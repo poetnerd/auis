@@ -1,0 +1,36 @@
+pub/AUIS/patches/official
+
+README
+
+The patches located in this directory should be applied using the patch program.  Sources for the patch program are available in pub/AUIS/util. 
+
+The patches currently available for release 6.3 are: 
+
+patch.631 - for all users 
+	See Aug. 27 info-andrew mail with subject: 	AUIS Release 6.3.1 Available
+patch.hp - for HP users only 
+	See Sept. 8 info-andrew mail with subject: 
+	Patch for HP Users
+patch.632 - for all AMS users
+	See October 27 info-andrew mail with subject:  	AUIS Patch 6.3.2
+patch.633 - for all users 
+	 Patch to V6 figure to make it accept 
+	figures created with later versions, including 	C++ versions 7.2 and higher.  
+patch.634 - for eatmail/AMS/Messages users
+	Fixes potential cause of coredumps for anyone 
+	who users eatmail or has AMS/Messages
+	configured to read mail from a UNIX-style
+	mail spool. 
+
+Previous posts to info-andrew are archived in the pub/AUIS/ia-archive directory on ftp.andrew.cmu.edu.  
+
+Apply the patches from the top-level AUIS directory, i.e., the directories overhead, atk, ams, exist.  Once you have the patch program, issue the following command to csh: 
+
+	patch -p < /{PathToFile}/{PatchFileName}
+
+Note:  omitting the -p flag will cause patch to not be able to find the correct file to fix.  
+
+If you do not have the patch sources, they can be found on a number of ftp servers.  We make them available on our ftp server, ftp.andrew.cmu.edu, in  pub/AUIS/util/patch.tar.Z.   
+
+Kindly report bugs you encounter to info-andrew-bugs@andrew.cmu.edu.  Technical questions or questions about using AUIS should be directed to the info-andrew@andrew.cmu.edu distribution list, while general information can be obtained by sending mail to info-andrew-request@andrew.cmu.edu. 
+

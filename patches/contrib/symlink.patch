@@ -1,0 +1,22 @@
+*** /tmp/,RCSt1014024   Wed Aug  2 16:43:04 1995
+--- overhead/class/lib/Imakefile        Fri Jun 23 00:27:17 1995
+***************
+*** 55,61 ****
+            ../machdep/machine/$(SHARED)/doload.o $(SHARED)/mapping.o 
+$(SHARED)/classind.o
+  InstallLibrary(SHARED_LIBCLASS, $(BASEDIR)/lib)
+  #ifndef NO_ALT_SHARED_LIBCLASS
+! InstallLink($(BASEDIR)/lib/SHARED_LIBCLASS, $(BASEDIR)/lib/ALT_SHARED_LIBCLAS
+S)
+  #endif /* NO_ALT_SHARED_LIBCLASS */
+  #endif /* LIBDL_ENV */
+  
+--- 55,61 ----
+            ../machdep/machine/$(SHARED)/doload.o $(SHARED)/mapping.o 
+$(SHARED)/classind.o
+  InstallLibrary(SHARED_LIBCLASS, $(BASEDIR)/lib)
+  #ifndef NO_ALT_SHARED_LIBCLASS
+! InstallLink(SHARED_LIBCLASS, $(BASEDIR)/lib/ALT_SHARED_LIBCLASS)
+  #endif /* NO_ALT_SHARED_LIBCLASS */
+  #endif /* LIBDL_ENV */
+  

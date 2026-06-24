@@ -1,0 +1,54 @@
+\begindata{text,539160920}
+\textdsversion{12}
+\template{default}
+The message below describes the bug  and a fix for a problem building the 
+whitepages database on machines running Solaris 2.x.
+
+
+\bold{\quotation{Excerpts from andrew: 28-Mar-96 Re: need help building wp 
+Craig_Everhart@transarc. (1791*)}}
+
+\quotation{***I just found the bug.  In the file
+
+}\quotation{\{ANDREW\}/src/overhead/util/lib/btw.c, function LockFile(), 
+the code
+
+}\quotation{tries locking the given file with fcntl() (hiding under
+
+}\quotation{osi_ExclusiveLockNoBlock in that function).  It expects to be 
+able to
+
+}\quotation{recognize errors due to a file's not being open in the correct 
+mode, and
+
+}\quotation{to recover; but it doesn't recognize what Solaris returns in 
+this case,
+
+}\quotation{which is EBADF.  It recognizes EWOULDBLOCK and EINVAL and 
+EACCES, but
+
+}\quotation{not EBADF. \
+
+
+}
+Solaris users have to apply this patch to make it work:
+
+
+diff btw.c_ori btw.c
+
+410c410
+
+<     if (errno != EWOULDBLOCK && errno != EINVAL && errno != EACCES) 
+return (bterr_FileSystemErrorBegin + errno);
+
+---
+
+>     if (errno != EWOULDBLOCK && errno != EINVAL && errno != EACCES && 
+errno != EBADF) return (bterr_FileSystemErrorBegin + errno);
+
+
+
+Tested it on an UFS, not AFS. \
+
+
+\enddata{text,539160920}

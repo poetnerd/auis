@@ -1,0 +1,82 @@
+Three files, including this one, include all you should need to get AUIS 6.3.3 going on an SGI5.2 system.  
+
+	SGI-port.6.3.3.README	- this file which contains additions to make to your local $ANDREWSRCDIR./config/site.mcr and $ANDREWSRCDIR./config/site.h files. 
+	SGI-port.6.3.3.diffs - context diffs of existing files
+	SGI-port.6.3.3.newfiles - additional files to be added to the AUIS version 6.3.3 sources
+
+We've run EZ successfully.  (Printing didn't work, but
+that's probably because troff is in the wrong place or something.)
+
+We had to make a few niggly little changes, so there are some patches
+included, in addition to the necessary new files.
+
+You also take two files from the Solaris port  :-).
+
+Share and enjoy, 
+
+Bill Cattey
+<wdc@athena.mit.edu>
+
+Manifest:
+
+	inst/inst.c  (patch)
+		added a line for the sgi's to use mode_t instead of long for file
+		modes, which made pinstall break on Irix 5.2
+	overhead/class/cmd/doindex.c (patch)
+		changed it so that things done for sgi_4 aren't done for sgi_5,
+		like dounload.
+	config/andrew.rls (patch)
+		added stuff to configure for the new Irix port
+		also fixed the lack of the class library defines in the file -fixes 
+			overhead/class/testing/testmain
+	config/platform.tmpl (patch)
+		added stuff to configure for the new Irix port
+
+	atk/console/stats/sgi_mips_52
+		new directory with stuff for Irix 5.2 port:
+		Imakefile, getstats.c (included)
+	
+	config/sgi_52
+		new directory filled with system.h and system.mcr for Irix 5.2
+		 (included)
+
+	overhead/class/machdep/sgi_mips_52
+		new directory with stuff for the Irix 5.2 port:
+		Imakefile, entry.c, makedo.csh  (included)
+		doload.[ch] (take them from your own machdep/sun_sparc_51 dir.)
+
+Configs:
+	For site.mcr we added the following:
+----8<---- site.mcr ----
+#ifdef SGI_52_ENV
+#undef sgi  /* can't have sgi be replaced by a 1 */
+
+        BASEDIR = /mit/andydevo/texport/6.3/sgi
+#ifdef AFS_ENV
+        AFSBASEDIR = /afs/dev.mit.edu/project/andrew/build/sgi/afsbuild
+#endif /* AFS_ENV */
+        LAUNCHAPP = launchapp
+
+        SHARED_LIB_PATH = -L/mit/andrew/6.3/sgi/lib -L/usr/andrew/lib -rpath /mit/andrew/6.3/sgi/lib:/usr/andrew/lib 
+        XBASEDIR = /usr/
+        XINCDIR = ${XBASEDIR}/include/X11
+        XLIBDIR = ${XBASEDIR}/lib
+        XLIB = -lX11
+#endif /* SGI */
+----8<---- site.h ----8<----
+#ifdef SGI_52_ENV
+
+#define DEFAULT_ANDREWDIR_ENV /mit/andrew/6.3/sgi
+#ifdef ANDREW_MALLOC_ENV
+#undef ANDREW_MALLOC_ENV    /* seems to have problem with PIC  */
+#endif /* ANDREW_MALLOC_ENV */
+#ifdef DEBUG_MALLOC_ENV
+#undef DEBUG_MALLOC_ENV
+#endif /* DEBUG_MALLOC_ENV */
+#ifndef FONTS_TO_PCF_ENV
+#define FONTS_TO_PCF_ENV 1
+#endif
+
+#endif /* SGI */
+----8<---- END site.h ----8<----
+

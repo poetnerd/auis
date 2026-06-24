@@ -1,0 +1,5 @@
+This patch contains changes made that are unrelated to any specific platform.
+
+Manifest:
+	overhead/class/lib/Imakefile (patch)
+		make the shared lib symlink use a relative instead of absolute path

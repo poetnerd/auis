@@ -1,0 +1,12 @@
+This patch corrects defects in MIT contributed software: 2rtf and neos.
+
+Manifest:
+	contrib/mit/2rtf/2rtf.h (patch)
+		don't redclare malloc and calloc on rs6k
+
+	contrib/mit/neos/eosfx.c (patch)
+		do not pre-declare macro functions that are later redeclared on solaris
+
+	contrib/mit/neos/papers.c (patch)
+		do not redeclare index (done for SYSV, though only tested on Soalris)
+

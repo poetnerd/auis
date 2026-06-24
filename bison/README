@@ -1,0 +1,115 @@
+					December 2002
+
+Bison A2.6 is obsolete. Please download Bison 1.75 from the Free Software
+Foundation:  http://www.fsf.org/directory/GNU/bison.html
+
+This directory continues to hold tools to convert bison output to 
+variant parsers. I have not tested them with the latest version of Bison.
+
+
+
+ 					July, 1995
+	Andrew Bison version A2.6
+
+					Wilfred J. Hansen
+					Director, Andrew Consortium
+					School of Computer Science
+					Carnegie Mellon
+					wjh+@cmu.edu
+
+Bison is a parser generator maintained by the Free Software Foundation as
+an alternative to yacc.  This directory contains Andrew Bison version A2.6, 
+derived from GNU Bison version 1.24.  It also includes parser generators for 
+C and C++  which have these advantages
+
+	No symbol conflicts.  Each parser is represented by a single name.
+	Shared parser code.  All grammars use a single instance of the 
+		parser object code.
+	C++ object.  For C++, the generated parser is an object.  Utilize it with
+		GrammarName *grammar = new GrammarName;
+	License free.  The license on the parser code permits effectively
+		unhindered use.  (As of version 1.24, FSF bison also produces
+		license free code.) 
+
+Bison-A2.6 has these advantages over other versions of Bison:
+
+	Errors in the grammar do not terminate input; all errors are 
+		found in one pass.  A complete example and test case is 
+		the file mess.y in the distribution.
+		
+	Tokens may now be specified as multiple-character strings:
+		"<=" can appear where formerly would have to be LESSEQ.
+
+	Several new switches:  
+		--token-table
+			Generates a token table in the .tab.c file.
+		--raw  
+			Outputs Bison token numbers instead of yacc numbers.
+		--no-parser
+			Does not add the parser code to the bison output.
+
+The Andrew User Interface System (AUIS) includes a lexical analyzer 
+generator--gentlex--tailored to this version of bison.
+
+
+This directory contains 
+	bison-A2.6 - sources in ASCII.  See bison.texinfo.
+	mkparser - license-free parser for C.  See parser.doc.
+	C++parser - license-free parser for C++.  See parserclass.doc.
+	bison-A2.6.tar.gz - all the above, tarred and gzipped.
+	Makefile - for testing and installing the sub-directories
+
+Installation
+	After unpacking the Andrew Bison distribution, the Makefile
+	in this parent directory can do testing or installation.  (Testing is
+	done in /tmp/bisontests.)
+	To do simple tests on your platform
+		make Test
+	To install in /usr/local
+		make Install
+	To install in /path/name
+		make Install DESTDIR=/path/name   
+
+Files installed into DESTDIR
+from bison
+	bin/bison
+	share/{bison.simple,bison.hairy}
+	info/bison.info*
+	man/man1/bison.1
+from C++parser
+	bin/mkparserclass	convert bison output to C++ parser
+	include/parser.H		header for parser methods
+	lib/libparser.a		binary for parser methods
+	doc/prsclass.doc		describes C++parser
+	help/atkparse.doc	Andrew parsing tools (general description)
+from mkparser
+	bin/mkparser		convert bison output to C parser
+	include/cparser.h	header for parser functions
+	lib/libcparser.a		binary of parser functions
+	doc/parser.doc		describes mkparser (for C)
+
+Recent Changes
+	A2.3 - revised to not use VARARGS for error messages
+	A2.4 - minor comment in this README, since removed
+	A2.5 - revised for bison-1.24
+		removed some ATK-isms so it is easier to build
+		fixed for %union{...}
+		make error processing compatible with yacc / bison
+			now accepts   yyclearin, yyerrok,
+				YYERROR, YYACCEPT, YYABORT
+		revised documents
+		overall installation and testing script
+	A2.6 - revised for gnu style
+		added an alias field to %token
+			(and undocumented the %thong declaration)
+		added % declarations as additional ways to
+			specify -d -k -n -y -l -r
+
+CARNEGIE MELLON UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD 
+TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY 
+AND FITNESS. IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY BE LIABLE FOR 
+ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES 
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN 
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF 
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+

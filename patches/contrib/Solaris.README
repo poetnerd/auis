@@ -1,0 +1,38 @@
+The file Solaris2.1X86.auis6.3.diffs is a set of patches to allow AUIS 6.3 to compile under Solaris 2.1 for x86.  These patches have not been tested or examined by the Andrew Consortium.
+
+-Rob Ryan
+Andrew Consortium
+
+Patch addendum submitted by Bill Cattey at MIT <wdc@mit.edu>: 
+
+When you build class under Solaris, you need to tell the assembler to generate position independent code.
+
+Although gnu as does just fine generating position independent code for the C compiler so that everything ELSE works, calling it from 
+the command line does not allow passing in a PIC flag.
+
+The following patch implements a hard-coded override of the site files if you set gnu env so that the local assembler from Sun will make the
+.spp.o code.
+
+Does this seem reasonable?  (I didn't do it, someone else did it, and he said that if he didn't, the build would blow out.)
+
+(THIS PATCH IS INCLUDED IN THE FILE Solaris2.1X86.auis6.3.diffs. ) 
+
+*** 1.1	1995/06/29 05:59:38
+--- Imakefile	1995/06/29 06:14:27
+***************
+*** 31,36 ****
+--- 31,40 ----
+  NormalObjectRule()
+  STD_DEFINES = $(PICFLAG)
+  
++ #if defined(GNU_ENV) && defined(SUN_ENV)
++ AS =/usr/ccs/bin/as  /* gnu as doesn't seem to have an argument to
+generate PIC code */
++ #endif
++ 
+  .spp.o:
+  	-$(RM) $@ ,$*.s ,$*.c
+  	$(CP) $*.spp ,$*.c
+
+
+

@@ -1,0 +1,1210 @@
+*** auis-6.3/README.ez	Wed Jun  1 15:10:13 1994
+--- ./README.ez	Wed Aug 24 14:40:41 1994
+***************
+*** 1,4 ****
+! \begindata{text,538097824}
+  \textdsversion{12}
+  \template{default}
+  \define{global
+--- 1,4 ----
+! \begindata{text,538838348}
+  \textdsversion{12}
+  \template{default}
+  \define{global
+***************
+*** 31,40 ****
+  
+  
+  }}}}
+! \bigger{Version 6.3
+  
+  
+! (May, 1994)
+  
+  
+  }
+--- 31,40 ----
+  
+  
+  }}}}
+! \bigger{Version 6.3.1
+  
+  
+! (August, 1994)
+  
+  
+  }
+***************
+*** 82,90 ****
+  
+  University of California, Berkeley and its contributors.
+  
+! \begindata{bp,537925432}
+! \enddata{bp,537925432}
+! \view{bpv,537925432,0,0,0}
+  
+  $Disclaimer: 
+  
+--- 82,90 ----
+  
+  University of California, Berkeley and its contributors.
+  
+! \begindata{bp,538589656}
+! \enddata{bp,538589656}
+! \view{bpv,538589656,2,0,0}
+  
+  $Disclaimer: 
+  
+***************
+*** 162,170 ****
+  
+  }
+  
+! \begindata{bp,537925480}
+! \enddata{bp,537925480}
+! \view{bpv,537925480,1,0,0}
+  
+  \chapter{1	Installation Instructions for the Andrew Distribution
+  
+--- 162,170 ----
+  
+  }
+  
+! \begindata{bp,538618520}
+! \enddata{bp,538618520}
+! \view{bpv,538618520,3,0,0}
+  
+  \chapter{1	Installation Instructions for the Andrew Distribution
+  
+***************
+*** 233,239 ****
+--- 233,242 ----
+  
+  CC=gcc -traditional
+  
++ (If you encounter problems using gcc -traditional, try gcc 
++ -fwritable-strings.)
+  
++ 
+  In site.h:
+  
+  #define GNU_ENV 1
+***************
+*** 1769,1777 ****
+  ./config/site.mcr:
+  
+  
+! CC = gcc
+  
+! GCCLIB = /usr/local/lib/gcc-lib/architecture/version/libgcc.a
+  
+  
+  GCCLIB should be the full path to libgcc.a.
+--- 1772,1780 ----
+  ./config/site.mcr:
+  
+  
+! CC = gcc -fwritable-strings
+  
+! GCCLIB = '/usr/local/lib/gcc-lib/architecture/version/libgcc.a'
+  
+  
+  GCCLIB should be the full path to libgcc.a.
+***************
+*** 2089,2097 ****
+  including fixes needed to csh and make for them to work for AUIS.
+  
+  
+! \begindata{bp,537925528}
+! \enddata{bp,537925528}
+! \view{bpv,537925528,2,0,0}
+  \chapter{2	Building the System
+  
+  }
+--- 2092,2100 ----
+  including fixes needed to csh and make for them to work for AUIS.
+  
+  
+! \begindata{bp,538618568}
+! \enddata{bp,538618568}
+! \view{bpv,538618568,4,0,0}
+  \chapter{2	Building the System
+  
+  }
+***************
+*** 2204,2212 ****
+  
+  
+  
+! \begindata{bp,537925576}
+! \enddata{bp,537925576}
+! \view{bpv,537925576,3,0,0}
+  \section{2.2	System Components
+  
+  }
+--- 2207,2215 ----
+  
+  
+  
+! \begindata{bp,538618616}
+! \enddata{bp,538618616}
+! \view{bpv,538618616,5,0,0}
+  \section{2.2	System Components
+  
+  }
+***************
+*** 2725,2733 ****
+  RS/6000: 60M
+  
+  }
+! \begindata{bp,537925624}
+! \enddata{bp,537925624}
+! \view{bpv,537925624,4,0,0}
+  \chapter{3	Setting up the Environment to Run Applications}
+  
+  
+--- 2728,2736 ----
+  RS/6000: 60M
+  
+  }
+! \begindata{bp,538618664}
+! \enddata{bp,538618664}
+! \view{bpv,538618664,6,0,0}
+  \chapter{3	Setting up the Environment to Run Applications}
+  
+  
+***************
+*** 2990,2993 ****
+  ONLY non-multi-media posts.
+  
+  
+! \enddata{text,538097824}
+--- 2993,2996 ----
+  ONLY non-multi-media posts.
+  
+  
+! \enddata{text,538838348}
+*** auis-6.3/FAQ.ez	Wed Jun  1 15:10:17 1994
+--- ./FAQ.ez	Wed Aug 24 14:39:20 1994
+***************
+*** 1,4 ****
+! \begindata{text,538097824}
+  \textdsversion{12}
+  \template{help}
+  \define{global
+--- 1,4 ----
+! \begindata{text,538752284}
+  \textdsversion{12}
+  \template{help}
+  \define{global
+***************
+*** 18,32 ****
+  
+  Frequently Asked Questions
+  
+! Release 6.2}}
+  
+  
+! \bold{\flushright{\flushleft{Last Update:  3/16/94}}}
+  
+! 
+! \begindata{bp,537925432}
+! \enddata{bp,537925432}
+! \view{bpv,537925432,0,0,0}
+  This file contains questions from everywhere and answers from many places. 
+   The sections on General Information and Common Problems Building Andrew 
+  were compiled by Susan Straub (susan+@andrew.cmu.edu).  The section on User 
+--- 18,32 ----
+  
+  Frequently Asked Questions
+  
+! Release 6.3.1}}
+  
+  
+! \bold{\flushright{\flushleft{Last Update:  8/94
+  
+! }}}
+! \begindata{bp,538360232}
+! \enddata{bp,538360232}
+! \view{bpv,538360232,0,0,0}
+  This file contains questions from everywhere and answers from many places. 
+   The sections on General Information and Common Problems Building Andrew 
+  were compiled by Susan Straub (susan+@andrew.cmu.edu).  The section on User 
+***************
+*** 54,59 ****
+--- 54,65 ----
+  	info-andrew-bugs@andrew.cmu.edu
+  
+  
++ We also offer an electronic answering system.  Send mail to 
++  andrew-service@andrew.cmu.edu with the word ``help'' as the only word on a 
++ line in the body of the message.  You will receive instructions on 
++ obtaining other information.
++ 
++ 
+  For information about the consortium you can contact:
+  
+  
+***************
+*** 187,193 ****
+--- 193,201 ----
+  \bold{   P2.}  \leftindent{Ezprint outputs rasters in PostScript.  Can I 
+  print those rasters?}
+  
++ \bold{N P3.}  \leftindent{How can I adjust for other printer page sizes?}
+  
++ 
+  \italic{Applications}
+  
+  
+***************
+*** 272,298 ****
+  \bold{G2.  How do I obtain the latest release?}
+  
+  
+! \indent{This release, 6.2, can be obtained in several ways.   Andrew, as 
+  well as a variety of CMU software and the latest patches, is available via 
+  anonymous ftp from the Internet host, ftp.andrew.cmu.edu (Internet: 
+! 128.2.232.154).   Due to its size, the compressed tar'd tree is split into 
+! 5 files, auis\{1,2,3\}, contrib and doc in the dist-6.2/ directory.    You 
+! should uncompress and tar -xvf each file individually.   The distribution 
+! is also available via anonymous ftp from the Internet host ftp.x.org 
+! (Internet address:  (198.112.44.100)).  The sources are located in the 
+! contrib/andrew tree.   \
+! 
+! 
+  
+- Release 6.2 is a beta version of that which will be made available on the 
+- X.V11R6 contrib tape.  You should grab that release when it becomes 
+- available.
+  
+  
+! NOTE:  The version of Andrew that is located in the ./pub/R5/contrib-3 
+! directory on the X.V11R5 tape is Release 5.0.   Since the Consortium 
+! supports only the latest release, please do not use that release.    Thank 
+! you.  \
+  
+  
+  
+--- 280,301 ----
+  \bold{G2.  How do I obtain the latest release?}
+  
+  
+! \indent{This release, 6.3.1, can be obtained in several ways.   Andrew, as 
+  well as a variety of CMU software and the latest patches, is available via 
+  anonymous ftp from the Internet host, ftp.andrew.cmu.edu (Internet: 
+! 128.2.232.154) in pub/AUIS.   Due to its size, the compressed tar'd tree is 
+! split into 6 files, auis\{1,2,3,4\}, contrib and doc in the 
+! pub/AUIS/dist-6.3.1/ directory.    You should gzip and tar -xvf each file 
+! individually.   If you already have release 6.3 installed, you may wish to 
+! apply the patch found in pub/AUIS/patches/official to your current 
+! installation.  The README in that directory provides instructions for 
+! applying the patch. \
+  
+  
+  
+! The distribution is also available via anonymous ftp from the Internet host 
+! ftp.x.org (Internet address:  198.112.44.100).  The sources are located in 
+! the contrib/libraries/andrew tree.   \
+  
+  
+  
+***************
+*** 334,339 ****
+--- 337,346 ----
+  
+  386/486			Linux				i386_Linux
+  
++ 386/486			NetBSD			i386_bsd
++ 
++ 386/486			BSDI/386		i386_bsdi (new, untested)
++ 
+  Macintosh II		MacMach			mac2_51
+  
+  Apollo			DomainOS			apollo68k
+***************
+*** 1211,1222 ****
+  To load the symbol table for the \bold{raster} dynamic object you would use 
+  this command on a Sun or a DECstation 
+  3100\footnote{\
+! \begindata{fnote,537925480}
+  \textdsversion{12}
+  the distributed version of gdb does not yet support ATK applications on the 
+  DS3100, but will do so in the very near future (1/15/91)\
+! \enddata{fnote,537925480}
+! \view{fnotev,537925480,1,0,0}}:
+  
+  (gdb)\bold{ add-file raster.dog 0x10046594}
+  
+--- 1218,1229 ----
+  To load the symbol table for the \bold{raster} dynamic object you would use 
+  this command on a Sun or a DECstation 
+  3100\footnote{\
+! \begindata{fnote,538360280}
+  \textdsversion{12}
+  the distributed version of gdb does not yet support ATK applications on the 
+  DS3100, but will do so in the very near future (1/15/91)\
+! \enddata{fnote,538360280}
+! \view{fnotev,538360280,1,0,0}}:
+  
+  (gdb)\bold{ add-file raster.dog 0x10046594}
+  
+***************
+*** 1378,1383 ****
+--- 1385,1420 ----
+  which will include the raster encoded in PostScript / hex form.
+  
+  
++ }\bold{P3. How can I adjust for other printer page sizes?}
++ 
++ 
++ \leftindent{Page size for all AUIS printing can be adjusted by modifying 
++ the file $ANDREWDIR/lib/tmac/tmac.atk.  Just after the copyright notice, 
++ you can insert these lines (without leading whitespace)
++ 
++ 
++ 	.ll 20c
++ 
++ 	.pl 30c
++ 
++ 
++ These set a line length of 20 centimeters and a page length of 30 
++ centimeters.
++ 
++ 
++ You can also adjust the default header and footer margins by changing the 
++ values assigned to HM and FM a few lines later.
++ 
++ 
++ If you want to change paper size for just one user, that user can copy 
++ tmac.atk into a private file, say /usr/you/tmac/tmac.atk.  To utilize this 
++ file, the user's preferences file should include a line like:
++ 
++ 
++ 	*.tmacfile:/usr/you/tmac/tmac.atk}
++ 
++ \leftindent{
++ 
+  }\section{Applications}
+  
+  
+***************
+*** 2295,2303 ****
+  }
+  _______________________
+  
+! \begindata{bp,537925656}
+! \enddata{bp,537925656}
+! \view{bpv,537925656,2,0,0}
+  Copyright 1992 Carnegie Mellon University.  All rights reserved.
+  
+  /* \
+--- 2332,2340 ----
+  }
+  _______________________
+  
+! \begindata{bp,538360456}
+! \enddata{bp,538360456}
+! \view{bpv,538360456,2,0,0}
+  Copyright 1992 Carnegie Mellon University.  All rights reserved.
+  
+  /* \
+***************
+*** 2345,2348 ****
+  
+  */
+  
+! \enddata{text,538097824}
+--- 2382,2385 ----
+  
+  */
+  
+! \enddata{text,538752284}
+
+diff -r -c auis-6.3/ams/delivery/queuem/Imakefile ./ams/delivery/queuem/Imakefile
+*** auis-6.3/ams/delivery/queuem/Imakefile	Thu May 26 13:47:31 1994
+--- ./ams/delivery/queuem/Imakefile	Mon Aug 15 17:54:55 1994
+***************
+*** 30,36 ****
+  TestProgramTarget(deliver, deliver.o, ${LIBS}, ${BSDLIB})
+  ProgramTarget(queuemail, queuem.o, ${LIBS}, $(MMDFLIBS) ${BSDLIB})
+  #ifdef CMU_ENV
+! InstallProgram(queuemail, ${DESTDIR}/etc/)
+  #endif
+  /* needs to be installed setuid daemon */
+  DependTarget()
+--- 30,36 ----
+  TestProgramTarget(deliver, deliver.o, ${LIBS}, ${BSDLIB})
+  ProgramTarget(queuemail, queuem.o, ${LIBS}, $(MMDFLIBS) ${BSDLIB})
+  #ifdef CMU_ENV
+! InstallProgram(queuemail, ${DESTDIR}/etc)
+  #endif
+  /* needs to be installed setuid daemon */
+  DependTarget()
+diff -r -c auis-6.3/ams/delivery/sendmail/Imakefile ./ams/delivery/sendmail/Imakefile
+*** auis-6.3/ams/delivery/sendmail/Imakefile	Thu May 26 13:47:42 1994
+--- ./ams/delivery/sendmail/Imakefile	Mon Aug 15 17:55:01 1994
+***************
+*** 42,48 ****
+  ProgramTarget(sendmail, sendmail.o, ${LIBS}, ${BSDLIB})
+  #ifdef RUN_AMDS_ENV
+  #ifdef CMU_ENV
+! InstallProgram(sendmail, ${DESTDIR}/etc/)
+  #else /* CMU_ENV */
+  install.time::
+  	@echo 'Sendmail has been built but not installed.'
+--- 42,48 ----
+  ProgramTarget(sendmail, sendmail.o, ${LIBS}, ${BSDLIB})
+  #ifdef RUN_AMDS_ENV
+  #ifdef CMU_ENV
+! InstallProgram(sendmail, ${DESTDIR}/etc)
+  #else /* CMU_ENV */
+  install.time::
+  	@echo 'Sendmail has been built but not installed.'
+diff -r -c auis-6.3/ams/libs/ms/update.c ./ams/libs/ms/update.c
+*** auis-6.3/ams/libs/ms/update.c	Thu May 26 13:41:51 1994
+--- ./ams/libs/ms/update.c	Mon Aug 15 17:52:20 1994
+***************
+*** 100,106 ****
+  Boolean DoEverything;
+  {
+  #if POSIX_ENV
+!     int status;
+  #else
+  #ifndef hpux
+      union wait status;
+--- 100,106 ----
+  Boolean DoEverything;
+  {
+  #if POSIX_ENV
+!     int status=0;
+  #else
+  #ifndef hpux
+      union wait status;
+***************
+*** 107,113 ****
+  #else	/* hpux */
+  #if HP_OS >= 70
+  #define WNOHANG 1
+!     int *status;
+  #endif /* HP_OS >= 70 */
+  #endif /*  not hpux */
+  #endif
+--- 107,113 ----
+  #else	/* hpux */
+  #if HP_OS >= 70
+  #define WNOHANG 1
+!     int status=0;
+  #endif /* HP_OS >= 70 */
+  #endif /*  not hpux */
+  #endif
+***************
+*** 172,178 ****
+  #else /* any system except HP_OS < 70 */
+  	do { /* Have you checked the children? */
+  #ifdef hpux /* HP_OS >= 70 */
+! 	    pid = (int) wait3(status, WNOHANG, NULL);
+  #else	/* non hpux system */
+  #if POSIX_ENV
+  	    pid = waitpid(-1, &status, WNOHANG);
+--- 172,178 ----
+  #else /* any system except HP_OS < 70 */
+  	do { /* Have you checked the children? */
+  #ifdef hpux /* HP_OS >= 70 */
+! 	    pid = (int) wait3(&status, WNOHANG, NULL);
+  #else	/* non hpux system */
+  #if POSIX_ENV
+  	    pid = waitpid(-1, &status, WNOHANG);
+diff -r -c auis-6.3/ams/msclients/vui/doc/Imakefile ./ams/msclients/vui/doc/Imakefile
+*** auis-6.3/ams/msclients/vui/doc/Imakefile	Thu May 26 13:44:10 1994
+--- ./ams/msclients/vui/doc/Imakefile	Mon Aug 15 17:53:29 1994
+***************
+*** 39,45 ****
+  
+  MkdirTarget($(DIRS))
+  
+! InstallMultiple($(DOCS), $(INSTINCFLAGS), $(DESTDIR)/doc/inprogram/vui/help/)
+  
+  
+  
+--- 39,45 ----
+  
+  MkdirTarget($(DIRS))
+  
+! InstallMultiple($(DOCS), $(INSTINCFLAGS), $(DESTDIR)/doc/inprogram/vui/help)
+  
+  
+  
+diff -r -c auis-6.3/ams/msclients/vui/vuipnl.c ./ams/msclients/vui/vuipnl.c
+*** auis-6.3/ams/msclients/vui/vuipnl.c	Thu May 26 13:43:37 1994
+--- ./ams/msclients/vui/vuipnl.c	Mon Aug 15 17:53:24 1994
+***************
+*** 943,949 ****
+      GetCurrentDir(MSG_ShortName, NIL, TRUE);
+      mess_bp[3].pdata = MSG_ShortName;
+      MSG_MaxVisible = n_shown;
+!     strcpy(MSG_date,holddate);
+      if (NumNew == NumTotal) MSG_CurrentRow = MSG_StartNum;
+      else MSG_CurrentRow=(MSG_StartNum==(long)(NumTotal-1))?0:1;
+      MSG_LastPageFlag=FALSE;
+--- 943,949 ----
+      GetCurrentDir(MSG_ShortName, NIL, TRUE);
+      mess_bp[3].pdata = MSG_ShortName;
+      MSG_MaxVisible = n_shown;
+!     /* strcpy(MSG_date,holddate);*/
+      if (NumNew == NumTotal) MSG_CurrentRow = MSG_StartNum;
+      else MSG_CurrentRow=(MSG_StartNum==(long)(NumTotal-1))?0:1;
+      MSG_LastPageFlag=FALSE;
+diff -r -c auis-6.3/ams/utils/nntp/lib/rfc822.c ./ams/utils/nntp/lib/rfc822.c
+*** auis-6.3/ams/utils/nntp/lib/rfc822.c	Thu May 26 13:46:43 1994
+--- ./ams/utils/nntp/lib/rfc822.c	Mon Aug 15 17:54:26 1994
+***************
+*** 717,723 ****
+  	return TRUE;
+  }
+  
+! #if !defined(USG) && !defined(NeXT)
+  char *
+  strpbrk(str, chars)
+  register char *str, *chars;
+--- 717,723 ----
+  	return TRUE;
+  }
+  
+! #if !defined(USG) && !defined(NeXT) && !defined(sys_sun4_41)
+  char *
+  strpbrk(str, chars)
+  register char *str, *chars;
+diff -r -c auis-6.3/atk/atkvers/atkvers.num ./atk/atkvers/atkvers.num
+*** auis-6.3/atk/atkvers/atkvers.num	Thu May 26 13:50:45 1994
+--- ./atk/atkvers/atkvers.num	Mon Aug 15 17:56:42 1994
+***************
+*** 1 ****
+! 6.3
+--- 1 ----
+! 6.3.1
+diff -r auis-6.3/atk/basics/x/xim.c atk/basics/x/xim.c
+***auis-6.3/atk/basics/x/xim.c	Thu May 26 13:51:32 1994
+--- atk/basics/x/xim.c	Fri Aug 26 11:42:25 1994
+***************
+***************
+*** 3124,3130 ****
+  		if (length == 1 && keyEvent->state & Mod1Mask)
+  		    enQuserKey(self, IM_METAESC); /* changed from '\033'--bobg */
+  		while (length-- > 0)
+! 		    enQuserKey(self, *strp++);
+  	        break;
+  
+  	case ButtonPress:
+--- 3124,3130 ----
+  		if (length == 1 && keyEvent->state & Mod1Mask)
+  		    enQuserKey(self, IM_METAESC); /* changed from '\033'--bobg */
+  		while (length-- > 0)
+! 		    enQuserKey(self, (unsigned char)*strp++);
+  	        break;
+  
+  	case ButtonPress:
+
+diff -r -c auis-6.3/atk/basics/common/im.c ./atk/basics/common/im.c
+*** auis-6.3/atk/basics/common/im.c	Thu May 26 13:53:00 1994
+--- ./atk/basics/common/im.c	Mon Aug 15 17:57:39 1994
+***************
+*** 2379,2386 ****
+  				int pid;
+  #ifdef hpux
+  #define WNOHANG 1
+! 			    int *status;
+! 			    while ((pid = (int) wait3 (status, WNOHANG, 0)) > 0) 
+  #else /* any system other than hpux */
+  #if POSIX_ENV
+  				int status;
+--- 2379,2386 ----
+  				int pid;
+  #ifdef hpux
+  #define WNOHANG 1
+! 			    int status;
+! 			    while ((pid = (int) wait3 (&status, WNOHANG, 0)) > 0) 
+  #else /* any system other than hpux */
+  #if POSIX_ENV
+  				int status;
+diff -r -c auis-6.3/atk/doc/Imakefile ./atk/doc/Imakefile
+*** auis-6.3/atk/doc/Imakefile	Thu May 26 13:59:30 1994
+--- ./atk/doc/Imakefile	Mon Aug 15 18:00:50 1994
+***************
+*** 17,21 ****
+  InstallHelpAlias(geomtry, geometry)
+  InstallHelpAlias(tour, andrewtour andrew-tour)
+  
+! InstallDocs(${TOPDOCS}, ${DESTDIR}/doc/)
+  InstallDocs(${DOCS}, ${DESTDIR}/doc/atk)
+--- 17,21 ----
+  InstallHelpAlias(geomtry, geometry)
+  InstallHelpAlias(tour, andrewtour andrew-tour)
+  
+! InstallDocs(${TOPDOCS}, ${DESTDIR}/doc)
+  InstallDocs(${DOCS}, ${DESTDIR}/doc/atk)
+diff -r -c auis-6.3/atk/figure/figospli.c ./atk/figure/figospli.c
+*** auis-6.3/atk/figure/figospli.c	Thu May 26 14:02:56 1994
+--- ./atk/figure/figospli.c	Mon Aug 15 18:03:34 1994
+***************
+*** 145,151 ****
+  	ctemp[i+1].t4 -= (ctemp[i+1].t1 * ctemp[i].t4);
+      }
+  
+!     ctemp[last+1].t4 /= ctemp[last+1].t2;
+      for (i=last-1; i>=first-1; i--) {
+  	ctemp[i+1].t4 = (ctemp[i+1].t4 - ctemp[i+1].t3*ctemp[i+2].t4) / ctemp[i+1].t2;
+      }
+--- 145,153 ----
+  	ctemp[i+1].t4 -= (ctemp[i+1].t1 * ctemp[i].t4);
+      }
+  
+!     if (last >= 0) {
+! 	ctemp[last+1].t4 /= ctemp[last+1].t2;
+!     }
+      for (i=last-1; i>=first-1; i--) {
+  	ctemp[i+1].t4 = (ctemp[i+1].t4 - ctemp[i+1].t3*ctemp[i+2].t4) / ctemp[i+1].t2;
+      }
+***************
+*** 205,211 ****
+  	ctemp[i+1].t4 -= (ctemp[i+1].t1 * ctemp[i].t4);
+      }
+  
+!     ctemp[last+1].t4 /= ctemp[last+1].t2;
+      for (i=last-1; i>=first-1; i--) {
+  	ctemp[i+1].t4 = (ctemp[i+1].t4 - ctemp[i+1].t3*ctemp[i+2].t4) / ctemp[i+1].t2;
+      }
+--- 207,215 ----
+  	ctemp[i+1].t4 -= (ctemp[i+1].t1 * ctemp[i].t4);
+      }
+  
+!     if (last >= 0) {
+! 	ctemp[last+1].t4 /= ctemp[last+1].t2;
+!     }
+      for (i=last-1; i>=first-1; i--) {
+  	ctemp[i+1].t4 = (ctemp[i+1].t4 - ctemp[i+1].t3*ctemp[i+2].t4) / ctemp[i+1].t2;
+      }
+diff -r -c auis-6.3/atk/support/hash.c ./atk/support/hash.c
+*** auis-6.3/atk/support/hash.c	Thu May 26 14:12:19 1994
+--- ./atk/support/hash.c	Mon Aug 15 18:09:36 1994
+***************
+*** 149,158 ****
+          return NULL;
+      egg = (struct egg *)glist_Find(self->buckets[bucket],FindEgg,key);
+      if (egg != NULL) {
+          glist_Delete(self->buckets[bucket],egg,FALSE);
+          free(egg->key);
+          free(egg);
+!         return egg->value; /* OK to reference after just freed */
+      }
+      else
+          return NULL;
+--- 149,159 ----
+          return NULL;
+      egg = (struct egg *)glist_Find(self->buckets[bucket],FindEgg,key);
+      if (egg != NULL) {
++ 	char *value=egg->value;
+          glist_Delete(self->buckets[bucket],egg,FALSE);
+          free(egg->key);
+          free(egg);
+!         return value;
+      }
+      else
+          return NULL;
+diff -r -c auis-6.3/atk/text/tabs.c ./atk/text/tabs.c
+*** auis-6.3/atk/text/tabs.c	Thu May 26 14:17:23 1994
+--- ./atk/text/tabs.c	Mon Aug 15 18:12:02 1994
+***************
+*** 375,382 ****
+  	    break;
+          case style_TabClear:
+  	    PrevTab = FindPrevTab(self, Pos);
+! 	    if (PrevTab >= 0 && tabChange->DotLocation == self->Positions[PrevTab])
+! 		/* There is a tab at this postion, so we get rid of it */
+  		tabs = tabs_Delete(self, PrevTab);
+  	    /* If there is no tab at the precise position specified, then
+  	     * this operation is ignored. Perhaps it should find another
+--- 375,382 ----
+  	    break;
+          case style_TabClear:
+  	    PrevTab = FindPrevTab(self, Pos);
+! 	    if (PrevTab >= 0 && PrevTab < self->number && tabChange->DotLocation == self->Positions[PrevTab])
+! 		/* There is a tab at this position, so we get rid of it */
+  		tabs = tabs_Delete(self, PrevTab);
+  	    /* If there is no tab at the precise position specified, then
+  	     * this operation is ignored. Perhaps it should find another
+diff -r -c auis-6.3/atk/textobjects/unknown.c ./atk/textobjects/unknown.c
+*** auis-6.3/atk/textobjects/unknown.c	Thu May 26 14:19:38 1994
+--- ./atk/textobjects/unknown.c	Mon Aug 15 18:12:52 1994
+***************
+*** 80,86 ****
+  {
+      if(self->odata) {
+  	text_Destroy(self->odata);
+! 	self->odata==NULL;
+      }
+      if(self->realclass) {
+  	free(self->realclass);
+--- 80,86 ----
+  {
+      if(self->odata) {
+  	text_Destroy(self->odata);
+! 	self->odata=NULL;
+      }
+      if(self->realclass) {
+  	free(self->realclass);
+***************
+*** 100,106 ****
+  }
+  
+  /* put a character back in the file and remove it from the text. */
+! static int tungetc(self, ch, file)
+  struct text *self;
+  FILE *file;
+  {
+--- 100,106 ----
+  }
+  
+  /* put a character back in the file and remove it from the text. */
+! static void tungetc(self, ch, file)
+  struct text *self;
+  FILE *file;
+  {
+***************
+*** 269,274 ****
+--- 269,275 ----
+  	    unknown_AlwaysInsertCharacters(self, 0, buf, strlen(buf));
+  	}
+      }
++     return ret;
+  }  
+  
+  /* wrap the unknown inset in an 'unknown' inset to protect future readers from a possibly corrupted
+diff -r -c auis-6.3/config/hp700_80/system.mcr ./config/hp700_80/system.mcr
+*** auis-6.3/config/hp700_80/system.mcr	Thu May 26 13:12:04 1994
+--- ./config/hp700_80/system.mcr	Tue Aug 30 11:30:01 1994
+***************
+*** 64,70 ****
+          CURSESLIBS = -lcurses
+          CLASSLIB = -L$(BASEDIR)/lib -lclass
+          XLIB = -L$(XLIBDIR) -lX11
+! 
+  /* Get site-specific inclusions */
+  #include <site.mcr>
+  SYS_CONFDIR = hp700_80
+--- 64,70 ----
+          CURSESLIBS = -lcurses
+          CLASSLIB = -L$(BASEDIR)/lib -lclass
+          XLIB = -L$(XLIBDIR) -lX11
+!         LEXLIB=
+  /* Get site-specific inclusions */
+  #include <site.mcr>
+  SYS_CONFDIR = hp700_80
+diff -r -c auis-6.3/config/i386_Linux/system.mcr ./config/i386_Linux/system.mcr
+*** auis-6.3/config/i386_Linux/system.mcr	Thu May 26 13:13:37 1994
+--- ./config/i386_Linux/system.mcr	Mon Aug 15 17:40:08 1994
+***************
+*** 21,27 ****
+  COMPILERFLAGS=-m486
+  
+  /* Now for the system-dependent information. */
+! CC = gcc
+  GNULIB = /usr/lib/libgcc.a
+  XUTILDIR = /usr/bin/X11
+  XLIBDIR = /usr/lib
+--- 21,27 ----
+  COMPILERFLAGS=-m486
+  
+  /* Now for the system-dependent information. */
+! CC = gcc -fwritable-strings
+  GNULIB = /usr/lib/libgcc.a
+  XUTILDIR = /usr/bin/X11
+  XLIBDIR = /usr/lib
+diff -r -c auis-6.3/config/i386_bsd/system.mcr ./config/i386_bsd/system.mcr
+*** auis-6.3/config/i386_bsd/system.mcr	Thu May 26 13:13:30 1994
+--- ./config/i386_bsd/system.mcr	Mon Aug 15 17:40:06 1994
+***************
+*** 43,49 ****
+  
+  /* Now for the system-dependent information. */
+  
+!         CDEBUGFLAGS = -O -fwritable-strings      
+          SUPLIBS = $(BASEDIR)/lib/libatkos.a $(BASEDIR)/lib/libossup.a
+  
+          /* 386BSD/Xfree86 location of X directory tree */
+--- 43,50 ----
+  
+  /* Now for the system-dependent information. */
+  
+!         CDEBUGFLAGS = -O 
+! COMPILERFLAGS = -fwritable-strings
+          SUPLIBS = $(BASEDIR)/lib/libatkos.a $(BASEDIR)/lib/libossup.a
+  
+          /* 386BSD/Xfree86 location of X directory tree */
+diff -r -c auis-6.3/config/i386_bsdi/system.mcr ./config/i386_bsdi/system.mcr
+*** auis-6.3/config/i386_bsdi/system.mcr	Thu May 26 13:13:33 1994
+--- ./config/i386_bsdi/system.mcr	Mon Aug 15 17:40:07 1994
+***************
+*** 39,45 ****
+  COMPILERFLAGS=
+  
+  /* Now for the system-dependent information. */
+! CC = cc
+  GNULIB = /usr/lib/libgcc.a
+  XUTILDIR = /usr/X11/bin
+  XLIBDIR = /usr/X11/lib
+--- 39,45 ----
+  COMPILERFLAGS=
+  
+  /* Now for the system-dependent information. */
+! CC = cc -fwritable-strings
+  GNULIB = /usr/lib/libgcc.a
+  XUTILDIR = /usr/X11/bin
+  XLIBDIR = /usr/X11/lib
+diff -r -c auis-6.3/config/imake.tmpl ./config/imake.tmpl
+*** auis-6.3/config/imake.tmpl	Thu May 26 13:11:39 1994
+--- ./config/imake.tmpl	Mon Aug 15 17:39:22 1994
+***************
+*** 100,105 ****
+--- 100,112 ----
+  #if defined(CMUCS)
+          AFSUTILS = $(BASEDIR)/lib/libafs.a ${AFSBASEDIR}/lib/afs/util.a
+  #endif
++ 
++ #ifdef AFS33_ENV
++ AFSAUDITLIB = $(AFSBASEDIR)/lib/afs/libaudit.a
++ #else
++ AFSAUDITLIB =
++ #endif
++ 
+  #ifdef AFS30_ENV
+  #ifdef AFS31_ENV
+          DESLIB = $(AFSBASEDIR)/lib/libdes.a
+***************
+*** 106,111 ****
+--- 113,119 ----
+          PRSLIB = $(AFSBASEDIR)/lib/afs/libprot.a \
+  	$(AFSBASEDIR)/lib/libubik.a \
+  	$(AFSBASEDIR)/lib/afs/libauth.a \
++ 	$(AFSAUDITLIB) \
+  	$(AFSBASEDIR)/lib/librxkad.a \
+  	$(AFSBASEDIR)/lib/librx.a \
+  	$(AFSBASEDIR)/lib/liblwp.a \
+***************
+*** 116,121 ****
+--- 124,130 ----
+        	$(AFSBASEDIR)/lib/libubik.a \
+        	$(AFSBASEDIR)/lib/librx.a \
+        	$(AFSBASEDIR)/lib/afs/libauth.a \
++ 	$(AFSAUDITLIB) \
+        	$(AFSBASEDIR)/lib/librxkad.a \
+        	$(AFSBASEDIR)/lib/liblwp.a \
+  	$(AFSBASEDIR)/lib/libscrypt.a \
+***************
+*** 132,137 ****
+--- 141,147 ----
+  #endif
+          UTILLIB = $(BASEDIR)/lib/libutil.a \
+  	$(AFSBASEDIR)/lib/afs/libauth.a \
++ 	$(AFSAUDITLIB) \
+  	$(AFSSYSLIB) \
+  	$(AFSBASEDIR)/lib/librx.a \
+  	$(AFSBASEDIR)/lib/librxkad.a \
+diff -r -c auis-6.3/overhead/class/machdep/dec_mach/Imakefile ./overhead/class/machdep/dec_mach/Imakefile
+*** auis-6.3/overhead/class/machdep/dec_mach/Imakefile	Thu May 26 13:16:28 1994
+--- ./overhead/class/machdep/dec_mach/Imakefile	Mon Aug 15 17:41:38 1994
+***************
+*** 44,50 ****
+  globals.o: 	globalrefs._h
+  
+  entry.o: 	entry.s
+! 		cc -c -I. entry.s
+  
+  globalrefs._h:	libc.eplist
+  		$(AWK) '{printf "\tglobalref(%s)\n", $$2}' libc.eplist >,globalrefs._h
+--- 44,50 ----
+  globals.o: 	globalrefs._h
+  
+  entry.o: 	entry.s
+! 		as -o entry.o entry.s
+  
+  globalrefs._h:	libc.eplist
+  		$(AWK) '{printf "\tglobalref(%s)\n", $$2}' libc.eplist >,globalrefs._h
+diff -r -c auis-6.3/overhead/class/machdep/i386_Linux/Imakefile ./overhead/class/machdep/i386_Linux/Imakefile
+*** auis-6.3/overhead/class/machdep/i386_Linux/Imakefile	Thu May 26 13:21:27 1994
+--- ./overhead/class/machdep/i386_Linux/Imakefile	Mon Aug 15 17:43:20 1994
+***************
+*** 6,12 ****
+  NormalObjectRule()
+  NormalAsmPPRule()
+  
+! all:		globals.o entry.o doload.o
+  globals.o:  	globals.spp
+  
+  InstallCshScript(makedo.csh, $(DESTDIR)/bin/makedo)
+--- 6,12 ----
+  NormalObjectRule()
+  NormalAsmPPRule()
+  
+! all::		globals.o entry.o doload.o
+  globals.o:  	globals.spp
+  
+  InstallCshScript(makedo.csh, $(DESTDIR)/bin/makedo)
+diff -r -c auis-6.3/overhead/mkparser/parser.doc ./overhead/mkparser/parser.doc
+*** auis-6.3/overhead/mkparser/parser.doc	Thu May 26 13:30:11 1994
+--- ./overhead/mkparser/parser.doc	Mon Aug 15 17:47:13 1994
+***************
+*** 1,7 ****
+  parser.doc - C parser for Bison tables  {This file is similar to 
+  		parserclass.doc in the AUIS C++ sources.}
+  
+! 								April 1994
+  
+  
+  	parser - object for parsing
+--- 1,7 ----
+  parser.doc - C parser for Bison tables  {This file is similar to 
+  		parserclass.doc in the AUIS C++ sources.}
+  
+! 								May, 1994
+  
+  
+  	parser - object for parsing
+***************
+*** 28,36 ****
+  The gggg.y file is processed through Bison to produce the gggg.tab.c file, 
+  which is then processed through the 'mkparser' script to produce gggg.c.  
+  This file defines the function
+- 
+  	gggg_New()
+- 
+  which the application code calls to allocate a parser object for gggg.
+  This is then passed as an argument to parser_Parse to parse a lexeme stream.
+  
+--- 28,34 ----
+***************
+*** 49,68 ****
+  The AUIS version of Bison supports one additional token type:
+  multi-character tokens.  These are written in the grammar surrounded
+  by quotation marks, as in "<=".  Thus one rule of the grammar might be
+- 
+  	expression : expression "<=" factor ;
+- 
+  In other words it is not necessary to define LE as a token and then teach 
+  the token analyzer that a less-than followed by an equal-sign is the
+  token LE.  (AUIS's 'tlex' token analyzer determines the token list from 
+  the tables generated by Bison.)
+  
+! Semantic action routines {specified in braces in the grammar} may refer to 
+! value stack locations with $$, $1, $2, and so on, as in yacc/Bison.  
+! In addition, the variable 'parser' points to the 
+! parser object for the parse in progress.  One use for this is to access the
+! associated 'rock' value:
+! 	struct whatever *info = (struct whatever *)parser->GetRock();
+  
+  Compilation errors are reported by calling parser_Error.  Its default
+  action is to call parser_ErrorGuts, which prints an error message.  If
+--- 47,71 ----
+  The AUIS version of Bison supports one additional token type:
+  multi-character tokens.  These are written in the grammar surrounded
+  by quotation marks, as in "<=".  Thus one rule of the grammar might be
+  	expression : expression "<=" factor ;
+  In other words it is not necessary to define LE as a token and then teach 
+  the token analyzer that a less-than followed by an equal-sign is the
+  token LE.  (AUIS's 'tlex' token analyzer determines the token list from 
+  the tables generated by Bison.)
+  
+! Semantic action routines {specified in braces in the grammar} may refer 
+! to value stack locations with $$, $1, $2, and so on, as in yacc/Bison.  In 
+! addition, the variable 'parser' points to the parser object for the parse in 
+! progress.  One use for this is to access the associated 'rock' value:
+! 	struct whatever *info = (struct whatever *)parser_GetRock(parser);
+! The result of the compilation can be passed back to the application program
+! by storing it into a component of the rock.  Suppose the value is in $1 and
+! the target field of the rock is 'value', then the code is
+! 	info->value = $1;
+! Note that no rockvalue will exist unless one has been stored.  For instance,
+! 	struct whatever parserinfo;
+! 	...
+! 	parser_SetRock(gparser, &parserinfo);
+  
+  Compilation errors are reported by calling parser_Error.  Its default
+  action is to call parser_ErrorGuts, which prints an error message.  If
+***************
+*** 71,79 ****
+  ErrorGuts in the .y file; this is the signal for mkparser to include
+  the appropriate declaration in gggg.h.  The declaration in the .y file
+  should be
+- 
+  	void gggg_ErrorGuts(int severity, char *severityname, char *msg);
+- 
+  This function will be called by parse_Error whenever an error is detected.
+  At that time,  (severity&~parser_FREEMSG) will be one of the values 
+  parser_WARNING, parser_SERIOUS, parser_SYNTAX, or parser_FATAL, as
+--- 74,80 ----
+***************
+*** 83,89 ****
+  string.  Applications should call Error instead of ErrorGuts because the 
+  former computes the maximum severity and counts the number of errors.
+  
+- 
+  In a context where there is no pointer to the parser object for the current
+  compilation, it can be retrieved via parser_GetCurrentparser().
+  
+--- 84,89 ----
+***************
+*** 93,99 ****
+  rather than embedded in the parser itself, these macros are no longer
+  appropriate.  Instead, a semantic action routine can terminate with one 
+  of the following macros:
+- 
+  	none		- parsing continues normally
+  	parser_ACCEPT	- parsing terminates and succeeds
+  	parser_ABORT	- parsing terminates and fails
+--- 93,98 ----
+***************
+*** 105,129 ****
+  	parser_CLINEROK	- pending input token is discarded and
+  				parser leaves error state
+  
+- 
+  In yacc/Bison, YYSTYPE defaults to int.  Mkparser removes this default;
+  the .y file must have a type named YYSTYPE by one of:
+  
+- 	Include a %union section in the grammar header in gggg.y
+- 	#define YYSTYPE in gggg.y or a file it #includes
+- 	Typedef YYSTYPE in gggg.y or a file it #includes
+  
+- 
+  Application Code
+  
+  In general, an application creates a parser object for a given grammar
+  by calling gggg_New:
+- 
+  	struct parser *gparser = gggg_New();
+  
+  The parse itself is done by calling parser_Parse with this object as the
+  first argument and a lexeme stream as two more arguments:
+- 
+  	parser_Parse(gparser, lexer, lexrock);
+  
+  A complete program might look like this
+--- 104,124 ----
+  	parser_CLINEROK	- pending input token is discarded and
+  				parser leaves error state
+  
+  In yacc/Bison, YYSTYPE defaults to int.  Mkparser removes this default;
+  the .y file must have a type named YYSTYPE by one of:
++ 	include a %union section in the grammar header in gggg.y,or
++ 	#define YYSTYPE in gggg.y or a file it #includes, or
++ 	declare YYSTYPE with a typedef in gggg.y or a file it #includes.
+  
+  
+  Application Code
+  
+  In general, an application creates a parser object for a given grammar
+  by calling gggg_New:
+  	struct parser *gparser = gggg_New();
+  
+  The parse itself is done by calling parser_Parse with this object as the
+  first argument and a lexeme stream as two more arguments:
+  	parser_Parse(gparser, lexer, lexrock);
+  
+  A complete program might look like this
+***************
+*** 149,157 ****
+  Tokens are acquired by the parser by calling the lexer provided as the 
+  second argument.  The third argument, lexer_rock, is supplied as one of 
+  the arguments to the lexer.  The full type expected of the lexer function is
+- 
+  	int lexer(void *lexrock, void *yylval);
+- 
+  Lexer routines can copy semantic values into *yylval, which will have 
+  space for a value of type YYSTYPE.  Note that, if the value is a pointer 
+  to an object, the pointer should be stored in *yylval and not in yylval 
+--- 144,150 ----
+***************
+*** 163,169 ****
+  from the gggg.tab.c file generated by Bison; other lexers can generate 
+  yacc token numbers and translate them with parser_TranslateTokenNumber: 
+  if the yacc token number is t, the Bison token number is
+- 
+  	parser_TranslateTokenNumber(gparser, t)
+  
+  Between the gggg_New() and the call to parser_Parse, the application
+--- 156,161 ----
+***************
+*** 174,180 ****
+  
+  The parser returns the maximum severity from among the severity values 
+  passed to parser_Error.  These values are
+- 
+  	parser_OK	no error
+  	parser_WARNING	there was some minor problem
+  	parser_SERIOUS	compilation aborted, but scan continued
+--- 166,171 ----
+***************
+*** 202,215 ****
+  objects, the client is responsible for the memory occupied by the
+  pointees.  If the parser terminates early for a syntax error or ABORT, 
+  these values can be deleted by supplying a KillVal function.
+- 
+  	parser_SetKillVal(gparser, f)
+- 
+  will establish f as the killval function.  After a syntax error and before 
+  discarding the stack, this function is called for each value on the 
+  stack.  The killval function is also called as states are popped for 
+  error recovery.  The call is
+- 
+  	(killvalfunction)(parseobject, value-pointer-from-stack)
+  
+  
+--- 193,203 ----
+***************
+*** 222,230 ****
+  -r switch specified in addition to -k.)
+  
+  At minimum, mkparser has one argument, the prefix of the file names:
+- 
+  	mkparser gggg
+- 
+  where the input files are gggg.tab.c and gggg.tab.h (if any).  The output 
+  will be the two files gggg.c and gggg.h.
+  
+--- 210,216 ----
+***************
+*** 238,248 ****
+  Compilation
+  
+  In the Imakefile, the grammar is processed with a rule like:
+- 
+  	gggg.c gggg.h: gggg.y
+  		ExecuteFromDESTDIR(bison -k gggg.y)
+  		ExecuteFromDESTDIR(mkparser gggg)
+- 
+  (The -k switch in the AUIS version of bison generates causes output
+  of a few additonal declarations.)  The .c file resulting from mkparser 
+  is compiled as a normal .c file and linked together with other source 
+--- 224,232 ----
+***************
+*** 260,266 ****
+  is the result of compiling cparser.c, from the same source directory as 
+  mkparser.  In AUIS, cparser.o is installed in
+  	$ANDREWDIR/lib/atk/libcparser.a.
+- 
+  
+  
+  Functions provided by parser object:
+--- 244,249 ----
+*** auis-6.3/contrib/eatmail/eatmail.c	Thu May 26 14:29:09 1994
+--- contrib/eatmail/eatmail.c	Fri Aug 26 11:43:03 1994
+***************
+*** 256,261 ****
+--- 256,262 ----
+  	AMS_RETURN_ERRCODE(errno, EIN_READ, EVIA_CONVERTINCOMING);
+      }
+      (void) fclose(fp);
++     return 0;
+  }
+  
+  static int CheckMailrcHold()

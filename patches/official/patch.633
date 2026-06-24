@@ -1,0 +1,40 @@
+/* This is a patch for V6 figure to make it accept figures created with later versions, including C++ versions 7.2 and higher.  */
+
+*** auis-6.3/atk/figure/figattr.c	1993/11/23 00:40:14
+--- ./atk/figure/figattr.c	1993/11/23 00:44:57
+***************
+*** 251,257 ****
+  
+  	for (ix=0; ix<figattr_NumAttributes; ix++)
+  	    if (!strcmp(buf, attribute_names[ix])) break;
+! 	if (ix==figattr_NumAttributes) return dataobject_BADFORMAT;
+  
+  	switch (ix) {
+  	    case figattr_Shade:
+--- 251,257 ----
+  
+  	for (ix=0; ix<figattr_NumAttributes; ix++)
+  	    if (!strcmp(buf, attribute_names[ix])) break;
+! 	/*if (ix==figattr_NumAttributes) return dataobject_BADFORMAT;*/ /* This is a very unforgiving tactic. In particular, it makes earlier versions of figure totally unable to read later versions, if attributes have been added. Why be so anal? */
+  
+  	switch (ix) {
+  	    case figattr_Shade:
+***************
+*** 293,298 ****
+--- 293,300 ----
+  		figattr_SetTextPos(self, ival);
+  		break;
+  		/* ##new */
++ 	    case figattr_NumAttributes: /* unknown attribute -- ignore */
++ 		break;
+  	    default:
+  		break;
+  	}
+
+*** auis-6.3/atk/atkvers/atkvers.num	Thu Oct 20 14:07:50 1994
+--- ./atk/atkvers/atkvers.num	Thu Mar 16 15:47:05 1995
+***************
+*** 1 ****
+! 6.3.2
+--- 1 ----
+! 6.3.3

@@ -1,0 +1,122 @@
+*** /tmp/,RCSt1013959   Wed Aug  2 16:28:21 1995
+--- contrib/mit/2rtf/2rtf.h     Sun Feb 19 17:43:27 1995
+***************
+*** 23,29 ****
+   
+   2rtf was written by Scott Rixner, rixner@ATHENA.MIT.EDU and Jeremy Paul 
+Kirby, jpkirby@ATHENA.MIT.EDU
+  
+!  $Header: /afs/dev.mit.edu/project/andrew/auis-63/contrib/mit/2rtf/RCS/2rtf.h
+,v 1.1 95/02/19 22:41:14 yoav Exp $
+  */
+  
+  /*
+--- 23,29 ----
+   
+   2rtf was written by Scott Rixner, rixner@ATHENA.MIT.EDU and Jeremy Paul 
+Kirby, jpkirby@ATHENA.MIT.EDU
+  
+!  $Header: /mit/andydevo/src63/contrib/mit/2rtf/RCS/2rtf.h,v 1.2 1995/02/19 
+22:43:27 yoav Exp $
+  */
+  
+  /*
+***************
+*** 182,187 ****
+--- 182,191 ----
+  typedef int (*FP)();
+  
+  char *me;
++ 
++ #ifndef _IBMR2
++ char *calloc(), *malloc();
++ #endif
+  
+  int errno, paragraph, TextDSVersion, RTFVersion;
+  long int CurrLine;
+*** /tmp/,RCSt1013972   Wed Aug  2 16:31:04 1995
+--- contrib/mit/neos/eosfx.c    Mon Mar  6 00:07:17 1995
+***************
+*** 25,31 ****
+  
+  #ifndef NORCSID
+  #define NORCSID
+! static char rcsid[]="$Header: /afs/dev.mit.edu/project/andrew/auis-63/contrib
+/mit/neos/RCS/eosfx.c,v 1.1 95/03/06 00:05:57 yoav Exp $";
+  #endif
+  
+  
+--- 25,31 ----
+  
+  #ifndef NORCSID
+  #define NORCSID
+! static char rcsid[]="$Header: /afs/dev.mit.edu/project/andrew/src/auis-63/con
+trib/mit/neos/RCS/eosfx.c,v 1.2 95/03/06 00:07:01 yoav Exp $";
+  #endif
+  
+  
+***************
+*** 394,400 ****
+--- 394,402 ----
+      static char *nametry;
+      char *oldsuffix, *tmpname;
+      char *t;
++ #ifndef SYSV    /* index and rindex should be macros */
+      char *index(), *rindex();
++ #endif
+      int i;
+  
+      result = New_Array(char, strlen(template) + 10);
+***************
+*** 448,454 ****
+--- 450,458 ----
+  char *path;
+  /* Returns the last element of a pathname */
+  {
++ #ifndef SYSV  /* rindex is a macro  */
+      char *rindex();
++ #endif
+      static char *result;
+  
+      if ((result = rindex(path, '/')) == NULL)
+*** /tmp/,RCSt1013980   Wed Aug  2 16:32:08 1995
+--- contrib/mit/neos/papers.c   Mon Mar  6 00:41:41 1995
+***************
+*** 1,9 ****
+! /* $Header: /afs/dev.mit.edu/project/andrew/auis-63/contrib/mit/neos/RCS/pape
+rs.c,v 1.1 95/03/06 00:40:14 yoav Exp $ */
+! /* $Source: /afs/dev.mit.edu/project/andrew/auis-63/contrib/mit/neos/RCS/pape
+rs.c,v $ */
+  /* $Author: yoav $ */
+  
+  #ifndef lint
+! static char *rcsid = "$Header: /afs/dev.mit.edu/project/andrew/auis-63/contri
+b/mit/neos/RCS/papers.c,v 1.1 95/03/06 00:40:14 yoav Exp $";
+  #endif /* lint */
+  /*
+   * papers.c
+--- 1,9 ----
+! /* $Header: /afs/dev.mit.edu/project/andrew/src/src/cmu/contrib/mit/neos/RCS/
+papers.c,v 1.2 95/03/06 00:41:40 yoav Exp $ */
+! /* $Source: /afs/dev.mit.edu/project/andrew/src/src/cmu/contrib/mit/neos/RCS/
+papers.c,v $ */
+  /* $Author: yoav $ */
+  
+  #ifndef lint
+! static char *rcsid = "$Header: /afs/dev.mit.edu/project/andrew/src/src/cmu/co
+ntrib/mit/neos/RCS/papers.c,v 1.2 95/03/06 00:41:40 yoav Exp $";
+  #endif /* lint */
+  /*
+   * papers.c
+***************
+*** 154,160 ****
+--- 154,162 ----
+  {
+      char **namelist, *realname, *tmp;
+      static char finalname[128];
++ #ifndef SYSV  /* don't redeclare a macro */
+      char *index();
++ #endif
+      int i;
+  
+      if ((namelist = hes_resolve(name, "passwd")) == NULL) {

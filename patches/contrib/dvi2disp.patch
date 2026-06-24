@@ -1,0 +1,34 @@
+*** /tmp/,RCSt1001352   Tue Aug  1 17:43:30 1995
+--- atk/preview/dvi2disp.c  Fri Jun 23 17:00:44 1995
+***************
+*** 28,34 ****
+  
+  #ifndef NORCSID
+  #define NORCSID
+! static char rcsid[]="$Header: /afs/dev.mit.edu/project/andrew/auis-63/atk/pre
+view/RCS/dvi2disp.c,v 1.1 95/06/23 16:53:14 yoav Exp $";
+  #endif
+  
+  
+--- 28,34 ----
+  
+  #ifndef NORCSID
+  #define NORCSID
+! static char rcsid[]="$Header: /mit/andydevo/src/cmu/atk/preview/RCS/dvi2disp.
+c,v 1.2 95/06/23 17:00:43 yoav Exp $";
+  #endif
+  
+  
+***************
+*** 591,596 ****
+--- 591,600 ----
+               break;
+         case 'S': 
+                self->slant = geti(self);
++              break;
++          case 'c':
++              /* ignore codeset */
++              (void) pregets(self);
+               break;
+         default: 
+               printf("Unknown device command: %c\n", com);

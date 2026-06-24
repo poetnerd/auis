@@ -1,0 +1,19 @@
+The patch NetBSD-6.3.3.diffs contains the following NetBSD-related patches: 
+
+	ams/msclients/cui/cui.c (patch)
+	ams/msclients/vui/vuipnl.c (patch)
+		fix for netbsd-current, to use stty and gtty correctly
+
+	atk/console/stats/rs_aix3/getstats.c (patch)
+		included system.h to define SYS_ERRLIST
+
+	contrib/tm/tm.c (patch)
+		used ioctl_compat.h for NetBSD and FreeBSD as well as bsdi
+
+	contrib/tm/tmv.c (patch)
+		changed sys_errlist to SYS_ERRLIST_TYPE
+
+	overhead/mail/metamail/metamail/metamail.c
+		use ioctl instead of gtty and stty
+
+This patch assumes the NetBSD-current.diffs patch has already been run on the source.  

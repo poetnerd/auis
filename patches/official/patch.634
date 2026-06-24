@@ -1,0 +1,91 @@
+/* This patch should be applied by anyone who uses eatmail or has AMS/Messages configured to read mail from a UNIXtm-style mail spool.  The bug is triggered when the "From " line added by sendmail has a local address with a space in it.  */
+
+*** auis-6.3.1/./ams/libs/ms/cvtold.c	Thu May 26 13:40:21 1994
+--- ././ams/libs/ms/cvtold.c	Wed Dec 13 17:56:03 1995
+***************
+*** 351,357 ****
+  {
+      PARSED_ADDRESS *ListHead = NULL;
+      struct tm TmBuf;
+!     char *addr, *date, *space;
+  
+      /* First pass, very simple */
+      if (strncmp(line, "From", 4)) {
+--- 351,357 ----
+  {
+      PARSED_ADDRESS *ListHead = NULL;
+      struct tm TmBuf;
+!     char *addr, *date, *space, *junk;
+  
+      /* First pass, very simple */
+      if (strncmp(line, "From", 4)) {
+***************
+*** 362,368 ****
+      if (!addr) return(0);
+      while (*addr && isspace(*addr)) ++addr;
+      if (!*addr) return(0);
+!     space = strchr(addr, ' ');
+      if (!space) return(0);
+      *space = '\0';
+      date = space+1;
+--- 362,373 ----
+      if (!addr) return(0);
+      while (*addr && isspace(*addr)) ++addr;
+      if (!*addr) return(0);
+!     if (*addr == '\"') {
+! 	junk = strchr(addr+1, '\"');
+!     } else {
+! 	junk = addr;
+!     }
+!     space = strchr(junk, ' ');
+      if (!space) return(0);
+      *space = '\0';
+      date = space+1;
+*** auis-6.3.1/./contrib/eatmail/eatmail.c	Thu May 26 14:29:09 1994
+--- ././contrib/eatmail/eatmail.c	Wed Dec 13 17:56:04 1995
+***************
+*** 439,445 ****
+  {
+      PARSED_ADDRESS *ListHead = NULL;
+      struct tm TmBuf;
+!     char *addr, *date, *space;
+  
+      /* First pass, very simple */
+      if (strncmp(line, "From", 4)) {
+--- 439,445 ----
+  {
+      PARSED_ADDRESS *ListHead = NULL;
+      struct tm TmBuf;
+!     char *addr, *date, *space, *junk;
+  
+      /* First pass, very simple */
+      if (strncmp(line, "From", 4)) {
+***************
+*** 450,456 ****
+      if (!addr) return(0);
+      while (*addr && isspace(*addr)) ++addr;
+      if (!*addr) return(0);
+!     space = strchr(addr, ' ');
+      if (!space) return(0);
+      *space = '\0';
+      date = space+1;
+--- 450,461 ----
+      if (!addr) return(0);
+      while (*addr && isspace(*addr)) ++addr;
+      if (!*addr) return(0);
+!     if (*addr == '\"') {
+! 	junk = strchr(addr+1, '\"');
+!     } else {
+! 	junk = addr;
+!     }
+!     space = strchr(junk, ' ');
+      if (!space) return(0);
+      *space = '\0';
+      date = space+1;
+*** auis-6.3.1/./atk/atkvers/atkvers.num	Wed Aug 24 15:58:27 1994
+--- ././atk/atkvers/atkvers.num	Wed Dec 13 17:56:04 1995
+***************
+*** 1 ****
+! 6.3.3
+--- 1 ----
+! 6.3.4

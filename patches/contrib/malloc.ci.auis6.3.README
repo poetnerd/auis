@@ -1,0 +1,16 @@
+The file malloc.ci.auis6.3.diff is a patch submitted by wdc@mit.edu to fix the problem described below.  This patch is to be applied to the the file overhead/malloc/malloc.ci in AUIS versions up to and including 6.3.  Instructions for applying patches are located on the ftp server ftp.andrew.cmu.edu in pub/AUIS/patches/official/README.  
+
+PROBLEM FIXED BY THIS PATCH:
+
+The computation of the arena size in addarena was incorrect.        
+It was telling us how many objects of the size of freehdr would
+fit in the arena when we wanted to know how many bytes were there.
+
+This problem was non-toxic until gcc 2.6 which takes ANSI C at it's
+word:  The results are undefined if you do pointer arithmetic on
+elements of an array that are not aligned on the unit of the size of
+the array elements.
+
+When we asked how many 24 byte structures fit between arenaend and
+arenastart, ANSI says it's ok to come back with garbage when 
+arenaend or arenastart are not aligned on a 24 byte boundry.

@@ -1,0 +1,8 @@
+This patch for dvi2disp is necessary for the RS6K machines. 
+
+Perhaps people have wondered why preview seems to put a blank page up as the first page of every RS/6000 document.  It was because vanilla RS/6000 troff would put up a codeset designator, that transcript psdit would choke on.
+
+Manifest:
+
+	atk/preview/dvi2disp.c (patch)
+		added a -c option to ignore codeset

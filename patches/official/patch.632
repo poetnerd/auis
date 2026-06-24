@@ -1,0 +1,39 @@
+***auis-6.3/overhead/mail/lib/parseadd.c.old
+--- ./overhead/mail/lib/parseadd.c  
+***************
+*** 58,63 ****
+--- 58,64 ----
+      extern int ParseErrorReason;
+      extern PARSED_ADDRESS *yyparsedaddress;
+      struct parser *p;
++     int errors;
+      /* Check for null pointer */
+      if (AddrIn == NIL) return PA_NULL_POINTER;
+      p=parsey_New();
+***************
+*** 65,72 ****
+      SetNextLine(AddrIn);
+      pareset_lexer();
+      parser_Parse(p, locallexer, p);
+      parser_Destroy(p);
+!     if (yyparsedaddress == NIL)
+  	return ParseErrorReason;
+      else {
+  	*AddrOut = yyparsedaddress;
+--- 66,74 ----
+      SetNextLine(AddrIn);
+      pareset_lexer();
+      parser_Parse(p, locallexer, p);
++     errors=p->nerrors;
+      parser_Destroy(p);
+!     if (yyparsedaddress == NIL || errors)
+  	return ParseErrorReason;
+      else {
+  	*AddrOut = yyparsedaddress;
+*** auis-6.3/atk/atkvers/atkvers.num.old
+--- ./atk/atkvers/atkvers.num
+***************
+*** 1 ****
+! 6.3.1
+--- 1 ----
+! 6.3.2

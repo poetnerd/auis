@@ -1,0 +1,3031 @@
+
+RCS file: ./atk/layout/layout.c,v
+Working file: layout.c
+	trunk: 1
+	R6tape: 1.9.1
+Layout inset (along with supporting filler and box insets) for ATK.
+----------------------------
+revision 1.13
+date: 1994/04/17 19:33:20;  author: rr2b;  state: Exp;  lines: +6 -2
+Updated to use the unknown inset
+=============================================================================
+
+
+RCS file: ./atk/layout/box.c,v
+Working file: box.c
+	trunk: 1
+	R6tape: 1.8.1
+Layout inset (along with supporting filler and box insets) for ATK.
+----------------------------
+revision 1.11
+date: 1994/04/17 19:33:20;  author: rr2b;  state: Exp;  lines: +6 -3
+Updated to use the unknown inset
+=============================================================================
+
+RCS file: ./atk/layout/boxview.c,v
+Working file: boxview.c
+	trunk: 1
+	R6tape: 1.6.1
+Layout inset (along with supporting filler and box insets) for ATK.
+----------------------------
+revision 1.9
+date: 1994/04/17 19:33:20;  author: rr2b;  state: Exp;  lines: +1 -1
+Updated to use the unknown inset
+=============================================================================
+
+RCS file: ./atk/layout/layoutv.c,v
+Working file: layoutv.c
+	trunk: 1
+	R6tape: 1.9.1
+Layout inset (along with supporting filler and box insets) for ATK.
+----------------------------
+revision 1.12
+date: 1994/04/17 19:33:20;  author: rr2b;  state: Exp;  lines: +1 -1
+Updated to use the unknown inset
+=============================================================================
+
+RCS file: ./atk/basics/x/menubar.c,v
+Working file: menubar.c
+	trunk: 1
+	R6tape: 1.35.1
+menubar for ATK implemented in Xlib.
+----------------------------
+revision 1.45
+date: 1994/04/14 02:22:44;  author: rr2b;  state: Exp;  lines: +1 -2
+Removed Xos.h, X consortium broke it.
+BUG
+
+=============================================================================
+
+
+RCS file: ./atk/basics/x/xgraphic.c,v
+Working file: xgraphic.c
+	trunk: 1
+	R6tape: 1.67.1
+new directory - lost the ,v files
+----------------------------
+revision 1.83
+date: 1994/04/19 16:15:05;  author: rr2b;  state: Exp;  lines: +9 -3
+Added preferences to force a DPI different than the X server reports:
+XDPI, the real X dots per inch.
+XHorizontalDPI, ditto but for horizontal only.
+XVerticalDPI, ditto but for vertical only.
+BUG
+
+=============================================================================
+
+
+RCS file: ./atk/basics/x/xfontd.c,v
+Working file: xfontd.c
+	trunk: 1
+	R6tape: 1.25.1
+new directory - lost the ,v files
+----------------------------
+revision 1.31
+date: 1994/04/19 16:53:05;  author: rr2b;  state: Exp;  lines: +2 -2
+Fixed argument type for BestFudgeFactor.
+BUG
+
+----------------------------
+revision 1.30
+date: 1994/04/19 16:16:08;  author: rr2b;  state: Exp;  lines: +62 -2
+Fixed so that the fudge factor can be set based on the DPI of the display.
+(as reported by the X server or by the DPI preferences in xgraphic.c)
+AndyFontsFudgeFactor: 75:2
+Is the default, additional entries would go like:
+AndyFontsFudgeFactor: 75:2, 100:0
+BUG
+=============================================================================
+
+RCS file: ./atk/basics/x/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.52.1
+new dir
+----------------------------
+revision 1.68
+date: 1994/04/19 16:24:37;  author: rr2b;  state: Exp;  lines: +1 -6
+Fixed to always pass in -DXLIB_ILLEGAL_ACCESS.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/basics/x/xcursor.c,v
+Working file: xcursor.c
+	trunk: 1
+	R6tape: 1.14.1
+new directory - lost the ,v files
+----------------------------
+revision 1.16
+date: 1994/04/11 19:12:03;  author: rr2b;  state: Exp;  lines: +3 -1
+Fixed bug where a pointer to the static data returned by environ:Getprofile
+was used for the foreground and background.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/basics/x/xprefs.pr,v
+Working file: xprefs.pr
+	trunk: 1
+	R6tape: 1.4.1
+# "
+description of preferences which relate to the menus
+and other X based stuff.
+----------------------------
+revision 1.10
+date: 1994/04/19 16:24:13;  author: rr2b;  state: Exp;  lines: +75 -2
+Added AndyFontFudgeFactor and DPI preferences.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/basics/common/im.c,v
+Working file: im.c
+	trunk: 2
+	R6tape: 2.79.1
+	X11R3: 2.1.1.1
+add copyright
+----------------------------
+revision 3.12
+date: 1994/08/02 02:08:42;  author: rr2b;  state: Exp;  lines: +3 -3
+Fixed argument to wait3 for hpux to be the address
+of the status result.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/basics/common/menulist.c,v
+Working file: menulist.c
+	trunk: 2
+	R6tape: 2.11.1
+	X11R3: 2.1.1.1
+add copyright
+----------------------------
+revision 2.16
+date: 1994/05/13 17:20:06;  author: rr2b;  state: Exp;  lines: +2 -2
+Fixed so that a priority with no card name will work properly.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/basics/common/app.pr,v
+Working file: app.pr
+	trunk: 1
+	R6tape: 1.3.1
+# "
+the preferences descriptions for generic prefs which apply to most
+all applications
+----------------------------
+revision 1.6
+date: 1994/04/21 18:07:37;  author: rr2b;  state: Exp;  lines: +8 -3
+Added warning about StrictXStyleSelections breaking ezdiff.
+DOC
+
+=============================================================================
+
+RCS file: ./atk/support/hash.c,v
+Working file: hash.c
+	trunk: 1
+	R6tape: 1.4.1
+Moving these files from rofftext and into support.
+Hash is now also used by txttroff.
+----------------------------
+revision 1.5
+date: 1994/08/02 17:49:51;  author: rr2b;  state: Exp;  lines: +3 -2
+Fixed to not reference a block of data after it has been freed.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/support/ghash.c,v
+Working file: ghash.c
+	trunk: 1
+	R6tape: 1.5.1
+generalized hash table class
+----------------------------
+revision 1.9
+date: 1994/04/13 21:55:32;  author: rr2b;  state: Exp;  lines: +2 -2
+fixed memory reference after free bug.
+BUG
+
+=============================================================================
+RCS file: ./atk/doc/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.12.1
+install docs
+----------------------------
+revision 1.15
+date: 1994/06/28 17:48:46;  author: rr2b;  state: Exp;  lines: +1 -1
+NEVER EVER EVER end an install path (or any other) with /!!!!!
+BUG
+
+=============================================================================
+
+RCS file: ./atk/text/Imakefile,v
+Working file: Imakefile
+	trunk: 2
+	R6tape: 2.42.1
+	X11R3: 2.1.1.1
+Initial instalation of Imakefiles
+----------------------------
+revision 2.52
+date: 1994/05/11 18:44:36;  author: rr2b;  state: Exp;  lines: +1 -1
+Fixed to use the right path to the site directory.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/text/smpltext.c,v
+Working file: smpltext.c
+	trunk: 2
+	R6tape: 2.26.1
+	X11R3: 2.1.1.1
+add copyright
+----------------------------
+revision 2.32
+date: 1994/04/15 17:33:37;  author: rr2b;  state: Exp;  lines: +5 -2
+Bullet proof to use the unknown inset to deal with dataobjects that can't be read normally.
+FEATURE
+
+=============================================================================
+
+RCS file: ./atk/text/tabs.c,v
+Working file: tabs.c
+	trunk: 1
+	R6tape: 1.9.1
+Initial Checkin: ==> Andy's Changes: See XXXXX <==
+----------------------------
+revision 1.13
+date: 1994/08/01 18:24:17;  author: rr2b;  state: Exp;  lines: +3 -3
+Fixed bug where a tab could be deleted that didn't exist.
+BUG.
+
+=============================================================================
+
+RCS file: ./atk/textobjects/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.13.1
+new directory - lost the ,v files
+----------------------------
+revision 1.18
+date: 1994/04/18 19:59:38;  author: rr2b;  state: Exp;  lines: +6 -6
+Added installation of the help file for the unknown inset.
+FEATURE
+
+----------------------------
+revision 1.17
+date: 1994/04/15 15:32:27;  author: rr2b;  state: Exp;  lines: +3 -2
+Second pass.  Once things pass through the unknown state manual intervention
+is required to do anything with the data except view it raw.
+FEATURE
+=============================================================================
+
+RCS file: ./atk/textobjects/unknown.c,v
+Working file: unknown.c
+Unknown inset for use when a requested inset doesn't exist
+----------------------------
+revision 1.5
+date: 1994/08/01 16:59:25;  author: rr2b;  state: Exp;  lines: +3 -2
+Fixed missing return from unknown__Read, and fixed extra = in assigment in
+FinalizeObject.
+BUG
+
+----------------------------
+revision 1.4
+date: 1994/04/18 18:28:26;  author: rr2b;  state: Exp;  lines: +1 -0
+Spit out the warning message to stderr as well as putting it in the text,
+BUG
+----------------------------
+revision 1.3
+date: 1994/04/15 16:15:57;  author: rr2b;  state: Exp;  lines: +68 -4
+Robustified.  \blahblah with no '(' will no longer cause the enddata to be missed.
+Commented thoroughly.
+BUG
+----------------------------
+revision 1.2
+date: 1994/04/15 15:32:27;  author: rr2b;  state: Exp;  lines: +140 -24
+Second pass.  Once things pass through the unknown state manual intervention
+is required to do anything with the data except view it raw.
+FEATURE
+----------------------------
+revision 1.1
+date: 1994/04/12 16:11:21;  author: rr2b;  state: Exp;
+Initial revision
+=============================================================================
+
+
+RCS file: ./atk/textobjects/unknown.ch,v
+Working file: unknown.ch
+Unknown inset for use when a requested inset doesn't exist
+----------------------------
+revision 1.2
+date: 1994/04/15 15:32:27;  author: rr2b;  state: Exp;  lines: +9 -0
+Second pass.  Once things pass through the unknown state manual intervention
+is required to do anything with the data except view it raw.
+FEATURE
+
+----------------------------
+revision 1.1
+date: 1994/04/12 16:11:21;  author: rr2b;  state: Exp;
+Initial revision
+=============================================================================
+
+
+RCS file: ./atk/textobjects/unknownv.c,v
+Working file: unknownv.c
+Unknown inset for use when a requested inset doesn't exist
+----------------------------
+revision 1.2
+date: 1994/04/18 19:55:31;  author: rr2b;  state: Exp;  lines: +110 -0
+Added the UI for saving and looking at the raw inset data.
+FEATURE
+
+----------------------------
+revision 1.1
+date: 1994/04/12 16:11:21;  author: rr2b;  state: Exp;
+Initial revision
+=============================================================================
+
+
+RCS file: ./atk/textobjects/unknownv.ch,v
+Working file: unknownv.ch
+Unknown inset for use when a requested inset doesn't exist
+----------------------------
+revision 1.2
+date: 1994/04/18 19:55:31;  author: rr2b;  state: Exp;  lines: +9 -1
+Added the UI for saving and looking at the raw inset data.
+FEATURE
+
+----------------------------
+revision 1.1
+date: 1994/04/12 16:11:21;  author: rr2b;  state: Exp;
+Initial revision
+=============================================================================
+
+
+RCS file: ./atk/textobjects/unknown.help,v
+Working file: unknown.help
+help file for the unknown inset.
+----------------------------
+revision 1.2
+date: 1994/04/18 19:52:30;  author: rr2b;  state: Exp;  lines: +8 -9
+Updated the names of the menu options.
+BUG
+
+----------------------------
+revision 1.1
+date: 1994/04/18 03:16:35;  author: rr2b;  state: Exp;
+Initial revision
+
+=============================================================================
+
+RCS file: ./atk/console/lib/getstats.h,v
+Working file: getstats.h
+	trunk: 2
+	R6tape: 2.14.1
+	X11R3: 2.1.1.1
+ÿ
+----------------------------
+revision 2.19
+date: 1994/05/10 18:01:28;  author: rr2b;  state: Exp;  lines: +90 -0
+BSD386
+PORT
+
+=============================================================================
+
+
+RCS file: ./atk/console/lib/sitevars.h,v
+Working file: sitevars.h
+	trunk: 2
+	R6tape: 2.12.1
+	X11R3: 2.1.1.1
+ÿ
+----------------------------
+revision 2.16
+date: 1994/05/10 17:58:17;  author: rr2b;  state: Exp;  lines: +12 -0
+BSD386
+PORT
+
+=============================================================================
+
+RCS file: ./atk/console/lib/vmmonf.c,v
+Working file: vmmonf.c
+	trunk: 2
+	R6tape: 2.13.1
+	X11R3: 2.1.1.1
+ÿ
+----------------------------
+revision 2.18
+date: 1994/05/10 17:51:04;  author: rr2b;  state: Exp;  lines: +9 -4
+Check for EAGAIN instead of EWOULDBLOCK under BSD386
+PORT
+
+=============================================================================
+RCS file: ./atk/console/stats/common/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.3.1
+initial installation
+----------------------------
+revision 1.8
+date: 1994/05/10 17:32:51;  author: rr2b;  state: Exp;  lines: +4 -0
+Added bsdi specific link line for getstats.
+PORT
+
+----------------------------
+revision 1.7
+date: 1994/04/18 17:58:25;  author: rr2b;  state: Exp;  lines: +0 -4
+INSTALL CHANGE: getstats must be manually setuid'd or setgid'd.
+=============================================================================
+
+RCS file: ./atk/console/stats/subdirs,v
+Working file: subdirs
+	trunk: 1
+	R6tape: 1.18.1
+initial installation
+----------------------------
+revision 1.23
+date: 1994/04/20 19:06:12;  author: rr2b;  state: Exp;  lines: +1 -0
+Added i386_bsd
+PORT
+
+=============================================================================
+
+RCS file: ./atk/console/stats/i386_bsd/Imakefile,v
+Working file: Imakefile
+NetBSD PORT
+----------------------------
+revision 1.1
+date: 1994/04/20 19:06:54;  author: rr2b;  state: Exp;
+Initial revision
+
+=============================================================================
+
+
+RCS file: ./atk/console/stats/i386_bsd/getstats.c,v
+Working file: getstats.c
+NetBSD PORT
+----------------------------
+revision 1.1
+date: 1994/04/20 19:06:54;  author: rr2b;  state: Exp;
+Initial revision
+
+=============================================================================
+
+RCS file: ./atk/table/tabio.c,v
+Working file: tabio.c
+	trunk: 1
+	R6tape: 1.18.1
+Initial checkin - start over due to rcs problem
+----------------------------
+revision 1.24
+date: 1994/04/15 18:37:52;  author: rr2b;  state: Exp;  lines: +21 -6
+Fixed to use the unknown inset instead of dropping everything after an unknown inset
+is encountered.
+BUG
+
+=============================================================================
+RCS file: ./atk/rofftext/rofftext.c,v
+Working file: rofftext.c
+	trunk: 2
+	R6tape: 2.24.1
+	X11R3: 2.1.1.1
+----------------------------
+revision 2.26
+date: 1994/05/10 17:29:58;  author: rr2b;  state: Exp;  lines: +4 -4
+Renamed setmode to Setmode to avoid a name
+clash with a BSD386 system function
+PORT
+
+=============================================================================
+
+RCS file: ./atk/rofftext/Imakefile,v
+Working file: Imakefile
+	trunk: 2
+	R6tape: 2.22.1
+	X11R3: 2.1.1.1
+Initial instalation of Imakefiles
+----------------------------
+revision 2.26
+date: 1994/04/20 02:49:32;  author: rr2b;  state: Exp;  lines: +1 -2
+Removed bogus num.y file.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/supportviews/matte.c,v
+Working file: matte.c
+	trunk: 2
+	R6tape: 2.15.1
+	X11R3: 2.1.1.1
+add copyright
+----------------------------
+revision 2.17
+date: 1994/04/15 17:33:19;  author: rr2b;  state: Exp;  lines: +10 -3
+Support for text to use the unknown inset.
+FEATURE
+
+=============================================================================
+
+
+RCS file: ./atk/eq/Imakefile,v
+Working file: Imakefile
+	trunk: 2
+	R6tape: 2.21.1
+	X11R3: 2.1.1.1
+Initial instalation of Imakefiles
+----------------------------
+revision 2.25
+date: 1994/04/20 02:45:17;  author: rr2b;  state: Exp;  lines: +0 -1
+Removed bogus parse.y.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/extensions/ezdiff.c,v
+Working file: ezdiff.c
+	trunk: 2
+	R6tape: 2.18.1
+	X11R3: 2.1.1.1
+ÿ
+----------------------------
+revision 2.26
+date: 1994/05/16 02:07:36;  author: rr2b;  state: Exp;  lines: +2 -2
+Switched to use execvp of execv.
+BUG
+
+----------------------------
+revision 2.25
+date: 1994/05/09 21:34:59;  author: rr2b;  state: Exp;  lines: +2 -2
+SIGCHLD vs SIGCLD
+PORT
+=============================================================================
+
+RCS file: ./atk/extensions/tags.c,v
+Working file: tags.c
+	trunk: 2
+	R6tape: 2.19.1
+	X11R3: 2.1.1.1
+ÿ
+----------------------------
+revision 2.22
+date: 1994/05/16 02:56:01;  author: rr2b;  state: Exp;  lines: +6 -2
+Omit -w flag to ctags on linux.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/extensions/gsearch.c,v
+Working file: gsearch.c
+Missing file
+----------------------------
+revision 1.5
+date: 1994/04/20 16:01:45;  author: rr2b;  state: Exp;  lines: +2 -2
+Fixed call to owatch to be owatch_Check.
+BUG
+
+----------------------------
+revision 1.4
+date: 1994/04/20 03:04:15;  author: wjh;  state: Exp;  lines: +60 -63
+fixed to exit when text is deleted out from under
+fixes bug when help changes text due to request for help in typescript
+BUG
+=============================================================================
+
+RCS file: ./atk/figure/figv.c,v
+Working file: figv.c
+	trunk: 1
+	R6tape: 1.13.1
+figure view
+----------------------------
+revision 1.28
+date: 1994/04/17 19:45:16;  author: rr2b;  state: Exp;  lines: +1 -4
+Removed unnecessary tests on the view name.
+BUG
+
+----------------------------
+revision 1.27
+date: 1994/04/17 18:02:49;  author: rr2b;  state: Exp;  lines: +4 -1
+Fixed to use the unknown inset in place of any otherwise
+unknown inset.
+BUG
+=============================================================================
+RCS file: ./atk/figure/figoins.c,v
+Working file: figoins.c
+	trunk: 1
+	R6tape: 1.2.1
+inset
+----------------------------
+revision 1.3
+date: 1994/04/17 18:02:49;  author: rr2b;  state: Exp;  lines: +10 -6
+Fixed to use the unknown inset in place of any otherwise
+unknown inset.
+BUG
+
+=============================================================================
+RCS file: ./atk/figure/figospli.c,v
+Working file: figospli.c
+	trunk: 1
+	R6tape: 1.4.1
+spline
+----------------------------
+revision 1.5
+date: 1994/08/01 19:34:47;  author: rr2b;  state: Exp;  lines: +7 -3
+Hopefully prevented divide by zero error when drawing splines.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/typescript/tscript.c,v
+Working file: tscript.c
+	trunk: 2
+	R6tape: 2.72.1
+	X11R3: 2.1.1.1
+add copyright
+----------------------------
+revision 2.84
+date: 1994/04/26 20:13:42;  author: rr2b;  state: Exp;  lines: +2 -2
+Fixed maybe for more GCC compatibility.
+BUG
+
+=============================================================================
+RCS file: ./atk/chart/chart.c,v
+Working file: chart.c
+	trunk: 1
+	R6tape: 1.15.1
+Initial Installation
+----------------------------
+revision 1.21
+date: 1994/05/09 21:31:49;  author: rr2b;  state: Exp;  lines: +2 -2
+don't include values.h under bsdi.
+PORT
+
+=============================================================================
+
+RCS file: ./atk/adew/cel.c,v
+Working file: cel.c
+	trunk: 2
+	R6tape: 2.24.1
+	X11R3: 2.1.1.1
+ÿ
+----------------------------
+revision 2.25
+date: 1994/04/17 22:06:26;  author: rr2b;  state: Exp;  lines: +6 -2
+Fixed to use the unknown inset.
+BUG
+
+=============================================================================
+RCS file: ./atk/adew/celv.c,v
+Working file: celv.c
+	trunk: 2
+	R6tape: 2.35.1
+	X11R3: 2.1.1.1
+ÿ
+----------------------------
+revision 2.36
+date: 1994/04/17 22:06:26;  author: rr2b;  state: Exp;  lines: +8 -3
+Fixed to use the unknown inset.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/adew/lset.c,v
+Working file: lset.c
+	trunk: 2
+	R6tape: 2.11.1
+	X11R3: 2.1.1.1
+ÿ
+----------------------------
+revision 2.12
+date: 1994/04/17 21:52:46;  author: rr2b;  state: Exp;  lines: +6 -2
+Fixed to use the unknown inset.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/adew/lsetv.c,v
+Working file: lsetv.c
+	trunk: 2
+	R6tape: 2.14.1
+	X11R3: 2.1.1.1
+ÿ
+----------------------------
+revision 2.16
+date: 1994/04/17 21:52:46;  author: rr2b;  state: Exp;  lines: +6 -3
+Fixed to use the unknown inset.
+BUG
+
+=============================================================================
+=====================================
+
+RCS file: ./atk/adew/page.c,v
+Working file: page.c
+	trunk: 1
+	R6tape: 1.9.1
+Inset to implement a general page object.
+Any number of dataobjects may be pasted in,
+menus are displayed to allow choice between them.
+----------------------------
+revision 1.10
+date: 1994/04/17 21:27:53;  author: rr2b;  state: Exp;  lines: +4 -1
+Fixed to use the unknown inset.
+fixed to remove observation of child views and data objects in FinalizeObject.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/adew/pagev.c,v
+Working file: pagev.c
+	trunk: 1
+	R6tape: 1.8.1
+Inset to implement a general page object.
+Any number of dataobjects may be pasted in,
+menus are displayed to allow choice between them.
+----------------------------
+revision 1.10
+date: 1994/04/18 02:43:58;  author: rr2b;  state: Exp;  lines: +2 -2
+Fixed to test dataobject for non-NULL before trying
+to remove the observation.
+BUG
+
+----------------------------
+revision 1.9
+date: 1994/04/17 21:27:53;  author: rr2b;  state: Exp;  lines: +9 -2
+Fixed to use the unknown inset.
+fixed to remove observation of child views and data objects in FinalizeObject.
+BUG
+=============================================================================
+
+RCS file: ./atk/image/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.12.1
+ATK image code
+----------------------------
+revision 1.19
+date: 1994/04/19 15:36:59;  author: rr2b;  state: Exp;  lines: +1 -1
+Took out the -I in front of TIFFINCLUDES. TIFFINCLUDES is assumed to
+include the -I itself.
+BUG
+
+=============================================================================
+
+RCS file: ./atk/prefed/prefs.c,v
+Working file: prefs.c
+	trunk: 1
+	R6tape: 1.15.1
+initial checkin of the preferences editor
+----------------------------
+revision 1.22
+date: 1994/04/24 15:39:48;  author: rr2b;  state: Exp;  lines: +3 -2
+Fixed coredump when a bogus preferences file is read.
+(in this case a .Xdefaults file)
+
+=============================================================================
+
+RCS file: ./atk/prefed/prefeda.c,v
+Working file: prefeda.c
+	trunk: 1
+	R6tape: 1.1.1.2
+Renaming the program to prefed, so that getting help on the name
+will get the help file.       
+----------------------------
+revision 1.6
+date: 1994/04/24 15:57:27;  author: rr2b;  state: Exp;  lines: +14 -2
+Fixed so that if the preferences code fell back on .Xdefaults the preference
+editor will refuse to edit it.  (Since the preference editor does not
+understand the general X resources syntax.)
+BUG
+
+=============================================================================
+
+RCS file: ./doc/mkbrowse/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.4.1
+initial checkin of the mkbrowse program for generating
+a org of the class heirarchy
+----------------------------
+revision 1.8
+date: 1994/04/20 19:47:54;  author: rr2b;  state: Exp;  lines: +2 -14
+Updated to use FlexOrLexFileRule
+=============================================================================
+
+RCS file: ./Imakefile,v
+Working file: Imakefile
+	trunk: 2
+	R6tape: 2.65.1.1
+	X11R3: 2.1.1.1
+Initial instalation of Imakefiles
+----------------------------
+revision 2.91
+date: 1994/04/18 21:07:47;  author: rr2b;  state: Exp;  lines: +5 -1
+Added test for GCCLIB.
+BUG
+
+=============================================================================
+
+RCS file: ./overhead/image/jpeg/Imakefile,v
+Working file: Imakefile
+jpeg v4.0
+----------------------------
+revision 1.8
+date: 1994/04/21 16:30:38;  author: rr2b;  state: Exp;  lines: +5 -0
+added special case for vax since it lacks
+ansi include files.
+BUG
+
+=============================================================================
+
+RCS file: ./overhead/image/tiff/tiffcompat.h,v
+Working file: tiffcompat.h
+	trunk: 1
+	R6tape: 1.3.1
+TIFF library for use by the image inset  
+----------------------------
+revision 1.8
+date: 1994/05/19 17:39:38;  author: rr2b;  state: Exp;  lines: +1 -1
+Fixed to not use LSEEK_RETURN_TYPE unless it is defined.
+BUG
+
+----------------------------
+revision 1.7
+date: 1994/05/19 16:24:15;  author: rr2b;  state: Exp;  lines: +0 -0
+removing disclaimer, double sigh
+----------------------------
+revision 1.6
+date: 1994/05/19 16:22:55;  author: rr2b;  state: Exp;  lines: +9 -1
+NetBSD port
+=============================================================================
+
+RCS file: ./overhead/util/lib/getpty.c,v
+Working file: getpty.c
+	trunk: 1
+	R6tape: 1.13.1
+This module provides a routine that returns both
+file descriptors for a pty.
+----------------------------
+revision 1.17
+date: 1994/05/10 18:08:33;  author: rr2b;  state: Exp;  lines: +2 -2
+Fixed to test SY_AIX3 instead of SY_AIX31.
+BUG
+
+=============================================================================
+
+RCS file: ./overhead/util/lib/prefs.help,v
+Working file: prefs.help
+	trunk: 1
+	R6tape: 1.40.1
+"
+initial check in.
+----------------------------
+revision 1.50
+date: 1994/04/21 18:12:30;  author: rr2b;  state: Exp;  lines: +13 -8
+Added warning about ezdiff with StrictXStyleSelections.
+DOC
+
+----------------------------
+revision 1.49
+date: 1994/04/19 16:36:47;  author: rr2b;  state: Exp;  lines: +42 -5
+Added descriptions of the AndyFontsFudgeFactor and DPI preferences.
+BUG
+=============================================================================
+
+RCS file: ./overhead/util/lib/procstuf.c,v
+Working file: procstuf.c
+	trunk: 2
+	R6tape: 2.14.1
+	X11R3: 2.1.1.1
+add copyright
+----------------------------
+revision 2.18
+date: 1994/04/14 04:42:37;  author: rr2b;  state: Exp;  lines: +4 -3
+Fixed to only use the bare status # on M_UNIX and non-POSIX_ENV systems
+Also fixed M_UNIX case to return NULL if appropriate.
+BUG
+
+=============================================================================
+
+RCS file: ./overhead/malloc/malloc.ci,v
+Working file: malloc.ci
+	trunk: 2
+	R6tape: 2.31.1
+	X11R3: 2.1.1.1
+add copyright
+----------------------------
+revision 2.35
+date: 1994/05/09 21:19:19;  author: rr2b;  state: Exp;  lines: +5 -2
+Added dummy variable for BSD386
+PORT
+
+----------------------------
+revision 2.34
+date: 1994/04/20 18:49:35;  author: rr2b;  state: Exp;  lines: +8 -18
+Added FILE_NEEDS_FLUSH macro.
+PORT
+----------------------------
+revision 2.33
+date: 1994/04/14 02:57:48;  author: rr2b;  state: Exp;  lines: +13 -3
+Added linux compatibility.
+BUG
+=============================================================================
+
+RCS file: ./overhead/class/lib/Imakefile,v
+Working file: Imakefile
+	trunk: 2
+	R6tape: 2.17.1
+	X11R3: 2.1.1.1
+Initial instalation of Imakefiles
+----------------------------
+revision 2.32
+date: 1994/04/26 18:46:59;  author: rr2b;  state: Exp;  lines: +4 -0
+GCC compatibility.
+BUG
+=============================================================================
+
+RCS file: ./overhead/class/pp/Imakefile,v
+Working file: Imakefile
+	trunk: 2
+	R6tape: 2.4.1
+	X11R3: 2.1.1.1
+Initial instalation of Imakefiles
+----------------------------
+revision 2.9
+date: 1994/04/20 19:45:15;  author: rr2b;  state: Exp;  lines: +1 -15
+Updated to use FlexOrLexFileRule
+PORT
+=============================================================================
+
+RCS file: ./overhead/class/pp/classpp.flex,v
+Working file: classpp.flex
+the flex version of the classpp rules
+----------------------------
+revision 1.5
+date: 1994/05/04 20:03:42;  author: rr2b;  state: Exp;  lines: +2 -21
+Removed disclaimer... sigh...
+BUG
+
+----------------------------
+revision 1.4
+date: 1994/05/04 19:54:10;  author: rr2b;  state: Exp;  lines: +30 -10
+Another fix for flex, for the NetBSD port. Also tested under Linux Slackware 1.0.
+----------------------------
+revision 1.3
+date: 1994/04/11 16:45:47;  author: rr2b;  state: Exp;  lines: +2 -1
+Added fix from Adam Richter for the latest
+version of flex.
+BUG
+=============================================================================
+
+RCS file: ./overhead/class/machdep/subdirs,v
+Working file: subdirs
+	trunk: 1
+	R6tape: 1.17.1
+----------------------------
+revision 1.25
+date: 1994/05/16 23:31:12;  author: rr2b;  state: Exp;  lines: +1 -0
+Added i386_bsdi
+BUG
+
+----------------------------
+revision 1.24
+date: 1994/04/20 19:02:00;  author: rr2b;  state: Exp;  lines: +1 -0
+Added i386_bsd
+PORT
+=============================================================================
+
+RCS file: ./overhead/class/machdep/sun_sparc_41/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.7.1
+Code submitted by Guy Harris to add SunOS4.1 dynamic loading support.
+----------------------------
+revision 1.15
+date: 1994/04/26 18:50:14;  author: rr2b;  state: Exp;  lines: +4 -0
+GCC Compatibility
+BUG
+
+=============================================================================
+
+RCS file: ./overhead/class/machdep/dec_mach/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.4.1
+dec_mach doload implementation:
+
+----------------------------
+revision 1.6
+date: 1994/07/26 15:57:51;  author: rr2b;  state: Exp;  lines: +1 -1
+Fixed for #&*#D bogosity in the /usr/cs/bin/cc frontend.
+(it wouldn't allow preprocessing of .s files)
+BUG
+
+=============================================================================
+RCS file: ./overhead/class/machdep/i386_Linux/Imakefile,v
+Working file: Imakefile
+Linux runtime support
+----------------------------
+revision 1.5
+date: 1994/08/02 18:29:51;  author: rr2b;  state: Exp;  lines: +1 -1
+Fixed all target to have two ::'s instead of 1.
+BUG
+
+=============================================================================
+
+RCS file: ./overhead/class/machdep/i386_bsd/Imakefile,v
+Working file: Imakefile
+NetBSD PORT
+----------------------------
+revision 1.1
+date: 1994/04/20 19:03:30;  author: rr2b;  state: Exp;
+Initial revision
+
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsd/aixfix.h,v
+Working file: aixfix.h
+NetBSD PORT
+----------------------------
+revision 1.1
+date: 1994/04/20 19:03:30;  author: rr2b;  state: Exp;
+Initial revision
+
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsd/dofix.c,v
+Working file: dofix.c
+NetBSD PORT
+----------------------------
+revision 1.1
+date: 1994/04/20 19:03:30;  author: rr2b;  state: Exp;
+Initial revision
+
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsd/doload.c,v
+Working file: doload.c
+NetBSD PORT
+----------------------------
+revision 1.3
+date: 1994/05/19 16:24:15;  author: rr2b;  state: Exp;  lines: +2 -21
+removing disclaimer, double sigh
+----------------------------
+revision 1.2
+date: 1994/05/19 16:22:55;  author: rr2b;  state: Exp;  lines: +2 -2
+NetBSD port
+----------------------------
+revision 1.1
+date: 1994/04/20 19:03:30;  author: rr2b;  state: Exp;
+Initial revision
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsd/doload.h,v
+Working file: doload.h
+NetBSD PORT
+----------------------------
+revision 1.1
+date: 1994/04/20 19:03:30;  author: rr2b;  state: Exp;
+Initial revision
+
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsd/entry.spp,v
+Working file: entry.spp
+NetBSD PORT
+----------------------------
+revision 1.1
+date: 1994/04/20 19:03:30;  author: rr2b;  state: Exp;
+Initial revision
+
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsd/getlist.awk,v
+Working file: getlist.awk
+NetBSD PORT
+----------------------------
+revision 1.1
+date: 1994/04/20 19:03:30;  author: rr2b;  state: Exp;
+Initial revision
+
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsd/globals.spp,v
+Working file: globals.spp
+NetBSD PORT
+----------------------------
+revision 1.1
+date: 1994/04/20 19:03:30;  author: rr2b;  state: Exp;
+Initial revision
+
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsd/makedo.csh,v
+Working file: makedo.csh
+NetBSD PORT
+----------------------------
+revision 1.1
+date: 1994/04/20 19:03:30;  author: rr2b;  state: Exp;
+Initial revision
+
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsdi/Imakefile,v
+Working file: Imakefile
+initial checking of machdep code for BSDI
+----------------------------
+revision 1.1
+date: 1994/05/16 23:22:55;  author: rr2b;  state: Exp;
+/tmp/msg
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsdi/aixfix.h,v
+Working file: aixfix.h
+initial checking of machdep code for BSDI
+----------------------------
+revision 1.1
+date: 1994/05/16 23:22:55;  author: rr2b;  state: Exp;
+/tmp/msg
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsdi/dofix.c,v
+Working file: dofix.c
+initial checking of machdep code for BSDI
+----------------------------
+revision 1.1
+date: 1994/05/16 23:22:55;  author: rr2b;  state: Exp;
+/tmp/msg
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsdi/doload.c,v
+Working file: doload.c
+initial checking of machdep code for BSDI
+----------------------------
+revision 1.1
+date: 1994/05/16 23:22:55;  author: rr2b;  state: Exp;
+/tmp/msg
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsdi/doload.h,v
+Working file: doload.h
+initial checking of machdep code for BSDI
+----------------------------
+revision 1.1
+date: 1994/05/16 23:22:55;  author: rr2b;  state: Exp;
+/tmp/msg
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsdi/entry.spp,v
+Working file: entry.spp
+initial checking of machdep code for BSDI
+----------------------------
+revision 1.1
+date: 1994/05/16 23:22:55;  author: rr2b;  state: Exp;
+/tmp/msg
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsdi/getlist.awk,v
+Working file: getlist.awk
+initial checking of machdep code for BSDI
+----------------------------
+revision 1.1
+date: 1994/05/16 23:22:55;  author: rr2b;  state: Exp;
+/tmp/msg
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsdi/globals.spp,v
+Working file: globals.spp
+initial checking of machdep code for BSDI
+----------------------------
+revision 1.1
+date: 1994/05/16 23:22:55;  author: rr2b;  state: Exp;
+/tmp/msg
+=============================================================================
+
+
+RCS file: ./overhead/class/machdep/i386_bsdi/makedo.csh,v
+Working file: makedo.csh
+initial checking of machdep code for BSDI
+----------------------------
+revision 1.1
+date: 1994/05/16 23:22:55;  author: rr2b;  state: Exp;
+/tmp/msg
+=============================================================================
+RCS file: ./overhead/eli/lib/Imakefile,v
+Working file: Imakefile
+	trunk: 2
+	R6tape: 2.9.1
+	X11R3: 2.1.1.1
+Initial instalation of Imakefiles
+----------------------------
+revision 2.12
+date: 1994/04/20 19:42:41;  author: rr2b;  state: Exp;  lines: +1 -11
+Update to use FlexOrLexFileRule
+
+=============================================================================
+RCS file: ./overhead/eli/lib/prims1.c,v
+Working file: prims1.c
+	trunk: 1
+	R6tape: 1.8.1
+Half of ELI's primitives.
+----------------------------
+revision 1.16
+date: 1994/04/21 16:27:16;  author: rr2b;  state: Exp;  lines: +1 -2
+Removed extraneous include of sys/wait.h
+
+=============================================================================
+RCS file: ./overhead/eli/lib/elil.flex,v
+Working file: elil.flex
+flex version
+----------------------------
+revision 1.3
+date: 1994/05/09 21:21:08;  author: rr2b;  state: Exp;  lines: +2 -2
+Sigh.  should remove realloc decl entirely but I don't want to
+risk changing it riht now.  Instead just add bsdi to _IBMR2.
+PORT
+
+=============================================================================
+RCS file: ./overhead/eli/lib/eliy.gra,v
+Working file: eliy.gra
+New version of eliy.y for use with the new cparser library.
+BUILD.
+----------------------------
+revision 1.2
+date: 1994/04/20 16:40:18;  author: rr2b;  state: Exp;  lines: +5 -2
+Added stub ErrorGuts so no parse errors will be reported.
+(that is the way it was before the new parsing technology)
+BUG
+
+=============================================================================
+
+RCS file: ./overhead/eli/lclhdrs/ecommon.h,v
+Working file: ecommon.h
+	trunk: 2
+	R6tape: 2.4.1
+	X11R3: 2.1.1.1
+add copyright
+----------------------------
+revision 2.5
+date: 1994/05/04 19:49:56;  author: rr2b;  state: Exp;  lines: +2 -4
+Removed bogus decl of malloc and realloc
+
+=============================================================================
+RCS file: ./overhead/eli/lclhdrs/prmtives.h,v
+Working file: prmtives.h
+	trunk: 2
+	R6tape: 2.10.1
+	X11R3: 2.1.1.1
+add copyright
+----------------------------
+revision 2.13
+date: 1994/05/04 19:49:56;  author: rr2b;  state: Exp;  lines: +0 -3
+Removed bogus decl of malloc and realloc
+
+=============================================================================
+
+RCS file: ./overhead/mail/metamail/metamail/metamail.c,v
+Working file: metamail.c
+metamail v2.6
+----------------------------
+revision 1.6
+date: 1994/05/09 21:27:20;  author: rr2b;  state: Exp;  lines: +5 -0
+Added ioctl include for BSD386
+PORT
+
+=============================================================================
+RCS file: ./overhead/mail/metamail/metamail/splitmail.c,v
+Working file: splitmail.c
+metamail v2.6
+----------------------------
+revision 1.2
+date: 1994/04/22 19:27:46;  author: rr2b;  state: Exp;  lines: +2 -0
+Vax patch
+BUG
+
+=============================================================================
+RCS file: ./overhead/mail/lib/Imakefile,v
+Working file: Imakefile
+	trunk: 2
+	R6tape: 2.25.1
+	X11R3: 2.1.1.1
+Initial instalation of Imakefiles
+----------------------------
+revision 2.33
+date: 1994/04/23 17:33:53;  author: rr2b;  state: Exp;  lines: +1 -2
+Added flex compatible version, the original parsel.l just couldn't
+be made to work.
+
+=============================================================================
+RCS file: ./overhead/mail/lib/mailconf.c,v
+Working file: mailconf.c
+	trunk: 2
+	R6tape: 2.58.1
+	X11R3: 2.1.1.1
+add copyright
+----------------------------
+revision 2.68
+date: 1994/05/19 16:24:15;  author: rr2b;  state: Exp;  lines: +2 -21
+removing disclaimer, double sigh
+----------------------------
+revision 2.67
+date: 1994/05/19 16:22:55;  author: rr2b;  state: Exp;  lines: +24 -4
+NetBSD port
+----------------------------
+revision 2.66
+date: 1994/05/09 21:25:53;  author: rr2b;  state: Exp;  lines: +6 -4
+BSD386 port
+PORT
+----------------------------
+revision 2.65
+date: 1994/04/20 18:02:01;  author: rr2b;  state: Exp;  lines: +10 -2
+Added {Free,Net}BSD defaults.
+NetBSD
+=============================================================================
+
+
+RCS file: ./overhead/mail/lib/parseadd.c,v
+Working file: parseadd.c
+	trunk: 2
+	R6tape: 2.13.1
+	X11R3: 2.1.1.1
+add copyright
+----------------------------
+revision 2.22
+date: 1994/04/23 17:33:53;  author: rr2b;  state: Exp;  lines: +6 -4
+Added flex compatible version, the original parsel.l just couldn't
+be made to work.
+=============================================================================
+RCS file: ./overhead/mail/lib/parsel.lex,v
+Working file: parsel.lex
+	trunk: 2
+	R6tape: 2.9.1
+	X11R3: 2.1.1.1
+Initial Check in for PMAK source tree
+----------------------------
+revision 2.18
+date: 1994/04/23 17:33:53;  author: rr2b;  state: Exp;  lines: +3 -1
+Added flex compatible version, the original parsel.l just couldn't
+be made to work.
+
+----------------------------
+revision 2.17
+date: 1994/04/11 00:58:12;  author: rr2b;  state: Exp;  lines: +13 -4
+Fixed so that adddress validation will work
+under FLEX_ENV
+BUG
+=============================================================================
+RCS file: ./overhead/mail/lib/parsel.flex,v
+Working file: parsel.flex
+Added flex compatible version, the original parsel.l just couldn't
+ be made to work.
+----------------------------
+revision 1.1
+date: 1994/04/23 17:33:53;  author: rr2b;  state: Exp;
+Initial revision
+
+=============================================================================
+RCS file: ./overhead/genmake/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.9.1
+Initial installation for genmake script
+----------------------------
+revision 1.11
+date: 1994/04/20 17:43:39;  author: rr2b;  state: Exp;  lines: +1 -1
+Fixed so that there is an explicit rule to make genmake
+BUG
+
+=============================================================================
+RCS file: ./overhead/bison/Makefile.in,v
+Working file: Makefile.in
+	trunk: 1
+	R6tape: 1.4.1
+----------------------------
+revision 1.9
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +40 -33
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+RCS file: ./overhead/bison/ChangeLog,v
+Working file: ChangeLog
+	trunk: 1
+	R6tape: 1.8.1
+----------------------------
+revision 1.12
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +70 -1
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/INSTALL,v
+Working file: INSTALL
+	trunk: 1
+	R6tape: 1.2.1
+----------------------------
+revision 1.6
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +4 -3
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.13.1
+Solaris Port contributed by Bill Cattey of MIT.
+----------------------------
+revision 1.22
+date: 1994/04/20 16:05:37;  author: rr2b;  state: Exp;  lines: +2 -2
+Removed spaces from XPFILE settings
+BUG
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/LR0.c,v
+Working file: LR0.c
+	trunk: 1
+	R6tape: 1.3.1
+----------------------------
+revision 1.5
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +9 -9
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+RCS file: ./overhead/bison/allocate.c,v
+Working file: allocate.c
+	trunk: 1
+	R6tape: 1.1.1
+----------------------------
+revision 1.2
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +22 -12
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+RCS file: ./overhead/bison/bison.simple,v
+Working file: bison.simple
+	trunk: 1
+	R6tape: 1.2.1
+----------------------------
+revision 1.6
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +14 -6
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+RCS file: ./overhead/bison/bison.texinfo,v
+Working file: bison.texinfo
+	trunk: 1
+	R6tape: 1.7.1
+----------------------------
+revision 1.11
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +19 -12
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/configure,v
+Working file: configure
+	trunk: 1
+	R6tape: 1.2.1
+----------------------------
+revision 1.6
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +204 -58
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/conflicts.c,v
+Working file: conflicts.c
+	trunk: 1
+	R6tape: 1.3.1
+----------------------------
+revision 1.15
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +2 -2
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/texinfo.tex,v
+Working file: texinfo.tex
+	trunk: 1
+	R6tape: 1.2.1
+----------------------------
+revision 1.6
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +303 -203
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/files.c,v
+Working file: files.c
+	trunk: 1
+	R6tape: 1.4.1
+----------------------------
+revision 1.9
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +5 -5
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/files.h,v
+Working file: files.h
+	trunk: 1
+	R6tape: 1.1.1
+Solaris Port contributed by Bill Cattey of MIT.
+----------------------------
+revision 1.4
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +3 -2
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/getargs.c,v
+Working file: getargs.c
+	trunk: 1
+	R6tape: 1.5.1
+----------------------------
+revision 1.7
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +27 -16
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/getopt.c,v
+Working file: getopt.c
+	trunk: 1
+	R6tape: 1.3.1
+----------------------------
+revision 1.7
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +62 -30
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/getopt.h,v
+Working file: getopt.h
+	trunk: 1
+	R6tape: 1.2.1
+----------------------------
+revision 1.6
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +2 -2
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/getopt1.c,v
+Working file: getopt1.c
+	trunk: 1
+	R6tape: 1.2.1
+----------------------------
+revision 1.6
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +12 -11
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+RCS file: ./overhead/bison/lex.c,v
+Working file: lex.c
+	trunk: 1
+	R6tape: 1.5.1
+----------------------------
+revision 1.7
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +1 -3
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+RCS file: ./overhead/bison/alloca.c,v
+Working file: alloca.c
+	trunk: 1
+	R6tape: 1.1.1
+simulate allocate of memory on the stack, but use heap
+----------------------------
+revision 1.5
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +383 -105
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/new.h,v
+Working file: new.h
+	trunk: 1
+	R6tape: 1.2.1
+----------------------------
+revision 1.3
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +9 -5
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+RCS file: ./overhead/bison/reader.c,v
+Working file: reader.c
+	trunk: 1
+	R6tape: 1.7.1
+----------------------------
+revision 1.12
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +3 -7
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+RCS file: ./overhead/bison/symtab.c,v
+Working file: symtab.c
+	trunk: 1
+	R6tape: 1.3.1
+----------------------------
+revision 1.5
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +1 -1
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+RCS file: ./overhead/bison/sys.h,v
+Working file: sys.h
+	trunk: 1
+	R6tape: 1.2.1
+----------------------------
+revision 1.10
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +23 -1
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+RCS file: ./overhead/bison/version.c,v
+Working file: version.c
+	trunk: 1
+	R6tape: 1.5.1
+----------------------------
+revision 1.10
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +3 -18
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+RCS file: ./overhead/bison/bison.info-1,v
+Working file: bison.info-1
+	trunk: 1
+	R6tape: 1.2.1
+see bison.info
+----------------------------
+revision 1.6
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +46 -47
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/bison.info,v
+Working file: bison.info
+	trunk: 1
+	R6tape: 1.2.1
+output of `makeinfo bison.texinfo`
+
+----------------------------
+revision 1.4
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +98 -97
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/bison.1,v
+Working file: bison.1
+	trunk: 1
+	R6tape: 1.3.1
+man entry for bison
+----------------------------
+revision 1.4
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +16 -3
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+RCS file: ./overhead/bison/bison.info-4,v
+Working file: bison.info-4
+	trunk: 1
+	R6tape: 1.2.1
+see bison.info
+----------------------------
+revision 1.4
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +90 -85
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+RCS file: ./overhead/bison/bison.info-2,v
+Working file: bison.info-2
+	trunk: 1
+	R6tape: 1.1.1
+> see bison.info
+----------------------------
+revision 1.3
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +45 -45
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/bison.info-3,v
+Working file: bison.info-3
+	trunk: 1
+	R6tape: 1.1.1
+see bison.info
+----------------------------
+revision 1.3
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +45 -45
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+
+RCS file: ./overhead/bison/bison.info-5,v
+Working file: bison.info-5
+	trunk: 1
+	R6tape: 1.1.1
+see bison.info
+----------------------------
+revision 1.3
+date: 1994/04/14 21:32:24;  author: wjh;  state: Exp;  lines: +12 -12
+upgrade to A2.2, corresponding to GNU bison-1.22
+
+=============================================================================
+
+RCS file: ./overhead/mkparser/Imakefile,v
+Working file: Imakefile
+Initial checkin of the C port of the C++ parser object
+----------------------------
+revision 1.8
+date: 1994/04/22 20:04:46;  author: rr2b;  state: Exp;  lines: +2 -2
+Added depend target, changed bogus setting of COMPILERFLAGS to use DEFINES
+and commented it out.  I don't think we need debugging support by default.
+BUG
+
+----------------------------
+revision 1.7
+date: 1994/04/11 20:39:28;  author: wjh;  state: Exp;  lines: +1 -1
+fixed compilation failure.  (Don't define CFLAGS!)
+=============================================================================
+
+
+RCS file: ./overhead/mkparser/parser.doc,v
+Working file: parser.doc
+documentation on the parser from the C++ version.
+----------------------------
+revision 1.6
+date: 1994/06/08 19:56:58;  author: susan;  state: Exp;  lines: +17 -34
+wjh update
+
+----------------------------
+revision 1.5
+date: 1994/04/20 16:15:39;  author: wjh;  state: Exp;  lines: +18 -0
+added note about not using -l switch
+revised title lines
+=============================================================================
+RCS file: ./overhead/mkparser/mkparser,v
+Working file: mkparser
+Initial checkin of the C port of the C++ parser object
+----------------------------
+revision 1.10
+date: 1994/04/20 17:19:09;  author: wjh;  state: Exp;  lines: +1 -1
+correct line number in #line mkparsertable
+
+----------------------------
+revision 1.9
+date: 1994/04/20 17:11:36;  author: wjh;  state: Exp;  lines: +4 -8
+fix to retain #if YYDEBUG everywhere except in tables
+----------------------------
+revision 1.8
+date: 1994/04/20 16:49:23;  author: wjh;  state: Exp;  lines: +10 -3
+revise to accept YYDEBUG in user code
+=============================================================================
+RCS file: ./README.ez,v
+Working file: README.ez
+	trunk: 1
+	R6tape: 1.71.1
+"
+formatted version of installation documentation - not shipped
+----------------------------
+revision 1.118
+date: 1994/08/01 16:51:31;  author: rr2b;  state: Exp;  lines: +32 -19
+Added notes indicating that -traditional or -fwritable-strings must be used.
+BUG
+----------------------------
+revision 1.117
+date: 1994/06/01 19:06:36;  author: susan;  state: Exp;  lines: +60 -31
+updated with R6 info
+----------------------------
+revision 1.116
+date: 1994/05/31 19:44:42;  author: susan;  state: Exp;  lines: +69 -24
+fixes made wrt release 6.3
+----------------------------
+revision 1.115
+date: 1994/05/24 18:32:26;  author: susan;  state: Exp;  lines: +18 -18
+updated version number
+----------------------------
+revision 1.114
+date: 1994/05/19 16:57:33;  author: rr2b;  state: Exp;  lines: +13 -1
+Added notes for BSD derived os's for 386's.
+PORT
+----------------------------
+revision 1.113
+date: 1994/05/18 18:55:52;  author: rr2b;  state: Exp;  lines: +13 -0
+Updated Solaris section.
+BUILD
+----------------------------
+revision 1.112
+date: 1994/05/18 16:25:49;  author: rr2b;  state: Exp;  lines: +48 -21
+Added info on what to do if using the Dec supplied X libs.
+BUG
+----------------------------
+revision 1.111
+date: 1994/05/13 15:32:55;  author: rr2b;  state: Exp;  lines: +22 -19
+Added bsdi system type.
+PORT
+----------------------------
+revision 1.110
+date: 1994/05/04 20:00:09;  author: rr2b;  state: Exp;  lines: +27 -17
+Updated section on Decstations and Ultrix 4.3 to include a mention of using -oldc when using the
+latest C compiler for ultrix.
+BUG
+----------------------------
+revision 1.109
+date: 1994/05/03 17:22:53;  author: susan;  state: Exp;  lines: +19 -24
+removed linux problem with fad, updated date and version number
+----------------------------
+revision 1.108
+date: 1994/04/25 15:07:34;  author: rr2b;  state: Exp;  lines: +4 -2
+Fixed bit about RESOLVER_ENV to mention that if it is undefined
+RESOLVLIB should be set to be empty.
+Also fixed typo.
+BUG
+----------------------------
+revision 1.107
+date: 1994/04/25 15:03:46;  author: rr2b;  state: Exp;  lines: +24 -22
+Fixed up section about RESOLVLIB, previously it implied that the setting of
+RESOLVLIB was immaterial if RESOLV_ENV was not defined.
+BUG
+----------------------------
+revision 1.106
+date: 1994/04/21 20:06:10;  author: rr2b;  state: Exp;  lines: +26 -22
+Added mention of NetBSD support
+----------------------------
+revision 1.105
+date: 1994/04/20 21:08:56;  author: rr2b;  state: Exp;  lines: +22 -22
+Added mention that solaris 2.3 users can define DPS_ENV
+FEATURE
+----------------------------
+revision 1.104
+date: 1994/04/18 17:50:15;  author: rr2b;  state: Exp;  lines: +52 -17
+added info about using gcc, and about the need to manually
+setuid or setgid getconsole and getstats.
+=============================================================================
+RCS file: ./site/config/rs_aix31/site.mcr,v
+Working file: site.mcr
+	R6tape: 1.1.1
+----------------------------
+revision 1.2
+date: 1994/08/16 18:52:10;  author: susan;  state: Exp;  lines: +0 -1
+fixed INSTALL flags
+
+=============================================================================
+
+RCS file: ./config/andrew.rls,v
+Working file: andrew.rls
+	susan: 2.200
+	trunk: 2
+	R6tape: 2.161.1
+	X11R3: 2.1.1.1
+changed name from ATK to Andrew
+----------------------------
+revision 2.200	locked by: susan;
+date: 1994/04/21 19:48:47;  author: rr2b;  state: Exp;  lines: +10 -4
+Cleaned up rules used only in contrib/parsec.
+BUG
+
+----------------------------
+revision 2.199
+date: 1994/04/20 19:56:01;  author: rr2b;  state: Exp;  lines: +1 -0
+Documented the fact that FLEX_ENV is checked.
+NetBSD PORT
+----------------------------
+revision 2.198
+date: 1994/04/20 19:39:33;  author: rr2b;  state: Exp;  lines: +17 -0
+Added FlexOrLexFileRule
+NetBSD port
+----------------------------
+revision 2.197
+date: 1994/04/19 21:08:32;  author: rr2b;  state: Exp;  lines: +1 -1
+Fixed to define FAILEXIT is it is NOT defined.
+BUG
+----------------------------
+revision 2.196
+date: 1994/04/19 15:34:22;  author: rr2b;  state: Exp;  lines: +0 -18
+Moved ASMPP_CC and AS_FLAGS settings to the
+allsys.mcr so system.mcr files can override it.
+BUG
+----------------------------
+revision 2.195
+date: 1994/04/14 02:38:33;  author: rr2b;  state: Exp;  lines: +7 -3
+Added a hack so that systems with a posix sh (like bash) can terminate
+a build on the first directory where an error occurs.
+BUILD
+=============================================================================
+RCS file: ./config/allsys.mcr,v
+Working file: allsys.mcr
+	trunk: 1
+	R6tape: 1.30.1
+File containing common definitions for the system.mcr files.
+----------------------------
+revision 1.45
+date: 1994/04/19 15:35:04;  author: rr2b;  state: Exp;  lines: +19 -1
+Moved the ASMPP_CC and AS_FLAGS settings here from andrew.rls so that
+system and site.mcr can override it.
+BUG
+
+----------------------------
+revision 1.44
+date: 1994/04/14 02:27:33;  author: rr2b;  state: Exp;  lines: +1 -1
+Fixed LEXLIB macro for FLEX_ENV case.
+BUILD
+=============================================================================
+
+RCS file: ./config/allsys.h,v
+Working file: allsys.h
+	trunk: 1
+	R6tape: 1.31.1
+File containing common information in the system.h files.
+----------------------------
+revision 1.57
+date: 1994/05/19 16:24:15;  author: rr2b;  state: Exp;  lines: +1 -20
+removing disclaimer, double sigh
+----------------------------
+revision 1.56
+date: 1994/05/19 16:22:55;  author: rr2b;  state: Exp;  lines: +24 -1
+NetBSD port
+----------------------------
+revision 1.55
+date: 1994/04/20 18:48:08;  author: rr2b;  state: Exp;  lines: +6 -0
+Added FILE_NEEDS_FLUSH macro from NetBSD port
+PORT
+=============================================================================
+
+
+RCS file: ./config/imake.tmpl,v
+Working file: imake.tmpl
+	trunk: 1
+	R6tape: 1.69.1
+Recover from the damaged file in RCS.
+This is the basic imake template for Andrew software.
+----------------------------
+revision 1.76
+date: 1994/06/27 18:37:19;  author: rr2b;  state: Exp;  lines: +11 -1
+Changed to support AFS33_ENV
+BUG
+
+----------------------------
+revision 1.75
+date: 1994/04/22 17:44:51;  author: rr2b;  state: Exp;  lines: +2 -2
+Added missing # sign so makedepend will recognize it's sentinel line again.
+BUG
+=============================================================================
+RCS file: ./config/subdirs,v
+Working file: subdirs
+	trunk: 1
+	R6tape: 1.25.1
+Initial checkin until rcsupdate gets smarter.
+----------------------------
+revision 1.32
+date: 1994/05/09 21:09:13;  author: rr2b;  state: Exp;  lines: +1 -0
+Added i386_bsdi
+
+----------------------------
+revision 1.31
+date: 1994/04/20 18:52:38;  author: rr2b;  state: Exp;  lines: +1 -0
+added i386_bsd.
+PORT
+=============================================================================
+
+
+RCS file: ./config/sun4_51/system.h,v
+Working file: system.h
+Solaris Port contributed by Bill Cattey of MIT.
+----------------------------
+revision 1.29
+date: 1994/04/20 21:07:15;  author: rr2b;  state: Exp;  lines: +0 -1
+Removed DPS_ENV it apparently does exist on all Solaris 2.x machines.
+BUG
+
+----------------------------
+revision 1.28
+date: 1994/04/19 16:03:12;  author: rr2b;  state: Exp;  lines: +2 -1
+Added HAS_GETTIMEOFDAY.
+BUG
+=============================================================================
+
+
+RCS file: ./config/sun4_51/system.mcr,v
+Working file: system.mcr
+Solaris Port contributed by Bill Cattey of MIT.
+----------------------------
+revision 1.36
+date: 1994/05/18 18:51:05;  author: rr2b;  state: Exp;  lines: +1 -1
+backed up to 1.34.  I decided I'm not comfortable changing this by default.
+I'll document it as something people can do in site.mcr if necessary
+BUILD
+
+----------------------------
+revision 1.35
+date: 1994/05/18 16:25:03;  author: rr2b;  state: Exp;  lines: +1 -1
+Fixed to include a full set of search directories in the -R list.
+BUG
+----------------------------
+revision 1.34
+date: 1994/04/19 16:04:12;  author: rr2b;  state: Exp;  lines: +1 -1
+Fixed to not use -fpic if gcc is being used.
+BUG
+=============================================================================
+RCS file: ./config/sun3_41/system.h,v
+Working file: system.h
+	trunk: 1
+	R6tape: 1.4.1
+Code submitted by Guy Harris in support of SunOS4.1
+----------------------------
+revision 1.8
+date: 1994/05/09 18:53:55;  author: rr2b;  state: Exp;  lines: +7 -13
+Patch from Guy Harris.
+
+=============================================================================
+
+
+RCS file: ./config/sun3_41/system.mcr,v
+Working file: system.mcr
+	trunk: 1
+	R6tape: 1.6.1
+Code submitted by Guy Harris in support of SunOS4.1
+----------------------------
+revision 1.12
+date: 1994/05/09 19:00:15;  author: rr2b;  state: Exp;  lines: +2 -2
+Removed -Bstatic -Bdynamic instead use a full path to the .a files.
+
+----------------------------
+revision 1.11
+date: 1994/05/09 18:52:22;  author: rr2b;  state: Exp;  lines: +14 -40
+Patch from Guy Harris.
+=============================================================================
+RCS file: ./config/sun4_41/system.mcr,v
+Working file: system.mcr
+	trunk: 1
+	R6tape: 1.6.1
+Code submitted by Guy Harris in support of SunOS4.1
+----------------------------
+revision 1.18
+date: 1994/04/26 18:53:59;  author: rr2b;  state: Exp;  lines: +4 -6
+GCC Compatibility.
+BUG
+
+----------------------------
+revision 1.17
+date: 1994/04/25 15:32:27;  author: rr2b;  state: Exp;  lines: +6 -0
+Fixed so that the static and dynamic flags can be passed through gcc.
+BUG
+=============================================================================
+RCS file: ./config/platform.tmpl,v
+Working file: platform.tmpl
+	trunk: 1
+	R6tape: 1.13.1
+References to the platform-specific macro files that have been split off of imake.tmpl.
+----------------------------
+revision 1.31
+date: 1994/05/19 16:24:15;  author: rr2b;  state: Exp;  lines: +1 -20
+removing disclaimer, double sigh
+----------------------------
+revision 1.30
+date: 1994/05/19 16:22:55;  author: rr2b;  state: Exp;  lines: +22 -3
+NetBSD port
+----------------------------
+revision 1.29
+date: 1994/05/09 21:13:36;  author: rr2b;  state: Exp;  lines: +7 -2
+Added logic to detect BSD386 (bsdi)
+PORT
+----------------------------
+revision 1.28
+date: 1994/04/20 19:00:36;  author: rr2b;  state: Exp;  lines: +6 -1
+added 386BSD family.  (i.e. NetBSD and FreeBSD)
+PORT
+=============================================================================
+RCS file: ./config/pmax_ul4/system.mcr,v
+Working file: system.mcr
+	trunk: 1
+	R6tape: 1.4.1
+initial revision for pmax_ul4
+----------------------------
+revision 1.8
+date: 1994/05/18 16:02:44;  author: rr2b;  state: Exp;  lines: +0 -2
+Removed semibogus hack for dec X11 libraries. It will be documented in README
+instead.
+BUG
+
+=============================================================================
+RCS file: ./config/hp700_80/system.mcr,v
+Working file: system.mcr
+	trunk: 1
+	R6tape: 1.6.1
+Macro and header files for hp700_80
+----------------------------
+revision 1.13
+date: 1994/08/01 18:36:03;  author: rr2b;  state: Exp;  lines: +1 -1
+Set LEXLIB to be empty since it was never used before and isn't needed for the HP.
+BUG
+=============================================================================
+
+RCS file: ./config/i386_Linux/system.mcr,v
+Working file: system.mcr
+Linux system files
+----------------------------
+revision 1.12
+date: 1994/08/02 17:54:37;  author: rr2b;  state: Exp;  lines: +1 -1
+Added -fwritable-strings
+BUG
+
+=============================================================================
+
+
+RCS file: ./config/i386_Linux/system.h,v
+Working file: system.h
+Linux system files
+----------------------------
+revision 1.18
+date: 1994/04/24 03:37:30;  author: rr2b;  state: Exp;  lines: +1 -0
+Finally got HAS_GETTIMEOFDAY defined so FAD and other things which need
+subsecond timing will work.
+BUG
+
+----------------------------
+revision 1.17
+date: 1994/04/20 18:50:55;  author: rr2b;  state: Exp;  lines: +3 -0
+Added FILE_NEEDS_FLUSH macro which is always true since I don't know
+what to really check.
+PORT
+----------------------------
+revision 1.16
+date: 1994/04/14 02:42:16;  author: rr2b;  state: Exp;  lines: +2 -1
+Updated for the latest Linux libc.
+UPDATE
+=============================================================================
+=====================================
+
+
+RCS file: ./config/i386_bsd/system.h,v
+Working file: system.h
+NetBSD PORT
+----------------------------
+revision 1.3
+date: 1994/05/19 16:24:15;  author: rr2b;  state: Exp;  lines: +1 -20
+removing disclaimer, double sigh
+----------------------------
+revision 1.2
+date: 1994/05/19 16:22:55;  author: rr2b;  state: Exp;  lines: +33 -0
+NetBSD port
+----------------------------
+revision 1.1
+date: 1994/04/20 18:53:12;  author: rr2b;  state: Exp;
+Initial revision
+=============================================================================
+
+
+RCS file: ./config/i386_bsd/system.mcr,v
+Working file: system.mcr
+NetBSD Port
+----------------------------
+revision 1.4
+date: 1994/08/02 17:57:06;  author: rr2b;  state: Exp;  lines: +3 -21
+Moved -fwritable-strings to COMPILERFLAGS, so it won't be overwritten
+if somebody wants to actually use -g in CDEBUGFLAGS.
+BUG
+
+----------------------------
+revision 1.3
+date: 1994/05/04 19:53:06;  author: rr2b;  state: Exp;  lines: +27 -7
+Removed tabs
+BUG
+----------------------------
+revision 1.2
+date: 1994/04/20 20:31:29;  author: rr2b;  state: Exp;  lines: +2 -20
+Added LEXLIB=-ll to overide the FLEX_ENV default of -lfl.
+PORT
+----------------------------
+revision 1.1
+date: 1994/04/20 18:53:12;  author: rr2b;  state: Exp;
+Initial revision
+=============================================================================
+
+RCS file: ./config/i386_bsdi/system.h,v
+Working file: system.h
+From the contributed BSD386 port.  Added disclaimer.
+----------------------------
+revision 1.3
+date: 1994/05/09 21:18:05;  author: rr2b;  state: Exp;  lines: +2 -0
+Added FILE_NEEDS_FLUSH macro for malloc
+
+----------------------------
+revision 1.2
+date: 1994/05/09 21:14:28;  author: rr2b;  state: Exp;  lines: +1 -2
+Took out i386_ENV, it's bogus
+PORT
+----------------------------
+revision 1.1
+date: 1994/05/09 21:07:11;  author: rr2b;  state: Exp;
+Initial revision
+=============================================================================
+
+
+RCS file: ./config/i386_bsdi/system.mcr,v
+Working file: system.mcr
+From the contributed BSD386 port.  Added disclaimer.
+----------------------------
+revision 1.3
+date: 1994/08/02 17:59:07;  author: rr2b;  state: Exp;  lines: +1 -1
+Added -fwritable-strings.
+BUG
+
+----------------------------
+revision 1.2
+date: 1994/05/19 16:11:18;  author: rr2b;  state: Exp;  lines: +4 -3
+Added suplibs to pick up the NetBSD hacks for fcvt.
+BUG
+----------------------------
+revision 1.1
+date: 1994/05/09 21:07:11;  author: rr2b;  state: Exp;
+Initial revision
+=============================================================================
+
+RCS file: ./atkams/messages/lib/Imakefile,v
+Working file: Imakefile
+	trunk: 2
+	R6tape: 2.28.1
+	X11R3: 2.1.1.1
+Initial instalation of Imakefiles
+----------------------------
+revision 2.37
+date: 1994/04/20 02:01:25;  author: rr2b;  state: Exp;  lines: +16 -16
+Sigh, have to make sure LEXLIB goes in the system libraries.
+else a dependency on it will be made.
+BUG
+
+----------------------------
+revision 2.36
+date: 1994/04/14 02:25:34;  author: rr2b;  state: Exp;  lines: +1 -1
+Added LEXLIB
+=============================================================================
+RCS file: ./atkams/messages/lib/text822.c,v
+Working file: text822.c
+	trunk: 1
+	R6tape: 1.41.1
+----------------------------
+revision 1.55
+date: 1994/05/10 18:11:39;  author: rr2b;  state: Exp;  lines: +3 -3
++-1 BUG FIX and better support for long headers.
+BUG
+
+=============================================================================
+
+RCS file: ./contrib/tm/Imakefile,v
+Working file: Imakefile
+	trunk: 2
+	R6tape: 2.16.1
+	X11R3: 2.1.1.1
+Initial instalation of Imakefiles
+----------------------------
+revision 2.17
+date: 1994/04/14 02:45:14;  author: rr2b;  state: Exp;  lines: +5 -1
+Added BSDLIB for linux.
+
+=============================================================================
+
+
+RCS file: ./contrib/tm/tm.c,v
+Working file: tm.c
+	trunk: 2
+	R6tape: 2.32.1
+	X11R3: 2.1.1.1
+ÿ
+----------------------------
+revision 2.42
+date: 1994/05/19 17:13:33;  author: rr2b;  state: Exp;  lines: +2 -2
+Added !bsdi to the condition of the use of setpgrp with no arguments.
+BUG
+
+----------------------------
+revision 2.41
+date: 1994/05/17 18:42:23;  author: rr2b;  state: Exp;  lines: +4 -4
+Fixed for SunOS4.1.3
+BUG
+----------------------------
+revision 2.40
+date: 1994/05/10 18:02:45;  author: rr2b;  state: Exp;  lines: +5 -1
+BSD386
+PORT
+----------------------------
+revision 2.39
+date: 1994/04/14 23:48:37;  author: rr2b;  state: Exp;  lines: +5 -1
+Added Linux compatibility.
+BUG
+----------------------------
+revision 2.38
+date: 1994/04/14 02:50:46;  author: rr2b;  state: Exp;  lines: +7 -5
+Added linux compatibility.
+BUG
+=============================================================================
+
+RCS file: ./contrib/tm/tmv.c,v
+Working file: tmv.c
+	trunk: 2
+	R6tape: 2.12.1
+	X11R3: 2.1.1.1
+ÿ
+----------------------------
+revision 2.14
+date: 1994/04/14 02:52:42;  author: rr2b;  state: Exp;  lines: +5 -1
+Added linux compatibility.
+BUG
+
+=============================================================================
+
+RCS file: ./contrib/mit/util/ez2ascii.c,v
+Working file: ez2ascii.c
+	trunk: 1
+	R6tape: 1.5.1
+Contrib code from MIT.
+----------------------------
+revision 1.9
+date: 1994/04/22 17:31:43;  author: rr2b;  state: Exp;  lines: +2 -3
+Removed redundant include of andrewos.h.
+TRIV
+
+=============================================================================
+
+RCS file: ./contrib/mit/neos/turnin.c,v
+Working file: turnin.c
+	trunk: 1
+	R6tape: 1.3.1
+ATK application: interface EZ to File Exchange Service.
+----------------------------
+revision 1.4
+date: 1994/04/22 23:53:28;  author: rr2b;  state: Exp;  lines: +1 -5
+Removed bogus malloc decl.
+BUG
+
+=============================================================================
+
+
+RCS file: ./contrib/mit/rtf2/rtf2.h,v
+Working file: rtf2.h
+second revision submitted by WDC@athena.mit.edu
+----------------------------
+revision 1.3
+date: 1994/04/22 17:41:16;  author: rr2b;  state: Exp;  lines: +2 -2
+added extern on declaration of LeftMargin and RightMargin since they are initialized in main.c
+so some compilers won't treat them as common variables.
+BUG
+
+=============================================================================
+
+RCS file: ./contrib/alink/alinkv.c,v
+Working file: alinkv.c
+	trunk: 1
+	R6tape: 1.3.1
+Audio-link inset submitted by Charles Hayden of BellLabs.
+----------------------------
+revision 1.5
+date: 1994/04/26 22:35:33;  author: rr2b;  state: Exp;  lines: +2 -2
+missed one.
+BUG
+
+----------------------------
+revision 1.4
+date: 1994/04/26 22:31:56;  author: rr2b;  state: Exp;  lines: +22 -3
+Fixed so that no argument is given to checkForInterrupt.
+BUG
+=============================================================================
+
+
+RCS file: ./contrib/champ/enodev.c,v
+Working file: enodev.c
+	trunk: 1
+	R6tape: 1.3.1
+moved from ./atk/contrib.
+----------------------------
+revision 1.4
+date: 1994/05/11 17:25:39;  author: rr2b;  state: Exp;  lines: +2 -2
+Fixed coredump bug when there is no message on display.
+BUG
+
+=============================================================================
+
+RCS file: ./contrib/srctext/html/doc/Imakefile,v
+Working file: Imakefile
+initial revision
+----------------------------
+revision 1.5
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +3 -0
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.4
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +0 -10
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/doc/TODO.html,v
+Working file: TODO.html
+initial revision
+----------------------------
+revision 1.5
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +0 -0
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.4
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +30 -27
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/doc/design.html,v
+Working file: design.html
+initial revision
+----------------------------
+revision 1.5
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +0 -0
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.4
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +8 -67
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/doc/htmlview.help,v
+Working file: htmlview.help
+initial revision
+----------------------------
+revision 1.4
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +0 -0
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.3
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +72 -63
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/doc/test.html,v
+Working file: test.html
+Updating to version 1.2 from Nick Williams
+----------------------------
+revision 1.2
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +0 -0
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.1
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/html.c,v
+Working file: html.c
+initial revision
+----------------------------
+revision 1.7
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +147 -93
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.6
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +547 -298
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/htmlview.c,v
+Working file: htmlview.c
+initial revision
+----------------------------
+revision 1.7
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +74 -28
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.6
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +143 -48
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/html.ch,v
+Working file: html.ch
+initial revision
+----------------------------
+revision 1.6
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +4 -2
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.5
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +35 -20
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/htmlview.ch,v
+Working file: htmlview.ch
+initial revision
+----------------------------
+revision 1.4
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +2 -1
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.3
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +24 -10
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/Imakefile,v
+Working file: Imakefile
+initial revision
+----------------------------
+revision 1.6
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +4 -1
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.5
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +4 -12
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/README,v
+Working file: README
+initial revision
+----------------------------
+revision 1.4
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +0 -0
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.3
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +20 -119
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/html.tpl,v
+Working file: html.tpl
+initial revision
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/subdirs,v
+Working file: subdirs
+initial revision
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/lib/html.init,v
+Working file: html.init
+initial revision
+----------------------------
+revision 1.5
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +0 -0
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.4
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +11 -21
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/lib/htmlmagic,v
+Working file: htmlmagic
+initial revision
+----------------------------
+revision 1.5
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +0 -0
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.4
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +0 -9
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/lib/Imakefile,v
+Working file: Imakefile
+initial revision
+----------------------------
+revision 1.5
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +2 -2
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.4
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +7 -8
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/lib/html.tpl,v
+Working file: html.tpl
+initial revision
+----------------------------
+revision 1.4
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +5 -0
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.3
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;  lines: +31 -6
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/version.c,v
+Working file: version.c
+Updating to version 1.2 from Nick Williams
+----------------------------
+revision 1.2
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +2 -4
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.1
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./contrib/srctext/html/ChangeLog,v
+Working file: ChangeLog
+Updating to version 1.2 from Nick Williams
+----------------------------
+revision 1.2
+date: 1994/05/16 15:50:48;  author: rr2b;  state: Exp;  lines: +18 -0
+Upgrade to 1.2, and fix bug when an image can't be found.
+BUG
+----------------------------
+revision 1.1
+date: 1994/05/09 20:32:31;  author: rr2b;  state: Exp;
+Updating to version 1.2 from Nick Williams
+=============================================================================
+
+
+RCS file: ./xmkfontd/Imakefile,v
+Working file: Imakefile
+	trunk: 2
+	R6tape: 2.28.1
+	X11R3: 2.1.1.1
+----------------------------
+revision 2.34
+date: 1994/05/11 17:23:41;  author: rr2b;  state: Exp;  lines: +0 -1
+Removed removal of fonts.alias, it's not necessary, and is harmful.
+BUG
+
+=============================================================================
+
+
+RCS file: ./ossupport/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.7.1
+initial checkin
+----------------------------
+revision 1.19
+date: 1994/05/19 16:24:15;  author: rr2b;  state: Exp;  lines: +0 -0
+removing disclaimer, double sigh
+----------------------------
+revision 1.18
+date: 1994/05/19 16:22:08;  author: rr2b;  state: Exp;  lines: +1 -1
+NetBSD port
+----------------------------
+revision 1.17
+date: 1994/05/10 18:04:27;  author: rr2b;  state: Exp;  lines: +1 -1
+Hacked to use i386_bsd ossupport for i386_bsdi as well.
+(for ecvt and gcvt, the fake ones)
+PORT
+----------------------------
+revision 1.16
+date: 1994/05/09 19:15:08;  author: rr2b;  state: Exp;  lines: +5 -0
+Added vax ossupport
+PORT
+----------------------------
+revision 1.15
+date: 1994/04/20 18:35:41;  author: rr2b;  state: Exp;  lines: +5 -0
+Added i386_bsd
+PORT
+=============================================================================
+
+
+RCS file: ./ossupport/i386_bsd/Imakefile,v
+Working file: Imakefile
+os specific  support for i386_bsd (should work for FreeBSD and NetBSD)
+PORT
+----------------------------
+revision 1.3
+date: 1994/05/19 16:24:15;  author: rr2b;  state: Exp;  lines: +1 -20
+removing disclaimer, double sigh
+----------------------------
+revision 1.2
+date: 1994/05/19 16:22:55;  author: rr2b;  state: Exp;  lines: +43 -20
+NetBSD port
+----------------------------
+revision 1.1
+date: 1994/04/20 18:36:17;  author: rr2b;  state: Exp;
+Initial revision
+=============================================================================
+
+
+RCS file: ./ossupport/i386_bsd/fcvt.c,v
+Working file: fcvt.c
+os specific  support for i386_bsd (should work for FreeBSD and NetBSD)
+PORT
+----------------------------
+revision 1.3
+date: 1994/05/19 16:24:15;  author: rr2b;  state: Exp;  lines: +0 -0
+removing disclaimer, double sigh
+----------------------------
+revision 1.2
+date: 1994/05/19 16:22:55;  author: rr2b;  state: Exp;  lines: +7 -13
+NetBSD port
+----------------------------
+revision 1.1
+date: 1994/04/20 18:36:17;  author: rr2b;  state: Exp;
+Initial revision
+=============================================================================
+
+
+RCS file: ./ossupport/i386_bsd/ness_hack.c,v
+Working file: ness_hack.c
+NetBSD port
+----------------------------
+revision 1.2
+date: 1994/05/19 16:24:15;  author: rr2b;  state: Exp;  lines: +0 -0
+removing disclaimer, double sigh
+----------------------------
+revision 1.1
+date: 1994/05/19 16:22:55;  author: rr2b;  state: Exp;
+NetBSD port
+=============================================================================
+
+
+RCS file: ./ossupport/i386_bsd/fcvt_hack.c,v
+Working file: fcvt_hack.c
+NetBSD port
+----------------------------
+revision 1.2
+date: 1994/05/19 16:24:15;  author: rr2b;  state: Exp;  lines: +0 -0
+removing disclaimer, double sigh
+----------------------------
+revision 1.1
+date: 1994/05/19 16:22:55;  author: rr2b;  state: Exp;
+NetBSD port
+=============================================================================
+
+
+RCS file: ./ossupport/i386_bsd/NetBSD.README,v
+Working file: NetBSD.README
+Information on the development of AUIS 6.3 for NetBSD and info
+on bugs in NetBSD 0.9 which need to be patched to compile AUIS 6.3.
+----------------------------
+revision 1.2
+date: 1994/05/26 17:01:20;  author: susan;  state: Exp;  lines: +69 -202
+changes submitted by user
+
+----------------------------
+revision 1.1
+date: 1994/05/19 16:47:30;  author: rr2b;  state: Exp;
+Initial revision
+=============================================================================
+
+
+RCS file: ./ossupport/i386_bsd/NetBSD-current.diffs,v
+Working file: NetBSD-current.diffs
+Diffs to AUIS 6.3 to fix sys_errlist and some instances where
+an off_t (64 bits) is needed.
+----------------------------
+revision 1.2
+date: 1994/05/26 17:01:20;  author: susan;  state: Exp;  lines: +33 -2
+changes submitted by user
+
+----------------------------
+revision 1.1
+date: 1994/05/19 16:47:30;  author: rr2b;  state: Exp;
+Initial revision
+=============================================================================
+
+
+RCS file: ./FAQ.ez,v
+Working file: FAQ.ez
+	trunk: 1
+	R6tape: 1.16.1
+"
+updated
+----------------------------
+revision 1.38
+date: 1994/08/23 17:32:06;  author: susan;  state: Exp;  lines: +44 -65
+added P3 section on changing page size
+----------------------------
+revision 1.37
+date: 1994/06/01 19:06:36;  author: susan;  state: Exp;  lines: +95 -35
+updated with R6 info
+----------------------------
+revision 1.36
+date: 1994/05/26 16:53:42;  author: susan;  state: Exp;  lines: +32 -32
+updated for 6.3
+----------------------------
+revision 1.35
+date: 1994/04/15 16:07:10;  author: susan;  state: Exp;  lines: +17 -17
+fixed error relating to latest release and IP address of ftp.andrew.cmu.edu
+=============================================================================
+
+
+
+RCS file: ./ams/libs/ms/update.c,v
+Working file: update.c
+	trunk: 2
+	R6tape: 2.15.1
+	X11R3: 2.1.1.1
+add copyright
+----------------------------
+revision 2.16
+date: 1994/08/08 17:57:53;  author: rr2b;  state: Exp;  lines: +4 -4
+Fixed bug where wait3 was called with an uninitialized pointer.
+BUG
+
+=============================================================================
+
+
+RCS file: ./ams/libs/ms/prsdate.gra,v
+Working file: prsdate.gra
+Updated to use the new parser
+BUILD
+----------------------------
+revision 1.5
+date: 1994/04/13 20:56:44;  author: rr2b;  state: Exp;  lines: +5 -3
+Fixed so that on error the parser will still be destroyed.
+BUG
+
+----------------------------
+revision 1.4
+date: 1994/04/13 20:53:56;  author: rr2b;  state: Exp;  lines: +2 -3
+Fixed so that error message will be freed if necessary before long jumping out.
+BUG
+----------------------------
+revision 1.3
+date: 1994/04/12 18:19:57;  author: wjh;  state: Exp;  lines: +6 -1
+define YYSTYPE fixes compile errors
+=============================================================================
+
+
+RCS file: ./ams/msclients/cui/Imakefile,v
+Working file: Imakefile
+	trunk: 2
+	R6tape: 2.36.1
+	X11R3: 2.1.1.1
+Initial instalation of Imakefiles
+----------------------------
+revision 2.47
+date: 1994/04/14 02:16:19;  author: rr2b;  state: Exp;  lines: +2 -2
+Added LEXLIB for -ll or -lfl.
+BUILD
+=============================================================================
+
+RCS file: ./ams/msclients/vui/doc/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.3.1
+initial installation
+----------------------------
+revision 1.6
+date: 1994/06/28 17:46:23;  author: rr2b;  state: Exp;  lines: +1 -1
+NEVER EVER EVER end an install path (or any other) with /!!!!!
+ON PAIN OF DEATH.
+BUG
+
+=============================================================================
+
+RCS file: ./ams/msclients/vui/Imakefile,v
+Working file: Imakefile
+	trunk: 2
+	R6tape: 2.41.1
+	X11R3: 2.1.1.1
+Initial instalation of Imakefiles
+----------------------------
+revision 2.50
+date: 1994/04/14 02:18:15;  author: rr2b;  state: Exp;  lines: +2 -2
+Added LEXLIB
+BUILD
+
+=============================================================================
+
+
+RCS file: ./ams/msclients/vui/vuipnl.c,v
+Working file: vuipnl.c
+	trunk: 1
+	R6tape: 1.40.1
+rechecked due to /usr/local/bin/ci errors
+----------------------------
+revision 1.52
+date: 1994/08/08 18:13:51;  author: rr2b;  state: Exp;  lines: +2 -2
+Removed bogus strcpy of random stack garbage to an unused variable.
+BUG
+
+=============================================================================
+
+RCS file: ./ams/delivery/sendmail/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.16.1
+----------------------------
+revision 1.23
+date: 1994/07/26 20:39:15;  author: susan;  state: Exp;  lines: +1 -1
+removed erroneous trailing /
+
+=============================================================================
+
+RCS file: ./ams/delivery/queuem/Imakefile,v
+Working file: Imakefile
+	trunk: 1
+	R6tape: 1.18.1
+----------------------------
+revision 1.29
+date: 1994/07/26 19:35:43;  author: susan;  state: Exp;  lines: +1 -1
+removed trailing / in order to compile on pmax_mach
+
+=============================================================================
+
+RCS file: ./ams/utils/nntp/lib/rfc822.c,v
+Working file: rfc822.c
+	trunk: 1
+	R6tape: 1.18.1
+initial installation 
+----------------------------
+revision 1.21
+date: 1994/08/01 18:40:11;  author: rr2b;  state: Exp;  lines: +2 -2
+Fixed to not define strpbrk on SunOS 4.1
+BUG
+
+=============================================================================
+
+RCS file: ./ams/utils/nntp/lib/getdate.gra,v
+Working file: getdate.gra
+Fixed to use the new parser.
+BUILD
+----------------------------
+revision 1.2
+date: 1994/04/12 16:00:42;  author: rr2b;  state: Exp;  lines: +4 -2
+Fixed to explicitly define YYSTYPE
+BUG
+
+=============================================================================

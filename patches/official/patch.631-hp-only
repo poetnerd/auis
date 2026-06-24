@@ -1,0 +1,32 @@
+*** auis-6.3/overhead/class/pp/Imakefile	Thu May 26 13:21:51 1994
+--- ./overhead/class/pp/Imakefile	Wed Sep  7 13:02:41 1994
+***************
+*** 6,11 ****
+--- 6,15 ----
+  CDEBUGFLAGS = 
+  #endif
+  
++ #if defined(hpux) && !defined(FLEX_ENV)
++ LEXLIB=-ll
++ #endif
++ 
+  FlexOrLexFileRule(classpp)
+  
+  DependTarget()
+*** auis-6.3/doc/mkbrowse/Imakefile	Thu May 26 14:59:38 1994
+--- ./doc/mkbrowse/Imakefile	Wed Sep  7 13:02:31 1994
+***************
+*** 29,34 ****
+--- 29,40 ----
+  
+  /* Copyright Carnegie Mellon University 1992 - All rights Reserved */
+  
++ #ifndef FLEX_ENV
++ LEXLIB=-ll
++ #else
++ LEXLIB=-fl
++ #endif
++ 
+  FlexOrLexFileRule(browserpp)
+  
+  DependTarget()
