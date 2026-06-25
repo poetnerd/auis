@@ -23,6 +23,7 @@ XINCDIR = /opt/X11/include
 XLIB = -L$(XLIBDIR) -lX11
 
 DYN_LINK_LIB = -ldl
+LEXLIB = -ll
 
 /* Get site-specific inclusions */
 #include <site.mcr>

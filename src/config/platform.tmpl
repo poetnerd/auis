@@ -27,7 +27,7 @@ XCOMM
 XCOMM The following comes from the macro file
 XCOMM
 
-#if defined(__APPLE__) && defined(__MACH__)
+#if defined(__APPLE__) || defined(__DARWIN__)
 #include <darwin/system.mcr>
 #define MacroIncludeFile darwin/system.mcr
 #endif /* Darwin/macOS */
