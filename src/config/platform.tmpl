@@ -27,6 +27,11 @@ XCOMM
 XCOMM The following comes from the macro file
 XCOMM
 
+#if defined(__APPLE__) && defined(__MACH__)
+#include <darwin/system.mcr>
+#define MacroIncludeFile darwin/system.mcr
+#endif /* Darwin/macOS */
+
 #if defined(sys_telmat)
 #include <telmat_svr4/system.mcr>
 #define MacroIncludeFile telmat_svr4/system.mcr
