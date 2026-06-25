@@ -107,9 +107,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 /******************** methods ******************/
 
 	void
-rectangle_UnionRect(Result,LHS, RHS)
-	register struct rectangle *LHS, *RHS;
-	register struct rectangle *Result;
+rect(register struct rectangle * Result, int LHS, register struct rectangle *LHS, * RHS)
 {
 	register long left, top;
 		/* Result may be same as RHS or LHS, so we
@@ -131,9 +129,7 @@ rectangle_UnionRect(Result,LHS, RHS)
 }
 
 	void
-rectangle_IntersectRect(Result,LHS, RHS)
-	register struct rectangle *Result;
-	register struct rectangle *LHS, *RHS;
+rect(register struct rectangle * Result, int LHS, register struct rectangle *LHS, * RHS)
 {
 	register long left, top;
 		/* Result may be same as RHS or LHS, so we

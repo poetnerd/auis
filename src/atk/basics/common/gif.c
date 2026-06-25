@@ -172,8 +172,7 @@ extern int WriteGIF();
  */
 
 static int 
-gifin_open_file(s)
-    FILE *s;
+gifin_open_file(FILE * s)
 {
   /* make sure there isn't already a file open */
   if (file_open)
@@ -323,8 +322,7 @@ gifin_open_image()
  * try to read next pixel from the raster, return result in *pel
  */
 
-static int gifin_get_pixel(pel)
-     int *pel;
+static int gifin_get_pixel(int * pel)
 {
   int  code;
   int  first;
@@ -422,9 +420,7 @@ static int gifin_close_file()
  * load a colormap from the input stream
  */
 
-static int gifin_load_cmap(cmap, ncolors)
-     BYTE cmap[3][256];
-     int  ncolors;
+static int gifin_load_cmap(int cmap, int ncolors)
 {
   int i;
 
@@ -488,8 +484,7 @@ static int gifin_read_data_block()
  * (returns the code of the first pixel in the string)
  */
 
-static int gifin_push_string(code)
-     int code;
+static int gifin_push_string(int code)
 {
   int rslt;
 
@@ -509,9 +504,7 @@ static int gifin_push_string(code)
  * add a new string to the string table
  */
 
-static gifin_add_string(p, e)
-     int p;
-     int e;
+static g(int p, int e)
 {
   prefix[table_size] = p;
   extnsn[table_size] = e;
@@ -529,16 +522,14 @@ static gifin_add_string(p, e)
  * semi-graceful fatal error mechanism
  */
 
-static gifin_fatal(msg)
-     char *msg;
+static gifin_fatal(char * msg)
 {
   printf("Error reading GIF file: %s\n", msg);
   exit(0);
 }
 
 static void 
-tellAboutImage( name )
-    char *name;
+tellAboutImage(char * name)
 {
   printf("%s is a %dx%d %sGIF image with %d colors\n", name,
 	 gifin_img_width, gifin_img_height,
@@ -547,10 +538,7 @@ tellAboutImage( name )
 }
 
 int
-gif__Load( gif, fullname, fp )
-    struct gif *gif;
-    char *fullname;
-    FILE *fp;
+gif__Load(struct gif * gif, char * fullname, FILE * fp)
 { 
   FILE *f;
   int x, y, pixel, pass, scanlen;
@@ -644,9 +632,7 @@ gif__Load( gif, fullname, fp )
 }
 
 int 
-gif__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+gif__Ident(struct classheader * classID, char * fullname)
 { 
     FILE *f;
     unsigned int ret;
@@ -666,10 +652,7 @@ gif__Ident( classID, fullname )
 }
 
 long
-gif__Read( self, file, id )
-    struct gif *self;
-    FILE *file;
-    long id;
+gif__Read(struct gif * self, FILE * file, long id)
 {
 	if(gif_Load(self, NULL, file) == 0) {
 	    gif_Compress(self);
@@ -680,20 +663,13 @@ gif__Read( self, file, id )
 }
 
 long
-gif__Write( self, file, writeID, level )
-    struct gif *self;
-    FILE *file;
-    long writeID;
-    int level;
+gif__Write(struct gif * self, FILE * file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
 long
-gif__WriteNative( self, file, filename )
-    struct gif *self;
-    FILE *file;
-    char *filename;
+gif__WriteNative(struct gif * self, FILE * file, char * filename)
 {
     int colorstyle = 0; /* 0 == color; 1 == greyscale; 2 == b/w */
     byte r[256], g[256], b[256];

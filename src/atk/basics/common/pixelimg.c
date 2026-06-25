@@ -64,10 +64,7 @@ static bitmask[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
   its value if that value is between start and start+length.
 */
 
-void pixelimage__ClipRange(ClassID, tstart, tlength, start, length)
-struct classheader *ClassID;
-long *tstart, *tlength;
-register long start, length;
+void pixelimage__ClipRange(struct classheader * ClassID, int tstart, long *tstart, * tlength, int start, register long start, length)
 {
     register long s = *tstart, l = *tlength;
     if (s < start) l -= start - s,  s = start;
@@ -85,9 +82,7 @@ register long start, length;
       Returns TRUE if the width or height is set negative
 */
 
-static boolean ClipChange(self, sub)
-struct pixelimage *self;
-struct rectangle *sub;
+static boolean ClipChange(struct pixelimage * self, struct rectangle * sub)
 {
     struct rectangle R;
     rectangle_SetRectSize(&R, 0, 0, self->pixelsPerRow, self->numRows);
@@ -118,10 +113,7 @@ struct rectangle *sub;
       assumes the arguments are valid
 */
 
-static long GetRow(self, x, y, length, dest)
-struct pixelimage *self;
-long x, y, length;
-register unsigned char *dest;
+static long GetRow(struct pixelimage * self, int x, int y, long x, y, length, register unsigned char * dest)
 {
     register unsigned char *src;  /* where to fetch next source halfword */
     register unsigned char *dend;  /* last dest halfword to fill */
@@ -182,10 +174,7 @@ register unsigned char *dest;
       It will return 0 if y is outside the bounds of the image.
 	  If 'dest' is not on a halfword boundary, returns -1;
 */
-long pixelimage__GetRow(self, x, y, length, dest)
-struct pixelimage *self;
-long x, y, length;
-register unsigned short *dest;
+long pixelimage__GetRow(struct pixelimage * self, int x, int y, long x, y, length, register unsigned short * dest)
 {
     if (((unsigned long)dest)&1)
 	/* dest not aligned */
@@ -209,10 +198,7 @@ register unsigned short *dest;
   Returns the number of bits stored.
 */
 
-static long SetRow(self, x, y, length, src)
-struct pixelimage *self;
-long x, y, length;
-register unsigned char *src;
+static long SetRow(struct pixelimage * self, int x, int y, long x, y, length, register unsigned char * src)
 {
     register unsigned char *dest;  /* where to store next halfword */
     register unsigned char *send;  /* addr of halfword with last src bit */
@@ -286,10 +272,7 @@ register unsigned char *src;
   If the src is not halfword aligned, returns -1;
 */
 
-long pixelimage__SetRow(self, x, y, length, src)
-struct pixelimage *self;
-long x, y, length;
-register unsigned short *src;
+long pixelimage__SetRow(struct pixelimage * self, int x, int y, long x, y, length, register unsigned short * src)
 {
     struct rectangle R;
     if (((unsigned long)src) & 1)
@@ -313,10 +296,7 @@ register unsigned short *src;
   Return value: The number of bits stored in 'dest'.
 */
 
-static long GetColumn(self, x, y, length, dest)
-struct pixelimage *self;
-long x, y, length;
-register unsigned char *dest;
+static long GetColumn(struct pixelimage * self, int x, int y, long x, y, length, register unsigned char * dest)
 {
     register unsigned char *src;		/* where to fetch next source byte */
     register unsigned char *send;	/* stop just before fetching this */
@@ -369,10 +349,7 @@ register unsigned char *dest;
       If 'dest' is not on a halfword boundary, returns -1;
 */
 
-long pixelimage__GetColumn(self, x, y, length, dest)
-struct pixelimage *self;
-long x, y, length;
-register unsigned short *dest;
+long pixelimage__GetColumn(struct pixelimage * self, int x, int y, long x, y, length, register unsigned short * dest)
 {
     if (((unsigned long)dest)&1)
 	/* dest not aligned */
@@ -398,10 +375,7 @@ register unsigned short *dest;
   Return value: The number of bits stored from 'src'.
 */
 
-static long SetColumn(self, x, y, length, src)
-struct pixelimage *self;
-long x, y, length;
-register unsigned char *src;
+static long SetColumn(struct pixelimage * self, int x, int y, long x, y, length, register unsigned char * src)
 {
     register unsigned char *dest;	/* byte to receive incoming bit */
     register unsigned char vbit;	/* which bit to test in v */
@@ -446,10 +420,7 @@ register unsigned char *src;
       If 'src' is not on a halfword boundary, returns -1;
 */
 
-long pixelimage__SetColumn(self, x, y, length, src)
-struct pixelimage *self;
-long x, y, length;
-register unsigned short *src;
+long pixelimage__SetColumn(struct pixelimage * self, int x, int y, long x, y, length, register unsigned short * src)
 {
     struct rectangle R;
     if (((unsigned long)src) & 1)
@@ -480,10 +451,7 @@ register unsigned short *src;
 	but I wouldn't count on it.)
 */
 
-void pixelimage__PaintSubraster(self, sub, byte)
-struct pixelimage *self;
-struct rectangle *sub;
-long byte;
+void pixelimage__PaintSubraster(struct pixelimage * self, struct rectangle * sub, long byte)
 {
     unsigned short buffer[BUFBYTES>>1];
     register unsigned char *bx, *bend;
@@ -505,9 +473,7 @@ long byte;
   change ones to zeros and zeros to ones in indicated subraster 
 */
 
-void pixelimage__InvertSubraster(self, sub)
-register struct pixelimage *self;
-struct rectangle *sub;
+void pixelimage__InvertSubraster(register struct pixelimage * self, struct rectangle * sub)
 {
     unsigned short buffer[BUFBYTES>>1];
     register unsigned char *bx, *bend;
@@ -534,10 +500,7 @@ static unsigned char GrayScalePatterns[2][15] ={
     0xAA, 0xB6, 0xDB, 0xDD, 0xEF, 0xFB, 0xFF}
 };
 
-void pixelimage__GraySubraster(self, sub, level)
-struct pixelimage *self;
-struct rectangle *sub;
-long level;
+void pixelimage__GraySubraster(struct pixelimage * self, struct rectangle * sub, long level)
 {
     unsigned short line0[BUFBYTES>>1], line1[BUFBYTES>>1];
     unsigned char byte0, byte1;
@@ -583,9 +546,7 @@ long level;
 /* pixelimage__MirrorLRSubraster(self, sub)
   reflect the subraster about its vertical axis 
 */
-void pixelimage__MirrorLRSubraster(self, sub)
-register struct pixelimage *self;
-struct rectangle *sub;
+void pixelimage__MirrorLRSubraster(register struct pixelimage * self, struct rectangle * sub)
 {
     unsigned short bufferleft[BUFBYTES>>1], bufferright[BUFBYTES>>1];
     register long colleft, colright;
@@ -609,9 +570,7 @@ struct rectangle *sub;
 /* pixelimage__MirrorUDSubraster(self, sub)
   reflect the subraster about its horizontal axis 
 */
-void pixelimage__MirrorUDSubraster(self, sub)
-struct pixelimage *self;
-struct rectangle *sub;
+void pixelimage__MirrorUDSubraster(struct pixelimage * self, struct rectangle * sub)
 {
     unsigned short buffer1[BUFBYTES>>1], buffer2[BUFBYTES>>1];
     long row1, row2;
@@ -636,10 +595,7 @@ struct rectangle *sub;
   copies the subraster to the target raster, interchanging rows and columns.
   If the target is too small in either dimension, it is Resized. 
 */
-void pixelimage__GetRotatedSubraster(self, sub, target)
-register struct pixelimage *self;
-struct rectangle *sub;
-struct pixelimage *target;
+void pixelimage__GetRotatedSubraster(register struct pixelimage * self, struct rectangle * sub, struct pixelimage * target)
 {
     register long col;
     register long W;
@@ -668,11 +624,7 @@ struct pixelimage *target;
 /* Scales the subraster by scaling factors and puts result into
   target. Target is resized as needed. Can copy form self to self.
 */
-void pixelimage__GetScaledSubraster(self, sub, NewW, NewH, target)
-struct pixelimage *self;
-struct rectangle *sub;
-long NewW, NewH;
-struct pixelimage *target;
+void pixelimage__GetScaledSubraster(struct pixelimage * self, struct rectangle * sub, int NewW, long NewW, NewH, struct pixelimage * target)
 {
     unsigned short bitbuf[BUFBYTES>>1];
     long x, y, width, height;
@@ -792,12 +744,7 @@ struct pixelimage *target;
   the (x, y) coordinates (as an offset from the origin of self) using
   the function given.
 */
-void pixelimage__BlitSubraster(self, x, y, source, sub, function)
-struct pixelimage *self;
-long x, y;
-struct pixelimage *source;
-struct rectangle *sub;
-int function;
+void pixelimage__BlitSubraster(struct pixelimage * self, int x, long x, y, struct pixelimage * source, struct rectangle * sub, int function)
 {
     struct rectangle R;
     long width, height;
@@ -994,9 +941,7 @@ int function;
   Returns TRUE always because there is 
   no memory allocation to fail.
 */
-boolean pixelimage__InitializeObject(classID, self)
-struct classheader	*classID;
-register struct pixelimage  *self;
+boolean pixelimage__InitializeObject(struct classheader	* classID, register struct pixelimage  * self)
 {
     self->pixelsPerRow = 0;
     self->RowWidth = 0;
@@ -1013,9 +958,7 @@ register struct pixelimage  *self;
   does processing for the middle of pixelimage_Destroy.
       Frees the 'bits', if any.
 */
-void pixelimage__FinalizeObject(ClassID,  self)
-struct classheader *ClassID;
-register struct pixelimage *self;
+void pixelimage__FinalizeObject(struct classheader * ClassID, register struct pixelimage * self)
 {
     if (self->bits != NULL)
 	free (self->bits);
@@ -1028,9 +971,7 @@ register struct pixelimage *self;
       The raster is NOT initialized to any particular value. 
       Returns the new pixelimage object. 
 */
-struct pixelimage *pixelimage__Create(ClassID, width, height)
-struct classheader *ClassID;
-long width, height;
+struct pixelimage *pixelimage__Create(struct classheader * ClassID, int width, long width, height)
 {
     struct pixelimage *ras = pixelimage_New();
     ras->pixelsPerRow = width;
@@ -1047,9 +988,7 @@ long width, height;
 
   The client must call NotifyObservers;  it will clear out ChangedRect.
 */
-void pixelimage__NotifyObservers(self, status)
-register struct pixelimage *self;
-long status;
+void pixelimage__NotifyObservers(register struct pixelimage * self, long status)
 {
     super_NotifyObservers(self, status);
     rectangle_EmptyRect(&self->ChangedRect);
@@ -1062,9 +1001,7 @@ long status;
   The upper left corners of the old and new images
   are aligned, with truncation or padding with WHITE. 
 */
-void pixelimage__Resize(self, width, height)
-register struct pixelimage *self;
-long width, height;
+void pixelimage__Resize(register struct pixelimage * self, int width, long width, height)
 {
     long w, h, i;
     unsigned short trow[BUFBYTES>>1];
@@ -1102,8 +1039,7 @@ long width, height;
   make a new pixelimage with all fields the same
   (both point to same bits array)
 */
-struct pixelimage *pixelimage__Clone(self)
-register struct pixelimage *self;
+struct pixelimage *pixelimage__Clone(register struct pixelimage * self)
 {
     struct pixelimage *new = (struct pixelimage *) class_NewObject(class_GetTypeName(self));
     new->numRows = self->numRows;
@@ -1117,8 +1053,7 @@ register struct pixelimage *self;
 /* pixelimage__Clear(self)
   Sets all the raster image to WHITE 
 */
-void pixelimage__Clear(self)
-register struct pixelimage *self;
+void pixelimage__Clear(register struct pixelimage * self)
 {
     register unsigned char *rowx;
     register long W = self->RowWidth;
@@ -1144,17 +1079,13 @@ register struct pixelimage *self;
 }
 
 
-long pixelimage__GetPixel(self, x, y)
-register struct pixelimage *self;
-register long x, y;
+long pixelimage__GetPixel(register struct pixelimage * self, int x, register long x, y)
 {
     register unsigned char *bytePtr = (self->bits) + (self->RowWidth*y) + (x >> 3);
     return (*bytePtr & bitmask[x & 0x7]) ? 1 : 0;
 }
 
-void pixelimage__SetPixel(self, x, y, pixelValue)
-register struct pixelimage *self;
-register long x, y, pixelValue;
+void pixelimage__SetPixel(register struct pixelimage * self, int x, int y, register long x, y, pixelValue)
 {
     struct rectangle R;
     register unsigned char *bytePtr;

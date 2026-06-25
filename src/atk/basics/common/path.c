@@ -62,16 +62,14 @@ static struct homestruct *homes = NULL;
 #define INITIALCHUNK 30 /* files */
 
 	static char *
-strappend(dest, src)
-	char *dest, *src;
+strappend(int dest, char *dest, * src)
 {
 	strcpy(dest, src);
 	return dest+strlen(dest);
 }
 
 
-static void FreeList(list)
-    char **list;
+static void FreeList(char ** list)
 {
     long i;
 
@@ -83,8 +81,7 @@ static void FreeList(list)
     }
 } /* path__FreeList */
 
-static void FreeFilesAndDirs(self)
-    struct path *self;
+static void FreeFilesAndDirs(struct path * self)
 {
     FreeList(self->files);
     FreeList(self->dirs);
@@ -92,9 +89,7 @@ static void FreeFilesAndDirs(self)
     self->dirs = NULL;
 } /* FreeFilesAndDirs */
 
-static void SetPath(self, filepath)
-    struct path *self;
-    char *filepath;
+static void SetPath(struct path * self, char * filepath)
 {
     if (self->filepath != NULL) {
         free(self->filepath);
@@ -121,9 +116,7 @@ static void SetPath(self, filepath)
 
 } /* SetPath */
 
-void path__InputTruncatedPathCache(c, fp)
-    struct classheader *c;
-    FILE *fp;
+void path__InputTruncatedPathCache(struct classheader * c, FILE * fp)
 {
     char lens[MAXPATHLEN];
     char fpath[MAXPATHLEN];
@@ -173,9 +166,7 @@ void path__InputTruncatedPathCache(c, fp)
 
 } /* path__InputTruncatedPathCache */
 
-void path__OutputTruncatedPathCache(c, fp)
-    struct classheader *c;
-    FILE *fp;
+void path__OutputTruncatedPathCache(struct classheader * c, FILE * fp)
 {
     struct homestruct *aHome;
 
@@ -186,9 +177,7 @@ void path__OutputTruncatedPathCache(c, fp)
     fprintf(fp, "no more home directories\n");
 } /* path__OutputTruncatedPathCache */
 
-boolean path__InitializeObject(c, self)
-    struct classheader *c;
-    struct path *self;
+boolean path__InitializeObject(struct classheader * c, struct path * self)
 {
     self->filepath = NULL;
     self->truncatedPath = NULL;
@@ -204,9 +193,7 @@ boolean path__InitializeObject(c, self)
     return TRUE;
 } /* path__InitializeObject */
 
-struct path *path__Create(c, filepath)
-    struct classheader *c;
-    char *filepath;
+struct path *path__Create(struct classheader * c, char * filepath)
 {
     struct path *self = path_New();
 
@@ -345,8 +332,7 @@ static char *LastSeg[NSTATES][NTYPES]
 
 
 	static void 
-FoldName (path)
-	register char *path;		/* path to fold */
+FoldName(register char * path)
 {
 	enum state CurrState, NextState;
 	char SavedY [MAXPATHLEN];
@@ -490,8 +476,7 @@ FoldName (path)
 
 */
 
-static void FoldName (path)
-    register char *path;			/* path to fold */
+static void FoldName(register char * path)
 {
     char   *pStart,		/* points to first char of a component */
 	   *pEnd;		/* points to first char following
@@ -565,12 +550,7 @@ static void FoldName (path)
 }
 #endif
 
-static long SetNewHome(shortPathName, name, cell, dir, dirlen)
-char *shortPathName;
-char *name;
-char *cell;
-char *dir;
-long dirlen;
+static long SetNewHome(char * shortPathName, char * name, char * cell, char * dir, long dirlen)
 {
     struct homestruct *newHome;
     long addedLen = 1;
@@ -608,12 +588,7 @@ long dirlen;
  * Also, call FreeTruncatedPaths() to free up the cached entries.
  */
 
-char *path__TruncatePath(c, frompath, result, limit, tryHome)
-    struct classheader *c;
-    char *frompath;
-    char *result;
-    long limit;
-    boolean tryHome;
+char *path__TruncatePath(struct classheader * c, char * frompath, char * result, long limit, boolean tryHome)
 {
     char shorter[MAXPATHLEN];
     char foldedpath[MAXPATHLEN];
@@ -783,8 +758,7 @@ char *path__TruncatePath(c, frompath, result, limit, tryHome)
     return result;
 } /* path__TruncatePath */
 
-void path__FreeTruncatedPaths(c)
-    struct classheader *c;
+void path__FreeTruncatedPaths(struct classheader * c)
 {
     struct homestruct *home;
     struct homestruct *nexthome;
@@ -798,10 +772,7 @@ void path__FreeTruncatedPaths(c)
     homes = NULL;
 } /* path__FreeTruncatedPaths */
 
-boolean path__ModifyToParentDirectory(c, path, isDirectory)
-    struct classheader *c;
-    char *path;
-    boolean isDirectory;
+boolean path__ModifyToParentDirectory(struct classheader * c, char * path, boolean isDirectory)
 {
     long len = strlen(path);
 
@@ -820,9 +791,7 @@ boolean path__ModifyToParentDirectory(c, path, isDirectory)
     return (len > 0);
 } /* path__ModifyToParentDirectory */
 
-static void *HandleCellTwiddle(fromString, toString)
-char *fromString;
-char *toString;
+static void *HandleCellTwiddle(char * fromString, char * toString)
 {
     char *home=NULL;
     struct passwd *passwd;
@@ -893,10 +862,7 @@ char *toString;
      }
 }
 
-static void HandleRelativeFileName(fromString, toString, basefile)
-char *fromString;
-char *toString;
-char *basefile;
+static void HandleRelativeFileName(char * fromString, char * toString, char * basefile)
 {
     register char *slash;
 
@@ -922,11 +888,7 @@ char *basefile;
     if the file name needs to be unfolded.
 */
 
-char *path__UnfoldFileName(c, fromString, toString, basefile) 
-struct classheader *c;
-char *fromString;
-char *toString;
-char *basefile;
+char *path__UnfoldFileName(struct classheader * c, char * fromString, char * toString, char * basefile)
 {
     char *fs = fromString;
     char tempstr[2*MAXPATHLEN+1];
@@ -1001,21 +963,15 @@ char *basefile;
     return toString;
 } /* path__UnfoldFileName */
 
-void path__ReleaseFiles(self, files)
-    struct path *self;
-    char **files;
+void path__ReleaseFiles(struct path * self, char ** files)
 {
 } /* path__ReleaseFiles */
 
-void path__ReleaseDirs(self, dirs)
-    struct path *self;
-    char **dirs;
+void path__ReleaseDirs(struct path * self, char ** dirs)
 {
 } /* path__ReleaseDirs */
 
-void path__FinalizeObject(c, self)
-    struct classheader *c;
-    struct path *self;
+void path__FinalizeObject(struct classheader * c, struct path * self)
 {
     if (self->filepath != NULL) {
         free(self->filepath);
@@ -1030,9 +986,7 @@ void path__FinalizeObject(c, self)
     return;
 } /* path__FinalizeObject */
 
-int CompareFileNames(a, b)
-    char **a;
-    char **b;
+int CompareFileNames(char ** a, char ** b)
 {
     /* this puts .files before all others */
 
@@ -1044,9 +998,7 @@ int CompareFileNames(a, b)
     }
 } /* CompareFileNames */
 
-boolean path__Scan(self, statEverything)
-    struct path *self;
-    boolean statEverything;
+boolean path__Scan(struct path * self, boolean statEverything)
 {
     char dirbuf[MAXPATHLEN];
     char fullName[MAXPATHLEN];
@@ -1203,9 +1155,7 @@ boolean path__Scan(self, statEverything)
     return noProblems;
 } /* path__Scan */
 
-void path__Input(self, fp)
-struct path *self;
-FILE *fp;
+void path__Input(struct path * self, FILE * fp)
 {
     char path[MAXPATHLEN];
     long len;
@@ -1252,9 +1202,7 @@ FILE *fp;
 
 } /* path__Input */
 
-void path__Output(self, fp)
-struct path *self;
-FILE *fp;
+void path__Output(struct path * self, FILE * fp)
 {
     if (self->knowIsDir) {
         fprintf(fp, "is directory: %d\n", self->isDir);
@@ -1279,8 +1227,7 @@ FILE *fp;
 
 } /* path__Output */
 
-boolean path__IsDirectory(self)
-struct path *self;
+boolean path__IsDirectory(struct path * self)
 {
     if (!self->knowIsDir) {
         struct stat statBuf;
@@ -1295,8 +1242,7 @@ struct path *self;
     return self->isDir;
 } /* path__IsDirectory */
 
-char **path__GetFiles(self)
-struct path *self;
+char **path__GetFiles(struct path * self)
 {
     if (!self->haveScanned) {
         path_Scan(self, FALSE);
@@ -1304,8 +1250,7 @@ struct path *self;
     return self->files;
 } /* path__GetFiles */
 
-char **path__GetDirs(self)
-struct path *self;
+char **path__GetDirs(struct path * self)
 {
     if (!self->haveScanned) {
         path_Scan(self, FALSE);
@@ -1313,8 +1258,7 @@ struct path *self;
     return self->dirs;
 } /* path__GetDirs */
 
-long path__GetNumFiles(self)
-struct path *self;
+long path__GetNumFiles(struct path * self)
 {
     if (!self->haveScanned) {
         path_Scan(self, FALSE);
@@ -1322,8 +1266,7 @@ struct path *self;
     return self->numFiles;
 } /* path__GetNumFiles */
 
-long path__GetNumDirs(self)
-struct path *self;
+long path__GetNumDirs(struct path * self)
 {
     if (!self->haveScanned) {
         path_Scan(self, FALSE);
@@ -1331,8 +1274,7 @@ struct path *self;
     return self->numDirs;
 } /* path__GetNumDirs */
 
-char *path__GetTruncatedPath(self)
-struct path *self;
+char *path__GetTruncatedPath(struct path * self)
 {
     if (self->truncatedPath == NULL && self->filepath != NULL) {
         self->truncatedPath = path_TruncatePath(self->filepath, NULL, MAXPATHLEN, TRUE);

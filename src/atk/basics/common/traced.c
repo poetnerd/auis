@@ -31,25 +31,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <class.h>
 #include "traced.eh"
 
-boolean traced__Destroyp(classID, self)
-struct classheader *classID;
-struct traced *self;
+boolean traced__Destroyp(struct classheader * classID, struct traced * self)
 {
     if(self->refcount==0) return TRUE;
     return (--self->refcount)==0;
 }
 
-boolean traced__InitializeObject(classID, self)
-struct classheader *classID;
-struct traced *self;
+boolean traced__InitializeObject(struct classheader * classID, struct traced * self)
 {
     self->refcount=1;
     return TRUE;
 }
 
-void traced__FinalizeObject(classID, self)
-struct classheader *classID;
-struct traced *self;
+void traced__FinalizeObject(struct classheader * classID, struct traced * self)
 {
     return;
 }

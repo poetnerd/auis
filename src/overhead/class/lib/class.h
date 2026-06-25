@@ -99,8 +99,6 @@ typedef unsigned long class_VersionNumberType;
 #endif /* AIX */
 
 extern void free();
-extern char *realloc();
-extern char *malloc();
 #endif /* _IBMR2 */
 
 extern int errno;

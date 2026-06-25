@@ -112,12 +112,7 @@ static byte pc2nc[256],r1[256],g1[256],b1[256];
 #define MONO(rd,gn,bl) (((rd)*11 + (gn)*16 + (bl)*5) >> 5)  /*.33R+ .5G+ .17B*/
 
 /*************************************************************/
-int WriteGIF(fp, pic, w, h, rmap, gmap, bmap, numcols, colorstyle)
-FILE *fp;
-byte *pic;
-int   w,h;
-byte *rmap, *gmap, *bmap;
-int   numcols, colorstyle;
+int WriteGIF(FILE * fp, byte * pic, int w, int h, int rmap, int gmap, byte *rmap, *gmap, * bmap, int numcols, int   numcols, colorstyle)
 {
   int RWidth, RHeight;
   int LeftOfs, TopOfs;
@@ -236,9 +231,7 @@ int   numcols, colorstyle;
 
 
 /******************************/
-static void putword(w, fp)
-int w;
-FILE *fp;
+static void putword(int w, FILE * fp)
 {
   /* writes a 16-bit integer in GIF order (LSB first) */
   fputc(w & 0xff, fp);
@@ -329,11 +322,7 @@ static int EOFCode;
 
 
 /********************************************************/
-static void compress(init_bits, outfile, data, len)
-int   init_bits;
-FILE *outfile;
-byte *data;
-int   len;
+static void compress(int init_bits, FILE * outfile, byte * data, int len)
 {
   register long fcode;
   register int i = 0;
@@ -463,8 +452,7 @@ unsigned long masks[] = { 0x0000, 0x0001, 0x0003, 0x0007, 0x000F,
                                   0x01FF, 0x03FF, 0x07FF, 0x0FFF,
                                   0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF };
 
-static void output(code)
-int code;
+static void output(int code)
 {
   cur_accum &= masks[cur_bits];
 
@@ -531,8 +519,7 @@ static void cl_block ()             /* table clear for block compress */
 
 
 /********************************/
-static void cl_hash(hsize)          /* reset code table */
-register count_int hsize;
+static void cl_hash(register count_int hsize)
 {
   register count_int *htab_p = htab+hsize;
   register long i;
@@ -592,8 +579,7 @@ static char accum[ 256 ];
  * Add a character to the end of the current packet, and if it is 254
  * characters, flush the packet to disk.
  */
-static void char_out(c)
-int c;
+static void char_out(int c)
 {
   accum[ a_count++ ] = c;
   if( a_count >= 254 ) 

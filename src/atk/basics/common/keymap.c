@@ -58,9 +58,7 @@ struct keymap_fulltable *NewFullTable()
     return newTable;
 }
 
-static void DoInitialize(self, sparsep)
-    struct keymap *self;
-    boolean sparsep;
+static void DoInitialize(struct keymap * self, boolean sparsep)
 {
 
     self->sparsep = sparsep;
@@ -73,17 +71,13 @@ static void DoInitialize(self, sparsep)
         self->table.full = NewFullTable();
 }
 
-boolean keymap__InitializeObject(classID, self)
-    struct classheader *classID;
-    struct keymap *self;
+boolean keymap__InitializeObject(struct classheader * classID, struct keymap * self)
 {
     DoInitialize(self, TRUE);
     return TRUE;
 }
 
-void keymap__FinalizeObject(classID, self)
-struct classheader *classID;
-struct keymap *self;
+void keymap__FinalizeObject(struct classheader * classID, struct keymap * self)
 {
     int i;
     if(self->sparsep) {
@@ -100,12 +94,7 @@ struct keymap *self;
     }
 }
 
-static boolean bindKey(self,keys,obj,rock,type)
-    struct keymap *self;
-    unsigned char *keys;
-    struct basicobject *obj;
-    long rock;
-    enum keymap_Types type;
+static boolean bindKey(struct keymap * self, unsigned char * keys, struct basicobject * obj, long rock, enum keymap_Types type)
 {
     enum keymap_Types e;
     register unsigned char *p;
@@ -131,11 +120,7 @@ static boolean bindKey(self,keys,obj,rock,type)
     return TRUE;
 }
 
-boolean keymap__BindToKey(self, keys, pe, rock)
-    struct keymap *self;
-    char *keys;
-    struct proctable_Entry *pe;
-    long rock;
+boolean keymap__BindToKey(struct keymap * self, char * keys, struct proctable_Entry * pe, long rock)
 {
 
     if (keys == NULL || *keys == 0)
@@ -144,15 +129,12 @@ boolean keymap__BindToKey(self, keys, pe, rock)
     return TRUE;
 }
 
-void keymap__RemoveBinding(self,keys)
-struct keymap *self;
-char *keys;
+void keymap__RemoveBinding(struct keymap * self, char * keys)
 {
     bindKey(self,keys,NULL,NULL,keymap_Empty);
 }
 
-static ExpandTable(self)
-    struct keymap *self;
+static ExpandTable(struct keymap * self)
 {
 
 /* Don't even try to expand a full table... */
@@ -176,12 +158,7 @@ static ExpandTable(self)
     }
 }
 
-void keymap__InsertObject(self, slot, object, rock, type)
-    struct keymap *self;
-    long slot;
-    struct basicobject *object;
-    long rock;
-    enum keymap_Types type;
+void keymap__InsertObject(struct keymap * self, long slot, struct basicobject * object, long rock, enum keymap_Types type)
 {
 
     slot &= KEYMASK;

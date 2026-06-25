@@ -91,9 +91,7 @@ static int allocProfBuf(size)
 #endif /* SYSV */
 }
 
-int profile__StartClass(classId,classname,filename)
-struct classheader *classId;
-char *classname,*filename;
+int profile__StartClass(struct classheader * classId, int classname, char *classname,* filename)
 {
 #ifndef SYSV
     struct classinfo *info=class_Load(classname);
@@ -109,11 +107,7 @@ char *classname,*filename;
 #endif /* SYSV */
 }
 
-int profile__Start(classId,textbase,textlength,filename)
-struct classheader *classId;
-char *textbase;
-long textlength;
-char *filename;
+int profile__Start(struct classheader * classId, char * textbase, long textlength, char * filename)
 {
 #ifndef SYSV
     if(textbase == NULL){
@@ -146,14 +140,12 @@ char *filename;
 #endif /* SYSV */
 }
 
-int profile__Active(classId)
-struct classheader *classId;
+int profile__Active(struct classheader * classId)
 {
     return (profBuf!=NULL);
 }
 
-int profile__Stop(classId)
-struct classheader *classId;
+int profile__Stop(struct classheader * classId)
 {
 #ifndef SYSV
     if(profBuf!=NULL){

@@ -57,10 +57,7 @@ struct cursor *self; {
 }
 
 
-void cursor__SetGlyph(self,fd,ch)
-struct cursor *self;
-struct fontdesc *fd;
-short ch;
+void cursor__SetGlyph(struct cursor * self, struct fontdesc * fd, short ch)
 {
      if (self->fillFont != fd || self->fillChar != ch)  {
 	self->fillFont = fd;
@@ -69,9 +66,7 @@ short ch;
      }
 }
 
-void cursor__SetStandard(self,ch)
-struct cursor *self;
-short ch;
+void cursor__SetStandard(struct cursor * self, short ch)
 {
     short c = lookup(ch);
 
@@ -82,9 +77,7 @@ short ch;
     }
 }
 
-boolean cursor__InitializeObject(classID,self)
-struct classheader *classID;
-struct cursor *self;
+boolean cursor__InitializeObject(struct classheader * classID, struct cursor * self)
 {
 	self->view = NULL;
 	self->posted = NULL;
@@ -97,9 +90,7 @@ struct cursor *self;
 	return TRUE;
 }
 
-struct cursor *cursor__Create(classID, view)
-struct classheader *classID;
-struct view *view;
+struct cursor *cursor__Create(struct classheader * classID, struct view * view)
 {
 
 	struct cursor *c = im_GetCursor();
@@ -107,9 +98,7 @@ struct view *view;
 	return(c);
 }
 
-void cursor__FinalizeObject(classID,self)
-struct classheader *classID;
-struct cursor *self;
+void cursor__FinalizeObject(struct classheader * classID, struct cursor * self)
 {
 	if(cursor_IsPosted(self)) im_RetractCursor(self->posted,self);
 	if(cursor_IsWindowCursor(self)) im_SetWindowCursor(self->windowim,NULL);

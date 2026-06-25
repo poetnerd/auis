@@ -152,10 +152,15 @@ def parse_type_declarations(decls_text):
 
         for name in name_part.split(','):
             name = name.strip()
+            array_suffix = ''
+            if '[]' in name:
+                array_suffix = '[]'
+                name = name.replace('[]', '').strip()
             if name.startswith('*'):
-                type_map[name.lstrip('*').strip()] = f"{type_part} *{name.lstrip('*').strip()}"
+                clean_name = name.lstrip('*').strip()
+                type_map[clean_name] = f"{type_part} *{clean_name}{array_suffix}"
             else:
-                type_map[name] = f"{type_part} {name}"
+                type_map[name] = f"{type_part} {name}{array_suffix}"
 
     return type_map
 

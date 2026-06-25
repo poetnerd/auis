@@ -69,15 +69,7 @@ struct mpitem {
 };
 
 static void 
-ExplodeMenuString(str, paneStr, paneStrLen, panePriority, 
-		  selectionStr, selectionStrLen, selectionPriority)
-char *str;
-char *paneStr;
-long paneStrLen;
-long *panePriority;
-char *selectionStr;
-long selectionStrLen;
-long *selectionPriority;
+ExplodeMenuString(char * str, char * paneStr, long paneStrLen, long * panePriority, char * selectionStr, long selectionStrLen, long * selectionPriority)
 {
     char *p;
     char *pLimit;
@@ -134,8 +126,7 @@ long *selectionPriority;
 static struct mpitem *currentmp = NULL; 
 static struct mpitem *firstmp = NULL; 
 
-static struct mlitem *mlitem_New(s1, s2)
-char *s1, *s2;
+static struct mlitem *mlitem_New(int s1, char *s1, * s2)
 {
   struct mlitem *ml;
   ml = (struct mlitem *) malloc(sizeof(struct mlitem));
@@ -154,9 +145,7 @@ char *s1, *s2;
   return ml;
 }
 
-static  struct mlitem *mlitem_Exists(mp, str)
-struct mpitem *mp;
-char *str;
+static  struct mlitem *mlitem_Exists(struct mpitem * mp, char * str)
 {
     struct mlitem *tmpml = mp->ml;
     while(tmpml) {
@@ -168,9 +157,7 @@ char *str;
     return tmpml;
 }
 
-static void mlitem_Add(mp, ml)
-struct mpitem *mp;
-struct mlitem *ml;
+static void mlitem_Add(struct mpitem * mp, struct mlitem * ml)
 {
   struct mlitem *tmpml = mp->ml;
   if (mp == NULL || ml == NULL)
@@ -184,8 +171,7 @@ struct mlitem *ml;
   }
 }
 
-static struct mpitem *mpitem_New(str)
-char *str;
+static struct mpitem *mpitem_New(char * str)
 {
   struct mpitem *mp;
   mp = (struct mpitem *) malloc(sizeof(struct mpitem));
@@ -199,8 +185,7 @@ char *str;
   return mp;
 }
 
-static  struct mpitem *mpitem_Exists(str)
-char *str;
+static  struct mpitem *mpitem_Exists(char * str)
 {
   struct mpitem *tmp = firstmp;
 
@@ -210,8 +195,7 @@ char *str;
   return tmp;
 }
 
-static short mpitem_DoResolv(str)
-char *str;
+static short mpitem_DoResolv(char * str)
 {
   struct mpitem *tmp = NULL;
   if ((tmp=mpitem_Exists(str)) != NULL)
@@ -222,9 +206,7 @@ char *str;
 #define INITIALSIZE 512
 
 /* Hacked routine to rea a "whole file" into memory. */
-static char *MapMenuFile(filename, fileLength)
-    char *filename;
-    long *fileLength; /* OUT */
+static char *MapMenuFile(char * filename, long * fileLength)
 {
 
     int fd;
@@ -277,9 +259,7 @@ static char *MapMenuFile(filename, fileLength)
 
 #define UnmapMenuFile(mappedMemory) free(mappedMemory)
 
-static int ReadMenuFile(filename, executeImmediately)
-char *filename;
-boolean executeImmediately;
+static int ReadMenuFile(char * filename, boolean executeImmediately)
 {
 
     char *buffer;
@@ -379,9 +359,7 @@ static long nextMLVersion = 0;
 static boolean initedmenufile=FALSE;
 static boolean translatemenus=TRUE;
 
-boolean menulist__InitializeObject(classID, self)
-struct classheader *classID;
-struct menulist *self;
+boolean menulist__InitializeObject(struct classheader * classID, struct menulist * self)
 {
     if(!initedmenufile) {
 	InitMenuFile();
@@ -405,9 +383,7 @@ struct menulist *self;
     return TRUE;
 }
 
-void menulist__FinalizeObject(classID, self)
-    struct classheader *classID;
-    struct menulist *self;
+void menulist__FinalizeObject(struct classheader * classID, struct menulist * self)
 {
 
     if (*self->refcount == 1) {
@@ -420,17 +396,13 @@ void menulist__FinalizeObject(classID, self)
     menulist_ClearChain(self);
 }
 
-void menulist__SetView(self, view)
-    struct menulist *self;
-    struct view *view;
+void menulist__SetView(struct menulist * self, struct view * view)
 {
 
     self->object = (struct basicobject *) view;
 }
 
-struct menulist *menulist__Create(classID, view)
-    struct classheader *classID;
-    struct view *view;
+struct menulist *menulist__Create(struct classheader * classID, struct view * view)
 {
 
     struct menulist *thisMenu;
@@ -440,9 +412,7 @@ struct menulist *menulist__Create(classID, view)
     return thisMenu;
 }
 
-struct menulist *menulist__DuplicateML(self, view)
-    struct menulist *self;
-    struct view *view;
+struct menulist *menulist__DuplicateML(struct menulist * self, struct view * view)
 {
 
     struct menulist *newMenus;
@@ -458,8 +428,7 @@ struct menulist *menulist__DuplicateML(self, view)
 /* Copy a menu list's menu items. Used to implement copy-on-write for item lists.
  * This routine should only be called when *menulist->refcount > 1
  */
-static void copyItems(menulist)
-struct menulist *menulist;
+static void copyItems(struct menulist * menulist)
 {
     struct itemlist *traverse = menulist->menus;
 
@@ -482,20 +451,13 @@ struct menulist *menulist;
     *menulist->refcount = 1;
 }
 
-static void SetPrio(p, sp)
-int p;
-char *sp;
+static void SetPrio(int p, char * sp)
 {
     if(p<1) sp[0]='\0';
     else sprintf(sp, "~%d", p);
 }
     
-void menulist__AddToML(self, string, menuProc, functionData, mask)
-    struct menulist *self;
-    char *string;
-    struct proctable_Entry *menuProc;
-    long functionData; /* Actually any 32 bit crufty... */
-    long mask;
+void menulist__AddToML(struct menulist * self, char * string, struct proctable_Entry * menuProc, long functionData, long mask)
 {
 
     struct itemlist *thisItem;
@@ -564,9 +526,7 @@ void menulist__AddToML(self, string, menuProc, functionData, mask)
     self->version = self->menuVersion = nextMLVersion;
 }
 
-void menulist__DeleteFromML(self, string)
-    struct menulist *self;
-    char *string;
+void menulist__DeleteFromML(struct menulist * self, char * string)
 {
 
     struct itemlist *traverse, **previous = &(self->menus);
@@ -589,9 +549,7 @@ void menulist__DeleteFromML(self, string)
     }
 }
 
-boolean menulist__SetMask(self,mask)
-struct menulist *self;
-long mask;
+boolean menulist__SetMask(struct menulist * self, long mask)
 {
     if(mask!=self->selectMask){
 	self->selectMask=mask;
@@ -600,8 +558,7 @@ long mask;
 	return FALSE;
 }
 
-void menulist__ClearML(self)
-    struct menulist *self;
+void menulist__ClearML(struct menulist * self)
 {
 
     struct itemlist *traverse, *next;
@@ -626,11 +583,7 @@ void menulist__ClearML(self)
     self->version = self->menuVersion = nextMLVersion;
 }
 
-boolean menulist__NextME(self, outString, outData, outProc)
-    struct menulist *self;
-    char **outString;
-    long *outData;
-    struct proctable_Entry **outProc;
+boolean menulist__NextME(struct menulist * self, char ** outString, long * outData, struct proctable_Entry ** outProc)
 {
 
     if (self->curMenu != NULL) {
@@ -644,8 +597,7 @@ boolean menulist__NextME(self, outString, outData, outProc)
         return FALSE;
 }
 
-struct menulist *menulist__NextBeforeMC(self)
-    struct menulist *self;
+struct menulist *menulist__NextBeforeMC(struct menulist * self)
 {
 
     register struct menulist *value;
@@ -658,8 +610,7 @@ struct menulist *menulist__NextBeforeMC(self)
     return NULL;
 }
 
-struct menulist *menulist__NextAfterMC(self)
-    struct menulist *self;
+struct menulist *menulist__NextAfterMC(struct menulist * self)
 {
 
     register struct menulist *value;
@@ -672,10 +623,7 @@ struct menulist *menulist__NextAfterMC(self)
     return NULL;
 }
 
-void menulist__ChainBeforeML(self, chainee, key)
-    struct menulist *self;
-    struct menulist *chainee;
-    long key;
+void menulist__ChainBeforeML(struct menulist * self, struct menulist * chainee, long key)
 {
 
     struct headerlist *tempHeader, *next, **previous;
@@ -716,10 +664,7 @@ void menulist__ChainBeforeML(self, chainee, key)
     self->version = nextMLVersion;
 }
 
-void menulist__ChainAfterML(self, chainee, key)
-    struct menulist *self;
-    struct menulist *chainee;
-    long key;
+void menulist__ChainAfterML(struct menulist * self, struct menulist * chainee, long key)
 {
 
     struct headerlist *tempHeader, *next, **previous;
@@ -760,9 +705,7 @@ void menulist__ChainAfterML(self, chainee, key)
     self->version = nextMLVersion;
 }
 
-void menulist__UnchainML(self, key)
-    struct menulist *self;
-    long key;
+void menulist__UnchainML(struct menulist * self, long key)
 {
 
     struct headerlist *traverse, **previous;
@@ -784,9 +727,7 @@ void menulist__UnchainML(self, key)
     }
 }
 
-struct menulist *menulist__GetChainedML(self, key)
-    struct menulist *self;
-    long key;
+struct menulist *menulist__GetChainedML(struct menulist * self, long key)
 {
 
     struct headerlist *traverse;
@@ -800,8 +741,7 @@ struct menulist *menulist__GetChainedML(self, key)
     return NULL;
 }
 
-void menulist__ClearChain(self)
-    struct menulist *self;
+void menulist__ClearChain(struct menulist * self)
 {
 
     boolean didSomething = FALSE;
@@ -824,14 +764,12 @@ void menulist__ClearChain(self)
         self->version = nextMLVersion;
 }
 
-int menulist__NextMLVersion(classID)
-    struct classheader *classID;
+int menulist__NextMLVersion(struct classheader * classID)
 {
     return nextMLVersion;
 }
 
-void menulist__IncrementMLVersion(classID)
-    struct classheader *classID;
+void menulist__IncrementMLVersion(struct classheader * classID)
 {
     ++nextMLVersion;
 }

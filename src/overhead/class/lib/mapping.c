@@ -105,9 +105,7 @@ static struct MapEntryStruct * KeyEntryRoots[HASHENTRIES];
  ** keep names that start the same way from hashing to
  ** same value.
  **/
-static int HashName(name)
-char * name;
-
+static int HashName(char * name)
 {
 char * p;
 unsigned int result;
@@ -127,13 +125,7 @@ unsigned int result;
  ** If the entry can not be created return NULL.
  **/
 static struct MapEntryStruct *
-CreateMapEntry(name, key, version, pathindex, data)
-char * name;
-char * key;
-class_VersionNumberType version;
-int pathindex;
-char * data;
-
+CreateMapEntry(char * name, char * key, class_VersionNumberType version, int pathindex, char * data)
 {
 struct MapEntryStruct * NewEntry;
 
@@ -187,9 +179,7 @@ struct MapEntryStruct * NewEntry;
  ** prepended to the load string.
  **/
 static char *
-ConstructLoadString(entry)
-struct MapEntryStruct * entry;
-
+ConstructLoadString(struct MapEntryStruct * entry)
 {
 char * ThisPath;
 char * ThisString;
@@ -305,9 +295,7 @@ int i;
  ** the path cannot be registered.
  **/
 int
-EnterPathEntry(path)
-char * path;
-
+EnterPathEntry(char * path)
 {
 struct PathEntryStruct * ThisEntry;
 int i;
@@ -363,9 +351,7 @@ int i;
  ** something is wrong.
  **/
 char *
-GetPathEntry(index)
-int index; 
-
+GetPathEntry(int index)
 {
 struct PathEntryStruct * ThisEntry;
 int i;
@@ -410,13 +396,7 @@ int i;
  ** existing entry will be used.
  **/
 int
-EnterMapEntry(name, key, version, pathindex, data)
-char * name;
-char * key;
-class_VersionNumberType version;
-int pathindex;
-char * data;
-
+EnterMapEntry(char * name, char * key, class_VersionNumberType version, int pathindex, char * data)
 {
 struct MapEntryStruct * ThisEntry;
 struct MapEntryStruct * NewEntry;
@@ -484,10 +464,7 @@ int KeyHash;
  ** free'd by the caller.
  **/
 char *
-MapByName(name, version)
-char * name;
-class_VersionNumberType version;
-
+MapByName(char * name, class_VersionNumberType version)
 {
 struct MapEntryStruct * ThisEntry;
 
@@ -512,10 +489,7 @@ struct MapEntryStruct * ThisEntry;
  ** free'd by the caller.
  **/
 char *
-MapByKey(key, version)
-char * key;
-class_VersionNumberType version;
-
+MapByKey(char * key, class_VersionNumberType version)
 {
 struct MapEntryStruct * ThisEntry;
 
@@ -539,10 +513,7 @@ struct MapEntryStruct * ThisEntry;
  ** be modified or free'd by the caller.
  **/
 struct MapEntryStruct *
-RetrieveByName(name, version)
-char * name;
-class_VersionNumberType version;
-
+RetrieveByName(char * name, class_VersionNumberType version)
 {
 struct MapEntryStruct * ThisEntry;
 
@@ -572,10 +543,7 @@ struct MapEntryStruct * ThisEntry;
  ** be modified or free'd by the caller.
  **/
 struct MapEntryStruct *
-RetrieveByKey(key, version)
-char * key;
-class_VersionNumberType version;
-
+RetrieveByKey(char * key, class_VersionNumberType version)
 {
 struct MapEntryStruct * ThisEntry;
 
@@ -611,9 +579,7 @@ struct MapEntryStruct * ThisEntry;
  ** to file.
  **/
 void
-DumpMappingInfo(file)
-FILE *file;
-
+DumpMappingInfo(FILE * file)
 {
 struct PathEntryStruct * ThisPath;
 struct MapEntryStruct * ThisMap;
@@ -670,9 +636,7 @@ int i, j;
  ** to file.
  **/
 void
-DumpMappingStats(file)
-FILE *file;
-
+DumpMappingStats(FILE * file)
 {
 struct PathEntryStruct * ThisPath;
 struct MapEntryStruct * ThisMap;

@@ -39,8 +39,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <namespc.ih> 
 #include <stdio.h>
 
+#include <stdlib.h>
 #ifndef _IBMR2
-extern char *malloc();
 #endif /* _IBMR2 */
 
 #define DEBUG_RM 1
@@ -61,14 +61,12 @@ struct namespace * converters;
 /****************************************************************/
 
 #if DEBUG_RM
-void Patom( atom )
-     struct atom * atom;
+void Patom(struct atom * atom)
 {
   printf("%s",atom_Name(atom));
 }
 
-void Plist( list )
-     struct atomlist * list;
+void Plist(struct atomlist * list)
 {
   struct atoms * current = atomlist_TraversalStart(list);
   if (current != NULL)
@@ -87,12 +85,7 @@ void Plist( list )
 /****************************************************************/
 /*		private functions				*/
 /****************************************************************/
-int FindResource( name, namecar, class, classcar, tree )
-     struct atomlist * name;
-     struct atoms * namecar;
-     struct atomlist * class;
-     struct atoms * classcar;
-     struct resourceTree ** tree;
+int FindResource(struct atomlist * name, struct atoms * namecar, struct atomlist * class, struct atoms * classcar, struct resourceTree ** tree)
 {
   short found;
   struct resourceTree * nexttree;
@@ -179,13 +172,7 @@ int FindResource( name, namecar, class, classcar, tree )
 
 
 
-int FindManyResources( resources, name, namecar, class, classcar, tree )
-     struct resourceList * resources;
-     struct atomlist * name;
-     struct atoms * namecar;
-     struct atomlist * class;
-     struct atoms * classcar;
-     struct resourceTree ** tree;
+int FindManyResources(struct resourceList * resources, struct atomlist * name, struct atoms * namecar, struct atomlist * class, struct atoms * classcar, struct resourceTree ** tree)
 {
   short foundAll;
   struct resourceTree * nexttree;
@@ -295,10 +282,7 @@ int FindManyResources( resources, name, namecar, class, classcar, tree )
 
 
 
-int Convertp( toconverters, namespace, index )
-     struct namespace * toconverters;
-     struct namespace * namespace;
-     int index;
+int Convertp(struct namespace * toconverters, struct namespace * namespace, int index)
 {
   return !namespace_Boundp( toconverters,
 			   namespace_NameAt(namespace,index),
@@ -306,10 +290,7 @@ int Convertp( toconverters, namespace, index )
 }
 
 
-short TryConversion( tree, type, data )
-     struct resourceTree * tree;
-     struct atom * type;
-     long * data;
+short TryConversion(struct resourceTree * tree, struct atom * type, long * data)
 {
   int fromtype;
   struct namespace * toconverters;
@@ -335,8 +316,7 @@ short TryConversion( tree, type, data )
 /****************************************************************/
 /*		class procedures				*/
 /****************************************************************/
-boolean rm__InitializeClass( classID )
-     struct classheader *classID;
+boolean rm__InitializeClass(struct classheader * classID)
 {
   resourceTree = (struct resourceTree *)malloc(sizeof( struct resourceTree ));
   resourceTree->data = NULL;
@@ -345,11 +325,7 @@ boolean rm__InitializeClass( classID )
   return TRUE;
 }
 
-void rm__PostConverter( classID, from, to, converter )
-     struct classheader *classID;
-     struct atom * from;
-     struct atom * to;
-     procedure converter;
+void rm__PostConverter(struct classheader * classID, struct atom * from, struct atom * to, procedure converter)
 {
   struct namespace * toconverters;
 
@@ -364,9 +340,7 @@ void rm__PostConverter( classID, from, to, converter )
 
 
 
-static struct  resourceTree * FindNodeCreate( path, tree )
-     struct atomlist * path;
-     struct resourceTree * tree;
+static struct  resourceTree * FindNodeCreate(struct atomlist * path, struct resourceTree * tree)
 {
   struct atoms * car = atomlist_TraversalStart( path );
 
@@ -390,11 +364,7 @@ static struct  resourceTree * FindNodeCreate( path, tree )
 }
 
 
-void PostResourceAt( root, path, data, type )
-     struct resourceTree * root;
-     struct atomlist * path;
-     long data;
-     struct atom * type;
+void PostResourceAt(struct resourceTree * root, struct atomlist * path, long data, struct atom * type)
 {
   struct resourceTree * tree = FindNodeCreate( path, root );
 
@@ -406,10 +376,7 @@ void PostResourceAt( root, path, data, type )
 }
 
 
-void rm__PostManyResources( classID, resources, context )
-     struct classheader *classID;
-     struct resourceList * resources;
-     struct atomlist * context;
+void rm__PostManyResources(struct classheader * classID, struct resourceList * resources, struct atomlist * context)
 {
   int x;
   struct resourceTree * tree = FindNodeCreate(context, resourceTree);
@@ -422,11 +389,7 @@ void rm__PostManyResources( classID, resources, context )
 }
 
 
-void rm__PostResource( classID, path, data, type )
-     struct classheader *classID;
-     struct atomlist * path;
-     long data;
-     struct atom * type;
+void rm__PostResource(struct classheader * classID, struct atomlist * path, long data, struct atom * type)
 {
 #if DEBUG_RM
   if (debug_rm)
@@ -443,12 +406,7 @@ void rm__PostResource( classID, path, data, type )
 
 
 /* name and class had better be the same length! */
-short rm__GetResource( classID, name, class, type, data )
-     struct classheader *classID;
-     struct atomlist * name;
-     struct atomlist * class;
-     struct atom * type;
-     long * data;
+short rm__GetResource(struct classheader * classID, struct atomlist * name, struct atomlist * class, struct atom * type, long * data)
 {
   struct resourceTree * tree = resourceTree;
   int x;
@@ -496,11 +454,7 @@ short rm__GetResource( classID, name, class, type, data )
 }
 
 
-void rm__GetManyResources( classID, resources, name, class)
-     struct classheader *classID;
-     struct resourceList* resources;
-     struct atomlist * name;
-     struct atomlist * class;
+void rm__GetManyResources(struct classheader * classID, struct resourceList* resources, struct atomlist * name, struct atomlist * class)
 {
   int x;
   struct resourceTree * tree = resourceTree;
@@ -526,12 +480,7 @@ void rm__GetManyResources( classID, resources, name, class)
 
 
 void
-rm__ContextualPostResource( classID, context, path, data, type )
-     struct classheader *classID;
-     struct atomlist * context;
-     struct atomlist * path;
-     long data;
-     struct atom * type;
+rm__ContextualPostResource(struct classheader * classID, struct atomlist * context, struct atomlist * path, long data, struct atom * type)
 {
   struct atoms * m;
   m = atomlist_Mark(path);

@@ -124,9 +124,7 @@ static int currentLine = 0;
 static procedure currentErrorProc = NULL;
 static long currentErrorRock;
 
-boolean init__InitializeObject(classID, init)
-    struct classheader *classID;
-    struct init *init;
+boolean init__InitializeObject(struct classheader * classID, struct init * init)
 {
     init->keys = NULL;
     init->menus = NULL;
@@ -138,9 +136,7 @@ boolean init__InitializeObject(classID, init)
     return TRUE;
 }
 
-void init__FinalizeObject(classID, self)
-    struct classheader *classID;
-    struct init *self;
+void init__FinalizeObject(struct classheader * classID, struct init * self)
 {
     struct init *parent=self->parent;
 
@@ -191,10 +187,7 @@ void init__FinalizeObject(classID, self)
     }
 }
 
-static struct keymap *GetKeymap(init, className, inheritFlag)
-    struct init *init;
-    char *className;
-    boolean inheritFlag;
+static struct keymap *GetKeymap(struct init * init, char * className, boolean inheritFlag)
 {
 
     struct keys *keys;
@@ -213,10 +206,7 @@ static struct keymap *GetKeymap(init, className, inheritFlag)
     return keys->keymap;
 }
 
-static struct menulist *GetMenulist(init, className, inheritFlag)
-    struct init *init;
-    char *className;
-    boolean inheritFlag;
+static struct menulist *GetMenulist(struct init * init, char * className, boolean inheritFlag)
 {
 
     struct menus *menus;
@@ -237,12 +227,7 @@ static struct menulist *GetMenulist(init, className, inheritFlag)
 
 enum init_bindingtype {init_KEY, init_MENU};
 
-static void BindFunction(init, args, forceLoad, type, commandName)
-    struct init *init;
-    char **args;
-    boolean forceLoad;
-    enum init_bindingtype type;
-    char *commandName;
+static void BindFunction(struct init * init, char ** args, boolean forceLoad, enum init_bindingtype type, char * commandName)
 {
 
     char *function, *tempString, *binding, *class, *loadClass, *inherit, *parameterString;
@@ -361,9 +346,7 @@ static void BindFunction(init, args, forceLoad, type, commandName)
 }
 
 /* Establish a default dataobject for files with a given extension. */
-static void AddFileType(args, forceLoad)
-    char **args;
-    boolean forceLoad;
+static void AddFileType(char ** args, boolean forceLoad)
 {
 
     char *extension, *type, *attributes, *existingAttributes;
@@ -394,8 +377,7 @@ static void AddFileType(args, forceLoad)
  * arguments. Not very useful since first argument is supposed to be a view.
  */
 #define NARGS	6
-static void Call(args)
-    char **args;
+static void Call(char ** args)
 {
 
     char *functionName;
@@ -432,8 +414,7 @@ static void Call(args)
 /* Load the named class. Useful for debugging and in certain applications where
  * key bindings (or menus) are inappropriate.
  */
-static void Load(args)
-    char **args;
+static void Load(char ** args)
 {
 
     char *class = GetToken(args);
@@ -454,8 +435,7 @@ Process an 'ifdef' entry, checking the specified environment variable.
                      0 :  If the statements after it should NOT be executed
                    -1 :  If an error is encountered
 */
-int IfDef (args)
-char **args;
+int IfDef(char ** args)
 {
     char *envvar, errmsg;
 
@@ -474,8 +454,7 @@ char **args;
 Expand a string containing environment variable references of the form $(envvar).  The resultant string is placed in a static area of max length 1024.  In case of error, return NULL.  NO CHECKING IS CURRENTLY DONE TO PREVENT OVERRUN OF THIS STATIC AREA.
 */
 static char static_string[1024];
-char *ExpandEnvVars (instr)
-char *instr;
+char *ExpandEnvVars(char * instr)
 {
     char *src, *dest;
 
@@ -512,10 +491,7 @@ char *instr;
 /* Include the named file as if its contents were inline within the current
  * file.
  */
-Include(init, args, forceLoad)
-    struct init *init;
-    char **args;
-    boolean forceLoad;
+Include(struct init * init, char ** args, boolean forceLoad)
 {
     char fullName[MAXPATHLEN];
     char *file = GetToken(args);
@@ -533,8 +509,7 @@ Include(init, args, forceLoad)
 /* Find the first token on this line and update the pointer to the buffer to
  * point past it.  Also smashes the buffer with a null character.
  */
-static char *GetToken(pp)
-    char **pp;
+static char *GetToken(char ** pp)
 {
     char *from = *pp, *to = from;
     int quote = FALSE;
@@ -580,9 +555,7 @@ static char *GetToken(pp)
 }
 
 /* Translate a key sequence that has ^A, \ddd, and \c conventions. */
-static int TranslateKeySequence(from, to)
-    char *from;
-    char *to;
+static int TranslateKeySequence(char * from, char * to)
 {
     while (*from != '\0') {
         if (*from == '\\') {
@@ -607,8 +580,7 @@ static int TranslateKeySequence(from, to)
     return 0;
 }
 
-static int parseBackslashed(fromChars)
-    char **fromChars;
+static int parseBackslashed(char ** fromChars)
 {
 
     int returnChar;
@@ -652,9 +624,7 @@ static int parseBackslashed(fromChars)
     return returnChar;
 }
 
-static struct keys *GetKeyFromKeystate(self, keystate)
-struct init *self;
-struct keystate *keystate;
+static struct keys *GetKeyFromKeystate(struct init * self, struct keystate * keystate)
 {
     struct keymap *keymap = keystate->orgMap;
     struct keys *keys;
@@ -665,9 +635,7 @@ struct keystate *keystate;
     return keys;
 }
 
-struct keystate *init__ModifyKeystate(self, keystate)
-    struct init *self;
-    struct keystate *keystate;
+struct keystate *init__ModifyKeystate(struct init * self, struct keystate * keystate)
 {
 
     struct keys *keys;
@@ -723,10 +691,7 @@ struct keystate *init__ModifyKeystate(self, keystate)
     return keystate;
 }
 
-static struct basicobject *CheckML(menulist, class, inherit)
-    struct menulist *menulist;
-    char *class;
-    boolean inherit;
+static struct basicobject *CheckML(struct menulist * menulist, char * class, boolean inherit)
 {
 
     struct menulist *thisML;
@@ -747,9 +712,7 @@ static struct basicobject *CheckML(menulist, class, inherit)
     return NULL;
 }
 
-struct menulist *init__ModifyMenulist(self, menulist)
-    struct init *self;
-    struct menulist *menulist;
+struct menulist *init__ModifyMenulist(struct init * self, struct menulist * menulist)
 {
 
     struct menus *menus;
@@ -785,8 +748,7 @@ struct menulist *init__ModifyMenulist(self, menulist)
     return topMenulist;
 }
 
-struct init *init__Duplicate(init)
-    struct init *init;
+struct init *init__Duplicate(struct init * init)
 {
 
     struct init *newInit;
@@ -808,9 +770,7 @@ struct init *init__Duplicate(init)
 #define INITIALSIZE 512
 
 /* Hacked routine to rea a "whole file" into memory. */
-static char *MapFile(filename, fileLength)
-    char *filename;
-    long *fileLength; /* OUT */
+static char *MapFile(char * filename, long * fileLength)
 {
 
     int fd;
@@ -863,10 +823,7 @@ static char *MapFile(filename, fileLength)
 
 #define UnmapFile(mappedMemory) free(mappedMemory)
 
-static int ReadFile(init, filename, executeImmediately)
-struct init *init;
-char *filename;
-boolean executeImmediately;
+static int ReadFile(struct init * init, char * filename, boolean executeImmediately)
 {
 
     char *buffer;
@@ -932,12 +889,7 @@ boolean executeImmediately;
 }    
 
 /* Read the user's init file. */
-int init__Load(init, filename, errorProc, errorRock, executeImmediately)
-    struct init *init;
-    char *filename;
-    procedure errorProc;
-    long errorRock;
-    boolean executeImmediately; /* True if modules should be loaded now. Useful for debugging init files. */
+int init__Load(struct init * init, char * filename, procedure errorProc, long errorRock, boolean executeImmediately)
 {
     struct children *kids=init->kids;
 
@@ -953,8 +905,7 @@ int init__Load(init, filename, errorProc, errorRock, executeImmediately)
     return ReadFile(init, filename, executeImmediately);
 }
 
-static void ErrorMsg(msg, a1, a2, a3, a4)
-    char *msg;
+static void ErrorMsg(char * msg, int a1, int a2, int a3, int a4)
 {
 
     char buffer[300], *bufferEnd;
@@ -968,11 +919,7 @@ static void ErrorMsg(msg, a1, a2, a3, a4)
 }
 
 	void
-init__AddKeyBinding(self, class, inherit, keymap)
-	struct init *self;
-	char *class;
-	boolean inherit;
-	struct keymap *keymap;
+init__AddKeyBinding(struct init * self, char * class, boolean inherit, struct keymap * keymap)
 {
 	struct keys *keys;
 	struct children *kids=self->kids;
@@ -993,11 +940,7 @@ init__AddKeyBinding(self, class, inherit, keymap)
 }
 
 	void
-init__DeleteKeyBinding(self, class, inherit, keymap)
-	struct init *self;
-	char *class;
-	boolean inherit;
-	struct keymap *keymap;
+init__DeleteKeyBinding(struct init * self, char * class, boolean inherit, struct keymap * keymap)
 {
 	struct keys *keys, **prev;
 
@@ -1025,11 +968,7 @@ init__DeleteKeyBinding(self, class, inherit, keymap)
 }
 
 	void
-init__AddMenuBinding(self, class, inherit, menulist)
-	struct init *self;
-	char *class;
-	boolean inherit;
-	struct menulist *menulist;
+init__AddMenuBinding(struct init * self, char * class, boolean inherit, struct menulist * menulist)
 {
 	struct menus *menus;
 
@@ -1052,11 +991,7 @@ init__AddMenuBinding(self, class, inherit, menulist)
 }
 
 	void
-init__DeleteMenuBinding(self, class, inherit, menulist)
-	struct init *self;
-	char *class;
-	boolean inherit;
-	struct menulist *menulist;
+init__DeleteMenuBinding(struct init * self, char * class, boolean inherit, struct menulist * menulist)
 {
 	struct menus *menus, **prev;
 	struct children *kids=self->kids;

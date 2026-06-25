@@ -164,8 +164,7 @@ static void initHexTable()
 /* read a hex value and return its value
  */
 
-static int nextInt(f)
-     FILE *f;
+static int nextInt(FILE * f)
 { int c;
   int value= 0;
   int shift= 0;
@@ -195,10 +194,7 @@ static int nextInt(f)
 }
 
 int
-xbitmap__Load( self, fullname, fp)
-    struct xbitmap *self;
-    char *fullname;
-    FILE *fp;
+xbitmap__Load(struct xbitmap * self, char * fullname, FILE * fp)
 { FILE         *f;
   char          line[MAX_SIZE];
   char          name_and_type[MAX_SIZE];
@@ -310,9 +306,7 @@ xbitmap__Load( self, fullname, fp)
  */
 
 int 
-xbitmap__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+xbitmap__Ident(struct classheader * classID, char * fullname)
 { struct xbitmap *self;
 
   if (xbitmap_Load(self = xbitmap_New(), fullname, NULL) == 0) {
@@ -323,10 +317,7 @@ xbitmap__Ident( classID, fullname )
 }
 
 long
-xbitmap__Read( self, file, id )
-    struct xbitmap *self;
-    FILE *file;
-    long id;
+xbitmap__Read(struct xbitmap * self, FILE * file, long id)
 {
     if(xbitmap_Load(self, NULL, file) == 0)
 	return(dataobject_NOREADERROR);
@@ -335,20 +326,13 @@ xbitmap__Read( self, file, id )
 }
 
 long
-xbitmap__Write( self, file, writeID, level )
-    struct xbitmap *self;
-    FILE *file;
-    long writeID;
-    int level;
+xbitmap__Write(struct xbitmap * self, FILE * file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
 long
-xbitmap__WriteNative( self, file, filename )
-    struct xbitmap *self;
-    FILE *file;
-    char *filename;
+xbitmap__WriteNative(struct xbitmap * self, FILE * file, char * filename)
 {
 return(0);
 }

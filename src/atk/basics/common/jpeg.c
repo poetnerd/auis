@@ -82,10 +82,7 @@ static jmp_buf jmpState;
 static external_methods_ptr emethods;
 
 long
-jpeg__WriteNative(jpeg, file, filename)
-    struct jpeg *jpeg;
-    FILE *file;
-    char *filename;
+jpeg__WriteNative(struct jpeg * jpeg, FILE * file, char * filename)
 {
     FILE *fp;
     int i, nc, rv, w, h, size;
@@ -139,9 +136,7 @@ jpeg__WriteNative(jpeg, file, filename)
 /********* JPEG DECOMPRESSION FUNCTIONS **********/
 
 /**************************************************/
-static void xv_jpeg_monitor(cinfo, loopcnt, looplimit)
-  decompress_info_ptr cinfo;
-  long loopcnt, looplimit;
+static void xv_jpeg_monitor(decompress_info_ptr cinfo, int loopcnt, long loopcnt, looplimit)
 {
 #ifdef FOO  
   int a,b;
@@ -158,8 +153,7 @@ static void xv_jpeg_monitor(cinfo, loopcnt, looplimit)
 }
 
 static void
-d_ui_method_selection(cinfo)
-  decompress_info_ptr cinfo;
+d_ui_method_selection(decompress_info_ptr cinfo)
 {
   /* select output colorspace & quantization parameters */
   if (cinfo->jpeg_color_space == CS_GRAYSCALE) {
@@ -177,8 +171,7 @@ d_ui_method_selection(cinfo)
 
 /**************************************************/
 static void
-output_init (cinfo)
-  decompress_info_ptr cinfo;
+output_init(decompress_info_ptr cinfo)
 {
   pWIDE = cinfo->image_width;
   pHIGH = cinfo->image_height;
@@ -197,10 +190,7 @@ output_init (cinfo)
 
 /**************************************************/
 static void
-put_color_map (cinfo, num_colors, colormap)
-  decompress_info_ptr cinfo;
-  int num_colors;
-  JSAMPARRAY colormap;
+put_color_map(decompress_info_ptr cinfo, int num_colors, JSAMPARRAY colormap)
 {
   int i;
 
@@ -213,10 +203,7 @@ put_color_map (cinfo, num_colors, colormap)
 }
 
 static void
-put_pixel_rows (cinfo, num_rows, pixel_data)
-  decompress_info_ptr cinfo;
-  int num_rows;
-  JSAMPIMAGE pixel_data;
+put_pixel_rows(decompress_info_ptr cinfo, int num_rows, JSAMPIMAGE pixel_data)
 {
   JSAMPROW ptr0, ptr1, ptr2;
   long col;
@@ -249,13 +236,11 @@ put_pixel_rows (cinfo, num_rows, pixel_data)
   }
 }
 
-static void output_term (cinfo)
-     decompress_info_ptr cinfo;
+static void output_term(decompress_info_ptr cinfo)
 {
 }
 
-static void jselwxv(cinfo)
-     decompress_info_ptr cinfo;
+static void jselwxv(decompress_info_ptr cinfo)
 {
   cinfo->methods->output_init = output_init;
   cinfo->methods->put_color_map = put_color_map;
@@ -263,8 +248,7 @@ static void jselwxv(cinfo)
   cinfo->methods->output_term = output_term;
 }
 
-static void JPEG_Message (msgtext)
-  char *msgtext;
+static void JPEG_Message(char * msgtext)
 {
   char tempstr[200];
 
@@ -277,8 +261,7 @@ static void JPEG_Message (msgtext)
 
 
 /**************************************************/
-static void JPEG_Error (msgtext)
-  char *msgtext;
+static void JPEG_Error(char * msgtext)
 {
   char tempstr[200];
   
@@ -311,10 +294,7 @@ jpeg__Load( jpeg, fullname, fp )
 }
 
 /*******************************************/
-int LoadJFIF(jpeg, fname, f)
-  struct jpeg *jpeg;
-  char *fname;
-  FILE *f;
+int LoadJFIF(struct jpeg * jpeg, char * fname, FILE * f)
 {
   int rtval;
   /* These three structs contain JPEG parameters and working data.
@@ -417,8 +397,7 @@ int LoadJFIF(jpeg, fname, f)
 /********* JPEG COMPRESSION FUNCTIONS **********/
 
 /**************************************************/
-static void c_ui_method_selection(cinfo)
-     compress_info_ptr cinfo;
+static void c_ui_method_selection(compress_info_ptr cinfo)
 {
   /* If the input is gray scale, generate a monochrome JPEG file. */
   if (cinfo->in_color_space == CS_GRAYSCALE)
@@ -427,8 +406,7 @@ static void c_ui_method_selection(cinfo)
 
 
 /**************************************************/
-static void input_init (cinfo)
-     compress_info_ptr cinfo;
+static void input_init(compress_info_ptr cinfo)
 {
   int w,h;
   if (colorType == IGREYSCALE) {
@@ -451,9 +429,7 @@ static void input_init (cinfo)
 
 
 /**************************************************/
-static void get_input_row(cinfo, pixel_row)
-     compress_info_ptr cinfo;
-     JSAMPARRAY        pixel_row;
+static void get_input_row(compress_info_ptr cinfo, JSAMPARRAY pixel_row)
 {
   JSAMPROW ptr0, ptr1, ptr2;
   long col;
@@ -481,16 +457,14 @@ static void get_input_row(cinfo, pixel_row)
 
 
 /**************************************************/
-static void input_term (cinfo)
-     compress_info_ptr cinfo;
+static void input_term(compress_info_ptr cinfo)
 {
   /* no work required */
 }
 
 
 /**************************************************/
-static void jselrxv(cinfo)
-     compress_info_ptr cinfo;
+static void jselrxv(compress_info_ptr cinfo)
 {
   cinfo->methods->input_init = input_init;
   cinfo->methods->get_input_row = get_input_row;
@@ -500,8 +474,7 @@ static void jselrxv(cinfo)
 
 
 /*******************************************/
-static int writeJFIF(fp)
-  FILE *fp;
+static int writeJFIF(FILE * fp)
 {
   int retval;
   struct Compress_info_struct cinfo;
@@ -541,10 +514,7 @@ static int writeJFIF(fp)
 }
 
 long
-jpeg__Read( self, file, id )
-    struct jpeg *self;
-    FILE *file;
-    long id;
+jpeg__Read(struct jpeg * self, FILE * file, long id)
 {
     if(jpeg_Load(self, NULL, file) == 0) {
 	jpeg_Compress(self);
@@ -555,19 +525,13 @@ jpeg__Read( self, file, id )
 }
 
 long
-jpeg__Write( self, file, writeID, level )
-    struct jpeg *self;
-    FILE *file;
-    long writeID;
-    int level;
+jpeg__Write(struct jpeg * self, FILE * file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
 int 
-jpeg__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+jpeg__Ident(struct classheader * classID, char * fullname)
 {
     FILE *f;
     int status = 0;
@@ -591,16 +555,12 @@ jpeg__Ident( classID, fullname )
 }
 
 boolean
-jpeg__InitializeObject( classID, self )
-    struct classheader *classID;
-    struct jpeg *self;
+jpeg__InitializeObject(struct classheader * classID, struct jpeg * self)
 {
     self->saveQuality = 75;
     return(TRUE);
 }
 
 void
-jpeg__FinalizeObject( classID, self )
-    struct classheader *classID;
-    struct jpeg *self;
+jpeg__FinalizeObject(struct classheader * classID, struct jpeg * self)
 {}

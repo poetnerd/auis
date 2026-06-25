@@ -55,8 +55,7 @@ static struct proctable_Entry *hashTable[HASHMAX];
 /* Initialize the package. 
 */
 	boolean 
-proctable__InitializeClass(classID)
-	struct classheader *classID;
+proctable__InitializeClas(struct classheader * classID)
 {
 	int i;
 	
@@ -70,13 +69,7 @@ proctable__InitializeClass(classID)
 	(do the mallocs in the caller or pass literals). 
 */
 	struct proctable_Entry *
-proctable__DefineProc(classID, name, proc, type, module, doc)
-	struct classheader *classID;
-	char *name;		/* these match the fields in an entry */
-	int (*proc)();
-	struct classinfo *type;
-	char *module;
-	char *doc;
+proc(struct classheader * classID, char * name, int proc, struct classinfo * type, char * module, char * doc)
 {
 	int hash;
 	struct proctable_Entry *pe = NULL;
@@ -118,9 +111,7 @@ proctable__DefineProc(classID, name, proc, type, module, doc)
 	return pe;
 }
 
-void proctable__DefineProcs(classID,procs)
-struct classheader *classID;
-struct proctable_Description *procs;
+void proctable__DefineProcs(struct classheader * classID, struct proctable_Description * procs)
 {
 	while(procs->name!=NULL){
 		proctable_DefineProc(procs->name, procs->proc, procs->type, 
@@ -133,15 +124,7 @@ struct proctable_Description *procs;
 	but all storage pointed to must be permanent (do the mallocs in the caller or pass literals). 
 */
 	struct proctable_Entry *
-proctable__DefineTypedProc(classID, name, proc, type, 
-		module, doc, returntype)
-	struct classheader *classID;
-	char *name;		/* these match the fields in an entry */
-	int (*proc)();
-	struct classinfo *type;
-	char *module;
-	char *doc;
-	enum proctable_type returntype;
+proc(struct classheader * classID, char * name, int proc, struct classinfo * type, char * module, char * doc, enum proctable_type returntype)
 {
 	struct proctable_Entry *pe;
 	pe = proctable_DefineProc(name, proc, type, module, doc);
@@ -150,9 +133,7 @@ proctable__DefineTypedProc(classID, name, proc, type,
 	return pe;
 }
 
-void proctable__DefineProcsWithTypes(classID,procs)
-struct classheader *classID;
-struct proctable_DescriptionWithType *procs;
+void proctable__DefineProcsWithTypes(struct classheader * classID, struct proctable_DescriptionWithType * procs)
 {
 	while(procs->name!=NULL){
 		proctable_DefineTypedProc(procs->name, procs->proc, procs->type, 
@@ -162,9 +143,7 @@ struct proctable_DescriptionWithType *procs;
 }
 
 /* Given a name, look up its entry. */
-struct proctable_Entry *proctable__Lookup(classID,name)
-	struct classheader *classID;
-	register char *name;
+struct proctable_Entry *proctable__Lookup(struct classheader * classID, register char * name)
 {
 	register int hash;
 	hash = HashName(name);
@@ -172,10 +151,7 @@ struct proctable_Entry *proctable__Lookup(classID,name)
 }
 
 /* Call the proc with each entry and with the rock. */
-void proctable__Enumerate(classID, proc, procdata)
-	struct classheader *classID;
-	int (*proc)();
-	char *procdata;
+void proctable__Enumerate(struct classheader * classID, int proc, char * procdata)
 {
 	int hash;
 	struct proctable_Entry *pe;
@@ -186,9 +162,7 @@ void proctable__Enumerate(classID, proc, procdata)
 }
 
 /* Force the package for this function to be loaded if possible. */
-void proctable__ForceLoaded(classID, pe)
-	struct classheader *classID;
-	struct proctable_Entry *pe;
+void proctable__ForceLoaded(struct classheader * classID, struct proctable_Entry * pe)
 {
 	if (proctable_Defined(pe) || pe->module == NULL)
 		return;
@@ -198,9 +172,7 @@ void proctable__ForceLoaded(classID, pe)
 }
 
 /* Potentially clear the module pointer for this entry. */
-static int ModuleClear(pe, module)
-	struct proctable_Entry *pe;
-	char *module;
+static int ModuleClear(struct proctable_Entry * pe, char * module)
 {
 	if (pe != NULL && pe->module != NULL && strcmp(pe->module, module) == 0)
 		pe->module = NULL;
@@ -209,8 +181,7 @@ static int ModuleClear(pe, module)
 
 
 /* Compute the hash function for this name. */
-static int HashName(name)
-	char *name;
+static int HashName(char * name)
 {
 	register int hash = 0;
 
@@ -222,9 +193,7 @@ static int HashName(name)
 }
 
 /* Given a name and a hash index, look up the name. */
-static struct proctable_Entry *LookupHash(name, hash)
-	int hash;
-	char *name;
+static struct proctable_Entry *LookupHash(char * name, int hash)
 {
 	struct proctable_Entry *pe;
 

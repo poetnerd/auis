@@ -75,8 +75,7 @@ static struct attributes hardWiredAttributes[4];
 #define EXTATTRINDEX  2 /* Where to put file's extension. */
 #define READONLYINDEX 3 /* Where to put the readonly flag. */
 
-static void FreeAttributes(attributes)
-struct attributes *attributes;
+static void FreeAttributes(struct attributes * attributes)
 {
     struct attributes *thisAttr, *nextAttr;
 
@@ -89,9 +88,7 @@ struct attributes *attributes;
     }
 }
 
-static struct mapEntry *GetEntry(extension, dataName)
-char *extension;
-char *dataName;
+static struct mapEntry *GetEntry(char * extension, char * dataName)
 {
     register struct mapEntry *thisEntry;
 
@@ -124,8 +121,7 @@ char *dataName;
     return thisEntry;
 }
 
-struct attributes *ParseAttributes(attributes)
-char *attributes;
+struct attributes *ParseAttributes(char * attributes)
 {
 /* If necessary, parse the colon seperated string of assignments to generate the
  * values list. The string looks like "key1=value1;key2=value2;...". All values
@@ -176,10 +172,7 @@ char *attributes;
     return attr;
 }
 
-void filetype__AddEntry(classID, extension, dataName, attributes)
-    struct classheader *classID;
-    char *extension, *dataName;
-    char *attributes;
+void filetype__AddEntry(struct classheader * classID, int extension, char *extension, * dataName, char * attributes)
 {
     struct mapEntry *thisEntry;
 
@@ -190,10 +183,7 @@ void filetype__AddEntry(classID, extension, dataName, attributes)
 
 }
 
-void filetype__AddExistingAttributes(classID, extension, dataName, attributes)
-    struct classheader *classID;
-    char *extension, *dataName;
-    char *attributes;
+void filetype__AddExistingAttributes(struct classheader * classID, int extension, char *extension, * dataName, char * attributes)
 {
     struct mapEntry *thisEntry;
 
@@ -203,9 +193,7 @@ void filetype__AddExistingAttributes(classID, extension, dataName, attributes)
     thisEntry->existingAttributes = ParseAttributes(attributes); 
 }
 
-int filetype__DeleteEntry(classID, extension)
-    struct classheader *classID;
-    register char *extension;
+int filetype__DeleteEntry(struct classheader * classID, register char * extension)
 {
 
     register struct mapEntry *traverse, **previous;
@@ -242,12 +230,7 @@ int filetype__DeleteEntry(classID, extension)
  *    the next call to this routine. If this can't be guaranteed, the
  *    programmer must copy the attributes list.
  */
-char *filetype__Lookup(classID, file, filename, objectID, attributes)
-    struct classheader *classID;
-    FILE *file;
-    register char *filename;
-    long *objectID;
-    struct attributes **attributes;
+char *filetype__Lookup(struct classheader * classID, FILE * file, register char * filename, long * objectID, struct attributes ** attributes)
 {
 
     register struct mapEntry *thisEntry;
@@ -387,10 +370,7 @@ char *filetype__Lookup(classID, file, filename, objectID, attributes)
         return NULL;
 }
 
-void filetype__CanonicalizeFilename(classID, canonicalName, name, maxSize)
-    struct classheader *classID;
-    char *canonicalName, *name;
-    int maxSize;
+void filetype__CanonicalizeFilename(struct classheader * classID, int canonicalName, char *canonicalName, * name, int maxSize)
 {
 
     char fullName[MAXPATHLEN];

@@ -54,9 +54,7 @@ long value;  {
     }
 }
 
-struct owatch_data *owatch__Create(classID, obj)
-struct classheader *classID;
-struct observable *obj;
+struct owatch_data *owatch__Create(struct classheader * classID, struct observable * obj)
 {
     int i;
     struct owatch_data *o=useddata;
@@ -105,9 +103,7 @@ struct observable *obj;
     return o;
 }
 
-void owatch__Delete(classID, owd)
-struct classheader *classID;
-struct owatch_data *owd;
+void owatch__Delete(struct classheader * classID, struct owatch_data * owd)
 {
     if(owd==NULL) return;
     if(owd->refs<1) {
@@ -126,9 +122,7 @@ struct owatch_data *owd;
     freedata=owd;
 }
 
-boolean owatch__CheckAndDelete(classID, owd)
-struct classheader *classID;
-struct owatch_data *owd;
+boolean owatch__CheckAndDelete(struct classheader * classID, struct owatch_data * owd)
 {
     boolean result;
     if(owd==NULL) return FALSE;

@@ -44,9 +44,7 @@ struct messitem {
 static struct messitem *currentmess=NULL; 
 static struct messitem *firstmess=NULL; 
 
-static struct messitem *messitem_Create( s1, s2, wh )
-  char *s1, *s2;
-  char wh;
+static struct messitem *messitem_Create(int s1, char *s1, * s2, char wh)
 {
   struct messitem *mess;
   mess = (struct messitem *) malloc(sizeof(struct messitem));
@@ -74,9 +72,7 @@ static struct messitem *messitem_Create( s1, s2, wh )
   return mess;
 }
 
-struct messitem *messitem__Exists(classID, str)
-  struct classheader *classID;
-  char *str;
+struct messitem *messitem__Exists(struct classheader * classID, char * str)
 {
 
   struct messitem *tmess = firstmess;
@@ -87,9 +83,7 @@ struct messitem *messitem__Exists(classID, str)
   return tmess;
 }
 
-char *messitem__Replace(classID, str)
-  struct classheader *classID;
-  char *str;
+char *messitem__Replace(struct classheader * classID, char * str)
 {
   struct messitem *mess = firstmess;
   if (str == NULL || *str == '\0') return str;
@@ -151,9 +145,7 @@ char *messitem__Replace(classID, str)
 #define INITIALSIZE 512
 
 /* Hacked routine to rea a "whole file" into memory. */
-static char *MapMessFile(filename, fileLength)
-    char *filename;
-    long *fileLength; /* OUT */
+static char *MapMessFile(char * filename, long * fileLength)
 {
 
     int fd;
@@ -206,9 +198,7 @@ static char *MapMessFile(filename, fileLength)
 
 #define UnmapMessFile(mappedMemory) free(mappedMemory)
 
-static int ReadMessFile(filename, executeImmediately)
-char *filename;
-boolean executeImmediately;
+static int ReadMessFile(char * filename, boolean executeImmediately)
 {
 
     char *buffer;
@@ -272,8 +262,7 @@ boolean executeImmediately;
 
 static boolean isMessFileLoaded = 0;
 
-void messitem__InitMessFile( classID )
-    struct classheader *classID;
+void messitem__InitMessFile(struct classheader * classID)
 {
     if (isMessFileLoaded == 0) {
 	char *al=environ_Get("ANDREWLANGUAGE");
