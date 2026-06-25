@@ -58,6 +58,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <txtvinfo.h>
 #include <textv.eh>
 
+extern int charType(char c);
+extern void InitializeMod(void);
+
 static struct graphic *pat;
 
 #define TEXT_VIEWREFCHAR '\377'  /* place holder character for viewrefs */
