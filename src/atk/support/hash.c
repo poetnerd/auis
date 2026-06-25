@@ -36,7 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 /* A hash table */
 
-#include <class.h>
+#include <andrewos.h>#include <class.h>
 #include <hash.eh>
 #include <glist.ih>
 
@@ -46,8 +46,7 @@ struct egg {
 
 
 
-static int DefaultHash(key)
-char *key;
+static int DefaultHash(char *key)
 {
     char c;
     int index=0;
@@ -60,15 +59,12 @@ char *key;
 }
 
 
-boolean hash__InitializeClass(classID)
-struct classheader *classID;
+boolean hash__InitializeClass(struct classheader *classID)
 {
     return TRUE;
 }
 
-boolean hash__InitializeObject(classID,self)
-struct classheader *classID;
-struct hash *self;
+boolean hash__InitializeObject(struct classheader *classID, struct hash *self)
 {
     int i;
     for(i=0;i<hash_BUCKETS;i++)
@@ -77,9 +73,7 @@ struct hash *self;
     return TRUE;
 }
 
-void hash__FinalizeObject(classID,self)
-struct classheader *classID;
-struct hash *self;
+void hash__FinalizeObject(struct classheader *classID, struct hash *self)
 {
     int i;
     for (i=0;i<hash_BUCKETS;i++)
@@ -87,10 +81,7 @@ struct hash *self;
             glist_Destroy(self->buckets[i]);
 }
 
-void hash__Store(self,key,value)
-struct hash *self;
-char *key;
-char *value;
+void hash__Store(struct hash *self, char *key, char *value)
 {
     int bucket = (*self->hash)(key);
     struct egg *egg = (struct egg *)malloc(sizeof(struct egg));
@@ -105,9 +96,7 @@ char *value;
     glist_Insert(self->buckets[bucket],egg);
 }
 
-static int FindEgg(egg,key)
-struct egg *egg;
-char *key;
+static int FindEgg(struct egg *egg, char *key)
 {
 
     if (strcmp(egg->key,key)==0)
@@ -118,9 +107,7 @@ char *key;
 
 
 
-char *hash__Lookup(self,key)
-struct hash *self;
-char *key;
+char *hash__Lookup(struct hash *self, char *key)
 {
     int bucket = (*self->hash)(key);
     struct egg *egg;
@@ -139,9 +126,7 @@ char *key;
     }
 }
 
-char * hash__Delete(self,key)
-struct hash *self;
-char *key;
+char * hash__Delete(struct hash *self, char *key)
 {
     int bucket = (*self->hash)(key);
     struct egg *egg;
@@ -160,9 +145,7 @@ char *key;
     
 }
 
-char *hash__Rename(self,key,new)
-struct hash *self;
-char *key,*new;
+char *hash__Rename(struct hash *self, char *key, char *new)
 {
     int bucket = (*self->hash)(key);
     struct egg *egg;
@@ -183,9 +166,7 @@ char *key,*new;
     }
 }
 
-void hash__Clear(self, valFree)
-struct hash *self;
-procedure valFree;
+void hash__Clear(struct hash *self, procedure valFree)
 {
     int i;
     struct egg *egg;
@@ -209,9 +190,7 @@ procedure valFree;
 }
 
 
-static PrintAll(egg,nothing)
-struct egg *egg;
-int nothing;
+static int PrintAll(struct egg *egg, int nothing)
 {
     printf("Egg (%s) contains (%s)\n",egg->key,egg->value);
     return FALSE;
@@ -219,8 +198,7 @@ int nothing;
 
 
 
-void hash__Debug(self)
-struct hash *self;
+void hash__Debug(struct hash *self)
 {
     int i;
     for (i=0;i<hash_BUCKETS;i++) {

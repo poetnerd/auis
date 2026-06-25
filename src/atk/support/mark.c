@@ -46,8 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 static struct mark *freeMarks = NULL;
 static struct mark *lastBlock = NULL;
 
-struct mark *mark__Allocate(classID)
-struct classheader *classID;
+struct mark *mark__Allocate(struct classheader *classID)
 {
 
     static int lastIndex = NUMPERBLOCK; /* Force a block malloc on first call. */
@@ -64,9 +63,7 @@ struct classheader *classID;
     return &lastBlock[lastIndex++];
 }
 
-void mark__Deallocate(classID, self)
-struct classheader *classID;
-    struct mark *self;
+void mark__Deallocate(struct classheader *classID, struct mark *self)
 {
 
     self->next = freeMarks;
@@ -107,10 +104,7 @@ boolean ending;  {
     return nmark;
 }
 
-void mark__UpdateMarks(self, pos, size)
-    struct mark *self;
-    long pos;
-    long size;
+void mark__UpdateMarks(struct mark *self, long pos, long size)
 {
 
     struct mark *mark;

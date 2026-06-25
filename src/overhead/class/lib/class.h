@@ -180,9 +180,9 @@ extern struct basicobject *class_NewObject(/* char * name */);
 extern boolean class_IsType(/* struct basicobject * testobject, struct basicobject * typeobject */);
 extern boolean class_IsTypeByName(/* char * testname, char * typename */);
 
+extern int class_EnterInfo();
 
-
-/* 
+/*
  * routines that help with profiling
  */
 extern void *class_GetEText();

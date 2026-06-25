@@ -76,9 +76,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #ifndef MAXPATHLEN 
 #include <sys/param.h>
+#include <errno.h>
 #endif
 
-extern int errno;
 
 static struct bufferlist *allBuffers;
 static char *backupExtension = NULL;
@@ -87,8 +87,7 @@ static char *checkpointDirectory = NULL;
 static boolean overwriteFiles = TRUE;
 static boolean checkpointGawdyNames = FALSE;
 
-void buffer__SetCheckpointFilename(self)
-struct buffer *self;
+void buffer__SetCheckpointFilename(struct buffer *self)
 {
     /* For this routine to work properly buffer names must be unique. */
     /* If they are not then the user might lose some information */
@@ -135,9 +134,7 @@ struct buffer *self;
 }
 
 
-boolean buffer__InitializeObject(classID, self)
-    struct classheader *classID;
-    struct buffer *self;
+boolean buffer__InitializeObject(struct classheader *classID, struct buffer *self)
 {
     self->bufferData = NULL;
     self->bufferName = NULL;
@@ -162,9 +159,7 @@ boolean buffer__InitializeObject(classID, self)
     return TRUE;
 }
 
-void buffer__FinalizeObject(classID, self)
-    struct classheader *classID;
-    struct buffer *self;
+void buffer__FinalizeObject(struct classheader *classID, struct buffer *self)
 {
     int counter;
 
@@ -189,18 +184,12 @@ void buffer__FinalizeObject(classID, self)
 }
 
 /* Changed bufferlist */
-struct buffer *buffer__Create(classID, bufferName, filename, objectName, data)
-    struct classheader *classID;
-    char *bufferName, *filename, *objectName;
-    struct dataobject *data;
+struct buffer *buffer__Create(struct classheader *classID, char *bufferName, char *filename, char *objectName, struct dataobject *data)
 {
     return bufferlist_CreateBuffer(allBuffers, bufferName, filename, objectName, data);
 }
 
-struct view *buffer__GetView(self, inputFocus, targetView, viewName)
-    struct buffer *self;
-    struct view **inputFocus, **targetView;
-    char *viewName;
+struct view *buffer__GetView(struct buffer *self, struct view **inputFocus, struct view **targetView, char *viewName)
 {
     int counter;
 
@@ -234,9 +223,7 @@ struct view *buffer__GetView(self, inputFocus, targetView, viewName)
     return self->viewList[counter].bufferApplicationView;
 }
 
-void buffer__RemoveView(self, unusedView)
-    struct buffer *self;
-    struct view *unusedView;
+void buffer__RemoveView(struct buffer *self, struct view *unusedView)
 {
     int counter;
 
@@ -250,8 +237,7 @@ void buffer__RemoveView(self, unusedView)
         }
 }
 
-boolean buffer__Visible(self)
-    struct buffer *self;
+boolean buffer__Visible(struct buffer *self)
 {
     int counter;
 
@@ -262,17 +248,12 @@ boolean buffer__Visible(self)
 }
 
 /* Changed bufferlist */
-struct buffer *buffer__Enumerate(classID, mapFunction, functionData)
-    struct classheader *classID;
-    boolean (*mapFunction)();
-    long functionData;
+struct buffer *buffer__Enumerate(struct classheader *classID, int mapFunction, long functionData)
 {
     return bufferlist_Enumerate(allBuffers, mapFunction, functionData);
 }
 
-void buffer__SetData(self, bufferData)
-    struct buffer *self;
-    struct dataobject *bufferData;
+void buffer__SetData(struct buffer *self, struct dataobject *bufferData)
 {
     self->bufferData = bufferData;
     dataobject_AddObserver(bufferData, self);
@@ -287,9 +268,7 @@ void buffer__SetData(self, bufferData)
     buffer_NotifyObservers(self, 0);
 }
 
-void buffer__SetName(self, bufferName)
-    struct buffer *self;
-    char *bufferName;
+void buffer__SetName(struct buffer *self, char *bufferName)
 {
     if (self->bufferName != NULL)
         free(self->bufferName);
@@ -298,9 +277,7 @@ void buffer__SetName(self, bufferName)
     buffer_NotifyObservers(self, 0);
 }
 
-void buffer__SetFilename(self, filename)
-    struct buffer *self;
-    char *filename;
+void buffer__SetFilename(struct buffer *self, char *filename)
 {
 
     char realName[MAXPATHLEN];
@@ -323,9 +300,7 @@ void buffer__SetFilename(self, filename)
     buffer_NotifyObservers(self, 0);/* Tuck it into slot. */
 }
 
-void buffer__SetWriteVersion(self, version)
-    struct buffer *self;
-    long version;
+void buffer__SetWriteVersion(struct buffer *self, long version)
 {
     long dobjVersion = dataobject_GetModified(buffer_GetData(self));
 
@@ -336,43 +311,32 @@ void buffer__SetWriteVersion(self, version)
     buffer_NotifyObservers(self, 0);/* Tuck it into slot. */
 }
 
-void buffer__SetCkpVersion(self, version)
-    struct buffer *self;
-    long version;
+void buffer__SetCkpVersion(struct buffer *self, long version)
 {
 
     self->ckpVersion = version;
     buffer_NotifyObservers(self, 0);/* Tuck it into slot. */
 }
 
-void buffer__SetCkpClock(self, clock)
-    struct buffer *self;
-    long clock;
+void buffer__SetCkpClock(struct buffer *self, long clock)
 {
 
     self->ckpClock = clock;
 }
 
-void buffer__SetCkpLatency(self, latency)
-    struct buffer *self;
-    long latency;
+void buffer__SetCkpLatency(struct buffer *self, long latency)
 {
     self->ckpLatency = latency;
 }
 
-void buffer__SetScratch(self, scratch)
-    struct buffer *self;
-    boolean scratch;
+void buffer__SetScratch(struct buffer *self, boolean scratch)
 {
 
     self->scratch = scratch;
     buffer_NotifyObservers(self, 0);/* Tuck it into slot. */
 }
 
-struct view *buffer__EnumerateViews(self, mapFunction, functionData)
-    struct buffer *self;
-    procedure mapFunction;
-    long functionData;
+struct view *buffer__EnumerateViews(struct buffer *self, procedure mapFunction, long functionData)
 {
 
     int counter;
@@ -395,26 +359,20 @@ struct view *buffer__EnumerateViews(self, mapFunction, functionData)
 }
 
 /* Changed bufferlist */
-struct buffer *buffer__FindBufferByFile(classID, filename)
-    struct classheader *classID;
-    char *filename;
+struct buffer *buffer__FindBufferByFile(struct classheader *classID, char *filename)
 {
     return bufferlist_FindBufferByFile(allBuffers, filename);
 }
 
 /* Changed Bufferlist */
-struct buffer *buffer__FindBufferByData(classID, bufferData)
-    struct classheader *classID;
-    struct dataobject *bufferData;
+struct buffer *buffer__FindBufferByData(struct classheader *classID, struct dataobject *bufferData)
 {
     return bufferlist_FindBufferByData(allBuffers, bufferData);
 }
 
 /* Changed Bufferlist */
 
-struct buffer *buffer__FindBufferByName(classID, bufferName)
-    struct classheader *classID;
-    char *bufferName;
+struct buffer *buffer__FindBufferByName(struct classheader *classID, char *bufferName)
 {
     return bufferlist_FindBufferByName(allBuffers, bufferName);
 }
@@ -426,9 +384,7 @@ struct buffer *buffer__FindBufferByName(classID, bufferName)
  * if this call fails.
  */
 
-int buffer__ReadFile(self, filename)
-    struct buffer *self;
-    char *filename;
+int buffer__ReadFile(struct buffer *self, char *filename)
 {
     long objectID;
     int returnCode = 0;
@@ -487,36 +443,24 @@ int buffer__ReadFile(self, filename)
 
 /* Changed bufferlist */
 
-struct buffer *buffer__GetBufferOnFile(classID, filename, flags)
-struct classheader *classID;
-char *filename;
-long flags;
+struct buffer *buffer__GetBufferOnFile(struct classheader *classID, char *filename, long flags)
 {
     return bufferlist_GetBufferOnFile(allBuffers, filename, flags);
 }
 
 /* Changed bufferlist */
 
-void buffer__GuessBufferName (classID, filename, bufferName, nameSize)
-    struct classheader *classID;
-    char *filename, *bufferName;
-    int nameSize;
+void buffer__GuessBufferName(struct classheader *classID, char *filename, char *bufferName, int nameSize)
 {
     bufferlist_GuessBufferName(allBuffers, filename, bufferName, nameSize);
 }
 
-void buffer__GetUniqueBufferName (classID, proposedBufferName, bufferName, nameSize)
-    struct classheader *classID;
-    char *proposedBufferName, *bufferName;
-    int nameSize;
+void buffer__GetUniqueBufferName(struct classheader *classID, char *proposedBufferName, char *bufferName, int nameSize)
 {
     bufferlist_GuessBufferName(allBuffers, proposedBufferName, bufferName, nameSize);
 }
 
-extern char *sys_errlist[];
-
-static int ResolveLink(linkname, buffer)
-char *linkname, *buffer;
+static int ResolveLink(char *linkname, char *buffer)
 {
     struct stat sbuf;
     char name[MAXPATHLEN];
@@ -545,10 +489,7 @@ char *linkname, *buffer;
     return 0;
 }
 
-int buffer__WriteToFile(self, filename, flags)
-    struct buffer *self;
-    char *filename;
-    long flags;
+int buffer__WriteToFile(struct buffer *self, char *filename, long flags)
 {
 
     char realName[MAXPATHLEN], linkdest[MAXPATHLEN];
@@ -822,8 +763,7 @@ int buffer__WriteToFile(self, filename, flags)
     return closeCode;
 }
 
-long buffer__GetFileDate(self)
-struct buffer *self;
+long buffer__GetFileDate(struct buffer *self)
 {
     struct stat stbuf;
     if (self->filename == NULL)
@@ -833,8 +773,7 @@ struct buffer *self;
     return (long) stbuf.st_mtime;
 }
 
-boolean buffer__InitializeClass(classID)
-    struct classheader *classID;
+boolean buffer__InitializeClass(struct classheader *classID)
 {
     char *s;
 
@@ -862,16 +801,12 @@ boolean buffer__InitializeClass(classID)
 
 /* Changed BufferList */
 
-void buffer__SetDefaultObject(classID, objectname)
-struct classheader *classID;
-char *objectname;
+void buffer__SetDefaultObject(struct classheader *classID, char *objectname)
 {
     bufferlist_SetDefaultObject(allBuffers, objectname);
 }
 
-void buffer__SetDefaultViewname(self,name)
-struct buffer *self;
-char *name;
+void buffer__SetDefaultViewname(struct buffer *self, char *name)
 {
     if(self->viewname != NULL)
 	free(self->viewname);
@@ -883,23 +818,17 @@ char *name;
     }
 }
 
-void buffer__SetDestroyData(self, destroy)
-    struct buffer *self;
-    boolean destroy;
+void buffer__SetDestroyData(struct buffer *self, boolean destroy)
 {
     self->destroyData = destroy;
 }
 
-void buffer__SetLastTouchDate(self, dateStamp)
-    struct buffer *self;
-    long dateStamp;
+void buffer__SetLastTouchDate(struct buffer *self, long dateStamp)
 {
     self->lastTouchDate = dateStamp;;
 }
 
-void buffer__SetReadOnly(self, readOnly)
-    struct buffer *self;
-    boolean readOnly;
+void buffer__SetReadOnly(struct buffer *self, boolean readOnly)
 {
     struct attributes attributes;
 
@@ -910,16 +839,12 @@ void buffer__SetReadOnly(self, readOnly)
     self->readOnly = readOnly;
 }
 
-struct bufferlist *buffer__GetGlobalBufferList(classID)
-    struct classheader *classID;
+struct bufferlist *buffer__GetGlobalBufferList(struct classheader *classID)
 {
     return allBuffers;
 }
 
-void buffer__ObservedChanged(self, object, value)
-struct buffer *self;
-struct observable *object;
-long value;
+void buffer__ObservedChanged(struct buffer *self, struct observable *object, long value)
 {
    if (value == observable_OBJECTDESTROYED) {
 	/* this makes little to no sense.
@@ -931,17 +856,13 @@ long value;
 }
 
 
-void buffer__SetIsModified(self, value)
-struct buffer *self;
-boolean value;
+void buffer__SetIsModified(struct buffer *self, boolean value)
 {
     self->isModified = value;
     buffer_NotifyObservers(self, observable_OBJECTCHANGED);
 }
 
-void buffer__SetIsRawFile(self, value)
-struct buffer *self;
-boolean value;
+void buffer__SetIsRawFile(struct buffer *self, boolean value)
 {
     self->isRawFile = value;
     buffer_NotifyObservers(self, observable_OBJECTCHANGED);

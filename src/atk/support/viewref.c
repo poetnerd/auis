@@ -34,15 +34,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
  
 
-#include <class.h>
+#include <andrewos.h>#include <class.h>
 #include <dataobj.ih>
 #include <viewref.eh>
 
 static long viewID = 0;
 
-boolean viewref__InitializeObject(classID, self)
-struct classheader *classID;
-struct viewref *self;
+boolean viewref__InitializeObject(struct classheader *classID, struct viewref *self)
 {
     self->viewType = NULL;
     self->viewID = viewID++;
@@ -51,9 +49,7 @@ struct viewref *self;
     return TRUE;
 }
 
-void viewref__FinalizeObject(classID, self)
-struct classheader *classID;
-struct viewref *self;
+void viewref__FinalizeObject(struct classheader *classID, struct viewref *self)
 {
     if (self->viewType != NULL) {
 	free(self->viewType);
@@ -66,10 +62,7 @@ struct viewref *self;
     }
 }
 
-struct viewref *viewref__Create(classID, viewType, dataObject)
-struct classheader *classID;
-char *viewType;
-struct dataobject *dataObject;
+struct viewref *viewref__Create(struct classheader *classID, char *viewType, struct dataobject *dataObject)
 {
     struct viewref *newvr;
     

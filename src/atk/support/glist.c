@@ -39,15 +39,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
  */
 
 
-#include <class.h>
+#include <andrewos.h>#include <class.h>
 #include <glist.eh>
 
 #define newelt() (struct glistelt *) malloc(sizeof(struct glistelt))
 
-boolean glist__InitializeObject(classID,self)
-struct classheader *classID;
-struct glist *self;
-
+boolean glist__InitializeObject(struct classheader *classID, struct glist *self)
 {
     self->head = self->tail = NULL;
     self->size = 0;
@@ -55,34 +52,26 @@ struct glist *self;
     return TRUE;
 }
 
-struct glist *glist__Create(classID,Destroy)
-struct classheader *classID;
-procedure Destroy;
+struct glist *glist__Create(struct classheader *classID, procedure Destroy)
 {
     struct glist *list = glist_New();
     list->DestroyProc = Destroy;
     return list;
 }
 
-static int copyElement(value,dest)
-char *value;
-struct glist *dest;
+static int copyElement(char *value, struct glist *dest)
 {
     glist_Insert(dest,value);
     return FALSE;
 }
 
 
-void glist__Copy(classID,dest,source)
-struct classheader *classID;
-struct glist *dest,*source;
+void glist__Copy(struct classheader *classID, struct glist *dest, struct glist *source)
 {
     glist_Find(source,copyElement,dest);
 }
 
-void glist__Clear(self,destroy)
-struct glist *self;
-boolean destroy;
+void glist__Clear(struct glist *self, boolean destroy)
 {
     struct glistelt *item = self->head, *next;
 
@@ -98,9 +87,7 @@ boolean destroy;
     self->size = 0;
 }
 
-void glist__FinalizeObject(classID,self)
-struct classheader *classID;
-struct glist *self;
+void glist__FinalizeObject(struct classheader *classID, struct glist *self)
 {
     struct glistelt *item = self->head, *next;
 
@@ -117,10 +104,7 @@ struct glist *self;
 }
 
 
-char * glist__Find(self,filter,rock)
-struct glist *self;
-procedure filter;
-char * rock;
+char * glist__Find(struct glist *self, procedure filter, char *rock)
 {
     char *rvalue;
     struct glistelt *item = self->head;
@@ -140,9 +124,7 @@ char * rock;
  *
  */
 
-boolean glist__Push(self,element)
-struct glist *self;
-char * element;
+boolean glist__Push(struct glist *self, char *element)
 {
     struct glistelt *temp = newelt();
 
@@ -159,9 +141,7 @@ char * element;
  *
  */
 
-boolean glist__Insert(self,element)
-struct glist *self;
-char *element;
+boolean glist__Insert(struct glist *self, char *element)
 {
     struct glistelt *temp = newelt();
 
@@ -183,8 +163,7 @@ char *element;
  *
  */
 
-char * glist__Pop(self)
-struct glist *self;
+char * glist__Pop(struct glist *self)
 {
     char *rvalue;
 
@@ -265,9 +244,7 @@ procedure greater; /* greater(element_1,element_2) */
  *
  */
 
-boolean glist__InsertUnique(self,element)
-struct glist *self;
-char * element;
+boolean glist__InsertUnique(struct glist *self, char *element)
 {
     if (glist_Contains(self,element))
         return FALSE;
@@ -283,17 +260,13 @@ struct glist_SortStruct {
     procedure compare;
 };
 
-static int MoveNew(listelt, ss)
-char *listelt;
-struct glist_SortStruct *ss;
+static int MoveNew(char *listelt, struct glist_SortStruct *ss)
 {
     glist_InsertSorted(ss->newlist,listelt,ss->compare);
     return FALSE;
 }
 
-boolean glist__Sort(self,compare)
-struct glist *self;
-procedure compare;
+boolean glist__Sort(struct glist *self, procedure compare)
 {
     struct glist *temp = glist_New();
     struct glist_SortStruct ss;
@@ -324,10 +297,7 @@ procedure compare;
 /***********************************************************************/
 
 
-boolean glist__Delete(self,element,destroy)
-struct glist *self;
-char * element;
-boolean destroy;
+boolean glist__Delete(struct glist *self, char *element, boolean destroy)
 {
     struct glistelt *item = self->head;
     struct glistelt *prev = NULL;
@@ -373,9 +343,7 @@ boolean destroy;
  *
  */
 
-boolean glist__Contains(self,element)
-struct glist *self;
-char * element;
+boolean glist__Contains(struct glist *self, char *element)
 {
     struct glistelt *item = self->head;
 
@@ -388,10 +356,7 @@ char * element;
     return FALSE;
 }
 
-void glist__Enumerate(self, proc, rock)
-struct glist *self;
-void (*proc)();
-unsigned long rock;
+void glist__Enumerate(struct glist *self, void (*proc)(), unsigned long rock)
 {
   struct glistelt *elt;
 

@@ -34,7 +34,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
  
 
-#include <class.h>
+#include <andrewos.h>#include <class.h>
 #include <style.eh>
 
 #include <namespc.ih>
@@ -48,9 +48,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 /* Convert any unit to unit style_RawDots */
 
-static long CVDots(amt, unit)
-register long amt;
-enum style_Unit unit;
+static long CVDots(register long amt, enum style_Unit unit)
 {
     switch (unit) {
         case style_RawDots:
@@ -284,9 +282,7 @@ enum style_FontFaceIndex {
 
 static char unknownstyle[]="unknown";
 
-boolean style__InitializeObject(classID, self)
-struct classheader *classID;
-struct style *self;
+boolean style__InitializeObject(struct classheader *classID, struct style *self)
 {
     self->name = malloc(sizeof(unknownstyle));
     if(self->name==NULL) return FALSE;
@@ -307,9 +303,7 @@ struct style *self;
     return TRUE;
 }
 
-void style__FinalizeObject(classID, self)
-struct classheader *classID;
-struct style *self;
+void style__FinalizeObject(struct classheader *classID, struct style *self)
 {
     if (self->name != NULL)
         free(self->name);
@@ -337,8 +331,7 @@ struct style *self;
  * Methods
  */
 
-void style__Reset(self)
-struct style *self;
+void style__Reset(struct style *self)
 {
     style_SetNewLeftMargin(self, style_LeftMargin, 0, style_Points);
     style_SetNewRightMargin(self, style_RightMargin, 0, style_Points);
@@ -407,8 +400,7 @@ int indexvalue; {
     return TRUE;
 }
 
-void style__Copy(self, dest)
-struct style *self, *dest;
+void style__Copy(struct style *self, struct style *dest)
 {
     register int i;
     register char **counterstyle;
@@ -462,9 +454,7 @@ struct style *self, *dest;
 
 /* Attribute Setting and Clearing Functions */
 
-void style__SetName(self, name)
-struct style *self;
-char *name;
+void style__SetName(struct style *self, char *name)
 {
     if (self->name != NULL)
         free(self->name);
@@ -474,15 +464,12 @@ char *name;
         strcpy(self->name, name);
 }
 
-char *style__GetName(self)
-struct style *self;
+char *style__GetName(struct style *self)
 {
     return self->name;
 }
 
-void style__SetMenuName(self, menuName)
-struct style *self;
-char *menuName;
+void style__SetMenuName(struct style *self, char *menuName)
 {
     if (self->menuName != NULL)
         free(self->menuName);
@@ -494,17 +481,12 @@ char *menuName;
     }
 }
 
-char *style__GetMenuName(self)
-struct style *self;
+char *style__GetMenuName(struct style *self)
 {
     return self->menuName;
 }
 
-void style__SetNewLeftMargin(self, Basis, Operand, Unit)
-struct style *self;
-enum style_MarginValue Basis;
-long Operand;
-enum style_Unit Unit;
+void style__SetNewLeftMargin(struct style *self, enum style_MarginValue Basis, long Operand, enum style_Unit Unit)
 {
     self->NewLeftMargin.MarginBasis = Basis;
     self->NewLeftMargin.Operand = Operand;
@@ -512,22 +494,14 @@ enum style_Unit Unit;
     self->NewLeftMargin.DotCvtOperand = CVDots(Operand,Unit);
 }
 
-void style__GetNewLeftMargin(self, RefBasis, RefOperand, RefUnit)
-struct style *self;
-enum style_MarginValue *RefBasis;
-long *RefOperand;
-enum style_Unit *RefUnit;
+void style__GetNewLeftMargin(struct style *self, enum style_MarginValue *RefBasis, long *RefOperand, enum style_Unit *RefUnit)
 {
     *RefBasis =  self->NewLeftMargin.MarginBasis;
     *RefOperand = self->NewLeftMargin.Operand;
     *RefUnit = self->NewLeftMargin.MarginUnit;
 }
 
-void style__SetNewRightMargin(self, Basis, Operand, Unit)
-struct style *self;
-enum style_MarginValue Basis;
-long Operand;
-enum style_Unit Unit;
+void style__SetNewRightMargin(struct style *self, enum style_MarginValue Basis, long Operand, enum style_Unit Unit)
 {
     self->NewRightMargin.MarginBasis = Basis;
     self->NewRightMargin.Operand = Operand;
@@ -535,22 +509,14 @@ enum style_Unit Unit;
     self->NewRightMargin.DotCvtOperand = CVDots(Operand,Unit);
 }
 
-void style__GetNewRightMargin(self, RefBasis, RefOperand, RefUnit)
-struct style *self;
-enum style_MarginValue *RefBasis;
-long *RefOperand;
-enum style_Unit *RefUnit;
+void style__GetNewRightMargin(struct style *self, enum style_MarginValue *RefBasis, long *RefOperand, enum style_Unit *RefUnit)
 {
     *RefBasis =  self->NewRightMargin.MarginBasis;
     *RefOperand = self->NewRightMargin.Operand;
     *RefUnit = self->NewRightMargin.MarginUnit;
 }
 
-void style__SetNewTopMargin(self, Basis, Operand, Unit)
-struct style *self;
-enum style_MarginValue Basis;
-long Operand;
-enum style_Unit Unit;
+void style__SetNewTopMargin(struct style *self, enum style_MarginValue Basis, long Operand, enum style_Unit Unit)
 {
     self->NewTopMargin.MarginBasis = Basis;
     self->NewTopMargin.Operand = Operand;
@@ -568,11 +534,7 @@ enum style_Unit *RefUnit;{
     *RefUnit = self->NewTopMargin.MarginUnit;
 }
 
-void style__SetNewBottomMargin(self, Basis, Operand, Unit)
-struct style *self;
-enum style_MarginValue Basis;
-long Operand;
-enum style_Unit Unit;
+void style__SetNewBottomMargin(struct style *self, enum style_MarginValue Basis, long Operand, enum style_Unit Unit)
 {
     self->NewBottomMargin.MarginBasis = Basis;
     self->NewBottomMargin.Operand = Operand;
@@ -580,22 +542,14 @@ enum style_Unit Unit;
     self->NewBottomMargin.DotCvtOperand = CVDots(Operand, Unit);
 }
 
-void style__GetNewBottomMargin(self, RefBasis, RefOperand, RefUnit)
-struct style *self;
-enum style_MarginValue *RefBasis;
-long *RefOperand;
-enum style_Unit *RefUnit;
+void style__GetNewBottomMargin(struct style *self, enum style_MarginValue *RefBasis, long *RefOperand, enum style_Unit *RefUnit)
 {
     *RefBasis =  self->NewBottomMargin.MarginBasis;
     *RefOperand = self->NewBottomMargin.Operand;
     *RefUnit = self->NewBottomMargin.MarginUnit;
 }
 
-void style__SetNewIndentation(self, Basis, Operand, Unit)
-struct style *self;
-enum style_MarginValue Basis;
-long Operand;
-enum style_Unit Unit;
+void style__SetNewIndentation(struct style *self, enum style_MarginValue Basis, long Operand, enum style_Unit Unit)
 {
     self->NewIndentation.MarginBasis = Basis;
     self->NewIndentation.Operand = Operand;
@@ -603,22 +557,14 @@ enum style_Unit Unit;
     self->NewIndentation.DotCvtOperand = CVDots(Operand, Unit);
 }
 
-void style__GetNewIndentation(self, RefBasis, RefOperand, RefUnit)
-struct style *self;
-enum style_MarginValue *RefBasis;
-long *RefOperand;
-enum style_Unit *RefUnit;
+void style__GetNewIndentation(struct style *self, enum style_MarginValue *RefBasis, long *RefOperand, enum style_Unit *RefUnit)
 {
     *RefBasis =  self->NewIndentation.MarginBasis;
     *RefOperand = self->NewIndentation.Operand;
     *RefUnit = self->NewIndentation.MarginUnit;
 }
 
-void style__SetNewInterparagraphSpacing(self, Basis, Operand, Unit)
-struct style *self;
-enum style_SpacingValue Basis;
-long Operand;
-enum style_Unit Unit;
+void style__SetNewInterparagraphSpacing(struct style *self, enum style_SpacingValue Basis, long Operand, enum style_Unit Unit)
 {
     self->NewInterparagraphSpacing.SpacingBasis = Basis;
     self->NewInterparagraphSpacing.Operand = Operand;
@@ -626,22 +572,14 @@ enum style_Unit Unit;
     self->NewInterparagraphSpacing.DotCvtOperand = CVDots(Operand, Unit);
 }
 
-void style__GetNewInterparagraphSpacing(self, RefBasis,RefOperand, RefUnit)
-struct style *self;
-enum style_SpacingValue *RefBasis;
-long *RefOperand;
-enum style_Unit *RefUnit;
+void style__GetNewInterparagraphSpacing(struct style *self, enum style_SpacingValue *RefBasis, long *RefOperand, enum style_Unit *RefUnit)
 {
     *RefBasis = self->NewInterparagraphSpacing.SpacingBasis;
     *RefOperand = self->NewInterparagraphSpacing.Operand;
     *RefUnit = self->NewInterparagraphSpacing.SpacingUnit;
 }
 
-void style__SetNewAbove(self, Basis, Operand, Unit)
-struct style *self;
-enum style_SpacingValue Basis;
-long Operand;
-enum style_Unit Unit;
+void style__SetNewAbove(struct style *self, enum style_SpacingValue Basis, long Operand, enum style_Unit Unit)
 {
     self->NewAbove.SpacingBasis = Basis;
     self->NewAbove.Operand = Operand;
@@ -649,22 +587,14 @@ enum style_Unit Unit;
     self->NewAbove.DotCvtOperand = CVDots(Operand, Unit);
 }
 
-void style__GetNewAbove(self, RefBasis, RefOperand, RefUnit)
-struct style *self;
-enum style_SpacingValue *RefBasis;
-long *RefOperand;
-enum style_Unit *RefUnit;
+void style__GetNewAbove(struct style *self, enum style_SpacingValue *RefBasis, long *RefOperand, enum style_Unit *RefUnit)
 {
     *RefBasis = self->NewAbove.SpacingBasis;
     *RefOperand = self->NewAbove.Operand;
     *RefUnit = self->NewAbove.SpacingUnit;
 }
 
-void style__SetNewBelow(self, Basis, Operand, Unit)
-struct style *self;
-enum style_SpacingValue Basis;
-long Operand;
-enum style_Unit Unit;
+void style__SetNewBelow(struct style *self, enum style_SpacingValue Basis, long Operand, enum style_Unit Unit)
 {
 
     self->NewBelow.SpacingBasis = Basis;
@@ -673,22 +603,14 @@ enum style_Unit Unit;
     self->NewBelow.DotCvtOperand = CVDots(Operand,Unit);
 }
 
-void style__GetNewBelow(self, RefBasis, RefOperand, RefUnit)
-struct style *self;
-enum style_SpacingValue *RefBasis;
-long *RefOperand;
-enum style_Unit *RefUnit;
+void style__GetNewBelow(struct style *self, enum style_SpacingValue *RefBasis, long *RefOperand, enum style_Unit *RefUnit)
 {
     *RefBasis = self->NewBelow.SpacingBasis;
     *RefOperand = self->NewBelow.Operand;
     *RefUnit = self->NewBelow.SpacingUnit;
 }
 
-void style__SetNewInterlineSpacing(self, Basis, Operand, Unit)
-struct style *self;
-enum style_SpacingValue Basis;
-long Operand;
-enum style_Unit Unit;
+void style__SetNewInterlineSpacing(struct style *self, enum style_SpacingValue Basis, long Operand, enum style_Unit Unit)
 {
     self->NewInterlineSpacing.SpacingBasis = Basis;
     self->NewInterlineSpacing.Operand = Operand;
@@ -696,20 +618,14 @@ enum style_Unit Unit;
     self->NewInterlineSpacing.DotCvtOperand = CVDots(Operand, Unit);
 }
 
-void style__GetNewInterlineSpacing(self, RefBasis, RefOperand, RefUnit)
-struct style *self;
-enum style_SpacingValue *RefBasis;
-long *RefOperand;
-enum style_Unit *RefUnit;
+void style__GetNewInterlineSpacing(struct style *self, enum style_SpacingValue *RefBasis, long *RefOperand, enum style_Unit *RefUnit)
 {
     *RefBasis = self->NewInterlineSpacing.SpacingBasis;
     *RefOperand = self->NewInterlineSpacing.Operand;
     *RefUnit = self->NewInterlineSpacing.SpacingUnit;
 }
 
-void style__SetFontFamily(self, NewFont)
-struct style *self;
-char *NewFont;
+void style__SetFontFamily(struct style *self, char *NewFont)
 {
     if (self->FontFamily != NULL)
         free(self->FontFamily);
@@ -721,10 +637,7 @@ char *NewFont;
         strcpy(self->FontFamily, NewFont);
 }
 
-void style__GetFontFamily(self, FontName, bufsize)
-struct style *self;
-char *FontName;
-int bufsize;
+void style__GetFontFamily(struct style *self, char *FontName, int bufsize)
 {
     register char *s;
 
@@ -739,30 +652,20 @@ int bufsize;
     *FontName = '\0';
 }
 
-void style__SetFontSize(self, Basis, Operand)
-struct style *self;
-enum style_FontSize Basis;
-long Operand;
+void style__SetFontSize(struct style *self, enum style_FontSize Basis, long Operand)
 {
 
     self->FontSize.SizeBasis = Basis;
     self->FontSize.Operand = Operand;
 }
 
-void style__GetFontSize(self, RefBasis, RefOperand)
-struct style *self;
-enum style_FontSize *RefBasis;
-long *RefOperand;
+void style__GetFontSize(struct style *self, enum style_FontSize *RefBasis, long *RefOperand)
 {
     *RefBasis = self->FontSize.SizeBasis;
     *RefOperand = self->FontSize.Operand;
 }
 
-void style__SetFontScript(self, Basis, Operand, Unit)
-struct style *self;
-enum style_ScriptMovement Basis;
-long Operand;
-enum style_Unit Unit;
+void style__SetFontScript(struct style *self, enum style_ScriptMovement Basis, long Operand, enum style_Unit Unit)
 {
     self->FontScript.ScriptBasis = Basis;
     self->FontScript.Operand = Operand;
@@ -770,20 +673,14 @@ enum style_Unit Unit;
     self->FontScript.DotCvtOperand = CVDots(Operand, Unit);
 }
 
-void style__GetFontScript(self,RefBasis, RefOperand, RefUnit)
-struct style *self;
-enum style_ScriptMovement *RefBasis;
-long *RefOperand;
-enum style_Unit *RefUnit;
+void style__GetFontScript(struct style *self, enum style_ScriptMovement *RefBasis, long *RefOperand, enum style_Unit *RefUnit)
 {
     *RefBasis = self->FontScript.ScriptBasis;
     *RefOperand = self->FontScript.Operand;
     *RefUnit = self->FontScript.SizeUnit;
 }
 
-void style__SetCounterName(self, NewName)
-struct style *self;
-char *NewName;
+void style__SetCounterName(struct style *self, char *NewName)
 {
     if (self->CounterName != NULL)
 	free(self->CounterName);
@@ -795,9 +692,7 @@ char *NewName;
 	strcpy(self->CounterName, NewName);
 }
 
-void style__GetCounterName(self, RetrievedName)
-struct style *self;
-char *RetrievedName;
+void style__GetCounterName(struct style *self, char *RetrievedName)
 {
     if (self->CounterName == NULL)
 	RetrievedName[0] = '\0';
@@ -805,9 +700,7 @@ char *RetrievedName;
 	strcpy(RetrievedName, self->CounterName);
 }
 
-void style__SetCounterParent(self, NewParent)
-struct style *self;
-char *NewParent;
+void style__SetCounterParent(struct style *self, char *NewParent)
 {
     if (self->CounterParent != NULL)
 	free(self->CounterParent);
@@ -819,9 +712,7 @@ char *NewParent;
 	strcpy(self->CounterParent, NewParent);
 }
 
-void style__GetCounterParent(self, RetrievedParent)
-struct style *self;
-char *RetrievedParent;
+void style__GetCounterParent(struct style *self, char *RetrievedParent)
 {
     if (self->CounterParent == NULL)
 	RetrievedParent[0] ='\0';
@@ -829,8 +720,7 @@ char *RetrievedParent;
 	strcpy(RetrievedParent, self->CounterParent);
 }
 
-void style__ClearCounterStyles(self)
-struct style *self;
+void style__ClearCounterStyles(struct style *self)
 {
     register int i;
 
@@ -842,9 +732,7 @@ struct style *self;
     self->CounterStyles = NULL;
 }
 
-void style__AddCounterStyle(self, NewStyle)
-struct style *self;
-char *NewStyle;
+void style__AddCounterStyle(struct style *self, char *NewStyle)
 {
     if (self->NumCounterStyles == 0)
 	self->CounterStyles = (char **) malloc(sizeof(char *));
@@ -859,10 +747,7 @@ char *NewStyle;
     self->NumCounterStyles++;
 }
 
-void style__GetCounterStyles(self,RefNumStyles, RefStyleStrings)
-struct style *self;
-long *RefNumStyles;
-char ***RefStyleStrings;
+void style__GetCounterStyles(struct style *self, long *RefNumStyles, char ***RefStyleStrings)
 {
     register int i;
 
@@ -875,8 +760,7 @@ char ***RefStyleStrings;
     }
 }
 
-void style__ClearTabChanges(self)
-struct style *self;
+void style__ClearTabChanges(struct style *self)
 {  
     if (self->TabChangeList != NULL)
 	free(self->TabChangeList);
@@ -884,11 +768,7 @@ struct style *self;
     self->TabChangeList = NULL;
 }
 
-void style__AddTabChange(self, TabOp, Where, Unit)
-struct style *self;
-enum style_TabAlignment TabOp;
-long Where;
-enum style_Unit Unit;
+void style__AddTabChange(struct style *self, enum style_TabAlignment TabOp, long Where, enum style_Unit Unit)
 {
     if (TabOp == style_AllClear) {
 	self->NumTabChanges = 0;
@@ -926,10 +806,7 @@ enum style_Unit Unit;
     self->NumTabChanges++;
 }
 
-void style__GetTabChangeList(self, RefNumTabChanges, RefTabChanges)
-struct style *self;
-long *RefNumTabChanges;
-struct tabentry ***RefTabChanges;
+void style__GetTabChangeList(struct style *self, long *RefNumTabChanges, struct tabentry ***RefTabChanges)
 {
     register int i;
     struct tabentry **Newptr;
@@ -1002,17 +879,13 @@ char * TestAttributeName;{
 
 /* Datastream I/O: Menu fields */
 
-void style__WriteMenu(self, fp)
-struct style *self;
-FILE *fp;
+void style__WriteMenu(struct style *self, FILE *fp)
 {
     if (self->menuName != NULL && self->menuName[0] != '\0')
         fprintf(fp, "menu:[%s]", self->menuName);
 }
 
-long style__ReadMenu(self, fp)
-struct style *self;
-FILE *fp;
+long style__ReadMenu(struct style *self, FILE *fp)
 {
     int c, pos;
     char name[128];
@@ -1057,9 +930,7 @@ int indexvalue; {
     return TRUE;
 }
 
-void style__WriteAttr(self, fp)
-struct style *self;
-FILE *fp;
+void style__WriteAttr(struct style *self, FILE *fp)
 {
     register int i;
     long numtabchanges, operand;
@@ -1333,9 +1204,7 @@ FILE *fp;
     }
 }
 
-long style__ReadAttr(self, fp)
-struct style *self;
-FILE *fp;
+long style__ReadAttr(struct style *self, FILE *fp)
 {
     register int j;
     int c, operand, basis, unit, newface;
@@ -1844,9 +1713,7 @@ struct style *self; FILE *fp; {
  * already been written.  Does not write trailing "}" and newline.
  */
 
-void style__Write(self, fp)
-struct style *self;
-FILE *fp;
+void style__Write(struct style *self, FILE *fp)
 {
     style_WriteMenu(self, fp);
     style_WriteAttr(self, fp);
@@ -1863,9 +1730,7 @@ FILE *fp;
  * of ignoring the bad style definition.
  */
 
-long style__Read(self, fp)
-struct style *self;
-FILE *fp;
+long style__Read(struct style *self, FILE *fp)
 {
     int c, pos;
     char token[17];

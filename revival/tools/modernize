@@ -89,7 +89,7 @@ KNR_PATTERN = re.compile(
     (                           # group 4: type declarations
         (?:\s*                  # each declaration line:
             (?:register\s+|unsigned\s+|const\s+|long\s+|short\s+)*
-            (?:struct\s+\w+|enum\s+\w+|\w+)  # type name
+            (?:struct\s+\w+|union\s+\w+|enum\s+\w+|\w+)  # type name
             \s+\**\s*           # spacing and pointer stars
             [^;{]+;             # declarator(s) and semicolon
             [^\n]*\n            # rest of line (may have comments)
@@ -136,42 +136,34 @@ def parse_type_declarations(decls_text):
         line = line.rstrip(';').strip()
         if not line:
             continue
-        last_space = -1
-        last_star = -1
-        paren_depth = 0
-        for i, ch in enumerate(line):
-            if ch == '(':
-                paren_depth += 1
-            elif ch == ')':
-                paren_depth -= 1
-            elif paren_depth == 0:
-                if ch == ' ' or ch == '\t':
-                    last_space = i
-                elif ch == '*':
-                    last_star = i
 
-        split_point = max(last_space, last_star)
-        if split_point < 0:
+        m = re.match(
+            r'((?:register\s+|unsigned\s+|const\s+|long\s+|short\s+)*'
+            r'(?:struct\s+\w+|union\s+\w+|enum\s+\w+|\w+))'
+            r'\s+(.*)', line)
+        if not m:
             continue
 
-        if last_star > last_space:
-            type_part = line[:last_star + 1]
-            name_part = line[last_star + 1:].strip()
-        else:
-            type_part = line[:last_space].strip()
-            name_part = line[last_space + 1:].strip()
+        base_type = m.group(1).strip()
+        rest = m.group(2).strip()
 
-        for name in name_part.split(','):
-            name = name.strip()
+        for decl in rest.split(','):
+            decl = decl.strip()
             array_suffix = ''
-            if '[]' in name:
-                array_suffix = '[]'
-                name = name.replace('[]', '').strip()
-            if name.startswith('*'):
-                clean_name = name.lstrip('*').strip()
-                type_map[clean_name] = f"{type_part} *{clean_name}{array_suffix}"
+            if '[]' in decl:
+                array_suffix = decl[decl.index('['):]
+                decl = decl[:decl.index('[')].strip()
+            stars = ''
+            while decl.startswith('*'):
+                stars += '*'
+                decl = decl[1:].strip()
+            name = decl
+            if not name or not re.match(r'\w+$', name):
+                continue
+            if stars:
+                type_map[name] = f"{base_type} {stars}{name}{array_suffix}"
             else:
-                type_map[name] = f"{type_part} {name}{array_suffix}"
+                type_map[name] = f"{base_type} {name}{array_suffix}"
 
     return type_map
 

@@ -38,14 +38,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include <andrewos.h>
 #include <class.h>
+
+extern int lc_strcmp(char *s1, char *s2);
 #include <strcache.eh>
 #include <util.h>
 #include <ctype.h>
 
 static struct strcache *gcache=NULL;
 
-static int lchash(key)
-char *key;
+static int lchash(char *key)
 {
     char c;
     int index=0;
@@ -57,8 +58,7 @@ char *key;
     return index;
 }
 
-static int lccomp(a,b)
-char *a, *b;
+static int lccomp(char *a, char *b)
 {
     if(a==NULL && b==NULL) return 0;
     if(a==NULL) return -1;
@@ -66,8 +66,7 @@ char *a, *b;
     return lc_strcmp(a, b);
 }
 
-boolean strcache__InitializeClass(classID)
-struct classheader *classID;
+boolean strcache__InitializeClass(struct classheader *classID)
 {
     gcache=strcache_New();
     if(gcache==NULL) return FALSE;
@@ -76,16 +75,12 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean strcache__InitializeObject(classID,self)
-struct classheader *classID;
-struct strcache *self;
+boolean strcache__InitializeObject(struct classheader *classID, struct strcache *self)
 {
     return TRUE;
 }
 
-char *strcache__SaveStr(classID,str)
-struct classheader *classID;
-char *str;
+char *strcache__SaveStr(struct classheader *classID, char *str)
 {
     char *result;
     if(gcache==NULL) return NULL;
@@ -109,9 +104,7 @@ struct egg {
 };
 
 
-static boolean EnumProc(e, rock)
-struct egg *e;
-struct enumerate *rock;
+static boolean EnumProc(struct egg *e, struct enumerate *rock)
 {
     boolean result;
     result=rock->proc(rock->rock, e->value,  e->key, rock->self);
@@ -119,10 +112,7 @@ struct enumerate *rock;
     return result;
 }
 
-char *Enumerate(self,proc,rock)
-struct ghash *self;
-procedure proc;
-long rock;
+char *Enumerate(struct ghash *self, procedure proc, long rock)
 {
     char *result;
     struct enumerate r;
@@ -141,40 +131,29 @@ long rock;
     return NULL;
 }
     
-boolean DumpStr(rock, val, key, self)
-long rock;
-char *val;
-char *key;
-struct strcache *self;
+boolean DumpStr(long rock, char *val, char *key, struct strcache *self)
 {
     printf("key:%s\n", key);
     return FALSE;
 }
 
-void strcache__Dump(classID)
-struct classheader *classID;
+void strcache__Dump(struct classheader *classID)
 {
     Enumerate(gcache, DumpStr, NULL);
 }
 
-void strcache__FinalizeObject(classID,self)
-struct classheader *classID;
-struct strcache *self;
+void strcache__FinalizeObject(struct classheader *classID, struct strcache *self)
 {
 
 }
 
-char *strcache__Delete(self,key)
-struct strcache *self;
-char *key;
+char *strcache__Delete(struct strcache *self, char *key)
 {
     return NULL;
 }
     
 
-char *strcache__Rename(self,key,new)
-struct strcache *self;
-char *key,*new;
+char *strcache__Rename(struct strcache *self, char *key, char *new)
 {
     return NULL;
 }

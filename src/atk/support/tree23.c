@@ -46,8 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 static struct tree23int *freeList = NULL;
 static struct tree23int *lastBlock = NULL;
 
-struct tree23int *tree23int__Allocate(classID)
-struct classheader *classID;
+struct tree23int *tree23int__Allocate(struct classheader *classID)
 {
 
     static int lastIndex = NUMPERBLOCK; /* Force a block malloc on first call. */
@@ -64,9 +63,7 @@ struct classheader *classID;
     return &lastBlock[lastIndex++];
 }
 
-void tree23int__Deallocate(classID, self)
-struct classheader *classID;
-    struct tree23int *self;
+void tree23int__Deallocate(struct classheader *classID, struct tree23int *self)
 {
     self->header.tree23int_methods = (struct basicobject_methods *) freeList;
     freeList = self;
@@ -175,16 +172,8 @@ procedure proc;  {
     if (self->nKids >= 3) tree23int_Apply(self->kid[2],proc);
 }
 
-void tree23int__Filter(self, offset, left, right, lowval, highval, proc, procdata)
-struct tree23int *self;
-long offset;
-struct tree23int *left;
-struct tree23int *right;
-long lowval;
-long highval;
-procedure proc;
-char *procdata;
-  {
+void tree23int__Filter(struct tree23int *self, long offset, struct tree23int *left, struct tree23int *right, long lowval, long highval, procedure proc, char *procdata)
+{
     offset += self->bump;
 
     if(self->leaf ){
@@ -272,12 +261,7 @@ struct tree23int *self;  {
     tree23int_Destroy(self);
 }
 
-void tree23int__Merge(self, ancestor, offset, proc, procdata)
-struct tree23int *self;
-struct tree23int *ancestor;
-long offset;
-procedure proc;
-char *procdata;
+void tree23int__Merge(struct tree23int *self, struct tree23int *ancestor, long offset, procedure proc, char *procdata)
 {
     offset = offset+self->bump;
     /*     recurse down the tree, adding stuff to the root */
@@ -485,8 +469,7 @@ struct tree23int *child;  {
     }
 }
 
-struct tree23int *tree23int__GetLeftMostNode(self)
-    struct tree23int *self;
+struct tree23int *tree23int__GetLeftMostNode(struct tree23int *self)
 {
     while (! self->leaf)  {
 	if (self->nKids == 0) return NULL;
@@ -495,9 +478,7 @@ struct tree23int *tree23int__GetLeftMostNode(self)
     return  self;
 }
 
-struct tree23int *tree23int__GetNextNode(self,node)
-    struct tree23int *self;
-    struct tree23int *node;
+struct tree23int *tree23int__GetNextNode(struct tree23int *self, struct tree23int *node)
 {
     struct tree23int *parent;
     
@@ -515,8 +496,7 @@ struct tree23int *tree23int__GetNextNode(self,node)
     return NULL;
 }
 
-struct tree23int *tree23int__GetRightMostNode(self)
-    struct tree23int *self;
+struct tree23int *tree23int__GetRightMostNode(struct tree23int *self)
 {
     while (! self->leaf)  {
 	if (self->nKids == 0) return NULL;
@@ -525,9 +505,7 @@ struct tree23int *tree23int__GetRightMostNode(self)
     return  self;
 }
 
-struct tree23int *tree23int__GetPreviousNode(self,node)
-    struct tree23int *self;
-    struct tree23int *node;
+struct tree23int *tree23int__GetPreviousNode(struct tree23int *self, struct tree23int *node)
 {
     struct tree23int *parent;
     
@@ -547,10 +525,7 @@ struct tree23int *tree23int__GetPreviousNode(self,node)
     return NULL;
 }
 
-long tree23int__Enumerate(self, proc, procdata)
-    struct tree23int *self;
-    procedure proc;
-    char *procdata;
+long tree23int__Enumerate(struct tree23int *self, procedure proc, char *procdata)
 {
     struct tree23int *node;
     struct tree23int *nextnode;
@@ -567,8 +542,7 @@ long tree23int__Enumerate(self, proc, procdata)
     return 0;
 }
 
-long tree23int__NumberOfLeaves(self)
-    struct tree23int *self;
+long tree23int__NumberOfLeaves(struct tree23int *self)
 {
     long count = 0;
     if(self->leaf) return 1;

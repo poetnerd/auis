@@ -53,9 +53,7 @@ static struct cursor *waitCursor;
 
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 
-static long completion__FindCommon(classID, string1, string2)
-    struct classheader *classID;
-    char *string1, *string2;
+long completion__FindCommon(struct classheader *classID, char *string1, char *string2)
 {
     long i = 0;
 
@@ -64,10 +62,7 @@ static long completion__FindCommon(classID, string1, string2)
     return i;
 }
 
-static void completion__CompletionWork(classID, string, data)
-    struct classheader *classID;
-    char *string;
-    struct result *data;
+void completion__CompletionWork(struct classheader *classID, char *string, struct result *data)
 {
 
     int partialCommon, nameLen;
@@ -110,11 +105,7 @@ static void completion__CompletionWork(classID, string, data)
     }
 }
 
-static void FileHelp(partialPath, dummyData, helpTextFunction, helpTextRock)
-    char *partialPath;
-    long dummyData; /* Just along for the ride. */
-    int (*helpTextFunction)();
-    long helpTextRock;
+static void FileHelp(char *partialPath, long dummyData, int (*helpTextFunction)(), long helpTextRock)
 {
 
     int namelen;
@@ -209,12 +200,7 @@ static void FileHelp(partialPath, dummyData, helpTextFunction, helpTextRock)
     im_SetProcessCursor(NULL);
 }
 
-static void completion__FileHelp(classID, partialPath, dummyData, helpTextFunction, helpTextRock)
-    struct classheader *classID;
-    char *partialPath;
-    long dummyData; /* Just along for the ride. */
-    int (*helpTextFunction)();
-    long helpTextRock;
+static void completion__FileHelp(struct classheader *classID, char *partialPath, long dummyData, int helpTextFunction, long helpTextRock)
 {
     FileHelp(partialPath, dummyData, helpTextFunction, helpTextRock);
 }
@@ -362,15 +348,7 @@ static enum keymap_Types FileHack(rock, key, entry, rockP)
     return keymap_Empty;
 }
 
-static int completion__GetFilename(classID, view, prompt, startPath, buffer, bufsiz, directoryP, mustMatch)
-    struct classheader *classID;
-    struct view *view;
-    char *prompt;
-    char *startPath;
-    char *buffer;
-    long bufsiz;
-    boolean directoryP;
-    boolean mustMatch;
+static int completion__GetFilename(struct classheader *classID, struct view *view, char *prompt, char *startPath, char *buffer, long bufsiz, boolean directoryP, boolean mustMatch)
 {
 
     struct fileRock fileRock;
@@ -414,8 +392,7 @@ static int completion__GetFilename(classID, view, prompt, startPath, buffer, buf
     return code;
 }
 
-boolean completion__InitializeClass(classID)
-    struct classheader *classID;
+boolean completion__InitializeClass(struct classheader *classID)
 {
 
     waitCursor = cursor_Create(NULL);

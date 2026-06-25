@@ -34,7 +34,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
  
 
-#include <class.h>
+#include <andrewos.h>#include <class.h>
 
 #include <style.ih>
 #include <menulist.ih>
@@ -48,9 +48,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #define INITIALNUMSTYLES 20
 
 
-boolean stylesheet__InitializeObject(classID, self)
-struct classheader *classID;
-struct stylesheet *self;
+boolean stylesheet__InitializeObject(struct classheader *classID, struct stylesheet *self)
 {
     self->nstyles = 0;
     self->maxStyles = 0;
@@ -62,9 +60,7 @@ struct stylesheet *self;
     return TRUE;
 }
 
-void stylesheet__FinalizeObject(classID, self)
-struct classheader *classID;
-struct stylesheet *self;
+void stylesheet__FinalizeObject(struct classheader *classID, struct stylesheet *self)
 {
     if (self->templateName)
 	free(self->templateName);
@@ -75,8 +71,7 @@ struct stylesheet *self;
 	free(self->styles);
 }
 
-void stylesheet__FreeStyles(self)
-struct stylesheet *self;
+void stylesheet__FreeStyles(struct stylesheet *self)
 {
     register int i;
     register struct style **styles;
@@ -91,9 +86,7 @@ struct stylesheet *self;
     self->version++;
 }
 
-static long FindStyle(self, styleptr)
-struct stylesheet *self;
-struct style *styleptr;
+static long FindStyle(struct stylesheet *self, struct style *styleptr)
 {
     register int i;
     register struct style **styles;
@@ -105,9 +98,7 @@ struct style *styleptr;
     return -1;
 }
 
-void stylesheet__Add(self, styleptr)
-struct stylesheet *self;
-struct style *styleptr;
+void stylesheet__Add(struct stylesheet *self, struct style *styleptr)
 {
     if (self->maxStyles == 0) {
 	self->maxStyles = INITIALNUMSTYLES;
@@ -123,9 +114,7 @@ struct style *styleptr;
     self->version++;
 }
 
-void stylesheet__Delete(self, styleptr)
-struct stylesheet *self;
-struct style *styleptr;
+void stylesheet__Delete(struct stylesheet *self, struct style *styleptr)
 {
     register int i;
 
@@ -137,9 +126,7 @@ struct style *styleptr;
     self->version++;
 }
 
-struct style *stylesheet__Find(self, name)
-struct stylesheet *self;
-char *name;
+struct style *stylesheet__Find(struct stylesheet *self, char *name)
 {
     register int i;
     register struct style **styles;
@@ -151,10 +138,7 @@ char *name;
     return NULL;
 }
 
-struct menulist *stylesheet__GetMenuList(self, procname, infotype)
-struct stylesheet *self;
-int (*procname)();
-struct classinfo *infotype;
+struct menulist *stylesheet__GetMenuList(struct stylesheet *self, int procname, struct classinfo *infotype)
 {
     struct proctable_Entry *proc;
 
@@ -178,10 +162,7 @@ struct classinfo *infotype;
 /* Assumes the "\define{" has already been read. */
 /* The ending "}" is read by style_Read. */
 
-long stylesheet__Read(self, fp, template)
-struct stylesheet *self;
-FILE *fp;
-boolean template;
+long stylesheet__Read(struct stylesheet *self, FILE *fp, boolean template)
 {
     int c, i;
     struct style *styleptr;
@@ -224,9 +205,7 @@ boolean template;
     return 0;
 }
 
-void stylesheet__Write(self, fp)
-struct stylesheet *self;
-FILE *fp;
+void stylesheet__Write(struct stylesheet *self, FILE *fp)
 {
     register int i;
     register struct style **styles;
@@ -239,9 +218,7 @@ FILE *fp;
 	}
 }
 
-void stylesheet__SetTemplateName(self, templateName)
-struct stylesheet *self;
-char *templateName;
+void stylesheet__SetTemplateName(struct stylesheet *self, char *templateName)
 {
     if (self->templateName != NULL) {
 	if (strcmp(self->templateName, templateName)==0)
@@ -259,8 +236,7 @@ char *templateName;
     self->version++;
 }
 
-char *stylesheet__GetTemplateName(self)
-struct stylesheet *self;
+char *stylesheet__GetTemplateName(struct stylesheet *self)
 {
     return self->templateName;
 }
@@ -287,8 +263,7 @@ long data;
 	return NULL;
 }
 
-struct style *stylesheet__GetGlobalStyle(self)
-struct stylesheet *self;
+struct style *stylesheet__GetGlobalStyle(struct stylesheet *self)
 {
     return stylesheet_Find(self, "global");
 }

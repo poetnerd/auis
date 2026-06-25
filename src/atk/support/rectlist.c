@@ -109,8 +109,7 @@ int oldnum, newnum;  {
     }
 }
 
-void rectlist__ResetList(classID)
-struct classheader *classID;
+void rectlist__ResetList(struct classheader *classID)
 {
     EndScan = 0;
     EndOld = 0;
@@ -147,9 +146,7 @@ long bottom, top, left, right, startscan; {
     }
 }
 
-void rectlist__InvertRectangles(classID, vPtr)
-struct classheader *classID;
-    struct view *vPtr;
+void rectlist__InvertRectangles(struct classheader *classID, struct view *vPtr)
 {
     register int i;
     struct rectangle invertRect;
