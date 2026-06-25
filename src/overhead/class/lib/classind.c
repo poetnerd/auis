@@ -180,8 +180,7 @@ struct IndexEntry * ThisEntry;
  ** Return a new, initialized entry or NULL if no space is available.
  **/
 struct IndexEntry *
-CreateEntry(name, key, version, data)
-
+CreateEntry(char *name, char *key, unsigned long version, char *data)
 {
 struct IndexEntry * ThisEntry;
 

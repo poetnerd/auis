@@ -39,11 +39,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #ifndef NeXT
 #ifndef sys_sun4_51
+#ifndef sys_darwin
 #include <a.out.h>
+#endif /* sys_darwin */
 #endif /* sys_sun4_51 */
 #endif
 #include <setjmp.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <sys/param.h>
 #include <stdio.h>
 
@@ -68,8 +70,7 @@ extern char _etext;
 extern char etext;
 #endif /* _IBMR2 */
 
-extern int errno;
-static pathopen();
+static int pathopen(char *aname, char *tname, char *ext, unsigned long version);
 
 /*
  * additional defined constants
@@ -266,7 +267,7 @@ char *class_Lookup(struct classheader * header, int cpindex)
     }
 }
 
-int class_EnterInfo(struct classinfo * info, char * name, int proc, char * base, char * namekey)
+int class_EnterInfo(struct classinfo * info, char * name, struct classinfo *(*proc)(), char * base, char * namekey)
 {
     int i;
 
@@ -321,7 +322,7 @@ boolean class_IsLoaded(char * name)
     return (FindEntry(name, class_VERSIONNOTKNOWN, NOLOAD, &unknownID) != -1);
 }
 
-boolean class_IsType(int testobject, struct basicobject *testobject, * typeobject)
+boolean class_IsType(struct basicobject *testobject, struct basicobject *typeobject)
 {
     struct classinfo *testtype = testobject->methods->info;
 
@@ -380,7 +381,7 @@ FILE *file;  {
 }
 
 /* support for the dynamic loading code */
-static pathopen(char * aname, char * tname, char * ext, unsigned long version)
+static int pathopen(char * aname, char * tname, char * ext, unsigned long version)
 {
 char * ThisPath;
 int fn;

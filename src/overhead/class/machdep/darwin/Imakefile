@@ -1,0 +1,5 @@
+NormalObjectRule()
+
+all::		doload.o
+
+InstallCshScript(makedo.csh, $(DESTDIR)/bin/makedo)
