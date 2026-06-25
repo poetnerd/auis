@@ -41,6 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
 #include <andrewos.h>
@@ -50,7 +51,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #define LINESALLOCSTEP	200
 
 char *prog;
-extern int errno;
 
 #if !POSIX_ENV
 char *malloc(), *realloc();
@@ -89,9 +89,7 @@ char **l1, **l2;
     return strcmp(*l1,*l2);
 }
 
-char **readFromLines(fromFile,numP)
-char *fromFile;
-int *numP;
+char **readFromLines(char *fromFile, int *numP)
 {
     FILE *fp;
     int fromLinesLen=0, fromLinesMax=LINESALLOCSTEP;
@@ -142,8 +140,7 @@ int *numP;
     return fromLines;
 }
 
-int strcmpFirstField(s1,s2)
-char *s1, *s2;
+int strcmpFirstField(char *s1, char *s2)
 {
     while(*s1==*s2 && isgraph(*s1))
 	s1++, s2++;
@@ -156,9 +153,7 @@ char *s1, *s2;
 	return *s1-*s2;
 }
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     int fd;
     FILE *newFp, *oldFp;
