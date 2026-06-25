@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define	OFILENAME   "andrdir.h"
 
