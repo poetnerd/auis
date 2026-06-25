@@ -64,7 +64,13 @@ modern C standards. Idempotent — safe to run repeatedly.
 
 Current transformations:
 - Manual `malloc()`/`realloc()` declarations → `#include <stdlib.h>`
+- `extern int errno;` → `#include <errno.h>`
 - K&R function definitions → ANSI prototypes
+
+Known limitations (require manual fixes):
+- Function pointer parameters (`void (*proc)()`) are converted to `int`
+- Split-line definitions (return type on separate line from function name)
+  are skipped to avoid name truncation
 
 ### Project documentation — `revival/doc/`
 *Completed 2026-06-23*
