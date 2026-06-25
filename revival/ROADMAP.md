@@ -2,6 +2,17 @@
 
 Tracking the work to bring the Andrew User Interface System back to life.
 
+## Repository
+
+- **Remote:** https://poetnerd.com/wdc/auis/home
+- **SCM:** Fossil
+- **Codeline:** andrew-6.4, branching from the 6.3.1 C source (tagged `6.3.1`)
+- **Trunk layout:**
+  - `src/` — contents of auis-6.3.1
+  - `revival/` — documentation and tools
+  - `patches/` — official and contributed patches from the archive
+  - `bison/` — AUIS's modified bison
+
 ## Completed
 
 ### ez2md converter — `revival/tools/ez2md.py`
