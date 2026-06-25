@@ -141,11 +141,37 @@ Fixed platform detection in `platform.tmpl`: imake/tradcpp defines
 `__DARWIN__`, not `__MACH__`. The original `#if defined(__APPLE__) &&
 defined(__MACH__)` never matched.
 
-Added source-tree `INCLUDES` override in `site.mcr` so compilation
-can proceed without a prior install to `$BASEDIR`.
-
 Created `site.mcr` and `site.h` with `#undef AMS_ENV` and
 `#undef ANDREW_MALLOC_ENV`.
+
+### Proper BASEDIR bootstrap
+
+Removed source-tree INCLUDES/CLASS overrides from `site.mcr`. Set
+`DEFAULT_ANDREWDIR_ENV` in `site.h` to `andrew-6.4/build/`. The build
+system creates this directory structure and installs headers, libraries,
+and binaries incrementally as each layer builds — `make dependInstall`
+at the top level drives the whole process.
+
+### Darwin system.h fixes
+
+- `NEWPGRP()`: macOS `setpgrp()` takes no arguments (POSIX, not BSD)
+- `LEXLIB = -ll`: macOS has `-ll`, not `-lfl`
+
+### Full tree compiles
+
+`make dependInstall` runs end-to-end through the entire AUIS source:
+overhead (sys, util, class, bison, image, fonts, cmenu) and all of ATK
+(basics, support, text, frame, ez, extensions, ness, raster, table,
+console, figure, help, srctext, org, bush, chart, eq, fad, layout,
+lookz, syntax, apt, image).
+
+Fixed last 3 compilation errors: missing `<stdlib.h>` in
+`overhead/util/hdrs/genhdr.c` and missing `<stdlib.h>`/`<string.h>`
+in `overhead/image/tiff/mkg3states.c`.
+
+Install phase incomplete — `.ih` headers and binaries not fully
+populating `build/`. Likely related to `makedo`/`doindex` toolchain
+(the dynamic object packaging layer) not being built for Darwin.
 
 `make Makefiles` generates Makefiles recursively throughout the tree.
 `make` in `overhead/class/pp` builds and links the class preprocessor.
