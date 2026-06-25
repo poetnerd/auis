@@ -34,6 +34,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
  
 
+#include <andrewos.h>
 #include <class.h>
 #include <dataobj.eh>
 #include <attribs.h>
@@ -251,10 +252,7 @@ short dataobject__Get(struct dataobject * self, struct atom * property, struct a
     return FALSE;
 }
 
-dataobject__ListCurrentViews(self,array,size)
-struct dataobject *self;
-struct view **array;
-int size;
+int dataobject__ListCurrentViews(struct dataobject *self, struct view **array, int size)
 { 
     /* fills in the array (of size 'size') with a list of views
           observing this dataobj.

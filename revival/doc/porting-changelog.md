@@ -46,3 +46,31 @@ macros at each level.
 ```bash
 ./class -I../../../atk/text -I../../../atk/basics/common ../../../atk/text/bp.ch
 ```
+
+## 2026-06-25
+
+### `overhead/class/lib/class.h`
+
+Replaced `#ifdef _IBMR2` block (conditional stdlib.h, manual `free()` declaration,
+AIX `#define void char` hack) with unconditional `#include <stdlib.h>` and
+`#include <errno.h>`.
+
+### `atk/basics/common/dataobj.c`
+
+- Added `#include <andrewos.h>` (was missing, needed for `strlen`/`strcpy`)
+- Manually converted `dataobject__ListCurrentViews()` from implicit-int K&R
+  to ANSI prototype (split-line definition not caught by modernizer)
+
+### Base class chain compiles
+
+All four files in the hierarchy compile on macOS/Darwin:
+- `traced.c` — root object (3.3K)
+- `observe.c` — observable pattern (9.7K)
+- `dataobj.c` — data object base (10K)
+- `bp.c` — test inset (4K)
+
+```bash
+CFLAGS="-I. -I../../../config/darwin -I../../../config -I../../../overhead/class/lib -I../../../overhead/cmenu -DFLEX_ENV -DPOSIX_ENV"
+cc $CFLAGS -c traced.c observe.c dataobj.c
+cc $CFLAGS -I../../text -c ../../text/bp.c
+```
