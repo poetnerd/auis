@@ -35,7 +35,7 @@
 #include <dirent.h>
 #define DIRENT_TYPE struct dirent
 #define DIRENT_NAMELEN(d) (strlen((d)->d_name))
-#define NEWPGRP() setpgrp(0, 0)
+#define NEWPGRP() setpgrp()
 
 #include <time.h>
 
