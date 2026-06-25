@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""Modernize AUIS C source files.
+
+Applies mechanical transformations to bring 1990s C code closer to
+modern C standards. Designed to be run repeatedly and idempotently.
+
+Usage:
+    modernize.py [--dry-run] file.c [file2.c ...]
+    modernize.py [--dry-run] --dir src/atk/text
+"""
+
+import re
+import sys
+import argparse
+import os
+
+
+def modernize_file(path, dry_run=False):
+    with open(path, 'r', encoding='utf-8', errors='replace') as f:
+        original = f.read()
+
+    text = original
+    text = fix_malloc_declarations(text)
+    text = fix_knr_functions(text)
+
+    if text == original:
+        return False
+
+    if dry_run:
+        print(f"Would modify: {path}")
+    else:
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(text)
+        print(f"Modified: {path}")
+    return True
+
+
+def fix_malloc_declarations(text):
+    """Replace manual malloc/realloc/calloc declarations with #include <stdlib.h>."""
+    patterns = [
+        r'#ifndef\s+_IBMR2\s*\n\s*char\s+\*malloc\(\)[^;]*;\s*/\*[^*]*\*/\s*\n\s*#endif\s*/\*\s*_IBMR2\s*\*/\s*\n',
+        r'extern\s+char\s+\*malloc\(\)\s*,\s*\*realloc\(\)\s*;[^\n]*\n',
+        r'extern\s+char\s+\*realloc\(\)\s*;\s*\n',
+        r'extern\s+char\s+\*malloc\(\)\s*;\s*\n',
+    ]
+    for pat in patterns:
+        if re.search(pat, text):
+            text = re.sub(pat, '', text)
+            if '#include <stdlib.h>' not in text:
+                text = add_include(text, '<stdlib.h>')
+    return text
+
+
+def add_include(text, header):
+    """Insert an #include after the last existing #include block."""
+    last_include = -1
+    for m in re.finditer(r'^#include\s+[<"][^>"]+[>"]\s*$', text, re.MULTILINE):
+        last_include = m.end()
+    if last_include >= 0:
+        return text[:last_include] + f'\n#include {header}' + text[last_include:]
+    return f'#include {header}\n' + text
+
+
+KNR_PATTERN = re.compile(
+    r'''
+    ^                           # start of line
+    (                           # group 1: return type + name + params
+        (?:static\s+|extern\s+|(?:unsigned\s+)?)* # optional qualifiers
+        (?:struct\s+\w+\s*\*?|  # struct return type
+           \w+)                 # or simple return type
+        \s*\**\s*               # optional pointer stars
+        (\w+)                   # group 2: function name
+        \s*\(                   # open paren
+        ([^)]+)                 # group 3: parameter names (no types)
+        \)                      # close paren
+    )
+    \s*(?:/\*[^*]*\*/)?\s*\n    # optional comment, end of line
+    (                           # group 4: type declarations
+        (?:\s*                  # each declaration line:
+            (?:register\s+|unsigned\s+|const\s+|long\s+|short\s+)*
+            (?:struct\s+\w+|enum\s+\w+|\w+)  # type name
+            \s+\**\s*           # spacing and pointer stars
+            [^;{]+;             # declarator(s) and semicolon
+            [^\n]*\n            # rest of line (may have comments)
+        )+                      # one or more declaration lines
+    )
+    \s*(?=\{)                   # optional blank lines before opening brace
+    ''',
+    re.MULTILINE | re.VERBOSE
+)
+
+
+def fix_knr_functions(text):
+    """Convert K&R function definitions to ANSI style."""
+    return KNR_PATTERN.sub(knr_replacer, text)
+
+
+def knr_replacer(match):
+    full_header = match.group(1)
+    func_name = match.group(2)
+    param_names_str = match.group(3)
+    type_decls = match.group(4)
+
+    param_names = [p.strip() for p in param_names_str.split(',')]
+
+    type_map = parse_type_declarations(type_decls)
+
+    ansi_params = []
+    for name in param_names:
+        if name in type_map:
+            ansi_params.append(type_map[name])
+        else:
+            ansi_params.append(f'int {name}')
+
+    ret_and_name = full_header[:full_header.index(func_name) + len(func_name)]
+    return f"{ret_and_name}({', '.join(ansi_params)})\n"
+
+
+def parse_type_declarations(decls_text):
+    """Parse K&R parameter type declarations into a name->typed-param map."""
+    type_map = {}
+    for line in decls_text.strip().split('\n'):
+        line = line.strip()
+        line = re.sub(r'/\*.*?\*/', '', line).strip()
+        line = line.rstrip(';').strip()
+        if not line:
+            continue
+        last_space = -1
+        last_star = -1
+        paren_depth = 0
+        for i, ch in enumerate(line):
+            if ch == '(':
+                paren_depth += 1
+            elif ch == ')':
+                paren_depth -= 1
+            elif paren_depth == 0:
+                if ch == ' ' or ch == '\t':
+                    last_space = i
+                elif ch == '*':
+                    last_star = i
+
+        split_point = max(last_space, last_star)
+        if split_point < 0:
+            continue
+
+        if last_star > last_space:
+            type_part = line[:last_star + 1]
+            name_part = line[last_star + 1:].strip()
+        else:
+            type_part = line[:last_space].strip()
+            name_part = line[last_space + 1:].strip()
+
+        for name in name_part.split(','):
+            name = name.strip()
+            if name.startswith('*'):
+                type_map[name.lstrip('*').strip()] = f"{type_part} *{name.lstrip('*').strip()}"
+            else:
+                type_map[name] = f"{type_part} {name}"
+
+    return type_map
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Modernize AUIS C source files')
+    parser.add_argument('files', nargs='*', help='Files to modernize')
+    parser.add_argument('--dir', help='Process all .c and .h files in directory tree')
+    parser.add_argument('--dry-run', action='store_true', help='Show what would change')
+    args = parser.parse_args()
+
+    files = list(args.files)
+    if args.dir:
+        for root, dirs, filenames in os.walk(args.dir):
+            for fn in filenames:
+                if fn.endswith(('.c', '.h')):
+                    files.append(os.path.join(root, fn))
+
+    if not files:
+        parser.print_help()
+        sys.exit(1)
+
+    modified = 0
+    for path in files:
+        if modernize_file(path, dry_run=args.dry_run):
+            modified += 1
+
+    print(f"\n{modified} file(s) {'would be ' if args.dry_run else ''}modified out of {len(files)} scanned.")
+
+
+if __name__ == '__main__':
+    main()

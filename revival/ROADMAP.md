@@ -15,17 +15,15 @@ Tracking the work to bring the Andrew User Interface System back to life.
 
 ## Completed
 
-### ez2md converter — `revival/tools/ez2md.py`
+### ez2md converter — `revival/tools/ez2md`
 *Completed 2026-06-23*
 
-A Python tool that converts ATK/ez format documents to Markdown. Handles
-the full document structure: metadata stripping, style definitions, heading
-commands, inline formatting (bold, italic, typewriter), nested and recursive
-embedded objects, footnotes, page breaks, and continuation backslashes.
+Converts ATK/ez format documents to Markdown. Handles the full document
+structure: metadata, styles, headings, inline formatting, nested embedded
+objects, footnotes, and page breaks.
 
-Supports both file-based I/O (`ez2md.py input.ez -o output.md`) and pipes
-(`cat input.ez | ez2md.py | less`), reading from stdin and writing to
-stdout by default.
+    ez2md input.ez -o output.md
+    cat input.ez | ez2md | less
 
 Tested against all 51 `.ez` files in the archive without errors.
 
@@ -53,6 +51,20 @@ Tested against all 51 `.ez` files in the archive without errors.
 - `\formatnote` content is intentionally dropped (typesetter directives)
 - Indentation commands (`\indent`, `\leftindent`) pass content through
   without visual indentation in Markdown
+
+### modernize — `revival/tools/modernize`
+*Completed 2026-06-24*
+
+Applies mechanical transformations to bring 1990s C source closer to
+modern C standards. Idempotent — safe to run repeatedly.
+
+    modernize file.c [file2.c ...]
+    modernize --dir src/atk/text
+    modernize --dry-run src/overhead/class/pp/class.c
+
+Current transformations:
+- Manual `malloc()`/`realloc()` declarations → `#include <stdlib.h>`
+- K&R function definitions → ANSI prototypes
 
 ### Project documentation — `revival/doc/`
 *Completed 2026-06-23*
