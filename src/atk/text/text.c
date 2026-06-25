@@ -54,6 +54,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <txtstvec.h>
 #include <viewref.ih>
 #include <text.eh>
+#include <util.h>
+
+static void PushLevel(char *s, int pos, int len, int IsReal);
+static int ComingNext(struct text *self, int pos);
 
 #define MAXENVSTACK 100
 #define TEXT_VIEWREFCHAR '\377'
@@ -65,8 +69,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #define MAX_QP_CHARS 76 /* The Quoted-Printable encoding REQUIRES that encoded lines be no more than 76 characters long */
 #define LAST_QP_CHAR (MAX_QP_CHARS - 1)
 
-static stylesIncludeBeginning = text_UNSET;
-static stylesIncludeEnd = text_UNSET;
+static int stylesIncludeBeginning = text_UNSET;
+static int stylesIncludeEnd = text_UNSET;
 
 /* Place holder character for viewrefs */
 /* All viewrefs contain this char, but the presence of this */
@@ -140,11 +144,7 @@ struct dataobject *obj;
     }
 }
 
-static struct environment *text__AlwaysWrapViewChar(self, pos, viewtype, dataobject)
-struct text *self;
-long pos;
-char *viewtype;
-struct dataobject *dataobject;
+struct environment *text__AlwaysWrapViewChar(struct text *self, long pos, char *viewtype, struct dataobject *dataobject)
 {
     struct viewref *newviewref;
     struct environment *newenv;
@@ -1210,11 +1210,7 @@ char *outbuf,*outp,*lastblank;
  * removed to save space.  It could be retrieved if necessary.
  */
 
-static void text__WriteSubString(self, pos, len, file, quoteCharacters)
-struct text *self;
-long pos;
-long len;
-FILE *file;
+void text__WriteSubString(struct text *self, long pos, long len, FILE *file, int quoteCharacters)
 {
     struct environment *rootenv;
     struct environment *startenv;
@@ -1421,10 +1417,7 @@ FILE *file;
         putc('}', file);
 }
 
-static WrapStyle(self,curenv,pos)
-struct text *self;
-struct environment *curenv;
-long pos;
+static int WrapStyle(struct text *self, struct environment *curenv, long pos)
 {
     struct environment *newenv;
     if (curenv->type == environment_Style){
@@ -1809,9 +1802,7 @@ struct text_statevector *sv;
     }
 }
 
-static PlayTabs(sv, oldsv, styleptr)
-struct text_statevector *sv, *oldsv;
-struct style * styleptr;
+static int PlayTabs(struct text_statevector *sv, struct text_statevector *oldsv, struct style *styleptr)
 {
     /* Tab updating is defined as copying over all of the old tabs and then */
     /* applying the modifiers in the style to the new tabs. */
@@ -2146,11 +2137,7 @@ long value;
 	    }
     }
 }
-static struct environment *text__EnumerateEnvironments(self,pos,len,callBack,rock)
-struct text *self;
-long pos,len;
-boolean (*callBack)();
-long rock;
+struct environment *text__EnumerateEnvironments(struct text *self, long pos, long len, boolean (*callBack)(), long rock)
 {   /* calls callback(rock,self,current_pos,env) on each environment found
       starting at pos and going len characters
       if callback returns TRUE .text__EnumerateEnvironment
@@ -2279,9 +2266,7 @@ int IsOpen;
     return(outp);
 }
 
-PushLevel(s, pos, len, IsReal)
-char *s;
-int pos, len, IsReal;
+static void PushLevel(char *s, int pos, int len, int IsReal)
 {
     struct stk *tmp = (struct stk *) malloc(sizeof(struct stk));
     char *cp = malloc(1+strlen(s));
@@ -2465,7 +2450,7 @@ char *boundary;
     endp = outbuf + LAST_QP_CHAR;
     outp = outbuf;
 
-    if (len <= 0 ) return;
+    if (len <= 0 ) return 0;
 
     startenv = environment_GetInnerMost(self->rootEnvironment, pos);
     endenv = environment_GetInnerMost(self->rootEnvironment, pos + len - 1);
@@ -2662,9 +2647,7 @@ char *boundary;
     return(self->header.dataobject.id);
 }
 
-int ComingNext(self, pos)
-struct text *self;
-int pos;
+static int ComingNext(struct text *self, int pos)
 {
     struct environment *e2, *e3;
     int elen;

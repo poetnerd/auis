@@ -99,15 +99,15 @@ extern char    *GetConfig();           /* returns the value corresponding to a
                                         * key for a given configurelist */
 extern char    *GetConfiguration();    /* returns the value for a key in the
                                         * AndrewSetup file */
-extern          FreeConfigureList();   /* frees a configure list */
+extern int      FreeConfigureList();   /* frees a configure list */
 
 extern char    *getprofile(), *getprofilestring();
 extern int      getprofileint(), getprofileswitch();
 extern char    *GetProfileFileName();
 extern char    *GetFirstProfileFileName();
-extern          refreshprofile();
+extern int      refreshprofile();
 
-extern          setprofilestring();
+extern int      setprofilestring();
 
 extern char    *ap_Shorten();          /* ap_Shorten(path) tries to shorten
                                         * path using the current home dir */
