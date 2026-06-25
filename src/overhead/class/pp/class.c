@@ -38,12 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <ctype.h>
 #include <signal.h>
 
-/*
- * define these for the compiler 
- */
-#ifndef _IBMR2
-char *malloc(),*realloc();  /* should include stdlib.h */
-#endif /* _IBMR2 */
+#include <stdlib.h>
+
 extern int yylex();	    /* using lex */
 #ifndef FLEX_ENV
 extern char yytext[];	    
@@ -55,6 +51,9 @@ extern char *yytext;
  * pick up parameters and constants
  */
 #include <classpp.h>
+
+extern void PushFile(FILE *file);
+extern void PopFile(void);
 
 
 
