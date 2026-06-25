@@ -117,4 +117,35 @@ Full text stack compiles on macOS/Darwin:
 
 - Fixed split-line regex bug that was truncating function names when
   return type was on a separate line from the function name
+- Fixed multi-name declaration parsing (`char *a, *b, *c;`)
+- Added `union` to type recognition (was only matching `struct`/`enum`)
 - Added `extern int errno;` → `#include <errno.h>` conversion
+
+### Support library: 17 of 20 files compile
+
+Added `#include <andrewos.h>` to files that called string functions
+without declarations (legal in K&R C, errors in modern C). Fixed
+`qsort` comparator in `list.c`, removed obsolete `sys_errlist` in
+`buffer.c`, fixed function pointer parameters mangled by modernizer,
+added `class_EnterInfo` declaration to `class.h`, fixed `union`
+type in `envrment.c`.
+
+Remaining: `complete.c`, `except.c`, `print.c` — not on critical path.
+
+### imake build system works on Darwin
+
+Created `config/darwin/system.mcr` with macOS paths: XQuartz at
+`/opt/X11`, Homebrew tools at `/opt/homebrew/bin`, `LEXLIB = -ll`.
+
+Fixed platform detection in `platform.tmpl`: imake/tradcpp defines
+`__DARWIN__`, not `__MACH__`. The original `#if defined(__APPLE__) &&
+defined(__MACH__)` never matched.
+
+Added source-tree `INCLUDES` override in `site.mcr` so compilation
+can proceed without a prior install to `$BASEDIR`.
+
+Created `site.mcr` and `site.h` with `#undef AMS_ENV` and
+`#undef ANDREW_MALLOC_ENV`.
+
+`make Makefiles` generates Makefiles recursively throughout the tree.
+`make` in `overhead/class/pp` builds and links the class preprocessor.
