@@ -20,6 +20,7 @@ def modernize_file(path, dry_run=False):
         original = f.read()
 
     text = original
+    text = fix_extern_errno(text)
     text = fix_malloc_declarations(text)
     text = fix_knr_functions(text)
 
@@ -33,6 +34,16 @@ def modernize_file(path, dry_run=False):
             f.write(text)
         print(f"Modified: {path}")
     return True
+
+
+def fix_extern_errno(text):
+    """Replace 'extern int errno;' with #include <errno.h>."""
+    pat = r'^[ \t]*extern\s+int\s+errno\s*;[^\n]*\n'
+    if re.search(pat, text, re.MULTILINE):
+        text = re.sub(pat, '', text, flags=re.MULTILINE)
+        if '#include <errno.h>' not in text:
+            text = add_include(text, '<errno.h>')
+    return text
 
 
 def fix_malloc_declarations(text):
