@@ -491,7 +491,10 @@ char *ExpandEnvVars(char * instr)
 /* Include the named file as if its contents were inline within the current
  * file.
  */
-Include(struct init * init, char ** args, boolean forceLoad)
+Include(init, args, forceLoad)
+    struct init *init;
+    char **args;
+    boolean forceLoad;
 {
     char fullName[MAXPATHLEN];
     char *file = GetToken(args);
@@ -919,7 +922,11 @@ static void ErrorMsg(char * msg, int a1, int a2, int a3, int a4)
 }
 
 	void
-init__AddKeyBinding(struct init * self, char * class, boolean inherit, struct keymap * keymap)
+init__AddKeyBinding(self, class, inherit, keymap)
+	struct init *self;
+	char *class;
+	boolean inherit;
+	struct keymap *keymap;
 {
 	struct keys *keys;
 	struct children *kids=self->kids;
@@ -940,7 +947,11 @@ init__AddKeyBinding(struct init * self, char * class, boolean inherit, struct ke
 }
 
 	void
-init__DeleteKeyBinding(struct init * self, char * class, boolean inherit, struct keymap * keymap)
+init__DeleteKeyBinding(self, class, inherit, keymap)
+	struct init *self;
+	char *class;
+	boolean inherit;
+	struct keymap *keymap;
 {
 	struct keys *keys, **prev;
 
@@ -968,7 +979,11 @@ init__DeleteKeyBinding(struct init * self, char * class, boolean inherit, struct
 }
 
 	void
-init__AddMenuBinding(struct init * self, char * class, boolean inherit, struct menulist * menulist)
+init__AddMenuBinding(self, class, inherit, menulist)
+	struct init *self;
+	char *class;
+	boolean inherit;
+	struct menulist *menulist;
 {
 	struct menus *menus;
 
@@ -991,7 +1006,11 @@ init__AddMenuBinding(struct init * self, char * class, boolean inherit, struct m
 }
 
 	void
-init__DeleteMenuBinding(struct init * self, char * class, boolean inherit, struct menulist * menulist)
+init__DeleteMenuBinding(self, class, inherit, menulist)
+	struct init *self;
+	char *class;
+	boolean inherit;
+	struct menulist *menulist;
 {
 	struct menus *menus, **prev;
 	struct children *kids=self->kids;

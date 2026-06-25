@@ -35,13 +35,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <cmap.eh>
 
 boolean
-colormap__InitializeClass(struct classheader * classID)
+colormap__InitializeClass( classID )
+    struct classheader *classID;
 {
     return(TRUE);
 }
 
 boolean
-colormap__InitializeObject(struct classheader * classID, struct colormap * self)
+colormap__InitializeObject( classID, self )
+    struct classheader *classID;
+    struct colormap *self;
 {
     self->size = self->used = 0;
     self->colors = NULL;
@@ -49,7 +52,9 @@ colormap__InitializeObject(struct classheader * classID, struct colormap * self)
 }
 
 void
-colormap__FinalizeObject(struct classheader * classID, struct colormap * self)
+colormap__FinalizeObject( classID, self )
+struct classheader *classID;
+struct colormap *self;
 {
     if(self->colors) {
 	free(self->colors);
@@ -58,7 +63,10 @@ colormap__FinalizeObject(struct classheader * classID, struct colormap * self)
 }
 
 int
-colormap__SetColor(struct colormap * self, struct color * color, boolean needpixel)
+colormap__SetColor( self, color, needpixel )
+    struct colormap *self;
+    struct color *color;
+    boolean needpixel;
 {
     if(!color || self->used == self->size)
 	return(-1);
@@ -70,32 +78,46 @@ colormap__SetColor(struct colormap * self, struct color * color, boolean needpix
 }
 
 int
-colormap__Copy(int self, struct colormap *self, * source)
+colormap__Copy( self, source )
+    struct colormap *self, *source;
 {
 }
 
 int
-colormap__Merge(int self, struct colormap *self, * other)
+colormap__Merge( self, other )
+    struct colormap *self, *other;
 {
 }
 
 struct color *
-colormap__AllocColor(struct colormap * self, char * name, int red, int green, unsigned int red, green, blue, boolean needpixel)
+colormap__AllocColor( self, name, red, green, blue, needpixel )
+    struct colormap *self;
+    char *name;
+    unsigned int red, green, blue;
+    boolean needpixel;
 {
 }
 
 int
-colormap__ChangeColor(struct colormap * self, struct color * c)
+colormap__ChangeColor( self, c )
+    struct colormap *self;
+    struct color *c;
 {
 }
 
 struct color *
-colormap__LookupColor(struct colormap * self, char * name, int r, int g, unsigned int r, g, b, boolean needpixel)
+colormap__LookupColor( self, name, r, g, b, needpixel )
+    struct colormap *self;
+    char *name;
+    unsigned int r, g, b;
+    boolean needpixel;
 {
 }
 
 int
-colormap__SetSize(struct colormap * self, int size)
+colormap__SetSize( self, size)
+    struct colormap *self;
+    int size;
 {
     self->size = size;
     if(self->colors = (struct color **) calloc(size, sizeof(struct color*))) {
@@ -106,7 +128,8 @@ colormap__SetSize(struct colormap * self, int size)
 }
 
 void
-colormap__Clear(struct colormap * self)
+colormap__Clear( self )
+    struct colormap *self;
 {
     int used = colormap_Used(self), i;
     struct color *c;
@@ -124,13 +147,16 @@ colormap__Clear(struct colormap * self)
 }
 
 char *
-colormap__ViewName(struct colormap * self)
+colormap__ViewName( self )
+    struct colormap *self;
 {
     return("colormapv");
 }
 
 void
-colormap__DestroyColor(struct colormap * self, struct color * c)
+colormap__DestroyColor( self, c )
+    struct colormap *self;
+    struct color *c;
 {
     register int i;
     for(i = 0; i < self->used; i++)

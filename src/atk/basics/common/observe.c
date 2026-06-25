@@ -184,7 +184,10 @@ long value;  {
 	associate the atom as a possible trigger for the class 
 */
 	void
-obser(struct classheader * classID, struct basicobject * classinstance, struct atom * trigger)
+observable__DefineTrigger(classID, classinstance, trigger)
+	struct classheader *classID;
+	struct basicobject *classinstance;
+	struct atom *trigger;
 {
 	struct triggerclass *tc;
 	struct classinfo *info;
@@ -209,7 +212,9 @@ obser(struct classheader * classID, struct basicobject * classinstance, struct a
 	the caller must destroy the list 
 */
 	struct atomlist *
-obs(struct classheader * classID, struct basicobject * classinstance)
+observable__ListTriggers(classID, classinstance)
+	struct classheader *classID;
+	struct basicobject *classinstance;
 {
 	struct triggerclass *tc;
 	struct classinfo *info;
@@ -229,7 +234,12 @@ obs(struct classheader * classID, struct basicobject * classinstance)
 		func(rcvr, self, rock)
 */
 	boolean
-observable__AddRecipient(struct observable * self, struct atom * trigger, struct basicobject * rcvr, int func, long rock)
+observable__AddRecipient(self, trigger, rcvr, func, rock)
+	struct observable *self;
+	struct atom *trigger;
+	void (*func)();
+	struct basicobject *rcvr;
+	long rock;
 {
 	struct triggerclass *tc;
 	struct triggerhousing *th;
@@ -276,7 +286,10 @@ observable__AddRecipient(struct observable * self, struct atom * trigger, struct
 	removes the receiver from the list of recipients
 */
 	void
-observable__Delet(struct observable * self, struct atom * trigger, struct basicobject * rcvr)
+observable__DeleteRecipient(self, trigger, rcvr)
+	struct observable *self;
+	struct atom *trigger;
+	struct basicobject *rcvr;
 {
 	struct triggerhousing *th;
 	struct triggerinstance *ti, *pi;
@@ -300,7 +313,9 @@ observable__Delet(struct observable * self, struct atom * trigger, struct basico
 	call all funcs associated with this trigger on this object
 */
 	void
-obser(struct observable * self, struct atom * trigger)
+observable__PullTrigger(self, trigger)
+	struct observable *self;
+	struct atom *trigger;
 {
 	struct triggerhousing *th;
 	struct triggerinstance *ti;
@@ -334,7 +349,9 @@ obser(struct observable * self, struct atom * trigger)
 			for each time Disable has been called.
 */
 	void
-obser(struct observable * self, struct atom * trigger)
+observable__DisableTrigger(self, trigger)
+	struct observable *self;
+	struct atom *trigger;
 {
 	struct triggerhousing *th;
 	for (th = self->triggers; th != NULL && th->trigger != trigger; th = th->next) 
@@ -350,7 +367,9 @@ obser(struct observable * self, struct atom * trigger)
 	this trigger will once again produce call backs
 */
 	void
-obser(struct observable * self, struct atom * trigger)
+observable__EnableTrigger(self, trigger)
+	struct observable *self;
+	struct atom *trigger;
 {
 	struct triggerhousing *th;
 	for (th = self->triggers; th != NULL && th->trigger != trigger; th = th->next) 

@@ -63,14 +63,14 @@ def add_include(text, header):
 
 KNR_PATTERN = re.compile(
     r'''
-    ^                           # start of line
+    ^[ \t]*                     # start of line, optional leading whitespace
     (                           # group 1: return type + name + params
         (?:static\s+|extern\s+|(?:unsigned\s+)?)* # optional qualifiers
         (?:struct\s+\w+\s*\*?|  # struct return type
            \w+)                 # or simple return type
-        \s*\**\s*               # optional pointer stars
+        (?:[ \t]*\*+[ \t]*|[ \t]+) # pointer stars OR mandatory whitespace
         (\w+)                   # group 2: function name
-        \s*\(                   # open paren
+        [ \t]*\(                # open paren (same line as function name)
         ([^)]+)                 # group 3: parameter names (no types)
         \)                      # close paren
     )

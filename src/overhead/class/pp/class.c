@@ -38,8 +38,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <ctype.h>
 #include <signal.h>
 
-#include <stdlib.h>
-
+/*
+ * define these for the compiler 
+ */
 extern int yylex();	    /* using lex */
 #ifndef FLEX_ENV
 extern char yytext[];	    
@@ -58,6 +59,7 @@ extern void PopFile(void);
 
 
 
+#include <stdlib.h>
 /*
  * Hints, etc:
  *

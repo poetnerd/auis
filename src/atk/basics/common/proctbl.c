@@ -55,7 +55,8 @@ static struct proctable_Entry *hashTable[HASHMAX];
 /* Initialize the package. 
 */
 	boolean 
-proctable__InitializeClas(struct classheader * classID)
+proctable__InitializeClass(classID)
+	struct classheader *classID;
 {
 	int i;
 	
@@ -69,7 +70,13 @@ proctable__InitializeClas(struct classheader * classID)
 	(do the mallocs in the caller or pass literals). 
 */
 	struct proctable_Entry *
-proc(struct classheader * classID, char * name, int proc, struct classinfo * type, char * module, char * doc)
+proctable__DefineProc(classID, name, proc, type, module, doc)
+	struct classheader *classID;
+	char *name;		/* these match the fields in an entry */
+	int (*proc)();
+	struct classinfo *type;
+	char *module;
+	char *doc;
 {
 	int hash;
 	struct proctable_Entry *pe = NULL;
@@ -124,7 +131,15 @@ void proctable__DefineProcs(struct classheader * classID, struct proctable_Descr
 	but all storage pointed to must be permanent (do the mallocs in the caller or pass literals). 
 */
 	struct proctable_Entry *
-proc(struct classheader * classID, char * name, int proc, struct classinfo * type, char * module, char * doc, enum proctable_type returntype)
+proctable__DefineTypedProc(classID, name, proc, type, 
+		module, doc, returntype)
+	struct classheader *classID;
+	char *name;		/* these match the fields in an entry */
+	int (*proc)();
+	struct classinfo *type;
+	char *module;
+	char *doc;
+	enum proctable_type returntype;
 {
 	struct proctable_Entry *pe;
 	pe = proctable_DefineProc(name, proc, type, module, doc);

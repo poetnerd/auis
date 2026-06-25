@@ -172,7 +172,8 @@ extern int WriteGIF();
  */
 
 static int 
-gifin_open_file(FILE * s)
+gifin_open_file(s)
+    FILE *s;
 {
   /* make sure there isn't already a file open */
   if (file_open)
@@ -504,7 +505,7 @@ static int gifin_push_string(int code)
  * add a new string to the string table
  */
 
-static g(int p, int e)
+static gifin_add_string(int p, int e)
 {
   prefix[table_size] = p;
   extnsn[table_size] = e;
@@ -529,7 +530,8 @@ static gifin_fatal(char * msg)
 }
 
 static void 
-tellAboutImage(char * name)
+tellAboutImage( name )
+    char *name;
 {
   printf("%s is a %dx%d %sGIF image with %d colors\n", name,
 	 gifin_img_width, gifin_img_height,
@@ -538,7 +540,10 @@ tellAboutImage(char * name)
 }
 
 int
-gif__Load(struct gif * gif, char * fullname, FILE * fp)
+gif__Load( gif, fullname, fp )
+    struct gif *gif;
+    char *fullname;
+    FILE *fp;
 { 
   FILE *f;
   int x, y, pixel, pass, scanlen;
@@ -632,7 +637,9 @@ gif__Load(struct gif * gif, char * fullname, FILE * fp)
 }
 
 int 
-gif__Ident(struct classheader * classID, char * fullname)
+gif__Ident( classID, fullname )
+    struct classheader *classID;
+    char *fullname;
 { 
     FILE *f;
     unsigned int ret;
@@ -652,7 +659,10 @@ gif__Ident(struct classheader * classID, char * fullname)
 }
 
 long
-gif__Read(struct gif * self, FILE * file, long id)
+gif__Read( self, file, id )
+    struct gif *self;
+    FILE *file;
+    long id;
 {
 	if(gif_Load(self, NULL, file) == 0) {
 	    gif_Compress(self);
@@ -663,13 +673,20 @@ gif__Read(struct gif * self, FILE * file, long id)
 }
 
 long
-gif__Write(struct gif * self, FILE * file, long writeID, int level)
+gif__Write( self, file, writeID, level )
+    struct gif *self;
+    FILE *file;
+    long writeID;
+    int level;
 {
     return(super_Write(self, file, writeID, level));
 }
 
 long
-gif__WriteNative(struct gif * self, FILE * file, char * filename)
+gif__WriteNative( self, file, filename )
+    struct gif *self;
+    FILE *file;
+    char *filename;
 {
     int colorstyle = 0; /* 0 == color; 1 == greyscale; 2 == b/w */
     byte r[256], g[256], b[256];

@@ -349,7 +349,8 @@ void view__PostDefaultHandler(struct view * self, char * handlerName, struct bas
 }
 
 static void
-view_SetDefaultColors(int self, struct view *self, * parent)
+view_SetDefaultColors(self, parent)
+  struct view *self, *parent;
 {
     char *foregroundColor, *backgroundColor;
     if (view_GetIM(self)) {
@@ -598,19 +599,25 @@ long view__WriteSelection(struct view * self, FILE * out)
 }
 
 void
-view__WantColormap(int self, struct view *self, * requestor, struct colormap ** cmap)
+view__WantColormap( self, requestor, cmap)
+    struct view *self, *requestor;
+    struct colormap **cmap;
 {
     if(self->parent)
 	view_WantColormap(self->parent, requestor, cmap);
 }
 
 void
-view__ReceiveColormap(struct view * self, struct colormap * cmap)
+view__ReceiveColormap( self, cmap )
+    struct view *self;
+    struct colormap *cmap;
 {
 }
 
 void
-view__LoseColormap(struct view * self, struct colormap * cmap)
+view__LoseColormap( self, cmap )
+    struct view *self;
+    struct colormap *cmap;
 {
 }
 

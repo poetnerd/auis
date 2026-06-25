@@ -62,7 +62,8 @@ static struct homestruct *homes = NULL;
 #define INITIALCHUNK 30 /* files */
 
 	static char *
-strappend(int dest, char *dest, * src)
+strappend(dest, src)
+	char *dest, *src;
 {
 	strcpy(dest, src);
 	return dest+strlen(dest);
@@ -332,7 +333,8 @@ static char *LastSeg[NSTATES][NTYPES]
 
 
 	static void 
-FoldName(register char * path)
+FoldName (path)
+	register char *path;		/* path to fold */
 {
 	enum state CurrState, NextState;
 	char SavedY [MAXPATHLEN];

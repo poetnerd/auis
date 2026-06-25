@@ -69,7 +69,15 @@ struct mpitem {
 };
 
 static void 
-ExplodeMenuString(char * str, char * paneStr, long paneStrLen, long * panePriority, char * selectionStr, long selectionStrLen, long * selectionPriority)
+ExplodeMenuString(str, paneStr, paneStrLen, panePriority, 
+		  selectionStr, selectionStrLen, selectionPriority)
+char *str;
+char *paneStr;
+long paneStrLen;
+long *panePriority;
+char *selectionStr;
+long selectionStrLen;
+long *selectionPriority;
 {
     char *p;
     char *pLimit;

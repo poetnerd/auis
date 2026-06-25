@@ -192,7 +192,8 @@ boolean application__ParseArgs(struct application * self, int argc, char ** argv
 
 
 void 
-application__ReadInitFile(struct application * self)
+application__ReadInitFile(self)
+struct application *self;
 {
     char buffer[256], *andrewDir, *sitename,*name=self->name;
     struct init *init;

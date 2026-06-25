@@ -480,7 +480,12 @@ void rm__GetManyResources(struct classheader * classID, struct resourceList* res
 
 
 void
-rm__ContextualPostResource(struct classheader * classID, struct atomlist * context, struct atomlist * path, long data, struct atom * type)
+rm__ContextualPostResource( classID, context, path, data, type )
+     struct classheader *classID;
+     struct atomlist * context;
+     struct atomlist * path;
+     long data;
+     struct atom * type;
 {
   struct atoms * m;
   m = atomlist_Mark(path);

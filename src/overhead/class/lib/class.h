@@ -84,24 +84,8 @@ typedef unsigned long class_VersionNumberType;
  ** external objects
  **/
 
-#ifdef _IBMR2	    /* Should be POSIX_ENV, but that requires <system.h> */
-#include <stdlib.h>	    /* ... for malloc(), etc. */
-#include <unistd.h>	    /* ... for other prototypes.  Maybe we shouldn't do this? */
-#else
-/* 
- * Please remove this once AIX221 has a real C compiler.  %%%%
- * Thank, pgc.
- *
- * Redefine void only for cc on AIX/RT.   -mrt
- */
-#if defined(AIX) && !defined(i386) && !defined(__HIGHC__)
-#define	void char
-#endif /* AIX */
-
-extern void free();
-#endif /* _IBMR2 */
-
-extern int errno;
+#include <stdlib.h>
+#include <errno.h>
 
 
 extern struct basicobject_methods class_RoutineStruct;

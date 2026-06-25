@@ -34,13 +34,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <color.eh>
 
 boolean
-color__InitializeClass(struct classheader * classID)
+color__InitializeClass( classID )
+    struct classheader *classID;
 {
     return (TRUE);
 }
 
 boolean
-color__InitializeObject(struct classheader * classID, struct color * self)
+color__InitializeObject( classID, self )
+    struct classheader *classID;
+    struct color *self;
 {
     self->name = NULL;
     self->r = self->g = self->b = 0;
@@ -48,7 +51,9 @@ color__InitializeObject(struct classheader * classID, struct color * self)
 }
 
 void
-color__FinalizeObject(struct classheader * classID, struct color * self)
+color__FinalizeObject( classID, self )
+    struct classheader *classID;
+    struct color *self;
 {
     if(self->name)
 	free(self->name);
@@ -56,7 +61,9 @@ color__FinalizeObject(struct classheader * classID, struct color * self)
 }
 
 void
-color__SetName(struct color * self, char * name)
+color__SetName( self, name )
+    struct color *self;
+    char *name;
 {
     if(self->name)
 	free(self->name);

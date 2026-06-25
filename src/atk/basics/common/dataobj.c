@@ -251,7 +251,10 @@ short dataobject__Get(struct dataobject * self, struct atom * property, struct a
     return FALSE;
 }
 
-dataobject__Lis(struct dataobject * self, struct view ** array, int size)
+dataobject__ListCurrentViews(self,array,size)
+struct dataobject *self;
+struct view **array;
+int size;
 { 
     /* fills in the array (of size 'size') with a list of views
           observing this dataobj.
@@ -289,7 +292,11 @@ long dataobject__WriteOtherFormat(struct dataobject * self, FILE * file, long wr
 }
 
 boolean
-dataobject__ReadOtherFormat(struct dataobject * self, FILE * file, int fmt, char *fmt, * encoding, char * description)
+dataobject__ReadOtherFormat(self, file, fmt, encoding, description)
+struct dataobject *self;
+FILE *file;
+char *fmt, *encoding;
+char *description;
 {
     return(FALSE); /* couldn't read it */
 }

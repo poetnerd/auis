@@ -226,7 +226,10 @@ static char *charToPrintable(long c)
 static long LogStart;	/* time log started */
 
 	void
-WriteLogEntry(struct im * self, unsigned char code, char * str)
+WriteLogEntry (self, code, str)
+	struct im *self;
+	unsigned char code;
+	char *str;
 {
 	long now = time(0);
 	if (now - LogStart > 600) {
@@ -243,7 +246,10 @@ WriteLogEntry(struct im * self, unsigned char code, char * str)
 }
 
 	void
-WriteLogXY(struct im * self, unsigned char code, int x, long x, y)
+WriteLogXY (self, code, x, y)
+	struct im *self;
+	unsigned char code;
+	long x, y;
 {
 	if (self->LogFile == NULL) return;
 	fprintf(self->LogFile, "%d%c%d,%d\n", time(0) - LogStart, code, x>>4, y>>4);
@@ -286,7 +292,8 @@ newAction()
 	allocate an empty action block 
 */
 	struct action *
-clon(register struct action * a)
+cloneAction(a)
+	register struct action *a;
 {
 	register struct action *new = newAction();
 	if (a == NULL) return NULL;
@@ -312,7 +319,8 @@ clon(register struct action * a)
 	put an action at the front of a queue
 */
 	void
-stackAction(int Q, register struct action **Q, * a)
+stackAction(Q, a)
+	register struct action **Q, *a;
 {
 	if (a == NULL) return;	/* the malloc failed */
 	a->next = *Q;
@@ -323,7 +331,8 @@ stackAction(int Q, register struct action **Q, * a)
 	put an action at the rear of a queue
 */
 	void
-en(int Q, register struct action **Q, * a)
+enqAction(Q, a)
+	register struct action **Q, *a;
 {
 	if (a == NULL) return;	/* the malloc failed */
 	a->next = NULL;
@@ -335,7 +344,8 @@ en(int Q, register struct action **Q, * a)
 	return list of action elements to FreeQ
 */
 	void
-freeQlist(struct action * Q)
+freeQlist (Q)
+	struct action *Q;
 {
 	struct action *a;
 	if (Q == NULL) return;
@@ -373,7 +383,8 @@ void freeQelt(struct action * Q)
 	(no need to prune PendingRelease because its im field is not used)
 */
 	void
-pruneActions(struct im * im)
+pruneActions(im)
+	struct im *im;
 {
 	register struct action *a, *p, *n;
 	for (p = NULL, a = InQ; a != NULL; a = n) {
@@ -394,7 +405,9 @@ pruneActions(struct im * im)
 	allocate an action block for a keystroke
 */
 	struct action *
-keyAction(struct im * im, register long k)
+keyAction(im, k)
+	struct im *im;
+	register long k;
 {
 	register struct action *a = newAction();
 	if (a == NULL) return NULL;
@@ -408,7 +421,12 @@ keyAction(struct im * im, register long k)
 	allocate an action block for a mouse hit
 */
 	struct action *
-mouseAction(struct im * im, enum view_MouseAction act, long x, long y, long newButtonState)
+mouseAction(im, act, x, y, newButtonState)
+	struct im *im;
+	enum view_MouseAction act;
+	long x;
+	long y;
+	long newButtonState;
 {
 	register struct action *a = newAction();
 	if (a == NULL) return NULL;
@@ -425,7 +443,11 @@ mouseAction(struct im * im, enum view_MouseAction act, long x, long y, long newB
 	allocate an action block for a menu selection
 */
 	struct action *
-men(struct im * im, struct proctable_Entry * procTableEntry, struct basicobject * object, long rock)
+menuAction(im, procTableEntry, object, rock)
+	struct im *im;
+ 	struct proctable_Entry *procTableEntry;
+	struct basicobject *object;
+   	long rock;
 {
 	register struct action *a = newAction();
 	if (a == NULL) return NULL;
@@ -444,7 +466,11 @@ men(struct im * im, struct proctable_Entry * procTableEntry, struct basicobject 
 	allocate an action block for a macro playback action
 */
 	struct action *
-macroAction(struct im * im, struct action * macro, struct action * nextaction, long remainingrepetitions)
+macroAction(im, macro, nextaction, remainingrepetitions)
+	struct im *im;
+	struct action *macro;
+	struct action *nextaction;
+	long remainingrepetitions;
 {
 	register struct action *a = newAction();
 	if (a == NULL) return NULL;
@@ -457,7 +483,9 @@ macroAction(struct im * im, struct action * macro, struct action * nextaction, l
 }
 
 	static void
-userKey(register struct im * self, long key)
+userKey(self, key)
+	register struct im *self;
+	long key;
 {
 	struct action *a;
 	if (self->LogFile != NULL) {
@@ -472,7 +500,12 @@ userKey(register struct im * self, long key)
 }
 
 	static void
-use(register struct im * self, enum view_MouseAction act, long x, long y, long newButtonState)
+userMouse(self, act, x, y, newButtonState)
+	register struct im *self;
+	enum view_MouseAction act;
+	long x;
+	long y;
+	long newButtonState;
 {
 	struct action *a;
 	if (self->LogFile != NULL) switch (act) {
@@ -489,7 +522,11 @@ use(register struct im * self, enum view_MouseAction act, long x, long y, long n
 }
 
 	static void
-u(register struct im * self, struct proctable_Entry * procTableEntry, struct basicobject * object, long rock)
+userMenu(self, procTableEntry, object, rock)
+	register struct im *self;
+ 	struct proctable_Entry *procTableEntry;
+	struct basicobject *object;
+   	long rock;
 {
 	struct action *a;
 	if (self->LogFile != NULL) 
@@ -604,7 +641,9 @@ PeekInputEvent()
 	queues the sequence of keys to be executed as if a macro
 */
 	void
-im__DoKe(struct im * self, unsigned char * keys)
+im__DoKeySequence(self, keys)
+	struct im *self;
+	unsigned char *keys;
 {
 	struct action *old;
 	boolean olddontRecord=dontRecord;
@@ -920,7 +959,7 @@ static boolean stillexists(struct im * self)
 
 static char argbuf[30];
 
-static HandleArg(struct im * self, long key)
+static HandleArgumentProcessing(struct im * self, long key)
 {
     long newArg;
 
@@ -1026,7 +1065,9 @@ static struct im *HandleProc(struct im * self, struct proctable_Entry * procTabl
 }
 
 	struct im * 
-im__DoKey(struct im * self, long key)
+im__DoKey(self, key)
+	struct im *self;
+	long key;
 {
 	struct proctable_Entry *procTableEntry;
 	struct basicobject *object;
@@ -1096,7 +1137,12 @@ im__DoKey(struct im * self, long key)
 
 /* used for DoMenu */
 	static boolean
-getMenuEntry(struct menulist * ml, int cname, char *cname, * name, struct proctable_Entry ** pPE, struct basicobject ** pObj, long * pRock)
+getMenuEntry(ml, cname, name, pPE, pObj, pRock)
+	struct menulist *ml;
+	char *cname, *name;
+ 	struct proctable_Entry **pPE;
+	struct basicobject **pObj;
+   	long *pRock;
 {
 	struct menulist *tml;
 	struct proctable_Entry *tpe;
@@ -1151,7 +1197,11 @@ getMenuEntry(struct menulist * ml, int cname, char *cname, * name, struct procta
 
 /* used for logging menu hits */
 	static char *
-ge(struct menulist * ml, struct proctable_Entry * procTableEntry, struct basicobject * object, long rock)
+getMenuEntryName(ml, procTableEntry, object, rock)
+	struct menulist *ml;
+ 	struct proctable_Entry *procTableEntry;
+	struct basicobject *object;
+   	long rock;
 {
 	struct menulist *tml;
 	char *entryname;
@@ -1183,7 +1233,11 @@ ge(struct menulist * ml, struct proctable_Entry * procTableEntry, struct basicob
 
     
 struct im * 
-im__HandleMenu(struct im * self, struct proctable_Entry * procTableEntry, struct basicobject * object, long rock)
+im__HandleMenu(self, procTableEntry, object, rock)
+    struct im *self;
+    struct proctable_Entry *procTableEntry;
+    struct basicobject *object;
+    long rock;
 {
     static struct classinfo *viewinfo=NULL;
     self->argState.argProvided = FALSE;
@@ -1206,13 +1260,21 @@ im__HandleMenu(struct im * self, struct proctable_Entry * procTableEntry, struct
   for such things as override windows */
 
 struct view *
-im__Hit(struct im * self, enum view_MouseAction action, int x, int y, long x, y, clicks)
+im__Hit (self, action, x, y, clicks)
+struct im *self;
+enum view_MouseAction action;
+long x, y, clicks;
 {
     return view_Hit(self->topLevel, action, x, y, clicks);
 }
 
 struct im *
-im__HandleMouse(struct im * self, enum view_MouseAction action, long x, long y, long newButtonState)
+im__HandleMouse(self, action, x, y, newButtonState)
+	struct im *self;
+	enum view_MouseAction action;
+	long x;
+	long y;
+	long newButtonState;
 {
 	register long dest = destroycount;
 
@@ -1533,7 +1595,10 @@ void im__WantInputFocus(struct im * self, struct view * requestor)
 }
 
 void
-im__WantColormap(struct im * self, struct view * requestor, struct colormap ** cmap)
+im__WantColormap( self, requestor, cmap )
+    struct im *self;
+    struct view *requestor;
+    struct colormap **cmap;
 {
     struct colormap **cMap = NULL;
     struct view *v;
@@ -1665,7 +1730,9 @@ void im__SetView(struct im * self, struct view * topLevel)
 }
 
 	boolean
-im__CreateWindow(struct im * self, char * host)
+im__CreateWindow(self, host)
+    struct im *self;
+    char *host;
 {
     printf("im_CreateWindow: missing method\n");
     return FALSE;
@@ -1694,7 +1761,8 @@ boolean im__SupportsOverride(struct im * self)
  Windows we will create a top level one instead. */
 
 	boolean
-im__CreateTransientWindow(int self, struct im *self, * other)
+im__CreateTransientWindow(self, other)
+    struct im *self, *other;
 {
     return im_CreateWindow(self, NULL);
 }
@@ -1706,7 +1774,8 @@ im__CreateTransientWindow(int self, struct im *self, * other)
  Windows we will create a top level one instead. */
 
 	boolean
-im__CreateOverrideWindow(int self, struct im *self, * other)
+im__CreateOverrideWindow(self, other)
+    struct im *self, *other;
 {
     return im_CreateWindow(self, NULL);
 }
@@ -1717,7 +1786,12 @@ im__CreateOverrideWindow(int self, struct im *self, * other)
 #define OFFSCREEN_IM_CREATE 3
 
 static struct im *
-DoCreate(struct classheader * classID, char * host, struct im * other, int flag, int width, long width, height)
+DoCreate(classID, host, other, flag, width, height)
+struct classheader *classID;
+char *host;
+struct im *other;
+int flag;
+long width, height;
 {
     struct im *newIM;
     unsigned char *logdir;
@@ -1787,7 +1861,8 @@ struct im *im__CreateOffscreen(struct classheader * classID, struct im * other, 
 	(Overriden in the subclasses)
 */
 	unsigned char *
-im__WhichWS(struct im * self)
+im__WhichWS(self)
+	struct im *self;
 {
 	return (unsigned char *)"none";
 }
@@ -1832,7 +1907,8 @@ extern char *getwd();
  *  physical path, which maybe confusing.
  */
 	static void 
-set_logical_wd(int dir, char *dir, * newdir)
+set_logical_wd(dir,	newdir)
+	char *dir, *newdir;
 {
 	if( *newdir != '/' ) {
 		strcat(dir, newdir);
@@ -1866,7 +1942,9 @@ static char *get_logical_wd(char * dir)
 
 
 	long 
-im__ChangeDirectory(struct classheader * classID, char * dirName)
+im__ChangeDirectory(classID, dirName)
+	struct classheader *classID;
+	char *dirName;
 {
 	register long code;
 
@@ -1878,7 +1956,9 @@ im__ChangeDirectory(struct classheader * classID, char * dirName)
 }
 
 	char *
-im__GetDirectory(struct classheader * classID, char * outputString)
+im__GetDirectory(classID, outputString)
+	struct classheader *classID;
+	char *outputString;
 {
 	boolean returnFail = FALSE;
 
@@ -2318,7 +2398,8 @@ struct event *im__EnqueueEvent(struct classheader * classID, int proc, char * pr
 }
 
 	boolean
-im__IsPlaying(struct classheader * ClassID)
+im__IsPlaying(ClassID)
+	struct classheader *ClassID;
 {
 	return playingRecord;
 }
@@ -2575,7 +2656,8 @@ static void PlayKeyboardMacro(struct im * self, long key)
 }
 
 	void
-im__CancelMacro(struct classheader * classID)
+im__CancelMacro(classID)
+	struct classheader *classID;
 {
 	/* if PendingRelease is not NULL, the macro has completed */
 	if ( ! playingRecord || PendingRelease != NULL) return;
@@ -2591,7 +2673,7 @@ im__CancelMacro(struct classheader * classID)
 This section deals with the global command argument, usually set by the ^U command.
  */
 
-static SetArgProvid(struct im * self, boolean value)
+static SetArgProvided(struct im * self, boolean value)
 {
     if (self->argState.argProvided != value) {
 	keystate_Reset(self->keystate);
@@ -2676,7 +2758,8 @@ void im__SetLastCmd(struct im * self, long cmd)
 }
 
 	void 
-im__Do(struct im * self)
+im__DoMacro(self)
+	struct im *self;
 {
 	if (doRecord)  {
 		message_DisplayString(self, 0, 
@@ -2700,7 +2783,9 @@ im__Do(struct im * self)
 	comparisons are case insensitive
 */
 	void
-im__DoMenu(struct im * self, char * itemname)
+im__DoMenu(self, itemname)
+	struct im *self;
+	char *itemname;
 {
  	struct proctable_Entry *pe;
 	struct basicobject *obj;
@@ -2736,7 +2821,8 @@ im__DoMenu(struct im * self, char * itemname)
 	otherwise returns FALSE
 */
 	boolean
-im__CheckForInt(struct classheader * classID)
+im__CheckForInterrupt(classID)
+	struct classheader *classID;
 {
 	struct action *tQ, *tx;
 	struct im *im;
@@ -2791,7 +2877,8 @@ static void RecordCharacter(long key)
 }
 
 	int 
-im__GetChar(struct im * self)
+im__GetCharacter(self)
+	struct im *self;
 {
 	struct action * a;
 	struct view *curview = self->topLevel;
@@ -3261,7 +3348,9 @@ void im__GetPreferedDimensions(struct classheader * classID, int top, int left, 
 /* We really ought to tell the window manager about this change in preferences.
     This should be a method instead of a class procedure. */
 	void 
-im__SetGeometrySpec(struct classheader * classID, char * value)
+im__SetGeometrySpec(classID, value)
+	struct classheader *classID;
+	char *value;
 {
 	char *buffer;
 	buffer = malloc(strlen(value) + 2);
@@ -3338,13 +3427,15 @@ void im__ExposeWindow(struct im * self)
 }
 
 	void
-im__HideWindow(struct im * self)
+im__HideWindow(self)
+	struct im *self;
 {
 	printf("im_HideWindow: missing method\n");
 }
 
 	void
-im__VanishWindow(struct im * self)
+im__VanishWindow(self)
+	struct im *self;
 {
 	printf("im_VanishWindow: missing method\n"); 
 }
@@ -3471,7 +3562,9 @@ void im__UnlinkNotification(struct im * self, struct view * unlinkedTree)
 }
 
      boolean
-im__CreateOffscreenWindow(int self, struct im *self, * other, int width, long width, height)
+im__CreateOffscreenWindow(self, other, width, height)
+struct im *self, *other;
+long width, height;
 {
     printf("im_CreateOffscreenWindow: missing method\n");
     return FALSE;
@@ -3626,7 +3719,8 @@ static SigHandler() {longjmp(trap, 1);}
 #endif
 
 static boolean
-isString(char * arg)
+isString(arg)
+char *arg;
 {
 #if defined(_ANSI_C_SOURCE) && !defined(_NO_PROTO)
     void (*oldBus)(int sig), (*oldSeg)(int sig); /* save signal handlers */
@@ -3881,38 +3975,50 @@ void im__CallDeleteWindowCallback(struct im * self)
 }
 
 struct colormap *
-im__CreateColormap(struct im * self)
+im__CreateColormap( self )
+struct im *self;
 {
     return(windowsystem_CreateColormap(im_GetWindowSystem(), self));
 }
 
 struct color *
-im__CreateColor(struct im * self, char * name, int r, int g, unsigned int r, g, b)
+im__CreateColor( self, name, r, g, b )
+    struct im *self;
+    char *name;
+    unsigned int r, g, b;
 {
     return(windowsystem_CreateColor(im_GetWindowSystem(), name, r, g, b));
 }
 
 void
-im__InstallColormap(struct im * self, struct colormap * cmap)
+im__InstallColormap( self, cmap )
+struct im *self;
+struct colormap *cmap;
 {
     self->installedColormap = cmap;
 }
 
 void
-im__ReceiveColormap(struct im * self, struct colormap * cmap)
+im__ReceiveColormap( self, cmap )
+    struct im *self;
+    struct colormap *cmap;
 {
     super_ReceiveColormap(self, cmap);
     view_LinkTree(self->topLevel, self);
 }
 
 boolean
-im__ResizeWindow(struct im * self, int w, int w, h)
+im__ResizeWindow( self, w, h )
+    struct im *self;
+    int w, h;
 {
     return(FALSE);
 }
 
 boolean
-im__MoveWindow(struct im * self, int x, int x, y)
+im__MoveWindow( self, x, y )
+    struct im *self;
+    int x, y;
 {
     return(FALSE);
 }

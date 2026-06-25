@@ -52,7 +52,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  ** makes alot of code easier.
  **/
 static void
-SafeFree(void * buffer)
+SafeFree(buffer)
+void * buffer;
+
 {
     if (buffer != NULL) {
 	free(buffer);
@@ -80,7 +82,9 @@ SafeFree(void * buffer)
  ** possible) and return NULL.
  **/
 struct IndexEntry *
-ReadEntry(FILE * fd)
+ReadEntry(fd)
+FILE *fd;
+
 {
 struct IndexEntry * ThisEntry;
 char buffer[MAXPATHLEN];
@@ -137,7 +141,10 @@ error:
 
 
 boolean
-WriteEntry(FILE * fd, struct IndexEntry * entry)
+WriteEntry(fd, entry)
+FILE *fd;
+struct IndexEntry * entry;
+
 {
     if (fprintf(fd, "%s\t%s\t%lx\t%s\n", entry->Name, entry->Key, entry->Version, entry->Data) < 0) {
 	return FALSE;
@@ -209,7 +216,9 @@ error:
  ** allocated for that entry.
  **/
 void
-DestroyEntry(struct IndexEntry * entry)
+DestroyEntry(entry)
+struct IndexEntry * entry;
+
 {
     if (entry != NULL) {
 	SafeFree(entry->Name);
@@ -224,7 +233,9 @@ DestroyEntry(struct IndexEntry * entry)
 
 
 char * 
-GetEntryName(struct IndexEntry * entry)
+GetEntryName(entry)
+struct IndexEntry * entry;
+
 {
     if (entry == NULL) {
 	return NULL;
@@ -236,7 +247,9 @@ GetEntryName(struct IndexEntry * entry)
 
 
 char * 
-GetEntryKey(struct IndexEntry * entry)
+GetEntryKey(entry)
+struct IndexEntry * entry;
+
 {
     if (entry == NULL) {
 	return NULL;
@@ -248,7 +261,9 @@ GetEntryKey(struct IndexEntry * entry)
 
 
 unsigned long
-GetEntryVersion(struct IndexEntry * entry)
+GetEntryVersion(entry)
+struct IndexEntry * entry;
+
 {
     if (entry == NULL) {
 	return NULL;
@@ -260,7 +275,9 @@ GetEntryVersion(struct IndexEntry * entry)
 
 
 char * 
-GetEntryData(struct IndexEntry * entry)
+GetEntryData(entry)
+struct IndexEntry * entry;
+
 {
     if (entry == NULL) {
 	return NULL;
@@ -271,7 +288,10 @@ GetEntryData(struct IndexEntry * entry)
 
 
 boolean
-SetEntryName(struct IndexEntry * entry, char * name)
+SetEntryName(entry, name)
+struct IndexEntry * entry;
+char * name;
+
 {
 char * FreeString;
 
@@ -298,7 +318,10 @@ char * FreeString;
 
 
 boolean
-SetEntryKey(struct IndexEntry * entry, char * key)
+SetEntryKey(entry, key)
+struct IndexEntry * entry;
+char * key;
+
 {
 char * FreeString;
 
@@ -325,7 +348,10 @@ char * FreeString;
 
 
 boolean
-SetEntryVersion(struct IndexEntry * entry, unsigned long version)
+SetEntryVersion(entry, version)
+struct IndexEntry * entry;
+unsigned long version;
+
 {
     if (entry == NULL) {
 	return FALSE;
@@ -338,7 +364,10 @@ SetEntryVersion(struct IndexEntry * entry, unsigned long version)
 
 
 boolean
-SetEntryData(struct IndexEntry * entry, char * data)
+SetEntryData(entry, data)
+struct IndexEntry * entry;
+char * data;
+
 {
 char * FreeString;
 
@@ -383,7 +412,10 @@ char * FreeString;
  ** Update index file.
  **/
 int
-UdateIndex(IndexEntry * entry)
+UdateIndex(entry)
+IndexEntry * entry;
+
+
 {
 int infd;
 int outfd;

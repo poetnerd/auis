@@ -82,7 +82,10 @@ static jmp_buf jmpState;
 static external_methods_ptr emethods;
 
 long
-jpeg__WriteNative(struct jpeg * jpeg, FILE * file, char * filename)
+jpeg__WriteNative(jpeg, file, filename)
+    struct jpeg *jpeg;
+    FILE *file;
+    char *filename;
 {
     FILE *fp;
     int i, nc, rv, w, h, size;
@@ -153,7 +156,8 @@ static void xv_jpeg_monitor(decompress_info_ptr cinfo, int loopcnt, long loopcnt
 }
 
 static void
-d_ui_method_selection(decompress_info_ptr cinfo)
+d_ui_method_selection(cinfo)
+  decompress_info_ptr cinfo;
 {
   /* select output colorspace & quantization parameters */
   if (cinfo->jpeg_color_space == CS_GRAYSCALE) {
@@ -171,7 +175,8 @@ d_ui_method_selection(decompress_info_ptr cinfo)
 
 /**************************************************/
 static void
-output_init(decompress_info_ptr cinfo)
+output_init (cinfo)
+  decompress_info_ptr cinfo;
 {
   pWIDE = cinfo->image_width;
   pHIGH = cinfo->image_height;
@@ -190,7 +195,10 @@ output_init(decompress_info_ptr cinfo)
 
 /**************************************************/
 static void
-put_color_map(decompress_info_ptr cinfo, int num_colors, JSAMPARRAY colormap)
+put_color_map (cinfo, num_colors, colormap)
+  decompress_info_ptr cinfo;
+  int num_colors;
+  JSAMPARRAY colormap;
 {
   int i;
 
@@ -203,7 +211,10 @@ put_color_map(decompress_info_ptr cinfo, int num_colors, JSAMPARRAY colormap)
 }
 
 static void
-put_pixel_rows(decompress_info_ptr cinfo, int num_rows, JSAMPIMAGE pixel_data)
+put_pixel_rows (cinfo, num_rows, pixel_data)
+  decompress_info_ptr cinfo;
+  int num_rows;
+  JSAMPIMAGE pixel_data;
 {
   JSAMPROW ptr0, ptr1, ptr2;
   long col;
@@ -514,7 +525,10 @@ static int writeJFIF(FILE * fp)
 }
 
 long
-jpeg__Read(struct jpeg * self, FILE * file, long id)
+jpeg__Read( self, file, id )
+    struct jpeg *self;
+    FILE *file;
+    long id;
 {
     if(jpeg_Load(self, NULL, file) == 0) {
 	jpeg_Compress(self);
@@ -525,13 +539,19 @@ jpeg__Read(struct jpeg * self, FILE * file, long id)
 }
 
 long
-jpeg__Write(struct jpeg * self, FILE * file, long writeID, int level)
+jpeg__Write( self, file, writeID, level )
+    struct jpeg *self;
+    FILE *file;
+    long writeID;
+    int level;
 {
     return(super_Write(self, file, writeID, level));
 }
 
 int 
-jpeg__Ident(struct classheader * classID, char * fullname)
+jpeg__Ident( classID, fullname )
+    struct classheader *classID;
+    char *fullname;
 {
     FILE *f;
     int status = 0;
@@ -555,12 +575,16 @@ jpeg__Ident(struct classheader * classID, char * fullname)
 }
 
 boolean
-jpeg__InitializeObject(struct classheader * classID, struct jpeg * self)
+jpeg__InitializeObject( classID, self )
+    struct classheader *classID;
+    struct jpeg *self;
 {
     self->saveQuality = 75;
     return(TRUE);
 }
 
 void
-jpeg__FinalizeObject(struct classheader * classID, struct jpeg * self)
+jpeg__FinalizeObject( classID, self )
+    struct classheader *classID;
+    struct jpeg *self;
 {}

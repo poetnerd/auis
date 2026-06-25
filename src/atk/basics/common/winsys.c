@@ -80,13 +80,18 @@ boolean windowsystem__HandleFiles(struct windowsystem * self, long WaitTime, boo
 }
 
 struct colormap *
-windowsystem__CreateColormap(struct windowsystem * self, struct im * im)
+windowsystem__CreateColormap( self, im )
+struct windowsystem *self;
+struct im *im;
 {
     return(NULL);
 }
 
 struct color *
-windowsystem__CreateColor(struct windowsystem * self, char * name, int r, int g, unsigned int r, g, b)
+windowsystem__CreateColor( self, name, r, g, b )
+char *name;
+unsigned int r, g, b; 
+    struct windowsystem *self;
 {
     return(NULL);
 }
