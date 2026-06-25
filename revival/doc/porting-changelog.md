@@ -74,3 +74,47 @@ CFLAGS="-I. -I../../../config/darwin -I../../../config -I../../../overhead/class
 cc $CFLAGS -c traced.c observe.c dataobj.c
 cc $CFLAGS -I../../text -c ../../text/bp.c
 ```
+
+### `overhead/class/pp/class.c` — manual fixes after modernizer
+
+- Simplified `errorhandler()` — removed `#ifdef POSIX_ENV`/`ANSI_C_SOURCE`
+  three-way block, replaced with plain `void errorhandler(int sig)`
+- Fixed `CompareMethods()` signature for `qsort()` — changed from
+  `struct methods **` params to `const void *` (required by modern `qsort`)
+
+### `overhead/util/hdrs/util.h`
+
+Fixed three implicit-int extern declarations: `FreeConfigureList()`,
+`refreshprofile()`, `setprofilestring()`.
+
+### `atk/text/text.c`
+
+- Added `static int` to two bare static variable declarations
+- Converted six split-line K&R functions to ANSI prototypes (not caught
+  by modernizer): `text__AlwaysWrapViewChar`, `text__WriteSubString`,
+  `WrapStyle`, `PlayTabs`, `text__EnumerateEnvironments`, `PushLevel`,
+  `ComingNext`
+- Removed incorrect `static` on three functions that the `.eh` file
+  declares as non-static
+- Added `#include <util.h>` for `ULstrncmp`
+- Added forward declarations for `PushFile`, `ComingNext`
+- Fixed bare `return;` in `text__WriteOtherFormat` (non-void function)
+
+### `atk/text/textv.c`
+
+Added forward declarations for `charType()` and `InitializeMod()`
+(defined in companion files `txtvcmds.c` and `txtvcsty.c`).
+
+### Text object and view compile
+
+Full text stack compiles on macOS/Darwin:
+- `simpletext.c` — 27K (text storage/manipulation)
+- `text.c` — 52K (styled text with environments)
+- `textv.c` — 59K (text rendering/display)
+- `bpv.c` — 4.9K (page break view)
+
+### modernize tool
+
+- Fixed split-line regex bug that was truncating function names when
+  return type was on a separate line from the function name
+- Added `extern int errno;` → `#include <errno.h>` conversion
