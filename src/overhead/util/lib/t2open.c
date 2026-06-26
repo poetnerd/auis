@@ -36,7 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <signal.h>
 #include <setjmp.h>
 #include <errno.h>
-#include <stdlib.h>
+extern int errno;
 static int *popen_pid = NULL;
 static int dtablesize = -1;
 
@@ -56,7 +56,9 @@ static SignalReturnType (*oldfunc)(int);
 static SignalReturnType (*oldfunc)();
 #endif
 
-int t2open(char *name, char *argv[], FILE **r, FILE **w)
+int t2open(name, argv, r, w)
+char *name, *argv[];
+FILE **r, **w;
 {
     int p1[2], p2[2], pgrp;
 
@@ -124,7 +126,9 @@ lclalarm()
     longjmp(env, 1);
 }
 
-int t2close(FILE *ptr, int seconds, int *timedout)
+int t2close(ptr, seconds, timedout)
+    FILE *ptr;
+    int seconds, *timedout;
 {
     SIGSET_TYPE omask, nmask;
     int status;

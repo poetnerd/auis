@@ -48,7 +48,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include "sbutton.ih"
 #include "sbuttonv.eh"
 
-#include <stdlib.h>
 /* Defined constants and macros */
 #if 0
 #define DEBUG 1			/* turn on debugging */
@@ -90,7 +89,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 static struct atom *buttonpushed=NULL;
 static boolean newcolors=TRUE;
 
-static void InitFGBG(struct view *self, struct sbutton_prefs *prefs, double *fg, double *bg)
+static void InitFGBG(self, prefs, fg, bg)
+struct view *self;
+struct sbutton_prefs *prefs;
+double *fg, *bg;
 {
 
     char *bgcolor=sbutton_GetBackground(prefs);
@@ -122,7 +124,12 @@ static void InitFGBG(struct view *self, struct sbutton_prefs *prefs, double *fg,
     }
 }
 
-static void MyOldComputeColor(struct view *self, struct sbutton_prefs *prefs, double *foreground, double *background, int color, double *result)
+static void MyOldComputeColor(self, prefs, foreground, background, color, result)
+struct view *self;
+struct sbutton_prefs *prefs;
+double *foreground, *background;
+int color;
+double *result;
 {
     double pct=0.0;
     int style=DEFAULTSTYLE(prefs->style);
@@ -164,7 +171,11 @@ static void MyOldComputeColor(struct view *self, struct sbutton_prefs *prefs, do
       + background[2]*(1.0-pct);
 }
 
-static void MyOldSetShade(struct view *self, struct sbutton_prefs *prefs, double *foreground, double *background, int color)
+static void MyOldSetShade(self, prefs, foreground, background, color)
+struct view *self;
+struct sbutton_prefs *prefs;
+double *foreground, *background;
+int color;
 {
     double result[3];
     int style=DEFAULTSTYLE(prefs->style);
@@ -179,7 +190,12 @@ static void MyOldSetShade(struct view *self, struct sbutton_prefs *prefs, double
 }
 
 
-static void MyNewComputeColor(struct view *self, struct sbutton_prefs *prefs, double *foreground, double *background, int color, double *result)
+static void MyNewComputeColor(self, prefs,foreground, background, color, result)
+struct view *self;
+struct sbutton_prefs *prefs;
+double *foreground, *background;
+int color;
+double *result;
 {
     long br, bg, bb;
     long rr=0, rg=0, rb=0;
@@ -229,7 +245,11 @@ static void MyNewComputeColor(struct view *self, struct sbutton_prefs *prefs, do
 	    break;
     }
 }
-static void MyNewSetShade(struct view *self, struct sbutton_prefs *prefs, double *foreground, double *background, int color)
+static void MyNewSetShade(self, prefs, foreground, background, color)
+struct view *self;
+struct sbutton_prefs *prefs;
+double *foreground, *background;
+int color;
 {
     double pct;
     double result[3];
@@ -242,13 +262,20 @@ static void MyNewSetShade(struct view *self, struct sbutton_prefs *prefs, double
     }
 }
 
-static void MySetShade(struct view *self, struct sbutton_prefs *prefs, double *foreground, double *background, int color)
+static void MySetShade(self, prefs, foreground, background, color)
+struct view *self;
+struct sbutton_prefs *prefs;
+double *foreground, *background;
+int color;
 {
     if(newcolors && DEFAULTSTYLE(prefs->style)==sbutton_MOTIF) MyNewSetShade(self, prefs, foreground, background, color);
     else MyOldSetShade(self, prefs, foreground, background, color);
 }
 
-void sbuttonv__SaveViewState(struct classheader *classID, struct view *self, struct sbuttonv_view_info *vi)
+void sbuttonv__SaveViewState(classID, self, vi)
+struct classheader *classID;
+struct view *self;
+struct sbuttonv_view_info *vi;
 {
     vi->transfermode=view_GetTransferMode(self);
     view_GetFGColor(self, &vi->fgr, &vi->fgg, &vi->fgb);
@@ -256,7 +283,10 @@ void sbuttonv__SaveViewState(struct classheader *classID, struct view *self, str
     vi->font=view_GetFont(self);
 }
 
-void sbuttonv__RestoreViewState(struct classheader *classID, struct view *self, struct sbuttonv_view_info *vi)
+void sbuttonv__RestoreViewState(classID, self, vi)
+struct classheader *classID;
+struct view *self;
+struct sbuttonv_view_info *vi;
 {
     view_SetTransferMode(self, vi->transfermode);
     view_SetBGColor(self, vi->bgr, vi->bgg, vi->bgb);
@@ -265,7 +295,11 @@ void sbuttonv__RestoreViewState(struct classheader *classID, struct view *self, 
     view_SetFont(self, vi->font);
 }
 
-void sbuttonv__SafeDrawButton(struct classheader *classID, struct view *self, struct sbutton_info *si, struct rectangle *r)
+void sbuttonv__SafeDrawButton(classID, self, si, r)
+struct classheader *classID;
+struct view *self;
+struct sbutton_info *si;
+struct rectangle *r;
 {
     struct sbuttonv_view_info vi;
     sbuttonv_SaveViewState(self, &vi);
@@ -273,7 +307,14 @@ void sbuttonv__SafeDrawButton(struct classheader *classID, struct view *self, st
     sbuttonv_RestoreViewState(self, &vi);
 }
 
-void sbuttonv__SizeForBorder(struct classheader *classID, struct view *self, enum sbuttonv_conv dir, int style, boolean lit, long w, long h, long *rw, long *rh)
+void sbuttonv__SizeForBorder(classID, self, dir,  style, lit, w, h, rw, rh)
+struct classheader *classID;
+struct view *self;
+enum sbuttonv_conv dir;
+int style;
+boolean lit;
+long w, h;
+long *rw, *rh;
 {
     style=DEFAULTSTYLE(style);
     
@@ -321,12 +362,25 @@ void sbuttonv__SizeForBorder(struct classheader *classID, struct view *self, enu
     }
 }
 
-void sbuttonv__DrawRectBorder(struct classheader *classID, struct view *self, struct rectangle *enclosing, struct sbutton_prefs *prefs, boolean inout, boolean draw, struct rectangle *interior)
+void sbuttonv__DrawRectBorder(classID, self, enclosing, prefs, inout, draw, interior)
+struct classheader *classID;
+struct view *self;
+struct rectangle *enclosing;
+struct sbutton_prefs *prefs;
+boolean inout, draw;
+struct rectangle *interior;
 {
     sbuttonv_DrawBorder(self, enclosing->left, enclosing->top, enclosing->width, enclosing->height, prefs, inout, draw, interior);
 }
 
-void sbuttonv__DrawBorder(struct classheader *classID, struct view *self, long x, long y, long w, long h, struct sbutton_prefs *prefs, boolean inout, boolean draw, struct rectangle *interior)
+void sbuttonv__DrawBorder(classID, self, x, y, w, h, prefs, inout, draw, interior)
+struct classheader *classID;
+struct view *self;
+long x, y, w, h;
+struct sbutton_prefs *prefs;
+boolean inout;
+struct rectangle *interior;
+boolean draw;
 {
     struct rectangle Rect2;
     int bdepth, r_bot, r2_bot;
@@ -435,7 +489,12 @@ void sbuttonv__DrawBorder(struct classheader *classID, struct view *self, long x
     if(interior && interior->height<=0) interior->height=1;
 }
 
-void sbuttonv__InteriorBGColor(struct classheader *classID, struct view *self, struct sbutton_prefs *prefs, boolean lit, double *result)
+void sbuttonv__InteriorBGColor(classID, self, prefs, lit,  result)
+struct classheader *classID;
+struct view *self;
+struct sbutton_prefs *prefs;
+boolean lit;
+double *result;
 {
     double topshade;
     double fore[3], back[3];
@@ -467,7 +526,13 @@ void sbuttonv__InteriorBGColor(struct classheader *classID, struct view *self, s
     sbuttonv_RestoreViewState(self, &vi);
 }
 
-static void DrawText(struct view *self, struct fontdesc *font, long x, long y, char *text, int len, long flags)
+static void DrawText(self, font, x, y, text, len, flags)
+struct view *self;
+struct fontdesc *font;
+long x, y;
+char *text;
+int len;
+long flags;
 {
     if(flags==TEXTINMIDDLE && len==1 && font!=NULL) {
 	long tx, ty;
@@ -485,7 +550,14 @@ static void DrawText(struct view *self, struct fontdesc *font, long x, long y, c
 
 #define SOMEFONT(prefs) (sbutton_GetFont(prefs)?sbutton_GetFont(prefs):fontdesc_Create(FONT, FONTTYPE, FONTSIZE))
 
-static void DrawLabel(struct view *self, char *text, boolean lit, struct sbutton_prefs *prefs, double *fg, double *bg, long x, long y, long flags)
+static void DrawLabel(self, text, lit, prefs, fg, bg, x, y, flags)
+struct view *self;
+char *text;
+boolean lit;
+struct sbutton_prefs *prefs;
+double *fg, *bg;
+long x, y;
+long flags;
 {
     int style;
     int len;
@@ -532,7 +604,14 @@ static void DrawLabel(struct view *self, char *text, boolean lit, struct sbutton
     }
 }
     
-void sbuttonv__DrawLabel(struct classheader *classID, struct view *self, char *text, long x, long y, struct sbutton_prefs *prefs, boolean lit, long flags)
+void sbuttonv__DrawLabel(classID, self, text,  x, y, prefs, lit, flags)
+struct classheader *classID;
+struct view *self;
+char *text;
+long x, y;
+struct sbutton_prefs *prefs;
+boolean lit;
+long flags;
 {
     
     double fg[3], bg[3];
@@ -545,7 +624,13 @@ void sbuttonv__DrawLabel(struct classheader *classID, struct view *self, char *t
     DrawLabel(self, text, lit, prefs, fg, bg, x, y, flags);
 }
 
-void sbuttonv__DrawButtonLabel(struct classheader *classID, struct view *self, char *text, struct rectangle *interior, struct sbutton_prefs *prefs, boolean lit)
+void sbuttonv__DrawButtonLabel(classID, self, text, interior, prefs, lit)
+struct classheader *classID;
+struct view *self;
+char *text;
+struct rectangle *interior;
+struct sbutton_prefs *prefs;
+boolean lit;
 {
     long tx, ty;
     int style=DEFAULTSTYLE(sbutton_GetStyle(prefs));
@@ -559,7 +644,11 @@ void sbuttonv__DrawButtonLabel(struct classheader *classID, struct view *self, c
     sbuttonv_DrawLabel(self, text, tx, ty, prefs, lit, -1);
 }
 
-void sbuttonv__DrawButton(struct classheader *classID, struct view *self, struct sbutton_info *si, struct rectangle *r)
+void sbuttonv__DrawButton(classID, self, si, r)
+struct classheader *classID;
+struct view *self;
+struct sbutton_info *si;
+struct rectangle *r;
 {
     int style;
     struct rectangle Rect2;
@@ -679,7 +768,8 @@ void sbuttonv__DrawButton(struct classheader *classID, struct view *self, struct
     if(si->lit) sbuttonv_HighlightButton(self, si, r);
 }
 
-boolean sbuttonv__InitializeClass(struct classheader *c)
+boolean sbuttonv__InitializeClass(c)
+struct classheader *c;
 {
     buttonpushed=atom_Intern("buttonpushed");
     if(buttonpushed==NULL) return FALSE;
@@ -688,7 +778,9 @@ boolean sbuttonv__InitializeClass(struct classheader *c)
     return(TRUE);
 }
 
-boolean sbuttonv__InitializeObject(struct classheader *c, struct sbuttonv *self)
+boolean sbuttonv__InitializeObject(c, self)
+struct classheader *c;
+struct sbuttonv *self;
 {
 /*
   Set up the data for each instance of the object.
@@ -717,7 +809,9 @@ boolean sbuttonv__InitializeObject(struct classheader *c, struct sbuttonv *self)
     return(TRUE);
 }
 
-unsigned char sbuttonv__SetActiveMouseButtons(struct sbuttonv *self, unsigned char active, unsigned char deactive)
+unsigned char sbuttonv__SetActiveMouseButtons(self, active, deactive)
+struct sbuttonv *self;
+unsigned char active, deactive;
 {
     unsigned char oldbs=self->activebuttons;
     self->activebuttons|=active;
@@ -725,7 +819,9 @@ unsigned char sbuttonv__SetActiveMouseButtons(struct sbuttonv *self, unsigned ch
     return oldbs;
 }
 
-void sbuttonv__LinkTree(struct sbuttonv *self, struct view *parent)
+void sbuttonv__LinkTree(self, parent)
+struct sbuttonv *self;
+struct view *parent;
 {
     super_LinkTree(self, parent);
 
@@ -733,12 +829,15 @@ void sbuttonv__LinkTree(struct sbuttonv *self, struct view *parent)
 
 
 
-void sbuttonv__FinalizeObject(struct classheader *c, struct sbuttonv *self)
+void sbuttonv__FinalizeObject(c, self)
+struct classheader *c;
+struct sbuttonv *self;
 {
     if(self->info) free(self->info);
 }
 
-static void EnsureInfo(struct sbuttonv *self)
+static void EnsureInfo(self)
+struct sbuttonv *self;
 {
     struct sbutton *b=sbuttonv_ButtonData(self);
     long ocount=self->bcount;
@@ -758,7 +857,10 @@ static void EnsureInfo(struct sbuttonv *self)
 #define MAXWIDTH(col, max, left) ((col)<(left)?max+1:max)
 #define MAXHEIGHT(row, max, left) ((row)<(left)?max+1:max)
 
-void sbuttonv__FullUpdate(struct sbuttonv *self, enum view_UpdateType type, long left, long top, long width, long height)
+void sbuttonv__FullUpdate(self, type, left, top, width, height)
+struct sbuttonv *self;
+enum view_UpdateType type;
+long left, top, width, height;
 {
 /*
   Redisplay this object.  Specifically, set my font, and put my text label
@@ -833,7 +935,8 @@ void sbuttonv__FullUpdate(struct sbuttonv *self, enum view_UpdateType type, long
 }
 
 
-void sbuttonv__Update(struct sbuttonv *self)
+void sbuttonv__Update(self)
+struct sbuttonv *self;  
 {
 
     struct sbutton *b=sbuttonv_ButtonData(self);
@@ -863,7 +966,9 @@ void sbuttonv__Update(struct sbuttonv *self)
 }
 
 
-static int RectEnclosesXY(struct rectangle *r, long x, long y)
+static int RectEnclosesXY(r, x, y)
+struct rectangle *r;
+long x, y;
 {
   return(   ( ((r->top)  <= y) && ((r->top + r->height) >= y) )
 	 && ( ((r->left) <= x) && ((r->left + r->width) >= x) )
@@ -871,7 +976,11 @@ static int RectEnclosesXY(struct rectangle *r, long x, long y)
 }
 
 
-static void sbuttonv__HighlightButton(struct classheader *classID, struct view *self, struct sbutton_info *si, struct rectangle *r)
+static void sbuttonv__HighlightButton(classID, self, si, r)
+struct classheader *classID;
+struct view *self;
+struct sbutton_info *si;
+struct rectangle *r;
 {
     struct rectangle Rect2;
     struct fontdesc *my_fontdesc;
@@ -957,7 +1066,11 @@ static void sbuttonv__HighlightButton(struct classheader *classID, struct view *
 }
 
 
-static void sbuttonv__UnHighlightButton(struct classheader *classID, struct view *self, struct sbutton_info *si, struct rectangle *r)
+static void sbuttonv__UnHighlightButton(classID, self, si, r)
+struct classheader *classID;
+struct view *self;
+struct sbutton_info *si;
+struct rectangle *r;
 {
     struct rectangle Rect2;
     int tx, ty;
@@ -1036,7 +1149,9 @@ static void sbuttonv__UnHighlightButton(struct classheader *classID, struct view
 }
 
 
-int sbuttonv__WhichButton(struct sbuttonv *self, long x, long y)
+int sbuttonv__WhichButton(self, x, y)
+struct sbuttonv *self;
+long x, y;
 {
     int row, col, spill, button;
     int i;
@@ -1059,7 +1174,10 @@ int sbuttonv__WhichButton(struct sbuttonv *self, long x, long y)
     } else return -1;
 }
 
-boolean sbuttonv__Touch(struct sbuttonv *self, int ind, enum view_MouseAction action)
+boolean sbuttonv__Touch(self, ind, action)
+struct sbuttonv *self;
+int ind;
+enum view_MouseAction action;
 {
     struct cursor *wait_cursor;
     struct sbutton *b=sbuttonv_ButtonData(self);
@@ -1088,7 +1206,11 @@ boolean sbuttonv__Touch(struct sbuttonv *self, int ind, enum view_MouseAction ac
 }
 
 
-struct view *sbuttonv__Hit(struct sbuttonv *self, enum view_MouseAction action, long x, long y, long numclicks)
+struct view *sbuttonv__Hit(self, action, x, y, numclicks)
+struct sbuttonv *self;
+long x, y;
+enum view_MouseAction action;
+long numclicks;  
 {
     /*
       Handle the button event.  Currently, semantics are:
@@ -1156,7 +1278,10 @@ struct view *sbuttonv__Hit(struct sbuttonv *self, enum view_MouseAction action, 
 }
 
 
-void sbuttonv__ObservedChanged(struct sbuttonv *self, struct sbutton *b, long v)
+void sbuttonv__ObservedChanged(self, b, v)
+struct sbuttonv *self;
+struct sbutton *b;
+long v;
 {
     struct sbutton *b2=sbuttonv_ButtonData(self);
     long bchange=(v>=sbutton_CHANGEBASE && v<sbutton_CHANGEBASE+self->bcount)?v-sbutton_CHANGEBASE:-1;
@@ -1284,7 +1409,10 @@ long *desired_height;
     return view_Fixed;
 }
 
-void sbuttonv__GetOrigin(struct sbuttonv *self, long width, long height, long *originX, long *originY)
+void sbuttonv__GetOrigin(self, width, height, originX, originY)
+struct sbuttonv *self;
+long width, height;
+long *originX, *originY;
 {
 /*
   We want this object to sit in-line with text, not below the baseline.
@@ -1342,7 +1470,11 @@ void sbuttonv__GetOrigin(struct sbuttonv *self, long width, long height, long *o
   return;
 }
 
-static boolean definetriggers(struct sbutton *b, int i, struct sbutton_info *si, struct sbuttonv *self)
+static boolean definetriggers(b, i, si, self)
+struct sbutton *b;
+int i;
+struct sbutton_info *si;
+struct sbuttonv *self;
 {
     if(sbutton_GetTrigger(b, i)) {
 	observable_DefineTrigger(self, sbutton_GetTrigger(b, i));
@@ -1350,14 +1482,18 @@ static boolean definetriggers(struct sbutton *b, int i, struct sbutton_info *si,
     return FALSE;
 }
 
-void sbuttonv__SetDataObject(struct sbuttonv *self, struct sbutton *b)
+void sbuttonv__SetDataObject(self, b)
+struct sbuttonv *self;
+struct sbutton *b;
 {
     if(sbutton_GetMaxCount(b)==0) sbutton_EnsureSize(b, 0);
     sbutton_Enumerate(b, definetriggers, self);
     super_SetDataObject(self, b);	
 }
 
-void sbuttonv__WantUpdate(struct sbuttonv *self, struct view *requestor)
+void sbuttonv__WantUpdate(self, requestor)
+struct sbuttonv *self;
+struct view *requestor;
 {
     if ((struct view *) self == requestor) {
 
@@ -1374,7 +1510,11 @@ void sbuttonv__WantUpdate(struct sbuttonv *self, struct view *requestor)
     /* if this is an activation change make it happen NOW! */
 } /* sbuttonv__WantUpdate */
 
-struct sbuttonv *sbuttonv__CreateFilledSButtonv(struct classheaded *classID, char *defview, struct sbuttonv *prefs, struct sbutton_list *blist)
+struct sbuttonv *sbuttonv__CreateFilledSButtonv(classID, defview, prefs, blist)
+struct classheaded *classID;
+char *defview;
+struct sbuttonv *prefs;
+struct sbutton_list *blist;
 {
     struct sbutton *data=sbutton_CreateFilledSButton(prefs, blist);
     struct sbuttonv *self;
@@ -1402,7 +1542,9 @@ struct sbuttonv *sbuttonv__CreateFilledSButtonv(struct classheaded *classID, cha
  *	PRINTING	
  *  # # # # # # # # # # # # #  */
 
-static void OutputLabel(FILE *f, char *l)
+static void OutputLabel(f, l)
+FILE *f;
+char *l;
 {
     while(*l) {
 	if(l[0]=='\\' || l[0]=='\"') fprintf(f, "\\\\");
@@ -1411,7 +1553,12 @@ static void OutputLabel(FILE *f, char *l)
     }
 }
 
-void sbuttonv__Print(register struct sbuttonv *self, register FILE *file, char *processor, char *format, boolean topLevel)
+void sbuttonv__Print(self, file, processor, format, topLevel)
+register struct sbuttonv  *self;
+register FILE  *file;
+char   *processor;
+char   *format;
+boolean   topLevel;
 {
 	int count;
 	register struct sbutton *dobj = (struct sbutton *)self->header.view.dataobject;

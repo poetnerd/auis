@@ -43,7 +43,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exam
 #include "fontdesc.ih"
 #include "style.ih"
 
-static boolean makeWindow(struct dataobject *dobj)
+static boolean makeWindow(dobj)
+struct dataobject *dobj;
 {
     struct view *v;
     struct view *applayer;
@@ -83,7 +84,8 @@ static boolean makeWindow(struct dataobject *dobj)
 }
 
 
-boolean helloworldapp__Start(struct helloworldapp *hwapp)
+boolean helloworldapp__Start(hwapp)
+struct helloworldapp *hwapp;
 {
     struct text *t;
     struct style *bold,*italic;

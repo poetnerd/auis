@@ -38,7 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <value.ih>
 #include <thmbstrv.eh>
 
-char *thumbstrV__GetValueString(struct thumbstrV *self)
+char *thumbstrV__GetValueString(self)
+struct thumbstrV *self;
 {
     struct value *w = thumbstrV_Value(self);
     long len,val;
@@ -51,7 +52,10 @@ char *thumbstrV__GetValueString(struct thumbstrV *self)
     }
     return(arr[val]);
 }
-struct thumbstrV * thumbstrV__DoHit(struct thumbstrV *self, enum view_MouseAction type, long x, long y, long hits)
+struct thumbstrV * thumbstrV__DoHit( self,type,x,y,hits )
+struct thumbstrV * self;
+enum view_MouseAction type;
+long x,y,hits;
 {
     int mv = value_GetArraySize(thumbstrV_Value(self));
     struct thumbV *sf = (struct thumbV *) self;

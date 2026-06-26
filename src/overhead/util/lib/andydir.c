@@ -35,15 +35,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <stdio.h>
 
-#include <stdlib.h>
-#include <string.h>
 #ifndef _IBMR2
+extern char *malloc();
 #endif /* _IBMR2 */
 
 extern char *getenv();
 
 /* Return a string with the current value for ANDYDIR imbedded in it. */
-char *AndyDir(char *str)
+char *AndyDir(str)
+char *str;
 {
     char *p = NULL;
     int addLen;

@@ -79,7 +79,6 @@ corresponding output:
 #include <stdio.h>
 #include <ctype.h>
 
-#include <stdlib.h>
 unsigned char filestem[100];		/* stem of input filename */
 
 
@@ -102,7 +101,8 @@ SkipComment()
 	}
 }
 
-int SkipString(char d)
+SkipString(d)
+	char d;	/* the close delimiter */
 {
 	register c;
 	putc(d, outf);	/* open the string */
@@ -208,7 +208,8 @@ PutNodeClass()
 }
 
 
-int main(int argc, unsigned char **argv)
+main(argc, argv)
+	unsigned char **argv;
 {
 	unsigned char *dot;
 

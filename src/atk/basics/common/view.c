@@ -45,7 +45,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <cmap.ih>
 #include <view.eh>
 
-#include <stdio.h>
 #define min(v1,v2) ((v1)<(v2) ? (v1) : (v2))
 #define view_STARTHEIGHT 150
 struct atom * A_name;

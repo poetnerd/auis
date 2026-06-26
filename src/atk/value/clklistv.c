@@ -44,9 +44,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 
 #include <clklistv.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
-static void handleclicks(struct clicklistV *self, struct cltextview *cv, long *position, long *numberOfClicks, enum view_MouseAction *action, long *startLeft, long *startRight, long *leftPos, long *rightPos, long which, long type)
+static void handleclicks(self,cv,position, numberOfClicks, action, startLeft, startRight, leftPos, rightPos,which,type)
+struct clicklistV *self;
+struct cltextview *cv;
+long *position;
+long *numberOfClicks;
+enum view_MouseAction *action;
+long *startLeft;
+long *startRight;
+long *leftPos;
+long *rightPos;
+long which,type;
 {   /* deal with clicks */
     struct value *val;
     if(type == cltextview_PREPROCESS){
@@ -90,7 +98,9 @@ static void handleclicks(struct clicklistV *self, struct cltextview *cv, long *p
     }
 }
 #ifdef USEGETCOUNT
-static getcount(char **str, long size)
+static getcount(str,size)
+char **str;
+long size;
 {
     register char *c;
     register long cnt = 0;
@@ -100,7 +110,10 @@ static getcount(char **str, long size)
     return cnt;
 }
 #endif /* USEGETCOUNT */
-static SetArray(struct clicklistV *self, char **str, long size)
+static SetArray(self,str,size)
+struct clicklistV *self;
+char **str;
+long size;
 {
     struct text *txt;
     long i,end,sl,textchanged;
@@ -142,7 +155,10 @@ static SetArray(struct clicklistV *self, char **str, long size)
 	cltextview_CollapseDot(self->cltextview);
     }
 }
-void clicklistV__ObservedChanged(struct clicklistV *self, struct observable *changed, long value)
+void clicklistV__ObservedChanged(self,changed,value)
+struct clicklistV *self;
+struct observable *changed;
+long value;
 {
     struct value *val ;
     char **arr;
@@ -187,7 +203,8 @@ void clicklistV__ObservedChanged(struct clicklistV *self, struct observable *cha
     }
 }
 
-struct view *clicklistV__GetApplicationLayer(struct clicklistV *self)
+struct view *clicklistV__GetApplicationLayer(self)
+struct clicklistV *self;
 {
     struct lpair *lp;
     struct cltextview *ev;
@@ -210,10 +227,13 @@ struct view *clicklistV__GetApplicationLayer(struct clicklistV *self)
     cltextview_AddObserver(ev,self);
     return (struct view *)lp;
 }
-boolean clicklistV__InitializeObject(struct classheader *classID, struct clicklistV *self)
+boolean clicklistV__InitializeObject(classID,self)
+struct classheader *classID;
+struct clicklistV *self;
 {
 #ifndef _IBMR2
-    #endif /* _IBMR2 */
+    extern char *malloc();
+#endif /* _IBMR2 */
     self->text = NULL;
     self->cltextview = NULL;
     self->csize = 128;
@@ -222,14 +242,17 @@ boolean clicklistV__InitializeObject(struct classheader *classID, struct clickli
     clicklistV_SetUseAlt(self,FALSE);
     return TRUE;
 }
-boolean clicklistV__FinalizeObject(struct classheader *classID, struct clicklistV *self)
+boolean clicklistV__FinalizeObject(classID,self)
+struct classheader *classID;
+struct clicklistV *self;
 {
     if(self->text)
 	text_RemoveObserver(self->text,self);
     free(self->choice);
     return TRUE;
 }
-void clicklistV__WantInputFocus(struct clicklistV *self)
+void clicklistV__WantInputFocus(self)
+struct clicklistV *self;
 {
     if(self->cltextview) 
 	cltextview_WantInputFocus(self->cltextview,self->cltextview);

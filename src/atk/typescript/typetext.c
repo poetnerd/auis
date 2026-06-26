@@ -47,7 +47,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/type
 #include <style.ih>
 #include <stylesht.ih>
 
-#include <string.h>
 long typetext__HandleKeyWord(self, pos, keyword, file)
 struct typetext *self;
 long pos;
@@ -73,17 +72,23 @@ FILE *file;  {
     return 0;
 }
 
-long typetext__HandleBegindata(struct typetext *self, long pos, FILE *file)
+long typetext__HandleBegindata(self,pos,file)
+struct typetext *self;
+long pos;
+FILE *file;
 {
 return super_HandleBegindata(self,pos,file);
 }
 
-char *typetext__ViewName(struct typetext *self)
+char *typetext__ViewName(self)
+    struct typetext *self;
 {
     return "typescript";
 }
 
-boolean typetext__InitializeObject(struct classheader *classID, struct typetext *self)
+boolean typetext__InitializeObject(classID, self)
+    struct classheader *classID;
+    struct typetext *self;
 {
     self->hashandler = FALSE;
     typetext_SetCopyAsText(self,TRUE);
@@ -93,7 +98,8 @@ boolean typetext__InitializeObject(struct classheader *classID, struct typetext 
     return TRUE;
 }
 
-long typetext__GetModified(struct typetext *self)
+long typetext__GetModified(self)
+    struct typetext *self;
 {
     return 0;
 }

@@ -42,7 +42,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <ctype.h>
 
-int LCappend(char *s1, char *s2)
+LCappend(s1, s2)
+char *s1, *s2;
 {
     char *e1;
 
@@ -54,7 +55,6 @@ int LCappend(char *s1, char *s2)
 }
 #ifdef TESTINGONLYTESTING
 #include <stdio.h>
-#include <string.h>
 main()
 {
     char a[100];

@@ -27,7 +27,6 @@
 #include <rle.h>
 
 
-#include <stdio.h>
 /*
  * output_term assumes that JSAMPLE has the same representation as rle_pixel,
  * to wit, "unsigned char".  Hence we can't cope with 12- or 16-bit samples.

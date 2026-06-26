@@ -65,8 +65,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <jpeg.eh>
 #include <jinclude.h>
 
-#include <stdlib.h>
-#include <stdio.h>
 static int pWIDE, pHIGH;
 static byte r[256],g[256],b[256];
 static byte *pic = NULL;

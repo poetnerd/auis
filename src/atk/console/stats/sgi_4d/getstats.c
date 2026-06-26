@@ -80,7 +80,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <getstats.h>
 #define sendval(text) {printf text ;fflush(stdout);}
 
-int GetGVMStats(int UsersID)
+GetGVMStats(UsersID)
+int UsersID;
 {
    
     sendval(("%d:%d\n", LOADCPU, 0));
@@ -116,7 +117,8 @@ InitGVMStats()
    
 }
 
-int GetDiskStats(int Init)
+GetDiskStats(Init)
+int Init;
 {
 }
 

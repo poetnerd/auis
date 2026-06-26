@@ -1,5 +1,3 @@
-#include <string.h>
-#include <stdio.h>
 /*
  * egetopt.c -- Extended 'getopt'.
  *

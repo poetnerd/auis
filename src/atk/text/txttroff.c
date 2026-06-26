@@ -128,8 +128,6 @@ static boolean enumerate;
 
 #include <txttroff.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 static FILE *troffFile;
 static int addNewLine;      /* True if \n should be added to keep lines from getting */
                             /* Too long, and a space has been found to insert it */
@@ -256,7 +254,8 @@ setcolor(color,f)
 	PUTCOLOR(r, g, b, f);
 }
 
-static char *speclookup(long c, long f)
+static char *speclookup(c,f)
+long c,f;
 {
     static char foo[6];
     *foo = 0;
@@ -504,7 +503,10 @@ static void InitializeFonts()
     fclose(fontfile);
 }
 
-static void ComputeTroffFont(register char *name, register long FaceCodemodifier, long FontSize)
+static void ComputeTroffFont(name, FaceCodemodifier, FontSize)
+register char *name;
+register long FaceCodemodifier; 
+long FontSize;
 {
     register family, mod,specfamily;
 
@@ -565,7 +567,9 @@ static void ChangeFont()
 	fprintf(troffFile, "'ft %s\n", code);
 }
 
-static void ChangeJustification(enum style_Justification old, enum style_Justification new, boolean putbreak)
+static void ChangeJustification(old, new,putbreak)
+enum style_Justification old, new;
+boolean putbreak;
 {
     if (old != new) {
 	PutNewlineIfNeeded();
@@ -803,7 +807,9 @@ static void InitializeStyle()
 /* OutputInitialTroff(f, cenv) */
 /* Generates the standard stuff at the beginning of the troff stream */
 /* The current environment is used to set font, font size, and adjust mode. */
-static handlemac(FILE *f, char *s)
+static handlemac(f,s)
+FILE *f;
+char *s;
 {
     FILE *fi,*fopen();
     register int c;
@@ -814,7 +820,10 @@ static handlemac(FILE *f, char *s)
     else fprintf(f, ".so %s\n",s);
 }
 
-static void OutputInitialTroff(register FILE *f, boolean toplevel, struct environment *cenv)
+static void OutputInitialTroff(f, toplevel, cenv)
+register FILE *f;
+boolean toplevel;
+struct environment *cenv;
 {
 /*     register char **mx; */
     register int i;
@@ -1000,7 +1009,8 @@ static void OutputInitialTroff(register FILE *f, boolean toplevel, struct enviro
 
 static int barPending;
 
-static int FlushBars(FILE *f)
+static int FlushBars(f)
+FILE *f;
 {
     if (barPending) {
         char buf[128];
@@ -1025,7 +1035,10 @@ static int FlushBars(FILE *f)
         return 0;
 }
 
-static void FlushLineSpacing(int cs, int hitchars, boolean needbreak)
+static void FlushLineSpacing(cs, hitchars, needbreak)
+int cs;
+int hitchars;
+boolean needbreak;
 {
     /* Put out .sp for subsequent new lines  */
 
@@ -1095,7 +1108,10 @@ static char defaultlist[] =
 "chapter,section,subsection,paragraph"
 ;
 static formatnote;
-static findinlist(char **lst, int cnt, char *str)
+static findinlist(lst,cnt,str)
+char **lst; 
+int cnt;
+char *str;
 {
     int i;
     for(i = 0; i < cnt; i++,lst++){
@@ -1106,7 +1122,11 @@ static findinlist(char **lst, int cnt, char *str)
     }
     return -1;
 }
-static appendlist(char **lst, int cnt, char *ostr, int TEST)
+static appendlist(lst,cnt,ostr,TEST)
+char **lst;
+int cnt;
+char *ostr;
+int TEST;
 {   /* BUG -- OVERFLOWS NOT DETECTED */
 
     char *str;
@@ -1135,7 +1155,8 @@ static appendlist(char **lst, int cnt, char *ostr, int TEST)
     lst[cnt] = NULL;
     return cnt;
 }
-static int lookup(char *s)
+static int lookup(s)
+char *s;
 {
     char **p;
     int i = 0;
@@ -1152,7 +1173,8 @@ static void endspecialformating()
     fprintf(troffFile,".FE\n");
     formatnote = -1;
 }
-static deletenewlines(char *buf)
+static deletenewlines(buf)
+char *buf;
 {
     register char *c;
     for(c = buf; *c != '\0'; c++){
@@ -1163,7 +1185,8 @@ static deletenewlines(char *buf)
 	else break;
     }
 }
-static deletechapnumbers(char *buf)
+static deletechapnumbers(buf)
+char *buf;
 {
     register char *c,*s;
     s = buf;
@@ -1174,7 +1197,8 @@ static deletechapnumbers(char *buf)
 	} while (*c++ != '\0');
     }
 }
-static insert(char *src, char *c)
+static insert(src,c)
+char *src,*c;
 {   /* inserts string src into the begining of string c , assumes enough space */
     char *p,*enddest;
     enddest = c + strlen(c);
@@ -1183,7 +1207,9 @@ static insert(char *src, char *c)
     for(p = src; *p != '\0';p++)
 	*c++ = *p;
 }
-static quote(char *buf, char c, int len)
+static quote(buf,c,len)
+char *buf,c;
+int len;
 {
     char *ebuf ;
     int cfree;
@@ -1203,7 +1229,10 @@ static outputendnote()
 {
     fprintf(troffFile,"%d ",endnotes++);
 }
-static handlespecialformating(struct text *d, struct environment *env, long pos, long len)
+static handlespecialformating(d,env,pos,len)
+struct text *d;
+struct environment *env;
+long pos,len;
 {
     struct style *st;
     struct content_chapentry *centry;
@@ -1337,12 +1366,18 @@ fflush(stdout); */
 
 }
 #if 0
-struct text *texttroff__CompileNotes(struct classheader *classID, struct text *txt)
+struct text *texttroff__CompileNotes(classID,txt)
+struct classheader *classID;
+struct text *txt;
 {
     return CompileNotes(self,txt,txt->rootEnvironment, 0,TRUE);
 
 }
-static struct text *CompileNotes(struct text *srctext, struct environment *env, long startpos, int topLevel)
+static struct text *CompileNotes(srctext,  env, startpos, topLevel)
+    struct text *srctext;
+    struct environment *env;
+    long startpos;
+    int topLevel;		/* top level call is slightly different */
 {
     struct environment *child;
     register int pos, cpos;
@@ -1397,7 +1432,13 @@ static struct text *CompileNotes(struct text *srctext, struct environment *env, 
   
 #endif /* 0 */
 
-void texttroff__WriteSomeTroff(struct classheader *classID, struct view *view, struct dataobject *dd, FILE *f, int toplevel, unsigned long flags)
+void texttroff__WriteSomeTroff(classID, view, dd, f, toplevel, flags)
+struct classheader *classID;
+struct view *view;
+struct dataobject *dd;
+FILE * f;
+int toplevel;
+unsigned long flags;
 {
     int elen, cs, ln , flag,count,indexfontface,hitchars;
     register long i, doclen;
@@ -1915,19 +1956,28 @@ void texttroff__WriteSomeTroff(struct classheader *classID, struct view *view, s
 #endif /* GROFF_ENV */
 }
 
-void texttroff__WriteTroff(struct classheader *classID, struct view *view, struct dataobject *dd, FILE *f, int toplevel)
+void texttroff__WriteTroff(classID, view, dd, f, toplevel)
+struct classheader *classID;
+struct view *view;
+struct dataobject *dd;
+FILE * f;
+int toplevel;
 {
     texttroff_WriteSomeTroff(view,dd,f,toplevel,texttroff_Revert);
 }
 
-void texttroff__BeginDoc(struct classheader *classID, FILE *f)
+void texttroff__BeginDoc(classID, f)
+struct classheader *classID;
+FILE *f;
 {
     textLevel++;
     OutputInitialTroff(f, TRUE, NULL);
     fputs(".br\n", f);
 }
 
-void texttroff__EndDoc(struct classheader *classID, FILE *f)
+void texttroff__EndDoc(classID, f)
+struct classheader *classID;
+FILE *f;
 {
     /*
      *fputs(".ev\n",f);
@@ -1936,7 +1986,10 @@ void texttroff__EndDoc(struct classheader *classID, FILE *f)
     textLevel--;
 }
 
-void texttroff__BeginPS(struct classheader *classID, FILE *f, long width, long height)
+void texttroff__BeginPS(classID, f, width, height)
+struct classheader *classID;
+FILE *f;
+long width, height;
 {
 #ifdef BOGOSITYWANTED
 	/* I see no reason for this extra dot to print.  It looks bad. */
@@ -1949,7 +2002,10 @@ void texttroff__BeginPS(struct classheader *classID, FILE *f, long width, long h
     fprintf(f, "\\!    %d troffadjust %d neg translate\n", width, height);
 }
 
-void texttroff__EndPS(struct classheader *classID, FILE *f, long width, long height)
+void texttroff__EndPS(classID, f, width, height)
+struct classheader *classID;
+FILE *f;
+long width, height;
 {
     fprintf(f, "\\}\n");
     fprintf(f, "'PE %d %d\n", width, height);

@@ -33,7 +33,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include  <intrface.h>
 
-void            EliReset(EliState_t *st, int freeP)
+void            EliReset(st, freeP)
+EliState_t     *st;
+int             freeP;
 {
     EliClearErr(st);
     eliTraceStk_Purge(st, EliTraceStk(st));
@@ -43,32 +45,41 @@ void            EliReset(EliState_t *st, int freeP)
     }
 }
 
-EliSexp_t      *EliSGetSexp(EliState_t *st, char *string)
+EliSexp_t      *EliSGetSexp(st, string)
+EliState_t     *st;
+char           *string;
 {
     return (eliSGetSexp_trace(st, EliTraceStk(st), string));
 }
 
-EliSexp_t      *EliFGetSexp(EliState_t *st, FILE *fp)
+EliSexp_t      *EliFGetSexp(st, fp)
+EliState_t     *st;
+FILE           *fp;
 {
     return (eliFGetSexp_trace(st, EliTraceStk(st), fp));
 }
 
-EliSexp_t      *EliGetSexp(EliState_t *st)
+EliSexp_t      *EliGetSexp(st)
+EliState_t     *st;
 {
     return (eliGetSexp_trace(st, EliTraceStk(st)));
 }
 
-EliSexp_t      *EliSexp_GetNew(EliState_t *st)
+EliSexp_t      *EliSexp_GetNew(st)
+EliState_t     *st;
 {
     return (eliSexp_GetNew_trace(st, EliTraceStk(st)));
 }
 
-EliCons_t      *EliCons_GetNew(EliState_t *st)
+EliCons_t      *EliCons_GetNew(st)
+EliState_t     *st;
 {
     return (eliCons_GetNew_trace(st, EliTraceStk(st)));
 }
 
-EliSym_t       *EliSym_GetNew_String(EliState_t *st, char *name)
+EliSym_t       *EliSym_GetNew_String(st, name)
+EliState_t     *st;
+char           *name;
 {
     EliStr_t       *str = eliStringTable_FindOrMake(st, EliStringTable(st), name);
 
@@ -78,12 +89,16 @@ EliSym_t       *EliSym_GetNew_String(EliState_t *st, char *name)
 	return (NULL);
 }
 
-EliSym_t       *EliSym_GetNew_StrNode(EliState_t *st, EliStr_t *name)
+EliSym_t       *EliSym_GetNew_StrNode(st, name)
+EliState_t     *st;
+EliStr_t       *name;
 {
     return (eliSym_GetNew_trace(st, EliTraceStk(st), name));
 }
 
-EliStr_t       *EliStr_GetNew(EliState_t *st, char *string)
+EliStr_t       *EliStr_GetNew(st, string)
+EliState_t     *st;
+char           *string;
 {
     return (eliStr_GetNew_trace(st, EliTraceStk(st), string));
 }
@@ -119,7 +134,14 @@ Note: In type checking, the empty list () will match e_data_symbol,
 and the symbol NIL will match e_data_list.
 */
 
-int             EliProcessList(EliState_t *st, EliCons_t *list, int min, int max, EliSexp_t *sexpBufV[], EliSexp_t **errBuf, eliDataTypes_t typeV[], int evalV[])
+int             EliProcessList(st, list, min, max, sexpBufV, errBuf, typeV, evalV)
+EliState_t     *st;
+EliCons_t      *list;
+int             min, max;
+EliSexp_t      *sexpBufV[], **errBuf;
+eliDataTypes_t  typeV[];
+int             evalV[];
+
 {
     int             i, len = EliListLen(list);
     EliCons_t      *listPtr = list;
@@ -165,67 +187,94 @@ int             EliProcessList(EliState_t *st, EliCons_t *list, int min, int max
     return (len);
 }
 
-int EliBind(EliState_t *st, EliCons_t *varlist, EliCons_t *arglist)
+int EliBind(st, varlist, arglist)
+EliState_t *st;
+EliCons_t *varlist, *arglist;
 {
     return (eliBind(st, EliEvalStack(st), varlist, arglist));
 }
 
-int EliEvalAndBind(EliState_t *st, EliCons_t *varlist, EliCons_t *arglist)
+int EliEvalAndBind(st, varlist, arglist)
+EliState_t *st;
+EliCons_t *varlist, *arglist;
 {
     return (eliEvalAndBind(st, EliEvalStack(st), varlist, arglist));
 }
 
-EliSym_t *EliEvalStk_FindSym(EliState_t *st, char *name)
+EliSym_t *EliEvalStk_FindSym(st, name)
+EliState_t *st;
+char *name;
 {
     return (eliEvalStk_FindSym(EliEvalStack(st), name));
 }
 
-void EliEvalStk_PopN(EliState_t *st, int n)
+void EliEvalStk_PopN(st, n)
+EliState_t *st;
+int n;
 {
     eliEvalStk_PopN(st, EliEvalStack(st), n);
 }
 
-EliStr_t *EliStringTable_Find(EliState_t *st, char *name)
+EliStr_t *EliStringTable_Find(st, name)
+EliState_t *st;
+char *name;
 {
     return (eliStringTable_Find(EliStringTable(st), name));
 }
 
-EliStr_t *EliStringTable_FindOrMake(EliState_t *st, char *string)
+EliStr_t *EliStringTable_FindOrMake(st, string)
+EliState_t *st;
+char *string;
 {
     return (eliStringTable_FindOrMake(st, EliStringTable(st), string));
 }
 
-EliStr_t *EliStringTable_Make(EliState_t *st, char *string)
+EliStr_t *EliStringTable_Make(st, string)
+EliState_t *st;
+char *string;
 {
     return (eliStringTable_Make(st, EliStringTable(st), string));
 }
 
-EliSym_t *EliSymTab_Find(EliState_t *st, char *name)
+EliSym_t *EliSymTab_Find(st, name)
+EliState_t *st;
+char *name;
 {
     return (eliSymTab_Find(EliSymbolTable(st), name));
 }
 
-EliSym_t *EliSymTab_FindOrMake(EliState_t *st, char *name)
+EliSym_t *EliSymTab_FindOrMake(st, name)
+EliState_t *st;
+char *name;
 {
     return (eliSymTab_FindOrMake(st, EliSymbolTable(st), name));
 }
 
-EliSym_t *EliSymTab_FindOrMakeAndBind(EliState_t *st, char *name, EliSexp_t *val)
+EliSym_t *EliSymTab_FindOrMakeAndBind(st, name, val)
+EliState_t *st;
+char *name;
+EliSexp_t *val;
 {
     return (eliSymTab_FindOrMakeAndBind(st, EliSymbolTable(st), name, val));
 }
 
-EliSym_t *EliSymTab_Make(EliState_t *st, char *name)
+EliSym_t *EliSymTab_Make(st, name)
+EliState_t *st;
+char *name;
 {
     return (eliSymTab_Make(st, EliSymbolTable(st), name));
 }
 
-EliSym_t *EliSymTab_MakeAndBind(EliState_t *st, char *name, EliSexp_t *val)
+EliSym_t *EliSymTab_MakeAndBind(st, name, val)
+EliState_t *st;
+char *name;
+EliSexp_t *val;
 {
     return (eliSymTab_MakeAndBind(st, EliSymbolTable(st), name, val));
 }
 
-void EliTraceStk_Purge(EliState_t *st)
+void EliTraceStk_Purge(st)
+EliState_t *st;
 {
     eliTraceStk_Purge(st, EliTraceStk(st));
 }

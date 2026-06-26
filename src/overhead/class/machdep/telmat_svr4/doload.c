@@ -11,7 +11,6 @@
 #include "resolvinfo.h"
 #include <sys/param.h>
 
-#include <stdlib.h>
 #define MAX_CLASSLIST 512
 
 struct resolv_class {

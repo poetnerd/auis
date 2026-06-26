@@ -48,8 +48,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <ctype.h>
 
 
-#include <string.h>
-#include <stdio.h>
 /* ************************************************************ */
 /*								*/
 /*  FormatFontname						*/
@@ -60,7 +58,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 	Create a FileName from a FontName structure 
 */
 
-char *FormatFontname(register struct FontName *n)
+char *FormatFontname (n)
+register struct FontName  *n;
 {
    static char buf[128];
    char  rbuf[5];
@@ -102,7 +101,9 @@ char *FormatFontname(register struct FontName *n)
 	a FontName structure (Fontname)
 */
 
-int parsefname(register char *FileName, register struct FontName *Fontname)
+parsefname(FileName, Fontname)
+register char *FileName;
+register struct FontName  *Fontname;
 {
    register char *p;
    register int   i;

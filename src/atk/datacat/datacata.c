@@ -50,13 +50,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/data
 #include <environ.ih>
 #include <keymap.ih>
 #include <filetype.ih>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <im.ih> /* for im_GetDir and im_ChangeDir */
 /* output options */
 
 
+extern int errno;
 
 char *progname;
 #define checkandprint(A) if(A) {datacatapp_PrintVersionNumber(self);A = FALSE;};
@@ -66,7 +64,8 @@ boolean cleanmode = FALSE;
 
 #define MAXIMUM_DEPTH (20)
 
-void datacatapp__ReadInitFile(struct datacatapp *self)
+void datacatapp__ReadInitFile(self)
+struct datacatapp *self;
 {
 }
 
@@ -150,7 +149,11 @@ boolean ipros, followlinks;
 
 }
 
-int doinsert(struct text *text, long size, long endskip, boolean followlinks, long depth)
+doinsert(text, size, endskip, followlinks, depth)
+struct text * text;
+long size, endskip;
+boolean followlinks;
+long depth;
 {
     long i,j,len;
     char name[MAXPATHLEN+1],cname[MAXPATHLEN+1],wdname[MAXPATHLEN+1];
@@ -401,14 +404,19 @@ char **argv;
     text_Write(tx,ofile,1,0);
     return TRUE;
     }
-int datacatapp__Run(struct datacatapp *self)
+datacatapp__Run(self)
+struct datacatapp *self;
 {   /* we are already done */
     exit(0);
 }
-void datacatapp__FinalizeObject(struct classheader *classID, struct datacatapp *self)
+void datacatapp__FinalizeObject(classID,self)
+struct classheader *classID;
+struct datacatapp *self;
 {
 }
-boolean datacatapp__InitializeObject(struct classheader *classID, struct datacatapp *self)
+boolean datacatapp__InitializeObject(classID,self)
+struct classheader *classID;
+struct datacatapp *self;
 {
     datacatapp_SetMajorVersion(self,1);
     datacatapp_SetMinorVersion(self,1);

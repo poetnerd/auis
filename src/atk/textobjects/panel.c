@@ -51,8 +51,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #include <panel.eh>
 
-#include <string.h>
-#include <stdlib.h>
 static struct keymap *classKeymap;
 static struct style *defaultHighlightStyle;
 static struct style *defaultOverallStyle;
@@ -63,7 +61,8 @@ static char defaultIcon;
  * Statics
  */
 
-static void DestroyPanelList(register struct panel_Entry *pe)
+static void DestroyPanelList(pe)
+register struct panel_Entry *pe;
 {
     while (pe != NULL) {
         register struct panel_Entry *ne;
@@ -73,7 +72,8 @@ static void DestroyPanelList(register struct panel_Entry *pe)
     }
 }
 
-static void DestroyKeyList(register struct key_Entry *ke)
+static void DestroyKeyList(ke)
+register struct key_Entry *ke;
 {
     while (ke != NULL) {
         register struct key_Entry *ne;
@@ -83,7 +83,8 @@ static void DestroyKeyList(register struct key_Entry *ke)
     }
 }
 
-static void ClearHighlight(register struct panel *self)
+static void ClearHighlight(self)
+register struct panel *self;
 {
     register long pos, len;
 
@@ -100,7 +101,9 @@ static void ClearHighlight(register struct panel *self)
     self->highlightEntry = NULL;
 }
 
-static void SetupHighlight(register struct panel *self, struct panel_Entry *entry)
+static void SetupHighlight(self, entry)
+register struct panel *self;
+struct panel_Entry *entry;
 {
     self->highlightEnv =
       text_AddStyle(self->text,
@@ -110,7 +113,9 @@ static void SetupHighlight(register struct panel *self, struct panel_Entry *entr
     self->highlightEntry = entry;
 }
 
-static void SelectAtPos(struct panel *self, long pos)
+static void SelectAtPos(self, pos)
+struct panel *self;
+long pos;
 {
     register struct panel_Entry *pe;
 
@@ -134,7 +139,9 @@ static void SelectAtPos(struct panel *self, long pos)
 	(*self->handler)(self->globalTag, pe->tag, self);
 }
 
-static void KeyDispatch(struct panel *self, long rock)
+static void KeyDispatch(self, rock)
+struct panel *self;
+long rock;
 {
     struct key_Entry *k = self->keyList;
     char c = (char) rock;
@@ -151,12 +158,18 @@ static void KeyDispatch(struct panel *self, long rock)
     (*k->proc)(k->rock, self, c);
 }
 
-static void ProcNext(long rock, struct panel *self, char c)
+static void ProcNext(rock, self, c)
+long rock;
+struct panel *self;
+char c;
 {
     panel_SelectNext(self);
 }
 
-static void ProcPrev(long rock, struct panel *self, char c)
+static void ProcPrev(rock, self, c)
+long rock;
+struct panel *self;
+char c;
 {
     panel_SelectPrevious(self);
 }
@@ -165,7 +178,8 @@ static void ProcPrev(long rock, struct panel *self, char c)
  * Class Procedures
  */
 
-boolean panel__InitializeClass(struct classheader *classID)
+boolean panel__InitializeClass(classID)
+struct classheader *classID;
 {
     defaultHighlightStyle = style_New();
     style_AddNewFontFace(defaultHighlightStyle, fontdesc_Bold);
@@ -196,7 +210,9 @@ boolean panel__InitializeClass(struct classheader *classID)
     return TRUE;
 }
 
-boolean panel__InitializeObject(struct classheader *classID, register struct panel *self)
+boolean panel__InitializeObject(classID, self)
+struct classheader *classID;
+register struct panel *self;
 {
     struct style *newover=style_New();
     if(newover && defaultOverallStyle) style_Copy(defaultOverallStyle, newover);
@@ -231,7 +247,9 @@ boolean panel__InitializeObject(struct classheader *classID, register struct pan
     return TRUE;
 }
 
-void panel__FinalizeObject(register struct classheader *ClassID, register struct panel *self)
+void panel__FinalizeObject(ClassID, self)
+register struct classheader *ClassID;
+register struct panel *self;
 {
     ClearHighlight(self);   /* clears env */
 
@@ -247,7 +265,11 @@ void panel__FinalizeObject(register struct classheader *ClassID, register struct
  * Methods
  */
 
-struct panel_Entry *panel__Add(register struct panel *self, char *item, char *tag, int showNow)
+struct panel_Entry *panel__Add(self, item, tag, showNow)
+register struct panel *self;
+char *item;
+char *tag;
+int showNow;			/* make new selection visible now? */
 {
     register struct panel_Entry *new;
     register long len;
@@ -279,7 +301,9 @@ struct panel_Entry *panel__Add(register struct panel *self, char *item, char *ta
     return new;
 }
 
-void panel__Remove(register struct panel *self, register struct panel_Entry *entry)
+void panel__Remove(self, entry)
+register struct panel *self;
+register struct panel_Entry *entry;
 {
     register long len;
     register struct panel_Entry *pe, **le;
@@ -313,7 +337,8 @@ void panel__Remove(register struct panel *self, register struct panel_Entry *ent
     free(entry);
 }
 
-void panel__RemoveAll(struct panel *self)
+void panel__RemoveAll(self)
+struct panel *self;
 {
     ClearHighlight(self);
     DestroyPanelList(self->panelList);
@@ -322,7 +347,8 @@ void panel__RemoveAll(struct panel *self)
     panel_WantUpdate(self, self);
 }
 
-void panel__SelectNext(struct panel *self)
+void panel__SelectNext(self)
+struct panel *self;
 {
     long pos;
 
@@ -335,7 +361,8 @@ void panel__SelectNext(struct panel *self)
     SelectAtPos(self, pos);     /* Handles end of doc okay. */
 }
 
-void panel__SelectPrevious(struct panel *self)
+void panel__SelectPrevious(self)
+struct panel *self;
 {
     long pos;
 
@@ -347,13 +374,16 @@ void panel__SelectPrevious(struct panel *self)
     SelectAtPos(self, pos);     /* Handles beg. of doc okay. */
 }
 
-void panel__ClearSelection(struct panel *self)
+void panel__ClearSelection(self)
+struct panel *self;
 {
     ClearHighlight(self);
     panel_WantUpdate(self, self);
 }
 
-void panel__MakeSelection(register struct panel *self, register struct panel_Entry *entry)
+void panel__MakeSelection(self, entry)
+register struct panel *self;
+register struct panel_Entry *entry;
 {
     ClearHighlight(self);
 
@@ -367,7 +397,11 @@ void panel__MakeSelection(register struct panel *self, register struct panel_Ent
     panel_WantUpdate(self, self);
 }
 
-void panel__AssignKey(struct panel *self, char c, void (*proc)(), long rock)
+void panel__AssignKey(self, c, proc, rock)
+struct panel *self;
+char c;
+void (*proc)();
+long rock;
 {
     struct key_Entry *k;
 
@@ -394,7 +428,10 @@ void panel__AssignKey(struct panel *self, char c, void (*proc)(), long rock)
  * Overrides
  */
 
-void panel__FullUpdate(register struct panel *self, enum view_UpdateType type, long x, long y, long w, long h)
+void panel__FullUpdate(self, type, x, y, w, h)
+register struct panel *self;
+enum view_UpdateType type;
+long x, y, w, h;
 {
     register struct graphic *graphic;
 
@@ -405,13 +442,17 @@ void panel__FullUpdate(register struct panel *self, enum view_UpdateType type, l
     super_FullUpdate(self, type, x, y, w, h);
 }
 
-void panel__PostMenus(struct panel *self, struct menulist *ml)
+void panel__PostMenus(self, ml)
+struct panel *self;
+struct menulist *ml;
 {
     /* Discard child menu postings */
     super_PostMenus(self,NULL);
 }
 
-void panel__PostKeyState(struct panel *self, struct keystate *ks)
+void panel__PostKeyState(self, ks)
+struct panel *self;
+struct keystate *ks;
 {
     /* Post our own keystate, discarding keystate from child */
 
@@ -419,7 +460,10 @@ void panel__PostKeyState(struct panel *self, struct keystate *ks)
     view_PostKeyState(self->header.view.parent, self->keystate);
 }
 
-struct view *panel__Hit(register struct panel *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
+struct view *panel__Hit(self, action, x, y, numberOfClicks)
+register struct panel *self;
+enum view_MouseAction action;
+long x, y, numberOfClicks;
 {
     super_Hit(self, action, x, y, numberOfClicks);
     SelectAtPos(self, panel_GetDotPosition(self));
@@ -428,7 +472,8 @@ struct view *panel__Hit(register struct panel *self, enum view_MouseAction actio
     return (struct view *)NULL;
 }
 
-void panel__FreeAllTags(struct panel *self)
+void panel__FreeAllTags(self)
+struct panel *self;
 {
     register struct panel_Entry *e;
     register char *tag;

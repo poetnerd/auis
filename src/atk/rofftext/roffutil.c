@@ -42,7 +42,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #include <glist.ih>
 #include <rofftext.ih>
 
-#include <stdlib.h>
 /* magic buffers */
 BUF NewBuf()
 {
@@ -54,13 +53,16 @@ BUF NewBuf()
     return b;
 }
 
-int FreeBuf(BUF b)
+FreeBuf(b)
+BUF b;
 {
     free(b->begin);
     free(b);
 }
 
-int Add2Buf(BUF b, char c)
+Add2Buf(b,c)
+BUF b;
+char c;
 {
     char *temp;
     if (b->ptr >= b->end) {
@@ -78,7 +80,8 @@ int Add2Buf(BUF b, char c)
 
 /* create environments with default values */
 
-int CreateEnvirons(struct rofftext *self)
+CreateEnvirons(self)
+struct rofftext *self;
 {
     struct roffEnviron *e ;
     int i;
@@ -101,7 +104,8 @@ int CreateEnvirons(struct rofftext *self)
     self->CurrentEnviron = self->Environs[0];
 }
 
-int DestroyEnvirons(struct rofftext *self)
+DestroyEnvirons(self)
+struct rofftext *self;
 {
     int i; struct roffEnviron *e;
 
@@ -115,7 +119,9 @@ int DestroyEnvirons(struct rofftext *self)
 
 /* push down to environment X */
 
-int PushEnviron(struct rofftext *self, int env)
+PushEnviron(self,env)
+struct rofftext *self;
+int env;
 {
     int indent;
     DEBUG(1, (stderr,"<<<Pushing Environment>>>\n"));
@@ -133,7 +139,8 @@ int PushEnviron(struct rofftext *self, int env)
 
 }
 
-int PopEnviron(struct rofftext *self)
+PopEnviron(self)
+struct rofftext *self;
 {
     int indent;
     DEBUG(1, (stderr,"<<<Popping environment>>>\n"));
@@ -147,7 +154,9 @@ int PopEnviron(struct rofftext *self)
         SetIndent(self,self->CurrentEnviron->indent);
 }
 
-struct diversionLevel *CreateDiversion(struct rofftext *self, struct diversionLevel *c)
+struct diversionLevel *CreateDiversion(self,c)
+struct rofftext *self;
+struct diversionLevel *c;
 {
     struct diversionLevel *d = (struct diversionLevel *)malloc(sizeof(struct diversionLevel));
 
@@ -174,21 +183,25 @@ struct diversionLevel *CreateDiversion(struct rofftext *self, struct diversionLe
     return d;
 }
 
-int DestroyDiversion(struct rofftext *self, struct diversionLevel *d)
+DestroyDiversion(self,d)
+struct rofftext *self;
+struct diversionLevel *d;
 {
     if (d->name)
         free(d->name);
     free(d);
 }
 
-int PushDiversion(struct rofftext *self)
+PushDiversion(self)
+struct rofftext *self;
 {
     glist_Push(self->DiversionStack,self->CurrentDiversion);
     self->CurrentDiversion = CreateDiversion(self,self->CurrentDiversion);
     self->v_DiversionLevel++;
 }
 
-int PopDiversion(struct rofftext *self)
+PopDiversion(self)
+struct rofftext *self;
 {
     if (self->v_DiversionLevel > 0) {
         DestroyDiversion(self,self->CurrentDiversion);

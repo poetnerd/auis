@@ -46,7 +46,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 #include <class.h>
 #include <table.ih>
 
-#include <stdlib.h>
 #if !POSIX_ENV
 extern char * malloc();
 #endif
@@ -120,7 +119,8 @@ Exception ()
     longjmp (jbs -> env, 1);
 }
 
-static double standardize(extended_double *x)
+static double standardize(x)
+extended_double *x;
 {
     if (!IsStandard(x)) {
 	*(jbs -> result) = *x;
@@ -129,7 +129,11 @@ static double standardize(extended_double *x)
     return StandardValue(x);
 }
 
-void  eval(register struct table *T, extended_double *result, int r, int c, char *input)
+void  eval (T, result, r, c, input)
+register struct table * T;
+extended_double *result;
+int     r, c;
+char   *input;
 {
     char *saveinput = input;
 
@@ -154,7 +158,11 @@ void  eval(register struct table *T, extended_double *result, int r, int c, char
     }
 }
 
-static void expr(register struct table *T, extended_double *result, char **inptr, int r, int c)
+static void expr (T, result, inptr, r, c)
+register struct table * T;
+extended_double *result;
+char **inptr;
+int     r, c;
 {
     struct jbstruct new_jbs, *old_jbs;
 #if defined(_ANSI_C_SOURCE) && !defined(_NO_PROTO)
@@ -174,7 +182,10 @@ static void expr(register struct table *T, extended_double *result, char **inptr
     signal (SIGFPE, oldsig);
 }
 
-static double relexpr(register struct table *T, char **inptr, int r, int c)
+static double relexpr(T, inptr, r, c)
+register struct table *T;
+char **inptr;
+int     r, c;
 {
     int     op, op2;
     double  x, y;
@@ -209,7 +220,10 @@ static double relexpr(register struct table *T, char **inptr, int r, int c)
     return x;
 }
 
-static double aexpr(register struct table *T, char **inptr, int r, int c)
+static double aexpr (T, inptr, r, c)
+register struct table *T;
+char **inptr;
+int     r, c;
 {
     int     op;
     double  x, y;
@@ -227,7 +241,10 @@ static double aexpr(register struct table *T, char **inptr, int r, int c)
     return x;
 }
 
-static double term(register struct table *T, char **inptr, int r, int c)
+static double term (T, inptr, r, c)
+register struct table * T;
+char **inptr;
+int     r, c;
 {
     int     op;
     double  x, y;
@@ -245,7 +262,10 @@ static double term(register struct table *T, char **inptr, int r, int c)
     return x;
 }
 
-static double factor(register struct table *T, char **inptr, int r, int c)
+static double factor (T, inptr, r, c)
+register struct table * T;
+char **inptr;
+int     r, c;
 {
     int     op;
     double x, y;
@@ -269,7 +289,11 @@ static double factor(register struct table *T, char **inptr, int r, int c)
     return x;
 }
 
-static cellref(register struct table *T, char **inptr, int rr, int cc, double *r, double *c)
+static cellref (T, inptr, rr, cc, r, c)
+register struct table * T;
+char **inptr;
+int     rr, cc;
+double *r, *c;
 {
     *r = relexpr(T, inptr, rr, cc);
     skipb(*inptr);
@@ -283,7 +307,10 @@ static cellref(register struct table *T, char **inptr, int rr, int cc, double *r
 
 #define DigitToDouble(c) ((double) (c - '0'))
 
-static double atom(register struct table *T, char **inptr, int rr, int cc)
+static double atom (T, inptr, rr, cc)
+register struct table * T;
+char **inptr;
+int     rr, cc;
 {
     int    c;
     double x = 0, y = 0;
@@ -387,7 +414,10 @@ static int  initdone = 0;
 static struct fun  *htable[HASHMASK + 1];
 static struct fun   sentinal;
 
-void enterfun(char *name, double (*fptr)(), int argc)
+void enterfun (name, fptr, argc)
+char     *name;
+double (*fptr)();
+int     argc;
 {
     struct fun *p, **q;
     char    c;
@@ -418,7 +448,14 @@ inithash () {
     initdone = 1;
 }
 
-static double funcall(register struct table *T, int rr, int cc, char *name, int length, int h, extended_double *args, int argc)
+static double funcall (T, rr, cc, name, length, h, args, argc)
+register struct table * T;
+int     rr, cc;
+char   *name;
+extended_double *args;
+int     argc,
+	h,
+	length;
 {
     struct fun *p;
     extended_double myresult;
@@ -462,7 +499,10 @@ NEXT: 	;
     }
 }
 
-char   *translate(char *input, int (*translaterc)(), struct movetrstate *ms)
+char   *translate (input, translaterc, ms)
+char   *input;
+int     (*translaterc) ();
+struct movetrstate * ms;
 {
     int     any = 0;
     int     absr,
@@ -587,7 +627,8 @@ static char *monthname[] = {
     "july", "august", "september", "october", "november", "december"
 };
 
-static int trydate(char *input)
+static int trydate (input)
+char   *input;
 {
     int     day = 0, month = 0, year = 0;
     int     i;

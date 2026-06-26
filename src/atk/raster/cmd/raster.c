@@ -65,8 +65,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <ctype.h>
 
 
-#include <string.h>
-boolean raster__InitializeObject(struct classhdr *ClassID, register struct raster *self)
+boolean raster__InitializeObject(ClassID, self)
+struct classhdr *ClassID;
+register struct raster  *self;
 {
     self->pix = NULL;
     self->readOnly = FALSE;
@@ -77,19 +78,25 @@ boolean raster__InitializeObject(struct classhdr *ClassID, register struct raste
     return TRUE;
 }
 
-void raster__FinalizeObject(struct classhdr *ClassID, register struct raster *self)
+void raster__FinalizeObject(ClassID, self)
+struct classhdr *ClassID;
+register struct raster  *self;
 {
     raster_SetPix(self, NULL);
 }
 
-struct raster * raster__Create(struct classhdr *ClassID, register long width, register long height)
+struct raster * raster__Create(ClassID, width, height)
+struct classhdr *ClassID;
+register long width, height;
 {
     register struct raster *self = raster_New();
     raster_Resize(self, width, height);
     return self;
 }
 
-void raster__Resize(register struct raster *self, register long width, register long height)
+void raster__Resize(self, width, height)
+register struct raster  *self;
+register long width, height;
 {
     struct rasterimage *pix = raster_GetPix(self);
     if (pix == NULL) 
@@ -100,7 +107,10 @@ void raster__Resize(register struct raster *self, register long width, register 
 	self->options = 0; }
 }
 
-void raster__ObservedChanged(register struct raster *self, struct rasterimage *pix, long status)
+void raster__ObservedChanged(self, pix, status)
+register struct raster  *self;
+struct rasterimage *pix;
+long status;
 {
     if (status == observable_OBJECTDESTROYED) {
 	/* the observed rasterimage is going away
@@ -131,7 +141,9 @@ void raster__ObservedChanged(register struct raster *self, struct rasterimage *p
 	    raster_NotifyObservers(self, status); }
 }
 
-void raster__SetPix(struct raster *self, struct rasterimage *newpix)
+void raster__SetPix(self, newpix)
+struct raster *self;
+struct rasterimage *newpix;
 {
     struct rasterimage *pix = raster_GetPix(self);
     if (newpix == pix) return;
@@ -790,7 +802,13 @@ raster__SetAttributes(self, attributes)
 
 static int tmpfilectr = 0;
 
-long raster__WriteOtherFormat(struct raster *self, FILE *file, long writeID, int level, int usagetype, char *boundary)
+long raster__WriteOtherFormat(self, file, writeID, level, usagetype, boundary)
+struct raster *self;
+FILE *file;
+long writeID;
+int level;
+int usagetype;
+char *boundary;
 {
     FILE *tmpfp;
     char Fnam[1000];
@@ -815,7 +833,12 @@ long raster__WriteOtherFormat(struct raster *self, FILE *file, long writeID, int
     return(self->header.dataobject.id);
 }
 
-boolean raster__ReadOtherFormat(struct raster *self, FILE *file, char *fmt, char *encoding, char *desc)
+boolean raster__ReadOtherFormat(self, file, fmt, encoding, desc)
+struct raster *self;
+FILE *file;
+char *fmt;
+char *encoding;
+char *desc;
 {
     char TmpFile[250];
     FILE *tmpfp = NULL;

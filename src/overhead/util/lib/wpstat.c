@@ -49,14 +49,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <bt.h>
 #include <wp.h>
 #include <btwp.h>
-#include <stdlib.h>
 #endif /* WHITEPAGES_ENV   */
+extern int errno;
 
 #ifndef _IBMR2
+extern char *malloc();
+extern char *realloc();
 #endif /* _IBMR2 */
 
 /* gives static English text interpreting an error code value */
-char *wp_ErrorString(wp_ErrorCode codevalue)
+char *wp_ErrorString(codevalue)
+wp_ErrorCode codevalue;
 {
     static char *WPErrs[wperr_MAX + 1 + 1] = {
 	"Not an error",

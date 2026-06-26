@@ -47,8 +47,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <messitem.ih>
 #include <menulist.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 #define MLITEM_UNDEF   0
 #define MLITEM_DELETE  1
 #define MLITEM_REPLACE 2

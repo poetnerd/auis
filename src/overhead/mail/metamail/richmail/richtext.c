@@ -20,8 +20,6 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 #include "richset.h"
 #include <config.h>
 
-#include <string.h>
-#include <stdlib.h>
 extern char *getenv();
 #ifdef AMIGA
 extern char *strchr();
@@ -162,14 +160,18 @@ static nomemabort() {
  * library call.
  */
 
-int main(int argc, char **argv)
+main(argc, argv)
+int argc;
+char **argv;
 {
   exit(richtext_main(argc, argv));
 }
 
 #endif
 
-int richtext_main(int argc, char **argv)
+richtext_main(argc, argv)
+int argc;
+char **argv;
 {
     RCHAR c;
     int i, atstart, negated,
@@ -599,24 +601,30 @@ int richtext_main(int argc, char **argv)
 static struct charsetmember OutputBuf[1000] = {0,0};
 static int PendingOutput = 0, PendingControls = 0;
 
-int controlputc(int c)
+controlputc(c)
+int c;
 {
     charmemberctrl (&OutputBuf[PendingOutput],(RCHAR)c);
     ++PendingOutput;
     ++PendingControls;
 }
 
-static immediate_controlputc(int c)
+static immediate_controlputc(c)
+int c;
 {
     (*RichtextPutc) (c, stdout);
 }
 
-int controloutput(char *s, int immediate)
+controloutput(s, immediate)
+char *s;
+int immediate;
 {
     tputs(s, 1, immediate ? immediate_controlputc : controlputc);
 }
 
-static folding_point(struct	charsetmember *buf, int pos)
+static folding_point (buf, pos)
+struct	charsetmember *buf;
+int	pos;
 {
     int i;
     for (i = pos; i > 0; --i) {
@@ -626,7 +634,9 @@ static folding_point(struct	charsetmember *buf, int pos)
     return (0);
 }
 
-static calc_column(struct	charsetmember *buf, int pos)
+static calc_column (buf, pos)
+struct	charsetmember *buf;
+int	pos;
 {
     struct charsetmember *s;
     int col = 0;
@@ -729,14 +739,17 @@ static FlushOut() {
                         StopUnderline, 0, BoldOn, BoldOff, 0);
 }
 
-static outputc(RCHAR c)
+static outputc(c)
+RCHAR c;
 {
     struct charsetmember member;
     charmember (&member,c);
     realoutputc(member, 0);
 }
 
-static realoutputc(struct charsetmember c, int alreadyformatted)
+static realoutputc(c, alreadyformatted)
+struct charsetmember c;
+int alreadyformatted;
 {
     int i, newinspace;
 
@@ -834,7 +847,9 @@ static Pause()
 /* Leading spaces should be output as MoveRight, to avoid 
    having margins that are underlined or reverse video */
 
-static fputsmovingright(struct charsetmember *s, FILE *fp)
+static fputsmovingright(s, fp)
+struct charsetmember *s;
+FILE *fp;
 {
     int inmargin=1;
     if (!s) return;
@@ -852,7 +867,11 @@ static fputsmovingright(struct charsetmember *s, FILE *fp)
     }
 }
 
-static ResetTerminalCodes(int FakeTerminal, int standout, int underline, int bold, char *standoutbuf, char *standendbuf, int modifiedstandout, char *StartUnderline, char *StopUnderline, int modifiedunderline, int BoldOn, int BoldOff, int modifiedbold)
+static ResetTerminalCodes(FakeTerminal, standout, underline, bold, standoutbuf, standendbuf,
+                    modifiedstandout, StartUnderline, StopUnderline, modifiedunderline,
+                    BoldOn, BoldOff, modifiedbold)
+char *standoutbuf, *standendbuf, *StartUnderline, *StopUnderline,
+    *BoldOn, *BoldOff;
 {
     if (OverStrike)
 	return;
@@ -883,13 +902,17 @@ static FinalizeTerminal() {
     FPUTS(KE, stdout);
 }
 
-static outputstr(char *s)
+static outputstr(s)
+char *s;
 {
     while (*s) OUTC(*s++);
 }
 
 #ifndef TPUTS_OK
-int tputs(char *s, int n, int (*func)())
+tputs(s, n, func)
+char *s;
+int n;
+int (*func)();
 {
     if (s) {
         while (*s) {
@@ -901,7 +924,9 @@ int tputs(char *s, int n, int (*func)())
 }
 #endif
 
-static FPUTS(unsigned char *s, FILE *fp)
+static FPUTS(s,fp)
+unsigned char *s;
+FILE *fp;
 {
     while(*s) (*RichtextPutc)((int)(*s++),fp);
 }

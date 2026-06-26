@@ -31,9 +31,6 @@
 #include <global.h>
 #include <gentlex.h>
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 struct line *ResWords = NULL;
 
 

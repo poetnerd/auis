@@ -29,8 +29,6 @@
 
 #include <util.h>
 
-#include <stdlib.h>
-#include <stdio.h>
 FILE *pathopen();
 char *AndrewDirStr=NULL;
 char *XBaseDirStr=NULL;
@@ -64,7 +62,9 @@ static struct hashf *havefile[HASHMAX];
 #define HASH(n, len) (((n[0]<<10)^(n[len-1]<<5)^(n[len/2]))%HASHMAX)
 #define HASHFILE(s) (((s).st_dev^(s).st_ino)%HASHMAX)
 
-boolean HaveIt(char *name, boolean add)
+boolean HaveIt(name, add)
+char *name;
+boolean add;
 {
     int len=strlen(name);
     int ind=HASH(name, len);
@@ -89,7 +89,8 @@ boolean HaveIt(char *name, boolean add)
     return FALSE;
 }
 
-static boolean AddClass(char *name)
+static boolean AddClass(name)
+char *name;
 {
     int len=strlen(name);
     int ind=HASH(name, len);
@@ -112,7 +113,9 @@ static boolean AddClass(char *name)
     return TRUE;
 }
 
-static struct hashf *AddFile(char *path, boolean exists)
+static struct hashf *AddFile(path, exists)
+char *path;
+boolean exists;
 {
     struct stat statbuf;
     struct hashf *result;
@@ -154,7 +157,8 @@ static struct hashf *AddFile(char *path, boolean exists)
     return result;
 }
 
-static void ProcessList(FILE *fp)
+static void ProcessList(fp)
+FILE *fp;
 {
     char filebuf[MAXPATHLEN+1];
     boolean defs=(fp!=stdin);
@@ -218,7 +222,10 @@ static void DumpStatl()
     }
 }
 
-static void DumpList(FILE *ifp, char *extn, FILE *ordering)
+static void DumpList(ifp, extn, ordering)
+FILE *ifp;
+char *extn;
+FILE *ordering;
 {
     int i;
     int c;
@@ -356,7 +363,9 @@ static void usage()
     exit(-1);
 }
 
-int main(int argc, char **argv)
+int main(argc, argv)
+int argc;
+char **argv;
 {
     int i=0;
     FILE *ifp;

@@ -53,7 +53,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include "sbutton.ih"
 #include "sbttnav.eh"
 
-#include <stdlib.h>
 #define PROMPTFONT "andysans12b"
 
 /* Forward Declarations */
@@ -64,14 +63,16 @@ static struct menulist *menulist = NULL;
 
 struct proctable_Entry *scpe=NULL, *lcpe=NULL, *triggerpe=NULL, *bdeletepe=NULL, *gdeletepe=NULL, *renamepe=NULL, *bgpe=NULL, *labelpe=NULL, *fontpe=NULL, *stylepe=NULL, *colorpe=NULL;
 
-static char *Intern(char *str)
+static char *Intern(str)
+char *str;
 {
     struct atom *a=atom_Intern(str);
     if(a!=NULL) return atom_Name(a);
     else return NULL;
 }
 
-boolean sbttnav__InitializeClass(struct classheader *c)
+boolean sbttnav__InitializeClass(c)
+struct classheader *c;
 {
     /* 
       Initialize all the class data.
@@ -141,7 +142,9 @@ static struct themenus {
     {NULL, NULL}
 };
 
-static struct sbutton_prefs *LookupGroupPrefs(struct sbttnav *self, char *name)
+static struct sbutton_prefs *LookupGroupPrefs(self, name)
+struct sbttnav *self;
+char *name;
 {
     struct groups *g=self->groups;
     while(g) {
@@ -151,7 +154,9 @@ static struct sbutton_prefs *LookupGroupPrefs(struct sbttnav *self, char *name)
     return NULL;
 }
 
-static struct groups **LookupGroup(struct sbttnav *self, char *name)
+static struct groups **LookupGroup(self, name)
+struct sbttnav *self;
+char *name;
 {
     struct groups **g=(&self->groups);
     while(*g) {
@@ -161,7 +166,10 @@ static struct groups **LookupGroup(struct sbttnav *self, char *name)
     return NULL;
 }
 
-static void AddGroupMenu(struct sbttnav *self, struct sbutton_prefs *prefs, int prio)
+static void AddGroupMenu(self, prefs, prio)
+struct sbttnav *self;
+struct sbutton_prefs *prefs;
+int prio;
 {
     char buf[256];
     struct groups *g;
@@ -220,7 +228,11 @@ struct menusrock {
     long count;
 };
 
-static boolean domenus(struct sbutton *b, int i, struct sbutton_info *si, struct menusrock *mr)
+static boolean domenus(b, i, si, mr)
+struct sbutton *b;
+int i;
+struct sbutton_info *si;
+struct menusrock *mr;
 {
     struct groups *g=mr->self->groups;
     while(g) {
@@ -235,7 +247,9 @@ static boolean domenus(struct sbutton *b, int i, struct sbutton_info *si, struct
     return FALSE;
 }
     
-void sbttnav__PostMenus(struct sbttnav *self, struct menulist *ml)
+void sbttnav__PostMenus(self, ml)
+struct sbttnav *self;
+struct menulist *ml;
 {
     struct sbutton *b=sbttnav_ButtonData(self);
     struct menusrock mr;
@@ -254,7 +268,10 @@ void sbttnav__PostMenus(struct sbttnav *self, struct menulist *ml)
     super_PostMenus(self, self->ml);
 }
 
-boolean sbttnav__Touch(struct sbttnav *self, int ind, enum view_MouseAction action)
+boolean sbttnav__Touch(self, ind, action)
+struct sbttnav *self;
+int ind;
+enum view_MouseAction action;
 {
     struct sbutton *b=sbttnav_ButtonData(self);
     switch(action) {
@@ -281,7 +298,9 @@ boolean sbttnav__Touch(struct sbttnav *self, int ind, enum view_MouseAction acti
     return super_Touch(self, ind, action);
 }
 
-boolean sbttnav__InitializeObject(struct classheaded *classID, struct sbttnav *self)
+boolean sbttnav__InitializeObject(classID, self)
+struct classheaded *classID;
+struct sbttnav *self;
 {
     (void) sbttnav_SetActiveMouseButtons(self, sbuttonv_LEFTBUTTON, sbuttonv_RIGHTBUTTON);
   
@@ -294,7 +313,9 @@ boolean sbttnav__InitializeObject(struct classheaded *classID, struct sbttnav *s
     return TRUE;
 }
 
-void sbttnav__FinalizeObject(struct classheader *classID, struct sbttnav *self)
+void sbttnav__FinalizeObject(classID, self)
+struct classheader *classID;
+struct sbttnav *self;
 {
     struct groups *g=self->groups;
     if(self->ml!=NULL) {
@@ -311,7 +332,9 @@ void sbttnav__FinalizeObject(struct classheader *classID, struct sbttnav *self)
 }
 
 
-static void BDeleteProc(struct sbttnav *self, long param)
+static void BDeleteProc(self, param)
+struct sbttnav *self;
+long param;
 {
     char buf[1024];
     struct sbutton *b=sbttnav_ButtonData(self);
@@ -327,7 +350,9 @@ static void BDeleteProc(struct sbttnav *self, long param)
     message_DisplayString(self, 0, buf);
 }
 
-static void LabelProc(struct sbttnav *self, long param)
+static void LabelProc(self, param)
+struct sbttnav *self;
+long param;
 {
     /*
       This is the routine which asks the user for a new text label. */
@@ -343,7 +368,9 @@ static void LabelProc(struct sbttnav *self, long param)
     }
 }
 
-static void TriggerProc(struct sbttnav *self, long param)
+static void TriggerProc(self, param)
+struct sbttnav *self;
+long param;
 {
     char buf[MAXPATHLEN];
     struct sbutton *b = sbttnav_ButtonData(self);
@@ -357,7 +384,9 @@ static void TriggerProc(struct sbttnav *self, long param)
     }
 }
 
-static void FontProc(struct sbttnav *self, long param)
+static void FontProc(self, param)
+struct sbttnav *self;
+long param;
 {
 /*
   This is the routine which asks the user for a new font.
@@ -398,7 +427,9 @@ static void FontProc(struct sbttnav *self, long param)
 }
 
 
-static void StyleProc(struct sbttnav *self, long param)
+static void StyleProc(self, param)
+struct sbttnav *self;
+long param;
 {
     /*
       This is the routine which asks the user for a new sbutton appearance.
@@ -435,7 +466,9 @@ static void StyleProc(struct sbttnav *self, long param)
     sbutton_NotifyObservers(b, observable_OBJECTCHANGED);
 }
 
-static void ColorProc(struct sbttnav *self, long param)
+static void ColorProc(self, param)
+struct sbttnav *self;
+long param;
 {
     /*
       This is the routine which asks the user for  new sbutton colors.
@@ -496,7 +529,9 @@ static void ColorProc(struct sbttnav *self, long param)
     sbutton_NotifyObservers(b, observable_OBJECTCHANGED);
 }
 
-static void GroupProc(struct sbttnav *self, long rock)
+static void GroupProc(self, rock)
+struct sbttnav *self;
+long rock;
 {
     struct sbutton *b=sbttnav_ButtonData(self);
     struct sbutton_prefs *prefs=sbutton_GetDefaultPrefs(b);
@@ -512,7 +547,9 @@ static void GroupProc(struct sbttnav *self, long rock)
     message_DisplayString(self, 0, "Set button group.");
 }
 
-static void AddButtonProc(struct sbttnav *self, long rock)
+static void AddButtonProc(self, rock)
+struct sbttnav *self;
+long rock;
 {
     char buf[1024];
     struct sbutton *b=sbttnav_ButtonData(self);
@@ -522,7 +559,9 @@ static void AddButtonProc(struct sbttnav *self, long rock)
     message_DisplayString(self, 0, "Added new button.");
 }
 
-static void SetRowsProc(struct sbttnav *self, long rock)
+static void SetRowsProc(self, rock)
+struct sbttnav *self;
+long rock;
 {
     char buf[1024];
     struct sbutton *b=sbttnav_ButtonData(self);
@@ -536,7 +575,9 @@ static void SetRowsProc(struct sbttnav *self, long rock)
     }
 }
 
-static void SetColsProc(struct sbttnav *self, long rock)
+static void SetColsProc(self, rock)
+struct sbttnav *self;
+long rock;
 {
     char buf[1024];
     struct sbutton *b=sbttnav_ButtonData(self);
@@ -550,7 +591,9 @@ static void SetColsProc(struct sbttnav *self, long rock)
     }
 }
 
-static void NewGroupProc(struct sbttnav *self, long rock)
+static void NewGroupProc(self, rock)
+struct sbttnav *self;
+long rock;
 {
     char buf[1024];
     struct sbutton *b=sbttnav_ButtonData(self);
@@ -565,7 +608,9 @@ static void NewGroupProc(struct sbttnav *self, long rock)
     sbttnav_PostMenus(self, NULL);
 }
 
-static void RenameProc(struct sbttnav *self, long rock)
+static void RenameProc(self, rock)
+struct sbttnav *self;
+long rock;
 {
     char buf[1024];
     struct sbutton *b=sbttnav_ButtonData(self);
@@ -606,7 +651,11 @@ struct deleterock {
     struct sbutton_prefs *def, *prefs;
 };
 
-static boolean dodeletion(struct sbutton *b, int i, struct sbutton_info *si, struct deleterock *rock)
+static boolean dodeletion(b, i, si, rock)
+struct sbutton *b;
+int i;
+struct sbutton_info *si;
+struct deleterock *rock;
 {
     if(si->prefs==rock->prefs) {
 	rock->prefs->refcount--;
@@ -616,7 +665,9 @@ static boolean dodeletion(struct sbutton *b, int i, struct sbutton_info *si, str
     return FALSE;
 }
 
-static void GDeleteProc(struct sbttnav *self, long rock)
+static void GDeleteProc(self, rock)
+struct sbttnav *self;
+long rock;
 {
     struct sbutton *b=sbttnav_ButtonData(self);
     struct sbutton_prefs *prefs=sbutton_GetDefaultPrefs(b);
@@ -649,7 +700,9 @@ static void GDeleteProc(struct sbttnav *self, long rock)
     sbttnav_PostMenus(self, NULL);
 }
 
-static void ShadowColorProc(struct sbttnav *self, long param)
+static void ShadowColorProc(self, param)
+struct sbttnav *self;
+long param;
 {
     /*
       This is the routine which asks the user for  new sbutton colors.
@@ -740,7 +793,9 @@ static void ShadowColorProc(struct sbttnav *self, long param)
 }
 
 
-static void LabelColorProc(struct sbttnav *self, long param)
+static void LabelColorProc(self, param)
+struct sbttnav *self;
+long param;
 {
     /*
       This is the routine which asks the user for  new sbutton colors.

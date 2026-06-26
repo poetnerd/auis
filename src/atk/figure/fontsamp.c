@@ -32,16 +32,17 @@ char *fontsamp_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 
 #include <fontsel.ih>
 
-#include <string.h>
-#include <stdlib.h>
 #define INITTESTSTRING "Sample"
 
-boolean fontsample__InitializeClass(struct classhdr *ClassID)
+boolean fontsample__InitializeClass(ClassID)
+struct classhdr *ClassID;
 {
     return TRUE;
 }
 
-boolean fontsample__InitializeObject(struct classhdr *ClassID, struct fontsample *self)
+boolean fontsample__InitializeObject(ClassID, self)
+struct classhdr *ClassID;
+struct fontsample *self;
 {
     self->teststring = malloc(strlen(INITTESTSTRING)+1);
     strcpy(self->teststring, INITTESTSTRING);
@@ -51,12 +52,15 @@ boolean fontsample__InitializeObject(struct classhdr *ClassID, struct fontsample
     return TRUE;
 }
 
-void fontsample__FinalizeObject(struct classhdr *ClassID, struct fontsample *self)
+void fontsample__FinalizeObject(ClassID, self)
+struct classhdr *ClassID;
+struct fontsample *self;
 {
     free(self->teststring);
 }
 
-static void RedrawView(struct fontsample *self)
+static void RedrawView(self)
+struct fontsample *self;
 {
     long x, y, w, h;
     struct fontdesc *fdesc;
@@ -74,18 +78,25 @@ static void RedrawView(struct fontsample *self)
     fontsample_DrawString(self, self->teststring, graphic_BETWEENLEFTANDRIGHT | graphic_BETWEENTOPANDBOTTOM);
 }
 
-void fontsample__FullUpdate(struct fontsample *self, enum view_UpdateType type, long left, long top, long width, long height)
+void fontsample__FullUpdate(self, type, left, top, width, height)
+struct fontsample *self;
+enum view_UpdateType type;
+long left, top, width, height;
 {
     RedrawView(self);
 }
 
-void fontsample__Update(struct fontsample *self)
+void fontsample__Update(self)
+struct fontsample *self;
 {
     fontsample_EraseVisualRect(self); 
     RedrawView(self);
 }
 
-void fontsample__ObservedChanged(struct fontsample *self, struct fontsel *dobj, long status)
+void fontsample__ObservedChanged(self, dobj, status)
+struct fontsample *self;
+struct fontsel *dobj;
+long status;
 {
     if (status == observable_OBJECTDESTROYED) {
     }
@@ -95,19 +106,25 @@ void fontsample__ObservedChanged(struct fontsample *self, struct fontsel *dobj, 
     }
 }
 
-struct view *fontsample__Hit(struct fontsample *self, enum view_MouseAction action, long x, long y, long clicks)
+struct view *fontsample__Hit(self, action, x, y, clicks)
+struct fontsample *self;
+enum view_MouseAction action;
+long x, y, clicks;
 {
     return NULL;
 }
 
-void fontsample__SetString(struct fontsample *self, char *val)
+void fontsample__SetString(self, val)
+struct fontsample *self;
+char *val;
 {
     free(self->teststring);
     self->teststring = malloc(strlen(val)+1);
     strcpy(self->teststring, val);
 }
 
-struct fontdesc *fontsample__GetFontDesc(struct fontsample *self)
+struct fontdesc *fontsample__GetFontDesc(self)
+struct fontsample *self;
 {
     struct fontsel *dobj = (struct fontsel *)fontsample_GetDataObject(self);
 

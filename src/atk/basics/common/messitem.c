@@ -28,7 +28,6 @@
 #include <environ.ih>
 #include <messitem.eh>
 
-#include <stdlib.h>
 #define DEFAULTMESS '0'
 #define LEFTMESS '1'
 #define RIGHTMESS '2'

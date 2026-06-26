@@ -98,7 +98,8 @@ Boolean UseInputFileName = false;
 char  FileName[255];
 
 
-char *Printrep(char c)
+char *Printrep(c)
+char c;
 {
     static char pr[4];
 
@@ -131,7 +132,8 @@ char *Printrep(char c)
 /* ************************************************************ */
 
 
-int ScanArgs(char *s)
+ScanArgs(s)
+char *s;
 {
 
     /* check each character of the option list for its meaning. */
@@ -183,7 +185,8 @@ int ScanArgs(char *s)
     }
 }
 
-int DetermineFiles(char *s)
+DetermineFiles(s)
+char *s;
 {
     short    n;
 
@@ -238,8 +241,6 @@ short NIcons = -1;
 #ifdef	WM_ENV	/* to avoid makedepend "errors" */
 #include <font.h>
 #include <fntmanip.h>
-#include <string.h>
-#include <stdlib.h>
 #endif /* WM_ENV	 */
 
 
@@ -487,7 +488,9 @@ skipsymbolic()
 	while (!isspace(c = GetChar()) && c != EOF);
 }
 
-int GetSVector(short *x, short *y)
+GetSVector(x, y)
+short   *x;
+short   *y;
 {
     char  c;
 
@@ -577,7 +580,8 @@ struct BitmapIconSpecificPart *sp;
 
 short    previousregion = rg_undefined;
 
-int EnterRegion(short r)
+EnterRegion(r)
+short    r;
 {
     if (r == previousregion)
 	return;
@@ -615,7 +619,8 @@ int EnterRegion(short r)
 /* ************************************************************ */
 
 
-unsigned short *copyraster(unsigned short cols, unsigned short rows)
+unsigned short *copyraster (cols, rows)
+unsigned short cols, rows;
 {
     long  bytesneeded;
     unsigned short *BitArray;
@@ -861,7 +866,8 @@ InputDBFont()
 /*								*/
 /* ************************************************************ */
 
-int DumpCharacter(short c)
+DumpCharacter(c)
+short    c /* character to dump */ ;
 {
     struct IconGenericPart *gp;
     struct BitmapIconSpecificPart *sp;
@@ -1050,7 +1056,9 @@ Boolean ConvertInternalToExternal()
 
 char ProgramName[] = "fdbwm";
 
-int main(int argc, char **argv)
+main(argc, argv)
+int   argc;
+char **argv;
 {
 
     /* main driver program.  Define the input file from either standard
@@ -1166,7 +1174,8 @@ TightenAllBoundingBoxes()
 /* macro to see if bit i,j of character c is set */
 #define isset(c,i,j) (bits[c][(j>>4)*specific[c].rows+i] & (1<<(15-(j&017))))
 
-int TightenBoundingBox(int c)
+TightenBoundingBox(c)
+int c;
 {
     register struct BitmapIconSpecificPart *sp = &(specific[c]);
     int top, bottom, left, right;

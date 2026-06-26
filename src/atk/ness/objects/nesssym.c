@@ -103,7 +103,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ness
 #include <compdefs.h>	/* for Tunk */
 #include <nevent.h>
 
-#include <stdlib.h>
 	boolean
 nesssym__InitializeObject(ClassID, self)
 	struct classhdr *ClassID;

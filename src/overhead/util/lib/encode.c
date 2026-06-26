@@ -40,7 +40,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 static char basis_64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-int to64(FILE *infile, FILE *outfile)
+to64(infile, outfile) 
+FILE *infile, *outfile;
 {
     int c1, c2, c3, ct=0;
     while ((c1 = getc(infile)) != EOF) {
@@ -65,7 +66,8 @@ int to64(FILE *infile, FILE *outfile)
     fflush(outfile);
 }
 
-int output64chunk(int c1, int c2, int c3, int pads, FILE *outfile)
+output64chunk(c1, c2, c3, pads, outfile)
+FILE *outfile;
 {
     putc(basis_64[c1>>2], outfile);
     putc(basis_64[((c1 & 0x3)<< 4) | ((c2 & 0xF0) >> 4)], outfile);
@@ -82,7 +84,8 @@ int output64chunk(int c1, int c2, int c3, int pads, FILE *outfile)
 }
 static char basis_hex[] = "0123456789ABCDEF";
 
-int hexchar(char c)
+hexchar(c)
+char c;
 {
     char *s;
     if (islower(c)) c = toupper(c);
@@ -92,7 +95,8 @@ int hexchar(char c)
 }
 
 
-int from64(FILE *infile, FILE *outfile)
+from64(infile, outfile)
+FILE *infile, *outfile;
 {
     unsigned int c1, c2, c3, c4, total = 0;
 
@@ -129,14 +133,16 @@ int from64(FILE *infile, FILE *outfile)
     return(total);
 }
 
-int char64(char c)
+char64(c)
+char c;
 {
     char *s = (char *) index(basis_64, c);
     if (s) return(s-basis_64);
     return(-1);
 }
 
-int fromqp(FILE *infile, FILE *outfile)
+fromqp(infile, outfile)
+FILE *infile, *outfile;
 {
     int c1, c2, total = 0;
 

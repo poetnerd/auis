@@ -44,9 +44,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <physical.h>
 #include <im.ih>
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 static char *foregroundColorName = NULL; /* Name of the default foreground color. */
 static char *backgroundColorName = NULL; /* Name of the default background color. */
 

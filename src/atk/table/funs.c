@@ -61,12 +61,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 extern int daysinmonth[];
 extern char *fcvt();
 
-int isrange(extended_double *x)
+int isrange (x)
+extended_double *x;
 {
     return (IsBogus(x) && strcmp (ExtractBogus(x), "range") == 0);
 }
 
-static void getrow(register struct table *T, register extended_double *result, int r, int c, int argc, extended_double *argv)
+static void getrow (T, result, r, c, argc, argv)
+register struct table * T;
+register extended_double *result;
+int     r, c;
+int     argc;
+extended_double *argv;
 {
     if (argc != 0)
 	MakeBogus(result, "No args expected");
@@ -74,7 +80,12 @@ static void getrow(register struct table *T, register extended_double *result, i
 	MakeStandard(result, (double) (r + 1));
 }
 
-static void getcol(register struct table *T, register extended_double *result, int r, int c, int argc, extended_double *argv)
+static void getcol (T, result, r, c, argc, argv)
+register struct table * T;
+register extended_double *result;
+int     r, c;
+int     argc;
+extended_double *argv;
 {
     if (argc != 0)
 	MakeBogus(result, "No args expected");
@@ -82,7 +93,12 @@ static void getcol(register struct table *T, register extended_double *result, i
 	MakeStandard(result, (double) (c + 1));
 }
 
-static void fsum(register struct table *T, register extended_double *result, int rr, int cc, int argc, extended_double *argv)
+static void fsum (T, result, rr, cc, argc, argv)
+register struct table * T;
+register extended_double *result;
+int     rr, cc;
+int     argc;
+extended_double *argv;
 {
     double  x = 0.0;
     extended_double *p = argv;
@@ -118,7 +134,12 @@ static void fsum(register struct table *T, register extended_double *result, int
     MakeStandard(result, x);
 }
 
-static void fcount(register struct table *T, register extended_double *result, int rr, int cc, int argc, extended_double *argv)
+static void fcount (T, result, rr, cc, argc, argv)
+register struct table * T;
+register extended_double *result;
+int     rr, cc;
+int     argc;
+extended_double *argv;
 {
     int     x = 0;
     extended_double *p = argv;
@@ -148,7 +169,13 @@ static void fcount(register struct table *T, register extended_double *result, i
     MakeStandard(result, (double) (x));
 }
 
-static void fmax(register struct table *T, register extended_double *result, int rr, int cc, int argc, extended_double *argv)
+static void fmax (T, result, rr, cc, argc, argv)
+register struct table * T;
+register extended_double *result;
+int     rr,
+        cc;
+int     argc;
+extended_double *argv;
 {
     double  x = 0;
     int     any = 0;
@@ -194,7 +221,13 @@ static void fmax(register struct table *T, register extended_double *result, int
 	eval(T, result, rr, cc, "-1/0");
 }
 
-static void fmin(register struct table *T, register extended_double *result, int rr, int cc, int argc, extended_double *argv)
+static void fmin (T, result, rr, cc, argc, argv)
+register struct table * T;
+register extended_double *result;
+int     rr,
+        cc;
+int     argc;
+extended_double *argv;
 {
     double  x = 0;
     int     any = 0;
@@ -240,7 +273,12 @@ static void fmin(register struct table *T, register extended_double *result, int
 	eval(T, result, rr, cc, "1/0");
 }
 
-static void vlookup(register struct table *T, register extended_double *result, int rr, int cc, int argc, extended_double *argv)
+static void vlookup (T, result, rr, cc, argc, argv)
+register struct table * T;
+register extended_double *result;
+int     rr, cc;
+int     argc;
+extended_double *argv;
 {
     double  x;
     extended_double *p = argv;
@@ -273,7 +311,8 @@ static void vlookup(register struct table *T, register extended_double *result, 
     MakeBogus(result, "LOOKUP!");
 }
 
-static double   iffer(double x, double y, double z)
+static double   iffer (x, y, z)
+double  x, y, z;
 {
     return x ? y : z;
 }
@@ -293,22 +332,30 @@ static double frand ()
     return (double) (random () & (0x1000000 - 1)) / (float) 0x1000000;
 }
 
-static double fnot(double x)
+static double fnot (x)
+double  x;
 {
     return x ? e_FALSE : e_TRUE;
 }
 
-static double fand(double x, double y)
+static double fand (x, y)
+double  x, y;
 {
     return (x != 0 && y != 0);
 }
 
-static double orf(double x, double y)
+static double orf (x, y)
+double  x, y;
 {
     return (x != 0 || y != 0);
 }
 
-static void fiserr(register struct table *T, register extended_double *result, int rr, int cc, int argc, extended_double *argv)
+static void fiserr (T, result, rr, cc, argc, argv)
+register struct table * T;
+register extended_double *result;
+int     rr, cc;
+int     argc;
+extended_double *argv;
 {
     int decpt, sign;
 
@@ -327,7 +374,12 @@ static void fiserr(register struct table *T, register extended_double *result, i
 	MakeStandard(result, e_FALSE);
 }
 
-static void fisinf(register struct table *T, register extended_double *result, int rr, int cc, int argc, extended_double *argv)
+static void fisinf (T, result, rr, cc, argc, argv)
+register struct table * T;
+register extended_double *result;
+int     rr, cc;
+int     argc;
+extended_double *argv;
 {
     int decpt, sign;
     char *cvtbuff;
@@ -348,7 +400,10 @@ static void fisinf(register struct table *T, register extended_double *result, i
 	MakeStandard(result, e_TRUE);
 }
 
-int     idate(int y, int m, int d)
+int     idate (y, m, d)
+int     y,
+        m,
+        d;
 {
     int     leapyear = 0;
     int     ans,
@@ -379,7 +434,12 @@ int     idate(int y, int m, int d)
     return ans + (ans < 59);
 }
 
-static void fdate(register struct table *T, register extended_double *result, int rr, int cc, int argc, extended_double *argv)
+static void fdate (T, result, rr, cc, argc, argv)
+register struct table * T;
+register extended_double *result;
+int     rr, cc;
+int     argc;
+extended_double *argv;
 {
     int     y, m, d;
     int     leapyear = 0;
@@ -434,7 +494,8 @@ static void fdate(register struct table *T, register extended_double *result, in
     MakeStandard(result, (double) (ans + (ans < 59)));
 }
 
-static double   fday(double fdate)
+static double   fday (fdate)
+double  fdate;
 {
     int     date;
     int     m;
@@ -456,7 +517,8 @@ static double   fday(double fdate)
     }
 }
 
-static double   fmonth(double fdate)
+static double   fmonth (fdate)
+double  fdate;
 {
     int     date;
     int     m;
@@ -478,7 +540,8 @@ static double   fmonth(double fdate)
     }
 }
 
-static double fyear(double fdate)
+static double fyear (fdate)
+double  fdate;
 {
     int     date;
     int     y;
@@ -497,12 +560,19 @@ static double fyear(double fdate)
     return (double) (y + 1900);
 }
 
-static void errorfunc(register struct table *T, register extended_double *result, int rr, int cc, int argc, extended_double *argv)
+static void errorfunc (T, result, rr, cc, argc, argv)
+register struct table * T;
+register extended_double *result;
+int     rr, cc;
+int     argc;
+extended_double *argv;
+
 {
     MakeBogus(result, "ERROR!");
 }
 
-static double   fmodulo(double x, double y)
+static double   fmodulo (x, y)
+double  x, y;
 {
     return x - y * floor (x / y);
 }
@@ -512,7 +582,8 @@ static double   fpi ()
     return 3.141592653589794;
 }
 
-static double fround(double x, double yy)
+static double fround (x, yy)
+double  x, yy;
 {
     int     y;
     double  p;

@@ -293,7 +293,8 @@ finalize_closure()
 
 #ifdef	DEBUG
 
-int print_closure(int n)
+print_closure(n)
+int n;
 {
   register short *isp;
 

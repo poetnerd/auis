@@ -168,7 +168,10 @@ typedef	union {
 	float		f;
 } float_t;
 
-int TIFFCvtIEEEFloatToNative(TIFF *tif, u_int n, float *f)
+TIFFCvtIEEEFloatToNative(tif, n, f)
+	TIFF *tif;
+	u_int n;
+	float *f;
 {
 	float_t *fp = (float_t *)f;
 
@@ -178,7 +181,10 @@ int TIFFCvtIEEEFloatToNative(TIFF *tif, u_int n, float *f)
 	}
 }
 
-int TIFFCvtNativeToIEEEFloat(TIFF *tif, u_int n, float *f)
+TIFFCvtNativeToIEEEFloat(tif, n, f)
+	TIFF *tif;
+	u_int n;
+	float *f;
 {
 	float_t *fp = (float_t *)f;
 

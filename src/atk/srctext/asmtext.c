@@ -38,13 +38,12 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 #include "srctext.ih"
 #include "asmtext.eh"
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 static Dict *words[TABLESIZE];
 
 /* addBangComment postpends a character to the string used to remember bang-comment chars.  This is of little use, except to make the info available to the VIEW, which needs it to create the proper keybindings */ /*RSK91add*/
-static void addBangComment(struct asmtext *self, char *ch)
+static void addBangComment(self,ch)
+struct asmtext *self;
+char *ch;
 {
     int indx=0;
     while (indx<MAX_BANGCHARS && self->bangComments[indx]!='\0')
@@ -60,7 +59,9 @@ static void addBangComment(struct asmtext *self, char *ch)
 }
 
 /* setReindentFilterName remembers the name of the filter that was specified in ezinit */ /*RSK91add*/
-static void setReindentFilterName(struct asmtext *self, char *name)
+static void setReindentFilterName(self,name)
+struct asmtext *self;
+char *name;
 {
     if (self->reindentFilterName!=NULL)
 	free(self->reindentFilterName);
@@ -68,7 +69,9 @@ static void setReindentFilterName(struct asmtext *self, char *name)
     strcpy(self->reindentFilterName, name);
 }
 
-void asmtext__SetAttributes(struct asmtext *self, struct attributes *atts)
+void asmtext__SetAttributes(self,atts)
+struct asmtext *self;
+struct attributes *atts;
 {
     super_SetAttributes(self,atts);
     while (atts!=NULL) {
@@ -84,7 +87,8 @@ void asmtext__SetAttributes(struct asmtext *self, struct attributes *atts)
     }
 }
 
-boolean asmtext__InitializeClass(struct classheader *classID)
+boolean asmtext__InitializeClass(classID)
+struct classheader *classID;
 {
     static Dict asmkeywords[]={
 	{NULL,0,0} };
@@ -92,7 +96,9 @@ boolean asmtext__InitializeClass(struct classheader *classID)
     return TRUE;
 }
 
-boolean asmtext__InitializeObject(struct classheader *classID, struct asmtext *self)
+boolean asmtext__InitializeObject(classID, self)
+struct classheader *classID;
+struct asmtext *self;
 {
     self->header.srctext.words= (Dict **)words; /*RSK91mod*/
     self->header.srctext.useTabs= FALSE;
@@ -103,7 +109,8 @@ boolean asmtext__InitializeObject(struct classheader *classID, struct asmtext *s
     return TRUE;
 }
 
-void asmtext__RedoStyles(struct asmtext *self)
+void asmtext__RedoStyles(self)
+struct asmtext *self;
 {
     struct nestedmark *root = (struct nestedmark *)self->header.text.rootEnvironment;
     long posn, len = asmtext_GetLength(self);
@@ -141,7 +148,9 @@ void asmtext__RedoStyles(struct asmtext *self)
 
 /* override */
 /* in srctext, Indent is called when Tab is hit with a region selected. This is being overridden in asmtext because asmtextview's Reindent should override srctextview's, and should never ever call this */
-long asmtext__Indent(struct asmtext *self, struct mark *mark)
+long asmtext__Indent(self,mark)
+struct asmtext *self;
+struct mark *mark;
 {
     printf("\nERROR - asmtext__Indent empty override entered.\n");
     fflush(stdout);
@@ -150,7 +159,10 @@ long asmtext__Indent(struct asmtext *self, struct mark *mark)
 
 /* asmtext_Keywordify makes buff all uppercase.  checkforceupper and Force Upper status are ignored. */
 /* This function "keywordifies" a string. "Keywordify" means "make the word all upper case so it will be found in the hash table". */
-char *asmtext__Keywordify(struct asmtext *self, char *buff, boolean checkforceupper)
+char *asmtext__Keywordify(self, buff, checkforceupper)
+struct asmtext *self;
+char *buff;
+boolean checkforceupper;
 {
     if (buff!=NULL && strlen(buff)>0)
 	makeupper(buff);

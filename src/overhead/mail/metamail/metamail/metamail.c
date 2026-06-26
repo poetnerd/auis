@@ -98,13 +98,14 @@ extern char **environ, *gets();
 
 #ifndef NO_RLIMITS
 #include <sys/resource.h>
-#include <string.h>
 #endif
 
 #define CMDSIZE 1200 /* Maximum size of command to execute */
 
 #define LINE_BUF_SIZE       2000
 #ifndef MICROSOFT
+extern char *malloc();
+extern char *realloc();
 #endif
 extern char *getenv();
 extern char *index();
@@ -196,7 +197,8 @@ void ParseContentParameters();
 
 sigtype cleanup();
 
-char *Cleanse(char *s)
+char *Cleanse(s) /* no leading or trailing space, all lower case */
+char *s;
 {
     char *tmp, *news;
     
@@ -212,7 +214,8 @@ char *Cleanse(char *s)
     return(news);
 }
 
-char *UnquoteString(char *s)
+char *UnquoteString(s)
+char *s;
 {
     char *ans, *t;
 
@@ -236,7 +239,8 @@ char *UnquoteString(char *s)
 }
 
 sigtype
-int cleanup(int signum)
+cleanup(signum) 
+int signum;
 {
     RestoreTtyState();
 #if defined(MSDOS) || defined(AMIGA)
@@ -277,7 +281,8 @@ ResetGlobals() {
     JunkParameter = NULL;
 }
 
-void modpath(char *auxpath)
+void modpath(auxpath)
+char *auxpath;
 {
     if (auxpath && *auxpath) {
         static char *newpath = 0;
@@ -293,7 +298,9 @@ void modpath(char *auxpath)
     }
 }
 
-int main(int argc, char **argv)
+main(argc, argv)
+int argc;
+char **argv;
 {
     int retcode;
 
@@ -652,7 +659,9 @@ int nestingdepth;
     return(-1); /* Unrecognized, really */
 }
 
-int ProcessArguments(int argc, char **argv)
+ProcessArguments(argc, argv)
+int argc;
+char **argv;
 {
     int i, RunAsRootOK = 0;
     char *SourceFileName = NULL, *NoAskStr, *QuietStr;
@@ -925,7 +934,9 @@ usage() {
     ExitWithError(NULL);
 }
 
-int RunInNewWindow(char **argv, int argc, char **SourceFileNamePtr)
+RunInNewWindow(argv, argc, SourceFileNamePtr)
+char **argv, **SourceFileNamePtr;
+int argc;
 {
     char *FullCmd, TmpName[TMPFILE_NAME_SIZE];
     int i, createdfile=0;
@@ -1003,7 +1014,8 @@ struct MailcapEntry BuiltInsAlternative[] = {
     {"text/plain", CATTEMPLATE, NULL, 0, 1, 0, "plain text", LPRTEMPLATE},
     {NULL, NULL, NULL, 0, 0, 0}};
 
-int ProcessMailcapFiles(char *SquirrelFile)
+ProcessMailcapFiles(SquirrelFile) 
+char *SquirrelFile;
 {
     char *s, *pathcopy = NULL;
 #ifdef MICROSOFT
@@ -1058,7 +1070,8 @@ int ProcessMailcapFiles(char *SquirrelFile)
 #endif /* MICROSOFT */
 }
 
-int TryBuiltIns(char *SquirrelFile)
+TryBuiltIns(SquirrelFile) 
+char *SquirrelFile;
 {
     int i;
     /* Last resort -- for sites that didn't bother putting a "text" line in their mailcap files... */
@@ -1069,7 +1082,8 @@ int TryBuiltIns(char *SquirrelFile)
     return(-1);
 }
 
-int ProcessMailcapFile(char *file, char *SquirrelFile)
+ProcessMailcapFile(file, SquirrelFile)
+char *file, *SquirrelFile;
 {
     struct MailcapEntry mc;
     FILE *fp = fopen(file, "r");
@@ -1095,7 +1109,8 @@ static char *ThingsToSkip[] = {
     NULL
 };
 
-char *ShortCommand(char *progname)
+char *ShortCommand(progname)
+char *progname;
 {
     int i;
     char *s, *oldprogname;
@@ -1127,7 +1142,9 @@ eatmore:
     }
 }    
 
-int TryMailcapEntry(struct MailcapEntry mc, char *SquirrelFile)
+TryMailcapEntry(mc, SquirrelFile)
+struct MailcapEntry mc;
+char *SquirrelFile;
 {
     StripTrailingSpace(mc.contenttype);
     if (DoDebug) fprintf(stderr, "Trying mailcap entry for '%s'.\n", mc.contenttype);
@@ -1148,7 +1165,8 @@ int TryMailcapEntry(struct MailcapEntry mc, char *SquirrelFile)
     return(-1);
 }
 
-int SaveSquirrelFile(char *SquirrelFile)
+SaveSquirrelFile(SquirrelFile)
+char *SquirrelFile;
 {
     int j;
     FILE *outfp;
@@ -1172,7 +1190,9 @@ int SaveSquirrelFile(char *SquirrelFile)
     return(0);
 }
 
-int ExecuteMailcapEntry(struct MailcapEntry mc, char *TmpFileName, char *ThisContentType)
+ExecuteMailcapEntry(mc, TmpFileName, ThisContentType)
+char *TmpFileName, *ThisContentType;
+struct MailcapEntry mc;
 {
     int resultcode=0, DidExecute, UsedTmpFileName;
     struct part *PartsWritten=NULL;
@@ -1317,7 +1337,8 @@ int ExecuteMailcapEntry(struct MailcapEntry mc, char *TmpFileName, char *ThisCon
     return(0);
 }
 
-int PassesTest(struct MailcapEntry *mc)
+PassesTest(mc)
+struct MailcapEntry *mc;
 {
     int result;
     char *cmd, TmpFileName[TMPFILE_NAME_SIZE];
@@ -1369,7 +1390,9 @@ char *s, **t;
     return(NULL);
 }	
 
-int GetMailcapEntry(FILE *fp, struct MailcapEntry *mc)
+GetMailcapEntry(fp, mc)
+FILE *fp;
+struct MailcapEntry *mc;
 {
     int rawentryalloc = 2000, len;
     char *rawentry, *s, *t, *LineBuf;
@@ -1457,7 +1480,8 @@ int GetMailcapEntry(FILE *fp, struct MailcapEntry *mc)
     return(1);
 }
 
-int ExitWithError(char *txt)
+ExitWithError(txt)
+char *txt;
 {
     if (txt) fprintf(stderr, "metamail: %s\n", txt);
     exit(-1);
@@ -1483,7 +1507,8 @@ char *s;
     return(newcopy);
 }
 
-int Read822Prefix(int PrintHeads, int nestingdepth)
+Read822Prefix(PrintHeads, nestingdepth)
+int PrintHeads, nestingdepth;
 {
     int SawNewline = 1, bytes = 0, alloced = 1000, HasEncodedChars=0;
     int c, oldbytes;
@@ -1734,7 +1759,8 @@ char *def;
 }
 #endif
 
-int OKToRun(char *ctype, char *progname, char *label)
+OKToRun(ctype, progname, label)
+char *ctype, *progname, *label;
 {
     char AnsBuf[100], *s;
 
@@ -1757,7 +1783,8 @@ int OKToRun(char *ctype, char *progname, char *label)
     }
 }
 
-int EliminateNastyChars(char *s)
+EliminateNastyChars(s)
+char *s;
 {
     if (s) for( ; *s ;++s) {
         if (isalnum((unsigned char) *s)) continue;
@@ -1770,7 +1797,8 @@ int EliminateNastyChars(char *s)
     }
 }
 
-int StripTrailingSpace(char *s)
+StripTrailingSpace(s)
+char *s;
 {
     char *t = s+strlen(s) -1;
     while (isspace((unsigned char) *t) && (t >= s)) *t-- = 0;
@@ -1876,7 +1904,9 @@ char *s;
 static char PrevCharset[100] = "us-ascii";
 
 /* This is the part that actually handles the charset issues */
-void PrintHeader(char *s, int ShowLeadingWhitespace)
+void PrintHeader(s, ShowLeadingWhitespace)
+char *s;
+int ShowLeadingWhitespace;
 {
     char *charset, *encoding, *txt, *txtend, TmpFile[TMPFILE_NAME_SIZE];
     int ecode = ENCODING_NONE, CorrectedCharset = 0;
@@ -1986,7 +2016,10 @@ void PrintHeader(char *s, int ShowLeadingWhitespace)
     PrintHeader(txtend + 2, 0);
 }
 
-int BuildCommand(char *Buf, char *controlstring, char *TmpFileName, int *UsedTmpFileName, struct part **PartsWritten)
+BuildCommand(Buf, controlstring, TmpFileName, UsedTmpFileName, PartsWritten)
+char *Buf, *controlstring, *TmpFileName;
+int *UsedTmpFileName;
+struct part **PartsWritten;
 {
     char *from, *to, *s, *p, *tmp;
     int prefixed = 0, UsedBigFile=0, UsedLittleFiles=0, numparts=0;
@@ -2189,7 +2222,8 @@ int BuildCommand(char *Buf, char *controlstring, char *TmpFileName, int *UsedTmp
     *to = 0;
 }
 
-int strcpynoquotes(char *t, char *f)
+strcpynoquotes(t,f)
+char *t, *f;
 {
     while (*f) {
         if (*f != '\"' && *f != '\'' && *f != '`') *t++ = *f; else *t++=' ';
@@ -2197,7 +2231,9 @@ int strcpynoquotes(char *t, char *f)
     }
 }
 
-int WriteTmpFile(char *fname, char *ctype)
+WriteTmpFile(fname, ctype)
+char *fname;
+char *ctype;
 {
     FILE *fpout;
     int retval = 0;
@@ -2214,7 +2250,10 @@ int WriteTmpFile(char *fname, char *ctype)
 }
 
 
-int TranslateInputToOutput(FILE *InputFP, FILE *OutputFP, int Ecode, char *ctype)
+TranslateInputToOutput(InputFP, OutputFP, Ecode, ctype)
+FILE *InputFP, *OutputFP;
+int Ecode;
+char *ctype;
 {
     int InMultipart = BoundaryCt > 0 ? 1 : 0;
 
@@ -2238,7 +2277,8 @@ int TranslateInputToOutput(FILE *InputFP, FILE *OutputFP, int Ecode, char *ctype
 #endif
 }
 
-int CreateNewWindowPrefix(char *Prefix)
+CreateNewWindowPrefix(Prefix)
+char *Prefix;
 {
     char *override = getenv("TERMINAL_CMD");
     if (override) {
@@ -2313,7 +2353,8 @@ RestoreTtyState() {
 #endif
 }
 
-int NeedToAskBeforeExecuting(char *type)
+NeedToAskBeforeExecuting(type)
+char *type;
 {
     struct NoAskItem *nai;
     if (!MightAskBeforeExecuting || DoInBackground) return(0);
@@ -2323,7 +2364,8 @@ int NeedToAskBeforeExecuting(char *type)
     return(1);
 }
 
-int NeedToBeQuiet(char *cmd)
+NeedToBeQuiet(cmd)
+char *cmd;
 {
     struct NoAskItem *nai;
     for (nai = FirstQuietItem; nai; nai = nai->next) {
@@ -2332,7 +2374,8 @@ int NeedToBeQuiet(char *cmd)
     return(0);
 }
 
-int CtypeMatch(char *ctype, char *pat)
+CtypeMatch(ctype, pat)
+char *ctype, *pat;
 {
     int len;
     char pat2[200];
@@ -2357,7 +2400,9 @@ int CtypeMatch(char *ctype, char *pat)
     return(0);
 }
 
-int ExecuteCommand(char *cmd, int really)
+ExecuteCommand(cmd, really)
+char *cmd;
+int really;
 {
     int code;
     if (!Quiet || DoDebug) {
@@ -2380,7 +2425,8 @@ int ExecuteCommand(char *cmd, int really)
     return(0);
 }
 
-int MkTmpFileName(char *name)
+MkTmpFileName(name)
+char *name;
 {
 #ifdef AMIGA
     strcpy(name, "T:mmXXXXXX");
@@ -2450,7 +2496,8 @@ FILE *outfp;
     free(Buf);
 }
 
-char *paramend(char *s)
+char *paramend(s)
+char *s;
 {
     int inquotes=0;
     while (*s) {
@@ -2513,7 +2560,8 @@ char *ct;
     } while (t);
 }
 
-char *FindParam(char *s)
+char *FindParam(s)
+char *s;
 {
     int i;
     for (i=0; i<CParamsUsed; ++i) {
@@ -2525,14 +2573,17 @@ char *FindParam(char *s)
 }
 
 #ifdef MSDOS
-int system2(char *s)
+system2(s)
+char *s;
 {
     printf("system2: \"%s\"\n", s);
     return(0);
 }
 #endif
 
-int strcatquoting(char *s1, char *s2)
+strcatquoting(s1, s2)
+char *s1;
+char *s2;
 {
     strcat(s1, s2);
 #ifdef NOTDEF

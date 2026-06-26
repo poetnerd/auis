@@ -43,7 +43,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <fontdesc.ih>
 #include <textrefv.eh>
 
-#include <stdio.h>
 #define DataObject(A) (A->header.view.dataobject)
 #define Data(A) ((struct textref *)(DataObject(A)))
 
@@ -55,7 +54,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #define PROCESSOR environ_AndrewDir("/bin/ezpostprocess")
 #define TFILE environ_AndrewDir("/lib/tmac/tmac.arf")
 
-static boolean findtag(struct textrefv *self, struct text *text, long pos, struct environment *env)
+static boolean findtag(self,text,pos,env)
+struct textrefv *self;
+struct text *text;
+long pos;
+struct environment *env;
 {
     char *foo,*name,buf[256];
     struct viewref *vr;
@@ -72,7 +75,12 @@ static boolean findtag(struct textrefv *self, struct text *text, long pos, struc
     }
     return FALSE;
 }
-void textrefv__Print(struct textrefv *self, FILE *f, char *process, char *final, int toplevel)
+void textrefv__Print(self, f, process, final, toplevel)
+struct textrefv *self;
+FILE *f;
+char *process;
+char *final;
+int toplevel;
 {
     struct textref *ref;
     char buf[256];
@@ -86,7 +94,10 @@ void textrefv__Print(struct textrefv *self, FILE *f, char *process, char *final,
     }
 }
 
-struct view *textrefv__Hit(struct textrefv *self, enum view_MouseAction action, long mousex, long mousey, long numberOfClicks)
+struct view *textrefv__Hit(self,action,mousex,mousey,numberOfClicks) 
+struct textrefv *self;
+enum view_MouseAction action;
+long mousex, mousey, numberOfClicks;
 {
     struct textref *ref;
     char buf[256];
@@ -125,7 +136,9 @@ struct view *textrefv__Hit(struct textrefv *self, enum view_MouseAction action, 
 #define FONTSIZE 12
 #define OFNAME "andy"
 #define OFSIZE 8
-boolean textrefv__InitializeObject(struct classheader *classID, struct textrefv *self)
+boolean textrefv__InitializeObject(classID,self)
+struct classheader *classID;
+struct textrefv *self;
 {
     struct fnotev *fv = (struct fnotev *) self;
     textrefv_SetDisplayStr(self,"?");
@@ -133,7 +146,8 @@ boolean textrefv__InitializeObject(struct classheader *classID, struct textrefv 
     fv->ofd = fontdesc_Create(OFNAME,0,OFSIZE);
     return TRUE;
 }
-boolean textrefv__InitializeClass(struct classheader *classID)
+boolean textrefv__InitializeClass(classID)
+struct classheader *classID;
 {   
     return TRUE;
 }

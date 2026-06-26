@@ -152,8 +152,8 @@ extern char *UnixError();
 
 #include <dropoff.h>
 
+extern int errno;
 
-#include <stdlib.h>
 typedef unsigned char bool;
 
 #define FALSE	0
@@ -237,7 +237,9 @@ int test_dropoff()
 }
 
 #ifdef AMS_DELIVERY_ENV
-static int getuserinfo(register int *uid, char **returnpath, char **inhome, char **outhome, char **myname)
+static int getuserinfo(uid, returnpath, inhome, outhome, myname)
+    register int *uid;
+    char **returnpath, **inhome, **outhome, **myname;
 {
     struct CellAuth *ca;
     static char r[300], h[MAXPATHLEN+1], usern[200], cellN[200];
@@ -311,7 +313,8 @@ static int getuserinfo(register int *uid, char **returnpath, char **inhome, char
 #endif /* AMS_DELIVERY_ENV */
 
 #ifdef AMS_DELIVERY_ENV
-static int rewind_fd(int f)
+static int rewind_fd(f)
+    int f;
 {
     if (lseek(f, 0, 0) < 0) {
 	sprintf(Dropoff_ErrMsg, "lseek failed: %s", UnixError(errno));
@@ -322,7 +325,8 @@ static int rewind_fd(int f)
 #endif /* AMS_DELIVERY_ENV */
 
 #if defined(AMS_DELIVERY_ENV) && defined(AFS_ENV)
-static bool setprotection(char *dirname, char *who, char *homecell)
+static bool setprotection(dirname, who, homecell)
+    char *dirname, *who, *homecell;
 {
     register int rights;
     struct ViceIoctl blob;
@@ -348,7 +352,8 @@ static bool setprotection(char *dirname, char *who, char *homecell)
 #endif /* defined(AMS_DELIVERY_ENV) && defined(AFS_ENV) */
 
 #ifdef AMS_DELIVERY_ENV
-static bool createoutgoing(char *dirname, char *whoname, char *homecell)
+static bool createoutgoing(dirname, whoname, homecell)
+    char *dirname, *whoname, *homecell;
 {
     if (mkdir(dirname, 0700) < 0) {
 	sprintf(Dropoff_ErrMsg,
@@ -365,7 +370,8 @@ static bool createoutgoing(char *dirname, char *whoname, char *homecell)
 #endif /* AMS_DELIVERY_ENV */
 
 #if defined(AMS_DELIVERY_ENV) && defined(AFS_ENV)
-static bool onvice(char *name)
+static bool onvice(name)
+    char *name;
 {
     int fd, res;
 
@@ -385,7 +391,10 @@ static bool drop_virgin = TRUE;
 static int drop_s;
 static struct sockaddr_in drop_addr;
 
-static bool blipdaemon(int uid, long flags, char *dirname, char *homecell)
+static bool blipdaemon(uid, flags, dirname, homecell)
+    int uid;
+    long flags;
+    char *dirname, *homecell;
 {
     extern unsigned long getaddr();
     char *Pkt, *NmTkPtr;
@@ -456,7 +465,13 @@ static bool blipdaemon(int uid, long flags, char *dirname, char *homecell)
 #endif /* AMS_DELIVERY_ENV */
 
 #ifdef AMS_DELIVERY_ENV
-static int tryoutgoing(int uid, char *home, char *tolist[], int f, char *returnpath, long flags, char *whoname, char *auth, char *homecell)
+static int tryoutgoing(uid, home, tolist, f, returnpath, flags, whoname, auth, homecell)
+    int uid;
+    char *home, *tolist[];
+    int f;
+    char *returnpath;
+    long flags;
+    char *whoname, *auth, *homecell;
 {
     char outgoing[MAXPATHLEN+1];
     register bool created;
@@ -516,7 +531,12 @@ static int tryoutgoing(int uid, char *home, char *tolist[], int f, char *returnp
 #endif /* AMS_DELIVERY_ENV */
 
 #ifdef AMS_DELIVERY_ENV
-static int trytoqueue(register int f, register char *tolist[], char *returnpath, char *inhome, long flags, char *auth, char *homecell)
+static int trytoqueue(f, tolist, returnpath, inhome, flags, auth, homecell)
+    register int f;
+    register char *tolist[];
+    char *returnpath, *inhome;
+    long flags;
+    char *auth, *homecell;
 {
     int uid;
     register int rc;
@@ -569,7 +589,10 @@ static int trytoqueue(register int f, register char *tolist[], char *returnpath,
 }
 #endif /* AMS_DELIVERY_ENV */
 
-int dropoff_auth(register char *tolist[], char *mesgfile, char *returnpath, char *home, long flags, char *auth)
+int dropoff_auth(tolist, mesgfile, returnpath, home, flags, auth)
+    register char *tolist[];
+    char *mesgfile, *returnpath, *home, *auth;
+    long flags;
 {
     register int f;
 #ifdef AMS_DELIVERY_ENV
@@ -690,7 +713,10 @@ int dropoff_auth(register char *tolist[], char *mesgfile, char *returnpath, char
     }
 }
 
-int dropoff(register char *tolist[], char *mesgfile, char *returnpath, char *home, long flags)
+int dropoff(tolist, mesgfile, returnpath, home, flags)
+register char *tolist[];
+char *mesgfile, *returnpath, *home;
+long flags;
 {
     return(dropoff_auth(tolist, mesgfile, returnpath, home, flags, NULL));
 }

@@ -83,7 +83,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 
 #include <system.h>
 
-int GetGVMStats(int UsersID)
+GetGVMStats(UsersID)
+int UsersID;
 {
 }
 
@@ -91,6 +92,7 @@ InitGVMStats()
 {
 }
 
-int GetDiskStats(int Init)
+GetDiskStats(Init)
+int Init;
 {
 }

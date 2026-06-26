@@ -48,11 +48,11 @@ FILE * popen ();
 #define AUXMODULE
 #include <spread.eh>
 
-#include <string.h>
-#include <stdio.h>
 extern struct view *spread_FindSubview();
 
-void m_rename(register struct spread *V, char ch)
+void m_rename(V, ch)
+register struct spread * V;
+char ch;
 {
     char buff[257];
 
@@ -70,7 +70,8 @@ void m_rename(register struct spread *V, char ch)
     }
 }
 
-void m_changedim(register struct spread *V)
+void m_changedim(V)
+register struct spread *V;
 {
     char buff[257];
     int nrows, ncols;
@@ -96,7 +97,9 @@ void m_changedim(register struct spread *V)
     }
 }
 
-void m_drawboxes(register struct spread *V, char ch)
+void m_drawboxes(V, ch)
+register struct spread * V;
+char ch;
 {
     int r, c;
     struct chunk chunk;
@@ -126,7 +129,9 @@ void m_drawboxes(register struct spread *V, char ch)
     table_SetModified(MyTable(V));
 }
 
-void m_eraseboxes(register struct spread *V, char ch)
+void m_eraseboxes(V, ch)
+register struct spread * V;
+char ch;
 {
     int r, c;
     struct chunk chunk;
@@ -156,7 +161,9 @@ void m_eraseboxes(register struct spread *V, char ch)
     table_SetModified(MyTable(V));
 }
 
-void m_drawalledges(register struct spread *V, char ch)
+void m_drawalledges(V, ch)
+register struct spread * V;
+char ch;
 {
     if (max(0, V->selection.TopRow) > V->selection.BotRow && max(0, V->selection.LeftCol) > V->selection.RightCol)
 	k_TellUser(V, "Please select a region to draw edges");
@@ -196,7 +203,9 @@ V->selection.LeftCol,V->selection.RightCol,V->selection.TopRow,V->selection.BotR
     }
 }
 
-void m_erasealledges(register struct spread *V, char ch)
+void m_erasealledges(V, ch)
+register struct spread * V;
+char ch;
 {
     if (max(0, V->selection.TopRow) > V->selection.BotRow && max(0, V->selection.LeftCol) > V->selection.RightCol)
 	k_TellUser(V, "Please select a region to draw edges");
@@ -236,7 +245,9 @@ V->selection.LeftCol,V->selection.RightCol,V->selection.TopRow,V->selection.BotR
     }
 }
 
-static char *newext(char *filename, char *extension)
+static char *newext(filename, extension)	/* returns "mumble.x" */
+char *filename;			/* "mumble.y" or something */
+char *extension;		/* ".x" */
 {
     char *cp, *suffixp;
     static char newname[257];
@@ -260,7 +271,9 @@ static char *newext(char *filename, char *extension)
     return newname;
 }
 
-void m_writeTroff(register struct spread *V, char ch)
+void m_writeTroff(V, ch)
+register struct spread * V;
+char ch;
 {
     char buf[300];
     char fname[300];
@@ -276,7 +289,9 @@ void m_writeTroff(register struct spread *V, char ch)
     }
 }
 
-void m_write(register struct spread *V, char ch)
+void m_write(V, ch)
+register struct spread * V;
+char ch;
 {
     char buf[300];
     char fname[300];
@@ -297,7 +312,9 @@ void m_write(register struct spread *V, char ch)
     }
 }
 
-void m_read(register struct spread *V, char ch)
+void m_read(V, ch)
+register struct spread * V;
+char ch;
 {
     char buf[300];
     char fname[300];
@@ -313,7 +330,9 @@ void m_read(register struct spread *V, char ch)
     }
 }
 
-void m_cut(register struct spread *V, char ch)
+void m_cut(V, ch)
+register struct spread * V;
+char ch;
 {
     if (V->selection.TopRow > V->selection.BotRow || V->selection.LeftCol > V->selection.RightCol)
 	k_TellUser (V, "Please select region to cut");
@@ -398,7 +417,9 @@ void m_cut(register struct spread *V, char ch)
     view_WantNewSize(getView(V).parent, &getView(V));
 }
 
-void m_copy(register struct spread *V, char ch)
+void m_copy(V, ch)
+register struct spread * V;
+char ch;
 {
     if (V->selection.TopRow > V->selection.BotRow || V->selection.LeftCol > V->selection.RightCol)
 	k_TellUser (V, "Please select region to copy");
@@ -410,7 +431,9 @@ void m_copy(register struct spread *V, char ch)
     }
 }
 
-void m_paste(register struct spread *V, char ch)
+void m_paste(V, ch)
+register struct spread * V;
+char ch;
 {
     if ((V->selection.TopRow >= 0 || V->selection.BotRow < table_NumberOfRows(MyTable(V))-1) && (V->selection.LeftCol >= 0 || V->selection.RightCol < table_NumberOfColumns(MyTable(V))-1) && (V->selection.TopRow > V->selection.BotRow || V->selection.LeftCol > V->selection.RightCol))
 	k_TellUser (V, "Please select region to paste into");
@@ -458,7 +481,9 @@ void m_paste(register struct spread *V, char ch)
     view_WantNewSize(getView(V).parent, &getView(V));
 }
 
-void m_combine(register struct spread *V, char ch)
+void m_combine(V, ch)
+register struct spread * V;
+char ch;
 {
     struct chunk chunk;
 
@@ -471,7 +496,9 @@ void m_combine(register struct spread *V, char ch)
     }
 }
 
-void m_separate(register struct spread *V, char ch)
+void m_separate(V, ch)
+register struct spread * V;
+char ch;
 {
     struct chunk chunk;
 
@@ -484,7 +511,9 @@ void m_separate(register struct spread *V, char ch)
     }
 }
 
-void m_drawedges(register struct spread *V, char ch)
+void m_drawedges(V, ch)
+register struct spread * V;
+char ch;
 {
     if (max(0, V->selection.TopRow) > V->selection.BotRow && max(0, V->selection.LeftCol) > V->selection.RightCol)
 	k_TellUser(V, "Please select a region to draw edges");
@@ -492,7 +521,9 @@ void m_drawedges(register struct spread *V, char ch)
 	table_SetBoundary (MyTable(V), &(V->selection), BLACK);
 }
 
-void m_eraseedges(register struct spread *V, char ch)
+void m_eraseedges(V, ch)
+register struct spread * V;
+char ch;
 {
     if (max(0, V->selection.TopRow) > V->selection.BotRow && max(0, V->selection.LeftCol) > V->selection.RightCol)
 	k_TellUser(V, "Please select a region to erase edges");
@@ -502,14 +533,18 @@ void m_eraseedges(register struct spread *V, char ch)
 
 /* process formatting menu hit */
 
-void m_format(register struct spread *V, char ch)
+void m_format (V, ch)
+register struct spread * V;
+char    ch;
 {
     table_SetFormat (MyTable(V), ch, &(V->selection));
 }
 
 /* process precision request */
 
-void m_precision(register struct spread *V, char ch)
+void m_precision (V, ch)
+register struct spread * V;
+char    ch;
 {
     char parambuff[100];
     int param;
@@ -521,7 +556,9 @@ void m_precision(register struct spread *V, char ch)
 	table_SetPrecision (MyTable(V), (param >= 0 ? param : 0), &(V->selection));
 }
 
-static objecttest(register struct spread *V, char *name, char *desiredname)
+static objecttest(V, name, desiredname)
+register struct spread *V;
+char *name,*desiredname;
 {
     if(class_Load(name) == NULL){
         char foo[640];
@@ -540,7 +577,9 @@ static objecttest(register struct spread *V, char *name, char *desiredname)
 
 /* process request for imbedded object */
 
-void m_imbed(register struct spread *V, char ch)
+void m_imbed (V, ch)
+register struct spread * V;
+char    ch;
 {
     char parambuff[100];
     struct cell * hitcell;
@@ -567,7 +606,9 @@ void m_imbed(register struct spread *V, char ch)
 
 /* compute row heights automatically */
 
-void m_resetheights(register struct spread *V, char ch)
+void m_resetheights (V, ch)
+register struct spread * V;
+char    ch;
 {
     int r;
     struct table *T = MyTable(V);
@@ -579,7 +620,9 @@ void m_resetheights(register struct spread *V, char ch)
 
 /* lock or unlock cells */
 
-void m_lock(register struct spread *V, char ch)
+void m_lock (V, ch)
+register struct spread * V;
+char    ch;
 {
     table_Lock (MyTable(V), ch, &(V->selection));
 }
@@ -623,7 +666,10 @@ static struct bind_Description menutable[] = {
     {NULL, NULL, 0, NULL, 0, NULL, NULL}
 };
 
-int DefineMenus(struct menulist *mainmenus, struct keymap *mainmap, struct spread_classinfo *classinfo)
+DefineMenus (mainmenus, mainmap, classinfo)
+struct menulist *mainmenus;
+struct keymap * mainmap;
+struct spread_classinfo *classinfo;
 {
     bind_BindList(menutable, mainmap, mainmenus, classinfo);
 }

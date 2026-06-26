@@ -39,7 +39,6 @@ char *observe_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 #include <atomlist.ih>
 #include <owatch.ih>
 
-#include <stdlib.h>
 #define INITIALNUMOBSERVERS 4
 
 

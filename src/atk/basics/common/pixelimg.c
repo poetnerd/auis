@@ -46,7 +46,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <andrewos.h>
 #include <pixelimg.eh>
 
-#include <stdlib.h>
 #define BUFBYTES	600	/* enough for 4792 bits */
 
 #define WHITEBYTE	0

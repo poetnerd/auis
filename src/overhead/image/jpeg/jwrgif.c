@@ -36,7 +36,6 @@
 
 #include "jinclude.h"
 
-#include <stdio.h>
 #ifdef GIF_SUPPORTED
 
 

@@ -16,7 +16,6 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 #include <ctype.h>
 #include <config.h>
 
-#include <string.h>
 extern char *index();
 static char basis_64[] =
    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -35,7 +34,8 @@ static char index_64[128] = {
 #define char64(c)  (((c) < 0 || (c) > 127) ? -1 : index_64[(c)])
 
 /*
-int char64(char c)
+char64(c)
+char c;
 {
     char *s = (char *) index(basis_64, c);
     if (s) return(s-basis_64);
@@ -46,7 +46,9 @@ int char64(char c)
 /* the following gets a character, but fakes it properly into two chars if there's a newline character */
 static int InNewline=0;
 
-int nextcharin(FILE *infile, int PortableNewlines)
+int nextcharin(infile, PortableNewlines)
+FILE *infile;
+int PortableNewlines;
 {
     int c;
 
@@ -67,7 +69,9 @@ int nextcharin(FILE *infile, int PortableNewlines)
 #endif
 }
 
-int to64(FILE *infile, FILE *outfile, int PortableNewlines)
+to64(infile, outfile, PortableNewlines) 
+FILE *infile, *outfile;
+int PortableNewlines;
 {
     int c1, c2, c3, ct=0;
     InNewline = 0; /* always reset it */
@@ -93,7 +97,8 @@ int to64(FILE *infile, FILE *outfile, int PortableNewlines)
     fflush(outfile);
 }
 
-int output64chunk(int c1, int c2, int c3, int pads, FILE *outfile)
+output64chunk(c1, c2, c3, pads, outfile)
+FILE *outfile;
 {
     putc(basis_64[c1>>2], outfile);
     putc(basis_64[((c1 & 0x3)<< 4) | ((c2 & 0xF0) >> 4)], outfile);
@@ -109,7 +114,10 @@ int output64chunk(int c1, int c2, int c3, int pads, FILE *outfile)
     }
 }
 
-int PendingBoundary(char *s, char **Boundaries, int *BoundaryCt)
+PendingBoundary(s, Boundaries, BoundaryCt)
+char *s;
+char **Boundaries;
+int *BoundaryCt;
 {
     int i;
 
@@ -131,7 +139,10 @@ int PendingBoundary(char *s, char **Boundaries, int *BoundaryCt)
 static int CRpending = 0;
 
 #ifdef NEWLINE_CHAR
-int almostputc(int c, FILE *outfile, int PortableNewlines)
+almostputc(c, outfile, PortableNewlines)
+int c;
+FILE *outfile;
+int PortableNewlines;
 {
     if (CRpending) {
         if (c == 10) {
@@ -153,13 +164,20 @@ int almostputc(int c, FILE *outfile, int PortableNewlines)
     }
 }
 #else
-int almostputc(int c, FILE *outfile, int PortableNewlines)
+almostputc(c, outfile, PortableNewlines)
+int c;
+FILE *outfile;
+int PortableNewlines;
 {
     putc(c, outfile);
 }
 #endif
 
-int from64(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct, int PortableNewlines)
+from64(infile, outfile, boundaries, boundaryct, PortableNewlines) 
+FILE *infile, *outfile;
+char **boundaries;
+int *boundaryct;
+int PortableNewlines;
 {
     int c1, c2, c3, c4;
     int newline = 1, DataDone = 0;
@@ -245,7 +263,8 @@ static char index_hex[128] = {
 #define hexchar(c)  (((c) > 127) ? -1 : index_hex[(c)])
 
 /*
-int hexchar(char c)
+hexchar(c)
+char c;
 {
     char *s;
     if (islower(c)) c = toupper(c);
@@ -255,7 +274,8 @@ int hexchar(char c)
 }
 */
 
-int toqp(FILE *infile, FILE *outfile)
+toqp(infile, outfile) 
+FILE *infile, *outfile;
 {
     int c, ct=0, prevc=255;
     while ((c = getc(infile)) != EOF) {
@@ -329,7 +349,10 @@ int toqp(FILE *infile, FILE *outfile)
     }
 }
 
-int fromqp(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct)
+fromqp(infile, outfile, boundaries, boundaryct) 
+FILE *infile, *outfile;
+char **boundaries;
+int *boundaryct;
 {
     unsigned int c1, c2;
     int sawnewline = 1, neednewline = 0;

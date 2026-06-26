@@ -47,7 +47,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <console.h>
 #include <sys/param.h>
 
-#include <stdio.h>
 extern InvertWindow();
 extern PromptToWindow();
 extern InitPstrings();
@@ -55,7 +54,10 @@ extern int Pposx, Pposy;
 extern char Pstring1[256], Pstring2[256], Pstring3[256], Pstring4[MAXPATHLEN];
 
 
-int DrawDebug(struct consoleClass *self, int Op, struct display *disp)
+DrawDebug(self,Op, disp)
+struct consoleClass *self;
+int Op;
+struct display *disp;
 {
     mydbg(("entering: DrawDebug\n"));
     if (Op == NEWVAL) {
@@ -66,7 +68,9 @@ int DrawDebug(struct consoleClass *self, int Op, struct display *disp)
     }
 }
 
-int RingAlarm(struct consoleClass *self, int Op, int indexed)
+RingAlarm(self, Op, indexed)
+struct consoleClass *self;
+int Op, indexed;
 {
     static char *BufPtr;
 
@@ -92,7 +96,10 @@ int RingAlarm(struct consoleClass *self, int Op, int indexed)
     }
 }
 
-int DrawGauge(struct consoleClass *self, int Op, struct display *disp)
+DrawGauge(self, Op, disp)
+struct consoleClass *self;
+int Op;
+struct display *disp;
 {
     int xo, yo, xc, yc, xoff, yoff, diam,
         DialPosition,
@@ -148,7 +155,9 @@ int DrawGauge(struct consoleClass *self, int Op, struct display *disp)
     }
 }
 
-int SetStandardCursor(struct consoleClass *self, short cursor)
+SetStandardCursor(self, cursor)
+struct consoleClass *self;
+short cursor;
 {
     static struct cursor *cp;
 
@@ -158,7 +167,10 @@ int SetStandardCursor(struct consoleClass *self, short cursor)
     im_SetWindowCursor(view_GetIM((struct view *)self), cp);
 }
 
-int SignalTrouble(struct consoleClass *self, int Op, struct display *disp)
+SignalTrouble(self, Op, disp)
+struct consoleClass *self;
+int Op;
+struct display *disp;
 {
     mydbg(("entering: SignalTrouble\n"));
     if (Op == REDRAW || Op == NEWVAL) {
@@ -167,7 +179,10 @@ int SignalTrouble(struct consoleClass *self, int Op, struct display *disp)
 }
 
 
-int DrawTitle(struct consoleClass *self, int Op, struct display *disp)
+DrawTitle(self,Op, disp)
+struct consoleClass *self;
+int Op;
+struct display *disp;
 {
     char    TextDum[50];
 
@@ -176,7 +191,9 @@ int DrawTitle(struct consoleClass *self, int Op, struct display *disp)
     im_SetTitle(view_GetIM((struct view *) self), TextDum);
 }
 
-int draw_corners(struct consoleClass *self, int x1, int y1, int x2, int y2, int inc)
+draw_corners(self, x1,y1,x2,y2,inc)
+struct consoleClass *self;
+int x1,y1,x2,y2,inc;
 {
     mydbg(("entering: draw_corners\n"));
     if (!PauseEnqueuedEvents && !RingingAlarm){
@@ -193,7 +210,9 @@ int draw_corners(struct consoleClass *self, int x1, int y1, int x2, int y2, int 
 
 
 
-int DrawTics1(struct consoleClass *self, int xc, int yc, int x1, int y1, int x2, int y2)
+DrawTics1(self, xc,yc,x1,y1,x2,y2)
+struct consoleClass *self;
+int xc,yc,x1,y1,x2,y2;
 {
     mydbg(("entering: DrawTics1\n"));
     if (!PauseEnqueuedEvents && !RingingAlarm){
@@ -209,7 +228,9 @@ int DrawTics1(struct consoleClass *self, int xc, int yc, int x1, int y1, int x2,
 }
 
 
-int DrawTics0(struct consoleClass *self, int xc, int yc, int x1, int y1, int x2, int y2)
+DrawTics0(self, xc,yc,x1,y1,x2,y2)
+struct consoleClass *self;
+int xc,yc,x1,y1,x2,y2;
 {
     mydbg(("entering: DrawTics0\n"));
     if (!PauseEnqueuedEvents && !RingingAlarm){
@@ -225,7 +246,10 @@ int DrawTics0(struct consoleClass *self, int xc, int yc, int x1, int y1, int x2,
 }
 
 
-int SetupTics(struct consoleClass *self, int xc, int yc, int r1, int r2, int r3, int r4, boolean IsRound, int MaxValue)
+SetupTics(self, xc, yc, r1, r2, r3, r4, IsRound, MaxValue)
+struct consoleClass *self;
+int xc, yc, r1, r2, r3, r4, MaxValue;
+boolean IsRound;
 {
     int     x1, y1, x2, y2, Limit, FewTics, theta;
     double    Theta, LotsOfTics, inc;
@@ -294,7 +318,10 @@ int SetupTics(struct consoleClass *self, int xc, int yc, int r1, int r2, int r3,
 
 
 
-int draw_dial(struct consoleClass *self, int xc, int yc, int r1, boolean IsRound, int MaxValue)
+draw_dial(self, xc, yc, r1, IsRound, MaxValue)
+struct consoleClass *self;
+int xc, yc, r1, MaxValue;
+boolean IsRound;
 {
     int     r2, r3, r4, corner;
 

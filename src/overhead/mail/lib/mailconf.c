@@ -51,8 +51,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <mailconf.h>
 
+extern int errno;
 
-#include <stdlib.h>
 /* MAIL SYSTEM CONFIGURATION */
 /* The variables in here are configured in several different ways.  In modifying this file, you must take note of the possibilities and the applicable rules.
 
@@ -664,7 +664,8 @@ static struct ConfigStringArrays {
 /* Now, provide a mechanism to dynamically configure these guys. */
 
 /* First, a mechanism to get the cell-dependent stuff. */
-static struct configurelist *openCellConfig(char *cellN)
+static struct configurelist *openCellConfig(cellN)
+char *cellN;
 {
 	int mylen;
 	char *mybuf;

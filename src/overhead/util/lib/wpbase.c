@@ -58,9 +58,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif /* #ifdef AFS_ENV */
 #include <svcconf.h>
 
+extern int errno;
 
-#include <stdlib.h>
 #ifndef _IBMR2
+extern char *malloc();
+extern char *realloc();
 #endif /* _IBMR2 */
 
 int wp_Debugging = 0;
@@ -78,20 +80,23 @@ static int DoingTiming = 0;		/* Set by wp_SetTiming, cleared on wp_Terminate */
 #endif /* Logs */
 #if LogsYes
 /*VARARGS2*/
-static void Log(int num, char *fmt, char *p1, char *p2, char *p3, char *p4, char *p5, char *p6)
+static void Log(num, fmt, p1, p2, p3, p4, p5, p6)
+int num; char *fmt, *p1, *p2, *p3, *p4, *p5, *p6;
 {
     if (DoingTiming) Logstat("wpbase.c", num, fmt, p1, p2, p3, p4, p5, p6);
 }
 #endif /* LogsYes */
 
-void w_LowerAll(register char *S)
+void w_LowerAll(S)
+register char *S;
 {
     for (; *S != '\0'; ++S) {
 	if (*S <= 'Z' && *S >= 'A') *S += ('a' - 'A');
     }
 }
 
-wp_ErrorCode w_BTreeErr(bt_ErrorCode code)
+wp_ErrorCode w_BTreeErr(code)
+bt_ErrorCode code;
 {	/* Translate B-tree error codes to our own version of them */
 	if (code == bterr_NoError) return wperr_NoError;
 	if (code >= 0 && code <= bterr_FileSystemErrorEnd)
@@ -102,7 +107,8 @@ wp_ErrorCode w_BTreeErr(bt_ErrorCode code)
 /*
 Translate field names to field indices for use in the various routines.  -1 is returned if the specified field is not found at this point.
 */
-wp_FieldIndex wp_FieldNameToIndex(char *FName)
+wp_FieldIndex wp_FieldNameToIndex(FName)
+char *FName;
 {
     int flIx;
 
@@ -111,14 +117,16 @@ wp_FieldIndex wp_FieldNameToIndex(char *FName)
     return (-1);
 }
 
-int wp_SetDebugging(int level)
+int wp_SetDebugging(level)
+int level;
 { int OldLevel;
 OldLevel = wp_Debugging;
 wp_Debugging = level;
 return OldLevel;
 }
 
-int wp_SetTiming(int level)
+int wp_SetTiming(level)
+int level;
 {
 #if LogsYes
     int OldLevel;
@@ -130,7 +138,8 @@ int wp_SetTiming(int level)
 #endif /* LogsYes */
 }
 
-void w_ZapIdSet(struct IdSet *IS)
+void w_ZapIdSet(IS)
+struct IdSet *IS;
 { /* Deallocate whatever in IS is allocated (carefully). */
     if (IS != Undef_IdSet && IS != Empty_IdSet) {
 	if ((IS->Tag==0 || IS->Tag==IdSetTag) && IS->Ids != NULL) free(IS->Ids);
@@ -138,7 +147,8 @@ void w_ZapIdSet(struct IdSet *IS)
     }
 }
 
-wp_ErrorCode w_GrowString(char **strP, int *ssizeP, int NSize)
+wp_ErrorCode w_GrowString(strP, ssizeP, NSize)
+char **strP; int *ssizeP, NSize;
 {/* Grow the string strP, accounting for its current size in ssizeP. */
     int newSize, tgtSize;
     char *newPtr;
@@ -171,7 +181,8 @@ static char NOT_AN_IDENT[PKLEN] = {0377, 0377, 0377, 0377, 0377, 0377, 0377, 037
 static char *CursorVal = NULL;
 static int CursorValSize = 0;
 
-wp_ErrorCode w_LoadEntry(register struct wp_CD *cd, char *IdKey)
+wp_ErrorCode w_LoadEntry(cd, IdKey)
+register struct wp_CD *cd; char *IdKey;
 {/* Load the identified entry into the Entries array. */
     char RecKey[PKLEN+4];
     bt_ErrorCode BTErr; wp_ErrorCode WPErr;
@@ -261,7 +272,8 @@ wp_ErrorCode w_LoadEntry(register struct wp_CD *cd, char *IdKey)
 static char *PMKey = NULL;
 static int PMKeyLen = 0;
 
-wp_ErrorCode w_ProbeMatches(struct wp_CD *cd, int BTIx, char *Probe, struct IdSet **ISPtr)
+wp_ErrorCode w_ProbeMatches(cd, BTIx, Probe, ISPtr)
+struct wp_CD *cd; int BTIx; char *Probe; struct IdSet **ISPtr;
 {
     struct IdSet *IS;
     int	IdCount, IdIx, PLen, DataLen, DataLen2;
@@ -325,7 +337,8 @@ wp_ErrorCode w_ProbeMatches(struct wp_CD *cd, int BTIx, char *Probe, struct IdSe
     return wperr_NoError;
 }
 
-static void ZapPKSet(wp_PrimeKeySet *PKS)
+static void ZapPKSet(PKS)
+wp_PrimeKeySet *PKS;
 { /* Deallocate whatever in PKS is allocated (carefully). */
     int	Idx;
     if (PKS != NULL) {
@@ -339,7 +352,9 @@ static void ZapPKSet(wp_PrimeKeySet *PKS)
     }
 }
 
-wp_ErrorCode w_IDtoPKSet(struct IdSet *IS, wp_PrimeKeySet **PKSPtr, int MaxResults, int *ResultNumberTruncated)
+wp_ErrorCode w_IDtoPKSet(IS, PKSPtr, MaxResults, ResultNumberTruncated)
+struct IdSet *IS; wp_PrimeKeySet **PKSPtr;
+int MaxResults, *ResultNumberTruncated;
 {
     wp_PrimeKeySet *PKs;
     int IdIx, CountToUse;
@@ -440,7 +455,8 @@ Once a prime key is determined, either from wp_Search or wp_Lookup, clients
  contain the given field.  wperr_FieldIndexOutOfBounds is returned if FieldIx
  is not the index for any field.
 */
-wp_ErrorCode cwp_Read(struct wp_cd *cd, wp_PrimeKey PKey, wp_FieldIndex FieldIx, char **FValPtr)
+wp_ErrorCode cwp_Read(cd, PKey, FieldIx, FValPtr)
+struct wp_cd *cd; wp_PrimeKey PKey; wp_FieldIndex FieldIx; char **FValPtr;
 {
     wp_ErrorCode RetCode;
     struct wp_CD *CD = (struct wp_CD *) cd;
@@ -468,7 +484,8 @@ wp_ErrorCode cwp_Read(struct wp_cd *cd, wp_PrimeKey PKey, wp_FieldIndex FieldIx,
     return wperr_NoError;
 }
 
-int wp_RetryThis(wp_ErrorCode cod)
+int wp_RetryThis(cod)
+wp_ErrorCode cod;
 {/* Return non-0 if this error code should be retried and 0 if it shouldn't. */
     int btCod;
 
@@ -510,7 +527,8 @@ int wp_RetryThis(wp_ErrorCode cod)
     }
 }
 
-static wp_ErrorCode cwp_GetOnly(struct wp_cd *cd, int DoNID, char *Probe, wp_PrimeKey *PKPtr)
+static wp_ErrorCode cwp_GetOnly(cd, DoNID, Probe, PKPtr)
+struct wp_cd *cd; int DoNID; char *Probe; wp_PrimeKey *PKPtr;
 {/* Get the NID or UID from the cell cd, with no constraints. */
     struct wp_CD *CD = (struct wp_CD *) cd;
     wp_ErrorCode RetVal;
@@ -555,21 +573,24 @@ static wp_ErrorCode cwp_GetOnly(struct wp_cd *cd, int DoNID, char *Probe, wp_Pri
     }
 }
 
-wp_ErrorCode cwp_GetNIDOnly(struct wp_cd *cd, int NID, wp_PrimeKey *PKPtr)
+wp_ErrorCode cwp_GetNIDOnly(cd, NID, PKPtr)
+struct wp_cd *cd; int NID; wp_PrimeKey *PKPtr;
 {/* Get the NID from the cell cd, with no constraints. */
     char ThisNID[16];
     sprintf(ThisNID, "%d", NID);
     return cwp_GetOnly(cd, 1, ThisNID, PKPtr);
 }
 
-wp_ErrorCode cwp_GetUIDOnly(struct wp_cd *cd, char *UID, wp_PrimeKey *PKPtr)
+wp_ErrorCode cwp_GetUIDOnly(cd, UID, PKPtr)
+struct wp_cd *cd; char *UID; wp_PrimeKey *PKPtr;
 {/* Get the UID from the cell cd, with no constraints. */
     return cwp_GetOnly(cd, 0, UID, PKPtr);
 }
 
 static struct wp_CD *CDRoot = NULL;
 
-static void ClearCD(struct wp_CD *cd)
+static void ClearCD(cd)
+struct wp_CD *cd;
 {
     int Ix;
 
@@ -580,7 +601,8 @@ static void ClearCD(struct wp_CD *cd)
     cd->PrevPK[0] = '\0';
 }
 
-wp_ErrorCode cwp_ReInitialize(struct wp_cd *cd)
+wp_ErrorCode cwp_ReInitialize(cd)
+struct wp_cd *cd;
 {/* Re-open the B-tree. */
     bt_ErrorCode BTErr;
     char *wpRootName;
@@ -630,7 +652,8 @@ wp_ErrorCode cwp_ReInitialize(struct wp_cd *cd)
     return wperr_NoError;
 }
 
-static wp_ErrorCode InitializeNewCD(struct wp_CD *cd, char *cellName)
+static wp_ErrorCode InitializeNewCD(cd, cellName)
+struct wp_CD *cd; char *cellName;
 {
     bt_ErrorCode BTErr;
     char *wpRootName;
@@ -681,7 +704,8 @@ static wp_ErrorCode InitializeNewCD(struct wp_CD *cd, char *cellName)
     return wperr_NoError;
 }
 
-wp_ErrorCode wp_InitializeDir(char *dirname, struct wp_cd **cdp)
+wp_ErrorCode wp_InitializeDir(dirname, cdp)
+char *dirname; struct wp_cd **cdp;
 {
     struct wp_CD *cd, *head;
     wp_ErrorCode res;
@@ -712,7 +736,8 @@ wp_ErrorCode wp_InitializeDir(char *dirname, struct wp_cd **cdp)
     return wperr_NoError;
 }
 
-wp_ErrorCode wp_InitializeCell(char *cellname, struct wp_cd **cdp)
+wp_ErrorCode wp_InitializeCell(cellname, cdp)
+char *cellname; struct wp_cd **cdp;
 {
     struct wp_CD *cd, *head;
     char *dirName;
@@ -804,7 +829,8 @@ wp_ErrorCode wp_InitializeCell(char *cellname, struct wp_cd **cdp)
     return wperr_NoError;
 }
 
-wp_ErrorCode cwp_Terminate(struct wp_cd *cd)
+wp_ErrorCode cwp_Terminate(cd)
+struct wp_cd *cd;
 {
     bt_ErrorCode BTErr;
     int Ix;

@@ -100,7 +100,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ness
 #include <compdefs.h>
 #include <gen.h>
 #include <nesssym.ih>
-#include <stdlib.h>
 #include <envt.h>		/* for NSPstore */
 
 
@@ -121,7 +120,9 @@ short yyerrflag = 0;
 long LoadReplaceTabs();
 
 
-int main(register int argc, register char **argv)
+main(argc, argv)
+	register int  argc;
+	register char  **argv;
 {
 	register struct nessmark *func, *printit;
 	FILE *f;
@@ -252,7 +253,8 @@ int main(register int argc, register char **argv)
 	
 }
 
-int printdata(register struct nessmark *m)
+printdata(m)
+	register struct nessmark *m;
 {
 	long loc, lend;
 	lend = mark_GetEndPos((struct mark *)m);

@@ -78,8 +78,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #define AUXMODULE 1
 #include <help.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 /* statics representing information cache */
 extern char *help_tutorialDirs[MAX_TUTORIAL_DIRS];
 extern char help_changesDir[MAXPATHLEN];
@@ -157,7 +155,9 @@ void init_hlptextview(hv)
 /*
  * help__ method for adding a directory to the searchpath
  */
-void help__AddSearchDir(struct classheader *classID, char *dirName)
+void help__AddSearchDir(classID,  dirName)
+struct classheader *classID;
+char *dirName;
 {
     if (access(dirName, 4) < 0) {
 	fprintf(stderr, "help: cannot open search directory '%s'\n", dirName);
@@ -171,7 +171,9 @@ void help__AddSearchDir(struct classheader *classID, char *dirName)
 /*
  * initializes a new help object.  Sets up the view hiearchy, sets up panels, etc
  */
-boolean help__InitializeObject(struct classheader *classID, register struct help *self)
+boolean help__InitializeObject(classID,self)
+struct classheader *classID;
+register struct help *self;
 {
     char pathName[MAXPATHLEN], *tmp = NULL, *colon = NULL;
     struct proctable_Entry *pe;
@@ -438,7 +440,9 @@ boolean help__InitializeObject(struct classheader *classID, register struct help
 /*
  * destroys the resources of the help object
  */
-void help__FinalizeObject(struct classhead *classID, register struct help *self)
+void help__FinalizeObject(classID, self)
+struct classhead *classID;
+register struct help *self;
 {
     DEBUG(("IN finalize\n"));
     self->mainLpair->obj[0] = NULL;
@@ -502,7 +506,9 @@ void help__FinalizeObject(struct classhead *classID, register struct help *self)
 /*
  * help__ method interface for using an alias file
  */
-void help__SetAliasesFile(struct classheader *classID, register char *alias)
+void help__SetAliasesFile(classID,alias)
+struct classheader *classID;
+register char *alias;
 {
     helpdb_ReadAliasesFile(alias);
 }
@@ -510,7 +516,9 @@ void help__SetAliasesFile(struct classheader *classID, register char *alias)
 /*
  * help__ method for adding a help index directory
  */
-void help__SetIndex(struct classheader *classID, register char *aindex)
+void help__SetIndex(classID,aindex)
+struct classheader *classID;
+register char *aindex;
 {
     DEBUG(("IN SetIndex: %s\n",aindex));
     helpdb_SetIndex(aindex);
@@ -524,7 +532,12 @@ void help__SetIndex(struct classheader *classID, register char *aindex)
  *	 0: if no help found for this topic
  *	 1: if successful
  */
-int help__HelpappGetHelpOn(struct classheader *classID, char *aname, long isnew, int ahistory, char *errmsg)
+int help__HelpappGetHelpOn(classID, aname, isnew, ahistory, errmsg)
+struct classheader *classID;
+char *aname;	/* what topic */
+long isnew;	/* is this a new topic? */
+int ahistory;	/* show in history log? 1-show aname 2-show tail of filename */
+char *errmsg;	/* error to print if failure. "Error" if this is NULL */
 {
     if (aname[0] == '\0') {
 	/* so -e flag with no file shown works */
@@ -545,7 +558,8 @@ int help__HelpappGetHelpOn(struct classheader *classID, char *aname, long isnew,
  * return the first view in the list of instances, so helpapp can expose
  * a hidden window.
  */
-struct view *help__GetInstance(struct classheader *classID)
+struct view *help__GetInstance(classID)
+struct classheader *classID;
 {
     return (struct view *)(help_ego->this);
 }
@@ -558,7 +572,9 @@ struct view *help__GetInstance(struct classheader *classID)
 /*
  * self explanatory
  */
-void help__PostMenus(register struct help *self, struct menulist *menuList)
+void help__PostMenus(self, menuList)
+register struct help *self;
+struct menulist *menuList;
 {
     DEBUG(("post menus\n"));
     if (self->info != NULL)
@@ -568,7 +584,9 @@ void help__PostMenus(register struct help *self, struct menulist *menuList)
 /*
  * override parents' keybindings
  */
-void help__PostKeyState(register struct help *self, struct keystate *keyState)
+void help__PostKeyState(self, keyState)
+register struct help *self;
+struct keystate *keyState;
 {
     DEBUG(("post keys\n"));
     keystate_AddBefore(self->state, keyState);
@@ -578,7 +596,11 @@ void help__PostKeyState(register struct help *self, struct keystate *keyState)
 /*
  * mouse action handler
  */
-struct view *help__Hit(struct help *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
+struct view *help__Hit(self, action, x, y, numberOfClicks)
+struct help *self;
+enum view_MouseAction action;
+long x, y;
+long numberOfClicks;
 {
     struct view *ret;
     char *topic;
@@ -614,7 +636,9 @@ struct view *help__Hit(struct help *self, enum view_MouseAction action, long x, 
 /*
  * set up the view tree based on whether panels or scrollbar is the top level view
  */
-void help__LinkTree(struct help *self, struct view *parent)
+void help__LinkTree(self, parent)
+struct help *self;
+struct view *parent;
 {
     DEBUG(("IN link tree\n"));
     DEBUG(("\tsuper..."));
@@ -633,7 +657,10 @@ void help__LinkTree(struct help *self, struct view *parent)
 /*
  * refreshing!
  */
-void help__FullUpdate(register struct help *self, enum view_UpdateType type, long left, long top, long width, long right)
+void help__FullUpdate(self, type, left, top, width, right)
+register struct help *self;
+enum view_UpdateType type;
+long left, top, width, right;
 {
     struct rectangle childRect;
 
@@ -656,7 +683,8 @@ void help__FullUpdate(register struct help *self, enum view_UpdateType type, lon
 /*
  * erase and refresh the screen
  */
-void help__Update(register struct help *self)
+void help__Update(self)
+register struct help *self;
 {
     DEBUG(("IN update\n"));
     /* clear out the region, then do a full redraw */
@@ -669,7 +697,9 @@ void help__Update(register struct help *self)
 /*
  * update event handler
  */
-void help__WantUpdate(register struct help *self, register struct view *requestor)
+void help__WantUpdate(self, requestor)
+register struct help *self;
+register struct view *requestor;
 {
     /* if the scrollbar took the hit, check if the user has selected something,
        and turn on some menus items if so */
@@ -686,7 +716,8 @@ void help__WantUpdate(register struct help *self, register struct view *requesto
 
 
 /* just like system, but fail if the command to be executed has a '`' in it. */
-static int safesystem(char *acmd)
+static int safesystem(acmd)
+char *acmd;
 {
     if(index(acmd, '`')) {
 	fprintf(stderr, "help: command execution failed due to illegal character '`' in command.\n");
@@ -699,7 +730,11 @@ static int safesystem(char *acmd)
 /*
  * classproc to handle getting help using a terminal-based interface
  */
-void help__GetHelpOnTerminal(struct classheader *classID, register char *akey, register int list, register int print)
+void help__GetHelpOnTerminal(classID,akey,list,print)
+struct classheader *classID;
+register char *akey;		/* topic string */
+register int list;		/* do help on topic, or just list files? */
+register int print;		/* prompt for printing each helpfile? */
 {
     FILE *tfile;
     char *alias, *pager, *index, *tmp;
@@ -895,7 +930,8 @@ struct help *self;
 /*
  * Allows help to just delete one window
  */
-void help_aux_ExitProc(register struct help *self)
+void help_aux_ExitProc(self)
+register struct help *self;
 {
     struct self_help *t, *p;
 
@@ -950,7 +986,8 @@ void help_aux_ExitProc(register struct help *self)
 /*
  * print a help file
  */
-void help_aux_Print(register struct help *self)
+void help_aux_Print(self)
+register struct help *self;
 {
     message_DisplayString(self, 0, msg_print_queue);
     im_ForceUpdate();
@@ -1028,7 +1065,9 @@ struct helpdb_completesplot {
     enum message_CompletionCode res;
 };
 
-static void CompletionSplot(char *name, char *original, struct helpdb_completesplot *rock)
+static void CompletionSplot(name, original, rock)
+char *name, *original;
+struct helpdb_completesplot *rock;
 {
     int ix, jx;
 
@@ -1107,7 +1146,8 @@ int buffersize;
 }
 
 /* like strcmp(), but it returns the index of the first character where s1 and s2 differ. If s1 and s2 are identical, returns -1. */
-static int lenstrcmp(unsigned char *s1, unsigned char *s2)
+static int lenstrcmp(s1, s2)
+unsigned char *s1, *s2;
 {
     int ix;
     unsigned char c1, c2;
@@ -1128,7 +1168,9 @@ struct help_helpsplot {
     long nummatches;
 };
 
-static void HelpEnumProc(char *name, char *original, struct help_helpsplot *rock)
+static void HelpEnumProc(name, original, rock)
+char *name, *original;
+struct help_helpsplot *rock;
 {
     int ix = lenstrcmp(name, rock->keywd);
     char *tmp = NULL;
@@ -1145,7 +1187,11 @@ static void HelpEnumProc(char *name, char *original, struct help_helpsplot *rock
     }
 }
 
-static void HelpHelpProc(char *partialKeyword, struct help *rock, int (*HelpWork)(), char *hrock)
+static void HelpHelpProc(partialKeyword, rock, HelpWork, hrock)
+char *partialKeyword;
+struct help *rock;
+int (*HelpWork)();
+char *hrock;
 {
     struct help_helpsplot hhsplot;
 
@@ -1223,7 +1269,8 @@ long type;		/* help_ON 			if Help On... */
 /*
  * Add a history item for a given file with given dot, dotlen and top
  */
-void help_aux_AddBookmark(register struct help *self)
+void help_aux_AddBookmark(self)
+register struct help *self;
 {
     AddHistoryItem(self, help_HE_BOOKMARK, help_SHOW_HIST);
 }
@@ -1232,7 +1279,8 @@ void help_aux_AddBookmark(register struct help *self)
 /*
  * Adds a search directory to the searchpath
  */
-void help_aux_AddSearchDir(struct help *self)
+void help_aux_AddSearchDir(self)
+struct help *self;
 {
     char buf[MAXPATHLEN];
     char buf2[MAXPATHLEN+100];

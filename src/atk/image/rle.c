@@ -86,7 +86,6 @@ struct XtndRsetup
 #include <image.ih>
 #include <rle.h>
 
-#include <stdlib.h>
 void dithermap();
 static void bfill();
 void make_square();
@@ -695,7 +694,9 @@ struct sv_globals * globals;
  *	decoding the instructions into scanline data.
  */
 
-int rle_getrow(struct sv_globals *globals, rle_pixel *scanline[])
+rle_getrow( globals, scanline )
+struct sv_globals * globals;
+rle_pixel *scanline[];
 {
     register rle_pixel * scanc;
     register int nc;
@@ -856,7 +857,9 @@ int rle_getrow(struct sv_globals *globals, rle_pixel *scanline[])
 
 /* Fill buffer at s with n copies of character c.  N must be <= 65535*/
 /* ARGSUSED */
-static void bfill(char *s, int n, int c)
+static void bfill( s, n, c )
+char *s;
+int n, c;
 {
 #ifdef vax
     asm("   movc5   $0,*4(ap),12(ap),8(ap),*4(ap)");

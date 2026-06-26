@@ -49,7 +49,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <signal.h>
 
 
-int WakeUp(struct consoleClass *self)
+WakeUp(self)
+    struct consoleClass *self;
 {
     mydbg(("entering: WakeUp\n"));
     if (!PauseEnqueuedEvents){

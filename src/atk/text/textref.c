@@ -35,11 +35,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <class.h>
 #include <textref.eh>
 
-char * textref__ViewName(struct textref *self)
+char * textref__ViewName(self)
+struct textref *self;
 {
     return "textrefv";
 }
-static char *textref__GetRef(struct textref *self, long size, char *buf)
+static char *textref__GetRef(self,size,buf)
+struct textref *self;
+long size;
+char *buf;
 {
     char *c,*name;
     long realsize,i;

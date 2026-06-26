@@ -54,7 +54,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 
 #include <errno.h>
-#include <stdlib.h>
 /*
  * some needed data structures.
  */

@@ -45,7 +45,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #include <wpi.h>
 
-#include <stdlib.h>
 /* Error code convention for PROVIDE-MAIL-BASED-SERVICE:
    Bit:  Integer: Meaning:
     0       1     Send success report to requestor, audittrail
@@ -102,7 +101,9 @@ static char *outdir;		/* the output directory, passed in to main */
 static char outfname[MAXPATHLEN];
 static FILE *outfile = NULL;
 
-static void error(int errcode, char *msg)
+static void error(errcode, msg)
+int errcode;
+char *msg;
 {				/* record the error, OR'ing the status  */
   if (errcode==0) fprintf(stderr,"> Warning");
   if ((errcode & 2) || (errcode & 4)) fprintf(stderr,"> Error");
@@ -120,14 +121,16 @@ static void error(int errcode, char *msg)
 }
 
 
-static void success(char *msg)
+static void success(msg)
+char *msg;
 {				/* record a success */
   fprintf(stdout, "Successfully processed: ``%s''.\n",msg);
   max_err |= Success;
 }
 
 
-static char *quote(char *s)
+static char *quote(s)
+char *s;
 {				/* Quotes output for passwd.chg format. */
   char *q, *r;
 
@@ -151,7 +154,8 @@ static char *quote(char *s)
 }
 
 
-static char *unquote(char *s)
+static char *unquote(s)
+char *s;
 {				/* strip the string s of the passwd.chg quotting */
   char *q,*r;
 
@@ -178,7 +182,8 @@ static char *unquote(char *s)
 #ifdef AMS_ENV
 #define genid(x) ams_genid(x)
 #else /* AMS_ENV */
-static char *genid(int x)
+static char *genid(x)
+     int x;
 {
   static long counter=0;
   static char *template="genid000000";
@@ -189,7 +194,10 @@ static char *genid(int x)
 }
 #endif /* AMS_ENV */
 
-static int do_change(char *user, char *field, int timestamp, WPI_entry_t record)
+static int do_change(user,field,timestamp,record)
+char *user, *field;
+int timestamp;
+WPI_entry_t record;
 {				/* write the change out */
   char *newvalue;
 
@@ -227,14 +235,16 @@ static void close_outfile()
   return;
 }
 
-static int blank_p(char *l)
+static int blank_p(l)
+char *l;
 {				/* is this a blank line? */
   for(;(*l) && (isspace(*l));++l);
   return(!((*l) && (!isspace(*l))));
 }
 
 
-static int comment_p(char *l)
+static int comment_p(l)
+char *l;
 {				/* is this a comment line? */
   return((*l) == '>');
 }
@@ -243,7 +253,8 @@ static int comment_p(char *l)
 #define adduser 0
 #define rmuser 1
 #define change 2
-static int which_cmd(char *command)
+static int which_cmd(command)
+char *command;
 {				/* which command request is this? */
   static char *cmd_tbl[] =  {"adduser", "rmuser", "change", NULL};
   int i;
@@ -252,7 +263,8 @@ static int which_cmd(char *command)
   return(cmd_tbl[i] ? i : -1);
 }
 
-static void stripNL(char *s)
+static void stripNL(s)
+char *s;
 {				/* remove the trailing newline from input */
   if (s==NULL)
     return;
@@ -266,7 +278,10 @@ static void stripNL(char *s)
 
 #define readln(stream, buf) freadline((stream),(buf), sizeof(buf))
 
-static int freadline(FILE *stream, char *buf, int bufsize)
+static int freadline(stream,buf,bufsize)
+FILE *stream;
+char *buf;
+int bufsize;
 {				/* get a line */
   if (!fgets(buf,bufsize,stream))
     return(0);
@@ -274,7 +289,8 @@ static int freadline(FILE *stream, char *buf, int bufsize)
   return(1);
 }
 
-static int parse(char *line, char *args[])
+static int parse(line, args)
+char *line, *args[];
 {				/* parse the command into pieces (broken by ":") */
   char *newline;
   char *colonpos;
@@ -295,7 +311,9 @@ static int parse(char *line, char *args[])
   return(i);
 }
 
-int main(int argc, char *argv[])
+main(argc, argv)
+int argc;
+char *argv[];
 {
   char *auth;
   boolx_t admin;

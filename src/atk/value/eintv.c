@@ -19,7 +19,8 @@ static struct keymap *ssmap;
 #include <valuev.ih>
 #include <eintv.eh>
 #define Text(A) ((struct enterint *)(A->header.view.dataobject))
-void eintview_CancelCommand(register struct eintview *self)
+void eintview_CancelCommand(self)
+register struct eintview *self; 
 {
     struct enterint *txt = Text(self);
     if(enterint_Changed(txt)){
@@ -29,21 +30,24 @@ void eintview_CancelCommand(register struct eintview *self)
 	enterint_NotifyObservers(txt,0);
     }
 }
-void eintview_ReturnCommand(register struct eintview *self)
+void eintview_ReturnCommand(self)
+register struct eintview *self; 
 {
     struct enterint *txt = Text(self);
     eintview_SetDotPosition(self,0);
     eintview_SetDotLength(self,0);
     enterint_updatebuf(txt);
 }
-void eintview_ClearCommand(register struct eintview *self)
+void eintview_ClearCommand(self)
+register struct eintview *self; 
 {
     struct enterint *txt = Text(self);
     enterint_Clear(txt);
     enterint_NotifyObservers(txt,0);
 }
 
-void eintview__ReceiveInputFocus(register struct eintview *self)
+void eintview__ReceiveInputFocus(self)
+register struct eintview *self; 
 {
     self->header.textview.hasInputFocus = TRUE;
     self->keystate->next = NULL;
@@ -58,7 +62,8 @@ void eintview__ReceiveInputFocus(register struct eintview *self)
     if(self->valueview)
 	valueview_Highlight(self->valueview);
 }
-void eintview__LoseInputFocus(register struct eintview *self)
+void eintview__LoseInputFocus(self)
+register struct eintview *self; 
 {
     if(self->valueview)
 	valueview_Dehighlight(self->valueview);
@@ -67,7 +72,9 @@ void eintview__LoseInputFocus(register struct eintview *self)
     }
     super_LoseInputFocus(self);
 }
-boolean eintview__InitializeObject(struct classheader *classID, struct eintview *self)
+boolean eintview__InitializeObject(classID,self)
+struct classheader *classID;
+struct eintview *self;
 {
     self->keystate = keystate_Create(self, ssmap);
     self->ClearOnRIF = FALSE;
@@ -76,7 +83,8 @@ boolean eintview__InitializeObject(struct classheader *classID, struct eintview 
     return TRUE;
 }
 
-boolean eintview__InitializeClass(struct classheader *classID)
+boolean eintview__InitializeClass(classID)
+struct classheader *classID;
 {    
     struct classinfo *classInfo = &eintview_classinfo;
     struct proctable_Entry *tempProc;

@@ -43,7 +43,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * Compute which strip a (row,sample) value is in.
  */
 u_int
-int TIFFComputeStrip(TIFF *tif, u_long row, u_int sample)
+TIFFComputeStrip(tif, row, sample)
+	TIFF *tif;
+	u_long row;
+	u_int sample;
 {
 	TIFFDirectory *td = &tif->tif_dir;
 	u_int strip;
@@ -65,7 +68,8 @@ int TIFFComputeStrip(TIFF *tif, u_long row, u_int sample)
  * Compute how many strips are in an image.
  */
 u_int
-int TIFFNumberOfStrips(TIFF *tif)
+TIFFNumberOfStrips(tif)
+	TIFF *tif;
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
@@ -78,7 +82,9 @@ int TIFFNumberOfStrips(TIFF *tif)
  * Compute the # bytes in a variable height, row-aligned strip.
  */
 u_long
-int TIFFVStripSize(TIFF *tif, u_long nrows)
+TIFFVStripSize(tif, nrows)
+	TIFF *tif;
+	u_long nrows;
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
@@ -112,7 +118,8 @@ int TIFFVStripSize(TIFF *tif, u_long nrows)
  * Compute the # bytes in a (row-aligned) strip.
  */
 u_long
-int TIFFStripSize(TIFF *tif)
+TIFFStripSize(tif)
+	TIFF *tif;
 {
 	return (TIFFVStripSize(tif, tif->tif_dir.td_rowsperstrip));
 }

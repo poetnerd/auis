@@ -67,14 +67,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #define EQRECT(a, b)  ((a)->left == (b)->left && (a)->top == (b)->top && (a)->width == (b)->width && (a)->height == (b)->height)
 
-boolean panner__InitializeClass(struct classheader *classID)
+boolean panner__InitializeClass(classID)
+struct classheader *classID;
 {
     return TRUE;
 }
 
 static int cursortypes[panner_NumberOfCursors] = {Cursor_SmallCross, Cursor_Octagon, Cursor_Gunsight, Cursor_CrossHairs};
 
-boolean panner__InitializeObject(struct classheader *classID, struct panner *self)
+boolean panner__InitializeObject(classID, self)
+struct classheader *classID;
+struct panner *self;
 {
     int ix;
 
@@ -101,7 +104,9 @@ boolean panner__InitializeObject(struct classheader *classID, struct panner *sel
     return TRUE;
 }
 
-void panner__FinalizeObject(struct classheader *classID, struct panner *self)
+void panner__FinalizeObject(classID, self)
+struct classheader *classID;
+struct panner *self;
 {
     int ix;
 
@@ -113,7 +118,9 @@ void panner__FinalizeObject(struct classheader *classID, struct panner *self)
 	    cursor_Destroy(self->cursors[ix]);
 }
 
-struct panner *panner__Create(struct classheader *classID, struct view *scrollee)
+struct panner *panner__Create(classID, scrollee)
+struct classheader *classID;
+struct view *scrollee;
 {
     struct panner *retval = panner_New();
 
@@ -124,12 +131,17 @@ struct panner *panner__Create(struct classheader *classID, struct view *scrollee
 }
 
 
-void panner__SetLocation(struct panner *self, int location)
+void panner__SetLocation(self, location)
+struct panner *self;
+int location;
 {
     super_SetLocation(self, scroll_TOP|scroll_LEFT);
 }
 
-void panner__PostCursor(struct panner *self, struct rectangle *rec, struct cursor *cursor)
+void panner__PostCursor(self, rec, cursor)
+struct panner *self;
+struct rectangle *rec;
+struct cursor *cursor;
 {
     super_PostCursor(self, rec, cursor);
     if (cursor != self->cursors[0] && cursor != self->cursors[3]) {
@@ -140,7 +152,8 @@ void panner__PostCursor(struct panner *self, struct rectangle *rec, struct curso
     }
 }
 
-static void recompute_panrect(struct panner *self)
+static void recompute_panrect(self)
+struct panner *self;
 {
     struct rectangle *r = &(((struct scroll *)self)->childrect);
 
@@ -186,14 +199,19 @@ static void recompute_panrect(struct panner *self)
 static char *InterfaceName[scroll_TYPES] = {"scroll,vertical", "scroll,horizontal"};
 
 /* right now, only called from getinfo(); may put in-line */
-static void get_interface(struct panner *self, int type)
+static void get_interface(self, type)
+struct panner *self;
+int type; /* scroll_VERT or scroll_HORIZ */
 {
     sself->force_get_interface = FALSE;
     if (sself->fns[type] == NULL)
         sself->fns[type] = (struct scrollfns *)view_GetInterface(sself->scrollee, InterfaceName[type]);
 }
 
-static void getinfo(struct panner *self, int type, struct range *total, struct range *seen, struct range *dot)
+static void getinfo(self, type, total, seen, dot)
+struct panner *self;
+int type; /* scroll_VERT or scroll_HORIZ */
+struct range *total, *seen, *dot;
 {
     void (*real_getinfo)();
 
@@ -209,7 +227,8 @@ static void getinfo(struct panner *self, int type, struct range *total, struct r
     }
 }
 
-static void calc_desired(struct panner *self)
+static void calc_desired(self)
+struct panner *self;
 {
     int i;
 
@@ -219,7 +238,9 @@ static void calc_desired(struct panner *self)
     }
 }
 
-static void update_everything(struct panner *self, boolean wipeold)
+static void update_everything(self, wipeold)
+struct panner *self;
+boolean wipeold;
 {
     struct sbuttonv_view_info vi;
     long maxwid, maxhgt;
@@ -328,7 +349,9 @@ static void update_everything(struct panner *self, boolean wipeold)
 }
 
 /* draw everything, assuming (or forcing) a blank background. sself->desired should already have been set, with calc_desired(). */
-static void draw_everything(struct panner *self, boolean wipeback)
+static void draw_everything(self, wipeback)
+struct panner *self;
+boolean wipeback;
 {
     struct sbuttonv_view_info vi;
 
@@ -356,7 +379,8 @@ static void draw_everything(struct panner *self, boolean wipeback)
 }
 
 /* assumes panrect, visible have already been set */
-static void move_panner(struct panner *self)
+static void move_panner(self)
+struct panner *self;
 {
     region_RectRegion(self->childclip, &sself->childrect); 
     if (self->visible) {
@@ -381,7 +405,10 @@ static void move_panner(struct panner *self)
     panner_PostCursor(self, &(self->gseenrect), self->cursors[3]);
 }
 
-void panner__FullUpdate(struct panner *self, enum view_UpdateType type, long left, long top, long width, long height)
+void panner__FullUpdate(self, type, left, top, width, height)
+struct panner *self;
+enum view_UpdateType type;
+long left, top, width, height;
 {
     struct rectangle r;
     int i;
@@ -449,7 +476,8 @@ void panner__FullUpdate(struct panner *self, enum view_UpdateType type, long lef
     panner_FlushGraphics(self);
 }
 
-void panner__Update(struct panner *self)
+void panner__Update(self)
+struct panner *self;
 {
     int i;
     struct rectangle r;
@@ -486,7 +514,10 @@ void panner__Update(struct panner *self)
     }
 }
 
-static void HandleDragging(struct panner *self, enum view_MouseAction action, long x, long y, long num_clicks)
+static void HandleDragging(self, action, x, y, num_clicks)
+struct panner *self;
+enum view_MouseAction action;
+long x, y, num_clicks;
 {
     if (action==view_RightUp || action==view_LeftUp) {
 	self->panrect.left = x - self->rockx;
@@ -505,7 +536,10 @@ static void HandleDragging(struct panner *self, enum view_MouseAction action, lo
     }
 }
 
-static void HandleThumbing(struct panner *self, enum view_MouseAction action, long x, long y, long num_clicks)
+static void HandleThumbing(self, action, x, y, num_clicks)
+struct panner *self;
+enum view_MouseAction action;
+long x, y, num_clicks;
 {
     void (*SetFrame)();
     struct scrollbar *tmp;
@@ -539,7 +573,10 @@ static void HandleThumbing(struct panner *self, enum view_MouseAction action, lo
     }
 }
 
-static void HandleDownHit(struct panner *self, enum view_MouseAction action, long x, long y, long num_clicks)
+static void HandleDownHit(self, action, x, y, num_clicks)
+struct panner *self;
+enum view_MouseAction action;
+long x, y, num_clicks;
 {
     long (*WhatIsAt)();
     long valx, valy;
@@ -579,7 +616,10 @@ static void HandleDownHit(struct panner *self, enum view_MouseAction action, lon
     sself->mousestate=scroll_NOTHING;
 }
 
-struct view *panner__Hit(struct panner *self, enum view_MouseAction action, long x, long y, long num_clicks)
+struct view *panner__Hit(self, action, x, y, num_clicks)
+struct panner *self;
+enum view_MouseAction action;
+long x, y, num_clicks;
 {
     switch (sself->mousestate) {
 	case scroll_DRAGGING:

@@ -71,8 +71,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <proctbl.ih>
 #include <celv.eh>
 #include <arbiter.ih>
-#include <stdlib.h>
-#include <stdio.h>
 /* #define DEBUG */
 
 #define DataObject(A) (A->header.view.dataobject)
@@ -97,7 +95,10 @@ struct overlay *next;
 #define SCALEWID
 #define DOINDENT(SELF) (SELF->drawing  || SELF->resizing)
 #define celview_COVERCHILD 1
-static scaleoverlay(struct celview *self, struct overlay *ov, struct rectangle *or)
+static scaleoverlay(self,ov,or)
+struct celview *self;
+struct overlay *ov;
+struct rectangle *or;
 {
     struct rectangle *nr = &(self->enclosingRect);
     struct rectangle *sr = &(ov->rect);
@@ -117,7 +118,9 @@ static scaleoverlay(struct celview *self, struct overlay *ov, struct rectangle *
 	}
     }
 }
-static struct view *PopOverlay(struct celview *self, struct view *v)
+static struct view *PopOverlay(self,v)
+struct celview *self;
+struct view *v;
 {
     if(self->olist){
 	struct overlay *o = NULL,*dm;
@@ -147,7 +150,8 @@ static struct view *PopOverlay(struct celview *self, struct view *v)
     }
     return NULL;
 }
-static void UpdateCursors(struct celview *self)
+static void UpdateCursors(self)
+struct celview *self;
 {
     switch(self->Moving){
 	case celview_ChangeWidth:
@@ -181,7 +185,12 @@ static void UpdateCursors(struct celview *self)
 	    break;
     }
 }
-void celview__Print(struct celview *self, FILE *file, char *processor, char *finalFormat, boolean topLevel)
+void celview__Print(self, file, processor, finalFormat, topLevel)
+struct celview *self;
+FILE *file;
+char *processor;
+char *finalFormat;
+boolean topLevel;
 {
     if(self->truechild) 
 	view_Print(self->truechild,file, processor, finalFormat, topLevel);
@@ -274,7 +283,8 @@ long *dHeight;
     if(*dHeight > height ) *dHeight = height;
     return val;
 }
-void celview__ReceiveInputFocus(struct celview *self)
+void celview__ReceiveInputFocus(self)
+    struct celview *self;
 {
     if(self->truechild) view_WantInputFocus(self->truechild,self->truechild);
     else {
@@ -284,7 +294,8 @@ void celview__ReceiveInputFocus(struct celview *self)
    celview_WantUpdate(self,self);
 }
 
-void celview__LoseInputFocus(struct celview *self)
+void celview__LoseInputFocus(self)
+    struct celview *self;
 {
     if(self->child) view_LoseInputFocus(self->child);
     self->HasFocus = FALSE;
@@ -292,7 +303,8 @@ void celview__LoseInputFocus(struct celview *self)
 }
 
 
-static UpdateDrawing(struct celview *self)
+static UpdateDrawing(self)
+struct celview *self;
 {
     if(self->OldMode != self->drawing || self->child == NULL){
 	if(self->child == NULL){
@@ -310,7 +322,9 @@ static UpdateDrawing(struct celview *self)
 	self->OldMode = self->drawing;
     }
 }
-struct view *celview__makeview(struct celview *self, struct cel *ls)
+struct view *celview__makeview(self,ls)
+struct celview *self;
+struct cel *ls;
 {
     /*    if(ls->application == VALUE && ls->valuename == NULL){
 	if(ls->dispatcher == NULL) celview_GetDispatcher(self); */
@@ -407,20 +421,25 @@ struct view *celview__makeview(struct celview *self, struct cel *ls)
     else self->mode = 0;
     return self->child;
 }
-static initchild(struct celview *self)
+static initchild(self)
+struct celview *self;
 {
     struct cel *vr = Cel(self);
     if(vr->viewType == NULL) return;
     celview_makeview(self,vr);
 }
-static char * trunc(char *c)
+static char * trunc(c)
+char *c;
 {
     char *cp;
     if((cp = strrchr(c,'/')) != NULL && *(++cp) != '\0')
 	return cp;
     return c;
 }
-void celview_ReadFile(struct celview *self, FILE *thisFile, char *iname)
+void celview_ReadFile(self,thisFile,iname)
+struct celview *self;
+FILE *thisFile;
+char *iname;
 {
     int objectID;
     char *objectName;
@@ -455,7 +474,8 @@ void celview_ReadFile(struct celview *self, FILE *thisFile, char *iname)
     }
     cel_NotifyObservers(ls,0);
 }
-static void celview_Paste(struct celview *self)
+static void celview_Paste(self)
+struct celview *self;
 {
     FILE *pasteFile;
     if(self->child ) return;
@@ -464,7 +484,8 @@ static void celview_Paste(struct celview *self)
     im_CloseFromCutBuffer(celview_GetIM(self), pasteFile);
 
 }
-static void celview_PromptForFile(struct celview *self)
+static void celview_PromptForFile(self)
+struct celview *self;
 {
     char frs[1024];
     FILE *thisFile;
@@ -477,7 +498,8 @@ static void celview_PromptForFile(struct celview *self)
     celview_ReadFile(self,thisFile,frs);
     fclose(thisFile);
 }
-static void InitNow(struct celview *self)
+static void InitNow(self)
+struct celview *self;
 {
     if(self->child) return;
     self->mode = INITNOW;
@@ -485,7 +507,8 @@ static void InitNow(struct celview *self)
     self->NeedsRemade  = self->NeedsReinit = TRUE;
     celview_WantUpdate(self,self);
 }
-void celview__Update(struct celview *self)
+void celview__Update(self)
+struct celview *self;
 {
     struct cel *vr = Cel(self);
     if(self->mode == celview_NoUpdate) return;
@@ -566,7 +589,9 @@ void celview__Update(struct celview *self)
 
 }
 #define OFFSET 5
-static drawshadow(struct celview *self, struct rectangle *r)
+static drawshadow(self,r)
+struct celview *self;
+struct rectangle *r;
 {
     celview_SetTransferMode(self,graphic_INVERT);
     celview_FillRectSize(self,r->left + OFFSET,r->top + r->height,r->width,OFFSET,celview_GrayPattern(self,8,16));
@@ -574,7 +599,10 @@ static drawshadow(struct celview *self, struct rectangle *r)
     celview_SetTransferMode(self,graphic_BLACK);
     celview_DrawRect(self,r);
 }
-void celview__FullUpdate(struct celview *self, enum view_UpdateType type, long left, long top, long width, long height)
+void celview__FullUpdate(self,type,left,top,width,height)
+struct celview *self;
+enum view_UpdateType type;
+long left,top,width,height;
 {
     struct rectangle currec,tmprec;
     struct overlay *ov,*lastov;
@@ -669,7 +697,9 @@ void celview__FullUpdate(struct celview *self, enum view_UpdateType type, long l
 }
 
 
-void celview__SetDataObject(struct celview *self, struct cel *dd)
+void celview__SetDataObject(self,dd)
+struct celview *self;
+struct cel *dd;
 {
     self->desw = dd->desw;
     self->desh = dd->desh;
@@ -678,7 +708,9 @@ void celview__SetDataObject(struct celview *self, struct cel *dd)
     self->NeedsRemade = TRUE;
     if(dd->application == cel_VALUE) self->NeedsPost = TRUE;
 }
-boolean celview__InitializeObject(struct classheader *classID, struct celview *self)
+boolean celview__InitializeObject(classID,self)
+struct classheader *classID;
+struct celview *self;
 {
     self->widthcursor = cursor_Create(self);
     self->heightcursor = cursor_Create(self);
@@ -715,7 +747,9 @@ boolean celview__InitializeObject(struct classheader *classID, struct celview *s
     menulist_SetMask(self->menus,1);
     return TRUE;
 }
-void celview__SetResizing(struct celview *self, long key)
+void celview__SetResizing(self,key)
+struct celview *self;
+long key;
 {
     if(self->resizing == 0){
 	self->resizing = 1;
@@ -728,19 +762,25 @@ void celview__SetResizing(struct celview *self, long key)
 	self->mode = celview_DoFull;
     celview_WantUpdate(self,self);
 }
-void celview__SetDrawing(struct celview *self, long key)
+void celview__SetDrawing(self,key)
+struct celview *self;
+long key;
 {
     self->drawing = !self->drawing;
     celview_WantUpdate(self,self);
 }
-void celview__PostMenus(struct celview *self, struct menulist *menulist)
+void celview__PostMenus(self, menulist)
+struct celview *self;
+struct menulist *menulist;
 {
     menulist_UnchainML(self->menus,ChildMenus);
     if(menulist != NULL && menulist != self->menus)
 	menulist_ChainAfterML(self->menus,menulist,ChildMenus);
     super_PostMenus(self, self->menus);
 }
-void celview__PostKeyState(struct celview *self, struct keystate *keystate)
+void celview__PostKeyState(self,keystate)
+struct celview *self;
+struct keystate *keystate;
 {
     struct keystate *cur = keystate;
     if(self->keystate != NULL && self->keystate->orgMap != self->keymap){
@@ -758,7 +798,9 @@ void celview__PostKeyState(struct celview *self, struct keystate *keystate)
     }
     super_PostKeyState(self, cur);
 }
-void celview__WantNewSize(struct celview *self, struct view *requestor)
+void celview__WantNewSize(self,requestor)
+    struct celview *self;
+struct view *requestor;
 {
     if(Cel(self)){
 	if(self->vismode == cel_INVISIBLE && requestor != (struct view *)self) return;
@@ -780,18 +822,21 @@ static struct bind_Description celviewBindings[]={
     {"celview-InsertFile",NULL,0,"celview,Insert File",0,1,celview_PromptForFile,"Read Child" },
 NULL
 };
-static SetVisible(struct celview *self)
+static SetVisible(self)
+struct celview *self;
 {
     if(Cel(self))
 	cel_SetVisible(Cel(self));
 }
-static SetInvisible(struct celview *self)
+static SetInvisible(self)
+struct celview *self;
 {
     if(Cel(self))
 	cel_SetInvisible(Cel(self));
 }
 
-boolean celview__InitializeClass(struct classheader *classID)
+boolean celview__InitializeClass(classID)
+    struct classheader *classID;
 {
     celviewMenus = menulist_New();
     celviewKeyMap =  keymap_New();
@@ -802,7 +847,9 @@ boolean celview__InitializeClass(struct classheader *classID)
     return TRUE;
 }
 
-static objecttest(register struct celview *self, char *name, char *desiredname)
+static objecttest(self,name,desiredname)
+register struct celview  *self;
+char *name,*desiredname;
 {
     if(class_Load(name) == NULL){
         char foo[640];
@@ -831,7 +878,8 @@ static struct types typearray[] = {
     {"",0}
 };
 
-static lookuptype(char *ty)
+static lookuptype(ty)
+char *ty;
 {
     struct types *tp;
     for(tp = typearray;tp->val != 0; tp++)
@@ -863,7 +911,10 @@ printf("returning> %s\n",buf);
 #endif /* DEBUG */
     return buf;
 }   
-int celview__ResourceListToString(struct classheader *classID, char *str, struct resourceList *rl)
+int celview__ResourceListToString(classID,str,rl)
+struct classheader *classID;
+char *str;
+struct resourceList *rl;
 {
 #ifdef DEBUG
 printf("In RLtoS found = %d %s\n",rl->found,rl->type->name);
@@ -902,7 +953,11 @@ printf("leaving RLtoS\n");
 #endif /* DEBUG */
 return TRUE;
 }
-void celview__GetManyParameters(struct celview *self, struct resourceList *resources, struct atomlist *name, struct atomlist *class)
+void celview__GetManyParameters( self, resources, name, class )
+struct celview * self;
+struct resourceList * resources;
+struct atomlist * name;
+struct atomlist * class;
 {
     int x;
     super_GetManyParameters(self, resources, name, class ); 
@@ -921,7 +976,9 @@ void celview__GetManyParameters(struct celview *self, struct resourceList *resou
 	appendresourceList( self, resources);
     }
 }
-static appendresourceList(struct celview *self, struct resourceList *resources)
+static appendresourceList( self, resources)
+struct celview * self;
+struct resourceList * resources;
 {   /* append new entries onto the cels text */
     char *buf,tbuf[1024],*obp,*cp,*el;
     struct resourceList rl;
@@ -968,7 +1025,10 @@ static appendresourceList(struct celview *self, struct resourceList *resources)
     }	
 
 }
-static editresourceList(struct celview *self, struct resourceList *resources, int askres, int maxcount)
+static editresourceList( self, resources,askres,maxcount )
+struct celview * self;
+struct resourceList * resources;
+int askres,maxcount;
 {
     struct resourceList *rl;
     char buf[1024],iname[512],*cp;
@@ -1008,7 +1068,9 @@ static editresourceList(struct celview *self, struct resourceList *resources, in
     SKIPTOSET(S1,C2,S2,tmp);\
     *S2++ ; *tmp = '\0'
 
-static boolean StringToResourceList(struct resourceList *rl, char *str)
+static boolean StringToResourceList(rl,str)
+struct resourceList *rl;
+char *str;
 {
     char buf[512], *tmp;
     char *start,*end,*cp;
@@ -1045,7 +1107,8 @@ static boolean StringToResourceList(struct resourceList *rl, char *str)
     }
     return TRUE;
 }
-static GetParameters(struct celview *self)
+static GetParameters(self)
+struct celview *self;
 {
     struct valueview *wv = (struct valueview *)self->truechild;
     struct resourceList *resources;
@@ -1086,13 +1149,15 @@ printf("setting ls->script %d\n",text_GetLength(ls->script));
 #endif /* DEBUG */
 
 }
-void celview__PostParameters(struct celview *self)
+void celview__PostParameters(self)
+struct celview *self;
 {
 self->NeedsPost = TRUE;
 celview_WantUpdate(self,self);
 }
 /* #define DEBUG  */
-static PostParameters(struct celview *self)
+static PostParameters(self)
+struct celview *self;
 {
     int len;
     struct resourceList rl;
@@ -1137,7 +1202,10 @@ fprintf(stdout,"Posting something \n"); fflush(stdout);
     }	
     self->NeedsPost = 0;
 }
-int celview__PromptForInfo(struct celview *self, struct arbiterview *arb, boolean promptForViewName, boolean changeRefName)
+int celview__PromptForInfo(self,arb,promptForViewName,changeRefName)
+struct celview *self;
+struct arbiterview *arb;
+boolean promptForViewName,changeRefName;
 {
 
     char iname[100],qz[64], *prompt;
@@ -1217,7 +1285,9 @@ printf("name is %s\n",refname);
     }
     return 1;
 }
-void celview__LinkTree(register struct celview *self, struct view *parent)
+void celview__LinkTree(self, parent)
+register struct celview *self;
+struct view *parent;
 {
     struct arbiterview *ab;
     int named = FALSE;
@@ -1265,7 +1335,8 @@ void celview__LinkTree(register struct celview *self, struct view *parent)
 	}
     }
 }
-void celview__Copy(register struct celview *self)
+void celview__Copy (self)
+    register struct celview *self;
 {
     FILE *cutFile;
     cutFile = im_ToCutBuffer(celview_GetIM(self));
@@ -1275,7 +1346,9 @@ void celview__Copy(register struct celview *self)
 }
 
 
-void celview__FinalizeObject(struct classheader *classID, struct celview *self)
+void celview__FinalizeObject(classID, self)
+struct classheader *classID;
+struct celview *self;
 {
     if(self->olist){
 	struct overlay *ov; 
@@ -1300,7 +1373,8 @@ void celview__FinalizeObject(struct classheader *classID, struct celview *self)
     }
     if(self->menus) menulist_Destroy(self->menus);
 }
-void celview__InitChildren(struct celview *self)
+void celview__InitChildren(self)
+struct celview *self;
 {
     if(self->child == NULL || self->NeedsRemade) {
 	celview_makeview(self,Cel(self));
@@ -1309,21 +1383,30 @@ void celview__InitChildren(struct celview *self)
 	view_InitChildren(self->child);
 	
 }
-boolean celview__CanView(struct celview *self, char *TypeName)
+boolean celview__CanView(self,TypeName)
+struct celview *self;
+char *TypeName;
 {
     return class_IsTypeByName(TypeName,"cel");
 }
-void celview__SetHitfunc(struct celview *self, int hitfunc, long hitrock)
+void celview__SetHitfunc(self,hitfunc,hitrock)
+struct celview *self;
+struct view * (*hitfunc)();
+long hitrock;
 {
     self->hitfunc = hitfunc;
     self->hitrock = hitrock;
 }
-void celview__SetKeymap(struct celview *self, struct keymap *km)
+void celview__SetKeymap(self,km)
+struct celview *self;
+struct keymap *km;
 {
     self->keymap = km;
  }
 
-void celview__SetMenulist(struct celview *self, struct menulist *ml)
+void celview__SetMenulist(self,ml)
+struct celview *self;
+struct menulist *ml;
 {
     menulist_UnchainML(self->menus,ClientMenus);
     if(ml != NULL){
@@ -1332,7 +1415,8 @@ void celview__SetMenulist(struct celview *self, struct menulist *ml)
     }
 }
 
-void celview__Repost(struct celview *self)
+void celview__Repost(self)
+struct celview *self;
 {
     /* question, how to force child to repost it's menus and keystate 
        so that we can add ours?
@@ -1350,7 +1434,11 @@ void celview__Repost(struct celview *self)
 	    celview_WantInputFocus(self,self);
     }
 }
-void celview__PushOverlay(struct celview *self, struct view *view, struct rectangle *rect, long flags)
+void celview__PushOverlay(self,view,rect,flags)
+struct celview *self;
+struct view *view;
+struct rectangle *rect;
+long flags;
 {
     struct overlay *ov;
     ov = (struct overlay *) malloc(sizeof(struct overlay));
@@ -1368,12 +1456,16 @@ void celview__PushOverlay(struct celview *self, struct view *view, struct rectan
     view_AddObserver(view,self); 
     celview_WantUpdate(self,self);
 }
-struct view *celview__PopOverlay(struct celview *self, struct view *view)
+struct view *celview__PopOverlay(self,view)
+struct celview *self;
+struct view *view;
 {
 if((view = PopOverlay(self,view)) != NULL) view_RemoveObserver(view,self);
 return view;
 }
-void celview__WantUpdate(struct celview *self, struct view *requestor)
+void celview__WantUpdate(self,requestor)
+struct celview *self;
+struct view *requestor;
 {
     register struct view *view;
     if(self->olist == NULL || requestor == (struct view *)self){
@@ -1386,7 +1478,10 @@ void celview__WantUpdate(struct celview *self, struct view *requestor)
 	    super_WantUpdate(self,requestor);
 
 }
-void celview__PostCursor(struct celview *self, struct rectangle *rec, struct cursor *c)
+void celview__PostCursor(self,rec,c)
+struct celview *self;
+struct rectangle *rec;
+struct cursor *c;
 {
     register struct view *view = c->view;
     if(self->olist == NULL || view == (struct view *)self){
@@ -1399,7 +1494,10 @@ void celview__PostCursor(struct celview *self, struct rectangle *rec, struct cur
 	    super_PostCursor(self,rec,c);
 
 }
-void celview__ObservedChanged(struct celview *self, struct observable *changed, long value)
+void celview__ObservedChanged(self, changed, value)
+struct celview *self;
+struct observable *changed;
+long value;
 {
     if(changed == (struct observable *)Cel(self)) 
     {
@@ -1452,7 +1550,10 @@ void celview__ObservedChanged(struct celview *self, struct observable *changed, 
     }
 }
 
-struct view *celview__Hit(struct celview *self, enum view_MouseAction action, long mousex, long mousey, long numberOfClicks)
+struct view *celview__Hit(self,action,mousex,mousey,numberOfClicks) 
+struct celview *self;
+enum view_MouseAction action;
+long mousex, mousey, numberOfClicks;
 {
     struct view *vw;
     static boolean lasthit;
@@ -1542,13 +1643,17 @@ struct view *celview__Hit(struct celview *self, enum view_MouseAction action, lo
     if(self->Moving || self->child == NULL) return (struct view *) self;
     return NULL;
 }
-struct basicobject * celview__WantHandler(struct celview *self, char *handlerName)
+struct basicobject * celview__WantHandler(self, handlerName)
+struct celview *self;
+char *handlerName;
 {
     if(strcmp(handlerName,"arbiterview") == 0 && self->arb) return (struct basicobject *)self->arb;
     return super_WantHandler(self, handlerName);
 }
 
-struct celview *celview__GetCelviewFromView(struct classheader *classID, struct view *v)
+struct celview *celview__GetCelviewFromView(classID,v)
+struct classheader *classID;
+struct view *v;
 {
     if(v == NULL) return NULL;
     for( v = v->parent;v != NULL; v = v->parent){
@@ -1557,7 +1662,12 @@ struct celview *celview__GetCelviewFromView(struct classheader *classID, struct 
     }
     return NULL;
 }
-void celview__GetOrigin(struct celview *self, long width, long height, long *originX, long *originY)
+ void celview__GetOrigin(self, width, height, originX, originY)
+    struct celview *self;
+    long width;
+    long height;
+    long *originX;
+    long *originY;
 {
     if(self->child) view_GetOrigin(self->child, width, height, originX, originY);
     else super_GetOrigin(self, width, height, originX, originY);

@@ -41,7 +41,6 @@ December, 1986 */
 #include <keymap.eh>
 #include <proctbl.ih>
 
-#include <stdlib.h>
 #define KEYMASK	(keymap_MAXKEYS-1)
 
 struct keymap_fulltable *NewFullTable()

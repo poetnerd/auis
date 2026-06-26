@@ -64,7 +64,8 @@ static struct atom *  A_string;
 
 
 
-boolean onoffV__InitializeClass(struct classheader *classID)
+boolean onoffV__InitializeClass(classID)
+struct classheader *classID;
 {
     InternAtoms;
     return TRUE;
@@ -77,14 +78,17 @@ boolean onoffV__InitializeClass(struct classheader *classID)
 /****************************************************************/
 /*		instance methods				*/
 /****************************************************************/
-boolean onoffV__InitializeObject(struct classheader *classID, struct onoffV *self)
+boolean onoffV__InitializeObject(classID, self )
+struct classheader *classID;
+struct onoffV * self;
 {
     onoffV_SetFixedCount(self,2);
     return TRUE;
 }
 
 
-void onoffV__LookupParameters(struct onoffV *self)
+void onoffV__LookupParameters(self)
+struct onoffV * self;
 {
     char * fontname;
     long fontsize;

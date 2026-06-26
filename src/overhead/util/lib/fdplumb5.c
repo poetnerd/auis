@@ -37,7 +37,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <fdplumbi.h>
 
-int dbg_t2open(char *name, char *argv[], FILE **r, FILE **w)
+dbg_t2open(name, argv, r, w)
+char *name, *argv[];
+FILE **r, **w;
 {
     int code;
 
@@ -50,7 +52,9 @@ int dbg_t2open(char *name, char *argv[], FILE **r, FILE **w)
 }
 
 
-int dbg_t2close(FILE *fp, int seconds, int *timedout)
+dbg_t2close(fp, seconds, timedout)
+FILE *fp;
+int seconds, *timedout;
 {
     RegisterCloseFile(fileno(fp));
     return(t2close(fp, seconds, timedout));

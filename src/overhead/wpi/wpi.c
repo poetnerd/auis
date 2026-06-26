@@ -46,7 +46,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #ifdef AMS_ENV
 #include <mail.h>
 #include <dropoff.h>
-#include <stdlib.h>
 #endif /* AMS_ENV */
 
 #ifndef _STD_C
@@ -120,7 +119,8 @@ static enum {
   bad_option,
   not_an_option
 }
-int which_arg(char *arg)
+which_arg(arg)
+char *arg;
 {				/* parse the argument list */
   if (arg[0] == '-' && arg[2] == '\0') {
     if (emulate_forward || emulate_setfrom) {
@@ -283,7 +283,9 @@ usage()
   exit(4);
 }
 
-int main(int argc, char *argv[])
+main(argc, argv)
+int argc;
+char *argv[];
 {
   char *arg;
   boolx_t command_line_fields_used = false;

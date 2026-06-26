@@ -1924,8 +1924,8 @@ int FoundError;		/* used to keep track of multiple errors */
 			    }
 
 			    if (*p == '\0') {
-				strcpy(currentarg, " int");
-				namePos = 4;
+				strcpy(currentarg, " unknown");
+				namePos = 8;
 			    }
 
 			    /* Now add it to the real argument list */

@@ -33,8 +33,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <errstk.h>
 
-#include <stdlib.h>
-static int eliTraceStk_Grow(eliTraceStack_t *s)
+static int eliTraceStk_Grow(s)
+eliTraceStack_t *s;
 {
     eliTraceStackNode_t *tmp = (s->stack) ? (eliTraceStackNode_t *) realloc(s->stack, (s->size + GROW_STACK_SIZE) * sizeof (eliTraceStackNode_t)) : (eliTraceStackNode_t *) malloc(GROW_STACK_SIZE * sizeof (eliTraceStackNode_t));
 
@@ -46,14 +46,18 @@ static int eliTraceStk_Grow(eliTraceStack_t *s)
     return (FALSE);
 }
 
-void            eliTraceStk_Init(eliTraceStack_t *s)
+void            eliTraceStk_Init(s)
+eliTraceStack_t *s;
 {
     s->top = 0;
     s->size = 0;
     s->stack = NULL;
 }
 
-int             eliTraceStk_PushStr(EliState_t *st, eliTraceStack_t *s, EliStr_t *node)
+int             eliTraceStk_PushStr(st, s, node)
+EliState_t *st;
+eliTraceStack_t *s;
+EliStr_t *node;
 {
     if (s->top == s->size) {
         if (!eliTraceStk_Grow(s))
@@ -68,7 +72,10 @@ int             eliTraceStk_PushStr(EliState_t *st, eliTraceStack_t *s, EliStr_t
     return (TRUE);
 }
 
-int             eliTraceStk_PushSym(EliState_t *st, eliTraceStack_t *s, EliSym_t *node)
+int             eliTraceStk_PushSym(st, s, node)
+EliState_t *st;
+eliTraceStack_t *s;
+EliSym_t *node;
 {
     if (s->top == s->size) {
         if (!eliTraceStk_Grow(s))
@@ -83,7 +90,10 @@ int             eliTraceStk_PushSym(EliState_t *st, eliTraceStack_t *s, EliSym_t
     return (TRUE);
 }
 
-int             eliTraceStk_PushCons(EliState_t *st, eliTraceStack_t *s, EliCons_t *node)
+int             eliTraceStk_PushCons(st, s, node)
+EliState_t *st;
+eliTraceStack_t *s;
+EliCons_t *node;
 {
     if (s->top == s->size) {
         if (!eliTraceStk_Grow(s))
@@ -98,7 +108,10 @@ int             eliTraceStk_PushCons(EliState_t *st, eliTraceStack_t *s, EliCons
     return (TRUE);
 }
 
-int             eliTraceStk_PushSexp(EliState_t *st, eliTraceStack_t *s, EliSexp_t *node)
+int             eliTraceStk_PushSexp(st, s, node)
+EliState_t *st;
+eliTraceStack_t *s;
+EliSexp_t *node;
 {
     if (s->top == s->size) {
         if (!eliTraceStk_Grow(s))
@@ -113,7 +126,10 @@ int             eliTraceStk_PushSexp(EliState_t *st, eliTraceStack_t *s, EliSexp
     return (TRUE);
 }
 
-int             eliTraceStk_PushFn(EliState_t *st, eliTraceStack_t *s, EliFn_t *node)
+int             eliTraceStk_PushFn(st, s, node)
+EliState_t *st;
+eliTraceStack_t *s;
+EliFn_t *node;
 {
     if (s->top == s->size) {
         if (!eliTraceStk_Grow(s))
@@ -128,7 +144,10 @@ int             eliTraceStk_PushFn(EliState_t *st, eliTraceStack_t *s, EliFn_t *
     return (TRUE);
 }
 
-int             eliTraceStk_PushBucketNode(EliState_t *st, eliTraceStack_t *s, eliBucketNode_t *node)
+int             eliTraceStk_PushBucketNode(st, s, node)
+EliState_t *st;
+eliTraceStack_t *s;
+eliBucketNode_t *node;
 {
     if (s->top == s->size) {
         if (!eliTraceStk_Grow(s))
@@ -143,7 +162,9 @@ int             eliTraceStk_PushBucketNode(EliState_t *st, eliTraceStack_t *s, e
     return (TRUE);
 }
 
-void            eliTraceStk_Pop(EliState_t *st, eliTraceStack_t *s)
+void            eliTraceStk_Pop(st, s)
+EliState_t     *st;
+eliTraceStack_t *s;
 {
     switch (s->stack[s->top - 1].type) {
         case e_types_string:
@@ -169,14 +190,16 @@ void            eliTraceStk_Pop(EliState_t *st, eliTraceStack_t *s)
     --(st->numErrStkNodes);
 }
 
-eliTraceStackNode_t *eliTraceStk_Top(eliTraceStack_t *s)
+eliTraceStackNode_t *eliTraceStk_Top(s)
+eliTraceStack_t *s;
 {
     if (s->top)
         return (&(s->stack[s->top - 1]));
     return (NULL);
 }
 
-eliObjTypes_t   eliTraceStk_TopType(eliTraceStack_t *s)
+eliObjTypes_t   eliTraceStk_TopType(s)
+eliTraceStack_t *s;
 {
     return (s->stack[s->top - 1].type);
 }

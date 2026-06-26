@@ -38,7 +38,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * front-end to ht.c) MOST OF THESE ASSUME THAT SYM'S ARE IN THE TABLE 
  */
 
-EliSym_t       *eliSymTab_Find(eliHashTable_t *symtab, char *name)
+EliSym_t       *eliSymTab_Find(symtab, name)
+eliHashTable_t *symtab;
+char           *name;
 {
     EliSexp_t      *tmp = eliHT_Find(symtab, name);
 
@@ -52,7 +54,10 @@ EliSym_t       *eliSymTab_Find(eliHashTable_t *symtab, char *name)
   * binds a value even to an existing node. 
   */
 
-EliSym_t       *eliSymTab_FindOrMake(EliState_t *st, eliHashTable_t *symtab, char *name)
+EliSym_t       *eliSymTab_FindOrMake(st, symtab, name)
+EliState_t     *st;
+eliHashTable_t *symtab;
+char           *name;
 {
     EliSym_t       *result;
 
@@ -64,7 +69,10 @@ EliSym_t       *eliSymTab_FindOrMake(EliState_t *st, eliHashTable_t *symtab, cha
     return (result);
 }
 
-EliSym_t *eliSymTab_Make(EliState_t *st, eliHashTable_t *tab, char *name)
+EliSym_t *eliSymTab_Make(st, tab, name)
+EliState_t *st;
+eliHashTable_t *tab;
+char *name;
 {
     EliSym_t *tmp;
     EliStr_t *strtmp;
@@ -90,7 +98,11 @@ EliSym_t *eliSymTab_Make(EliState_t *st, eliHashTable_t *tab, char *name)
       * If not, make a new node and bind the value, then place it in symtab.
       * Return the symnode to which the value was bound (probably rarely used). 
 	*/
-EliSym_t       *eliSymTab_FindOrMakeAndBind(EliState_t *st, eliHashTable_t *symtab, char *name, EliSexp_t *val)
+EliSym_t       *eliSymTab_FindOrMakeAndBind(st, symtab, name, val)
+EliState_t     *st;
+eliHashTable_t *symtab;
+char           *name;
+EliSexp_t      *val;
 {
     EliSym_t       *tmp;
 
@@ -109,7 +121,11 @@ EliSym_t       *eliSymTab_FindOrMakeAndBind(EliState_t *st, eliHashTable_t *symt
       * preexistence) 
 */
 
-EliSym_t       *eliSymTab_MakeAndBind(EliState_t *st, eliHashTable_t *symtab, char *name, EliSexp_t *val)
+EliSym_t       *eliSymTab_MakeAndBind(st, symtab, name, val)
+EliState_t     *st;
+eliHashTable_t *symtab;
+char           *name;
+EliSexp_t      *val;
 {
     EliSym_t       *tmp;
     EliSexp_t      *nodetmp;

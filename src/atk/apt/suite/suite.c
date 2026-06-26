@@ -85,9 +85,6 @@ END-SPECIFICATION  ************************************************************/
 #include <suitecv.ih>
 #include <suiteev.ih>
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #define	CurrentItem		    (self->current_item)
 #define Apt			    (self->apt)
 #define Items			    (self->items)

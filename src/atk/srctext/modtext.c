@@ -41,18 +41,23 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 #include "srctext.ih"
 #include "modtext.eh"
 
-#include <stdlib.h>
-boolean modtext__IsTokenChar(struct modtext *self, char ch)
+boolean modtext__IsTokenChar(self,ch)    
+struct modtext *self;
+char ch;
 {
     return isalnum(ch)||ch=='_'||ch=='|';
 }
 
-boolean modtext__IsTokenOrPeriod(struct modtext *self, char ch)
+boolean modtext__IsTokenOrPeriod(self,ch)
+struct modtext *self;
+char ch;
 {
     return modtext_IsTokenChar(self,ch)||(ch=='.');
 }
 
-void modtext__SetAttributes(struct modtext *self, struct attributes *atts)
+void modtext__SetAttributes(self,atts)
+struct modtext *self;
+struct attributes *atts;
 {
     super_SetAttributes(self,atts);
     while (atts!=NULL) {
@@ -67,7 +72,10 @@ void modtext__SetAttributes(struct modtext *self, struct attributes *atts)
 
 /* modtext_Keywordify makes buff all uppercase IF it wasn't mixed case to begin with AND ForceUpper is ON.  The latter condition only applies if checkforceupper is TRUE. */
 /* This function "keywordifies" a string. RedoStyles says checkforceupper is FALSE, so "begin" won't ever be found in the hash table. BackwardCheckWord says checkforceupper is TRUE, so, if ForceUpper is ON, "begin" changes to "BEGIN", hence it gets "keywordified". */
-char *modtext__Keywordify(struct modtext *self, char *buff, boolean checkforceupper)
+char *modtext__Keywordify(self, buff, checkforceupper)
+struct modtext *self;
+char *buff;
+boolean checkforceupper;
 {
     if (buff!=NULL && strlen(buff)>0 && checkforceupper && modtext_GetForceUpper(self)) {
 	char *b= buff;
@@ -81,7 +89,9 @@ char *modtext__Keywordify(struct modtext *self, char *buff, boolean checkforceup
 
 /* override */
 /* modtext_BackwardCheckWord calls CheckWord to wrap procedure name whenever PROCEDURE_VAL is found */
-void modtext__BackwardCheckWord(struct modtext *self, long from, long to)
+void modtext__BackwardCheckWord(self,from,to)
+struct modtext *self;
+long from,to;
 {
     Dict *word;
     char buff[1024];
@@ -101,7 +111,9 @@ void modtext__BackwardCheckWord(struct modtext *self, long from, long to)
 
 /* override */
 /* modtext_CheckWord does the procedure-name recognizing */
-long modtext__CheckWord(struct modtext *self, long i, long end)
+long modtext__CheckWord(self,i,end)
+struct modtext *self;
+long i,end;
 {
     long j;
     Dict *word;
@@ -124,7 +136,8 @@ long modtext__CheckWord(struct modtext *self, long i, long end)
     return j;
 }
 
-static void SetupStyles(struct modtext *self)
+static void SetupStyles(self)
+struct modtext *self;
 {
     if ((self->header.srctext.kindStyle[KEYWRD]= stylesheet_Find(self->header.text.styleSheet, "keyword")) == NULL) {
 	self->header.srctext.kindStyle[KEYWRD]= style_New();
@@ -135,13 +148,16 @@ static void SetupStyles(struct modtext *self)
 }
 
 /* only setup styles that are common to both mtext and m3text! */
-void modtext__SetupStyles(struct modtext *self)
+void modtext__SetupStyles(self)
+struct modtext *self;
 {
     super_SetupStyles(self);
     SetupStyles(self);
 }
 
-boolean modtext__InitializeObject(struct classheader *classID, struct modtext *self)
+boolean modtext__InitializeObject(classID, self)
+struct classheader *classID;
+struct modtext *self;
 {
     self->header.srctext.useTabs=FALSE;
     self->header.srctext.commentIndent= 3;
@@ -155,7 +171,9 @@ boolean modtext__InitializeObject(struct classheader *classID, struct modtext *s
 
 /* override */
 /* CheckComment will wrap the comment style around paren-star comments, taking nesting into account. */
-long modtext__CheckComment(struct modtext *self, long start)
+long modtext__CheckComment(self, start)
+struct modtext *self;
+long start;
 {
     int prev, c=0, comments=1;
     long end=start+1, len=modtext_GetLength(self);
@@ -180,7 +198,9 @@ long modtext__CheckComment(struct modtext *self, long start)
 }
 
 /* checkPreproc wraps the preproc style around a preprocessor directive */
-static long checkPreproc(struct modtext *self, long start)
+static long checkPreproc(self, start)
+struct modtext *self;
+long start;
 {
     long end, len=modtext_GetLength(self);
     int prev, c;
@@ -208,7 +228,8 @@ static long checkPreproc(struct modtext *self, long start)
     return end-1;
 }
 
-void modtext__RedoStyles(struct modtext *self)
+void modtext__RedoStyles(self)
+struct modtext *self;
 {
     long posn, len=modtext_GetLength(self);
     int prev=0, c='\n'; /* c is initialized to a newline so the start of the file looks like the start of line. */
@@ -257,7 +278,9 @@ struct paren_node {
 
 static char *opens = "({[";
 static char *closes = ")}]";
-long modtext__ReverseBalance(struct modtext *self, long pos)
+long modtext__ReverseBalance(self, pos)
+struct modtext *self;
+long pos;
 {
     boolean found = FALSE, /*RSKmod remove "incomment = FALSE,"*/ instring = FALSE, doublestring = FALSE, atleastone = FALSE;
     int incomment=0;/*RSKadd*/
@@ -347,7 +370,9 @@ long modtext__ReverseBalance(struct modtext *self, long pos)
     }
 }
 
-static long GetStyleCount(struct modtext *self, long pos)
+static long GetStyleCount(self,pos)
+struct modtext *self;
+long pos;
 {
     struct environment *me;
     struct style * styletype;
@@ -366,7 +391,9 @@ static long GetStyleCount(struct modtext *self, long pos)
     return NULL;
 }
 
-static long backwardSkipComment(struct modtext *self, long pos)
+static long backwardSkipComment(self,pos)
+struct modtext *self;
+long pos;
 {
     int count=1;
     int ch=0,prev;
@@ -379,7 +406,9 @@ static long backwardSkipComment(struct modtext *self, long pos)
     return pos-1;
 }
 
-static long backwardSkipPragma(struct modtext *self, long pos)
+static long backwardSkipPragma(self,pos)
+struct modtext *self;
+long pos;
 {
     int count=1;
     int ch=0,prev;
@@ -392,7 +421,9 @@ static long backwardSkipPragma(struct modtext *self, long pos)
     return pos-1;
 }
 
-static long maybeBackwardSkipCppLines(struct modtext *self, long pos)
+static long maybeBackwardSkipCppLines(self,pos)
+struct modtext *self;
+long pos;
 {
     long currentEOL, len=modtext_GetLength(self);
     --pos;
@@ -403,7 +434,9 @@ static long maybeBackwardSkipCppLines(struct modtext *self, long pos)
     return currentEOL+1;
 }
 
-static long backwardSkipJunk(struct modtext *self, long i)
+static long backwardSkipJunk(self,i)
+struct modtext *self;
+long i;
 {
     int ch=0;
     boolean done=FALSE;
@@ -438,7 +471,9 @@ static long backwardSkipJunk(struct modtext *self, long i)
     return i+1;
 }
 
-static long matchend(struct modtext *self, long pos)
+static long matchend(self,pos)
+struct modtext *self;
+long pos;
 {
     int count=1;
     while((count>0)&&(--pos>=0)) {
@@ -458,7 +493,9 @@ static long matchend(struct modtext *self, long pos)
     return modtext_CurrentIndent(self,pos);
 }
 
-static long SkipPragma(struct modtext *self, long pos, long end)
+static long SkipPragma(self,pos,end)
+struct modtext *self;
+long pos,end;
 {
     int count=1;
     int ch=0,prev;
@@ -469,7 +506,10 @@ static long SkipPragma(struct modtext *self, long pos, long end)
     return pos+1;
 }
 
-static long backLevel(struct modtext *self, long pos, Dict *word, long count)
+static long backLevel(self,pos,word,count)   /*RSKmod*/
+struct modtext *self;
+long pos,count;
+Dict *word;/*RSKadd*/
 {
     Dict *word2;
     long ncount,tpos;
@@ -510,7 +550,9 @@ static long backLevel(struct modtext *self, long pos, Dict *word, long count)
     return 0;
 }
 
-static int backwardFirstnonwhitespace(struct modtext *self, long pos)
+static int backwardFirstnonwhitespace(self,pos)   
+struct modtext *self;
+long pos;
 {
     int ch;
     while (pos>0) {
@@ -524,7 +566,9 @@ static int backwardFirstnonwhitespace(struct modtext *self, long pos)
 #define STYLESTARTCOL(self,pos) (modtext_CurrentColumn((self),environment_Eval(modtext_GetEnvironment((self),(pos)))))
 
 /* Indentation returns the proper indentation of the line that starts at pos */ /*RSK91rewrite*/
-int modtext__Indentation(struct modtext *self, long pos)
+int modtext__Indentation(self,pos)
+struct modtext *self;
+long pos;
 {
     char buff[256];
     Dict *word;

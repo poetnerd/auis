@@ -40,7 +40,8 @@
 static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/srctext/RCS/dogtags.c,v 1.4 1994/02/28 21:24:33 rr2b Exp $";
 #endif
 
-static char *makeupper(char *str)
+static char *makeupper(str)
+char *str;
 {
     char *st;
     st=str;
@@ -52,7 +53,9 @@ static char *makeupper(char *str)
 }
 
 /* nextDogtagPos() returns the position of the next "<@" in the file, or returns "length" if not found */
-static long nextDogtagPos(struct text *self, long pos, long length)
+static long nextDogtagPos(self, pos, length)
+struct text *self;
+long pos,length;
 {
     long p=pos;
     while (p<length) {
@@ -65,7 +68,9 @@ static long nextDogtagPos(struct text *self, long pos, long length)
 }
 
 /* dogtagSubstitution() returns a string that should replace whatever is in the file from dtpos of length dtlen.  If underscores are found within the delimiters, they will be counted, and the substitution string will try to fit itself into that number of characters, as well as being left- or right-justified, or centered if underscores were found on BOTH sides of the dogtag.  */
-static char *dogtagSubstitution(struct text *self, long dtpos, long dtlen)
+static char *dogtagSubstitution(self, dtpos,dtlen)
+struct text *self;
+long dtpos, dtlen;
 {
     static char subst[1024], padded[1024], firstletter;
     int leading=0, trailing=0, count=0;
@@ -249,7 +254,9 @@ static char *dogtagSubstitution(struct text *self, long dtpos, long dtlen)
 }
 
 /* dogtags_substituteregion() will replace dogtags with the appropriate information, but only in the region specified */
-void dogtags_substituteregion(struct text *self, long *posa, long *lena)
+void dogtags_substituteregion(self, posa,lena)
+struct text *self;
+long *posa, *lena; /* *posa and *lena passed by reference; *lena will probably be changing! */
 {
     register long pos;
     long srclen=(*posa)+(*lena), dtstart=nextDogtagPos(self, *posa, srclen);
@@ -290,7 +297,8 @@ void dogtags_substituteregion(struct text *self, long *posa, long *lena)
 }
 
 /* dogtags_substitute() will buzz through the entire text object looking for dogtags, which are delimited by <@Dogtagname@>, and substitute the appropriate actual information */
-void dogtags_substitute(struct text *self)
+void dogtags_substitute(self)
+struct text *self;
 {
     long pos=0, len=text_GetLength(self);
     dogtags_substituteregion(self, &pos,&len);

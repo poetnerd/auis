@@ -46,7 +46,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <class.h>
 #include "list.eh"
 
-#include <stdlib.h>
 #define new() \
   (struct list_Entry *) malloc(sizeof (struct list_Entry))
 

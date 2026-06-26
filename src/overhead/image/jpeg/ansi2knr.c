@@ -187,12 +187,13 @@ BY ANY OTHER PARTY.
 
 #ifdef MSDOS
 #include <malloc.h>
-#include <stdlib.h>
 #else
 #ifdef VMS
-          extern void free();
+     extern char *malloc();
+     extern void free();
 #else
-          extern int free();
+     extern char *malloc();
+     extern int free();
 #endif
 #endif
 
@@ -218,7 +219,9 @@ BY ANY OTHER PARTY.
 #define isidchar(ch) (isalnum(ch) || (ch) == '_')
 #define isidfirstchar(ch) (isalpha(ch) || (ch) == '_')
 
-int main(int argc, char *argv[])
+main(argc, argv)
+    int argc;
+    char *argv[];
 {	FILE *in, *out;
 #define bufsize 5000			/* arbitrary size */
 	char *buf;

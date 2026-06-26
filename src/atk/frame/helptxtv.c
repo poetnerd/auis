@@ -42,17 +42,25 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fram
 #include <cursor.ih>
 #include <helptxtv.eh>
 
-#include <string.h>
-void helptextview__WantInputFocus(struct helptextview *self, struct view *vw)
+void helptextview__WantInputFocus(self,vw)
+struct helptextview *self;
+struct view *vw;
 {   /* ignore requests for input focus */
 }
-struct view *helptextview__Hit(struct helptextview *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
+struct view *helptextview__Hit(self, action, x, y, numberOfClicks)
+struct helptextview *self;
+enum view_MouseAction action;
+long x;
+long y;
+long numberOfClicks;
 {
     if (action == view_LeftDown  || action == view_LeftUp) 
 	return super_Hit(self, action, x, y, numberOfClicks);
     return NULL;
 }
-static char *helptextview_getstartstring(struct helptextview *self, char *buf)
+static char *helptextview_getstartstring(self,buf)
+struct helptextview *self;
+char *buf;
 {
     /* finds the starting string for the completion, sticks it in buf, and returns
 	a pointer to the end of the string */
@@ -74,7 +82,15 @@ static char *helptextview_getstartstring(struct helptextview *self, char *buf)
     *bp = '\0';
     return bp;
 }
-void helptextview__GetClickPosition(struct helptextview *self, long position, long numberOfClicks, enum view_MouseAction action, long startLeft, long startRight, long *leftPos, long *rightPos)
+void helptextview__GetClickPosition(self, position, numberOfClicks, action, startLeft, startRight, leftPos, rightPos)
+struct helptextview *self;
+long position;
+long numberOfClicks;
+enum view_MouseAction action;
+long startLeft;
+long startRight;
+long *leftPos;
+long *rightPos;
 {   
     char buf[512], *bp;
     int pos;
@@ -96,20 +112,30 @@ void helptextview__GetClickPosition(struct helptextview *self, long position, lo
     message_InsertCharacters(self, 0, buf, bp - buf);
     message_SetCursorPos(self,bp - buf);
 }
-void helptextview__FullUpdate(struct helptextview *self, enum view_UpdateType type, long left, long top, long width, long height)
+void helptextview__FullUpdate(self, type, left, top, width, height)
+struct helptextview *self;
+enum view_UpdateType type;
+long left;
+long top;
+long width;
+long height;
 {
     struct rectangle tr;
     super_FullUpdate(self, type, left, top, width, height);
     helptextview_GetVisualBounds(self,&tr);
     helptextview_PostCursor(self,&tr,self->myCursor);
 }
-boolean helptextview__InitializeObject(struct classheader *classID, struct helptextview *self)
+boolean helptextview__InitializeObject(classID, self)
+struct classheader *classID;
+struct helptextview *self;
 {
     self->myCursor = cursor_Create(self);
     cursor_SetStandard(self->myCursor,Cursor_LeftPointer);
     return TRUE;
 }
-void helptextview__FinalizeObject(struct classheader *classID, struct helptextview *self)
+void helptextview__FinalizeObject(classID, self)
+struct classheader *classID;
+struct helptextview *self;
 {
     cursor_Destroy(self->myCursor);
 }

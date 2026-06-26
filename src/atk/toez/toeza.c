@@ -65,7 +65,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/toez
 #include <text.ih>
 #include <rofftext.ih>
 
-#include <stdlib.h>
 	boolean
 toezapp__InitializeObject(classID,self)
 	struct classheader *classID;

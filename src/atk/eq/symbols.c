@@ -46,7 +46,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/eq/R
 #include <exfont.h>
 #include <eqparse.h>
 
-#include <string.h>
 #define NONE -1
 #define what (int)
 
@@ -316,7 +315,9 @@ struct symbol symbols[] = {
 };
 
 
-struct symbol *eq__Lookup(struct classheader *classID, char *name)
+struct symbol *eq__Lookup(classID, name)
+struct classheader *classID;
+char *name;
 {
     register struct symbol *s;
     for (s=symbols;  s->name;  s++)

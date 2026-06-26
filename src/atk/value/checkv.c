@@ -75,12 +75,14 @@ static struct atom *  A_string;
 /*		private functions				*/
 /****************************************************************/
 
-static void CarveFonts(struct checkv *self)
+static void CarveFonts(self)
+struct checkv * self;
 {
     self->normalfont = fontdesc_Create( self->fontname, fontdesc_Plain, self->fontsize );
 }  
 
-static Drawcheck(struct checkv *self)
+static Drawcheck(self)
+struct checkv * self;
 {
     register int side;
     register int gap;
@@ -137,7 +139,8 @@ static Drawcheck(struct checkv *self)
 
 
 
-boolean checkv__InitializeClass(struct classheader *classID)
+boolean checkv__InitializeClass(classID)
+struct classheader *classID;
 {
     InternAtoms;
     return TRUE;
@@ -148,7 +151,9 @@ boolean checkv__InitializeClass(struct classheader *classID)
 /****************************************************************/
 /*		instance methods				*/
 /****************************************************************/
-boolean checkv__InitializeObject(struct classheader *classID, struct checkv *self)
+boolean checkv__InitializeObject(classID, self )
+struct classheader *classID;
+struct checkv * self;
 {
     self->label = NULL;
     self->fontname = NULL;
@@ -159,7 +164,8 @@ boolean checkv__InitializeObject(struct classheader *classID, struct checkv *sel
    return TRUE;
 }
 
-void checkv__LookupParameters(struct checkv *self)
+void checkv__LookupParameters(self)
+struct checkv * self;
 {
     char * fontname;
     long fontsize;
@@ -218,7 +224,9 @@ void checkv__LookupParameters(struct checkv *self)
 }
 
 
-void checkv__DrawFromScratch(struct checkv *self, long x, long y, long width, long height)
+void checkv__DrawFromScratch(self,x,y,width,height)
+struct checkv * self;
+long x,y,width,height;
 {
     self->x = x;
     self->y = y;
@@ -237,7 +245,8 @@ void checkv__DrawFromScratch(struct checkv *self, long x, long y, long width, lo
 }
 
 
-void checkv__DrawDehighlight(struct checkv *self)
+void checkv__DrawDehighlight(self)
+struct checkv * self;
 {
 
     struct value *w = checkv_Value(self);
@@ -246,12 +255,14 @@ void checkv__DrawDehighlight(struct checkv *self)
 
 }
 
-void checkv__DrawHighlight(struct checkv *self)
+void checkv__DrawHighlight(self)
+struct checkv * self;
 {
 }
 
 
-void checkv__DrawNewValue(struct checkv *self)
+void checkv__DrawNewValue( self )
+struct checkv * self;
 {
     struct value *w = checkv_Value(self);
     self->tmpval = value_GetValue(w);
@@ -260,7 +271,10 @@ void checkv__DrawNewValue(struct checkv *self)
 
 
 
-struct checkv * checkv__DoHit(struct checkv *self, enum view_MouseAction type, long x, long y, long hits)
+struct checkv * checkv__DoHit( self,type,x,y,hits )
+struct checkv * self;
+enum view_MouseAction type;
+long x,y,hits;
 {
     struct value *tt = checkv_Value(self);
     switch(type){

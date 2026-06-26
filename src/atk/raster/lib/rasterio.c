@@ -52,7 +52,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <rasterio.eh>
 #include <pixelimg.ih>
 
-#include <string.h>
 #define class_StaticEntriesOnly
 #include <dataobj.ih>		/* for read return values */
 #undef class_StaticEntriesOnly

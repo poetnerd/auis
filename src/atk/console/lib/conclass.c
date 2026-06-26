@@ -69,7 +69,9 @@ struct classinfo *consoleClass_GetInfoHack()  {
 }
 static struct menulist *stdMenulist;
 
-boolean consoleClass__InitializeObject(struct classheader *classID, struct consoleClass *self)
+boolean consoleClass__InitializeObject(classID, self)
+struct classheader *classID;
+struct consoleClass *self;
 {
     mydbg(("entering: consoleClass__InitializeObject"));
     self->stdMenulist = menulist_DuplicateML(stdMenulist, self);
@@ -83,7 +85,13 @@ boolean consoleClass__InitializeObject(struct classheader *classID, struct conso
     return TRUE;
 }
 
-void consoleClass__FullUpdate(struct consoleClass *self, enum view_UpdateType type, long left, long top, long width, long height)
+void consoleClass__FullUpdate(self, type, left, top, width, height)
+    struct consoleClass *self;
+    enum view_UpdateType type;
+    long left;
+    long top;
+    long width;
+    long height;
 {
     static boolean firstTime = TRUE;
 
@@ -105,7 +113,9 @@ void consoleClass__FullUpdate(struct consoleClass *self, enum view_UpdateType ty
     }
 }
 
-void consoleClass__WantUpdate(struct consoleClass *self, struct view *requestor)
+void consoleClass__WantUpdate(self, requestor)
+struct consoleClass *self;
+struct view *requestor;
 {
     mydbg(("entering: consoleClass__WantUpdate\n"));
     if (!PauseEnqueuedEvents && !RingingAlarm){
@@ -114,7 +124,8 @@ void consoleClass__WantUpdate(struct consoleClass *self, struct view *requestor)
 }  
 
 
-void consoleClass__Update(struct consoleClass *self)
+void consoleClass__Update(self)
+struct consoleClass *self;
 {
     struct display *mydisp;
 
@@ -129,7 +140,9 @@ void consoleClass__Update(struct consoleClass *self)
     }
 }
 
-void consoleClass__PostMenus(struct consoleClass *self, struct menulist *menu)
+void consoleClass__PostMenus(self, menu)
+    struct consoleClass *self;
+    struct menulist *menu;
 {
     mydbg(("entering: consoleClass__PostMenus\n"));
     menulist_UnchainML(self->stdMenulist, 0);
@@ -141,7 +154,12 @@ void consoleClass__PostMenus(struct consoleClass *self, struct menulist *menu)
 extern struct display *FindInstrument(); 
 extern SetStandardCursor(); 
 
-struct view *consoleClass__Hit(struct consoleClass *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
+struct view *consoleClass__Hit(self, action, x, y, numberOfClicks)
+struct consoleClass *self;
+enum view_MouseAction action;
+long x;
+long y;
+long numberOfClicks;
 {
     struct view *ret = NULL;
     struct RegionLog   *whichlog;
@@ -196,7 +214,8 @@ struct view *consoleClass__Hit(struct consoleClass *self, enum view_MouseAction 
 }
 
 
-void consoleClass__ReceiveInputFocus(struct consoleClass *self)
+void consoleClass__ReceiveInputFocus(self)
+    struct consoleClass *self;
 {
     mydbg(("entering: consoleClass__ReceiveInputFocus\n"));
     super_ReceiveInputFocus(self);
@@ -206,13 +225,15 @@ void consoleClass__ReceiveInputFocus(struct consoleClass *self)
     consoleClass_PostKeyState(self, NULL);
 }
 
-void consoleClass__LoseInputFocus(struct consoleClass *self)
+void consoleClass__LoseInputFocus(self)
+    struct consoleClass *self;
 {
     mydbg(("entering: consoleClass__LoseInputFocus\n"));
     self->haveInputFocus = FALSE;
 }
 
-void SetLogFont(struct text *textObj)
+void SetLogFont(textObj)
+struct text *textObj;
 {
     char FontBuffer[50];
     long FontSize, FontStyle;
@@ -236,7 +257,8 @@ void SetLogFont(struct text *textObj)
 
 
 
-boolean consoleClass__InitializeClass(struct classheader *classID)
+boolean consoleClass__InitializeClass(classID)
+    struct classheader *classID;
 {
     mydbg(("entering: consoleClass__InitializeClass\n"));
     stdMenulist = menulist_New();

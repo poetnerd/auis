@@ -97,7 +97,6 @@ static char *MitCopyright=
 #include <ctype.h>
 #include <xbitmap.eh>
 
-#include <stdio.h>
 /* SUPPRESS 560 */
 
 #define MAX_SIZE 255

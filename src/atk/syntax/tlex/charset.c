@@ -45,7 +45,6 @@
 #include <ctype.h>
 #include <global.h>
 
-#include <stdlib.h>
 /* there is one bitarray for every eight Charsets created */
 struct bitarray {
 	char *name;

@@ -35,7 +35,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  */
 #include "tiffioP.h"
 
-#include <stdlib.h>
 #if USE_PROTOTYPES
 extern	int TIFFFreeDirectory(TIFF*);
 #else

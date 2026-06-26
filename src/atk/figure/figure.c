@@ -43,12 +43,10 @@ char *figure_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/f
 
 #include <attribs.h>
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 static void FlattenRefList();
 
-boolean figure__InitializeClass(struct classhdr *ClassID)
+boolean figure__InitializeClass(ClassID)
+struct classhdr *ClassID;
 {
 #ifndef _SEPARATEFIGOBJECTS
     figobj_StaticLoadOnlyThisClass();
@@ -65,7 +63,9 @@ boolean figure__InitializeClass(struct classhdr *ClassID)
     return TRUE;
 }
 
-boolean figure__InitializeObject(struct classhdr *ClassID, struct figure *self)
+boolean figure__InitializeObject(ClassID, self)
+struct classhdr *ClassID;
+struct figure *self;
 {
     struct figogrp *tmp;
 
@@ -90,7 +90,9 @@ boolean figure__InitializeObject(struct classhdr *ClassID, struct figure *self)
     return TRUE;
 }
 
-void figure__FinalizeObject(struct classhdr *ClassID, struct figure *self)
+void figure__FinalizeObject(ClassID, self)
+struct classhdr *ClassID;
+struct figure *self;
 {
     int ix;
 
@@ -101,12 +103,15 @@ void figure__FinalizeObject(struct classhdr *ClassID, struct figure *self)
     free(self->objs);
 }
 
-char *figure__ViewName(struct figure *self)
+char *figure__ViewName(self)
+struct figure *self;
 {
     return "figview";
 }
 
-void figure__SetAttributes(struct figure *self, struct attributes *attributes)
+void figure__SetAttributes(self, attributes)
+struct figure *self;
+struct attributes *attributes;
 {
     while (attributes) {
 	if(!strcmp(attributes->key, "readonly")) {
@@ -116,7 +121,9 @@ void figure__SetAttributes(struct figure *self, struct attributes *attributes)
     }
 }
 
-static void FlattenRefList(struct figure *self, long ix)
+static void FlattenRefList(self, ix)
+struct figure *self;
+long ix;
 {
     for (; ix<self->objs_size; ix++) {
 	self->objs[ix].o = NULL;
@@ -124,14 +131,22 @@ static void FlattenRefList(struct figure *self, long ix)
     }
 }
 
-long figure__InsertObject(struct figure *self, struct figobj *o, long parent, long depth)
+long figure__InsertObject(self, o, parent, depth)
+struct figure *self;
+struct figobj *o;
+long parent; 
+long depth;
 {
     if (figure_GetReadOnly(self))
 	return figure_NULLREF;
     return figure_AlwaysInsertObject(self, o, parent, depth);
 }
 
-long figure__AlwaysInsertObject(struct figure *self, struct figobj *o, long parent, long depth)
+long figure__AlwaysInsertObject(self, o, parent, depth)
+struct figure *self;
+struct figobj *o;
+long parent; /* if figure_NULLREF, put in top-level group, unless there is none. */
+long depth; /* 0 = back, 1 = next to back, etc. -1 or a high value means in front. */
 {
     long ix, count, oldroot;
     long *pt;
@@ -178,7 +193,9 @@ long figure__AlwaysInsertObject(struct figure *self, struct figobj *o, long pare
     return ix;
 }
 
-boolean figure__DeleteObject(struct figure *self, struct figobj *o)
+boolean figure__DeleteObject(self, o)
+struct figure *self;
+struct figobj *o;
 {
     if (figure_GetReadOnly(self))
 	return FALSE;
@@ -187,7 +204,9 @@ boolean figure__DeleteObject(struct figure *self, struct figobj *o)
 }
 
 /* delete object o and all of its contents. If o is the root group, the fig is emptied and fig->root = NULLREF. */
-boolean figure__AlwaysDeleteObject(struct figure *self, struct figobj *o)
+boolean figure__AlwaysDeleteObject(self, o)
+struct figure *self;
+struct figobj *o;
 {
     long ix;
     long *pt;
@@ -223,7 +242,11 @@ boolean figure__AlwaysDeleteObject(struct figure *self, struct figobj *o)
     return TRUE;
 }
 
-void figure__LinkObjectByRef(struct figure *self, long ref, long parent, long depth)
+void figure__LinkObjectByRef(self, ref, parent, depth)
+struct figure *self;
+long ref;
+long parent; /* if figure_NULLREF, put in top-level group, unless there is none. */
+long depth; /* 0 = back, 1 = next to back, etc. -1 or a high value means in front. */
 {
     if (figure_GetReadOnly(self))
 	return;
@@ -231,7 +254,11 @@ void figure__LinkObjectByRef(struct figure *self, long ref, long parent, long de
     figure_AlwaysLinkObjectByRef(self, ref, parent, depth);
 }
 
-void figure__AlwaysLinkObjectByRef(struct figure *self, long ref, long parent, long depth)
+void figure__AlwaysLinkObjectByRef(self, ref, parent, depth)
+struct figure *self;
+long ref;
+long parent; /* if figure_NULLREF, put in top-level group, unless there is none. */
+long depth; /* 0 = back, 1 = next to back, etc. -1 or a high value means in front. */
 {
     long *pt;
     long count, oldroot;
@@ -267,7 +294,9 @@ void figure__AlwaysLinkObjectByRef(struct figure *self, long ref, long parent, l
     figure_SetModified(self);
 }
 
-void figure__UnlinkObjectByRef(struct figure *self, long ref)
+void figure__UnlinkObjectByRef(self, ref)
+struct figure *self;
+long ref;
 {
     if (figure_GetReadOnly(self))
 	return;
@@ -275,7 +304,9 @@ void figure__UnlinkObjectByRef(struct figure *self, long ref)
     figure_AlwaysUnlinkObjectByRef(self, ref);
 }
 
-void figure__AlwaysUnlinkObjectByRef(struct figure *self, long ref)
+void figure__AlwaysUnlinkObjectByRef(self, ref)
+struct figure *self;
+long ref;
 {
     long *pt;
     struct figogrp *paro;
@@ -301,7 +332,9 @@ void figure__AlwaysUnlinkObjectByRef(struct figure *self, long ref)
     figure_SetModified(self);
 }
 
-long figure__FindDepthByRef(struct figure *self, long ref)
+long figure__FindDepthByRef(self, ref)
+struct figure *self;
+long ref;
 {
     long *pt;
     long count;
@@ -322,7 +355,11 @@ long figure__FindDepthByRef(struct figure *self, long ref)
     return count;
 }
 
-static struct figobj *EOT_AllArea(struct figure *self, long grp, boolean (*callfun)(), long rock)
+static struct figobj *EOT_AllArea(self, grp, callfun, rock)
+struct figure *self;
+long grp;
+boolean (*callfun)();
+long rock;
 {
     long ix, startval;
     struct figobj *this, *ores;
@@ -349,7 +386,12 @@ static struct figobj *EOT_AllArea(struct figure *self, long grp, boolean (*callf
     return NULL;
 }
 
-static struct figobj *EOT_OverlapArea(struct figure *self, long grp, struct rectangle *area, boolean (*callfun)(), long rock)
+static struct figobj *EOT_OverlapArea(self, grp, area, callfun, rock)
+struct figure *self;
+long grp;
+struct rectangle *area;
+boolean (*callfun)();
+long rock;
 {
     long ix, startval;
     struct figobj *this, *ores;
@@ -380,7 +422,12 @@ static struct figobj *EOT_OverlapArea(struct figure *self, long grp, struct rect
     return NULL;
 }
 
-static struct figobj *EOT_IncludeArea(struct figure *self, long grp, struct rectangle *area, boolean (*callfun)(), long rock)
+static struct figobj *EOT_IncludeArea(self, grp, area, callfun, rock)
+struct figure *self;
+long grp;
+struct rectangle *area;
+boolean (*callfun)();
+long rock;
 {
     long ix, startval;
     struct figobj *this, *ores;
@@ -411,7 +458,16 @@ static struct figobj *EOT_IncludeArea(struct figure *self, long grp, struct rect
 
 /* call callfun on every object in a group in an area. If area is NULL, call callfun on every object in the group. If grp is figure_NULLREF, then every object in the fig is checked.
 callfun should be of the form
-boolean callfun(int struct figobj *o, int long ref, int struct figure *self, long rock)
+  boolean callfun(struct figobj *o, long ref, struct figure *self, rock)
+If an invocation of callfun returns TRUE, the enumeration halts and EnumerateObjects returns that figobj. Otherwise, EnumerateObjects returns NULL.
+*/
+struct figobj *figure__EnumerateObjectTree(self, grp, area, allowoverlap, callfun, rock)
+struct figure *self;
+long grp;
+struct rectangle *area;
+boolean allowoverlap;
+boolean (*callfun)();
+long rock;
 {
     if (!area) {
 	return EOT_AllArea(self, grp, callfun, rock);
@@ -427,7 +483,16 @@ boolean callfun(int struct figobj *o, int long ref, int struct figure *self, lon
 
 /* call callfun on every object in an area. If area is NULL, call callfun on every object.
 callfun should be of the form
-boolean callfun(int struct figobj *o, int long ref, int struct figure *self, long rock)
+  boolean callfun(struct figobj *o, long ref, struct figure *self, rock)
+If an invocation of callfun returns TRUE, the enumeration halts and EnumerateObjects returns that figobj. Otherwise, EnumerateObjects returns NULL.
+*/
+struct figobj *figure__EnumerateObjectGroup(self, grp, area, allowoverlap, callfun, rock)
+struct figure *self;
+long grp;
+struct rectangle *area;
+boolean allowoverlap;
+boolean (*callfun)();
+long rock;
 {
     int ix;
     struct rectangle tmp;
@@ -478,7 +543,15 @@ boolean callfun(int struct figobj *o, int long ref, int struct figure *self, lon
 
 /* call callfun on every object in an area. If area is NULL, call callfun on every object.
 callfun should be of the form
-boolean callfun(int struct figobj *o, int long ref, int struct figure *self, long rock)
+  boolean callfun(struct figobj *o, long ref, struct figure *self, rock)
+If an invocation of callfun returns TRUE, the enumeration halts and EnumerateObjects returns that figobj. Otherwise, EnumerateObjects returns NULL.
+*/
+struct figobj *figure__EnumerateObjects(self, area, allowoverlap, callfun, rock)
+struct figure *self;
+struct rectangle *area;
+boolean allowoverlap;
+boolean (*callfun)();
+long rock;
 {
     int ix;
     struct rectangle tmp;
@@ -525,7 +598,9 @@ boolean callfun(int struct figobj *o, int long ref, int struct figure *self, lon
     }
 }
 
-long figure__FindRefByObject(struct figure *self, struct figobj *o)
+long figure__FindRefByObject(self, o)
+struct figure *self;
+struct figobj *o;
 {
     int ix;
 
@@ -536,7 +611,9 @@ long figure__FindRefByObject(struct figure *self, struct figobj *o)
     return figure_NULLREF;
 }
  
-struct figobj *figure__FindObjectByRef(struct figure *self, long ref)
+struct figobj *figure__FindObjectByRef(self, ref)
+struct figure *self;
+long ref;
 {
     if (ref<0 || ref>=self->objs_size)
 	return NULL;
@@ -544,7 +621,13 @@ struct figobj *figure__FindObjectByRef(struct figure *self, long ref)
     return self->objs[ref].o;
 }
 
-static long FRBPSplot(struct figure *self, long gref, enum figobj_HitVal howhit, long x, long y, long delta, long *ptref)
+static long FRBPSplot(self, gref, howhit, x, y, delta, ptref)
+struct figure *self;
+long gref;
+enum figobj_HitVal howhit;
+long delta;
+long x, y;
+long *ptref;
 {
     long ix, jx;
     enum figobj_HitVal res;
@@ -567,7 +650,14 @@ static long FRBPSplot(struct figure *self, long gref, enum figobj_HitVal howhit,
 }
 
 /* search the tree under group gref for an object at x, y. If recursive is true, whole tree is searched; otherwise, just that group. howhit determines how good the hit has to be to be returned. *ptref will be set to a handle if HitMe returns one. delta is the allowable distance from a handle (in fig coords). */ 
-long figure__FindRefByPos(struct figure *self, long gref, boolean recursive, enum figobj_HitVal howhit, long delta, long x, long y, long *ptref)
+long figure__FindRefByPos(self, gref, recursive, howhit, delta, x, y, ptref)
+struct figure *self;
+long gref;
+boolean recursive;
+enum figobj_HitVal howhit;
+long delta;
+long x, y;
+long *ptref;
 {
     int ix;
     long tmp = figobj_NULLREF;
@@ -607,7 +697,8 @@ long figure__FindRefByPos(struct figure *self, long gref, boolean recursive, enu
     }
 }
 
-struct rectangle *figure__GetOverallBounds(struct figure *self)
+struct rectangle *figure__GetOverallBounds(self)
+struct figure *self;
 {
     struct figobj *o = NULL;
 
@@ -630,7 +721,12 @@ struct rectangle *figure__GetOverallBounds(struct figure *self)
 #define LINELENGTH (250)
 static char buf[LINELENGTH+1];
 
-static void WriteObject(struct figure *self, long oref, FILE *fp, long writeid, int level)
+static void WriteObject(self, oref, fp, writeid, level)
+struct figure *self;
+long oref;
+FILE *fp;
+long writeid;
+int level;
 {
     struct figobj *o = self->objs[oref].o;
     /* printf("fig: WriteObject(%d): %s\n", oref, class_GetTypeName(o)); */
@@ -654,7 +750,12 @@ static void WriteObject(struct figure *self, long oref, FILE *fp, long writeid, 
     }
 }
 
-static long ReadObject(struct figure *self, struct figobj *o, long oref, FILE *fp, long oid)
+static long ReadObject(self, o, oref, fp, oid)
+struct figure *self;
+struct figobj *o; 
+long oref;
+FILE *fp;
+long oid;
 {
     long ix, subref, tid;
     char namebuf[100];
@@ -691,7 +792,11 @@ static long ReadObject(struct figure *self, struct figobj *o, long oref, FILE *f
     }
 }
 
-long figure__Write(struct figure *self, FILE *fp, long writeid, int level)
+long figure__Write(self, fp, writeid, level)
+struct figure *self;
+FILE *fp;
+long writeid;
+int level;
 {
     if (figure_GetWriteID(self) != writeid) {
 	figure_SetWriteID(self, writeid);
@@ -712,7 +817,14 @@ long figure__Write(struct figure *self, FILE *fp, long writeid, int level)
     return figure_GetID(self);
 }
 
-void figure__WritePartial(struct figure *self, FILE *fp, long writeid, int level, long *list, long listnum, struct point *origin)
+void figure__WritePartial(self, fp, writeid, level, list, listnum, origin)
+struct figure *self;
+FILE *fp;
+long writeid;
+int level;
+long *list;
+long listnum;
+struct point *origin;
 {
     struct figogrp *tmpgrp;
     int ix;
@@ -750,7 +862,10 @@ void figure__WritePartial(struct figure *self, FILE *fp, long writeid, int level
     fprintf(fp, "\\enddata{%s,%ld}\n", class_GetTypeName(self), figure_GetID(self));
 }
 
-long figure__Read(struct figure *self, FILE *fp, long id)
+long figure__Read(self, fp, id)
+struct figure *self;
+FILE *fp;
+long id;
 {
     long tid, ix, ref, val1, val2;
     double fal1, fal2;
@@ -817,7 +932,12 @@ long figure__Read(struct figure *self, FILE *fp, long id)
 /* put stuff from file into focus. The root group of the file is *not* inserted; everything in the root group is copied into the focus group of self. The origin field of the file is returned in origin.
 ### If the root group of the file has attributes active, they will overwrite the focus group's original attributes. This is not a problem for pasting, since a copied fig has nothing active.
 */
-long figure__ReadPartial(struct figure *self, FILE *fp, long id, long focus, struct point *origin)
+long figure__ReadPartial(self, fp, id, focus, origin)
+struct figure *self;
+FILE *fp;
+long id;
+long focus;
+struct point *origin;
 {
     long tid, ix, val1, val2;
     double fal1, fal2;

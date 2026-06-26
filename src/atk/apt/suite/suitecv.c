@@ -82,9 +82,6 @@ END-SPECIFICATION  ************************************************************/
 #include <suiteev.ih>
 #include <suitecv.eh>
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #define EV			    ((self)->parent_EV)
 #define ParentItem		    ((self)->parent_item)
 #define KeyState		    ((self)->kstate)
@@ -153,7 +150,8 @@ suitecv__PostKeyState(self,kstate)
     else super_PostKeyState(self,kstate);
 }
 
-void UpdateCaption(struct suitecv *self)
+void UpdateCaption( self )
+    struct suitecv *self;
 {
     struct text *txt = (struct text *) ParentItem->dataobject;
     long len = text_GetLength( txt ), returnedLen;
@@ -176,7 +174,10 @@ suitecv__ReceiveInputFocus( self )
     suitecv_CollapseDot(self);
 }
 
-void suitecv__FullUpdate(struct suitecv *self, enum view_UpdateType type, long left, long top, long width, long height)
+void suitecv__FullUpdate( self, type, left, top, width, height )
+    struct suitecv *self;
+    enum view_UpdateType type;
+    long left, top, width, height;
 {
     UpdateCaption( self );
     super_FullUpdate( self, type, left, top, width, height);

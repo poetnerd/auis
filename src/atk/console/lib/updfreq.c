@@ -49,12 +49,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <sys/ioctl.h>
 #include <signal.h>
 
-#include <stdio.h>
 extern ClearRectangle();
 extern struct fontdesc *SetupFont();
 static void Invert();
 
-int UpdateDisplay(struct consoleClass *self, struct display *disp)
+UpdateDisplay(self, disp)
+struct consoleClass *self;
+struct display *disp;
 {
     struct rectangle clpRect;
 
@@ -128,7 +129,12 @@ int UpdateDisplay(struct consoleClass *self, struct display *disp)
 
 
 
-int NewValue(struct consoleClass *self, struct datum *datum, int val, char *text, boolean forceupdating)
+NewValue(self, datum, val, text, forceupdating)
+struct consoleClass *self;
+struct datum *datum;
+int val;
+char *text;
+boolean forceupdating;
 {
     boolean DoUpdate = FALSE;
     int     i,
@@ -182,7 +188,8 @@ int NewValue(struct consoleClass *self, struct datum *datum, int val, char *text
 }
 
 
-int CheckFPA(struct consoleClass *self)
+CheckFPA(self)
+struct consoleClass *self;
 {
     mydbg(("entering: CheckFPA\n"));
     if (fpacheck()){
@@ -193,7 +200,8 @@ int CheckFPA(struct consoleClass *self)
     
 
 
-int CheckTrouble(struct consoleClass *self)
+CheckTrouble(self)
+struct consoleClass *self;
 {
     int trct;
     static char TextDum[128]="ERROR:  ", *Tdum;
@@ -218,7 +226,9 @@ int CheckTrouble(struct consoleClass *self)
     NewValue(self, &Numbers[TROUBLE], trct, NULL, FALSE);
 }
 
-static void Invert(struct consoleClass *self, struct display *disp)
+static void Invert(self,disp)
+    struct consoleClass *self;
+    struct display *disp;
 {
     struct rectangle invertRect;
 
@@ -229,7 +239,9 @@ static void Invert(struct consoleClass *self, struct display *disp)
 }
 
 #define HIGHLIGHTTHICKNESS 3
-int HighlightDisplay(struct consoleClass *self, struct display *dp)
+HighlightDisplay(self, dp)
+struct consoleClass *self;
+struct display *dp;
 {
     static struct fontdesc *shape10 = NULL;
     boolean Highlight;

@@ -33,7 +33,9 @@ static char system_c_rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3
 #ifdef hpux
 #include <stdlib.h>
 #include <errno.h>
-int os_system(char *cmd)
+extern int errno;
+int os_system(cmd)
+char *cmd;
 {
     int result;
     errno=0;
@@ -42,7 +44,8 @@ int os_system(char *cmd)
     return result;
 }
 #else
-int os_system(char *cmd)
+int os_system(cmd)
+char *cmd;
 {
     return system(cmd);
 }

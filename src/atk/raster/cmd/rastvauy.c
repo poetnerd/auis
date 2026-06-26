@@ -53,12 +53,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <heximage.ih>
 #include <dispbox.h>
 
-#include <stdio.h>
 extern void PostMenus(), CorrectHighlight();
 void OverlayInsetProc(), RemoveInsetProc(), ResizeInsetProc(), ImprintInsetProc();
 
 /* clean happy one-pixel draw. Displays correctly in rasterview self, even if zoomed, but does *not* notify other observers. If (x, y) is out of bounds, nothing happens. bit may be TRUE, FALSE, or DRAW_REVERSE_PIXEL. Note that this does more than the internal function SetPixel(). */
-void rasterview__SetPixel(struct rasterview *self, struct raster *ras, long x, long y, int bit)
+void rasterview__SetPixel(self, ras, x, y, bit)
+struct rasterview *self;
+struct raster *ras;
+long x, y;
+int bit;
 {
     struct rasterimage *pix;
     struct rectangle SR;
@@ -96,7 +99,10 @@ void rasterview__SetPixel(struct rasterview *self, struct raster *ras, long x, l
 /* the following method replicates code from rasterview__SetPixel(). This is just to improve the speed. Any changes to __SetPixel() should be added to  __PatternSetPixel() also. */
 
 /* like rasterview_SetPixel(), but uses an 8x8 pattern instead of solid black or white. If pattern is NULL, invert the pixel. */
-void rasterview__PatternSetPixel(struct rasterview *self, long x, long y, unsigned char *pattern)
+void rasterview__PatternSetPixel(self, x, y, pattern)
+struct rasterview *self;
+long x, y;
+unsigned char *pattern;
 {
     struct rasterimage *pix;
     struct rectangle SR;
@@ -139,7 +145,11 @@ void rasterview__PatternSetPixel(struct rasterview *self, long x, long y, unsign
 }
 
 /* draws up to 64 pixels according to an 8x8 brush. If the brush is NULL, draw just one pixel. Uses rasterview_PatternSetPixel(). */
-void rasterview__BrushSetPixel(struct rasterview *self, long x, long y, unsigned char *pattern, unsigned char *brush)
+void rasterview__BrushSetPixel(self, x, y, pattern, brush)
+struct rasterview *self;
+long x, y;
+unsigned char *pattern;
+unsigned char *brush;
 {
     if (!brush) {
 	rasterview_PatternSetPixel(self, x, y, pattern);
@@ -160,7 +170,9 @@ void rasterview__BrushSetPixel(struct rasterview *self, long x, long y, unsigned
     }
 }
 
-void ToggleCoordProc(struct rasterview *self, char *rock)
+void ToggleCoordProc(self, rock)
+struct rasterview *self;
+char *rock;
 {
     self->ShowCoords = !(self->ShowCoords);
     
@@ -175,13 +187,17 @@ void ToggleCoordProc(struct rasterview *self, char *rock)
       self->needsFullUpdate=FALSE;
       rasterview_WantUpdate(self, caller); 
 */
-void rasterview__SetDesiredSelection(struct rasterview *self, struct rectangle *R)
+void rasterview__SetDesiredSelection(self, R)
+struct rasterview *self;
+struct rectangle *R;
 {
     rectangle_IntersectRect(&self->DesiredSelection, R, &self->ViewSelection); 
     CorrectHighlight(self);
 }
 
-void MakeToolsetProc(struct rasterview *self, char *rock)
+void MakeToolsetProc(self, rock)
+struct rasterview *self;
+char *rock;
 {
     struct raster *r = (struct raster *)rasterview_GetDataObject(self);
     struct im *im;
@@ -243,7 +259,9 @@ void MakeToolsetProc(struct rasterview *self, char *rock)
     PostMenus(self);
 }
 
-void KillToolsetProc(struct rasterview *self, char *rock)
+void KillToolsetProc(self, rock)
+struct rasterview *self;
+char *rock;
 {
     struct im *toolim = NULL;
     struct frame *toolfr = NULL;
@@ -283,12 +301,15 @@ void KillToolsetProc(struct rasterview *self, char *rock)
     rasterview_SetPan(self); /* does PostMenus() */
 }
 
-void rasterview__DestroyToolset(struct rasterview *self)
+void rasterview__DestroyToolset(self)
+struct rasterview *self;
 {
     KillToolsetProc(self, 0);
 }
 
-boolean objecttest(struct rasterview *self, char *name, char *desiredname)
+boolean objecttest(self, name, desiredname)
+struct rasterview *self;
+char *name,*desiredname;
 {
     if(class_Load(name) == NULL){
 	char foo[640];
@@ -306,12 +327,16 @@ boolean objecttest(struct rasterview *self, char *name, char *desiredname)
 }
 
 /* overlay an inset, using self->DesiredSelection for the box dimensions. insetname should be the name of a subclass of dataobject. If insetname is NULL, the user will be prompted for a class name. */
-void rasterview__OverlayInset(struct rasterview *self, char *insetname)
+void rasterview__OverlayInset(self, insetname)
+struct rasterview *self;
+char *insetname;
 {
     OverlayInsetProc(self, insetname);
 }
 
-void OverlayInsetProc(struct rasterview *self, char *rock)
+void OverlayInsetProc(self, rock)
+struct rasterview *self;
+char *rock;
 {
     char iname[100], buf[200];
     char *viewname;
@@ -386,12 +411,15 @@ void OverlayInsetProc(struct rasterview *self, char *rock)
 }
 
 /* remove the overlaid inset */
-void rasterview__RemoveInset(struct rasterview *self)
+void rasterview__RemoveInset(self)
+struct rasterview *self;
 {
     RemoveInsetProc(self);
 }
 
-void RemoveInsetProc(struct rasterview *self, char *rock)
+void RemoveInsetProc(self, rock)
+struct rasterview *self;
+char *rock;
 {
     if (!self->inset) return;
 
@@ -412,12 +440,15 @@ void RemoveInsetProc(struct rasterview *self, char *rock)
 }
 
 /* resize the overlaid inset to the dimensions of self->DesiredSelection */
-void rasterview__ResizeInset(struct rasterview *self)
+void rasterview__ResizeInset(self)
+struct rasterview *self;
 {
     ResizeInsetProc(self);
 }
 
-void ResizeInsetProc(struct rasterview *self, char *rock)
+void ResizeInsetProc(self, rock)
+struct rasterview *self;
+char *rock;
 {
     char buf[200];
 
@@ -443,13 +474,17 @@ void ResizeInsetProc(struct rasterview *self, char *rock)
 }
 
 /* Imprint (paste down) the overlaid inset on the raster. */
-void rasterview__ImprintInset(struct rasterview *self, long function)
+void rasterview__ImprintInset(self, function)
+struct rasterview *self;
+long function;
 {
     ImprintInsetProc(self, (function % 16));
 }
 
 /* the rock determines the transfer mode (copy, or, xor, etc.) It should be a number between 0 and 15, as defined in graphic.ch. If it is not, it defaults to the toolset's selected mode, or COPY if there is no toolset. */
-void ImprintInsetProc(struct rasterview *self, long rock)
+void ImprintInsetProc(self, rock)
+struct rasterview *self;
+long rock;
 {
     struct im *offim;
     struct graphic *offgr;
@@ -522,7 +557,9 @@ void ImprintInsetProc(struct rasterview *self, long rock)
     message_DisplayString(self, 10, "Inset imprinted.");
 }
 
-void rasterview__LinkTree(struct rasterview *self, struct view *parent)
+void rasterview__LinkTree( self, parent )
+struct rasterview *self;
+struct view *parent;
 {
     super_LinkTree(self, parent);
     if (parent && rasterview_GetIM(self)) {

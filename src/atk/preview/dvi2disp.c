@@ -58,14 +58,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/prev
 #include <graphic.ih>
 #include <fontdesc.ih>
 
-#include <stdlib.h>
-#include <stdio.h>
 preview_coordinate	DX = 5;	/* step size in x */
 preview_coordinate	DY = 5;	/* step size in y */
 
 preview_coordinate   maxdots = 32000; /* maximum number of dots in an object */
 
-static int   geti(struct preview *self)
+static int   geti (self )
+struct preview *self;
 {
    register    FILE * f = self->DviFileIn;
    register int   n = 0;
@@ -117,7 +116,8 @@ static char *pregets (self) struct preview *self;
 	      return FALSE if not on screen
  */
 
-static Boolean SetPosition(register struct preview *self)
+static Boolean SetPosition(self)
+register struct preview *self;
 {
    register    cvx = self->LogicalX * self->DisplayResolution / self->InputResolution;
    register    cvy = self->LogicalY * self->DisplayResolution / self->InputResolution;
@@ -139,7 +139,9 @@ static Boolean SetPosition(register struct preview *self)
 /* 								 */
 /* ************************************************************ */
 
-static UseFont(struct preview *self, int f, int s)
+static UseFont(self,f,s)
+struct preview *self;
+int f,s;
 {
    register    h, l, m;
    register struct preview_fontname  *p;
@@ -212,7 +214,8 @@ static UseFont(struct preview *self, int f, int s)
 /* 								 */
 /* ************************************************************ */
 
-static DrawThing(struct preview *self)
+static DrawThing(self)
+struct preview *self;
 {
    char *com = pregets (self);
    switch (com[0])
@@ -441,7 +444,8 @@ struct trs
                "~=", 0100, Symbol,
 };
 
-static ShowSpecial(struct preview *self)
+static ShowSpecial(self)
+struct preview *self;
 {
     register char  *s = pregets (self);
     register    h,
@@ -525,7 +529,8 @@ static ShowSpecial(struct preview *self)
 /* 								 */
 /* ************************************************************ */
 
-static void DeviceControl(struct preview *self)
+static void DeviceControl(self)
+struct preview *self;
 {
    char  com = pregets (self)[0];
    if (self->debug) fprintf(stderr,"device control %c\n",com);
@@ -599,7 +604,9 @@ static void DeviceControl(struct preview *self)
 /* 								 */
 /* ************************************************************ */
 
-static void DumpCharacter(struct preview *self, char c)
+static void DumpCharacter(self,c)
+ struct preview *self;
+char c;
 {
        self->CharactersOnThisPage = TRUE;
        if (SetPosition(self))
@@ -614,7 +621,8 @@ static void DumpCharacter(struct preview *self, char c)
        self->PhysicalX = -1;
 }
 
-void preview__DviToDisplay(struct preview *self)
+void preview__DviToDisplay(self) 
+struct preview *self;
 {
    register    FILE * f =  self->DviFileIn;
    register int   c,lastc;
@@ -745,7 +753,9 @@ void preview__DviToDisplay(struct preview *self)
 
 #define scale(v) (((v)* self->DisplayResolution+( self->InputResolution>>1))/ self->InputResolution)
 
-static drawwig(struct preview *self, char *s)
+static drawwig(self,s)	/* draw wiggly line */
+struct preview *self;
+	char *s;
 {
     preview_coordinate     xc[50],
             yc[50],
@@ -807,7 +817,8 @@ static drawwig(struct preview *self, char *s)
     }
 }
 
-static char *getstr(char *p, char *temp)
+static char *getstr(p, temp)	/* copy next non-blank string from p to temp, update p */
+char *p, *temp;
 {
     while (*p == ' ' || *p == '\t' || *p == '\n')
 	p++;
@@ -840,7 +851,8 @@ static dist(x1, y1, x2, y2)	/* integer distance from x1,y1 to x2,y2 */
     return sqrt (dx * dx + dy * dy) + 0.5;
 }
 
-static drawarc(struct preview *self, int dx1, int dy1, int dx2, int dy2)
+static drawarc(self,dx1, dy1, dx2, dy2)
+struct preview *self;
 {
     preview_coordinate     x0,
             y0,
@@ -857,7 +869,8 @@ static drawarc(struct preview *self, int dx1, int dy1, int dx2, int dy2)
      self->LogicalY = y2;
 }
 
-static drawellip(struct preview *self, int a, int b)
+static drawellip(self,a, b)
+struct preview *self;
 {
     preview_coordinate     xc,
             yc;
@@ -870,7 +883,8 @@ static drawellip(struct preview *self, int a, int b)
 
 #define sqr(x) (long int)(x)*(x)
 
-static conicarc(struct preview *self, int xp, int yp, int x0, int y0, int x1, int y1, int a, int b)
+static conicarc(self,xp, yp, x0, y0, x1, y1, a, b)
+struct preview *self;
 {
 	/* based on Bresenham, CACM, Feb 77, pp 102-3 */
 	/* by Chris Van Wyk */

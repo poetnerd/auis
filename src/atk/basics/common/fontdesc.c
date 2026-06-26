@@ -39,7 +39,6 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ba
 #include <ctype.h>
 
 
-#include <stdlib.h>
 char *fontdesc__GetFontFamily(struct fontdesc * self)
 {
     return self->FontName->name;

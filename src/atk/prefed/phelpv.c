@@ -45,17 +45,22 @@ static char *rcsid_phelpv_c = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.
 #define TEXT(s) ((struct text *)phelpv_GetDataObject(s))
 #define PREFS(s) (phelpv_GetPrefs(s))
 
-boolean phelpv__InitializeClass(struct classheader *classID)
+boolean phelpv__InitializeClass(classID)
+struct classheader *classID;
 {
     return TRUE;
 }
 
-boolean phelpv__InitializeObject(struct classheader *classID, struct phelpv *self)
+boolean phelpv__InitializeObject(classID, self)
+struct classheader *classID;
+struct phelpv *self;
 {
     return TRUE;
 }
 
-void phelpv__FinalizeObject(struct classheader *classID, struct phelpv *self)
+void phelpv__FinalizeObject(classID, self)
+struct classheader *classID;
+struct phelpv *self;
 {
 }
 
@@ -64,7 +69,9 @@ struct fghrock {
     char *name;
 };
 
-static boolean WarpToGroupHelp(struct prefgroup *pg, struct fghrock *rock)
+static boolean WarpToGroupHelp(pg, rock)
+struct prefgroup *pg;
+struct fghrock *rock;
 {
     if(rock->name==pg->name) {
 	struct phelpv *self=rock->self;
@@ -79,7 +86,8 @@ static boolean WarpToGroupHelp(struct prefgroup *pg, struct fghrock *rock)
     return TRUE;
 }
 
-static void DoGroupHelp(struct phelpv *self)
+static void DoGroupHelp(self)
+struct phelpv *self;
 {
     struct text *txt=TEXT(self);
     struct environment *renv = txt->rootEnvironment;
@@ -102,13 +110,18 @@ static void DoGroupHelp(struct phelpv *self)
 
     }
 }
-void phelpv__SetDotPosition(struct phelpv *self, long pos)
+void phelpv__SetDotPosition(self, pos)
+struct phelpv *self;
+long pos;
 {
     super_SetDotPosition(self, pos);
     DoGroupHelp(self);
 }
 
-struct view *phelpv__Hit(struct phelpv *self, enum view_MouseAction action, long x, long y, long clicks)
+struct view *phelpv__Hit(self, action, x, y, clicks)
+struct phelpv *self;
+enum view_MouseAction action;
+long x, y, clicks;
 {
     struct view *result=super_Hit(self, action, x, y, clicks);
     if(result==(struct view *)self && action==view_LeftUp || action==view_RightUp) {

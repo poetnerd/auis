@@ -43,7 +43,6 @@ December, 1986 */
 #include <keystate.eh>
 
 
-#include <stdlib.h>
 void keystate__SetObject(struct keystate * self, struct basicobject * object)
 {
 

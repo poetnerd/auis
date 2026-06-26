@@ -41,9 +41,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <stdio.h>
 
+extern int errno;
 
-#include <errno.h>
-int fwriteallchars(char *Thing, int NItems, FILE *stream)
+int fwriteallchars(Thing, NItems, stream)
+char *Thing;
+int NItems;
+FILE *stream;
 {
     int Code, ToWrite;
 

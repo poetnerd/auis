@@ -49,13 +49,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #ifdef WHITEPAGES_ENV  /* avoid makedepend "errors" */
 #include <btint.h>
-#include <stdlib.h>
 #endif /* WHITEPAGES_ENV   */
 
+extern int errno;
 
 extern int br_Debugging;
 
-static bt_ErrorCode JustMove(struct btC *bC, int ToEnd)
+static bt_ErrorCode JustMove(bC, ToEnd)
+struct btC *bC;
+int ToEnd;	/* whether to beginning or to end */
 {
     int Idx, Flags, TreeDepth, RootNameLength, ValueLength, ThisByte;
     bt_ErrorCode RetVal;
@@ -116,7 +118,8 @@ Declaration:
 	extern bt_ErrorCode bt_CopyCursor(cursptr, curs);
 	struct btCursor **cursptr, *curs;
 */
-bt_ErrorCode bt_CopyCursor(struct btCursor **cursptr, struct btCursor *curs)
+bt_ErrorCode bt_CopyCursor(cursptr, curs)
+struct btCursor **cursptr, *curs;
 {
     struct BTr *bt;
     struct btC *NewbC;
@@ -150,7 +153,8 @@ bt_ErrorCode bt_CopyCursor(struct btCursor **cursptr, struct btCursor *curs)
   extern bt_ErrorCode bt_CursorToEnd(curs);
   struct btCursor *curs;
   */
-bt_ErrorCode bt_CursorToStart(struct btCursor *curs)
+bt_ErrorCode bt_CursorToStart(curs)
+struct btCursor *curs;
 {
     struct btC *bC = (struct btC *) curs;
 
@@ -160,7 +164,8 @@ bt_ErrorCode bt_CursorToStart(struct btCursor *curs)
     return JustMove(bC, FALSE);
 }
 
-bt_ErrorCode bt_CursorToEnd(struct btCursor *curs)
+bt_ErrorCode bt_CursorToEnd(curs)
+struct btCursor *curs;
 {
     struct btC *bC = (struct btC *) curs;
 

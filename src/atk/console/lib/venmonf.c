@@ -61,9 +61,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #define bool_t int
 #include <afs/afsint.h>
 #include <afs/venus.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #endif /* AFS_ENV */
 
 #define MAXVQSIZE 2000
@@ -88,8 +85,9 @@ int SetHomeEnv()
 }
 
 
-int CheckVenusQuota(struct consoleClass *self)
-{
+CheckVenusQuota(self)
+    struct consoleClass *self;
+ {
 #ifdef AFS_ENV
     struct ViceIoctl blob;
     VolumeStatus  *status;
@@ -189,7 +187,9 @@ int CheckVenusQuota(struct consoleClass *self)
 
 #define MARINERBUFSIZE 1000
 
-int CheckMariner(FILE *ActiveVenus, struct consoleClass *self)
+CheckMariner(ActiveVenus, self)
+FILE *ActiveVenus;
+struct consoleClass *self;
 {
 #ifdef AFS_ENV
     static char buf[MARINERBUFSIZE];
@@ -221,7 +221,9 @@ int CheckMariner(FILE *ActiveVenus, struct consoleClass *self)
 }
 
 
-int CheckTheMariner(char *buf, struct consoleClass *self)
+CheckTheMariner(buf, self)
+char *buf;
+struct consoleClass *self;
 {
 #ifdef AFS_ENV
     mydbg(("entering: CheckTheMariner\n"));

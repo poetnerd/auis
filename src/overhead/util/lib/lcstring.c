@@ -49,7 +49,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * (4/4/91)
 */
 
-char *lcstring(char *d, char *s, int n)
+char *lcstring (d, s, n)
+  char *d;				/* dest string */
+  char *s;				/* source string */
+  int   n;				/* max transfer size */
 {   char *original_d = d;
     char  c;
 
@@ -68,9 +71,9 @@ char *lcstring(char *d, char *s, int n)
 
 #ifdef TESTINGONLYTESTING
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-int main(int argc, char *argv[])
+main(argc,argv)
+int argc;
+char *argv[];
 {
 char *str1, str2;
 int len;

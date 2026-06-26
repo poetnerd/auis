@@ -33,7 +33,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <errstkop.h>
 
-void            eliTraceStk_Purge(EliState_t *st, eliTraceStack_t *s)
+void            eliTraceStk_Purge(st, s)	/* Pop stuff off until empty */
+EliState_t     *st;
+eliTraceStack_t *s;
 {
     while (eliTraceStk_Top(s))
 	eliTraceStk_Pop(st, s);
@@ -54,7 +56,10 @@ int n;
     return (popped);
 }
 
-EliStr_t       *eliStr_GetNew_trace(EliState_t *st, eliTraceStack_t *s, char *string)
+EliStr_t       *eliStr_GetNew_trace(st, s, string)
+EliState_t     *st;
+eliTraceStack_t *s;
+char           *string;
 {
     EliStr_t       *tmp;
 
@@ -69,7 +74,10 @@ EliStr_t       *eliStr_GetNew_trace(EliState_t *st, eliTraceStack_t *s, char *st
     return (tmp);
 }
 
-EliSym_t       *eliSym_GetNew_trace(EliState_t *st, eliTraceStack_t *s, EliStr_t *strnode)
+EliSym_t       *eliSym_GetNew_trace(st, s, strnode)
+EliState_t     *st;
+eliTraceStack_t *s;
+EliStr_t       *strnode;
 {
     EliSym_t       *tmp;
 
@@ -84,7 +92,9 @@ EliSym_t       *eliSym_GetNew_trace(EliState_t *st, eliTraceStack_t *s, EliStr_t
     return (tmp);
 }
 
-EliCons_t      *eliCons_GetNew_trace(EliState_t *st, eliTraceStack_t *s)
+EliCons_t      *eliCons_GetNew_trace(st, s)
+EliState_t     *st;
+eliTraceStack_t *s;
 {
     EliCons_t      *tmp;
 
@@ -99,7 +109,9 @@ EliCons_t      *eliCons_GetNew_trace(EliState_t *st, eliTraceStack_t *s)
     return (tmp);
 }
 
-EliSexp_t      *eliSexp_GetNew_trace(EliState_t *st, eliTraceStack_t *s)
+EliSexp_t      *eliSexp_GetNew_trace(st, s)
+EliState_t     *st;
+eliTraceStack_t *s;
 {
     EliSexp_t      *tmp;
 
@@ -114,7 +126,9 @@ EliSexp_t      *eliSexp_GetNew_trace(EliState_t *st, eliTraceStack_t *s)
     return (tmp);
 }
 
-EliFn_t        *eliFn_GetNew_trace(EliState_t *st, eliTraceStack_t *s)
+EliFn_t        *eliFn_GetNew_trace(st, s)
+EliState_t     *st;
+eliTraceStack_t *s;
 {
     EliFn_t        *tmp;
 
@@ -129,7 +143,11 @@ EliFn_t        *eliFn_GetNew_trace(EliState_t *st, eliTraceStack_t *s)
     return (tmp);
 }
 
-eliBucketNode_t *eliBucketNode_GetNew_trace(EliState_t *st, eliTraceStack_t *s, EliSexp_t *datum, char *key)
+eliBucketNode_t *eliBucketNode_GetNew_trace(st, s, datum, key)
+EliState_t     *st;
+eliTraceStack_t *s;
+EliSexp_t      *datum;
+char           *key;
 {
     eliBucketNode_t *tmp;
 
@@ -144,7 +162,9 @@ eliBucketNode_t *eliBucketNode_GetNew_trace(EliState_t *st, eliTraceStack_t *s, 
     return (tmp);
 }
 
-EliSexp_t      *eliGetSexp_trace(EliState_t *st, eliTraceStack_t *s)
+EliSexp_t      *eliGetSexp_trace(st, s)
+EliState_t     *st;
+eliTraceStack_t *s;
 {
     EliSexp_t      *result;
 
@@ -159,7 +179,10 @@ EliSexp_t      *eliGetSexp_trace(EliState_t *st, eliTraceStack_t *s)
     return (result);
 }
 
-EliSexp_t      *eliFGetSexp_trace(EliState_t *st, eliTraceStack_t *s, FILE *fp)
+EliSexp_t      *eliFGetSexp_trace(st, s, fp)
+EliState_t     *st;
+eliTraceStack_t *s;
+FILE           *fp;
 {
     EliSexp_t      *result;
 
@@ -174,7 +197,10 @@ EliSexp_t      *eliFGetSexp_trace(EliState_t *st, eliTraceStack_t *s, FILE *fp)
     return (result);
 }
 
-EliSexp_t      *eliSGetSexp_trace(EliState_t *st, eliTraceStack_t *s, char *string)
+EliSexp_t      *eliSGetSexp_trace(st, s, string)
+EliState_t     *st;
+eliTraceStack_t *s;
+char           *string;
 {
     EliSexp_t      *result;
 

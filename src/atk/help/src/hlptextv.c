@@ -41,26 +41,32 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <text.ih>
 #include <hlptextv.eh>
 
-#include <string.h>
-boolean hlptextview__InitializeClass(struct classheader *classID)
+boolean hlptextview__InitializeClass(classID)
+struct classheader *classID;
 {
     return TRUE;
 }
 
-boolean hlptextview__InitializeObject(struct classheader *classID, struct hlptextview *self)
+boolean hlptextview__InitializeObject(classID, self)
+struct classheader *classID;
+struct hlptextview *self;
 {
     hlptextview_SetHyperlinkCheck(self, FALSE);
     return TRUE;
 }
 
-void hlptextview__FinalizeObject(struct classheader *classID, struct hlptextview *self)
+void hlptextview__FinalizeObject(classID, self)
+struct classheader *classID;
+struct hlptextview *self;
 {
     return;
 }
 
 /* given a buffer and a position, return the largest string containing that position which includes no whitespace. The buffer may be mutilated as a side effect.
 If the character at pos and pos+1 are both whitespace, return NULL. */
-static char *TrimWhiteSpace(char *buf, int pos)
+static char *TrimWhiteSpace(buf, pos)
+char *buf;
+int pos;
 {
     int val;
 
@@ -90,7 +96,11 @@ static char *TrimWhiteSpace(char *buf, int pos)
 }
 
 /* override */
-void hlptextview__GetClickPosition(struct hlptextview *self, long position, long numberOfClicks, enum view_MouseAction action, long startLeft, long startRight, long *leftPos, long *rightPos)
+void hlptextview__GetClickPosition(self, position, numberOfClicks, action, startLeft, startRight, leftPos, rightPos)
+struct hlptextview *self;
+long position, numberOfClicks;
+enum view_MouseAction action;
+long startLeft, startRight, *leftPos, *rightPos;
 {
     super_GetClickPosition(self, position, numberOfClicks, action, startLeft, startRight, leftPos, rightPos);
     if (hlptextview_GetHyperlinkCheck(self)) {

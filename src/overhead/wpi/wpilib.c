@@ -53,7 +53,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif /* AMS_ENV */
 #ifdef CMU_ENV
 #include <parseadd.h>
-#include <stdlib.h>
 extern PARSED_ADDRESS *SingleAddress();
 #endif /* CMU_ENV */
 
@@ -160,7 +159,8 @@ WPI_GetWorkingDomain()
 }
 
 change_t
-int WPI_CanIChange(char *field)
+WPI_CanIChange(field)
+char *field;
 {
   int i;
 
@@ -172,7 +172,10 @@ int WPI_CanIChange(char *field)
 
 #ifdef AMS_ENV
 static validate_t
-int chk_fwd(char *field, char *addr, WPI_entry_t entry)
+chk_fwd(field,addr,entry)	/* POLICY -- canonicalizes forwarding addresses */
+char *field;
+char *addr;
+WPI_entry_t entry;
 {
   char *out, buf[MAXPATHLEN*2];
   int err;
@@ -201,7 +204,12 @@ int chk_fwd(char *field, char *addr, WPI_entry_t entry)
 
 #ifdef CMU_ENV
 static validate_t
-int chk_caf_cmuedu(char *field, char *addr, WPI_entry_t entry)
+chk_caf_cmuedu(field,addr,entry) /* POLICY -- allow (and canonicalize)
+				    an associated CMU.EDU CMUname.
+				    Also allow -1, underscore and dot */
+char *field;
+char *addr;
+WPI_entry_t entry;
 {
   char *p;
   PARSED_ADDRESS *AddrList, *Addr;
@@ -359,27 +367,39 @@ int chk_caf_cmuedu(char *field, char *addr, WPI_entry_t entry)
 #endif /* CMU_ENV */
 
 static validate_t
-int constant_cool(char *field, char *arg, WPI_entry_t entry)
+constant_cool(field,arg,entry)
+char *field;
+char *arg;
+WPI_entry_t entry;
 {
   WPI_Update(field, arg, entry);
   return(cool);
 }
 
 static validate_t
-int constant_drag(char *field, char *arg, WPI_entry_t entry)
+constant_drag(field,arg,entry)
+char *field;
+char *arg;
+WPI_entry_t entry;
 {
   WPI_Update(field, arg, entry);
   return(drag);
 }
 
 static validate_t
-int constant_uncool(char *field, char *arg, WPI_entry_t entry)
+constant_uncool(field,arg,entry)
+char *field;
+char *arg;
+WPI_entry_t entry;
 {
   return(uncool);
 }
 
 validate_t 
-int WPI_Validate(char *field, char *value, WPI_entry_t entry)
+WPI_Validate(field, value, entry) /* POLICY */
+char *field; 
+char *value;
+WPI_entry_t entry;
 {
   static struct validate_function {
     char *field;
@@ -523,7 +543,9 @@ WPI_Self()
 #define WPCALL(x) {wp_ErrorCode err; if ((err=(x))!=wperr_NoError) {error(wp_ErrorString(err),WPERRPART(err));if (wpd) cwp_Terminate(wpd); wpd=NULL; return(NULL);}}
 
 WPI_entry_t
-int WPI_Lookup(char *user, boolx_t admin_flag)
+WPI_Lookup(user, admin_flag)
+char *user;
+boolx_t admin_flag;
 {
   static struct wp_cd *wpd = NULL; /* "sticky" fields--try to maintain  */
   static char *wpd_domain = NULL; /* state from call to call */

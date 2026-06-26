@@ -46,8 +46,6 @@ extern char * fcvt();
 #define AUXMODULE
 #include <spread.eh>
 
-#include <string.h>
-#include <stdio.h>
 extern struct view *spread_FindSubview();
 
 static boolean debug=0;
@@ -61,7 +59,10 @@ static boolean debug=0;
 
 /* return first pixel value for given cell index */
 
-long spread_Width(struct spread *V, int i, int j)
+long spread_Width(V, i, j)
+struct spread * V;
+int i;
+int j;
 {
     struct table *T = MyTable(V);
     long p = 0;
@@ -77,7 +78,10 @@ long spread_Width(struct spread *V, int i, int j)
     return p;
 }
 
-long spread_Height(struct spread *V, int i, int j)
+long spread_Height(V, i, j)
+struct spread * V;
+int i;
+int j;
 {
     long p = 0;
 
@@ -98,7 +102,8 @@ long spread_Height(struct spread *V, int i, int j)
 
 /* should I have highlighting? */
 
-int spread_WantHighlight(struct spread *V)
+int spread_WantHighlight(V)
+struct spread *V;
 {
     struct table *T = MyTable(V);
 
@@ -121,7 +126,8 @@ int spread_WantHighlight(struct spread *V)
 
 /* fix cursors after update */
 
-static void FixCursors(struct spread *V)
+static void FixCursors(V)
+struct spread * V;
 {
     struct rectangle vb;
 
@@ -135,7 +141,10 @@ static void FixCursors(struct spread *V)
 
 /* notify children of full update event */
 
-static void NotifyKids(struct spread *V, enum view_UpdateType how, struct rectangle *updateClipRect)
+static void NotifyKids(V, how, updateClipRect)
+struct spread * V;
+enum view_UpdateType how;
+struct rectangle *updateClipRect;
 {
     struct table *T = MyTable(V);
     int r, c, x, y;
@@ -185,7 +194,10 @@ static void NotifyKids(struct spread *V, enum view_UpdateType how, struct rectan
 
 /*  redraw when exposed or size changed, etc */
 
-int spread_update_FullUpdate(struct spread *V, enum view_UpdateType how, struct rectangle *updateClipRect)
+spread_update_FullUpdate(V, how, updateClipRect)
+struct spread * V;
+enum view_UpdateType how;
+struct rectangle *updateClipRect;
 {
     struct FontSummary *fs;
 
@@ -213,7 +225,10 @@ int spread_update_FullUpdate(struct spread *V, enum view_UpdateType how, struct 
 
 /*  redraw when contents changed */
 
-int spread_PartialUpdate(struct spread *V, enum view_UpdateType how, struct rectangle *updateClipRect)
+spread_PartialUpdate(V, how, updateClipRect)
+struct spread * V;
+enum view_UpdateType how;
+struct rectangle *updateClipRect;
 {
     struct table *T = MyTable(V);
     int zapped;
@@ -253,7 +268,9 @@ int spread_PartialUpdate(struct spread *V, enum view_UpdateType how, struct rect
 	printf("*****\n");
 }
 
-int spread_InvertRectangle(struct spread *V, int left, int top, int width, int height)
+spread_InvertRectangle(V, left, top, width, height)
+struct spread * V;
+int left, top, width, height;
 {
     spread_SetTransferMode(V, graphic_INVERT);
     if (width < 0) {
@@ -267,7 +284,8 @@ int spread_InvertRectangle(struct spread *V, int left, int top, int width, int h
     spread_FillRectSize(V, left, top, width, height, V->blackPix);
 }
 
-static SmashSelection(struct spread *V)
+static SmashSelection (V)
+struct spread * V;
 {
     int x0, x1, y0, y1;
     int x2, x3, y2, y3;
@@ -314,7 +332,8 @@ static SmashSelection(struct spread *V)
 	spread_InvertRectangle (V, x2, y2, x3 - x2, y3 - y2);
 }
 
-int spread_ClearSelectionBox(struct spread *V)
+spread_ClearSelectionBox (V)
+struct spread * V ;
 {
     if(V->selectionvisible) {
 	SmashSelection (V);
@@ -322,12 +341,17 @@ int spread_ClearSelectionBox(struct spread *V)
     }
 }
 
-static Flush(struct spread *V)
+static Flush(V)
+struct spread * V;
 {
     spread_FlushGraphics(V);
 }
 
-static updateCells(struct spread *V, int zapped, enum view_UpdateType how, struct rectangle *updateClipRect)
+static updateCells(V, zapped, how, updateClipRect)
+struct spread * V;
+int zapped;
+enum view_UpdateType how;
+struct rectangle *updateClipRect;
 {
     struct table *T = MyTable(V);
     int r, c, x, y;
@@ -370,7 +394,11 @@ static updateCells(struct spread *V, int zapped, enum view_UpdateType how, struc
     spread_SetClippingRect(V, updateClipRect);
 }
 
-static updateString(struct spread *V, char justification, char *string, struct rectangle *cellBounds)
+static updateString (V, justification, string, cellBounds)
+struct spread * V;
+char justification;
+char *string;
+struct rectangle *cellBounds;
 {
     if (justification == '\"') { 		/* right */
 	spread_MoveTo(V, rectangle_Left(cellBounds) + rectangle_Width(cellBounds) - 1, rectangle_Top(cellBounds));
@@ -386,7 +414,12 @@ static updateString(struct spread *V, char justification, char *string, struct r
     }
 }
 
-static updateValue(struct spread *V, extended_double *value, char format, int precision, struct rectangle *cellBounds)
+static updateValue (V, value, format, precision, cellBounds)
+struct spread * V;
+extended_double *value;
+char format;
+int precision;
+struct rectangle *cellBounds;
 {
     struct table *T = MyTable(V);
     int     x, y;
@@ -490,7 +523,13 @@ static updateValue(struct spread *V, extended_double *value, char format, int pr
     }
 }
 
-static updateCell(struct spread *V, struct cell *cell, int zapped, enum view_UpdateType how, struct rectangle *bodyClipRect, struct rectangle *cellBounds)
+static updateCell(V, cell, zapped, how, bodyClipRect, cellBounds)
+struct spread * V;
+struct cell * cell;
+enum view_UpdateType how;
+int     zapped;
+struct rectangle *bodyClipRect;
+struct rectangle *cellBounds;
 {
     struct rectangle cellClipRect;
     struct view *child;
@@ -538,7 +577,9 @@ static updateCell(struct spread *V, struct cell *cell, int zapped, enum view_Upd
     }
 }
 
-static updateEdges(struct spread *V, struct rectangle *updateClipRect)
+static updateEdges(V, updateClipRect)
+struct spread * V;
+struct rectangle *updateClipRect;
 {
     struct table *T = MyTable(V);
     int     x, y, r, c, k;
@@ -630,7 +671,9 @@ static updateEdges(struct spread *V, struct rectangle *updateClipRect)
 
 #define	spread_BORDERMARGIN 2	/* white space from table edge to bordering label */
 
-static updateBorder(struct spread *V, struct rectangle *updateClipRect)
+static updateBorder(V, updateClipRect)
+struct spread * V;
+struct rectangle *updateClipRect;
 {
     struct table *T = MyTable(V);
     int     r, c, x, y;

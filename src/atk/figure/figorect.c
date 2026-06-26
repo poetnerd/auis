@@ -38,8 +38,9 @@ char *figorect_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 
 #include <rect.h>
 
-#include <stdio.h>
-boolean figorect__InitializeObject(struct classhdr *ClassID, struct figorect *self)
+boolean figorect__InitializeObject(ClassID, self)
+struct classhdr *ClassID;
+struct figorect *self;
 {
     figorect_PosW(self) = 0;
     figorect_PosH(self) = 0;
@@ -50,7 +51,9 @@ boolean figorect__InitializeObject(struct classhdr *ClassID, struct figorect *se
     return TRUE;
 }
 
-struct figorect *figorect__Create(struct classheader *classID, long left, long top, long width, long height)
+struct figorect *figorect__Create(classID, left, top, width, height)
+struct classheader *classID;
+long left, top, width, height;
 {
     struct figorect *res = figorect_New();
     if (!res) return NULL;
@@ -64,13 +67,17 @@ struct figorect *figorect__Create(struct classheader *classID, long left, long t
     return res;
 }
 
-char *figorect__ToolName(struct figorect *dummy, struct figtoolview *v, long rock)
+char *figorect__ToolName(dummy, v, rock)
+struct figorect *dummy;
+struct figtoolview *v;
+long rock;
 {
     return "Rectangle";
 }
 
 /* set bounding box and handle list in fig coordinates */
-void figorect__RecomputeBounds(struct figorect *self)
+void figorect__RecomputeBounds(self)
+struct figorect *self;
 {
     long left, width, top, height;
     long lwid;
@@ -137,12 +144,15 @@ static long canonical[] = {
     3, 5, 7, 1, figobj_NULLREF
 };
 
-long *figorect__GetCanonicalHandles(struct figorect *self)
+long *figorect__GetCanonicalHandles(self)
+struct figorect *self;
 {
     return canonical;
 }
 
-void figorect__Draw(struct figorect *self, struct figview *v)
+void figorect__Draw(self, v) 
+struct figorect *self;
+struct figview *v;
 {
     long x, y, w, h;
     long shad, lw;
@@ -186,7 +196,9 @@ void figorect__Draw(struct figorect *self, struct figview *v)
 	figview_SetLineWidth(v, 1);
 }
 
-void figorect__Sketch(struct figorect *self, struct figview *v)
+void figorect__Sketch(self, v) 
+struct figorect *self;
+struct figview *v;
 {
     long x, y, w, h;
 
@@ -301,7 +313,9 @@ long clicks;
 }
 
 /* basic procedure to move a handle -- used by figorect__MoveHandle(), figorect__Reshape() */
-static void MoveHandle(struct figorect *self, long x, long y, long ptref)
+static void MoveHandle(self, x, y, ptref)
+struct figorect *self;
+long x, y, ptref;
 {
     long ix;
 
@@ -353,7 +367,12 @@ static void MoveHandle(struct figorect *self, long x, long y, long ptref)
     }
 }
 
-boolean figorect__Reshape(struct figorect *self, enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref)
+boolean figorect__Reshape(self, action, v, x, y, handle, ptref)
+struct figorect *self;
+enum view_MouseAction action;
+struct figview *v;
+boolean handle;
+long x, y, ptref;
 {
     if (!handle)
 	return;
@@ -381,7 +400,9 @@ boolean figorect__Reshape(struct figorect *self, enum view_MouseAction action, s
     return TRUE;
 }
 
-void figorect__MoveHandle(struct figorect *self, long x, long y, long ptref)
+void figorect__MoveHandle(self, x, y, ptref)
+struct figorect *self;
+long x, y, ptref;
 {
     if (figorect_GetReadOnly(self))
 	return;
@@ -390,7 +411,9 @@ void figorect__MoveHandle(struct figorect *self, long x, long y, long ptref)
     figorect_SetModified(self);
 }
 
-void figorect__Reposition(struct figorect *self, long xd, long yd)
+void figorect__Reposition(self, xd, yd)
+struct figorect *self;
+long xd, yd;
 {
     if (figorect_GetReadOnly(self))
 	return;
@@ -400,7 +423,10 @@ void figorect__Reposition(struct figorect *self, long xd, long yd)
     figorect_SetModified(self);
 }
 
-void figorect__InheritVAttributes(struct figorect *self, struct figattr *attr, unsigned long mask)
+void figorect__InheritVAttributes(self, attr, mask)
+struct figorect *self;
+struct figattr *attr;
+unsigned long mask;
 {
     super_InheritVAttributes(self, attr, mask);
 
@@ -409,7 +435,10 @@ void figorect__InheritVAttributes(struct figorect *self, struct figattr *attr, u
     }
 }
 
-unsigned long figorect__UpdateVAttributes(struct figorect *self, struct figattr *attr, unsigned long mask)
+unsigned long figorect__UpdateVAttributes(self, attr, mask)
+struct figorect *self;
+struct figattr *attr;
+unsigned long mask;
 {
     mask = super_UpdateVAttributes(self, attr, mask);
     
@@ -419,14 +448,19 @@ unsigned long figorect__UpdateVAttributes(struct figorect *self, struct figattr 
     return mask;
 }
 
-void figorect__WriteBody(struct figorect *self, FILE *fp)
+void figorect__WriteBody(self, fp)
+struct figorect *self;
+FILE *fp;
 {
     super_WriteBody(self, fp);
 
     fprintf(fp, "$ %d %d\n", self->w, self->h);
 }
 
-long figorect__ReadBody(struct figorect *self, FILE *fp, boolean recompute)
+long figorect__ReadBody(self, fp, recompute)
+struct figorect *self;
+FILE *fp;
+boolean recompute;
 {
     int	ix; 
     long w, h;
@@ -454,7 +488,11 @@ long figorect__ReadBody(struct figorect *self, FILE *fp, boolean recompute)
 
 #define FadeColor(col, shad)  (1.0 - (1.0-(shad)) * (1.0-(col)))
 
-void figorect__PrintObject(struct figorect *self, struct figview *v, FILE *file, char *prefix)
+void figorect__PrintObject(self, v, file, prefix)
+struct figorect *self;
+struct figview *v;
+FILE *file;
+char *prefix;
 {
     long x, y, w, h;
     long shad, lw;

@@ -44,10 +44,10 @@ static char *rcsid_prefs_c = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3
 #include <strcache.ih>
 #include <envrment.ih>
 
-#include <stdlib.h>
-#include <stdio.h>
 /* tests two cached strings for equality. */
-static int FindCat(struct prefgroup *a, char *b)
+static int FindCat(a, b)
+struct prefgroup *a;
+char *b;
 {
     return a->name==b?0:1;
 }
@@ -58,14 +58,18 @@ static int FindCat(struct prefgroup *a, char *b)
 
 static char *ReadLine();	
 
-static void FreeHelpStyles(struct prefs *self)
+static void FreeHelpStyles(self)
+struct prefs *self;
 {
     zfree(self->llist);
     self->llistsize=self->llistcnt=0;
 }
 
 
-static struct environment *AddStyle(struct text *self, long pos, long len, struct style *style)
+static struct environment *AddStyle(self, pos, len, style)
+struct text *self;
+long pos, len;
+struct style *style;
 {
     struct environment *newenv;
     newenv = environment_InsertStyle(self->rootEnvironment, pos, style, TRUE);
@@ -75,7 +79,8 @@ static struct environment *AddStyle(struct text *self, long pos, long len, struc
 }
 
 
-static void ApplyHelpStyles(struct prefs *self)
+static void ApplyHelpStyles(self)
+struct prefs *self;
 {
     long i;
     struct stylesheet *ss=text_GetStyleSheet(self->help);
@@ -100,7 +105,9 @@ static void ApplyHelpStyles(struct prefs *self)
     FreeHelpStyles(self);
 }
 
-boolean prefs__InitializeObject(struct classheader *classID, struct prefs *self)
+boolean prefs__InitializeObject(classID, self)
+struct classheader *classID;
+struct prefs *self;
 {
     char *file;
     FILE *fp2;
@@ -190,19 +197,24 @@ boolean prefs__InitializeObject(struct classheader *classID, struct prefs *self)
 }
 
 
-static boolean freestring(char *name, long rock)
+static boolean freestring(name, rock)
+char *name;
+long rock;
 {
     zfree(name);
     return TRUE;
 }
 
-static void freestringlist(struct list *vl)
+static void freestringlist(vl)
+struct list *vl;
 {
     list_Enumerate(vl, freestring, NULL);
     list_Destroy(vl);
 }
 
-static boolean freeall(struct prefdesc *pd, struct prefs *rock)
+static boolean freeall(pd, rock)
+struct prefdesc *pd;
+struct prefs *rock;
 {
     zfree(pd->cond);
     zfree(pd->val);
@@ -225,13 +237,17 @@ static boolean freeall(struct prefdesc *pd, struct prefs *rock)
 }
 
 
-static boolean freegroups(struct prefgroup *pg, struct prefs *self)
+static boolean freegroups(pg, self)
+struct prefgroup *pg;
+struct prefs *self;
 {
     zfree(pg);
     return TRUE;
 }
 
-void prefs__FinalizeObject(struct classheader *classID, struct prefs *self)
+void prefs__FinalizeObject(classID, self)
+struct classheader *classID;
+struct prefs *self;
 {
     if(self->categories) {
 	list_Enumerate(self->categories, freegroups, self);
@@ -270,7 +286,9 @@ static char *trans[]={
     NULL, NULL
 };
 
-char *prefs__TranslateViewName(struct classheader *classID, char *name)
+char *prefs__TranslateViewName(classID, name)
+struct classheader *classID;
+char *name;
 {
     char **p=trans;
     if(name == NULL)
@@ -301,7 +319,9 @@ struct therock {
     struct prefval *obj;
 };
 
-static boolean AddViews(char *vname, struct therock *tr)
+static boolean AddViews(vname, tr)
+char *vname;
+struct therock *tr;
 {
     struct prefs *self=tr->self;
     struct prefval *obj=tr->obj;
@@ -312,7 +332,9 @@ static boolean AddViews(char *vname, struct therock *tr)
     return TRUE;
 }
 
-static struct prefdesc *NewPrefDesc(struct prefs *self, char *p)
+static struct prefdesc *NewPrefDesc(self, p)
+struct prefs *self;
+char *p;
 {
     struct prefdesc *result=(struct prefdesc *)malloc(sizeof(struct prefdesc));
     char *q;
@@ -360,13 +382,16 @@ static struct prefdesc *NewPrefDesc(struct prefs *self, char *p)
     return result;
 }
 
-static boolean CopyViewName(char *name, struct list *nl)
+static boolean CopyViewName(name, nl)
+char *name;
+struct list *nl;
 {
     list_InsertEnd(nl, name);
     return TRUE;
 }
 
-static struct list *CopyViewList(struct list *vl)
+static struct list *CopyViewList(vl)
+struct list *vl;
 {
     struct list *nl;
 
@@ -380,13 +405,16 @@ static struct list *CopyViewList(struct list *vl)
 }
 
 
-static boolean CopyStr(char *name, struct list *nl)
+static boolean CopyStr(name, nl)
+char *name;
+struct list *nl;
 {
     list_InsertEnd(nl, STRDUP(name));
     return TRUE;
 }
 
-static struct list *CopyList(struct list *vl)
+static struct list *CopyList(vl)
+struct list *vl;
 {
     struct list *nl;
 
@@ -399,7 +427,8 @@ static struct list *CopyList(struct list *vl)
     return nl;
 }
 
-static struct prefdesc *DuplicateDesc(struct prefdesc *pd)
+static struct prefdesc *DuplicateDesc(pd)
+struct prefdesc *pd;
 {
     struct prefdesc *result=(struct prefdesc *)malloc(sizeof(struct prefdesc));
     if(result==NULL) return NULL;
@@ -431,13 +460,18 @@ static struct prefdesc *DuplicateDesc(struct prefdesc *pd)
     return result;
 }
 
-static boolean FixOrderValues(struct prefdesc *pd, long val)
+static boolean FixOrderValues(pd, val)
+struct prefdesc *pd;
+long val;
 {
     if(pd->order>val) pd->order++;
     return TRUE;
 }
 
-struct prefdesc *prefs__DuplicatePref(struct prefs *self, struct prefdesc *pd, char *newapp, char *newcond)
+struct prefdesc *prefs__DuplicatePref(self, pd, newapp, newcond)
+struct prefs *self;
+struct prefdesc *pd;
+char *newapp, *newcond;
 {
     struct prefdesc *result=DuplicateDesc(pd);
     char *v;
@@ -505,7 +539,9 @@ struct prefdesc *prefs__DuplicatePref(struct prefs *self, struct prefdesc *pd, c
     return result;
 }
 
-void prefs__DeletePref(struct prefs *self, struct prefdesc *pd)
+void prefs__DeletePref(self, pd)
+struct prefs *self;
+struct prefdesc *pd;
 {
     if(pd->pm) {
 	long pos=mark_GetPos(pd->pm)-2, lpos=(-1);
@@ -536,7 +572,9 @@ void prefs__DeletePref(struct prefs *self, struct prefdesc *pd)
     }
 }
 
-static struct list *HandleViewList(struct prefs *self, char *buf)
+static struct list *HandleViewList(self, buf)
+struct prefs *self;
+char *buf;
 {
     char *p=buf;
     struct list *vl;
@@ -559,7 +597,9 @@ static struct list *HandleViewList(struct prefs *self, char *buf)
 }
 
 
-static boolean FindDesc(struct prefdesc *pd, struct thedescrock *rock)
+static boolean FindDesc(pd, rock)
+struct prefdesc *pd;
+struct thedescrock *rock;
 {
     char *app=rock->app;
     char *name=rock->name;
@@ -586,7 +626,8 @@ static boolean FindDesc(struct prefdesc *pd, struct thedescrock *rock)
 }
 
 
-static boolean ListsEqual(struct list *l1, struct list *l2)
+static boolean ListsEqual(l1, l2)
+struct list *l1, *l2;
 {
     if(l1==l2) return TRUE;
     
@@ -603,7 +644,9 @@ static boolean ListsEqual(struct list *l1, struct list *l2)
 }
 
 
-static boolean InsertPref(struct prefdesc *pd, struct prefs *self)
+static boolean InsertPref(pd, self)
+struct prefdesc *pd;
+struct prefs *self;
 {
     if(pd->shadow && self->sortby!=prefs_Group) return TRUE;
  
@@ -621,7 +664,10 @@ static boolean InsertPref(struct prefdesc *pd, struct prefs *self)
 /* see code at end of this file... it doesn't get used right now, but might be useful someday... */
 }
 
-static void HandlePref(struct prefs *self, struct prefline *line, int *order)
+static void HandlePref(self, line, order)
+struct prefs *self;
+struct prefline *line;
+int *order;
 {
     struct prefval *obj=NULL;
     int len;
@@ -762,7 +808,9 @@ static void HandlePref(struct prefs *self, struct prefline *line, int *order)
 }
 
 
-static char *myindex(char *p, char ch)
+static char *myindex(p, ch)
+char *p;
+char ch;
 {
     boolean haveslash=FALSE;
     while(*p) {
@@ -808,7 +856,9 @@ static struct wbuf condbuf={
     0
 };
 
-static char * SetBuf(struct wbuf *wb, char *str)
+static char * SetBuf(wb, str)
+struct wbuf *wb;
+char *str;
 {
     if(str==NULL) str="";
     if(wb->buf==NULL) {
@@ -833,7 +883,11 @@ static char * SetBuf(struct wbuf *wb, char *str)
 #define MAX(x,y) ((x)<(y)?y:x)
 #endif
 
-static void AddHelpStyle(struct prefs *self, long pos, long len, enum style_type type)
+static void AddHelpStyle(self, pos, len, type)
+struct prefs *self;
+long pos;
+long len;
+enum style_type type;
 {
     if(self->llistcnt>=self->llistsize) {
 	if(self->llist==NULL) {
@@ -860,7 +914,10 @@ static void AddHelpStyle(struct prefs *self, long pos, long len, enum style_type
 #define ValBufSet(str) SetBuf(&valbuf, str)
 #define CondBufSet(str) SetBuf(&condbuf, str)
 
-static void AddCategory(struct prefs *self, char *group, long pos)
+static void AddCategory(self, group, pos)
+struct prefs *self;
+char *group;
+long pos;
 {
     struct prefgroup *pg=(struct prefgroup *)list_Enumerate(self->categories, FindCat, group);
     if(pg==NULL) {
@@ -873,7 +930,9 @@ static void AddCategory(struct prefs *self, char *group, long pos)
     if(pos>=0) pg->grouphelp=pos;
 }
 
-static boolean ReadPrefLine(struct prefs *self, struct prefline *line)
+static boolean ReadPrefLine(self,line)
+struct prefs *self;
+struct prefline *line;
 {
     char *buf=NULL, *pp, *app, *name, *val;
     boolean errorflag=FALSE;
@@ -1056,7 +1115,8 @@ static boolean ReadPrefLine(struct prefs *self, struct prefline *line)
 
 #define SAFESTR(x) (x?x:"")
 
-static int sortbyname(struct prefdesc *pd1, struct prefdesc *pd2)
+static int sortbyname(pd1, pd2)
+struct prefdesc *pd1, *pd2;
 {
     int result=lc_strcmp((pd1)->name, (pd2)->name);
     if(result!=0) return result;
@@ -1067,7 +1127,8 @@ static int sortbyname(struct prefdesc *pd1, struct prefdesc *pd2)
     }
 }
 
-static int sortbyapp(struct prefdesc *pd1, struct prefdesc *pd2)
+static int sortbyapp(pd1, pd2)
+struct prefdesc *pd1, *pd2;
 {
     int result=lc_strcmp((pd1)->app, (pd2)->app);
     if(result!=0) return result;
@@ -1079,7 +1140,8 @@ static int sortbyapp(struct prefdesc *pd1, struct prefdesc *pd2)
 }
 
 
-static int sortbygroup(struct prefdesc *pd1, struct prefdesc *pd2)
+static int sortbygroup(pd1, pd2)
+struct prefdesc *pd1, *pd2;
 {
     int result=lc_strcmp(SAFESTR((pd1)->group), SAFESTR((pd2)->group));
     if(result!=0) return result;
@@ -1093,7 +1155,8 @@ static int sortbygroup(struct prefdesc *pd1, struct prefdesc *pd2)
 static boolean sane=FALSE;
 #define ISWILD(p) (p==NULL || (p[0]=='*' && p[1]=='\0'))
 
-static int sortbyorder(struct prefdesc *pd1, struct prefdesc *pd2)
+static int sortbyorder(pd1, pd2)
+struct prefdesc *pd1, *pd2;
 {
     if(sane) {
 	if((pd1->name==pd2->name) && ISWILD(pd1->app) && !ISWILD(pd2->app)) return 1;
@@ -1111,12 +1174,16 @@ static int (*sortprocs[])()={
     sortbyorder
 };
 
-static int catsort(struct prefgroup *pg1, struct prefgroup *pg2)
+static int catsort(pg1, pg2)
+struct prefgroup *pg1, *pg2;
 {
     return ULstrcmp(pg1->name, pg2->name);
 }
 
-void prefs__Sort(struct prefs *self, enum prefs_SortType sortby, boolean perm)
+void prefs__Sort(self, sortby, perm)
+struct prefs *self;
+enum prefs_SortType sortby;
+boolean perm;
 {
     if((int)sortby>=(int)prefs_MaxSortType) return;
 
@@ -1128,13 +1195,16 @@ void prefs__Sort(struct prefs *self, enum prefs_SortType sortby, boolean perm)
     list_Sort(self->categories, catsort);
 }
 
-static boolean ResetOrder(struct prefdesc *pd, struct prefs *self)
+static boolean ResetOrder(pd, self)
+struct prefdesc *pd;
+struct prefs *self;
 {
     pd->order=(-1);
     return TRUE;
 }
 
-long prefs__ReadDataPart(struct prefs *self)
+long prefs__ReadDataPart(self)
+struct prefs *self;
 {
     /*
       Read in the object from the file.
@@ -1177,7 +1247,9 @@ long prefs__ReadDataPart(struct prefs *self)
     return err;
 }
 
-static boolean ResetValues(struct prefdesc *pd, struct prefs *self)
+static boolean ResetValues(pd, self)
+struct prefdesc *pd;
+struct prefs *self;
 {
 
     if(pd->val) {
@@ -1189,7 +1261,8 @@ static boolean ResetValues(struct prefdesc *pd, struct prefs *self)
     return TRUE;
 }
 
-long prefs__ReScan(struct prefs *self)
+long prefs__ReScan(self)
+struct prefs *self;
 {
     long err;
     list_Enumerate(self->prefs, ResetValues, self);
@@ -1199,7 +1272,10 @@ long prefs__ReScan(struct prefs *self)
     return err;
 }
 
-long prefs__Read(struct prefs *self, FILE *fp, long id)
+long prefs__Read(self, fp, id)
+struct prefs *self;
+FILE *fp;
+long id;
 {
     long err=dataobject_NOREADERROR;
     endflag=TRUE;
@@ -1209,13 +1285,18 @@ long prefs__Read(struct prefs *self, FILE *fp, long id)
     return err;
 }
 
-static boolean PrefvalP(struct prefdesc *pd, struct prefval *obj)
+static boolean PrefvalP(pd, obj)
+struct prefdesc *pd;
+struct prefval *obj;
 {
     if(pd->obj==obj) return FALSE;
     else return TRUE;
 }
 
-void prefs__ObservedChanged(struct prefs *self, struct observable *changed, long val)
+void prefs__ObservedChanged(self, changed, val)
+struct prefs *self;
+struct observable *changed;
+long val;
 {
     static struct classinfo *prefval_ci=NULL;
     struct prefdesc *pd=NULL;
@@ -1237,14 +1318,18 @@ struct writerock {
     long pos, len;
 };
 
-static boolean PrintPrevLines(char *line, struct writerock *rock)
+static boolean PrintPrevLines(line, rock)
+char *line;
+struct writerock *rock;
 {
     sprintf(rock->buf, "%s\n", line);
     rock->writefunc(rock, NULL);
     return TRUE;
 }
 
-static boolean writeprefs(struct prefdesc *pd, struct writerock *rock)
+static boolean writeprefs(pd, rock)
+struct prefdesc *pd;
+struct writerock *rock;
 {
     struct prefs *self=rock->self;
     FILE *fp=rock->fp;
@@ -1282,13 +1367,19 @@ static boolean writeprefs(struct prefdesc *pd, struct writerock *rock)
     return TRUE;
 }
 
-long prefs__WritePlain(struct prefs *self, FILE *file, long writeID, int level)
+long prefs__WritePlain(self, file, writeID, level)
+struct prefs *self;
+FILE *file;
+long writeID;
+int level;
 {
     return super_Write(self, file, writeID, level);
 }
 
 
-static void twrite(struct writerock *rock, struct prefdesc *pd)
+static void twrite(rock, pd)
+struct writerock *rock;
+struct prefdesc *pd;
 {
     int len=strlen(rock->buf);
     prefs_AlwaysReplaceCharacters(rock->self, rock->pos, rock->len, rock->buf, len);
@@ -1303,7 +1394,9 @@ static void twrite(struct writerock *rock, struct prefdesc *pd)
     rock->pos+=len;
 }
 
-void prefs__UpdateOneInText(struct prefs *self, struct prefdesc *pd)
+void prefs__UpdateOneInText(self, pd)
+struct prefs *self;
+struct prefdesc *pd;
 {
     char *nval=prefval_FullPreferenceString(pd->obj);
     int len;
@@ -1327,7 +1420,8 @@ void prefs__UpdateOneInText(struct prefs *self, struct prefdesc *pd)
     mark_SetLength(pd->pm, len);    
 }
 
-void prefs__UpdateText(struct prefs *self)
+void prefs__UpdateText(self)
+struct prefs *self;
 {
     struct writerock thisrock;
     char buf[1024];
@@ -1346,12 +1440,18 @@ void prefs__UpdateText(struct prefs *self)
     if(self->lastline.prevlines) list_Enumerate(self->lastline.prevlines, PrintPrevLines, &thisrock);
 }
 
-static void filewrite(struct writerock *rock, struct prefdesc *pd)
+static void filewrite(rock, pd)
+struct writerock *rock;
+struct prefdesc *pd;
 {
     fprintf(rock->fp, "%s", rock->buf);
 }
 
-long prefs__Write(struct prefs *self, FILE *file, long writeID, int level)
+long prefs__Write(self, file, writeID, level)
+struct prefs *self;
+FILE *file;
+long writeID;
+int level;
 {
     struct writerock thisrock;
     if (prefs_GetWriteID(self) != writeID)  {
@@ -1372,7 +1472,8 @@ long prefs__Write(struct prefs *self, FILE *file, long writeID, int level)
 }
 
 
-static char *ProcessLine(char *buf)
+static char *ProcessLine(buf)
+char *buf;
 {
     char *p, *q=buf;
 
@@ -1395,7 +1496,8 @@ static char *ProcessLine(char *buf)
     buf = text_GetBuf(txtobj, 0L, text_GetLength(txtobj), &length);
 #endif
 #define BUFSTEP 400
-static char *ReadLine(struct prefs *self)
+static char *ReadLine(self)
+struct prefs *self;
 {
     static int bufsize=0;
     int bp=0;
@@ -1436,7 +1538,8 @@ static char *ReadLine(struct prefs *self)
 }
 
 
-char *prefs__ViewName(struct prefs *self)
+char *prefs__ViewName(self)
+struct prefs *self;
 {
     return "pintv";
 }

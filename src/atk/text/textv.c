@@ -58,8 +58,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <txtvinfo.h>
 #include <textv.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 extern int charType(char c);
 extern void InitializeMod(void);
 
@@ -100,7 +98,9 @@ static struct scrollfns scrollInterface = {getinfo, setframe, endzone, whatisat}
 
 #define Text(self) ((struct text *) ((self)->header.view.dataobject))
 
-boolean textview__InitializeObject(struct classheader *classID, struct textview *self)
+boolean textview__InitializeObject(classID, self)
+    struct classheader *classID;
+    struct textview *self;
 {
     long fontSize = 12;
     char bodyFont[100];
@@ -193,7 +193,9 @@ boolean textview__InitializeObject(struct classheader *classID, struct textview 
     return TRUE;
 }
 
-void textview__LinkTree(struct textview *self, struct view *parent)
+void textview__LinkTree(self, parent)
+struct textview *self;
+struct view *parent;
 {
 
     int cnt;
@@ -215,7 +217,8 @@ void textview__LinkTree(struct textview *self, struct view *parent)
     }
 }
 
-static void FreeTextData(struct textview *self)
+static void FreeTextData(self)
+struct textview *self;
 {
     struct text *t = Text(self);
 
@@ -273,7 +276,9 @@ static void FreeTextData(struct textview *self)
 }
 
 
-void textview__FinalizeObject(struct classheader *classID, struct textview *self)
+void textview__FinalizeObject(classID, self)
+struct classheader *classID;
+struct textview *self;
 {
     int cnt;
     if((cnt = dictionary_CountRefs(self)) > 0){
@@ -310,7 +315,9 @@ void textview__FinalizeObject(struct classheader *classID, struct textview *self
     }
 }
 
-static struct environment *CheckHidden(struct text *self, long pos)
+static struct environment *CheckHidden(self, pos)
+struct text *self;
+long pos;
 {
     struct environment *env=environment_GetInnerMost(self->rootEnvironment, pos);
     while(env!=NULL && env->type==environment_Style) {
@@ -323,7 +330,9 @@ static struct environment *CheckHidden(struct text *self, long pos)
 }
 
 
-static long ReverseNewline(struct text *self, long pos)
+static long ReverseNewline(self, pos)
+struct text *self;
+long pos;
 {
     long tp;
     for (tp = pos-1; tp >= 0; tp--) {
@@ -340,7 +349,9 @@ static long ReverseNewline(struct text *self, long pos)
     return tp;
 }
 
-boolean textview_PrevCharIsNewline(struct text *self, long pos)
+boolean textview_PrevCharIsNewline(self, pos)
+struct text *self;
+long pos;
 {
     struct environment *env;
     unsigned char ch;
@@ -357,7 +368,9 @@ boolean textview_PrevCharIsNewline(struct text *self, long pos)
     return FALSE;			
 }
     
-static void HandleSelection(struct textview *self, long len)
+static void HandleSelection(self, len)
+struct textview *self;
+long len;
 {
     struct im *im=textview_GetIM(self);
     if(im==NULL) return;
@@ -372,7 +385,10 @@ static void HandleSelection(struct textview *self, long len)
     mark_SetLength(self->dot, len);
 }
 
-void textview__ObservedChanged(struct textview *self, struct observable *changed, long value)
+void textview__ObservedChanged(self, changed, value)
+    struct textview *self;
+    struct observable *changed;
+    long value;
 {
     struct text *tself=Text(self);
     struct view *vself = (struct view *) self;
@@ -406,7 +422,9 @@ void textview__ObservedChanged(struct textview *self, struct observable *changed
            }
 }
 
-void textview__WantUpdate(struct textview *self, struct view *requestor)
+void textview__WantUpdate(self, requestor)
+struct textview *self;
+struct view *requestor;
 {
     if ((struct view *)self == requestor && self->needUpdate)
         return;
@@ -416,7 +434,9 @@ void textview__WantUpdate(struct textview *self, struct view *requestor)
    super_WantUpdate(self, requestor);
 }
 
-void textview__SetDataObject(struct textview *self, struct dataobject *dataObject)
+void textview__SetDataObject(self, dataObject)
+    struct textview *self;
+    struct dataobject *dataObject;
 {
     if (!class_IsTypeByName(class_GetTypeName(dataObject), "text"))  {
 	fprintf(stderr, "Incompatible dataobject associated with textview\n");
@@ -459,7 +479,8 @@ void textview__SetDataObject(struct textview *self, struct dataobject *dataObjec
     textview_WantUpdate(self, self);
 }
 
-struct view *textview__GetApplicationLayer(struct textview *self)
+struct view *textview__GetApplicationLayer(self)
+    struct textview *self;
 {
     long scrollpos=scroll_LEFT;
     char *pos=environ_GetProfile("ScrollbarPosition");
@@ -473,13 +494,17 @@ struct view *textview__GetApplicationLayer(struct textview *self)
      return (struct view *) scroll_Create(self, scrollpos);
 }
 
-void textview__DeleteApplicationLayer(struct textview *self, struct view *scrollbar)
+void textview__DeleteApplicationLayer(self, scrollbar)
+    struct textview *self;
+    struct view *scrollbar;
 {
     self->hasApplicationLayer = FALSE;
     scroll_Destroy((struct scroll *) scrollbar);
 }
 
-static void EnsureSize(struct textview *self, long lines)
+static void EnsureSize(self, lines)
+    struct textview *self;
+    long lines;
 {
     register int i, j;
     register long nSize;
@@ -500,7 +525,9 @@ static void EnsureSize(struct textview *self, long lines)
 /* Updates the cursor.  If oldcursor is true then it adds the elements to the old rectangle list.  If it is false then it adds them to the new rectangle list and then at the end does an invert rectangle.
 */
 
-static void UpdateCursor(struct textview *self, boolean oldCursor)
+static void UpdateCursor(self, oldCursor)
+    struct textview *self;
+    boolean oldCursor;
 {
     int csx, csy, csh, csb, cex, cey, ceh, ceb, by;
 
@@ -635,13 +662,18 @@ static void UpdateCursor(struct textview *self, boolean oldCursor)
     }
 }
 
-static void XorCursor(struct textview *self)
+static void XorCursor(self)
+    struct textview *self;
 {
     rectlist_ResetList();
     UpdateCursor(self, FALSE);
 }
 
-static void CopyLineInfo(struct textview *self, struct linedesc *newline, struct linedesc *line, int movement)
+static void CopyLineInfo(self, newline, line, movement)
+    struct textview *self;
+    struct linedesc *newline;
+    struct linedesc *line;
+    int movement;
 {
     if (line != newline) {
         mark_SetPos(newline->data,  mark_GetPos(line->data));
@@ -665,7 +697,9 @@ static void CopyLineInfo(struct textview *self, struct linedesc *newline, struct
 
  *//* For each line that needs to be redrawn, we call the type-specific redrawing routine.  For now, we will call specific routines in the document handler, but this will change soon. */
 
-static void DoUpdate(struct textview *self, boolean reformat)
+static void DoUpdate(self, reformat)
+struct textview *self;
+boolean reformat;
 {
     register struct mark *lob, *tob;
     register struct linedesc *tl;
@@ -1239,7 +1273,13 @@ calls in this function are being RETURNED state vector information in info.sv, b
     self->pixelsShownOffTop = self->pixelsReadyToBeOffTop;
 }
 
-void textview__FullUpdate(struct textview *self, enum view_UpdateType type, long left, long top, long width, long height)
+void textview__FullUpdate(self, type, left, top, width, height)
+    struct textview *self;
+    enum view_UpdateType type;
+    long left;
+    long top;
+    long width;
+    long height;
 {
     long dotpos;
     long line = 0;
@@ -1277,7 +1317,9 @@ void textview__FullUpdate(struct textview *self, enum view_UpdateType type, long
     }
 }
 
-void textview__WantNewSize(struct textview *self, struct view *requestor)
+void textview__WantNewSize(self,requestor)
+struct textview *self;
+struct view *requestor;
 {
     self->force = TRUE;
     self->csxPos = BADCURPOS;		/* Indication that cursor is not visible */
@@ -1287,12 +1329,18 @@ void textview__WantNewSize(struct textview *self, struct view *requestor)
     } else super_WantNewSize(self, requestor); /* if self wants a new size pass up the request */
 }
 
-void textview__Update(struct textview *self)
+void textview__Update(self)
+    struct textview *self;
 {
     DoUpdate(self, TRUE);
 }
 
-struct view *textview__Hit(struct textview *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
+struct view *textview__Hit(self, action, x, y, numberOfClicks)
+    struct textview *self;
+    enum view_MouseAction action;
+    long x;
+    long y;
+    long numberOfClicks;
 {
     int newPos, oldPos, oldLen, oldMid;
     struct view *vptr;
@@ -1388,7 +1436,8 @@ struct view *textview__Hit(struct textview *self, enum view_MouseAction action, 
     return (struct view *) self;
 }
 
-void textview__ReceiveInputFocus(struct textview *self)
+void textview__ReceiveInputFocus(self)
+    struct textview *self;
 {
     self->hasInputFocus = TRUE;
     self->keystate->next = NULL;
@@ -1402,13 +1451,16 @@ void textview__ReceiveInputFocus(struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview__LoseInputFocus(struct textview *self)
+void textview__LoseInputFocus(self)
+    struct textview *self;
 {
     self->hasInputFocus = FALSE;
     textview_WantUpdate(self, self);
 }
 
-void textview__SetDotPosition(struct textview *self, long newPosition)
+void textview__SetDotPosition(self, newPosition)
+    struct textview *self;
+    long newPosition;
 {
     long len;
 
@@ -1423,7 +1475,9 @@ void textview__SetDotPosition(struct textview *self, long newPosition)
 	
 }
 
-void textview__SetDotLength(struct textview *self, long newLength)
+void textview__SetDotLength(self, newLength)
+struct textview *self;
+long newLength;
 {
     struct im *im=textview_GetIM(self);
 
@@ -1435,22 +1489,28 @@ void textview__SetDotLength(struct textview *self, long newLength)
 
 }
 
-long textview__GetDotPosition(struct textview *self)
+long textview__GetDotPosition(self)
+    struct textview *self;
 {
     return mark_GetPos(self->dot);
 }
 
-long textview__GetDotLength(struct textview *self)
+long textview__GetDotLength(self)
+    struct textview *self;
 {
     return mark_GetLength(self->dot);
 }
 
-long textview__GetTopPosition(struct textview *self)
+long textview__GetTopPosition(self)
+    struct textview *self;
 {
     return mark_GetPos(self->top);
 }
 
-void textview__SetTopOffTop(struct textview *self, long newTopPosition, long pixelsOffTop)
+void textview__SetTopOffTop(self, newTopPosition, pixelsOffTop)
+    struct textview *self;
+    long newTopPosition;
+    long pixelsOffTop;
 {
     long len;
     long curTop;
@@ -1511,12 +1571,17 @@ void textview__SetTopOffTop(struct textview *self, long newTopPosition, long pix
     textview_WantUpdate(self, self);
 }
 
-void textview__SetTopPosition(struct textview *self, long newTopPosition)
+void textview__SetTopPosition(self, newTopPosition)
+    struct textview *self;
+    long newTopPosition;
 {
     textview_SetTopOffTop(self, newTopPosition, 0);
 }
 
-void textview__SetBorder(struct textview *self, long xBorder, long yBorder)
+void textview__SetBorder(self, xBorder, yBorder)
+    struct textview *self;
+    long xBorder;
+    long yBorder;
 {
     self->bx = xBorder;
     self->by = yBorder;
@@ -1524,7 +1589,10 @@ void textview__SetBorder(struct textview *self, long xBorder, long yBorder)
     /* Have to do some update here for resetting the border. */
 }
 
-void textview__SetEmbeddedBorder(struct textview *self, long xBorder, long yBorder)
+void textview__SetEmbeddedBorder(self, xBorder, yBorder)
+    struct textview *self;
+    long xBorder;
+    long yBorder;
 {
     self->ebx = xBorder;
     self->eby = yBorder;
@@ -1532,7 +1600,8 @@ void textview__SetEmbeddedBorder(struct textview *self, long xBorder, long yBord
     /* Have to do some update here for resetting the border. */
 }
 
-long textview__CollapseDot(struct textview *self)
+long textview__CollapseDot(self)
+    struct textview *self;
 {
     long pos;
     struct im *im=textview_GetIM(self);
@@ -1545,7 +1614,15 @@ long textview__CollapseDot(struct textview *self)
     return pos;
 }
 
-void textview__GetClickPosition(struct textview *self, long position, long numberOfClicks, enum view_MouseAction action, long startLeft, long startRight, long *leftPos, long *rightPos)
+void textview__GetClickPosition(self, position, numberOfClicks, action, startLeft, startRight, leftPos, rightPos)
+    struct textview *self;
+    long position;
+    long numberOfClicks;
+    enum view_MouseAction action;
+    long startLeft;
+    long startRight;
+    long *leftPos;
+    long *rightPos;
 {
     register int pos;
     register int testType;
@@ -1612,7 +1689,9 @@ void textview__GetClickPosition(struct textview *self, long position, long numbe
     }
 }
 
-boolean textview__Visible(struct textview *self, long pos)
+boolean textview__Visible(self, pos)
+    struct textview *self;
+    long pos;
 {
     register struct mark *lineMark;
     register long len = self->displayLength;
@@ -1633,7 +1712,11 @@ boolean textview__Visible(struct textview *self, long pos)
     return FALSE;
 }
 
-long textview__Locate(struct textview *self, long x, long y, struct view **foundView)
+long textview__Locate(self, x, y, foundView)
+    struct textview *self;
+    long x;
+    long y;
+    struct view **foundView;
 {
     register long i;
     register long textLength = text_GetLength(Text(self));
@@ -1669,7 +1752,10 @@ long textview__Locate(struct textview *self, long x, long y, struct view **found
 	return mark_GetPos(self->lines[i - 1].data) + self->lines[i - 1].nChars;
 }
 
-void textview__GetTextSize(struct textview *self, long *width, long *height)
+void textview__GetTextSize(self, width, height)
+    struct textview *self;
+    long *width;
+    long *height;
 {
     long by = (self->hasApplicationLayer) ? self->by : self->eby;
     long bx = (self->hasApplicationLayer) ? self->bx : self->ebx;
@@ -1678,7 +1764,11 @@ void textview__GetTextSize(struct textview *self, long *width, long *height)
     *height = textview_GetLogicalHeight(self) - 2 * by;
 }
 
-static long CalculateBltToTop(struct textview *self, long pos, long *distMoved, long *linesAdded)
+static long CalculateBltToTop(self, pos, distMoved, linesAdded)
+    struct textview *self;
+    long pos;
+    long *distMoved;
+    long *linesAdded;
 {
     struct mark *tm;
     struct text *text = Text(self);
@@ -1763,7 +1853,13 @@ static long CalculateBltToTop(struct textview *self, long pos, long *distMoved, 
   if we were to move pos down by units.
 */
 
-static long BackSpace(struct textview *self, long pos, long units, enum textview_MovementUnits type, long *distMoved, long *linesAdded)
+static long BackSpace(self, pos, units, type, distMoved, linesAdded)
+    struct textview *self;
+    long pos;
+    long units;
+    enum textview_MovementUnits type;
+    long *distMoved;
+    long *linesAdded;
 {
     struct mark *tm;
     long lastn [MAXPARA];
@@ -1950,7 +2046,13 @@ static long BackSpace(struct textview *self, long pos, long units, enum textview
     }
 }
 
-long textview__MoveBack(struct textview *self, long pos, long units, enum textview_MovementUnits type, long *distMoved, long *linesAdded)
+long textview__MoveBack(self, pos, units, type, distMoved, linesAdded)
+    struct textview *self;
+    long pos;
+    long units;
+    enum textview_MovementUnits type;
+    long *distMoved;
+    long *linesAdded;
 {
     long accumHeight = 0;
     long numLines = 0;
@@ -1991,7 +2093,13 @@ long textview__MoveBack(struct textview *self, long pos, long units, enum textvi
     return newPos;
 }
 
-long textview__MoveForward(struct textview *self, long pos, long units, enum textview_MovementUnits type, long *distMoved, long *linesAdded)
+long textview__MoveForward(self, pos, units, type, distMoved, linesAdded)
+    struct textview *self;
+    long pos;
+    long units;
+    enum textview_MovementUnits type;
+    long *distMoved;
+    long *linesAdded;
 {
     struct mark *tm;
     long vxs, vys;
@@ -2058,7 +2166,8 @@ long textview__MoveForward(struct textview *self, long pos, long units, enum tex
 }
 
 #define DEFAULTHEIGHT 20
-static int CalculateLineHeight(struct textview *self)
+static int CalculateLineHeight(self)
+    struct textview *self;
 {
 
     struct style *defaultStyle;
@@ -2163,7 +2272,12 @@ long *desiredwidth, *desiredheight;
     return(view_HeightFlexible | view_WidthFlexible);
 }
 
-void textview__GetOrigin(struct textview *self, long width, long height, long *originX, long *originY)
+void textview__GetOrigin(self, width, height, originX, originY)
+    struct textview *self;
+    long width;
+    long height;
+    long *originX;
+    long *originY;
 {
   /* NB...GetOrigin assumes BX and BY are 0 and is used to insert inline text
 children. */
@@ -2176,12 +2290,16 @@ children. */
     *originX = 0;
 }
 
-void textview__FrameDot(struct textview *self, long pos)
+void textview__FrameDot(self, pos)
+    struct textview *self;
+    long pos;
 {
     mark_SetPos(self->frameDot, pos);
 }
 
-long textview__FindLineNumber(struct textview *self, long pos)
+long textview__FindLineNumber(self, pos)
+    struct textview *self;
+    long pos;
 {
     register struct linedesc *tl = self->lines;    
     register int i;
@@ -2205,7 +2323,10 @@ long textview__FindLineNumber(struct textview *self, long pos)
     return -1;
 }
 
-static long position(long pos, struct linedesc *theline, long coord)
+static long position(pos, theline, coord)
+    long pos;
+    struct linedesc *theline;
+    long coord;
 {
     long off;
 
@@ -2227,7 +2348,9 @@ static long position(long pos, struct linedesc *theline, long coord)
     return (pos << FINESCROLL) + off;
 }
 
-static void getinfo(struct textview *self, struct range *total, struct range *seen, struct range *dot)
+static void getinfo(self, total, seen, dot)
+struct textview *self;
+struct range *total, *seen, *dot;
 {
     struct linedesc *last;
     long lastpos;
@@ -2262,7 +2385,9 @@ static void getinfo(struct textview *self, struct range *total, struct range *se
     dot->end = dot->beg + (textview_GetDotLength(self) << FINESCROLL);
 }
 
-static long whatisat(struct textview *self, long numerator, long denominator)
+static long whatisat(self, numerator, denominator)
+    struct textview *self;
+    long numerator, denominator;
 {
     long coord;
     long pos;
@@ -2279,7 +2404,9 @@ static long whatisat(struct textview *self, long numerator, long denominator)
 
 /* move the text at position to be on screen at numerator/denominator */
 
-static void setframe(struct textview *self, long position, long numerator, long denominator)
+static void setframe(self, position, numerator, denominator)
+    struct textview *self;
+    long position, numerator, denominator;
 {
     long dist, lines, coord;
     long newpos;
@@ -2347,7 +2474,10 @@ static void setframe(struct textview *self, long position, long numerator, long 
     textview_SetTopOffTop(self, newpos, off);
 }
 
-static void endzone(struct textview *self, int end, enum view_MouseAction action)
+static void endzone(self, end, action)
+struct textview *self;
+int end;
+enum view_MouseAction action;
 {
     if(action != view_LeftDown && action != view_RightDown) return;
     
@@ -2370,7 +2500,9 @@ static void endzone(struct textview *self, int end, enum view_MouseAction action
     }
 }
 
-char *textview__GetInterface(struct textview *self, char *interfaceName)
+char *textview__GetInterface(self, interfaceName)
+    struct textview *self;
+    char *interfaceName;
 {
 
     if (strcmp(interfaceName, "scroll,vertical") == 0)
@@ -2378,7 +2510,8 @@ char *textview__GetInterface(struct textview *self, char *interfaceName)
     return NULL;
 }
 
-boolean  textview__InitializeClass(struct classheader *classID)
+boolean  textview__InitializeClass(classID)
+    struct classheader *classID;
 {
     extern struct keymap *textview_InitEmacsKeyMap();
     extern struct keymap *textview_InitViInputModeKeyMap();
@@ -2398,17 +2531,25 @@ boolean  textview__InitializeClass(struct classheader *classID)
     return TRUE;
 }
 
-void textview__SetDefaultStyle(struct textview *self, struct style *styleptr)
+void textview__SetDefaultStyle(self, styleptr)
+    struct textview *self;
+    struct style *styleptr;
 {
     self->defaultStyle = styleptr;
 }
 
-struct style *textview__GetDefaultStyle(struct textview *self)
+struct style *textview__GetDefaultStyle(self)
+    struct textview *self;
 {
     return self->defaultStyle;
 }
 
-void textview__Print(struct textview *self, FILE *f, char *process, char *final, int toplevel)
+void textview__Print(self, f, process, final, toplevel)
+    struct textview *self;
+    FILE *f;
+    char *process;
+    char *final;
+    int toplevel;
 {
     /* This is really screwed. This should return an error and the guy above this */
     /* layer should handle it. */
@@ -2421,7 +2562,9 @@ void textview__Print(struct textview *self, FILE *f, char *process, char *final,
 	texttroff_WriteTroff(self, Text(self), f, toplevel); 
 }
 
-static void CreateMatte(struct textview *self, struct viewref *vr)
+static void CreateMatte(self, vr)
+struct textview *self;
+struct viewref *vr;
 {
     struct view *v =
       (struct view *) dictionary_LookUp(self, (char *) vr);
@@ -2441,7 +2584,8 @@ static void CreateMatte(struct textview *self, struct viewref *vr)
     }
 }
 
-void textview__InitChildren(struct textview *self)
+void textview__InitChildren(self)
+struct textview *self;
 {
     struct text *d = Text(self);
     long pos = 0;
@@ -2464,13 +2608,19 @@ void textview__InitChildren(struct textview *self)
     }
 }
 
-boolean textview__CanView(struct textview *self, char *TypeName)
+boolean textview__CanView(self, TypeName)
+struct textview *self;
+char *TypeName;
 {
     return class_IsTypeByName(TypeName, "text");
 }
 
 /* NOTE: sv (if non-NULL) is assumed to be an UN-initialized statevector, either previously initialize and finalized, or never initialized. */
-struct environment *textview__GetStyleInformation(struct textview *self, struct text_statevector *sv, long pos, long *length)
+struct environment *textview__GetStyleInformation(self, sv, pos, length)
+struct textview *self;
+struct text_statevector *sv;
+long pos;
+long *length;
 {
     struct environment *env;
 
@@ -2485,7 +2635,10 @@ struct environment *textview__GetStyleInformation(struct textview *self, struct 
     return env;
 }
 
-struct environment *textview__GetEnclosedStyleInformation(struct textview *self, long pos, long *length)
+struct environment *textview__GetEnclosedStyleInformation(self, pos, length)
+struct textview *self;
+long pos;
+long *length;
 {
     struct environment *env;
 
@@ -2496,13 +2649,16 @@ struct environment *textview__GetEnclosedStyleInformation(struct textview *self,
     return env;
 }
 
-void textview__ReleaseStyleInformation(struct textview *self, struct environment *env)
+void textview__ReleaseStyleInformation(self, env)
+struct textview *self;
+struct environment *env;
 {
 }
 
 /* functions added to support VI interface - FAS */
 
-void textview__ToggleVIMode(struct textview *self)
+void textview__ToggleVIMode(self)
+struct textview *self;
 {
     /* switch between VI input/command mode */
 
@@ -2514,7 +2670,8 @@ void textview__ToggleVIMode(struct textview *self)
     textview_ReceiveInputFocus(self);
 }
 
-void textview__ToggleEditor(struct textview *self)
+void textview__ToggleEditor(self)
+struct textview *self;
 {
     /* switch between emacs and vi editors */
     self->editor = self->editor ^ 1;
@@ -2533,13 +2690,17 @@ void textview__ToggleEditor(struct textview *self)
 }
 
 /* Stubs for selection code. */
-void textview__LoseSelectionOwnership(struct textview *self)
+void textview__LoseSelectionOwnership(self)
+struct textview *self;
 {
     mark_SetLength(self->dot, 0);
     textview_WantUpdate(self, self);
 }
 
-static int stringmatch(register struct text *d, register long pos, register char *c)
+static int stringmatch(d,pos,c)
+register struct text *d;
+register long pos;
+register char *c;
 {
     /* Tests if the text begins with the given string */
     while(*c != '\0') {
@@ -2549,7 +2710,10 @@ static int stringmatch(register struct text *d, register long pos, register char
     return TRUE;
 }
 
-static void DoCopySelection(struct textview *self, FILE *cutFile, long pos, long len)
+static void DoCopySelection(self, cutFile, pos, len)
+struct textview *self;
+FILE *cutFile;
+long pos, len;
 {
     struct text *d;
     register long nextChange;
@@ -2571,7 +2735,9 @@ static void DoCopySelection(struct textview *self, FILE *cutFile, long pos, long
 		text_GetCopyAsText(d) ? "text": class_GetTypeName(d), /* d->header.dataobject.id */ 999999);
 }
 
-long textview__WriteSelection(struct textview *self, FILE *out)
+long textview__WriteSelection(self, out)
+struct textview *self;
+FILE *out;
 {
     DoCopySelection(self, out, mark_GetPos(self->dot), mark_GetLength(self->dot));
     /* if this is called on a view which doesn't override it there is an error.*/

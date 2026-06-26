@@ -50,8 +50,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <fontdesc.ih>
 #include <label.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 #define MAXFILELINE 255
 
 	boolean

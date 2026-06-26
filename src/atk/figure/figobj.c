@@ -41,15 +41,15 @@ char *figobj_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/f
 
 #include <point.h>
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-boolean figobj__InitializeClass(struct classhdr *ClassID)
+boolean figobj__InitializeClass(ClassID)
+struct classhdr *ClassID;
 {
     return TRUE;
 }
 
-boolean figobj__InitializeObject(struct classhdr *ClassID, struct figobj *self)
+boolean figobj__InitializeObject(ClassID, self)
+struct classhdr *ClassID;
+struct figobj *self;
 {
     self->numpts = 0;
     self->pts = NULL;
@@ -69,7 +69,9 @@ boolean figobj__InitializeObject(struct classhdr *ClassID, struct figobj *self)
     return TRUE;
 }
 
-void figobj__FinalizeObject(struct classhdr *ClassID, struct figobj *self)
+void figobj__FinalizeObject(ClassID, self)
+struct classhdr *ClassID;
+struct figobj *self;
 {
     if (self->pts)
 	free(self->pts);
@@ -80,23 +82,34 @@ void figobj__FinalizeObject(struct classhdr *ClassID, struct figobj *self)
     figattr_Destroy(self->iattr);
 }
 
-char *figobj__ToolName(struct figobj *dummy, struct figtoolview *v, long rock)
+char *figobj__ToolName(dummy, v, rock)
+struct figobj *dummy;
+struct figtoolview *v;
+long rock;
 {
     return "<no-name>";
 }
 
 /* called when the tool is reclicked in the toolset */
-void figobj__ToolModify(struct figobj *dummy, struct figtoolview *v, long rock)
+void figobj__ToolModify(dummy, v, rock) 
+struct figobj *dummy;
+struct figtoolview *v;
+long rock;
 {
 }
 
-struct figobj *figobj__Instantiate(struct figobj *dummy, struct figtoolview *v, long rock)
+struct figobj *figobj__Instantiate(dummy, v, rock) 
+struct figobj *dummy;
+struct figtoolview *v;
+long rock;
 {
     struct figobj *res = (struct figobj *)class_NewObject(class_GetTypeName(dummy));
     return res;
 }
 
-void figobj__SetNumHandles(struct figobj *self, long num)
+void figobj__SetNumHandles(self, num)
+struct figobj *self;
+long num;
 {
     int ix;
     if (num > self->pt_size) {
@@ -130,22 +143,28 @@ static long canonical[] = {
     figobj_NULLREF
 };
 
-long *figobj__GetCanonicalHandles(struct figobj *self)
+long *figobj__GetCanonicalHandles(self)
+struct figobj *self;
 {
     return canonical;
 }
 
-struct rectangle *figobj__GetBounds(struct figobj *self, struct figview *vv)
+struct rectangle *figobj__GetBounds(self, vv)
+struct figobj *self;
+struct figview *vv;
 {
     return &(self->bounds);
 }
 
-struct rectangle *figobj__GetSelectedBounds(struct figobj *self, struct figview *vv)
+struct rectangle *figobj__GetSelectedBounds(self, vv)
+struct figobj *self;
+struct figview *vv;
 {
     return &(self->selbounds);
 }
 
-void figobj__UpdateParentBounds(struct figobj *self)
+void figobj__UpdateParentBounds(self)
+struct figobj *self;
 {
     struct figogrp *tmp;
 
@@ -162,18 +181,23 @@ void figobj__UpdateParentBounds(struct figobj *self)
 
 /* Should only be called by figobj_ methods. 
   set bounding box in fig coordinates */
-void figobj__RecomputeBounds(struct figobj *self)
+void figobj__RecomputeBounds(self)
+struct figobj *self;
 {
     figobj_UpdateParentBounds(self);
     rectangle_SetRectSize(&(self->bounds), self->x-50, self->y-50, 101, 101);
 }
 
-void figobj__Draw(struct figobj *self, struct figview *v)
+void figobj__Draw(self, v) 
+struct figobj *self;
+struct figview *v;
 {
     figview_SetTransferMode(v, graphic_COPY);
 }
 
-void figobj__Sketch(struct figobj *self, struct figview *v)
+void figobj__Sketch(self, v) 
+struct figobj *self;
+struct figview *v;
 {
     long x, y, w, h;
     struct rectangle *rec = figobj_GetBounds(self, v);
@@ -187,7 +211,9 @@ void figobj__Sketch(struct figobj *self, struct figview *v)
 }
 
 /* draw handles or whatever. defaults to drawing all handles. */
-void figobj__Select(struct figobj *self, struct figview *v)
+void figobj__Select(self, v)
+struct figobj *self;
+struct figview *v;
 {
     long ix;
     long x, y;
@@ -205,7 +231,9 @@ void figobj__Select(struct figobj *self, struct figview *v)
     }
 }
 
-static void UnionRectanglePt(struct rectangle *rec, long x, long y)
+static void UnionRectanglePt(rec, x, y)
+struct rectangle *rec;
+long x, y;
 {
     if (rectangle_IsEmptyRect(rec)) {
 	rectangle_SetRectSize(rec, x, y, 1, 1);
@@ -228,7 +256,8 @@ static void UnionRectanglePt(struct rectangle *rec, long x, long y)
 }
 
 /* this assumes that self->bounds has already been set to the basic bounding box value, and the object's handles have been properly defined. */
-void figobj__ComputeSelectedBounds(struct figobj *self)
+void figobj__ComputeSelectedBounds(self)
+struct figobj *self;
 {
     long ix;
     long x, y;
@@ -245,7 +274,8 @@ void figobj__ComputeSelectedBounds(struct figobj *self)
     }
 }
 
-void figobj__ClearAttachments(struct figobj *self)
+void figobj__ClearAttachments(self)
+struct figobj *self;
 {
     int ix;
 
@@ -256,7 +286,9 @@ void figobj__ClearAttachments(struct figobj *self)
     self->anyattachmentsactive = FALSE;
 }
 
-void figobj__StabilizeAttachments(struct figobj *self, boolean keepproport)
+void figobj__StabilizeAttachments(self, keepproport)
+struct figobj *self;
+boolean keepproport;
 {
     boolean didany = FALSE;
     struct figogrp *vg = figobj_GetParent(self);
@@ -302,7 +334,9 @@ static short offsets[9][2] = {
     {-1, 0}   /*figobj_MiddleBottom*/
 };
 
-void figobj__DrawAttachments(struct figobj *self, struct figview *v)
+void figobj__DrawAttachments(self, v) 
+struct figobj *self;
+struct figview *v;
 {
     long ix;
     long x, y, dx, dy;
@@ -417,22 +451,39 @@ long *ptref;
     return figobj_HitInside; 
 }
 
-void figobj__MoveHandle(struct figobj *self, long x, long y, long ptref)
+void figobj__MoveHandle(self, x, y, ptref)
+struct figobj *self;
+long x, y, ptref;
 {
     
 }
 
-boolean figobj__AddParts(struct figobj *self, enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref)
+boolean figobj__AddParts(self, action, v, x, y, handle, ptref)
+struct figobj *self;
+enum view_MouseAction action;
+struct figview *v;
+boolean handle;
+long x, y, ptref;
 {
     return FALSE;
 }
 
-boolean figobj__DeleteParts(struct figobj *self, enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref)
+boolean figobj__DeleteParts(self, action, v, x, y, handle, ptref)
+struct figobj *self;
+enum view_MouseAction action;
+struct figview *v;
+boolean handle;
+long x, y, ptref;
 {
     return FALSE;
 }
 
-boolean figobj__Reshape(struct figobj *self, enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref)
+boolean figobj__Reshape(self, action, v, x, y, handle, ptref)
+struct figobj *self;
+enum view_MouseAction action;
+struct figview *v;
+boolean handle;
+long x, y, ptref;
 {
     if (!handle)
 	return FALSE;
@@ -460,7 +511,9 @@ boolean figobj__Reshape(struct figobj *self, enum view_MouseAction action, struc
     return TRUE;
 }
 
-void figobj__Reposition(struct figobj *self, long xd, long yd)
+void figobj__Reposition(self, xd, yd)
+struct figobj *self;
+long xd, yd;
 {
     if (figobj_GetReadOnly(self))
 	return;
@@ -471,7 +524,10 @@ void figobj__Reposition(struct figobj *self, long xd, long yd)
     figobj_SetModified(self);
 }
 
-void figobj__SetParent(struct figobj *self, long pref, struct figure *ancfig)
+void figobj__SetParent(self, pref, ancfig)
+struct figobj *self;
+long pref;
+struct figure *ancfig;
 {
     struct figattr *tmp;
 
@@ -502,7 +558,10 @@ void figobj__SetParent(struct figobj *self, long pref, struct figure *ancfig)
 }
 
 /* notify self that an ancestor group's attributes have changed. mask indicates which ones; all mask-active parts will be active. */
-void figobj__InheritVAttributes(struct figobj *self, struct figattr *attr, unsigned long mask)
+void figobj__InheritVAttributes(self, attr, mask)
+struct figobj *self;
+struct figattr *attr;
+unsigned long mask;
 {
     figattr_CopyData(self->iattr, attr, mask);
     if (mask & (~(self->attr->active)) & figobj_AttributesUsed(self))
@@ -510,7 +569,10 @@ void figobj__InheritVAttributes(struct figobj *self, struct figattr *attr, unsig
 }
 
 /* update self's personal attributes. mask indicates which parts of attr to use; ignore all others. Returns a mask of which attributes were actually set. */
-unsigned long figobj__UpdateVAttributes(struct figobj *self, struct figattr *attr, unsigned long mask)
+unsigned long figobj__UpdateVAttributes(self, attr, mask)
+struct figobj *self;
+struct figattr *attr;
+unsigned long mask;
 {
     if (figobj_GetReadOnly(self))
 	return 0;
@@ -527,12 +589,17 @@ unsigned long figobj__UpdateVAttributes(struct figobj *self, struct figattr *att
 #define LINELENGTH (250)
 static char buf[LINELENGTH+1];
 
-void figobj__WriteBody(struct figobj *self, FILE *fp)
+void figobj__WriteBody(self, fp)
+struct figobj *self;
+FILE *fp;
 {
     fprintf(fp, "$ %d %d\n", figobj_PosX(self), figobj_PosY(self));
 }
 
-long figobj__ReadBody(struct figobj *self, FILE *fp, boolean recompute)
+long figobj__ReadBody(self, fp, recompute)
+struct figobj *self;
+FILE *fp;
+boolean recompute;
 {
     int	ix; 
     long x, y;
@@ -553,7 +620,11 @@ long figobj__ReadBody(struct figobj *self, FILE *fp, boolean recompute)
     return dataobject_NOREADERROR;
 }
 
-long figobj__Write(struct figobj *self, FILE *fp, long writeid, int level)
+long figobj__Write(self, fp, writeid, level)
+struct figobj *self;
+FILE *fp;
+long writeid;
+int level;
 {
     int ix;
     if (figobj_GetWriteID(self) != writeid) {
@@ -575,7 +646,10 @@ long figobj__Write(struct figobj *self, FILE *fp, long writeid, int level)
     return figobj_GetID(self);
 }
 
-long figobj__Read(struct figobj *self, FILE *fp, long id)
+long figobj__Read(self, fp, id)
+struct figobj *self;
+FILE *fp;
+long id;
 {
     long unid, tid, ix;
     long val1, val2, val3, val4, val5;
@@ -623,6 +697,10 @@ long figobj__Read(struct figobj *self, FILE *fp, long id)
     return dataobject_NOREADERROR;     
 }
 
-void figobj__PrintObject(struct figobj *self, struct figview *v, FILE *file, char *prefix)
+void figobj__PrintObject(self, v, file, prefix)
+struct figobj *self;
+struct figview *v;
+FILE *file;
+char *prefix;
 {
 }

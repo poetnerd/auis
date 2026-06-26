@@ -37,8 +37,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <util.h>
 
-#include <string.h>
-#include <stdlib.h>
 #ifndef NULL
 #define NULL 0
 #endif

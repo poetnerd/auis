@@ -16,8 +16,8 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 #include <ctype.h>
 #include "richlex.h"
 
-#include <string.h>
-char *translate(char *t)
+char *translate(t)
+char *t;
 {
     if (!strcmp(t, "fixed")) return("typewriter");
     if (!strcmp(t, "excerpt")) return("quotation");
@@ -75,7 +75,8 @@ main() {
     fputs("\n \n\\enddata{text, 42}\n", stdout);
 }
 
-int ignoretoken(char *t)
+ignoretoken(t)
+char *t;
 {
     if (*t == '/') ++t;
     if (!strcmp(t, "us-ascii")) return(1);
@@ -84,10 +85,13 @@ int ignoretoken(char *t)
     return(0);
 }
 
-int controlputc(int c)
+controlputc(c)
+int c;
 {
 }
 
-int controloutput(char *s, int immediate)
+controloutput(s, immediate)
+char *s;
+int immediate;
 {
 }

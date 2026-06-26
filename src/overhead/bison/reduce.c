@@ -36,7 +36,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "new.h"
 
 
-#include <stdlib.h>
 extern char   **tags;		/* reader.c */
 extern int      verboseflag;	/* getargs.c */
 static int      statisticsflag;	/* XXXXXXX */
@@ -73,7 +72,10 @@ extern void fatals ();
 
 
 bool
-int bits_equal(BSet L, BSet R, int n)
+bits_equal (L, R, n)
+BSet L;
+BSet R;
+int n;
 {
   int i;
 
@@ -172,7 +174,9 @@ reduce_grammar ()
  */
 
 static bool 
-int useful_production(int i, BSet N)
+useful_production (i, N)
+int  i;
+BSet N;
 {
   rule  r;
   short n;

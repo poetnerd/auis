@@ -33,7 +33,6 @@
 #include <mcidas.h>
 #include <mcidas.eh>
 
-#include <stdio.h>
 /*
  * convert from little endian to big endian four byte object
  */

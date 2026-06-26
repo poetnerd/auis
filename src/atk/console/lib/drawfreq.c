@@ -51,8 +51,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <console.h>
 #include <sitevars.h>
 
-#include <stdlib.h>
-#include <stdio.h>
 extern int SineMult[], CosineMult[];
 
 extern ClearRectangle();
@@ -91,7 +89,10 @@ char *strcat();
        * HandLength * radius /10 is  length of dial hand
        */
 
-int DrawDialHand(struct consoleClass *self, struct display *disp, int DialPosition, int Bend, int CHL)
+DrawDialHand(self, disp, DialPosition, Bend, CHL)
+struct consoleClass *self;
+struct display *disp;
+int DialPosition, Bend, CHL;
 {
     int HandPosition, Xpart, Ypart;
     
@@ -118,7 +119,10 @@ int DrawDialHand(struct consoleClass *self, struct display *disp, int DialPositi
     consoleClass_SetTransferMode(self, graphic_BLACK);
 }
 
-int DrawDial(struct consoleClass *self, int Op, struct display *disp)
+DrawDial(self, Op, disp)
+struct consoleClass *self;
+int Op;
+struct display *disp;
 {
     int DialPosition, Radius;
     int CHL, Bend;
@@ -170,7 +174,10 @@ consoleClass_WantUpdate(self, self);
 }
 
 
-int DrawIndicator(struct consoleClass *self, int Op, struct display *disp)
+DrawIndicator(self,Op, disp)
+struct consoleClass *self;
+int Op;
+struct display *disp;
 {
     int i, l, xoff = 0, yoff = 0, inc = 0;
     long    j, k;
@@ -281,7 +288,11 @@ int DrawIndicator(struct consoleClass *self, int Op, struct display *disp)
 }
 
 
-int maketext(struct consoleClass *self, char *target, struct display *disp, int Which)
+maketext(self, target, disp, Which)
+    struct consoleClass *self;
+    char *target;
+    struct display *disp;
+    int Which;
 {
     char   *s, *t, u[20], *v;
 
@@ -327,7 +338,10 @@ int maketext(struct consoleClass *self, char *target, struct display *disp, int 
 }
 
 
-int DrawBarGraph(struct consoleClass *self, int Op, struct display *disp)
+DrawBarGraph(self, Op, disp)
+struct consoleClass *self;
+int Op;
+struct display *disp;
 {
     struct datum   *dat;
     int     BarSize;
@@ -384,7 +398,9 @@ int DrawBarGraph(struct consoleClass *self, int Op, struct display *disp)
 
 #define PI 3.14159265
 
-int itoa(int n, char s[])
+itoa(n,s)
+char s[];
+int n;
 {
     int i, sign;
 
@@ -401,7 +417,8 @@ int itoa(int n, char s[])
     reverse(s);
 }
 
-int reverse(char s[])
+reverse(s)
+char s[];
 {
     int i,j;
     char c;
@@ -415,7 +432,10 @@ int reverse(char s[])
 }
 
 
-int DrawEKGGraph(struct consoleClass *self, int Op, struct display *disp)
+DrawEKGGraph(self, Op, disp)
+struct consoleClass *self;
+int Op;
+struct display *disp;
 {
     int counter, omitted, oldheight, thisheight, xm, ym, i, xinc, fh, vmax;
     struct datum *dat;
@@ -475,7 +495,10 @@ int DrawEKGGraph(struct consoleClass *self, int Op, struct display *disp)
 extern FILE *ExternalLogFP;
 extern boolean LogErrorsExternally;
 
-int PreLogError(struct consoleClass *self, int Op, struct display *disp)
+PreLogError(self, Op, disp)
+struct consoleClass *self;
+int Op;
+struct display *disp;
 {
     mydbg(("entering: PreLogError\n"));
     if (Op == NEWVAL) {
@@ -499,7 +522,10 @@ int PreLogError(struct consoleClass *self, int Op, struct display *disp)
 
 }
 
-int PreLogReport(struct consoleClass *self, int Op, struct display *disp)
+PreLogReport(self,Op, disp)
+    struct consoleClass *self;
+    int Op;
+    struct display *disp;
 {
     mydbg(("entering: PreLogReport\n"));
     if (Op == NEWVAL) {
@@ -509,7 +535,10 @@ int PreLogReport(struct consoleClass *self, int Op, struct display *disp)
     }
 }
 
-int PreLogUser(struct consoleClass *self, int Op, struct display *disp)
+PreLogUser(self, Op, disp)
+    struct consoleClass *self;
+    int Op;
+    struct display *disp;
 {
     mydbg(("entering: PreLogUser\n"));
     if (Op == NEWVAL) {
@@ -519,7 +548,10 @@ int PreLogUser(struct consoleClass *self, int Op, struct display *disp)
     }
 }
 
-int PreLogSilly(struct consoleClass *self, int Op, struct display *disp)
+PreLogSilly(self, Op, disp)
+    struct consoleClass *self;
+    int Op;
+    struct display *disp;
 {
     mydbg(("entering: PreLogSilly\n"));
     if (Op == NEWVAL) {
@@ -529,27 +561,43 @@ int PreLogSilly(struct consoleClass *self, int Op, struct display *disp)
     }
 }
 
-int LogError(struct consoleClass *self, int Op, struct display *disp)
+LogError(self, Op, disp)
+    struct consoleClass *self;
+    int Op;
+    struct display *disp;
 {
     mydbg(("entering: LogError\n"));
 }
 
-int LogReport(struct consoleClass *self, int Op, struct display *disp)
+LogReport(self, Op, disp)
+    struct consoleClass *self;
+    int Op;
+    struct display *disp;
 {
     mydbg(("entering: LogReport\n"));
 }
 
-int LogUser(struct consoleClass *self, int Op, struct display *disp)
+LogUser(self, Op, disp)
+    struct consoleClass *self;
+    int Op;
+    struct display *disp;
 {
     mydbg(("entering: LogUser\n"));
 }
 
-int LogSilly(struct consoleClass *self, int Op, struct display *disp)
+LogSilly(self, Op, disp)
+    struct consoleClass *self;
+    int Op;
+    struct display *disp;
 {
     mydbg(("entering: LogSilly\n"));
 }
 
-int AddToLog(struct consoleClass *self, struct display *disp, boolean IsClick, struct RegionLog *logptr, boolean IsUser)
+AddToLog(self,disp, IsClick, logptr,IsUser)
+struct consoleClass *self;
+struct display *disp;
+boolean IsClick,IsUser;
+struct RegionLog *logptr;
 {
     int     WhichExtern, i, j, k, troublecount;
     boolean HighlightTrouble = FALSE;
@@ -742,7 +790,9 @@ int AddToLog(struct consoleClass *self, struct display *disp, boolean IsClick, s
 
 
 
-int AddStringToLog(char *string, struct RegionLog *logptr)
+AddStringToLog(string, logptr)
+char *string;
+struct RegionLog *logptr;
 {
     static char Buffer[256];
     char   *s,
@@ -776,7 +826,8 @@ int AddStringToLog(char *string, struct RegionLog *logptr)
     }
 }
 
-long GetMyPosition(struct text *textlog)
+long GetMyPosition(textlog)
+struct text *textlog;
 {
     mydbg(("entering: GetMyPosition\n"));
     if(REVSCROLL){
@@ -787,14 +838,17 @@ long GetMyPosition(struct text *textlog)
     }
 }
 
-int SetLogFence(struct text *textlog)
+SetLogFence(textlog)
+struct text *textlog;
 {
     long pos = text_GetLength(textlog);
     mydbg(("entering: SetLogFence\n"));
     text_SetFence(textlog, pos + 1);
 }
 
-int ScrollToEnd(struct RegionLog *rlogptr, int Op)
+ScrollToEnd(rlogptr, Op)
+struct RegionLog *rlogptr;
+int Op;
 {
     int i;
     long pos;
@@ -820,7 +874,9 @@ int ScrollToEnd(struct RegionLog *rlogptr, int Op)
 #define MAXLOGLENGTH 10000
 #define BASELOGLENGTH 75
 
-int AddLineToLog(char *string, struct RegionLog *rlogptr)
+AddLineToLog(string, rlogptr)
+char *string;
+struct RegionLog *rlogptr;
 {
     char   *s = NULL;
     long pos1, len, StartPos;
@@ -916,7 +972,10 @@ int AddLineToLog(char *string, struct RegionLog *rlogptr)
     }
 }
 
-int DrawLog(struct consoleClass *self, int Op, struct display *disp)
+DrawLog(self, Op, disp)
+struct consoleClass *self;
+int Op;
+struct display *disp;
 {
     mydbg(("entering: DrawLog\n"));
     if ((PauseEnqueuedEvents == FALSE) && (RingingAlarm == FALSE)){
@@ -938,7 +997,10 @@ int DrawLog(struct consoleClass *self, int Op, struct display *disp)
     }
 }
 
-int DrawNothing(struct consoleClass *self, int Op, struct display *disp)
+DrawNothing(self, Op, disp)
+struct consoleClass *self;
+int Op;
+struct display *disp;
 {
     mydbg(("entering: DrawNothing\n"));
 /*

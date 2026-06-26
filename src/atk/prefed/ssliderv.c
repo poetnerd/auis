@@ -41,65 +41,91 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 #include <prefval.ih>
 #include "ssliderv.eh"
 
-#include <stdlib.h>
 #define zfree(x) do { if(x) { free(x); (x)=NULL;}} while (0)
 #define DATA(self) ((struct prefval *)ssliderv_GetDataObject(self))
 
-boolean ssliderv__InitializeObject(struct classheader *classID, struct ssliderv *self)
+boolean ssliderv__InitializeObject(classID, self)
+struct classheader *classID;
+struct ssliderv *self;
 {
     ssliderv_SetScrollee(self, self);
     return TRUE;
 }
 
-void ssliderv__FinalizeObject(struct classheader *classID, struct ssliderv *self)
+void ssliderv__FinalizeObject(classID, self)
+struct classheader *classID;
+struct ssliderv *self;
 {
 }
 
-static void getinfo(struct ssliderv *self, struct range *total, struct range *seen, struct range *dot)
+static void getinfo(self, total, seen, dot)
+struct ssliderv *self;
+struct range *total, *seen, *dot;
 {
     ssliderv_GetInfo(self, total, seen, dot);
 }
 
-void ssliderv__GetInfo(struct ssliderv *self, struct range *total, struct range *seen, struct range *dot)
+void ssliderv__GetInfo(self, total, seen, dot)
+struct ssliderv *self;
+struct range *total, *seen, *dot;
 {    
 }
 
-static long whatisat(struct ssliderv *self, long numerator, long denominator)
+static long whatisat(self, numerator, denominator)
+struct ssliderv *self;
+long numerator, denominator;
 {
     ssliderv_WhatIsAt(self, numerator, denominator);
 }
 
-long ssliderv__WhatIsAt(struct ssliderv *self, long numerator, long denominator)
+long ssliderv__WhatIsAt(self, numerator, denominator)
+struct ssliderv *self;
+long numerator, denominator;
 {
     return 0;
 }
 
-static void setframe(struct ssliderv *self, long position, long numerator, long denominator)
+static void setframe(self, position, numerator, denominator)
+struct ssliderv *self;
+long position, numerator, denominator;
 {
     ssliderv_SetFrame(self, position, numerator, denominator);
 }
 
-void ssliderv__SetFrame(struct ssliderv *self, long pos, long num, long denom)
+void ssliderv__SetFrame(self, pos, num, denom)
+struct ssliderv *self;
+long pos, num, denom;
 {
 }
 
-static void endzone(struct ssliderv *self, int end, enum view_MouseAction action)
+static void endzone(self, end, action)
+struct ssliderv *self;
+int end;
+enum view_MouseAction action;
 {
     ssliderv_Endzone(self, end, action);
 }
 
-void ssliderv__Endzone(struct ssliderv *self, int end, enum view_MouseAction action)
+void ssliderv__Endzone(self, end, action)
+struct ssliderv *self;
+int end;
+enum view_MouseAction action;
 {
 }
     
 static struct scrollfns scrollInterface = {getinfo, setframe, endzone, whatisat};
 
-char *ssliderv__GetInterface(struct ssliderv *self, char *name)
+char *ssliderv__GetInterface(self, name)
+struct ssliderv *self;
+char *name;
 {
     return (char *)&scrollInterface;
 }
 
-void ssliderv__FullUpdate(struct ssliderv *self, enum view_UpdateType type, long left, long top, long width, long height)
+void ssliderv__FullUpdate(self, type, left, top, width, height)
+struct ssliderv *self;
+enum view_UpdateType type;
+long left, top, width, height;
 {
     ((struct scroll *)self)->desired.location=((struct scroll *)self)->ideal_location;
     super_FullUpdate(self, type, left, top, width, height);
@@ -132,7 +158,12 @@ long *dHeight;
   return retval;
 }
 
-void ssliderv__GetOrigin(struct ssliderv *self, long width, long height, long *originX, long *originY)
+void ssliderv__GetOrigin(self, width, height, originX, originY)
+struct ssliderv *self;
+long width;
+long height;
+long *originX;
+long *originY;
 {
     *originX=0;
     *originY=height;

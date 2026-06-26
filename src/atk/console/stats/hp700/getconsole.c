@@ -23,7 +23,6 @@ static char *rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/con
 #include <sys/ioctl.h>
 #include <termios.h>
 
-#include <stdlib.h>
 extern char *sys_errlist[];
 
 main()

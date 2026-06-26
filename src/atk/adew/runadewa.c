@@ -51,13 +51,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <runadewa.eh>
 
 
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
 static char **Gargv;
 static int Gargc;
+extern int errno;
 
-boolean runadewapp__InitializeObject(struct classheader *classID, struct runadewapp *self)
+boolean runadewapp__InitializeObject(classID,self)
+struct classheader *classID;
+struct runadewapp *self;
 {
     self->initFile=TRUE;
     self->files=NULL;
@@ -76,14 +76,18 @@ boolean runadewapp__InitializeObject(struct classheader *classID, struct runadew
 }
 
 
-static void StartupError(char *string)
+static void StartupError( string)
+    char *string;
 {
 	fprintf(stderr,"%s\n",string);
 	fflush(stderr);
 }
 
 
-static void addFile(struct runadewapp *self, char *name, boolean newWin, boolean ro)
+static void addFile(self,name,newWin,ro)
+struct runadewapp *self;
+char *name;
+boolean newWin,ro;
 {
     struct runadewapp_fileList *fileEntry=
       (struct runadewapp_fileList *) malloc(sizeof(struct runadewapp_fileList));
@@ -95,7 +99,9 @@ static void addFile(struct runadewapp *self, char *name, boolean newWin, boolean
     *self->fileLink=fileEntry;
     self->fileLink=(&(fileEntry->next));
 }
-static char *getarg(char **argv, int *argc)
+static char *getarg(argv,argc)
+char **argv;
+int *argc;
 {
     int cnt;
     char *opt;
@@ -111,7 +117,10 @@ static char *getarg(char **argv, int *argc)
     *argc -= cnt;
     return opt;
 }
-boolean runadewapp__ParseArgs(struct runadewapp *self, int argc, char **argv)
+boolean runadewapp__ParseArgs(self,argc,argv)
+struct runadewapp *self;
+int argc;
+char **argv;
 {
     int maxInitWindows=environ_GetProfileInt("MaxInitWindows", 2);
     boolean useNewWindow = FALSE;
@@ -159,7 +168,8 @@ boolean runadewapp__ParseArgs(struct runadewapp *self, int argc, char **argv)
 
 
 
-boolean runadewapp__Start(struct runadewapp *self)
+boolean runadewapp__Start(self)
+struct runadewapp *self;
 {
     struct runadewapp_fileList *fileEntry, *next;
     char iname[256];
@@ -245,7 +255,9 @@ boolean runadewapp__InitializeClass()
     Gargc = 0;
     return TRUE;
 }
-char **runadewapp__GetArguments(struct classheader *classID, int *argc)
+char **runadewapp__GetArguments(classID,argc)
+struct classheader *classID;
+int *argc;
 {
     if(argc != NULL) *argc = Gargc;
     return Gargv;

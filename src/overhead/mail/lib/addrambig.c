@@ -32,7 +32,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #ifdef WHITEPAGES_ENV
 #include <wp.h>
 
-#include <stdlib.h>
 /*
  * Returns wperr_NoError if "addr" is a sufficiently clear match for
  * the entry with primary key "PK" in the cell for "wpCD" to allow
@@ -41,7 +40,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * temporary failure.
  */
 
-wp_ErrorCode AddressMatchesUnambiguously(struct wp_cd *wpCD, char *addr, char *PK)
+wp_ErrorCode AddressMatchesUnambiguously(wpCD, addr, PK)
+struct wp_cd *wpCD;
+char *addr;
+char *PK;
 {
     wp_SearchToken STok;
     wp_PrimeKey otherPK;

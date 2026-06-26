@@ -56,8 +56,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <text.eh>
 #include <util.h>
 
-#include <stdlib.h>
-#include <stdio.h>
 static void PushLevel(char *s, int pos, int len, int IsReal);
 static int ComingNext(struct text *self, int pos);
 
@@ -104,7 +102,9 @@ static void ClearStyles();
 
 static int DataStreamVersion = 0;
 
-static void AddObj(struct text *self, struct dataobject *obj)
+static void AddObj(self, obj)
+struct text *self;
+struct dataobject *obj;
 {
     long i;
 
@@ -128,7 +128,9 @@ static void AddObj(struct text *self, struct dataobject *obj)
     self->nobjs++;
 }
 
-static void DelObj(struct text *self, struct dataobject *obj)
+static void DelObj(self, obj)
+struct text *self;
+struct dataobject *obj;
 {
     long i;
     for(i=0;i<self->nobjs;i++) {
@@ -156,7 +158,9 @@ struct environment *text__AlwaysWrapViewChar(struct text *self, long pos, char *
     return newenv;
 }
 
-boolean text__InitializeObject(struct classheader *classID, struct text *self)
+boolean text__InitializeObject(classID, self)
+struct classheader *classID;
+struct text *self;
 {
     self->objs=NULL;
     self->nobjs=0;
@@ -191,7 +195,9 @@ boolean text__InitializeObject(struct classheader *classID, struct text *self)
     return(TRUE);
 }
 
-void text__FinalizeObject(struct classheader *classID, struct text *self)
+void text__FinalizeObject(classID, self)
+struct classheader *classID;
+struct text *self;
 {
     ClearStyles(self);
     environment_Destroy(self->rootEnvironment);
@@ -202,7 +208,9 @@ void text__FinalizeObject(struct classheader *classID, struct text *self)
 }
 
 
-void text__SetBaseTemplateName(struct text *self, char *name)
+void text__SetBaseTemplateName(self, name)
+struct text *self;
+char *name;
 {
     if(self->templateName != NULL) free(self->templateName);
     if(name==NULL) self->templateName=NULL;
@@ -219,7 +227,9 @@ void text__SetBaseTemplateName(struct text *self, char *name)
  * read it "when the time is right."
  */
 
-void text__SetAttributes(struct text *self, struct attributes *attributes)
+void text__SetAttributes(self, attributes)
+struct text *self;
+struct attributes *attributes;
 {
     super_SetAttributes(self, attributes);
 
@@ -244,7 +254,11 @@ void text__SetAttributes(struct text *self, struct attributes *attributes)
     }
 }
 
-struct viewref *text__InsertObject(struct text *self, long pos, char *name, char *viewname)
+struct viewref *text__InsertObject(self, pos, name, viewname)
+struct text *self;
+long pos;
+char *name;
+char *viewname;
 {
     struct dataobject *newobject;
     struct environment *env;
@@ -274,7 +288,10 @@ struct viewref *text__InsertObject(struct text *self, long pos, char *name, char
  * is -1. 
  */
 #if 0
-static long text_ListObjects(struct text *self, struct dataobject **list, long size)
+static long text_ListObjects(self, list, size)
+struct text *self;
+struct dataobject **list;
+long size;
 {
     struct dataobject *ob,**ptr,**cptr;
     struct environment *rootenv;
@@ -373,7 +390,10 @@ static long text_ListObjects(struct text *self, struct dataobject **list, long s
     return count;
 }
 #else /* !0 */
-static long text_ListObjects(struct text *self, struct dataobject **list, long size)
+static long text_ListObjects(self, list, size)
+struct text *self;
+struct dataobject **list;
+long size;
 {
     struct dataobject ***stash=(struct dataobject ***)list;
     boolean growYourOwn = (size == 0); /* grow an array ourselves? */
@@ -396,7 +416,8 @@ static long text_ListObjects(struct text *self, struct dataobject **list, long s
 }
 #endif /* !0 */
 
-static void ClearStyles(struct text *self)
+static void ClearStyles(self)
+struct text *self;
 {
     struct environment *rt;
     
@@ -420,13 +441,15 @@ static void ClearStyles(struct text *self)
     self->nobjs=0;
 }
 
-void text__Clear(struct text *self)
+void text__Clear(self)
+struct text *self;
 {
     ClearStyles(self);
     super_Clear(self);
 }
 
-long text__GetModified(struct text *self)
+long text__GetModified(self)
+struct text *self;
 {
     struct dataobject **dbuf, **d;
     long maxSoFar;
@@ -453,19 +476,28 @@ long text__GetModified(struct text *self)
     return maxSoFar;
 }
 
-void text__ClearCompletely(struct text *self)
+void text__ClearCompletely(self)
+struct text *self;
 {
     ClearStyles(self);
     super_Clear(self);
 }
 
-void text__LengthChanged(struct text *self, long pos, long len)
+void text__LengthChanged(self, pos, len)
+struct text *self;
+long pos;
+long len;
 {
     super_LengthChanged(self, pos, len);
     environment_Update(self->rootEnvironment, pos, len);
 }
 
-boolean DoReplaceCharacters(struct text *self, long pos, long len, char *repStr, long repLen, boolean alwaysp)
+boolean DoReplaceCharacters(self, pos, len, repStr, repLen, alwaysp)
+struct text *self;
+long pos, len;
+char *repStr;
+long repLen;
+boolean alwaysp;
 {
     struct environment *environment;
 
@@ -483,17 +515,28 @@ boolean DoReplaceCharacters(struct text *self, long pos, long len, char *repStr,
     return TRUE;
 }
 
-boolean text__ReplaceCharacters(struct text *self, long pos, long len, char *repStr, long repLen)
+boolean text__ReplaceCharacters(self, pos, len, repStr, repLen)
+struct text *self;
+long pos, len;
+char *repStr;
+long repLen;
 {
     return DoReplaceCharacters(self, pos, len, repStr, repLen, FALSE);
 }
 
-void text__AlwaysReplaceCharacters(struct text *self, long pos, long len, char *repStr, long repLen)
+void text__AlwaysReplaceCharacters(self, pos, len, repStr, repLen)
+struct text *self;
+long pos, len;
+char *repStr;
+long repLen;
 {
     DoReplaceCharacters(self, pos, len, repStr, repLen, TRUE);
 }
 
-void text__AlwaysDeleteCharacters(struct text *self, long pos, long len)
+void text__AlwaysDeleteCharacters(self, pos, len)
+struct text *self;
+long pos;
+long len;
 {
     struct environment *te;
     struct environment *le;
@@ -540,7 +583,9 @@ void text__AlwaysDeleteCharacters(struct text *self, long pos, long len)
     }
 }
 
-static int ParseInteger(FILE *file, long *id)
+static int ParseInteger(file,id)
+FILE *file;
+long *id;
 {
     int c;
     while ((c = getc(file)) != EOF && c != ',' && c != '}')
@@ -549,7 +594,11 @@ static int ParseInteger(FILE *file, long *id)
     return c;
 }
 
-long text__HandleKeyWord(struct text *self, long pos, char *keyword, FILE *file)
+long text__HandleKeyWord(self, pos, keyword, file)
+struct text *self;
+long pos;
+char *keyword;
+FILE *file;
 {
     struct environment *newenv;
     struct style *style;
@@ -720,7 +769,10 @@ long text__HandleKeyWord(struct text *self, long pos, char *keyword, FILE *file)
     return 0;
 }
 
-long text__HandleCloseBrace(struct text *self, long pos, FILE *file)
+long text__HandleCloseBrace(self, pos, file)
+struct text *self;
+long pos;
+FILE *file;
 {
     if(HighBitStart != -1){
 	unsigned char *foo;
@@ -752,7 +804,10 @@ long text__HandleCloseBrace(struct text *self, long pos, FILE *file)
     }
 }
 
-struct environment *text__AlwaysAddStyle(struct text *self, long pos, long len, struct style *style)
+struct environment *text__AlwaysAddStyle(self, pos, len, style)
+struct text *self;
+long pos, len;
+struct style *style;
 {
     register struct environment *newenv;
 
@@ -766,7 +821,11 @@ struct environment *text__AlwaysAddStyle(struct text *self, long pos, long len, 
     return newenv;
 }
 
-struct environment *text__AddStyle(struct text *self, long pos, long len, struct style *style)
+struct environment *text__AddStyle(self, pos, len, style)
+struct text *self;
+long pos;
+long len;
+struct style *style;
 {
     if (text_GetReadOnly(self) || pos < text_GetFence(self))
         return NULL;
@@ -774,7 +833,11 @@ struct environment *text__AddStyle(struct text *self, long pos, long len, struct
         return text_AlwaysAddStyle(self, pos, len, style);
 }
 
-struct environment *text__AlwaysAddView(struct text *self, long pos, char *viewtype, struct dataobject *dataobject)
+struct environment *text__AlwaysAddView(self, pos, viewtype, dataobject)
+struct text *self;
+long pos;
+char *viewtype;
+struct dataobject *dataobject;
 {
     struct viewref *newviewref;
     char c = TEXT_VIEWREFCHAR;
@@ -791,7 +854,11 @@ struct environment *text__AlwaysAddView(struct text *self, long pos, char *viewt
     return newenv;
 }
 
-struct environment *text__AddView(struct text *self, long pos, char *viewtype, struct dataobject *dataobject)
+struct environment *text__AddView(self, pos, viewtype, dataobject)
+struct text *self;
+long pos;
+char *viewtype;
+struct dataobject *dataobject;
 {
     if (text_GetReadOnly(self) || pos < text_GetFence(self))
         return NULL;
@@ -806,7 +873,8 @@ struct environment *text__AddView(struct text *self, long pos, char *viewtype, s
  * Something better needs to be done about this.
  */
 
-static boolean DiscardToEnddata(FILE *file)
+static boolean DiscardToEnddata(file)
+FILE *file;
 {
     int c, i;
     char buf[20];
@@ -844,7 +912,11 @@ haveback:
 }
 
 
-long text__AlwaysInsertFile(struct text *self, FILE *file, char *filename, long position)
+long text__AlwaysInsertFile(self, file, filename, position)
+struct text *self;
+FILE *file;
+char *filename;
+long position;
 {
     char *objectName;
     long objectID;
@@ -913,7 +985,11 @@ long text__AlwaysInsertFile(struct text *self, FILE *file, char *filename, long 
 }
 
 
-long text__InsertFile(struct text *self, FILE *file, char *filename, long position)
+long text__InsertFile(self, file, filename, position)
+struct text *self;
+FILE *file;
+char *filename;
+long position;
 {
     if (text_GetReadOnly(self) || position < text_GetFence(self))
         return 0;
@@ -923,7 +999,8 @@ long text__InsertFile(struct text *self, FILE *file, char *filename, long positi
 
 #ifdef CHECK_BE1
 
-static boolean HasBinaryChars(struct text *self)
+static boolean HasBinaryChars(self)
+struct text *self;  /* (Other than viewrefs) */
 {
     long pos = 0;
     while (pos < text_GetLength(self)) {
@@ -945,7 +1022,8 @@ static boolean HasBinaryChars(struct text *self)
     return FALSE;
 }
 
-static void TryConversion(struct text *self)
+static void TryConversion(self)
+struct text *self;
 {
 /*    fprintf(stderr, "File contains nonascii characters\n"); */
     if (class_Load("be1be2") == NULL) {
@@ -960,7 +1038,10 @@ static void TryConversion(struct text *self)
 
 #endif /* CHECK_BE1 */
 
-long text__Read(struct text *self, FILE *file, long id)
+long text__Read(self, file, id)
+struct text *self;
+FILE *file;
+long id;
 {
     int retval;
     ClearStyles(self);
@@ -981,7 +1062,10 @@ long text__Read(struct text *self, FILE *file, long id)
     return retval;
 }
 
-static int StringMatch(register struct text *self, register long pos, register char *c)
+static int StringMatch(self, pos, c)
+register struct text *self;
+register long pos;
+register char *c;
 {
     /* Tests if the text begins with the given string */
     while (*c != '\0') {
@@ -992,12 +1076,17 @@ static int StringMatch(register struct text *self, register long pos, register c
     return TRUE;
 }
 
-static boolean TestForNoTemplate(struct style *style)
+static boolean TestForNoTemplate(style)
+struct style *style;
 {
     return ! style->template;
 }
 
-long text__Write(struct text *self, FILE *file, long writeID, int level)
+long text__Write(self, file, writeID, level)
+struct text *self;
+FILE *file;
+long writeID;
+int level;
 {
     boolean quoteCharacters = FALSE;
 
@@ -1048,7 +1137,11 @@ long text__Write(struct text *self, FILE *file, long writeID, int level)
     return self->header.dataobject.id;
 }
 
-long text__ReadSubString(struct text *self, long pos, FILE *file, boolean quoteCharacters)
+long text__ReadSubString(self, pos, file, quoteCharacters)
+struct text *self;
+long pos;
+FILE *file;
+boolean quoteCharacters;
 {
     struct environmentelement environmentStack[MAXENVSTACK];
     struct environmentelement *lastEnvBegin = envBegin;
@@ -1080,13 +1173,18 @@ long text__ReadSubString(struct text *self, long pos, FILE *file, boolean quoteC
     return len;
 }
 
-static void PutsRange(char *p, FILE *fp, char *ep)
+static void PutsRange(p, fp, ep)
+char *p;
+FILE *fp;
+char *ep;
 {
     while (p < ep)
         putc(*p++, fp);
 }
 
-static char *WriteOutBuf(FILE *file, char *outbuf, char *outp, char *lastblank)
+static char *WriteOutBuf(file,outbuf,outp,lastblank)
+FILE *file;
+char *outbuf,*outp,*lastblank;
 {
     char blankchar,*temp;
     if(lastblank == NULL || lastblank == outbuf) {
@@ -1370,7 +1468,12 @@ CopySurroundingStyles(self, pos, curenv)
 }
 
 	
-boolean text__CopyTextExactly(struct text *self, long pos, struct text *srctext, long srcpos, long len)
+boolean text__CopyTextExactly(self,pos,srctext,srcpos,len)
+    struct text *self;
+    long pos;
+    struct text *srctext;
+    long srcpos;
+    long len;
 {
     if (pos >= text_GetFence(self)) {
 	text_AlwaysCopyTextExactly(self,pos,srctext,srcpos,len);
@@ -1380,7 +1483,12 @@ boolean text__CopyTextExactly(struct text *self, long pos, struct text *srctext,
         return FALSE;
 }
 
-void text__AlwaysCopyTextExactly(struct text *self, long pos, struct text *srctext, long srcpos, long len)
+void text__AlwaysCopyTextExactly(self,pos,srctext,srcpos,len)
+struct text *self;
+long pos;
+struct text *srctext;
+long srcpos;
+long len;
 {
     struct environment *startenv;
     struct environment *curenv;
@@ -1507,7 +1615,12 @@ void text__AlwaysCopyTextExactly(struct text *self, long pos, struct text *srcte
     envptr = lastEnvptr;
 }
 
-void text__AlwaysCopyText(struct text *self, long pos, struct text *srctext, long srcpos, long len)
+void text__AlwaysCopyText(self,pos,srctext,srcpos,len)
+struct text *self;
+long pos;
+struct text *srctext;
+long srcpos;
+long len;
 {
     struct environment *rootenv;
     struct environment *startenv;
@@ -1622,7 +1735,10 @@ void text__AlwaysCopyText(struct text *self, long pos, struct text *srctext, lon
     envptr = lastEnvptr;
 }
 
-void text__SetEnvironmentStyle(struct text *self, struct environment *envptr, struct style *styleptr)
+void text__SetEnvironmentStyle(self, envptr, styleptr)
+struct text *self;
+struct environment *envptr;
+struct style *styleptr;
 {
     if (envptr->type != environment_View) {
         envptr->data.style = styleptr;
@@ -1632,7 +1748,9 @@ void text__SetEnvironmentStyle(struct text *self, struct environment *envptr, st
     else fprintf(stderr, "Can't set environment style; wrong environment type.\n");
 }
 
-void text__SetGlobalStyle(struct text *self, struct style *styleptr)
+void text__SetGlobalStyle(self, styleptr)
+struct text *self;
+struct style *styleptr;
 {
     if (self->rootEnvironment->type != environment_View) {
         self->rootEnvironment->data.style = styleptr;
@@ -1642,14 +1760,17 @@ void text__SetGlobalStyle(struct text *self, struct style *styleptr)
     else fprintf(stderr, "Can't set global style; wrong environment type.\n");
 }
 
-struct style *text__GetGlobalStyle(struct text *self)
+struct style *text__GetGlobalStyle(self)
+struct text *self;
 {
     return self->rootEnvironment->data.style;
 }
 
 /* New definition of environment state vector -- controls the formatting of text */
 
-void text__InitStateVector(struct classheader *classID, struct text_statevector *sv)
+void text__InitStateVector(classID, sv)
+struct classheader *classID;
+struct text_statevector *sv;
 {
     sv->CurLeftMargin = sv->CurRightMargin = sv->CurRightEdge =
       sv->CurLeftEdge = sv->CurTopMargin = sv->CurBottomMargin =
@@ -1666,7 +1787,9 @@ void text__InitStateVector(struct classheader *classID, struct text_statevector 
     sv->tabs = tabs_Create();
 }
 
-void text__FinalizeStateVector(struct classheader *classID, struct text_statevector *sv)
+void text__FinalizeStateVector(classID,sv)
+struct classheader *classID;
+struct text_statevector *sv;
 {
     if(sv->tabs) {
 	tabs_Death(sv->tabs);
@@ -1703,7 +1826,9 @@ static int PlayTabs(struct text_statevector *sv, struct text_statevector *oldsv,
 /* This routine takes a pointer to a state vector, a pointer and the */
 /* style to use, and plays that style over the state vector. */
 
-static void PlayStyle(struct text_statevector *sv, struct style *styleptr)
+static void PlayStyle(sv, styleptr)
+struct text_statevector *sv;
+struct style *styleptr;
 {
     register long delta;
     struct text_statevector oldvalues;
@@ -1925,7 +2050,11 @@ static void PlayStyle(struct text_statevector *sv, struct style *styleptr)
 /* state vector, in the right order
   The state vector must be initialized.*/
 
-void text__ApplyEnvironment(struct classheader *classID, struct text_statevector *sv, struct style *defaultStyle, struct environment *env)
+void text__ApplyEnvironment(classID, sv, defaultStyle, env)
+struct classheader *classID;
+struct text_statevector *sv;
+struct style *defaultStyle;
+struct environment *env;
 {
     if (env == NULL) {
         if (defaultStyle != NULL)
@@ -1940,7 +2069,9 @@ void text__ApplyEnvironment(struct classheader *classID, struct text_statevector
         PlayStyle(sv, env->data.style);
 }
 
-struct viewref *text__FindViewreference(register struct text *self, register long pos, register long len)
+struct viewref *text__FindViewreference(self, pos, len)
+register struct text *self;
+register long pos, len;
 {
     while (len > 0) {
         long gotlen;
@@ -1956,7 +2087,10 @@ struct viewref *text__FindViewreference(register struct text *self, register lon
     return NULL;
 }
 
-void text__ObservedChanged(struct text *self, struct observable *changed, long value)
+void text__ObservedChanged(self, changed, value)
+struct text *self;
+struct observable *changed;
+long value;
 {
     long pos, len;
     static struct classinfo *vci=NULL;
@@ -2147,7 +2281,8 @@ static void PushLevel(char *s, int pos, int len, int IsReal)
     Top = tmp;
 }
 
-char *PopLevel(int *IsReal)
+char *PopLevel(IsReal)
+int *IsReal;
 {
     char *s;
     struct stk *tmp = Top;
@@ -2162,7 +2297,8 @@ char *PopLevel(int *IsReal)
 }
 
 /* This routine removes a styleNode from the list of embedded styles */
-void DeleteStyleNode(struct stk *styleNode)
+void DeleteStyleNode(styleNode)
+struct stk *styleNode;
 {
     if(styleNode->prev)
 	styleNode->prev->next = styleNode->next;
@@ -2174,7 +2310,9 @@ void DeleteStyleNode(struct stk *styleNode)
     free(styleNode);
 }
 
-static char *WriteOutBufOther(FILE *file, char *outbuf, char *outp)
+static char *WriteOutBufOther(file, outbuf, outp)
+FILE *file;
+char *outbuf,*outp;
 {
     char *savedp, *endp, *new_endp = NULL;
     boolean UglyChop = FALSE;
@@ -2260,7 +2398,13 @@ static char *WriteOutBufOther(FILE *file, char *outbuf, char *outp)
 #define COMING_STYLE 2
 #define COMING_INSET 3
 
-long text__WriteOtherFormat(struct text *self, FILE *file, long writeID, int level, int usagetype, char *boundary)
+long text__WriteOtherFormat(self, file, writeID, level, usagetype, boundary)
+struct text *self;
+FILE *file;
+long writeID;
+int level;
+int usagetype;
+char *boundary;
 {
     long pos, len;
     struct environment *rootenv;
@@ -2529,7 +2673,8 @@ static int ComingNext(struct text *self, int pos)
     else return(COMING_PLAIN);
 }
 
-boolean text__CheckHighBit(struct text *self)
+boolean text__CheckHighBit(self)
+struct text *self;
 {
     long i, len=text_GetLength(self);
     struct simpletext *st=(struct simpletext *)self;

@@ -36,7 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <signal.h>
 #include <errno.h>
 #include <setjmp.h>
-#include <stdlib.h>
+extern int errno;
 #define	tst(a,b)	(*mode == 'r'? (b) : (a))
 #define	RDR	0
 #define	WTR	1
@@ -63,7 +63,9 @@ static SignalReturnType (*oldfunc)();
 #endif
 
 
-FILE *topen(char *name, char *argv[], char *mode, int *pgrp)
+FILE *topen(name, argv, mode, pgrp)
+char *name, *argv[], *mode;
+int *pgrp;
 {
     int p[2];
     register myside, hisside;
@@ -114,11 +116,14 @@ lclalarm()
     longjmp(env, 1);
 }
 
-int tclose(FILE *ptr, int seconds, int *timedout)
+int tclose(ptr, seconds, timedout)
+FILE *ptr;
+int seconds, *timedout;
 {
     register f, r;
     int status;
     SIGSET_TYPE omask, nmask;
+    extern int errno;
     struct itimerval val;
 #ifdef __STDC__
     SignalReturnType (*old)(int);
@@ -181,19 +186,22 @@ int tclose(FILE *ptr, int seconds, int *timedout)
     return status;
 }
 
-FILE *qopen(char *name, char *argv[], char *mode)
+FILE *qopen(name, argv, mode)
+char *name, *argv[], *mode;
 {
     int dummy;
 
     return topen(name, argv, mode, &dummy);
 }
 
-int qclose(FILE *ptr)
+int qclose(ptr)
+FILE *ptr;
 {
     return tclose(ptr, 0, 0);
 }
 
-int getpidfromfp(FILE *ptr)
+int getpidfromfp(ptr)
+FILE *ptr;
 {
     return(popen_pid[fileno(ptr)]);
 }

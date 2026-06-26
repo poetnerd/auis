@@ -40,8 +40,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #define AUXMODULE 1
 #include <text.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 #define StateInit		0
 #define StateSawSlash		1
 #define StateSawKeyword		2
@@ -54,7 +52,8 @@ struct templatelist  {
 
 struct templatelist *tlHead = NULL;
 
-static struct templatelist *FindTemplate(struct stylesheet *ssptr)
+static struct templatelist *FindTemplate(ssptr)
+    struct stylesheet *ssptr;
 {
     register struct templatelist *tPtr;
     
@@ -63,7 +62,8 @@ static struct templatelist *FindTemplate(struct stylesheet *ssptr)
     return tPtr;
 }
 
-static struct templatelist *text_AddTemplate(struct stylesheet *ssptr)
+static struct templatelist *text_AddTemplate(ssptr)
+    struct stylesheet *ssptr;
 {
     struct templatelist *newTL;
 
@@ -76,7 +76,8 @@ static struct templatelist *text_AddTemplate(struct stylesheet *ssptr)
     return newTL;
 }
 
-static struct templatelist *text_FindTemplateByName(char *templateName)
+static struct templatelist *text_FindTemplateByName(templateName)
+    char *templateName;
 {
     register struct templatelist *tPtr;
     
@@ -85,7 +86,9 @@ static struct templatelist *text_FindTemplateByName(char *templateName)
     return tPtr;
 }
 
-static void text_OverrideStyles(struct stylesheet *ssptr, struct stylesheet *templateptr)
+static void text_OverrideStyles(ssptr, templateptr)
+    struct stylesheet *ssptr;
+    struct stylesheet *templateptr;
 {
     register int i;
     register struct style **styles, *overridestyle;
@@ -105,7 +108,8 @@ static void text_OverrideStyles(struct stylesheet *ssptr, struct stylesheet *tem
     ssptr->version++;
 }
 
-static void SetGlobalStyleInText(struct text *self)
+static void SetGlobalStyleInText(self)
+struct text *self;
 {
     struct style *styleptr = stylesheet_GetGlobalStyle(self->styleSheet);
 
@@ -121,7 +125,10 @@ static void SetGlobalStyleInText(struct text *self)
 }
 
 /* This routine parses the contents of a template file */
-long text__ReadTemplate(struct text *self, char *templateName, boolean inserttemplatetext)
+long text__ReadTemplate(self, templateName, inserttemplatetext)
+    struct text *self;
+    char *templateName;
+    boolean inserttemplatetext;
 {
     FILE *fileptr;
     int c, statecode, i;

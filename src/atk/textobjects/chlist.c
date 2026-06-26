@@ -35,8 +35,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <andrewos.h>
 #include <chlist.eh>
 
-#include <stdlib.h>
-boolean chlist__InitializeObject(struct classheader *c, struct chlist *self)
+boolean chlist__InitializeObject(c, self)
+struct classheader *c;
+struct chlist *self;
 {
     self->ItemList = NULL;
     self->numitems = 0;
@@ -49,7 +50,8 @@ boolean chlist__InitializeObject(struct classheader *c, struct chlist *self)
     return(TRUE);
 }
 
-void Clear(struct chlist *self)
+void Clear(self)
+struct chlist *self;
 {
     long i, j;
     struct listitem *item;
@@ -76,12 +78,15 @@ void Clear(struct chlist *self)
     }
 }	
 
-void chlist__FinalizeObject(struct classheader *c, struct chlist *self)
+void chlist__FinalizeObject(c, self)
+struct classheader *c;
+struct chlist *self;
 {
     Clear(self);
 }
 
-void chlist__Clear(struct chlist *self)
+void chlist__Clear(self)
+struct chlist *self;
 {
     Clear(self);
     super_Clear(self);
@@ -96,7 +101,11 @@ void chlist__Clear(struct chlist *self)
     chlist_SetReadOnly(self, TRUE);
 }
     
-void chlist__SetRegionStringByIndex(struct chlist *self, long index, long regionNum, char *regionStr)
+void chlist__SetRegionStringByIndex(self, index, regionNum, regionStr)
+struct chlist *self;
+long index;
+long regionNum;
+char *regionStr;
 {
     struct listitem *item;
     long len, oldLen, changeLen = 0;
@@ -190,13 +199,19 @@ void chlist__SetRegionStringByIndex(struct chlist *self, long index, long region
     chlist_NotifyObservers(self, 0);
 }
 
-void chlist__SetRegionString(struct chlist *self, char *str, long regionNum, char *regionStr)
+void chlist__SetRegionString(self, str, regionNum, regionStr)
+struct chlist *self;
+char *str;
+long regionNum;
+char *regionStr;
 {
     chlist_SetRegionStringByIndex(self, chlist_GetIndexByString(self, str), regionNum, regionStr);
 
 }
 
-void chlist__DefineRegion(struct chlist *self, long regionNum)
+void chlist__DefineRegion(self, regionNum)
+struct chlist *self;
+long regionNum;
 {
     long i;
 
@@ -215,7 +230,9 @@ void chlist__DefineRegion(struct chlist *self, long regionNum)
     }
 }
 
-void chlist__DefineStringRegion(struct chlist *self, long regionNum)
+void chlist__DefineStringRegion(self, regionNum)
+struct chlist *self;
+long regionNum;
 {
     long i;
 
@@ -231,7 +248,12 @@ void chlist__DefineStringRegion(struct chlist *self, long regionNum)
     }
 }
 
-boolean chlist__AddItemAtIndex(struct chlist *self, long index, char *str, int (*proc)(), long data)
+boolean chlist__AddItemAtIndex(self, index, str, proc, data)
+struct chlist *self;
+long index;
+char *str;
+int (*proc)();
+long data;
 {
     char *mycopy;
     struct listitem *newbuf;
@@ -284,12 +306,18 @@ boolean chlist__AddItemAtIndex(struct chlist *self, long index, char *str, int (
 }
 
 
-boolean chlist__AddItemToEnd(struct chlist *self, char *str, int (*proc)(), long data)
+boolean chlist__AddItemToEnd(self, str, proc, data)
+struct chlist *self;
+char *str;
+int (*proc)();
+long data;
 {
     return chlist_AddItemAtIndex(self, self->numitems, str, proc, data);
 }
 
-struct listitem * chlist__FindItem(struct chlist *self, char *str)
+struct listitem * chlist__FindItem(self, str)
+struct chlist *self;
+char *str;
 {
     int i;
     i = chlist_GetIndexByString(self,str);
@@ -297,7 +325,9 @@ struct listitem * chlist__FindItem(struct chlist *self, char *str)
     return(NULL);
 }
 
-struct listitem * chlist__FindItemByIndex(struct chlist *self, unsigned long index)
+struct listitem * chlist__FindItemByIndex(self, index)
+struct chlist *self;
+unsigned long index;
 {
     if (index < self->numitems) {
         return (&self->ItemList[index]);
@@ -305,7 +335,9 @@ struct listitem * chlist__FindItemByIndex(struct chlist *self, unsigned long ind
     return NULL;
 }
 
-procedure chlist__SetFreeProcedure(struct chlist *self, procedure proc)
+procedure chlist__SetFreeProcedure(self, proc)
+struct chlist *self;
+procedure proc;
 {
     procedure oldproc = self->freeProc;
 
@@ -314,7 +346,9 @@ procedure chlist__SetFreeProcedure(struct chlist *self, procedure proc)
     return(oldproc);
 }
 
-long chlist__GetIndexByString(struct chlist *self, char *str)
+long chlist__GetIndexByString(self, str)
+struct chlist *self;
+char *str;
 {
     int i;
     for (i=0; i<self->numitems; ++i) {
@@ -325,7 +359,9 @@ long chlist__GetIndexByString(struct chlist *self, char *str)
     return(-1);
 }
 
-long chlist__GetIndexByData(struct chlist *self, long data)
+long chlist__GetIndexByData(self, data)
+struct chlist *self;
+long data;
 {
     int i;
     for (i=0; i<self->numitems; ++i) {
@@ -336,7 +372,9 @@ long chlist__GetIndexByData(struct chlist *self, long data)
     return(-1);
 }
 
-boolean chlist__DeleteItemByIndex(struct chlist *self, long i)
+boolean chlist__DeleteItemByIndex(self, i)
+struct chlist *self;
+long i;
 {
     int len, j;
 
@@ -375,26 +413,36 @@ boolean chlist__DeleteItemByIndex(struct chlist *self, long i)
     return(TRUE);
 }
 
-boolean chlist__DeleteItem(struct chlist *self, char *str)
+boolean chlist__DeleteItem(self, str)
+struct chlist *self;
+char *str;
 {
     int i = chlist_GetIndexByString(self, str);
 
     return chlist_DeleteItemByIndex(self, i);
 }
 
-boolean chlist__ChangeItemByIndex(struct chlist *self, long index, char *newstr)
+boolean chlist__ChangeItemByIndex(self, index, newstr)
+struct chlist *self;
+long index;
+char *newstr;
 {
     chlist_SetRegionStringByIndex(self, index, self->strRegionNum, newstr);
 
     return(TRUE);
 }
 
-boolean chlist__ChangeItem(struct chlist *self, char *oldstr, char *newstr)
+boolean chlist__ChangeItem(self, oldstr, newstr)
+struct chlist *self;
+char *oldstr, *newstr;
 {
     return chlist_ChangeItemByIndex(self, chlist_GetIndexByString(self, oldstr), newstr);
 }
 
-boolean chlist__ChangeDataByIndex(struct chlist *self, long i, long rock)
+boolean chlist__ChangeDataByIndex(self, i, rock)
+struct chlist *self;
+long i;
+long rock;
 {
     if (i<0 || i >= self->numitems) return(FALSE);
 
@@ -409,12 +457,20 @@ boolean chlist__ChangeDataByIndex(struct chlist *self, long i, long rock)
     return(TRUE);
 }
 
-boolean chlist__ChangeData(struct chlist *self, char *oldstr, long rock)
+boolean chlist__ChangeData(self, oldstr, rock)
+struct chlist *self;
+char *oldstr;
+long rock;
 {
     return chlist_ChangeDataByIndex(self, chlist_GetIndexByString(self, oldstr), rock);
 }
 
-long chlist__GetRegionInfoForPosition(struct chlist *self, long index, long position, long *size, long *offset)
+long chlist__GetRegionInfoForPosition(self, index, position, size, offset)
+struct chlist *self;
+long index;
+long position;
+long *size;
+long *offset;
 {
     struct listitem *item = &self->ItemList[index];
     long itemPosition = item->loc;
@@ -467,7 +523,12 @@ long chlist__GetRegionInfoForPosition(struct chlist *self, long index, long posi
     return regionID;
 }
 
-long chlist__GetIndexByPosition(struct chlist *self, long position, long *regionID, long *size, long *offset)
+long chlist__GetIndexByPosition(self, position, regionID, size, offset)
+struct chlist *self;
+long position;
+long *regionID;
+long *size;
+long *offset;
 {
     long min = 0;
     long max = self->numitems - 1;
@@ -500,7 +561,12 @@ long chlist__GetIndexByPosition(struct chlist *self, long position, long *region
     return -1;
 }
 
-void chlist__EnumerateItems(struct chlist *self, long index, long length, procedure proc, long rock)
+void chlist__EnumerateItems(self, index, length, proc, rock)
+struct chlist *self;
+long index;
+long length;
+procedure proc;
+long rock;
 {
     long endIndex = index + length;
 

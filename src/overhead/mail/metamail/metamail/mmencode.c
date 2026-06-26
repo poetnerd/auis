@@ -16,13 +16,14 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 #include <config.h>
 #ifdef MSDOS
 #include <fcntl.h>
-#include <stdlib.h>
 #endif
 
 #define BASE64 1
 #define QP 2 /* quoted-printable */
 
-int main(int argc, char **argv)
+main(argc, argv)
+int argc;
+char **argv;
 {
     int encode = 1, which = BASE64, i, portablenewlines = 0;
     FILE *fp = stdin;

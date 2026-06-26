@@ -33,8 +33,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include  <str.h>
 
-#include <string.h>
-#include <stdlib.h>
 /*
  * Returns the first strnode in the free area.  If one does not exist, a new
  * block of strnodes is allocated and linked into the freelist, and a strnode
@@ -43,7 +41,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * NOTE: Initialization is performed on the returned node. 
  */
 
-EliStr_t       *eliStr_GetNew(EliState_t *st, char *string)
+EliStr_t       *eliStr_GetNew(st, string)
+EliState_t     *st;
+char           *string;
 {
     EliStr_t       *tmp = NULL;
     EliSexp_t      *nodetmp;
@@ -113,7 +113,8 @@ EliStr_t       *eliStr_GetNew(EliState_t *st, char *string)
  * this block's freelist. 
  */
 
-EliStr_t       *eliStr_GetNewBlock(int numnodes)
+EliStr_t       *eliStr_GetNewBlock(numnodes)
+int             numnodes;
 {
     EliStr_t       *result;
     int             i;
@@ -127,7 +128,9 @@ EliStr_t       *eliStr_GetNewBlock(int numnodes)
     return (result);
 }
 
-int             eliStr_DecrRefcount(EliState_t *st, EliStr_t *node)
+int             eliStr_DecrRefcount(st, node)
+EliState_t     *st;
+EliStr_t       *node;
 {
     int             result;
 
@@ -149,12 +152,14 @@ int             eliStr_DecrRefcount(EliState_t *st, EliStr_t *node)
     return (result);
 }
 
-void            eliStr_IncrRefcount(EliStr_t *node)
+void            eliStr_IncrRefcount(node)
+EliStr_t       *node;
 {
     ++(node->data.refcount);
 }
 
-char           *EliStr_GetString(EliStr_t *node)
+char           *EliStr_GetString(node)
+EliStr_t       *node;
 {
     return (node->data.string);
 }

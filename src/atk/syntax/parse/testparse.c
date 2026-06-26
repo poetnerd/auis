@@ -58,7 +58,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/synt
 #include <lexan.ih>
 
 #include <foo.tab.c>	
-#include <stdio.h>
 #include <parsedesc.h>	/* declare parse_description */
 #include <parsepre.h>	/* begin function 'action' */
 #include <foo.act>	/* body of function 'action' */

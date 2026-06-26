@@ -26,7 +26,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "andrewos.h"
 #include "files.h"
 
-#include <stdlib.h>
 int verboseflag;
 int definesflag;
 int debugflag;

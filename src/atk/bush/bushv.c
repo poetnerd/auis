@@ -91,8 +91,6 @@ END-SPECIFICATION  ******************************************************/
 #include <bush.ih>
 #include <bushv.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 #define	by_name					    0
 #define	by_size					    1
 #define	by_date					    2

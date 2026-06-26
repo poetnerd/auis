@@ -63,7 +63,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ness
 
 #include <type.ih>
 
-#include <stdlib.h>
 #define BUFLEN 300
 
 /* defining occurrence for declaration in call.hn */
@@ -397,7 +396,9 @@ argtypeerror(n, formal, actual)
 	check types
 */
 	static Texpr
-int builtincall(struct varnode *fnode, struct exprnode *argtypes)
+builtincall(fnode, argtypes)
+	struct varnode *fnode;
+	struct exprnode *argtypes;
 {
 	struct builtindef *b = nesssym_NGetINode(fnode->sym, builtindef);
 	unsigned char *defn;
@@ -552,7 +553,10 @@ checkargtypes(func, fexpr, formal, actual)
 	return the corresponding Ctype in *Pctype
 */
 	static Texpr 
-int MapType(struct type *type, operation firstop, Texpr *Pctype)
+MapType(type, firstop, Pctype)
+	struct type *type;
+	operation firstop;
+	Texpr *Pctype;
 {
 	struct type *super;
 	operation *ops;
@@ -1705,7 +1709,9 @@ callCompLib(lnode)
 	is called after a successful compile.
 */
 	enum libstate
-int callCheckLib(unsigned char *fun, struct funcnode **fnode)
+callCheckLib(fun, fnode)
+	unsigned char *fun;
+	struct funcnode **fnode;
 {
 	unsigned char fname[MAXNAMLEN+1];
 	unsigned char *under;

@@ -59,7 +59,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fram
 #include <messitem.ih>
 #include <framemsg.eh>
 
-#include <stdlib.h>
 static boolean isMessFileLoaded = 0;
 
 #define DEFAULTMESSAGETIMEOUT 15 /* Default timeout in seconds. */
@@ -70,8 +69,10 @@ static long messageTimeout;
 
 static char copyrightnotice[]=AUIS_SHORT_COPYRIGHT;
 
-boolean framemessage__InitializeObject(struct classheader *classID, struct framemessage *self)
-{
+boolean framemessage__InitializeObject(classID, self)
+    struct classheader *classID;
+    struct framemessage *self;
+    {
     self->erasureEvent=NULL;
     self->frame = NULL;
     self->messageText = text_New();
@@ -96,7 +97,9 @@ boolean framemessage__InitializeObject(struct classheader *classID, struct frame
     return TRUE;
 }
 
-void framemessage__FinalizeObject(struct classheader *classID, struct framemessage *self)
+void framemessage__FinalizeObject(classID, self)
+    struct classheader *classID;
+    struct framemessage *self;
 {
 
     if (self->messageView != NULL)
@@ -106,7 +109,9 @@ void framemessage__FinalizeObject(struct classheader *classID, struct framemessa
 
 }
 
-struct framemessage *framemessage__Create(struct classheader *classID, struct frame *frame)
+struct framemessage *framemessage__Create(classID, frame)
+    struct classheader *classID;
+    struct frame *frame;
 {
 
     struct framemessage *self;
@@ -116,7 +121,8 @@ struct framemessage *framemessage__Create(struct classheader *classID, struct fr
     return self;
 }
 
-static void EraseDisplayedMessage(struct framemessage *self)
+static void EraseDisplayedMessage(self)
+    struct framemessage *self;
 {
     self->erasureEvent=NULL;
     if (self->messageLen > 0) {
@@ -128,7 +134,9 @@ static void EraseDisplayedMessage(struct framemessage *self)
 }
 
 /* Enqueue erasure event. */
-static void QueueErasure(struct framemessage *self, long length)
+static void QueueErasure(self, length)
+struct framemessage *self;
+long length; /* Length of text to erase. */
 {
    if(!frameview_GetIM(self->messageView)) return;
    if(self->erasureEvent) im_CancelInteractionEvent( frameview_GetIM(self->messageView), self->erasureEvent);
@@ -141,7 +149,10 @@ static void QueueErasure(struct framemessage *self, long length)
     else self->erasureEvent=NULL;
 }
 
-int framemessage__DisplayString(struct framemessage *self, int priority, char *string)
+int framemessage__DisplayString(self, priority, string)
+struct framemessage *self;
+int priority;
+char *string;
 {
 
       int len;
@@ -187,7 +198,10 @@ int framemessage__DisplayString(struct framemessage *self, int priority, char *s
 /* Really does everything common to all "AskFor..." calls.
  * Should either be renamed, or broken into two routines. 
  */
-static void BuildPrompt(struct framemessage *self, char *prompt, char *defaultString)
+static void BuildPrompt(self, prompt, defaultString)
+    struct framemessage *self;
+    char *prompt;
+    char *defaultString;
 {
 
     int len;
@@ -208,7 +222,10 @@ static void BuildPrompt(struct framemessage *self, char *prompt, char *defaultSt
 
 void CancelNoExit();
 
-static void Process(struct framemessage *self, char *buffer, int bufferSize)
+static void Process(self, buffer, bufferSize)
+struct framemessage *self;
+char *buffer;
+int bufferSize;
 {
     char *qanswer=NULL;
     qanswer=im_GetAnswer();
@@ -225,7 +242,11 @@ static void Process(struct framemessage *self, char *buffer, int bufferSize)
     }
 }
 
-int framemessage__AskForString(struct framemessage *self, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize)
+int framemessage__AskForString(self, priority, prompt, defaultString, buffer, bufferSize)
+    struct framemessage *self;
+    int priority;
+    char *prompt, *defaultString, *buffer;
+    int bufferSize; /* Is actual sizeof buffer including NUL. */
 {
     char *qanswer = NULL;
     char *str = messitem_Replace(prompt);
@@ -270,7 +291,11 @@ int framemessage__AskForString(struct framemessage *self, int priority, char *pr
     return 0;
 }
 
-int framemessage__AskForPasswd(struct framemessage *self, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize)
+int framemessage__AskForPasswd(self, priority, prompt, defaultString, buffer, bufferSize)
+    struct framemessage *self;
+    int priority;
+    char *prompt, *defaultString, *buffer;
+    int bufferSize; /* Is actual sizeof buffer including NUL. */
 {
     static struct style *passwdStyle = NULL;
     struct owatch_data *checkit=NULL;
@@ -320,7 +345,16 @@ int framemessage__AskForPasswd(struct framemessage *self, int priority, char *pr
 }
 
 /* Hairy function... */
-int framemessage__AskForStringCompleted(struct framemessage *self, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize, struct keystate *keystate, enum message_CompletionCode (*completionProc)(), int (*helpProc)(), long completionData, int flags)
+int framemessage__AskForStringCompleted(self, priority, prompt, defaultString, buffer, bufferSize, keystate, completionProc, helpProc, completionData, flags)
+    struct framemessage *self;
+    int priority;
+    char *prompt, *defaultString, *buffer;
+    int bufferSize; /* Is actual sizeof buffer including NUL. */
+    struct keystate *keystate;
+    enum message_CompletionCode (*completionProc)(/* char *string, long rock, char *buffer, int buffersize */);
+    int (*helpProc)(/* char *partialKeyword, long rock, int (*helpTextFunction)(), long helpTextRockchar */);
+    long completionData;
+    int flags;
 {
 
 /* The order things happen in this routine is very important. */
@@ -402,7 +436,11 @@ int framemessage__AskForStringCompleted(struct framemessage *self, int priority,
 }
 #ifdef THISCODEWORKS
 /* This routine kludges together a linear prompt for a multiple choice question. */
-static char *KludgePrompt(char *prompt, long defaultChoice, char *choices[], char *abbrevKeys)
+static char *KludgePrompt(prompt, defaultChoice, choices, abbrevKeys)
+    char *prompt;
+    long defaultChoice;
+    char *choices[];
+    char *abbrevKeys;
 {
 
     int i;
@@ -468,7 +506,14 @@ static char *KludgePrompt(char *prompt, long defaultChoice, char *choices[], cha
 }
 #endif /* THISCODEWORKS */
 
-int framemessage__MultipleChoiceQuestion(struct framemessage *self, int priority, char *prompt, long defaultChoice, long *result, char **choices, char *abbrevKeys)
+int framemessage__MultipleChoiceQuestion(self, priority, prompt, defaultChoice, result, choices, abbrevKeys)
+    struct framemessage *self;
+    int priority;
+    char *prompt;
+    long defaultChoice;
+    long *result;
+    char **choices;
+    char *abbrevKeys;
 {
 	struct owatch_data *checkit=NULL;
 #ifdef THISCODEWORKS /* This is saracastic I assume (i.e. really should be #if 0). */
@@ -528,7 +573,8 @@ int framemessage__MultipleChoiceQuestion(struct framemessage *self, int priority
 #endif /* THISCODEWORKS */
 }
 
-void CancelNoExit(struct framemessage *self)
+void CancelNoExit(self)
+struct framemessage *self;
 {
     if (framemessage_Asking(self)) {
 	self->punt = TRUE;
@@ -537,7 +583,8 @@ void CancelNoExit(struct framemessage *self)
     else if(self->companion) msghandler_CancelQuestion(self->companion);
 }
 
-void framemessage__CancelQuestion(struct framemessage *self)
+void framemessage__CancelQuestion(self)
+    struct framemessage *self;
 {
 
     if (framemessage_Asking(self)) {
@@ -548,7 +595,10 @@ void framemessage__CancelQuestion(struct framemessage *self)
     else if(self->companion) msghandler_CancelQuestion(self->companion);
 }
 
-int framemessage__GetCurrentString(struct framemessage *self, char *buffer, int bufferSize)
+int framemessage__GetCurrentString(self, buffer, bufferSize)
+    struct framemessage *self;
+    char *buffer;
+    int bufferSize; /* Is actual sizeof buffer including NUL. */
 {
 
     int pos, length;
@@ -568,7 +618,11 @@ int framemessage__GetCurrentString(struct framemessage *self, char *buffer, int 
     return frameview_GetDotPosition(self->messageView) - pos;
 }
 
-int framemessage__InsertCharacters(struct framemessage *self, int pos, char *string, int len)
+int framemessage__InsertCharacters(self, pos, string, len)
+    struct framemessage *self;
+    int pos;
+    char *string;
+    int len;
 {
     if (!framemessage_Asking(self)){
 	if(self->companion) 
@@ -580,7 +634,10 @@ int framemessage__InsertCharacters(struct framemessage *self, int pos, char *str
     text_NotifyObservers(self->messageText, 0);
 }
 
-int framemessage__DeleteCharacters(struct framemessage *self, int pos, int len)
+int framemessage__DeleteCharacters(self, pos, len)
+    struct framemessage *self;
+    int pos;
+    int len;
 {
 
     if (!framemessage_Asking(self)){
@@ -595,7 +652,8 @@ int framemessage__DeleteCharacters(struct framemessage *self, int pos, int len)
     text_NotifyObservers(self->messageText, 0);
 }
 
-int framemessage__GetCursorPos(struct framemessage *self)
+int framemessage__GetCursorPos(self)
+    struct framemessage *self;
 {
     if (!framemessage_Asking(self)){
 	if(self->companion) 
@@ -606,7 +664,9 @@ int framemessage__GetCursorPos(struct framemessage *self)
     return frameview_GetDotPosition(self->messageView) - text_GetFence(self->messageText);
 }
 
-int framemessage__SetCursorPos(struct framemessage *self, int pos)
+int framemessage__SetCursorPos(self, pos)
+    struct framemessage *self;
+    int pos;
 {
 
     if (!framemessage_Asking(self)){
@@ -621,17 +681,21 @@ int framemessage__SetCursorPos(struct framemessage *self, int pos)
     frameview_WantUpdate(self->messageView, self->messageView);
 }
 
-boolean framemessage__Asking(struct framemessage *self)
+boolean framemessage__Asking(self)
+    struct framemessage *self;
 {
 
     return self->asking;
 }
-void framemessage__SetCompanion(struct framemessage *self, struct msghandler *companion)
+void framemessage__SetCompanion(self,companion)
+struct framemessage *self;
+struct msghandler *companion;
 {
     self->companion = companion;
 }
 
-boolean framemessage__InitializeClass(struct classheader *classID)
+boolean framemessage__InitializeClass(classID)
+    struct classheader *classID;
 {
     messageTimeout = environ_GetProfileInt("MessageTimeout", DEFAULTMESSAGETIMEOUT); /* Expressed in seconds. */
 
@@ -640,7 +704,9 @@ boolean framemessage__InitializeClass(struct classheader *classID)
     return TRUE;
 }
 
-void framemessage__Advice(struct framemessage *self, enum message_Preference pp)
+void framemessage__Advice(self,pp)
+struct framemessage *self;
+enum message_Preference pp;
 {
     frame_Advice(self->frame,pp);
 }

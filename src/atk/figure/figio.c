@@ -47,8 +47,6 @@ char *figio_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fi
 
 #include "point.h"
 
-#include <stdlib.h>
-#include <stdio.h>
 static struct figattr *dummyattr;
 
 static char *buf = NULL;
@@ -67,7 +65,8 @@ static void EnsurePts();
 #define FromZipW(val)  (long)(((double)(val) * ratio))
 #define FromZipH(val)  (long)(((double)(-(val)) * ratio))
 
-boolean figio__InitializeClass(struct classhdr *ClassID)
+boolean figio__InitializeClass(ClassID)
+struct classhdr *ClassID;
 {
     bufsize = BUFSIZESTEP;
     buf = malloc(bufsize);
@@ -81,7 +80,8 @@ boolean figio__InitializeClass(struct classhdr *ClassID)
     return TRUE;
 }
 
-static void EnsurePts(int num)
+static void EnsurePts(num)
+int num;
 {
     if (num <= pts_size)
 	return;
@@ -122,7 +122,10 @@ static char *GetString(fl)
 /* eats lines into buf until (first char IN list) == inlist 
   always reads at least one line
   returns NULL if EOF */
-static char *EatLinesUntil(FILE *fl, char *list, boolean inlist)
+static char *EatLinesUntil(fl, list, inlist)
+FILE *fl;
+char *list;
+boolean inlist;
 {
     char *ctmp, *res;
 
@@ -137,7 +140,8 @@ static char *EatLinesUntil(FILE *fl, char *list, boolean inlist)
 }
 
 /* remove leading T and turn \n into newline */
-static void SquishZipTextInput(char *pt)
+static void SquishZipTextInput(pt)
+char *pt;
 {
     char *rept;
 
@@ -156,7 +160,12 @@ static void SquishZipTextInput(char *pt)
 }
 
 /* file should be ready to read in first (*D...) line */
-long figio__ReadZipFile(struct classhdr *ClassID, FILE *fl, struct figure *fig, long parent, double ratio)
+long figio__ReadZipFile(ClassID, fl, fig, parent, ratio)
+struct classhdr *ClassID;
+FILE *fl;
+struct figure *fig;
+long parent;
+double ratio;
 {
     char *ctmp, objtype;
     long starx, stary, altx, alty, greyval;

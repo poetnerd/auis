@@ -57,8 +57,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #define AMBIGUOUS -2
 #include <ctype.h>
 
-#include <string.h>
-int stablk(char *arg, char **table, int quiet)
+int stablk (arg,table,quiet)
+char *arg, **table;
+int quiet; /* ignored */
 {
     register int i,ix = 0,count;
 

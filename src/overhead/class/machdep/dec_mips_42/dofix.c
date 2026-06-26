@@ -1,5 +1,3 @@
-#include <string.h>
-#include <stdlib.h>
 /* ********************************************************************** *\
  *         Copyright IBM Corporation 1988,1991 - All Rights Reserved      *
  *        For full copyright information see:'andrew/config/COPYRITE'     *
@@ -45,7 +43,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <stdio.h> /* For NULL in absence of stddef.h */
 
-static char *ComputeOutputFileName(char *InputFileName, char *extension)
+static char *ComputeOutputFileName (InputFileName, extension)
+char *InputFileName;
+char *extension;
 {
 
     static char name[256];
@@ -73,7 +73,9 @@ static char *ComputeOutputFileName(char *InputFileName, char *extension)
     return name ;
 }
 
-int main(int argc, char **argp)
+main(argc, argp)
+int argc;
+char **argp;
 {
     char *InputFileName;
     char *OutputFileName;

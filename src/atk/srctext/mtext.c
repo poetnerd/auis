@@ -42,7 +42,8 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 
 static Dict *words[TABLESIZE];
 
-static void SetupStyles(struct mtext *self)
+static void SetupStyles(self)
+struct mtext *self;
 {
     if ((self->header.srctext.kindStyle[IDNTFR]= stylesheet_Find(self->header.text.styleSheet, "predefined")) == NULL) {
 	self->header.srctext.kindStyle[IDNTFR]= style_New();
@@ -59,13 +60,15 @@ static void SetupStyles(struct mtext *self)
     }
 }
 
-void mtext__SetupStyles(struct mtext *self)
+void mtext__SetupStyles(self)
+struct mtext *self;
 {
     super_SetupStyles(self);
     SetupStyles(self);
 }
 
-boolean mtext__InitializeClass(struct classheader *classID)
+boolean mtext__InitializeClass(classID)
+struct classheader *classID;
 {
     static Dict mkeywords[]={
 /* meanings of bit values:
@@ -160,7 +163,9 @@ boolean mtext__InitializeClass(struct classheader *classID)
     return TRUE;
 }
 
-boolean mtext__InitializeObject(struct classheader *classID, struct mtext *self)
+boolean mtext__InitializeObject(classID, self)
+struct classheader *classID;
+struct mtext *self;
 {
     self->header.srctext.words= (Dict **)words;
     self->header.modtext.preprocessor= TRUE;

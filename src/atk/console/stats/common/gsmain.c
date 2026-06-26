@@ -81,7 +81,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <stdio.h>
 #include <getstats.h>
 
-#include <stdlib.h>
 #define sendval(text) {printf text ;fflush(stdout);}
 
 extern GetGVMStats(); /* */
@@ -91,7 +90,9 @@ extern GetDiskStats(); /* */
 #define min(a, b) (((a) <= (b)) ? (a) : (b))
 
 
-int main(int argc, char **argv)
+main(argc, argv)
+int argc;
+char **argv;
 {
     int GVMPollFreq = 0, DiskPollFreq = 0, UsersID = 0;
     int time1 = 0, time2 = 0, sleepTime = 0;

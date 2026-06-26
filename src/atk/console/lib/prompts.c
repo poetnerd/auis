@@ -50,14 +50,22 @@ int Pposx, Pposy;
 char Pstring1[256] = "", Pstring2[256] = "", Pstring3[256] = "", Pstring4[MAXPATHLEN] = "";
 
 
-int ClearRectangle(struct consoleClass *self, struct rectangle *clpRect, short Op1, struct graphic *Op2)
+ClearRectangle(self, clpRect, Op1, Op2)
+struct consoleClass *self;
+struct rectangle *clpRect;
+short Op1;
+struct graphic *Op2;
 {
     mydbg(("entering: ClearRectangle\n"));
     consoleClass_SetTransferMode(self, Op1);
     consoleClass_FillRect(self, clpRect, Op2);
 }
 
-int ClearBox(struct consoleClass *self, int x, int y, int w, int h, short Op1, struct graphic *Op2)
+ClearBox(self, x, y, w, h, Op1, Op2)
+struct consoleClass *self;
+int x, y, w, h;
+short Op1;
+struct graphic *Op2;
 {
     struct rectangle tempRect;
 
@@ -66,7 +74,8 @@ int ClearBox(struct consoleClass *self, int x, int y, int w, int h, short Op1, s
     ClearRectangle(self, &tempRect, Op1, Op2);
 }
 
-int ClearWindow(struct consoleClass *self)
+ClearWindow(self)
+struct consoleClass *self;
 {
     struct rectangle windowRect;
     
@@ -75,7 +84,8 @@ int ClearWindow(struct consoleClass *self)
     ClearRectangle(self, &windowRect, graphic_COPY, consoleClass_WhitePattern(self));
 }
 
-int InvertWindow(struct consoleClass *self)
+InvertWindow(self)
+struct consoleClass *self;
 {
     struct rectangle windowRect;
 
@@ -94,7 +104,8 @@ InitPstrings()
     Pposx = Pposy = 0;
 }
 
-int PromptToWindow(struct consoleClass *self)
+PromptToWindow(self)
+struct consoleClass *self;
 {
     register short *fontWidth = fontdesc_WidthTable(EventFont, consoleClass_GetDrawable(self));
     int width = consoleClass_GetLogicalWidth(self), height = consoleClass_GetLogicalHeight(self);
@@ -121,7 +132,9 @@ int PromptToWindow(struct consoleClass *self)
 
 
 
-int GetStringFromWindow(struct consoleClass *self, long maxSize)
+GetStringFromWindow(self, maxSize)
+struct consoleClass *self;
+long maxSize;
 {
     int c;
     register short   *fontWidth = fontdesc_WidthTable(EventFont, consoleClass_GetDrawable(self));
@@ -171,7 +184,8 @@ int GetStringFromWindow(struct consoleClass *self, long maxSize)
     }
 }
 
-int RedrawPrompt(struct consoleClass *self)
+RedrawPrompt(self)
+struct consoleClass *self;
 {
     register short *fontWidth = fontdesc_WidthTable(EventFont, consoleClass_GetDrawable(self));
     int width = consoleClass_GetLogicalWidth(self), height = consoleClass_GetLogicalHeight(self);

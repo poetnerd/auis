@@ -70,6 +70,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h>		/* sys/time.h */
 #include <svcconf.h>
 #include <errno.h>
+extern int errno;
 #ifdef AFS30_ENV
 #include <netinet/in.h>
 #include <afs/acl.h>
@@ -96,7 +97,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 
 
-#include <stdlib.h>
 /**********************
  *                    *
  * Macro Definitions  *
@@ -178,7 +178,8 @@ static id_and_name_t New_id_and_name()
     return(ret);
 }
 
-static void Free_id_and_name(id_and_name_t in)
+static void Free_id_and_name(in)
+id_and_name_t in;
 {
     if (in == NULL) return;
     if (in->cell) free(in->cell);
@@ -186,7 +187,9 @@ static void Free_id_and_name(id_and_name_t in)
     free(in);
 }
 
-static id_and_name_t New_ID(long id, char *cell)
+static id_and_name_t New_ID(id, cell)
+long id;
+char *cell;
 {
   /* Builds a new id_and_name_t element, with the id and cell
      fields initialized.
@@ -200,7 +203,8 @@ static id_and_name_t New_ID(long id, char *cell)
     return(ret);
 }
 
-static id_and_name_t New_Name(char *name, char *cell)
+static id_and_name_t New_Name(name, cell)
+char *name, *cell;
 {
   /* Builds a new id_and_name_t element, with the name and cell
      fields initialized.
@@ -214,7 +218,8 @@ static id_and_name_t New_Name(char *name, char *cell)
     return(ret);
 }
 
-static long NameToID(char *name, char *cell)
+static long NameToID(name, cell)
+char *name, *cell;
 {
   /* Returns the id of a name in a cell.
      Will not return NULL.
@@ -256,7 +261,9 @@ static long NameToID(char *name, char *cell)
     return(id);
 }
 
-static char *IDToName(long id, char *cell)
+static char *IDToName(id, cell)
+long id;
+char *cell;
 {
   /* Returns the name of an id in a cell.
      Errors are signalled. */
@@ -285,7 +292,8 @@ static char *IDToName(long id, char *cell)
     return(CopyString(name));
 }
 
-static access_list_t New_access_list(int pos, int neg)
+static access_list_t New_access_list(pos, neg)
+int pos, neg;
 {
     access_list_t ret;
     int i;
@@ -347,7 +355,8 @@ static access_list_t New_access_list(int pos, int neg)
     return(ret);
 }
 
-static void Free_access_list(access_list_t al)
+static void Free_access_list(al)
+access_list_t al;
 {
     int i;
 
@@ -362,7 +371,9 @@ static void Free_access_list(access_list_t al)
     return;
 }
 
-static long Pos_Rights_Of(long id, access_list_t rights)
+static long Pos_Rights_Of(id, rights)
+long id;
+access_list_t rights;
 {
   /* Return the positive rights of the id in the access list.
      May encounter errors (via GET_ID) which are not caught and
@@ -376,7 +387,9 @@ static long Pos_Rights_Of(long id, access_list_t rights)
     return(0L);
 }
 
-static long Neg_Rights_Of(long id, access_list_t rights)
+static long Neg_Rights_Of(id, rights)
+long id;
+access_list_t rights;
 {
   /* Return the negative rights of the id in the access list.
      May encounter errors (via GET_ID) which are not caught and
@@ -390,7 +403,8 @@ static long Neg_Rights_Of(long id, access_list_t rights)
     return(0L);
 }
 
-static int Group_P(id_and_name_t name)
+static int Group_P(name)
+id_and_name_t name;
 {
   /* Returns true if the name is a group name (its numeric id is negative),
      else 0, implying a user name.
@@ -400,7 +414,8 @@ static int Group_P(id_and_name_t name)
     return(GET_ID(name)<0L);
 }
 
-static char *GroupMembers(id_and_name_t name)
+static char *GroupMembers(name)
+id_and_name_t name;
 {
   /* Returns a newline delimited list of members of the group.
      Signals errors. */
@@ -452,7 +467,8 @@ static char *GroupMembers(id_and_name_t name)
     return(ret);
 }
 
-static int Member_of_Group_P(id_and_name_t user, id_and_name_t group)
+static int Member_of_Group_P(user, group)
+id_and_name_t user, group;
 {
   /* Returns 1 if name is a member of group, 0 if not.
      Signals errors. */
@@ -485,7 +501,8 @@ static int Member_of_Group_P(id_and_name_t user, id_and_name_t group)
     return(0);
 }
 
-static char *GetACL(char *pathname)
+static char *GetACL(pathname)
+char *pathname;
 {
   /* Returns the access control string of the directory pathname.
      Errors are signalled. */
@@ -502,7 +519,8 @@ static char *GetACL(char *pathname)
     return(CopyString(al));
 }
 
-static access_list_t ParseACL(char *acl, char *cell)
+static access_list_t ParseACL(acl, cell)
+char *acl, *cell;
 {
   /* Parses an access control list (see GetACL), for cell, returning an
      access list.
@@ -545,7 +563,9 @@ static access_list_t ParseACL(char *acl, char *cell)
 }
 
 #ifdef DEBUG_1
-static void DumpAL(FILE *f, access_list_t al)
+static void DumpAL(f, al)
+FILE *f;
+access_list_t al;
 {
     int i;
     char *gm;
@@ -636,7 +656,12 @@ char *dircell;
     return(neg_userrights);
 }
 
-static long Do_Positive_Rights(access_list_t rights_list, long int neg_userrights, long int testrights, int anyflag, id_and_name_t username, char *dircell)
+static long Do_Positive_Rights(rights_list, neg_userrights, testrights, anyflag, username, dircell)
+access_list_t rights_list;
+long int neg_userrights, testrights;
+int anyflag;
+id_and_name_t username;
+char *dircell;
 {
 
     long int pos_userrights = 0;
@@ -753,7 +778,8 @@ int anyflag;
  *                    *
  **********************/
 
-int aq_GroupP(char *group, char *groupcell)
+int aq_GroupP(group, groupcell)
+char *group, *groupcell;
 { /* Returns 1 if the name "group" is a groupname, 0 if not, <0 on errors. */
     id_and_name_t user = NULL;
     int ret;
@@ -770,7 +796,8 @@ int aq_GroupP(char *group, char *groupcell)
     EH_end;
 }
 
-int aq_GetGroupMembers(char *group, char *groupcell, char **outBuf)
+int aq_GetGroupMembers(group, groupcell, outBuf)
+char *group, *groupcell, **outBuf;
 {/* Return the members of the given group as a newline-separated list in outBuf, which is modified to point to a malloc'd string.  The return value is 0 if all is OK and negative on errors: a return value of -1 means to look in errno. */
     id_and_name_t user = NULL;
     char *ret = NULL;
@@ -801,7 +828,8 @@ int aq_GetGroupMembers(char *group, char *groupcell, char **outBuf)
     EH_end;
 }
 
-int aq_UserInGroup(char *user, char *usercell, char *group, char *groupcell)
+int aq_UserInGroup(user, usercell, group, groupcell)
+char *user, *usercell, *group, *groupcell;
 {/* Return whether the given user is in the given group in the given cell.  1 means YES, 0 means NO, negative numbers are error codes; -1 means to look in errno. */
 
     id_and_name_t the_user = NULL, the_group = NULL;
@@ -847,7 +875,8 @@ char *user, *usercell, *dir;
   EH_end;
 }
 
-int aq_CheckUserAllRightsToDir(char *user, char *usercell, char *dir, long int rights)
+int aq_CheckUserAllRightsToDir(user, usercell, dir, rights)
+char *user, *usercell, *dir; long int rights;
 {/* Check whether the given user has all of a collection of rights to the given directory.  Return 1 if YES, 0 if NO; negative numbers are error codes, and -1 means to look in errno. */
 
   long int retrights;
@@ -861,7 +890,8 @@ int aq_CheckUserAllRightsToDir(char *user, char *usercell, char *dir, long int r
   EH_end;
 }
 
-int aq_CheckUserAnyRightToDir(char *user, char *usercell, char *dir, long int rights)
+int aq_CheckUserAnyRightToDir(user, usercell, dir, rights)
+char *user, *usercell, *dir; long int rights;
 {/* Check whether the given user has any of a collection of rights to the given directory.  Return 1 if YES, 0 if NO; negative numbers are error codes, and -1 means to look in errno. */
 
   long int retrights;
@@ -893,7 +923,9 @@ char *aq_GetLastErrorMessage()
 
 #ifdef DEBUG_1
 
-int main(int argc, char *argv[])
+main(argc, argv)
+int argc;
+char *argv[];
 {
 				/* Tests internal data structures */
     char *acl, *dir;

@@ -83,8 +83,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/crea
 #include <nullv.ih>
 #include <nulla.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 	boolean
 nullapp__InitializeClass(classID)
 	struct classheader *classID;

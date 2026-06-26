@@ -43,8 +43,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <dataobj.ih>
 #include <observe.ih>
 #include <view.ih>
-#include <stdlib.h>
-#include <stdio.h>
 #define INITIALNUMOBSERVERS 4
 
 static struct atom *rock1atom, *rock2atom, *stringatom, *stringarrayatom, *valueatom;
@@ -52,7 +50,10 @@ static struct atom *rock1atom, *rock2atom, *stringatom, *stringarrayatom, *value
 /****************************************************************/
 /*		static support					*/
 /****************************************************************/
-static short FindObserverCallBack(struct value *self, struct basicobject *observer, procedure callBack)
+static short FindObserverCallBack(self, observer, callBack)
+     struct value * self;
+     struct basicobject *observer;
+     procedure callBack;
 {
   short i = 0;
 
@@ -64,7 +65,9 @@ static short FindObserverCallBack(struct value *self, struct basicobject *observ
 }
 
 
-static short FindObserver(struct value *self, struct basicobject *observer)
+static short FindObserver( self, observer )
+     struct value * self;
+     struct basicobject *observer;
 {
   short i = 0;
 
@@ -75,7 +78,8 @@ static short FindObserver(struct value *self, struct basicobject *observer)
 }
 
 
-static short FreeSlot(struct value *self)
+static short FreeSlot( self )
+     struct value * self;
 {
   short i,j;
   
@@ -104,7 +108,9 @@ static short FreeSlot(struct value *self)
 /****************************************************************/
 /*		class procedures 				*/
 /****************************************************************/
-boolean value__InitializeObject(struct classheader *classID, struct value *self)
+boolean value__InitializeObject(classID,self)
+struct classheader *classID;
+     struct value * self;
 {
   self->maxObservers = 0;
   self->updatecount = 0L;
@@ -117,7 +123,9 @@ boolean value__InitializeObject(struct classheader *classID, struct value *self)
   return TRUE;
 }
 
-void value__FinalizeObject(struct classheader *classID, struct value *self)
+void value__FinalizeObject(classID,self)
+struct classheader *classID;
+struct value * self;
 {
   value_NotifyObservers(self, value_OBJECTDESTROYED);
   if (self->observers){
@@ -131,7 +139,11 @@ void value__FinalizeObject(struct classheader *classID, struct value *self)
 /****************************************************************/
 
 
-void value__AddCallBackObserver(struct value *self, struct basicobject *observer, procedure callBack, long rock)
+void value__AddCallBackObserver( self, observer, callBack, rock )
+     struct value * self;
+     struct basicobject * observer;
+     procedure callBack;
+     long rock;
 {
   short free;
 
@@ -145,7 +157,10 @@ void value__AddCallBackObserver(struct value *self, struct basicobject *observer
 }
 
 
-void value__RemoveCallBack(struct value *self, struct basicobject *observer, procedure callBack)
+void value__RemoveCallBack( self, observer, callBack )
+     struct value * self;
+     struct basicobject * observer;
+     procedure callBack;
 {
   short i;
 
@@ -156,7 +171,9 @@ void value__RemoveCallBack(struct value *self, struct basicobject *observer, pro
 }
      
 
-void value__RemoveCallBackObserver(struct value *self, struct basicobject *observer)
+void value__RemoveCallBackObserver( self, observer )
+     struct value * self;
+     struct basicobject * observer;
 {
   short i;
 
@@ -165,7 +182,9 @@ void value__RemoveCallBackObserver(struct value *self, struct basicobject *obser
 }
 
 
-void value__NotifyObservers(struct value *self, long rock)
+void value__NotifyObservers( self, rock )
+     struct value * self;
+     long rock;
 {
   short i;
   super_NotifyObservers( self, rock );
@@ -180,7 +199,11 @@ void value__NotifyObservers(struct value *self, long rock)
 
 
 
-long value__Write(struct value *self, FILE *file, long writeID, int level)
+long value__Write(self, file, writeID, level)
+    struct value *self;
+    FILE *file;
+    long writeID;
+    int level;
 {   /* NOTE : only the value (rock1)is saved */
     if (value_GetWriteID(self) != writeID)  {
 	value_SetWriteID( self,writeID);
@@ -191,7 +214,10 @@ long value__Write(struct value *self, FILE *file, long writeID, int level)
 
     return value_GetID(self);
 }
-long value__Read(struct value *self, FILE *file, long id)
+long value__Read(self, file, id)
+struct value *self;
+FILE *file;
+long id;
 {
     char buf[256];
     while(1){
@@ -205,7 +231,10 @@ long value__Read(struct value *self, FILE *file, long id)
     
 }
 	
-void value__SetValueType(struct value *self, long rock, int type)
+void value__SetValueType(self,rock,type)
+struct value *self;
+long rock;
+int type;
 {
     
     switch(type){
@@ -237,18 +266,23 @@ void value__SetValueType(struct value *self, long rock, int type)
     (self->updatecount)++;
     if(self->notify) value_NotifyObservers(self,value_NEWVALUE);
 }
-char *value__ViewName(struct value *self)
+char *value__ViewName(self)
+    struct value *self;
 {
     return "buttonV";
 }
-void value__SetStrArrayAndSize(struct value *self, char **rock, long size)
+void value__SetStrArrayAndSize(self,rock,size)
+struct value *self;
+char **rock;
+long size;
 {
     self->stringarray = (char **) rock;
     self->rock2 = size;
     if(self->notify) value_NotifyObservers(self,value_NEWVALUE);
 }
 
-boolean value__InitializeClass(struct classheader *classID)
+boolean value__InitializeClass(classID)
+struct classheader *classID;
 {
     valueatom=atom_Intern("value");
     rock1atom=atom_Intern("rock1");

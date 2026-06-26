@@ -38,7 +38,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <updlist.eh>
 #include <view.ih>
 
-#include <stdlib.h>
 static struct updateitem *freeList = NULL;
 
 boolean updatelist__InitializeObject(struct classheader * classID, struct updatelist * self)

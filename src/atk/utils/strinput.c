@@ -53,12 +53,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/util
 #include <textv.ih>
 #include <view.ih>
 
-#include <string.h>
-#include <stdlib.h>
 #define debug(x) /* printf x ; fflush(stdin); */
 static struct style *promptStyle = NULL;
 
-boolean strinput__InitializeClass(struct classheader classID)
+boolean strinput__InitializeClass(classID)
+struct classheader classID;
 {
     if (!promptStyle && !(promptStyle = style_New()))
 	return FALSE;
@@ -70,7 +69,9 @@ boolean strinput__InitializeClass(struct classheader classID)
 }
 
 
-boolean strinput__InitializeObject(struct classheader *classID, struct strinput *self)
+boolean strinput__InitializeObject(classID, self)
+struct classheader *classID;
+struct strinput *self;
 {
     self->textobj  = text_New();
     self->textv    = textview_New();
@@ -79,14 +80,18 @@ boolean strinput__InitializeObject(struct classheader *classID, struct strinput 
     return TRUE;
 }
 
-void strinput__FinalizeObject(struct classheader *classID, struct strinput *self)
+void strinput__FinalizeObject(classID, self)
+struct classheader *classID;
+struct strinput *self;
 {
     if (self->textv) textview_Destroy(self->textv);
     if (self->textobj) text_Destroy(self->textobj);
     if (self->prompt) free(self->prompt);
 }
 
-char *strinput__GetInput(struct strinput *self, int length)
+char *strinput__GetInput(self, length)
+struct strinput *self;
+int length;
 {
     int len,pos;
     char *string;
@@ -104,7 +109,9 @@ char *strinput__GetInput(struct strinput *self, int length)
     return string;
 }
 
-void strinput__SetPrompt(struct strinput *self, char *string)
+void strinput__SetPrompt(self, string)
+struct strinput *self;
+char *string;
 {
     int fence, len;
 
@@ -127,7 +134,8 @@ void strinput__SetPrompt(struct strinput *self, char *string)
     strinput_WantUpdate(self, self->textv);
 }	  
 
-void strinput__ClearInput(struct strinput *self)
+void strinput__ClearInput(self)
+struct strinput *self;
 {
     text_Clear(self->textobj);
     strinput_SetPrompt(self, self->prompt);
@@ -135,7 +143,9 @@ void strinput__ClearInput(struct strinput *self)
     textview_SetDotPosition(self->textv, text_GetLength(self->textobj));
 }
 
-void strinput__SetInput(struct strinput *self, char *string)
+void strinput__SetInput(self, string)
+struct strinput *self;
+char *string;
 {
     text_Clear(self->textobj);
     strinput_SetPrompt(self, self->prompt);
@@ -147,7 +157,10 @@ void strinput__SetInput(struct strinput *self, char *string)
     textview_SetDotPosition(self->textv, text_GetLength(self->textobj));
 }
 
-void strinput__FullUpdate(struct strinput *self, enum view_UpdateType type, long left, long top, long width, long height)
+void strinput__FullUpdate(self, type, left, top, width, height)
+struct strinput *self;
+enum view_UpdateType type;
+long left, top, width, height;
 {
     struct rectangle child;
 
@@ -156,17 +169,22 @@ void strinput__FullUpdate(struct strinput *self, enum view_UpdateType type, long
     textview_FullUpdate(self->textv, type, 0, 0, child.width, child.height);
 }
 
-struct view *strinput__Hit(struct strinput *self, enum view_MouseAction action, long x, long y, long clicks)
+struct view *strinput__Hit(self, action, x, y, clicks)
+struct strinput *self;
+enum view_MouseAction action;
+long x, y, clicks;
 {
     return textview_Hit(self->textv, action, x, y, clicks);
 }
 
-boolean strinput__HaveYouGotTheFocus(struct strinput *self)
+boolean strinput__HaveYouGotTheFocus(self)
+struct strinput *self;
 {
     return(self->textv->hasInputFocus);
 }
 
-void strinput__ReceiveInputFocus(struct strinput *self)
+void strinput__ReceiveInputFocus(self)
+struct strinput *self;
 {
     super_ReceiveInputFocus(self);
     strinput_WantInputFocus(self, self->textv);

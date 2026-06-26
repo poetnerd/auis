@@ -53,9 +53,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <vopcona.eh>
 
 
-#include <stdlib.h>
-#include <stdio.h>
-boolean vopconapp__InitializeObject(struct classheader *classID, struct vopconapp *self)
+boolean vopconapp__InitializeObject(classID,self)
+struct classheader *classID;
+struct vopconapp *self;
 {
     self->consoleName = NULL;
     vopconapp_SetMajorVersion(self, MAJORVERSION);
@@ -63,7 +63,9 @@ boolean vopconapp__InitializeObject(struct classheader *classID, struct vopconap
     return TRUE;
 }
 
-void vopconapp__FinalizeObject(struct classheader *classID, struct vopconapp *self)
+void vopconapp__FinalizeObject(classID,self)
+struct classheader *classID;
+struct vopconapp *self;
 {
     if(self->consoleName != NULL){
 	free(self->consoleName);
@@ -75,7 +77,10 @@ void vopconapp__FinalizeObject(struct classheader *classID, struct vopconapp *se
  */
 int ForceErrorMonitoring = FALSE;
 
-boolean vopconapp__ParseArgs(struct vopconapp *self, int argc, char **argv)
+boolean vopconapp__ParseArgs(self,argc,argv)
+struct vopconapp *self;
+int argc;
+char **argv;
 {
     if(!super_ParseArgs(self,argc,argv))
 	return FALSE;
@@ -127,7 +132,8 @@ boolean vopconapp__ParseArgs(struct vopconapp *self, int argc, char **argv)
 }
 
 
-boolean vopconapp__Start(struct vopconapp *self)
+boolean vopconapp__Start(self)
+struct vopconapp *self;
 {
     struct consoleClass *con;
     struct im *im;
@@ -153,7 +159,8 @@ boolean vopconapp__Start(struct vopconapp *self)
 
 
 
-boolean vopconapp__InitializeClass(struct classheader *classID)
+boolean vopconapp__InitializeClass(classID)
+struct classheader *classID;
 {
     consoleClass_StaticEntry;
     logview_StaticEntry;

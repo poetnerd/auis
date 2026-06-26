@@ -37,7 +37,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <class.h>
 #include <keyrec.eh>
 
-#include <stdlib.h>
 static struct keyitem *freeList = NULL;
 
 boolean keyrec__InitializeObject(struct classheader * classID, struct keyrec * self)

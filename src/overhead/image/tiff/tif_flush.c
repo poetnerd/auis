@@ -37,7 +37,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  */
 #include "tiffioP.h"
 
-int TIFFFlush(TIFF *tif)
+TIFFFlush(tif)
+	TIFF *tif;
 {
 
 	if (tif->tif_mode != O_RDONLY) {

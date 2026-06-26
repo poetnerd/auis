@@ -59,9 +59,8 @@ void resetmstats()
 #include <sys/time.h>
 #include <sys/resource.h>
 
+extern int errno;
 
-#include <errno.h>
-#include <stdlib.h>
 #ifndef RUNAPP
 #define RUNAPP "runapp"
 #endif /* RUNAPP */
@@ -83,7 +82,8 @@ static void initClass()
     class_Init(classPath);
 }
 
-static char *leaf(char *path)
+static char *leaf(path)
+char *path;
 {
     char *p=rindex(path,'/');
     if(p==NULL)
@@ -93,14 +93,17 @@ static char *leaf(char *path)
 }
 
 /* strip off the suffix, if any */
-static void stripSuffix(char *buf, char *suffix)
+static void stripSuffix(buf,suffix)
+char *buf,*suffix;
 {
     char *end=buf+strlen(buf)-strlen(suffix);
     if(strcmp(suffix,end)==0)
 	*end='\0';
 }
 
-int main(int argc, char **argv)
+main(argc,argv)
+int argc;
+char **argv;
 {
     struct application *app;
     char appclass[200];

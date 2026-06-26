@@ -2,8 +2,6 @@
 #include "resolvinfo.h"
 
 
-#include <string.h>
-#include <stdlib.h>
 SCNTAB *p_symtab, *p_debug, *p_line, *p_head_scns, *p_dynsym;
 
 static char	*prog_name = "resolv_file";
@@ -31,7 +29,9 @@ char     *filename;
  */
 
 VOID_P 
-int get_scndata(Elf_Scn *fd_scn, size_t *size)
+get_scndata(fd_scn, size)
+Elf_Scn *fd_scn;
+size_t    *size;
 {
 	Elf_Data *p_data;
 
@@ -46,7 +46,11 @@ int get_scndata(Elf_Scn *fd_scn, size_t *size)
 	return( p_data->d_buf );
 }
 
-struct resolv_info* dump_string_table(Elf *elf_file, SCNTAB *s, int num_scns, char *filename)
+struct resolv_info* dump_string_table(elf_file, s, num_scns, filename)
+Elf    *elf_file;
+SCNTAB *s;
+int    num_scns;
+char *filename;
 {
 	size_t section_size;
 	unsigned char *strtab;
@@ -120,7 +124,10 @@ struct resolv_info* dump_string_table(Elf *elf_file, SCNTAB *s, int num_scns, ch
 	return all_list;
 }
 
-struct resolv_info *dump_section_table(Elf *elf_file, Elf32_Ehdr *elf_head_p, char *filename)
+struct resolv_info *dump_section_table(elf_file, elf_head_p, filename)
+Elf        *elf_file;
+Elf32_Ehdr *elf_head_p;
+char       *filename;
 {
 
 	static SCNTAB *buffer, *p_scns;
@@ -190,7 +197,8 @@ struct resolv_info *dump_section_table(Elf *elf_file, Elf32_Ehdr *elf_head_p, ch
 }
 
 
-struct resolv_info *resolv_file(char *filename)
+struct resolv_info *resolv_file(filename)
+char * filename;
 {
 	Elf        *elf_file;
 	Elf        *arf;
@@ -255,7 +263,9 @@ struct resolv_info *resolv_file(char *filename)
 
 #ifdef TESTINGONLYTESTING
 
-int main(int argc, char *argv[])
+main(argc, argv)
+	int argc;
+	char *argv[];
 {
 	extern  int optind;	
  	int         optopt;	

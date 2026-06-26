@@ -41,8 +41,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <cmenu.h>
 
-#include <stdlib.h>
-int AddMenuItems(struct cmenu *menu)
+AddMenuItems(menu)
+    struct cmenu *menu;
 {
 
     int pane;
@@ -80,7 +80,9 @@ int AddMenuItems(struct cmenu *menu)
     }
 }
 
-int main(int argc, char *argv[])
+main(argc, argv)
+    int argc;
+    char *argv[];
 {
 
     Display *display;

@@ -55,8 +55,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/eq/R
 #include <message.ih>
 #include <stdio.h>
 
-#include <string.h>
-#include <stdlib.h>
 #define MAXFILENAME 400
 
 FILE *popen();
@@ -72,7 +70,9 @@ char* eqview_cut_suffix = "} } ";
  * the screen eventually via the update mechanism.
  */
 
-void eqview__Changed(struct eqview *self, enum changed changed)
+void eqview__Changed(self, changed)
+struct eqview *self;
+enum changed changed;
 {
     if ((int)changed > (int)self->changed)
 	self->changed = changed;
@@ -82,7 +82,9 @@ void eqview__Changed(struct eqview *self, enum changed changed)
  * Self-insert, basically
  */
 
-void eqview_Default(struct eqview *self, char c)
+void eqview_Default(self, c)
+struct eqview *self;
+char c;
 {
     static char s[2] = " ";
     long pos, len, added;
@@ -105,17 +107,20 @@ void eqview_Default(struct eqview *self, char c)
  * Parse-based output
  */
 
-void eqview_WriteC(struct eqview *self)
+void eqview_WriteC(self)
+struct eqview *self;
 {
     eq_Parse(Eq(self), stdout, 'c');
 }
 
-void eqview_WriteEqn(struct eqview *self)
+void eqview_WriteEqn(self)
+struct eqview *self;
 {
     eq_Parse(Eq(self), stdout, 'e');
 }
 
-void eqview_WriteTroff(struct eqview *self)
+void eqview_WriteTroff(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     FILE *file = popen("eqn", "w");
@@ -123,7 +128,8 @@ void eqview_WriteTroff(struct eqview *self)
     pclose(file);
 }
 
-void eqview_WriteDvi(struct eqview *self)
+void eqview_WriteDvi(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     FILE *file = popen("eqn | troff", "w");
@@ -132,7 +138,8 @@ void eqview_WriteDvi(struct eqview *self)
 }
 
 /*
-void eqview_PreviewMe(struct eqview *self)
+void eqview_PreviewMe(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     FILE *file;
@@ -145,7 +152,8 @@ void eqview_PreviewMe(struct eqview *self)
 }
 */
 /*
-void eqview_PrintMe(struct eqview *self)
+void eqview_PrintMe(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     FILE *file;
@@ -158,7 +166,8 @@ void eqview_PrintMe(struct eqview *self)
 }
 */
 /*
-void eqview_WriteOutFile(struct eqview *self)
+void eqview_WriteOutFile(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     char name[MAXFILENAME], out[500];
@@ -192,7 +201,8 @@ void eqview_WriteOutFile(struct eqview *self)
 }
 */
 /*
-void eqview_Save(struct eqview *self)
+void eqview_Save(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     char out[500];
@@ -215,7 +225,8 @@ void eqview_Save(struct eqview *self)
 }
 */
 /*
-void eqview_ReadInFile(struct eqview *self)
+void eqview_ReadInFile(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     char name[MAXFILENAME], out[500];
@@ -260,7 +271,10 @@ void eqview_ReadInFile(struct eqview *self)
  * i points to a begin group.
  */
 
-long eqview_MoveRight(struct eqview *self, struct eq *eqptr, long i, long x)
+long eqview_MoveRight(self, eqptr, i, x)
+struct eqview *self;
+struct eq *eqptr;
+long i, x;
 {
     register int n = eq_FindEndGroup(eqptr, i+1), closest = 0, distance = 1000000, j;
     for (j = i+1;  j<=n;  j++) {
@@ -281,7 +295,8 @@ long eqview_MoveRight(struct eqview *self, struct eq *eqptr, long i, long x)
     return closest;
 }
 
-void eqview_MoveForward(struct eqview *self)
+void eqview_MoveForward(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     long n = eq_Size(eqptr), i, pos, len;
@@ -313,7 +328,8 @@ void eqview_MoveForward(struct eqview *self)
     eqview_Changed(self, EQVIEW_caret);
 }
 
-void eqview_MoveBackward(struct eqview *self)
+void eqview_MoveBackward(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     int i, pos, len;
@@ -349,7 +365,8 @@ void eqview_MoveBackward(struct eqview *self)
     eqview_Changed(self, EQVIEW_caret);
 }
 
-void eqview_MoveToBeginning(struct eqview *self)
+void eqview_MoveToBeginning(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     int pos, len;
@@ -371,7 +388,8 @@ void eqview_MoveToBeginning(struct eqview *self)
     eqview_Changed(self, EQVIEW_caret);
 }
 
-void eqview_MoveToEnd(struct eqview *self)
+void eqview_MoveToEnd(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     int pos, len;
@@ -390,7 +408,8 @@ void eqview_MoveToEnd(struct eqview *self)
     eqview_Changed(self, EQVIEW_caret);
 }
 
-void eqview_DeleteBackward(struct eqview *self)
+void eqview_DeleteBackward(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     int pos, len, start, stop;
@@ -424,7 +443,8 @@ void eqview_DeleteBackward(struct eqview *self)
     eqview_Changed(self, EQVIEW_eq);
 }
 
-void eqview_DeleteForward(struct eqview *self)
+void eqview_DeleteForward(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     int pos, len, start, stop;
@@ -459,7 +479,8 @@ void eqview_DeleteForward(struct eqview *self)
     eqview_Changed(self, EQVIEW_eq);
 }
 
-void eqview_CR(struct eqview *self)
+void eqview_CR(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     long i, pos, len, added, n = eq_Size(eqptr);;
@@ -482,7 +503,8 @@ void eqview_CR(struct eqview *self)
     eqview_Changed(self, EQVIEW_eq);
 }
 
-void eqview_MoveUp(struct eqview *self)
+void eqview_MoveUp(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     long i;
@@ -550,7 +572,8 @@ void eqview_MoveUp(struct eqview *self)
     eqview_Changed(self, EQVIEW_caret);
 }
 
-void eqview_MoveDown(struct eqview *self)
+void eqview_MoveDown(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     long i;
@@ -635,7 +658,8 @@ void eqview_MoveDown(struct eqview *self)
  * Diacritical marks
  */
 
-void eqview_Bar(struct eqview *self)
+void eqview_Bar(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     long pos, len, start, stop;
@@ -658,7 +682,8 @@ void eqview_Bar(struct eqview *self)
     eqview_Changed(self, EQVIEW_eq);
 }
 
-void eqview_Dot(struct eqview *self)
+void eqview_Dot(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     long n, pos, len, added = 0;
@@ -683,7 +708,8 @@ void eqview_Dot(struct eqview *self)
     eqview_Changed(self, EQVIEW_eq);
 }
 
-void eqview_Prime(struct eqview *self)
+void eqview_Prime(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     long n, pos, len, added = 0;
@@ -713,7 +739,9 @@ void eqview_Prime(struct eqview *self)
  */
 
 #ifdef notdef
-void eqview_Open(struct eqview *self, char c)
+void eqview_Open(self, c)
+struct eqview *self;
+char c;
 {
     register struct eq *eqptr = Eq(self);
     long pos, len, added;
@@ -733,7 +761,9 @@ void eqview_Open(struct eqview *self, char c)
 }
 #endif /* notdef */
 
-void eqview_Close(struct eqview *self, char c)
+void eqview_Close(self, c)
+struct eqview *self;
+char c;
 {
     register struct eq *eqptr = Eq(self);
     long pos, len, added, level = 0, i, matched = 0;
@@ -802,7 +832,8 @@ void eqview_Close(struct eqview *self, char c)
  * the cut buffer.
  */
 
-void eqview_Cut(struct eqview *self)
+void eqview_Cut(self)
+struct eqview *self;
 {
     struct eq *eqptr = Eq(self);
     long pos, len;
@@ -825,7 +856,8 @@ void eqview_Cut(struct eqview *self)
     eqview_Changed(self, EQVIEW_eq);
 }
 
-void eqview_Copy(struct eqview *self)
+void eqview_Copy(self)
+struct eqview *self;
 {
     struct eq *eqptr = Eq(self);
     long pos, len;
@@ -850,7 +882,8 @@ void eqview_Copy(struct eqview *self)
  * but the two are inconsistent wrt scripted zilches.
  */
 
-void eqview_Paste(struct eqview *self)
+void eqview_Paste(self)
+struct eqview *self;
 {
     struct eq *eqptr = Eq(self);
     register int i;
@@ -945,7 +978,8 @@ void eqview_Exit()
  * For debugging
  */
 
-void eqview_DumpAndWrite(struct eqview *self)
+void eqview_DumpAndWrite(self)
+struct eqview *self;
 {
     FILE *file;
     struct eq *eqptr = Eq(self);
@@ -975,7 +1009,9 @@ void eqview_doc()
  * Called as a result of eqview_Special
  */
 
-void eqview_DoSpecial(struct eqview *self, char *s)
+void eqview_DoSpecial(self, s)
+struct eqview *self;
+char *s;
 {
     long pos, len, added;
 
@@ -1007,7 +1043,9 @@ void eqview_DoSpecial(struct eqview *self, char *s)
     }
 }
 
-void eqview_Special(struct eqview *self, char c)
+void eqview_Special(self, c)
+struct eqview *self;
+char c;
 {
     char name[100];
     long code;
@@ -1026,7 +1064,8 @@ void eqview_Special(struct eqview *self, char c)
 }
 
 /*
-void eqview_Punt(struct eqview *self)
+void eqview_Punt(self)
+struct eqview *self;
 {
     message_DisplayString(self, 0, "Bad command.");
     return;
@@ -1037,7 +1076,8 @@ void eqview_Punt(struct eqview *self)
  * Scripts
  */
 
-void eqview_SuperScript(struct eqview *self)
+void eqview_SuperScript(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     long pos, len, n;
@@ -1052,7 +1092,8 @@ void eqview_SuperScript(struct eqview *self)
     eqview_Changed(self, EQVIEW_eq);
 }
 
-void eqview_SubScript(struct eqview *self)
+void eqview_SubScript(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     long pos, len, n;
@@ -1067,7 +1108,8 @@ void eqview_SubScript(struct eqview *self)
     eqview_Changed(self, EQVIEW_eq);
 }
 
-void eqview_AboveScript(struct eqview *self)
+void eqview_AboveScript(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     long pos, len, n;
@@ -1082,7 +1124,8 @@ void eqview_AboveScript(struct eqview *self)
     eqview_Changed(self, EQVIEW_eq);
 }
 
-void eqview_BelowScript(struct eqview *self)
+void eqview_BelowScript(self)
+struct eqview *self;
 {
     register struct eq *eqptr = Eq(self);
     long pos, len, n;
@@ -1102,7 +1145,9 @@ void eqview_BelowScript(struct eqview *self)
  * There should be a third parameter to keymap-called routines!
  */
 
-void eqview_String(struct eqview *self, char *s)
+void eqview_String(self, s)
+struct eqview *self;
+char *s;
 {
     long pos, len, added;
 
@@ -1120,7 +1165,8 @@ void eqview_String(struct eqview *self, char *s)
     eqview_Changed(self, EQVIEW_eq);
 }
 
-void eqview_Root(struct eqview *self)
+void eqview_Root(self)
+struct eqview *self;
 {
     long pos;
 
@@ -1129,7 +1175,8 @@ void eqview_Root(struct eqview *self)
     eqview_SetDotPosition(self, pos-2);
 }
 
-void eqview_Fraction(struct eqview *self)
+void eqview_Fraction(self)
+struct eqview *self;
 {
     long pos;
 
@@ -1138,7 +1185,8 @@ void eqview_Fraction(struct eqview *self)
     eqview_SetDotPosition(self, pos-7);
 }
 
-void eqview_lbrace(struct eqview *self)
+void eqview_lbrace(self)
+struct eqview *self;
 {
     eqview_String(self, "lbrace");
 }
@@ -1237,7 +1285,9 @@ static struct bind_Description eqviewCutBindings[]={
     NULL
 };
 
-struct keymap *eqview_InitKeyMap(struct eqview_classinfo *classInfo, struct menulist **eqviewMenus, struct menulist **eqviewCutMenus)
+struct keymap *eqview_InitKeyMap(classInfo, eqviewMenus, eqviewCutMenus)
+struct eqview_classinfo *classInfo;
+struct menulist **eqviewMenus, **eqviewCutMenus;
 {
     struct keymap *keymap = keymap_New();
     char str[2];

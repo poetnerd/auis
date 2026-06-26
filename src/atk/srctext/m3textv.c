@@ -45,8 +45,6 @@ static char rcsHeader[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/at
 #include "m3text.ih"
 #include "m3textv.eh"
 
-#include <stdlib.h>
-#include <stdio.h>
 /* AutoCut was not made externally visible by txtvcmod, so WE have to check the preference TOO */
 static int autocut_mode = -1;	/* uninitialized */
 #define IsAutoCutMode() ((autocut_mode == -1 && (autocut_mode = environ_GetProfileSwitch("autocut", FALSE))) || autocut_mode)
@@ -67,7 +65,8 @@ static struct bind_Description m3textBindings[]={
     NULL
 };
 
-boolean m3textview__InitializeClass(struct classheader *classID)
+boolean m3textview__InitializeClass(classID)
+struct classheader *classID;
 {
     m3_Menus = menulist_New();
     m3_Map = keymap_New();
@@ -75,7 +74,9 @@ boolean m3textview__InitializeClass(struct classheader *classID)
     return TRUE;
 }
 
-boolean m3textview__InitializeObject(struct classheader *classID, struct m3textview *self)
+boolean m3textview__InitializeObject(classID, self)
+struct classheader *classID;
+struct m3textview *self;
 {
     self->m3_state = keystate_Create(self, m3_Map);
     self->m3_menus = menulist_DuplicateML(m3_Menus, self);
@@ -83,27 +84,34 @@ boolean m3textview__InitializeObject(struct classheader *classID, struct m3textv
     return TRUE;
 }
 
-void m3textview__FinalizeObject(struct classheader *classID, struct m3textview *self)
+void m3textview__FinalizeObject(classID, self)
+struct classheader *classID;
+struct m3textview *self;
 {
     keystate_Destroy(self->m3_state);
     menulist_Destroy(self->m3_menus);
 }
 
-void m3textview__PostMenus(struct m3textview *self, struct menulist *menulist)
+void m3textview__PostMenus(self, menulist)
+struct m3textview *self;
+struct menulist *menulist;
 {
     menulist_ChainBeforeML(self->m3_menus, menulist, self);
     super_PostMenus(self, self->m3_menus);
 }
 
-struct keystate *m3textview__PrependKeyState(struct m3textview *self)
+struct keystate *m3textview__PrependKeyState(self)
+struct m3textview *self;
 {
     self->m3_state->next= NULL;
     return keystate_AddBefore(self->m3_state, super_PrependKeyState(self));
 }
 
 /* FindInterfaceOrModule() isolates the identifier pointed to by the caret and tries to find its corresponding interface (if module is FALSE) or module (if module is TRUE) */
-static void FindInterfaceOrModule(struct m3textview *self, boolean module)
-{
+static void FindInterfaceOrModule(self, module)    /*RSK90mod*/
+    struct m3textview *self;
+    boolean module;
+    {
     struct m3text *ct = (struct m3text *)self->header.view.dataobject;
     long pos,oldpos;
     char name[256],proc[256],msg[300];
@@ -164,18 +172,24 @@ static void FindInterfaceOrModule(struct m3textview *self, boolean module)
     m3text_NotifyObservers(ct, 0);
     }
 
-static void interface(struct m3textview *self, long key)
-{
+static void interface(self, key)    /*RSKadd*/
+    struct m3textview *self;
+    long key;
+    {
     FindInterfaceOrModule(self,FALSE);
     }
 
-static void module(struct m3textview *self, long key)
-{
+static void module(self, key)    /*RSKadd*/
+    struct m3textview *self;
+    long key;
+    {
     FindInterfaceOrModule(self,TRUE);
     }
 
 /* identical to mtext's asterisk() with the exception of pragma-checking */
-static void asterisk(struct m3textview *self, char key)
+static void asterisk(self, key)
+struct m3textview *self;
+char key; /* must be char for "&" to work. */
 {
     struct m3text *ct=(struct m3text *)self->header.view.dataobject;
     int count=im_Argument(m3textview_GetIM(self));
@@ -198,7 +212,9 @@ static void asterisk(struct m3textview *self, char key)
 }
 
 /* m3pragma should be functionally equivalent to paren function in modtextv.c */
-static void m3pragma(struct m3textview *self, char key)
+static void m3pragma(self, key) /*RSK91mod*/
+struct m3textview *self;
+char key; /* must be char for "&" to work. */
 {
     struct m3text *ct=(struct m3text *)self->header.view.dataobject;
     long openpragma,oldpos=m3textview_GetDotPosition(self);

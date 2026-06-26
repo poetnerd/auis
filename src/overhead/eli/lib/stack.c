@@ -44,7 +44,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * to a global symbol (which we don't want to bind to). 
  */
 
-int             eliEvalAndBind(EliState_t *st, eliEvalStack_t *s, EliCons_t *varlist, EliCons_t *arglist)
+int             eliEvalAndBind(st, s, varlist, arglist)
+EliState_t     *st;
+eliEvalStack_t *s;
+EliCons_t      *varlist, *arglist;
 {
     int             pushed = 0, varlen = EliListLen(varlist), argsempty = !EliListLen(arglist), i;
     EliCons_t      *varptr = varlist, *argptr = arglist;
@@ -96,7 +99,10 @@ int             eliEvalAndBind(EliState_t *st, eliEvalStack_t *s, EliCons_t *var
     return (pushed);
 }
 
-int             eliBind(EliState_t *st, eliEvalStack_t *s, EliCons_t *varlist, EliCons_t *arglist)
+int             eliBind(st, s, varlist, arglist)
+EliState_t     *st;
+eliEvalStack_t *s;
+EliCons_t      *varlist, *arglist;
 {
     int             pushed = 0, varlen = EliListLen(varlist), argsempty = !EliListLen(arglist), i;
     EliCons_t      *varptr = varlist, *argptr = arglist;
@@ -145,7 +151,10 @@ int             eliBind(EliState_t *st, eliEvalStack_t *s, EliCons_t *varlist, E
 
 /* pop n items off the stack */
 
-void            eliEvalStk_PopN(EliState_t *st, eliEvalStack_t *s, int n)
+void            eliEvalStk_PopN(st, s, n)
+EliState_t     *st;
+eliEvalStack_t *s;
+int             n;
 {
     int             i;
 

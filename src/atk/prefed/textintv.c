@@ -41,7 +41,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 #include <textv.ih>
 #include "titextv.ih"
 
-boolean textintv__InitializeObject(struct classheader *classID, struct textintv *self)
+boolean textintv__InitializeObject(classID, self)
+struct classheader *classID;
+struct textintv *self;
 {
     struct text *t;
     struct textview *tv;
@@ -64,13 +66,17 @@ boolean textintv__InitializeObject(struct classheader *classID, struct textintv 
     
 }
 
-void textintv__FinalizeObject(struct classheader *classID, struct textintv *self)
+void textintv__FinalizeObject(classID, self)
+struct classheader *classID;
+struct textintv *self;
 {
     /* the wrapv class takes care of destroying everything */
 }
 
 
-void textintv__SetDotPosition(struct textintv *self, long pos)
+void textintv__SetDotPosition(self, pos)
+struct textintv *self;
+long pos;
 {
 }
 

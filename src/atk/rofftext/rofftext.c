@@ -59,8 +59,6 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ro
 #include <roffstyl.h>
 #include <roffutil.h>
 
-#include <stdlib.h>
-#include <stdio.h>
 static int SCALE[8] = 
 {    1, /* u, basic unit */
    432, /* i, inch */
@@ -84,7 +82,9 @@ int ROFFDEBUG = 0;
  *
  */
 
-int SetIndent(struct rofftext *self, int u)
+SetIndent(self,u)
+struct rofftext *self;
+int u;
 {
 
     int indentcm = ((u+85)/170); /* convert units to centimeters, round to nearest */
@@ -107,7 +107,9 @@ int SetIndent(struct rofftext *self, int u)
 
 /* set a temporary indent */
 
-int SetTempIndent(struct rofftext *self, int u)
+SetTempIndent(self,u)
+struct rofftext *self;
+int u;
 {
     int indentcm;
     int i;
@@ -146,28 +148,33 @@ int SetTempIndent(struct rofftext *self, int u)
 }
 /* set and check for beginning of line */
 
-int Is_BOL(struct rofftext *self)
+Is_BOL(self)
+struct rofftext *self;
 {
     return self->v_BOL;
 }
 
 /* next character read will be beginning of line */
 
-int Set_BOL(struct rofftext *self)
+Set_BOL(self)
+struct rofftext *self;
 {
     self->v_NextBOL = TRUE;
 }
 
 /* destroy an input context structure */
 
-int DestroyContext(IC c)
+DestroyContext(c)
+IC c;
 {
     free(c);
 }
 
 /* evaluate an expression */
 /*
-int EvalNumber(struct rofftext *self, char *str)
+EvalNumber(self,str)
+struct rofftext *self;
+char *str;
 {
     int i;
     sscanf(str,"%d",&i);
@@ -176,7 +183,11 @@ int EvalNumber(struct rofftext *self, char *str)
 */
 /* open a trickle on a stream or string */
 
-static Trickle topen(struct rofftext *self, char *filename, FILE *f, char *s)
+static Trickle topen(self,filename,f,s)
+struct rofftext *self;
+char *filename;
+FILE *f;
+char *s;
 {
     Trickle t = (Trickle)malloc(sizeof(struct trickle));
     struct _trickle *cur = (struct _trickle *)malloc(sizeof(struct _trickle));
@@ -221,14 +232,18 @@ static Trickle topen(struct rofftext *self, char *filename, FILE *f, char *s)
     return t;
 }
 
-static tclose(struct rofftext *self, Trickle t)
+static tclose(self,t)
+struct rofftext *self;
+Trickle t;
 {
 }
 
 
 /* Get a character from the trickle */
 
-static g(struct rofftext *self, Trickle t)
+static g(self,t)
+struct rofftext *self;
+Trickle t;
 {
     register int c = 0;
     register struct _trickle *cur = t->t;
@@ -313,7 +328,15 @@ Trickle t;
  * f is TRUE if we should pop the macro stack on EOF or end-of-string
  */
 
-int tpush(struct rofftext *self, Trickle t, char *filename, FILE *f, char *s, boolean push, int argc, char *argv[])
+tpush(self,t,filename,f,s,push,argc,argv)
+struct rofftext *self;
+Trickle t;
+char *filename;
+FILE *f;
+char *s;
+boolean push;
+int argc;
+char *argv[];
 {
     struct _trickle *temp = (struct _trickle *)malloc(sizeof(struct _trickle));
     static char fn[512] = "/usr/man/";
@@ -400,7 +423,9 @@ int tpush(struct rofftext *self, Trickle t, char *filename, FILE *f, char *s, bo
 }
 
 /* munch to end of line */
-static munch(struct rofftext *self, Trickle t)
+static munch(self,t)
+struct rofftext *self;
+Trickle t;
 {
     register int c;
 
@@ -410,7 +435,9 @@ static munch(struct rofftext *self, Trickle t)
 
 /* read the next two input characters and output the corresponding special character */
 
-static special(struct rofftext *self, Trickle t)
+static special(self,t)
+struct rofftext *self;
+Trickle t;
 {
     char temp[3],*result;
     temp[0] = g(self,t);
@@ -428,7 +455,9 @@ static special(struct rofftext *self, Trickle t)
 
 /* set font according to \\f request */
 
-static setfont(struct rofftext *self, Trickle t)
+static setfont(self,t)
+struct rofftext *self;
+Trickle t;
 {
     char name[3],*font;
     getname(self,t,name);
@@ -464,7 +493,9 @@ static setfont(struct rofftext *self, Trickle t)
 }
 
 /*  do sub/super scripts */
-static setbase(struct rofftext *self, int inc)
+static setbase(self, inc)
+struct rofftext *self;
+int inc;	/* up: 1; down: -1 */
 {
     if (self->basestyle != 0) EndStyle(self, self->basestyle);
     self->baseline += inc;
@@ -476,7 +507,9 @@ static setbase(struct rofftext *self, int inc)
 
 /* get the width of a string */
 
-static getwidth(struct rofftext *self, Trickle t)
+static getwidth(self,t)
+struct rofftext *self;
+Trickle t;
 {
     register int c,delim = get(self,t); /*read until this */
     int length = 0;
@@ -492,7 +525,10 @@ static getwidth(struct rofftext *self, Trickle t)
 }
 
 /* get alpha characters up to white space */
-static getsym(struct rofftext *self, Trickle t, char *str)
+static getsym(self, t, str)
+struct rofftext *self;
+Trickle t;
+char *str;
 {
     register int c;
     while ((c = g(self,t)) != '\n' && c != EOF) {
@@ -507,7 +543,9 @@ static getsym(struct rofftext *self, Trickle t, char *str)
 
 }
 
-static dohmove(struct rofftext *self, Trickle t)
+static dohmove(self,t)
+struct rofftext *self;
+Trickle t;
 {
     static BUF Buffer = NULL;
     register int c,delim = get(self,t);
@@ -535,7 +573,9 @@ static dohmove(struct rofftext *self, Trickle t)
 
 /* munch requests for movement */
 
-static munchmove(struct rofftext *self, Trickle t)
+static munchmove(self,t)
+struct rofftext *self;
+Trickle t;
 {
     static BUF Buffer = NULL;
     register int c,delim = get(self,t);
@@ -561,7 +601,10 @@ static munchmove(struct rofftext *self, Trickle t)
 
 /* returns a 1- or 2-character name, as in \nX or \n(XX */
 
-static getname(struct rofftext *self, Trickle t, char *name)
+static getname(self,t,name)
+struct rofftext *self;
+Trickle t;
+char *name;
 {
     if ((name[0] = g(self,t)) == '(') {
         name[0] = g(self,t);
@@ -574,7 +617,9 @@ static getname(struct rofftext *self, Trickle t, char *name)
 
 /* get point size change request */
 
-static getsize(struct rofftext *self, Trickle t)
+static getsize(self,t)
+struct rofftext *self;
+Trickle t;
 {
     register int c,d;
 
@@ -599,7 +644,9 @@ static getsize(struct rofftext *self, Trickle t)
 
 /* Get the contents of a register, formatted appropriately */
 
-static char *getregister(struct rofftext *self, Trickle t)
+static char *getregister(self,t)
+struct rofftext *self;
+Trickle t;
 {
     register int c;
     struct reg *r;
@@ -681,7 +728,13 @@ DEBUG(1, (stderr, "value of .$ is %s\n", temp));
 }
 
 
-int putregister(struct rofftext *self, char *name, int value, enum RegFmt fmt, int inc, boolean relative)
+putregister(self,name,value,fmt,inc,relative)
+struct rofftext *self;
+char *name;
+int value;
+enum RegFmt fmt;
+int inc;
+boolean relative;
 {
     struct reg *r = (Reg)hash_Lookup(self->Registers,name);
     if (r==NULL) {
@@ -701,7 +754,9 @@ int putregister(struct rofftext *self, char *name, int value, enum RegFmt fmt, i
 
 /* storing and retrieving named strings */
 
-char *getstring(struct rofftext *self, char *name)
+char *getstring(self,name)
+struct rofftext *self;
+char *name;
 {
     char *str;
     DEBUG(1, (stderr,"Name = (%s)\n",name));
@@ -715,7 +770,9 @@ char *getstring(struct rofftext *self, char *name)
     }
 }
 
-int putstring(struct rofftext *self, char *name, char *value)
+putstring(self,name,value)
+struct rofftext *self;
+char *name,*value;
 {
     char *v = StrDup(value), *existing;
 
@@ -734,7 +791,12 @@ int putstring(struct rofftext *self, char *name, char *value)
  *
  */
 
-int getarg(struct rofftext *self, Trickle t, char *buf, int n, boolean copymode)
+getarg(self,t,buf,n,copymode)
+struct rofftext *self;
+Trickle t;
+char *buf;
+int n;
+boolean copymode;
 {
     register int c;
     register int count = 0;
@@ -787,7 +849,9 @@ int getarg(struct rofftext *self, Trickle t, char *buf, int n, boolean copymode)
         
 /* Put a character on the output */
 
-int put(struct rofftext *self, unsigned char c)
+put(self,c)
+struct rofftext *self;
+unsigned char c;
 {
     if (self->CurrentDiversion->SnarfOutput!=NULL)
         Add2Buf(self->CurrentDiversion->SnarfOutput,c);
@@ -871,7 +935,9 @@ struct rofftext *self;
 
 /* Get a character, translating quoted characters */
 
-int get(struct rofftext *self, Trickle t)
+get(self,t)
+struct rofftext *self;
+Trickle t;
 {
     register int c;
     register boolean translated = FALSE;
@@ -1082,7 +1148,8 @@ int get(struct rofftext *self, Trickle t)
 
 /* Put the default commands in the dictionary */
 
-static CreateDefaultCommands(struct rofftext *self)
+static CreateDefaultCommands(self)
+struct rofftext *self;
 {
     CMD(ex,ex_cmd);
     CMD(rm,rm_cmd);
@@ -1154,7 +1221,9 @@ static CreateDefaultCommands(struct rofftext *self)
 
 /* Initialize the pre-defined registers */
 
-boolean rofftext__InitializeObject(struct classheader *classID, struct rofftext *self)
+boolean rofftext__InitializeObject(classID,self)
+struct classheader *classID;
+struct rofftext *self;
 {
 #if defined(M_UNIX)
     time_t seconds;
@@ -1308,7 +1377,11 @@ boolean rofftext__InitializeObject(struct classheader *classID, struct rofftext 
  *
  */
 
-static DoCommand(struct rofftext *self, Trickle t, char *name, boolean br)
+static DoCommand(self,t,name,br)
+struct rofftext *self;
+Trickle t;
+char *name;
+boolean br;
 {
     int i=0,j;
     char temp[128];
@@ -1365,7 +1438,10 @@ static DoCommand(struct rofftext *self, Trickle t, char *name, boolean br)
 
 /* scan the input for commands, do commands, crush text  until EOF or cmd */
 
-int Scan(struct rofftext *self, Trickle t, char *cmd)
+Scan(self,t,cmd)
+struct rofftext *self;
+Trickle t;
+char *cmd;
 {
     register int c;
     char temp[3],name[3],*ptr;
@@ -1514,7 +1590,10 @@ int oldmode, newmode; {
     return newmode;
 }
 
-static long ReadFormatted(struct rofftext *self, FILE *file, long id)
+static long ReadFormatted(self, file, id)
+struct rofftext *self;
+FILE *file;
+long id;
 {
     int c, lastc;
     int mode = 0, newmode = M_PLAIN;
@@ -1577,7 +1656,10 @@ FILE *fp; {
 }
 
 
-long rofftext__Read(struct rofftext *self, FILE *file, long id)
+long rofftext__Read(self,file,id)
+struct rofftext *self;
+FILE *file;
+long id;
 {
     procedure cmd;
     char **begin,**ptr;
@@ -1638,13 +1720,15 @@ long rofftext__Read(struct rofftext *self, FILE *file, long id)
     return dataobject_NOREADERROR;
 }
 
-char *rofftext__ViewName(struct rofftext *self)
+char *rofftext__ViewName(self)
+struct rofftext *self;
 {
     return "textview";
 }
 
 
-boolean rofftext__InitializeClass(struct classheader *classID)
+boolean rofftext__InitializeClass(classID)
+struct classheader *classID;
 {
 #ifdef DEBUGGING
     char *debval = (char *)getenv("ROFFDEBUG");
@@ -1654,13 +1738,17 @@ boolean rofftext__InitializeClass(struct classheader *classID)
     return TRUE;
 }
 
-void rofftext__FinalizeObject(struct classheader *classID, struct rofftext *self)
+void rofftext__FinalizeObject(classID,self)
+struct classheader *classID;
+struct rofftext *self;
 {}
 
 
 
 
-void rofftext__SetAttributes(struct rofftext *self, struct attributes *atts)
+void rofftext__SetAttributes(self,atts)
+struct rofftext	*self;
+struct attributes *atts;
 {
     super_SetAttributes(self,atts);
 
@@ -1697,7 +1785,11 @@ void rofftext__SetAttributes(struct rofftext *self, struct attributes *atts)
 
 #define DATASTREAMVERSIONNUMBER 12
 
-long rofftext__Write(struct rofftext *self, FILE *file, long writeID, int level)
+long rofftext__Write(self, file, writeID, level)
+    struct rofftext *self;
+    FILE *file;
+    long writeID;
+    int level;
 {
 
     if (self->text->header.dataobject.writeID != writeID)  {
@@ -1719,7 +1811,12 @@ long rofftext__Write(struct rofftext *self, FILE *file, long writeID, int level)
 
 
 
-long rofftext__ReadRoffIntoText(struct classheader *classID, struct text *t, FILE *fp, long pos, char **resources)
+long rofftext__ReadRoffIntoText(classID,t,fp,pos,resources)
+struct classheader *classID;
+struct text *t;
+FILE *fp;
+long pos;
+char **resources;
 {
     long cc;
     struct rofftext *r = rofftext_New();
@@ -1732,7 +1829,9 @@ long rofftext__ReadRoffIntoText(struct classheader *classID, struct text *t, FIL
     return cc;
 }
 
-void rofftext__SetText(struct rofftext *self, struct text *t)
+void rofftext__SetText(self,t)
+struct rofftext *self;
+struct text *t;
 {
     text_ReadTemplate(t,"roff",FALSE);
     self->stack->env = environment_GetEnclosing(t->rootEnvironment, 0L);

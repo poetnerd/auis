@@ -45,7 +45,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 #define DATA(self) ((struct prefval *)pvaltvfc_GetDataObject(self))
 #define TEXT(self) (pvaltvfc_GetText(self))
 
-static void pvaltvfc__Select(struct pvaltvfc *self, int ind)
+static void pvaltvfc__Select(self, ind)
+struct pvaltvfc *self;
+int ind;
 {
     if(ind<prefval_GetChoiceListSize(DATA(self))) {
 	prefval_SetIndexValue(DATA(self), prefval_GetCurrentItem(DATA(self)),  &DATA(self)->cvalues[prefval_GetChoiceListSize(DATA(self)) - ind - 1]);
@@ -53,17 +55,22 @@ static void pvaltvfc__Select(struct pvaltvfc *self, int ind)
     }
 }
     
-boolean pvaltvfc__InitializeClass(struct classheader *classID)
+boolean pvaltvfc__InitializeClass(classID)
+struct classheader *classID;
 {
     return TRUE;
 }
 
-boolean pvaltvfc__InitializeObject(struct classheader *classID, struct pvaltvfc *self)
+boolean pvaltvfc__InitializeObject(classID, self)
+struct classheader *classID;
+struct pvaltvfc *self;
 {
     return TRUE;
 }
 
-void pvaltvfc__FinalizeObject(struct classheader *classID, struct pvaltvfc *self)
+void pvaltvfc__FinalizeObject(classID, self)
+struct classheader *classID;
+struct pvaltvfc *self;
 {
 }
 

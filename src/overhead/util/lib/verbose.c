@@ -39,7 +39,11 @@ static unsigned int *Mask = NULL;
 static char    *Prefix = NULL;
 static FILE    *Stream = NULL;
 
-void            Verbose_SetUp(FILE *stream, char *prefix, int *threshold, unsigned int *mask)
+void            Verbose_SetUp(stream, prefix, threshold, mask)
+FILE           *stream;
+char           *prefix;
+int            *threshold;
+unsigned int   *mask;
 {
     Stream = stream;
     Prefix = prefix;

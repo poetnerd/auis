@@ -40,7 +40,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <atom.eh>
 
 
-#include <stdlib.h>
 #define Log2HashTableSize   9
 #define HashTableSize       (1 << Log2HashTableSize)
 

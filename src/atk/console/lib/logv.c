@@ -48,20 +48,25 @@ static int logview_NoTextviewKey()
     return(0);
 }
 
-boolean logview__InitializeObject(struct classheader *classID, struct logview *self)
+boolean logview__InitializeObject(classID, self)
+    struct classheader *classID;
+    struct logview *self;
 {
     self->menu = menulist_DuplicateML(logviewMenu, self);
     return TRUE;
 }
 
-void logview__FinalizeObject(struct classheader *classID, struct logview *self)
+void logview__FinalizeObject(classID, self)
+struct classheader *classID;
+struct logview *self;
 {
     if (self->menu != NULL)
 	menulist_Destroy(self->menu);
 }
 	
 
-void logview__LoseInputFocus(struct logview *self)
+void logview__LoseInputFocus(self)
+    struct logview *self;
 {
     logview_SetDotLength(self, 0);
     logview_PostMenus(self, NULL);
@@ -69,7 +74,9 @@ void logview__LoseInputFocus(struct logview *self)
     logview_WantUpdate(self, self);
 }
 
-void logview__PostMenus(struct logview *self, struct menulist *menulist)
+void logview__PostMenus(self, menulist)
+    struct logview *self;
+    struct menulist *menulist;
 {
     if (logview_GetDotLength(self) > 0)  {
 	menulist_SetMask(self->menu, 1);
@@ -80,7 +87,9 @@ void logview__PostMenus(struct logview *self, struct menulist *menulist)
     super_PostMenus(self, self->menu);
 }
 
-void logview__FrameDot(struct logview *self, long pos)
+void logview__FrameDot(self, pos)
+    struct logview *self;
+    long pos;
 {
     struct linedesc *lastLine;
     long topPos;
@@ -98,7 +107,8 @@ void logview__FrameDot(struct logview *self, long pos)
     super_FrameDot(self, pos);
 }
 
-boolean logview__InitializeClass(struct classheader *classID)
+boolean logview__InitializeClass(classID)
+    struct classheader *classID;
 {
     struct proctable_Entry *tempProc;
     struct classinfo *classInfo = &logview_classinfo;

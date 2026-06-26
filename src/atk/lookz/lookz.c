@@ -45,8 +45,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/look
 #include <text.ih>
 #include <lookz.eh>
 
-#include <string.h>
-#include <stdio.h>
 #define MAXFILELINE 255
 
 	boolean
@@ -135,7 +133,9 @@ lookz__SetVisibility(self, visibility)
 	}
 }
 
-void lookz__SetCanClose(struct lookz *self, boolean canClose)
+void lookz__SetCanClose(self, canClose)
+struct lookz *self;
+boolean canClose;
 {
     if (self->canClose != canClose) {
 	self->canClose = canClose;
@@ -144,7 +144,9 @@ void lookz__SetCanClose(struct lookz *self, boolean canClose)
     }
 }
 
-void lookz__SetTextObject(struct lookz *self, struct text *text)
+void lookz__SetTextObject(self, text)
+struct lookz *self;
+struct text *text;
 {
     if (self->text != text) {
 	if (self->text != NULL) {
@@ -158,7 +160,10 @@ void lookz__SetTextObject(struct lookz *self, struct text *text)
     }
 }
 
-void lookz__ObservedChanged(struct lookz *self, struct dataobject *dobj, long value)
+void lookz__ObservedChanged(self, dobj, value)
+struct lookz *self;
+struct dataobject *dobj;
+long value;
 {
     if (value == observable_OBJECTDESTROYED &&
 	 (struct dataobject *) self->text == dobj) {

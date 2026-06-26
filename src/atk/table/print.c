@@ -42,12 +42,13 @@ extern char * fcvt();
 #define AUXMODULE
 #include <spread.eh>
 
-#include <stdio.h>
 extern struct view *spread_FindSubview();
 
 /* get type of tab stop (Left, Right, Center, None) */
 
-static char TabType(struct table *T, int r, int c)
+static char TabType(T, r, c)
+struct table *T;
+int r, c;
 {
     struct cell *cell = table_GetCell(T, r, c);
 
@@ -73,7 +74,9 @@ static char TabType(struct table *T, int r, int c)
 
 /* determine if a new set of tabs are needed */
 
-static int NeedNewTabs(struct table *T, int r)
+static int NeedNewTabs(T, r)
+struct table *T;
+int r;
 {
     int c;
 
@@ -88,7 +91,10 @@ static int NeedNewTabs(struct table *T, int r)
 
 /* get end of (combined) cell */
 
-static int CellWidth(struct table *T, int r, int c, int *nextc)
+static int CellWidth(T, r, c, nextc)
+struct table *T;
+int r, c;
+int *nextc;
 {
     int k;
     int x;
@@ -104,7 +110,10 @@ static int CellWidth(struct table *T, int r, int c, int *nextc)
 
 /* set tab stops */
 
-static void SetTabs(struct table *T, FILE *f, int r)
+static void SetTabs(T, f, r)
+struct table *T;
+FILE *f;
+
 {
     int c;
     int x;
@@ -148,7 +157,10 @@ static void SetTabs(struct table *T, FILE *f, int r)
 /* expects top of cell (contents) in diversion mark */
 /* scratches in number register 34 (height of current row) */
 
-static void PrintEdges(struct table *T, FILE *f, int r)
+static void PrintEdges(T, f, r)
+struct table *T;
+FILE *f;
+int r;
 {
     int c;
     int x;
@@ -197,7 +209,12 @@ static void PrintEdges(struct table *T, FILE *f, int r)
 
 /* print the value of a cell as a string */
 
-static void printVal(struct table *T, FILE *f, extended_double *value, char format, int prec)
+static void printVal(T, f, value, format, prec)
+struct table * T;
+FILE * f;
+extended_double *value;
+char    format;
+int     prec;
 {
     extended_double newvalue;
     int decpt, sign;
@@ -257,7 +274,14 @@ static void printVal(struct table *T, FILE *f, extended_double *value, char form
 /* uses macros 40... to stack current status */
 /* assumes .rt will return to beginning of row */
 
-static void PrintChild(struct table *T, FILE *f, int r, int c, struct view *child, char *processor, char *format, int linemacro)
+static void PrintChild(T, f, r, c, child, processor, format, linemacro)
+struct table *T;
+FILE *f;
+int r, c;
+struct view *child;
+char *processor;
+char *format;
+int linemacro;	/* numeric name of macro to restore line widths */
 {
     int k;
     int x;
@@ -282,7 +306,13 @@ static void PrintChild(struct table *T, FILE *f, int r, int c, struct view *chil
 
 /* print one row */
 
-static void PrintRow(struct spread *V, FILE *f, int r, char *processor, char *format, int linemacro)
+static void PrintRow(V, f, r, processor, format, linemacro)
+struct spread *V;
+FILE *f;
+int r;
+char *processor;
+char *format;
+int linemacro;	/* numeric name of macro to restore line widths */
 {
     struct table *T = MyTable(V);
     int c;
@@ -332,7 +362,11 @@ static void PrintRow(struct spread *V, FILE *f, int r, char *processor, char *fo
 /* number register 31 = trash */
 /* number register 32 = top to baseline distance of digits */
 
-int WriteTroff(struct spread *V, FILE *f, char *processor, char *format, int toplevel)
+WriteTroff(V, f, processor, format, toplevel)
+struct spread * V;
+FILE * f;
+char *processor;
+char *format;
 {
     register struct table *T = MyTable(V);
     int r;

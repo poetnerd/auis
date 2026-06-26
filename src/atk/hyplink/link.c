@@ -42,7 +42,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/hypl
 #include <path.ih>
 #include <link.eh>
 
-#include <stdlib.h>
 extern char *getenv();
 
 /* Defined constants and macros */
@@ -169,7 +168,8 @@ struct link *self;
 }
 
 #else
-char *link__GetResolvedLink(struct link *self)
+char *link__GetResolvedLink(self)
+struct link *self;
 {
     static char localbuf[MAXPATHLEN+1];
     if(link_GetRawLink(self)) {

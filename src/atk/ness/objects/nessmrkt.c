@@ -98,7 +98,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ness
 
 static long writeid = 1;
 
-int main(register int argc, register char **argv)
+main(argc, argv)
+	register int	  argc;
+	register char  **argv;
 {
 	register struct nessmark *m;
 	register struct simpletext *t;
@@ -135,7 +137,8 @@ so nessmarktest need not be recompiled when nessmark is*/
 	simpletext_Write(t, stdout, ++writeid, 0);
 }
 
-int printdata(register struct nessmark *m)
+printdata(m)
+	register struct nessmark *m;
 {
 	long loc, lend;
 	lend = mark_GetEndPos((struct mark *)m);
@@ -174,7 +177,8 @@ int printdata(register struct nessmark *m)
  * }
  */
 
-int replacetabs(struct nessmark *file)
+replacetabs(file)
+	struct nessmark *file;
 {
 	struct nessmark *m = nessmark_New(), 
 			*f = nessmark_New(),

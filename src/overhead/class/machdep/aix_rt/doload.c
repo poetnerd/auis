@@ -55,10 +55,12 @@ char doload_extension[] = ".do";
 
 #include "../common/safe.h"
 
-#include <stdlib.h>
 /* initialize state */
 
-void doload_setup(struct doload_environment *e, int inFD, doload_mode mode)
+void doload_setup(e, inFD, mode)
+struct doload_environment *e;
+int inFD;
+doload_mode mode;
 {
     e->mode = mode;
     e->fd = inFD;
@@ -74,7 +76,8 @@ void doload_setup(struct doload_environment *e, int inFD, doload_mode mode)
 
 /* tear down environment */
 
-void doload_cleanup(struct doload_environment *e)
+void doload_cleanup(e)
+struct doload_environment *e;
 {
     if (e->problems > 0) {
 	e->problems = 0;
@@ -89,7 +92,8 @@ void doload_cleanup(struct doload_environment *e)
 
 /* read module into memory */
 
-int doload_read(struct doload_environment *e)
+doload_read(e)
+struct doload_environment *e;
 {
     long stringlen;	/* length of string table */
 
@@ -254,13 +258,15 @@ extern long globalcount;
 static char *symtypename[] = {"UNDF", "ABS ", "TEXT", "DATA", "BSS ", "????" };
 
 
-char *RelocType(int i)
+char *RelocType(i)
+int i;
 {
     i &= N_SECT ;
     return symtypename[i <= 4 ? i : 5];
 }
 
-int doload_preset(register struct doload_environment *e)
+doload_preset(e)
+register struct doload_environment *e;
 {
     register struct nlist *sp;
     register struct nlist *sbound;
@@ -313,7 +319,11 @@ int doload_preset(register struct doload_environment *e)
 
 /* compute relocation adjustment */
 
-long adjust(register struct doload_environment *e, register long tw, register struct relocation_info *rp, char *format)
+long adjust(e, tw, rp, format)
+register struct doload_environment *e;
+register long tw;
+register struct relocation_info *rp;
+char *format;
 {
     if (e->mode == List)
 	printf("  %s", format);
@@ -387,7 +397,10 @@ long adjust(register struct doload_environment *e, register long tw, register st
 
 /* relocate one item */
 
-int doload_relocate(register struct doload_environment *e, register char *cp, register struct relocation_info *rp)
+doload_relocate(e, cp, rp)
+register struct doload_environment *e;
+register char *cp;
+register struct relocation_info *rp;
 {
     register long tw;
 

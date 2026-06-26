@@ -80,8 +80,6 @@ END-SPECIFICATION  ************************************************************/
 #include <apts.ih>
 #include <chart.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 #define  ChartTitle		     (self->chart_title)
 #define  ChartTitleDataObjectName    (self->chart_title_data_object_name)
 #define  ChartTitleViewObjectName    (self->chart_title_view_object_name)

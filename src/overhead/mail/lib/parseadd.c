@@ -42,7 +42,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <parseadd.h>
 #include "parsey.h"
 
-#include <stdlib.h>
 typedef unsigned char bool;
 #define FALSE	0
 #define TRUE	1
@@ -52,7 +51,9 @@ typedef unsigned char bool;
 extern char *StrCopy();
 
 
-static int locallexer(struct parser *lexerrock, YYSTYPE *lval)
+static int locallexer(lexerrock, lval)
+struct parser *lexerrock;
+YYSTYPE *lval;
 {
     extern char mail_parseyytext[];
     extern YYSTYPE mail_parseyylval;
@@ -69,7 +70,9 @@ static int locallexer(struct parser *lexerrock, YYSTYPE *lval)
    the reason for the failure (see parseadd.h).
 */
 
-int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut)
+int ParseAddressList(AddrIn, AddrOut)
+    char *AddrIn;
+    PARSED_ADDRESS **AddrOut;
 {
     extern int ParseErrorReason;
     extern PARSED_ADDRESS *yyparsedaddress;
@@ -98,7 +101,13 @@ int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut)
    Note that this routine is *NOT* the inverse of ParseAddressList.
 */
 
-int UnparseOneAddress(PARSED_ADDRESS *Addr, int Mode, char *Buffer, int Length, char *Prefix, int LineLength)
+int UnparseOneAddress(Addr, Mode, Buffer, Length, Prefix, LineLength)
+    PARSED_ADDRESS *Addr;
+    int Mode;
+    char *Buffer;
+    int Length;
+    char *Prefix;
+    int LineLength;
 {
     extern PARSED_ADDRESS *MakeAddress(), *MakeAddrList();
     register PARSED_ADDRESS *Copy, *List;
@@ -141,14 +150,21 @@ static int UP_HeaderLength;
    Note that this routine is *NOT* the inverse of ParseAddressList.
 */
 
-int UnparseAddressList(PARSED_ADDRESS *AddrList, int /* The address list to unparse */
-		       Mode, int /* Unparse format */
-		       Buffer, int /* Buffer to unparse into */
-		       Length, int /* Length of buffer */
-		       Header, int /* Text for header */
-		       Prefix, int /* Prefix for folded lines */
-		       LineLength, int /* Max line length */
-		       HowMany)
+int UnparseAddressList(AddrList,	/* The address list to unparse */
+		       Mode,		/* Unparse format */
+		       Buffer,		/* Buffer to unparse into */
+		       Length,		/* Length of buffer */
+		       Header,		/* Text for header */
+		       Prefix,		/* Prefix for folded lines */
+		       LineLength,	/* Max line length */
+		       HowMany)		/* How many were unparsed */
+    PARSED_ADDRESS *AddrList;
+    int Mode;
+    char *Buffer;
+    int Length;
+    char *Header;
+    char *Prefix;
+    int LineLength, *HowMany;
 {
     int result;
 
@@ -188,7 +204,9 @@ int UnparseAddressList(PARSED_ADDRESS *AddrList, int /* The address list to unpa
     return result;
 }
 
-static int StartUnparse(PARSED_ADDRESS *AddrList, int Mode)
+static int StartUnparse(AddrList, Mode)
+    PARSED_ADDRESS *AddrList;
+    int Mode;
 {
     bool First;
 
@@ -221,7 +239,10 @@ static int StartUnparse(PARSED_ADDRESS *AddrList, int Mode)
     return PA_OK;
 }
 
-static int UnparseAddress(PARSED_ADDRESS *Addr, int Mode, bool Last, bool NewLine)
+static int UnparseAddress(Addr, Mode, Last, NewLine)
+    PARSED_ADDRESS *Addr;
+    int Mode;
+    bool Last, NewLine;
 {
     switch (Addr->Kind) {
 	case SIMPLE_ADDRESS:	return UnparseSimpleAddress(Addr, Mode, Last, NewLine);
@@ -234,7 +255,10 @@ static int UnparseAddress(PARSED_ADDRESS *Addr, int Mode, bool Last, bool NewLin
    Task: get this address into the buffer as nicely as possible
 */
 
-static int UnparseSimpleAddress(PARSED_ADDRESS *Addr, int Mode, bool Last, bool NewLine)
+static int UnparseSimpleAddress(Addr, Mode, Last, NewLine)
+    PARSED_ADDRESS *Addr;
+    int Mode;
+    bool Last, NewLine;
 {
     int result;
 
@@ -261,7 +285,10 @@ static int UnparseSimpleAddress(PARSED_ADDRESS *Addr, int Mode, bool Last, bool 
     return PA_OK;
 }
 
-static int UnparseGroupAddress(PARSED_ADDRESS *Addr, int Mode, bool Last)
+static int UnparseGroupAddress(Addr, Mode, Last)
+    PARSED_ADDRESS *Addr;
+    int Mode;
+    bool Last;
 {
     int result;
     char *BeforeGroup;
@@ -318,7 +345,8 @@ static int UnparseGroupAddress(PARSED_ADDRESS *Addr, int Mode, bool Last)
     return PA_OK;
 }
 
-static bool SafeCopy(char *s)
+static bool SafeCopy(s)
+    char *s;
 {
     register int len;
 
@@ -345,7 +373,9 @@ static bool SafeCopy(char *s)
 	} else\
 	    return PA_TOO_LONG
 
-int PrintSimpleAddress(register PARSED_ADDRESS *Addr, int Mode)
+PrintSimpleAddress(Addr, Mode)
+    register PARSED_ADDRESS *Addr;
+    int Mode;
 {
     bool Comments;
     register int nhosts;
@@ -382,7 +412,9 @@ int PrintSimpleAddress(register PARSED_ADDRESS *Addr, int Mode)
     return PA_OK;
 }
 
-static PrintWith0Hosts(register PARSED_ADDRESS *Addr, int Mode)
+static PrintWith0Hosts(Addr, Mode)
+    register PARSED_ADDRESS *Addr;
+    int Mode;
 {
     bool RoutePhrase;
     int result;
@@ -396,7 +428,9 @@ static PrintWith0Hosts(register PARSED_ADDRESS *Addr, int Mode)
     return PA_OK;
 }
 
-static PrintWith1Host(register PARSED_ADDRESS *Addr, int Mode)
+static PrintWith1Host(Addr, Mode)
+    register PARSED_ADDRESS *Addr;
+    int Mode;
 {
     bool RoutePhrase;
     int result;
@@ -411,7 +445,9 @@ static PrintWith1Host(register PARSED_ADDRESS *Addr, int Mode)
     return PA_OK;
 }
 
-static PrintWithManyHosts(register PARSED_ADDRESS *Addr, int Mode, int Nhosts)
+static PrintWithManyHosts(Addr, Mode, Nhosts)
+    register PARSED_ADDRESS *Addr;
+    int Mode, Nhosts;
 {
     IFPUTC('<');
     FOR_ALL_REVERSE_HOSTS(host, Addr, {
@@ -431,7 +467,9 @@ static PrintWithManyHosts(register PARSED_ADDRESS *Addr, int Mode, int Nhosts)
     })
 }
 
-static int Shift(char *Start, int Dist)
+static int Shift(Start, Dist)
+    char *Start;
+    int Dist;
 {
     register char *From, *To;
 
@@ -442,7 +480,8 @@ static int Shift(char *Start, int Dist)
     return PA_OK;
 }
 
-static DoFold(char *Break)
+static DoFold(Break)
+    char *Break;
 {
     int Dist, result;
     char *AddrStart;
@@ -465,7 +504,8 @@ static DoFold(char *Break)
     return PA_OK;
 }
 
-static char *NextSpace(register char *c)
+static char *NextSpace(c)
+    register char *c;
 {
     for (; c<UP_NextPos; c++)
 	switch (*c) {
@@ -476,7 +516,8 @@ static char *NextSpace(register char *c)
     return NIL;
 }
 
-static Fold(bool NewLine)
+static Fold(NewLine)
+    bool NewLine;
 {
     bool JustFolded;
 
@@ -534,7 +575,8 @@ static Fold(bool NewLine)
     }
 }
 
-static int QuoteAndPrint(register char *String)
+static int QuoteAndPrint(String)
+    register char *String;
 {
     IFPUTC('"');
     for (; *String!='\0'; String++)
@@ -548,7 +590,8 @@ static int QuoteAndPrint(register char *String)
     return PA_OK;
 }
 
-int Unquote(register char *String)
+int Unquote(String)
+    register char *String;
 {
     register char *to;
     register bool InQuotes;
@@ -570,7 +613,9 @@ int Unquote(register char *String)
    quoting because we accept dots in route phrases.
 */
 
-static int PrintRoutePhrase(char *Phrase, int Mode)
+static int PrintRoutePhrase(Phrase, Mode)
+    char *Phrase;
+    int Mode;
 {
     register char *c;
     register bool legal;
@@ -611,7 +656,9 @@ static int PrintRoutePhrase(char *Phrase, int Mode)
 	Turn a string of spaces into a '.' (set UP_SPACES_TO_DOTS)
 */
 
-static int PrintLocalPart(char *Part, int Mode)
+static int PrintLocalPart(Part, Mode)
+    char *Part;
+    int Mode;
 {
     register char *c, last;
     register enum { LEGAL, ILLEGAL, MUSTQUOTE } status;
@@ -674,7 +721,8 @@ static int PrintLocalPart(char *Part, int Mode)
     return PA_OK;
 }
 
-int FreeHost(ADDRESS_HOST *Host)
+int FreeHost(Host)
+    ADDRESS_HOST *Host;
 {
     RemHost(Host);
     if (Host->Name != NIL) StrFree(Host->Name);
@@ -682,7 +730,8 @@ int FreeHost(ADDRESS_HOST *Host)
     return PA_OK;
 }
 
-static int FreeHosts(PARSED_ADDRESS *Addr)
+static int FreeHosts(Addr)
+    PARSED_ADDRESS *Addr;
 {
     FOR_ALL_REVERSE_HOSTS(h, Addr, {
 	int code;
@@ -695,7 +744,8 @@ static int FreeHosts(PARSED_ADDRESS *Addr)
     return PA_OK;
 }
 
-static int FreeComments(PARSED_ADDRESS *Addr)
+static int FreeComments(Addr)
+    PARSED_ADDRESS *Addr;
 {
     register ADDRESS_COMMENT *c, *Next;
 
@@ -707,7 +757,8 @@ static int FreeComments(PARSED_ADDRESS *Addr)
     return PA_OK;
 }
 
-static int FreeGroupMembers(PARSED_ADDRESS *Addr)
+static int FreeGroupMembers(Addr)
+    PARSED_ADDRESS *Addr;
 {
     return FreeAddressList(Addr->Members);
 }
@@ -717,7 +768,8 @@ static int FreeGroupMembers(PARSED_ADDRESS *Addr)
    from any chain it might be on.
 */
 
-int FreeAddress(register PARSED_ADDRESS *AddrIn)
+int FreeAddress(AddrIn)
+    register PARSED_ADDRESS *AddrIn;
 {
     register int code;
 
@@ -749,7 +801,8 @@ int FreeAddress(register PARSED_ADDRESS *AddrIn)
    Free the space used by an address list.
 */
 
-int FreeAddressList(PARSED_ADDRESS *Addrs)
+int FreeAddressList(Addrs)
+    PARSED_ADDRESS *Addrs;
 {
     FOR_ALL_ADDRESSES(addr, Addrs, {
 	int code;
@@ -766,7 +819,8 @@ int FreeAddressList(PARSED_ADDRESS *Addrs)
    must be on some list.
 */
 
-int RemAddress(register PARSED_ADDRESS *Addr)
+int RemAddress(Addr)
+    register PARSED_ADDRESS *Addr;
 {
     register PARSED_ADDRESS *Save;
 
@@ -783,7 +837,8 @@ int RemAddress(register PARSED_ADDRESS *Addr)
    list for this routine to work.
 */
 
-int RemHost(register ADDRESS_HOST *Host)
+int RemHost(Host)
+    register ADDRESS_HOST *Host;
 {
     register ADDRESS_HOST *Save;
 
@@ -795,7 +850,8 @@ int RemHost(register ADDRESS_HOST *Host)
     return PA_OK;
 }
 
-ADDRESS_HOST *MakeHost(char *name)
+ADDRESS_HOST *MakeHost(name)
+    char *name;
 {
     register ADDRESS_HOST *host;
 
@@ -810,7 +866,9 @@ ADDRESS_HOST *MakeHost(char *name)
     return host;
 }
 
-int AddHost(PARSED_ADDRESS *Addr, ADDRESS_HOST *Host)
+int AddHost(Addr, Host)
+    PARSED_ADDRESS *Addr;
+    ADDRESS_HOST *Host;
 {
     Host -> Next = Host;
     Host -> Prev = Host;
@@ -823,7 +881,8 @@ int AddHost(PARSED_ADDRESS *Addr, ADDRESS_HOST *Host)
  * ReplaceWith.  ReplaceWith is freed.
  */
 
-int ReplaceAddress(PARSED_ADDRESS *Addr, PARSED_ADDRESS *ReplaceWith)
+int ReplaceAddress(Addr, ReplaceWith)
+    PARSED_ADDRESS *Addr, *ReplaceWith;
 {
     int code;
     PARSED_ADDRESS tmpAddr;
@@ -849,7 +908,9 @@ int ReplaceAddress(PARSED_ADDRESS *Addr, PARSED_ADDRESS *ReplaceWith)
     return PA_OK;
 }
 
-PARSED_ADDRESS *SingleAddress(PARSED_ADDRESS *AddrList, int *pCount)
+PARSED_ADDRESS *SingleAddress(AddrList, pCount)
+PARSED_ADDRESS *AddrList;
+int *pCount;
 {
 /* Count the number of addressees are in the initial list */
 /* Return some single simple address */

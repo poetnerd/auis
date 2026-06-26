@@ -58,8 +58,6 @@ extern char *getenv();
 /* Different people say different things about whether unistd.h lives in sys/ */
 /* #include <sys/unistd.h> */
 #include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
 #endif
 
 extern char *malloc(), *realloc(), *index(), *getmyname();
@@ -486,7 +484,8 @@ int definitelynew;
     return(List);
 }
 
-int main(int argc, char **argv)
+main(argc, argv)
+char **argv;
 {
     char *sdum, *LineBuf, CmdBuf[100];
     int i, EightBitMode = 0, RightToLeftMode = 0, AllDone=0, EightBitSeen=0, prevaddrdone=1;
@@ -1040,7 +1039,10 @@ char *newid() {
     return(idbuf);
 }
 
-int WriteOutMessage(FILE *fp, char *ToList, char *Subject, char *CCList, struct mailpart *FirstPart)
+WriteOutMessage(fp, ToList, Subject, CCList, FirstPart)
+FILE *fp;
+char *ToList, *Subject, *CCList;
+struct mailpart *FirstPart;
 {
     FILE *fpin;
     static int ctr = 0;
@@ -1116,7 +1118,9 @@ int WriteOutMessage(FILE *fp, char *ToList, char *Subject, char *CCList, struct 
     }
 }
 
-int WriteContentTypeAndEncoding(FILE *fp, struct mailpart *part)
+WriteContentTypeAndEncoding(fp, part)
+FILE *fp;
+struct mailpart *part;
 {
     fprintf(fp, "Content-ID: %s\n", newid());
     if (part->istext) {
@@ -1153,7 +1157,10 @@ int WriteContentTypeAndEncoding(FILE *fp, struct mailpart *part)
     }
 }
 
-int TranslateInputToEncodedOutput(FILE *InputFP, FILE *OutputFP, int Ecode, char *ctype)
+TranslateInputToEncodedOutput(InputFP, OutputFP, Ecode, ctype)
+FILE *InputFP, *OutputFP;
+int Ecode;
+char *ctype;
 {
     int c, EightBitSeen = 0;
 
@@ -1182,7 +1189,8 @@ static char *EnvStartStack[MAX_STACK_SIZE];
    kept open across an inserted object -- i.e. the richtext is split into 
    two parts of a multipart message */
 
-int TempCloseStyles(FILE *fp)
+TempCloseStyles(fp)
+FILE *fp;
 {
     int i = StackSize;
     while(--i>=0) {
@@ -1204,7 +1212,9 @@ RestoreCurrentStyles() {
     }
 }
 
-int ReopenStyles(FILE *fp, struct mailpart *part)
+ReopenStyles(fp, part)
+FILE *fp;
+struct mailpart *part;
 {
     int i=0;
     RestoreCurrentStyles();
@@ -1219,7 +1229,8 @@ richtextreset()
     StackSize = 0;
 }
 
-int AlreadyInStyle(char *s)
+AlreadyInStyle(s)
+char *s;
 {
     int i;
     for (i=0; i<StackSize; ++i) {
@@ -1228,7 +1239,10 @@ int AlreadyInStyle(char *s)
     return(0);
 }
 
-int StartStyle(FILE *fp, char *s, char *envstartstr)
+StartStyle(fp, s, envstartstr)
+FILE *fp;
+char *s;
+char *envstartstr;
 {
     char *t;
     fprintf(fp, "<%s>", s);
@@ -1241,7 +1255,9 @@ int StartStyle(FILE *fp, char *s, char *envstartstr)
     if (!V_quiet) printf("Beginning: %s\n", t);
 }
 
-int EndStyle(FILE *fp, char *s)
+EndStyle(fp, s)
+FILE *fp;
+char *s;
 {
     int i = StackSize, j;
     while(--i>=0) {
@@ -1263,7 +1279,11 @@ int EndStyle(FILE *fp, char *s)
     if (!V_quiet) printf("Ending: %s\n", s);
 }
 
-int ToggleStyle(char *name, FILE *fp, struct mailpart *part, char *turnonstr, char *turnoffstr)
+ToggleStyle(name, fp, part, turnonstr, turnoffstr)
+char *name;
+FILE *fp;
+struct mailpart *part;
+char *turnonstr, *turnoffstr;
 {
     part->isrich = 1;
     if (AlreadyInStyle(name)) {
@@ -1278,7 +1298,11 @@ int ToggleStyle(char *name, FILE *fp, struct mailpart *part, char *turnonstr, ch
     }
 }
 
-int TryOpeningStyle(char *name, FILE *fp, struct mailpart *part, char *envstartstr)
+TryOpeningStyle(name, fp, part, envstartstr)
+char *name;
+FILE *fp;
+struct mailpart *part;
+char *envstartstr;
 {
     if (AlreadyInStyle(name)) {
         printf("mailto: Already in %s style\n", name);
@@ -1288,7 +1312,10 @@ int TryOpeningStyle(char *name, FILE *fp, struct mailpart *part, char *envstarts
     }
 }
 
-int TryClosingStyle(char *name, FILE *fp, struct mailpart *part)
+TryClosingStyle(name, fp, part)
+char *name;
+FILE *fp;
+struct mailpart *part;
 {
     if (AlreadyInStyle(name)) {
         part->isrich = 1;
@@ -1298,7 +1325,11 @@ int TryClosingStyle(char *name, FILE *fp, struct mailpart *part)
     }
 }
 
-int FputsQuotingLT(char *s, FILE *fp, struct mailpart *part, int EightBitMode, int RightToLeftMode)
+FputsQuotingLT(s, fp, part, EightBitMode, RightToLeftMode)
+char *s;
+FILE *fp;
+struct mailpart *part;
+int EightBitMode, RightToLeftMode;
 {
     static int InNewLineSequence=1;
     int c=0;
@@ -1359,7 +1390,8 @@ int FputsQuotingLT(char *s, FILE *fp, struct mailpart *part, int EightBitMode, i
     }
 }
 
-int cleanexit(int code)
+cleanexit(code)
+int code;
 {
     finalize();
     exit(code);
@@ -1497,7 +1529,9 @@ char *s, **t;
     return(NULL);
 }	
 
-char *Cleanse(char *s, int dolc)
+char *Cleanse(s, dolc) /* no leading or trailing space, all lower case */
+char *s;
+int dolc;
 {
     char *tmp, *news;
     
@@ -1513,7 +1547,8 @@ char *Cleanse(char *s, int dolc)
     return(news);
 }
 
-char *DeQuote(char *s)
+char *DeQuote(s)
+char *s;
 {
     char *retval;
     s = Cleanse(s, 0);
@@ -1919,7 +1954,8 @@ CreateNewPart() {
     return(mp);
 }
 
-int SetTextFlags(struct mailpart *mp)
+SetTextFlags(mp)
+struct mailpart *mp;
 {
     if (!lc2strncmp(mp->content_type, "text/", 5)) {
         mp->istext = 1;
@@ -1929,7 +1965,8 @@ int SetTextFlags(struct mailpart *mp)
     }
 }
 
-int WhichEncodingForFile(char *fname, char *ctype)
+WhichEncodingForFile(fname, ctype)
+char *fname, *ctype;
 {
     int c, linesize=0, total=0, unsafechars=0, longlines=0;
     char *s;
@@ -1964,7 +2001,8 @@ int WhichEncodingForFile(char *fname, char *ctype)
     return(ENC_NONE);
 }
 
-int BuildCommand(char *Buf, char *controlstring, char *TmpFileName)
+BuildCommand(Buf, controlstring, TmpFileName)
+char *Buf, *controlstring, *TmpFileName;
 {
     char *from, *to;
     int prefixed = 0;
@@ -2001,7 +2039,8 @@ int BuildCommand(char *Buf, char *controlstring, char *TmpFileName)
     }
 }
 
-int CtypeMatch(char *ctype, char *pat)
+CtypeMatch(ctype, pat)
+char *ctype, *pat;
 {
     int len;
     char *s;
@@ -2021,7 +2060,8 @@ int CtypeMatch(char *ctype, char *pat)
     return(0);
 }
 
-int EditCurrentMessage(int UseVisual)
+EditCurrentMessage(UseVisual)
+int UseVisual;
 {
     char *editor = NULL;
     char *CmdBuf, *CmdBuf2, LineBuf[100];
@@ -2159,7 +2199,9 @@ int IsAndrew;
     }
 }
 
-int ProcessOneMailRC(char *fname, int IsAndrew)
+ProcessOneMailRC(fname, IsAndrew)
+char *fname;
+int IsAndrew;
 {
     FILE *fp;
     char *LineBuf = NULL, *sdum;
@@ -2191,7 +2233,9 @@ int ProcessOneMailRC(char *fname, int IsAndrew)
     fclose(fp);
 }
 
-int HandleSetCommand(char *cmd, int DoSet)
+HandleSetCommand(cmd, DoSet)
+char *cmd;
+int DoSet;
 {
     char *s;
     int i;
@@ -2233,7 +2277,8 @@ struct alias {
     struct alias *next;
 } *FirstAlias = NULL;
 
-int HandleAliasCommand(char *aliasline)
+HandleAliasCommand(aliasline)
+char *aliasline;
 {
     struct alias *tmpalias;
     char *s, *s2;
@@ -2261,7 +2306,10 @@ int HandleAliasCommand(char *aliasline)
     FirstAlias = tmpalias;
 }
 
-int EmitHeader(FILE *fp, char *hdr, char *body)
+EmitHeader(fp, hdr, body)
+FILE *fp;
+char *hdr;
+char *body;
 {
     fputs(hdr, fp);
     fputs(": ", fp);
@@ -2296,7 +2344,10 @@ char *s;
     return(NULL);
 }
 
-int HeaderFputs(char *s, FILE *fp, char *hdr)
+HeaderFputs(s, fp, hdr)
+char *s;
+FILE *fp;
+char *hdr;
 {
     char *firstnonascii, *firstascii;
 
@@ -2334,14 +2385,19 @@ int HeaderFputs(char *s, FILE *fp, char *hdr)
 
 static char basis_hex[] = "0123456789ABCDEF";
 
-int PutQP(unsigned char c, FILE *fp)
+PutQP(c, fp)
+unsigned char c;
+FILE *fp;
 {
     putc('=', fp);
     putc(basis_hex[c>>4], fp);
     putc(basis_hex[c&0xF], fp);
 }
 
-int EmitHeaderWithAliases(FILE *fp, char *hdr, char *names)
+EmitHeaderWithAliases(fp, hdr, names)
+FILE *fp;
+char *hdr;
+char *names;
 {
     fputs(hdr, fp);
     fputs(": ", fp);
@@ -2349,7 +2405,10 @@ int EmitHeaderWithAliases(FILE *fp, char *hdr, char *names)
     fputs("\n", fp);
 }
 
-int EmitAddresses(FILE *fp, char *names, char *hdr)
+EmitAddresses(fp, names, hdr)
+FILE *fp;
+char *names;
+char *hdr;
 {
     char *s;
     while (names) {
@@ -2364,7 +2423,10 @@ int EmitAddresses(FILE *fp, char *names, char *hdr)
     }
 }
 
-int DeAlias(char *name, FILE *fp, char *hdr)
+DeAlias(name, fp, hdr)
+char *name;
+FILE *fp;
+char *hdr;
 {
     struct alias *tmpalias;
     char *end, savechar;
@@ -2387,7 +2449,9 @@ int DeAlias(char *name, FILE *fp, char *hdr)
 }
 
 
-int WriteCtypeNicely(FILE *fp, char *ct)
+WriteCtypeNicely(fp, ct)
+FILE *fp;
+char *ct;
 {
     char *semi, *slash, *eq, *s;
 
@@ -2420,7 +2484,9 @@ int WriteCtypeNicely(FILE *fp, char *ct)
     }
 }
 
-int fputsquoting(char *s, FILE *fp)
+fputsquoting(s, fp)
+char *s;
+FILE *fp;
 {
     char *end = s + strlen(s) - 1;
     while (isspace((unsigned char) *end) && end > s) --end;
@@ -2487,25 +2553,29 @@ char *cmd;
 }
 #endif
 
-int controlputc(char c)
+controlputc(c)
+char c;
 {
     fputc(c, stdout);
 }
 
 /* Do the equivalent of an fputs for the terminal escape stuff */
 #ifdef AMIGA
-int tfputs(char *s)
+tfputs(s)
+char *s;
 {
     fputs(s, stdout);
     return (0);
 }
 #else
-int tfputs(char *s)
+tfputs(s)
+char *s;
 {
     tputs(s, 1, controlputc);
 }
 #endif
-int ContainsEightBitChar(char *fname)
+ContainsEightBitChar(fname)
+char *fname;
 {
     int c, eightBitSeen = 0;
     FILE *fp = fopen(fname, "r");

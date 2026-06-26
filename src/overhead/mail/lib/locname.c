@@ -52,7 +52,6 @@ char *inet_ntoa();
 #include "mailconf.h"
 #include "mail.h"
 
-#include <stdlib.h>
 static struct MailDom mdRoot = {NULL, NULL, 1, NULL, NULL};
 static char ThisHostName[250] = "";
 static char ThisHostAddr[20] = "";
@@ -73,7 +72,8 @@ static struct MailDom *newMD()
     return md;
 }
 
-static int EvalRec(struct MailDom *md)
+static int EvalRec(md)
+struct MailDom *md;
 {/* Put md->Orig through a cycle of evaluation.  Return 0 if out of memory. */
 #define	DomLen 150
 #define	MaxMX	2   /* Bump this when can get more than one MX rec */
@@ -109,7 +109,8 @@ static int EvalRec(struct MailDom *md)
     return 1;
 }
 
-static int TestMD(char *MDName, struct MailDom **pMD, char *currDom)
+static int TestMD(MDName, pMD, currDom)
+char *MDName; struct MailDom **pMD; char *currDom;
 {/* Test the given name and return a pointer to its struct MailDom.  Return -1 if it can't be done somehow, 0 if it's the given currDom domain name, and 1 if it's done OK. */
     struct MailDom *md;
 
@@ -140,7 +141,10 @@ static int TestMD(char *MDName, struct MailDom **pMD, char *currDom)
     *pMD = md; return 1;
 }
 
-int la_KindDomain(PARSED_ADDRESS *Addr, int *outType, char **outPrime, char **outSecond, char *Domain)
+int la_KindDomain(Addr, outType, outPrime, outSecond, Domain)
+PARSED_ADDRESS *Addr;
+int *outType;
+char **outPrime, **outSecond, *Domain;
 {
     /* Pass it an Addr; it fills in outType, outPrime, and, optionally, outSecond.  If outPrime is non-null, it is malloc()'ed storage; free it when you're done.  Domain will be used as the ``current'' default mail domain.
 	*/
@@ -266,7 +270,10 @@ int la_KindDomain(PARSED_ADDRESS *Addr, int *outType, char **outPrime, char **ou
 	return laerr_NoError;
 }
 
-int la_Kind(PARSED_ADDRESS *Addr, int *outType, char **outPrime, char **outSecond)
+int la_Kind(Addr, outType, outPrime, outSecond)
+PARSED_ADDRESS *Addr;
+int *outType;
+char **outPrime, **outSecond;
 {
     /* Pass it an Addr; it fills in outType, outPrime, and, optionally, outSecond.  If outPrime is non-null, it is malloc()'ed storage; free it when you're done.
     */
@@ -280,7 +287,8 @@ int la_Kind(PARSED_ADDRESS *Addr, int *outType, char **outPrime, char **outSecon
     return la_KindDomain(Addr, outType, outPrime, outSecond, PrevailingDomain);
 }
 
-char *la_ErrorString(int errcode)
+char *la_ErrorString(errcode)
+int errcode;
 {	/* Return a static string describing the laerr_XXX code */
     static char *ErrDesc[] = {
 	"no error",		/* laerr_NoError */

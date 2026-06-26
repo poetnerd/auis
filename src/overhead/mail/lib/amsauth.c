@@ -47,9 +47,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <mailconf.h>
 #include <mail.h>
 
+extern int errno;
 
-#include <stdlib.h>
 #ifndef _IBMR2
+extern char *malloc();
+extern char *realloc();
 #endif /* _IBMR2 */
 
 static struct CellAuth *AMSHome = NULL;
@@ -63,7 +65,8 @@ void ForgetAMSHome()
     EraseCellMemory();
 }
 
-int FindAMSHomeCell(struct CellAuth **ppCellAuth)
+int FindAMSHomeCell(ppCellAuth)
+struct CellAuth **ppCellAuth;
 {/* Returns a pointer to the cell that AMS thinks is the user's home, if there is one.
     Return 1 if have to use the workstation cell (not prime auth), 2 if no authentication at all. */
     int rc;
@@ -216,7 +219,8 @@ int FindAMSHomeCell(struct CellAuth **ppCellAuth)
     }
 }
 
-int SetAMSHomeCell(struct CellAuth *cellAuth)
+int SetAMSHomeCell(cellAuth)
+struct CellAuth *cellAuth;
 {/* Choose the given cell to operate as the AMS home cell.  Returns 0 if all OK, <0 for a temp fail, >0 for persistent failures.  Returning 1 means that the given cell can't be an AMS home cell since it isn't the workstation cell and it doesn't run AMS delivery.  Returning 2 means that there aren't any authentications.  Returning -4 means that the given cell can't be set as an AMS home cell since it's not the workstation cell and it's not clear that the cell runs AMS delivery. */
     int rc;
     struct CellAuth *othCA;

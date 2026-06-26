@@ -48,23 +48,29 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <bt.h>
 #include <wp.h>
 #include <btwp.h>
-#include <stdlib.h>
 #endif /* WHITEPAGES_ENV   */
 
 #if !POSIX_ENV
+extern int errno;
+extern char *malloc();
+extern char *realloc();
 #endif
 
 /* Compatibility routines for non-cellular use */
 extern struct wp_CD *ThisCellDir;
 
-wp_ErrorCode wp_Search(wp_SearchToken SrchToken, int MaxResults, int MaxQuality, int *MatchQuality, wp_PrimeKeySetPtr *PKPtr)
+wp_ErrorCode wp_Search(SrchToken, MaxResults, MaxQuality, MatchQuality, PKPtr)
+wp_SearchToken SrchToken; int MaxResults;
+int MaxQuality, *MatchQuality; wp_PrimeKeySetPtr *PKPtr;
 {
     if (ThisCellDir == NULL) return wperr_NotInited;
     return cwp_Search((struct wp_cd *) ThisCellDir, SrchToken, MaxResults,
 		       MaxQuality, MatchQuality, PKPtr);
 }
 
-wp_ErrorCode wp_Lookup(wp_SearchToken SrchToken, int *MinMatchesFound, int MaxQuality, int *MatchQuality, wp_PrimeKey *PKPtr)
+wp_ErrorCode wp_Lookup(SrchToken, MinMatchesFound, MaxQuality, MatchQuality, PKPtr)
+wp_SearchToken SrchToken; int *MinMatchesFound;
+int MaxQuality, *MatchQuality; wp_PrimeKey *PKPtr;
 {
     if (ThisCellDir == NULL) return wperr_NotInited;
     return cwp_Lookup((struct wp_cd *) ThisCellDir, SrchToken, MinMatchesFound,

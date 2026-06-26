@@ -97,8 +97,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <help.h>
 #include <helpdb.ih>
 
-#include <stdlib.h>
-#include <stdio.h>
 /*---------------------------------------------------------------------------*/
 /*				GLOBALS					     */
 /*---------------------------------------------------------------------------*/
@@ -252,7 +250,8 @@ char *ae1, *ae2;
 }
 
 /* just like system, but fail if the command to be executed has a '`' in it. */
-static int safesystem(char *acmd)
+static int safesystem(acmd)
+char *acmd;
 {
     if(index(acmd, '`')) {
 	fprintf(stderr, "help: command execution failed due to illegal character '`' in command.\n");
@@ -1048,7 +1047,8 @@ register struct help *self;
 /*
  * show next file in list
  */
-void NextHelp(register struct help *self)
+void NextHelp(self)
+register struct help *self;
 {
     if (!(self->info->flags & MENU_SwitchMoreMenu)) {
 	return;
@@ -1277,7 +1277,8 @@ SetupPanel(readpairs, fname, panel, def)
 /*
  * Setup the lpairs for the side panel(s)
  */
-struct view *SetupLpairs(register struct help *self)
+struct view *SetupLpairs(self)
+register struct help *self;
 {
     long which = 0;
 

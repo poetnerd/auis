@@ -31,11 +31,12 @@
 #include <message.ih>
 #include <unknownv.eh>
 
-#include <stdio.h>
 static struct menulist *umenus=NULL;
 
 
-static void SaveRaw(struct basicobject *aself, long rock)
+static void SaveRaw(aself, rock)
+struct basicobject *aself;
+long rock;
 {
     struct unknownv *self=(struct unknownv *)aself;
     struct unknown *dself=(struct unknown *)unknownv_GetDataObject(self);
@@ -77,7 +78,9 @@ static void SaveRaw(struct basicobject *aself, long rock)
 }
 
 static char sepline[]="### Raw Inset Data, do not edit ###\n";
-static void DisplayRaw(struct basicobject *aself, long rock)
+static void DisplayRaw(aself, rock)
+struct basicobject *aself;
+long rock;
 {
     struct unknownv *self=(struct unknownv *)aself;
     struct unknown *dself=(struct unknown *)unknownv_GetDataObject(self);
@@ -97,7 +100,8 @@ static struct bind_Description  ubind[]={
     {NULL, NULL, 0, NULL, 0, 0, NULL, NULL, NULL}
 };
 
-boolean unknownv__InitializeClass(struct classheader *c)
+boolean unknownv__InitializeClass(c)
+struct classheader *c;
 {
     umenus=menulist_New();
     if(umenus==NULL) return FALSE;
@@ -105,19 +109,25 @@ boolean unknownv__InitializeClass(struct classheader *c)
     return TRUE;
 }
 
-boolean unknownv__InitializeObject(struct classheader *c, struct unknownv *self)
+boolean unknownv__InitializeObject(c, self)
+struct classheader *c;
+struct unknownv *self;
 {
     self->menus=menulist_DuplicateML(umenus, self);
     if(self->menus) return TRUE;
     else return FALSE;
 }
 
-void unknownv__FinalizeObject(struct classheader *c, struct unknownv *self)
+void unknownv__FinalizeObject(c, self)
+struct classheader *c;
+struct unknownv *self;
 {
     if(self->menus) menulist_Destroy(self->menus);
 }
 
-void unknownv__PostMenus(struct unknownv *self, struct menulist *menus)
+void unknownv__PostMenus(self, menus)
+struct unknownv *self;
+struct menulist *menus;
 {
     menulist_UnchainML(self->menus, self);
     if(menus) menulist_ChainBeforeML(self->menus, menus, self);

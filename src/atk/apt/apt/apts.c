@@ -97,9 +97,6 @@ END-SPECIFICATION  ************************************************************/
 #include  <ctype.h>
 
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 /******************************************************************************\
 *                                                                              *
 *                           String Facilities                                  *

@@ -49,7 +49,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <cursor.ih>
 #include <tindex.eh>
 
-#include <stdio.h>
 #define tindex_HIDDEN -16
 #define tindex_VISIBLE -17
 
@@ -61,7 +60,9 @@ static char *indexnames[] = {
     "indexi",
     ""
 };
-static struct view *FindView(struct view *v1, struct view *v2, struct view *v3, long dat)
+static struct view *FindView(v1,v2,v3,dat)
+struct view *v1,*v2,*v3;
+long dat;
 {
     if(class_IsTypeByName(class_GetTypeName(v2),"textview")){
 	return v2;
@@ -69,7 +70,8 @@ static struct view *FindView(struct view *v1, struct view *v2, struct view *v3, 
     return NULL;
 }
 
-static struct view *getcurrentview(struct view *self)
+static struct view *getcurrentview(self)
+struct view *self;
 {
     struct buffer *buf;
     struct content *ct;
@@ -81,7 +83,8 @@ static struct view *getcurrentview(struct view *self)
 }
 
 #define indexnamecount 2
-static struct textview *getrealview(struct view *v)
+static struct textview *getrealview(v)
+struct view *v;
 {
     char *name;
     name = class_GetTypeName(v);
@@ -92,7 +95,9 @@ static struct textview *getrealview(struct view *v)
     else return NULL;
 }
 static struct cursor *WaitCursor;
-static boolean skipnewlines(struct text *d, long *pos, long *len)
+static boolean skipnewlines(d,pos,len)
+struct text *d;
+long *pos,*len;
 {
     long i,end;
     int c;
@@ -113,16 +118,20 @@ static boolean skipnewlines(struct text *d, long *pos, long *len)
     return TRUE;
 	
 }
-static void printindex(struct view *self)
+static void printindex(self)
+struct view *self;
 {
     tindex_PrintIndex((struct view *) getrealview(self));
 }
-static void previewindex(struct view *self)
+static void previewindex(self)
+struct view *self;
 {
     tindex_PreviewIndex((struct view *) getrealview(self));
 }
 
-static void tindex__PrintIndex(struct classheader *ClassID, struct view *self)
+static void tindex__PrintIndex(ClassID,self)
+struct classheader *ClassID;
+struct view *self;
 {
     if(self == NULL) return;
     message_DisplayString(NULL,0,"Preparing Index - please wait");
@@ -132,7 +141,9 @@ static void tindex__PrintIndex(struct classheader *ClassID, struct view *self)
     message_DisplayString(NULL,0,"Index sent to printer; watch console for result");
 
 }
-static void tindex__PreviewIndex(struct classheader *ClassID, register struct view *self)
+static void tindex__PreviewIndex(ClassID,self)
+struct classheader *ClassID;
+register struct view *self;
 {
     if(self == NULL) return;
     message_DisplayString(NULL,0,"Preparing Index - please wait");
@@ -141,7 +152,8 @@ static void tindex__PreviewIndex(struct classheader *ClassID, register struct vi
     environ_Delete("IndexOnly");
     message_DisplayString(NULL,0,"Index Preview window should appear soon");
 }
-static void tindex_IndexTermCmd(register struct view *v)
+static void tindex_IndexTermCmd(v)
+register struct view *v;
 {
     /* Prompt for an index term and call index_IndexTerm */
     char thisString[100],*error;
@@ -168,7 +180,8 @@ static void tindex_IndexTermCmd(register struct view *v)
 	text_NotifyObservers(d,0);
     }
 }
-void tindex_ReadIndexFile(register struct view *v)
+void tindex_ReadIndexFile(v)
+register struct view *v;
 {
     /* Prompt for an index term and call index_IndexTerm */
     FILE *f,*fopen();
@@ -195,7 +208,8 @@ void tindex_ReadIndexFile(register struct view *v)
 	text_NotifyObservers(d,0);
     }
 }
-void tindex_WriteIndexFile(register struct view *v)
+void tindex_WriteIndexFile(v)
+register struct view *v;
 {
     /* Prompt for an index term and call index_IndexTerm */
     FILE *f,*fopen();
@@ -217,7 +231,10 @@ void tindex_WriteIndexFile(register struct view *v)
 
     message_DisplayString(v,0,"Done");
 }
-static void tindex_FudgeFonts(struct text *txt, char *name, int ftype)
+static void tindex_FudgeFonts(txt,name , ftype)
+struct text *txt;
+char *name;
+int ftype;
 {
     struct style *Style;
     if(txt && (Style = stylesheet_Find(txt->styleSheet,name )) != NULL){
@@ -239,31 +256,36 @@ static void tindex_FudgeFonts(struct text *txt, char *name, int ftype)
     text_RegionModified(txt,0,text_GetLength(txt));
     text_NotifyObservers(txt,0);
 }
-void tindex_MakeIndexPlain(register struct view *v)
+void tindex_MakeIndexPlain(v)
+register struct view *v;
 {
     struct textview *self;
     if((self = getrealview(v)) == NULL) return ;
     tindex_FudgeFonts(Text(self),"index",fontdesc_Plain);
 }
-void tindex_MakeIndexItalic(register struct view *v)
+void tindex_MakeIndexItalic(v)
+register struct view *v;
 {
     struct textview *self;
     if((self = getrealview(v)) == NULL) return ;
     tindex_FudgeFonts(Text(self),"index",fontdesc_Italic);
 }
-void tindex_HideInvIndex(register struct view *v)
+void tindex_HideInvIndex(v)
+register struct view *v;
 {
     struct textview *self;
     if((self = getrealview(v)) == NULL) return ;
     tindex_FudgeFonts(Text(self),"indexi", tindex_HIDDEN);
 }
-void tindex_ExposeInvIndex(register struct view *v)
+void tindex_ExposeInvIndex(v)
+register struct view *v;
 {
     struct textview *self;
     if((self = getrealview(v)) == NULL) return ;
     tindex_FudgeFonts(Text(self),"indexi", tindex_VISIBLE);
 }
-static indexstyle(register char *name)
+static indexstyle(name)
+register char *name;
 {
     register char **sp;
     register int which = 0;
@@ -277,7 +299,11 @@ static indexstyle(register char *name)
     return 0;
 }
 
-static boolean isindexenv(struct content *self, struct text *text, long pos, struct environment *env)
+static boolean isindexenv(self,text,pos,env)
+struct content *self;
+struct text *text;
+long pos;
+struct environment *env;
 {
     char *sn;
     if (env->type == environment_Style){
@@ -288,7 +314,10 @@ static boolean isindexenv(struct content *self, struct text *text, long pos, str
     else return TRUE;
     return FALSE;
 }
-int tindex__IndexTerm(struct classheader *classID, struct text *d, char *term, char **error)
+int tindex__IndexTerm(classID,d,term,error)
+struct classheader *classID;
+struct text *d;
+char *term,**error;
 {
     char *lastPattern = NULL;
     char  *tp;
@@ -335,7 +364,9 @@ int tindex__IndexTerm(struct classheader *classID, struct text *d, char *term, c
     }
     return(j);
 }
-static skipchapnumber(struct text *d, long *pos, long *len)
+static skipchapnumber(d,pos,len)
+struct text *d;
+long *pos,*len;
 {
     long i;
     int c;
@@ -350,7 +381,11 @@ static skipchapnumber(struct text *d, long *pos, long *len)
     }
 fflush(stdout);
 }
-static boolean writeindex(FILE *f, struct text *text, long pos, struct environment *env)
+static boolean writeindex(f,text,pos,env)
+FILE *f;
+struct text *text;
+long pos;
+struct environment *env;
 {
     long len;
     char *sn,c;
@@ -371,11 +406,17 @@ static boolean writeindex(FILE *f, struct text *text, long pos, struct environme
     }
     return FALSE;
 }
-void tindex__WriteIndexList(struct classheader *classID, struct text *d, FILE *f)
+void tindex__WriteIndexList(classID,d,f)
+struct classheader *classID;
+struct text *d;
+FILE *f;
 {
     text_EnumerateEnvironments(d,0,text_GetLength(d),writeindex,(long)f);
 }
-char *tindex__ReadIndexList(struct classheader *classID, struct text *d, FILE *f)
+char *tindex__ReadIndexList(classID,d,f)
+struct classheader *classID;
+struct text *d;
+FILE *f;
 {
     char buf[512],*error,*nl;
     while(fgets(buf,511,f) != NULL){
@@ -386,7 +427,8 @@ char *tindex__ReadIndexList(struct classheader *classID, struct text *d, FILE *f
     }
     return NULL;
 }
-boolean tindex__InitializeClass(struct classheader *ClassID)
+boolean tindex__InitializeClass(ClassID)
+struct classheader *ClassID; 
 {
     struct classinfo *viewtype = class_Load("view");
 

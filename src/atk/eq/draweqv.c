@@ -51,7 +51,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/eq/R
 #define AUXMODULE 1
 #include <eqv.eh>
 
-#include <stdlib.h>
 static struct graphic *pat;
 
 /*
@@ -228,7 +227,9 @@ int eqstyle_axis[MAX_eqstyle];			/* y axis positions */
 int eqstyle_min_paren[MAX_eqstyle] = { 2, 2, 1, 0 };/* smallest paren per eqstyle */
 int have_eqstyle[MAX_eqstyle] = { 0, 0, 0, 0 };	/* have above been computed? */
 
-static void InitFont(struct eqview *self, enum eqstyle eqstyle)
+static void InitFont(self, eqstyle)
+struct eqview *self;
+enum eqstyle eqstyle;
 {
     struct fontdesc_charInfo info;
 
@@ -265,7 +266,10 @@ static void InitFont(struct eqview *self, enum eqstyle eqstyle)
  * Find the dimensions of a simple atom
  */
 
-static void eqview_FormatSimple(struct eqview *self, struct formula *f, enum eqstyle eqstyle)
+static void eqview_FormatSimple(self, f, eqstyle)
+struct eqview *self;
+struct formula *f;			/* printable equation */
+enum eqstyle eqstyle;			/* in what eqstyle */
 {
     struct fontdesc *font = FONT(f->symbol->what, eqstyle);
     struct fontdesc_charInfo info;
@@ -323,7 +327,11 @@ struct {
     : (exfont[(int)n].font = fontdesc_Create(exfont[(int)n].fontfamily, exfont[(int)n].fontstyle, exfont[(int)n].fontsize)))
 
 
-long eqview_Extender(struct eqview *self, char *s, char **stringp, long code, long size)
+long eqview_Extender(self, s, stringp, code, size)
+struct eqview *self;
+char *s;
+char **stringp;
+long code, size;
 {
     int i, left=size;
     for (i=0; i<EX_NEXTENDERS; i++) {
@@ -350,7 +358,8 @@ long eqview_Extender(struct eqview *self, char *s, char **stringp, long code, lo
  * Zero size
  */
 
-static void eqview_Zero(struct formula *f)
+static void eqview_Zero(f)
+struct formula *f;
 {
     /* f->pos = f->min = f->max = zero has bugs on rt */
     f->pos = zero;
@@ -364,7 +373,13 @@ static void eqview_Zero(struct formula *f)
  * Find the dimensions of an extendable atom
  */
 
-char *eqview_Extendable(struct eqview *self, struct formula *f, struct formula *leftf, struct formula *rightf, enum eqstyle eqstyle, char ext1, char ext2, long hang, long one_part_extender)
+char *eqview_Extendable(self, f, leftf, rightf, eqstyle, ext1, ext2, hang, one_part_extender)
+struct eqview *self;
+struct formula *f, *leftf, *rightf;
+enum eqstyle eqstyle;
+char ext1, ext2;
+long hang;		/* whether to hang (root) or center (paren) */
+long one_part_extender;	/* whether extender has only one part */
 {
     struct fontdesc_charInfo info;
     struct FontSummary *summary;
@@ -480,7 +495,10 @@ char *eqview_Extendable(struct eqview *self, struct formula *f, struct formula *
 }
 
 
-static void eqview_FormatExtendable(struct eqview *self, struct formula *leftf, struct formula *f, struct formula *rightf, enum eqstyle eqstyle)
+static void eqview_FormatExtendable(self, leftf, f, rightf, eqstyle)
+struct eqview *self;
+struct formula *leftf, *f, *rightf;
+enum eqstyle eqstyle;
 {
     int lsize, rsize;
     char *s;
@@ -559,7 +577,8 @@ static void eqview_FormatExtendable(struct eqview *self, struct formula *leftf, 
 
 
 
-static void eqview_MinMax(struct formula *f)
+static void eqview_MinMax(f)
+struct formula *f;
 {
     f->pos = zero;
     f->min = large;
@@ -579,7 +598,11 @@ static void eqview_MinMax(struct formula *f)
 #define f2above (f2script[(int)ABOVE])
 #define f2below (f2script[(int)BELOW])
 
-static struct formula *eqview_FormatGroup(struct eqview *self, struct eq *eqptr, struct formula *f, enum eqstyle eqstyle)
+static struct formula *eqview_FormatGroup(self, eqptr, f, eqstyle)
+struct eqview *self;
+struct eq *eqptr;
+struct formula *f;
+enum eqstyle eqstyle;
 {
     enum align current_alignment = HLIST;
     enum eqstyle current_eqstyle = eqstyle;
@@ -799,7 +822,11 @@ enum eqstyle eqstyle;
  * H H H H   .    .
  */
 
-struct formula *eqview__Draw(struct eqview *self, struct eq *eqptr, struct formula *f, long x, long y)
+struct formula *eqview__Draw(self, eqptr, f, x, y)
+struct eqview *self;
+struct eq *eqptr;
+struct formula *f;
+long x, y;
 {
     struct formula *prev = 0, *this = f, *next = 0, *begin = 0;
     int in_align = 0;
@@ -893,7 +920,10 @@ struct formula *eqview__Draw(struct eqview *self, struct eq *eqptr, struct formu
  * Find a mouse click
  */
 
-long eqview__Find(struct eqview *self, struct eq *eqptr, long mx, long my, long restrict)
+long eqview__Find(self, eqptr, mx, my, restrict)
+struct eqview *self;
+struct eq *eqptr;
+long mx, my, restrict;
 {
     register int i;
     long n = eq_Size(eqptr);
@@ -931,7 +961,9 @@ long eqview__Find(struct eqview *self, struct eq *eqptr, long mx, long my, long 
 
 static int min_x, min_y, max_x, max_y;
 
-static eqview_Box(struct eq *eqptr, long pos, long start, long stop, long x, long y)
+static eqview_Box(eqptr, pos, start, stop, x, y)
+struct eq *eqptr;
+long pos, start, stop, x, y;
 {
     register int i;
     for (i=start; i<stop; i++) {
@@ -958,7 +990,8 @@ static eqview_Box(struct eq *eqptr, long pos, long start, long stop, long x, lon
 }
 
 
-void eqview__CalculateCaret(struct eqview *self)
+void eqview__CalculateCaret(self)
+struct eqview *self;
 {
     int pos, len;
     struct eq *eqptr = Eq(self);
@@ -986,7 +1019,8 @@ void eqview__CalculateCaret(struct eqview *self)
 }
 
 
-void eqview__DrawCaret(struct eqview *self)
+void eqview__DrawCaret(self)
+struct eqview *self;
 {
     struct rectangle rect;
 

@@ -35,11 +35,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <class.h>
 #include <texttag.eh>
 
-char * texttag__ViewName(struct texttag *self)
+char * texttag__ViewName(self)
+struct texttag *self;
 {
     return "texttagv";
 }
-static char *texttag__GetTag(struct texttag *self, long size, char *buf)
+static char *texttag__GetTag(self,size,buf)
+struct texttag *self;
+long size;
+char *buf;
 {
     long i;
     char *c;

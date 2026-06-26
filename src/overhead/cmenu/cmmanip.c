@@ -36,11 +36,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <cmintern.h>
 #include <scache.h>
 
-#include <stdlib.h>
 /* Need to handle movement of worm item in this code... */
 
 /* Should be in the C library damn it. */
-static char *CopyString(char *string)
+static char *CopyString(string)
+    char *string;
 {
 
     char *tempString;
@@ -56,7 +56,9 @@ static char *CopyString(char *string)
     return(tempString);
 }
 
-struct pane *PaneNumToPtr(struct cmenu *menu, int paneNum)
+struct pane *PaneNumToPtr(menu, paneNum)
+    struct cmenu *menu;
+    int paneNum;
 {
 
     struct pane *panePtr;
@@ -70,7 +72,9 @@ struct pane *PaneNumToPtr(struct cmenu *menu, int paneNum)
     return panePtr;
 }
 
-int PanePtrToNum(struct cmenu *menu, struct pane *panePtr)
+int PanePtrToNum(menu, panePtr)
+    struct cmenu *menu;
+    struct pane *panePtr;
 {
 
     int paneNum = 0;
@@ -85,7 +89,10 @@ int PanePtrToNum(struct cmenu *menu, struct pane *panePtr)
         return paneNum;
 }
 
-struct selection *SelectionNumToPtr(struct cmenu *menu, struct pane *panePtr, int selectionNum)
+struct selection *SelectionNumToPtr(menu, panePtr, selectionNum)
+    struct cmenu *menu;
+    struct pane *panePtr;
+    int selectionNum;
 {
 
     struct selection *selectionPtr;
@@ -99,7 +106,10 @@ struct selection *SelectionNumToPtr(struct cmenu *menu, struct pane *panePtr, in
     return selectionPtr;
 }
 
-int SelectionPtrToNum(struct cmenu *menu, struct pane *panePtr, struct selection *selectionPtr)
+int SelectionPtrToNum(menu, panePtr, selectionPtr)
+    struct cmenu *menu;
+    struct pane *panePtr;
+    struct selection *selectionPtr;
 {
 
     int selectionNum = 0;
@@ -114,7 +124,12 @@ int SelectionPtrToNum(struct cmenu *menu, struct pane *panePtr, struct selection
         return selectionNum;
 }
 
-static int GetPane(struct cmenu *menu, char *paneTitle, int panePriority, struct pane **thisPaneRet, struct pane **lastPaneRet)
+static int GetPane(menu, paneTitle, panePriority, thisPaneRet, lastPaneRet)
+    struct cmenu *menu;
+    char *paneTitle;
+    int panePriority;
+    struct pane **thisPaneRet;
+    struct pane **lastPaneRet;
 {
 
     struct pane *thisPane;
@@ -139,7 +154,11 @@ static int GetPane(struct cmenu *menu, char *paneTitle, int panePriority, struct
     return 0;
 }
 
-int cmenu_AddPane(struct cmenu *menu, char *paneTitle, int panePriority, int flags)
+int cmenu_AddPane(menu, paneTitle, panePriority, flags)
+    struct cmenu *menu;
+    char *paneTitle;
+    int panePriority;
+    int flags;
 {
 
     struct pane *newPane;
@@ -181,7 +200,9 @@ int cmenu_AddPane(struct cmenu *menu, char *paneTitle, int panePriority, int fla
     return 0;
 }
 
-static void FreeSelections(struct cmenu *menu, struct pane *pane)
+static void FreeSelections(menu, pane)
+    struct cmenu *menu;
+    struct pane *pane;
 {
 
     struct selection *thisSelection;
@@ -196,7 +217,8 @@ static void FreeSelections(struct cmenu *menu, struct pane *pane)
     }
 }
 
-void cmenu_Destroy(struct cmenu *menu)
+void cmenu_Destroy(menu)
+    struct cmenu *menu;
 {
 
     struct pane *thisPane;
@@ -212,7 +234,10 @@ void cmenu_Destroy(struct cmenu *menu)
     free(menu);
 }
 
-int cmenu_DeletePane(struct cmenu *menu, char *paneTitle, int panePriority)
+int cmenu_DeletePane(menu, paneTitle, panePriority)
+    struct cmenu *menu;
+    char *paneTitle;
+    int panePriority;
 {
 
     struct pane *thisPane;
@@ -235,7 +260,15 @@ int cmenu_DeletePane(struct cmenu *menu, char *paneTitle, int panePriority)
     return 0;
 }
 
-int cmenu_AddSelection(struct cmenu *menu, char *paneTitle, int panePriority, char *selectionLabel, int priority, long selectionData, int flags, char *keys)
+int cmenu_AddSelection(menu, paneTitle, panePriority, selectionLabel, priority, selectionData, flags, keys)
+    struct cmenu *menu;
+    char *paneTitle;
+    int panePriority;
+    char *selectionLabel;
+    int priority;
+    long selectionData;
+    int flags;
+    char *keys;
 {
 
     struct pane *thisPane;
@@ -324,7 +357,8 @@ int cmenu_AddSelection(struct cmenu *menu, char *paneTitle, int panePriority, ch
     return 0;
 }
 
-static void RecomputeMaxSelectionWidth(struct pane *pane)
+static void RecomputeMaxSelectionWidth(pane)
+    struct pane *pane;
 {
 
     struct selection *thisSelection;
@@ -341,7 +375,13 @@ static void RecomputeMaxSelectionWidth(struct pane *pane)
    pane->maxKeysWidth = kmax;
 }
 
-int cmenu_DeleteSelection(struct cmenu *menu, char *paneTitle, int panePriority, char *selectionLabel, int priority, int flags)
+int cmenu_DeleteSelection(menu, paneTitle, panePriority, selectionLabel, priority, flags)
+    struct cmenu *menu;
+    char *paneTitle;
+    int panePriority;
+    char *selectionLabel;
+    int priority;
+    int flags;
 {
 
     struct pane *thisPane;
@@ -383,7 +423,12 @@ int cmenu_DeleteSelection(struct cmenu *menu, char *paneTitle, int panePriority,
     return 0;
 }
 
-int cmenu_SetActive(struct cmenu *menu, char *paneTitle, int panePriority, int priority, int active)
+int cmenu_SetActive(menu, paneTitle, panePriority, priority, active)
+    struct cmenu *menu;
+    char *paneTitle;
+    int panePriority;
+    int priority;
+    int active;
 {
 
     struct pane *thisPane;
@@ -406,7 +451,11 @@ int cmenu_SetActive(struct cmenu *menu, char *paneTitle, int panePriority, int p
     return 0;
 }
 
-int cmenu_GetActive(struct cmenu *menu, char *paneTitle, int panePriority, int priority)
+int cmenu_GetActive(menu, paneTitle, panePriority, priority)
+    struct cmenu *menu;
+    char *paneTitle;
+    int panePriority;
+    int priority;
 {
 
     struct pane *thisPane;

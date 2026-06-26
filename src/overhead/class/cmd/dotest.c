@@ -38,7 +38,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <andrewos.h> /* sys/file.h */
 
 char *doload();
@@ -56,7 +55,9 @@ FlagRedraw()
 
 /* main program for testing loadability */
 
-int main(int argc, char **argp)
+main(argc, argp)
+int argc;
+char **argp;
 {
     int fd;
     int gotcha = 0;

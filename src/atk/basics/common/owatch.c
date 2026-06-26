@@ -32,8 +32,6 @@ char *owatch_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/b
 #include <observe.ih>
 #include "owatch.eh"
 
-#include <stdlib.h>
-#include <stdio.h>
 static struct owatch_data *freedata=NULL;
 static struct owatch_data *useddata=NULL;
 static struct owatch *owo=NULL;

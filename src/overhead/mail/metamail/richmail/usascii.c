@@ -38,7 +38,6 @@
 #include "richlex.h"
 #include "richset.h"
 
-#include <string.h>
 /*
  * Initialise the US-ASCII character set processor.
  */
@@ -52,7 +51,9 @@ char	*name;
 /*
  * Process a command for the US-ASCII processor.
  */
-int	usascii_command(char *token, int negated)
+int	usascii_command (token,negated)
+char	*token;
+int	negated;
 {
     if (!strcmp(token,"us-ascii")) {
     	if (negated) {
@@ -70,7 +71,8 @@ int	usascii_command(char *token, int negated)
 /*
  * Check for singleton US-ASCII tokens.
  */
-int	usascii_single(char *token)
+int	usascii_single (token)
+char	*token;
 {
     return (0);
 }
@@ -78,7 +80,8 @@ int	usascii_single(char *token)
 /*
  * Determine the width of a US-ASCII character.
  */
-int	usascii_width(RCHAR ch)
+int	usascii_width (ch)
+RCHAR	ch;
 {
     return (1);
 }
@@ -86,7 +89,8 @@ int	usascii_width(RCHAR ch)
 /*
  * Determine if the current character can be used as a folding point.
  */
-int	usascii_fold(RCHAR ch)
+int	usascii_fold (ch)
+RCHAR	ch;
 {
     return (ch < 0x7F && isspace (ch));
 }

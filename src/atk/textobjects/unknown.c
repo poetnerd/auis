@@ -27,15 +27,17 @@
 #include <unknown.eh>
 #include <ctype.h>
 
-#include <stdlib.h>
 static char keywordbuf[32];
 
-char *unknown__GetRealClass(struct unknown *self)
+char *unknown__GetRealClass(self)
+struct unknown *self;
 {
     return self->realclass?self->realclass:"unknown";
 }
 
-void unknown__SetRealClass(struct unknown *self, char *rclass)
+void unknown__SetRealClass(self, rclass)
+struct unknown *self;
+char *rclass;
 {
     char buf[256];
     if(rclass && class_IsTypeByName(rclass, "unknown")) {
@@ -61,7 +63,9 @@ void unknown__SetRealClass(struct unknown *self, char *rclass)
     unknown_AlwaysInsertCharacters(self, 0, buf, strlen(buf));
 }
     
-boolean unknown__InitializeObject(struct classheader *c, struct unknown *self)
+boolean unknown__InitializeObject(c, self)
+struct classheader *c;
+struct unknown *self;
 {
     unknown_SetReadOnly(self, TRUE);
     self->odata=NULL;
@@ -70,7 +74,9 @@ boolean unknown__InitializeObject(struct classheader *c, struct unknown *self)
     return TRUE;
 }
 
-void unknown__FinalizeObject(struct classheader *c, struct unknown *self)
+void unknown__FinalizeObject(c, self)
+struct classheader *c;
+struct unknown *self;
 {
     if(self->odata) {
 	text_Destroy(self->odata);
@@ -83,7 +89,9 @@ void unknown__FinalizeObject(struct classheader *c, struct unknown *self)
 }
 
 /* get a character from the file and put it in the text */
-static int tgetc(struct text *self, FILE *file)
+static int tgetc(self, file)
+struct text *self;
+FILE *file;
 {
     int ch=getc(file);
     char charch=ch;
@@ -92,7 +100,9 @@ static int tgetc(struct text *self, FILE *file)
 }
 
 /* put a character back in the file and remove it from the text. */
-static void tungetc(struct text *self, int ch, FILE *file)
+static void tungetc(self, ch, file)
+struct text *self;
+FILE *file;
 {
     ungetc(ch, file);
     if(self) text_AlwaysDeleteCharacters(self, text_GetLength(self)-1, 1);
@@ -101,7 +111,12 @@ static void tungetc(struct text *self, int ch, FILE *file)
 /* Read one unknown dataobject, putting the raw datastream into self, and checking
  that the enddata id matches id.  If lev is 0 or 1 the "real" class name for this object
  will be set on the unknown inset uself. */
-static long RealRead(struct unknown *uself, struct text *self, FILE *file, long id, int lev)
+static long RealRead(uself, self, file, id, lev)
+struct unknown *uself;
+struct text *self;
+FILE *file;
+long id;
+int lev;
 {
     int ch;
     int sawslash=0;
@@ -207,7 +222,10 @@ static long RealRead(struct unknown *uself, struct text *self, FILE *file, long 
 }
 
 /* this function will read and ignore any dataobject. */
-long unknown__Read(struct unknown *self, FILE *file, long id)
+long unknown__Read(self, file, id)
+struct unknown *self;
+FILE *file;
+long id;
 {
     long ret;
     if(self->odata==NULL) {
@@ -256,7 +274,11 @@ long unknown__Read(struct unknown *self, FILE *file, long id)
 
 /* wrap the unknown inset in an 'unknown' inset to protect future readers from a possibly corrupted
  version of the data. */
-long unknown__Write(struct unknown *self, FILE *file, long writeid, int level)
+long unknown__Write(self, file, writeid, level)
+struct unknown *self;
+FILE *file;
+long writeid;
+int level;
 {
     if(unknown_GetWriteID(self)!=writeid) {
 	long pos=0, len;

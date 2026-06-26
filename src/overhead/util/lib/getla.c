@@ -42,7 +42,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #ifdef NeXT
-double getla(int indx)
+double getla(indx)
+int indx;
 {
     return (double) 0.0;
 }
@@ -61,7 +62,8 @@ static struct nlist Nl[] =
 
 static int kmem = -1, fpastate = -1, fpacount = 0;
 
-double getla(int indx)
+double getla(indx)
+int indx;
 {
 #ifdef sun
     long avenrun[3];	/* For any kind of sun */

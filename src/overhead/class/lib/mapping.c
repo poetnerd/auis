@@ -61,7 +61,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <mapping.h>
 
 
-#include <stdlib.h>
 /* 
  * various constants and other twiddle-able
  * values.

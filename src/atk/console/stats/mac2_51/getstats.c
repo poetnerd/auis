@@ -94,7 +94,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include "getstats.h"
 
 
-#include <stdlib.h>
 struct mtab mtab[NMOUNT];
 char	root[32];
 int	fi;
@@ -144,7 +143,9 @@ get_cpuload ()
 	TotalTime = 1;
 }
 
-int get_stats(struct vm_statistics *stat, int userId)
+get_stats(stat, userId)
+	struct vm_statistics	*stat;
+	int userId;
 {
         struct tbl_loadavg	avenrun;
 	double scale;
@@ -195,7 +196,8 @@ InitGVMStats()
 
 
 
-int GetGVMStats(int UsersID)
+GetGVMStats(UsersID)
+int UsersID;
 {
     get_cpuload();
     get_stats(&vm_stat, UsersID);
@@ -244,7 +246,8 @@ int GetGVMStats(int UsersID)
 #endif
 }
 
-void Sleep_Msecs(unsigned int msecs)
+void Sleep_Msecs(msecs)
+    unsigned int    msecs;
 {
     static sleepPort = PORT_NULL;
     msg_header_t    m;
@@ -263,7 +266,8 @@ void Sleep_Msecs(unsigned int msecs)
 
 extern int getmnt();
 
-int GetDiskStats(int Init)
+GetDiskStats(Init)
+int Init;
 {
     int i = 0;
     struct fstab *fsp;
@@ -293,9 +297,14 @@ int GetDiskStats(int Init)
     endfsent();
 }
 
-int bread(int fi, daddr_t bno, char *buf, int cnt)
+int bread(fi, bno, buf, cnt)
+int fi;
+daddr_t bno;
+char *buf;
+int cnt;
 {
     register int n;
+    extern int errno;
 
     (void) lseek(fi, (long)(bno * DEV_BSIZE), 0);
 #ifndef sun
@@ -317,7 +326,8 @@ int bread(int fi, daddr_t bno, char *buf, int cnt)
 /*
  * Given a name like /dev/rrp0h, returns the mounted path, like /usr.
  */
-char *mpath(char *file)
+char *mpath(file)
+char *file;
 {
     register struct mtab *mp;
 
@@ -332,7 +342,8 @@ char *mpath(char *file)
     return "";
 }
 
-int eq(char *f1, char *f2)
+eq(f1, f2)
+char *f1, *f2;
 {
     if (strncmp(f1, "/dev/", 5) == 0)
 	f1 += 5;
@@ -349,14 +360,19 @@ int eq(char *f1, char *f2)
     return (0);
 }
 
-int round(double num)
+int round(num)
+double num;
 {
     int inum = (int) num;
     return(((num - inum) >= 0.5) ? (inum + 1) : inum);
 }
 
 
-int dfree1(int id, char *file, int infsent, int Init)
+dfree1(id, file, infsent, Init)
+int id;
+char *file;
+int infsent;
+int Init;
 {
     long totalblks, availblks, avail, free, used;
     int fi;
