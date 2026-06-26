@@ -217,9 +217,43 @@ Five tools in `build/bin/`: `class`, `makedo`, `doindex`, `cregister`,
 `genmake`. Fixed `doindex.c`: skip `<a.out.h>` on Darwin, replaced
 `sys_errlist` with `strerror()`.
 
-### Remaining: doindex + dlopen integration
+### Dynamic loading pipeline verified
 
-`doindex` loads each `.do` file to extract class info. It calls the
-runtime `doload()` which uses `dlopen()`. Untested end-to-end — the
-test object was cleaned before validation. Next step: compile an actual
-ATK object, package it with `makedo`, verify `doindex` can read it.
+Tested end-to-end: `bp.do` created by `makedo` (`cc -dynamiclib`),
+loaded by `dlopen()`, entry point `bp__GetClassInfo` resolved by
+`dlsym()`. Multiple ATK `.do` files built during `make dependInstall`
+(app, atom, atomlist, bind, cursor, dataobj, describe).
+
+### `CLASS_CTRAMPOLINE_ENV` enabled
+
+Added to `darwin/system.h`. Uses C-based lazy loading (checks if class
+is loaded, calls `class_Lookup` if not) instead of x86 assembler
+trampolines. Added `class_Lookup` declaration to `class.h`. Created
+`classproc.c` in Darwin machdep with null `class_RoutineStruct`.
+
+### ANSI prototypes in class preprocessor
+
+Changed `usePrototypes` default from `FALSE` to `TRUE` — the prototype
+generation code was already implemented behind the `-p` flag, just never
+enabled on any platform. The RS/6000 (AIX) worked around the lack of
+prototypes with `-D_NO_PROTO` instead.
+
+Enabling prototypes exposed incomplete-type conflicts: struct types used
+in method parameters need to be declared at file scope before the
+prototypes reference them. Fixed by adding automatic forward declaration
+emission to the class preprocessor — it scans all method `realargtypes`
+for `struct X` patterns and emits `struct X;` at file scope in both
+`.ih` and `.eh` files. No manual `.ch` file edits needed.
+
+### `etext` symbol
+
+macOS doesn't provide the linker `etext` symbol. Added `#ifdef sys_darwin`
+guard in `class.c` to provide a static dummy.
+
+### Remaining compile errors
+
+~15 files across overhead and ATK fail with the same patterns: missing
+`<stdlib.h>`/`<string.h>` includes and implicit-int declarations. These
+are not architectural — just individual file fixes. Once resolved, the
+full `make dependInstall` will populate `build/dlib/atk/` with `.do`
+files and `build/include/atk/` with `.ih` headers.
