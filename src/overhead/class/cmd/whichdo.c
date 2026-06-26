@@ -50,7 +50,7 @@ struct PathEntry {
 static struct PathEntry *globalPath = 0;
 char *pathopen();
 
-main(argc, argv)
+int main(argc, argv)
 int argc;
 char *argv[];
 {
@@ -131,7 +131,7 @@ void myclass_Init(char *defaultPath)
 
 }
 
-Initialize()
+static int Initialize()
 {
     myclass_Init((char *)AndrewDir("/dlib/atk"));
 }

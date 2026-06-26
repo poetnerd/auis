@@ -46,6 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #define	G3STATES
 #include "g3states.h"
 
+#include <stdlib.h>
 typedef struct {
 	Fax3BaseState b;
 } Fax3DecodeState;

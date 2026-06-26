@@ -45,7 +45,7 @@ static listerproc(register struct Index *ai, register struct indexComponent *ac,
     printf("Record keyed by %s\n", ac->name);
 }
 
-main(argc, argv)
+int main(argc, argv)
 int argc;
 char **argv;
 {

@@ -47,7 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-extern ProgramName[];	/* blechhh */
+extern char ProgramName[];	/* blechhh */
 
 /* used to avoid problems with null pointers expected to be
   treated as null strings */

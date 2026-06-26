@@ -56,7 +56,7 @@ char *prog;
 char *malloc(), *realloc();
 #endif
 
-err(f,a,b)
+int err(f,a,b)
 char *f,*a,*b;
 {
     char buf[1000];
@@ -66,7 +66,7 @@ char *f,*a,*b;
     exit(10);
 }
 
-syserr(f,a,b,c)
+int syserr(f,a,b,c)
 char *f,*a,*b,*c;
 {
     char buf[1000];
@@ -83,7 +83,7 @@ char *f,*a,*b,*c;
     exit(9);
 }
 
-qsLineCompare(l1,l2)
+int qsLineCompare(l1,l2)
 char **l1, **l2;
 {
     return strcmp(*l1,*l2);

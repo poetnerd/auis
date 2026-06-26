@@ -49,7 +49,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #define CONTROLMAX 1000  /* Longest printf control string */
 
-errprintf(application, type, log, id, format, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20)
+int errprintf(application, type, log, id, format, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20)
 
 int type;
 char *application, *log, *id, *format, *s1, *s2, *s3, *s4, *s5, *s6, *s7, *s8, 
@@ -85,7 +85,7 @@ char *application, *log, *id, *format, *s1, *s2, *s3, *s4, *s5, *s6, *s7, *s8,
 	s12, s13, s14, s15, s16, s17, s18, s19, s20));
 }
 
-safefprintf(fp, control, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20)
+static int safefprintf(fp, control, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20)
 FILE *fp;
 char *control, *s1, *s2, *s3, *s4, *s5, *s6, *s7, *s8, *s9, *s10, *s11, *s12, *s13, *s14, *s15, *s16, *s17, *s18, *s19, *s20;
 {
