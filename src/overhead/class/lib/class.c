@@ -63,12 +63,14 @@ extern char *getenv();	    /* %%%% */
 #if !SY_AIX12 && !hpux
 extern int getpid();
 #endif /* !SY_AIX12  && !hpux */
-#ifdef _IBMR2
+#ifdef sys_darwin
+static char etext;
+#elif defined(_IBMR2)
 extern char _etext;
 #define etext _etext
 #else
 extern char etext;
-#endif /* _IBMR2 */
+#endif
 
 static int pathopen(char *aname, char *tname, char *ext, unsigned long version);
 

@@ -181,6 +181,7 @@ extern boolean class_IsType(/* struct basicobject * testobject, struct basicobje
 extern boolean class_IsTypeByName(/* char * testname, char * typename */);
 
 extern int class_EnterInfo();
+extern char *class_Lookup();
 
 /*
  * routines that help with profiling

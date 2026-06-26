@@ -3020,7 +3020,7 @@ static void GlobalInit()
     SloppyMode = FALSE;
     IgnoreCurrentDirectory = FALSE;
     MakingBaseObject = FALSE;
-    usePrototypes = FALSE;
+    usePrototypes = TRUE;
 
     FinalClassName[0] = '\0';
     FinalParentName[0] = '\0';
