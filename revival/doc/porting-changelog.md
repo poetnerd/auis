@@ -279,10 +279,35 @@ The `.do` files are created during the build but cleaned by
 The install rules fire but `doindex` runs during install and the timing
 of clean vs install needs investigation.
 
-### Remaining overhead compile errors
+### Class preprocessor: `unknown` → `int` for untyped parameters
 
-~19 files in overhead still fail (implicit-int split-line definitions,
-undeclared internal functions). ATK itself compiles cleanly. These
-overhead failures don't block ATK compilation but do prevent some
-overhead libraries (`libutil.a`) from building, which may be needed
-at link time.
+Method parameters in `.ch` files declared without a type (e.g. `printer`
+in `PrintObject(..., printer)`) were emitted as `unknown` in ANSI
+prototypes. Changed to `int` (the C default for untyped parameters).
+
+### Mass modernization — attempted and reverted
+
+Ran the improved modernizer across all 916 `.c` files. This exposed a
+deeper problem: earlier modernizer runs (with buggy multi-name parameter
+parsing and missing function pointer handling) had committed damaged
+code. The accumulated damage from multiple partial modernization passes
+made the tree unbuildable.
+
+Reverted all `.c` files, but the revert target (`aa26555472`) itself
+contained modernizer damage from earlier commits.
+
+### Plan for next session
+
+The `.c` files need a fresh start:
+
+1. Revert ALL `.c` files under `src/atk/` and `src/overhead/` to **trunk**
+   (the pristine 6.3.1 originals)
+2. Re-apply the small number of intentional hand-edits documented in this
+   changelog (class.c runtime, doindex.c, sys.c, etc.)
+3. Run the now-fully-fixed modernizer in a single clean pass
+4. Build with `make -k dependInstall`
+
+Non-`.c` changes are safe and should be kept: class preprocessor
+(`usePrototypes`, forward declarations, `int` for unknown types),
+Darwin platform config, `class.h`, `doload.c`/`doload.h`, `makedo.csh`,
+`classproc.c`, `site.h`, `site.mcr`, `util.h`, Imakefiles.
