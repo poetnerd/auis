@@ -121,10 +121,7 @@ unsigned char *name;
 }
 
 static struct sym**
-lookup(name, scope, found)
-char *name;
-long scope;
-boolean *found;
+int lookup(char *name, long scope, boolean *found)
 {
     register struct sym **s, **start = table+hash(name);
 
@@ -151,10 +148,7 @@ boolean *found;
 }
 
 static struct sym**
-lookupInScope(name, scope, found)
-char *name;
-long scope;
-boolean *found;
+int lookupInScope(char *name, long scope, boolean *found)
 {
     register struct sym **s;
 
@@ -251,9 +245,7 @@ sym_ScopeType scope;
 \*****************************************************************************/
 
 sym_ScopeType
-sym__NewScope(ClassID, scope)
-struct classhdr *ClassID;
-sym_ScopeType scope;
+int sym__NewScope(struct classhdr *ClassID, sym_ScopeType scope)
 {
     long new = nextFreeScope;
 
@@ -299,20 +291,14 @@ sym_ScopeType scope;
 }
 
 sym_ScopeType
-sym__ParentScope(ClassID, scope)
-struct classhdr *ClassID;
-sym_ScopeType scope;
+int sym__ParentScope(struct classhdr *ClassID, sym_ScopeType scope)
 {
 	return enclosingScope[scope];
 }
 
 
 struct sym*
-sym__Define(ClassID, name, proto, scope)
-struct classhdr *ClassID;
-char *name;
-struct sym *proto;
-sym_ScopeType scope;
+int sym__Define(struct classhdr *ClassID, char *name, struct sym *proto, sym_ScopeType scope)
 {
     boolean found;
     struct sym *newSym, **loc;
@@ -364,10 +350,7 @@ sym_ScopeType scope;
 
 
 struct sym*
-sym__Find(ClassID, name, scope)
-struct classhdr *ClassID;
-char *name;
-sym_ScopeType scope;
+int sym__Find(struct classhdr *ClassID, char *name, sym_ScopeType scope)
 {
     boolean found;
     struct sym **loc = lookup(name, scope, &found);
@@ -379,12 +362,7 @@ sym_ScopeType scope;
 }
 
 struct sym*
-sym__Locate(ClassID, name, proto, scope, new)
-struct classhdr *ClassID;
-char *name;
-struct sym *proto;
-sym_ScopeType scope;
-boolean *new;
+int sym__Locate(struct classhdr *ClassID, char *name, struct sym *proto, sym_ScopeType scope, boolean *new)
 {
     boolean found;
     struct sym *newSym, **loc;
@@ -520,8 +498,7 @@ struct classhdr *ClassID;
 }
 
 
-printdata(self)
-struct sym *self;
+int printdata(struct sym *self)
 {
     if (self == NULL)
 	printf("NULL\n");

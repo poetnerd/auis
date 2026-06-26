@@ -95,8 +95,7 @@ static	void putspan();
 extern	int TIFFFlushData1();
 #endif
 
-TIFFInitCCITTFax3(tif)
-	TIFF *tif;
+int TIFFInitCCITTFax3(TIFF *tif)
 {
 	tif->tif_predecode = Fax3PreDecode;
 	tif->tif_decoderow = Fax3Decode;
@@ -114,9 +113,7 @@ TIFFInitCCITTFax3(tif)
 	return (1);
 }
 
-TIFFModeCCITTFax3(tif, isClassF)
-	TIFF *tif;
-	int isClassF;
+int TIFFModeCCITTFax3(TIFF *tif, int isClassF)
 {
 	if (isClassF)
 		tif->tif_options |= FAX3_CLASSF;

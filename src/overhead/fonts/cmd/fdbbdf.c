@@ -130,8 +130,7 @@ static used[256];
 int HeaderPrinted = 0;
 int minChar;
 
-usage(s)
-char *s;
+int usage(char *s)
 {
 	fprintf(stderr,"usage: %s [-mask] [-Soffset] [filename]  \n",s);
 	exit(1);
@@ -162,8 +161,7 @@ FILE *fout;
 	}
     }
 }
-main(argc,argv)
-char *argv[];
+int main(int argc, char *argv[])
 {
     int i,count;FILE *f;
     initlst();
@@ -224,9 +222,7 @@ char *lookup(register char *s, int *i)
 	*i = -1;
 	return(NULL);
 }
-hexout(c,f)
-register char *c;
-register FILE *f;
+int hexout(register char *c, register FILE *f)
 {
 	register int w = 0;
 	while(*c != '\0'){
@@ -244,9 +240,7 @@ register FILE *f;
 }
 static int psize,maxnwx,maxnwy,maxntosx,maxntosy,maxwtoex,maxwtoey,maxwbx,maxwby,maxnewlx,maxnewly,nicons;
 
-PrintHeader(fout,count)
-FILE *fout;
-int count;
+int PrintHeader(FILE *fout, int count)
 {
 	if(padflag ){
 		int size = MAX( maxwtoex + maxnwx,maxntosy + maxnwy) ; 
@@ -289,8 +283,7 @@ fprintf(fout,"BBX %d %d %d %d\n",bx,by,-orx ,ory - by );
 fprintf(fout,"BITMAP\n");
 }
 
-fontcount(f)
-FILE *f;
+int fontcount(FILE *f)
 {
     char buf[256];
     int result,count = 0;

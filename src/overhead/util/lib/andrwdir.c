@@ -35,7 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <stdio.h>
 #include <andrdir.h>
-#include <util.h>
+
 #include <stdlib.h>
 #include <string.h>
 #ifndef _IBMR2

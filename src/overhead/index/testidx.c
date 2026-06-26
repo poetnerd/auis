@@ -45,9 +45,7 @@ static listerproc(register struct Index *ai, register struct indexComponent *ac,
     printf("Record keyed by %s\n", ac->name);
 }
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     if (argc < 2) return printf("test: usage is 'test <opcode> <operands>\n");
     if (!strcmp(argv[1], "cr")) {

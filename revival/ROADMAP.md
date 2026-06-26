@@ -70,6 +70,8 @@ Current transformations:
   (skipped if `andrewos.h` is already included, since it provides these)
 - Missing `<stdio.h>` when `printf`, `fprintf`, `fopen`, etc. are called
 - K&R function definitions → ANSI prototypes
+- Implicit-int function definitions (no return type) → adds `int`
+- Multiple declarations per line (`int a; char *b;`) parsed correctly
 
 Known limitations (require manual fixes):
 - Split-line definitions (return type on separate line from function name)

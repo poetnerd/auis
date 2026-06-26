@@ -35,9 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <X11/Xlib.h>
 #include <cmintern.h>
 #include <cmdraw.h>
-extern void FlipButton();
-extern void DrawMenus();
-extern int SelectionPtrToNum();
+
 
 #if !defined(PRE_X11R4_ENV) && defined(__STDC__)
 static Bool SuitableEvent(Display *, XEvent *, char *);

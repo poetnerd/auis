@@ -95,10 +95,7 @@ int   WriteImage();
 int   WriteRow();
 
 
-main(ARGC, ARGV)
-int   ARGC;
-char *ARGV[];
-
+int main(int ARGC, char *ARGV[])
 {
 struct ScanInitParamsType SIP;
 int    rc;

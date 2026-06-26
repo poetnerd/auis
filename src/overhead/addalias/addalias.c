@@ -41,11 +41,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
 #include <andrewos.h>
 
+#include <stdlib.h>
 #define MAXLOCKTRIES 	15
 #define TEXTALLOCSTEP	5000
 #define LINESALLOCSTEP	200
@@ -56,8 +56,7 @@ char *prog;
 char *malloc(), *realloc();
 #endif
 
-int err(f,a,b)
-char *f,*a,*b;
+int err(char *f, char *a, char *b)
 {
     char buf[1000];
     sprintf(buf,f,a,b);
@@ -66,8 +65,7 @@ char *f,*a,*b;
     exit(10);
 }
 
-int syserr(f,a,b,c)
-char *f,*a,*b,*c;
+int syserr(char *f, char *a, char *b, char *c)
 {
     char buf[1000];
 
@@ -83,8 +81,7 @@ char *f,*a,*b,*c;
     exit(9);
 }
 
-int qsLineCompare(l1,l2)
-char **l1, **l2;
+int qsLineCompare(char **l1, char **l2)
 {
     return strcmp(*l1,*l2);
 }

@@ -74,9 +74,7 @@ boolean atob(char *str)
     return FALSE;
 }
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     char *name,*def = NULL;
     boolean boolVal=FALSE, intVal=FALSE, set=FALSE;
