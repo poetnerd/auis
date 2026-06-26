@@ -191,12 +191,35 @@ specific dynamic loading code in `overhead/class/machdep/`. There is no
 Darwin machdep directory. This is the dynamic loader issue identified in
 the porting assessment — it's now the critical path item.
 
-Options:
-1. Create a Darwin machdep using `dlopen()`/`dlsym()` (the modern POSIX
-   dynamic loading API)
-2. Use `genstatl` to build a statically-linked AUIS first, bypassing
-   the dynamic loader entirely
-3. Adapt `makedo` to produce standard `.dylib` files on macOS
+### Darwin dynamic loader (`overhead/class/machdep/darwin/`)
 
-`make Makefiles` generates Makefiles recursively throughout the tree.
-`make` in `overhead/class/pp` builds and links the class preprocessor.
+Created a new machdep for Darwin using POSIX `dlopen()`/`dlsym()`:
+
+- `doload.c` — 70 lines replacing ~500 lines of platform-specific a.out
+  parsing. Loads `.do` files via `dlopen()`, finds `classname__GetClassInfo`
+  via `dlsym()`. Falls back to underscore-prefixed symbol for Mach-O.
+- `doload.h` — minimal header, defines `doload_extension` as `.do`
+- `makedo.csh` — creates `.do` files via `cc -dynamiclib -undefined
+  dynamic_lookup`. Uses `.do` extension for compatibility with existing
+  build rules.
+- `Imakefile` — builds only `doload.o` (no entry.o/globals.o trampolines
+  needed with dlopen)
+
+Modified `class/lib/Imakefile` to exclude `entry.o`/`globals.o` on Darwin.
+Modified `class/lib/class.c` to skip `<a.out.h>` on Darwin, fixed
+`<signal.h>` include, fixed `pathopen` implicit int, fixed function
+pointer parameter in `class_EnterInfo`, fixed `class_IsType` multi-name
+parameter mangling.
+
+### Build tools all installed
+
+Five tools in `build/bin/`: `class`, `makedo`, `doindex`, `cregister`,
+`genmake`. Fixed `doindex.c`: skip `<a.out.h>` on Darwin, replaced
+`sys_errlist` with `strerror()`.
+
+### Remaining: doindex + dlopen integration
+
+`doindex` loads each `.do` file to extract class info. It calls the
+runtime `doload()` which uses `dlopen()`. Untested end-to-end — the
+test object was cleaned before validation. Next step: compile an actual
+ATK object, package it with `makedo`, verify `doindex` can read it.
