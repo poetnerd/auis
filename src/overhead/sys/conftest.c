@@ -39,10 +39,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <andrewos.h>
 
+#include <stdlib.h>
 /* ./conftest "$(RESOLVLIB)" */
 
-int main (argc, argv)
-int argc; char **argv;
+int main(int argc, int argv)
 {
     int Problem, OneProb;
 

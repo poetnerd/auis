@@ -70,6 +70,8 @@ static int Coffset = 0;
 
 #define MAX(A,B) ((A > B)? A:B)
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #define otherwise break; case
 static char *names[] = {
     "magic ",
@@ -197,9 +199,7 @@ char *argv[];
     exit(0);
 }
 
-char *lookup(s,i)
-register char *s;
-int *i;
+char *lookup(register char *s, int *i)
 {
 	register struct st *lstp;
 	for(lstp = lst; lstp != endlst; lstp++){

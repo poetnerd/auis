@@ -768,6 +768,7 @@ return(0);
 
 #include <stdio.h>
 
+#include <stdlib.h>
 main()
 {
     printf("\nscan:   The scan command is not supported on this machine.\n");

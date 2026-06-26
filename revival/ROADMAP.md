@@ -65,6 +65,10 @@ modern C standards. Idempotent — safe to run repeatedly.
 Current transformations:
 - Manual `malloc()`/`realloc()` declarations → `#include <stdlib.h>`
 - `extern int errno;` → `#include <errno.h>`
+- Missing `<stdlib.h>` when `exit`, `malloc`, `free`, `atoi`, `qsort`, etc. are called
+- Missing `<string.h>` when `strlen`, `strcpy`, `strcmp`, etc. are called
+  (skipped if `andrewos.h` is already included, since it provides these)
+- Missing `<stdio.h>` when `printf`, `fprintf`, `fopen`, etc. are called
 - K&R function definitions → ANSI prototypes
 
 Known limitations (require manual fixes):

@@ -22,6 +22,7 @@ def modernize_file(path, dry_run=False):
     text = original
     text = fix_extern_errno(text)
     text = fix_malloc_declarations(text)
+    text = fix_missing_includes(text)
     text = fix_knr_functions(text)
 
     if text == original:
@@ -59,6 +60,42 @@ def fix_malloc_declarations(text):
             text = re.sub(pat, '', text)
             if '#include <stdlib.h>' not in text:
                 text = add_include(text, '<stdlib.h>')
+    return text
+
+
+STDLIB_FUNCS = {'exit', 'atoi', 'atol', 'atof', 'abort', 'abs',
+                'malloc', 'realloc', 'calloc', 'free',
+                'getenv', 'qsort', 'bsearch', 'strtol', 'strtod'}
+STRING_FUNCS = {'strlen', 'strcpy', 'strncpy', 'strcat', 'strncat',
+                'strcmp', 'strncmp', 'strchr', 'strrchr', 'strstr',
+                'memcpy', 'memset', 'memcmp', 'memmove', 'strerror'}
+STDIO_FUNCS = {'printf', 'fprintf', 'sprintf', 'snprintf',
+               'sscanf', 'fscanf', 'scanf',
+               'fopen', 'fclose', 'fread', 'fwrite',
+               'fgets', 'fputs', 'puts', 'putchar', 'getchar',
+               'perror', 'fflush', 'fseek', 'ftell', 'rewind'}
+
+
+def fix_missing_includes(text):
+    """Add standard library includes when functions are called but header is missing."""
+    has_andrewos = '#include' in text and ('andrewos.h' in text or 'andrewos>' in text)
+
+    func_call_pat = re.compile(r'\b(\w+)\s*\(')
+    called = set(func_call_pat.findall(text))
+
+    if not has_andrewos:
+        if called & STRING_FUNCS:
+            if '#include <string.h>' not in text:
+                text = add_include(text, '<string.h>')
+
+    if called & STDLIB_FUNCS:
+        if '#include <stdlib.h>' not in text:
+            text = add_include(text, '<stdlib.h>')
+
+    if called & STDIO_FUNCS:
+        if '#include <stdio.h>' not in text:
+            text = add_include(text, '<stdio.h>')
+
     return text
 
 

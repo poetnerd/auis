@@ -42,9 +42,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/doc/mkbr
 /*
  * define these for the compiler 
  */
-#ifndef _IBMR2
-char *malloc(),*realloc();  /* should include stdlib.h */
-#endif /* _IBMR2 */
 extern int yylex();	    /* using lex */
 
 #ifdef FLEX_ENV
@@ -66,6 +63,7 @@ int entrycount=0;
  */
 #include <browserpp.h>
 
+#include <stdlib.h>
 /* This is a complete bastardization of the class preprocessor to simply take a list of .ch files and generate an org datastream giving the inheritance structure, it may be that this functionality should be merged into the real class program.
   -Rob Ryan (rr2b@andrew.cmu.edu) */
 /* for more complete comments see the real class.c */
@@ -105,10 +103,7 @@ static int classDefinition;		/* TRUE if building a class, FALSE for package */
  ** Clean up and exit on catastrophic error.  The program exits with exit code
  ** ec after the message str is sent to stderr and stderr is flushed.
  **/
-void errorexit(ec, str)
-int ec;		/* exit code */
-char *str;	/* error string to print on the way out */
-
+void errorexit(int ec, char *str)
 {
 
 /*
@@ -127,11 +122,7 @@ char *str;	/* error string to print on the way out */
  ** Another way to call errorexit() but this one stuffs param into
  ** base to create the message.  param must be a string pointer.
  **/
-static void errorexitparam(ec, base, param)
-int ec;		/* exit code */
-char *base;	/* base of message string */
-char *param;	/* string to stuff in base */
-
+static void errorexitparam(int ec, char *base, char *param)
 {
 char message[MAXMESSAGESIZE+1];
 
@@ -184,9 +175,7 @@ static int gettoken()
  ** If the passed token is is whitespace or a comment return the next token 
  ** that is not whitespace or a comment.
  **/
-static int retrievetoken(intoken)
-int intoken;
-
+static int retrievetoken(int intoken)
 {
 int token;
 
@@ -215,9 +204,7 @@ int token;
 /**
  ** Add another directory to the search path.
  **/
-static void AddDirectory(dirname)
-char *dirname;
-
+static void AddDirectory(char *dirname)
 {
     if (strlen(dirname)	< MAXPATHLEN) {		/* is the name within the system's bounds? */
 	if (NumDirectories < MAXINCLUDEPATHS) {	/* have a finite number of entries */
@@ -241,9 +228,7 @@ char *dirname;
 /** 
  ** Try to open a file along the current search paths.
  **/
-static FILE *OpenFile(filename)
-char *filename;
-
+static FILE *OpenFile(char *filename)
 {
 FILE *file;
 char tempfile[MAXPATHLEN + 1];
@@ -315,13 +300,7 @@ int i;
  ** filled in and checked.   For packages the parent class items
  ** are left empty.
  **/
-static void ParseHeader(toplevel, ClassName, ParentClassName, ClassNameKey, ParentClassNameKey)
-int toplevel;
-char *ClassName;
-char *ParentClassName;
-char *ClassNameKey;
-char *ParentClassNameKey;
-
+static void ParseHeader(int toplevel, char *ClassName, char *ParentClassName, char *ClassNameKey, char *ParentClassNameKey)
 {
 int token;
 
@@ -446,10 +425,7 @@ int token;
  ** Decide the next state for the parser depending on the 
  ** kind of token just received.
  **/
-static void handleclasskeywords(intoken, CurrentState) 
-int intoken;
-enum ParseState	*CurrentState;	/* what state the parser is in */
-
+static void handleclasskeywords(int intoken, enum ParseState *CurrentState)
 {
 int token;
 
@@ -493,10 +469,7 @@ int token;
     }
 }
 
-struct EntryStruct *AddClassEntry(first, entrycount, name, superclass)
-struct EntryStruct *first;
-int *entrycount;
-char *name, *superclass;
+struct EntryStruct *AddClassEntry(struct EntryStruct *first, int *entrycount, char *name, char *superclass)
 {
     struct EntryStruct *new=(struct EntryStruct *)malloc(sizeof(struct EntryStruct));
     if(new==NULL) return first;
@@ -515,10 +488,7 @@ char *name, *superclass;
  ** needed information is collected to be emitted during the generation 
  ** phase.
  **/
-static void ParseFile(ThisFile, toplevel)
-FILE *ThisFile;	    /* file from which we are currently reading the definitions */
-int toplevel;	    /* TRUE if this is the first call to ParseFile() */
-
+static void ParseFile(FILE *ThisFile, int toplevel)
 {							/* top of ParseFile() */
     int token;		/* only used in top half */
     char *ClassName;
@@ -596,9 +566,7 @@ int toplevel;	    /* TRUE if this is the first call to ParseFile() */
  ** names are generated, open the .ih and .eh files called
  ** importfile and exportfile respectively.
  **/
-static void SetupFiles(HeaderFile)
-FILE **HeaderFile;
-
+static void SetupFiles(FILE **HeaderFile)
 {
     char *BasePointer;
 
@@ -637,9 +605,7 @@ FILE **HeaderFile;
  ** Close open files.  Check return codes to be certain
  ** everything went OK.
  **/
-static void CleanupFiles(HeaderFile)
-FILE *HeaderFile;
-
+static void CleanupFiles(FILE *HeaderFile)
 {
     (void) fclose(HeaderFile);	    /* so what if we can't close it, we're just reading */
 
@@ -674,10 +640,7 @@ static void usage()
 /**
  ** Parse the arguments from the command line.
  **/
-static void ParseArgs(argc, argv)
-int argc;
-char *argv[];
-
+static void ParseArgs(int argc, char *argv[])
 {				    /* start of ParseArgs() */
 int i;	/* used to loop through array of args */
 
@@ -791,16 +754,12 @@ static void GlobalInit()
 }
 
 
-static int compareclasses(x,y)
-struct EntryStruct **x,**y;
+static int compareclasses(struct EntryStruct **x, struct EntryStruct **y)
 {
     return strcmp((*x)->Name,(*y)->Name);
 }
 
-static int CheckSuperClass(list,count,superclass)
-struct EntryStruct **list;
-int count;
-char *superclass;
+static int CheckSuperClass(struct EntryStruct **list, int count, char *superclass)
 {
     int top=0, bot=count-1;
     int cmp;
@@ -815,9 +774,7 @@ char *superclass;
     else return -1;
 }
 
-static void ShowSubClasses(t,depth)
-struct EntryStruct *t;
-int depth;
+static void ShowSubClasses(struct EntryStruct *t, int depth)
 {
     struct EntryStruct *TempEntry;
     int i=depth;
@@ -837,10 +794,7 @@ struct EntryStruct **sortedlist=NULL;
 /**
  ** Parse args, process file, the ususal stuff...
  **/
-int main(argc, argv)
-int argc;
-char *argv[];
-
+int main(int argc, char *argv[])
 {
     int i;
     struct EntryStruct *lasttop=NULL, *TempEntry;

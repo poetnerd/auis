@@ -33,6 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include  <sym.h>
 
+#include <stdlib.h>
 /*
  * Returns the first symnode in the free area.  If one does not exist, a new
  * block of symnodes is allocated and linked into the freelist, and a symnode
@@ -44,9 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * incremented. The freelink field is also eradicated unnecessarily. 
  */
 
-EliSym_t       *eliSym_GetNew(st, strnode)
-EliState_t     *st;
-EliStr_t       *strnode;
+EliSym_t       *eliSym_GetNew(EliState_t *st, EliStr_t *strnode)
 {
     EliSym_t       *tmp = NULL;
 
@@ -111,8 +110,7 @@ EliStr_t       *strnode;
   * this block's freelist. 
 */
 
-EliSym_t       *eliSym_GetNewBlock(numnodes)
-int             numnodes;
+EliSym_t       *eliSym_GetNewBlock(int numnodes)
 {
     EliSym_t       *result;
     int             i;
@@ -133,10 +131,7 @@ int             numnodes;
   * assumes that the val-field is already bound, which it need not be. 
   */
 /* NOTE: This is really tangled and should be rewritten */
-void            EliSym_BindSexp(st, node, val)
-EliState_t     *st;
-EliSym_t       *node;
-EliSexp_t      *val;
+void            EliSym_BindSexp(EliState_t *st, EliSym_t *node, EliSexp_t *val)
 {
     int             decr = TRUE, incr = TRUE;
 
@@ -156,9 +151,7 @@ EliSexp_t      *val;
 }
 
 /* Slightly tangled */
-int             eliSym_DecrRefcount(st, node)
-EliState_t     *st;
-EliSym_t       *node;
+int             eliSym_DecrRefcount(EliState_t *st, EliSym_t *node)
 {
     int             result, decr = TRUE;
 
@@ -186,24 +179,19 @@ EliSym_t       *node;
     return (result);
 }
 
-void            eliSym_IncrRefcount(node)
-EliSym_t       *node;
+void            eliSym_IncrRefcount(EliSym_t *node)
 {
     ++(node->data.refcount);
 }
 
-EliSexp_t      *EliSym_GetSexp(node)
-EliSym_t       *node;
+EliSexp_t      *EliSym_GetSexp(EliSym_t *node)
 {
     return (node->data.val);
 }
 
 /* Bind a function node to the sym */
 
-void            EliSym_BindFn(st, node, val)
-EliState_t     *st;
-EliSym_t       *node;
-EliFn_t        *val;
+void            EliSym_BindFn(EliState_t *st, EliSym_t *node, EliFn_t *val)
 {
     int             decr = TRUE;
 
@@ -218,35 +206,29 @@ EliFn_t        *val;
 
 /* Return the functional value of a symbol */
 
-EliFn_t        *EliSym_GetFn(node)
-EliSym_t       *node;
+EliFn_t        *EliSym_GetFn(EliSym_t *node)
 {
     return (node->data.fnval);
 }
 
 /* Return the strnode containing the symnode's name */
 
-EliStr_t       *EliSym_GetName(node)
-EliSym_t       *node;
+EliStr_t       *EliSym_GetName(EliSym_t *node)
 {
     return (node->data.name);
 }
 
-eliSymScopes_t  eliSym_GetScope(node)
-EliSym_t       *node;
+eliSymScopes_t  eliSym_GetScope(EliSym_t *node)
 {
     return (node->data.type);
 }
 
-void            eliSym_SetScope(node, val)
-EliSym_t       *node;
-eliSymScopes_t  val;
+void            eliSym_SetScope(EliSym_t *node, eliSymScopes_t val)
 {
     node->data.type = val;
 }
 
-int             eliSym_GetRefcount(node)
-EliSym_t       *node;
+int             eliSym_GetRefcount(EliSym_t *node)
 {
     return (node->data.refcount);
 }

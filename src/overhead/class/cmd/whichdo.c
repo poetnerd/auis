@@ -38,6 +38,7 @@ Author: Tom Neuendorffer
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <andrewos.h> /* sys/file.h */
 
 extern char *getenv();
