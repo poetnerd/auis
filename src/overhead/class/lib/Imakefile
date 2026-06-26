@@ -41,7 +41,7 @@ PICFLAG = -fpic
 #endif  
 #ifndef LIBDL_ENV
 #ifdef sys_darwin
-LibraryTarget(libclass.a, class.o classproc.o ../machdep/machine/doload.o mapping.o classind.o)
+LibraryTarget(libclass.a, class.o ../machdep/machine/classproc.o ../machdep/machine/doload.o mapping.o classind.o)
 #else
 LibraryTarget(libclass.a, class.o classproc.o ../machdep/machine/entry.o ../machdep/machine/doload.o mapping.o classind.o ../machdep/machine/globals.o)
 #endif

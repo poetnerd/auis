@@ -77,6 +77,7 @@ struct osi_Times {unsigned long int Secs; unsigned long int USecs;};
 #endif
 
 #define ANSI_COMPILER 1
+#define CLASS_CTRAMPOLINE_ENV 1
 
 #include <site.h>
 

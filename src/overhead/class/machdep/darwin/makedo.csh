@@ -1,8 +1,8 @@
 #!/bin/csh -f
-# makedo - create a dynamically loadable module (.so) using standard shared libraries
+# makedo - create a dynamically loadable module (.do)
 #
-# This replaces the original makedo which used ld -r and dofix to create
-# custom .do files. With dlopen(), we just create standard shared objects.
+# Based on the Solaris (sun_sparc_51) makedo which uses dlopen().
+# Creates a shared object linked against libclass.
 
 if (! $?ANDREWDIR) setenv ANDREWDIR /usr/andrew
 if ($#argv == 0) then
@@ -63,15 +63,5 @@ if (! $?filelist) then
     exit 1
 endif
 
-# Create shared object as .do (the AUIS convention; dlopen doesn't care about extension)
-set dofile=${outfile:r}.do
-# macOS uses -dynamiclib; -undefined dynamic_lookup allows unresolved
-# symbols to be resolved at load time (needed because insets reference
-# the class runtime which isn't linked into the .do)
-cc -dynamiclib -undefined dynamic_lookup -o $dofile $filelist
-set retcode=$status
-if (! $retcode) then
-    ${bindir}/doindex $dofile
-    set retcode=$status
-endif
-exit($retcode)
+cc -dynamiclib -flat_namespace -undefined dynamic_lookup -o ${outfile:r}.do $filelist -L${libdir} -lclass
+exit($status)
