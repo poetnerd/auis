@@ -75,8 +75,7 @@ char *argv[];
 }
 
 
-static char *pathopen (aname)
-register char *aname;
+static char *pathopen(register char *aname)
 {/* open it along the path CLASSPATH */
     register struct PathEntry *tpe;
     register int fn;
@@ -95,8 +94,7 @@ register char *aname;
     return NULL;
 }
 
-void myclass_Init(defaultPath)
-char *defaultPath;
+void myclass_Init(char *defaultPath)
 {
     char *envString;
     register char *st1, *st2;
