@@ -32,6 +32,7 @@
 
 #include <atom.ih>
 #include <namespc.ih>
+#include <attribs.h>
 
 struct property {
     struct atom * type;
