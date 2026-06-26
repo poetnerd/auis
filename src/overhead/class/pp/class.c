@@ -760,6 +760,31 @@ int errvalCount[errval_NUM];	/* ??? */
     outstr2("#if !defined(%s_ROUTINESDEFINED) && !defined(dontDefineRoutinesFor_%s) && !defined(class_StaticEntriesOnly)\n",FinalClassName,FinalClassName);
     outstr1("#define %s_ROUTINESDEFINED\n\n",FinalClassName);
 
+    if (usePrototypes) {
+	struct methods *mp2;
+	for (mp2 = methodlist->next; mp2 != NULL; mp2 = mp2->next) {
+	    char *s;
+	    if (mp2->realargtypes != NULL) {
+		s = mp2->realargtypes;
+		while ((s = strstr(s, "struct ")) != NULL) {
+		    char name[200];
+		    int i = 0;
+		    s += 7;
+		    while (s[i] && (s[i] == '_' || (s[i] >= 'a' && s[i] <= 'z') || (s[i] >= 'A' && s[i] <= 'Z') || (s[i] >= '0' && s[i] <= '9')))
+			i++;
+		    if (i > 0 && i < (int)sizeof(name)) {
+			strncpy(name, s, i);
+			name[i] = '\0';
+			fprintf(exportfile, "struct %s;\n", name);
+			fprintf(importfile, "struct %s;\n", name);
+		    }
+		    s += i;
+		}
+	    }
+	}
+	outstr0("\n");
+    }
+
     if(classDefinition){
 	/* don't use an outstr function as this has an integer */
 
