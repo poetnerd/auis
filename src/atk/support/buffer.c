@@ -77,6 +77,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #ifndef MAXPATHLEN 
 #include <sys/param.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
 #endif
 
 
@@ -248,7 +250,7 @@ boolean buffer__Visible(struct buffer *self)
 }
 
 /* Changed bufferlist */
-struct buffer *buffer__Enumerate(struct classheader *classID, int mapFunction, long functionData)
+struct buffer *buffer__Enumerate(struct classheader *classID, boolean (*mapFunction)(), long functionData)
 {
     return bufferlist_Enumerate(allBuffers, mapFunction, functionData);
 }
@@ -459,6 +461,8 @@ void buffer__GetUniqueBufferName(struct classheader *classID, char *proposedBuff
 {
     bufferlist_GuessBufferName(allBuffers, proposedBufferName, bufferName, nameSize);
 }
+
+
 
 static int ResolveLink(char *linkname, char *buffer)
 {

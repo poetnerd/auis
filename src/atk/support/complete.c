@@ -53,7 +53,7 @@ static struct cursor *waitCursor;
 
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 
-long completion__FindCommon(struct classheader *classID, char *string1, char *string2)
+static long completion__FindCommon(struct classheader *classID, char *string1, char *string2)
 {
     long i = 0;
 
@@ -62,7 +62,7 @@ long completion__FindCommon(struct classheader *classID, char *string1, char *st
     return i;
 }
 
-void completion__CompletionWork(struct classheader *classID, char *string, struct result *data)
+static void completion__CompletionWork(struct classheader *classID, char *string, struct result *data)
 {
 
     int partialCommon, nameLen;
@@ -200,7 +200,7 @@ static void FileHelp(char *partialPath, long dummyData, int (*helpTextFunction)(
     im_SetProcessCursor(NULL);
 }
 
-static void completion__FileHelp(struct classheader *classID, char *partialPath, long dummyData, int helpTextFunction, long helpTextRock)
+static void completion__FileHelp(struct classheader *classID, char *partialPath, long dummyData, int (*helpTextFunction)(), long helpTextRock)
 {
     FileHelp(partialPath, dummyData, helpTextFunction, helpTextRock);
 }

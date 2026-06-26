@@ -42,6 +42,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <ctype.h>
 #include <proctbl.eh>
 
+#include <string.h>
+#include <stdlib.h>
 static struct proctable_Entry *LookupHash();
 static int ModuleClear();
 static int HashName();
@@ -118,7 +120,7 @@ proctable__DefineProc(classID, name, proc, type, module, doc)
 	return pe;
 }
 
-void proctable__DefineProcs(struct classheader * classID, struct proctable_Description * procs)
+void proctable__DefineProcs(struct classheader *classID, struct proctable_Description *procs)
 {
 	while(procs->name!=NULL){
 		proctable_DefineProc(procs->name, procs->proc, procs->type, 
@@ -148,7 +150,7 @@ proctable__DefineTypedProc(classID, name, proc, type,
 	return pe;
 }
 
-void proctable__DefineProcsWithTypes(struct classheader * classID, struct proctable_DescriptionWithType * procs)
+void proctable__DefineProcsWithTypes(struct classheader *classID, struct proctable_DescriptionWithType *procs)
 {
 	while(procs->name!=NULL){
 		proctable_DefineTypedProc(procs->name, procs->proc, procs->type, 
@@ -158,7 +160,7 @@ void proctable__DefineProcsWithTypes(struct classheader * classID, struct procta
 }
 
 /* Given a name, look up its entry. */
-struct proctable_Entry *proctable__Lookup(struct classheader * classID, register char * name)
+struct proctable_Entry *proctable__Lookup(struct classheader *classID, register char *name)
 {
 	register int hash;
 	hash = HashName(name);
@@ -166,7 +168,7 @@ struct proctable_Entry *proctable__Lookup(struct classheader * classID, register
 }
 
 /* Call the proc with each entry and with the rock. */
-void proctable__Enumerate(struct classheader * classID, int proc, char * procdata)
+void proctable__Enumerate(struct classheader *classID, int (*proc)(), char *procdata)
 {
 	int hash;
 	struct proctable_Entry *pe;
@@ -177,7 +179,7 @@ void proctable__Enumerate(struct classheader * classID, int proc, char * procdat
 }
 
 /* Force the package for this function to be loaded if possible. */
-void proctable__ForceLoaded(struct classheader * classID, struct proctable_Entry * pe)
+void proctable__ForceLoaded(struct classheader *classID, struct proctable_Entry *pe)
 {
 	if (proctable_Defined(pe) || pe->module == NULL)
 		return;
@@ -187,7 +189,7 @@ void proctable__ForceLoaded(struct classheader * classID, struct proctable_Entry
 }
 
 /* Potentially clear the module pointer for this entry. */
-static int ModuleClear(struct proctable_Entry * pe, char * module)
+static int ModuleClear(struct proctable_Entry *pe, char *module)
 {
 	if (pe != NULL && pe->module != NULL && strcmp(pe->module, module) == 0)
 		pe->module = NULL;
@@ -196,7 +198,7 @@ static int ModuleClear(struct proctable_Entry * pe, char * module)
 
 
 /* Compute the hash function for this name. */
-static int HashName(char * name)
+static int HashName(char *name)
 {
 	register int hash = 0;
 
@@ -208,7 +210,7 @@ static int HashName(char * name)
 }
 
 /* Given a name and a hash index, look up the name. */
-static struct proctable_Entry *LookupHash(char * name, int hash)
+static struct proctable_Entry *LookupHash(char *name, int hash)
 {
 	struct proctable_Entry *pe;
 

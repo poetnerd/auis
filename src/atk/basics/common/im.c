@@ -71,6 +71,8 @@ Figure out some way to handle levels of user.  Macros should probably not be an 
 #include <profile.ih>
 #include <cmap.ih>
 
+#include <stdlib.h>
+#include <stdio.h>
 #include <sys/wait.h>	/* for pruning zombies */ 
 #include <netinet/in.h>	/* for byte ordering in logs */
 
@@ -357,7 +359,7 @@ freeQlist (Q)
 /* freeQelt(Q)
 	return action element to FreeQ
 */
-void freeQelt(struct action * Q)
+void freeQelt(struct action *Q)
 {
     switch(Q->type) {
 	case im_ProcEvent:
@@ -539,7 +541,7 @@ userMenu(self, procTableEntry, object, rock)
 }
 
 /* ConsumeMacroEvent consumes an event off the macro at the head of the input queue, returns the event consumed, or NULL if an interrupt was detected. */
-static struct action *ConsumeMacroEvent(struct action * a)
+static struct action *ConsumeMacroEvent(struct action *a)
 {
     if (a->next == NULL) {
 	/* reduce repetitions or remove macro elt */
@@ -671,21 +673,21 @@ im__DoKeySequence(self, keys)
 
 /* Special stubs so that everyone can use the one shared version of the LWP and vfile package */
 
-void im__IOMGRCancel(struct classheader * classID, char * localImPid)
+void im__IOMGRCancel(struct classheader *classID, char *localImPid)
 {
 #ifdef LWP
     IOMGR_Cancel(localImPid);
 #endif /* LWP */
 }
 
-void im__IOMGRSoftSig(struct classheader * classID, procedure aproc, char * arock)
+void im__IOMGRSoftSig(struct classheader *classID, procedure aproc, char *arock)
 {
 #ifdef LWP
     IOMGR_SoftSig(aproc,arock);
 #endif /* LWP */
 }
 
-boolean im__IOMGRSelect(struct classheader * classID, long maxnum, long * rmask, long * wmask, long * emask, struct timeval * timeOut)
+boolean im__IOMGRSelect(struct classheader *classID, long maxnum, long *rmask, long *wmask, long *emask, struct timeval *timeOut)
 {
     long ret = 0;
 #ifdef LWP
@@ -752,7 +754,7 @@ static struct vfile *GetUnUsedVfile()
     return NULL;
 }
 
-static struct vfile *GetCorrespondingVFile(FILE * f)
+static struct vfile *GetCorrespondingVFile(FILE *f)
 {
     register int i;
 
@@ -765,7 +767,7 @@ static struct vfile *GetCorrespondingVFile(FILE * f)
 }
 
 
-FILE *im__vfileopen(struct classheader * classID, char * mode, struct expandstring * buffer)
+FILE *im__vfileopen(struct classheader *classID, char *mode, struct expandstring *buffer)
 {
     FILE *f;
     struct vfile *vf;
@@ -797,7 +799,7 @@ FILE *im__vfileopen(struct classheader * classID, char * mode, struct expandstri
     return f;
 }
 
-void im__vfileclose(struct classheader * classID, FILE * f, struct expandstring * buffer)
+void im__vfileclose(struct classheader *classID, FILE *f, struct expandstring *buffer)
 {
     struct vfile *vf;
 
@@ -833,7 +835,7 @@ void im__vfileclose(struct classheader * classID, FILE * f, struct expandstring 
 }
 
 
-void im__vfilecleanup(struct classheader * classID)
+void im__vfilecleanup(struct classheader *classID)
 {
     register int i;
 
@@ -869,7 +871,7 @@ char *value;  {
 
 #ifdef LWP
 /* called on iomgr lwp's stack at a safe time*/
-static int WakeUpIM(char * dummy)
+static int WakeUpIM(char *dummy)
 {
     if (imPid != NULL)
         IOMGR_Cancel(imPid);
@@ -887,7 +889,7 @@ static DeathInTheFamily() {
 #endif
 
 
-static void startKeyEchoing(struct im * self, long time)
+static void startKeyEchoing(struct im *self, long time)
 {
     if(self->keyEchoState==im_KeyEchoPending){
 	self->keyEchoState=im_KeyEchoDisplayed;
@@ -899,7 +901,7 @@ static void startKeyEchoing(struct im * self, long time)
 
 #define KEYECHODELAY 750 /* msec */
 
-static void echoKey(struct im * self, long key, int pending)
+static void echoKey(struct im *self, long key, int pending)
 {
     if(self->keyEchoState==im_KeyEchoOff){
 	if(self->argState.argProvided) {
@@ -937,7 +939,7 @@ static void echoKey(struct im * self, long key, int pending)
 	message_DisplayString(self,0,self->keyEcho);
 }	
 
-static void resetKeyEcho(struct im * self)
+static void resetKeyEcho(struct im *self)
 {
     if(self->keyEchoState!=im_KeyEchoOff){
 	if(self->keyEchoEvent!=NULL){
@@ -947,7 +949,7 @@ static void resetKeyEcho(struct im * self)
 	self->keyEchoState=im_KeyEchoOff;
     }
 }
-static boolean stillexists(struct im * self)
+static boolean stillexists(struct im *self)
 {
     register struct im *im = imList;
     while (im != NULL)  {
@@ -959,7 +961,7 @@ static boolean stillexists(struct im * self)
 
 static char argbuf[30];
 
-static HandleArgumentProcessing(struct im * self, long key)
+static HandleArgumentProcessing(struct im *self, long key)
 {
     long newArg;
 
@@ -1006,7 +1008,7 @@ static HandleArgumentProcessing(struct im * self, long key)
 }
 
 
-static void RecordProc(struct im * im, struct proctable_Entry * procTableEntry, long rock, struct basicobject * object, struct action * keys)
+static void RecordProc(struct im *im, struct proctable_Entry *procTableEntry, long rock, struct basicobject *object, struct action *keys)
 {
     register struct action *a = newAction();
     if (a == NULL) return;
@@ -1026,7 +1028,7 @@ static struct action *lastkeys=NULL;
 /* this will be filled in (in InitializeClass) with the proctable_Entry for im-stop-keyboard-macro */
 static struct proctable_Entry *stopmacroproc=NULL;
 
-static struct im *HandleProc(struct im * self, struct proctable_Entry * procTableEntry, struct basicobject * object, long rock, struct action * keys)
+static struct im *HandleProc(struct im *self, struct proctable_Entry *procTableEntry, struct basicobject *object, long rock, struct action *keys)
 {
     register long dest = destroycount;
 
@@ -1334,7 +1336,7 @@ im__HandleMouse(self, action, x, y, newButtonState)
 	return NULL;
 }
 
-void im__NormalConfiguration(struct im * self, int rock, long rock, customrock, struct im * parent, int x, long *x, * y, int w, unsigned long *w, * h)
+void im__NormalConfiguration(struct im *self, long rock, long customrock, struct im *parent, long *x, long *y, unsigned long *w, unsigned long *h)
 {
     if(rock&im_AtTop) {
 	long py=im_GetVisualTop(parent);
@@ -1355,14 +1357,14 @@ void im__NormalConfiguration(struct im * self, int rock, long rock, customrock, 
 }
 
 /* so that im's can easily override the "normal" configuration function */
-static void GenericConfig(struct im * self, int rock, long rock, customrock, struct im * parent, int x, long *x, * y, int w, unsigned long *w, * h)
+static void GenericConfig(struct im *self, long rock, long customrock, struct im *parent, long *x, long *y, unsigned long *w, unsigned long *h)
 {
     im_NormalConfiguration(self, rock, customrock, parent, x, y, w, h);
 }
 
 static procedure configfunc=(procedure)GenericConfig;
 
-procedure im__DefaultConfigureFunction(struct classheader * classID, procedure func)
+procedure im__DefaultConfigureFunction(struct classheader *classID, procedure func)
 {
     procedure result=configfunc;
     configfunc=func;
@@ -1370,7 +1372,7 @@ procedure im__DefaultConfigureFunction(struct classheader * classID, procedure f
 }
 
 static long configrock=0;
-long im__DefaultConfigureRock(struct classheader * classID, long rock)
+long im__DefaultConfigureRock(struct classheader *classID, long rock)
 {
     long result=configrock;
     configrock=rock;
@@ -1378,7 +1380,7 @@ long im__DefaultConfigureRock(struct classheader * classID, long rock)
 }
 
 static long configcustomrock=0;
-long im__DefaultConfigureCustomRock(struct classheader * classID, long rock)
+long im__DefaultConfigureCustomRock(struct classheader *classID, long rock)
 {
     long result=configcustomrock=0;
     configcustomrock=rock;
@@ -1387,17 +1389,17 @@ long im__DefaultConfigureCustomRock(struct classheader * classID, long rock)
 
 static boolean defaulticonic=FALSE;
 
-void im__SetDefaultIconic(struct classheader * classID, boolean val)
+void im__SetDefaultIconic(struct classheader *classID, boolean val)
 {
     defaulticonic=val;
 }
 
-boolean im__GetDefaultIconic(struct classheader * classID)
+boolean im__GetDefaultIconic(struct classheader *classID)
 {
     return defaulticonic;
 }
 
-boolean im__InitializeObject(struct classheader * classID, struct im * self)
+boolean im__InitializeObject(struct classheader *classID, struct im *self)
 {
 
     struct atom * atom;
@@ -1471,12 +1473,12 @@ boolean im__InitializeObject(struct classheader * classID, struct im * self)
 
 static struct im *lastUsed = NULL;
 
-struct im *im__GetLastUsed(struct classheader * classID)
+struct im *im__GetLastUsed(struct classheader *classID)
 {
     return lastUsed;
 }
 
-void im__SetLastUsed(struct classheader * classID, struct im * used)
+void im__SetLastUsed(struct classheader *classID, struct im *used)
 {
     if (lastUsed == used)
 	return;
@@ -1496,7 +1498,7 @@ void im__SetLastUsed(struct classheader * classID, struct im * used)
 static struct view *selectionOwner=NULL;
 static struct im *ownerIM=NULL;
 
-void im__ObservedChanged(struct im * self, struct observable * changedo, long value)
+void im__ObservedChanged(struct im *self, struct observable *changedo, long value)
 {
     struct view *changed=(struct view *)changedo;
     if(value!=observable_OBJECTDESTROYED) return;
@@ -1505,7 +1507,7 @@ void im__ObservedChanged(struct im * self, struct observable * changedo, long va
     ownerIM=NULL;
 }
 
-void im__FinalizeObject(struct classheader * classID, struct im * self)
+void im__FinalizeObject(struct classheader *classID, struct im *self)
 {
     register struct im *im = imList;
     register struct im *prevIM = NULL;
@@ -1568,12 +1570,12 @@ void im__FinalizeObject(struct classheader * classID, struct im * self)
     }
 }
 
-void im__WantUpdate(struct im * self, struct view * requestor)
+void im__WantUpdate(struct im *self, struct view *requestor)
 {
     updatelist_AddTo(globalUpdateList, requestor);
 }
 
-void im__WantInputFocus(struct im * self, struct view * requestor)
+void im__WantInputFocus(struct im *self, struct view *requestor)
 {
     struct colormap **current = NULL, **new = NULL;
 
@@ -1618,11 +1620,11 @@ im__WantColormap( self, requestor, cmap )
     }
 }
 
-void im__WantNewSize(struct im * self, struct view * requestor)
+void im__WantNewSize(struct im *self, struct view *requestor)
 {
 }
 
-struct basicobject *im__WantHandler(struct im * self, char * handlerName)
+struct basicobject *im__WantHandler(struct im *self, char *handlerName)
 {
     struct handler *ptr;
 
@@ -1633,12 +1635,12 @@ struct basicobject *im__WantHandler(struct im * self, char * handlerName)
     return NULL;
 }
 
-char *im__WantInformation(struct im * self, char * key)
+char *im__WantInformation(struct im *self, char *key)
 {
     return NULL;
     }
     
-void im__PostKeyState(struct im * self, struct keystate * keystate)
+void im__PostKeyState(struct im *self, struct keystate *keystate)
 {
     if (self->keystate != NULL)  {
 	keystate_Reset(self->keystate);
@@ -1659,12 +1661,12 @@ void im__PostKeyState(struct im * self, struct keystate * keystate)
 /* Menu stuff... */
 
 
-void im__PostMenus(struct im * self, struct menulist * menulist)
+void im__PostMenus(struct im *self, struct menulist *menulist)
 {
     printf("im_PostMenus: missing method\n");
 }
 
-void im__PostDefaultHandler(struct im * self, char * handlerName, struct basicobject * handler)
+void im__PostDefaultHandler(struct im *self, char *handlerName, struct basicobject *handler)
 {
     struct handler **ptr;
     struct handler *next_handler;
@@ -1698,7 +1700,7 @@ void im__PostDefaultHandler(struct im * self, char * handlerName, struct basicob
     }
 }
     
-void im__SetView(struct im * self, struct view * topLevel)
+void im__SetView(struct im *self, struct view *topLevel)
 {
     if (self->topLevel)
         view_UnlinkTree(self->topLevel);
@@ -1738,18 +1740,18 @@ im__CreateWindow(self, host)
     return FALSE;
 }
 
-void im__SetBorderWidth(struct im * self, long n)
+void im__SetBorderWidth(struct im *self, long n)
 {
     printf("im_SetBorderWidth: missing method\n");
 }
 
 /* these should be overridden by any ims which support transients or overrides, they need to be methods so that if you have a generic im pointer you can discover whether the specific kind of im underlying it supports transients or overrides, as opposed to the previous macros which would only actually tell you if the class used in the *im_SupportsTransient call supports transients */
-boolean im__SupportsTransient(struct im * self)
+boolean im__SupportsTransient(struct im *self)
 {
     return FALSE;
 }
 
-boolean im__SupportsOverride(struct im * self)
+boolean im__SupportsOverride(struct im *self)
 {
     return FALSE;
 }
@@ -1834,24 +1836,24 @@ long width, height;
     return newIM;
 }
 
-struct im *im__Create(struct classheader * classID, char * host)
+struct im *im__Create(struct classheader *classID, char *host)
 {
 	return (DoCreate(classID, host, NULL, NORMAL_IM_CREATE,0, 0));
 }
 
 /* Just the same as im__Create except we call im_CreateTransientWindow. */
 
-struct im *im__CreateTransient(struct classheader * classID, struct im * other)
+struct im *im__CreateTransient(struct classheader *classID, struct im *other)
 {
 	return (DoCreate(classID, NULL, other, TRANSIENT_IM_CREATE, 0, 0));
 }
 
-struct im *im__CreateOverride(struct classheader * classID, struct im * other)
+struct im *im__CreateOverride(struct classheader *classID, struct im *other)
 {
 	return (DoCreate(classID, NULL, other, OVERRIDE_IM_CREATE, 0, 0));
 }
 
-struct im *im__CreateOffscreen(struct classheader * classID, struct im * other, int width, long width, height)
+struct im *im__CreateOffscreen(struct classheader *classID, struct im *other, long width, long height)
 {
     return (DoCreate(classID, NULL, other, OFFSCREEN_IM_CREATE, width, height));
 }
@@ -1868,14 +1870,14 @@ im__WhichWS(self)
 }
 
 
-void im__ForceUpdate(struct classheader * classID)
+void im__ForceUpdate(struct classheader *classID)
 {
     im_RedrawChangedWindows();
     updatelist_Clear(globalUpdateList);
     windowsystem_FlushAllWindows(currentWS);
 }
 
-void im__RedrawChangedWindows(struct classheader * classID)
+void im__RedrawChangedWindows(struct classheader *classID)
 {
     struct im *im;
 
@@ -1890,7 +1892,7 @@ void im__RedrawChangedWindows(struct classheader * classID)
 	}
 }
 
-void im__RedrawWindow(struct im * self)
+void im__RedrawWindow(struct im *self)
 {
 }
 
@@ -1926,7 +1928,7 @@ set_logical_wd(dir,	newdir)
 	}
 }
 
-static char *get_logical_wd(char * dir)
+static char *get_logical_wd(char *dir)
 {
 #ifdef LOGICAL_WD_ENV
 /* this code is ifdef'ed out because Zalman feels it can give incorrect results */
@@ -1972,7 +1974,7 @@ im__GetDirectory(classID, outputString)
 }
 
 
-void im__DeliverSignals(struct classheader * classID)
+void im__DeliverSignals(struct classheader *classID)
 {
     register int i;
     anyDelivered = 0;
@@ -2003,7 +2005,7 @@ static int InternalSignal(int asigno)
 }
 #endif /* POSIX_ENV */
 
-void im__SignalHandler(struct classheader * classID, long signalNumber, int proc, char * procdata)
+void im__SignalHandler(struct classheader *classID, long signalNumber, int (*proc)(), char *procdata)
 {
     sigProcs[signalNumber] = proc;
     sigData[signalNumber] = procdata;
@@ -2024,7 +2026,7 @@ void im__SignalHandler(struct classheader * classID, long signalNumber, int proc
 }
 
 
-boolean im__AddFileHandler(struct classheader * classID, FILE * file, procedure proc, char * procdata, long priority)
+boolean im__AddFileHandler(struct classheader *classID, FILE *file, procedure proc, char *procdata, long priority)
 {
     register long i;
     register struct FILEHandlers  *p = globalFILEHandlers;
@@ -2057,7 +2059,7 @@ boolean im__AddFileHandler(struct classheader * classID, FILE * file, procedure 
     return TRUE;
 }
 
-void im__RemoveFileHandler(struct classheader * classID, FILE * file)
+void im__RemoveFileHandler(struct classheader *classID, FILE *file)
 {
     register struct FILEHandlers *p = &globalFILEHandlers[NFILEHandlers];
 
@@ -2070,7 +2072,7 @@ void im__RemoveFileHandler(struct classheader * classID, FILE * file)
     }
 }
 
-boolean im__AddCanOutHandler(struct classheader * classID, FILE * file, procedure proc, char * procdata, long priority)
+boolean im__AddCanOutHandler(struct classheader *classID, FILE *file, procedure proc, char *procdata, long priority)
 {
     register long i;
     register struct FILEHandlers  *p = CanOutHandlers;
@@ -2103,7 +2105,7 @@ boolean im__AddCanOutHandler(struct classheader * classID, FILE * file, procedur
     return TRUE;
 }
 
-void im__RemoveCanOutHandler(struct classheader * classID, FILE * file)
+void im__RemoveCanOutHandler(struct classheader *classID, FILE *file)
 {
     register struct FILEHandlers *p = &CanOutHandlers[NCanOutHandlers];
 
@@ -2154,13 +2156,13 @@ ProcessInputQueue()
 
 
 
-static void im__HandleRedraw(register struct im * im)
+static void im__HandleRedraw(register struct im *im)
 {
     printf("im_HandleRedraw: missing method\n");
 }
 
 
-boolean im__Interact(struct classheader * classID, boolean mayBlock)
+boolean im__Interact(struct classheader *classID, boolean mayBlock)
 {
     struct im *trav=imList;
     
@@ -2305,7 +2307,7 @@ boolean im__Interact(struct classheader * classID, boolean mayBlock)
  * native to BE 2. Don't remove it without contacting the current messages
  * maintainer.
  */
-void im__SetCleanUpZombies(struct classheader * classID, boolean value)
+void im__SetCleanUpZombies(struct classheader *classID, boolean value)
 {
 #if POSIX_ENV
     {
@@ -2329,7 +2331,7 @@ void im__SetCleanUpZombies(struct classheader * classID, boolean value)
 #endif
 }
 
-void im__AddZombieHandler(struct classheader * classID, int pid, procedure function, long functionData)
+void im__AddZombieHandler(struct classheader *classID, int pid, procedure function, long functionData)
 {
 
     struct zombiehandler *thisHandler;
@@ -2352,7 +2354,7 @@ void im__AddZombieHandler(struct classheader * classID, int pid, procedure funct
     }
 }
 
-void im__RemoveZombieHandler(struct classheader * classID, int pid)
+void im__RemoveZombieHandler(struct classheader *classID, int pid)
 {
 
     struct zombiehandler *thisHandler, **previous = &allZombieHandlers;
@@ -2367,17 +2369,17 @@ void im__RemoveZombieHandler(struct classheader * classID, int pid)
 }
 
 
-void im__KeyboardExit(struct classheader * classID)
+void im__KeyboardExit(struct classheader *classID)
 {
     keyboardExitFlag = TRUE;
 }
 
-long im__KeyboardLevel(struct classheader * classID)
+long im__KeyboardLevel(struct classheader *classID)
 {
     return keyboardLevel;
 }
 
-void im__KeyboardProcessor(struct classheader * classID)
+void im__KeyboardProcessor(struct classheader *classID)
 {
     if(defaulticonic) im_SetDefaultIconic(FALSE);
     keyboardLevel += 1;
@@ -2388,7 +2390,7 @@ void im__KeyboardProcessor(struct classheader * classID)
 }
 
 
-struct event *im__EnqueueEvent(struct classheader * classID, int proc, char * procdata, long timeIncrement)
+struct event *im__EnqueueEvent(struct classheader *classID, int (*proc)(), char *procdata, long timeIncrement)
 {
     struct event *event;
 
@@ -2405,7 +2407,7 @@ im__IsPlaying(ClassID)
 }
 
 
-static void InteractionEventWork(struct im_InteractionEvent * interactionEvent)
+static void InteractionEventWork(struct im_InteractionEvent *interactionEvent)
 {
 
     struct im *im = interactionEvent->im;
@@ -2422,7 +2424,7 @@ static void InteractionEventWork(struct im_InteractionEvent * interactionEvent)
     im->pendingInteractionEvents = event;
 }
 
-struct im_InteractionEvent *im__SetInteractionEvent(struct im * self, procedure interactionFunction, long interactionData, long timeIncrement)
+struct im_InteractionEvent *im__SetInteractionEvent(struct im *self, procedure interactionFunction, long interactionData, long timeIncrement)
 {
 
     struct im_InteractionEvent *newEvent;
@@ -2439,7 +2441,7 @@ struct im_InteractionEvent *im__SetInteractionEvent(struct im * self, procedure 
     return newEvent;
 }
 
-void im__CancelInteractionEvent(struct im * self, struct im_InteractionEvent * event)
+void im__CancelInteractionEvent(struct im *self, struct im_InteractionEvent *event)
 {
 
     struct im_InteractionEvent **previous = &self->interactionEvents;
@@ -2465,7 +2467,7 @@ void im__CancelInteractionEvent(struct im * self, struct im_InteractionEvent * e
     }
 }
 
-static void FreeInteractionEvents(struct im * self)
+static void FreeInteractionEvents(struct im *self)
 {
 
     struct im_InteractionEvent *interactionEvent;
@@ -2490,7 +2492,7 @@ static void FreeInteractionEvents(struct im * self)
     self->pendingInteractionEvents = NULL;
 }
 
-void im__DispatchPendingInteractionEvents(struct im * self)
+void im__DispatchPendingInteractionEvents(struct im *self)
 {
 
     struct im_InteractionEvent *interactionEvent;
@@ -2505,25 +2507,25 @@ void im__DispatchPendingInteractionEvents(struct im * self)
     self->pendingInteractionEvents = NULL;
 }
 
-static void RedrawWindow(struct im * self, long key)
+static void RedrawWindow(struct im *self, long key)
 {
     self->doRedraw = TRUE;
     globalDoRedraw = TRUE;
 }
 
-struct action *im__GetMacro(struct classheader * classID)
+struct action *im__GetMacro(struct classheader *classID)
 {
     return Record;
 }
 
-void im__SetMacro(struct classheader * classID, struct action * NewRecord)
+void im__SetMacro(struct classheader *classID, struct action *NewRecord)
 {
     freeQlist(Record);
     Record=NewRecord;
 }
 
 /* Place all the actions in the list starting at a at the front of the queue and interact until they are gone. */
-void im__PlayActions(struct im * self, struct action * a)
+void im__PlayActions(struct im *self, struct action *a)
 {
     /* REMOVE THIS BEFORE FINAL CHECK-IN */
    /* struct action *newa, *last=NULL, *first=NULL;
@@ -2545,7 +2547,7 @@ void im__PlayActions(struct im * self, struct action * a)
     */
 }    
 
-static void StartKeyboardMacro(struct im * self, long key)
+static void StartKeyboardMacro(struct im *self, long key)
 {
     if (playingRecord) 
 	return;
@@ -2581,7 +2583,7 @@ static void EditRecording()
     }
 }
 
-static void DumpActions(struct action * a)
+static void DumpActions(struct action *a)
 {
     while(a) {
 	switch(a->type) {
@@ -2616,7 +2618,7 @@ static void DumpActions(struct action * a)
     }
 }
 
-static void StopKeyboardMacro(struct im * self, long key)
+static void StopKeyboardMacro(struct im *self, long key)
 {
     int i;
     struct action *look=Record;
@@ -2632,7 +2634,7 @@ static void StopKeyboardMacro(struct im * self, long key)
 	message_DisplayString(self, 0, "You weren't recording events");
 }
 
-static void PlayKeyboardMacro(struct im * self, long key)
+static void PlayKeyboardMacro(struct im *self, long key)
 {
     register long count;
     
@@ -2673,7 +2675,7 @@ im__CancelMacro(classID)
 This section deals with the global command argument, usually set by the ^U command.
  */
 
-static SetArgProvided(struct im * self, boolean value)
+static SetArgProvided(struct im *self, boolean value)
 {
     if (self->argState.argProvided != value) {
 	keystate_Reset(self->keystate);
@@ -2683,22 +2685,22 @@ static SetArgProvided(struct im * self, boolean value)
     self->argState.cmdpos = 0;
 }
 
-struct im_ArgState *im__GetArgState(struct im * self)
+struct im_ArgState *im__GetArgState(struct im *self)
 {
     return &(self->argState);
 }
 
-void im__ClearArg(struct im * self)
+void im__ClearArg(struct im *self)
 {
     self->argState.argument = 1;
 }
 
-boolean im__ArgProvided(struct im * self)
+boolean im__ArgProvided(struct im *self)
 {
     return self->argState.argProvided;
 }
 
-long im__Argument(struct im * self)
+long im__Argument(struct im *self)
 {
     if (self->argState.argProvided)
 	return self->argState.argument;
@@ -2706,13 +2708,13 @@ long im__Argument(struct im * self)
 	return 1;
 }
 
-void im__ProvideArg(struct im * self, long arg)
+void im__ProvideArg(struct im *self, long arg)
 {
     self->argState.argNext = TRUE;
     self->argState.argument = arg;
 }
 
-void im__DisplayArg(struct im * self)
+void im__DisplayArg(struct im *self)
 {
     char buf[30];
 
@@ -2722,7 +2724,7 @@ void im__DisplayArg(struct im * self)
     message_DisplayString(self, 0, buf);
 }
 
-long im__BumpArg(struct im * self, long val)
+long im__BumpArg(struct im *self, long val)
 {
     struct im_ArgState *as = im_GetArgState(self);
     long newArg;
@@ -2742,17 +2744,17 @@ long im__BumpArg(struct im * self, long val)
 
 static long nextCmdValue = 1;	/* next value to alloc */
 
-long im__AllocLastCmd(struct classheader * classID)
+long im__AllocLastCmd(struct classheader *classID)
 {
     return nextCmdValue++;
 }
 
-long im__GetLastCmd(struct im * self)
+long im__GetLastCmd(struct im *self)
 {
     return self->lastCommand;
 }
 
-void im__SetLastCmd(struct im * self, long cmd)
+void im__SetLastCmd(struct im *self, long cmd)
 {
     thisCmd = cmd;
 }
@@ -2853,7 +2855,7 @@ im__CheckForInterrupt(classID)
 	return FALSE;
 }
 	
-boolean im__WasMeta(struct im * self)
+boolean im__WasMeta(struct im *self)
 {
     return (self->WasMeta);
 }
@@ -2928,7 +2930,7 @@ im__GetCharacter(self)
 
 static long WriteID = 1;
 
-long im__GetWriteID(struct classheader * classID)
+long im__GetWriteID(struct classheader *classID)
 {
     return WriteID++;
 }
@@ -2954,7 +2956,7 @@ void static PrintMallocStats(self, c)
 	message_DisplayString(self, 0, "could not write out malloc statistics");
 }
 
-void ResetMallocStats(struct im * self, long c)
+void ResetMallocStats(struct im *self, long c)
 {
 #if defined(ANDREW_MALLOC_ENV) && defined(DEBUG_MALLOC_ENV)
     resetmstats();
@@ -2962,7 +2964,7 @@ void ResetMallocStats(struct im * self, long c)
 #endif /* #if defined(ANDREW_MALLOC_ENV) && defined(DEBUG_MALLOC_ENV) */
 }
 
-void PrintMallocTable(struct im * self, long c)
+void PrintMallocTable(struct im *self, long c)
 {
 #if defined(ANDREW_MALLOC_ENV) && defined(DEBUG_MALLOC_ENV)
     FILE *outFile;
@@ -2982,7 +2984,7 @@ void PrintMallocTable(struct im * self, long c)
 	message_DisplayString(self, 0, "Could not write out malloc table");
 }
 
-static void StartProfiling(struct im * self, long c)
+static void StartProfiling(struct im *self, long c)
 {
     int success;
 
@@ -3004,7 +3006,7 @@ static void StartProfiling(struct im * self, long c)
 	message_DisplayString(self,0,"Couldn't start profiling!");
 }
 
-static void StopProfiling(struct im * self, long c)
+static void StopProfiling(struct im *self, long c)
 {
     if(!profile_Active()){
 	message_DisplayString(self,0,"Not profiling.");
@@ -3063,7 +3065,7 @@ static boolean grokSelections = FALSE;
 static boolean xSelectionLossage = FALSE;
 static boolean copyOnSelect = FALSE;
 
-boolean im__InitializeClass(struct classheader * classID)
+boolean im__InitializeClass(struct classheader *classID)
 {
 
     char *envString;
@@ -3159,13 +3161,13 @@ struct cursor * C; {
     printf("im_ClearCursors: missing method\n");
 }
 
-void im__PostCursor(struct im * self, struct rectangle * rec, struct cursor * cursor)
+void im__PostCursor(struct im *self, struct rectangle *rec, struct cursor *cursor)
 {
     printf("im_PostCursor: missing method\n");
 
 }
 
-void im__RetractCursor(struct im * self, register struct cursor * cursor)
+void im__RetractCursor(struct im *self, register struct cursor *cursor)
 {
     register struct cursor *cp,*lastcp;
     if(cursor == NULL || cursor->posted == NULL) return;
@@ -3184,7 +3186,7 @@ void im__RetractCursor(struct im * self, register struct cursor * cursor)
 	im_UpdateCursors(self);
 }
 
-void im__RetractViewCursors(struct im * self, struct view * requestor)
+void im__RetractViewCursors(struct im *self, struct view *requestor)
 {
     /* clears cursors belonging to a view */
     register struct cursor *cp,*lastcp;
@@ -3208,7 +3210,7 @@ void im__RetractViewCursors(struct im * self, struct view * requestor)
 }
 
 
-void im__SetProcessCursor(struct classheader * classID, struct cursor * cursor)
+void im__SetProcessCursor(struct classheader *classID, struct cursor *cursor)
 {
     register struct im *im;
     if(ProcessCursor == cursor){
@@ -3224,12 +3226,12 @@ void im__SetProcessCursor(struct classheader * classID, struct cursor * cursor)
         im_UpdateCursors(im);
 }
 
-struct cursor *im__GetProcessCursor(struct classheader * classID)
+struct cursor *im__GetProcessCursor(struct classheader *classID)
 {
 	return ProcessCursor;
 }
 
-void im__SetWindowCursor(struct im * self, struct cursor * cursor)
+void im__SetWindowCursor(struct im *self, struct cursor *cursor)
 {
     if(self->WindowCursor == cursor){
 	if(cursor == NULL || !cursor->changed)  return;
@@ -3243,7 +3245,7 @@ void im__SetWindowCursor(struct im * self, struct cursor * cursor)
     im_UpdateCursors(self);
 }
 
-void im__ClearCursorList(struct im * self)
+void im__ClearCursorList(struct im *self)
 {
     register struct cursor *cp;
 
@@ -3257,7 +3259,7 @@ void im__ClearCursorList(struct im * self)
     self->cursorPostsPending = TRUE;
     }
 
-void im__UpdateCursors(struct im * self)
+void im__UpdateCursors(struct im *self)
 {
     printf("im_UpdateCursors: missing method\n");
 }
@@ -3265,7 +3267,7 @@ void im__UpdateCursors(struct im * self)
 
 
 
-void im__SetTitle(struct im * self, char * title)
+void im__SetTitle(struct im *self, char *title)
 {
     if (self->title != NULL)  {
 	free(self->title);
@@ -3278,12 +3280,12 @@ void im__SetTitle(struct im * self, char * title)
     if (self->LogFile != NULL) WriteLogEntry(self, log_TITLE, title);
 }
 
-char *im__GetTitle(struct im * self)
+char *im__GetTitle(struct im *self)
 {
     return self->title;
 }
 
-void im__SetProgramName(struct classheader * classID, char * name)
+void im__SetProgramName(struct classheader *classID, char *name)
 {
     unsigned char *shudder;
     if (initialProgramName != NULL)  {
@@ -3307,18 +3309,18 @@ void im__SetProgramName(struct classheader * classID, char * name)
     ProgramNameAtom = atom_Intern(initialProgramName);
 }
 
-char *im__GetProgramName(struct classheader * classID)
+char *im__GetProgramName(struct classheader *classID)
 {
     return initialProgramName;
 }
 
-void im__SetGlobalInit(struct classheader * classID, struct init * init)
+void im__SetGlobalInit(struct classheader *classID, struct init *init)
 {
 
     globalInit = init;
 }
 
-struct init *im__GetGlobalInit(struct classheader * classID)
+struct init *im__GetGlobalInit(struct classheader *classID)
 {
 
     return globalInit;
@@ -3326,7 +3328,7 @@ struct init *im__GetGlobalInit(struct classheader * classID)
 
 /* We really ought to tell the window manager about this change in preferences.
     This should be a method instead of a class procedure. */
-void im__SetPreferedDimensions(struct classheader * classID, int top, int left, int width, long top, left, width, height)
+void im__SetPreferedDimensions(struct classheader *classID, long top, long left, long width, long height)
 {
 
     preferedTop = top;
@@ -3336,7 +3338,7 @@ void im__SetPreferedDimensions(struct classheader * classID, int top, int left, 
     setDimensions = TRUE;
 }
 
-void im__GetPreferedDimensions(struct classheader * classID, int top, int left, int width, long *top, *left, *width, * height)
+void im__GetPreferedDimensions(struct classheader *classID, long *top, long *left, long *width, long *height)
 {
 
     *top = preferedTop;
@@ -3366,23 +3368,23 @@ im__SetGeometrySpec(classID, value)
 }
 
 
-FILE *im__FromCutBuffer(struct im * self)
+FILE *im__FromCutBuffer(struct im *self)
 {
     printf("im_FromCutBuffer: missing method\n");
     return NULL;
 }
 
-FILE *im__OnlyFromCutBuffer(struct im * self)
+FILE *im__OnlyFromCutBuffer(struct im *self)
 {
     printf("im_OnlyFromCutBuffer: missing method\n");
 }
 
-FILE *im__OnlyFromSelection(struct im * self)
+FILE *im__OnlyFromSelection(struct im *self)
 {
     printf("im_OnlyFromSelection: missing method\n");
 }
 
-FILE *im__ToCutBuffer(struct im * self)
+FILE *im__ToCutBuffer(struct im *self)
 {
     FILE *cutFile;
 
@@ -3392,36 +3394,36 @@ FILE *im__ToCutBuffer(struct im * self)
     return cutFile;
 }
 
-void im__CloseFromCutBuffer(struct im * self, FILE * readFile)
+void im__CloseFromCutBuffer(struct im *self, FILE *readFile)
 {
     im_vfileclose(readFile, 0);
 }
 
-void im__CloseToCutBuffer(struct im * self, FILE * writeFile)
+void im__CloseToCutBuffer(struct im *self, FILE *writeFile)
 {
     printf("im_CloseToCutBuffer: missing method\n");
 
 }
 
-void im__RotateCutBuffers(struct im * self, long count)
+void im__RotateCutBuffers(struct im *self, long count)
 {
     printf("im_RotateCutBuffers: missing method\n");
 
 }
 
-void im__AppendToCutBuffer(struct im * self, FILE * writeFile)
+void im__AppendToCutBuffer(struct im *self, FILE *writeFile)
 {
     printf("im_AppendToCutBuffer: missing method\n");
 
 }
 
-void im__SetWMFocus(struct im * self)
+void im__SetWMFocus(struct im *self)
 {
     printf("im_SetWMFocus: missing method\n");
 
 }
 
-void im__ExposeWindow(struct im * self)
+void im__ExposeWindow(struct im *self)
 {
     printf("im_ExposeWindow: missing method\n");
 }
@@ -3440,28 +3442,28 @@ im__VanishWindow(self)
 	printf("im_VanishWindow: missing method\n"); 
 }
 
-struct windowsystem *im__GetWindowSystem(struct classheader * classID)
+struct windowsystem *im__GetWindowSystem(struct classheader *classID)
 {
 
     return currentWS;
 }
 
-struct cursor * im__GetCursor(struct classheader * classID)
+struct cursor * im__GetCursor(struct classheader *classID)
 {
     return windowsystem_CreateCursor(im_GetWindowSystem());
 }
 
-struct fontdesc * im__GetFontdesc(struct classheader * classID)
+struct fontdesc * im__GetFontdesc(struct classheader *classID)
 {
     return windowsystem_CreateFontdesc(im_GetWindowSystem());
 }
 
-struct graphic * im__GetGraphic(struct classheader * classID)
+struct graphic * im__GetGraphic(struct classheader *classID)
 {
     return windowsystem_CreateGraphic(im_GetWindowSystem());
 }
 
-short im__GetResource(struct im * self, struct atomlist * name, struct atomlist * class, struct atom * type, long * data)
+short im__GetResource(struct im *self, struct atomlist *name, struct atomlist *class, struct atom *type, long *data)
 {
   struct atoms * nameMark = atomlist_Mark(name);
   struct atoms * classMark = atomlist_Mark(name);
@@ -3478,7 +3480,7 @@ short im__GetResource(struct im * self, struct atomlist * name, struct atomlist 
 }
 
 
-void im__PostResource(struct im * self, struct atomlist * path, struct atom * type, long data)
+void im__PostResource(struct im *self, struct atomlist *path, struct atom *type, long data)
 {
   struct atoms * pathMark = atomlist_Mark(path);
 
@@ -3489,7 +3491,7 @@ void im__PostResource(struct im * self, struct atomlist * path, struct atom * ty
 }
 
 
-void im__GetManyParameters(struct im * self, struct resourceList * resources, struct atomlist * name, struct atomlist * class)
+void im__GetManyParameters(struct im *self, struct resourceList *resources, struct atomlist *name, struct atomlist *class)
 {
   struct atoms * nameMark = NULL;
   struct atoms * classMark = NULL;
@@ -3526,7 +3528,7 @@ void im__GetManyParameters(struct im * self, struct resourceList * resources, st
     atomlist_Cut(class,classMark);
 }
 
-void im__UnlinkNotification(struct im * self, struct view * unlinkedTree)
+void im__UnlinkNotification(struct im *self, struct view *unlinkedTree)
 {
 
     struct cursor *thisCursor;
@@ -3570,32 +3572,32 @@ long width, height;
     return FALSE;
 }
 
-boolean im__SupportsOffscreen(struct im * self)
+boolean im__SupportsOffscreen(struct im *self)
 {
     return FALSE;
 }
 
-struct rectangle *im__GetLoc(struct im * self, struct view * view, struct rectangle * rect)
+struct rectangle *im__GetLoc(struct im *self, struct view *view, struct rectangle *rect)
 {
     printf("im_GetLoc: missing method\n");
     return NULL;
 }
 
-char **im__GetDroppedFiles(struct im * self)
+char **im__GetDroppedFiles(struct im *self)
 {
     return NULL;
 }
 
-void im__DropFile(struct im * self, char * pathname, struct cursor * cursor)
+void im__DropFile(struct im *self, char *pathname, struct cursor *cursor)
 {
 }
 
-void im__DropFiles(struct im * self, char ** pathnames, struct cursor * cursor)
+void im__DropFiles(struct im *self, char **pathnames, struct cursor *cursor)
 {
 }
 
 
-void im__SuspendRecording(struct classheader * classID)
+void im__SuspendRecording(struct classheader *classID)
 {
     struct action *a;
     if(doRecord) {
@@ -3607,7 +3609,7 @@ void im__SuspendRecording(struct classheader * classID)
     recordingSuspensionLevel++;
 }
 
-void im__RecordAnswer(struct classheader * classID, char * answer)
+void im__RecordAnswer(struct classheader *classID, char *answer)
 {
     struct action *a;
     if(!doRecord) return;
@@ -3622,7 +3624,7 @@ void im__RecordAnswer(struct classheader * classID, char * answer)
     }
 }
 
-void im__RecordCancellation(struct classheader * classID)
+void im__RecordCancellation(struct classheader *classID)
 {
     im_RecordAnswer(NULL);
 }
@@ -3632,7 +3634,7 @@ static struct action *pendingAnswerFree=NULL;
 
 static boolean wasCancel;
 
-char *im__GetAnswer(struct classheader * classID)
+char *im__GetAnswer(struct classheader *classID)
 {
     wasCancel=FALSE;
     if(pendingAnswerFree!=NULL) {
@@ -3669,12 +3671,12 @@ char *im__GetAnswer(struct classheader * classID)
     return NULL;
 }
 
-boolean im__AnswerWasCancel(struct classheader * classID)
+boolean im__AnswerWasCancel(struct classheader *classID)
 {
     return wasCancel;
 }
 
-void im__ResumeRecording(struct classheader * classID)
+void im__ResumeRecording(struct classheader *classID)
 {
     if(doRecord && recordingSuspensionLevel>0) {
 	struct action *a;
@@ -3688,7 +3690,7 @@ void im__ResumeRecording(struct classheader * classID)
     if(recordingSuspensionLevel>0) recordingSuspensionLevel--;
 }
 
-void im__QueueAnswer(struct classheader * classID, char * answer)
+void im__QueueAnswer(struct classheader *classID, char *answer)
 {
     struct action *a;
     a=newAction();
@@ -3702,7 +3704,7 @@ void im__QueueAnswer(struct classheader * classID, char * answer)
     }
 }
 
-void im__QueueCancellation(struct classheader * classID)
+void im__QueueCancellation(struct classheader *classID)
 {
     im_QueueAnswer(NULL);
 }
@@ -3762,7 +3764,7 @@ int kmvc=0;
 
 #define ROCKSEQUAL(rock, rstring, rock2) ((rock==rock2) || (rstring && isString((char*)rock2) && strcmp((char*)rock,(char*)rock2)==0))
 
-static boolean VerifyBinding(struct im * self, char * keys, int keyslen, struct basicobject * obj, struct proctable_Entry * pe, long rock, boolean rstring)
+static boolean VerifyBinding(struct im *self, char *keys, int keyslen, struct basicobject *obj, struct proctable_Entry *pe, long rock, boolean rstring)
 {
     struct keystate *ks;
     boolean answer=FALSE;
@@ -3823,7 +3825,7 @@ static boolean VerifyBinding(struct im * self, char * keys, int keyslen, struct 
     return answer;
 }
 
-static char *GetKeyBinding(struct im * self, struct keymap * km, struct basicobject * obj, struct proctable_Entry * pe, long rock, boolean rstring)
+static char *GetKeyBinding(struct im *self, struct keymap *km, struct basicobject *obj, struct proctable_Entry *pe, long rock, boolean rstring)
 {
     int i;
     int ind=strlen(keybinding);
@@ -3884,7 +3886,7 @@ static char *GetKeyBinding(struct im * self, struct keymap * km, struct basicobj
     return NULL;
 }
 
-char *im__GetKeyBinding(struct im * self, struct basicobject * obj, struct proctable_Entry * pe, long rock)
+char *im__GetKeyBinding(struct im *self, struct basicobject *obj, struct proctable_Entry *pe, long rock)
 {
     struct keystate *ks=self->keystate;
     boolean rstring=isString((char*)rock);
@@ -3901,7 +3903,7 @@ char *im__GetKeyBinding(struct im * self, struct basicobject * obj, struct proct
     return NULL;
 }
 
-boolean im__RequestSelectionOwnership(struct im * self, struct view * requestor)
+boolean im__RequestSelectionOwnership(struct im *self, struct view *requestor)
 {
     if(!grokSelections && (struct view *)self!=requestor) {
 	if(requestor) return FALSE;
@@ -3941,13 +3943,13 @@ boolean im__RequestSelectionOwnership(struct im * self, struct view * requestor)
     return TRUE;
 }
 
-struct view *im__GetSelectionOwner(struct classheader * classID)
+struct view *im__GetSelectionOwner(struct classheader *classID)
 {
     return selectionOwner;
 }
 
 
-void im__GiveUpSelectionOwnership(struct im * self, struct view * requestor)
+void im__GiveUpSelectionOwnership(struct im *self, struct view *requestor)
 {
     /* This deliberately does NOT call LoseSelectionOwnership on the requestor, it is assumed that the requestor will have taken the appropriate action. */
     if(selectionOwner==requestor) {
@@ -3955,20 +3957,20 @@ void im__GiveUpSelectionOwnership(struct im * self, struct view * requestor)
     }
 }
 /* Functions that support window manager delete window requests. */
-procedure im__GetDeleteWindowCallback(struct im * self)
+procedure im__GetDeleteWindowCallback(struct im *self)
 {
     return self->delete_window_cb;
 }
-long im__GetDeleteWindowCallbackRock(struct im * self)
+long im__GetDeleteWindowCallbackRock(struct im *self)
 {
     return self->delete_window_rock;
 }
-void im__SetDeleteWindowCallback(struct im * self, procedure p, long rock)
+void im__SetDeleteWindowCallback(struct im *self, procedure p, long rock)
 {
     self->delete_window_cb = p;
     self->delete_window_rock = rock;
 }
-void im__CallDeleteWindowCallback(struct im * self)
+void im__CallDeleteWindowCallback(struct im *self)
 {
     if (self->delete_window_cb)
 	(*self->delete_window_cb)(self, self->delete_window_rock);

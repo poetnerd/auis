@@ -72,7 +72,6 @@ Current transformations:
 - K&R function definitions → ANSI prototypes
 
 Known limitations (require manual fixes):
-- Function pointer parameters (`void (*proc)()`) are converted to `int`
 - Split-line definitions (return type on separate line from function name)
   are skipped to avoid name truncation
 

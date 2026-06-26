@@ -38,6 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #define EVENT_IMPLEMENTATION
 #include <event.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 #include <andrewos.h> /* sys/time.h */
 
 static struct event *timerQueue = NULL;
@@ -49,7 +51,7 @@ static long id=1;
 
 static struct event *freeList;
 
-boolean event__InitializeObject(struct classheader * classID, struct event * self)
+boolean event__InitializeObject(struct classheader *classID, struct event *self)
 {
     self->t = event_ENDOFTIME;
     self->proc = NULL;
@@ -63,7 +65,7 @@ boolean event__InitializeObject(struct classheader * classID, struct event * sel
     return TRUE;
 }
 
-struct event *event__Allocate(struct classheader * classID)
+struct event *event__Allocate(struct classheader *classID)
 {
     register struct event *e;
 
@@ -76,13 +78,13 @@ struct event *event__Allocate(struct classheader * classID)
     return e;
 }
 
-void event__Deallocate(struct classheader * classID, struct event * self)
+void event__Deallocate(struct classheader *classID, struct event *self)
 {
     self->next = freeList;
     freeList = self;
 }
 
-void event__Cancel(struct classheader * classID, struct event * self)
+void event__Cancel(struct classheader *classID, struct event *self)
 {
     register struct event *prev = NULL;
     register struct event *x;
@@ -99,7 +101,7 @@ void event__Cancel(struct classheader * classID, struct event * self)
     event_Destroy(x);
 }
 
-struct event *event__Enqueue(struct classheader * classID, long time, int proc, char * procdata)
+struct event *event__Enqueue(struct classheader *classID, long time, int (*proc)(), char *procdata)
 {
     register struct event *e;
 
@@ -129,7 +131,7 @@ struct event *event__Enqueue(struct classheader * classID, long time, int proc, 
     return (struct event *)e->id;
 }
 
-void event__ForceNext(struct classheader * classID)
+void event__ForceNext(struct classheader *classID)
 {
     /* set time so next event will occur
     this routine changes the value that will be
@@ -139,14 +141,14 @@ void event__ForceNext(struct classheader * classID)
     tuBase = timerQueue->t;
 }
 
-long event__FirstTime(struct classheader * classID, long currentTime)
+long event__FirstTime(struct classheader *classID, long currentTime)
 {
     /* returns the time remaining to first event on queue */
 
     return ((timerQueue == NULL) ? event_ENDOFTIME : timerQueue->t - currentTime);
 }
 
-void event__StartTimer(struct classheader * classID)
+void event__StartTimer(struct classheader *classID)
 {
     /* start timer for elapsed time
     units are   microseconds >>6  (max of 64000 sec) */
@@ -178,7 +180,7 @@ void event__StartTimer(struct classheader * classID)
     timeInited = TRUE;
 }
 
-long event__HandleTimer(struct classheader * classID, long currentTime)
+long event__HandleTimer(struct classheader *classID, long currentTime)
 {
     /* there are elements on timer queue.  process first if it is
     time (or if it will be time within 10 msec).
@@ -206,7 +208,7 @@ long event__HandleTimer(struct classheader * classID, long currentTime)
     return (twait>0 ? twait : 0);
 }
 
-long event__Now(struct classheader * classID)
+long event__Now(struct classheader *classID)
 {
     /* returns time relative to last StartTimer 
     units are   microseconds >>6  (max of 64000 sec) 
