@@ -250,10 +250,39 @@ for `struct X` patterns and emits `struct X;` at file scope in both
 macOS doesn't provide the linker `etext` symbol. Added `#ifdef sys_darwin`
 guard in `class.c` to provide a static dummy.
 
-### Remaining compile errors
+### modernize: missing-include detection and function pointer fix
 
-~15 files across overhead and ATK fail with the same patterns: missing
-`<stdlib.h>`/`<string.h>` includes and implicit-int declarations. These
-are not architectural — just individual file fixes. Once resolved, the
-full `make dependInstall` will populate `build/dlib/atk/` with `.do`
-files and `build/include/atk/` with `.ih` headers.
+Added detection of calls to standard library functions (`strlen`, `exit`,
+`printf`, etc.) and automatic insertion of the appropriate `#include`.
+Fixed function pointer parameter handling — `type (*name)()` was being
+converted to `int name`.
+
+### `make -k dependInstall` results
+
+Using `make -k` (keep going on errors) allows the build to continue past
+overhead utility failures and reach ATK. Results:
+
+- **ATK compiles with zero errors**
+- 62 `.do` shared library files created during build
+- 583 ATK headers installed to `build/include/atk/`
+- Build tools: `class`, `doindex`, `makedo`, `cregister`, `genmake`,
+  `mkparser`, `sys`
+
+Applications in `build/bin/` (`ez`, `bush`, `figure`, `table`, etc.)
+are **broken symlinks** to `runapp` — the generic application launcher
+which was not built. `runapp` uses `genstatl` to statically link the
+requested insets. Building a working `runapp` (or a statically-linked
+`ez` directly via `genstatl`) is the next step.
+
+The `.do` files are created during the build but cleaned by
+`dependInstallClean` before they can be installed to `build/dlib/atk/`.
+The install rules fire but `doindex` runs during install and the timing
+of clean vs install needs investigation.
+
+### Remaining overhead compile errors
+
+~19 files in overhead still fail (implicit-int split-line definitions,
+undeclared internal functions). ATK itself compiles cleanly. These
+overhead failures don't block ATK compilation but do prevent some
+overhead libraries (`libutil.a`) from building, which may be needed
+at link time.
