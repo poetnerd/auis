@@ -113,6 +113,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/crea
 #include <observe.ih>
 #include <updlist.ih>
 
+#include <stdlib.h>
 #undef class_StaticEntriesOnly
 
 
@@ -138,9 +139,7 @@ LL(dir, pct, top, bot)
 }
 
 
-main(argc, argv)
-	register int	  argc;
-	register char  **argv;
+int main(register int argc, register char **argv)
 {
 	register struct null *dobj;
 	register struct nullview *dview, *dview2;
@@ -264,8 +263,7 @@ main(argc, argv)
 	im_KeyboardProcessor();		/* Do it */
 }
 
-printdata(dobj)
-	register struct null *dobj;
+int printdata(register struct null *dobj)
 {
 	/* $$$ same procedure as in nulltest.c */
 	register struct dotlist *d;

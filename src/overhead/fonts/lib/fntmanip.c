@@ -60,6 +60,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "font.h"
 #include "fntmanip.h"
 
+#include <string.h>
 /*
 	The "fntmanip.h" header file defines an 4 data structures:
 
@@ -109,16 +110,14 @@ static unsigned char inv[] = {
 			      0x2,0xa,0x6,0xe,
 			      0x1,0x9,0x5,0xd,
 			      0x3,0xb,0x7,0xf};
-unsigned char reverse(c)
-unsigned char c;
+unsigned char reverse(unsigned char c)
 {
 return (inv[c & 0x0f] << 4) | inv[c >> 4];
 }
 
 
-WordReverse(i)
-register short i;
-       {
+int WordReverse(register short i)
+{
 	struct TwoChar{
 	    unsigned char c1;
 	    unsigned char c2;
@@ -142,8 +141,7 @@ register short i;
 
 
 
-ExplodeFont(f)
-register struct font *f;
+int ExplodeFont(register struct font *f)
 {
    register short i;
    struct BitmapIconSpecificPart *maxspecific;
@@ -301,8 +299,7 @@ ComputeGenericFromSpecific()
 
 /* ***************************************************************** */
 
-char *DetermineFontFileForWriting (FontFileFormat)
-int FontFileFormat;
+char *DetermineFontFileForWriting(int FontFileFormat)
 {
    char *FileName;
    static char OutputFileName[255];
@@ -338,9 +335,7 @@ int FontFileFormat;
 
 /* ***************************************************************** */
 
-WriteExplodedFont(outf,FontFileFormat)
-FILE * outf;
-int FontFileFormat;
+int WriteExplodedFont(FILE *outf, int FontFileFormat)
 {
     if (FontFileFormat == 0)
 	WriteFwmFont(outf);
@@ -351,8 +346,7 @@ int FontFileFormat;
     }
 }
 
-WriteFwmFont(outf)
-FILE *outf;
+int WriteFwmFont(FILE *outf)
 {
     short matchg[128];
     short matchs[128];
@@ -471,8 +465,7 @@ FILE *outf;
 
 /* ***************************************************************** */
 
-short ImplodeFont (FontFileFormat)
-int FontFileFormat;
+short ImplodeFont(int FontFileFormat)
 {
    char *OutputFontFileName;
    FILE * OutputFile;

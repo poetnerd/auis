@@ -62,6 +62,8 @@ static char *Copyright= "Copyright 1989, 1993 Jim Frost";
 #include <image.ih>
 #include <faces.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 /* SUPPRESS 560 */
 
 static short HexTable[256];  /* conversion value */
@@ -106,9 +108,7 @@ static void initHexTable()
 /* read a hex value and return its value
  */
 
-static int nextInt(f, len)
-     FILE        *f;
-     unsigned int  len;
+static int nextInt(FILE *f, unsigned int len)
 { int c;
   int value= 0;
   int count;

@@ -66,10 +66,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif /* AMS_ENV */
 /* #include <mail.h> */
 #include <bt.h>
-extern int errno;
 
 #ifndef _IBMR2
-extern char *malloc(), *realloc();
 #endif /* _IBMR2 */
 
 #include <wp.h>
@@ -164,6 +162,7 @@ static char	NameChar[256] = {
 
 #include <btwp.h>
 
+#include <stdlib.h>
 static char *BTTokTbls[NumBTIndices] = {wpTokenChar, NameChar, NameChar, NameChar,
 					NameChar, wpTokenChar, wpTokenChar,
 					NameChar, NameChar};
@@ -367,8 +366,7 @@ static char *OldFieldContent[FldCOUNT] = {
 	oflCAF };
 
 /*VARARGS1*/
-static void DebOut(Fmt, p1, p2, p3, p4, p5, p6, p7, p8, p9)
-char *Fmt, *p1, *p2, *p3, *p4, *p5, *p6, *p7, *p8, *p9;
+static void DebOut(char *Fmt, char *p1, char *p2, char *p3, char *p4, char *p5, char *p6, char *p7, char *p8, char *p9)
 {/* Timestamped debugging trace. */
 	struct tm *This;
 	struct osi_Times TV;
@@ -380,22 +378,19 @@ char *Fmt, *p1, *p2, *p3, *p4, *p5, *p6, *p7, *p8, *p9;
 	fprintf(stdout, Fmt, p1, p2, p3, p4, p5, p6, p7, p8, p9);
 }
 
-static char ToLower(C)
-char C;
+static char ToLower(char C)
 { if (C <= 'Z' && C >= 'A') return C + ('a' - 'A');
    else return C;
 }
 
-static void LowerAll(S)
-char *S;
+static void LowerAll(char *S)
 {  while (*S != '\0') {
 	if (*S <= 'Z' && *S >= 'A') *S += ('a' - 'A');
 	++S;
     }
 }
 
-static void TrackBig(Key, Size)
-char *Key; int Size;
+static void TrackBig(char *Key, int Size)
 {/* Record that we saw a value in the B-tree of size Size with key Key in the table of the biggest values. */
 	int B, C;
 
@@ -427,8 +422,7 @@ char *Key; int Size;
 	}
 }
 
-static void PrintBig(desc)
-FILE *desc;
+static void PrintBig(FILE *desc)
 {/* Print (on desc) the biggest N values. */
 	int B;
 
@@ -439,9 +433,7 @@ FILE *desc;
 	}
 }
 
-static void ParseArguments(argc,argv)
-    int	argc;
-    char	**argv;
+static void ParseArguments(int argc, char **argv)
 {
     static char UsageArgs[] = " [-dDrRwWNfFE] [-Mmalloclevel] [-c conf] [-Pperiod -pwhich] [-s treerootname] outtreedir inchg outchg oldpass curpasswd";
     int	thisarg, argval;
@@ -786,8 +778,7 @@ static void CloseGlobalFiles()
     }
 }
 
-static void Trim(str, toElim)
-char *str, *toElim;
+static void Trim(char *str, char *toElim)
 {
 /* Eliminate leading and trailing characters in the toElim set from the string str. */
 	int LastChar, FirstChar, ThisChar;
@@ -813,8 +804,7 @@ char *str, *toElim;
 	}
 }
 
-static void StripMultiSpaces(str)
-char *str;
+static void StripMultiSpaces(char *str)
 {
 /* Replace sequences of white space characters with a single space in the string str. */
 	char *Src, *Dst;
@@ -838,10 +828,7 @@ char *str;
 	if (Debugging && Changed) DebOut("StripMultiSpaces produces ``%s''.\n", str);
 }
 
-static int GetOnePW(pwFile, Ptr, Lim, NLOK)
-FILE *pwFile;
-char *Ptr;
-int Lim, NLOK;
+static int GetOnePW(FILE *pwFile, char *Ptr, int Lim, int NLOK)
 {/* Read the next part of a passwd(5) entry. */
     char *XPtr; int InChar;
 
@@ -857,8 +844,7 @@ int Lim, NLOK;
     else return (InChar == ':' ? 0 : -1);
 }
 
-static int ReadPWEntry(pwFile, pwStruct)
-	FILE	*pwFile; struct passwd *pwStruct;
+static int ReadPWEntry(FILE *pwFile, struct passwd *pwStruct)
 {
 /* Returns 0 if got all entries, +n if masked entries were missing, -1 on EOF, -2
 	on input read error, and -3 if some fields were unexpectedly missing. */
@@ -966,8 +952,7 @@ static void TestPWReads()
 */
 
 
-static int Quote(SrcPtr, DestPtr, MaxChars)
-    char *SrcPtr, *DestPtr;
+static int Quote(char *SrcPtr, char *DestPtr, int MaxChars)
 {
     register char C;
 
@@ -980,8 +965,7 @@ static int Quote(SrcPtr, DestPtr, MaxChars)
     return(0);
 }
 
-static void DeQuote(SrcPtr, DestPtr)
-    char *SrcPtr, *DestPtr;
+static void DeQuote(char *SrcPtr, char *DestPtr)
 {
     register char C;
     if (strcmp(SrcPtr, "+ ") == 0) {*DestPtr++ = '\0';}
@@ -1068,8 +1052,7 @@ static void TestChgReads()
 }
 */
 
-static void PrintChangeEntry(strm)
-	FILE *strm;
+static void PrintChangeEntry(FILE *strm)
 {
 /* Print the current change entry in nice format to stream strm..
  */
@@ -1101,8 +1084,7 @@ static void LoadDBFields()
     strcpy(flWN, flN);	/* WN gets pre-set from N. */
 }
 
-static void AddTokensFromName(DestPtr, NamePtr)
-char *DestPtr, *NamePtr;
+static void AddTokensFromName(char *DestPtr, char *NamePtr)
 {
 /* Add the new tokens in ``NamePtr'' string to the DestPtr set.
  */
@@ -1141,8 +1123,7 @@ char *DestPtr, *NamePtr;
 	}
 }
 
-static void FillOutCurrentEntry(isNew, Skippable)
-int isNew, Skippable;
+static void FillOutCurrentEntry(int isNew, int Skippable)
 {
 /* There's an entry from the source files in the database fields.  isNew is true iff this is a new entry in the passwd file.  Skippable is true if this entry has probably not changed.  Fill in the derived fields for this entry, presuming that they haven't been changed explicitly.  If making a Grits file, write that entry.
  */
@@ -1396,8 +1377,7 @@ int isNew, Skippable;
 #endif /* AMS_ENV */
 }
 
-static char *MakePrimeKey(nam, NID)
-char *nam; int NID;
+static char *MakePrimeKey(char *nam, int NID)
 {/* Make the canonical 8-character prime key for the given login name and NID.  Return a pointer to it in static storage. */
 	static char Base64Chars[64] = {
 		'0', '1', '2', '3', '4', '5', '6', '7',
@@ -1440,8 +1420,7 @@ Implementation of MakePrimeKey needs to change!
 	return OutBuf;
 }
 
-static int LookupFieldName(fldN)
-char *fldN;
+static int LookupFieldName(char *fldN)
 {
 /* Find this program's index for the field name that fldN points to.
    Return -1 if it's not a match. */
@@ -1455,8 +1434,7 @@ char *fldN;
 
 /* Return the field index for the name at fldN, or halt. */
 /* unneeded at the moment
-static int NeedFieldIx (fldN)
-char *fldN;
+static int NeedFieldIx(char *fldN)
 {
     int fldI;
     fldI = LookupFieldName (fldN);
@@ -1466,10 +1444,7 @@ char *fldN;
 }
 */
 
-static void BurstEntry(ContentArr, ent, entlen)
-char *ContentArr[];
-char *ent;
-int entlen;
+static void BurstEntry(char *ContentArr[], char *ent, int entlen)
 {/* Take an old B-tree prime value, pointed to by ent, and separate it into its component fields (in ContentArr). */
 	int Fld;
 	char *FPtr, *FSpan, *FEnd, *namStart, *nPtr;
@@ -1523,10 +1498,7 @@ int entlen;
 }
 
 #define MAXTOKENS 30
-static void AddToks(TkChar, FldPtr, Toks, NumToksP, OnlySurn)
-char *TkChar, *FldPtr;
-char Toks[MAXTOKENS][MEDIUMSTRINGSIZE];
-int *NumToksP, OnlySurn;
+static void AddToks(char *TkChar, char *FldPtr, int Toks, int *NumToksP, int OnlySurn)
 {
 	char *FldEnd;
 	char *Last, *Prev, *LastEnd, *PrevEnd, *NStart, *NEnd;
@@ -1581,8 +1553,7 @@ int *NumToksP, OnlySurn;
 	}
 }
 
-static int IsTempFail(bterr, oper, whr)
-bt_ErrorCode bterr; char *oper, *whr;
+static int IsTempFail(bt_ErrorCode bterr, char *oper, char *whr)
 {/* If the bterr value represented in bterr is a temporary condition, this routine will sleep for a while and return TRUE.  If it's not a temporary condition, it will return FALSE immediately.  oper and whr describe the operation that failed, for the sake of possible debugging output. */
 
 	int UnixErr;
@@ -1610,9 +1581,7 @@ bt_ErrorCode bterr; char *oper, *whr;
 	return TRUE;
 }
 
-static void EnsureKV(btix, ixkey, ixval)
-int btix;
-char *ixkey, *ixval;
+static void EnsureKV(int btix, char *ixkey, char *ixval)
 {/* Ensure that the key/value pair ixkey/ixval is present in B-tree index btix. */
 	static char TaggedKey[MEDIUMSTRINGSIZE + 10];
 	bt_ErrorCode BTerr;
@@ -1696,9 +1665,7 @@ char *ixkey, *ixval;
 	}
 }
 
-static void DeleteKV(btix, ixkey, ixval)
-int btix;
-char *ixkey, *ixval;
+static void DeleteKV(int btix, char *ixkey, char *ixval)
 {/* Delete the key/value pair ixkey/ixval from the B-tree index btix. */
 	static char TaggedKey[MEDIUMSTRINGSIZE + 10];
 	bt_ErrorCode BTerr;
@@ -1729,8 +1696,7 @@ char *ixkey, *ixval;
 	}
 }
 
-static void EnsureKey(ixkey, tag, mainkey)
-char *ixkey, tag, *mainkey;
+static void EnsureKey(char *ixkey, char tag, char *mainkey)
 {/* Ensure that mainkey is indexed by ixkey (tagged as ``tag''). */
 	static char TaggedKey[MEDIUMSTRINGSIZE + 10];
 	bt_ErrorCode BTerr;
@@ -1822,8 +1788,7 @@ char *ixkey, tag, *mainkey;
 	}
 }
 
-static void RemoveKey(ixkey, tag, mainkey)
-char *ixkey, tag, *mainkey;
+static void RemoveKey(char *ixkey, char tag, char *mainkey)
 {/* Remove any instances of mainkey from the index for ixkey with tag ``tag''. */
 	static char TaggedKey[MEDIUMSTRINGSIZE + 10];
 	bt_ErrorCode BTerr;
@@ -1928,8 +1893,7 @@ char *ixkey, tag, *mainkey;
 	}
 }
 
-static void UpdateIndices(MainKey)
-char *MainKey;
+static void UpdateIndices(char *MainKey)
 {/* Given the entry in FieldContent and the old one in OldFieldContent, and the key in MainKey, make the index entries correspond to the main entry that's already in the B-tree. */
 	int WhichIx, OTok, NTok, XTok;
 	char *FldPtr;
@@ -2062,8 +2026,7 @@ static void BuildCanonSoundEntries()
 	}
 }
 
-static void ValidateEntry(MainKey, Skippable, Deleting, SrcID)
-char *MainKey; int Skippable, Deleting, SrcID;
+static void ValidateEntry(char *MainKey, int Skippable, int Deleting, int SrcID)
 {
 /* Make the entry for MainKey either present or absent, according to Deleting.  If Deleting is false, construct a new entry from the FieldContent set (already filled out) and push that into the database, then update the indices.  Skippable is true if it's believed that this is probably an unchanged entry.  If Deleting is true, just update the indices and delete the main key when done.
  */
@@ -2257,8 +2220,7 @@ static void DeleteCurrentEntry()
     HaveAnEntry = 0;
 }
 
-static void WriteChange(ID, WhatField, OldVal, NewVal, Stamp)
-char *ID, *WhatField, *OldVal, *NewVal, *Stamp;
+static void WriteChange(char *ID, char *WhatField, char *OldVal, char *NewVal, char *Stamp)
 {
 /* Write the change entry given by parameters out to the new change file.
  */
@@ -2289,8 +2251,7 @@ static void WriteCurrentChange()
     WriteChange (InChgEntry, InChgField, InChgOldVal, InChgNewVal, InChgStamp);
 }
 
-static void ReplaceField (fldInd, UserPtr, ContPtr)
-int fldInd; char *UserPtr, *ContPtr;
+static void ReplaceField(int fldInd, char *UserPtr, char *ContPtr)
 {
 /* Replace field fldInd in the current Grits entry with contents ContPtr. */
 
@@ -2595,8 +2556,7 @@ static FILE *cCurrFile, *cPrevFile;
 static enum EntryBoundaryTypes {bdy_null, bdy_line, bdy_grits} cBoundary;
 static int cBTIndex; static char *cBTIxTag;
 
-static int ReadGrits(AddFile)
-FILE *AddFile;
+static int ReadGrits(FILE *AddFile)
 {/* Read a single entry from the AddFile into the FieldContent arrays.  Return 1 if it got one, 0 at EOF. */
     int Chr;
     char *MBPtr, *MBEnd;
@@ -2973,9 +2933,7 @@ static void DoPass1()
     ClosePass1Files();
 }
 
-main(argc, argv)
-    int	argc;
-    char	**argv;
+int main(int argc, char **argv)
 {
 #ifdef AMS_ENV
     CheckAMSConfiguration();

@@ -145,6 +145,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 #include <cmapv.ih>
 #include <imagev.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 #define CONTINUOUS_PAN	0
 #define DISCREET_PAN	1
 #define PURE_POSTSCRIPT (-1) /* When this is passed to writePS as the
@@ -777,11 +779,7 @@ imagev__LoseInputFocus( self )
 }
 
 enum view_DSattributes 
-imagev__DesiredSize( self, width, height, pass, desiredWidth, desiredHeight )
-     struct imagev *self;
-     long width, height;
-     enum view_DSpass pass;
-     long *desiredWidth, *desiredHeight;
+int imagev__DesiredSize(struct imagev *self, long width, long height, enum view_DSpass pass, long *desiredWidth, long *desiredHeight)
 {
     /* This routine needs to be smarter.  Now we just DEMAND that we be given
      enough space to accomodate our image dimensions.  In future, we may
@@ -1858,9 +1856,7 @@ ReadCmd( self )
     message_DisplayString(self, 0, message);
 }
 
-static void InternalZoomCmd(self, rock)
-struct imagev *self;
-long rock;
+static void InternalZoomCmd(struct imagev *self, long rock)
 {
     long newscale, fact;
     long midx, midy, offx, offy;
@@ -1981,9 +1977,7 @@ imagev__PostKeyState(self, ks)
 }
 
 /* convert a rectangle in image coords to pix coords. */
-static void RectToPix(self, dest, src)
-    struct imagev *self;
-    struct rectangle *dest, *src;
+static void RectToPix(struct imagev *self, struct rectangle *dest, struct rectangle *src)
 {
     if (rectangle_IsEmptyRect(src)) {
 	rectangle_EmptyRect(dest);

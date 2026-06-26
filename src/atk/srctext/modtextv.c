@@ -60,8 +60,7 @@ static struct bind_Description modtextBindings[]={
     NULL
 };
 
-boolean modtextview__InitializeClass(classID)
-struct classheader *classID;
+boolean modtextview__InitializeClass(struct classheader *classID)
 {
     mod_Menus = menulist_New();
     mod_Map = keymap_New();
@@ -69,9 +68,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean modtextview__InitializeObject(classID, self)
-struct classheader *classID;
-struct modtextview *self;
+boolean modtextview__InitializeObject(struct classheader *classID, struct modtextview *self)
 {
     self->mod_state = keystate_Create(self, mod_Map);
     self->mod_menus = menulist_DuplicateML(mod_Menus, self);
@@ -79,33 +76,26 @@ struct modtextview *self;
     return TRUE;
 }
 
-void modtextview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct modtextview *self;
+void modtextview__FinalizeObject(struct classheader *classID, struct modtextview *self)
 {
     keystate_Destroy(self->mod_state);
     menulist_Destroy(self->mod_menus);
 }
 
-void modtextview__PostMenus(self, menulist)
-struct modtextview *self;
-struct menulist *menulist;
+void modtextview__PostMenus(struct modtextview *self, struct menulist *menulist)
 {
     menulist_ChainBeforeML(self->mod_menus, menulist, self);
     super_PostMenus(self, self->mod_menus);
 }
 
-struct keystate *modtextview__PrependKeyState(self)
-struct modtextview *self;
+struct keystate *modtextview__PrependKeyState(struct modtextview *self)
 {
     self->mod_state->next= NULL;
     return keystate_AddBefore(self->mod_state, super_PrependKeyState(self));
 }
 
 /* override */
-void modtextview__Paren(self, key) /*RSK91mod*/
-struct modtextview *self;
-char key; /* must be char for "&" to work. */
+void modtextview__Paren(struct modtextview *self, char key)
 {
     if (key=='}')
 	modtextview_SelfInsertReindent(self,key);
@@ -125,9 +115,7 @@ char key; /* must be char for "&" to work. */
 
 /* override */
 /* HandleEndOfLineStyle will terminate both linecomment AND preprocessor styles when a newline is added (if not \quoted) */
-void modtextview__HandleEndOfLineStyle(self, pos)
-struct modtextview *self;
-long pos;
+void modtextview__HandleEndOfLineStyle(struct modtextview *self, long pos)
 {
     struct modtext *ct=(struct modtext *)self->header.view.dataobject;
     if (ct->preprocessor) {
@@ -140,9 +128,7 @@ long pos;
 	super_HandleEndOfLineStyle(self,pos);
 }
 
-static void startPreproc(self, key)
-struct modtextview *self;
-char key;
+static void startPreproc(struct modtextview *self, char key)
 {
     struct modtext *ct=(struct modtext *)self->header.view.dataobject;
     long pos, oldpos;

@@ -56,6 +56,8 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 #include "srctextv.eh"
 #include "toolcnt.h"
 
+#include <stdlib.h>
+#include <stdio.h>
 /* AutoCut was not made externally visible by txtvcmod, so WE have to check the preference TOO */
 static int autocut_mode = -1;	/* uninitialized */
 #define IsAutoCutMode() ((autocut_mode == -1 && (autocut_mode = environ_GetProfileSwitch("autocut", FALSE))) || autocut_mode)
@@ -131,8 +133,7 @@ static struct bind_Description srctextBindings[]={
     NULL
 };
 
-boolean srctextview__InitializeClass(classID)
-struct classheader *classID;
+boolean srctextview__InitializeClass(struct classheader *classID)
 {
     src_Menus = menulist_New();
     src_Map = keymap_New();
@@ -142,9 +143,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean srctextview__InitializeObject(classID, self)
-struct classheader *classID;
-struct srctextview *self;
+boolean srctextview__InitializeObject(struct classheader *classID, struct srctextview *self)
 {
     self->src_state = keystate_Create(self, src_Map);
     self->src_menus = menulist_DuplicateML(src_Menus, self);
@@ -152,17 +151,13 @@ struct srctextview *self;
     return TRUE;
 }
 
-void srctextview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct srctextview *self;
+void srctextview__FinalizeObject(struct classheader *classID, struct srctextview *self)
 {
     keystate_Destroy(self->src_state);
     menulist_Destroy(self->src_menus);
 }
 
-void srctextview__PostMenus(self, menulist)
-struct srctextview *self;
-struct menulist *menulist;
+void srctextview__PostMenus(struct srctextview *self, struct menulist *menulist)
 {
     menulist_ChainBeforeML(self->src_menus, menulist, self);
     super_PostMenus(self, self->src_menus);
@@ -171,8 +166,7 @@ struct menulist *menulist;
 /* override */
 /* srctextview_ReceiveInputFocus does mostly the same thing as textview's, but it calls _PrependKeyState to allow srctextview and its subclasses to prepend their keystate overrides to its own, and does some funky stuff to add menus too. */ /*RSK92add*/
 /*RSK92note: if you're a genius and want to clean this up, make sure your fix works in the following test case: edit a C program, embed a table inset in a comment, embed a ctext object INTO that table, and type slash-star and try the "Indent" menu for both the parent C program and the double-nested ctext object. If that still works OK, you're not getting paid enough; ask for a raise. */
-void srctextview__ReceiveInputFocus(self)
-struct srctextview *self;
+void srctextview__ReceiveInputFocus(struct srctextview *self)
 {
     self->header.textview.hasInputFocus = TRUE;
     self->header.textview.keystate->next= NULL;
@@ -192,21 +186,18 @@ struct srctextview *self;
 }
 
 /* srctextview_PrependKeyState is called by _ReceiveInputFocus, in order to set up all the subclasses' keybinding overrides. This is overridden by subclasses, who should call super_PrependKeyState and then return that, prepended with their OWN keystate. This is a pretty dorky system, but it succeeds in binding keys with the proper precedence. */ /*RSK92add*/
-struct keystate *srctextview__PrependKeyState(self)
-struct srctextview *self;
+struct keystate *srctextview__PrependKeyState(struct srctextview *self)
 {
     self->src_state->next= NULL;
     return keystate_AddBefore(self->src_state, self->header.textview.keystate);
 }
 
-static void redo(self)
-struct srctextview *self;
+static void redo(struct srctextview *self)
 {
     srctextview_RedoStyles(self);
 }
 
-void srctextview__RedoStyles(self)
-struct srctextview *self;
+void srctextview__RedoStyles(struct srctextview *self)
 {
     struct srctext *c=(struct srctext *)srctextview_GetDataObject(self);
     srctextview_WaitCursorOn(self);
@@ -217,8 +208,7 @@ struct srctextview *self;
 }
 
 /* friendly read-only behavior stolen from txtvcmod.c */
-boolean srctextview__ConfirmReadOnly(self)
-struct srctextview *self;
+boolean srctextview__ConfirmReadOnly(struct srctextview *self)
 {
     if (srctext_GetReadOnly((struct srctext *)srctextview_GetDataObject(self))) {
 	message_DisplayString(self, 0, "Document is read only.");
@@ -228,23 +218,17 @@ struct srctextview *self;
 }
 
 /* override to disable "feature" of picking up the style at the front of a paragragh */
-void srctextview__PrepareInsertion(self, insertingNewLine)
-struct srctextview *self;
-boolean insertingNewLine;
+void srctextview__PrepareInsertion(struct srctextview *self, boolean insertingNewLine)
 {
     return;
 }
 
-static void selfinsert(self, key)
-struct srctextview *self;
-char key;
+static void selfinsert(struct srctextview *self, char key)
 {
     srctextview__SelfInsert(self,key);
 }
 
-void srctextview__SelfInsert(self, key)
-struct srctextview *self;
-char key; /* must be char for "&" to work. */
+void srctextview__SelfInsert(struct srctextview *self, char key)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     int count=im_Argument(srctextview_GetIM(self));
@@ -263,16 +247,12 @@ char key; /* must be char for "&" to work. */
     srctext_NotifyObservers(ct, 0);
 }
 
-static void selfinsertreindent(self, key)
-struct srctextview *self;
-char key;
+static void selfinsertreindent(struct srctextview *self, char key)
 {
     srctextview__SelfInsertReindent(self,key);
 }
 
-void srctextview__SelfInsertReindent(self, key)
-struct srctextview *self;
-char key; /* must be char for "&" to work. */
+void srctextview__SelfInsertReindent(struct srctextview *self, char key)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     long pos;
@@ -284,16 +264,13 @@ char key; /* must be char for "&" to work. */
 	srctext_ReindentLine(ct, pos);
 }
 
-static void reindent(self, key)
-struct srctextview *self;
-long key;
+static void reindent(struct srctextview *self, long key)
 {
     srctextview_Reindent(self);
 }
 
 /* srctextview_Reindent is called when the Tab key is pressed.  If the cursor is in front of a line, it will reindent the line (if enable-indentation is on).  Otherwise, it'll jump to the next tab stop or multiple of tab size, depending on their settings.  If Overstrike mode is on, it will MOVE the cursor there instead of inserting whitespace to that point. */
-void srctextview__Reindent(self)
-struct srctextview *self;
+void srctextview__Reindent(struct srctextview *self)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     long pos=srctextview_GetDotPosition(self), len=srctextview_GetDotLength(self);
@@ -357,16 +334,13 @@ struct srctextview *self;
     srctext_NotifyObservers(ct,0);
 }
 
-static void reformat(self, key)
-struct srctextview *self;
-long key;
+static void reformat(struct srctextview *self, long key)
 {
     srctextview_Reformat(self);
 }
 
 /* Reformat calls the same ReindentLine routine as Ctrl-J, on the whole region. This will break up too-long lines, instead of just indenting. */
-void srctextview__Reformat(self)
-struct srctextview *self;
+void srctextview__Reformat(struct srctextview *self)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     long pos=srctextview_GetDotPosition(self), len=srctextview_GetDotLength(self);
@@ -414,31 +388,23 @@ struct srctextview *self;
     srctext_NotifyObservers(ct,0);
 }
 
-static void retrn(self,key)   
-struct srctextview *self;
-long key;
+static void retrn(struct srctextview *self, long key)
 {
     srctextview_HandleNewlineAndRetrn(self,key,FALSE,FALSE);
 }
 
-static void reindretrn(self,key)
-struct srctextview *self;
-long key;
+static void reindretrn(struct srctextview *self, long key)
 {
     srctextview_HandleNewlineAndRetrn(self,key,TRUE,FALSE);
 }
 
-static void newline(self, key)
-struct srctextview *self;
-long key;
+static void newline(struct srctextview *self, long key)
 {
     srctextview_HandleNewlineAndRetrn(self,key,TRUE,TRUE);
 }
 
 /* HandleEndOfLineStyle will terminate linecomments when a newline is inserted. Override it if there are *other* such styles (such as preprocessor style in C) */
-void srctextview__HandleEndOfLineStyle(self, pos)
-struct srctextview *self;
-long pos;
+void srctextview__HandleEndOfLineStyle(struct srctextview *self, long pos)
 {
     struct srctext *ct = (struct srctext *)srctextview_GetDataObject(self);
 
@@ -449,10 +415,7 @@ long pos;
     }
 }
 
-void srctextview__HandleNewlineAndRetrn(self,key, reindentThisLine,preindentNewLine)
-struct srctextview *self;
-long key;
-boolean reindentThisLine, preindentNewLine;
+void srctextview__HandleNewlineAndRetrn(struct srctextview *self, long key, boolean reindentThisLine, boolean preindentNewLine)
 {
     int newlines = im_Argument(srctextview_GetIM(self));
     struct srctext *ct = (struct srctext *)srctextview_GetDataObject(self);
@@ -521,9 +484,7 @@ boolean reindentThisLine, preindentNewLine;
 }
 
 /* MatchParens will wrap the cursor around the matched parens, *even if* the starting one is off the screen. */
-void srctextview__MatchParens(self, key)
-struct srctextview *self;
-char key;
+void srctextview__MatchParens(struct srctextview *self, char key)
 {
     struct srctext *ct = (struct srctext *)srctextview_GetDataObject(self);
     long start = srctextview_GetDotPosition(self), openparen = srctext_ReverseBalance(ct, start), pos;
@@ -569,17 +530,13 @@ char key;
         }
 }
 
-static void paren(self,key)
-struct srctextview *self;
-char key;
+static void paren(struct srctextview *self, char key)
 {
     srctextview_Paren(self,key);
 }
 
 /* Paren is overridden by modtextview, because it must check for nested comments and such */
-void srctextview__Paren(self, key)
-struct srctextview *self;
-char key; /* must be char for "&" to work. */
+void srctextview__Paren(struct srctextview *self, char key)
 {
     struct srctext *ct = (struct srctext *)srctextview_GetDataObject(self);
     long pos=srctextview_GetDotPosition(self);
@@ -588,17 +545,14 @@ char key; /* must be char for "&" to work. */
 	srctextview_MatchParens(self, key);
 }
 
-static void forceupperon(self, rock)
-struct srctextview *self;
-long rock; /* required by key bindings, but not used */
+static void forceupperon(struct srctextview *self, long rock)
 {
     srctextview_ForceUpperOn(self);
 }
 
 /* Set the data object's data item forceUpper to TRUE and */
 /* change the menu list entry to Force Upper Off */    /*DHGadd*/
-void srctextview__ForceUpperOn(self)
-struct srctextview *self;
+void srctextview__ForceUpperOn(struct srctextview *self)
 {
     struct proctable_Entry *proc;
 
@@ -616,17 +570,14 @@ struct srctextview *self;
     srctextview_WantInputFocus(self, self);
 }
 
-static void forceupperoff(self, rock)
-struct srctextview *self;
-long rock; /* required by key bindings, but not used */
+static void forceupperoff(struct srctextview *self, long rock)
 {
     srctextview_ForceUpperOff(self);
 }
 
 /* Set the data object's data item forceUpper to FALSE and */
 /* change the menu list entry to Force Upper On */    /*DHGadd*/
-void srctextview__ForceUpperOff(self)
-struct srctextview *self;
+void srctextview__ForceUpperOff(struct srctextview *self)
 {
     struct proctable_Entry *proc;
 
@@ -647,9 +598,7 @@ struct srctextview *self;
 /*-- Override-- */
 /* Associate the view with the data object, and */
 /* initialize the force upper on/off menu option */
-void srctextview__SetDataObject( self, dataobj )    /*DHGadd*/
-struct srctextview *self;
-struct srctext *dataobj;
+void srctextview__SetDataObject(struct srctextview *self, struct srctext *dataobj)
 {
     /*struct proctable_Entry *proc;*/
 
@@ -667,23 +616,18 @@ struct srctext *dataobj;
 	menulist_DeleteFromML(self->src_menus, "Source Text,Find Next too-long Line~60");
 }
 
-void srctextview__DeleteMenuItem(self,menuitem)
-struct srctextview *self;
-char menuitem[];
+void srctextview__DeleteMenuItem(struct srctextview *self, char menuitem[])
 {
     menulist_DeleteFromML(self->src_menus, menuitem);
     return;
 }
 
-static void compress(self, key)
-struct srctextview *self;
-long key;
+static void compress(struct srctextview *self, long key)
 {
     srctextview_Compress(self);
 }
 
-void srctextview__Compress(self)
-struct srctextview *self;
+void srctextview__Compress(struct srctextview *self)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     long pos=srctextview_GetDotPosition(self), len=srctextview_GetDotLength(self);
@@ -707,15 +651,12 @@ struct srctextview *self;
     ToolCount("EditViews-compress",NULL);
 }
 
-static void compressAll(self, key)
-struct srctextview *self;
-long key;
+static void compressAll(struct srctextview *self, long key)
 {
     srctextview_CompressAll(self);
 }
 
-void srctextview__CompressAll(self)
-struct srctextview *self;
+void srctextview__CompressAll(struct srctextview *self)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     long pos=1, oldpos=srctextview_CollapseDot(self), srclen;
@@ -765,9 +706,7 @@ struct srctextview *self;
 
 /* This method is only around for backward compatibility with things like watson */
 /* dummy is a dummy parameter left here for no reason other than to be consistent with previous versions. */
-void srctextview__DecompressAll(self,dummy)
-struct srctextview *self;
-long dummy;
+void srctextview__DecompressAll(struct srctextview *self, long dummy)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     long modValue=srctext_GetModified(ct);
@@ -776,15 +715,12 @@ long dummy;
     srctext_NotifyObservers(ct,0);
 }
 
-static void renameIdent(self, key)
-struct srctextview *self;
-long key;
+static void renameIdent(struct srctextview *self, long key)
 {
     srctextview_RenameIdent(self);
 }
 
-void srctextview__RenameIdent(self)
-struct srctextview *self;
+void srctextview__RenameIdent(struct srctextview *self)
 {
     struct srctext *ct = (struct srctext *)srctextview_GetDataObject(self);
     long pos, len, newlen;
@@ -881,9 +817,7 @@ struct finderInfo {
     struct frame *myFrame, *otherFrame, *bestFrame;
     struct buffer *myBuffer;
 };
-static boolean FrameFinder(frame, info)
-struct frame *frame;
-struct finderInfo *info;
+static boolean FrameFinder(struct frame *frame, struct finderInfo *info)
 {
     struct rectangle bogus;
 
@@ -905,9 +839,7 @@ struct finderInfo *info;
         }
     return FALSE;
 }
-static ViewEqual(frame, view)
-struct frame *frame;
-struct view *view;
+static ViewEqual(struct frame *frame, struct view *view)
 {
 #if 1
     return (frame_GetView(frame) == view);
@@ -915,16 +847,12 @@ struct view *view;
     return (view_GetIM((struct view *) frame) == view_GetIM(view))
 #endif /* 1 */
 }
-static struct frame *FindByView(view)
-struct srctextview *view;
+static struct frame *FindByView(struct srctextview *view)
 {
     return frame_Enumerate(ViewEqual, view);
 }
 /* Find a window other than the one that contains this inset.  Create one if we have to. */
-static struct view *PutInAnotherWindow(view, buffer, forceWindow)
-struct srctextview *view;
-struct buffer *buffer;
-int forceWindow;
+static struct view *PutInAnotherWindow(struct srctextview *view, struct buffer *buffer, int forceWindow)
 {
     boolean FrameFinder();
     struct frame *frame;
@@ -965,9 +893,7 @@ int forceWindow;
 }
 /*------------------------------------------------------*/
 
-static long tcpos(txt,strng)
-struct content *txt;
-char *strng;
+static long tcpos(struct content *txt, char *strng)
 {
     long pos=0, end=content_GetLength(txt);
     char buf[256];
@@ -984,9 +910,7 @@ char *strng;
     return -1;
 }
 
-void srctextview__PutFileIntoNewWindow(self, bufname, proc, filename)
-struct srctextview *self;
-char *bufname,*proc,*filename;
+void srctextview__PutFileIntoNewWindow(struct srctextview *self, char *bufname, char *proc, char *filename)
 {
     struct view *newView=0;
     struct view *view=(struct view *)(srctextview_GetIM(self)->topLevel);
@@ -1030,10 +954,8 @@ char *bufname,*proc,*filename;
 }
 
 /* fileExists(self,filename) returns true if "filename" exists */
-static boolean fileExists(self, filename)
-    struct srctextview *self;
-    char *filename;
-    {
+static boolean fileExists(struct srctextview *self, char *filename)
+{
     FILE *fp;
     if ((fp=fopen(filename,"r"))==NULL)
 	return FALSE;
@@ -1045,10 +967,8 @@ static boolean fileExists(self, filename)
     }
 
 /* FindSubFile() attempts to locate "filename" somewhere in the "searchpath", and then PutFileIntoNewWindow() */
-boolean srctextview__FindSubFile(self, filename, bufname, procname, searchpath)
-    struct srctextview *self;
-    char *filename,*bufname,*procname,*searchpath;
-    {
+boolean srctextview__FindSubFile(struct srctextview *self, char *filename, char *bufname, char *procname, char *searchpath)
+{
     char path[1024];
     long pos=0,oldpos=0;
 
@@ -1092,16 +1012,13 @@ boolean srctextview__FindSubFile(self, filename, bufname, procname, searchpath)
     return FALSE;
     }
 
-static void insertComment(self,key)   
-struct srctextview *self;
-long key;
+static void insertComment(struct srctextview *self, long key)
 {
     srctextview_InsertComment(self);
 }
 
 /* InsertComment gets called when Esc-1 is pressed in the view, to insert a comment. If there's already a comment there, it will be reformatted */
-void srctextview__InsertComment(self)
-struct srctextview *self;
+void srctextview__InsertComment(struct srctextview *self)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     long endofline, pos;
@@ -1143,16 +1060,13 @@ struct srctextview *self;
     srctext_NotifyObservers(ct,0);
 }
 
-static void insertLineComment(self,key)  
-struct srctextview *self;
-long key;
+static void insertLineComment(struct srctextview *self, long key)
 {
     srctextview_InsertLineComment(self);
 }
 
 /* InsertLineComment gets called when Esc-2 is pressed in the view, to insert a line-comment. If there's already a comment there, it will be reformatted */
-void srctextview__InsertLineComment(self)
-struct srctextview *self;
+void srctextview__InsertLineComment(struct srctextview *self)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     long endofline, pos;
@@ -1195,17 +1109,13 @@ struct srctextview *self;
     srctext_NotifyObservers(ct,0);
 }
 
-static void startComment(self,key)
-struct srctextview *self;
-char key; /* must be char for "&" to work. */
+static void startComment(struct srctextview *self, char key)
 {
     srctextview_StartComment(self,key);
 }
 
 /* srctextview_StartComment is written to handle slash-star comments, but not mapped in the proctable. To enable them in ctextview or plxtextview, simply bind them. */
-void srctextview__StartComment(self,key)
-struct srctextview *self;
-char key; /* must be char for "&" to work. */
+void srctextview__StartComment(struct srctextview *self, char key)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     int count=im_Argument(srctextview_GetIM(self));
@@ -1223,17 +1133,13 @@ char key; /* must be char for "&" to work. */
     srctext_NotifyObservers(ct, 0);
 }
 
-static void endComment(self,key)
-struct srctextview *self;
-char key; /* must be char for "&" to work. */
+static void endComment(struct srctextview *self, char key)
 {
     srctextview_EndComment(self,key);
 }
 
 /* srctextview_EndComment is written to handle slash-star comments, but not mapped in the proctable. To enable them in ctextview or plxtextview, simply bind them. */
-void srctextview__EndComment(self,key)
-struct srctextview *self;
-char key; /* must be char for "&" to work. */
+void srctextview__EndComment(struct srctextview *self, char key)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     int count=im_Argument(srctextview_GetIM(self));
@@ -1274,17 +1180,13 @@ char key; /* must be char for "&" to work. */
     srctext_NotifyObservers(ct,0); 
 }
 
-static void startLineComment(self,key)
-struct srctextview *self;
-char key; /* must be char for "&" to work. */
+static void startLineComment(struct srctextview *self, char key)
 {
     srctextview_StartLineComment(self,key);
 }
 
 /* srctextview_StartLineComment is written to handle any bang-comment character, but not mapped in the proctable. To enable a bang comment, simply bind it in the subclass. */
-void srctextview__StartLineComment(self,key)
-struct srctextview *self;
-char key; /* must be char for "&" to work. */
+void srctextview__StartLineComment(struct srctextview *self, char key)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     int count=im_Argument(srctextview_GetIM(self));
@@ -1302,17 +1204,13 @@ char key; /* must be char for "&" to work. */
     srctext_NotifyObservers(ct, 0);
 }
 
-static void styleLabel(self,key)
-struct srctextview *self;
-char key; /* must be char for "&" to work. */
+static void styleLabel(struct srctextview *self, char key)
 {
     srctextview_StyleLabel(self,key);
 }
 
 /* StyleLabel JUST wraps the label style, if appropriate. It calls SelfInsert to do all the actual insertion/update work. */
-void srctextview__StyleLabel(self, key)
-struct srctextview *self;
-char key;
+void srctextview__StyleLabel(struct srctextview *self, char key)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     long pos;
@@ -1332,17 +1230,13 @@ char key;
 	srctextview_SelfInsert(self,key);
 }
 
-static void styleString(self,key)
-struct srctextview *self;
-char key;
+static void styleString(struct srctextview *self, char key)
 {
     srctextview_StyleString(self,key);
 }
 
 /* String starts or ends a string style, as appropriate. */
-void srctextview__StyleString(self, key)
-struct srctextview *self;
-char key;
+void srctextview__StyleString(struct srctextview *self, char key)
 {
     struct srctext *ct=(struct srctext *)srctextview_GetDataObject(self);
     long pos;
@@ -1374,9 +1268,7 @@ char key;
 }
 
 /* nextLongLine finds the next line exceeding max-length and wraps the cursor around the offending characters */
-static void nextLongLine(self,key)
-struct srctextview *self;
-long key;
+static void nextLongLine(struct srctextview *self, long key)
 {
     struct srctext *ct = (struct srctext *)srctextview_GetDataObject(self);
     long max=srctext_GetMaxLineLength(ct);
@@ -1414,9 +1306,7 @@ long key;
 }
 
 /* checkLineLengths calls srctext_CheckLineLengths to display a box if any lines exceed that length */
-static void checkLineLengths(self,rock)
-struct srctextview *self;
-long rock;
+static void checkLineLengths(struct srctextview *self, long rock)
 {
     struct srctext *d = (struct srctext *)srctextview_GetDataObject(self);
     int numericalvalue= srctext_GetMaxLineLength(d); /* use max-length unless explicitly specified in exinit */
@@ -1425,9 +1315,7 @@ long rock;
     srctext_CheckLineLengths(d,numericalvalue,self);
 }
 
-static void toggleOverstrike(self,key) /*RSK91overstrike*/
-struct srctextview *self;
-long key;
+static void toggleOverstrike(struct srctextview *self, long key)
 {
     struct srctext *d = (struct srctext *)srctextview_GetDataObject(self);
     if (srctext_IsInOverstrikeMode(d)) {
@@ -1442,18 +1330,14 @@ long key;
     srctext_NotifyObservers(d,observable_OBJECTCHANGED);
 }
 
-static void overstrikeOn(self,key) /*RSK91overstrike*/
-struct srctextview *self;
-long key;
+static void overstrikeOn(struct srctextview *self, long key)
 {
     struct srctext *d = (struct srctext *)srctextview_GetDataObject(self);
     srctext_ChangeOverstrikeMode(d,TRUE);
     srctext_NotifyObservers(d,observable_OBJECTCHANGED);
 }
 
-static void overstrikeOff(self,key) /*RSK91overstrike*/
-struct srctextview *self;
-long key;
+static void overstrikeOff(struct srctextview *self, long key)
 {
     struct srctext *d = (struct srctext *)srctextview_GetDataObject(self);
     srctext_ChangeOverstrikeMode(d,FALSE);
@@ -1461,28 +1345,24 @@ long key;
 }
 
 /* WaitCursorOn sets the process cursor to a Clock (wait) symbol */
-void srctextview__WaitCursorOn(self)
-struct srctextview *self;
+void srctextview__WaitCursorOn(struct srctextview *self)
 {
     im_SetProcessCursor(waitCursor);
 }
 
 /* WaitCursorOff sets the process cursor back to normal */
-void srctextview__WaitCursorOff(self)
-struct srctextview *self;
+void srctextview__WaitCursorOff(struct srctextview *self)
 {
     im_SetProcessCursor(NULL);
 }
 
-static void whatColumn(self)
-struct srctextview *self;
+static void whatColumn(struct srctextview *self)
 {
     srctextview_WhatColumn(self);
 }
 
 /* WhatColumn displays the current column of the caret (or selected region) in the message window, taking tab characters into account */
-void srctextview__WhatColumn(self)
-struct srctextview *self;
+void srctextview__WhatColumn(struct srctextview *self)
 {
     struct srctext *ct = (struct srctext *)srctextview_GetDataObject(self);
     long pos=srctextview_GetDotPosition(self), len=srctextview_GetDotLength(self);
@@ -1496,9 +1376,7 @@ struct srctextview *self;
 }
 
 /* gotoColumn is called from a menu card. Its rock parameter, passed from the proctable entry, defaults to 0 but may contain a left-margin-is-column-one parameter from an ezinit binding. In either case, the number will be converted to left-margin-is-column-ZERO (negative means PROMPT for column) value, and passed on to the GotoColumn method. */
-static void gotoColumn(self,rock)
-struct srctextview *self;
-long rock;
+static void gotoColumn(struct srctextview *self, long rock)
 {
     int numericalvalue= 0;
     if (rock) /* rock is actually a string, if from ezinit file */
@@ -1508,9 +1386,7 @@ long rock;
 
 /* GotoColumn method's rock parameter is a left-margin-is-column-zero value, which is the system used internally by all source view code. Users communicate with left-margin-is-column-ONE values, which get interpreted by gotoColumn. */
 /* If rock parameter is negative, it means a proctable entry is calling this with no parameter and the user should be PROMPTED for a column number. Any other value of rock is considered a parameter and will forgo the prompting, using rock as the target column. */
-void srctextview__GotoColumn(self,rock)
-struct srctextview *self;
-int rock;
+void srctextview__GotoColumn(struct srctextview *self, int rock)
 {
     struct srctext *ct = (struct srctext *)srctextview_GetDataObject(self);
     long p;

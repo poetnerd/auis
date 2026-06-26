@@ -51,8 +51,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
  *  This is a no-no on SPARC.
  */
 
-WriteText(self)
-struct rofftext *self;
+int WriteText(struct rofftext *self)
 {
     rofftext_Write(self,stdout,(long)self,1);
 }
@@ -63,10 +62,7 @@ struct rofftext *self;
  *
  */
 
-ChangeStyle(self,id,st)
-struct rofftext *self;
-int id;
-char *st;
+int ChangeStyle(struct rofftext *self, int id, char *st)
 {
     int l, newid;
 
@@ -100,8 +96,7 @@ char *st;
 
 /* close innermost style */
 
-CloseStyle(self)
-struct rofftext *self;
+int CloseStyle(struct rofftext *self)
 {
     DEBUG(1, (stderr,"Closing style %d (%d to %d, length %d)\n", self->stack->ID, self->stack->pos, self->pos, (self->pos - self->stack->pos)));
 
@@ -124,9 +119,7 @@ struct rofftext *self;
 
 /* begin a style.  Caller must hang onto returned ID to close style */
 
-BeginStyle(self,st)
-struct rofftext *self;
-char *st;
+int BeginStyle(struct rofftext *self, char *st)
 {
     struct style *style;
     
@@ -155,9 +148,7 @@ DEBUG(4, (stderr, "Inserting style %s at pos %d offset %d\n", st, self->pos, sel
 
 /* ends a style and cleans up */
 
-EndStyle(self,ID)
-struct rofftext *self;
-int ID;
+int EndStyle(struct rofftext *self, int ID)
 {
     int l;
 
@@ -186,8 +177,7 @@ int ID;
 
 } 
 
-CloseAllStyles(self)
-struct rofftext *self;
+int CloseAllStyles(struct rofftext *self)
 {
     while(self->stack->level >= 0)
         CloseStyle(self);

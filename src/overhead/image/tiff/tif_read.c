@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  */
 #include "tiffioP.h"
 
+#include <stdlib.h>
 #if USE_PROTOTYPES
 static	TIFFSeek(TIFF *, u_int, u_int);
 static	int TIFFReadRawStrip1(TIFF *, u_int, u_char *, u_int, char []);
@@ -59,10 +60,7 @@ static	TIFFCheckRead();
 #endif
 
 /*VARARGS3*/
-TIFFReadScanline(tif, buf, row, sample)
-	register TIFF *tif;
-	u_char *buf;
-	u_int row, sample;
+int TIFFReadScanline(register TIFF *tif, u_char *buf, u_int row, u_int sample)
 {
 	int e;
 
@@ -83,9 +81,7 @@ TIFFReadScanline(tif, buf, row, sample)
  */
 static
 /*VARARGS2*/
-TIFFSeek(tif, row, sample)
-	register TIFF *tif;
-	u_int row, sample;
+int TIFFSeek(register TIFF *tif, u_int row, u_int sample)
 {
 	register TIFFDirectory *td = &tif->tif_dir;
 	int strip;

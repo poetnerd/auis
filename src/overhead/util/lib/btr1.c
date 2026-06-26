@@ -49,13 +49,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #ifdef WHITEPAGES_ENV  /* avoid makedepend "errors" */
 #include <btint.h>
+#include <stdlib.h>
 #endif /* WHITEPAGES_ENV   */
 
-extern int errno;
 
 #ifndef _IBMR2
-extern char *malloc();
-extern char *realloc();
 #endif /* _IBMR2 */
 
 extern int br_Debugging;
@@ -65,8 +63,7 @@ Declaration:
 	extern bt_ErrorCode bt_NextCursor(curs);
 	struct btCursor *curs;
 */
-bt_ErrorCode bt_NextCursor(curs)
-struct btCursor *curs;
+bt_ErrorCode bt_NextCursor(struct btCursor *curs)
 {
     struct btC *bC = (struct btC *) curs;
     int Idx, Exact, Flags, RootNameLength, ValueLength, ThisByte;

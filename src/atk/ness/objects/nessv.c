@@ -240,6 +240,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ness
 #include <textv.ih>
 #include <nesssym.ih>
 #include <error.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <compdefs.h>	/* for flag_xobj */
 
 static boolean  debug;      /* This debug switch is toggled with ESC-^D-D */
@@ -648,9 +650,7 @@ static void WaitOff()
 }
 
 /* Append the src ness to the end ness.  First it compiles the src if it has not already been compiled.  Errors are sent to the src view and to stderr, a notice is displayed in a dialog if any errors occurred. If the src compiles successfullly, it is appended to the dest and the dest is compiled.  Any errors encountered in compiling the dest are treated the same way as errors compiling the src. */
-static boolean DoAppend(self, src, dest)
-struct nessview *self;
-struct ness *src,*dest;
+static boolean DoAppend(struct nessview *self, struct ness *src, struct ness *dest)
 {
     long end;
     ness_SetAccessLevel(dest, ness_codeUV);
@@ -707,11 +707,7 @@ struct ness *src,*dest;
 }
 
 /* Saves the buffer b to filename, and if src is in a buffer which is visible replaces it with the buffer b on the destination of the append. */
-static void UpdateFile(self, src, b, filename)
-struct nessview *self;
-struct ness *src;
-struct buffer *b;
-char *filename;
+static void UpdateFile(struct nessview *self, struct ness *src, struct buffer *b, char *filename)
 {
     struct buffer *ob;
     WaitOn();
@@ -754,8 +750,7 @@ struct helpRock {
 };
 
 /* Get a name for a ness, either uses it's Adew name, or the tail of it's filename, if any.  Otherwise returns NULL. */
-static char *GetName(n)
-struct ness *n;
+static char *GetName(struct ness *n)
 {
     char *name=(char *)ness_GetName(n), *p;
     if(name) return name;
@@ -767,9 +762,7 @@ struct ness *n;
 }
 
 /* Appends the name of the ness n to the help text if it matches the partial name in the help rock. */
-static long match(n,h)
-struct ness *n;
-struct helpRock *h;
+static long match(struct ness *n, struct helpRock *h)
 {
     char buf[1024];
     int len;
@@ -786,11 +779,7 @@ struct helpRock *h;
 
 static char *headingtxt="Active Ness Scripts\n";
 /* This is the function called to provide help when the user uses '?' in a prompt for a Ness script. */
-static void helpProc(partial,myrock,HelpWork,rock)
-char *partial;
-struct helpRock *myrock;
-procedure HelpWork;
-long rock;
+static void helpProc(char *partial, struct helpRock *myrock, procedure HelpWork, long rock)
 {
     struct text *t=myrock->text;
     struct ness *n=ness_GetList();
@@ -841,12 +830,7 @@ int bufferSize;
 
 static char sbuf[1024]=".atkmacros";
 
-static long AskForScript(self, current, prompt, buf, bufsiz)
-struct view *self;
-struct ness *current;
-char *prompt;
-char *buf;
-long bufsiz;
+static long AskForScript(struct view *self, struct ness *current, char *prompt, char *buf, long bufsiz)
 {
     struct ness *n=ness_GetList();
     struct helpRock myrock;
@@ -885,9 +869,7 @@ long bufsiz;
 }
 
 /* Appends one Ness script to another.  If the rock is >255 it is assumed to be a pointer to the name of the destination Ness script, otherwise AskForScript is used to get the name of the destination. If the destination has a filename associated with it the file is updated to reflect the new contents of the script, throwing away any changes which had been made to the file. The destination Ness will be recompiled with the new code, and the source will be destroyed if it has a buffer. */
-static void ScriptAppend(self, rock)
-struct nessview *self;
-long rock;
+static void ScriptAppend(struct nessview *self, long rock)
 {
     char buf[1024];
     char *name=NULL;
@@ -943,9 +925,7 @@ static char *appendchoices[]={
 };
 
 /* Appends a Ness script to a file.  If the rock is >255 it is assumed to be a pointer to the filename of the destination, otherwise completion_GetFilename is used to get the filename of the destination. The destination is read in if necessary and the script is appended to it. The destination Ness will be recompiled with the new code, and the source will be destroyed if it has a buffer. Changes to the destination will be saved or a warning will be given. */
-static void Append(self, rock)
-struct nessview *self;
-long rock;
+static void Append(struct nessview *self, long rock)
 {
     char buf[1024];
     char *filename=NULL, *p, *q;
@@ -1050,9 +1030,7 @@ long rock;
 }
 
 /* Visit an existing Ness script, brings up the specified Ness script in a buffer in a window. */
-static void Visit(self, rock)
-struct view *self;
-long rock;
+static void Visit(struct view *self, long rock)
 {
     struct ness *n=ness_GetList();
     char buf[1024];
@@ -1612,13 +1590,7 @@ nessview__Hit(self, action, x, y, numberOfClicks)
 	If neither is fixed, they may be arbitrary values. 
 */
 	enum view_DSattributes
-nessview__DesiredSize(self, width, height, pass, desiredWidth, desiredHeight) 
-	register struct nessview *self;
-	long width;
-	long height;
-	enum view_DSpass pass;
-	long *desiredWidth;
-	long *desiredHeight;
+int nessview__DesiredSize(register struct nessview *self, long width, long height, enum view_DSpass pass, long *desiredWidth, long *desiredHeight)
 {
 	DEBUG(("DesiredSize(...%d, %d, %d...)\n", width, height, pass));
 

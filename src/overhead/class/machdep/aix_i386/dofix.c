@@ -46,13 +46,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <../common/safe.h>
 
+#include <stdlib.h>
 char *doload_getname();
 
 /* set entry point */
 
-FixEntryPoint(e, EntryPointName)
-register struct doload_environment *e;
-char *EntryPointName;
+int FixEntryPoint(register struct doload_environment *e, char *EntryPointName)
 {
     register SYMENT *sp;
     register SYMENT *sbound;
@@ -82,9 +81,7 @@ char *EntryPointName;
 
 /* write new symbol table */
 
-WriteNewSym(e, outFD)
-register struct doload_environment *e;
-int outFD;
+int WriteNewSym(register struct doload_environment *e, int outFD)
 {
     register int i;
     register char *newcp;
@@ -136,10 +133,7 @@ int outFD;
 
 /* read, fix, and write out module */
 
-FixIt(inFD, outFD, EntryPointName)
-int inFD;			/* open fd for .o file */
-int outFD;			/* open fd for .do file */
-char *EntryPointName;		/* entry point name */
+int FixIt(int inFD, int outFD, char *EntryPointName)
 {
     struct doload_environment E;
     register struct doload_environment *e;
@@ -220,9 +214,7 @@ char *EntryPointName;		/* entry point name */
     return ;
 }
 
-static char *ComputeOutputFileName (InputFileName, extension)
-char *InputFileName;
-char *extension;
+static char *ComputeOutputFileName(char *InputFileName, char *extension)
 {
     static char name[256];
     register char  *p, *q;
@@ -251,9 +243,7 @@ char *extension;
 
 /* main program */
 
-main(argc, argp)
-int argc;
-char **argp;
+int main(int argc, char **argp)
 {
     int infd;
     int outfd;

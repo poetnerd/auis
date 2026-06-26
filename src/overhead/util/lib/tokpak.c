@@ -53,20 +53,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #define KEYSIZE	(sizeof(auth_EncryptionKey))
 #include <errno.h>
 #include <ctype.h>
+#include <stdlib.h>
 #define MAXPackedTicket_Len (11*sizeof(unsigned long) + sizeof(struct ktc_encryptionKey) + MAXKTCTICKETLEN + (2 * sizeof(struct ktc_principal)) + 8*sizeof(unsigned long))
 #endif /* AFS_ENV */
 
 #define NIL 0
-extern int errno;
 #ifndef _IBMR2
-extern char *malloc(), *realloc();
 #endif /* _IBMR2 */
 
 #ifdef AFS_ENV
-static int PackKTC(aserv, atok, acli, where, debug, IsPrim)
-struct ktc_principal *aserv, *acli;
-struct ktc_token *atok;
-char *where; int debug, IsPrim;
+static int PackKTC(struct ktc_principal *aserv, struct ktc_token *atok, struct ktc_principal *acli, char *where, int debug, int IsPrim)
 {
     register char *p;
     long int Dum;
@@ -152,9 +148,7 @@ char *where; int debug, IsPrim;
 #endif /* AFS_ENV */
 
 
-int tok_AddStr(pOut, pOutL, pOutM, StrToAdd)
-char **pOut; int *pOutL, *pOutM;
-char *StrToAdd;
+int tok_AddStr(char **pOut, int *pOutL, int *pOutM, char *StrToAdd)
 {
     char C, *S;
 
@@ -175,10 +169,7 @@ char *StrToAdd;
     return 1;
 }
 
-int GetAndPackAllTokens_Prim(pWhere, pWhereLen, pWhereMax, debug, PrimCell)
-char **pWhere;
-int *pWhereLen, *pWhereMax;
-int debug; char *PrimCell;
+int GetAndPackAllTokens_Prim(char **pWhere, int *pWhereLen, int *pWhereMax, int debug, char *PrimCell)
 {/* Extend *pWhere with an array of all tokens in all cells.  Maybe override definition of ``primary'' token. */
 #ifdef AFS_ENV
     struct ktc_principal serviceName, clientName;	/* service name for ticket */
@@ -267,10 +258,7 @@ int debug; char *PrimCell;
 #endif /* AFS_ENV */
 }
 
-int GetAndPackAllTokens(pWhere, pWhereLen, pWhereMax, debug)
-char **pWhere;
-int *pWhereLen, *pWhereMax;
-int debug;
+int GetAndPackAllTokens(char **pWhere, int *pWhereLen, int *pWhereMax, int debug)
 {/* Extend *pWhere with an array of all tokens in all cells. */
     return (GetAndPackAllTokens_Prim(pWhere, pWhereLen, pWhereMax, debug, NULL));
 }

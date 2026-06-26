@@ -49,12 +49,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 
 #include <mmtext.eh>
 
+#include <string.h>
+#include <stdlib.h>
 #define INITIAL 100
 #define INCREMENT 1000
 
-boolean mmtext__InitializeObject(classID,self)
-struct classheader *classID;
-struct mmtext *self;
+boolean mmtext__InitializeObject(struct classheader *classID, struct mmtext *self)
 {
     self->nLines = 0;
     self->nAlloc = INITIAL;

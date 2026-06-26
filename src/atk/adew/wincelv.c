@@ -40,13 +40,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <rect.h>
 #include <wincelv.eh>
 
+#include <stdio.h>
 #define DataObject(A) (A->header.view.dataobject)
 #define Cel(A) ((struct cel *) DataObject(A))
 
-struct view *wincelview__Hit(self,action,mousex,mousey,numberOfClicks) 
-struct wincelview *self;
-enum view_MouseAction action;
-long mousex, mousey, numberOfClicks;
+struct view *wincelview__Hit(struct wincelview *self, enum view_MouseAction action, long mousex, long mousey, long numberOfClicks)
 {
     if(action == view_LeftUp){
 	if(self->celview == NULL)wincelview_pushchild(self);
@@ -54,8 +52,7 @@ long mousex, mousey, numberOfClicks;
     }	
     return (struct view *) self;
 }
-void wincelview__pushchild(self)
-struct wincelview *self;
+void wincelview__pushchild(struct wincelview *self)
 {
     struct arbiterview *abv;
     struct cel *pc = Cel(self);
@@ -77,16 +74,14 @@ struct wincelview *self;
 	}
     }
 }
-void wincelview__popchild(self)
-struct wincelview *self;
+void wincelview__popchild(struct wincelview *self)
 {
     if(self->celview != NULL && self->window != NULL){
 	im_Destroy(self->window);
     }
 }
 
-static DoUpdate(self)
-struct wincelview *self;
+static DoUpdate(struct wincelview *self)
 {
     struct rectangle enclosingRect;
     long xsize,ysize;
@@ -116,10 +111,7 @@ struct wincelview *self;
     pt[4].y = enclosingRect.top + enclosingRect.height + 1;
     wincelview_DrawPath(self,pt,5);
 }
-void wincelview__ObservedChanged(self, changed, value)
-struct wincelview *self;
-struct observable *changed;
-long value;
+void wincelview__ObservedChanged(struct wincelview *self, struct observable *changed, long value)
 {
     if(value == observable_OBJECTDESTROYED){
 	if(changed == (struct observable *)self->window){
@@ -131,16 +123,11 @@ long value;
 	self->window = NULL;
     }
 }
-void wincelview__FullUpdate(self,type,left,top,width,height)
-struct wincelview *self;
-enum view_UpdateType type;
-long left,top,width,height;
+void wincelview__FullUpdate(struct wincelview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     DoUpdate(self);
 }
-boolean wincelview__InitializeObject(classID,self)
-struct classheader *classID;
-struct wincelview *self;
+boolean wincelview__InitializeObject(struct classheader *classID, struct wincelview *self)
 {
     self->celview = NULL;
     return TRUE;

@@ -49,6 +49,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <rect.h>
 #include <oscroll.eh>
 
+#include <stdlib.h>
 /* The physical aspects of the scrollbar that cannot be changed dynamically */
 /* percentage overlap when thumbing using the endzones */
 #define	THUMBPCT	10
@@ -145,8 +146,7 @@ static int current_end_state = 0;
 
 /* Creation and Destruction routines. */
 
-boolean oscroll__InitializeClass(classID)
-struct classheader *classID;
+boolean oscroll__InitializeClass(struct classheader *classID)
 {
     emulation = environ_GetProfileSwitch("MotifScrollBars", FALSE);
     if(emulation) NormalIcon = Cursor_Arrow;
@@ -163,9 +163,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean oscroll__InitializeObject(classID, self)
-struct classheader *classID;
-struct oscroll *self;
+boolean oscroll__InitializeObject(struct classheader *classID, struct oscroll *self)
 {
     int i;
 
@@ -223,9 +221,7 @@ struct oscroll *self;
     return TRUE;
 }
     
-void oscroll__FinalizeObject(classID, self)
-struct classheader *classID;
-struct oscroll *self;
+void oscroll__FinalizeObject(struct classheader *classID, struct oscroll *self)
 {
     int i;
 
@@ -241,10 +237,7 @@ struct oscroll *self;
     }
 }
 
-struct oscroll *oscroll__Create(classID, scrollee, location)
-struct classheader *classID;
-struct view *scrollee;
-int location;
+struct oscroll *oscroll__Create(struct classheader *classID, struct view *scrollee, int location)
 {
     struct oscroll *retval = oscroll_New();
 
@@ -258,18 +251,14 @@ int location;
 
 /* State modification routines. */
 
-void oscroll__SetView(self, view)
-struct oscroll *self;
-struct view *view;
+void oscroll__SetView(struct oscroll *self, struct view *view)
 {
 
     oscroll_SetChild(self, view);
     oscroll_SetScrollee(self, view);
 }
 
-void oscroll__SetChild(self, child)
-struct oscroll *self;
-struct view *child;
+void oscroll__SetChild(struct oscroll *self, struct view *child)
 {
     if (self->child != child) {
         self->force_full_update = TRUE;
@@ -283,9 +272,7 @@ struct view *child;
     }
 }
 
-void oscroll__SetScrollee(self, scrollee)
-struct oscroll *self;
-struct view *scrollee;
+void oscroll__SetScrollee(struct oscroll *self, struct view *scrollee)
 {
     if (self->scrollee != scrollee) {
         self->force_get_interface = TRUE;
@@ -295,43 +282,34 @@ struct view *scrollee;
     }
 }
 
-struct view *oscroll__GetChild(self)
-struct oscroll *self;
+struct view *oscroll__GetChild(struct oscroll *self)
 {
     return self->child;
 }
 
-struct view *oscroll__GetScrollee(self)
-struct oscroll *self;
+struct view *oscroll__GetScrollee(struct oscroll *self)
 {
     return self->scrollee;
 }
 
-void oscroll__SetLocation(self, location)
-struct oscroll *self;
-int location;
+void oscroll__SetLocation(struct oscroll *self, int location)
 {
     if(emulation && self->ideal_location != location) self->force_full_update = TRUE;
     self->ideal_location = location;
     oscroll_WantUpdate(self, self);  
 }
 
-int oscroll__GetLocation(self)
-struct oscroll *self;
+int oscroll__GetLocation(struct oscroll *self)
 {
     return self->ideal_location;
 }
 
-int oscroll__GetCurrentLocation(self)
-struct oscroll *self;
+int oscroll__GetCurrentLocation(struct oscroll *self)
 {
     return self->current.location;
 }
 
-void oscroll__SetParameters(self, endzone, bar, without, with)
-struct oscroll *self;
-long endzone, bar;
-int without, with;
+void oscroll__SetParameters(struct oscroll *self, long endzone, long bar, int without, int with)
 {
     self->endzone_threshold = endzone;
     self->bar_threshold = bar;
@@ -340,10 +318,7 @@ int without, with;
     oscroll_WantUpdate(self, self);
 }
 
-void oscroll__GetParameters(self, endzone, bar, without, with)
-struct oscroll *self;
-long *endzone, *bar;
-int *without, *with;
+void oscroll__GetParameters(struct oscroll *self, long *endzone, long *bar, int *without, int *with)
 {
     *endzone = self->endzone_threshold;
     *bar = self->bar_threshold;
@@ -351,9 +326,7 @@ int *without, *with;
     *with = self->min_elevator[1];
 }
 
-void oscroll__SetWidth(self, newWidth)
-struct oscroll *self;
-long newWidth;
+void oscroll__SetWidth(struct oscroll *self, long newWidth)
 {
     self->barWidth = newWidth;
     
@@ -363,15 +336,12 @@ long newWidth;
     oscroll_WantUpdate(self, self);
 }
 
-long oscroll__GetWidth(self)
-struct oscroll *self;
+long oscroll__GetWidth(struct oscroll *self)
 {
     return self->barWidth;
 }
 
-void oscroll__SetDotWidth(self, newWidth)
-struct oscroll *self;
-long newWidth;
+void oscroll__SetDotWidth(struct oscroll *self, long newWidth)
 {
     if(!emulation) {
 	/* NORMAL SCROLLBARS */
@@ -386,15 +356,12 @@ long newWidth;
     }
 }
 
-long oscroll__GetDotWidth(self)
-struct oscroll *self;
+long oscroll__GetDotWidth(struct oscroll *self)
 {
     return self->dotWidth;
 }
 
-void oscroll__SetEndZoneLength(self, newLength)
-struct oscroll *self;
-long newLength;
+void oscroll__SetEndZoneLength(struct oscroll *self, long newLength)
 {
     if(!emulation) {
 	/* NORMAL SCROLLBARS */
@@ -406,15 +373,12 @@ long newLength;
     }
 }
 
-long oscroll__GetEndZoneLength(self)
-struct oscroll *self;
+long oscroll__GetEndZoneLength(struct oscroll *self)
 {
     return self->endzoneLength;
 }
 
-void oscroll__SetEndToBarSpace(self, newSpace)
-struct oscroll *self;
-long newSpace;
+void oscroll__SetEndToBarSpace(struct oscroll *self, long newSpace)
 {
     if(!emulation) {
 	/* NORMAL SCROLLBARS */
@@ -427,27 +391,21 @@ long newSpace;
 }
 
 
-long oscroll__GetEndToBarSpace(self)
-struct oscroll *self;
+long oscroll__GetEndToBarSpace(struct oscroll *self)
 {
     return self->endbarSpace;
 }
 
 /* Interface routines. */
 
-static void get_interface(self, type)
-struct oscroll *self;
-int type;
+static void get_interface(struct oscroll *self, int type)
 {
     self->force_get_interface = FALSE;
     if (self->fns[type] == NULL)
         self->fns[type] = (struct oscrollfns *)view_GetInterface(self->scrollee, InterfaceName[type]);
 }
 
-static void getinfo(self, type, total, seen, dot)
-struct oscroll *self;
-int type;
-struct orange *total, *seen, *dot;
+static void getinfo(struct oscroll *self, int type, struct orange *total, struct orange *seen, struct orange *dot)
 {
     void (*real_getinfo)();
 
@@ -463,11 +421,7 @@ struct orange *total, *seen, *dot;
     }
 }
 
-static void set_frame(self, side, posn, coord)
-struct oscroll *self;
-int side;
-int posn;
-long coord;
+static void set_frame(struct oscroll *self, int side, int posn, long coord)
 {
     void (*real_setframe)();
     int type = Type[side];
@@ -518,9 +472,7 @@ long coord;
 
 /* Calculation routines. */
 
-static long bar_height(self, side)
-struct oscroll *self;
-int side;
+static long bar_height(struct oscroll *self, int side)
 {
     switch (Type[side]) {
         case oscroll_VERT: return self->height;
@@ -528,11 +480,7 @@ int side;
     }
 }
 
-static void endzone(self, side, end, action)
-struct oscroll *self;
-int side;
-int end;
-enum view_MouseAction action;
+static void endzone(struct oscroll *self, int side, int end, enum view_MouseAction action)
 {
     void (*real_endzone)();
     int type = Type[side];
@@ -569,10 +517,7 @@ enum view_MouseAction action;
     }
 }
 
-static int what_is_at(self, side, coord)
-struct oscroll *self;
-int side;
-int coord;
+static int what_is_at(struct oscroll *self, int side, int coord)
 {
     long (*real_what)();
     int type = Type[side];
@@ -585,10 +530,7 @@ int coord;
         return 0;
 }
 
-static void rotate(self, side, x, y, scroll_x, scroll_y)
-struct oscroll *self;
-int side;
-long x, y, *scroll_x, *scroll_y;
+static void rotate(struct oscroll *self, int side, long x, long y, long *scroll_x, long *scroll_y)
 {
     switch (side) {
         case oscroll__LEFT:
@@ -612,11 +554,7 @@ long x, y, *scroll_x, *scroll_y;
 
 
 
-static long from_range_to_bar(self, side, bar, posn)
-struct oscroll *self;
-int side;
-struct oscrollbar *bar;
-long posn;
+static long from_range_to_bar(struct oscroll *self, int side, struct oscrollbar *bar, long posn)
 {
     int endzones = bar->endzones ? self->endzoneLength : 0;
     long cords = bar_height(self, side) - 2*(endzones + self->endbarSpace) - 1;
@@ -635,11 +573,7 @@ long posn;
 }
 
 
-static long from_bar_to_range(self, side, bar, posn, status)
-struct oscroll *self;
-int side, *status;
-struct oscrollbar *bar;
-long posn;
+static long from_bar_to_range(struct oscroll *self, int side, struct oscrollbar *bar, long posn, int *status)
 {
     int endzones = bar->endzones ? self->endzoneLength : 0;
     long height = bar_height(self, side),
@@ -669,8 +603,7 @@ long posn;
 }
 
 
-static void calc_location(self)
-struct oscroll *self;
+static void calc_location(struct oscroll *self)
 {
     int i, lastlocation;
 
@@ -732,8 +665,7 @@ struct oscroll *self;
 	of scrollbars that can be turned off (since we never turn any back on...) */
 }
 
-static void calc_desired(self)
-struct oscroll *self;
+static void calc_desired(struct oscroll *self)
 {
     int i, exists[oscroll_TYPES];
 
@@ -752,11 +684,7 @@ struct oscroll *self;
 }
 
 
-static int calc_dot(self, side, bar, x1, y1, x2, y2)
-struct oscroll *self;
-int side;
-struct oscrollbar *bar;
-long *x1, *y1, *x2, *y2;
+static int calc_dot(struct oscroll *self, int side, struct oscrollbar *bar, long *x1, long *y1, long *x2, long *y2)
 {
 
     if (bar->dot.end < bar->dot.beg || bar->dot.end < bar->total.beg || bar->dot.beg > bar->total.end)
@@ -780,11 +708,7 @@ long *x1, *y1, *x2, *y2;
     return 1;
 }
 
-static int calc_elevator(self, side, bar, x1, y1, x2, y2)
-struct oscroll *self;
-int side;
-struct oscrollbar *bar;
-long *x1, *y1, *x2, *y2;
+static int calc_elevator(struct oscroll *self, int side, struct oscrollbar *bar, long *x1, long *y1, long *x2, long *y2)
 {
     int min,
         height = bar_height(self, side),
@@ -830,10 +754,7 @@ long *x1, *y1, *x2, *y2;
     return 1;
 } 
 
-static void rectangle(self, x1, y1, x2, y2, tile)
-struct oscroll *self;
-int x1, y1, x2, y2;
-struct graphic *tile;
+static void rectangle(struct oscroll *self, int x1, int y1, int x2, int y2, struct graphic *tile)
 {
    struct rectangle rect;
 
@@ -882,10 +803,7 @@ long tt, tb;			/* top and bottom of thumb in already-rotated
 	rectangle(self, tb, y1 - 1, x2, y2, FILLPAT);
 }
     
-static void draw_thumb_and_bar(self, side, force)
-struct oscroll *self;
-int side;
-boolean force;
+static void draw_thumb_and_bar(struct oscroll *self, int side, boolean force)
 {
     long x1, y1, x2, y2;
     static long ox1 = 0, oy1 = 0, ox2 = 0, oy2 = 0;
@@ -926,8 +844,7 @@ boolean force;
     			   (d).y = REALBARWIDTH(self) - (s).x;
     
 
-static void init_arrows(self)
-struct oscroll *self;
+static void init_arrows(struct oscroll *self)
 {
     struct arrow *a, *b;
     int scale3d = TD_DEPTH * 1.84;
@@ -950,10 +867,7 @@ struct oscroll *self;
     SWAP_COPY_PT(a->pa[4], b->pa[4]);	SWAP_COPY_PT(a->pa[5], b->pa[5]);
 }
     
-static void draw_endzones(self, side, height, state)
-struct oscroll *self;
-int side, height;
-int state;			/* which arrow on or off */
+static void draw_endzones(struct oscroll *self, int side, int height, int state)
 {
     long x1, y1, x2, y2;
     struct point pa[6];
@@ -1061,9 +975,7 @@ int state;			/* which arrow on or off */
     oscroll_FillPolygon(self, t, 3, TD_BACKPAT(self));
 }
 			  
-static void motif_draw_whole_bar(self, side)
-struct oscroll *self;
-int side;
+static void motif_draw_whole_bar(struct oscroll *self, int side)
 {
     struct oscrollbar *bar = &self->desired.bar[Type[side]];
     int height = bar_height(self, side);
@@ -1107,9 +1019,7 @@ int side;
     motif_Draw3dBorder(self, x1, y1, x2, y2, FALSE, NULL);
 }
 
-static void draw_elevator(self, side)
-struct oscroll *self;
-int side;
+static void draw_elevator(struct oscroll *self, int side)
 {
     long x1, y1, x2, y2;
     long left, top, width, height;
@@ -1137,9 +1047,7 @@ int side;
     }
 }
     
-static void draw_dot(self, side)
-struct oscroll *self;
-int side;
+static void draw_dot(struct oscroll *self, int side)
 {
     long x1, y1, x2, y2;
     long left, top, width, height;
@@ -1165,9 +1073,7 @@ int side;
     }
 }
 
-static void normal_draw_whole_bar(self, side)
-struct oscroll *self;
-int side;
+static void normal_draw_whole_bar(struct oscroll *self, int side)
 {
     struct oscrollbar *bar = &self->desired.bar[Type[side]];
     int height = bar_height(self, side);
@@ -1201,10 +1107,7 @@ int side;
 }
 
 
-static void erase_dot(self, side, top, bot)
-struct oscroll *self;
-int side;
-long top, bot;
+static void erase_dot(struct oscroll *self, int side, long top, long bot)
 {
     int i;
     long x1, x2, y1, y2;
@@ -1242,9 +1145,7 @@ long x1,y1,x2,y2; {
     }
 }
 
-static void move_elevator(self, side)
-struct oscroll *self;
-int side;
+static void move_elevator(struct oscroll *self, int side)
 {
     struct oscrollbar *des = &self->desired.bar[Type[side]],
         *cur = &self->current.bar[Type[side]];
@@ -1461,10 +1362,7 @@ long left, top, width, height;
 }
 
 
-static void motif_full_update(self, type, left, top, width, height)
-struct oscroll *self;
-enum view_UpdateType type;
-long left, top, width, height;
+static void motif_full_update(struct oscroll *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     int i;
     struct rectangle rect, crect, VB;
@@ -1609,10 +1507,7 @@ long left, top, width, height;
 }
 
 
-static void full_update(self, type, left, top, width, height)
-struct oscroll *self;
-enum view_UpdateType type;
-long left, top, width, height;
+static void full_update(struct oscroll *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     if(!emulation) {
 	/* NORMAL SCROLLBARS */
@@ -1625,10 +1520,7 @@ long left, top, width, height;
 
 /* Overrides of the view routines: */
 
-void oscroll__FullUpdate(self, type, left, top, width, height)
-struct oscroll *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void oscroll__FullUpdate(struct oscroll *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     self->pending_update = 0;
     if (type == view_FullRedraw || type == view_LastPartialRedraw) {
@@ -1644,8 +1536,7 @@ long left, top, width, height;
     full_update(self, type, left, top, width, height);
 }
 
-void normal_scroll__Update(self)
-struct oscroll *self;
+void normal_scroll__Update(struct oscroll *self)
 {
     int i;
     long l, t, w, h;
@@ -1689,8 +1580,7 @@ struct oscroll *self;
     }
 }
 
-void motif_scroll__Update(self)
-struct oscroll *self;
+void motif_scroll__Update(struct oscroll *self)
 {
     int i;
     long l, t, w, h;
@@ -1727,8 +1617,7 @@ struct oscroll *self;
     }
 }
 
-void oscroll__Update(self)
-struct oscroll *self;
+void oscroll__Update(struct oscroll *self)
 {
     if(!emulation) {
 	/* NORMAL SCROLLBARS */
@@ -1740,9 +1629,7 @@ struct oscroll *self;
 }
 
 
-void oscroll__WantUpdate(self, requestor)
-struct oscroll *self;
-struct view *requestor;
+void oscroll__WantUpdate(struct oscroll *self, struct view *requestor)
 {
     if ((struct view *)self != requestor)
         updatelist_AddTo(self->updatelist, requestor);
@@ -1758,8 +1645,7 @@ struct view *requestor;
  * it right when we get a mouse hit.  This way there is
  * no scroll latency.
  */
-static void RepeatEvent(self)
-struct oscroll *self;
+static void RepeatEvent(struct oscroll *self)
 {
     struct oscrollbar *cur = NULL;
     static long lastcoord = 0;
@@ -1791,9 +1677,7 @@ struct oscroll *self;
 
 }
 
-static void RepeatScroll(self, cTime)
-struct oscroll *self;
-long cTime;
+static void RepeatScroll(struct oscroll *self, long cTime)
 {
     struct oscrollbar *cur = NULL;
     long timeInterval;
@@ -1833,10 +1717,7 @@ long cTime;
 }
 
 
-struct view *normal_scroll__Hit(self, action, x, y, num_clicks)
-struct oscroll *self;
-enum view_MouseAction action;
-long x, y, num_clicks;
+struct view *normal_scroll__Hit(struct oscroll *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
     int posn = 0, status, side = 0, delta, i, endzones;
     long coord = 0, temp, y1, y2;
@@ -2094,10 +1975,7 @@ long x, y, num_clicks;
     return (struct view *)self;
 }
 
-struct view *motif_scroll__Hit(self, action, x, y, num_clicks)
-struct oscroll *self;
-enum view_MouseAction action;
-long x, y, num_clicks;
+struct view *motif_scroll__Hit(struct oscroll *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
     int posn = 0, status, side = 0, delta, i, endzones;
     long coord = 0, temp, y1, y2;
@@ -2410,10 +2288,7 @@ long x, y, num_clicks;
     return (struct view *)self;
 }
 
-struct view *oscroll__Hit(self, action, x, y, num_clicks)
-struct oscroll *self;
-enum view_MouseAction action;
-long x, y, num_clicks;
+struct view *oscroll__Hit(struct oscroll *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
     if(!emulation) {
 	/* NORMAL SCROLLBARS */
@@ -2424,9 +2299,7 @@ long x, y, num_clicks;
     }
 }
 
-void oscroll__LinkTree(self, parent)
-    struct oscroll *self;
-    struct view *parent;
+void oscroll__LinkTree(struct oscroll *self, struct view *parent)
 {
 
     super_LinkTree(self, parent);
@@ -2434,9 +2307,7 @@ void oscroll__LinkTree(self, parent)
         view_LinkTree(self->child, self);
 }
 
-void oscroll__UnlinkNotification(self, unlinkedTree)
-    struct oscroll *self;
-    struct view *unlinkedTree;
+void oscroll__UnlinkNotification(struct oscroll *self, struct view *unlinkedTree)
 {
 
     updatelist_DeleteTree(self->updatelist, unlinkedTree);
@@ -2445,11 +2316,7 @@ void oscroll__UnlinkNotification(self, unlinkedTree)
 
 /* The 3-D drawing routines */
 
-void motif_Draw3dBorder(v, x1, y1, x2, y2, sense, fillp)
-struct view *v;
-long x1, y1, x2, y2;
-boolean sense;			/* "innie" or "outtie" */
-struct graphic *fillp;		/* center fill pattern, NULL for none */
+void motif_Draw3dBorder(struct view *v, long x1, long y1, long x2, long y2, boolean sense, struct graphic *fillp)
 {
     motif_DrawBorder(v, x1, y1, x2, y2,
 	       (sense) ? view_GrayPattern(v, TD_BGPATVAL, 16) :
@@ -2461,11 +2328,7 @@ struct graphic *fillp;		/* center fill pattern, NULL for none */
 }
     
 
-void motif_DrawBorder(v, x1, y1, x2, y2, lt, dk, fillp, depth)
-struct view *v;
-long x1, y1, x2, y2;		/* enclosing coords */
-struct graphic *lt, *dk, *fillp; /* patterns for light, dark and center */
-int depth;			/* depth of border */
+void motif_DrawBorder(struct view *v, long x1, long y1, long x2, long y2, struct graphic *lt, struct graphic *dk, struct graphic *fillp, int depth)
 {
 
     long left, top, width, height;

@@ -856,13 +856,7 @@ pushbuttonview__ObservedChanged(self, b, v)
 
 
 enum view_DSattributes 
-pushbuttonview__DesiredSize(self, width, height, pass, desired_width, desired_height)
-struct pushbuttonview *self;
-long width;
-long height;
-enum view_DSpass pass;
-long *desired_width;
-long *desired_height;
+int pushbuttonview__DesiredSize(struct pushbuttonview *self, long width, long height, enum view_DSpass pass, long *desired_width, long *desired_height)
 {
 /* 
   Tell parent that this object  wants to be as big as the box around its
@@ -1110,9 +1104,7 @@ ColorProc(self, param)
 }
 
 
-void pushbuttonview__WantUpdate(self, requestor)
-     struct pushbuttonview *self;
-     struct view *requestor;
+void pushbuttonview__WantUpdate(struct pushbuttonview *self, struct view *requestor)
 {
     if ((struct view *) self == requestor) {
 	if (self->awaitingUpdate) {
@@ -1123,9 +1115,7 @@ void pushbuttonview__WantUpdate(self, requestor)
     super_WantUpdate(self, requestor);
 } /* pushbuttonview__WantUpdate */
 
-static void OutputLabel(f, l)
-FILE *f;
-char *l;
+static void OutputLabel(FILE *f, char *l)
 {
     if(l==NULL) l=NO_MSG;
     while(*l) {
@@ -1136,12 +1126,7 @@ char *l;
     }
 }
 
-void pushbuttonview__Print(self, file, processor, format, topLevel)
-register struct pushbuttonview  *self;
-register FILE  *file;
-char   *processor;
-char   *format;
-boolean   topLevel;
+void pushbuttonview__Print(register struct pushbuttonview *self, register FILE *file, char *processor, char *format, boolean topLevel)
 {
     int count;
     register struct pushbutton *dobj = (struct pushbutton *)self->header.view.dataobject;

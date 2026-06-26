@@ -43,11 +43,10 @@ extern char *inet_ntoa();
 #include <arpa/inet.h>
 #endif /* hpux */
 #include <netdb.h>
+#include <stdlib.h>
 #include <andrewos.h> /* sys/time.h */
 
-main(argc, argv)
-int argc;
-unsigned char **argv;
+int main(int argc, unsigned char **argv)
 {
     int i, j;
     unsigned long foo, bar, baz;

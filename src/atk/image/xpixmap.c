@@ -68,6 +68,8 @@ static char *Copyright= "Copyright 1989, 1993 Jim Frost";
 #include <image.ih>
 #include <xpixmap.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 /* SUPPRESS 530 */
 /* SUPPRESS 560 */
 
@@ -76,9 +78,7 @@ extern int      Scrn; /* X screen number */
 
 #define XPM_FORMAT 1
 
-static void corrupted(fullname, f)
-     char  *fullname;
-     FILE *f;
+static void corrupted(char *fullname, FILE *f)
 {
   fclose(f);
   printf("%s: X Pixmap file is corrupted\n", fullname);
@@ -291,8 +291,7 @@ xpixmap__Load( self, fullname, fp )
   return(0);
 }
 
-int xpixmapIdent(fullname)
-     char *fullname;
+int xpixmapIdent(char *fullname)
 { struct xpixmap *self = xpixmap_New();
 
   if (xpixmap_Load(self, fullname, NULL) == 0) {

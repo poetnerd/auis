@@ -1,13 +1,12 @@
 #include <stdio.h>
 
+#include <string.h>
 /*
  * hack to metamail to decode uuencoded bodyparts
  * Written by Keith Moore, February 1992
  */
 
-uueget (ptr, outfp, n)
-char *ptr;
-FILE *outfp;
+int uueget(char *ptr, FILE *outfp, int n)
 {
     unsigned char c1, c2, c3;
     unsigned char p0, p1, p2, p3;
@@ -30,10 +29,7 @@ FILE *outfp;
 }
 
 
-getline (buf, size, fp)
-char *buf;
-int size;
-FILE *fp;
+int getline(char *buf, int size, FILE *fp)
 {
     int c;
     char *ptr = buf;
@@ -62,10 +58,7 @@ FILE *fp;
 }
 
 
-fromuue (infp, outfp, boundaries, ctptr)
-FILE *infp, *outfp;
-char **boundaries;
-int *ctptr;
+int fromuue(FILE *infp, FILE *outfp, char **boundaries, int *ctptr)
 {
     char buf[63];
 

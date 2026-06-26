@@ -41,16 +41,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <sbutton.ih>
 #include <bargrphv.eh>
 
+#include <stdlib.h>
 #define FUDGE 2
 #define FUDGE2 4
 #define FUDGE4 8
 #define MAXWID 36
 
-static DrawKnurl(self,fullupdate,rr)
-struct bargraphV * self;
-boolean fullupdate;
-struct rectangle *rr;
-
+static DrawKnurl(struct bargraphV *self, boolean fullupdate, struct rectangle *rr)
 {
     long start,height;
     struct rectangle r,clipper;
@@ -94,10 +91,7 @@ struct rectangle *rr;
     self->lasttop = r.top;
 }
 
-void bargraphV__Drawslider(self,fullupdate,rr)
-struct bargraphV * self;
-boolean fullupdate;
-struct rectangle *rr;
+void bargraphV__Drawslider(struct bargraphV *self, boolean fullupdate, struct rectangle *rr)
 {
     int start,height;
     struct rectangle interior,exterior,cl,clside,clipper;
@@ -147,18 +141,14 @@ struct rectangle *rr;
     self->lasttop = exterior.top;
 
 }
-boolean bargraphV__InitializeObject(classID, self )
-struct classheader *classID;
-struct bargraphV * self;
+boolean bargraphV__InitializeObject(struct classheader *classID, struct bargraphV *self)
 {
     struct sliderV *ss;
     ss = (struct sliderV *) self;
     ss->readonlydefault = TRUE;
     return TRUE;
 }
-void bargraphV__DrawFromScratch(self,x,y,width,height)
-struct bargraphV * self;
-long x,y,width,height;
+void bargraphV__DrawFromScratch(struct bargraphV *self, long x, long y, long width, long height)
 {
     struct sliderV *ss;
     ss = (struct sliderV *) self;

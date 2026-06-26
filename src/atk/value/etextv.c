@@ -43,8 +43,7 @@ static struct keymap *ssmap;
 #include <valuev.ih>
 #include <etextv.eh>
 #define Text(A) ((struct entertext *)(A->header.view.dataobject))
-void etextview_CancelCommand(self)
-register struct etextview *self; 
+void etextview_CancelCommand(register struct etextview *self)
 {
     struct entertext *txt = Text(self);
     if(entertext_Changed(txt)){
@@ -54,24 +53,21 @@ register struct etextview *self;
 	entertext_NotifyObservers(txt,0);
     }
 }
-void etextview_ReturnCommand(self)
-register struct etextview *self; 
+void etextview_ReturnCommand(register struct etextview *self)
 {
     struct entertext *txt = Text(self);
     etextview_SetDotPosition(self,0);
     etextview_SetDotLength(self,0);
     entertext_updatebuf(txt);
 }
-void etextview_ClearCommand(self)
-register struct etextview *self; 
+void etextview_ClearCommand(register struct etextview *self)
 {
     struct entertext *txt = Text(self);
     entertext_Clear(txt);
     entertext_NotifyObservers(txt,0);
 }
 
-void etextview__ReceiveInputFocus(self)
-register struct etextview *self; 
+void etextview__ReceiveInputFocus(register struct etextview *self)
 {
     self->header.textview.hasInputFocus = TRUE;
     self->keystate->next = NULL;
@@ -86,8 +82,7 @@ register struct etextview *self;
     if(self->valueview)
 	valueview_Highlight(self->valueview);
 }
-void etextview__LoseInputFocus(self)
-register struct etextview *self; 
+void etextview__LoseInputFocus(register struct etextview *self)
 {
     if(self->valueview)
 	valueview_Dehighlight(self->valueview);
@@ -96,9 +91,7 @@ register struct etextview *self;
     }
     super_LoseInputFocus(self);
 }
-boolean etextview__InitializeObject(classID,self)
-struct classheader *classID;
-struct etextview *self;
+boolean etextview__InitializeObject(struct classheader *classID, struct etextview *self)
 {
     self->keystate = keystate_Create(self, ssmap);
     self->ClearOnRIF = FALSE;
@@ -107,8 +100,7 @@ struct etextview *self;
     return TRUE;
 }
 
-boolean etextview__InitializeClass(classID)
-struct classheader *classID;
+boolean etextview__InitializeClass(struct classheader *classID)
 {    
     struct classinfo *classInfo = &etextview_classinfo;
     struct proctable_Entry *tempProc;

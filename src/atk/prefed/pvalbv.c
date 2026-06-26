@@ -46,9 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 #define ON 1
 #define OFF 0
 
-boolean pvalbv__InitializeObject(classID, self)
-struct classheader *classID;
-struct pvalbv *self;
+boolean pvalbv__InitializeObject(struct classheader *classID, struct pvalbv *self)
 {
     struct sbutton *t=pvalbv_GetSButton(self);
     sbutton_SetLabel(t, OFF, "No");
@@ -59,20 +57,13 @@ struct pvalbv *self;
     
 }
 
-void pvalbv__FinalizeObject(classID, self)
-struct classheader *classID;
-struct pvalbv *self;
+void pvalbv__FinalizeObject(struct classheader *classID, struct pvalbv *self)
 {
     /* the wrapv class takes care of destroying everything */
 }
 
 
-struct view *pvalbv__Hit(self, action, x, y, numberOfClicks)
-struct pvalbv *self;
-enum view_MouseAction action;
-long x;
-long y;
-long numberOfClicks;
+struct view *pvalbv__Hit(struct pvalbv *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     struct view *ret;
     boolean val;
@@ -94,8 +85,7 @@ long numberOfClicks;
 }
 
 
-void pvalbv__UpdateSButton(self)
-struct pvalbv *self;
+void pvalbv__UpdateSButton(struct pvalbv *self)
 {
     if(prefval_GetType(DATA(self))==prefval_Boolean) {
 	if(prefval_GetValue(DATA(self))) {

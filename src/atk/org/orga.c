@@ -77,6 +77,9 @@ END-SPECIFICATION  ************************************************************/
 #include  <orga.eh>
 
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #define  Org		    (self->org_data_object)
 #define  OrgView	    (self->org_view_object)
 #define  Frame		    (self->frame)

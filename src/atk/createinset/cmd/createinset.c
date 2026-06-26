@@ -127,6 +127,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/crea
 #endif /* #ifndef MAXPATHLEN */
 #include <pwd.h>
 
+#include <stdlib.h>
 #include <class.h>		/* for boolean */
 /* REVISE THE FOLLOWING 
  *	For changes in the list of files or names or locations.
@@ -172,9 +173,7 @@ usage() {
 	exit(2);
 }
 
-main( argc, argv )
-	register int	  argc;
-	register char  **argv;
+int main(register int argc, register char **argv)
 {
 	FILE *inf, *outf;
 	char **filename;
@@ -312,8 +311,7 @@ convert(inf, outf)
 	}
 }
 
-ProcessLog(inf, outf)
-	FILE *inf, *outf;
+int ProcessLog(FILE *inf, FILE *outf)
 {
 	time_t TM;
 	struct tm *now;

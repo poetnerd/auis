@@ -73,9 +73,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 boolean RastersInitiallyShrunk = FALSE;
 char debug;
 
-void DisplayBoxBlitOverlap(self, pix)
-struct rasterview *self;
-struct rasterimage *pix;
+void DisplayBoxBlitOverlap(struct rasterview *self, struct rasterimage *pix)
 {
     struct rectangle SR;
     struct rectangle DB;
@@ -124,8 +122,7 @@ struct rasterimage *pix;
     LEAVE(DisplayBoxBlitOverlap);
 }
 
-void DisplayBoxDrawPanHighlight(self)
-struct rasterview *self;
+void DisplayBoxDrawPanHighlight(struct rasterview *self)
 {
     struct graphic *G = rasterview_GetDrawable(self);
     struct rectangle DS;
@@ -164,10 +161,7 @@ struct rasterview *self;
 }
 
 /* Write Pixel Image of the contents of the Display Box. */
-void DisplayBoxWritePixImageFull(self, G, pix)
-struct rasterview *self;
-struct graphic *G;
-struct rasterimage *pix;
+void DisplayBoxWritePixImageFull(struct rasterview *self, struct graphic *G, struct rasterimage *pix)
 {
     struct rectangle DB;
 
@@ -199,9 +193,7 @@ struct rasterimage *pix;
 }
 
 /* Write Pixel Image of the contents of the Display Box assuming a White area on which to write. */
-void DisplayBoxWritePixImage(self, G)
-struct rasterview *self;
-struct graphic *G;
+void DisplayBoxWritePixImage(struct rasterview *self, struct graphic *G)
 {
     struct rectangle DB;
 
@@ -234,8 +226,7 @@ struct graphic *G;
     DrawHighlightScreenCoordinates(self, G, DB, graphic_BLACK, graphic_WHITE);
 }
 
-void DisplayBoxHide(self)
-struct rasterview *self;
+void DisplayBoxHide(struct rasterview *self)
 {
     struct raster *ras = (struct raster *)self->header.view.dataobject;
     struct graphic *G = rasterview_GetDrawable(self);
@@ -314,9 +305,7 @@ struct rasterview *self;
     }
 }
 
-void DisplayBoxDrawHighlight(self, G)
-struct rasterview *self;
-struct graphic *G;
+void DisplayBoxDrawHighlight(struct rasterview *self, struct graphic *G)
 {
     struct rectangle DS;
     struct rectangle DBS;
@@ -353,9 +342,7 @@ struct graphic *G;
     DrawHighlightScreenCoordinates(self, G, DS, graphic_BLACK, graphic_WHITE);
 }
 
-void DisplayBoxDrawHighlightGray(self, G)
-struct rasterview *self;
-struct graphic *G;
+void DisplayBoxDrawHighlightGray(struct rasterview *self, struct graphic *G)
 {
     struct rectangle DS;
     struct rectangle DBS;
@@ -390,9 +377,7 @@ struct graphic *G;
     DrawHighlightScreenCoordinates(self, G, DS, graphic_BLACK, graphic_WHITE);
 }
 
-void DisplayBoxHideHighlight(self, G)
-struct rasterview *self;
-struct graphic *G;
+void DisplayBoxHideHighlight(struct rasterview *self, struct graphic *G)
 {
     struct rasterimage *pix =
       raster_GetPix((struct raster *)self->header.view.dataobject);
@@ -436,10 +421,7 @@ struct graphic *G;
 			   rectangle_Height(&self->DisplayBoxSelection));
 }
 
-void DrawHighlightBehindDisplayBox(self, G, gray)
-struct rasterview *self;
-struct graphic *G;
-boolean gray;
+void DrawHighlightBehindDisplayBox(struct rasterview *self, struct graphic *G, boolean gray)
 {
     struct rectangle DBF;		/* Display Box Frame */
     struct rectangle DSF;		/* Desired Selection Frame */
@@ -845,10 +827,7 @@ boolean gray;
     }
 }
 
-void DisplayBoxHideOverlappingHighlight(self, G, pix)
-struct rasterview *self;
-struct graphic *G;
-struct rasterimage *pix;
+void DisplayBoxHideOverlappingHighlight(struct rasterview *self, struct graphic *G, struct rasterimage *pix)
 {
     long Xoff = self->Xoff;
     long Yoff = self->Yoff;
@@ -898,11 +877,7 @@ struct rasterimage *pix;
     }
 }
 
-void SetPixelBehindDisplayBox(self, pix, x, y, bit)
-struct rasterview *self;
-struct rasterimage *pix;
-long x, y;
-boolean bit;
+void SetPixelBehindDisplayBox(struct rasterview *self, struct rasterimage *pix, long x, long y, boolean bit)
 {
     struct rasterimage *fullpix =
       raster_GetPix((struct raster *)self->header.view.dataobject);

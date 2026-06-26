@@ -45,10 +45,7 @@ extern int PanePtrToNum();
 extern struct selection *SelectionNumToPtr();
 extern int SelectionPtrToNum();
 
-struct pane *SetPaneNum(menu, state, paneNum)
-    struct cmenu *menu;
-    struct drawingState *state;
-    int paneNum;
+struct pane *SetPaneNum(struct cmenu *menu, struct drawingState *state, int paneNum)
 {
     if (paneNum == -1) {
         state->paneNum = -1;
@@ -62,10 +59,7 @@ struct pane *SetPaneNum(menu, state, paneNum)
     return state->panePtr;
 }
 
-int SetPanePtr(menu, state, panePtr)
-    struct cmenu *menu;
-    struct drawingState *state;
-    struct pane *panePtr;
+int SetPanePtr(struct cmenu *menu, struct drawingState *state, struct pane *panePtr)
 {
     if (panePtr == NULL) {
         state->paneNum = -1;
@@ -79,10 +73,7 @@ int SetPanePtr(menu, state, panePtr)
     return state->paneNum;
 }
 
-struct selection *SetSelectionNum(menu, state, selectionNum)
-    struct cmenu *menu;
-    struct drawingState *state;
-    int selectionNum;
+struct selection *SetSelectionNum(struct cmenu *menu, struct drawingState *state, int selectionNum)
 {
     if (selectionNum == -1) {
         state->selectionNum = -1;
@@ -96,10 +87,7 @@ struct selection *SetSelectionNum(menu, state, selectionNum)
     return state->selectionPtr;
 }
 
-int SetSelectionPtr(menu, state, selectionPtr)
-    struct cmenu *menu;
-    struct drawingState *state;
-    struct selection *selectionPtr;
+int SetSelectionPtr(struct cmenu *menu, struct drawingState *state, struct selection *selectionPtr)
 {
     if (selectionPtr == NULL) {
         state->selectionNum = -1;
@@ -116,15 +104,7 @@ int SetSelectionPtr(menu, state, selectionPtr)
 /* This routine calculates which pane should be on top and which selection
  * should be higlighted.
  */
-void CalculatePaneAndSelection(menu, state, x, y, returnPaneNum, returnSelNum, returnPanePtr, returnSelPtr)
-    struct cmenu *menu;
-    struct drawingState *state;
-    int x;
-    int y;
-    int *returnPaneNum;
-    int *returnSelNum;
-    struct pane **returnPanePtr;
-    struct selection **returnSelPtr;
+void CalculatePaneAndSelection(struct cmenu *menu, struct drawingState *state, int x, int y, int *returnPaneNum, int *returnSelNum, struct pane **returnPanePtr, struct selection **returnSelPtr)
 {
 
     int xShift = menu->gMenuData->xShift;
@@ -288,11 +268,7 @@ void CalculatePaneAndSelection(menu, state, x, y, returnPaneNum, returnSelNum, r
     *returnSelPtr = selPtr;
 }
 
-void ShowASelection(globalData, pane, selection, x, y)
-struct cmenudata *globalData;
-struct pane *pane;
-struct selection *selection;
-int x, y;
+void ShowASelection(struct cmenudata *globalData, struct pane *pane, struct selection *selection, int x, int y)
 {
     Display *display = globalData->dpy;
     Window window = globalData->menuWindow;
@@ -312,13 +288,7 @@ int x, y;
     }
 }
 
-void ShowAPane(menu, state, pane, x, y, position)  
-    struct cmenu *menu; 
-    struct drawingState *state;
-    struct pane *pane;
-    long x;
-    long y;
-    int position;
+void ShowAPane(struct cmenu *menu, struct drawingState *state, struct pane *pane, long x, long y, int position)
 {
     struct cmenudata *globalData = menu->gMenuData;
     Display *display = globalData->dpy;
@@ -460,12 +430,7 @@ DrawWormHole(menu, state)
 }
 
 /* Initializes drawingState and maps the menu window. Perhaps this function should be renamed. */
-void CreateMenuStack(menu, state, x, y, parentWindow)
-    struct cmenu *menu;
-    struct drawingState *state;
-    long x;
-    long y;
-    Window parentWindow;
+void CreateMenuStack(struct cmenu *menu, struct drawingState *state, long x, long y, Window parentWindow)
 {
 
     int	paneWidth = 0;
@@ -621,9 +586,7 @@ void CreateMenuStack(menu, state, x, y, parentWindow)
     XSync(display, 0);
 }
 
-DrawMenus(menu, state)
-    struct cmenu *menu;
-    struct drawingState *state;
+int DrawMenus(struct cmenu *menu, struct drawingState *state)
 {
     long X = state->stackWidth - state->paneWidth;
     long Y = state->stackHeight - state->paneHeight;
@@ -644,13 +607,7 @@ DrawMenus(menu, state)
     }
 }
 
-void FlipButton(menu, state, paneNum, selectionNum, selectionPtr, onOrOff)
-    struct cmenu *menu;
-    struct drawingState *state;
-    int paneNum;
-    int selectionNum;
-    struct selection *selectionPtr;
-    int onOrOff;
+void FlipButton(struct cmenu *menu, struct drawingState *state, int paneNum, int selectionNum, struct selection *selectionPtr, int onOrOff)
 {
 
     struct cmenudata *globalData = menu->gMenuData;

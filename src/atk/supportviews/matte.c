@@ -60,8 +60,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 struct menulist *matteMenus;
 static struct keymap *matteKeyMap;
 
-static void UpdateCursors(self)
-struct matte *self;
+static void UpdateCursors(struct matte *self)
 {
     switch(self->Moving){
 	case matte_ChangeWidth:
@@ -95,12 +94,7 @@ struct matte *self;
 	    break;
     }
 }
-void matte__Print(self, file, processor, finalFormat, topLevel)
-struct matte *self;
-FILE *file;
-char *processor;
-char *finalFormat;
-boolean topLevel;
+void matte__Print(struct matte *self, FILE *file, char *processor, char *finalFormat, boolean topLevel)
 {
     if(self->child) 
 	view_Print(self->child,file, processor, finalFormat, topLevel);
@@ -163,12 +157,7 @@ long *dHeight;
     return val;
 }
 
-void matte__GetOrigin(self, width, height, originX, originY)
-    struct matte *self;
-    long width;
-    long height;
-    long *originX;
-    long *originY;
+void matte__GetOrigin(struct matte *self, long width, long height, long *originX, long *originY)
 {
     if (self->child != NULL)
         view_GetOrigin(self->child, width, height, originX, originY);
@@ -176,32 +165,25 @@ void matte__GetOrigin(self, width, height, originX, originY)
         super_GetOrigin(self, width, height, originX, originY);
 }
 
-void matte__WantInputFocus(self, requestor)
-struct matte *self;
-struct view *requestor;
+void matte__WantInputFocus(struct matte *self, struct view *requestor)
 {
     if(((struct view *)self)==requestor && self->child) super_WantInputFocus(self, self->child);
     else super_WantInputFocus(self, requestor);
 }
 
-void matte__ReceiveInputFocus(self)
-    struct matte *self;
+void matte__ReceiveInputFocus(struct matte *self)
 {
     if(self->child) view_ReceiveInputFocus(self->child);
     matte_WantUpdate(self,self);
 }
 
-void matte__LoseInputFocus(self)
-    struct matte *self;
+void matte__LoseInputFocus(struct matte *self)
 {
     if(self->child) view_LoseInputFocus(self->child);
     matte_WantUpdate(self,self);
 }
 
-struct view *matte__Hit(self,action,mousex,mousey,numberOfClicks) 
-struct matte *self;
-enum view_MouseAction action;
-long mousex, mousey, numberOfClicks;
+struct view *matte__Hit(struct matte *self, enum view_MouseAction action, long mousex, long mousey, long numberOfClicks)
 {
     if((self->child && !self->resizing) || self->ref == NULL)	
 	return view_Hit(self->child,action,view_EnclosedXToLocalX(self->child, mousex), view_EnclosedYToLocalY(self->child, mousey),numberOfClicks);
@@ -241,8 +223,7 @@ long mousex, mousey, numberOfClicks;
     if(self->Moving) return (struct view *) self;
     return NULL;
 }
-UpdateDrawing(self)
-struct matte *self;
+int UpdateDrawing(struct matte *self)
 {
     if(self->OldMode != self->drawing){
 	struct rectangle enclosingRect;
@@ -254,8 +235,7 @@ struct matte *self;
 	self->OldMode = self->drawing;
     }
 }
-void matte__Update(self)
-struct matte *self;
+void matte__Update(struct matte *self)
 {
     if(self->ref && self->desw != self->ref->desw || self->desh != self->ref->desh){
 	self->desw = self->ref->desw ;
@@ -270,10 +250,7 @@ struct matte *self;
     UpdateCursors(self);
     UpdateDrawing(self);
 }
-void matte__FullUpdate(self,type,left,top,width,height)
-struct matte *self;
-enum view_UpdateType type;
-long left,top,width,height;
+void matte__FullUpdate(struct matte *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct rectangle enclosingRect;
     if(type == view_FullRedraw && self->ref && (self->desw != self->ref->desw || self->desh != self->ref->desh)){
@@ -310,15 +287,11 @@ long left,top,width,height;
 	view_FullUpdate(self->child,type,left,top,width,height);
     }
 }
-matte_PromptForViewName(self)
-struct matte *self;
+int matte_PromptForViewName(struct matte *self)
 {   /* MISSING FUNCTION */
 return NULL;
 }
-struct matte *matte__Create(classID,vr,parent)
-struct classheader *classID;
-struct viewref *vr;
-struct view *parent;
+struct matte *matte__Create(struct classheader *classID, struct viewref *vr, struct view *parent)
 {
     struct matte *self;
     char *viewT=vr->viewType;
@@ -350,17 +323,13 @@ struct view *parent;
     view_AddObserver(self->child,self);
     return(self);
 }
-void matte__SetDataObject(self,dd)
-struct matte *self;
-struct dataobject *dd;
+void matte__SetDataObject(struct matte *self, struct dataobject *dd)
 {
     if(self->child){
 	view_SetDataObject(self->child,dd);
     }
 }
-boolean matte__InitializeObject(classID,self)
-struct classheader *classID;
-struct matte *self;
+boolean matte__InitializeObject(struct classheader *classID, struct matte *self)
 {
     self->widthcursor = cursor_Create(self);
     self->heightcursor = cursor_Create(self);
@@ -378,9 +347,7 @@ struct matte *self;
     self->sizepending = TRUE;
     return TRUE;
 }
-void matte__SetResizing(self,key)
-struct matte *self;
-long key;
+void matte__SetResizing(struct matte *self, long key)
 {
     if(self->resizing == 0){
 	self->resizing = 1;
@@ -391,24 +358,18 @@ long key;
     }
     matte_WantUpdate(self,self);
 }
-void matte__SetDrawing(self,key)
-struct matte *self;
-long key;
+void matte__SetDrawing(struct matte *self, long key)
 {
     self->drawing = !self->drawing;
     matte_WantUpdate(self,self);
 }
-void matte__PostMenus(self, menulist)
-struct matte *self;
-struct menulist *menulist;
+void matte__PostMenus(struct matte *self, struct menulist *menulist)
 {
     menulist_ClearChain(self->menus);
     menulist_ChainBeforeML(self->menus, menulist, (long) menulist);
     super_PostMenus(self, self->menus);
 }
-void matte__WantNewSize(self,requestor)
-    struct matte *self;
-struct view *requestor;
+void matte__WantNewSize(struct matte *self, struct view *requestor)
 {
 
     if(self->ref && (self->ref->desw != UNSET ||  self->ref->desh != UNSET)){
@@ -428,18 +389,14 @@ static struct bind_Description matteBindings[]={
     NULL
 };
 
-boolean matte__InitializeClass(classID)
-    struct classheader *classID;
+boolean matte__InitializeClass(struct classheader *classID)
 {
     matteMenus = menulist_New();
     matteKeyMap =  keymap_New();
     bind_BindList(matteBindings, matteKeyMap , matteMenus, &matte_classinfo);
     return TRUE;
 }
-void matte__ObservedChanged(self, changed, value)
-struct matte *self;
-struct observable *changed;
-long value;
+void matte__ObservedChanged(struct matte *self, struct observable *changed, long value)
 {
     if(changed == (struct observable *)self->ref ) 
     {
@@ -462,24 +419,19 @@ long value;
 	else matte_Destroy(self);
     }
 }
-void matte__LinkTree(self, parent)
-struct matte *self;
-struct view *parent;
+void matte__LinkTree(struct matte *self, struct view *parent)
 {
 
     super_LinkTree(self, parent);
     if (self->child != NULL)
         view_LinkTree(self->child, self);
 }
-void matte__InitChildren(self)
-struct matte *self;
+void matte__InitChildren(struct matte *self)
 {
     if (self->child != NULL)
         view_InitChildren(self->child);
 }
-void matte__FinalizeObject(classID, self)
-struct classheader *classID;
-struct matte *self;
+void matte__FinalizeObject(struct classheader *classID, struct matte *self)
 {
     if(self->child){
 	struct view *child = self->child;

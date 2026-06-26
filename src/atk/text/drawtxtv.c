@@ -49,6 +49,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #define AUXMODULE 1
 #include <textv.eh>
 
+#include <stdlib.h>
 #define textview_MOVEVIEW 99999999
 static struct graphic *pat;
 #define FGC 1
@@ -64,9 +65,7 @@ static struct graphic *pat;
 /* the max number of pixels a char can overhang its bounding box */
 #define MAXOVERHANG 4
 
-static long StringWidth(widths, s)
-register short *widths;
-register unsigned char *s;
+static long StringWidth(register short *widths, register unsigned char *s)
 {
     register short w = 0;
     while (*s)
@@ -76,9 +75,7 @@ register unsigned char *s;
 
 /* Puts a 5-char sequence in string */
 
-static void CharToOctal(s, c)
-register unsigned char *s;
-register char c;
+static void CharToOctal(register unsigned char *s, register char c)
 {
     *s++ = '\\';
     *s++ = '0' + ((c >> 6) & 3);
@@ -89,11 +86,7 @@ register char c;
 
 int drawtxtv_tabscharspaces = 8;
 
-static long GetNextTabPosition(v, width, sv, info)
-struct textview *v;
-int width;
-struct text_statevector *sv;
-struct formattinginfo *info;
+static long GetNextTabPosition(struct textview *v, int width, struct text_statevector *sv, struct formattinginfo *info)
 {
     int tabWidth = drawtxtv_tabscharspaces * (v->tabWidth);
     if (sv->SpecialFlags & style_TabsCharacters)
@@ -133,11 +126,7 @@ struct formattinginfo *info;
 
 }
 
-static long ParagraphIndent(self, text, pos, info)
-struct textview *self;
-struct text *text;
-long pos;
-register struct formattinginfo *info;
+static long ParagraphIndent(struct textview *self, struct text *text, long pos, register struct formattinginfo *info)
 {
     struct environment *myEnv;
     struct text_statevector mysv;
@@ -172,12 +161,7 @@ register struct formattinginfo *info;
     return width;
 }
 
-static long MovePast(self, width, widths, info, string)
-struct textview *self;
-register long width;
-register short *widths;
-struct formattinginfo *info;
-register unsigned char *string;
+static long MovePast(struct textview *self, register long width, register short *widths, struct formattinginfo *info, register unsigned char *string)
 {
     register unsigned char tc;
     register long bump = info->spaceBump;
@@ -198,15 +182,7 @@ register unsigned char *string;
  * Finds the screen X coordinate for a given document pos
  */
 
-static void LocateCursor(self, startX, spaceShim, startPos, widths, linePos, searchPos, info)
-struct textview *self;
-long startX;
-long spaceShim;
-long startPos;
-register short *widths;
-long linePos;
-long searchPos;
-register struct formattinginfo *info;
+static void LocateCursor(struct textview *self, long startX, long spaceShim, long startPos, register short *widths, long linePos, long searchPos, register struct formattinginfo *info)
 {
     long bx = (self->hasApplicationLayer) ? self->bx : self->ebx;
 
@@ -239,15 +215,7 @@ register struct formattinginfo *info;
  * Finds document pos for a given screen X coordinate
  */
 
-static void LocateHit(self, startX, spaceShim, startPos, widths, linePos, searchX, info)
-struct textview *self;
-long startX;
-long spaceShim;
-long startPos;
-register short *widths;
-long linePos;
-long searchX;
-register struct formattinginfo *info;
+static void LocateHit(struct textview *self, long startX, long spaceShim, long startPos, register short *widths, long linePos, long searchX, register struct formattinginfo *info)
 {
     long bx = (self->hasApplicationLayer) ? self->bx : self->ebx;
 
@@ -284,11 +252,7 @@ register struct formattinginfo *info;
     }
 }
 
-static void AllocateLineItem(self, text, pos, info)
-struct textview *self;
-struct text *text;
-long pos;
-register struct formattinginfo *info;
+static void AllocateLineItem(struct textview *self, struct text *text, long pos, register struct formattinginfo *info)
 {
     register struct fontdesc *tf;
     register struct lineitem *tlp;
@@ -417,11 +381,7 @@ short *exposeStylesWidths = NULL;
 
 /* Need to look here - ajp */
 
-static void ComputeStyleItem(self, startPos, endPos, pixelAddr, charAddr, info)
-long startPos, endPos;
-struct textview *self;
-long *pixelAddr, *charAddr;
-register struct formattinginfo *info;
+static void ComputeStyleItem(struct textview *self, long startPos, long endPos, long *pixelAddr, long *charAddr, register struct formattinginfo *info)
 {
     struct environment *startEnv, *endEnv;
     register struct environment *cparent, *te;
@@ -541,11 +501,7 @@ register struct formattinginfo *info;
 
 /* NOTE: the info structure passed in is expected to be initialized, and will be left initialized upon exit.
   The caller (text__LinRedraw) is responsible for finalizing the statevector in the info struct. */
-static void GenerateLineItems(self, text, currentLine, info)
-struct textview *self;
-struct text *text;
-struct mark *currentLine;
-register struct formattinginfo *info;
+static void GenerateLineItems(struct textview *self, struct text *text, struct mark *currentLine, register struct formattinginfo *info)
 {
     struct environment *myEnv;
     long lastEnvPos = 0;
@@ -947,11 +903,7 @@ register struct formattinginfo *info;
     }
 }
 
-static void DrawBar(self, tt, bx, by, width)
-struct textview *self;
-struct lineitem *tt;
-long bx, by;
-long width;
+static void DrawBar(struct textview *self, struct lineitem *tt, long bx, long by, long width)
 {
     struct FontSummary *fontInfo;
     long above, below;
@@ -1003,10 +955,7 @@ long width;
 /*
  * Draw a change bar line at the right side of the view.
  */
-static void DrawChangeBar(self,info,by)
-struct textview *self;
-register struct formattinginfo *info;
-long by;
+static void DrawChangeBar(struct textview *self, register struct formattinginfo *info, long by)
 {
     long x = textview_GetLogicalWidth(self);
     if (x > 5) {
@@ -1022,10 +971,7 @@ long by;
  * would to painful to do it right at this time.
  */
 
-static void DrawStringNoTabs(self, s, ctrl)
-struct textview *self;
-unsigned char *s;
-int ctrl;
+static void DrawStringNoTabs(struct textview *self, unsigned char *s, int ctrl)
 {
     unsigned char *st, *dt, xbuf[1024];
     for (st = s, dt = xbuf; *st; st++)
@@ -1035,10 +981,7 @@ int ctrl;
     textview_DrawString(self, xbuf, graphic_ATBASELINE);
 }
 
-static void drawcontinued(self,info,by)
-struct textview *self;
-register struct formattinginfo *info;
-long by;
+static void drawcontinued(struct textview *self, register struct formattinginfo *info, long by)
 {   /* draw a pointer at the end of the line 
       to indicate that unwrapped text is 
       beyond the end of the page */
@@ -1066,16 +1009,7 @@ long by;
 }
 
 /* NOTE: the info structure passed in is expected to be UN-initialized. The info structure will be initialized upon exit, but the tabs field of the statevector will be NULL. */
-long textview__LineRedraw(self, type, currentLine, x, y, xSize, ySize, search, cont, txheight, info)
-struct textview *self;
-enum textview_LineRedrawType type;
-struct mark *currentLine;
-long x, y;
-long xSize, ySize;
-long search;
-boolean *cont;
-long *txheight;
-register struct formattinginfo *info;
+long textview__LineRedraw(struct textview *self, enum textview_LineRedrawType type, struct mark *currentLine, long x, long y, long xSize, long ySize, long search, boolean *cont, long *txheight, register struct formattinginfo *info)
 {
     struct text *text = Text(self);
     long zapMe;
@@ -1733,10 +1667,7 @@ register struct formattinginfo *info;
     return info->lineAbove + info->below;
 }
 
-void textview__ViewMove(self, lineStructure, movement)
-struct textview *self;
-struct linedesc *lineStructure;
-long movement;
+void textview__ViewMove(struct textview *self, struct linedesc *lineStructure, long movement)
 {
     struct environment *curenv;
     struct view *CurView;

@@ -43,10 +43,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * returned. 
  */
 
-EliStr_t       *eliStringTable_FindOrMake(st, strtab, string)
-EliState_t     *st;
-eliHashTable_t *strtab;
-char           *string;
+EliStr_t       *eliStringTable_FindOrMake(EliState_t *st, eliHashTable_t *strtab, char *string)
 {
     EliStr_t       *tmp;
 
@@ -63,10 +60,7 @@ char           *string;
  * Like eliStringTable_FindOrMake, but always creates a new node. 
  */
 
-EliStr_t       *eliStringTable_Make(st, strtab, string)
-EliState_t     *st;
-eliHashTable_t *strtab;
-char           *string;
+EliStr_t       *eliStringTable_Make(EliState_t *st, eliHashTable_t *strtab, char *string)
 {
     EliStr_t       *tmp;
 
@@ -82,9 +76,7 @@ char           *string;
  * all data in ht are strnodes! 
  */
 
-EliStr_t       *eliStringTable_Find(strtab, name)
-eliHashTable_t *strtab;
-char           *name;
+EliStr_t       *eliStringTable_Find(eliHashTable_t *strtab, char *name)
 {
     EliSexp_t      *tmp = eliHT_Find(strtab, name);
 

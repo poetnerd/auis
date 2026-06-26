@@ -46,6 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 #include <class.h>
 #include <table.ih>
 
+#include <stdlib.h>
 #if !POSIX_ENV
 extern char * malloc();
 #endif
@@ -119,8 +120,7 @@ Exception ()
     longjmp (jbs -> env, 1);
 }
 
-static double standardize(x)
-extended_double *x;
+static double standardize(extended_double *x)
 {
     if (!IsStandard(x)) {
 	*(jbs -> result) = *x;
@@ -129,11 +129,7 @@ extended_double *x;
     return StandardValue(x);
 }
 
-void  eval (T, result, r, c, input)
-register struct table * T;
-extended_double *result;
-int     r, c;
-char   *input;
+void  eval(register struct table *T, extended_double *result, int r, int c, char *input)
 {
     char *saveinput = input;
 
@@ -158,11 +154,7 @@ char   *input;
     }
 }
 
-static void expr (T, result, inptr, r, c)
-register struct table * T;
-extended_double *result;
-char **inptr;
-int     r, c;
+static void expr(register struct table *T, extended_double *result, char **inptr, int r, int c)
 {
     struct jbstruct new_jbs, *old_jbs;
 #if defined(_ANSI_C_SOURCE) && !defined(_NO_PROTO)
@@ -182,10 +174,7 @@ int     r, c;
     signal (SIGFPE, oldsig);
 }
 
-static double relexpr(T, inptr, r, c)
-register struct table *T;
-char **inptr;
-int     r, c;
+static double relexpr(register struct table *T, char **inptr, int r, int c)
 {
     int     op, op2;
     double  x, y;
@@ -220,10 +209,7 @@ int     r, c;
     return x;
 }
 
-static double aexpr (T, inptr, r, c)
-register struct table *T;
-char **inptr;
-int     r, c;
+static double aexpr(register struct table *T, char **inptr, int r, int c)
 {
     int     op;
     double  x, y;
@@ -241,10 +227,7 @@ int     r, c;
     return x;
 }
 
-static double term (T, inptr, r, c)
-register struct table * T;
-char **inptr;
-int     r, c;
+static double term(register struct table *T, char **inptr, int r, int c)
 {
     int     op;
     double  x, y;
@@ -262,10 +245,7 @@ int     r, c;
     return x;
 }
 
-static double factor (T, inptr, r, c)
-register struct table * T;
-char **inptr;
-int     r, c;
+static double factor(register struct table *T, char **inptr, int r, int c)
 {
     int     op;
     double x, y;
@@ -289,11 +269,7 @@ int     r, c;
     return x;
 }
 
-static cellref (T, inptr, rr, cc, r, c)
-register struct table * T;
-char **inptr;
-int     rr, cc;
-double *r, *c;
+static cellref(register struct table *T, char **inptr, int rr, int cc, double *r, double *c)
 {
     *r = relexpr(T, inptr, rr, cc);
     skipb(*inptr);
@@ -307,10 +283,7 @@ double *r, *c;
 
 #define DigitToDouble(c) ((double) (c - '0'))
 
-static double atom (T, inptr, rr, cc)
-register struct table * T;
-char **inptr;
-int     rr, cc;
+static double atom(register struct table *T, char **inptr, int rr, int cc)
 {
     int    c;
     double x = 0, y = 0;
@@ -414,10 +387,7 @@ static int  initdone = 0;
 static struct fun  *htable[HASHMASK + 1];
 static struct fun   sentinal;
 
-void enterfun (name, fptr, argc)
-char     *name;
-double (*fptr)();
-int     argc;
+void enterfun(char *name, double (*fptr)(), int argc)
 {
     struct fun *p, **q;
     char    c;
@@ -448,14 +418,7 @@ inithash () {
     initdone = 1;
 }
 
-static double funcall (T, rr, cc, name, length, h, args, argc)
-register struct table * T;
-int     rr, cc;
-char   *name;
-extended_double *args;
-int     argc,
-	h,
-	length;
+static double funcall(register struct table *T, int rr, int cc, char *name, int length, int h, extended_double *args, int argc)
 {
     struct fun *p;
     extended_double myresult;
@@ -499,10 +462,7 @@ NEXT: 	;
     }
 }
 
-char   *translate (input, translaterc, ms)
-char   *input;
-int     (*translaterc) ();
-struct movetrstate * ms;
+char   *translate(char *input, int (*translaterc)(), struct movetrstate *ms)
 {
     int     any = 0;
     int     absr,
@@ -627,8 +587,7 @@ static char *monthname[] = {
     "july", "august", "september", "october", "november", "december"
 };
 
-static int trydate (input)
-char   *input;
+static int trydate(char *input)
 {
     int     day = 0, month = 0, year = 0;
     int     i;

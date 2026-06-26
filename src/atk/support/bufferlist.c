@@ -54,6 +54,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #ifndef MAXPATHLEN 
 #include <sys/param.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
 #endif
 #define DEFAULTOBJECT "text"
 

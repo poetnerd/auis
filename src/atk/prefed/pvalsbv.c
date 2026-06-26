@@ -43,9 +43,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 
 #define DATA(self) ((struct prefval *)pvalsbv_GetDataObject(self))
 
-boolean pvalsbv__InitializeObject(classID, self)
-struct classheader *classID;
-struct pvalsbv *self;
+boolean pvalsbv__InitializeObject(struct classheader *classID, struct pvalsbv *self)
 {
     struct sbutton *t;
     struct prefsbv *tv;
@@ -67,30 +65,22 @@ struct pvalsbv *self;
     
 }
 
-void pvalsbv__FinalizeObject(classID, self)
-struct classheader *classID;
-struct pvalsbv *self;
+void pvalsbv__FinalizeObject(struct classheader *classID, struct pvalsbv *self)
 {
     /* the wrapv class takes care of destroying everything */
 }
 
-void pvalsbv__UpdateSButton(self)
-struct pvalsbv *self;
+void pvalsbv__UpdateSButton(struct pvalsbv *self)
 {
 }
 
-void pvalsbv__SetDataObject(self, d)
-struct pvalsbv *self;
-struct prefval *d;
+void pvalsbv__SetDataObject(struct pvalsbv *self, struct prefval *d)
 {
     super_SetDataObject(self, d);
     pvalsbv_UpdateSButton(self);
 }
 
-void pvalsbv__ObservedChanged(self, changed, val)
-struct pvalsbv *self;
-struct prefval *changed;
-long val;
+void pvalsbv__ObservedChanged(struct pvalsbv *self, struct prefval *changed, long val)
 {
     super_ObservedChanged(self, changed, val);
     if(changed==DATA(self)) {

@@ -65,13 +65,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ezpr
 #include <keymap.ih>
 #ifdef hpux
 #include <unistd.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
 #endif /* hpux */
 /* output options */
 #define PREVIEW 0
 #define PRINT 1
 #define TROFF 2
 
-extern int errno;
 static boolean quiet;
 #ifdef PageOffsetOpt
 
@@ -84,13 +86,11 @@ static char *topts[] = {
 
 char *progname;
 
-void ezprintapp__ReadInitFile(self)
-struct ezprintapp *self;
+void ezprintapp__ReadInitFile(struct ezprintapp *self)
 {
 }
 
-static void usage(self)
-struct ezprintapp *self;
+static void usage(struct ezprintapp *self)
 {
     if(!quiet){
 	ezprintapp_PrintVersionNumber(self);
@@ -452,14 +452,11 @@ spoolers */
 		}
 	return TRUE;
 }
-ezprintapp__Run(self)
-struct ezprintapp *self;
+int ezprintapp__Run(struct ezprintapp *self)
 {   /* we are already done */
     exit(0);
 }
-boolean ezprintapp__InitializeObject(classID,self)
-struct classheader *classID;
-struct ezprintapp *self;
+boolean ezprintapp__InitializeObject(struct classheader *classID, struct ezprintapp *self)
 {
     ezprintapp_SetPrintVersionFlag(self,FALSE);
     ezprintapp_SetMajorVersion(self, 7);

@@ -96,8 +96,7 @@ static short hexTable[256];		/* conversion value */
 static boolean initialized = FALSE;	/* easier to fill in at run time */
   
 /* from X11R5 XRdBitF.c */
-static NextInt (fstream)
-    FILE *fstream;
+static NextInt(FILE *fstream)
 {
     int	ch;
     int	value = 0;
@@ -157,11 +156,7 @@ static void initHexTable()
 }
 
 
-long xbm__ReadImage(ClassID, file, pix)
-
-struct classhdr *ClassID;
-FILE *file;		
-struct pixelimage *pix;	
+long xbm__ReadImage(struct classhdr *ClassID, FILE *file, struct pixelimage *pix)
 {
 unsigned char *location;
 long width, height, byte, value,bytewidth, i;
@@ -226,12 +221,7 @@ char name[64], bits[64], *t;
    return dataobject_NOREADERROR;
 }
 
-void xbm__WriteImage(ClassID, file, pix, sub)
-
-struct classhdr *ClassID;
-register FILE *file;		
-register struct pixelimage *pix;
-register struct rectangle *sub;
+void xbm__WriteImage(struct classhdr *ClassID, register FILE *file, register struct pixelimage *pix, register struct rectangle *sub)
 {
 
     char c, *title = "raster";

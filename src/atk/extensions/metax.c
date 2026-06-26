@@ -54,6 +54,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <style.ih>
 #include <fontdesc.ih>
 
+#include <stdlib.h>
 static struct style *fixed=NULL,*boldulined=NULL,*heading=NULL,*columns=NULL;
 
 struct helpRock {
@@ -66,8 +67,7 @@ struct helpRock {
 static char spaces[]="                               ";
 #define MAXFUNLEN sizeof(spaces)
 
-static void LoadClass(partial)
-char *partial;
+static void LoadClass(char *partial)
 {
     char class[100];
     int i;
@@ -78,9 +78,7 @@ char *partial;
     }
 }
 
-static long match(pe,h)
-struct proctable_Entry *pe;
-struct helpRock *h;
+static long match(struct proctable_Entry *pe, struct helpRock *h)
 {
     char buf[1024];
     int len;
@@ -102,11 +100,7 @@ struct helpRock *h;
 }
 
 
-static void helpProc(partial,myrock,HelpWork,rock)
-char *partial;
-struct helpRock *myrock;
-procedure HelpWork;
-long rock;
+static void helpProc(char *partial, struct helpRock *myrock, procedure HelpWork, long rock)
 {
     struct text *t=myrock->text;
     if(!HelpWork) return;
@@ -128,15 +122,12 @@ long rock;
     text_AddStyle(t,39,text_GetLength(t)-39,columns);
 }
 
-static char *GetProcName(pe)
-struct proctable_Entry *pe;
+static char *GetProcName(struct proctable_Entry *pe)
 {
     return proctable_GetName(pe)?proctable_GetName(pe):"";
 }
 
-static boolean myCompletionWork(pe, data)
-struct proctable_Entry *pe;
-struct result *data;
+static boolean myCompletionWork(struct proctable_Entry *pe, struct result *data)
 {
     completion_CompletionWork(GetProcName(pe), data);
     return FALSE;
@@ -166,8 +157,7 @@ static enum message_CompletionCode mycomplete(partial, dummyData, buffer, buffer
     return result.code;
 }
 
-static int donothing(vw)
-struct view *vw;
+static int donothing(struct view *vw)
 {  
     message_DisplayString(vw, 0, "No such function.");
     im_ForceUpdate();
@@ -181,10 +171,7 @@ char *func;
     else return donothing;
 }
 
-static boolean getfunction(v,buf,size,prompt,initial)
-struct view *v;
-char *buf,*prompt,*initial;
-int size;
+static boolean getfunction(struct view *v, char *buf, int size, char *prompt, char *initial)
 {
     struct helpRock myrock;
     struct framemessage *fmsg=(struct framemessage *)view_WantHandler(v,"message");
@@ -202,10 +189,7 @@ int size;
     return TRUE;
 }
 
-static boolean getarg(v,arg,size,prompt,initial,result)
-struct view *v;
-char *arg,*prompt,*initial;
-long *result;
+static boolean getarg(struct view *v, char *arg, int size, char *prompt, char *initial, long *result)
 {
 
     if(message_AskForString(v, 0,prompt, initial, arg, size) != 0) return FALSE;
@@ -225,9 +209,7 @@ long *result;
     return TRUE;
 }
 
-static void metax(tv,argument)
-struct view *tv;
-long argument;
+static void metax(struct view *tv, long argument)
 {
     char cbuf[500];
     struct proctable_Entry *proc;
@@ -248,9 +230,7 @@ long argument;
 	donothing((struct view *)tv);
 }
 
-static void metax2(tv,argument)
-struct view *tv;
-long argument;
+static void metax2(struct view *tv, long argument)
 {
     char cbuf[500], arg[500];
     struct proctable_Entry *proc;
@@ -273,8 +253,7 @@ long argument;
 	donothing((struct view *)tv);
 }
 
-boolean metax__InitializeClass(classID)
-struct classheader *classID;
+boolean metax__InitializeClass(struct classheader *classID)
 {
     struct classinfo *info = class_Load("view");
     fixed=style_New();

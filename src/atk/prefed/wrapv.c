@@ -43,18 +43,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 #include <menulist.ih>
 #include <keystate.ih>
 
-boolean wrapv__InitializeObject(classID, self)
-struct classheader *classID;
-struct wrapv *self;
+boolean wrapv__InitializeObject(struct classheader *classID, struct wrapv *self)
 {
     self->intv=self->tv=NULL;
     self->t=NULL;
     return TRUE;
 }
 
-void wrapv__FinalizeObject(classID, self)
-struct classheader *classID;
-struct wrapv *self;
+void wrapv__FinalizeObject(struct classheader *classID, struct wrapv *self)
 {
   if(self->intv!=(struct view *)self->tv) {
 	view_DeleteApplicationLayer(self->tv, self->intv);
@@ -70,25 +66,19 @@ struct wrapv *self;
     }
 }
  
-void wrapv__LinkTree(self, parent)
-struct wrapv *self;
-struct view *parent;
+void wrapv__LinkTree(struct wrapv *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if(self->intv) view_LinkTree(self->intv, self);
 }
 
-void wrapv__InitChildren(self)
-struct wrapv *self;
+void wrapv__InitChildren(struct wrapv *self)
 {
     if(self->intv) view_InitChildren(self->intv);
     else super_InitChildren(self);
 }
 
-void wrapv__FullUpdate(self, type, left, top, width, height)
-struct wrapv *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void wrapv__FullUpdate(struct wrapv *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct rectangle r;
     int i;
@@ -102,8 +92,7 @@ long left, top, width, height;
     } else super_FullUpdate(self, type, left, top, width, height);
 }
 
-void wrapv__Update(self)
-struct wrapv *self;
+void wrapv__Update(struct wrapv *self)
 {
     if(self->intv) view_Update(self->intv);
     if(self->tv) view_Update(self->tv);
@@ -111,12 +100,7 @@ struct wrapv *self;
 }
 
 
-struct view *wrapv__Hit(self, action, x, y, numberOfClicks)
-struct wrapv *self;
-enum view_MouseAction action;
-long x;
-long y;
-long numberOfClicks;
+struct view *wrapv__Hit(struct wrapv *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     if(self->intv) return view_Hit(self->intv, action, x, y, numberOfClicks);
     else return super_Hit(self, action, x, y, numberOfClicks);
@@ -134,28 +118,19 @@ long *dHeight;
     else return super_DesiredSize(self, width, height, pass, dWidth, dHeight);
 }
 
-void wrapv__GetOrigin(self, width, height, originX, originY)
-struct wrapv *self;
-long width;
-long height;
-long *originX;
-long *originY;
+void wrapv__GetOrigin(struct wrapv *self, long width, long height, long *originX, long *originY)
 {
     if(self->intv) view_GetOrigin(self->intv, width, height, originX, originY);
     else super_GetOrigin(self, width, height, originX, originY);
 }
 
-void wrapv__WantInputFocus(self, requestor)
-struct wrapv *self;
-struct view *requestor;
+void wrapv__WantInputFocus(struct wrapv *self, struct view *requestor)
 {
     if((struct view *)self == requestor && self->tv) view_WantInputFocus(self->tv, self->tv);
     else super_WantInputFocus(self, requestor);
 }
 
-void wrapv__PostMenus(self, ml)
-struct wrapv *self;
-struct menulist *ml;
+void wrapv__PostMenus(struct wrapv *self, struct menulist *ml)
 {
     struct menulist *lml=wrapv_Menus(self);
 
@@ -165,9 +140,7 @@ struct menulist *ml;
     } else super_PostMenus(self, ml);
 }
 
-void wrapv__PostKeyState(self, ks)
-struct wrapv *self;
-struct keystate *ks;
+void wrapv__PostKeyState(struct wrapv *self, struct keystate *ks)
 {
     struct keystate *lks=wrapv_Keys(self);
     if(lks) {
@@ -176,21 +149,17 @@ struct keystate *ks;
     } else super_PostKeyState(self, ks);
 }
 
-struct keystate *wrapv__Keys(self)
-struct wrapv *self;
+struct keystate *wrapv__Keys(struct wrapv *self)
 {
     return NULL;
 }
 
-struct menulist *wrapv__Menus(self)
-struct wrapv *self;
+struct menulist *wrapv__Menus(struct wrapv *self)
 {
     return NULL;
 }
 
-void wrapv__WantUpdate(self, req)
-struct wrapv *self;
-struct view *req;
+void wrapv__WantUpdate(struct wrapv *self, struct view *req)
 {
     super_WantUpdate(self, self);
 }

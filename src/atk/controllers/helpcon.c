@@ -56,11 +56,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cont
 #include "environ.ih"
 #include <ctype.h>
 
+#include <stdlib.h>
+#include <stdio.h>
 /* #define HELPDIR "/usr/andy/help" */
 #define HELPDIR environ_AndrewDir("/help") 
 
-static NoteHistory(self)
-struct helpcon *self;
+static NoteHistory(struct helpcon *self)
 {   /* insert current file and position into the history text buffer */
     char buf[256];
     struct text *txt =  self->historytext;
@@ -69,8 +70,7 @@ struct helpcon *self;
     text_AlwaysInsertCharacters(txt, text_GetLength(txt),buf,strlen(buf));
     text_NotifyObservers(txt,1);
 }
-static settopics(self)
-struct helpcon *self;
+static settopics(struct helpcon *self)
 {   /* insert current file and position into the history text buffer */
     DIRENT_TYPE **dl;
     char *cp,*dp;
@@ -90,9 +90,7 @@ struct helpcon *self;
     text_NotifyObservers(self->topics,1);
 }
 
-static GetHelpOn(self,buf,type,SaveHistory)
-struct helpcon *self;
-char *buf,*type;
+static GetHelpOn(struct helpcon *self, char *buf, char *type, int SaveHistory)
 {   /* look up the file in the help directory and insert in the body text */
     char bb[512],*objectName,*cp;
     FILE *f;
@@ -132,17 +130,7 @@ char *buf,*type;
     }
     return TRUE;
 }
-static void handleclicks(self,cv,position, numberOfClicks, action, startLeft, startRight, leftPos, rightPos,which,type)
-struct helpcon *self;
-struct cltextview *cv;
-long *position;
-long *numberOfClicks;
-enum view_MouseAction *action;
-long *startLeft;
-long *startRight;
-long *leftPos;
-long *rightPos;
-long which,type;
+static void handleclicks(struct helpcon *self, struct cltextview *cv, long *position, long *numberOfClicks, enum view_MouseAction *action, long *startLeft, long *startRight, long *leftPos, long *rightPos, long which, long type)
 {   /* deal with clicks */
     char buf[256],*cp;
     int len;
@@ -179,8 +167,7 @@ long which,type;
 /* user code ends here for includes */
 
 static struct helpcon *firsthelpcon;
-static struct helpcon *FindSelf(v)
-struct view *v;
+static struct helpcon *FindSelf(struct view *v)
 {
 	struct helpcon *self,*last = NULL;
 	struct arbiterview *arbv = (struct arbiterview *) view_WantHandler(v,"arbiterview");
@@ -195,25 +182,17 @@ struct view *v;
 	else last->next = self;
 	return self;
 }
-static void topicschoiceCallBack(self,val,r1,r2)
-struct helpcon *self;
-struct value *val;
-long r1,r2;
+static void topicschoiceCallBack(struct helpcon *self, struct value *val, long r1, long r2)
 {
 /* user code begins here for topicschoiceCallBack */
 /* user code ends here for topicschoiceCallBack */
 }
-static void choicelabelCallBack(self,val,r1,r2)
-struct helpcon *self;
-struct value *val;
-long r1,r2;
+static void choicelabelCallBack(struct helpcon *self, struct value *val, long r1, long r2)
 {
 /* user code begins here for choicelabelCallBack */
 /* user code ends here for choicelabelCallBack */
 }
-static initself(self,v)
-struct helpcon *self;
-struct view *v;
+static initself(struct helpcon *self, struct view *v)
 {
 	self->v = v;
 	self->topicsView = (struct cltextview *)arbiterview_GetNamedView(v,"topics");
@@ -229,9 +208,7 @@ struct view *v;
 	self->choicelabel = (struct value *)arbiterview_GetNamedObject(v,"choicelabel");
 	if(self->choicelabel) value_AddCallBackObserver(self->choicelabel, self,choicelabelCallBack,0);
 }
-static helpcon_help(v,dat)
-struct view *v;
- long dat;
+static helpcon_help(struct view *v, long dat)
 {
 struct helpcon *self;
 if((self = FindSelf(v)) == NULL) return;
@@ -285,8 +262,7 @@ if((self = FindSelf(v)) == NULL) return;
 }
 /* user code ends here for helpcon_help */
  }
-boolean helpcon__InitializeClass(ClassID)
-struct classheader *ClassID;
+boolean helpcon__InitializeClass(struct classheader *ClassID)
 {
 struct classinfo *viewtype = class_Load("view");
 firsthelpcon = NULL;
@@ -295,9 +271,7 @@ proctable_DefineProc("helpcon-help",helpcon_help, viewtype,NULL,"helpcon help");
 /* user code ends here for InitializeClass */
 return TRUE;
 }
-boolean helpcon__InitializeObject(ClassID,self)
-struct classheader *ClassID;
-struct helpcon *self;
+boolean helpcon__InitializeObject(struct classheader *ClassID, struct helpcon *self)
 {
 self->topics = NULL;
 self->topicsView = NULL;

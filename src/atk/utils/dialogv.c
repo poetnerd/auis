@@ -54,17 +54,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/util
 #include <dialog.ih>
 #include <dialogv.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 #define PADDING 5
 
-boolean dialogv__InitializeClass(classID)
-struct classheader *classID;
+boolean dialogv__InitializeClass(struct classheader *classID)
 {
     return TRUE;
 }
 
-boolean dialogv__InitializeObject(classID, self)
-struct classheader *classID;
-struct dialogv *self;
+boolean dialogv__InitializeObject(struct classheader *classID, struct dialogv *self)
 {
     
     self->cont=NULL;
@@ -98,9 +97,7 @@ struct dialogv *self;
     return TRUE;
 }
 
-void dialogv__FinalizeObject(classID, self)
-struct classheader *classID;
-struct dialogv *self;
+void dialogv__FinalizeObject(struct classheader *classID, struct dialogv *self)
 {
     struct im *im=dialogv_GetIM(self);
     /*  remove all knowledge of an object from this dialogv immediately after the object has been destroyed or dissociated with this dialogv, otherwise it may get re-associated depending on the order in which things are done in this function. */
@@ -139,9 +136,7 @@ struct dialogv *self;
     
 }
 
-void dialogv__SetDataObject(self, obj)
-struct dialogv *self;
-struct dataobject *obj;
+void dialogv__SetDataObject(struct dialogv *self, struct dataobject *obj)
 {
     struct dialog *dobj=(struct dialog *)obj;
     if(dobj) {
@@ -162,10 +157,7 @@ struct dataobject *obj;
     super_SetDataObject(self, obj);
 }
 
-void dialogv__FullUpdate(self, type, left, top, width, height)
-struct dialogv *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void dialogv__FullUpdate(struct dialogv *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     int tpos=0;
     double topcolor[3];
@@ -260,12 +252,7 @@ long left, top, width, height;
     
 }
 
-struct view *dialogv__Hit(self, action, x, y, numberOfClicks)
-struct dialogv *self;
-enum view_MouseAction action;
-long x;
-long y;
-long numberOfClicks;
+struct view *dialogv__Hit(struct dialogv *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
 
     if(self->rider) {
@@ -366,9 +353,7 @@ long *dHeight;
     return view_Fixed;
 }
 
-void dialogv__InstallRider(self, rider)
-struct dialogv *self;
-struct view *rider;
+void dialogv__InstallRider(struct dialogv *self, struct view *rider)
 {
     long dumbw, dumbh;
     self->roffset=PADDING;
@@ -378,9 +363,7 @@ struct view *rider;
     if(rider) view_WantInputFocus(rider, rider);
 }
 
-void dialogv__InstallSidekick(self, sidekick)
-struct dialogv *self;
-struct view *sidekick;
+void dialogv__InstallSidekick(struct dialogv *self, struct view *sidekick)
 {
     long dumbw, dumbh;
     self->sidekick=sidekick;
@@ -388,9 +371,7 @@ struct view *sidekick;
     if(self->client) (void) dialogv_DesiredSize(self, view_GetLogicalWidth(self->client), view_GetLogicalHeight(self->client), view_WidthSet, &dumbw, &dumbh);
 }
 	
-void dialogv__LinkTree(self, parent)
-struct dialogv *self;
-struct view *parent;
+void dialogv__LinkTree(struct dialogv *self, struct view *parent)
 {
     struct im *im;
     struct dialog *d=(struct dialog *)dialogv_GetDataObject(self);
@@ -433,11 +414,7 @@ struct view *parent;
     }
 }
 
-struct dialogv *dialogv__Create(classID, list, font, style)
-struct classheader *classID;
-char **list;
-char *font;
-int style;
+struct dialogv *dialogv__Create(struct classheader *classID, char **list, char *font, int style)
 {
     struct sbutton *s;
     struct dialog *d=dialog_New();
@@ -502,19 +479,13 @@ int style;
 }
 
 
-static void HitFunc(self, rock, button, brock)
-struct sbutton *self;
-struct dialogv *rock;
-int button;
-long brock;
+static void HitFunc(struct sbutton *self, struct dialogv *rock, int button, long brock)
 {
     rock->lastchoice=sbutton_GetCount(self)-button-1;
     *(rock->cont)=FALSE;
 }
 
-void dialogv__PostMenus(self, ml)
-struct dialogv *self;
-struct menulist *ml;
+void dialogv__PostMenus(struct dialogv *self, struct menulist *ml)
 {
     if(!ml) {
 	super_PostMenus(self, self->extramenus);
@@ -527,8 +498,7 @@ struct menulist *ml;
     } else super_PostMenus(self, ml);
 }
 
-void dialogv__ReceiveInputFocus(self)
-struct dialogv *self;
+void dialogv__ReceiveInputFocus(struct dialogv *self)
 {
     if(self->rider) view_ReceiveInputFocus(self->rider);
     else {
@@ -540,32 +510,24 @@ struct dialogv *self;
     }
 }
 
-void dialogv__SetExtraMenus(self, ml)
-struct dialogv *self;
-struct menulist *ml;
+void dialogv__SetExtraMenus(struct dialogv *self, struct menulist *ml)
 {
     self->extramenus=ml;
 }
 
-void dialogv__SetExtraKeyState(self, ks)
-struct dialogv *self;
-struct keystate *ks;
+void dialogv__SetExtraKeyState(struct dialogv *self, struct keystate *ks)
 {
     self->extrakeys=ks;
 }
 
-void dialogv__ActivateButton(self, ind)
-struct dialogv *self;
-int ind;
+void dialogv__ActivateButton(struct dialogv *self, int ind)
 {
     struct sbutton *sb=dialogv_GetButtonsData(self);
     sbutton_ActivateButton(sb, sb->count-ind-1);
     self->lastchoice=ind;
 }
 
-void dialogv__DeActivateButton(self, ind)
-struct dialogv *self;
-int ind;
+void dialogv__DeActivateButton(struct dialogv *self, int ind)
 {
     struct sbutton *sb=dialogv_GetButtonsData(self);
     if(sb && dialogv_GetButtonsView(self)) {
@@ -574,25 +536,13 @@ int ind;
     }
 }
 
-static void ConfigureFunc(self, rock, customrock, parent, x, y, w, h)
-struct im *self;
-long rock, customrock;
-struct im *parent;
-long *x, *y;
-unsigned long *w, *h;
+static void ConfigureFunc(struct im *self, long rock, long customrock, struct im *parent, long *x, long *y, unsigned long *w, unsigned long *h)
 {
     (void) dialogv_DesiredSize((struct dialogv *)customrock, im_GetLogicalWidth(parent), im_GetLogicalHeight(parent), view_NoSet, w, h);
     im_NormalConfiguration(self, rock, customrock, parent, x, y, w, h);
 }
     
-int dialogv__PostChoice(dv, im, client, cflag, deflt, block, pos)
-struct dialogv *dv;
-struct im *im;
-struct view *client;
-boolean *cflag;
-int deflt;
-boolean block;
-long pos;
+int dialogv__PostChoice(struct dialogv *dv, struct im *im, struct view *client, boolean *cflag, int deflt, boolean block, long pos)
 {
     struct im *new;
     struct sbutton *sb=dialogv_GetButtonsData(dv);
@@ -638,23 +588,12 @@ long pos;
     else return -1;
 }
 
-static void Interface(b, rock, ind, brock)
-struct sbutton *b;
-struct dialogv_HitRock *rock;
-int ind;
-long brock;
+static void Interface(struct sbutton *b, struct dialogv_HitRock *rock, int ind, long brock)
 {
     if(rock->func) rock->func(rock->rock, b->count-ind-1, brock);
 }
 
-int dialogv__PostInput(dv, im, client, choicefunc, choicerock, block, pos)
-struct dialogv *dv;
-struct im *im;
-struct view *client;
-procedure choicefunc;
-long choicerock;
-boolean block;
-long pos;
+int dialogv__PostInput(struct dialogv *dv, struct im *im, struct view *client, procedure choicefunc, long choicerock, boolean block, long pos)
 {
     struct im *new;
     struct sbutton *sb=dialogv_GetButtonsData(dv);
@@ -694,28 +633,23 @@ long pos;
     return 0;
 }
 
-void dialogv__Vanish(self)
-struct dialogv *self;
+void dialogv__Vanish(struct dialogv *self)
 {
     if(dialogv_GetIM(self)) im_VanishWindow(dialogv_GetIM(self));
 }
 
-void dialogv__UnVanish(self)
-struct dialogv *self;
+void dialogv__UnVanish(struct dialogv *self)
 {
     if(dialogv_GetIM(self)) im_ExposeWindow(dialogv_GetIM(self));
 }
 
-void dialogv__SetLayout(self, rows, cols)
-struct dialogv *self;
-int rows, cols;
+void dialogv__SetLayout(struct dialogv *self, int rows, int cols)
 {
     if(!dialogv_GetButtonsData(self)) return;
     sbutton_SetLayout(dialogv_GetButtonsData(self), rows, cols, sbutton_GrowRows);
 }
 
-void dialogv__CancelQuestion(self)
-struct dialogv *self;
+void dialogv__CancelQuestion(struct dialogv *self)
 {
     *(self->cont)=FALSE;
     self->lastchoice=(-1);

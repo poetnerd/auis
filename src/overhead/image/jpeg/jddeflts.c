@@ -13,6 +13,7 @@
 #include "jinclude.h"
 
 
+#include <stdlib.h>
 /* Default do-nothing progress monitoring routine.
  * This can be overridden by a user interface that wishes to
  * provide progress monitoring; just set methods->progress_monitor

@@ -39,6 +39,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <util.h>
 #include <ghash.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 struct egg {
     char *key,*value;
 };

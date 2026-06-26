@@ -39,10 +39,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <ctype.h>
 
+#include <string.h>
+#include <stdlib.h>
 extern char *arpadate();
 
-int main(argc, argv)
-char *argv[];
+int main(int argc, char *argv[])
 {
     int AnyArgs, ac;
     unsigned long int Then;

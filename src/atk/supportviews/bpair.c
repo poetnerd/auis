@@ -65,8 +65,7 @@ static void lpair_ResetDimensions();
 	They are copied from lpair.c, with deletion of the line-between code,
 	code for movable borders, and the calls on DesiredSize   */
 
-static void lpair_ComputeSizes (l)
-register struct lpair *l;
+static void lpair_ComputeSizes(register struct lpair *l)
 {
 
     int totalsize, i = 0;
@@ -104,8 +103,7 @@ register struct lpair *l;
     l->objcvt[1-i] = totalsize - l->objcvt[i];
 }
 
-static void lpair_ResetDimensions(self)
-register struct lpair *self;
+static void lpair_ResetDimensions(register struct lpair *self)
 {
 
     register int i, x, y;

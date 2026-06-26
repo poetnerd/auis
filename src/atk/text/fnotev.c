@@ -48,6 +48,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <txttroff.ih>
 #include <fnotev.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 #define FONTNAME "andy"
 #define FONTSIZE 16
 #define OFNAME "andy"
@@ -67,8 +69,7 @@ struct impair {
 };
 static struct impair *list;
 static endnotes = FALSE;
-void initci(self)
-struct fnotev *self;
+void initci(struct fnotev *self)
 {
     if(fnotev_GetDrawable(self) != NULL){
 	fontdesc_CharSummary(self->fd,fnotev_GetDrawable(self),*(self->displaystr),&(self->ci[0]));
@@ -76,23 +77,13 @@ struct fnotev *self;
     }
 }
 
-void fnotev__GetOrigin(self, width, height, originX, originY)
-    struct fnotev *self;
-    long width;
-    long height;
-    long *originX;
-    long *originY;
+void fnotev__GetOrigin(struct fnotev *self, long width, long height, long *originX, long *originY)
 {
     *originX = 0;
     *originY = height - 3;
 }
 static int clevel = -100;
-void fnotev__Print(self, f, process, final, toplevel)
-    struct fnotev *self;
-    FILE *f;
-    char *process;
-    char *final;
-    int toplevel;
+void fnotev__Print(struct fnotev *self, FILE *f, char *process, char *final, int toplevel)
 {
 	struct text *d;
 	long i,doclen,ln,cs,c,addNewLine;
@@ -154,10 +145,7 @@ void fnotev__Print(self, f, process, final, toplevel)
 	fprintf(f,".FE\n");
 	clevel = -100;
     }
-struct view *fnotev__Hit(self,action,mousex,mousey,numberOfClicks) 
-struct fnotev *self;
-enum view_MouseAction action;
-long mousex, mousey, numberOfClicks;
+struct view *fnotev__Hit(struct fnotev *self, enum view_MouseAction action, long mousex, long mousey, long numberOfClicks)
 {
 
     if(action == view_LeftUp || action == view_RightUp){
@@ -193,9 +181,7 @@ long mousex, mousey, numberOfClicks;
     return (struct view *) self;
 }
 #if 0
-fnotev_FindLoc(self,parent)
-struct fnotev *self;
-struct text *parent;
+int fnotev_FindLoc(struct fnotev *self, struct text *parent)
 {
     struct text *d,*parent;
     strcut textv *pv;
@@ -221,9 +207,7 @@ long *desiredwidth, *desiredheight;
     else *desiredheight = 11;
     return(view_HeightFlexible | view_WidthFlexible);
 }
-static struct impair *findwindow(self,pc)
-struct fnotev *self;
-struct text *pc;
+static struct impair *findwindow(struct fnotev *self, struct text *pc)
 {
     struct im *m;
     struct impair *cim;
@@ -288,22 +272,18 @@ struct text *pc;
     textview_WantUpdate(cim->textview,cim->textview);
 #endif
 }
-void fnotev__pushchild(self)
-struct fnotev *self;
+void fnotev__pushchild(struct fnotev *self)
 {
     struct text *pc = Text(self);
     if(pc ){
 	findwindow(self,pc); 
     }
 }
-void fnotev__popchild(self)
-struct fnotev *self;
+void fnotev__popchild(struct fnotev *self)
 {
 }
 
-static DoUpdate(self,full)
-struct fnotev *self;
-boolean full;
+static DoUpdate(struct fnotev *self, boolean full)
 {
     struct rectangle enclosingRect;
 /*     long xsize,ysize; 
@@ -364,9 +344,7 @@ boolean full;
 
 #endif
 }
-void fnotev__LinkTree(self, parent)
-register struct fnotev *self;
-struct view *parent;
+void fnotev__LinkTree(register struct fnotev *self, struct view *parent)
 {
     super_LinkTree(self,parent);
     while(!class_IsTypeByName(class_GetTypeName(parent),"textview")){
@@ -377,11 +355,7 @@ struct view *parent;
 }
 
 #if 0
-ismyenv(self,d,pos,env)
-struct fnotev *self;
-struct text *d;
-long pos;
-struct environment *env;
+int ismyenv(struct fnotev *self, struct text *d, long pos, struct environment *env)
 {
     if(env->type == environment_View && env->data.viewref->dataObject == DataObject(self)){
 	self->pos = pos;
@@ -389,10 +363,7 @@ struct environment *env;
     }
 }
 #endif
-void fnotev__ObservedChanged(self, changed, value)
-struct fnotev *self;
-struct observable *changed;
-long value;
+void fnotev__ObservedChanged(struct fnotev *self, struct observable *changed, long value)
 {
     if(value == observable_OBJECTDESTROYED){
 	if(self->imp && changed == (struct observable *)self->imp->fn){
@@ -428,22 +399,16 @@ long value;
     }
     fnotev_WantUpdate(self,self);
 }
-void fnotev__FullUpdate(self,type,left,top,width,height)
-struct fnotev *self;
-enum view_UpdateType type;
-long left,top,width,height;
+void fnotev__FullUpdate(struct fnotev *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     DoUpdate(self,TRUE);
 }
-void fnotev__Update(self)
-struct fnotev *self;
+void fnotev__Update(struct fnotev *self)
 {
     DoUpdate(self,FALSE);
 }
 
-boolean fnotev__InitializeObject(classID,self)
-struct classheader *classID;
-struct fnotev *self;
+boolean fnotev__InitializeObject(struct classheader *classID, struct fnotev *self)
 {
     self->imp = NULL;
     self->fd = fontdesc_Create(FONTNAME,0,FONTSIZE);
@@ -457,27 +422,21 @@ struct fnotev *self;
     self->ci[0].width = 0;
     return TRUE;
 }
-void fnotev__FinalizeObject(classID,self)
-struct classheader *classID;
-struct fnotev *self;
+void fnotev__FinalizeObject(struct classheader *classID, struct fnotev *self)
 {
     free(self->ci);
 }
-boolean fnotev__InitializeClass(classID)
-struct classheader *classID;
+boolean fnotev__InitializeClass(struct classheader *classID)
 {
     list = NULL;
     endnotes = FALSE;
     return TRUE;
 }
-void fnotev__SetEndnote(classID,doendnotes)
-struct classheader *classID;
-boolean doendnotes;
+void fnotev__SetEndnote(struct classheader *classID, boolean doendnotes)
 {
 endnotes = doendnotes;
 }
-void fnotev__ReceiveInputFocus(self)
-    struct fnotev *self;
+void fnotev__ReceiveInputFocus(struct fnotev *self)
 {
 	super_ReceiveInputFocus(self);
 	if(self->parentview){	

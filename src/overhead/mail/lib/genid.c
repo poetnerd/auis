@@ -87,8 +87,7 @@ char *convlongto64(num, pad)
 
 /* Note that the following routine throws away the first 4 of 36 bits */
 
-unsigned long conv64tolong(xnum)
-register char *xnum;
+unsigned long conv64tolong(register char *xnum)
 {
     register int digits;
     unsigned long Answer = 0;
@@ -112,8 +111,7 @@ extern long random();
 #define ChooseRandomBits(n) (((unsigned long) random()) >> (32-n))
 
 
-char *ams_genid(IsFileName)
-int IsFileName;
+char *ams_genid(int IsFileName)
 {
     static char IDBuf[20];
     static long mycounter = 0, MyPid = -1;

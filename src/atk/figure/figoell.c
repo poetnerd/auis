@@ -34,16 +34,13 @@ char *figoell_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 #include <figattr.ih>
 #include <print.ih>
 
-boolean figoell__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-struct figoell *self;
+#include <stdio.h>
+boolean figoell__InitializeObject(struct classhdr *ClassID, struct figoell *self)
 {
     return TRUE;
 }
 
-struct figoell *figoell__Create(classID, left, top, width, height)
-struct classheader *classID;
-long left, top, width, height;
+struct figoell *figoell__Create(struct classheader *classID, long left, long top, long width, long height)
 {
     struct figoell *res = figoell_New();
     if (!res) return NULL;
@@ -57,10 +54,7 @@ long left, top, width, height;
     return res;
 }
 
-char *figoell__ToolName(dummy, v, rock)
-struct figoell *dummy;
-struct figtoolview *v;
-long rock;
+char *figoell__ToolName(struct figoell *dummy, struct figtoolview *v, long rock)
 {
     return "Ellipse";
 }
@@ -106,9 +100,7 @@ long *ptref;
     return figobj_Miss;
 }
 
-void figoell__Draw(self, v) 
-struct figoell *self;
-struct figview *v;
+void figoell__Draw(struct figoell *self, struct figview *v)
 {
     long x, y, w, h;
     long shad, lw;
@@ -152,9 +144,7 @@ struct figview *v;
 	figview_SetLineWidth(v, 1);
 }
 
-void figoell__Sketch(self, v) 
-struct figoell *self;
-struct figview *v;
+void figoell__Sketch(struct figoell *self, struct figview *v)
 {
     long x, y, w, h;
 
@@ -183,11 +173,7 @@ struct figview *v;
 
 #define FadeColor(col, shad)  (1.0 - (1.0-(shad)) * (1.0-(col)))
 
-void figoell__PrintObject(self, v, file, prefix)
-struct figoell *self;
-struct figview *v;
-FILE *file;
-char *prefix;
+void figoell__PrintObject(struct figoell *self, struct figview *v, FILE *file, char *prefix)
 {
     long x, y, w, h;
     long shad, lw;

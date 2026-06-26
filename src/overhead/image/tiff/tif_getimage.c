@@ -41,6 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "tiffcompat.h"
 #include "prototypes.h"
 
+#include <stdlib.h>
 typedef	u_char RGBvalue;
 
 static	u_long width, height;		/* image width & height */
@@ -63,11 +64,7 @@ static	u_long **PALmap;
 
 static	int gt();
 
-TIFFReadRGBAImage(tif, rwidth, rheight, raster, stop)
-	TIFF *tif;
-	u_long rwidth, rheight;
-	u_long *raster;
-	int stop;
+int TIFFReadRGBAImage(TIFF *tif, u_long rwidth, u_long rheight, u_long *raster, int stop)
 {
 	int ok;
 	u_long width, height;
@@ -245,9 +242,7 @@ gt(tif, w, h, raster)
 }
 
 u_long
-setorientation(tif, h)
-	TIFF *tif;
-	u_long h;
+int setorientation(TIFF *tif, u_long h)
 {
 	u_long y;
 

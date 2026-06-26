@@ -30,17 +30,16 @@ char *fontsel_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 
 #include <fontdesc.ih>
 
+#include <string.h>
+#include <stdlib.h>
 static char *CopyString();
 
-boolean fontsel__InitializeClass(ClassID)
-struct classhdr *ClassID;
+boolean fontsel__InitializeClass(struct classhdr *ClassID)
 {
     return TRUE;
 }
 
-boolean fontsel__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-struct fontsel *self;
+boolean fontsel__InitializeObject(struct classhdr *ClassID, struct fontsel *self)
 {
     self->active = ~(unsigned long)0;
 
@@ -51,32 +50,24 @@ struct fontsel *self;
     return TRUE;
 }
 
-void fontsel__FinalizeObject(ClassID, self)
-struct classhdr *ClassID;
-struct fontsel *self;
+void fontsel__FinalizeObject(struct classhdr *ClassID, struct fontsel *self)
 {
     free(self->family);
 }
 
-void fontsel__SetStyle(self, mask)
-struct fontsel *self;
-long mask;
+void fontsel__SetStyle(struct fontsel *self, long mask)
 {
     self->style = mask;
     self->active |= ((unsigned long)1<<fontsel_Style);
 }
 
-void fontsel__SetSize(self, newsize)
-struct fontsel *self;
-short newsize;
+void fontsel__SetSize(struct fontsel *self, short newsize)
 {
     self->size = newsize;
     self->active |= ((unsigned long)1<<fontsel_Size);
 }
 
-void fontsel__SetFamily(self, newfam)
-struct fontsel *self;
-char *newfam;
+void fontsel__SetFamily(struct fontsel *self, char *newfam)
 {
     if (strcmp(newfam, self->family)) {
 	free(self->family);
@@ -85,8 +76,7 @@ char *newfam;
     self->active |= ((unsigned long)1<<fontsel_Family);
 }
 
-static char *CopyString(str)
-char *str;
+static char *CopyString(char *str)
 {
     char *tmp;
 

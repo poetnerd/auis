@@ -54,6 +54,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/hypl
 #include <bind.ih>
 #include <environ.ih>
 #include "shellesc.ih"
+#include <stdio.h>
 #endif
 
 /* Defined constants and macros */

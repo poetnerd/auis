@@ -43,11 +43,11 @@ of the author */
 #include <dataobj.ih>
 #include <cel.ih>
 
+#include <stdlib.h>
+#include <stdio.h>
 #define page_BYDATAOBJECT -10
 
-boolean page__InitializeObject(c, self)
-struct classheader *c;
-struct page *self;
+boolean page__InitializeObject(struct classheader *c, struct page *self)
 {
     self->FirstSwitchee = NULL;
     self->NowPlaying = NULL;
@@ -55,9 +55,7 @@ struct page *self;
     return(TRUE);
 }
 
-void page__FinalizeObject(c, self)
-struct classheader *c;
-struct page *self;
+void page__FinalizeObject(struct classheader *c, struct page *self)
 {
     struct page_switchee *sw;
     for (sw = self->FirstSwitchee; sw; sw = sw->next) {
@@ -66,10 +64,7 @@ struct page *self;
 	free(sw->viewname);
     }
 }
-static struct page_switchee *FindSwitchee(self, d,which)
-register struct page *self;
-register struct dataobject *d;
-register long which;
+static struct page_switchee *FindSwitchee(register struct page *self, register struct dataobject *d, register long which)
 {
     register struct page_switchee *sw = NULL;
     register struct page_switchee *Now = self->NowPlaying;
@@ -113,9 +108,7 @@ register long which;
     }
     return sw;
 }
-static boolean SetSwitchee(self,sw)
-struct page *self;
-struct page_switchee *sw;
+static boolean SetSwitchee(struct page *self, struct page_switchee *sw)
 {
     if(sw == self->NowPlaying) return(FALSE); /* no change */
     self->NowPlaying = sw;
@@ -123,11 +116,7 @@ struct page_switchee *sw;
     return(TRUE);
 }
 
-long page__Write(self,fp ,writeid,level)
-struct page *self;
-FILE *fp;
-long writeid;
-int level;
+long page__Write(struct page *self, FILE *fp, long writeid, int level)
 {
     struct page_switchee *sw;
     if (page_GetWriteID(self) != writeid) {
@@ -150,10 +139,7 @@ int level;
     return page_GetID(self);
 }
 
-long page__Read(self, fp, id)
-struct page *self;
-FILE *fp;
-long id;
+long page__Read(struct page *self, FILE *fp, long id)
 {
     char LineBuf[250], Label[250], *s, *obidstr, *thisname;
     int status, obid;
@@ -221,10 +207,7 @@ long id;
 }
 
 
-boolean page__AddObject(self, d, label, viewname,which)
-struct page *self;
-struct dataobject *d;
-char *label, *viewname;
+boolean page__AddObject(struct page *self, struct dataobject *d, char *label, char *viewname, int which)
 {
     struct page_switchee *sw, *swtmp;
 
@@ -283,9 +266,7 @@ char *label, *viewname;
     return(TRUE);
 }
 
-boolean page__DeleteObject(self, d)
-struct page *self;
-struct dataobject *d;
+boolean page__DeleteObject(struct page *self, struct dataobject *d)
 {
     struct page_switchee *sw, *prevsw;
 
@@ -311,9 +292,7 @@ struct dataobject *d;
     }
     return(FALSE);
 }
-static char * page__GetSwitcheeName(self,sw)
-struct page *self;
-struct page_switchee *sw;
+static char * page__GetSwitcheeName(struct page *self, struct page_switchee *sw)
 {
 
     if(class_IsTypeByName(class_GetTypeName(sw->d),"cel")){
@@ -321,8 +300,7 @@ struct page_switchee *sw;
     }
     return(sw->label);
 }
-static char * page__GetNowPlayingName(self)
-struct page *self;
+static char * page__GetNowPlayingName(struct page *self)
 {
     struct page_switchee *sw;
 
@@ -333,9 +311,7 @@ struct page *self;
     return(sw->label);
 }
 
-boolean page__SetNowPlaying(self, d)
-struct page *self;
-struct dataobject *d;
+boolean page__SetNowPlaying(struct page *self, struct dataobject *d)
 {
     struct page_switchee *sw;
 
@@ -345,9 +321,7 @@ struct dataobject *d;
     return(TRUE);
 
 }
-boolean page__SetNowPlayingByName(self, name)
-struct page *self;
-char *name;
+boolean page__SetNowPlayingByName(struct page *self, char *name)
 {
     struct page_switchee *sw;
 
@@ -359,9 +333,7 @@ char *name;
     }
     return(FALSE);
 }
-boolean page__SetNowPlayingByPosition(self, number)
-struct page *self;
-long number;
+boolean page__SetNowPlayingByPosition(struct page *self, long number)
 {
     struct page_switchee *sw;
     sw = FindSwitchee(self,NULL,number);
@@ -369,18 +341,14 @@ long number;
     SetSwitchee(self,sw);
     return(TRUE);
 }
-struct dataobject *page__GetObjectAtPosition(self, number)
-struct page *self;
-long number;
+struct dataobject *page__GetObjectAtPosition(struct page *self, long number)
 {
     struct page_switchee *sw;
     sw = FindSwitchee(self,NULL,number);
     if(sw == NULL) return NULL;
     return sw->d;
 }
-struct dataobject *page__GetObjectByName(self, name)
-struct page *self;
-char *name;
+struct dataobject *page__GetObjectByName(struct page *self, char *name)
 {
     struct page_switchee *sw;
     for (sw = self->FirstSwitchee; sw; sw = sw->next) {
@@ -390,18 +358,14 @@ char *name;
     }
     return NULL;
 }
-char  *page__GetNameOfObject(self, d)
-struct page *self;
-struct dataobject *d;
+char  *page__GetNameOfObject(struct page *self, struct dataobject *d)
 {
     struct page_switchee *sw;
     sw = FindSwitchee(self,d,page_BYDATAOBJECT);
     if(sw == NULL) return NULL;
     return page_GetSwitcheeName(self,sw);
 }
-long page__GetPositionOfObject(self, d)
-struct page *self;
-struct dataobject *d;
+long page__GetPositionOfObject(struct page *self, struct dataobject *d)
 {
     struct page_switchee *sw;
     long count = 0L;
@@ -411,8 +375,7 @@ struct dataobject *d;
     }
     return 0l;
 }
-long page__GetObjectCount(self)
-struct page *self;
+long page__GetObjectCount(struct page *self)
 {
     struct page_switchee *sw;
     long count = 0L;
@@ -421,13 +384,11 @@ struct page *self;
     }
     return count;
 }
-char *page__ViewName(self)
-struct page *self;
+char *page__ViewName(struct page *self)
 {
     return("pagev"); 
 }
-long page__GetModified(self)
-struct page *self;
+long page__GetModified(struct page *self)
 {
 #if 0
     long maxSoFar,x;

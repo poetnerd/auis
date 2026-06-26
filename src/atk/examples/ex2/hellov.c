@@ -38,9 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exam
 
 #define POSUNDEF -1
 
-boolean helloworldview__InitializeObject(classID, hwv)
-    struct classheader *classID;
-    struct helloworldview *hwv;
+boolean helloworldview__InitializeObject(struct classheader *classID, struct helloworldview *hwv)
 {
     hwv->x = POSUNDEF;
     hwv->y = POSUNDEF;
@@ -49,13 +47,7 @@ boolean helloworldview__InitializeObject(classID, hwv)
 }
 
 
-void helloworldview__FullUpdate(hwv, type, left, top, width, height)
-    struct helloworldview *hwv;
-    enum view_UpdateType type;
-    long left;
-    long top;
-    long width;
-    long height;
+void helloworldview__FullUpdate(struct helloworldview *hwv, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct rectangle myVisualRect; 
 
@@ -71,8 +63,7 @@ void helloworldview__FullUpdate(hwv, type, left, top, width, height)
 }
 
     
-void helloworldview__Update(hwv)
-    struct helloworldview *hwv;
+void helloworldview__Update(struct helloworldview *hwv)
 {
     if (hwv->newX != hwv->x ||  hwv->newY != hwv->y) {
         helloworldview_SetTransferMode(hwv,graphic_INVERT);
@@ -89,12 +80,7 @@ void helloworldview__Update(hwv)
 }
 
 
-struct view *helloworldview__Hit(hwv, action, x, y, numberOfClicks)
-    struct helloworldview *hwv;
-    enum view_MouseAction action;
-    long x;
-    long y;
-    long numberOfClicks;
+struct view *helloworldview__Hit(struct helloworldview *hwv, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     if (action == view_LeftDown)  {  
         hwv->HaveDownTransition = TRUE;

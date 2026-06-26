@@ -39,14 +39,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include "parseadd.h"
 
+#include <stdlib.h>
+#include <string.h>
 #define NIL	0
 
 #ifndef _IBMR2
-extern char *malloc();
 #endif /* _IBMR2 */
 
-NoStorage(proc)
-    char *proc;
+int NoStorage(char *proc)
 {
     extern int ParseErrorReason;
 
@@ -54,8 +54,7 @@ NoStorage(proc)
     ParseErrorReason = PA_NO_MEM;
 }
 
-char *StrCopy(old)
-    char *old;
+char *StrCopy(char *old)
 {
     char *new;
 
@@ -68,8 +67,7 @@ char *StrCopy(old)
     return new;
 }
 
-char *StrCat3(s1, s2, s3)
-    char *s1, *s2, *s3;
+char *StrCat3(char *s1, char *s2, char *s3)
 {
     register char *new;
 
@@ -84,15 +82,12 @@ char *StrCat3(s1, s2, s3)
     return new;
 }
 
-StrFree(s)
-    char *s;
+int StrFree(char *s)
 {
     free(s);
 }
 
-PARSED_ADDRESS *MakeAddress(kind, local)
-    ADDRESS_KIND kind;
-    char *local;
+PARSED_ADDRESS *MakeAddress(ADDRESS_KIND kind, char *local)
 {
     register PARSED_ADDRESS *addr;
 
@@ -113,8 +108,7 @@ PARSED_ADDRESS *MakeAddress(kind, local)
     return addr;
 }
 
-ADDRESS_COMMENT *MakeComment(text)
-    char *text;
+ADDRESS_COMMENT *MakeComment(char *text)
 {
     register ADDRESS_COMMENT *comment;
 
@@ -133,8 +127,7 @@ ADDRESS_COMMENT *MakeComment(text)
    h1 & h2 are doubly-linked circular chains.
  */
 
-ADDRESS_HOST *AppendHosts(h1, h2)
-    register ADDRESS_HOST *h1, *h2;
+ADDRESS_HOST *AppendHosts(register ADDRESS_HOST *h1, register ADDRESS_HOST *h2)
 {
     ADDRESS_HOST *temp;
 
@@ -151,8 +144,7 @@ ADDRESS_HOST *AppendHosts(h1, h2)
   a dummy header.
 */
 
-ADDRESS_HOST *MakeHostList(h)
-    ADDRESS_HOST *h;
+ADDRESS_HOST *MakeHostList(ADDRESS_HOST *h)
 {
     ADDRESS_HOST *Head;
     extern ADDRESS_HOST *MakeHost();
@@ -162,8 +154,7 @@ ADDRESS_HOST *MakeHostList(h)
     return (h != NIL ? AppendHosts(Head, h) : Head);
 }
 
-PARSED_ADDRESS *AppendAddresses(a1, a2)
-    register PARSED_ADDRESS *a1, *a2;
+PARSED_ADDRESS *AppendAddresses(register PARSED_ADDRESS *a1, register PARSED_ADDRESS *a2)
 {
     PARSED_ADDRESS *temp;
 
@@ -182,8 +173,7 @@ PARSED_ADDRESS *AppendAddresses(a1, a2)
   a dummy header.
 */
 
-PARSED_ADDRESS *MakeAddrList(a)
-    PARSED_ADDRESS *a;
+PARSED_ADDRESS *MakeAddrList(PARSED_ADDRESS *a)
 {
     PARSED_ADDRESS *Head;
 

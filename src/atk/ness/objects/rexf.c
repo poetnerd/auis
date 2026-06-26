@@ -121,6 +121,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ness
 #include <interp.h>		/* for frameelt for envt.h */
 #include <envt.h>
 
+#include <stdlib.h>
 /* iar is no longer needed as an argument to RunError */
 #define IAR 0
 
@@ -195,12 +196,7 @@ copyTop(n)
 }
 
 /* 
-pushInt(n)
-	push integer n to stack
-*/
-	static void
-pushInt(n)
-	long n;
+int pushInt(long n)
 {
 	struct longstkelt *l;
 	NSPstore=(union stackelement *)

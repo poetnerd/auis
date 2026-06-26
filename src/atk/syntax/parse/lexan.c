@@ -56,6 +56,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/synt
 #include <ctype.h>
 #include <lexan.eh>
 
+#include <stdlib.h>
 	boolean
 lexan__InitializeClass(ClassID)
 	struct classheader *ClassID;

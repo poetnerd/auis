@@ -49,9 +49,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 static struct menulist *pvaltvMenus=NULL;
 static struct keymap *pvaltvKeymap=NULL;
 
-static void pvaltvUpdate(self, rock)
-struct pvaltv *self;
-long rock;
+static void pvaltvUpdate(struct pvaltv *self, long rock)
 {
     pvaltv_UpdateValue(self);
 }
@@ -81,8 +79,7 @@ static struct bind_Description pvaltvBindings[]={
 };
     
     
-boolean pvaltv__InitializeClass(classID)
-struct classheader *classID;
+boolean pvaltv__InitializeClass(struct classheader *classID)
 {
     pvaltvMenus=menulist_New();
     pvaltvKeymap=keymap_New();
@@ -98,9 +95,7 @@ struct classheader *classID;
     
     
 }
-boolean pvaltv__InitializeObject(classID, self)
-struct classheader *classID;
-struct pvaltv *self;
+boolean pvaltv__InitializeObject(struct classheader *classID, struct pvaltv *self)
 {
     self->ks=keystate_Create(self, pvaltvKeymap);
     if(self->ks==NULL) return FALSE;
@@ -114,17 +109,13 @@ struct pvaltv *self;
     return TRUE;
 }
 
-void pvaltv__FinalizeObject(classID, self)
-struct classheader *classID;
-struct pvaltv *self;
+void pvaltv__FinalizeObject(struct classheader *classID, struct pvaltv *self)
 {
     if(self->ks) keystate_Destroy(self->ks);
     if(self->menulist) menulist_Destroy(self->menulist);
 }
 
-void pvaltv__UpdateText(self, val)
-struct pvaltv *self;
-long val;
+void pvaltv__UpdateText(struct pvaltv *self, long val)
 {
     struct prefval *pvd=DATA(self);
     struct text *pvt=TEXT(self);
@@ -146,8 +137,7 @@ long val;
     }
 }
 
-void pvaltv__UpdateValue(self)
-struct pvaltv *self;
+void pvaltv__UpdateValue(struct pvaltv *self)
 {
     struct text *pvt=TEXT(self);
     int i;
@@ -160,10 +150,7 @@ struct pvaltv *self;
     prefval_NotifyObservers(DATA(self), prefval_ValuesChanged);
 }
 
-void pvaltv__ObservedChanged(self, changed, val)
-struct pvaltv *self;
-struct prefval *changed;
-long val;
+void pvaltv__ObservedChanged(struct pvaltv *self, struct prefval *changed, long val)
 {
     if(changed==DATA(self) && val!=observable_OBJECTDESTROYED) {
 	pvaltv_UpdateText(self, val);
@@ -171,30 +158,24 @@ long val;
     super_ObservedChanged(self, changed, val);
 }
 
-void pvaltv__SetDataObject(self, d)
-struct pvaltv *self;
-struct prefval *d;
+void pvaltv__SetDataObject(struct pvaltv *self, struct prefval *d)
 {
     super_SetDataObject(self, d);
     pvaltv_ObservedChanged(self, d, prefval_Generic);
 }
 
-struct keystate *pvaltv__Keys(self)
-struct pvaltv *self;
+struct keystate *pvaltv__Keys(struct pvaltv *self)
 {
     return self->ks;
 }
 
-struct menulist *pvaltv__Menus(self)
-struct pvaltv *self;
+struct menulist *pvaltv__Menus(struct pvaltv *self)
 {
     menulist_ClearChain(self->menulist);
     return self->menulist;
 }
 
-int pvaltv__Locate(self, pos)
-struct pvaltv *self;
-long pos;
+int pvaltv__Locate(struct pvaltv *self, long pos)
 {
     struct text *t=pvaltv_GetText(self);
     long len=text_GetLength(t);

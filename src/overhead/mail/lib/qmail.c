@@ -152,7 +152,7 @@ These two routines are just like tryvicequeues_ext except that they implement tw
 #include "mailconf.h"
 #include "qmail.h"
 
-extern int errno;
+#include <stdlib.h>
 extern char *UnixError(), *arpadate();
 
 typedef unsigned char bool;
@@ -170,10 +170,7 @@ char Qmail_ErrMsg[2*MAXPATHLEN];
 
 #define MAXRETRIES  10
 
-int qmail_ext(dir, tolist, file, returnpath, auth, enq, forstr, holduntil)
-char *dir, *tolist[];
-int file, enq, holduntil;
-char *returnpath, *auth, *forstr;
+int qmail_ext(char *dir, char *tolist[], int file, char *returnpath, char *auth, int enq, char *forstr, int holduntil)
 {
     static bool virgin = TRUE;
     static char host[200];
@@ -251,18 +248,12 @@ char *returnpath, *auth, *forstr;
     return rc;
 }
 
-int qmail(dir, tolist, file, returnpath, auth)
-char *dir, *tolist[];
-int file;
-char *returnpath, *auth;
+int qmail(char *dir, char *tolist[], int file, char *returnpath, char *auth)
 {
     return qmail_ext(dir, tolist, file, returnpath, auth, 0, NIL, 0);
 }
 
-static int tryvicequeues_intern(tolist, file, returnpath, auth, enq, forstr, holduntil, dirname, pfx, Cell)
-char *tolist[];
-int file, enq, holduntil;
-char *returnpath, *auth, *forstr, *dirname, *pfx, *Cell;
+static int tryvicequeues_intern(char *tolist[], int file, char *returnpath, char *auth, int enq, char *forstr, int holduntil, char *dirname, char *pfx, char *Cell)
 {
     int start, q, rc = 0;
     register DIR *dirp = NIL;
@@ -374,18 +365,12 @@ char *returnpath, *auth, *forstr, *dirname, *pfx, *Cell;
     return rc;
 }
 
-int tryvicequeues_dir(tolist, file, returnpath, auth, enq, forstr, holduntil, dirname, pfx)
-char *tolist[];
-int file, enq, holduntil;
-char *returnpath, *auth, *forstr, *dirname, *pfx;
+int tryvicequeues_dir(char *tolist[], int file, char *returnpath, char *auth, int enq, char *forstr, int holduntil, char *dirname, char *pfx)
 {
     return tryvicequeues_intern(tolist, file, returnpath, auth, enq, forstr, holduntil, dirname, pfx, NULL);
 }
 
-int tryvicequeues_cell(tolist, file, returnpath, auth, enq, forstr, holduntil, cellname, pfx)
-char *tolist[];
-int file, enq, holduntil;
-char *returnpath, *auth, *forstr, *cellname, *pfx;
+int tryvicequeues_cell(char *tolist[], int file, char *returnpath, char *auth, int enq, char *forstr, int holduntil, char *cellname, char *pfx)
 {
     char DirDir[MAXPATHLEN+1];
 
@@ -397,10 +382,7 @@ char *returnpath, *auth, *forstr, *cellname, *pfx;
     return tryvicequeues_intern(tolist, file, returnpath, auth, enq, forstr, holduntil, DirDir, pfx, cellname);
 }
 
-int tryvicequeues_ext(tolist, file, returnpath, auth, enq, forstr, holduntil)
-char *tolist[];
-int file, enq, holduntil;
-char *returnpath, *auth, *forstr;
+int tryvicequeues_ext(char *tolist[], int file, char *returnpath, char *auth, int enq, char *forstr, int holduntil)
 {
     int rc;
     char *CellToTry;
@@ -415,18 +397,12 @@ char *returnpath, *auth, *forstr;
     return rc;
 }
 
-int tryvicequeues(tolist, file, returnpath, auth)
-char *tolist[];
-int file;
-char *returnpath, *auth;
+int tryvicequeues(char *tolist[], int file, char *returnpath, char *auth)
 {
     return tryvicequeues_ext(tolist, file, returnpath, auth, 0, NIL, 0);
 }
 
-static int create(name, f, filekind, mode)
-char *name, *filekind;
-FILE **f;
-int mode;
+static int create(char *name, FILE **f, char *filekind, int mode)
 {
     register int fd;
 
@@ -448,9 +424,7 @@ int mode;
     return Q_OK;
 }
 
-static int tryclose(f, name)
-FILE *f;
-char *name;
+static int tryclose(FILE *f, char *name)
 {
     /* Try to close it */
     if (vfclose(f) == EOF) {
@@ -462,9 +436,7 @@ char *name;
 	return Q_OK;
 }
 
-static void quote(s, f)
-register char *s;
-register FILE *f;
+static void quote(register char *s, register FILE *f)
 {
     fputc('|', f);
 
@@ -480,8 +452,7 @@ register FILE *f;
     fputc('|', f);
 }
 
-static int writesf(name, tolist, returnpath, auth, enq, forstr)
-char *name, *tolist[], *returnpath, *auth, *forstr; int enq;
+static int writesf(char *name, char *tolist[], char *returnpath, char *auth, int enq, char *forstr)
 {
     FILE *f;
     register int rc, i;
@@ -509,10 +480,7 @@ char *name, *tolist[], *returnpath, *auth, *forstr; int enq;
     return tryclose(f, name);
 }
 
-static int writeqf(name, file, host)
-char *name;
-register int file;
-char *host;
+static int writeqf(char *name, register int file, char *host)
 {
     FILE *f;
     register int rc, bufsize;
@@ -565,8 +533,7 @@ char *host;
     return tryclose(f, name);
 }
 
-static int writegf(name)
-char *name;
+static int writegf(char *name)
 {
     FILE *f;
     register int rc;

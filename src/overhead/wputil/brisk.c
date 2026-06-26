@@ -53,9 +53,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <arpa/nameser.h>
 #include <netinet/in.h>
 #include <resolv.h>
+#include <stdlib.h>
 #endif /* tst_NDBM */
 
-extern int errno;
 
 static int Debugging = 0;
 
@@ -92,8 +92,7 @@ static struct Str {char *Buf, *Name; int digitsOnly, Needed;} Fields[] = {
 };
 #define numFields (sizeof(Fields) / sizeof(Fields[0]))
 
-static void cvDown(Ptr)
-char *Ptr;
+static void cvDown(char *Ptr)
 {/* Lower-case null-terminated string Ptr in place. */
     while (*Ptr != '\0') {
 	if (isupper(*Ptr)) {*Ptr = tolower(*Ptr);}
@@ -129,8 +128,7 @@ static struct endGoodness {char *endName; int Good, Preempt;} Ends[] = {
 };
 #define numEnds (sizeof(Ends) / sizeof(Ends[0]))
 
-static char IsDomain(hst, outhst)
-char *hst, *outhst;
+static char IsDomain(char *hst, char *outhst)
 {/* Check the goodness of host ``hst''.  Copy it, or what it's an alias for, to ``outhst''. */
     int Ix;
     char *s, *t;
@@ -335,8 +333,7 @@ static int WriteFields()
     return 0;
 }
 
-static int singAddr(Head, Res)
-PARSED_ADDRESS *Head, **Res;
+static int singAddr(PARSED_ADDRESS *Head, PARSED_ADDRESS **Res)
 {/* Count the elements under Head, return how many there were, and point to one of them via Res. */
     int RNum;
 
@@ -357,8 +354,7 @@ PARSED_ADDRESS *Head, **Res;
       return RNum;
 }
 
-static PARSED_ADDRESS *SingleAddress(Head)
-PARSED_ADDRESS *Head;
+static PARSED_ADDRESS *SingleAddress(PARSED_ADDRESS *Head)
 {/* If list Head has a single element, return it, else return NULL. */
     int Count;
     PARSED_ADDRESS *Res;
@@ -366,8 +362,7 @@ PARSED_ADDRESS *Head;
     return (Count == 1 ? Res : NULL);
 }
 
-static int AnyNonBlank(txt)
-char *txt;
+static int AnyNonBlank(char *txt)
 {/* Return TRUE iff there's any non-blank text in the character string txt. */
     if (txt != NULL) for (; *txt != '\0'; ++txt) {
 	if (isascii(*txt) && *txt != ' ' && *txt != '(' && *txt != ')' && isprint(*txt)) return 1;
@@ -387,8 +382,7 @@ static char IsNameChar[128] = {
 /* Consider '{' to be name chars for national usage */
 };
 
-static int AllNameChars(txt)
-char *txt;
+static int AllNameChars(char *txt)
 {/* Return TRUE iff all characters in txt might reasonably appear in a personal name. */
     if (txt == NULL) return 0;
     for (; *txt != '\0'; ++txt) {
@@ -397,9 +391,7 @@ char *txt;
     return 1;
 }
 
-static int GetAddress(Addr, Res)
-PARSED_ADDRESS *Addr;
-char *Res;
+static int GetAddress(PARSED_ADDRESS *Addr, char *Res)
 {/* Write the address to Res and return an indication of how good an address it is (0 = unusable, and the larger the result the better). */
     char *s, *t, *u, *v, *q;
     int HValue, LValue, isDom, DomCode, AnyDomCode, UnPRes, FinalRes;
@@ -541,8 +533,7 @@ char *Res;
     }
 }
 
-static void FixGecos(fld, pwnam)
-char *fld, *pwnam;
+static void FixGecos(char *fld, char *pwnam)
 {/* Heuristically guess whether the argument points to an encoded pw_gecos field, and if so, replace it with a simple person name. */
     char *s, *d, *t;
     auto char outFld[ADDRLEN], outNam[ADDRLEN];
@@ -615,8 +606,7 @@ char *fld, *pwnam;
     }
 }
 
-static int GetPersonal(comm, nameRes, affilRes, otherRes)
-char *comm; char *nameRes, *affilRes, *otherRes;
+static int GetPersonal(char *comm, char *nameRes, char *affilRes, char *otherRes)
 {/* Get personal information from the given text string and return an indication of how good that information is (0 for unusable; the larger the better). */
     char *nComm, *s, *t, *u, *v;
     int Ctr, oldC, RDum;
@@ -832,9 +822,7 @@ char *comm; char *nameRes, *affilRes, *otherRes;
     return 0;
 }
 
-static int GetPersEffects(Addr, nameRes, affilRes, otherRes)
-PARSED_ADDRESS *Addr;
-char *nameRes, *affilRes, *otherRes;
+static int GetPersEffects(PARSED_ADDRESS *Addr, char *nameRes, char *affilRes, char *otherRes)
 {/* Get personal information from the address (personal name, text affiliation, anything else) and return an indication of how good the information is (0 = unusable; the larger the result the better). */
     auto char wk1[ADDRLEN], wk2[ADDRLEN], wk3[ADDRLEN], wk4[ADDRLEN], wk5[ADDRLEN], wk6[ADDRLEN];
     auto char Comm[ADDRLEN];
@@ -1095,8 +1083,7 @@ static void CloseOut()
     }
 }
 
-static void Usage(arg0, prob)
-char *arg0, *prob;
+static void Usage(char *arg0, char *prob)
 {/* Complain about a Usage error. */
     fputs("brisk: ", stderr);
     fputs(prob, stderr);
@@ -1104,9 +1091,7 @@ char *arg0, *prob;
     exit(2);
 }
 
-main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
     int RC;
 

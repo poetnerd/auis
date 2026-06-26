@@ -49,6 +49,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <path.ih>
 #include <filetype.eh>
 
+#include <errno.h>
+#include <stdlib.h>
 #define DEFAULTTYPE "text"
 
 static struct mapEntry {
@@ -59,7 +61,6 @@ static struct mapEntry {
     struct attributes *existingAttributes;
 } *allEntries = NULL, defaultMapping = {NULL, NULL, NULL, NULL, NULL};
 
-extern int errno;
 
 /* These next statics are fairly bogus. */
 static char lastFilename[MAXPATHLEN];

@@ -41,8 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exam
 #include "im.ih"
 #include "hello.ih"
 
-static boolean makeWindow(dobj)
-struct dataobject *dobj;
+static boolean makeWindow(struct dataobject *dobj)
 {
     struct view *v;
     struct view *applayer;
@@ -81,8 +80,7 @@ struct dataobject *dobj;
 
 }
 
-boolean helloworldapp__Start(hwapp)
-struct helloworldapp *hwapp;
+boolean helloworldapp__Start(struct helloworldapp *hwapp)
 {
     struct helloworld *hw;
 

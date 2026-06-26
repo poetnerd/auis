@@ -49,6 +49,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/apt/
 #include <apts.ih>
 #include <suiteta.eh>
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 struct view *Name_Choice(), 
             *RW_Hit_Handler(),
 	    *First_Test(), 

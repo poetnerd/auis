@@ -41,6 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <assert.h>
 
+#include <stdlib.h>
 #define	STRIPINCR	20		/* expansion factor on strip array */
 
 #if USE_PROTOTYPES
@@ -56,10 +57,7 @@ static	TIFFAppendToStrip();
 #endif
 
 /*VARARGS3*/
-TIFFWriteScanline(tif, buf, row, sample)
-	register TIFF *tif;
-	u_char *buf;
-	u_int row, sample;
+int TIFFWriteScanline(register TIFF *tif, u_char *buf, u_int row, u_int sample)
 {
 	static char module[] = "TIFFWriteScanline";
 	register TIFFDirectory *td;

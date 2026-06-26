@@ -38,6 +38,8 @@
 #include <gentlex.h>
 
 
+#include <string.h>
+#include <stdlib.h>
 static struct line *Thongs = NULL;	/* list of all thongs */
 	/* each thong on the list has its ->action field pt
 	   to a Hdr for the resulting action.  

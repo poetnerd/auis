@@ -42,11 +42,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <stdio.h>
 
+#include <stdlib.h>
 #include <andrewos.h> /* sys/file.h */
 
 
-FixIt(orig, new)
-char *orig, *new;
+int FixIt(char *orig, char *new)
 {
     char buf[1024];
     int err;
@@ -57,9 +57,7 @@ char *orig, *new;
     }
 }
 
-static char *ComputeOutputFileName (InputFileName, extension)
-char *InputFileName;
-char *extension;
+static char *ComputeOutputFileName(char *InputFileName, char *extension)
 {
     static char name[256];
     register char  *p, *q;

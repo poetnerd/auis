@@ -71,6 +71,8 @@ END-SPECIFICATION  ************************************************************/
 #include "chartpie.eh"
 #include <ctype.h>
 
+#include <stdlib.h>
+#include <stdio.h>
 int chartpie_debug = 0;
 
 #define debug chartpie_debug

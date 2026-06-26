@@ -58,6 +58,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/synt
 #include <lexan.ih>
 #include <parse.eh>
 
+#include <stdlib.h>
 static struct parse *CurrentParse = NULL;
 static boolean DebugFlag = FALSE;
 #define ERRORTOK 1
@@ -264,9 +265,7 @@ parse__TokenNumberFromName(self, name)
 	return 0;
 }
 
-debugstate(desc, state, pendtok, errorstate)
-struct parse_tables *desc;
-int state, pendtok, errorstate;
+int debugstate(struct parse_tables *desc, int state, int pendtok, int errorstate)
 {
 	if (pendtok == NOTOK)
 		printf("(%d,--)", state);
@@ -280,17 +279,13 @@ int state, pendtok, errorstate;
 	fflush(stdout);
 }
 
-debugshift(desc, tact)
-	struct parse_tables *desc;
-	int tact;
+int debugshift(struct parse_tables *desc, int tact)
 {
 	printf(":   shift to state %d\n", tact);
 	fflush(stdout);
 }
 
-debugreduce(desc, rule, revealedstate, newstate)
-	struct parse_tables *desc;
-	int rule, revealedstate, newstate;
+int debugreduce(struct parse_tables *desc, int rule, int revealedstate, int newstate)
 {
 	int i;
 	printf(":   reduce   %d->%d\n", revealedstate, newstate);
@@ -303,9 +298,7 @@ debugreduce(desc, rule, revealedstate, newstate)
 	fflush(stdout);
 }
 
-debugflush(desc, state)
-	struct parse_tables *desc;
-	int state;
+int debugflush(struct parse_tables *desc, int state)
 {
 	printf("\t\tpop state %d\n", state);
 	fflush(stdout);

@@ -45,6 +45,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include <print.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 static void SetPrinterType();
 
 /* The following defaults are used by the print software */

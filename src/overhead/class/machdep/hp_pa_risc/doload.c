@@ -49,6 +49,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <errno.h>
 #include <andrdir.h>
 
+#include <stdlib.h>
 #define TRUE 1
 #define FALSE 0
 

@@ -37,6 +37,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include "scache.h"
 
+#include <string.h>
+#include <stdlib.h>
 static struct scache_node scache[256];
 
 #define HASH(str,len) (((*(str)<<2)+((str)[(len)>>1])+((str)[(len)-(len)?1:0]<<2)+((str)[len>>2]<<2)+(len))&0xff)
@@ -48,8 +50,7 @@ void scache_Init()
     bzero(scache,sizeof(scache));
 }
 
-char *scache_Hold(str)
-char *str;
+char *scache_Hold(char *str)
 {
     unsigned long len;
     unsigned long hash;
@@ -94,8 +95,7 @@ char *str;
     return e->str;
 }
 
-void scache_Free(str)
-char *str;
+void scache_Free(char *str)
 {
     scache_REFCOUNT(str)--;
 }

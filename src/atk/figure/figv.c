@@ -56,6 +56,9 @@ char *figv_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fig
 
 #include <rect.h>
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #define figview_InitNumHighlights (2)
 #define SCROLL_EXTRA_SPACE (256)
 #define recttopix_Exact (-9999)
@@ -79,9 +82,7 @@ static void FlattenRefList();
 static void IncreaseClipRegProc();
 static void RedrawGroup(), RepostMenus();
 
-static void ToggleDebugProc(self, rock)
-struct figview *self;
-long rock;
+static void ToggleDebugProc(struct figview *self, long rock)
 {
     debug = ! debug;
     printf("debug is now %d\n", debug);  fflush (stdout);
@@ -102,8 +103,7 @@ static char *FigureBackgroundColor = NULL;
 #define	ML_noshowprintarea  (128)
 #define	ML_showprintarea    (256)
 
-boolean figview__InitializeClass(ClassID)
-struct classheader *ClassID;
+boolean figview__InitializeClass(struct classheader *ClassID)
 {
     struct proctable_Entry *proc = NULL;
 
@@ -183,9 +183,7 @@ struct classheader *ClassID;
     return TRUE;
 }
 
-boolean figview__InitializeObject(ClassID, self)
-struct classheader *ClassID;
-struct figview *self;
+boolean figview__InitializeObject(struct classheader *ClassID, struct figview *self)
 {
     int hx;
 
@@ -262,9 +260,7 @@ struct figview *self;
     return TRUE;
 }
 
-void figview__FinalizeObject(ClassID, self)
-struct classheader *ClassID;
-struct figview *self;
+void figview__FinalizeObject(struct classheader *ClassID, struct figview *self)
 {
     int ix;
 
@@ -305,9 +301,7 @@ struct figview *self;
     keystate_Destroy(self->Keystate);
 }
 
-void figview__SetDataObject(self, fig)
-struct figview *self;
-struct figure *fig;
+void figview__SetDataObject(struct figview *self, struct figure *fig)
 {
     super_SetDataObject(self, fig);
     self->focusgroup = figure_RootObjRef(fig);
@@ -317,9 +311,7 @@ struct figure *fig;
     self->pany = self->originy;
 }
 
-void figview__SetExpertMode(self, val)
-struct figview *self;
-boolean val;
+void figview__SetExpertMode(struct figview *self, boolean val)
 {
     val = (val) ? TRUE : FALSE;
 
@@ -336,16 +328,12 @@ boolean val;
     RepostMenus(self);
 }
 
-static void SetExpertModeProc(self, val)
-struct figview *self;
-long val;
+static void SetExpertModeProc(struct figview *self, long val)
 {
     figview_SetExpertMode(self, val);
 }
 
-static void ToggleReadOnlyProc(self, val)
-struct figview *self;
-long val;
+static void ToggleReadOnlyProc(struct figview *self, long val)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     if (!fig) return;
@@ -358,10 +346,7 @@ long val;
 	message_DisplayString(self, 10, "Document is now writable.");
 }
 
-void figview__ObservedChanged(self, obs, status)
-struct figview *self;
-struct observable *obs;
-long status;
+void figview__ObservedChanged(struct figview *self, struct observable *obs, long status)
 {
     if (obs == (struct observable *)self->toolset) {
 	if (status==observable_OBJECTDESTROYED) {
@@ -378,8 +363,7 @@ long status;
     }
 }
 
-struct view *figview__GetApplicationLayer(self)
-struct figview *self;
+struct view *figview__GetApplicationLayer(struct figview *self)
 {
     struct scroll *view;
 
@@ -396,9 +380,7 @@ static struct scrollfns	vertical_scroll_interface =
 static struct scrollfns	horizontal_scroll_interface =
 {x_getinfo, x_setframe, NULL, x_whatisat};
 
-struct scrollfns *figview__GetInterface(self, interface_name)
-struct figview *self;
-char *interface_name;
+struct scrollfns *figview__GetInterface(struct figview *self, char *interface_name)
 {
     struct scrollfns *interface;
     
@@ -411,9 +393,7 @@ char *interface_name;
     return interface;
 }
 
-static void x_getinfo(self, total, seen, dot)
-struct figview *self;
-struct range *total, *seen, *dot;
+static void x_getinfo(struct figview *self, struct range *total, struct range *seen, struct range *dot)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     struct rectangle *figrect = figure_GetOverallBounds(fig);
@@ -462,9 +442,7 @@ struct range *total, *seen, *dot;
     }
 }
 
-static long x_whatisat(self, coordinate, outof)
-struct figview *self;
-long coordinate, outof;
+static long x_whatisat(struct figview *self, long coordinate, long outof)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     struct rectangle *figrect = figure_GetOverallBounds(fig);
@@ -472,10 +450,7 @@ long coordinate, outof;
     return figview_ToFigX(self, coordinate) - (figrect->left - SCROLL_EXTRA_SPACE);
 }
 
-static void x_setframe(self, position, coordinate, outof) 
-struct figview *self;
-int position;
-long coordinate, outof;
+static void x_setframe(struct figview *self, int position, long coordinate, long outof)
 {
     long diffpos;
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
@@ -490,9 +465,7 @@ long coordinate, outof;
     }
 }
 
-static void y_getinfo(self, total, seen, dot)
-struct figview *self;
-struct range *total, *seen, *dot;
+static void y_getinfo(struct figview *self, struct range *total, struct range *seen, struct range *dot)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     struct rectangle *figrect = figure_GetOverallBounds(fig);
@@ -541,9 +514,7 @@ struct range *total, *seen, *dot;
     }
 }
 
-static long y_whatisat(self, coordinate, outof)
-struct figview *self;
-long coordinate, outof;
+static long y_whatisat(struct figview *self, long coordinate, long outof)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     struct rectangle *figrect = figure_GetOverallBounds(fig);
@@ -551,10 +522,7 @@ long coordinate, outof;
     return figview_ToFigY(self, coordinate) - (figrect->top - SCROLL_EXTRA_SPACE);
 }
 
-static void y_setframe(self, position, coordinate, outof) 
-struct figview *self;
-int position;
-long coordinate, outof;
+static void y_setframe(struct figview *self, int position, long coordinate, long outof)
 {
     long diffpos;
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
@@ -570,8 +538,7 @@ long coordinate, outof;
 }
 
 /* assumes self is input focus */
-static void RepostMenus(self)
-struct figview *self;
+static void RepostMenus(struct figview *self)
 {
     long menumask = 0;
     long val;
@@ -606,9 +573,7 @@ struct figview *self;
     }
 }
 
-void figview__PostMenus(self, ml)
-struct figview *self;
-struct menulist *ml;
+void figview__PostMenus(struct figview *self, struct menulist *ml)
 {
     /* Enable the menus for this object. */
     menulist_UnchainML(self->Menus, self);
@@ -618,9 +583,7 @@ struct menulist *ml;
     super_PostMenus(self, self->Menus);
 }
 
-void figview__PostKeyState(self, ks)
-struct figview *self;
-struct keystate *ks;
+void figview__PostKeyState(struct figview *self, struct keystate *ks)
 {
     /* Enable the keys for this object. */
     struct keystate *newch;
@@ -636,16 +599,13 @@ struct keystate *ks;
     }
 }
 
-void figview__SetBuildKeystate(self, ks)
-struct figview *self;
-struct keystate *ks;
+void figview__SetBuildKeystate(struct figview *self, struct keystate *ks)
 {
     self->BuildKeystate = ks;
     figview_PostKeyState(self, NULL);
 }
 
-void figview__ReceiveInputFocus(self)
-struct figview *self;
+void figview__ReceiveInputFocus(struct figview *self)
 {
     self->HasInputFocus = TRUE;
     figview_PostKeyState(self, NULL);
@@ -653,8 +613,7 @@ struct figview *self;
     /*figview_WantUpdate(self, self);  if there's any visual change */
 }
 
-void figview__LoseInputFocus(self)
-struct figview *self;
+void figview__LoseInputFocus(struct figview *self)
 {
     self->HasInputFocus = FALSE;
     /*figview_WantUpdate(self, self);    if there's any visual change */
@@ -672,9 +631,7 @@ long *dheight;
     return super_DesiredSize(self, width, height, pass, dwidth, dheight);
 }
 
-static void IncreaseTmpProc(self, num)
-struct figview *self;
-long num;
+static void IncreaseTmpProc(struct figview *self, long num)
 {
     if (self->tmplist == NULL) {
 	self->tmp_size = num+8;
@@ -690,9 +647,7 @@ long num;
     }
 }
 
-static void IncreaseRedrawProc(self, num)
-struct figview *self;
-long num;
+static void IncreaseRedrawProc(struct figview *self, long num)
 {
     if (self->redrawlist == NULL) {
 	self->redraw_size = num+8;
@@ -708,9 +663,7 @@ long num;
     }
 }
 
-static void IncreaseClipRegProc(self, num)
-struct figview *self;
-long num;
+static void IncreaseClipRegProc(struct figview *self, long num)
 {
     int ix;
 
@@ -734,9 +687,7 @@ long num;
     }
 }
 
-void figview__SetNumHighlights(self, num)
-struct figview *self;
-int num;
+void figview__SetNumHighlights(struct figview *self, int num)
 {
     int oldnum = self->numhighlights;
     int hx;
@@ -761,9 +712,7 @@ int num;
     }
 }
 
-static void FlattenRefList(self, ix)
-struct figview *self;
-long ix;
+static void FlattenRefList(struct figview *self, long ix)
 {
     for (; ix<self->objs_size; ix++) {
 	self->objs[ix].o = NULL;
@@ -782,10 +731,7 @@ long ix;
 }
 
 /* convert a rectangle in fig coords to pix coords, expanding it by delta pixels. If delta = recttopix_Exact, do not expand it at all. */
-static void RectToPix(self, dest, src, delta)
-struct figview *self;
-struct rectangle *dest, *src;
-long delta;
+static void RectToPix(struct figview *self, struct rectangle *dest, struct rectangle *src, long delta)
 {
     if (rectangle_IsEmptyRect(src)) {
 	rectangle_EmptyRect(dest);
@@ -808,9 +754,7 @@ long delta;
 
 /* Let B = UpdateRect clipped to visual bounds. Clip drawing to B, erase B, and redraw all elements (in order) that intersect B. 
 If recterased is TRUE, we can assume that the drawing area has been erased already. */
-static void RedrawView(self, recterased)
-struct figview *self;
-boolean recterased;
+static void RedrawView(struct figview *self, boolean recterased)
 {
     struct rectangle B, foc;
     struct rectangle inrec;
@@ -1061,11 +1005,7 @@ boolean recterased;
     self->DoingFullUpdate = FALSE;
 }
 
-static void RedrawGroup(self, fig, gref, B)
-struct figview *self;
-struct figure *fig;
-long gref;
-struct rectangle *B;
+static void RedrawGroup(struct figview *self, struct figure *fig, long gref, struct rectangle *B)
 {
     int ix;
     struct rectangle tmp;
@@ -1313,8 +1253,7 @@ boolean needfull;
     rectangle_UnionRect(&self->UpdateRect, &self->UpdateRect, &self->MustEraseRect);
 }
 
-static void OldUpdateCache(self)
-struct figview *self;
+static void OldUpdateCache(struct figview *self)
 {
     boolean needfull = self->NeedFullUpdate;
     if (needfull)
@@ -1323,14 +1262,12 @@ struct figview *self;
     UpdateCache(self, needfull);
 }
 
-void figview__FlushDataChanges(self)
-struct figview *self;
+void figview__FlushDataChanges(struct figview *self)
 {
     OldUpdateCache(self);
 }
 
-static void UpdateWindowSize(self)
-struct figview *self;
+static void UpdateWindowSize(struct figview *self)
 {
     struct figobj *foc;
     struct rectangle logrec;
@@ -1360,17 +1297,13 @@ struct figview *self;
 
 }
 
-static void FixPixelPanning(self)
-struct figview *self;
+static void FixPixelPanning(struct figview *self)
 {
     self->ppanx=figview_ToPixW(self, (self)->panx);
     self->ppany=figview_ToPixH(self, (self)->pany);
 }
 
-void figview__FullUpdate(self, type, left, top, width, height)
-struct figview *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void figview__FullUpdate(struct figview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     self->UpdateCached = FALSE;
   
@@ -1426,12 +1359,7 @@ long left, top, width, height;
 #define ABS(x) ((x<0)?-(x):x)
 #endif
 
-static void DoRedraws(self, ux, uy, dr, diffx, diffy)
-struct figview *self;
-struct rectangle *ux;
-struct rectangle *uy;
-struct rectangle *dr;
-long diffx, diffy;
+static void DoRedraws(struct figview *self, struct rectangle *ux, struct rectangle *uy, struct rectangle *dr, long diffx, long diffy)
 {
     struct rectangle vb;
     struct region *vr=region_CreateEmptyRegion();
@@ -1494,9 +1422,7 @@ long diffx, diffy;
 }
 
     
-static void DoBlit(self, diffx, diffy)
-struct figview *self;
-long diffx, diffy;
+static void DoBlit(struct figview *self, long diffx, long diffy)
 {
     struct rectangle s, ux, uy, vr;
     struct point d;
@@ -1554,8 +1480,7 @@ long diffx, diffy;
     DoRedraws(self, &ux, &uy, &s, diffx, diffy);
 }
 
-void figview__Update(self)
-struct figview *self;
+void figview__Update(struct figview *self)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long lppanx=self->ppanx;
@@ -1591,9 +1516,7 @@ struct figview *self;
 }
 
 /* if the requestor is an inset, we have to find the objref corresponding to it. This is a linear search. self->lastupdated is a cheap hack to speed this up. */
-void figview__WantUpdate(self, requestor)
-struct figview *self;
-struct view *requestor;
+void figview__WantUpdate(struct figview *self, struct view *requestor)
 {
     if ((struct view *)self != requestor) {
 	int ix;
@@ -1623,9 +1546,7 @@ struct view *requestor;
     }
 }
 
-void figview__BlockUpdates(self, val)
-struct figview *self;
-boolean val;
+void figview__BlockUpdates(struct figview *self, boolean val)
 {
     if (val) {
 	/* turn blocking on */
@@ -1644,11 +1565,7 @@ boolean val;
     }
 }
 
-static boolean TEI_Splot(o, ref, self, vv)
-struct figobj *o;
-long ref;
-struct figure *self;
-long *vv;
+static boolean TEI_Splot(struct figobj *o, long ref, struct figure *self, long *vv)
 {
     if (figobj_IsInset(o) 
 	 && (int)(figobj_HitMe(o, vv[1], vv[2], 0, NULL)) >= (int)(figobj_HitInside))
@@ -1657,10 +1574,7 @@ long *vv;
     return FALSE;
 }
 
-struct view *figview__Hit(self, action, x, y, num_clicks)
-struct figview *self;
-enum view_MouseAction action;
-long x, y, num_clicks;
+struct view *figview__Hit(struct figview *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
     if (! self->OnScreen) return NULL;
 
@@ -1798,17 +1712,14 @@ long x, y, num_clicks;
     return (struct view *)self;		/* where to send subsequent hits */
 }
 
-boolean figview__IsSelected(self, ref)
-struct figview *self;
-long ref;
+boolean figview__IsSelected(struct figview *self, long ref)
 {
     if (ref<0 || ref>=self->objs_size) 
 	return FALSE;
     return (self->objs[ref].o && self->objs[ref].selected);
 }
 
-void figview__ClearSelection(self)
-struct figview *self;
+void figview__ClearSelection(struct figview *self)
 {
     int ix;
 
@@ -1819,9 +1730,7 @@ struct figview *self;
     RepostMenus(self);
 }
 
-void figview__Select(self, o)
-struct figview *self;
-struct figobj *o;
+void figview__Select(struct figview *self, struct figobj *o)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref = figure_FindRefByObject(fig, o);
@@ -1830,9 +1739,7 @@ struct figobj *o;
 	figview_SelectByRef(self, ref);
 }
 
-void figview__SelectByRef(self, ref)
-struct figview *self;
-long ref;
+void figview__SelectByRef(struct figview *self, long ref)
 {
     if (ref<0 || ref>=self->objs_size) 
 	return;
@@ -1844,9 +1751,7 @@ long ref;
     }
 }
 
-void figview__ToggleSelect(self, o)
-struct figview *self;
-struct figobj *o;
+void figview__ToggleSelect(struct figview *self, struct figobj *o)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref = figure_FindRefByObject(fig, o);
@@ -1855,9 +1760,7 @@ struct figobj *o;
 	figview_ToggleSelectByRef(self, ref);
 }
 
-void figview__ToggleSelectByRef(self, ref)
-struct figview *self;
-long ref;
+void figview__ToggleSelectByRef(struct figview *self, long ref)
 {
     if (ref<0 || ref>=self->objs_size) 
 	return;
@@ -1873,9 +1776,7 @@ long ref;
     RepostMenus(self);
 }
 
-void figview__Unselect(self, o)
-struct figview *self;
-struct figobj *o;
+void figview__Unselect(struct figview *self, struct figobj *o)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref = figure_FindRefByObject(fig, o);
@@ -1884,9 +1785,7 @@ struct figobj *o;
 	figview_UnselectByRef(self, ref);
 }
 
-void figview__UnselectByRef(self, ref)
-struct figview *self;
-long ref;
+void figview__UnselectByRef(struct figview *self, long ref)
 {
     if (ref<0 || ref>=self->objs_size) 
 	return;
@@ -1899,8 +1798,7 @@ long ref;
 }
 
 /* if there is exactly one object selected, return its ref. Otherwise, return figure_NULLREF */
-long figview__GetOneSelected(self)
-struct figview *self;
+long figview__GetOneSelected(struct figview *self)
 {
     /* could be more efficient */
     int ix;
@@ -1915,12 +1813,7 @@ struct figview *self;
     return figure_NULLREF; /* should never happen, but what the hell */
 }
 
-static void EnumSelSplot(self, fig, grp, func, rock)
-struct figview *self;
-struct figure *fig;
-long grp;
-void (*func)();
-long rock;
+static void EnumSelSplot(struct figview *self, struct figure *fig, long grp, void (*func)(), long rock)
 {
     long ix;
     struct figogrp *gr = (struct figogrp *)fig->objs[grp].o;
@@ -1943,10 +1836,7 @@ long rock;
 func should be of the form
 void func(struct figobj *o, long ref, struct figview *self, rock)
 */
-void figview__EnumerateSelection(self, func, rock)
-struct figview *self;
-void (*func)();
-long rock;
+void figview__EnumerateSelection(struct figview *self, void (*func)(), long rock)
 {
     long grp;
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
@@ -1962,9 +1852,7 @@ long rock;
 }
 
 /* if ref==figure_NULLREF, set to root group */
-void figview__SetFocusByRef(self, ref)
-struct figview *self;
-long ref;
+void figview__SetFocusByRef(struct figview *self, long ref)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     if (!fig) return;
@@ -1995,9 +1883,7 @@ long ref;
     }
 }
 
-static void AbortObjectProc(self, rock)
-struct figview *self;
-long rock;
+static void AbortObjectProc(struct figview *self, long rock)
 {
     if (self->toolset)
 	figtoolview_AbortObjectBuilding(self->toolset);
@@ -2005,9 +1891,7 @@ long rock;
 	message_DisplayString(self, 10, "No object is being created.");
 }
 
-static void FocusUpProc(self, rock)
-struct figview *self;
-long rock;
+static void FocusUpProc(struct figview *self, long rock)
 {
     long old, ref;
 
@@ -2035,9 +1919,7 @@ long rock;
     figview_WantUpdate(self, self);
 }
 
-static void FocusDownProc(self, rock)
-struct figview *self;
-long rock;
+static void FocusDownProc(struct figview *self, long rock)
 {
     long old, ref;
     struct figogrp *foc;
@@ -2064,9 +1946,7 @@ long rock;
     figview_WantUpdate(self, self);
 }
 
-static void FocusLeftProc(self, rock)
-struct figview *self;
-long rock;
+static void FocusLeftProc(struct figview *self, long rock)
 {
     long old, ref, fref;
     long count;
@@ -2108,9 +1988,7 @@ long rock;
     figview_WantUpdate(self, self);
 }
 
-static void FocusRightProc(self, rock)
-struct figview *self;
-long rock;
+static void FocusRightProc(struct figview *self, long rock)
 {
     long old, ref;
     long count;
@@ -2149,10 +2027,7 @@ long rock;
     figview_WantUpdate(self, self);
 }
 
-void figview__CutNPaste(self, operation, rock)
-struct figview *self;
-short operation;
-long rock; /* currently unused */
+void figview__CutNPaste(struct figview *self, short operation, long rock)
 {
     switch (operation) {
 	case figview_OpCopy:
@@ -2175,11 +2050,7 @@ long rock; /* currently unused */
     }
 }
 
-static void CutSelSplot(self, fig, gref, fp)
-struct figview *self;
-struct figure *fig;
-long gref;
-FILE *fp;
+static void CutSelSplot(struct figview *self, struct figure *fig, long gref, FILE *fp)
 {
     long ix;
     struct figogrp *gr = (struct figogrp *)fig->objs[gref].o;
@@ -2198,9 +2069,7 @@ FILE *fp;
     }
 }
 
-static void CutSelProc(self, rock)
-struct figview *self;
-long rock;
+static void CutSelProc(struct figview *self, long rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref;
@@ -2245,9 +2114,7 @@ long rock;
     RepostMenus(self);
 }
 
-static void CopySelProc(self, rock)
-struct figview *self;
-long rock;
+static void CopySelProc(struct figview *self, long rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref;
@@ -2278,9 +2145,7 @@ long rock;
     im_CloseToCutBuffer(figview_GetIM(self), fp); 
 }
 
-static void CopySelInsetProc(self, rock)
-struct figview *self;
-long rock;
+static void CopySelInsetProc(struct figview *self, long rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref;
@@ -2306,9 +2171,7 @@ long rock;
     im_CloseToCutBuffer(figview_GetIM(self), fp); 
 }
 
-static void RotatePasteProc(self, rock)
-struct figview *self;
-long rock;
+static void RotatePasteProc(struct figview *self, long rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref;
@@ -2340,9 +2203,7 @@ long rock;
     im_RotateCutBuffers(figview_GetIM(self), 1);
 }
 
-static void PasteSelProc(self, rock)
-struct figview *self;
-long rock;
+static void PasteSelProc(struct figview *self, long rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     FILE *fp;
@@ -2422,9 +2283,7 @@ long rock;
     figure_NotifyObservers(fig, figure_DATACHANGED);
 }
 
-static void ShowPrintAreaProc(self, rock)
-struct figview *self;
-long rock; /* 0 for off, 1 for on, 2 for recalc */
+static void ShowPrintAreaProc(struct figview *self, long rock)
 {
     long wpts, hpts;
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
@@ -2453,9 +2312,7 @@ long rock; /* 0 for off, 1 for on, 2 for recalc */
     }
 }
 
-static void SetPrintScaleProc(self, rock)
-struct figview *self;
-long rock;
+static void SetPrintScaleProc(struct figview *self, long rock)
 {
     char buffer[64];
     char obuffer[256];
@@ -2524,9 +2381,7 @@ long rock;
     message_DisplayString(self, 10, obuffer);
 }
 
-static void ReadZipProc(self, rock)
-struct figview *self;
-long rock;
+static void ReadZipProc(struct figview *self, long rock)
 {
     int res;
     long count1, count2, ix;
@@ -2633,9 +2488,7 @@ long rock;
     figure_NotifyObservers(fig, figure_DATACHANGED);
 }
 
-static void WritePSProc(self, rock)
-struct figview *self;
-long rock;
+static void WritePSProc(struct figview *self, long rock)
 {
     int res;
     char buffer[296];
@@ -2669,11 +2522,7 @@ long rock;
     message_DisplayString(self, 10, buffer);
 }
 
-static boolean PrintSplot(o, ref, fig, lump)
-struct figobj *o;
-long ref;
-struct figure *fig;
-struct printlump *lump;
+static boolean PrintSplot(struct figobj *o, long ref, struct figure *fig, struct printlump *lump)
 {
     struct view *vtmp;
     struct rectangle insetb, *bbox;
@@ -2716,12 +2565,7 @@ struct printlump *lump;
     return FALSE;
 }
 
-void figview__Print(self, file, processor, format, toplevel)
-struct figview *self;
-FILE *file;
-char *processor;
-char *format;
-boolean toplevel;
+void figview__Print(struct figview *self, FILE *file, char *processor, char *format, boolean toplevel)
 {
     struct figure *fig = (struct figure *)self->header.view.dataobject;
     long wpts, hpts;  /* image dimensions in points */
@@ -2803,9 +2647,7 @@ boolean toplevel;
     }
 }
 
-static void ToolsetCreateProc(self, rock)
-struct figview *self;
-char *rock;
+static void ToolsetCreateProc(struct figview *self, char *rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     struct im *im;
@@ -2868,15 +2710,12 @@ char *rock;
     RepostMenus(self);
 }
 
-void figview__DestroyToolset(self)
-struct figview *self;
+void figview__DestroyToolset(struct figview *self)
 {
     ToolsetKillProc(self, 0);
 }
 
-static void ToolsetKillProc(self, rock)
-struct figview *self;
-char *rock;
+static void ToolsetKillProc(struct figview *self, char *rock)
 {
     struct im *toolim = NULL;
     struct frame *toolfr = NULL;
@@ -2921,9 +2760,7 @@ char *rock;
     RepostMenus(self); 
 }
 
-static void ChangeZoomProc(self, rock)
-struct figview *self;
-long rock;
+static void ChangeZoomProc(struct figview *self, long rock)
 {
     long newscale;
     long midx, midy, offx, offy;
@@ -2963,16 +2800,12 @@ long rock;
 }
 
 /* 1 to zoom in, -1 to zoom out, 0 to zoom norm */
-void figview__ChangeZoom(self, val)
-struct figview *self;
-long val;
+void figview__ChangeZoom(struct figview *self, long val)
 {
     ChangeZoomProc(self, val);
 }
 
-static void PanToOriginProc(self, rock)
-struct figview *self;
-long rock;
+static void PanToOriginProc(struct figview *self, long rock)
 {
     if (self->panx==self->originx && self->pany==self->originy)
 	return;
@@ -2983,9 +2816,7 @@ long rock;
     figview_WantUpdate(self, self);
 }
 
-void figview__LinkTree( self, parent )
-struct figview *self;
-struct view *parent;
+void figview__LinkTree(struct figview *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if (parent && figview_GetIM(self)) {

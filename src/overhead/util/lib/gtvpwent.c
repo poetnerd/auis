@@ -46,8 +46,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif /* WHITEPAGES_ENV */
 #include <svcconf.h>
 
-extern int errno;
 
+#include <stdlib.h>
 #ifdef WHITEPAGES_ENV
 static int wpOpenedHere = 0;
 static char *LastPK = NULL;

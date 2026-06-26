@@ -50,9 +50,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #ifdef WHITEPAGES_ENV  /* avoid makedepend "errors" */
 #include <btint.h>
+#include <stdlib.h>
 #endif /* WHITEPAGES_ENV   */
 
-extern int errno;
 
 extern int br_Debugging;
 
@@ -62,9 +62,7 @@ Declaration:
 	struct btCursor *curs;
 	char **keyLoc;
 */
-bt_ErrorCode bt_GetCursorKey(curs, keyLoc)
-struct btCursor *curs;
-char **keyLoc;
+bt_ErrorCode bt_GetCursorKey(struct btCursor *curs, char **keyLoc)
 {
     struct btC *bC = (struct btC *) curs;
     struct btFile *bF;
@@ -121,10 +119,7 @@ Declaration:
 	char **valueLoc;
 	unsigned int *returnedLen;
 */
-bt_ErrorCode bt_GetCursorValue(curs, valueLoc, returnedLen)
-struct btCursor *curs;
-char **valueLoc;
-unsigned int *returnedLen;
+bt_ErrorCode bt_GetCursorValue(struct btCursor *curs, char **valueLoc, unsigned int *returnedLen)
 {
     struct btC *bC = (struct btC *) curs;
     bt_ErrorCode RetVal;

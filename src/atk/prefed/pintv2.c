@@ -35,6 +35,7 @@
 #include <prefs.ih>
 #include <complete.ih>
 
+#include <stdio.h>
 #define TEXT(tv) ((struct text *)textview_GetDataObject(tv))
 #define PREFS(pv) ((struct prefs *)pintv_GetDataObject(pv))
 #define RFOLDEDEQ(x,y) ((x)==(y))
@@ -43,9 +44,7 @@
 static char explanation[]="In the following cases a general preference of the form \"*.prefname:...\" or \"prefname:...\" was found to precede a preference of the form \"appname.prefname:...\"\nIn cases like this the general preference overrides the specific preference, which probably isn't what was intended.  If you save your preferences they will be re-ordered so that this conflict does not occur.  This may cause a CHANGE in behavior.\n\n";
 
 
-static void ReportErrors(self, curtime)
-struct pintv *self;
-long curtime;
+static void ReportErrors(struct pintv *self, long curtime)
 {
     struct buffer *b;
     struct frame *f;
@@ -75,16 +74,13 @@ long curtime;
     textview_WantInputFocus((struct textview *)frame_GetView(f), (struct textview *)frame_GetView(f));
 }
 
-struct event *pintv_GetReportEvent(rock)
-long rock;
+struct event *pintv_GetReportEvent(long rock)
 {
     return im_EnqueueEvent(ReportErrors, rock, 0);
 }
 
 
-static void KeepOldCopy(self, curtime)
-struct pintv *self;
-long curtime;
+static void KeepOldCopy(struct pintv *self, long curtime)
 {
     struct prefs *prefs=(struct prefs *)pintv_GetDataObject(self);
     char buf[1024];
@@ -139,24 +135,18 @@ long curtime;
     im_SetProcessCursor(old);
 }
 
-struct event *pintv_GetKeepEvent(rock)
-long rock;
+struct event *pintv_GetKeepEvent(long rock)
 {
     return im_EnqueueEvent(KeepOldCopy, rock, 0);
 }
 
-static boolean FindTextBuffer(b, data)
-struct buffer *b;
-struct prefs *data;
+static boolean FindTextBuffer(struct buffer *b, struct prefs *data)
 {
     if(buffer_GetData(b)==(struct dataobject *)data && buffer_GetDefaultViewname(b) && strcmp(buffer_GetDefaultViewname(b), "textview")==0) return TRUE;
     else return FALSE;
 }
 
-void pintv_EditAsText(self, sb, rock)
-struct pintv *self;
-struct sbutton *sb;
-long rock;
+void pintv_EditAsText(struct pintv *self, struct sbutton *sb, long rock)
 {
     char bufname[1024];
     struct buffer *b;

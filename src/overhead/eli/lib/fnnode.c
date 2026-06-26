@@ -33,8 +33,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include  <fnnode.h>
 
-EliFn_t        *eliFn_GetNew(st)
-EliState_t     *st;
+#include <stdlib.h>
+EliFn_t        *eliFn_GetNew(EliState_t *st)
 {
     EliFn_t        *tmp = NULL;
 
@@ -63,8 +63,7 @@ EliState_t     *st;
     return (tmp);
 }
 
-EliFn_t        *eliFn_GetNewBlock(numcells)
-int             numcells;
+EliFn_t        *eliFn_GetNewBlock(int numcells)
 {
     EliFn_t        *result;
     int             i;
@@ -78,15 +77,12 @@ int             numcells;
     return (result);
 }
 
-void            eliFn_IncrRefcount(node)
-EliFn_t        *node;
+void            eliFn_IncrRefcount(EliFn_t *node)
 {
     ++(node->data.refcount);
 }
 
-int             eliFn_DecrRefcount(st, node)
-EliState_t     *st;
-EliFn_t        *node;
+int             eliFn_DecrRefcount(EliState_t *st, EliFn_t *node)
 {
     int             result;
 
@@ -107,10 +103,7 @@ EliFn_t        *node;
     return (result);
 }
 
-void            eliFn_SetCons(st, node, fn)
-EliState_t     *st;
-EliFn_t        *node;
-EliCons_t      *fn;
+void            eliFn_SetCons(EliState_t *st, EliFn_t *node, EliCons_t *fn)
 {
     EliCons_t      *tmp;
 
@@ -125,11 +118,7 @@ EliCons_t      *fn;
 	eliCons_DecrRefcount(st, tmp);
 }
 
-void            eliFn_SetCompiled(st, node, fn)
-EliState_t     *st;
-EliFn_t        *node;
-void            (*fn) ();
-
+void            eliFn_SetCompiled(EliState_t *st, EliFn_t *node, void (*fn)())
 {
     if (node->data.type == e_fn_list)
 	eliCons_DecrRefcount(st, node->data.fn.consval);
@@ -137,14 +126,12 @@ void            (*fn) ();
     node->data.fn.compiled = fn;
 }
 
-eliFnTypes_t    eliFn_GetType(node)
-EliFn_t        *node;
+eliFnTypes_t    eliFn_GetType(EliFn_t *node)
 {
     return (node->data.type);
 }
 
-EliCons_t      *eliFn_GetCons(node)
-EliFn_t        *node;
+EliCons_t      *eliFn_GetCons(EliFn_t *node)
 {
     return (node->data.fn.consval);
 }

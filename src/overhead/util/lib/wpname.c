@@ -50,12 +50,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <bt.h>
 #include <wp.h>
 #include <btwp.h>
+#include <stdlib.h>
 #endif /* WHITEPAGES_ENV   */
-extern int errno;
 
 #ifndef _IBMR2
-extern char *malloc();
-extern char *realloc();
 #endif /* _IBMR2 */
 
 extern int wp_Debugging;
@@ -68,8 +66,7 @@ extern int wp_Debugging;
 #define LogsYes 0
 #endif /* LogsYes */
 
-static wp_ErrorCode CopyIdSet(Source, Dest)
-struct IdSet *Source, **Dest;
+static wp_ErrorCode CopyIdSet(struct IdSet *Source, struct IdSet **Dest)
 {	/* Make a copy. */
 	struct IdSet *D;
 	int Ix;
@@ -99,8 +96,7 @@ struct NamSet {
 #define Undef_NamSet	((struct NamSet *) 0)
 #define Empty_NamSet	((struct NamSet *) -1)
 
-static void ZapNamSet(SS)
-struct NamSet *SS;
+static void ZapNamSet(struct NamSet *SS)
 {/* Carefully deallocate all things referred to by SS. */
 	int Idx;
 
@@ -141,8 +137,7 @@ static struct NamSet *NewNamSet()
 	return SS;
 }
 
-static wp_ErrorCode FreshenNamSet(NSPtr)
-struct NamSet **NSPtr;
+static wp_ErrorCode FreshenNamSet(struct NamSet **NSPtr)
 {/* Make it appear that the NS that NSPtr points to is squeaky-clean. */
 	struct NamSet *NS;
 	int Ix;
@@ -161,8 +156,7 @@ struct NamSet **NSPtr;
 	return wperr_NoError;
 }
 
-static wp_ErrorCode AddNamSet(NSPtr, Str)
-struct NamSet **NSPtr; char *Str;
+static wp_ErrorCode AddNamSet(struct NamSet **NSPtr, char *Str)
 { /* Add string Str to token set SS.  We need to malloc a copy of Str. */
 	char	**NewNams;
 	int	NewSize, NewStrSize, Ix, *NewNamSizs;
@@ -229,8 +223,7 @@ struct TokSet {
 };
 #define Undef_Str	((char *) 0)
 #define Empty_Str	((char *) -1)
-static void ZapTokSet(SS)
-struct TokSet *SS;
+static void ZapTokSet(struct TokSet *SS)
 {/* Carefully deallocate all things referred to by SS. */
 	int Idx;
 
@@ -301,8 +294,7 @@ struct TokSet *SS;
 		free(SS);
 	}
 }
-static struct TokSet *BuildTokSet(NS)
-struct NamSet *NS;
+static struct TokSet *BuildTokSet(struct NamSet *NS)
 {/* Extend the given NamSet to a TokSet; deallocate the NamSet on success. */
 	struct TokSet *TS;
 	int Tok;
@@ -356,14 +348,12 @@ struct NamSet *NS;
 	return TS;
 }
 
-static char ToLower(C)
-char C;
+static char ToLower(char C)
 { if (C >= 'A') if (C <= 'Z') C += ('a' - 'A');
    return C;
 }
 
-static void PrintSrchToken(file, ST)
-FILE *file; struct wp_SrchToken *ST;
+static void PrintSrchToken(FILE *file, struct wp_SrchToken *ST)
 {
 	struct wp_Constraint *CPtr;
 
@@ -388,8 +378,7 @@ Begin setting up for a new database search.  This initial search specifies that 
 
 This routine malloc's storage to hold the search token.  It is the client program's responsibility to call wp_DeAllocate of that storage to deallocate it.  If storage allocation fails, this routine will have allocated nothing and will return code wperr_OutOfMemory.
 */
-wp_ErrorCode wp_SetUp(NameProbe, SearchKind, STPointer)
-char *NameProbe;  int SearchKind; wp_SearchToken *STPointer;
+wp_ErrorCode wp_SetUp(char *NameProbe, int SearchKind, wp_SearchToken *STPointer)
 {
 	struct wp_SrchToken *ST;
 
@@ -425,9 +414,7 @@ This routine malloc's storage to hold the search token.  It is the client
   If storage allocation fails, this routine will have allocated nothing and will
  return code wperr_OutOfMemory.
 */
-wp_ErrorCode wp_Constrain(STPointer, FieldNum, Content, ConstraintKind)
-wp_SearchToken *STPointer; wp_FieldIndex FieldNum;
-char *Content; enum wp_ConstraintKind ConstraintKind;
+wp_ErrorCode wp_Constrain(wp_SearchToken *STPointer, wp_FieldIndex FieldNum, char *Content, enum wp_ConstraintKind ConstraintKind)
 {
 	struct wp_SrchToken *ST = (struct wp_SrchToken *) *STPointer;
 	struct wp_Constraint *CP;
@@ -457,8 +444,7 @@ char *Content; enum wp_ConstraintKind ConstraintKind;
 /* Test whatever constraints are declared in the Constraints list of a search.
 	Return TRUE iff the given identifier obeys the given constraint list.
 */
-static wp_ErrorCode TestConstraints(cd, Ident, CList, Passed)
-struct wp_CD *cd; btwp_identifier Ident; struct wp_Constraint *CList; int *Passed;
+static wp_ErrorCode TestConstraints(struct wp_CD *cd, btwp_identifier Ident, struct wp_Constraint *CList, int *Passed)
 {
 	struct wp_Constraint *CPtr;
 	char *FContent;
@@ -509,8 +495,7 @@ struct wp_CD *cd; btwp_identifier Ident; struct wp_Constraint *CList; int *Passe
 	Return a constrained version of the IdSet.
 	Consume the argument IdSet (deallocate or shrink);
 	return a new version (allocated or shrunk). */
-static wp_ErrorCode ApplyConstraints(cd, ISPtr, CList, ISCPtr)
-struct wp_CD *cd; struct IdSet **ISPtr; struct wp_Constraint *CList; int *ISCPtr;
+static wp_ErrorCode ApplyConstraints(struct wp_CD *cd, struct IdSet **ISPtr, struct wp_Constraint *CList, int *ISCPtr)
 {
 	struct IdSet *IS = *ISPtr;
 	struct IdSet *NewIS;
@@ -568,8 +553,7 @@ struct wp_CD *cd; struct IdSet **ISPtr; struct wp_Constraint *CList; int *ISCPtr
 	return wperr_NoError;
 }
 
-static int AnyDigits(str)
-char *str;
+static int AnyDigits(char *str)
 {/* Return 1 iff there are any digits in the argument string str. */
 	register char *S;
 
@@ -577,8 +561,7 @@ char *str;
 	return 0;
 }
 
-static struct IdSet *IntersectIDs(S1, S2)
-struct IdSet *S1, *S2;
+static struct IdSet *IntersectIDs(struct IdSet *S1, struct IdSet *S2)
 { /* Assume that the IdSets S1 and S2 are sorted.
 	Perform the operation ``S1 := S1 intersect S2'', overwriting S1.
 */
@@ -624,8 +607,7 @@ struct IdSet *S1, *S2;
 static char *KMKey = NULL;
 static int KMKeyLen = 0;
 
-static wp_ErrorCode KeyMatch(cd, BTIx, Probe, ResPtr)
-struct wp_CD *cd; int BTIx; char *Probe, **ResPtr;
+static wp_ErrorCode KeyMatch(struct wp_CD *cd, int BTIx, char *Probe, char **ResPtr)
 {/* Returns via ResPtr any value that matches Probe viewed as a BTIx. */
 	int	PLen, DataLen;
 	bt_ErrorCode BTErr; wp_ErrorCode WPErr;
@@ -658,8 +640,7 @@ struct wp_CD *cd; int BTIx; char *Probe, **ResPtr;
 static char *PBKey = NULL;
 static int PBKeyLen = 0;
 
-static wp_ErrorCode w_ProbeBegins(cd, BTIx, Probe, ISPtr)
-struct wp_CD *cd; int BTIx; char *Probe; struct IdSet **ISPtr;
+static wp_ErrorCode w_ProbeBegins(struct wp_CD *cd, int BTIx, char *Probe, struct IdSet **ISPtr)
 {
 	register struct IdSet *IS = Undef_IdSet;
 	int IdCount, IdIx, PLen, DataLen, DataLen2, EachKeyLen, TempFail;
@@ -797,8 +778,7 @@ NxtKey:
 static unsigned char *PCopy = NULL;
 static int PCopyLen = 0;
 
-static wp_ErrorCode BurstName(Probe, NSPtr)
-unsigned char *Probe; struct NamSet **NSPtr;
+static wp_ErrorCode BurstName(unsigned char *Probe, struct NamSet **NSPtr)
 { /* Burst name Probe into its indexed components. */
 	unsigned char *TPtr, SaveCh, *NS;
 	int LastWasNTok;
@@ -874,8 +854,7 @@ unsigned char *Probe; struct NamSet **NSPtr;
 	return wperr_NoError;
 }
 
-static wp_ErrorCode NickSetup(cd, Probe, StrLoc, MapLoc)
-struct wp_CD *cd; char *Probe; char **StrLoc; struct NamSet **MapLoc;
+static wp_ErrorCode NickSetup(struct wp_CD *cd, char *Probe, char **StrLoc, struct NamSet **MapLoc)
 {/* Probe is the probe string; StrLoc points to where the CanonNick result is stored; MapLoc points to where the set of names is stored. */
 	wp_ErrorCode RetVal;
 	char *MatchRes;
@@ -917,8 +896,7 @@ struct wp_CD *cd; char *Probe; char **StrLoc; struct NamSet **MapLoc;
 
 static struct NamSet *NP = Undef_NamSet;
 
-static wp_ErrorCode MatchName(cd, NPtr, SS, AllMatch, SurM, OthM, LNLP, RsltP)
-struct wp_CD *cd; char *NPtr; struct TokSet *SS; int AllMatch, SurM, OthM, LNLP, *RsltP;
+static wp_ErrorCode MatchName(struct wp_CD *cd, char *NPtr, struct TokSet *SS, int AllMatch, int SurM, int OthM, int LNLP, int *RsltP)
 {	/* Match the probes in TokSet SS against the name from database in NPtr. */
 	/* LNLP is TRUE iff the last probe needs to match the last key. */
 	/* AllMatch is TRUE iff we need an exact match, not just a component match. */
@@ -1059,9 +1037,7 @@ struct wp_CD *cd; char *NPtr; struct TokSet *SS; int AllMatch, SurM, OthM, LNLP,
 	return wperr_NoError;
 }
 
-static wp_ErrorCode MatchSequence(cd, ISPtr, SS, CList, AllMatch, SurM, OthM, LNLP, ISCPtr)
-struct wp_CD *cd; struct IdSet **ISPtr; struct TokSet *SS;
-struct wp_Constraint *CList; int AllMatch, SurM, OthM, LNLP; int *ISCPtr;
+static wp_ErrorCode MatchSequence(struct wp_CD *cd, struct IdSet **ISPtr, struct TokSet *SS, struct wp_Constraint *CList, int AllMatch, int SurM, int OthM, int LNLP, int *ISCPtr)
 { /* Find and return the identifers of entries, from set IS, in which at least one of the names has components that match the sequence of strings in SS.  SurM is MEx iff the surname must match exactly; OthM is MEx iff non-surnames must match exactly.  LNLP is true iff the surname in the probe needs to match the surname in the name string.  AllMatch is true iff we need a complete match for a name, not just a component match.
 */
 	struct IdSet *IS, *NewIS;
@@ -1151,9 +1127,7 @@ struct wp_Constraint *CList; int AllMatch, SurM, OthM, LNLP; int *ISCPtr;
 	return wperr_NoError;
 }
 
-static wp_ErrorCode IntersectAndAssignIdSet(OutISPtr, OutCopied, OtherIS)
-struct IdSet **OutISPtr, *OtherIS;
-int *OutCopied;
+static wp_ErrorCode IntersectAndAssignIdSet(struct IdSet **OutISPtr, int *OutCopied, struct IdSet *OtherIS)
 {
 /* Set *OutISPtr to be the intersection of its old contents and the set OtherIS.  If *OutISPtr is currently null, just assign OtherIS to it.  If it isn't null, obey the OutCopied flag to tell if it should be copied before modifying it.
 */
@@ -1180,8 +1154,7 @@ int *OutCopied;
 	return wperr_NoError;
 }
 
-static wp_ErrorCode UnionIDs(pS1, pS1Copied, pS2, pS2Copied)
-struct IdSet **pS1, **pS2; int *pS1Copied, *pS2Copied;
+static wp_ErrorCode UnionIDs(struct IdSet **pS1, int *pS1Copied, struct IdSet **pS2, int *pS2Copied)
 { /* Assume that the IdSets S1 and S2 are sorted.
 	Perform the operation ``S1 := S1 union S2'', overwriting *pS1.
 */
@@ -1253,8 +1226,7 @@ struct IdSet **pS1, **pS2; int *pS1Copied, *pS2Copied;
 	return wperr_NoError;
 }
 
-static wp_ErrorCode NickMatch(cd, Probe, StrLoc, MapLoc, ISPtr)
-struct wp_CD *cd; char *Probe; char **StrLoc; struct NamSet **MapLoc; struct IdSet **ISPtr;
+static wp_ErrorCode NickMatch(struct wp_CD *cd, char *Probe, char **StrLoc, struct NamSet **MapLoc, struct IdSet **ISPtr)
 {/* Probe is the probe string; StrLoc points to where the CanonNick result is stored; MapLoc points to where the set of names is stored; and ISPtr is where the resultant set, if any, is to be stored. */
 	wp_ErrorCode RetVal; int Ix, ISCopied, NewISCopied;
 	struct IdSet *IS = Undef_IdSet, *NewIS = Undef_IdSet;
@@ -1299,12 +1271,7 @@ struct wp_CD *cd; char *Probe; char **StrLoc; struct NamSet **MapLoc; struct IdS
 static unsigned char *DoneP = NULL;
 static int DonePLen = 0;
 
-static wp_ErrorCode NameMatch(cd, Probe, NToks, Constraints,
-			AllMatch, SurM, OthM, LNLP, ISPtr, ISCopied)
-struct wp_CD *cd; char *Probe; struct TokSet *NToks; struct wp_Constraint *Constraints;
-int AllMatch, SurM, OthM, LNLP;
-struct IdSet **ISPtr;
-int *ISCopied;
+static wp_ErrorCode NameMatch(struct wp_CD *cd, char *Probe, struct TokSet *NToks, struct wp_Constraint *Constraints, int AllMatch, int SurM, int OthM, int LNLP, struct IdSet **ISPtr, int *ISCopied)
 {	/* Do a pass of name-matching.  Result back in ISPtr. */
 	wp_ErrorCode RetVal;
 	struct IdSet *ResIS = Undef_IdSet, *NewIS;
@@ -1588,9 +1555,7 @@ int *ISCopied;
 	return RetVal;
 }
 
-static wp_ErrorCode TryHeuristic(cd, WhichHeur, Probe, Constraints, ISPtr, ISCPtr)
-struct wp_CD *cd; int WhichHeur; char *Probe; struct wp_Constraint *Constraints;
-struct IdSet **ISPtr; int *ISCPtr;
+static wp_ErrorCode TryHeuristic(struct wp_CD *cd, int WhichHeur, char *Probe, struct wp_Constraint *Constraints, struct IdSet **ISPtr, int *ISCPtr)
 {	/* Do the specified heuristic match on the name */
 	static char HeurID[10];
 	wp_ErrorCode RetVal;
@@ -1641,10 +1606,7 @@ This routine malloc's storage to hold the prime keys.  It is the client program'
  storage allocation fails, this routine will have allocated nothing and will return
  code wperr_OutOfMemory.
 */
-wp_ErrorCode cwp_Search(cd, SrchToken, MaxResults, MaxQuality, MatchQuality, PKPtr)
-	struct wp_cd *cd;
-	wp_SearchToken SrchToken; int MaxResults;
-	int MaxQuality, *MatchQuality; wp_PrimeKeySetPtr *PKPtr;
+wp_ErrorCode cwp_Search(struct wp_cd *cd, wp_SearchToken SrchToken, int MaxResults, int MaxQuality, int *MatchQuality, wp_PrimeKeySetPtr *PKPtr)
 {
 	struct wp_CD *CD = (struct wp_CD *) cd;
 	struct wp_SrchToken *ST = (struct wp_SrchToken *) SrchToken;
@@ -1892,10 +1854,7 @@ This routine malloc's storage to hold the prime key.  It is the client program's
   If storage allocation fails, this routine will have allocated nothing and will
  return code wperr_OutOfMemory.
 */
-wp_ErrorCode cwp_Lookup(cd, SrchToken, MinMatchesFound, MaxQuality, MatchQuality, PKPtr)
-	struct wp_cd *cd;
-	wp_SearchToken SrchToken; int *MinMatchesFound;
-	int MaxQuality, *MatchQuality; wp_PrimeKey *PKPtr;
+wp_ErrorCode cwp_Lookup(struct wp_cd *cd, wp_SearchToken SrchToken, int *MinMatchesFound, int MaxQuality, int *MatchQuality, wp_PrimeKey *PKPtr)
 {
 	wp_ErrorCode RetVal;
 	wp_PrimeKeySet *PKs;
@@ -1958,8 +1917,7 @@ To find out all the fields that might exist in the database, use procedure
  wperr_FieldIndexOutOfBounds if the given index is not within bounds.
 
 */
-wp_ErrorCode wp_AllFields(FieldIx, FNamPtr)
-wp_FieldIndex FieldIx; char **FNamPtr;
+wp_ErrorCode wp_AllFields(wp_FieldIndex FieldIx, char **FNamPtr)
 {
     if (FieldIx < 0 || FieldIx > FldMAX) return wperr_FieldIndexOutOfBounds;
     *FNamPtr = wpFieldName[FieldIx];

@@ -39,6 +39,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <dict.eh>
 #include <view.ih>
 
+#include <stdlib.h>
+#include <stdio.h>
 #define INITIALSIZE 128
 #define dictionary_DELETED NULL
 #define EntryDeleted(A) (A->view == (struct view *) dictionary_DELETED &&  A->id == (char *)dictionary_DELETED)

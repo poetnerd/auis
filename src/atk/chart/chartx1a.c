@@ -45,6 +45,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/char
 #include  <chartx1a.eh>
 
 
+#include <stdlib.h>
+#include <stdio.h>
 #define  Chart		    (self->chart_data_object)
 #define  ChartView	    (self->chart_view_object)
 #define  Frame		    (self->frame)
@@ -118,9 +120,8 @@ chartx1app__Start( self )
   }
 
 
-Query( topic )
-  char			     *topic;
-  {
+int Query(char *topic)
+{
   char			      response[255];
 
   printf( "Enter %s: ", topic );

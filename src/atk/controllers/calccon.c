@@ -49,13 +49,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cont
 #include <lset.ih>
 #include <value.ih>
 #include <stringv.ih>
+#include <stdio.h>
 /* user code begins here for includes */
 #define ADD 1
 #define SUB 2
 #define MULT 3
 #define DIV 4
-displayval(self)
-struct calccon *self;
+int displayval(struct calccon *self)
 {
 if(self->error){
     value_SetString(self->output,"Error");
@@ -64,8 +64,7 @@ if(self->error){
 sprintf(self->buf,"%12.6g",self->val);
 value_SetString(self->output,self->buf);
 }
-clear(self)
-struct calccon *self;
+int clear(struct calccon *self)
 {
 self->val = 0.0;
 self->saveval = 0.0;
@@ -78,8 +77,7 @@ displayval(self);
 /* user code ends here for includes */
 
 static struct calccon *firstcalccon;
-static struct calccon *FindSelf(v)
-struct view *v;
+static struct calccon *FindSelf(struct view *v)
 {
 	struct calccon *self,*last = NULL;
 	struct arbiterview *arbv =arbiterview_FindArb(v);
@@ -95,10 +93,7 @@ struct view *v;
 	arbiterview_AddObserver(self->arbv,self);
 	return self;
 }
-static void calcCallBack(self,val,r1,r2)
-struct calccon *self;
-struct value *val;
-long r1,r2;
+static void calcCallBack(struct calccon *self, struct value *val, long r1, long r2)
 {
 if(r2 == value_OBJECTDESTROYED) {
 	if(self->calc_4 == val) self->calc_4 = NULL;
@@ -137,10 +132,7 @@ displayval(self);
 /* user code ends here for calcCallBack */
 }
 }
-static void valenterCallBack(self,val,r1,r2)
-struct calccon *self;
-struct value *val;
-long r1,r2;
+static void valenterCallBack(struct calccon *self, struct value *val, long r1, long r2)
 {
 if(r2 == value_OBJECTDESTROYED) {
 	if(self->valenter == val) self->valenter = NULL;
@@ -191,10 +183,7 @@ if(r2 == value_OBJECTDESTROYED) {
 /* user code ends here for valenterCallBack */
 }
 }
-static void decimalCallBack(self,val,r1,r2)
-struct calccon *self;
-struct value *val;
-long r1,r2;
+static void decimalCallBack(struct calccon *self, struct value *val, long r1, long r2)
 {
 if(r2 == value_OBJECTDESTROYED) {
 	if(self->decimal == val) self->decimal = NULL;
@@ -205,10 +194,7 @@ if(r2 == value_OBJECTDESTROYED) {
 /* user code ends here for decimalCallBack */
 }
 }
-static void digitCallBack(self,val,r1,r2)
-struct calccon *self;
-struct value *val;
-long r1,r2;
+static void digitCallBack(struct calccon *self, struct value *val, long r1, long r2)
 {
 if(r2 == value_OBJECTDESTROYED) {
 	if(self->digit_0 == val) self->digit_0 = NULL;
@@ -239,10 +225,7 @@ if(r2 == value_OBJECTDESTROYED) {
 /* user code ends here for digitCallBack */
 }
 }
-static void outputCallBack(self,val,r1,r2)
-struct calccon *self;
-struct value *val;
-long r1,r2;
+static void outputCallBack(struct calccon *self, struct value *val, long r1, long r2)
 {
 if(r2 == value_OBJECTDESTROYED) {
 	if(self->output == val) self->output = NULL;
@@ -252,9 +235,7 @@ if(r2 == value_OBJECTDESTROYED) {
 /* user code ends here for outputCallBack */
 }
 }
-static initself(self,v)
-struct calccon *self;
-struct view *v;
+static initself(struct calccon *self, struct view *v)
 {
 	self->v = v;
 	self->calc_4View = (struct buttonV *)arbiterview_GetNamedView(v,"calc-4");
@@ -330,9 +311,7 @@ struct view *v;
 	if(self->calc_3) value_AddCallBackObserver(self->calc_3, self,calcCallBack,3);
 	if(self->calc_3View) buttonV_AddObserver(self->calc_3View,self);
 }
-calccon_clear(v,dat)
-struct view *v;
- long dat;
+int calccon_clear(struct view *v, long dat)
 {
 struct calccon *self;
 if((self = FindSelf(v)) == NULL) return;
@@ -341,10 +320,7 @@ arbiterview_SetIgnoreUpdates(v, TRUE);
 clear(self);
 /* user code ends here for calccon_clear */
 }
-void calccon__ObservedChanged(self,observed,status)
-struct calccon *self;
-struct observable * observed;
-long status;
+void calccon__ObservedChanged(struct calccon *self, struct observable *observed, long status)
 {
 /* user code begins here for ObservedChanged */
 /* user code ends here for ObservedChanged */
@@ -373,8 +349,7 @@ if (status == observable_OBJECTDESTROYED) {
 	if (observed == (struct observable *) self->calc_3View) self->calc_3View=NULL;
 }
 }
-boolean calccon__InitializeClass(ClassID)
-struct classheader *ClassID;
+boolean calccon__InitializeClass(struct classheader *ClassID)
 {
 struct classinfo *viewtype = class_Load("view");
 firstcalccon = NULL;
@@ -383,9 +358,7 @@ proctable_DefineProc("calccon-clear",calccon_clear, viewtype,NULL,"calccon clear
 /* user code ends here for InitializeClass */
 return TRUE;
 }
-void calccon__FinalizeObject(ClassID,self)
-struct classheader *ClassID;
-struct calccon *self;
+void calccon__FinalizeObject(struct classheader *ClassID, struct calccon *self)
 {
 	if(self->calc_4) value_RemoveCallBackObserver(self->calc_4, self);
 	if(self->calc_5) value_RemoveCallBackObserver(self->calc_5, self);
@@ -408,9 +381,7 @@ struct calccon *self;
 /* user code begins here for FinalizeObject */
 /* user code ends here for FinalizeObject */
 }
-boolean calccon__InitializeObject(ClassID,self)
-struct classheader *ClassID;
-struct calccon *self;
+boolean calccon__InitializeObject(struct classheader *ClassID, struct calccon *self)
 {
 self->calc_4 = NULL;
 self->calc_4View = NULL;

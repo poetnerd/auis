@@ -207,6 +207,9 @@ XXX code in the basic operations here will be repeated in the interpreter
 
 #include <nessmark.eh>
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 static char  debug = FALSE;
 #define DEBUG(s) {if (debug) {printf s ; fflush(stdout);}}
 #define ENTER(r) DEBUG(("Enter %s(0x%lx)\n", "r", self))

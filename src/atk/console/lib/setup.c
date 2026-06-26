@@ -64,6 +64,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <sitevars.h>
 
 
+#include <stdlib.h>
+#include <stdio.h>
 extern ClearWindow();
 extern PromptToWindow();
 extern GetStringFromWindow();
@@ -102,9 +104,7 @@ extern int	ForceErrorMonitoring;
 extern struct classinfo *consoleClass_GetInfoHack();
 extern struct menulist *PrepareUserMenus();
 
-void ToggleDebugging (self, rock)
-    struct consoleClass *self;
-    char *rock;
+void ToggleDebugging(struct consoleClass *self, char *rock)
 {
     mydbg(("Entering: ToggleDebugging\n"));
     MYDEBUGGING = ! MYDEBUGGING;
@@ -468,9 +468,7 @@ char *ClickOptions[] = {
 };
 
 
-int LaccNameLookup(string, table)
-char *string;
-char **table;
+int LaccNameLookup(char *string, char **table)
 {
     int i;
 
@@ -484,10 +482,7 @@ char **table;
 }
 
 
-struct FuncStruct *AuxFuncLookup(string, index, len, num)
-char *string;
-int index;
-int len, *num;
+struct FuncStruct *AuxFuncLookup(char *string, int index, int len, int *num)
 {
     struct FuncStruct *myfs;
 
@@ -502,8 +497,7 @@ int len, *num;
     return(NULL);
 }
 
-struct FuncStruct *FuncLookup(string)
-    char *string;
+struct FuncStruct *FuncLookup(char *string)
 {
     struct FuncStruct *myfs;
     int num;
@@ -527,8 +521,7 @@ struct FuncStruct *FuncLookup(string)
 }
 
 
-struct fontdesc *SetupFont(fontname)
-char *fontname;
+struct fontdesc *SetupFont(char *fontname)
 {
     struct fontdesc *font;
     char FontBuffer[50];
@@ -551,12 +544,7 @@ char *fontname;
 
 #define NOMORETOKENS '\0'
 #define MAXTOKENSIZE 256
-char *GetNextToken(self, MapToLower, fp, lineno, PanicAtEOF)
-    struct consoleClass *self;
-    boolean MapToLower;
-    FILE *fp;
-    int *lineno;
-    boolean PanicAtEOF;
+char *GetNextToken(struct consoleClass *self, boolean MapToLower, FILE *fp, int *lineno, boolean PanicAtEOF)
 {
     boolean StillLooking = TRUE,
 	    InQuotes = FALSE;
@@ -629,9 +617,7 @@ char *GetNextToken(self, MapToLower, fp, lineno, PanicAtEOF)
 
 
 
-InitializeDisplays(self, IsStartup)
-    struct consoleClass *self;
-    boolean IsStartup;
+int InitializeDisplays(struct consoleClass *self, boolean IsStartup)
 {
     int     i, j;
 
@@ -655,8 +641,7 @@ InitializeDisplays(self, IsStartup)
     VeryFirstDisplay->Threshhold = j;
 }
 
-CleanOldState(self)
-struct consoleClass *self;
+int CleanOldState(struct consoleClass *self)
 {
     struct display *dp, *dp2;
     int     i;
@@ -705,8 +690,7 @@ struct consoleClass *self;
     consoleClass_PostMenus(self, self->stdMenulist);
 }
 
-KillInitExecProcesses(killPIDs)
-boolean killPIDs;
+int KillInitExecProcesses(boolean killPIDs)
 {
     SIGSET_TYPE    the_mask, oldmask;
     int     j;
@@ -807,8 +791,7 @@ SetConsoleLib()
 #define DOWNCASE(x) (isascii(x) && isalpha(x) && isupper(x) ? (tolower(x)) : (x) )
 #endif /* DOWNCASE */
 
-char *lcfilename(s)
-  char *s;				/* source string */
+char *lcfilename(char *s)
 {
     char *p;
     char *c;
@@ -847,8 +830,7 @@ extern char *RealProgramName;
 #define STDEXTLTH 8
 #define MAXMATCHES 7
 #define MODIFYTYPEIN 7
-char *FindConsoleInPaths(theTypeInPtr)
-char *theTypeInPtr;
+char *FindConsoleInPaths(char *theTypeInPtr)
 {
     FILE *pfd = NULL;
     char *theName = NULL;
@@ -1000,9 +982,7 @@ char *theTypeInPtr;
  * date: Tue May 30 15:50:19 EDT 1989
  * NOTE: Leaves ConFile open by design
  */
-boolean GetConsoleFileFromTypeIn(self, IsStartup)
-struct consoleClass *self;
-boolean IsStartup;
+boolean GetConsoleFileFromTypeIn(struct consoleClass *self, boolean IsStartup)
 {
 #define MAXTRIES 5
     FILE         *pfd =NULL ;
@@ -1108,9 +1088,7 @@ boolean IsStartup;
     return(TRUE);
 }
 
-SetupFromConsoleFile(self, IsStartup)
-struct consoleClass *self;
-boolean IsStartup;
+int SetupFromConsoleFile(struct consoleClass *self, boolean IsStartup)
 {
     struct display *thisdisp;
     int            *newchild;
@@ -1922,8 +1900,7 @@ boolean IsStartup;
 }
 
 
-InitDisplay(self)
-struct consoleClass *self;
+int InitDisplay(struct consoleClass *self)
 {
     struct display *dp;
     int     i;
@@ -1959,8 +1936,7 @@ struct consoleClass *self;
 
 
 
-PostParseArgs(name) 
-char *name;
+int PostParseArgs(char *name)
 {
     mydbg(("entering: PostParseArgs\n"));
     if (fpacheck()){
@@ -1986,8 +1962,7 @@ char *name;
 
 char MyHomeDir[MAXPATHLEN] = "";
 
-OneTimeInit(self)
-struct consoleClass *self;
+int OneTimeInit(struct consoleClass *self)
 {
     int i, fd;
 #ifdef POSIX_ENV
@@ -2081,8 +2056,7 @@ struct consoleClass *self;
     VirginDisplay.label = VirginDisplay.disptext = VirginDisplay.ClickStringLeft = Nullity;
 }
 
-NeedsParsed(s)
-char *s;
+int NeedsParsed(char *s)
 {
     boolean FoundIt = FALSE;
 
@@ -2099,9 +2073,7 @@ char *s;
 extern char *sys_errlist[];
 extern int sys_nerr;
 
-ClearAllLogs(self, rock)
-struct consoleClass *self;
-char *rock;
+int ClearAllLogs(struct consoleClass *self, char *rock)
 {
     int i, len;
 
@@ -2114,9 +2086,7 @@ char *rock;
 }
 
 
-WriteMonsterLog(self, rock)
-struct consoleClass *self;
-char *rock;
+int WriteMonsterLog(struct consoleClass *self, char *rock)
 {
     char *LogFileName, Question[80], buffer[MAXPATHLEN];
     int i;

@@ -38,6 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <txtstvec.h>
 #include <tabs.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 static struct tabs *DefaultTabs = NULL;
 
 int

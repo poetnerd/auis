@@ -44,15 +44,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <andrewos.h>
 #include <errno.h>
-extern int errno;
 #include <stdio.h>
 #include <sys/stat.h>
 #include <signal.h>
 /* #include <sys.h> DMT commented out */
-extern int errno;
 
-static int DoCall(Action, OldP)
-int Action, *OldP;
+static int DoCall(int Action, int *OldP)
 {/* Do the Computer Science Department's ``rpause'' system call for ENOSPC. */
 #define	RPAUSE_SAME	0		/* leave state unchanged */
 #define	RPAUSE_DISABLE	1	/* disable pause on error */

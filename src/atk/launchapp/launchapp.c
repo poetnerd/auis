@@ -53,6 +53,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/laun
 
 #include <launchapp.eh>
 
+#include <errno.h>
+#include <stdlib.h>
 #define MAJORVERSION (1)
 #define MINORVERSION (0)
 
@@ -63,7 +65,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/laun
 #define MAILADDR ("info-andrew-request+@andrew.cmu.edu")
 
 
-extern int errno;
 extern char *sys_errlist[];
 
 enum lpair_side {
@@ -98,15 +99,7 @@ static struct buttoninfo {
     {NULL, NULL, (void (*) ()) 0, 0}
 };
 
-static struct lpair *lpair_AddSplit(lp, v, side, splitdir, splittype,
-				    splitval, movable)
-struct lpair *lp;
-struct view *v;
-enum lpair_side side;
-enum lpair_dir splitdir;
-enum lpair_type splittype;
-long splitval;
-boolean movable;
+static struct lpair *lpair_AddSplit(struct lpair *lp, struct view *v, enum lpair_side side, enum lpair_dir splitdir, enum lpair_type splittype, long splitval, boolean movable)
 {
     struct lpair *new = lpair_New();
 
@@ -149,19 +142,12 @@ boolean movable;
     return (new);
 }
 
-static void ZombieHandler(pid, rock, status)
-int pid;
-long rock;
-int *status;
+static void ZombieHandler(int pid, long rock, int *status)
 {
     Buttons[rock].pid = 0;
 }
 
-static void Do(name, frame, index, args)
-char *name;
-struct frame *frame;
-long index;
-char **args;
+static void Do(char *name, struct frame *frame, long index, char **args)
 {
     int forkval;
     char msgbuf[100];
@@ -192,8 +178,7 @@ char **args;
 }
 
 
-static char *Bin(str)
-char *str;
+static char *Bin(char *str)
 {
     static char buf[1024];
     char *bin=environ_AndrewDir("/bin/");
@@ -203,10 +188,7 @@ char *str;
     return buf;
 }
 
-static void DoHelp(self, b, rock)
-struct launchapp *self;
-struct pushbutton *b;
-long rock;
+static void DoHelp(struct launchapp *self, struct pushbutton *b, long rock)
 {
     static char *args[] = {"help", "-d", "-new", NULL};
 
@@ -215,10 +197,7 @@ long rock;
     Do("Help", self->frame, rock, args);
 }
 
-static void DoTour(self, b, rock)
-struct launchapp *self;
-struct pushbutton *b;
-long rock;
+static void DoTour(struct launchapp *self, struct pushbutton *b, long rock)
 {
     char *args[4];
     args[0] = Bin("ez");
@@ -228,10 +207,7 @@ long rock;
     Do("Tour", self->frame, rock, args);
 }
 
-static void DoEz(self, b, rock)
-struct launchapp *self;
-struct pushbutton *b;
-long rock;
+static void DoEz(struct launchapp *self, struct pushbutton *b, long rock)
 {
     char *args[4];
     args[0] = Bin("ez");
@@ -241,10 +217,7 @@ long rock;
     Do("Ez", self->frame, rock, args);
 }
 
-static void DoConsole(self, b, rock)
-struct launchapp *self;
-struct pushbutton *b;
-long rock;
+static void DoConsole(struct launchapp *self, struct pushbutton *b, long rock)
 {
     static char *args[] = {"console", "-d", NULL};
 
@@ -253,10 +226,7 @@ long rock;
     Do("Console", self->frame, rock, args);
 }
 
-static void DoMessages(self, b, rock)
-struct launchapp *self;
-struct pushbutton *b;
-long rock;
+static void DoMessages(struct launchapp *self, struct pushbutton *b, long rock)
 {
     static char *args[] = {"messages", "-d", NULL};
 
@@ -264,10 +234,7 @@ long rock;
     Do("Messages", self->frame, rock, args);
 }
 
-static void DoTypescript(self, b, rock)
-struct launchapp *self;
-struct pushbutton *b;
-long rock;
+static void DoTypescript(struct launchapp *self, struct pushbutton *b, long rock)
 {
     static char *args[] = {"typescript", "-d", NULL};
 
@@ -275,10 +242,7 @@ long rock;
     Do("Typescript", self->frame, rock, args);
 }
 
-static void DoBush(self, b, rock)
-struct launchapp *self;
-struct pushbutton *b;
-long rock;
+static void DoBush(struct launchapp *self, struct pushbutton *b, long rock)
 {
     static char *args[] = {"bush", "-d", NULL};
 
@@ -286,17 +250,12 @@ long rock;
     Do("Bush", self->frame, rock, args);
 }
 
-static void DoExit(self, b, rock)
-struct launchapp *self;
-struct pushbutton *b;
-long rock;
+static void DoExit(struct launchapp *self, struct pushbutton *b, long rock)
 {
     im_KeyboardExit();
 }
 
-boolean launchapp__InitializeObject(c, self)
-struct classheader *c;
-struct launchapp *self;
+boolean launchapp__InitializeObject(struct classheader *c, struct launchapp *self)
 {
     char *tourFile = (char *) environ_AndrewDir(TOURFILENAME);
 
@@ -327,9 +286,7 @@ struct launchapp *self;
     return(TRUE);
 }
 
-void launchapp__FinalizeObject(c, self)
-struct classheader *c;
-struct launchapp *self;
+void launchapp__FinalizeObject(struct classheader *c, struct launchapp *self)
 {
     if(self->buttons) free(self->numbuttons);
     if(self->buttontext) {
@@ -345,9 +302,7 @@ struct launchapp *self;
 }
 
 /* Futile attempt at maintaining consistency in the face of adversity */
-static void YaGotMe(signal, self)
-int signal;
-struct launchapp *self;
+static void YaGotMe(int signal, struct launchapp *self)
 {
     struct buttoninfo *ptr;
 
@@ -359,8 +314,7 @@ struct launchapp *self;
     }
 }
 
-int launchapp__Run(self)
-struct launchapp *self;
+int launchapp__Run(struct launchapp *self)
 {
     int result;
     struct buttoninfo *ptr;
@@ -377,8 +331,7 @@ struct launchapp *self;
     return (result);
 }
 
-boolean launchapp__Start(self)
-struct launchapp *self;
+boolean launchapp__Start(struct launchapp *self)
 {
     struct lpair *tmp, *top2, *top, *buttonlp;
     struct pushbuttonview *pbv;

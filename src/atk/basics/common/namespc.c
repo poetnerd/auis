@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <class.h>
 #include <namespc.eh>
 #include <atom.ih>
+#include <stdlib.h>
 #define namespace_InitialSize 4
 #define Empty
 #ifndef True

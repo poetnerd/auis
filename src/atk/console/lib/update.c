@@ -54,10 +54,7 @@ int DynamicXmin, DynamicXmax, DynamicYmin, DynamicYmax, XGrowthRange, YGrowthRan
 
 extern struct fontdesc *SetupFont();
 
-ScaleCoordinate(self, old, IsX)
-struct consoleClass *self;
-int old;
-boolean IsX;
+int ScaleCoordinate(struct consoleClass *self, int old, boolean IsX)
 {
     int Gmin, Gmax, DesiredRange, Range, GrowthRange;
 
@@ -89,8 +86,7 @@ boolean IsX;
 
 
 
-RedrawDisplays(self)
-struct consoleClass *self;
+int RedrawDisplays(struct consoleClass *self)
 {
     struct display *disp;
     char    ThisLabel[256];

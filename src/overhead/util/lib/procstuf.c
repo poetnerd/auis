@@ -43,13 +43,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <ctype.h>
 #include <truth.h>
 
+#include <stdlib.h>
+#include <stdio.h>
 extern char *getenv();
 
 /* trash second arg */
-char *argvtostr(argv,buf,len)
-char **argv;
-char *buf;
-int len;
+char *argvtostr(char **argv, char *buf, int len)
 {
     if(argv!=NULL && *argv){
 	char **p=argv;
@@ -73,8 +72,7 @@ int len;
     return buf;
 }
 
-contains(str,set)
-char *str,*set;
+int contains(char *str, char *set)
 {
     char *p,*q;
 
@@ -90,10 +88,7 @@ char *str,*set;
 #define SHCHARS "$;'\"`<>*?|()"
 
 /* trashes first two args */
-char **strtoargv(str,argv,len)
-char *str;
-char **argv;
-int len;
+char **strtoargv(char *str, char **argv, int len)
 {
     char **p=argv;
     char *s;

@@ -25,10 +25,7 @@
 #include <sys/param.h>
 #include <stdio.h>
 
-FILE *pathopen(path, file, mode)
-char *path;
-char *file;
-char *mode;
+FILE *pathopen(char *path, char *file, char *mode)
 {
     char realpath[MAXPATHLEN+1];
     char *p=path;

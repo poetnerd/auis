@@ -43,16 +43,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #endif /* WM_ENV   */
 #include <rect.h>
 
-void mrl__FinalizeObject(classID,self)
-struct classheader *classID;
-struct mrl *self;
+void mrl__FinalizeObject(struct classheader *classID, struct mrl *self)
 {
 	if(self->wmregion > 0) wm_DestroyRegion(self->wmregion);
 }
 
-boolean mrl__InitializeObject(classID,self)
-struct classheader *classID;
-struct mrl *self;
+boolean mrl__InitializeObject(struct classheader *classID, struct mrl *self)
 {
 	self->wmregion = -1;
 	self->next = NULL;
@@ -63,11 +59,7 @@ struct mrl *self;
 	return TRUE;
 }
 
-struct mrl *mrl__Create(classID,region,next,r)
-struct classheader *classID;
-long region;
-struct mrl *next;
-struct rectangle *r;
+struct mrl *mrl__Create(struct classheader *classID, long region, struct mrl *next, struct rectangle *r)
 {
     struct mrl *self;
     self = mrl_New();
@@ -82,10 +74,7 @@ struct rectangle *r;
     return(self);
 }
 
-static struct mrl *mrC(region,next,left,top,right,bottom)
-int region;
-struct mrl *next;
-long left,top,right, bottom;
+static struct mrl *mrC(int region, struct mrl *next, long left, long top, long right, long bottom)
 {
 	struct mrl *self;
 	self = mrl_New();
@@ -97,9 +86,7 @@ long left,top,right, bottom;
 	self->next = next;
 	return(self);
 }
-struct mrl *mrl__Reset(self,r)
-struct mrl *self;
-struct rectangle *r;
+struct mrl *mrl__Reset(struct mrl *self, struct rectangle *r)
 {
     struct mrl *mp,*tmp;
     if(self == NULL) return(NULL);
@@ -121,10 +108,8 @@ struct rectangle *r;
 
 #define FINISH   	if(next) self->next = mrl_Disect(self->next,r); return(self);
 #define MAKENEW(A,B,C,D) self->next = mrC( -1,self->next,A,B,C,D)
-struct mrl *mrl__Disect(self,r)
-struct mrl *self;
-struct rectangle *r;
-  {
+struct mrl *mrl__Disect(struct mrl *self, struct rectangle *r)
+{
     int ob, ot, ol, or, nb, nt, nl, nr;
     struct mrl *next = self->next;
     ob = self->bottom ;

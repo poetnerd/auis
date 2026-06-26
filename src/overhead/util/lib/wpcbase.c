@@ -53,10 +53,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif /* WHITEPAGES_ENV   */
 #include <svcconf.h>
 
-extern int errno;
+#include <stdlib.h>
 #ifndef _IBMR2
-extern char *malloc();
-extern char *realloc();
 #endif /* _IBMR2 */
 
 /* Compatibility routines for non-cellular use */
@@ -96,22 +94,19 @@ wp_ErrorCode wp_Terminate()
     return res;
 }
 
-wp_ErrorCode wp_GetNIDOnly(NID, PKPtr)
-int NID; wp_PrimeKey *PKPtr;
+wp_ErrorCode wp_GetNIDOnly(int NID, wp_PrimeKey *PKPtr)
 {
     if (ThisCellDir == NULL) return wperr_NotInited;
     return cwp_GetNIDOnly((struct wp_cd *) ThisCellDir, NID, PKPtr);
 }
 
-wp_ErrorCode wp_GetUIDOnly(UID, PKPtr)
-char *UID; wp_PrimeKey *PKPtr;
+wp_ErrorCode wp_GetUIDOnly(char *UID, wp_PrimeKey *PKPtr)
 {
     if (ThisCellDir == NULL) return wperr_NotInited;
     return cwp_GetUIDOnly((struct wp_cd *) ThisCellDir, UID, PKPtr);
 }
 
-wp_ErrorCode wp_Read(PKey, FieldIx, FValPtr)
-wp_PrimeKey PKey; wp_FieldIndex FieldIx; char **FValPtr;
+wp_ErrorCode wp_Read(wp_PrimeKey PKey, wp_FieldIndex FieldIx, char **FValPtr)
 {
     if (ThisCellDir == NULL) return wperr_NotInited;
     return cwp_Read((struct wp_cd *) ThisCellDir, PKey, FieldIx, FValPtr);

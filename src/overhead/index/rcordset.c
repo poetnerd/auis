@@ -39,6 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include "index.h"
 
+#include <stdlib.h>
 /*
  * Internal routine: return a new, empty hash list.  Empty hash lists are not represented
  * by null pointers, but rather a hash list with a zero entry count.

@@ -79,6 +79,9 @@
 #include <tlex.eh>
 
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #ifdef DODEBUG
 #define DEBUG(p) (printf p, fflush(stdin))
 #else
@@ -404,13 +407,7 @@ ScanNumber(self, parm)
 	second character is in currchar and is at currpos
 	accepts characters having bits set in parm->continueset
 	leaves next character in the text to be read
-	returns tlex_ACCEPT (found a token)
-		or value from handler
-*/
-	static int
-ScanID(self, parm)
-	register struct tlex *self;
-	struct tlex_IDRecparm *parm;
+returns tlex_ACCEPT(int found a token)
 {
 	if (parm->SaveText) {
 		if (parm->continueset.vector)

@@ -42,10 +42,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif /* HAS_SYSEXITS */
 #ifdef sys_sun4_51
 #include "/usr/ucbinclude/sysexits.h"
+#include <stdio.h>
 #endif
 
-char *UnixSysExits(exitNumber)
-int	exitNumber;
+char *UnixSysExits(int exitNumber)
 {
     /* Returns a pointer to a static buffer containing English text describing the condition that exitNumber describes (interpreted as a sysexits.h value).  The text has no newlines in it. */
     static char ExitBuff[40];

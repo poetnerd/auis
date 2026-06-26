@@ -37,6 +37,7 @@
 #include "richlex.h"
 #include "richset.h"
 
+#include <stdlib.h>
 /*
  * Define a list of all character set processors in memory.
  */
@@ -142,8 +143,7 @@ struct	charsetproc *charset;
  * See if the character set processor on the top of the stack
  * matches the given processor.
  */
-int	charsettop (charset)
-struct	charsetproc *charset;
+int	charsettop(struct	charsetproc *charset)
 {
     if (NumCharSets > 1) {
 	return (CharSets[NumCharSets - 1] == charset);
@@ -192,9 +192,7 @@ RCHAR	ch;
  * "command" function of all character set processors.  Returns
  * zero if the command was not processed.
  */
-int	charsetcommand (token,negated)
-char	*token;
-int	negated;
+int	charsetcommand(char *token, int negated)
 {
     int temp = 0;
     while (CharacterSets[temp]) {
@@ -208,8 +206,7 @@ int	negated;
 /*
  * Test for an extension singleton command.
  */
-int	charsetsingle (token)
-char	*token;
+int	charsetsingle(char *token)
 {
     int temp = 0;
     while (CharacterSets[temp]) {

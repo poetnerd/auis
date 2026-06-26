@@ -48,6 +48,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <errno.h>
 #include <util.h>
 
+#include <string.h>
+#include <stdlib.h>
 #define WHITESPACE " \b\f\n\r\t\v"
 
 #ifndef DONTLOGPROGRESS
@@ -73,7 +75,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #define ENTRYKIND "EK"
 #define HOMEDIR "HD"
 
-extern int errno;
 
 #ifndef DONTRETRYTEMPFAILURES
 static struct tempfail {
@@ -87,8 +88,7 @@ static int retry_count = 0;
 
 #endif /* DONTRETRYTEMPFAILURES */
 
-static void logerror(code)
-int code;
+static void logerror(int code)
 {
   char *msg;
 
@@ -114,15 +114,13 @@ int code;
   fprintf(stderr, "Error: %s.\n", msg?msg:"<NULL MESSAGE>");
 }
 
-static void quit(code)
-int code;
+static void quit(int code)
 {
   logerror(code);
   exit(code);
 }
 
-static int InitWP(cdp)
-struct wp_cd **cdp;
+static int InitWP(struct wp_cd **cdp)
 {
   /* initialize the local white pages, put wp_cd into cdp */
   wp_ErrorCode wp_err;
@@ -134,9 +132,7 @@ struct wp_cd **cdp;
   return(NOERR);
 }
 
-static void ReportError(user, state)
-char *user;
-int state;
+static void ReportError(char *user, int state)
 {
   char *msg;
 
@@ -168,8 +164,7 @@ int state;
   printf("|error|%s|%s|%s|\n", user, msg, UnixError(errno));
 }
 
-static char *Trim(s, set)
-char *s, *set;
+static char *Trim(char *s, char *set)
 {
   /* Trim the characters in set from the end of s, and
      return a pointer to the first character in s not in set.
@@ -188,8 +183,7 @@ char *s, *set;
   return(s+strspn(s,set));
 }
 
-static int PrintFwd(name, home)
-char *name, *home;
+static int PrintFwd(char *name, char *home)
 {
   /* compare contents of home/.forward with fwd (which can be NULL), if
      different, print 'em */
@@ -291,8 +285,7 @@ char *name, *home;
 }
 
 #ifndef DONTRETRYTEMPFAILURES
-static void RecordTempFail(name, home)
-char *name, *home;
+static void RecordTempFail(char *name, char *home)
 {
   /* record this entry for later processing */
   struct tempfail *new;
@@ -310,9 +303,7 @@ char *name, *home;
 }
 #endif /* DONTRETRYTEMPFAILURES */
 
-static int CheckEntry(cd, key)
-struct wp_cd *cd;
-wp_PrimeKey key;
+static int CheckEntry(struct wp_cd *cd, wp_PrimeKey key)
 {
   /* check the entry against $HD/.forward, if appropriate */
   int my_err;
@@ -340,9 +331,7 @@ wp_PrimeKey key;
   }
 }
 
-main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
   int my_err;
   wp_ErrorCode wp_err;

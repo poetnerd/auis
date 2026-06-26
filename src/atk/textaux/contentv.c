@@ -62,23 +62,21 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <tindex.ih>
 
 #include "contentv.eh"
+#include <string.h>
+#include <stdio.h>
 static struct menulist *contentvMenus;
 static struct keymap *contentvKeyMap;
 static int ScrollTop = FALSE;
 #define Data(self) ((struct content *)(((struct view *) self)->dataobject))
 #define Text(v)	(struct text *) ((v)->header.view.dataobject)
 #define Srctext(self) (Data(self)->srctext)
-boolean contentv__InitializeObject(classID,self)
-struct classheader *classID;
-struct contentv *self;
+boolean contentv__InitializeObject(struct classheader *classID, struct contentv *self)
 {
     self->menus = menulist_DuplicateML(contentvMenus, self);
     self->srcview = NULL;
     return TRUE;
 }
-boolean contentv__FinializeObject(classID,self)
-struct classheader *classID;
-struct contentv *self;
+boolean contentv__FinializeObject(struct classheader *classID, struct contentv *self)
 {
      if(self->menus){
 	menulist_Destroy(self->menus);
@@ -86,9 +84,7 @@ struct contentv *self;
     }
     return TRUE;
 }
-static void reinit(self,value)
-struct contentv *self;
-long value;
+static void reinit(struct contentv *self, long value)
 {
     struct content *ct;
     long  pos = contentv_GetDotPosition(self);
@@ -98,9 +94,7 @@ long value;
     contentv_SetDotPosition(self,pos);
     contentv_FrameDot(self,pos);
 }
-static void enumerate(self,value)
-struct contentv *self;
-long value;
+static void enumerate(struct contentv *self, long value)
 {
     struct content *ct;
     long len,tlen;
@@ -134,9 +128,7 @@ long value;
 	content_Enumerate(ct,-1,0,NULL);
     }
 }
-static int LocateInView(v1,v2,v3,dat)
-struct view *v1,*v2,*v3;
-long dat;
+static int LocateInView(struct view *v1, struct view *v2, struct view *v3, long dat)
 {
     struct mark *m = (struct mark *) dat;
     if(class_IsTypeByName(class_GetTypeName(v2),"textview")){
@@ -149,9 +141,7 @@ long dat;
     }
     return 0; /* go through all views */
 }
-static void locate(self,value)
-struct contentv *self;
-long value;
+static void locate(struct contentv *self, long value)
 {
     struct content *ct;
     struct mark *loc;
@@ -168,9 +158,7 @@ long value;
 	    buffer_EnumerateViews(buf,LocateInView,(long) loc);
     }
 }
-static void denumerate(self,value)
-struct contentv *self;
-long value;
+static void denumerate(struct contentv *self, long value)
 {
     struct content *ct;
     long len,pos,tlen;
@@ -189,16 +177,13 @@ struct contentv_cntr {
 struct buffer *buf;
 int tc,bc;
 };
-static int check(fr, rock)
-    struct frame *fr;
-    struct contentv_cntr *rock;
+static int check(struct frame *fr, struct contentv_cntr *rock)
 {
      rock->tc++;
      if(frame_GetBuffer(fr) == rock->buf) rock->bc++;
      return FALSE;
 }
-static struct frame *getframe(vw)
-struct view *vw;
+static struct frame *getframe(struct view *vw)
 {
     while (vw->parent != NULL){
 	vw = vw->parent;
@@ -208,9 +193,7 @@ struct view *vw;
     }
     return NULL;
 }
-static void destroy(self,value)
-struct contentv *self;
-long value;
+static void destroy(struct contentv *self, long value)
 {
     struct buffer *buffer;
     struct frame *fr;
@@ -235,35 +218,22 @@ long value;
 	}
     }
 }
-static void contentv_MakeContents(self)
-    register struct textview *self;
+static void contentv_MakeContents(register struct textview *self)
 {
     contentv_MakeWindow(Text(self));
 }
-void contentv__GetClickPosition(self, position, numberOfClicks, action, startLeft, startRight, leftPos, rightPos)
-    struct contentv *self;
-    long position;
-    long numberOfClicks;
-    enum view_MouseAction action;
-    long startLeft;
-    long startRight;
-    long *leftPos;
-    long *rightPos;
-    {
+void contentv__GetClickPosition(struct contentv *self, long position, long numberOfClicks, enum view_MouseAction action, long startLeft, long startRight, long *leftPos, long *rightPos)
+{
 	super_GetClickPosition(self, position, numberOfClicks, action, startLeft, startRight, leftPos, rightPos);
 	if(numberOfClicks == 1 && (action == view_LeftUp || action == view_RightUp))
 	    locate(self,0);
     }
-static boolean findframe(fr,buf)
-struct frame *fr;
-struct buffer *buf;
+static boolean findframe(struct frame *fr, struct buffer *buf)
 {
     if(frame_GetBuffer(fr) == buf) return TRUE;
     return FALSE;
 }
-static void contentv_doprint(self,type)
-register struct contentv *self;
-char *type;
+static void contentv_doprint(register struct contentv *self, char *type)
 {
     struct buffer *bu;
     struct frame *fr;
@@ -300,13 +270,11 @@ char *type;
 	return;
     }
 }
-static void contentv_PreviewCmd(self)
-    struct contentv *self;
+static void contentv_PreviewCmd(struct contentv *self)
 {
     contentv_doprint(self,"frame-preview");	
 }
-static void contentv_PrintCmd(self)
-    struct contentv *self;
+static void contentv_PrintCmd(struct contentv *self)
 {
     contentv_doprint(self,"frame-print");
 }
@@ -322,16 +290,13 @@ static struct bind_Description contentvBindings[]={
     NULL
 };
 
-void contentv__PostMenus(self, menulist)
-struct contentv *self;
-struct menulist *menulist;
+void contentv__PostMenus(struct contentv *self, struct menulist *menulist)
 {
     menulist_ClearChain(self->menus);
     menulist_ChainBeforeML(self->menus, menulist, menulist);
     super_PostMenus(self, self->menus);
 }
-boolean contentv__InitializeClass(classID)
-    struct classheader *classID;
+boolean contentv__InitializeClass(struct classheader *classID)
 {
     struct classinfo *textviewtype = class_Load("textview");
     contentvMenus = menulist_New();
@@ -342,9 +307,7 @@ boolean contentv__InitializeClass(classID)
 
     return TRUE;
 }
-static void contentv__MakeWindow(classID,txt)
-struct classinfo *classID;
-struct text *txt;
+static void contentv__MakeWindow(struct classinfo *classID, struct text *txt)
 {
     char buf[1024];
     struct content *ct;

@@ -36,6 +36,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <X11/Xatom.h>
 
 #include <atoms.h>
+#include <stdlib.h>
+#include <stdio.h>
 /* Note the order and number of the entries below should be reflected in the atom #defines in atoms.h */
 static char *atomnames[]={
     "ATK",
@@ -58,9 +60,7 @@ static char *atomnames[]={
 
 static Atom xim_ATOMS;
 
-static Atom *SetAtoms(dpy, buf)
-Display *dpy;
-char *buf;
+static Atom *SetAtoms(Display *dpy, char *buf)
 {
     Atom *result;
     char *p;
@@ -82,9 +82,7 @@ char *buf;
     return result;
 }
 
-Atom *xim_SetupAtoms(dpy, force)
-Display *dpy;
-boolean force;
+Atom *xim_SetupAtoms(Display *dpy, boolean force)
 {
     int i;
     Atom RetAtom;

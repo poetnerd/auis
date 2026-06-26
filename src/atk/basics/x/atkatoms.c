@@ -32,9 +32,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <class.h>
 #include <X11/Xlib.h>
 
-main(argc, argv)
-int argc;
-char **argv;
+#include <stdlib.h>
+#include <stdio.h>
+int main(int argc, char **argv)
 {
     char *dpyname;
     Display *dpy;

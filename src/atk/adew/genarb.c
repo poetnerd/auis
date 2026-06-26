@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #define CMD_STR "#! /bin/csh -f\n\
 if ($?ANDREWDIR) then\n\
 exec ez $1  $ANDREWDIR/lib/arbiters/Arb\n\

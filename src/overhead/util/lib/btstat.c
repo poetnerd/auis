@@ -48,10 +48,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <btint.h>
 #endif /* WHITEPAGES_ENV   */
 
-extern int errno;
 
-char *bt_ErrorString(codevalue)
-bt_ErrorCode codevalue;
+char *bt_ErrorString(bt_ErrorCode codevalue)
 {
     static char *BTErrs[bterr_MAX + 1 + 1] = {
 	"Not an error",

@@ -51,6 +51,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 
 #include <ctype.h>
 
+#include <stdio.h>
 static struct atomlist *  AL_bodyfont;
 static struct atomlist *  AL_bodyfont_size;
 static struct atomlist *  AL_label;
@@ -87,9 +88,7 @@ static struct atom *  A_string;
 #define FUDGE2 4
 #define SLIDERWID 20
 #define STYLEOPTIONSUPPORTED 1
-static void sliderV_HandleStyleString(self,s)
-struct sliderV *self;
-char *s;
+static void sliderV_HandleStyleString(struct sliderV *self, char *s)
 {
     boolean go;
     go = TRUE;
@@ -125,8 +124,7 @@ char *s;
 /*		private functions				*/
 /****************************************************************/
 
-static void CarveFonts(self)
-struct sliderV * self;
+static void CarveFonts(struct sliderV *self)
 {
     self->normalfont = fontdesc_Create( self->fontname, fontdesc_Plain, self->fontsize );
     self->boldfont   = fontdesc_Create( self->fontname, fontdesc_Bold,  self->fontsize );
@@ -136,8 +134,7 @@ struct sliderV * self;
 #define MAXWID 36
 #define ADDTOP 3
 #define SUBHEIGHT 7
-static void getsizes(self)
-struct sliderV * self;
+static void getsizes(struct sliderV *self)
 {
     struct FontSummary *fs;
     long labelwidth, labelheight, valheight,junk,wp,ww,w ,exsp,exvh;
@@ -179,9 +176,7 @@ struct sliderV * self;
 }
 #ifdef DRAWOUTSIDELINES
 
-db(self,foo,fo)
-struct sliderV * self;
-struct rectangle *foo,*fo;
+int db(struct sliderV *self, struct rectangle *foo, struct rectangle *fo)
 {
     sliderV_DrawRect(self,foo);   
     sliderV_MoveTo( self, fo->left, fo->top );
@@ -194,10 +189,7 @@ struct rectangle *foo,*fo;
     sliderV_DrawLineTo( self, foo->left + foo->width, foo->top + foo->height);
 
 }
-static void DrawButton(self,x,y,width,height,pct,drawborder)
-     struct sliderV * self;
-     long x,y,width,height;
-     boolean drawborder;
+static void DrawButton(struct sliderV *self, long x, long y, long width, long height, int pct, boolean drawborder)
 {
   struct rectangle foo,fo;
   long vcut,wcut;
@@ -221,8 +213,7 @@ static void DrawButton(self,x,y,width,height,pct,drawborder)
 }
 #endif /* DRAWOUTSIDELINES */
 
-static void DrawLabel(self)
-struct sliderV * self;
+static void DrawLabel(struct sliderV *self)
 {
     if(self->label){	
 	sliderV_SetTransferMode( self, graphic_COPY);
@@ -236,14 +227,12 @@ struct sliderV * self;
     }
 
 }
-char *sliderV__GetValueString(self)
-struct sliderV * self;
+char *sliderV__GetValueString(struct sliderV *self)
 {
     sprintf(self->buf,"%ld",sliderV_GetTmpVal(self));
     return self->buf;
 }
-static void DrawValue(self)
-struct sliderV * self;
+static void DrawValue(struct sliderV *self)
 {
     char *buf;   
     buf = sliderV_GetValueString(self);
@@ -262,10 +251,7 @@ struct sliderV * self;
 #define HGH 3
 #define SPACE 6
 
-static void sliderV__Drawslider(self,fullupdate,rr)
-struct sliderV * self;
-boolean fullupdate;
-struct rectangle *rr;
+static void sliderV__Drawslider(struct sliderV *self, boolean fullupdate, struct rectangle *rr)
 {
     int start,height,st;
     struct rectangle interior,ti;
@@ -337,8 +323,7 @@ struct rectangle *rr;
 
 
 
-boolean sliderV__InitializeClass(classID)
-struct classheader *classID;
+boolean sliderV__InitializeClass(struct classheader *classID)
 {
     InternAtoms;
     return TRUE;
@@ -351,9 +336,7 @@ struct classheader *classID;
 /****************************************************************/
 /*		instance methods				*/
 /****************************************************************/
-boolean sliderV__InitializeObject(classID, self )
-struct classheader *classID;
-struct sliderV * self;
+boolean sliderV__InitializeObject(struct classheader *classID, struct sliderV *self)
 {
     self->label = NULL;
     self->fontname = NULL;
@@ -376,14 +359,11 @@ struct sliderV * self;
     return TRUE;
 }
 
-void sliderV__FinalizeObject(classID, self )
-struct classheader *classID;
-struct sliderV * self;
+void sliderV__FinalizeObject(struct classheader *classID, struct sliderV *self)
 {   
     sbutton_FreePrefs(self->prefs);
 }
-void sliderV__LookupParameters(self)
-struct sliderV * self;
+void sliderV__LookupParameters(struct sliderV *self)
 {
     char * fontname;
     long fontsize,diff;
@@ -499,9 +479,7 @@ struct sliderV * self;
 }
 
 
-void sliderV__DrawFromScratch(self,x,y,width,height)
-struct sliderV * self;
-long x,y,width,height;
+void sliderV__DrawFromScratch(struct sliderV *self, long x, long y, long width, long height)
 {
     self->x = x;
     self->y = y;
@@ -534,8 +512,7 @@ long x,y,width,height;
 }
 
 
-void sliderV__DrawDehighlight(self)
-struct sliderV * self;
+void sliderV__DrawDehighlight(struct sliderV *self)
 {
     struct value *w = sliderV_Value(self);
     self->activefont = self->normalfont;
@@ -545,8 +522,7 @@ struct sliderV * self;
     sliderV_Drawslider(self,TRUE,&self->inwheelrec);
 }
 
-void sliderV__DrawHighlight(self)
-struct sliderV * self;
+void sliderV__DrawHighlight(struct sliderV *self)
 {
     struct value *w = sliderV_Value(self);
     self->activefont = self->boldfont;
@@ -557,8 +533,7 @@ struct sliderV * self;
 }
 
 
-void sliderV__DrawNewValue( self )
-struct sliderV * self;
+void sliderV__DrawNewValue(struct sliderV *self)
 {
     struct value *w = sliderV_Value(self);
     if(self->tmpval != value_GetValue(w)){
@@ -570,10 +545,7 @@ struct sliderV * self;
 
 
 
-struct sliderV * sliderV__DoHit( self,type,x,y,hits )
-struct sliderV * self;
-enum view_MouseAction type;
-long x,y,hits;
+struct sliderV * sliderV__DoHit(struct sliderV *self, enum view_MouseAction type, long x, long y, long hits)
 {
     struct value *tt = sliderV_Value(self);
     long myval;

@@ -34,15 +34,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <andrewos.h>
 #include <errno.h>
-extern int errno;
 
 /* OS independence for times. */
 #if SY_B4x || SY_AIXx
 #define HAS_GETTIMEOFDAY 1
 #endif /* #if SY_B4x */
 
-int osi_GetTimes(blk)
-struct osi_Times *blk;
+int osi_GetTimes(struct osi_Times *blk)
 {
 #ifdef HAS_GETTIMEOFDAY
     struct timeval TV;
@@ -87,6 +85,7 @@ void osi_SetZone()
 
 #ifdef TESTINGONLYTESTING
 #include <stdio.h>
+#include <stdlib.h>
 main() {
     struct osi_Times TMs;
     printf("It's now %ld o'clock; do you know where your children are?\n", osi_GetSecs());

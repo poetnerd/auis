@@ -68,6 +68,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <cltextv.ih>
 #include <text.ih>
 
+#include <stdlib.h>
+#include <stdio.h>
 void ArbCopyCelCallBack();
 void ArbCutCelCallBack();
 static struct arbcon *Gself;
@@ -90,9 +92,7 @@ static char defaultvwlist[] = "text,fad,table,eq,raster,lookz,lset,page,ness,zip
 onoffV,value sliderstrV,value thumbstrV,value controlV,value pianoV,value stringV,value enterstrV,value menterstrV,value clicklistV,arbiter" ;
 struct menulist *arbconMenus;
 static struct atom *atta[7];
-static void DoCopy(self,clear)
-struct arbcon *self;
-boolean clear;
+static void DoCopy(struct arbcon *self, boolean clear)
 {
    char buf[256],*s,*oldref;
    *buf = '\0';
@@ -140,17 +140,13 @@ boolean clear;
 	}
     }
 }
-static int mystrcmp(s1,s2)
-register char *s1,*s2;
+static int mystrcmp(register char *s1, register char *s2)
 {
     if(s1 == NULL && s2 == NULL) return 0;
     if(s1 == NULL || s2 == NULL) return 1;
     return strcmp(s1,s2);
 }
-static findinlist(lst,cnt,str)
-char **lst; 
-int cnt;
-char *str;
+static findinlist(char **lst, int cnt, char *str)
 {
     int i;
     for(i = 0; i < cnt; i++,lst++){
@@ -161,8 +157,7 @@ char *str;
     }
     return -1;
 }
-static char *parseobv(str,buf)
-register char *str,*buf;
+static char *parseobv(register char *str, register char *buf)
 {
     register char *stop = NULL;
     while(*str){
@@ -179,8 +174,7 @@ register char *str,*buf;
     return NULL;
 }
     
-static SetNotice(str)
-char *str;
+static SetNotice(char *str)
 {
     if(Gself == NULL) return;
     if(str) {
@@ -210,11 +204,7 @@ char *str;
     value_SetString(Gself->ArbTextEdit,Gself->arr);
     message_DisplayString(NULL,0,"");
 }
-static appendlist(lst,cnt,str,TEST)
-char **lst;
-int cnt;
-char *str;
-int TEST;
+static appendlist(char **lst, int cnt, char *str, int TEST)
 {   /* BUG -- OVERFLOWS NOT DETECTED */
     int next = 1;
     if(TEST){
@@ -235,10 +225,7 @@ int TEST;
     }
     return cnt;
 }
-static SetName(cv,abv,name)
-struct celview *cv;
-struct arbiterview *abv;
-char *name;
+static SetName(struct celview *cv, struct arbiterview *abv, char *name)
 {
 
     int count = 0;
@@ -264,9 +251,7 @@ char *name;
 	}
     }
 }
-static long findstring(txt,str)
-struct text *txt;
-char *str;
+static long findstring(struct text *txt, char *str)
 {   /* searches text for str by itself on a line */
     register long i,ch,pos,len;
     register char *p;
@@ -285,17 +270,7 @@ char *str;
     }
     return -1;
 }
-static void handleclicks(self,ct,position, numberOfClicks, action, startLeft, startRight, leftPos, rightPos,which,type)
-struct arbcon *self;
-struct cltextview *ct;
-long *position;
-long *numberOfClicks;
-enum view_MouseAction *action;
-long *startLeft;
-long *startRight;
-long *leftPos;
-long *rightPos;
-long which,type;
+static void handleclicks(struct arbcon *self, struct cltextview *ct, long *position, long *numberOfClicks, enum view_MouseAction *action, long *startLeft, long *startRight, long *leftPos, long *rightPos, long which, long type)
 {   /* deal with clicks */
     char buf[512];
     int len;
@@ -332,10 +307,7 @@ long which,type;
 	}
     }
 }
-static NewWindow(filename,bflags,AddArb)
-char *filename;
-int bflags;
-boolean AddArb;
+static NewWindow(char *filename, int bflags, boolean AddArb)
 {
 
     struct frame *newFrame;
@@ -408,15 +380,12 @@ arbcon_Create(){
     strcpy(foo,ARBCONNAME);
     NewWindow(foo,0,FALSE);
 }
-struct celview *arbcon__currentcelview(ClassID)
-struct classheader *ClassID;
+struct celview *arbcon__currentcelview(struct classheader *ClassID)
 {
     if(Gself == NULL) return NULL;
     return Gself->currentcelview;
 }
-void arbcon__SetCurrentArbiterview(ClassID,ab)
-struct classheader *ClassID;
-struct arbiterview *ab;
+void arbcon__SetCurrentArbiterview(struct classheader *ClassID, struct arbiterview *ab)
 {  
     static char buf[256];
     if(Gself == NULL) return ;
@@ -442,18 +411,14 @@ struct arbiterview *ab;
     Gself->ArbiterName = buf;
     text_NotifyObservers(Gself->ArbCelList,0);
 }
-void arbcon__DeleteArbiter(ClassID,arb)
-struct classheader *ClassID;
-struct arbiterview *arb;
+void arbcon__DeleteArbiter(struct classheader *ClassID, struct arbiterview *arb)
 {
     if(Gself == NULL) return ;
     if(Gself->CurrentArbiterview == arb) arbcon_SetCurrentArbiterview(NULL);
     arbcon_InitArbiters();
 }
 
-void arbcon__AddArbiter(ClassID,arb)
-struct classheader *ClassID;
-struct arbiterview *arb;
+void arbcon__AddArbiter(struct classheader *ClassID, struct arbiterview *arb)
 {
     char buf[512];
     if(Gself == NULL || arb == OwnArb) return;
@@ -468,8 +433,7 @@ printf("Adding %s (%d) to text %d (%s) \n", buf,strlen(buf),Gself->ArbArbList,cl
 #endif /* DEBUG */
 
 }
-void arbcon__InitArbiters(ClassID)
-struct classheader *ClassID;
+void arbcon__InitArbiters(struct classheader *ClassID)
 {
     struct arbiterview *ab,*cab;
     cab = NULL;
@@ -488,8 +452,7 @@ struct classheader *ClassID;
     if(Gself->CurrentArbiterview == NULL && cab != NULL)
 	arbcon_SetCurrentArbiterview(cab);
 }
-static addtypes(cl)
-struct cel *cl;
+static addtypes(struct cel *cl)
 {
 /*  Not Currently Supported
     char *obstr,*vwstr;
@@ -504,8 +467,7 @@ struct cel *cl;
     }
 */
 }
-static setupcel(cl)
-struct cel *cl;
+static setupcel(struct cel *cl)
 {
     char *obstr,*vwstr;
     char *name,*str;
@@ -555,10 +517,7 @@ struct cel *cl;
     return TRUE;
 }
 
-boolean arbcon__InitCel(ClassID,cv,abv)
-struct classheader *ClassID;
-struct celview *cv;
-struct arbiterview *abv;
+boolean arbcon__InitCel(struct classheader *ClassID, struct celview *cv, struct arbiterview *abv)
 {
 #if 0
     struct cel *cl;
@@ -614,8 +573,7 @@ struct arbiterview *abv;
 arbcon__EditCurrentCelview SHOULD CAUSE THE CEL TO REINIT ITSELF IF LENGTH OF TEXT = 0
 */
 #ifdef NOTUSED
-static CopyText(dst,src)
-struct text *dst,*src;
+static CopyText(struct text *dst, struct text *src)
 {
     char foo[4000];
     int len = text_GetLength(src);
@@ -626,8 +584,7 @@ struct text *dst,*src;
     text_NotifyObservers(dst,NULL);
 }
 #endif /* NOTUSED */
-void arbcon__EditCurrentCelview(ClassID)
-struct classheader *ClassID;
+void arbcon__EditCurrentCelview(struct classheader *ClassID)
 {
     struct text *src;
     long i,len,bufsize;
@@ -674,17 +631,12 @@ struct classheader *ClassID;
     value_SetString(Gself->ArbTextEdit,Gself->arr);
     view_WantInputFocus((struct view *)Gself->ArbTextEditView, Gself->ArbTextEditView);
 }
-static struct celview *currentcelview(ClassID)
-struct classheader *ClassID;
+static struct celview *currentcelview(struct classheader *ClassID)
 {
     if(Gself == NULL) return NULL;
     return Gself->currentcelview;
 }
-void arbcon__AddCel(ClassID,arb,cl,notify)
-struct classheader *ClassID;
-struct arbiterview *arb;
-struct cel *cl;
-boolean notify;
+void arbcon__AddCel(struct classheader *ClassID, struct arbiterview *arb, struct cel *cl, boolean notify)
 {
     char buf[512];
     struct celview *cv;
@@ -715,10 +667,7 @@ boolean notify;
     }
     addtypes(cl);
 }
-void arbcon__DeleteCelview(ClassID,arb,cv)
-struct classheader *ClassID;
-struct arbiterview *arb;
-struct celview *cv;
+void arbcon__DeleteCelview(struct classheader *ClassID, struct arbiterview *arb, struct celview *cv)
 {
     int loc;
     char *name;
@@ -736,8 +685,7 @@ struct celview *cv;
 	text_NotifyObservers(Gself->ArbCelList,0);
     }
 }
-void arbcon__SaveCurrentCelview(ClassID)
-struct classheader *ClassID;
+void arbcon__SaveCurrentCelview(struct classheader *ClassID)
 {
 #if 0
     struct text *src;
@@ -796,8 +744,7 @@ struct classheader *ClassID;
 #endif /* 0 */
 }
 
-static boolean isarbcon(cv)
-struct celview *cv;
+static boolean isarbcon(struct celview *cv)
 {
     struct atom *att,**atp;
     att =  cel_GetRefAtom(Cel(cv));
@@ -809,9 +756,7 @@ struct celview *cv;
     
 }
 
-void arbcon__SetCurrentCelview(ClassID,cv)
-struct classheader *ClassID;
-struct celview *cv;
+void arbcon__SetCurrentCelview(struct classheader *ClassID, struct celview *cv)
 {
     char *srs;
     char buf[256];
@@ -855,8 +800,7 @@ struct celview *cv;
     }
     if(cv) arbcon_EditCurrentCelview();
 }
-void arbcon__DestroyCurrentCelview(ClassID)
-struct classheader *ClassID;
+void arbcon__DestroyCurrentCelview(struct classheader *ClassID)
 {
     if(Gself != NULL && Gself->currentcelview!= NULL) {
 	struct celview *cv;
@@ -866,10 +810,7 @@ struct classheader *ClassID;
 	celview_Destroy(cv);
     }
 }
-static setobview(self,str,docopy)
-struct arbcon *self;
-char *str;
-boolean docopy;
+static setobview(struct arbcon *self, char *str, boolean docopy)
 {
     char *vw,*obs,*vws;
     static char buf[128];
@@ -895,8 +836,7 @@ boolean docopy;
 	arbcon_SetCurrentCelview(NULL);
      if(docopy)  DoCopy(self,TRUE);
 }
-static void addobview(v)
-struct view *v;
+static void addobview(struct view *v)
 {
      char buf[256],*m,objbuf[256],*vw;
      int which;
@@ -931,16 +871,14 @@ struct view *v;
      setobview(Gself,m,TRUE);
 }
 
-static void copy(v)
-struct view *v;
+static void copy(struct view *v)
 {
     if(Gself == NULL) return;
     if(value_GetValue(Gself->ArbLinkCel) == 1)
 	value_SetValue(Gself->ArbLinkCel,0);
     else DoCopy(Gself,TRUE);
 }
-static void copylink(v)
-struct view *v;
+static void copylink(struct view *v)
 {
     if(Gself == NULL) return;
     if(Gself->currentcelview == NULL) {
@@ -951,14 +889,12 @@ struct view *v;
 	value_SetValue(Gself->ArbLinkCel,1);
     else  DoCopy(Gself,TRUE);
 }
-static void cut(v)
-struct view *v;
+static void cut(struct view *v)
 {
     if(Gself == NULL) return;
     ArbCutCelCallBack(Gself,Gself->ArbCutCel,0,0);
 }
-static void newwin(v)
-struct view *v;
+static void newwin(struct view *v)
 {
     char frs[1024],prompt[256],*type;
     if(Gself == NULL) return;
@@ -975,8 +911,7 @@ struct view *v;
     if(type != NULL && *type)
 	buffer_SetDefaultObject("text");
 }
-static void newlist(v)
-struct view *v;
+static void newlist(struct view *v)
 {
     char *p;
     arbcon_SetCurrentArbiterview(NULL);
@@ -988,8 +923,7 @@ struct view *v;
 	arbiterview_SetCopyMode(Gself->CurrentArbiterview,TRUE);
 }
 #ifdef NOTUSED
-static void arbnewwin(v)
-struct view *v;
+static void arbnewwin(struct view *v)
 {
     char frs[1024],prompt[256],*type;
     if(Gself == NULL) return;
@@ -1001,8 +935,7 @@ struct view *v;
     NewWindow(frs,0,TRUE);
 }
 #endif /* NOTUSED */
-static void init(self)
-struct arbcon *self;
+static void init(struct arbcon *self)
 {
     if(Gself == NULL) return;
     arbcon_InitArbiters();
@@ -1011,8 +944,7 @@ struct arbcon *self;
 	arbiterview_InitArbcon(self->CurrentArbiterview);
     }
 }
-static void showcels(v)
-struct view *v;
+static void showcels(struct view *v)
 {
     struct rectangle rec;
     struct arbiterview *abv;
@@ -1036,8 +968,7 @@ struct view *v;
     sprintf(buf,"Click on desired %s cel",Gself->ArbiterName);
     message_DisplayString(abv,0,buf);
 }
-static void arbchdir(v)
-struct view *v;
+static void arbchdir(struct view *v)
 {
     struct arbiterview *abv;
     char buf[1024],bb[1200];
@@ -1055,8 +986,7 @@ struct view *v;
 	message_DisplayString(NULL,0,bb);
     }
 }
-static void createcon(v)
-struct view *v;
+static void createcon(struct view *v)
 {
     struct arbiterview *abv;
     if(Gself == NULL) return;
@@ -1085,9 +1015,7 @@ static struct bind_Description arbconBindings[]={
     {"arbcon-show-cels",NULL,0,"Arbcon~0,Show Cels~21",0,0,showcels,"Show cel names"},
     NULL
 };
-static boolean dolistfile(self,s)
-struct arbcon *self;
-char *s;
+static boolean dolistfile(struct arbcon *self, char *s)
 {
     /* open file and append to list of objects */
     FILE *f,*fopen();
@@ -1107,8 +1035,7 @@ char *s;
     self->vwcount =appendlist(self->vwlist,self->vwcount,buf,FALSE);
     return TRUE;
 }
-static boolean createGself(self)
-struct arbcon *self;
+static boolean createGself(struct arbcon *self)
 {   /* initialization code */
     FILE *f,*fopen();
     char *p,*m;
@@ -1204,8 +1131,7 @@ struct arbcon *self;
 /* user code ends here for includes */
 
 static struct arbcon *firstarbcon;
-static struct arbcon *FindSelf(v)
-struct view *v;
+static struct arbcon *FindSelf(struct view *v)
 {
 	struct arbcon *self,*last = NULL;
 	struct arbiterview *arbv =arbiterview_FindArb(v);
@@ -1223,10 +1149,7 @@ struct view *v;
 	else last->next = self;
 	return self;
 }
-static void ArbLinkCelCallBack(self,val,r1,r2)
-struct arbcon *self;
-struct value *val;
-long r1,r2;
+static void ArbLinkCelCallBack(struct arbcon *self, struct value *val, long r1, long r2)
 {
 if(r2 == value_OBJECTDESTROYED) {
 	self->ArbLinkCel = NULL;
@@ -1259,10 +1182,7 @@ if(r2 == value_OBJECTDESTROYED) {
 
 /* user code ends here for ArbLinkCelCallBack */
 }
-static void ArbCutCelCallBack(self,val,r1,r2)
-struct arbcon *self;
-struct value *val;
-long r1,r2;
+static void ArbCutCelCallBack(struct arbcon *self, struct value *val, long r1, long r2)
 {
 if(r2 == value_OBJECTDESTROYED) {
 	self->ArbCutCel = NULL;
@@ -1283,10 +1203,7 @@ if(r2 == value_OBJECTDESTROYED) {
 }
 /* user code ends here for ArbCutCelCallBack */
 }
-static void ArbApplicationChoiceCallBack(self,val,r1,r2)
-struct arbcon *self;
-struct value *val;
-long r1,r2;
+static void ArbApplicationChoiceCallBack(struct arbcon *self, struct value *val, long r1, long r2)
 {
 if(r2 == value_OBJECTDESTROYED) {
 	self->ArbApplicationChoice = NULL;
@@ -1308,10 +1225,7 @@ if (Gself->currentcelview){
 else DoCopy(self,TRUE);
 /* user code ends here for ArbApplicationChoiceCallBack */
 }
-static void ArbobviewlistCallBack(self,val,r1,r2)
-struct arbcon *self;
-struct value *val;
-long r1,r2;
+static void ArbobviewlistCallBack(struct arbcon *self, struct value *val, long r1, long r2)
 {
 if(r2 == value_OBJECTDESTROYED) {
 	self->Arbobviewlist = NULL;
@@ -1322,10 +1236,7 @@ if(r2 == value_OBJECTDESTROYED) {
     setobview(self,value_GetString(val),(value_GetValue(val) == 1));
 /* user code ends here for ArbobviewlistCallBack */
 }
-static void ArbTextEditCallBack(self,val,r1,r2)
-struct arbcon *self;
-struct value *val;
-long r1,r2;
+static void ArbTextEditCallBack(struct arbcon *self, struct value *val, long r1, long r2)
 {
 if(r2 == value_OBJECTDESTROYED) {
 	self->ArbTextEdit = NULL;
@@ -1336,9 +1247,7 @@ if(r2 == value_OBJECTDESTROYED) {
     arbcon_SaveCurrentCelview();
 /* user code ends here for ArbTextEditCallBack */
 }
-static initself(self,v)
-struct arbcon *self;
-struct view *v;
+static initself(struct arbcon *self, struct view *v)
 {
 	self->v = v;
 	self->ArbLinkCelView = (struct onoffV *)arbiterview_GetNamedView(v,"ArbLinkCel");
@@ -1362,9 +1271,7 @@ struct view *v;
 	if(self->ArbTextEdit) value_AddCallBackObserver(self->ArbTextEdit, self,ArbTextEditCallBack,0);
 	if(self->ArbTextEditView) view_AddObserver((struct view *)self->ArbTextEditView,self);
 }
-arbcon_copycon(v,dat)
-struct view *v;
- long dat;
+int arbcon_copycon(struct view *v, long dat)
 {
 struct arbcon *self;
 if((self = FindSelf(v)) == NULL) return;
@@ -1388,10 +1295,7 @@ else{
 }
 /* user code ends here for arbcon_copycon */
 }
-void arbcon__ObservedChanged(self,observed,status)
-struct arbcon *self;
-struct observable * observed;
-long status;
+void arbcon__ObservedChanged(struct arbcon *self, struct observable *observed, long status)
 {
 /* user code begins here for ObservedChanged */
     if(status == observable_OBJECTDESTROYED &&
@@ -1414,8 +1318,7 @@ long status;
 	if (observed == (struct observable *) self->ArbTextEditView) self->ArbTextEditView=NULL;
     }
 }
-boolean arbcon__InitializeClass(ClassID)
-struct classheader *ClassID;
+boolean arbcon__InitializeClass(struct classheader *ClassID)
 {
 struct classinfo *viewtype = class_Load("view");
 firstarbcon = NULL;
@@ -1426,9 +1329,7 @@ Gself= NULL;
 /* user code ends here for InitializeClass */
 return TRUE;
 }
-void arbcon__FinalizeObject(ClassID,self)
-struct classheader *ClassID;
-struct arbcon *self;
+void arbcon__FinalizeObject(struct classheader *ClassID, struct arbcon *self)
 {
 	if(self->ArbLinkCel) value_RemoveCallBackObserver(self->ArbLinkCel, self);
 	if(self->ArbCutCel) value_RemoveCallBackObserver(self->ArbCutCel, self);
@@ -1458,9 +1359,7 @@ struct arbcon *self;
 	
 /* user code ends here for FinalizeObject */
 }
-boolean arbcon__InitializeObject(ClassID,self)
-struct classheader *ClassID;
-struct arbcon *self;
+boolean arbcon__InitializeObject(struct classheader *ClassID, struct arbcon *self)
 {
 self->ArbLinkCel = NULL;
 self->ArbLinkCelView = NULL;

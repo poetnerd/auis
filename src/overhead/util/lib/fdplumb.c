@@ -38,8 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h>
 #include <fdplumbi.h>
 
+#include <stdlib.h>
 #ifndef _IBMR2
-extern char *malloc();
 #endif /* _IBMR2 */
 
 static int HasInitializedFDPlumbing = 0;
@@ -72,9 +72,7 @@ int fdplumb_SpillGuts() {
     return fdplumb_SpillGutsToFile(stderr, 0);
 }
 
-int fdplumb_SpillGutsToFile(fp, ExtraNewLines)
-FILE *fp;
-int ExtraNewLines;
+int fdplumb_SpillGutsToFile(FILE *fp, int ExtraNewLines)
 {
     int i, total = 0;
 
@@ -95,9 +93,7 @@ int ExtraNewLines;
     return total;
 }
 
-void RegisterOpenFile(fd, path, Code)
-int fd, Code;
-char *path;
+void RegisterOpenFile(int fd, char *path, int Code)
 {
     int i;
 
@@ -129,8 +125,7 @@ char *path;
     }
 }
 
-void RegisterCloseFile(fd)
-int fd;
+void RegisterCloseFile(int fd)
 {
     if (!HasInitializedFDPlumbing) {
 	if (fdplumb_LogAllFileAccesses) fprintf(stderr, "<critical:fdplumb>Attempt to close fd %d before any opens!", fd);
@@ -144,9 +139,7 @@ int fd;
 }
 	
    
-int dbg_creat(path, mode)
-char *path;
-int mode;
+int dbg_creat(char *path, int mode)
 {
     int fd;
 
@@ -155,9 +148,7 @@ int mode;
     return(fd);
 }
 
-int dbg_open(path, flags, mode)
-char *path;
-int flags, mode;
+int dbg_open(char *path, int flags, int mode)
 {
     int fd;
 
@@ -177,22 +168,19 @@ char *path, *type;
     return(fp);
 }
 
-int dbg_close(fd)
-int fd;
+int dbg_close(int fd)
 {
     RegisterCloseFile(fd);
     return(close(fd));
 }
 
-int dbg_fclose(fp)
-FILE *fp;
+int dbg_fclose(FILE *fp)
 {
     RegisterCloseFile(fileno(fp));
     return(fclose(fp));
 }
 
-int dbg_dup(oldfd)
-int oldfd;
+int dbg_dup(int oldfd)
 {
     int newfd;
 
@@ -201,8 +189,7 @@ int oldfd;
     return(newfd);
 }
 
-int dbg_dup2(oldfd, newfd)
-int oldfd, newfd;
+int dbg_dup2(int oldfd, int newfd)
 {
     int res;
 
@@ -212,8 +199,7 @@ int oldfd, newfd;
     return(res);
 }
 
-int dbg_pipe(fdarr)
-int fdarr[2];
+int dbg_pipe(int fdarr)
 {
     int res;
 
@@ -225,8 +211,7 @@ int fdarr[2];
     return(res);
 }
 
-int dbg_socket(af, typ, prot)
-int af, typ, prot;
+int dbg_socket(int af, int typ, int prot)
 {
     int fd;
 
@@ -236,8 +221,7 @@ int af, typ, prot;
 }
 
 #if !defined(hp9000s300) && !defined(M_UNIX)
-int dbg_socketpair(dom, typ, prot, sv)
-int dom, typ, prot, sv[2];
+int dbg_socketpair(int dom, int typ, int prot, int sv)
 {
     int res;
 

@@ -52,6 +52,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #include <string.h>
 
+#include <stdlib.h>
 /*---------------*/
 /* Macros        */
 /*---------------*/
@@ -694,9 +695,7 @@ char *argv[];
   return;
 }
 
-main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
   struct CellAuth *ca;
 

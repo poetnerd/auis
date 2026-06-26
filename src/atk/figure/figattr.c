@@ -31,6 +31,8 @@ char *figattr_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 
 #include <class.h>
 
+#include <stdlib.h>
+#include <stdio.h>
 static char attribute_names[figattr_NumAttributes][20] = {
     "shade",
     "color",
@@ -44,9 +46,7 @@ static char attribute_names[figattr_NumAttributes][20] = {
 
 static char *CopyString();
 
-boolean figattr__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-struct figattr *self;
+boolean figattr__InitializeObject(struct classhdr *ClassID, struct figattr *self)
 {
     self->active = 0;
 
@@ -62,9 +62,7 @@ struct figattr *self;
     return TRUE;
 }
 
-void figattr__FinalizeObject(ClassID, self)
-struct classhdr *ClassID;
-struct figattr *self;
+void figattr__FinalizeObject(struct classhdr *ClassID, struct figattr *self)
 {
     if (self->color)
 	free(self->color);
@@ -72,8 +70,7 @@ struct figattr *self;
 	free(self->fontfamily);
 }
 
-struct figattr *figattr__CopySelf(self)
-struct figattr *self;
+struct figattr *figattr__CopySelf(struct figattr *self)
 {
     struct figattr *res = figattr_New();
 
@@ -93,10 +90,7 @@ struct figattr *self;
     return res;
 }
 
-void figattr__CopyData(self, src, mask)
-struct figattr *self;
-struct figattr *src;
-unsigned long mask;
+void figattr__CopyData(struct figattr *self, struct figattr *src, unsigned long mask)
 {
     if (mask & (1<<figattr_Shade)) {
 	if (!figattr_IsActive(src, figattr_Shade))
@@ -156,8 +150,7 @@ unsigned long mask;
     /* ##new */
 }
 
-static char *CopyString(str)
-char *str;
+static char *CopyString(char *str)
 {
     char *tmp;
 
@@ -171,11 +164,7 @@ char *str;
 }
 
 /* does not use /begindata /enddata convention */
-long figattr__Write(self, fp, writeid, level)
-struct figattr *self;
-FILE *fp;
-long writeid;
-int level;
+long figattr__Write(struct figattr *self, FILE *fp, long writeid, int level)
 {
     int ix;
 
@@ -222,10 +211,7 @@ int level;
 }
 
 /* does not use /begindata /enddata convention */
-long figattr__Read(self, fp, id)
-struct figattr *self;
-FILE *fp;
-long id;
+long figattr__Read(struct figattr *self, FILE *fp, long id)
 {
 #define LINELENGTH (250)
     static char buf[LINELENGTH+1];

@@ -151,8 +151,7 @@ ThunderDecodeRow(tif, buf, occ, s)
 	return (1);
 }
 
-TIFFInitThunderScan(tif)
-	TIFF *tif;
+int TIFFInitThunderScan(TIFF *tif)
 {
 	tif->tif_decoderow = ThunderDecodeRow;
 	tif->tif_decodestrip = ThunderDecodeRow;

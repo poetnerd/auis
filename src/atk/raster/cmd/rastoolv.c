@@ -65,11 +65,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <pattern.h>
 #include <rect.h>
 
+#include <stdlib.h>
 #define ZRPATTERN_INVERT ((unsigned char *)NULL)
 #define ZRBRUSH_PIXEL ((unsigned char *)NULL)
 
 #ifndef _IBMR2
-extern char *malloc();
 #endif
 
 static void SetToolProc(), SetToolNum(), SetBrushProc(), SetPatternProc(), CallCommandProc(), CallPasteModeProc(), PasteDownProc();
@@ -135,8 +135,7 @@ static char pastemodelayout[ZRPASTEMODES_NUM][24] = {
 static struct menulist *Menus;
 static struct keymap *Keymap;
 
-boolean rastoolview__InitializeClass(ClassID)
-struct classhdr *ClassID;
+boolean rastoolview__InitializeClass(struct classhdr *ClassID)
 {
     struct proctable_Entry *proc = NULL;
     
@@ -177,9 +176,7 @@ struct classhdr *ClassID;
     return TRUE;
 }
 
-boolean rastoolview__InitializeObject(c, self)
-struct classheader *c;
-struct rastoolview *self;
+boolean rastoolview__InitializeObject(struct classheader *c, struct rastoolview *self)
 {
     int ix;
 
@@ -304,9 +301,7 @@ struct rastoolview *self;
     return TRUE;
 }
 
-void rastoolview__FinalizeObject(c, self)
-struct classheader *c;
-struct rastoolview *self;
+void rastoolview__FinalizeObject(struct classheader *c, struct rastoolview *self)
 {
 
     if (self->fillpix) {
@@ -340,8 +335,7 @@ struct rastoolview *self;
     stringtbl_Destroy(self->tooltbl);
 }
 
-static void RepostMenus(self)
-struct rastoolview *self;
+static void RepostMenus(struct rastoolview *self)
 {
     long menumask = 0;
 
@@ -356,9 +350,7 @@ struct rastoolview *self;
     }
 }
 
-void rastoolview__PostMenus(self, ml)
-struct rastoolview *self;
-struct menulist *ml;
+void rastoolview__PostMenus(struct rastoolview *self, struct menulist *ml)
 {
 /* Enable the menus for this object. */
 
@@ -367,9 +359,7 @@ struct menulist *ml;
     super_PostMenus(self, self->Menus);
 }
 
-void rastoolview__PostKeyState(self, ks)
-struct rastoolview *self;
-struct keystate *ks;
+void rastoolview__PostKeyState(struct rastoolview *self, struct keystate *ks)
 {
 /* Enable the keys for this object. */
 
@@ -378,8 +368,7 @@ struct keystate *ks;
     super_PostKeyState(self, self->Keystate);
 }
 
-boolean rastoolview__WantSelectionHighlighted(self)
-struct rastoolview *self;
+boolean rastoolview__WantSelectionHighlighted(struct rastoolview *self)
 {
     void (*tpr)();
 
@@ -388,9 +377,7 @@ struct rastoolview *self;
     return (tpr==Tool_Paste || tpr==Tool_Text);
 }
 
-boolean rastoolview__SetPrimaryView(self, zrview)
-struct rastoolview *self;
-struct rasterview *zrview;
+boolean rastoolview__SetPrimaryView(struct rastoolview *self, struct rasterview *zrview)
 {
     if (self->primaryview) {
 	rastoolview_RemoveObserver(self, self->primaryview);
@@ -430,9 +417,7 @@ struct rasterview *zrview;
     return TRUE;
 }
 
-static void SetToolNum(self, toolnum)
-struct rastoolview *self;
-int toolnum;
+static void SetToolNum(struct rastoolview *self, int toolnum)
 {
     if (toolnum==0)
 	toolnum = RASTOOL_PAN;
@@ -446,10 +431,7 @@ int toolnum;
     stringtbl_SetBitOfEntry(self->tooltbl, self->toolacc[self->toolnum], TRUE);
 }
 
-void rastoolview__ObservedChanged(self, observed, status)
-struct rastoolview *self;
-struct observable *observed;
-long status;
+void rastoolview__ObservedChanged(struct rastoolview *self, struct observable *observed, long status)
 {
     if (observed == (struct observable *)self->primaryview) {
 	if (status==observable_OBJECTDESTROYED) {
@@ -488,15 +470,12 @@ long status;
     }
 }
 
-void rastoolview__UnlinkTree(self)
-struct rastoolview *self;
+void rastoolview__UnlinkTree(struct rastoolview *self)
 {
     super_UnlinkTree(self);
 }
 
-static void Command_Refresh(self, rock)
-struct rastoolview *self;
-char *rock;
+static void Command_Refresh(struct rastoolview *self, char *rock)
 {
     struct rasterview *rself = self->primaryview;
 
@@ -506,9 +485,7 @@ char *rock;
     rasterview_WantUpdate(rself, rself);
 }
 
-static void Command_Copy(self, rock)
-struct rastoolview *self;
-char *rock;
+static void Command_Copy(struct rastoolview *self, char *rock)
 {
     struct rasterview *rself = self->primaryview;
 
@@ -520,9 +497,7 @@ char *rock;
 	message_DisplayString(rself, 10, "Selection copied.");
 }
 
-static void Command_ZoomIn(self, rock)
-struct rastoolview *self;
-char *rock;
+static void Command_ZoomIn(struct rastoolview *self, char *rock)
 {
     struct rasterview *rself = self->primaryview;
     int newscale;
@@ -538,9 +513,7 @@ char *rock;
     rasterview_SetScale(rself, newscale);
 }
 
-static void Command_ZoomOut(self, rock)
-struct rastoolview *self;
-char *rock;
+static void Command_ZoomOut(struct rastoolview *self, char *rock)
 {
     struct rasterview *rself = self->primaryview;
     int newscale;
@@ -558,9 +531,7 @@ char *rock;
     rasterview_SetScale(rself, newscale);
 }
 
-static void Command_ZoomNorm(self, rock)
-struct rastoolview *self;
-char *rock;
+static void Command_ZoomNorm(struct rastoolview *self, char *rock)
 {
     struct rasterview *rself = self->primaryview;
     int newscale;
@@ -571,9 +542,7 @@ char *rock;
     rasterview_SetScale(rself, newscale);
 }
 
-static void Command_Quit(self, rock)
-struct rastoolview *self;
-char *rock;
+static void Command_Quit(struct rastoolview *self, char *rock)
 {
     if (self->primaryview) {
 	rasterview_DestroyToolset(self->primaryview);
@@ -585,10 +554,7 @@ char *rock;
 }
 
 
-static void CallCommandProc(st, self, accnum)
-struct stringtbl *st;
-struct rastoolview *self;
-short accnum;
+static void CallCommandProc(struct stringtbl *st, struct rastoolview *self, short accnum)
 {
     int cmdnum;
     void (*comproc)();
@@ -609,10 +575,7 @@ short accnum;
 	(*comproc)(self, commandlayout[cmdnum].rock);
 }
 
-static void CallPasteModeProc(st, self, accnum)
-struct stringtbl *st;
-struct rastoolview *self;
-short accnum;
+static void CallPasteModeProc(struct stringtbl *st, struct rastoolview *self, short accnum)
 {
     int pmdnum;
 
@@ -648,10 +611,7 @@ short accnum;
     PasteResplot(self, 0);
 }
 
-static void SetPatternProc(st, self, accnum)
-struct stringtbl *st;
-struct rastoolview *self;
-short accnum;
+static void SetPatternProc(struct stringtbl *st, struct rastoolview *self, short accnum)
 {
     int patternnum;
 
@@ -678,10 +638,7 @@ short accnum;
     }
 }
 
-static void SetBrushProc(st, self, accnum)
-struct stringtbl *st;
-struct rastoolview *self;
-short accnum;
+static void SetBrushProc(struct stringtbl *st, struct rastoolview *self, short accnum)
 {
     int brushnum;
 
@@ -708,10 +665,7 @@ short accnum;
     }
 }
 
-static void SetToolProc(st, self, accnum)
-struct stringtbl *st;
-struct rastoolview *self;
-short accnum;
+static void SetToolProc(struct stringtbl *st, struct rastoolview *self, short accnum)
 {
     int toolnum;
     struct raster *ras = (struct raster *)self->primaryobj;
@@ -754,11 +708,7 @@ short accnum;
     rastoolview_NotifyObservers(self, NULL); 
 }
 
-static void DrawLine(rself, x0, y0, x1, y1, pattern, brush)
-struct rasterview *rself;
-long x0, y0, x1, y1;
-unsigned char *pattern;
-unsigned char *brush;
+static void DrawLine(struct rasterview *rself, long x0, long y0, long x1, long y1, unsigned char *pattern, unsigned char *brush)
 {
     int dx, dy, x, y, d, incr_str, incr_diag;
 
@@ -922,10 +872,7 @@ unsigned char *brush;
 }
 
 /* draw a circle with midpoint algorithm */
-static void DrawCircle(rself, x0, y0, rad, pattern, brush)
-struct rasterview *rself;
-long x0, y0, rad;
-unsigned char *pattern, *brush;
+static void DrawCircle(struct rasterview *rself, long x0, long y0, long rad, unsigned char *pattern, unsigned char *brush)
 {
     int d, x, y;
 
@@ -973,11 +920,7 @@ unsigned char *pattern, *brush;
 }
 
 /* draw an ellipse with midpoint algorithm */
-static void DrawEllipse(rself, x0, y0, xrad, yrad, pattern, brush)
-struct rasterview *rself;
-long x0, y0;
-long xrad, yrad; /* both must be >= 0 */
-unsigned char *pattern, *brush;
+static void DrawEllipse(struct rasterview *rself, long x0, long y0, long xrad, long yrad, unsigned char *pattern, unsigned char *brush)
 {
     int d, x, y;
 
@@ -1028,11 +971,7 @@ unsigned char *pattern, *brush;
     rasterview_BrushSetPixel(rself, x0+x, y0, pattern, brush);
 }
 
-static void FillRectangle(self, x0, y0, wid, hgt, pattern)
-struct rastoolview *self;
-long x0, y0;
-long wid, hgt;
-unsigned char *pattern;
+static void FillRectangle(struct rastoolview *self, long x0, long y0, long wid, long hgt, unsigned char *pattern)
 {
     struct rasterimage *pix = raster_GetPix((struct raster *)self->primaryobj);
     int ix, iy;
@@ -1058,11 +997,7 @@ unsigned char *pattern;
 	}
 }
 
-static void FillCircle(self, x0, y0, rad, pattern)
-struct rastoolview *self;
-long x0, y0;
-long rad;
-unsigned char *pattern;
+static void FillCircle(struct rastoolview *self, long x0, long y0, long rad, unsigned char *pattern)
 {
     struct rasterimage *pix = raster_GetPix((struct raster *)self->primaryobj);
     int ix, iy;
@@ -1082,11 +1017,7 @@ unsigned char *pattern;
     }
 }
 
-static void FillEllipse(self, x0, y0, xrad, yrad, pattern)
-struct rastoolview *self;
-long x0, y0;
-long xrad, yrad; /* both must be >= 0 */
-unsigned char *pattern;
+static void FillEllipse(struct rastoolview *self, long x0, long y0, long xrad, long yrad, unsigned char *pattern)
 {
     struct rasterimage *pix = raster_GetPix((struct raster *)self->primaryobj);
     int ix, iy;
@@ -1110,11 +1041,7 @@ unsigned char *pattern;
     }
 }
 
-static void DrawRectangle(rself, x0, y0, wid, hgt, pattern, brush)
-struct rasterview *rself;
-long x0, y0;
-long wid, hgt;
-unsigned char *pattern, *brush;
+static void DrawRectangle(struct rasterview *rself, long x0, long y0, long wid, long hgt, unsigned char *pattern, unsigned char *brush)
 {
     if (wid<0) {
 	x0 += wid;
@@ -1136,10 +1063,7 @@ unsigned char *pattern, *brush;
 	DrawLine(rself, x0, y0+hgt, x0, y0+1, pattern, brush);
 }
 
-static void Tool_SolidRect(self, action, x, y, numclicks)
-struct rastoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Tool_SolidRect(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct rasterimage *pix = raster_GetPix((struct raster *)self->primaryobj);
 
@@ -1167,10 +1091,7 @@ long x, y, numclicks;
     }
 }
 
-static void Tool_SolidCircle(self, action, x, y, numclicks)
-struct rastoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Tool_SolidCircle(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     int rad;
     struct rasterimage *pix = raster_GetPix((struct raster *)self->primaryobj);
@@ -1201,10 +1122,7 @@ long x, y, numclicks;
     }
 }
 
-static void Tool_SolidEllipse(self, action, x, y, numclicks)
-struct rastoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Tool_SolidEllipse(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     int xrad, yrad;
     struct rasterimage *pix = raster_GetPix((struct raster *)self->primaryobj);
@@ -1239,10 +1157,7 @@ long x, y, numclicks;
     }
 }
 
-static void Tool_Paint(self, action, x, y, numclicks)
-struct rastoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Tool_Paint(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct rasterimage *pix = raster_GetPix((struct raster *)self->primaryobj);
 
@@ -1264,10 +1179,7 @@ long x, y, numclicks;
     }
 }
 
-static void Tool_Line(self, action, x, y, numclicks)
-struct rastoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Tool_Line(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct rasterimage *pix;
 
@@ -1294,10 +1206,7 @@ long x, y, numclicks;
     }
 }
 
-static void Tool_Circle(self, action, x, y, numclicks)
-struct rastoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Tool_Circle(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct rasterimage *pix;
     int rad;
@@ -1329,10 +1238,7 @@ long x, y, numclicks;
     }
 }
 
-static void Tool_Ellipse(self, action, x, y, numclicks)
-struct rastoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Tool_Ellipse(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct rasterimage *pix;
     long xrad, yrad;
@@ -1370,10 +1276,7 @@ long x, y, numclicks;
     }
 }
 
-static void Tool_Rectangle(self, action, x, y, numclicks)
-struct rastoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Tool_Rectangle(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct rasterimage *pix;
 
@@ -1402,10 +1305,7 @@ long x, y, numclicks;
     }
 }
 
-static void Tool_Text(self, action, x, y, numclicks)
-struct rastoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Tool_Text(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct rasterimage *pix;
     struct rectangle *VS, *sel;
@@ -1484,8 +1384,7 @@ long x, y, numclicks;
     }
 }
 
-static struct raster *GetPasted(self)
-struct rastoolview *self;
+static struct raster *GetPasted(struct rastoolview *self)
 {
     struct raster *ras = self->pasteraster;
     FILE *pasteFile;
@@ -1522,10 +1421,7 @@ struct rastoolview *self;
     return ras;
 }
 
-static void Tool_Paste(self, action, x, y, numclicks)
-struct rastoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Tool_Paste(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct rasterimage *pix, *pix2, *pix3;
     struct point pt;
@@ -1708,10 +1604,7 @@ long x, y, numclicks;
     }
 }
 
-static void Tool_FloodFill(self, action, x, y, numclicks)
-struct rastoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Tool_FloodFill(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     int bit;
     struct rasterimage *pix = raster_GetPix((struct raster *)self->primaryobj);
@@ -1754,8 +1647,7 @@ long x, y, numclicks;
     im_EnqueueEvent(FloodSplot, self, (event_MSECtoTU(10)));
 }  
 
-static void FloodSplot(self)
-struct rastoolview *self;
+static void FloodSplot(struct rastoolview *self)
 {
     struct rasterimage *pix = raster_GetPix((struct raster *)self->primaryobj);
     struct rasterimage *fillpix = self->fillpix;
@@ -1885,10 +1777,7 @@ struct rastoolview *self;
     /*rasterimage_NotifyObservers(pix, raster_BITSCHANGED);*/
 }
 
-static void Tool_SprayPaint(self, action, x, y, numclicks)
-struct rastoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Tool_SprayPaint(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     switch (action) {
 	case view_LeftDown:
@@ -1908,8 +1797,7 @@ long x, y, numclicks;
     }
 }
 
-static void SpraySplot(self)
-struct rastoolview *self;
+static void SpraySplot(struct rastoolview *self)
 {
     int rad = self->sprayradius;
     int sqrad = rad*rad;
@@ -1932,10 +1820,7 @@ struct rastoolview *self;
     }
 }
 
-static void Tool_CurvePaint(self, action, x, y, numclicks)
-struct rastoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Tool_CurvePaint(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     switch (action) {
 	case view_LeftDown:
@@ -1959,8 +1844,7 @@ long x, y, numclicks;
     }
 }
 
-static void CurveSplot(self)
-struct rastoolview *self;
+static void CurveSplot(struct rastoolview *self)
 {
     int x, y;
     
@@ -1983,9 +1867,7 @@ struct rastoolview *self;
     }
 }
 
-static void PasteDownProc(self, rock)
-struct rastoolview *self;
-char *rock;
+static void PasteDownProc(struct rastoolview *self, char *rock)
 {
     if (self->unpaste) {
 	self->unpaste = FALSE;
@@ -1993,9 +1875,7 @@ char *rock;
     }
 }
 
-static void Toolmod_Paste(self, rock)
-struct rastoolview *self;
-char *rock;
+static void Toolmod_Paste(struct rastoolview *self, char *rock)
 {
     struct rasterimage *pix, *pix3;
     struct rectangle R;
@@ -2015,9 +1895,7 @@ char *rock;
     }
 }
 
-static void PasteResplot(self, rock)
-struct rastoolview *self;
-char *rock;
+static void PasteResplot(struct rastoolview *self, char *rock)
 {
     struct rasterimage *pix, *pix2, *pix3;
     struct rectangle CR, R;
@@ -2042,9 +1920,7 @@ char *rock;
     }
 }
 
-static void Toolmod_FloodFill(self, rock)
-struct rastoolview *self;
-char *rock;
+static void Toolmod_FloodFill(struct rastoolview *self, char *rock)
 {
     struct span *tmp;
     if (self->fillstack==NULL) {
@@ -2060,9 +1936,7 @@ char *rock;
     }
 }
 
-static void Toolmod_SprayPaint(self, rock)
-struct rastoolview *self;    
-char *rock;
+static void Toolmod_SprayPaint(struct rastoolview *self, char *rock)
 {
     char buffer[32], buf2[32];
     int val, res;
@@ -2086,9 +1960,7 @@ char *rock;
     message_DisplayString(self, 10, buf2);
 }
 		
-static void Toolmod_CurvePaint(self, rock)
-struct rastoolview *self;    
-char *rock;
+static void Toolmod_CurvePaint(struct rastoolview *self, char *rock)
 {
     char buffer[32], buf2[32];
     int res;
@@ -2113,9 +1985,7 @@ char *rock;
     message_DisplayString(self, 10, buf2);
 }
 
-static void Toolmod_Text(self, rock)
-struct rastoolview *self;    
-char *rock;
+static void Toolmod_Text(struct rastoolview *self, char *rock)
 {
     if (!rasterview_GetOverlaidInset(self->primaryview)) {
 	message_DisplayString(self, 10, "There is no overlay inset in the raster window.");
@@ -2125,9 +1995,7 @@ char *rock;
     RepostMenus(self);
 }
 
-static void ResizeInsetProc(self, rock)
-struct rastoolview *self;    
-char *rock;
+static void ResizeInsetProc(struct rastoolview *self, char *rock)
 {
     if (!rasterview_GetOverlaidInset(self->primaryview)) {
 	message_DisplayString(self, 10, "There is no overlay inset in the raster window.");
@@ -2137,9 +2005,7 @@ char *rock;
     RepostMenus(self);
 }
 
-static void RemoveInsetProc(self, rock)
-struct rastoolview *self;    
-char *rock;
+static void RemoveInsetProc(struct rastoolview *self, char *rock)
 {
     if (!rasterview_GetOverlaidInset(self->primaryview)) {
 	message_DisplayString(self, 10, "There is no overlay inset in the raster window.");

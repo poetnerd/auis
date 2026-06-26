@@ -47,6 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 /* #include <assert.h> */
 #include "prototypes.h"
 
+#include <stdlib.h>
 /*
  * NB: The 5.0 spec describes a different algorithm than Aldus
  *     implements.  Specifically, Aldus does code length transitions
@@ -200,8 +201,7 @@ static	void cl_hash();
 extern	int TIFFFlushData1();
 #endif
 
-TIFFInitLZW(tif)
-	TIFF *tif;
+int TIFFInitLZW(TIFF *tif)
 {
 	tif->tif_predecode = LZWPreDecode;
 	tif->tif_decoderow = LZWDecode;

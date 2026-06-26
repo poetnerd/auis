@@ -84,6 +84,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #define AUXMODULE 1
 #include <gif.eh>
 
+#include <stdio.h>
 typedef long int        count_int;
 
 static int  Width, Height;

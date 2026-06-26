@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <smpltext.ih>
 #include <search.eh>
 
+#include <stdlib.h>
 /* array to fold upper case to lower case 
 Now modified to handle the iso 8859 char set  # 1 */
 
@@ -76,8 +77,7 @@ int MatchLength;
 #define isop(c)	(((c) & 0200) && ((c) < 0205))	/* true if c is a special op */
 
 
-search__GetMatchLength (classID)
-struct classheader *classID;
+int search__GetMatchLength(struct classheader *classID)
 {
     return MatchLength;
 }
@@ -102,11 +102,7 @@ unsigned char *s; {
     }
 }
 
-char *search__GetQuotedSearchString(classID, string, resString, resStrLen)
-struct classheader *classID;
-char *string;
-char *resString;
-long resStrLen;
+char *search__GetQuotedSearchString(struct classheader *classID, char *string, char *resString, long resStrLen)
 {
     long resultMaxLen;
     long resultLen = 0;

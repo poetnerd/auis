@@ -38,6 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <dataobj.ih>
 #include <viewref.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 static long viewID = 0;
 
 boolean viewref__InitializeObject(struct classheader *classID, struct viewref *self)

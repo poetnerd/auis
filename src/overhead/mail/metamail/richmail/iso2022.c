@@ -44,6 +44,7 @@
 #include "richlex.h"
 #include "richset.h"
 
+#include <string.h>
 /*
  * Global data for this module.
  */
@@ -97,9 +98,7 @@ char	*name;
 /*
  * Process a command for the ISO-2022 processor.
  */
-int	iso2022_command (token,negated)
-char	*token;
-int	negated;
+int	iso2022_command(char *token, int negated)
 {
     int swchar;
     if (!strcmp(token,"iso-2022-jp")) {
@@ -224,8 +223,7 @@ int	negated;
 /*
  * Check for singleton ISO-2022 tokens.
  */
-int	iso2022_single (token)
-char	*token;
+int	iso2022_single(char *token)
 {
     return (!strncmp (token,ISO_GENERIC_PREFIX,ISO_GENERIC_LEN) ||
 	    !strncmp (token,ISO_SHIFT_PREFIX,ISO_SHIFT_LEN) ||
@@ -235,8 +233,7 @@ char	*token;
 /*
  * Determine the width of a ISO-2022 character.
  */
-int	iso2022_width (ch)
-RCHAR	ch;
+int	iso2022_width(RCHAR ch)
 {
     return (ch & 0xFF00 ? 2 : 1);
 }
@@ -244,8 +241,7 @@ RCHAR	ch;
 /*
  * Determine if the current character can be used as a folding point.
  */
-int	iso2022_fold (ch)
-RCHAR	ch;
+int	iso2022_fold(RCHAR ch)
 {
     if (ch < 0x7F && isspace (ch)) {
     	return (1);
@@ -325,9 +321,7 @@ struct 	charsetproc	iso2022_charset =
  * Define an output routine for slotting into RichtextPutc so
  * that ISO-2022 escape sequences are treated correctly.
  */
-int	iso2022_fputc (ch,file)
-int	ch;
-FILE	*file;
+int	iso2022_fputc(int ch, FILE *file)
 {
     if (OutPrevChar == ESC && ch == '(') {
 	/* Process escape sequences that end JIS 2-byte modes */

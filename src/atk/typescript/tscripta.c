@@ -45,6 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/type
 #include <environ.ih>
 #include <fontdesc.ih>
 
+#include <stdio.h>
 #define DOSOMETHINGINTERVAL 30 /* Every 30 seconds, do something... */
 
 /* A nonsubtle hint to the OS that we would like to occupy some memory... */
@@ -54,10 +55,7 @@ static void DontSwapMeOut()
     im_EnqueueEvent((procedure) DontSwapMeOut, 0, event_SECtoTU(DOSOMETHINGINTERVAL));
 }
 
-boolean typescriptapp__ParseArgs(self,argc,argv)
-struct typescriptapp *self;
-int argc;
-char **argv;
+boolean typescriptapp__ParseArgs(struct typescriptapp *self, int argc, char **argv)
 {
     if(!super_ParseArgs(self,argc,argv))
 	return FALSE;
@@ -107,9 +105,7 @@ char **argv;
     return TRUE;
 }
 
-boolean typescriptapp__InitializeObject(classID,self)
-struct classheader *classID;
-struct typescriptapp *self;
+boolean typescriptapp__InitializeObject(struct classheader *classID, struct typescriptapp *self)
 {
     typescriptapp_SetName(self, "typescript");
     self->argv=NULL;
@@ -124,14 +120,11 @@ struct typescriptapp *self;
     return TRUE;
 }
 
-void typescriptapp__FinalizeObject(classID,self)
-struct classheader *classID;
-struct typescriptapp *self;
+void typescriptapp__FinalizeObject(struct classheader *classID, struct typescriptapp *self)
 {
 }
 
-boolean typescriptapp__Start(self)
-struct typescriptapp *self;
+boolean typescriptapp__Start(struct typescriptapp *self)
 {
     struct view *vs;
     struct im *im;
@@ -210,8 +203,7 @@ struct typescriptapp *self;
 }
 
 
-void typescriptapp__Stop(self)
-struct typescriptapp *self;
+void typescriptapp__Stop(struct typescriptapp *self)
 {
     if (self->ss)
 	typescript_Destroy(self->ss);

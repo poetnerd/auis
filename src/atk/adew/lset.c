@@ -44,14 +44,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <atomlist.ih>
 #include <text.ih>
 #include <ctype.h>
+#include <stdio.h>
 /* #define DEBUG 1 */
 
 #define VALUE 10
 #define CEL 5
 static struct atom *a_vp,*a_name,*a_atomlist;
 
-static registerobject(self)
-struct lset *self;
+static registerobject(struct lset *self)
 {
     struct atomlist *al;
     char buf[256];
@@ -69,8 +69,7 @@ struct lset *self;
 	lset_Put(self,a_name,a_atomlist,al);
     }
 }
-static struct dataobject *getregisteredobject(self)
-struct lset *self;
+static struct dataobject *getregisteredobject(struct lset *self)
 {
     struct atomlist *al;
     char buf[256];
@@ -82,9 +81,7 @@ struct lset *self;
 	return (struct dataobject *)val;
     return NULL;
 }
-char *lset__registername(self,name)
-struct lset *self;
-char *name;
+char *lset__registername(struct lset *self, char *name)
 {
     strcpy(self->refname,name);
     if(getregisteredobject(self) != NULL){
@@ -94,8 +91,7 @@ char *name;
     return self->refname;
 }
 
-boolean lset__InitializeClass(ClassID)
-struct classheader *ClassID;
+boolean lset__InitializeClass(struct classheader *ClassID)
 {
     
     a_vp = atom_Intern("struct dataobject *");
@@ -103,10 +99,7 @@ struct classheader *ClassID;
     a_atomlist = atom_Intern("atomlist");
     return TRUE;
 }
-void lset__InsertObject (self, name,viewname)
-struct lset *self;
-char *name;
-char *viewname;
+void lset__InsertObject(struct lset *self, char *name, char *viewname)
 {
     struct dataobject *newobject;
     char buf[128];
@@ -142,8 +135,7 @@ char *viewname;
     registerobject(self);
 }
 
-long lset__GetModified(self)
-struct lset *self;
+long lset__GetModified(struct lset *self)
 {
     register long mod = super_GetModified(self);
     if(self->dobj)
@@ -155,8 +147,7 @@ struct lset *self;
     return mod;
 }
 	
-static char *getline(buf,c)
-register char *buf,*c;
+static char *getline(register char *buf, register char *c)
 {
 /* printf("Getting line from %s\n",buf); */
     if(buf == NULL || *buf == '\0'){
@@ -176,10 +167,7 @@ register char *buf,*c;
     return (buf);
 }
 
-long lset__Read(self, file, id)
-    struct lset *self;
-    FILE *file;
-    long id;
+long lset__Read(struct lset *self, FILE *file, long id)
 {
     long endcount = 1;
     boolean begindata;
@@ -303,11 +291,7 @@ putchar(c);
     return dataobject_NOREADERROR;
 }
 
-long lset__Write(self,file ,writeid,level)
-struct lset *self;
-FILE *file;
-long writeid;
-int level;
+long lset__Write(struct lset *self, FILE *file, long writeid, int level)
 {
     long did,lid,rid;
     did = lid = rid = 0l;
@@ -328,9 +312,7 @@ int level;
     return lset_GetID(self);
 }
 
-boolean lset__InitializeObject(classID, self)
-struct classheader *classID;
-struct lset *self;
+boolean lset__InitializeObject(struct classheader *classID, struct lset *self)
 {
 *self->dataname = '\0';
 *self->viewname = '\0';

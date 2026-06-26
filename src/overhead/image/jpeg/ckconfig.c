@@ -168,9 +168,7 @@ unsigned short un_short;
 typedef void * void_ptr;	/* check void * */
 typedef void (*void_func) ();	/* check ptr to function returning void */
 
-void testfunction2 (arg1, arg2)	/* check void function result */
-     void_ptr arg1;
-     void_func arg2;
+void testfunction2(void_ptr arg1, void_func arg2)
 {
   char * locptr = (char *) arg1; /* check casting to and from void * */
   arg1 = (void *) locptr;
@@ -188,8 +186,7 @@ void testfunction2 (arg1, arg2)	/* check void function result */
 #ifdef HAVE_CONST
 static const int carray[3] = {1, 2, 3};
 
-int testfunction3 (arg1)
-     const int arg1;
+int testfunction3(const int arg1)
 {
   return carray[arg1];
 }
@@ -226,8 +223,7 @@ int new_change ()
 }
 
 
-int test_char_sign (arg)
-     int arg;
+int test_char_sign(int arg)
 {
   if (arg == 189) {		/* expected result for unsigned char */
     new_change();
@@ -266,9 +262,7 @@ int test_shifting (arg)
 }
 
 
-int main (argc, argv)
-     int argc;
-     char ** argv;
+int main(int argc, char **argv)
 {
   char signed_char_check = (char) (-67);
 

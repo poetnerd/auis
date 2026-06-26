@@ -49,6 +49,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
 #include <path.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 struct homestruct {
     char fullPath[MAXPATHLEN];
     char shortPath[MAXPATHLEN];

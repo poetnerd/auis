@@ -78,6 +78,8 @@ END-SPECIFICATION  ************************************************************/
 #include  <chartv.ih>
 #include  <suite.ih>
 
+#include <stdlib.h>
+#include <stdio.h>
 #define  add_code		    1
 #define  delete_code		    2
 #define  sort_ascend_value_code	    3
@@ -487,9 +489,8 @@ Initialize_Palette( self ) /*=== CONVERT TO REAL FORM ===*/
   return  status;
   }
 
-Destroy_Palette( self )
-  register struct chartv	  *self;
-  {
+int Destroy_Palette(register struct chartv *self)
+{
   if ( ControlSuite )	        suite_Destroy( ControlSuite );
   if ( TitleSuite )		suite_Destroy( TitleSuite );
   if ( TypeSuite )		suite_Destroy( TypeSuite );
@@ -657,25 +658,20 @@ Palette_Titles_Handler( self, suite, item, action )
   return 0;
   }
 
-Activate_Viewer( self )
-  register struct chartv	 *self;
-  {
+int Activate_Viewer(register struct chartv *self)
+{
   Activate( self, delete_code );
   Activate( self, print_code );
   Activate( self, save_code );
   }
 
-static Passivate( self, code )
-  register struct chartv	 *self;
-  register long			  code;
-  {
+static Passivate(register struct chartv *self, register long code)
+{
   suite_PassivateItem( ControlSuite, suite_ItemOfDatum( ControlSuite, code ) );
   }
 
-static Activate( self, code )
-  register struct chartv	 *self;
-  register long			  code;
-  {
+static Activate(register struct chartv *self, register long code)
+{
   suite_ActivateItem( ControlSuite, suite_ItemOfDatum( ControlSuite, code ) );
   }
 

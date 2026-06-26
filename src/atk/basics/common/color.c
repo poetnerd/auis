@@ -33,6 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <andrewos.h>
 #include <color.eh>
 
+#include <stdlib.h>
 boolean
 color__InitializeClass( classID )
     struct classheader *classID;

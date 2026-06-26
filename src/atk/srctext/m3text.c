@@ -43,9 +43,7 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 static Dict *words[TABLESIZE];
 
 /* modpragma should be functionally the same as modtext's CheckComment method */
-static long modpragma(self, start)
-struct m3text *self;
-long start;
+static long modpragma(struct m3text *self, long start)
 {
     int prev, c=0, pragmas=1;
     long end=start+1, len=m3text_GetLength(self);
@@ -70,8 +68,7 @@ long start;
 }
 
 /* like modtext_RedoStyles, but with ctext's \' and \" recognition */
-void m3text__RedoStyles(self)
-struct m3text *self;
+void m3text__RedoStyles(struct m3text *self)
 {
     long posn, len = m3text_GetLength(self);
     int prev = 0, c = '\n'; /* c is initialized to a newline so the start of the file looks like the start of line. */
@@ -109,9 +106,7 @@ struct m3text *self;
 }
 
 /* returns true iff the character at pos is quoted (ie. "\"). Takes into account the slash being quoted. (ie "\\"). */ /*RSK92mod*/
-boolean m3text__Quoted(self, pos)
-struct m3text *self;
-long pos;
+boolean m3text__Quoted(struct m3text *self, long pos)
 {
     boolean retval = FALSE;
     while (pos-->0 && m3text_GetChar(self,pos)=='\\')
@@ -119,8 +114,7 @@ long pos;
     return retval;
 }
 
-static void SetupStyles(self)
-struct m3text *self;
+static void SetupStyles(struct m3text *self)
 {
     if ((self->header.srctext.kindStyle[IDNTFR]= stylesheet_Find(self->header.text.styleSheet, "identifier")) == NULL) {
 	self->header.srctext.kindStyle[IDNTFR]= style_New();
@@ -137,15 +131,13 @@ struct m3text *self;
     }
 }
 
-void m3text__SetupStyles(self)
-struct m3text *self;
+void m3text__SetupStyles(struct m3text *self)
 {
     super_SetupStyles(self);
     SetupStyles(self);
 }
 
-boolean m3text__InitializeClass(classID)
-struct classheader *classID;
+boolean m3text__InitializeClass(struct classheader *classID)
 {
     static Dict m3keywords[]={
 /* meanings of bit values:
@@ -266,9 +258,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean m3text__InitializeObject(classID, self)
-struct classheader *classID;
-struct m3text *self;
+boolean m3text__InitializeObject(struct classheader *classID, struct m3text *self)
 {
     self->header.srctext.words= (Dict **)words;
     SetupStyles(self); /*RSK92add*/

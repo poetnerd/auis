@@ -40,6 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <dlfcn.h>
 #include <string.h>
 
+#include <stdlib.h>
 /*
  * SunOS 4.1 doesn't have any #defines for the second argument to
  * "dlopen()"; it just says "it has to be 1".  S5R4 has defines for

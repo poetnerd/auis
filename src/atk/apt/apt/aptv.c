@@ -102,6 +102,8 @@ END-SPECIFICATION  ************************************************************/
 #include <aptv.eh>
 #include <ctype.h>
 
+#include <stdlib.h>
+#include <stdio.h>
 #define  Balanced		    (view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBOTTOM)
 
 #define  Initialized		      self->states.initialized
@@ -1185,13 +1187,8 @@ place = "centerstring";
   }
 
 enum view_DSattributes
-aptv__DesiredSize( self, given_width, given_height,
-		      pass, desired_width, desired_height )
-  register struct aptv	     *self;
-  register long		      given_width, given_height;
-  register enum view_DSpass   pass;
-  register long		     *desired_width, *desired_height;
-  {
+int aptv__DesiredSize(register struct aptv *self, register long given_width, register long given_height, register enum view_DSpass pass, register long *desired_width, register long *desired_height)
+{
   register enum view_DSattributes result = view_WidthFlexible |
 					       view_HeightFlexible;
 

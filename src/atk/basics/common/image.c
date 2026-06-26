@@ -72,7 +72,9 @@
 #include <gif.ih>
 #include <image.eh>
 
-extern int errno;
+#include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
 #define MAXFILELINE 255
 #define DEFAULT_SAVE_QUALITY (75)
 

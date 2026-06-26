@@ -65,6 +65,8 @@ Function
 #include <netdb.h>
 #include <netinet/in.h>
 
+#include <stdlib.h>
+#include <stdio.h>
 void	InitHosts();
 void	ReConnect();
 
@@ -165,10 +167,7 @@ int	bindrc;
 struct r_connection * con;
 int	NumberOfColumns = 1;
 
-ConfigureMachines(self, Rows, Columns, Machines, Initialize)
-struct consoleClass *self;
-int *Rows, *Columns, *Machines;
-boolean Initialize;
+int ConfigureMachines(struct consoleClass *self, int *Rows, int *Columns, int *Machines, boolean Initialize)
 {
     mydbg(("entering: ConfigureMachines\n"));
     if (Initialize){
@@ -182,9 +181,7 @@ boolean Initialize;
 
 #define MarkAndReturn(x)  { (x).IsDisplaying = TRUE; return (&(x));}
 
-struct datum *BuildDatum(keyword, machine)
-char *keyword;
-int machine;
+struct datum *BuildDatum(char *keyword, int machine)
 {
     mydbg(("entering: BuildDatum\n"));
     if(machine >= activeClusters)
@@ -290,8 +287,7 @@ int machine;
     return((struct datum *)-1);
 }
 
-OneTimeRemoteInit(self)
-    struct consoleClass *self;
+int OneTimeRemoteInit(struct consoleClass *self)
 {
     PROCESS parentPid;
     int		rc;
@@ -312,15 +308,13 @@ OneTimeRemoteInit(self)
     r_Init(0);
 }
 
-InitializeInstruments(self)
-    struct consoleClass *self;
+int InitializeInstruments(struct consoleClass *self)
 { /* not needed for file server console */
     mydbg(("entering: InitializeInstruments\n"));
     return;
 }
 
-WakeUp(self) 
-    struct consoleClass *self; 
+int WakeUp(struct consoleClass *self)
 {
     ViceStatistics * current = 0;
     ViceStatistics * previous = 0;
@@ -371,12 +365,7 @@ WakeUp(self)
 }
 
 
-Calculate(self, current, previous, dial, index)
-struct consoleClass *self;
-ViceStatistics	* current;
-ViceStatistics	* previous;
-struct MonitorStats * dial;
-int		  index;
+int Calculate(struct consoleClass *self, ViceStatistics *current, ViceStatistics *previous, struct MonitorStats *dial, int index)
 {
     int		interval;
     int		total;
@@ -564,17 +553,14 @@ int		  index;
     return(0);
 }
 
-LogIt (level, str)
-    int	    level;
-    char    * str;
+int LogIt(int level, char *str)
 {
     mydbg(("entering: LogIt\n"));
     printf("%s", str);
     fflush(stdout);
 }
 
-void	ReConnect(self)
-    struct consoleClass *self;
+void	ReConnect(struct consoleClass *self)
 {
     struct stat buff;
     struct hostent *hoste;
@@ -634,8 +620,7 @@ void	ReConnect(self)
     con = r_NewConn(hostn,portn);
 }
 
-void InitHosts(self)
-    struct consoleClass *self;
+void InitHosts(struct consoleClass *self)
 {
     long    count;
     register int    i;
@@ -722,9 +707,7 @@ InitPrint(self) struct consoleClass *self;{}
 extern boolean LogErrorsExternally;
 extern FILE *ExternalLogFP;
 
-ReportInternalError(self, string)
-    struct consoleClass *self;
-    char *string;
+int ReportInternalError(struct consoleClass *self, char *string)
 {
     mydbg(("entering: ReportInternalError\n"));
     if (LogErrorsExternally) {
@@ -740,8 +723,7 @@ ReportInternalError(self, string)
 /* The following need to be filled in .  -- nsb */
 #define MAXCOLUMNS 10
 
-ChooseColumns(numcol)
-    int numcol;
+int ChooseColumns(int numcol)
 {
     mydbg(("entering: ChooseColumns\n"));
     NumberOfColumns = numcol;
@@ -749,9 +731,7 @@ ChooseColumns(numcol)
     if(NumberOfColumns > MAXCOLUMNS) NumberOfColumns = MAXCOLUMNS;
 }
 
-ChooseMachines(self, machinelist)
-    struct consoleClass *self;
-    char *machinelist;
+int ChooseMachines(struct consoleClass *self, char *machinelist)
 {
     char	* prev;
     char	* curr;
@@ -791,8 +771,7 @@ ChooseMachines(self, machinelist)
 int OutgoingAge;
 char OtherVenusStr[10], FetchVenusStr[10], FinishedVenusStr[10], PrimaryErrorBuffer[10];
 
-VenusNovelty(self)
-    struct consoleClass *self;
+int VenusNovelty(struct consoleClass *self)
 {
     mydbg(("entering: VenusNovelty\n"));
     ReportInternalError(self, "vopcon:  Vopcon does not use VenusNovelty");
@@ -805,9 +784,7 @@ InitClock() {}
 
 InitMail(self)struct consoleClass *self; {}
 
-CheckMail(self, requested)
-struct consoleClass *self;
-int requested;
+int CheckMail(struct consoleClass *self, int requested)
 {}
 
 ReInitializeRemoteInstruments() {

@@ -53,6 +53,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <errno.h>
 #include <sitevars.h>
 
+#include <stdlib.h>
+#include <stdio.h>
 extern char *sys_errlist[];
 extern char MyHomeDir[];
 
@@ -111,8 +113,7 @@ SetMailEnv()
 }
 
 
-InitMail(self)
-struct consoleClass *self;
+int InitMail(struct consoleClass *self)
 {
     char *s;
 
@@ -217,8 +218,7 @@ SetPrintEnv()
     if (needsFreed) free(buff);
 }
 
-InitPrint(self)
-    struct consoleClass *self;
+int InitPrint(struct consoleClass *self)
 {
     char *s;
 
@@ -239,9 +239,7 @@ InitPrint(self)
 }
 
 
-AbortPrintChecking(self, text)
-    struct consoleClass *self;
-    char *text;
+int AbortPrintChecking(struct consoleClass *self, char *text)
 {
     mydbg(("entering: AbortPrintChecking\n"));
     ReportInternalError(self, text);
@@ -253,10 +251,7 @@ AbortPrintChecking(self, text)
     return(-1);
 }
 
-NonAndrewCheckMail(self, Name, LastModTime, LastValue)
-    struct consoleClass *self;
-    char *Name;
-    int *LastModTime, LastValue;
+int NonAndrewCheckMail(struct consoleClass *self, char *Name, int *LastModTime, int LastValue)
 {
     FILE *fp;
     struct stat filstatbuf;
@@ -300,8 +295,7 @@ NonAndrewCheckMail(self, Name, LastModTime, LastValue)
 
 /* Mail checker -- see how many messages in a BSD mail file are new. */
 
-NewMsgs(mf)
-    FILE *mf;
+int NewMsgs(FILE *mf)
 {
     int LastLineBlank, inhead = 0, newCount;
     boolean EOMChar = FALSE; /* Do I have to check for a specific charater */

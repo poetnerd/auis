@@ -39,18 +39,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <errno.h>
 #include <util.h>
 
+#include <string.h>
+#include <stdlib.h>
 #ifndef NULL
 #define NULL 0
 #endif
 
 extern char *getenv();
 
-extern int errno;
 
 static char home[100]="";
 
-char *gethome(name)
-char *name;
+char *gethome(char *name)
 {
     struct passwd *pw=NULL;
     char *h=NULL;

@@ -42,6 +42,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stddef.h> /* For NULL and the like. */
 #include <errno.h>
 
+#include <stdlib.h>
+#include <stdio.h>
 extern int			    errno, sys_nerr;
 extern char			   *sys_errlist[];
 

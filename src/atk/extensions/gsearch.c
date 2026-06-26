@@ -49,6 +49,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 
 #include <gsearch.eh>
 
+#include <stdlib.h>
+#include <string.h>
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
 #define DYNSTR_GROWSIZE (64)
@@ -82,15 +84,13 @@ struct statestack {
 };
 
 #ifndef _IBMR2
-extern char *malloc(), *realloc();
 #endif
 
 static jmp_buf jmpenv;
 static struct dynstr LastPattern;
 static struct statestacknode *StackTop;
 
-static int statestack_init(s)
-struct statestack *s;
+static int statestack_init(struct statestack *s)
 {
     s->used = 0;
     s->allocated = STATESTACK_GROWSIZE;
@@ -101,24 +101,18 @@ struct statestack *s;
     return (0);
 }
 
-static void statestack_destroy(s)
-struct statestack *s;
+static void statestack_destroy(struct statestack *s)
 {
     free(s->nodes);
 }
 
-static void statestack_pop(s)
-struct statestack *s;
+static void statestack_pop(struct statestack *s)
 {
     --(s->used);
     StackTop = s->nodes + s->used - 1;
 }
 
-static void statestack_push(s, pl, wp, fp, pos, len, sf, fwdp)
-struct statestack *s;
-int pl, wp, fp;
-long pos, len, sf;
-int fwdp;
+static void statestack_push(struct statestack *s, int pl, int wp, int fp, long pos, long len, long sf, int fwdp)
 {
     if (s->used == s->allocated) {
 	int newsize = s->allocated + STATESTACK_GROWSIZE;
@@ -140,8 +134,7 @@ int fwdp;
     StackTop = s->nodes + s->used - 1;
 }
 
-static int dynstr_init(d)
-struct dynstr *d;
+static int dynstr_init(struct dynstr *d)
 {
     d->used = 1;
     d->allocated = DYNSTR_GROWSIZE;
@@ -151,17 +144,13 @@ struct dynstr *d;
     return (0);
 }
 
-static void dynstr_shortento(d, size)
-struct dynstr *d;
-int size;
+static void dynstr_shortento(struct dynstr *d, int size)
 {
     d->used = size;
     d->text[d->used - 1] = '\0';
 }
 
-static void dynstr_ensuresize(d, size)
-struct dynstr *d;
-int size;
+static void dynstr_ensuresize(struct dynstr *d, int size)
 {
     int newsize;
 
@@ -174,9 +163,7 @@ int size;
     d->allocated = newsize;
 }
 
-static void dynstr_put(d, str)
-struct dynstr *d;
-char *str;
+static void dynstr_put(struct dynstr *d, char *str)
 {
     int need = 1 + strlen(str);
 
@@ -185,9 +172,7 @@ char *str;
     d->used = need;
 }
 
-static void dynstr_append(d, str)
-struct dynstr *d;
-char *str;
+static void dynstr_append(struct dynstr *d, char *str)
 {
     int need = d->used + strlen(str);
 
@@ -196,21 +181,17 @@ char *str;
     d->used = need;
 }
 
-static void dynstr_destroy(d)
-struct dynstr *d;
+static void dynstr_destroy(struct dynstr *d)
 {
     free(d->text);
 }
 
-static int dynstr_empty(d)
-struct dynstr *d;
+static int dynstr_empty(struct dynstr *d)
 {
     return ((d->used == 0) || (d->text[0] == '\0'));
 }
 
-static void dynstr_addchar(d, c)
-struct dynstr *d;
-int c;
+static void dynstr_addchar(struct dynstr *d, int c)
 {
     int need = d->used + 1;
 
@@ -219,17 +200,14 @@ int c;
     d->text[(d->used)++] = '\0';
 }
 
-static void dynstr_copy(dest, src)
-struct dynstr *dest, *src;
+static void dynstr_copy(struct dynstr *dest, struct dynstr *src)
 {
     dynstr_ensuresize(dest, src->used);
     strcpy(dest->text, src->text);
     dest->used = src->used;
 }
 
-static void dosearch(tv, forwardp)
-struct textview *tv;
-int forwardp;
+static void dosearch(struct textview *tv, int forwardp)
 {
     FILE *tmp_file;
     struct text *txt = (struct text *) textview_GetDataObject(tv);
@@ -826,16 +804,12 @@ cleanup_and_return:
 	    return;
 }
 
-static void     fsearch(tv, key)
-struct textview *tv;
-long            key;
+static void     fsearch(struct textview *tv, long key)
 {
     dosearch(tv, 1);
 }
 
-static void     rsearch(tv, key)
-struct textview *tv;
-long            key;
+static void     rsearch(struct textview *tv, long key)
 {
     dosearch(tv, 0);
 }

@@ -34,8 +34,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h>    /* types */
 #include <fdplumbi.h>
 
-DIR *dbg_opendir(name)
-char *name;
+DIR *dbg_opendir(char *name)
 {
     DIR *d;
 
@@ -47,8 +46,7 @@ char *name;
 }
 
 
-void dbg_closedir(d)
-DIR *d;
+void dbg_closedir(DIR *d)
 {
     RegisterCloseFile(d->dd_fd);
     closedir(d);

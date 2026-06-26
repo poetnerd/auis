@@ -81,10 +81,7 @@ xcolor__Create( classID, name, R, G, B )
 }
 
 
-void xcolor__ObservedChanged(self, changed, value)
-struct xcolor *self;
-struct observable *changed;
-long value;
+void xcolor__ObservedChanged(struct xcolor *self, struct observable *changed, long value)
 {
     struct classinfo *xcmapinfo=NULL;
     struct classinfo *xgraphicinfo=NULL;

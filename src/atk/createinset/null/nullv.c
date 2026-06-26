@@ -108,6 +108,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/crea
 #include <nullv.eh>
 
 
+#include <string.h>
+#include <stdio.h>
 static char  debug;      /* This debug switch is toggled with ESC-^D-D */
 	/*	$$$ you could provide a method in this module which sets -debug-
 		Then nullvt.c could call it to set this debug from the -d switch */
@@ -619,13 +621,7 @@ LEAVE(Hit);
 	If neither is fixed, they may be arbitrary values. 
 */
 	enum view_DSattributes
-nullview__DesiredSize(self, width, height, pass, desiredWidth, desiredHeight) 
-	register struct nullview *self;
-	long width;
-	long height;
-	enum view_DSpass pass;
-	long *desiredWidth;
-	long *desiredHeight;
+int nullview__DesiredSize(register struct nullview *self, long width, long height, enum view_DSpass pass, long *desiredWidth, long *desiredHeight)
 {
 	DEBUG(("DesiredSize(...%d, %d, %d...)\n", width, height, pass));
 

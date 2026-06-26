@@ -69,6 +69,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #endif /* AFS_ENV */
 #include <sitevars.h>
 
+#include <stdio.h>
 extern ClearWindow();
 extern InitPstrings();
 extern PromptToWindow();
@@ -117,9 +118,7 @@ IsViceRunning()
 
 
 
-int make_socket(self, port)
-struct consoleClass *self;
-int port;
+int make_socket(struct consoleClass *self, int port)
 {
 
     int desc, protonum;
@@ -150,8 +149,7 @@ int port;
     return(desc);
 }
 
-InitializeMariner(self)
-    struct consoleClass *self;
+int InitializeMariner(struct consoleClass *self)
 {
 #ifdef AFS_ENV
     char *p;
@@ -221,9 +219,7 @@ InitializeMariner(self)
 
 
 
-int Bind (service, host)
-    int service;
-    char *host;
+int Bind(int service, char *host)
 {
     int s;
     char buf[100];
@@ -260,8 +256,7 @@ int Bind (service, host)
 
 extern boolean REVSCROLL;
 
-LogMarinerFetchInfo(disp)
-    struct display *disp;
+int LogMarinerFetchInfo(struct display *disp)
 {
 #ifdef AFS_ENV
     int ct = 0;
@@ -303,9 +298,7 @@ LogMarinerFetchInfo(disp)
 
 
 
-VenusNovelty(self, rock)
-    struct consoleClass *self;
-    char *rock;
+int VenusNovelty(struct consoleClass *self, char *rock)
 {
     int dum;
 
@@ -364,8 +357,7 @@ VenusNovelty(self, rock)
     RedrawDisplays(self);
 }
 
-IsViceError(n)
-    int n;
+int IsViceError(int n)
 {
     mydbg(("entering: IsViceError\n"));
     switch(errno) {

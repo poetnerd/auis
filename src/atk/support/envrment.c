@@ -39,6 +39,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <tree23.ih>
 #include <viewref.ih>
 
+#include <stdlib.h>
+#include <stdio.h>
 /* Crank out structs in 4k blocks. */
 #define DESIREDBLOCKSIZE 4096
 /* Number of marks per block */

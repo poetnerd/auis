@@ -45,9 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exam
 
 static struct keymap *helloworldviewKeymap;
 
-boolean helloworldview__InitializeObject(classID, hwv)
-struct classheader *classID;
-struct helloworldview *hwv;   
+boolean helloworldview__InitializeObject(struct classheader *classID, struct helloworldview *hwv)
 {
     hwv->x = POSUNDEF;
     hwv->y = POSUNDEF;
@@ -59,13 +57,7 @@ struct helloworldview *hwv;
     return TRUE;
 }
 
-void helloworldview__FullUpdate(hwv, type, left, top, width, height)
-struct helloworldview *hwv;
-enum view_UpdateType type;
-long left;
-long top;
-long width;
-long height; 
+void helloworldview__FullUpdate(struct helloworldview *hwv, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct rectangle myVisualRect;
 
@@ -96,8 +88,7 @@ long height;
 }
 
 
-void helloworldview__Update(hwv)
-struct helloworldview *hwv;
+void helloworldview__Update(struct helloworldview *hwv)
 {    
     /* TransferMode is graphic_INVERT from the last FullUpdate */
 
@@ -123,12 +114,7 @@ struct helloworldview *hwv;
 }
 
 
-struct view *helloworldview__Hit(hwv, action, x, y, numberOfClicks)
-struct helloworldview *hwv;
-enum view_MouseAction action;
-long x;
-long y;
-long numberOfClicks;
+struct view *helloworldview__Hit(struct helloworldview *hwv, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     if(hwv->HaveDownTransition)
 	switch(action){
@@ -170,8 +156,7 @@ long numberOfClicks;
 }
 
   
-void helloworldview__ReceiveInputFocus(hwv)
-struct helloworldview *hwv;
+void helloworldview__ReceiveInputFocus(struct helloworldview *hwv)
 {
     hwv->haveInputFocus = TRUE;
     hwv->keystate->next = NULL;
@@ -180,16 +165,13 @@ struct helloworldview *hwv;
 }
 
 
-void helloworldview__LoseInputFocus(hwv)
-struct helloworldview *hwv;
+void helloworldview__LoseInputFocus(struct helloworldview *hwv)
 {
     hwv->haveInputFocus = FALSE;
 }
 
 
-static void Center(hwv, rock)
-struct helloworldview *hwv;
-long rock;
+static void Center(struct helloworldview *hwv, long rock)
 {
     struct rectangle myVisualRect;
 
@@ -200,9 +182,7 @@ long rock;
 }
 
 
-static void Invert(hwv, rock)
-struct helloworldview *hwv;
-long rock;
+static void Invert(struct helloworldview *hwv, long rock)
 {
     hwv->newBlackOnWhite = ! hwv->newBlackOnWhite;
     helloworldview_WantUpdate(hwv, hwv);
@@ -215,8 +195,7 @@ static struct bind_Description helloworldviewBindings[]={
     NULL
 };
 
-boolean helloworldview__InitializeClass(classID)
-    struct classheader *classID;
+boolean helloworldview__InitializeClass(struct classheader *classID)
 {
     helloworldviewKeymap=keymap_New();
     bind_BindList(helloworldviewBindings, helloworldviewKeymap,NULL,&helloworldview_classinfo);

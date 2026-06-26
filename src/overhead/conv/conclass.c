@@ -49,6 +49,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <ctype.h>
 #include <mapping.h>
 #include <sys/param.h>
+#include <stdlib.h>
 #include <andrewos.h> /* sys/file.h */
 
 struct namelist {
@@ -90,8 +91,7 @@ char *fn;
     fclose(f);
     return TRUE;
 }
-char *getnm(c)
-char *c;
+char *getnm(char *c)
 {
     struct MapEntryStruct *mp;
     if(((mp = RetrieveByName(c,class_VERSIONNOTKNOWN)) == NULL )|| (mp->Key == NULL) || (mp->Name == mp->Key) || (strcmp(mp->Name,mp->Key) == 0)){
@@ -102,8 +102,7 @@ char *c;
     }
 
 }
-char *rgetnm(c)
-char *c;
+char *rgetnm(char *c)
 {
     struct MapEntryStruct *mp;
     if(((mp = RetrieveByKey(c,class_VERSIONNOTKNOWN)) == NULL )|| (mp->Name == NULL) || (mp->Name == mp->Key) || (strcmp(mp->Name,mp->Key) == 0)){
@@ -115,10 +114,7 @@ char *c;
 
 }
 int hflag;
-getf(f,buf,src)
-FILE *f;
-char *buf;
-char *src;
+int getf(FILE *f, char *buf, char *src)
 {
     char ending[1024];
     boolean foundio,foundic;
@@ -194,9 +190,7 @@ char *src;
 	fflush(stderr);
     }
 }
-rgetf(f,buf)
-FILE *f;
-char *buf;
+int rgetf(FILE *f, char *buf)
 {
     boolean brak;
     char ending[1024];
@@ -249,9 +243,7 @@ char *buf;
 	fputs(buf,fout);
     }
 }
-main(argc,argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
     boolean reverse;
     char **src,*cvfile,*AndrewDir(),*srclist[512],*dirfile;
@@ -343,8 +335,7 @@ char *argv[];
     }
 }
 
-usage(nm)
-char *nm;
+int usage(char *nm)
 {
     fprintf(stderr,"usage: %s [-h] [-r] [-c<conversion file>] filename <filename> [-d<directory>]\n-h is used to convert old .H to .ch files\n-r reverses the process to convert new style back to old style\n-c<conversion file> will use the named file for additional conversion information\n\tthe default conversion file is %s\n-d<directory> will write the file[s] out to the indicated directory, converting the name if necessary\n\t-d, if present, it must be provided at least one filename\n" ,nm,CONVERTFILE);
     exit(1);

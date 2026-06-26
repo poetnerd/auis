@@ -41,7 +41,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 #define viewname(v) ((v) == NULL ? "<NO VIEW>" : atom_Name(atomlist_First(view_GetName(v))))
 
 #ifndef _IBMR2
-extern char *malloc();
 #endif /* _IBMR2 */
 
 #include <class.h>
@@ -67,6 +66,9 @@ extern char *malloc();
 #include <layout.ih>
 #include <layoutv.eh>
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 static char layout_debug=0;
 
 #define	POINTINGTHRESHHOLD 6	    /* max distance away from object pointed at */
@@ -695,12 +697,7 @@ long thresh;			/* tolerance outside component allowed */
 /* process mouse hit */
 
 struct view *			/* returns view which should get follow-up events*/
-layoutview__Hit(self, action, x, y, numberOfClicks)
-struct layoutview *self;
-enum view_MouseAction action;	/* which button; what it did */
-long x;				/* where the mouse points */
-long y;
-long numberOfClicks;		/* number of hits at same place */
+int layoutview__Hit(struct layoutview *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     struct component *c;
     struct view *result;

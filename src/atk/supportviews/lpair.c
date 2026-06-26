@@ -46,6 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <rect.h>
 
 
+#include <stdlib.h>
 /* In theory, BARWIDTH could be nuked, but it should be optimized out anyway and it may be useful "someday." */
 #define BARWIDTH 0
 
@@ -70,10 +71,7 @@ static void lpair_ResetDimensions ();
 #define max(a, b) ((a < b) ? b : a)
 
 /* Basically, the only reason this routine exists is because the FullUpdate signature does not use rectangles. This routine expects its redrawRectangle argument to be valid know matter what the type argument is. The type arg is just passed through to the children that need to be redrawn. All in all, this, Update, and FullUpdate can probably be simplified. -Z- */
-static void DoFullUpdate(self, type, redrawRectangle)
-struct lpair *self;
-enum view_UpdateType type;
-struct rectangle *redrawRectangle;
+static void DoFullUpdate(struct lpair *self, enum view_UpdateType type, struct rectangle *redrawRectangle)
 {
 	/*  All this code needs changed */
 	register int	x, y;
@@ -154,8 +152,7 @@ struct rectangle *redrawRectangle;
 }
 
 
-void lpair__Update(self)
-struct lpair *self;
+void lpair__Update(struct lpair *self)
 {
 	if (self->needsfull) {
 
@@ -186,13 +183,7 @@ struct lpair *self;
 }
 
 
-void lpair__FullUpdate(self, type, left, top, width, height)
-struct lpair *self;
-enum view_UpdateType type;
-long	left;
-long	top;
-long	width;
-long	height;
+void lpair__FullUpdate(struct lpair *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
 
 	struct rectangle redrawRectangle;
@@ -224,11 +215,7 @@ long	height;
 
 #define ABS(x) ((x) > 0 ? (x) : -(x))
 
-struct view *lpair__Hit(self, action, x, y, numberOfClicks)
-struct lpair *self;
-enum view_MouseAction action;
-long	x, y;
-long	numberOfClicks;
+struct view *lpair__Hit(struct lpair *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
 
 	register long	dim;
@@ -318,9 +305,7 @@ long	numberOfClicks;
 /* This routineis special to prevent children from getting updates before a
  * FullUpdate. 
 */
-void lpair__WantUpdate(self, requestor)
-struct lpair *self;
-struct view *requestor;
+void lpair__WantUpdate(struct lpair *self, struct view *requestor)
 {
 
 	/* If we are about to FullUpdate the view requesting an update, throw away the
@@ -389,9 +374,7 @@ long	*desiredwidth, *desiredheight;
 }
 
 
-static void lpair_ComputeSizesFromTotal (l, totalsize)
-register struct lpair *l;
-int	totalsize;
+static void lpair_ComputeSizesFromTotal(register struct lpair *l, int totalsize)
 {
 	int	i = 0;
 
@@ -419,8 +402,7 @@ int	totalsize;
 }
 
 
-static void lpair_ComputeSizes (l)
-register struct lpair *l;
+static void lpair_ComputeSizes(register struct lpair *l)
 {
 
 	int	totalsize;
@@ -440,8 +422,7 @@ register struct lpair *l;
 }
 
 
-static void lpair_ResetDimensions(self)
-register struct lpair *self;
+static void lpair_ResetDimensions(register struct lpair *self)
 {
 
 	register int	i, x, y;
@@ -467,9 +448,7 @@ register struct lpair *self;
 }
 
 
-boolean lpair__InitializeObject (classID, self)
-struct classheader *classID;
-register struct lpair *self;
+boolean lpair__InitializeObject(struct classheader *classID, register struct lpair *self)
 {
 
 	self->obj[0] = NULL;
@@ -487,9 +466,7 @@ register struct lpair *self;
 }
 
 
-void lpair__FinalizeObject(classID, self)
-struct classheader *classID;
-struct lpair *self;
+void lpair__FinalizeObject(struct classheader *classID, struct lpair *self)
 {
 
 	if (self->obj[0] != NULL)
@@ -500,10 +477,7 @@ struct lpair *self;
 }
 
 
-struct lpair *lpair__Create (classID, l1, l2, x)
-struct classheader *classID;
-struct view *l1, *l2;
-long	x;
+struct lpair *lpair__Create(struct classheader *classID, struct view *l1, struct view *l2, long x)
 {
 
 	struct lpair *newl;
@@ -514,10 +488,7 @@ long	x;
 }
 
 
-void lpair__Init(newl, l1, l2, x)
-struct lpair *newl;
-struct view *l1, *l2;
-long	x;
+void lpair__Init(struct lpair *newl, struct view *l1, struct view *l2, long x)
 {
 
 	if (x < 0)
@@ -528,10 +499,7 @@ long	x;
 }
 
 
-struct lpair *lpair__SetUp(self, l1, l2, bsize, porf, vorh, moveable)
-struct lpair *self; /* The lpair view to modify. */
-struct view *l1, *l2; /* This lpairs prospective children. */
-int	bsize, porf, vorh; /* Size of bottom (right) view area, size is percent or pixels, vertical or horizontal. */
+struct lpair *lpair__SetUp(struct lpair *self, struct view *l1, struct view *l2, int bsize, int porf, int vorh, int moveable)
 {
 
 	lpair_SetNth(self, 0, l1);
@@ -560,10 +528,7 @@ int	bsize, porf, vorh; /* Size of bottom (right) view area, size is percent or p
 }
 
 
-struct lpair *lpair__VFixed (tl, l1, l2, bsize, moveable)
-struct view *l1, *l2;
-struct lpair *tl;
-int	bsize;
+struct lpair *lpair__VFixed(struct lpair *tl, struct view *l1, struct view *l2, int bsize, int moveable)
 {
 
 	lpair_SetUp(tl, l1, l2, bsize, lpair_BOTTOMFIXED, lpair_HORIZONTAL, moveable);
@@ -571,10 +536,7 @@ int	bsize;
 }
 
 
-struct lpair *lpair__VTFixed (tl, l1, l2, bsize, moveable)
-struct view *l1, *l2;
-struct lpair *tl;
-int	bsize;
+struct lpair *lpair__VTFixed(struct lpair *tl, struct view *l1, struct view *l2, int bsize, int moveable)
 {
 
 	lpair_SetUp(tl, l1, l2, bsize, lpair_TOPFIXED, lpair_HORIZONTAL, moveable);
@@ -582,20 +544,14 @@ int	bsize;
 }
 
 
-struct lpair *lpair__VSplit(tl, l1, l2, pct, moveable)
-struct view *l1, *l2;
-int	pct;
-register struct lpair *tl;
+struct lpair *lpair__VSplit(register struct lpair *tl, struct view *l1, struct view *l2, int pct, int moveable)
 {
 	lpair_SetUp(tl, l1, l2, pct, lpair_PERCENTAGE, lpair_HORIZONTAL, moveable);
 	return tl;
 }
 
 
-struct lpair *lpair__HFixed (tl, l1, l2, bsize, moveable)
-struct view *l1, *l2;
-struct lpair *tl;
-int	bsize;
+struct lpair *lpair__HFixed(struct lpair *tl, struct view *l1, struct view *l2, int bsize, int moveable)
 {
 
 	lpair_SetUp(tl, l1, l2, bsize, lpair_BOTTOMFIXED, lpair_VERTICAL, moveable);
@@ -603,10 +559,7 @@ int	bsize;
 }
 
 
-struct lpair *lpair__HTFixed (tl, l1, l2, bsize, moveable)
-struct view *l1, *l2;
-struct lpair *tl;
-int	bsize;
+struct lpair *lpair__HTFixed(struct lpair *tl, struct view *l1, struct view *l2, int bsize, int moveable)
 {
 
 	lpair_SetUp(tl, l1, l2, bsize, lpair_TOPFIXED, lpair_VERTICAL, moveable);
@@ -614,19 +567,14 @@ int	bsize;
 }
 
 
-struct lpair *lpair__HSplit(tl, l1, l2, pct, moveable)
-struct view *l1, *l2;
-int	pct;
-register struct lpair *tl;
+struct lpair *lpair__HSplit(register struct lpair *tl, struct view *l1, struct view *l2, int pct, int moveable)
 {
 	lpair_SetUp(tl, l1, l2, pct, lpair_PERCENTAGE, lpair_VERTICAL, moveable);
 	return tl;
 }
 
 
-void lpair__SetLPState(tl, porf, vorh, movable)
-struct lpair *tl; /* Pointer to the lpair we wish to modify. */
-int	porf, vorh, movable; /* Percent or fixed, Vertical or Horizontal, movable bar. * */
+void lpair__SetLPState(struct lpair *tl, int porf, int vorh, int movable)
 {
 
 	if (porf == lpair_PERCENTAGE || porf == lpair_BOTTOMFIXED || porf == lpair_TOPFIXED)
@@ -645,9 +593,7 @@ int	porf, vorh, movable; /* Percent or fixed, Vertical or Horizontal, movable ba
 }
 
 
-void lpair__GetLPState(tl, porf, vorh, movable)
-struct lpair *tl;
-int	*porf, *vorh, *movable;
+void lpair__GetLPState(struct lpair *tl, int *porf, int *vorh, int *movable)
 {
 
 	*porf = tl->sizeform;
@@ -656,28 +602,21 @@ int	*porf, *vorh, *movable;
 }
 
 
-void lpair__SetMovable(lp, i)
-struct lpair *lp;
-int	i;
+void lpair__SetMovable(struct lpair *lp, int i)
 {
 
 	lp->movable = i;
 }
 
 
-struct view *lpair__GetNth(l, ai)
-register struct lpair *l;
-int	ai;
+struct view *lpair__GetNth(register struct lpair *l, int ai)
 {
 
 	return l->obj[ai];
 }
 
 
-void lpair__SetNth(self, ai, x)
-register struct lpair *self;
-register struct view *x;
-int	ai;
+void lpair__SetNth(register struct lpair *self, int ai, register struct view *x)
 {
 
 	if (ai >= 0 && ai <= 1 && self->obj[ai] != x) {
@@ -699,9 +638,7 @@ int	ai;
 }
 
 
-void lpair__LinkTree(self, parent)
-struct lpair *self;
-struct view *parent;
+void lpair__LinkTree(struct lpair *self, struct view *parent)
 {
 
 	super_LinkTree(self, parent);
@@ -712,8 +649,7 @@ struct view *parent;
 }
 
 
-void lpair__InitChildren(self)
-struct lpair *self;
+void lpair__InitChildren(struct lpair *self)
 {
 	if (self->obj[0] != NULL)
 		view_InitChildren(self->obj[0]);

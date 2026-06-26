@@ -33,6 +33,7 @@
 #define AM_MEMORY_MANAGER	/* we define big_Xarray_control structs */
 
 #include "jinclude.h"
+#include <stdio.h>
 #include "jmemsys.h"		/* import the system-dependent declarations */
 
 #ifndef NO_GETENV

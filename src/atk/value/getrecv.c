@@ -41,6 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <view.ih>
 #include <getrecv.eh>
 
+#include <stdlib.h>
 /****************************************************************/
 /*		private functions				*/
 /****************************************************************/
@@ -54,8 +55,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 
 
 
-boolean GetRecV__InitializeClass(classID)
-struct classheader *classID;
+boolean GetRecV__InitializeClass(struct classheader *classID)
 {
     return TRUE;
 }
@@ -67,9 +67,7 @@ struct classheader *classID;
 /****************************************************************/
 /*		instance methods				*/
 /****************************************************************/
-boolean GetRecV__InitializeObject(classID, self )
-struct classheader *classID;
-struct GetRecV * self;
+boolean GetRecV__InitializeObject(struct classheader *classID, struct GetRecV *self)
 {
     self->x = self->y = self ->width = self->height = 0;
     self->tmpval = NULL;
@@ -78,16 +76,13 @@ struct GetRecV * self;
 }
 
 
-void GetRecV__LookupParameters(self)
-struct GetRecV * self;
+void GetRecV__LookupParameters(struct GetRecV *self)
 {
 
 }
 #define IsEqualRect(LHS, RHS)( (LHS->left == RHS->left) && (LHS->top == RHS->top) && (LHS->width == RHS->width) && (LHS->height == RHS->height) )
 #define CopyRect(LHS, RHS) rectangle_SetRectSize(LHS, rectangle_Left(RHS),rectangle_Top(RHS),rectangle_Width(RHS),rectangle_Height(RHS))
-void GetRecV__DrawFromScratch(self,x,y,width,height)
-struct GetRecV * self;
-long x,y,width,height;
+void GetRecV__DrawFromScratch(struct GetRecV *self, long x, long y, long width, long height)
 {
     struct value *w = GetRecV_Value(self);
     if(value_GetUpdateCount(w) == 0){
@@ -139,8 +134,7 @@ long x,y,width,height;
     }
 }
 
-void GetRecV__DrawDehighlight(self)
-struct GetRecV * self;
+void GetRecV__DrawDehighlight(struct GetRecV *self)
 {
     GetRecV_SetTransferMode( self, graphic_COPY );
     GetRecV_EraseRect( self,&(self->tmpval->parent));
@@ -148,8 +142,7 @@ struct GetRecV * self;
     GetRecV_DrawRect(self,&(self->tmpval->child));
 
 }
-void GetRecV__DrawHighlight(self)
-struct GetRecV * self;
+void GetRecV__DrawHighlight(struct GetRecV *self)
 {
   /*
     GetRecV_SetTransferMode( self, graphic_COPY );
@@ -158,8 +151,7 @@ struct GetRecV * self;
     GetRecV_DrawRect(self,&(self->tmpval->child));
 */
 }
-void GetRecV__DrawNewValue( self )
-struct GetRecV * self;
+void GetRecV__DrawNewValue(struct GetRecV *self)
 {
     GetRecV_SetTransferMode( self, graphic_COPY );
     GetRecV_EraseRect( self,&(self->tmpval->parent));
@@ -170,10 +162,7 @@ struct GetRecV * self;
 #define ABS(A) (((A) > 0) ? (A): -(A))
 #define CREC(rec,self) rectangle_SetRectSize(&rec,MIN(self->firstx,self->lastx),MIN(self->firsty,self->lasty),ABS(self->firstx - self->lastx),ABS(self->firsty - self->lasty))
 #define OutBounds(SELF,X,Y)((X  + rectangle_Left(&(SELF->tmpval->parent))> rectangle_Width(&(SELF->tmpval->parent))) || (Y + rectangle_Top(&(SELF->tmpval->parent)))> rectangle_Height(&(SELF->tmpval->parent)))
-struct GetRecV * GetRecV__DoHit( self,type,x,y,hits )
-struct GetRecV * self;
-enum view_MouseAction type;
-long x,y,hits;
+struct GetRecV * GetRecV__DoHit(struct GetRecV *self, enum view_MouseAction type, long x, long y, long hits)
 {
     struct value *tt = GetRecV_Value(self);
     struct rectangle rec;

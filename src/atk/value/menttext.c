@@ -41,15 +41,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <envrment.ih>
 #include <fontdesc.ih>
 #include <menttext.eh>
+#include <stdlib.h>
 #define INITIALSIZE 64
 
 #define Root(self) (((struct text *)self)->rootEnvironment)
 #define MyEnvinfo(text,pos) environment_GetInnerMost(Root(self), pos)
 #define Enclosed(text,pos) Root(self) != MyEnvinfo(text,pos)
 
-boolean mentertext__InitializeObject(classID,self)
-struct classheader *classID;
-struct mentertext *self;
+boolean mentertext__InitializeObject(struct classheader *classID, struct mentertext *self)
 {
     if((self->buf = malloc(INITIALSIZE)) == NULL)return FALSE;
     self->buflen = 0;
@@ -62,8 +61,7 @@ struct mentertext *self;
     self->bufp[0] = "";
     return TRUE;
 }
-static checkstyles(self)
-struct mentertext *self;
+static checkstyles(struct mentertext *self)
 {
 
     if ((self->Style = stylesheet_Find(self->header.text.styleSheet, "italic")) == NULL){
@@ -73,9 +71,7 @@ struct mentertext *self;
 	style_AddNewFontFace(self->Style, fontdesc_Bold);
     }
 }
-int mentertext_GetBufP(self,buf)
-struct mentertext *self;
-char *buf;
+int mentertext_GetBufP(struct mentertext *self, char *buf)
 {
     long i,fin,elen,count;
     struct environment *newenv;
@@ -108,15 +104,12 @@ char *buf;
     if(!foundlast) self->bufp[count++] = "";
     return count;
 }
-boolean mentertext__FinalizeObject(classID,self)
-struct classheader *classID;
-struct mentertext *self;
+boolean mentertext__FinalizeObject(struct classheader *classID, struct mentertext *self)
 {
     free(self->buf);
     return TRUE;
 }
-void mentertext__updatebuf(self)
-struct mentertext *self;
+void mentertext__updatebuf(struct mentertext *self)
 {
     long len = mentertext_GetLength(self) + 1;
     if(self->realbuflen < len){
@@ -131,15 +124,11 @@ struct mentertext *self;
 	mentertext_NotifyObservers(self,mentertext_BUFCHANGEDFLAG);
     }
 }
-boolean mentertext__Changed(self)
-struct mentertext *self;
+boolean mentertext__Changed(struct mentertext *self)
 {
     return (boolean)(self->mod != mentertext_GetModified(self));
 }
-void mentertext__SetChars(self,str,len)
-struct mentertext *self;
-char *str;
-int len;
+void mentertext__SetChars(struct mentertext *self, char *str, int len)
 {
     self->src = str;
     self->bufpcount = 0;
@@ -175,11 +164,7 @@ int len;
     mentertext_NotifyObservers(self,0);
 }
 
-boolean mentertext__InsertCharacters(self, pos, str, len)
-struct mentertext *self;
-long pos;
-char *str;
-long len;  
+boolean mentertext__InsertCharacters(struct mentertext *self, long pos, char *str, long len)
 {
     if(Enclosed(self,pos)){
 /*
@@ -202,9 +187,7 @@ long len;  {
     if(!super_DeleteCharacters(self, pos, len)) return FALSE;
     return TRUE;
 }
-void mentertext__ClearLine(self,pos)
-struct mentertext *self;
-long pos;
+void mentertext__ClearLine(struct mentertext *self, long pos)
 {
     long i,lasti;
     long len = mentertext_GetLength(self);
@@ -220,8 +203,7 @@ long pos;
 }
 
 
-char *mentertext__ViewName(self)
-struct mentertext *self;
+char *mentertext__ViewName(struct mentertext *self)
 {
     return ("etextview");
 }

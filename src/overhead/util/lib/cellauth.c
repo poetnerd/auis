@@ -52,13 +52,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <afs/auth.h>
 #include <netinet/in.h>
 #include <afs/cellconfig.h>
+#include <stdlib.h>
 #endif /* AFS_ENV */
 
-extern int errno;
 
 #ifndef _IBMR2
-extern char *malloc();
-extern char *realloc();
 #endif /* IBMR2 */
 
 #define INITIALAUTHS	5
@@ -87,8 +85,7 @@ void EraseCellMemory()
 #endif /* AFS_ENV */
 }
 
-static void ClearSome(lowBd, upBd)
-int lowBd, upBd;
+static void ClearSome(int lowBd, int upBd)
 {/* Clears myAuth[ix] for ix in [lowBd, upBd). */
     int Ix;
     for (Ix = lowBd; Ix < upBd; ++Ix) {
@@ -121,8 +118,7 @@ static int GrowBasics()
 }
 
 #ifdef AFS_ENV
-static int AnyNumber(someName, someKVNo, theNum)
-char *someName; int someKVNo, *theNum;
+static int AnyNumber(char *someName, int someKVNo, int *theNum)
 {
     char *cp;
 
@@ -298,8 +294,7 @@ int ca_UpdateCellAuths()
     return 0;
 }
 
-static int AddALocal(LocalName)
-char *LocalName;
+static int AddALocal(char *LocalName)
 {/* Add the given name as a bit of local identity.  Return -1 on malloc failure or the myAuth index of the added structure. */
 
     if (localIx >= 0) return localIx;
@@ -329,9 +324,7 @@ char *LocalName;
     return localIx;
 }
 
-int FindCell(cellName, ppCellAuth)
-char *cellName;
-struct CellAuth **ppCellAuth;
+int FindCell(char *cellName, struct CellAuth **ppCellAuth)
 {/* Return a pointer to our authentication for cell cellName, via ppCellAuth.
     Return 0 if it was found, or an error code (>0 for permanent, <0 for temporary).
 	  Return 1 if we don't have any authentication in that cell, or if there's no such cell.
@@ -379,8 +372,7 @@ struct CellAuth **ppCellAuth;
     return 1;
 }
 
-int FindAnyCell(ppCellAuth)
-struct CellAuth **ppCellAuth;
+int FindAnyCell(struct CellAuth **ppCellAuth)
 {/* Like FindCell, except that it returns a pointer to any authenticated cell, if there is one. */
 
 	CheckServiceConfiguration();
@@ -403,8 +395,7 @@ struct CellAuth **ppCellAuth;
 	}
 }
 
-int FindNextCell(ppCellAuth)
-struct CellAuth **ppCellAuth;
+int FindNextCell(struct CellAuth **ppCellAuth)
 {/* Like FindCell, except that it returns a pointer to the next authenticated cell, if there is one.  Start it by setting what's pointed to by ppCellAuth to NULL. */
 	CheckServiceConfiguration();
 #ifdef AFS_ENV

@@ -47,14 +47,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 #include <bind.ih>
 #include <observe.ih>
 
+#include <stdio.h>
 #define DATA(self) ((struct prefs *)prefsv_GetDataObject(self))
 
 static struct menulist *prefsvMenus=NULL;
 static struct keymap *prefsvKeymap=NULL;
 
-static void sort(pv, rock)
-struct prefsv *pv;
-char *rock;
+static void sort(struct prefsv *pv, char *rock)
 {
     char buf[256];
     if((long)rock<=255) return;
@@ -145,8 +144,7 @@ static struct bind_Description prefsvBindings[]={
 };
     
     
-boolean prefsv__InitializeClass(classID)
-struct classheader *classID;
+boolean prefsv__InitializeClass(struct classheader *classID)
 {
     prefsvMenus=menulist_New();
     prefsvKeymap=keymap_New();
@@ -161,9 +159,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean prefsv__InitializeObject(classID, self)
-struct classheader *classID;
-struct prefsv *self;
+boolean prefsv__InitializeObject(struct classheader *classID, struct prefsv *self)
 {
     self->ks=keystate_Create(self, prefsvKeymap);
     if(self->ks==NULL) return FALSE;
@@ -177,18 +173,14 @@ struct prefsv *self;
     return TRUE;
 }
 
-void prefsv__FinalizeObject(classID, self)
-struct classheader *classID;
-struct prefsv *self;
+void prefsv__FinalizeObject(struct classheader *classID, struct prefsv *self)
 {
     if(self->ks) keystate_Destroy(self->ks);
     if(self->menulist) menulist_Destroy(self->menulist);
 }
 
 
-void prefsv__PostMenus(self, ml)
-struct prefsv *self;
-struct menulist *ml;
+void prefsv__PostMenus(struct prefsv *self, struct menulist *ml)
 {
     if(self->menulist) {
 	if(ml) menulist_ChainAfterML(self->menulist, ml, ml);
@@ -196,9 +188,7 @@ struct menulist *ml;
     } else super_PostMenus(self, ml);
 }
 
-void prefsv__PostKeyState(self, ks)
-struct prefsv *self;
-struct keystate *ks;
+void prefsv__PostKeyState(struct prefsv *self, struct keystate *ks)
 {
     struct keystate *lks=self->ks;
     if(lks) {

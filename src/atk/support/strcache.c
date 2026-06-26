@@ -92,6 +92,7 @@ char *strcache__SaveStr(struct classheader *classID, char *str)
 }
 
 #include <glist.ih>
+#include <stdio.h>
 struct enumerate {
     boolean found;
     procedure proc;

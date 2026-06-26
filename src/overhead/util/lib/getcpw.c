@@ -47,8 +47,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <svcconf.h>
 
 
-extern int errno;
 
+#include <stdlib.h>
 #ifdef WHITEPAGES_ENV
 int cpw_error;
 #endif /* WHITEPAGES_ENV */
@@ -60,8 +60,7 @@ static int idxID = -1, idxPW, idxNI, idxGI, idxN, idxHD, idxSh;
 
 static char StgBuf[BUFSIZ+1];
 static char *StgPtr;
-static char *AddStg(loc)
-char *loc;
+static char *AddStg(char *loc)
 {/* Store a value in StgBuf and return a pointer to it */
     char *OldStg;
     int LocLen;
@@ -74,8 +73,7 @@ char *loc;
     return OldStg;
 }
 
-static struct passwd *getcpwkey(PKey, cd)
-wp_PrimeKey PKey; struct wp_cd *cd;
+static struct passwd *getcpwkey(wp_PrimeKey PKey, struct wp_cd *cd)
 {/* Return a struct passwd for PKey, a White Pages prime key, or NULL with errno set */
     static struct passwd RetP;
     wp_ErrorCode Res;
@@ -137,8 +135,7 @@ wp_PrimeKey PKey; struct wp_cd *cd;
     return &RetP;
 }
 
-static wp_ErrorCode open_wp(vcell, cdp)
-char *vcell; struct wp_cd **cdp;
+static wp_ErrorCode open_wp(char *vcell, struct wp_cd **cdp)
 {/* Do the hassle of opening a WP cell. */
     wp_ErrorCode Res;
     struct wp_cd *cd;
@@ -152,8 +149,7 @@ char *vcell; struct wp_cd **cdp;
     return wperr_NoError;
 }
 
-struct passwd *getcpwuid(vuid, vcell)
-int vuid; char *vcell;
+struct passwd *getcpwuid(int vuid, char *vcell)
 {/* Return a struct passwd for vuid, a Vice UID, in Vice cell vcell. */
     wp_ErrorCode Res;
     wp_PrimeKey KVal;
@@ -180,8 +176,7 @@ int vuid; char *vcell;
     }
 }
 
-struct passwd *getcpwnam(vnam, vcell)
-char *vnam, *vcell;
+struct passwd *getcpwnam(char *vnam, char *vcell)
 {/* Return a struct passwd for vuid, a Vice pw_nam, in Vice cell vcell. */
     wp_ErrorCode Res;
     wp_PrimeKey KVal;
@@ -210,9 +205,7 @@ char *vnam, *vcell;
 #endif /* WHITEPAGES_ENV */
 
 #ifdef TESTINGONLYTESTING
-main (argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     struct passwd *P;
 

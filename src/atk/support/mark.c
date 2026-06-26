@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <class.h>
 #include <mark.eh>
 
+#include <stdlib.h>
 /* Crank out marks in 4k blocks. */
 #define DESIREDBLOCKSIZE 4096
 /* Number of marks per block */

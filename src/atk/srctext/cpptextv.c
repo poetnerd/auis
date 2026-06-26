@@ -57,8 +57,7 @@ static struct bind_Description cpptextBindings[]={
     NULL
 };
 
-boolean cpptextview__InitializeClass(classID)
-struct classheader *classID;
+boolean cpptextview__InitializeClass(struct classheader *classID)
 {
     cpp_Menus = menulist_New();
     cpp_Map = keymap_New();
@@ -67,9 +66,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean cpptextview__InitializeObject(classID, self)
-struct classheader *classID;
-struct cpptextview *self;
+boolean cpptextview__InitializeObject(struct classheader *classID, struct cpptextview *self)
 {
     self->cpp_state = keystate_Create(self, cpp_Map);
     self->cpp_menus = menulist_DuplicateML(cpp_Menus, self);
@@ -77,33 +74,26 @@ struct cpptextview *self;
     return TRUE;
 }
 
-void cpptextview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct cpptextview *self;
+void cpptextview__FinalizeObject(struct classheader *classID, struct cpptextview *self)
 {
     keystate_Destroy(self->cpp_state);
     menulist_Destroy(self->cpp_menus);
 }
 
-void cpptextview__PostMenus(self, menulist) 
-struct cpptextview *self;
-struct menulist *menulist;
+void cpptextview__PostMenus(struct cpptextview *self, struct menulist *menulist)
 {
     menulist_ChainBeforeML(self->cpp_menus, menulist, self);
     super_PostMenus(self, self->cpp_menus);
 }
 
-struct keystate *cpptextview__PrependKeyState(self)
-struct cpptextview *self;
+struct keystate *cpptextview__PrependKeyState(struct cpptextview *self)
 {
     self->cpp_state->next= NULL;
     return keystate_AddBefore(self->cpp_state, super_PrependKeyState(self));
 }
 
 /* slash will END an existing comment style if preceded by an asterisk, or start a line comment style if preceded by another slash */ /*RSK92mod*/
-static void slash(self, key)
-struct cpptextview *self;
-char key;
+static void slash(struct cpptextview *self, char key)
 {
     struct cpptext *ct=(struct cpptext *)self->header.view.dataobject;
     int count=im_Argument(cpptextview_GetIM(self));

@@ -60,8 +60,7 @@ static struct bind_Description asmtextBindings[]={
     NULL
 };
 
-boolean asmtextview__InitializeClass(classID)
-struct classheader *classID;
+boolean asmtextview__InitializeClass(struct classheader *classID)
 {
     asm_Menus = menulist_New();
     asm_Map = keymap_New();
@@ -69,9 +68,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean asmtextview__InitializeObject(classID, self)
-struct classheader *classID;
-struct asmtextview *self;
+boolean asmtextview__InitializeObject(struct classheader *classID, struct asmtextview *self)
 {
     self->asm_state = keystate_Create(self, asm_Map);
     self->asm_menus = menulist_DuplicateML(asm_Menus, self);
@@ -79,24 +76,19 @@ struct asmtextview *self;
     return TRUE;
 }
 
-void asmtextview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct asmtextview *self;
+void asmtextview__FinalizeObject(struct classheader *classID, struct asmtextview *self)
 {
     keystate_Destroy(self->asm_state);
     menulist_Destroy(self->asm_menus);
 }
 
-void asmtextview__PostMenus(self, menulist)
-struct asmtextview *self;
-struct menulist *menulist;
+void asmtextview__PostMenus(struct asmtextview *self, struct menulist *menulist)
 {
     menulist_ChainBeforeML(self->asm_menus, menulist, self);
     super_PostMenus(self, self->asm_menus);
 }
 
-struct keystate *asmtextview__PrependKeyState(self)
-struct asmtextview *self;
+struct keystate *asmtextview__PrependKeyState(struct asmtextview *self)
 {
     self->asm_state->next= NULL;
     return keystate_AddBefore(self->asm_state, super_PrependKeyState(self));
@@ -105,9 +97,7 @@ struct asmtextview *self;
 /* override */
 /* hook all those bang-comment characters that were captured from .ezinit to proctable entries */
 /* NOTE! asm_Map, the keymap, is shared by ALL asmtextview objects.  Since THIS asmtext object might not want bang-comment characters that some OTHER asmtext put in the keymap, we must double-check this in bangcomment() */
-void asmtextview__SetDataObject( self, dataobj )
-struct asmtextview *self;
-struct asmtext *dataobj;
+void asmtextview__SetDataObject(struct asmtextview *self, struct asmtext *dataobj)
 {
     char *bang= dataobj->bangComments;
     super_SetDataObject(self,dataobj);
@@ -126,9 +116,7 @@ struct asmtext *dataobj;
 
 /* override */
 /* only check if c-comments are on */
-void asmtextview__StartComment(self,key)
-struct asmtextview *self;
-char key; /* must be char for "&" to work. */
+void asmtextview__StartComment(struct asmtextview *self, char key)
 {
     struct asmtext *ct=(struct asmtext *)self->header.view.dataobject;
     if (asmtext_UseCComments(ct))
@@ -139,9 +127,7 @@ char key; /* must be char for "&" to work. */
 
 /* override */
 /* only check if c-comments are on */
-void asmtextview__EndComment(self,key)
-struct asmtextview *self;
-char key; /* must be char for "&" to work. */
+void asmtextview__EndComment(struct asmtextview *self, char key)
 {
     struct asmtext *ct=(struct asmtext *)self->header.view.dataobject;
     if (asmtext_UseCComments(ct))
@@ -151,9 +137,7 @@ char key; /* must be char for "&" to work. */
 }
 
 /* override */
-void asmtextview__StartLineComment(self,key)
-struct asmtextview *self;
-char key; /* must be char for "&" to work. */
+void asmtextview__StartLineComment(struct asmtextview *self, char key)
 {
     struct asmtext *ct=(struct asmtext *)self->header.view.dataobject;
     /* hold it! make sure THIS asmtext object is the one that mapped this key to be a bang-comment! */ /*RSK91add*/
@@ -164,8 +148,7 @@ char key; /* must be char for "&" to work. */
 }
 
 /* override */
-void asmtextview__Reindent(self)
-struct asmtextview *self;
+void asmtextview__Reindent(struct asmtextview *self)
 {
     struct asmtext *ct= (struct asmtext *)self->header.view.dataobject;
     long pos= asmtextview_GetDotPosition(self), len= asmtextview_GetDotLength(self);

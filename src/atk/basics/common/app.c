@@ -41,6 +41,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <profile.ih>
 #include <app.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 static void errorProc(pointer rock, char * str)
 {
     fprintf(stderr, "%s", str);

@@ -33,6 +33,8 @@
 #include <global.h>
 #include <gentlex.h>
 
+#include <string.h>
+#include <stdlib.h>
 static char InputBuffer[200];	/* usually contains the next line of input */
 static char *InputText;		/* pts to first non-whitespace in InputBuffer*/
 

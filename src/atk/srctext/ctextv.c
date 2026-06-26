@@ -65,8 +65,7 @@ static struct bind_Description ctextBindings[]={
     NULL
 };
 
-boolean ctextview__InitializeClass(classID)
-struct classheader *classID;
+boolean ctextview__InitializeClass(struct classheader *classID)
 {
     c_Menus = menulist_New();
     c_Map = keymap_New();
@@ -74,9 +73,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean ctextview__InitializeObject(classID, self)
-struct classheader *classID;
-struct ctextview *self;
+boolean ctextview__InitializeObject(struct classheader *classID, struct ctextview *self)
 {
     self->c_state = keystate_Create(self, c_Map);
     self->c_menus = menulist_DuplicateML(c_Menus, self);
@@ -84,24 +81,19 @@ struct ctextview *self;
     return TRUE;
 }
 
-void ctextview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct ctextview *self;
+void ctextview__FinalizeObject(struct classheader *classID, struct ctextview *self)
 {
     keystate_Destroy(self->c_state);
     menulist_Destroy(self->c_menus);
 }
 
-void ctextview__PostMenus(self, menulist)
-struct ctextview *self;
-struct menulist *menulist;
+void ctextview__PostMenus(struct ctextview *self, struct menulist *menulist)
 {
     menulist_ChainBeforeML(self->c_menus, menulist, self);
     super_PostMenus(self, self->c_menus);
 }
 
-struct keystate *ctextview__PrependKeyState(self)
-struct ctextview *self;
+struct keystate *ctextview__PrependKeyState(struct ctextview *self)
 {
     self->c_state->next= NULL;
     return keystate_AddBefore(self->c_state, super_PrependKeyState(self));
@@ -109,9 +101,7 @@ struct ctextview *self;
 
 /* override */
 /* Paren is overridden so that an end-brace will reindent the line */
-void ctextview__Paren(self, key)
-struct ctextview *self;
-char key; /* must be char for "&" to work. */
+void ctextview__Paren(struct ctextview *self, char key)
 {
     struct ctext *ct = (struct ctext *)self->header.view.dataobject;
     long pos=ctextview_GetDotPosition(self);
@@ -125,9 +115,7 @@ char key; /* must be char for "&" to work. */
 
 /* override */
 /* HandleEndOfLineStyle will terminate both linecomment AND preprocessor styles when a newline is added (if not \quoted) */
-void ctextview__HandleEndOfLineStyle(self, pos)
-struct ctextview *self;
-long pos;
+void ctextview__HandleEndOfLineStyle(struct ctextview *self, long pos)
 {
     struct ctext *ct=(struct ctext *)self->header.view.dataobject;
 
@@ -138,9 +126,7 @@ long pos;
     }
 }
 
-static void startPreproc(self, key)
-struct ctextview *self;
-char key;
+static void startPreproc(struct ctextview *self, char key)
 {
     struct ctext *ct=(struct ctext *)self->header.view.dataobject;
     long pos, oldpos;
