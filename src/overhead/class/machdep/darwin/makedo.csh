@@ -63,15 +63,15 @@ if (! $?filelist) then
     exit 1
 endif
 
-# Create shared object
-set sofile=${outfile:r}.so
+# Create shared object as .do (the AUIS convention; dlopen doesn't care about extension)
+set dofile=${outfile:r}.do
 # macOS uses -dynamiclib; -undefined dynamic_lookup allows unresolved
 # symbols to be resolved at load time (needed because insets reference
-# the class runtime which isn't linked into the .so)
-cc -dynamiclib -undefined dynamic_lookup -o $sofile $filelist
+# the class runtime which isn't linked into the .do)
+cc -dynamiclib -undefined dynamic_lookup -o $dofile $filelist
 set retcode=$status
 if (! $retcode) then
-    ${bindir}/doindex ${outfile:r}.do
+    ${bindir}/doindex $dofile
     set retcode=$status
 endif
 exit($retcode)

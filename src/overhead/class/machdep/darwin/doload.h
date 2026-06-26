@@ -12,7 +12,7 @@
 
 extern int doload_trace;
 
-#define doload_extension ".so"
+#define doload_extension ".do"
 
 extern void *(*doload())();
 
