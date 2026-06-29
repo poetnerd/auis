@@ -36,13 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exam
 #include "graphic.ih"
 #include "hellov.eh"
 
-void helloworldview__FullUpdate(hwv, type, left, top, width, height)
-    struct helloworldview *hwv;
-    enum view_UpdateType type;
-    long left;
-    long top;
-    long width;
-    long height;
+void helloworldview__FullUpdate(struct helloworldview *hwv, enum view_UpdateType type, long left, long top, long width, long height)
 {
     int x,y;
     struct rectangle VisualRect;		

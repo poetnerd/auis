@@ -33,12 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <errnode.h>
 
-void            eliErr_Set(st, e, code, node, loc, unixerr)
-EliState_t     *st;
-eliErrStuff_t  *e;
-int             code;
-EliSexp_t      *node;
-char           *loc;
+void            eliErr_Set(EliState_t *st, eliErrStuff_t *e, int code, EliSexp_t *node, char *loc, int unixerr)
 {
     EliSexp_t      *tmp = e->badnode;
 
@@ -52,44 +47,37 @@ char           *loc;
 	eliSexp_DecrRefcount(st, tmp);
 }
 
-int eliErr_GetUnixErr(e)
-eliErrStuff_t *e;
+int eliErr_GetUnixErr(eliErrStuff_t *e)
 {
     return (e->unixerr);
 }
 
-int             eliErr_GetCode(e)
-eliErrStuff_t  *e;
+int             eliErr_GetCode(eliErrStuff_t *e)
 {
     return (e->errnum);
 }
 
-EliSexp_t      *eliErr_GetNode(e)
-eliErrStuff_t  *e;
+EliSexp_t      *eliErr_GetNode(eliErrStuff_t *e)
 {
     return (e->badnode);
 }
 
-EliCons_t *eliErr_GetBacktrace(e)
-eliErrStuff_t *e;
+EliCons_t *eliErr_GetBacktrace(eliErrStuff_t *e)
 {
     return (e->backtrace);
 }
 
-char           *eliErr_GetLoc(e)
-eliErrStuff_t  *e;
+char           *eliErr_GetLoc(eliErrStuff_t *e)
 {
     return (e->errloc);
 }
 
-int             eliErr_SexpP(e)
-eliErrStuff_t  *e;
+int             eliErr_SexpP(eliErrStuff_t *e)
 {
     return ((e->badnode) != NULL);
 }
 
-void            eliErr_Init(e)
-eliErrStuff_t  *e;
+void            eliErr_Init(eliErrStuff_t *e)
 {
     e->badnode = NULL;
     e->backtrace = NULL;

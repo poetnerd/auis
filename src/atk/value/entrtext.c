@@ -40,10 +40,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <style.ih>
 #include <envrment.ih>
 #include <fontdesc.ih>
+#include <stdlib.h>
 #define INITIALSIZE 64
-boolean entertext__InitializeObject(classID,self)
-struct classheader *classID;
-struct entertext *self;
+boolean entertext__InitializeObject(struct classheader *classID, struct entertext *self)
 {
     if((self->buf = (char *)malloc(INITIALSIZE)) == NULL)return FALSE;
     self->buflen = 0;
@@ -54,15 +53,12 @@ struct entertext *self;
     self->Style = NULL;
     return TRUE;
 }
-boolean entertext__FinalizeObject(classID,self)
-struct classheader *classID;
-struct entertext *self;
+boolean entertext__FinalizeObject(struct classheader *classID, struct entertext *self)
 {
     free(self->buf);
     return TRUE;
 }
-void entertext__updatebuf(self)
-struct entertext *self;
+void entertext__updatebuf(struct entertext *self)
 {
     long len = entertext_GetLength(self) + 1;
     self->needswrap = FALSE;
@@ -80,23 +76,18 @@ struct entertext *self;
 	entertext_SetGlobalStyle(self, NULL);
     self->needswrap = TRUE;
 }
-boolean entertext__Changed(self)
-struct entertext *self;
+boolean entertext__Changed(struct entertext *self)
 {
     return (boolean)(self->mod != entertext_GetModified(self));
 }
-void entertext__SetChars(self,str,len)
-struct entertext *self;
-char *str;
-int len;
+void entertext__SetChars(struct entertext *self, char *str, int len)
 {
     self->needswrap = FALSE;
     entertext_Clear(self);
     if(len && str && *str) entertext_InsertCharacters(self,0,str,len);
     self->needswrap = TRUE;
 }
-static checkstyles(self)
-struct entertext *self;
+static checkstyles(struct entertext *self)
 {
     
     if(self->needswrap && entertext_GetGlobalStyle(self) == NULL){
@@ -109,11 +100,7 @@ struct entertext *self;
 	entertext_SetGlobalStyle(self, self->Style);
     }
 }
-boolean entertext__InsertCharacters(self, pos, str, len)
-struct entertext *self;
-long pos;
-char *str;
-long len;  
+boolean entertext__InsertCharacters(struct entertext *self, long pos, char *str, long len)
 {
     if(!super_InsertCharacters(self, pos, str, len)) return FALSE;
     checkstyles(self);
@@ -129,8 +116,7 @@ long len;  {
     return TRUE;
 }
 
-char *entertext__ViewName(self)
-struct entertext *self;
+char *entertext__ViewName(struct entertext *self)
 {
     return ("etextview");
 }

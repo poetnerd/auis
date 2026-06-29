@@ -56,8 +56,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <afs/venus.h>
 #endif /* AFS_ENV */
 
-int VenusFlush(pname)
-char *pname;
+int VenusFlush(char *pname)
 {
 #ifdef AFS_ENV
     if (ViceIsRunning()) {
@@ -70,8 +69,7 @@ char *pname;
 	return 0;
 }
 
-int VenusFlushCallback(pname)
-char *pname;
+int VenusFlushCallback(char *pname)
 {
 #ifdef AFS_ENV
     if (ViceIsRunning()) {
@@ -84,8 +82,7 @@ char *pname;
 	return 0;
 }
 
-int VenusFetch(pname)
-char *pname;
+int VenusFetch(char *pname)
 {
 #ifdef AFS_ENV
     if (ViceIsRunning()) {
@@ -98,8 +95,7 @@ char *pname;
 	return 0;
 }
 
-int VenusCancelStore(fid)
-int fid;
+int VenusCancelStore(int fid)
 {
 #ifdef AFS_ENV
     if (ViceIsRunning()) {

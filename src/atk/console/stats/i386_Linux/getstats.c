@@ -126,8 +126,7 @@ FILE *df_pipe;		/* pipe filesystem info is read from */
  * oh well.
  */
 
-GetDiskStats(Init)
-int Init;
+int GetDiskStats(int Init)
 {
 int id;	    /* each filesystem has a number in the datastream */
 int i;	    /* % of filesystem that is used */
@@ -159,8 +158,7 @@ char name[1000];    /* name of filesystem mount point */
     (void) pclose(df_pipe);	/* close this to recover resources */
 }
 
-GetGVMStats(UsersID)
-int UsersID;
+int GetGVMStats(int UsersID)
 {
   float a1, a5, a15;
   char loadav_str[250];

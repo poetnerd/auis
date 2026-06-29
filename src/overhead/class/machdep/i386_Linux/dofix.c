@@ -21,6 +21,7 @@ static char *dofix_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/o
 
 #include <../common/safe.h>
 
+#include <stdlib.h>
 /* set entry point */
 
 /*
@@ -30,9 +31,7 @@ static char *dofix_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/o
  * the text segment size to the offset within the data segment.
  */
 
-FixEntryPoint(e, EntryPointName)
-register struct doload_environment *e;
-char *EntryPointName;
+int FixEntryPoint(register struct doload_environment *e, char *EntryPointName)
 {
     register struct nlist *sp;
     register struct nlist *sbound;
@@ -74,9 +73,7 @@ extern struct globaltab {
 } globals[];
 extern long globalcount;
 
-FixRelocation(e, rp)
-register struct doload_environment *e;
-register struct relocation_info *rp;
+int FixRelocation(register struct doload_environment *e, register struct relocation_info *rp)
 {
     register int i;
     register int j;
@@ -127,9 +124,7 @@ register struct relocation_info *rp;
 
 /* write new symbol table */
 
-WriteNewSym(e, outFD)
-register struct doload_environment *e;
-int outFD;
+int WriteNewSym(register struct doload_environment *e, int outFD)
 {
     register int i;
     register char *newcp;
@@ -175,10 +170,7 @@ int outFD;
 
 /* read, fix, and write out module */
 
-FixIt(inFD, outFD, EntryPointName)
-int inFD;			/* open fd for .o file */
-int outFD;			/* open fd for .do file */
-char *EntryPointName;		/* entry point name */
+int FixIt(int inFD, int outFD, char *EntryPointName)
 {
     struct doload_environment E;
     register struct doload_environment *e;
@@ -224,9 +216,7 @@ char *EntryPointName;		/* entry point name */
     return ;
 }
 
-static char *ComputeOutputFileName (InputFileName, extension)
-char *InputFileName;
-char *extension;
+static char *ComputeOutputFileName(char *InputFileName, char *extension)
 {
     static char name[256];
     register char  *p, *q;
@@ -255,9 +245,7 @@ char *extension;
 
 /* main program */
 
-main(argc, argp)
-int argc;
-char **argp;
+int main(int argc, char **argp)
 {
     int infd;
     int outfd;

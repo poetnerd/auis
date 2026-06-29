@@ -38,8 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <value.ih>
 #include <slidstrv.eh>
 
-char *sliderstrV__GetValueString(self)
-struct sliderstrV *self;
+char *sliderstrV__GetValueString(struct sliderstrV *self)
 {
     struct value *w = sliderstrV_Value(self);
     long len,val;

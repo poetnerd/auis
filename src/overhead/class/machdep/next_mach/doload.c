@@ -39,6 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <ldsyms.h>
 #include <rld.h>
 #include <streams/streams.h>
+#include <stdlib.h>
 extern long globals;
 long etext=(long)&globals;
 

@@ -58,8 +58,7 @@ static char CharClass[0200] = {
 	Ctxt, Ctxt, Ctxt, Ctxt, Ctxt, Ctxt, Ctxt, Ctxt,	/* 0150 - 0157 */
 	Ctxt, Ctxt, Ctxt, Ctxt, Ctxt, Ctxt, Ctxt, Ctxt,	/* 0160 - 0167 */
 	Ctxt, Ctxt, Ctxt, Ctxt, Ctxt, Ctxt, Ctxt, Ctxt };	/* 0170 - 0177 */
-void CanonicalizePersonName(LocalPart)
-char *LocalPart;
+void CanonicalizePersonName(char *LocalPart)
 {/* Overwrites the storage in LocalPart with a canonicalized version--normalizing dots and spaces. */
 /* Turns dots to spaces unless they look like an abbreviation. */
     char *SPtr, *DPtr, Chr;

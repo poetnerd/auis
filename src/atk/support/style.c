@@ -34,12 +34,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
  
 
-#include <andrewos.h>#include <class.h>
+#include <class.h>
 #include <style.eh>
 
 #include <namespc.ih>
 #include <fontdesc.ih>
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #define iswhite(c) ((c) == ' ' || (c) == '\t' || (c) == '\n')
 
 /*

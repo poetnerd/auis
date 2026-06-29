@@ -85,6 +85,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #ifdef M_UNIX
 #ifndef sun
 #include <sys/eio.h>
+#include <stdlib.h>
+#include <stdio.h>
 #endif
 int ErrorDeviceHandler();
 #endif
@@ -103,9 +105,7 @@ u_long ThisHostAddr;
 
 #define MAXERRORRESTARTS 2
 
-RestartErrorMonitoring(self, msg)
-    struct consoleClass *self;
-    char *msg;
+int RestartErrorMonitoring(struct consoleClass *self, char *msg)
 {
     char ErrTxt[256];
     static int ErrorRestarts = 0;
@@ -125,8 +125,7 @@ RestartErrorMonitoring(self, msg)
     }
 }
 
-static int IsRemoteDisplay(s)
-    char *s;
+static int IsRemoteDisplay(char *s)
 {
     char buf[256], *c;
 
@@ -148,9 +147,7 @@ static int IsRemoteDisplay(s)
     return 1;
 }
 
-InitErrorMonitoring(self,FirstTime)
-    struct consoleClass *self;
-    boolean FirstTime;
+int InitErrorMonitoring(struct consoleClass *self, boolean FirstTime)
 {
     int tempfd;
     int PtyNumber = 0;
@@ -300,8 +297,7 @@ skipit:
 #endif /* M_UNIX || __hpux */
 }
 
-maptolower(str)
-char str[];
+int maptolower(char str[])
 {
     int i;
     for (i = 0; i < strlen(str); i++){
@@ -315,8 +311,7 @@ char str[];
 extern struct hostent *gethostbyname();
 extern int make_socket();
 
-OpenConsoleSocket(self)
-    struct consoleClass *self;
+int OpenConsoleSocket(struct consoleClass *self)
 {
     struct hostent *hent;
     int flags;
@@ -382,17 +377,14 @@ OpenConsoleSocket(self)
     return(0);
 }
 
-ReportInternalError(self, string)
-    struct consoleClass *self;
-    char *string;
+int ReportInternalError(struct consoleClass *self, char *string)
 {
     mydbg(("entering: ReportInternalError\n"));
     AnotherError(self,string, TRUE);
 }
 
 #if defined(M_UNIX) || defined(__hpux)
-ConsolePipe(self)
-    struct consoleClass *self;
+int ConsolePipe(struct consoleClass *self)
 {
     int i; 
     int flags;

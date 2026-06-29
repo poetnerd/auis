@@ -61,6 +61,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
 #include <profile.eh>
 
+#include <stdlib.h>
 #define SCALE_1_TO_1 0x10000L
 
 static char *profBuf=NULL;
@@ -91,7 +92,7 @@ static int allocProfBuf(size)
 #endif /* SYSV */
 }
 
-int profile__StartClass(struct classheader * classId, int classname, char *classname,* filename)
+int profile__StartClass(struct classheader *classId, char *classname, char *filename)
 {
 #ifndef SYSV
     struct classinfo *info=class_Load(classname);
@@ -107,7 +108,7 @@ int profile__StartClass(struct classheader * classId, int classname, char *class
 #endif /* SYSV */
 }
 
-int profile__Start(struct classheader * classId, char * textbase, long textlength, char * filename)
+int profile__Start(struct classheader *classId, char *textbase, long textlength, char *filename)
 {
 #ifndef SYSV
     if(textbase == NULL){
@@ -140,12 +141,12 @@ int profile__Start(struct classheader * classId, char * textbase, long textlengt
 #endif /* SYSV */
 }
 
-int profile__Active(struct classheader * classId)
+int profile__Active(struct classheader *classId)
 {
     return (profBuf!=NULL);
 }
 
-int profile__Stop(struct classheader * classId)
+int profile__Stop(struct classheader *classId)
 {
 #ifndef SYSV
     if(profBuf!=NULL){

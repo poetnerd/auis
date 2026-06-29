@@ -36,6 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "class.h"
 #include "testobj2.eh"
 
+#include <stdio.h>
 boolean testobject2__InitializeClass()
 {
     printf("Testobj2 InitializeClass entered.\n");
@@ -48,9 +49,7 @@ boolean testobject2__InitializeObject()
     return TRUE;
 }
 
-void testobject2__Diddle(X, n)
-struct testobject2 *X;
-int n;
+void testobject2__Diddle(struct testobject2 *X, int n)
 {
     printf("Testobj2 Diddle entered, n=%d\n", n);
 }

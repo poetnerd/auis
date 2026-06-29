@@ -47,6 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <rm.ih>
 #include <view.ih>
 #include <ctype.h>
+#include <stdio.h>
 static struct atomlist *  AL_bodyfont;
 static struct atomlist *  AL_bodyfont_size;
 static struct atomlist *  AL_label;
@@ -83,8 +84,7 @@ static struct atom *  A_string;
 /*		private functions				*/
 /****************************************************************/
 
-static void CarveFonts(self)
-struct thumbV * self;
+static void CarveFonts(struct thumbV *self)
 {
     self->normalfont = fontdesc_Create( self->fontname, fontdesc_Plain, self->fontsize );
     self->boldfont   = fontdesc_Create( self->fontname, fontdesc_Bold,  self->fontsize );
@@ -92,8 +92,7 @@ struct thumbV * self;
     self->activefont = self->header.valueview.mouseIsOnTarget ? self->boldfont : self->normalfont;
 }  
 #define MAXWID 36
-static void getsizes(self)
-struct thumbV * self;
+static void getsizes(struct thumbV *self)
 {
     struct FontSummary *fs;
     long labelwidth, labelheight, valheight,junk,wp,ww;
@@ -126,8 +125,7 @@ struct thumbV * self;
 }
 
 
-static void DrawLabel(self)
-struct thumbV * self;
+static void DrawLabel(struct thumbV *self)
 {
     if(self->label){	
 	thumbV_SetTransferMode( self, graphic_COPY);
@@ -141,14 +139,12 @@ struct thumbV * self;
     }
 
 }
-char *thumbV__GetValueString(self)
-struct thumbV * self;
+char *thumbV__GetValueString(struct thumbV *self)
 {
     sprintf(self->buf,"%ld",thumbV_GetTmpVal(self));
     return self->buf;
 }
-static void DrawValue(self)
-struct thumbV * self;
+static void DrawValue(struct thumbV *self)
 {
     char *buf;   
     buf = thumbV_GetValueString(self);
@@ -164,8 +160,7 @@ struct thumbV * self;
 }
 #define HGH 3
 #define SPACE 6
-static DrawKnurl(self)
-struct thumbV * self;
+static DrawKnurl(struct thumbV *self)
 {
 #ifdef USELINES
     long y,x1,x2,end,nl, hn,change,inc,minx,maxx;
@@ -214,8 +209,7 @@ struct thumbV * self;
 
 }
 
-static DrawThumbwheel(self,DoAll)
-struct thumbV * self;
+static DrawThumbwheel(struct thumbV *self, int DoAll)
 {
     thumbV_SetTransferMode( self, graphic_COPY );
 #if 0
@@ -243,8 +237,7 @@ struct thumbV * self;
 
 
 
-boolean thumbV__InitializeClass(classID)
-struct classheader *classID;
+boolean thumbV__InitializeClass(struct classheader *classID)
 {
     InternAtoms;
     return TRUE;
@@ -257,9 +250,7 @@ struct classheader *classID;
 /****************************************************************/
 /*		instance methods				*/
 /****************************************************************/
-boolean thumbV__InitializeObject(classID, self )
-struct classheader *classID;
-struct thumbV * self;
+boolean thumbV__InitializeObject(struct classheader *classID, struct thumbV *self)
 {
     self->label = NULL;
     self->fontname = NULL;
@@ -277,8 +268,7 @@ struct thumbV * self;
 }
 
 
-void thumbV__LookupParameters(self)
-struct thumbV * self;
+void thumbV__LookupParameters(struct thumbV *self)
 {
     char * fontname;
     long fontsize,diff;
@@ -372,9 +362,7 @@ struct thumbV * self;
 }
 
 
-void thumbV__DrawFromScratch(self,x,y,width,height)
-struct thumbV * self;
-long x,y,width,height;
+void thumbV__DrawFromScratch(struct thumbV *self, long x, long y, long width, long height)
 {
     self->x = x;
     self->y = y;
@@ -404,8 +392,7 @@ long x,y,width,height;
 }
 
 
-void thumbV__DrawDehighlight(self)
-struct thumbV * self;
+void thumbV__DrawDehighlight(struct thumbV *self)
 {
     struct value *w = thumbV_Value(self);
     self->activefont = self->normalfont;
@@ -414,8 +401,7 @@ struct thumbV * self;
     DrawValue(self);	
 }
 
-void thumbV__DrawHighlight(self)
-struct thumbV * self;
+void thumbV__DrawHighlight(struct thumbV *self)
 {
     struct value *w = thumbV_Value(self);
     self->activefont = self->boldfont;
@@ -425,8 +411,7 @@ struct thumbV * self;
 }
 
 
-void thumbV__DrawNewValue( self )
-struct thumbV * self;
+void thumbV__DrawNewValue(struct thumbV *self)
 {
     struct value *w = thumbV_Value(self);
     if(self->tmpval != value_GetValue(w)){
@@ -437,10 +422,7 @@ struct thumbV * self;
 
 
 
-struct thumbV * thumbV__DoHit( self,type,x,y,hits )
-struct thumbV * self;
-enum view_MouseAction type;
-long x,y,hits;
+struct thumbV * thumbV__DoHit(struct thumbV *self, enum view_MouseAction type, long x, long y, long hits)
 {
     struct value *tt = thumbV_Value(self);
     long myval;

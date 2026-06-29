@@ -52,8 +52,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 extern FILE *fopen();
 #include "errprntf.h"
 
+#include <stdlib.h>
 #if !POSIX_ENV
-extern int errno;
 #endif
 
 typedef int bool;
@@ -86,8 +86,7 @@ static int StatFile = -1;
 static struct sockaddr_in LogAddress;
 
 /*VARARGS1*/
-static void warning(format, a0, a1, a2, a3, a4)
-    char *format, *a0, *a1, *a2, *a3, *a4;
+static void warning(char *format, char *a0, char *a1, char *a2, char *a3, char *a4)
 {
     errprintf(ProgName, ERR_WARNING, NIL, NIL,
 	      format, a0, a1, a2, a3, a4);
@@ -112,9 +111,7 @@ static bool GetMyName()
     return TRUE;
 }
 
-static Format(to, from, len)
-    register char *to, *from;
-    register int len;	/* Doesn't include '\0' */
+static Format(register char *to, register char *from, register int len)
 {
     register int flen;
 
@@ -265,9 +262,7 @@ static int OpenSocket()
 	!=0	    Error
 */
 
-int InitStats(prog, errflag)
-    char *prog;
-    int errflag;
+int InitStats(char *prog, int errflag)
 {
     if (StatFile != -1) {
 	if (errflag)
@@ -350,10 +345,7 @@ int TermStats()
 
 */
 
-int Logstat(module, call, format, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
-    char *module;
-    int call;
-    char *format;
+int Logstat(char *module, int call, char *format, int a0, int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9)
 {
     int save_errno;
     char ModuleName[LOGSTRLEN+1];
@@ -411,8 +403,7 @@ int Logstat(module, call, format, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
 	nothing
 */
 
-SetTransaction(number)
-    int number;
+int SetTransaction(int number)
 {
     TransactionNumber = number;
 }

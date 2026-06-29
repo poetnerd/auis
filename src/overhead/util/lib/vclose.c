@@ -52,7 +52,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <andyenv.h>
 #include <errno.h>
-extern int errno;
 #include <stdio.h>
 #include <ctype.h>
 #include <andrewos.h>		/* sys/types.h */
@@ -67,7 +66,6 @@ extern int errno;
 #include <afs/errors.h>
 #endif /* AFS_ENV */
 
-extern int errno;
 
 #define ALLSIGS	    0xffffffff
 
@@ -126,8 +124,7 @@ static CkVice()
     HasCheckedVice = 1;
 }
 
-static DoIoctl(fd)
-int fd;
+static DoIoctl(int fd)
 {
     struct ViceIoctl dummy;
 
@@ -150,8 +147,7 @@ int ViceIsRunning() {
 #endif /* AFS_ENV */
 }
 
-int vclose(fd)
-int fd;
+int vclose(int fd)
 {
 #ifdef AFS_ENV
     SIGSET_TYPE newmask, oldmask;
@@ -182,8 +178,7 @@ int fd;
     return rc;
 }
 
-int vfclose(f)
-FILE *f;
+int vfclose(FILE *f)
 {
 #ifdef AFS_ENV
     SIGSET_TYPE oldmask, newmask;
@@ -220,8 +215,7 @@ FILE *f;
     return rc;
 }
 
-int vdown(err)
-int err;
+int vdown(int err)
 {
 /*	ETIMEDOUT:	Venus has timed out the connection to the file server
       ENXIO:	the Venus process handling the kernel device has terminated
@@ -254,8 +248,7 @@ probably it's left over from a previous Venus run
 		);
 }
 
-int IsOnVice(fd)
-int fd;
+int IsOnVice(int fd)
 {
     /* Return TRUE if we believe that the file open on the given file descriptor is in Vice, and FALSE otherwise.
 	*/

@@ -32,6 +32,8 @@ char *owatch_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/b
 #include <observe.ih>
 #include "owatch.eh"
 
+#include <stdlib.h>
+#include <stdio.h>
 static struct owatch_data *freedata=NULL;
 static struct owatch_data *useddata=NULL;
 static struct owatch *owo=NULL;
@@ -54,7 +56,7 @@ long value;  {
     }
 }
 
-struct owatch_data *owatch__Create(struct classheader * classID, struct observable * obj)
+struct owatch_data *owatch__Create(struct classheader *classID, struct observable *obj)
 {
     int i;
     struct owatch_data *o=useddata;
@@ -103,7 +105,7 @@ struct owatch_data *owatch__Create(struct classheader * classID, struct observab
     return o;
 }
 
-void owatch__Delete(struct classheader * classID, struct owatch_data * owd)
+void owatch__Delete(struct classheader *classID, struct owatch_data *owd)
 {
     if(owd==NULL) return;
     if(owd->refs<1) {
@@ -122,7 +124,7 @@ void owatch__Delete(struct classheader * classID, struct owatch_data * owd)
     freedata=owd;
 }
 
-boolean owatch__CheckAndDelete(struct classheader * classID, struct owatch_data * owd)
+boolean owatch__CheckAndDelete(struct classheader *classID, struct owatch_data *owd)
 {
     boolean result;
     if(owd==NULL) return FALSE;

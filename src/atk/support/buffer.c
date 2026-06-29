@@ -462,7 +462,7 @@ void buffer__GetUniqueBufferName(struct classheader *classID, char *proposedBuff
     bufferlist_GuessBufferName(allBuffers, proposedBufferName, bufferName, nameSize);
 }
 
-
+extern char *sys_errlist[];
 
 static int ResolveLink(char *linkname, char *buffer)
 {

@@ -14,6 +14,7 @@
 #include "jinclude.h"
 
 
+#include <string.h>
 GLOBAL long
 jround_up (long a, long b)
 /* Compute a rounded up to next multiple of b; a >= 0, b > 0 */

@@ -208,9 +208,7 @@ TIFFNoTileDecode(tif, pp, cc, s)
 	return (TIFFNoDecode(tif, "tile"));
 }
 
-TIFFSetCompressionScheme(tif, scheme)
-	TIFF *tif;
-	int scheme;
+int TIFFSetCompressionScheme(TIFF *tif, int scheme)
 {
 	struct cscheme const *c = findScheme(scheme);
 

@@ -74,6 +74,8 @@ END-SPECIFICATION  ************************************************************/
 #include  <chartv.ih>
 #include  <chartapp.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 int chartapp_debug = 0;
 
 #define debug chartapp_debug

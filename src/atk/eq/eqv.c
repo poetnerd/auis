@@ -53,6 +53,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/eq/R
 #include <mark.ih>
 #include <im.ih>
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 static int fudge = 5;		/* extra space: for visual balance and for cursor */
 static struct keymap *eqviewKeymap;
 static struct menulist *eqviewMenus, *eqviewCutMenus;
@@ -61,9 +64,7 @@ static struct graphic *pat;
 static int debug_flag = 0;
 #define debug(f) if (debug_flag) { printf f; fflush(stdout); }
 
-boolean eqview__InitializeObject(classID, self)
-struct classheader *classID;
-struct eqview *self;
+boolean eqview__InitializeObject(struct classheader *classID, struct eqview *self)
 {
     debug(("Init here\n"));
 
@@ -82,9 +83,7 @@ struct eqview *self;
     return TRUE;
 }
 
-void eqview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct eqview *self;
+void eqview__FinalizeObject(struct classheader *classID, struct eqview *self)
 {
     if (self->keystate)
 	keystate_Destroy(self->keystate);
@@ -97,9 +96,7 @@ struct eqview *self;
     mark_Destroy(self->dot);
 }
 
-void eqview__SetDataObject(self, dataObject)
-struct eqview *self;
-struct dataobject *dataObject;
+void eqview__SetDataObject(struct eqview *self, struct dataobject *dataObject)
 {
     if (!class_IsTypeByName(class_GetTypeName(dataObject), "eq"))  {
 	fprintf(stderr, "Incompatible dataobject associated with eqview\n");
@@ -111,10 +108,7 @@ struct dataobject *dataObject;
     eqview_SetDotPosition(self, 4);
 }
 
-void eqview__FullUpdate(self, type, left, top, width, height)
-struct eqview *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void eqview__FullUpdate(struct eqview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     debug(("FullUpdate here\n"));
 
@@ -128,8 +122,7 @@ long left, top, width, height;
 }
 
 
-void eqview__Update(self)
-struct eqview *self;
+void eqview__Update(struct eqview *self)
 {
     struct eq *eqptr = Eq(self);
     struct formula *first = eq_Access(eqptr, 0);
@@ -201,9 +194,7 @@ struct eqview *self;
     self->changed = EQVIEW_nothing;
 }
 
-void eqview__SetDotPosition(self, newp)
-struct eqview *self;
-long newp;
+void eqview__SetDotPosition(struct eqview *self, long newp)
 {
     long len = eq_Size(Eq(self));
 
@@ -218,9 +209,7 @@ long newp;
     eqview_WantUpdate(self, self);
 }
 
-void eqview__SetDotLength(self, newl)
-struct eqview *self;
-long newl;
+void eqview__SetDotLength(struct eqview *self, long newl)
 {
     if (newl < 0)
 	newl = 0;
@@ -229,22 +218,17 @@ long newl;
     eqview_WantUpdate(self, self);
 }
 
-long eqview__GetDotPosition(self)
-struct eqview *self;
+long eqview__GetDotPosition(struct eqview *self)
 {
     return mark_GetPos(self->dot);
 }
 
-long eqview__GetDotLength(self)
-struct eqview *self;
+long eqview__GetDotLength(struct eqview *self)
 {
     return mark_GetLength(self->dot);
 }
 
-struct eqview *eqview__Hit(self, action, x, y, clicks)
-struct eqview *self;
-enum view_MouseAction action;
-long x, y, clicks;
+struct eqview *eqview__Hit(struct eqview *self, enum view_MouseAction action, long x, long y, long clicks)
 {
     int i, pos, len;
     struct eq *eqptr = Eq(self);
@@ -275,8 +259,7 @@ long x, y, clicks;
     return self;
 }
 
-void eqview__ReceiveInputFocus(self)
-struct eqview *self;
+void eqview__ReceiveInputFocus(struct eqview *self)
 {
     debug(("ReceiveInputFocus here\n"));
 
@@ -288,8 +271,7 @@ struct eqview *self;
 }
 
 
-void eqview__LoseInputFocus(self)
-struct eqview *self;
+void eqview__LoseInputFocus(struct eqview *self)
 {
     debug(("LoseInputFocus here\n"));
 
@@ -322,8 +304,7 @@ long *widthp, *heightp;
     return(view_Fixed);
 }
 
-boolean eqview__InitializeClass(classID)
-struct classheader *classID;
+boolean eqview__InitializeClass(struct classheader *classID)
 {
     extern struct keymap *eqview_InitKeyMap();
 
@@ -332,12 +313,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-void eqview__Print(self, file, process, final, toplevel)
-struct eqview *self;
-FILE *file;
-char *process;
-char *final;
-int toplevel;
+void eqview__Print(struct eqview *self, FILE *file, char *process, char *final, int toplevel)
 {
     struct eq *eqptr = Eq(self);
 
@@ -347,8 +323,7 @@ int toplevel;
     }    
 }
 
-struct view *eqview__GetApplicationLayer(self)
-struct eqview *self;
+struct view *eqview__GetApplicationLayer(struct eqview *self)
 {
     self->embedded = FALSE;
     eqview_WantInputFocus(self, self);

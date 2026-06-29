@@ -67,17 +67,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #define EQRECT(a, b)  ((a)->left == (b)->left && (a)->top == (b)->top && (a)->width == (b)->width && (a)->height == (b)->height)
 
-boolean panner__InitializeClass(classID)
-struct classheader *classID;
+boolean panner__InitializeClass(struct classheader *classID)
 {
     return TRUE;
 }
 
 static int cursortypes[panner_NumberOfCursors] = {Cursor_SmallCross, Cursor_Octagon, Cursor_Gunsight, Cursor_CrossHairs};
 
-boolean panner__InitializeObject(classID, self)
-struct classheader *classID;
-struct panner *self;
+boolean panner__InitializeObject(struct classheader *classID, struct panner *self)
 {
     int ix;
 
@@ -104,9 +101,7 @@ struct panner *self;
     return TRUE;
 }
 
-void panner__FinalizeObject(classID, self)
-struct classheader *classID;
-struct panner *self;
+void panner__FinalizeObject(struct classheader *classID, struct panner *self)
 {
     int ix;
 
@@ -118,9 +113,7 @@ struct panner *self;
 	    cursor_Destroy(self->cursors[ix]);
 }
 
-struct panner *panner__Create(classID, scrollee)
-struct classheader *classID;
-struct view *scrollee;
+struct panner *panner__Create(struct classheader *classID, struct view *scrollee)
 {
     struct panner *retval = panner_New();
 
@@ -131,17 +124,12 @@ struct view *scrollee;
 }
 
 
-void panner__SetLocation(self, location)
-struct panner *self;
-int location;
+void panner__SetLocation(struct panner *self, int location)
 {
     super_SetLocation(self, scroll_TOP|scroll_LEFT);
 }
 
-void panner__PostCursor(self, rec, cursor)
-struct panner *self;
-struct rectangle *rec;
-struct cursor *cursor;
+void panner__PostCursor(struct panner *self, struct rectangle *rec, struct cursor *cursor)
 {
     super_PostCursor(self, rec, cursor);
     if (cursor != self->cursors[0] && cursor != self->cursors[3]) {
@@ -152,8 +140,7 @@ struct cursor *cursor;
     }
 }
 
-static void recompute_panrect(self)
-struct panner *self;
+static void recompute_panrect(struct panner *self)
 {
     struct rectangle *r = &(((struct scroll *)self)->childrect);
 
@@ -199,19 +186,14 @@ struct panner *self;
 static char *InterfaceName[scroll_TYPES] = {"scroll,vertical", "scroll,horizontal"};
 
 /* right now, only called from getinfo(); may put in-line */
-static void get_interface(self, type)
-struct panner *self;
-int type; /* scroll_VERT or scroll_HORIZ */
+static void get_interface(struct panner *self, int type)
 {
     sself->force_get_interface = FALSE;
     if (sself->fns[type] == NULL)
         sself->fns[type] = (struct scrollfns *)view_GetInterface(sself->scrollee, InterfaceName[type]);
 }
 
-static void getinfo(self, type, total, seen, dot)
-struct panner *self;
-int type; /* scroll_VERT or scroll_HORIZ */
-struct range *total, *seen, *dot;
+static void getinfo(struct panner *self, int type, struct range *total, struct range *seen, struct range *dot)
 {
     void (*real_getinfo)();
 
@@ -227,8 +209,7 @@ struct range *total, *seen, *dot;
     }
 }
 
-static void calc_desired(self)
-struct panner *self;
+static void calc_desired(struct panner *self)
 {
     int i;
 
@@ -238,9 +219,7 @@ struct panner *self;
     }
 }
 
-static void update_everything(self, wipeold)
-struct panner *self;
-boolean wipeold;
+static void update_everything(struct panner *self, boolean wipeold)
 {
     struct sbuttonv_view_info vi;
     long maxwid, maxhgt;
@@ -349,9 +328,7 @@ boolean wipeold;
 }
 
 /* draw everything, assuming (or forcing) a blank background. sself->desired should already have been set, with calc_desired(). */
-static void draw_everything(self, wipeback)
-struct panner *self;
-boolean wipeback;
+static void draw_everything(struct panner *self, boolean wipeback)
 {
     struct sbuttonv_view_info vi;
 
@@ -379,8 +356,7 @@ boolean wipeback;
 }
 
 /* assumes panrect, visible have already been set */
-static void move_panner(self)
-struct panner *self;
+static void move_panner(struct panner *self)
 {
     region_RectRegion(self->childclip, &sself->childrect); 
     if (self->visible) {
@@ -405,10 +381,7 @@ struct panner *self;
     panner_PostCursor(self, &(self->gseenrect), self->cursors[3]);
 }
 
-void panner__FullUpdate(self, type, left, top, width, height)
-struct panner *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void panner__FullUpdate(struct panner *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct rectangle r;
     int i;
@@ -476,8 +449,7 @@ long left, top, width, height;
     panner_FlushGraphics(self);
 }
 
-void panner__Update(self)
-struct panner *self;
+void panner__Update(struct panner *self)
 {
     int i;
     struct rectangle r;
@@ -514,10 +486,7 @@ struct panner *self;
     }
 }
 
-static void HandleDragging(self, action, x, y, num_clicks)
-struct panner *self;
-enum view_MouseAction action;
-long x, y, num_clicks;
+static void HandleDragging(struct panner *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
     if (action==view_RightUp || action==view_LeftUp) {
 	self->panrect.left = x - self->rockx;
@@ -536,10 +505,7 @@ long x, y, num_clicks;
     }
 }
 
-static void HandleThumbing(self, action, x, y, num_clicks)
-struct panner *self;
-enum view_MouseAction action;
-long x, y, num_clicks;
+static void HandleThumbing(struct panner *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
     void (*SetFrame)();
     struct scrollbar *tmp;
@@ -573,10 +539,7 @@ long x, y, num_clicks;
     }
 }
 
-static void HandleDownHit(self, action, x, y, num_clicks)
-struct panner *self;
-enum view_MouseAction action;
-long x, y, num_clicks;
+static void HandleDownHit(struct panner *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
     long (*WhatIsAt)();
     long valx, valy;
@@ -616,10 +579,7 @@ long x, y, num_clicks;
     sself->mousestate=scroll_NOTHING;
 }
 
-struct view *panner__Hit(self, action, x, y, num_clicks)
-struct panner *self;
-enum view_MouseAction action;
-long x, y, num_clicks;
+struct view *panner__Hit(struct panner *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
     switch (sself->mousestate) {
 	case scroll_DRAGGING:

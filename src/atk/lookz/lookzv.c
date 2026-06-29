@@ -99,6 +99,7 @@ preprocessor. */
 #include <frame.ih>
 #include <im.ih>
 
+#include <stdlib.h>
 #if 0
 #define DEBUG(s) (printf s, fflush(stdout))
 #define ENTER(r) DEBUG(("Enter %s(0x%lx)\n", "r", self))
@@ -251,9 +252,7 @@ struct strTbl SubScrNames[] = {
 */
 
 static
-long CVDots(amt, unit)
-	register long amt;
-	enum style_Unit unit;
+long CVDots(register long amt, enum style_Unit unit)
 {
 	switch (unit) {
             case style_RawDots:
@@ -1777,14 +1776,7 @@ LEAVE(lookzview__Hit);
 }
 
 	enum view_DSattributes
-lookzview__DesiredSize( self, width, height, pass, 
-				desiredWidth, desiredHeight ) 
-	register struct lookzview *self;
-	long width;
-	long height;
-	enum view_DSpass pass;
-	long *desiredWidth;
-	long *desiredHeight;
+int lookzview__DesiredSize(register struct lookzview *self, long width, long height, enum view_DSpass pass, long *desiredWidth, long *desiredHeight)
 {
 	if (lookzview_GetVisibility(self)) 
 		*desiredWidth = 550,  *desiredHeight = 400;
@@ -2077,17 +2069,12 @@ AddStyle(self)
  * We return TRUE when the given environment uses the style we are
  * deleting.
  */
-boolean CheckDelStyle(sty, txt, level, env)
-struct style *sty;
-struct text *txt;
-int level;
-struct environment *env;
+boolean CheckDelStyle(struct style *sty, struct text *txt, int level, struct environment *env)
 {
     return (env != NULL && env->type == environment_Style && env->data.style == sty);
 }
 
-static void DeleteStyle(self)
-	register struct lookzview *self;
+static void DeleteStyle(register struct lookzview *self)
 {
 	struct style *delsty;
 	struct lookz *lz;

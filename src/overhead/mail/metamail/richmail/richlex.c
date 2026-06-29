@@ -46,6 +46,7 @@
 #include "richlex.h"
 #include "richset.h"
 
+#include <string.h>
 int CorrectionEnabled = 1;	/* Zero if correction has been disabled */
 int RichtextLessThanFlag = 0;	/* Non-zero to turn on multi-byte '<' hack */
 
@@ -123,8 +124,7 @@ richtextreset()
  * Push a character into the push-back buffer for later
  * retrieval by RGET.
  */
-static	void	richtextpushback(c)
-int	c;
+static	void	richtextpushback(int c)
 {
     PushbackBuffer[PushbackSize++] = c;
 }
@@ -132,8 +132,7 @@ int	c;
 /*
  * Unget a character that has been read from the input stream.
  */
-static	void	richtextunget(c)
-int	c;
+static	void	richtextunget(int c)
 {
     if (PushbackSize)
 	--PushbackExtract;	/* Character was retrieved from push-back */
@@ -144,8 +143,7 @@ int	c;
 /*
  * Unget two characters that have been read from the input stream.
  */
-static	void	richtextunget2(c1,c2)
-int	c1,c2;
+static	void	richtextunget2(int c1, int c2)
 {
     if (PushbackExtract > 1) {
 	PushbackExtract -= 2;	/* Go back two characters in the push-back */
@@ -219,9 +217,7 @@ static richtextsingle()
  * so, for example, errors like "<bold hi kids</bold>" don't cause
  * problems: it will be corrected to "<bold>hi kids</bold>".
  */
-RCHAR richtextlex(file,token)
-void *file;
-char *token;
+RCHAR richtextlex(void *file, char *token)
 {
     int c,i,lastch;
     RCHAR cmd;
@@ -396,9 +392,7 @@ char *token;
 /*
  * Output a string via "RichtextPutc".
  */
-static richtextoutstr(str,outparam)
-char *str;
-void *outparam;
+static richtextoutstr(char *str, void *outparam)
 {
     while (*str) {
 	RPUT(*str,outparam);

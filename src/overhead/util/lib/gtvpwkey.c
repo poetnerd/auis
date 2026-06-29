@@ -43,9 +43,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #ifdef WHITEPAGES_ENV
 #include <pwd.h>
 #include <wp.h>
+#include <stdlib.h>
 #endif /* WHITEPAGES_ENV */
 
-extern int errno;
 
 #ifdef WHITEPAGES_ENV
 static char *EMPTYFIELD = "";
@@ -81,8 +81,7 @@ void _pw_CloseWP()
 
 static char StgBuf[BUFSIZ+1];
 static char *StgPtr;
-static char *AddStg(loc)
-char *loc;
+static char *AddStg(char *loc)
 {/* Store a value in StgBuf and return a pointer to it */
     char *OldStg;
     int LocLen;
@@ -95,8 +94,7 @@ char *loc;
     return OldStg;
 }
 
-struct passwd *_pw_getvpwkey(PKey)
-wp_PrimeKey PKey;
+struct passwd *_pw_getvpwkey(wp_PrimeKey PKey)
 {/* Return a struct passwd for PKey, a White Pages prime key, or NULL with errno set */
     static struct passwd RetP;
     wp_ErrorCode Res;

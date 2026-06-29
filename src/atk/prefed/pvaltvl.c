@@ -49,6 +49,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 #include <text.ih>
 #include <textv.ih>
 
+#include <stdlib.h>
 #define DATA(self) ((struct prefval *)pvaltvl_GetDataObject(self))
 #define TEXT(self) (pvaltvl_GetText(self))
 
@@ -56,9 +57,7 @@ static struct menulist *pvaltvlMenus=NULL;
 static struct keymap *pvaltvlKeymap=NULL;
 
 
-static void pvaltvlUpdate(self, rock)
-struct pvaltvl *self;
-long rock;
+static void pvaltvlUpdate(struct pvaltvl *self, long rock)
 {
 }
 
@@ -87,8 +86,7 @@ static struct bind_Description pvaltvlBindings[]={
 };
     
     
-boolean pvaltvl__InitializeClass(classID)
-struct classheader *classID;
+boolean pvaltvl__InitializeClass(struct classheader *classID)
 {
     pvaltvlMenus=menulist_New();
     pvaltvlKeymap=keymap_New();
@@ -104,9 +102,7 @@ struct classheader *classID;
     
     
 }
-boolean pvaltvl__InitializeObject(classID, self)
-struct classheader *classID;
-struct pvaltvl *self;
+boolean pvaltvl__InitializeObject(struct classheader *classID, struct pvaltvl *self)
 {
     self->ks=keystate_Create(self, pvaltvlKeymap);
     if(self->ks==NULL) return FALSE;
@@ -121,17 +117,13 @@ struct pvaltvl *self;
     return TRUE;
 }
 
-void pvaltvl__FinalizeObject(classID, self)
-struct classheader *classID;
-struct pvaltvl *self;
+void pvaltvl__FinalizeObject(struct classheader *classID, struct pvaltvl *self)
 {
     if(self->ks) keystate_Destroy(self->ks);
     if(self->menulist) menulist_Destroy(self->menulist);
 }
 
-void pvaltvl__SetDotPosition(self, pos)
-struct pvaltvl *self;
-long pos;
+void pvaltvl__SetDotPosition(struct pvaltvl *self, long pos)
 {
     struct text *t=pvaltvl_GetText(self);
     int count=pvaltvl_Locate(self, pos);
@@ -141,9 +133,7 @@ long pos;
     super_SetDotPosition(self, pos);
 }
 
-void pvaltvl__UpdateText(self, val)
-struct pvaltvl *self;
-long val;
+void pvaltvl__UpdateText(struct pvaltvl *self, long val)
 {
     struct prefval *pvd=DATA(self);
     struct text *pvt=TEXT(self);
@@ -165,8 +155,7 @@ long val;
     }
 }
 
-void pvaltvl__UpdateValue(self)
-struct pvaltvl *self;
+void pvaltvl__UpdateValue(struct pvaltvl *self)
 {
     struct prefval *pvd=DATA(self);
     struct text *pvt=TEXT(self);
@@ -223,10 +212,7 @@ struct pvaltvl *self;
 }
 
  
-void pvaltvl__ObservedChanged(self, changed, val)
-struct pvaltvl *self;
-struct prefval *changed;
-long val;
+void pvaltvl__ObservedChanged(struct pvaltvl *self, struct prefval *changed, long val)
 {
 
     super_ObservedChanged(self, changed, val);
@@ -237,15 +223,12 @@ long val;
 }
 
 
-struct keystate *pvaltvl__Keys(self)
-struct pvaltvl *self;
+struct keystate *pvaltvl__Keys(struct pvaltvl *self)
 {
     return NULL;
 }
 	
-void pvaltvl__SetDataObject(self, d)
-struct pvaltvl *self;
-struct prefval *d;
+void pvaltvl__SetDataObject(struct pvaltvl *self, struct prefval *d)
 {
     super_SetDataObject(self, d);
     pvaltvl_ObservedChanged(self, d, prefval_Generic);

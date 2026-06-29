@@ -65,11 +65,7 @@ static struct helprock {
     long ind;
 } thelprock;
 
-static void helpfunc(rock, type, item, null)
-struct helprock *rock;
-enum message_HelpItem type;
-char *item;
-long null;
+static void helpfunc(struct helprock *rock, enum message_HelpItem type, char *item, long null)
 {
     char buf[1024];
     struct pvaltvf *self=rock->self;
@@ -91,9 +87,7 @@ long null;
     rock->ind++;
 }
 
-static void pvaltvfHelp(self, rock)
-struct pvaltvf *self;
-long rock;
+static void pvaltvfHelp(struct pvaltvf *self, long rock)
 {
     char buf[1024], buf2[1024];
     boolean good=TRUE;
@@ -124,15 +118,11 @@ long rock;
 }
 
 
-static void pvaltvfNop(self, rock)
-struct pvaltvf *self;
-long rock;
+static void pvaltvfNop(struct pvaltvf *self, long rock)
 {
 }
 
-static void pvaltvfComplete(self, rock)
-struct pvaltvf *self;
-long rock;
+static void pvaltvfComplete(struct pvaltvf *self, long rock)
 {
     char buf[1024], buf2[1024];
     boolean good=TRUE;
@@ -222,8 +212,7 @@ static struct bind_Description pvaltvfBindings[]={
 };
     
     
-boolean pvaltvf__InitializeClass(classID)
-struct classheader *classID;
+boolean pvaltvf__InitializeClass(struct classheader *classID)
 {
     pvaltvfMenus=menulist_New();
     pvaltvfKeymap=keymap_New();
@@ -238,9 +227,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean pvaltvf__InitializeObject(classID, self)
-struct classheader *classID;
-struct pvaltvf *self;
+boolean pvaltvf__InitializeObject(struct classheader *classID, struct pvaltvf *self)
 {
     self->ks=keystate_Create(self, pvaltvfKeymap);
     if(self->ks==NULL) return FALSE;
@@ -255,17 +242,14 @@ struct pvaltvf *self;
     return TRUE;
 }
 
-void pvaltvf__FinalizeObject(classID, self)
-struct classheader *classID;
-struct pvaltvf *self;
+void pvaltvf__FinalizeObject(struct classheader *classID, struct pvaltvf *self)
 {
     if(self->ks) keystate_Destroy(self->ks);
     if(self->menulist) menulist_Destroy(self->menulist);
 }
 
 
-struct keystate *pvaltvf__Keys(self)
-struct pvaltvf *self;
+struct keystate *pvaltvf__Keys(struct pvaltvf *self)
 {
     return self->ks;
 }

@@ -58,6 +58,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #define bool_t int
 #include <afs/afsint.h>
 #include <afs/venus.h>
+#include <stdlib.h>
+#include <stdio.h>
 #endif /* AFS_ENV */
 
 extern struct classinfo *consoleClass_GetInfoHack();
@@ -75,10 +77,7 @@ extern SetPrintEnv();
 #define SUFFIX 2
 #define NO_DOTS 3
 
-CheckDir(self, Name, LastModTime, LastValue)
-struct consoleClass *self;
-char *Name;
-int *LastModTime, LastValue;
+int CheckDir(struct consoleClass *self, char *Name, int *LastModTime, int LastValue)
 {
     DIR *dp;
     DIRENT_TYPE *dirent;
@@ -181,9 +180,7 @@ int *LastModTime, LastValue;
     return(dc);
 }
 
-CheckMail(self, requested)
-struct consoleClass *self;
-int requested;
+int CheckMail(struct consoleClass *self, int requested)
 {
     int value, iserror;
     char ErrTxt[256];
@@ -224,8 +221,7 @@ int requested;
     NewValue(self, &Numbers[MAIL], value, NULL, FALSE);
 }
 
-CheckDirectories(self)
-struct consoleClass *self;
+int CheckDirectories(struct consoleClass *self)
 {
     int i, val;
     char ErrTxt[256];
@@ -252,8 +248,7 @@ struct consoleClass *self;
     }
 }
 
-CheckPrint(self)
-struct consoleClass *self;
+int CheckPrint(struct consoleClass *self)
 {
     DIR * dp;
     DIRENT_TYPE  *dirent;
@@ -323,8 +318,7 @@ struct consoleClass *self;
 
 static int OutgoingModTime = 0;
 
-CheckOutgoingMail(self)
-struct consoleClass *self;
+int CheckOutgoingMail(struct consoleClass *self)
 {
     DIR * dp;
     DIRENT_TYPE  *dirent;
@@ -381,10 +375,7 @@ struct consoleClass *self;
 }
 
 #ifdef AFS_ENV
-PrefetchMailFiles(self, MailboxDir, requested)
-struct consoleClass *self;
-char *MailboxDir;
-int requested;
+int PrefetchMailFiles(struct consoleClass *self, char *MailboxDir, int requested)
 {
     DIR *dp;
     DIRENT_TYPE *dirent;
@@ -430,10 +421,7 @@ int requested;
 #endif /* AFS_ENV */
 
 
-ParseMail(self, fname, requested)
-struct consoleClass *self;
-char *fname;
-int requested;
+int ParseMail(struct consoleClass *self, char *fname, int requested)
 {
     FILE *fp;
     int c, onenewline, eofcheck;

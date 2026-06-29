@@ -94,6 +94,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include "getstats.h"
 
 
+#include <stdlib.h>
 struct mtab mtab[NMOUNT];
 char	root[32];
 int	fi;
@@ -143,9 +144,7 @@ get_cpuload ()
 	TotalTime = 1;
 }
 
-get_stats(stat, userId)
-	struct vm_statistics	*stat;
-	int userId;
+int get_stats(struct vm_statistics *stat, int userId)
 {
         struct tbl_loadavg	avenrun;
 	double scale;
@@ -196,8 +195,7 @@ InitGVMStats()
 
 
 
-GetGVMStats(UsersID)
-int UsersID;
+int GetGVMStats(int UsersID)
 {
     get_cpuload();
     get_stats(&vm_stat, UsersID);
@@ -246,8 +244,7 @@ int UsersID;
 #endif
 }
 
-void Sleep_Msecs(msecs)
-    unsigned int    msecs;
+void Sleep_Msecs(unsigned int msecs)
 {
     static sleepPort = PORT_NULL;
     msg_header_t    m;
@@ -266,8 +263,7 @@ void Sleep_Msecs(msecs)
 
 extern int getmnt();
 
-GetDiskStats(Init)
-int Init;
+int GetDiskStats(int Init)
 {
     int i = 0;
     struct fstab *fsp;
@@ -297,14 +293,9 @@ int Init;
     endfsent();
 }
 
-int bread(fi, bno, buf, cnt)
-int fi;
-daddr_t bno;
-char *buf;
-int cnt;
+int bread(int fi, daddr_t bno, char *buf, int cnt)
 {
     register int n;
-    extern int errno;
 
     (void) lseek(fi, (long)(bno * DEV_BSIZE), 0);
 #ifndef sun
@@ -326,8 +317,7 @@ int cnt;
 /*
  * Given a name like /dev/rrp0h, returns the mounted path, like /usr.
  */
-char *mpath(file)
-char *file;
+char *mpath(char *file)
 {
     register struct mtab *mp;
 
@@ -342,8 +332,7 @@ char *file;
     return "";
 }
 
-eq(f1, f2)
-char *f1, *f2;
+int eq(char *f1, char *f2)
 {
     if (strncmp(f1, "/dev/", 5) == 0)
 	f1 += 5;
@@ -360,19 +349,14 @@ char *f1, *f2;
     return (0);
 }
 
-int round(num)
-double num;
+int round(double num)
 {
     int inum = (int) num;
     return(((num - inum) >= 0.5) ? (inum + 1) : inum);
 }
 
 
-dfree1(id, file, infsent, Init)
-int id;
-char *file;
-int infsent;
-int Init;
+int dfree1(int id, char *file, int infsent, int Init)
 {
     long totalblks, availblks, avail, free, used;
     int fi;

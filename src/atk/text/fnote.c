@@ -40,6 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <stylesht.ih>
 #include <fnote.eh>
 
+#include <stdio.h>
 struct fnote **stack , **endstack;
 struct text *tmptext;
 long notecount;
@@ -55,10 +56,7 @@ struct style *HStyle = NULL;
 #define NEW -333
 #define FLIP 42
 
-struct style *GetStyle(self,txt,openflag)
-struct fnote *self;
-struct text *txt;
-int openflag;
+struct style *GetStyle(struct fnote *self, struct text *txt, int openflag)
 {
     struct style *Style = NULL;
     if(txt != self->parenttext){
@@ -89,10 +87,7 @@ int openflag;
     return Style;
 }
 
-void fnote__addenv(self,txt,pos)
-struct fnote *self;
-struct text *txt;
-long pos;
+void fnote__addenv(struct fnote *self, struct text *txt, long pos)
 {
     struct style *Style = NULL;
     struct environment *te;
@@ -109,11 +104,7 @@ fflush(stdout);
     self->open = OPEN;
 }
 
-static boolean doupdate(self,text,pos,env)
-struct fnote *self;
-struct text *text;
-long pos;
-struct environment *env;
+static boolean doupdate(struct fnote *self, struct text *text, long pos, struct environment *env)
 {
     static struct environment *lastenv = NULL;
     static long lastpos = -1;
@@ -162,9 +153,7 @@ fflush(stdout);
     }
     return retval;
 }
-static boolean copy(self,text)
-struct fnote *self;
-struct text *text;
+static boolean copy(struct fnote *self, struct text *text)
 {   /* This routine should only be called after doupdate has properly updated the env pointers*/
     long len;
     char buf[64];
@@ -187,9 +176,7 @@ struct text *text;
     }
     return TRUE;
 }
-static boolean fnote_open(self,text)
-struct fnote *self;
-struct text *text;
+static boolean fnote_open(struct fnote *self, struct text *text)
 {   /* This routine should only be called after doupdate has properly updated the env pointers*/
     long oldmod,selfmod;
     if(self->open == OPEN) return TRUE;
@@ -204,9 +191,7 @@ struct text *text;
     fnote_RestoreModified(self,selfmod);
     return TRUE;
 }
-static boolean fnote_close(self,text)
-struct fnote *self;
-struct text *text;
+static boolean fnote_close(struct fnote *self, struct text *text)
 {   /* This routine should only be called after doupdate has properly updated the env pointers*/
     long len;
     long oldmod,selfmod;
@@ -227,17 +212,13 @@ struct text *text;
     fnote_RestoreModified(self,selfmod);
     return TRUE;
 }
-long fnote__GetLocLength(self)
-struct fnote *self;
+long fnote__GetLocLength(struct fnote *self)
 {
     if(self->env)
 	return environment_GetLength(self->env) - 1;
     return 0L;
 }
-static DoAll(text,callBack,order)
-struct text *text;
-boolean (*callBack)();
-int order;
+static DoAll(struct text *text, boolean (*callBack)(), int order)
 {
     struct fnote *st[MAXNOTES];
     stack = st;
@@ -261,16 +242,12 @@ int order;
     stack = NULL;
 }
 
-void fnote__CloseAll(classID,text)
-struct classheader *classID;
-struct text *text;
+void fnote__CloseAll(struct classheader *classID, struct text *text)
 {
     DoAll(text,fnote_close,BACKWARD);
 }
 
-void fnote__Close(self,text)
-struct fnote *self;
-struct text *text;
+void fnote__Close(struct fnote *self, struct text *text)
 {
 /* printf("in close text = %d\n",text); */
     if(text){
@@ -279,11 +256,7 @@ struct text *text;
 	    text_NotifyObservers(text,0);
     }
 }
-long fnote__CopyNote(self,text,desttext,count,number)
-struct fnote *self;
-struct text *text,*desttext;
-long count;
-boolean number;
+long fnote__CopyNote(struct fnote *self, struct text *text, struct text *desttext, long count, boolean number)
 {
     tmptext = desttext;
     donumber = number;
@@ -302,11 +275,7 @@ boolean number;
    return notecount;
 }
 
-int fnote__CopyAll(classID,text,desttext,count,number)
-struct classheader *classID;
-struct text *text,*desttext;
-long count;
-boolean number;
+int fnote__CopyAll(struct classheader *classID, struct text *text, struct text *desttext, long count, boolean number)
 {
     tmptext = desttext;
     notecount = count;
@@ -315,26 +284,19 @@ boolean number;
     tmptext = NULL;
     return notecount;
 }
-int fnote__UpdateAll(classID,text,count)
-struct classheader *classID;
-struct text *text;
-long count;
+int fnote__UpdateAll(struct classheader *classID, struct text *text, long count)
 {
     tmptext = NULL;
     notecount = count;
     DoAll(text,NULL,NOPROCESS); /* just assign numbers and update the env */
     return notecount;
 }
-void fnote__OpenAll(classID,text)
-struct classheader *classID;
-struct text *text;
+void fnote__OpenAll(struct classheader *classID, struct text *text)
 {
     DoAll(text,fnote_open,BACKWARD);
 }
 
-void fnote__Open(self,text)
-struct fnote *self;
-struct text *text;
+void fnote__Open(struct fnote *self, struct text *text)
 {
     if(text){
 	text_EnumerateEnvironments(text,0,text_GetLength(text),doupdate,(long)self);
@@ -342,15 +304,12 @@ struct text *text;
 	    text_NotifyObservers(text,0);
     }
 }
-boolean fnote__IsOpen(self)
-struct fnote *self;
+boolean fnote__IsOpen(struct fnote *self)
 {
     return (self->open == OPEN); 
  /*   return (fnote_GetLength(self) == 0); */
 }
-boolean fnote__InitializeObject(ClassID,self)
-struct classheader *ClassID;
-struct fnote *self;
+boolean fnote__InitializeObject(struct classheader *ClassID, struct fnote *self)
 {
     self->loc = self->ownloc = self->notecount = -1;
     self->parenttext = NULL;
@@ -359,10 +318,7 @@ struct fnote *self;
     self->open = NEW;
     return TRUE;
 }
-long fnote__Read(self,file,id)
-struct fnote *self;
-FILE *file;
-long id;
+long fnote__Read(struct fnote *self, FILE *file, long id)
 {
     long foo;
     foo = super_Read(self,file,id);
@@ -370,8 +326,7 @@ long id;
     else self->open = CLOSE;
     return foo;
 }
-boolean fnote__InitializeClass(ClassID)
-struct classheader *ClassID;
+boolean fnote__InitializeClass(struct classheader *ClassID)
 {
     stack = NULL;
     endstack = NULL;
@@ -382,8 +337,7 @@ struct classheader *ClassID;
     HStyle = NULL;
     return TRUE;
 }
-char * fnote__ViewName(self)
-struct fnote *self;
+char * fnote__ViewName(struct fnote *self)
 {
     return "fnotev";
 }

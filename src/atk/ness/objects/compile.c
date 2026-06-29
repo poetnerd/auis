@@ -111,6 +111,8 @@ static void parsepragmat(/* struct ness * self, char *prag */);
 
 #include <ness.tlc>
 
+#include <string.h>
+#include <stdlib.h>
 struct compilation *curComp = NULL;	/* compilation in progress */
 int ntEXTEND = 0, ntON = 0, ntFUNCTION = 0, ntWHILE = 0, ntIF = 0, 
 	ntEVENT = 0, ntMENU = 0, ntMOUSE = 0, ntKEYS = 0;

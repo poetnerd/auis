@@ -91,6 +91,7 @@ END-SPECIFICATION  ************************************************************/
 #include <zip.ih>
 #include <zipv.ih>
 
+#include <string.h>
 #define  Screen			1
 #define  Paper			2
 

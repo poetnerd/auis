@@ -212,6 +212,7 @@ TIFFGetFileSize(int fd)
 #if defined(applec)
 #include <ioctl.h>
 #include <Files.h>
+#include <string.h>
 #undef lseek
 
 long

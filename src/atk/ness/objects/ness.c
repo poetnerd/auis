@@ -159,6 +159,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ness
 #include <call.h>
 
 
+#include <stdlib.h>
 static struct ness *NessList = NULL;		/* list of all nesses 
 				(so we can access library) */
 
@@ -448,9 +449,7 @@ ness__SetDebug(ClassID, d)
 	printf("Ness: debug is now %d\n", debug);
 }
 
-void ness__SetFilename(self, name)
-struct ness *self;
-char *name;
+void ness__SetFilename(struct ness *self, char *name)
 {
     char buf[1024];
     if(self->filename!=NULL) free(self->filename);
@@ -502,9 +501,7 @@ ness__Write(self, file, writeID, level)
 
 
 
-void ness__SetAttributes(self, attributes)
-struct ness *self;
-struct attributes *attributes;
+void ness__SetAttributes(struct ness *self, struct attributes *attributes)
 {
     super_SetAttributes(self, attributes);
     while (attributes) {
@@ -1046,8 +1043,7 @@ cantread:
 	}
 }
 
-void GetViewForError(self)
-struct ness *self;
+void GetViewForError(struct ness *self)
 {
     struct buffer *b=buffer_FindBufferByData(self);
 

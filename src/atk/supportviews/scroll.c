@@ -126,12 +126,7 @@ static struct sbutton_info thebutton={
 #define DRAWRECT(self, left, top, width, height) scroll_DrawRectSize(self, left, top, (width)-1, (height)-1)
 #define FILLRECT(self, left, top, width, height) scroll_FillRectSize(self, left, top, (width), (height), NULL)
 
-static void draw_arrow(self, side, r, dir, lit)
-struct scroll *self;
-int side;
-struct rectangle *r;
-int dir;
-boolean lit;
+static void draw_arrow(struct scroll *self, int side, struct rectangle *r, int dir, boolean lit)
 {
     struct rectangle t;
     double oldfg[3];
@@ -249,8 +244,7 @@ boolean lit;
 
 /* Creation and Destruction routines. */
 
-boolean scroll__InitializeClass(classID)
-struct classheader *classID;
+boolean scroll__InitializeClass(struct classheader *classID)
 {
  
     return TRUE;
@@ -263,9 +257,7 @@ static char scrollbarbutton[]="scrollbutton";
 static char scrollbarelevator[]="scrollelevator";
 static char scrollbardot[]="scrolldot";
 
-boolean scroll__InitializeObject(classID, self)
-struct classheader *classID;
-struct scroll *self;
+boolean scroll__InitializeObject(struct classheader *classID, struct scroll *self)
 {
     int i;
 
@@ -332,9 +324,7 @@ struct scroll *self;
     
 #define sfree(x)  do { if(x) sbutton_FreePrefs(x); x=NULL; } while (0)
 
-void scroll__FinalizeObject(classID, self)
-struct classheader *classID;
-struct scroll *self;
+void scroll__FinalizeObject(struct classheader *classID, struct scroll *self)
 {
     int i;
     if (self->child != NULL)
@@ -354,12 +344,7 @@ struct scroll *self;
     sfree(self->dotprefs);
 }
 
-struct scroll *scroll__CreateScroller(classID, scrollee, location, name)
-struct classheader *classID;
-struct view *scrollee;
-int location;
-char *name;
-
+struct scroll *scroll__CreateScroller(struct classheader *classID, struct view *scrollee, int location, char *name)
 {
     struct classinfo *oscroll;
     
@@ -380,10 +365,7 @@ char *name;
     return retval;
 }
 
-struct scroll *scroll__Create(classID, scrollee, location)
-struct classheader *classID;
-struct view *scrollee;
-int location;
+struct scroll *scroll__Create(struct classheader *classID, struct view *scrollee, int location)
 {
     return scroll__CreateScroller(classID, scrollee, location, NULL);
 }
@@ -391,18 +373,14 @@ int location;
 
 /* State modification routines. */
 
-void scroll__SetView(self, view)
-struct scroll *self;
-struct view *view;
+void scroll__SetView(struct scroll *self, struct view *view)
 {
 
     scroll_SetChild(self, view);
     scroll_SetScrollee(self, view);
 }
 
-void scroll__SetChild(self, child)
-struct scroll *self;
-struct view *child;
+void scroll__SetChild(struct scroll *self, struct view *child)
 {
     if (self->child != child) {
         self->force_full_update = TRUE;
@@ -415,9 +393,7 @@ struct view *child;
     }
 }
 
-void scroll__SetScrollee(self, scrollee)
-struct scroll *self;
-struct view *scrollee;
+void scroll__SetScrollee(struct scroll *self, struct view *scrollee)
 {
     if (self->scrollee != scrollee) {
         self->force_get_interface = TRUE;
@@ -426,42 +402,33 @@ struct view *scrollee;
     }
 }
 
-struct view *scroll__GetChild(self)
-struct scroll *self;
+struct view *scroll__GetChild(struct scroll *self)
 {
     return self->child;
 }
 
-struct view *scroll__GetScrollee(self)
-struct scroll *self;
+struct view *scroll__GetScrollee(struct scroll *self)
 {
     return self->scrollee;
 }
 
-void scroll__SetLocation(self, location)
-struct scroll *self;
-int location;
+void scroll__SetLocation(struct scroll *self, int location)
 {
     self->ideal_location = location;
     scroll_WantUpdate(self, self);  
 }
 
-int scroll__GetLocation(self)
-struct scroll *self;
+int scroll__GetLocation(struct scroll *self)
 {
     return self->ideal_location;
 }
 
-int scroll__GetCurrentLocation(self)
-struct scroll *self;
+int scroll__GetCurrentLocation(struct scroll *self)
 {
     return self->current.location;
 }
 
-void scroll__SetParameters(self, endzone, bar, without, with)
-struct scroll *self;
-long endzone, bar;
-int without, with;
+void scroll__SetParameters(struct scroll *self, long endzone, long bar, int without, int with)
 {
     self->endzone_threshold = endzone;
     self->bar_threshold = bar;
@@ -470,10 +437,7 @@ int without, with;
     scroll_WantUpdate(self, self);
 }
 
-void scroll__GetParameters(self, endzone, bar, without, with)
-struct scroll *self;
-long *endzone, *bar;
-int *without, *with;
+void scroll__GetParameters(struct scroll *self, long *endzone, long *bar, int *without, int *with)
 {
     *endzone = self->endzone_threshold;
     *bar = self->bar_threshold;
@@ -481,9 +445,7 @@ int *without, *with;
     *with = self->min_elevator[1];
 }
 
-void scroll__SetWidth(self, newWidth)
-struct scroll *self;
-long newWidth;
+void scroll__SetWidth(struct scroll *self, long newWidth)
 {
     self->barWidth = newWidth;
     
@@ -493,15 +455,12 @@ long newWidth;
     scroll_WantUpdate(self, self);
 }
 
-long scroll__GetWidth(self)
-struct scroll *self;
+long scroll__GetWidth(struct scroll *self)
 {
     return self->barWidth;
 }
 
-void scroll__SetDotWidth(self, newWidth)
-struct scroll *self;
-long newWidth;
+void scroll__SetDotWidth(struct scroll *self, long newWidth)
 {
     if (newWidth > self->barWidth - 2) {
 	newWidth = self->barWidth - 2;
@@ -513,16 +472,13 @@ long newWidth;
     scroll_WantUpdate(self, self);
 }
 
-long scroll__GetDotWidth(self)
-struct scroll *self;
+long scroll__GetDotWidth(struct scroll *self)
 {
     return self->dotWidth;
 }
 
 
-void scroll__SetElevatorWidth(self, newWidth)
-struct scroll *self;
-long newWidth;
+void scroll__SetElevatorWidth(struct scroll *self, long newWidth)
 {
     if(newWidth > self->barWidth) newWidth=self->barWidth;
 
@@ -532,41 +488,32 @@ long newWidth;
     scroll_WantUpdate(self, self);
 }
 
-long scroll__GetElevatorWidth(self)
-struct scroll *self;
+long scroll__GetElevatorWidth(struct scroll *self)
 {
     return self->elevatorWidth;
 }
 
-void scroll__SetWindowPadding(self, newPadding)
-struct scroll *self;
-long newPadding;
+void scroll__SetWindowPadding(struct scroll *self, long newPadding)
 {
     self->windowPadding=newPadding;
 }
 
-void scroll__SetViewPadding(self, newPadding)
-struct scroll *self;
-long newPadding;
+void scroll__SetViewPadding(struct scroll *self, long newPadding)
 {
     self->viewPadding=newPadding;
 }
 
-long scroll__GetWindowPadding(self)
-struct scroll *self;
+long scroll__GetWindowPadding(struct scroll *self)
 {
     return self->windowPadding;
 }
 
-long scroll__GetViewPadding(self)
-struct scroll *self;
+long scroll__GetViewPadding(struct scroll *self)
 {
     return self->viewPadding;
 }
 
-void scroll__SetEndZoneLength(self, newLength)
-struct scroll *self;
-long newLength;
+void scroll__SetEndZoneLength(struct scroll *self, long newLength)
 {
     self->endzoneLength = newLength;
     if ((self->endzoneLength + self->endbarSpace + self->buttonSpace) * 2 > self->endzone_threshold) {
@@ -575,15 +522,12 @@ long newLength;
     scroll_WantUpdate(self, self);
 }
 
-long scroll__GetEndZoneLength(self)
-struct scroll *self;
+long scroll__GetEndZoneLength(struct scroll *self)
 {
     return self->endzoneLength;
 }
 
-void scroll__SetEndToBarSpace(self, newSpace)
-struct scroll *self;
-long newSpace;
+void scroll__SetEndToBarSpace(struct scroll *self, long newSpace)
 {
     self->endbarSpace = newSpace;
     if ((self->endzoneLength + self->endbarSpace + self->buttonSpace) * 2 > self->endzone_threshold) {
@@ -593,27 +537,21 @@ long newSpace;
 }
 
 
-long scroll__GetEndToBarSpace(self)
-struct scroll *self;
+long scroll__GetEndToBarSpace(struct scroll *self)
 {
     return self->endbarSpace;
 }
 
 /* Interface routines. */
 
-static void get_interface(self, type)
-struct scroll *self;
-int type;
+static void get_interface(struct scroll *self, int type)
 {
     self->force_get_interface = FALSE;
     if (self->fns[type] == NULL)
         self->fns[type] = (struct scrollfns *)view_GetInterface(self->scrollee, InterfaceName[type]);
 }
 
-static void getinfo(self, type, total, seen, dot)
-struct scroll *self;
-int type;
-struct range *total, *seen, *dot;
+static void getinfo(struct scroll *self, int type, struct range *total, struct range *seen, struct range *dot)
 {
     void (*real_getinfo)();
 
@@ -631,9 +569,7 @@ struct range *total, *seen, *dot;
 
 /* Calculation routines. */
 
-static long bar_height(self, side)
-struct scroll *self;
-int side;
+static long bar_height(struct scroll *self, int side)
 {
     switch(side) {
 	case scroll__LEFT:
@@ -645,11 +581,7 @@ int side;
     }      
 }
 
-static void set_frame(self, side, posn, coord)
-struct scroll *self;
-int side;
-int posn;
-long coord;
+static void set_frame(struct scroll *self, int side, int posn, long coord)
 {
     void (*real_setframe)();
     int type = Type[side];
@@ -660,11 +592,7 @@ long coord;
 	real_setframe(self->scrollee, posn, coord, CHILDBARHEIGHT(self, side));
 }
 
-static void endzone(self, side, end, action)
-struct scroll *self;
-int side;
-int end;
-enum view_MouseAction action;
+static void endzone(struct scroll *self, int side, int end, enum view_MouseAction action)
 {
     void (*real_endzone)();
     int type = Type[side];
@@ -691,10 +619,7 @@ enum view_MouseAction action;
     }
 }
 
-static int what_is_at(self, side, coord)
-struct scroll *self;
-int side;
-int coord;
+static int what_is_at(struct scroll *self, int side, int coord)
 {
     long (*real_what)();
     int type = Type[side];
@@ -708,10 +633,7 @@ int coord;
 }
 
 
-static boolean barrects(self, side, boxrect, topbuttonrect, botbuttonrect)
-struct scroll *self;
-int side;
-struct rectangle *boxrect, *topbuttonrect, *botbuttonrect;
+static boolean barrects(struct scroll *self, int side, struct rectangle *boxrect, struct rectangle *topbuttonrect, struct rectangle *botbuttonrect)
 {
     long x1, x2, y1, y2;
     long tx1, tx2, ty1, ty2;
@@ -834,9 +756,7 @@ struct rectangle *boxrect, *topbuttonrect, *botbuttonrect;
 }
 
 
-static void compute_inner(self, draw)
-struct scroll *self;
-boolean draw;
+static void compute_inner(struct scroll *self, boolean draw)
 {
     int i;
     int diff;
@@ -958,8 +878,7 @@ boolean draw;
 }
 
 
-static void calc_desired(self)
-struct scroll *self;
+static void calc_desired(struct scroll *self)
 {
     int i, exists[scroll_TYPES];
 
@@ -979,11 +898,7 @@ struct scroll *self;
 
 
 
-static long from_range_to_bar(self, side, bar, posn)
-struct scroll *self;
-int side;
-struct scrollbar *bar;
-long posn;
+static long from_range_to_bar(struct scroll *self, int side, struct scrollbar *bar, long posn)
 {
     long cords = bar_height(self, side) - 2 * self->endbarSpace;
     long retval;
@@ -998,11 +913,7 @@ long posn;
     return retval;
 }
 
-static long from_bar_to_range(self, side, bar, posn)
-struct scroll *self;
-int side;
-struct scrollbar *bar;
-long posn;
+static long from_bar_to_range(struct scroll *self, int side, struct scrollbar *bar, long posn)
 {
     long height =  bar_height(self, side),
     cords = height - 2*self->endbarSpace,
@@ -1021,11 +932,7 @@ long posn;
 }
 
 
-static boolean calc_elevator(self, side, bar, r)
-struct scroll *self;
-int side;
-struct scrollbar *bar;
-struct rectangle *r;
+static boolean calc_elevator(struct scroll *self, int side, struct scrollbar *bar, struct rectangle *r)
 {
     long min, height=bar_height(self, side) - self->endbarSpace;
     int diff;
@@ -1092,11 +999,7 @@ struct rectangle *r;
     return TRUE;
 }
 
-static boolean calc_dot(self, side, bar, r)
-struct scroll *self;
-int side;
-struct scrollbar *bar;
-struct rectangle *r;
+static boolean calc_dot(struct scroll *self, int side, struct scrollbar *bar, struct rectangle *r)
 {
     int diff;
 
@@ -1152,9 +1055,7 @@ struct rectangle *r;
     return TRUE;
 }
 
-static void draw_elevator(self, side)
-struct scroll *self;
-int side;
+static void draw_elevator(struct scroll *self, int side)
 {
     struct sbuttonv_view_info vi;
     struct rectangle r;
@@ -1166,9 +1067,7 @@ int side;
     }
 }
 
-static void draw_dot(self, side)
-struct scroll *self;
-int side;
+static void draw_dot(struct scroll *self, int side)
 {
     struct sbuttonv_view_info vi;
     struct rectangle r;
@@ -1181,9 +1080,7 @@ int side;
     }
 }
 
-static void move_elevator(self, side)
-struct scroll *self;
-int side;
+static void move_elevator(struct scroll *self, int side)
 {
     struct rectangle ner, oer, ndr, odr, r1, r2;
 
@@ -1242,9 +1139,7 @@ int side;
 }
 
 
-static void draw_bar(self, side)
-struct scroll *self;
-int side;
+static void draw_bar(struct scroll *self, int side)
 {
     struct sbuttonv_view_info vi;
     barrects(self, side, &self->interiors[side], &self->topbutton[side], &self->botbutton[side]);
@@ -1262,8 +1157,7 @@ int side;
 }
 
 
-static void draw_everything(self)
-struct scroll *self;
+static void draw_everything(struct scroll *self)
 {
     int i;
     struct rectangle r;
@@ -1307,8 +1201,7 @@ struct scroll *self;
 	}
 }
 
-static void InitPrefs(self)
-struct scroll *self;
+static void InitPrefs(struct scroll *self)
 {
     boolean graphicIsMono;
     boolean mono;
@@ -1384,10 +1277,7 @@ struct scroll *self;
 
 /* Overrides of the view routines: */
 
-void scroll__FullUpdate(self, type, left, top, width, height)
-struct scroll *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void scroll__FullUpdate(struct scroll *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct rectangle r;
     int i;
@@ -1457,8 +1347,7 @@ long left, top, width, height;
 }
 
 
-void scroll__Update(self)
-struct scroll *self;
+void scroll__Update(struct scroll *self)
 {
     int i;
     struct rectangle r;
@@ -1490,9 +1379,7 @@ struct scroll *self;
     }
 }
 
-void scroll__WantUpdate(self, requestor)
-struct scroll *self;
-struct view *requestor;
+void scroll__WantUpdate(struct scroll *self, struct view *requestor)
 {
     if ((struct view *)self != requestor)
         updatelist_AddTo(self->updatelist, requestor);
@@ -1503,8 +1390,7 @@ struct view *requestor;
     }
 }
 
-static void DoRepeatScroll(self)
-struct scroll *self;
+static void DoRepeatScroll(struct scroll *self)
 {
     if(self->emulation) {
 	switch(self->dir) {
@@ -1522,9 +1408,7 @@ struct scroll *self;
     }
 }
 
-static void RepeatScroll(self, cTime)
-struct scroll *self;
-long cTime;
+static void RepeatScroll(struct scroll *self, long cTime)
 {
     long timeInterval;
 
@@ -1546,9 +1430,7 @@ long cTime;
 
 static void ScheduleRepeatEndZone();
 
-static void RepeatEndZone(self, cTime)
-struct scroll *self;
-long cTime;
+static void RepeatEndZone(struct scroll *self, long cTime)
 {
     self->scrollEvent=NULL;
     if(self->mousestate!=scroll_TOPENDZONE && self->mousestate!=scroll_BOTTOMENDZONE) return;
@@ -1556,8 +1438,7 @@ long cTime;
     ScheduleRepeatEndZone(self);
 }
 
-static void CancelScrollEvent(self)
-struct scroll *self;
+static void CancelScrollEvent(struct scroll *self)
 {
     if(self->scrollEvent) {
 	event_Cancel(self->scrollEvent);
@@ -1565,17 +1446,13 @@ struct scroll *self;
     }
 }
 
-static void ScheduleRepeatEndZone(self)
-struct scroll *self;
+static void ScheduleRepeatEndZone(struct scroll *self)
 {
     CancelScrollEvent(self);
     self->scrollEvent = im_EnqueueEvent((procedure) RepeatEndZone, (char *) self, event_MSECtoTU(ENDZONEREPTIME(self)));
 }
 
-static void HandleEndZone(self, action, x, y)
-struct scroll *self;
-enum view_MouseAction action;
-long x, y;
+static void HandleEndZone(struct scroll *self, enum view_MouseAction action, long x, long y)
 {
 
     struct rectangle *r;
@@ -1613,10 +1490,7 @@ long x, y;
     endzone(self, self->side, self->mousestate, action);
 }
 
-static void HandleRepeatMode(self, action, x, y)
-struct scroll *self;
-enum view_MouseAction action;
-long x, y;
+static void HandleRepeatMode(struct scroll *self, enum view_MouseAction action, long x, long y)
 {
     long coord;
     
@@ -1633,10 +1507,7 @@ long x, y;
     im_ForceUpdate();
 }
 
-static boolean CheckEndZones(self, action, x, y)
-struct scroll *self;
-enum view_MouseAction action;
-long x, y;
+static boolean CheckEndZones(struct scroll *self, enum view_MouseAction action, long x, long y)
 {
     int i;
 
@@ -1675,10 +1546,7 @@ long x, y;
     return FALSE;
 }
 
-static void HandleThumbing(self, action, x, y)
-struct scroll *self;
-enum view_MouseAction action;
-long x, y;
+static void HandleThumbing(struct scroll *self, enum view_MouseAction action, long x, long y)
 {
     struct scrollbar *cur, *des;
     long coord=0;
@@ -1752,10 +1620,7 @@ long x, y;
     }
 }
 
-static void CheckBars(self, action, x, y)
-struct scroll *self;
-enum view_MouseAction action;
-long x, y;
+static void CheckBars(struct scroll *self, enum view_MouseAction action, long x, long y)
 {
     int i;
     struct scrollbar *bar=NULL;
@@ -1808,10 +1673,7 @@ long x, y;
     }
 }
 
-static void MaybeStartThumbing(self, action, x, y)
-struct scroll *self;
-enum view_MouseAction action;
-long x, y;
+static void MaybeStartThumbing(struct scroll *self, enum view_MouseAction action, long x, long y)
 {
     if(self->side==-1) return;
 
@@ -1831,10 +1693,7 @@ long x, y;
 }
 
 
-struct view *scroll__Hit(self, action, x, y, num_clicks)
-struct scroll *self;
-enum view_MouseAction action;
-long x, y, num_clicks;
+struct view *scroll__Hit(struct scroll *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
     switch(self->mousestate) {
 	case scroll_THUMBING:
@@ -1872,18 +1731,14 @@ long x, y, num_clicks;
     return (struct view *)self;
 }
 
-void scroll__LinkTree(self, parent)
-struct scroll *self;
-struct view *parent;
+void scroll__LinkTree(struct scroll *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if (self->child)
 	view_LinkTree(self->child, self);
 }
 
-void scroll__UnlinkNotification(self, unlinkedTree)
-struct scroll *self;
-struct view *unlinkedTree;
+void scroll__UnlinkNotification(struct scroll *self, struct view *unlinkedTree)
 {
 
     updatelist_DeleteTree(self->updatelist, unlinkedTree);

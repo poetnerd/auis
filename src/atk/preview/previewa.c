@@ -48,6 +48,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/prev
 #include <im.ih>
 #include <signal.h>
 
+#include <stdlib.h>
+#include <stdio.h>
 char *DviBaseName=NULL;
 char *DviFileName=NULL;
 boolean DoScaling = TRUE;
@@ -55,19 +57,14 @@ FILE *filein;
 boolean DviFileComplete;
 boolean debug;
 
-boolean previewapp__InitializeObject(classID,self)
-struct classheader *classID;
-struct previewapp *self;
+boolean previewapp__InitializeObject(struct classheader *classID, struct previewapp *self)
 {
     previewapp_SetMajorVersion(self, 7);
     previewapp_SetMinorVersion(self, 0);
     return TRUE;
 }
 
-boolean previewapp__ParseArgs(self,argc,argv)
-struct previewapp *self;
-int argc;
-char **argv;
+boolean previewapp__ParseArgs(struct previewapp *self, int argc, char **argv)
 {
     if(!super_ParseArgs(self,argc,argv))
 	return FALSE;
@@ -126,8 +123,7 @@ FinishUp()
     signal(SIGTERM, SIG_DFL);
 }
 
-boolean previewapp__Start(self)
-struct previewapp *self;
+boolean previewapp__Start(struct previewapp *self)
 {
     struct view *v;
     struct im *im;
@@ -191,8 +187,7 @@ struct previewapp *self;
     return TRUE;
 }
 
-previewapp__Run(self)
-struct previewapp *self;
+int previewapp__Run(struct previewapp *self)
 {
     if(!previewapp_Fork(self))
 	return -1;

@@ -41,9 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 #include <textv.ih>
 #include "textintv.ih"
 
-boolean titextv__InitializeObject(classID, self)
-struct classheader *classID;
-struct titextv *self;
+boolean titextv__InitializeObject(struct classheader *classID, struct titextv *self)
 {
     self->intv=NULL;
     self->lastpos=(-1);
@@ -51,15 +49,12 @@ struct titextv *self;
     
 }
 
-void titextv__FinalizeObject(classID, self)
-struct classheader *classID;
-struct titextv *self;
+void titextv__FinalizeObject(struct classheader *classID, struct titextv *self)
 {
 }
 
 
-void titextv__Update(self)
-struct titextv *self;
+void titextv__Update(struct titextv *self)
 {
     long pos;
 

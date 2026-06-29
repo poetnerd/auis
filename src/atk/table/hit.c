@@ -47,6 +47,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 #define AUXMODULE
 #include <spread.eh>
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 extern struct view *spread_FindSubview();
 
 static boolean debug=FALSE;
@@ -63,11 +66,7 @@ static  abs (x) int x;
 
 /* Handle mouse hit */
 
-struct view * MouseHit (V, action, x, y, numberOfClicks)
-register struct spread * V;
-enum view_MouseAction action;
-long x, y;
-long numberOfClicks;		/* how should i use this?? */
+struct view * MouseHit(register struct spread *V, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     struct chunk chunk;
     struct cell * hitcell;
@@ -243,9 +242,7 @@ long numberOfClicks;		/* how should i use this?? */
     return &getView(V);
 }
 
-CopyChunk(to, from)
-Chunk to;
-Chunk from;
+int CopyChunk(Chunk to, Chunk from)
 {
     to->LeftCol = from->LeftCol;
     to->RightCol = from->RightCol;
@@ -253,9 +250,7 @@ Chunk from;
     to->BotRow = from->BotRow;
 }
 
-CompareChunk(to, from)
-Chunk to;
-Chunk from;
+int CompareChunk(Chunk to, Chunk from)
 {
     return (to->LeftCol != from->LeftCol ||
 		to->RightCol != from->RightCol ||
@@ -263,10 +258,7 @@ Chunk from;
 		to->BotRow != from->BotRow);
 }
 
-static  movecoldown (V, x, y, chunk)
-register struct spread * V;
-int     x, y;
-Chunk chunk;
+static  movecoldown(register struct spread *V, int x, int y, Chunk chunk)
 {
     int index;
 
@@ -287,9 +279,7 @@ Chunk chunk;
     }
 }
 
-static  movecolmove (V, x, y)
-register struct spread * V;
-int     x,  y;
+static  movecolmove(register struct spread *V, int x, int y)
 {
     if (debug)
 	printf("movecolmove\n");
@@ -300,9 +290,7 @@ int     x,  y;
     spread_InvertRectangle (V, V->currentoffset, V->icy, V->icx - V->currentoffset, 2);
 }
 
-static  movecolup (V, x, y)
-register struct spread * V;
-int     x,  y;
+static  movecolup(register struct spread *V, int x, int y)
 {
     movecolcancel (V);
     table_ChangeThickness (MyTable(V), 1, V->currentslice,
@@ -310,8 +298,7 @@ int     x,  y;
     view_WantNewSize(getView(V).parent, &getView(V));
 }
 
-static  movecolcancel (V)
-register struct spread * V;
+static  movecolcancel(register struct spread *V)
 {
     if (debug)
 	printf("movecolcancel\n");
@@ -320,10 +307,7 @@ register struct spread * V;
     spread_InvertRectangle (V, V->currentoffset, V->icy, V->icx - V->currentoffset, 2);
 }
 
-static  moverowdown (V, x, y, chunk)
-register struct spread * V;
-int     x,  y;
-Chunk chunk;
+static  moverowdown(register struct spread *V, int x, int y, Chunk chunk)
 {
     int index;
 
@@ -346,9 +330,7 @@ Chunk chunk;
 }
 
 
-static  moverowmove (V, x, y)
-register struct spread * V;
-int     x, y;
+static  moverowmove(register struct spread *V, int x, int y)
 {
     if (debug)
 	printf("moverowmove\n");
@@ -359,9 +341,7 @@ int     x, y;
     spread_InvertRectangle (V, V->icx, V->currentoffset, 2, V->icy - V->currentoffset);
 }
 
-static  moverowup (V, x, y)
-register struct spread * V;
-int     x,  y;
+static  moverowup(register struct spread *V, int x, int y)
 {
     if (debug)
 	printf("moverowup\n");
@@ -370,8 +350,7 @@ int     x,  y;
     view_WantNewSize(getView(V).parent, &getView(V));
 }
 
-static  moverowcancel (V)
-register struct spread * V;
+static  moverowcancel(register struct spread *V)
 {
     if (debug)
 	printf("moverowcancel\n");
@@ -382,10 +361,7 @@ register struct spread * V;
 
 /* Get the formula of a cell */
 
-GetFormula (V, chunk, keybuff)
-register struct spread * V;
-register Chunk chunk;
-char **keybuff;
+int GetFormula(register struct spread *V, register Chunk chunk, char **keybuff)
 {
     if (debug)
 	printf("GetFormula entered\n");
@@ -403,8 +379,7 @@ char **keybuff;
 
 /* true if character is not a separator */
 
-static IsNotSeparator (ch)
-register char ch;
+static IsNotSeparator(register char ch)
 {
     return (ch != '=' && ch != '+' && ch != '-' && ch != '*' && ch != '^' && ch != '/' && ch != ':' && ch != ',' && ch != '(' && ch != '[');
 }
@@ -413,9 +388,7 @@ register char ch;
 
 Note that this routine is useful only if bufferstatus = BUFFERHASINPUT
  */
-static  EnterCellName (V, chunk)
-register struct spread * V;
-Chunk chunk;
+static  EnterCellName(register struct spread *V, Chunk chunk)
 {
     char buf[10], rbuf[5], cbuf[5];
     int i;
@@ -452,8 +425,7 @@ Chunk chunk;
 }
 
 
-TellFormula (V)
-register struct spread * V;
+int TellFormula(register struct spread *V)
 {
     char *keybuff;
 
@@ -483,9 +455,7 @@ register struct spread * V;
 
 /* set current working cell */
 
-SetCurrentCell (V, chunk)
-register struct spread * V;
-register Chunk chunk;
+int SetCurrentCell(register struct spread *V, register Chunk chunk)
 {
     long k;
 
@@ -530,9 +500,7 @@ register Chunk chunk;
 	printf("SetCurrentCell exited\n");
 }
 
-extendCurrentCell(V, chunk)
-register struct spread * V;
-register Chunk chunk;
+int extendCurrentCell(register struct spread *V, register Chunk chunk)
 {
     int x0, x1, y0, y1, x2, y2, x3, y3;
 

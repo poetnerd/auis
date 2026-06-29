@@ -72,6 +72,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 
 #include <index.h>
 
+#include <stdlib.h>
 boolean helpdb__InitializeClass();
 char *helpdb__MapAlias ();
 int helpdb__CheckIndex();
@@ -131,8 +132,7 @@ static char *err_server = "Sorry; a file server is down.";
 static char *err_index2 = "Sorry; index cannot be found";
 
 
-boolean helpdb__InitializeClass(classID)
-struct classheader *classID;
+boolean helpdb__InitializeClass(struct classheader *classID)
 {
     char pathName[MAXPATHLEN], *tmp;
 
@@ -166,9 +166,7 @@ struct classheader *classID;
 /*
  * Opens a given index file
  */
-int helpdb__SetIndex(classID, aindex)
-struct classheader *classID;
-char *aindex;
+int helpdb__SetIndex(struct classheader *classID, char *aindex)
 {
     if (openIndex)
 	index_Close(openIndex);
@@ -187,9 +185,7 @@ char *aindex;
 /*
  * checks the status of the help index and prints an error dialog
  */
-int helpdb__CheckIndex(classID, v)
-struct classheader *classID;
-register struct view *v;
+int helpdb__CheckIndex(struct classheader *classID, register struct view *v)
 {
     char err_buf[HELP_MAX_ERR_LENGTH * 2];
 
@@ -238,8 +234,7 @@ register char *acmd;
 /*
  * atoi that only converts numbers, a little safer...
  */
-static int safeatoi(astring)
-register char *astring;
+static int safeatoi(register char *astring)
 {
     register long value;
     register char tc;
@@ -258,9 +253,7 @@ register char *astring;
 /*
  * returns alias matching a string.  simple.
  */
-char *helpdb__MapAlias(classID, alias)
-struct classheader *classID;
-register char *alias;
+char *helpdb__MapAlias(struct classheader *classID, register char *alias)
 {
     register struct helpAlias *ta;
     
@@ -270,8 +263,7 @@ register char *alias;
     return NULL;
 }
 
-struct helpDir *helpdb__GetHelpDirs(classID)
-struct classheader *classID;
+struct helpDir *helpdb__GetHelpDirs(struct classheader *classID)
 {
     return firstHelpDirs;
 }
@@ -281,10 +273,7 @@ struct helpdb_EnumAllSplot {
     char *ptr;
 };
 
-static void EnumAllSplot(aindex, ac, rock)
-struct Index *aindex;
-struct indexComponent *ac;
-struct helpdb_EnumAllSplot *rock;
+static void EnumAllSplot(struct Index *aindex, struct indexComponent *ac, struct helpdb_EnumAllSplot *rock)
 {
     if (ac && ac->name && (*(ac->name) != '\0')) {
 	(*(rock->proc))(ac->name, ac->data, rock->ptr);
@@ -292,12 +281,7 @@ struct helpdb_EnumAllSplot *rock;
 }
 
 /* call proc for each help alias and help index entry. proc should have the definition
-void proc(char *name, char *original, rock) 
-name is the help topic keyword; original is the filename (for index entries) or the real name of the alias (for aliases.) */
-void helpdb__EnumerateAll(classID, proc, ptr)
-struct classheader *classID;
-void (*proc)();
-char *ptr;
+void proc(int char *name, int char *original, int rock)
 {
     struct helpdb_EnumAllSplot heas;
     struct helpAlias *ta;
@@ -312,18 +296,13 @@ char *ptr;
 
 /* call proc for each help index entry. proc should have the definition
 void proc(struct Index *aindex, struct indexComponent *ac, rock) */
-void helpdb__Enumerate(classID, proc, ptr)
-struct classheader *classID;
-void (*proc)();
-char *ptr;
+void helpdb__Enumerate(struct classheader *classID, void (*proc)(), char *ptr)
 {
     index_Enumerate(openIndex, proc, ptr);
 }
 
 
-void helpdb__AddSearchDir(classID, dirName)
-struct classheader *classID;
-char *dirName;
+void helpdb__AddSearchDir(struct classheader *classID, char *dirName)
 {
     struct helpDir *thd, *lhd;
     char *lastchar, *firstchar;
@@ -351,8 +330,7 @@ char *dirName;
 }
 
 
-void helpdb__PrintSearchDirs(classID)
-struct classheader *classID;
+void helpdb__PrintSearchDirs(struct classheader *classID)
 {
     struct helpDir *thd;
 
@@ -366,9 +344,7 @@ struct classheader *classID;
  * Construct a list of aliases to be checked in case the index call
  * misses.
  */
-void helpdb__ReadAliasesFile(classID, aname)
-struct classheader *classID;
-char *aname;
+void helpdb__ReadAliasesFile(struct classheader *classID, char *aname)
 {
     char original[HNSIZE+1];
     char alias[HNSIZE+1];
@@ -467,9 +443,7 @@ char *aname;
 /*
  * returns a string sans extension, if any
  */
-static void ParseBaseName(aname, abase)
-register char *aname;
-register char *abase;
+static void ParseBaseName(register char *aname, register char *abase)
 {
     register char *tp;
     
@@ -486,8 +460,7 @@ register char *abase;
  * comput metric based on file type and extension.
  * The higher the metric, the later the file will be shown
  */
-static void ComputeMetric(ah)
-register struct helpFile *ah;
+static void ComputeMetric(register struct helpFile *ah)
 {
     register char *extension;
     register char *tf;
@@ -523,10 +496,7 @@ register struct helpFile *ah;
 /*
  * Complex file matching mechanism
  */
-static int Match(akey, afile, amatchName)
-register char *akey;
-register char *afile;
-int amatchName;
+static int Match(register char *akey, register char *afile, int amatchName)
 {
     char *keyExt, *fileExt;
     register char *tp;
@@ -598,11 +568,7 @@ int amatchName;
  * returned and the cache isn't touched.  If the topic is a
  * command-running alias, run the command, and return 2
  */
-int helpdb__SetupHelp(classID, c, aname, strip)
-struct classheader *classID;
-register struct cache *c;
-register char *aname;
-int strip;			/* whether to strip changes files */
+int helpdb__SetupHelp(struct classheader *classID, register struct cache *c, register char *aname, int strip)
 {
     struct helpFile *tf, *nf;
     struct helpFile *al = NULL;
@@ -678,8 +644,7 @@ int strip;			/* whether to strip changes files */
  * find help on a topic.  Filename is Missing.name.number in MISSINGDIR
  * when help doesn't find an index hit.  Increments 'number' each subsequent miss.
  */
-static void NotifyError(aname)
-register char *aname;
+static void NotifyError(register char *aname)
 {
     /* tname is the full path to the "Miss" file, without the number
        	  appended
@@ -732,8 +697,7 @@ register char *aname;
     close(fd);
 }
 
-static char *LowerCase(astring)
-register char *astring;
+static char *LowerCase(register char *astring)
 {
     register char *tp = astring;
 
@@ -750,10 +714,7 @@ register char *astring;
  * Given a directory path "dname", adds all files in that directory
  * that match topic "aname" to the list "tmplist".
  */
-static struct helpFile *AddFilesFromDir(dname, aname, tmplist)
-char *dname;
-char *aname;
-struct helpFile *tmplist;
+static struct helpFile *AddFilesFromDir(char *dname, char *aname, struct helpFile *tmplist)
 {
     struct helpFile *tf, *nf, **ef;
     DIR *tempdir;
@@ -815,9 +776,7 @@ struct helpFile *tmplist;
  * If strip is non-zero, strips files with extensions CHANGE_EXT and TUTORIAL_EXT
  * from the returned list
  */
-static struct helpFile *SetupHelpAux(aname, strip)
-register char *aname;
-int strip;			/* whether to strip changes files */
+static struct helpFile *SetupHelpAux(register char *aname, int strip)
 {
     register long i;
     register struct helpFile *t, *p, *n, **ef;

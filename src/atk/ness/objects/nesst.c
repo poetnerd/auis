@@ -60,13 +60,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ness
 #include <proctbl.ih>
 #include <observe.ih>
 
+#include <string.h>
 #undef class_StaticEntriesOnly
 
 
 
-main(argc, argv)
-	register int argc;
-	register char **argv;
+int main(register int argc, register char **argv)
 {
 	register struct ness *dobj;
 	boolean debug = TRUE;
@@ -136,8 +135,7 @@ main(argc, argv)
 	ness_Write(dobj, f=fopen("/tmp/t2", "w"), 12, 0);
 }
 
-printdata(dobj)
-	register struct ness *dobj;
+int printdata(register struct ness *dobj)
 {
 	printf("Origin: %s\n", dobj->Origin);
 	printf("OriginalModValue: %ld\n", dobj->OriginalModValue);

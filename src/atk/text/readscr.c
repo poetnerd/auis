@@ -54,6 +54,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #include <readscr.eh>
 
+#include <stdlib.h>
 #define STACKSIZE 1000
 #define STRINGSIZE 50
 #define NORM 0
@@ -82,23 +83,17 @@ static shortscribe();
 static startenv();
 static finishenv();
 
-static goshdarn(errmsg)
-char *errmsg;
+static goshdarn(char *errmsg)
 {
     fprintf(stderr, "<warning:readscr>%s\n", errmsg);
 }
 
-boolean readscr__InitializeObject(classID) /* stupid convention */
-    struct classheader *classID;
+boolean readscr__InitializeObject(struct classheader *classID)
 {
     return TRUE;
 }
 
-struct text *readscr__Begin(classID, d, pos, len, purge, version, GetTemplate)
-struct classheader *classID;
-struct text *d;
-int pos, len, purge, GetTemplate;
-char *version;
+struct text *readscr__Begin(struct classheader *classID, struct text *d, int pos, int len, int purge, char *version, int GetTemplate)
 {
     if (GetTemplate && text_ReadTemplate(d, "scribe", 0)) {
 	goshdarn("Couldn't read template.");
@@ -127,12 +122,7 @@ char *version;
     return(d);
 }
 
-readscr__PrintFile(classID, filename, tv, d, Version, TrashWhenDone)
-struct classheader *classID;
-char *filename, *Version;
-int TrashWhenDone;
-struct textview *tv;
-struct text *d;
+int readscr__PrintFile(struct classheader *classID, char *filename, struct textview *tv, struct text *d, char *Version, int TrashWhenDone)
 {
     int fd;
     struct stat statbuf;
@@ -160,9 +150,7 @@ struct text *d;
 
 
 /* ** textfix - reads chars in and handles them appropriately ** */
-static textfix(d, len)
-struct text *d;
-int len;
+static textfix(struct text *d, int len)
 {
     register int i, tmp;
 
@@ -253,8 +241,7 @@ int len;
 }
 
 /* ** linefix - if single \n, output space, if multiple \n's, output n-1 \n's ** */
-static linefix(d)
-struct text *d;
+static linefix(struct text *d)
 {
     if (OldFormat) {
 	if (LineFeeds == 1) {
@@ -290,8 +277,7 @@ struct text *d;
 }
 
 /* ** scribefix - deal with @commands ** */
-static scribefix(d)
-struct text *d;
+static scribefix(struct text *d)
 {
     register int i, next, lowernext;
     char shortcommand[STRINGSIZE], realstring[STRINGSIZE];
@@ -345,9 +331,7 @@ struct text *d;
 }
 
 /* ** longscribe - deal with @begin and @end scribe environments ** */
-static longscribe(d, shortcommand)
-struct text *d;
-char *shortcommand;
+static longscribe(struct text *d, char *shortcommand)
 {
     register int i;
     struct style *tempstyle;
@@ -454,9 +438,7 @@ char *shortcommand;
 
 
 /* ** shortscribe - deal with all other environments ** */
-static shortscribe(d, shortcommand)
-struct text *d;
-char *shortcommand;
+static shortscribe(struct text *d, char *shortcommand)
 {
     struct style *tempstyle;
     int delim;
@@ -490,9 +472,7 @@ char *shortcommand;
 }
 
 /* ** startenv - add an environment to the stack ** */
-static startenv(delim, tempstyle)
-int delim;
-struct style *tempstyle;
+static startenv(int delim, struct style *tempstyle)
 {
     int rpos;
 

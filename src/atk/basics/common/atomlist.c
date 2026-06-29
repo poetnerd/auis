@@ -48,13 +48,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
  * Class Procedures
  */
 
-boolean atomlist__InitializeObject(struct classheader * classID, struct atomlist * self)
+boolean atomlist__InitializeObject(struct classheader *classID, struct atomlist *self)
 {
   self->atoms = NULL;
   return TRUE;
 }
 
-void atomlist__FinalizeObject(struct classheader * classID, register struct atomlist * self)
+void atomlist__FinalizeObject(struct classheader *classID, register struct atomlist *self)
 {
     register struct atoms *next;
 
@@ -66,7 +66,7 @@ void atomlist__FinalizeObject(struct classheader * classID, register struct atom
 }
 
 
-struct atomlist *atomlist__Copy(struct classheader * classID, struct atomlist * oldlist)
+struct atomlist *atomlist__Copy(struct classheader *classID, struct atomlist *oldlist)
 {
     struct atomlist *newlist = atomlist_New();
     register struct atoms *atoms;
@@ -78,7 +78,7 @@ struct atomlist *atomlist__Copy(struct classheader * classID, struct atomlist * 
 }
 
 
-struct atomlist *atomlist__StringToAtomlist(struct classheader * classID, char * string)
+struct atomlist *atomlist__StringToAtomlist(struct classheader *classID, char *string)
 {
     char *atomstart;
     char *atomend;
@@ -101,7 +101,7 @@ struct atomlist *atomlist__StringToAtomlist(struct classheader * classID, char *
  * Methods
  */
 
-struct atom *atomlist__Last(struct atomlist * self)
+struct atom *atomlist__Last(struct atomlist *self)
 {
     register struct atoms *atoms;
 
@@ -112,7 +112,7 @@ struct atom *atomlist__Last(struct atomlist * self)
 }
 
 
-short atomlist__Memberp(struct atomlist * self, struct atom * key)
+short atomlist__Memberp(struct atomlist *self, struct atom *key)
 {
     register struct atoms *atoms;
 
@@ -122,7 +122,7 @@ short atomlist__Memberp(struct atomlist * self, struct atom * key)
     return (atoms != NULL);
 }
 
-void atomlist__DropFirst(struct atomlist * self)
+void atomlist__DropFirst(struct atomlist *self)
 {
     struct atoms *oldfirst = self->atoms;
 
@@ -132,7 +132,7 @@ void atomlist__DropFirst(struct atomlist * self)
     }
 }
 
-void atomlist__Prepend(struct atomlist * self, struct atom * atom)
+void atomlist__Prepend(struct atomlist *self, struct atom *atom)
 {
     register struct atoms *atoms;
 
@@ -143,7 +143,7 @@ void atomlist__Prepend(struct atomlist * self, struct atom * atom)
     self->atoms = atoms;
 }
 
-void atomlist__Append(struct atomlist * self, struct atom * atom)
+void atomlist__Append(struct atomlist *self, struct atom *atom)
 {
     register struct atoms *new;
     register struct atoms **last;
@@ -159,7 +159,7 @@ void atomlist__Append(struct atomlist * self, struct atom * atom)
 }
 
 
-void atomlist__JoinToEnd(struct atomlist * self, struct atomlist * otherlist)
+void atomlist__JoinToEnd(struct atomlist *self, struct atomlist *otherlist)
 {
     register struct atoms *otherAtoms;
     register struct atoms **last;
@@ -175,7 +175,7 @@ void atomlist__JoinToEnd(struct atomlist * self, struct atomlist * otherlist)
     }
 }
 
-void atomlist__JoinToBeginning(struct atomlist * self, struct atomlist * otherlist)
+void atomlist__JoinToBeginning(struct atomlist *self, struct atomlist *otherlist)
 {
     register struct atoms *otherAtoms;
     register struct atoms **last;
@@ -192,7 +192,7 @@ void atomlist__JoinToBeginning(struct atomlist * self, struct atomlist * otherli
     }
 }
 
-void atomlist__Cut(register struct atomlist * self, struct atoms * mark)
+void atomlist__Cut(register struct atomlist *self, struct atoms *mark)
 {
     register struct atoms *next;
 

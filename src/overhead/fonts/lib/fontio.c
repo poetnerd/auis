@@ -43,6 +43,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include "font.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <andrewos.h> /* sys/types.h */
 #include <sys/stat.h> /* for fstat */
 static unsigned char reverse_bits[] = {
@@ -55,8 +56,7 @@ static unsigned char reverse_bits[] = {
 struct font *ReadFdbFont ();
 #endif /* READFDB */
 
-struct font *ReadFwmFont (FileName)
-char *FileName;
+struct font *ReadFwmFont(char *FileName)
 {
     struct stat st;
     register struct font   *f;
@@ -90,9 +90,7 @@ char *FileName;
 
 char *FormatFontname () /* from fntnamng.c */ ;
 
-struct font *GetFontFromFile (dir, n)
-char *dir;
-struct FontName  *n;
+struct font *GetFontFromFile(char *dir, struct FontName *n)
 {
    char *basename;
    char  FullFileName[256];
@@ -139,8 +137,7 @@ struct FontName  *n;
 #define maximize(A,B) if(B > A) A = B;
 #define sb(A) cc2 =(unsigned char *) &(A);cc1 = cc2++ ;tmp = *cc2;*cc2 = *cc1;*cc1=tmp
 #define ssb(A) sb(A.x); sb(A.y)
-fbbswap(foo)
-struct font *foo;
+int fbbswap(struct font *foo)
 {
     /*	Takes a font compiled on a byte reversed machine and converts it for use. 
 	Assumes BITMAP type icons 	*/

@@ -40,6 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <classind.h>
 
 
+#include <stdlib.h>
 /*
  *
  * local functions
@@ -181,6 +182,7 @@ struct IndexEntry * ThisEntry;
  **/
 struct IndexEntry *
 CreateEntry(char *name, char *key, unsigned long version, char *data)
+
 {
 struct IndexEntry * ThisEntry;
 

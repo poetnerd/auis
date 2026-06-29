@@ -41,18 +41,15 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 #include "srctext.ih"
 #include "ctext.eh"
 
+#include <stdlib.h>
 static Dict *words[TABLESIZE];
 
-boolean ctext__IsTokenChar(self,ch)    
-struct ctext *self;
-char ch;
+boolean ctext__IsTokenChar(struct ctext *self, char ch)
 {
     return (isalnum(ch) || (ch) == '_');
 }
     
-void ctext__SetAttributes(self,atts)
-struct ctext	*self;
-struct attributes   *atts;
+void ctext__SetAttributes(struct ctext *self, struct attributes *atts)
 {
     super_SetAttributes(self,atts);
     while (atts!=NULL) {
@@ -69,8 +66,7 @@ struct attributes   *atts;
     }
 }
 
-static void SetupStyles(self)
-struct ctext *self;
+static void SetupStyles(struct ctext *self)
 {
     if ((self->header.srctext.kindStyle[KEYWRD]= stylesheet_Find(self->header.text.styleSheet, "keyword")) == NULL) {
 	self->header.srctext.kindStyle[KEYWRD]= style_New();
@@ -86,15 +82,13 @@ struct ctext *self;
     }
 }
 
-void ctext__SetupStyles(self)
-struct ctext *self;
+void ctext__SetupStyles(struct ctext *self)
 {
     super_SetupStyles(self);
     SetupStyles(self);
 }
 
-boolean ctext__InitializeClass(classID)
-struct classheader *classID;
+boolean ctext__InitializeClass(struct classheader *classID)
 {
     static Dict ckeywords[]={
 	{"auto",0,KEYWRD},
@@ -134,9 +128,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean ctext__InitializeObject(classID, self)
-struct classheader *classID;
-struct ctext *self;
+boolean ctext__InitializeObject(struct classheader *classID, struct ctext *self)
 {
     self->header.srctext.words= (Dict **)words;
     self->braceIndent=0;
@@ -161,9 +153,7 @@ struct ctext *self;
 
 #define match(self,pos,str) ((pos==0 || !ctext_IsTokenChar(self,ctext_GetChar(self,pos-1))) && !ctext_IsTokenChar(self,ctext_GetChar(self,pos+cstrlen(str))) && ctext_DoMatch(self,pos,str,cstrlen(str))) /*RSK91fix: use IsTokenChar, not isalnum*/
 
-long ctext__MaybeBackwardSkipCppLines(self,pos) /*RSK91mod: returns the position <cr> preceding the Cpp-line, instead of the last character of the previous line (for //comment detection)*/
-struct ctext *self;
-long pos;
+long ctext__MaybeBackwardSkipCppLines(struct ctext *self, long pos)
 {
     long currentEOL;
     long len= ctext_GetLength(self);
@@ -177,9 +167,7 @@ long pos;
     return currentEOL+1;
 }
 
-long ctext__BackwardSkipJunk(self,pos)
-struct ctext *self;
-long pos;
+long ctext__BackwardSkipJunk(struct ctext *self, long pos)
 {
     while (pos>=0) {
 	register int c=ctext_GetChar(self,pos--);
@@ -212,10 +200,7 @@ long pos;
 
 /* beg and end must be constants (for switch) */
 /* assumes ending delimiter AFTER pos */
-long ctext__BackwardSkipDelimited(self,pos,beg,end)
-struct ctext *self;
-long pos;
-char beg, end;
+long ctext__BackwardSkipDelimited(struct ctext *self, long pos, char beg, char end)
 {
     int level=1;
     while(pos>=0 && level>0){
@@ -247,9 +232,7 @@ char beg, end;
 }
 
 /* returns true iff the character at pos is quoted (ie. "\"). Takes into account the slash being quoted. (ie "\\"). */ /*RSK92mod*/
-boolean ctext__Quoted(self, pos)
-struct ctext *self;
-long pos;
+boolean ctext__Quoted(struct ctext *self, long pos)
 {
     boolean retval = FALSE;
     while (pos-->0 && ctext_GetChar(self,pos)=='\\')
@@ -258,9 +241,7 @@ long pos;
 }
 
 /* ctext_UnstyledCommentStart is a fallback for places where we KNOW we're at the end of a comment, but InCommentStart returns zero becuse there was no style there. */ /*RSK92add*/
-long ctext__UnstyledCommentStart(self, pos)
-struct ctext *self;
-long pos;
+long ctext__UnstyledCommentStart(struct ctext *self, long pos)
 {
     int prev, c=0;
     while (pos>0) {
@@ -277,9 +258,7 @@ long pos;
 }
 
 /* CheckPreproc wraps the preproc style around a preprocessor directive */
-long ctext__CheckPreproc(self, start)
-struct ctext *self;
-long start;
+long ctext__CheckPreproc(struct ctext *self, long start)
 {
     long end, len=ctext_GetLength(self);
     int prev, c;
@@ -314,9 +293,7 @@ long start;
     return end-1;
 }
 
-static void fn_name(self, posn, last_comment)
-struct ctext *self;
-long posn, last_comment;
+static void fn_name(struct ctext *self, long posn, long last_comment)
 {
     long end=posn, length=ctext_GetLength(self);
     int c, parencount=0;
@@ -342,8 +319,7 @@ long posn, last_comment;
 	ctext_WrapStyle(self, posn+1,end-posn, self->header.srctext.function_style, TRUE,TRUE);
 }
 
-void ctext__RedoStyles(self)
-struct ctext *self;
+void ctext__RedoStyles(struct ctext *self)
 {
     long last_comment = 0, posn, len = ctext_GetLength(self);
     int prev=0, c='\n', braces=0, escape=FALSE;

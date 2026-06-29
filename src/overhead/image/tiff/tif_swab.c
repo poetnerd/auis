@@ -41,8 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "tiffio.h"
 
 #ifndef TIFFSwabShort
-TIFFSwabShort(wp)
-	unsigned short *wp;
+int TIFFSwabShort(unsigned short *wp)
 {
 	register unsigned char *cp = (unsigned char *)wp;
 	int t;
@@ -52,8 +51,7 @@ TIFFSwabShort(wp)
 #endif
 
 #ifndef TIFFSwabLong
-TIFFSwabLong(lp)
-	unsigned long *lp;
+int TIFFSwabLong(unsigned long *lp)
 {
 	register unsigned char *cp = (unsigned char *)lp;
 	int t;
@@ -64,9 +62,7 @@ TIFFSwabLong(lp)
 #endif
 
 #ifndef TIFFSwabArrayOfShort
-TIFFSwabArrayOfShort(wp, n)
-	unsigned short *wp;
-	register int n;
+int TIFFSwabArrayOfShort(unsigned short *wp, register int n)
 {
 	register unsigned char *cp;
 	register int t;
@@ -81,9 +77,7 @@ TIFFSwabArrayOfShort(wp, n)
 #endif
 
 #ifndef TIFFSwabArrayOfLong
-TIFFSwabArrayOfLong(lp, n)
-	register unsigned long *lp;
-	register int n;
+int TIFFSwabArrayOfLong(register unsigned long *lp, register int n)
 {
 	register unsigned char *cp;
 	register int t;
@@ -184,9 +178,7 @@ unsigned char TIFFNoBitRevTable[256] = {
     0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff, 
 };
 
-TIFFReverseBits(cp, n)
-	register unsigned char *cp;
-	register int n;
+int TIFFReverseBits(register unsigned char *cp, register int n)
 {
 	for (; n > 8; n -= 8) {
 		cp[0] = TIFFBitRevTable[cp[0]];

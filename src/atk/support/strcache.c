@@ -38,8 +38,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include <andrewos.h>
 #include <class.h>
-
-extern int lc_strcmp(char *s1, char *s2);
 #include <strcache.eh>
 #include <util.h>
 #include <ctype.h>
@@ -92,6 +90,7 @@ char *strcache__SaveStr(struct classheader *classID, char *str)
 }
 
 #include <glist.ih>
+#include <stdio.h>
 struct enumerate {
     boolean found;
     procedure proc;

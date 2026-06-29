@@ -39,65 +39,65 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <class.h>
 #include <msghndlr.eh>
 
-int msghandler__DisplayString(struct msghandler * self, int priority, char * string)
+int msghandler__DisplayString(struct msghandler *self, int priority, char *string)
 {
     return -1;
 }
 
-int msghandler__AskForString(struct msghandler * self, int priority, int prompt, int defaultString, char *prompt, *defaultString, * buffer, int bufferSize)
+int msghandler__AskForString(struct msghandler *self, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize)
 {
     return -1;
 }
 
-int msghandler__AskForPasswd(struct msghandler * self, int priority, int prompt, int defaultString, char *prompt, *defaultString, * buffer, int bufferSize)
+int msghandler__AskForPasswd(struct msghandler *self, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize)
 {
     return msghandler_AskForString(self,priority,prompt,defaultString,buffer,bufferSize);
 }
 
-int msghandler__AskForStringCompleted(struct msghandler * self, int priority, int prompt, int defaultString, char *prompt, *defaultString, * buffer, int bufferSize, struct keystate * keystate, int completionProc, procedure completionProc, helpProc, long functionData, int flags)
+int msghandler__AskForStringCompleted(struct msghandler *self, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize, struct keystate *keystate, procedure completionProc, procedure helpProc, long functionData, int flags)
 {
     return -1;
 }
 
-int msghandler__MultipleChoiceQuestion(struct msghandler * self, int priority, char * prompt, long defaultChoice, long * result, char ** choices, char * abbrevKeys)
+int msghandler__MultipleChoiceQuestion(struct msghandler *self, int priority, char *prompt, long defaultChoice, long *result, char **choices, char *abbrevKeys)
 {
     return -1;
 }
 
-void msghandler__CancelQuestion(struct msghandler * self)
+void msghandler__CancelQuestion(struct msghandler *self)
 {
 }
 
-int msghandler__GetCurrentString(struct msghandler * self, char * buffer, int bufferSize)
-{
-    return -1;
-}
-
-int msghandler__InsertCharacters(struct msghandler * self, int pos, char * string, int len)
+int msghandler__GetCurrentString(struct msghandler *self, char *buffer, int bufferSize)
 {
     return -1;
 }
 
-int msghandler__DeleteCharacters(struct msghandler * self, int pos, int pos, len)
+int msghandler__InsertCharacters(struct msghandler *self, int pos, char *string, int len)
+{
+    return -1;
+}
+
+int msghandler__DeleteCharacters(struct msghandler *self, int pos, int len)
 {
 	return 0;
 }
 
-int msghandler__GetCursorPos(struct msghandler * self)
+int msghandler__GetCursorPos(struct msghandler *self)
 {
     return -1;
 }
 
-int msghandler__SetCursorPos(struct msghandler * self, int pos)
+int msghandler__SetCursorPos(struct msghandler *self, int pos)
 {
     return -1;
 }
 
-boolean msghandler__Asking(struct msghandler * self)
+boolean msghandler__Asking(struct msghandler *self)
 {
     return FALSE;
 }
 
-void msghandler__Advice(struct msghandler * self, enum message_Preference pp)
+void msghandler__Advice(struct msghandler *self, enum message_Preference pp)
 {
 }

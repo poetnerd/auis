@@ -81,6 +81,9 @@ END-SPECIFICATION  ************************************************************/
 #include <suitecv.ih>
 #include <suiteev.eh>
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #define Suite			    (self->parent)
 #define	CurrentItem		    (Suite->current_item)
 #define Rows			    (Suite->rows)

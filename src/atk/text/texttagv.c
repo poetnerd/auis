@@ -38,15 +38,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <fontdesc.ih>
 #include <texttagv.eh>
 
+#include <stdio.h>
 #define DataObject(A) (A->header.view.dataobject)
 #define Data(A) ((struct texttag *)(DataObject(A)))
 
-void texttagv__Print(self, f, process, final, toplevel)
-struct texttagv *self;
-FILE *f;
-char *process;
-char *final;
-int toplevel;
+void texttagv__Print(struct texttagv *self, FILE *f, char *process, char *final, int toplevel)
 {
     struct texttag *tag;
     char buf[256];
@@ -55,10 +51,7 @@ int toplevel;
     texttag_GetTag(tag,255,buf);
     fprintf(f,".iy \"TEXTTAG %s\"\n",buf);
 }
-struct view *texttagv__Hit(self,action,mousex,mousey,numberOfClicks) 
-struct texttagv *self;
-enum view_MouseAction action;
-long mousex, mousey, numberOfClicks;
+struct view *texttagv__Hit(struct texttagv *self, enum view_MouseAction action, long mousex, long mousey, long numberOfClicks)
 {
     return super_Hit(self,action,mousex,mousey,numberOfClicks) ;
 }
@@ -66,9 +59,7 @@ long mousex, mousey, numberOfClicks;
 #define FONTSIZE 12
 #define OFNAME "andy"
 #define OFSIZE 8
-boolean texttagv__InitializeObject(classID,self)
-struct classheader *classID;
-struct texttagv *self;
+boolean texttagv__InitializeObject(struct classheader *classID, struct texttagv *self)
 {
     struct fnotev *fv = (struct fnotev *) self;
     texttagv_SetDisplayStr(self,"@");
@@ -76,8 +67,7 @@ struct texttagv *self;
     fv->ofd = fontdesc_Create(OFNAME,0,OFSIZE);
     return TRUE;
 }
-boolean texttagv__InitializeClass(classID)
-struct classheader *classID;
+boolean texttagv__InitializeClass(struct classheader *classID)
 {
     return TRUE;
 }

@@ -47,9 +47,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <filehdr.h>
 #include <scnhdr.h>
 
-static char *ComputeOutputFileName (InputFileName, extension)
-char *InputFileName;
-char *extension;
+#include <string.h>
+#include <stdlib.h>
+static char *ComputeOutputFileName(char *InputFileName, char *extension)
 {
 
     static char name[256];
@@ -120,9 +120,7 @@ ComputeBindingAddress( InputFileName )
 	return ( ( hash + 1 ) * 0x00400000 ) + sh.s_scnptr ;
 }
 
-main(argc, argp)
-int argc;
-char **argp;
+int main(int argc, char **argp)
 {
     char *InputFileName;
     char *OutputFileName;

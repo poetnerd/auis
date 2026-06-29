@@ -36,12 +36,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <textv.ih>
 #include <cursor.ih>
 #include <cltextv.eh>
+#include <stdlib.h>
 #define INITIALNUMOBSERVERS 4
 
-static short FindObserverCallBack(self, observer, callBack)
-     struct cltextview * self;
-     struct basicobject *observer;
-     procedure callBack;
+static short FindObserverCallBack(struct cltextview *self, struct basicobject *observer, procedure callBack)
 {
   short i = 0;
 
@@ -53,9 +51,7 @@ static short FindObserverCallBack(self, observer, callBack)
 }
 
 
-static short FindObserver( self, observer )
-     struct cltextview * self;
-     struct basicobject *observer;
+static short FindObserver(struct cltextview *self, struct basicobject *observer)
 {
   short i = 0;
 
@@ -66,8 +62,7 @@ static short FindObserver( self, observer )
 }
 
 
-static short FreeSlot( self )
-     struct cltextview * self;
+static short FreeSlot(struct cltextview *self)
 {
   short i,j;
   
@@ -92,16 +87,8 @@ static short FreeSlot( self )
   return j;
 }
 
-void cltextview__GetClickPosition(self, position, numberOfClicks, action, startLeft, startRight, leftPos, rightPos)
-    struct cltextview *self;
-    long position;
-    long numberOfClicks;
-    enum view_MouseAction action;
-    long startLeft;
-    long startRight;
-    long *leftPos;
-    long *rightPos;
-    {
+void cltextview__GetClickPosition(struct cltextview *self, long position, long numberOfClicks, enum view_MouseAction action, long startLeft, long startRight, long *leftPos, long *rightPos)
+{
 	int i;
 	for (i = 0; i < self->maxObservers; ++i)
 	    if (self->observers[i].observer != NULL)
@@ -115,11 +102,7 @@ void cltextview__GetClickPosition(self, position, numberOfClicks, action, startL
     }
 
 
-void cltextview__AddClickObserver( self, observer, callBack, rock )
-     struct cltextview * self;
-     struct basicobject * observer;
-     procedure callBack;
-     long rock;
+void cltextview__AddClickObserver(struct cltextview *self, struct basicobject *observer, procedure callBack, long rock)
 {
   short free;
 
@@ -133,10 +116,7 @@ void cltextview__AddClickObserver( self, observer, callBack, rock )
 }
 
 
-void cltextview__RemoveClick( self, observer, callBack )
-     struct cltextview * self;
-     struct basicobject * observer;
-     procedure callBack;
+void cltextview__RemoveClick(struct cltextview *self, struct basicobject *observer, procedure callBack)
 {
   short i;
 
@@ -147,9 +127,7 @@ void cltextview__RemoveClick( self, observer, callBack )
 }
      
 
-void cltextview__RemoveClickObserver( self, observer )
-     struct cltextview * self;
-     struct basicobject * observer;
+void cltextview__RemoveClickObserver(struct cltextview *self, struct basicobject *observer)
 {
   short i;
 
@@ -158,9 +136,7 @@ void cltextview__RemoveClickObserver( self, observer )
 }
 
 
-boolean cltextview__InitializeObject(ClassID,self)
-struct classheader *ClassID;
-struct cltextview *self;
+boolean cltextview__InitializeObject(struct classheader *ClassID, struct cltextview *self)
 {
   self->maxObservers = 0;
   self->observers = NULL;
@@ -168,22 +144,14 @@ struct cltextview *self;
   cursor_SetStandard(self->cursor,Cursor_LeftPointer);
   return TRUE;
 }
-void cltextview__FullUpdate(self, type, left, top, width, height)
-struct cltextview *self;
-enum view_UpdateType type;
-long left;
-long top;
-long width;
-long height;
+void cltextview__FullUpdate(struct cltextview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct rectangle rect;
     super_FullUpdate(self, type, left, top, width, height);
     cltextview_GetVisualBounds(self,&rect);
     cltextview_PostCursor(self,&rect,self->cursor);
 }
-void cltextview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct cltextview *self;
+void cltextview__FinalizeObject(struct classheader *classID, struct cltextview *self)
 {
     if(self->cursor)
 	cursor_Destroy(self->cursor);

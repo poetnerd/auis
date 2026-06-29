@@ -90,6 +90,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 
 #include <getstats.h>
 
+#include <string.h>
+#include <stdlib.h>
 extern int errno, sys_nerr;
 extern char *sys_errlist[];
 
@@ -157,9 +159,7 @@ Initialize(argc, argv)
     dk_skip_interval = dk_sec / sleep_sec;		/* Close enough for us. */
 }
 
-main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     struct sysinfo si1,si2;
     struct vmker vmk;
@@ -202,10 +202,7 @@ double realtime()
 /****************************************************************************/
 /* get_sys_vm_info(struct sysinfo *si,struct vker *vmk, struct vminfo *vm); */
 
-get_sys_vm_info(si,vmk,vm)
-    struct sysinfo *si;
-    struct vmker *vmk;
-    struct vminfo *vm;
+int get_sys_vm_info(struct sysinfo *si, struct vmker *vmk, struct vminfo *vm)
 {
     /*
     ** Get the system info structure from the running kernel.
@@ -219,10 +216,7 @@ get_sys_vm_info(si,vmk,vm)
 }
 
 /*********************************************************************/
-getkmemdata(buf,bufsize,n_value)
-char *buf;      /* buffer for kernel data*/
-int bufsize;    /* buffers size */
-long n_value;    /* seek address to kernels data */
+int getkmemdata(char *buf, int bufsize, long n_value)
 {
     static int fd;
     static initted = 0;
@@ -248,11 +242,7 @@ long n_value;    /* seek address to kernels data */
 #define SIDELTA(a) (si->a - si2->a)
 #define VMDELTA(a) (vm->a - vm2->a)
 
-print_sysinfo(refresh_time,si,si2,vmk,vm,vm2)
-    double refresh_time;
-    struct sysinfo *si,*si2;
-    struct vmker *vmk;
-    struct vminfo *vm,*vm2;
+int print_sysinfo(double refresh_time, struct sysinfo *si, struct sysinfo *si2, struct vmker *vmk, struct vminfo *vm, struct vminfo *vm2)
 {
     long cpuTime, idleTime, userTime, kernalTime, waitTime;
     int swp_proc = 0;

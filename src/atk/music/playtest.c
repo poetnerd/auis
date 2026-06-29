@@ -59,14 +59,14 @@ playtest.c
 #include <observe.ih>
 #include <proctbl.ih>
 #include <dataobj.ih>
+#include <stdlib.h>
 #undef class_StaticEntriesOnly
 
 
 struct text *text;	/* the source text */
 
 
-main(argc, argv)
-        char **argv;
+int main(int argc, char **argv)
 {
 	FILE *inputfile;
 

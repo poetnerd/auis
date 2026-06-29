@@ -86,12 +86,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <observe.ih>
 #include <updlist.ih>
 
+#include <stdlib.h>
 #undef class_StaticEntriesOnly
 
 
-main(argc, argv)
-	register int	  argc;
-	register char  **argv;
+int main(register int argc, register char **argv)
 {
 	register struct raster *dobj;
 	register struct rasterview *dview;
@@ -189,8 +188,7 @@ main(argc, argv)
 	im_KeyboardProcessor();		/* Do it */
 }
 
-printdata(dobj)
-	register struct raster *dobj;
+int printdata(register struct raster *dobj)
 {
 	printf ("%d x %d\n", raster_GetWidth(dobj), 
 			raster_GetHeight(dobj));

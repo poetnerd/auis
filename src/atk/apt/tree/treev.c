@@ -113,6 +113,8 @@ END-SPECIFICATION  ************************************************************/
 #include  <ctype.h>
 #include <atom.ih>
 
+#include <stdlib.h>
+#include <stdio.h>
 int treev_debug = 0;
 
 struct treev_instance
@@ -385,8 +387,7 @@ static char *treev_fg=NULL, *treev_bg=NULL;
 static long treev_fgr, treev_fgg, treev_fgb;
 static long treev_bgr, treev_bgg, treev_bgb;
 
-static void treev_FlipColors(self)
-struct treev *self;
+static void treev_FlipColors(struct treev *self)
 {
     struct atom *a;
     treev_GetForegroundColor(self, &treev_fg, &treev_fgr, &treev_fgg, &treev_fgb);
@@ -405,8 +406,7 @@ struct treev *self;
     treev_SetBackgroundColor(self, treev_fg, treev_fgr, treev_fgg, treev_fgb);
 }
 
-static void treev_RestoreColors(self)
-struct treev *self;
+static void treev_RestoreColors(struct treev *self)
 {
     treev_SetForegroundColor(self, treev_fg, treev_fgr, treev_fgg, treev_fgb);
     treev_SetBackgroundColor(self, treev_bg, treev_bgr, treev_bgg, treev_bgb);
@@ -642,9 +642,8 @@ treev__SetDebug( self, state )
   }
 
 tree_type_node
-treev__CurrentNode( self )
-  register struct treev	      *self;
-  {
+int treev__CurrentNode(register struct treev *self)
+{
   register tree_type_node      node;
 
   if ( (node = (self->instance->scrolled_treev) ?
@@ -812,13 +811,8 @@ Check_Dimensions( self, node )
   }
 
 enum view_DSattributes
-treev__DesiredSize( self, given_width, given_height,
-		      pass, desired_width, desired_height )
-  register struct treev		  *self;
-  register long			   given_width, given_height;
-  register enum view_DSpass	   pass;
-  register long			  *desired_width, *desired_height;
-  {
+int treev__DesiredSize(register struct treev *self, register long given_width, register long given_height, register enum view_DSpass pass, register long *desired_width, register long *desired_height)
+{
   register enum view_DSattributes  result = view_WidthFlexible |
 					       view_HeightFlexible;
 
@@ -2824,10 +2818,8 @@ Node_Shadow( self, node )   /*=== might want to optimize !!! ===*/
   }
 
 tree_type_node
-Node_Shadow_Node( self, node )   /*=== might want to optimize !!! ===*/
-  register struct treev	     *self;
-  register struct tree_node  *node;
-  {
+int Node_Shadow_Node(register struct treev *self, register struct tree_node *node)
+{
   register struct tree_node  *candidate, *shadow_node = NULL;
   register struct node_shadow *shadow = NULL;
 

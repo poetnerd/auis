@@ -37,11 +37,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 #include <observe.ih>
 #include <proctbl.ih>
 #include <dataobj.ih>
+#include <stdlib.h>
 #undef class_StaticEntriesOnly
 
-main(argc, argv)
-    int argc;
-    char **argv;
+int main(int argc, char **argv)
 {
     long ret, saveQuality = -1;
     struct xwd *self;

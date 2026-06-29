@@ -110,6 +110,8 @@ static char io_buffer[4096];
 
 #ifdef UTMP_MUNGE
 #include <utmp.h>
+#include <stdlib.h>
+#include <stdio.h>
 #endif
 
 #ifdef CONTRIB_ENV
@@ -158,7 +160,6 @@ static int 	(*typescript_CopyRegionCmd)();
 static int 	(*typescript_ZapRegionCmd)(); 
 
 #ifndef _IBMR2
-extern char *realloc();
 #endif /* _IBMR2 */
 
 static long maxSize;
@@ -1735,8 +1736,7 @@ long key;
  * Drag current working directory (or at least what we think is
  * the current working directory) out onto another window.
  */
-static void typescript_DragCwdCmd(self)
-struct typescript *self;
+static void typescript_DragCwdCmd(struct typescript *self)
 {
     struct im *im = typescript_GetIM(self);
     char wd[4096];
@@ -1747,8 +1747,7 @@ struct typescript *self;
     }
 }
 
-static int typescript_ResetTTY(self)
-struct typescript *self;
+static int typescript_ResetTTY(struct typescript *self)
 {
     ResetTTY(self->SlaveChannel);
 }

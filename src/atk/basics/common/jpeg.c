@@ -65,6 +65,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <jpeg.eh>
 #include <jinclude.h>
 
+#include <stdlib.h>
+#include <stdio.h>
 static int pWIDE, pHIGH;
 static byte r[256],g[256],b[256];
 static byte *pic = NULL;
@@ -139,7 +141,7 @@ jpeg__WriteNative(jpeg, file, filename)
 /********* JPEG DECOMPRESSION FUNCTIONS **********/
 
 /**************************************************/
-static void xv_jpeg_monitor(decompress_info_ptr cinfo, int loopcnt, long loopcnt, looplimit)
+static void xv_jpeg_monitor(decompress_info_ptr cinfo, long loopcnt, long looplimit)
 {
 #ifdef FOO  
   int a,b;
@@ -259,7 +261,7 @@ static void jselwxv(decompress_info_ptr cinfo)
   cinfo->methods->output_term = output_term;
 }
 
-static void JPEG_Message(char * msgtext)
+static void JPEG_Message(char *msgtext)
 {
   char tempstr[200];
 
@@ -272,7 +274,7 @@ static void JPEG_Message(char * msgtext)
 
 
 /**************************************************/
-static void JPEG_Error(char * msgtext)
+static void JPEG_Error(char *msgtext)
 {
   char tempstr[200];
   
@@ -305,7 +307,7 @@ jpeg__Load( jpeg, fullname, fp )
 }
 
 /*******************************************/
-int LoadJFIF(struct jpeg * jpeg, char * fname, FILE * f)
+int LoadJFIF(struct jpeg *jpeg, char *fname, FILE *f)
 {
   int rtval;
   /* These three structs contain JPEG parameters and working data.
@@ -485,7 +487,7 @@ static void jselrxv(compress_info_ptr cinfo)
 
 
 /*******************************************/
-static int writeJFIF(FILE * fp)
+static int writeJFIF(FILE *fp)
 {
   int retval;
   struct Compress_info_struct cinfo;

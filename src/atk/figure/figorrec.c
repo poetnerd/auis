@@ -34,18 +34,15 @@ char *figorrec_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 #include <figattr.ih>
 #include <print.ih>
 
-boolean figorrec__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-struct figorrec *self;
+#include <stdio.h>
+boolean figorrec__InitializeObject(struct classhdr *ClassID, struct figorrec *self)
 {
     figorrec_AttributesUsed(self) = (1<<figattr_Shade) | (1<<figattr_LineWidth) | (1<<figattr_Color) | (1<<figattr_RRectCorner);
 
     return TRUE;
 }
 
-struct figorrec *figorrec__Create(classID, left, top, width, height)
-struct classheader *classID;
-long left, top, width, height;
+struct figorrec *figorrec__Create(struct classheader *classID, long left, long top, long width, long height)
 {
     struct figorrec *res = figorrec_New();
     if (!res) return NULL;
@@ -59,17 +56,12 @@ long left, top, width, height;
     return res;
 }
 
-char *figorrec__ToolName(dummy, v, rock)
-struct figorrec *dummy;
-struct figtoolview *v;
-long rock;
+char *figorrec__ToolName(struct figorrec *dummy, struct figtoolview *v, long rock)
 {
     return "Round Rect";
 }
 
-void figorrec__Draw(self, v) 
-struct figorrec *self;
-struct figview *v;
+void figorrec__Draw(struct figorrec *self, struct figview *v)
 {
     long x, y, w, h;
     long shad, lw, corn;
@@ -116,9 +108,7 @@ struct figview *v;
 	figview_SetLineWidth(v, 1);
 }
 
-void figorrec__Sketch(self, v) 
-struct figorrec *self;
-struct figview *v;
+void figorrec__Sketch(struct figorrec *self, struct figview *v)
 {
     long x, y, w, h, corn;
 
@@ -150,11 +140,7 @@ struct figview *v;
 
 #define FadeColor(col, shad)  (1.0 - (1.0-(shad)) * (1.0-(col)))
 
-void figorrec__PrintObject(self, v, file, prefix)
-struct figorrec *self;
-struct figview *v;
-FILE *file;
-char *prefix;
+void figorrec__PrintObject(struct figorrec *self, struct figview *v, FILE *file, char *prefix)
 {
     long x, y, w, h;
     long shad, lw, corn;

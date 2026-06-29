@@ -46,6 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ness
 #include <style.ih>
 #include <nessm.eh>
 
+#include <stdio.h>
 static char keytmpl[]="DoKeys(currentinputfocus, \"%\")\n";
 static char menutmpl[]="(currentinputfocus, %)\n";
 static char answertmpl[]="QueueAnswer(\"%\")\n";
@@ -53,8 +54,7 @@ static char canceltmpl[]="QueueCancellation()\n";
 static char menu[]="menu";
 static char keys[]="keys";
 
-static char *mousehits(act)
-enum view_MouseAction act;
+static char *mousehits(enum view_MouseAction act)
 {
     switch(act) {
 	case view_LeftDown:
@@ -76,11 +76,7 @@ enum view_MouseAction act;
 
 static long lastpos=(-1);
 static enum im_EventType lasttype=im_NoEvent;
-static long InsertKey(n, m, pos, key)
-struct ness *n;
-struct mark *m;
-long pos;
-char key;
+static long InsertKey(struct ness *n, struct mark *m, long pos, char key)
 {
     if(lasttype!=im_KeyboardEvent) {
 	lastpos=pos=mark_GetPos(m)-1;
@@ -93,11 +89,7 @@ char key;
     return pos+1;
 }
 
-static int InsertProcCall(n, pos, proc, rock)
-struct ness *n;
-long pos;
-struct proctable_Entry *proc;
-long rock;
+static int InsertProcCall(struct ness *n, long pos, struct proctable_Entry *proc, long rock)
 {
     char buf[32];
     char procbuf[256], *p;
@@ -127,8 +119,7 @@ long rock;
 }
 
 
-static void DumpActions(a)
-struct action *a;
+static void DumpActions(struct action *a)
 {
     while(a) {
 	printf("a:%x\n",a);
@@ -166,9 +157,7 @@ struct action *a;
 
 #define CNTRL(c) ((c)-'@')
 
-static void RegionToPrintable(n, pos, len)
-struct ness *n;
-long pos, len;
+static void RegionToPrintable(struct ness *n, long pos, long len)
 {
     struct mark *m=ness_CreateMark(n, pos, len);
     long cpos=pos;
@@ -215,10 +204,7 @@ long pos, len;
 }
 
 
-static struct action *QueueAnswers(n, look, m)
-struct ness *n;
-struct action *look;
-struct mark *m;
+static struct action *QueueAnswers(struct ness *n, struct action *look, struct mark *m)
 {
     struct action *a=look->next;
     int susplevel=1;
@@ -260,9 +246,7 @@ static char *choices[]={
 };
 
 
-static void DoConv(self, rock)
-struct view *self;
-long rock;
+static void DoConv(struct view *self, long rock)
 {
     struct action *look=im_GetMacro();
     struct ness *n;
@@ -501,8 +485,7 @@ long rock;
     mark_Destroy(mke);
 }
     
-boolean nessm__InitializeClass(classID)
-struct classheader *classID;
+boolean nessm__InitializeClass(struct classheader *classID)
 {
     proctable_DefineProc("nessm-make-macro", DoConv, class_Load("view"), "nessm", "Converts a keyboard macro to ness code.");
     return TRUE;

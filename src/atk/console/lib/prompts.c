@@ -50,22 +50,14 @@ int Pposx, Pposy;
 char Pstring1[256] = "", Pstring2[256] = "", Pstring3[256] = "", Pstring4[MAXPATHLEN] = "";
 
 
-ClearRectangle(self, clpRect, Op1, Op2)
-struct consoleClass *self;
-struct rectangle *clpRect;
-short Op1;
-struct graphic *Op2;
+int ClearRectangle(struct consoleClass *self, struct rectangle *clpRect, short Op1, struct graphic *Op2)
 {
     mydbg(("entering: ClearRectangle\n"));
     consoleClass_SetTransferMode(self, Op1);
     consoleClass_FillRect(self, clpRect, Op2);
 }
 
-ClearBox(self, x, y, w, h, Op1, Op2)
-struct consoleClass *self;
-int x, y, w, h;
-short Op1;
-struct graphic *Op2;
+int ClearBox(struct consoleClass *self, int x, int y, int w, int h, short Op1, struct graphic *Op2)
 {
     struct rectangle tempRect;
 
@@ -74,8 +66,7 @@ struct graphic *Op2;
     ClearRectangle(self, &tempRect, Op1, Op2);
 }
 
-ClearWindow(self)
-struct consoleClass *self;
+int ClearWindow(struct consoleClass *self)
 {
     struct rectangle windowRect;
     
@@ -84,8 +75,7 @@ struct consoleClass *self;
     ClearRectangle(self, &windowRect, graphic_COPY, consoleClass_WhitePattern(self));
 }
 
-InvertWindow(self)
-struct consoleClass *self;
+int InvertWindow(struct consoleClass *self)
 {
     struct rectangle windowRect;
 
@@ -104,8 +94,7 @@ InitPstrings()
     Pposx = Pposy = 0;
 }
 
-PromptToWindow(self)
-struct consoleClass *self;
+int PromptToWindow(struct consoleClass *self)
 {
     register short *fontWidth = fontdesc_WidthTable(EventFont, consoleClass_GetDrawable(self));
     int width = consoleClass_GetLogicalWidth(self), height = consoleClass_GetLogicalHeight(self);
@@ -132,9 +121,7 @@ struct consoleClass *self;
 
 
 
-GetStringFromWindow(self, maxSize)
-struct consoleClass *self;
-long maxSize;
+int GetStringFromWindow(struct consoleClass *self, long maxSize)
 {
     int c;
     register short   *fontWidth = fontdesc_WidthTable(EventFont, consoleClass_GetDrawable(self));
@@ -184,8 +171,7 @@ long maxSize;
     }
 }
 
-RedrawPrompt(self)
-struct consoleClass *self;
+int RedrawPrompt(struct consoleClass *self)
 {
     register short *fontWidth = fontdesc_WidthTable(EventFont, consoleClass_GetDrawable(self));
     int width = consoleClass_GetLogicalWidth(self), height = consoleClass_GetLogicalHeight(self);

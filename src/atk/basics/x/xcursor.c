@@ -56,6 +56,8 @@ static char CursorTable[] = {  'a',
 
 #include <xcursor.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 extern int cursordebug;
 static char *foreground;
 static char *background;
@@ -73,8 +75,7 @@ static struct ccache {
 } *fc=NULL;
 
 
-void xcursor__ChangeShape(self)
-struct xcursor *self;
+void xcursor__ChangeShape(struct xcursor *self)
 {
     self->valid=FALSE;
     if(xcursor_IsPosted(self)){
@@ -96,9 +97,7 @@ struct xcursor *self;
 #define DEFAULTFONTNAME "icon"
 #define DEFAULTFONTSIZE 12
 #define DEFAULTMASKNAME "icon"
-void xcursor__SetStandard(self,ch)
-struct xcursor *self;
-short ch;
+void xcursor__SetStandard(struct xcursor *self, short ch)
 {
     struct fontdesc *oldfont=self->header.cursor.fillFont;
     char oldchar=self->header.cursor.fillChar;
@@ -108,10 +107,7 @@ short ch;
     if(oldfont!=self->header.cursor.fillFont || oldchar!=self->header.cursor.fillChar) xcursor_ChangeShape(self);
 }
 
-Cursor LookupCursor(dpy, xfd, c)
-Display *dpy;
-struct xfontdesc *xfd;
-int c;
+Cursor LookupCursor(Display *dpy, struct xfontdesc *xfd, int c)
 {
     struct ccache *cc=fc;
     while(cc!=NULL) {
@@ -121,9 +117,7 @@ int c;
     return None;
 }
 
-void xcursor__Make(self, im)
-struct xcursor *self;
-struct xim *im;
+void xcursor__Make(struct xcursor *self, struct xim *im)
 {
     Cursor tmp = None;
     XFontStruct *info;
@@ -270,9 +264,7 @@ struct xim *im;
     }
 }
 
-boolean xcursor__InitializeObject(classID,self)
-struct classheader *classID;
-struct xcursor *self;
+boolean xcursor__InitializeObject(struct classheader *classID, struct xcursor *self)
 {
     self->Xw = 0;
     self->Xc = 0;
@@ -284,9 +276,7 @@ struct xcursor *self;
 }
 
 
-void xcursor__FinalizeObject(classID,self)
-struct classheader *classID;
-struct xcursor *self;
+void xcursor__FinalizeObject(struct classheader *classID, struct xcursor *self)
 {
 	/* if(self->Xc) XFreeCursor(self->Xd, self->Xc); */ /* bogus */
 	self->Xc = 0;
@@ -294,8 +284,7 @@ struct xcursor *self;
         self->Xw = 0;
 }
 
-boolean xcursor__InitializeClass(classID)
-struct classheader *classID;
+boolean xcursor__InitializeClass(struct classheader *classID)
 {
     foreground = environ_GetProfile("cursorforegroundcolor");
     if (foreground == NULL || *foreground == '\0') {
@@ -311,9 +300,7 @@ struct classheader *classID;
 }
 
 
-void xcursor__FinalizeDisplay(classID, dpy)
-struct classheader *classID;
-Display *dpy;
+void xcursor__FinalizeDisplay(struct classheader *classID, Display *dpy)
 {
     struct ccache *cc=fc;
     struct ccache **lc=(&fc);

@@ -39,7 +39,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 #define classname(do) ((do) == NULL ? "<NO OBJECT>" : class_GetTypeName(do))
 
 #ifndef _IBMR2
-extern char *malloc();
 #endif /* _IBMR2 */
 
 #include <class.h>
@@ -58,6 +57,8 @@ extern char *malloc();
 #include <box.ih>
 #include <boxview.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 static boolean boxview_debug=0;
 /* replace child view with another object */
 
@@ -318,11 +319,7 @@ struct boxview *self;
 /* process mouse hit */
 
 struct view *				/* returns view which should get follow-up events*/
-boxview__Hit(self, action, x, y, numberOfClicks)
-struct boxview *self;
-enum view_MouseAction action;		/* which button; what it did */
-long x, y;				/* where the mouse points */
-long numberOfClicks;			/* number of hits at same place */
+int boxview__Hit(struct boxview *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     int tw = boxview_BoxWidth(self);
 

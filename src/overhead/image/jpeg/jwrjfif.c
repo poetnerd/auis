@@ -23,6 +23,7 @@
 
 #include "jinclude.h"
 
+#include <stdio.h>
 #ifdef JFIF_SUPPORTED
 
 

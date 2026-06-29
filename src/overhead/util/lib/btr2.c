@@ -49,13 +49,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #ifdef WHITEPAGES_ENV  /* avoid makedepend "errors" */
 #include <btint.h>
+#include <stdlib.h>
 #endif /* WHITEPAGES_ENV   */
 
-extern int errno;
 
 #ifndef _IBMR2
-extern char *malloc();
-extern char *realloc();
 #endif /* _IBMR2 */
 
 extern int br_Debugging;
@@ -67,10 +65,7 @@ Declaration:
 	struct BTree *bt;
 	struct BTHead *hdrloc;
 */
-bt_ErrorCode bt_GetFixedHead(bt, hdrloc, siz)
-struct BTree *bt;
-struct BTHead *hdrloc;
-int siz;
+bt_ErrorCode bt_GetFixedHead(struct BTree *bt, struct BTHead *hdrloc, int siz)
 {
     int MinSize, Scanner;
     unsigned long *Scn;
@@ -106,11 +101,7 @@ Declaration:
 	struct stat **StatPtr;
 	char **Filename;
 */
-bt_ErrorCode bt_GetCursorAttributes(curs, ID1, ID2, StatPtr, Filename, Offset)
-struct btCursor *curs;
-unsigned long *ID1, *ID2, *Offset;
-struct stat **StatPtr;
-char **Filename;
+bt_ErrorCode bt_GetCursorAttributes(struct btCursor *curs, unsigned long *ID1, unsigned long *ID2, struct stat **StatPtr, char **Filename, unsigned long *Offset)
 {
     struct btC *bC = (struct btC *) curs;
 

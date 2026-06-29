@@ -67,6 +67,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #define AUXMODULE 1
 #include <conclass.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 extern struct classinfo *consoleClass_GetInfoHack();
 extern ClearWindow();
 extern PromptToWindow();
@@ -122,9 +124,7 @@ static char *PriorityTexts[] = {
 
 struct menulist *PrepareUserMenus();
 
-DebugMenu(self, rock)
-struct consoleClass *self;
-char *rock;
+int DebugMenu(struct consoleClass *self, char *rock)
 {
     mydbg(("entering: DebugMenu\n"));
     ToggleDebugging(self, NULL);
@@ -143,9 +143,7 @@ char *rock;
 }
 
 
-DoQuit(self, rock)
-struct consoleClass *self;
-char *rock;
+int DoQuit(struct consoleClass *self, char *rock)
 {
     mydbg(("entering: DoQuit\n"));
     KillInitExecProcesses(TRUE);
@@ -153,9 +151,7 @@ char *rock;
 }
 
 
-char *TitleFromFile(fname, IncludeVersion)
-char *fname;
-boolean IncludeVersion;
+char *TitleFromFile(char *fname, boolean IncludeVersion)
 {
     char   *s,
         *t;
@@ -200,9 +196,7 @@ extern char *RealProgramName;
     I did this to avoid changing the calling parameters to the proc in setup. */
 char *consoleName;
 
-ReadNewConsoleFile(self, rock)
-struct consoleClass *self;
-char *rock;
+int ReadNewConsoleFile(struct consoleClass *self, char *rock)
 {
     consoleName = rock;
 
@@ -239,8 +233,7 @@ char *rock;
 
 
 
-int adjmon(mday, max, mon)
-int *mday, max, *mon;
+int adjmon(int *mday, int max, int *mon)
 {
     if (*mday > max){
 	*mon += 1;
@@ -251,9 +244,7 @@ int *mday, max, *mon;
 }
 
 
-SetAlarm(self, rock)
-struct consoleClass *self;
-char *rock;
+int SetAlarm(struct consoleClass *self, char *rock)
 {
     boolean isPM, isAM;
     int     hr, min, day, mday, wday, mon, year;
@@ -448,9 +439,7 @@ char *rock;
     consoleClass_WantUpdate(self, self);
 }
 
-TurnOffAlarm(self, rock)
-struct consoleClass *self;
-char *rock;
+int TurnOffAlarm(struct consoleClass *self, char *rock)
 {
     mydbg(("entering: TurnOffAlarm\n"));
     VeryFirstDisplay->Threshhold = 36500000;
@@ -476,9 +465,7 @@ int LastX = 0, LastY = 0, MovingX;
  * any boundary.
  */
 
-struct display *FindInstrument(self, x, y)
-struct consoleClass *self;
-int x,y;
+struct display *FindInstrument(struct consoleClass *self, int x, int y)
 {
     struct display *mydisp;
 
@@ -503,9 +490,7 @@ int x,y;
 #define ABSVALDIFF(a,b) (((a) > (b)) ? ((a) - (b)) : ((b) - (a)))
 #define CLOSEFIT 4
 
-CheckMovingX(self, x, y)
-struct consoleClass *self;
-int x, y;
+int CheckMovingX(struct consoleClass *self, int x, int y)
 {
     struct display *mydisp;
 
@@ -528,9 +513,7 @@ int x, y;
 }
 
 
-ResizeDisplay(self, x, y, LastX, LastY, MovingX)
-struct consoleClass *self;
-int x, y, LastX, LastY, MovingX;
+int ResizeDisplay(struct consoleClass *self, int x, int y, int LastX, int LastY, int MovingX)
 {
     struct display *mydisp;
     int     old, new, this;
@@ -583,9 +566,7 @@ int x, y, LastX, LastY, MovingX;
 #define IntVarOn(x)    IntrnlVars[(x)].turnon
 #define IntVarOff(x)   IntrnlVars[(x)].turnoff
 
-TogVar(self, rock)
-    struct consoleClass *self;
-    int rock;
+int TogVar(struct consoleClass *self, int rock)
 {
     int whichvar = rock;
     struct proctable_Entry *menuProc;
@@ -625,9 +606,7 @@ TogVar(self, rock)
 }
     
 
-ExpandMenu(self, rock)
-struct consoleClass *self;
-char *rock;
+int ExpandMenu(struct consoleClass *self, char *rock)
 {
     mydbg(("entering: ExpandMenu\n"));
     self->menuMask &= ~SHR_MASK;
@@ -647,8 +626,7 @@ char *rock;
     consoleClass_WantUpdate(self, self);
 }
 
-ShrinkMenu(self)
-struct consoleClass *self;
+int ShrinkMenu(struct consoleClass *self)
 {
     mydbg(("entering: ShrinkMenu\n"));
     self->menuMask &= ~EXP_MASK;
@@ -666,8 +644,7 @@ struct consoleClass *self;
 extern SetConsoleLib();
 extern RestartStats();
 
-void GetStdItems(tempMenulist)
-struct menulist *tempMenulist;
+void GetStdItems(struct menulist *tempMenulist)
 {
     struct proctable_Entry *menuProc;
 
@@ -704,8 +681,7 @@ struct menulist *tempMenulist;
 }
 
 
-void GetStdConsoles(tempMenulist)
-struct menulist *tempMenulist;
+void GetStdConsoles(struct menulist *tempMenulist)
 {
     char TmpBuf[MAXPATHLEN];
     int len, len2, i, j;
@@ -825,10 +801,7 @@ char *GetUserPaths()
 }
 
 
-void GetExtraConsoles(tempMenulist, conpath, cardTitle)
-struct menulist *tempMenulist;
-char *conpath;
-char *cardTitle;
+void GetExtraConsoles(struct menulist *tempMenulist, char *conpath, char *cardTitle)
 {
     char TmpBuf[MAXPATHLEN];
     int len, len2, i, j;
@@ -927,9 +900,7 @@ char *cardTitle;
     mydbg(("Leaving: GetExtraConsoles(1)\n"));
 }
 
-void SetStartUpConsole(path, ConFile)
-char *path;
-char *ConFile;
+void SetStartUpConsole(char *path, char *ConFile)
 {
     mydbg(("Entering: SetStartUpConsole(%s, %s)\n", path, ConFile));
     /* These mallocs could be space leaks since there's no checking, 
@@ -946,9 +917,7 @@ char *ConFile;
 extern char *getwd();
 #endif /* getwd */
 
-FindStartUpConsole(ConFile, IsStartUp)
-char *ConFile;
-boolean IsStartUp;
+int FindStartUpConsole(char *ConFile, boolean IsStartUp)
 {
     FILE *pfd = NULL;
     int i;
@@ -1152,10 +1121,7 @@ boolean IsStartUp;
 }
 
 
-PrepareStdMenus(IsStartup, stdMenulist, ClassInfo)
-boolean IsStartup;
-struct menulist **stdMenulist;
-struct classinfo *ClassInfo;
+int PrepareStdMenus(boolean IsStartup, struct menulist **stdMenulist, struct classinfo *ClassInfo)
 {
     struct menulist *tempMenulist;
     int num;
@@ -1183,9 +1149,7 @@ struct classinfo *ClassInfo;
 
 
 
-struct menulist *PrepareUserMenus(self, ClassInfo)
-struct consoleClass *self;
-struct classinfo *ClassInfo;
+struct menulist *PrepareUserMenus(struct consoleClass *self, struct classinfo *ClassInfo)
 {
     struct menulist *tempMenulist;
     struct proctable_Entry *menuProc;

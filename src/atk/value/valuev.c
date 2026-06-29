@@ -58,8 +58,7 @@ static struct atom *  A_long;
 
 /**************** private functions ****************/
 
-static void LookupParameters(self)
-     struct valueview * self;
+static void LookupParameters(struct valueview *self)
 {
   struct resourceList parameters[4];
   parameters[0].name = AL_background;
@@ -94,8 +93,7 @@ static void LookupParameters(self)
 }
 
 
-static void DrawFromScratch(self)
-     struct valueview * self;
+static void DrawFromScratch(struct valueview *self)
 {
   long x,y,width,height;
 
@@ -153,8 +151,7 @@ static void DrawFromScratch(self)
 
 /**************** class methods ****************/
 
-boolean valueview__InitializeClass(classID)
-struct classheader *classID;
+boolean valueview__InitializeClass(struct classheader *classID)
 {
   InternAtoms;
   return TRUE;
@@ -163,9 +160,7 @@ struct classheader *classID;
 
 /**************** instance methods ****************/
 
-boolean valueview__InitializeObject(classID,self)
-    struct classheader *classID;
-     struct valueview * self;
+boolean valueview__InitializeObject(struct classheader *classID, struct valueview *self)
 {
   self->borderPixels = 1;
   self->back =  NULL;
@@ -193,27 +188,21 @@ long *desiredwidth, *desiredheight;
     return( view_WidthFlexible | view_HeightFlexible) ;
 }
 
-void valueview__RequestUpdateFunction( self, fp )
-     struct valueview * self;
-     void (*fp)();  
+void valueview__RequestUpdateFunction(struct valueview *self, void (*fp)())
 {
   updateq_EnqueueUpdateFunction( self->updateq, fp );
   valueview_WantUpdate( self, self );
 }
 
 
-void valueview__RequestFullUpdate( self )
-     struct valueview * self;
+void valueview__RequestFullUpdate(struct valueview *self)
 {
   updateq_ClearUpdateQueue( self->updateq );
   valueview_RequestUpdateFunction( self, DrawFromScratch );
 }
 
 
-void valueview__FullUpdate( self, type, x, y, width, height )
-     struct valueview * self;
-     enum view_UpdateType type;
-     long x,y,width,height;
+void valueview__FullUpdate(struct valueview *self, enum view_UpdateType type, long x, long y, long width, long height)
 {
   if (/* type == view_NewParameters  ||  */ self->back == NULL) 
     LookupParameters(self);
@@ -232,11 +221,7 @@ void valueview__FullUpdate( self, type, x, y, width, height )
 #define MAXPAR 36
 static struct resourceList par[MAXPAR];
 int setpar = 0;
-void valueview__GetManyParameters( self, resources, name, class )
-struct celview * self;
-struct resourceList * resources;
-struct atomlist * name;
-struct atomlist * class;
+void valueview__GetManyParameters(struct celview *self, struct resourceList *resources, struct atomlist *name, struct atomlist *class)
 {
     super_GetManyParameters( self, resources, name, class );
     if(setpar){
@@ -247,8 +232,7 @@ struct atomlist * class;
 	}
     }
 }
-struct resourceList *valueview__GetDesiredParameters(self)
-struct valueview * self;
+struct resourceList *valueview__GetDesiredParameters(struct valueview *self)
 {
     setpar = TRUE;
     valueview_LookupParameters(self);
@@ -256,16 +240,12 @@ struct valueview * self;
     return par;
 }
     
-void valueview__LookupParameters(self)
-     struct valueview * self;
+void valueview__LookupParameters(struct valueview *self)
 {
   /* subclass responsability */
 }
 
-void valueview__ObservedChanged( self, observed, status )
-     struct valueview * self;
-     struct observable * observed;
-     long status;
+void valueview__ObservedChanged(struct valueview *self, struct observable *observed, long status)
 {
   switch (status)
     {
@@ -293,42 +273,35 @@ void valueview__ObservedChanged( self, observed, status )
     }
 }
 
-static DA(self)
-     struct valueview * self;
+static DA(struct valueview *self)
 {
     valueview_DrawActivation(self);
 }
 
-static DDA(self)
-     struct valueview * self;
+static DDA(struct valueview *self)
 {
     valueview_DrawDeactivation(self);
 }
-static DNV(self)
-     struct valueview * self;
+static DNV(struct valueview *self)
 {
     valueview_DrawNewValue(self);
 }
 
-static DBV(self)
-     struct valueview * self;
+static DBV(struct valueview *self)
 {
     valueview_DrawBadValue(self);
 }
-static DH(self)
-     struct valueview * self;
+static DH(struct valueview *self)
 {
     valueview_DrawHighlight(self);
 }
 
-static DDH(self)
-     struct valueview * self;
+static DDH(struct valueview *self)
 {
     valueview_DrawDehighlight(self);
 }
 
-void valueview__Activate(self)
-     struct valueview * self;
+void valueview__Activate(struct valueview *self)
 {
   if (!self->active)
     {
@@ -337,8 +310,7 @@ void valueview__Activate(self)
     }
 }
 
-void valueview__Deactivate(self)
-     struct valueview * self;
+void valueview__Deactivate(struct valueview *self)
 {
   if (self->active)
     {
@@ -347,31 +319,27 @@ void valueview__Deactivate(self)
     }
 }
 
-void valueview__Update(self)
-     struct valueview * self;
+void valueview__Update(struct valueview *self)
 {
 /*  valueview_RestoreGraphicsState( self );*/
   updateq_ExecuteUpdateQueue( self->updateq );
 }
 
 
-void valueview__DrawFromScratch(self)
-     struct valueview * self;
+void valueview__DrawFromScratch(struct valueview *self)
 {
   /* Subclass responsibility */
 }
 
 
-void valueview__DrawActivation(self)
-     struct valueview * self;
+void valueview__DrawActivation(struct valueview *self)
 {
   DrawFromScratch( self );
 }
 
 
 
-void valueview__DrawDeactivation(self)
-     struct valueview * self;
+void valueview__DrawDeactivation(struct valueview *self)
 {
   valueview_ClearClippingRect( self );
   valueview_SetTransferMode( self, self->deactivationTransferMode );
@@ -381,15 +349,13 @@ void valueview__DrawDeactivation(self)
 }
 
 
-void valueview__DrawNewValue(self)
-     struct valueview * self;
+void valueview__DrawNewValue(struct valueview *self)
 {
   /* subclass responsibility */
 }
 
 
-void valueview__DrawBadValue(self)
-     struct valueview * self;
+void valueview__DrawBadValue(struct valueview *self)
 {
   struct graphic * black;
   valueview_ClearClippingRect( self );
@@ -402,37 +368,31 @@ void valueview__DrawBadValue(self)
 }
 
 
-void valueview__DrawNoChange(self)
-     struct valueview * self;
+void valueview__DrawNoChange(struct valueview *self)
 {
   /* subclass responsibility */
 }
 
 
-void valueview__DrawDestroyed(self)
-     struct valueview * self;
+void valueview__DrawDestroyed(struct valueview *self)
 {
   /* subclass responsibility */
 }
 
 
-void valueview__DrawHighlight(self)
-     struct valueview * self;
+void valueview__DrawHighlight(struct valueview *self)
 {
   /* subclass responsibility */
 }
 
 
-void valueview__DrawDehighlight(self)
-     struct valueview * self;
+void valueview__DrawDehighlight(struct valueview *self)
 {
   /* subclass responsibility */
 }
 
 
-void valueview__DeactivationMask( self, map )
-     struct valueview * self;
-     struct graphic * map;
+void valueview__DeactivationMask(struct valueview *self, struct graphic *map)
 {
   self->deactivationMask = map;
   if (!self->active)
@@ -440,59 +400,47 @@ void valueview__DeactivationMask( self, map )
 }
 
 
-void valueview__SetDeactivationTransfer( self, mode )
-     struct valueview * self;
-     short mode;
+void valueview__SetDeactivationTransfer(struct valueview *self, short mode)
 {
   self->deactivationTransferMode = mode;
   if (!self->active)
     valueview_RequestUpdateFunction( self, DrawFromScratch );
 }
 
-void valueview__NewValue(self)
-     struct valueview * self;
+void valueview__NewValue(struct valueview *self)
 {
   valueview_RequestUpdateFunction( self,DNV);
 }
 
-void valueview__BadValue(self)
-     struct valueview * self;
+void valueview__BadValue(struct valueview *self)
 {
   valueview_RequestUpdateFunction( self,DBV);
 }
 
-void valueview__NoChange(self)
-     struct valueview * self;
+void valueview__NoChange(struct valueview *self)
 {
 }
 
-void valueview__Changed(self)
-     struct valueview * self;
+void valueview__Changed(struct valueview *self)
 {
   /* subclasses should override this if there observed dataobject
      will change with a status other than NOCHANGE, NEWVALUE, or BADVALUE */
 }
 
-void valueview__Destroyed(self)
-     struct valueview * self;
+void valueview__Destroyed(struct valueview *self)
 {
   self->header.view.dataobject = NULL;
   valueview_Deactivate(self);
 }
 
 
-struct valueview * valueview__DoHit(self, type, x, y, numberOfClicks)
-struct valueview * self;
-enum view_MouseAction type;
-long x, y, numberOfClicks;
+struct valueview * valueview__DoHit(struct valueview *self, enum view_MouseAction type, long x, long y, long numberOfClicks)
 {
     /* this is a subclass responsability */
     return self;
 }
 
-boolean valueview__OnTarget(self,x,y)
-struct valueview *self;
-long x,y;
+boolean valueview__OnTarget(struct valueview *self, long x, long y)
 {
     return (self->viewx <= x && self->viewx + self->viewwidth >= x &&
 	     self->viewy <= y && self->viewy + self->viewheight >= y);
@@ -501,10 +449,7 @@ long x,y;
 /* Highlight the value that's handling events */
 /* Dehighlight it and stop sending movement events if the mouse cursor */
 /* wanders off.  Dehighlight it on an up transition. */
-struct valueview * valueview__Hit(self, type, x, y, numberOfClicks)
-     struct valueview * self;
-     enum view_MouseAction type;
-     long x, y, numberOfClicks;
+struct valueview * valueview__Hit(struct valueview *self, enum view_MouseAction type, long x, long y, long numberOfClicks)
 {
 #if 0
   register short sendEvent;
@@ -582,8 +527,7 @@ struct valueview * valueview__Hit(self, type, x, y, numberOfClicks)
 }
 
 
-void valueview__Highlight( self )
-     struct valueview * self;
+void valueview__Highlight(struct valueview *self)
 {
   if (!self->mouseIsOnTarget)
     valueview_RequestUpdateFunction(self,DH);
@@ -591,8 +535,7 @@ void valueview__Highlight( self )
 }
 
 
-void valueview__Dehighlight( self )
-     struct valueview * self;
+void valueview__Dehighlight(struct valueview *self)
 {
   if (self->mouseIsOnTarget)
     valueview_RequestUpdateFunction(self,DDH);
@@ -601,23 +544,19 @@ void valueview__Dehighlight( self )
 
 
 
-void valueview__GetCenter( self, x, y )
-     struct valueview * self;
-     long * x, * y;
+void valueview__GetCenter(struct valueview *self, long *x, long *y)
 {
   /* this controls the location of a label. */
   *x = self->x + (self->width >> 1);
   *y = self->y + (self->height >> 1);
 }
-void valueview__ReceiveInputFocus(self)
-struct valueview *self;
+void valueview__ReceiveInputFocus(struct valueview *self)
 {
     valueview_PostMenus(self,NULL);
     valueview_PostKeyState(self,NULL);
     self->HasInputFocus = TRUE;
 }
-void valueview__LoseInputFocus(self)
-struct valueview *self;
+void valueview__LoseInputFocus(struct valueview *self)
 {
     self->HasInputFocus = FALSE;
 }

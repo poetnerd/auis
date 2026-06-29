@@ -72,6 +72,8 @@ END-SPECIFICATION  ************************************************************/
 #include <filetype.ih>
 #include <org.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 #define Tree (self->tree_data_object)
 
 static tree_Specification specification[] = {

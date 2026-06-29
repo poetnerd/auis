@@ -34,7 +34,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
  
 
-#include <andrewos.h>#include <class.h>
+#include <class.h>
 
 #include <style.ih>
 #include <menulist.ih>
@@ -43,6 +43,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <stylesht.eh>
 
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #define iswhite(c) ((c) == ' ' || (c) == '\t' || (c) == '\n')
 
 #define INITIALNUMSTYLES 20
@@ -138,7 +141,7 @@ struct style *stylesheet__Find(struct stylesheet *self, char *name)
     return NULL;
 }
 
-struct menulist *stylesheet__GetMenuList(struct stylesheet *self, int procname, struct classinfo *infotype)
+struct menulist *stylesheet__GetMenuList(struct stylesheet *self, int (*procname)(), struct classinfo *infotype)
 {
     struct proctable_Entry *proc;
 

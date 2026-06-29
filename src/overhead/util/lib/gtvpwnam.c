@@ -45,15 +45,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <wp.h>
 #endif /* WHITEPAGES_ENV */
 #include <svcconf.h>
+#include <stdlib.h>
 #ifndef NULL
 #define NULL 0
 #endif
 
-extern int errno;
 
 #ifdef WHITEPAGES_ENV
-struct passwd *getvpwnam(vnam)
-char *vnam;
+struct passwd *getvpwnam(char *vnam)
 {/* Return a struct passwd for vuid, a Vice pw_nam */
     wp_ErrorCode Res;
     wp_PrimeKey KVal;

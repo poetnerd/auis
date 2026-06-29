@@ -39,8 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exam
 #include "frame.ih"
 #include "hellov.ih"
 
-boolean helloworldapp__Start(hwapp)
-struct helloworldapp *hwapp;
+boolean helloworldapp__Start(struct helloworldapp *hwapp)
 {
     struct helloworldview *hwv;
     struct view *applayer;

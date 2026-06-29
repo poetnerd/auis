@@ -34,6 +34,8 @@
 #include <gentlex.h>
 
 
+#include <string.h>
+#include <stdlib.h>
 /* TransEscape(buf, plen)
 	translate the characters in buf as though they follow backslash
 	in a C string

@@ -43,6 +43,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <cmap.ih>
 #include <xcmap.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 boolean
 xcolormap__InitializeClass( classID )
     struct classheader *classID;
@@ -284,9 +286,7 @@ xcolormap__Create( classID, xim )
     return(xcmap);
 }
 
-void xcolormap__DestroyColor( self, xc )
-struct xcolormap *self;
-struct xcolor *xc;
+void xcolormap__DestroyColor(struct xcolormap *self, struct xcolor *xc)
 {
     unsigned long pixels[1];
     Display *disp = xcolormap_XDisplay(self);
@@ -297,10 +297,7 @@ struct xcolor *xc;
 }
 
 
-void xcolormap__ObservedChanged(self, changed, value)
-struct xcolormap *self;
-struct observable *changed;
-long value;
+void xcolormap__ObservedChanged(struct xcolormap *self, struct observable *changed, long value)
 {
     super_ObservedChanged(self, changed, value);
     /* an xgraphic is being destroyed, make sure we don't notify it of future changes. */

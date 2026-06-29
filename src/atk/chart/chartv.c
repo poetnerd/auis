@@ -103,6 +103,7 @@ END-SPECIFICATION  ************************************************************/
 #include <chartv.eh>
 
 
+#include <stdlib.h>
 static   struct menulist	 *class_menulist;
 static   struct keymap		 *class_keymap;
 
@@ -614,10 +615,8 @@ chartv_Delete_Command( self )
   }
 
 
-chartv_ReChart( self, moniker )
-  register struct chartv     *self;
-  register char		     *moniker;
-  {
+int chartv_ReChart(register struct chartv *self, register char *moniker)
+{
   struct rectangle	      bounds;
   register struct chartobj   *prior_viewer = ChartViewer;
 

@@ -79,6 +79,8 @@ fptr RealFuncs[] = {
 
 fptr Funcs[] = {
 #include <../common/entrydefs.h>
+#include <stdlib.h>
+#include <stdio.h>
 };
 
 Usage()
@@ -89,9 +91,7 @@ Usage()
 
 double global;
 
-main(argc, argv)
-    int argc;
-    char *argv[];
+int main(int argc, char *argv[])
 {
 
     int index;
@@ -111,9 +111,7 @@ void blow(double arg1)
 {
 }
 
-fptr *class_Lookup(index, crud)
-    int index;
-    void *crud;
+fptr *class_Lookup(int index, void *crud)
 {
     blow(3.0);
     return RealFuncs;

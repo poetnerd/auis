@@ -42,8 +42,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 #define viewnamestring(v) ((v) == NULL ? "<NO VIEW>" : atom_Name(atomlist_First(view_GetName(v))))
 
 #ifndef _IBMR2
-extern char *malloc();
-extern char *realloc();
 #endif /* _IBMR2 */
 
 #include <class.h>
@@ -63,6 +61,9 @@ extern char *realloc();
 
 #include <fillerv.eh>
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 static boolean debug=FALSE;
 /* graphic information */
 

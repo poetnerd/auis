@@ -49,10 +49,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #ifdef RESOLVER_ENV
 #include <arpa/nameser.h>
 #include <resolv.h>
+#include <stdlib.h>
 extern int h_errno;
 #endif /* RESOLVER_ENV */
 
-extern int errno;
 
 #ifdef RESOLVER_ENV
 typedef union {
@@ -83,8 +83,7 @@ typedef union {
 #endif /* (defined(RES_DEFNAMES)) */
 #endif /* (defined(RES_DEFNAMES) || defined(RES_DNSRCH)) */
 
-static u_short get_ushort(ptr)
-char *ptr;
+static u_short get_ushort(char *ptr)
 {
     unsigned char *P = (unsigned char *) ptr;
     u_short Res;
@@ -94,9 +93,7 @@ char *ptr;
     return (Res);
 }
 
-static int GetRec(InName, wantedType, sawA, sawMX, OutN, sizeOutN, OutFwd, sizeOutFwd)
-char *InName; int wantedType, *sawA, *sawMX;
-char *OutN; int sizeOutN; char *OutFwd; int sizeOutFwd;
+static int GetRec(char *InName, int wantedType, int *sawA, int *sawMX, char *OutN, int sizeOutN, char *OutFwd, int sizeOutFwd)
 {/* Get the address and MX records describing the desired mail destination.  Expand domain abbreviations the same way that gethostname() does, if the BIND distribution supports it. */
     HEADER *hp;
     char *eom, *cp;
@@ -363,9 +360,7 @@ char *domain;
 }
 
 enum MailHostQuality
-ValidateDomainMail(InName, OutName, OutNameLen, FwdName, FwdNameLen, TolerableDelay)
-char *InName, *OutName, *FwdName;
-int OutNameLen, FwdNameLen, TolerableDelay;
+int ValidateDomainMail(char *InName, char *OutName, int OutNameLen, char *FwdName, int FwdNameLen, int TolerableDelay)
 {/* Validates InName as a destination domain for mail, returning the rewritten name in OutName (which is storage of size OutNameLen owned by the caller).  Possibly returns a forwarding host (if we're to do MX mail forwarding checks) in FwdName (which is storage of size FwdNameLen owned by the caller), if FwdName is not NULL.  Returns a code saying whether the given name was known-OK, known-bad, or unvalidatable in the given interval.  TolerableDelay is the caller's suggestion for how long this procedure should wait for an answer from name resolvers.
 
     The idea behind all the configuration options is that the behavior of this procedure should mimic how the underlying mail delivery will handle a destination mail domain insofar as determining whether a host is good, bad, or indeterminate.
@@ -541,9 +536,7 @@ int OutNameLen, FwdNameLen, TolerableDelay;
 }
 
 enum MailHostQuality
-ValidateMailHostName(InName, OutName, OutNameLen, TolerableDelay)
-char *InName, *OutName;
-int OutNameLen, TolerableDelay;
+int ValidateMailHostName(char *InName, char *OutName, int OutNameLen, int TolerableDelay)
 {
     return ValidateDomainMail(InName, OutName, OutNameLen, NULL, 0, TolerableDelay);
 }

@@ -43,12 +43,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/type
 #include <im.ih>
 #include <fontdesc.ih>
 
+#include <stdio.h>
 static FILE *outfile = NULL;
 
-boolean pipescriptapp__ParseArgs(self,argc,argv)
-struct pipescriptapp *self;
-int argc;
-char **argv;
+boolean pipescriptapp__ParseArgs(struct pipescriptapp *self, int argc, char **argv)
 {
     if(!super_ParseArgs(self,argc,argv))
 	return FALSE;
@@ -88,8 +86,7 @@ char **argv;
  return TRUE;
 }
 
-boolean pipescriptapp__Start(self)
-struct pipescriptapp *self;
+boolean pipescriptapp__Start(struct pipescriptapp *self)
 {
     struct view *vs;
     struct im *im;
@@ -133,9 +130,7 @@ struct pipescriptapp *self;
     return TRUE;
 }
 
-boolean pipescriptapp__InitializeObject(classID,self)
-struct classheader *classID;
-struct pipescriptapp *self;
+boolean pipescriptapp__InitializeObject(struct classheader *classID, struct pipescriptapp *self)
 {
     pipescriptapp_SetName(self, "pipescript");
     self->filemenu = 1;

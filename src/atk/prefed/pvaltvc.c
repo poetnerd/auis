@@ -48,9 +48,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 static struct menulist *pvaltvcMenus=NULL;
 static struct keymap *pvaltvcKeymap=NULL;
 
-static void pvaltvc__Select(self, ind)
-struct pvaltvc *self;
-int ind;
+static void pvaltvc__Select(struct pvaltvc *self, int ind)
 {
     int i;
     int max=prefval_GetListMax(DATA(self));
@@ -68,9 +66,7 @@ int ind;
 }
 
 
-static void pvaltvcUpdate(self, rock)
-struct pvaltvc *self;
-long rock;
+static void pvaltvcUpdate(struct pvaltvc *self, long rock)
 {
     pvaltvc_Select(self, pvaltvc_Locate(self, textview_GetDotPosition(pvaltvc_GetTextView(self))));
 }
@@ -100,8 +96,7 @@ static struct bind_Description pvaltvcBindings[]={
 };
     
     
-boolean pvaltvc__InitializeClass(classID)
-struct classheader *classID;
+boolean pvaltvc__InitializeClass(struct classheader *classID)
 {
     pvaltvcMenus=menulist_New();
     pvaltvcKeymap=keymap_New();
@@ -118,9 +113,7 @@ struct classheader *classID;
     
 }
 
-boolean pvaltvc__InitializeObject(classID, self)
-struct classheader *classID;
-struct pvaltvc *self;
+boolean pvaltvc__InitializeObject(struct classheader *classID, struct pvaltvc *self)
 {
     self->ks=keystate_Create(self, pvaltvcKeymap);
     if(self->ks==NULL) return FALSE;
@@ -137,17 +130,13 @@ struct pvaltvc *self;
     return TRUE;
 }
 
-void pvaltvc__FinalizeObject(classID, self)
-struct classheader *classID;
-struct pvaltvc *self;
+void pvaltvc__FinalizeObject(struct classheader *classID, struct pvaltvc *self)
 {
     if(self->ks) keystate_Destroy(self->ks);
     if(self->menulist) menulist_Destroy(self->menulist);
 }
 
-void pvaltvc__UpdateText(self, val)
-struct pvaltvc *self;
-long val;
+void pvaltvc__UpdateText(struct pvaltvc *self, long val)
 {
     struct prefval *pvd=DATA(self);
     struct text *pvt=TEXT(self);
@@ -173,42 +162,30 @@ long val;
     }
 }
 
-void pvaltvc__UpdateValue(self)
-struct pvaltvc *self;
+void pvaltvc__UpdateValue(struct pvaltvc *self)
 {
 }
 
  
-void pvaltvc__ObservedChanged(self, changed, val)
-struct pvaltvc *self;
-struct prefval *changed;
-long val;
+void pvaltvc__ObservedChanged(struct pvaltvc *self, struct prefval *changed, long val)
 {
     super_ObservedChanged(self, changed, val);  
 }
 
 
-struct keystate *pvaltvc__Keys(self)
-struct pvaltvc *self;
+struct keystate *pvaltvc__Keys(struct pvaltvc *self)
 {
     return self->ks;
 }
 	
-void pvaltvc__SetDataObject(self, d)
-struct pvaltvc *self;
-struct prefval *d;
+void pvaltvc__SetDataObject(struct pvaltvc *self, struct prefval *d)
 {
     super_SetDataObject(self, d);
     pvaltvc_ObservedChanged(self, d, prefval_Generic);
     text_AddObserver(TEXT(self), self);
 }
 
-struct view *pvaltvc__Hit(self, action, x, y, numberOfClicks)
-struct pvaltvc *self;
-enum view_MouseAction action;
-long x;
-long y;
-long numberOfClicks;
+struct view *pvaltvc__Hit(struct pvaltvc *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     struct view *result = super_Hit(self, action, x, y, numberOfClicks);
     struct textview *tv=pvaltvc_GetTextView(self);

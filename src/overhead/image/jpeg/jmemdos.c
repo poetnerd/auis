@@ -40,6 +40,7 @@
 #include "jinclude.h"
 #include "jmemsys.h"
 
+#include <stdio.h>
 #ifdef INCLUDES_ARE_ANSI
 #include <stdlib.h>		/* to declare malloc(), free(), getenv() */
 #else

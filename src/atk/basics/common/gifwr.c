@@ -84,6 +84,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #define AUXMODULE 1
 #include <gif.eh>
 
+#include <stdio.h>
 typedef long int        count_int;
 
 static int  Width, Height;
@@ -112,7 +113,7 @@ static byte pc2nc[256],r1[256],g1[256],b1[256];
 #define MONO(rd,gn,bl) (((rd)*11 + (gn)*16 + (bl)*5) >> 5)  /*.33R+ .5G+ .17B*/
 
 /*************************************************************/
-int WriteGIF(FILE * fp, byte * pic, int w, int h, int rmap, int gmap, byte *rmap, *gmap, * bmap, int numcols, int   numcols, colorstyle)
+int WriteGIF(FILE *fp, byte *pic, int w, int h, byte *rmap, byte *gmap, byte *bmap, int numcols, int colorstyle)
 {
   int RWidth, RHeight;
   int LeftOfs, TopOfs;
@@ -231,7 +232,7 @@ int WriteGIF(FILE * fp, byte * pic, int w, int h, int rmap, int gmap, byte *rmap
 
 
 /******************************/
-static void putword(int w, FILE * fp)
+static void putword(int w, FILE *fp)
 {
   /* writes a 16-bit integer in GIF order (LSB first) */
   fputc(w & 0xff, fp);
@@ -322,7 +323,7 @@ static int EOFCode;
 
 
 /********************************************************/
-static void compress(int init_bits, FILE * outfile, byte * data, int len)
+static void compress(int init_bits, FILE *outfile, byte *data, int len)
 {
   register long fcode;
   register int i = 0;

@@ -71,6 +71,9 @@ END-SPECIFICATION  ************************************************************/
 #include <tree.eh>
 #include <ctype.h>
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 static char tree_debug = 0;
 #define  RootNode		((self)->root_node)
 #define  ParentNode(node)	((node)->parent)
@@ -183,11 +186,8 @@ tree__TreeAttribute( self, attribute )
 
 static
 tree_type_node
-Build_Node( self, name, datum )
-  register struct tree	     *self;
-  register char	    	     *name;
-  register long		      datum;
-  {
+int Build_Node(register struct tree *self, register char *name, register long datum)
+{
   register struct tree_node  *node;
 
   IN(Build_Node);
@@ -202,11 +202,8 @@ Build_Node( self, name, datum )
   }
 
 tree_type_node
-tree__CreateRootNode( self, name, datum )
-  register struct tree	     *self;
-  register char	    	     *name;
-  register long		      datum;
-  {
+int tree__CreateRootNode(register struct tree *self, register char *name, register long datum)
+{
   register tree_type_node     node = NULL;
 
   IN(tree_CreateRootNode);
@@ -219,12 +216,8 @@ tree__CreateRootNode( self, name, datum )
   }
 
 tree_type_node
-tree__CreateParentNode( self, name, datum, child )
-  register struct tree	     *self;
-  register char	    	     *name;
-  register long		      datum;
-  register tree_type_node     child;
-  {
+int tree__CreateParentNode(register struct tree *self, register char *name, register long datum, register tree_type_node child)
+{
   register tree_type_node     node = NULL;
 
   IN(tree_CreateParentNode);
@@ -234,12 +227,8 @@ tree__CreateParentNode( self, name, datum, child )
   }
 
 tree_type_node
-tree__CreateChildNode( self, name, datum, parent )
-  register struct tree	     *self;
-  register char	    	     *name;
-  register long		      datum;
-  register tree_type_node     parent;
-  {
+int tree__CreateChildNode(register struct tree *self, register char *name, register long datum, register tree_type_node parent)
+{
   register tree_type_node     node = NULL,  prior = NULL;
 
   IN(tree_CreateChildNode);
@@ -263,12 +252,8 @@ tree__CreateChildNode( self, name, datum, parent )
   }
 
 tree_type_node
-tree__CreateRightNode( self, name, datum, left )
-  register struct tree	     *self;
-  register char	    	     *name;
-  register long		      datum;
-  register tree_type_node     left;
-  {
+int tree__CreateRightNode(register struct tree *self, register char *name, register long datum, register tree_type_node left)
+{
   register tree_type_node     node = NULL;
 
   IN(tree_CreateRightNode);
@@ -286,12 +271,8 @@ tree__CreateRightNode( self, name, datum, left )
   }
 
 tree_type_node
-tree__CreateLeftNode( self, name, datum, right )
-  register struct tree	     *self;
-  register char	    	     *name;
-  register long		      datum;
-  register tree_type_node     right;
-  {
+int tree__CreateLeftNode(register struct tree *self, register char *name, register long datum, register tree_type_node right)
+{
   register tree_type_node     node = NULL;
 
   IN(tree_CreateLeftNode);
@@ -373,10 +354,8 @@ tree__DestroyNodeChildren( self, node )
   }
 
 tree_type_node
-tree__HookNode( self, node, parent, left, right )
-  register struct tree	     *self;
-  register tree_type_node     node, parent, left, right;
-  {
+int tree__HookNode(register struct tree *self, register tree_type_node node, register tree_type_node parent, register tree_type_node left, register tree_type_node right)
+{
   IN(tree_HookNode);
   if ( node  ||  (node = RootNode) )
     {
@@ -387,10 +366,8 @@ tree__HookNode( self, node, parent, left, right )
   }
 
 tree_type_node
-tree__UnHookNode( self, node )
-  register struct tree	     *self;
-  register tree_type_node     node;
-  {
+int tree__UnHookNode(register struct tree *self, register tree_type_node node)
+{
   IN(tree_UnhookNode);
   if ( node  ||  (node = RootNode) )
     {
@@ -401,10 +378,8 @@ tree__UnHookNode( self, node )
   }
 
 tree_type_node
-tree__MoveNode( self, node, parent, left, right )
-  register struct tree	     *self;
-  register tree_type_node     node, parent, left, right;
-  {
+int tree__MoveNode(register struct tree *self, register tree_type_node node, register tree_type_node parent, register tree_type_node left, register tree_type_node right)
+{
   IN(tree_MoveNode);
   if ( node  ||  (node = RootNode) )
     {
@@ -415,10 +390,8 @@ tree__MoveNode( self, node, parent, left, right )
   }
 
 tree_type_node
-tree__DuplicateNode( self, node, parent, left, right )
-  register struct tree	     *self;
-  register tree_type_node     node, parent, left, right;
-  {
+int tree__DuplicateNode(register struct tree *self, register tree_type_node node, register tree_type_node parent, register tree_type_node left, register tree_type_node right)
+{
   IN(tree_DuplicateNode);
   if ( node  ||  (node = RootNode) )
     {
@@ -429,11 +402,8 @@ tree__DuplicateNode( self, node, parent, left, right )
   }
 
 tree_type_node
-tree__NodeOfName( self, name, node )
-  register struct tree	     *self;
-  register char		     *name;
-  register tree_type_node     node;
-  {
+int tree__NodeOfName(register struct tree *self, register char *name, register tree_type_node node)
+{
   register tree_type_node     candidate = NULL;
   register long		      level;
 
@@ -456,11 +426,8 @@ tree__NodeOfName( self, name, node )
   }
 
 tree_type_node
-tree__NodeOfDatum( self, datum, node )
-  register struct tree	     *self;
-  register long		      datum;
-  register tree_type_node     node;
-  {
+int tree__NodeOfDatum(register struct tree *self, register long datum, register tree_type_node node)
+{
   register tree_type_node     candidate = NULL;
   register long		      level;
 
@@ -734,10 +701,8 @@ tree__Apply( self, node, proc, anchor, datum )
   }
 
 tree_type_node
-tree__NextNode( self, node )
-  register struct tree	     *self;
-  register tree_type_node     node;
-  {
+int tree__NextNode(register struct tree *self, register tree_type_node node)
+{
   register tree_type_node     next = NULL, parent;
 
   IN(tree_NextNode);
@@ -758,10 +723,8 @@ tree__NextNode( self, node )
   }
 
 tree_type_node
-tree__PriorNode( self, node )
-  register struct tree 	     *self;
-  register tree_type_node     node;
-  {
+int tree__PriorNode(register struct tree *self, register tree_type_node node)
+{
   register tree_type_node     prior = NULL;
 
   IN(tree_PriorNode);

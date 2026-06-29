@@ -42,12 +42,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h>	/* strings.h */
 #include <ctype.h>
 #include <util.h>
+#include <stdlib.h>
 #ifndef NULL
 #define NULL 0
 #endif
 
-int BE2LinePromoteInit(refstate)
-struct LinePromState **refstate;
+int BE2LinePromoteInit(struct LinePromState **refstate)
 {/*		Returns < 0 for (malloc) failure, 0 for OK.  Initializes *refstate
 		to point to malloc'ed storage that will hold the LinePromote state.
 */
@@ -63,8 +63,7 @@ struct LinePromState **refstate;
     return 0;
 }
 
-int BE2LinePromote(line, state)
-char *line; struct LinePromState *state;
+int BE2LinePromote(char *line, struct LinePromState *state)
 {/*		*Works only on BE2 Datastream messages*
 		Returns 2 if this line (including the newline) should be
 		``promoted'' from the beginning of a message to the
@@ -142,8 +141,7 @@ and, in fact, that only the first \begindata should be promoted.  This could be 
     }
 }
 
-int BE2LinePromoteEnd(state)
-struct LinePromState *state;
+int BE2LinePromoteEnd(struct LinePromState *state)
 {/*		Cleans up the malloc'ed storage and returns 0 if OK,
 		non-zero on errors.
 */

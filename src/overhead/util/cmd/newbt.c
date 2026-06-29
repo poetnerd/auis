@@ -41,18 +41,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #ifdef WHITEPAGES_ENV  /* avoid makedepend "errors" */
 #include "bt.h"
+#include <errno.h>
+#include <stdlib.h>
 #endif /* WHITEPAGES_ENV   */
 
-extern int errno;
 
 static int Debugging = 0;
 
 static char *NewFile;
 static int EntrySize;
 
-static void ParseArguments(argc,argv)
-int argc;
-char *argv[];
+static void ParseArguments(int argc, char *argv[])
 {
     int thisarg;
     char *Swch;
@@ -94,9 +93,7 @@ char *argv[];
     }
 }
 
-main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
     bt_ErrorCode ErrVal;
 

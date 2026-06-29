@@ -40,6 +40,7 @@ extern char *getmyname();
 #include <time.h>
 #include <lib_protos.h>
 
+#include <stdlib.h>
 #define NORMALDELIVERYCMD NormalDeliveryCmd
 #define VERBOSEDELIVERYCMD VerboseDeliveryCmd
 #else
@@ -70,8 +71,7 @@ char *s;
     }
 }
 
-main(argc, argv)
-char **argv;
+int main(int argc, char **argv)
 {
     int i, DoDeliver=0, SplitSize=DEFAULT_SPLIT_SIZE, dum, InNewline=1, bytesread, whichpart=1, Verbose=0, numparts = -1, c;
     char *fname = NULL, *bigbuf, *s, *SharedHeaders, *headend, *from, id[100], *deliverycmd, *prefix, SubjectBuf[250];
@@ -241,9 +241,7 @@ char **argv;
     return(0);
 }
 
-HandleOnePart(DoDeliver, deliverycmd, prefix, numparts, whichpart, SharedHeaders, SubjectBuf, id, MessageID, bigbuf)
-int DoDeliver, numparts, whichpart;
-char *deliverycmd, *prefix, *SharedHeaders, *SubjectBuf, *id, *MessageID, *bigbuf;
+int HandleOnePart(int DoDeliver, char *deliverycmd, char *prefix, int numparts, int whichpart, char *SharedHeaders, char *SubjectBuf, char *id, char *MessageID, char *bigbuf)
 {
     FILE *fpout;
     char OutputFile[1000];
@@ -326,9 +324,7 @@ static char *SharedHeads[] = {
     NULL
 };
 
-ShareThisHeader(s, SubjectBuf)
-char *s;
-char *SubjectBuf;
+int ShareThisHeader(char *s, char *SubjectBuf)
 {
     int i;
     char *colon = index(s, ':');
@@ -354,8 +350,7 @@ char *SubjectBuf;
 
 static char *tspecials = "()<>@,;:\\\"/[]?.=";
 
-IllegalContentType(ctype)
-char *ctype;
+int IllegalContentType(char *ctype)
 {
     char *ct, *semicolon, *st, *s, *param, *eq, *matcheq;
     ct = malloc(1+strlen(ctype));
@@ -426,8 +421,7 @@ char *ctype;
     return(0);
 }
 
-int ULstrcmp(s1, s2)
-register char *s1, *s2;
+int ULstrcmp(register char *s1, register char *s2)
 {
     char c1,c2;
 

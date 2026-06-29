@@ -44,9 +44,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #define CALLMEMADAM "__AMS__EXP__"
 #define LOOKFOR "AMS-Binaries"
 
-amsconfig(argc, argv, name)
-int argc;
-char **argv, *name;
+int amsconfig(int argc, char **argv, char *name)
 {
     char *s, ExpDir[1+MAXPATHLEN], NewName[100];
 

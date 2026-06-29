@@ -60,6 +60,7 @@ extern __sigpause();
 
 #include <stdio.h>
 
+#include <string.h>
 extern FILE __iob[];
 extern char *_stdbuf, *_lastbuf, *_sibuf, *_smbuf, *_sobuf;
 extern char **environ, **_environ;

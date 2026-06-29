@@ -57,8 +57,7 @@ A_long = atom_Intern("long") ,\
 A_string = atom_Intern("string") )
 
 
-void mbuttonv__LookupParameters(self)
-     struct mbuttonv * self;
+void mbuttonv__LookupParameters(struct mbuttonv *self)
 {
   char * fontname;
   long fontsize;
@@ -161,17 +160,14 @@ void mbuttonv__LookupParameters(self)
 
 }
 
-boolean mbuttonv__InitializeObject(classID, self )
-struct classheader *classID;
-struct mbuttonv * self;
+boolean mbuttonv__InitializeObject(struct classheader *classID, struct mbuttonv *self)
 {
     mbuttonv_SetFixedCount(self,0);
     mbuttonv_SetFixedColumns(self,0);
     return TRUE;
 }
 
-boolean mbuttonv__InitializeClass(classID)
-struct classheader *classID;
+boolean mbuttonv__InitializeClass(struct classheader *classID)
 {
     InternAtoms;
     return TRUE;

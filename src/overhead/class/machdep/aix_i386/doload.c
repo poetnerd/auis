@@ -53,12 +53,10 @@ int doload_trace=0;		/* nonzero if debugging */
 
 #include "../common/safe.h"
 
+#include <stdlib.h>
 /* initialize state */
 
-void doload_setup(e, inFD, mode)
-struct doload_environment *e;
-int inFD;
-doload_mode mode;
+void doload_setup(struct doload_environment *e, int inFD, doload_mode mode)
 {
     e->mode = mode;
     e->fd = inFD;
@@ -73,8 +71,7 @@ doload_mode mode;
 
 /* tear down environment */
 
-void doload_cleanup(e)
-struct doload_environment *e;
+void doload_cleanup(struct doload_environment *e)
 {
     if (e->problems > 0) {
 	printf("%d problems found\n", e->problems);
@@ -90,8 +87,7 @@ struct doload_environment *e;
 
 /* read module into memory */
 
-void doload_read(e)
-struct doload_environment *e;
+void doload_read(struct doload_environment *e)
 {
     long stringlen;	/* length of string table */
     long csize; 	/* size of all contents */
@@ -340,8 +336,7 @@ extern long globalsize;
 
 /* resolves undefined referenses to known globals in symbol table */
 
-doload_preset(e)
-register struct doload_environment *e;
+int doload_preset(register struct doload_environment *e)
 {
     register SYMENT *sp;
     register SYMENT *sbound;
@@ -447,11 +442,7 @@ register struct doload_environment *e;
 
 /* compute relocation adjustment */
 
-static long adjust(e, tw, rp, format)
-register struct doload_environment *e;
-register long tw;
-register RELOC *rp;
-char *format;
+static long adjust(register struct doload_environment *e, register long tw, register RELOC *rp, char *format)
 {
     SYMENT *sp;
     int s;
@@ -523,10 +514,7 @@ char *format;
 
 /* relocate one item */
 
-static void relocate(e, cp, rp)
-register struct doload_environment *e;
-register char *cp;
-register RELOC *rp;
+static void relocate(register struct doload_environment *e, register char *cp, register RELOC *rp)
 {
     register long tw;
     long pc;
@@ -569,9 +557,7 @@ register RELOC *rp;
     return;
 }
 
-static void printaddr(e, cp)
-register struct doload_environment *e;
-register unsigned long cp;
+static void printaddr(register struct doload_environment *e, register unsigned long cp)
 {
     printf("\n%.8x ", cp);
     return ;
@@ -579,11 +565,7 @@ register unsigned long cp;
 
 /* format and display data */
 
-static char *printdata(e, cp, base, bound)	/* returns bound */
-register struct doload_environment *e;
-register char *cp;
-register char *base;
-register char *bound;
+static char *printdata(register struct doload_environment *e, register char *cp, register char *base, register char *bound)
 {
     int k;
 
@@ -602,10 +584,7 @@ register char *bound;
     return bound;
 }
 
-static int relocationbound(e, rp, bound)
-register struct doload_environment *e;
-register RELOC *rp;
-int bound;
+static int relocationbound(register struct doload_environment *e, register RELOC *rp, int bound)
 {
     long result;
 #ifdef undef
@@ -635,12 +614,7 @@ int bound;
     return result;
 }
 
-static void fixsegment(e, n, base, size, rpp)
-register struct doload_environment *e;
-register unsigned long n;	/* number of relocation items */
-register char *base;
-unsigned long size;
-RELOC **rpp;
+static void fixsegment(register struct doload_environment *e, register unsigned long n, register char *base, unsigned long size, RELOC **rpp)
 {
     register RELOC *rp = *rpp;
     char *cp;
@@ -661,8 +635,7 @@ RELOC **rpp;
 
 /* fix up loaded text */
 
-doload_fixup(e)
-register struct doload_environment *e;
+int doload_fixup(register struct doload_environment *e)
 {
     RELOC *rp;
     int s;

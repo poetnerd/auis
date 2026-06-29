@@ -43,8 +43,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #include <andrdir.h>
 
+#include <stdlib.h>
 char ProgramName[100];
-extern int errno;
 
 #define MAXCONFIGSIZE 2000
 
@@ -70,18 +70,7 @@ getconfiguration -- read information from configuration file /AndrewSetup.
 */
 
 
-ReadConfigureLine(fp, text, maxTextLength, program, programLength, key, keyLength, value, valueLength, condition, conditionLength)
-FILE *fp;
-char *text;
-int maxTextLength;
-char **program;
-int *programLength;
-char **key;
-int *keyLength;
-char **value;
-int *valueLength;
-char **condition;
-int *conditionLength;
+int ReadConfigureLine(FILE *fp, char *text, int maxTextLength, char **program, int *programLength, char **key, int *keyLength, char **value, int *valueLength, char **condition, int *conditionLength)
 {
     char *keybeg;
     char *keyend;
@@ -300,8 +289,7 @@ int *conditionLength;
     }
 }
 
-struct configurelist *ReadConfigureFile(fileName)
-    char *fileName;
+struct configurelist *ReadConfigureFile(char *fileName)
 {
     FILE *fp;
 
@@ -360,10 +348,7 @@ struct configurelist *ReadConfigureFile(fileName)
 }
     
 
-char *GetConfig(header, key, usedefault)
-    struct configurelist *header;
-    char *key;
-    int usedefault;
+char *GetConfig(struct configurelist *header, char *key, int usedefault)
 {
     struct configurelist *p;
     char *t;
@@ -392,8 +377,7 @@ char *GetConfig(header, key, usedefault)
     return NULL;
 }
 
-char *GetConfiguration(key)
-char *key;
+char *GetConfiguration(char *key)
 {
     static int inited = 0;
     static struct configurelist *setupHead = NULL;
@@ -418,8 +402,7 @@ char *key;
     return GetConfig(setupHead, key, 1);
 }
 
-FreeConfigureList(cList)
-    register struct configurelist *cList;
+int FreeConfigureList(register struct configurelist *cList)
 {
     register struct configurelist *t;
 
@@ -439,9 +422,7 @@ FreeConfigureList(cList)
 /* This is the main routine used to test the routine above */
 
 #ifdef TESTINGONLYTESTING
-main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     int i;
     char *val;

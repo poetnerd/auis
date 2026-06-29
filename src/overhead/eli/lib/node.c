@@ -33,8 +33,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include  <node.h>
 
-EliSexp_t      *eliSexp_GetNew(st)
-EliState_t     *st;
+#include <stdlib.h>
+EliSexp_t      *eliSexp_GetNew(EliState_t *st)
 {
     EliSexp_t      *tmp = NULL;
 
@@ -63,8 +63,7 @@ EliState_t     *st;
     return (tmp);
 }
 
-EliSexp_t      *eliSexp_GetNewBlock(numcells)
-int             numcells;
+EliSexp_t      *eliSexp_GetNewBlock(int numcells)
 {
     EliSexp_t      *result;
     int             i;
@@ -78,15 +77,12 @@ int             numcells;
     return (result);
 }
 
-void            eliSexp_IncrRefcount(node)
-EliSexp_t      *node;
+void            eliSexp_IncrRefcount(EliSexp_t *node)
 {
     ++(node->data.refcount);
 }
 
-void            eliSexp_DecrRefcount(st, node)
-EliState_t     *st;
-EliSexp_t      *node;
+void            eliSexp_DecrRefcount(EliState_t *st, EliSexp_t *node)
 {
     if (1 > (--(node->data.refcount))) {
 	--(st->numNodes);
@@ -116,20 +112,14 @@ EliSexp_t      *node;
     }
 }
 
-void            EliSexp_SetInt(st, node, val)
-EliState_t     *st;
-EliSexp_t      *node;
-long            val;
+void            EliSexp_SetInt(EliState_t *st, EliSexp_t *node, long val)
 {
     eliDecrRefcount_SexpRef(st, node);
     node->data.type = e_data_integer;
     node->data.datum.intval = val;
 }
 
-void            EliSexp_SetSym(st, node, val)
-EliState_t     *st;
-EliSexp_t      *node;
-EliSym_t       *val;
+void            EliSexp_SetSym(EliState_t *st, EliSexp_t *node, EliSym_t *val)
 {
     if ((node->data.type == e_data_symbol) ? (node->data.datum.symval != val) : TRUE) {
 	eliDecrRefcount_SexpRef(st, node);
@@ -139,10 +129,7 @@ EliSym_t       *val;
     }
 }
 
-void            EliSexp_SetStr(st, node, val)
-EliState_t     *st;
-EliSexp_t      *node;
-EliStr_t       *val;
+void            EliSexp_SetStr(EliState_t *st, EliSexp_t *node, EliStr_t *val)
 {
     if ((node->data.type == e_data_string) ? (node->data.datum.strval != val) : TRUE) {
 	eliDecrRefcount_SexpRef(st, node);
@@ -152,10 +139,7 @@ EliStr_t       *val;
     }
 }
 
-void            EliSexp_SetCons(st, node, val)
-EliState_t     *st;
-EliSexp_t      *node;
-EliCons_t      *val;
+void            EliSexp_SetCons(EliState_t *st, EliSexp_t *node, EliCons_t *val)
 {
     if ((node->data.type == e_data_list) ? (node->data.datum.consval != val) : TRUE) {
 	eliDecrRefcount_SexpRef(st, node);
@@ -165,10 +149,7 @@ EliCons_t      *val;
     }
 }
 
-void            EliSexp_SetFn(st, node, val)
-EliState_t     *st;
-EliSexp_t      *node;
-EliFn_t        *val;
+void            EliSexp_SetFn(EliState_t *st, EliSexp_t *node, EliFn_t *val)
 {
     if ((node->data.type == e_data_fn) ? (node->data.datum.fnval != val) : TRUE) {
 	eliDecrRefcount_SexpRef(st, node);
@@ -178,8 +159,7 @@ EliFn_t        *val;
     }
 }
 
-eliDataTypes_t  EliSexp_GetType(node)
-EliSexp_t      *node;
+eliDataTypes_t  EliSexp_GetType(EliSexp_t *node)
 {
     return (node->data.type);
 }
@@ -189,46 +169,37 @@ EliSexp_t      *node;
  * of a node to e_data_none when its datum has been deallocated 
  */
 
-void            eliSexp_SetType(node, type)
-EliSexp_t      *node;
-eliDataTypes_t  type;
+void            eliSexp_SetType(EliSexp_t *node, eliDataTypes_t type)
 {
     node->data.type = type;
 }
 
-EliCons_t      *EliSexp_GetCons(n)
-EliSexp_t      *n;
+EliCons_t      *EliSexp_GetCons(EliSexp_t *n)
 {
     return (n->data.datum.consval);
 }
 
-EliSym_t       *EliSexp_GetSym(n)
-EliSexp_t      *n;
+EliSym_t       *EliSexp_GetSym(EliSexp_t *n)
 {
     return (n->data.datum.symval);
 }
 
-EliStr_t       *EliSexp_GetStr(n)
-EliSexp_t      *n;
+EliStr_t       *EliSexp_GetStr(EliSexp_t *n)
 {
     return (n->data.datum.strval);
 }
 
-long            EliSexp_GetInt(n)
-EliSexp_t      *n;
+long            EliSexp_GetInt(EliSexp_t *n)
 {
     return (n->data.datum.intval);
 }
 
-EliFn_t        *EliSexp_GetFn(n)
-EliSexp_t      *n;
+EliFn_t        *EliSexp_GetFn(EliSexp_t *n)
 {
     return (n->data.datum.fnval);
 }
 
-void EliSexp_SetSexp(st, node1, node2)
-EliState_t *st;
-EliSexp_t *node1, *node2;
+void EliSexp_SetSexp(EliState_t *st, EliSexp_t *node1, EliSexp_t *node2)
 {
     switch (EliSexp_GetType(node2)) {
         case e_data_integer:

@@ -56,20 +56,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <environ.ih>
 #include <consolea.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 /*
  * This callback is called when the window
  * manager requests to destroy the im.
  */
-static void delete_console_win(im, rock)
-struct im *im;
-long rock;
+static void delete_console_win(struct im *im, long rock)
 {
      im_KeyboardExit();
 }
 
-boolean consoleapp__InitializeObject(classID,self)
-struct classheader *classID;
-struct consoleapp *self;
+boolean consoleapp__InitializeObject(struct classheader *classID, struct consoleapp *self)
 {
     self->consoleName = NULL;
     /* NOTE: the following defines for the version info come from ../lib/convers.h */
@@ -78,9 +76,7 @@ struct consoleapp *self;
     return TRUE;
 }
 
-void consoleapp__FinalizeObject(classID,self)
-struct classheader *classID;
-struct consoleapp *self;
+void consoleapp__FinalizeObject(struct classheader *classID, struct consoleapp *self)
 {
     if(self->consoleName != NULL){
 	free(self->consoleName);
@@ -93,10 +89,7 @@ struct consoleapp *self;
 int ForceErrorMonitoring = FALSE;
 int InhibitErrorMonitoring = FALSE;
 
-boolean consoleapp__ParseArgs(self,argc,argv)
-struct consoleapp *self;
-int argc;
-char **argv;
+boolean consoleapp__ParseArgs(struct consoleapp *self, int argc, char **argv)
 {
     if(!super_ParseArgs(self,argc,argv))
 	return FALSE;
@@ -152,8 +145,7 @@ char **argv;
 
 
 
-boolean consoleapp__Start(self)
-struct consoleapp *self;
+boolean consoleapp__Start(struct consoleapp *self)
 {
     struct consoleClass *con;
     struct im *im;
@@ -180,8 +172,7 @@ struct consoleapp *self;
 
 
 
-boolean consoleapp__InitializeClass(classID)
-struct classheader *classID;
+boolean consoleapp__InitializeClass(struct classheader *classID)
 {
     char *s;
     consoleClass_StaticEntry;

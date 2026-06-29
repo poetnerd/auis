@@ -40,11 +40,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <view.ih>
 #include <palette.eh>
 
+#include <stdlib.h>
 static struct palette_item *FreeList;
 
-boolean palette__InitializeObject(classID, self)
-struct classheader *classID;
-struct palette *self;
+boolean palette__InitializeObject(struct classheader *classID, struct palette *self)
 {
     self->loc = palette_LEFT;
     self->items = NULL;
@@ -56,10 +55,7 @@ struct palette *self;
     return TRUE;
 }
 
-struct palette *palette__Create(classID, child, loc)
-struct classheader *classID;
-struct view *child;
-enum palette_location loc;
+struct palette *palette__Create(struct classheader *classID, struct view *child, enum palette_location loc)
 {
     struct palette *new = palette_New();
 
@@ -69,9 +65,7 @@ enum palette_location loc;
     return new;
 }
 
-void palette__FinalizeObject(classID, self)
-struct classheader *classID;
-struct palette *self;
+void palette__FinalizeObject(struct classheader *classID, struct palette *self)
 {
     struct palette_item *p;
 
@@ -89,9 +83,7 @@ struct palette *self;
 }
 
 
-void palette__DestroyItem(classID, item)
-struct classheader *classID;
-struct palette_item *item;
+void palette__DestroyItem(struct classheader *classID, struct palette_item *item)
 {
     struct palette *self = item->palette;
     struct palette_item *ptr, **prev;
@@ -121,9 +113,7 @@ struct palette_item *item;
     abort();
 }
 
-void palette__SelectItem(classID, item)
-struct classheader *classID;
-struct palette_item *item;
+void palette__SelectItem(struct classheader *classID, struct palette_item *item)
 {
     if (item->new_selected)
         return;
@@ -132,9 +122,7 @@ struct palette_item *item;
     palette_WantUpdate(item->palette, item->palette);
 }
 
-void palette__DeselectItem(classID, item)
-struct classheader *classID;
-struct palette_item *item;
+void palette__DeselectItem(struct classheader *classID, struct palette_item *item)
 {
     if (!item->new_selected)
         return;
@@ -143,10 +131,7 @@ struct palette_item *item;
     palette_WantUpdate(item->palette, item->palette);
 }
 
-void palette__FullUpdate(self, type, left, top, w, h)
-struct palette *self;
-enum view_UpdateType type;
-long left, top, w, h;
+void palette__FullUpdate(struct palette *self, enum view_UpdateType type, long left, long top, long w, long h)
 {
     struct fontdesc_charInfo info;
     int maxwidth, maxheight, items, columns, col, x, y, tmp;
@@ -313,8 +298,7 @@ long left, top, w, h;
     view_FullUpdate(self->child, view_FullRedraw, 0, 0, rectangle_Width(&child), rectangle_Height(&child));
 }
 
-void palette__Update(self)
-struct palette *self;
+void palette__Update(struct palette *self)
 {
     struct palette_item *item;
     struct graphic *black;
@@ -345,10 +329,7 @@ struct palette *self;
     }
 }
 
-struct view *palette__Hit(self, action, x, y, numclicks)
-struct palette *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+struct view *palette__Hit(struct palette *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct palette_item *item, *ptr;
 
@@ -439,9 +420,7 @@ long x, y, numclicks;
     }
 }
 
-void palette__WantUpdate(self, requestor)
-struct palette *self;
-struct view *requestor;
+void palette__WantUpdate(struct palette *self, struct view *requestor)
 {
     struct palette_item *item;
 
@@ -454,9 +433,7 @@ struct view *requestor;
     super_WantUpdate(self, requestor);
 }
 
-void palette__SetLocation(self, loc)
-struct palette *self;
-enum palette_location loc;
+void palette__SetLocation(struct palette *self, enum palette_location loc)
 {
     if (self->loc != loc) {
         self->loc = loc;
@@ -465,9 +442,7 @@ enum palette_location loc;
     }
 }
 
-void palette__SetChild(self, child)
-struct palette *self;
-struct view *child;
+void palette__SetChild(struct palette *self, struct view *child)
 {
     if (self->child != NULL)
         self->child->parent = NULL;
@@ -478,13 +453,7 @@ struct view *child;
         child->parent = (struct view *)self;
 }
 
-static struct palette_item *palette_AddItem(self, info, pos, fn, rock, autoselect)
-struct palette *self;
-union palette_iteminfo info;
-int pos;
-void (*fn)();
-long rock;
-enum palette_autoselect autoselect;
+static struct palette_item *palette_AddItem(struct palette *self, union palette_iteminfo info, int pos, void (*fn)(), long rock, enum palette_autoselect autoselect)
 {
     struct palette_item *item, *ptr, **prev;
 
@@ -517,13 +486,7 @@ enum palette_autoselect autoselect;
     return item;
 }
 
-struct palette_item *palette__AddIcon(self, font, ch, pos, fn, rock, autoselect)
-struct palette *self;
-struct fontdesc *font;
-int ch, pos;
-void (*fn)();
-long rock;
-enum palette_autoselect autoselect;
+struct palette_item *palette__AddIcon(struct palette *self, struct fontdesc *font, int ch, int pos, void (*fn)(), long rock, enum palette_autoselect autoselect)
 {
     union palette_iteminfo info;
 
@@ -533,13 +496,7 @@ enum palette_autoselect autoselect;
     return palette_AddItem(self, info, pos, fn, rock, autoselect);
 }
 
-struct palette_item *palette__AddView(self, view, pos, fn, rock, autoselect)
-struct palette *self;
-struct view *view;
-int pos;
-void (*fn)();
-long rock;
-enum palette_autoselect autoselect;
+struct palette_item *palette__AddView(struct palette *self, struct view *view, int pos, void (*fn)(), long rock, enum palette_autoselect autoselect)
 {
     union palette_iteminfo info;
 
@@ -549,14 +506,7 @@ enum palette_autoselect autoselect;
     return palette_AddItem(self, info, pos, fn, rock, autoselect);
 }
 
-struct palette_item *palette__AddString(self, font, str, pos, fn, rock, autoselect)
-struct palette *self;
-struct fontdesc *font;
-char *str;
-int pos;
-void (*fn)();
-long rock;
-enum palette_autoselect autoselect;
+struct palette_item *palette__AddString(struct palette *self, struct fontdesc *font, char *str, int pos, void (*fn)(), long rock, enum palette_autoselect autoselect)
 {
     union palette_iteminfo info;
 

@@ -47,6 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include "sbutton.eh"
 
+#include <stdlib.h>
 /* Defined constants and macros */
 
 #define MAX_LINE_LENGTH 70  /* can't be less than 6 */
@@ -64,8 +65,7 @@ static char *True="True";
 static char *False="False";
 static char *EmptyString="";
 
-static char *Intern(str)
-char *str;
+static char *Intern(char *str)
 {
     struct atom *a;
     if(str==NULL) return NULL;
@@ -74,8 +74,7 @@ char *str;
     else return NULL;
 }
 
-boolean sbutton__InitializeClass(c)
-struct classheader *c;
+boolean sbutton__InitializeClass(struct classheader *c)
 {
     /* 
       Initialize all the class data.
@@ -87,9 +86,7 @@ struct classheader *c;
 }
 
 
-static void init(self, i, j)
-struct sbutton *self;
-int i, j;
+static void init(struct sbutton *self, int i, int j)
 {
     while(i<=j)	{
 	self->buttons[i].rock=0;
@@ -102,8 +99,7 @@ int i, j;
     }
 }
 
-static boolean SetupInitialState(self)
-struct sbutton *self;
+static boolean SetupInitialState(struct sbutton *self)
 {
     self->prefs=sbutton_GetNewPrefs(NULL);
     if(self->prefs==NULL) return FALSE;
@@ -112,9 +108,7 @@ struct sbutton *self;
     return TRUE;
 }
 
-boolean sbutton__EnsureSize(self, ind)
-struct sbutton *self;
-int ind;
+boolean sbutton__EnsureSize(struct sbutton *self, int ind)
 {
     int newsize,i=self->maxcount;
     if(ind<0) return FALSE;
@@ -169,10 +163,7 @@ char *colorprefs[sbutton_COLORS]={
 
 static char *defprefname="sbutton";
 
-void sbutton__InitPrefs(classID, prefs, name)
-struct classheader *classID;
-struct sbutton_prefs *prefs;
-char *name;
+void sbutton__InitPrefs(struct classheader *classID, struct sbutton_prefs *prefs, char *name)
 {
     char buf[1024], *font;
     long style, size;
@@ -193,9 +184,7 @@ char *name;
     if (fontdesc_ExplodeFontName(font,buf,sizeof(buf), &style, &size)) prefs->font=fontdesc_Create(buf,style,size);
 }
 
-struct sbutton_prefs *sbutton__GetNewPrefs(classID, name)
-struct classhead *classID;
-char *name;
+struct sbutton_prefs *sbutton__GetNewPrefs(struct classhead *classID, char *name)
 {
     char buf[1024];
     struct sbutton_prefs *new=(struct sbutton_prefs *)malloc(sizeof(struct sbutton_prefs));
@@ -216,10 +205,7 @@ char *name;
     return new;
 }
 
-void sbutton__WritePrefs(c, fp, prefs)
-struct classheader *c;
-FILE *fp;
-struct sbutton_prefs *prefs;
+void sbutton__WritePrefs(struct classheader *c, FILE *fp, struct sbutton_prefs *prefs)
 {
     int i;
     char buf[1024];
@@ -249,9 +235,7 @@ struct sbutton_prefs *prefs;
     fprintf(fp,"\\endprefs\n\n");
 }
 
-void sbutton__FreePrefs(c, prefs)
-struct classheader *c;
-struct sbutton_prefs *prefs;
+void sbutton__FreePrefs(struct classheader *c, struct sbutton_prefs *prefs)
 {
     prefs->refcount--;
     if(prefs->refcount<=0) {
@@ -260,10 +244,7 @@ struct sbutton_prefs *prefs;
     }
 }
 
-struct sbutton_prefs *sbutton__DuplicatePrefs(c, prefs, name)
-struct classheader *c;
-struct sbutton_prefs *prefs;
-char *name;
+struct sbutton_prefs *sbutton__DuplicatePrefs(struct classheader *c, struct sbutton_prefs *prefs, char *name)
 {
     struct sbutton_prefs *result=(struct sbutton_prefs *)malloc(sizeof(struct sbutton_prefs));
     if(result==NULL) return result;
@@ -274,9 +255,7 @@ char *name;
     return result;
 }
 
-boolean sbutton__InitializeObject(c, self)
-struct classheader *c;
-struct sbutton *self;
+boolean sbutton__InitializeObject(struct classheader *c, struct sbutton *self)
 {
     /*
       Inititialize the object instance data.
@@ -314,9 +293,7 @@ struct sbutton *self;
     return(TRUE);
 }
 
-void sbutton__FinalizeObject(c, self)
-struct classheader *c;
-struct sbutton *self;
+void sbutton__FinalizeObject(struct classheader *c, struct sbutton *self)
 {
     /*
       Finalize the object instance data.
@@ -337,16 +314,13 @@ struct sbutton *self;
     return;
 }
 
-void sbutton__SetChangeFlag(self, on)
-struct sbutton *self;
-long on;
+void sbutton__SetChangeFlag(struct sbutton *self, long on)
 {
     self->change|=on;
 }
 
 
-long sbutton__GetChangeType(self)
-struct sbutton *self;
+long sbutton__GetChangeType(struct sbutton *self)
 {
     return self->change;
 }
@@ -359,9 +333,7 @@ static char *sizepolicies[]={
     "Proc"
 };
 
-static void sbutton__WriteDataPart(self, fp)
-struct sbutton *self;
-FILE *fp;
+static void sbutton__WriteDataPart(struct sbutton *self, FILE *fp)
 {
     /*
       Write the object data out onto the datastream.
@@ -415,11 +387,7 @@ FILE *fp;
 }
 
 
-long sbutton__Write(self, fp, id, level)
-struct sbutton *self;
-FILE *fp;
-long id;
-int level;
+long sbutton__Write(struct sbutton *self, FILE *fp, long id, int level)
 {
     long uniqueid = sbutton_UniqueID(self);
 
@@ -443,10 +411,7 @@ struct read_status {
     struct sbutton_prefs **prefs;
 };
 
-static boolean newprefsproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean newprefsproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     if(rock->prefs==NULL) return TRUE;
     rock->lastprefs++;
@@ -457,10 +422,7 @@ char *buf;
     return FALSE;
 }
 
-static boolean labelproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean labelproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     rock->lastbutton--;
     if(rock->lastbutton<0) return TRUE;
@@ -468,29 +430,20 @@ char *buf;
     return FALSE;
 }
 
-static boolean litpproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean litpproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     sbutton_SetLit(self, rock->lastbutton, *buf=='T');
     return FALSE;
 }
 
-static boolean styleproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean styleproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     if(rock->lastprefs<0 || rock->lastprefs>=rock->maxprefs) return TRUE;
     sbutton_GetStyle(rock->prefs[rock->lastprefs]) = atoi(buf);
     return FALSE;
 }
 
-static boolean fontproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean fontproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     struct fontdesc *font=NULL;
     char buf2[1024];
@@ -507,20 +460,14 @@ char *buf;
     return FALSE;
 }
 
-static boolean bgproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean bgproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     if(rock->lastprefs<0 || rock->lastprefs>=rock->maxprefs) return TRUE;
     if(*buf!='\0') sbutton_GetBackground(rock->prefs[rock->lastprefs]) = Intern(buf);
     return FALSE;
 }
 
-static boolean fgproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean fgproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     if(rock->lastprefs<0 || rock->lastprefs>=rock->maxprefs) return TRUE;
     if(*buf!='\0') sbutton_GetForeground(rock->prefs[rock->lastprefs]) = Intern(buf);
@@ -528,20 +475,14 @@ char *buf;
 }
 
 
-static boolean tsproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean tsproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     if(rock->lastprefs<0 || rock->lastprefs>=rock->maxprefs) return TRUE;
     if(*buf!='\0') sbutton_GetTopShadow(rock->prefs[rock->lastprefs]) = Intern(buf);
     return FALSE;
 }
 
-static boolean topproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean topproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     if(rock->lastprefs<0 || rock->lastprefs>=rock->maxprefs) return TRUE;
     if(*buf!='\0') sbutton_GetTop(rock->prefs[rock->lastprefs]) = Intern(buf);
@@ -549,10 +490,7 @@ char *buf;
 }
 
 
-static boolean bsproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean bsproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     if(rock->lastprefs<0 || rock->lastprefs>=rock->maxprefs) return TRUE;
     if(*buf!='\0') sbutton_GetBottomShadow(rock->prefs[rock->lastprefs]) = Intern(buf);
@@ -560,10 +498,7 @@ char *buf;
 }
 
 
-static boolean lfgproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean lfgproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     if(rock->lastprefs<0 || rock->lastprefs>=rock->maxprefs) return TRUE;
     if(*buf!='\0') sbutton_GetLabelFG(rock->prefs[ rock->lastprefs]) = Intern(buf);
@@ -571,20 +506,14 @@ char *buf;
 }
 
 
-static boolean lbgproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean lbgproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     if(rock->lastprefs<0 || rock->lastprefs>=rock->maxprefs) return TRUE;
    if(*buf!='\0') sbutton_GetLabelBG(rock->prefs[rock->lastprefs]) = Intern(buf);
    return FALSE;
 }
 
-static boolean nameproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean nameproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     if(rock->lastprefs<0 || rock->lastprefs>=rock->maxprefs) return TRUE;
     if(*buf!='\0') sbutton_GetName(rock->prefs[rock->lastprefs]) = NewString(buf);
@@ -595,10 +524,7 @@ char *buf;
     }
     return FALSE;}
 
-static boolean prefsproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean prefsproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     int i=atoi(buf);
     if(i<0 || i>=rock->maxprefs) return TRUE;
@@ -606,18 +532,12 @@ char *buf;
     return FALSE;
 }
 
-static boolean doneproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean doneproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     return TRUE;
 }
 
-static boolean triggerproc(self, rock, buf)
-struct sbutton *self;
-struct read_status *rock;
-char *buf;
+static boolean triggerproc(struct sbutton *self, struct read_status *rock, char *buf)
 {
     sbutton_SetTrigger(self, rock->lastbutton, buf);
     return FALSE;
@@ -647,11 +567,7 @@ static struct dataprocs {
     {NULL, NULL}
 };
 
-static long dostuff(self, fp, rock, procs)
-struct sbutton *self;
-FILE *fp;
-long rock;
-struct dataprocs *procs;
+static long dostuff(struct sbutton *self, FILE *fp, long rock, struct dataprocs *procs)
 {
     char *buf, *buf2;
     boolean done=FALSE;
@@ -682,10 +598,7 @@ struct dataprocs *procs;
 
 
  
-static long sbutton__ReadDataPart(self, fp, dsversion)
-struct sbutton *self;
-FILE *fp;
-int dsversion;
+static long sbutton__ReadDataPart(struct sbutton *self, FILE *fp, int dsversion)
 {
     /*
       Read in the object from the file.
@@ -763,11 +676,7 @@ int dsversion;
 }
 
 
-static long sbutton_SanelyReturnReadError(self, fp, id, code)
-struct sbutton *self;
-FILE *fp;
-long id;
-long code;
+static long sbutton_SanelyReturnReadError(struct sbutton *self, FILE *fp, long id, long code)
 {
     /*
       Suck up the file until our enddata, then return the error code.
@@ -792,10 +701,7 @@ long code;
 }
 
 
-long sbutton__Read(self, fp, id)
-struct sbutton *self;
-FILE *fp;
-long id;
+long sbutton__Read(struct sbutton *self, FILE *fp, long id)
 {
 
   char *buf;
@@ -818,15 +724,12 @@ long id;
 }
 
 
-char *sbutton__ViewName(self)
-struct sbutton *self;
+char *sbutton__ViewName(struct sbutton *self)
 {
     return "sbttnav";
 }
 
-void sbutton__ActivateButton(self, ind)
-struct sbutton *self;
-int ind;
+void sbutton__ActivateButton(struct sbutton *self, int ind)
 {
     if(ind<0 || ind>=self->count) return;
     if(self->singleactivation && self->activated>=0 && self->activated<self->count && self->activated!=ind) sbutton_DeActivateButton(self, self->activated);
@@ -838,9 +741,7 @@ int ind;
     sbutton_NotifyObservers(self, ind+sbutton_CHANGEBASE);
 }
 
-void sbutton__DeActivateButton(self, ind)
-struct sbutton *self;
-int ind;
+void sbutton__DeActivateButton(struct sbutton *self, int ind)
 {
     if(ind<0 || ind>=self->count) return;
     if(self->activated==ind) self->activated=(-1);
@@ -851,9 +752,7 @@ int ind;
     sbutton_NotifyObservers(self, ind+sbutton_CHANGEBASE);
 }
 
-void sbutton__Actuate(self, ind)
-struct sbutton *self;
-int ind;
+void sbutton__Actuate(struct sbutton *self, int ind)
 {
     struct owatch_data *w1=owatch_Create(self);
     if(ind>=0 && ind<self->count && self->hitfunc) self->hitfunc(self, self->hitfuncrock, ind, self->buttons[ind].rock);
@@ -863,20 +762,14 @@ int ind;
     }
 }
 
-void sbutton__SetRock(self, ind, rock)
-struct sbutton *self;
-int ind;
-long rock;
+void sbutton__SetRock(struct sbutton *self, int ind, long rock)
 {
     if(!sbutton_EnsureSize(self, ind)) return;
 
     self->buttons[ind].rock=rock;
 }
 
-void sbutton__SetLit(self, ind, onoff)
-struct sbutton *self;
-int ind;
-boolean onoff;
+void sbutton__SetLit(struct sbutton *self, int ind, boolean onoff)
 {
     if(!sbutton_EnsureSize(self, ind)) return;
     self->buttons[ind].lit=onoff;
@@ -886,10 +779,7 @@ boolean onoff;
 }
 
 
-void sbutton__SetPrefs(self, ind, prefs)
-struct sbutton *self;
-int ind;
-struct sbutton_prefs *prefs;
+void sbutton__SetPrefs(struct sbutton *self, int ind, struct sbutton_prefs *prefs)
 {
     if(!sbutton_EnsureSize(self, ind) || prefs==NULL) return;
     sbutton_FreePrefs(self->buttons[ind].prefs);
@@ -900,10 +790,7 @@ struct sbutton_prefs *prefs;
     sbutton_NotifyObservers(self, ind+sbutton_CHANGEBASE);
 }
 
-void sbutton__SetLayout(self, rows, cols, policy)
-struct sbutton *self;
-int rows, cols;
-enum sbutton_sizepolicy policy;
+void sbutton__SetLayout(struct sbutton *self, int rows, int cols, enum sbutton_sizepolicy policy)
 {
     if(rows>0) self->rows=rows;
     if(cols>0) self->cols=cols;
@@ -929,9 +816,7 @@ enum sbutton_sizepolicy policy;
     sbutton_NotifyObservers(self, observable_OBJECTCHANGED);
 }
 
-void sbutton__Delete(self, ind)
-struct sbutton *self;
-int ind;
+void sbutton__Delete(struct sbutton *self, int ind)
 {
     int i;
     struct sbutton_prefs *prefs;
@@ -959,9 +844,7 @@ int ind;
     return;
 }
 
-void sbutton__Swap(self, i1, i2)
-struct sbutton *self;
-int i1, i2;
+void sbutton__Swap(struct sbutton *self, int i1, int i2)
 {
     struct sbutton_info si;
     if(i1<0 || i1>=self->count) return;
@@ -975,10 +858,7 @@ int i1, i2;
     sbutton_NotifyObservers(self, observable_OBJECTCHANGED);
 }
 	
-void sbutton__SetLabel(self, ind, txt)
-struct sbutton *self;
-int ind;
-char *txt;
+void sbutton__SetLabel(struct sbutton *self, int ind, char *txt)
 {
 /*
   Set the text label for this object.
@@ -997,10 +877,7 @@ char *txt;
     sbutton_NotifyObservers(self, ind+sbutton_CHANGEBASE);
 }
 
-void sbutton__SetTrigger(self, ind, txt)
-struct sbutton *self;
-int ind;
-char *txt;
+void sbutton__SetTrigger(struct sbutton *self, int ind, char *txt)
 {
 /*
   Set the text label for this object.
@@ -1020,10 +897,7 @@ char *txt;
     sbutton_NotifyObservers(self, ind+sbutton_CHANGEBASE);
 }
 
-int sbutton__Enumerate(self, func, rock)
-struct sbutton *self;
-boolean (*func)();
-long rock;
+int sbutton__Enumerate(struct sbutton *self, boolean (*func)(), long rock)
 {
     int i;
     for(i=0;i<self->count;i++) {
@@ -1032,9 +906,7 @@ long rock;
     return -1;
 }
 
-static void WriteLine(f, l)
-FILE *f;
-char *l;
+static void WriteLine(FILE *f, char *l)
 {
     /* 
       Output a single line onto the data stream, quoting
@@ -1081,8 +953,7 @@ char *l;
 }
 
 
-static char *GlomStrings(s, t)
-char *s, *t;
+static char *GlomStrings(char *s, char *t)
 {
     /* 
       Safely (allocs more memory) concatenates the two strings, 
@@ -1103,8 +974,7 @@ char *s, *t;
     }
 }
 
-static char *ReadLine(f)
-FILE *f;
+static char *ReadLine(FILE *f)
 {
     /* 
       Reads from the datastream, attempting to return a single string.
@@ -1164,8 +1034,7 @@ FILE *f;
     return(NULL);
 }
 
-static char *EncodeFont(font)
-struct fontdesc *font;
+static char *EncodeFont(struct fontdesc *font)
 {
     /*
       Returns a string representing the name of the font for this object.
@@ -1194,9 +1063,7 @@ struct fontdesc *font;
 }
 
 
-struct sbutton *sbutton__CreateSButton(classID, prefs)
-struct classheader *classID;
-struct sbutton_prefs *prefs;
+struct sbutton *sbutton__CreateSButton(struct classheader *classID, struct sbutton_prefs *prefs)
 {
     struct sbutton *self=sbutton_New();
     int i;
@@ -1233,10 +1100,7 @@ struct sbutton_prefs *prefs;
 }
 
 
-struct sbutton *sbutton__CreateFilledSButton(classID, prefs, blist)
-struct classheader *classID;
-struct sbutton_prefs *prefs;
-struct sbutton_list *blist;
+struct sbutton *sbutton__CreateFilledSButton(struct classheader *classID, struct sbutton_prefs *prefs, struct sbutton_list *blist)
 {
     struct sbutton *self=sbutton_CreateSButton(prefs);
     int count=0;
@@ -1257,9 +1121,7 @@ struct sbutton_list *blist;
     return self;
 }
 
-void sbutton__NotifyObservers(self, v)
-struct sbutton *self;
-long v;
+void sbutton__NotifyObservers(struct sbutton *self, long v)
 {
     /* Do all the notifications, then reset the change flag. */
     super_NotifyObservers(self, v);

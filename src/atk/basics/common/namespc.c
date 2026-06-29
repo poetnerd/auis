@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <class.h>
 #include <namespc.eh>
 #include <atom.ih>
+#include <stdlib.h>
 #define namespace_InitialSize 4
 #define Empty
 #ifndef True
@@ -55,7 +56,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 /*		private functions				*/
 /****************************************************************/
 
-static int Index(struct namespace * self, struct atom * key)
+static int Index(struct namespace *self, struct atom *key)
 {
   int i;
   for (i = 0; i < self->namespaceSize; ++i)
@@ -65,7 +66,7 @@ static int Index(struct namespace * self, struct atom * key)
 }
 
 
-static int Create(struct namespace * self, struct atom * key)
+static int Create(struct namespace *self, struct atom *key)
 {
   struct namespace_entry * de;
 
@@ -95,7 +96,7 @@ static int Create(struct namespace * self, struct atom * key)
 
 
 /* (just in case your wondering, this is not a method) */
-boolean namespace__InitializeObject(struct classheader * classID, struct namespace * self)
+boolean namespace__InitializeObject(struct classheader *classID, struct namespace *self)
 {
   self->namespace =
     (struct namespace_entry *)malloc(namespace_InitialSize *
@@ -107,18 +108,18 @@ boolean namespace__InitializeObject(struct classheader * classID, struct namespa
   return TRUE;
 }
 
-void namespace__FinalizeObject(struct classheader * classID, struct namespace * self)
+void namespace__FinalizeObject(struct classheader *classID, struct namespace *self)
 {
     if(self->namespace) free(self->namespace);
 }
 
-int namespace__Lookup(struct namespace * self, struct atom * name)
+int namespace__Lookup(struct namespace *self, struct atom *name)
 {
   return Index(self,name);
 }
 
 
-int namespace__LookupCreate(struct namespace * self, struct atom * name)
+int namespace__LookupCreate(struct namespace *self, struct atom *name)
 {
   int index = Index( self, name );
 
@@ -128,14 +129,14 @@ int namespace__LookupCreate(struct namespace * self, struct atom * name)
 }
 
 
-short namespace__BoundpAt(struct namespace * self, int index)
+short namespace__BoundpAt(struct namespace *self, int index)
 {
   return (index >= 0) && (index < self->namespaceSize)
     && (self->namespace[index].name != NULL)
     && (self->namespace[index].boundp);
 }
 
-long namespace__ValueAt(struct namespace * self, int index)
+long namespace__ValueAt(struct namespace *self, int index)
 {
   return (index >= 0) && (index < self->namespaceSize)
     && (self->namespace[index].name != NULL)
@@ -144,14 +145,14 @@ long namespace__ValueAt(struct namespace * self, int index)
 }
 
 
-void namespace__UnbindAt(struct namespace * self, int index)
+void namespace__UnbindAt(struct namespace *self, int index)
 {
   if (index >= 0 && index < self->namespaceSize)
     self->namespace[index].boundp = False;
 }
 
 
-struct atom * namespace__NameAt(struct namespace * self, int index)
+struct atom * namespace__NameAt(struct namespace *self, int index)
 {
   return (index >= 0 && index < self->namespaceSize) ?
     self->namespace[index].name : NULL;
@@ -159,7 +160,7 @@ struct atom * namespace__NameAt(struct namespace * self, int index)
 
 
 
-void namespace__SetValueAt(struct namespace * self, int index, long value)
+void namespace__SetValueAt(struct namespace *self, int index, long value)
 {
   if (index < self->namespaceSize && index >= 0
       && self->namespace[index].name != NULL)
@@ -170,19 +171,19 @@ void namespace__SetValueAt(struct namespace * self, int index, long value)
 }
 
 
-void namespace__SetValue(struct namespace * self, struct atom * name, long value)
+void namespace__SetValue(struct namespace *self, struct atom *name, long value)
 {
   namespace_SetValueAt( self, namespace_LookupCreate(self,name), value );
 }
 
 
-long namespace__GetValue(struct namespace * self, struct atom * name)
+long namespace__GetValue(struct namespace *self, struct atom *name)
 {
   return namespace_ValueAt( self, namespace_Lookup(self, name) );
 }
 
 
-short namespace__Boundp(struct namespace * self, struct atom * name, long * value)
+short namespace__Boundp(struct namespace *self, struct atom *name, long *value)
 {
   int index = Index( self, name );
   if (index >= 0 && self->namespace[index].boundp && value != NULL)
@@ -190,7 +191,7 @@ short namespace__Boundp(struct namespace * self, struct atom * name, long * valu
   return index >= 0 && self->namespace[index].boundp;
 }
 
-void namespace__Unbind(struct namespace * self, struct atom * name)
+void namespace__Unbind(struct namespace *self, struct atom *name)
 {
   int index = Index( self, name );
   if (index >= 0)
@@ -201,7 +202,7 @@ void namespace__Unbind(struct namespace * self, struct atom * name)
 }
 
 
-struct atom * namespace__WhereIsValue(struct namespace * self, long value)
+struct atom * namespace__WhereIsValue(struct namespace *self, long value)
 {
   int x;
   for (x = 0; x < self->namespaceSize; ++x)
@@ -214,7 +215,7 @@ struct atom * namespace__WhereIsValue(struct namespace * self, long value)
 
 
 
-int namespace__Enumerate(struct namespace * self, procedure proc, long procdata)
+int namespace__Enumerate(struct namespace *self, procedure proc, long procdata)
 {
   int x;
   for ( x = 0;
@@ -228,7 +229,7 @@ int namespace__Enumerate(struct namespace * self, procedure proc, long procdata)
 }
 
 
-void namespace__Clear(struct namespace * self)
+void namespace__Clear(struct namespace *self)
 {
   int x;
   for (x = 0;

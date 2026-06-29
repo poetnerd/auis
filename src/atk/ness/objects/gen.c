@@ -118,6 +118,8 @@ static char *rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/nes
 #include <toksym.ih>
 
 
+#include <stdlib.h>
+#include <stdio.h>
 static sysMarkIndex freeSysMarks = (-1);
 
 /* defining instance for declaration in compdefs.hn */
@@ -267,8 +269,7 @@ makeFunction(loc)
 	returns an index into SysMark
 */
 	TSysMarkRef
-makeConst(s)
-	char *s;
+int makeConst(char *s)
 {
 	struct nessmark *v = allocSysMark(0, NULL);
 
@@ -325,10 +326,7 @@ BackSlashReduce(text)
 	returns an index into SysMark
 */
 	TSysMarkRef
-makeStyledConst(text, pos, len, bsReduce)
-	struct text *text;
-	long pos, len;
-	boolean bsReduce;
+int makeStyledConst(struct text *text, long pos, long len, boolean bsReduce)
 {
 	struct nessmark *v;
 	struct text *newt;
@@ -390,10 +388,7 @@ addOp(m, op)
 	the case of rand>0xFF is tested for in finishfunc 
 */
 	TCodeRef
-refStack(m, op, rand)
-	struct nessmark *m;
-	unsigned char op;
-	TStackRef rand;
+int refStack(struct nessmark *m, unsigned char op, TStackRef rand)
 {
 	long pos, len;
 	unsigned char s[2];
@@ -426,10 +421,7 @@ fixRefStack(m, loc, val)
 	which do not allocate more than 65535 SysMarks
 */
 	TCodeRef
-refSysMark(m, op, rand)
-	struct nessmark *m;
-	unsigned char op;
-	TSysMarkRef rand;
+int refSysMark(struct nessmark *m, unsigned char op, TSysMarkRef rand)
 {
 	long pos, len;
 	unsigned char s[3];

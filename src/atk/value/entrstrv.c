@@ -46,19 +46,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 
 
 
-struct buttonV *enterstrV__DoHit( self,type,x,y,hits )
-     struct enterstrV * self;
-     enum view_MouseAction type;
-     long x,y,hits;
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+struct buttonV *enterstrV__DoHit(struct enterstrV *self, enum view_MouseAction type, long x, long y, long hits)
 {
   if (self->etext &&(type == view_RightUp || type == view_LeftUp))
       entertext_updatebuf(self->etext);
   return (struct buttonV *)self;
 }
-void enterstrV__ObservedChanged(self,changed,value)
-struct enterstrV *self;
-struct observable *changed;
-long value;
+void enterstrV__ObservedChanged(struct enterstrV *self, struct observable *changed, long value)
 {
     struct value *val ;
     char *str,*os;
@@ -98,12 +95,7 @@ long value;
 	super_ObservedChanged(self,changed,value);
     }
 }
-void enterstrV__DrawButtonText(self,text,len,rect,rect2,pushd)
-struct enterstrV * self;
-char *text;
-long len;
-struct rectangle *rect,*rect2;
-boolean pushd;
+void enterstrV__DrawButtonText(struct enterstrV *self, char *text, long len, struct rectangle *rect, struct rectangle *rect2, boolean pushd)
 {
     struct rectangle r,r2;
     struct buttonV *ss;
@@ -123,9 +115,7 @@ boolean pushd;
     etextview_FullUpdate(self->etextview,view_FullRedraw, 0, 0, 0, 0);
 }
 
-boolean enterstrV__InitializeObject(classID,self)
-struct classheader *classID;
-struct enterstrV *self;
+boolean enterstrV__InitializeObject(struct classheader *classID, struct enterstrV *self)
 {
     self->etext = NULL;
     self->etextview = NULL;
@@ -138,24 +128,18 @@ struct enterstrV *self;
     ((struct buttonV *)self)->buttontype = TRUE;
     return TRUE;
 }
-boolean enterstrV__FinalizeObject(classID,self)
-struct classheader *classID;
-struct enterstrV *self;
+boolean enterstrV__FinalizeObject(struct classheader *classID, struct enterstrV *self)
 {
     if(self->etext)
 	entertext_RemoveObserver(self->etext,self);
     return TRUE;
 }
-void enterstrV__LinkTree(self,parent)
-struct enterstrV *self;
+void enterstrV__LinkTree(struct enterstrV *self, int parent)
 {
     super_LinkTree(self,parent);
     etextview_LinkTree(self->etextview,self);
 }
-struct view * enterstrV__Hit(self, type, x, y, numberOfClicks)
-struct enterstrV * self;
-enum view_MouseAction type;
-long x, y, numberOfClicks;
+struct view * enterstrV__Hit(struct enterstrV *self, enum view_MouseAction type, long x, long y, long numberOfClicks)
 {
     if(self->etextview) 
 	etextview_WantInputFocus(self->etextview,self->etextview);

@@ -37,8 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <fdplumbi.h>
 
-FILE *dbg_qopen(path, argv, mode)
-char *path, *argv[], *mode;
+FILE *dbg_qopen(char *path, char *argv[], char *mode)
 {
     FILE *fp;
 
@@ -47,9 +46,7 @@ char *path, *argv[], *mode;
     return(fp);
 }
 
-FILE *dbg_topen(path, argv, mode, pgrp)
-char *path, *argv[], *mode;
-int *pgrp;
+FILE *dbg_topen(char *path, char *argv[], char *mode, int *pgrp)
 {
     FILE *fp;
     extern FILE *topen();
@@ -59,16 +56,13 @@ int *pgrp;
     return(fp);
 }
 
-dbg_qclose(fp)
-FILE *fp;
+int dbg_qclose(FILE *fp)
 {
     RegisterCloseFile(fileno(fp));
     return(qclose(fp));
 }
 
-dbg_tclose(fp, seconds, timedout)
-FILE *fp;
-int seconds, *timedout;
+int dbg_tclose(FILE *fp, int seconds, int *timedout)
 {
     RegisterCloseFile(fileno(fp));
     return(tclose(fp, seconds, timedout));

@@ -27,9 +27,9 @@
 #define NORCSID
 static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/support/RCS/except.c,v 1.3 1992/12/15 21:42:39 rr2b R6tape $";
 #endif
-#include <andrewos.h>
-#include <class.h>#include <except.eh>
+#include <except.eh>
 
+#include <string.h>
 except_HandlerContext_p except_CurrentContext = NULL;
 except_Exception except_ExceptionID = NULL;
 char *except_ExceptionValue = NULL;

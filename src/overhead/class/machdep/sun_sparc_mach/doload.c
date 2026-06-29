@@ -54,12 +54,10 @@ int doload_trace=0;		/* nonzero if debugging */
 
 #include "../common/safe.h"
 
+#include <stdlib.h>
 /* initialize state */
 
-void doload_setup(e, inFD, mode)
-struct doload_environment *e;
-int inFD;
-doload_mode mode;
+void doload_setup(struct doload_environment *e, int inFD, doload_mode mode)
 {
     e->mode = mode;
     e->fd = inFD;
@@ -75,8 +73,7 @@ doload_mode mode;
 
 /* tear down environment */
 
-void doload_cleanup(e)
-struct doload_environment *e;
+void doload_cleanup(struct doload_environment *e)
 {
     if (e->problems > 0) {
 	e->problems = 0;
@@ -91,8 +88,7 @@ struct doload_environment *e;
 
 /* read module into memory */
 
-doload_read(e)
-struct doload_environment *e;
+int doload_read(struct doload_environment *e)
 {
     long stringlen;	/* length of string table */
 
@@ -205,16 +201,14 @@ extern long globalcount;
 static char *symtypename[] = {"UNDF", "ABS ", "TEXT", "DATA", "BSS ", "????" };
 
 
-char *RelocType(i)
-int i;
+char *RelocType(int i)
 {
     i = (i & N_TYPE) >> 1;
     return symtypename[i <= 4 ? i : 5];
 }
 
 
-doload_preset(e)
-register struct doload_environment *e;
+int doload_preset(register struct doload_environment *e)
 {
     register struct nlist *sp;
     register struct nlist *sbound;
@@ -258,11 +252,7 @@ register struct doload_environment *e;
 
 /* compute relocation adjustment */
 
-long adjust(e, tw, rp, format)
-register struct doload_environment *e;
-register long tw;
-register struct relocation_info *rp;
-char *format;
+long adjust(register struct doload_environment *e, register long tw, register struct relocation_info *rp, char *format)
 {
     if (e->mode == List)
 	printf("  %s", format);
@@ -349,10 +339,7 @@ char *format;
 #define HI3MASK 0xe000
 #define LOW13MASK 0x1fff
 
-doload_relocate(e, cp, rp)
-register struct doload_environment *e;
-register char *cp;
-register struct relocation_info *rp;
+int doload_relocate(register struct doload_environment *e, register char *cp, register struct relocation_info *rp)
 {
     register long tw;
 

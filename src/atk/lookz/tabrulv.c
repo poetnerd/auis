@@ -48,6 +48,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/look
 
 #include <tabrulv.eh>
 
+#include <string.h>
+#include <stdio.h>
 #define	IconString	"/"
 #define	ClearString	"AllClear"
 #define	CancelString	"Cancel"
@@ -633,14 +635,7 @@ register long  x, y, num_clicks;
 }
 
 enum view_DSattributes
-tabrulerview__DesiredSize( self, width, height, pass, 
-			   desiredWidth, desiredHeight ) 
-register struct tabrulerview *self;
-long width;
-long height;
-enum view_DSpass pass;
-long *desiredWidth;
-long *desiredHeight;
+int tabrulerview__DesiredSize(register struct tabrulerview *self, long width, long height, enum view_DSpass pass, long *desiredWidth, long *desiredHeight)
 {
     *desiredHeight = 80;
     *desiredWidth = 700;

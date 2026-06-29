@@ -43,6 +43,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <ctype.h>
 #include <util.h>
 
+#include <stdlib.h>
 #define DEFAULTPROFILES "~/preferences:~/.preferences:~/.Xdefaults"
 #define GLOBALPROFILE AndrewDir("/lib/global.prf")
 
@@ -226,9 +227,7 @@ char   *var; {
     return neg ? -n : n;
 }
 
-profileentryexists(var, usedefault)
-    char *var;
-    int usedefault;
+int profileentryexists(char *var, int usedefault)
 {
 
     if (! inited)  {

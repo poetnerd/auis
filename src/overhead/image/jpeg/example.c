@@ -36,6 +36,8 @@
 
 
 
+#include <stdlib.h>
+#include <stdio.h>
 /******************** JPEG COMPRESSION SAMPLE INTERFACE *******************/
 
 /* This half of the example shows how to feed data into the JPEG compressor.

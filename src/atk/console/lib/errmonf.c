@@ -63,6 +63,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <sitevars.h>
 #include <errno.h>
 
+#include <stdlib.h>
+#include <stdio.h>
 extern struct classinfo *consoleClass_GetInfoHack();
 extern FILE *qopen();
 extern int ConsoleSocket;
@@ -93,9 +95,7 @@ char PrimaryErrorBuffer[ERRBUFSIZE];
  */
 
 #define DEVCONSOLEBUFSIZE 160
-CheckErrorsIn(ErrorsIn, self)
-    FILE *ErrorsIn;
-    struct consoleClass *self;
+int CheckErrorsIn(FILE *ErrorsIn, struct consoleClass *self)
 {
     static char buf[DEVCONSOLEBUFSIZE];
     static char *fillptr = buf;
@@ -135,9 +135,7 @@ CheckErrorsIn(ErrorsIn, self)
 
 #define MESSAGESIZE 1500
 boolean WasUDPAction = FALSE;
-CheckConsoleSocket(ConsoleIn, self)
-    FILE *ConsoleIn;
-    struct consoleClass *self;
+int CheckConsoleSocket(FILE *ConsoleIn, struct consoleClass *self)
 {
     int j, len;
     static char hostname[80];
@@ -186,10 +184,7 @@ static char *mailargvector[] = {_SITE_QUEUEMAIL, "-i", "bogus", 0};
 
 static char MyHost[100]="";
 
-AnotherError(self, errstring, AddNewline)
-    struct consoleClass *self;
-    char *errstring;
-    boolean AddNewline;
+int AnotherError(struct consoleClass *self, char *errstring, boolean AddNewline)
 {
     int Priority = DefaultErrorPriority, i, j, max, nerr;
     char *ErrText, *ErrPri=NULL, *Application=NULL, *LogAddress=NULL, *sdum;

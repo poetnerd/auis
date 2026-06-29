@@ -43,6 +43,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <andrewos.h> /* sys/time.h sys/file.h */
 #include <sitevars.h>
 
+#include <stdlib.h>
+#include <stdio.h>
 extern boolean WasUDPAction;
 
 InitClock() {
@@ -53,9 +55,8 @@ InitClock() {
     Numbers[DATE].RawText = (char *)malloc(30);
 }
 
-CheckClock(self)
-    struct consoleClass *self;
- {
+int CheckClock(struct consoleClass *self)
+{
     long    now;
     struct tm  *currentTime;
     boolean IsPM = FALSE;

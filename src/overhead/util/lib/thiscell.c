@@ -50,15 +50,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <stdlib.h>
 #endif /* AFS_ENV */
 
 #define	MAXSIZE		200
 
 #ifndef _IBMR2
-extern char *malloc();
 #endif /* _IBMR2 */
 
-extern int errno;
 
 /*
   * GetCurrentWSCell
@@ -82,9 +81,7 @@ extern int errno;
   *	Nothing interesting.
   */
 
-int GetCurrentWSCell(Buf, size) 
-char *Buf;
-int   size;
+int GetCurrentWSCell(char *Buf, int size)
 {
     char *CellName;
     long code;			/* Result of pioctl() call */
@@ -150,10 +147,7 @@ int   size;
   *	Nothing interesting.
   */
 
-int GetCellFromFileName(FileName, Buf, size)
-char *FileName;
-char *Buf;
-int   size;
+int GetCellFromFileName(char *FileName, char *Buf, int size)
 {
     char *CellName;
     long code;			/* Result of pioctl() call */

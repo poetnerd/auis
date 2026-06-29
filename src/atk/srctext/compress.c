@@ -39,15 +39,12 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 
 #define TEXT_VIEWREFCHAR '\377'
 
-boolean compress__InitializeClass(ClassID)
-struct classheader *ClassID;
+boolean compress__InitializeClass(struct classheader *ClassID)
 {
     return TRUE;
 }
 
-boolean compress__InitializeObject(ClassID,self)
-struct classheader *ClassID;
-struct compress *self;
+boolean compress__InitializeObject(struct classheader *ClassID, struct compress *self)
 {
     self->lines= 0;
     self->loc= -1;
@@ -55,25 +52,20 @@ struct compress *self;
     return TRUE;
 }
 
-void compress__FinalizeObject(ClassID,self)
-struct classheader *ClassID;
-struct compress *self;
+void compress__FinalizeObject(struct classheader *ClassID, struct compress *self)
 {
     return;
 }
 
 /* GetModified always returns 0, so that the parent document won't realize one of its subobjects has changed when a region is compressed. */
-long compress__GetModified(self)
-struct compress *self;
+long compress__GetModified(struct compress *self)
 {
     return 0;
 }
 
 /* override */
 /* GetPosForLine "tricks" everyone who calls it by ALSO counting newlines inside NESTED compress objects */
-long compress__GetPosForLine(self, line)
-struct compress *self;
-long line;
+long compress__GetPosForLine(struct compress *self, long line)
 {
     long i=1, pos=0, len=compress_GetLength(self);
     int ch;
@@ -95,9 +87,7 @@ long line;
 
 /* override */
 /* GetLineForPos "tricks" everyone who calls it by ALSO counting newlines inside NESTED compress objects */
-long compress__GetLineForPos(self, pos)
-struct compress *self;
-long pos;
+long compress__GetLineForPos(struct compress *self, long pos)
 {
     long line=1;
     int ch;
@@ -115,11 +105,7 @@ long pos;
 
 /* quickAddView is a ripoff of text_AlwaysAddView, but with all but the bare necessities ripped out of it. It also changes env_WRAPView to env_INSERTView, which is a zillion times faster, but doesn't allow nesting. */
 /* text_AlwaysInsertFile calls dictionary_Insert. I have no idea what that does. I don't call it when I insert a compress object/view, and it seems to work OK, so I just left it out. -RSK*/
-struct environment *quickAddView(self, pos, viewtype, compressobj)
-struct text *self;
-long pos;
-char *viewtype;
-struct compress *compressobj;
+struct environment *quickAddView(struct text *self, long pos, char *viewtype, struct compress *compressobj)
 {
     struct viewref *newviewref=viewref_Create(viewtype, (struct dataobject *)compressobj);
     char c=TEXT_VIEWREFCHAR;
@@ -137,10 +123,7 @@ struct compress *compressobj;
     return newenv;
 }
 
-void compress__Compress(ClassID, txt, pos,len)
-struct classheader *ClassID;
-struct text *txt;
-long pos, len;
+void compress__Compress(struct classheader *ClassID, struct text *txt, long pos, long len)
 {
     struct compress *self;
     if (len<1) return;
@@ -155,10 +138,7 @@ long pos, len;
 }
 
 /* IsThere returns a pointer to the compress inset at that position, if there IS one there, or returns NULL if there isn't one there */
-struct compress *compress__IsThere(ClassID, txt, pos)
-struct classheader *ClassID;
-struct text *txt;
-long pos;
+struct compress *compress__IsThere(struct classheader *ClassID, struct text *txt, long pos)
 {
     if (text_GetChar(txt,pos)==TEXT_VIEWREFCHAR) {
 	struct environment *env=environment_GetInnerMost(txt->rootEnvironment, pos);
@@ -172,20 +152,14 @@ long pos;
 }
 
 /* CompressInFront compresses the specified region by removing it from the parent document and stashing it into itself (in the front). */
-void compress__CompressInFront(self,txt,pos,len)
-struct compress *self;
-struct text *txt;
-long pos,len;
+void compress__CompressInFront(struct compress *self, struct text *txt, long pos, long len)
 {
     compress_AlwaysCopyText(self,0, txt,pos,len);
     text_AlwaysDeleteCharacters(txt, pos,len);
 }
 
 /* CompressInBack compresses the specified region by removing it from the parent document and stashing it into itself (at the end). */
-void compress__CompressInBack(self,txt,pos,len)
-struct compress *self;
-struct text *txt;
-long pos,len;
+void compress__CompressInBack(struct compress *self, struct text *txt, long pos, long len)
 {
     compress_AlwaysCopyText(self,compress_GetLength(self), txt,pos,len);
     text_AlwaysDeleteCharacters(txt, pos,len);
@@ -194,11 +168,7 @@ long pos,len;
 /* global pointers that store a list of compresses to run through, immediately after doupdate is done */
 static struct compress **compresslist=NULL, **endcompresslist=NULL;
 
-static boolean doupdate(self,txt,pos,env)
-struct compress *self;
-struct text *txt;
-long pos;
-struct environment *env;
+static boolean doupdate(struct compress *self, struct text *txt, long pos, struct environment *env)
 {
     boolean retval=FALSE;
     if (env->type == environment_View){
@@ -223,9 +193,7 @@ struct environment *env;
 }
 
 /* DoAll updates all the data held by the compresses in this text object, and will enumerate through them as well if callBack is non-NULL */
-static void DoAll(txt,callBack)
-struct text *txt;
-boolean (*callBack)();
+static void DoAll(struct text *txt, boolean (*callBack)())
 {
 #define MAXCOMPRESSES 1024 /* MAXCOMPRESSES just determines the maximum number that can have the callBack() executed on them. ALL of the compresses in the text will have their positions updated, no matter HOW many there are, so don't worry about it. */
     struct compress *compresses[MAXCOMPRESSES];
@@ -241,9 +209,7 @@ boolean (*callBack)();
     }
 }
 
-static boolean decompress(self,txt)
-struct compress *self;
-struct text *txt;
+static boolean decompress(struct compress *self, struct text *txt)
 {
     text_AlwaysCopyText(txt,self->loc+1, self,0,compress_GetLength(self));
     text_AlwaysDeleteCharacters(txt,self->loc,1); /* this deletes the character, which reduces the view env's length to zero.  When the env removes itself, it destroys its viewref, which in turn destroys the dataobject it was looking at */
@@ -251,19 +217,14 @@ struct text *txt;
 }
 
 /* DecompressBox puts the compressed text back into the parent document */
-void compress__DecompressBox(self,txt)
-struct compress *self;
-struct text *txt;
+void compress__DecompressBox(struct compress *self, struct text *txt)
 {
     DoAll(txt,NULL); /* make sure everything's updated */
     decompress(self,txt);
 }
 
 /* PartialDecompress decompresses the part that needs decompressing, and re-compresses the rest */
-void compress__PartialDecompress(self,txt, pos,len)
-struct compress *self;
-struct text *txt;
-long pos,len;
+void compress__PartialDecompress(struct compress *self, struct text *txt, long pos, long len)
 {
     long cprslen=compress_GetLength(self);
     if (pos==0 && len>=cprslen) {
@@ -293,9 +254,7 @@ long pos,len;
 }
 
 /* DecompressAll decompresses everything in the parent document */
-void compress__DecompressAll(classID, txt)
-struct classheader *classID;
-struct text *txt;
+void compress__DecompressAll(struct classheader *classID, struct text *txt)
 {
     DoAll(txt,decompress);
 }
@@ -303,9 +262,7 @@ struct text *txt;
 /* static variables used for limited-range operations */
 static long startrange, endrange;
 
-static boolean decompressIfInRange(self,txt)
-struct compress *self;
-struct text *txt;
+static boolean decompressIfInRange(struct compress *self, struct text *txt)
 {
     if (self->loc >= startrange && self->loc <= endrange)
 	return decompress(self,txt);
@@ -313,10 +270,7 @@ struct text *txt;
 }
 
 /* DecompressRange decompresses everything in the parent document that falls within len after pos */
-void compress__DecompressRange(classID, txt,pos,len)
-struct classheader *classID;
-struct text *txt;
-long pos,len;
+void compress__DecompressRange(struct classheader *classID, struct text *txt, long pos, long len)
 {
     startrange= pos;
     endrange= pos+len;

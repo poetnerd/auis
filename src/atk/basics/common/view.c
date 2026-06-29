@@ -45,13 +45,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <cmap.ih>
 #include <view.eh>
 
+#include <stdio.h>
 #define min(v1,v2) ((v1)<(v2) ? (v1) : (v2))
 #define view_STARTHEIGHT 150
 struct atom * A_name;
 struct atom * A_atomlist;
 struct atom * A_context;
 
-boolean view__InitializeClass(struct classheader * classID)
+boolean view__InitializeClass(struct classheader *classID)
 {
   A_name = atom_Intern("name");
   A_context = atom_Intern("context");
@@ -59,7 +60,7 @@ boolean view__InitializeClass(struct classheader * classID)
   return TRUE;
 }
 
-boolean view__InitializeObject(struct classheader * classID, struct view * self)
+boolean view__InitializeObject(struct classheader *classID, struct view *self)
 {
     self->imPtr = NULL;
     self->parent = NULL;
@@ -71,7 +72,7 @@ boolean view__InitializeObject(struct classheader * classID, struct view * self)
     return TRUE;
 }
 
-void view__FinalizeObject(struct classheader * classID, struct view * self)
+void view__FinalizeObject(struct classheader *classID, struct view *self)
 {    
     if (self->dataobject != NULL)  {
 	dataobject_RemoveObserver(self->dataobject, self);
@@ -95,7 +96,7 @@ void view__FinalizeObject(struct classheader * classID, struct view * self)
     }
 }
 
-void view__ObservedChanged(struct view * self, struct observable * changed, long value)
+void view__ObservedChanged(struct view *self, struct observable *changed, long value)
 {
     if (changed == (struct observable *) self->dataobject)  {
 	if (value == observable_OBJECTDESTROYED)
@@ -105,7 +106,7 @@ void view__ObservedChanged(struct view * self, struct observable * changed, long
     }
 }
 
-void view__SetDataObject(struct view * self, struct dataobject * dataobject)
+void view__SetDataObject(struct view *self, struct dataobject *dataobject)
 {
     struct atomlist *newname;
     struct atomlist *context;
@@ -142,17 +143,17 @@ void view__SetDataObject(struct view * self, struct dataobject * dataobject)
     }
 }
 
-struct view *view__GetApplicationLayer(struct view * self)
+struct view *view__GetApplicationLayer(struct view *self)
 {
     return self;
 }
 
-void view__DeleteApplicationLayer(struct view * self, struct view * applicationLayer)
+void view__DeleteApplicationLayer(struct view *self, struct view *applicationLayer)
 {
 }
 
 
-char * view__DescriptionObject(struct view * self, char * format, long rock)
+char * view__DescriptionObject(struct view *self, char *format, long rock)
 {
 #define	MaxObjName 128
     /* The default is to take the name of the view, and if it is appended by the string "view", replace "view" with format, otherwise append format. If we don't have any format, then use "describer" as the format */
@@ -231,19 +232,19 @@ enum view_DescriberErrs view__Describe(self,format,file,rock)
 
 }
 
-void view__FullUpdate(struct view * self, enum view_UpdateType type, long left, long top, long width, long height)
+void view__FullUpdate(struct view *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
 }
 
-void view__Update(struct view * self)
+void view__Update(struct view *self)
 {
 }
 
-void view__Print(struct view * self, FILE * file, char * processor, char * finalFormat, boolean topLevel)
+void view__Print(struct view *self, FILE *file, char *processor, char *finalFormat, boolean topLevel)
 {
 }
 
-struct view *view__Hit(struct view * self, enum view_MouseAction action, long x, long y, long numberOfClicks)
+struct view *view__Hit(struct view *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     return self;
 }
@@ -261,13 +262,13 @@ enum view_DSattributes view__DesiredSize(self, width, height, pass, dWidth, dHei
     return view_HeightFlexible | view_WidthFlexible;
 }
 
-void view__GetOrigin(struct view * self, long width, long height, long * originX, long * originY)
+void view__GetOrigin(struct view *self, long width, long height, long *originX, long *originY)
 {
     *originX = 0;
     *originY = 0;
 }
 
-void view__ReceiveInputFocus(struct view * self)
+void view__ReceiveInputFocus(struct view *self)
 {
     if(self->parent!=NULL){
 	view_PostMenus(self,NULL);
@@ -275,30 +276,30 @@ void view__ReceiveInputFocus(struct view * self)
     }
 }
 
-void view__LoseInputFocus(struct view * self)
+void view__LoseInputFocus(struct view *self)
 {
 }
 
-void view__WantUpdate(struct view * self, struct view * requestor)
+void view__WantUpdate(struct view *self, struct view *requestor)
 {
     if (self->parent != NULL)
 	view_WantUpdate(self->parent, requestor);
 }
 
-void view__WantInputFocus(struct view * self, struct view * requestor)
+void view__WantInputFocus(struct view *self, struct view *requestor)
 {
    if (self->parent != NULL)
 	view_WantInputFocus(self->parent, requestor);
 }
 
-void view__WantNewSize(struct view * self, struct view * requestor)
+void view__WantNewSize(struct view *self, struct view *requestor)
 {
 /* This function tree climbs one level only. */
     if (self == requestor && self->parent != NULL)
         view_WantNewSize(self->parent, requestor);
 }
 
-struct basicobject * view__WantHandler(struct view * self, char * handlerName)
+struct basicobject * view__WantHandler(struct view *self, char *handlerName)
 {
     if (self->parent != NULL)
 	return view_WantHandler(self->parent, handlerName);
@@ -306,7 +307,7 @@ struct basicobject * view__WantHandler(struct view * self, char * handlerName)
 	return NULL;
 }
 
-char *view__WantInformation(struct view * self, char * key)
+char *view__WantInformation(struct view *self, char *key)
 {
     if (self->parent != NULL)
 	return view_WantInformation(self->parent, key);
@@ -314,35 +315,35 @@ char *view__WantInformation(struct view * self, char * key)
 	return NULL;
 }
 
-void view__PostKeyState(struct view * self, struct keystate * keystate)
+void view__PostKeyState(struct view *self, struct keystate *keystate)
 {
     if (self->parent != NULL)
 	view_PostKeyState(self->parent, keystate);
 }
 
-void view__PostMenus(struct view * self, struct menulist * menulist)
+void view__PostMenus(struct view *self, struct menulist *menulist)
 {
     if (self->parent != NULL)
 	view_PostMenus(self->parent, menulist);
 }
 
-void view__RetractCursor(struct view * self, struct cursor * cursor)
+void view__RetractCursor(struct view *self, struct cursor *cursor)
 {
     if (self->parent != NULL)
 	view_RetractCursor(self->parent, cursor);
 }
-void view__RetractViewCursors(struct view * self, struct view * requestor)
+void view__RetractViewCursors(struct view *self, struct view *requestor)
 {
     if (self->parent != NULL)
 	view_RetractViewCursors(self->parent, requestor);
 }
-void view__PostCursor(struct view * self, struct rectangle * rec, struct cursor * cursor)
+void view__PostCursor(struct view *self, struct rectangle *rec, struct cursor *cursor)
 {
     if (self->parent != NULL)
 	view_PostCursor(self->parent, rec, cursor);
 }
 
-void view__PostDefaultHandler(struct view * self, char * handlerName, struct basicobject * handler)
+void view__PostDefaultHandler(struct view *self, char *handlerName, struct basicobject *handler)
 {
     if (self->parent != NULL)
 	view_PostDefaultHandler(self->parent, handlerName, handler);
@@ -362,28 +363,28 @@ view_SetDefaultColors(self, parent)
     }
 }
 
-void view__InsertViewRegion(struct view * self, struct view * parent, struct region * region)
+void view__InsertViewRegion(struct view *self, struct view *parent, struct region *region)
 {
     graphic_InsertGraphicRegion(self->drawable, parent->drawable, region);
     self->imPtr = parent->imPtr;
     self->parent = parent;
 }
 
-void view__InsertView(int self, struct view *self, * parent, struct rectangle * enclosingRectangle)
+void view__InsertView(struct view *self, struct view *parent, struct rectangle *enclosingRectangle)
 {
     graphic_InsertGraphic(self->drawable, parent->drawable, enclosingRectangle);
     self->imPtr = parent->imPtr;
     self->parent = parent;
 }
 
-void view__InsertViewSize(int self, struct view *self, * parent, int xOriginInParent, int yOriginInParent, int width, long xOriginInParent, yOriginInParent, width, height)
+void view__InsertViewSize(struct view *self, struct view *parent, long xOriginInParent, long yOriginInParent, long width, long height)
 {
     graphic_InsertGraphicSize(self->drawable, parent->drawable, xOriginInParent, yOriginInParent, width, height);
     self->imPtr = parent->imPtr;
     self->parent = parent;
 }
 
-void view__InsertGraphic(int self, struct view *self, * parent, struct rectangle * enclosingRectangle)
+void view__InsertGraphic(struct view *self, struct view *parent, struct rectangle *enclosingRectangle)
 {
     view_InsertView(self,parent,enclosingRectangle);
 }
@@ -396,7 +397,7 @@ char *view__GetInterface(self, type)
     return NULL;
 }
 
-void view__LinkTree(struct view * self, struct view * parent)
+void view__LinkTree(struct view *self, struct view *parent)
 {
 
     if (parent != NULL) {
@@ -426,7 +427,7 @@ void view__LinkTree(struct view * self, struct view * parent)
     }
 }
 
-void view__UnlinkTree(struct view * self)
+void view__UnlinkTree(struct view *self)
 {
     struct view *parent = self->parent;
 
@@ -436,14 +437,14 @@ void view__UnlinkTree(struct view * self)
         view_UnlinkNotification(parent, self);
 }
 
-void view__UnlinkNotification(struct view * self, struct view * unlinkedTree)
+void view__UnlinkNotification(struct view *self, struct view *unlinkedTree)
 {
 
     if (self->parent != NULL)
         view_UnlinkNotification(self->parent, unlinkedTree);
 }
 
-boolean view__IsAncestor(struct view * self, struct view * possibleAncestor)
+boolean view__IsAncestor(struct view *self, struct view *possibleAncestor)
 {
     while (self != NULL && self != possibleAncestor)
         self = self->parent;
@@ -462,7 +463,7 @@ struct view * self;{
     return 0;
 }
 
-static void EnsureName(struct view * self)
+static void EnsureName(struct view *self)
 {
   if (self->name == NULL)
     self->name = atomlist_StringToAtomlist(class_GetTypeName(self));
@@ -470,25 +471,25 @@ static void EnsureName(struct view * self)
     self->className = atomlist_StringToAtomlist(class_GetTypeName(self));
 }
 
-void view__SetName(struct view * self, struct atomlist * name)
+void view__SetName(struct view *self, struct atomlist *name)
 {
   self->name = atomlist_Copy(name);
   self->name_explicitly_set = TRUE;
 }
 
-struct atomlist * view__GetName(struct view * self)
+struct atomlist * view__GetName(struct view *self)
 {
   EnsureName(self);
   return self->name;
 }
 
-struct atomlist * view__GetClass(struct view * self)
+struct atomlist * view__GetClass(struct view *self)
 {
   EnsureName(self);
   return self->className;
 }
 
-short view__GetParameter(struct view * self, struct atomlist * name, struct atom * type, long * data)
+short view__GetParameter(struct view *self, struct atomlist *name, struct atom *type, long *data)
 {
   struct atomlist * dup;
   short val;
@@ -499,7 +500,7 @@ short view__GetParameter(struct view * self, struct atomlist * name, struct atom
 }
 
 
-short view__GetResource(struct view * self, struct atomlist * name, struct atomlist * class, struct atom * type, long * data)
+short view__GetResource(struct view *self, struct atomlist *name, struct atomlist *class, struct atom *type, long *data)
 {
   struct atoms * nameMark = atomlist_Mark( name );
   struct atoms * classMark = atomlist_Mark( class );
@@ -519,7 +520,7 @@ short view__GetResource(struct view * self, struct atomlist * name, struct atoml
 }
 
 
-void view__GetManyParameters(struct view * self, struct resourceList * resources, struct atomlist * name, struct atomlist * class)
+void view__GetManyParameters(struct view *self, struct resourceList *resources, struct atomlist *name, struct atomlist *class)
 {
   struct atoms * nameMark = NULL;
   struct atoms * classMark = NULL;
@@ -552,7 +553,7 @@ void view__GetManyParameters(struct view * self, struct resourceList * resources
     }
 }
 
-void view__PostResource(struct view * self, struct atomlist * path, struct atom * type, long data)
+void view__PostResource(struct view *self, struct atomlist *path, struct atom *type, long data)
 {
   struct atoms * pathMark = atomlist_Mark( path );
   EnsureName(self);
@@ -563,7 +564,7 @@ void view__PostResource(struct view * self, struct atomlist * path, struct atom 
       atomlist_Cut( path, pathMark );
     }
 }
-void view__InitChildren(struct view * self)
+void view__InitChildren(struct view *self)
 {
     /*
       All parent views are responsible for overriding this method.
@@ -576,7 +577,7 @@ void view__InitChildren(struct view * self)
 	  this call filters down the view tree. 
     */
 }
-boolean view__CanView(struct view * self, char * TypeName)
+boolean view__CanView(struct view *self, char *TypeName)
 {
     /* 
       Views should return TRUE or FALSE depending on whether they are
@@ -587,12 +588,12 @@ boolean view__CanView(struct view * self, char * TypeName)
 }
 
 /* Stubs for selection code. */
-void view__LoseSelectionOwnership(struct view * self)
+void view__LoseSelectionOwnership(struct view *self)
 {
     /* nothing needs done here */
 }
 
-long view__WriteSelection(struct view * self, FILE * out)
+long view__WriteSelection(struct view *self, FILE *out)
 {
     /* if this is called on a view which doesn't override it there is an error.*/
     return -1;

@@ -128,6 +128,8 @@ END-SPECIFICATION  ************************************************************/
 #include <apt.eh>
 #include <apts.ih>
 
+#include <stdlib.h>
+#include <stdio.h>
 int apt_debug = 0;
 #define debug apt_debug
 

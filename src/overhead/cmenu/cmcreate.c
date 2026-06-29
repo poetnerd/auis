@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <wormimg.h>
 #include <shadows.h>
 
+#include <stdlib.h>
 char *getprofile();
 int getprofileswitch();
 
@@ -45,10 +46,7 @@ int getprofileswitch();
 
 static struct cmenudata *menuDataList = NULL;
 
-static Window GetMenuWindow(display, parent, dp)
-Display *display;
-Window parent;
-struct cmenudata *dp;
+static Window GetMenuWindow(Display *display, Window parent, struct cmenudata *dp)
 {
 
     XSetWindowAttributes xswa;
@@ -97,11 +95,7 @@ struct cmenudata *dp;
 			  ((dp->useSaveUnder) ? CWSaveUnder : 0) | CWEventMask | CWCursor, &xswa);
 }
 
-static int GetGCs(dp, window, def_env, newshadows, colorDisplay)
-struct cmenudata *dp;
-Window window;
-char *def_env;
-int newshadows, colorDisplay;
+static int GetGCs(struct cmenudata *dp, Window window, char *def_env, int newshadows, int colorDisplay)
 {
     Display *display = dp->dpy;    
     GC tempgc;
@@ -319,10 +313,7 @@ error:
     return -1;
 }
 
-static int GetDisplayInfo(dpy, menu, def_env)
-Display *dpy;
-struct cmenu *menu;
-char *def_env;
+static int GetDisplayInfo(Display *dpy, struct cmenu *menu, char *def_env)
 {
 
     struct cmenudata *dp;
@@ -560,11 +551,7 @@ error:
       return -1;
 }
 
-struct cmenu *cmenu_Create(dpy, parent, def_env, freeFunction)
-Display *dpy;		/* Display structure pointer. */
-Window parent;		/* Window ID of the menu's parent window. */
-register char *def_env;	/* X Defaults program environment name. */
-void (*freeFunction)();
+struct cmenu *cmenu_Create(Display *dpy, Window parent, register char *def_env, void (*freeFunction)())
 {
 
     struct cmenu *menu;

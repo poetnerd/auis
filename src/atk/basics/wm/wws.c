@@ -44,34 +44,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <mrl.ih>
 #include <wws.eh>
 
-struct wmcursor *wmws__CreateCursor(self)
-    struct wmws *self;
+struct wmcursor *wmws__CreateCursor(struct wmws *self)
 {
     return wmcursor_New();
 }
 
-struct wmfontdesc *wmws__CreateFontdesc(self)
-    struct wmws *self;
+struct wmfontdesc *wmws__CreateFontdesc(struct wmws *self)
 {
     return wmfontdesc_New();
 }
 
-struct wmgraphic *wmws__CreateGraphic(self)
-    struct wmws *self;
+struct wmgraphic *wmws__CreateGraphic(struct wmws *self)
 {
     return wmgraphic_New();
 }
 
-struct wmim *wmws__CreateIM(self)
-    struct wmws *self;
+struct wmim *wmws__CreateIM(struct wmws *self)
 {
     return wmim_New();
 }
 
-struct wmoffscrwin *wmws__CreateOffScreenWindow(self,host,width,height)
-    struct wmws *self;
-char * host;
-long width, height;
+struct wmoffscrwin *wmws__CreateOffScreenWindow(struct wmws *self, char *host, long width, long height)
 {
 /*
     return wmoffscrwin_Create(host,width,height);
@@ -79,23 +72,18 @@ long width, height;
     return NULL;
 }
 
-boolean wmws__HandleFiles(self, WaitTime, beCheap)
-    struct wmws *self;
-    long WaitTime;
-    boolean beCheap;
+boolean wmws__HandleFiles(struct wmws *self, long WaitTime, boolean beCheap)
 {
     return wmim_HandleFiles(WaitTime, beCheap);
 }
 
-void wmws__FlushAllWindows(self)
-    struct wmws *self;
+void wmws__FlushAllWindows(struct wmws *self)
 {
     wmim_FlushAllWindows();
 }
 
 
-boolean wmws__InitializeClass(classID)
-struct classheader * classID;
+boolean wmws__InitializeClass(struct classheader *classID)
 {
     wmim_StaticLoadOnlyThisClass();
     wmfontdesc_StaticLoadOnlyThisClass();

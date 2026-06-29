@@ -46,6 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
 
 
+#include <stdlib.h>
 /************** methods *********************/
 
 
@@ -150,7 +151,7 @@ struct region * TestRegion;{
     return XEqualRegion(self->regionData, TestRegion->regionData);
 }
 
-struct rectangle *region__GetBoundingBox(struct region * self, struct rectangle * retRect)
+struct rectangle *region__GetBoundingBox(struct region *self, struct rectangle *retRect)
 {
     XRectangle rect;
 
@@ -166,14 +167,14 @@ struct rectangle *region__GetBoundingBox(struct region * self, struct rectangle 
 
 /****************** classprocedures *****************/
 
-struct region * region__CreateEmptyRegion(struct classheader * classID)
+struct region * region__CreateEmptyRegion(struct classheader *classID)
 {
     struct region * retValue;
     retValue = region_New();
     return retValue;
 }
 
-struct region * region__CreateRectRegion(struct classheader * classID, struct rectangle * RegionShape)
+struct region * region__CreateRectRegion(struct classheader *classID, struct rectangle *RegionShape)
 {
     struct region * self;
 
@@ -182,12 +183,12 @@ struct region * region__CreateRectRegion(struct classheader * classID, struct re
     return self;
 }
 
-struct region * region__CreateOvalRegion(struct classheader * classID, struct rectangle * RegionShape)
+struct region * region__CreateOvalRegion(struct classheader *classID, struct rectangle *RegionShape)
 {
     return region_CreateRectRegion(RegionShape);
 }
 
-struct region * region__CreatePolyRegion(struct classheader * classID, struct point * PointArray, short PointCount)
+struct region * region__CreatePolyRegion(struct classheader *classID, struct point *PointArray, short PointCount)
 {
     XPoint * polyPts;
     int i;
@@ -214,7 +215,7 @@ struct region * region__CreatePolyRegion(struct classheader * classID, struct po
     return retValue;
 }
 
-void region__CopyRegion(struct classheader * classID, struct region * Destination, struct region * Source)
+void region__CopyRegion(struct classheader *classID, struct region *Destination, struct region *Source)
 {
     if (!Destination) return;
     if (Destination->regionData) {
@@ -226,14 +227,14 @@ void region__CopyRegion(struct classheader * classID, struct region * Destinatio
 
 /************* Predefines *************/
 
-boolean region__InitializeObject(struct classheader * classID, struct region * self)
+boolean region__InitializeObject(struct classheader *classID, struct region *self)
 {
     self->regionData = XCreateRegion();
     if(self->regionData) return TRUE;
     else return FALSE;
 }
 
-void region__FinalizeObject(struct classheader * classID, struct region * self)
+void region__FinalizeObject(struct classheader *classID, struct region *self)
 {
     if (self->regionData) {
 	XDestroyRegion(self->regionData);

@@ -38,6 +38,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "new.h"
 #include "gram.h"
 
+#include <stdlib.h>
 FILE *finput = NULL;
 FILE *foutput = NULL;
 FILE *fdefines = NULL;

@@ -51,8 +51,7 @@ static	int Fax4Encode();
 static	int Fax4PostEncode();
 #endif
 
-TIFFInitCCITTFax4(tif)
-	TIFF *tif;
+int TIFFInitCCITTFax4(TIFF *tif)
 {
 	TIFFInitCCITTFax3(tif);		/* reuse G3 compression */
 	tif->tif_decoderow = Fax4Decode;

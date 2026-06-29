@@ -33,6 +33,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include  <bglisp.h>
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 EliProcessInfo_t EliProcessInfo;
 char            ProgramName[100] = "bglisp";
 
@@ -48,9 +51,7 @@ EliSexp_t *lastBacktrace;
  * but they now go to stderr.
  */
 
-main(argc, argv)
-int             argc;
-char          **argv;
+int main(int argc, char **argv)
 {
     static EliState_t stStruct, *st;
     int i, j, MallocP = FALSE;
@@ -125,8 +126,7 @@ Welcome()
     printf("This is ELI version %d.%d\n\n", EliProcessInfo.MajorVersion, EliProcessInfo.MinorVersion);
 }
 
-ReadEvalPrint(st)
-EliState_t     *st;
+int ReadEvalPrint(EliState_t *st)
 {				/* Main interpreter loop */
     EliSexp_t      *sexp1, *sexp2;
     int             exit = FALSE, q;
@@ -205,10 +205,7 @@ Cleanup()
     printf("\nThank you for using this fine software.\n    -Bob Glickstein\n\n");
 }
 
-void BGLISP_Prim_BTERR(st, arglist, resbuf)
-EliState_t *st;
-EliCons_t *arglist;
-EliSexp_t *resbuf;
+void BGLISP_Prim_BTERR(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     if (EliSexp_GetType(lastBacktrace) == e_data_list)
 	EliSexp_SetSexp(st, resbuf, lastBacktrace);

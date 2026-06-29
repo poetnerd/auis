@@ -38,8 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
  
 
-int ULstlmatch (big,small)
-char *small, *big;
+int ULstlmatch(char *big, char *small)
 {
 /*  stlmatch  --  match leftmost part of string
  *

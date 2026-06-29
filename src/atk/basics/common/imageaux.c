@@ -52,7 +52,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #endif
 #include <andrewos.h>
 
-unsigned long doMemToVal(unsigned char         * p, unsigned int len)
+unsigned long doMemToVal(unsigned char *p, unsigned int len)
 { unsigned int  a;
   unsigned long i;
 
@@ -62,7 +62,7 @@ unsigned long doMemToVal(unsigned char         * p, unsigned int len)
   return(i);
 }
 
-unsigned long doValToMem(unsigned long val, unsigned char          * p, unsigned int len)
+unsigned long doValToMem(unsigned long val, unsigned char *p, unsigned int len)
 { int a;
 
   for (a= len - 1; a >= 0; a--) {
@@ -72,7 +72,7 @@ unsigned long doValToMem(unsigned long val, unsigned char          * p, unsigned
   return(val);
 }
 
-unsigned long doMemToValLSB(unsigned char         * p, unsigned int len)
+unsigned long doMemToValLSB(unsigned char *p, unsigned int len)
 { int val, a;
 
   val= 0;
@@ -84,7 +84,7 @@ unsigned long doMemToValLSB(unsigned char         * p, unsigned int len)
 /* this is provided for orthagonality
  */
 
-unsigned long doValToMemLSB(unsigned long val, unsigned char          * p, unsigned int len)
+unsigned long doValToMemLSB(unsigned long val, unsigned char *p, unsigned int len)
 {
   while (len--) {
     *(p++)= val & 0xff;
@@ -96,7 +96,7 @@ unsigned long doValToMemLSB(unsigned long val, unsigned char          * p, unsig
 /* this flips all the bits in a byte array at byte intervals
  */
 
-void flipBits(unsigned char * p, unsigned int len)
+void flipBits(unsigned char *p, unsigned int len)
 { static int init= 0;
   static unsigned char flipped[256];
 

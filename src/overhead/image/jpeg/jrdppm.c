@@ -22,6 +22,7 @@
 
 #include "jinclude.h"
 
+#include <stdio.h>
 #ifdef PPM_SUPPORTED
 
 

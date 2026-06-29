@@ -45,6 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <svcconf.h>
 #ifdef WHITEPAGES_ENV
 #include <wp.h>
+#include <stdlib.h>
 #endif /* WHITEPAGES_ENV */
 
 #ifdef WHITEPAGES_ENV
@@ -61,9 +62,7 @@ static int FatalError, TempFail, Uncertain;
 static char *tildeuser = "";
 static int Debugging = 0;
 
-static int ResolveTilde(Addr, laType, PrimePtr, Dom)
-PARSED_ADDRESS *Addr;
-int laType; char **PrimePtr; char *Dom;
+static int ResolveTilde(PARSED_ADDRESS *Addr, int laType, char **PrimePtr, char *Dom)
 {/* Try to resolve a leading tilde in the current +dist+ or +dir-insert+ argument.  If all is well, rewrite the laPrime result and return 0.  If anything else comes up, issue an error message and return non-0. */
     char *OldPrime;
     char *NewPrime, *PrPtr, *NewLocal, *UserToUse, *TagToUse;
@@ -136,9 +135,7 @@ int laType; char **PrimePtr; char *Dom;
 }
 
 
-static void ValidateRecipient(Addr, PrevailingDomain)
-PARSED_ADDRESS *Addr;
-char *PrevailingDomain;
+static void ValidateRecipient(PARSED_ADDRESS *Addr, char *PrevailingDomain)
 {
     ADDRESS_HOST *HostPtr;
     char *CanonID;
@@ -494,9 +491,7 @@ char *PrevailingDomain;
     free(laPrime);
 }
 
-static void ValidateAddresses(AddrList, PrevailingDomain)
-PARSED_ADDRESS *AddrList;
-char *PrevailingDomain;
+static void ValidateAddresses(PARSED_ADDRESS *AddrList, char *PrevailingDomain)
 {
     FOR_ALL_ADDRESSES(ThisAddr, AddrList, {
 		       switch (ThisAddr->Kind) {
@@ -513,8 +508,7 @@ char *PrevailingDomain;
 }
 
 
-static void CanonicalizeList(newList)
-char *newList;
+static void CanonicalizeList(char *newList)
 {/* Canonicalize white space in the address list. */
     char *Src, *Dst, C;
     if (newList != NULL) {
@@ -549,8 +543,7 @@ char *newList;
 }
 
 
-static char *ListUnparse(AddrList, ErrPtr, InitialSize)
-PARSED_ADDRESS *AddrList; int *ErrPtr, InitialSize;
+static char *ListUnparse(PARSED_ADDRESS *AddrList, int *ErrPtr, int InitialSize)
 { /* Unparse the address Addr and return it as a string, or NULL on any errors */
     char *UnPBuff;
     int UnPBuffSize, Code, NumUnparsed;
@@ -578,8 +571,7 @@ PARSED_ADDRESS *AddrList; int *ErrPtr, InitialSize;
 }
 
 
-static int FunkyParseAddressList(Strg, OutAddr)
-char *Strg; PARSED_ADDRESS **OutAddr;
+static int FunkyParseAddressList(char *Strg, PARSED_ADDRESS **OutAddr)
 {
     PARSED_ADDRESS *Addr;
     int PACode, Code2;
@@ -618,16 +610,14 @@ char *Strg; PARSED_ADDRESS **OutAddr;
     return PACode;
 }
 
-void fwdvalid_SetTildeUser(s)
-char *s;
+void fwdvalid_SetTildeUser(char *s)
 {
   tildeuser = s;
   return;
 }
 
 
-int ValidateFwdAddr(/* IN */ NewAddr, /* OUT */ FixedAddr)
-char *NewAddr, **FixedAddr;
+int ValidateFwdAddr(int /* IN */ NewAddr, int /* OUT */ FixedAddr)
 {/* Takes a string, and checks it for validity as a mail address.  Returns 0 if successful.  The "canonicalized" form of NewAddr will be returned in FixedAddr (malloc'd). */
 
     int parse_code;
@@ -681,9 +671,7 @@ char *NewAddr, **FixedAddr;
 }
 
 #ifdef TESTINGONLYTESTING
-main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     int err;
     char *out;

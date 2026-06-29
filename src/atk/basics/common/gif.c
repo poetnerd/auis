@@ -80,6 +80,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <gif.h>
 #include <gif.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 /****
  **
  ** local #defines
@@ -323,7 +325,7 @@ gifin_open_image()
  * try to read next pixel from the raster, return result in *pel
  */
 
-static int gifin_get_pixel(int * pel)
+static int gifin_get_pixel(int *pel)
 {
   int  code;
   int  first;
@@ -523,7 +525,7 @@ static gifin_add_string(int p, int e)
  * semi-graceful fatal error mechanism
  */
 
-static gifin_fatal(char * msg)
+static gifin_fatal(char *msg)
 {
   printf("Error reading GIF file: %s\n", msg);
   exit(0);

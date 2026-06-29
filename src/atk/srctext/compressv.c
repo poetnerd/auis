@@ -48,6 +48,7 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 #include "compress.ih"
 #include "compressv.eh"
 
+#include <stdio.h>
 static struct fontdesc *boxfont;
 static char *boxfgcolor=NULL, *boxbgcolor=NULL;
 static int boxwidth=0;
@@ -65,12 +66,7 @@ static struct bind_Description compressBindings[]={
     NULL
 };
 
-void compressv__GetOrigin(self, width, height, originX, originY)
-struct compressv *self;
-long width;
-long height;
-long *originX;
-long *originY;
+void compressv__GetOrigin(struct compressv *self, long width, long height, long *originX, long *originY)
 {
     *originX = 0;
     *originY = height;
@@ -78,8 +74,7 @@ long *originY;
 }
 
 /* compressv_BoxText returns the string that should appear in the box that gets drawn. It points to static storage, so either use the return value immediately, or make a copy of it. */
-char *compressv__BoxText(self)
-struct compressv *self;
+char *compressv__BoxText(struct compressv *self)
 {
     static char boxstr[256];
     struct compress *cmprs=(struct compress *)compressv_GetDataObject(self);
@@ -88,21 +83,13 @@ struct compressv *self;
     return boxstr;
 }
 
-void compressv__Print(self, f, process, final, toplevel)
-struct compressv *self;
-FILE *f;
-char *process;
-char *final;
-int toplevel;
+void compressv__Print(struct compressv *self, FILE *f, char *process, char *final, int toplevel)
 {
     /* note: the placement of the troff font size changes, \s-2 and \s+2, is not as haphazard as they may seem. If the -2 size includes BOTH spaces, the left edge of the box gets disconnected. If the -2 size includes NEITHER space, the top and bottom edges extend too far left. */
     fprintf(f, "\\(br \\s-2%s \\s+2\\(br\\l'|0\\(rn'\\l'|0\\(ul'", compressv_BoxText(self));
 }
 
-struct view *compressv__Hit(self,action, mousex,mousey, numberOfClicks)
-struct compressv *self;
-enum view_MouseAction action;
-long mousex, mousey, numberOfClicks;
+struct view *compressv__Hit(struct compressv *self, enum view_MouseAction action, long mousex, long mousey, long numberOfClicks)
 {
     struct text *txt=(struct text *)self->parenttext;
     struct compress *fn=(struct compress *)compressv_GetDataObject(self);
@@ -132,9 +119,7 @@ long *desiredwidth, *desiredheight;
     return(view_HeightFlexible | view_WidthFlexible);
 }
 
-static DoUpdate(self,full)
-struct compressv *self;
-boolean full;
+static DoUpdate(struct compressv *self, boolean full)
 {
     struct rectangle enclosingRect;
     enclosingRect.top = 0; enclosingRect.left = 0;
@@ -151,9 +136,7 @@ boolean full;
     compressv_DrawString(self,compressv_BoxText(self),(view_BETWEENTOPANDBOTTOM | view_BETWEENLEFTANDRIGHT));
 }
 
-void compressv__LinkTree(self, parent)
-register struct compressv *self;
-struct view *parent;
+void compressv__LinkTree(register struct compressv *self, struct view *parent)
 {
     struct compress *fn=(struct compress *)compressv_GetDataObject(self);
     super_LinkTree(self,parent);
@@ -170,22 +153,17 @@ struct view *parent;
 	compress_SetLines(fn, compress_GetLineForPos(fn, compress_GetLength(fn))); /* I wanted to do this in compress_Compress, but the value didn't get copied when the compress box got copied. */
 }
 
-void compressv__FullUpdate(self,type,left,top,width,height)
-struct compressv *self;
-enum view_UpdateType type;
-long left,top,width,height;
+void compressv__FullUpdate(struct compressv *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     DoUpdate(self,TRUE);
 }
 
-void compressv__Update(self)
-struct compressv *self;
+void compressv__Update(struct compressv *self)
 {
     DoUpdate(self,FALSE);
 }
 
-void compressv__ReceiveInputFocus(self)
-struct compressv *self;
+void compressv__ReceiveInputFocus(struct compressv *self)
 {
     super_ReceiveInputFocus(self);
     if(self->parentview){	
@@ -196,10 +174,7 @@ struct compressv *self;
 }
 
 /* blow ourselves away if our compress got decompressed */
-void compressv__ObservedChanged(self, changed, value)
-struct compressv *self;
-struct observable *changed;
-long value;
+void compressv__ObservedChanged(struct compressv *self, struct observable *changed, long value)
 {
     boolean destroy=FALSE;
     /* check this BEFORE we call super_, because super_ will set our dataobject to NULL if it IS destroyed. */
@@ -210,9 +185,7 @@ long value;
 	compressv_Destroy(self);
 }
 
-boolean compressv__InitializeObject(classID,self)
-struct classheader *classID;
-struct compressv *self;
+boolean compressv__InitializeObject(struct classheader *classID, struct compressv *self)
 {
     self->cursor= cursor_Create(self);
     cursor_SetStandard(self->cursor,Cursor_CrossHairs);
@@ -221,15 +194,12 @@ struct compressv *self;
     return TRUE;
 }
 
-void compressv__FinalizeObject(classID,self)
-struct classheader *classID;
-struct compressv *self;
+void compressv__FinalizeObject(struct classheader *classID, struct compressv *self)
 {
     if (self->cursor!=NULL) cursor_Destroy(self->cursor);
 }
 
-boolean compressv__InitializeClass(classID)
-struct classheader *classID;
+boolean compressv__InitializeClass(struct classheader *classID)
 {
     char family[256];
     long style=0, size=8;    
@@ -253,9 +223,7 @@ struct classheader *classID;
 }
 
 /* engulfBoxes snags any compress insets that are butted up against the ends of the specified region, and includes them in the region */
-void engulfBoxes(txt, ppos,plen)
-struct text *txt;
-long *ppos,*plen;
+void engulfBoxes(struct text *txt, long *ppos, long *plen)
 {
     while (compress_IsThere(txt,*ppos-1) || (text_GetChar(txt,*ppos-1)=='\n' && compress_IsThere(txt,*ppos-2))) {
 	--*ppos;
@@ -265,10 +233,7 @@ long *ppos,*plen;
 	++*plen;
 }
 
-boolean getLinesFromUser(self, rString,prompt, pfirst,plast)
-struct textview *self;
-char *rString,*prompt;
-long *pfirst,*plast;
+boolean getLinesFromUser(struct textview *self, char *rString, char *prompt, long *pfirst, long *plast)
 {
     struct text *txt=(struct text *)textview_GetDataObject(self);
     char range[32];
@@ -289,9 +254,7 @@ long *pfirst,*plast;
     return TRUE;
 }
 
-void compressLines(self, rString)
-struct textview *self;
-char *rString;
+void compressLines(struct textview *self, char *rString)
 {
     struct text *txt=(struct text *)textview_GetDataObject(self);
     long mod=text_GetModified(txt);
@@ -313,9 +276,7 @@ char *rString;
     text_NotifyObservers(txt,0);
 }
 
-void decompressLines(self, rString)
-struct textview *self;
-char *rString;
+void decompressLines(struct textview *self, char *rString)
 {
     struct text *txt=(struct text *)textview_GetDataObject(self);
     long mod=text_GetModified(txt);
@@ -354,9 +315,7 @@ char *rString;
     text_NotifyObservers(txt,0);
 }
 
-void compressRegion(self, rock)
-struct textview *self;
-long rock;
+void compressRegion(struct textview *self, long rock)
 {
     struct text *txt=(struct text *)textview_GetDataObject(self);
     long mod=text_GetModified(txt);
@@ -368,9 +327,7 @@ long rock;
     }
 }
 
-void decompressAll(self, rock)
-struct textview *self;
-long rock;
+void decompressAll(struct textview *self, long rock)
 {
     struct text *txt=(struct text *)textview_GetDataObject(self);
     long mod=text_GetModified(txt);

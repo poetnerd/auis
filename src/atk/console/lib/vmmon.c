@@ -44,6 +44,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <signal.h>
 
 
+#include <stdio.h>
 extern ComputeStatistics();
 extern int children[]; /* Make getstats a bona-fide controlled child */
   /*
@@ -60,17 +61,14 @@ extern int children[]; /* Make getstats a bona-fide controlled child */
   * processed in ComputeStatistics - in vmmonf.c
   */
 
-getkmemexit(pid, self)
-int pid;
-struct consoleClass *self;
+int getkmemexit(int pid, struct consoleClass *self)
 {
     mydbg(("entering: getkmemexit\n"));
     /* no-op -- do I really need this?  Can I just use NULL for the function pointer
 	in the im_AddZombieHandler call? */
 }    
 
-console_InitStats(self)
-    struct consoleClass *self;
+int console_InitStats(struct consoleClass *self)
 {
     /* pfds = Pipe File DescriptorS */
     int pfds[2];

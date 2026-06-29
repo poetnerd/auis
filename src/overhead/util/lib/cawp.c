@@ -48,13 +48,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <svcconf.h>
 #ifdef WHITEPAGES_ENV
 #include <wp.h>
+#include <stdlib.h>
 #endif /* WHITEPAGES_ENV */
 
-extern int errno;
 
 #ifndef _IBMR2
-extern char *malloc();
-extern char *realloc();
 #endif /* _IBMR2 */
 
 
@@ -62,8 +60,7 @@ extern char *realloc();
 static int idxID = -1;
 static int idxN, idxHD, idxNI;
 
-static wp_ErrorCode GetWP(ca)
-struct CellAuth *ca;
+static wp_ErrorCode GetWP(struct CellAuth *ca)
 {/* Fill in White Pages values and return any errors encountered. */
 #ifdef AFS_ENV
     wp_ErrorCode wpErr;
@@ -158,8 +155,7 @@ struct CellAuth *ca;
 }
 #endif /* AFS_ENV */
 
-void FillInCell(cellAuth)
-struct CellAuth *cellAuth;
+void FillInCell(struct CellAuth *cellAuth)
 {/* Fill in the accounting (WP/passwd) values for the given cell pointer; an error (or success) code is left in cellAuth->WpError. */
 #ifdef AFS_ENV
     wp_ErrorCode wpErr;

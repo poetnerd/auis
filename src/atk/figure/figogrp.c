@@ -39,9 +39,8 @@ char *figogrp_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 #include <proctbl.ih>
 #include <bind.ih>
 
-boolean figogrp__InitializeObject(ClassID, self)
-struct classheader *ClassID;
-struct figogrp *self;
+#include <stdio.h>
+boolean figogrp__InitializeObject(struct classheader *ClassID, struct figogrp *self)
 {
     self->root = figure_NULLREF;
     self->bboxdirty = TRUE;
@@ -54,24 +53,18 @@ struct figogrp *self;
     return TRUE;
 }
 
-void figogrp__FinalizeObject(classID, self)
-struct clasheader *classID;
-struct figogrp *self;
+void figogrp__FinalizeObject(struct clasheader *classID, struct figogrp *self)
 {
     return;
 }
 /*  boolean callfun(struct figobj *o, long ref, struct figure *self, rock) */
 
-boolean figogrp__InitializeClass(classID)
-struct classheader *classID;
+boolean figogrp__InitializeClass(struct classheader *classID)
 {
     return TRUE;
 }
 
-char *figogrp__ToolName(dummy, v, rock)
-struct figogrp *dummy;
-struct figtoolview *v;
-long rock;
+char *figogrp__ToolName(struct figogrp *dummy, struct figtoolview *v, long rock)
 {
     return "<group>";
 }
@@ -86,15 +79,11 @@ long clicks;
     return figobj_Failed;
 }
 
-void figogrp__Draw(self, v) 
-struct figogrp *self;
-struct figview *v;
+void figogrp__Draw(struct figogrp *self, struct figview *v)
 {
 }
 
-void figogrp__Sketch(self, v) 
-struct figogrp *self;
-struct figview *v;
+void figogrp__Sketch(struct figogrp *self, struct figview *v)
 {
     long x, y, w, h;
     struct rectangle *rec = &self->handlebox;
@@ -115,9 +104,7 @@ struct figview *v;
     figview_DrawRectSize(v, x, y, w, h);
 }
 
-void figogrp__Select(self, v)
-struct figogrp *self;
-struct figview *v;
+void figogrp__Select(struct figogrp *self, struct figview *v)
 {
     long ix;
     long x, y;
@@ -145,9 +132,7 @@ struct figview *v;
 
 /* basic procedure to move a handle -- used by figogrp__MoveHandle(), figogrp__Reshape() */
 /* use when self->doconstraints is FALSE */
-static void MoveHandleNocon(self, x, y, ptref)
-struct figogrp *self;
-long x, y, ptref;
+static void MoveHandleNocon(struct figogrp *self, long x, long y, long ptref)
 {
     long dx, dy;
 
@@ -160,9 +145,7 @@ long x, y, ptref;
 
 /* basic procedure to move a handle -- used by figogrp__MoveHandle(), figogrp__Reshape() */
 /* use when self->doconstraints is TRUE */
-static void MoveHandleCon(self, x, y, ptref)
-struct figogrp *self;
-long x, y, ptref;
+static void MoveHandleCon(struct figogrp *self, long x, long y, long ptref)
 {
     long ix;
     struct rectangle *R = &(self)->handlebox;
@@ -211,12 +194,7 @@ long x, y, ptref;
     }
 }
 
-boolean figogrp__Reshape(self, action, v, x, y, handle, ptref)
-struct figogrp *self;
-enum view_MouseAction action;
-struct figview *v;
-boolean handle;
-long x, y, ptref;
+boolean figogrp__Reshape(struct figogrp *self, enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref)
 {
     if (!handle)
 	return;
@@ -272,9 +250,7 @@ long x, y, ptref;
     }
 }
 
-void figogrp__MoveHandle(self, x, y, ptref)
-struct figogrp *self;
-long x, y, ptref;
+void figogrp__MoveHandle(struct figogrp *self, long x, long y, long ptref)
 {
     if (figogrp_GetReadOnly(self))
 	return;
@@ -289,9 +265,7 @@ long x, y, ptref;
     figogrp_SetModified(self);
 }
 
-void figogrp__Reposition(self, xd, yd)
-struct figogrp *self;
-long xd, yd;
+void figogrp__Reposition(struct figogrp *self, long xd, long yd)
 {
     if (!self->doconstraints) {
 	int ix;
@@ -312,11 +286,7 @@ long xd, yd;
     }
 }
 
-static boolean ReconfigureChild(o, ref, v, self)
-struct figobj *o;
-long ref;
-struct figure *v;
-struct figogrp *self;
+static boolean ReconfigureChild(struct figobj *o, long ref, struct figure *v, struct figogrp *self)
 {
     struct rectangle *R=(&(self)->handlebox);
     int i=0;
@@ -338,8 +308,7 @@ struct figogrp *self;
 }
 
 				 
-void figogrp__Reconfigure(self)
-struct figogrp *self;
+void figogrp__Reconfigure(struct figogrp *self)
 {
     struct figure *fig = figogrp_GetAncestorFig(self);
     if (!self->doconstraints || !fig) return;
@@ -347,15 +316,12 @@ struct figogrp *self;
 }
 
 
-void figogrp__RecomputeBounds(self)
-struct figogrp *self;
+void figogrp__RecomputeBounds(struct figogrp *self)
 {
     self->bboxdirty = TRUE;
 }
 
-void figogrp__SetConstraintsActive(self, newval)
-struct figogrp *self;
-boolean newval;
+void figogrp__SetConstraintsActive(struct figogrp *self, boolean newval)
 {
     struct figure *fig = figogrp_GetAncestorFig(self);
     if (!fig) return;
@@ -380,9 +346,7 @@ boolean newval;
     }
 }
 
-struct rectangle *figogrp__GetBounds(self, vv)
-struct figogrp *self;
-struct figview *vv;
+struct rectangle *figogrp__GetBounds(struct figogrp *self, struct figview *vv)
 {
     struct rectangle *R = &((struct figobj *)self)->bounds;
     struct rectangle *HR = &self->handlebox;
@@ -433,17 +397,13 @@ struct figview *vv;
     return R;
 }
 
-struct rectangle *figogrp__GetSelectedBounds(self, vv)
-struct figogrp *self;
-struct figview *vv;
+struct rectangle *figogrp__GetSelectedBounds(struct figogrp *self, struct figview *vv)
 {
     figogrp_GetBounds(self, vv); /* make sure bbox is cleaned up */
     return &(((struct figobj *)self)->selbounds);
 }
 
-void figogrp__StabilizeAttachments(self, keepproport)
-struct figogrp *self;
-boolean keepproport;
+void figogrp__StabilizeAttachments(struct figogrp *self, boolean keepproport)
 {
     if (((struct figobj *)self)->anyattachmentsactive 
 	 && ((struct figobj *)self)->vas) {
@@ -479,8 +439,7 @@ static long canonical_nocon[] = {
     3, figobj_NULLREF
 };
 
-long *figogrp__GetCanonicalHandles(self)
-struct figogrp *self;
+long *figogrp__GetCanonicalHandles(struct figogrp *self)
 {
     if (self->doconstraints)
 	return canonical_con;
@@ -488,18 +447,12 @@ struct figogrp *self;
 	return canonical_nocon;
 }
 
-void figogrp__SetParent(self, pref, ancfig)
-struct figogrp *self;
-long pref;
-struct figure *ancfig;
+void figogrp__SetParent(struct figogrp *self, long pref, struct figure *ancfig)
 {
     super_SetParent(self, pref, ancfig);
 }
 
-void figogrp__InheritVAttributes(self, attr, mask)
-struct figogrp *self;
-struct figattr *attr;
-unsigned long mask;
+void figogrp__InheritVAttributes(struct figogrp *self, struct figattr *attr, unsigned long mask)
 {
     int ix;
     struct figure *fig;
@@ -531,10 +484,7 @@ unsigned long mask;
     }
 }
 
-unsigned long figogrp__UpdateVAttributes(self, attr, mask)
-struct figogrp *self;
-struct figattr *attr;
-unsigned long mask;
+unsigned long figogrp__UpdateVAttributes(struct figogrp *self, struct figattr *attr, unsigned long mask)
 {
     int ix;
     struct figure *fig;
@@ -564,17 +514,12 @@ unsigned long mask;
     selfattr->active = tmpmask;
 }
 
-void figogrp__WriteBody(self, fp)
-struct figogrp *self;
-FILE *fp;
+void figogrp__WriteBody(struct figogrp *self, FILE *fp)
 {
     fprintf(fp, "$ %d %d %d %d %d\n", self->doconstraints, self->handlebox.left, self->handlebox.top, self->handlebox.width, self->handlebox.height);
 }
 
-long figogrp__ReadBody(self, fp, recompute)
-struct figogrp *self;
-FILE *fp;
-boolean recompute;
+long figogrp__ReadBody(struct figogrp *self, FILE *fp, boolean recompute)
 {
 #define LINELENGTH (250)
     char buf[LINELENGTH+1];

@@ -57,6 +57,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <xcmap.ih>
 #include <xgraphic.eh>
 
+#include <stdlib.h>
 static int regionDebug = 0;
 static int imageDebug = 0;
 static int bltDebug = 0;
@@ -111,10 +112,7 @@ typedef struct _XRegion {
 /******* end of special declarations *********/
 
 #ifdef XRELEASE2_ENV
-static TempXSetRegion( dpy, gc, r )
-    Display *dpy;
-    GC gc;
-    register Region r;
+static TempXSetRegion(Display *dpy, GC gc, register Region r)
 {
     register int i;
     register XRectangle *xr;
@@ -172,9 +170,7 @@ struct xgraphic_UpdateBlock {
 
 static struct xgraphic_UpdateBlock * updateBlockHeader = NULL;
 
-struct  xgraphic_UpdateBlock * xgraphic_FindUpdateBlock(WhichDisplay, WhichWindow)
-Display * WhichDisplay;
-Drawable WhichWindow;
+struct  xgraphic_UpdateBlock * xgraphic_FindUpdateBlock(Display *WhichDisplay, Drawable WhichWindow)
 {
     struct xgraphic_UpdateBlock * CurBlock;
 
@@ -239,10 +235,7 @@ Drawable whichWindow; {
     if (regionDebug) printf("SetUpdateRegion: for block %X, setting counter %d, region %X\n", curBlock, curBlock->RegionCounter, curBlock->updateRegionInUse);
 }
 
-void xgraphic__FinalizeWindow(classID, WhichDisplay, WhichWindow)
-struct classheader *classID;
-Display *WhichDisplay;
-Drawable WhichWindow;
+void xgraphic__FinalizeWindow(struct classheader *classID, Display *WhichDisplay, Drawable WhichWindow)
 {
     struct xgraphic_UpdateBlock *CurBlock, *NextBlock, *last=NULL;
     for (CurBlock=updateBlockHeader ; CurBlock ; CurBlock=NextBlock){
@@ -258,8 +251,7 @@ Drawable WhichWindow;
     }
 }
 
-void xgraphic__ClearColors(self)
-struct xgraphic *self;
+void xgraphic__ClearColors(struct xgraphic *self)
 {
     struct xcolormap *cmap = *(struct xcolormap**) xgraphic_CurrentColormap(self);
     int i;
@@ -273,15 +265,12 @@ struct xgraphic *self;
 }
 
 /* since X uses 0=black and ATK uses 0=white, */
-boolean xgraphic__IsImageInverted(self)
-struct xgraphic *self;
+boolean xgraphic__IsImageInverted(struct xgraphic *self)
 {
     return TRUE;
 }
 
-static void xgraphic_LocalSetTransferFunction(self, prevValue)
-struct xgraphic * self;
-int prevValue;
+static void xgraphic_LocalSetTransferFunction(struct xgraphic *self, int prevValue)
 {
 /* This discussion documents how the X transfer function was calculated.
 
@@ -654,9 +643,7 @@ short Operation; {
 			    TextLength);
 }
 
-void xgraphic__DrawRectSize(self,x, y,width,height)
-struct xgraphic * self;
-long x,y,width,height;
+void xgraphic__DrawRectSize(struct xgraphic *self, long x, long y, long width, long height)
 {
     VerifyUpdateClipping(self);
 
@@ -857,9 +844,7 @@ long cornerHeight, cornerWidth; {
 
 }
 
-void xgraphic__DrawTrapezoid(self,topX,topY,topWidth,bottomX,bottomY,bottomWidth)
-struct xgraphic * self;
-long topX, topY, topWidth, bottomX, bottomY, bottomWidth;
+void xgraphic__DrawTrapezoid(struct xgraphic *self, long topX, long topY, long topWidth, long bottomX, long bottomY, long bottomWidth)
 {
     XPoint PolygonPts[5];
 
@@ -1260,12 +1245,7 @@ long topX, topY, topWidth, bottomX, bottomY, bottomWidth; {
 }
 
 
-void xgraphic__BitBlt(self, SrcRect, DstGraphic, DstOrigin, ClipRect)
-struct xgraphic * self;
-struct rectangle * SrcRect;
-struct graphic *DstGraphic;
-struct point * DstOrigin;
-struct rectangle * ClipRect;
+void xgraphic__BitBlt(struct xgraphic *self, struct rectangle *SrcRect, struct graphic *DstGraphic, struct point *DstOrigin, struct rectangle *ClipRect)
 {
     if (rectangle_Width(SrcRect) != 0 && rectangle_Height(SrcRect) != 0)  {
 
@@ -2131,9 +2111,7 @@ struct xgraphic_UpdateBlock * updateBlk; {
     self->lastUpdateRegionIDUsed = curUpdateRegionID;
 }
 
-void xgraphic__SetClippingRegion(self, region)
-struct xgraphic *self;
-struct region *region;
+void xgraphic__SetClippingRegion(struct xgraphic *self, struct region *region)
 {
     /* Machine independent stuff */
     super_SetClippingRegion(self,region);
@@ -2150,8 +2128,7 @@ struct rectangle * AdditionalRect;{
     xgraphic_LocalSetClippingRect(self,NULL);
 }
 
-void xgraphic__ClearClippingRect(self)
-struct xgraphic * self;
+void xgraphic__ClearClippingRect(struct xgraphic *self)
 {
     /* Machine independent part */
     super_ClearClippingRect(self);
@@ -2159,9 +2136,7 @@ struct xgraphic * self;
     xgraphic_LocalSetClippingRect(self,NULL);
 }
 
-void xgraphic__SetLineWidth(self,NewLineWidth)
-struct xgraphic * self;
-short NewLineWidth;
+void xgraphic__SetLineWidth(struct xgraphic *self, short NewLineWidth)
 {   XGCValues tempGC;
 
     if ( xgraphic_GetLineWidth( self ) != NewLineWidth )
@@ -2179,11 +2154,7 @@ short NewLineWidth;
     }
 }
 
-void xgraphic__SetLineDash( self, dashPattern, dashOffset, dashType )
-struct xgraphic *self;
-char		*dashPattern;
-int		dashOffset;
-short		dashType;
+void xgraphic__SetLineDash(struct xgraphic *self, char *dashPattern, int dashOffset, short dashType)
 {
     XGCValues tempGC;
     register int	n = 0;
@@ -2216,9 +2187,7 @@ short		dashType;
     }
 }
 
-void xgraphic__SetLineCap( self, newLineCap )
-struct xgraphic *self;
-short		newLineCap;
+void xgraphic__SetLineCap(struct xgraphic *self, short newLineCap)
 {
     XGCValues tempGC;
 
@@ -2237,9 +2206,7 @@ short		newLineCap;
     }
 }
 
-void xgraphic__SetLineJoin( self, newLineJoin )
-struct xgraphic *self;
-short		newLineJoin;
+void xgraphic__SetLineJoin(struct xgraphic *self, short newLineJoin)
 {
     XGCValues tempGC;
 
@@ -2266,8 +2233,7 @@ short NewTransferMode;{
     xgraphic_LocalSetTransferFunction(self, prevValue);
 }
 
-static void xgraphicClearGrayLevels(self)
-     struct xgraphic *self;
+static void xgraphicClearGrayLevels(struct xgraphic *self)
 {
   register int i;
 
@@ -2276,9 +2242,7 @@ static void xgraphicClearGrayLevels(self)
     self->gray_levels[i] = NULL;
 }
 
-static void HandleInsertion(self, EnclosingGraphic)
-struct xgraphic *self;
-struct xgraphic *EnclosingGraphic;
+static void HandleInsertion(struct xgraphic *self, struct xgraphic *EnclosingGraphic)
 {
     XGCValues tempGCValues;
     long tmpx, tmpy;
@@ -2380,10 +2344,7 @@ long xOriginInParent, yOriginInParent, width, height; {
     xgraphic_InsertGraphic(self,EnclosingGraphic,&r);
 }
 
-void xgraphic__InsertGraphic(self, EnclosingGraphic, EnclosedRectangle)
-struct xgraphic * self;
-struct xgraphic * EnclosingGraphic;
-struct rectangle * EnclosedRectangle;
+void xgraphic__InsertGraphic(struct xgraphic *self, struct xgraphic *EnclosingGraphic, struct rectangle *EnclosedRectangle)
 {
     /* First do the machine independent stuff */
 
@@ -2392,19 +2353,14 @@ struct rectangle * EnclosedRectangle;
     HandleInsertion(self, EnclosingGraphic);
 }
 
-void xgraphic__InsertGraphicRegion(self, EnclosingGraphic, region)
-struct xgraphic * self;
-struct xgraphic * EnclosingGraphic;
-struct region * region;
+void xgraphic__InsertGraphicRegion(struct xgraphic *self, struct xgraphic *EnclosingGraphic, struct region *region)
 {
     super_InsertGraphicRegion(self,EnclosingGraphic, region);
 
     HandleInsertion(self, EnclosingGraphic);
 }
 
-void xgraphic__SetVisualRegion(self, region)
-struct xgraphic *self;
-struct region *region;
+void xgraphic__SetVisualRegion(struct xgraphic *self, struct region *region)
 {
     super_SetVisualRegion(self, region);
 
@@ -2416,16 +2372,13 @@ struct xgraphic *self; {
     XFlush(xgraphic_XDisplay(self));
 }
 
-void xgraphic__SetPatternOrigin(self, xpos, ypos)
-struct xgraphic * self;
-long xpos, ypos;
+void xgraphic__SetPatternOrigin(struct xgraphic *self, long xpos, long ypos)
 {
     super_SetPatternOrigin(self, xpos, ypos);
     XSetTSOrigin(xgraphic_XDisplay(self), xgraphic_XFillGC(self), xpos, ypos);
 }
 
-struct graphic * xgraphic__WhitePattern(self)
-struct xgraphic *self;
+struct graphic * xgraphic__WhitePattern(struct xgraphic *self)
 {
     if (self->gray_levels[0] != NULL)
       return (struct graphic *) self->gray_levels[0];
@@ -2433,8 +2386,7 @@ struct xgraphic *self;
     return (struct graphic *) xgraphic_GrayPattern(self,0,16);
 }
 
-struct graphic * xgraphic__BlackPattern(self)
-struct xgraphic *self;
+struct graphic * xgraphic__BlackPattern(struct xgraphic *self)
 {
     if (self->gray_levels[16] != NULL)
       return (struct graphic *) self->gray_levels[16];
@@ -2447,8 +2399,7 @@ static struct fontdesc *  xgraphic_shadeFont = NULL;
 	((XFontStruct *)xfontdesc_GetRealFontDesc(self, graphic))
 
 
-static void CacheShades(self)
-struct xgraphic *self;
+static void CacheShades(struct xgraphic *self)
 {
     struct xgraphic * RetValue;
     long width, height;
@@ -2546,8 +2497,7 @@ struct xgraphic *self;
 }
 
 
-static void GetShades(self)
-struct xgraphic *self;
+static void GetShades(struct xgraphic *self)
 {
     Display *dpy=xgraphic_XDisplay(self);
     Window root=RootWindow(dpy, DefaultScreen(dpy));
@@ -2586,9 +2536,7 @@ struct xgraphic *self;
 }
 static boolean cacheshades=FALSE;
 
-struct xgraphic * xgraphicGrayShade (self, index)
-     struct xgraphic *self;
-     long index;	/* between 0 and 16, inclusive */
+struct xgraphic * xgraphicGrayShade(struct xgraphic *self, long index)
 {
   if (index < 0 || index > 16)
     return (NULL);
@@ -2607,9 +2555,7 @@ struct xgraphic * xgraphicGrayShade (self, index)
   return (self->gray_shades[index]);
 }
 
-struct graphic * xgraphic__GrayPattern(self, IntensityNum, IntensityDenom)
-    struct xgraphic *self;
-     short IntensityNum, IntensityDenom;
+struct graphic * xgraphic__GrayPattern(struct xgraphic *self, short IntensityNum, short IntensityDenom)
 {
 
   short index, xgraphic_ApproximateColor();
@@ -2642,10 +2588,7 @@ struct graphic * xgraphic__GrayPattern(self, IntensityNum, IntensityDenom)
 
 /* The next three routines need the "currently installed" colormap.  But, where is that coming from?  You'd think it would come from im but there is no hook to im in the graphic layer.  */
     
-static void SetFGColor( self, colorName, red, green, blue )
-    struct xgraphic * self;
-    char *colorName;
-    long red, green, blue;
+static void SetFGColor(struct xgraphic *self, char *colorName, long red, long green, long blue)
 {
     struct xcolor *xc=NULL;
     struct xcolormap **cmap = (struct xcolormap**) xgraphic_CurrentColormap(self);
@@ -2712,10 +2655,7 @@ static void SetFGColor( self, colorName, red, green, blue )
 }
 
     
-static void SetBGColor(self, colorName, red, green, blue)
-    struct xgraphic *self;
-    char *colorName;
-    long red, green, blue;
+static void SetBGColor(struct xgraphic *self, char *colorName, long red, long green, long blue)
 {
     struct xcolor *xc=NULL;
     struct xcolormap **cmap = (struct xcolormap**) xgraphic_CurrentColormap(self);
@@ -2786,10 +2726,7 @@ static void SetBGColor(self, colorName, red, green, blue)
 #endif /* PLANEMASK_ENV */
 }
 
-static short xgraphic_ApproximateColor( self, colorName, red, green, blue )
-  struct xgraphic *self;
-  char *colorName;
-  long *red, *green, *blue;
+static short xgraphic_ApproximateColor(struct xgraphic *self, char *colorName, long *red, long *green, long *blue)
 {
     short		    index = 0;
   struct xcolor *xc;
@@ -2824,9 +2761,7 @@ static short xgraphic_ApproximateColor( self, colorName, red, green, blue )
     return index;
 }
 
-static void SetStipple(self, index)
-struct xgraphic *self;
-long index;
+static void SetStipple(struct xgraphic *self, long index)
 {
     struct xgraphic	*tile;
 
@@ -2853,10 +2788,7 @@ long index;
  * that somebody may still be using these colors when one of the ground colors
  * changes... -Z-
  */
-void xgraphic__SetForegroundColor(self, colorName, red, green, blue )
-    struct xgraphic *self;
-    char *colorName;
-    long red, green, blue;
+void xgraphic__SetForegroundColor(struct xgraphic *self, char *colorName, long red, long green, long blue)
 {
     short		index;
     long		oldRed, oldGreen, oldBlue;
@@ -2880,10 +2812,7 @@ void xgraphic__SetForegroundColor(self, colorName, red, green, blue )
     }
 }
 
-void xgraphic__SetBackgroundColor(self, colorName, red, green, blue)
-    struct xgraphic *self;
-    char *colorName;
-    long red, green, blue;
+void xgraphic__SetBackgroundColor(struct xgraphic *self, char *colorName, long red, long green, long blue)
 {
     long oldRed, oldGreen, oldBlue;
 
@@ -2907,9 +2836,7 @@ void xgraphic__SetBackgroundColor(self, colorName, red, green, blue)
     }
 }
 
-void xgraphic__SetFGColor( self, red, green, blue )
-struct xgraphic	*self;
-double		red, green, blue;
+void xgraphic__SetFGColor(struct xgraphic *self, double red, double green, double blue)
 {
 long		Red, Green, Blue, oldRed, oldGreen, oldBlue;
 short		index;
@@ -2944,9 +2871,7 @@ short		index;
     }
 }
 
-void xgraphic__SetBGColor( self, red, green, blue )
-struct xgraphic	*self;
-double		red, green, blue;
+void xgraphic__SetBGColor(struct xgraphic *self, double red, double green, double blue)
 {
 long		Red, Green, Blue, oldRed, oldGreen, oldBlue;
 
@@ -3042,9 +2967,7 @@ struct xgraphic * self;{
 /*   Predefined procedures */
 /* -------------------------------------------------- */
 
-boolean xgraphic__InitializeObject(classID,self)
-struct classheader *classID;
-struct xgraphic *self;
+boolean xgraphic__InitializeObject(struct classheader *classID, struct xgraphic *self)
 {
     self->flipforstipple=FALSE;
     self->lastStipple=NULL;
@@ -3080,16 +3003,13 @@ struct xgraphic *self;
     return TRUE;
 }
 
-boolean xgraphic__InitializeClass(classID)
-struct classheader *classID;
+boolean xgraphic__InitializeClass(struct classheader *classID)
 {
     cacheshades=environ_GetProfileSwitch("CacheShades", FALSE);
     return TRUE;
 }
 
-void xgraphic__FinalizeObject(classID, self)
-struct classheader *classID;
-struct xgraphic *self;
+void xgraphic__FinalizeObject(struct classheader *classID, struct xgraphic *self)
 {
     struct xcolormap **xcmap = (struct xcolormap **) xgraphic_CurrentColormap(self);
     if (self->localGraphicContext != NULL) {
@@ -3103,8 +3023,7 @@ struct xgraphic *self;
     }
 }
 	
-static long RealDisplayClass( self )
-struct xgraphic		    *self;
+static long RealDisplayClass(struct xgraphic *self)
 {
     XWindowAttributes atts;
     long		    class = 0;
@@ -3141,18 +3060,14 @@ struct xgraphic		    *self;
     return class;
 }
 
-long xgraphic__DisplayClass( self )
-struct xgraphic		    *self;
+long xgraphic__DisplayClass(struct xgraphic *self)
 {
     if(self->DisplayClass == 0) 
 	self->DisplayClass = RealDisplayClass(self);
     return (self->DisplayClass);
 }
 
-void xgraphic__ObservedChanged(self, changed, value)
-struct xgraphic *self;
-struct observable *changed;
-long value;
+void xgraphic__ObservedChanged(struct xgraphic *self, struct observable *changed, long value)
 {
     super_ObservedChanged(self, changed, value);
     switch(value) {

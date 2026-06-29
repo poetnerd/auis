@@ -50,14 +50,12 @@ static int dmsize[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 /* return inverse of local time */
 
 #if defined(_POSIX_SOURCE) || defined(_IBMR2)
-time_t gtime(ct)
-register struct tm *ct;
+time_t gtime(register struct tm *ct)
 {
     return (mktime(ct));
 }
 #else /* _POSIX_SOURCE */
-time_t gtime(ct)
-register struct tm *ct;
+time_t gtime(register struct tm *ct)
 {
     time_t copyt;
     register int day;

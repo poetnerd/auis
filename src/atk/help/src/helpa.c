@@ -83,6 +83,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <helpsys.h>
 #include <helpa.eh>
 
+#include <stdlib.h>
 #define	IPPORT_HELPNAME	"andrewhelp"
 /*---------------------------------------------------------------------------*/
 /*			CONDITIONAL DEBUGGING				     */

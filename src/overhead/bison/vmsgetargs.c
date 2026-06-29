@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include "files.h"
 
+#include <string.h>
 /*
  *	VMS version of getargs(): Uses DCL command parsing
  *		(argc and argv are ignored)
@@ -41,9 +42,7 @@ extern char * version_string;
 char *spec_name_prefix;
 char *spec_file_prefix;
 
-getargs(argc,argv)
-     int argc;
-     char *argv[];
+int getargs(int argc, char *argv[])
 {
   register char *cp;
   static char Input_File[256];

@@ -78,6 +78,8 @@ char *chtest_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/nes
 #include <parse.ih>
 #include <sym.ih>
 
+#include <stdlib.h>
+#include <stdio.h>
 struct type_ctypes *Ctypes;
 
 	void
@@ -107,9 +109,7 @@ DoDumps(dumpclass, dumpitem)
 	}
 }
 
-main(argc, argv)
-	register int argc;
-	register char **argv;
+int main(register int argc, register char **argv)
 {
 	char *result;
 

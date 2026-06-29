@@ -81,9 +81,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #define min(a, b) (((a) <= (b)) ? (a) : (b))
 #define sendval(text) {printf text ;fflush(stdout);}
 
-main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     int GVMPollFreq = 0, DiskPollFreq = 0, UsersID = 0;
     int time1 = 0, time2 = 0, sleepTime = 0;
@@ -217,6 +215,7 @@ struct	fs_data *mountbuffer;
 
 #define VMMON_DODECL
 #include <getstats.h>
+#include <stdlib.h>
 extern struct nlist RawStatistics[];
 
 
@@ -245,9 +244,6 @@ off_t procp;
 struct mapent *SwapMap;
 struct proc proc[8];/* 8 = a few, for fewer syscalls */
 struct proc *mproc;
-extern char *malloc();
-
-
 struct{
    long time[CPUSTATES];
    long xfer[DK_NDRIVE];
@@ -274,8 +270,7 @@ union {
 
 
 
-GetGVMStats(UsersID)
-int UsersID;
+int GetGVMStats(int UsersID)
 {
     register int   i;
     long  t;
@@ -483,8 +478,7 @@ InitGVMStats()
 
 extern int getmnt();
 
-GetDiskStats(Init)
-int Init;
+int GetDiskStats(int Init)
 {
     int i = 0;
 #ifdef sys_vax_20
@@ -577,13 +571,8 @@ int Init;
 }
 
 #ifndef sys_vax_20
-int bread(fi, bno, buf, cnt)
-int fi;
-daddr_t bno;
-char *buf;
-int cnt;
+int bread(int fi, daddr_t bno, char *buf, int cnt)
 {
-    extern int errno;
 
     (void) lseek(fi, (long)(bno * DEV_BSIZE), 0);
 #ifndef sun
@@ -606,8 +595,7 @@ int cnt;
  * Given a name like /dev/rrp0h, returns the mounted path, like /usr.
  */
 #ifndef sys_vax_20
-char *mpath(file)
-char *file;
+char *mpath(char *file)
 {
 #if defined(sun) | defined(hpux)
     FILE *mntp;
@@ -645,8 +633,7 @@ char *file;
 
 #ifndef sys_vax_20
 #ifndef sun
-eq(f1, f2)
-char *f1, *f2;
+int eq(char *f1, char *f2)
 {
     if (strncmp(f1, "/dev/", 5) == 0)
 	f1 += 5;
@@ -665,18 +652,14 @@ char *f1, *f2;
 #endif /* sun */
 #endif /* sys_vax_20 */
 
-int round(num)
-double num;
+int round(double num)
 {
     int inum = (int) num;
     return(((num - inum) >= 0.5) ? (inum + 1) : inum);
 }
 
 #ifdef sys_vax_20
-print_df(id, fd, Init)
-int id;
-register struct fs_data *fd;
-int Init;
+int print_df(int id, register struct fs_data *fd, int Init)
 {
 	register int used;
 	used = fd->fd_btot - fd->fd_bfree;
@@ -692,11 +675,7 @@ int Init;
 
 
 #ifndef sys_vax_20
-dfree1(id, file, infsent, Init)
-int id;
-char *file;
-int infsent;
-int Init;
+int dfree1(int id, char *file, int infsent, int Init)
 {
     long totalblks, availblks, free, used;
     int fi;
@@ -755,11 +734,7 @@ int Init;
 
 
 #ifdef sun
-dfree2(id, file, mnt, Init)
-int id;
-char *file;
-struct mntent *mnt;
-int Init;
+int dfree2(int id, char *file, struct mntent *mnt, int Init)
 {
     struct statfs fs;
     long totalblks, avail, free, used, reserved;
@@ -787,9 +762,7 @@ int Init;
 #define min(a, b) (((a) <= (b)) ? (a) : (b))
 
 
-main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     int GVMPollFreq = 0, DiskPollFreq = 0, UsersID = 0;
     int time1 = 0, time2 = 0, sleepTime = 0;

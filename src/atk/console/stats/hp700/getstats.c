@@ -112,6 +112,7 @@ long maxuprc = 0;    /* we have to nlist in HP-UX  */
 #define VMMON_DODECL
 #include <nlist.h>
 #include <getstats.h>
+#include <stdlib.h>
 extern struct nlist RawStatistics[];
 
 char	root[32];
@@ -123,9 +124,6 @@ int nproc;
 off_t procp;
 struct proc proc[8];/* 8 = a few, for fewer syscalls */
 struct proc *mproc;
-extern char *malloc();
-
-
 struct{
    long time[CPUSTATES];
    long xfer[DK_NDRIVE];
@@ -144,8 +142,7 @@ union {
 
 
 
-GetGVMStats(UsersID)
-int UsersID;
+int GetGVMStats(int UsersID)
 {
     register int   i;
     long  t;
@@ -291,8 +288,7 @@ InitGVMStats()
 
 extern int getmnt();
 
-GetDiskStats(Init)
-int Init;
+int GetDiskStats(int Init)
 {
     int i = 0;
     struct stat statb;
@@ -324,13 +320,8 @@ int Init;
     (void) endmntent(mtabp);
 }
 
-int bread(fi, bno, buf, cnt)
-int fi;
-daddr_t bno;
-char *buf;
-int cnt;
+int bread(int fi, daddr_t bno, char *buf, int cnt)
 {
-    extern int errno;
 
     (void) lseek(fi, (long)(bno * DEV_BSIZE), 0);
     if (read(fi, buf, (unsigned) cnt) < 0)
@@ -347,8 +338,7 @@ int cnt;
 /*
  * Given a name like /dev/rrp0h, returns the mounted path, like /usr.
  */
-char *mpath(file)
-char *file;
+char *mpath(char *file)
 {
     FILE *mntp;
     register struct mntent *mnt;
@@ -368,18 +358,13 @@ char *file;
     return "";
 }
 
-int round(num)
-double num;
+int round(double num)
 {
     int inum = (int) num;
     return(((num - inum) >= 0.5) ? (inum + 1) : inum);
 }
 
-dfree1(id, file, infsent, Init)
-int id;
-char *file;
-int infsent;
-int Init;
+int dfree1(int id, char *file, int infsent, int Init)
 {
     long totalblks, availblks, free, used;
     int fi;
@@ -432,11 +417,7 @@ int Init;
 }
 
 
-dfree2(id, file, mnt, Init)
-int id;
-char *file;
-struct mntent *mnt;
-int Init;
+int dfree2(int id, char *file, struct mntent *mnt, int Init)
 {
     struct statfs fs;
     long totalblks, avail, free, used, reserved;

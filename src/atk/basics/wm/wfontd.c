@@ -46,6 +46,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <ctype.h>
 
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #define MDFD ((struct fcache *)(((struct fontdesc *)self)->MachineDependentFontDescriptor))
 
 /* a pointer to an fcache value is stored in the MachineDependentFontDescriptor field of the fontdesc.
@@ -155,15 +158,12 @@ LoadAndrewFont(self, graphic)
 
 /* ************* class procedures ****************** */
 
-struct wmfontdesc *wmfontdesc__Allocate(classID)
-    struct classheader *classID;
+struct wmfontdesc *wmfontdesc__Allocate(struct classheader *classID)
 {
     return (struct wmfontdesc *) malloc(sizeof(struct wmfontdesc));
 }
 
-void wmfontdesc__Deallocate(classID, self)
-    struct classheader *classID;
-    struct wmfontdesc *self;
+void wmfontdesc__Deallocate(struct classheader *classID, struct wmfontdesc *self)
 {
 /* Fontdesc structures are never deallocated since they are reused. */
 }
@@ -336,11 +336,7 @@ register long * YWidth; {
 
 }
 
-void wmfontdesc__CharSummary(self,gr,LookUpChar,RetValue)
-struct fontdesc * self;
-struct wmgraphic * gr;
-unsigned char LookUpChar;
-struct fontdesc_charInfo * RetValue;
+void wmfontdesc__CharSummary(struct fontdesc *self, struct wmgraphic *gr, unsigned char LookUpChar, struct fontdesc_charInfo *RetValue)
 {
     register struct font   *font = fontdesc_GetRealFontDesc(self, gr);
     if (!RetValue) return;

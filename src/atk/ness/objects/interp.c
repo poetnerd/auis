@@ -137,6 +137,7 @@ static char *rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/nes
 #include <nevent.h>
 #include <call.h>
 
+#include <stdlib.h>
 #define APPENDSLOP 100		/* bytes to increase append rcvr beyond required */
 #define FUNCSTACKSLOP 55	/* number of markers to leave space for after entering
 					a function */

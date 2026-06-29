@@ -43,6 +43,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/hypl
 #include <observe.ih>
 #include <pshbttn.eh>
 
+#include <stdlib.h>
 /* Defined constants and macros */
 #define DS_VERSION 2 /* datastream version */
 

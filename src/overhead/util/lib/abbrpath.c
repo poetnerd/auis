@@ -69,8 +69,7 @@ static void initMyHome()
 
 static char shortenRes[MAXPATHLEN+1] = "";
 
-char *ap_Shorten(pathname)
-char *pathname;
+char *ap_Shorten(char *pathname)
 {/* Shorten it if we can. */
     initMyHome();
     if (homeLen > 0) {
@@ -86,8 +85,7 @@ char *pathname;
     return pathname;
 }
 
-char *ap_ShortenAlso(pathname, auxI, auxH)
-char *pathname, *auxI, *auxH;
+char *ap_ShortenAlso(char *pathname, char *auxI, char *auxH)
 {/* Shorten it if we can. */
     int auxHLen, auxAbbr;
 
@@ -137,8 +135,7 @@ char *pathname, *auxI, *auxH;
 
 static char pfx[] = "---";
 
-char *ap_ShortenTo(pathname, maxLen)
-char *pathname; int maxLen;
+char *ap_ShortenTo(char *pathname, int maxLen)
 {/* Shorten it if we can. */
     char *res, *cp; int len;
     auto char toshortRes[MAXPATHLEN+1];
@@ -156,8 +153,7 @@ char *pathname; int maxLen;
     return NULL;	/* Have to give up--can't shorten to spec. */
 }
 
-char *ap_ShortenAlsoTo(pathname, auxI, auxH, maxLen)
-char *pathname, *auxI, *auxH; int maxLen;
+char *ap_ShortenAlsoTo(char *pathname, char *auxI, char *auxH, int maxLen)
 {/* Shorten it if we can. */
     char *res, *cp; int len;
     auto char toshortRes[MAXPATHLEN+1];
@@ -177,6 +173,7 @@ char *pathname, *auxI, *auxH; int maxLen;
 
 #ifdef TESTINGONLYTESTING
 #include <stdio.h>
+#include <stdlib.h>
 main()
 {
     char a[300];

@@ -56,6 +56,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <valuev.ih>
 #include <text.ih>
 
+#include <stdio.h>
 static struct keymap *newKeymap;
 static struct menulist *newMenus;
 static struct lsetview *DeleteMode = NULL;
@@ -79,8 +80,7 @@ static struct types typearray[] = {
     {"",0}
 };
 
-static lookuptype(ty)
-char *ty;
+static lookuptype(char *ty)
 {
     struct types *tp;
     for(tp = typearray;tp->val != 0; tp++)
@@ -89,9 +89,7 @@ char *ty;
     return 0;
 }
 
-static struct view *makeview(self,ls)
-struct lsetview *self;
-struct lset *ls;
+static struct view *makeview(struct lsetview *self, struct lset *ls)
 {
     char *lv=ls->viewname;
     if(ls->dobj!=NULL && class_IsTypeByName(class_GetTypeName(ls->dobj), "unknown")) {
@@ -117,17 +115,11 @@ struct lset *ls;
     }
     return NULL;
 }
-lsetview_SetMode(self,mode)
-struct lsetview *self;
-int mode;
+int lsetview_SetMode(struct lsetview *self, int mode)
 {
 self->mode = mode;
 }
-struct lsetview *lsetview__Create(classID, level,d,parent)
-    struct classheader *classID;
-int level;
-struct lset *d;
-struct view *parent;
+struct lsetview *lsetview__Create(struct classheader *classID, int level, struct lset *d, struct view *parent)
 {
     struct lsetview *lv;
     if(d == NULL) d = lset_New();
@@ -137,9 +129,7 @@ struct view *parent;
    lv->level = level;
     return(lv);
 }
-static initkids(self,ls)
-struct lsetview *self;
-struct lset *ls;
+static initkids(struct lsetview *self, struct lset *ls)
 {
 	struct lsetview *v1,*v2;
 	v1 = lsetview_Create(self->level+1,(struct lset *) ls->left,(struct view *)self);
@@ -151,8 +141,7 @@ struct lset *ls;
 	self->mode = lsetview_IsSplit;
 	lsetview_WantUpdate(self,self);
     }	
-static dolink(self)
-struct lsetview *self;
+static dolink(struct lsetview *self)
 {
     struct lset *ls;
     ls = Data(self);
@@ -165,19 +154,14 @@ struct lsetview *self;
     }
 }
 
-void lsetview__SetDataObject(self,ls)
-struct lsetview *self;
-struct lset *ls;
+void lsetview__SetDataObject(struct lsetview *self, struct lset *ls)
 {
     self->revision = ls->revision;
    if(Data(self) != ls) super_SetDataObject(self,ls);
    self->mode = lsetview_NeedLink;
 }
 
-struct view *lsetview__Hit(self,action,x,y,numberOfClicks)
-struct lsetview *self;
-enum view_MouseAction action;
-long x, y, numberOfClicks;
+struct view *lsetview__Hit(struct lsetview *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
 long size;
 int pct;
@@ -239,9 +223,7 @@ struct view *vw;
 
     return((struct view *)self);
 }
-static objecttest(self,name,desiredname)
-register struct lsetview  *self;
-char *name,*desiredname;
+static objecttest(register struct lsetview *self, char *name, char *desiredname)
 {
     if(class_Load(name) == NULL){
         char foo[640];
@@ -257,31 +239,27 @@ char *name,*desiredname;
     }
     return(TRUE);
 }
-static lsetview_PlaceApplication(self)
-struct lsetview *self;
+static lsetview_PlaceApplication(struct lsetview *self)
 {
     if(self->child || self->mode == lsetview_IsSplit) return;
     Data(self)->application = TRUE;
     lsetview_PlaceView(self);
 }
-static lsetview_PlaceCel(self)
-struct lsetview *self;
+static lsetview_PlaceCel(struct lsetview *self)
 {
     if(self->child || self->mode == lsetview_IsSplit) return;
     Data(self)->application = CEL;
     lsetview_PlaceView(self);
 }
 
-static lsetview_PlaceValue(self)
-struct lsetview *self;
+static lsetview_PlaceValue(struct lsetview *self)
 {
     if(self->child || self->mode == lsetview_IsSplit) return;
     Data(self)->application = VALUE;
     self->promptforparameters = 1;
     lsetview_PlaceView(self);
 }
-static lsetview_DestroyView(self)
-struct lsetview *self;
+static lsetview_DestroyView(struct lsetview *self)
 {
     struct lset *ls = Data(self);
 /*    struct lpair *lp = (struct lpair *) self; */
@@ -310,8 +288,7 @@ struct lsetview *self;
         view_UnlinkTree(lp->obj[1]);
 */
 }
-static lsetview_PlaceView(self)
-struct lsetview *self;
+static lsetview_PlaceView(struct lsetview *self)
 {
 /* if(self->level == 0) return; */
 /* prompt for dataobject */
@@ -361,16 +338,14 @@ printf("Still in Place View\n");
 /*    if(makeview(self,ls) )  */
 	lset_NotifyObservers(ls,0);
 }
-lsetview_DeleteMode(self)
-struct lsetview *self;
+int lsetview_DeleteMode(struct lsetview *self)
 {
   self->mode = lsetview_Initialized;
     lsetview_WantUpdate(self,self);
     message_DisplayString(self, 0, "Click on lset to delete");
     DeleteMode = self;
 }
-lsetview_UnsplitParent(self)
-struct lsetview *self;
+int lsetview_UnsplitParent(struct lsetview *self)
 {
     struct lsetview *parent = (struct lsetview *) self->header.view.parent;
     if(self->child || self->mode == lsetview_IsSplit) return;
@@ -379,8 +354,7 @@ struct lsetview *self;
     }
 }
 
-lsetview_ReadView(self)
-struct lsetview *self;
+int lsetview_ReadView(struct lsetview *self)
 {
 /* prompt for dataobject */
 
@@ -404,10 +378,7 @@ struct lsetview *self;
     lsetview_ReadFile(self,thisFile,iname);
     fclose(thisFile);
 }
-void lsetview__ReadFile(self,thisFile,iname)
-struct lsetview *self;
-FILE *thisFile;
-char *iname;
+void lsetview__ReadFile(struct lsetview *self, FILE *thisFile, char *iname)
 {
     int objectID;
     char *objectName;
@@ -419,8 +390,7 @@ char *iname;
     if(ls->dobj != NULL) dataobject_Read(ls->dobj,thisFile,objectID);
     lset_NotifyObservers(ls,0);
 }
-lsetview_Paste(self)
-struct lsetview *self;
+int lsetview_Paste(struct lsetview *self)
 {
     FILE *pasteFile;
     if(self->child || self->mode == lsetview_IsSplit) return;
@@ -430,8 +400,7 @@ struct lsetview *self;
 
 }
 
-void lsetview__Update(self)
-struct lsetview *self;
+void lsetview__Update(struct lsetview *self)
 {
  /*   lsetview_RestoreGraphicsState(self); */
     struct lset *ls = Data(self);
@@ -496,10 +465,7 @@ struct lsetview *self;
        lsetview_PostCursor(self,&tr,self->cursor);
    }
 }
-void lsetview__FullUpdate(self,type,left,top,width,height)
-struct lsetview *self;
-enum view_UpdateType type;
-long left,top,width,height;
+void lsetview__FullUpdate(struct lsetview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     if(self->mode == lsetview_NeedLink)
 	dolink(self);
@@ -519,11 +485,8 @@ long left,top,width,height;
     }
     else lsetview_Update(self);
 }
-void lsetview__ObservedChanged(self, changed, value)
-    struct lsetview *self;
-    struct observable *changed;
-    long value;
-    {
+void lsetview__ObservedChanged(struct lsetview *self, struct observable *changed, long value)
+{
 	struct lset *ls = Data(self);
 	struct lpair *lp = (struct lpair *) self;
 	struct view *v;
@@ -577,8 +540,7 @@ void lsetview__ObservedChanged(self, changed, value)
 	    super_ObservedChanged(self, changed, value);
 	}
     }
-boolean lsetview__Unsplit(self,who)
-struct lsetview *self,*who;
+boolean lsetview__Unsplit(struct lsetview *self, struct lsetview *who)
 {
     struct lpair *lp ;
     struct lsetview *saved;
@@ -634,8 +596,7 @@ struct lsetview *self,*who;
     */
    
 }
-void lsetview__ReceiveInputFocus(self)
-struct lsetview *self;
+void lsetview__ReceiveInputFocus(struct lsetview *self)
 {
     if(self->child){
 	view_WantInputFocus(self->child,self->child);
@@ -653,18 +614,14 @@ struct lsetview *self;
     lsetview_WantUpdate(self,self);
 
 }
-void lsetview__LoseInputFocus(self)
-struct lsetview *self;
+void lsetview__LoseInputFocus(struct lsetview *self)
 {
 self->HasFocus = 0;
 if(self->mode == lsetview_MakeVert || self->mode == lsetview_MakeHorz)
     self->mode = lsetview_Initialized;
 lsetview_WantUpdate(self,self);
 }
-boolean lsetview__InitializeObject(classID, self)
-    struct classheader *classID;
-struct lsetview *self;
-
+boolean lsetview__InitializeObject(struct classheader *classID, struct lsetview *self)
 {
     self->HasFocus = 0;
     self->mode = lsetview_UnInitialized;
@@ -679,39 +636,32 @@ struct lsetview *self;
     DeleteMode = NULL;
     return TRUE;
 }
-static void lsetview_SplitVert(self)
-struct lsetview *self;
+static void lsetview_SplitVert(struct lsetview *self)
 {
 if(self->child || self->mode == lsetview_IsSplit) return;
 self->mode = lsetview_MakeHorz;
 lsetview_WantUpdate(self,self);
 }
-static void lsetview_SplitHorz(self)
-struct lsetview *self;
+static void lsetview_SplitHorz(struct lsetview *self)
 {
 if(self->child || self->mode == lsetview_IsSplit) return;
 self->mode = lsetview_MakeVert;
 lsetview_WantUpdate(self,self);
 }
 
-void lsetview__LinkTree(self, parent)
-struct lsetview *self;
-struct view *parent;
+void lsetview__LinkTree(struct lsetview *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if(self->child) 
 	view_LinkTree(self->child,self);
     if(self->mode == lsetview_NeedLink) dolink(self);
 }
-void lsetview__WantNewSize(self, requestor)
-    struct lsetview *self;
-    struct view *requestor;
+void lsetview__WantNewSize(struct lsetview *self, struct view *requestor)
 {
 	self->mode = lsetview_UpdateView;
 	lsetview_WantUpdate(self,self);
 }
-boolean lsetview__InitializeClass(classID)
-struct classheader *classID;
+boolean lsetview__InitializeClass(struct classheader *classID)
 {
     char *cmdString;
     struct proctable_Entry *tempProc;
@@ -754,26 +704,18 @@ struct classheader *classID;
     menulist_AddToML(newMenus,"lset,Split Vertically~10",tempProc,NULL,0);
     return TRUE;
 }
-void lsetview__InitChildren(self)
-struct lsetview *self;
+void lsetview__InitChildren(struct lsetview *self)
 {
     if(self->child) 
 	view_InitChildren(self->child);
     else     super_InitChildren(self);
 
 }
-boolean lsetview__CanView(self,TypeName)
-struct lsetview *self;
-char *TypeName;
+boolean lsetview__CanView(struct lsetview *self, char *TypeName)
 {
     return class_IsTypeByName(TypeName,"lset");
 }
-void lsetview__Print(self, file, processor, finalFormat, topLevel)
-struct lsetview *self;
-FILE *file;
-char *processor;
-char *finalFormat;
-boolean topLevel;
+void lsetview__Print(struct lsetview *self, FILE *file, char *processor, char *finalFormat, boolean topLevel)
 {
     struct lpair *lself = (struct lpair *) self;
     if(self->child) 
@@ -785,9 +727,7 @@ boolean topLevel;
 	    view_Print(lself->obj[1] ,file, processor, finalFormat, topLevel);
     }
 }
-void lsetview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct lsetview *self;
+void lsetview__FinalizeObject(struct classheader *classID, struct lsetview *self)
 {
     if(self->menulist) menulist_Destroy(self->menulist);
     if(self->app){

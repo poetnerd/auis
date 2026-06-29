@@ -124,6 +124,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <sys/sysinfo.h>
 
 
+#include <stdlib.h>
 /*
  * The following information is from manual
  * "Managing the AIX Operating System" SC23-2008.

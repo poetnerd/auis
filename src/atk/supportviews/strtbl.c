@@ -50,6 +50,8 @@ deferred:
 #include <class.h>
 #include <strtbl.eh>
 
+#include <stdlib.h>
+#include <stdio.h>
 #define MAXFILELINE 255
 
 
@@ -187,10 +189,7 @@ SetIthBit(self, i, val)
 	}
 }
 
-short stringtbl__GetEntryOfString(self, s, startIndex)
-	register struct stringtbl *self;
-	register char *s;
-	short startIndex;
+short stringtbl__GetEntryOfString(register struct stringtbl *self, register char *s, short startIndex)
 {
 	register short i;
 
@@ -380,8 +379,7 @@ stringtbl__GetStringOfEntry(self, accnum)
 }
 
 
-char *stringtbl__ViewName(self)
-struct stringtbl *self;
+char *stringtbl__ViewName(struct stringtbl *self)
 {
     return ("strtblview");
 }

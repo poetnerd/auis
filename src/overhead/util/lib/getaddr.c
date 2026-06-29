@@ -88,9 +88,7 @@ unsigned long getaddr ()
 #ifdef TESTINGONLYTESTING
 #include <stdio.h>
 #include <arpa/inet.h>
-main(argc,argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
   struct in_addr a;
 

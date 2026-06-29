@@ -38,12 +38,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h> /* sys/types.h sys/file.h */
 #include <stdio.h>
 #ifndef NeXT
-#ifndef sys_sun4_51
-#ifndef sys_darwin
+#ifndef sys_darwin#ifndef sys_sun4_51
 #include <a.out.h>
-#endif /* sys_darwin */
 #endif /* sys_sun4_51 */
-#endif
+#endif /* sys_darwin */#endif
 #include <setjmp.h>
 #include <signal.h>
 #include <sys/param.h>
@@ -56,6 +54,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <doload.h>
 #include <errno.h>
 
+#include <stdlib.h>
 /* external symbols that have no include files */
 
 
@@ -70,9 +69,9 @@ extern char _etext;
 #define etext _etext
 #else
 extern char etext;
-#endif
+#endif /* _IBMR2 */
 
-static int pathopen(char *aname, char *tname, char *ext, unsigned long version);
+static int pathopen();
 
 /*
  * additional defined constants
@@ -142,7 +141,7 @@ static struct pathentry *globalPath = NULL;
  **/
 
 
-static int FindEntryByType(struct classinfo * info)
+static int FindEntryByType(struct classinfo *info)
 {
     int i;
 
@@ -152,7 +151,7 @@ static int FindEntryByType(struct classinfo * info)
     return -1;
 }
 
-static int FindEntryByName(char * name)
+static int FindEntryByName(char *name)
 {
     int i;
 
@@ -163,7 +162,7 @@ static int FindEntryByName(char * name)
     return -1;
 }
 
-static int FindEntry(char * name, unsigned long version, int load, struct classheader * header)
+static int FindEntry(char *name, unsigned long version, int load, struct classheader *header)
 {
     int i;
     int returncode;
@@ -254,7 +253,7 @@ static int FindEntry(char * name, unsigned long version, int load, struct classh
 }
 
 
-char *class_Lookup(struct classheader * header, int cpindex)
+char *class_Lookup(struct classheader *header, int cpindex)
 {
     int index;
 
@@ -269,7 +268,7 @@ char *class_Lookup(struct classheader * header, int cpindex)
     }
 }
 
-int class_EnterInfo(struct classinfo * info, char * name, struct classinfo *(*proc)(), char * base, char * namekey)
+int class_EnterInfo(struct classinfo *info, char *name, struct classinfo *(*proc)(), char *base, char *namekey)
 {
     int i;
 
@@ -296,7 +295,7 @@ int class_EnterInfo(struct classinfo * info, char * name, struct classinfo *(*pr
     return i;
 }
 
-struct basicobject *class_NewObject(char * name)
+struct basicobject *class_NewObject(char *name)
 {
     int index;
     
@@ -307,7 +306,7 @@ struct basicobject *class_NewObject(char * name)
     return NULL;
 }
 
-struct classinfo *class_Load(char * name)
+struct classinfo *class_Load(char *name)
 {
     int infoIndex;
 
@@ -318,7 +317,7 @@ struct classinfo *class_Load(char * name)
         return NULL;
 }
 
-boolean class_IsLoaded(char * name)
+boolean class_IsLoaded(char *name)
 {
     unknownID.name = name;
     return (FindEntry(name, class_VERSIONNOTKNOWN, NOLOAD, &unknownID) != -1);
@@ -344,7 +343,7 @@ boolean class_IsType(struct basicobject *testobject, struct basicobject *typeobj
     return FALSE;
 }
 
-boolean class_IsTypeByName(char * testname, char * typename)
+boolean class_IsTypeByName(char *testname, char *typename)
 {
     struct classinfo *testinfo;
     long index;
@@ -383,7 +382,7 @@ FILE *file;  {
 }
 
 /* support for the dynamic loading code */
-static int pathopen(char * aname, char * tname, char * ext, unsigned long version)
+static int pathopen(char *aname, char *tname, char *ext, unsigned long version)
 {
 char * ThisPath;
 int fn;
@@ -408,7 +407,7 @@ int fn;
 }
 
 /* adds the given colon-separated pathlist onto the FRONT of globalPath */
-void class_PrependClassPath(char * path)
+void class_PrependClassPath(char *path)
 {
     char *p;
 
@@ -451,7 +450,7 @@ void class_PrependClassPath(char * path)
 
 
 /* set up the mapping tables */
-void class_ProcessClassPath(char * path)
+void class_ProcessClassPath(char *path)
 {
     char *p;
     struct pathentry * ThisPath;
@@ -601,7 +600,7 @@ static SignalHandlerReturnType class_ErrorHandler();
  ** already running free all the allocated space,
  ** close files, etc. before reinitializing system.
  **/
-class_ErrorType class_Init(char * defaultPath)
+class_ErrorType class_Init(char *defaultPath)
 {
     char *envString;
 
@@ -656,7 +655,7 @@ class_DebugLevelType class_GetDebugLevel()
  ** Set and Get the search path for loading 
  ** objects.
  **/
-class_ErrorType class_SetClassPath(char * path)
+class_ErrorType class_SetClassPath(char *path)
 {
     struct pathentry *pe=globalPath;
 
@@ -694,7 +693,7 @@ class_GetClassPath()
 /**
  **  Print the headings for a class runtime dump.
  **/
-void class_DumpClassEntry(FILE * file, int index)
+void class_DumpClassEntry(FILE *file, int index)
 {
 struct classinfo *ThisEntry;
 
@@ -735,7 +734,7 @@ struct classinfo *ThisEntry;
 /**
  **  Dump the information about all the registered classes to file.
  **/
-void class_DumpAllClassInfo(FILE * file)
+void class_DumpAllClassInfo(FILE *file)
 {
 int i;	/* used to cycle through the list of classes */
 
@@ -772,7 +771,7 @@ int i;	/* used to cycle through the list of classes */
  ** search path, the entries, then some stats about the 
  ** hash table that holds the entries.
  **/
-void class_DumpMappingTableInfo(FILE * file)
+void class_DumpMappingTableInfo(FILE *file)
 {
     /* print a heading */
     fprintf(file, "\n");
@@ -795,7 +794,7 @@ void class_DumpMappingTableInfo(FILE * file)
 /**
  **  Dump the information about this process
  **/
-void class_DumpAllInfo(FILE * file)
+void class_DumpAllInfo(FILE *file)
 {
     /* print a heading */
     fprintf(file, "\n\n");
@@ -878,7 +877,7 @@ void *class_GetEText()
  ** loaded objects.  This value of NULL is set up in
  ** the class_EnterInfo() routine.
  **/
-void *class_GetTextBase(struct classinfo * thisclass)
+void *class_GetTextBase(struct classinfo *thisclass)
 {
     return (thisclass->textbase);
 }
@@ -891,7 +890,7 @@ void *class_GetTextBase(struct classinfo * thisclass)
  ** loaded objects.  This value of 0 is set up in
  ** the class_EnterInfo() routine.
  **/
-unsigned long class_GetTextLength(struct classinfo * thisclass)
+unsigned long class_GetTextLength(struct classinfo *thisclass)
 {
     return (thisclass->textlength);
 }

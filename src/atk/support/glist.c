@@ -39,9 +39,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
  */
 
 
-#include <andrewos.h>#include <class.h>
+#include <class.h>
 #include <glist.eh>
 
+#include <stdlib.h>
 #define newelt() (struct glistelt *) malloc(sizeof(struct glistelt))
 
 boolean glist__InitializeObject(struct classheader *classID, struct glist *self)

@@ -45,8 +45,7 @@ static struct keymap *ssmap;
 #include <menulist.ih>
 #include <metextv.eh>
 #define Text(A) ((struct mentertext *)(A->header.view.dataobject))
-void metextview_CancelCommand(self)
-register struct metextview *self; 
+void metextview_CancelCommand(register struct metextview *self)
 {
     struct mentertext *txt = Text(self);
     if(mentertext_Changed(txt)){
@@ -54,8 +53,7 @@ register struct metextview *self;
 	mentertext_NotifyObservers(txt,0);
     }
 }
-void metextview_ReturnCommand(self)
-register struct metextview *self; 
+void metextview_ReturnCommand(register struct metextview *self)
 {
     long np;
     char resp[64];
@@ -80,16 +78,14 @@ register struct metextview *self;
 	}
     }
 }
-void metextview_ClearCommand(self)
-register struct metextview *self; 
+void metextview_ClearCommand(register struct metextview *self)
 {
     struct mentertext *txt = Text(self);
     mentertext_Clear(txt);
     mentertext_NotifyObservers(txt,0);
 }
 
-void metextview__ReceiveInputFocus(self)
-register struct metextview *self; 
+void metextview__ReceiveInputFocus(register struct metextview *self)
 {
     self->header.textview.hasInputFocus = TRUE;
     self->keystate->next = NULL;
@@ -106,8 +102,7 @@ register struct metextview *self;
     menulist_SetMask(self->header.textview.menus, textview_NoMenus);
 /*    metextview_PostMenus(self,self->header.textview.menus); */
 }
-void metextview__LoseInputFocus(self)
-register struct metextview *self; 
+void metextview__LoseInputFocus(register struct metextview *self)
 {
     if(self->valueview)
 	valueview_Dehighlight(self->valueview);
@@ -116,9 +111,7 @@ register struct metextview *self;
     }
     super_LoseInputFocus(self);
 }
-boolean metextview__InitializeObject(classID,self)
-struct classheader *classID;
-struct metextview *self;
+boolean metextview__InitializeObject(struct classheader *classID, struct metextview *self)
 {
     self->keystate = keystate_Create(self, ssmap);
     self->ClearOnRIF = FALSE;
@@ -127,8 +120,7 @@ struct metextview *self;
     return TRUE;
 }
 
-boolean metextview__InitializeClass(classID)
-struct classheader *classID;
+boolean metextview__InitializeClass(struct classheader *classID)
 {    
     struct classinfo *classInfo = &metextview_classinfo;
     struct proctable_Entry *tempProc;
@@ -144,10 +136,7 @@ struct classheader *classID;
 */
     return TRUE;
 }
-void metextview__ObservedChanged(self,changed,value)
-register struct metextview *self;
-struct observable *changed;
-register long value;
+void metextview__ObservedChanged(register struct metextview *self, struct observable *changed, register long value)
 {
     super_ObservedChanged(self,changed,value);
     if(value != observable_OBJECTDESTROYED){

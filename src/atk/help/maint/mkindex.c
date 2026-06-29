@@ -45,6 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <sys/stat.h>
 #include <index.h>
 
+#include <stdlib.h>
 static char *prog;		/* our name */
 static int verbose = 0;
 static int action = 1;
@@ -53,8 +54,7 @@ static int action = 1;
 /*
  * lowercases's a string.
  */
-static char *LowerCase(astring)
-register char *astring;
+static char *LowerCase(register char *astring)
 {
     register char *tp = astring;
 
@@ -68,9 +68,7 @@ register char *astring;
 }
 
 
-void AddPrimary(newIndex, key, path)
-struct Index *newIndex;
-char *key, *path;
+void AddPrimary(struct Index *newIndex, char *key, char *path)
 {
     char *ap=CURRENTANDREWDIR;
     int alen=strlen(ap);
@@ -83,9 +81,7 @@ char *key, *path;
     
 }
 
-static BuildIndex(aindex, srcDirName, targetDirName)
-char *srcDirName, *targetDirName;
-register struct Index *aindex;
+static BuildIndex(register struct Index *aindex, char *srcDirName, char *targetDirName)
 {
     register DIR *srcDir;
     register DIRENT_TYPE *sde;
@@ -166,9 +162,7 @@ void show_usage()
 
 
 
-main(argc, argv)
-int argc;
-register char **argv;
+int main(int argc, register char **argv)
 {
     struct Index *newIndex;
     long code, lineNo[FSSIZE];

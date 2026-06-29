@@ -33,6 +33,7 @@ extern int doload_trace;
 
 #include <../common/entrydefs.h>
 
+#include <stdio.h>
 /*    return (void*) ((long(*)())((classinfo_addr->procs->routines[(num)]))) \
       (cl,(void*)((long(*)())((classinfo_addr->procs->routines[0]))) (cl,cl->versionnumber), lp1, lp2, lp3, lp4, lp5, lp6, lp7, lp8) ; \*/
 /*    return (void*) ((long(*)())((classinfo_addr->procs->routines[(num)]))) (header_addr, lp1, lp2, lp3, lp4, lp5, lp6, lp7, lp8, lp9, lp10) ; */

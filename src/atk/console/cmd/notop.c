@@ -59,45 +59,35 @@ char EXTENSION2[] = "Console";
 
 
 
-ChooseColumns(numcol)
-    int numcol;
+int ChooseColumns(int numcol)
 {
     mydbg(("entering: ChooseColumns\n"));
 }
 
-ChooseMachines(self, machinelist)
-struct consoleClass *self;
-    char *machinelist;
+int ChooseMachines(struct consoleClass *self, char *machinelist)
 {
     mydbg(("entering: ChooseMachines\n"));
 }
 
-ConfigureMachines(self, Rows, Columns, Machines, Initialize)
-struct consoleClass *self;
-    int *Rows, *Columns, *Machines;
-    boolean Initialize;
+int ConfigureMachines(struct consoleClass *self, int *Rows, int *Columns, int *Machines, boolean Initialize)
 {
     mydbg(("entering: ConfigureMachines\n"));
     *Rows = *Columns = *Machines = 1;
 }
 
-struct datum *BuildDatum(keyword, machine)
-    char *keyword;
-    int machine;
+struct datum *BuildDatum(char *keyword, int machine)
 {
     mydbg(("entering: BuildDatum\n"));
     return(&Numbers[ALWAYS]);
 }
 
-OneTimeRemoteInit(self)
-    struct consoleClass *self;
+int OneTimeRemoteInit(struct consoleClass *self)
 {
     mydbg(("entering: OneTimeRemoteInit\n"));
     /* Does nothing if not operator console */
 }
 
-InitializeGetStats(self)
-    struct consoleClass *self;
+int InitializeGetStats(struct consoleClass *self)
 {
     static boolean DidInitDisks = FALSE;
     if ((DoVMStat && ! DidInitGVM) || (DoDiskFreeStat && !DidInitDisks)){
@@ -108,8 +98,7 @@ InitializeGetStats(self)
 
 }
 
-InitializeInstruments(self)
-    struct consoleClass *self;
+int InitializeInstruments(struct consoleClass *self)
 {
     static boolean DidInitMail = FALSE, DidInitDirs = FALSE, DidInitPrint = FALSE;
 
@@ -136,8 +125,7 @@ InitializeInstruments(self)
     }
 }
 
-struct RegionLog *WhichErrorLog(i)
-    int i;
+struct RegionLog *WhichErrorLog(int i)
 {
     mydbg(("entering: WhichErrorLog\n"));
     return &RegionLogs[ERRORREGIONLOG];
