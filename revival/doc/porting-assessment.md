@@ -19,6 +19,44 @@ local customization. imake still exists in most distributions
 (package `xutils-dev` on Debian/Ubuntu). A CMake or plain Makefile
 migration might be worthwhile eventually but isn't necessary to get started.
 
+## Strategic decision: compiler leniency over wholesale modernization
+
+Early in the revival, we tried mass-converting the K&R C source to ANSI C
+(explicit prototypes, typed parameters) using an automated tool
+(`revival/tools/modernize`). This was unreliable at scale — edge cases
+in K&R parsing (multi-name declarations, function pointers, split-line
+definitions) caused the tool to silently introduce bugs across hundreds
+of files. A single mass-modernization pass took the error count from
+roughly zero to over 2000.
+
+The working strategy instead: **leave the K&R source untouched and use
+compiler flags to relax modern clang/gcc's strict defaults** back to
+behavior compatible with 1990s C compilers:
+
+```
+COMPILERFLAGS = -Wno-implicit-int -Wno-implicit-function-declaration \
+                -Wno-incompatible-function-pointer-types
+```
+
+This took the build from ~1062 errors (after the modernizer revert) down
+to ~344 — and critically, those 344 are *real* portability problems
+(`sys_errlist` removed from libc, `Display`/`FILE` struct internals
+hidden by modern headers) rather than self-inflicted tool damage.
+
+**Current policy:** Do not run the modernizer across the tree. Only
+hand-edit or modernize a file when:
+- Build forces it (a structural incompatibility, e.g. `<a.out.h>`
+  doesn't exist on Darwin) — fix narrowly, not wholesale
+- We are touching that file for an unrelated reason anyway
+
+**Follow-on effort (not now):** A deliberate, careful pass to bring the
+codebase to full ANSI/POSIX C — once the system builds and runs, with
+test coverage or working application behavior to validate against. At
+that point, modernizing one file at a time with a working build to test
+against is much safer than modernizing blind. The `modernize` tool
+remains useful for that future effort, but its bugs (see ROADMAP "Known
+limitations") should be fixed first.
+
 ## Issues to address
 
 ### 1. `gcc -fwritable-strings` (HIGH effort)
@@ -36,6 +74,12 @@ This implies such patterns exist throughout the codebase. Finding and
 fixing all instances is tedious but mechanical — change string literals
 to `char[]` arrays or allocate writable copies. A modern compiler will
 warn or crash on the unfixed ones, so they're findable.
+
+This is one of the few K&R-era issues compiler flags cannot paper over —
+writing into a string literal is undefined behavior, not just a stricter
+diagnostic. Per the strategic decision above, defer fixing this broadly;
+address it only in files we touch for other reasons, until the follow-on
+ANSI/POSIX modernization effort.
 
 ### 2. glibc `FILE` struct internals (LOW effort)
 
