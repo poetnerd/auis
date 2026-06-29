@@ -38,7 +38,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <util.h>
 
-#include <stdlib.h>
 #define boolean short
 #define FALSE 0
 #define TRUE 1
@@ -49,7 +48,8 @@ char ProgramName[100]="pf";
 #define DIE(str) (fprintf(stderr,str),exit(-1))
 #define USAGE "Usage: pref [-p programname] [-sbi] preferencename [default|value]\n"
 
-boolean atob(char *str)
+boolean atob(str)
+char *str;
 {
     int i;
     static struct keys {
@@ -74,7 +74,9 @@ boolean atob(char *str)
     return FALSE;
 }
 
-int main(int argc, char **argv)
+main(argc,argv)
+int argc;
+char **argv;
 {
     char *name,*def = NULL;
     boolean boolVal=FALSE, intVal=FALSE, set=FALSE;

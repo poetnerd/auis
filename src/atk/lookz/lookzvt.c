@@ -85,10 +85,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/look
 #include <updlist.ih>
 #include <bind.ih>
 
-#include <stdlib.h>
 #undef class_StaticEntriesOnly
 
-int printdata(register struct lookz *dobj)
+printdata(dobj)
+	register struct lookz *dobj;
 {
 	printf("Image is %s\n", (lookz_GetVisibility(dobj) ? "visible" : "hidden"));
 	fflush(stdout);
@@ -123,7 +123,9 @@ findDefine(f)
 	}
 }
 
-int main(register int argc, register char **argv)
+main( argc, argv )
+	register int	  argc;
+	register char  **argv;
 {
 	register struct lookz *dobj;
 	register struct lookzview *dview;

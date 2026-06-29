@@ -61,8 +61,6 @@ static char *rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/syn
 
 #include <andrewos.h>
 
-#include <stdlib.h>
-#include <stdio.h>
 /*****************************************************************************\
  *
  * CLASS CONSTANTS
@@ -121,7 +119,10 @@ unsigned char *name;
 }
 
 static struct sym**
-int lookup(char *name, long scope, boolean *found)
+lookup(name, scope, found)
+char *name;
+long scope;
+boolean *found;
 {
     register struct sym **s, **start = table+hash(name);
 
@@ -148,7 +149,10 @@ int lookup(char *name, long scope, boolean *found)
 }
 
 static struct sym**
-int lookupInScope(char *name, long scope, boolean *found)
+lookupInScope(name, scope, found)
+char *name;
+long scope;
+boolean *found;
 {
     register struct sym **s;
 
@@ -245,7 +249,9 @@ sym_ScopeType scope;
 \*****************************************************************************/
 
 sym_ScopeType
-int sym__NewScope(struct classhdr *ClassID, sym_ScopeType scope)
+sym__NewScope(ClassID, scope)
+struct classhdr *ClassID;
+sym_ScopeType scope;
 {
     long new = nextFreeScope;
 
@@ -291,14 +297,20 @@ sym_ScopeType scope;
 }
 
 sym_ScopeType
-int sym__ParentScope(struct classhdr *ClassID, sym_ScopeType scope)
+sym__ParentScope(ClassID, scope)
+struct classhdr *ClassID;
+sym_ScopeType scope;
 {
 	return enclosingScope[scope];
 }
 
 
 struct sym*
-int sym__Define(struct classhdr *ClassID, char *name, struct sym *proto, sym_ScopeType scope)
+sym__Define(ClassID, name, proto, scope)
+struct classhdr *ClassID;
+char *name;
+struct sym *proto;
+sym_ScopeType scope;
 {
     boolean found;
     struct sym *newSym, **loc;
@@ -350,7 +362,10 @@ sym_ScopeType scope;
 
 
 struct sym*
-int sym__Find(struct classhdr *ClassID, char *name, sym_ScopeType scope)
+sym__Find(ClassID, name, scope)
+struct classhdr *ClassID;
+char *name;
+sym_ScopeType scope;
 {
     boolean found;
     struct sym **loc = lookup(name, scope, &found);
@@ -362,7 +377,12 @@ int sym__Find(struct classhdr *ClassID, char *name, sym_ScopeType scope)
 }
 
 struct sym*
-int sym__Locate(struct classhdr *ClassID, char *name, struct sym *proto, sym_ScopeType scope, boolean *new)
+sym__Locate(ClassID, name, proto, scope, new)
+struct classhdr *ClassID;
+char *name;
+struct sym *proto;
+sym_ScopeType scope;
+boolean *new;
 {
     boolean found;
     struct sym *newSym, **loc;
@@ -498,7 +518,8 @@ struct classhdr *ClassID;
 }
 
 
-int printdata(struct sym *self)
+printdata(self)
+struct sym *self;
 {
     if (self == NULL)
 	printf("NULL\n");

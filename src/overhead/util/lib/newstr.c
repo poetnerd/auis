@@ -1,4 +1,3 @@
-#include <stdlib.h>
 /* ********************************************************************** *\
  *         Copyright IBM Corporation 1988,1991 - All Rights Reserved      *
  *        For full copyright information see:'andrew/config/COPYRITE'     *
@@ -42,9 +41,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h>		/* strings.h */
 
 #ifndef _IBMR2
+extern char *malloc();
 #endif /* _IBMR2 */
 
-char *NewString(char *srcptr)
+char *NewString(srcptr)
+char *srcptr;
 {
     /* Allocate a buffer long enough to hold the argument string, copy the string to that buffer, and return the pointer to the new buffer. */
     char *NewP;

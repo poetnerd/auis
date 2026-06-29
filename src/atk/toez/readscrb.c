@@ -174,8 +174,6 @@ with passthru set.
 
 
 
-#include <string.h>
-#include <stdlib.h>
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 static struct text *ScribeDoc = NULL;	/* has Scribe.tpl */
@@ -292,13 +290,17 @@ Error0(msg)
 Error1(msg, a) 
 	char *msg, *a; 
 {	sprintf (ErrBuf, msg, a);   Error();   }
-int Error2(char *msg, char *a, char *b)
+Error2(msg, a, b) 
+	char *msg, *a, *b; 
 {	sprintf (ErrBuf, msg, a, b);   Error();   }
-int Error3(char *msg, char *a, char *b, char *c)
+Error3(msg, a, b, c) 
+	char *msg, *a, *b, *c; 
 {	sprintf (ErrBuf, msg, a, b, c);   Error();   }
-int Error4(char *msg, char *a, char *b, char *c, char *d)
+Error4(msg, a, b, c, d) 
+	char *msg, *a, *b, *c, *d; 
 {	sprintf (ErrBuf, msg, a, b, c, d);   Error();   }
-int Error5(char *msg, char *a, char *b, char *c, char *d, char *e)
+Error5(msg, a, b, c, d, e) 
+	char *msg, *a, *b, *c, *d, *e; 
 {	sprintf (ErrBuf, msg, a, b, c, d, e);   Error();   }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

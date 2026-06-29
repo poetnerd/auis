@@ -52,8 +52,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #define AUXMODULE 1
 #include <textv.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 #define DELETE_NOSTYLES 0
 #define DELETE_LEFT 1
 #define DELETE_RIGHT 2
@@ -78,7 +76,10 @@ static long flipEndMax = 0;
 struct mark *insertMark = NULL;
 
 
-void textview__PrepareDeletion(struct textview *self, long pos, long len)
+void textview__PrepareDeletion(self, pos, len)
+struct textview *self;
+long pos;
+long len;
 {
     struct environment *env;
     long envPos;
@@ -160,7 +161,8 @@ void textview__PrepareDeletion(struct textview *self, long pos, long len)
     }
 }
 
-void textview__FinishDeletion(struct textview *self)
+void textview__FinishDeletion(self)
+struct textview *self;
 {
     struct text *d = Text(self);
     struct environment *env;
@@ -188,7 +190,10 @@ void textview__FinishDeletion(struct textview *self)
     mark_SetModified(self->insertEnvMark, FALSE);
 }
 
-void textview__DeleteCharacters(struct textview *self, long pos, long len)
+void textview__DeleteCharacters(self, pos, len)
+struct textview *self;
+long pos;
+long len;
 {
     if (len != 0) {
 	textview_PrepareDeletion(self, pos, len);
@@ -203,7 +208,11 @@ void textview__DeleteCharacters(struct textview *self, long pos, long len)
     }
 }
 
-static struct environment *AddNewEnvironment(struct textview *self, struct stylesheet *ss, struct environment *env, struct InsertStack *insert)
+static struct environment *AddNewEnvironment(self, ss, env, insert)
+struct textview *self;
+struct stylesheet *ss;
+struct environment *env;
+struct InsertStack *insert;
 {
     struct style *style = NULL;
     struct environment *newEnv;
@@ -229,7 +238,8 @@ static struct environment *AddNewEnvironment(struct textview *self, struct style
     return newEnv;
 }
 
-void textview__FinishInsertion(struct textview *self)
+void textview__FinishInsertion(self)
+struct textview *self;
 {
     long i;
     long pos;
@@ -263,7 +273,9 @@ void textview__FinishInsertion(struct textview *self)
     
 }
 
-static void PushFlipBegEnv(struct environment *te, boolean value)
+static void PushFlipBegEnv(te, value)
+struct environment *te;
+boolean value;
 {
     if (flipBegCnt >= flipBegMax) {
 	    flipBegMax = flipBegCnt * 2;
@@ -273,7 +285,9 @@ static void PushFlipBegEnv(struct environment *te, boolean value)
     te->header.nestedmark.includeBeginning = value;
 }
 
-static void PushFlipEndEnv(struct environment *te, boolean value)
+static void PushFlipEndEnv(te, value)
+struct environment *te;
+boolean value;
 {
     if (flipEndCnt >= flipEndMax) {
 	    flipEndMax = flipEndCnt * 2;
@@ -283,7 +297,10 @@ static void PushFlipEndEnv(struct environment *te, boolean value)
     te->header.nestedmark.includeEnding = value;
 }
 
-static void SetBeginningDown(struct textview *self, struct environment *te, long pos)
+static void SetBeginningDown(self, te, pos)
+struct textview *self;
+struct environment *te;
+long pos;
 {
     while ((te = environment_GetChild(te, pos)) != NULL && te->type == environment_Style) {
 	if (te->header.nestedmark.includeBeginning && environment_Eval(te) == pos) {
@@ -292,7 +309,10 @@ static void SetBeginningDown(struct textview *self, struct environment *te, long
     }
 }
 
-static void SetEndingDown(struct textview *self, struct environment *te, long pos)
+static void SetEndingDown(self, te, pos)
+struct textview *self;
+struct environment *te;
+long pos;
 {
     long endPos;
 
@@ -307,7 +327,9 @@ static void SetEndingDown(struct textview *self, struct environment *te, long po
     }
 }
 
-void textview__PrepareInsertion(struct textview *self, boolean insertingNewLine)
+void textview__PrepareInsertion(self, insertingNewLine)
+struct textview *self;
+boolean insertingNewLine;
 {
     long pos = textview_GetDotPosition(self) + textview_GetDotLength(self);
     long ePos;
@@ -391,7 +413,9 @@ void textview__PrepareInsertion(struct textview *self, boolean insertingNewLine)
     }
 }
 
-struct environment *textview__GetEnclosingEnvironment(struct textview *self, long pos)
+struct environment *textview__GetEnclosingEnvironment(self, pos)
+struct textview *self;
+long pos;
 {
     struct environment *te;
     long lastCmd = im_GetLastCmd(self->header.view.imPtr);
@@ -417,7 +441,9 @@ struct environment *textview__GetEnclosingEnvironment(struct textview *self, lon
     return te;
 }
 
-struct environment *textview__GetInsertEnvironment(struct textview *self, long pos)
+struct environment *textview__GetInsertEnvironment(self, pos)
+struct textview *self;
+long pos;
 {
     struct environment *te;
     long lastCmd = im_GetLastCmd(self->header.view.imPtr);
@@ -435,7 +461,8 @@ struct environment *textview__GetInsertEnvironment(struct textview *self, long p
     return te;
 }
 
-void textview__ClearInsertStack(struct textview *self)
+void textview__ClearInsertStack(self)
+struct textview *self;
 {
     while (self->insertStack != NULL) {
 	struct InsertStack *p;
@@ -448,7 +475,8 @@ void textview__ClearInsertStack(struct textview *self)
     }
 }
 
-void textview__PopInsertStack(struct textview *self)
+void textview__PopInsertStack(self)
+struct textview *self;
 {
     if (self->insertStack != NULL) {
 	struct InsertStack *p;
@@ -461,7 +489,9 @@ void textview__PopInsertStack(struct textview *self)
     }
 }
 
-void textview__AddStyleToInsertStack(struct textview *self, char *styleName)
+void textview__AddStyleToInsertStack(self, styleName)
+struct textview *self;
+char *styleName;
 {
     struct InsertStack *p;
 
@@ -478,7 +508,8 @@ void textview__AddStyleToInsertStack(struct textview *self, char *styleName)
     }
 }
 
-void textview__PlainInsertEnvironment(struct textview *self)
+void textview__PlainInsertEnvironment(self)
+struct textview *self;
 {
     struct text *d = Text(self);
     long pos;
@@ -498,7 +529,8 @@ void textview__PlainInsertEnvironment(struct textview *self)
 }
 
 
-void textview__UpInsertEnvironment(struct textview *self)
+void textview__UpInsertEnvironment(self)
+struct textview *self;
 {
     struct text *d = Text(self);
     long pos;
@@ -519,7 +551,8 @@ void textview__UpInsertEnvironment(struct textview *self)
     }
 }
 
-void textview__DownInsertEnvironment(struct textview *self)
+void textview__DownInsertEnvironment(self)
+struct textview *self;
 {
     struct environment *pe;
     struct environment *te;
@@ -554,7 +587,8 @@ void textview__DownInsertEnvironment(struct textview *self)
     }
 }
 
-void textview__LeftInsertEnvironment(struct textview *self)
+void textview__LeftInsertEnvironment(self)
+struct textview *self;
 {
     struct environment *te;
     struct environment *pe;
@@ -588,7 +622,8 @@ void textview__LeftInsertEnvironment(struct textview *self)
     self->insertEnvironment = te;
 }
 
-void textview__RightInsertEnvironment(struct textview *self)
+void textview__RightInsertEnvironment(self)
+struct textview *self;
 {
     struct environment *te;
     struct environment *pe;
@@ -625,7 +660,9 @@ void textview__RightInsertEnvironment(struct textview *self)
 /* This is no longer a command you can type;
  * it is now called from a menu item */
 
-void textview__LookCmd(register struct textview *self, int look)
+void textview__LookCmd(self, look)
+register struct textview *self;
+int look;
 {
     register struct text *d;
     struct stylesheet *ss;
@@ -649,7 +686,9 @@ void textview__LookCmd(register struct textview *self, int look)
     message_DisplayString(self, 0, "Sorry; can't add style.");
 }
 
-void textview_PlainerCmd(register struct textview *self, char *type)
+void textview_PlainerCmd(self, type)
+register struct textview *self;
+char *type;
 {
     register struct text *d;
     register struct environment *env;
@@ -694,7 +733,8 @@ void textview_PlainerCmd(register struct textview *self, char *type)
     text_NotifyObservers(d, observable_OBJECTCHANGED);
 }
 
-void textview_PlainestCmd(register struct textview *self)
+void textview_PlainestCmd(self)
+register struct textview *self;
 {
     register struct text *d;
     int pos, len;
@@ -719,7 +759,8 @@ void textview_PlainestCmd(register struct textview *self)
 
 /* Inserts a lookz view in front of the current paragraph. */
 
-void textview_ExposeStyleEditor(struct textview *self)
+void textview_ExposeStyleEditor(self)
+struct textview *self;
 {
     register int pos;
     register struct text *d;
@@ -754,7 +795,8 @@ void textview_ExposeStyleEditor(struct textview *self)
 
 #define SHOWSIZE 250
 
-void textview_ShowStylesCmd(register struct textview *self)
+void textview_ShowStylesCmd(self)
+register struct textview *self;
 {
     char tbuf[SHOWSIZE];
     register char *tp;
@@ -824,7 +866,8 @@ void textview_ShowStylesCmd(register struct textview *self)
 }
 
 
-void textview_ChangeTemplate(struct textview *self)
+void textview_ChangeTemplate(self)
+struct textview *self;
 {
     char tname[150];
     register struct text *d;
@@ -852,7 +895,8 @@ void textview_ChangeTemplate(struct textview *self)
 
 #define BADCURPOS -1
 
-void textview_ToggleExposeStyles(struct textview *self)
+void textview_ToggleExposeStyles(self)
+struct textview *self;
 {
     self->exposeStyles = ! self->exposeStyles;
     self->force = TRUE;
@@ -861,14 +905,16 @@ void textview_ToggleExposeStyles(struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_ToggleColorStyles(struct textview *self)
+void textview_ToggleColorStyles(self)
+struct textview *self;
 {
     self->showColorStyles = ! self->showColorStyles;
     self->force = TRUE;
     textview_WantUpdate(self, self);
 }
 
-static void DoDisplayInsertEnvironment(struct textview *self)
+static void DoDisplayInsertEnvironment(self)
+struct textview *self;
 {
     struct text *d = Text(self);
     char *p;
@@ -963,7 +1009,8 @@ static void DoDisplayInsertEnvironment(struct textview *self)
 #endif
 }
 
-void textview_DisplayInsertEnvironment(struct textview *self)
+void textview_DisplayInsertEnvironment(self)
+struct textview *self;
 {
     long pos;
 
@@ -980,7 +1027,8 @@ void textview_DisplayInsertEnvironment(struct textview *self)
 }
 
 
-void textview_PlainInsertEnvCmd(struct textview *self)
+void textview_PlainInsertEnvCmd(self)
+struct textview *self;
 {
     if (ConfirmReadOnly(self))
         return;
@@ -994,7 +1042,8 @@ void textview_PlainInsertEnvCmd(struct textview *self)
     DoDisplayInsertEnvironment(self);
 }
 
-void textview_UpInsertEnvironmentCmd(struct textview *self)
+void textview_UpInsertEnvironmentCmd(self)
+struct textview *self;
 {
     if (ConfirmReadOnly(self))
         return;
@@ -1008,7 +1057,8 @@ void textview_UpInsertEnvironmentCmd(struct textview *self)
     DoDisplayInsertEnvironment(self);
 }
 
-void textview_DownInsertEnvironmentCmd(struct textview *self)
+void textview_DownInsertEnvironmentCmd(self)
+struct textview *self;
 {
     if (ConfirmReadOnly(self))
         return;
@@ -1022,7 +1072,8 @@ void textview_DownInsertEnvironmentCmd(struct textview *self)
     DoDisplayInsertEnvironment(self);
 }
 
-void textview_LeftInsertEnvironmentCmd(struct textview *self)
+void textview_LeftInsertEnvironmentCmd(self)
+struct textview *self;
 {
     if (ConfirmReadOnly(self))
         return;
@@ -1036,7 +1087,8 @@ void textview_LeftInsertEnvironmentCmd(struct textview *self)
     DoDisplayInsertEnvironment(self);
 }
 
-void textview_RightInsertEnvCmd(struct textview *self)
+void textview_RightInsertEnvCmd(self)
+struct textview *self;
 {
     if (ConfirmReadOnly(self))
         return;
@@ -1050,7 +1102,9 @@ void textview_RightInsertEnvCmd(struct textview *self)
     DoDisplayInsertEnvironment(self);
 }
 
-static boolean StyleCompletionWork(struct style *style, struct result *data)
+static boolean StyleCompletionWork(style, data)
+struct style *style;
+struct result *data;
 {
     completion_CompletionWork(style_GetName(style), data);
     return FALSE;
@@ -1088,7 +1142,9 @@ struct helpData {
     long textRock;
 };
 
-static boolean StyleHelpWork(struct style *style, struct helpData *helpData)
+static boolean StyleHelpWork(style, helpData)
+struct style *style;
+struct helpData *helpData;
 {
     char infoBuffer[1024];
     char strippedMenuName[1000];
@@ -1123,7 +1179,11 @@ static boolean StyleHelpWork(struct style *style, struct helpData *helpData)
     return FALSE; /* Keep on enumerating. */
 }
 
-static void StyleHelp(char *partial, struct stylesheet *styleSheet, int (*helpTextFunction)(), long helpTextRock)
+static void StyleHelp(partial, styleSheet, helpTextFunction, helpTextRock)
+char *partial;
+struct stylesheet *styleSheet;
+int (*helpTextFunction)();
+long helpTextRock;
 {
     struct helpData helpData;
 
@@ -1134,7 +1194,9 @@ static void StyleHelp(char *partial, struct stylesheet *styleSheet, int (*helpTe
     stylesheet_EnumerateStyles(styleSheet, (procedure) StyleHelpWork, (long) &helpData);
 }
 
-void textview_InsertEnvironment(struct textview *self, char *sName)
+void textview_InsertEnvironment(self, sName)
+struct textview *self;
+char *sName;
 {
     struct text *d = Text(self);
     struct stylesheet *ss = text_GetStyleSheet(d);

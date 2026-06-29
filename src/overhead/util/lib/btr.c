@@ -49,16 +49,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #ifdef WHITEPAGES_ENV  /* avoid makedepend "errors" */
 #include <btint.h>
-#include <stdlib.h>
 #endif /* WHITEPAGES_ENV   */
 
+extern int errno;
 
 #ifndef _IBMR2
+extern char *malloc();
+extern char *realloc();
 #endif /* _IBMR2 */
 
 int br_Debugging = 0;
 
-int btr_SetDebugging(int level)
+int btr_SetDebugging(level)
+int level;
 {
     int OldLevel;
     OldLevel = br_Debugging;
@@ -66,7 +69,8 @@ int btr_SetDebugging(int level)
     return OldLevel;
 }
 
-unsigned short b_ReadNetShort(FILE *f)
+unsigned short b_ReadNetShort(f)
+FILE *f;
 {	/* Read an unsigned short from file ``f'' in network byte order. */
     unsigned short ns;
 
@@ -74,7 +78,8 @@ unsigned short b_ReadNetShort(FILE *f)
     return ((unsigned short) ntohs((short) ns));
 }
 
-unsigned long b_ReadNetLong(FILE *f)
+unsigned long b_ReadNetLong(f)
+FILE *f;
 {	/* Read an unsigned long from file ``f'' in network byte order. */
     unsigned long nl;
 
@@ -101,7 +106,10 @@ struct btFile *b_NewbtFileStr()
     return bF;
 }
 
-bt_ErrorCode b_ReadbtFile(struct btFile *bF, char *path, int WantLock)
+bt_ErrorCode b_ReadbtFile(bF, path, WantLock)
+struct btFile *bF;
+char *path;
+int WantLock;
 {
     int Res, MinHead, ErrVal;
 
@@ -192,7 +200,10 @@ bt_ErrorCode b_ReadbtFile(struct btFile *bF, char *path, int WantLock)
     return bterr_NoError;
 }
 
-bt_ErrorCode b_ScanNode(struct btFile *bF, unsigned char *Key, int *IdxIdxPtr, int *WasExactPtr, int *FlagsPtr)
+bt_ErrorCode b_ScanNode(bF, Key, IdxIdxPtr, WasExactPtr, FlagsPtr)
+struct btFile *bF;
+unsigned char *Key;
+int *IdxIdxPtr, *WasExactPtr, *FlagsPtr;
 {	/* Search the file *bF for the key Key.  Return via IdxIdx the index (in bF->Index) of the largest entry that is less than or equal to the given Key.  Return via WasExact whether the match was exact.  Return via Flags the flags for the matching entry. */
 
 #define	DFSiz	50	/* must be greater than 2 */
@@ -253,7 +264,8 @@ bt_ErrorCode b_ScanNode(struct btFile *bF, unsigned char *Key, int *IdxIdxPtr, i
     return bterr_NoError;
 }
 
-int b_FileIsRoot(struct btFile *bF)
+int b_FileIsRoot(bF)
+struct btFile *bF;
 {	/* Return our guess as to whether the given btFile is the root of a tree. */
 
     if (bF->Head.BTID1 == 0 && bF->Head.BTID2 == 0) return TRUE;
@@ -267,7 +279,9 @@ int b_FileIsRoot(struct btFile *bF)
 	    char *path;		path to target file name
 	      char *mode;		"r" for reading, "w" for read and update (so far)
 		  */
-bt_ErrorCode bt_Open(struct BTree **btptr, char *path, char *mode)
+bt_ErrorCode bt_Open(btptr, path, mode)
+struct BTree **btptr;
+char *path, *mode;
 {
     struct BTr *bt;
     struct btFile *bF;
@@ -294,7 +308,8 @@ bt_ErrorCode bt_Open(struct BTree **btptr, char *path, char *mode)
     return bterr_NoError;
 }
 
-bt_ErrorCode b_DecrRefCount(struct btFile **bFPtr)
+bt_ErrorCode b_DecrRefCount(bFPtr)
+struct btFile **bFPtr;
 {	/* Decrement the reference count on the given file, deleting the file if the count hits zero. */
     int Res;
     struct btFile *bF = *bFPtr;
@@ -310,7 +325,9 @@ bt_ErrorCode b_DecrRefCount(struct btFile **bFPtr)
     return bterr_NoError;
 } 
 
-bt_ErrorCode b_StoreFilePtr(struct btFile **bFPtrLoc, struct btFile *NewPtrVal)
+bt_ErrorCode b_StoreFilePtr(bFPtrLoc, NewPtrVal)
+struct btFile **bFPtrLoc;
+struct btFile *NewPtrVal;
 {/* Assign NewPtrVal to bFPtrLoc, handling reference counts */
     bt_ErrorCode RetVal;
 
@@ -333,7 +350,8 @@ bt_ErrorCode b_StoreFilePtr(struct btFile **bFPtrLoc, struct btFile *NewPtrVal)
   extern bt_ErrorCode bt_Close(btp);
   struct BTree *btp;		pointer to b-tree to close
     */
-bt_ErrorCode bt_Close(struct BTree *btp)
+bt_ErrorCode bt_Close(btp)
+struct BTree *btp;
 {
     struct BTr *bt = (struct BTr *) btp;		/* regain internal access */
     struct btC *bC, *bCNext;
@@ -353,7 +371,9 @@ bt_ErrorCode bt_Close(struct BTree *btp)
     return RetVal;
 }
 
-bt_ErrorCode b_GetFlags(struct btFile *bF, int Idx, int *FlagsPtr)
+bt_ErrorCode b_GetFlags(bF, Idx, FlagsPtr)
+struct btFile *bF;
+int Idx, *FlagsPtr;
 {
     int ThisByte;
 
@@ -368,7 +388,10 @@ bt_ErrorCode b_GetFlags(struct btFile *bF, int Idx, int *FlagsPtr)
     return bterr_NoError;
 }
 
-bt_ErrorCode b_GetValueLength(struct btFile *bF, int Idx, unsigned int *LenPtr)
+bt_ErrorCode b_GetValueLength(bF, Idx, LenPtr)
+struct btFile *bF;
+int Idx;
+unsigned int *LenPtr;
 {/* Get the number of bytes in the Value part of the Idx'th Key-Value pair in file bF.  Leave the bF's cursor pointing to the first Value byte. */
 
     unsigned short LenValue;
@@ -393,7 +416,9 @@ bt_ErrorCode b_GetValueLength(struct btFile *bF, int Idx, unsigned int *LenPtr)
   struct BTree *btp;
   struct btCursor **cursptr;
   */
-bt_ErrorCode bt_NewCursor(struct BTree *btp, struct btCursor **cursptr)
+bt_ErrorCode bt_NewCursor(btp, cursptr)
+struct BTree *btp;
+struct btCursor **cursptr;
 {
     struct BTr *bt = (struct BTr *) btp;
     struct btC *bC;
@@ -419,7 +444,8 @@ bt_ErrorCode bt_NewCursor(struct BTree *btp, struct btCursor **cursptr)
   extern bt_ErrorCode bt_FreeCursor(curs);
   struct btCursor *curs;
   */
-bt_ErrorCode bt_FreeCursor(struct btCursor *curs)
+bt_ErrorCode bt_FreeCursor(curs)
+struct btCursor *curs;
 {
     struct btC *bC = (struct btC *) curs;
     struct btC *Rover;
@@ -467,7 +493,9 @@ struct btCursor *curs;
     struct btCursor *curs;
     char *key;
     */
-bt_ErrorCode bt_Search(struct btCursor *curs, unsigned char *key)
+bt_ErrorCode bt_Search(curs, key)
+struct btCursor *curs;
+unsigned char *key;
 {
     struct btC *bC = (struct btC *) curs;
     int Idx, Exact, Flags, TreeDepth, RootNameLength, ThisByte;
@@ -549,7 +577,9 @@ bt_ErrorCode bt_Search(struct btCursor *curs, unsigned char *key)
   struct btCursor *curs;
   unsigned int *valueLen;
   */
-bt_ErrorCode bt_GetCursorValueLen(struct btCursor *curs, unsigned int *valueLen)
+bt_ErrorCode bt_GetCursorValueLen(curs, valueLen)
+struct btCursor *curs;
+unsigned int *valueLen;
 {
     struct btC *bC = (struct btC *) curs;
 
@@ -567,7 +597,10 @@ bt_ErrorCode bt_GetCursorValueLen(struct btCursor *curs, unsigned int *valueLen)
   char *valueLoc;
   unsigned int valueLocSize, *returnedLen;
   */
-bt_ErrorCode bt_GetCursorValueData(struct btCursor *curs, char *valueLoc, unsigned int valueLocSize, unsigned int *returnedLen)
+bt_ErrorCode bt_GetCursorValueData(curs, valueLoc, valueLocSize, returnedLen)
+struct btCursor *curs;
+char *valueLoc;
+unsigned int valueLocSize, *returnedLen;
 {
     struct btC *bC = (struct btC *) curs;
     bt_ErrorCode RetVal;

@@ -45,7 +45,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 
 #define DATA(self) ((struct prefval *)pvalcv_GetDataObject(self))
 
-boolean pvalcv__InitializeObject(struct classheader *classID, struct pvalcv *self)
+boolean pvalcv__InitializeObject(classID, self)
+struct classheader *classID;
+struct pvalcv *self;
 {
     struct sbutton *sb=pvalcv_GetSButton(self);
     sbutton_SetLabel(sb, 0, "      ");
@@ -53,12 +55,15 @@ boolean pvalcv__InitializeObject(struct classheader *classID, struct pvalcv *sel
     return TRUE;
 }
 
-void pvalcv__FinalizeObject(struct classheader *classID, struct pvalcv *self)
+void pvalcv__FinalizeObject(classID, self)
+struct classheader *classID;
+struct pvalcv *self;
 {
     /* the wrapv class takes care of destroying everything */
 }
 
-void pvalcv__UpdateSButton(struct pvalcv *self)
+void pvalcv__UpdateSButton(self)
+struct pvalcv *self;
 {
     struct sbutton *sb=pvalcv_GetSButton(self);
     char *ps=prefval_IndexValueString(DATA(self), 0);

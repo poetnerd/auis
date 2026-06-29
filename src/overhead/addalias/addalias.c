@@ -45,18 +45,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <errno.h>
 #include <andrewos.h>
 
-#include <stdlib.h>
 #define MAXLOCKTRIES 	15
 #define TEXTALLOCSTEP	5000
 #define LINESALLOCSTEP	200
 
 char *prog;
+extern int errno;
 
 #if !POSIX_ENV
 char *malloc(), *realloc();
 #endif
 
-int err(char *f, char *a, char *b)
+err(f,a,b)
+char *f,*a,*b;
 {
     char buf[1000];
     sprintf(buf,f,a,b);
@@ -65,7 +66,8 @@ int err(char *f, char *a, char *b)
     exit(10);
 }
 
-int syserr(char *f, char *a, char *b, char *c)
+syserr(f,a,b,c)
+char *f,*a,*b,*c;
 {
     char buf[1000];
 
@@ -81,12 +83,15 @@ int syserr(char *f, char *a, char *b, char *c)
     exit(9);
 }
 
-int qsLineCompare(char **l1, char **l2)
+qsLineCompare(l1,l2)
+char **l1, **l2;
 {
     return strcmp(*l1,*l2);
 }
 
-char **readFromLines(char *fromFile, int *numP)
+char **readFromLines(fromFile,numP)
+char *fromFile;
+int *numP;
 {
     FILE *fp;
     int fromLinesLen=0, fromLinesMax=LINESALLOCSTEP;
@@ -137,7 +142,8 @@ char **readFromLines(char *fromFile, int *numP)
     return fromLines;
 }
 
-int strcmpFirstField(char *s1, char *s2)
+int strcmpFirstField(s1,s2)
+char *s1, *s2;
 {
     while(*s1==*s2 && isgraph(*s1))
 	s1++, s2++;
@@ -150,7 +156,9 @@ int strcmpFirstField(char *s1, char *s2)
 	return *s1-*s2;
 }
 
-int main(int argc, char **argv)
+int main(argc,argv)
+int argc;
+char **argv;
 {
     int fd;
     FILE *newFp, *oldFp;

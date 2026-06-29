@@ -117,7 +117,9 @@ static double foreground_color[3],background_color[3];
 #define BUTTONPRESSDEPTH 2
 #define TEXTPAD 2
 
-static void frame_setShade(struct frame *self, int val)
+static void frame_setShade(self, val)
+struct frame *self;
+int val;			/* 0 - 200*/
 {
     double pct;
     if(val > 100){
@@ -173,7 +175,8 @@ GetProfileString (pref, defalt)
     return (p);
 }
 
-int frame_CacheSettings(struct frame *self)
+frame_CacheSettings(self)
+struct frame *self;
 {
     char *fgcolor, *bgcolor;
     unsigned char fg_rgb[3], bg_rgb[3];
@@ -203,7 +206,11 @@ int frame_CacheSettings(struct frame *self)
 			 &(background_color[2]));
     }
 }
-static void drawButton(struct frame *self, struct rectangle *rect, char *text, boolean pushed, boolean borderonly, boolean blit)
+static void drawButton(self,rect,text,pushed,borderonly,blit)
+struct frame * self;
+struct rectangle *rect;
+char *text;
+boolean pushed,borderonly,blit;
 {
 
     struct rectangle Rect2;
@@ -271,7 +278,8 @@ static void drawButton(struct frame *self, struct rectangle *rect, char *text, b
     }
 }
 
-static int CalculateLineHeight(struct frame *self)
+static int CalculateLineHeight(self)
+    struct frame *self;
 {
 
     struct style *defaultStyle;
@@ -291,7 +299,9 @@ static int CalculateLineHeight(struct frame *self)
     return fontSummary->maxHeight + 4; /* Two for top and bottom border. */
 }
 
-void frame__SetReturnFocus(struct frame *self, struct view *v)
+void frame__SetReturnFocus(self, v)
+struct frame *self;
+struct view *v;
 {
     if(self->returnFocus) view_RemoveObserver(self->returnFocus, self);
     if(v) {
@@ -300,7 +310,8 @@ void frame__SetReturnFocus(struct frame *self, struct view *v)
     self->returnFocus=v;
 }
 
-void frame__ReturnFocus(struct frame *self)
+void frame__ReturnFocus(self)
+struct frame *self;
 {
     struct view *focus;
     if(self->returnFocus) {
@@ -313,7 +324,9 @@ void frame__ReturnFocus(struct frame *self)
     }
 }
 
-boolean frame__InitializeObject(struct classheader *classID, struct frame *self)
+boolean frame__InitializeObject(classID, self)
+    struct classheader *classID;
+    struct frame *self;
 {
     extern struct keymap *frame_InitKeymap();
 
@@ -384,7 +397,9 @@ boolean frame__InitializeObject(struct classheader *classID, struct frame *self)
     return TRUE;
 }
 
-void frame__FinalizeObject(struct classheader *classID, struct frame *self)
+void frame__FinalizeObject(classID, self)
+    struct classheader *classID;
+    struct frame *self;
 {
 
     struct frame *traverse, **previous;
@@ -434,7 +449,10 @@ void frame__FinalizeObject(struct classheader *classID, struct frame *self)
 
 static void SetTitle();
 
-void frame__FullUpdate(struct frame *self, enum view_UpdateType type, long left, long top, long width, long height)
+void frame__FullUpdate(self, type, left, top, width, height)
+struct frame *self;
+enum view_UpdateType type;
+long left, top, width, height;
 {
     if (self->lineHeight == 0) {
 	long dw, dh;
@@ -453,7 +471,8 @@ void frame__FullUpdate(struct frame *self, enum view_UpdateType type, long left,
 	DoUpdate(self);
     }
 }
-static handleNewData(struct frame *self)
+static handleNewData(self)
+struct frame *self;
 {
     struct view *inputFocus, *targetView,*oldchild;
     oldchild = self->childView;
@@ -472,9 +491,9 @@ static handleNewData(struct frame *self)
 }
 
 #include <lpair.ih>
-#include <stdlib.h>
-#include <stdio.h>
-void frame__WantNewSize(struct frame *self, struct view *req)
+void frame__WantNewSize(self, req)
+struct frame *self;
+struct view *req;
 {
     long dw=(-1), dh=(-1);
     
@@ -490,7 +509,8 @@ void frame__WantNewSize(struct frame *self, struct view *req)
     frame_WantUpdate(self, self);
 }
 
-void frame__Update(struct frame *self)
+void frame__Update(self)
+    struct frame *self;
 {
     struct pendingupdates *pu;
 
@@ -516,7 +536,10 @@ void frame__Update(struct frame *self)
 }
 
 
-void frame__ObservedChanged(struct frame *self, struct observable *changed, long value)
+void frame__ObservedChanged(self, changed, value)
+struct frame *self;
+struct observable *changed;
+long value;
 {    
     if((struct observable *)self->returnFocus==changed && value==observable_OBJECTDESTROYED) {
 	self->returnFocus=NULL;
@@ -546,7 +569,10 @@ void frame__ObservedChanged(struct frame *self, struct observable *changed, long
 	frame_WantUpdate(self, self);
 }
 
-void frame__SetBuffer(struct frame *self, struct buffer *buffer, boolean setInputFocus)
+void frame__SetBuffer(self, buffer, setInputFocus)
+    struct frame *self;
+    struct buffer *buffer;
+    boolean setInputFocus;
 {
 
     struct view *inputFocus, *targetView;
@@ -589,7 +615,9 @@ void frame__SetBuffer(struct frame *self, struct buffer *buffer, boolean setInpu
     }
 }
 
-void frame__SetView(struct frame *self, struct view *view)
+void frame__SetView(self, view)
+struct frame *self;
+struct view *view;
 {
     self->realBuffer=NULL;
     
@@ -620,7 +648,9 @@ void frame__SetView(struct frame *self, struct view *view)
 }
 
 /* Create a frame suitable for use as a buffer window. */
-struct frame *frame__Create(struct classheader *classID, register struct buffer *buffer)
+struct frame *frame__Create(classID, buffer)
+    struct classheader *classID;
+    register struct buffer *buffer;
 {
 
     register struct frame *tempFrame = frame_New();
@@ -632,7 +662,10 @@ struct frame *frame__Create(struct classheader *classID, register struct buffer 
 
 /* Iterates over all frames.
  */
-struct frame *frame__Enumerate(struct classheader *classID, boolean (*mapFunction)(), long functionData)
+struct frame *frame__Enumerate(classID, mapFunction, functionData)
+    struct classheader *classID;
+    boolean (*mapFunction)();
+    long functionData;
 {
 
     struct frame *traverse, *next;
@@ -645,7 +678,9 @@ struct frame *frame__Enumerate(struct classheader *classID, boolean (*mapFunctio
     return NULL;
 }
 
-struct basicobject *frame__WantHandler(struct frame *self, char *handlerName)
+struct basicobject *frame__WantHandler(self, handlerName)
+struct frame *self;
+char *handlerName;
 {
     if (strcmp(handlerName, "message") == 0)
 	return (struct basicobject *) self->messageLine;
@@ -654,7 +689,9 @@ struct basicobject *frame__WantHandler(struct frame *self, char *handlerName)
 	return view_WantHandler(self->header.view.parent, handlerName);
 }
 
-void frame__PostKeyState(struct frame *self, struct keystate *keystate)
+void frame__PostKeyState(self, keystate)
+struct frame *self;
+struct keystate *keystate;
 {
     if(self->IsAsking){
 	if (keystate == NULL || keystate->object != (struct basicobject *) self->dialogView) {
@@ -685,7 +722,9 @@ void frame__PostKeyState(struct frame *self, struct keystate *keystate)
 }
 
 
-void frame__PostMenus(struct frame *self, struct menulist *menulist)
+void frame__PostMenus(self, menulist)
+struct frame *self;
+struct menulist *menulist;
 {
 
     if(self->IsAsking ){
@@ -709,7 +748,9 @@ void frame__PostMenus(struct frame *self, struct menulist *menulist)
 	view_PostMenus(self->header.view.parent, menulist);
 }
 
-void frame__SetCommandEnable(struct frame *self, boolean enable)
+void frame__SetCommandEnable(self, enable)
+    struct frame *self;
+    boolean enable;
 {
 
     if ((self->commandEnable = enable) == TRUE) {
@@ -729,7 +770,8 @@ void frame__SetCommandEnable(struct frame *self, boolean enable)
     }
 }
 
-struct buffer *frame__GetHelpBuffer(struct frame *self)
+struct buffer *frame__GetHelpBuffer(self)
+    struct frame *self;
 {
 
     int i;
@@ -749,7 +791,10 @@ struct buffer *frame__GetHelpBuffer(struct frame *self)
     buffer_SetScratch(buffer, TRUE);
     return buffer;
 }
-struct buffer *frame__SetHelpBuffer(struct frame *self, struct buffer *buf, boolean setInputFocus)
+struct buffer *frame__SetHelpBuffer(self, buf, setInputFocus)
+struct frame *self;
+struct buffer *buf;
+boolean setInputFocus;
 {   /* Returns the last buffer IF it will need to be restored */
     struct view *inputFocus, *targetView;
     int NeedUpdate = 0;
@@ -790,7 +835,8 @@ struct buffer *frame__SetHelpBuffer(struct frame *self, struct buffer *buf, bool
     return NULL;
 }
 
-void frame__RemoveHelp(struct frame *self)
+void frame__RemoveHelp(self)
+struct frame *self;
 {
     if(self->revertToReal) {
 	self->revertToReal=FALSE;
@@ -799,7 +845,9 @@ void frame__RemoveHelp(struct frame *self)
     }
 }
 
-void frame__SetTitle(struct frame *self, char *title)
+void frame__SetTitle(self, title)
+    struct frame *self;
+    char *title;
 {
     if (self->title != NULL)
         free(self->title);
@@ -819,7 +867,8 @@ void frame__SetTitle(struct frame *self, char *title)
  * This code sets the title bar such that the end of a filename is visible.
  * Seldom is there so much code to accomplish so little.
  */
-static void SetTitle(struct frame *self)
+static void SetTitle(self)
+    struct frame *self;
 {
     static char *readonly_flag = NULL;
 
@@ -883,7 +932,9 @@ static void SetTitle(struct frame *self)
 
 /* The following is code to support the dialog box */
 
-static void ConsiderReturning(struct frame *self, int Choice)
+static void ConsiderReturning(self, Choice)
+struct frame *self;
+int Choice;
 {
     if (self->StackPos != frame_GlobalStackCount) {
 	framemessage_DisplayString(self->messageLine, 0, "Please answer the other dialog box first.");
@@ -1044,7 +1095,9 @@ long x, y;
     }
     return(1);
 }
-static drawshadow(struct frame *self, struct rectangle *r)
+static drawshadow(self,r)
+struct frame *self;
+struct rectangle *r;
 {
     frame_FillRectSize(self,r->left + OFFSET,r->top + r->height,r->width,OFFSET,frame_GrayPattern(self,8,16));
     frame_FillRectSize(self,r->left + r->width,r->top + OFFSET,OFFSET,r->height - OFFSET,frame_GrayPattern(self,8,16));
@@ -1124,7 +1177,11 @@ struct frame *self;
     /* A no-op for now */
 }
 
-static int ButtonInteract(struct frame *self, char **AnswerList, long DefaultWildestAnswer, long *WildestAnswer, int flags)
+static int ButtonInteract(self, AnswerList, DefaultWildestAnswer, WildestAnswer, flags)
+struct frame *self;
+char **AnswerList;
+long DefaultWildestAnswer, *WildestAnswer;
+int flags;
 {
     int i;
     int answer;
@@ -1278,7 +1335,9 @@ struct frame *self;
     super_FullUpdate(self, view_FullRedraw, r.left, r.top, r.width, r.height);
 }
 
-void frame__Advice(struct frame *self, enum message_Preference pp)
+void frame__Advice(self, pp)
+struct frame *self;
+enum message_Preference pp;
 {
     if(pp == message_NoBlock) self->IsBlocking = 0;
     else self->PositionalPreference = pp;
@@ -1420,7 +1479,9 @@ struct frame *self;
 }
 
 
-static void GotKey(struct frame *self, char c)
+static void GotKey(self, c)
+struct frame *self;
+char c;
 {
     int curpt, startpt=self->DefaultWildestAnswer;
     char c1;
@@ -1447,12 +1508,14 @@ static void GotKey(struct frame *self, char c)
     }
 }
 
-static void ConfirmDefaultAnswer(struct frame *self)
+static void ConfirmDefaultAnswer(self)
+struct frame *self;
 {
     ConsiderReturning(self, self->DefaultWildestAnswer);
 }
 
-static void Cancel(struct frame *self)
+static void Cancel(self)
+struct frame *self;
 {
     /* ^G key binding */
     if (self->StackPos != frame_GlobalStackCount) {
@@ -1481,7 +1544,8 @@ static void Cancel(struct frame *self)
 
 }
 
-static void retractCursors(struct frame *self)
+static void retractCursors(self)
+struct frame *self;
 {
     if(cursor_IsPosted(self->octcursor))
 	frame_RetractCursor(self, self->octcursor);
@@ -1534,13 +1598,17 @@ struct frame *self;
     self->hasDialogMessage = 0;
     self->PotentialChoice = 0;
 }
-static isDialogChild(struct frame *self, struct view *v)
+static isDialogChild(self, v)
+struct frame *self;
+struct view *v;
 {
     while(v->parent != NULL && v->parent != (struct view *) self) 
 	v = v->parent;
     return(v == self->DialogBufferView || v == (struct view *)self->dialogView);
 }
-void frame__WantUpdate(struct frame *self, struct view *v)
+void frame__WantUpdate(self, v)
+struct frame *self;
+struct view *v;
 {
     if (self->IsAsking && !self->UsingDialog) {
 	struct pendingupdates *pu;
@@ -1564,12 +1632,16 @@ void frame__WantUpdate(struct frame *self, struct view *v)
   * This function is called when the window manager requests
   * a delete window.
   */
-static void delete_window_request(struct im *im, struct frame *self)
+static void delete_window_request(im, self)
+struct im *im;
+struct frame *self;
 {
     framecmds_DeleteWindow(self);
 }
 
-void frame__LinkTree(struct frame *self, struct view *parent)
+void frame__LinkTree(self, parent)
+struct frame *self;
+struct view *parent;
 {
     struct im *oldim=frame_GetIM(self);
     super_LinkTree(self, parent);
@@ -1583,7 +1655,10 @@ void frame__LinkTree(struct frame *self, struct view *parent)
 
 
 #define ERROR (-1)
-int frame__DisplayString(struct frame *self, int priority, char *string)
+int frame__DisplayString(self, priority, string)
+struct frame *self;
+int priority;
+char *string;
 {
     char *mychoices[3];
     long result,defaultChoice;
@@ -1597,13 +1672,20 @@ int frame__DisplayString(struct frame *self, int priority, char *string)
     return ERROR;
 }
 
-static void ReturnInterface(struct frame *rock, int ind, long brock)
+static void ReturnInterface(rock, ind, brock)
+struct frame *rock;
+int ind;
+long brock;
 {
     ConsiderReturning(rock, ind+1);
 }
 
 
-static struct view *PrepareForStringInput(struct frame *self, char *prompt, int bufferSize, boolean CompButtons)
+static struct view *PrepareForStringInput(self,prompt,bufferSize,CompButtons)
+struct frame *self;
+char *prompt;
+int bufferSize; /* Is actual sizeof buffer including NUL. */
+boolean CompButtons;
 {
     static char *ans[6];
     struct view *focus;
@@ -1669,7 +1751,11 @@ static struct view *PrepareForStringInput(struct frame *self, char *prompt, int 
    	    
     return focus;
 }
-int frame__AskForString(struct frame *self, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize)
+int frame__AskForString(self, priority, prompt, defaultString, buffer, bufferSize)
+struct frame *self;
+int priority;
+char *prompt, *defaultString, *buffer;
+int bufferSize; /* Is actual sizeof buffer including NUL. */
 {
     int i;
     struct view *focus;
@@ -1696,7 +1782,11 @@ int frame__AskForString(struct frame *self, int priority, char *prompt, char *de
     
     return i;
 }
-int frame__AskForPasswd(struct frame *self, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize)
+int frame__AskForPasswd(self, priority, prompt, defaultString, buffer, bufferSize)
+struct frame *self;
+int priority;
+char *prompt, *defaultString, *buffer;
+int bufferSize; /* Is actual sizeof buffer including NUL. */
 {
     int i;
     struct view *focus;
@@ -1727,7 +1817,16 @@ int frame__AskForPasswd(struct frame *self, int priority, char *prompt, char *de
 }
 
 
-int frame__AskForStringCompleted(struct frame *self, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize, struct keystate *keystate, enum message_CompletionCode (*completionProc)(), int (*helpProc)(), long completionData, int flags)
+int frame__AskForStringCompleted(self, priority, prompt, defaultString, buffer, bufferSize, keystate, completionProc, helpProc, completionData, flags)
+struct frame *self;
+int priority;
+char *prompt, *defaultString, *buffer;
+int bufferSize; /* Is actual sizeof buffer including NUL. */
+struct keystate *keystate;
+enum message_CompletionCode (*completionProc)(/* char *string, long rock, char *buffer, int buffersize */);
+int (*helpProc)(/* char *partialKeyword, long rock, int (*helpTextFunction)(), long helpTextRockchar */);
+long completionData;
+int flags;
 {  
     int i=ERROR;
     struct view *focus;
@@ -1764,7 +1863,14 @@ int frame__AskForStringCompleted(struct frame *self, int priority, char *prompt,
     return i;
 }
 
-int frame__MultipleChoiceQuestion(struct frame *self, int priority, char *prompt, long defaultChoice, long *result, char **choices, char *abbrevKeys)
+int frame__MultipleChoiceQuestion(self, priority, prompt, defaultChoice, result, choices, abbrevKeys)
+struct frame *self;
+int priority;
+char *prompt;
+long defaultChoice;
+long *result;
+char **choices;
+char *abbrevKeys;
 {
     char *mychoices[100];
     int i;
@@ -1798,7 +1904,9 @@ int frame__MultipleChoiceQuestion(struct frame *self, int priority, char *prompt
     return ERROR;
 }
 
-static void SingleLine(struct frame *self, long key)
+static void SingleLine(self, key)
+struct frame *self;
+long key;
 {
     self->messageView->lines=1;
     frameview_WantNewSize(self->messageView, self->messageView);
@@ -1806,7 +1914,8 @@ static void SingleLine(struct frame *self, long key)
 }
 
 
-boolean frame__InitializeClass(struct classheader *classID)
+boolean frame__InitializeClass(classID)
+    struct classheader *classID;
 {
     char c[2], *s;
 
@@ -1848,7 +1957,9 @@ struct buffer *b;
   return(frame_GetBuffer(f)==b);
 }
 
-struct frame *frame__FindFrameForBuffer(struct classheader *classhdr, struct buffer *b)
+struct frame *frame__FindFrameForBuffer(classhdr, b)
+struct classheader *classhdr;
+struct buffer *b;
 {
 /*
   This tries to find the frame of our buffer.  If there is no
@@ -1871,7 +1982,9 @@ struct frame *frame__FindFrameForBuffer(struct classheader *classhdr, struct buf
   return f;
 }
 
-struct frame *frame__GetFrameInWindowForBuffer(struct classheader *classhdr, struct buffer *b)
+struct frame *frame__GetFrameInWindowForBuffer(classhdr, b)
+struct classheader *classhdr;
+struct buffer *b;
 {
     struct frame *f;
     struct im *im;

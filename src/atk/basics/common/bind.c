@@ -45,7 +45,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <proctbl.ih>
 #include <bind.eh>
 
-void bind__BindList(struct classheader *classID, struct bind_Description *bl, struct keymap *km, struct menulist *ml, struct classinfo *type)
+void bind__BindList(classID, bl, km, ml, type)
+struct classheader *classID;
+struct bind_Description *bl;
+struct keymap *km;
+struct menulist *ml;
+struct classinfo *type;
 {
     while(bl && (bl->procName || bl->keyVector || bl->menuEntry)) {
 	struct proctable_Entry *pe;

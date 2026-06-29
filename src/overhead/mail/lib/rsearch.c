@@ -49,9 +49,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <arpa/nameser.h>
 #include <resolv.h>
 
+extern int errno;
 
-#include <stdlib.h>
-static int oneTry(char *dom, char *sfx, int class, int type, char *answer, int anslen)
+static int oneTry(dom, sfx, class, type, answer, anslen)
+char *dom, *sfx;		/* domain name and suffix */
+int class, type;		/* class and type of query */
+char *answer;		/* buffer to put answer */
+int anslen;		/* size of answer */
 {
     char buf[PACKETSZ], tryname[2*MAXDNAME + 1];
     int n;
@@ -93,7 +97,8 @@ static int oneTry(char *dom, char *sfx, int class, int type, char *answer, int a
     return(n);
 }
 
-static char *myhostalias(register char *name)
+static char *myhostalias(name)		/* same as hostalias() in gethostnamadr.c, sigh */
+register char *name;
 {
     register char *C1, *C2;
     FILE *fp;
@@ -128,7 +133,11 @@ static char *myhostalias(register char *name)
    Always use a QUERY operation, no extra data, no extra resource records.
    Return the size of the response, or -1 for errors. */
 
-int cptres_search(char *name, int class, int type, char *answer, int anslen)
+cptres_search(name, class, type, answer, anslen)
+char *name;		/* domain name */
+int class, type;		/* class and type of query */
+char *answer;		/* buffer to put answer */
+int anslen;		/* size of answer */
 {
     register char *cp;
 #ifdef RES_DNSRCH

@@ -60,7 +60,8 @@ struct nestedmark *self;  {
     return TRUE;
 }
 
-struct nestedmark *nestedmark__NewButSimilar(struct nestedmark *self)
+struct nestedmark *nestedmark__NewButSimilar(self)
+struct nestedmark *self;
 {
     struct nestedmark *sib=nestedmark_NewFromObject(self);
     sib->includeBeginning=self->includeBeginning;
@@ -68,7 +69,8 @@ struct nestedmark *nestedmark__NewButSimilar(struct nestedmark *self)
     return sib;
 }
 
-static void DoFreeTree(struct nestedmark *self)
+static void DoFreeTree(self)
+struct nestedmark *self;
 {
     nestedmark_FreeTree(self);
 }
@@ -98,7 +100,9 @@ struct tree23int *which;  {
 	self->parent = data->fpparent;
 }
 
-struct nestedmark *splitOffRight(struct nestedmark *self, int rpos)
+struct nestedmark *splitOffRight(self,rpos)
+struct nestedmark *self;
+int rpos;
 {
     struct tree23int *node;
     struct nestedmark *right=nestedmark_NewButSimilar(self);
@@ -140,7 +144,9 @@ struct nestedmark *splitOffRight(struct nestedmark *self, int rpos)
     return right;
 }
 
-struct nestedmark *nestedmark__Split(struct nestedmark *self, long rpos)
+struct nestedmark *nestedmark__Split(self,rpos)
+struct nestedmark *self;
+long rpos;
 {
     struct nestedmark *right=splitOffRight(self,rpos), *parent=self->parent;
 
@@ -154,7 +160,10 @@ struct nestedmark *nestedmark__Split(struct nestedmark *self, long rpos)
     return right;
 }
 
-struct nestedmark *nestedmark__Add(struct nestedmark *self, long pos, long length)
+struct nestedmark *nestedmark__Add(self, pos, length)
+struct nestedmark *self;
+long pos;
+long length;
 {
     register struct nestedmark *cp;
     register struct nestedmark *nm1;
@@ -237,7 +246,10 @@ register struct nestedmark *pp;
     nestedmark_Destroy(self);
 }
 
-void nestedmark__Update(struct nestedmark *self, long pos, long length)
+void nestedmark__Update(self, pos, length)
+struct nestedmark *self;
+long pos;
+long length;
 {
     register struct nestedmark *up, *tp;
     long tpos, tsize;
@@ -440,7 +452,9 @@ nmark is above self.  If it is negative then self is above nmark.
 If it is 0 then they are the same node and if it is nestedmark_UNRELATED
 then they are not directly related. */
 
-long nestedmark__Distance(struct nestedmark *self, struct nestedmark *nmark)
+long nestedmark__Distance(self, nmark)
+struct nestedmark *self;
+struct nestedmark *nmark;
 {
     register int i;
     register struct nestedmark *tmark = self;
@@ -452,13 +466,18 @@ long nestedmark__Distance(struct nestedmark *self, struct nestedmark *nmark)
     return nestedmark_UNRELATED;
 }
 
-void nestedmark__SetStyle(struct nestedmark *self, boolean includebeginning, boolean includeending)
+void nestedmark__SetStyle(self, includebeginning, includeending)
+    struct nestedmark *self;
+    boolean includebeginning;
+    boolean includeending;
 {
     self->includeBeginning = includebeginning;
     self->includeEnding = includeending;
 }
 
-struct nestedmark *nestedmark__GetChild(struct nestedmark *self, long pos)
+struct nestedmark *nestedmark__GetChild(self, pos)
+    struct nestedmark *self;
+    long pos;
 {
     struct nestedmark *child;
     
@@ -475,7 +494,10 @@ struct nestedmark *nestedmark__GetChild(struct nestedmark *self, long pos)
     return NULL;
 }
 
-struct nestedmark *nestedmark__GetPreviousChild(struct nestedmark *self, struct nestedmark *nm, long pos)
+struct nestedmark *nestedmark__GetPreviousChild(self, nm, pos)
+    struct nestedmark *self;
+    struct nestedmark *nm;
+    long pos;
 {
     struct tree23int *tp;
 
@@ -508,7 +530,10 @@ struct nestedmark *nestedmark__GetPreviousChild(struct nestedmark *self, struct 
     }
 }
 
-struct nestedmark *nestedmark__GetNextChild(struct nestedmark *self, struct nestedmark *nm, long pos)
+struct nestedmark *nestedmark__GetNextChild(self, nm, pos)
+    struct nestedmark *self;
+    struct nestedmark *nm;
+    long pos;
 {
     struct tree23int *tp;
     
@@ -532,7 +557,8 @@ struct nestedmark *nestedmark__GetNextChild(struct nestedmark *self, struct nest
     }
 }
 
-long nestedmark__NumberOfChildren(struct nestedmark *self)
+long nestedmark__NumberOfChildren(self)
+    struct nestedmark *self;
 {
     if (self->children != 0)
 	return tree23int_NumberOfLeaves(self->children);

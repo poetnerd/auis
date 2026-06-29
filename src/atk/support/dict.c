@@ -39,8 +39,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <dict.eh>
 #include <view.ih>
 
-#include <stdlib.h>
-#include <stdio.h>
 #define INITIALSIZE 128
 #define dictionary_DELETED NULL
 #define EntryDeleted(A) (A->view == (struct view *) dictionary_DELETED &&  A->id == (char *)dictionary_DELETED)
@@ -51,7 +49,8 @@ struct dirtable {
     char *object;
 };
 static struct dirtable *table, *last, *end;
-boolean dictionary__InitializeClass(struct classheader *classID)
+boolean dictionary__InitializeClass(classID)
+    struct classheader *classID;
 {
     table = (struct dirtable *) malloc(INITIALSIZE * sizeof(struct dirtable));
     end = &(table[INITIALSIZE]);
@@ -59,7 +58,11 @@ boolean dictionary__InitializeClass(struct classheader *classID)
 
     return TRUE;
 }
-void dictionary__Insert(struct classheader *classID, register struct view *view, char *id, char *object)
+void dictionary__Insert(classID, view,id,object)
+struct classheader *classID;
+register struct view *view;
+char *id; 
+char *object;
 {
     register struct dirtable *dd,*freeref;
     freeref = NULL;
@@ -91,14 +94,19 @@ void dictionary__Insert(struct classheader *classID, register struct view *view,
     dd->id = id;
     dd->object = object;
 }
-char *dictionary__LookUp(struct classheader *classID, register struct view *view, char *id)
+char *dictionary__LookUp(classID, view,id)
+struct classheader *classID;
+register struct view *view;
+char *id;
 {
     register struct dirtable *dd;
     for(dd = table; dd < last; dd++)
         if(dd->view == view && dd->id == id) return(dd->object);
     return(NULL);
 }
-long dictionary__CountViews(struct classheader *classID, char *id)
+long dictionary__CountViews(classID, id)
+struct classheader *classID;
+char *id;
 {
     register struct dirtable *dd;
     long i = 0;
@@ -109,7 +117,11 @@ long dictionary__CountViews(struct classheader *classID, char *id)
     }
     return i;
 }
-long dictionary__ListViews(struct classheader *classID, char *id, struct view **viewarray, long len)
+long dictionary__ListViews(classID, id,viewarray,len)
+struct classheader *classID;
+char *id;
+struct view **viewarray;
+long len;
 {
     register struct dirtable *dd;
     long i = 0;
@@ -121,7 +133,9 @@ long dictionary__ListViews(struct classheader *classID, char *id, struct view **
     }
     return i;
 }
-long dictionary__CountRefs(struct classheader *classID, register struct view *view)
+long dictionary__CountRefs(classID, view)
+struct classheader *classID;
+register struct view *view;
 {
     register struct dirtable *dd;
     long i = 0;
@@ -132,7 +146,11 @@ long dictionary__CountRefs(struct classheader *classID, register struct view *vi
     }
     return i;
 }
-long dictionary__ListRefs(struct classheader *classID, register struct view *view, char **refarray, long len)
+long dictionary__ListRefs(classID, view,refarray,len)
+struct classheader *classID;
+register struct view *view;
+char **refarray;
+long len;
 {
     register struct dirtable *dd;
     long i = 0;
@@ -145,7 +163,10 @@ long dictionary__ListRefs(struct classheader *classID, register struct view *vie
     return i;
 }
 
-void dictionary__Delete(struct classheader *classID, register struct view *view, char *id)
+void dictionary__Delete(classID, view,id)
+struct classheader *classID;
+register struct view *view;
+char *id;
 {
     register struct dirtable *dd;
     for(dd = table; dd < last; dd++)

@@ -40,7 +40,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <classind.h>
 
 
-#include <stdlib.h>
 /*
  *
  * local functions
@@ -181,7 +180,7 @@ struct IndexEntry * ThisEntry;
  ** Return a new, initialized entry or NULL if no space is available.
  **/
 struct IndexEntry *
-CreateEntry(char *name, char *key, unsigned long version, char *data)
+CreateEntry(name, key, version, data)
 
 {
 struct IndexEntry * ThisEntry;

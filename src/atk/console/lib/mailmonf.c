@@ -58,8 +58,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #define bool_t int
 #include <afs/afsint.h>
 #include <afs/venus.h>
-#include <stdlib.h>
-#include <stdio.h>
 #endif /* AFS_ENV */
 
 extern struct classinfo *consoleClass_GetInfoHack();
@@ -77,7 +75,10 @@ extern SetPrintEnv();
 #define SUFFIX 2
 #define NO_DOTS 3
 
-int CheckDir(struct consoleClass *self, char *Name, int *LastModTime, int LastValue)
+CheckDir(self, Name, LastModTime, LastValue)
+struct consoleClass *self;
+char *Name;
+int *LastModTime, LastValue;
 {
     DIR *dp;
     DIRENT_TYPE *dirent;
@@ -180,7 +181,9 @@ int CheckDir(struct consoleClass *self, char *Name, int *LastModTime, int LastVa
     return(dc);
 }
 
-int CheckMail(struct consoleClass *self, int requested)
+CheckMail(self, requested)
+struct consoleClass *self;
+int requested;
 {
     int value, iserror;
     char ErrTxt[256];
@@ -221,7 +224,8 @@ int CheckMail(struct consoleClass *self, int requested)
     NewValue(self, &Numbers[MAIL], value, NULL, FALSE);
 }
 
-int CheckDirectories(struct consoleClass *self)
+CheckDirectories(self)
+struct consoleClass *self;
 {
     int i, val;
     char ErrTxt[256];
@@ -248,7 +252,8 @@ int CheckDirectories(struct consoleClass *self)
     }
 }
 
-int CheckPrint(struct consoleClass *self)
+CheckPrint(self)
+struct consoleClass *self;
 {
     DIR * dp;
     DIRENT_TYPE  *dirent;
@@ -318,7 +323,8 @@ int CheckPrint(struct consoleClass *self)
 
 static int OutgoingModTime = 0;
 
-int CheckOutgoingMail(struct consoleClass *self)
+CheckOutgoingMail(self)
+struct consoleClass *self;
 {
     DIR * dp;
     DIRENT_TYPE  *dirent;
@@ -375,7 +381,10 @@ int CheckOutgoingMail(struct consoleClass *self)
 }
 
 #ifdef AFS_ENV
-int PrefetchMailFiles(struct consoleClass *self, char *MailboxDir, int requested)
+PrefetchMailFiles(self, MailboxDir, requested)
+struct consoleClass *self;
+char *MailboxDir;
+int requested;
 {
     DIR *dp;
     DIRENT_TYPE *dirent;
@@ -421,7 +430,10 @@ int PrefetchMailFiles(struct consoleClass *self, char *MailboxDir, int requested
 #endif /* AFS_ENV */
 
 
-int ParseMail(struct consoleClass *self, char *fname, int requested)
+ParseMail(self, fname, requested)
+struct consoleClass *self;
+char *fname;
+int requested;
 {
     FILE *fp;
     int c, onenewline, eofcheck;

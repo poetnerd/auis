@@ -46,7 +46,8 @@ void (*fn)();
     return (oldfn);
 }
 
-void            reg_error(char *s)
+void            reg_error(s)
+char           *s;
 {
     if (errfn == ((void (*) ()) 0))
         fprintf(stderr, "regexp: %s\n", s);

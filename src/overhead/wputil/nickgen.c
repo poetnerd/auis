@@ -38,11 +38,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <btwp.h>
 
-#include <stdlib.h>
 static int Debugging = 0;
 static int NickExceptions = 0;
 
-int main(int argc, char *argv[])
+main(argc, argv)
+int argc; char *argv[];
 {
     int arg;
     char *ifile = NULL;

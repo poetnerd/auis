@@ -44,11 +44,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 
 #include <errno.h>
 
-#include <stdlib.h>
-#include <stdio.h>
 #define	GETSTAT_MASK   64   /* Getstats -is- dead, Restart Getstats -is- showing */
 
-int RestartStats(struct consoleClass *self)
+RestartStats(self)
+struct consoleClass *self;
 {
     mydbg(("entering: RestartStats\n"));
     self->menuMask &= ~GETSTAT_MASK;
@@ -58,7 +57,12 @@ int RestartStats(struct consoleClass *self)
     consoleClass_PostMenus(self, self->stdMenulist);
 }
 
-int EndStats(struct consoleClass *self, FILE *vmstats, char *error, char *type, int fatal)
+EndStats(self, vmstats, error, type, fatal)
+struct consoleClass *self;
+FILE *vmstats;
+char *error;
+char *type;
+int fatal;
 {
     char buffer[256];
     
@@ -75,7 +79,9 @@ int EndStats(struct consoleClass *self, FILE *vmstats, char *error, char *type, 
     }
 }
     
-int ComputeStatistics(FILE *vmstats, struct consoleClass *self)
+ComputeStatistics(vmstats, self)
+FILE *vmstats;
+struct consoleClass *self;
 {
     int id = 0, val = 0, num = 0;
     char dname[50], buf[200];
@@ -216,7 +222,8 @@ int ComputeStatistics(FILE *vmstats, struct consoleClass *self)
     }
 }
 
-int CheckWindows(struct consoleClass *self)
+CheckWindows(self) 
+struct consoleClass *self;
 {
     int count, max;
 

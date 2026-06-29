@@ -36,7 +36,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <cparser.h>
 
-#include <stdlib.h>
 static struct parser *CurrentParser = NULL;
 static int DebugFlag = 0;
 #define ERRORTOK 1

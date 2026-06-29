@@ -41,6 +41,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 /*
  * define these for the compiler 
  */
+#ifndef _IBMR2
+char *malloc(),*realloc();  /* should include stdlib.h */
+#endif /* _IBMR2 */
 extern int yylex();	    /* using lex */
 #ifndef FLEX_ENV
 extern char yytext[];	    
@@ -53,12 +56,9 @@ extern char *yytext;
  */
 #include <classpp.h>
 
-extern void PushFile(FILE *file);
-extern void PopFile(void);
 
 
 
-#include <stdlib.h>
 /*
  * Hints, etc:
  *
@@ -233,7 +233,10 @@ static struct InfoStruct *ExtraInfoTail;
  ** Clean up and exit on catastrophic error.  The program exits with exit code
  ** ec after the message str is sent to stderr and stderr is flushed.
  **/
-void errorexit(int ec, char *str)
+void errorexit(ec, str)
+int ec;		/* exit code */
+char *str;	/* error string to print on the way out */
+
 {
 /*
  * Don't bother checking return codes as there isn't
@@ -264,7 +267,11 @@ void errorexit(int ec, char *str)
  ** Another way to call errorexit() but this one stuffs param into
  ** base to create the message.  param must be a string pointer.
  **/
-static void errorexitparam(int ec, char *base, char *param)
+static void errorexitparam(ec, base, param)
+int ec;		/* exit code */
+char *base;	/* base of message string */
+char *param;	/* string to stuff in base */
+
 {
 char message[MAXMESSAGESIZE+1];
 
@@ -281,7 +288,10 @@ char message[MAXMESSAGESIZE+1];
  ** Clean up and exit on catastrophic error.  The program exits with exit code
  ** ec after the message str is sent to stderr and stderr is flushed.
  **/
-static void warning(int level, char *str)
+static void warning(level, str)
+int level;	/* warning level */
+char *str;	/* error string to print on the way out */
+
 {
 /*
  * Emit the message if the command line switches permit it.
@@ -320,7 +330,18 @@ static void warning(int level, char *str)
  ** Error handler for caught signals
  ** Left of unspecified type on purpose
  **/
+#if defined(ANSI_C_SOURCE) && !defined(_NO_PROTO)
 static void errorhandler(int sig)
+#else
+static
+#ifdef POSIX_ENV
+void
+#endif
+errorhandler(sig, code, scp)
+int sig;
+int code;
+struct sigcontext *scp;
+#endif
 {
     errorexit(EXITCODE_SIGNAL, "killed by a caught signal");
 }
@@ -366,7 +387,9 @@ static int gettoken()
  ** If the passed token is is whitespace or a comment return the next token 
  ** that is not whitespace or a comment.
  **/
-static int retrievetoken(int intoken)
+static int retrievetoken(intoken)
+int intoken;
+
 {
 int token;
 
@@ -391,7 +414,11 @@ int token;
 /**
  **
  **/
-static void InsertInfo(struct InfoStruct **Head, struct InfoStruct **Tail, char *Data)
+static void InsertInfo(Head, Tail, Data)
+struct InfoStruct **Head;
+struct InfoStruct **Tail;
+char *Data;
+
 {
 struct InfoStruct *ThisInfo;
 
@@ -424,7 +451,9 @@ struct InfoStruct *ThisInfo;
 /**
  ** Add superclasses to collected information.
  **/
-static void AddSuperClassInfo(char *name)
+static void AddSuperClassInfo(name)
+char *name;
+
 {
     InsertInfo(&ParentInfoHead, &ParentInfoTail, name);
 }
@@ -433,7 +462,9 @@ static void AddSuperClassInfo(char *name)
 /**
  ** Add dependencies to collected information.
  **/
-static void AddDependsInfo(char *name)
+static void AddDependsInfo(name)
+char *name;
+
 {
     InsertInfo(&DependsInfoHead, &DependsInfoTail, name);
 }
@@ -442,7 +473,9 @@ static void AddDependsInfo(char *name)
 /**
  ** Add class data to collected information.
  **/
-static void AddClassDataInfo(char *data)
+static void AddClassDataInfo(data)
+char *data;
+
 {
     InsertInfo(&DataInfoHead, &DataInfoTail, data);
 }
@@ -451,7 +484,9 @@ static void AddClassDataInfo(char *data)
 /**
  ** Add extra to collected information.
  **/
-static void AddExtraInfo(char *text)
+static void AddExtraInfo(text)
+char *text;
+
 {
     InsertInfo(&ExtraInfoHead, &ExtraInfoTail, text);
 }
@@ -470,7 +505,9 @@ static void AddExtraInfo(char *text)
 /**
  ** Add another directory to the search path.
  **/
-static void AddDirectory(char *dirname)
+static void AddDirectory(dirname)
+char *dirname;
+
 {
     if (strlen(dirname)	< MAXPATHLEN) {		/* is the name within the system's bounds? */
 	if (NumDirectories < MAXINCLUDEPATHS) {	/* have a finite number of entries */
@@ -494,7 +531,9 @@ static void AddDirectory(char *dirname)
 /** 
  ** Try to open a file along the current search paths.
  **/
-static FILE *OpenFile(char *filename)
+static FILE *OpenFile(filename)
+char *filename;
+
 {
 FILE *file;
 char tempfile[MAXPATHLEN + 1];
@@ -558,25 +597,39 @@ int i;
  ** There are a few versions of this because we can't count on 
  ** variable argument function support on all systems.
  **/
-static void outstr0(char *str)
+static void outstr0(str)	    /* just the string */
+char *str;
+
 {
     (void) fprintf(importfile, str);
     (void) fprintf(exportfile, str);
 }
 
-static void outstr1(char *str, char *a)
+static void outstr1(str, a)	    /* 1 arg version */
+char *str;
+char *a;
+
 {
     (void) fprintf(importfile, str, a);
     (void) fprintf(exportfile, str, a);
 }
 
-static void outstr2(char *str, char *a, char *b)
+static void outstr2(str, a, b)	    /* 2 arg version */
+char *str;
+char *a;
+char *b;
+
 {
     (void) fprintf(importfile, str, a, b);
     (void) fprintf(exportfile, str, a, b);
 }
 
-static void outstr3(char *str, char *a, char *b, char *c)
+static void outstr3(str, a, b, c)    /* 3 arg version */
+char *str;
+char *a;
+char *b;
+char *c;
+
 {
     (void) fprintf(importfile, str, a, b, c);
     (void) fprintf(exportfile, str, a, b, c);
@@ -971,7 +1024,7 @@ int errvalCount[errval_NUM];	/* ??? */
 	    (void) fprintf(exportfile, "boolean %s__Initialize(struct classheader *, struct %s *, unsigned long);\n", FinalClassName, FinalClassName);
 	    (void) fprintf(exportfile, "void %s__Finalize(struct classheader *, struct %s *);\n", FinalClassName, FinalClassName);
 	    if(destroyp) (void) fprintf(exportfile, "boolean %s__Destroyp(struct classheader *, struct %s *);\n", FinalClassName, FinalClassName);
-	    if (initializeobject)
+	    if (initializeobject && ! initializeobjectdefined)
 		(void) fprintf(exportfile, "boolean %s__InitializeObject(struct classheader *, struct %s *);\n", FinalClassName, FinalClassName);
 	}
 	else {
@@ -980,7 +1033,7 @@ int errvalCount[errval_NUM];	/* ??? */
 	    (void) fprintf(exportfile, "boolean %s__Initialize();\n", FinalClassName);
 	    (void) fprintf(exportfile, "void %s__Finalize();\n", FinalClassName);
 	    if(destroyp) (void) fprintf(exportfile, "boolean %s__Destroyp();\n", FinalClassName);
-	    if (initializeobject)
+	    if (initializeobject && ! initializeobjectdefined)
 		(void) fprintf(exportfile, "boolean %s__InitializeObject();\n", FinalClassName);
 	}
     }
@@ -1425,7 +1478,10 @@ static void GenerateEpilog()
 {
 }
 
-static void PrintClassNamesFromInfo(FILE *descFile, struct InfoStruct *info, struct InfoStruct *parentInfo)
+static void PrintClassNamesFromInfo(descFile, info, parentInfo)
+FILE *descFile;
+struct InfoStruct *info;
+struct InfoStruct *parentInfo;
 {
     if (parentInfo != NULL) {
 	PrintClassNamesFromInfo(descFile, parentInfo, parentInfo->next);
@@ -1436,10 +1492,10 @@ static void PrintClassNamesFromInfo(FILE *descFile, struct InfoStruct *info, str
     fprintf(descFile, "%s", info->data);
 }
 
-static int CompareMethods(const void *v1, const void *v2)
+static int CompareMethods(mp1, mp2)
+struct methods **mp1;
+struct methods **mp2;
 {
-    struct methods * const *mp1 = v1;
-    struct methods * const *mp2 = v2;
     return (strcmp((*mp1)->name, (*mp2)->name));
 }
 
@@ -1661,7 +1717,9 @@ static void GenerateFiles()
 /**
  ** ???
  **/
-static struct methods *searchmethods(char *str)
+static struct methods *searchmethods(str)
+char *str;
+
 {
     struct methods *mp;
     
@@ -1680,7 +1738,12 @@ static struct methods *searchmethods(char *str)
  ** as there is no way this isn't an error since we must
  ** find a "}" to close the class definition.
  **/
-static void DoDefinitions(enum ParseState CurrentState, int toplevel, char *ClassName, int intoken)
+static void DoDefinitions(CurrentState, toplevel, ClassName, intoken)
+enum ParseState	CurrentState;	/* what state the parser is in */
+int toplevel;			/* TRUE if the top most definition file */
+char *ClassName;		/* name of the currently processed class */
+int intoken;			/* must keep track of this for caller */
+
 {			    /* start of DoDefinitions */
 
 
@@ -1898,8 +1961,8 @@ int FoundError;		/* used to keep track of multiple errors */
 			    }
 
 			    if (*p == '\0') {
-				strcpy(currentarg, " int");
-				namePos = 4;
+				strcpy(currentarg, " unknown");
+				namePos = 8;
 			    }
 
 			    /* Now add it to the real argument list */
@@ -2239,7 +2302,13 @@ int FoundError;		/* used to keep track of multiple errors */
  ** filled in and checked.   For packages the parent class items
  ** are left empty.
  **/
-static void ParseHeader(int toplevel, char *ClassName, char *ParentClassName, char *ClassNameKey, char *ParentClassNameKey)
+static void ParseHeader(toplevel, ClassName, ParentClassName, ClassNameKey, ParentClassNameKey)
+int toplevel;
+char *ClassName;
+char *ParentClassName;
+char *ClassNameKey;
+char *ParentClassNameKey;
+
 {
 int token;
 
@@ -2405,7 +2474,10 @@ int token;
  ** Decide the next state for the parser depending on the 
  ** kind of token just received.
  **/
-static void handleclasskeywords(int intoken, enum ParseState *CurrentState)
+static void handleclasskeywords(intoken, CurrentState) 
+int intoken;
+enum ParseState	*CurrentState;	/* what state the parser is in */
+
 {
 int token;
 
@@ -2486,7 +2558,10 @@ static void UpdateClassInfo()
  ** needed information is collected to be emitted during the generation 
  ** phase.
  **/
-static void ParseFile(FILE *ThisFile, int toplevel)
+static void ParseFile(ThisFile, toplevel)
+FILE *ThisFile;	    /* file from which we are currently reading the definitions */
+int toplevel;	    /* TRUE if this is the first call to ParseFile() */
+
 {							/* top of ParseFile() */
     int token;		/* only used in top half */
     char *ClassName;
@@ -2702,7 +2777,9 @@ DependsOnlyExit:
  ** This is the top level of control for the 
  ** processing of the class definition file.
  **/
-static void ProcessFile(FILE *ThisFile)
+static void ProcessFile(ThisFile)
+FILE *ThisFile;	    /* file from which we are currently reading the definitions */
+
 {
     ParseFile(ThisFile,	TRUE);	/* TRUE indicates this is the toplevel file */
     UpdateClassInfo();
@@ -2716,7 +2793,9 @@ static void ProcessFile(FILE *ThisFile)
  ** names are generated, open the .ih and .eh files called
  ** importfile and exportfile respectively.
  **/
-static void SetupFiles(FILE **HeaderFile)
+static void SetupFiles(HeaderFile)
+FILE **HeaderFile;
+
 {
     char *BasePointer;
 
@@ -2779,7 +2858,9 @@ static void SetupFiles(FILE **HeaderFile)
  ** Close open files.  Check return codes to be certain
  ** everything went OK.
  **/
-static void CleanupFiles(FILE *HeaderFile)
+static void CleanupFiles(HeaderFile)
+FILE *HeaderFile;
+
 {
     (void) fclose(HeaderFile);	    /* so what if we can't close it, we're just reading */
 
@@ -2847,7 +2928,10 @@ static void usage()
 /**
  ** Parse the arguments from the command line.
  **/
-static void ParseArgs(int argc, char *argv[])
+static void ParseArgs(argc, argv)
+int argc;
+char *argv[];
+
 {				    /* start of ParseArgs() */
 int i;	/* used to loop through array of args */
 
@@ -3019,7 +3103,7 @@ static void GlobalInit()
     SloppyMode = FALSE;
     IgnoreCurrentDirectory = FALSE;
     MakingBaseObject = FALSE;
-    usePrototypes = TRUE;
+    usePrototypes = FALSE;
 
     FinalClassName[0] = '\0';
     FinalParentName[0] = '\0';
@@ -3030,7 +3114,10 @@ static void GlobalInit()
 /**
  ** Parse args, process file, the ususal stuff...
  **/
-int main(int argc, char *argv[])
+int main(argc, argv)
+int argc;
+char *argv[];
+
 {
 FILE *HeaderFile;	    /* stream for the base definition file */
 

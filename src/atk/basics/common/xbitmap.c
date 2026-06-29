@@ -97,7 +97,6 @@ static char *MitCopyright=
 #include <ctype.h>
 #include <xbitmap.eh>
 
-#include <stdio.h>
 /* SUPPRESS 560 */
 
 #define MAX_SIZE 255
@@ -165,7 +164,8 @@ static void initHexTable()
 /* read a hex value and return its value
  */
 
-static int nextInt(FILE *f)
+static int nextInt(f)
+     FILE *f;
 { int c;
   int value= 0;
   int shift= 0;

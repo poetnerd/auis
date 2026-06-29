@@ -95,7 +95,10 @@ int   WriteImage();
 int   WriteRow();
 
 
-int main(int ARGC, char *ARGV[])
+main(ARGC, ARGV)
+int   ARGC;
+char *ARGV[];
+
 {
 struct ScanInitParamsType SIP;
 int    rc;
@@ -765,7 +768,6 @@ return(0);
 
 #include <stdio.h>
 
-#include <stdlib.h>
 main()
 {
     printf("\nscan:   The scan command is not supported on this machine.\n");

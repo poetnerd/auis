@@ -4,15 +4,16 @@
 #ifdef SYSV
 #include <unistd.h>
 #include <sys/utsname.h>
-#include <stdlib.h>
-#include <string.h>
 #endif
 
+extern char *malloc();
 char **Exceptions;
 int *NeedsPortableNewlines;
 int ExceptionsAlloced = 0, ExceptionsUsed = 0;
 
-int ExceptionalNewline(char *contenttype, int needsportable)
+ExceptionalNewline(contenttype, needsportable)
+char *contenttype;
+int needsportable;
 {
     char *s;
     if (ExceptionsAlloced == 0) {
@@ -39,7 +40,8 @@ int ExceptionalNewline(char *contenttype, int needsportable)
     return(0);
 }
 
-int DoesNeedPortableNewlines(char *ctype)
+DoesNeedPortableNewlines(ctype)
+char *ctype;
 {
     int i;
 
@@ -63,7 +65,9 @@ int DoesNeedPortableNewlines(char *ctype)
     return(0);
 }
 
-int lc2strncmp(char *s1, char *s2, int len)
+lc2strncmp(s1, s2, len)
+char *s1, *s2;
+int len;
 {
     if (!s1 || !s2) return (-1);
     while (*s1 && *s2 && len > 0) {
@@ -74,7 +78,8 @@ int lc2strncmp(char *s1, char *s2, int len)
     return((*s1 == *s2) ? 0 : -1);
 }
 
-int lc2strcmp(char *s1, char *s2)
+lc2strcmp(s1, s2)
+char *s1, *s2;
 {
     if (!s1 || !s2) return (-1);
     while (*s1 && *s2) {

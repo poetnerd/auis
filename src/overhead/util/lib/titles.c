@@ -36,11 +36,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <util.h>
 
-#include <string.h>
-#include <stdlib.h>
 static char *BeginInitialArgv = NULL, *EndInitialArgv;
 
-void SetInitialArgs(int argc, char **argv, char **envp)
+void SetInitialArgs(argc, argv, envp)
+int argc; char **argv, **envp;
 {
     int Ix;
 
@@ -57,7 +56,8 @@ void SetInitialArgs(int argc, char **argv, char **envp)
 }
 
 /*VARARGS1*/
-void SetProcTitle(char *str, int a1, int a2, int a3, int a4, int a5)
+void SetProcTitle(str, a1, a2, a3, a4, a5)
+char *str;
 {/* Set the process title. */
     char *cp;
     char Title[1500];
@@ -71,7 +71,8 @@ void SetProcTitle(char *str, int a1, int a2, int a3, int a4, int a5)
 }
 
 #ifdef TESTINGONLYTESTING
-int main(int argc, char **argv)
+main(argc, argv)
+int argc; char **argv;
 {
     char Str[500];
     char *cp;

@@ -37,13 +37,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <fdplumbi.h>
 
-int dbg_vclose(int fd)
+dbg_vclose(fd)
+int fd;
 {
     RegisterCloseFile(fd);
     return(vclose(fd));
 }
 
-int dbg_vfclose(FILE *fp)
+dbg_vfclose(fp)
+FILE *fp;
 {
     RegisterCloseFile(fileno(fp));
     return(vfclose(fp));

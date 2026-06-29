@@ -41,7 +41,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <ctype.h>
 
 
-int ULstrcmp(register char *s1, register char *s2)
+int ULstrcmp(s1, s2)
+register char *s1, *s2;
 {
     /* case INSENSITIVE:  Compare strings:  s1>s2: >0  s1==s2: 0  s1<s2: <0
 	  */
@@ -58,7 +59,9 @@ int ULstrcmp(register char *s1, register char *s2)
 
 #define DOWNCASE(x) (isascii(x) && isalpha(x) && isupper(x) ? (tolower(x)) : (x) )
 
-int ULstrncmp(char *s1, char *s2, int n)
+int ULstrncmp(s1,s2,n)
+char *s1, *s2;
+int n;
 {
   /* case INSENSITIVE:  Compare strings, up to n chars:  
      s1>s2: >0  s1==s2: 0  s1<s2: <0
@@ -77,8 +80,9 @@ int ULstrncmp(char *s1, char *s2, int n)
 
 #ifdef TESTINGONLYTESTING
 #include <stdio.h>
-#include <stdlib.h>
-int main(int argc, char *argv[])
+main(argc,argv)
+int argc;
+char *argv[];
 {
   int result = 0;
 

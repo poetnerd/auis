@@ -50,7 +50,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ness
 #include <ness.ih>
 #include <cursor.ih>
 
-#include <stdio.h>
 static struct cursor *waitcursor=NULL;
 
 static int waitcount=0;
@@ -88,7 +87,9 @@ static void WaitOff()
 }
 
 
-static boolean DoAppend(struct nessmv *self, struct ness *src, struct ness *dest)
+static boolean DoAppend(self, src, dest)
+struct nessmv *self;
+struct ness *src,*dest;
 {
     long end;
     ness_SetAccessLevel(dest, ness_codeUV);
@@ -144,7 +145,11 @@ static boolean DoAppend(struct nessmv *self, struct ness *src, struct ness *dest
     return TRUE;
 }
 
-static void UpdateFile(struct nessmv *self, struct ness *src, struct buffer *b, char *filename)
+static void UpdateFile(self, src, b, filename)
+struct nessmv *self;
+struct ness *src;
+struct buffer *b;
+char *filename;
 {
     struct buffer *ob;
     WaitOn();
@@ -183,7 +188,8 @@ struct helpRock {
 };
 
 
-static char *GetName(struct ness *n)
+static char *GetName(n)
+struct ness *n;
 {
     char *name=(char *)ness_GetName(n), *p;
     if(name) return name;
@@ -194,7 +200,9 @@ static char *GetName(struct ness *n)
     else return name;
 }
     
-static long match(struct ness *n, struct helpRock *h)
+static long match(n,h)
+struct ness *n;
+struct helpRock *h;
 {
     char buf[1024];
     int len;
@@ -210,7 +218,11 @@ static long match(struct ness *n, struct helpRock *h)
 }
 
 
-static void helpProc(char *partial, struct helpRock *myrock, procedure HelpWork, long rock)
+static void helpProc(partial,myrock,HelpWork,rock)
+char *partial;
+struct helpRock *myrock;
+procedure HelpWork;
+long rock;
 {
     struct text *t=myrock->text;
     struct ness *n=ness_GetList();
@@ -258,7 +270,11 @@ int bufferSize;
 
 static char sbuf[1024]=".atkmacros";
 
-static long AskForScript(struct nessmv *self, char *prompt, char *buf, long bufsiz)
+static long AskForScript(self, prompt, buf, bufsiz)
+struct nessmv *self;
+char *prompt;
+char *buf;
+long bufsiz;
 {
     struct ness *n=ness_GetList();
     struct helpRock myrock;
@@ -287,7 +303,9 @@ static long AskForScript(struct nessmv *self, char *prompt, char *buf, long bufs
     return 0;
 }
 
-static void ScriptAppend(struct nessmv *self, long rock)
+static void ScriptAppend(self, rock)
+struct nessmv *self;
+long rock;
 {
     char buf[1024];
     char *name=NULL;
@@ -344,7 +362,9 @@ static char *appendchoices[]={
 };
 
 
-static void Append(struct nessmv *self, long rock)
+static void Append(self, rock)
+struct nessmv *self;
+long rock;
 {
     char buf[1024];
     char *filename=NULL;
@@ -419,7 +439,9 @@ static void Append(struct nessmv *self, long rock)
     UpdateFile(self, src, b, filename);
 }
 
-static void Visit(struct nessmv *self, long rock)
+static void Visit(self, rock)
+struct nessmv *self;
+long rock;
 {
     struct ness *n=ness_GetList();
     char buf[1024];
@@ -476,14 +498,17 @@ static struct bind_Description Bindings[]={
 
 static struct menulist *menus=NULL;
 
-boolean nessmv__InitializeClass(struct classheader *classID)
+boolean nessmv__InitializeClass(classID)
+struct classheader *classID;
 {
     menus = menulist_New();
     bind_BindList(Bindings, NULL , menus, &nessmv_classinfo);
     return TRUE;
 }
 
-boolean nessmv__InitializeObject(struct classheader *classID, struct nessmv *self)
+boolean nessmv__InitializeObject(classID, self)
+struct classheader *classID;
+struct nessmv *self;
 { 
     self->ml=menulist_DuplicateML(menus, self);
     
@@ -492,13 +517,17 @@ boolean nessmv__InitializeObject(struct classheader *classID, struct nessmv *sel
     return TRUE;
 }
 
-void nessmv__FinalizeObject(struct classheader *classID, struct nessmv *self)
+void nessmv__FinalizeObject(classID, self)
+struct classheader *classID;
+struct nessmv *self;
 {
     if(self->ml) menulist_Destroy(self->ml);
     self->ml=NULL;
 }
 
-void nessmv__PostMenus(struct nessmv *self, struct menulist *ml)
+void nessmv__PostMenus(self, ml)
+struct nessmv *self;
+struct menulist *ml;
 {
     menulist_ClearChain(self->ml);
     if(ml && ml!=self->ml) {

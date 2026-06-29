@@ -75,8 +75,6 @@ END-SPECIFICATION  ************************************************************/
 #include "charthst.eh"
 #include <ctype.h>
 
-#include <stdlib.h>
-#include <stdio.h>
 int charthst_debug = 0;
 
 #define debug charthst_debug

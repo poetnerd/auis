@@ -80,8 +80,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <gif.h>
 #include <gif.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 /****
  **
  ** local #defines
@@ -325,7 +323,8 @@ gifin_open_image()
  * try to read next pixel from the raster, return result in *pel
  */
 
-static int gifin_get_pixel(int *pel)
+static int gifin_get_pixel(pel)
+     int *pel;
 {
   int  code;
   int  first;
@@ -423,7 +422,9 @@ static int gifin_close_file()
  * load a colormap from the input stream
  */
 
-static int gifin_load_cmap(int cmap, int ncolors)
+static int gifin_load_cmap(cmap, ncolors)
+     BYTE cmap[3][256];
+     int  ncolors;
 {
   int i;
 
@@ -487,7 +488,8 @@ static int gifin_read_data_block()
  * (returns the code of the first pixel in the string)
  */
 
-static int gifin_push_string(int code)
+static int gifin_push_string(code)
+     int code;
 {
   int rslt;
 
@@ -507,7 +509,9 @@ static int gifin_push_string(int code)
  * add a new string to the string table
  */
 
-static gifin_add_string(int p, int e)
+static gifin_add_string(p, e)
+     int p;
+     int e;
 {
   prefix[table_size] = p;
   extnsn[table_size] = e;
@@ -525,7 +529,8 @@ static gifin_add_string(int p, int e)
  * semi-graceful fatal error mechanism
  */
 
-static gifin_fatal(char *msg)
+static gifin_fatal(msg)
+     char *msg;
 {
   printf("Error reading GIF file: %s\n", msg);
   exit(0);

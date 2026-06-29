@@ -70,8 +70,6 @@ static int Coffset = 0;
 
 #define MAX(A,B) ((A > B)? A:B)
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #define otherwise break; case
 static char *names[] = {
     "magic ",
@@ -130,7 +128,8 @@ static used[256];
 int HeaderPrinted = 0;
 int minChar;
 
-int usage(char *s)
+usage(s)
+char *s;
 {
 	fprintf(stderr,"usage: %s [-mask] [-Soffset] [filename]  \n",s);
 	exit(1);
@@ -161,7 +160,8 @@ FILE *fout;
 	}
     }
 }
-int main(int argc, char *argv[])
+main(argc,argv)
+char *argv[];
 {
     int i,count;FILE *f;
     initlst();
@@ -197,7 +197,9 @@ int main(int argc, char *argv[])
     exit(0);
 }
 
-char *lookup(register char *s, int *i)
+char *lookup(s,i)
+register char *s;
+int *i;
 {
 	register struct st *lstp;
 	for(lstp = lst; lstp != endlst; lstp++){
@@ -222,7 +224,9 @@ char *lookup(register char *s, int *i)
 	*i = -1;
 	return(NULL);
 }
-int hexout(register char *c, register FILE *f)
+hexout(c,f)
+register char *c;
+register FILE *f;
 {
 	register int w = 0;
 	while(*c != '\0'){
@@ -240,7 +244,9 @@ int hexout(register char *c, register FILE *f)
 }
 static int psize,maxnwx,maxnwy,maxntosx,maxntosy,maxwtoex,maxwtoey,maxwbx,maxwby,maxnewlx,maxnewly,nicons;
 
-int PrintHeader(FILE *fout, int count)
+PrintHeader(fout,count)
+FILE *fout;
+int count;
 {
 	if(padflag ){
 		int size = MAX( maxwtoex + maxnwx,maxntosy + maxnwy) ; 
@@ -283,7 +289,8 @@ fprintf(fout,"BBX %d %d %d %d\n",bx,by,-orx ,ory - by );
 fprintf(fout,"BITMAP\n");
 }
 
-int fontcount(FILE *f)
+fontcount(f)
+FILE *f;
 {
     char buf[256];
     int result,count = 0;

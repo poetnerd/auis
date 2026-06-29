@@ -44,7 +44,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 static struct strcache *gcache=NULL;
 
-static int lchash(char *key)
+static int lchash(key)
+char *key;
 {
     char c;
     int index=0;
@@ -56,7 +57,8 @@ static int lchash(char *key)
     return index;
 }
 
-static int lccomp(char *a, char *b)
+static int lccomp(a,b)
+char *a, *b;
 {
     if(a==NULL && b==NULL) return 0;
     if(a==NULL) return -1;
@@ -64,7 +66,8 @@ static int lccomp(char *a, char *b)
     return lc_strcmp(a, b);
 }
 
-boolean strcache__InitializeClass(struct classheader *classID)
+boolean strcache__InitializeClass(classID)
+struct classheader *classID;
 {
     gcache=strcache_New();
     if(gcache==NULL) return FALSE;
@@ -73,12 +76,16 @@ boolean strcache__InitializeClass(struct classheader *classID)
     return TRUE;
 }
 
-boolean strcache__InitializeObject(struct classheader *classID, struct strcache *self)
+boolean strcache__InitializeObject(classID,self)
+struct classheader *classID;
+struct strcache *self;
 {
     return TRUE;
 }
 
-char *strcache__SaveStr(struct classheader *classID, char *str)
+char *strcache__SaveStr(classID,str)
+struct classheader *classID;
+char *str;
 {
     char *result;
     if(gcache==NULL) return NULL;
@@ -90,7 +97,6 @@ char *strcache__SaveStr(struct classheader *classID, char *str)
 }
 
 #include <glist.ih>
-#include <stdio.h>
 struct enumerate {
     boolean found;
     procedure proc;
@@ -103,7 +109,9 @@ struct egg {
 };
 
 
-static boolean EnumProc(struct egg *e, struct enumerate *rock)
+static boolean EnumProc(e, rock)
+struct egg *e;
+struct enumerate *rock;
 {
     boolean result;
     result=rock->proc(rock->rock, e->value,  e->key, rock->self);
@@ -111,7 +119,10 @@ static boolean EnumProc(struct egg *e, struct enumerate *rock)
     return result;
 }
 
-char *Enumerate(struct ghash *self, procedure proc, long rock)
+char *Enumerate(self,proc,rock)
+struct ghash *self;
+procedure proc;
+long rock;
 {
     char *result;
     struct enumerate r;
@@ -130,29 +141,40 @@ char *Enumerate(struct ghash *self, procedure proc, long rock)
     return NULL;
 }
     
-boolean DumpStr(long rock, char *val, char *key, struct strcache *self)
+boolean DumpStr(rock, val, key, self)
+long rock;
+char *val;
+char *key;
+struct strcache *self;
 {
     printf("key:%s\n", key);
     return FALSE;
 }
 
-void strcache__Dump(struct classheader *classID)
+void strcache__Dump(classID)
+struct classheader *classID;
 {
     Enumerate(gcache, DumpStr, NULL);
 }
 
-void strcache__FinalizeObject(struct classheader *classID, struct strcache *self)
+void strcache__FinalizeObject(classID,self)
+struct classheader *classID;
+struct strcache *self;
 {
 
 }
 
-char *strcache__Delete(struct strcache *self, char *key)
+char *strcache__Delete(self,key)
+struct strcache *self;
+char *key;
 {
     return NULL;
 }
     
 
-char *strcache__Rename(struct strcache *self, char *key, char *new)
+char *strcache__Rename(self,key,new)
+struct strcache *self;
+char *key,*new;
 {
     return NULL;
 }

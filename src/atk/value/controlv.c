@@ -49,7 +49,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <im.ih>
 #include <cursor.ih>
 
-#include <string.h>
 static boolean Inhibit;
 static struct atomlist *  AL_bodyfont;
 static struct atomlist *  AL_bodyfont_size;
@@ -77,7 +76,8 @@ static struct cursor *WaitCursor;
    A_long = atom_Intern("long") ,\
    A_string = atom_Intern("string") )
 
-static DoFunc(struct controlV *self)
+static DoFunc(self)
+struct controlV * self;
 {
     char iname[256];
     struct proctable_Entry *pr;
@@ -100,7 +100,10 @@ static DoFunc(struct controlV *self)
     }
     return FALSE;
 }
-struct controlV *controlV__DoHit(struct controlV *self, enum view_MouseAction type, long x, long y, long hits)
+struct controlV *controlV__DoHit(self,type,x,y,hits )
+struct controlV * self;
+enum view_MouseAction type;
+long x,y,hits;
 {
 
     if (type == view_RightUp || type == view_LeftUp)
@@ -108,7 +111,8 @@ struct controlV *controlV__DoHit(struct controlV *self, enum view_MouseAction ty
     return super_DoHit(self,type,x,y,hits );
 }
 
-void controlV__LookupParameters(struct controlV *self)
+void controlV__LookupParameters(self)
+     struct controlV * self;
 {
     struct buttonV *bv = (struct buttonV *) self;
   char * fontname;
@@ -194,7 +198,8 @@ void controlV__LookupParameters(struct controlV *self)
 
 }
 
-boolean controlV__InitializeClass(struct classheader *classID)
+boolean controlV__InitializeClass(classID)
+struct classheader *classID;
 {
   InternAtoms;
   WaitCursor = cursor_Create(NULL);
@@ -203,7 +208,9 @@ boolean controlV__InitializeClass(struct classheader *classID)
   return TRUE;
 }
 
-boolean controlV__InitializeObject(struct classheader *classID, struct controlV *self)
+boolean controlV__InitializeObject(classID, self )
+struct classheader *classID;
+struct controlV * self;
 {
     self->cclass = NULL;
     self->function = NULL;
@@ -211,7 +218,9 @@ boolean controlV__InitializeObject(struct classheader *classID, struct controlV 
     self->needsinit = TRUE;
     return TRUE;
 }
-void controlV__DrawFromScratch(struct controlV *self, long x, long y, long width, long height)
+void controlV__DrawFromScratch(self,x,y,width,height)
+struct controlV * self;
+long x,y,width,height;
 {
     super_DrawFromScratch(self,x,y,width,height);
     if(self->autoinit && self->needsinit && !Inhibit){
@@ -219,11 +228,14 @@ void controlV__DrawFromScratch(struct controlV *self, long x, long y, long width
     }
 }
 
-void controlV__InhibitAutoInit(struct classheader *ClassID)
+void controlV__InhibitAutoInit(ClassID)
+struct classheader *ClassID;
 {
     Inhibit = TRUE;
 }
-void controlV__SetAutoInit(struct classheader *ClassID, boolean val)
+void controlV__SetAutoInit(ClassID,val)
+struct classheader *ClassID;
+boolean val;
 {
     Inhibit = !val;
 }

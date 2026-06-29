@@ -63,8 +63,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <sys/param.h>
 #include <tags.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 struct SearchPattern {
     short size, used;
     unsigned char *body;
@@ -80,7 +78,9 @@ struct finderInfo {
     struct buffer *myBuffer;
 };
 
-static ViewEqual(struct frame *frame, struct view *view)
+static ViewEqual(frame, view)
+    struct frame *frame;
+    struct view *view;
 {
 
 #if 1
@@ -90,7 +90,8 @@ static ViewEqual(struct frame *frame, struct view *view)
 #endif /* 1 */
 }
 
-static struct frame *FindByView(struct view *view)
+static struct frame *FindByView(view)
+    struct view *view;
 {
 
     return frame_Enumerate(ViewEqual, (long) view);
@@ -106,7 +107,9 @@ static void checkFileName()
 }
 
 
-static struct buffer *tags_OpenBuffer(char *filename)
+static struct buffer *tags_OpenBuffer(filename)
+char *filename;
+
 {
     struct buffer *rbuffer;
     long version;
@@ -123,7 +126,9 @@ static struct buffer *tags_OpenBuffer(char *filename)
 
 /* open a buffer on the tag file*/
 
-static struct buffer *tags_OpenTagsBuffer(char *name)
+static struct buffer *tags_OpenTagsBuffer(name)
+char *name;
+
 {
     struct buffer *tagsbuffer;
     long version;
@@ -148,7 +153,10 @@ static struct buffer *tags_OpenTagsBuffer(char *name)
 /*
  * Zombie handler for completion of the 'tags' command.
  */
-void tags_finished(int pid, struct view *view, long *status)
+void tags_finished(pid, view, status)
+int pid;
+struct view *view;
+long *status;
 {
     int exit_status;
     struct buffer *buffer;
@@ -165,7 +173,10 @@ void tags_finished(int pid, struct view *view, long *status)
     }
 }
 
-void tags_RebuildTagsFile(struct view *view, long key)
+void tags_RebuildTagsFile(view, key)
+struct view *view;
+long key;
+
 {
     int pid;
 #ifdef linux
@@ -198,7 +209,10 @@ void tags_RebuildTagsFile(struct view *view, long key)
 
 /* skips over to the next field separated by blanks & tabs */
 
-long nextField(struct text *doc, long pos)
+long nextField(doc, pos)
+struct text *doc;
+long pos;
+
 {
     char c;
 
@@ -214,7 +228,10 @@ long nextField(struct text *doc, long pos)
 /* returns true if pos is in the first field
    fields are separated by blanks & tabs */
 
-int firstField(struct text *doc, long pos)
+int firstField(doc,pos)
+struct text *doc;
+long pos;
+
 {
     char c = text_GetChar(doc,pos);
     if ((c == ' ') || (c == '\t') || (c == '\n'))
@@ -230,7 +247,9 @@ int firstField(struct text *doc, long pos)
 
 /* gets the function name at the dot */
 
-char *getFunction(struct text *doc, long pos)
+char *getFunction(doc,pos)
+struct text *doc;
+long pos;
 {
     char c;
     static char name[256];
@@ -267,7 +286,11 @@ struct buffer *buffer; {
 
 /* Most of the work is done here. */
 
-void tags_FindTag(struct view *view, char *tag, int RecursiveEdit)
+void tags_FindTag (view, tag, RecursiveEdit)
+struct view *view;
+char *tag;
+int RecursiveEdit;
+
 {
     char find[255];
 
@@ -455,7 +478,9 @@ void tags_FindTag(struct view *view, char *tag, int RecursiveEdit)
     /*im_ForceUpdate();*/  /*isn't this bogus? */
 }
 
-void tags_GotoTagCmd(struct view *view, long key)
+void tags_GotoTagCmd(view,key)
+struct view *view;
+long key;
 {
     static char name[256];
     int RecursiveEdit= !im_ArgProvided(view_GetIM(view)) && environ_GetProfileSwitch("TagRecursiveEdit", TRUE);
@@ -466,7 +491,9 @@ void tags_GotoTagCmd(struct view *view, long key)
     tags_FindTag(view,name,RecursiveEdit);
 }
 
-void tags_FindTagCmd(struct view *view, long key)
+void tags_FindTagCmd(view,key)
+struct view *view;
+long key;
 {
     char *name;
     int RecursiveEdit= !im_ArgProvided(view_GetIM(view)) && environ_GetProfileSwitch("TagRecursiveEdit", TRUE);
@@ -476,7 +503,9 @@ void tags_FindTagCmd(struct view *view, long key)
     tags_FindTag(view,name,RecursiveEdit);
 }
 
-void tags_OpenCmd(struct view *view, long key)
+void tags_OpenCmd(view,key)
+struct view *view;
+long key;
 {
     char *name;
     int RecursiveEdit;
@@ -487,7 +516,9 @@ void tags_OpenCmd(struct view *view, long key)
 
 }
 
-void tags_LoadTagFileCmd(struct view *view, long key)
+void tags_LoadTagFileCmd(view,key)
+struct view *view;
+long key;
 {
     struct buffer *buffer, *tbuf;
     static char name[MAXPATHLEN+1];
@@ -520,7 +551,8 @@ void tags_LoadTagFileCmd(struct view *view, long key)
 
 
 
-boolean tags__InitializeClass(struct classheader *classID)
+boolean tags__InitializeClass(classID)
+    struct classheader *classID;
 {
     struct classinfo *textviewType = class_Load("textview");
 

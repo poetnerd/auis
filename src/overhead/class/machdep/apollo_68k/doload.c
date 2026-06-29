@@ -47,7 +47,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 #include <apollo/error.h>
 
-#include <string.h>
 int doload_trace=0;
 
 /*
@@ -98,7 +97,12 @@ error_fmt( st )
  * doload - loads a package into the process's address space. Returns Entry point address
  *          or NULL if error.
  */
-char *doload(int inFD, char *name, char **bp, long *lenP, char *path)
+char *doload(inFD, name, bp, lenP, path )
+int inFD;			/* open fd for package file */
+char *name;			/* name of package being loaded */
+char **bp;			/* base address of package */
+long *lenP; /* Not used by ap_doload */
+char *path;			/* Pathname of package being loaded */
 {
         loader_$handle_t handle;
         char *EntryPoint = NULL;

@@ -44,15 +44,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 
 #include "prefval.eh"
 
-#include <stdlib.h>
-#include <stdio.h>
 #define zfree(x) do { if(x) { free(x); (x)=NULL;}} while (0)
 
 #define MAX_LINE_LENGTH 70
 
 static char *GlomStrings(), *ReadLine();
 
-static char *strsave(char *str)
+static char *strsave(str)
+char *str;
 {
     char *result;
 
@@ -67,7 +66,9 @@ static char *strsave(char *str)
     return result;
 }
 
-void prefval__FreeValue(struct prefval *self, struct prefval_value *v)
+void prefval__FreeValue(self, v)
+struct prefval *self;
+struct prefval_value *v;
 {
     switch(prefval_GetType(self)) {
 	case prefval_Filename:
@@ -90,7 +91,9 @@ void prefval__FreeValue(struct prefval *self, struct prefval_value *v)
 }
 
 /* copy v2 to v1. */
-void prefval__CopyValue(struct prefval *self, struct prefval_value *v1, struct prefval_value *v2)
+void prefval__CopyValue(self, v1, v2)
+struct prefval *self;
+struct prefval_value *v1, *v2;
 {
     prefval_FreeValue(self, v1);
     switch(prefval_GetType(self)) {
@@ -116,7 +119,9 @@ void prefval__CopyValue(struct prefval *self, struct prefval_value *v1, struct p
     v1->set=v2->set;
 }
 
-void prefval__InitValue(struct prefval *self, struct prefval_value *v)
+void prefval__InitValue(self, v)
+struct prefval *self;
+struct prefval_value *v;
 {
     switch(prefval_GetType(self)) {
 	case prefval_Filename:
@@ -145,7 +150,9 @@ void prefval__InitValue(struct prefval *self, struct prefval_value *v)
     v->set=TRUE;
 }
 
-static boolean EnsureListSize(struct prefval *self, int n)
+static boolean EnsureListSize(self, n)
+struct prefval *self;
+int n;
 {
     struct prefval_value *result=self->values;
     
@@ -165,7 +172,9 @@ static boolean EnsureListSize(struct prefval *self, int n)
     } else return FALSE;
 }
 
-static boolean EnsureChoiceListSize(struct prefval *self, int n)
+static boolean EnsureChoiceListSize(self, n)
+struct prefval *self;
+int n;
 {
     struct prefval_value *cvalues=self->cvalues;
     char **choices=self->choices;
@@ -197,7 +206,9 @@ static boolean EnsureChoiceListSize(struct prefval *self, int n)
     self->cvalues=cvalues;
 }
 
-boolean prefval__InitializeObject(struct classheader *classID, struct prefval *self)
+boolean prefval__InitializeObject(classID, self)
+struct classheader *classID;
+struct prefval *self;
 {
     self->listmax=1;
     self->valueset=FALSE;
@@ -215,7 +226,9 @@ boolean prefval__InitializeObject(struct classheader *classID, struct prefval *s
     return TRUE;
 }
 
-void prefval__FinalizeObject(struct classheader *classID, struct prefval *self)
+void prefval__FinalizeObject(classID, self)
+struct classheader *classID;
+struct prefval *self;
 {
     zfree(self->separator);
     zfree(self->prefname);
@@ -237,19 +250,28 @@ void prefval__FinalizeObject(struct classheader *classID, struct prefval *self)
     }
 }
 
-static boolean appproc(struct prefval *self, FILE *fp, char *buf)
+static boolean appproc(self, fp, buf)
+struct prefval *self;
+FILE *fp;
+char *buf;
 {
     prefval_SetAppName(self, buf);
     return FALSE;
 }
 
-static boolean prefproc(struct prefval *self, FILE *fp, char *buf)
+static boolean prefproc(self, fp, buf)
+struct prefval *self;
+FILE *fp;
+char *buf;
 {
     prefval_SetPrefName(self, buf);
     return FALSE;
 }
 
-static boolean listproc(struct prefval *self, FILE *fp, char *buf)
+static boolean listproc(self, fp, buf)
+struct prefval *self;
+FILE *fp;
+char *buf;
 {
     int i=atoi(buf);
     
@@ -269,7 +291,10 @@ static boolean listproc(struct prefval *self, FILE *fp, char *buf)
     return FALSE;
 }
 
-static boolean clistproc(struct prefval *self, FILE *fp, char *buf)
+static boolean clistproc(self, fp, buf)
+struct prefval *self;
+FILE *fp;
+char *buf;
 {
     int i=atoi(buf);
     
@@ -296,31 +321,46 @@ static boolean clistproc(struct prefval *self, FILE *fp, char *buf)
 }
 
 
-static boolean typeproc(struct prefval *self, FILE *fp, char *buf)
+static boolean typeproc(self, fp, buf)
+struct prefval *self;
+FILE *fp;
+char *buf;
 {
     prefval_SetType(self, prefval_StringToType(buf));
     return FALSE;
 }
 
-static boolean condproc(struct prefval *self, FILE *fp, char *buf)
+static boolean condproc(self, fp, buf)
+struct prefval *self;
+FILE *fp;
+char *buf;
 {
     prefval_SetCondition(self, buf);
     return FALSE;
 }
 
-static boolean sepproc(struct prefval *self, FILE *fp, char *buf)
+static boolean sepproc(self, fp, buf)
+struct prefval *self;
+FILE *fp;
+char *buf;
 {
     prefval_SetSeparator(self, buf);
     return FALSE;
 }
 
-static boolean listmaxproc(struct prefval *self, FILE *fp, char *buf)
+static boolean listmaxproc(self, fp, buf)
+struct prefval *self;
+FILE *fp;
+char *buf;
 {
     prefval_SetListMax(self, atoi(buf));
     return FALSE;
 }
 
-static boolean doneproc(struct prefval *self, FILE *fp, char *buf)
+static boolean doneproc(self, fp, buf)
+struct prefval *self;
+FILE *fp;
+char *buf;
 {
     return TRUE;
 }
@@ -345,7 +385,11 @@ static struct dataprocs {
 /* set in ReadLine if a line has a control directive */
 static boolean linehascontrol;
 
-static long dostuff(struct prefval *self, FILE *fp, long rock, struct dataprocs *procs)
+static long dostuff(self, fp, rock, procs)
+struct prefval *self;
+FILE *fp;
+long rock;
+struct dataprocs *procs;
 {
     char *buf, *buf2;
     boolean done=FALSE;
@@ -378,7 +422,10 @@ static long dostuff(struct prefval *self, FILE *fp, long rock, struct dataprocs 
 
 
  
-static long prefval__ReadDataPart(struct prefval *self, FILE *fp, int dsversion)
+static long prefval__ReadDataPart(self, fp, dsversion)
+struct prefval *self;
+FILE *fp;
+int dsversion;
 {
     /*
       Read in the object from the file.
@@ -388,7 +435,9 @@ static long prefval__ReadDataPart(struct prefval *self, FILE *fp, int dsversion)
     return err;
 }
 
-static struct prefval_value *prefval__StringToValue(struct prefval *self, char *str)
+static struct prefval_value *prefval__StringToValue(self, str)
+struct prefval *self;
+char *str;
 {
     static struct prefval_value sv;
     if(prefval_GetType(self)==prefval_None) return NULL;
@@ -457,7 +506,8 @@ char *str;
     return prefval_None;
 }
 
-char *prefval__TypeString(struct prefval *self)
+char *prefval__TypeString(self)
+struct prefval *self;
 {
     
     struct prefvaltypes *t=types;
@@ -472,7 +522,9 @@ char *prefval__TypeString(struct prefval *self)
     return "Unkown";
 }
 
-char *prefval__IndexValueString(struct prefval *self, int which)
+char *prefval__IndexValueString(self, which)
+struct prefval *self;
+int which;
 {
     static char buf[1024];
     if(which>=self->vlistsize) return "NO VALUE 3!";
@@ -503,7 +555,8 @@ char *prefval__IndexValueString(struct prefval *self, int which)
 }
 
 static char prefvalbuf[1024];
-static char *PreferenceString(struct prefval *self)
+static char *PreferenceString(self)
+struct prefval *self;
 {
     char *buf=prefvalbuf;
     int i;
@@ -524,13 +577,15 @@ static char *PreferenceString(struct prefval *self)
 }
 
 
-char *prefval__PreferenceString(struct prefval *self)
+char *prefval__PreferenceString(self)
+struct prefval *self;
 {
     prefvalbuf[0]='\0';
     return PreferenceString(self);
 }
 
-char *prefval__FullPreferenceString(struct prefval *self)
+char *prefval__FullPreferenceString(self)
+struct prefval *self;
 {
     if(prefval_GetCondition(self)) {
 	sprintf(prefvalbuf, "?%s:", prefval_GetCondition(self));
@@ -539,7 +594,9 @@ char *prefval__FullPreferenceString(struct prefval *self)
 }
 
 
-void prefval__SetFromPreferenceString(struct prefval *self, char *str)
+void prefval__SetFromPreferenceString(self, str)
+struct prefval *self;
+char *str;
 {
     prefval_ClearValues(self);
     if(self->separator) {
@@ -577,7 +634,11 @@ void prefval__SetFromPreferenceString(struct prefval *self, char *str)
 }
 
 
-static long prefval_SanelyReturnReadError(struct prefval *self, FILE *fp, long id, long code)
+static long prefval_SanelyReturnReadError(self, fp, id, code)
+struct prefval *self;
+FILE *fp;
+long id;
+long code;
 {
     /*
       Suck up the file until our enddata, then return the error code.
@@ -602,7 +663,10 @@ static long prefval_SanelyReturnReadError(struct prefval *self, FILE *fp, long i
 }
 
 
-long prefval__Read(struct prefval *self, FILE *fp, long id)
+long prefval__Read(self, fp, id)
+struct prefval *self;
+FILE *fp;
+long id;
 {
 
   char *buf;
@@ -628,7 +692,11 @@ long prefval__Read(struct prefval *self, FILE *fp, long id)
 
 
 
-long prefval__Write(struct prefval *self, FILE *file, long writeID, int level)
+long prefval__Write(self, file, writeID, level)
+struct prefval *self;
+FILE *file;
+long writeID;
+int level;
 {
     if (prefval_GetWriteID(self) != writeID)  {
 	int i=prefval_GetListSize(self);
@@ -655,28 +723,35 @@ long prefval__Write(struct prefval *self, FILE *file, long writeID, int level)
 }
 
 
-void prefval__SetAppName(struct prefval *self, char *name)
+void prefval__SetAppName(self, name)
+struct prefval *self;
+char *name;
 {
     zfree(self->appname);
     self->appname=strsave(name);
     prefval_SetModified(self);
 }
 
-void prefval__SetPrefName(struct prefval *self, char *name)
+void prefval__SetPrefName(self, name)
+struct prefval *self;
+char *name;
 {
     zfree(self->prefname);
     self->prefname=strsave(name);
     prefval_SetModified(self);
 }
 
-void prefval__SetSeparator(struct prefval *self, char *name)
+void prefval__SetSeparator(self, name)
+struct prefval *self;
+char *name;
 {
     zfree(self->separator);
     self->separator=strsave(name);
     prefval_SetModified(self);
 }
 
-void prefval__ClearChoices(struct prefval *self)
+void prefval__ClearChoices(self)
+struct prefval *self;
 {
     int i;
     for(i=0;i<self->clistsize;i++) {
@@ -688,7 +763,8 @@ void prefval__ClearChoices(struct prefval *self)
     self->clistsize=0;
 }
 
-void prefval__ClearValues(struct prefval *self)
+void prefval__ClearValues(self)
+struct prefval *self;
 {
     int i;
     for(i=0;i<self->vlistsize;i++) {
@@ -699,7 +775,11 @@ void prefval__ClearValues(struct prefval *self)
 }
 
 
-void prefval__SetChoices(struct prefval *self, int nchoices, char **choices, struct prefval_value *tvalues)
+void prefval__SetChoices(self, nchoices, choices, tvalues)
+struct prefval *self;
+int nchoices;
+char **choices;
+struct prefval_value *tvalues;
 {
     int i;
     
@@ -717,7 +797,11 @@ void prefval__SetChoices(struct prefval *self, int nchoices, char **choices, str
     prefval_SetModified(self);
 }
 
-void prefval__SetChoice(struct prefval *self, int which, char *choice, struct prefval_value *tvalue)
+void prefval__SetChoice(self, which, choice, tvalue)
+struct prefval *self;
+int which;
+char *choice;
+struct prefval_value *tvalue;
 {
     if(!EnsureChoiceListSize(self, which)) return;
     
@@ -731,7 +815,10 @@ void prefval__SetChoice(struct prefval *self, int which, char *choice, struct pr
     prefval_SetModified(self);
 }
 
-void prefval__SetValues(struct prefval *self, int nvalues, struct prefval_value *tvalues)
+void prefval__SetValues(self, nvalues, tvalues)
+struct prefval *self;
+int nvalues;
+struct prefval_value *tvalues;
 {
     int i;
 
@@ -744,7 +831,10 @@ void prefval__SetValues(struct prefval *self, int nvalues, struct prefval_value 
     prefval_SetModified(self);
 }
 
-void prefval__SetIndexValue(struct prefval *self, int which, struct prefval_value *tvalue)
+void prefval__SetIndexValue(self, which, tvalue)
+struct prefval *self;
+int which;
+struct prefval_value *tvalue;
 {
     if(!EnsureListSize(self, which)) return;
     if(tvalue) prefval_CopyValue(self, self->values+which, tvalue);
@@ -752,7 +842,9 @@ void prefval__SetIndexValue(struct prefval *self, int which, struct prefval_valu
     prefval_SetModified(self);
 }
 
-void prefval__SetValue(struct prefval *self, struct prefval_value *tvalue)
+void prefval__SetValue(self, tvalue)
+struct prefval *self;
+struct prefval_value *tvalue;
 {
     prefval_SetIndexValue(self, 0, tvalue);
 }
@@ -760,14 +852,16 @@ void prefval__SetValue(struct prefval *self, struct prefval_value *tvalue)
 static char **choices=NULL;
 static struct prefval_value *cvalues=NULL;
 
-static int compare_choices(int *i1, int *i2)
+static int compare_choices(i1, i2)
+int *i1, *i2;
 {
     if(choices==NULL) return 0;
     
     return strcmp(choices[*i2], choices[*i1]);
 }
 	     
-void prefval__SortChoices(struct prefval *self)
+void prefval__SortChoices(self)
+struct prefval *self;
 {
     int *indices;
     int i;
@@ -818,25 +912,30 @@ void prefval__SortChoices(struct prefval *self)
 }
 
 
-void prefval__SetCondition(struct prefval *self, char *cond)
+void prefval__SetCondition(self, cond)
+struct prefval *self;
+char *cond;
 {
     zfree(self->condition);
     self->condition=strsave(cond);
     prefval_SetModified(self);
 }
 
-void prefval__SetModified(struct prefval *self)
+void prefval__SetModified(self)
+struct prefval *self;
 {
     self->isdefault=FALSE;
     super_SetModified(self);
 }
 
-void prefval__SetDefault(struct prefval *self)
+void prefval__SetDefault(self)
+struct prefval *self;
 {
     self->isdefault=TRUE;
 }
 
-static char *GlomStrings(char *s, char *t)
+static char *GlomStrings(s, t)
+char *s, *t;
 {
     /* 
       Safely (allocs more memory) concatenates the two strings, 
@@ -857,7 +956,8 @@ static char *GlomStrings(char *s, char *t)
     }
 }
 
-static char *ReadLine(FILE *f)
+static char *ReadLine(f)
+FILE *f;
 {
     /* 
       Reads from the datastream, attempting to return a single string.

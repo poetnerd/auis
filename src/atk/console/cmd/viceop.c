@@ -65,8 +65,6 @@ Function
 #include <netdb.h>
 #include <netinet/in.h>
 
-#include <stdlib.h>
-#include <stdio.h>
 void	InitHosts();
 void	ReConnect();
 
@@ -167,7 +165,10 @@ int	bindrc;
 struct r_connection * con;
 int	NumberOfColumns = 1;
 
-int ConfigureMachines(struct consoleClass *self, int *Rows, int *Columns, int *Machines, boolean Initialize)
+ConfigureMachines(self, Rows, Columns, Machines, Initialize)
+struct consoleClass *self;
+int *Rows, *Columns, *Machines;
+boolean Initialize;
 {
     mydbg(("entering: ConfigureMachines\n"));
     if (Initialize){
@@ -181,7 +182,9 @@ int ConfigureMachines(struct consoleClass *self, int *Rows, int *Columns, int *M
 
 #define MarkAndReturn(x)  { (x).IsDisplaying = TRUE; return (&(x));}
 
-struct datum *BuildDatum(char *keyword, int machine)
+struct datum *BuildDatum(keyword, machine)
+char *keyword;
+int machine;
 {
     mydbg(("entering: BuildDatum\n"));
     if(machine >= activeClusters)
@@ -287,7 +290,8 @@ struct datum *BuildDatum(char *keyword, int machine)
     return((struct datum *)-1);
 }
 
-int OneTimeRemoteInit(struct consoleClass *self)
+OneTimeRemoteInit(self)
+    struct consoleClass *self;
 {
     PROCESS parentPid;
     int		rc;
@@ -308,13 +312,15 @@ int OneTimeRemoteInit(struct consoleClass *self)
     r_Init(0);
 }
 
-int InitializeInstruments(struct consoleClass *self)
+InitializeInstruments(self)
+    struct consoleClass *self;
 { /* not needed for file server console */
     mydbg(("entering: InitializeInstruments\n"));
     return;
 }
 
-int WakeUp(struct consoleClass *self)
+WakeUp(self) 
+    struct consoleClass *self; 
 {
     ViceStatistics * current = 0;
     ViceStatistics * previous = 0;
@@ -365,7 +371,12 @@ int WakeUp(struct consoleClass *self)
 }
 
 
-int Calculate(struct consoleClass *self, ViceStatistics *current, ViceStatistics *previous, struct MonitorStats *dial, int index)
+Calculate(self, current, previous, dial, index)
+struct consoleClass *self;
+ViceStatistics	* current;
+ViceStatistics	* previous;
+struct MonitorStats * dial;
+int		  index;
 {
     int		interval;
     int		total;
@@ -553,14 +564,17 @@ int Calculate(struct consoleClass *self, ViceStatistics *current, ViceStatistics
     return(0);
 }
 
-int LogIt(int level, char *str)
+LogIt (level, str)
+    int	    level;
+    char    * str;
 {
     mydbg(("entering: LogIt\n"));
     printf("%s", str);
     fflush(stdout);
 }
 
-void	ReConnect(struct consoleClass *self)
+void	ReConnect(self)
+    struct consoleClass *self;
 {
     struct stat buff;
     struct hostent *hoste;
@@ -620,7 +634,8 @@ void	ReConnect(struct consoleClass *self)
     con = r_NewConn(hostn,portn);
 }
 
-void InitHosts(struct consoleClass *self)
+void InitHosts(self)
+    struct consoleClass *self;
 {
     long    count;
     register int    i;
@@ -707,7 +722,9 @@ InitPrint(self) struct consoleClass *self;{}
 extern boolean LogErrorsExternally;
 extern FILE *ExternalLogFP;
 
-int ReportInternalError(struct consoleClass *self, char *string)
+ReportInternalError(self, string)
+    struct consoleClass *self;
+    char *string;
 {
     mydbg(("entering: ReportInternalError\n"));
     if (LogErrorsExternally) {
@@ -723,7 +740,8 @@ int ReportInternalError(struct consoleClass *self, char *string)
 /* The following need to be filled in .  -- nsb */
 #define MAXCOLUMNS 10
 
-int ChooseColumns(int numcol)
+ChooseColumns(numcol)
+    int numcol;
 {
     mydbg(("entering: ChooseColumns\n"));
     NumberOfColumns = numcol;
@@ -731,7 +749,9 @@ int ChooseColumns(int numcol)
     if(NumberOfColumns > MAXCOLUMNS) NumberOfColumns = MAXCOLUMNS;
 }
 
-int ChooseMachines(struct consoleClass *self, char *machinelist)
+ChooseMachines(self, machinelist)
+    struct consoleClass *self;
+    char *machinelist;
 {
     char	* prev;
     char	* curr;
@@ -771,7 +791,8 @@ int ChooseMachines(struct consoleClass *self, char *machinelist)
 int OutgoingAge;
 char OtherVenusStr[10], FetchVenusStr[10], FinishedVenusStr[10], PrimaryErrorBuffer[10];
 
-int VenusNovelty(struct consoleClass *self)
+VenusNovelty(self)
+    struct consoleClass *self;
 {
     mydbg(("entering: VenusNovelty\n"));
     ReportInternalError(self, "vopcon:  Vopcon does not use VenusNovelty");
@@ -784,7 +805,9 @@ InitClock() {}
 
 InitMail(self)struct consoleClass *self; {}
 
-int CheckMail(struct consoleClass *self, int requested)
+CheckMail(self, requested)
+struct consoleClass *self;
+int requested;
 {}
 
 ReInitializeRemoteInstruments() {

@@ -50,7 +50,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <../common/safe.h>
 
-#include <stdlib.h>
 /* set entry point */
 
 /*
@@ -60,7 +59,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * the text segment size to the offset within the data segment.
  */
 
-int FixEntryPoint(register struct doload_environment *e, char *EntryPointName)
+FixEntryPoint(e, EntryPointName)
+register struct doload_environment *e;
+char *EntryPointName;
 {
     register struct nlist *sp;
     register struct nlist *sbound;
@@ -97,7 +98,9 @@ extern struct globaltab {
 } globals[];
 extern long globalcount;
 
-int FixRelocation(register struct doload_environment *e, register struct relocation_info *rp)
+FixRelocation(e, rp)
+register struct doload_environment *e;
+register struct relocation_info *rp;
 {
     register int i;
     register int j;
@@ -156,7 +159,9 @@ return;
 
 /* write new symbol table */
 
-int WriteNewSym(register struct doload_environment *e, int outFD)
+WriteNewSym(e, outFD)
+register struct doload_environment *e;
+int outFD;
 {
     register int i;
     register char *newcp;
@@ -172,7 +177,10 @@ int WriteNewSym(register struct doload_environment *e, int outFD)
 
 /* read, fix, and write out module */
 
-int FixIt(int inFD, int outFD, char *EntryPointName)
+FixIt(inFD, outFD, EntryPointName)
+int inFD;			/* open fd for .o file */
+int outFD;			/* open fd for .do file */
+char *EntryPointName;		/* entry point name */
 {
     struct doload_environment E;
     register struct doload_environment *e;
@@ -228,7 +236,9 @@ int FixIt(int inFD, int outFD, char *EntryPointName)
     return ;
 }
 
-static char *ComputeOutputFileName(char *InputFileName, char *extension)
+static char *ComputeOutputFileName (InputFileName, extension)
+char *InputFileName;
+char *extension;
 {
     static char name[256];
     register char  *p, *q;
@@ -257,7 +267,9 @@ static char *ComputeOutputFileName(char *InputFileName, char *extension)
 
 /* main program */
 
-int main(int argc, char **argp)
+main(argc, argp)
+int argc;
+char **argp;
 {
     int infd;
     int outfd;

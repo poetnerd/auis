@@ -58,8 +58,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <frame.ih>
 #include <dataobj.ih>
 
-#include <stdlib.h>
-#include <stdio.h>
 static struct cursor *WaitCursor;
 
 #define INCREMENTSIZE 64
@@ -79,7 +77,9 @@ static struct arbiterview *firstlink , *lastlink;
 #define Cel(A) ((struct cel *) DataObject(A))
 #define Parent(V) (((struct view *)V)->parent)
 #define Arbiter(A) ((struct arbiter *) DataObject(A))
-struct celview *arbiterview__lookupname(struct arbiterview *self, char *ViewName)
+struct celview *arbiterview__lookupname(self,ViewName)
+struct arbiterview *self;
+char *ViewName;
 {
     struct cel *cl;
     char *st;
@@ -95,7 +95,10 @@ struct celview *arbiterview__lookupname(struct arbiterview *self, char *ViewName
     return NULL;
 }
 
-void arbiterview__FullUpdate(struct arbiterview *self, enum view_UpdateType type, long left, long top, long width, long height)
+void arbiterview__FullUpdate(self,type,left,top,width,height)
+struct arbiterview *self;
+enum view_UpdateType type;
+long left,top,width,height;
 {
 /*
     if(self->NeedsInit ){
@@ -108,7 +111,9 @@ void arbiterview__FullUpdate(struct arbiterview *self, enum view_UpdateType type
     super_FullUpdate(self,type,left,top,width,height);
 }
 
-void arbiterview__InitCell(struct arbiterview *self, struct celview *cv)
+void arbiterview__InitCell(self,cv)
+struct arbiterview *self;
+struct celview *cv;
 {
     struct cel *cl;
     cl = Cel(cv);
@@ -175,7 +180,9 @@ printf("Leaving initcell %s (%s)- %d\n", cel_GetRefName(cl),class_GetTypeName(ce
 }
 
 
-void arbiterview__ArbRead(struct arbiterview *self, char *frs)
+void arbiterview__ArbRead(self,frs)
+struct arbiterview *self;
+char *frs;
 {
 /* user code begins here for ArbReadButtonCallBack */
     FILE *f;
@@ -200,7 +207,9 @@ void arbiterview__ArbRead(struct arbiterview *self, char *frs)
     fclose(f);
  /*   strcpy(self->filename,frs); */
 }
-boolean arbiterview__CreateCon(struct arbiterview *self, struct text *EditText)
+boolean arbiterview__CreateCon(self,EditText)
+struct arbiterview *self;
+struct text *EditText;
 {
     char fnm[64];
     char buf[1060];
@@ -257,13 +266,18 @@ boolean arbiterview__CreateCon(struct arbiterview *self, struct text *EditText)
     return TRUE;
 }
 
-void arbiterview__DeleteCell(struct arbiterview *self, struct celview *cv)
+void arbiterview__DeleteCell(self,cv)
+struct arbiterview *self;
+struct celview *cv;
 {
     if(deletelist(self,cv))
     	celview_RemoveObserver(cv,self);
 
 }
-int arbiterview__registername(struct arbiterview *self, struct celview *cv, char *refname)
+int arbiterview__registername(self,cv,refname)
+struct arbiterview *self;
+struct celview *cv;
+char *refname;
 {
     register struct cel *clp;
     struct cel *cl = Cel(cv);
@@ -303,7 +317,10 @@ printf(" exiting Register name \n");
 #endif /* DEBUG */
     return TRUE;
 }
-static appendlist(char **lst, int cnt, char *str)
+static appendlist(lst,cnt,str)
+char **lst;
+int cnt;
+char *str;
 {
     int next = 1;
     while(*str){
@@ -323,10 +340,13 @@ static appendlist(char **lst, int cnt, char *str)
 }
 	
 
-boolean arbiterview__InitializeObject(struct classheader *classID, struct arbiterview *self)
+boolean arbiterview__InitializeObject(classID,self)
+struct classheader *classID;
+struct arbiterview *self;
 {
 #ifndef _IBMR2
-    #endif /* _IBMR2 */
+    extern char *malloc();
+#endif /* _IBMR2 */
     if(lastlink != NULL) lastlink->next = self;
     self->next = NULL;
     lastlink = self;
@@ -344,7 +364,8 @@ boolean arbiterview__InitializeObject(struct classheader *classID, struct arbite
  /*  arbcon_AddArbiter(self); */
     return TRUE;
 }
-boolean arbiterview__InitializeClass(struct classheader *ClassID)
+boolean arbiterview__InitializeClass(ClassID)
+struct classheader *ClassID;
 {
     firstlink = lastlink = NULL;
     a_vp = atom_Intern("struct dataobject *");
@@ -352,7 +373,9 @@ boolean arbiterview__InitializeClass(struct classheader *ClassID)
     if(WaitCursor) cursor_SetStandard(WaitCursor,Cursor_Wait);
     return TRUE;
 }
-void arbiterview__FinalizeObject(struct classheader *classID, struct arbiterview *self)
+void arbiterview__FinalizeObject(classID,self)
+struct classheader *classID;
+struct arbiterview *self;
 {
     register struct celview **v;
     register int i = self->celcount;
@@ -373,7 +396,9 @@ void arbiterview__FinalizeObject(struct classheader *classID, struct arbiterview
     arbcon_DeleteArbiter(self);
 }
 
-static addlist(struct arbiterview *self, struct celview *cv)
+static addlist(self,cv)
+struct arbiterview *self;
+struct celview *cv;
 {
     register struct celview **v;
     register int i = 0;
@@ -389,7 +414,9 @@ static addlist(struct arbiterview *self, struct celview *cv)
     arbiterview_NotifyObservers(self,0);
     return self->celcount - 1;
 }
-static deletelist(struct arbiterview *self, struct celview *cv)
+static deletelist(self,cv)
+struct arbiterview *self;
+struct celview *cv;
 {
     register struct celview **v;
     register int i = self->celcount;
@@ -424,7 +451,10 @@ printf("found string\n");
     return shift;
 }
 
-void arbiterview__AddHandler(struct arbiterview *self, int (*handler)(), long rock)
+void arbiterview__AddHandler(self,handler,rock)
+struct arbiterview *self;
+int (*handler)();
+long rock;
 {
     struct celview **v;
     register int i = self->celcount;
@@ -437,12 +467,17 @@ void arbiterview__AddHandler(struct arbiterview *self, int (*handler)(), long ro
 	}
     }
 }
-struct basicobject * arbiterview__WantHandler(struct arbiterview *self, char *handlerName)
+struct basicobject * arbiterview__WantHandler(self, handlerName)
+struct arbiterview *self;
+char *handlerName;
 {
     if(strcmp(handlerName,"arbiterview") == 0) return (struct basicobject *)self;
     return super_WantHandler(self, handlerName);
 }
-struct dataobject * arbiterview__GetNamedObject(struct classheader *classID, struct view *vw, char *name)
+struct dataobject * arbiterview__GetNamedObject(classID,vw,name)
+struct classheader *classID;
+struct view *vw;
+char *name;
 {
     long val;
     char ss[256];
@@ -509,7 +544,10 @@ printf("Returning NULL\n");
 #endif /* DEBUG */
     return NULL;
 }
-struct view * arbiterview__GetNamedView(struct classheader *classID, struct view *vw, char *name)
+struct view * arbiterview__GetNamedView(classID,vw,name)
+struct classheader *classID;
+struct view *vw;
+char *name;
 {
     struct celview *v;
     if((v = arbiterview_GetNamedCelview(vw,name)) == NULL) return NULL;
@@ -517,7 +555,10 @@ struct view * arbiterview__GetNamedView(struct classheader *classID, struct view
 
 }
 
-struct celview * arbiterview__GetNamedCelview(struct classheader *classID, struct view *vw, char *name)
+struct celview * arbiterview__GetNamedCelview(classID,vw,name)
+struct classheader *classID;
+struct view *vw;
+char *name;
 {
 
     struct cel *cl;
@@ -557,19 +598,25 @@ printf("Found via arbiter - Returning %d\n",val);
     }
     return NULL;
 }
-void arbiterview__ObservedChanged(struct arbiterview *self, struct observable *changed, long value)
+void arbiterview__ObservedChanged(self, changed, value)
+struct arbiterview *self;
+struct observable *changed;
+long value;
 {
     if (value == observable_OBJECTDESTROYED){
 	if(deletelist(self,(struct celview *)changed)) return;
     }
     super_ObservedChanged(self, changed, value);
 }
-void arbiterview__SetDataObject(struct arbiterview *self, struct arbiter *dd)
+void arbiterview__SetDataObject(self,dd)
+struct arbiterview *self;
+struct arbiter *dd;
 {
     arbiter_SetApplication(dd,cel_APPLICATION);
     super_SetDataObject(self,dd);
 }
-void arbiterview__InitArbcon(struct arbiterview *self)
+void arbiterview__InitArbcon(self)
+struct arbiterview *self;
 {
     register struct celview **v;
     struct cel *cl;
@@ -580,11 +627,15 @@ void arbiterview__InitArbcon(struct arbiterview *self)
     }
     arbiterview_SetCelMode(self,TRUE);
 }
-struct arbiterview *arbiterview__GetFirstLink(struct classheader *ClassID)
+struct arbiterview *arbiterview__GetFirstLink(ClassID)
+struct classheader *ClassID;
 {
     return firstlink;
 }
-long arbiterview__GetArbName(struct arbiterview *self, char *buf, long buflen)
+long arbiterview__GetArbName(self,buf,buflen)
+struct arbiterview *self;
+char *buf;
+long buflen;
 {
     int csize;
     struct buffer *b;
@@ -613,7 +664,9 @@ long arbiterview__GetArbName(struct arbiterview *self, char *buf, long buflen)
     }
    return (csize + strlen(myname));
 }
-struct arbiterview *arbiterview__FindArbByName(struct classheader *ClassID, char *str)
+struct arbiterview *arbiterview__FindArbByName(ClassID,str)
+struct classheader *ClassID;
+char *str;
 {
     char buf[2048];
     long len,slen;
@@ -627,11 +680,14 @@ struct arbiterview *arbiterview__FindArbByName(struct classheader *ClassID, char
     return NULL;
 }
 
-char *arbiterview__GetDataName(struct arbiterview *self)
+char *arbiterview__GetDataName(self)
+struct arbiterview *self;
 {
     return "arbiter";
 }
-void arbiterview__LinkTree(register struct arbiterview *self, struct view *parent)
+void arbiterview__LinkTree(self, parent)
+register struct arbiterview *self;
+struct view *parent;
 {
     super_LinkTree(self,parent);
     if(parent == NULL){
@@ -641,7 +697,8 @@ void arbiterview__LinkTree(register struct arbiterview *self, struct view *paren
 	arbcon_AddArbiter(self);
 
 }
-boolean arbiterview__InTree(struct arbiterview *self)
+boolean arbiterview__InTree(self)
+struct arbiterview *self;
 {
 /*  printf("In Intree %d, %s, parent = %d\n",self ,arbiter_GetRefName(Arbiter(self)), ((struct view *)self)->parent);
  printf("cp = %d\n",arbiterview_GetTrueChild(self)->parent);
@@ -664,7 +721,10 @@ boolean arbiterview__InTree(struct arbiterview *self)
     return(arbiterview_InTree(((struct celview *)self)->arb));
 }
 
-void arbiterview__SetIgnoreUpdates(struct classheader *classID, struct view *vw, boolean val)
+void arbiterview__SetIgnoreUpdates(classID,vw,val)
+struct classheader *classID;
+struct view *vw;
+boolean val;
 {
     struct arbiterview *self;
     struct view *fr;
@@ -681,7 +741,9 @@ void arbiterview__SetIgnoreUpdates(struct classheader *classID, struct view *vw,
 	}
     }
 }
-struct arbiterview *arbiterview__FindArb(struct classheader *classID, struct view *vw)
+struct arbiterview *arbiterview__FindArb(classID, vw)
+struct classheader *classID;
+struct view *vw;
 {
     struct arbiterview *self;
     struct celview *cself;

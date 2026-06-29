@@ -43,7 +43,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <sys/param.h>
 #include <ctype.h>
 
-#include <stdlib.h>
 extern char *AndrewDir();
 char *cls,*viewname,*oldcls,*oldvw;
 static char defstring[] = {"\
@@ -122,13 +121,16 @@ static char Controlbase[] = "\
 DOBJS = %s.do\n\
 IHFILES = %s.ih\n\
 ";
-void ws(struct stf *s, FILE *f)
+void ws(s,f)
+struct stf *s;
+FILE *f;
 {
     char *c;
     for(c = s->begin; c < s->end; c++)
 	putc(*c,f);
 }
-int justcomments(struct stf *s)
+justcomments(s)
+struct stf *s;
 {
     char *c;
     int incomment = FALSE;
@@ -142,7 +144,9 @@ int justcomments(struct stf *s)
     }
     return TRUE;
 }
-int writemerge(struct stf *o, struct stf *n, FILE *f)
+writemerge(o,n,f)
+struct stf *o,*n;
+FILE *f;
 {
     for(;n != NULL; n = n->next){
 	if(n->bro) {
@@ -163,7 +167,8 @@ int writemerge(struct stf *o, struct stf *n, FILE *f)
 	fprintf(f,"\n#endif /* UNUSED_USER_CODE */\n");
     }
 }
-struct stf *newstf(struct stf *old)
+struct stf *newstf(old)
+struct stf *old;
 {
     struct stf *new;
     new =  (struct stf *) (malloc(sizeof (struct stf)));
@@ -172,7 +177,9 @@ struct stf *newstf(struct stf *old)
     new->bro = new->next = NULL;
     return new;
 }
-int writestr(FILE *fi, FILE *fo, char *name)
+writestr(fi,fo,name)
+FILE *fi,*fo;
+char *name;
 {
     int c;
     fprintf(fo,"static char %s[] = {\"\\\n",name);
@@ -183,7 +190,8 @@ int writestr(FILE *fi, FILE *fo, char *name)
     }
     fprintf(fo,"\"};\n");
 }
-long createchfile(char *src, char *classn, char *name)
+long createchfile(src,classn,name)
+char *src,*classn,*name;
 {
     FILE *oldf,*newf;
     sprintf(name,"%s.fh",classn);
@@ -201,7 +209,8 @@ long createchfile(char *src, char *classn, char *name)
     close(newf);
     return 0;
 }
-struct stf *makestf(char *buf)
+struct stf *makestf(buf)
+char *buf;
 {
     struct stf *start, *new;
     char *c;
@@ -230,7 +239,9 @@ struct stf *makestf(char *buf)
     new->end = c;
     return start;
 }				
-char *getf(FILE *f, char *s, char *buf, char *s1, char *s2)
+char *getf(f,s,buf,s1,s2)
+FILE *f;
+char *s,*buf,*s1,*s2;
 {
     static char ending[1024];
     register char *c,*cp;
@@ -275,14 +286,16 @@ char *getf(FILE *f, char *s, char *buf, char *s1, char *s2)
 	}
     }
 }
-int keycmp(register char *s1, register char *s2)
+keycmp(s1,s2)
+register char *s1,*s2;
 {
     while(*s1++ == *s2){
 	if(*s2++ == '\n') return TRUE;
     }
     return FALSE;
 }
-int setbro(struct stf *s1, struct stf *s2)
+setbro(s1,s2)
+struct stf *s1,*s2;
 {
     register struct stf *ss2,*ss1;
     for(ss1 = s1 ; ss1 != NULL; ss1 = ss1->next){
@@ -297,7 +310,10 @@ int setbro(struct stf *s1, struct stf *s2)
     }
 }
 
-static FILE *tryopen(char *name, boolean *renamed, char **s1, char **s2)
+static FILE *tryopen(name,renamed,s1,s2)
+char *name;
+boolean *renamed;
+char **s1,**s2;
 {
     char buf[1024],*p;
     FILE *f;
@@ -341,7 +357,9 @@ static FILE *tryopen(char *name, boolean *renamed, char **s1, char **s2)
     return NULL;
 }
 	    
-int process(FILE *oldf, char *name)
+process(oldf,name)
+FILE *oldf;
+char *name;
 {
     static char oldb[64000], newb[64000];
     FILE *newf;
@@ -381,24 +399,28 @@ int process(FILE *oldf, char *name)
 }
 
 
-int usage(char *s)
+usage(s)
+char *s;
 {
     fprintf(stderr,"usage: %s <-C ClassName(:oldclassname)> <-F FunctionName> <-T Title> <-O ShellScriptName> <-M> <-I> <-V Viewname(:oldviewname)> <-W> <-Help> <Filename>\n",s);
     exit(1);
 }
-int writeinset(char *iname, char *src, char *cls, char *func)
+writeinset(iname,src,cls,func)
+char *iname,*src,*cls,*func;
 {
     
 }
 static char makefile[MAXPATHLEN];
-char *ps(char *s)
+char *ps(s)
+char *s;
 {
     char *c;
     if((c = strchr(s,':')) != NULL) 
 	*c++ = '\0';
     return c;
 }
-int main(int argc, char *argv[])
+main(argc,argv)
+char *argv[];
 {
     register char *c;
     register int cc;

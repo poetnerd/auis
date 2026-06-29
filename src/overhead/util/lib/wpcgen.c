@@ -49,16 +49,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <bt.h>
 #include <wp.h>
 #include <btwp.h>
-#include <stdlib.h>
 #endif /* WHITEPAGES_ENV   */
 
 #if !POSIX_ENV
+extern int errno;
+extern char *malloc();
+extern char *realloc();
 #endif
 
 /* Compatibility routines for non-cellular use */
 extern struct wp_CD *ThisCellDir;
 
-wp_ErrorCode wp_Generate(wp_PrimeKey *PKPtr)
+wp_ErrorCode wp_Generate(PKPtr)
+wp_PrimeKey *PKPtr;
 {
     if (ThisCellDir == NULL) return wperr_NotInited;
     return cwp_Generate((struct wp_cd *) ThisCellDir, PKPtr);

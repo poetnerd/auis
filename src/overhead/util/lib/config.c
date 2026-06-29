@@ -43,8 +43,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #include <andrdir.h>
 
-#include <stdlib.h>
 char ProgramName[100];
+extern int errno;
 
 #define MAXCONFIGSIZE 2000
 
@@ -70,7 +70,18 @@ getconfiguration -- read information from configuration file /AndrewSetup.
 */
 
 
-int ReadConfigureLine(FILE *fp, char *text, int maxTextLength, char **program, int *programLength, char **key, int *keyLength, char **value, int *valueLength, char **condition, int *conditionLength)
+ReadConfigureLine(fp, text, maxTextLength, program, programLength, key, keyLength, value, valueLength, condition, conditionLength)
+FILE *fp;
+char *text;
+int maxTextLength;
+char **program;
+int *programLength;
+char **key;
+int *keyLength;
+char **value;
+int *valueLength;
+char **condition;
+int *conditionLength;
 {
     char *keybeg;
     char *keyend;
@@ -289,7 +300,8 @@ int ReadConfigureLine(FILE *fp, char *text, int maxTextLength, char **program, i
     }
 }
 
-struct configurelist *ReadConfigureFile(char *fileName)
+struct configurelist *ReadConfigureFile(fileName)
+    char *fileName;
 {
     FILE *fp;
 
@@ -348,7 +360,10 @@ struct configurelist *ReadConfigureFile(char *fileName)
 }
     
 
-char *GetConfig(struct configurelist *header, char *key, int usedefault)
+char *GetConfig(header, key, usedefault)
+    struct configurelist *header;
+    char *key;
+    int usedefault;
 {
     struct configurelist *p;
     char *t;
@@ -377,7 +392,8 @@ char *GetConfig(struct configurelist *header, char *key, int usedefault)
     return NULL;
 }
 
-char *GetConfiguration(char *key)
+char *GetConfiguration(key)
+char *key;
 {
     static int inited = 0;
     static struct configurelist *setupHead = NULL;
@@ -402,7 +418,8 @@ char *GetConfiguration(char *key)
     return GetConfig(setupHead, key, 1);
 }
 
-int FreeConfigureList(register struct configurelist *cList)
+FreeConfigureList(cList)
+    register struct configurelist *cList;
 {
     register struct configurelist *t;
 
@@ -422,7 +439,9 @@ int FreeConfigureList(register struct configurelist *cList)
 /* This is the main routine used to test the routine above */
 
 #ifdef TESTINGONLYTESTING
-int main(int argc, char **argv)
+main(argc, argv)
+int argc;
+char **argv;
 {
     int i;
     char *val;

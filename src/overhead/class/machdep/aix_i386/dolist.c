@@ -83,7 +83,9 @@ int inFD;			/* open fd for package file */
 
 /* main program for testing doload */
 
-int main(int argc, char **argp)
+main(argc, argp)
+int argc;
+char **argp;
 {
     int fd;
     int gotcha = 0;

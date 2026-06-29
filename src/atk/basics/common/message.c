@@ -44,7 +44,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <message.eh>
 
 
-int message__DisplayString(struct classheader *classID, struct view *view, int priority, char *string)
+int message__DisplayString(classID, view, priority, string)
+    struct classheader *classID;
+    struct view *view;
+    int priority;
+    char *string;
 {
     char *str = messitem_Replace(string);
     struct msghandler *handler;
@@ -63,7 +67,12 @@ int message__DisplayString(struct classheader *classID, struct view *view, int p
     return msghandler_DisplayString(handler, priority, str);
 }
 
-int message__AskForString(struct classheader *classID, struct view *view, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize)
+int message__AskForString(classID, view, priority, prompt, defaultString, buffer, bufferSize)
+    struct classheader *classID;
+    struct view *view;
+    int priority;
+    char *prompt, *defaultString, *buffer;
+    int bufferSize;
 {
     char *str = messitem_Replace(prompt);
     struct msghandler *handler;
@@ -82,7 +91,12 @@ int message__AskForString(struct classheader *classID, struct view *view, int pr
     return msghandler_AskForString(handler, priority, str, defaultString, buffer, bufferSize);
 }
 
-int message__AskForPasswd(struct classheader *classID, struct view *view, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize)
+int message__AskForPasswd(classID, view, priority, prompt, defaultString, buffer, bufferSize)
+    struct classheader *classID;
+    struct view *view;
+    int priority;
+    char *prompt, *defaultString, *buffer;
+    int bufferSize;
 {
     char *str = messitem_Replace(prompt);
     struct msghandler *handler;
@@ -101,7 +115,16 @@ int message__AskForPasswd(struct classheader *classID, struct view *view, int pr
     return msghandler_AskForPasswd(handler, priority, str, defaultString, buffer, bufferSize);
 }
 
-int message__AskForStringCompleted(struct classheader *classID, struct view *view, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize, struct keymap *keystate, procedure completionProc, procedure helpProc, long functionData, int flags)
+int message__AskForStringCompleted(classID, view, priority, prompt, defaultString, buffer, bufferSize, keystate, completionProc, helpProc, functionData, flags)
+    struct classheader *classID;
+    struct view *view;
+    int priority;
+    char *prompt, *defaultString, *buffer;
+    int bufferSize;
+    struct keymap *keystate;
+    procedure completionProc, helpProc;
+    long functionData;
+    int flags;
 {
     char *str = messitem_Replace(prompt);
     struct msghandler *handler;
@@ -120,7 +143,15 @@ int message__AskForStringCompleted(struct classheader *classID, struct view *vie
     return msghandler_AskForStringCompleted(handler, priority, str, defaultString, buffer, bufferSize, keystate, completionProc, helpProc, functionData, flags);
 }
 
-int message__MultipleChoiceQuestion(struct classheader *classID, struct view *view, int priority, char *prompt, long defaultChoice, long *result, char **choices, char *abbrevKeys)
+int message__MultipleChoiceQuestion(classID, view, priority, prompt, defaultChoice, result, choices, abbrevKeys)
+    struct classheader *classID;
+    struct view *view;
+    int priority;
+    char *prompt;
+    long defaultChoice;
+    long *result;
+    char **choices;
+    char *abbrevKeys;
 {
     struct msghandler *handler;
     char *nchoices[128];
@@ -147,7 +178,9 @@ int message__MultipleChoiceQuestion(struct classheader *classID, struct view *vi
     return msghandler_MultipleChoiceQuestion(handler, priority, str, defaultChoice, result, nchoices, abbrevKeys);
 }
 
-void message__CancelQuestion(struct classheader *classID, struct view *view)
+void message__CancelQuestion(classID, view)
+    struct classheader *classID;
+    struct view *view;
 {
 
     struct msghandler *handler = (struct msghandler *) view_WantHandler(view, "message");
@@ -156,7 +189,10 @@ void message__CancelQuestion(struct classheader *classID, struct view *view)
         msghandler_CancelQuestion(handler);
     }
 }
-void message__Advice(struct classheader *classID, struct view *view, enum message_Preference pp)
+void message__Advice(classID, view,pp)
+    struct classheader *classID;
+    struct view *view;
+    enum message_Preference pp;
 {
 
     struct msghandler *handler = (struct msghandler *) view_WantHandler(view, "message");
@@ -166,7 +202,11 @@ void message__Advice(struct classheader *classID, struct view *view, enum messag
     }
 }
 
-int message__GetCurrentString(struct classheader *classID, struct view *view, char *buffer, int bufferSize)
+int message__GetCurrentString(classID, view, buffer, bufferSize)
+    struct classheader *classID;
+    struct view *view;
+    char *buffer;
+    int bufferSize;
 {
 
     struct msghandler *handler = (struct msghandler *) view_WantHandler(view, "message");
@@ -178,7 +218,12 @@ int message__GetCurrentString(struct classheader *classID, struct view *view, ch
     return msghandler_GetCurrentString(handler, buffer, bufferSize);
 }
 
-int message__InsertCharacters(struct classheader *classID, struct view *view, int pos, char *string, int len)
+int message__InsertCharacters(classID, view, pos, string, len)
+    struct classheader *classID;
+    struct view *view;
+    int pos;
+    char *string;
+    int len;
 {
 
     struct msghandler *handler = (struct msghandler *) view_WantHandler(view, "message");
@@ -190,7 +235,10 @@ int message__InsertCharacters(struct classheader *classID, struct view *view, in
     return msghandler_InsertCharacters(handler, pos, string, len);
 }
 
-int message__DeleteCharacters(struct classheader *classID, struct view *view, int pos, int len)
+int message__DeleteCharacters(classID, view, pos, len)
+    struct classheader *classID;
+    struct view *view;
+    int pos, len;
 {
 
     struct msghandler *handler = (struct msghandler *) view_WantHandler(view, "message");
@@ -202,7 +250,9 @@ int message__DeleteCharacters(struct classheader *classID, struct view *view, in
     return msghandler_DeleteCharacters(handler, pos, len);
 }
 
-int message__GetCursorPos(struct classheader *classID, struct view *view)
+int message__GetCursorPos(classID, view)
+    struct classheader *classID;
+    struct view *view;
 {
 
     struct msghandler *handler = (struct msghandler *) view_WantHandler(view, "message");
@@ -214,7 +264,10 @@ int message__GetCursorPos(struct classheader *classID, struct view *view)
     return msghandler_GetCursorPos(handler);
 }
 
-int message__SetCursorPos(struct classheader *classID, struct view *view, int pos)
+int message__SetCursorPos(classID, view, pos)
+    struct classheader *classID;
+    struct view *view;
+    int pos;
 {
 
     struct msghandler *handler = (struct msghandler *) view_WantHandler(view, "message");
@@ -226,7 +279,9 @@ int message__SetCursorPos(struct classheader *classID, struct view *view, int po
     return msghandler_SetCursorPos(handler, pos);
 }
 
-boolean message__Asking(struct classheader *classID, struct view *view)
+boolean message__Asking(classID, view)
+    struct classheader *classID;
+    struct view *view;
 {
 
     struct msghandler *handler = (struct msghandler *) view_WantHandler(view, "message");

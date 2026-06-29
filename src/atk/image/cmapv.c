@@ -41,8 +41,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 #include <cmap.ih>
 #include <cmapv.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 struct view *Color_Choice();
 struct view *Control_Choice();
 

@@ -46,7 +46,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <class.h>
 #include "list.eh"
 
-#include <stdlib.h>
 #define new() \
   (struct list_Entry *) malloc(sizeof (struct list_Entry))
 
@@ -54,7 +53,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
  * Class procedures
  */
 
-boolean list__InitializeObject(struct classheader *classID, struct list *self)
+boolean list__InitializeObject(classID, self)
+struct classheader *classID;
+struct list *self;
 {
     self->head = NULL;
     self->tail = NULL;
@@ -63,24 +64,32 @@ boolean list__InitializeObject(struct classheader *classID, struct list *self)
     return TRUE;
 }
 
-void list__FinalizeObject(struct classheader *classID, struct list *self)
+void list__FinalizeObject(classID, self)
+struct classheader *classID;
+struct list *self;
 {
     list_Clear(self);
 }
 
-static int CopyEntry(char *value, struct list *dst)
+static int CopyEntry(value, dst)
+char *value;
+struct list *dst;
 {
     list_InsertEnd(dst, value);
 
     return TRUE;
 }
 
-void list__Merge(struct classheader *classID, struct list *dst, struct list *src)
+void list__Merge(classID, dst, src)
+struct classheader *classID;
+struct list *dst, *src;
 {
     list_Enumerate(src, CopyEntry, (char *) dst);
 }
 
-void list__Append(struct classheader *classID, struct list *dst, struct list *src)
+void list__Append(classID, dst, src)
+struct classheader *classID;
+struct list *dst, *src;
 {
     if (dst->size == 0) {
         dst->head = src->head;
@@ -100,7 +109,9 @@ void list__Append(struct classheader *classID, struct list *dst, struct list *sr
  * Methods
  */
 
-void list__InsertFront(struct list *self, char *data)
+void list__InsertFront(self, data)
+struct list *self;
+char *data;
 {
     register struct list_Entry *p;
 
@@ -111,7 +122,9 @@ void list__InsertFront(struct list *self, char *data)
     self->size++;
 }
 
-void list__InsertEnd(struct list *self, char *data)
+void list__InsertEnd(self, data)
+struct list *self;
+char *data;
 {
     register struct list_Entry *p;
 
@@ -127,7 +140,9 @@ void list__InsertEnd(struct list *self, char *data)
     self->size++;
 }
 
-boolean list__InsertUnique(struct list *self, char *data)
+boolean list__InsertUnique(self, data)
+struct list *self;
+char *data;
 {
     if (list_Member(self, data))
         return FALSE;
@@ -141,7 +156,10 @@ boolean list__InsertUnique(struct list *self, char *data)
 /* data2, a negative number if data1 is less than data2, */
 /* or zero if they are equal. */
 
-void list__InsertSorted(struct list *self, char *data, procedure compare)
+void list__InsertSorted(self, data, compare)
+struct list *self;
+char *data;
+procedure compare;
 {
     register struct list_Entry *n, *p, **pp;
 
@@ -162,7 +180,8 @@ void list__InsertSorted(struct list *self, char *data, procedure compare)
     self->size++;
 }
 
-char *list__RemoveFront(struct list *self)
+char *list__RemoveFront(self)
+struct list *self;
 {
     register struct list_Entry *p = self->head;
     register char *data;
@@ -184,7 +203,9 @@ char *list__RemoveFront(struct list *self)
  * Find and delete
  */
 
-boolean list__Delete(struct list *self, char *data)
+boolean list__Delete(self, data)
+struct list *self;
+char *data;
 {
     register struct list_Entry *p, **pp, *lp=NULL;
 
@@ -205,7 +226,9 @@ boolean list__Delete(struct list *self, char *data)
     return TRUE;
 }
 
-boolean list__Member(struct list *self, char *data)
+boolean list__Member(self, data)
+struct list *self;
+char *data;
 {
     register struct list_Entry *p;
 
@@ -224,7 +247,9 @@ boolean list__Member(struct list *self, char *data)
 
 struct arg { char **list; int ind;};
 
-static boolean MoveNew(char *data, struct arg *ap)
+static boolean MoveNew(data, ap)
+char *data;
+struct arg *ap;
 {
     ap->list[ap->ind]=data;
     ap->ind++;
@@ -233,7 +258,9 @@ static boolean MoveNew(char *data, struct arg *ap)
 
 static procedure tcompare=NULL;
 
-static int rcompare(char **d1, char **d2)
+static int rcompare(d1, d2)
+char **d1;
+char **d2;
 {
     procedure lcompare=tcompare;
     int result=tcompare?tcompare(*d1, *d2):0;
@@ -241,7 +268,9 @@ static int rcompare(char **d1, char **d2)
     return result;
 }
 
-boolean list__Sort(struct list *self, procedure compare)
+boolean list__Sort(self, compare)
+struct list *self;
+procedure compare;
 {
     struct arg a;
     int i;
@@ -275,7 +304,10 @@ boolean list__Sort(struct list *self, procedure compare)
  * Otherwise, the enumeration completes and NULL is returned.
  */
 
-char *list__Enumerate(struct list *self, procedure proc, char *rock)
+char *list__Enumerate(self, proc, rock)
+struct list *self;
+procedure proc;
+char *rock;
 {
     register struct list_Entry *p;
 
@@ -286,7 +318,8 @@ char *list__Enumerate(struct list *self, procedure proc, char *rock)
     return NULL;
 }
 
-void list__Clear(struct list *self)
+void list__Clear(self)
+struct list *self;
 {
     register struct list_Entry *p, *n;
 

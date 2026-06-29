@@ -16,9 +16,10 @@ static char *rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/val
 #include <style.ih>
 #include <envrment.ih>
 #include <fontdesc.ih>
-#include <stdlib.h>
 #define INITIALSIZE 64
-boolean enterint__InitializeObject(struct classheader *classID, struct enterint *self)
+boolean enterint__InitializeObject(classID,self)
+struct classheader *classID;
+struct enterint *self;
 {
     if((self->buf = (char *)malloc(INITIALSIZE)) == NULL)return FALSE;
     self->buflen = 0;
@@ -29,12 +30,15 @@ boolean enterint__InitializeObject(struct classheader *classID, struct enterint 
     self->Style = NULL;
     return TRUE;
 }
-boolean enterint__FinalizeObject(struct classheader *classID, struct enterint *self)
+boolean enterint__FinalizeObject(classID,self)
+struct classheader *classID;
+struct enterint *self;
 {
     free(self->buf);
     return TRUE;
 }
-void enterint__updatebuf(struct enterint *self)
+void enterint__updatebuf(self)
+struct enterint *self;
 {
     long len = enterint_GetLength(self) + 1;
     self->needswrap = FALSE;
@@ -54,18 +58,23 @@ void enterint__updatebuf(struct enterint *self)
 	enterint_SetGlobalStyle(self, NULL);
     self->needswrap = TRUE;
 }
-boolean enterint__Changed(struct enterint *self)
+boolean enterint__Changed(self)
+struct enterint *self;
 {
     return (boolean)(self->mod != enterint_GetModified(self));
 }
-void enterint__SetChars(struct enterint *self, char *str, int len)
+void enterint__SetChars(self,str,len)
+struct enterint *self;
+char *str;
+int len;
 {
     self->needswrap = FALSE;
     enterint_Clear(self);
     if(len && str && *str) enterint_InsertCharacters(self,0,str,len);
     self->needswrap = TRUE;
 }
-static checkstyles(struct enterint *self)
+static checkstyles(self)
+struct enterint *self;
 {
     
     if(self->needswrap && enterint_GetGlobalStyle(self) == NULL){
@@ -78,7 +87,11 @@ static checkstyles(struct enterint *self)
 	enterint_SetGlobalStyle(self, self->Style);
     }
 }
-boolean enterint__InsertCharacters(struct enterint *self, long pos, char *str, long len)
+boolean enterint__InsertCharacters(self, pos, str, len)
+struct enterint *self;
+long pos;
+char *str;
+long len;  
 {
     if(atoi(str) <=0) {
       enterint_Clear(self);
@@ -98,7 +111,8 @@ long len;  {
     return TRUE;
 }
 
-char *enterint__ViewName(int self)
+char *enterint__ViewName(self)
+struct enterint*self;
 {
     return ("eintview");
 }

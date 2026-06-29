@@ -33,7 +33,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include  <cons.h>
 
-#include <stdlib.h>
 /*
  * Returns the first cons cell in the free area.  If one does not exist, a
  * new block of cons cells is allocated and linked into the freelist, and a
@@ -45,7 +44,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * also eradicated unnecessarily. 
  */
 
-EliCons_t      *eliCons_GetNew(EliState_t *st)
+EliCons_t      *eliCons_GetNew(st)
+EliState_t     *st;
 {
     EliCons_t      *tmp = NULL;
 
@@ -107,7 +107,8 @@ EliCons_t      *eliCons_GetNew(EliState_t *st)
  * cell in this block's freelist. 
  */
 
-EliCons_t      *eliCons_GetNewBlock(int numcells)
+EliCons_t      *eliCons_GetNewBlock(numcells)
+int             numcells;
 {
     EliCons_t      *result;
     int             i;
@@ -130,7 +131,10 @@ EliCons_t      *eliCons_GetNewBlock(int numcells)
  * with the cell's innards. 
  */
 
-void            EliCons_BindCar(EliState_t *st, EliCons_t *cell, EliSexp_t *val)
+void            EliCons_BindCar(st, cell, val)
+EliState_t     *st;
+EliCons_t      *cell;
+EliSexp_t      *val;
 {
     eliSexp_IncrRefcount(val);
     eliSexp_DecrRefcount(st, cell->data.car);
@@ -146,14 +150,19 @@ void            EliCons_BindCar(EliState_t *st, EliCons_t *cell, EliSexp_t *val)
  * with the cell's innards. 
  */
 
-void            EliCons_BindCdr(EliState_t *st, EliCons_t *cell, EliSexp_t *val)
+void            EliCons_BindCdr(st, cell, val)
+EliState_t     *st;
+EliCons_t      *cell;
+EliSexp_t      *val;
 {
     eliSexp_IncrRefcount(val);
     eliSexp_DecrRefcount(st, cell->data.cdr);
     cell->data.cdr = val;
 }
 
-int             eliCons_DecrRefcount(EliState_t *st, EliCons_t *cell)
+int             eliCons_DecrRefcount(st, cell)
+EliState_t     *st;
+EliCons_t      *cell;
 {
     int             result;
 
@@ -174,7 +183,8 @@ int             eliCons_DecrRefcount(EliState_t *st, EliCons_t *cell)
     return (result);
 }
 
-void            eliCons_IncrRefcount(EliCons_t *cell)
+void            eliCons_IncrRefcount(cell)
+EliCons_t      *cell;
 {
     ++(cell->data.refcount);
 }
@@ -184,7 +194,8 @@ void            eliCons_IncrRefcount(EliCons_t *cell)
  * last cons cell in the top level is returned. 
  */
 
-EliCons_t      *EliLastCell(EliCons_t *cell)
+EliCons_t      *EliLastCell(cell)
+EliCons_t      *cell;
 {
     EliCons_t      *result;
 
@@ -192,12 +203,14 @@ EliCons_t      *EliLastCell(EliCons_t *cell)
     return (result);
 }
 
-EliSexp_t      *EliCons_GetCar(EliCons_t *cell)
+EliSexp_t      *EliCons_GetCar(cell)
+EliCons_t      *cell;
 {
     return (cell->data.car);
 }
 
-EliSexp_t      *EliCons_GetCdr(EliCons_t *cell)
+EliSexp_t      *EliCons_GetCdr(cell)
+EliCons_t      *cell;
 {
     return (cell->data.cdr);
 }

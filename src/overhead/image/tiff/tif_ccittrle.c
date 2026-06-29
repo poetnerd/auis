@@ -39,7 +39,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "tiffioP.h"
 #include "tif_fax3.h"
 
-int TIFFInitCCITTRLE(TIFF *tif)
+TIFFInitCCITTRLE(tif)
+	TIFF *tif;
 {
 	TIFFInitCCITTFax3(tif);		/* reuse G3 compression */
 	tif->tif_preencode = NULL;
@@ -58,7 +59,8 @@ int TIFFInitCCITTRLE(TIFF *tif)
 	return (1);
 }
 
-int TIFFInitCCITTRLEW(TIFF *tif)
+TIFFInitCCITTRLEW(tif)
+	TIFF *tif;
 {
 	TIFFInitCCITTFax3(tif);		/* reuse G3 compression */
 	tif->tif_preencode = NULL;

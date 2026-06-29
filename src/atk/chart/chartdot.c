@@ -78,7 +78,6 @@ END-SPECIFICATION  ************************************************************/
 #include "chartdot.eh"
 #include <ctype.h>
 
-#include <stdlib.h>
 int chartdot_debug = 0;
 
 #define debug chartdot_debug

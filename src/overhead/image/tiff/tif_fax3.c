@@ -46,7 +46,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #define	G3STATES
 #include "g3states.h"
 
-#include <stdlib.h>
 typedef struct {
 	Fax3BaseState b;
 } Fax3DecodeState;
@@ -95,7 +94,8 @@ static	void putspan();
 extern	int TIFFFlushData1();
 #endif
 
-int TIFFInitCCITTFax3(TIFF *tif)
+TIFFInitCCITTFax3(tif)
+	TIFF *tif;
 {
 	tif->tif_predecode = Fax3PreDecode;
 	tif->tif_decoderow = Fax3Decode;
@@ -113,7 +113,9 @@ int TIFFInitCCITTFax3(TIFF *tif)
 	return (1);
 }
 
-int TIFFModeCCITTFax3(TIFF *tif, int isClassF)
+TIFFModeCCITTFax3(tif, isClassF)
+	TIFF *tif;
+	int isClassF;
 {
 	if (isClassF)
 		tif->tif_options |= FAX3_CLASSF;

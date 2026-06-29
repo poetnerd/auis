@@ -45,15 +45,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 
 
 
-#include <string.h>
-#include <stdio.h>
-struct buttonV *menterstrV__DoHit(struct menterstrV *self, enum view_MouseAction type, long x, long y, long hits)
+struct buttonV *menterstrV__DoHit( self,type,x,y,hits )
+     struct menterstrV * self;
+     enum view_MouseAction type;
+     long x,y,hits;
 {
   if (self->etext &&(type == view_RightUp || type == view_LeftUp))
       mentertext_updatebuf(self->etext);
   return (struct buttonV *)self;
 }
-void menterstrV__ObservedChanged(struct menterstrV *self, struct observable *changed, long value)
+void menterstrV__ObservedChanged(self,changed,value)
+struct menterstrV *self;
+struct observable *changed;
+long value;
 {
     struct value *val ;
     char *str,*os;
@@ -92,7 +96,8 @@ void menterstrV__ObservedChanged(struct menterstrV *self, struct observable *cha
 	}
     }
 }
-struct view *menterstrV__GetApplicationLayer(struct menterstrV *self)
+struct view *menterstrV__GetApplicationLayer(self)
+struct menterstrV *self;
 {
     struct lpair *lp;	
     struct metextview *ev;
@@ -113,19 +118,24 @@ struct view *menterstrV__GetApplicationLayer(struct menterstrV *self)
     metextview_SetValueview(ev,(struct valueview *)self);
     return (struct view *)lp;
 }
-boolean menterstrV__InitializeObject(struct classheader *classID, struct menterstrV *self)
+boolean menterstrV__InitializeObject(classID,self)
+struct classheader *classID;
+struct menterstrV *self;
 {
     self->etext = NULL;
     self->etextview = NULL;
     return TRUE;
 }
-boolean menterstrV__FinalizeObject(struct classheader *classID, struct menterstrV *self)
+boolean menterstrV__FinalizeObject(classID,self)
+struct classheader *classID;
+struct menterstrV *self;
 {
     if(self->etext)
 	mentertext_RemoveObserver(self->etext,self);
     return TRUE;
 }
-void menterstrV__WantInputFocus(struct menterstrV *self)
+void menterstrV__WantInputFocus(self)
+struct menterstrV *self;
 {
     if(self->etextview) 
 	metextview_WantInputFocus(self->etextview,self->etextview);

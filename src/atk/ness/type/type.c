@@ -123,9 +123,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ness
 #include <err.h>
 
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 /* declarations for parser and lex 
 		(referenced from type.tlc and parse.gra.tab.c) */
 
@@ -204,7 +201,9 @@ char * str;
 /* given a field in a property list, append the definition of that and all subsequent fields.
  */
 
-int appendfields(struct type *self, long depth)
+appendfields(self, depth)
+struct type * self;
+long depth;
 {
     int i;
 
@@ -222,7 +221,9 @@ int appendfields(struct type *self, long depth)
 /* given the structure associated with an object, append the fields except for the header.
  */
 
-int appenddata(struct type *self, long depth)
+appenddata(self, depth)
+struct type * self;
+long depth;
 {
     int i;
 
@@ -239,7 +240,9 @@ int appenddata(struct type *self, long depth)
 
 /* same as above, but use comma separated enum format */
 
-int appendconsts(struct type *self, long depth)
+appendconsts(self, depth)
+struct type * self;
+long depth;
 {
     int i;
 
@@ -263,7 +266,9 @@ int appendconsts(struct type *self, long depth)
 
 /* same as above, but use comma separated parameter format */
 
-int appendparams(struct type *self, long depth)
+appendparams(self, depth)
+struct type * self;
+long depth;
 {
     if (self == NULL)
 	return;
@@ -279,7 +284,10 @@ int appendparams(struct type *self, long depth)
 
 /* recursively construct the declaration */
 
-int type_GetDeclaration_(struct type *self, long opsPos, long depth)
+type_GetDeclaration_(self, opsPos, depth)
+struct type * self;
+long opsPos;
+long depth;
 {
     long i;
     char buf[1000];
@@ -521,7 +529,9 @@ table_init()
     currentClass = NULL;
 }
 
-int copyTable(struct type **from, struct type **to, long size)
+copyTable(from, to, size)
+struct type **from, **to;
+long size;
 {
     int i;
 
@@ -529,7 +539,8 @@ int copyTable(struct type **from, struct type **to, long size)
 	to[i] = from[i];
 }
 
-int table_setClass(struct type *class)
+table_setClass(class)
+struct type *class;
 {
     struct classInfo *classInfo = class->info.classInfo;
     currentClass = class;
@@ -581,7 +592,9 @@ table_flush()
     classInfo->data = tables->data;
 }
 
-int table_addMethod(struct type *method, boolean overrideFlag)
+table_addMethod(method, overrideFlag)
+struct type * method;
+boolean overrideFlag;
 {
     type_SetScope(method, tables->scope);
 
@@ -712,7 +725,9 @@ parseerror(parser, sev, str)
 
 /* APPEND FIELDS TO HEADER STRUCTURE OF CLASS STRUCTURE */
 
-int appendSuperClasses(struct type *self, struct type *header)
+appendSuperClasses(self, header)
+struct type *self;
+struct type *header;
 {
     struct type *super, *data;
     char * name;
@@ -829,7 +844,8 @@ lookupFileName(classname)
 \*******************************************************************************/
 
 struct type_ctypes*
-int type__GetCtypes(struct classhdr *ClassID)
+type__GetCtypes(ClassID)
+struct classhdr *ClassID;
 {
     return &ctypes;
 }

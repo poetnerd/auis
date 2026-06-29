@@ -63,13 +63,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <errno.h>
 #include <util.h>
 
+extern int errno;
 extern char ProgramName[];
 extern char *GetProfileFileName();
 extern char *GetFirstProfileFileName();
 
 #define BIGPREF 2000
 
-int setprofilestring(char *prog, char *pref, char *val)
+setprofilestring(prog, pref, val) 
+char *prog, *pref, *val;
 {
     FILE *oldR;
     FILE *newR;
@@ -246,9 +248,11 @@ Needs to compile with:
   cc -DTESTINGONLYTESTING setprof.c /usr/andrew/lib/libutil.a -o setprof 
 */
 char ProgramName[100] = "foobar";
-int main(int argc, char **argv)
+main(argc, argv)
+char **argv;
 {
     int x;
+    extern int errno;
 
     printf("Setting preference %s.%s: %s\n", argv[1], argv[2], argv[3]);
     x = setprofilestring(argv[1], argv[2], argv[3]);

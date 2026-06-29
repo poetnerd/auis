@@ -39,46 +39,62 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ba
 #include <ctype.h>
 
 
-#include <stdlib.h>
-char *fontdesc__GetFontFamily(struct fontdesc *self)
+char *fontdesc__GetFontFamily(self)
+struct fontdesc *self;
 {
     return self->FontName->name;
 }
 
-struct fontnamedesc *fontdesc__GetFontFamilyDesc(struct fontdesc *self)
+struct fontnamedesc *fontdesc__GetFontFamilyDesc(self)
+struct fontdesc *self;
 {
     return self->FontName;
 }
 
-long fontdesc__GetFontSize(struct fontdesc *self)
+long fontdesc__GetFontSize(self)
+struct fontdesc *self;
 {
     return self->FontSize;
 }
 
-long fontdesc__GetFontStyle(struct fontdesc *self)
+long fontdesc__GetFontStyle(self)
+struct fontdesc *self;
 {
     return self->FontStyles;
 }
 
-struct graphic *fontdesc__CvtCharToGraphic(struct fontdesc *self, struct graphic *graphic, char SpecialChar)
+struct graphic *fontdesc__CvtCharToGraphic(self, graphic, SpecialChar)
+struct fontdesc *self;
+struct graphic *graphic;
+char SpecialChar;
 {
     /* Override Me */
     return NULL;
 }
 
-struct font *fontdesc__GetRealFontDesc(struct fontdesc *self, struct graphic *graphic)
+struct font *fontdesc__GetRealFontDesc(self, graphic)
+struct fontdesc *self;
+struct graphic *graphic;
 {
     /* Override Me */
     return NULL;
 }
 
-long fontdesc__TextSize(struct fontdesc *self, struct graphic *graphic, char *text, long TextLength, long *XWidth, long *YWidth)
+long fontdesc__TextSize(self, graphic, text, TextLength, XWidth, YWidth)
+struct fontdesc *self;
+struct graphic *graphic;
+char *text;
+long TextLength;
+long *XWidth;
+long *YWidth;
 {
     /* Override Me */
     return 0;
 }
 
-struct FontSummary *fontdesc__FontSummary(struct fontdesc *self, struct graphic *graphic)
+struct FontSummary *fontdesc__FontSummary(self, graphic)
+struct fontdesc *self;
+struct graphic *graphic;
 {
     register struct FontSummary *tsp;
 
@@ -90,33 +106,49 @@ struct FontSummary *fontdesc__FontSummary(struct fontdesc *self, struct graphic 
     return tsp;
 }
 
-short *fontdesc__WidthTable(struct fontdesc *self, struct graphic *graphic)
+short *fontdesc__WidthTable(self, graphic)
+struct fontdesc *self;
+struct graphic *graphic;
 {
     /* Override Me */
     return NULL;
 }
 
-short *fontdesc__HeightTable(struct fontdesc *self, struct graphic *graphic)
+short *fontdesc__HeightTable(self, graphic)
+struct fontdesc *self;
+struct graphic *graphic;
 {
     /* Override Me */
     return NULL;
 
 }
 
-long fontdesc__StringSize(struct fontdesc *self, struct graphic *graphic, register unsigned char *string, register long *XWidth, register long *YWidth)
+long fontdesc__StringSize(self, graphic, string,XWidth,YWidth)
+struct fontdesc *self;
+struct graphic *graphic;
+register unsigned char *string;
+register long *XWidth;
+register long *YWidth;
 {
     /* Override Me */
     return 0;
 }
 
-void fontdesc__CharSummary(struct fontdesc *self, struct graphic *gr, char LookUpChar, struct fontdesc_charInfo *retVal)
+void fontdesc__CharSummary(self,gr,LookUpChar,retVal)
+struct fontdesc *self;
+struct graphic *gr;
+char LookUpChar;
+struct fontdesc_charInfo *retVal;
 {
     /* Override Me */
 }
 
 /* Warning: The following routines are Textview critical code */
 
-static struct fontdesc *fontdesc_CreateUsingDescriptor(struct fontnamedesc *FontName, long FontStyle, long FontSize)
+static struct fontdesc *fontdesc_CreateUsingDescriptor(FontName, FontStyle, FontSize)
+struct fontnamedesc *FontName;
+long FontStyle;
+long FontSize;
 {
     struct fontdesc *retVal;
 
@@ -136,7 +168,11 @@ static struct fontdesc *fontdesc_CreateUsingDescriptor(struct fontnamedesc *Font
     return retVal;
 }
 
-struct fontdesc *fontdesc__Create(struct classheader *classID, char *fontName, long fontStyle, long fontSize)
+struct fontdesc *fontdesc__Create(classID, fontName, fontStyle, fontSize)
+struct classheader *classID;
+char *fontName;
+long fontStyle;
+long fontSize;
 {
     char tempFontName[256], *s = tempFontName;
     do {    /* Fold lowercase */
@@ -146,7 +182,9 @@ struct fontdesc *fontdesc__Create(struct classheader *classID, char *fontName, l
       (fontdesc_GetFontNameDesc(tempFontName), fontStyle, fontSize);
 }
 
-struct fontnamedesc *fontdesc__GetFontNameDesc(struct classheader *classID, char *fontName)
+struct fontnamedesc *fontdesc__GetFontNameDesc(classID, fontName)
+struct classheader *classID;
+char *fontName;
 {
     static struct fontnamedesc *allFontNames = NULL;
     register struct fontnamedesc *tp;
@@ -164,17 +202,22 @@ struct fontnamedesc *fontdesc__GetFontNameDesc(struct classheader *classID, char
     return tp;
 }
 
-struct fontdesc *fontdesc__Allocate(struct classheader *classID)
+struct fontdesc *fontdesc__Allocate(classID)
+    struct classheader *classID;
 {
     return (struct fontdesc *) malloc(sizeof(struct fontdesc));
 }
 
-void fontdesc__Deallocate(struct classheader *classID, struct fontdesc *self)
+void fontdesc__Deallocate(classID, self)
+    struct classheader *classID;
+    struct fontdesc *self;
 {
 /* Fontdesc structures are never deallocated since they are reused. */
 }
 
-boolean fontdesc__InitializeObject(struct classheader *classID, struct fontdesc *self)
+boolean fontdesc__InitializeObject(classID, self)
+struct classheader *classID;
+struct fontdesc *self;
 {
     self->FontName = NULL;
     self->FontStyles = fontdesc_Plain;
@@ -187,7 +230,9 @@ boolean fontdesc__InitializeObject(struct classheader *classID, struct fontdesc 
     return TRUE;
 }
 
-void fontdesc__FinalizeObject(struct classheader *classID, struct fontdesc *FontDescObject)
+void fontdesc__FinalizeObject(classID, FontDescObject)
+struct classheader *classID;
+struct fontdesc *FontDescObject;
 {
     if (FontDescObject->widthTable)
         free(FontDescObject->widthTable);
@@ -223,7 +268,13 @@ void fontdesc__FinalizeObject(struct classheader *classID, struct fontdesc *Font
  * know, it ought to have a local routine to parse the fontnames.
  */
 
-boolean fontdesc__ExplodeFontName(struct classheader *classID, char *fontName, char *familyName, long bufSize, long *fontStyle, long *fontSize)
+boolean fontdesc__ExplodeFontName(classID, fontName, familyName, bufSize, fontStyle, fontSize)
+struct classheader *classID;
+char *fontName;
+char *familyName;
+long bufSize;
+long *fontStyle;
+long *fontSize;
 {
     char *endName;
     int style = 0;
@@ -306,7 +357,12 @@ boolean fontdesc__ExplodeFontName(struct classheader *classID, char *fontName, c
     return TRUE;
 }
 
-long fontdesc__StringBoundingBox(struct fontdesc *font, struct graphic *graphic, char *string, int *width, int *height)
+long fontdesc__StringBoundingBox(font, graphic, string, width, height)
+struct fontdesc *font;
+struct graphic *graphic;
+char *string;
+int *width;
+int *height;
 {
   int w, a, d, ascent, descent, junk;
   register short *fwt, *fht;

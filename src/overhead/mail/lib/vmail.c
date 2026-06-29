@@ -58,7 +58,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #ifdef AFS_ENV
 /* AFS-specific error codes */
 #include <afs/errors.h>
-#include <stdlib.h>
 #endif /* AFS_ENV */
 
 typedef int bool;
@@ -70,6 +69,7 @@ typedef int bool;
 enum lockcodes { LOCK_OK, LOCK_FAILED_OK,
 			LOCK_FAILED_ERROR, LOCK_FAILED_TEMP_ERROR };
 
+extern int errno;
 
 static FILE *msgfile = NULL;	/* Descriptor of open msg file: NULL if unopen */
 static char msgfilename[MAXPATHLEN+1];
@@ -90,7 +90,8 @@ static char AFSDownMsg[] = "AFS is apparently down for ``%s'': %s";
 #if LogsYes
 static int DoingTiming = 0;		/* Set by VM_SetTiming, cleared on VM_close */
 /*VARARGS2*/
-static void Log(int num, char *fmt, char *p1, char *p2, char *p3, char *p4, char *p5, char *p6)
+static void Log(num, fmt, p1, p2, p3, p4, p5, p6)
+int num; char *fmt, *p1, *p2, *p3, *p4, *p5, *p6;
 {
     if (DoingTiming) Logstat("vmail.c", num, fmt, p1, p2, p3, p4, p5, p6);
 }
@@ -157,7 +158,8 @@ static enum OnAFSCodes dirinAFS(name)
     }
 }
 
-static int CheckDirInAFS(char *dir, char *proc)
+static int CheckDirInAFS(dir, proc)
+    char *dir, *proc;
 {
     static enum OnAFSCodes status;
 
@@ -182,7 +184,8 @@ static int CheckDirInAFS(char *dir, char *proc)
     }
 }
 
-int VM_SetTiming(int param)
+int VM_SetTiming(param)
+int param;
 {
 #if LogsYes
 	int OldValue;
@@ -195,7 +198,8 @@ int VM_SetTiming(int param)
 #endif /* LogsYes */
 }
 
-int VM_open(char *User, char *Mailbox, char *ReturnPath, char *For, char *Authenticated, char *PgmName)
+VM_open(User, Mailbox, ReturnPath, For, Authenticated, PgmName)
+    char *User, *Mailbox, *ReturnPath, *For, *Authenticated, *PgmName;
 {
     int rc, ExCode;
 
@@ -244,7 +248,9 @@ int VM_open(char *User, char *Mailbox, char *ReturnPath, char *For, char *Authen
     return EX_OK;
 }
 
-int VM_write(char *s, int n)
+int VM_write(s, n)
+    char *s;
+    int n;
 {
     if (msgfile == NULL) {
 	strcpy(VM_text, "VM_open not called before VM_write");
@@ -278,7 +284,8 @@ int VM_write(char *s, int n)
     return EX_OK;
 }
 
-int VM_printf(char *fmt, int a0, int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9)
+int VM_printf(fmt, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
+    char *fmt;
 {
     if (msgfile == NULL) {
 	strcpy(VM_text, "VM_open not called before VM_printf");
@@ -413,7 +420,9 @@ static enum lockcodes lock(f, name)
 	return LOCK_OK;
 }
 
-static int WriteHeaders(register FILE *f, char *fname, char *returnpath, char *four, char *auth, char *pgmname)
+static int WriteHeaders(f, fname, returnpath, four, auth, pgmname)
+    register FILE *f;
+    char *fname, *returnpath, *four, *auth, *pgmname;
 {
     int Res;
 
@@ -463,7 +472,9 @@ static int WriteHeaders(register FILE *f, char *fname, char *returnpath, char *f
 
 /* CreateAndInitFile -- create file & write headers */
 
-static int CreateAndInitFile(char *mailbox, char *returnpath, char *four, char *auth, char *pgmname)
+static int CreateAndInitFile(mailbox, returnpath, four, auth, pgmname)
+    char *mailbox;
+    char *returnpath, *four, *auth, *pgmname;
 {
     register int n, f;
     register bool gotfile;

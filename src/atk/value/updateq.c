@@ -36,14 +36,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 
 #include <class.h>
 #include <updateq.eh>
-#include <stdlib.h>
 #define New(TYPE) ( TYPE *)malloc( sizeof (TYPE) )
 
 /**************** statics ****************/
 
 
 /**************** class procedures ****************/
-boolean updateq__InitializeObject(struct classheader *classID, struct updateq *self)
+boolean updateq__InitializeObject(classID, self )
+struct classheader *classID;
+     struct updateq * self;
 {
   self->view = NULL;
   self->queue = NULL;
@@ -51,19 +52,24 @@ boolean updateq__InitializeObject(struct classheader *classID, struct updateq *s
 }
 
 
-void updateq__FinalizeObject(struct updateq *self)
+void updateq__FinalizeObject( self )
+     struct updateq * self;
 {
   updateq_ClearUpdateQueue(self);
 }
 
 
-void updateq__SetView(struct updateq *self, struct view *view)
+void updateq__SetView( self, view )
+     struct updateq * self;
+     struct view * view;
 {
   self->view = view;
 }
 
 
-void updateq__EnqueueUpdateFunction(struct updateq *self, procedure fp)
+void updateq__EnqueueUpdateFunction( self, fp )
+     struct updateq * self;
+     procedure fp;
 {
   struct fp_queue *  newEntry;
   struct fp_queue ** qpointer;
@@ -78,7 +84,8 @@ void updateq__EnqueueUpdateFunction(struct updateq *self, procedure fp)
 }
 
 
-void updateq__ExecuteUpdateQueue(struct updateq *self)
+void updateq__ExecuteUpdateQueue(self)
+     struct updateq * self;
 {
   struct fp_queue * qpointer;
 
@@ -97,7 +104,8 @@ void updateq__ExecuteUpdateQueue(struct updateq *self)
 }
 
 
-void updateq__ClearUpdateQueue(struct updateq *self)
+void updateq__ClearUpdateQueue(self)
+     struct updateq * self;
 {
   struct fp_queue * qpointer;
   

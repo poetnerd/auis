@@ -72,9 +72,7 @@
 #include <gif.ih>
 #include <image.eh>
 
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
+extern int errno;
 #define MAXFILELINE 255
 #define DEFAULT_SAVE_QUALITY (75)
 
@@ -383,7 +381,8 @@ static char *convlongto64(num, pad)
 
 /* Note that the following routine throws away the first 4 of 36 bits */
 
-static unsigned long conv64tolong(register char *xnum)
+static unsigned long conv64tolong(xnum)
+register char *xnum;
 {
     register int digits;
     unsigned long Answer = 0;
@@ -2396,7 +2395,13 @@ image__Halftone( self )
 
 static int tmpfilectr = 0;
 
-long image__WriteOtherFormat(struct image *self, FILE *file, long writeID, int level, int usagetype, char *boundary)
+long image__WriteOtherFormat(self, file, writeID, level, usagetype, boundary)
+struct image *self;
+FILE *file;
+long writeID;
+int level;
+int usagetype;
+char *boundary;
 {
     FILE *tmpfp;
     char Fnam[1000];

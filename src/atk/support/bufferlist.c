@@ -53,9 +53,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #ifndef MAXPATHLEN 
 #include <sys/param.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
 #endif
 #define DEFAULTOBJECT "text"
 
@@ -64,16 +61,21 @@ struct listentry {
     struct listentry *next;
 };
 
+extern int errno;
 static char defaultobjectname[64] = DEFAULTOBJECT;
 
-boolean bufferlist__InitializeObject(struct classheader *classID, struct bufferlist *self)
+boolean bufferlist__InitializeObject(classID, self)
+    struct classheader *classID;
+    struct bufferlist *self;
 {
     self->head = NULL;
 
     return TRUE;
 }
 
-void bufferlist__FinalizeObject(struct classheader *classID, struct bufferlist *self)
+void bufferlist__FinalizeObject(classID, self)
+    struct classheader *classID;
+    struct bufferlist *self;
 {
     struct listentry *traverse;
     struct listentry *next;
@@ -84,7 +86,10 @@ void bufferlist__FinalizeObject(struct classheader *classID, struct bufferlist *
     }
 }
 
-void bufferlist__ObservedChanged(struct bufferlist *self, struct observable *object, long changeType)
+void bufferlist__ObservedChanged(self, object, changeType)
+struct bufferlist *self;
+struct observable *object;
+long changeType;
 {
     if (changeType == observable_OBJECTDESTROYED) {
 	struct buffer *buffer = (struct buffer *) object;
@@ -95,7 +100,9 @@ void bufferlist__ObservedChanged(struct bufferlist *self, struct observable *obj
     }
 }
 
-void bufferlist__AddBuffer(struct bufferlist *self, struct buffer *buffer)
+void bufferlist__AddBuffer(self, buffer)
+    struct bufferlist *self;
+    struct buffer *buffer;
 {
     struct listentry *newElement;
     struct listentry *traverse;
@@ -115,7 +122,9 @@ void bufferlist__AddBuffer(struct bufferlist *self, struct buffer *buffer)
     }
 }
 
-void bufferlist__RemoveBuffer(struct bufferlist *self, struct buffer *buffer)
+void bufferlist__RemoveBuffer(self, buffer)
+    struct bufferlist *self;
+    struct buffer *buffer;
 {
     struct listentry **previous = &self->head;
     struct listentry *traverse;
@@ -131,7 +140,10 @@ void bufferlist__RemoveBuffer(struct bufferlist *self, struct buffer *buffer)
     }
 }
 
-struct buffer *bufferlist__CreateBuffer(struct bufferlist *self, char *bufferName, char *filename, char *objectName, struct dataobject *data)
+struct buffer *bufferlist__CreateBuffer(self, bufferName, filename, objectName, data)
+    struct bufferlist *self;
+    char *bufferName, *filename, *objectName;
+    struct dataobject *data;
 {
     char realName[MAXPATHLEN];
     struct buffer *thisBuffer;
@@ -188,7 +200,10 @@ struct buffer *bufferlist__CreateBuffer(struct bufferlist *self, char *bufferNam
     return thisBuffer;
 }
 
-struct buffer *bufferlist__Enumerate(struct bufferlist *self, boolean (*mapFunction)(), long functionData)
+struct buffer *bufferlist__Enumerate(self, mapFunction, functionData)
+    struct bufferlist *self;
+    boolean (*mapFunction)();
+    long functionData;
 {
     struct listentry *traverse, *next;
 
@@ -200,7 +215,9 @@ struct buffer *bufferlist__Enumerate(struct bufferlist *self, boolean (*mapFunct
     return NULL;
 }
 
-struct buffer *bufferlist__FindBufferByFile(struct bufferlist *self, char *filename)
+struct buffer *bufferlist__FindBufferByFile(self, filename)
+    struct bufferlist *self;
+    char *filename;
 {
     char realName[MAXPATHLEN];
     char *bufferFilename;
@@ -218,7 +235,9 @@ struct buffer *bufferlist__FindBufferByFile(struct bufferlist *self, char *filen
     return NULL;
 }
 
-struct buffer *bufferlist__FindBufferByData(struct bufferlist *self, struct dataobject *bufferData)
+struct buffer *bufferlist__FindBufferByData(self, bufferData)
+    struct bufferlist *self;
+    struct dataobject *bufferData;
 {
     struct listentry *traverse;
 
@@ -232,7 +251,9 @@ struct buffer *bufferlist__FindBufferByData(struct bufferlist *self, struct data
 
 /* Changed Bufferlist */
 
-struct buffer *bufferlist__FindBufferByName(struct bufferlist *self, char *name)
+struct buffer *bufferlist__FindBufferByName(self, name)
+    struct bufferlist *self;
+    char *name;
 {
     char *bufferName;
     struct listentry *traverse;
@@ -253,7 +274,10 @@ struct buffer *bufferlist__FindBufferByName(struct bufferlist *self, char *name)
  * object because it has the FILE *. Perhaps this is all bogus...
  */
 
-struct buffer *bufferlist__GetBufferOnFile(struct bufferlist *self, char *filename, long flags)
+struct buffer *bufferlist__GetBufferOnFile(self, filename, flags)
+struct bufferlist *self;
+char *filename;
+long flags;
 {
     char realName[MAXPATHLEN];
     struct buffer *thisBuffer;
@@ -395,7 +419,11 @@ struct buffer *bufferlist__GetBufferOnFile(struct bufferlist *self, char *filena
     return thisBuffer;
 }
 
-void bufferlist__GetUniqueBufferName(struct bufferlist *self, char *proposedName, char *bufferName, int nameSize)
+void bufferlist__GetUniqueBufferName(self, proposedName, bufferName, nameSize)
+struct bufferlist *self;
+char *proposedName;
+char *bufferName;
+int nameSize;
 {
     register int uniquefier, nameLength;
 
@@ -418,7 +446,10 @@ void bufferlist__GetUniqueBufferName(struct bufferlist *self, char *proposedName
     return;
 }
 
-void bufferlist__GuessBufferName(struct bufferlist *self, char *filename, char *bufferName, int nameSize)
+void bufferlist__GuessBufferName (self, filename, bufferName, nameSize)
+    struct bufferlist *self;
+    char *filename, *bufferName;
+    int nameSize;
 {
     char *slash;
     char newBufferName[MAXPATHLEN];
@@ -436,7 +467,9 @@ void bufferlist__GuessBufferName(struct bufferlist *self, char *filename, char *
 }
 
 
-void bufferlist__SetDefaultObject(struct bufferlist *self, char *objectname)
+void bufferlist__SetDefaultObject(self, objectname)
+struct bufferlist *self;
+char *objectname;
 {
     if (objectname != NULL)
         strncpy(defaultobjectname,objectname, sizeof(defaultobjectname));

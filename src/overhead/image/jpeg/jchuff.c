@@ -13,7 +13,6 @@
 #include "jinclude.h"
 
 
-#include <stdlib.h>
 /* Static variables to avoid passing 'round extra parameters */
 
 static compress_info_ptr cinfo;

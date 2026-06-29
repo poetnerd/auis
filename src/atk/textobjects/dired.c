@@ -45,7 +45,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #include <dired.eh>
 
-#include <stdlib.h>
 #define RootEnv(dired) \
     ((struct environment *) (dired)->header.text.rootEnvironment)
 
@@ -57,12 +56,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
  * errno contains the error code from the opendir(2) call.
  */
 
-static int CompareFilenameProc(struct fileinfo *f1, struct fileinfo *f2)
+static int CompareFilenameProc(f1, f2)
+struct fileinfo *f1, *f2;
 {
     return strcmp(f1->fileName, f2->fileName);
 }
 
-int LongModeLine(char *dname, char *fname, char *buf)
+LongModeLine(dname, fname, buf)
+char *dname, *fname, *buf;
 {
     struct stat stbuf;
     strcpy(buf, dname);
@@ -76,7 +77,9 @@ int LongModeLine(char *dname, char *fname, char *buf)
     }
 }
 
-static struct list *DirIntoList(char *dname, boolean longMode, boolean dotFiles)
+static struct list *DirIntoList(dname, longMode, dotFiles)
+char *dname;
+boolean longMode, dotFiles;
 {
     struct list *list;
     DIR *dirp;
@@ -123,14 +126,17 @@ static struct list *DirIntoList(char *dname, boolean longMode, boolean dotFiles)
  * Free a list
  */
 
-static int FreeProc(struct fileinfo *fi, long rock)
+static int FreeProc(fi, rock)
+struct fileinfo *fi;
+long rock;
 {
     free(fi->fileName);
     free(fi->dispName);
     return TRUE;
 }
 
-static void DestroyList(struct list *list)
+static void DestroyList(list)
+struct list *list;
 {
     list_Enumerate(list, FreeProc, 0);
     list_Destroy(list);
@@ -144,7 +150,9 @@ static void DestroyList(struct list *list)
  * (env != NULL) entries.
  */
 
-static int InsTextProc(struct fileinfo *fi, struct dired *dired)
+static int InsTextProc(fi, dired)
+struct fileinfo *fi;
+struct dired *dired;
 {
     fi->pos = dired_GetLength(dired);
     fi->len = strlen(fi->dispName);
@@ -157,7 +165,9 @@ static int InsTextProc(struct fileinfo *fi, struct dired *dired)
 
 static void SetupStyles();
 
-static void ListIntoText(struct dired *self, struct list *list)
+static void ListIntoText(self, list)
+struct dired *self;
+struct list *list;
 {
 
     dired_SetReadOnly(self, FALSE);
@@ -172,7 +182,8 @@ static void ListIntoText(struct dired *self, struct list *list)
  * Class procedures
  */
 
-static void SetupStyles(struct dired *self)
+static void SetupStyles(self)
+struct dired *self;
 {
     struct attributes templateAttribute;
     struct style *style;
@@ -196,7 +207,9 @@ static void SetupStyles(struct dired *self)
         dired_SetGlobalStyle(self, style);
 }
 
-boolean dired__InitializeObject(struct classheader *classID, struct dired *self)
+boolean dired__InitializeObject(classID, self)
+struct classheader *classID;
+struct dired *self;
 {
     self->dir = NULL;
     self->flist = NULL;
@@ -209,7 +222,9 @@ boolean dired__InitializeObject(struct classheader *classID, struct dired *self)
     return TRUE;
 }
 
-void dired__FinalizeObject(struct classheader *classID, struct dired *self)
+void dired__FinalizeObject(classID, self)
+struct classheader *classID;
+struct dired *self;
 {
     if (self->flist != NULL)
         DestroyList(self->flist);
@@ -226,7 +241,9 @@ void dired__FinalizeObject(struct classheader *classID, struct dired *self)
  * NOTE: the "dir" attribute should be last in the attr list
  */
 
-void dired__SetAttributes(struct dired *self, struct attributes *attributes)
+void dired__SetAttributes(self, attributes)
+struct dired *self;
+struct attributes *attributes;
 {
     super_SetAttributes(self, attributes);
 
@@ -243,7 +260,8 @@ void dired__SetAttributes(struct dired *self, struct attributes *attributes)
  * Prevent checkpoints
  */
 
-long dired__GetModified(struct dired *self)
+long dired__GetModified(self)
+struct dired *self;
 {
     return 0;
 }
@@ -260,7 +278,9 @@ long dired__GetModified(struct dired *self)
  * text, and leaves the error code from opendir(2) in errno.
  */
 
-long dired__SetDir(struct dired *self, char *dname)
+long dired__SetDir(self, dname)
+struct dired *self;
+char *dname;
 {
     char newDir[256];
     struct list *newList;
@@ -288,17 +308,22 @@ long dired__SetDir(struct dired *self, char *dname)
     return 0;
 }
 
-char *dired__GetDir(struct dired *self)
+char *dired__GetDir(self)
+struct dired *self;
 {
     return self->dir;
 }
 
-static int FindNameProc(struct fileinfo *fi, char *name)
+static int FindNameProc(fi, name)
+struct fileinfo *fi;
+char *name;
 {
     return (strcmp(fi->fileName, name) != 0);
 }
 
-struct fileinfo *LookupFile(struct dired *self, char *name)
+struct fileinfo *LookupFile(self, name)
+struct dired *self;
+char *name;
 {
     if (self->flist == NULL)
         return NULL;
@@ -306,12 +331,16 @@ struct fileinfo *LookupFile(struct dired *self, char *name)
       list_Enumerate(self->flist, FindNameProc, name);
 }
 
-static int FindPosProc(struct fileinfo *fi, long pos)
+static int FindPosProc(fi, pos)
+struct fileinfo *fi;
+long pos;
 {
     return (pos < fi->pos || pos > fi->pos + fi->len);
 }
 
-struct fileinfo *LookupPos(struct dired *self, long pos)
+struct fileinfo *LookupPos(self, pos)
+struct dired *self;
+long pos;
 {
     if (self->flist == NULL)
         return NULL;
@@ -324,7 +353,9 @@ struct fileinfo *LookupPos(struct dired *self, long pos)
  *  in which the document position falls.
  */
 
-char *dired__Locate(struct dired *self, long pos)
+char *dired__Locate(self, pos)
+struct dired *self;
+long pos;
 {
     struct fileinfo *fi = LookupPos(self, pos);
     return (fi == NULL) ? NULL : fi->fileName;
@@ -338,7 +369,10 @@ char *dired__Locate(struct dired *self, long pos)
  * Does not change the document unnecessarily.
  */
 
-static void WrapStyle(struct dired *self, struct fileinfo *fi, struct style *style)
+static void WrapStyle(self, fi, style)
+struct dired *self;
+struct fileinfo *fi;
+struct style *style;
 {
     dired_SetReadOnly(self, FALSE);
 
@@ -368,7 +402,9 @@ static void WrapStyle(struct dired *self, struct fileinfo *fi, struct style *sty
  * Given a filename, mark it (if it wasn't marked)
  */
 
-void dired__Mark(struct dired *self, char *fname)
+void dired__Mark(self, fname)
+struct dired *self;
+char *fname;
 {
     struct fileinfo *fi;
     fi = LookupFile(self, fname);
@@ -376,25 +412,32 @@ void dired__Mark(struct dired *self, char *fname)
         WrapStyle(self, fi, self->markedStyle);
 }
 
-void dired__Unmark(struct dired *self, char *fname)
+void dired__Unmark(self, fname)
+struct dired *self;
+char *fname;
 {
     struct fileinfo *fi = LookupFile(self, fname);
     if (fi != NULL)
         WrapStyle(self, fi, NULL);
 }
 
-boolean dired__IsMarked(struct dired *self, char *fname)
+boolean dired__IsMarked(self, fname)
+struct dired *self;
+char *fname;
 {
     struct fileinfo *fi = LookupFile(self, fname);
     return (fi != NULL && fi->env != NULL);
 }
 
-static int AnythingProc(struct fileinfo *fi, long rock)
+static int AnythingProc(fi, rock)
+struct fileinfo *fi;
+long rock;
 {
     return (fi->env == NULL);
 }
 
-boolean dired__AnythingMarked(struct dired *self)
+boolean dired__AnythingMarked(self)
+struct dired *self;
 {
     if (self->flist == NULL)
         return FALSE;
@@ -417,14 +460,20 @@ struct emargs {
  * continues until the end, in which case NULL is returned.
  */
 
-static int EnumProc(struct fileinfo *fi, struct emargs *args)
+static int EnumProc(fi, args)
+struct fileinfo *fi;
+struct emargs *args;
 {
     if (args->all || fi->env != NULL)
         return (*args->proc)(fi->fileName, args->rock);
     return TRUE;
 }
 
-static char *DoEnumerate(struct dired *self, procedure proc, long rock, boolean all)
+static char *DoEnumerate(self, proc, rock, all)
+struct dired *self;
+procedure proc;
+long rock;
+boolean all;
 {
     struct fileinfo *result;
     struct emargs args;
@@ -435,12 +484,18 @@ static char *DoEnumerate(struct dired *self, procedure proc, long rock, boolean 
     return (result == NULL) ? NULL : result->fileName;
 }
 
-char *dired__EnumerateMarked(struct dired *self, procedure proc, long rock)
+char *dired__EnumerateMarked(self, proc, rock)
+struct dired *self;
+procedure proc;
+long rock;
 {
     return DoEnumerate(self, proc, rock, FALSE);
 }
 
-char *dired__EnumerateAll(struct dired *self, procedure proc, long rock)
+char *dired__EnumerateAll(self, proc, rock)
+struct dired *self;
+procedure proc;
+long rock;
 {
     return DoEnumerate(self, proc, rock, TRUE);
 }

@@ -218,7 +218,10 @@ img__Load ( img, fullname, fp )
 **		5 if pattern length is too big ( > 255)
 */
 
-static int IMG_ReadHeader(FILE *f, IMG_Header *h)
+static int IMG_ReadHeader (f,h)
+
+    FILE      *f;
+    IMG_Header *h;
 {
 	register int tlen;			/* total to read in */
 	register int rlen;			/* read lengths */
@@ -307,7 +310,11 @@ static int IMG_ReadHeader(FILE *f, IMG_Header *h)
 **	Returns no value (void function)
 */
 
-static void IMG_WriteByte(unsigned char c, register int cols, unsigned int bpl)
+static void IMG_WriteByte (c,cols,bpl)
+
+    unsigned char c;
+    register int cols;
+    unsigned int bpl;
 {
 	register int i;
 	register unsigned char *ptr;

@@ -59,7 +59,6 @@ known problems:
 #include <menulist.ih>
 #include <keymap.ih>
 #include <keystate.ih>
-#include <stdio.h>
 */
 
 /*
@@ -374,7 +373,14 @@ printf("i %d  for hit at (%d, %d)  in box at (%d,%d) of size %dx%d\n",
 }
 
 enum view_DSattributes
-int strtblview__DesiredSize(struct strtblview *self, long width, long height, enum view_DSpass pass, long *desiredWidth, long *desiredHeight)
+strtblview__DesiredSize( self, width, height, pass, 
+				desiredWidth, desiredHeight ) 
+	struct strtblview *self;
+	long width;
+	long height;
+	enum view_DSpass pass;
+	long *desiredWidth;
+	long *desiredHeight;
 {
 	struct stringtbl *st 
 			= (struct stringtbl *)self->header.view.dataobject;

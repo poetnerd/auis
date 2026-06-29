@@ -65,8 +65,6 @@
 #include <g3.h>
 #include <g3.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 /* SUPPRESS 530 */
 /* SUPPRESS 558 */
 /* SUPPRESS 560 */
@@ -110,7 +108,10 @@ static int curbit;
 tableentry *whash[HASHSIZE];
 tableentry *bhash[HASHSIZE];
 
-int	g3_addtohash(tableentry *hash[], tableentry *te, int n, int a, int b)
+int	g3_addtohash(hash, te, n, a, b)
+	tableentry	*hash[];
+	tableentry	*te;
+	int	n, a, b;
 {
 	unsigned int pos;
 
@@ -130,7 +131,10 @@ int	g3_addtohash(tableentry *hash[], tableentry *te, int n, int a, int b)
 	}
 }
 
-tableentry	*g3_hashfind(tableentry *hash[], int length, int code, int a, int b)
+tableentry	*g3_hashfind(hash, length, code, a, b)
+	tableentry	*hash[];
+	int	length, code;
+	int	a, b;
 {
 	unsigned int pos;
 	tableentry *te;
@@ -150,7 +154,9 @@ tableentry	*g3_hashfind(tableentry *hash[], int length, int code, int a, int b)
 	return ((te && te->length == length && te->code == code) ? te : 0);
 }
 
-int	g3_getfaxrow(ZFILE *fd, byte *bitrow)
+int	g3_getfaxrow(fd, bitrow)
+	ZFILE	*fd;
+	byte	*bitrow;
 {
         int col;
 	int curlen, curcode, nextbit;
@@ -265,7 +271,8 @@ int	g3_getfaxrow(ZFILE *fd, byte *bitrow)
 	return (0);
 }
 
-int	g3_skiptoeol(FILE *fd)
+int	g3_skiptoeol(fd)
+	FILE	*fd;
 {
 	while (g3_rawzeros<11 && !g3_eof)
 		(void) g3_rawgetbit(fd);
@@ -273,7 +280,8 @@ int	g3_skiptoeol(FILE *fd)
 	return(0);
 }
 
-int	g3_rawgetbit(FILE *fd)
+int	g3_rawgetbit(fd)
+	FILE	*fd;
 {
 	int	b;
 	static int	shdata;
@@ -306,7 +314,9 @@ int	g3_rawgetbit(FILE *fd)
     return b;
 }
 
-int	g3_bitson(bit *b, int c, int n)
+int	g3_bitson(b, c, n)
+	bit	*b;
+	int	c, n;
 {
 	int	i, col;
 	bit	*bP;
@@ -338,7 +348,8 @@ int	g3_bitson(bit *b, int c, int n)
  * to after the hash table init.  -nazgul
  */
 
-int	g3_ident(FILE *fd)
+int	g3_ident(fd)
+	FILE	*fd;
 {
 
     int		ret = 0, col1, col2, i;
@@ -496,7 +507,8 @@ g3__Load( g3, fullname, fp )
  * it was always getting false positives so now it loads the whole image in
  * to see if it's reasonable.
  */
-int	g3Ident(char *fullname)
+int	g3Ident( fullname )
+	char	*fullname;
 { struct g3 *g3 = g3_New();
 
 	g3_verb = 0;

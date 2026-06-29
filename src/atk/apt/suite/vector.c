@@ -69,7 +69,6 @@ END-SPECIFICATION  ************************************************************/
 #include <class.h>
 #include <vector.eh>
 
-#include <stdlib.h>
 #define Data			(self->data)    
 #define InitialDataSize		(self->initial_vector_count)
 #define DataSize		(self->current_vector_count)

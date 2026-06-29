@@ -30,7 +30,6 @@
 #include <environ.ih>
 #include <filetype.ih>
 
-#include <stdio.h>
 static char *fakeargv[]=
 {
     "prefed",
@@ -38,14 +37,19 @@ static char *fakeargv[]=
     NULL
 };
 
-boolean prefedapp__InitializeObject(struct classheader *classID, struct prefedapp *self)
+boolean prefedapp__InitializeObject(classID, self)
+struct classheader *classID;
+struct prefedapp *self;
 {
     struct ezapp *e=(struct ezapp *)self;
     e->defaultObject="prefs";
     return TRUE;
 }
 
-boolean prefedapp__ParseArgs(struct prefedapp *self, int argc, char **argv)
+boolean prefedapp__ParseArgs(self, argc, argv)
+struct prefedapp *self;
+int argc;
+char **argv;
 {
     boolean result=super_ParseArgs(self, argc, argv);
     if(((struct ezapp *)self)->files==NULL) {
@@ -67,11 +71,14 @@ boolean prefedapp__ParseArgs(struct prefedapp *self, int argc, char **argv)
     } else return result;
 }
 
-void prefedapp__FinalizeObject(struct classheader *classID, struct prefedapp *self)
+void prefedapp__FinalizeObject(classID, self)
+struct classheader *classID;
+struct prefedapp *self;
 {
 }
 
-boolean prefedapp__Start(struct prefedapp *self)
+boolean prefedapp__Start(self)
+struct prefedapp *self;
 {
     /* XXX make sure the default object type is a prefs!
 	this will override any settings in an initfile! */

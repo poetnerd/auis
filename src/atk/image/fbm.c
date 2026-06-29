@@ -75,7 +75,6 @@ static char *MRMCopyright = "Copyright 1990 Mark Majhor";
 #include <fbm.h>
 #include <fbm.eh>
 
-#include <stdlib.h>
 /****
  **
  ** local variables
@@ -110,7 +109,8 @@ static char *fbmin_img_credit;		/* credit for image */
  * open FBM image in the input stream; returns FBMIN_SUCCESS if
  * successful. (might also return various FBMIN_ERR codes.)
  */
-static int fbmin_open_image(FILE *s)
+static int fbmin_open_image(s)
+FILE *s;
 {
   char *hp;		/* header pointer */
 
@@ -226,7 +226,8 @@ static fbmin_image_test()
  * descriptive but I don't care
  */
 
-static void tellAboutImage(char *name)
+static void tellAboutImage(name)
+     char *name;
 {
   printf("%s is a %dx%d FBM image with %d colors\n", name,
     fbmin_img_width, fbmin_img_height, fbmin_img_clrlen / 3);

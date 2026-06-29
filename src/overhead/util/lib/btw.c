@@ -49,9 +49,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #ifdef WHITEPAGES_ENV  /* avoid makedepend "errors" */
 #include <btint.h>
-#include <stdlib.h>
 #endif /* WHITEPAGES_ENV   */
 
+extern int errno;
 static int Debugging = 0;
 
 static struct osi_Times CurrTime;
@@ -61,14 +61,17 @@ struct btStack {	/* For stack of file nodes going down tree */
 	struct btFile	*FP;
 };
 
-int btw_SetDebugging(int level)
+int btw_SetDebugging(level)
+int level;
 { int OldLevel;
   OldLevel = Debugging;
   Debugging = level;
   return OldLevel;
 }
 
-static void WriteNetShort(FILE *f, unsigned short s)
+static void WriteNetShort(f, s)
+FILE *f;
+unsigned short s;
 {	/* Write the unsigned short ``s'' to file ``f'' in network byte order. */
 	unsigned short ns;
 
@@ -76,7 +79,9 @@ static void WriteNetShort(FILE *f, unsigned short s)
 	fwriteallchars(&ns, sizeof(ns), f);
 }
 
-static void WriteNetLong(FILE *f, unsigned long l)
+static void WriteNetLong(f, l)
+FILE *f;
+unsigned long l;
 {	/* Write the unsigned long ``l'' to file ``f'' in network byte order. */
 	unsigned long nl;
 
@@ -85,7 +90,8 @@ static void WriteNetLong(FILE *f, unsigned long l)
 }
 
 #define ThisBTVersion	1
-bt_ErrorCode b_InitbtFileStr(struct btFile **bFPtr)
+bt_ErrorCode b_InitbtFileStr(bFPtr)
+struct btFile **bFPtr;
 {
 	struct btFile *bF;
 
@@ -127,7 +133,9 @@ bt_ErrorCode b_InitbtFileStr(struct btFile **bFPtr)
 	return bterr_NoError;
 }
 
-bt_ErrorCode b_AddIndex(struct btFile *bF, int InitialIndexSize)
+bt_ErrorCode b_AddIndex(bF, InitialIndexSize)
+struct btFile *bF;
+int InitialIndexSize;
 {
 	int nbytes = sizeof(unsigned long) * InitialIndexSize;
 
@@ -175,7 +183,10 @@ static char Base64Chars[64] = {		/* for use in generating unique file names */
 	'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
 	'u', 'v', 'w', 'x', 'y', 'z', '+', '=' };
 
-static bt_ErrorCode GenerateNewFile(struct btFile *bF, char *RootFileName, char *FirstKey, char **NewFileSuffixPtr)
+static bt_ErrorCode GenerateNewFile(bF, RootFileName, FirstKey, NewFileSuffixPtr)
+struct btFile *bF;
+char *RootFileName, *FirstKey;
+char **NewFileSuffixPtr;
 {/* Return a new file, locked and opened for writing, with name and FILE in the bF str.  Return the suffix (minus dot) via NewFileSuffixPtr.  */
 
     char *NewName, *NewNameSuffix, *NewNameSansDirs, *Suffix;
@@ -332,7 +343,8 @@ static bt_ErrorCode GenerateNewFile(struct btFile *bF, char *RootFileName, char 
     return bterr_NoError;
 }
 
-bt_ErrorCode b_WriteHeadIndex(struct btFile *bF)
+bt_ErrorCode b_WriteHeadIndex(bF)
+struct btFile *bF;
 {
     int Chunk;
 
@@ -373,7 +385,8 @@ static struct btStack *NewStackElt()
     return bS;
 }
 
-static bt_ErrorCode FlushStack(struct btStack *bS)
+static bt_ErrorCode FlushStack(bS)
+struct btStack *bS;
 {
     struct btStack *bSNext;
 
@@ -385,7 +398,8 @@ static bt_ErrorCode FlushStack(struct btStack *bS)
     return bterr_NoError;
 }
 
-static bt_ErrorCode LockFile(struct btFile *bF)
+static bt_ErrorCode LockFile(bF)
+struct btFile *bF;
 { /* Lock a file after it's already opened.  Retry as Vice dictates. */
     char *OldFileName;
     int Res;
@@ -404,7 +418,9 @@ static bt_ErrorCode LockFile(struct btFile *bF)
     return RetVal;
 }
 
-static bt_ErrorCode MoveRight(struct btC *bC, char *key)
+static bt_ErrorCode MoveRight(bC, key)
+struct btC *bC;
+char *key;
 {/* This follows brother links, using locking, at any level of the tree.  It does not descend the tree. */
     int Idx, Exact, Flags, TreeDepth, RootNameLength, ValueLength, ThisByte;
     bt_ErrorCode RetVal;
@@ -467,7 +483,8 @@ enum OpKind {OpInsert, OpUpdate, OpDelete, OpCondUpdate, OpCondDelete};
 #define	BYTECOUNTSIZE	2
 #define	FILEPTRSIZE	8
 
-static bt_ErrorCode NewBasicFile(struct btFile *bF, struct btFile **NewbFPtr)
+static bt_ErrorCode NewBasicFile(bF, NewbFPtr)
+struct btFile *bF, **NewbFPtr;
 { /* Make a copy of the bF structure suitable for being the basis for a new copy of the file. */
 
     struct btFile *NewbF;
@@ -489,7 +506,11 @@ static bt_ErrorCode NewBasicFile(struct btFile *bF, struct btFile **NewbFPtr)
     return bterr_NoError;
 }
 
-static bt_ErrorCode CopyPart(struct btFile *bF, struct btFile *newbF, long int *SOffsP, long int *DOffsP, int idxLow, int idxHigh, int idxOffset, int *WasLeftP)
+static bt_ErrorCode CopyPart(bF, newbF, SOffsP, DOffsP, idxLow, idxHigh, idxOffset, WasLeftP)
+struct btFile *bF, *newbF;
+long int *SOffsP, *DOffsP;
+int idxLow, idxHigh, idxOffset;
+int *WasLeftP;
 {/* Copy from bF to newbF, idxLow <= ix < idxHigh, updating globals. */
     int	Ix, Char;
     unsigned short	ShortLen;
@@ -542,7 +563,12 @@ static bt_ErrorCode CopyPart(struct btFile *bF, struct btFile *newbF, long int *
       return (bterr_FileSystemErrorBegin + (errno == 0 ? EIO : errno));
 }
 
-static bt_ErrorCode AppendThis(struct btFile *newbF, long int *DOffsP, int NewFlags, char *Key, char *Val, int ValLen)
+static bt_ErrorCode AppendThis(newbF, DOffsP, NewFlags, Key, Val, ValLen)
+struct btFile *newbF;
+long int *DOffsP;
+int NewFlags;
+char *Key, *Val;
+int ValLen;
 {
     int DataLen;
 
@@ -569,7 +595,12 @@ static bt_ErrorCode AppendThis(struct btFile *newbF, long int *DOffsP, int NewFl
 }
 
 /* Check that the entry in bF at position Pos is Key/OldValLoc/OldValLen. */
-static bt_ErrorCode CheckOld(struct btFile *bF, int Pos, long int *SOffsP, unsigned char *Key, unsigned char *OldValLoc, unsigned int OldValLen)
+static bt_ErrorCode CheckOld(bF, Pos, SOffsP, Key, OldValLoc, OldValLen)
+struct btFile *bF;
+int Pos;
+long int *SOffsP;
+unsigned char *Key, *OldValLoc;
+unsigned int OldValLen;
 {
     int	Char;
     unsigned char	*Ptr;
@@ -612,7 +643,13 @@ static bt_ErrorCode CheckOld(struct btFile *bF, int Pos, long int *SOffsP, unsig
       return (bterr_FileSystemErrorBegin + (errno == 0 ? EIO : errno));
 }
 
-static bt_ErrorCode NewCompleteVersion(struct btC *bC, enum OpKind Op, char *NewKey, char *NewVal, int NewValLen, struct btFile **NewbFPtr, char **NewFileSuffixPtr, char *ovLoc, int ovLen)
+static bt_ErrorCode NewCompleteVersion(bC, Op, NewKey, NewVal, NewValLen,
+		NewbFPtr, NewFileSuffixPtr, ovLoc, ovLen)
+struct btC *bC;
+struct btFile **NewbFPtr;
+enum OpKind Op;
+char *NewKey, *NewVal, **NewFileSuffixPtr, *ovLoc;
+int NewValLen, ovLen;
 {
 /* Make a new version of the file pointed to by bC and return it via NewbFPtr.
   The result version is identical to the (entire) source version except modified
@@ -814,7 +851,16 @@ static bt_ErrorCode NewCompleteVersion(struct btC *bC, enum OpKind Op, char *New
     return(bterr_FileSystemErrorBegin + (Char==0 ? EIO : Char));
 }
 
-static bt_ErrorCode NewSplitHalf(struct btC *bC, enum OpKind Op, char *newkey, char *newval, int newvalLen, struct btFile **bFPtr, int Split, int IsRight, char *XKey, char *XVal, char **SfxPtr, char *ovLoc, int ovLen)
+static bt_ErrorCode NewSplitHalf(bC, Op, newkey, newval, newvalLen, bFPtr,
+		Split, IsRight, XKey, XVal, SfxPtr, ovLoc, ovLen)
+struct btC *bC;
+enum OpKind Op;
+char *newkey, *newval, *ovLoc;
+int newvalLen, ovLen;
+struct btFile **bFPtr;
+int Split, IsRight;
+char *XKey, *XVal;
+char **SfxPtr;
 {
 /* Make one of the split halves of the new version of the file pointed to by bC
  and return it via bFPtr.  If IsRight is true, we make the right half, else the left
@@ -1099,7 +1145,10 @@ static bt_ErrorCode NewSplitHalf(struct btC *bC, enum OpKind Op, char *newkey, c
     return(bterr_FileSystemErrorBegin + (Char==0 ? EIO : Char));
 }
 
-static bt_ErrorCode NewLevel(struct btFile **bFPtr, struct btFile *bF, struct btC *bC, char *val1, char *key2, char *val2)
+static bt_ErrorCode NewLevel(bFPtr, bF, bC, val1, key2, val2)
+struct btFile **bFPtr, *bF;
+struct btC *bC;
+char *val1, *key2, *val2;
 {
     /* Make a new root node at a new level (from tree assoc. with oldbF).  Store the new btFile via bFPtr.  The new root node is the result of splitting the old root node into the two parts reachable via val1 and val2, with the non-null key being key2. */
     struct btFile *NewbF;
@@ -1163,7 +1212,9 @@ static bt_ErrorCode NewLevel(struct btFile **bFPtr, struct btFile *bF, struct bt
     return bterr_NoError;
 }
 
-static bt_ErrorCode StoreLockedFile(struct btFile *bF, int *fdPtr)
+static bt_ErrorCode StoreLockedFile(bF, fdPtr)
+struct btFile *bF;
+int *fdPtr;
 {/* Store the locked file bF.  If fdPtr is non-null, this routine leaves the file locked.  It stores via fdPtr a file descriptor to be unlocked when done, or a -1 if that failed.  UnlockFD(fd) will do the job. */
     int oldErrno;
 
@@ -1199,7 +1250,8 @@ static bt_ErrorCode StoreLockedFile(struct btFile *bF, int *fdPtr)
     return bterr_NoError;
 }
 
-static bt_ErrorCode UnlockFD(int fd)
+static bt_ErrorCode UnlockFD(fd)
+int fd;
 {/* Unlocks and closes a file descriptor. */
     osi_UnLock(fd);
     errno = 0;
@@ -1207,7 +1259,10 @@ static bt_ErrorCode UnlockFD(int fd)
     return bterr_NoError;
 }
 
-static bt_ErrorCode InstallNew(struct btFile **oldbFptr, struct btFile *newbF, struct BTr *bt, int *fdPtr)
+static bt_ErrorCode InstallNew(oldbFptr, newbF, bt, fdPtr)
+struct btFile **oldbFptr, *newbF;
+struct BTr *bt;
+int *fdPtr;
 {/* Install the new file newbF in the loc pointed to by oldbFptr. */
 /* Always returns with both files closed, unless replacing the root, in which case the new file is left open for reading and is pointed to by the root. */
 /* If fdPtr is non-null, this routine will leave the new file locked and will store a file descriptor in fdPtr that is to be unlocked and closed when the caller is done with the new file.  -1 will be stored if the file is not still locked and open, for any reason. */
@@ -1262,7 +1317,10 @@ static bt_ErrorCode InstallNew(struct btFile **oldbFptr, struct btFile *newbF, s
     return bterr_NoError;
 }
 
-static int WhereToSplit(struct btC *bC, enum OpKind Op, int SizeDelta)
+static int WhereToSplit(bC, Op, SizeDelta)
+struct btC *bC;
+enum OpKind Op;
+int SizeDelta;
 {/* Given that the node pointed to by bC needs to be split, and that the op will change the target size by SizeDelta, return a decent guess for the lower bound of the new right node. */
     int LB, UB, Mid, Size, TempSize, Trial;
     struct btFile *bF = bC->FP;
@@ -1295,7 +1353,11 @@ static int WhereToSplit(struct btC *bC, enum OpKind Op, int SizeDelta)
     return UB;
 }
 
-static bt_ErrorCode ChangeOp(struct BTr *bt, enum OpKind Op, char *key, char *valueLoc, unsigned int valueLen, char *ovLoc, unsigned int ovLen)
+static bt_ErrorCode ChangeOp(bt, Op, key, valueLoc, valueLen, ovLoc, ovLen)
+struct BTr *bt;
+enum OpKind Op;
+char *key, *valueLoc, *ovLoc;
+unsigned int valueLen, ovLen;
 {
     /* Carry out the specified transformation on the given b-tree. */
 
@@ -1613,7 +1675,10 @@ Declaration:
 	char *key, *valueLoc;
 	unsigned int valueLen;
 */
-bt_ErrorCode bt_Insert(struct BTree *bt, char *key, char *valueLoc, unsigned int valueLen)
+bt_ErrorCode bt_Insert(bt, key, valueLoc, valueLen)
+struct BTree *bt;
+char *key, *valueLoc;
+unsigned int valueLen;
 {
     return ChangeOp((struct BTr *) bt, OpInsert, key, valueLoc, valueLen, NULL, 0);
 }
@@ -1625,7 +1690,10 @@ Declaration:
 	char *key, *valueLoc;
 	unsigned int valueLen;
 */
-bt_ErrorCode bt_Replace(struct BTree *bt, char *key, char *valueLoc, unsigned int valueLen)
+bt_ErrorCode bt_Replace(bt, key, valueLoc, valueLen)
+struct BTree *bt;
+char *key, *valueLoc;
+unsigned int valueLen;
 {
     return ChangeOp((struct BTr *) bt, OpUpdate, key, valueLoc, valueLen, NULL, 0);
 }
@@ -1636,7 +1704,9 @@ Declaration:
 	struct BTree *bt;
 	char *key;
 */
-bt_ErrorCode bt_Delete(struct BTree *bt, char *key)
+bt_ErrorCode bt_Delete(bt, key)
+struct BTree *bt;
+char *key;
 {
     return ChangeOp((struct BTr *) bt, OpDelete, key, NULL, 0, NULL, 0);
 }
@@ -1649,7 +1719,10 @@ Declaration:
 	char *key, *oldValueLoc, *newValueLoc;
 	unsigned int oldValueLen, newValueLen;
 */
-bt_ErrorCode bt_CondReplace(struct BTree *bt, char *key, char *oldValueLoc, unsigned int oldValueLen, char *newValueLoc, unsigned int newValueLen)
+bt_ErrorCode bt_CondReplace(bt, key, oldValueLoc, oldValueLen, newValueLoc, newValueLen)
+struct BTree *bt;
+char *key, *oldValueLoc, *newValueLoc;
+unsigned int oldValueLen, newValueLen;
 {
     return ChangeOp((struct BTr *) bt, OpCondUpdate, key,
 		     newValueLoc, newValueLen,
@@ -1663,7 +1736,10 @@ Declaration:
 	char *key, *oldValueLoc;
 	unsigned int oldValueLen;
 */
-bt_ErrorCode bt_CondDelete(struct BTree *bt, char *key, char *oldValueLoc, unsigned int oldValueLen)
+bt_ErrorCode bt_CondDelete(bt, key, oldValueLoc, oldValueLen)
+struct BTree *bt;
+char *key, *oldValueLoc;
+unsigned int oldValueLen;
 {
     return ChangeOp((struct BTr *) bt, OpCondDelete, key, NULL, 0,
 		     oldValueLoc, oldValueLen);

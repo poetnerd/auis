@@ -36,8 +36,9 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 #include <attribs.h>
 #include "rawtext.eh"
 
-#include <stdlib.h>
-boolean rawtext__InitializeObject(struct classheader *classID, struct rawtext *self)
+boolean rawtext__InitializeObject(classID, self)
+struct classheader *classID;
+struct rawtext *self;
 {
     self->NewlineEOF= environ_GetProfileSwitch("rawtext.newlineateof",FALSE); /*RSK92add*/
     self->OverstrikeMode= FALSE; /*RSK92overstrike*/
@@ -47,13 +48,19 @@ boolean rawtext__InitializeObject(struct classheader *classID, struct rawtext *s
     return TRUE;
 }
 
-void rawtext__FinalizeObject(struct classheader *classID, struct rawtext *self)
+void rawtext__FinalizeObject(classID, self)
+struct classheader *classID;
+struct rawtext *self;
 {
     return;
 }
 
 /* override */
-long rawtext__Write(struct rawtext *self, FILE *file, long writeID, int level)
+long rawtext__Write(self, file, writeID, level)
+struct rawtext *self;
+FILE *file;
+long writeID;
+int level;
 {
     long temp, len=rawtext_GetLength(self);
     if (len>0 && rawtext_PutNewlineAtEOF(self) && rawtext_GetChar(self, len-1)!='\n')
@@ -64,7 +71,9 @@ long rawtext__Write(struct rawtext *self, FILE *file, long writeID, int level)
 }
 
 /* override */
-void rawtext__SetAttributes(struct rawtext *self, struct attributes *atts)
+void rawtext__SetAttributes(self,atts)
+struct rawtext *self;
+struct attributes *atts;
 {
     super_SetAttributes(self,atts);
     while (atts!=NULL) {
@@ -77,7 +86,11 @@ void rawtext__SetAttributes(struct rawtext *self, struct attributes *atts)
 }
 
 /*RSK92overstrike: this is a duplicate of the original simpletext_InsertCharacters; it's used by the TABOVER macro to ignore overstrike mode*/
-boolean rawtext__JustInsertCharacters(struct rawtext *self, long pos, char *str, long len)
+boolean rawtext__JustInsertCharacters(self,pos,str,len)
+struct rawtext *self;
+long pos;
+char *str;
+long len;
 {
     if (pos >= rawtext_GetFence(self)) {
         rawtext_AlwaysInsertCharacters(self, pos, str, len);
@@ -89,7 +102,9 @@ boolean rawtext__JustInsertCharacters(struct rawtext *self, long pos, char *str,
 
 /*RSK91overstrike: mostly snagged from Patch10's ConfirmViewDeletion in atk/text/txtvcmod.c*/
 #define TEXT_VIEWREFCHAR '\377'
-static boolean MakeSureNotOverstrikingView(struct rawtext *d, long pos, long len)
+static boolean MakeSureNotOverstrikingView(d, pos, len)
+struct rawtext *d;
+long pos, len;
 {
     boolean hasViews;
     struct environment *env;
@@ -108,7 +123,9 @@ static boolean MakeSureNotOverstrikingView(struct rawtext *d, long pos, long len
 }
 
 /*RSK91overstrike: this routine was based on Patch10's textview_ViDeleteCmd (atk/text/txtvcmod.c).*/
-void rawtext__OverstrikeAChar(struct rawtext *d, long pos)
+void rawtext__OverstrikeAChar(d,pos)
+struct rawtext *d;
+long pos;
 {
     int	dsize;
     char c;
@@ -126,7 +143,11 @@ void rawtext__OverstrikeAChar(struct rawtext *d, long pos)
 }
 
 /*RSK91overstrike: override simpletext's normal character insertion*/
-boolean rawtext__InsertCharacters(struct rawtext *self, long pos, char *str, long len)
+boolean rawtext__InsertCharacters(self, pos, str, len)
+struct rawtext *self;
+long pos;
+char *str;
+long len;
 {
     if (rawtext_IsInOverstrikeMode(self)) {
 	int i= 0;

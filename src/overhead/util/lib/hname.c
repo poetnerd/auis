@@ -44,8 +44,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <system.h>
 #include <util.h>
 
+extern int errno;
 
-int GetHostDomainName(char *buf, int buflen)
+int GetHostDomainName(buf, buflen)
+char *buf; int buflen;
 {/* Returns like gethostname(); optionally appends the result of getdomainname(). */
     int Code;
     int hlen, dlen;
@@ -91,7 +93,6 @@ int GetHostDomainName(char *buf, int buflen)
 
 #ifdef TESTINGONLYTESTING
 #include <stdio.h>
-#include <stdlib.h>
 main()
 {
     char Dogs[1000];

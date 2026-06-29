@@ -36,8 +36,6 @@ static char cmuwm_rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/at
 #include <cmuwm.h>
 #include <cmuwm.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 int 
 cmuwm__Ident( classID, fullname )
     struct classheader *classID;

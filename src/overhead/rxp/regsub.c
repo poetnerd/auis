@@ -55,7 +55,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <regexp.h>
 #include "regmagic.h"
 
-#include <string.h>
 #ifndef CHARBITS
 #define	UCHARAT(p)	((int)*(unsigned char *)(p))
 #else /* CHARBITS */
@@ -65,7 +64,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 /*
  - regsub - perform substitutions after a regexp match
  */
-void            reg_sub(regexp *prog, char *source, char *dest)
+void            reg_sub(prog, source, dest)
+regexp         *prog;
+char           *source;
+char           *dest;
 {
     register char  *src;
     register char  *dst;

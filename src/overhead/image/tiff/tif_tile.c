@@ -43,7 +43,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * Compute which tile an (x,y,z,s) value is in.
  */
 u_int
-int TIFFComputeTile(TIFF *tif, u_long x, u_long y, u_int s, u_long z)
+TIFFComputeTile(tif, x, y, s, z)
+	TIFF *tif;
+	u_long x, y, z;
+	u_int s;
 {
 	TIFFDirectory *td = &tif->tif_dir;
 	u_long dx = td->td_tilewidth;
@@ -114,7 +117,8 @@ TIFFCheckTile(tif, x, y, z, s)
  * Compute how many tiles are in an image.
  */
 u_int
-int TIFFNumberOfTiles(TIFF *tif)
+TIFFNumberOfTiles(tif)
+	TIFF *tif;
 {
 	TIFFDirectory *td = &tif->tif_dir;
 	u_long dx = td->td_tilewidth;
@@ -139,7 +143,8 @@ int TIFFNumberOfTiles(TIFF *tif)
  * Compute the # bytes in each row of a tile.
  */
 u_long
-int TIFFTileRowSize(TIFF *tif)
+TIFFTileRowSize(tif)
+	TIFF *tif;
 {
 	TIFFDirectory *td = &tif->tif_dir;
 	u_long rowsize;
@@ -156,7 +161,9 @@ int TIFFTileRowSize(TIFF *tif)
  * Compute the # bytes in a variable length, row-aligned tile.
  */
 u_long
-int TIFFVTileSize(TIFF *tif, u_long nrows)
+TIFFVTileSize(tif, nrows)
+	TIFF *tif;
+	u_long nrows;
 {
 	TIFFDirectory *td = &tif->tif_dir;
 	u_long tilesize;
@@ -193,7 +200,8 @@ int TIFFVTileSize(TIFF *tif, u_long nrows)
  * Compute the # bytes in a row-aligned tile.
  */
 u_long
-int TIFFTileSize(TIFF *tif)
+TIFFTileSize(tif)
+	TIFF *tif;
 {
 	return (TIFFVTileSize(tif, tif->tif_dir.td_tilelength));
 }

@@ -39,12 +39,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <sys/stat.h>
 #include "index.h"
 
-#include <stdlib.h>
 /*
  * Internal routine: given a FILE * and an integer, write the integer in a machine-independent
  * form to the file.  Make sure this works for vaxes as well as normal machines.
  */
-static writeInteger(register FILE *afile, register long ai)
+static writeInteger(afile, ai)
+register long ai;
+register FILE *afile;
 {
     register long tc;
 
@@ -62,7 +63,9 @@ static writeInteger(register FILE *afile, register long ai)
   * Internal routine: given a FILE * and a record id pointer, write the external representation
   * of the record ID to the file.
   */
-static writeRecordID(register FILE *afile, register struct recordID *arid)
+static writeRecordID(afile, arid)
+register struct recordID *arid;
+register FILE *afile;
 {
     register long code;
     register long tc;
@@ -92,7 +95,9 @@ static writeRecordID(register FILE *afile, register struct recordID *arid)
   * Internal routine: given a FILE * and a pointer to an integer, read the external representation
   * of the integer from the file and return it in the place provided.
   */
-static readInteger(register FILE *afile, register long *ai)
+static readInteger(afile, ai)
+register long *ai;
+register FILE *afile;
 {
     register long code;
     register long tc;
@@ -115,7 +120,8 @@ static readInteger(register FILE *afile, register long *ai)
   * return a pointer to a static recordID structure containing the newly-read
   * recordID.
   */
-static struct recordID *readRecordID(register FILE *afile)
+static struct recordID *readRecordID(afile)
+register FILE *afile;
 {
     register long code;
     register long tc;
@@ -149,7 +155,8 @@ static struct recordID *readRecordID(register FILE *afile)
   * Internal routine: read a set of hash bucket ids from a file (FILE *), and return a hashList *
   * pointer to the newly-created list.
   */
-struct hashList *readHashList(register FILE *afile)
+struct hashList *readHashList(afile)
+register FILE *afile;
 {
     register long temp;
     register struct hashList *tlist, *clist;
@@ -237,7 +244,8 @@ register struct indexBucket *ab;
 							     * primary and secondary records) from the file, and return a ponter to the struct
   * hashBucket * just created.
   */
-struct indexBucket *index_ReadIndex(register FILE *afile)
+struct indexBucket *index_ReadIndex(afile)
+register FILE *afile;
 {
     register long tc;
     char charBuffer[MAXSTRLENGTH];
@@ -358,7 +366,9 @@ register struct indexBucket *abucket;
 	    * the index package you are done with this structure by using index_CPut,
 	    * not by freeing it.
 	    */
-struct indexBucket *index_CGetHash(struct Index *ai, register long ahash)
+struct indexBucket *index_CGetHash(ai, ahash)
+struct Index *ai;
+register long ahash;
 {
     register FILE *file;
     register struct indexBucket *tb;
@@ -386,7 +396,9 @@ struct indexBucket *index_CGetHash(struct Index *ai, register long ahash)
 	    * the index package you are done with this structure by using index_CPut,
 	    * not by freeing it.
 	    */
-struct indexBucket *index_CGet(struct Index *ai, register char *akey)
+struct indexBucket *index_CGet(ai, akey)
+struct Index *ai;
+register char *akey;
 {
     return index_CGetHash(ai, index_Hash(akey, ai->hashTableSize));
 }
@@ -421,7 +433,8 @@ register struct indexBucket *ab;
   * Internal routine: Clear out the contents of an index file.  This routine does not
   * delete the directory itself, but does delete all of its contents.
   */
-static Purge(register char *apath)
+static Purge(apath)
+register char *apath;
 {
     register DIR *td;
     register DIRENT_TYPE *tde;

@@ -49,12 +49,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #ifdef WHITEPAGES_ENV /* avoid makedepend "errors" */
 #include <btint.h>
-#include <stdlib.h>
 #endif /* WHITEPAGES_ENV  */
+extern int errno;
 
 static int Debugging;
 
-int btcreate_SetDebugging(int level)
+int btcreate_SetDebugging(level)
+int level;
 {
     int OldLevel;
     OldLevel = Debugging;
@@ -70,7 +71,10 @@ Declaration:
 	int LockStyle;	how to do locking on this structure
 NULL terminates the argument list.
 */
-bt_ErrorCode bt_Create(char *path, int MaxFileSize, int LockStyle, int *Dum)
+bt_ErrorCode bt_Create(path, MaxFileSize, LockStyle, Dum)
+char *path;
+int MaxFileSize, LockStyle;
+int *Dum;
 {
     /* Create a new b-tree. */
 

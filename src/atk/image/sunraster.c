@@ -64,12 +64,12 @@ static char *Copyright= "Copyright 1989, 1993 Jim Frost";
 #include <sunraster.h>
 #include <sunraster.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 /* SUPPRESS 558 */
 /* SUPPRESS 560 */
 
-static void babble(char *name, struct rheader *header)
+static void babble(name, header)
+     char           *name;
+     struct rheader *header;
 {
   printf("%s is a", name);
   switch (memToVal(header->type, 4)) {
@@ -156,7 +156,11 @@ sunraster__Ident( classID, fullname )
 /* read either rl-encoded or normal image data
  */
 
-static void sunread(FILE *f, byte *buf, unsigned int len, unsigned int enc)
+static void sunread(f, buf, len, enc)
+     FILE        *f;
+     byte         *buf;
+     unsigned int  len;
+     unsigned int  enc;  /* true if encoded file */
 { static byte repchar, remaining= 0;
 
   /* rl-encoded read

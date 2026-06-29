@@ -37,7 +37,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <andrewos.h>		/* sys/time.h */
 
-char *NiceTime(long int Time)
+char *NiceTime(Time)
+long int Time;
 {/* Like ctime, but do a more attractive job and don't end with a newline. */
     static char Res[50];
     static char *Mon[] = {	"Jan", "Feb", "Mar", "Apr", "May", "Jun",

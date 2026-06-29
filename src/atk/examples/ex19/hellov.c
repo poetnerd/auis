@@ -54,7 +54,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exam
 
 #include "hello.ih"
 
-#include <string.h>
 #define TOTALSIZE 1500
 
 static void xgetinfo(), xsetframe(), ygetinfo(), ysetframe();
@@ -71,7 +70,9 @@ static struct scrollfns vertInterface = {
 static struct keymap *helloworldviewKeymap;
 static struct menulist *helloworldviewMenulist;
 
-boolean helloworldview__InitializeObject(struct classheader *classID, struct helloworldview *hwv)
+boolean helloworldview__InitializeObject(classID,hwv)
+struct classheader *classID;
+struct helloworldview *hwv;   
 {
     hwv->haveInputFocus=FALSE;
     hwv->HaveDownTransition=FALSE;
@@ -91,7 +92,9 @@ boolean helloworldview__InitializeObject(struct classheader *classID, struct hel
     return TRUE;
 }
 
-void helloworldview__FinalizeObject(struct classheader *classID, struct helloworldview *hwv)
+void helloworldview__FinalizeObject(classID,hwv)
+struct classheader *classID;
+struct helloworldview *hwv;
 {
     if(hwv->view!=NULL){
 	view_DeleteApplicationLayer(hwv->view,hwv->applayer);
@@ -102,14 +105,18 @@ void helloworldview__FinalizeObject(struct classheader *classID, struct hellowor
     cursor_Destroy(hwv->dragCursor);
 }
 
-void helloworldview__LinkTree(struct helloworldview *hwv, struct view *parent)
+void helloworldview__LinkTree(hwv,parent)
+struct helloworldview *hwv;
+struct view *parent;
 {
     if(hwv->applayer!=NULL)
 	view_LinkTree(hwv->applayer,hwv);
     super_LinkTree(hwv,parent);
 }
 
-static void setSubView(struct helloworldview *hwv, struct dataobject *dobj)
+static void setSubView(hwv,dobj)
+struct helloworldview *hwv;
+struct dataobject *dobj;
 {
     if(hwv->view!=NULL){
 	view_UnlinkTree(hwv->applayer);
@@ -134,7 +141,9 @@ static void setSubView(struct helloworldview *hwv, struct dataobject *dobj)
     hwv->redrawSubView=TRUE;
 }
 
-void helloworldview__SetDataObject(struct helloworldview *hwv, struct helloworld *hw)
+void helloworldview__SetDataObject(hwv,hw)
+struct helloworldview *hwv;
+struct helloworld *hw;
 {
     hwv->x=hw->x;
     hwv->y=hw->y;
@@ -143,17 +152,23 @@ void helloworldview__SetDataObject(struct helloworldview *hwv, struct helloworld
     super_SetDataObject(hwv,hw);
 }
 
-struct view *helloworldview__GetApplicationLayer(struct helloworldview *hwv)
+struct view *helloworldview__GetApplicationLayer(hwv)
+struct helloworldview *hwv;
 {
     return (struct view *)scroll_Create(hwv,scroll_LEFT+scroll_BOTTOM);
 }
 
-void helloworldview__DeleteApplicationLayer(struct helloworldview *hwv, struct scroll *scrollbar)
+void helloworldview__DeleteApplicationLayer(hwv,scrollbar)
+struct helloworldview *hwv;
+struct scroll *scrollbar;
 {
     scroll_Destroy(scrollbar);
 }
 
-void helloworldview__ObservedChanged(struct helloworldview *hwv, struct helloworld *changed, long val)
+void helloworldview__ObservedChanged(hwv,changed,val)
+struct helloworldview *hwv;
+struct helloworld *changed;
+long val;
 {
     struct helloworld *hw=(struct helloworld *)hwv->header.view.dataobject;
 
@@ -173,7 +188,13 @@ void helloworldview__ObservedChanged(struct helloworldview *hwv, struct hellowor
 #define WIDTH 100
 #define HEIGHT 100
 
-void helloworldview__FullUpdate(struct helloworldview *hwv, enum view_UpdateType type, long left, long top, long width, long height)
+void helloworldview__FullUpdate(hwv,type,left,top,width,height)
+struct helloworldview *hwv;
+enum view_UpdateType type;
+long left;
+long top;
+long width;
+long height; 
 {
     struct helloworld *hw=(struct helloworld *)hwv->header.view.dataobject;
     struct rectangle myVisualRect,rec;
@@ -233,7 +254,8 @@ void helloworldview__FullUpdate(struct helloworldview *hwv, enum view_UpdateType
     hwv->redrawSubView=FALSE;
 }
 
-void helloworldview__Update(struct helloworldview *hwv)
+void helloworldview__Update(hwv)
+struct helloworldview *hwv;
 {    
     struct helloworld *hw=(struct helloworld *)hwv->header.view.dataobject;
 
@@ -300,7 +322,12 @@ void helloworldview__Update(struct helloworldview *hwv)
 }
 
 
-struct view *helloworldview__Hit(struct helloworldview *hwv, enum view_MouseAction action, long x, long y, long numberOfClicks)
+struct view *helloworldview__Hit(hwv,action,x,y,numberOfClicks)
+struct helloworldview *hwv;
+enum view_MouseAction action;
+long x;
+long y;
+long numberOfClicks;
 {
     struct helloworld *hw=(struct helloworld *)hwv->header.view.dataobject;
 
@@ -365,7 +392,8 @@ struct view *helloworldview__Hit(struct helloworldview *hwv, enum view_MouseActi
 }
 
 
-void helloworldview__ReceiveInputFocus(struct helloworldview *hwv)
+void helloworldview__ReceiveInputFocus(hwv)
+struct helloworldview *hwv;
 {
     hwv->haveInputFocus=TRUE;
     hwv->keystate->next=NULL;
@@ -374,12 +402,15 @@ void helloworldview__ReceiveInputFocus(struct helloworldview *hwv)
 }
 
 
-void helloworldview__LoseInputFocus(struct helloworldview *hwv)
+void helloworldview__LoseInputFocus(hwv)
+struct helloworldview *hwv;
 {
     hwv->haveInputFocus=FALSE;
 }
 
-static void Center(struct helloworldview *hwv, long rock)
+static void Center(hwv,rock)
+struct helloworldview *hwv;
+long rock;
 {
     struct helloworld *hw=(struct helloworld *)hwv->header.view.dataobject;
 
@@ -390,7 +421,9 @@ static void Center(struct helloworldview *hwv, long rock)
 }
 
 
-static void Invert(struct helloworldview *hwv, long rock)
+static void Invert(hwv, rock)
+struct helloworldview *hwv;
+long rock;
 {
     struct helloworld *hw=(struct helloworld *)hwv->header.view.dataobject;
 
@@ -399,7 +432,9 @@ static void Invert(struct helloworldview *hwv, long rock)
 }
 
 
-static void relocate(struct helloworldview *hwv, long rock)
+static void relocate(hwv,rock)
+struct helloworldview *hwv;
+long rock;
 {
     struct helloworld *hw=(struct helloworld *)hwv->header.view.dataobject;
     char buf[100];
@@ -418,7 +453,9 @@ static void relocate(struct helloworldview *hwv, long rock)
 }
 
 
-static void readHW(struct helloworldview *hwv, long rock)
+static void readHW(hwv,rock)
+struct helloworldview *hwv;
+long rock;
 {
     char file[100], msgBuf[100];
     FILE *fp;
@@ -460,7 +497,9 @@ static void readHW(struct helloworldview *hwv, long rock)
 }
 
 
-static void writeHW(struct helloworldview *hwv, long rock)
+static void writeHW(hwv,rock)
+struct helloworldview *hwv;
+long rock;
 {
     char file[100], msgBuf[100];
     FILE *fp;
@@ -480,7 +519,9 @@ static void writeHW(struct helloworldview *hwv, long rock)
 }
 
 
-static void changeObj(struct helloworldview *hwv, long rock)
+static void changeObj(hwv,rock)
+struct helloworldview *hwv;
+long rock;
 {
     char objtype[100],msgbuf[100];
     struct helloworld *hw=(struct helloworld *)hwv->header.view.dataobject;
@@ -506,7 +547,9 @@ static void changeObj(struct helloworldview *hwv, long rock)
     dataobject_Destroy(oldDobj); /* get rid of the old one */
 }
 
-static void xgetinfo(struct helloworldview *hwv, struct range *total, struct range *seen, struct range *dot)
+static void xgetinfo(hwv, total, seen, dot)
+struct helloworldview *hwv;
+struct range *total, *seen, *dot;
 {
     struct helloworld *hw=(struct helloworld *)hwv->header.view.dataobject;
 
@@ -517,7 +560,9 @@ static void xgetinfo(struct helloworldview *hwv, struct range *total, struct ran
     dot->beg = dot->end = hw->x;
 }
 
-static void ygetinfo(struct helloworldview *hwv, struct range *total, struct range *seen, struct range *dot)
+static void ygetinfo(hwv, total, seen, dot)
+struct helloworldview *hwv;
+struct range *total, *seen, *dot;
 {
     struct helloworld *hw=(struct helloworld *)hwv->header.view.dataobject;
 
@@ -528,7 +573,10 @@ static void ygetinfo(struct helloworldview *hwv, struct range *total, struct ran
     dot->beg = dot->end = hw->y;
 }
 
-static void xsetframe(struct helloworldview *hwv, int posn, long cord, long outof)
+static void xsetframe(hwv, posn, cord, outof)
+struct helloworldview *hwv;
+int posn;
+long cord, outof;
 {
     hwv->newFrameX = posn - hwv->vrWidth * cord / outof;
     if (hwv->newFrameX + hwv->vrWidth > TOTALSIZE)
@@ -538,7 +586,10 @@ static void xsetframe(struct helloworldview *hwv, int posn, long cord, long outo
     helloworldview_WantUpdate(hwv, hwv);
 }
 
-static void ysetframe(struct helloworldview *hwv, int posn, long cord, long outof)
+static void ysetframe(hwv, posn, cord, outof)
+struct helloworldview *hwv;
+int posn;
+long cord, outof;
 {
     hwv->newFrameY = posn - hwv->vrHeight * cord / outof;
     if (hwv->newFrameY + hwv->vrHeight > TOTALSIZE)
@@ -548,18 +599,24 @@ static void ysetframe(struct helloworldview *hwv, int posn, long cord, long outo
     helloworldview_WantUpdate(hwv, hwv);
 }
 
-static long xwhat(struct helloworldview *hwv, long cord, long outof)
+static long xwhat(hwv, cord, outof)
+struct helloworldview *hwv;
+long cord, outof;
 {
     return hwv->frameX + hwv->vrWidth * cord / outof;
 }
 
-static long ywhat(struct helloworldview *hwv, long cord, long outof)
+static long ywhat(hwv, cord, outof)
+struct helloworldview *hwv;
+long cord, outof;
 {
     return hwv->frameY + hwv->vrHeight * cord / outof;
 }
 
 
-char *helloworldview__GetInterface(struct helloworldview *hwv, char *type)
+char *helloworldview__GetInterface(hwv, type)
+struct helloworldview *hwv;
+char *type;
 {
     if (strcmp(type, "scroll,vertical") == 0)
 	return (char *) &vertInterface;
@@ -580,7 +637,8 @@ static struct bind_Description helloworldviewBindings[]={
     NULL
 };
 
-boolean helloworldview__InitializeClass(struct classheader *classID)
+boolean helloworldview__InitializeClass(classID)
+struct classheader *classID;
 {
     helloworldviewMenulist=menulist_New();
     helloworldviewKeymap=keymap_New();

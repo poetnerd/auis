@@ -39,7 +39,6 @@ char *observe_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 #include <atomlist.ih>
 #include <owatch.ih>
 
-#include <stdlib.h>
 #define INITIALNUMOBSERVERS 4
 
 
@@ -74,7 +73,9 @@ static struct triggerclass *Triggers = NULL;	/* the list of defined triggers */
 
 
 
-boolean observable__InitializeObject(struct classheader *classID, struct observable *self)
+boolean observable__InitializeObject(classID, self)
+struct classheader *classID;
+struct observable *self;
 {
     self->nObservers = 0;
     self->maxObservers = 0;
@@ -83,7 +84,9 @@ boolean observable__InitializeObject(struct classheader *classID, struct observa
     return TRUE;
 }
 
-void observable__FinalizeObject(struct classheader *classID, struct observable *self)
+void observable__FinalizeObject(classID, self)
+struct classheader *classID;
+struct observable *self;
 {
     struct triggerinstance *ti, *tit;
     struct triggerhousing *th, *tht;
@@ -387,7 +390,9 @@ observable__EnableTrigger(self, trigger)
 /* observable__DisableCount(self, trigger)
 	return the number of outstanding DisableTrigger calls
 */
-long observable__DisableCount(struct observable *self, struct atom *trigger)
+long observable__DisableCount(self, trigger)
+struct observable *self;
+struct atom *trigger;
 {
     struct triggerhousing *th;
     struct triggerclass *tc;

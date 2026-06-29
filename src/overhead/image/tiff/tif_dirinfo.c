@@ -40,7 +40,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "tiffioP.h"
 #include "prototypes.h"
 
-#include <stdlib.h>
 #ifndef TRUE
 #define	TRUE	1
 #define	FALSE	0

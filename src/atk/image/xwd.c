@@ -69,15 +69,16 @@ static char *Copyright= "Copyright 1989, 1993 Jim Frost";
 #include <X11/X.h>
 #include <xwd.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 /* SUPPRESS 558 */
 
 /* this reads the header and does the magic to determine if it is indeed
  * an XWD file.
  */
 
-static int isXWD(char *name, FILE *f, XWDHeader *header)
+static int isXWD(name, f, header)
+     char      *name;
+     FILE      *f;
+     XWDHeader *header;
 { GenericXWDHeader  gh;
   int               a;
 

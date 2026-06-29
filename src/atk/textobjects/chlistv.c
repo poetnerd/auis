@@ -38,12 +38,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include "style.ih"
 #include "chlistv.eh"
 
-#include <stdlib.h>
-#include <stdio.h>
 static boolean chlistview_Debug = FALSE;
 
 
-void chlistview__SetUpdateRegion(struct chlistview *self, long pos, long len)
+void chlistview__SetUpdateRegion(self, pos, len)
+struct chlistview *self;
+long pos;
+long len;
 {
     struct textview *tv = (struct textview *) self;
     long i;
@@ -64,7 +65,9 @@ void chlistview__SetUpdateRegion(struct chlistview *self, long pos, long len)
 }
 
 
-boolean chlistview__InitializeObject(struct classheader *c, struct chlistview *self)
+boolean chlistview__InitializeObject(c, self)
+struct classheader *c;
+struct chlistview *self;
 {
     self->highlightedItem = -1;
     self->numStylesAllocated = 0;
@@ -73,7 +76,9 @@ boolean chlistview__InitializeObject(struct classheader *c, struct chlistview *s
     return(TRUE);
 }
 
-void chlistview__FinalizeObject(struct classheader *c, struct chlistview *self)
+void chlistview__FinalizeObject(c, self)
+struct classheader *c;
+struct chlistview *self;
 {
     if (self->normalStyles != NULL) {
 	free(self->normalStyles);
@@ -83,7 +88,10 @@ void chlistview__FinalizeObject(struct classheader *c, struct chlistview *self)
     }
 }
 
-struct view *chlistview__Hit(struct chlistview *self, enum view_MouseAction action, long x, long y, long nclicks)
+struct view *chlistview__Hit(self, action, x, y, nclicks)
+struct chlistview *self;
+enum view_MouseAction action;
+long x, y, nclicks;
 {
     int pos, index, region;
     struct chlist *l;
@@ -101,7 +109,9 @@ struct view *chlistview__Hit(struct chlistview *self, enum view_MouseAction acti
     return((struct view *) self);
 }
 
-void chlistview__ActivateItem(struct chlistview *self, int pos)
+void chlistview__ActivateItem(self, pos)
+struct chlistview *self;
+int pos;
 {
     int region, index;
     struct chlist *l;
@@ -117,7 +127,9 @@ void chlistview__ActivateItem(struct chlistview *self, int pos)
    chlistview_WantInputFocus(self, self);
 }
 
-void chlistview__HighlightItem(struct chlistview *self, long index)
+void chlistview__HighlightItem(self, index)
+struct chlistview *self;
+long index;
 {
     if (self->highlightedItem != index) {
 	struct chlist *l;
@@ -146,7 +158,9 @@ void chlistview__HighlightItem(struct chlistview *self, long index)
     }
 }
 
-void chlistview__UnhighlightItem(struct chlistview *self, long index)
+void chlistview__UnhighlightItem(self, index)
+struct chlistview *self;
+long index;
 {
     if (self->highlightedItem >= 0) {
 	struct chlist *l;
@@ -167,7 +181,11 @@ void chlistview__UnhighlightItem(struct chlistview *self, long index)
     }
 }
 
-struct environment *chlistview__GetStyleInformation(struct chlistview *self, struct text_statevector *sv, long pos, long *length)
+struct environment *chlistview__GetStyleInformation(self, sv, pos, length)
+struct chlistview *self;
+struct text_statevector *sv;
+long pos;
+long *length;
 {
     struct environment *env;
     long index, regionID, size, offset;
@@ -204,7 +222,10 @@ struct environment *chlistview__GetStyleInformation(struct chlistview *self, str
     return env;
 }
 
-struct style *chlistview__GetRegionStyle(struct chlistview *self, long regionID, boolean highlighted)
+struct style *chlistview__GetRegionStyle(self, regionID, highlighted)
+struct chlistview *self;
+long regionID;
+boolean highlighted;
 {
     if (self->normalStyles != NULL) {
 	if (highlighted) {
@@ -217,7 +238,11 @@ struct style *chlistview__GetRegionStyle(struct chlistview *self, long regionID,
     return NULL;
 }
 
-void chlistview__SetRegionStyles(struct chlistview *self, long regionID, struct style *normalStyle, struct style *highlightStyle)
+void chlistview__SetRegionStyles(self, regionID, normalStyle, highlightStyle)
+struct chlistview *self;
+long regionID;
+struct style *normalStyle;
+struct style *highlightStyle;
 {
     long oldSize;
 

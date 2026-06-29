@@ -124,8 +124,6 @@ DECLARE1(append_1, unsigned long, prefix)
 #define	G3CODES
 #include "t4.h"
 
-#include <string.h>
-#include <stdlib.h>
 short
 #if defined(__STDC__) || defined(__EXTENDED__) || USE_CONST
 DECLARE3(search_table, unsigned long, prefix, tableentry const*, tab, int, n)

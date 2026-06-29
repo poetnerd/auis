@@ -47,8 +47,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #include <be1be2.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 /* Primitive environment attributes */
 
 #define SVLeftMargin 0		/* text left margin */
@@ -112,7 +110,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
  * Package classprocedures
  */
 
-boolean be1be2__CheckBE1(struct classheader *classID, struct text *text)
+boolean be1be2__CheckBE1(classID, text)
+struct classheader *classID;
+struct text *text;
 {
     long gotlen, len = text_GetLength(text);
     register int pos = 0;
@@ -162,7 +162,9 @@ boolean be1be2__CheckBE1(struct classheader *classID, struct text *text)
  *    CVDots, copied from style.c
  */
 
-static long CVDots(register long amt, enum style_Unit unit)
+static long CVDots(amt, unit)
+register long amt;
+enum style_Unit unit;
 {
     switch (unit) {
         case style_RawDots:
@@ -182,7 +184,9 @@ static long CVDots(register long amt, enum style_Unit unit)
     return 0;
 }
 
-boolean ConvertStyle(struct style *self, long attr, long opcode, long optype, long opparm)
+boolean ConvertStyle(self, attr, opcode, optype, opparm)
+struct style *self;
+long attr, opcode, optype, opparm;
 {
     boolean retVal = TRUE;
 
@@ -462,7 +466,9 @@ struct envElem {
     long pos;
 };
 
-boolean be1be2__Convert(struct classheader *classID, struct text *text)
+boolean be1be2__Convert(classID, text)
+struct classheader *classID;
+struct text *text;
 {
     static struct envElem envStack[MAXENVSTACK], *envSP;
     static char *BE1map[MAXBE1STYLES];  /* Maps index to style name */

@@ -33,8 +33,6 @@
 #include <gentlex.h>
 
 
-#include <string.h>
-#include <stdlib.h>
 char *Prefix = NULL;
 static int PrefixLen = 0;
 char *tlxFile = NULL;

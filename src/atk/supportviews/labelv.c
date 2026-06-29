@@ -64,7 +64,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <labelv.eh>
 
 
-#include <stdio.h>
 	static boolean
 BogusCallFromParent(self, where, msg)
 	register struct labelview *self;
@@ -241,7 +240,14 @@ labelview__Hit(self, action, x, y, num_clicks)
 }
 
 	enum view_DSattributes
-int labelview__DesiredSize(register struct labelview *self, long width, long height, enum view_DSpass pass, long *desiredWidth, long *desiredHeight)
+labelview__DesiredSize( self, width, height, pass, 
+				desiredWidth, desiredHeight ) 
+	register struct labelview *self;
+	long width;
+	long height;
+	enum view_DSpass pass;
+	long *desiredWidth;
+	long *desiredHeight;
 {
 	if ( ! self->GaveSize ) {
 		long w, h;

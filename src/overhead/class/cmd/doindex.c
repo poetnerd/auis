@@ -51,8 +51,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <classind.h>
 
 
-#include <errno.h>
-#include <stdlib.h>
 /*
  * some needed data structures.
  */
@@ -69,6 +67,7 @@ struct EntryStruct {
  * external symbols that have no include files
  */
 
+extern int errno;
 
 
 /*
@@ -297,12 +296,7 @@ RETRY:
 		goto RETRY; /* reopen, as old file has probably been renamed by other process */
 	    }
 	    else {
-		extern int sys_nerr,errno;
-		extern char *sys_errlist[]; 
-		if(errno > sys_nerr)
-		    fprintf(stdout, "%s: Warning : file lock call failed, ignoring unknown error #%d.\n", ProgramName,errno);
-		else 
-		    fprintf(stdout, "%s: Warning : file lock call failed, ignoring '%s' error.\n", ProgramName,sys_errlist[errno]);
+		fprintf(stdout, "%s: Warning : file lock call failed: %s\n", ProgramName, strerror(errno));
 	    }
 	}
 #endif /* !sys_ps_aix12 && !sys_ps_aix11 */

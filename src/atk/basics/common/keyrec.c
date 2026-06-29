@@ -37,10 +37,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <class.h>
 #include <keyrec.eh>
 
-#include <stdlib.h>
 static struct keyitem *freeList = NULL;
 
-boolean keyrec__InitializeObject(struct classheader *classID, struct keyrec *self)
+boolean keyrec__InitializeObject(classID, self)
+    struct classheader *classID;
+    struct keyrec *self;
 {
     if (freeList != NULL)  {
 	self->head = freeList;
@@ -54,13 +55,16 @@ boolean keyrec__InitializeObject(struct classheader *classID, struct keyrec *sel
     return TRUE;
 }
 
-void keyrec__FinalizeObject(struct classheader *classID, struct keyrec *self)
+void keyrec__FinalizeObject(classID, self)
+    struct classheader *classID;
+    struct keyrec *self;
 {
     self->tail->next = freeList;
     freeList = self->head;
 }
 
-void keyrec__Clear(struct keyrec *self)
+void keyrec__Clear(self)
+    struct keyrec *self;
 {
     if (self->head != self->tail)  {
 	self->tail->next = freeList;
@@ -70,26 +74,30 @@ void keyrec__Clear(struct keyrec *self)
     }
 }
 	
-boolean keyrec__StartRecording(struct keyrec *self)
+boolean keyrec__StartRecording(self)
+    struct keyrec *self;
 {
     if (self->recording) return FALSE;
     self->recording = TRUE;
     keyrec_Clear(self);
 }
 
-boolean keyrec__StopRecording(struct keyrec *self)
+boolean keyrec__StopRecording(self)
+    struct keyrec *self;
 {
     if (! self->recording) return FALSE;
     self->recording = FALSE;
     return TRUE;
 }
 
-boolean keyrec__Recording(struct keyrec *self)
+boolean keyrec__Recording(self)
+    struct keyrec *self;
 {
     return self->recording;
 }
 
-struct keyrec *keyrec__Copy(struct keyrec *self)
+struct keyrec *keyrec__Copy(self)
+    struct keyrec *self;
 {
     register struct keyrec *newkr;
     register struct keyitem *ki;
@@ -112,7 +120,13 @@ struct keyrec *keyrec__Copy(struct keyrec *self)
     return newkr;
 }
 
-void keyrec__RecordEvent(struct keyrec *self, enum keyrec_EventType type, struct view *view, union keyrec_KeyValue value1, union keyrec_KeyValue value2, union keyrec_KeyValue value3)
+void keyrec__RecordEvent(self, type, view, value1, value2, value3)
+    struct keyrec *self;
+    enum keyrec_EventType type;
+    struct view *view;
+    union keyrec_KeyValue value1;
+    union keyrec_KeyValue value2;
+    union keyrec_KeyValue value3;
 {
     register struct keyitem *newki;
 
@@ -133,14 +147,21 @@ void keyrec__RecordEvent(struct keyrec *self, enum keyrec_EventType type, struct
     self->tail = newki;
 }
 
-boolean keyrec__StartPlaying(struct keyrec *self)
+boolean keyrec__StartPlaying(self)
+    struct keyrec *self;
 {
     if (self->recording || self->playing) return FALSE;
     self->playing = TRUE;
     self->current = self->head->next;
 }
 
-boolean keyrec__NextKey(struct keyrec *self, enum keyrec_EventType *type, struct view **view, union keyrec_KeyValue *value1, union keyrec_KeyValue *value2, union keyrec_KeyValue *value3)
+boolean keyrec__NextKey(self, type, view, value1, value2, value3)
+    struct keyrec *self;
+    enum keyrec_EventType *type;
+    struct view **view;
+    union keyrec_KeyValue *value1;
+    union keyrec_KeyValue *value2;
+    union keyrec_KeyValue *value3;
 {
     if (! self->playing) return FALSE;
     if (self->current == self->head)  {
@@ -156,7 +177,8 @@ boolean keyrec__NextKey(struct keyrec *self, enum keyrec_EventType *type, struct
     return TRUE;
 }
 
-void keyrec__StopPlaying(struct keyrec *self)
+void keyrec__StopPlaying(self)
+    struct keyrec *self;
 {
     self->playing = FALSE;
 }

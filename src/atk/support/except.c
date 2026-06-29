@@ -29,44 +29,56 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #endif
 #include <except.eh>
 
-#include <string.h>
 except_HandlerContext_p except_CurrentContext = NULL;
 except_Exception except_ExceptionID = NULL;
 char *except_ExceptionValue = NULL;
 except_UncaughtExceptionHandler except_UncaughtHandler = NULL;
 
-except_Exception except__GetRaisedException(struct classheader *c)
+except_Exception except__GetRaisedException(c)
+    struct classheader *c;
 {
     return (except_ExceptionID);
 } /* except__GetRaisedException */
 
-void except__SetExceptionValue(struct classheader *c, char *v)
+void except__SetExceptionValue(c, v)
+    struct classheader *c;
+    char *v;
 {
     except_ExceptionValue = v;
 } /* except__SetExceptionValue */
 
-char *except__GetExceptionValue(struct classheader *c)
+char *except__GetExceptionValue(c)
+    struct classheader *c;
 {
     return (except_ExceptionValue);
 } /* except__GetExceptionValue */
 
-void except__SetUncaughtExceptionHandler(struct classheader *c, except_UncaughtExceptionHandler h)
+void except__SetUncaughtExceptionHandler(c, h)
+    struct classheader *c;
+    except_UncaughtExceptionHandler h;
 {
     except_UncaughtHandler = h;
 } /* except__SetUncaughtExceptionHandler */
 
-except_UncaughtExceptionHandler except__GetUncaughtExceptionHandler(struct classheader *c)
+except_UncaughtExceptionHandler except__GetUncaughtExceptionHandler(c)
+    struct classheader *c;
 {
     return (except_UncaughtHandler);
 } /* except__GetUncaughtExceptionHandler */
 
-void except__PushContext(struct classheader *c, except_HandlerContext_p context)
+void except__PushContext(c, context)
+    struct classheader *c;
+    except_HandlerContext_p context;
 {
     context->nested = except_CurrentContext;
     except_CurrentContext = context;
 } /* except__PushContext */
 
-boolean except__CheckException(struct classheader *c, except_Exception xid, except_HandlerContext_p context, int *flags)
+boolean except__CheckException(c, xid, context, flags)
+    struct classheader *c;
+    except_Exception xid;
+    except_HandlerContext_p context;
+    int *flags;
 {
     if ((strcmp(xid, except_ExceptionID) == 0) ||
 	(strcmp(xid, except_ANY) == 0))
@@ -80,12 +92,15 @@ boolean except__CheckException(struct classheader *c, except_Exception xid, exce
     return (FALSE);
 } /* except__CheckException */
 
-void except__ResetContext(struct classheader *c, except_HandlerContext_p context)
+void except__ResetContext(c, context)
+    struct classheader *c;
+    except_HandlerContext_p context;
 {
     except_CurrentContext = context;
 } /* except__ResetContext */
 
-except_HandlerContext_p except__GetCurrentContext(struct classheader *c)
+except_HandlerContext_p except__GetCurrentContext(c)
+    struct classheader *c;
 {
     return (except_CurrentContext);
 } /* except__GetCurrentContext */
@@ -98,7 +113,10 @@ static void except_DefaultHandler()
     i = 3 / i;
 } /* except_DefaultHandler */
 
-boolean except__RAISE(struct classheader *c, except_Exception xid, char *value)
+boolean except__RAISE(c, xid, value)
+    struct classheader *c;
+    except_Exception xid;
+    char *value;
 {
     if (xid != NULL) {
 	except_ExceptionID = xid;

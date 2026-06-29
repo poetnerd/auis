@@ -74,8 +74,6 @@ deferred features:
 #include <lprruler.ih>
 #include <lprrulv.eh>
 
-#include <string.h>
-#include <stdio.h>
 /*
 static struct menulist  *class_menulist;
 static struct keymap  *class_keymap;
@@ -725,7 +723,14 @@ lprrulerview__Hit(self, action, x, y, num_clicks)
 }
 
 enum view_DSattributes
-int lprrulerview__DesiredSize(struct lprrulerview *self, long width, long height, enum view_DSpass pass, long *desiredWidth, long *desiredHeight)
+lprrulerview__DesiredSize( self, width, height, pass, 
+				desiredWidth, desiredHeight ) 
+	struct lprrulerview *self;
+	long width;
+	long height;
+	enum view_DSpass pass;
+	long *desiredWidth;
+	long *desiredHeight;
 {
 	*desiredHeight = 80;
 	*desiredWidth = 700;

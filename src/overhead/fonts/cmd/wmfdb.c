@@ -73,8 +73,6 @@ char *ExplicitOutputFileName = NULL;
 #ifdef WM_ENV
 #include "font.h"
 #include "fntmanip.h"
-#include <string.h>
-#include <stdlib.h>
 #endif /* WM_ENV */
 /* ************************************************************ */
 
@@ -124,7 +122,8 @@ Boolean check = false;
 /* ************************************************************ */
 
 /* print representation of a character for debugging */
-char *printrep(int c)
+char *printrep (c)
+int   c;
 {
    static char s[5];
 
@@ -358,7 +357,8 @@ DumpFont()
 
 /* ************************************************************ */
 
-struct font *GetFEFont(char *name)
+struct font *GetFEFont (name)
+char *name;
 {
    struct FontName   fn;
    struct font *f;
@@ -450,7 +450,8 @@ struct font *GetFEFont(char *name)
 /* ************************************************************ */
 
 
-int ScanArgs(char *s)
+ScanArgs(s)
+char *s;
 {
    /* check each character of the option list for its meaning. */
    switch (*++s)
@@ -489,7 +490,8 @@ int ScanArgs(char *s)
       }
 }
 
-int DetermineFiles(char *s)
+DetermineFiles(s)
+char *s;
 {
    short    n;
 
@@ -542,7 +544,9 @@ int DetermineFiles(char *s)
  
 char ProgramName[] = "wmfdb";
 
-int main(int argc, char **argv)
+main(argc, argv)
+int   argc;
+char **argv;
 {
    Boolean namenotgiven = true;
 

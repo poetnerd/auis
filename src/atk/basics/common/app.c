@@ -41,15 +41,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <profile.ih>
 #include <app.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
-static void errorProc(pointer rock, char *str)
+static void errorProc(rock, str)
+pointer rock;
+char *str;
 {
     fprintf(stderr, "%s", str);
     fflush(stderr);
 }
 
-boolean application__InitializeObject(struct classheader *classID, struct application *self)
+boolean application__InitializeObject(classID,self)
+struct classheader *classID;
+struct application *self;
 {
     self->fork=TRUE; /* do it by default */
     self->name=NULL;
@@ -66,10 +68,13 @@ boolean application__InitializeObject(struct classheader *classID, struct applic
     return TRUE;
 }
 
-void application__FinalizeObject(struct classheader *classID, struct application *self)
+void application__FinalizeObject(classID,self)
+struct classheader *classID;
+struct application *self;
 {
 }
-void application__PrintVersionNumber(struct application *self)
+void application__PrintVersionNumber(self)
+struct application *self;
 {
     if (!environ_GetProfileSwitch("PrintVersionNumber", TRUE))
 	return;
@@ -93,7 +98,10 @@ void application__PrintVersionNumber(struct application *self)
  * These 4 routines are the heart of the application interface
  */
 
-boolean application__ParseArgs(struct application *self, int argc, char **argv)
+boolean application__ParseArgs(self,argc,argv)
+struct application *self;
+int argc;
+char **argv;
 {
     char *host;
 
@@ -294,7 +302,8 @@ struct application *self;
 }
 
 
-boolean application__Start(struct application *self)
+boolean application__Start(self)
+struct application *self;
 {
     char *t;
 
@@ -345,7 +354,8 @@ boolean application__Start(struct application *self)
     return TRUE;
 }
 
-void application__Stop(struct application *self)
+void application__Stop(self)
+struct application *self;
 {
     if (class_IsLoaded("profile"))
         profile_Stop(); /* stop current profiling, if any */
@@ -354,7 +364,8 @@ void application__Stop(struct application *self)
 /* this assumes interaction; maybe should be in a subclass, like
  * interactiveapp or something
  */
-int application__Run(struct application *self)
+int application__Run(self)
+struct application *self;
 {
     if(!application_Fork(self))
 	return -1;
@@ -364,7 +375,8 @@ int application__Run(struct application *self)
     return 0;
 }
 
-boolean application__Fork(struct application *self)
+boolean application__Fork(self)
+struct application *self;
 {
     if(self->fork){
 	self->fork=FALSE; /* just in case */
@@ -387,7 +399,10 @@ boolean application__Fork(struct application *self)
  * Some utility routines
  */
 
-void application__DeleteArgs(struct classheader *classID, char **argv, int num)
+void application__DeleteArgs(classID,argv,num)
+struct classheader *classID;
+char **argv;
+int num;
 {
     int i;
 
@@ -402,7 +417,8 @@ void application__DeleteArgs(struct classheader *classID, char **argv, int num)
     *argv=NULL;
 }
 
-char *application__GetATKVersion(struct classheader *c)
+char *application__GetATKVersion(c)
+struct classheader *c;
 {
     FILE *fp;
     char *andrewDir, fname[1200], *s;

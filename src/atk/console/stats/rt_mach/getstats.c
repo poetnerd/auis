@@ -99,7 +99,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 
 #define VMMON_DODECL
 #include <getstats.h>
-#include <stdlib.h>
 extern struct nlist RawStatistics[];
 
 
@@ -124,6 +123,9 @@ off_t procp;
 struct mapent *SwapMap;
 struct proc proc[8];/* 8 = a few, for fewer syscalls */
 struct proc *mproc;
+extern char *malloc();
+
+
 struct{
    long time[CPUSTATES];
    long xfer[DK_NDRIVE];
@@ -145,7 +147,8 @@ union {
 
 
 
-int GetGVMStats(int UsersID)
+GetGVMStats(UsersID)
+int UsersID;
 {
     register int   i;
     long  t;
@@ -341,8 +344,13 @@ int Init;
     endfsent();
 }
 
-int bread(int fi, daddr_t bno, char *buf, int cnt)
+int bread(fi, bno, buf, cnt)
+int fi;
+daddr_t bno;
+char *buf;
+int cnt;
 {
+    extern int errno;
 
     (void) lseek(fi, (long)(bno * DEV_BSIZE), 0);
    if (read(fi, buf, cnt) != cnt)
@@ -359,7 +367,8 @@ int bread(int fi, daddr_t bno, char *buf, int cnt)
 /*
  * Given a name like /dev/rrp0h, returns the mounted path, like /usr.
  */
-char *mpath(char *file)
+char *mpath(file)
+char *file;
 {
     register struct mtab *mp;
 
@@ -375,7 +384,8 @@ char *mpath(char *file)
     return "";
 }
 
-int eq(char *f1, char *f2)
+eq(f1, f2)
+char *f1, *f2;
 {
     if (strncmp(f1, "/dev/", 5) == 0)
 	f1 += 5;
@@ -392,14 +402,19 @@ int eq(char *f1, char *f2)
     return (0);
 }
 
-int round(double num)
+int round(num)
+double num;
 {
     int inum = (int) num;
     return(((num - inum) >= 0.5) ? (inum + 1) : inum);
 }
 
 
-int dfree1(int id, char *file, int infsent, int Init)
+dfree1(id, file, infsent, Init)
+int id;
+char *file;
+int infsent;
+int Init;
 {
     long totalblks, availblks, free, used;
     int fi;

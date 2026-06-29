@@ -45,7 +45,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <text.ih>
 #include <deskey.eh>
 
-#include <stdio.h>
 static long NProcs;
 
 /* Begining of Forward Declarations */
@@ -81,7 +80,8 @@ void sortByProc();
 #define TMPB "/tmp/,tmp2"
 #define TMPC "/tmp/,tmp3"
 
-boolean deskey__InitializeClass(struct classheader *c)
+boolean deskey__InitializeClass(c)
+struct classheader *c;
 {
     struct classinfo *imc;
     imc = class_Load("im");
@@ -95,7 +95,9 @@ boolean deskey__InitializeClass(struct classheader *c)
 }
 
 /* empty and fill [scratch] buffer with text from a file.  Uses AlwaysDelete and AlwaysInsert to overcome the possibility that the scratch buffer might be read-only */
-static boolean bufferFill(struct im *im, struct text *text)
+static boolean bufferFill(im, text)
+struct im *im;
+struct text *text;
 {
     long len;
     
@@ -110,14 +112,19 @@ static boolean bufferFill(struct im *im, struct text *text)
 }
 
 
-static boolean bufferFind(struct frame *f, struct buffer *b)
+static boolean bufferFind(f,b)
+struct frame *f;
+struct buffer *b;
 {
   return(frame_GetBuffer(f) == b);
 }
 
 /* initiate file and buffer setup - the file will eventually be used to fill the buffer,
   the buffer is a scratch buffer (possibly read-only too) */
-static boolean bufferSetup(FILE **f, struct im *im, struct text **text)
+static boolean bufferSetup(f, im, text)
+FILE **f;
+struct im *im;
+struct text **text;
 {
     struct im *newim;
     struct buffer *buffer;
@@ -156,7 +163,8 @@ static boolean bufferSetup(FILE **f, struct im *im, struct text **text)
 }
 
 
-static struct view *bufferFindView(struct buffer *b)
+static struct view *bufferFindView(b)
+struct buffer *b;
 {
   struct frame *f;
   struct im *im;
@@ -185,7 +193,8 @@ static struct view *bufferFindView(struct buffer *b)
 
 /* create a printable character from any [reasonable] [dec] value */
 /* same routine as is used within 'im' for uniformity of appearance */
-static char *charToPrintable(long c)
+static char *charToPrintable(c)
+long c;
 {
     static char s[8];
 
@@ -215,7 +224,8 @@ static char *charToPrintable(long c)
 }
 
 /* set up the ATK datastream for the buffer - perhaps a bit of a hack, but.... */
-static void datastreamOpen(FILE *f)
+static void datastreamOpen(f)
+FILE *f;
 {
     fprintf(f, "\\begindata{text,999666333}\n");
     fprintf(f, "\\textdsversion{12}\n");
@@ -242,14 +252,18 @@ static void datastreamOpen(FILE *f)
 }
 
 /* make sure to close the ATK datastream */
-static void datastreamClose(FILE *f)
+static void datastreamClose(f)
+FILE *f;
 {
     fprintf(f, "\\enddata{text, 999666333}\n");
 }
 
 #define PARSE_ERROR (-2)
 
-static int transferLine(FILE *f1, FILE *f2, boolean really)
+static int transferLine(f1, f2, really)
+FILE *f1;
+FILE *f2;
+boolean really;
 {
     int code;
     while ((code = fgetc(f1)) != '\n' && code != EOF)
@@ -261,7 +275,8 @@ static int transferLine(FILE *f1, FILE *f2, boolean really)
 }
 
 /* read TMPA - write TMPB - mv TMPB to TMPA */
-static int removeOverridden(int sort)
+static int removeOverridden(sort)
+int sort;
 {
     FILE *f1, *f2;
     int code;
@@ -331,7 +346,9 @@ static int removeOverridden(int sort)
     initiates the temporary file, calling the functions needed to fill it
     calling the functions to setup the second file and buffer, calling
     the function to fill that, and getting rid of all the temporary files */
-static void describeAllKeys(struct im *im, int sort)
+static void describeAllKeys(im, sort)
+struct im *im;
+int sort;
 {
     FILE *f, *tmpf;
     char buf[MAXPATHLEN];
@@ -381,7 +398,8 @@ static void describeAllKeys(struct im *im, int sort)
     initiates the temporary file, calling the functions needed to fill it
     calling the functions to setup the second file and buffer, calling
     the function to fill that, and getting rid of all the temporary files */
-static long describeAllProcEntries(struct im *im)
+static long describeAllProcEntries(im)
+struct im *im;
 {
     FILE *f, *tmpf;
     char buf[MAXPATHLEN];
@@ -428,7 +446,13 @@ static long describeAllProcEntries(struct im *im)
 /* mapno - is an incremented number representing which keymap the entry is from
   this is used on the other end of the processing to eliminate those bindings which
   were overridden */
-void describeBinding(char *bind, int len, int runKey, struct proctable_Entry *pte, FILE *f, long mapno)
+void describeBinding(bind,len,runKey,pte,f, mapno)
+char *bind;
+int len;
+int runKey; /* if == -1, not part of a run */
+struct proctable_Entry *pte;
+FILE *f;
+long mapno;
 {
     char keys[50];
 
@@ -446,7 +470,12 @@ void describeBinding(char *bind, int len, int runKey, struct proctable_Entry *pt
 }
 
 /* recursive function to go through entire active keymap */
-void describeKeymap(struct keymap *map, char *bind, int len, FILE *f, long mapno)
+void describeKeymap(map,bind,len,f, mapno)
+struct keymap *map;
+char *bind;
+int len;
+FILE *f;
+long mapno;
 {
     int key, runKey = -1;
     enum keymap_Types lastKeyType;
@@ -495,7 +524,9 @@ void describeKeymap(struct keymap *map, char *bind, int len, FILE *f, long mapno
 }
 
 
-static void describeKeys(struct im *im, FILE *f)
+static void describeKeys(im, f)
+struct im *im;
+FILE *f;
 {
     struct keystate *ks;
     long mapno = 1; 
@@ -507,7 +538,9 @@ static void describeKeys(struct im *im, FILE *f)
 }
 
 
-static void describeProcEntry(struct proctable_Entry *pe, FILE *f)
+static void describeProcEntry(pe, f)
+struct proctable_Entry *pe;
+FILE *f;
 {
     NProcs++;
 
@@ -546,7 +579,8 @@ static void describeProcEntry(struct proctable_Entry *pe, FILE *f)
 
 /* Sigh.  Should call proctable_GetDocumentation(pte) 
   but include file is broken. */
-static char *getProcDoc(struct proctable_Entry *pte)
+static char *getProcDoc(pte)
+struct proctable_Entry *pte;
 {
     if (!proctable_Defined(pte))
 	return("<not loaded>");
@@ -557,7 +591,9 @@ static char *getProcDoc(struct proctable_Entry *pte)
 
 
 
-void makePrefix(char *buf, char *keys, int len)
+void makePrefix(buf,keys,len)
+char *buf, *keys;
+int len;
 {
     while(len-- > 0){
 	sprintf(buf, "%s-", charToPrintable(*keys++));
@@ -566,7 +602,9 @@ void makePrefix(char *buf, char *keys, int len)
 }
 
 
-static int parseFile(FILE *f, FILE *d)
+static int parseFile(f, d)
+FILE *f;
+FILE *d;
 {
     int c;
     int count = 0;
@@ -579,7 +617,9 @@ static int parseFile(FILE *f, FILE *d)
 }
 
 
-static void parseBindFile(FILE *f, FILE *d)
+static void parseBindFile(f, d)
+FILE *f;
+FILE *d;
 {
     int c;
     for (;;){
@@ -607,7 +647,9 @@ static void parseBindFile(FILE *f, FILE *d)
 }
 
 
-static void parseProcFile(FILE *f, FILE *d)
+static void parseProcFile(f, d)
+FILE *f;
+FILE *d;
 {
     int c1, c2, cd;
     for(;;){
@@ -641,14 +683,16 @@ static void parseProcFile(FILE *f, FILE *d)
 }
 
 
-static void sortByKey(struct im *im)
+static void sortByKey(im)
+struct im *im;
 {
     describeAllKeys(im, KEYSORT);
 }
 
 
 
-static void sortByProc(struct im *im)
+static void sortByProc(im)
+struct im *im;
 {
     describeAllKeys(im, PROCSORT);
 }
@@ -657,7 +701,8 @@ static void sortByProc(struct im *im)
 
 
 /* Prompt for a key sequence and show the name and documentation of the function it's bound to. */
-static void describeAKey(struct im *im)
+static void describeAKey(im)
+struct im *im;
 {
     int done = FALSE;
     char buf[1000];
@@ -704,7 +749,9 @@ static void describeAKey(struct im *im)
 /* ListAProc(pe, f)
 	Format the entry 'pe' and print it to 'f'
 */
-static void ListAProc(struct proctable_Entry *pe, FILE *f)
+static void ListAProc(pe, f)
+struct proctable_Entry *pe;
+FILE *f;
 {
     NProcs++;
 
@@ -738,7 +785,8 @@ case proctable_DisposeString:  fprintf(f, "=> DisposableString");  break;
 	write to /tmp/ProcList a list of all current proctable entries
 	Return number of entries written.  
 */
-static long ListProctable(struct im *im)
+static long ListProctable(im)
+struct im *im;
 {
     FILE *f;
     NProcs = 0;

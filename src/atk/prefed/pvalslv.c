@@ -41,22 +41,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 #include <prefval.ih>
 #include "pvalslv.eh"
 
-#include <stdlib.h>
 #define zfree(x) do { if(x) { free(x); (x)=NULL;}} while (0)
 #define DATA(self) ((struct prefval *)pvalslv_GetDataObject(self))
 #define VALUE(self) (prefval_GetValue(DATA(self))?prefval_GetValue(DATA(self))->v.ival:0)
 
-boolean pvalslv__InitializeObject(struct classheader *classID, struct pvalslv *self)
+boolean pvalslv__InitializeObject(classID, self)
+struct classheader *classID;
+struct pvalslv *self;
 {
     pvalslv_SetLocation(self, scroll_BOTTOM);
     return TRUE;
 }
 
-void pvalslv__FinalizeObject(struct classheader *classID, struct pvalslv *self)
+void pvalslv__FinalizeObject(classID, self)
+struct classheader *classID;
+struct pvalslv *self;
 {
 }
 
-void pvalslv__GetInfo(struct pvalslv *self, struct range *total, struct range *seen, struct range *dot)
+void pvalslv__GetInfo(self, total, seen, dot)
+struct pvalslv *self;
+struct range *total, *seen, *dot;
 {
 
     total->beg=prefval_GetRangeLow(DATA(self));
@@ -74,7 +79,9 @@ void pvalslv__GetInfo(struct pvalslv *self, struct range *total, struct range *s
     dot->end = -1;
 }
 
-long pvalslv__WhatIsAt(struct pvalslv *self, long numerator, long denominator)
+long pvalslv__WhatIsAt(self, numerator, denominator)
+struct pvalslv *self;
+long numerator, denominator;
 {
     long coord;
 
@@ -88,7 +95,9 @@ long pvalslv__WhatIsAt(struct pvalslv *self, long numerator, long denominator)
     return coord;
 }
 
-void pvalslv__SetFrame(struct pvalslv *self, long pos, long num, long denom)
+void pvalslv__SetFrame(self, pos, num, denom)
+struct pvalslv *self;
+long pos, num, denom;
 {
     struct prefval_value v;
     long coord;
@@ -108,7 +117,10 @@ void pvalslv__SetFrame(struct pvalslv *self, long pos, long num, long denom)
 
 }
 
-void pvalslv__Endzone(struct pvalslv *self, int end, enum view_MouseAction action)
+void pvalslv__Endzone(self, end, action)
+struct pvalslv *self;
+int end;
+enum view_MouseAction action;
 {
     long diff=0;
     struct prefval_value v;

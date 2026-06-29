@@ -47,11 +47,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #ifdef WHITEPAGES_ENV /* avoid makedepend "errors" */
 #include <wp.h>
 #include <btwp.h>
-#include <stdlib.h>
 #endif /* WHITEPAGES_ENV  */
 int bwDebugging = 0;
 
 #ifndef _IBMR2
+extern char *malloc(), *realloc();
 #endif /* _IBMR2 */
 
 /* IF YOU CHANGE THE FOLLOWING, CHANGE ``makeboth.c'' ALSO. */

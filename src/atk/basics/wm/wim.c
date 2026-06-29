@@ -72,8 +72,6 @@ Figure out some way to handle levels of user.  Macros should probably not be an 
 #include <wgraphic.ih>
 #include <wfontd.ih>
 #include <wmclient.h>
-#include <stdlib.h>
-#include <stdio.h>
 static struct wm_window **windowList;
 static long numberOfWindowFiles = 0;
 static long wmWindowCtr = 0;
@@ -94,7 +92,8 @@ static struct im_GlobalDataType * gData = NULL;
 /* size of a long, converted to a string */
 #define CVSIZE 8
 
-static char *cv2string(long value)
+static char *cv2string(value)
+    long value;
 {
 
     static char tbuffer[20];
@@ -104,7 +103,8 @@ static char *cv2string(long value)
     return tbuffer;
 }
 
-static long cv2long(char *string)
+static long cv2long(string)
+    char *string;
 {
 
     register int count;
@@ -127,7 +127,8 @@ static long cv2long(char *string)
 
 #ifdef LWP
 /* called on iomgr lwp's stack at a safe time*/
-static int WakeUpIM(char *dummy)
+static int WakeUpIM(dummy)
+    char *dummy;
 {
     if (imPid != NULL)
         im_IOMGRCancel(imPid);
@@ -418,7 +419,8 @@ wmim__CreateWindow(self, host)
     return TRUE;
 }
 
-void wmim__FlushAllWindows(struct classheader *classID)
+void wmim__FlushAllWindows(classID)
+    struct classheader *classID;
 {
     int i;
 
@@ -431,7 +433,9 @@ void wmim__FlushAllWindows(struct classheader *classID)
 /* Recursively checks if this menu list or any of its chainees need to be installed. */
 
 /* Recursively installs a menu list and all its chainees. */
-static void InstallMenus(struct wmim *self, struct menulist *menulist)
+static void InstallMenus(self, menulist)
+    struct wmim *self;
+    struct menulist *menulist;
 {
     register struct itemlist *item;
     struct headerlist *header;
@@ -473,14 +477,16 @@ struct cacheregion {
     struct cacheregion *next, **selfP;
 };
 
-struct cacheregion *lastCacheRegion(struct cacheregion *list)
+struct cacheregion *lastCacheRegion(list)
+struct cacheregion *list;
 {
     while(list->next!=NULL)
 	list=list->next;
     return list;
 }
 
-int linkCacheRegion(struct cacheregion *region, struct cacheregion **listP)
+linkCacheRegion(region,listP)
+struct cacheregion *region, **listP;
 {
     if(region->selfP!=NULL)
 	*region->selfP=region->next;
@@ -495,7 +501,8 @@ int linkCacheRegion(struct cacheregion *region, struct cacheregion **listP)
     *listP=region;
 }
 
-struct cacheregion *unlinkCacheRegion(struct cacheregion *region)
+struct cacheregion *unlinkCacheRegion(region)
+struct cacheregion *region;
 {
     if(region->selfP!=NULL)
 	*region->selfP=region->next;
@@ -508,7 +515,8 @@ struct cacheregion *unlinkCacheRegion(struct cacheregion *region)
     return region;
 }
 
-int freeCacheRegions(struct cacheregion *region)
+freeCacheRegions(region)
+struct cacheregion *region;
 {
     while(region!=NULL){
 	struct cacheregion *next=region->next;
@@ -525,7 +533,8 @@ struct mlcacheNode {
     struct mlcacheNode *next,*prev,*others;
 };
 
-static struct mlcacheNode *newCacheNode(struct mlcacheNode *prev)
+static struct mlcacheNode *newCacheNode(prev)
+struct mlcacheNode *prev;
 {
     struct mlcacheNode *cache=
       (struct mlcacheNode *)malloc(sizeof(struct mlcacheNode));
@@ -541,7 +550,8 @@ static struct mlcacheNode *newCacheNode(struct mlcacheNode *prev)
     return cache;
 }
 
-static void freeMLCache(struct mlcacheNode *cache)
+static void freeMLCache(cache)
+struct mlcacheNode *cache;
 {
 /* printf("fmlc: freeing a cache\n"); */
     if(cache->next!=NULL)
@@ -551,7 +561,8 @@ static void freeMLCache(struct mlcacheNode *cache)
     free((char *)cache);
 }
 
-static void discardCachedML(struct mlcacheNode *cache, struct mlcacheNode **rootP)
+static void discardCachedML(cache,rootP)
+struct mlcacheNode *cache,**rootP;
 {
     struct mlcacheNode **backP;
 
@@ -586,7 +597,11 @@ static void discardCachedML(struct mlcacheNode *cache, struct mlcacheNode **root
 /* else printf("dcml: Avoiding blowing away the root.\n"); */
 }
 
-struct mlcacheNode *findCachedML(struct wmim *self, struct menulist *ml, struct mlcacheNode *cache, boolean *newVersionP)
+struct mlcacheNode *findCachedML(self,ml,cache,newVersionP)
+struct wmim *self;
+struct menulist *ml;
+struct mlcacheNode *cache;
+boolean *newVersionP;
 {
     struct headerlist *h;
     struct mlcacheNode *unused=NULL;
@@ -628,7 +643,9 @@ struct mlcacheNode *findCachedML(struct wmim *self, struct menulist *ml, struct 
     return cache;
 }
 
-static void updateMenus(struct wmim *self, struct menulist *ml)
+static void updateMenus(self,ml)
+struct wmim *self;
+struct menulist *ml;
 {
     boolean newVersion=FALSE;
     struct cacheregion *destroy=NULL;
@@ -702,7 +719,9 @@ printf("um: reusing menu region %d.\n",cache->region->id);
     self->menuRegion=cache->region->id;
 }
 
-void wmim__PostMenus(struct wmim *self, struct menulist *menulist)
+void wmim__PostMenus(self, menulist)
+    struct wmim *self;
+    struct menulist *menulist;
 {
     struct wm_window *window = im2window(self);
     struct im * imself = (struct im *) self;
@@ -736,7 +755,9 @@ wmim__WhichWS(self)
 	return (unsigned char *)"wm";
 }
 
-boolean wmim__InitializeObject(struct classheader *classID, struct wmim *self)
+boolean wmim__InitializeObject(classID, self)
+struct classheader *classID;
+struct wmim *self;
 {
     int i;
 
@@ -755,7 +776,9 @@ boolean wmim__InitializeObject(struct classheader *classID, struct wmim *self)
     return TRUE;
 }
 
-void wmim__FinalizeObject(struct classheader *classID, struct wmim *self)
+void wmim__FinalizeObject(classID, self)
+    struct classheader *classID;
+    struct wmim *self;
 {
     struct wm_window *oldwin = im2window(self);
     long wctr, i;
@@ -783,7 +806,8 @@ void wmim__FinalizeObject(struct classheader *classID, struct wmim *self)
 }
 
 
-void wmim__HandleRedraw(register struct im *im)
+void wmim__HandleRedraw (im)
+register struct im *im;
 {
     long width;
     long height;
@@ -931,13 +955,15 @@ wmim__HandleFiles (ClassID, twait, beCheap)
 	return FALSE;
 }
 
-void wmim__RedrawWindow(struct wmim *self)
+void wmim__RedrawWindow(self)
+struct wmim *self;
 {
     wmim_HandleRedraw(self); /*sigh*/
 }
 
 
-boolean  wmim__InitializeClass(struct classheader *classID)
+boolean  wmim__InitializeClass(classID)
+    struct classheader *classID;
 {
     gData = im_GetGlobalData(); /* load up the pointer to shared, global state */
 
@@ -986,7 +1012,10 @@ struct wmcursor * C; {
 	C->mrlist = mrl_Reset(C->mrlist,NULL);
 }
 
-void wmim__PostCursor(struct im *self, struct rectangle *rec, struct cursor *cursor)
+void wmim__PostCursor(self,rec,cursor)
+struct im *self;
+struct rectangle *rec;
+struct cursor *cursor;
 {
     static struct rectangle temprec;
     struct rectangle *vrec = &(((struct wmcursor *)cursor)->rec);
@@ -1021,7 +1050,8 @@ void wmim__PostCursor(struct im *self, struct rectangle *rec, struct cursor *cur
 	im_UpdateCursors(self);
 }
 
-void wmim__ClearCursorList(struct wmim *self)
+void wmim__ClearCursorList(self)
+struct wmim *self;
 {
     if (im_IsPlaying()) return;
 
@@ -1029,7 +1059,8 @@ void wmim__ClearCursorList(struct wmim *self)
     wmim_UpdateCursors(self);
 }
 
-void wmim__UpdateCursors(struct wmim *self)
+void wmim__UpdateCursors(self)
+struct wmim *self;
 {
     if (im_IsPlaying()) return;
 
@@ -1048,7 +1079,8 @@ void wmim__UpdateCursors(struct wmim *self)
     fflush(winout);
 }
 
-static int updateGlobalCursors(struct im *self)
+static int updateGlobalCursors(self)
+struct im *self;
 {
 
     if(ProcessCursor != NULL) {
@@ -1064,7 +1096,8 @@ static int updateGlobalCursors(struct im *self)
     return(0);
 }
 
-static setCursorRegions(struct wmcursor *cursor)
+static setCursorRegions(cursor)
+struct wmcursor *cursor;
 {
     register struct cursor *cp;
     struct rectangle *rec;
@@ -1085,7 +1118,8 @@ static setCursorRegions(struct wmcursor *cursor)
     }
 }
 
-static ActivateCursors(struct im *self)
+static ActivateCursors(self)
+struct im *self;
 {	
     register struct wmcursor *cp;
     register struct mrl *mr;
@@ -1111,7 +1145,8 @@ static ActivateCursors(struct im *self)
     self->cursorPostsPending = FALSE;
 }
 
-static DeactivateCursors(struct im *self)
+static DeactivateCursors(self)
+struct im *self;
 {
     register struct wmcursor *cp;
     register struct mrl *mr;
@@ -1127,7 +1162,9 @@ static DeactivateCursors(struct im *self)
 }
 
 
-void wmim__SetTitle(struct im *self, char *title)
+void wmim__SetTitle(self, title)
+    struct im *self;
+    char *title;
 {
     super_SetTitle(self,title);
     if (CurrentUserWindow !=  im2window(self))
@@ -1147,7 +1184,8 @@ void wmim__SetTitle(struct im *self, char *title)
 
 #define QUOTE '\035'
 
-FILE *wmim__FromCutBuffer(struct wmim *self)
+FILE *wmim__FromCutBuffer(self)
+    struct wmim *self;
 {
     long count;
     FILE *pasteFile;
@@ -1199,7 +1237,9 @@ FILE *wmim__FromCutBuffer(struct wmim *self)
 }
 
 
-void wmim__CloseToCutBuffer(struct im *self, FILE *writeFile)
+void wmim__CloseToCutBuffer(self, writeFile)
+    struct im *self;
+    FILE *writeFile;
 {
     register int i;
     register unsigned char *s;
@@ -1235,7 +1275,9 @@ void wmim__CloseToCutBuffer(struct im *self, FILE *writeFile)
     im_SetProcessCursor(NULL);
 }
 
-void wmim__RotateCutBuffers(struct im *self, long count)
+void wmim__RotateCutBuffers(self, count)
+    struct im *self;
+    long count;
 {
 
     if (CurrentUserWindow !=  im2window(self))
@@ -1244,7 +1286,9 @@ void wmim__RotateCutBuffers(struct im *self, long count)
 
 }
 
-void wmim__AppendToCutBuffer(struct wmim *self, FILE *writeFile)
+void wmim__AppendToCutBuffer(self, writeFile)
+    struct wmim *self;
+    FILE *writeFile;
 {
 
     wmim_CloseToCutBuffer(self, writeFile);
@@ -1253,7 +1297,8 @@ void wmim__AppendToCutBuffer(struct wmim *self, FILE *writeFile)
     wm_AppendCutBuffers();
 }
 
-void wmim__SetWMFocus(struct wmim *self)
+void wmim__SetWMFocus(self)
+    struct wmim *self;
 {
 
     struct wm_window *tempWindow = CurrentUserWindow;
@@ -1273,7 +1318,8 @@ void wmim__SetWMFocus(struct wmim *self)
  * before we can process the first one. This is done to prevent a UNIX kernel
  * bug involving out-of-band data from hanging the process.
  */
-void wmim__ExposeWindow(struct wmim *self)
+void wmim__ExposeWindow(self)
+    struct wmim *self;
 {
     int mask;
     struct wm_window *tempWindow = CurrentUserWindow;
@@ -1301,7 +1347,8 @@ void wmim__ExposeWindow(struct wmim *self)
         wm_SelectWindow(tempWindow);
 }
 
-void wmim__HideWindow(struct wmim *self)
+void wmim__HideWindow(self)
+    struct wmim *self;
 {
     int mask;
     struct wm_window *tempWindow = CurrentUserWindow;
@@ -1334,7 +1381,8 @@ void wmim__HideWindow(struct wmim *self)
         wm_SelectWindow(tempWindow);
 }
 
-void wmim__VanishWindow(struct wmim *self)
+void wmim__VanishWindow(self)
+    struct wmim *self;
 {
 	wmim_HideWindow(self);	/* shrink it */
 	wmim_HideWindow(self);	/* make it really go away */

@@ -59,9 +59,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/prev
 #endif /* USEFRAME */
 #include <preview.eh>
 
-#include <stdlib.h>
 #define ResetOffsets(self) if(! self->DoScaling ) self->yoff = self->xoff = 0;
-static SetTitle(struct preview *self)
+static SetTitle(self)
+struct preview *self;
 {
     if(preview_GetIM(self) == NULL) return;
     if(self->FindFirstPage || self->CurrentPageTableIndex == 0)
@@ -81,7 +81,9 @@ static SetTitle(struct preview *self)
 		);
     im_SetTitle(preview_GetIM(self),self->WindowTitle);
 }
-static DisplayPage(struct preview *self, preview_pagetableindex n)
+static DisplayPage(self,n)
+struct preview *self;
+preview_pagetableindex n;
 {
    if (self->debug)
       fprintf(stderr, "DisplayPage %d\n", n);
@@ -110,14 +112,17 @@ static DisplayPage(struct preview *self, preview_pagetableindex n)
 	       preview_DviToDisplay(self);
 	    }
 }
-void preview__WantUpdate(struct preview *self, struct view *requestor)
+void preview__WantUpdate(self, requestor)
+    struct preview *self;
+    struct view *requestor;
 {
     if (self->RedrawRequested && (struct view *)self == requestor) return;
     super_WantUpdate(self, requestor);
     if((struct view *)self == requestor) self->RedrawRequested = TRUE;
 }
 
-void preview__Update(struct preview *self)
+void preview__Update(self)
+struct preview *self;
 {
    if (self->debug)
       fprintf(stderr, "DoRedraw\n");
@@ -153,12 +158,16 @@ void preview__Update(struct preview *self)
    DisplayPage(self,self->CurrentPageTableIndex);
    SetCursor(self);
 }
-void preview__FullUpdate(struct preview *self, enum view_UpdateType type, long left, long top, long width, long right)
+void preview__FullUpdate(self,type,left, top,  width,  right)
+struct preview *self;
+enum view_UpdateType type;
+long left, top,  width,  right;
 {
 	self->SizeChanged = TRUE;
 	preview_Update(self);
 }
-void preview__ReceiveInputFocus(struct preview *self)
+void preview__ReceiveInputFocus(self)
+    struct preview *self;
 {
     self->hasInputFocus = TRUE;
     self->keystate->next = NULL;
@@ -166,11 +175,13 @@ void preview__ReceiveInputFocus(struct preview *self)
     preview_PostMenus(self, self->menulist);
 }
 
-void preview__LoseInputFocus(struct preview *self)
+void preview__LoseInputFocus(self)
+    struct preview *self;
 {
     self->hasInputFocus = FALSE;
 }
-static SetScale(struct preview *self)
+static SetScale(self)
+struct preview *self;
 {
 
 	/* change menu */
@@ -182,7 +193,8 @@ static SetScale(struct preview *self)
  	if(self->hasInputFocus == TRUE) preview_PostMenus(self, self->menulist);
 	preview_WantUpdate(self,self);
 }
-static SetFullSize(struct preview *self)
+static SetFullSize(self)
+struct preview *self;
 {
 
 	/* change menu */
@@ -195,7 +207,8 @@ static SetFullSize(struct preview *self)
 	preview_WantUpdate(self,self);
 
 }
-static LastPage(struct preview *self)
+static LastPage(self)
+struct preview *self;
 {
 /*	       if (self->CurrentPageTableIndex > self->LowestNonBlankPageIndex){ */
 	       if (self->CurrentPageTableIndex > 1){
@@ -204,7 +217,8 @@ static LastPage(struct preview *self)
 		   preview_WantUpdate(self,self);
 	}
 }
-static NextPage(struct preview *self)
+static NextPage(self)
+struct preview *self;
 {
 	if (!self->DviFileComplete 
 	   || self->CurrentPageTableIndex < self->NumberofPageTableEntries-1){
@@ -213,7 +227,9 @@ static NextPage(struct preview *self)
 		preview_WantUpdate(self,self);
 	}
 }
-static SetPage(struct preview *self, long pagenum)
+static SetPage(self,pagenum)
+struct preview *self;
+long pagenum;
 {
 	if(pagenum < self->NumberofPageTableEntries &&
 /*	    pagenum >= self->LowestNonBlankPageIndex && */
@@ -224,22 +240,26 @@ static SetPage(struct preview *self, long pagenum)
 		preview_WantUpdate(self,self);
 	}
 }
-static PrintCmd(struct preview *self)
+static PrintCmd(self)	
+struct preview *self; 
 {
     DoPrintCmd(self,-1);
 }
-static PrintPageCmd(struct preview *self)
+static PrintPageCmd(self)
+struct preview *self; 
 {
     DoPrintCmd(self,self->CurrentPageTableIndex);
 }
-static DeleteWindowCmd(struct preview *self)
+static DeleteWindowCmd(self)	
+struct preview *self; 
 {
     /* Since preview always runs in a single window and
       a seperate process, we just exit.
       previewapp will then call preview_ReadyToQuit */
     im_KeyboardExit();
 }
-int preview__ReadyToQuit(struct preview *self)
+int preview__ReadyToQuit(self)
+struct preview *self;
 {
 #ifdef USEFRAME
     char answer[50];
@@ -259,7 +279,9 @@ int preview__ReadyToQuit(struct preview *self)
 
 static struct keymap *keymap;
 
-boolean preview__InitializeObject(struct classheader *classID, struct preview *self)
+boolean preview__InitializeObject(classID,self)
+struct classheader *classID;
+struct preview *self;
 {
     struct proctable_Entry *tempProc;
     tmpnam(self->DviFileName);
@@ -333,7 +355,8 @@ boolean preview__InitializeObject(struct classheader *classID, struct preview *s
     return TRUE;
 }
 
-static updatemenu(struct preview *self)
+static updatemenu(self)
+struct preview *self;
 {
 	if(self->menupage >= 0) {
 		menulist_AddToML(self->menulist, self->menubuf, self->SetPageProc, self->menupage, 0);
@@ -342,7 +365,10 @@ static updatemenu(struct preview *self)
 	}
 }
 
-static DeclarePage(struct preview *self, preview_pagenumber n, long FilePosition)
+static DeclarePage(self,n, FilePosition)
+struct preview *self;
+preview_pagenumber    n;
+long  FilePosition;
 {
    preview_pagetableindex i;
 /*     int RedrawRequested = FALSE;
@@ -383,7 +409,8 @@ static DeclarePage(struct preview *self, preview_pagenumber n, long FilePosition
  /*   if (RedrawRequested) preview_WantUpdate(self,self); */
 }
 
-static InitPageMap(struct preview *self)
+static InitPageMap(self)
+struct preview *self;
 {
    preview_pagetableindex    i;
 
@@ -399,14 +426,17 @@ static InitPageMap(struct preview *self)
 static char testdvi[] = "x T ";
 #define TESTDVILEN 4
 
-int notdvifile(struct preview *self)
+notdvifile(self)
+struct preview *self;
 {
     fprintf(stderr,"The input file to preview is not a dvi file\n");
     fflush(stderr);
     self->printpending = FALSE;
     im_KeyboardExit();
 }
-static MakePageMap(FILE *filein, struct preview *self)
+static MakePageMap(filein,self)
+FILE *filein;
+struct preview *self;
 {
    register int   c;
    register long  FilePosition;
@@ -477,7 +507,9 @@ static MakePageMap(FILE *filein, struct preview *self)
     if(self->printpending) PrintCmd(self);
 }
 
-static MakePageMapWithoutCopying(FILE *filein, struct preview *self)
+static MakePageMapWithoutCopying(filein,self)
+FILE *filein;
+struct preview *self;
 {
    register int   c;
    register int   lastc;
@@ -519,7 +551,8 @@ static MakePageMapWithoutCopying(FILE *filein, struct preview *self)
    updatemenu(self);
 }
 
-static DrawBorder(struct preview *self)
+static DrawBorder(self)
+struct preview *self;
 {
    Boolean leftside = self->xoff > 0;
    Boolean topside = self->yoff > 0;
@@ -550,7 +583,8 @@ static DrawBorder(struct preview *self)
       }
 }
 
-static SetCursor(struct preview *self)
+static SetCursor(self)
+struct preview *self;
 {
     
     if(self->CursorChanged){
@@ -577,7 +611,8 @@ static SetCursor(struct preview *self)
     }
 }
 
-static DoFindFirstPage(struct preview *self)
+static DoFindFirstPage(self)
+struct preview *self;
 {
    preview_pagetableindex cp;
 
@@ -610,7 +645,8 @@ static DoFindFirstPage(struct preview *self)
 }
 
 
-static insert(char *src, char *c)
+static insert(src,c)
+char *src,*c;
 {   /* inserts string src into the begining of string c , assumes enough space */
     char *p,*enddest;
     enddest = c + strlen(c);
@@ -619,7 +655,8 @@ static insert(char *src, char *c)
     for(p = src; *p != '\0';p++)
 	*c++ = *p;
 }
-static void normalize(char *s)
+static void normalize(s)
+char *s;
 {
     register char *c;
     for(c = s + strlen(s) - 1; c >= s; c--){
@@ -629,7 +666,9 @@ static void normalize(char *s)
     }
 }
 
-static DoPrintCmd(struct preview *self, int page)
+static DoPrintCmd(self,page)	
+struct preview *self; 
+int page;
 {
    int processid;
    Preview_Line PrintCommandFormat;
@@ -725,20 +764,25 @@ static DoPrintCmd(struct preview *self, int page)
 static void hgetinfo(), hsetframe(),vgetinfo(), vsetframe();
 static long vwhatisat(),hwhatisat();
 
-struct view *preview__GetApplicationLayer(struct preview *self)
+struct view *preview__GetApplicationLayer(self)
+    struct preview *self;
 {
    
      return (struct view *) scroll_Create(self, scroll_LEFT | scroll_BOTTOM);
     
 }
 
-void preview__DeleteApplicationLayer(struct preview *self, struct scroll *scrollbar)
+void preview__DeleteApplicationLayer(self, scrollbar)
+    struct preview *self;
+    struct scroll *scrollbar;
 {
 
     scroll_Destroy(scrollbar);
 }
 #define RANGE(T,A) ((T->beg > A)? T->beg : ((T->end < A)? T->end : A))
-static void vgetinfo(struct preview *self, struct range *total, struct range *seen, struct range *dot)
+static void vgetinfo(self, total, seen, dot)
+    struct preview *self;
+    struct range *total, *seen, *dot;
 {
 
     total->beg = 0;
@@ -749,7 +793,9 @@ static void vgetinfo(struct preview *self, struct range *total, struct range *se
     dot->beg = 0;
     dot->end = -1;
 }
-static void hgetinfo(struct preview *self, struct range *total, struct range *seen, struct range *dot)
+static void hgetinfo(self, total, seen, dot)
+    struct preview *self;
+    struct range *total, *seen, *dot;
 {
 
     total->beg = 0;
@@ -760,12 +806,16 @@ static void hgetinfo(struct preview *self, struct range *total, struct range *se
     dot->beg = 0;
     dot->end = -1;
 }
-static long hwhatisat(struct preview *self, long numerator, long denominator)
+static long hwhatisat(self, numerator, denominator)
+    struct preview *self;
+    long numerator, denominator;
 {
 return numerator - self->xoff;
 
 }
-static long vwhatisat(struct preview *self, long numerator, long denominator)
+static long vwhatisat(self, numerator, denominator)
+    struct preview *self;
+    long numerator, denominator;
 {
 return numerator - self->yoff;
 
@@ -776,7 +826,9 @@ return numerator - self->yoff;
     self->yoff =   numerator-position ;
     preview_WantUpdate(self,self);
 }
-static void hsetframe(struct preview *self, long position, long numerator, long denominator)
+static void hsetframe(self, position, numerator, denominator)
+    struct preview *self;
+    long position,  numerator, denominator;
 {
     self->xoff =  numerator -position;
     preview_WantUpdate(self,self);
@@ -784,7 +836,9 @@ static void hsetframe(struct preview *self, long position, long numerator, long 
 static struct scrollfns vscrollInterface = {vgetinfo, vsetframe, NULL, vwhatisat};
 static struct scrollfns hscrollInterface = {hgetinfo, hsetframe, NULL, hwhatisat};
 
-char *preview__GetInterface(struct preview *self, char *interfaceName)
+char *preview__GetInterface(self, interfaceName)
+    struct preview *self;
+    char *interfaceName;
 {
 
     if (strcmp(interfaceName, "scroll,vertical") == 0)
@@ -794,7 +848,11 @@ char *preview__GetInterface(struct preview *self, char *interfaceName)
     return NULL;
 }
 
-struct preview *preview__Create(struct classheader *classID, FILE *f, char *fname, char *fbase, boolean compleated, boolean scale)
+struct preview *preview__Create(classID,f,fname,fbase,compleated,scale)
+struct classheader *classID;
+FILE *f;
+char *fname, *fbase;
+boolean compleated, scale;
 {
     struct preview *self = preview_New();
 
@@ -838,14 +896,21 @@ struct preview *preview__Create(struct classheader *classID, FILE *f, char *fnam
 	im_AddFileHandler(f, MakePageMap, self, 6);
     return(self);
 }
-struct preview *preview__Hit(struct preview *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
+struct preview *preview__Hit(self, action, x, y, numberOfClicks)
+    struct preview *self;
+    enum view_MouseAction action;
+    long x;
+    long y;
+    long numberOfClicks;
 {
 
  	if (! self->hasInputFocus)
 	    preview_WantInputFocus(self, self);
 	return(self);
 }
-void preview__FinalizeObject(struct classheader *classID, struct preview *self)
+void preview__FinalizeObject(classID,self)
+struct classheader *classID;
+struct preview *self;
 {
    if (self->CreatedTemp)
       unlink(self->DviFileName);

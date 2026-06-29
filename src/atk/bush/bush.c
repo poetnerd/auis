@@ -73,9 +73,6 @@ struct map_item {
 #include <im.ih>
 #include <vector.ih>
 #include <environ.ih>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <bush.eh>  /* includes tree.ih */
 
 #define	GivenDirName		    (self->given_dir_name)

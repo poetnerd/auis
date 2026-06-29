@@ -56,8 +56,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <xfontd.eh>
 #include <environ.ih>
 
-#include <stdlib.h>
-#include <stdio.h>
 /* Filled in in InitializeClass from a user preference.
  * If TRUE, font substitutions result in a warning being printed on stderr.
  */
@@ -125,7 +123,8 @@ static void FillDlist()
     }
 }
 
-static int BestFudgeFactor(long vdpi)
+static int BestFudgeFactor(vdpi)
+long vdpi;
 {
     int bestfudge=2;
     int bestdpidiff=99999;
@@ -149,7 +148,8 @@ static int BestFudgeFactor(long vdpi)
 /* This procedure creates the name of the andrew font file
 given a particular set of characteristics */
 
-static struct FontSummary *GetFontSummary(struct xfontdesc *self)
+static struct FontSummary *GetFontSummary(self)
+    struct xfontdesc *self;
 {
 
      register struct FontSummary *tsp;
@@ -190,7 +190,9 @@ static struct FontSummary *GetFontSummary(struct xfontdesc *self)
 
 }
 
-static AddStyleModifiers(char *string, int styles)
+static AddStyleModifiers(string, styles)
+    char *string;
+    int styles;
 {
 
     char *oldString = string;
@@ -224,7 +226,9 @@ struct bestfont {
 
 #define MAXBEST 3
 
-static char *GetNthDash(char *p, int cnt)
+static char *GetNthDash(p, cnt)
+char *p;
+int cnt;
 {
     while (*p != '\0') {
 	if (*p == '-') {
@@ -238,7 +242,12 @@ static char *GetNthDash(char *p, int cnt)
     return p;
 }
 
-static boolean XExplodeFontName(char *fontName, char *familyName, long bufSize, long *fontStyle, long *fontSize)
+static boolean XExplodeFontName(fontName, familyName, bufSize, fontStyle, fontSize)
+char *fontName;
+char *familyName;
+long bufSize;
+long *fontStyle;
+long *fontSize;
 {
     char *p;
     char *end;
@@ -325,7 +334,14 @@ static boolean XExplodeFontName(char *fontName, char *familyName, long bufSize, 
  * This routine depends on fontdesc_ExplodeFont name to the names in the list
  * into their size and style.
  */
-static struct bestfont *ClosestFonts(char **possibleNames, int numNames, char *desiredFamily, int desiredSize, int desiredStyle, int *numBest, boolean andyName)
+static struct bestfont *ClosestFonts(possibleNames, numNames, desiredFamily, desiredSize, desiredStyle, numBest, andyName)
+    char **possibleNames;
+    int numNames;
+    char *desiredFamily;
+    int desiredSize;
+    int desiredStyle;
+    int *numBest;
+    boolean andyName;
 {
 
     int index;
@@ -399,7 +415,14 @@ static struct bestfont *ClosestFonts(char **possibleNames, int numNames, char *d
 
 #define MAXNAMES 50
 
-static XFontStruct *GetClosestFont(struct xgraphic *graphic, char *matchStr, char *desiredName, int desiredSize, int desiredStyle, boolean andyName, char *substitute)
+static XFontStruct *GetClosestFont(graphic, matchStr, desiredName, desiredSize, desiredStyle, andyName, substitute)
+struct xgraphic *graphic;
+char *matchStr;
+char *desiredName;
+int desiredSize;
+int desiredStyle;
+boolean andyName;
+char *substitute;
 {
     char **fontNames = NULL;
     int numNames;
@@ -675,8 +698,11 @@ struct xgraphic *graphic;
 
 /* ************* methods ****************** */
 
-struct graphic *xfontdesc__CvtCharToGraphic(struct xfontdesc *self, struct graphic *graphic2, char SpecialChar)
-{
+struct graphic *xfontdesc__CvtCharToGraphic(self, graphic2, SpecialChar)
+    struct xfontdesc * self;
+    struct graphic *graphic2;
+    char SpecialChar;
+    {
     struct xgraphic *graphic=(struct xgraphic *)graphic2;
     struct xgraphic * RetValue;
     long width, height;
@@ -773,7 +799,13 @@ xfontdesc__GetRealFontDesc(self, graphic2)
 	else return (struct font *)fc->font;
 }
 
-long xfontdesc__TextSize(struct xfontdesc *self, struct graphic *graphic2, char *text, long TextLength, long *XWidth, long *YWidth)
+long xfontdesc__TextSize(self, graphic2, text, TextLength, XWidth, YWidth)
+    struct xfontdesc * self;
+    struct graphic *graphic2;
+    char * text;
+    long TextLength;
+    long * XWidth;
+    long * YWidth;
 {
     XFontStruct *font;
     register long retWidth = 0;
@@ -792,7 +824,9 @@ long xfontdesc__TextSize(struct xfontdesc *self, struct graphic *graphic2, char 
 
 /* This procedure returns the font size table for all characters in a font 
 	XXX the value should depend on which display we are on */
-short *xfontdesc__WidthTable(struct xfontdesc *self, struct graphic *graphic2)
+short *xfontdesc__WidthTable(self, graphic2)
+	struct xfontdesc * self;
+	struct graphic *graphic2;
 {
 	register XFontStruct *font;
 	register short * fontWidthTable;
@@ -830,7 +864,9 @@ short *xfontdesc__WidthTable(struct xfontdesc *self, struct graphic *graphic2)
 
 /* This procedure returns the font size table for all characters in a font 
 	XXX the value should depend on which display we are on */
-short *xfontdesc__HeightTable(struct xfontdesc *self, struct graphic *graphic2)
+short *xfontdesc__HeightTable(self, graphic2)
+	struct xfontdesc * self;
+	struct graphic *graphic2;
 {
 
 	register XFontStruct *font;
@@ -871,7 +907,12 @@ short *xfontdesc__HeightTable(struct xfontdesc *self, struct graphic *graphic2)
 	return fontHeightTable;
 }
 
-long xfontdesc__StringSize(struct xfontdesc *self, struct graphic *graphic2, register unsigned char *string, register long *XWidth, register long *YWidth)
+long xfontdesc__StringSize(self, graphic2, string,XWidth,YWidth)
+    struct xfontdesc * self;
+    struct graphic *graphic2;
+    register unsigned char * string;
+    register long * XWidth;
+    register long * YWidth;
 {
 
     register XFontStruct  *font;
@@ -888,7 +929,11 @@ long xfontdesc__StringSize(struct xfontdesc *self, struct graphic *graphic2, reg
     return retWidth;
 }
 
-void xfontdesc__CharSummary(struct xfontdesc *self, struct graphic *graphic2, char LookUpChar, struct fontdesc_charInfo *RetValue)
+void xfontdesc__CharSummary(self, graphic2, LookUpChar, RetValue)
+    struct xfontdesc * self;
+    struct graphic * graphic2;
+    char LookUpChar;
+    struct fontdesc_charInfo *RetValue;
 {
 
 	register XFontStruct *font;
@@ -937,12 +982,15 @@ void xfontdesc__CharSummary(struct xfontdesc *self, struct graphic *graphic2, ch
 
 /* ************* predefines ************** */
 
-struct xfontdesc *xfontdesc__Allocate(struct classheader *classID)
+struct xfontdesc *xfontdesc__Allocate(classID)
+    struct classheader *classID;
 {
     return (struct xfontdesc *) malloc(sizeof(struct xfontdesc));
 }
 
-void xfontdesc__Deallocate(struct classheader *classID, struct xfontdesc *self)
+void xfontdesc__Deallocate(classID, self)
+    struct classheader *classID;
+    struct xfontdesc *self;
 {
 /* Fontdesc structures are never deallocated since they are reused. */
 }

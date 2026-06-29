@@ -36,8 +36,6 @@ char *figospli_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 #include <message.ih>
 #include <print.ih>
 
-#include <stdlib.h>
-#include <stdio.h>
 #define figospli_Segments (8)
 
 struct figospli_temp {
@@ -50,7 +48,8 @@ static int ctemp_size;
 static struct point *ptemp;
 static int ptemp_size;
 
-boolean figospli__InitializeClass(struct classhdr *ClassID)
+boolean figospli__InitializeClass(ClassID)
+struct classhdr *ClassID;
 {
     ctemp_size = 0;
     ctemp = NULL;
@@ -59,7 +58,9 @@ boolean figospli__InitializeClass(struct classhdr *ClassID)
     return TRUE;
 }
 
-boolean figospli__InitializeObject(struct classhdr *ClassID, struct figospli *self)
+boolean figospli__InitializeObject(ClassID, self)
+struct classhdr *ClassID;
+struct figospli *self;
 {
     self->cubit = NULL;
     self->cubit_size = 0;
@@ -70,7 +71,11 @@ boolean figospli__InitializeObject(struct classhdr *ClassID, struct figospli *se
 }
 
 /* efficient? well, no. */
-struct figospli *figospli__Create(struct classheader *classID, struct point *pointlist, long numpoints, boolean isclosed)
+struct figospli *figospli__Create(classID, pointlist, numpoints, isclosed)
+struct classheader *classID;
+struct point *pointlist;
+long numpoints;
+boolean isclosed;
 {
     struct figoplin *tmp = figoplin_Create(pointlist, numpoints, isclosed);
     struct figospli *res;
@@ -85,7 +90,9 @@ struct figospli *figospli__Create(struct classheader *classID, struct point *poi
     return res;
 }
 
-void figospli__FinalizeObject(struct classhdr *ClassID, struct figospli *self)
+void figospli__FinalizeObject(ClassID, self)
+struct classhdr *ClassID;
+struct figospli *self;
 {
     if (self->cubit)
 	free(self->cubit);
@@ -93,7 +100,10 @@ void figospli__FinalizeObject(struct classhdr *ClassID, struct figospli *self)
 	free(self->tmppts);
 }
 
-char *figospli__ToolName(struct figospli *dummy, struct figtoolview *v, long rock)
+char *figospli__ToolName(dummy, v, rock)
+struct figospli *dummy;
+struct figtoolview *v;
+long rock;
 {
     if (rock & 2)
 	return "Closed Spline";
@@ -101,7 +111,11 @@ char *figospli__ToolName(struct figospli *dummy, struct figtoolview *v, long roc
 	return "Spline";
 }
 
-static void spline(struct point *pts, int n, struct figospli_cubit *cubit, boolean closed)
+static void spline(pts, n, cubit, closed)
+struct point *pts;
+int n;
+struct figospli_cubit *cubit;
+boolean closed; /* if TRUE, pts[n] doesn't exist; use pts[0] instead. */
 {
     /* uses pts[0...n], ctemp[0...n], cubit[0...n-1] */
     int i;
@@ -234,7 +248,9 @@ static void spline(struct point *pts, int n, struct figospli_cubit *cubit, boole
     }
 }
 
-static void SetNumCubits(struct figospli *self, long inum)
+static void SetNumCubits(self, inum)
+struct figospli *self;
+long inum;
 {
     int num;
 
@@ -289,7 +305,8 @@ static void SetNumCubits(struct figospli *self, long inum)
     }
 }
 
-void figospli__RecomputeBounds(struct figospli *self)
+void figospli__RecomputeBounds(self)
+struct figospli *self;
 {
     int ix, jx, realnum, num, lwid;
     long px, py;
@@ -359,7 +376,9 @@ void figospli__RecomputeBounds(struct figospli *self)
     figospli_ComputeSelectedBounds(self); /* ### inefficient -- this gets called twice, once in super_ and once here. */
 }
 
-void figospli__Draw(struct figospli *self, struct figview *v)
+void figospli__Draw(self, v) 
+struct figospli *self;
+struct figview *v;
 {
     long ix, shad, lw;
     char *col;
@@ -400,7 +419,10 @@ void figospli__Draw(struct figospli *self, struct figview *v)
     figview_SetLineJoin(v, graphic_JoinMiter);
 }
 
-static int FindLineHit(struct figospli *self, long x, long y, long delta)
+static int FindLineHit(self, x, y, delta)
+struct figospli *self;
+long x, y;
+long delta;
 {
     int ix;
     long x0, y0, x1, y1;
@@ -467,7 +489,11 @@ R = (dx+cx+bx+ax, dy+cy+by+ay)
   and then
 P Q R curveto
 */
-void figospli__PrintObject(struct figospli *self, struct figview *v, FILE *file, char *prefix)
+void figospli__PrintObject(self, v, file, prefix)
+struct figospli *self;
+struct figview *v;
+FILE *file;
+char *prefix;
 {
     long ix, x, y, xbase, ybase, nump;
     struct point *pts;

@@ -46,9 +46,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #include <rofftext.ih>
 #include <rofftxta.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
-boolean rofftextapp__InitializeObject(struct classheader *classID, struct rofftextapp *self)
+boolean rofftextapp__InitializeObject(classID,self)
+struct classheader *classID;
+struct rofftextapp *self;
 {
     self->macrofile = NULL;
     self->RoffType = FALSE;
@@ -69,7 +69,8 @@ boolean rofftextapp__InitializeObject(struct classheader *classID, struct roffte
 /*
  * usage statement
  */
-static void show_usage(struct rofftextapp *self)
+static void show_usage(self)
+struct rofftextapp *self;
 {
     fprintf(stderr,
 	"Usage: %s [-xhntbw] [-m macro file] [-o outputfile] [-] [file...]\n",
@@ -88,7 +89,10 @@ static void show_usage(struct rofftextapp *self)
 }
     
 
-boolean rofftextapp__ParseArgs(struct rofftextapp *self, int argc, char **argv)
+boolean rofftextapp__ParseArgs(self,argc,argv)
+struct rofftextapp *self;
+int argc;
+char **argv;
 {
     char temp2[128], *andrewdir, *getenv();
     boolean slash = FALSE;
@@ -173,12 +177,14 @@ boolean rofftextapp__ParseArgs(struct rofftextapp *self, int argc, char **argv)
     return TRUE;
 }
 
-boolean rofftextapp__Start(struct rofftextapp *self)
+boolean rofftextapp__Start(self)
+struct rofftextapp *self;
 {
     return TRUE;
 }
 
-int rofftextapp__Run(struct rofftextapp *self)
+int rofftextapp__Run(self)
+struct rofftextapp *self;
 {
     struct rofftext *r;
     struct text *t;

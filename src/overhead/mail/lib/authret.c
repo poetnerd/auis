@@ -48,13 +48,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <svcconf.h>
 #include <mail.h>
 
+extern int errno;
 
-#include <stdlib.h>
 #ifndef _IBMR2
+extern char *malloc();
+extern char *realloc();
 #endif /* _IBMR2 */
 
 
-int GetAuthInfo(char *FName, char **pBuff)
+int GetAuthInfo(FName, pBuff)
+char *FName, **pBuff;
 {/* Generate authentication information for us relative to the file FName.  Put it in a static buffer, and return a pointer to that static buffer in pBuff.  Return zero for all-OK, negative numbers for temporary error conditions, and positive numbers for permanent error conditions. */
 	static char AuthBuff[2000];
 	auto char CellName[200];
@@ -98,13 +101,15 @@ int GetAuthInfo(char *FName, char **pBuff)
 	return OurReturn;
 }
 
-static int IsPlusOK(struct CellAuth *ca)
+static int IsPlusOK(ca)
+struct CellAuth *ca;
 {/* uses CheckAMSDelivery(ca->CellName), but sometimes faster. */
 	if (ca->UsesAMSDelivery > 0) return ca->UsesAMSDelivery;
 	return CheckAMSUseridPlusWorks(ca->CellName);
 }
 
-int GetRetPath(char *FName, char **pBuff)
+int GetRetPath(FName, pBuff)
+char *FName, **pBuff;
 {/* Generate a return-path to us relative to the file FName.  Put it in a static buffer, and return a pointer to that static buffer in pBuff.  Return zero for all-OK, negative numbers for temporary error conditions, and positive numbers for permanent error conditions. */
 	static char RetPathBuff[2000];
 	auto char CellName[200];

@@ -39,8 +39,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <tree23.ih>
 #include <viewref.ih>
 
-#include <stdlib.h>
-#include <stdio.h>
 /* Crank out structs in 4k blocks. */
 #define DESIREDBLOCKSIZE 4096
 /* Number of marks per block */
@@ -50,7 +48,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 static struct environment *freeList = NULL;
 static struct environment *lastBlock = NULL;
 
-struct environment *environment__Allocate(struct classheader *classID)
+struct environment *environment__Allocate(classID)
+struct classheader *classID;
 {
 
     static int lastIndex = NUMPERBLOCK; /* Force a block malloc on first call. */
@@ -67,13 +66,17 @@ struct environment *environment__Allocate(struct classheader *classID)
     return &lastBlock[lastIndex++];
 }
 
-void environment__Deallocate(struct classheader *classID, struct environment *self)
+void environment__Deallocate(classID, self)
+    struct classheader *classID;
+    struct environment *self;
 {
     self->header.environment_methods = (struct basicobject_methods *) freeList;
     freeList = self;
 }
 
-boolean environment__InitializeObject(struct classheader *classID, struct environment *self)
+boolean environment__InitializeObject(classID, self)
+    struct classheader *classID;
+    struct environment *self;
 {
     self->type = environment_None;
     self->data.style = NULL;
@@ -81,7 +84,9 @@ boolean environment__InitializeObject(struct classheader *classID, struct enviro
     return TRUE;
 }
 
-void environment__FinalizeObject(struct classheader *classID, struct environment *self)
+void environment__FinalizeObject(classID, self)
+    struct classheader *classID;
+    struct environment *self;
 {
     switch (self->type)  {
 	case environment_View:
@@ -91,7 +96,8 @@ void environment__FinalizeObject(struct classheader *classID, struct environment
     }
 }
 	
-struct environment *environment__NewButSimilar(struct environment *self)
+struct environment *environment__NewButSimilar(self)
+struct environment *self;
 {
     struct environment *sib=super_NewButSimilar(self);
     sib->type=self->type;
@@ -99,7 +105,12 @@ struct environment *environment__NewButSimilar(struct environment *self)
     return sib;
 }
 
-struct environment *environment__Wrap(struct environment *self, long pos, long length, enum environmenttype type, union environmentcontents data)
+struct environment *environment__Wrap(self, pos, length, type, data)
+    struct environment *self;
+    long pos;
+    long length;
+    enum environmenttype type;
+    union environmentcontents data;
 {
     struct environment *newenv, *nm1, *nm2, *cp;
 
@@ -144,7 +155,11 @@ struct environment *environment__Wrap(struct environment *self, long pos, long l
     return newenv;
 }
 
-struct environment *environment__WrapStyle(struct environment *self, long pos, long length, struct style *style)
+struct environment *environment__WrapStyle(self, pos, length, style)
+struct environment *self;
+long pos;
+long length;
+struct style *style;
 {
 
     union environmentcontents data;
@@ -153,7 +168,11 @@ struct environment *environment__WrapStyle(struct environment *self, long pos, l
     return environment_Wrap(self, pos, length, environment_Style, data);
 }
 
-struct environment *environment__WrapView(struct environment *self, long pos, long length, struct viewref *viewref)
+struct environment *environment__WrapView(self, pos, length, viewref)
+struct environment *self;
+long pos;
+long length;
+struct viewref *viewref;
 {
 
     union environmentcontents data;
@@ -162,7 +181,12 @@ struct environment *environment__WrapView(struct environment *self, long pos, lo
     return environment_Wrap(self, pos, length, environment_View, data);
 }
 
-struct environment *environment__Insert(struct environment *self, long rpos, enum environmenttype type, union environmentcontents data, boolean doinsert)
+struct environment *environment__Insert(self, rpos, type, data, doinsert)
+struct environment *self;
+long rpos;			/* relative position of the environment */
+enum environmenttype type;
+union environmentcontents data;
+boolean doinsert;
 {
     struct environment *newenv;
     
@@ -180,7 +204,11 @@ struct environment *environment__Insert(struct environment *self, long rpos, enu
     return newenv;
 }
 
-struct environment *environment__InsertStyle(struct environment *self, long rpos, struct style *style, boolean doinsert)
+struct environment *environment__InsertStyle(self, rpos, style, doinsert)
+struct environment *self;
+long rpos;			/* relative position of the environment */
+struct style *style;
+boolean doinsert;
 {
 
     union environmentcontents data;
@@ -190,7 +218,11 @@ struct environment *environment__InsertStyle(struct environment *self, long rpos
     return environment_Insert(self, rpos, environment_Style, data, doinsert);
 }
 
-struct environment *environment__InsertView(struct environment *self, long rpos, struct viewref *viewref, boolean doinsert)
+struct environment *environment__InsertView(self, rpos, viewref, doinsert)
+struct environment *self;
+long rpos;			/* relative position of the environment */
+struct viewref *viewref;
+boolean doinsert;
 {
 
     union environmentcontents data;
@@ -201,7 +233,8 @@ struct environment *environment__InsertView(struct environment *self, long rpos,
 }
 
 
-struct environment *environment__GetRootEnvironment(struct classheader *classID)
+struct environment *environment__GetRootEnvironment(classID)
+struct classheader *classID;
 {
     struct environment *newenv;
     
@@ -218,7 +251,9 @@ struct removestruct {
     boolean anyChange;
 };
 
-static long AlterEnvironmentSize(struct environment *self, struct removestruct *data)
+static long AlterEnvironmentSize(self, data)
+    struct environment *self;
+    struct removestruct *data;
 {
     long pos;
     if (self->type != data->type && data->type != environment_Any)
@@ -261,7 +296,12 @@ static long AlterEnvironmentSize(struct environment *self, struct removestruct *
     return 0;
 }
 
-boolean environment__Remove(struct environment *self, long pos, long length, enum environmenttype type, boolean deleteall)
+boolean environment__Remove(self, pos, length, type, deleteall)
+    struct environment *self;
+    long pos;
+    long length;
+    enum environmenttype type;
+    boolean deleteall;
 {
     struct environment *beginenv, *endenv;
     struct environment *parentenv;
@@ -318,7 +358,9 @@ boolean environment__Remove(struct environment *self, long pos, long length, enu
     return procdata.anyChange;
 }
 
-void environment__Dump(struct environment *self, int level)
+void environment__Dump(self, level)
+    struct environment *self;
+    int level;
 {
     struct nestedmark *nself = (struct nestedmark *) self;
     register int i = level;

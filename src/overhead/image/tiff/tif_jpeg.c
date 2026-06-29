@@ -39,7 +39,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  */
 #include "tiffioP.h"
 
-int TIFFInitJPEG(register TIFF *tif)
+TIFFInitJPEG(tif)
+	register TIFF *tif;
 {
 	return (1);
 }

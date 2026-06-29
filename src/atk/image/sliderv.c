@@ -42,12 +42,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 
 /* Creation and Destruction routines. */
 
-boolean sliderv__InitializeClass(struct classheader *classID)
+boolean sliderv__InitializeClass(classID)
+struct classheader *classID;
 {
     return TRUE;
 }
 
-boolean sliderv__InitializeObject(struct classheader *classID, struct sliderv *self)
+boolean sliderv__InitializeObject(classID, self)
+struct classheader *classID;
+struct sliderv *self;
 {
     self->scrollbar = scroll_Create(NULL, scroll_LEFT );
     self->curval = 0;
@@ -57,7 +60,9 @@ boolean sliderv__InitializeObject(struct classheader *classID, struct sliderv *s
     return TRUE;
 }
     
-void sliderv__FinalizeObject(struct classheader *classID, struct sliderv *self)
+void sliderv__FinalizeObject(classID, self)
+struct classheader *classID;
+struct sliderv *self;
 {
     if (self->scrollbar) {
 	scroll_UnlinkTree(self->scrollbar);
@@ -67,7 +72,10 @@ void sliderv__FinalizeObject(struct classheader *classID, struct sliderv *self)
 
 /* Overrides of the view routines: */
 
-void sliderv__FullUpdate(struct sliderv *self, enum view_UpdateType type, long left, long top, long width, long height)
+void sliderv__FullUpdate(self, type, left, top, width, height)
+struct sliderv *self;
+enum view_UpdateType type;
+long left, top, width, height;
 {
     struct rectangle r;
 
@@ -78,7 +86,8 @@ void sliderv__FullUpdate(struct sliderv *self, enum view_UpdateType type, long l
     }
 }
 
-void sliderv__Update(struct sliderv *self)
+void sliderv__Update(self)
+struct sliderv *self;
 {
     int i;
     struct rectangle r;
@@ -87,7 +96,9 @@ void sliderv__Update(struct sliderv *self)
     /* super_Update(self); */
 }
 
-void sliderv__WantUpdate(struct sliderv *self, struct view *requestor)
+void sliderv__WantUpdate(self, requestor)
+    struct sliderv *self;
+    struct view *requestor;
 {
     super_WantUpdate(self, requestor);
     super_WantUpdate(self, self);
@@ -112,12 +123,16 @@ static void sv_getinfo(), sv_setframe(), sv_endzone();
 static struct scrollfns scrollInterface =
 	{ sv_getinfo, sv_setframe, sv_endzone, sv_whatisat };
 
-char *sliderv__GetInterface(struct sliderv *self, char *interfaceName)
+char *sliderv__GetInterface(self, interfaceName)
+struct sliderv *self;
+char *interfaceName;
 {
     return (char *) &scrollInterface;
 }
 
-static void sv_getinfo(struct sliderv *self, struct range *total, struct range *seen, struct range *dot)
+static void sv_getinfo(self, total, seen, dot)
+struct sliderv *self;
+struct range *total, *seen, *dot;
 {
 	total->beg = 0;
 	total->end = self->range;
@@ -127,18 +142,25 @@ static void sv_getinfo(struct sliderv *self, struct range *total, struct range *
 	dot->beg = dot->end = -1;
 }
 
-static long sv_whatisat(struct sliderv *self, long numerator, long denominator)
+static long sv_whatisat(self, numerator, denominator)
+ struct sliderv *self;
+ long numerator, denominator;
 {
 	register long r = self->curval + (numerator*SKIP)/denominator;
 	return r;
 }
 
-static void sv_setframe(struct sliderv *self, long position, long numerator, long denominator)
+static void sv_setframe(self, position, numerator, denominator)
+    struct sliderv *self;
+    long position, numerator, denominator;
 {
     sliderv_SetCurval(self, position - (numerator*SKIP)/denominator);
 }
 
-static void sv_endzone(struct sliderv *self, int end, enum view_MouseAction action)
+static void sv_endzone(self, end, action)
+struct sliderv *self;
+int end;
+enum view_MouseAction action;
 {
     if (action == view_LeftDown) {
 	if(end == scroll_TOPENDZONE || end == scroll_MOTIFTOPENDZONE) {
@@ -155,14 +177,18 @@ static void sv_endzone(struct sliderv *self, int end, enum view_MouseAction acti
     }
 }
 
-void sliderv__LinkTree(struct sliderv *self, struct view *parent)
+void sliderv__LinkTree(self, parent)
+struct sliderv *self;
+struct view *parent;
 {
     super_LinkTree(self, parent);
     if (self->scrollbar)
 	scroll_LinkTree(self->scrollbar, self);
 }
 
-void sliderv__UnlinkNotification(struct sliderv *self, struct view *unlinkedTree)
+void sliderv__UnlinkNotification(self, unlinkedTree)
+struct sliderv *self;
+struct view *unlinkedTree;
 {
     super_UnlinkNotification(self, unlinkedTree);
 }

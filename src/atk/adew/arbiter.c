@@ -37,28 +37,33 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <class.h>
 #include <cel.ih>
 #include <arbiter.eh>
-#include <string.h>
-#include <stdio.h>
 static struct arbiter *master;
 
-struct arbiter *arbiter__GetMaster(struct classheader *classID)
+struct arbiter *arbiter__GetMaster(classID)
+struct classheader *classID;
 {
     return master;
 }
-struct arbiter *arbiter__SetMaster(struct classheader *classID, struct arbiter *newmaster)
+struct arbiter *arbiter__SetMaster(classID,newmaster)
+struct classheader *classID;
+struct arbiter *newmaster;
 {
     struct arbiter *oldmaster;
     oldmaster = master;
     master = newmaster;
     return oldmaster;
 }
-boolean arbiter__InitializeClass(struct classheader *classID)
+boolean arbiter__InitializeClass(classID)
+struct classheader *classID;
 {
     master = NULL;
     return TRUE;
 }
 
-long arbiter__Read(struct arbiter *self, FILE *file, long id)
+long arbiter__Read(self, file, id)
+struct arbiter *self;
+FILE *file;
+long id;
 {
     long result; /* set self as master so that as child cells are read, they will
 		   call declare read on self, thus the arbiter will find all
@@ -73,7 +78,9 @@ long arbiter__Read(struct arbiter *self, FILE *file, long id)
     arbiter_ReadObjects(self);
     return result;
 }
-long arbiter__ReadFile(struct arbiter *self, FILE *thisFile)
+long arbiter__ReadFile(self,thisFile)
+struct arbiter *self;
+FILE *thisFile;
 {  
     long result; /* set self as master so that as child cells are read, they will
 		   call declare read on self, thus the arbiter will find all
@@ -88,7 +95,9 @@ long arbiter__ReadFile(struct arbiter *self, FILE *thisFile)
     arbiter_ReadObjects(self);
     return result;
 }
-FILE *arbiter__DeclareRead(struct arbiter *self, struct cel *cel)
+FILE *arbiter__DeclareRead(self,cel)
+struct arbiter *self;
+struct cel *cel;
 {
 #ifdef DEBUG
     fprintf(stdout,"declaring %d(%s) to %d(%s)\n",cel,cel_GetRefName(cel),self,arbiter_GetRefName(self));fflush(stdout);
@@ -102,7 +111,9 @@ FILE *arbiter__DeclareRead(struct arbiter *self, struct cel *cel)
 
     return NULL;
 }
-struct cel *arbiter__FindChildCelByName(struct arbiter *self, char *name)
+struct cel *arbiter__FindChildCelByName(self,name)
+struct arbiter *self;
+char *name;
 {
     struct cel *cel,*ncel;
     char *tname;
@@ -117,18 +128,23 @@ struct cel *arbiter__FindChildCelByName(struct arbiter *self, char *name)
     }
     return NULL;
 }
-struct dataobject *arbiter__FindChildObjectByName(struct arbiter *self, char *name)
+struct dataobject *arbiter__FindChildObjectByName(self,name)
+struct arbiter *self;
+char *name;
 {
     struct cel *cel;
     cel = arbiter_FindChildCelByName(self,name);
     if(cel != NULL) return cel_GetObject(cel);
     return NULL;
 }
-void arbiter__ReadObjects(struct arbiter *self)
+void arbiter__ReadObjects(self)
+struct arbiter *self;
 {
 /* for subclass to use */
 }
-boolean arbiter__InitializeObject(struct classheader *classID, struct arbiter *self)
+boolean arbiter__InitializeObject(classID, self)
+struct classheader *classID;
+struct arbiter *self;
 {
 self->first = (struct cel *)self;
 return TRUE;

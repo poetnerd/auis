@@ -19,7 +19,6 @@
 
 #include "jinclude.h"
 
-#include <stdio.h>
 #ifdef TARGA_SUPPORTED
 
 

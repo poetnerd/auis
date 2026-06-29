@@ -104,7 +104,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
 #include <rect.h>
 
-#include <stdlib.h>
 /******************** methods ******************/
 
 	void

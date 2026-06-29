@@ -70,8 +70,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 #include <stdarg.h>
 #else
 #include <varargs.h>
-#include <stdlib.h>
-#include <stdio.h>
 #endif
 #endif
 
@@ -212,7 +210,10 @@ int LoadTIFF( self, fname, f, nc )
 
 
 /*******************************************/
-static int loadPalette(TIFF *tif, long w, long h, int photo, int bps)
+static int loadPalette(tif, w, h, photo, bps)
+TIFF *tif;
+long  w,h;
+int   photo,bps;
 {
   /* load up the XV global variables */
 
@@ -223,7 +224,10 @@ static int loadPalette(TIFF *tif, long w, long h, int photo, int bps)
 }
 
 /*******************************************/
-static int loadColor(TIFF *tif, long w, long h, int photo, int bps, int nc)
+static int loadColor(tif, w, h, photo, bps, nc)
+TIFF *tif;
+long  w,h;
+int   photo,bps,nc;
 {
   int  rv;
 
@@ -236,7 +240,10 @@ static int loadColor(TIFF *tif, long w, long h, int photo, int bps, int nc)
 
 
 /*******************************************/
-static void _TIFFerr(char *module, char *fmt, va_list ap)
+static void _TIFFerr(module, fmt, ap)
+char *module;
+char *fmt;
+va_list ap;
 {
   char buf[2048];
   char *cp = buf;
@@ -251,7 +258,10 @@ static void _TIFFerr(char *module, char *fmt, va_list ap)
 }
 
 /*******************************************/
-static void _TIFFwarn(char *module, char *fmt, va_list ap)
+static void _TIFFwarn(module, fmt, ap)
+char *module;
+char *fmt;
+va_list ap;
 {
   char buf[2048];
   char *cp = buf;
@@ -288,7 +298,11 @@ static	byte **PALmap;
 
 static	int gt();
 
-static int loadImage(TIFF *tif, u_long rwidth, u_long rheight, byte *raster, int stop)
+static int loadImage(tif, rwidth, rheight, raster, stop)
+	TIFF *tif;
+	u_long rwidth, rheight;
+	byte *raster;
+	int stop;
 {
 	int ok;
 	u_long width, height;
@@ -475,7 +489,9 @@ gt(tif, w, h, raster)
 }
 
 u_long
-int setorientation(TIFF *tif, u_long h)
+setorientation(tif, h)
+	TIFF *tif;
+	u_long h;
 {
 	u_long y;
 

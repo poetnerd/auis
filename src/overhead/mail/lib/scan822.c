@@ -38,16 +38,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <ctype.h>
 
 #ifndef _IBMR2
+extern char *malloc(), *realloc();
 #endif /* _IBMR2 */
 
 #include <util.h>
 #include "mail.h"
 
-#include <stdlib.h>
 #define TRUE 1
 #define FALSE 0
 
-int BracketField(char *Hdr, char *FieldName, char **pBegin, char **pEnd, char **pLineBegin)
+int BracketField(Hdr, FieldName, pBegin, pEnd, pLineBegin)
+char *Hdr, *FieldName;
+char **pBegin, **pEnd, **pLineBegin;
 {/* Takes an RFC822 header in Hdr and the name of a field in FieldName.  If the given field name is in the given header, this procedure sets pBegin and pEnd to point to the text of the header (setting pBegin after the FieldName (with colon) and whitespace, and setting pEnd to point to the trailing newline of that field).  If pLineBegin is non-null, it is set to point to the beginning of the line containing the field.
 Returns 1 if the header is found, 0 otherwise.
   */
@@ -92,14 +94,16 @@ Returns 1 if the header is found, 0 otherwise.
 
 static char *tokPtr; static int tokCount, tokMax;
 
-static int AddTok(char ch)
+static int AddTok(ch)
+char ch;
 {/* Check for overflow to NextWord's RsltBuf. */
     if (tokCount >= tokMax) return 0;
     *tokPtr++ = ch; ++tokCount;
     return 1;
 }
 
-int IsOK822Atom(char ch)
+int IsOK822Atom(ch)
+char ch;
 {/* Return a Boolean saying whether this character is OK as an RFC822 ``atom'' constituent. */
     if (!isascii(ch)) return FALSE;		/* Must be seven-bit ASCII */
     if (ch != ' ' && iscntrl(ch)) return FALSE;		/* Must not be a CTL or a space */
@@ -113,7 +117,8 @@ int IsOK822Atom(char ch)
     }
 }
 
-int Next822Word(char **Line, char *LineEnd, char *RsltBuf, int sizeRsltBuf)
+int Next822Word(Line, LineEnd, RsltBuf, sizeRsltBuf)
+char **Line, *LineEnd, *RsltBuf; int sizeRsltBuf;
 {/* Scan the string pointed to by Line for the next non-comment token, which will either be a word or some kind of punctuation.  (Rejects imbedded NUL characters.)
     Copy it to RsltBuf and return the updated pointer via Line.  Return is822Atom, is822QuotedString, or is822Special in the appropriate cases.
     If the buffer size is exceeded, or there's a lexical error, return 0.
@@ -180,7 +185,8 @@ int Next822Word(char **Line, char *LineEnd, char *RsltBuf, int sizeRsltBuf)
     }
 }
 
-char *Next822LPart(char *Line, char *LineEnd, char *RsltBuf, int sizeRsltBuf)
+char *Next822LPart(Line, LineEnd, RsltBuf, sizeRsltBuf)
+char *Line, *LineEnd, *RsltBuf; int sizeRsltBuf;
 {/* Scan the string pointed to by Line for the next non-comment token, which will either be a local-part or some kind of punctuation.
     Copy it to RsltBuf and return the updated Line pointer.
     If the buffer size is exceeded, or on lexical errors, return NULL.
@@ -224,7 +230,8 @@ char *Next822LPart(char *Line, char *LineEnd, char *RsltBuf, int sizeRsltBuf)
     }
 }
 
-char *Next822Phrase(char *Line, char *LineEnd, char *RsltBuf, int sizeRsltBuf)
+char *Next822Phrase(Line, LineEnd, RsltBuf, sizeRsltBuf)
+char *Line, *LineEnd, *RsltBuf; int sizeRsltBuf;
 {/* Scan the string pointed to by Line for the next non-comment token, which will either be a phrase or some kind of punctuation.
     Copy it to RsltBuf and return the updated Line pointer.
     If the buffer size is exceeded, or on lexical errors, return NULL.
@@ -253,7 +260,8 @@ char *Next822Phrase(char *Line, char *LineEnd, char *RsltBuf, int sizeRsltBuf)
     }
 }
 
-char *Quote822LPart(char *Cleartext)
+char *Quote822LPart(Cleartext)
+char *Cleartext;
 {/* Return a copy of Cleartext, malloced, that is a quoted representation of Cleartext as an RFC822 Local-part.  Return NULL on malloc failure. */
     int NewLen;
     char *Src, *Dst, *Copy;
@@ -284,7 +292,8 @@ char *Quote822LPart(char *Cleartext)
     }
 }
 
-char *Quote822Phrase(char *Cleartext)
+char *Quote822Phrase(Cleartext)
+char *Cleartext;
 {/* Return a copy of Cleartext, malloced, that is a quoted representation of Cleartext as an RFC822 phrase.  Return NULL on malloc failure. */
     int NewLen;
     char *Src, *Dst, *Copy;

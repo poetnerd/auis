@@ -40,7 +40,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <atom.eh>
 
 
-#include <stdlib.h>
 #define Log2HashTableSize   9
 #define HashTableSize       (1 << Log2HashTableSize)
 
@@ -56,7 +55,8 @@ static struct alist *hashTable[HashTableSize];
  * Statics
  */
 
-static int Hash(register unsigned char *word)
+static int Hash(word)
+register unsigned char *word;
 {
     register unsigned int total = 0;
 
@@ -68,7 +68,9 @@ static int Hash(register unsigned char *word)
     return total & (HashTableSize - 1);
 }
 
-static struct atom *CreateAtom(register char *name, register int index)
+static struct atom *CreateAtom(name, index)
+register char *name;
+register int index;
 {
     register struct atom *a;
     register struct alist *l;
@@ -89,7 +91,9 @@ static struct atom *CreateAtom(register char *name, register int index)
  * Class procedures
  */
 
-struct atom *atom__Intern(struct classheader *classID, register char *name)
+struct atom *atom__Intern(classID, name)
+struct classheader *classID;
+register char *name;
 {
     register int index;
     register struct alist *a;
@@ -104,7 +108,9 @@ struct atom *atom__Intern(struct classheader *classID, register char *name)
 }
 
 
-struct atom *atom__InternRock(struct classheader *classID, long rock)
+struct atom *atom__InternRock(classID, rock)
+struct classheader *classID;
+long rock;
 {
     char temp[16];
 
@@ -112,7 +118,8 @@ struct atom *atom__InternRock(struct classheader *classID, long rock)
     return atom_Intern(temp);
 }
 
-boolean atom__InitializeClass(struct classheader *classID)
+boolean atom__InitializeClass(classID)
+struct classheader *classID;
 {
     register struct alist **ap = hashTable;
     register int i = HashTableSize;
@@ -123,13 +130,17 @@ boolean atom__InitializeClass(struct classheader *classID)
     return TRUE;
 }
 
-boolean atom__InitializeObject(struct classheader *classID, struct atom *self)
+boolean atom__InitializeObject(classID, self)
+struct classheader *classID;
+struct atom *self;
 {
     self->name = NULL;
     return TRUE;
 }
 
-void atom__FinalizeObject(struct classheader *classID, struct atom *self)
+void atom__FinalizeObject(classID, self)
+struct classheader *classID;
+struct atom *self;
 {
 	fprintf(stderr, "Illegal Destruction of an Atom\n");
 }

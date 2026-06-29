@@ -44,16 +44,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <class.h>
 #include <environ.eh>
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 extern ProgramName[];	/* blechhh */
 
 /* used to avoid problems with null pointers expected to be
   treated as null strings */
 static char *nullstring="";
 
-void environ__SetProgramName(struct classheader *classID, char *s)
+void environ__SetProgramName(classID,s)
+struct classheader *classID;
+char *s;
 {
     if(s==NULL) s=nullstring;
     strcpy(ProgramName,s);
@@ -62,7 +61,9 @@ void environ__SetProgramName(struct classheader *classID, char *s)
 /* Quick and simple routine for checking if a environment entry is for a given
  * variable, probably faster than raw strlen and strncmp combinations.
  */
-static boolean varcmp(register char *variable, register char *envEntry)
+static boolean varcmp(variable, envEntry)
+    register char *variable;
+    register char *envEntry;
 {
 
     while (*variable != '\0' && *variable++ == *envEntry++)
@@ -73,7 +74,9 @@ static boolean varcmp(register char *variable, register char *envEntry)
 /* This function inherently leaks core under certain circumstances. This
  * shouldn't be a problem since it shouldn't be called too much.
  */
-void environ__Put(struct classheader *classID, char *variable, char *value)
+void environ__Put(classID, variable, value)
+    struct classheader *classID;
+    char   *variable, *value;
 {
 
     extern char **environ;
@@ -115,7 +118,9 @@ void environ__Put(struct classheader *classID, char *variable, char *value)
     sprintf (*p, "%s=%s", variable, value);
 }
 
-void environ__Delete(struct classheader *classID, char *variable)
+void environ__Delete(classID, variable)
+    struct classheader *classID;
+    char	*variable;
 {
 
     extern char **environ;
@@ -127,7 +132,9 @@ void environ__Delete(struct classheader *classID, char *variable)
 	    *p = p[1];
 }
 
-char *environ__Get(struct classheader *classID, char *variable)
+char *environ__Get(classID, variable)
+    struct classheader *classID;
+    char *variable;
 {
 
     extern char *getenv();
@@ -135,7 +142,9 @@ char *environ__Get(struct classheader *classID, char *variable)
     return(getenv(variable));
 }
 
-char *environ__GetProfile(struct classheader *classID, char *preference)
+char *environ__GetProfile(classID, preference)
+    struct classheader *classID;
+    char *preference;
 {
 
     extern char *getprofile();
@@ -143,54 +152,79 @@ char *environ__GetProfile(struct classheader *classID, char *preference)
     return getprofile(preference);
 }
 
-boolean environ__GetProfileSwitch(struct classheader *classID, char *preference, boolean defaultValue)
+boolean environ__GetProfileSwitch(classID, preference, defaultValue)
+    struct classheader *classID;
+    char *preference;
+    boolean defaultValue;
 {
 
     return getprofileswitch(preference, defaultValue);
 }
 
-long environ__GetProfileInt(struct classheader *classID, char *preference, long defaultValue)
+long environ__GetProfileInt(classID, preference, defaultValue)
+    struct classheader *classID;
+    char *preference;
+    long defaultValue;
 {
 
     return getprofileint(preference, defaultValue);
 }
 
-boolean environ__ProfileEntryExists(struct classheader *classID, char *preference, boolean useDefault)
+boolean environ__ProfileEntryExists(classID, preference, useDefault)
+    struct classheader *classID;
+    char *preference;
+    boolean useDefault;
 {
     return profileentryexists(preference, (int) useDefault);
 }
 
-char *environ__GetConfiguration(struct classheader *classID, char *key)
+char *environ__GetConfiguration(classID, key)
+    struct classheader *classID;
+    char *key;
 {
     return (char *) GetConfiguration(key);
 }
 
-char *environ__AndrewDir(struct classheader *classID, char *str)
+char *environ__AndrewDir(classID, str)
+    struct classheader *classID;
+    char *str;
 {
     return (char *) AndrewDir(str);
 }
 
-char *environ__LocalDir(struct classheader *classID, char *str)
+char *environ__LocalDir(classID, str)
+    struct classheader *classID;
+    char *str;
 {
     return (char *) LocalDir(str);
 }
 
-struct configurelist *environ__ReadConfigureFile(struct classheader *classID, char *filename)
+struct configurelist *environ__ReadConfigureFile(classID, filename)
+    struct classheader *classID;
+    char *filename;
 {
     return (struct configurelist *) ReadConfigureFile(filename);
 }
 
-char *environ__GetConfig(struct classheader *classID, struct configurelist *cList, char *key, boolean usedefault)
+char *environ__GetConfig(classID, cList, key, usedefault)
+    struct classheader *classID;
+    struct configurelist *cList;
+    char *key;
+    boolean usedefault;
 {
     return (char *) GetConfig(cList, key, usedefault);
 }
 
-void environ__FreeConfigureList(struct classheader *classID, struct configurelist *cList)
+void environ__FreeConfigureList(classID, cList)
+    struct classheader *classID;
+    struct configurelist *cList;
 {
     FreeConfigureList(cList);
 }
 
-char *environ__GetHome(struct classheader *classID, char *user)
+char *environ__GetHome(classID,user)
+struct classheader *classID;
+char *user;
 {
     char *gethome();
 
@@ -199,7 +233,8 @@ char *environ__GetHome(struct classheader *classID, char *user)
 
 extern char *GetProfileFileName();
 
-char *environ__GetProfileFileName(struct classheader *classID)
+char *environ__GetProfileFileName(classID)
+struct classheader *classID;
 {
     return GetProfileFileName();
 }

@@ -44,8 +44,6 @@ char *figotext_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 #include <proctbl.ih>
 #include <print.ih>
 
-#include <stdlib.h>
-#include <stdio.h>
 static struct keymap *EmbeddedKeymap;
 static struct region *tmpreg;
 
@@ -54,7 +52,8 @@ static struct region *tmpreg;
 static void InsertProc(), DeleteProc(), KillDotProc(), KillLineProc(), MoveDot(), MoveDotProc(), TwiddleCharsProc(), CompleteProc();
 static void IncreaseNumChars();
 
-boolean figotext__InitializeClass(struct classhdr *ClassID)
+boolean figotext__InitializeClass(ClassID)
+struct classhdr *ClassID;
 {
     struct proctable_Entry *proc = NULL;
     int ix;
@@ -95,7 +94,9 @@ boolean figotext__InitializeClass(struct classhdr *ClassID)
     return TRUE;
 }
 
-boolean figotext__InitializeObject(struct classhdr *ClassID, struct figotext *self)
+boolean figotext__InitializeObject(ClassID, self)
+struct classhdr *ClassID;
+struct figotext *self;
 {
     self->Keystate = keystate_Create(self, EmbeddedKeymap);
 
@@ -114,7 +115,10 @@ boolean figotext__InitializeObject(struct classhdr *ClassID, struct figotext *se
     return TRUE;
 }
 
-struct figotext *figotext__Create(struct classheader *classID, char *chars, long xpos, long ypos)
+struct figotext *figotext__Create(classID, chars, xpos, ypos)
+struct classheader *classID;
+char *chars;
+long xpos, ypos;
 {
     struct figotext *res = figotext_New();
     if (!res) return NULL;
@@ -130,19 +134,25 @@ struct figotext *figotext__Create(struct classheader *classID, char *chars, long
     return res;
 }
 
-void figotext__FinalizeObject(struct classhdr *ClassID, struct figotext *self)
+void figotext__FinalizeObject(ClassID, self)
+struct classhdr *ClassID;
+struct figotext *self;
 {
     if (self->text)
 	free(self->text);
 }
 
-char *figotext__ToolName(struct figotext *dummy, struct figtoolview *v, long rock)
+char *figotext__ToolName(dummy, v, rock)
+struct figotext *dummy;
+struct figtoolview *v;
+long rock;
 {
     return "Text";
 }
 
 /* set bounding box and handle list in fig coordinates. Note that the bounding box is computed by scaling a normal-size font's box, whereas the actual drawing is done with a scaled-size font.  */
-void figotext__RecomputeBounds(struct figotext *self)
+void figotext__RecomputeBounds(self)
+struct figotext *self;
 {   
     long x, y, w, h, texw, texh;
     struct rectangle altrec;
@@ -282,12 +292,15 @@ static long canonical[] = {
     1, 3, figobj_NULLREF
 };
 
-long *figotext__GetCanonicalHandles(struct figotext *self)
+long *figotext__GetCanonicalHandles(self)
+struct figotext *self;
 {
     return canonical;
 }
 
-struct rectangle *figotext__GetBounds(struct figotext *self, struct figview *vv)
+struct rectangle *figotext__GetBounds(self, vv)
+struct figotext *self;
+struct figview *vv;
 {
     if (!vv) {
 	if (!self->basis) {
@@ -303,7 +316,9 @@ struct rectangle *figotext__GetBounds(struct figotext *self, struct figview *vv)
     return super_GetBounds(self, vv);
 }
 
-void figotext__Draw(struct figotext *self, struct figview *v)
+void figotext__Draw(self, v) 
+struct figotext *self;
+struct figview *v;
 {
     long gray, count;
     char *fam, *col, *cx, *cxend;
@@ -375,7 +390,9 @@ void figotext__Draw(struct figotext *self, struct figview *v)
 	figview_ClearClippingRect(v);
 }
 
-void figotext__Sketch(struct figotext *self, struct figview *v)
+void figotext__Sketch(self, v) 
+struct figotext *self;
+struct figview *v;
 {
     /*super_Sketch(self, v);*/
     long x, y, w, h;
@@ -388,7 +405,9 @@ void figotext__Sketch(struct figotext *self, struct figview *v)
     figview_DrawRectSize(v, x, y, w, h);
 }
 
-static void IncreaseNumChars(struct figotext *self, int val)
+static void IncreaseNumChars(self, val)
+struct figotext *self;
+int val;
 {
     if (val > self->text_size) {
 	while (val > self->text_size)
@@ -490,14 +509,17 @@ long *ptref;
     return res;
 }
 
-static void CompleteProc(struct figotext *self, int rock)
+static void CompleteProc(self, rock)
+struct figotext *self;
+int rock;
 {
     if (self->buildview && self->buildview->toolset) {
 	figtoolview_AbortObjectBuilding(self->buildview->toolset);
     }
 }
 
-static void KillDotProc(struct figotext *self)
+static void KillDotProc(self)
+struct figotext *self;
 {
     char *ch;
     if (self->dotpos == (-1))
@@ -509,7 +531,9 @@ static void KillDotProc(struct figotext *self)
     self->textdirty = TRUE;
 }
 
-static void MoveDot(struct figotext *self, int pos)
+static void MoveDot(self, pos)
+struct figotext *self;
+int pos;    /* -1 to remove dot */
 {
     int ix, len;
 
@@ -548,7 +572,9 @@ static void MoveDot(struct figotext *self, int pos)
     }
 }
 
-static void MoveDotProc(struct figotext *self, int towhere)
+static void MoveDotProc(self, towhere)
+struct figotext *self;
+int towhere;
 {
     if (self->dotpos == (-1))
 	return;
@@ -577,7 +603,9 @@ static void MoveDotProc(struct figotext *self, int towhere)
     figview_WantUpdate(self->buildview, self->buildview);
 }
 
-static void KillLineProc(struct figotext *self, int rock)
+static void KillLineProc(self, rock)
+struct figotext *self;
+int rock;
 {
     if (self->dotpos == (-1))
 	return;
@@ -590,7 +618,9 @@ static void KillLineProc(struct figotext *self, int rock)
     figview_WantUpdate(self->buildview, self->buildview);
 }
 
-static void TwiddleCharsProc(struct figotext *self, int rock)
+static void TwiddleCharsProc(self, rock)
+struct figotext *self;
+int rock;
 {
     char tmp;
     if (self->dotpos < 2)
@@ -606,7 +636,9 @@ static void TwiddleCharsProc(struct figotext *self, int rock)
     figview_WantUpdate(self->buildview, self->buildview);
 }
 
-static void InsertProc(struct figotext *self, int rock)
+static void InsertProc(self, rock)
+struct figotext *self;
+int rock;
 {
     int ix;
     int len = strlen(self->text);
@@ -631,7 +663,9 @@ static void InsertProc(struct figotext *self, int rock)
     figview_WantUpdate(self->buildview, self->buildview);
 }
 
-static void DeleteProc(struct figotext *self, int rock)
+static void DeleteProc(self, rock)
+struct figotext *self;
+int rock;
 {
     char *ch;
     if (self->dotpos<=0)
@@ -648,7 +682,9 @@ static void DeleteProc(struct figotext *self, int rock)
     figview_WantUpdate(self->buildview, self->buildview);
 }
 
-static void MoveHandle(struct figotext *self, long x, long y, long ptref)
+static void MoveHandle(self, x, y, ptref)
+struct figotext *self;
+long x, y, ptref;
 {
     struct point *pt = &(figotext_GetHandles(self)[ptref]);
     int val;
@@ -678,7 +714,12 @@ static void MoveHandle(struct figotext *self, long x, long y, long ptref)
     /* figotext_Reposition(self, x - pt->x, y - pt->y); */
 }
 
-boolean figotext__Reshape(struct figotext *self, enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref)
+boolean figotext__Reshape(self, action, v, x, y, handle, ptref)
+struct figotext *self;
+enum view_MouseAction action;
+struct figview *v;
+boolean handle;
+long x, y, ptref;
 {
     if (!handle)
 	return FALSE;
@@ -707,7 +748,9 @@ boolean figotext__Reshape(struct figotext *self, enum view_MouseAction action, s
     return TRUE;
 }
 
-void figotext__MoveHandle(struct figotext *self, long x, long y, long ptref)
+void figotext__MoveHandle(self, x, y, ptref)
+struct figotext *self;
+long x, y, ptref;
 {
     if (figotext_GetReadOnly(self))
 	return;
@@ -716,7 +759,10 @@ void figotext__MoveHandle(struct figotext *self, long x, long y, long ptref)
     figotext_RecomputeBounds(self);
 }
 
-void figotext__InheritVAttributes(struct figotext *self, struct figattr *attr, unsigned long mask)
+void figotext__InheritVAttributes(self, attr, mask)
+struct figotext *self;
+struct figattr *attr;
+unsigned long mask;
 {
     super_InheritVAttributes(self, attr, mask);
 
@@ -726,7 +772,10 @@ void figotext__InheritVAttributes(struct figotext *self, struct figattr *attr, u
     }
 }
 
-unsigned long figotext__UpdateVAttributes(struct figotext *self, struct figattr *attr, unsigned long mask)
+unsigned long figotext__UpdateVAttributes(self, attr, mask)
+struct figotext *self;
+struct figattr *attr;
+unsigned long mask;
 {
     mask = super_UpdateVAttributes(self, attr, mask);
 
@@ -742,7 +791,9 @@ nonprintable characters, including space, \, =: =000 (octal)
 others: inserted normally.
 A newline is inserted every LINESIZE output characters. The end is marked with =000.
 */
-void figotext__WriteBody(struct figotext *self, FILE *fp)
+void figotext__WriteBody(self, fp)
+struct figotext *self;
+FILE *fp;
 {
     int ix, ch;
     int count;
@@ -773,7 +824,10 @@ void figotext__WriteBody(struct figotext *self, FILE *fp)
     }
 }
 
-long figotext__ReadBody(struct figotext *self, FILE *fp, boolean recompute)
+long figotext__ReadBody(self, fp, recompute)
+struct figotext *self;
+FILE *fp;
+boolean recompute;
 {
     int	ix; 
     int count, ch;
@@ -826,7 +880,8 @@ long figotext__ReadBody(struct figotext *self, FILE *fp, boolean recompute)
     return dataobject_NOREADERROR;
 }
 
-static boolean StringMatch(char *str1, char *str2)
+static boolean StringMatch(str1, str2)
+char *str1, *str2;
 {
     char c1, c2;
 
@@ -849,7 +904,11 @@ static boolean StringMatch(char *str1, char *str2)
     return TRUE;
 }
 
-void figotext__PrintObject(struct figotext *self, struct figview *v, FILE *file, char *prefix)
+void figotext__PrintObject(self, v, file, prefix)
+struct figotext *self;
+struct figview *v;
+FILE *file;
+char *prefix;
 {
     int ix, ch, count;
     char *fam, *psfam;

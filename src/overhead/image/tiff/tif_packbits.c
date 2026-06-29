@@ -52,7 +52,8 @@ static	int PackBitsEncode(), PackBitsEncodeChunk();
 static	int PackBitsDecode();
 #endif
 
-int TIFFInitPackBits(TIFF *tif)
+TIFFInitPackBits(tif)
+	TIFF *tif;
 {
 	tif->tif_decoderow = PackBitsDecode;
 	tif->tif_decodestrip = PackBitsDecode;

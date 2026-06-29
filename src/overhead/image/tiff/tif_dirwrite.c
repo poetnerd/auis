@@ -45,8 +45,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "tiffioP.h"
 #include "prototypes.h"
 
-#include <string.h>
-#include <stdlib.h>
 #if HAVE_IEEEFP
 #define	TIFFCvtNativeToIEEEFloat(tif, n, fp)
 #endif

@@ -34,9 +34,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <prmtives.h>
 #include <sys/errno.h>
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 static struct {
     char           *name;
     void            (*fn) ();
@@ -270,7 +267,8 @@ static struct {
 
 static jmp_buf  brokenPipeEnv, alarmEnv;
 
-void            eliPrimInit(EliState_t *st)
+void            eliPrimInit(st)
+EliState_t     *st;
 {
     int             i;
 
@@ -281,7 +279,11 @@ void            eliPrimInit(EliState_t *st)
     }
 }
 
-void            eliPrimDefCompiled(EliState_t *st, char *name, void (*fn)())
+void            eliPrimDefCompiled(st, name, fn)
+EliState_t     *st;
+char           *name;
+void            (*fn) ();
+
 {
     EliFn_t        *tmp;
 
@@ -296,7 +298,10 @@ void            eliPrimDefCompiled(EliState_t *st, char *name, void (*fn)())
 
 /* Define a function: bind it to a symbol & place in global table */
 
-void            EliPrimDef(EliState_t *st, char *name, EliFn_t *fn)
+void            EliPrimDef(st, name, fn)
+EliState_t     *st;
+char           *name;
+EliFn_t        *fn;
 {
     EliSym_t       *symtmp;
 
@@ -309,7 +314,9 @@ void            EliPrimDef(EliState_t *st, char *name, EliFn_t *fn)
 /* If the string s1 is found in s2, return that part of s2 that
  * begins with s1, else NULL
  */
-char           *eliFindPrefix(char *s1, char *s2, int ignoreCase)
+char           *eliFindPrefix(s1, s2, ignoreCase)
+char           *s1, *s2;
+int             ignoreCase;
 {
     int             len = strlen(s1), looping = TRUE;
     char           *place = NULL, *ptr2, *pat, *ref, *orig = s2, *ref2;
@@ -346,7 +353,8 @@ char           *eliFindPrefix(char *s1, char *s2, int ignoreCase)
     return (place);
 }
 
-char           *eliStrCat(char *s1, char *s2)
+char           *eliStrCat(s1, s2)
+char           *s1, *s2;
 {
     char           *buf = NULL;
     int             s1len = strlen(s1), len = 1 + s1len + strlen(s2);
@@ -361,7 +369,8 @@ char           *eliStrCat(char *s1, char *s2)
 
 /* The next bit deals with the library mechanism. */
 
-static          eliCountElts(char *s)
+static          eliCountElts(s)
+char           *s;
 {
     int             tot = 0;
 
@@ -376,7 +385,8 @@ static          eliCountElts(char *s)
 }
 
 
-static          eliInitLibraries(EliState_t *st)
+static          eliInitLibraries(st)
+EliState_t     *st;
 {
     int             numelts, whichelt;
     char           *elilib = NULL, *clientlib = NULL, *s;
@@ -423,7 +433,9 @@ static          eliInitLibraries(EliState_t *st)
     return (0);
 }
 
-static          eliLoadFromLibrary(EliState_t *st, EliSexp_t *resbuf, EliSexp_t *loadfileSexp)
+static          eliLoadFromLibrary(st, resbuf, loadfileSexp)
+EliState_t     *st;
+EliSexp_t      *resbuf, *loadfileSexp;
 {
     char            FileName[1 + MAXPATHLEN], *loadfile;
     int             i, unixErr = 0;
@@ -484,7 +496,10 @@ static          eliLoadFromLibrary(EliState_t *st, EliSexp_t *resbuf, EliSexp_t 
 /***** BEGIN DEFINITIONS OF LISP FUNCTIONS HERE *****/
 
 
-void            Prim_DOSTAR(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_DOSTAR(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliCons_t      *consptr, *consptr2, *vars = NULL, *constmp, *endstuff;
     EliSexp_t      *nodeptr, *resnode, *nodetmp, *nodeerr, *varsnode, *body = NULL, *bindval, *oneMoreTmp;
@@ -676,7 +691,10 @@ void            Prim_DOSTAR(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbu
     eliEvalStk_PopN(st, EliEvalStack(st), bound);
 }
 
-void            Prim_READ(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_READ(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[1], *err, *sexp, *evaledSexp;
     eliDataTypes_t  typeV[1];
@@ -733,7 +751,10 @@ void            Prim_READ(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
     }
 }
 
-void            Prim_CONSP(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_CONSP(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[1], *tmp, *err;
 
@@ -753,7 +774,10 @@ void            Prim_CONSP(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf
     EliSexp_SetSym(st, resbuf, ((EliSexp_GetType(tmp) == e_data_list) || EliNilP(st, tmp)) ? EliTSym(st) : EliNilSym(st));
 }
 
-void            Prim_STRINGP(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_STRINGP(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[1], *tmp, *err;
 
@@ -773,7 +797,10 @@ void            Prim_STRINGP(EliState_t *st, EliCons_t *arglist, EliSexp_t *resb
     EliSexp_SetSym(st, resbuf, (EliSexp_GetType(tmp) == e_data_string) ? EliTSym(st) : EliNilSym(st));
 }
 
-void            Prim_ATOM(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_ATOM(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[1], *tmp, *err;
     int             atomic;
@@ -797,7 +824,10 @@ void            Prim_ATOM(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
     EliSexp_SetSym(st, resbuf, atomic ? EliTSym(st) : EliNilSym(st));
 }
 
-void            Prim_NUMBERP(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_NUMBERP(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[1], *tmp, *err;
 
@@ -817,7 +847,10 @@ void            Prim_NUMBERP(EliState_t *st, EliCons_t *arglist, EliSexp_t *resb
     EliSexp_SetSym(st, resbuf, (EliSexp_GetType(tmp) == e_data_integer) ? EliTSym(st) : EliNilSym(st));
 }
 
-void            Prim_LESSP(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_LESSP(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[2], *tmp1, *tmp2, *err;
 
@@ -850,7 +883,10 @@ void            Prim_LESSP(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf
     EliSexp_SetSym(st, resbuf, (EliSexp_GetInt(tmp1) < EliSexp_GetInt(tmp2)) ? EliTSym(st) : EliNilSym(st));
 }
 
-void            Prim_BOUNDP(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_BOUNDP(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[1], *err, *tmp;
     EliSym_t       *symtmp;
@@ -882,7 +918,10 @@ void            Prim_BOUNDP(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbu
     }
 }
 
-void            Prim_MINUS(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_MINUS(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[2], *err;
     eliDataTypes_t  typeV[2];
@@ -912,7 +951,10 @@ void            Prim_MINUS(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf
         EliSexp_SetInt(st, resbuf, EliSexp_GetInt(args[0]) - EliSexp_GetInt(args[1]));
 }
 
-void            Prim_TIMES(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_TIMES(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliCons_t      *argptr = arglist;
     EliSexp_t      *curarg, *evalarg, *tmp, *tmperr;
@@ -947,7 +989,10 @@ void            Prim_TIMES(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf
     EliSexp_SetInt(st, resbuf, result);
 }
 
-void            Prim_DIV(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_DIV(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[2], *tmp1, *tmp2, *err;
     long            longtmp;
@@ -985,7 +1030,10 @@ void            Prim_DIV(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
     EliSexp_SetInt(st, resbuf, (long) (EliSexp_GetInt(tmp1) / longtmp));
 }
 
-void            Prim_STRCAT(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_STRCAT(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t     **args, *err;
     eliDataTypes_t *typeV;
@@ -1057,7 +1105,10 @@ void            Prim_STRCAT(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbu
  * string, only the first character is significant.  If there is no such substring,
  * NIL is returned.
  */
-void            Prim_INDEX(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_INDEX(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[2], *restmp, *err;
     EliStr_t       *str1, *str2, *yaStr;
@@ -1100,7 +1151,10 @@ void            Prim_INDEX(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf
         EliSexp_SetSym(st, resbuf, EliNilSym(st));
 }
 
-void            Prim_RINDEX(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_RINDEX(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[2], *restmp, *err;
     EliStr_t       *str1, *str2;
@@ -1139,7 +1193,10 @@ void            Prim_RINDEX(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbu
         EliSexp_SetSym(st, resbuf, EliNilSym(st));
 }
 
-void            Prim_STRDECOMPOSE(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_STRDECOMPOSE(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[3], *err, *tmp;
     EliStr_t       *strNodes[3];
@@ -1219,7 +1276,10 @@ void            Prim_STRDECOMPOSE(EliState_t *st, EliCons_t *arglist, EliSexp_t 
         EliSexp_SetSym(st, resbuf, EliNilSym(st));
 }
 
-void            Prim_STRLEN(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_STRLEN(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[1], *err, *tmp;
 
@@ -1243,7 +1303,10 @@ void            Prim_STRLEN(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbu
     EliSexp_SetInt(st, resbuf, (long) strlen(EliStr_GetString(EliSexp_GetStr(tmp))));
 }
 
-void            Prim_LCSTRING(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_LCSTRING(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[1], *err, *nodetmp;
     char           *oldstring, *oldptr, *newptr, c;
@@ -1280,7 +1343,10 @@ void            Prim_LCSTRING(EliState_t *st, EliCons_t *arglist, EliSexp_t *res
     EliSexp_SetStr(st, resbuf, newstr);
 }
 
-void            Prim_APPEND(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_APPEND(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *thisnode, *evalnode, *aNode, *anotherNode, *yetAnotherNode;
     EliCons_t      *thisarg, *reslist = NULL, *lastcell = NULL, *newcell, *aCell;
@@ -1333,7 +1399,10 @@ void            Prim_APPEND(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbu
         EliSexp_SetSym(st, resbuf, EliNilSym(st));
 }
 
-void            Prim_RE_STRCONTAINS(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_RE_STRCONTAINS(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[3], *err, *patNode, *refNode;
     int             numargs, rxpResult;
@@ -1386,7 +1455,10 @@ void            Prim_RE_STRCONTAINS(EliState_t *st, EliCons_t *arglist, EliSexp_
  *
  * By the way, I really overdid it with the error checking here.
  */
-void            Prim_SUBSTRING(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_SUBSTRING(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[3], *err, *evalnode;
     EliStr_t       *theStringNode, *result;
@@ -1468,7 +1540,10 @@ void            Prim_SUBSTRING(EliState_t *st, EliCons_t *arglist, EliSexp_t *re
     EliSexp_SetStr(st, resbuf, result);
 }
 
-void            Prim_SYMBOLP(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_SYMBOLP(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[1], *tmp, *err;
 
@@ -1488,7 +1563,10 @@ void            Prim_SYMBOLP(EliState_t *st, EliCons_t *arglist, EliSexp_t *resb
     EliSexp_SetSym(st, resbuf, ((EliSexp_GetType(tmp) == e_data_symbol) || EliNilP(st, tmp)) ? EliTSym(st) : EliNilSym(st));
 }
 
-void            Prim_PLUMBER(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_PLUMBER(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[1], *tmp, *err;
     FILE           *fp, *fopen();
@@ -1532,7 +1610,10 @@ void            Prim_PLUMBER(EliState_t *st, EliCons_t *arglist, EliSexp_t *resb
  * present, and non-nil, then ignore case.
  */
 
-void            Prim_RE_STRDECOMPOSE(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_RE_STRDECOMPOSE(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[3], *err, *patNode, *refNode, *strs[3], *cdrs[2];
     int             numargs, rxpResult;
@@ -1638,7 +1719,10 @@ void            Prim_RE_STRDECOMPOSE(EliState_t *st, EliCons_t *arglist, EliSexp
     }
 }
 
-void            Prim_GENSYM(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_GENSYM(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     static int      num = 1;
     char            name[GENSYM_NAMELEN];
@@ -1662,7 +1746,10 @@ void            Prim_GENSYM(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbu
     EliSexp_SetSym(st, resbuf, symNode);
 }
 
-void            Prim_FUNCTION(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_FUNCTION(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *args[1], *err, *tmp;
     EliFn_t        *fnTmp;
@@ -1695,7 +1782,10 @@ void            Prim_FUNCTION(EliState_t *st, EliCons_t *arglist, EliSexp_t *res
         EliSexp_SetCons(st, resbuf, eliFn_GetCons(fnTmp));
 }
 
-void            Prim_LOAD(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_LOAD(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     EliSexp_t      *argnodes[1], *err, *resbuf2;
 
@@ -1745,7 +1835,10 @@ static int      AlarmHandler()
  * If input evaluates to NIL, no stdin is passed to the child.
  */
 
-void            Prim_FILTER(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
+void            Prim_FILTER(st, arglist, resbuf)
+EliState_t     *st;
+EliCons_t      *arglist;
+EliSexp_t      *resbuf;
 {
     int             i, childpid, stdinpipe[2], stdoutpipe[2], numchildcmdargs;
     int             stderrpipe[2], listlen = EliListLen(arglist), gavetimeout;

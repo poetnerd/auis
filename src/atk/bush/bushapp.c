@@ -74,7 +74,6 @@ END-SPECIFICATION  ************************************************************/
 #include <bushv.ih>
 #include <bushapp.eh>
 
-#include <stdio.h>
 #define	Bush		((self)->bush)
 #define	Bushv		((self)->bushview)
 #define	Debug		((self)->debug)

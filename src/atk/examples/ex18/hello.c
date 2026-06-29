@@ -41,7 +41,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exam
 #include "fontdesc.ih"
 #include "style.ih"
 
-#include <string.h>
 struct dataobject *createInitialDobj()
 {
     struct text *text=text_New();
@@ -61,7 +60,9 @@ struct dataobject *createInitialDobj()
     return (struct dataobject *)text;
 }
 
-boolean helloworld__InitializeObject(struct classheader *classID, struct helloworld *hw)
+boolean helloworld__InitializeObject(classID,hw)
+struct classheader *classID;
+struct helloworld *hw;   
 {
     hw->x = POSUNDEF;
     hw->y = POSUNDEF;
@@ -71,12 +72,17 @@ boolean helloworld__InitializeObject(struct classheader *classID, struct hellowo
     return TRUE;
 }
 
-void helloworld__FinalizeObject(struct classheader *classID, struct helloworld *hw)
+void helloworld__FinalizeObject(classID,hw)
+struct classheader *classID;
+struct helloworld *hw;
 {
     dataobject_Destroy(hw->dobj);
 }
 
-long helloworld__Read(struct helloworld *hw, FILE *file, long id)
+long helloworld__Read(hw,file,id)
+struct helloworld *hw;
+FILE *file;
+long id;
 {
     char buf[100],classNameBuf[100];
     long retVal,dobjObjId;
@@ -114,7 +120,11 @@ long helloworld__Read(struct helloworld *hw, FILE *file, long id)
     return retVal;
 }
 
-long helloworld__Write(struct helloworld *hw, FILE *file, long writeId, int level)
+long helloworld__Write(hw,file,writeId,level)
+struct helloworld *hw;
+FILE *file;
+long writeId;
+int level;
 {
     if(writeId!=helloworld_GetWriteID(hw)){ /* only write a given version once */
 	helloworld_SetWriteID(hw,writeId);

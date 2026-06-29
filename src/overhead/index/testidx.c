@@ -39,13 +39,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include "index.h"
 
-static listerproc(register struct Index *ai, register struct indexComponent *ac, register char *arock)
+static listerproc(ai, ac, arock)
+register struct Index *ai;
+register struct indexComponent *ac;
+register char *arock;
 {
     if ((long) arock != 17) printf("arock was trashed\n");
     printf("Record keyed by %s\n", ac->name);
 }
 
-int main(int argc, char **argv)
+main(argc, argv)
+int argc;
+char **argv;
 {
     if (argc < 2) return printf("test: usage is 'test <opcode> <operands>\n");
     if (!strcmp(argv[1], "cr")) {

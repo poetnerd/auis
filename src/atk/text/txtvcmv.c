@@ -44,9 +44,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #define AUXMODULE 1
 #include <textv.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
-void textview_EndOfWordCmd(register struct textview *self)
+void textview_EndOfWordCmd (self)
+    register struct textview *self;
 {/**/
     register int j, ct, pos, dlen, testType;
     register struct text *d;
@@ -77,7 +76,8 @@ void textview_EndOfWordCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_ForwardWordCmd(register struct textview *self)
+void textview_ForwardWordCmd (self)
+    register struct textview *self;
 {
     register int j, count, pos, dlen;
     register struct text *d;
@@ -138,7 +138,8 @@ void textview_ForwardWordCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_BackwardWordCmd(register struct textview *self)
+void textview_BackwardWordCmd (self)
+    register struct textview *self;
 {
     register int j, count, pos;
     register struct text *d;
@@ -177,7 +178,8 @@ void textview_BackwardWordCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_LineToTopCmd(register struct textview *self)
+void textview_LineToTopCmd(self)
+register struct textview *self;
 {
     long pos;
 
@@ -188,7 +190,8 @@ void textview_LineToTopCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_ForwardParaCmd(register struct textview *self)
+void textview_ForwardParaCmd(self)
+register struct textview *self;
 {
     register int j, ct, pos, dlen;
     register struct text *d;
@@ -210,7 +213,8 @@ void textview_ForwardParaCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_BackwardParaCmd(register struct textview *self)
+void textview_BackwardParaCmd(self)
+register struct textview *self;
 {
     register int j, ct, pos;
     register struct text *d;
@@ -228,7 +232,8 @@ void textview_BackwardParaCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_GotoParagraphCmd(register struct textview *self)
+void textview_GotoParagraphCmd(self)
+register struct textview *self;
 {
     char temp[100];
     int line, gf;
@@ -254,7 +259,8 @@ void textview_GotoParagraphCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_WhatParagraphCmd(register struct textview *v)
+void textview_WhatParagraphCmd (v)
+register struct textview *v;
 {
     char temp[100];
     register int i, pos;
@@ -269,7 +275,8 @@ void textview_WhatParagraphCmd(register struct textview *v)
     message_DisplayString(v, 0, temp);
 }
 
-void textview_ViGlitchUpCmd(register struct textview *self)
+void textview_ViGlitchUpCmd(self)
+register struct textview *self;
 {
     register int n;
     register int pos;
@@ -292,7 +299,8 @@ void textview_ViGlitchUpCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_ViGlitchDownCmd(register struct textview *self)
+void textview_ViGlitchDownCmd(self)
+register struct textview *self;
 {
     register int n,pos;
     long	dotPos;
@@ -326,7 +334,8 @@ void textview_ViGlitchDownCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_DownCmd(register struct textview *self)
+void textview_DownCmd(self)
+    register struct textview *self;
 {
     if ( im_Argument(self->header.view.imPtr) == 1 )
     {
@@ -337,7 +346,8 @@ void textview_DownCmd(register struct textview *self)
     textview_ViGlitchUpCmd(self);
 }
 
-void textview_UpCmd(register struct textview *self)
+void textview_UpCmd(self)
+    register struct textview *self;
 {
     if ( im_Argument(self->header.view.imPtr) == 1 )
     {
@@ -348,7 +358,8 @@ void textview_UpCmd(register struct textview *self)
     textview_ViGlitchDownCmd(self);
 }
 
-void textview_GlitchUpCmd(register struct textview *self)
+void textview_GlitchUpCmd(self)
+register struct textview *self;
 {
     register int n;
     register int pos;
@@ -364,7 +375,8 @@ void textview_GlitchUpCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_GlitchDownCmd(register struct textview *self)
+void textview_GlitchDownCmd(self)
+register struct textview *self;
 {
     register int n,pos;
     long dist, lines;
@@ -393,12 +405,14 @@ void textview_GlitchDownCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-static long PageOverlap(long viewHeight)
+static long PageOverlap(viewHeight)
+long viewHeight;
 {
     return (viewHeight < 147) ? viewHeight / 3 : 49;
 }
 
-void textview_NextScreenCmd(struct textview *self)
+void textview_NextScreenCmd(self)
+struct textview *self;
 {
     int argument = im_Argument(textview_GetIM(self));
     int count;
@@ -434,7 +448,8 @@ void textview_NextScreenCmd(struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_PrevScreenCmd(register struct textview *self)
+void textview_PrevScreenCmd(self)
+register struct textview *self;
 {
     int argument = im_Argument(textview_GetIM(self));
     int count;
@@ -479,7 +494,8 @@ void textview_PrevScreenCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_StartOfParaCmd(register struct textview *self)
+void textview_StartOfParaCmd (self)
+register struct textview *self;
 {
     register struct text *d;
     register int pos;
@@ -492,7 +508,8 @@ void textview_StartOfParaCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_EndOfParaCmd(register struct textview *self)
+void textview_EndOfParaCmd (self)
+register struct textview *self;
 {
     register struct text *d;
     register int pos;
@@ -504,7 +521,8 @@ void textview_EndOfParaCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_SelectRegionCmd(register struct textview *self)
+void textview_SelectRegionCmd(self)
+register struct textview *self;
 {
     register int i;
     register int dot, mark;
@@ -522,14 +540,16 @@ void textview_SelectRegionCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_CtrlAtCmd(register struct textview *self)
+void textview_CtrlAtCmd(self)
+register struct textview *self;
 {
     mark_SetPos(self->atMarker,textview_GetDotPosition(self));
     mark_SetLength(self->atMarker,textview_GetDotLength(self));
     message_DisplayString(self, 0, "Mark set.");
 }
 
-void textview_BackwardCmd(register struct textview *self)
+void textview_BackwardCmd(self)
+register struct textview *self;
 {
     register long endpos, len;
     register struct text *d;
@@ -554,7 +574,8 @@ void textview_BackwardCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_ForwardCmd(register struct textview *self)
+void textview_ForwardCmd(self)
+register struct textview *self;
 {
     register long pos;
     register long newPos;
@@ -567,7 +588,8 @@ void textview_ForwardCmd(register struct textview *self)
     }
 }
 
-void textview_PreviousLineCmd(register struct textview *self)
+void textview_PreviousLineCmd (self)
+register struct textview *self;  /**/
 {
     register int npos, j;
     int xpos;
@@ -652,7 +674,8 @@ void textview_PreviousLineCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_NextLineCmd(register struct textview *self)
+void textview_NextLineCmd (self)
+register struct textview *self; /**/
 {
     register int npos, j;
     int xpos;
@@ -747,7 +770,8 @@ void textview_NextLineCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_EndOfTextCmd(register struct textview *self)
+void textview_EndOfTextCmd(self)
+register struct textview *self;
 {
     register struct text *d;
     register int e;
@@ -761,7 +785,8 @@ void textview_EndOfTextCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_BeginningOfTextCmd(register struct textview *self)
+void textview_BeginningOfTextCmd(self)
+register struct textview *self;
 {
     textview_CtrlAtCmd(self);
     textview_SetDotPosition(self,0);
@@ -770,7 +795,8 @@ void textview_BeginningOfTextCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_EndOfLineCmd(register struct textview *self)
+void textview_EndOfLineCmd (self)
+register struct textview *self;
 {
     register int startpos, npos, dsize;
     register struct text *d;
@@ -806,7 +832,8 @@ void textview_EndOfLineCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_BeginningOfLineCmd(register struct textview *self)
+void textview_BeginningOfLineCmd(self)
+register struct textview *self;
 {
     register int pos;
 
@@ -830,7 +857,8 @@ void textview_BeginningOfLineCmd(register struct textview *self)
     textview_WantUpdate(self, self);
 }
 
-void textview_EndOfWSWordCmd(register struct textview *self)
+void textview_EndOfWSWordCmd(self)
+    register struct textview *self;
 {/**/
     long	pos, textSize;
     register int	j, ct;
@@ -848,7 +876,8 @@ void textview_EndOfWSWordCmd(register struct textview *self)
     }
 }
 
-void textview_ForwardWSWordCmd(register struct textview *self)
+void textview_ForwardWSWordCmd(self)
+    register struct textview *self;
 {/**/
     long	pos, textSize;
     register int	j, ct;
@@ -866,7 +895,8 @@ void textview_ForwardWSWordCmd(register struct textview *self)
     }
 }
 
-void textview_BackwardWSWordCmd(register struct textview *self)
+void textview_BackwardWSWordCmd(self)
+    register struct textview *self;
 {/**/
     long		pos;
     register int	j, ct;
@@ -883,7 +913,8 @@ void textview_BackwardWSWordCmd(register struct textview *self)
     }
 }
 
-void textview_BeginningOfFirstWordCmd(struct textview *self)
+void textview_BeginningOfFirstWordCmd(self)
+    struct textview *self;
 {
     register struct text *d;
     char	c;
@@ -897,7 +928,8 @@ void textview_BeginningOfFirstWordCmd(struct textview *self)
 	textview_ForwardWordCmd(self);
 }
 
-void textview_BeginningOfPreviousLineCmd(struct textview *self)
+void textview_BeginningOfPreviousLineCmd(self)
+    struct textview *self;
 {
     int	ct;
     register int    j;
@@ -912,7 +944,8 @@ void textview_BeginningOfPreviousLineCmd(struct textview *self)
     }
 }
 
-void textview_BeginningOfNextLineCmd(struct textview *self)
+void textview_BeginningOfNextLineCmd(self)
+    struct textview *self;
 {
     int	ct;
     register int    j;
@@ -927,7 +960,9 @@ void textview_BeginningOfNextLineCmd(struct textview *self)
     }
 }
 
-void textview_CursorToLine(struct textview *self, long line)
+void textview_CursorToLine(self, line)
+struct textview *self;
+long line;
 {
     if (line > 0 && line <= self->nLines) {
         textview_SetDotPosition(self, mark_GetPos(self->lines[line - 1].data));
@@ -938,22 +973,29 @@ void textview_CursorToLine(struct textview *self, long line)
 
 /* Useful commands for our editor. */
 
-void textview_CursorToTop(struct textview *self, long key)
+void textview_CursorToTop(self, key)
+struct textview *self;
+long key;
 {
     textview_CursorToLine(self, 1);
 }
 
-void textview_CursorToCenter(struct textview *self, long key)
+void textview_CursorToCenter(self, key)
+struct textview *self;
+long key;
 {
     textview_CursorToLine(self, self->nLines / 2);
 }
 
-void textview_CursorToBottom(struct textview *self, long key)
+void textview_CursorToBottom(self, key)
+struct textview *self;
+long key;
 {
     textview_CursorToLine(self, self->nLines);
 }
 
-void textview_GoToLineCmd(register struct textview *self)
+void textview_GoToLineCmd(self)
+    register struct textview *self;
 {
 
     int argument, pos;

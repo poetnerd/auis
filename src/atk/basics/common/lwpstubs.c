@@ -40,7 +40,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
 /* this is a dummy iomgr_select.  It is linked in only if IOMGR is not being used */
 
-int IOMGR_Select(long num, long rfs, long wfs, long xfs, struct timeval *timeout)
+IOMGR_Select(num, rfs, wfs, xfs, timeout)
+    long num, rfs, wfs, xfs;
+    struct timeval *timeout;
 {
     return select(num, rfs, wfs, xfs, timeout);
 }

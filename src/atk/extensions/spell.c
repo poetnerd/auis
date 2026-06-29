@@ -55,8 +55,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 
 #include <spell.eh>
 
-#include <stdlib.h>
-#include <stdio.h>
 #define Text(self) ((struct text *) self->header.view.dataobject)
 
 static FILE *inFile, *outFile;
@@ -78,7 +76,9 @@ struct process {
     boolean stopped;
 };
 
-static struct process *StartProcess(char *command, FILE **inputFile, FILE **outputFile)
+static struct process *StartProcess(command, inputFile, outputFile)
+    char *command;
+    FILE **inputFile, **outputFile;
 {
 
     int inpipe[2], outpipe[2], pid;
@@ -160,7 +160,8 @@ static int KillSpeller()
  * replaced by a multiple choice question call shortly.
  * Really should have a bounds test on buffer...
  */
-static int BuildQuestionLine(char *buffer, char *choices)
+static int BuildQuestionLine(buffer, choices)
+    char *buffer, *choices;
 {
 
     int i;
@@ -196,7 +197,10 @@ static int BuildQuestionLine(char *buffer, char *choices)
  * position.
  */
 /* ARGUSED */
-void spell__CheckDocument(struct classheader *classID, struct textview *self, long rock)
+void spell__CheckDocument(classID, self, rock)
+    struct classheader *classID;
+    struct textview *self;
+    long rock;
 {
 
     int pos = textview_GetDotPosition(self), savePos = pos, saveLength = textview_GetDotLength(self), c;
@@ -438,12 +442,15 @@ void spell__CheckDocument(struct classheader *classID, struct textview *self, lo
     textview_WantUpdate(self, self);
 }
 
-static void spell_CheckSpellingCmd(struct textview *self, long rock)
+static void spell_CheckSpellingCmd(self, rock)
+    struct textview *self;
+    long rock;
 {
     spell_CheckDocument(self, rock);
 }
  
-boolean spell__InitializeClass(struct classheader *classID)
+boolean spell__InitializeClass(classID)
+    struct classheader *classID;
 {
     proctable_DefineProc("spell-check-document", (procedure) spell_CheckSpellingCmd, class_Load("textview"), NULL, "Checks spelling from the caret on.");
 

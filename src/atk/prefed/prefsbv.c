@@ -39,17 +39,24 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 
 #include <view.ih>
 
-boolean prefsbv__InitializeObject(struct classheader *classID, struct prefsbv *self)
+boolean prefsbv__InitializeObject(classID, self)
+struct classheader *classID;
+struct prefsbv *self;
 {
     return TRUE;
     
 }
 
-void prefsbv__FinalizeObject(struct classheader *classID, struct prefsbv *self)
+void prefsbv__FinalizeObject(classID, self)
+struct classheader *classID;
+struct prefsbv *self;
 {
 }
 
-boolean prefsbv__Touch(struct prefsbv *self, int ind, enum view_MouseAction act)
+boolean prefsbv__Touch(self, ind, act)
+struct prefsbv *self;
+int ind;
+enum view_MouseAction act;
 {
     if(!super_Touch(self, ind, act)) return FALSE;
     if(act!=view_LeftUp) return TRUE;

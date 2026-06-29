@@ -46,7 +46,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exam
 #include "fontdesc.ih"
 #include "hello.ih"
 
-static struct view *appLayerOrDestroy(struct view *v)
+static struct view *appLayerOrDestroy(v)
+struct view *v;
 {
     if(v==NULL)
 	return NULL;
@@ -62,7 +63,8 @@ static struct view *appLayerOrDestroy(struct view *v)
     }
 }
 
-static boolean makeSplitWindow(struct dataobject *dobj1, struct dataobject *dobj2)
+static boolean makeSplitWindow(dobj1,dobj2)
+struct dataobject *dobj1,*dobj2;
 {
     struct view *v1,*v2;
     struct view *al1,*al2,*lpAl;
@@ -117,7 +119,8 @@ static boolean makeSplitWindow(struct dataobject *dobj1, struct dataobject *dobj
 
 }
 
-boolean helloworldapp__Start(struct helloworldapp *hwapp)
+boolean helloworldapp__Start(hwapp)
+struct helloworldapp *hwapp;
 {
     struct helloworld *hw;
     struct text *t;

@@ -42,8 +42,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <stdio.h>
 #include <console.h>
 
-#include <string.h>
-#include <stdlib.h>
 CheckNet()
 {
     short i;

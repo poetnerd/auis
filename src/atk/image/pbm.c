@@ -40,7 +40,6 @@
 #include <pbm.h>
 #include <pbm.eh>
 
-#include <stdio.h>
 /* SUPPRESS 558 */
 
 static int IntTable[256];
@@ -83,7 +82,8 @@ static void initializeTable()
   Initialized = 1;
 }
 
-static int pbmReadChar(FILE *f)
+static int pbmReadChar(f)
+     FILE *f;
 { int c;
 
   if ((c = fgetc(f)) == EOF) {
@@ -98,7 +98,8 @@ static int pbmReadChar(FILE *f)
   return(c);
 }
 
-static int pbmReadInt(FILE *f)
+static int pbmReadInt(f)
+     FILE *f;
 { int c, value;
 
   for (;;) {
@@ -118,7 +119,10 @@ static int pbmReadInt(FILE *f)
   }
 }
 
-static int isPBM(FILE *f, char *name, unsigned int *width, unsigned int *height, unsigned int *maxval)
+static int isPBM(f, name, width, height, maxval)
+     FILE         *f;
+     char         *name;
+     unsigned int *width, *height, *maxval;
 { byte buf[4];
 
   if(!Initialized)

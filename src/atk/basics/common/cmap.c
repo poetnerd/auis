@@ -34,7 +34,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <color.ih>
 #include <cmap.eh>
 
-#include <stdlib.h>
 boolean
 colormap__InitializeClass( classID )
     struct classheader *classID;

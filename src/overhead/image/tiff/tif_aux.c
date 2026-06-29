@@ -39,7 +39,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "tiffioP.h"
 #include "prototypes.h"
 
-#include <stdlib.h>
 /*
  * Like TIFFGetField, but return any default
  * value if the tag is not present in the directory.

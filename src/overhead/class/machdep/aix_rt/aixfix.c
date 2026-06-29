@@ -45,7 +45,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #ifdef i386
 
-void Emit(char *cp)
+void Emit(cp)
+char *cp;
+
 {
     (void) printf("\t.globl %s ; .text; .long %s, 1f ; .data; 1: .string \"%s\" \n", 
 		   cp, cp, cp);
@@ -54,7 +56,9 @@ void Emit(char *cp)
 
 #else
 
-void Emit(char *cp)
+void Emit(cp)
+char *cp;
+
 {
 static char Label[14] = "LXYZZY000000";
 static int Count = 0;

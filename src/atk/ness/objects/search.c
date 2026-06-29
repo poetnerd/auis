@@ -260,8 +260,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ness
 #include <interp.h>		/* for frameelt for envt.h */
 #include <envt.h>
 #include <compdefs.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <nevent.h>	/* for ProperPtr */
 
 /* XXX  KLUDGE.  The following definition should be exported by text.ch */

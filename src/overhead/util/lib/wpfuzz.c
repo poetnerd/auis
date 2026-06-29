@@ -47,20 +47,22 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #ifdef WHITEPAGES_ENV  /* avoid makedepend "errors" */
 #include <wp.h>
 #include <btwp.h>
-#include <stdlib.h>
 #endif /* WHITEPAGES_ENV   */
 
 extern int bwDebugging;
 
 #ifndef _IBMR2
+extern char *malloc(), *realloc();
 #endif /* _IBMR2 */
 
-static int CmpIxVal(char *Loc1, char *Loc2)
+static int CmpIxVal(Loc1, Loc2)
+char *Loc1, *Loc2;
 {/* Helper (comparator) procedure for wpSortIxValue and qsort. */
     return strncmp(Loc1, Loc2, PKLEN);
 }
 
-int wpSortIxValue(char *IxLoc, int IxSize)
+int wpSortIxValue(IxLoc, IxSize)
+char *IxLoc; int IxSize;
 {/* Sort the array of index values at IxLoc (of length IxSize, in units of PKLEN), in place, and flush duplicates.  Return the size of the canonicalized array, in units of PKLEN. */
     char *Src, *Dst, *TopLoc;
     int DstCount;
@@ -229,7 +231,10 @@ static struct Map CRules[] = {
 };
 #define NumCRules  (sizeof(CRules) / sizeof(CRules[0]))
 
-static int ApplyInit(struct Map Ruleset[], int NumRuleset, char *str, char *Title)
+static int ApplyInit(Ruleset, NumRuleset, str, Title)
+struct Map Ruleset[];
+int NumRuleset;
+char *str, *Title;
 {/* Apply the given ruleset at the beginning of the string. */
 	register char *Src, *Dst, *LastSrc;
 	register int Which, Changed, RightLen;
@@ -259,7 +264,10 @@ static int ApplyInit(struct Map Ruleset[], int NumRuleset, char *str, char *Titl
 	}
 }
 
-static int ApplyTerm(struct Map Ruleset[], int NumRuleset, char *str, char *Title)
+static int ApplyTerm(Ruleset, NumRuleset, str, Title)
+struct Map Ruleset[];
+int NumRuleset;
+char *str, *Title;
 {/* Apply the given ruleset at the end of the string. */
 	register char *Fing, *Src, *Dst, *LastSrc;
 	register int Which, Changed, RightLen;
@@ -293,7 +301,10 @@ static int ApplyTerm(struct Map Ruleset[], int NumRuleset, char *str, char *Titl
 	}
 }
 
-static int Apply(struct Map Ruleset[], int NumRuleset, char *str, char *Title)
+static int Apply(Ruleset, NumRuleset, str, Title)
+struct Map Ruleset[];
+int NumRuleset;
+char *str, *Title;
 {/* Apply the given ruleset anywhere in the string. */
 	register char *Fing, *Src, *Dst, *LastSrc;
 	register int Which, Changed, RightLen;
@@ -325,7 +336,8 @@ static int Apply(struct Map Ruleset[], int NumRuleset, char *str, char *Title)
 	}
 }
 
-static char *BasicCanon(char *str)
+static char *BasicCanon(str)
+char *str;
 {/* Allocate and return a minimally-processed representation of the given name, or NULL. */
 	char *ostr;
 	register char *Src, *Dst;
@@ -341,12 +353,14 @@ static char *BasicCanon(char *str)
 	return ostr;
 }
 
-static void GivenHack(char *str)
+static void GivenHack(str)
+char *str;
 {/* Check for a particular pattern of given names and treat specially, overwriting the string if found. */
 	if (strcmp(str, "st.") == 0) strcpy(str, "saint");
 }
 
-static void MapCG(char *str)
+static void MapCG(str)
+char *str;
 {/* Do the C-{S,K} and G-{G,J} mapping for the given string, in place. */
 	register char *Src;
 
@@ -379,7 +393,8 @@ static void MapCG(char *str)
 	}
 }
 
-static void PhoneticMap(char *str, int IsGiven)
+static void PhoneticMap(str, IsGiven)
+char *str; int IsGiven;
 {/* Do the phonetic mapping for str, in place. */
 	register int Changed;
 
@@ -407,7 +422,8 @@ static void PhoneticMap(char *str, int IsGiven)
 	}
 }
 
-static void Codify(char *str, char Codes[])
+static void Codify(str, Codes)
+char *str; char Codes[];
 {/* Use the alphabetic code table Codes to reduce str to canonical form, in place. */
 	register char *Src, *Dst;
 	register char Code, LastCode;
@@ -445,7 +461,8 @@ static char SurnCodes[26] = {
 	0, 'f', 0, 'k', 0, 's'
 };
 
-char *CanonSurn(char *str)
+char *CanonSurn(str)
+char *str;
 {/* Allocate and return a canonical representation of the given surname, or NULL. */
 	char *ostr;
 
@@ -457,7 +474,8 @@ char *CanonSurn(char *str)
 	return ostr;
 }
 
-char *CanonGiven(char *str)
+char *CanonGiven(str)
+char *str;
 {/* Allocate and return a canonical representation of the given given name, or NULL. */
 	char *ostr;
 
@@ -470,7 +488,8 @@ char *CanonGiven(char *str)
 	return ostr;
 }
 
-char *CanonNick(char *str)
+char *CanonNick(str)
+char *str;
 {/* Allocate and return a canonical representation of the given nickname, or NULL. */
     char *ostr;
     int oLen;

@@ -82,8 +82,6 @@ END-SPECIFICATION  ************************************************************/
 #include "chartobj.eh"
 #include <ctype.h>
 
-#include <stdlib.h>
-#include <stdio.h>
 int chartobj_debug = 0;
 
 #define debug chartobj_debug

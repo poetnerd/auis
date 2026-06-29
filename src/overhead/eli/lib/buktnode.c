@@ -33,7 +33,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include  <buktnode.h>
 
-#include <stdlib.h>
 /*
  * Returns the first bucketnode in the free area.  If one does not exist, a
  * new block of bucketnodes is allocated and linked into the freelist, and a
@@ -45,7 +44,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * field referent has its refcount incr'd. 
  */
 
-eliBucketNode_t *eliBucketNode_GetNew(EliState_t *st, EliSexp_t *datum, char *key)
+eliBucketNode_t *eliBucketNode_GetNew(st, datum, key)
+EliState_t     *st;
+EliSexp_t      *datum;
+char           *key;
 {
     eliBucketNode_t *tmp = NULL;
 
@@ -87,7 +89,8 @@ eliBucketNode_t *eliBucketNode_GetNew(EliState_t *st, EliSexp_t *datum, char *ke
   * node in this block's freelist. 
   */
 
-eliBucketNode_t *eliBucketNode_GetNewBlock(int numnodes)
+eliBucketNode_t *eliBucketNode_GetNewBlock(numnodes)
+int             numnodes;
 {
     eliBucketNode_t *result;
     int             i;
@@ -103,56 +106,65 @@ eliBucketNode_t *eliBucketNode_GetNewBlock(int numnodes)
 
 /* Set the "prev" field */
 
-void            eliBucketNode_SetPrev(eliBucketNode_t *bnode, eliBucketNode_t *val)
+void            eliBucketNode_SetPrev(bnode, val)
+eliBucketNode_t *bnode, *val;
 {
     bnode->data.prev = val;
 }
 
 /* Set the "next" field */
 
-void            eliBucketNode_SetNext(eliBucketNode_t *bnode, eliBucketNode_t *val)
+void            eliBucketNode_SetNext(bnode, val)
+eliBucketNode_t *bnode, *val;
 {
     bnode->data.next = val;
 }
 
 /* Return the "prev" field */
 
-eliBucketNode_t *eliBucketNode_GetPrev(eliBucketNode_t *bnode)
+eliBucketNode_t *eliBucketNode_GetPrev(bnode)
+eliBucketNode_t *bnode;
 {
     return (bnode->data.prev);
 }
 
 /* Return the "next" field */
 
-eliBucketNode_t *eliBucketNode_GetNext(eliBucketNode_t *bnode)
+eliBucketNode_t *eliBucketNode_GetNext(bnode)
+eliBucketNode_t *bnode;
 {
     return (bnode->data.next);
 }
 
 /* Return the key field */
 
-EliStr_t       *eliBucketNode_GetKey(eliBucketNode_t *bnode)
+EliStr_t       *eliBucketNode_GetKey(bnode)
+eliBucketNode_t *bnode;
 {
     return (bnode->data.key);
 }
 
 /* Return the datum field */
 
-EliSexp_t      *eliBucketNode_GetSexp(eliBucketNode_t *bnode)
+EliSexp_t      *eliBucketNode_GetSexp(bnode)
+eliBucketNode_t *bnode;
 {
     return (bnode->data.datum);
 }
 
 /* Increment node's refcount */
 
-void            eliBucketNode_IncrRefcount(eliBucketNode_t *bnode)
+void            eliBucketNode_IncrRefcount(bnode)
+eliBucketNode_t *bnode;
 {
     ++(bnode->data.refcount);
 }
 
 /* Decrement node's refcount */
 
-void            eliBucketNode_DecrRefcount(EliState_t *st, eliBucketNode_t *bnode)
+void            eliBucketNode_DecrRefcount(st, bnode)
+EliState_t     *st;
+eliBucketNode_t *bnode;
 {
     if (1 > (--(bnode->data.refcount))) {
 	--(st->numBucketNodes);

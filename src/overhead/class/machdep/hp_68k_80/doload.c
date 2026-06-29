@@ -48,7 +48,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <errno.h>
 #include <dl.h>
 
-#include <stdlib.h>
 #define TRUE 1
 #define FALSE 0
 
@@ -60,6 +59,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 char doload_extension[] = ".do";
 
 int doload_trace=0;		/* nonzero if debugging */
+extern int errno;
 
 /* doload: Load a dynamic object.
  *

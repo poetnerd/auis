@@ -50,7 +50,12 @@ static char    *eliErrStrs[] =
 
 /* Definition of EliError, the all-purpose error-handler */
 
-void            EliError(EliState_t *st, int errtype, EliSexp_t *node, char *loc, int unixerr)
+void            EliError(st, errtype, node, loc, unixerr)
+EliState_t     *st;
+int             errtype;
+EliSexp_t      *node;
+char           *loc;
+int unixerr;
 {
     void (*fn)();
 
@@ -73,7 +78,8 @@ int             code;
     return (eliErrStrs[j]);
 }
 
-void            eliyyerror(char *s)
+void            eliyyerror(s)
+char           *s;
 {
 }
 

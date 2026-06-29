@@ -35,42 +35,50 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 /* These are front-end routines to errnode operations */
 
-int             EliErr_ErrP(EliState_t *st)
+int             EliErr_ErrP(st)	/* Has an error occurred? */
+EliState_t     *st;
 {
     return (st->g_errflag);
 }
 
-int             EliErr_ErrCode(EliState_t *st)
+int             EliErr_ErrCode(st)
+EliState_t     *st;
 {
     return (eliErr_GetCode(EliErrNode(st)));
 }
 
-int EliErr_UnixErr(EliState_t *st)
+int EliErr_UnixErr(st)
+EliState_t *st;
 {
     return (eliErr_GetUnixErr(EliErrNode(st)));
 }
 
-EliSexp_t      *EliErr_BadSexp(EliState_t *st)
+EliSexp_t      *EliErr_BadSexp(st)
+EliState_t     *st;
 {
     return (eliErr_GetNode(EliErrNode(st)));
 }
 
-int             EliErr_BadSexpP(EliState_t *st)
+int             EliErr_BadSexpP(st)
+EliState_t     *st;
 {
     return (eliErr_GetNode(EliErrNode(st)) != NULL);
 }
 
-char           *EliErr_ErrLoc(EliState_t *st)
+char           *EliErr_ErrLoc(st)
+EliState_t     *st;
 {
     return (eliErr_GetLoc(EliErrNode(st)));
 }
 
-int EliErr_BacktraceP(EliState_t *st)
+int EliErr_BacktraceP(st)
+EliState_t *st;
 {
     return (eliErr_GetBacktrace(EliErrNode(st)) != NULL);
 }
 
-EliCons_t *EliErr_Backtrace(EliState_t *st)
+EliCons_t *EliErr_Backtrace(st)
+EliState_t *st;
 {
     return (eliErr_GetBacktrace(EliErrNode(st)));
 }

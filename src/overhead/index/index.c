@@ -38,7 +38,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include "index.h"
 
-#include <stdlib.h>
 /* given an index and a record id, copy out key into abuffer, a buffer of max size alen */
 index_GetKey(ai, arid, abuffer, alen)
 struct Index *ai;
@@ -90,7 +89,9 @@ register long alen;
 /* internal routine: given a bucket, tell if there are any references from a secondary
     * record the given record id.
     */
-static index_RecordInUse(register struct indexBucket *ab, register struct recordID *arid)
+static index_RecordInUse(ab, arid)
+register struct indexBucket *ab;
+register struct recordID *arid;
 {
     register struct indexComponent *tc;
     for(tc = ab->list; tc; tc=tc->next) {
@@ -103,7 +104,9 @@ static index_RecordInUse(register struct indexBucket *ab, register struct record
   * Internal routine: given a bucket, return a pointer to the named primary record, or null
   * if none exist.
       */
-struct indexComponent *index_FindID(register struct indexBucket *ab, register struct recordID *arid)
+struct indexComponent *index_FindID(ab, arid)
+register struct indexBucket *ab;
+register struct recordID *arid;
 {
     register struct indexComponent *tc;
     for(tc = ab->list; tc; tc=tc->next) {
@@ -116,7 +119,9 @@ struct indexComponent *index_FindID(register struct indexBucket *ab, register st
   * Internal routine: given a bucket pointer and a record id, generate the next unique
   * record id for records placed in that bucket.
       */
-static index_GenerateKey(register struct indexBucket *ab, register struct recordID *arid)
+static index_GenerateKey(ab, arid)
+register struct indexBucket *ab;
+register struct recordID *arid;
 {
     arid->word1 = ab->hashIndex;
     arid->word2 = ab->nextID++;
@@ -306,7 +311,9 @@ register struct recordID *arid;
   * Internal routine: compute the hash for a string, given a hash table size (usually
 									       * found in the index structure).
 	*/
-long index_Hash(register char *astring, register short hashSize)
+long index_Hash(astring, hashSize)
+register short hashSize;
+register char *astring;
 {
     register long aval;
     register short tc;
@@ -326,7 +333,10 @@ long index_Hash(register char *astring, register short hashSize)
       * a standard I/O FILE * for the file.  If opening for writing, the new file will be created
 	  * if necessary, and truncated.
 	      */
-FILE *index_HashOpen(register struct Index *ai, register long ahash, register long awrite)
+FILE *index_HashOpen(ai, ahash, awrite)
+register struct Index *ai;
+register long awrite;
+register long ahash;
 {
     char tpath[1024];
     char tbuffer[20];
@@ -364,7 +374,8 @@ char *arock;
       * The pathname is the pathname of the directory containing all of the hash bucket
       * and version number files.
       */
-struct Index *index_Open(register char *apath)
+struct Index *index_Open(apath)
+register char *apath;
 {
     register DIR *td;
     register DIRENT_TYPE *tde;
@@ -428,7 +439,9 @@ register struct Index *ai;
   * primary records having the specified key.  This recordSet must be freed, using
   * recordset_Free, when the caller is finished with it.
   */
-struct recordSet *index_GetPrimarySet(register struct Index *ai, register char *akey)
+struct recordSet *index_GetPrimarySet(ai, akey)
+register struct Index *ai;
+register char *akey;
 {
     struct indexBucket *tb;
     register struct indexComponent *tlist;
@@ -449,7 +462,9 @@ struct recordSet *index_GetPrimarySet(register struct Index *ai, register char *
   * records (primary or secondary) having the specified key.  This recordSet must be freed, using
   * recordset_Free, when the caller is finished with it.
   */
-struct recordSet *index_GetAnySet(register struct Index *ai, register char *akey)
+struct recordSet *index_GetAnySet(ai, akey)
+register struct Index *ai;
+register char *akey;
 {
     struct indexBucket *tb;
     register struct indexComponent *tlist;

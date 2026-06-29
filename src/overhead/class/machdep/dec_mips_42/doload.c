@@ -67,7 +67,11 @@ extern long globalcount;
 
 #include "../common/safe.h"
 
-static char *read_section(struct doload_environment *e, long offset, char *buffer, long length)
+static char *read_section(e, offset, buffer, length)
+    struct doload_environment *e;
+    long offset;
+    char *buffer;
+    long length;
 {
 
     if (buffer == NULL) {
@@ -79,7 +83,10 @@ static char *read_section(struct doload_environment *e, long offset, char *buffe
 }
 
 /* initialize state */
-static void doload_setup(struct doload_environment *e, int inFD, doload_mode mode)
+static void doload_setup(e, inFD, mode)
+    struct doload_environment *e;
+    int inFD;
+    doload_mode mode;
 {
     e->mode = mode;
     e->fd = inFD;
@@ -97,7 +104,8 @@ static void doload_setup(struct doload_environment *e, int inFD, doload_mode mod
 
 /* tear down environment */
 
-static void doload_cleanup_success(struct doload_environment *e)
+static void doload_cleanup_success(e)
+    struct doload_environment *e;
 {
     struct doload_section *section;
 
@@ -108,7 +116,8 @@ static void doload_cleanup_success(struct doload_environment *e)
     safe_free(e->stringtab);
 }
 
-static void doload_cleanup(struct doload_environment *e)
+static void doload_cleanup(e)
+    struct doload_environment *e;
 {
     if (e->problems > 0) {
 	e->problems = 0;
@@ -125,7 +134,8 @@ static void doload_cleanup(struct doload_environment *e)
     }
 }
 
-static struct globaltab *find_global(char *name)
+static struct globaltab *find_global(name)
+    char *name;
 {
     register struct globaltab *thisGlobal;
 
@@ -147,7 +157,8 @@ static struct globaltab *find_global(char *name)
  * Doesn't included common symbols which have to be allocated in the global
  * area.
  */
-static unsigned long common_space(struct doload_environment *e)
+static unsigned long common_space(e)
+    struct doload_environment *e;
 {
     pEXTR sp;
     pEXTR sbound;
@@ -160,7 +171,9 @@ static unsigned long common_space(struct doload_environment *e)
     return common_total;
 }
 
-static char *common_alloc(struct doload_environment *e, unsigned long size)
+static char *common_alloc(e, size)
+    struct doload_environment *e;
+    unsigned long size;
 {
     char *ret_val;
 
@@ -176,7 +189,9 @@ static char *common_alloc(struct doload_environment *e, unsigned long size)
     return ret_val;
 }
 
-static char *gp_alloc(struct doload_environment *e, unsigned long size)
+static char *gp_alloc(e, size)
+    struct doload_environment *e;
+    unsigned long size;
 {
     char *ret_val;
  
@@ -228,7 +243,8 @@ struct doload_section_description {
 /* read module into memory */
 
 /* This routine reads all of the interesting sections of a object module into memory so they can be worked on by other parts of the code. Some of these sections are permanent while others are only sued during the loading phase and are freed afterwards. (List specific sections used by this code.) */
-static doload_read(struct doload_environment *e)
+static doload_read(e)
+    struct doload_environment *e;
 {
     long stringlen;	/* length of string table */
     long sectionSizes[WHERE_MAX + 1];
@@ -393,7 +409,6 @@ void *(* doload(inFD, name, bp, lenP, path) )()
 #include <sys/syscall.h>
 #include <sys/sysmips.h>
 
-#include <stdlib.h>
     if (syscall(SYS_sysmips, MIPS_CACHEFLUSH, e->text, e->total_size,
                 BCACHE, 0) == -1) {
 #endif
@@ -438,7 +453,8 @@ static char *doload_symbolClasses[] = {
     "scMax",
 };
 
-static char *symbol_class_name(int class_number)
+static char *symbol_class_name(class_number)
+    int class_number;
 {
     if (class_number < (sizeof(doload_symbolClasses) / sizeof(doload_symbolClasses[0])))
         return doload_symbolClasses[class_number];
@@ -452,7 +468,8 @@ static char *symbol_class_name(int class_number)
  * after this routine executes. doload_finish_resolution also allocates space
  * for common symbols.
  */
-static doload_finish_resolution(struct doload_environment *e)
+static doload_finish_resolution(e)
+    struct doload_environment *e;
 {
     register pEXTR sp;
     register pEXTR sbound;
@@ -486,7 +503,10 @@ static doload_finish_resolution(struct doload_environment *e)
 }
 
 /* compute relocation adjustment */
-static long adjust(struct doload_environment *e, long tw, struct reloc *rp)
+static long adjust(e, tw, rp)
+    struct doload_environment *e;
+    long tw;
+    struct reloc *rp;
 {
     if (rp->r_extern) {
         pEXTR sp = e->symtab + rp->r_symndx;
@@ -563,7 +583,9 @@ static long adjust(struct doload_environment *e, long tw, struct reloc *rp)
 #define SETLOWHALF(addr, value) ((*(((short *)(addr)))) = (value))
 #endif /* Byte order selection */
 
-static void relocate_section(register struct doload_environment *e, struct doload_section *section)
+static void relocate_section(e, section)
+    register struct doload_environment *e;
+    struct doload_section *section;
 {
     struct reloc *rp;
     struct reloc *sectionRelocBound = section->rtab + section->num_relocs;

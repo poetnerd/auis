@@ -41,11 +41,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #include <rofftext.ih>
 #include <mantext.eh>
 
-#include <stdlib.h>
 #define INITIAL 100
 #define INCREMENT 1000
 
-boolean mantext__InitializeObject(struct classheader *classID, struct mantext *self)
+boolean mantext__InitializeObject(classID,self)
+struct classheader *classID;
+struct mantext *self;
 {
     self->nLines = 0;
     self->nAlloc = INITIAL;

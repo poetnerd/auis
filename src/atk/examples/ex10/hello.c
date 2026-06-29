@@ -35,7 +35,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exam
 
 #include "hello.eh"
 
-boolean helloworld__InitializeObject(struct classheader *classID, struct helloworld *hw)
+boolean helloworld__InitializeObject(classID,hw)
+struct classheader *classID;
+struct helloworld *hw;   
 {
     hw->x = POSUNDEF;
     hw->y = POSUNDEF;

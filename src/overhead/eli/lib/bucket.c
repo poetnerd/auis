@@ -33,17 +33,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include  <bucket.h>
 
-#include <string.h>
 /* Initialize a bucket */
 
-void            eliBucket_Init(eliBucket_t *b)
+void            eliBucket_Init(b)
+eliBucket_t    *b;
 {
     b->head = b->tail = NULL;
 }
 
 /* Insert a bucketnode into the given bucket (insertion at HEAD) */
 
-void            eliBucket_Insert(eliBucket_t *b, eliBucketNode_t *bnode)
+void            eliBucket_Insert(b, bnode)
+eliBucket_t    *b;
+eliBucketNode_t *bnode;
 {
     eliBucketNode_SetPrev(bnode, NULL);
     if (!(b->head)) {		/* Empty bucket */
@@ -60,7 +62,9 @@ void            eliBucket_Insert(eliBucket_t *b, eliBucketNode_t *bnode)
 
 /* Auxiliary function -- finds a bucketnode with a key & returns it */
 
-eliBucketNode_t *eliBucket_Find_aux(eliBucket_t *b, char *key)
+eliBucketNode_t *eliBucket_Find_aux(b, key)
+eliBucket_t    *b;
+char           *key;
 {
     eliBucketNode_t *tmp = b->head;
     int             found = FALSE;
@@ -76,7 +80,9 @@ eliBucketNode_t *eliBucket_Find_aux(eliBucket_t *b, char *key)
 
 /* Traverse bucket, find bucketnode with given key, return bucketnode's datum */
 
-EliSexp_t      *eliBucket_Find(eliBucket_t *b, char *key)
+EliSexp_t      *eliBucket_Find(b, key)
+eliBucket_t    *b;
+char           *key;
 {
     eliBucketNode_t *tmp;
 
@@ -87,7 +93,10 @@ EliSexp_t      *eliBucket_Find(eliBucket_t *b, char *key)
  * Delete bucketnode with given key 
  */
 
-void            eliBucket_Delete(EliState_t *st, eliBucket_t *b, char *key)
+void            eliBucket_Delete(st, b, key)
+EliState_t     *st;
+eliBucket_t    *b;
+char           *key;
 {
     eliBucketNode_t *tmp3, *tmp2, *tmp;
 

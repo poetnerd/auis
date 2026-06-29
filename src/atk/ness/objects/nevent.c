@@ -72,8 +72,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ness
 #include <call.h>	/* for callInitAll */
 #include <ness.ih>
 
-#include <stdlib.h>
-#include <stdio.h>
 /* data for functions reporting event parameters */
 static long MouseX = 0;
 static long MouseY = 0;
@@ -92,7 +90,8 @@ extern struct basicobject *ProperPtr();
 extern struct text *FrameMark();
 
 /* This is used to generate a permanent copy of something, hopefully we will want this same string many times, and won't want too many different strings frozen. */
-static char *pfreeze(char *name)
+static char *pfreeze(name)
+char *name;
 {
     struct atom *a=atom_Intern(name);
     return atom_Name(a);
@@ -762,7 +761,10 @@ KeyProcStub(obj, enodeptr)
 }
 
 
-int EventEventStub(struct ness *ness, struct view *obj, struct eventnode *enode)
+EventEventStub(ness, obj, enode)
+	struct ness *ness;
+	struct view *obj;
+	struct eventnode *enode;
 {
 	InterpretEvent(obj, enode);
 }

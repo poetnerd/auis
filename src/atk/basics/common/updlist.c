@@ -38,16 +38,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <updlist.eh>
 #include <view.ih>
 
-#include <stdlib.h>
 static struct updateitem *freeList = NULL;
 
-boolean updatelist__InitializeObject(struct classheader *classID, struct updatelist *self)
+boolean updatelist__InitializeObject(classID, self)
+    struct classheader *classID;
+    struct updatelist *self;
 {
     self->updates = NULL;
     return TRUE;
 }
 
-void updatelist__FinalizeObject(struct classheader *classID, struct updatelist *self)
+void updatelist__FinalizeObject(classID, self)
+    struct classheader *classID;
+    struct updatelist *self;
 {
 
     struct updateitem *item;
@@ -60,7 +63,9 @@ void updatelist__FinalizeObject(struct classheader *classID, struct updatelist *
     }
 }
 
-void updatelist__AddTo(struct updatelist *self, struct view *view)
+void updatelist__AddTo(self, view)
+    struct updatelist *self;
+    struct view *view;
 {
   /* modified to 1) add the view to the end of the list, and 2) remove earlier occurrence of the view from the list */
 
@@ -105,7 +110,9 @@ void updatelist__AddTo(struct updatelist *self, struct view *view)
       last->next = newui;
 }
 
-void updatelist__DeleteTree(struct updatelist *self, struct view *tree)
+void updatelist__DeleteTree(self, tree)
+    struct updatelist *self;
+    struct view *tree;
 {
     struct updateitem *item;
     struct updateitem *next;
@@ -125,7 +132,8 @@ void updatelist__DeleteTree(struct updatelist *self, struct view *tree)
 }
 
 
-void updatelist__Clear(struct updatelist *self)
+void updatelist__Clear(self)
+    struct updatelist *self;
 {
     struct updateitem *item;
     struct updateitem *lastitem = NULL;

@@ -50,8 +50,6 @@ static struct wmgraphic * (wmgraphic_shades[17]) =
 #include <region.ih>
 #include <image.ih>
 
-#include <stdlib.h>
-#include <stdio.h>
 struct wm_saved_state_vector {
     struct wm_saved_state_vector * next_vector;
     struct wm_window * associatedWindow;
@@ -127,7 +125,9 @@ struct wmgraphic * testgraphic; {
     }
 }
 
-void wmgraphic__ClearCache(struct classheader *classID, struct wm_window *wPtr)
+void wmgraphic__ClearCache(classID,wPtr)
+struct classheader *classID;
+struct wm_window * wPtr;
 {
     struct wm_saved_state_vector * tempWP;
 
@@ -151,7 +151,8 @@ void wmgraphic__ClearCache(struct classheader *classID, struct wm_window *wPtr)
 
 static int wm_map[4] = { f_white, f_invert, f_copy, f_black};
 
-static void wmgraphic_LocalSetTransferFunction(struct wmgraphic *self)
+static void wmgraphic_LocalSetTransferFunction(self)
+struct wmgraphic * self;
 {
     /* Set the local transfer function based on the logical
 	function */
@@ -423,7 +424,9 @@ struct fontdesc * ChosenFont;{
 
 }
 
-void wmgraphic__DrawRectSize(struct wmgraphic *self, long x, long y, long width, long height)
+void wmgraphic__DrawRectSize(self,x, y,width,height)
+struct wmgraphic * self;
+long x,y,width,height;
 {
     long curX, curY, curWidth, curHeight;
     long lineWidth, halfWidth, oddLineWidth;
@@ -594,7 +597,10 @@ int WMMode; {
     wmgraphic_LocalSetTransferFunction(self);
 }
 
-void wmgraphic__FillRect(struct wmgraphic *self, struct rectangle *Rect, struct graphic *GTile)
+void wmgraphic__FillRect(self, Rect, GTile)
+struct wmgraphic * self;
+struct rectangle * Rect;
+struct graphic * GTile; 
 {
     struct rectangle Temp;
 
@@ -816,7 +822,9 @@ struct graphic * Tile;{
 }
 
 
-void wmgraphic__FillTrapezoid(struct wmgraphic *self, long topX, long topY, long topWidth, long bottomX, long bottomY, long bottomWidth, struct wmgraphic *Tile)
+void wmgraphic__FillTrapezoid(self,topX, topY, topWidth, bottomX, bottomY, bottomWidth, Tile)
+struct wmgraphic * self, *Tile;
+long topX, topY, topWidth, bottomX, bottomY, bottomWidth;
 {
     if (Tile == NULL) {
         Tile = (self->forePixel == 0) ?
@@ -844,7 +852,12 @@ void wmgraphic__FillTrapezoid(struct wmgraphic *self, long topX, long topY, long
 }
 
 
-void wmgraphic__BitBlt(struct wmgraphic *self, struct rectangle *SrcRect, struct graphic *DstGraphic, struct point *DstOrigin, struct rectangle *ClipRect)
+void wmgraphic__BitBlt(self, SrcRect, DstGraphic, DstOrigin, ClipRect)
+struct wmgraphic * self;
+struct rectangle * SrcRect;
+struct graphic *DstGraphic;
+struct point * DstOrigin;
+struct rectangle * ClipRect;
 {
     ValidateState(self);
 
@@ -945,7 +958,8 @@ wmgraphic__ReadImage(self, SrcX, SrcY, DestImage, DestX, DestY, width, height)
 	printf("wmgraphic: ReadPixImage method is missing\n");
 }
 
-void wmgraphic_LocalSetClippingRect(struct wmgraphic *self)
+void wmgraphic_LocalSetClippingRect(self)
+struct wmgraphic * self;
 {
     struct rectangle Temp;
 
@@ -975,7 +989,8 @@ struct rectangle * AdditionalRect;{
     wmgraphic_LocalSetClippingRect(self);
 }
 
-void wmgraphic__ClearClippingRect(struct wmgraphic *self)
+void wmgraphic__ClearClippingRect(self)
+struct wmgraphic * self;
 {
     /* Machine independent state manipulation */
     super_ClearClippingRect(self);
@@ -996,8 +1011,11 @@ short NewTransferMode;{
 }
 
 
-void wmgraphic__InsertGraphic(struct wmgraphic *self, struct wmgraphic *EnclosingGraphic, struct rectangle *EnclosedRectangle)
-{
+void wmgraphic__InsertGraphic(self, EnclosingGraphic, EnclosedRectangle)
+struct wmgraphic * self;
+struct wmgraphic * EnclosingGraphic;
+struct rectangle * EnclosedRectangle;
+    {
 
     /* do window manager independent stuff */
     super_InsertGraphic(self,EnclosingGraphic,EnclosedRectangle);
@@ -1012,7 +1030,8 @@ void wmgraphic__InsertGraphic(struct wmgraphic *self, struct wmgraphic *Enclosin
 
 static int skiprestore = 1;
 
-void wmgraphic__RestoreGraphicsState(struct wmgraphic *self)
+void wmgraphic__RestoreGraphicsState(self)
+struct wmgraphic * self;
 {
 /* for debuggging */
     if (skiprestore) return;
@@ -1043,7 +1062,8 @@ void wmgraphic__RestoreGraphicsState(struct wmgraphic *self)
 
 }
 
-static void wmgraphic_LocalRestoreGraphicsState(struct wmgraphic *self, struct wmgraphic *oldgPtr)
+static void wmgraphic_LocalRestoreGraphicsState(self,oldgPtr)
+struct wmgraphic * self, * oldgPtr;
 {
 
 /* Restore current font */
@@ -1200,7 +1220,9 @@ struct wmgraphic * self;{
 /*   Predefined procedures */
 /* -------------------------------------------------- */
 
-boolean wmgraphic__InitializeObject(struct classheader *classID, struct wmgraphic *self)
+boolean wmgraphic__InitializeObject(classID,self)
+struct classheader *classID;
+struct wmgraphic *self;
 {
     /* Note: this is very machine dependent */
     self->window /* wm_windowid */ = NULL;

@@ -42,7 +42,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 int debug = 1;
 
-int caller(int (*victim)())
+int caller(victim)
+int (*victim)();
 {
     int i, j;
 
@@ -53,7 +54,8 @@ int caller(int (*victim)())
     return i;
 }
 
-int callee(int k)
+int callee(k)
+int k;
 {
     int n;
 

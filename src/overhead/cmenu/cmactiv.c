@@ -61,7 +61,10 @@ struct activationState {
 /* This function defines all events which are meaningful to the cmenuActivate
  * procedure's event loop.
  */
-static Bool SuitableEvent(Display *display, XEvent *event, char *args)
+static Bool SuitableEvent(display, event, args)
+    Display *display;
+    XEvent *event;
+    char *args; /* Should be void * */
 {
 
     struct activationState *state = (struct activationState *) args;
@@ -84,7 +87,10 @@ static Bool SuitableEvent(Display *display, XEvent *event, char *args)
 /* This function defines all events which should be cleared from the queue
  * when we are done.
  */
-static Bool DiscardableEvents(Display *display, XEvent *event, char *args)
+static Bool DiscardableEvents(display, event, args)
+    Display *display;
+    XEvent *event;
+    char *args; /* Should be void * */
 {
 
     struct activationState *state = (struct activationState *) args;
@@ -105,7 +111,10 @@ static Bool DiscardableEvents(Display *display, XEvent *event, char *args)
 }
 #endif /* ATTEMPTSAVEUNDERS */
 
-static int HandlePress(struct cmenu *menu, XButtonEvent *buttonEvent, struct activationState *state)
+static int HandlePress(menu, buttonEvent, state)
+    struct cmenu *menu;
+    XButtonEvent *buttonEvent;
+    struct activationState *state;
 {
 
     if (buttonEvent->button == state->buttonName) {
@@ -122,7 +131,10 @@ static int HandlePress(struct cmenu *menu, XButtonEvent *buttonEvent, struct act
     return(0);
 }
 
-static void HandleMovement(struct cmenu *menu, XMotionEvent *motionEvent, struct activationState *state)
+static void HandleMovement(menu, motionEvent, state)
+    struct cmenu *menu;
+    XMotionEvent *motionEvent;
+    struct activationState *state;
 {
 
     struct drawingState *drawingState = &state->drawingState;
@@ -200,7 +212,10 @@ static void HandleMovement(struct cmenu *menu, XMotionEvent *motionEvent, struct
     SetSelectionPtrAndNum(drawingState, selectionPtr, selectionNum);
 }
 
-static void EventLoop(struct cmenu *menu, Display *display, struct activationState *state)
+static void EventLoop(menu, display, state)
+    struct cmenu *menu;
+    Display *display;
+    struct activationState *state;
 {
 
     XEvent events[2];

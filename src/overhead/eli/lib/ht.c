@@ -35,7 +35,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 /* Default hashing function */
 
-int             eliHT_Hash(char *key)
+int             eliHT_Hash(key)
+char           *key;
 {
     int             result = 0;
     char           *p = key;
@@ -48,7 +49,8 @@ int             eliHT_Hash(char *key)
 
 /* Initialize a hash table */
 
-void            eliHT_Init(eliHashTable_t *h)
+void            eliHT_Init(h)
+eliHashTable_t *h;
 {
     int             i;
 
@@ -62,7 +64,11 @@ void            eliHT_Init(eliHashTable_t *h)
  * given key 
  */
 
-void            eliHT_Insert(EliState_t *st, eliHashTable_t *h, EliSexp_t *datum, char *key)
+void            eliHT_Insert(st, h, datum, key)
+EliState_t     *st;
+eliHashTable_t *h;
+EliSexp_t      *datum;
+char           *key;
 {
     eliBucketNode_t *tmp;
 
@@ -73,21 +79,29 @@ void            eliHT_Insert(EliState_t *st, eliHashTable_t *h, EliSexp_t *datum
 
 /* Return the datum within the proper bucketnode whose key is key */
 
-EliSexp_t      *eliHT_Find(eliHashTable_t *h, char *key)
+EliSexp_t      *eliHT_Find(h, key)
+eliHashTable_t *h;
+char           *key;
 {
     return (eliBucket_Find(&(h->buckets[(*(h->hash)) (key)]), key));
 }
 
 /* Remove the bucketnode whose key is key */
 
-void            eliHT_Delete(EliState_t *st, eliHashTable_t *h, char *key)
+void            eliHT_Delete(st, h, key)
+EliState_t     *st;
+eliHashTable_t *h;
+char           *key;
 {
     eliBucket_Delete(st, &(h->buckets[(*(h->hash)) (key)]), key);
 }
 
 /* Some may never wish to use this */
 
-void            eliHT_SetHashFn(eliHashTable_t *h, int (*fn)())
+void            eliHT_SetHashFn(h, fn)
+eliHashTable_t *h;
+int             (*fn) ();
+
 {
     h->hash = fn;
 }

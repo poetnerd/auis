@@ -36,7 +36,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exam
 
 #include "hello.eh"
 
-boolean helloworld__InitializeObject(struct classheader *classID, struct helloworld *hw)
+boolean helloworld__InitializeObject(classID,hw)
+struct classheader *classID;
+struct helloworld *hw;   
 {
     hw->x=POSUNDEF;
     hw->y=POSUNDEF;
@@ -44,7 +46,10 @@ boolean helloworld__InitializeObject(struct classheader *classID, struct hellowo
     return TRUE;
 }
 
-long helloworld__Read(struct helloworld *hw, FILE *file, long id)
+long helloworld__Read(hw,file,id)
+struct helloworld *hw;
+FILE *file;
+long id;
 {
     char buf[100];
 
@@ -62,7 +67,11 @@ long helloworld__Read(struct helloworld *hw, FILE *file, long id)
     return dataobject_NOREADERROR;
 }
 
-long helloworld__Write(struct helloworld *hw, FILE *file, long writeId, int level)
+long helloworld__Write(hw,file,writeId,level)
+struct helloworld *hw;
+FILE *file;
+long writeId;
+int level;
 {
     if(writeId!=helloworld_GetWriteID(hw)){ /* only write a given version once */
 	helloworld_SetWriteID(hw,writeId);

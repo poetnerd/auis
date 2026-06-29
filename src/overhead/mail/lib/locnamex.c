@@ -38,8 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include "mail.h"
 
-#include <stdlib.h>
-void la_FreeMD(struct MailDom *MD)
+void la_FreeMD(MD)
+struct MailDom *MD;
 {/* Somebody's about to erase the pointer MD. */
 
     if (MD != NULL && (--(MD->Refs)) == 0) {	/* Keep the reference count */

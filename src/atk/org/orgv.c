@@ -122,7 +122,6 @@ END-SPECIFICATION  ************************************************************/
 #include <treev.ih>
 #include <suite.ih>
 
-#include <stdio.h>
 static  struct menulist		 *class_menulist;
 static  struct keymap		 *class_keymap;
 
@@ -604,7 +603,11 @@ orgv__Hit( self, action, x, y, clicks )
 }
 
 enum view_DSattributes
-int orgv__DesiredSize(register struct orgv *self, register long given_width, register long given_height, register enum view_DSpass pass, register long *desired_width, register long *desired_height)
+orgv__DesiredSize( self, given_width, given_height, pass, desired_width, desired_height )
+  register struct orgv	    *self;
+  register long		     given_width, given_height;
+  register enum view_DSpass  pass;
+  register long		    *desired_width, *desired_height;
 {
   register enum view_DSattributes result = view_WidthFlexible | view_HeightFlexible;
   IN(orgv_DesiredSize);

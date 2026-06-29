@@ -207,7 +207,11 @@ pcx__Load( pcx, fullname, fp )
 **	Returns no value (void function)
 */
 
-static void PCX_LoadImage(FILE *f, int bytes_per_row, struct pcx *pcx, int rows)
+static void PCX_LoadImage (f,bytes_per_row,pcx,rows)
+    FILE *f;
+    int bytes_per_row;
+    struct pcx *pcx;
+    int rows;
 {
 /* Goes like this: Read a byte.  If the two high bits are set,
  ** then the low 6 bits contain a repeat count, and the byte to

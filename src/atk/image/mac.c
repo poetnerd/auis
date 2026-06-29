@@ -73,7 +73,6 @@ static char *MRMCopyright = "Copyright 1990 Mark Majhor";
 #include <mac.h>
 #include <mac.eh>
 
-#include <stdlib.h>
 /****
  **
  ** local variables
@@ -102,7 +101,8 @@ static int  macin_img_BPL;	       /* image bytes per line */
  * successful. (might also return various MACIN_ERR codes.)
  */
 /* ARGSUSED */
-static int macin_open_image(FILE *s)
+static int macin_open_image(s)
+FILE *s;
 {
   BYTE mhdr[MAC_HDR_LEN];
   char *hp;		/* header pointer */
@@ -173,7 +173,8 @@ static int macin_close_file()
  * semi-graceful fatal error mechanism
  */
 
-static macin_fatal(char *msg)
+static macin_fatal(msg)
+     char *msg;
 {
   printf("Error reading MacPaint file: %s\n", msg);
   exit(0);
@@ -189,7 +190,8 @@ static macin_fatal(char *msg)
  * descriptive but I don't care
  */
 
-static void tellAboutImage(char *name)
+static void tellAboutImage(name)
+char *name;
 {
   printf("%s is a %dx%d MacPaint image\n",
     name, macin_img_width, macin_img_height);

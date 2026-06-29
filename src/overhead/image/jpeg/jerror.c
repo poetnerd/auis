@@ -21,7 +21,6 @@
  */
 
 #include "jinclude.h"
-#include <stdio.h>
 #ifdef INCLUDES_ARE_ANSI
 #include <stdlib.h>		/* to declare exit() */
 #endif

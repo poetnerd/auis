@@ -66,14 +66,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cont
 #if defined (sys_rt_r3) || defined (sys_rt_aos4)
 
 #include  <machineio/speakerio.h>
-#include <stdio.h>
 #endif /* defined (sys_rt_r3) || defined (sys_rt_aos4) */
 struct nh {
     char *note;
     float freq;
 };
 float arr[61];
-int setbl(struct spk_blk *b, float freq)
+setbl(b,freq)
+struct spk_blk *b;
+float freq;
 {
 #if defined (sys_rt_r3) || defined (sys_rt_aos4)
     if (freq < 23) {
@@ -107,7 +108,9 @@ int setbl(struct spk_blk *b, float freq)
 #endif /* defined (sys_rt_r3) || defined (sys_rt_aos4) */
 }
 static int sp = 0;
-int play(char *buf, int Speed)
+play(buf,Speed)
+char *buf;
+int Speed;
 {
 #if defined (sys_rt_r3) || defined (sys_rt_aos4)
     char *note;
@@ -139,7 +142,8 @@ char *names[] = { "","C","C#","D","D#","E","F","F#","G","G#","A","A#","B","C" };
 /* user code ends here for includes */
 
 static struct pcontrol *firstpcontrol;
-static struct pcontrol *FindSelf(struct view *v)
+static struct pcontrol *FindSelf(v)
+struct view *v;
 {
 	struct pcontrol *self,*last = NULL;
 	for(self= firstpcontrol; self != NULL; self = self->next){
@@ -152,7 +156,10 @@ static struct pcontrol *FindSelf(struct view *v)
 	else last->next = self;
 	return self;
 }
-static void replayCallBack(struct pcontrol *self, struct value *val, long r1, long r2)
+static void replayCallBack(self,val,r1,r2)
+struct pcontrol *self;
+struct value *val;
+long r1,r2;
 {
 /* user code begins here for replayCallBack */
     char buf[256],*cp;
@@ -172,7 +179,10 @@ static void replayCallBack(struct pcontrol *self, struct value *val, long r1, lo
     closespk();
 /* user code ends here for replayCallBack */
 }
-static void kbCallBack(struct pcontrol *self, struct value *val, long r1, long r2)
+static void kbCallBack(self,val,r1,r2)
+struct pcontrol *self;
+struct value *val;
+long r1,r2;
 {
 /* user code begins here for kbCallBack */
     char buf[64];
@@ -200,24 +210,36 @@ static void kbCallBack(struct pcontrol *self, struct value *val, long r1, long r
     closespk();
 /* user code ends here for kbCallBack */
 }
-static void volumeCallBack(struct pcontrol *self, struct value *val, long r1, long r2)
+static void volumeCallBack(self,val,r1,r2)
+struct pcontrol *self;
+struct value *val;
+long r1,r2;
 {
 /* user code begins here for volumeCallBack */
 /* user code ends here for volumeCallBack */
 }
-static void clearCallBack(struct pcontrol *self, struct value *val, long r1, long r2)
+static void clearCallBack(self,val,r1,r2)
+struct pcontrol *self;
+struct value *val;
+long r1,r2;
 {
 /* user code begins here for clearCallBack */
     text_Clear(self->score);
     text_NotifyObservers(self->score,0);
 /* user code ends here for clearCallBack */
 }
-static void modeCallBack(struct pcontrol *self, struct value *val, long r1, long r2)
+static void modeCallBack(self,val,r1,r2)
+struct pcontrol *self;
+struct value *val;
+long r1,r2;
 {
 /* user code begins here for modeCallBack */
 /* user code ends here for modeCallBack */
 }
-static void ntCallBack(struct pcontrol *self, struct value *val, long r1, long r2)
+static void ntCallBack(self,val,r1,r2)
+struct pcontrol *self;
+struct value *val;
+long r1,r2;
 {
 /* user code begins here for ntCallBack */
     static int len[] = { 96,64,50,32,24,16,12,8,6,4,3,2};
@@ -228,12 +250,18 @@ static void ntCallBack(struct pcontrol *self, struct value *val, long r1, long r
     value_SetString(self->noteout,s);
 /* user code ends here for ntCallBack */
 }
-static void speedCallBack(struct pcontrol *self, struct value *val, long r1, long r2)
+static void speedCallBack(self,val,r1,r2)
+struct pcontrol *self;
+struct value *val;
+long r1,r2;
 {
 /* user code begins here for speedCallBack */
 /* user code ends here for speedCallBack */
 }
-static void ReadCallBack(struct pcontrol *self, struct value *val, long r1, long r2)
+static void ReadCallBack(self,val,r1,r2)
+struct pcontrol *self;
+struct value *val;
+long r1,r2;
 {
 /* user code begins here for ReadCallBack */
 
@@ -255,12 +283,18 @@ static void ReadCallBack(struct pcontrol *self, struct value *val, long r1, long
     }
 /* user code ends here for ReadCallBack */
 }
-static void noteoutCallBack(struct pcontrol *self, struct value *val, long r1, long r2)
+static void noteoutCallBack(self,val,r1,r2)
+struct pcontrol *self;
+struct value *val;
+long r1,r2;
 {
 /* user code begins here for noteoutCallBack */
 /* user code ends here for noteoutCallBack */
 }
-static void undoCallBack(struct pcontrol *self, struct value *val, long r1, long r2)
+static void undoCallBack(self,val,r1,r2)
+struct pcontrol *self;
+struct value *val;
+long r1,r2;
 {
 /* user code begins here for undoCallBack */
     int i;
@@ -275,7 +309,10 @@ static void undoCallBack(struct pcontrol *self, struct value *val, long r1, long
     }
 /* user code ends here for undoCallBack */
 }
-static void restCallBack(struct pcontrol *self, struct value *val, long r1, long r2)
+static void restCallBack(self,val,r1,r2)
+struct pcontrol *self;
+struct value *val;
+long r1,r2;
 {
 /* user code begins here for restCallBack */
     char buf[64];
@@ -290,7 +327,10 @@ static void restCallBack(struct pcontrol *self, struct value *val, long r1, long
     }
 /* user code ends here for restCallBack */
 }
-static void SaveCallBack(struct pcontrol *self, struct value *val, long r1, long r2)
+static void SaveCallBack(self,val,r1,r2)
+struct pcontrol *self;
+struct value *val;
+long r1,r2;
 {
 /* user code begins here for SaveCallBack */
 
@@ -311,7 +351,9 @@ static void SaveCallBack(struct pcontrol *self, struct value *val, long r1, long
     }
 /* user code ends here for SaveCallBack */
 }
-static initself(struct pcontrol *self, struct view *v)
+static initself(self,v)
+struct pcontrol *self;
+struct view *v;
 {
 	self->v = v;
 	self->kb_2View = (struct pianoV *)arbiterview_GetNamedView(v,"kb-2");
@@ -399,7 +441,9 @@ static initself(struct pcontrol *self, struct view *v)
 	self->kb_1 = (struct value *)arbiterview_GetNamedObject(v,"kb-1");
 	if(self->kb_1) value_AddCallBackObserver(self->kb_1, self,kbCallBack,1);
 }
-int pcontrol_start(struct view *v, long dat)
+pcontrol_start(v,dat)
+struct view *v;
+ long dat;
 {
 struct pcontrol *self;
 if((self = FindSelf(v)) == NULL) return;
@@ -408,7 +452,8 @@ arbiterview_SetIgnoreUpdates(v, TRUE);
 self->duration = (struct value *)arbiterview_GetNamedObject(v,"duration");
 /* user code ends here for pcontrol_start */
 }
-boolean pcontrol__InitializeClass(struct classheader *ClassID)
+boolean pcontrol__InitializeClass(ClassID)
+struct classheader *ClassID;
 {
 struct classinfo *viewtype = class_Load("view");
 firstpcontrol = NULL;
@@ -436,7 +481,9 @@ proctable_DefineProc("pcontrol-start",pcontrol_start, viewtype,NULL,"pcontrol st
 return TRUE;
 #endif /* defined (sys_rt_r3) || defined (sys_rt_aos4) */
 }
-boolean pcontrol__InitializeObject(struct classheader *ClassID, struct pcontrol *self)
+boolean pcontrol__InitializeObject(ClassID,self)
+struct classheader *ClassID;
+struct pcontrol *self;
 {
 self->kb_2 = NULL;
 self->kb_2View = NULL;

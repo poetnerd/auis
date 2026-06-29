@@ -14,7 +14,8 @@ static char *rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tex
 #include <class.h>
 #include <bp.eh>
 
-char *bp__ViewName(struct bp *self)
+char *bp__ViewName(self)
+struct bp *self;
 {
     return "bpv";
 }

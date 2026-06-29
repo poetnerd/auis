@@ -61,7 +61,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <mapping.h>
 
 
-#include <stdlib.h>
 /* 
  * various constants and other twiddle-able
  * values.
@@ -106,7 +105,9 @@ static struct MapEntryStruct * KeyEntryRoots[HASHENTRIES];
  ** keep names that start the same way from hashing to
  ** same value.
  **/
-static int HashName(char *name)
+static int HashName(name)
+char * name;
+
 {
 char * p;
 unsigned int result;

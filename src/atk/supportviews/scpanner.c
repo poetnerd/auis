@@ -56,18 +56,25 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <scpanner.eh>
 #include <panner.ih>
 
-boolean scrollandpanner__InitializeObject(struct classheader *classID, struct scrollandpanner *self)
+boolean scrollandpanner__InitializeObject(classID, self)
+struct classheader *classID;
+struct scrollandpanner *self;
 {
     self->panner = panner_New();
     return TRUE;
 }
 
-void scrollandpanner__FinalizeObject(struct classheader *classID, struct scrollandpanner *self)
+void scrollandpanner__FinalizeObject(classID, self)
+struct classheader *classID;
+struct scrollandpanner *self;
 {
     panner_Destroy(self->panner);
 }
 
-struct scrollandpanner *scrollandpanner__Create(struct classheader *classID, struct view *scrollee, int location)
+struct scrollandpanner *scrollandpanner__Create(classID, scrollee, location)
+struct classheader *classID;
+struct view *scrollee;
+int location;
 {
     struct scrollandpanner *retval=NULL;
 
@@ -80,19 +87,24 @@ struct scrollandpanner *scrollandpanner__Create(struct classheader *classID, str
     return retval;
 }
 
-void scrollandpanner__SetScrollee(struct scrollandpanner *self, struct view *scrollee)
+void scrollandpanner__SetScrollee(self, scrollee)
+struct scrollandpanner *self;
+struct view *scrollee;
 {
     super_SetScrollee(self, scrollee);
     panner_SetScrollee(self->panner, scrollee);
 }
 
-void scrollandpanner__SetChild(struct scrollandpanner *self, struct view *child)
+void scrollandpanner__SetChild(self, child)
+struct scrollandpanner *self;
+struct view *child;
 {
     panner_SetChild(self->panner, child);
     super_SetChild(self, self->panner);
 }
 
-struct view *scrollandpanner__GetChild(struct scrollandpanner *self)
+struct view *scrollandpanner__GetChild(self)
+struct scrollandpanner *self;
 {
     return panner_GetChild(self->panner);
 }

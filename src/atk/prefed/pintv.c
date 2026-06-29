@@ -61,8 +61,6 @@ static char *pintv_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3
 
 #include <phelpv.ih>
 
-#include <stdlib.h>
-#include <stdio.h>
 #define TEXT_VIEWREFCHAR '\377'
 
 #define SAVESTR(str) (str?strcache_SaveStr(str):NULL)
@@ -77,7 +75,8 @@ static struct sbutton_list blist[]={
     {NULL, 0, NULL, FALSE}
 };
 
-static struct labelview *MakeLabel(char *str)
+static struct labelview *MakeLabel(str)
+char *str;
 {
     struct label *l=label_New();
     struct labelview *lv=labelview_New();
@@ -99,7 +98,8 @@ static struct labelview *MakeLabel(char *str)
     return lv;
 }
 
-static void DestroyLabel(struct labelview *lv)
+static void DestroyLabel(lv)
+struct labelview *lv;
 {
     struct label *l=(struct label *)labelview_GetDataObject(lv);
     label_Destroy(l);
@@ -128,7 +128,9 @@ static struct textview *MakeText()
     return tv;
 }
 
-static void DestroyText(struct textview *tv, struct view *tva)
+static void DestroyText(tv, tva)
+struct textview *tv;
+struct view *tva;
 {
     struct text *t=TEXT(tv);
     textview_DeleteApplicationLayer(tv, tva);
@@ -136,7 +138,8 @@ static void DestroyText(struct textview *tv, struct view *tva)
     textview_Destroy(tv);
 }
 
-static void DestroyButtons(struct sbuttonv *sbv)
+static void DestroyButtons(sbv)
+struct sbuttonv *sbv;
 {
     struct sbutton *sb=(struct sbutton *)sbuttonv_GetDataObject(sbv);
     sbutton_Destroy(sb);
@@ -148,7 +151,9 @@ static char *currlabp=NULL;
 
 extern void pintv_EditAsText();
 
-boolean pintv__InitializeObject(struct classheader *classID, struct pintv *self)
+boolean pintv__InitializeObject(classID, self)
+struct classheader *classID;
+struct pintv *self;
 {
     struct sbutton_prefs *prefs=sbutton_GetNewPrefs("PrefEdButtons");
     struct sbutton *sb;
@@ -223,12 +228,14 @@ boolean pintv__InitializeObject(struct classheader *classID, struct pintv *self)
     return TRUE;
 }
 
-static void DestroyLpair(struct lpair *lp)
+static void DestroyLpair(lp)
+struct lpair *lp;
 {
     lpair_Destroy(lp);
 }
 
-static void ClearLpair(struct lpair *lp)
+static void ClearLpair(lp)
+struct lpair *lp;
 {
     lpair_SetNth(lp, 0, NULL);
     lpair_SetNth(lp, 1, NULL);
@@ -239,7 +246,10 @@ static void ClearCPref();
 static void UpdateCPref();
 static struct environment *SelectLine();
 
-void pintv__ObservedChanged(struct pintv *self, struct observable *changed, long value)
+void pintv__ObservedChanged(self, changed, value)
+struct pintv *self;
+struct observable *changed;
+long value;
 {
     if((struct observable *)self->errors==changed && value==-1) self->errors=NULL;
     if((struct observable *)PREFS(self)==changed && value!=(-1) && !PREFS(self)->selfmod) {
@@ -255,7 +265,9 @@ void pintv__ObservedChanged(struct pintv *self, struct observable *changed, long
     super_ObservedChanged(self, changed, value);
 }
 
-void pintv__FinalizeObject(struct classheader *classID, struct pintv *self)
+void pintv__FinalizeObject(classID, self)
+struct classheader *classID;
+struct pintv *self;
 {
     if(self->errors) text_RemoveObserver(self->errors, self);
     ClearLpair((struct lpair *)self);
@@ -288,12 +300,16 @@ void pintv__FinalizeObject(struct classheader *classID, struct pintv *self)
     if(self->helpv) phelpv_Destroy(self->helpv);
 }
 
-boolean pintv__InitializeClass(struct classheader *classID)
+boolean pintv__InitializeClass(classID)
+struct classheader *classID;
 {
     return TRUE;
 }
 
-void pintv__FullUpdate(struct pintv *self, enum view_UpdateType type, long left, long top, long width, long height)
+void pintv__FullUpdate(self, type, left, top, width, height)
+struct pintv *self;
+enum view_UpdateType type;
+long left, top, width, height;
 {
     struct rectangle bounds;
     pintv_GetVisualBounds(self, &bounds);
@@ -315,7 +331,10 @@ void pintv__FullUpdate(struct pintv *self, enum view_UpdateType type, long left,
     super_FullUpdate(self, type, left, top, width, height);
 }
 
-static struct environment *SelectLine(struct textview *tv, struct environment *oldsel, boolean donew)
+static struct environment *SelectLine(tv, oldsel, donew)
+struct textview *tv;
+struct environment *oldsel;
+boolean donew;
 {
     struct text *t=TEXT(tv);
     long line=text_GetLineForPos(t, textview_GetDotPosition(tv));
@@ -349,7 +368,11 @@ struct addrock {
     struct prefdesc *cpd;
 };
 
-static struct environment *AddView(struct text *self, long pos, char *viewtype, struct dataobject *dataobject)
+static struct environment *AddView(self, pos, viewtype, dataobject)
+struct text *self;
+long pos;
+char *viewtype;
+struct dataobject *dataobject;
 {
     struct environment *newenv=text_AlwaysWrapViewChar(self, pos, viewtype, dataobject);
   /* yes, this looks weird, but the viewref takes ownership of the object.... so all this does is decrement the reference count the code which adds prefvals to the queue grabs an extra reference so that this destroy won't remove the prefs ownership of the prefval */
@@ -357,7 +380,11 @@ static struct environment *AddView(struct text *self, long pos, char *viewtype, 
     return newenv;
 }
 
-static struct viewref *InsertObject(struct text *self, long pos, char *name, char *viewname)
+static struct viewref *InsertObject(self, pos, name, viewname)
+struct text *self;
+long pos;
+char *name;
+char *viewname;
 {
     struct dataobject *newobject;
     struct environment *env;
@@ -374,7 +401,10 @@ static struct viewref *InsertObject(struct text *self, long pos, char *name, cha
     return NULL;
 }
 
-static struct environment *AddStyle(struct text *self, long pos, long len, struct style *style)
+static struct environment *AddStyle(self, pos, len, style)
+struct text *self;
+long pos, len;
+struct style *style;
 {
     struct environment *newenv;
     newenv = environment_InsertStyle(self->rootEnvironment, pos, style, TRUE);
@@ -394,7 +424,8 @@ static struct dstyle {
     struct dstyle *next;
 } *firststyle=NULL, *freedstyle=NULL;
 
-static struct dstyle *GetDStyle(struct text *pt)
+static struct dstyle *GetDStyle(pt)
+struct text *pt;
 {
     struct dstyle *result;
     if(freedstyle) {
@@ -409,7 +440,10 @@ static struct dstyle *GetDStyle(struct text *pt)
     return result;
 }
 
-static void PushStyle(struct text *pt, long pos, long len, struct style *style)
+static void PushStyle(pt, pos, len, style)
+struct text *pt;
+struct style *style;
+long pos, len;
 {
     struct dstyle *n=GetDStyle(pt);
     if(n==NULL) return;
@@ -422,7 +456,11 @@ static void PushStyle(struct text *pt, long pos, long len, struct style *style)
 }
 
 static char viewrefchar='\377';
-static void PushView(struct text *pt, long pos, char *view, struct dataobject *data)
+static void PushView(pt, pos, view, data)
+struct text *pt;
+struct dataobject *data;
+char *view;
+long pos;
 {
     struct dstyle *n=GetDStyle(pt);
     if(n==NULL) return;
@@ -434,7 +472,11 @@ static void PushView(struct text *pt, long pos, char *view, struct dataobject *d
     n->pd=NULL;
 }
 
-static void PushObject(struct text *pt, long pos, char *objname, char *dummy)
+static void PushObject(pt, pos, objname, dummy)
+struct text *pt;
+char *objname;
+long pos;
+char *dummy;
 {
     struct dstyle *n=GetDStyle(pt);
     if(n==NULL) return;
@@ -446,7 +488,10 @@ static void PushObject(struct text *pt, long pos, char *objname, char *dummy)
     n->pd=NULL;
 }
 
-static void PushMark(struct text *pt, struct prefdesc *pd, long pos, long len)
+static void PushMark(pt, pd, pos, len)
+struct text *pt;
+struct prefdesc *pd;
+long pos, len;
 {
     struct dstyle *n=GetDStyle(pt);
     if(n==NULL) return;
@@ -459,7 +504,8 @@ static void PushMark(struct text *pt, struct prefdesc *pd, long pos, long len)
     n->view=NULL;
 }
 
-static void DoStyles(struct pintv *self)
+static void DoStyles(self)
+struct pintv *self;
 {
     struct dstyle *d=firststyle, *next;
     while(d) {
@@ -488,7 +534,11 @@ static void DoStyles(struct pintv *self)
     firststyle=NULL;
 }
 
-static long AddVal(struct text *ct, int pos, char *label, char *val, boolean bolditalic)
+static long AddVal(ct, pos, label, val, bolditalic)
+struct text *ct;
+char *label;
+char *val;
+boolean bolditalic;
 {
     struct stylesheet *ss=text_GetStyleSheet(ct);
     struct style *bold=stylesheet_Find(ss, bolditalic?"bold":"italic");
@@ -508,7 +558,9 @@ static long AddVal(struct text *ct, int pos, char *label, char *val, boolean bol
     return pos+len+1;
 }
 
-static boolean AddViews(char *name, struct addrock *rock)
+static boolean AddViews(name, rock)
+char *name;
+struct addrock *rock;
 {
     struct prefdesc *pd=rock->cpd;
     struct text *ct=TEXT(rock->self->cpref);
@@ -523,7 +575,9 @@ static boolean AddViews(char *name, struct addrock *rock)
     return TRUE;
 }
 
-static boolean AddCommentLines(char *line, struct addrock *rock)
+static boolean AddCommentLines(line, rock)
+char *line;
+struct addrock *rock;
 {
     int len=strlen(line);
     struct text *pt=TEXT(rock->self->cpref);
@@ -629,7 +683,9 @@ static char *choices[]={
 };
 
 
-static boolean getcondition(struct pintv *self, char **current)
+static boolean getcondition(self, current)
+struct pintv *self;
+char **current;
 {
     long result;
     int num=0;
@@ -735,7 +791,9 @@ struct uniqrock {
 };
 
 
-static boolean checkuniq(struct prefdesc *pd, struct uniqrock *ur)
+static boolean checkuniq(pd, ur)
+struct prefdesc *pd;
+struct uniqrock *ur;
 {
     if(strcmp(pd->name, ur->prefname)==0 && strcmp(pd->app, ur->appname)==0 && ((pd->cond==ur->cond) || (pd->cond && ur->cond && strcmp(pd->cond, ur->cond)==0))) return FALSE;
     return TRUE;
@@ -744,7 +802,9 @@ static boolean checkuniq(struct prefdesc *pd, struct uniqrock *ur)
 
 static boolean AddInstances();
 
-static void FixPref(struct pintv *self, struct prefdesc *pd)
+static void FixPref(self, pd)
+struct pintv *self;
+struct prefdesc *pd;
 {
     struct stylesheet *ss;
     struct addrock rock;
@@ -771,7 +831,10 @@ static void FixPref(struct pintv *self, struct prefdesc *pd)
     text_NotifyObservers(TEXT(self->cpref), observable_OBJECTCHANGED);
 }
 
-static void AddPref(struct pintv *self, struct prefdesc *pd, struct prefdesc *pd2)
+static void AddPref(self, pd, pd2)
+struct pintv *self;
+struct prefdesc *pd;
+struct prefdesc *pd2;
 {
     struct stylesheet *ss;
     struct addrock rock;
@@ -796,7 +859,10 @@ static void AddPref(struct pintv *self, struct prefdesc *pd, struct prefdesc *pd
     text_NotifyObservers(TEXT(self->cpref), observable_OBJECTCHANGED);
 }
 
-static void changecondition(struct pintv *self, struct sbutton *sb, struct prefdesc *pd)
+static void changecondition(self, sb, pd)
+struct pintv *self;
+struct sbutton *sb;
+struct prefdesc *pd;
 {
     struct uniqrock ur;
     char *newcond=pd->cond;
@@ -821,7 +887,10 @@ static void changecondition(struct pintv *self, struct sbutton *sb, struct prefd
     message_DisplayString(self, 0, "Condition changed.");
 }
 
-static void duplicate(struct pintv *self, struct sbutton *sb, struct prefdesc *pd)
+static void duplicate(self, sb, pd)
+struct pintv *self;
+struct sbutton *sb;
+struct prefdesc *pd;
 {
     struct uniqrock ur;
     struct prefs *prefs=PREFS(self);
@@ -852,7 +921,10 @@ static void duplicate(struct pintv *self, struct sbutton *sb, struct prefdesc *p
     message_DisplayString(self, 0, "Preference duplicated.");
 }
 
-static void changeapp(struct pintv *self, struct sbutton *sb, struct prefdesc *pd)
+static void changeapp(self, sb, pd)
+struct pintv *self;
+struct sbutton *sb;
+struct prefdesc *pd;
 {
     struct uniqrock ur;
     char buf[1024];
@@ -878,7 +950,10 @@ static void changeapp(struct pintv *self, struct sbutton *sb, struct prefdesc *p
 }
 
 
-static void delete(struct pintv *self, struct sbutton *sb, struct prefdesc *pd)
+static void delete(self, sb, pd)
+struct pintv *self;
+struct sbutton *sb;
+struct prefdesc *pd;
 {
     long dotpos=textview_GetDotPosition(self->preferences);
     long toppos=textview_GetTopPosition(self->preferences);
@@ -913,7 +988,10 @@ static void delete(struct pintv *self, struct sbutton *sb, struct prefdesc *pd)
     message_DisplayString(self, 0, "Preference deleted.");
 }
 
-static void reset(struct pintv *self, struct sbutton *sb, struct prefdesc *pd)
+static void reset(self, sb, pd)
+struct pintv *self;
+struct sbutton *sb;
+struct prefdesc *pd;
 {
     if(pd->indefs) {
 	prefs_DeletePref(PREFS(self), pd);
@@ -930,7 +1008,9 @@ static void reset(struct pintv *self, struct sbutton *sb, struct prefdesc *pd)
 }
 
 
-static void SetHelp(struct pintv *self, struct prefdesc *pd)
+static void SetHelp(self, pd)
+struct pintv *self;
+struct prefdesc *pd;
 {
     if(pd->helppos>=0 && self->helpv) {
 	phelpv_SetTopPosition(self->helpv, pd->helppos);
@@ -945,7 +1025,9 @@ static void SetHelp(struct pintv *self, struct prefdesc *pd)
 
 static boolean sethelp=FALSE;
 
-static boolean AddInstances(struct prefdesc *pd, struct addrock *rock)
+static boolean AddInstances(pd, rock)
+struct addrock *rock;
+struct prefdesc *pd;
 {
     struct pintv *self=rock->self;
 
@@ -1057,7 +1139,9 @@ static boolean AddInstances(struct prefdesc *pd, struct addrock *rock)
     return TRUE;
 }
 
-static boolean AddPreferences(struct prefdesc *pd, struct pintv *self)
+static boolean AddPreferences(pd, self)
+struct prefdesc *pd;
+struct pintv *self;
 {
     char *name=pd->name;
     struct text *pt=TEXT(self->preferences);
@@ -1066,12 +1150,15 @@ static boolean AddPreferences(struct prefdesc *pd, struct pintv *self)
     return TRUE;
 }
 
-static boolean CheckPrefName(struct prefdesc *name1, struct prefdesc *name2)
+static boolean CheckPrefName(name1, name2)
+struct prefdesc *name1, *name2;
 {
     return !RFOLDEDEQ(name1->name, name2->name);
 }
 
-static boolean AddPreferencesToList(struct prefdesc *pd, struct pintv *self)
+static boolean AddPreferencesToList(pd, self)
+struct pintv *self;
+struct prefdesc *pd;
 {
     if(INCLUDE(self, pd, TRUE) && !pd->shadow) {
 	if(list_Enumerate(self->prefslist, CheckPrefName, pd)) return TRUE;
@@ -1080,7 +1167,9 @@ static boolean AddPreferencesToList(struct prefdesc *pd, struct pintv *self)
     return TRUE;
 }
 
-static boolean RemoveMarks(struct prefdesc *pd, struct addrock *rock)
+static boolean RemoveMarks(pd, rock)
+struct prefdesc *pd;
+struct addrock *rock;
 {
     struct pintv *self=rock->self;
     if(pd->mark) {
@@ -1091,13 +1180,15 @@ static boolean RemoveMarks(struct prefdesc *pd, struct addrock *rock)
     return TRUE;
 }
 
-static int mycmp(struct prefdesc *n1, struct prefdesc *n2)
+static int mycmp(n1, n2)
+struct prefdesc *n1, *n2;
 {
     int result=ULstrcmp(n1->name, n2->name);
     return result;
 }
 
-static void UpdatePrefs(struct pintv *self)
+static void UpdatePrefs(self)
+struct pintv *self;
 {
 
     self->pref_sel=NULL;
@@ -1113,7 +1204,8 @@ static void UpdatePrefs(struct pintv *self)
     text_NotifyObservers(TEXT(self->preferences), 0);
 }
 
-static void ClearCPref(struct pintv *self)
+static void ClearCPref(self)
+struct pintv *self;
 {
     struct text *ct=TEXT(self->cpref);
   /*  struct environment *rt;
@@ -1132,7 +1224,8 @@ static void ClearCPref(struct pintv *self)
     textview_SetDataObject(self->cpref, ct);
 }
 
-static void UpdateCPref(struct pintv *self)
+static void UpdateCPref(self)
+struct pintv *self;
 {
     struct text *ct=TEXT(self->cpref);
     struct stylesheet *ss;
@@ -1169,13 +1262,16 @@ static void UpdateCPref(struct pintv *self)
 }
 
 
-static boolean LocatePref(struct prefdesc *pd, struct pintv *self)
+static boolean LocatePref(pd, self)
+struct prefdesc *pd;
+struct pintv *self;
 {
     if(INCLUDE(self, pd, FALSE)) return FALSE;
     else return TRUE;
 }
 
-static void MoveCPref(struct pintv *self)
+static void MoveCPref(self)
+struct pintv *self;
 {
     struct prefdesc *pd=(struct prefdesc *)list_Enumerate(PREFS(self)->prefs, LocatePref, self);
     if(pd && pd->mark && mark_GetPos(pd->mark)>=0) {
@@ -1190,7 +1286,9 @@ static void MoveCPref(struct pintv *self)
     }
 }
 
-static boolean FindNewHelp(struct prefdesc *pd, struct pintv *self)
+static boolean FindNewHelp(pd, self)
+struct pintv *self;
+struct prefdesc *pd;
 {
     long pos=textview_GetDotPosition(self->cpref);
     if(pd->mark && pos >= mark_GetPos(pd->mark) && pos<=mark_GetEndPos(pd->mark)) {
@@ -1200,7 +1298,8 @@ static boolean FindNewHelp(struct prefdesc *pd, struct pintv *self)
     return TRUE;
 }
 
-static void ReProcess(struct pintv *self)
+static void ReProcess(self)
+struct pintv *self;
 {
     message_DisplayString(self, 0, "Processing changes from text.");
     prefs_ReScan(PREFS(self));
@@ -1210,7 +1309,12 @@ static void ReProcess(struct pintv *self)
     self->lockdown=FALSE;
 }
 
-struct view *pintv__Hit(struct pintv *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
+struct view *pintv__Hit(self, action, x, y, numberOfClicks)
+struct pintv *self;
+enum view_MouseAction action;
+long x;
+long y;
+long numberOfClicks;
 {
     char buf[1024];
     struct view *result;
@@ -1241,7 +1345,9 @@ struct view *pintv__Hit(struct pintv *self, enum view_MouseAction action, long x
     return result;
 }
 
-static boolean VerifyPrefSanity(struct prefdesc *pd2, struct pintv *self)
+static boolean VerifyPrefSanity(pd2, self)
+struct prefdesc *pd2;
+struct pintv *self;
 {
     struct prefdesc *pd=self->cpd;
     if(RFOLDEDEQ(pd2->name, pd->name) && pd2->order>pd->order) {
@@ -1263,7 +1369,9 @@ static boolean VerifyPrefSanity(struct prefdesc *pd2, struct pintv *self)
    return TRUE;
 }
 
-static boolean CheckSanity(struct prefdesc *pd, struct pintv *self)
+static boolean CheckSanity(pd, self)
+struct prefdesc *pd;
+struct pintv *self;
 {
     if(pd->order>=0 && (pd->app==NULL || pd->app[0]=='\0' || (pd->app[0]=='*' && pd->app[1]=='\0'))) {
 	long pos=self->errors ? text_GetLength(self->errors) : 0;
@@ -1278,7 +1386,9 @@ static boolean CheckSanity(struct prefdesc *pd, struct pintv *self)
     return TRUE;
 }
 
-static boolean AddCategories(struct prefgroup *pg, struct pintv *self)
+static boolean AddCategories(pg, self)
+struct pintv *self;
+struct prefgroup *pg;
 {
     struct text *cat=TEXT(self->categories);
     text_AlwaysInsertCharacters(cat, text_GetLength(cat), pg->name, strlen(pg->name));
@@ -1288,7 +1398,9 @@ static boolean AddCategories(struct prefgroup *pg, struct pintv *self)
 
 extern struct event *pintv_GetKeepEvent(), *pintv_GetReportEvent();
 
-void pintv__SetDataObject(struct pintv *self, struct dataobject *d)
+void pintv__SetDataObject(self, d)
+struct pintv *self;
+struct dataobject *d;
 {
     struct prefs *prefs=(struct prefs *)d;
     struct prefdesc *pd;
@@ -1335,12 +1447,16 @@ void pintv__SetDataObject(struct pintv *self, struct dataobject *d)
     else ClearCPref(self);
 }
 
-void pintv__WantInputFocus(struct pintv *self, struct view *requestor)
+void pintv__WantInputFocus(self, requestor)
+struct pintv *self;
+struct view *requestor;
 {
     super_WantInputFocus(self, requestor);
 }
 
-void pintv__WantUpdate(struct pintv *self, struct view *requestor)
+void pintv__WantUpdate(self, requestor)
+struct pintv *self;
+struct view *requestor;
 {
     if((requestor==(struct view *)self->cpref || requestor==(struct view *)self->cpref_al)) {
 	list_Enumerate(PREFS(self)->prefs, FindNewHelp, self);

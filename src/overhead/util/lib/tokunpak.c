@@ -56,16 +56,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #define KEYSIZE	(sizeof(auth_EncryptionKey))
 #include <errno.h>
 #include <ctype.h>
-#include <stdlib.h>
 #define MAXPackedTicket_Len (11*sizeof(unsigned long) + sizeof(struct ktc_encryptionKey) + MAXKTCTICKETLEN + (2 * sizeof(struct ktc_principal)) + 8*sizeof(unsigned long))
 #endif /* AFS_ENV */
 
 #define NIL 0
+extern int errno;
 #ifndef _IBMR2
+extern char *malloc(), *realloc();
 #endif /* _IBMR2 */
 
 #ifdef AFS_ENV
-static int IsKTC(char *where)
+static int IsKTC(where)
+char *where;
 {/* Return TRUE if this is a packed KTC ticket or FALSE otherwise. */
     long int Dum0, Dum9, Dum10;
 
@@ -77,7 +79,11 @@ static int IsKTC(char *where)
     return (Dum0 == 0 && Dum9 == -1 && Dum10 == -1);
 }
 
-static int UnpackKTC(char *tokens, struct ktc_token *atok, struct ktc_principal *aserv, struct ktc_principal *acli, int debug, int *pPrimFlag)
+static int UnpackKTC(tokens, atok, aserv, acli, debug, pPrimFlag)
+char *tokens;
+struct ktc_token *atok;
+struct ktc_principal *aserv, *acli;
+int debug, *pPrimFlag;
 {
     register char *p;
     long int Dum;
@@ -162,7 +168,8 @@ int unpacktokens(tokens, ctoken, stoken, debug, set)
 {    return 0; }
 
 #if defined(AMS_DELIVERY_ENV) || defined(AFS_ENV)
-int tok_GetStr(char **pRead, char *EndP, char *outStr, int sizeOutStr)
+int tok_GetStr(pRead, EndP, outStr, sizeOutStr)
+char **pRead, *EndP, *outStr; int sizeOutStr;
 {/* Get a null-terminated string from *pRead, putting it into outStr. */
     int CharsLeft;
     char *Out, *In;

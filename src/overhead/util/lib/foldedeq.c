@@ -61,7 +61,9 @@ int FoldTRT[256] = {
   High bits are disregarded EXCEPT for character 128.
   */
 
-int lc_strcmp(register unsigned char *s1, register unsigned char *s2)
+lc_strcmp(s1, s2)
+    register unsigned char *s1;
+    register unsigned char *s2;
 {
     while (*s1 && (FoldTRT[*s1] == FoldTRT[*s2])) {
 	++s1;
@@ -71,7 +73,9 @@ int lc_strcmp(register unsigned char *s1, register unsigned char *s2)
     return FoldTRT[*s1] - FoldTRT[*s2];
 }
 
-int lc_strncmp(register unsigned char *s1, register unsigned char *s2, int n)
+lc_strncmp(s1, s2, n)
+    register unsigned char *s1;
+    register unsigned char *s2;
 {
     while (n && *s1 && (FoldTRT[*s1] == FoldTRT[*s2])) {
 	--n;
@@ -82,12 +86,17 @@ int lc_strncmp(register unsigned char *s1, register unsigned char *s2, int n)
     return n == 0 ? 0 : FoldTRT[*s1] - FoldTRT[*s2];
 }
 
-int FoldedEQ(register unsigned char *s1, register unsigned char *s2)
+FoldedEQ(s1, s2)
+    register unsigned char *s1;
+    register unsigned char *s2;
 {
     return (lc_strcmp(s1, s2) == 0);
 }
 
-int FoldedEQn(register unsigned char *s1, register unsigned char *s2, register int n)
+FoldedEQn(s1, s2, n)
+    register unsigned char *s1;
+    register unsigned char *s2;
+    register int n;
 {
     return (lc_strncmp(s1, s2, n) == 0);
 }

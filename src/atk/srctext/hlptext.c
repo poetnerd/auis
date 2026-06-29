@@ -35,13 +35,18 @@ static char rcsHeader[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/at
 #include "dogtags.h"
 #include "hlptext.eh"
 
-boolean hlptext__InitializeObject(struct classheader *classID, struct hlptext *self)
+boolean hlptext__InitializeObject(classID, self)
+struct classheader *classID;
+struct hlptext *self;
 {
     hlptext_SetCopyAsText(self,TRUE);
     return TRUE;
 }
 
-long hlptext__Read(struct hlptext *self, FILE *file, long id)
+long hlptext__Read(self, file, id)
+struct hlptext *self;
+FILE *file;
+long id;
 {
     long tmpRetValue;
 

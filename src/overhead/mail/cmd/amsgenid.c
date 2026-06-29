@@ -35,9 +35,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <mailconf.h>
 #include <mail.h>
 
-#include <string.h>
-#include <stdlib.h>
-int main(int argc, char **argv)
+main(argc, argv)
+int argc;
+char **argv;
 {
     int i;
     int isFile = 0;

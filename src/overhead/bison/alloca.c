@@ -212,7 +212,6 @@ alloca (size)
 
 #ifdef DEBUG_I00AFUNC
 #include <stdio.h>
-#include <stdlib.h>
 #endif
 
 #ifndef CRAY_STACK

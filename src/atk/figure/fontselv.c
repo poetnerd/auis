@@ -39,9 +39,6 @@ char *fontselv_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 #include <fontsamp.ih>
 #include <fontsel.ih>
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #define DEFAULTDEFAULT "<default>"
 
 struct stylelayout_t {
@@ -80,12 +77,15 @@ static char sizelayout[SIZES_NUM_INIT][16] = {
 static void InsertSize(), ShowExtraProc(), SetSizeProc(), SetFamilyProc(), SetStyleProc();
 static char *CopyString();
 
-boolean fontselview__InitializeClass(struct classhdr *ClassID)
+boolean fontselview__InitializeClass(ClassID)
+struct classhdr *ClassID;
 {
     return TRUE;
 }
 
-boolean fontselview__InitializeObject(struct classhdr *ClassID, struct fontselview *self)
+boolean fontselview__InitializeObject(ClassID, self)
+struct classhdr *ClassID;
+struct fontselview *self;
 {
     int ix;
     struct stringtbl *tl;
@@ -180,7 +180,9 @@ boolean fontselview__InitializeObject(struct classhdr *ClassID, struct fontselvi
     return TRUE;
 }
 
-void fontselview__FinalizeObject(struct classhdr *ClassID, struct fontselview *self)
+void fontselview__FinalizeObject(ClassID, self)
+struct classhdr *ClassID;
+struct fontselview *self;
 {
     int ix;
 
@@ -215,13 +217,18 @@ void fontselview__FinalizeObject(struct classhdr *ClassID, struct fontselview *s
     free(self->familylist);
 }
 
-void fontselview__SetDataObject(struct fontselview *self, struct dataobject *dobj)
+void fontselview__SetDataObject(self, dobj)
+struct fontselview *self;
+struct dataobject *dobj;
 {
     super_SetDataObject(self, dobj);
     fontsample_SetDataObject(self->sample, dobj);
 }
 
-void fontselview__ObservedChanged(struct fontselview *self, struct fontsel *dobj, long status)
+void fontselview__ObservedChanged(self, dobj, status)
+struct fontselview *self;
+struct fontsel *dobj;
+long status;
 {
     long ix, vnum, accnum;
     char *cx;
@@ -303,7 +310,9 @@ void fontselview__ObservedChanged(struct fontselview *self, struct fontsel *dobj
     }
 }
 
-static void InsertSize(struct fontselview *self, short val)
+static void InsertSize(self, val)
+struct fontselview *self;
+short val;
 {
     struct stringtbl *st = self->sizetbl;   
     char name[16];
@@ -331,7 +340,10 @@ static void InsertSize(struct fontselview *self, short val)
     self->sizes_num++;
 }
 
-static void SetSizeProc(struct stringtbl *st, struct fontselview *self, short accnum)
+static void SetSizeProc(st, self, accnum)
+struct stringtbl *st;
+struct fontselview *self;
+short accnum;
 {
     int sizenum;
     struct fontsel *fontsel = (struct fontsel *)fontselview_GetDataObject(self);
@@ -404,7 +416,10 @@ static void SetSizeProc(struct stringtbl *st, struct fontselview *self, short ac
     }
 }
 
-static void SetStyleProc(struct stringtbl *st, struct fontselview *self, short accnum)
+static void SetStyleProc(st, self, accnum)
+struct stringtbl *st;
+struct fontselview *self;
+short accnum;
 {
     int stylenum;
     struct fontsel *fontsel = (struct fontsel *)fontselview_GetDataObject(self);
@@ -452,7 +467,10 @@ static void SetStyleProc(struct stringtbl *st, struct fontselview *self, short a
     fontsel_NotifyObservers(fontsel, fontsel_DATACHANGED);
 }
 
-static void SetFamilyProc(struct stringtbl *st, struct fontselview *self, short accnum)
+static void SetFamilyProc(st, self, accnum)
+struct stringtbl *st;
+struct fontselview *self;
+short accnum;
 {
     int familynum;
     struct fontsel *fontsel = (struct fontsel *)fontselview_GetDataObject(self);
@@ -486,7 +504,9 @@ static void SetFamilyProc(struct stringtbl *st, struct fontselview *self, short 
     }
 }
 
-void fontselview__SetExtraOptionString(struct fontselview *self, char *val)
+void fontselview__SetExtraOptionString(self, val)
+struct fontselview *self;
+char *val;
 {
     if (!val)
 	return;
@@ -496,7 +516,8 @@ void fontselview__SetExtraOptionString(struct fontselview *self, char *val)
     self->defaultstring = CopyString(val);
 }
 
-void fontselview__ShowExtraOption(struct fontselview *self)
+void fontselview__ShowExtraOption(self)
+struct fontselview *self;
 {
     if (self->showdefault)
 	return;
@@ -508,12 +529,15 @@ void fontselview__ShowExtraOption(struct fontselview *self)
     self->familyextra = stringtbl_AddString(self->familytbl, self->defaultstring);
 }
 
-static void ShowExtraProc(struct fontselview *self, long rock)
+static void ShowExtraProc(self, rock)
+struct fontselview *self;
+long rock;
 {
     fontselview_ShowExtraOption(self);
 }
 
-static char *CopyString(char *str)
+static char *CopyString(str)
+char *str;
 {
     char *tmp;
 
