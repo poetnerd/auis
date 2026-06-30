@@ -650,3 +650,92 @@ Verified both `eqparse.c` (`atk/eq/`, the equation-editor parser) and
 with zero errors end to end, including a fresh bison + mkparser
 regeneration each time (not just incremental edits to stale generated
 output).
+
+### Remaining error categories cleared: 101 → 0
+
+Worked through everything left after the mkparser fixes, file by file,
+compile-verifying each before moving on:
+
+- **`figio.c`, `fad.c`** — K&R parameter-type declaration missing
+  entirely (parameter silently defaults to `int`); added the missing
+  `FILE *fl;` / `char *name;` lines. Same root cause as several fixes
+  in earlier sessions, just not yet reached by the build.
+- **`xcursor.c`, `unknown.c`, `srctext.c`** — called `NewString()`
+  (declared in `overhead/util/hdrs/util.h`, defined in
+  `overhead/util/lib/newstr.c`) without including `<util.h>`. Added it.
+- **`mkcon.c`, `helpdb.c`** — called `close()` (POSIX fd-based) on
+  `FILE *`/`DIR *` handles instead of `fclose()`/`closedir()`. Genuine
+  pre-existing bugs, not porting artifacts — undefined behavior on any
+  platform, just silently tolerated by old lenient compilers. Fixed to
+  use the correct cleanup function for each handle type.
+- **`xgraphic.c`** — `NULL` (a real pointer on modern systems) assigned
+  to `Drawable` (an X11 integer XID typedef) and passed to an `int`
+  parameter. Changed to `0`, the semantically correct null value for
+  integer ID types.
+- **`org.c`, `suiteta.c`, `srctextv.c`** — generic "long used to smuggle
+  a pointer through a void-typed attribute slot" pattern (`tree_NodeDatum`,
+  `suite_ItemAttribute`, the `rock` parameter documented in-line as
+  "actually a string") passed directly to `free()`/`atoi()`. Added
+  explicit casts to restore the original behavior under strict typing.
+- **`cel.c`** — same `getline()`-collides-with-POSIX issue as `lset.c`
+  in an earlier session; renamed to `cel_GetLine` (also resolved 4
+  "too few arguments" errors at its call sites, same root cause: clang
+  was type-checking calls against POSIX's 3-arg `getline` once the
+  conflict made that the visible declaration).
+- **`spread.c`, `table.c`, `tabio.c`, `box.c`** — same `malloc`/`realloc`
+  K&R extern-decl-conflicts-with-stdlib.h pattern fixed for other files
+  earlier in this session; just hadn't been reached by the build yet.
+- **`m3textv.c`, `chart.c`, `srctextv.c`/`cpptextv.c`/`ctextv.c`/`modtextv.c`**
+  — more "static follows non-static" instances, some newly reached by
+  the build (`chart.c`), some missed in earlier passes because the
+  declaration line had a trailing comment the tool didn't yet tolerate
+  at the time it ran (`m3textv.c`). Found and fixed a real idempotency
+  bug in `fix-missing-static-decl` along the way: `try_parse_decl_block`
+  returned early for blocks that were *already* static without
+  recording their names as matched, so re-running the tool on an
+  already-fixed file treated those names as having no declaration at
+  all and inserted duplicates. Fixed by parsing already-static blocks
+  too (just not rewriting them) so their names are always recorded.
+- **`im.c`'s `im__HandleRedraw`** — a *second* instance of the
+  `fix-static-methods` Pattern-A truncation bug (see above), missed in
+  the original sweep because that sweep's trunk-diff check used `head -6`
+  per file and this file's corruption hunk happened to fall past that
+  cutoff. Re-ran a complete, untruncated trunk-diff across all 21
+  originally-affected files plus a structural grep (any line that's a
+  class-method name immediately followed by a bare, unclosed `(`) to
+  confirm no further instances exist anywhere in that set.
+- **`atk/basics/common/profile.c`** — genuinely platform-incompatible
+  code, not a quick textual fix: implements BSD-style `a.out`/`gprof`
+  CPU profiling (`struct phdr`, `profil()`, raw text-segment addresses),
+  which has no equivalent on Mach-O/Darwin. The file already had a clean
+  `#ifndef SYSV ... #else return FALSE ... #endif` fallback for systems
+  without this support; extended all 5 guards to `!defined(SYSV) &&
+  !defined(sys_darwin)` so Darwin takes the same already-implemented
+  "profiling unavailable" path. Also needed the `<a.out.h>`/
+  `<sys/gprof.h>` includes guarded out the same way, and the *order* of
+  `#include <class.h>` / `<andrewos.h>` swapped — `sys_darwin` is only
+  defined once `andrewos.h` pulls in Darwin's `system.h`, so a guard
+  checking it needs to come after that include, not before.
+- **`atk/basics/lib/Imakefile`** — this directory compiles sibling
+  sources from `../common`, `../x`, `../wm` into `libbasics.a` (a static
+  build of the same code that's also built as individual `.do` files in
+  those directories), but only `.ih` files get installed centrally
+  (`InstallClassFiles` doesn't install `.eh`) — so the angle-bracket
+  `#include <profile.eh>` couldn't be found at all from this directory.
+  Added `LOCALINCLUDES = -I../common -I../x -I../wm` so the compiler
+  looks for `.eh` files next to their `.c` siblings, matching how this
+  already works for the canonical (non-`lib/`) build of the same files.
+- **`atk/chart/chart.c`** — `<values.h>` doesn't exist on Darwin
+  (obsolete SysV/BSD header providing `MAXINT` etc., superseded by
+  `<limits.h>`); the file already had a defensive `#ifndef MAXINT
+  #define MAXINT ... #endif` fallback right after the include, so just
+  guarded the include itself with `&& !defined(sys_darwin)` and let the
+  existing fallback do its job.
+
+### Final result: 278 `.do` files, 602 headers, effectively zero errors
+
+`make Clean; make -k dependInstall` from scratch. The previous
+high-water mark (before this session) was 62 `.do` files. The single
+remaining grep hit for "error:" in the build log is a false positive —
+a string literal in `defaults.c` (`"Internal error: unknown recognizer
+type"`), not a diagnostic. No `fatal error:` lines remain at all.
