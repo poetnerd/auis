@@ -865,5 +865,62 @@ Rebuilt via `make dependInstall` (no `-k`) — exit 0, all 23 originally-found
 ATK 6.3.1); please wait...`, then into X11/XIM connection logic. New, much
 more minor issue surfaced there, not yet investigated: `Could not find
 host /private/tmp/com.apple.launchd.*/org.xquartz in ez(xim)` and a
-`xfontdesc_CvtCharToGraphic: 0 width character` warning. Unconfirmed
-whether an actual X11 window draws yet.
+`xfontdesc_CvtCharToGraphic: 0 width character` warning.
+
+### `ez` draws a real window — first time in this revival — then crashes in scrollbar rendering
+
+`ez` forks and the parent always `exit(0)`s immediately
+(`application__Run`/`application__Fork` in `atk/basics/common/app.c:367-395`
+— normal background-the-app design, not a bug); the actual work happens in
+the forked child, which inherits the open X connection. `application__ParseArgs`
+(`app.c:140-143`) has an undocumented bare `-d` switch that sets
+`self->fork=FALSE`, keeping the app in the foreground for debugging —
+useful enough to note here for next time. `ez -d`, run natively, drew an
+actual window onscreen (confirmed by the user watching XQuartz/the Dock)
+before crashing with `Bus error: 10`.
+
+Caught under `lldb` (native terminal): `EXC_BAD_ACCESS` inside
+`sbuttonv__DrawBorder` (`atk/supportviews/sbuttonv.c`), called from
+`draw_elevator` in `atk/supportviews/scroll.c:1164` — a 10-argument call
+(`sbuttonv_DrawBorder(self, r.left, r.top, r.width, r.height,
+self->elevatorprefs, sbuttonv_BORDEROUT, TRUE, NULL)`, classID implicit).
+`image lookup -a <fault-addr>` showed the crash was a write through the
+function's `interior` parameter (the 10th/last argument, passed as literal
+`NULL` at the call site) — except the value it actually held at runtime was
+the address of a *different, unrelated function*
+(`xgraphic__SetFGColor + 308`), not a null or valid `struct rectangle *`.
+
+Disassembling both the callee's prologue and the caller's argument setup
+(see [[project_classpp_vtable_codegen_bug]] for the full register-by-register
+walkthrough) pinned this down precisely: `scroll.c` dispatches `DrawBorder`
+*virtually*, through this codebase's generic class-procedure-table
+mechanism (`sbuttonv_CLASSPROCEDURES->routines[10]`, cast to `(void (*)())`
+— a K&R "unspecified parameters" function pointer type, the core dispatch
+mechanism used everywhere in this Class/OOP system, auto-generated into
+every class's `.ih`/`.eh` by the class preprocessor). The callee correctly
+expects its 10th argument on the stack at `[SP+8]` (confirmed in its
+prologue). The caller correctly places arguments 1-9 (registers x0-x7, plus
+an explicit stack store for argument 9) — but **never emits any instruction
+storing argument 10 to `[SP+8]`** before the `blr`. The callee reads stale,
+unrelated stack content left over from an earlier call in that same stack
+region. Per the C standard this calling pattern is well-defined (not UB) —
+real callee is also K&R-style/non-prototyped, argument types match after
+default promotion — so this looks like a genuine clang arm64 codegen bug:
+it appears to drop the store for the *last* stack-spilled argument when
+calling through a `(void (*)())`-typed pointer with more than 8 total
+arguments. `DrawBorder` is unusually wide (10 args) for a class method,
+plausibly why this is the first place the revival has hit it — but nothing
+rules out other >=9-argument virtually-dispatched methods elsewhere in this
+large class hierarchy having the identical latent bug, just not yet
+exercised at runtime. Not caught at compile time; there is currently no
+compiler warning for this pattern.
+
+**Not yet fixed.** User's chosen direction: fix it at the root, in the
+class preprocessor (`overhead/class/pp/class.c`, the tool that generates
+`.ih`/`.eh` from `.ch` class specs) so it emits properly, fully-prototyped
+function pointer casts (matching each method's real declared signature,
+which the preprocessor already knows from the `.ch` spec) instead of the
+generic `(void (*)())`. Flagged as a separate, large task — likely a fresh
+session/agent, to avoid re-deriving this investigation's context cold. Full
+details, the exact disassembly evidence, and pointers for where to start in
+`class.c` are in [[project_classpp_vtable_codegen_bug]].
