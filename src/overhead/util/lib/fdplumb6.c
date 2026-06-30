@@ -41,7 +41,7 @@ char *name;
 
     d = opendir(name);
     if (d) {
-	RegisterOpenFile(d->dd_fd, name, FDLEAK_OPENCODE_OPENDIR);
+	RegisterOpenFile(dirfd(d), name, FDLEAK_OPENCODE_OPENDIR);
     }
     return(d);
 }
@@ -50,7 +50,7 @@ char *name;
 void dbg_closedir(d)
 DIR *d;
 {
-    RegisterCloseFile(d->dd_fd);
+    RegisterCloseFile(dirfd(d));
     closedir(d);
 }
 

@@ -13,7 +13,7 @@
 #include <allsys.mcr>
 
 CC = cc
-COMPILERFLAGS = -Wno-implicit-int -Wno-implicit-function-declaration -Wno-incompatible-function-pointer-types
+COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Wno-implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
 LEX = flex
 RANLIB = ranlib
 

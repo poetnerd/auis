@@ -312,7 +312,8 @@ int x, y;
     }
 }
 
-void ShowAPane(menu, state, pane, x, y, position)  
+static DrawWormHole();
+void ShowAPane(menu, state, pane, x, y, position)
     struct cmenu *menu; 
     struct drawingState *state;
     struct pane *pane;

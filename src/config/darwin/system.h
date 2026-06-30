@@ -18,6 +18,10 @@
 #undef FILE_NEEDS_FLUSH
 #define FILE_NEEDS_FLUSH(f) (1)
 
+/* BSD stdio uses _r (bytes remaining) instead of _cnt */
+#undef FILE_HAS_IO
+#define FILE_HAS_IO(f) ((f)->_r)
+
 #undef SIGSET_TYPE
 #define SIGSET_TYPE sigset_t
 

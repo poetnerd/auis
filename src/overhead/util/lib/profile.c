@@ -36,7 +36,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <fdplumb.h>
 #include <stdio.h>
-#include <andrewos.h>		/* sys/types.h */
+#include <andrewos.h>
+extern char *AndrewDir();		/* sys/types.h */
 #include <sys/stat.h>
 #include <sys/param.h>	/* For MAXPATHLEN */
 #include <pwd.h>

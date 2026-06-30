@@ -47,7 +47,7 @@ struct PathEntry {
     char name[1];
 };
 static struct PathEntry *globalPath = 0;
-char *pathopen();
+static char *pathopen();
 
 main(argc, argv)
 int argc;
