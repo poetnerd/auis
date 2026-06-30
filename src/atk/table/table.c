@@ -49,11 +49,6 @@ static int CreateCell();
 static int movetr();
 static char * myrealloc();
 
-#ifndef _IBMR2
-extern char * malloc ();
-extern char * realloc ();
-#endif /* _IBMR2 */
-
 extern double atof();
 
 struct table * ReadASCII ();

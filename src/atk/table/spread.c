@@ -51,10 +51,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #include <spread.eh>
 
-#ifndef _IBMR2
-extern char * malloc();
-#endif
-
 /* initialize entire class */
 static char debug=0;
 

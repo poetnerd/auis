@@ -49,11 +49,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 static boolean debug=FALSE;
 
-#ifndef _IBMR2
-extern char * malloc();
-extern char * realloc();
-#endif
-
 
 /* read and write ASCII representation */
 

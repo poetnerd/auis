@@ -49,9 +49,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 #include <box.eh>
 
 static boolean debug=FALSE;
-#ifndef _IBMR2
-extern char * malloc ();
-#endif /* _IBMR2 */
 
 #define classname(do) ((do) == NULL ? "<NO OBJECT>" : class_GetTypeName(do))
 #define safename(c) ((c) == NULL ? "<NULL DATA>" : classname(c->data))
