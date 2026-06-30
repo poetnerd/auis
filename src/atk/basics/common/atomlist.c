@@ -41,7 +41,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <atom.ih>
 
 #ifndef _IBMR2
-extern char *malloc();
 #endif /* _IBMR2 */
 
 /*

@@ -158,7 +158,6 @@ static int 	(*typescript_CopyRegionCmd)();
 static int 	(*typescript_ZapRegionCmd)(); 
 
 #ifndef _IBMR2
-extern char *realloc();
 #endif /* _IBMR2 */
 
 static long maxSize;

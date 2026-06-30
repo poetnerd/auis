@@ -82,7 +82,6 @@ struct statestack {
 };
 
 #ifndef _IBMR2
-extern char *malloc(), *realloc();
 #endif
 
 static jmp_buf jmpenv;

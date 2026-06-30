@@ -69,7 +69,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #define ZRBRUSH_PIXEL ((unsigned char *)NULL)
 
 #ifndef _IBMR2
-extern char *malloc();
 #endif
 
 static void SetToolProc(), SetToolNum(), SetBrushProc(), SetPatternProc(), CallCommandProc(), CallPasteModeProc(), PasteDownProc();

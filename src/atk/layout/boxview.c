@@ -39,7 +39,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 #define classname(do) ((do) == NULL ? "<NO OBJECT>" : class_GetTypeName(do))
 
 #ifndef _IBMR2
-extern char *malloc();
 #endif /* _IBMR2 */
 
 #include <class.h>

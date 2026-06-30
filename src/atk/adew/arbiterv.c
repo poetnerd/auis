@@ -345,7 +345,6 @@ struct classheader *classID;
 struct arbiterview *self;
 {
 #ifndef _IBMR2
-    extern char *malloc();
 #endif /* _IBMR2 */
     if(lastlink != NULL) lastlink->next = self;
     self->next = NULL;

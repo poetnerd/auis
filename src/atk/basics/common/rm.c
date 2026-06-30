@@ -40,7 +40,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <stdio.h>
 
 #ifndef _IBMR2
-extern char *malloc();
 #endif /* _IBMR2 */
 
 #define DEBUG_RM 1

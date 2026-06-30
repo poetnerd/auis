@@ -232,7 +232,6 @@ struct classheader *classID;
 struct clicklistV *self;
 {
 #ifndef _IBMR2
-    extern char *malloc();
 #endif /* _IBMR2 */
     self->text = NULL;
     self->cltextview = NULL;
