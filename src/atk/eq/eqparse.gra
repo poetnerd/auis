@@ -43,12 +43,15 @@ union ptr {
 };
  
 #define YYSTYPE union ptr
-union ptr x(), value;
+static union ptr x();
+union ptr value;
 #undef boolean
 #include <class.h>
 #include <eq.ih>
 #include <stdio.h>
 #include <cparser.h>
+static int is_node();
+static int print();
 %}
  
 %%

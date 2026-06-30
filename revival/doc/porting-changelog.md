@@ -550,3 +550,103 @@ that the overall build process finishes.
 `make Clean; make -k dependInstall` from scratch: **87 `.do` files**
 (previous high-water mark was 62), **602 headers installed** in
 `build/include/atk/` (up from 583), errors down to 101 from 284.
+
+## 2026-06-30 (continued)
+
+### Fixed `mkparser`/modern-bison incompatibilities: `eqparse.c` and
+`num.c` now compile clean
+
+The earlier YYDEBUG fix (above) got `eqparse.c` and `num.c` further but
+not all the way — investigated the rest. Both grammars now compile with
+zero errors. Three more bugs in `overhead/mkparser/mkparser`, all the
+same shape: the script was written against 1990s Bison's exact textual
+output and relies on brittle markers (specific comment strings, filename
+patterns) that modern Bison (2.3) doesn't reproduce, even though the
+underlying table-compression algorithm and overall structure are
+unchanged.
+
+- **`YYFLAG` undeclared.** `cparser.h`'s `struct parser_tables.defflag`
+  is a real runtime sentinel — `cparser.c` compares `actx[s] == defflag`
+  to decide "use the default reduction" while walking the LALR tables.
+  `actx` is mkparser's name for `yypact` (confirmed: `(short *)yypact,
+  /* actx */`), and old Bison generated a `YYFLAG` macro holding exactly
+  this sentinel. Modern Bison still has the identical sentinel, with the
+  identical role (confirmed via its own usage, e.g. `if (yyn ==
+  YYPACT_NINF)`), just renamed to `YYPACT_NINF` — and critically, its
+  *value* is grammar-specific (`-16` for `num.gra`, `-83` for
+  `eqparse.gra`), so the fix could not be a hardcoded literal. Changed
+  mkparser to emit `YYPACT_NINF` (relying on Bison's own already-emitted
+  `#define`) instead of the now-nonexistent `YYFLAG`. (`nextx`/`yypgoto`
+  has no equivalent sentinel in modern Bison's output, but `cparser.c`'s
+  algorithm already falls back safely to its regular table-check path
+  when the shortcut doesn't apply, so no corresponding fix was needed
+  there.)
+
+- **`reduceActions` left unclosed, swallowing the rest of the file.**
+  mkparser extracts just the grammar-specific rule actions from Bison's
+  `switch (yyn) { ... }` dispatch and re-wraps them as a standalone
+  `reduceActions()` function (since `cparser`'s `parser_Parse` supplies
+  its own driver loop and only needs the raw actions). It used to detect
+  the end of that switch via a literal comment old Bison left in its
+  output ("the action file gets copied in in place of this dollarsign");
+  modern Bison doesn't emit that text at all, so the rule never fired,
+  and `reduceActions`'s function body and switch were never closed —
+  swallowing all of Bison's own remaining `yyparse()` driver code, and
+  the grammar's entire epilogue (every action routine after `%%`,
+  e.g. `eqparse.gra`'s `eq__Parse`, `num.gra`'s `locallexer`) into one
+  giant unclosed block. That's what was actually behind the "function
+  declared in block scope cannot have 'static' storage class" /
+  "parameter list without types" / "use of undeclared identifier 'self'"
+  errors reported against `eqparse.gra`/`num.gra` lines — the grammar
+  source was never the problem. Replaced the comment-based marker with
+  Bison's `default: break;` (the dispatch switch's always-present
+  fallback case, immediately followed by the switch's own closing
+  brace) — present in every Bison version since it's part of the literal
+  switch-statement boilerplate, not skeleton-specific text.
+
+- **Bison's own `switch (yyn)` opening brace leaking through.** Old
+  Bison wrote `switch (yyn) {` on one line, so mkparser's rule matching
+  that line and discarding it (`next`) was sufficient. Modern Bison
+  puts the brace on its own following line (Allman style) — the match
+  rule still fired and discarded the `switch (yyn)` line, but the
+  brace line right after it was untouched by that rule and fell through
+  to mkparser's default print-everything behavior, leaking an extra,
+  never-closed `{` into the output (on top of the two mkparser injects
+  for its own `reduceActions(...) {` and `switch (i) {`). Added a
+  `getline` to consume and discard that line too. Combined with a
+  matching second `}` in the new-marker fix above (the old code only
+  ever emitted one closing brace, closing the switch but never the
+  function), brace balance across the whole generated file is now
+  verified at exactly 0 (was +2/+3 before these fixes, by direct count).
+
+- **`#if YYDEBUG` guard incorrectly stripped** (see prior entry above,
+  same root cause family): mkparser's `intables` heuristic — "we've seen
+  an `#include <stdio.h>` so we must be near the table declarations" —
+  breaks because modern Bison's restructured skeleton has an earlier,
+  unrelated `<stdio.h>` include for its `YYFPRINTF` debug-macro setup.
+  Rather than patching the heuristic further, removed the now-redundant
+  stripping rule entirely: modern Bison already correctly self-guards
+  this content with its own `#if YYDEBUG`/`#endif` (the table-declaration
+  guard-*injection* logic that follows, for `yyprhs`/`yyrhs`/`yyrline`,
+  is untouched and simply no-ops for modern Bison's output, since its
+  table declarations don't match the old `short yyprhs` text pattern
+  it looks for — also harmless, since those tables are already
+  natively guarded too).
+
+- **`eqparse.gra` itself had one real bug**, unmasked once the above
+  were fixed: `union ptr x(), value;` mixes a function declarator and a
+  variable declarator sharing one type in a single statement — a shape
+  `fix-missing-static-decl` doesn't parse (it only handles statements
+  made entirely of `name()`-shaped entries), so it inserted a redundant
+  second declaration instead of fixing this one. Split by hand into
+  `static union ptr x(); union ptr value;`. Also removed a duplicate
+  `static int yylex();` the tool inserted — a non-static-block static
+  declaration for the same name already existed further down in the
+  file, which the tool doesn't currently check for before deciding a
+  declaration is "missing".
+
+Verified both `eqparse.c` (`atk/eq/`, the equation-editor parser) and
+`num.c` (`atk/rofftext/`, the roff numeric-expression parser) compile
+with zero errors end to end, including a fresh bison + mkparser
+regeneration each time (not just incremental edits to stale generated
+output).
