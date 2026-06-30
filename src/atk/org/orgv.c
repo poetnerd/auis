@@ -139,8 +139,6 @@ static  struct keymap		 *class_keymap;
 #define  menu_unfolded		  (1<<13)
 #define  menu_debug		  (1<<14)
 
-extern int			  sys_nerr;
-extern char			 *sys_errlist[];
 
 static char			  ExplodePhrase[]   = "Explode",
 				  ImplodePhrase[]   = "Implode",

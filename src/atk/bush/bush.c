@@ -126,8 +126,7 @@ struct map_item {
 
 tree_Specification DirTree[] = {tree_Order(tree_PreOrder),NULL};
 
-extern int			    errno, sys_nerr;
-extern char			   *sys_errlist[];
+extern int errno;
 
 char				baseName[] = "/afs"; /*Pathname to give to pioctl()*/
 #define	MAX_PIOCTL_BUFF_SIZE	1000
@@ -272,7 +271,7 @@ bush__InitTree( self, root_path )
   ExtractNodeName(tmp,&nodeName);
   AllocNameSpace(nodeName,&rootDir->name);
   if(stat(RootPath,&stats) < 0) {
-      printf("bush: error '%s' encountered while scanning '%s'.\n", sys_errlist[errno]);
+      printf("bush: error '%s' encountered while scanning '%s'.\n", strerror(errno));
       return;
   }
   else {

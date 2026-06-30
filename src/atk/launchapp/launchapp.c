@@ -64,7 +64,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/laun
 
 
 extern int errno;
-extern char *sys_errlist[];
 
 enum lpair_side {
     lpair_TopLeft, lpair_BottomRight
@@ -184,7 +183,7 @@ char **args;
 	}
 	else {
 	    sprintf(msgbuf, "Error starting %s (%s)",
-		    name, sys_errlist[errno]);
+		    name, strerror(errno));
 	    message_DisplayString(frame, 100, msgbuf);
 	}
 	frame_WantInputFocus(frame, frame);

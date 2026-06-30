@@ -106,8 +106,6 @@ END-SPECIFICATION  ************************************************************/
 static   struct menulist	 *class_menulist;
 static   struct keymap		 *class_keymap;
 
-extern int			  sys_nerr;
-extern char			 *sys_errlist[];
 
 int chartv_debug = 0;
 
@@ -768,7 +766,7 @@ chartv_Save_Command( self )
         }
         else
         { DEBUG(File Open Failed);
-        sprintf( msg, "Unable to Open '%s' (%s)", file_name, sys_errlist[errno] );
+        sprintf( msg, "Unable to Open '%s' (%s)", file_name, strerror(errno) );
         chartv_Announce( self, msg );
         chart_SetChartAttribute( Chart, chart_FileName( NULL ) );
         }

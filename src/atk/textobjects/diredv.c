@@ -55,7 +55,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <diredv.eh>
 
 extern int errno;
-extern char *sys_errlist[];
 
 #define Dired(self) \
     ((struct dired *) (self)->header.view.dataobject)
@@ -130,7 +129,7 @@ long rock;
             sprintf(buf, "No directory specified.\n");
         else
             sprintf(buf, "Could not read: %s (%s)\n",
-              dir, sys_errlist[errno]);
+              dir, strerror(errno));
         message_DisplayString(self, 0, buf);
     }
     WAITOFF();
@@ -262,7 +261,7 @@ long rock;
     WAITON();
 
     if (stat(fname, &stbuf) < 0) {
-        sprintf(buf, "Could not stat: %s (%s)\n", fname, sys_errlist[errno]);
+        sprintf(buf, "Could not stat: %s (%s)\n", fname, strerror(errno));
         WAITOFF();
         message_DisplayString(self, 0, buf);
         return;
@@ -275,7 +274,7 @@ long rock;
             message_DisplayString(self, 0, buf);
             im_ForceUpdate();
             if (dired_SetDir(dired, fname) < 0)
-                sprintf(buf, "Could not read: %s (%s)\n", fname, sys_errlist[errno]);
+                sprintf(buf, "Could not read: %s (%s)\n", fname, strerror(errno));
             else
                 strcpy(buf, "Done.\n");
             message_DisplayString(self, 0, buf);
@@ -317,7 +316,7 @@ struct diredview *self;
         im_ForceUpdate();
         WAITON();
         if (unlink(GetFullName(self, filename)) < 0) {
-            sprintf(buf, "Cannot delete: %s (%s)\n", filename, sys_errlist[errno]);
+            sprintf(buf, "Cannot delete: %s (%s)\n", filename, strerror(errno));
             WAITOFF();
             message_DisplayString(self, 0, buf);
             return FALSE;
@@ -368,7 +367,7 @@ struct diredview *self;
         /* Have to copy the full name since it's a static buffer */
         strcpy(buf, GetFullName(self, filename));
         if (rename(buf, GetFullName(self, ans)) < 0) {
-            sprintf(buf, "Cannot rename: %s (%s)\n", filename, sys_errlist[errno]);
+            sprintf(buf, "Cannot rename: %s (%s)\n", filename, strerror(errno));
             WAITOFF();
             message_DisplayString(self, 0, buf);
             return FALSE;

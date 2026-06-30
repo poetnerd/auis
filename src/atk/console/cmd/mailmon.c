@@ -53,7 +53,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/cons
 #include <errno.h>
 #include <sitevars.h>
 
-extern char *sys_errlist[];
 extern char MyHomeDir[];
 
 extern char *getenv();

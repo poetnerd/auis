@@ -42,7 +42,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <be1be2a.eh>
 
 extern int errno;
-extern char *sys_errlist[];
 
 /*
  * Obtain list of input files
@@ -109,7 +108,7 @@ char *fileName;
 
     fp = fopen(fileName, "r");
     if (fp == NULL) {
-        fprintf(stderr, "%s: Cannot open %s (%s)\n", progName, fileName, sys_errlist[errno]);
+        fprintf(stderr, "%s: Cannot open %s (%s)\n", progName, fileName, strerror(errno));
         return;
     }
 
@@ -138,7 +137,7 @@ char *fileName;
 
     fp = fopen(outName, "w");
     if (fp == NULL) {
-        fprintf(stderr, "%s: Could not open output file %s (%s)\n", progName, outName, sys_errlist[errno]);
+        fprintf(stderr, "%s: Could not open output file %s (%s)\n", progName, outName, strerror(errno));
         text_Destroy(text);
         return;
     }
@@ -146,7 +145,7 @@ char *fileName;
     if (text_Write(text, fp, 1, 1) < 0) {
         fclose(fp);
         unlink(outName);
-        fprintf(stderr, "%s: Error writing output file %s (%s)\n", progName, outName, sys_errlist[errno]);
+        fprintf(stderr, "%s: Error writing output file %s (%s)\n", progName, outName, strerror(errno));
         text_Destroy(text);
         return;
     }

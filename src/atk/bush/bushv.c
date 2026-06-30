@@ -128,8 +128,7 @@ static char	*default_editor_choices[] = { "ez",
 static char			    msg[MAXPATHLEN * 2];
 static char			    cmd[MAXPATHLEN * 2];
 static char			   *argv[10];
-extern int			    errno, sys_nerr;
-extern char			   *sys_errlist[];
+extern int errno;
 
 static struct keymap		   *kmap;
 static struct menulist		   *menulist = NULL;
@@ -1281,10 +1280,8 @@ IssueError( self, what, where, overlay )
   static char *question[] = { "Continue", NULL };
 
   IN(IssueError);
-  if(errno > 0 && errno <= sys_nerr) 
-    sprintf(msg,"ERROR %s '%s': %s", what, where, sys_errlist[errno] );
-  else if(errno != 0)
-    sprintf(msg,"ERROR %s '%s': (Invalid System Error-code '%d')", what, where, errno );
+  if(errno != 0)
+    sprintf(msg,"ERROR %s '%s': %s", what, where, strerror(errno));
   else
     sprintf(msg,"ERROR %s '%s'", what, where);
   if(overlay) message_MultipleChoiceQuestion(self,100,msg,0,&result,question,NULL);
@@ -2507,7 +2504,7 @@ bushv_SaveFile( self )
         Announce("File not found; could not create. Attempt to write to a directory.");
         break;
        default:
-        sprintf(message, "Could not save file: %s.",sys_errlist[errno]);
+        sprintf(message, "Could not save file: %s.",strerror(errno));
         Announce(message);
     }
     return_value = -1;
@@ -2568,7 +2565,7 @@ bushv_WriteFile( self )
         Announce("File not found; could not create. Attempt to write to a directory.");
         break;
       default:
-        sprintf(message, "Could not save file: %s.",sys_errlist[errno]);
+        sprintf(message, "Could not save file: %s.",strerror(errno));
         Announce(message);
     }
     return_value = -1;
