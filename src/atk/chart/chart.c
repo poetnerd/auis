@@ -70,7 +70,7 @@ HISTORY
 END-SPECIFICATION  ************************************************************/
 
 #include <andrewos.h>
-#if defined(POSIX_ENV) && !defined(bsdi)
+#if defined(POSIX_ENV) && !defined(bsdi) && !defined(sys_darwin)
 #include <values.h>
 #endif
 #include <rect.h>
@@ -79,6 +79,22 @@ END-SPECIFICATION  ************************************************************/
 #include <apt.ih>
 #include <apts.ih>
 #include <chart.eh>
+static char * Extract_Field_Value();
+static int Parse_Item_Field();
+static int Parse_Name_Field();
+static int Parse_Type_Field();
+static int Reader();
+static int SetChartAttribute();
+static int SetItemAttribute();
+static int SetItemValue();
+static long Sort_By_Ascending_Label();
+static long Sort_By_Ascending_Position();
+static long Sort_By_Ascending_Value();
+static long Sort_By_Descending_Label();
+static long Sort_By_Descending_Position();
+static long Sort_By_Descending_Value();
+static char * ValueString();
+static int Writer();
 
 #define  ChartTitle		     (self->chart_title)
 #define  ChartTitleDataObjectName    (self->chart_title_data_object_name)
