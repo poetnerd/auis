@@ -63,7 +63,21 @@ BEGIN {
 }}
 
 # delete bison.simple stuff
-/#line.*bison/ {deleting = 1; next}
+# Old bison's #line directives named the skeleton file ('bison.simple')
+# while it was being copied in, so this rule could detect "we're now
+# inside yyparse() itself" by matching on that filename. Modern bison's
+# #line directives only ever reference the generated file itself (e.g.
+# "eqparse.tab.c"), never a skeleton filename -- so this never fired,
+# and bison's own yyparse() definition (with its un-suppressed opening
+# brace) got printed straight through, leaving the 'switch (yyn)' rule
+# below injecting reduceActions() while still nested inside it. Trigger
+# on the structural marker instead: '#ifdef YYPARSE_PARAM', which always
+# opens bison's block of (4, #if/#ifdef-nested) alternate yyparse()
+# signatures, through to its single shared opening brace -- all of which
+# must be deleted as one unit, preprocessor directives included, since
+# deleting only some of those lines would unbalance the #if/#else/#endif
+# nesting of whichever ones survive.
+/^#ifdef YYPARSE_PARAM/ {deleting = 1}
 /#line/ {deleting = 0}
 /Note some compilers choke/ {next}
 # insert declaration of reduceActions in place of Bison's parser
@@ -74,15 +88,39 @@ BEGIN {
 	print "reduceActions(i, pyyval, yyvsp, parser)\nint i;\nYYSTYPE *pyyval;\nYYSTYPE *yyvsp;\n"
 	print "		struct parser *parser; {"
 	print "	switch (i) {"
-	print "" 
+	print ""
+	# Old bison wrote 'switch (yyn) {' on one line, so matching and
+	# discarding just that line was enough. Modern bison puts the brace
+	# on its own following line; consume and discard it too, or it
+	# leaks through as a third (unwanted) opening brace alongside the
+	# two just injected above.
+	getline
 	deleting = 0
 	intables = 0
 	next
 }
 
 # insert end of reduceActions function
-/action file gets copied/ {
-	print ""
+# Old bison's skeleton carried a literal comment here ('the action file
+# gets copied in in place of this dollarsign') that survived into its
+# generated output as a marker. Modern bison doesn't emit that text at
+# all, so the rule never fired -- 'reduceActions' and its enclosing
+# 'switch (i) {' were left unclosed, swallowing the rest of bison's own
+# yyparse() (and everything after it, including the grammar's epilogue
+# code) inside them. Use a structural marker instead, which bison has
+# always emitted regardless of version: 'default: break;' immediately
+# followed by the switch's own closing brace.
+/default: break;/ {
+	print
+	afterdefault = 1
+	next
+}
+afterdefault == 1 {
+	afterdefault = 0
+	# This line is bison's own closing brace for 'switch (yyn)' --
+	# print it through to close OUR injected 'switch (i) {', then close
+	# the injected 'reduceActions(...) {' function with a second brace.
+	print "}"
 	print " return 0;  /* no special action */"
 	print "}"
 	print "#undef yyval"
@@ -90,12 +128,18 @@ BEGIN {
 	next
 }
 
-# remove  '#if...YYDEBUG' ... '#endif'  from table declarations
-#	and add them around  yyprhs, yyrhs, yyrline
+# add '#if YYDEBUG != 0' ... '#endif' around  yyprhs, yyrhs, yyrline
 #	(but NOT arount yytname)
-/stdio\.h/ {intables = 1}
-/#if.*YYDEBUG/ {if (intables == 1) {inyydebug = 1; next}}
-/#endif/ {if (inyydebug == 1) {inyydebug = 0; next}}
+# This script used to also strip any pre-existing '#if...YYDEBUG' it saw
+# near the table declarations, on the assumption that the 1990s bison it
+# was written for never guarded that section itself. Modern bison does
+# guard it (and guards its own debug-print functions earlier in the file
+# with a *different*, real '#if YYDEBUG' too) -- stripping blindly based
+# on "have we seen an stdio.h include yet" no longer reliably distinguishes
+# the two, and was deleting the opening '#if YYDEBUG' for the debug-print
+# functions, leaving their '#else'/'#endif' orphaned and 'yydebug'
+# referenced with no declaration in scope. Removed; modern bison's own
+# guards are correct as emitted.
 /(short yyprhs)|(short yyrhs)|(short yyrline)/ {
 	print "#if YYDEBUG != 0"
 	print
@@ -127,7 +171,10 @@ END {
 	print ""
 	print "	sizeof(YYSTYPE),	/* eltsz */"
 	print ""
-	print "	YYFLAG,		/* defflag */"
+	print "	YYPACT_NINF,	/* defflag -- old bison called this YYFLAG;"
+	print "			   modern bison renamed it but it's the same"
+	print "			   sentinel (\"no pact entry, use default"
+	print "			   reduction\") that actx[]/yypact[] uses */"
 	print "	YYLAST,		/* table_max */"
 	print ""
 	print "	(char **)yytname,	/* name */"
