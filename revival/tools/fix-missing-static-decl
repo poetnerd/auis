@@ -134,15 +134,17 @@ def find_static_defined_names(lines):
 
 def try_parse_decl_block(lines, start, static_names):
     """If lines[start:] begins a forward-declaration block, return
-    (end_index, type_text, entries) where entries is a list of (star, name)
-    tuples. Otherwise return None."""
+    (end_index, type_text, entries, already_static) where entries is a
+    list of (star, name) tuples. Otherwise return None. Blocks that are
+    already static are still parsed (so their names can be recorded as
+    matched -- otherwise a second run over an already-fixed file thinks
+    those names have no declaration at all and inserts a duplicate) but
+    the caller leaves them untouched rather than rewriting them."""
     first = lines[start].rstrip('\n')
     m = re.match(r'^(\s*)(static\s+)?(' + TYPE_RE + r')(.*)$', first)
     if not m:
         return None
     indent, already_static, type_text, rest = m.groups()
-    if already_static:
-        return None  # already static, not what we're fixing
 
     entries = []
     j = start
@@ -160,7 +162,7 @@ def try_parse_decl_block(lines, start, static_names):
             if sep == ';':
                 if remainder and not re.match(r'^' + TRAILING_COMMENT + r'\s*$', remainder):
                     return None  # trailing junk after ';'
-                return (j, type_text.strip(), entries)
+                return (j, type_text.strip(), entries, bool(already_static))
         j += 1
         if j >= len(lines):
             return None
@@ -201,10 +203,20 @@ def fix_file(path, dry_run=False):
         # those (a different, stricter rule than file scope).
         parsed = try_parse_decl_block(lines, i, static_names) if brace_depth == 0 else None
         if parsed:
-            end, type_text, entries = parsed
+            end, type_text, entries, already_static = parsed
+            matched_names.update(name for _, name in entries)
+
+            if already_static:
+                # Already correct (e.g. a prior run already fixed this
+                # block) -- leave as-is. Names are recorded above so the
+                # missing-declaration pass below doesn't treat them as
+                # undeclared and insert a duplicate.
+                out.extend(lines[i:end + 1])
+                i = end + 1
+                continue
+
             needs_static = [(star, name) for star, name in entries if name in static_names]
             stays_plain = [(star, name) for star, name in entries if name not in static_names]
-            matched_names.update(name for _, name in entries)
 
             if not needs_static:
                 out.extend(lines[i:end + 1])
