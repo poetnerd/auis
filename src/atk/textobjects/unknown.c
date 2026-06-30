@@ -22,6 +22,7 @@
  */
 
 #include <andrewos.h>
+#include <util.h>
 #include <stdio.h>
 #include <text.ih>
 #include <unknown.eh>

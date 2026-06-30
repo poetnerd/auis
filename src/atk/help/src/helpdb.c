@@ -728,7 +728,7 @@ register char *aname;
     if (!found)			/* make the first entry */
 	strcat(tname, ".1");
     fd = open(tname, O_RDWR | O_CREAT | O_TRUNC, 0666);
-    close(dd);
+    closedir(dd);
     close(fd);
 }
 

@@ -100,6 +100,7 @@ int num;
 
 /* yank data into buf until a newline, extending buf if necessary */
 static char *GetString(fl)
+FILE *fl;
 {
     char *ctmp, *res;
 

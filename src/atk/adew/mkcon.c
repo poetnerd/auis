@@ -205,8 +205,8 @@ char *src,*classn,*name;
 	return -1;
     }
     writestr(oldf,newf,"defaultstr");
-    close(oldf);
-    close(newf);
+    fclose(oldf);
+    fclose(newf);
     return 0;
 }
 struct stf *makestf(buf)

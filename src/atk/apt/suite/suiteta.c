@@ -655,7 +655,7 @@ Number_Test( self, suite, item, type, action, x, y, clicks )
     suite_ChangeItemAttribute(suite, item, suite_ItemCaption(""));
   else {
       if(suite_ItemAttribute(suite, item, suite_ItemCaption(0))) {
-	  test = atoi( suite_ItemAttribute( suite, item, suite_ItemCaption(0) ) );
+	  test = atoi( (char *) suite_ItemAttribute( suite, item, suite_ItemCaption(0) ) );
 	  if(test >= 0 || test <= last_test) {
 	      current_test = test;
 	      Change_Test(self);

@@ -55,6 +55,37 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 #include "srctext.ih"
 #include "srctextv.eh"
 #include "toolcnt.h"
+static struct frame * FindByView();
+static boolean FrameFinder();
+static struct view * PutInAnotherWindow();
+static int ViewEqual();
+static void checkLineLengths();
+static void compress();
+static void compressAll();
+static void endComment();
+static boolean fileExists();
+static void forceupperoff();
+static void forceupperon();
+static void gotoColumn();
+static void insertComment();
+static void insertLineComment();
+static void newline();
+static void nextLongLine();
+static void paren();
+static void redo();
+static void reformat();
+static void reindent();
+static void reindretrn();
+static void renameIdent();
+static void retrn();
+static void selfinsert();
+static void selfinsertreindent();
+static void startComment();
+static void startLineComment();
+static void styleLabel();
+static void styleString();
+static long tcpos();
+static void whatColumn();
 
 /* AutoCut was not made externally visible by txtvcmod, so WE have to check the preference TOO */
 static int autocut_mode = -1;	/* uninitialized */
@@ -66,7 +97,7 @@ static struct cursor *waitCursor;
 
 static void compress(), compressAll(), endComment(), forceupperon(), forceupperoff(), gotoColumn(), insertComment(), insertLineComment(), newline(), paren(), redo(), reformat(), reindent(), renameIdent(), retrn(), reindretrn(), selfinsert(), selfinsertreindent(), startComment(), startLineComment(), styleLabel(), styleString(), whatColumn();
 static void nextLongLine(), checkLineLengths();
-void toggleOverstrike(), overstrikeOn(), overstrikeOff(); /*RSK91overstrike*/
+static void toggleOverstrike(), overstrikeOn(), overstrikeOff();
 
 static struct bind_Description srctextBindings[]={
     {"srctextview-self-insert"," ",' ', NULL,0,0, selfinsert, "Insert a character and check for a preceding keyword."},
@@ -903,7 +934,6 @@ struct srctextview *view;
 struct buffer *buffer;
 int forceWindow;
 {
-static boolean FrameFinder();
     struct frame *frame;
     struct finderInfo myInfo;
 
@@ -1398,7 +1428,7 @@ long rock;
     struct srctext *d = (struct srctext *)srctextview_GetDataObject(self);
     int numericalvalue= srctext_GetMaxLineLength(d); /* use max-length unless explicitly specified in exinit */
     if (rock) /* rock is actually a string, if from ezinit file */
-	numericalvalue= atoi(rock);
+	numericalvalue= atoi((char *)rock);
     srctext_CheckLineLengths(d,numericalvalue,self);
 }
 
@@ -1479,7 +1509,7 @@ long rock;
 {
     int numericalvalue= 0;
     if (rock) /* rock is actually a string, if from ezinit file */
-	numericalvalue= atoi(rock);
+	numericalvalue= atoi((char *)rock);
     srctextview_GotoColumn(self,numericalvalue-1);
 }
 

@@ -3056,7 +3056,7 @@ struct xgraphic *self;
     self->lastFillStyle = FillSolid;
     self->lastFillPixel =  0; /* black */
     self->lastFillTile = NULL;
-    self->localWindow = NULL;
+    self->localWindow = 0;
     self->displayUsed = NULL;
 #if 0
     self->colormap = NULL;
@@ -3065,7 +3065,7 @@ struct xgraphic *self;
     self->screenUsed = 0;
     /* we can't really fill in any of the graphic stuff until we
     have a parent or root */
-    self->gray_shades = xgraphic_FindGrayBlock(NULL,NULL);
+    self->gray_shades = xgraphic_FindGrayBlock(NULL,0);
     self->gray_levels = (struct xgraphic **) malloc(sizeof(struct graphic *) * 17);
     xgraphicClearGrayLevels(self);
     self->valid = FALSE;

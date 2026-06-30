@@ -118,7 +118,7 @@ Free_Elements( self, tree, node, datum )
   register tree_type_node node;
 {
   if ( tree_NodeDatum( tree, node ) )
-    free( tree_NodeDatum( tree, node ) );
+    free( (void *) tree_NodeDatum( tree, node ) );
   return(NULL);
 }
 

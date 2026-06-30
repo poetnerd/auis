@@ -152,6 +152,7 @@ struct fad *self;
 
 void fad__SetName(self,name)
 struct fad *self;
+char *name;
 {
 	strcpy(self->fadname,name);
 }
