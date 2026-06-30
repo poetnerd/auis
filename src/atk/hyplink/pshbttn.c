@@ -138,7 +138,7 @@ struct pushbutton *self;
 }
 
 
-static void
+void
 pushbutton__WriteDataPart(self, fp)
 struct pushbutton *self;
 FILE *fp;
@@ -240,7 +240,7 @@ int level;
 }
 
 
-static long
+long
 pushbutton__ReadDataPart(self, fp, dsversion)
 struct pushbutton *self;
 FILE *fp;

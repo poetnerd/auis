@@ -865,7 +865,7 @@ register struct im *im;
     
     Function returns true if it invoked any handlers, false otherwise.
 */
-	static boolean 
+	boolean
 wmim__HandleFiles (ClassID, twait, beCheap)
 	struct classhdr *ClassID;
 	long twait; 

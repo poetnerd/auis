@@ -40,7 +40,7 @@ struct textref *self;
 {
     return "textrefv";
 }
-static char *textref__GetRef(self,size,buf)
+char *textref__GetRef(
 struct textref *self;
 long size;
 char *buf;

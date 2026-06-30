@@ -2281,7 +2281,7 @@ ProcessInputQueue()
 
 
 
-static void im__HandleRedraw (im)
+void im__HandleRedraw (
     register struct im *im;
 {
     printf("im_HandleRedraw: missing method\n");

@@ -117,7 +117,7 @@ ErrorWithParm(self, parm)
 }
 
 
-	static void
+	void
 tlex__Error(self, msg)
 	register struct tlex *self;
 	char *msg;
@@ -223,7 +223,7 @@ tlex__SetText(self, text, pos, len)
 		self->RecentPos[i] = self->RecentLen[i] = 0;
 }
 
-	static boolean
+	boolean
 tlex__InitializeClass(ClassID)
 	struct classhdr *ClassID;
 {

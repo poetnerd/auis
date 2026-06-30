@@ -48,7 +48,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 static struct menulist *pvaltvcMenus=NULL;
 static struct keymap *pvaltvcKeymap=NULL;
 
-static void pvaltvc__Select(self, ind)
+void pvaltvc__Select(
 struct pvaltvc *self;
 int ind;
 {

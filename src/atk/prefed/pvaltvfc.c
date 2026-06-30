@@ -45,7 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/pref
 #define DATA(self) ((struct prefval *)pvaltvfc_GetDataObject(self))
 #define TEXT(self) (pvaltvfc_GetText(self))
 
-static void pvaltvfc__Select(self, ind)
+void pvaltvfc__Select(
 struct pvaltvfc *self;
 int ind;
 {

@@ -86,7 +86,6 @@ char *ostr;
 int TEST;
 {   /* BUG -- OVERFLOWS NOT DETECTED */
 #ifndef _IBMR2
-    extern char *malloc();
 #endif /* _IBMR2 */
     char *str;
     long len;
@@ -204,7 +203,7 @@ struct text *src;
     return(0);
 
 }
-static long content__StringToInts(self,pos,lev)
+long content__StringToInts(
 struct content *self;
 long pos;
 int *lev;
@@ -224,7 +223,7 @@ struct content_chapentry *cp;
 }
     return(opos + olen <= pos + len);
 }
-static struct mark *content__locate(self,pos)
+struct mark *content__locate(
 struct content *self;
 long pos;
 {
@@ -311,7 +310,7 @@ long buflen;
     return cp;
 }
    
-static void content__Denumerate(self,pos,len)
+void content__Denumerate(
 struct content *self;
 long pos,len;
 {
@@ -365,7 +364,7 @@ struct content_chapentry *cp;
     return FALSE;
 
 }
-static long content__Enumerate(self,opos,len,start)
+long content__Enumerate(
 struct content *self;
 long opos,len;
 char *start;

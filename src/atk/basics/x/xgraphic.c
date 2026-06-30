@@ -2786,7 +2786,7 @@ static void SetBGColor(self, colorName, red, green, blue)
 #endif /* PLANEMASK_ENV */
 }
 
-static short xgraphic_ApproximateColor( self, colorName, red, green, blue )
+short xgraphic_ApproximateColor( self, colorName, red, green, blue )
   struct xgraphic *self;
   char *colorName;
   long *red, *green, *blue;

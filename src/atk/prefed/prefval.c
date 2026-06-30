@@ -422,7 +422,7 @@ struct dataprocs *procs;
 
 
  
-static long prefval__ReadDataPart(self, fp, dsversion)
+long prefval__ReadDataPart(
 struct prefval *self;
 FILE *fp;
 int dsversion;
@@ -435,7 +435,7 @@ int dsversion;
     return err;
 }
 
-static struct prefval_value *prefval__StringToValue(self, str)
+struct prefval_value *prefval__StringToValue(
 struct prefval *self;
 char *str;
 {

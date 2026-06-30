@@ -53,7 +53,7 @@ static struct cursor *waitCursor;
 
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 
-static long completion__FindCommon(classID, string1, string2)
+long completion__FindCommon(
     struct classheader *classID;
     char *string1, *string2;
 {
@@ -64,7 +64,7 @@ static long completion__FindCommon(classID, string1, string2)
     return i;
 }
 
-static void completion__CompletionWork(classID, string, data)
+void completion__CompletionWork(
     struct classheader *classID;
     char *string;
     struct result *data;
@@ -209,7 +209,7 @@ static void FileHelp(partialPath, dummyData, helpTextFunction, helpTextRock)
     im_SetProcessCursor(NULL);
 }
 
-static void completion__FileHelp(classID, partialPath, dummyData, helpTextFunction, helpTextRock)
+void completion__FileHelp(
     struct classheader *classID;
     char *partialPath;
     long dummyData; /* Just along for the ride. */
@@ -334,7 +334,7 @@ static enum message_CompletionCode FileComplete(pathname, directory, buffer, buf
     return result.code;
 }
 
-static enum message_CompletionCode completion__FileComplete(classID, pathname, directory, buffer, bufferSize)
+enum message_CompletionCode completion__FileComplete(
     struct classheader *classID;
     char *pathname;
     boolean directory;
@@ -362,7 +362,7 @@ static enum keymap_Types FileHack(rock, key, entry, rockP)
     return keymap_Empty;
 }
 
-static int completion__GetFilename(classID, view, prompt, startPath, buffer, bufsiz, directoryP, mustMatch)
+int completion__GetFilename(
     struct classheader *classID;
     struct view *view;
     char *prompt;

@@ -92,7 +92,7 @@ print_error(self, severity, msg)
 		free(msg);
 }
 
-	static boolean
+	boolean
 parse__InitializeClass(ClassID)
 	struct classheader *ClassID;
 {
@@ -101,7 +101,7 @@ parse__InitializeClass(ClassID)
 
 
 
-	static boolean
+	boolean
 parse__SetDebug(ClassID, value)
 	struct classheader *ClassID;
 	boolean value;
@@ -111,13 +111,13 @@ parse__SetDebug(ClassID, value)
 	return oldval;
 }
 
-	static struct parse *
+	struct parse *
 parse__GetCurrentParse()
 {
 	return CurrentParse;
 }
 
-	static boolean
+	boolean
 parse__InitializeObject(ClassID, self)
 	struct classheader *ClassID;
 	register struct parse  *self;
@@ -135,14 +135,14 @@ parse__InitializeObject(ClassID, self)
 	return TRUE;
 }
 
-	static void 
+	void
 parse__FinalizeObject(ClassID, self)
 	struct classheader *ClassID;
 	register struct parse  *self;
 {
 }
 
-	static struct parse *
+	struct parse *
 parse__Create(ClassID, desc, lex, action, rock, errhand)
 	struct classheader *ClassID;
 	struct parse_tables *desc;
@@ -167,7 +167,7 @@ parse__Create(ClassID, desc, lex, action, rock, errhand)
 	return p;
 }
 
-	static void
+	void
 parse__Error(self, severity, msg)
 	struct parse *self;
 	int severity;
@@ -180,7 +180,7 @@ parse__Error(self, severity, msg)
 	self->errorHandler(self, severity, msg);
 }
 
-	static void *     /* int (*)() */
+	void *     /* int (*)() */
 parse__SetErrorHandler(self, handler)
 	struct parse *self;
 	void (*handler)();
@@ -197,7 +197,7 @@ parse__SetErrorHandler(self, handler)
 	 the handler is called for each reserved word:
 		handler(rock, char *word, int tokennumber) 
 */
-	static void
+	void
 parse__EnumerateReservedWords(self, handler, rock)
 	struct parse *self;
 	void (*handler)();
@@ -241,7 +241,7 @@ parse__EnumerateReservedWords(self, handler, rock)
 	The routine is forgiving enough to accept the name parameter
 		without quotes:  "a" will match "'a'";  ":=" will match "\":=\""
 */
-	static int
+	int
 parse__TokenNumberFromName(self, name)
 	struct parse *self;
 	char *name;
@@ -317,7 +317,7 @@ debugnewline()
 	fflush(stdout);
 }
 
-	static int
+	int
 parse__Run(self)
 	struct parse *self;
 {
