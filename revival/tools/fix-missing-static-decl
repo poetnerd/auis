@@ -1,0 +1,283 @@
+#!/usr/bin/env python3
+"""Add 'static' to forward declarations whose definition is static.
+
+K&R AUIS source often puts a block of forward declarations near the top
+of a .c file, declared without 'static', while the actual definition
+further down the file *is* static (a private file-scope helper). Modern
+clang rejects this as "static declaration follows non-static
+declaration". The correct fix is almost always to make the forward
+declaration match the definition, not to strip 'static' from the
+definition (these aren't class methods — class methods are handled by
+fix-static-methods instead).
+
+Handles two declaration shapes:
+
+  Single-name, one per line (deskey.c style):
+    char *getProcDoc();
+    -> static char *getProcDoc();          (if getProcDoc is defined static)
+
+  Multi-name, comma list sharing one type (srctextv.c style):
+    void compress(),
+         gotoColumn(),
+         redo();
+    If only some names (e.g. compress, redo) are defined static, the
+    list is split:
+        static void compress(),
+             redo();
+        void gotoColumn();
+
+Names whose definition is static but have no matching forward-declaration
+block get a brand-new `static TYPE NAME();` inserted right after the
+file's #include block. This is always safe when nothing else in the file
+already declares that name (adding a redundant-but-consistent forward
+declaration ahead of a same-shaped definition never changes meaning) —
+*except* when the name collides with a standard library function the
+file relies on via an included header (e.g. a local 'abs' colliding with
+<stdlib.h>'s non-static one). Those names are skipped and reported for a
+manual look instead of auto-inserted.
+
+Usage:
+    fix-missing-static-decl [--dry-run] file.c [file2.c ...]
+    fix-missing-static-decl [--dry-run] --dir src/atk/text
+"""
+
+import re
+import sys
+import argparse
+import os
+
+TYPE_RE = (
+    r'(?:struct\s+\w+\s*\*?\s*|union\s+\w+\s*\*?\s*|'
+    r'(?:unsigned\s+)?(?:long\s+)?(?:int|char|void|boolean|short|long|float|double)\s*\*?\s*)'
+)
+
+TRAILING_COMMENT = r'(?:/\*.*?\*/)?'
+
+DEF_ONE_LINE = re.compile(
+    r'^static\s+(' + TYPE_RE + r')?([A-Za-z_]\w*)\s*\(([^)]*)\)\s*(\{)?\s*'
+    + TRAILING_COMMENT + r'\s*$'
+)
+SKIP_DIRS = {
+    'hp300', 'hp700', 'hp800', 'pmax_3', 'pmax_41', 'pmax_42', 'pmax_ul4',
+    'rt_aos4', 'rt_mach', 'sun3_35', 'sun3_4', 'sun3_41', 'sun4_40',
+    'sun4_41', 'sun4_51', 'vax_3', 'vax_43', 'aix_i386', 'aix_rt', 'aos_rt',
+    'dec_mips', 'dec_mips_42', 'dec_vax', 'hp_68k', 'i386_bsd', 'i386_bsdi',
+    'i386_Linux', 'i386_mach', 'mach_rt', 'sco_i386', 'sgi_mips', 'sun_68k',
+    'sun_sparc', 'sun_sparc_mach', 'rs_aix3',
+}
+
+# Common standard-library function names. If a static definition uses one
+# of these, don't auto-insert a forward declaration -- the real conflict
+# is almost certainly against the libc prototype pulled in by some header,
+# and the fix is to rename the local helper, not declare it static here.
+LIBC_NAMES = {
+    'abs', 'free', 'malloc', 'calloc', 'realloc', 'exit', 'abort',
+    'atoi', 'atof', 'atol', 'strtol', 'strtod', 'index', 'rindex',
+    'getenv', 'qsort', 'system', 'toupper', 'tolower', 'isalpha',
+    'isdigit', 'isspace', 'ispunct', 'isupper', 'islower', 'rand',
+    'srand', 'signal', 'time', 'ctime', 'gmtime', 'localtime', 'mktime',
+    'sprintf', 'fprintf', 'printf', 'scanf', 'sscanf', 'strcmp',
+    'strncmp', 'strcpy', 'strncpy', 'strcat', 'strncat', 'strlen',
+    'strchr', 'strrchr', 'strstr', 'strdup', 'memcpy', 'memset',
+    'memmove', 'memcmp', 'open', 'close', 'read', 'write', 'fopen',
+    'fclose', 'fread', 'fwrite', 'fseek', 'ftell', 'getopt', 'gets',
+    'puts', 'putchar', 'getchar', 'min', 'max', 'fmin', 'fmax',
+    'getline', 'getdelim', 'strtok', 'strpbrk', 'strspn', 'strcspn',
+}
+
+
+def find_static_defined_names(lines):
+    """Return {name: type_text} for functions defined 'static' in the file."""
+    names = {}
+    i = 0
+    n = len(lines)
+    while i < n:
+        line = lines[i].rstrip('\n')
+
+        m = DEF_ONE_LINE.match(line)
+        if m:
+            names[m.group(2)] = (m.group(1) or 'int').strip()
+            i += 1
+            continue
+
+        if re.match(r'^static\s*' + TRAILING_COMMENT + r'\s*$', line):
+            # K&R split: 'static' alone, then either TYPE alone then NAME(...),
+            # or NAME(...) directly (implicit int).
+            if i + 1 < n:
+                nxt = lines[i + 1].rstrip('\n')
+                m2 = re.match(r'^([A-Za-z_]\w*)\s*\(', nxt)
+                if m2 and not nxt.rstrip().endswith(';'):
+                    names[m2.group(1)] = 'int'
+                    i += 2
+                    continue
+                m3 = re.match(r'^(' + TYPE_RE + r')\s*' + TRAILING_COMMENT + r'\s*$', nxt)
+                if m3 and i + 2 < n:
+                    nxt2 = lines[i + 2].rstrip('\n')
+                    m4 = re.match(r'^([A-Za-z_]\w*)\s*\(', nxt2)
+                    if m4 and not nxt2.rstrip().endswith(';'):
+                        names[m4.group(1)] = m3.group(1).strip()
+                        i += 3
+                        continue
+
+        # K&R split: 'static TYPE' together on one line, NAME(...) on the next.
+        m5 = re.match(r'^static\s+(' + TYPE_RE + r')\s*' + TRAILING_COMMENT + r'\s*$', line)
+        if m5 and i + 1 < n:
+            nxt = lines[i + 1].rstrip('\n')
+            m6 = re.match(r'^([A-Za-z_]\w*)\s*\(', nxt)
+            if m6 and not nxt.rstrip().endswith(';'):
+                names[m6.group(1)] = m5.group(1).strip()
+                i += 2
+                continue
+        i += 1
+    return names
+
+
+def try_parse_decl_block(lines, start, static_names):
+    """If lines[start:] begins a forward-declaration block, return
+    (end_index, type_text, entries) where entries is a list of (star, name)
+    tuples. Otherwise return None."""
+    first = lines[start].rstrip('\n')
+    m = re.match(r'^(\s*)(static\s+)?(' + TYPE_RE + r')(.*)$', first)
+    if not m:
+        return None
+    indent, already_static, type_text, rest = m.groups()
+    if already_static:
+        return None  # already static, not what we're fixing
+
+    entries = []
+    j = start
+    remainder = rest
+    while True:
+        remainder = remainder.strip()
+        # consume comma/semicolon separated entries on this logical line
+        while remainder:
+            term_m = re.match(r'^(\*\s*)?([A-Za-z_]\w*)\s*\(\s*\)\s*(,|;)', remainder)
+            if not term_m:
+                return None  # not a simple declaration list; bail
+            star, name, sep = term_m.groups()
+            entries.append((bool(star), name))
+            remainder = remainder[term_m.end():].strip()
+            if sep == ';':
+                if remainder and not re.match(r'^' + TRAILING_COMMENT + r'\s*$', remainder):
+                    return None  # trailing junk after ';'
+                return (j, type_text.strip(), entries)
+        j += 1
+        if j >= len(lines):
+            return None
+        remainder = lines[j].rstrip('\n')
+
+    # unreachable
+
+
+def fix_file(path, dry_run=False):
+    with open(path, 'r', errors='replace') as f:
+        lines = f.readlines()
+
+    static_types = find_static_defined_names(lines)
+    if not static_types:
+        return False, []
+
+    static_names = set(static_types)
+    out = []
+    i = 0
+    n = len(lines)
+    changed = False
+    matched_names = set()
+    last_include_idx = None
+    ifdef_depth = 0
+    brace_depth = 0
+
+    while i < n:
+        if re.match(r'^\s*#\s*(if|ifdef|ifndef)\b', lines[i]):
+            ifdef_depth += 1
+        elif re.match(r'^\s*#\s*endif\b', lines[i]):
+            ifdef_depth -= 1
+        elif ifdef_depth == 0 and re.match(r'^\s*#\s*include\b', lines[i]):
+            last_include_idx = len(out)
+
+        # Only treat a line as a file-scope forward-declaration block when
+        # we're not inside a function body -- block-scope function
+        # declarations exist in K&R code too, and C forbids 'static' on
+        # those (a different, stricter rule than file scope).
+        parsed = try_parse_decl_block(lines, i, static_names) if brace_depth == 0 else None
+        if parsed:
+            end, type_text, entries = parsed
+            needs_static = [(star, name) for star, name in entries if name in static_names]
+            stays_plain = [(star, name) for star, name in entries if name not in static_names]
+            matched_names.update(name for _, name in entries)
+
+            if not needs_static:
+                out.extend(lines[i:end + 1])
+            else:
+                def fmt(entry_list):
+                    return ', '.join(('*' if s else '') + nm + '()' for s, nm in entry_list)
+                new_lines = []
+                new_lines.append(f'static {type_text} {fmt(needs_static)};\n')
+                if stays_plain:
+                    new_lines.append(f'{type_text} {fmt(stays_plain)};\n')
+                out.extend(new_lines)
+                changed = True
+            i = end + 1
+            continue
+
+        brace_depth += lines[i].count('{') - lines[i].count('}')
+        out.append(lines[i])
+        i += 1
+
+    skipped = []
+    missing = static_names - matched_names
+    if missing and last_include_idx is not None:
+        insert_lines = []
+        for name in sorted(missing):
+            if name in LIBC_NAMES:
+                skipped.append(name)
+                continue
+            insert_lines.append(f'static {static_types[name]} {name}();\n')
+        if insert_lines:
+            out[last_include_idx + 1:last_include_idx + 1] = insert_lines
+            changed = True
+
+    if changed and not dry_run:
+        with open(path, 'w') as f:
+            f.writelines(out)
+
+    return changed, skipped
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument('--dry-run', action='store_true',
+                        help='Show what would change without modifying files')
+    parser.add_argument('--dir', metavar='DIR',
+                        help='Process all .c files under DIR recursively')
+    parser.add_argument('files', nargs='*', metavar='file.c',
+                        help='C source files to process')
+    args = parser.parse_args()
+
+    targets = list(args.files)
+    if args.dir:
+        for dirpath, dirnames, filenames in os.walk(args.dir):
+            dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+            for fn in filenames:
+                if fn.endswith('.c'):
+                    targets.append(os.path.join(dirpath, fn))
+
+    if not targets:
+        parser.print_help()
+        sys.exit(1)
+
+    total = 0
+    for path in targets:
+        changed, skipped = fix_file(path, dry_run=args.dry_run)
+        if changed:
+            verb = 'Would modify' if args.dry_run else 'Modified'
+            print(f'{verb}: {path}')
+            total += 1
+        if skipped:
+            print(f'  SKIPPED (libc name collision, needs manual look) in {path}: {", ".join(skipped)}')
+
+    print(f'\nTotal files {"that would be " if args.dry_run else ""}modified: {total}')
+
+
+if __name__ == '__main__':
+    main()
