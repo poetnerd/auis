@@ -26,6 +26,13 @@
 * $
 */
 
+/* Source files under ../common, ../x, ../wm are compiled here too (into
+ * libbasics.a) but their .eh files aren't installed centrally (only
+ * .ih is, via InstallClassFiles) -- look for them next to their .c
+ * siblings instead.
+ */
+LOCALINCLUDES = -I../common -I../x -I../wm
+
 COMMONOBJS = ../common/app.o ../common/atom.o ../common/atomlist.o \
 	../common/basinit.o ../common/bind.o ../common/cursor.o ../common/dataobj.o \
 	../common/describe.o ../common/environ.o ../common/event.o \
