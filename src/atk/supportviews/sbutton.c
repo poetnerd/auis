@@ -359,7 +359,7 @@ static char *sizepolicies[]={
     "Proc"
 };
 
-void sbutton__WriteDataPart(
+void sbutton__WriteDataPart(self, fp)
 struct sbutton *self;
 FILE *fp;
 {
@@ -682,7 +682,7 @@ struct dataprocs *procs;
 
 
  
-long sbutton__ReadDataPart(
+long sbutton__ReadDataPart(self, fp, dsversion)
 struct sbutton *self;
 FILE *fp;
 int dsversion;

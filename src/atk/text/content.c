@@ -203,7 +203,7 @@ struct text *src;
     return(0);
 
 }
-long content__StringToInts(
+long content__StringToInts(self,pos,lev)
 struct content *self;
 long pos;
 int *lev;
@@ -223,7 +223,7 @@ struct content_chapentry *cp;
 }
     return(opos + olen <= pos + len);
 }
-struct mark *content__locate(
+struct mark *content__locate(self,pos)
 struct content *self;
 long pos;
 {
@@ -310,7 +310,7 @@ long buflen;
     return cp;
 }
    
-void content__Denumerate(
+void content__Denumerate(self,pos,len)
 struct content *self;
 long pos,len;
 {
@@ -364,7 +364,7 @@ struct content_chapentry *cp;
     return FALSE;
 
 }
-long content__Enumerate(
+long content__Enumerate(self,opos,len,start)
 struct content *self;
 long opos,len;
 char *start;

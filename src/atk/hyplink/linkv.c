@@ -502,17 +502,17 @@ long param;
   return;
 }
 
-void linkview__Link(
+void linkview__Link(self)
 struct linkview *self; {
     LinkProc(self, 0);
 }
 
-void linkview__AutoLink(
+void linkview__AutoLink(self)
 struct linkview *self; {
     AutolinkProc(self, 0);
 }
 
-void linkview__LinkFile(
+void linkview__LinkFile(self, dest)
 struct linkview *self;
 char *dest; {
     LinkProc(self, dest);

@@ -311,7 +311,7 @@ struct dataobject *d;
     }
     return(FALSE);
 }
-char * page__GetSwitcheeName(
+char * page__GetSwitcheeName(self,sw)
 struct page *self;
 struct page_switchee *sw;
 {
@@ -321,7 +321,7 @@ struct page_switchee *sw;
     }
     return(sw->label);
 }
-char * page__GetNowPlayingName(
+char * page__GetNowPlayingName(self)
 struct page *self;
 {
     struct page_switchee *sw;

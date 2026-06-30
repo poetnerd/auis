@@ -342,7 +342,7 @@ boolean contentv__InitializeClass(classID)
 
     return TRUE;
 }
-void contentv__MakeWindow(
+void contentv__MakeWindow(classID,txt)
 struct classinfo *classID;
 struct text *txt;
 {

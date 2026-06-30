@@ -191,7 +191,7 @@ struct buttonV_rl *rl1,*rl2;
     else if (rl2->key == 3 && rl1->key == 2) return 1;
     else return (rl1->key - rl2->key);
 }
-void buttonV__CacheSettings(
+void buttonV__CacheSettings(self)
 struct buttonV *self;
 {
     char tmp[256],*t,*chr;

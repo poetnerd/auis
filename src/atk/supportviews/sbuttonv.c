@@ -976,7 +976,7 @@ long x, y;
 }
 
 
-void sbuttonv__HighlightButton(
+void sbuttonv__HighlightButton(classID, self, si, r)
 struct classheader *classID;
 struct view *self;
 struct sbutton_info *si;
@@ -1066,7 +1066,7 @@ struct rectangle *r;
 }
 
 
-void sbuttonv__UnHighlightButton(
+void sbuttonv__UnHighlightButton(classID, self, si, r)
 struct classheader *classID;
 struct view *self;
 struct sbutton_info *si;

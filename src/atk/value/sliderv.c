@@ -262,7 +262,7 @@ struct sliderV * self;
 #define HGH 3
 #define SPACE 6
 
-void sliderV__Drawslider(
+void sliderV__Drawslider(self,fullupdate,rr)
 struct sliderV * self;
 boolean fullupdate;
 struct rectangle *rr;

@@ -129,7 +129,7 @@ struct view *self;
     tindex_PreviewIndex((struct view *) getrealview(self));
 }
 
-void tindex__PrintIndex(
+void tindex__PrintIndex(ClassID,self)
 struct classheader *ClassID;
 struct view *self;
 {
@@ -141,7 +141,7 @@ struct view *self;
     message_DisplayString(NULL,0,"Index sent to printer; watch console for result");
 
 }
-void tindex__PreviewIndex(
+void tindex__PreviewIndex(ClassID,self)
 struct classheader *ClassID;
 register struct view *self;
 {

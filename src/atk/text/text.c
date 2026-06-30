@@ -140,7 +140,7 @@ struct dataobject *obj;
     }
 }
 
-struct environment *text__AlwaysWrapViewChar(
+struct environment *text__AlwaysWrapViewChar(self, pos, viewtype, dataobject)
 struct text *self;
 long pos;
 char *viewtype;
@@ -1210,7 +1210,7 @@ char *outbuf,*outp,*lastblank;
  * removed to save space.  It could be retrieved if necessary.
  */
 
-void text__WriteSubString(
+void text__WriteSubString(self, pos, len, file, quoteCharacters)
 struct text *self;
 long pos;
 long len;
@@ -2146,7 +2146,7 @@ long value;
 	    }
     }
 }
-struct environment *text__EnumerateEnvironments(
+struct environment *text__EnumerateEnvironments(self,pos,len,callBack,rock)
 struct text *self;
 long pos,len;
 boolean (*callBack)();

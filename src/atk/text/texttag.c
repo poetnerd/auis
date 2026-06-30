@@ -40,7 +40,7 @@ struct texttag *self;
 {
     return "texttagv";
 }
-char *texttag__GetTag(
+char *texttag__GetTag(self,size,buf)
 struct texttag *self;
 long size;
 char *buf;
