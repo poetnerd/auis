@@ -59,9 +59,11 @@ def fix_file(path, dry_run=False):
         line = lines[i]
 
         # Pattern A: 'static ... classname__Method(' on one line
-        m = re.match(r'^(static\s+)(.*\b[A-Za-z_][A-Za-z0-9_]*__[A-Za-z0-9_]+\s*\()', line)
+        m = re.match(r'^(static\s+)(?=.*\b[A-Za-z_][A-Za-z0-9_]*__[A-Za-z0-9_]+\s*\()', line)
         if m:
-            out.append(m.group(2) + '\n')
+            # Strip only the 'static ' prefix -- keep everything after it
+            # (parameter names, closing paren, etc.) untouched.
+            out.append(line[m.end(1):])
             changed = True
             i += 1
             continue
