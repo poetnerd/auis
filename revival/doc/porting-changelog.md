@@ -449,3 +449,104 @@ which stock bison handles fine. `ness.gra` will need either a rewrite
 to use named `%token` declarations instead of inline string-literal
 terminals, or a working copy of the Andrew bison fork — deferred, not
 on the critical path for `eq`/ATK core.
+
+## 2026-06-30
+
+### Add `fix-missing-static-decl` tool, fix remaining 'static follows
+non-static' errors (127 → 0)
+
+Two distinct sub-problems behind the same clang error, needing opposite
+fixes — kept as two separate tools rather than merged, since they apply
+to disjoint symbol categories (class methods vs. private file-scope
+helpers):
+
+- **Forward declaration missing `static`**: K&R source often puts a
+  block of forward declarations near the top of a `.c` file without
+  `static`, while the real definition further down *is* static (a
+  private helper). New tool `revival/tools/fix-missing-static-decl`
+  fixes this two ways: (1) splits/rewrites existing forward-declaration
+  blocks (single-name-per-line and multi-name comma-list styles) to add
+  `static` only to the names that need it; (2) inserts a brand-new
+  `static TYPE NAME();` after the file's `#include` block when no
+  forward declaration exists at all (the call-site-creates-an-implicit-
+  declaration case, e.g. `chartobj.c`'s `Generate_Shadows`,
+  `fadv.c`'s `DoAnimation`).
+- Three names collided with standard library functions pulled in
+  transitively (`hit.c`'s `abs`, `funs.c`'s `fmax`/`fmin`, `lset.c`'s
+  `getline`) — auto-insertion would have masked the real conflict, so
+  the tool maintains a skip-list and these were fixed by hand: `hit.c`'s
+  reimplementation of `abs` was simply deleted (libc's is identical and
+  already in scope); `funs.c`'s `fmax`/`fmin` renamed to `funs_Max`/
+  `funs_Min`; `lset.c`'s `getline` renamed to `lset_GetLine` (its 2-arg
+  signature was also being type-checked against POSIX's 3-arg
+  `getline`, which is what the separate "too few arguments" errors in
+  that file actually were — same root cause, no separate fix needed).
+- Two tool bugs found and fixed during rollout: (1) the insertion logic
+  initially placed new declarations after the textually-last
+  `#include`, without tracking `#ifdef` nesting — landed inside a
+  still-open `#ifdef UTMP_MUNGE` block in `tscript.c`, hiding the
+  declaration from the actual Darwin build. Fixed by tracking
+  `#if`/`#ifdef`/`#ifndef`/`#endif` depth and only inserting at depth 0.
+  (2) The declaration-block rewriter didn't track brace depth either,
+  so it matched a *block-scope* (local, inside-a-function) forward
+  declaration in `im.c` and `compile.c` and incorrectly added `static`
+  to it — block-scope function declarations cannot be `static` in C,
+  a stricter rule than file scope, so this introduced a new error
+  ("function declared in block scope cannot have 'static' storage
+  class"). Fixed by tracking `{`/`}` depth and only treating lines as
+  file-scope declaration blocks at depth 0. Also added tolerance for
+  trailing `/* comment */` text on declaration/definition lines, which
+  the original anchored regexes rejected outright (silently failing to
+  detect `mtextv.c`'s `definition`/`implementation`, both commented
+  `/*RSKadd*/`).
+
+### Critical bug found in `fix-static-methods` (already committed) —
+silently truncated 16 files
+
+While chasing the above, found that `fix-static-methods`'s Pattern A
+regex (`static ... classname__Method(` on one line) captured only up to
+the opening paren and discarded everything after it when rewriting the
+line — silently dropping the K&R parameter-name list and the closing
+paren whenever a method's `static TYPE NAME(params)` was written on a
+single line (as opposed to the 3-line K&R split, which was handled
+correctly). E.g. `complete.c`'s
+
+```c
+static long completion__FindCommon(classID, string1, string2)
+```
+
+became
+
+```c
+long completion__FindCommon(
+```
+
+— invalid C, surfacing as "expected `)`" / "expected identifier or `(`"
+errors against the *next* line. This had already been committed (the
+"Add fix-static-methods tool... 21 files" commit) and pushed.
+
+Found the full blast radius by diffing `andrew-6.4/src` against the
+`trunk` checkout (andrew-6.4 is a branch off trunk, so any file
+untouched by revival work should be byte-identical to trunk) rather than
+a blanket `fossil revert`, which would also have discarded legitimate
+later edits stacked on the same files (e.g. `content.c`'s separate
+`malloc` extern cleanup). 16 of the 21 files were affected, 32 functions
+total. Fixed the tool itself (capture the prefix as a zero-width
+lookahead, slice the original line instead of reconstructing it from
+matched groups — preserves everything after `static `), then wrote a
+one-off repair script comparing each corrupted line against its trunk
+counterpart (minus `static `) to restore the dropped parameter lists
+exactly, leaving every other edit on those files untouched. Verified via
+a fresh trunk diff (only the intended `static`-stripping remained) and
+by compiling all 16 files individually.
+
+**Lesson**: a full-tree build completing with `make -k` (exit 0) does
+not mean zero errors — `-k` means "keep going past errors." Compile-
+verify every individual file a tool touches before committing, not just
+that the overall build process finishes.
+
+### Clean rebuild after all fixes
+
+`make Clean; make -k dependInstall` from scratch: **87 `.do` files**
+(previous high-water mark was 62), **602 headers installed** in
+`build/include/atk/` (up from 583), errors down to 101 from 284.
