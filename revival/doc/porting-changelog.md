@@ -905,22 +905,27 @@ storing argument 10 to `[SP+8]`** before the `blr`. The callee reads stale,
 unrelated stack content left over from an earlier call in that same stack
 region. Per the C standard this calling pattern is well-defined (not UB) —
 real callee is also K&R-style/non-prototyped, argument types match after
-default promotion — so this looks like a genuine clang arm64 codegen bug:
-it appears to drop the store for the *last* stack-spilled argument when
-calling through a `(void (*)())`-typed pointer with more than 8 total
-arguments. `DrawBorder` is unusually wide (10 args) for a class method,
-plausibly why this is the first place the revival has hit it — but nothing
-rules out other >=9-argument virtually-dispatched methods elsewhere in this
-large class hierarchy having the identical latent bug, just not yet
-exercised at runtime. Not caught at compile time; there is currently no
-compiler warning for this pattern.
+default promotion.
 
-**Not yet fixed.** User's chosen direction: fix it at the root, in the
-class preprocessor (`overhead/class/pp/class.c`, the tool that generates
+**Leading hypothesis, formed from this one call site only, not yet
+independently verified:** a genuine clang arm64 codegen bug that drops the
+store for the *last* stack-spilled argument when calling through a
+`(void (*)())`-typed pointer with more than 8 total arguments.
+`DrawBorder` is unusually wide (10 args) for a class method, plausibly why
+this is the first place the revival has hit it — but nothing yet confirms
+this by reproducing it at a second, independent >=9-argument virtual call
+site, or via a minimal standalone repro outside the AUIS tree. Not caught
+at compile time either way; there is currently no compiler warning for
+this pattern.
+
+**Not yet fixed.** User's chosen direction, contingent on the hypothesis
+holding up under further verification: fix it at the root, in the class
+preprocessor (`overhead/class/pp/class.c`, the tool that generates
 `.ih`/`.eh` from `.ch` class specs) so it emits properly, fully-prototyped
 function pointer casts (matching each method's real declared signature,
 which the preprocessor already knows from the `.ch` spec) instead of the
 generic `(void (*)())`. Flagged as a separate, large task — likely a fresh
 session/agent, to avoid re-deriving this investigation's context cold. Full
 details, the exact disassembly evidence, and pointers for where to start in
-`class.c` are in [[project_classpp_vtable_codegen_bug]].
+`class.c` are in the project memory file
+`project_classpp_vtable_codegen_bug.md`.
