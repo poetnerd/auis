@@ -739,3 +739,26 @@ high-water mark (before this session) was 62 `.do` files. The single
 remaining grep hit for "error:" in the build log is a false positive —
 a string literal in `defaults.c` (`"Internal error: unknown recognizer
 type"`), not a diagnostic. No `fatal error:` lines remain at all.
+
+### `-k` no longer needed; found and fixed one more gap while verifying
+
+Tested `make dependInstall` without `-k` (only used originally to push
+past real blocking errors and maximize `.do`/header counts despite
+them) — it completed cleanly, same 278 `.do` files, exit 0.
+
+Verifying this surfaced one real gap: `atk/basics/lib/` independently
+compiles `../x/xgraphic.c` a second time (into the static `libbasics.a`,
+separate from the `.do` built directly in `atk/basics/x/`) but failed
+there with "incomplete definition of type 'Display'". Root cause:
+`atk/basics/x/Imakefile` sets `-DXLIB_ILLEGAL_ACCESS`, which is what
+makes modern Xlib.h expose `Display`'s full struct instead of just a
+forward declaration (`struct _XDisplay;` — Xlib.h hides the real
+definition without it, by design, to push callers toward accessor
+macros). `basics/lib/Imakefile` has its own separate `DEFINES`/Makefile
+and wasn't setting this flag, so its independent compile of the same
+source saw only the opaque type. Added the same `-DXLIB_ILLEGAL_ACCESS`
+there. This was very likely already broken before today (silently
+masked — this directory's build never got far enough to reach it until
+the `.eh`-lookup fix earlier in this session). `make Clean; make
+dependInstall` (no `-k`) now succeeds end to end: 278 `.do` files, 0
+errors, exit 0.

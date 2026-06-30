@@ -33,6 +33,14 @@
  */
 LOCALINCLUDES = -I../common -I../x -I../wm
 
+/* ../x/xgraphic.c (and friends) reach directly into Xlib's Display
+ * struct; ../x/Imakefile defines this to expose it (modern Xlib.h
+ * hides the struct -- forward-declares it only -- without this).
+ * Needed here too since this directory has its own separate compile
+ * of the same sources, with its own Makefile/DEFINES.
+ */
+DEFINES = -DXLIB_ILLEGAL_ACCESS
+
 COMMONOBJS = ../common/app.o ../common/atom.o ../common/atomlist.o \
 	../common/basinit.o ../common/bind.o ../common/cursor.o ../common/dataobj.o \
 	../common/describe.o ../common/environ.o ../common/event.o \
