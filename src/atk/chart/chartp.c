@@ -77,6 +77,8 @@ END-SPECIFICATION  ************************************************************/
 #include  <chart.ih>
 #include  <chartv.ih>
 #include  <suite.ih>
+static int Activate();
+static int Passivate();
 
 #define  add_code		    1
 #define  delete_code		    2

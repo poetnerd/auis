@@ -52,7 +52,7 @@ static int autocut_mode = -1;	/* uninitialized */
 static struct keymap *c_Map;
 static struct menulist *c_Menus;
 
-void startPreproc();
+static void startPreproc();
 
 static struct bind_Description ctextBindings[]={
     {"ctextview-start-preproc","#",'#', NULL,0,0, startPreproc, "Start preprocessor style if pressed at start of line."},

@@ -73,6 +73,39 @@ Figure out some way to handle levels of user.  Macros should probably not be an 
 
 #include <sys/wait.h>	/* for pruning zombies */ 
 #include <netinet/in.h>	/* for byte ordering in logs */
+static struct action * ConsumeMacroEvent();
+static int DeathInTheFamily();
+static struct im * DoCreate();
+static void DumpActions();
+static void EditRecording();
+static void FreeInteractionEvents();
+static void GenericConfig();
+static struct vfile * GetCorrespondingVFile();
+static char * GetKeyBinding();
+static struct vfile * GetUnUsedVfile();
+static int HandleArgumentProcessing();
+static struct im * HandleProc();
+static void InitGlobalStructure();
+static void InteractionEventWork();
+static int InternalSignal();
+static void PlayKeyboardMacro();
+static void RecordCharacter();
+static void RecordProc();
+static void RedrawWindow();
+static int SetArgProvided();
+static void StartKeyboardMacro();
+static void StartProfiling();
+static void StopKeyboardMacro();
+static void StopProfiling();
+static boolean VerifyBinding();
+static int WakeUpIM();
+static char * charToPrintable();
+static void echoKey();
+static char * get_logical_wd();
+static boolean isString();
+static void resetKeyEcho();
+static void startKeyEchoing();
+static boolean stillexists();
 
 #define HITPIXELS 1
 

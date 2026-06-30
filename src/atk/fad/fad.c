@@ -36,6 +36,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fad/
 #include <fad.eh>
 #include <fontdesc.ih>
 #include <attribs.h>
+static struct fontdesc * my_DefineFont();
+static struct vector * newvector();
+static int pointmatch();
 #define STARTHEIGHT 256
 /* *********
 struct fad *fad__NewData()

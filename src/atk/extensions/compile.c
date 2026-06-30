@@ -65,6 +65,34 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <stylesht.ih>
 
 #include <compile.eh>
+static struct frame * FindByView();
+static int FinishProcess();
+static boolean FrameFinder();
+static void InsertMessage();
+static struct buffer * MakeCommandBuffer();
+static struct errorList * MakeErrorList();
+static int ParseCCError();
+static int ParseCD();
+static int ParseEgrepError();
+static int ParseEntry();
+static int ParseHCError();
+static int ParseSGIError();
+static struct view * PopToMark();
+static struct view * PutInAnotherWindow();
+static boolean SaveAllBuffers();
+static boolean SaveModifiedBuffer();
+static boolean SetDotToEnd();
+static struct process * StartProcess();
+static int ViewEqual();
+static void compile_Build();
+static void compile_BuildHandler();
+static void compile_KillBuild();
+static int compile_NextError();
+static int compile_PreviousError();
+static void compile_SetCommand();
+static int getlinepos();
+static long nextlinepos();
+static void resetErrors();
 
 #ifdef hpux
 #define killpg(id,sig) kill(-(id),sig)

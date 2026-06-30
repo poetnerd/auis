@@ -84,6 +84,58 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/type
 #endif /* sys_telmat */
 
 #include <signal.h>
+static int AnounceDeath();
+static void ClearTypescript();
+static void ClearTypescriptText();
+static void ExecuteCurrentCommand();
+static struct environment * GetCommandEnv();
+static int GrabCommand();
+static void GrabCommandHere();
+static void GrabCurrentCommand();
+static void GrabLastCommand();
+static void GrabNextCommand();
+static void MaintainLastEnv();
+static void MyCanOutHandler();
+static void NoEchoCommand();
+static int NullWinSizeProc();
+static int PositionDot();
+static char * ReadDirName();
+static void ReadFromProcess();
+static void ResetTTY();
+static void SendSig();
+static void SetTitle();
+static void TypescriptDoReturnCommand();
+static void TypescriptEOTCommand();
+static void TypescriptEndOfLineCommand();
+static void TypescriptINTCommand();
+static void TypescriptLeftCommand();
+static void TypescriptQUITCommand();
+static void TypescriptReturnAndPositionCommand();
+static void TypescriptReturnCommand();
+static void TypescriptSTOPCommand();
+static void TypescriptUnboundCommand();
+static void TypescriptZapCommand();
+static void Typescript_DigitCmd();
+static void Typescript_SelfInsertCmd();
+static int WritePty();
+static int doprint();
+static void smashReadOnlyBuf();
+static int typescriptAddFileMenu();
+static int typescriptAddMenu();
+static int typescriptAddSearchMenu();
+static int typescriptAddtypescriptMenus();
+static int typescript_BackwardsRotatePasteCmd();
+static void typescript_DragCwdCmd();
+static int typescript_HandleMenus();
+static int typescript_PreviewCmd();
+static int typescript_PrintCmd();
+static int typescript_ResetTTY();
+static int typescript_RotatePasteCmd();
+static void typescript_RuboutCmd();
+static int typescript_SaveAs();
+static int typescript_SetPrinterCmd();
+static void typescript_YankCmd();
+static void typescript_handlereadonly();
 
 #if defined(POSIX_ENV) && !defined(sun)
 #include <termios.h>

@@ -45,6 +45,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 #include <fontdesc.ih>
 
 #include <table.eh>
+static int CreateCell();
+static int movetr();
+static char * myrealloc();
 
 #ifndef _IBMR2
 extern char * malloc ();

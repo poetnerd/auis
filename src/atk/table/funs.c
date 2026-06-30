@@ -54,6 +54,29 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #define AUXMODULE
 #include <table.eh>
+static void errorfunc();
+static double false();
+static double fand();
+static void fcount();
+static void fdate();
+static double fday();
+static void fiserr();
+static void fisinf();
+static double fmodulo();
+static double fmonth();
+static double fnot();
+static double fpi();
+static double frand();
+static double fround();
+static void fsum();
+static double fyear();
+static void getcol();
+static void getrow();
+static double iffer();
+static double orf();
+static double today();
+static double true();
+static void vlookup();
 
 #define e_TRUE 1.0
 #define e_FALSE 0.0
@@ -169,7 +192,7 @@ extended_double *argv;
     MakeStandard(result, (double) (x));
 }
 
-static void fmax (T, result, rr, cc, argc, argv)
+static void funs_Max (T, result, rr, cc, argc, argv)
 register struct table * T;
 register extended_double *result;
 int     rr,
@@ -221,7 +244,7 @@ extended_double *argv;
 	eval(T, result, rr, cc, "-1/0");
 }
 
-static void fmin (T, result, rr, cc, argc, argv)
+static void funs_Min (T, result, rr, cc, argc, argv)
 register struct table * T;
 register extended_double *result;
 int     rr,
@@ -640,7 +663,7 @@ enterfuns () {
     enterfun("today", today, 0);
     enterfun("sum", fsum, -1);
     enterfun("count", fcount, -1);
-    enterfun("max", fmax, -1);
-    enterfun("min", fmin, -1);
+    enterfun("max", funs_Max, -1);
+    enterfun("min", funs_Min, -1);
     enterfun("vlookup", vlookup, -1);
 }

@@ -44,6 +44,7 @@ static char rcsHeader[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/at
 
 #include "m3text.ih"
 #include "m3textv.eh"
+static void asterisk();
 
 /* AutoCut was not made externally visible by txtvcmod, so WE have to check the preference TOO */
 static int autocut_mode = -1;	/* uninitialized */
@@ -52,10 +53,8 @@ static int autocut_mode = -1;	/* uninitialized */
 static struct keymap *m3_Map;
 static struct menulist *m3_Menus;
 
-void asterisk(),
-     interface(),
-     module(),
-     m3pragma();
+static void asterisk();
+void interface(), module(), m3pragma();
 
 static struct bind_Description m3textBindings[]={
     {"m3textview-asterisk","*",'*', NULL,0, 0, asterisk,""},

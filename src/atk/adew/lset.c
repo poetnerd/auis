@@ -44,6 +44,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <atomlist.ih>
 #include <text.ih>
 #include <ctype.h>
+static struct dataobject * getregisteredobject();
+static int registerobject();
 /* #define DEBUG 1 */
 
 #define VALUE 10
@@ -155,7 +157,7 @@ struct lset *self;
     return mod;
 }
 	
-static char *getline(buf,c)
+static char *lset_GetLine(buf,c)
 register char *buf,*c;
 {
 /* printf("Getting line from %s\n",buf); */
@@ -280,9 +282,9 @@ putchar(c);
     sscanf(cbuf,"%d %d %d %ld %ld %ld %d\n" ,&(self->type),&(self->pct),&(self->application),
 	 &did,&lid,&rid,&textpending);
     cp = strchr(cbuf,'\n'); cp++;
-    cp = getline(cp,self->dataname);
-    cp = getline(cp,self->viewname);
-    cp = getline(cp,self->refname);
+    cp = lset_GetLine(cp,self->dataname);
+    cp = lset_GetLine(cp,self->viewname);
+    cp = lset_GetLine(cp,self->refname);
     *buf = '\0';
     if(textpending){
 	self->pdoc = (struct text *) newobject;

@@ -144,6 +144,41 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 #include <cmap.ih>
 #include <cmapv.ih>
 #include <imagev.eh>
+static void Brighten();
+static void ChangeZoomCmd();
+static void Dither();
+static void Export_Cmd();
+static void GammaCorrect();
+static void Gray();
+static void Halftone();
+static void Import_Cmd();
+static void InfoCmd();
+static void InternalZoomCmd();
+static void Normalize();
+static void PanToOriginCmd();
+static void PostCursor();
+static void ReadCmd();
+static void RectToPix();
+static void Reduce();
+static void SaveAs();
+static void ScaleToFit();
+static void SetSaveFormat();
+static void SetSaveQuality();
+static void ShowFixed();
+static void ShowTrue();
+static int WriteToFile();
+static void Write_Postscript();
+static char * imageTypeName();
+static int image_Export();
+static struct image * image_Import();
+static void x_getinfo();
+static void x_setframe();
+static long x_whatisat();
+static void y_getinfo();
+static void y_setframe();
+static long y_whatisat();
+static void InternalZoomCmd();
+static void RectToPix();
 
 #define CONTINUOUS_PAN	0
 #define DISCREET_PAN	1

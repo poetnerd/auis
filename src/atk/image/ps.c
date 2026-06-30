@@ -97,7 +97,8 @@ static double margins[7][2] = { { 1.000, 1.000},   /* US NORMAL */
 #define RANGE(a,b,c) { if (a < b) a = b;  if (a > c) a = c; }
 
 static void setScale();
-void centerImage(), writePS();
+static void centerImage();
+void writePS();
 static void psColorImage(), psColorMap(), epsPreview();
 static void psRleCmapImage();
 static int  rle_encode(), writeBWStip();

@@ -45,6 +45,16 @@ extern char * fcvt();
 
 #define AUXMODULE
 #include <spread.eh>
+static void FixCursors();
+static int Flush();
+static void NotifyKids();
+static int SmashSelection();
+static int updateBorder();
+static int updateCell();
+static int updateCells();
+static int updateEdges();
+static int updateString();
+static int updateValue();
 
 extern struct view *spread_FindSubview();
 

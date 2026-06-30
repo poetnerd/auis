@@ -70,6 +70,8 @@ END-SPECIFICATION  ************************************************************/
 #include "chart.ih"
 #include "chartpie.eh"
 #include <ctype.h>
+static int Compute_Pie_Points();
+static int Show_Pie_Chart();
 
 int chartpie_debug = 0;
 

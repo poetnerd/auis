@@ -57,6 +57,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <buffer.ih>
 #include <frame.ih>
 #include <dataobj.ih>
+static int addlist();
+static int appendlist();
+static int deletelist();
 
 static struct cursor *WaitCursor;
 

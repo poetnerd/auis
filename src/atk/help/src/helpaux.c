@@ -77,6 +77,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <hlptextv.ih>
 #define AUXMODULE 1
 #include <help.eh>
+static void CompletionSplot();
+static void HelpEnumProc();
+static void HelpHelpProc();
+static int lenstrcmp();
+static int safesystem();
 
 /* statics representing information cache */
 extern char *help_tutorialDirs[MAX_TUTORIAL_DIRS];

@@ -45,6 +45,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #include <class.h>
 #include <table.ih>
+static double aexpr();
+static double atom();
+static int cellref();
+static void expr();
+static double factor();
+static double funcall();
+static double relexpr();
+static double standardize();
+static double term();
+static int trydate();
 
 #if !POSIX_ENV
 extern char * malloc();

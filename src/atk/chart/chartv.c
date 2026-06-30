@@ -101,6 +101,11 @@ END-SPECIFICATION  ************************************************************/
 #include <chartobj.ih>
 #include <chart.ih>
 #include <chartv.eh>
+static int ChangeChartAttribute();
+static int Description_Modified();
+static int Initialize();
+static int Preserve_Description();
+static int SetChartAttribute();
 
 
 static   struct menulist	 *class_menulist;

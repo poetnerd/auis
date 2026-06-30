@@ -58,6 +58,24 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ro
 #include <roffcmds.h>
 #include <roffstyl.h>
 #include <roffutil.h>
+static int CreateDefaultCommands();
+static int DoCommand();
+static long ReadFormatted();
+static int Setmode();
+static int dohmove();
+static int g();
+static int getname();
+static char * getregister();
+static int getsize();
+static int getsym();
+static int getwidth();
+static boolean istroff();
+static int munch();
+static int munchmove();
+static int setbase();
+static int setfont();
+static int special();
+static int tclose();
 
 static int SCALE[8] = 
 {    1, /* u, basic unit */

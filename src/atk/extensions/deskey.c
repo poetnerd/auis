@@ -48,28 +48,28 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 static long NProcs;
 
 /* Begining of Forward Declarations */
-boolean bufferFill();
-boolean bufferFind();
-boolean bufferSetup();
-char *charToPrintable();
-char *getProcDoc();
-int parseFile();
-long describeAllProcEntries();
-struct view *bufferFindView();
-void datastreamClose();
-void datastreamOpen();
-void describeAKey();
-void describeAllKeys();
+static boolean bufferFill();
+static boolean bufferFind();
+static boolean bufferSetup();
+static char * charToPrintable();
+static char * getProcDoc();
+static int parseFile();
+static long describeAllProcEntries();
+static struct view * bufferFindView();
+static void datastreamClose();
+static void datastreamOpen();
+static void describeAKey();
+static void describeAllKeys();
 void describeBinding();
 void describeKeymap();
-void describeKeys();
-void describeProcEntry();
-long ListProctable();
+static void describeKeys();
+static void describeProcEntry();
+static long ListProctable();
 void makePrefix();
-void parseBindFile();
-void parseProcFile();
-void sortByKey();
-void sortByProc();
+static void parseBindFile();
+static void parseProcFile();
+static void sortByKey();
+static void sortByProc();
 /* End of Forward Declarations */
 
 #define KEYSORT 1

@@ -50,7 +50,7 @@ static int autocut_mode = -1;	/* uninitialized */
 static struct keymap *cpp_Map;
 static struct menulist *cpp_Menus;
 
-void slash();
+static void slash();
 
 static struct bind_Description cpptextBindings[]={
     {"cpptextview-slash","/",'/',NULL,0,0,slash,"Insert a slash, possibly an end comment delimiter or the start of a line comment."},

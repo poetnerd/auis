@@ -81,6 +81,23 @@ END-SPECIFICATION  ************************************************************/
 #include "chartv.ih"
 #include "chartobj.eh"
 #include <ctype.h>
+static int Draw_Bottom_Scale();
+static int Draw_Horizontal_Labels();
+static int Draw_Labels();
+static int Draw_Left_Scale();
+static int Draw_Right_Scale();
+static int Draw_Scales();
+static int Draw_Top_Scale();
+static int Draw_Vertical_Labels();
+static int Free_Shadows();
+static int Generate_Shadows();
+static int Prepare_Horizontal_Scale();
+static int Prepare_Vertical_Scale();
+static int Print_Horizontal_Labels();
+static int Print_Labels();
+static int Print_Left_Scale();
+static int Print_Scales();
+static int Set_Shadows();
 
 int chartobj_debug = 0;
 

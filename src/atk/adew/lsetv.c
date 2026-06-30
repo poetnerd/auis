@@ -55,6 +55,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <rm.ih>
 #include <valuev.ih>
 #include <text.ih>
+static int dolink();
+static int initkids();
+static int lookuptype();
+static int lsetview_DestroyView();
+static int lsetview_PlaceApplication();
+static int lsetview_PlaceCel();
+static int lsetview_PlaceValue();
+static int lsetview_PlaceView();
+static void lsetview_SplitHorz();
+static void lsetview_SplitVert();
+static struct view * makeview();
+static int objecttest();
 
 static struct keymap *newKeymap;
 static struct menulist *newMenus;

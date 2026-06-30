@@ -64,31 +64,8 @@ static struct keymap *src_Map;
 static struct menulist *src_Menus;
 static struct cursor *waitCursor;
 
-void compress(),
-     compressAll(),
-     endComment(),
-     forceupperon(),
-     forceupperoff(),
-     gotoColumn(),
-     insertComment(),
-     insertLineComment(),
-     newline(),
-     paren(),
-     redo(),
-     reformat(),
-     reindent(),
-     renameIdent(),
-     retrn(),
-     reindretrn(),
-     selfinsert(),
-     selfinsertreindent(),
-     startComment(),
-     startLineComment(),
-     styleLabel(),
-     styleString(),
-     whatColumn();
-void nextLongLine(),
-     checkLineLengths();
+static void compress(), compressAll(), endComment(), forceupperon(), forceupperoff(), gotoColumn(), insertComment(), insertLineComment(), newline(), paren(), redo(), reformat(), reindent(), renameIdent(), retrn(), reindretrn(), selfinsert(), selfinsertreindent(), startComment(), startLineComment(), styleLabel(), styleString(), whatColumn();
+static void nextLongLine(), checkLineLengths();
 void toggleOverstrike(), overstrikeOn(), overstrikeOff(); /*RSK91overstrike*/
 
 static struct bind_Description srctextBindings[]={
@@ -926,7 +903,7 @@ struct srctextview *view;
 struct buffer *buffer;
 int forceWindow;
 {
-    boolean FrameFinder();
+static boolean FrameFinder();
     struct frame *frame;
     struct finderInfo myInfo;
 

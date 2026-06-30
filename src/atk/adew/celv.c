@@ -71,6 +71,26 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <proctbl.ih>
 #include <celv.eh>
 #include <arbiter.ih>
+static int GetParameters();
+static void InitNow();
+static struct view * PopOverlay();
+static int PostParameters();
+static int SetInvisible();
+static int SetVisible();
+static boolean StringToResourceList();
+static void UpdateCursors();
+static int UpdateDrawing();
+static int appendresourceList();
+static char * atomlisttostring();
+static void celview_Paste();
+static void celview_PromptForFile();
+static int drawshadow();
+static int editresourceList();
+static int initchild();
+static int lookuptype();
+static int objecttest();
+static int scaleoverlay();
+static char * trunc();
 /* #define DEBUG */
 
 #define DataObject(A) (A->header.view.dataobject)

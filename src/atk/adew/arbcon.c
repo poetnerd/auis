@@ -67,9 +67,45 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <envrment.ih>
 #include <cltextv.ih>
 #include <text.ih>
+static void ArbApplicationChoiceCallBack();
+static void ArbCutCelCallBack();
+static void ArbLinkCelCallBack();
+static void ArbTextEditCallBack();
+static void ArbobviewlistCallBack();
+static int CopyText();
+static void DoCopy();
+static struct arbcon * FindSelf();
+static int NewWindow();
+static int SetName();
+static int SetNotice();
+static void addobview();
+static int addtypes();
+static int appendlist();
+static void arbchdir();
+static void arbnewwin();
+static void copy();
+static void copylink();
+static boolean createGself();
+static void createcon();
+static struct celview * currentcelview();
+static void cut();
+static boolean dolistfile();
+static int findinlist();
+static long findstring();
+static void handleclicks();
+static void init();
+static int initself();
+static boolean isarbcon();
+static int mystrcmp();
+static void newlist();
+static void newwin();
+static char * parseobv();
+static int setobview();
+static int setupcel();
+static void showcels();
 
 void ArbCopyCelCallBack();
-void ArbCutCelCallBack();
+static void ArbCutCelCallBack();
 static struct arbcon *Gself;
 static struct arbiterview *OwnArb;
 #define INITIALSIZE 512

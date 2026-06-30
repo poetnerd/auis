@@ -46,20 +46,20 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #define AUXMODULE
 #include <spread.eh>
+static int EnterCellName();
+static int IsNotSeparator();
+static int movecolcancel();
+static int movecoldown();
+static int movecolmove();
+static int movecolup();
+static int moverowcancel();
+static int moverowdown();
+static int moverowmove();
+static int moverowup();
 
 extern struct view *spread_FindSubview();
 
 static boolean debug=FALSE;
-
-#ifndef abs
-static  abs (x) int x;
-{
-    if (x < 0)
-	return - x;
-    else
-	return x;
-}
-#endif
 
 /* Handle mouse hit */
 

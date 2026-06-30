@@ -50,6 +50,32 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fad/
 #include <complete.ih>
 #include <event.ih>
 #include <fadv.eh>
+static int AddMenus();
+static int BeginTroff();
+static int CurrentFrame();
+static int DoAnimation();
+static int EndTroff();
+static int KeyIn();
+static int MySetCursor();
+static int MySetStandardCursor();
+static int PrintVec();
+static int ReadIcons();
+static void UpdateCursor();
+static int clearfad();
+static int drawlist();
+static int fontinit();
+static int getlist();
+static void idraw();
+static int labelfontsize();
+static int labelfonttype();
+static struct fontdesc * my_DefineFont();
+static int nameframe();
+static int picset();
+static int recalc();
+static int seticon();
+static int vecdraw();
+static int xx_DrawTo();
+static int xx_MoveTo();
 
 #define GetDelay(A) (event_MSECtoTU(20))
 #define SetMode(A,B) (A->mode = (B))

@@ -50,7 +50,7 @@ static int autocut_mode = -1;	/* uninitialized */
 static struct keymap *mod_Map;
 static struct menulist *mod_Menus;
 
-void startPreproc();
+static void startPreproc();
 
 static struct bind_Description modtextBindings[]={
     {"modtextview-start-preproc","#",'#', NULL,0,0, startPreproc, "Start preprocessor style if pressed at start of line."},
