@@ -278,6 +278,23 @@ not `.so`, and linking flags differ (`-dynamiclib` instead of `-shared`).
 
 The revival codebase will be managed under Fossil SCM, not git.
 
+### Vendored bison (Andrew Bison A2.6) disabled on Darwin/arm64
+
+`overhead/bison/` bundles CMU's own bison fork (derived from GNU Bison
+1.24) so that `mkparser` can post-process its output into Andrew's
+shared-object-code parser runtime. On Darwin/arm64 the built binary
+hangs in an uninterruptible kernel wait when run on real grammars —
+not killable even with `kill -9`. Not worth chasing; the vendored
+bison's own README (2002) already recommended moving to stock FSF
+bison. `overhead/bison/Imakefile` now builds it (for reference) but
+does not install it, so the system `bison` is used instead. Required
+one matching fix: `config/andrew.rls`'s `Parser()` macro now passes
+`-o classname.tab.c` explicitly, since modern bison derives output
+names from the input extension and AUIS's grammars use the nonstandard
+`.gra` extension. See `porting-changelog.md` (2026-06-29) for the full
+investigation. One grammar, `atk/ness/objects/ness.gra`, uses the fork's
+multi-character-string-token extension and isn't yet handled.
+
 ## Archive fetch: missing files (404)
 
 The following files were not available when the archive was mirrored from

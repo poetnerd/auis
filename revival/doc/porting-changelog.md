@@ -311,3 +311,141 @@ Non-`.c` changes are safe and should be kept: class preprocessor
 (`usePrototypes`, forward declarations, `int` for unknown types),
 Darwin platform config, `class.h`, `doload.c`/`doload.h`, `makedo.csh`,
 `classproc.c`, `site.h`, `site.mcr`, `util.h`, Imakefiles.
+
+## 2026-06-29
+
+Followed the plan from the previous session: reverted all `.c` files to
+trunk, re-applied minimal compiler leniency instead of mass modernization,
+then fixed errors surgically as they appeared.
+
+### `config/darwin/system.mcr`
+
+Added `-std=gnu89 -Wno-return-type` to `COMPILERFLAGS` (previously had
+only the implicit-int/implicit-function-declaration/incompatible-pointer
+warnings disabled). Note: `-std=gnu89` does **not** suppress "static
+declaration follows non-static declaration" — that required a real fix,
+see `fix-static-methods` below.
+
+### `config/darwin/system.h`
+
+Added `FILE_HAS_IO(f)` override: `(f)->_r` instead of the Linux/glibc
+`_cnt` field — BSD/Darwin's `struct __sFILE` uses `_r` for buffered-bytes-
+remaining.
+
+### `overhead/util/lib/` fixes (got `overhead/` building with zero errors)
+
+- `fdplumb6.c` — `d->dd_fd` doesn't exist on Darwin's `DIR` struct;
+  replaced with `dirfd(d)`.
+- `times.c` — guarded out the `osi_ZoneNames`/`osi_SecondsWest`/
+  `osi_IsEverDaylight`/`osi_SetZone` block with `&& !defined(sys_darwin)`;
+  Darwin's `system.h` already provides these via `tzname`/`timezone`/
+  `daylight`/`tzset()` macros, and the two definitions conflicted.
+- `usignal.c` — removed `extern char *sys_siglist[];` (macOS declares it
+  `const`); cast the return value instead.
+- `profile.c` — added `extern char *AndrewDir();` after the `andrewos.h`
+  include; the `GLOBALPROFILE` macro called it before any declaration was
+  in scope, causing an implicit-int return truncated to a pointer.
+
+### `overhead/class/cmd/whichdo.c`, `overhead/cmenu/cmdraw.c`
+
+"Static declaration follows non-static declaration" on plain (non-class)
+static helpers — fixed with forward declarations instead of stripping
+`static`, since these aren't class methods and don't need external
+linkage:
+- `whichdo.c` — forward decl of `pathopen()` was missing `static`,
+  didn't match the later `static` definition.
+- `cmdraw.c` — `DrawWormHole`'s forward declaration needs to go before
+  its caller (`ShowAPane`), not just before its own definition (first
+  attempt put it in the wrong place and didn't fix the error).
+
+### `sys_errlist`/`sys_nerr` removal (ATK-wide)
+
+Same pattern as the `doindex.c` fix from the previous session, applied
+across `atk/org/orgv.c`, `chart/chartv.c`, `textobjects/diredv.c`,
+`text/be1be2a.c`, `bush/bush.c`, `bush/bushv.c`, `launchapp/launchapp.c`,
+`console/cmd/mailmon.c`, `console/lib/{console.h,venusmon.c,mailmonf.c,
+setup.c}`: removed `extern char *sys_errlist[]` / `extern int sys_nerr`
+declarations (macOS declares these `const`), replaced
+`sys_errlist[errno]` usage with `strerror(errno)`.
+
+### `malloc`/`realloc` extern removal (ATK-wide)
+
+Removed stale `extern char *malloc();`/`extern char *realloc();`
+K&R declarations (conflict with `<stdlib.h>`'s real prototypes) from
+`basics/common/{rm.c,atomlist.c}`, `layout/{boxview.c,layoutv.c,
+fillerv.c}`, `extensions/gsearch.c`, `raster/cmd/rastoolv.c` (file-scope),
+and `value/clklistv.c`, `adew/arbiterv.c`, `typescript/tscript.c`,
+`text/content.c` (local/in-function scope).
+
+### New tool: `revival/tools/fix-static-methods`
+
+The class preprocessor emits non-static extern declarations for every
+class method in `.eh` files. Where the `.c` implementation defines a
+method as `static` (legal K&R, since the class dispatch table found it
+some other way), modern clang rejects it outright. Wrote a script to
+strip `static` from class method definitions (functions matching
+`classname__Method`) — this is the *correct* fix, not a workaround,
+since these methods need external linkage for `dlopen`/`dlsym` to find
+them. Run across `src/atk/`, fixed 21 files. Does not touch single-name
+static helpers (e.g. `initself`, `DrawWormHole`) — those need forward
+declarations instead (see `whichdo.c`/`cmdraw.c` above).
+
+One straggler missed by the `__`-only regex: `basics/x/xgraphic.c`'s
+`xgraphic_ApproximateColor` uses a single underscore, fixed manually.
+
+### Vendored bison hang — root cause and fix
+
+`make -k dependInstall` reproducibly hung (uninterruptible, unkillable
+even with `kill -9`) every single run, always at the same spot: bison
+parsing `atk/eq/eqparse.gra`. This had been silently causing the
+"multiple make processes" confusion in earlier sessions — every build
+attempt was hitting this exact same dead end, not actually colliding
+with other sessions.
+
+Root cause: AUIS bundles its own bison fork, "Andrew Bison A2.6"
+(`overhead/bison/`, derived from GNU Bison 1.24, by Wilfred J. Hansen /
+Andrew Consortium — see `overhead/bison/../../../bison/README` for the
+original 1995/2002 documentation). It adds real extensions over stock
+bison: multi-character string tokens (`"<="` as a bare grammar
+terminal), and critically a "no symbol conflicts / shared parser
+object code" design — `overhead/mkparser` post-processes bison's
+`.tab.c`/`.tab.h` output into Andrew's own table-driven `cparser`
+runtime so multiple bison-generated parsers can link into one binary
+without colliding on `yyparse`/`yylval`/etc. This vendored bison gets
+built and installed to `build/bin/bison`, shadowing the system bison on
+`PATH` for the rest of the build. On Darwin/arm64 the vendored binary
+itself hangs in the kernel (likely a 32-bit-era pointer/int-size bug) —
+not worth chasing, since the README itself (written in 2002) already
+recommended switching to stock FSF bison and only worried that
+`mkparser` hadn't been tested against it.
+
+Verified system bison (`/usr/bin/bison`, GNU Bison 2.3) + the existing
+`mkparser` work correctly together, with one wrinkle: modern bison
+derives output filenames from the input file's extension when no
+`-o`/`--defines` is given, and old bison always hardcoded `.tab.c`/
+`.tab.h` regardless of extension. Since AUIS grammar files use the
+nonstandard `.gra` extension (not `.y`), modern bison was silently
+producing `eqparse.tab.gra` instead of `eqparse.tab.c`/`.h`, which
+`mkparser` couldn't find. Fixed:
+
+- `config/andrew.rls` — `Parser()` macro now passes `-o classname.tab.c`
+  explicitly, pinning the output filename regardless of input extension.
+- `overhead/bison/Imakefile` — wrapped `InstallProgram(bison, ...)` in
+  `#ifndef sys_darwin` so the vendored binary is still built (harmless,
+  useful for reference) but never installed to `build/bin`, so it can't
+  shadow the system bison.
+
+Verified end-to-end: `make eqparse.h eqparse.c` in `atk/eq/` now
+completes in under a second using system bison, producing correct
+output that `mkparser` processes without error.
+
+Confirmed via grep that only `ness.gra` (`atk/ness/objects/ness.gra`)
+actually uses the multi-character-string-token extension (`"<="`,
+`">="`, `":="`, `"~:="` as bare terminals in `%nonassoc`/`%left` and
+rule bodies) — the other seven `.gra` files in the tree (`eqparse.gra`,
+`num.gra`, `parse.gra`, `parsey.gra`, `eliy.gra`, `prsdate.gra`,
+`getdate.gra`) only have ordinary C string literals inside action code,
+which stock bison handles fine. `ness.gra` will need either a rewrite
+to use named `%token` declarations instead of inline string-literal
+terminals, or a working copy of the Andrew bison fork — deferred, not
+on the critical path for `eq`/ATK core.

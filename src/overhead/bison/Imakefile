@@ -17,7 +17,17 @@ NormalObjectRule()
 
 /*  make and install the program */
 ProgramTarget(bison, $(OBJECTS),  $(UTILLIB), )
+/* This is Andrew Bison A2.0, derived from GNU Bison 1.24 (1990). On
+ * Darwin/arm64 it hangs in an uninterruptible wait when run on real
+ * grammars (e.g. atk/eq/eqparse.gra) -- a 32-bit-era bug that doesn't
+ * appear worth chasing now that the system bison works fine with the
+ * existing mkparser toolchain (see revival/doc/porting-changelog.md).
+ * Still built for reference, but not installed, so it can't shadow
+ * the system bison on PATH.
+ */
+#ifndef sys_darwin
 InstallProgram(bison, ${DESTDIR}/bin)
+#endif
 
 /*  install documents  
 bison.info: bison.texinfo
