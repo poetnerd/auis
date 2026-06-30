@@ -353,7 +353,7 @@ int usedefaultview;
 printf("Initing v = %s, d = %s, r = %s\n",self->viewType,self->dataType,self->refname);
 #endif /* DEBUG */
 }
-struct atom *getline(place)
+struct atom *cel_GetLine(place)
 char **place;
 {
     char tmpbuf[512];
@@ -552,13 +552,13 @@ long cel__Read(self, file, id)
     while (*cp != '\n') cp++;
     cp++;
 
-    if((self->dataatm = getline(&cp)) != NULL)self->dataType = atom_Name(self->dataatm);
+    if((self->dataatm = cel_GetLine(&cp)) != NULL)self->dataType = atom_Name(self->dataatm);
     else self->dataType = NULL;
-    if((self->viewatm = getline(&cp)) != NULL) self->viewType =atom_Name(self->viewatm);
+    if((self->viewatm = cel_GetLine(&cp)) != NULL) self->viewType =atom_Name(self->viewatm);
     else self->viewType = NULL;
-    if((self->refatm = getline(&cp)) != NULL) self->refname =atom_Name(self->refatm);
+    if((self->refatm = cel_GetLine(&cp)) != NULL) self->refname =atom_Name(self->refatm);
     else self->refname = NULL;
-    if((self->linkatm = getline(&cp)) != NULL) self->linkname =atom_Name(self->linkatm);
+    if((self->linkatm = cel_GetLine(&cp)) != NULL) self->linkname =atom_Name(self->linkatm);
     else self->linkname = NULL;
     *buf = '\0';
     if(textpending){
