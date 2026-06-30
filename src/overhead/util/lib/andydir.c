@@ -40,6 +40,7 @@ extern char *malloc();
 #endif /* _IBMR2 */
 
 extern char *getenv();
+extern char *GetConfiguration();
 
 /* Return a string with the current value for ANDYDIR imbedded in it. */
 char *AndyDir(str)

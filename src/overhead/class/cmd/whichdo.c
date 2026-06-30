@@ -41,6 +41,7 @@ Author: Tom Neuendorffer
 #include <andrewos.h> /* sys/file.h */
 
 extern char *getenv();
+extern char *AndrewDir();
 
 struct PathEntry {
     struct PathEntry *next;

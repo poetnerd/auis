@@ -46,6 +46,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
 extern ProgramName[];	/* blechhh */
 
+extern char *GetConfiguration();
+extern char *AndrewDir();
+extern char *LocalDir();
+extern struct configurelist *ReadConfigureFile();
+extern char *GetConfig();
+
 /* used to avoid problems with null pointers expected to be
   treated as null strings */
 static char *nullstring="";

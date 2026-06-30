@@ -60,6 +60,7 @@ void resetmstats()
 #include <sys/resource.h>
 
 extern int errno;
+extern char *AndrewDir();
 
 #ifndef RUNAPP
 #define RUNAPP "runapp"

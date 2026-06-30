@@ -67,6 +67,7 @@ extern int errno;
 extern char ProgramName[];
 extern char *GetProfileFileName();
 extern char *GetFirstProfileFileName();
+extern char *AndrewDir();
 
 #define BIGPREF 2000
 

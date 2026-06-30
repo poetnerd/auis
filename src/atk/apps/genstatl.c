@@ -30,6 +30,8 @@
 #include <util.h>
 
 FILE *pathopen();
+extern char *AndrewDir();
+extern char *XBaseDir();
 char *AndrewDirStr=NULL;
 char *XBaseDirStr=NULL;
 char *AFSBaseDirStr=NULL;

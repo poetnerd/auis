@@ -45,6 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 char ProgramName[100];
 extern int errno;
+extern char *getenv();
 
 #define MAXCONFIGSIZE 2000
 
