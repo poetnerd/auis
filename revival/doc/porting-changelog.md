@@ -762,3 +762,108 @@ masked — this directory's build never got far enough to reach it until
 the `.eh`-lookup fix earlier in this session). `make Clean; make
 dependInstall` (no `-k`) now succeeds end to end: 278 `.do` files, 0
 errors, exit 0.
+
+## 2026-06-30 (runtime debugging session)
+
+First end-to-end runtime smoke test of the binaries produced by the
+now-clean compile phase: does `runapp`/`ez` actually launch.
+
+### `./build/bin/ez` unkillable hang — misdiagnosed, then correctly root-caused
+
+`ez -help` hung in an unkillable kernel wait (`UE` state in `ps`, `lldb -p
+<pid>` couldn't even attach). Initial diagnosis pointed at Bitdefender's
+EndpointSecurity system extension stalling on `AUTH_EXEC`/`AUTH_OPEN`
+kernel callouts — supported at the time by `sample <pid>` showing 100% of
+samples parked in `class_ProcessClassPath` (the classpath/`.do`-index
+scanning code, `overhead/class/lib/class.c:477`) and by two unrelated
+processes (a different project's Python interpreters) also stuck in `UE`
+state, which seemed to confirm a host-wide problem rather than an AUIS bug.
+
+A `spindump` capture (root not required for a live/recent process)
+overturned that theory. `runapp` showed as `(suspended) (zombie)` — already
+terminated, stuck mid-teardown — with its blocking turnstile chain
+resolving to `Code [808]` (VS Code), via `Responsible: Code [808]` (set
+because the binary was launched from a VS Code-owned terminal/Bash tool).
+The same two stray Python zombies that had seemed like host-wide proof
+*also* had `Responsible: Code [808]` and terminated on the exact same
+kernel blocking primitive, despite reaching it via a completely different
+path (a `dyld4::halt`/`abort_with_payload` crash, not a file-open stall).
+No turnstile chain anywhere in the ~110k-line spindump named Bitdefender.
+Conclusion: VS Code's integrated-terminal responsible-process/exception-port
+relationship was intercepting the SIGSEGV's exception delivery and never
+completing the crash-reporter handshake, leaving the process suspended
+forever instead of actually crashing and exiting. Confirmed by running
+`ez -help` from a native Terminal.app window instead: no hang at all,
+just `Segmentation fault: 11`.
+
+**Practical implication, not yet fixed or further investigated:** any future
+crash in a binary launched from VS Code's integrated terminal (including an
+AI-extension Bash tool) can plausibly hang unkillable the same way. Build
+and run AUIS binaries from native Terminal.app/iTerm2 when testing for
+exactly this reason, not as a general habit.
+
+### `runapp.c`'s `AndrewDir()` call — the actual segfault, and a systemic bug class
+
+`lldb` (run natively) caught the real crash: `EXC_BAD_ACCESS` at
+`class_ProcessClassPath + 64` (`ldrb w8, [x20]`), `x20 == 0x29ec0c0` — a
+garbage pointer dereferenced on the function's very first line (`*path ==
+'\0'`). Root cause: `atk/apps/runapp.c:81` calls `AndrewDir("/dlib/atk")`
+with no prototype in scope anywhere (`andrdir.h` only defines the
+`QUOTED_DEFAULT_*` macros, never declares `AndrewDir`'s return type). Under
+K&R rules an undeclared function defaults to returning `int`; this build's
+`-Wno-implicit-int -Wno-implicit-function-declaration` (needed to get this
+codebase through modern clang at all) silently re-enables that default
+instead of erroring. On LP64/arm64 that truncates `AndrewDir`'s real 64-bit
+heap-pointer return value to 32 bits; the `(char *)` cast back zero-extends
+the truncated value into a garbage pointer — exactly matching the fault
+address. This is the same general hazard class as the `malloc`/`getenv`
+K&R-extern-decl fixes from earlier sessions, just on functions whose return
+type happens to be a pointer rather than `int`, so it manifests as a wild
+pointer instead of a silently-wrong number.
+
+Grepped the build log for the same compiler tell
+(`-Wint-to-pointer-cast`, i.e. `warning: cast to 'TYPE *' from smaller
+integer type 'int'`) and found 22 more instances of the identical pattern.
+Fixed by adding a local `extern <ReturnType> FunctionName();` declaration
+near the top of each calling file — matching this codebase's own existing
+convention (several files already do exactly this for `getenv`/`malloc`,
+e.g. `overhead/util/lib/andrwdir.c`) rather than introducing header-based
+prototypes, since the relevant headers (`andrdir.h`) are build-generated
+with machine-specific macros and not a natural home for this. Fixed in:
+`overhead/util/lib/andrwdir.c`, `andydir.c`, `xbasedir.c`, `localdir.c`
+(each needed `extern char *GetConfiguration();`), `config.c`, `profile.c`
+(each needed `extern char *getenv();`), `atk/basics/common/environ.c`
+(needed externs for `GetConfiguration`/`AndrewDir`/`LocalDir`/
+`ReadConfigureFile`/`GetConfig` — these back the `environ__*` Class
+methods), `atk/apps/genstatl.c` (`AndrewDir`/`XBaseDir`), `atk/apps/runapp.c`
+(`AndrewDir` — the fix that resolved the `ez` crash), `overhead/util/lib/setprof.c`
+(`AndrewDir`), `overhead/class/cmd/whichdo.c` (`getenv`/`AndrewDir`),
+`overhead/util/lib/fdplumb4.c` (`qopen`, which already has a correct
+prototype in `util.h` — `fdplumbi.h`, the header this file actually
+includes, doesn't pull that in, so added a local extern instead of
+switching headers).
+
+Two warning sites were deliberately **not** treated as the same bug:
+`init.c`'s `(char *) atoi(...)` and `tif_packbits.c`'s `tif->tif_data =
+(char *) TIFFScanlineSize(tif)` both cast a genuinely-`int` value into a
+pointer-sized slot on purpose (int→pointer, the safe direction — not the
+dangerous pointer-truncated-to-int-then-back-to-pointer round trip). Two
+more were left unfixed as lower priority rather than not-a-bug:
+`bison/files.c`'s `tryopen` (already has a `FILE *tryopen();` forward
+declaration at file scope, yet two of its dozen-plus call sites still warn
+— not fully root-caused; `bison` is a vendored build-time tool, not part of
+the AUIS runtime) and vendored `tif_packbits.c`/libtiff more generally
+(not AUIS-authored code).
+
+Rebuilt via `make dependInstall` (no `-k`) — exit 0, all 23 originally-found
+`-Wint-to-pointer-cast` warnings for the 12 fixed files gone from the log.
+
+### Result: `ez` launches
+
+`./build/bin/ez` (run from native Terminal.app, not VS Code) now gets past
+`class_Init`/`class_ProcessClassPath` entirely: `Starting ez (Version 7.0,
+ATK 6.3.1); please wait...`, then into X11/XIM connection logic. New, much
+more minor issue surfaced there, not yet investigated: `Could not find
+host /private/tmp/com.apple.launchd.*/org.xquartz in ez(xim)` and a
+`xfontdesc_CvtCharToGraphic: 0 width character` warning. Unconfirmed
+whether an actual X11 window draws yet.
