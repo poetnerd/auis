@@ -1043,3 +1043,50 @@ assignments for x0–x7 (first 8) and explicit `str` instructions to
 arrives at `sbuttonv__DrawBorder` as `NULL` as intended, not as stale stack
 content from a prior call. Runtime test pending (run `ez -d` from native
 Terminal.app).
+
+## 2026-07-01
+
+### LP64 int/long sign mismatch in untyped observer dispatch
+
+A third variant of the LP64 bug class, distinct from the pointer-truncation
+and stack-spill bugs fixed earlier:
+
+**Mechanism:** A plain `int` constant (`-1`) passed as an argument through
+an untyped `(void (*)())` virtual dispatch macro is placed in a 32-bit `w`
+register by the compiler. ARM64 zero-extends `w` to `x` on any write, so the
+receiver's 64-bit `long changeType` parameter sees `0x00000000FFFFFFFF`
+(4294967295) instead of `0xFFFFFFFFFFFFFFFF` (-1L). Comparisons against
+the defining `#define` (which promotes to ULONG_MAX in the unsigned context)
+silently fail.
+
+**Crash:** `ez` hung after the first file was closed and the editor sat idle
+for ~30 seconds. Root cause: `observable__FinalizeObject` calls
+`observable_NotifyObservers(self, observable_OBJECTDESTROYED)` to tell
+observers the object is going away. With `observable_OBJECTDESTROYED` defined
+as plain `-1`, the dispatched value was `4294967295`, not `-1L`.
+`bufferlist__ObservedChanged` compares `changeType == observable_OBJECTDESTROYED`
+— never matched — so `bufferlist__RemoveBuffer` never fired. The freed buffer
+remained in the bufferlist as a dangling pointer. The checkpoint timer
+(`FindCkpBuffer`) later iterated the list, dereferenced the freed buffer's
+fields, and crashed. Diagnosed by adding `fprintf` instrumentation to
+`bufferlist.c` and observing `type=4294967295` in the log; confirmed by
+disassembling `observable__FinalizeObject` and seeing `mov w1, #-0x1`
+(32-bit) before the fix vs. `mov x1, #-0x1` (64-bit) after.
+
+**Fixes:**
+- `src/atk/basics/common/observe.ch`: `#define observable_OBJECTDESTROYED -1`
+  → `(-1L)`
+- `src/atk/value/value.ch`: `#define value_OBJECTDESTROYED -1` → `(-1L)`
+- `src/overhead/class/lib/class.h`: `#define class_VERSIONNOTKNOWN -1`
+  → `(-1L)` — same pattern; `class_VERSIONNOTKNOWN` flows through the untyped
+  `(*entrypoint)()` call in `doindex.c:410` and through K&R-unprototyped
+  `RetrieveByName`/`RetrieveByKey` calls in the class loader.
+
+**Audit:** Grepped all 13 `.ch` files that define their own `NotifyObservers`
+variants for plain negative `#define`s. Only `observe.ch` and `value.ch` had
+the `OBJECTDESTROYED (-1)` pattern. `ness.ch`'s `UNSPECIFIEDSYNTAXLEVEL -1`
+is stored in a struct field (typed assignment, no truncation), not passed
+through untyped dispatch — safe.
+
+**Result:** `ez` now runs stably; checkpoint timer fires repeatedly without
+crashing. Menus, character input, and object insertion all work.
