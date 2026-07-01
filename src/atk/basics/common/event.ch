@@ -41,7 +41,7 @@
 
 class event  {
     classprocedures:
-    Cancel(struct event *);
+    Cancel(struct event *ev);
     Enqueue(long time, procedure proc, char *procdata) returns struct event *;
     ForceNext();
     FirstTime(long currentTime) returns long;

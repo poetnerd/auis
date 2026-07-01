@@ -193,7 +193,8 @@ static struct sigaction handler;        /* pointer to signal handler, used to ca
 static struct sigvec handler;/* pointer to signal handler, used to catch signals */
 #endif
 
-static int usePrototypes;		/* TRUE if system is to generate prototypes */
+static int usePrototypesImport;		/* TRUE: prototyped casts in dispatch macros (.ih) */
+static int usePrototypesExport;		/* TRUE: prototyped decls of user functions (.eh) */
 static int generateDescriptionFile;	/* TRUE if system is to generate a description file for the class */
 static int generateHeaderFiles = TRUE;	/* TRUE if system is to generate .ih and .eh files for the class */
 
@@ -659,9 +660,65 @@ char *c;
  ** dynamically loaded.
  **
  ** good luck.    pgc
- ** 
- ** 
+ **
+ **
  **/
+
+
+/**
+ ** Emit forward struct declarations for every struct type referenced in
+ ** method parameter types or return types.  Required when usePrototypesImport
+ ** is TRUE: the generated dispatch-macro casts name struct types (via void *)
+ ** that may not yet be fully declared at the point the .ih/.eh is included.
+ ** A bare "struct X;" is always valid and idempotent.
+ **/
+static void GenerateForwardDecls()
+{
+#define MAX_FWD_DECLS 64
+    struct methods *mp;
+    char *seen[MAX_FWD_DECLS];
+    int nseen = 0;
+    int i;
+
+    for (mp = methodlist->next; mp != NULL; mp = mp->next) {
+	char *arrs[2];
+	int a;
+	arrs[0] = mp->realargtypes;
+	arrs[1] = mp->methodtype;
+	for (a = 0; a < 2; a++) {
+	    char *p = arrs[a];
+	    if (p == NULL) continue;
+	    while ((p = strstr(p, "struct ")) != NULL) {
+		char *q;
+		char structname[256];
+		int len;
+		p += 7;
+		q = p;
+		while (*q != '\0' && (isalnum((unsigned char)*q) || *q == '_'))
+		    q++;
+		len = q - p;
+		if (len <= 0 || len >= (int)sizeof(structname)) continue;
+		strncpy(structname, p, len);
+		structname[len] = '\0';
+		for (i = 0; i < nseen; i++)
+		    if (strcmp(seen[i], structname) == 0) break;
+		if (i == nseen && nseen < MAX_FWD_DECLS) {
+		    seen[nseen] = malloc(len + 1);
+		    strcpy(seen[nseen], structname);
+		    nseen++;
+		    outstr1("struct %s;\n", structname);
+		}
+	    }
+	}
+    }
+
+    if (nseen > 0)
+	outstr0("\n");
+
+#undef MAX_FWD_DECLS
+}
+
+
 static void GenerateRoutines()
 
 {
@@ -821,7 +878,7 @@ int errvalCount[errval_NUM];	/* ??? */
 		if(mp->macrodef==NULL){
 		    char proto[10000];
 
-		    if (usePrototypes) {
+		    if (usePrototypesImport && mp->argcount >= 8) {
 			sprintf(proto, "struct %s *%s", FinalClassName, mp->argtypes);
 		    }
 		    else {
@@ -848,7 +905,7 @@ int errvalCount[errval_NUM];	/* ??? */
 
 	proto[0] = '\0';
 
-	if (usePrototypes) {
+	if (usePrototypesImport) {
 	    strcpy(proto, "struct classheader *, unsigned long");
 	}
 
@@ -861,7 +918,7 @@ int errvalCount[errval_NUM];	/* ??? */
 	(void) fprintf(importfile, "    (*((struct %s * (*)(%s)) (%s_CLASSPROCEDURES->routines[0])))(&%s_classheader,%s_VERSION)\n", FinalClassName, proto, FinalClassName, FinalClassName, FinalClassName);
         (void) fprintf(exportfile, "    (%s__New(NULL, %s_VERSION))\n", FinalClassName, FinalClassName);
 
-	if (usePrototypes) {
+	if (usePrototypesImport) {
 	    sprintf(proto, "struct classheader *, struct %s *, unsigned long", FinalClassName);
 	}
 
@@ -873,7 +930,7 @@ int errvalCount[errval_NUM];	/* ??? */
 
         outstr0("\n");
 
-	if (usePrototypes) {
+	if (usePrototypesImport) {
 	    sprintf(proto, "struct classheader *, struct %s *", FinalClassName);
 	}
 
@@ -892,7 +949,7 @@ int errvalCount[errval_NUM];	/* ??? */
 	if (mp->type==ptype_classproc && mp->defined)  {
 	    char proto[10000];
 
-	    if (usePrototypes) {
+	    if (usePrototypesImport && mp->argcount >= 8) {
 		sprintf(proto, "struct classheader *%s", mp->argtypes);
 	    }
 	    else {
@@ -940,7 +997,7 @@ int errvalCount[errval_NUM];	/* ??? */
             if (mp->type==ptype_method && mp->inherited)  {
 		char proto[10000];
 
-		if (usePrototypes) {
+		if (usePrototypesImport && mp->argcount >= 8) {
 		    sprintf(proto, "struct %s *%s", FinalClassName, mp->argtypes);
 		}
 		else {
@@ -991,7 +1048,7 @@ int errvalCount[errval_NUM];	/* ??? */
             if (mp->type==ptype_method && mp->defined && mp->macrodef==NULL)  {
 		char proto[10000];
 
-		if (usePrototypes) {
+		if (usePrototypesExport) {
 		    sprintf(proto, "struct %s *%s", FinalClassName, mp->realargtypes);
 		}
 		else {
@@ -1018,13 +1075,13 @@ int errvalCount[errval_NUM];	/* ??? */
 
         (void) fprintf(exportfile, "\n};\n\n");
 
-	if (usePrototypes) {
+	if (usePrototypesExport) {
 	    (void) fprintf(exportfile, "struct %s *%s__New(struct classheader *, unsigned long);\n", FinalClassName, FinalClassName);
 	    (void) fprintf(exportfile, "void %s__Destroy(struct classheader *, struct %s *);\n", FinalClassName, FinalClassName);
 	    (void) fprintf(exportfile, "boolean %s__Initialize(struct classheader *, struct %s *, unsigned long);\n", FinalClassName, FinalClassName);
 	    (void) fprintf(exportfile, "void %s__Finalize(struct classheader *, struct %s *);\n", FinalClassName, FinalClassName);
 	    if(destroyp) (void) fprintf(exportfile, "boolean %s__Destroyp(struct classheader *, struct %s *);\n", FinalClassName, FinalClassName);
-	    if (initializeobject && ! initializeobjectdefined)
+	    if (initializeobject)
 		(void) fprintf(exportfile, "boolean %s__InitializeObject(struct classheader *, struct %s *);\n", FinalClassName, FinalClassName);
 	}
 	else {
@@ -1033,7 +1090,7 @@ int errvalCount[errval_NUM];	/* ??? */
 	    (void) fprintf(exportfile, "boolean %s__Initialize();\n", FinalClassName);
 	    (void) fprintf(exportfile, "void %s__Finalize();\n", FinalClassName);
 	    if(destroyp) (void) fprintf(exportfile, "boolean %s__Destroyp();\n", FinalClassName);
-	    if (initializeobject && ! initializeobjectdefined)
+	    if (initializeobject)
 		(void) fprintf(exportfile, "boolean %s__InitializeObject();\n", FinalClassName);
 	}
     }
@@ -1042,7 +1099,14 @@ int errvalCount[errval_NUM];	/* ??? */
 	if (mp->type==ptype_classproc && mp->defined && !mp->special)  {
 	    char proto[10000];
 
-	    if (usePrototypes) {
+	    /* InitializeObject is emitted above with the correct 2-param
+	     * prototype; skip here to avoid double-declaration. FinalizeObject
+	     * is NOT skipped: it may have a non-void return type, so it must
+	     * go through the loop to pick up the correct mp->methodtype. */
+	    if (strcmp(mp->name, "InitializeObject") == 0)
+		continue;
+
+	    if (usePrototypesExport) {
 		sprintf(proto, "struct classheader *%s", mp->realargtypes);
 	    }
 	    else {
@@ -1112,7 +1176,7 @@ int errvalCount[errval_NUM];	/* ??? */
     if(classDefinition){
         (void) fprintf(exportfile, "\nstatic int classinitialized = FALSE;\n");
 
-	if (usePrototypes) {
+	if (usePrototypesExport) {
 	    (void) fprintf(exportfile, "\nboolean %s__Initialize(", FinalClassName);
 	    (void) fprintf(exportfile, "struct classheader *classID,");
 	    (void) fprintf(exportfile, " struct %s *self,", FinalClassName);
@@ -1131,7 +1195,7 @@ int errvalCount[errval_NUM];	/* ??? */
 	     */
 	    char proto[10000];
 
-	    if (usePrototypes) {
+	    if (usePrototypesImport) {
 		sprintf(proto, "struct classheader *, struct %s *, unsigned long", FinalClassName);
 	    }
 	    else {
@@ -1172,7 +1236,7 @@ int errvalCount[errval_NUM];	/* ??? */
 	    if (FinalParentName[0])  {
 		char proto[10000];
 
-		if (usePrototypes) {
+		if (usePrototypesImport) {
 		    sprintf(proto, "struct classheader *, struct %s *", FinalClassName);
 		}
 		else {
@@ -1186,7 +1250,7 @@ int errvalCount[errval_NUM];	/* ??? */
 	}
 	(void) fprintf(exportfile,"    return TRUE;\n}\n\n");
 
-	if (usePrototypes) {
+	if (usePrototypesExport) {
 	    (void) fprintf(exportfile, "struct %s *%s__New(", FinalClassName, FinalClassName);
 	    (void) fprintf(exportfile, "struct classheader *classID,");
 	    (void) fprintf(exportfile, " unsigned long versionnumber)\n{\n");
@@ -1219,7 +1283,7 @@ int errvalCount[errval_NUM];	/* ??? */
         (void) fprintf(exportfile, "    return self;\n");
         (void) fprintf(exportfile, "}\n\n");
 
-	if (usePrototypes) {
+	if (usePrototypesExport) {
 	    (void) fprintf(exportfile, "void %s__Finalize(", FinalClassName);
 	    (void) fprintf(exportfile, "struct classheader *classID,");
 	    (void) fprintf(exportfile, " struct %s *self)\n{\n", FinalClassName);
@@ -1238,7 +1302,7 @@ int errvalCount[errval_NUM];	/* ??? */
              */
 	    char proto[10000];
 
-	    if (usePrototypes) {
+	    if (usePrototypesImport) {
 		sprintf(proto, "struct classheader *, struct %s *", FinalClassName);
 	    }
 	    else {
@@ -1250,7 +1314,7 @@ int errvalCount[errval_NUM];	/* ??? */
         }
         (void) fprintf(exportfile, "}\n\n");
 
-	if (usePrototypes) {
+	if (usePrototypesExport) {
 	    (void) fprintf(exportfile, "void %s__Destroy(", FinalClassName);
 	    (void) fprintf(exportfile, "struct classheader *classID,");
 	    (void) fprintf(exportfile, " struct %s *self)\n{\n", FinalClassName);
@@ -1269,7 +1333,7 @@ int errvalCount[errval_NUM];	/* ??? */
 		 */
 		char proto[1024];
 
-		if (usePrototypes) {
+		if (usePrototypesImport) {
 		    sprintf(proto, "struct classheader *, struct %s *", mp->declaredIn);
 		}
 		else {
@@ -1695,6 +1759,7 @@ static void GenerateFiles()
 	    GenerateExtra();		/* the extra stuff from the .ch file */
 	    GenerateParentInfo();		/* get to parent's info */
 	    GenerateClassStructure();	/* class data structure */
+	    GenerateForwardDecls();	/* struct forward decls needed by prototypes */
 	    GenerateRoutines();		/* generated routines, classheader, etc. */
 	    GenerateEpilog();		/* paired with Prolog() */
 	}
@@ -1895,7 +1960,7 @@ int FoundError;		/* used to keep track of multiple errors */
 	remlen = curlen = INITIALARGSTRSIZE;
 	curstr = (char *) malloc(curlen);
 
-	if (usePrototypes || generateDescriptionFile) {
+	if (usePrototypesImport || usePrototypesExport || generateDescriptionFile) {
 	    remarglen = curarglen = INITIALARGSTRSIZE;
 	    argstr = (char *) malloc(curarglen);
 
@@ -1908,7 +1973,7 @@ int FoundError;		/* used to keep track of multiple errors */
 	    *curstr = ',';
 	}
 
-	if (usePrototypes || generateDescriptionFile) {
+	if (usePrototypesImport || usePrototypesExport || generateDescriptionFile) {
 	    if (CurrentMethod->type != ptype_macro) {
 		remarglen -= 1;
 		*argstr = ',';
@@ -1942,7 +2007,7 @@ int FoundError;		/* used to keep track of multiple errors */
 		    strcpy(&curstr[curlen - remlen], LastArg);
 		    remlen -= len;
 
-		    if (usePrototypes || generateDescriptionFile) {
+		    if (usePrototypesImport || usePrototypesExport || generateDescriptionFile) {
 			if (namePos > 0) {
 			    /* Remove identifier name */
 			    char *p;
@@ -1961,8 +2026,8 @@ int FoundError;		/* used to keep track of multiple errors */
 			    }
 
 			    if (*p == '\0') {
-				strcpy(currentarg, " unknown");
-				namePos = 8;
+				strcpy(currentarg, " void *");
+				namePos = 7;
 			    }
 
 			    /* Now add it to the real argument list */
@@ -2007,7 +2072,7 @@ int FoundError;		/* used to keep track of multiple errors */
 		    if (token == class_Comma)  {
 			strcpy(&curstr[curlen - remlen], ",");
 			remlen -= 1;
-			if (usePrototypes || generateDescriptionFile) {
+			if (usePrototypesImport || usePrototypesExport || generateDescriptionFile) {
 			    strcpy(&argstr[curarglen - remarglen], ",");
 			    remarglen -= 1;
 			    strcpy(&realargstr[currealarglen - remrealarglen], ",");
@@ -2060,7 +2125,7 @@ int FoundError;		/* used to keep track of multiple errors */
     } else  {
 	CurrentMethod->methodargs = (argcount)  ? curstr : "";
 	CurrentMethod->argcount = argcount;
-	if (usePrototypes || generateDescriptionFile) {
+	if (usePrototypesImport || usePrototypesExport || generateDescriptionFile) {
 	    CurrentMethod->argtypes = (argcount)  ? argstr : "";
 	    CurrentMethod->realargtypes = (argcount)  ? realargstr : "";
 	}
@@ -2988,7 +3053,8 @@ int i;	/* used to loop through array of args */
 		    break;
 		case 'p':	/* generate prototypes */
 		    if (argv[i][2] == '\0') {
-			usePrototypes = TRUE;
+			usePrototypesImport = TRUE;
+			usePrototypesExport = TRUE;
 		    } else {
 			usage();
 		    };
@@ -3103,7 +3169,8 @@ static void GlobalInit()
     SloppyMode = FALSE;
     IgnoreCurrentDirectory = FALSE;
     MakingBaseObject = FALSE;
-    usePrototypes = FALSE;
+    usePrototypesImport = TRUE;   /* always: fix arm64 dispatch ABI */
+    usePrototypesExport = FALSE;  /* K&R decls: compatible with unconverted .c files */
 
     FinalClassName[0] = '\0';
     FinalParentName[0] = '\0';

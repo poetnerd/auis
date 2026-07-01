@@ -126,10 +126,10 @@ class sbutton: dataobject[dataobj] {
 
     Actuate(int ind);
     SetRock(int ind, long rock);
-    SetLayout(int rows, int cols, enum sbutton_sizepolicy);
+    SetLayout(int rows, int cols, enum sbutton_sizepolicy pol);
     SetLabel(int ind,char *txt);
     SetLit(int ind, boolean litp);
-    SetPrefs(int ind, struct sbutton_prefs *);
+    SetPrefs(int ind, struct sbutton_prefs *prefs);
     Enumerate(boolean (*func)(),long rock) returns int;
     SetTrigger(int ind, char *name);
     Delete(int ind);

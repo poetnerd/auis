@@ -195,7 +195,7 @@ int size;
 	myrock.text=(struct text *)buffer_GetData(b);
     } else myrock.text=NULL;
     
-    if(message_AskForStringCompleted(v, 0, prompt, initial, buf, size, NULL, mycomplete, helpProc, &myrock, message_MustMatch | (initial?0:message_NoInitialString))) {
+    if(message_AskForStringCompleted(v, 0, prompt, initial, buf, size, NULL, mycomplete, helpProc, (long)(void *)&myrock, message_MustMatch | (initial?0:message_NoInitialString))) {
 	message_DisplayString(v,0,"Cancelled");
 	return FALSE;
     }

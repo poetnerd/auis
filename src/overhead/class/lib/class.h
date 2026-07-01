@@ -116,6 +116,9 @@ struct classheader  {
     struct basicobject_methods *classprocedures;
 };
 
+/* Backward-compatible abbreviation used in older ATK source files */
+#define classhdr classheader
+
 struct classinfo {
     struct basicobject_methods *methods;
     struct basicobject_methods *procs;

@@ -1216,7 +1216,7 @@ char *sName;
 	if (message_AskForStringCompleted(self, 0, "Insert style: ",
 					  NULL, styleName,
 					  sizeof(styleName), NULL, (procedure) StyleComplete,
-					  (procedure) StyleHelp, (long) ss,
+					  (procedure) StyleHelp, (long)(void *) ss,
 					  message_MustMatch |
 					  message_NoInitialString) == -1) {
 	    return;

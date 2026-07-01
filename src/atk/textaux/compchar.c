@@ -489,7 +489,7 @@ char *ptr;
 					      NULL, /* no special keymap */
 					      NULL,/* no completion */
 					      helpProc, /* will give help */
-					      (long)&myrock,
+					      (long)(void *)&myrock,
 					      message_NoInitialString);
     if(result<0) {
 	message_DisplayString(tv,0,"Character composition cancelled.");
