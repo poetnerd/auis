@@ -43,7 +43,7 @@
  ** some constants, typedef's, etc.
  **/
 
-#define class_VERSIONNOTKNOWN -1
+#define class_VERSIONNOTKNOWN (-1L)
 
 #ifdef NULL
 #undef NULL
