@@ -929,3 +929,117 @@ session/agent, to avoid re-deriving this investigation's context cold. Full
 details, the exact disassembly evidence, and pointers for where to start in
 `class.c` are in the project memory file
 `project_classpp_vtable_codegen_bug.md`.
+
+## 2026-06-30 (class preprocessor ABI fix)
+
+### Root cause confirmed and fixed — no standalone repro needed
+
+The standalone repro (minimal C file calling through `(void (*)())` with 10
+args) did not reproduce the missing stack store at `-O` or `-O0`, confirming
+the bug is context-sensitive rather than a clean isolated compiler bug. The
+decision was made to fix the class preprocessor regardless: emitting a
+prototyped function pointer cast is unambiguously correct and makes the
+dispatch independent of whatever assumptions the compiler makes for
+unprototyped calls.
+
+### Design: `usePrototypes` split into Import and Export halves
+
+The original `usePrototypes` flag in `class.c` controlled both dispatch
+macro casts (in `.ih` and `.eh`) and function forward declarations (in
+`.eh`). These are separate concerns with opposite requirements for this
+codebase:
+
+- **`.ih` dispatch macros** need prototyped casts so the compiler knows the
+  full argument list and emits correct stack stores for args that spill
+  beyond the 8 arm64 integer registers. This is the ABI fix.
+- **`.eh` function declarations** conflict with unconverted K&R definitions
+  in the object `.c` files if typed with ANSI prototypes. They must stay
+  K&R `()` for compatibility.
+
+`usePrototypes` was split into two independent flags:
+
+```c
+static int usePrototypesImport;  /* prototyped casts in dispatch macros */
+static int usePrototypesExport;  /* prototyped decls of user functions  */
+```
+
+Defaults: `usePrototypesImport = TRUE` (always — this is the fix),
+`usePrototypesExport = FALSE` (K&R declarations for mixed-codebase
+compatibility). The `-p` flag sets both TRUE for a fully-modernized tree.
+
+### Threshold: only prototype dispatch casts for 9+ argument methods
+
+Enabling prototyped casts on all methods exposed pre-existing K&R type
+abuses at call sites (pointers passed as `long`, longs as pointers, the
+ATK suite attribute macro expansion pattern where a single macro arg expands
+to two comma-separated values). These are real issues but orthogonal to the
+ABI bug, which only manifests when arguments spill beyond the 8 arm64
+integer registers (x0–x7).
+
+The fix: dispatch macro casts use a prototyped type only when
+`mp->argcount >= 8` (total args ≥ 9, past the register limit). Methods with
+≤8 total args keep the K&R `(void (*)())` cast — all their arguments fit in
+registers regardless, so no stack store is needed and no ABI bug exists.
+This is an acknowledged workaround; a future pass should bring all call
+sites up to properly typed dispatch.
+
+### Additional class preprocessor fixes made in the same pass
+
+Several secondary issues surfaced during the prototype-enable process and
+were fixed:
+
+- **Forward declarations for struct types**: `GenerateForwardDecls()` added
+  to `class.c`, scanning all method `realargtypes` for `struct X` patterns
+  and emitting `struct X;` into both `.ih` and `.eh` before the dispatch
+  macros reference them.
+- **Untyped parameters**: `.ch` parameters declared without a type (e.g.
+  `printer` in `PrintObject(..., printer)`) previously emitted as `unknown`,
+  changed to `void *` (pointer-sized, accepts any pointer arg without
+  conversion error).
+- **`InitializeObject` prototype**: the special-block declaration was always
+  emitting a 1-param prototype (`struct classheader *` only), but class.c
+  always calls `__InitializeObject(classID, self)` with 2 args. Fixed to
+  emit the correct 2-param prototype in both `usePrototypesExport` branches.
+- **`FinalizeObject` prototype**: removed from the special block (which
+  hardcoded `void` return) and delegated to the classproc loop, which uses
+  `mp->methodtype` and correctly reflects the declared return type (some
+  classes declare `FinalizeObject() returns boolean`).
+- **`classhdr` alias**: 41 `.c` files use `struct classhdr *ClassID`
+  (original informal abbreviation) instead of `struct classheader *`.
+  Rather than mass-editing those files, added `#define classhdr classheader`
+  to `overhead/class/lib/class.h`.
+- **Unnamed `.ch` parameters**: `event.ch` `Cancel(struct event *)` and
+  `sbutton.ch` `SetPrefs(int ind, struct sbutton_prefs *)` and
+  `SetLayout(int rows, int cols, enum sbutton_sizepolicy)` had unnamed
+  parameters — the class preprocessor's parser treats the last identifier as
+  the parameter name and strips it, leaving incomplete types (`struct  *`,
+  `enum`). Fixed by adding explicit parameter names in the `.ch` files.
+
+### Call-site fixes for the 12-arg `message_AskForStringCompleted`
+
+`AskForStringCompleted` has 11 user args (12 total with classID), past the
+8-register threshold, so it now gets a prototyped dispatch cast. Its
+`functionData` cookie parameter (typed `long` in `message.ch` — the ATK
+convention for a value that holds either integers or pointers) was being
+passed struct pointers without a cast in three files. Fixed with LP64-safe
+`(long)(void *)ptr` two-step casts in `metax.c`, `helpaux.c`,
+`txtvcsty.c`, and `compchar.c`.
+
+### Build result
+
+Zero errors. 278 `.do` files, clean compile. The `sbuttonv_DrawBorder`
+dispatch macro now emits:
+
+```c
+(*((void (*)(struct classheader *, void *, long, long, long, long,
+             void *, boolean, boolean, void *))
+   (sbuttonv_CLASSPROCEDURES->routines[10])))
+  (&sbuttonv_classheader, v, x, y, w, h, prefs, lit, draw, interior)
+```
+
+The compiler sees 10 explicit arguments, generates correct register
+assignments for x0–x7 (first 8) and explicit `str` instructions to
+`[SP+0]` and `[SP+8]` (arguments 9 and 10). The `interior` parameter
+arrives at `sbuttonv__DrawBorder` as `NULL` as intended, not as stale stack
+content from a prior call. Runtime test pending (run `ez -d` from native
+Terminal.app).
