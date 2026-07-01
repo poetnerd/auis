@@ -85,7 +85,7 @@ data:
 };
 
 
-#define value_OBJECTDESTROYED -1
+#define value_OBJECTDESTROYED (-1L)
 
 
 /* 
