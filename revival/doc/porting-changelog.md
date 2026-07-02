@@ -1326,3 +1326,36 @@ confirmed by reading each variable declaration:
 files are not yet reached by `make dependInstall` (no generated `.ih`/`.eh`
 headers), so compile verification of those files is deferred until those
 directories enter the build.
+
+### LP64 untyped-dispatch fix: `lpair__Init` `long x` → `int x`
+
+**`src/atk/supportviews/lpair.c`, function `lpair__Init` (line 520)**
+
+`lpair__Init` is called through untyped `(void (*)())` dispatch with an
+`int` argument. When the argument is negative (e.g. `-MAINPCT` = -25,
+meaning "split at 25% from the right"), arm64 zero-extends the 32-bit
+representation to 64 bits: `int -25` → `long 4294967271`. The function's
+`if (x < 0)` branch never fires; `lpair_VFixed` (BOTTOMFIXED) is called
+instead of `lpair_VSplit` (PERCENTAGE). The help app's right-side panel
+area got an enormous fixed pixel size instead of a percentage split, making
+the panels invisible.
+
+**Fix:** changed the parameter declaration from `long x` to `int x`. The
+untyped dispatch places a 32-bit `w` register value; declaring `int`
+matches the actual width and sign-extends correctly on read.
+
+### LP64 untyped-dispatch fix: `panel__InitializeClass` margin/indent casts
+
+**`src/atk/textobjects/panel.c`, function `panel__InitializeClass` (lines 190–191)**
+
+`style_SetNewLeftMargin` and `style_SetNewIndentation` take a `long Operand`
+parameter. The calls passed uncast `int` literals: `16384` and `-16384`.
+Through untyped `(void (*)())` dispatch, `-16384` (0xFFFFC000 as 32-bit)
+zero-extends on arm64 to `4294951936` — a large positive value. The style
+engine applied a left indentation of ~4 billion internal units, pushing all
+panel text (Overviews and Programs lists) billions of pixels off-screen to
+the right. Only the ▶ scroll arrow remained visible.
+
+**Fix:** added explicit `(long)` casts: `(long)16384` and `(long)-16384`.
+This ensures the value placed in the argument register is sign-extended to
+the full 64 bits the callee expects.
