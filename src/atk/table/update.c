@@ -432,10 +432,10 @@ int precision;
 struct rectangle *cellBounds;
 {
     struct table *T = MyTable(V);
-    int     x, y;
+    long    x, y;
     double val;
     int decpt, sign;
-    int rightshim;
+    long rightshim;
     char    buf[1030], *p;
     int adjustedprecision = precision + 1;
 

@@ -1410,3 +1410,25 @@ so `textview_FullUpdate` rendered into an invisible area.
 `dialogv__DesiredSize`. No other changes; `oldheight` is used only in
 arithmetic comparisons and as a `long *` output parameter, all consistent
 with `long`.
+
+### LP64 fix: table val-cell numbers/expressions invisible (`update.c` — `updateValue`)
+
+**Symptom:** In the table (spread) inset, entering text (e.g. `aaa`) into a
+cell worked — the text appeared in the cell. Entering a number or expression
+(e.g. `42`) stored the value correctly in the datastream but nothing appeared
+in the cell.
+
+**Root cause:** `updateValue` in `src/atk/table/update.c` declared
+`int x, y` then passed `&x` and `&y` to `fontdesc_StringSize`, which takes
+`long *XWidth, long *YWidth` and writes 8 bytes to each. On arm64
+(little-endian LP64), the compiler placed `y` at sp+120 and `x` at sp+124
+(adjacent, `y` at lower address). The 8-byte write to `&y` correctly filled
+sp+120–123 (y = font height) but also wrote the high 32 bits of the height
+value (zero) to sp+124–127, **zeroing x**. With `x = 0`, `spread_MoveTo`
+positioned the rendered number string at `left + width - 1` — the right edge
+of the cell — and the clip rect made it entirely invisible.
+
+**Fix:** changed `int x, y` and `int rightshim` to `long` in `updateValue`
+(`src/atk/table/update.c:435–438`). `rightshim` uses `V->dotWidth` and
+`V->zeroWidth` which are both `long` fields; making it `long` avoids a
+truncation on assignment.
