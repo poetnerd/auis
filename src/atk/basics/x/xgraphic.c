@@ -43,6 +43,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
+#ifdef HAVE_XFT
+#include <X11/Xft/Xft.h>
+#endif
 
 #include <physical.h>
 #include <graphic.ih>
@@ -58,6 +61,32 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <xgraphic.eh>
 
 static int regionDebug = 0;
+
+#ifdef HAVE_XFT
+extern XftFont *xfontdesc_GetXftFont(struct xfontdesc *, struct graphic *);
+
+static XftColor
+GetXftForeColor(self)
+struct xgraphic *self;
+{
+    static unsigned long cachedPixel = ~0UL;
+    static XftColor cachedColor;
+    unsigned long fgpixel = self->foregroundpixel;
+    if (fgpixel != cachedPixel) {
+	XColor xc;
+	xc.pixel = fgpixel;
+	XQueryColor(xgraphic_XDisplay(self),
+	    DefaultColormap(xgraphic_XDisplay(self), self->screenUsed), &xc);
+	cachedColor.pixel = fgpixel;
+	cachedColor.color.red = xc.red;
+	cachedColor.color.green = xc.green;
+	cachedColor.color.blue = xc.blue;
+	cachedColor.color.alpha = 0xFFFF;
+	cachedPixel = fgpixel;
+    }
+    return cachedColor;
+}
+#endif /* HAVE_XFT */
 static int imageDebug = 0;
 static int bltDebug = 0;
 static int GotError;
@@ -567,7 +596,65 @@ long TextLength; {
 
     }
     /* Put out the actual characters */
-    
+
+#ifdef HAVE_XFT
+    /* Try Xft anti-aliased rendering (scalable fonts, non-XOR mode) */
+    if (self->header.graphic.currentFont != NULL &&
+	self->header.graphic.transferMode != graphic_XOR) {
+	XftFont *xftfont = xfontdesc_GetXftFont(
+	    (struct xfontdesc *)self->header.graphic.currentFont,
+	    (struct graphic *)self);
+	if (xftfont) {
+	    Display *dpy = xgraphic_XDisplay(self);
+	    XftDraw *xftd = XftDrawCreate(dpy, xgraphic_XWindow(self),
+		DefaultVisual(dpy, self->screenUsed),
+		DefaultColormap(dpy, self->screenUsed));
+	    if (xftd) {
+		XftColor fgc = GetXftForeColor(self);
+		int gx = physical_LogicalXToGlobalX(self, x);
+		int gy = physical_LogicalYToGlobalY(self, y);
+		int spaceShim = self->header.graphic.spaceShim;
+		/* Place each glyph at its X11-metric position and clip it
+		   to its advance cell.  Clipping prevents right-side bearing
+		   overflow from bleeding into the next character's area, which
+		   would cause visible artifacts when that character is later
+		   erased (e.g. end-of-paragraph deletion). */
+		short *widths = fontdesc_WidthTable(
+		    self->header.graphic.currentFont, (struct graphic *)self);
+		if (widths) {
+		    int i, cx = gx;
+		    int fh = xftfont->ascent + xftfont->descent;
+		    int clip_y = gy - xftfont->ascent;
+		    for (i = 0; i < TextLength; i++) {
+			unsigned char ch = (unsigned char)Text[i];
+			int adv = widths[ch];
+			if (ch == ' ' && spaceShim) adv += spaceShim;
+			if (adv > 0) {
+			    XRectangle clip;
+			    clip.x = (short)cx;
+			    clip.y = (short)clip_y;
+			    clip.width  = (unsigned short)adv;
+			    clip.height = (unsigned short)fh;
+			    XftDrawSetClipRectangles(xftd, 0, 0, &clip, 1);
+			}
+			XftChar8 c8 = (XftChar8)ch;
+			XftDrawString8(xftd, &fgc, xftfont, cx, gy, &c8, 1);
+			cx += adv;
+		    }
+		    XftDrawDestroy(xftd);
+		    return;
+		}
+		/* widths unavailable: string rendering fallback */
+		XftDrawString8(xftd, &fgc, xftfont, gx, gy,
+		    (XftChar8 *)Text, TextLength);
+		XftDrawDestroy(xftd);
+		return;
+	    }
+	}
+    }
+#endif /* HAVE_XFT */
+
+    /* Fallback: core X11 rendering (bitmap fonts, XOR mode, no Xft font) */
     if (self->header.graphic.spaceShim) {
 	/* Have space shim, must break up text and dump it */
 
@@ -630,7 +717,7 @@ long TextLength; {
 	    xgraphic_XWindow(self),
 	    xgraphic_XGC(self),
 	    physical_LogicalXToGlobalX(self,x),
-	    physical_LogicalYToGlobalY(self,y),Text,TextLength);	
+	    physical_LogicalYToGlobalY(self,y),Text,TextLength);
     }
 
 }

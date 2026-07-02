@@ -188,36 +188,90 @@ The Andrew Message System, if desired. This has its own large set of
 dependencies (mail delivery, white pages, etc.) and could reasonably
 be left for much later or not at all.
 
-### 9. Font system (HIGH effort, but deferrable)
+### 9. Font system (in progress as of 2026-07)
 
-AUIS uses the X core font protocol — server-side bitmap font rendering
-with XLFD naming, custom "Andy" bitmap fonts (BDF format), and integer
-glyph metrics. The entire font landscape has changed:
+AUIS was written for the X core font protocol — server-side bitmap font
+rendering with XLFD naming, custom "Andy" bitmap fonts (BDF/PCF format),
+and integer glyph metrics. The revival is migrating to client-side Xft
+rendering in phases, while retaining the Andy symbol fonts for characters
+that have no standard substitute.
 
-- Modern Linux uses client-side rendering: FreeType + fontconfig + Xft
-- Fonts are TrueType/OpenType, not BDF bitmaps
-- Anti-aliasing and subpixel rendering are expected
-- Unicode and complex text layout (Pango/HarfBuzz) are standard
+#### What was found
 
-Key source files to investigate (once available):
-- `atk/basics/` — font abstraction, `xgraphic.c`, `xfontd.c`
+The build tree includes 40 compiled PCF fonts in `build/X11fonts/`. The
+`fonts.alias` file in that directory maps all Andy text font names
+(`andysans*`, `andytype*`) to standard Adobe Helvetica/Courier XLFD names
+already present in XQuartz — so no custom Andy text bitmaps need to be
+installed separately for text rendering. The symbol fonts (`symba*.pcf`,
+five sizes: 8, 10, 12, 16, 22 point) are CMU-custom with no standard
+substitute; without them, bullet characters render as `7`.
+
+Text rendering quality with the original X core path (before Xft) was
+surprisingly good — font appearance was correct, and bold/italic/size
+changes all worked properly. The visible rendering problem was a frame-size
+reporting bug in the `help` application causing text to appear clipped at
+the right margin; this was unrelated to fonts.
+
+#### Current approach: hybrid Xft + X core
+
+Two rendering paths exist in the revival; Xft is being introduced
+conditionally:
+
+| Rendering path | Status |
+|---|---|
+| Body text | Migrated to Xft (2026-07, phase 1 complete) |
+| Menus | Xft migration in progress (2026-07, phase 2) |
+| Symbol characters (bullets, math) | Andy `symba*.pcf` via X core — permanent |
+| Cursor shapes | Andy cursor PCF via X core — permanent |
+
+Because the symbol and cursor fonts have no Xft/fontconfig equivalent,
+`xset fp+ build/X11fonts && xset fp rehash` remains a required setup step
+even after the Xft text migration is complete. See `quickstart.md` for the
+exact invocation.
+
+#### Key source files
+
+- `atk/basics/x/xgraphic.c`, `xfontd.c` — font abstraction and X drawing
 - `atk/text/` — text measurement and drawing
 - `atk/support/` — style and font selection
-- `overhead/fonts/` — the Andy bitmap font distribution
+- `build/X11fonts/fonts.alias` — Andy→Adobe XLFD name mappings
 
-The X core font protocol still works on modern X11. A pragmatic approach:
-get ez running with bitmap fonts first (functional but ugly), then migrate
-to Xft/fontconfig as a separate phase. The critical question is how well
-the font abstraction in `atk/basics/` isolates the rest of the system
-from X font specifics.
+### 11. `%d` / `%ld` mismatch in scanf family (MEDIUM effort, systemic)
 
-Key questions to investigate once the full source is available:
-- How thick is the font abstraction in `atk/basics/`?
-- Where do XLFD strings and bitmap metrics leak out into the text and
-  view code?
-- What does the drawing path look like:
-  `text object → view → graphic → X calls`?
-- How separable is the print rendering from the screen rendering?
+AUIS was written for ILP32 platforms where `sizeof(int) == sizeof(long)
+== 4`. Throughout the codebase, `long` variables used for sizes, IDs, and
+dimensions are read with `%d` format specifiers in `scanf`/`fscanf`/
+`sscanf`. On LP64 arm64, `long` is 64 bits but `%d` tells `fscanf` to
+write only 32 bits — the upper 32 bits of each `long` remain as stack
+garbage.
+
+Unlike `printf` mismatches (wrong output, no memory write), `scanf`
+mismatches corrupt the stack frame: dimensions come back as plausibly-
+small values when garbage upper bits happen to be zero, and as wildly
+wrong large values otherwise, causing crashes or corrupt rendering.
+
+**Known instances (confirmed 2026-07-02):**
+- `atk/raster/lib/raster.c:660` — `long version, width, height` read
+  with `%d %d %d`
+- `atk/raster/lib/rasterio.c:391` — identical pattern
+
+**Fix:** Change `%d` to `%ld` for `long *` arguments. Also initialize
+`long` locals to `0` before the `fscanf` so a partial write leaves `0`
+in the upper bytes rather than stack garbage.
+
+**To audit the full tree:**
+```
+grep -rn 'fscanf\|sscanf\|scanf' src/ --include="*.c" | grep '%d'
+```
+For each hit, verify whether the corresponding argument is `int *` (correct)
+or `long *` (needs `%ld`). This pattern is likely widespread given the
+codebase's ILP32 heritage; every graphical inset that reads dimension or
+ID values from a file is a candidate.
+
+This is LP64 variant #4, distinct from the three fixed earlier:
+- #1 Undeclared function → implicit `int` return, pointer truncated
+- #2 >8-arg call through `(void(*)())` → stack argument dropped
+- #3 `int` constant through untyped dispatch → zero-extended, comparison fails
 
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 

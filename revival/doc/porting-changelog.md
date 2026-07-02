@@ -1090,3 +1090,132 @@ through untyped dispatch — safe.
 
 **Result:** `ez` now runs stably; checkpoint timer fires repeatedly without
 crashing. Menus, character input, and object insertion all work.
+
+## 2026-07-01 – 2026-07-02
+
+### Xft anti-aliased text rendering (`atk/basics/x/xfontd.c`, `xgraphic.c`)
+
+Added Xft-based anti-aliased text rendering as an overlay on top of the
+existing X11 bitmap path. Body text in ez now renders with full AA using
+the system's TrueType fonts; the bitmap path remains as fallback.
+
+**`src/config/darwin/system.mcr`** — added three new entries:
+
+```
+#define HAVE_XFT 1
+XFTLIB = -lXft
+XFTINCDIR = $(XINCDIR)/freetype2
+STD_DEFINES = -DHAVE_XFT
+```
+
+`HAVE_XFT` gates all Xft code in the tree; `XFTINCDIR` gives the compiler
+FreeType2 headers needed by `<X11/Xft/Xft.h>`.
+
+**`xfontd.c`** — added an `XftFont *xft` field to `struct fcache` (the
+per-display font cache entry). On each font load, after the existing
+`XLoadQueryFont` call, the XLFD is retrieved and tested: only fonts whose
+XLFD charset-registry field is `iso8859*` or `iso10646*` are opened with
+`XftFontOpenXlfd`. Fonts with `adobe-fontspecific` encoding (e.g.
+`andysymbol`) are deliberately excluded — their byte values are Adobe
+Symbol encoding, not Unicode, and Xft would misinterpret them. Added
+`xfontdesc_GetXftFont()` accessor and `XftFontClose` in `FinalizeObject`.
+`TextSize`, `StringSize`, and `WidthTable` remain on the X11 metric path
+throughout; the widthTable is the source of truth for all layout and
+cursor positioning.
+
+**`xgraphic.c`** — added an `#ifdef HAVE_XFT` block in the `MoveTo`/draw
+path. When an Xft font is available and the transfer mode is not XOR, a
+temporary `XftDraw` is created and each character in the string is
+rendered individually with `XftDrawString8`, clipped to its advance-width
+cell via `XftDrawSetClipRectangles` before each draw.
+
+The per-character clip is the key correctness invariant: Xft glyphs'
+anti-aliased ink can bleed slightly beyond their nominal advance width
+(right-side bearing overflow). Without clipping, deleting a character
+erases the boundary pixels of the preceding character's glyph, visible as
+corruption at end-of-paragraph. Clipping each glyph to its advance cell
+makes AA rendering behave like a bitmap font from AUIS's perspective —
+incremental erase-and-redraw stays correct. The visual cost is that the
+1–2px anti-aliased fringe at each glyph's right edge is clipped; this is
+imperceptible at body text sizes and far preferable to editing artifacts.
+
+Each character is placed at its X11 widthTable-derived X position (not
+Xft's own advance), so cursor movement, selection, and deletion — which
+all use widthTable for coordinate computation — remain consistent with
+what is rendered on screen. The spaceShim is added to space characters to
+preserve AUIS's justified-text spacing.
+
+**Menu Xft work not included**: an attempt to extend Xft to menu text was
+made and reverted. Menu rendering in `cmenu/cmdraw.c` and `menubar.c`
+involves per-line measurement and layout that did not converge; those
+files were restored to their pre-Xft state.
+
+### Symbola font pipeline (bullets, math symbols)
+
+AUIS documents use `andysymbola` for bullet and worm list markers. This
+maps through `fonts.alias` to `symbola*`, which must be resolved from
+`symba*.pcf` files compiled from AUIS's own `symba*.fdb` sources.
+
+**`src/config/darwin/system.mcr`** — added `#define ISO80_FONTS_ENV 1`.
+Under this flag, `xmkfontd/Imakefile` installs `non-andrew.fonts.alias`
+as `build/X11fonts/fonts.alias` instead of running `mkfntdir.csh`. The
+alias file maps all `andy*` logical font names to XQuartz scalable fonts
+and includes `andysymbola8..22 → symbola8..22`.
+
+**`src/overhead/fonts/fonts/adobe/Imakefile`** — `DeclareFont(symba8)`
+through `DeclareFont(symba22)` were placed outside the
+`#ifndef ISO80_FONTS_ENV` guard so the PCF files are built even when the
+main Andrew bitmap fonts are suppressed.
+
+**Build pipeline:** `symba*.fdb` → `fdbbdf` → BDF → `bdftopcf` →
+`symba*.pcf`. `mkfontdir` registers them as `symbola*` (from the `FONT
+SymbolA10` field in the BDF headers). The alias chain is then complete:
+`andysymbola10` → `symbola10` (fonts.alias) → `symba10.pcf` (fonts.dir).
+
+### Font build infrastructure (`config/darwin/system.mcr`)
+
+The default from `allsys.mcr`:
+
+```
+XFC        = $(XBASEDIR)/$(XBINDIR)/bdftopcf
+XMKFONTDIR = $(XBASEDIR)/$(XBINDIR)/mkfontdir
+```
+
+resolved to `/opt/X11//usr/bin/X11/bdftopcf` on Darwin — a nonexistent
+path — because `XBINDIR` was never overridden from its default
+`/usr/bin/X11`. On XQuartz, these tools live at `/opt/X11/bin/`.
+
+Fixed by adding to `darwin/system.mcr`:
+
+```
+XBINDIR = bin
+```
+
+This single override corrects both `XFC` and `XMKFONTDIR` in every
+generated Makefile. `FONTS_TO_PCF_ENV` is already defined globally in
+`allsys.h` (PCF is the modern default); this fix only addresses the tool
+path, not the format selection.
+
+`make Makefiles` from the top of the source tree propagated `XBINDIR = bin`
+to all font-building directories (`overhead/fonts/fonts/adobe/`,
+`atk/eq/`, `atk/value/`, `atk/table/`, `xmkfontd/`).
+
+### `fonts.alias` install mode (`xmkfontd/Imakefile`)
+
+`fonts.alias` was being installed with `${INSTINCFLAGS}` (mode `0444`,
+read-only). On the second `make dependInstall`, `install` could not
+overwrite the existing read-only file, silently leaving a stale alias
+table. Changed to `${INSTLIBFLAGS}` (mode `0664`).
+
+### Post-install X server steps (not automatable)
+
+After `make dependInstall`, the running X server must be told about the
+font directory before `ez` can use the new fonts:
+
+```sh
+xset fp+ /path/to/andrew-6.4/build/X11fonts
+xset fp rehash
+```
+
+These steps cannot be part of the build; they belong in `.xinitrc` or
+equivalent session startup.

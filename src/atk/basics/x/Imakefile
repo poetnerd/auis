@@ -26,7 +26,11 @@
 * $
 */
 
+#ifdef HAVE_XFT
+LOCALINCLUDES = -I../common -I$(XFTINCDIR)
+#else
 LOCALINCLUDES = -I../common
+#endif
 
 DEFINES = -DXLIB_ILLEGAL_ACCESS -DANDREW_FONTS_X=\"/$(FONTDESTX)/\"
 
@@ -38,9 +42,17 @@ IHFILES = xws.ih xim.ih xcursor.ih xfontd.ih xcolor.ih xcmap.ih xgraphic.ih
 
 #ifdef HAVE_SHARED_LIBS
 X11LIB = $(XLIB)
+#ifdef HAVE_XFT
+SYSLIBS = $(BSDLIB) $(XFTLIB)
+#else
 SYSLIBS = $(BSDLIB)
+#endif
+#else
+#ifdef HAVE_XFT
+SYSLIBS = $(XLIB) $(BSDLIB) $(XFTLIB)
 #else
 SYSLIBS = $(XLIB) $(BSDLIB)
+#endif
 #endif
 
 LIBS = $(BASEDIR)/lib/libcmenu.a 	\

@@ -31,7 +31,11 @@
  * .ih is, via InstallClassFiles) -- look for them next to their .c
  * siblings instead.
  */
+#ifdef HAVE_XFT
+LOCALINCLUDES = -I../common -I../x -I../wm -I$(XFTINCDIR)
+#else
 LOCALINCLUDES = -I../common -I../x -I../wm
+#endif
 
 /* ../x/xgraphic.c (and friends) reach directly into Xlib's Display
  * struct; ../x/Imakefile defines this to expose it (modern Xlib.h

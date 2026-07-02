@@ -18,10 +18,19 @@ LEX = flex
 RANLIB = ranlib
 
 XBASEDIR = /opt/X11
+XBINDIR = bin
 XUTILDIR = /opt/homebrew/bin
 XLIBDIR = /opt/X11/lib
 XINCDIR = /opt/X11/include
 XLIB = -L$(XLIBDIR) -lX11
+
+#define HAVE_XFT 1
+XFTLIB = -lXft
+XFTINCDIR = $(XINCDIR)/freetype2
+STD_DEFINES = -DHAVE_XFT
+
+/* No native Andrew bitmap fonts on this system; map andy* to X11 scalable fonts */
+#define ISO80_FONTS_ENV 1
 
 DYN_LINK_LIB = -ldl
 LEXLIB = -ll

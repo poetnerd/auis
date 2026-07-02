@@ -47,6 +47,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
+#ifdef HAVE_XFT
+#include <X11/Xft/Xft.h>
+#endif
 #include <cmenu.h>
 
 #include <xgraphic.ih>
@@ -77,6 +80,9 @@ struct fcache {
 	Display *dpy;		/* first display the font was opened on (for XFreeFont) */
 	unsigned long host;		/* the host file descriptor */
 	XFontStruct *font;		/* the value for wm_SelectFont() */
+#ifdef HAVE_XFT
+	XftFont *xft;			/* anti-aliased rendering (NULL for bitmap fonts) */
+#endif
 	struct fcache *next;
 };
 
@@ -544,13 +550,28 @@ xfontdesc_LoadXFont(self, graphic)
             fudge = 0;
         }
 
-        weight = (desiredStyle & fontdesc_Bold) ? "bold" : 
+        weight = (desiredStyle & fontdesc_Bold) ? "bold" :
           ((desiredStyle & fontdesc_Medium) ? "demibold" : "medium");
         slant = (desiredStyle & fontdesc_Italic) ? "i" : "r";
 	spacing = (desiredStyle & fontdesc_Fixed) ? "m" : "p";
 
-        sprintf(xstyleName, "-*-%s-%s-%s-*-*-*-%d-*-*-%s-*-*-*", xfamily, weight, slant, 10 * (desiredSize + fudge), spacing);
-        font = XLoadQueryFont(xgraphic_XDisplay(graphic), xstyleName);
+        /* Try scalable font at actual screen DPI first (pixel_size=0 selects
+           Type1/TrueType over bitmap PCFs, giving anti-aliased rendering). */
+        {
+            long hdpi = xgraphic_GetHorizontalResolution(graphic);
+            long vdpi_local = xgraphic_GetVerticalResolution(graphic);
+            if (hdpi > 0 && vdpi_local > 0) {
+                sprintf(xstyleName, "-*-%s-%s-%s-*-*-0-%d-%ld-%ld-%s-*-*-*",
+                    xfamily, weight, slant, 10 * (desiredSize + fudge),
+                    hdpi, vdpi_local, spacing);
+                font = XLoadQueryFont(xgraphic_XDisplay(graphic), xstyleName);
+            }
+        }
+
+        if (font == NULL) {
+            sprintf(xstyleName, "-*-%s-%s-%s-*-*-*-%d-*-*-%s-*-*-*", xfamily, weight, slant, 10 * (desiredSize + fudge), spacing);
+            font = XLoadQueryFont(xgraphic_XDisplay(graphic), xstyleName);
+        }
 
         /* try character cell */
         if (font == NULL && (desiredStyle & fontdesc_Fixed)) {
@@ -650,7 +671,36 @@ xfontdesc_LoadXFont(self, graphic)
 	fc->dpy = xgraphic_XDisplay(graphic);
 	fc->host = ConnectionNumber(fc->dpy);
 	fc->font = font;
-	*fcp = fc;	/* link the new one into the list */	
+#ifdef HAVE_XFT
+	/* Load matching XftFont for anti-aliased rendering (scalable fonts only) */
+	fc->xft = NULL;
+	if (font != NULL) {
+	    Atom fontAtom = XInternAtom(fc->dpy, "FONT", False);
+	    unsigned long atomVal;
+	    if (XGetFontProperty(font, fontAtom, &atomVal)) {
+		char *xlfd = XGetAtomName(fc->dpy, atomVal);
+		if (xlfd) {
+		    /* Only use Xft for Latin/Unicode charsets.
+		       Symbol, fontspecific, etc. use non-Unicode byte
+		       encodings that XftDrawString8 would misinterpret. */
+		    const char *cp = xlfd + strlen(xlfd);
+		    while (cp > xlfd && *cp != '-') cp--;  /* skip charset-encoding */
+		    if (cp > xlfd) {
+			const char *reg = cp - 1;
+			while (reg > xlfd && *reg != '-') reg--;
+			if (*reg == '-') {
+			    reg++;
+			    if (strncmp(reg, "iso8859", 7) == 0 ||
+				strncmp(reg, "iso10646", 8) == 0)
+				fc->xft = XftFontOpenXlfd(fc->dpy, graphic->screenUsed, xlfd);
+			}
+		    }
+		    XFree(xlfd);
+		}
+	    }
+	}
+#endif
+	*fcp = fc;	/* link the new one into the list */
     }
     self->header.fontdesc.DescValid = (MDFD != NULL);
 
@@ -849,14 +899,14 @@ short *xfontdesc__WidthTable(self, graphic2)
 		   everything */
 		for(i=0; i < fontdesc_NumIcons; i++) 
 			fontWidthTable[i] = font->max_bounds.width;
-	else 
+	else
 		for(i=0; i < fontdesc_NumIcons; i++) {
 			if (i < font->min_char_or_byte2 ||
 					i > font->max_char_or_byte2)
 				 fontWidthTable[i] = 0;
 			else
-				fontWidthTable[i] = (font->per_char) 
-					? font->per_char[i-font->min_char_or_byte2].width 
+				fontWidthTable[i] = (font->per_char)
+					? font->per_char[i-font->min_char_or_byte2].width
 					: font->max_bounds.width;
 	}
 	return fontWidthTable;
@@ -1004,7 +1054,28 @@ xfontdesc__InitializeObject(classID, self)
 	return TRUE;
 }
 
-	void
+#ifdef HAVE_XFT
+XftFont *
+xfontdesc_GetXftFont(self, graphic2)
+    struct xfontdesc *self;
+    struct graphic *graphic2;
+{
+    struct fcache *fc;
+    struct xgraphic *graphic = (struct xgraphic *)graphic2;
+    if ((graphic = EnsureGraphic(graphic)) == NULL)
+	return NULL;
+    for (fc = MDFD; fc != NULL && fc->host != ConnectionNumber(xgraphic_XDisplay(graphic)); fc = fc->next)
+	{}
+    if (fc == NULL) {
+	xfontdesc_LoadXFont(self, graphic);
+	for (fc = MDFD; fc != NULL && fc->host != ConnectionNumber(xgraphic_XDisplay(graphic)); fc = fc->next)
+	    {}
+    }
+    return (fc != NULL) ? fc->xft : NULL;
+}
+#endif /* HAVE_XFT */
+
+void
 xfontdesc__FinalizeObject(classID, self)
 	struct classheader *classID;
 	struct xfontdesc * self;
@@ -1013,6 +1084,10 @@ xfontdesc__FinalizeObject(classID, self)
 	for (fc = MDFD; fc != NULL; fc = tfc) {
 		tfc = fc->next;
 		XFreeFont(fc->dpy, fc->font);
+#ifdef HAVE_XFT
+		if (fc->xft)
+		    XftFontClose(fc->dpy, fc->xft);
+#endif
 	}
 }
 
