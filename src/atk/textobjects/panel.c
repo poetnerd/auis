@@ -187,8 +187,8 @@ struct classheader *classID;
     defaultOverallStyle = style_New();
     style_SetJustification(defaultOverallStyle, style_LeftJustified);
     style_SetFontSize(defaultOverallStyle, style_ConstantFontSize, 10);
-    style_SetNewLeftMargin(defaultOverallStyle, style_LeftMargin,             16384, style_Inches);
-    style_SetNewIndentation(defaultOverallStyle, style_LeftEdge,             -16384, style_Inches);
+    style_SetNewLeftMargin(defaultOverallStyle, style_LeftMargin,             (long)16384, style_Inches);
+    style_SetNewIndentation(defaultOverallStyle, style_LeftEdge,             (long)-16384, style_Inches);
 
     defaultIconFont = fontdesc_Create("icon", fontdesc_Plain, 12);
     defaultIcon = 'R';
