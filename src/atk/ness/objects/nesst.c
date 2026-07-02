@@ -128,7 +128,7 @@ main(argc, argv)
 	dobj = ness_New();
 	printf("reading t1\n");  fflush(stdout);
 	f = fopen("/tmp/t1", "r");
-	fscanf(f, "\\begindata{ness,%d} ", &id);
+	fscanf(f, "\\begindata{ness,%ld} ", &id);
 	printf("read: %d\n",ness_Read(dobj, f, id));
 	fclose(f);
 	printdata(dobj);

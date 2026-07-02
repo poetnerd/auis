@@ -103,7 +103,7 @@ label__Read( self, file, id )
 	/* reads a label from -file-.  See file format in label.ch */
 	/* This routine reads the \enddata, if any. Its syntax is not checked */
 
-	fscanf(file, " %s %d %d ", fontfamily, &style, &size);
+	fscanf(file, " %s %ld %ld ", fontfamily, &style, &size);
 	label_SetFont(self, fontfamily, style, size);
 
 	*text = '\0';

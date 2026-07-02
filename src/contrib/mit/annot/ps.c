@@ -203,7 +203,7 @@ ps__Read(self,file,id)
 
     ps_SetID(self,ps_UniqueID(self));
 
-    fscanf(file,"%ld %ld %d %ld %ld", &x, &y, &haschild, &width, &height);
+    fscanf(file,"%ld %ld %ld %ld %ld", &x, &y, &haschild, &width, &height);
     ps_SetSize(self, x, y);
     ps_SetPixelWidth(self, width);
     ps_SetPixelHeight(self, height);

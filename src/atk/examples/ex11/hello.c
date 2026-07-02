@@ -58,7 +58,7 @@ long id;
     if(fgets(buf,sizeof(buf),file)==NULL)
 	return dataobject_PREMATUREEOF;
     /* the %hd tells scanf that blackOnWhite is a short, not an int */
-    if(sscanf(buf,"%d %d %hd\n",&hw->x,&hw->y,&hw->blackOnWhite)<3)
+    if(sscanf(buf,"%ld %ld %hd\n",&hw->x,&hw->y,&hw->blackOnWhite)<3)
 	return dataobject_BADFORMAT;
 
     if(fgets(buf,sizeof(buf),file)==NULL) /* read in the \enddata{...} */

@@ -172,7 +172,7 @@ char name[64], bits[64], *t;
 /* get width (in pixels) and height fields from top of bitmap file */
     for (i=0; i<2; i++) 
     {
-	if (fscanf(file," #define %s %d ", name, &value) == 2)
+	if (fscanf(file," #define %s %ld ", name, &value) == 2)
 	{
 
 	    if ((t = rindex(name, '_')) == 0)

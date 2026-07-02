@@ -225,7 +225,7 @@ icon__Read(self,file,id)
     self->child = (struct dataobject *)0;
     icon_SetID(self,icon_UniqueID(self));
 
-    fscanf(file,"%ld %ld %d", &x, &y, &haschild);
+    fscanf(file,"%ld %ld %ld", &x, &y, &haschild);
     self->width = x;
     self->height = y;
 

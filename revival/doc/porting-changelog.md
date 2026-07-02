@@ -1273,7 +1273,56 @@ their stack frames were clean when `raster__Read()` was entered and the
 garbage upper bytes happened to be zero — luck, not correctness.
 
 **Broader audit:** grep across all `.c` files under `src/` for `%d`
-paired with `long *` found additional candidates in `layout.c`,
-`label.c`, `nesst.c`, `xbm.c`, `print.c`, `annot/icon.c`, `annot/ps.c`,
-`tm.c`, `txttroff.c`, and `2rtf` — not fixed here, need individual type
-verification before changing.
+paired with `long *` found additional candidates — fixed in the
+2026-07-02 session below after type verification.
+
+## 2026-07-02
+
+### LP64 `%d`→`%ld` secondary pass (scanf-family audit)
+
+Followed up the raster fix with a tree-wide grep for remaining
+`fscanf`/`sscanf` calls using `%d` with `long *` arguments. The audit
+distinguished scanf-family (memory-corrupting — `%d` writes 4 bytes into
+an 8-byte `long`, leaving the upper 4 as stack garbage) from
+printf/fprintf-family (wrong output for large values, but no memory
+corruption; 2,597 hits batched separately as lower priority).
+
+Of 141 scanf-family `%d` hits, most were `int *` (correct). Real bugs
+confirmed by reading each variable declaration:
+
+**Fixed:**
+
+- `src/atk/layout/layout.c:235` — `long left, top, width, height` read
+  with `%d,%d,%d,%d`; changed to `%ld,%ld,%ld,%ld`.
+- `src/atk/supportviews/label.c:106` — `long style, size` read with
+  `%d %d`; changed to `%ld %ld`.
+- `src/atk/raster/lib/xbm.c:175` — `long value` (XBM `#define` pixel
+  dimension) read with `%d`; changed to `%ld`.
+- `src/contrib/mit/annot/icon.c:228` — `long haschild` read with `%d`
+  (while `x` and `y` already used `%ld`); changed to `%ld`.
+- `src/contrib/mit/annot/ps.c:206` — same `haschild` pattern.
+- `src/atk/ness/objects/nesst.c:131` — `long id` in ness test driver
+  read with `%d`; changed to `%ld`.
+- `src/atk/utils/dialog.c:202,217` — `long textid` reads
+  `\begindata{text,ID}` and `\begindata{sbutton,ID}` with `%d`; changed
+  to `%ld`. These feed directly into `text_Read`/`sbutton_Read` as the
+  `id` parameter — same risk class as the raster bug.
+- `src/atk/text/be1be2.c:373,382` — `long TabCount, TabLoc` (BE2
+  style-stream tab stop reader) read with `%d`; changed to `%ld`.
+- `src/atk/ness/objects/ness.c:598` — `long syntaxlevel` struct field
+  read with `%d`; changed to `%ld`.
+- `src/atk/examples/ex11–ex13,ex16/hello.c:61` — `long hw->x, hw->y`
+  read with `%d %d`; changed to `%ld %ld`.
+- `src/atk/examples/ex17–ex19/hello.c:94,96` — same `hw->x/y` fix plus
+  `long dobjObjId` reading `\begindata{...,ID}` with `%d`; changed to
+  `%ld`.
+
+**Confirmed not bugs (int \* with %d — correct):**
+`print.c` (`rtmp/gtmp/btmp`), `txttroff.c` (`font_count`),
+`tm.c` (`dummyI`), `contrib/mit/2rtf/` (`version, a, b, c, active`),
+`console/stats/i386_Linux/` and `rt_aix221/` (Linux/AIX dead code on Darwin).
+
+`annot/icon.c`, `annot/ps.c`, `nesst.c`, `ness.c`, and the example
+files are not yet reached by `make dependInstall` (no generated `.ih`/`.eh`
+headers), so compile verification of those files is deferred until those
+directories enter the build.

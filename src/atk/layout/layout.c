@@ -232,7 +232,7 @@ long id;			    /* unique identifier in data stream */
 
 	    case '<': /* another component coming */
 		c = layout_CreateComponent(self);
-		if (fscanf(f, "%d,%d,%d,%d", &left, &top, &width, &height) != 4) {
+		if (fscanf(f, "%ld,%ld,%ld,%ld", &left, &top, &width, &height) != 4) {
 		    objectto(f, "layout:  expected four numbers separated by commas");
 		    layout_RemoveComponent(self, c);
 		    return dataobject_BADFORMAT;

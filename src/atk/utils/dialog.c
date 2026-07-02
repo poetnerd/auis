@@ -199,7 +199,7 @@ long id;
     p=fgets(buf, sizeof(buf)-1, fp);
     if(!p) return SanelyReturnReadError(self, fp, id, dataobject_PREMATUREEOF);
     
-    if(sscanf(buf, "\\begindata{text,%d}", &textid )!=1)  SanelyReturnReadError(self, fp, id, dataobject_BADFORMAT);
+    if(sscanf(buf, "\\begindata{text,%ld}", &textid )!=1)  SanelyReturnReadError(self, fp, id, dataobject_BADFORMAT);
     
     if(self->text) text_Clear(self->text);
     else self->text=text_New();
@@ -214,7 +214,7 @@ long id;
     p=fgets(buf, sizeof(buf)-1, fp);
     if(!p) return SanelyReturnReadError(self, fp, id, dataobject_PREMATUREEOF);
     
-    if(sscanf(buf, "\\begindata{sbutton,%d}", &textid )!=1)  return SanelyReturnReadError(self, fp, id, dataobject_BADFORMAT);
+    if(sscanf(buf, "\\begindata{sbutton,%ld}", &textid )!=1)  return SanelyReturnReadError(self, fp, id, dataobject_BADFORMAT);
 
     err=sbutton_Read(self->buttons, fp, textid);
     

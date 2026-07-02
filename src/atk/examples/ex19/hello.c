@@ -91,9 +91,9 @@ long id;
 
     if(fgets(buf,sizeof(buf),file)==NULL ||
        /* the %hd tells scanf that blackOnWhite is a short, not an int */
-       sscanf(buf,"%d %d %hd\n",&hw->x,&hw->y,&hw->blackOnWhite)<3 ||
+       sscanf(buf,"%ld %ld %hd\n",&hw->x,&hw->y,&hw->blackOnWhite)<3 ||
        fgets(buf,sizeof(buf),file)==NULL ||
-       sscanf(buf,"\\begindata{%[^,],%d}\n",classNameBuf,&dobjObjId)<2)
+       sscanf(buf,"\\begindata{%[^,],%ld}\n",classNameBuf,&dobjObjId)<2)
 	retVal=dataobject_PREMATUREEOF;
     else{
 	if(strcmp(classNameBuf,class_GetTypeName(hw->dobj))!=0){
