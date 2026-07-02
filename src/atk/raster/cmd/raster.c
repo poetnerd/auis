@@ -607,7 +607,7 @@ raster__Read(self, file, id)
 	switch (*keyword) {
 	case 'r':	{		/* "refer" type */
 		struct rasterimage *addr;
-		fscanf(file, " %d ", &objectid);
+		fscanf(file, " %ld ", &objectid);
 
 		addr=NULL;/* XXX Lookup the objectid in a namespc.  set addr  */
 
@@ -621,7 +621,7 @@ raster__Read(self, file, id)
 	case 's':	{            /* "share" type */
 		long pid;
 		struct rasterimage *addr;
-		fscanf(file, " %d %x ", &pid, &addr);
+		fscanf(file, " %ld %lx ", &pid, &addr);
 		if (pid == getpid()  && strcmp(class_GetTypeName(addr), 
 						"rasterimage")==0) {
 			raster_SetPix(self, pix=addr);
@@ -636,7 +636,7 @@ raster__Read(self, file, id)
 		if (pix == NULL)
 			raster_SetPix(self, pix = rasterimage_New());
 		rasterimage_Defile(pix);
-		fscanf(file, "%d %255s %1023s ", &objectid, filename, path);
+		fscanf(file, "%ld %255s %1023s ", &objectid, filename, path);
 		f2 = rasterimage_FindFile(pix, filename, path);
 		result = raster_Read(self, f2, 0);
 
@@ -657,7 +657,7 @@ raster__Read(self, file, id)
 		}
 		/* fix this to not Defile ??? XXX */
 		if (pix) rasterimage_Defile(pix);
-		fscanf(file, " %d %d %d ", &objectid, &width, &height);
+		fscanf(file, " %ld %ld %ld ", &objectid, &width, &height);
 
 		if (width < 1 || height < 1 || width > 1000000 || height > 1000000) {
 			result = dataobject_BADFORMAT;

@@ -1219,3 +1219,61 @@ xset fp rehash
 
 These steps cannot be part of the build; they belong in `.xinitrc` or
 equivalent session startup.
+
+## 2026-07-01
+
+### LP64 `%d`→`%ld` fixes in raster readers (`raster.c`, `rasterio.c`)
+
+**Symptom:** raster images in `src/contrib/mit/neos/doc/history.ez` were
+rendered as raw pixel data text instead of images. The document also
+truncated early and hung on "go to end of file".
+
+**Root cause (two-stage):**
+
+`raster__Read()` (`src/atk/raster/cmd/raster.c`) and
+`rasterio__ReadImage()` (`src/atk/raster/lib/rasterio.c`) declare their
+`objectid`, `width`, `height`, and `version` variables as `long`, but
+all their `fscanf` calls used `%d`/`%x` format specifiers. On
+LP64/arm64 `%d` writes only 4 bytes into an 8-byte `long`, leaving the
+upper 4 bytes as whatever stack garbage was present.
+
+`history.ez` contains a `\begindata{zip,...}` inset *before* the first
+raster. `zip` falls through to `unknown__Read()`, which calls deeply
+into the text subsystem, extensively dirtying stack frames. When
+`raster__Read()` is then entered, the garbage upper bytes in `width`
+and `height` cause the range check `if (width > 1000000 || height >
+1000000)` to fire (raster.c:662). The resulting `break` exits the
+`'b'` case without reaching the `\enddata{raster,...}` scan at lines
+686–691.
+
+With the enddata scan skipped, all 405 pixel-data rows plus the
+`\enddata{raster,...}` line remain in the file stream. The text reader
+consumes them as literal characters. When it hits `\enddata{raster,...}`,
+`endcount` drops to 0, terminating text reading for the entire document.
+The remaining document content is never read; unclosed style environments
+cause a hang on "go to end".
+
+**Fix:** changed all `%d`/`%x` specifiers paired with `long *` arguments
+to `%ld`/`%lx`. Seven edits across two files:
+
+`src/atk/raster/cmd/raster.c`:
+- line 610: `fscanf(…, " %ld ", &objectid)`
+- line 624: `fscanf(…, " %ld %lx ", &pid, &addr)`
+- line 639: `fscanf(…, "%ld %255s %1023s ", &objectid, …)`
+- line 660: `fscanf(…, " %ld %ld %ld ", &objectid, &width, &height)`
+
+`src/atk/raster/lib/rasterio.c`:
+- line 374: `fscanf(…, " %ld ", &version)`
+- line 391: `fscanf(…, " %ld %ld %ld ", &objectid, &width, &height)`
+- line 414: `fscanf(…, "enddata{raster,%ld", &discardid)`
+
+Documents that never triggered the bug (e.g. `NEOS_stud.ez`) have
+smaller raster IDs and no complex inset preceding the first raster, so
+their stack frames were clean when `raster__Read()` was entered and the
+garbage upper bytes happened to be zero — luck, not correctness.
+
+**Broader audit:** grep across all `.c` files under `src/` for `%d`
+paired with `long *` found additional candidates in `layout.c`,
+`label.c`, `nesst.c`, `xbm.c`, `print.c`, `annot/icon.c`, `annot/ps.c`,
+`tm.c`, `txttroff.c`, and `2rtf` — not fixed here, need individual type
+verification before changing.

@@ -371,7 +371,7 @@ rasterio__ReadImage(ClassID, file, pix)
 				|| getc(file) != '}' || getc(file) != '\n') 
 		return dataobject_NOTBE2DATASTREAM;
 
-	fscanf(file, " %d ", &version);
+	fscanf(file, " %ld ", &version);
 	if (version < 2) 
 		return dataobject_BADFORMAT;
 
@@ -388,7 +388,7 @@ rasterio__ReadImage(ClassID, file, pix)
 	if (strcmp(keyword, "bits") != 0)
 		return dataobject_BADFORMAT;
 
-	fscanf(file, " %d %d %d ", &objectid, &width, &height);
+	fscanf(file, " %ld %ld %ld ", &objectid, &width, &height);
 
 	if (width < 1 || height < 1 || width > 1000000 || height > 1000000) 
 		return dataobject_BADFORMAT;
@@ -411,7 +411,7 @@ rasterio__ReadImage(ClassID, file, pix)
 
 	while (! feof(file) && getc(file) != '\\') {};	/* scan for \enddata */
 	if (result == dataobject_NOREADERROR &&
-			fscanf(file, "enddata{raster,%d", &discardid) != 1
+			fscanf(file, "enddata{raster,%ld", &discardid) != 1
 				|| getc(file) != '}' || getc(file) != '\n') 
 		result = dataobject_MISSINGENDDATAMARKER;
 
