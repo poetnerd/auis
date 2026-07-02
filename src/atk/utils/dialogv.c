@@ -299,7 +299,7 @@ long *dHeight;
 {
     long iw, ih;
     long dummy;
-    int  oldheight;
+    long oldheight;
     struct dialog *d=(struct dialog *)dialogv_GetDataObject(self);
     int style;
     
