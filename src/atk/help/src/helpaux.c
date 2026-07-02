@@ -273,7 +273,7 @@ register struct help *self;
     if (!self->info->scroll)
 	return FALSE;
     DEBUG(("scroll "));
-    
+
     /* panels and their scrollbars */
     self->oldpanel = (struct panel *)NULL;
     self->tmpanel = panel_New();
@@ -290,7 +290,6 @@ register struct help *self;
     self->historyScroll = (struct scroll *) panel_GetApplicationLayer(self->historyPanel);
     if (!self->overviewScroll || !self->listScroll)
 	return FALSE;
-
 
     /* labels */
     self->overviewLab = label_New();
@@ -325,7 +324,7 @@ register struct help *self;
     if (!self->overviewLpair || !self->listLpair || !self->historyLpair
 	|| !self->panelLpair1 || !self->panelLpair2)
 	return FALSE;
-    
+
     lpair_VTFixed(self->overviewLpair, self->overviewLabV, self->overviewScroll, LABPCT, 0);
     lpair_VTFixed(self->listLpair, self->listLabV, self->listScroll, LABPCT, 0);
     lpair_VTFixed(self->historyLpair, self->historyLabV, self->historyScroll, LABPCT, 0);
@@ -337,7 +336,7 @@ register struct help *self;
     if (!self->mainLpair)
 	return FALSE;
     DEBUG(("main lpair "));
-    
+
     lpair_SetLPState(self->mainLpair, lpair_NOCHANGE, lpair_VERTICAL, 1);
 
     DEBUG(("handlers "));

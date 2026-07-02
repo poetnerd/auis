@@ -273,6 +273,93 @@ This is LP64 variant #4, distinct from the three fixed earlier:
 - #2 >8-arg call through `(void(*)())` → stack argument dropped
 - #3 `int` constant through untyped dispatch → zero-extended, comparison fails
 
+### 12. LP64 untyped dispatch: `long` parameter / `int` argument mismatch (MEDIUM effort, systemic)
+
+#### Root cause
+
+The ATK class system generates method dispatch macros of the form:
+
+```c
+#define lpair_Init(self,l1,l2,x) \
+    ((* ((void (*)())((self)->header.lpair_methods->routines[59]))) (self,l1,l2,x))
+```
+
+Every virtual method call goes through an untyped `void (*)()` cast. Because
+the compiler sees no parameter types at the call site, it cannot insert the
+sign-extension or zero-extension instructions it would emit for a typed call.
+
+On arm64 (LP64), when an `int` value of `-N` is passed through such a dispatch
+to a function that declares the receiving parameter as `long`:
+
+- The caller stores the 32-bit value in a register: `0xFFFFFFE7` (for -25)
+- The upper 32 bits of the 64-bit register are **zero**, not sign-extended
+- The callee reads a `long` from that register: `0x00000000FFFFFFFFE7` = **4,294,967,271** (positive)
+
+The net effect: any function that (a) is dispatched through the class vtable,
+(b) declares a parameter as `long`, and (c) is called with a negative `int`
+expression will receive a large positive value instead of the intended negative
+one. Sign-dependent logic (`if (x < 0)`) silently takes the wrong branch.
+
+This is LP64 variant #3 (extended). Earlier LP64 variants:
+- **#1** Undeclared pointer-returning function → implicit `int` return → pointer truncated to 32 bits
+- **#2** >8-arg call through `void (*)()` → 9th+ args spilled to stack with wrong ABI, dropped
+- **#3** `int` constant through untyped dispatch → zero-extended, sign-dependent branch fails
+- **#4** `%d` with `long *` in scanf → only 32 bits written, upper 32 bits garbage (see §11)
+
+#### Confirmed instances (as of 2026-07-02)
+
+| File | Function | Parameter | Effect when wrong |
+|---|---|---|---|
+| `atk/supportviews/lpair.c` | `lpair__Init` | `long x` receiving `int -MAINPCT` | calls `VFixed` instead of `VSplit`; PERCENTAGE→BOTTOMFIXED; panel gets 0 width |
+| `atk/textobjects/panel.c` | call to `style__SetNewIndentation` | `Operand` declared `long`, called with `int -16384` | indentation becomes +4 billion units; all panel text rendered off-screen |
+
+The `lpair__Init` fix changed the parameter declaration from `long` to `int`.
+The `panel.c` fix cast the literal to `(long)-16384` at the call site.
+
+#### Strategic options
+
+**Option A — Fix the dispatch mechanism**: Change the generated `.ih` macros
+from `void (*)()` to properly typed function pointers. Correct in principle;
+requires modifying the class preprocessor in `overhead/class/`, regenerating
+all `.ih` files, and careful verification across the whole system. High risk,
+high reward.
+
+**Option B — Systematic parameter audit**: Identify all vtable methods whose
+implementations declare `long` parameters, then audit call sites for negative
+`int` arguments. Fix either by changing `long → int` in the implementation
+(appropriate for values that will never exceed 32-bit range: pixel sizes,
+percentages, style margins) or by casting to `(long)` at the call site
+(appropriate when the value genuinely needs 64-bit range). This is mechanical
+and can be driven by grep.
+
+**Option C — Fix on contact** (current approach): Fix each instance as it
+manifests as a visual or runtime bug. Low risk per fix, high whack-a-mole
+factor.
+
+#### Recommendation
+
+**Option B — systematic audit** is the right next step after the immediate
+runtime issues are stable. It is a one-time effort that eliminates the
+entire class of bugs without the risk of touching the dispatch mechanism.
+
+The audit query:
+
+```sh
+# Find functions with 'long' parameter declarations (K&R style)
+grep -rn "^long\b" src/atk/supportviews/lpair.c src/atk/support/style.c \
+    src/atk/text/ src/atk/textobjects/ src/atk/supportviews/ \
+    src/atk/frame/ src/atk/basics/
+
+# Cross-reference against vtable method list in each class's .ih
+# Focus on parameters that are passed negative int literals at any call site
+grep -rn "lpair_Init\|lpair_VSplit\|style_SetNew" src/ --include="*.c" | grep '\-[0-9]'
+```
+
+For each hit: if the parameter is used only for small integers (sizes in
+pixels or percent, style units), `long → int` in the implementation is
+the right fix. If it needs 64-bit range (file offsets, text positions,
+accumulated sizes), keep `long` and cast at the call site instead.
+
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 
 The `messages` application is the UI for mail and bulletin boards. It
