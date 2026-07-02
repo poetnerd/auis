@@ -113,18 +113,20 @@ to the same binary.
 
 ```
 cd /Users/wdc/src/AUIS/andrew-6.4/build
-bin/help -d
+bin/helpa -d
 ```
+
+Note the argument order: application name before flags (`helpa -d`, not
+`-d helpa`). The `-d` flag is parsed by `app.c`'s `ParseArgs` after
+`runapp` has identified the target application; flags before the app name
+are not seen by the application.
 
 ## Known issues (as of 2026-07)
 
 **Dialog boxes** do not appear as visible popup windows. They are created
-and functional but remain invisible as top-level windows. Workaround:
-dialog interactions are accessible via the menu bar. Under investigation.
-
-**Help shows only one frame** instead of the normal two (topic navigator +
-content). The multi-window creation path has a bug; the single content
-frame works correctly. Under investigation.
+and functional but placed off-screen (LP64 zero-extension of negative
+position values through untyped dispatch). Workaround: dialog interactions
+are accessible via the menu bar. Under investigation.
 
 **Figure insets** load but render incorrectly (messy screen). The figure
 `.do` object loads successfully via the dynamic class loader; the rendering
