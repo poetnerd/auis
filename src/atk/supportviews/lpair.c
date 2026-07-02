@@ -517,7 +517,7 @@ long	x;
 void lpair__Init(newl, l1, l2, x)
 struct lpair *newl;
 struct view *l1, *l2;
-long	x;
+int	x;
 {
 
 	if (x < 0)
