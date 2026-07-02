@@ -1359,3 +1359,54 @@ the right. Only the ▶ scroll arrow remained visible.
 **Fix:** added explicit `(long)` casts: `(long)16384` and `(long)-16384`.
 This ensures the value placed in the argument register is sign-extended to
 the full 64 bits the callee expects.
+
+### LP64 fix: dialog popup windows invisible (`xim.c` — `DoTransientGeometry`)
+
+**Symptom:** When a dialog should appear (e.g. quit-with-unsaved-buffers
+confirmation), the menubar correctly switched to dialog menus but no popup
+window was visible.
+
+**Root cause:** `DoTransientGeometry` (`src/atk/basics/x/xim.c:1285`)
+declared its geometry output params as `int *left, *top, *width, *height`
+(32-bit). The configure function (`ConfigureFunc` in `dialogv.c`) and
+`im_NormalConfiguration` (`im.c`) both declare the same params as
+`long *x, *y` and `unsigned long *w, *h` (64-bit on LP64). When the
+config function wrote the computed width/height back through those pointers,
+it wrote 8 bytes into 4-byte `int` slots. On little-endian arm64, the
+correct value landed in the low 4 bytes but the upper 4 bytes (zero for any
+reasonable pixel dimension) overwrote the adjacent variable — zeroing
+`height`. `XCreateSimpleWindow` was then called with `height = 0`, creating
+an invisible window. The same mismatch existed in `ReConfigurePopups`
+(`xim.c:2733`).
+
+**Fixes (`src/atk/basics/x/xim.c`):**
+- `DoTransientGeometry`: changed parameter types from `int *` to `long *`
+  for `left`, `top`, `width`, `height`; added `(int)`/`(unsigned int)` casts
+  at the `XSizeHints` field assignments.
+- `DoCreateTransientWindow`: changed locals `int left, top; unsigned int
+  width, height;` to `long left, top, width, height;`; added casts at the
+  two `XCreateSimpleWindow` calls.
+- `ReConfigurePopups`: replaced `int x, y; unsigned int w, h;` with
+  intermediate `int xi, yi; unsigned int wi, hi;` for `XGetGeometry` (which
+  requires those types), copied to `long x, y, w, h;` before calling the
+  config function, then cast back to `int`/`unsigned int` for
+  `XMoveResizeWindow`.
+
+### LP64 fix: dialog text invisible (`dialogv.c` — `DesiredSize`)
+
+**Symptom:** After the popup window fix above, the dialog frame and buttons
+were visible but the message text was not.
+
+**Root cause:** `dialogv__DesiredSize` (`src/atk/utils/dialogv.c:302`)
+declared `int oldheight` but passed `&oldheight` to `textview_DesiredSize`
+and `sbuttonv_SizeForBorder`, both of which take `long *dHeight`/`long *rh`
+and write 8 bytes. Same class of bug as the `xim.c` fix: the 8-byte write
+to a 4-byte `int` on the stack corrupted the adjacent variable on every
+iteration of the binary-search width-sizing loop. This randomized
+`self->twidth`, leaving the text view inserted with zero or garbage width,
+so `textview_FullUpdate` rendered into an invisible area.
+
+**Fix:** changed `int oldheight;` to `long oldheight;` in
+`dialogv__DesiredSize`. No other changes; `oldheight` is used only in
+arithmetic comparisons and as a `long *` output parameter, all consistent
+with `long`.
