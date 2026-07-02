@@ -1282,7 +1282,7 @@ XSizeHints **sizehintsp, **zoomhintsp;
 static void DoTransientGeometry(self, override, other, left, top, width, height, sizehintsp, zoomhintsp)
 struct xim *self, *other;
 boolean override;
-int *top, *left, *width, *height;
+long *top, *left, *width, *height;
 XSizeHints **sizehintsp, **zoomhintsp;
 {
     Display *xDisplay=xim2display(self);
@@ -1380,12 +1380,12 @@ XSizeHints **sizehintsp, **zoomhintsp;
 	but twm still uses them as of June, 1989.
     */	
     sizehints.flags = PMinSize | PMaxSize	| USSize | PSize | USPosition | PPosition;
-    sizehints.x = *left;
-    sizehints.y = *top;
-    sizehints.width = *width;
-    sizehints.height = *height;
-    sizehints.min_width = *width;
-    sizehints.min_height = *height;
+    sizehints.x = (int)*left;
+    sizehints.y = (int)*top;
+    sizehints.width = (int)*width;
+    sizehints.height = (int)*height;
+    sizehints.min_width = (int)*width;
+    sizehints.min_height = (int)*height;
     sizehints.max_width = DisplayWidth(xDisplay, DefaultScreen(xDisplay));
     sizehints.max_height = DisplayHeight(xDisplay, DefaultScreen(xDisplay));
     *sizehintsp=(&sizehints);
@@ -1582,12 +1582,11 @@ DoCreateTransientWindow(self, other, override)
     static int doSynch = 0;
     XSetWindowAttributes windowAttributes;
     XSizeHints *sizehints, *zoomhints;
-    int left, top;
+    long left, top, width, height;
     char *foregroundColor;
     char *backgroundColor;
     struct xcolor *foreground, *background;
     struct colormap **cmap;
-    unsigned int width, height;
 
     self->AtomCache=other->AtomCache;
     
@@ -1625,13 +1624,13 @@ DoCreateTransientWindow(self, other, override)
 	} else {
 	    /* note this cannot be an override because overrides don't have either menu system enabled */
 	    DoTransientGeometry(self, override, other, &left, &top, &width, &height, &sizehints, &zoomhints);
-	    newWindow = XCreateSimpleWindow(xDisplay, RootWindow(xDisplay, DefaultScreen(xDisplay)), left, top, width, height, 2, BlackPixel(xDisplay, DefaultScreen(xDisplay)), WhitePixel(xDisplay, DefaultScreen(xDisplay)));
+	    newWindow = XCreateSimpleWindow(xDisplay, RootWindow(xDisplay, DefaultScreen(xDisplay)), (int)left, (int)top, (unsigned int)width, (unsigned int)height, 2, BlackPixel(xDisplay, DefaultScreen(xDisplay)), WhitePixel(xDisplay, DefaultScreen(xDisplay)));
 	    mb_InitWindows(self->mbi, newWindow);
 	    self->menu=self->startupmenu=MakeStartupMenu(self->mbi, xim2programname(self));
 	}
     } else {
 	DoTransientGeometry(self, override, other, &left, &top, &width, &height, &sizehints, &zoomhints);
-	newWindow = XCreateSimpleWindow(xDisplay, override?oWindow:RootWindow(xDisplay, DefaultScreen(xDisplay)), left, top, width, height, 2, BlackPixel(xDisplay, DefaultScreen(xDisplay)), WhitePixel(xDisplay, DefaultScreen(xDisplay)));
+	newWindow = XCreateSimpleWindow(xDisplay, override?oWindow:RootWindow(xDisplay, DefaultScreen(xDisplay)), (int)left, (int)top, (unsigned int)width, (unsigned int)height, 2, BlackPixel(xDisplay, DefaultScreen(xDisplay)), WhitePixel(xDisplay, DefaultScreen(xDisplay)));
     } 
     /* (This really should be a fake "insertgraphic" into its own graphic 
 	to guarantee that all graphic state exists alike for all views.) */
@@ -2725,14 +2724,16 @@ struct xim *im;
     struct xim *p=im->popup_active;
     while(p) {
 	if(xim_ConfigureFunction(p)) {
-	    int x,y;
-	    unsigned int w,h, bw, dr;
+	    int xi, yi;
+	    unsigned int wi, hi, bw, dr;
+	    long x, y, w, h;
 	    Window dummy;
-	    XGetGeometry(xim2display(p), xim2window(p), &dummy, &x, &y, &w, &h, &bw, &dr);
+	    XGetGeometry(xim2display(p), xim2window(p), &dummy, &xi, &yi, &wi, &hi, &bw, &dr);
+	    x = xi; y = yi; w = wi; h = hi;
 	    y-=MENUBARHEIGHT(im);
 	    xim_ConfigureFunction(p)(p, xim_ConfigureRock(p), xim_ConfigureCustomRock(p), im, &x, &y, &w, &h);
 	    y+=MENUBARHEIGHT(im);
-	    XMoveResizeWindow(xim2display(p), xim2window(p), x, y, w, h);
+	    XMoveResizeWindow(xim2display(p), xim2window(p), (int)x, (int)y, (unsigned int)w, (unsigned int)h);
 	    ForceLocUpdate(p);
 	}
 	p=p->popup_active;
