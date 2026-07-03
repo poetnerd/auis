@@ -505,7 +505,7 @@ InitStyles(doc)
 			inxiStyle = createStyle("indexi", "Title~3,Invisible Index~41"), 
 			fontdesc_Italic);
 		style_SetFontScript(inxiStyle, style_PreviousScriptMovement,
-			(long)-2, style_Points);
+			-2, style_Points);
 	}
 	passStyle = stylesheet_Find(DocSheet, "formatnote");
 	if (passStyle == NULL) 

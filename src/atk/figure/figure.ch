@@ -27,7 +27,7 @@
 
 #include <rect.h>
 
-#define figure_NULLREF (-1L)
+#define figure_NULLREF (-1)
 
 /* status values for NotifyObservers */
 #define figure_DATACHANGED 1

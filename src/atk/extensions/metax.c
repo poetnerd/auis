@@ -298,8 +298,8 @@ struct classheader *classID;
 	return FALSE;
     }
     
-    style_SetNewLeftMargin(columns, style_LeftMargin, (long)550000, style_CM);
-    style_SetNewIndentation(columns, style_LeftMargin, (long)-550000, style_CM);
+    style_SetNewLeftMargin(columns, style_LeftMargin, 550000, style_CM); 
+    style_SetNewIndentation(columns, style_LeftMargin, -550000, style_CM);
     style_SetFontSize(heading,style_ConstantFontSize,20);
     style_SetJustification(heading,style_Centered);
     style_SetFontFamily(fixed, "AndyType");
