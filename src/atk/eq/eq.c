@@ -209,7 +209,7 @@ long pos;
     }
 
     self->gap += 1;
-    mark_UpdateMarks(self->markList, pos , -1);
+    mark_UpdateMarks(self->markList, pos , (long)-1);
 }
 
 /*

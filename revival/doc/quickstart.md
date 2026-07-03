@@ -18,21 +18,45 @@ org.xquartz:0`); you do not normally need to set it by hand.
 
 **Build tools** — Xcode Command Line Tools, plus:
 ```
-brew install bison flex
+brew install bison flex imake makedepend
 ```
-The build uses system `bison` (not the vendored Andrew bison, which hangs
-on Darwin/arm64 — see `porting-changelog.md` 2026-06-29).
-
-**imake** — bundled in the source tree; no separate install needed.
+- `bison` and `flex`: the build uses system versions (the vendored Andrew
+  bison hangs on Darwin/arm64 — see `porting-changelog.md` 2026-06-29)
+- `imake`: required to regenerate Makefiles on a fresh checkout
+- `makedepend`: required for the `make depend` phase
 
 ## Building
 
-From the `andrew-6.4/` checkout root:
+### Incremental build (normal case)
+
+From `andrew-6.4/src/`:
 ```
-make dependInstall 2>&1 | tee dependInstall.log
+make dependInstall 2>&1 | tee ../dependInstall.log
 ```
 A clean build produces 278 `.do` files and 602 headers with zero errors.
 `-k` is not needed; the tree is clean. Do not run concurrent builds.
+
+### Fresh checkout bootstrap
+
+On a brand-new fossil clone with no existing `build/` directory, the
+generated Makefiles and `build/include/` tree do not yet exist. Follow
+the bootstrap sequence from `src/README.ascii`:
+
+```bash
+cd andrew-6.4/src
+
+# Step 1: generate the top-level Makefile via imake
+imake -I. -I./config -Timake.tmpl -s Makefile -DTOPDIR=.
+
+# Step 2: World = make Makefiles (all subdirs) + make dependInstall
+make World 2>&1 | tee ../dependInstall.log
+```
+
+`make World` regenerates all subdirectory Makefiles via imake, creates
+the `build/` directory tree, builds all libraries and binaries, generates
+`.ih`/`.eh` headers from `.ch` class specs, and installs everything.
+On a working tree, `make dependInstall` is equivalent and faster (skips
+the Makefile regeneration step).
 
 Check for LP64 warnings before running new code paths:
 ```
@@ -123,27 +147,12 @@ are not seen by the application.
 
 ## Known issues (as of 2026-07)
 
-**Dialog boxes** do not appear as visible popup windows. They are created
-and functional but placed off-screen (LP64 zero-extension of negative
-position values through untyped dispatch). Workaround: dialog interactions
-are accessible via the menu bar. Under investigation.
-
 **Figure insets** load but render incorrectly (messy screen). The figure
 `.do` object loads successfully via the dynamic class loader; the rendering
 bug is inside `atk/figure/`. Under investigation.
 
 **`zip` insets** are not supported — `ez` will display an error for
 documents containing them (e.g., some `contrib/mit/neos/doc/` files).
-
-**Frame size reporting in help** causes text to appear clipped at the
-right margin. Body text rendering itself is correct (confirmed via `ez`);
-the clipping is a geometry bug in how help reports its window size to the
-text formatter.
-
-**Cursor displays as letter `a`** — XQuartz is substituting a default
-cursor glyph. This is an Andy cursor font rendering artifact. Adding the
-Andy font path (see above) may improve this; full resolution is part of
-the ongoing font work.
 
 **`ness.gra` bison extension** — the Ness scripting language grammar uses
 a multi-character string token extension specific to the Andrew bison fork.
