@@ -1490,3 +1490,32 @@ honored `GXinvert`; that is why they erased cleanly.
 any non-copy transfer mode falls through to the X11 core text path
 (`XDrawString`/`XDrawText`) which properly honors the GC function, so the
 erase pass XOR-cancels the previous draw and leaves no ghost.
+
+### fad animation invisible at `$T 0` on modern hardware (`fadv.c` — `queup`)
+
+**Symptom:** After the XOR-erase fix above, fad animations stored with
+`$T 0` (zero frame delay) became invisible — the animation ran but completed
+in a blink with no perceptible motion.
+
+**Root cause:** `$T 0` (`frtime = 0`) was always intended as "run as fast as
+possible." On ILP32-era workstations, X11 protocol round-trips to a local or
+networked X server meant each frame naturally took tens of milliseconds, so
+"as fast as possible" was still perceptibly animated. On modern hardware with
+XQuartz, the same drawing commands complete in under a millisecond per frame,
+making `event_MSECtoTU(0)` drain the entire animation before a single screen
+refresh occurs. Before the XOR-erase fix this was masked: accumulated ghost
+images were visible even at zero delay; after the fix, each frame cleanly
+replaces the previous and the animation disappears.
+
+**Fix:** In `queup` (`src/atk/fad/fadv.c`), if `cp->frtime == 0` substitute
+a 30 ms floor:
+
+```c
+short frtime = cp->frtime > 0 ? cp->frtime : 30;
+self->nextevent = im_EnqueueEvent(dodoan, self, event_MSECtoTU(frtime));
+```
+
+The stored `frtime` value in the datastream is unchanged; the floor applies
+only at render time. 30 ms (≈ 30 fps) matches the frame rate period hardware
+delivered for `$T 0` files and is consistent with the visual pacing of
+surviving fad demo documents.
