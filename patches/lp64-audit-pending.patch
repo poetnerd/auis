@@ -1,0 +1,133 @@
+Index: src/atk/eq/eq.c
+==================================================================
+--- src/atk/eq/eq.c
++++ src/atk/eq/eq.c
+@@ -207,11 +207,11 @@
+ 	self->p2 = self->p2 + self->p1 - pos - 1;
+ 	self->p1 = pos;
+     }
+ 
+     self->gap += 1;
+-    mark_UpdateMarks(self->markList, pos , -1);
++    mark_UpdateMarks(self->markList, pos , (long)-1);
+ }
+ 
+ /*
+  * Delete an item but preserve structure
+  */
+
+Index: src/atk/extensions/metax.c
+==================================================================
+--- src/atk/extensions/metax.c
++++ src/atk/extensions/metax.c
+@@ -296,12 +296,12 @@
+ 	style_Destroy(fixed);
+ 	style_Destroy(boldulined);
+ 	return FALSE;
+     }
+     
+-    style_SetNewLeftMargin(columns, style_LeftMargin, 550000, style_CM); 
+-    style_SetNewIndentation(columns, style_LeftMargin, -550000, style_CM);
++    style_SetNewLeftMargin(columns, style_LeftMargin, (long)550000, style_CM);
++    style_SetNewIndentation(columns, style_LeftMargin, (long)-550000, style_CM);
+     style_SetFontSize(heading,style_ConstantFontSize,20);
+     style_SetJustification(heading,style_Centered);
+     style_SetFontFamily(fixed, "AndyType");
+     style_AddNewFontFace(fixed, fontdesc_Fixed);
+     style_SetFontSize(fixed,style_ConstantFontSize,10);
+
+Index: src/atk/figure/figure.ch
+==================================================================
+--- src/atk/figure/figure.ch
++++ src/atk/figure/figure.ch
+@@ -25,11 +25,11 @@
+   $Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/figure/RCS/figure.ch,v 1.4 1993/05/04 01:18:42 susan Exp $
+ */
+ 
+ #include <rect.h>
+ 
+-#define figure_NULLREF (-1)
++#define figure_NULLREF (-1L)
+ 
+ /* status values for NotifyObservers */
+ #define figure_DATACHANGED 1
+ 
+ struct figure_oref {
+
+Index: src/atk/srctext/srctext.c
+==================================================================
+--- src/atk/srctext/srctext.c
++++ src/atk/srctext/srctext.c
+@@ -190,12 +190,12 @@
+ 	style_SetName(global, "global");
+ 	style_SetFontFamily(global, "andytype");
+ 	style_AddNewFontFace(global, fontdesc_Fixed);
+ 	style_AddFlag(global, style_ContinueIndent);
+ 	style_AddFlag(global, style_TabsCharacters);
+-	style_SetNewLeftMargin(global, style_LeftEdge, 16, style_RawDots);
+-	style_SetNewIndentation(global, style_LeftMargin, -16, style_RawDots);
++	style_SetNewLeftMargin(global, style_LeftEdge, (long)16, style_RawDots);
++	style_SetNewIndentation(global, style_LeftMargin, (long)-16, style_RawDots);
+ 	style_SetJustification(global, style_LeftJustified);
+ 	stylesheet_Add(ss, global);
+     }
+     srctext_SetGlobalStyle(self, stylesheet_Find(ss,"global"));
+ }
+
+Index: src/atk/support/style.c
+==================================================================
+--- src/atk/support/style.c
++++ src/atk/support/style.c
+@@ -1336,11 +1336,12 @@
+ long style__ReadAttr(self, fp)
+ struct style *self;
+ FILE *fp;
+ {
+     register int j;
+-    int c, operand, basis, unit, newface;
++    long operand;
++    int c, basis, unit, newface;
+     unsigned int flag;
+ 
+     enum style_Attribute attr;
+     enum style_MarginValue newmargin;
+     enum style_SpacingValue newspacing;
+
+Index: src/atk/toez/readscrb.c
+==================================================================
+--- src/atk/toez/readscrb.c
++++ src/atk/toez/readscrb.c
+@@ -503,11 +503,11 @@
+ 	if (inxiStyle == NULL) {
+ 		style_AddNewFontFace(
+ 			inxiStyle = createStyle("indexi", "Title~3,Invisible Index~41"), 
+ 			fontdesc_Italic);
+ 		style_SetFontScript(inxiStyle, style_PreviousScriptMovement,
+-			-2, style_Points);
++			(long)-2, style_Points);
+ 	}
+ 	passStyle = stylesheet_Find(DocSheet, "formatnote");
+ 	if (passStyle == NULL) 
+ 		style_AddPassThru(passStyle = createStyle("formatnote", 
+ 						"Region~4,FormatNote~60"));
+
+Index: src/atk/typescript/tscript.c
+==================================================================
+--- src/atk/typescript/tscript.c
++++ src/atk/typescript/tscript.c
+@@ -2190,12 +2190,12 @@
+     style_SetFontFamily(defaultStyle, bodyFont);
+     style_SetFontSize(defaultStyle, style_ConstantFontSize, fontSize);
+     style_ClearNewFontFaces(defaultStyle);
+     style_AddNewFontFace(defaultStyle, fontStyle);
+     style_SetJustification(defaultStyle, style_LeftJustified);
+-    style_SetNewLeftMargin(defaultStyle,style_LeftMargin,16384, style_Inches);
+-    style_SetNewIndentation(defaultStyle,style_LeftEdge,-16384, style_Inches);
++    style_SetNewLeftMargin(defaultStyle,style_LeftMargin,(long)16384, style_Inches);
++    style_SetNewIndentation(defaultStyle,style_LeftEdge,(long)-16384, style_Inches);
+     typescript_SetDefaultStyle(tp, defaultStyle);
+     stpos = text_GetLength(SsText);
+     tp->cmdStart = text_CreateMark(SsText,stpos,0);
+     text_SetFence(SsText, stpos);
+     mark_IncludeBeginning(tp->cmdStart) = TRUE;
+
