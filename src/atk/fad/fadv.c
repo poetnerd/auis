@@ -331,7 +331,10 @@ queup(self)
 struct fadview *self;
 {
 	struct fad *cp = findpic(self);
-	self->nextevent = im_EnqueueEvent(dodoan,self,event_MSECtoTU(cp->frtime));
+	/* frtime=0 meant "as fast as possible" when X11 round-trips provided
+	 * natural pacing on period hardware; enforce a visible minimum now. */
+	short frtime = cp->frtime > 0 ? cp->frtime : 30;
+	self->nextevent = im_EnqueueEvent(dodoan,self,event_MSECtoTU(frtime));
 }
 
 static int
