@@ -1053,7 +1053,7 @@ long mousex, mousey, numberOfClicks;
 		int szz;
 		if(message_AskForString(self,0,"Label String? ","",frs,256)== -1) break;
 		if((szz = strlen(frs)) == 0 ) break;
-		cpic->lp = fad_setpoint(cpic,LABELFLAG,LABELFLAG,NEW,Cframe);	
+		cpic->lp = fad_setpoint(cpic,(long)LABELFLAG,(long)LABELFLAG,NEW,Cframe);
 		cv = fad_setvector(cpic,cpic->fp,cpic->lp,Cframe);
 		cv->label = malloc(szz + 1);
 		strcpy(cv->label,frs);
@@ -1065,13 +1065,13 @@ long mousex, mousey, numberOfClicks;
 	    }
 #ifdef ANIMATEBUTTONMODE
 	    else if(IsMode(self , ANIMATEBUTTONMODE)){
-		cpic->lp = fad_setpoint(cpic,fad_iconnum(cpic,"icon12"),'L',NEW,Cframe);
+		cpic->lp = fad_setpoint(cpic,(long)fad_iconnum(cpic,"icon12"),(long)'L',NEW,Cframe);
 		cv = fad_setvector(cpic,cpic->fp,cpic->lp,Cframe);
 		cv->mode = ANIMATEMODE;
 	    }
 #endif /* ANIMATEBUTTONMODE */
 	    else if(IsMode(self , ICONMODE)){
-		cpic->lp = fad_setpoint(cpic,cpic->currentfontindex,cpic->currenticon,NEW,Cframe);	
+		cpic->lp = fad_setpoint(cpic,(long)cpic->currentfontindex,(long)(unsigned char)cpic->currenticon,NEW,Cframe);
 		cv = fad_setvector(cpic,cpic->fp,cpic->lp,Cframe);
 	    }
 	    else {
@@ -1190,7 +1190,7 @@ struct fadview *self;
     struct fad *cpic = findpic(self);
     while(( c = getc(f))!= EOF){
 	if(c == NULL) break;
-	fad_setpoint(cpic, fad_iconnum(cpic,cpic->cfname), c,NEW,self->f);
+	fad_setpoint(cpic, (long)fad_iconnum(cpic,cpic->cfname), (long)(unsigned char)c, NEW,self->f);
 	if (!FILE_HAS_IO(f)) break;
     }
     if(c == EOF){
@@ -1238,7 +1238,7 @@ char *s;
     message_DisplayString(self,0,"");
     if(message_AskForString(self,75,"Characters for icons ","",bb,256)== -1) return(0);
     for(cp = bb; *cp; cp++){
-	fad_setpoint(cpic,fad_iconnum(cpic,cpic->cfname),(int)*cp,NEW,self->f);
+	fad_setpoint(cpic,(long)fad_iconnum(cpic,cpic->cfname),(long)(unsigned char)*cp,NEW,self->f);
     }
     return(fad_flipicons(cpic));
 }
