@@ -598,9 +598,10 @@ long TextLength; {
     /* Put out the actual characters */
 
 #ifdef HAVE_XFT
-    /* Try Xft anti-aliased rendering (scalable fonts, non-XOR mode) */
+    /* Try Xft anti-aliased rendering (scalable fonts, copy mode only) */
     if (self->header.graphic.currentFont != NULL &&
-	self->header.graphic.transferMode != graphic_XOR) {
+	self->header.graphic.transferMode != graphic_XOR &&
+	self->header.graphic.transferMode != graphic_INVERT) {
 	XftFont *xftfont = xfontdesc_GetXftFont(
 	    (struct xfontdesc *)self->header.graphic.currentFont,
 	    (struct graphic *)self);

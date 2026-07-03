@@ -1432,3 +1432,61 @@ of the cell — and the clip rect made it entirely invisible.
 (`src/atk/table/update.c:435–438`). `rightshim` uses `V->dotWidth` and
 `V->zeroWidth` which are both `long` fields; making it `long` avoids a
 truncation on assignment.
+
+### LP64 fix: fad animation vector coordinates truncated (`fad.c`, `fadv.c`)
+
+**Symptom:** The `fad` drawing/animation inset renders incorrectly on arm64:
+animated vectors draw at garbage positions, icon/label sentinels are
+misidentified, and the editor misplaces newly drawn points.
+
+**Root cause (fad.c):** `fad__Read` and `fad__Write` declared coordinate
+temporaries as `int p1x, p1y, p2x, p2y`, then passed `&p1x` etc. to
+`sscanf` with `%d` format. On LP64 `sscanf %d` writes 4 bytes into an
+8-byte `long *` — or rather writes exactly 4 bytes into the `int` — but
+the coordinates stored in `struct fadpoint` are `long x, y`. The parsed
+values are correct for positive coordinates; however the sentinel constants
+`ICONFLAG = -10` and `LABELFLAG = -10000` round-trip through `fad_setpoint`
+as `long` parameters, so passing them via unprototyped K&R dispatch from
+`int` temporaries zero-extends them to large positive values on arm64, making
+`ISICONORLABEL()` and `ISICON()` tests (`< 0`) fail.
+
+**Root cause (fadv.c):** Five `fad_setpoint` call sites pass negative
+sentinel values (`LABELFLAG`, `fad_iconnum()` results, character codes via
+`(int)*cp`) through K&R untyped dispatch. Without explicit `(long)` casts
+these sign-or-zero-extend to 64-bit values that defeat the sentinel tests.
+
+**Fix:** In `fad.c`:
+- Changed `int p1x,p1y,p2x,p2y` → `long` in `fad__Read`.
+- Changed all `sscanf` format specifiers for these coordinates from `%d` to `%ld`.
+- Changed all `fprintf` coordinate format specifiers in `fad__Write` from `%d` to `%ld`.
+- Added `(long)LABELFLAG` casts in the `$S` parser call to `fad_setpoint`.
+
+In `fadv.c`, added explicit `(long)` casts on all negative/sentinel arguments
+at the five `fad_setpoint` call sites that use `LABELFLAG`, `fad_iconnum()`,
+or character-code values.
+
+### fad XOR-erase animation ghost fix (`xgraphic.c` — `xgraphic_DrawChars`)
+
+**Symptom:** The `fad` animation inset left persistent ghost images of text
+labels (e.g., "Carnegie", "Mellon") after each animation step. Line vectors
+erased correctly; only text rendered via `DrawString`/`DrawText` ghosted.
+
+**Root cause:** `xgraphic_DrawChars` gates XFT anti-aliased rendering with:
+```c
+if (... && transferMode != graphic_XOR)
+```
+`graphic_XOR = 0x66` and `graphic_INVERT = 0x55` are **distinct values**.
+The `fad` animation loop calls `SetTransferMode(graphic_INVERT)` then draws
+text to "erase" the previous frame via XOR cancellation. Because
+`graphic_INVERT != graphic_XOR`, the condition was TRUE and XFT rendered the
+erase pass via alpha-blending — which ignores the X11 GC function (`GXinvert`)
+and simply draws the glyph again. Drawing the same glyph twice with XFT adds
+intensity rather than canceling, producing an accumulating ghost.
+Line vectors (via `XDrawLine`) are never routed through XFT and correctly
+honored `GXinvert`; that is why they erased cleanly.
+
+**Fix:** Added `&& transferMode != graphic_INVERT` to the XFT gate in
+`xgraphic_DrawChars` (`src/atk/basics/x/xgraphic.c`). With this change,
+any non-copy transfer mode falls through to the X11 core text path
+(`XDrawString`/`XDrawText`) which properly honors the GC function, so the
+erase pass XOR-cancels the previous draw and leaves no ghost.
