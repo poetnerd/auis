@@ -284,13 +284,13 @@ int level;
 		fprintf(f,"$F\n");
 		for(vv = ff->v; vv != NULL; vv = vv->v){
 		        if(vv->mode == BOXMODE)
-				fprintf(f,"$B %d,%d %d,%d\n",vv->p1->x,vv->p1->y,vv->p2->x,vv->p2->y);
+				fprintf(f,"$B %ld,%ld %ld,%ld\n",vv->p1->x,vv->p1->y,vv->p2->x,vv->p2->y);
 		        else if(vv->mode == ANIMATEMODE)
-				fprintf(f,"$A %d,%d %d,%d\n",vv->p1->x,vv->p1->y,vv->p2->x,vv->p2->y);
+				fprintf(f,"$A %ld,%ld %ld,%ld\n",vv->p1->x,vv->p1->y,vv->p2->x,vv->p2->y);
 			else if(vv->label == NULL)
-				fprintf(f,"$V %d,%d %d,%d\n",vv->p1->x,vv->p1->y,vv->p2->x,vv->p2->y);
+				fprintf(f,"$V %ld,%ld %ld,%ld\n",vv->p1->x,vv->p1->y,vv->p2->x,vv->p2->y);
 			else
-				fprintf(f,"$S %d,%d\n%s\n",vv->p1->x,vv->p1->y,vv->label);
+				fprintf(f,"$S %ld,%ld\n%s\n",vv->p1->x,vv->p1->y,vv->label);
 			}
 		}
 	fprintf(f,"$$\n");
@@ -303,7 +303,9 @@ FILE *f;
 long id;
 {
 	char *c,s[256],*cc,*cp,str[256];
-	int p1x,p1y,p2x,p2y,newf = 0,szz;
+	long p1x,p1y,p2x,p2y;
+	int newf = 0;
+	int szz;
 	struct vector *vv;
 	struct fad_frame *ff = NULL;
 	struct fadpoint *fp,*lp;
@@ -349,7 +351,7 @@ long id;
 			else newf = 1;
 			break;
 		case 'P':
-			sscanf(s,"$P %d,%d,%d,%d\n",&p1x,&p1y,&p2x,&p2y);
+			sscanf(s,"$P %ld,%ld,%ld,%ld\n",&p1x,&p1y,&p2x,&p2y);
 			self->ox = 0; self->oy = 0; /* should be read as 0 */
 			self->desw = p2x; self->desh = p2y;
 			ff = self->f;
@@ -357,31 +359,31 @@ long id;
 			newf = 0;
 			break;
 		case 'V':
-			sscanf(s,"$V %d,%d %d,%d\n",&p1x,&p1y,&p2x,&p2y);
+			sscanf(s,"$V %ld,%ld %ld,%ld\n",&p1x,&p1y,&p2x,&p2y);
 			fp = fad_setpoint(self,p1x,p1y,NEW,ff);
 			lp = fad_setpoint(self,p2x,p2y,NEW,ff);
 			vv = fad_setvector(self,fp,lp,ff);
 			if(ISICON(p2x)) self->currenticon = p2y;
 			break;
 		case 'A':
-			sscanf(s,"$A %d,%d %d,%d\n",&p1x,&p1y,&p2x,&p2y);
+			sscanf(s,"$A %ld,%ld %ld,%ld\n",&p1x,&p1y,&p2x,&p2y);
 			fp = fad_setpoint(self,p1x,p1y,NEW,ff);
 			lp = fad_setpoint(self,p2x,p2y,NEW,ff);
 			vv = fad_setvector(self,fp,lp,ff);
 			vv->mode = ANIMATEMODE;
 			break;
 		case 'B':
-			sscanf(s,"$B %d,%d %d,%d\n",&p1x,&p1y,&p2x,&p2y);
+			sscanf(s,"$B %ld,%ld %ld,%ld\n",&p1x,&p1y,&p2x,&p2y);
 			fp = fad_setpoint(self,p1x,p1y,NEW,ff);
 			lp = fad_setpoint(self,p2x,p2y,NEW,ff);
 			vv = fad_setvector(self,fp,lp,ff);
 			vv->mode = BOXMODE;
 			break;
 		case 'S':
-			sscanf(s,"$S %d,%d\n",&p1x,&p1y);
+			sscanf(s,"$S %ld,%ld\n",&p1x,&p1y);
 			fgets(str,256,f);
 			fp = fad_setpoint(self,p1x,p1y,NEW,ff);
-			lp = fad_setpoint(self,LABELFLAG,LABELFLAG,NEW,ff);	
+			lp = fad_setpoint(self,(long)LABELFLAG,(long)LABELFLAG,NEW,ff);
 			vv = fad_setvector(self,fp,lp,ff);
 			szz = strlen(str);
 			str[szz - 1] = '\0';
