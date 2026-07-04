@@ -131,7 +131,7 @@ long value;
 	}
     }
     else {
-	content_Enumerate(ct,-1,0,NULL);
+	content_Enumerate(ct,(long)-1,0,NULL);
     }
 }
 static int LocateInView(v1,v2,v3,dat)
@@ -183,7 +183,7 @@ long value;
 	len++;
 	content_Denumerate(ct,pos,len);
     }
-    else content_Denumerate(ct,-1,0);
+    else content_Denumerate(ct,(long)-1,0);
 }
 struct contentv_cntr {
 struct buffer *buf;

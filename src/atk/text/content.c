@@ -646,7 +646,7 @@ struct content *self;
 	    self->doindent = FALSE;
 	self->chapcount = -1;
     }
-    if(self->enumerate) content_Enumerate(self,-1,0,NULL);
+    if(self->enumerate) content_Enumerate(self,(long)-1,0,NULL);
     else if(self->doindent) doindent(self);
 
 }

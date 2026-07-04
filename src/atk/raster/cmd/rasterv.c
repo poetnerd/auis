@@ -1631,8 +1631,8 @@ struct classhdr *ClassID;
     proc = proctable_DefineProc("rasterv-negative", ModifyCommand,
 				 &rasterview_classinfo, NULL,
 				 "Interchange black and white within selection");
-    keymap_BindToKey(Keymap, "\033n", proc, -1);	/* ESC - n */
-    menulist_AddToML(Menus, "Raster Ops~20,Negative~21", proc, -1, menuNegative);
+    keymap_BindToKey(Keymap, "\033n", proc, (long)-1);	/* ESC - n */
+    menulist_AddToML(Menus, "Raster Ops~20,Negative~21", proc, (long)-1, menuNegative);
 
     proc = proctable_DefineProc("rasterv-white", ModifyCommand,
 				 &rasterview_classinfo, NULL,

@@ -126,8 +126,8 @@ struct classheader *ClassID;
     proc = proctable_DefineProc("figview-zoom", ChangeZoomProc, &figview_classinfo, NULL, "Change scale of view.");
     menulist_AddToML(EmbeddedMenus, "Figure~5,Zoom In~10", proc, 1, 0);
     keymap_BindToKey(EmbeddedKeymap, "\033Z", proc, 1); /* esc-Z */
-    menulist_AddToML(EmbeddedMenus, "Figure~5,Zoom Out~11", proc, -1, 0);
-    keymap_BindToKey(EmbeddedKeymap, "\033z", proc, -1); /* esc-z */
+    menulist_AddToML(EmbeddedMenus, "Figure~5,Zoom Out~11", proc, (long)-1, 0);
+    keymap_BindToKey(EmbeddedKeymap, "\033z", proc, (long)-1); /* esc-z */
     menulist_AddToML(EmbeddedMenus, "Figure~5,Normal Size~12", proc, 0, 0);
 
     proc = proctable_DefineProc("figview-pan-to-origin", PanToOriginProc, &figview_classinfo, NULL, "Pan to (0,0).");
