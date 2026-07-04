@@ -17,7 +17,8 @@ history behind each completed item.
 - Raster insets: rendering correctly
 - Table insets: cell text visible (LP64 `update.c` fix)
 - Eq insets: complex equations render correctly
-- Fad insets: fully working
+- Fad insets: fully working (LP64 fix + Xft XOR ghost fix + 30ms timing floor)
+- Fnote insets: marker glyph centered correctly (Xft metrics fix, 2026-07-04)
 - Srctext: indentation rendering fixed (LP64 audit)
 - `Sherman.Alloc` integration test: text, eq, fad, cel/arbiter spreadsheet
   all render; zip unsupported (expected); calc engine presumed working if
