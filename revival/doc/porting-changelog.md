@@ -161,3 +161,22 @@ The codebase was written for ILP32 (32-bit int, long, pointer). Five distinct bu
 
 - `help.c ToggleProgramListSize` (shrink branch): fallback directory lookup used `SETUP_PANELSDIR` → `DEFAULT_PANELSDIR` (`/help`), but `help.programs` actually lives under the lib dir. Since `HelpPanelsDir` is never configured, the small-list file was never found, silently falling through to the extension-enumeration fallback over `/help` — producing a big list that looked just like "expand," so "Shrink Programs List" appeared to do nothing.
 - Fixed to match the working init-time chain in `helpaux.c` (`InitializeObject`): `SETUP_PANELSDIR` → `SETUP_LIBDIR` → `DEFAULT_LIBDIR` (`/lib`).
+
+### 2026-07-04 — helpa: list-panel scroll position (LP64 #3 pattern, call-site variant)
+
+- `textv.c textview__InitializeObject`: `self->frameDot = text_CreateMark(dataObject, -1, 0)` — `text_CreateMark` dispatches through the untyped `(struct mark *(*)())` macro; the bare `int` literal `-1` isn't sign-extended to the `long pos` field on LP64, so `frameDot->pos` held garbage (`4294967295`, `8589934591`, etc. observed in lldb) instead of the sentinel `-1`.
+- `DoUpdate`'s `mark_GetPos(self->frameDot) != -1` check (`textv.c:1231`) then spuriously fired on every first redraw, computing a scroll position from garbage input that landed near the end of the document — this is what made `helpa`'s Programs list open scrolled to the bottom instead of the top.
+- Same root mechanism as LP64 #3 (`observable_OBJECTDESTROYED`), but the `-1` is a bare call-site literal rather than a named `#define`d sentinel, so it didn't show up in a grep for the earlier fix's constant names.
+- Fix: `text_CreateMark(dataObject, (long)-1, 0)`.
+
+### 2026-07-04 — LP64 #3 call-site audit: content enumerate, figure zoom, raster negative
+
+Following the `frameDot` fix above, swept for sibling "bare `-1` literal through untyped class-dispatch macro" call sites (grep pattern and full writeup in `roadmap.md`; methodology also in `revival/doc/runtime-debugging-guide.md`). Narrowed ~925 raw hits to 22 candidates; confirmed 6 real bugs (receiver actually sign-checks the corrupted value) and fixed all with `(long)-1` casts:
+
+- `content.c`/`contentv.c` (`content__Enumerate`/`content__Denumerate`): `opos`/`pos < 0` is the "enumerate everything" sentinel; corrupted value read as huge positive, silently skipping that path. 3 call sites (`content.c:649`, `contentv.c:134,186`).
+- `figv.c` (`ChangeZoomProc`): `rock<0`/`rock>0` decides zoom out vs. zoom in; "Zoom Out" (menu item + `Esc-z` keybinding) passed `-1` through `menulist_AddToML`/`keymap_BindToKey`. Corrupted, Zoom Out would zoom in instead. 2 call sites (`figv.c:129-130`).
+- `rasterv.c` (`ModifyCommand`): `rock == -1` selects "invert selection" ("Negative" menu item + `Esc-n` keybinding). Corrupted, Negative would silently do nothing (falls through all the `==` branches). 2 call sites (`rasterv.c:1634-1635`).
+
+Several other candidates from the same grep sweep were confirmed harmless despite passing through the same untyped mechanism (e.g. `view_FullUpdate(...,-1,-1)` width/height args in `figv.c`/`rastvaux*.c` are ignored entirely by the receiving `FullUpdate` overrides, which recompute geometry from the view instead) — not fixed, no observable bug. A few lower-priority candidates (`rectangle_InsetRect` unprototyped-arg risk in `figv.c`'s clip-region code, `environ_GetProfileInt`/`cwp_Search` in the deprioritized messages/AMS subsystem, `tlex_RecentPosition` in the not-yet-working `ness` extension) were left untriaged — see `roadmap.md`'s "Variant 3 follow-up audit" section.
+
+**Also found, not fixed:** a live Xlib `_XLockDisplay` self-deadlock (single-thread re-entrancy triggered by `MappingNotify`/`XRefreshKeyboardMapping`), discovered incidentally while testing the figure-inset fix above. This supersedes the old "checkpoint timer UAF" theory for the `^V` scroll-hang heisenbug — see `roadmap.md`'s Heisenbugs section.
