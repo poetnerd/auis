@@ -452,7 +452,7 @@ void textview__SetDataObject(self, dataObject)
 
     self->dot = text_CreateMark((struct text *) dataObject, 0, 0);
     self->top = text_CreateMark((struct text *) dataObject, 0, 0);
-    self->frameDot = text_CreateMark((struct text *) dataObject, -1, 0);
+    self->frameDot = text_CreateMark((struct text *) dataObject, (long)-1, 0);
     /* The frameDot must start at -1 because that is later interpreted
           (near the end of DoUpdate) as meaning that it has never been set */
     self->atMarker = text_CreateMark((struct text *) dataObject, 0, 0);
