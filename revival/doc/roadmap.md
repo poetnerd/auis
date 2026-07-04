@@ -19,6 +19,8 @@ history behind each completed item.
 - Eq insets: complex equations render correctly
 - Fad insets: fully working (LP64 fix + Xft XOR ghost fix + 30ms timing floor)
 - Fnote insets: marker glyph centered correctly (Xft metrics fix, 2026-07-04)
+- `help` app: Programs list panel now shows the top of the list on first
+  display, instead of scrolling to the end (LP64 fix, 2026-07-04)
 - Srctext: indentation rendering fixed (LP64 audit)
 - `Sherman.Alloc` integration test: text, eq, fad, cel/arbiter spreadsheet
   all render; zip unsupported (expected); calc engine presumed working if
@@ -36,6 +38,81 @@ history behind each completed item.
 - Variant 5: `long`/`int` mismatch in display positioning through untyped
   dispatch (lpair, panel, dialog, table, fad, srctext, eq, metax, toez,
   typescript margins; style__ReadAttr operand; figure_NULLREF sentinel; full audit committed)
+
+**Variant 3 follow-up audit (2026-07-04) — bare `-1` literals at call sites,
+not just `#define`d sentinels:**
+
+Found via `help`'s list-panel scroll bug: `textv.c:455`,
+`self->frameDot = text_CreateMark((struct text *) dataObject, -1, 0)`.
+`text_CreateMark` dispatches through the untyped `(struct mark *(*)())`
+class-method macro, so the bare `int` literal `-1` isn't sign-extended to
+the `long pos` field on LP64 — `frameDot->pos` ends up as garbage (observed:
+`4294967295`, `4294967335`, `8589934591` in lldb — all the "low 32 bits look
+like -1, upper 32 bits are register garbage" signature). `DoUpdate`'s
+`mark_GetPos(self->frameDot) != -1` check then spuriously fires on every
+first redraw. **Fixed**: `(long)-1` cast at the call site.
+
+This is the same root mechanism as Variant 3 (`observable_OBJECTDESTROYED`
+etc.) but the `-1` is a bare call-site literal rather than a named
+`#define`d sentinel, so grepping for the constant's name doesn't find it —
+it only shows up by grepping call sites directly. A full sweep (see
+methodology below) turned up **6 more confirmed instances**, all fixed with
+the same `(long)-1` cast, all compile-clean and rebuilt/reinstalled:
+
+- `src/atk/text/content.c:649`, `src/atk/textaux/contentv.c:134,186` —
+  `content_Enumerate`/`content_Denumerate`'s `opos`/`pos` (`long`) is
+  checked `< 0` as an "enumerate everything" sentinel in
+  `src/atk/text/content.c` (`content__Enumerate`/`content__Denumerate`);
+  the corrupted value would read as a huge positive number instead,
+  silently skipping the enumerate-all path.
+- `src/atk/figure/figv.c:129-130` — `ChangeZoomProc`'s `rock` (`long`) is
+  checked `rock<0`/`rock>0` to decide zoom in vs. zoom out; the "Zoom Out"
+  menu item and `Esc-z` keybinding both passed a bare `-1` through
+  `menulist_AddToML`/`keymap_BindToKey` (both untyped dispatch). If
+  corrupted, **Zoom Out would zoom in instead**.
+- `src/atk/raster/cmd/rasterv.c:1634-1635` — `ModifyCommand`'s `rock`
+  (`long`) is checked `rock == -1` (exact equality) for "invert
+  selection"; the "Negative" menu item and `Esc-n` keybinding both passed
+  a bare `-1` through the same two untyped-dispatch macros. If corrupted,
+  **Negative would silently do nothing** (falls through all the `==`
+  branches).
+
+**Audit methodology** (repeatable for future sweeps):
+```sh
+# class-dispatch-style calls (lower_Upper(...)) with a bare -1 argument
+grep -rEn '\b[a-z][a-zA-Z0-9]*_[A-Z][a-zA-Z0-9]*\([^;()]*(,|\() *-1 *(,|\))[^;]*\)' \
+  src/ --include=*.c | grep -v "(long)-1\|(long) -1\|== *-1\|!= *-1"
+```
+This narrowed ~925 raw `-1`-near-parens hits down to 22 candidates. Each
+candidate needs manual triage: (1) find the macro's dispatch — untyped
+`(TYPE (*)())` cast is the risky pattern, a plain field-assignment macro
+(e.g. `mark_SetPos`, `rectangle_SetRectSize`) or a normal prototyped C
+function is safe; (2) find the receiver and check whether it actually
+*consumes* the value in a way sensitive to its exact bit pattern (a sign
+check `< 0`/`== -1`, or arithmetic) vs. ignoring the parameter entirely
+(several `view_FullUpdate(...,-1,-1)` width/height args in `figv.c` and
+`rastvaux*.c` are ignored by both `figview__FullUpdate` and
+`rasterview__FullUpdate`, which recompute geometry from the view instead —
+confirmed harmless despite passing through the same untyped mechanism).
+
+**Deferred / not yet triaged** (lower priority, left as future audit
+targets, not confirmed either way):
+- `src/atk/basics/common/rect.c` / `figv.c:905` — `rectangle_InsetRect`
+  is a plain function but its header prototype
+  (`rect.h:73: void rectangle_InsetRect(/*LHS, DeltaX, DeltaY*/);`) has no
+  parameter types, so call sites don't widen `-1` to the real `long
+  DeltaX, DeltaY`. Unlike the confirmed bugs above, the receiver does
+  arithmetic (`+=`/`-=`) rather than a sign check, so a corrupted value
+  would grossly mis-size a rectangle rather than silently no-op — worth
+  checking given `figure` insets are the one confirmed-broken "messy
+  screen" case in this document.
+- `environ_GetProfileInt(...,-1)` (messages/atkams, several sites) and
+  `cwp_Search(...,-1,...)` (ams/delivery) — likely safe (looks like a
+  plain `int`-returning function, not virtual dispatch) but unverified;
+  deprioritized since `messages`/AMS revival is long-term, not part of
+  the active inset sweep.
+- `tlex_RecentPosition(...,-1 or -2,...)` (ness) — moot until the `ness`
+  bison grammar extension blocker is resolved; the code doesn't run yet.
 
 ---
 
@@ -142,11 +219,63 @@ Stopped reproducing spontaneously once debugging attempts began.
 **Not reproduced on:** Mac-mini. Not triggered by VS Code terminal (was
 running from native Terminal.app).
 
-**Possible cause:** the checkpoint timer UAF (`observable_OBJECTDESTROYED`
-zero-extension bug, fixed 2026-06-30) is a plausible match — scrolling a
-fresh window can trigger a checkpoint, and the UAF produced a crash rather
-than a hang. May already be fixed by committed patches; needs deliberate
-re-testing on `spoon` after current fixes are stable.
+**Possible cause (superseded, see below):** the checkpoint timer UAF
+(`observable_OBJECTDESTROYED` zero-extension bug, fixed 2026-06-30) was a
+plausible match — scrolling a fresh window can trigger a checkpoint, and
+the UAF produced a crash rather than a hang.
+
+### Xlib display-lock self-deadlock (reproduced 2026-07-04, root cause identified)
+
+Reproduced by accident during the figure-inset LP64 audit: scrolling in
+both `ez` (viewing `NEWSLETTERS/EZ/95Summer.ez`) and, independently, a
+`help` window hung the same session. **Not a crash this time** — attaching
+lldb to the stuck `help` process (no relaunch, no interrupt needed — it
+was already wedged) showed:
+
+```
+frame #0: libsystem_kernel.dylib`__psynch_mutexwait
+frame #1: libsystem_pthread.dylib`_pthread_mutex_firstfit_lock_wait
+frame #2: libsystem_pthread.dylib`_pthread_mutex_firstfit_lock_slow
+frame #3: libX11.6.dylib`_XLockDisplay
+frame #4: libX11.6.dylib`XkbGetUpdatedMap
+frame #5: libX11.6.dylib`XkbKeysymToModifiers
+frame #6: libX11.6.dylib`XRefreshKeyboardMapping
+frame #7: runapp`HandleWindowEvent
+frame #8: runapp`xim__HandleFiles
+frame #9: runapp`im__Interact
+frame #10: runapp`im__KeyboardProcessor
+frame #11: runapp`application__Run
+frame #12: helpa.do`helpapp__Run
+frame #13: runapp`main
+```
+
+Only **one thread exists** in the process, and it's blocked forever trying
+to acquire Xlib's own display-connection mutex (`_XLockDisplay`) — a
+self-deadlock, not a cross-thread one. `HandleWindowEvent` is responding
+to an X `MappingNotify` (keyboard mapping changed) by calling
+`XRefreshKeyboardMapping`, which tries to lock the display — but something
+earlier in the *same* call chain already holds that lock (almost
+certainly Xlib's own event-dispatch machinery calling back into
+`xim__HandleFiles`/`HandleWindowEvent` while still holding it internally),
+and the lock isn't held recursively. This matches the "intermittent,
+input-related, seems tied to fresh windows" character of the original
+report far better than the checkpoint-timer theory, and is **not** fixed
+by any patch committed so far — this is a live, distinct bug.
+
+**Trigger appears to be keyboard-mapping churn** (`MappingNotify`), not
+scrolling logic itself — consistent with why `^V` specifically was the
+original trigger (a modifier-involving key combo) and why it's
+intermittent (depends on X server-side keymap-change timing, not app
+state).
+
+**Not yet investigated:** which AUIS/Xlib call site re-enters
+`_XLockDisplay` while already holding it; whether this is triggerable
+deliberately (vs. needing to wait for an incidental `MappingNotify`);
+whether it's an AUIS-side bug (calling into Xlib from inside a callback
+that already holds the lock) or an XQuartz/libX11 packaging issue specific
+to this environment. Needs a dedicated debugging session — see
+`revival/doc/runtime-debugging-guide.md` for the general lldb debugging
+process/cookbook developed for this project.
 
 ---
 
@@ -168,7 +297,11 @@ with `Sherman.Alloc` and `95Summer.ez` as integration test documents.
 Figure insets load but render incorrectly ("messy screen"). The
 `figure_NULLREF (-1L)` fix from the LP64 audit may partially address it —
 retest after committing. If still broken, needs a dedicated debugging
-instance.
+instance. Also check `rectangle_InsetRect(&inrec, -1, -1)` at `figv.c:905`
+— see the Variant 3 follow-up audit above; its unprototyped
+`(DeltaX, DeltaY)` args do arithmetic rather than a sign check, so a
+corrupted `-1` would grossly mis-size a rectangle rather than silently
+no-op, a plausible contributor to "messy screen."
 
 ### typescript "Can't connect subchannel"
 `bin/typescript -d` crashes immediately after "please wait..." with
