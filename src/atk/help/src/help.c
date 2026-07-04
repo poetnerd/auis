@@ -1642,9 +1642,11 @@ long rock;
 	panel_RemoveAll(self->listPanel); /* this frees all the strings in panelLits */
 	
 	/* add only the small list of entries to listPanel */
-	tmp = environ_GetConfiguration(SETUP_PANELSDIR);
-	if (tmp == NULL)
-	    tmp = environ_AndrewDir(DEFAULT_PANELSDIR);
+	if ((tmp = environ_GetConfiguration(SETUP_PANELSDIR)) == NULL) {
+	    tmp = environ_GetConfiguration(SETUP_LIBDIR);
+	    if (tmp == NULL)
+		tmp = environ_AndrewDir(DEFAULT_LIBDIR);
+	}
 	sprintf(pathName, "%s%s", tmp, PROGRAMFILE);
 
 	if (0 == SetupPanel(TRUE, pathName, self->listPanel, NULL)) {

@@ -156,3 +156,8 @@ The codebase was written for ILP32 (32-bit int, long, pointer). Five distinct bu
 ### 2026-07-04 — fnotev rendering fix
 
 - `fnotev.c DesiredSize/DoUpdate`: box height from fontdesc newlineHeight; marker glyph centered (BETWEENTOPANDBOTTOM|BETWEENLEFTANDRIGHT) — old ATTOP|ATLEFT pushed baseline past box bottom on scalable fonts
+
+### 2026-07-04 — helpa: Shrink Programs List fix
+
+- `help.c ToggleProgramListSize` (shrink branch): fallback directory lookup used `SETUP_PANELSDIR` → `DEFAULT_PANELSDIR` (`/help`), but `help.programs` actually lives under the lib dir. Since `HelpPanelsDir` is never configured, the small-list file was never found, silently falling through to the extension-enumeration fallback over `/help` — producing a big list that looked just like "expand," so "Shrink Programs List" appeared to do nothing.
+- Fixed to match the working init-time chain in `helpaux.c` (`InitializeObject`): `SETUP_PANELSDIR` → `SETUP_LIBDIR` → `DEFAULT_LIBDIR` (`/lib`).
