@@ -192,8 +192,8 @@ struct srctext *self;
 	style_AddNewFontFace(global, fontdesc_Fixed);
 	style_AddFlag(global, style_ContinueIndent);
 	style_AddFlag(global, style_TabsCharacters);
-	style_SetNewLeftMargin(global, style_LeftEdge, 16, style_RawDots);
-	style_SetNewIndentation(global, style_LeftMargin, -16, style_RawDots);
+	style_SetNewLeftMargin(global, style_LeftEdge, (long)16, style_RawDots);
+	style_SetNewIndentation(global, style_LeftMargin, (long)-16, style_RawDots);
 	style_SetJustification(global, style_LeftJustified);
 	stylesheet_Add(ss, global);
     }

@@ -1338,7 +1338,8 @@ struct style *self;
 FILE *fp;
 {
     register int j;
-    int c, operand, basis, unit, newface;
+    long operand;
+    int c, basis, unit, newface;
     unsigned int flag;
 
     enum style_Attribute attr;
