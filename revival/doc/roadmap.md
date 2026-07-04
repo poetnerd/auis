@@ -128,6 +128,27 @@ Ordered by dependency depth; each step proves a layer the next relies on.
 
 ---
 
+## Heisenbugs (intermittent, not currently reproducible)
+
+### ^V scroll hang on fresh window (spoon host)
+**Observed:** on host `spoon`, repeatedly: opening `help` or `ez` and
+pressing `^V` to scroll the default window caused the process to die
+(confirmed dead in debugger) while the X window persisted until XQuartz
+was restarted. `help` would still believe a server process was available.
+Triggered even on the default help window with no special document.
+Stopped reproducing spontaneously once debugging attempts began.
+
+**Not reproduced on:** Mac-mini. Not triggered by VS Code terminal (was
+running from native Terminal.app).
+
+**Possible cause:** the checkpoint timer UAF (`observable_OBJECTDESTROYED`
+zero-extension bug, fixed 2026-06-30) is a plausible match — scrolling a
+fresh window can trigger a checkpoint, and the UAF produced a crash rather
+than a hang. May already be fixed by committed patches; needs deliberate
+re-testing on `spoon` after current fixes are stable.
+
+---
+
 ## Active (instances running)
 
 - **Xft phase 2: menu rendering** — deprioritized; menus are working
