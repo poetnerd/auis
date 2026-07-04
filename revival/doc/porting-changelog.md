@@ -142,12 +142,13 @@ The codebase was written for ILP32 (32-bit int, long, pointer). Five distinct bu
 - XOR ghost: `graphic_INVERT` added to XFT bypass (`graphic_INVERT ≠ graphic_XOR`; Xft alpha-blends instead of XOR-canceling)
 - `$T 0` timing: `queup()` applies 30ms floor for zero-delay frames (modern hardware runs <1ms/frame, draining animation invisibly)
 
-### 2026-07-03 — Clean-clone bootstrap fix; LP64 audit round 2 (pending)
+### 2026-07-03 — Clean-clone bootstrap fix; LP64 audit round 2
 
 - `overhead/class/machdep/darwin/doload.c`, `classproc.c`, and generated Makefiles were not in fossil; added. Fresh clones now build. Note: first-time clone needs `make World`, not `make dependInstall`.
-- LP64 variant-5 audit round 2: changes identified for the files below, saved as `patches/lp64-audit-pending.patch`, then reverted pending runtime verification:
-  - `style.c style__ReadAttr`: `int operand` → `long operand` — style attribute operands (margins, sizes) read from `.ez` datastream were truncated to 32 bits
-  - `figure.ch figure_NULLREF`: `-1` → `-1L` — LP64 #3 pattern, same as `observable_OBJECTDESTROYED`
-  - `eq.c`: `mark_UpdateMarks(..., -1)` → `(long)-1` — LP64 #3: negative int through untyped dispatch
-  - `metax.c`, `srctext.c`, `tscript.c`: `(long)` casts on `style_SetNewLeftMargin`/`SetNewIndentation` call sites with int literals
-  - `readscrb.c`: `(long)-2` cast in `style_SetFontScript` call
+
+**LP64 variant-5 audit round 2 — style attribute reads, eq marks, figure sentinel:**
+- `style.c style__ReadAttr`: `int operand` → `long operand`; all 11 style dispatch calls in the `.ez` attribute reader (`SetNewLeftMargin`, `SetNewRightMargin`, `SetNewIndentation`, top/bottom margins, interline/interparagraph spacing, above/below, font size, font script, tab) now correctly sign-extend negative operands from `atoi`. Verified by `otool` disassembly: unfixed binary emits `mov x2, x0` (zero-extends), fixed emits `sxtw x2, w0` (sign-extends) after each `bl atoi`.
+- `figure.ch figure_NULLREF`: `-1` → `-1L`; sentinel used in parent-pointer comparison through untyped dispatch (LP64 #3 pattern, same as `observable_OBJECTDESTROYED`)
+- `eq.c eq__Insert`: `mark_UpdateMarks(..., -1)` → `(long)-1`; delete-size sentinel zero-extended to `4294967295` without the cast, corrupting all marks in the equation editor on each character delete
+- `tscript.c`, `srctext.c`, `metax.c`: `(long)` casts on negative literals at `style_SetNewLeftMargin`/`style_SetNewIndentation` call sites (missed in round 1 sweep)
+- `readscrb.c`: `(long)-2` at `style_SetFontScript` call (file not in active build; pre-emptive)
