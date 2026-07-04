@@ -215,10 +215,27 @@ long *desiredwidth, *desiredheight;
     *desiredheight = 14; */
     if(self->ci[0].width == 0) initci(self);
 
-    if(self->ci[0].width != 0)	*desiredwidth = self->ci[0].width + SHIM /*+ SHIM */;
+    if(self->ci[0].width != 0)	*desiredwidth = self->ci[0].width + SHIM;
     else *desiredwidth = 13;
-    if(self->ci[0].height != 0) *desiredheight = self->ci[0].height  + SHIM + 1/* + SHIM */;
-    else *desiredheight = 11;
+    /* Height: use the font's overall line height rather than the per-character
+     * bounds of '*'.  The asterisk has no descender and sits at x-height, so
+     * its per-char height understates how tall the box should be relative to
+     * the surrounding text.  newlineHeight (font.ascent + font.descent) gives
+     * a box that reads as proportional to the text line. */
+    if (fnotev_GetDrawable(self) != NULL) {
+	struct FontSummary *fs = fontdesc_FontSummary(self->fd, fnotev_GetDrawable(self));
+	if (fs && fs->newlineHeight > 0) {
+	    *desiredheight = fs->newlineHeight - SHIM;
+	} else if (self->ci[0].height != 0) {
+	    *desiredheight = self->ci[0].height + SHIM + 1;
+	} else {
+	    *desiredheight = 11;
+	}
+    } else if (self->ci[0].height != 0) {
+	*desiredheight = self->ci[0].height + SHIM + 1;
+    } else {
+	*desiredheight = 11;
+    }
     return(view_HeightFlexible | view_WidthFlexible);
 }
 static struct impair *findwindow(self,pc)
@@ -348,18 +365,21 @@ boolean full;
 /* fprintf(stderr,"wid = %d, height = %d\n",enclosingRect.width,enclosingRect.height);fflush(stdout);*/
     if(Fnote(self)->open == -333)
 	fnote_Open(Fnote(self),self->parenttext);
-    if(fnote_IsOpen(Fnote(self))){
+    if(fnote_IsOpen(Fnote(self)))
 	fnotev_SetFont(self,self->ofd);
-	fnotev_MoveTo(self,/* self->ci[1].xOriginOffset + */SHIM,/*self->ci[1].yOriginOffset +*/SHIM);
-    }
-    else{
+    else
 	fnotev_SetFont(self,self->fd);
-	fnotev_MoveTo(self,/*self->ci[0].xOriginOffset + */1,/*self->ci[0].yOriginOffset + */1);
-    }
-    fnotev_DrawString(self,self->displaystr,(view_ATTOP | view_ATLEFT)); 
-    fnotev_DrawRect(self,&(enclosingRect)); 
-  /*	fnotev_MoveTo(self,enclosingRect.width / 2,enclosingRect.height / 2);
-    fnotev_DrawString(self,"*",(view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBOTTOM)); */
+    /* Center the marker glyph in the box.  BETWEENTOPANDBOTTOM and
+     * BETWEENLEFTANDRIGHT derive from max_bounds metrics (same source used
+     * by DrawChars internally), so centering is consistent regardless of
+     * whether XFT or core X11 rendering is active.  The old ATTOP|ATLEFT
+     * approach broke because it added max_bounds.ascent to Y=1 while the
+     * box was sized only to the asterisk's per-character ascent — on
+     * scalable fonts the typographic ascender is much larger, pushing the
+     * baseline past the box bottom. */
+    fnotev_MoveTo(self, enclosingRect.width / 2, enclosingRect.height / 2);
+    fnotev_DrawString(self, self->displaystr, (view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBOTTOM));
+    fnotev_DrawRect(self,&(enclosingRect));
     
 
 #endif

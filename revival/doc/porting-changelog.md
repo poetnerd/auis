@@ -152,3 +152,7 @@ The codebase was written for ILP32 (32-bit int, long, pointer). Five distinct bu
 - `eq.c eq__Insert`: `mark_UpdateMarks(..., -1)` → `(long)-1`; delete-size sentinel zero-extended to `4294967295` without the cast, corrupting all marks in the equation editor on each character delete
 - `tscript.c`, `srctext.c`, `metax.c`: `(long)` casts on negative literals at `style_SetNewLeftMargin`/`style_SetNewIndentation` call sites (missed in round 1 sweep)
 - `readscrb.c`: `(long)-2` at `style_SetFontScript` call (file not in active build; pre-emptive)
+
+### 2026-07-04 — fnotev rendering fix
+
+- `fnotev.c DesiredSize/DoUpdate`: box height from fontdesc newlineHeight; marker glyph centered (BETWEENTOPANDBOTTOM|BETWEENLEFTANDRIGHT) — old ATTOP|ATLEFT pushed baseline past box bottom on scalable fonts
