@@ -82,7 +82,7 @@ class amsn: ams {
       CUI_ReportAmbig(char *name, char *atype);
       CUI_ResendMessage(int cuid, char *tolist) returns long;
       CUI_RewriteHeaderLine(char *addr, char *newaddr) returns long;
-      CUI_RewriteHeaderLineInternal(char *addr, char *newaddr, int maxdealiases, int *numfound, int *externalcount, int format, int strip, int trust) returns long;
+      CUI_RewriteHeaderLineInternal(char *addr, char *newaddr, int maxdealiases, int *numfound, int *externalcount, int *format, int *strip, int *trust) returns long;
       CUI_Rock() returns char *;
       CUI_SetClientVersion(char *vers);
       CUI_SetPrinter(char *printername) returns long;
