@@ -57,8 +57,19 @@ POBB = pobbconf
 EATMAIL = eatmail
 #endif /* AMS_ENV */
 
-#ifndef SGI_4D_ENV
+/* tm uses the pre-POSIX BSD sgtty tty API (TIOCGETP, struct sgttyb, etc.),
+   removed from modern kernels; deferred pending a termios port.
+   See revival/doc/porting-assessment.md.  #define MK_TM to build it. */
+#ifdef MK_TM
 TM = tm
+#endif
+
+/* bdffont's parser depends on a hand-maintained bdfparse.act action file
+   that is absent from the tree (no fossil history, no generator) --
+   deferred pending its reconstruction. See revival/doc/porting-assessment.md.
+   #define MK_BDFFONT to build it. */
+#ifdef MK_BDFFONT
+BDFFONT = bdffont
 #endif
 
 #if defined(sys_sun4_41) || defined(sys_sun3_41)
@@ -67,6 +78,6 @@ ALINK = alink
 
 SUBDIRS = ${CALC} ${CHAMP}  demos $(GESTURES)  wpedit \
 	${TM} time $(EATMAIL) \
-	mit ${ALINK} ${ZIP} $(PARSEC) bdffont srctext
+	mit ${ALINK} ${ZIP} $(PARSEC) ${BDFFONT} srctext
 
 EXTRASUBDIRS = ${POBB}

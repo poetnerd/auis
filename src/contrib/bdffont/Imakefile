@@ -48,7 +48,7 @@ bdffont.tlc:	bdffont.tlx bdfparse.tab.c
 	ExecuteFromDESTDIR(gentlex bdffont.tlx bdfparse.tab.c)
 
 bdfparse.tab.c:	bdfparse.y
-	ExecuteFromDESTDIR(bison -d -r -n bdfparse.y) 
+	ExecuteFromDESTDIR(bison -d -v bdfparse.y)
 
 
 LIBS = ${BASEDIR}/lib/atk/libtext.a 
