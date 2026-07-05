@@ -3,10 +3,8 @@
 %{
 #include <eli.h>
 #include <eliy.h>
+#include <stdlib.h>
 
-#if !defined(_IBMR2) && !defined(bsdi)
-extern char *realloc();
-#endif
 static DoString();
 #undef YY_INPUT
 #define YY_INPUT(buf,result,max_size) \

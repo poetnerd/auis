@@ -47,7 +47,7 @@ extern char *inet_ntoa();
 
 main(argc, argv)
 int argc;
-unsigned char **argv;
+char **argv;
 {
     int i, j;
     unsigned long foo, bar, baz;

@@ -33,8 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include  <prmtives.h>
 #include <sys/errno.h>
-
-extern char *sys_errlist[];
+#include <stdio.h>
 
 void            Prim_SETQ(st, arglist, resbuf)
 EliState_t     *st;
