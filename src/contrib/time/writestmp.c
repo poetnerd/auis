@@ -88,7 +88,7 @@ struct writestamp *self;
 }
 
 
-static void
+void
 writestamp__UpdateTime(self)
 struct writestamp *self;
 {
