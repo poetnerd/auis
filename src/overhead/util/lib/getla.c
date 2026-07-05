@@ -41,6 +41,24 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <sys/fixpoint.h>
 #endif
 
+#ifdef __APPLE__
+/* No /dev/kmem or nlist() on modern Darwin (no _nlist symbol in libc at
+   all); use the portable getloadavg(3) from <stdlib.h> instead. */
+#include <stdlib.h>
+double getla(indx)
+int indx;
+{
+    double avenrun[3];
+    if (getloadavg(avenrun, 3) < 0) return -1.0;
+    return avenrun[indx];
+}
+
+getla_ShutDown()
+{
+    /* no persistent handle to close: getloadavg() is stateless */
+}
+#else /* __APPLE__ */
+
 #ifdef NeXT
 double getla(indx)
 int indx;
@@ -111,7 +129,6 @@ int indx;
 #endif /* mips & ultrix */
 #endif /* SUN_ENV */
 }
-#endif /* NeXT */
 
 getla_ShutDown()
 {
@@ -120,6 +137,8 @@ getla_ShutDown()
 	kmem = -1;
     }
 }
+#endif /* NeXT */
+#endif /* __APPLE__ */
 
 
 
