@@ -876,7 +876,7 @@ long id;
 
     if (fgets(buf, LINELENGTH, fp) == NULL)
 	return dataobject_PREMATUREEOF;
-    ix = sscanf(buf, "$origin %d %d", &val1, &val2);
+    ix = sscanf(buf, "$origin %ld %ld", &val1, &val2);
     if (ix!=2) return dataobject_BADFORMAT;
     self->originx = val1;
     self->originy = val2;
@@ -953,7 +953,7 @@ struct point *origin;
 
     if (fgets(buf, LINELENGTH, fp) == NULL)
 	return dataobject_PREMATUREEOF;
-    ix = sscanf(buf, "$origin %d %d", &val1, &val2);
+    ix = sscanf(buf, "$origin %ld %ld", &val1, &val2);
     if (ix!=2) return dataobject_BADFORMAT;
     if (origin) {
 	origin->x = val1;

@@ -84,6 +84,15 @@ specific file:
      relink needed.
    - Grep the target `Makefile` for both patterns before assuming which
      one applies; get it wrong and you'll rebuild the wrong thing.
+   - **Check `nm -g build/bin/runapp | grep <symbol>` before trusting a
+     `.do`-only rebuild** — a class can have a `.do` target in its
+     Makefile that's dead weight because the class is *also* statically
+     linked (confirmed for `text`, `simpletext`, `textview`, `matte` —
+     unlike `help`/`figure`, which genuinely are dynamic; see
+     `project_runapp_static_link` memory). Rebuilding/installing such a
+     `.do` is a silent no-op; `T <symbol>` in the `nm` output means you
+     must relink `runapp` instead. Losing sight of this cost a multi-hour
+     debugging detour on 2026-07-04.
 3. macOS doesn't embed DWARF in the final linked binary — it uses a
    debug-map (stabs) pointing back at the `.o` files on disk. As long as
    the `.o` stays where it was built, lldb resolves file:line breakpoints
@@ -116,6 +125,28 @@ specific file:
    `<commands...>` / `DONE`, ending the block with `continue`,
    auto-continues through repeated hits unattended — good for confirming
    a value across an entire run without babysitting each stop.
+8. **A statically-linked function's own `fprintf` can stay completely
+   silent even when `lldb` proves the function executes** (breakpoint
+   hits repeatedly, sane backtrace and register state, no crash). Hit
+   this 2026-07-04 debugging `matte__Create`: instrumented, rebuilt,
+   relinked, confirmed the marker string was in the binary via `strings`
+   — zero output across many runs, while an `lldb` breakpoint on the
+   same symbol fired every time. Root cause not fully identified. Don't
+   treat "no fprintf output" as proof a function never ran; confirm with
+   a breakpoint first.
+9. **Reading struct fields with zero debug info, without a `-g -O0`
+   recompile**: `expr self->field`/`frame variable` need type info this
+   build doesn't have and fail outright, even for a live, correctly-typed
+   pointer. Instead: `register read x0` (or x1/x2 for the 2nd/3rd arg,
+   per AAPCS64) for the raw pointer, then `memory read -s8 -fx -c<N>
+   $x0` for a raw word dump. To know which field is which without an
+   offset table, find a **known-good anchor value** in the dump — a
+   pointer you already captured elsewhere (e.g. a `dataobject` address
+   logged by a *working* `fprintf`) or a `#define`d constant matching one
+   of the struct's fields — then count fields backward/forward from that
+   anchor using the struct's declared order in its `.ih`/`.ch`. This is
+   how the `figview` `originx` corruption (`0x100000000` instead of `0`)
+   was found — see `project_figure_status` memory.
 
 ## Killing processes cleanly
 

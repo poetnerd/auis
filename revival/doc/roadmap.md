@@ -22,7 +22,7 @@ history behind each completed item.
 - `help` app: fully functional — Programs list panel scroll fixed (LP64 fix, 2026-07-04); regression tests below
 - Bp (page break) insets: **proven working** — visible as page-break rule in `Cattey.Writing`
 - Srctext insets: **proven working** — indentation and syntax coloring render correctly (LP64 audit)
-- Figure insets: **proven working** — `95Summer.ez` figure renders correctly (see Chronological log 2026-07-04). Root cause was not LP64: `figattr.c` rejected any attribute name it didn't recognize (`arrowsize`/`arrowpos`/`arrow`/`linestyle`, added by a later figure-format version) with `dataobject_BADFORMAT`, and `simpletext__HandleBegindata` ignored `dataobject_Read`'s error return, so the parser desynced and dumped the rest of the document as raw text. Fixed by applying official CMU `patch.633` (figattr tolerates unknown attributes) plus new hardening in `smpltext.c` (failed inset reads now fall back to a raw `unknown` object instead of corrupting the rest of the parse)
+- Figure insets: **proven working** — `95Summer.ez`'s figure renders correctly end to end (see Chronological log 2026-07-04). Two independent bugs stacked on top of each other: (1) parser-desync — official CMU `patch.633` (figattr tolerates unknown attributes from later format versions) plus new `smpltext.c` hardening (failed inset reads fall back to a raw `unknown` object instead of corrupting the rest of the parse); (2) LP64 — `figure__Read`'s `$origin` line was parsed with `sscanf(buf, "$origin %d %d", &val1, &val2)` into `long val1, val2`, the same %d-into-long pattern as the other LP64 audits, leaving stack garbage in the upper 32 bits of `originx`. That corrupted `originx` flows straight into `figview`'s `panx` (`SetDataObject` does `panx = originx`), pushing the entire figure's rendering ~4 billion pixels off-screen — content was being drawn, just nowhere near the visible clip region. Confirmed live via `lldb`: found `originx == 0x100000000` in the running `figview`'s memory. Fixed both `figure__Read` and the analogous `figure__ReadPartial`.
 - `Sherman.Alloc` integration test: text, eq, fad, cel/arbiter spreadsheet
   all render; zip unsupported (expected); calc engine presumed working if
   cel displays correctly
@@ -36,7 +36,7 @@ history behind each completed item.
 - Variant 3: `int` constant zero-extended through untyped dispatch
   (`observable_OBJECTDESTROYED`, `value_OBJECTDESTROYED`,
   `class_VERSIONNOTKNOWN`)
-- Variant 4: `%d` with `long *` in scanf family (full tree audit done)
+- Variant 4: `%d` with `long *` in scanf family (full tree audit done; one straggler found later and fixed — `figure.c`'s `$origin` parsing, see Completed and Chronological log 2026-07-04)
 - Variant 5: `long`/`int` mismatch in display positioning through untyped
   dispatch (lpair, panel, dialog, table, fad, srctext, eq, metax, toez,
   typescript margins; style__ReadAttr operand; figure_NULLREF sentinel; full audit committed)
@@ -258,7 +258,7 @@ Ordered by dependency depth; each step proves a layer the next relies on.
 
 | # | Inset / App | Test document | What it proves | Search string |
 |---|-------------|--------------|----------------|---------------|
-| 1 | fnote | **[PROVEN]** `PAPERS/atk/Cattey.Writing` | inline text-in-text insets | look for superscript footnote markers in body text; click to expand |
+| 1 | **fnote** | **[PROVEN]** `PAPERS/atk/Cattey.Writing` | inline text-in-text insets | look for superscript footnote markers in body text; click to expand |
 | 2 | **textref / texttag** | **[PROVEN]** `src/atk/examples/ex14/ex14.doc` + `ex15/ex15.doc` | cross-ref insets; page-number references that update dynamically | in ex14: search "Program Listing for Example 14 at the end of this section on p." — the number after "p." is a live textref pointing to the texttag at the listing |
 | 3 | **eq** | `ia-archive/dec.91` | **[PROVEN]** equation editor; text marks confirmed | look for rendered equations with fractions and subscripts |
 | 4 | **table** | `ia-archive/aug.90` | **[PROVEN]** cell text visible | spreadsheet cells with numbers and formulas |
@@ -272,7 +272,7 @@ Ordered by dependency depth; each step proves a layer the next relies on.
 | 12 | **cel / adew** | `src/atk/adew/vallist` | **[PROVEN via Sherman.Alloc]** ADEW stack: value+text+cel+arbiter renders | spreadsheet cells with live calculation |
 | 13 | typescript | `bin/typescript -d` | terminal emulator; **crashes "Can't connect subchannel"** — likely macOS PTY compat issue, not LP64 | terminal window inset |
 | 14 | bush | `bin/bush -d` | shell application | interactive shell |
-| 15 | **figure** | `NEWSLETTERS/EZ/95Summer.ez` | **[PROVEN]** root cause was version-skew in figure attributes + a swallowed Read error in `simpletext`, not LP64; fixed 2026-07-04 | drawing/diagram insets in newsletter |
+| 15 | **figure** | `NEWSLETTERS/EZ/95Summer.ez` | **[PROVEN]** two stacked bugs fixed: parser desync (patch.633 + smpltext.c) and LP64 `$origin` scanf corruption (figure.c); renders correctly end to end | drawing/diagram insets in newsletter |
 | 16 | **Sherman.Alloc** | `PAPERS/atk/Sherman.Alloc` | **[PROVEN]** text+eq+fad+cel/arbiter all render; zip unsupported (expected) | multi-inset compound document |
 
 **No good test document exists for:** `lookz`, `launchapp`, `prefed`
@@ -302,7 +302,7 @@ running from native Terminal.app).
 plausible match — scrolling a fresh window can trigger a checkpoint, and
 the UAF produced a crash rather than a hang.
 
-### Xlib display-lock self-deadlock (reproduced 2026-07-04, root cause identified)
+### Xlib display-lock self-deadlock — **deferred** (reproduced 2026-07-04, root cause identified)
 
 Reproduced by accident during the figure-inset LP64 audit: scrolling in
 both `ez` (viewing `NEWSLETTERS/EZ/95Summer.ez`) and, independently, a
@@ -387,27 +387,45 @@ Run: `DISPLAY=:0; build/bin/runapp helpa -d`
 All five LP64 variant classes identified, swept, and committed. `Sherman.Alloc`
 and `95Summer.ez` used as integration tests; both render correctly.
 
-### typescript "Can't connect subchannel"
-`bin/typescript -d` crashes immediately after "please wait..." with
-"Can't connect subchannel" + SIGSEGV. The error occurs before any
-rendering, pointing to a PTY/pipe setup failure (macOS compat, not LP64).
-Find the error string in `src/atk/typescript/` to identify the failing
-syscall.
+### Messages application prerequisites (current focus)
+
+Goal: get `messages` running with a local mail store. Three streams of work:
+
+**Stream 1 — remaining ATK inset prerequisites (unproven):**
+These insets appear in the messages UI and/or in rendered mail:
+- `lset` (scrollable list) — mail folder/message list display; test with `ia-archive/nov.91` or `jan.90`
+- `value` / `valueview` (slider, button) — UI controls; test with `ia-archive/sep.90` or `jan.90`
+- `pushbutton` / `link` / `linkview` — hyplink navigation; test with `PAPERS/conf/1995/widgets.ez`
+
+**Stream 2 — AMS local mail store:**
+The user ran messages with a local mail store at MIT Athena (via forked fetchmail
+bypassing AFS). A local-store backend almost certainly exists in `ams/`.
+Look in `ams/libs/`, `ams/delivery/`, and `site.h` for `#ifdef` variants or
+alternate delivery paths. If found, this is the shortest path to a working messages.
+
+**Stream 3 — atkams/ interface audit:**
+Understand what `messages` calls into `atkams/`, and what `atkams/` calls into `ams/`.
+If the boundary is clean, an IMAP adapter behind `atkams/` is viable as a
+fallback if no local-store backend exists.
+
+**Contrib objects:** TBD — user to specify which contribs are in scope.
 
 ### printf/fprintf %d/%ld audit
 2,597 printf-family hits with `long` values and `%d` format specifiers
 logged during the scanf audit. These produce wrong output for large values
-but do not corrupt memory. Lower priority than the positioning fixes;
-address as a batch once the inset sweep is complete.
+but do not corrupt memory. Address as a batch; not blocking messages work.
 
 ### Xft phase 2 (deferred)
-Menu text rendering via Xft. Menus are currently acceptable without it;
-defer until after higher-priority inset work. Once done, the only
-remaining X core font path dependency would be the Andy symbol and
-cursor fonts.
+Menu text rendering via Xft. Menus are currently acceptable without it.
+Only remaining X core font path dependency is Andy symbol and cursor fonts.
 
 ### Update quickstart.md
 Remove resolved known-issues entries as each fix lands.
+
+### Not current focus
+- `typescript` "Can't connect subchannel" crash — macOS PTY compat issue, not LP64; defer
+- `bush` shell application — defer until after messages
+- `org`, `chart`, `launchapp` — defer
 
 ---
 
@@ -456,27 +474,13 @@ that should be fixed before use at scale.
 
 ### Messages application
 
+**Elevated to near-term focus** — see Near-term section for the active
+work plan. Moved here for architectural notes only.
+
 `messages` is the AUIS mail/bulletin-board client. Full AMS revival is
 off the table — the AFS/shared-filesystem delivery model is a dead end.
-Two viable paths, in order of investigation:
-
-**Step 1 — find the local mail store backend (fast, high potential):**
-The user ran `messages` with a local mail store at MIT Athena in the
-1990s (using a forked `fetchmail` to bypass AFS delivery). This means a
-local-store backend likely already exists in `ams/` — look for `#ifdef`
-variants, `site.h` configuration options, or alternate delivery paths in
-`ams/libs/` and `ams/delivery/`. If found and revivable, this is the
-shortest path to a working `messages`.
-
-**Step 2 — audit the `atkams/` interface boundary:**
-Understand what `messages` calls into `atkams/`, and what `atkams/` calls
-into `ams/`. If the boundary is clean, an IMAP adapter behind `atkams/`
-is viable. If AMS internals are deeply mixed in, a stub AMS layer (even
-for IMAP) may be needed regardless.
-
-**Prerequisite:** all ATK insets working (particularly text, raster, eq,
-fad, table) — `messages` renders mail as ATK compound documents, so inset
-rendering quality directly affects mail readability.
+See Near-term → Messages prerequisites for the two viable backend paths
+(local store vs. IMAP adapter).
 
 ---
 
