@@ -35,6 +35,14 @@ STD_DEFINES = -DHAVE_XFT
 DYN_LINK_LIB = -ldl
 LEXLIB = -ll
 
+/* macOS splits BIND resolver symbols (res_init/res_send/res_mkquery/
+   dn_expand/dn_skipname, all renamed to res_9_* by <resolv.h> on this
+   platform) out of libc into a separate library; older Andrew configs
+   never needed this since those symbols lived in libc there. Needed by
+   anything linking overhead/mail/lib/rsearch.c or valhost.c (e.g. AMS's
+   ValidateMailHostName). */
+RESOLVER_LIB = -lresolv
+
 /* Get site-specific inclusions */
 #include <site.mcr>
 SYS_CONFDIR = darwin

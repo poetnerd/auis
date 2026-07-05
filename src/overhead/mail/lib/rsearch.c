@@ -46,6 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <netinet/in.h>
 #include <ctype.h>
 #include <errno.h>
+#define BIND_8_COMPAT
 #include <arpa/nameser.h>
 #include <resolv.h>
 

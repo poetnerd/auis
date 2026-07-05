@@ -190,6 +190,8 @@ STD_DEFINES = -DHAVE_XFT
 DYN_LINK_LIB = -ldl
 LEXLIB = -ll
 
+RESOLVER_LIB = -lresolv
+
 SYS_CONFDIR = darwin
 
 #
