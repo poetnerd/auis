@@ -372,6 +372,46 @@ This is LP64 variant #3 (extended). Earlier LP64 variants:
 The `lpair__Init` fix changed the parameter declaration from `long` to `int`.
 The `panel.c` fix cast the literal to `(long)-16384` at the call site.
 
+#### New sub-variant (2026-07-05): mismatch isn't limited to dispatch-macro call sites
+
+`CUI_GetHeaders` (`ams/libs/cui/cuilib.c`, reached from `atkams/messages/lib`'s
+`captions.c`/`capaux.c` via the `ams_CUI_GetHeaders` class dispatch) showed the
+same root mechanism firing across a **plain unprototyped C function call**,
+not just the `void (*)()` vtable macros — worth recording since it means the
+grep-for-dispatch-macros audit query in this section won't find every
+instance:
+
+- **By-value case**: `startbyte` was `long` in `cuilib.c`'s `CUI_GetHeaders`
+  and in the already-`long` `ams/libs/snap/cuisnap.c` (dormant SNAP-networked
+  variant), but `int` in the `.ch` class interfaces (`ams.ch`/`amsn.ch`/
+  `amss.ch`), their `.c` implementations, and the real caller
+  (`atkams/messages/lib/capaux.c`'s `totalbytes`, accumulated across a header-
+  read loop in `InsertUpdatesInDocument`). Register-garbage-dependent — worked
+  on one host, segfaulted immediately on a second host (`spoon`) with the
+  same fossil checkout, confirming the "upper 32 bits are whatever was there
+  before" mechanism rather than a deterministic value bug.
+- **By-pointer case (new, more dangerous)**: `nbytes`/`status` had the *same*
+  int-vs-long mismatch, but as pointer types (`int *` vs `long *`) rather than
+  by-value. `ms/libs/ms/headers.c`'s `MS_HeadersSince` (the actual local-
+  mailbox implementation that writes through these pointers) declared
+  `int *numbytes, *bytesleft`; everything above it in the active call chain
+  read them back as `long *`. This isn't just a misread value — a write
+  through the narrower-than-expected type only fills half the register-width
+  the reader expects, so the reader picks up genuine adjacent-memory garbage
+  in the upper bits, same failure mode as the by-value case, but the
+  underlying hazard (writer and reader disagreeing on a pointer's pointee
+  size) is the more serious member of this family: if the size relationship
+  were reversed (writer wider than the true allocation), it would be an
+  actual out-of-bounds write, not just a garbage read. `ams/libs/snap/cuisnap.c`
+  already had the correct `long *` throughout, confirming `long` was always
+  the intended type and `headers.c` was the file that never got updated.
+
+Fixed by widening the `int`/`int *` side to `long`/`long *` everywhere in the
+active chain (`headers.c`, `.ch` interfaces, `.c` implementations, `capaux.c`,
+`foldaux.c`), plus the dormant SNAP-server side (`ams/ms/ms.c`) for
+forward-compatibility. Full file list in `porting-changelog.md`'s 2026-07-05
+entries.
+
 #### Strategic options
 
 **Option A — Fix the dispatch mechanism**: Change the generated `.ih` macros

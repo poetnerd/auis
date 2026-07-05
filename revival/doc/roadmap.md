@@ -5,6 +5,16 @@ history behind each completed item.
 
 ---
 
+## Major milestones
+
+- **2026-07-05**: `messages` application running with local mail store —
+  "mail (Private BB; 0 new of 0)" confirmed in the folder panel. All three
+  prerequisite streams closed simultaneously: AMS local backend alive,
+  atkams/ interface working, ATK insets (lset, value, pushbutton/link)
+  sufficient for the messages UI to render.
+
+---
+
 ## Completed
 
 - `ez2md` converter (`revival/tools/ez2md.py`): converts `.ez` files to
@@ -29,6 +39,7 @@ history behind each completed item.
 - Xft phase 1: body text rendering via client-side Xft (anti-aliased)
 - Andy symbol fonts (`symba*.pcf`) built and installed in `build/X11fonts/`
 - `overhead/malloc/malloc.ci` `addarena` arena-size pointer-arithmetic bug fixed (`patches/contrib/malloc.ci.auis6.3.diff`, 2026-07-04) — source-correctness only, see Historical patches audit below for why it has no runtime effect here
+- `messages` application: **running** (2026-07-05) — local mail store (`Private BB`) visible in folder panel; three-pane layout, menus, and help text all rendering; AMS local backend + atkams/ interface + ATK insets all working
 
 **LP64 bug classes identified and swept:**
 - Variant 1: Missing prototypes / pointer return truncation (23 sites)
@@ -387,7 +398,7 @@ Run: `DISPLAY=:0; build/bin/runapp helpa -d`
 All five LP64 variant classes identified, swept, and committed. `Sherman.Alloc`
 and `95Summer.ez` used as integration tests; both render correctly.
 
-### Messages application prerequisites (current focus)
+### ~~Messages application prerequisites~~ — **DONE (2026-07-05)**
 
 Goal: get `messages` running with a local mail store. Three streams of work:
 
@@ -449,8 +460,24 @@ of 5 more active files with the same bare-call pattern (`ams/libs/ms/init.c`,
 `porting-changelog.md`. Separately, `contrib/bdffont` turned out to be
 unbuildable (missing `bdfparse.act`, no generator, no fossil history) and
 was conditionalized out (`MK_BDFFONT`); see `porting-assessment.md` §7b.
-**Next up:** retest `messages` under `lldb` now that `mailconf.c` is fixed;
-re-run full `dependInstall` to confirm clean without `-k`.
+**✓ MILESTONE (2026-07-05):** `messages` is running. "mail (Private BB; 0 new
+of 0)" confirmed in the folder panel. Three-pane layout, menu bar, and help
+text all rendering correctly.
+
+**Follow-up (2026-07-05): same-tip rebuild on host `spoon` segfaulted immediately.**
+Real `SIGSEGV` (confirmed via `lldb`, not a codesigning/kernel-kill artifact),
+in `CUI_GetHeaders`'s header-scanning loop. Two `long`/`int` mismatches in
+`CUI_GetHeaders`'s `startbyte`/`nbytes`/`status` params, both invisible at
+compile time (no prototype in scope at the mismatched boundaries) — same
+LP64 Variant 5 family as `lpair__Init`/`style__SetNewIndentation`, but this
+time crossing a plain unprototyped C call, not just the `void (*)()` vtable
+macros. `ms/libs/ms/headers.c`'s `MS_HeadersSince` (`int`/`int *`) was the
+outlier; `cuilib.c`'s `CUI_GetHeaders` and the dormant SNAP variant
+(`cuisnap.c`) already agreed on `long`/`long *`. Fixed end-to-end
+(`headers.c`, `ams.ch`/`amsn.ch`/`amss.ch`, `ams.c`/`amsn.c`/`amss.c`,
+`capaux.c`, `foldaux.c`, dormant `ams/ms/ms.c`); rebuilt clean. Full detail
+in `porting-assessment.md` §12 and `porting-changelog.md`. **Next up:**
+retest on `spoon`.
 
 **Stream 3 — atkams/ interface audit: resolved by the Stream 2 survey.**
 `ams/Imakefile` and `atkams/messages/lib/Imakefile` show the boundary is
@@ -464,6 +491,27 @@ time eatmail mit srctext` (see `contrib/Imakefile`); `tm` and `bdffont`
 deferred (§ above). Still TBD whether any of these besides `srctext`
 (already a proven inset, see Completed) matter for the messages path
 specifically.
+
+### cui + gendemo (next session, ~2026-07-09) — current focus
+
+`gendemo` (in `build/etc/`) builds and links but requires `cui` (the curses
+AMS client, conditionalized out as `MK_CUI` during the AMS_ENV activation) to
+actually populate the `amsdemo` demo folder. The Mail Overview help topic
+refers users to `gendemo`; without a populated `amsdemo`, there is nothing to
+demonstrate in `messages`. Re-enable and fix `cui` first, then run `gendemo`
+to create the demo mail folder, then verify `messages` can browse and read it.
+
+`cui` was deferred because it depends on the BSD `sgtty` API (removed from
+macOS). Options: stub/shim `sgtty`, switch to `termios`, or find a minimal
+path through `cui`'s init that `gendemo` actually exercises (it may not need
+full terminal interaction).
+
+### IMAP / AMS backend investigation (week of 2026-07-14)
+
+With `messages` running against the local mbox backend, investigate whether
+an IMAP adapter behind `atkams/` is viable for connecting to a live mail
+server. The `atkams/`–`ams/` boundary is already audited (see Stream 3 above);
+this is the next architectural step toward real-world mail use.
 
 ### printf/fprintf %d/%ld audit
 2,597 printf-family hits with `long` values and `%d` format specifiers
