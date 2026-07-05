@@ -51,6 +51,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <mailconf.h>
 
+extern char *AndrewDir();
+extern char *LocalDir();
+
 extern int errno;
 
 /* MAIL SYSTEM CONFIGURATION */
@@ -192,7 +195,7 @@ int AMS_WSRunsQueuemail = 0;
 char *AMS_MailBoxPrefix = "/usr/mail";	/* Prefix for ``/userid'', giving file where mail is delivered. */
 #else /* ((SY_U5x != 0) || defined(hpux))	 */
 /* yes, below it really is __386BSD__ || bsdi, they both want /var/mail in place of /usr/spool/mail. */
-#if defined(__386BSD__) || defined(bsdi) || defined(__NetBSD__) || defined(__FreeBSD__)
+#if defined(__386BSD__) || defined(bsdi) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(sys_darwin)
 char *AMS_MailBoxPrefix = "/var/mail"; /* Prefix for ``/userid'', giving file where mail is delivered. */
 #else
 char *AMS_MailBoxPrefix = "/usr/spool/mail"; /* Prefix for ``/userid'', giving file where mail is delivered. */

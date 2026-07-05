@@ -34,6 +34,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <prmtives.h>
 #include <sys/errno.h>
 
+extern char *AndrewDir();
+
 static struct {
     char           *name;
     void            (*fn) ();

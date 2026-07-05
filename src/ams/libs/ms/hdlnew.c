@@ -50,6 +50,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>                  /* sys/file.h */
 #include <system.h>
 
+extern char *AndrewDir();
+
 #ifdef sys_vax_11
 #define void int                       /* What a grubby hack -- vaxes should
                                         * die. */
@@ -75,7 +77,7 @@ static char    *currentMessageFile = NULL;
 
 extern char     home[], MyMailDomain[], Me[];
 extern int      homeUsesAMSDelivery, homeUsesUseridPlus;
-extern char    *getenv(), *sys_errlist[];
+extern char    *getenv();
 
 /* No longer takes the second (location string)
  * argument

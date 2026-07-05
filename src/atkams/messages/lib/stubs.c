@@ -69,6 +69,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <frame.ih>
 
 extern FILE *topen();
+extern char *LocalDir();
+
+static int PrepareAutoBugFile();
+static int DescribeLink();
+static int SnarfFile();
+static int ReportOptionState();
+static RememberMessage();
+static ReportErrorHistory();
 
 extern char *FindUserDir(), *StripWhiteEnds(), *CUI_ClientVersion;
 extern char CUI_MailDomain[], *CUI_WhoIAm;
@@ -767,7 +775,8 @@ int Decode;
 	    }
 	    else {
 		strcat(ErrorText, "(in unknown call ");
-		strcat(ErrorText, sprintf(NumDum, "%d", errcause));
+		sprintf(NumDum, "%d", errcause);
+		strcat(ErrorText, NumDum);
 	    }
 	    strcat(ErrorText, " in ");
 	    if (ms_errvialist[errvia]) {
@@ -775,7 +784,8 @@ int Decode;
 	    }
 	    else {
 		strcat(ErrorText, "in unknown caller ");
-		strcat(ErrorText, sprintf(NumDum, "%d", errvia));
+		sprintf(NumDum, "%d", errvia);
+		strcat(ErrorText, NumDum);
 	    }
 	    strcat(ErrorText, ")");
 	   

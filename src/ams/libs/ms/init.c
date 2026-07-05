@@ -50,6 +50,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 extern char **environ;
 extern char *getprofile(), *StripWhiteEnds();
+extern char *AndrewDir();
+extern char *LocalDir();
 
 char *StandardHeaderNames[] =  {
     "reply-to", /* HP_REPLY_TO */

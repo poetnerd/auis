@@ -61,6 +61,7 @@ extern char *getenv();
 #endif
 
 extern char *malloc(), *realloc(), *index(), *getmyname();
+extern char *AndrewDir();
 struct mailpart *CreateNewPart();
 
 /* The main data structure for the multiple parts of the mail */

@@ -107,6 +107,7 @@ extern char **environ, *gets();
 extern char *malloc();
 extern char *realloc();
 #endif
+extern char *AndrewDir();
 extern char *getenv();
 extern char *index();
 extern char *rindex();
