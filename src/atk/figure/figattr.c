@@ -253,7 +253,7 @@ long id;
 
 	for (ix=0; ix<figattr_NumAttributes; ix++)
 	    if (!strcmp(buf, attribute_names[ix])) break;
-	if (ix==figattr_NumAttributes) return dataobject_BADFORMAT;
+	/* if (ix==figattr_NumAttributes) return dataobject_BADFORMAT; */ /* This is a very unforgiving tactic. In particular, it makes earlier versions of figure totally unable to read later versions, if attributes have been added. Why be so anal? */
 
 	switch (ix) {
 	    case figattr_Shade:
@@ -287,6 +287,8 @@ long id;
 		figattr_SetTextPos(self, ival);
 		break;
 		/* ##new */
+	    case figattr_NumAttributes: /* unknown attribute -- ignore */
+		break;
 	    default:
 		break;
 	}

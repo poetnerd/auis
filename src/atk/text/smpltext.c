@@ -907,6 +907,7 @@ FILE *file;
 	long objectid;
 	char *s;
 	struct dataobject *newobject;
+	long readret;
 
 	self->highbitflag=(-1);	    
 	s = objectname;
@@ -941,7 +942,28 @@ FILE *file;
 		dataobject_SetAttributes(newobject, &readOnlyAttr);
 	    }
 	    /* 	    Call the read routine for the object */
-	    dataobject_Read(newobject, file,objectid);
+	    readret = dataobject_Read(newobject, file,objectid);
+	    if (readret != dataobject_NOREADERROR && strcmp(objectname, "unknown") != 0) {
+		/* The object's own Read failed partway through (e.g. the file was
+		 written by a newer/different version of the class and contains
+		 fields this one doesn't understand). The file position is now
+		 somewhere in the middle of the object's datastream rather than at
+		 its \enddata marker; if we pressed on, the rest of the document
+		 would be parsed out of sync. Salvage the remainder as a raw
+		 'unknown' object instead, which scans forward (honoring nested
+		 begindata/enddata) until it finds the real \enddata{objectname,id},
+		 so the parser resynchronizes and everything after it still renders. */
+		fprintf(stderr,
+			"warning: %s__Read failed (error %ld) reading object %ld; salvaging as raw data\n",
+			objectname, readret, objectid);
+		dataobject_Destroy(newobject);
+		newobject = (struct dataobject *)class_NewObject("unknown");
+		if (newobject == NULL) {
+		    fprintf(stderr, "Could not find data object unknown - ignoring\n");
+		    return(-2);
+		}
+		readret = dataobject_Read(newobject, file, objectid);
+	    }
 	    if((c = getc(file))!= '\n')ungetc(c,file);
 	    /*     At this point , the object pointer is the new object id */
 	    if(simpletext_GetObjectInsertionFlag(self) == FALSE){

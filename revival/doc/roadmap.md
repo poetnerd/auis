@@ -1,6 +1,6 @@
 # AUIS Revival Roadmap
 
-Current as of 2026-07-03. See `porting-changelog.md` for the detailed
+Current as of 2026-07-04. See `porting-changelog.md` for the detailed
 history behind each completed item.
 
 ---
@@ -18,10 +18,11 @@ history behind each completed item.
 - Table insets: cell text visible (LP64 `update.c` fix)
 - Eq insets: complex equations render correctly
 - Fad insets: fully working (LP64 fix + Xft XOR ghost fix + 30ms timing floor)
-- Fnote insets: marker glyph centered correctly (Xft metrics fix, 2026-07-04)
-- `help` app: Programs list panel now shows the top of the list on first
-  display, instead of scrolling to the end (LP64 fix, 2026-07-04)
-- Srctext: indentation rendering fixed (LP64 audit)
+- Fnote insets: marker glyph centered correctly (Xft metrics fix, 2026-07-04); **proven working** — footnote marker and popup text display correctly in `Cattey.Writing`
+- `help` app: fully functional — Programs list panel scroll fixed (LP64 fix, 2026-07-04); regression tests below
+- Bp (page break) insets: **proven working** — visible as page-break rule in `Cattey.Writing`
+- Srctext insets: **proven working** — indentation and syntax coloring render correctly (LP64 audit)
+- Figure insets: **proven working** — `95Summer.ez` figure renders correctly (see Chronological log 2026-07-04). Root cause was not LP64: `figattr.c` rejected any attribute name it didn't recognize (`arrowsize`/`arrowpos`/`arrow`/`linestyle`, added by a later figure-format version) with `dataobject_BADFORMAT`, and `simpletext__HandleBegindata` ignored `dataobject_Read`'s error return, so the parser desynced and dumped the rest of the document as raw text. Fixed by applying official CMU `patch.633` (figattr tolerates unknown attributes) plus new hardening in `smpltext.c` (failed inset reads now fall back to a raw `unknown` object instead of corrupting the rest of the parse)
 - `Sherman.Alloc` integration test: text, eq, fad, cel/arbiter spreadsheet
   all render; zip unsupported (expected); calc engine presumed working if
   cel displays correctly
@@ -103,9 +104,10 @@ targets, not confirmed either way):
   parameter types, so call sites don't widen `-1` to the real `long
   DeltaX, DeltaY`. Unlike the confirmed bugs above, the receiver does
   arithmetic (`+=`/`-=`) rather than a sign check, so a corrupted value
-  would grossly mis-size a rectangle rather than silently no-op — worth
-  checking given `figure` insets are the one confirmed-broken "messy
-  screen" case in this document.
+  would grossly mis-size a rectangle rather than silently no-op. (Not the
+  cause of the `95Summer.ez` "messy screen" case — that turned out to be
+  a figure-attribute version mismatch, see Completed; this remains an
+  untriaged latent risk.)
 - `environ_GetProfileInt(...,-1)` (messages/atkams, several sites) and
   `cwp_Search(...,-1,...)` (ams/delivery) — likely safe (looks like a
   plain `int`-returning function, not virtual dispatch) but unverified;
@@ -131,10 +133,10 @@ dataobject [PROVEN]          view [PROVEN]
     +-- bp / bpv  [PROVEN]       +-- scroll / sbuttonv  [PROVEN]
     +-- raster    [PROVEN]       +-- lpair              [PROVEN]
     +-- text ---- textview  [PROVEN]
-    |        +-- fnote                (text-in-text; trivially proven)
-    |        +-- textref / texttag    (cross-refs; text mark system proven by eq)
+    |        +-- fnote         [PROVEN — Cattey.Writing: footnote marker + popup]
+    |        +-- textref / texttag  [PROVEN — ex14/ex14.doc cross-ref page numbers]
     |        +-- rofftext             (extends text)
-    |        +-- srctext              (extends text)
+    |        +-- srctext      [PROVEN — indentation + syntax coloring confirmed]
     |
     +-- eq -- eqview  [PROVEN — complex equation rendered from ia-archive/dec.91]
     +-- table         [PROVEN — cell text visible after LP64 fix]
@@ -154,7 +156,7 @@ dataobject [PROVEN]          view [PROVEN]
     +-- cel                           (ADEW spreadsheet cell; needs value+text)
     |        +-- arbiter              (ADEW application builder)
     +-- lset                          (scrollable list view)
-    +-- figure -- figview             [BROKEN — messy screen]
+    +-- figure -- figview             [PROVEN — 95Summer.ez renders correctly]
                +-- figobj hierarchy
                       (figorect, figoplin, figoell, figogrp, figotext...)
 
@@ -179,27 +181,28 @@ unproven and requires its own test.
 Ordered by dependency depth; each step proves a layer the next relies on.
 `[PROVEN]` items are already confirmed; start from the first unconfirmed entry.
 
-| # | Inset / App | Test document | What it proves |
-|---|-------------|--------------|----------------|
-| 1 | fnote | `NEWSLETTERS/EZ/92Sep.ez` | inline text-in-text insets |
-| 2 | textref / texttag | `PAPERS/atk/Cattey.Writing` | cross-ref insets; text mark system (likely works — eq proved marks) |
-| 3 | **eq** | `ia-archive/dec.91` | **[PROVEN]** equation editor; text marks confirmed |
-| 4 | **table** | `ia-archive/aug.90` | **[PROVEN]** cell text visible |
-| 5 | value (slider/button) | `ia-archive/sep.90` or `ia-archive/jan.90` | value views; valueview dispatch chain |
-| 6 | lset | `ia-archive/nov.91` or `ia-archive/jan.90` | scrollable list widget |
-| 7 | pushbutton / link | `PAPERS/conf/1995/widgets.ez` | hyplink chain: pushbutton→link→linkview |
-| 8 | **fad** | `src/atk/adew/Title.doc` | **[PROVEN]** LP64 fix complete |
-| 9 | org | `src/atk/org/example1.org` | outliner; proves apt→aptv base |
-| 10 | rofftext | `bin/rofftext -d <manpage>` | roff formatter on top of text |
-| 11 | chart | `build/doc/atk/classes.org` or synthesize | proves apt branch independently of org |
-| 12 | **cel / adew** | `src/atk/adew/vallist` | **[PROVEN via Sherman.Alloc]** ADEW stack: value+text+cel+arbiter renders |
-| 13 | typescript | `bin/typescript -d` | terminal emulator; **crashes "Can't connect subchannel"** — likely macOS PTY compat issue, not LP64 |
-| 14 | bush | `bin/bush -d` | shell application |
-| 15 | **figure** | `NEWSLETTERS/EZ/95Summer.ez` | **[BROKEN — messy screen]** figure_NULLREF (-1L) fix committed; retest after commit |
-| 16 | **Sherman.Alloc** | `PAPERS/atk/Sherman.Alloc` | **[PROVEN]** text+eq+fad+cel/arbiter all render; zip unsupported (expected) |
+| # | Inset / App | Test document | What it proves | Search string |
+|---|-------------|--------------|----------------|---------------|
+| 1 | fnote | **[PROVEN]** `PAPERS/atk/Cattey.Writing` | inline text-in-text insets | look for superscript footnote markers in body text; click to expand |
+| 2 | **textref / texttag** | **[PROVEN]** `src/atk/examples/ex14/ex14.doc` + `ex15/ex15.doc` | cross-ref insets; page-number references that update dynamically | in ex14: search "Program Listing for Example 14 at the end of this section on p." — the number after "p." is a live textref pointing to the texttag at the listing |
+| 3 | **eq** | `ia-archive/dec.91` | **[PROVEN]** equation editor; text marks confirmed | look for rendered equations with fractions and subscripts |
+| 4 | **table** | `ia-archive/aug.90` | **[PROVEN]** cell text visible | spreadsheet cells with numbers and formulas |
+| 5 | value (slider/button) | `ia-archive/sep.90` or `ia-archive/jan.90` | value views; valueview dispatch chain | slider or button widgets embedded in text |
+| 6 | lset | `ia-archive/nov.91` or `ia-archive/jan.90` | scrollable list widget | scrollable selection list inset |
+| 7 | pushbutton / link | `PAPERS/conf/1995/widgets.ez` | hyplink chain: pushbutton→link→linkview | clickable button insets |
+| 8 | **fad** | `src/atk/adew/Title.doc` | **[PROVEN]** LP64 fix complete | animated/fading text title inset |
+| 9 | org | `src/atk/org/example1.org` | outliner; proves apt→aptv base | outline nodes with expand/collapse |
+| 10 | rofftext | `bin/rofftext -d <manpage>` | roff formatter on top of text | formatted man page output |
+| 11 | chart | `build/doc/atk/classes.org` or synthesize | proves apt branch independently of org | bar or line chart inset |
+| 12 | **cel / adew** | `src/atk/adew/vallist` | **[PROVEN via Sherman.Alloc]** ADEW stack: value+text+cel+arbiter renders | spreadsheet cells with live calculation |
+| 13 | typescript | `bin/typescript -d` | terminal emulator; **crashes "Can't connect subchannel"** — likely macOS PTY compat issue, not LP64 | terminal window inset |
+| 14 | bush | `bin/bush -d` | shell application | interactive shell |
+| 15 | **figure** | `NEWSLETTERS/EZ/95Summer.ez` | **[PROVEN]** root cause was version-skew in figure attributes + a swallowed Read error in `simpletext`, not LP64; fixed 2026-07-04 | drawing/diagram insets in newsletter |
+| 16 | **Sherman.Alloc** | `PAPERS/atk/Sherman.Alloc` | **[PROVEN]** text+eq+fad+cel/arbiter all render; zip unsupported (expected) | multi-inset compound document |
 
-**No good test document exists for:** `lookz`, `srctext`, `launchapp`, `prefed`
+**No good test document exists for:** `lookz`, `launchapp`, `prefed`
 — these need synthetic test files or targeted app launches.
+`srctext` is now [PROVEN]; `Cattey.Writing` contains srctext insets (source code blocks).
 
 **Known non-starters:** `ness` (bison extension), `zip` (unsupported),
 `clock`/`writestamp`/`timeoday` (contrib, lower priority).
@@ -279,6 +282,23 @@ process/cookbook developed for this project.
 
 ---
 
+## Regression test checklists
+
+### help application
+Run: `DISPLAY=:0; build/bin/runapp helpa -d`
+
+1. **Startup**: window opens showing "A Guided Tour of Andrew" in the main panel
+2. **Overviews pane**: right panel top section shows entries (Andrew Tour, Multimedia, Mail, Programming); text is readable
+3. **Programs pane**: right panel bottom section shows programs list starting from the **top** of the list (first entry visible, scrollbar at top) — regression for LP64 frameDot bug
+4. **Overviews link**: click "Andrew Tour" in Overviews → main panel changes to that document
+5. **Programs link**: click any entry in Programs → main panel changes to that help topic
+6. **In-text links**: click a cross-reference link in the main panel text → navigates to linked topic
+7. **Expand/Shrink Programs pane**: use Panels menu → "Expand Programs" / "Shrink Programs" → pane resizes correctly
+8. **Show History**: use Panels menu → "Show History" → history pane appears listing previously visited topics
+9. **History links**: click an entry in the History pane → main panel navigates to that topic
+
+---
+
 ## Active (instances running)
 
 - **Xft phase 2: menu rendering** — deprioritized; menus are working
@@ -288,20 +308,9 @@ process/cookbook developed for this project.
 
 ## Near-term
 
-### LP64 positioning sweep completion
-Complete the audit across all remaining `src/atk/` insets. Once the
-active audit instance reports back, triage any unclear cases and verify
-with `Sherman.Alloc` and `95Summer.ez` as integration test documents.
-
-### Figure inset rendering
-Figure insets load but render incorrectly ("messy screen"). The
-`figure_NULLREF (-1L)` fix from the LP64 audit may partially address it —
-retest after committing. If still broken, needs a dedicated debugging
-instance. Also check `rectangle_InsetRect(&inrec, -1, -1)` at `figv.c:905`
-— see the Variant 3 follow-up audit above; its unprototyped
-`(DeltaX, DeltaY)` args do arithmetic rather than a sign check, so a
-corrupted `-1` would grossly mis-size a rectangle rather than silently
-no-op, a plausible contributor to "messy screen."
+### ~~LP64 positioning sweep~~ — complete
+All five LP64 variant classes identified, swept, and committed. `Sherman.Alloc`
+and `95Summer.ez` used as integration tests; both render correctly.
 
 ### typescript "Can't connect subchannel"
 `bin/typescript -d` crashes immediately after "please wait..." with
@@ -329,10 +338,9 @@ Remove resolved known-issues entries as each fix lands.
 
 ## Medium-term
 
-### Integration test: `Sherman.Alloc`
-Open `PAPERS/atk/Sherman.Alloc` in `ez` — contains `fad`, `calc`, `cel`,
-`eq`, `table`, and `zip` insets. A clean render of this document is a
-meaningful milestone for multi-inset support.
+### ~~Integration test: `Sherman.Alloc`~~ — proven
+All insets in `Sherman.Alloc` render correctly (fad, cel, arbiter, eq, table);
+zip unsupported as expected. Multi-inset compound documents confirmed working.
 
 ### zip inset
 Currently reports "not supported." Investigate whether the zip inset
