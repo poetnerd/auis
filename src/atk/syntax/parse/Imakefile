@@ -63,8 +63,8 @@ BASETESTLIBS = ${BASEDIR}/lib/atk/libbasics.a \
 SYSLIBS = 
 
 testparse.o: foo.tab.c
-foo.tab.c: foo.y $(BASEDIR)/bin/bison
-	$(BASEDIR)/bin/bison -n foo.y
+foo.tab.c: foo.y
+	bison -n foo.y
 
 ClassTestProgramTarget(testparse, testparse.o,  ${TESTLIBS} ${BASETESTLIBS}, ${SYSLIBS} ${BSDLIB})
 LibraryTarget(libparse.a, ${OBJS})
