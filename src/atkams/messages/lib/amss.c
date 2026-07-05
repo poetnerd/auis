@@ -164,7 +164,8 @@ int lim;
 long amss__CUI_GetHeaders(self, dirname, date64, headbuf, lim, startbyte, nbytes, status, RegisterCuids)
 struct amss *self;
 char *dirname, *date64, *headbuf;
-int lim, startbyte, *nbytes, *status, RegisterCuids;
+int lim, RegisterCuids;
+long startbyte, *nbytes, *status;
 {
     return(CUI_GetHeaders(dirname, date64, headbuf, lim, startbyte, nbytes, status, RegisterCuids));
 }

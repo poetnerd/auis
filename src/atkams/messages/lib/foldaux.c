@@ -369,10 +369,11 @@ char *FullName, *nickname;
 	    if (MsgCount > 0) {
 		FILE *fp;
 		char SnapshotBuf[AMS_SNAPSHOTSIZE], LineBuf[2000], *objtype;
-		int numbytes, bytesleft, cuid, IsDup, myid = 0;
+		long numbytes, bytesleft;
+		int cuid, IsDup, myid = 0;
 
 		QAddToDoc(d, &pos, E7, strlen(E7), self->ItalicStyle, strlen(E7)-1);
-		if (ams_CUI_GetHeaders(ams_GetAMS(), FullName, "000000", SnapshotBuf, AMS_SNAPSHOTSIZE, 0, &numbytes, &bytesleft, TRUE)) {
+		if (ams_CUI_GetHeaders(ams_GetAMS(), FullName, "000000", SnapshotBuf, AMS_SNAPSHOTSIZE, 0L, &numbytes, &bytesleft, TRUE)) {
 		    ams_ReportError(ams_GetAMS(), "Could not get first notice text", ERR_WARNING, TRUE, mcode);
 		    return;
 		}

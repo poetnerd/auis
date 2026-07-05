@@ -45,7 +45,8 @@ extern char *fixDate();
 
 MS_HeadersSince(FullDirName, datefield, ReturnBuf, MaxReturn, startbyte, numbytes, bytesleft)
 char *FullDirName, *datefield, *ReturnBuf;
-int MaxReturn, startbyte, *numbytes, *bytesleft;
+int MaxReturn;
+long startbyte, *numbytes, *bytesleft;
 {
     struct MS_Directory *Dir = NULL;
     struct stat statbuf;
@@ -186,7 +187,7 @@ int MaxReturn, startbyte, *numbytes, *bytesleft;
 	    fixDate(AMS_DATE(s));
 	}
     }
-    debug(4, ("Returning, %d bytes remain unsent\n", *bytesleft));
+    debug(4, ("Returning, %ld bytes remain unsent\n", *bytesleft));
     CacheDirectoryForClosing(Dir, MD_READ); /* read only, ignore errors */
     return(0);
 }

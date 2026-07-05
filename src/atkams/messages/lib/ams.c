@@ -248,7 +248,8 @@ int lim;
 long ams__CUI_GetHeaders(self, dirname, date64, headbuf, lim, startbyte, nbytes, status, RegisterCuids)
 struct ams *self;
 char *dirname, *date64, *headbuf;
-int lim, startbyte, *nbytes, *status, RegisterCuids;
+int lim, RegisterCuids;
+long startbyte, *nbytes, *status;
 {
     ReportMissing("CUI_GetHeaders");
     return(0);

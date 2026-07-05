@@ -59,7 +59,7 @@ class amsn: ams {
       CUI_GenTmpFileName(char *name) returns long;
       CUI_GetFileFromVice(char *tmpfile, char *vfile) returns long;
       CUI_GetHeaderContents(int cuid, char *hdrname, int hdrnum, char *hdrbuf, int lim) returns long;
-      CUI_GetHeaders(char *dirname, char *date64, char *headbuf, int lim, int startbyte, int *nbytes, int *status, int RegisterCuids) returns long;
+      CUI_GetHeaders(char *dirname, char *date64, char *headbuf, int lim, long startbyte, long *nbytes, long *status, int RegisterCuids) returns long;
       CUI_GetSnapshotFromCUID(int cuid, char *Sbuf) returns long;
       CUI_HandleMissingFolder(char *dname) returns long;
       CUI_Initialize(proc TimerFunction, char *rock) returns long;

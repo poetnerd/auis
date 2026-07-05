@@ -381,7 +381,8 @@ struct captions *ci;
 char *shortname, *dname, *StartTime;
 Boolean ShowAll;
 {
-    int totalbytes, numbytes, cuid, status, addlen, highstart, highlen, envstart, inspos, insertct = 0, IsDup, myfirstcuid = 0;
+    long totalbytes, numbytes, status;
+    int cuid, addlen, highstart, highlen, envstart, inspos, insertct = 0, IsDup, myfirstcuid = 0;
     char date64[AMS_DATESIZE+1], olddate64[AMS_DATESIZE+1], newdate[AMS_DATESIZE+1], firstdate[AMS_DATESIZE+1], captionbuf[100*AMS_SNAPSHOTSIZE], ErrorText[256], *DirName, *ThisCaption, *s;
     Boolean UseHighDensity, MayModify, IsRead;
     struct environment *et, *et2;
