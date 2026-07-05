@@ -66,7 +66,7 @@ struct messwind *self;
 {
     struct messwind *m = (struct messwind *) messwind_New();
 
-    ams_InstallInNewWindow(m, "messages", "Messages", environ_GetProfileInt("messages.width", -1), environ_GetProfileInt("messages.height", -1), m->folders);
+    ams_InstallInNewWindow(m, "messages", "Messages", environ_GetProfileInt("messages.width", (long)-1), environ_GetProfileInt("messages.height", (long)-1), m->folders);
 }
 
 static struct keymap *messwind_standardkeymap;

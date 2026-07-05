@@ -75,6 +75,9 @@ typedef short Boolean;
 #undef dontDefineRoutinesFor_captions
 #include <sendmsg.eh>
 
+static Submit();
+static UnlinkCKPFile();
+
 #include <unscribe.h>
 
 /* constants for the Deliver() subroutine */
@@ -1699,7 +1702,7 @@ struct sendmessage *self;
 {
     struct sendmessage *s = sendmessage_New();
 
-    s->myframe = ams_InstallInNewWindow(s, "messages-send", "Message composition", environ_GetProfileInt("sendmessage.width", -1), environ_GetProfileInt("sendmessage.height", -1), s);
+    s->myframe = ams_InstallInNewWindow(s, "messages-send", "Message composition", environ_GetProfileInt("sendmessage.width", (long)-1), environ_GetProfileInt("sendmessage.height", (long)-1), s);
     im_SetDeleteWindowCallback(sendmessage_GetIM(self), delete_sendmsg_win, self);
     sendmessage_Reset(s);
 }

@@ -96,7 +96,7 @@ struct messagesapp *m;
     }
     if (m->SendOnly) {
 	sm = sendmessage_New();
-	sm->myframe = ams_InstallInNewWindow(sm, "sendmessage", VerString, environ_GetProfileInt("sendmessage.width", -1), environ_GetProfileInt("sendmessage.height", -1), sm);
+	sm->myframe = ams_InstallInNewWindow(sm, "sendmessage", VerString, environ_GetProfileInt("sendmessage.width", (long)-1), environ_GetProfileInt("sendmessage.height", (long)-1), sm);
 	if (!sm->myframe) Die = TRUE;
 	v = (struct view *) sm;
     } else {
@@ -108,7 +108,7 @@ struct messagesapp *m;
 	    struct messwind *mess = messwind_New();
 	    fold = mess->folders;
 	    v = (struct view *) mess;
-	    fold->myframe = ams_InstallInNewWindow(mess, "messages", VerString, environ_GetProfileInt("messages.width", -1), environ_GetProfileInt("messages.height", -1), fold);
+	    fold->myframe = ams_InstallInNewWindow(mess, "messages", VerString, environ_GetProfileInt("messages.width", (long)-1), environ_GetProfileInt("messages.height", (long)-1), fold);
 	}
 	if (!fold->myframe) Die = TRUE;
     }

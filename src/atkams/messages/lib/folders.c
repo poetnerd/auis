@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
  
 
 #include <andrewos.h> /* sys/file.h */
+#include <stdlib.h>
 #include <cui.h>
 #include <fdphack.h>
 #include <hdrparse.h>
@@ -76,10 +77,6 @@ extern int GlobalTransactionCount;
 
 static struct keymap *folders_standardkeymap;
 static struct menulist *folders_standardmenulist;
-
-#ifndef _IBMR2
-extern char *malloc();
-#endif /* _IBMR2 */
 
 static char *ForgetItString = "Forget it -- do nothing.";
 
@@ -1048,7 +1045,7 @@ struct folders *self;
 	self->sm = sendmessage_New();
 	sendmessage_SetFoldersView(self->sm, self);
 	
-	self->sm->myframe = ams_InstallInNewWindow(self->sm, "messages-send", "Message Composition", environ_GetProfileInt("sendmessage.width", -1), environ_GetProfileInt("sendmessage.height", -1), self->sm);
+	self->sm->myframe = ams_InstallInNewWindow(self->sm, "messages-send", "Message Composition", environ_GetProfileInt("sendmessage.width", (long)-1), environ_GetProfileInt("sendmessage.height", (long)-1), self->sm);
 	if (self->sm->myframe == NULL) {
 	    sendmessage_Destroy(self->sm);
 	    self->sm = NULL;
