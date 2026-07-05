@@ -36,6 +36,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <mailconf.h>
 
+extern char *AndrewDir();
+
 extern char *getenv();
 extern FILE *popen();
 

@@ -56,6 +56,21 @@ static struct style *FixedStyle, *BoldStyle, *FormatStyle, *TinyStyle, *GlobalSt
 static char *myfontname = NULL;
 static int myfontsize, UsingFootNote, PrintMinorHeaders;
 static char *fgetsdecoding(), *UnquoteString();
+static boolean ReadMessage();
+static RotateThirteen();
+static FindParam();
+static InsertProperObject();
+static ParseEncoding();
+static getcdecoding();
+static ungetcdecoding();
+static getc64();
+static ungetc64();
+static getcqp();
+static ungetcqp();
+static hexchar();
+static char64();
+static PlainAsciiText();
+static int ForceMetamail();
 
 boolean text822__InitializeObject(c, self)
 struct classheader *c;

@@ -43,6 +43,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <afs/prs_fs.h>
 #endif /* AFS_ENV */
 
+static ReallyTruly_ProcessNewMessages();
+
 #define MAILBOXFILECHUNK 1000
 
 extern char  home[], Me[], *PersonalMailCollectionCommand, *GetPersonalMailbox(), *getprofile(), *getenv();

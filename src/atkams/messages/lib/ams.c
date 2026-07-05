@@ -62,7 +62,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <init.ih>
 
 static int IWantSnap = 0;
-int RestartTimer();
+static int RestartTimer();
+static TimerReport();
 
 void ams__RemoveErrorDialogWindow(self)
 struct ams *self;
@@ -813,9 +814,9 @@ struct ams *self;
     return(0);
 }
 
-int ams__vdown(self, errno)
+int ams__vdown(self, errnum)
 struct ams *self;
-int errno;
+int errnum;
 {
     ReportMissing("vdown");
     return(0);

@@ -42,6 +42,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <afs/venus.h>
 #endif /* AFS_ENV */
 
+static int RealEpoch();
+static DeleteThrough();
+
 static int dirCmp(s1, s2)
 char **s1, **s2;
 {

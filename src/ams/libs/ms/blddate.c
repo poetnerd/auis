@@ -35,6 +35,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <hdrparse.h>
 #include <andrewos.h> /* sys/time.h */
 
+extern char *convlongto64();
+
 BuildDateField(Msg, datetype)
 struct MS_Message *Msg;
 int datetype;

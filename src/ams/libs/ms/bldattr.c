@@ -36,6 +36,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h> /* sys/types.h */
 #include <netinet/in.h>  /* for htonl, etc. */
 
+static int BuildHashVals();
+
 #if !POSIX_ENV
 extern char *index(), *rindex();
 #define strchr(s,c) index(s,c)

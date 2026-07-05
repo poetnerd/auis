@@ -54,6 +54,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #include <mailconf.h>
 #include <mail.h>	/* for ITC libmail */
+static int CreateAndInitFile();
 
 #ifdef AFS_ENV
 /* AFS-specific error codes */

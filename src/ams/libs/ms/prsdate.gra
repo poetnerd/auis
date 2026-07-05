@@ -29,6 +29,21 @@
 
 %{
 #define YYSTYPE int
+static int nextlex();
+static peeper();
+static int prelex();
+static int tabfind();
+static check();
+static constrain();
+static time_def();
+static int weekday();
+static int month();
+static int mday();
+static setrep();
+static int new_dtm();
+static incr();
+static incryear();
+static incrmonth();
 %}
 
 

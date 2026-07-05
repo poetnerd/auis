@@ -63,9 +63,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif /* AFS_ENV */
 
 extern int (*CUI_GenericClientSignalHandler)();
-extern char *sys_errlist[];
-extern int sys_nerr;
-char **unix_sys_errlist = sys_errlist;
+char **unix_sys_errlist = (char **) sys_errlist;
 int unix_sys_nerr = 0; /* initialized below */
 
 extern long CUI_LastCallFinished;

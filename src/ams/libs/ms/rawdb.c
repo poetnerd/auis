@@ -62,6 +62,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 extern char    *permanentmalloc();
 extern char     MyMailDomain[];
+static int CheckHintDroppingPermission();
+static int CheckPathForMUFHints();
+static int ClearUpdates();
+static int CheckForMUFHints();
+static int SetProgressMark();
+static int CheckMarksInProgress();
+static int AddToCheckList();
+static FreeCheckLists();
+static FreeCheckList();
+static int CheckCheckLists();
 
 static char    *EFBIGFormat = "Maximum number of files per directory may have been exceeded closing %s";
 

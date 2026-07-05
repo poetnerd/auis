@@ -677,11 +677,11 @@ struct amsn *self;
     return(mserrcode);
 }
 
-int amsn__vdown(self, errno)
+int amsn__vdown(self, errnum)
 struct amsn *self;
-int errno;
+int errnum;
 {
-    return(vdown(errno));
+    return(vdown(errnum));
 }
 
 int amsn__AMS_ERRNO(self)

@@ -47,6 +47,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 
 #include <ltextv.eh>
 
+static void redo();
+static void paren();
+static void tab();
+static void newline();
+
 static long BounceTime = 0;
 static struct keymap *L_Map;
 static struct menulist *L_Menus;

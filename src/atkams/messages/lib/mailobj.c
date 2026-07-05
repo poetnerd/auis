@@ -48,6 +48,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <view.ih>
 #include <sys/param.h>
 #include <fdphack.h>
+
+static int char64();
 #include <ctype.h>
 #undef popen /* BOGUS -- should be handled by fdphack */
 #undef pclose /* ditto */

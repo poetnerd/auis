@@ -38,6 +38,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <hdrparse.h>
 
+static int MergeList_GrowIfNecessary();
+static int SetChains();
+static int SetChain();
+
 #define MS_RECONDIREXT (".r")
 #define PADSIZE 10                     /* BOGUS -- duplicates stuff in rawdb.c */
 

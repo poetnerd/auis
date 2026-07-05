@@ -39,6 +39,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <errprntf.h>
 #include <hdrparse.h>
 
+extern char *AndrewDir();
+extern char *UnixError();
+extern char *ap_Shorten();
+
 #define DefaultDocumentFormat "2"
 #define PRINTPREFIX ".MS.ToPrint"
 

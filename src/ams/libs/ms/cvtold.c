@@ -43,6 +43,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ctype.h>
 #include <parseadd.h>
 
+static int IsNewFrom();
+
 extern int errno;
 extern char home[];
 

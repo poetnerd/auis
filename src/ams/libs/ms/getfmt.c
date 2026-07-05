@@ -37,6 +37,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <hdrparse.h>
 
+extern char *StripWhiteEnds();
+
 GetFormatFromMessage(Msg, ThisFormat, bufsize, IsBE2)
 struct MS_Message *Msg;
 char *ThisFormat;

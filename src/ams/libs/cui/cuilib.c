@@ -77,6 +77,9 @@ extern char *index (), *rindex();
 
 extern char *NextAddress(), *cvEng();
 extern char *SnapVersionString;
+extern char *ap_Shorten();
+static OutputLine();
+static ValidateDirname();
 
 /* Any CUI functions that return a long should be in this list */
 long HandleAddress(), CUI_CacheDirName(), CUI_SetDirNode(), CUI_GetDirNode(), CUI_AlterSnapshot(), CUI_GetHeaders(), CUI_DisambiguateDir(), CUI_SetSubscriptionEntry(), CUI_MergeDirectories();

@@ -154,6 +154,9 @@ These two routines are just like tryvicequeues_ext except that they implement tw
 
 extern int errno;
 extern char *UnixError(), *arpadate();
+static int writesf();
+static int writeqf();
+static int writegf();
 
 typedef unsigned char bool;
 

@@ -141,7 +141,7 @@ char *DirName, *NewName;
 	    if (IsMagic) strcat(NewPref, "*");
 	    strcat(NewPref, s);
 	    if (t2) {
-		strcat(NewPref, ':');
+		strcat(NewPref, ":");
 		strcat(NewPref, t2);
 	    }
 	}

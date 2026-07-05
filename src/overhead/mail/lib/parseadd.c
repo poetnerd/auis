@@ -46,6 +46,17 @@ typedef unsigned char bool;
 #define FALSE	0
 #define TRUE	1
 
+static int StartUnparse();
+static int UnparseAddress();
+static int UnparseSimpleAddress();
+static int UnparseGroupAddress();
+static PrintWith0Hosts();
+static PrintWith1Host();
+static PrintWithManyHosts();
+static Fold();
+static int PrintRoutePhrase();
+static int PrintLocalPart();
+
 #define NIL	0
 
 extern char *StrCopy();

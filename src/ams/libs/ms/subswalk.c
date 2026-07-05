@@ -36,6 +36,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <ms.h>
 
+static int RealSubsTreeWalk();
+
 /* This routine walks down a directory subtree corresponding to a message
 	directory, and prints appropriate subscription information on the
 	stream it is passed.  The named directory should be a message

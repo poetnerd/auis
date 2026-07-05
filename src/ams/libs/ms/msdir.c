@@ -44,6 +44,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ctype.h>
 
 extern char    *permanentmalloc();
+extern char *convlongto64();
+static int AlreadyMergingChain();
+static int NeedToMerge();
+static int ConstructHashList();
+static int AddHash();
+static int AddMerge();
+static int AnythingMatches();
+static int EnsureNotInCache();
+static int NoteRecentDirUse();
 extern unsigned long KRHash();
 
 struct dcnode {

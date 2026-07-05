@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <andrewos.h> /* sys/file.h */
 #include <mailconf.h>
+static int CheckLabel();
 
 extern char *getprofile(), *StripWhiteEnds();
 extern char home[], MyMailDomain[];

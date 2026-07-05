@@ -51,6 +51,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif /* WHITEPAGES_ENV */
 
 extern char *StripWhiteEnds();
+static int ReplaceNthListElement();
+static int UnparseNthElement();
+static int CheckGlobalAlias();
+static int ExternalForcingCode();
 
 extern int NeedToTimeOut;
 extern char home[], Me[], MyMailDomain[];

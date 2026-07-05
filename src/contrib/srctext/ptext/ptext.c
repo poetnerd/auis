@@ -55,6 +55,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <tree23.ih>
 #include <ptext.eh>
 
+static int indentation();
+static int currentIndent();
+static int currentColumn();
+
 static boolean isident(c)
 char c;
 {

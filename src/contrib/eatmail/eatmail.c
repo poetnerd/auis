@@ -45,6 +45,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <ctype.h>
 #include <parseadd.h>
 #include <pwd.h>
+
+static int IsNewFrom();
 /* for completeness */
 
 #if !POSIX_ENV

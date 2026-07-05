@@ -56,6 +56,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mail.h>
 #include <dropoff.h>
 
+static int ConvertDropoffCode();
+
 extern char    *DayArray[], *MonArray[];        /* Just the names of days and
                                                  * months */
 extern char    *pop();

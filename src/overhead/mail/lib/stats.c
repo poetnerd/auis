@@ -51,6 +51,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <fdplumb.h>
 extern FILE *fopen();
 #include "errprntf.h"
+static int Format();
 
 #if !POSIX_ENV
 extern int errno;
@@ -102,7 +103,7 @@ static bool GetMyName()
 
     if (GetHostDomainName(buf, sizeof buf) < 0) {
 	if (ShowErrors)
-	    warning("Can't find my name: %d", errno);
+	    warning("Can't find my name: %d", (char *)(long)errno);
 	return FALSE;
     }
 
@@ -162,7 +163,7 @@ static bool ChooseLogHost()
     f = fopen(HostsFile, "r");
     if (f == NULL) {
 	if (ShowErrors)
-	    warning("Can't open hosts file (%d): \"%s\"", errno, HostsFile);
+	    warning("Can't open hosts file (%d): \"%s\"", (char *)(long)errno, HostsFile);
 	return FALSE;
     }
 
@@ -188,7 +189,7 @@ static bool ChooseLogHost()
     for (; host>=0; host--)
 	if (fgets(LogHost, sizeof(LogHost), f) == NULL) {
 	    if (ShowErrors)
-		warning("Not enough lines (%d) in \"%s\"", host, HostsFile);
+		warning("Not enough lines (%d) in \"%s\"", (char *)(long)host, HostsFile);
 	    return FALSE;
 	}
 
@@ -236,7 +237,7 @@ static int OpenSocket()
     /* Create socket */
     s = socket(AF_INET, SOCK_DGRAM, 0);
     if (s < 0) {
-	warning("Socket failed: %d", errno);
+	warning("Socket failed: %d", (char *)(long)errno);
 	return -1;
     }
 
@@ -367,7 +368,7 @@ int Logstat(module, call, format, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
 
     /* Get the time & format it */
     osi_GetTimes(&tp);
-    now = localtime(tp.Secs);
+    now = localtime((time_t *) &tp.Secs);
 
     /* Format system info */
     Format(ModuleName, module, LOGSTRLEN);
@@ -393,7 +394,7 @@ int Logstat(module, call, format, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
     sprintf(c, format, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9);
     if (sendto(StatFile, buffer, strlen(buffer)+1, 0,
 	       &LogAddress, sizeof LogAddress) < 0) {
-	warning("Sendto failed: %d", errno);
+	warning("Sendto failed: %d", (char *)(long)errno);
 	errno = save_errno;
 	return 1;
     }
