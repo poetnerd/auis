@@ -28,6 +28,7 @@ history behind each completed item.
   cel displays correctly
 - Xft phase 1: body text rendering via client-side Xft (anti-aliased)
 - Andy symbol fonts (`symba*.pcf`) built and installed in `build/X11fonts/`
+- `overhead/malloc/malloc.ci` `addarena` arena-size pointer-arithmetic bug fixed (`patches/contrib/malloc.ci.auis6.3.diff`, 2026-07-04) — source-correctness only, see Historical patches audit below for why it has no runtime effect here
 
 **LP64 bug classes identified and swept:**
 - Variant 1: Missing prototypes / pointer return truncation (23 sites)
@@ -115,6 +116,80 @@ targets, not confirmed either way):
   the active inset sweep.
 - `tlex_RecentPosition(...,-1 or -2,...)` (ness) — moot until the `ness`
   bison grammar extension blocker is resolved; the code doesn't run yet.
+
+---
+
+## Historical patches audit (`patches/`) — complete, 2026-07-04
+
+CMU's official 6.3.x point-release patches plus community/site contrib
+patches from the 1990s live in `patches/official/` and `patches/contrib/`
+(the same set is duplicated verbatim under `andrew-6.4/patches/`,
+`trunk/patches/`, and the top-level `AUIS/patches/` — they're identical,
+no need to check more than one copy). This was triggered by finding that
+CMU had already patched the exact figure-attribute-version bug hit while
+fixing `95Summer.ez` (see Completed, above) — worth checking here *before*
+deep-diving into a new bug, since CMU or a site admin may have already
+found and fixed it decades ago. Every file every patch touches was
+diffed against current source (not just the patch descriptions) to
+determine actual relevance.
+
+**Applied:**
+- `official/patch.633` — "make figure accept figures created with later
+  versions, including C++ 7.2+." Makes `figattr__Read` tolerate unknown
+  attribute names instead of returning `dataobject_BADFORMAT`. Applied
+  2026-07-04 as part of the `95Summer.ez` figure fix (see Completed).
+- `contrib/malloc.ci.auis6.3.diff` — `overhead/malloc/malloc.ci`
+  `addarena`: `A.arenaend - A.arenastart` is `struct freehdr *`
+  subtraction, which the C standard defines in units of
+  `sizeof(struct freehdr)`, not bytes — undercounts the arena-growth
+  heuristic by ~20-24x. Fixed by casting both to `char *` before
+  subtracting. **No observable runtime effect**: `ANDREW_MALLOC_ENV` is
+  `#undef`'d in `config/site.h` and there is no `malloc.o`/`libmalloc.a`
+  anywhere in `build/` — this codebase runs on system `malloc` via libc,
+  Andrew's custom allocator is dead code here. Fixed anyway for source
+  correctness (submitted originally by the current user, `wdc@mit.edu`,
+  in 1995) in case `ANDREW_MALLOC_ENV` is ever revisited. `malloc.ci` is
+  `#include`d into `malloc.c`/`pmalloc.c`, which currently fail to
+  compile for unrelated pre-existing reasons (`AbortFullMessage`
+  static/non-static prototype conflict) — out of scope, this directory
+  isn't part of the active build either way.
+
+**Investigated, found already fixed in our 6.3.1 baseline** (no action
+needed — but worth knowing these bug patterns were already closed before
+this project started, so don't waste time rediscovering them):
+- `official/patch.631`, `atk/figure/figospli.c` hunk — guards
+  `ctemp[last+1].t4 /= ctemp[last+1].t2` division (spline math for
+  polyline figures) with `if (last >= 0)` to avoid an uninitialized-value
+  divide on degenerate (too-few-point) curves. Already present at both
+  call sites (lines ~148, ~210).
+- `official/patch.631`, `atk/textobjects/unknown.c` (the exact file our
+  new `smpltext.c` hardening depends on) — all 3 hunks already applied:
+  `self->odata==NULL` typo (comparison instead of assignment, would have
+  left a dangling pointer after `text_Destroy`) is correctly `=`; `static
+  int tungetc` is correctly `static void`; `unknown__Read` already
+  `return`s `ret` at the end.
+- `official/patch.631`, `atk/support/hash.c` hunk — use-after-free fix
+  (`return egg->value` after `free(egg)`) already applied; value is
+  copied to a local before the free.
+- `official/patch.631`, `atk/text/tabs.c` hunk — `PrevTab >= 0` bounds
+  check already extended to `PrevTab >= 0 && PrevTab < self->number`.
+
+**Not applicable:**
+- `official/patch.631`, `atk/basics/common/im.c` hunk — `#ifdef
+  hpux`-only, doesn't affect Darwin.
+- `official/patch.632` — AMS `parseadd.c` fix, `official/patch.634` —
+  AMS/`eatmail` coredump fix. Both out of scope; AMS/Messages revival is
+  long-term (see Medium-term below), not part of the active inset sweep.
+- `contrib/symlink.patch` — makes a shared-lib install symlink relative
+  instead of absolute in `overhead/class/lib/Imakefile`. Confirmed dead
+  code path for us: it's inside `#else /* LIBDL_ENV */`, and Darwin's
+  config never defines `LIBDL_ENV` — we build a static `libclass.a`, not
+  the shared `libclass.so` this patch targets.
+- All SGI/NetBSD/Solaris/HP-UX/RS6000 platform ports (`SGI-port.6.3.3.*`,
+  `NetBSD*.README`/`.diffs`, `Solaris*.diffs`/`.README`,
+  `patch.631-hp-only`, `dvi2disp.patch`, `mit.patch`) — assembler flags,
+  `stty`/`gtty` variants, `mode_t` sizing for Irix, `sys_errlist` typing,
+  etc. for platforms unrelated to macOS/arm64.
 
 ---
 
