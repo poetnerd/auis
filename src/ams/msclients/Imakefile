@@ -4,5 +4,17 @@
 \* ********************************************************************** */
 #define IHaveSubdirs
 
-SUBDIRS	=	cui nns vui
+/* cui and vui are curses-style terminal mail clients built on the
+   pre-POSIX BSD sgtty tty API (TIOCGETP, struct sgttyb, etc.), removed
+   from modern kernels; deferred pending a termios port. messages (the
+   GUI ez client) is the primary destination, so these are low priority.
+   See revival/doc/porting-assessment.md.  #define MK_CUI / MK_VUI to build them. */
+#ifdef MK_CUI
+CUI = cui
+#endif
+#ifdef MK_VUI
+VUI = vui
+#endif
+
+SUBDIRS	=	$(CUI) nns $(VUI)
 

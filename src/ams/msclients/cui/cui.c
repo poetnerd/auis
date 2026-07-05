@@ -152,13 +152,11 @@ extern struct tm   *localtime ();
 extern	FILE * qopen ();
 
 extern char *convlongto64 (), *StripWhiteEnds (), *getenv (), *copy(), *GetLine();
-extern char *sys_errlist[],
-	   *ms_errlist[],
+extern char *ms_errlist[],
 	   *ms_errcauselist[],
 	   *ms_errvialist[],
 	   *rpc_errlist[];
-extern int  sys_nerr,
-	    ms_nerr,
+extern int  ms_nerr,
 	    ms_nerrcause,
 	    ms_nerrvia,
 	    rpc_nerr;
