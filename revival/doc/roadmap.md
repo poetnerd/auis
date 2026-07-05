@@ -1,6 +1,6 @@
 # AUIS Revival Roadmap
 
-Current as of 2026-07-04. See `porting-changelog.md` for the detailed
+Current as of 2026-07-05. See `porting-changelog.md` for the detailed
 history behind each completed item.
 
 ---
@@ -397,18 +397,73 @@ These insets appear in the messages UI and/or in rendered mail:
 - `value` / `valueview` (slider, button) — UI controls; test with `ia-archive/sep.90` or `jan.90`
 - `pushbutton` / `link` / `linkview` — hyplink navigation; test with `PAPERS/conf/1995/widgets.ez`
 
-**Stream 2 — AMS local mail store:**
-The user ran messages with a local mail store at MIT Athena (via forked fetchmail
-bypassing AFS). A local-store backend almost certainly exists in `ams/`.
-Look in `ams/libs/`, `ams/delivery/`, and `site.h` for `#ifdef` variants or
-alternate delivery paths. If found, this is the shortest path to a working messages.
+**Stream 2 — AMS local mail store: found, 2026-07-04.** The build already
+separates the message store/UI from the AMDS delivery daemon via independent
+Imake flags:
 
-**Stream 3 — atkams/ interface audit:**
-Understand what `messages` calls into `atkams/`, and what `atkams/` calls into `ams/`.
-If the boundary is clean, an IMAP adapter behind `atkams/` is viable as a
-fallback if no local-store backend exists.
+| Flag | Gates | Needed for local-store `messages`? |
+|---|---|---|
+| `AMS_ENV` | whether `ams/`/`atkams/` build at all (`Imakefile:37-39`), plus `overhead/mail` (`libmail.a`, `libcparser.a`) | **yes** — currently `#undef`'d in `config/site.h`, overriding `allsys.h`'s default of 1 |
+| `AMS_DELIVERY_ENV` | `ams/delivery/` (sendmail/vicemail/queuem/trymail) and `ams/utils/` (nntp/muserver/purge/reauth/undigest) — the actual AMDS transport | no — leave off |
+| `SNAP_ENV` | networked "remote message server" variant (`ams/ms`, `libcuis.a`) vs. the local `nosnap` path (`libcuin.a`) | no — leave off, local path is the default |
+| `WHITEPAGES_ENV` | `overhead/wpi`/`wputil`; auto-forced only by `AFS_ENV` or `AMS_DELIVERY_ENV` | no — stays off since neither of those is on |
 
-**Contrib objects:** TBD — user to specify which contribs are in scope.
+With only `AMS_ENV` on, `atkams/messages/lib`'s Imakefile builds `amsn.do`
+against `NLIBS` (`libcui.a`, `libcuin.a`, `libmssrv.a`, `libeli.a`,
+`librxp.a`) — the local, non-networked message store — and never touches
+delivery or white-pages code.
+
+The local-mailbox backend the user remembers is real and already in the
+source: `ams/libs/ms/newmail.c`'s `ProcessNewMail(..., PROCESSNEW_MBOX, ...)`
+imports from a plain mailbox file returned by `GetPersonalMailbox()` in
+`ams/libs/ms/findmbox.c` — a standard Unix mbox (`~/mailbox`, or the
+`mailboxdir` profile override), with no AFS/AMDS/white-pages involved. This
+is almost certainly the exact seam the user's fetchmail fork fed into at
+MIT Athena. `AFS_ENV`/`WHITEPAGES_ENV` references in `ams/libs/ms/mswp.c`,
+`init.c`, and `atkams/messages/lib/{ams,stubs}.c` are all `#ifdef`-optional
+(`mswp.c:980` even has an explicit `#ifndef WHITEPAGES_ENV` fallback path),
+confirming this is a first-class supported configuration, not a hack.
+
+**Next action:** ~~flip `#undef AMS_ENV` → `#define AMS_ENV 1` in
+`config/site.h`~~ — **done, 2026-07-05.** `AMS_ENV`/`CONTRIB_ENV` are on in
+`config/site.h`. All newly-exposed subtrees (`atkams/messages/lib`,
+`overhead/mail`, `overhead/eli`, `ams/libs/cui`, `ams/libs/ms`,
+`contrib/srctext`/`eatmail`/`time`) fixed and verified compiling/linking
+clean per-directory. User's first full top-level `make dependInstall`
+(no `-k`) surfaced exactly 2 more link-time errors (`nns`'s `getla()`
+needing `getloadavg()` instead of dead `/dev/kmem`+`nlist()`, and a
+missing `${RESOLVER_LIB}` on `nns`'s link line) — both fixed same-day,
+full details in `porting-changelog.md`'s 2026-07-05 entry. `ams/msclients/vui`/`cui` and `contrib/tm` — curses
+terminal clients on the removed BSD `sgtty` API — conditionalized out of
+the build (`MK_VUI`/`MK_CUI`/`MK_TM`) rather than fixed; not needed for
+the GUI `messages` path. Rationale in `porting-assessment.md` §7a.
+
+First runtime test of `messages` (2026-07-05) segfaulted: `EXC_BAD_ACCESS`
+in `_platform_strlen` via `mailconf.c`'s `CkAMSCellConfig` (`AndrewDir`/
+`LocalDir` called with no prototype in scope — same LP64 #1 pattern fixed
+at 23 sites on 2026-06-30, recurring because `overhead/mail` was never
+built/audited before `AMS_ENV` went on). Fixed `mailconf.c` plus a sweep
+of 5 more active files with the same bare-call pattern (`ams/libs/ms/init.c`,
+`hdlnew.c`; `atkams/messages/lib/stubs.c`; `overhead/mail/metamail/metamail/{metamail,mailto}.c`;
+`overhead/eli/lib/prims1.c`); all rebuilt clean. Full details in
+`porting-changelog.md`. Separately, `contrib/bdffont` turned out to be
+unbuildable (missing `bdfparse.act`, no generator, no fossil history) and
+was conditionalized out (`MK_BDFFONT`); see `porting-assessment.md` §7b.
+**Next up:** retest `messages` under `lldb` now that `mailconf.c` is fixed;
+re-run full `dependInstall` to confirm clean without `-k`.
+
+**Stream 3 — atkams/ interface audit: resolved by the Stream 2 survey.**
+`ams/Imakefile` and `atkams/messages/lib/Imakefile` show the boundary is
+exactly the Imake flags above — `messages` links against the local
+`libmssrv.a`/`libcuin.a` regardless of whether AMDS is present. No IMAP
+adapter is needed for the local-store path; that fallback remains available
+later if the mbox approach hits a wall.
+
+**Contrib objects:** `CONTRIB_ENV` on brings in `calc demos gestures wpedit
+time eatmail mit srctext` (see `contrib/Imakefile`); `tm` and `bdffont`
+deferred (§ above). Still TBD whether any of these besides `srctext`
+(already a proven inset, see Completed) matter for the messages path
+specifically.
 
 ### printf/fprintf %d/%ld audit
 2,597 printf-family hits with `long` values and `%d` format specifiers

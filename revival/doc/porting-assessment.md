@@ -136,6 +136,62 @@ Modern Linux puts X11 in `/usr/include/X11`, `/usr/lib/x86_64-linux-gnu`,
 etc. Fix the paths in `site.mcr` or update the defaults. The X11 API
 itself hasn't changed in the ways that matter — Xlib is remarkably stable.
 
+### 7a. Deferred: legacy sgtty-based terminal clients — tm, vui, cui (LOW priority, defer)
+
+`contrib/tm`, `ams/msclients/vui`, and `ams/msclients/cui` are curses-style
+terminal mail clients built on the pre-POSIX BSD `sgtty` tty API
+(`TIOCGETP`, `TIOCREMOTE`, `struct sgttyb`, `CBREAK`/`RAW`/`CRMOD` modes).
+That ioctl interface was removed from the kernel decades ago (macOS keeps
+the `#define`s in `<sys/ioctl_compat.h>` for source compatibility only —
+the ioctls themselves are gone), so even a clean compile wouldn't produce
+a client with working raw terminal input. Making these actually function
+means rewriting the tty layer to use `termios` (`tcgetattr`/`tcsetattr`,
+`cfmakeraw`), which is a real porting project in its own right, not a
+mechanical fix.
+
+`messages` (the GUI ez client, built on `atkams/`) is the primary
+destination for mail in this revival, so `tm`/`vui`/`cui` are low
+priority. They are conditionalized out of the build rather than patched
+to merely compile:
+
+- `contrib/Imakefile`: `TM` now requires `#define MK_TM` (was unconditional
+  except on SGI)
+- `ams/msclients/Imakefile`: `CUI`/`VUI` now require `#define MK_CUI` /
+  `MK_VUI` (was unconditional); `nns` (the other msclients subdir) is
+  unaffected and still builds
+
+Revisit as a dedicated termios-port task if a terminal-based mail client
+is ever wanted alongside `messages`.
+
+### 7b. Deferred: contrib/bdffont (LOW priority, defer)
+
+`contrib/bdffont`'s parser splits bison's output across two files: a
+generated `bdfparse.tab.c` plus a hand-maintained `bdfparse.act`
+containing the grammar's C action bodies (`#include`d separately at
+`bdffont.c`). `bdfparse.act` does not exist anywhere in the source tree —
+no fossil history, no Imakefile rule that generates it. `overhead/mkparser`
+is a working, already-fixed tool for a related scheme, but it emits one
+merged `prefix.c`/`prefix.h`, not this split `.tab.c`+`.act` convention, so
+it doesn't apply here. Reconstructing `bdfparse.act` means hand-writing the
+parser's semantic actions from `bdfparse.y`'s grammar with nothing to
+verify against — exploratory reverse-engineering, not a mechanical fix.
+
+(The same broken split-file convention also appears in `atk/ness/type`,
+`atk/ness/objects`, and `atk/syntax/parse`'s `testparse` test target, but
+none of those are currently reachable: `atk/ness` requires
+`MK_NESS`/`MK_AUTHORING`, which isn't defined, and `testparse` isn't part
+of `make install`. `bdffont` was the only one actually blocking the
+build, since `contrib/Imakefile` listed it unconditionally.)
+
+Conditionalized out of the build rather than patched to merely compile:
+
+- `contrib/Imakefile`: `BDFFONT` now requires `#define MK_BDFFONT` (was
+  unconditional)
+
+Revisit if `bdfparse.act` can be recovered from an original CMU
+distribution, or if someone is willing to hand-write it against the
+grammar.
+
 ### 7. Console/stats module (LOW priority, defer)
 
 `atk/console/stats/i386_Linux/` contains platform-specific code for
@@ -361,6 +417,14 @@ the right fix. If it needs 64-bit range (file offsets, text positions,
 accumulated sizes), keep `long` and cast at the call site instead.
 
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
+
+**Resolved 2026-07-04 for the local-store case — see `roadmap.md` Near-term →
+Messages application prerequisites, Stream 2/3.** The build already has a
+clean seam: `AMS_ENV` on with `AMS_DELIVERY_ENV`/`SNAP_ENV`/`WHITEPAGES_ENV`
+left off builds `messages` against a local, non-networked mbox-backed
+message store (`ams/libs/ms`), with none of the AFS/AMDS delivery machinery
+involved. An IMAP adapter remains a viable fallback (notes below still
+apply to that scenario) but is no longer the near-term plan.
 
 The `messages` application is the UI for mail and bulletin boards. It
 sits on top of AMS, which implements its own storage, delivery, and
