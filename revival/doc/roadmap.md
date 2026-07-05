@@ -534,6 +534,41 @@ Remove resolved known-issues entries as each fix lands.
 
 ## Medium-term
 
+### Prototype sweep (targeted ANSI C — Variant 1 prevention)
+
+Every newly activated subtree (AMS_ENV, CONTRIB_ENV, and any future addition)
+has reproduced LP64 Variant 1 (missing prototype → assumed `int` return →
+pointer truncated on arm64). A tree-wide pass adding prototypes at all
+unprototyped call sites would close this class permanently for all code,
+including subtrees not yet activated, before they bite us at runtime.
+
+Scope: add `#include` of the correct header, or a local `extern ReturnType
+function(args);` declaration, at every call site where a function is currently
+called without a prototype in scope. K&R parameter-declaration style in function
+*definitions* (`foo(x, y) int x; ...`) is a separate cosmetic issue — leave
+that for the full ANSI C pass below. Prototype-at-call-site is the safety-
+critical fix.
+
+The `modernize` tool in `revival/tools/` is a partial starting point, but has
+known parsing bugs. A simpler approach: compile with `-Werror=implicit-function-
+declaration` and work through the errors tree-by-tree.
+
+**Why now rather than long-term:** Variant 1 has cost debugging time on every
+subtree activation. The next activations (cui, any remaining contrib) will hit
+it again without this sweep.
+
+### Classpp: typed dispatch for all methods
+
+The classpp fix (2026-06-30) emits typed casts only for methods with ≥9
+arguments. Extending this to all methods would eliminate LP64 Variants 2, 3,
+and 5 *structurally* — no per-call-site sweep needed, and no `.c` implementation
+files need to change. This is the right architectural fix for the class dispatch
+bug family.
+
+Currently deferred because the per-inset sweep has been sufficient, but as AMS
+and contrib code is exercised more heavily, unswept Variant 3/5 sites will
+surface. Better to fix classpp once than sweep indefinitely.
+
 ### ~~Integration test: `Sherman.Alloc`~~ — proven
 All insets in `Sherman.Alloc` render correctly (fad, cel, arbiter, eq, table);
 zip unsupported as expected. Multi-inset compound documents confirmed working.
@@ -561,19 +596,16 @@ installing the PCF files into XQuartz's default font path
 
 ## Long-term / architectural
 
-### Classpp: typed dispatch for all methods
-The classpp fix (2026-06-30) emits typed casts only for methods with ≥9
-arguments. Extending this to all methods would eliminate the entire LP64
-variant-5 dispatch zero-extension class permanently, without requiring
-any changes to `.c` implementation files. This is the right structural
-fix; the current per-inset sweep is the interim approach.
-
-### ANSI C modernization
-A deliberate, file-by-file pass to add prototypes, convert K&R parameter
-declarations, and fix implicit-int patterns -- now that the system runs
-and application behavior provides a validation baseline. The `modernize`
-tool in `revival/tools/` is a starting point but has known parsing bugs
-that should be fixed before use at scale.
+### ANSI C modernization (full K&R conversion)
+The medium-term prototype sweep (above) closes the safety-critical LP64
+Variant 1 class. This is the follow-on cosmetic/correctness pass: convert
+K&R parameter declarations to ANSI style (`foo(int x, char *y)` instead of
+`foo(x, y) int x; char *y;`), fix remaining implicit-int patterns, and
+generally bring the codebase to C99. No LP64 impact beyond what the prototype
+sweep already addresses. The `modernize` tool in `revival/tools/` is a
+starting point but has known parsing bugs that should be fixed before use
+at scale. Requires the working runtime baseline (now available) for
+regression validation.
 
 ### Messages application
 
