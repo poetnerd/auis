@@ -31,6 +31,15 @@
 
 #ifndef PLUMBFDLEAKS
 #define PLUMBFDLEAKS
+
+#include <dirent.h>
+#include <stdio.h>
+extern DIR *dbg_opendir();
+extern FILE *dbg_fopen();
+extern FILE *dbg_popen();
+extern FILE *dbg_qopen();
+extern FILE *dbg_topen();
+
 #define open dbg_open
 #define fopen dbg_fopen
 #define close dbg_close
