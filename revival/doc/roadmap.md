@@ -5,6 +5,35 @@ history behind each completed item.
 
 ---
 
+## Current action plan
+
+### Objective: messages demo a.k.a.amsdemo
+
+- Prerequisite: cui
+- gendemo
+- Then find the bugs in the demos.
+
+### Objective: Reliable operation
+
+- Let's get all the function prototypes live with ANSI
+
+---
+
+## Little Annoyances to clean up
+
+### Keymap:
+
+- The arrow keys don't work yet
+- We don't have a "Meta" key active yet
+
+---
+
+## Questions
+
+- How do I get a right click with my magic pad?
+
+---
+
 ## Major milestones
 
 - **2026-07-05**: `messages` application running with local mail store —
@@ -255,6 +284,10 @@ application [PROVEN via ez, help]
     +-- org (orga)                    (outliner as standalone app)
     +-- chart (chartapp)
     +-- launchapp
+
+contrib
+    +-- writestamp [PROVEN]
+    +-- calc
 ```
 
 Note: `help` does not use `lset` — confirmed by source audit. `lset` is
@@ -284,18 +317,24 @@ Ordered by dependency depth; each step proves a layer the next relies on.
 | 13 | typescript | `bin/typescript -d` | terminal emulator; **crashes "Can't connect subchannel"** — likely macOS PTY compat issue, not LP64 | terminal window inset |
 | 14 | bush | `bin/bush -d` | shell application | interactive shell |
 | 15 | **figure** | `NEWSLETTERS/EZ/95Summer.ez` | **[PROVEN]** two stacked bugs fixed: parser desync (patch.633 + smpltext.c) and LP64 `$origin` scanf corruption (figure.c); renders correctly end to end | drawing/diagram insets in newsletter |
-| 16 | **Sherman.Alloc** | `PAPERS/atk/Sherman.Alloc` | **[PROVEN]** text+eq+fad+cel/arbiter all render; zip unsupported (expected) | multi-inset compound document |
+| 16 | **Sherman.Alloc** | `PAPERS/atk/Sherman.Alloc` | **[PROVEN]** text+eq+fad+cel/arbiter all render; zip unsupported (expected); calc inset from contrib not yet working | multi-inset compound document |
+| 17 | **Cattey.Writing** | `PAPERS/atk/Cattey.Writing` | **[PROVEN]** writestamp, fnote, raster, |
 
 **No good test document exists for:** `lookz`, `launchapp`, `prefed`
 — these need synthetic test files or targeted app launches.
-`srctext` is now [PROVEN]; `Cattey.Writing` contains srctext insets (source code blocks).
+`srctext` is now [PROVEN].
 
 **Known non-starters:** `ness` (bison extension), `zip` (unsupported),
-`clock`/`writestamp`/`timeoday` (contrib, lower priority).
+`clock`/`calc`/`timeoday` (contrib, lower priority).
 
 ---
 
 ## Heisenbugs (intermittent, not currently reproducible)
+
+### Display mess
+
+**Observed:** On rare occasions, text will draw into the menu area. 
+But I can't reproduce it reliably.
 
 ### ^V scroll hang on fresh window (spoon host)
 **Observed:** on host `spoon`, repeatedly: opening `help` or `ez` and
