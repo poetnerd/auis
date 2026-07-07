@@ -65,10 +65,10 @@ NOSNAPLIBS	=	${BASEDIR}/lib/libcui.a ${BASEDIR}/lib/libcuin.a \
 NormalObjectRule()
 
 #ifdef SNAP_ENV
-ProgramTarget(vuis, ${OBJS}, parameterized_snap_libs(libsnap), ${CURSESLIBS} ${MMDFLIBS} $(LEXLIB) ${BSDLIB})
+ProgramTarget(vuis, ${OBJS}, parameterized_snap_libs(libsnap), ${CURSESLIBS} ${MMDFLIBS} $(LEXLIB) ${BSDLIB} ${RESOLVER_LIB})
 #endif /* SNAP_ENV */
 
-ProgramTarget(vuin, ${OBJS}, ${NOSNAPLIBS}, ${CURSESLIBS} ${MMDFLIBS}  $(LEXLIB) ${BSDLIB})
+ProgramTarget(vuin, ${OBJS}, ${NOSNAPLIBS}, ${CURSESLIBS} ${MMDFLIBS}  $(LEXLIB) ${BSDLIB} ${RESOLVER_LIB})
 
 InstallMultiple(${PRODUCTS}, ${INSTPROGFLAGS}, ${DESTDIR}/bin)
 InstallLink(vuin, ${DESTDIR}/bin/vui)

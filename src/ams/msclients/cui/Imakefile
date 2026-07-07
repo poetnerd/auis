@@ -60,10 +60,10 @@ NOSNAPLIBS	= ${BASEDIR}/lib/libcui.a ${BASEDIR}/lib/libcuin.a \
 NormalObjectRule()
 
 #ifdef SNAP_ENV
-ProgramTarget(cuis, ${OBJS}, parameterized_snap_libs(libsnap), ${MMDFLIBS} $(LEXLIB) ${BSDLIB})
+ProgramTarget(cuis, ${OBJS}, parameterized_snap_libs(libsnap), ${MMDFLIBS} $(LEXLIB) ${BSDLIB} ${RESOLVER_LIB})
 #endif /* SNAP_ENV */
 
-ProgramTarget(cuin, ${OBJS}, ${NOSNAPLIBS}, ${MMDFLIBS} $(LEXLIB) ${BSDLIB})
+ProgramTarget(cuin, ${OBJS}, ${NOSNAPLIBS}, ${MMDFLIBS} $(LEXLIB) ${BSDLIB} ${RESOLVER_LIB})
 
 InstallMultiple(${PRODUCTS}, $(INSTPROGFLAGS), ${DESTDIR}/bin)
 InstallLink(cuin, $(DESTDIR)/bin/cui)
