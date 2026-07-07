@@ -136,32 +136,47 @@ Modern Linux puts X11 in `/usr/include/X11`, `/usr/lib/x86_64-linux-gnu`,
 etc. Fix the paths in `site.mcr` or update the defaults. The X11 API
 itself hasn't changed in the ways that matter — Xlib is remarkably stable.
 
-### 7a. Deferred: legacy sgtty-based terminal clients — tm, vui, cui (LOW priority, defer)
+### 7a. Deferred: legacy sgtty-based terminal clients — tm, vui (LOW priority, defer)
 
-`contrib/tm`, `ams/msclients/vui`, and `ams/msclients/cui` are curses-style
-terminal mail clients built on the pre-POSIX BSD `sgtty` tty API
-(`TIOCGETP`, `TIOCREMOTE`, `struct sgttyb`, `CBREAK`/`RAW`/`CRMOD` modes).
-That ioctl interface was removed from the kernel decades ago (macOS keeps
-the `#define`s in `<sys/ioctl_compat.h>` for source compatibility only —
-the ioctls themselves are gone), so even a clean compile wouldn't produce
-a client with working raw terminal input. Making these actually function
-means rewriting the tty layer to use `termios` (`tcgetattr`/`tcsetattr`,
-`cfmakeraw`), which is a real porting project in its own right, not a
-mechanical fix.
+`contrib/tm` and `ams/msclients/vui` are curses-style terminal mail clients
+built in part on the pre-POSIX BSD `sgtty` tty API (`TIOCGETP`, `TIOCREMOTE`,
+`struct sgttyb`, `CBREAK`/`RAW`/`CRMOD` modes). That ioctl interface was
+removed from the kernel decades ago (macOS keeps the `#define`s in
+`<sys/ioctl_compat.h>` for source compatibility only — the ioctls themselves
+are gone), so even a clean compile wouldn't produce a client with working raw
+terminal input. Making these actually function means rewriting the tty layer
+to use `termios` (`tcgetattr`/`tcsetattr`, `cfmakeraw`), which is a real
+porting project in its own right, not a mechanical fix. `vui` additionally
+calls curses `raw()`/termcap globals (`CM`, `SO`, ...) that modern ncurses
+no longer exports directly — a separate curses-port problem on top of the
+sgtty one.
 
 `messages` (the GUI ez client, built on `atkams/`) is the primary
-destination for mail in this revival, so `tm`/`vui`/`cui` are low
-priority. They are conditionalized out of the build rather than patched
-to merely compile:
+destination for mail in this revival, so `tm`/`vui` are low priority. They
+remain conditionalized out of the build rather than patched to merely
+compile:
 
-- `contrib/Imakefile`: `TM` now requires `#define MK_TM` (was unconditional
+- `contrib/Imakefile`: `TM` still requires `#define MK_TM` (was unconditional
   except on SGI)
-- `ams/msclients/Imakefile`: `CUI`/`VUI` now require `#define MK_CUI` /
-  `MK_VUI` (was unconditional); `nns` (the other msclients subdir) is
-  unaffected and still builds
+- `ams/msclients/Imakefile`: `VUI` still requires `#define MK_VUI` (was
+  unconditional)
 
-Revisit as a dedicated termios-port task if a terminal-based mail client
-is ever wanted alongside `messages`.
+Revisit as a dedicated termios/curses-port task if a terminal-based mail
+client is ever wanted alongside `messages`.
+
+**`ams/msclients/cui` turned out not to belong on this list.** It was
+originally grouped here on the assumption that it shared `vui`/`tm`'s sgtty
+dependency. In fact `cui` doesn't use curses at all (only `vui` does), and
+its one BSD-sgtty reference — a `#ifdef POSIX_ENV`/`#else` fallback in
+`GetBodyFromCUID()`, under the rarely-built `METAMAIL_ENV` — was already dead
+code on this platform: `POSIX_ENV` is unconditionally defined in
+`config/darwin/system.h`, so the `termios` branch was the one actually
+compiling. `cui` was still failing to build, but for an unrelated reason —
+its `Imakefile` never got the `${RESOLVER_LIB}` link fix that `nns` received
+on 2026-07-05 (§ above). Fixed 2026-07-07: `${RESOLVER_LIB}` added to
+`ams/msclients/cui/Imakefile`'s `ProgramTarget` lines; `cuin` now compiles,
+links, and installs cleanly. `MK_CUI` is enabled in `config/site.h`. Full
+detail in `porting-changelog.md`'s 2026-07-07 entry.
 
 ### 7b. Deferred: contrib/bdffont (LOW priority, defer)
 

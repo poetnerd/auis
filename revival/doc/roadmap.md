@@ -9,7 +9,7 @@ history behind each completed item.
 
 ### Objective: messages demo a.k.a.amsdemo
 
-- Prerequisite: cui
+- ~~Prerequisite: cui~~ — done 2026-07-07, was a missing RESOLVER_LIB link flag, not sgtty
 - gendemo
 - Then find the bugs in the demos.
 
@@ -31,6 +31,7 @@ history behind each completed item.
 ## Questions
 
 - How do I get a right click with my magic pad?
+- How do I get drag scroll working without having to click and drag the elevator?
 
 ---
 
@@ -483,10 +484,12 @@ clean per-directory. User's first full top-level `make dependInstall`
 (no `-k`) surfaced exactly 2 more link-time errors (`nns`'s `getla()`
 needing `getloadavg()` instead of dead `/dev/kmem`+`nlist()`, and a
 missing `${RESOLVER_LIB}` on `nns`'s link line) — both fixed same-day,
-full details in `porting-changelog.md`'s 2026-07-05 entry. `ams/msclients/vui`/`cui` and `contrib/tm` — curses
-terminal clients on the removed BSD `sgtty` API — conditionalized out of
-the build (`MK_VUI`/`MK_CUI`/`MK_TM`) rather than fixed; not needed for
-the GUI `messages` path. Rationale in `porting-assessment.md` §7a.
+full details in `porting-changelog.md`'s 2026-07-05 entry. `ams/msclients/vui`
+and `contrib/tm` — curses terminal clients on the removed BSD `sgtty` API —
+remain conditionalized out of the build (`MK_VUI`/`MK_TM`) rather than fixed;
+not needed for the GUI `messages` path. Rationale in `porting-assessment.md`
+§7a. `ams/msclients/cui` was originally grouped with them but didn't actually
+share that dependency — see the 2026-07-07 fix below.
 
 First runtime test of `messages` (2026-07-05) segfaulted: `EXC_BAD_ACCESS`
 in `_platform_strlen` via `mailconf.c`'s `CkAMSCellConfig` (`AndrewDir`/
@@ -531,19 +534,19 @@ deferred (§ above). Still TBD whether any of these besides `srctext`
 (already a proven inset, see Completed) matter for the messages path
 specifically.
 
-### cui + gendemo (next session, ~2026-07-09) — current focus
+### gendemo — current focus
 
-`gendemo` (in `build/etc/`) builds and links but requires `cui` (the curses
-AMS client, conditionalized out as `MK_CUI` during the AMS_ENV activation) to
-actually populate the `amsdemo` demo folder. The Mail Overview help topic
-refers users to `gendemo`; without a populated `amsdemo`, there is nothing to
-demonstrate in `messages`. Re-enable and fix `cui` first, then run `gendemo`
-to create the demo mail folder, then verify `messages` can browse and read it.
+**✓ (2026-07-07)** `cui` builds/links/installs — the blocker was a missing
+`${RESOLVER_LIB}` link flag on its Imakefile (same bug class as `nns`'s
+2026-07-05 fix), not the BSD `sgtty` API as originally assumed. `cui` doesn't
+use curses at all, and its one sgtty reference was already dead code
+(`POSIX_ENV` is unconditionally on for darwin). Full detail in
+`porting-changelog.md`'s 2026-07-07 entry.
 
-`cui` was deferred because it depends on the BSD `sgtty` API (removed from
-macOS). Options: stub/shim `sgtty`, switch to `termios`, or find a minimal
-path through `cui`'s init that `gendemo` actually exercises (it may not need
-full terminal interaction).
+Next: run `gendemo` (in `build/etc/`) to populate the `amsdemo` demo folder —
+the Mail Overview help topic refers users to it, and without a populated
+`amsdemo` there is nothing to demonstrate in `messages` — then verify
+`messages` can browse and read it.
 
 ### IMAP / AMS backend investigation (week of 2026-07-14)
 

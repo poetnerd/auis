@@ -261,3 +261,48 @@ Both errors were pre-existing bugs the day's other fixes exposed by getting far 
 Fixed end to end: `ms/libs/ms/headers.c` (`MS_HeadersSince` signature + one `%d`→`%ld` debug format), `ams.ch`/`amsn.ch`/`amss.ch`, `ams.c`/`amsn.c`/`amss.c`, `atkams/messages/lib/capaux.c` (`totalbytes`/`numbytes`/`status` → `long`), `foldaux.c` (`numbytes`/`bytesleft` → `long`), and — for forward-compatibility since `MS_HeadersSince`'s signature changed — the dormant SNAP-server side `ams/ms/ms.c` (`SNAP_ENV` currently off). All rebuilt clean (`make install`, zero errors, warnings only). `messages` retest on `spoon` pending.
 
 **Deferred, conditionalized out of the build: `contrib/bdffont`** — its parser splits bison's output across a generated `bdfparse.tab.c` and a hand-maintained `bdfparse.act` (grammar action bodies) that doesn't exist anywhere in the tree — no fossil history, no generating rule. `overhead/mkparser` is a working tool but for a different, merged-output scheme; doesn't apply. Reconstructing `bdfparse.act` means hand-writing parser actions from the grammar with nothing to verify against — not a mechanical fix. (Same broken convention also exists in `atk/ness/type`, `atk/ness/objects`, and `atk/syntax/parse`'s `testparse`, but none of those are currently reachable — `atk/ness` needs `MK_NESS`/`MK_AUTHORING`, undefined; `testparse` isn't part of `make install`.) Along the way, fixed `contrib/bdffont/Imakefile`'s bison invocation itself (`bison -d -r -n` — modern bison's `-r`/`--report` requires an argument and was swallowing the following `-n`, a separate flag error unrelated to which bison binary runs) to `bison -d -v`; this let the build reach the real blocker. Gated `bdffont` behind `MK_BDFFONT` in `contrib/Imakefile` (was unconditional). Full rationale in `porting-assessment.md` §7b.
+
+### 2026-07-07 — cui builds: sgtty was a red herring, real bug was a missing link flag
+
+User enabled `MK_CUI` in `config/site.h` and ran a full build; `cui.c`,
+`cuifns.c`, `unixmach.c`, and `morprntf.c` all compiled clean (only the usual
+K&R deprecation warnings) — the failure was at the final `cuin` link step,
+with the exact same undefined symbols as `nns`'s 2026-07-05 fix:
+`_res_9_dn_expand`, `_res_9_dn_skipname`, `_res_9_init`, `_res_9_mkquery`,
+`_res_9_send`, all referenced from `libmail.a` (`valhost.o`, `rsearch.o`),
+pulled in transitively through `libcui.a`/`libcuin.a`.
+
+Before applying that fix, checked whether `cui`'s BSD-`sgtty` reference
+(the reason it was deferred/conditionalized in the first place, see
+`porting-assessment.md` §7a) was actually the blocker. It wasn't: the only
+sgtty code anywhere in `ams/msclients/cui/*.c` is a `#ifdef POSIX_ENV`/
+`#else` fallback in `cui.c`'s `GetBodyFromCUID()` (under the rarely-built
+`METAMAIL_ENV`), and `POSIX_ENV` is unconditionally defined by
+`config/darwin/system.h:79-80` — so the `termios` branch is the one that's
+always compiled on this platform; the sgtty `#else` was already dead code.
+`cui` also doesn't use curses at all (unlike `vui`), so the "curses-style
+sgtty client" description in `porting-assessment.md` §7a was never accurate
+for `cui` specifically — it was written generically for the `tm`/`vui`/`cui`
+group without checking each one.
+
+Real fix: `ams/msclients/cui/Imakefile`'s `ProgramTarget` lines for `cuin`/
+`cuis` never got `${RESOLVER_LIB}` appended, unlike `nns` — presumably missed
+on 2026-07-05 because `cui` was still gated off (`MK_CUI` undefined) and
+untested at the time. Added `${RESOLVER_LIB}` to both lines, regenerated the
+Makefile (`make Makefile`), relinked (`make cuin`), installed (`make
+install`). Zero errors; `build/bin/cuin` is a real arm64 Mach-O, `build/bin/cui`
+symlinked to it as before.
+
+Applied the identical one-line fix to `ams/msclients/vui/Imakefile`'s
+`vuis`/`vuin` lines for consistency (same gap, same cause). `vui` does not
+yet build far enough to benefit from it, though — it fails at compile time in
+`andpnlm.c` on undeclared `CM`/`SO` termcap globals, a real and separate
+curses-port issue, deferred per `porting-assessment.md` §7a. `contrib/tm`
+untouched.
+
+Net effect: `cui` is no longer deferred. It builds, links, and installs.
+Cleared the way for the "cui + gendemo" roadmap item — `gendemo` needed a
+working `cui` to populate the `amsdemo` demo folder, not a `termios` port.
+
+Updated `porting-assessment.md` §7a to drop `cui` from the sgtty-deferred
+list and record the real story.
