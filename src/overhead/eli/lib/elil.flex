@@ -183,7 +183,13 @@ static DoString()
 
 int reset_lexer()
 {
-  yy_init = 1;
+  /* Modern flex inverted the meaning of the internal init flag from what
+     this file was written against (nonzero used to mean "please
+     reinitialize"; it now means "already initialized, skip setup").
+     Poking that flag directly left the scan buffer uncreated on the
+     first-ever call, crashing on a NULL yy_c_buf_p. Use the real API. */
+  yyrestart(yyin);
+  return 0;
 }
 
 /*
