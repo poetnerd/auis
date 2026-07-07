@@ -471,6 +471,99 @@ pixels or percent, style units), `long → int` in the implementation is
 the right fix. If it needs 64-bit range (file offsets, text positions,
 accumulated sizes), keep `long` and cast at the call site instead.
 
+### 13. Modern flex generator/init-flag polarity mismatch (LOW effort, closed 2026-07-07)
+
+#### Root cause
+
+Several subsystems embed a flex-generated lexer alongside hand-written C
+that calls back into flex's generated internals directly, rather than
+through flex's public API. Two of these (`overhead/mail/lib/parsel.flex`,
+`overhead/eli/lib/elil.flex`) define a small `reset_lexer`-style function,
+called before every parse to force the scanner to discard state and start
+fresh on new input:
+
+```c
+int pareset_lexer()
+{
+  yy_init = 1;
+}
+```
+
+`yy_init` is not part of flex's public interface — it's a private
+implementation detail of the generated scanner, and its *meaning* changed
+between the flex version this code was written against (circa 1994) and
+modern flex (2.6.x, what ships on macOS/Homebrew today):
+
+- **Old flex:** `yy_init` nonzero means "please (re)initialize on next call."
+- **Modern flex:** `yy_init` nonzero means "already initialized, buffer
+  exists, skip setup."
+
+Neither `parsel.c` nor `elil.c` has fossil history — both are regenerated
+at build time from their `.flex` source via `FlexOrLexFileRule`/
+`LexWithReplacement`, so this build's use of a modern flex silently changed
+the behavior of code that hadn't been touched in 30 years. Forcing
+`yy_init = 1` before the *first-ever* lex call in a process now makes the
+generated `yylex()` skip creating its scan buffer entirely, leaving the
+static buffer-position pointer at NULL. The first character read or write
+of the very first parse in the process dereferences that NULL pointer.
+
+#### Confirmed instances (2026-07-07)
+
+| File | Caller | Symptom |
+|---|---|---|
+| `overhead/mail/lib/parsel.flex` (`pareset_lexer`) | `parseadd.c ParseAddressList`, called from `BuildCaption`/`MS_ReconstructDirectory` | `cui`'s `recon` command (used by `gendemo`) segfaulted on the very first address-caption build |
+| `overhead/eli/lib/elil.flex` (`reset_lexer`) | `eliy.gra`, ELI/FLAMES filter-language parser | not yet observed as a runtime crash (no currently-built code path reliably exercises it — see below), but structurally identical and pre-emptively fixed |
+
+Fix: replace the direct flag poke with flex's actual public, version-stable
+API, `yyrestart(yyin)` (renamed by each file's build-time sed step to
+`mail_parseyyrestart(mail_parseyyin)` / `eliyyrestart(eliyyin)`).
+`yyrestart` has meant "discard current buffer, start fresh" since flex's
+earliest releases — using it is strictly *more* portable across flex
+versions than poking `yy_init`, not less.
+
+#### Swept, not affected
+
+- `doc/mkbrowse/browserpp.flex` already calls `yyrestart(yyin)` correctly.
+- `overhead/class/pp/classpp.flex` has no reset-lexer pattern at all — the
+  class preprocessor lexes exactly once per invocation, so the bug's
+  precondition (reusing one process's scanner across multiple parses)
+  never arises.
+- A full-tree search (`andrew-6.4/`, not just `src/`) for `.flex`/`.lex`/`.ll`
+  files, cross-checked against every Imakefile referencing flex/lex build
+  rules, confirms these four are the *only* flex-based lexers in the tree.
+  This bug class is fully swept, not just fixed where noticed.
+
+#### Legacy-platform interaction: none
+
+`FlexOrLexFileRule` (`config/andrew.rls`) selects between the `.flex` source
+(when `FLEX_ENV` is defined — unconditional on Darwin, `config/darwin/
+system.h:75-76`) and a parallel, separately-fossil-tracked `.lex` source
+(for sites without flex, i.e. genuine AT&T lex). The `.lex` siblings'
+equivalent functions are no-ops:
+
+```c
+int pareset_lexer() { return 0;}   /* parsel.lex */
+int reset_lexer() {}                /* elil.lex */
+```
+
+Plain lex's generated scanner has no persistent multi-buffer state to reset
+in the first place — the whole `yy_init` trick, and the bug in it, is
+specific to flex's buffering model. The two code paths are chosen at
+Imake-configuration time and cannot interact, so this fix has no bearing on
+non-flex legacy builds either way.
+
+#### Verification
+
+Static: confirmed correct post-rename output in generated `parsel.c`/
+`elil.c`; both compile clean. Dynamic: `cui`'s `recon` verified crash-free
+across repeated runs after the `parsel.flex` fix. The `elil.flex` fix could
+not be dynamically exercised — `bglisp` (ELI's own test REPL, and the most
+direct way to drive its lexer) hangs uninterruptibly at process startup in
+the sandbox used for this session, independent of any input (reproduces
+with `/dev/null` on stdin) — a separate, pre-existing issue, not caused by
+or diagnostic of this fix. Confidence rests on the byte-for-byte identical
+mechanism and generator to the dynamically-proven `parsel.flex` fix.
+
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 
 **Resolved 2026-07-04 for the local-store case — see `roadmap.md` Near-term →

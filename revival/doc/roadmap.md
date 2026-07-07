@@ -1,6 +1,6 @@
 # AUIS Revival Roadmap
 
-Current as of 2026-07-05. See `porting-changelog.md` for the detailed
+Current as of 2026-07-07. See `porting-changelog.md` for the detailed
 history behind each completed item.
 
 ---
@@ -10,8 +10,13 @@ history behind each completed item.
 ### Objective: messages demo a.k.a.amsdemo
 
 - ~~Prerequisite: cui~~ — done 2026-07-07, was a missing RESOLVER_LIB link flag, not sgtty
-- gendemo
-- Then find the bugs in the demos.
+- ~~gendemo~~ — done 2026-07-07: cwd bug (needs to run from `src/ams/demo/`)
+  plus a `cui recon` segfault (modern-flex init-flag polarity bug, new bug
+  class, see `porting-assessment.md` §13); both fixed, demo folder populates
+  and reconstructs cleanly
+- Then find the bugs in the demos. **In progress:** a second, unrelated,
+  intermittent crash already turned up in the date-header parser
+  (`prsdate.c`/`parser_Parse`, `memmove` overrun) — not yet root-caused.
 
 ### Objective: Reliable operation
 
@@ -534,7 +539,7 @@ deferred (§ above). Still TBD whether any of these besides `srctext`
 (already a proven inset, see Completed) matter for the messages path
 specifically.
 
-### gendemo — current focus
+### gendemo — done; demo folder populates and reconstructs cleanly
 
 **✓ (2026-07-07)** `cui` builds/links/installs — the blocker was a missing
 `${RESOLVER_LIB}` link flag on its Imakefile (same bug class as `nns`'s
@@ -543,10 +548,35 @@ use curses at all, and its one sgtty reference was already dead code
 (`POSIX_ENV` is unconditionally on for darwin). Full detail in
 `porting-changelog.md`'s 2026-07-07 entry.
 
-Next: run `gendemo` (in `build/etc/`) to populate the `amsdemo` demo folder —
-the Mail Overview help topic refers users to it, and without a populated
-`amsdemo` there is nothing to demonstrate in `messages` — then verify
-`messages` can browse and read it.
+**✓ (2026-07-07)** `gendemo` itself has two independent bugs, both fixed:
+
+1. It reads its 23 demo posts (`d1`/`d1.heads` ... `d23`/`d23.heads`)
+   relative to the current directory, not `$ANDREWDIR` — those files live
+   only in `src/ams/demo/` and are never installed. Must `cd src/ams/demo`
+   before invoking it (`ANDREWDIR` is only used to find `cui`/`arpadate`).
+2. With cwd fixed, `cui`'s final `recon` step segfaulted on the very first
+   address caption it tried to build. Root cause: a **new bug class** — flex
+   regenerates `overhead/mail/lib/parsel.c` at build time (no fossil
+   history), and modern flex inverted the meaning of an internal init flag
+   that a hand-written `pareset_lexer()` was poking directly instead of
+   using flex's real public API. Fixed (`yyrestart(yyin)`); swept the whole
+   tree and found/fixed one sibling instance (`overhead/eli/lib/elil.flex`,
+   the ELI/FLAMES filter-language lexer — pre-emptive, no confirmed crash
+   yet). Full writeup in `porting-assessment.md` §13, session detail in
+   `porting-changelog.md`'s 2026-07-07 entry. Verified: `recon` completes
+   ("Reconstructed folder ~/.MESSAGES/amsdemo with twenty-three entries")
+   repeatably, no crash.
+
+**Next up — two threads:**
+
+1. **New, unrelated intermittent crash found while re-verifying `recon`:**
+   `parsedate` → `parser_Parse` → `memmove` heap overrun building the date
+   field (`BuildDateField`/`MS_ReconstructDirectory`). Bison-generated
+   (`ams/libs/ms/prsdate.c` from `prsdate.gra`, also untracked in fossil) —
+   different generator, different subsystem, data-dependent rather than a
+   fixed polarity bug. Not yet root-caused; needs its own lldb session.
+2. Once `recon` is fully stable, verify `messages` can actually browse and
+   read the populated `amsdemo` folder end-to-end (captions, dates, bodies).
 
 ### IMAP / AMS backend investigation (week of 2026-07-14)
 
