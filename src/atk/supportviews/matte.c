@@ -403,7 +403,7 @@ struct matte *self;
 struct menulist *menulist;
 {
     menulist_ClearChain(self->menus);
-    menulist_ChainBeforeML(self->menus, menulist, (long) menulist);
+    menulist_ChainBeforeML(self->menus, menulist, menulist);
     super_PostMenus(self, self->menus);
 }
 void matte__WantNewSize(self,requestor)

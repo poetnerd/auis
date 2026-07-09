@@ -1937,7 +1937,7 @@ void bdffontv__PostMenus(self, menulist)
 {
     menulist_ClearChain(self->menus);
     if (menulist) {
-        menulist_ChainBeforeML(self->menus, menulist, (long) menulist);
+        menulist_ChainBeforeML(self->menus, menulist, menulist);
     }
     super_PostMenus(self, self->menus);
 } /* bdffontv__PostMenus */

@@ -121,12 +121,12 @@ struct classheader *ClassID;
     menulist_AddToML(EmbeddedMenus, "Figure~5,Remove Toolset~31", proc, NULL, ML_toolset);
 
     proc = proctable_DefineProc("figview-set-expert-mode", SetExpertModeProc, &figview_classinfo, NULL, "Turns on expert mode for self and toolset.");
-    menulist_AddToML(EmbeddedMenus, "Figure~5,Expert Mode~40", proc, 1, ML_nonexpertmode);
+    menulist_AddToML(EmbeddedMenus, "Figure~5,Expert Mode~40", proc, (void *)1, ML_nonexpertmode);
 
     proc = proctable_DefineProc("figview-zoom", ChangeZoomProc, &figview_classinfo, NULL, "Change scale of view.");
-    menulist_AddToML(EmbeddedMenus, "Figure~5,Zoom In~10", proc, 1, 0);
+    menulist_AddToML(EmbeddedMenus, "Figure~5,Zoom In~10", proc, (void *)1, 0);
     keymap_BindToKey(EmbeddedKeymap, "\033Z", proc, 1); /* esc-Z */
-    menulist_AddToML(EmbeddedMenus, "Figure~5,Zoom Out~11", proc, (long)-1, 0);
+    menulist_AddToML(EmbeddedMenus, "Figure~5,Zoom Out~11", proc, (void *)-1, 0);
     keymap_BindToKey(EmbeddedKeymap, "\033z", proc, (long)-1); /* esc-z */
     menulist_AddToML(EmbeddedMenus, "Figure~5,Normal Size~12", proc, 0, 0);
 
@@ -160,7 +160,7 @@ struct classheader *ClassID;
     keymap_BindToKey(EmbeddedKeymap, "\033P", proc, 0); /* esc-P */
 
     proc = proctable_DefineProc("figview-show-print-area", ShowPrintAreaProc, &figview_classinfo, NULL, "Show page boundaries.");
-    menulist_AddToML(EmbeddedMenus, "File,Show Print Area~26", proc, 1, ML_noshowprintarea);
+    menulist_AddToML(EmbeddedMenus, "File,Show Print Area~26", proc, (void *)1, ML_noshowprintarea);
     menulist_AddToML(EmbeddedMenus, "File,Hide Print Area~26", proc, 0, ML_showprintarea);
 
     proc = proctable_DefineProc("figview-focus-down", FocusDownProc, &figview_classinfo, NULL, "move focus down to subgroup.");

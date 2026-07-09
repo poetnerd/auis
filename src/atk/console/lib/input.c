@@ -605,7 +605,7 @@ TogVar(self, rock)
             if (IntVarOn(whichvar)) {
                 menulist_DeleteFromML(self->userMenulist, IntVarOff(whichvar));
                 menuProc = proctable_DefineProc("console-toggle-var", TogVar, consoleClass_GetInfoHack(), NULL, "dummy.");
-                menulist_AddToML(self->userMenulist, IntVarOn(whichvar), menuProc, whichvar, 0);
+                menulist_AddToML(self->userMenulist, IntVarOn(whichvar), menuProc, (void *)(long)whichvar, 0);
             }
         }
         else {
@@ -613,7 +613,7 @@ TogVar(self, rock)
             if (IntrnlVars[whichvar].turnon) {
                 menulist_DeleteFromML(self->userMenulist, IntVarOn(whichvar));
                 menuProc = proctable_DefineProc("console-toggle-var", TogVar, consoleClass_GetInfoHack(), NULL, "dummy.");
-                menulist_AddToML(self->userMenulist, IntVarOff(whichvar), menuProc, whichvar, 0);
+                menulist_AddToML(self->userMenulist, IntVarOff(whichvar), menuProc, (void *)(long)whichvar, 0);
             }
         }
     }
@@ -1210,7 +1210,7 @@ struct classinfo *ClassInfo;
         if (IntrnlVars[i].InUse && IntrnlVars[i].turnon) {
             sprintf(ErrTxt, "%s", IntrnlVars[i].turnon);
             menuProc = proctable_DefineProc("console-toggle-var", TogVar, ClassInfo, NULL, "dummy.");
-            menulist_AddToML(tempMenulist, ErrTxt, menuProc, IntVarCount[i], 0);
+            menulist_AddToML(tempMenulist, ErrTxt, menuProc, (void *)(long)IntVarCount[i], 0);
         }
     }
     return(tempMenulist);

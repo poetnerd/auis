@@ -144,7 +144,7 @@ long length; /* Length of text to erase. */
     if(length>0)
 	self->erasureEvent = im_SetInteractionEvent(frameview_GetIM(self->messageView),
 			       (procedure) EraseDisplayedMessage,
-			       (long) self,
+			       self,
 						    event_SECtoTU(messageTimeout));
     else self->erasureEvent=NULL;
 }

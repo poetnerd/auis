@@ -39,6 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <proctbl.ih>
 #include <view.ih>
 #include <clockv.eh>
+#include <util.h>
 
 /* Defined constants and macros */
 #define MENUTITLE "Clock %s,%s"

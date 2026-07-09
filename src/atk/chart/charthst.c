@@ -235,7 +235,7 @@ charthst__DrawChart( self )
     top = (ItemY(shadow) < BaseLine) ? ItemY(shadow) : BaseLine;
     height = abs(BaseLine - ItemY(shadow));
     charthst_FillRectSize( self, ItemLeft(shadow) = left, ItemTop(shadow) = top,
-	ItemWidth(shadow) = width+fudge, ItemHeight(shadow) = height, graphic_BLACK );
+	ItemWidth(shadow) = width+fudge, ItemHeight(shadow) = height, (struct graphic *)graphic_BLACK );
     ItemTop(shadow) -= 5;
     ItemHeight(shadow) += 10;
     left += width + 1 + fudge;

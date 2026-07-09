@@ -433,8 +433,8 @@ struct messages *self;
 	} else {
 	    sprintf(MenuString, "File Into (%d)~%d,%s", i/biggermax, 40+i/biggermax, ams_GetClassListEntry(i));
 	}
-	if(i<smallmax)  menulist_AddToML(self->fileintomenulist, MenuString, directlyclassifyproc,  i, MENUMASK_MSGSHOWING | MENUMASK_FILEINTOMENU);
-	else menulist_AddToML(self->expandedmenuslist, MenuString, directlyclassifyproc,  i, MENUMASK_MSGSHOWING | MENUMASK_FILEINTOMENU);
+	if(i<smallmax)  menulist_AddToML(self->fileintomenulist, MenuString, directlyclassifyproc,  (void *)(long)i, MENUMASK_MSGSHOWING | MENUMASK_FILEINTOMENU);
+	else menulist_AddToML(self->expandedmenuslist, MenuString, directlyclassifyproc,  (void *)(long)i, MENUMASK_MSGSHOWING | MENUMASK_FILEINTOMENU);
     }
 }
 

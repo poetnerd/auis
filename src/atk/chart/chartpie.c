@@ -285,7 +285,7 @@ Show_Pie_Chart( self, medium )
       if ( medium == Screen )
 	{
 	chartpie_MoveTo( self, DrawingItemLabelX(i), DrawingItemLabelY(i) );
-	chartpie_DrawString( self, chart_ItemAttribute( Data, item, chart_ItemName(0) ),
+	chartpie_DrawString( self, (char *)chart_ItemAttribute( Data, item, chart_ItemName(0) ),
 	    view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBOTTOM );
 	chartpie_MoveTo( self, DrawingItemLabelX(i), DrawingItemLabelY(i) + height );
 	chartpie_DrawString( self, percent_string,

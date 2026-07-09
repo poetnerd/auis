@@ -114,7 +114,7 @@ long key;
 	    break;
 	default:
 	    message_DisplayString(self, MESSAGE, "A Help window should appear shortly.");
-	    im_AddZombieHandler(pid, helpDeath, (long)self);
+	    im_AddZombieHandler(pid, helpDeath, self);
 	    break;
     }
     return;

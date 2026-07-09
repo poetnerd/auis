@@ -197,7 +197,7 @@ short method;
 	    message_DisplayString(tv,1,"Fork failed.");
 	    return;
 	default:
-	    im_AddZombieHandler(pid, (procedure) commandFinished,(long)fd);
+	    im_AddZombieHandler(pid, (procedure) commandFinished,fd);
 	    message_DisplayString(tv,0,"Filtering...");
     }
 }

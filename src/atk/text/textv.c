@@ -1261,9 +1261,9 @@ calls in this function are being RETURNED state vector information in info.sv, b
 
 	if (menulist_SetMask(self->menus, mask)) {
 	    if (readonly || !(alwaysDisplayStyleMenus || (mask & textview_SelectionMenus)))
-		menulist_UnchainML(self->menus, textview_StyleMenusKey);
+		menulist_UnchainML(self->menus, (void *)textview_StyleMenusKey);
 	    else
-		menulist_ChainBeforeML(self->menus, self->styleMenus, textview_StyleMenusKey);
+		menulist_ChainBeforeML(self->menus, self->styleMenus, (void *)textview_StyleMenusKey);
 	    textview_PostMenus(self, self->menus);
 	}
     }

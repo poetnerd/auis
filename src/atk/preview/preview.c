@@ -359,7 +359,7 @@ static updatemenu(self)
 struct preview *self;
 {
 	if(self->menupage >= 0) {
-		menulist_AddToML(self->menulist, self->menubuf, self->SetPageProc, self->menupage, 0);
+		menulist_AddToML(self->menulist, self->menubuf, self->SetPageProc, (void *)(long)self->menupage, 0);
 		if(self->hasInputFocus == TRUE)preview_PostMenus(self, self->menulist);
 		self->menupage = -1;
 	}

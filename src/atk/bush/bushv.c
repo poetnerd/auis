@@ -1868,7 +1868,7 @@ PushToEntry( self )
 	readWriteAttr.value.integer = FALSE; /* Read Write */
 	menulist_SetMask(Menulist, bushv_RWEntryMenus);
 	if(CkpInterval != 0)
-	  im_EnqueueEvent(Checkpoint, (long) self, event_SECtoTU(CkpInterval));
+	  im_EnqueueEvent(Checkpoint, self, event_SECtoTU(CkpInterval));
       }
       dataobject_SetAttributes(EntryObject, &readWriteAttr);
       lpair_SetNth(LP, 1,
@@ -2634,7 +2634,7 @@ Checkpoint( dummyData )
       bushv_RetractCursor(self,Cursor);
       EntryObjectLastCKP = dataobject_GetModified(EntryObject);
     }
-    im_EnqueueEvent(Checkpoint,(long)self,event_SECtoTU(CkpInterval));
+    im_EnqueueEvent(Checkpoint,self,event_SECtoTU(CkpInterval));
   }
 }
 

@@ -1145,7 +1145,7 @@ ParseFontFullName( self, fullname, familyName, buffSize, size, type )
   register long *size, *type;
 {
   if(fullname && *fullname)
-      fontdesc_ExplodeFontName(fullname, familyName, buffSize, (long)type, (long)size);
+      fontdesc_ExplodeFontName(fullname, familyName, buffSize, type, size);
 }
 
 static void

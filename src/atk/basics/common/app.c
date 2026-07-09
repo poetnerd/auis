@@ -223,19 +223,19 @@ struct application *self;
 
     if((sitename = environ_GetConfiguration("SiteConfigName")) != NULL){
 	sprintf(buffer, "%s/lib/%s.atkinit", andrewDir,sitename);
-	sitegloinit = init_Load(init, buffer, (procedure) self->errorProc, (long) self->errorRock,self->forceload) >= 0;
+	sitegloinit = init_Load(init, buffer, (procedure) self->errorProc, self->errorRock,self->forceload) >= 0;
 	if(name != NULL){
 	    sprintf(buffer, "%s/lib/%s.%sinit", andrewDir,sitename, name);
 	    siteinit = init_Load(init, buffer, (procedure) self->errorProc,
-				 (long) self->errorRock, self->forceload) >= 0;
+				 self->errorRock, self->forceload) >= 0;
 	}
     }
 
     /* try for .NAMEinit and quit if succeed */
     if (home != NULL  &&  name != NULL)  {
 	sprintf(buffer, "%s/.%sinit", home, name);
-	if ((init_Load(init, buffer, (procedure) self->errorProc, 
-		       (long) self->errorRock, self->forceload)) >= 0) 
+	if ((init_Load(init, buffer, (procedure) self->errorProc,
+		       self->errorRock, self->forceload)) >= 0)
 	    return;
     }
 
@@ -249,7 +249,7 @@ struct application *self;
 	    nextStr = index(thisStr, ':');
 	    if (nextStr != NULL) *nextStr++ = '\0';
 	    sprintf(buffer, "%s/global.%sinit", thisStr, name);
-	    if (init_Load(init, buffer, (procedure) self->errorProc, (long) self->errorRock, self->forceload) >= 0) {
+	    if (init_Load(init, buffer, (procedure) self->errorProc, self->errorRock, self->forceload) >= 0) {
 		HadGlobalNameInit = TRUE;
 		if(localLib = (char*) malloc(strlen(thisStr) + 1))
 		    strcpy(localLib, thisStr);
@@ -264,19 +264,19 @@ struct application *self;
     /* try for andrew/lib/global.NAMEinit and continue even if succeed */
     if (! HadGlobalNameInit && (name != NULL)) {
 	sprintf(buffer, "%s/lib/global.%sinit", andrewDir, name);
-	HadGlobalNameInit = (init_Load(init, buffer,	(procedure) self->errorProc,(long) self->errorRock, self->forceload)) >= 0;
+	HadGlobalNameInit = (init_Load(init, buffer,	(procedure) self->errorProc,self->errorRock, self->forceload)) >= 0;
     }
 
     /* try for ~/.atkinit or ~/.be2init  either alone or extending
 	global.NAMEinit quit if succeed */
     if (home != NULL) {
 	sprintf(buffer, "%s/.atkinit", home);
-	if ((init_Load(init, buffer, (procedure) self->errorProc, 
-		       (long) self->errorRock, self->forceload)) >= 0) 
+	if ((init_Load(init, buffer, (procedure) self->errorProc,
+		       self->errorRock, self->forceload)) >= 0)
 	    return;
 	sprintf(buffer, "%s/.be2init", home);
-	if ((init_Load(init, buffer, (procedure) self->errorProc, 
-		       (long) self->errorRock, self->forceload)) >= 0 ) 
+	if ((init_Load(init, buffer, (procedure) self->errorProc,
+		       self->errorRock, self->forceload)) >= 0 )
 	    return;
     }
 
@@ -284,12 +284,12 @@ struct application *self;
     if (! HadGlobalNameInit) {
 	if (localLib) {
 	    sprintf(buffer, "%s/global.atkinit", localLib);
-	    if ((init_Load(init, buffer, (procedure) self->errorProc, (long) self->errorRock,self->forceload)) >= 0)
+	    if ((init_Load(init, buffer, (procedure) self->errorProc, self->errorRock,self->forceload)) >= 0)
 		return;
 	}
 	else {
 	    sprintf(buffer, "%s/lib/global.atkinit", andrewDir);
-	    if ((init_Load(init, buffer, (procedure) self->errorProc, (long) self->errorRock,self->forceload)) >= 0)
+	    if ((init_Load(init, buffer, (procedure) self->errorProc, self->errorRock,self->forceload)) >= 0)
 		return;
 	}
     }

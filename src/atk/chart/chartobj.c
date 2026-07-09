@@ -793,7 +793,7 @@ Draw_Horizontal_Labels( self, left, top, width, height )
       fudge = (excess) ? ((i % excess) ? 0 : 1) : 0;
       x += x_increment + fudge;
       chartobj_DrawString( self,
-	chart_ItemAttribute( Chart, chart_item, chart_ItemName(0) ), Balanced );
+	(char *)chart_ItemAttribute( Chart, chart_item, chart_ItemName(0) ), Balanced );
       chart_item = chart_NextItem( Chart, chart_item );
       i++;
       }

@@ -1262,7 +1262,7 @@ long type;		/* help_ON 			if Help On... */
 	}
 	helpName[code++] = '\0';
     } else {			/* prompt for topic */
-	code = message_AskForStringCompleted(self, 0, msg_ask_prompt, 0, helpName, HNSIZE, NULL, HelpCompletionProc, HelpHelpProc, (long)(void *)self, 0);
+	code = message_AskForStringCompleted(self, 0, msg_ask_prompt, 0, helpName, HNSIZE, NULL, HelpCompletionProc, HelpHelpProc, self, 0);
 	if ((code < 0) || (helpName[0] == '\0')) return;
     }
 

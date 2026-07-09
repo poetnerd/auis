@@ -320,7 +320,7 @@ short TryConversion( tree, type, data )
       gotgooddata = TRUE;
     else
       if (namespace_Boundp( converters, type, (long *) &toconverters ) &&
-	  ((fromtype = namespace_Enumerate(tree->data, Convertp, (long) toconverters)) >= 0))
+	  ((fromtype = namespace_Enumerate(tree->data, Convertp, toconverters)) >= 0))
 	{
 	  converter =
 	    (procedure)namespace_GetValue( toconverters,

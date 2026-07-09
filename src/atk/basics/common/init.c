@@ -356,7 +356,7 @@ static void BindFunction(init, args, forceLoad, type, commandName)
         struct menulist *menulist;
 
         menulist = GetMenulist(init, class, inheritFlag);
-        menulist_AddToML(menulist, binding, proc, (long) parameterString, 0);
+        menulist_AddToML(menulist, binding, proc, parameterString, 0);
     }
 }
 
@@ -778,7 +778,7 @@ struct menulist *init__ModifyMenulist(self, menulist)
             }
             freeItem->next = self->usedMenus;
             self->usedMenus = freeItem;
-            menulist_ChainAfterML(freeItem->menulist, topMenulist, (long) topMenulist);
+            menulist_ChainAfterML(freeItem->menulist, topMenulist, topMenulist);
 	    topMenulist = freeItem->menulist;
 	}
     }

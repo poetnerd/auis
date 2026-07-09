@@ -335,7 +335,7 @@ struct t822view *bv;
     view_PostResource((struct view *) tv,AL_top_label,A_string,"On");
     view_PostResource((struct view *) tv,AL_bottom_label,A_string,"Off");
     view_PostResource((struct view *) tv,AL_min_value,A_long,0);
-    view_PostResource((struct view *) tv,AL_max_value,A_long,100);
+    view_PostResource((struct view *) tv,AL_max_value,A_long,(void *)100);
     view_PostResource((struct view *) tv,AL_label,A_string, "Alter");
     view_PostResource((struct view *) tv,AL_label2,A_string, "Adjust");
     text_ClearCompletely(t);

@@ -318,7 +318,7 @@ struct menulist *ml;
 	    menulist_DeleteFromML(self->ml, MenuBuf);
 	} else {
 	    menulist_AddToML(self->ml, MenuBuf,
-			     switchobjproc, (long) sw, 0);
+			     switchobjproc, sw, 0);
 	}
     }
     if (ml) menulist_ChainBeforeML(self->ml, ml, ml);

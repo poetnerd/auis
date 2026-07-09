@@ -271,7 +271,7 @@ Control_Choice( self, suite, item, type, action, x, y, clicks )
   long x, y, clicks;
 {
   if(item && action == view_LeftDown) {
-      message_DisplayString(self, 0, suite_ItemAttribute(suite, item, suite_ItemCaption(0)));
+      message_DisplayString(self, 0, (char *)suite_ItemAttribute(suite, item, suite_ItemCaption(0)));
   }
   return(NULL);
 }

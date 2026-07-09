@@ -730,7 +730,7 @@ struct menulist *menulist;
     if(self->IsAsking ){
 	if((menulist != NULL) && self->hasDialogMessage && menulist->object == (struct basicobject *) self->dialogView){
 	    menulist_ClearChain(self->mymenus);
-	    menulist_ChainBeforeML(self->mymenus, menulist, (long) menulist);
+	    menulist_ChainBeforeML(self->mymenus, menulist, menulist);
 	    view_PostMenus(self->header.view.parent,self->mymenus);
 	}
 	else {
@@ -740,8 +740,8 @@ struct menulist *menulist;
     else if ((menulist == NULL) || (menulist->object != (struct basicobject *) self->messageView)) {
 	menulist_ClearChain(self->defaultmenulist);
 	menulist_ClearChain(self->menulist);
-	menulist_ChainBeforeML(self->defaultmenulist, menulist, (long) menulist);
-	if(self->commandEnable) menulist_ChainBeforeML(self->defaultmenulist, self->menulist, (long)self->menulist);
+	menulist_ChainBeforeML(self->defaultmenulist, menulist, menulist);
+	if(self->commandEnable) menulist_ChainBeforeML(self->defaultmenulist, self->menulist, self->menulist);
 	view_PostMenus(self->header.view.parent, self->defaultmenulist);
     }
     else
@@ -1282,7 +1282,7 @@ struct frame *self;
 	    }
 	    sprintf(Priority, "~%d", i);
 	    strcat(BigBuf, Priority);
-	    menulist_AddToML(self->mymenus, BigBuf, returnconsidered, i,0);
+	    menulist_AddToML(self->mymenus, BigBuf, returnconsidered, (void *)(long)i,0);
 	}
 	menulist_AddToML(self->mymenus, "Quit", 0, 0,0);
 	if(self->dv) {
@@ -1649,7 +1649,7 @@ struct view *parent;
 	im_SetDeleteWindowCallback(oldim, NULL, NULL);
     }
     if(frame_GetIM(self) && im_GetDeleteWindowCallback(frame_GetIM(self)) == NULL) {
-	im_SetDeleteWindowCallback(frame_GetIM(self), delete_window_request, (long)self);
+	im_SetDeleteWindowCallback(frame_GetIM(self), delete_window_request, self);
     }
 }
 

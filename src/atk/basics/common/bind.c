@@ -63,7 +63,7 @@ struct classinfo *type;
 	if(km && bl->keyVector)
 	    keymap_BindToKey(km, bl->keyVector, pe, bl->keyRock);
 	if(ml && bl->menuEntry)
-	    menulist_AddToML(ml, bl->menuEntry, pe, bl->menuRock, bl->menuMask);
+	    menulist_AddToML(ml, bl->menuEntry, pe, (void *)bl->menuRock, bl->menuMask);
 
 	bl++;
     }

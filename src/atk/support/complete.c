@@ -386,7 +386,7 @@ int completion__GetFilename(classID, view, prompt, startPath, buffer, bufsiz, di
 
     fileRock.view = view;
     fileRock.keystate = keystate_New();
-    keystate_SetOverride(fileRock.keystate, FileHack, (long) &fileRock);
+    keystate_SetOverride(fileRock.keystate, FileHack, &fileRock);
 
     if (startPath == NULL)
         startPath = "";
@@ -408,7 +408,7 @@ int completion__GetFilename(classID, view, prompt, startPath, buffer, bufsiz, di
 
     if ((code = message_AskForStringCompleted(view, 40, prompt,
          initialString, buffer, bufsiz, fileRock.keystate, (procedure) FileComplete,
-         (procedure) FileHelp, (long) directoryP, mustMatch ? message_MustMatch : 0)) != -1)
+         (procedure) FileHelp, (void *)(long) directoryP, mustMatch ? message_MustMatch : 0)) != -1)
         filetype_CanonicalizeFilename(buffer, buffer, bufsiz);
     keystate_Destroy(fileRock.keystate);
     return code;

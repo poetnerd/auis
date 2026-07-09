@@ -78,7 +78,7 @@ long curtime;
 struct event *pintv_GetReportEvent(rock)
 long rock;
 {
-    return im_EnqueueEvent(ReportErrors, rock, 0);
+    return im_EnqueueEvent(ReportErrors, (void *)rock, 0);
 }
 
 
@@ -142,7 +142,7 @@ long curtime;
 struct event *pintv_GetKeepEvent(rock)
 long rock;
 {
-    return im_EnqueueEvent(KeepOldCopy, rock, 0);
+    return im_EnqueueEvent(KeepOldCopy, (void *)rock, 0);
 }
 
 static boolean FindTextBuffer(b, data)

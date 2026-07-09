@@ -66,7 +66,7 @@ methods:
     DoProc(struct proctable_Entry *pe, long rock, struct basicobject *object) returns enum keystate_DoProcValues;
     /* Zap a chain of keystates. */
     FreeChain();	/* Calls destroy on each keystate object */
-    SetOverride(procedure function, long functionData);
+    SetOverride(procedure function, void *functionData);
     GetOverride(procedure *function, long *functionData);
 classprocedures:
     Create(struct basicobject *object, struct keymap *keymap) returns struct keystate *;

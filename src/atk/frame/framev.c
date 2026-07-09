@@ -243,7 +243,7 @@ void frameview__PostMenus(self, menulist)
 {
     if (menulist != self->menulist) {
         menulist_ClearChain(self->menulist);
-        menulist_ChainAfterML(self->menulist, menulist, (long) menulist);
+        menulist_ChainAfterML(self->menulist, menulist, menulist);
     }
     super_PostMenus(self, self->menulist);
 }
@@ -330,7 +330,7 @@ static void TransientMessage(self, message)
     pos = text_GetLength(Text(self));
     mark_SetPos(self->transientMark, pos);
     text_AlwaysInsertCharacters(Text(self), pos, message, len = strlen(message));
-    keystate_SetOverride(self->keystate, KeyEraseMessage, (long) self);
+    keystate_SetOverride(self->keystate, KeyEraseMessage, self);
      frameview_WantUpdate(self, self);
     mark_SetLength(self->transientMark, len);
     self->event = im_EnqueueEvent((procedure) EraseMessage, (char *) self, event_SECtoTU(4));

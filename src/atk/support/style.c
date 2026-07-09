@@ -1329,7 +1329,7 @@ FILE *fp;
     }
 
     if (self->AdditionalAttributes) {
-	(void) namespace_Enumerate(self->AdditionalAttributes, style_writeAdditionalAttribute, (long) fp);
+	(void) namespace_Enumerate(self->AdditionalAttributes, style_writeAdditionalAttribute, fp);
     }
 }
 

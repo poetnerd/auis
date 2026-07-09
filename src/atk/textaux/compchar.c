@@ -240,14 +240,14 @@ long *prock;
     struct textview *tv=rock->tv;
     unsigned char *i=(unsigned char *)index(rock->list,key);
     if(!i) {
-	keystate_SetOverride(tv->keystate,rock->oldoverride, rock->oldrock);
+	keystate_SetOverride(tv->keystate,rock->oldoverride, (void *)rock->oldrock);
 	free(rock);
 	message_DisplayString(tv,0,"No such character.");
 	*prock=0;
 	*ppe=nop;
 	return keymap_Proc;
     }
-    keystate_SetOverride(tv->keystate,rock->oldoverride, rock->oldrock);
+    keystate_SetOverride(tv->keystate,rock->oldoverride, (void *)rock->oldrock);
     free(rock);
     *prock=rock->codes[i-(unsigned char *)rock->list];
     *ppe=insertchar;
@@ -275,7 +275,7 @@ char *ch;
 	keystate_SetOverride(tv->keystate,NULL,0);
 	return;
     }
-    keystate_SetOverride(tv->keystate,(procedure)doafter ,(long)rock);
+    keystate_SetOverride(tv->keystate,(procedure)doafter ,rock);
 }
 /*
   compchar_leftaccentafter:
@@ -489,7 +489,7 @@ char *ptr;
 					      NULL, /* no special keymap */
 					      NULL,/* no completion */
 					      helpProc, /* will give help */
-					      (long)(void *)&myrock,
+					      &myrock,
 					      message_NoInitialString);
     if(result<0) {
 	message_DisplayString(tv,0,"Character composition cancelled.");
@@ -586,7 +586,7 @@ long *prock;
     long handle=handlekey(rock,key);
     message_DisplayString(rock->tv,0,"");
     if(handle>0) {
-	keystate_SetOverride(ks,rock->oldoverride,rock->oldrock);
+	keystate_SetOverride(ks,rock->oldoverride,(void *)rock->oldrock);
 	SelfInsertCmd(rock->tv,handle,rock->c->style);
 	free(rock);
 	*ppe=nop;
@@ -602,7 +602,7 @@ long *prock;
 	code=(enum keymap_Types) (*rock->oldoverride)(rock->oldrock,key,ppe,prock);
     else if(!ks->curMap) return keymap_Empty;
     else code=keymap_Lookup(ks->curMap,key,ppe,prock);
-    keystate_SetOverride(ks,rock->oldoverride,rock->oldrock);
+    keystate_SetOverride(ks,rock->oldoverride,(void *)rock->oldrock);
     free(rock);
     return code;
 }
@@ -637,7 +637,7 @@ char *ch;
 	message_DisplayString(tv,0,"");
 	return;
     }
-    keystate_SetOverride(tv->keystate,(procedure)docomposing ,(long)rock);
+    keystate_SetOverride(tv->keystate,(procedure)docomposing ,rock);
     message_DisplayString(tv,0,"Initial character: ");
 }
 

@@ -2293,8 +2293,8 @@ ProcessInputQueue()
 		self = im_DoKey(a->im, a->v.key);
 	    break;
 	case im_MenuEvent:
-	    self = im_HandleMenu(a->im, a->v.proc.procTableEntry, 
-				     a->v.proc.object, a->v.proc.rock);
+	    self = im_HandleMenu(a->im, a->v.proc.procTableEntry,
+				     a->v.proc.object, (void *)a->v.proc.rock);
 	    self=NULL;
 	    break;
 	case im_ProcEvent:
@@ -3026,7 +3026,7 @@ im__DoMenu(self, itemname)
 	if (getMenuEntry(self->postedml ? self->postedml : self->menus, cbuf, ibuf, &pe, &obj, &rock)) {
 	    boolean olddontRecord=dontRecord;
 	    dontRecord=TRUE;
-	    im_HandleMenu(self, pe, obj, rock);
+	    im_HandleMenu(self, pe, obj, (void *)rock);
 	    dontRecord=olddontRecord;
 	}
 }

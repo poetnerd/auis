@@ -392,7 +392,7 @@ struct menulist **normalMenus;
 	pl = proctable_Lookup("textview-plainer");
 	keymap_BindToKey(newKeymap, "\030\020", pl, (long) "old");
 	if (normalMenus != NULL && *normalMenus != NULL) {
-	    menulist_AddToML(*normalMenus, "Plainer~40", pl, (long) "old", textview_NotReadOnlyMenus);
+	    menulist_AddToML(*normalMenus, "Plainer~40", pl, "old", textview_NotReadOnlyMenus);
 	}
 	pl = proctable_Lookup("textview-plainest");
 	if (normalMenus != NULL && *normalMenus != NULL) {

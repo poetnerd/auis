@@ -26,6 +26,9 @@
 * $
 */
 
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
+
 DOBJS = app.do atom.do atomlist.do bind.do cursor.do dataobj.do describe.do \
 	environ.do event.do filetype.do fontdesc.do init.do keymap.do \
 	keyrec.do keystate.do menulist.do message.do msghndlr.do \

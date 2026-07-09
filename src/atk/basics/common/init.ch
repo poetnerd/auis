@@ -42,7 +42,7 @@ class init  {
         ModifyMenulist(struct menulist *ml) returns struct menulist *;
         ModifyKeystate(struct keystate *ks) returns struct keystate *;
         Duplicate() returns struct init *;
-        Load(char *filename, procedure errorProc, long errorRock, boolean executeImmediately) returns int;
+        Load(char *filename, procedure errorProc, void *errorRock, boolean executeImmediately) returns int;
         AddKeyBinding(char *class, boolean inherit, struct keymap *keymap);
         DeleteKeyBinding(char *class, boolean inherit, struct keymap *keymap);
         AddMenuBinding(char *class, boolean inherit, struct menulist *menulist);

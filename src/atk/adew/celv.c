@@ -793,9 +793,9 @@ void celview__PostMenus(self, menulist)
 struct celview *self;
 struct menulist *menulist;
 {
-    menulist_UnchainML(self->menus,ChildMenus);
+    menulist_UnchainML(self->menus,(void *)ChildMenus);
     if(menulist != NULL && menulist != self->menus)
-	menulist_ChainAfterML(self->menus,menulist,ChildMenus);
+	menulist_ChainAfterML(self->menus,menulist,(void *)ChildMenus);
     super_PostMenus(self, self->menus);
 }
 void celview__PostKeyState(self,keystate)
@@ -1209,7 +1209,7 @@ printf("In Postparametes %d\n",(ls->script == NULL)? -1:text_GetLength(ls->scrip
 		printf("Calling STRL w/ %s\n",cp);
 #endif /* DEBUG */
 		if((StringToResourceList(&rl,cp)) == TRUE){
-		    view_PostResource(self->truechild,rl.name,rl.type,rl.data);
+		    view_PostResource(self->truechild,rl.name,rl.type,(void *)rl.data);
 #ifdef SHOULDNOTDEF
 fprintf(stdout,"Posting something \n"); fflush(stdout);
 		    celview_PostResource(self,rl.name,rl.type,rl.data); 
@@ -1428,9 +1428,9 @@ void celview__SetMenulist(self,ml)
 struct celview *self;
 struct menulist *ml;
 {
-    menulist_UnchainML(self->menus,ClientMenus);
+    menulist_UnchainML(self->menus,(void *)ClientMenus);
     if(ml != NULL){
-	menulist_ChainBeforeML(self->menus,ml,ClientMenus);
+	menulist_ChainBeforeML(self->menus,ml,(void *)ClientMenus);
 	menulist_SetView(ml,self);
     }
 }

@@ -169,7 +169,7 @@ struct classinfo *infotype;
     proc = proctable_DefineProc("wraplook", procname, infotype, NULL, NULL);
 
     for (i = 0, styles = self->styles; i < self->nstyles; i++, styles++)
-	menulist_AddToML(self->styleMenu, (*styles)->menuName, proc, i, 0);
+	menulist_AddToML(self->styleMenu, (*styles)->menuName, proc, (void *)(long)i, 0);
 
     return self->styleMenu;
 }

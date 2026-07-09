@@ -930,9 +930,9 @@ struct menulist	*ml;			/* list of menus to post */
 	    printf("layoutview_PostMenus %x %s\n", ml, viewname((struct view *)ml->object));
     }
 
-    menulist_UnchainML(self->menulist, CHILD_MENULIST_KEY);
+    menulist_UnchainML(self->menulist, (void *)CHILD_MENULIST_KEY);
     if (ml != NULL)
-	menulist_ChainAfterML(self->menulist, ml, CHILD_MENULIST_KEY);
+	menulist_ChainAfterML(self->menulist, ml, (void *)CHILD_MENULIST_KEY);
 
     super_PostMenus(self, self->menulist);
 }

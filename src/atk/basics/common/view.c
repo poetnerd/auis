@@ -661,7 +661,7 @@ void view__PostResource( self, path, type, data )
   if (self->parent != NULL)
     {
       atomlist_JoinToBeginning( path, self->name );
-      view_PostResource( self->parent, path, type, data );
+      view_PostResource( self->parent, path, type, (void *)data );
       atomlist_Cut( path, pathMark );
     }
 }

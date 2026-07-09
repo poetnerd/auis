@@ -238,7 +238,7 @@ struct proctable_Entry *proc;
     }
     *c = '\0';
     if(retstr && *retstr)
-	menulist_AddToML(typescriptMenus, bf, proc, (long)retstr, 0);
+	menulist_AddToML(typescriptMenus, bf, proc, retstr, 0);
     else free(bf);
 }
     

@@ -1484,8 +1484,8 @@ char *fakeprogname, *realprogname;
 	sprintf(buffer, "%s/lib/%s.atkinit", andrewDir,sitename);
 	sprintf(buffer1, "%s/lib/%s.%sinit", andrewDir,sitename, fakeprogname);
 	if(access(buffer1, R_OK)>=0) {
-	    sitegloinit = init_Load(init, buffer, (procedure) HandleInitProblem, (long) NULL,FALSE) >= 0;
-	    siteinit = init_Load(init, buffer1, (procedure) HandleInitProblem, (long) NULL, FALSE) >= 0;
+	    sitegloinit = init_Load(init, buffer, (procedure) HandleInitProblem, NULL,FALSE) >= 0;
+	    siteinit = init_Load(init, buffer1, (procedure) HandleInitProblem, NULL, FALSE) >= 0;
 	}
     }
     
@@ -1494,10 +1494,10 @@ char *fakeprogname, *realprogname;
 	sprintf(buffer1, "%s/.%sinit", home, fakeprogname);
 	if(access(buffer1, R_OK)>=0) {
 	    if(sitename && !sitegloinit) {
-		sitegloinit = init_Load(init, buffer, (procedure) HandleInitProblem, (long) NULL,FALSE) >= 0;
+		sitegloinit = init_Load(init, buffer, (procedure) HandleInitProblem, NULL,FALSE) >= 0;
 	    }
 
-	    if ((init_Load(init, buffer1, (procedure) HandleInitProblem, (long) NULL, FALSE) >= 0)) 
+	    if ((init_Load(init, buffer1, (procedure) HandleInitProblem, NULL, FALSE) >= 0))
 		goto done;
 	}
     }
@@ -1507,10 +1507,10 @@ char *fakeprogname, *realprogname;
     if(access(buffer1, R_OK)>=0) {
 
 	if(sitename && !sitegloinit) {
-	    sitegloinit = init_Load(init, buffer, (procedure) HandleInitProblem, (long) NULL,FALSE) >= 0;
+	    sitegloinit = init_Load(init, buffer, (procedure) HandleInitProblem, NULL,FALSE) >= 0;
 	}
 
-	HadGlobalNameInit = init_Load(init, buffer1, (procedure) HandleInitProblem, (long) NULL, FALSE) >= 0;
+	HadGlobalNameInit = init_Load(init, buffer1, (procedure) HandleInitProblem, NULL, FALSE) >= 0;
     }
 
 	
@@ -1519,10 +1519,10 @@ char *fakeprogname, *realprogname;
     if(HadGlobalNameInit) {
 	if (home != NULL) {
 	    sprintf(buffer, "%s/.atkinit", home);
-	    if(init_Load(init, buffer, (procedure) HandleInitProblem, (long) NULL, FALSE) >= 0) 
+	    if(init_Load(init, buffer, (procedure) HandleInitProblem, NULL, FALSE) >= 0)
 		goto done;
 	    sprintf(buffer, "%s/.be2init", home);
-	    if (init_Load(init, buffer, (procedure) HandleInitProblem, (long) NULL, FALSE) >= 0 ) 
+	    if (init_Load(init, buffer, (procedure) HandleInitProblem, NULL, FALSE) >= 0 )
 		goto done;
 	}
     } else {

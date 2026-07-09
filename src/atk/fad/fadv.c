@@ -669,31 +669,31 @@ struct proctable_Entry *menuProc;
     if(self && findpic(self))
 	readonly = findpic(self)->readonly;
     if(!readonly) {
-	menulist_AddToML(ml,"File,Read Fad~50",menuProc,(long) 'R',0);
-	menulist_AddToML(ml,"Icon~5,Next icon~10",menuProc,(long) 'f',0);
-	menulist_AddToML(ml,"Icon~5,Previous icon~11",menuProc,(long) 'u',0); 
-	menulist_AddToML(ml,"Icon~5,Pick new icons~21",menuProc,(long) 'I',0);
-	menulist_AddToML(ml,"Mode~2,Line~1",menuProc,(long) 'N',0);
-	menulist_AddToML(ml,"Mode~2,Icon~2",menuProc,(long) 'E',0);
-	menulist_AddToML(ml,"Mode~2,Label~3",menuProc,(long) 'L',0);
+	menulist_AddToML(ml,"File,Read Fad~50",menuProc,(void *)'R',0);
+	menulist_AddToML(ml,"Icon~5,Next icon~10",menuProc,(void *)'f',0);
+	menulist_AddToML(ml,"Icon~5,Previous icon~11",menuProc,(void *)'u',0);
+	menulist_AddToML(ml,"Icon~5,Pick new icons~21",menuProc,(void *)'I',0);
+	menulist_AddToML(ml,"Mode~2,Line~1",menuProc,(void *)'N',0);
+	menulist_AddToML(ml,"Mode~2,Icon~2",menuProc,(void *)'E',0);
+	menulist_AddToML(ml,"Mode~2,Label~3",menuProc,(void *)'L',0);
 #ifdef BOXMODEON
-	menulist_AddToML(ml,"Mode~2,Box~4",menuProc,(long) 'b',0);
+	menulist_AddToML(ml,"Mode~2,Box~4",menuProc,(void *)'b',0);
 #endif /* BOXMODEON */
 #ifdef ANIMATEBUTTONMODE
-	menulist_AddToML(ml,"Mode~2,Action Button~5",menuProc,(long) 'B',0);
+	menulist_AddToML(ml,"Mode~2,Action Button~5",menuProc,(void *)'B',0);
 #endif /* ANIMATEBUTTONMODE */
-	menulist_AddToML(ml,"Misc~7,Delete last item~10",menuProc,(long) 'd',0);
-	menulist_AddToML(ml,"Misc~7,Delete current frame~11",menuProc,(long) 'D',0);
-	menulist_AddToML(ml,"Misc~7,Set Label Font~30",menuProc,(long) 'F',0);
-	menulist_AddToML(ml,"Misc~7,Set # animation frames~31",menuProc,(long) '#',0);
-	menulist_AddToML(ml,"Misc~7,Set frame delay~32",menuProc,(long) 't',0);
-	menulist_AddToML(ml,"Fad~1,Repeat frame~30",menuProc,(long) 'r',0);
+	menulist_AddToML(ml,"Misc~7,Delete last item~10",menuProc,(void *)'d',0);
+	menulist_AddToML(ml,"Misc~7,Delete current frame~11",menuProc,(void *)'D',0);
+	menulist_AddToML(ml,"Misc~7,Set Label Font~30",menuProc,(void *)'F',0);
+	menulist_AddToML(ml,"Misc~7,Set # animation frames~31",menuProc,(void *)'#',0);
+	menulist_AddToML(ml,"Misc~7,Set frame delay~32",menuProc,(void *)'t',0);
+	menulist_AddToML(ml,"Fad~1,Repeat frame~30",menuProc,(void *)'r',0);
     }
-    menulist_AddToML(ml,"Fad~1,Pick frame~22",menuProc,(long) 'p',0);
-    menulist_AddToML(ml,"Fad~1,Next frame~20",menuProc,(long) 'n',0);
-    menulist_AddToML(ml,"Fad~1,Previous frame~21",menuProc,(long) 'l',0);
-    menulist_AddToML(ml,"Fad~1,Animate~5",menuProc,(long) 'a',0);
-    menulist_AddToML(ml,"Fad~1,Animate portion~6",menuProc,(long) 'A',0);
+    menulist_AddToML(ml,"Fad~1,Pick frame~22",menuProc,(void *)'p',0);
+    menulist_AddToML(ml,"Fad~1,Next frame~20",menuProc,(void *)'n',0);
+    menulist_AddToML(ml,"Fad~1,Previous frame~21",menuProc,(void *)'l',0);
+    menulist_AddToML(ml,"Fad~1,Animate~5",menuProc,(void *)'a',0);
+    menulist_AddToML(ml,"Fad~1,Animate portion~6",menuProc,(void *)'A',0);
     /* 	menulist_AddToML(ml,"Fad,Copy last frame",menuProc,(long) 'c'); */
 }
 

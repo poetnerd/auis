@@ -1602,7 +1602,7 @@ struct classhdr *ClassID;
     menulist_AddToML(Menus, "Raster~30,Resize Inset~77", proc, NULL, menuInsetThere);
 
     proc = proctable_DefineProc("rasterv-imprint-inset", ImprintInsetProc, &rasterview_classinfo, NULL, "Imprint the overlaid inset.");
-    menulist_AddToML(Menus, "Raster~30,Paste Down Inset~75", proc, 99, menuInsetThere);
+    menulist_AddToML(Menus, "Raster~30,Paste Down Inset~75", proc, (void *)99, menuInsetThere);
 
     proc = proctable_DefineProc("rasterv-copy-subraster", CopyCommand,
 				 &rasterview_classinfo, NULL,
@@ -1632,7 +1632,7 @@ struct classhdr *ClassID;
 				 &rasterview_classinfo, NULL,
 				 "Interchange black and white within selection");
     keymap_BindToKey(Keymap, "\033n", proc, (long)-1);	/* ESC - n */
-    menulist_AddToML(Menus, "Raster Ops~20,Negative~21", proc, (long)-1, menuNegative);
+    menulist_AddToML(Menus, "Raster Ops~20,Negative~21", proc, (void *)-1, menuNegative);
 
     proc = proctable_DefineProc("rasterv-white", ModifyCommand,
 				 &rasterview_classinfo, NULL,
@@ -1644,25 +1644,25 @@ struct classhdr *ClassID;
 				 &rasterview_classinfo, NULL,
 				 "Set black within selection");
     keymap_BindToKey(Keymap, "\033B", proc, 1);	/* ESC - B */
-    menulist_AddToML(Menus, "Raster Ops~20,Black~23", proc, 1, menuOps);
+    menulist_AddToML(Menus, "Raster Ops~20,Black~23", proc, (void *)1, menuOps);
 
     proc = proctable_DefineProc("rasterv-gray", ModifyCommand,
 				 &rasterview_classinfo, NULL,
 				 "Set gray within selection");
     keymap_BindToKey(Keymap, "\033G", proc, 2);	/* ESC - G */
-    menulist_AddToML(Menus, "Raster Ops~20,Gray~24", proc, 2, menuOps);
+    menulist_AddToML(Menus, "Raster Ops~20,Gray~24", proc, (void *)2, menuOps);
 
     proc = proctable_DefineProc("rasterv-mirror-left-right", ModifyCommand,
 				 &rasterview_classinfo, NULL,
 				 "Interchange left and right within selection");
     keymap_BindToKey(Keymap, "\033L", proc, 3);	/* ESC - L */
-    menulist_AddToML(Menus, "Raster Ops~20,Mirror LR~25", proc, 3, menuOps);
+    menulist_AddToML(Menus, "Raster Ops~20,Mirror LR~25", proc, (void *)3, menuOps);
 
     proc = proctable_DefineProc("rasterv-mirror-up-down", ModifyCommand,
 				 &rasterview_classinfo, NULL,
 				 "Interchange top and bottom within selection");
     keymap_BindToKey(Keymap, "\033U", proc, 4);	/* ESC - U */
-    menulist_AddToML(Menus, "Raster Ops~20,Mirror UD~26", proc, 4, menuOps);
+    menulist_AddToML(Menus, "Raster Ops~20,Mirror UD~26", proc, (void *)4, menuOps);
 
     proc = proctable_DefineProc("rasterv-rotate", RotateCommand,
 				 &rasterview_classinfo, NULL,
@@ -1790,7 +1790,7 @@ struct classhdr *ClassID;
 				 "Read file in X Window Dump format");
     keymap_BindToKey(Keymap, "\033\022x", proc, 0);
     /* ESC - ^R - x*/
-    menulist_AddToML(Menus, "File,Read X Window Dump~13", proc, (long)Inxwd, menuRead);
+    menulist_AddToML(Menus, "File,Read X Window Dump~13", proc, (void *)Inxwd, menuRead);
 
     proc = proctable_DefineProc("rasterv-read-xbmfile",
 				 RasterIOCommand,
@@ -1798,7 +1798,7 @@ struct classhdr *ClassID;
 				 "Read file in X Bitmap format");
     keymap_BindToKey(Keymap, "\033\022b", proc, 0);
     /* ESC - ^R - b*/
-    menulist_AddToML(Menus, "File,Read X Bitmap~14", proc, (long)Inxbm, menuRead);
+    menulist_AddToML(Menus, "File,Read X Bitmap~14", proc, (void *)Inxbm, menuRead);
 
     proc = proctable_DefineProc("rasterv-read-file", ReadFileCommand,
 				 &rasterview_classinfo, NULL,
@@ -1810,19 +1810,19 @@ struct classhdr *ClassID;
 				 &rasterview_classinfo, NULL,
 				 "Read a file allegedly in MacPaint format");
     keymap_BindToKey(Keymap, "\033\022Im", proc, (long)InMacPaint);	/* ESC - ^R - I - m */
-    menulist_AddToML(Menus, "Raster I/O~42,Read MacPaint~22", proc, (long)InMacPaint, menuRead);
+    menulist_AddToML(Menus, "Raster I/O~42,Read MacPaint~22", proc, (void *)InMacPaint, menuRead);
 
     proc = proctable_DefineProc("rasterv-write-macpaint", RasterIOCommand,
 				 &rasterview_classinfo, NULL,
 				 "Write file in MacPaint format");
     keymap_BindToKey(Keymap, "\033\022IM", proc, (long)OutMacPaint);	/* ESC - ^R - I - M */
-    menulist_AddToML(Menus, "Raster I/O~42,Write MacPaint~24", proc, (long)OutMacPaint, menuWrite);
+    menulist_AddToML(Menus, "Raster I/O~42,Write MacPaint~24", proc, (void *)OutMacPaint, menuWrite);
 
     proc = proctable_DefineProc("rasterv-write-postscript", RasterIOCommand,
 				 &rasterview_classinfo, NULL,
 				 "Write file in postscript format");
     keymap_BindToKey(Keymap, "\033\022IP", proc, (long)OutPostscript);	/* ESC - ^R - I - P */
-    menulist_AddToML(Menus, "Raster I/O~42,Write Postscript~32", proc, (long)OutPostscript, menuWrite);
+    menulist_AddToML(Menus, "Raster I/O~42,Write Postscript~32", proc, (void *)OutPostscript, menuWrite);
 
     proc = proctable_DefineProc("rasterv-read-rasterfile", ReadFileCommand,
 				 &rasterview_classinfo, NULL,
@@ -1838,7 +1838,7 @@ struct classhdr *ClassID;
 				 "Read file in X Window Dump format");
     keymap_BindToKey(Keymap, "\033\022x", proc, 0);
     /* ESC - ^R - x*/
-    menulist_AddToML(Menus, "Raster I/O~42,Read X Window Dump~52", proc, (long)Inxwd, menuRead);
+    menulist_AddToML(Menus, "Raster I/O~42,Read X Window Dump~52", proc, (void *)Inxwd, menuRead);
 
 
     proc = proctable_DefineProc("rasterv-write-xwdfile",
@@ -1847,7 +1847,7 @@ struct classhdr *ClassID;
 				 "Write file in X Window Dump format");
     keymap_BindToKey(Keymap, "\033\022X", proc, 0);
     /* ESC - ^R - X*/
-    menulist_AddToML(Menus, "Raster I/O~42,Write X Window Dump~54", proc, (long)Outxwd, menuWrite);
+    menulist_AddToML(Menus, "Raster I/O~42,Write X Window Dump~54", proc, (void *)Outxwd, menuWrite);
 
 /* end of paul's attempt to add XWD I/O : */
 
@@ -1859,7 +1859,7 @@ struct classhdr *ClassID;
 				 "Read file in X Bitmap format");
     keymap_BindToKey(Keymap, "\033\022b", proc, 0);
     /* ESC - ^R - b*/
-    menulist_AddToML(Menus, "Raster I/O~42,Read X Bitmap~62", proc, (long)Inxbm, menuRead);
+    menulist_AddToML(Menus, "Raster I/O~42,Read X Bitmap~62", proc, (void *)Inxbm, menuRead);
 
 
     proc = proctable_DefineProc("rasterv-write-xbmfile",
@@ -1868,7 +1868,7 @@ struct classhdr *ClassID;
 				 "Write file in X Bitmap format");
     keymap_BindToKey(Keymap, "\033\022B", proc, 0);
     /* ESC - ^R - B*/
-    menulist_AddToML(Menus, "Raster I/O~42,Write X Bitmap~64", proc, (long)Outxbm, menuWrite);
+    menulist_AddToML(Menus, "Raster I/O~42,Write X Bitmap~64", proc, (void *)Outxbm, menuWrite);
 
 /* end of paul's attempt to add X Bitmap I/O : */
 
@@ -1879,7 +1879,7 @@ struct classhdr *ClassID;
 				 "Dump X window and read.");
     keymap_BindToKey(Keymap, "\033\022Iw", proc, 0);
     /* ESC - ^R - I - w*/
-    menulist_AddToML(Menus, "Raster I/O~42,Make Window Dump~70", proc, (long)MakeWD, menuRead);
+    menulist_AddToML(Menus, "Raster I/O~42,Make Window Dump~70", proc, (void *)MakeWD, menuRead);
 
 
     proc = proctable_DefineProc("rasterv-make-asnap",
@@ -1888,7 +1888,7 @@ struct classhdr *ClassID;
 				 "Sweep area and read.");
     keymap_BindToKey(Keymap, "\033\022Ia", proc, 0);
     /* ESC - ^R - I - a*/
-    menulist_AddToML(Menus, "Raster I/O~42,Make Area Dump~71", proc, (long)MakeAsnap, menuRead);
+    menulist_AddToML(Menus, "Raster I/O~42,Make Area Dump~71", proc, (void *)MakeAsnap, menuRead);
 #endif
   /* add old names to proctable */
 

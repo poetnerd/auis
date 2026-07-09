@@ -1166,7 +1166,7 @@ char **args;
 
     self->pid=pid;
 
-    im_AddZombieHandler(pid,childDied,(long)self);
+    im_AddZombieHandler(pid,childDied,self);
     im_AddFileHandler(self->ptyFile,readFromProc,self,0);
 #if defined(POSIX_ENV) && !defined(bsdi)
     setpgrp();
