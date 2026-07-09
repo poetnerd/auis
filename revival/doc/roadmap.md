@@ -719,8 +719,16 @@ zero-consumer leaves, then the core, largest last.
        a six-file `Build(action, v)` vs runtime `(v, action)`
        transposition — the `.ch` was wrong for ~35 years; all fixes
        interface-side only)
-4. [ ] First cross-directory step — `atk/raster/lib` (7 classes, 17
-       external includers; runtime check: raster insets)
+4. [x] First cross-directory step — `atk/raster/lib` (done 2026-07-09;
+       ZERO fallout — the seven codec `.ch`s were accurate; consumers
+       `raster/cmd` + `raster/convert` rebuilt clean against typed
+       `.ih`; gate green. First before/after test protocol:
+       `convertraster` battery byte-identical to pre-rollout baseline
+       (`~/src/AUIS/test-baselines/raster-pi/`, incl. Xbitmap
+       round-trip == identity invariant); user visually verified
+       92Sep.ez raster inset and face.raster negate/flip-lr/flip-ud
+       before and after. Pre-existing RF read hang logged under
+       Little Annoyances pre-flip)
 5. [ ] `atk/frame` (5 classes, 95 external)
 6. [ ] `atk/supportviews` (17 classes, 178 external)
 7. [ ] `atk/text` (21 classes, 321 external)
