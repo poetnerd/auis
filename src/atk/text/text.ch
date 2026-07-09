@@ -69,7 +69,7 @@ methods:
     AlwaysInsertFile(FILE * file,char *filename, long position) returns long;
     InsertFile(FILE * file,char *filename, long position) returns long;
     ClearCompletely();
-    EnumerateEnvironments(long pos,long len,procedure callBack,long rock) returns struct environment *;
+    EnumerateEnvironments(long pos,long len,procedure callBack,void *rock) returns struct environment *;
     SetBaseTemplateName(char *name);
     AlwaysWrapViewChar(long pos, char *view, struct dataobject *dobj) returns struct environment *;
     

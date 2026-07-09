@@ -274,7 +274,7 @@ struct text *text;
 {
 /* printf("in close text = %d\n",text); */
     if(text){
-	text_EnumerateEnvironments(text,0,text_GetLength(text),doupdate,(long)self);
+	text_EnumerateEnvironments(text,0,text_GetLength(text),doupdate,self);
 	if (fnote_close(self,text))
 	    text_NotifyObservers(text,0);
     }
@@ -295,7 +295,7 @@ boolean number;
     else {    
 	notecount = count;
 	if(text){
-	    text_EnumerateEnvironments(text,0,text_GetLength(text),doupdate,(long)self);
+	    text_EnumerateEnvironments(text,0,text_GetLength(text),doupdate,self);
 	    copy(self,text);
 	}
     }
@@ -337,7 +337,7 @@ struct fnote *self;
 struct text *text;
 {
     if(text){
-	text_EnumerateEnvironments(text,0,text_GetLength(text),doupdate,(long)self);
+	text_EnumerateEnvironments(text,0,text_GetLength(text),doupdate,self);
 	if (fnote_open(self,text))
 	    text_NotifyObservers(text,0);
     }

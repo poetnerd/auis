@@ -411,7 +411,7 @@ struct classheader *classID;
 struct text *d;
 FILE *f;
 {
-    text_EnumerateEnvironments(d,0,text_GetLength(d),writeindex,(long)f);
+    text_EnumerateEnvironments(d,0,text_GetLength(d),writeindex,f);
 }
 char *tindex__ReadIndexList(classID,d,f)
 struct classheader *classID;

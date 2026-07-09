@@ -627,7 +627,7 @@ struct content *self;
     struct content_chapentry *cp;
     if(self->srctext == NULL) return;
     clear(self);
-    text_EnumerateEnvironments(self->srctext,0, text_GetLength(self->srctext),ns,(long)self);
+    text_EnumerateEnvironments(self->srctext,0, text_GetLength(self->srctext),ns,self);
     if(self->indexentry){
 	content_AlwaysInsertCharacters(self,content_GetLength(self) ,INDEXHEADER,strlen(INDEXHEADER));
     }

@@ -111,7 +111,7 @@ long mousex, mousey, numberOfClicks;
 	((txt = textrefv_GetParentText(self)) != NULL) &&
 	((tv = textrefv_GetParentTextview(self)) != NULL) &&
 	((self->cref = textref_GetRef(ref,255,buf)) != NULL) && 
-	(text_EnumerateEnvironments(txt,0,text_GetLength(txt),findtag,(long) self) != NULL) &&
+	(text_EnumerateEnvironments(txt,0,text_GetLength(txt),findtag,self) != NULL) &&
 	self->loc >= 0){
 /*
 	cpos = textview_GetDotPosition(tv);
