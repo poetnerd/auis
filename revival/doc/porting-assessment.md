@@ -49,13 +49,14 @@ hand-edit or modernize a file when:
   doesn't exist on Darwin) — fix narrowly, not wholesale
 - We are touching that file for an unrelated reason anyway
 
-**Follow-on effort (not now):** A deliberate, careful pass to bring the
-codebase to full ANSI/POSIX C — once the system builds and runs, with
-test coverage or working application behavior to validate against. At
-that point, modernizing one file at a time with a working build to test
-against is much safer than modernizing blind. The `modernize` tool
-remains useful for that future effort, but its bugs (see ROADMAP "Known
-limitations") should be fixed first.
+**Follow-on effort (now underway):** A deliberate, careful pass to bring
+the codebase to full ANSI/POSIX C — the working runtime baseline this
+paragraph was waiting for now exists. Assessed 2026-07-08; full plan in
+§14. Note the tool verdict changed: `modernize`'s regex K&R converter is
+*not* the vehicle for that pass (§14 explains why), so its "known
+limitations" are moot rather than a to-fix list. Leniency flags remain in
+force per subtree until that subtree is converted and its flags ratcheted
+to errors.
 
 ## Issues to address
 
@@ -453,6 +454,12 @@ factor.
 runtime issues are stable. It is a one-time effort that eliminates the
 entire class of bugs without the risk of touching the dispatch mechanism.
 
+**Update 2026-07-08: superseded by the ANSI conversion plan (§14).**
+Option A is milestone M1 there — extended beyond typed dispatch casts to
+typed `.eh` prototypes, both generated from the `.ch` signatures classpp
+already parses. With types emitted by the generator, Option B's audit
+becomes a set of located compile errors rather than a grep exercise.
+
 The audit query:
 
 ```sh
@@ -563,6 +570,88 @@ the sandbox used for this session, independent of any input (reproduces
 with `/dev/null` on stdin) — a separate, pre-existing issue, not caused by
 or diagnostic of this fix. Confidence rests on the byte-for-byte identical
 mechanism and generator to the dynamically-proven `parsel.flex` fix.
+
+### 14. ANSI C conversion plan (assessed 2026-07-08)
+
+How to complete the conversion abandoned in June (checkin `5e57549713`,
+779 files, reverted in `99fe31066c`). Analysis lives here; the ordered
+work plan (milestones M1–M4) lives in `roadmap.md` → Medium-term →
+ANSI C conversion.
+
+#### Why the June mass conversion failed
+
+Three compounding causes:
+
+1. `modernize` *inferred* parameter types from K&R declaration blocks
+   with regexes — silently mis-converts split-line definitions, macro
+   types, and multi-name declarations.
+2. All 779 files landed in one commit with no per-file compile gate —
+   ~2000 errors arrived at once, with no way to bisect tool damage from
+   real findings.
+3. Converted definitions conflicted with the typeless declarations in
+   generated `.eh` files.
+
+Cause 3 is the pivotal observation: those conflicts were the compiler
+correctly cross-checking two declarations of the same function — but
+neither side was authoritative, so the errors were noise. Invert it: emit
+the true `.ch` signature into the `.eh`, and every such conflict becomes a
+located, genuine bug report.
+
+#### Keystone: .ch files already carry full ANSI signatures
+
+`atk/text/text.ch:46` reads `Read(FILE *file, long id) returns long;` —
+classpp parses this, then throws the types away, emitting
+`long text__Read();` into the `.eh` and `(void (*)())` casts into the
+`.ih` dispatch macros. Emitting what it already knows gives whole-tree
+type checking with zero hand edits:
+
+- **Typed `.ih` casts** → the compiler converts arguments correctly at
+  every method call site. Kills LP64 Variants 2/3/5 structurally
+  (§12 Option A, extended to all methods, not just ≥9-arg).
+- **Typed `.eh` prototypes** → every method *definition*, even while
+  still K&R, is checked against the `.ch` truth (C89
+  promoted-compatibility rule). Signature drift like the
+  `CUI_GetHeaders` long/int mess (§12) becomes a compile error instead
+  of a host-dependent segfault.
+
+#### Scale
+
+1,544 `.c` files in `src/`; ~1,301 of them contain ~13,700 K&R
+definitions (same-line-name heuristic; split-line forms push the true
+count toward ~15k). ~5,100 (37%) are `__` class methods — every one has
+its authoritative signature in a `.ch` file, so no type inference is
+needed for the entire highest-risk cohort.
+
+#### Tool verdicts
+
+| Tool | Verdict |
+|---|---|
+| `modernize` | Discard the regex K&R→ANSI core — it is what failed in June and cannot be patched into reliability. The include-adding passes are marginal; compile errors drive the same fixes more safely. |
+| `fix-static-methods` | Keep as-is. Correct diagnosis (class methods need external linkage for the dispatch table and dynamic loader), narrow, line-based. |
+| `fix-missing-static-decl` | Keep as-is. Idempotent, brace-depth aware, libc-collision skip list, splits multi-name declaration lists. |
+
+Replacement is a new `ansify` driver — a per-file pipeline, not a merge
+of the old code:
+
+1. `fix-static-methods`, then `fix-missing-static-decl`
+2. Class methods (`__` names): rewrite the definition header by *lookup*
+   in a signature database generated from the `.ch` files (a classpp
+   side output) — never by inference
+3. Remaining file-local functions: `cproto` (Homebrew; drives the real
+   preprocessor — the tool this job was done with in the 1990s)
+4. Compile the file; discard the changes on failure
+
+The per-file compile gate is the guardrail the June attempt lacked.
+
+#### Delegation
+
+M2 sweeps and M3 subtree conversion runs are delegable to smaller models
+(Sonnet class) under these guardrails: per-file compile gate, signature
+DB as ground truth, §12's long-vs-int policy, one subtree per commit, no
+edits to generated files, no concurrent builds. Pure audits and dry-run
+triage are Haiku class. Kept at the top level: the classpp codegen change
+(M1), `ansify` construction, and adjudicating `.ch`-vs-`.c` signature
+disagreements — those are real bugs, not conversion noise.
 
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 

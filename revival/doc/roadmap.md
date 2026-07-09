@@ -17,10 +17,13 @@ history behind each completed item.
 - Then find the bugs in the demos. **In progress:** a second, unrelated,
   intermittent crash already turned up in the date-header parser
   (`prsdate.c`/`parser_Parse`, `memmove` overrun) — not yet root-caused.
+   - Inter-line spaceing in folders and message header panes is double wide.
+   - Timestamps are incorrect affects display and message ordering. "7-Jul-126" isn't right.
 
 ### Objective: Reliable operation
 
-- Let's get all the function prototypes live with ANSI
+- Let's get all the function prototypes live with ANSI — plan of record
+  now at Medium-term → ANSI C conversion (M1–M4)
 
 ---
 
@@ -606,40 +609,46 @@ Remove resolved known-issues entries as each fix lands.
 
 ## Medium-term
 
-### Prototype sweep (targeted ANSI C — Variant 1 prevention)
+### ANSI C conversion (M1–M4) — plan of record, assessed 2026-07-08
 
-Every newly activated subtree (AMS_ENV, CONTRIB_ENV, and any future addition)
-has reproduced LP64 Variant 1 (missing prototype → assumed `int` return →
-pointer truncated on arm64). A tree-wide pass adding prototypes at all
-unprototyped call sites would close this class permanently for all code,
-including subtrees not yet activated, before they bite us at runtime.
+Absorbs the former "Prototype sweep" and "Classpp typed dispatch" entries
+here plus the long-term "ANSI C modernization" entry into one ordered
+plan. Analysis — June mass-conversion postmortem, keystone finding, tool
+verdicts, delegation guardrails — in `porting-assessment.md` §14.
 
-Scope: add `#include` of the correct header, or a local `extern ReturnType
-function(args);` declaration, at every call site where a function is currently
-called without a prototype in scope. K&R parameter-declaration style in function
-*definitions* (`foo(x, y) int x; ...`) is a separate cosmetic issue — leave
-that for the full ANSI C pass below. Prototype-at-call-site is the safety-
-critical fix.
+Keystone: `.ch` files already carry full ANSI method signatures; classpp
+parses and discards them. Emitting them (M1) type-checks every method
+call site and definition tree-wide *before* any mass file editing starts
+— the compiler becomes the auditor instead of grep.
 
-The `modernize` tool in `revival/tools/` is a partial starting point, but has
-known parsing bugs. A simpler approach: compile with `-Werror=implicit-function-
-declaration` and work through the errors tree-by-tree.
+- **M1 — classpp emits types.** Typed prototypes in `.eh` (today:
+  `long text__Read();`) and typed casts in all `.ih` dispatch macros
+  (extends the 2026-06-30 ≥9-arg fix to every method). Kills LP64
+  Variants 2/3/5 structurally and catches signature drift (the
+  `CUI_GetHeaders` class of bug) at compile time. Side output: a
+  method-signature database for M3. Gate behind a classpp flag or
+  regenerate subtree-by-subtree so error burndown is incremental.
+- **M2 — Prototype sweep.** `-Werror=implicit-function-declaration`
+  subtree-by-subtree (`src/config/darwin/system.mcr` COMPILERFLAGS);
+  fix by adding `#include`s or `extern` declarations at call sites.
+  Closes Variant 1 permanently — it has cost debugging time on every
+  subtree activation so far.
+- **M3 — Definition conversion.** New `ansify` pipeline
+  (porting-assessment §14: static-fix tools → class methods by
+  signature-DB lookup → cproto for file-local functions → per-file
+  compile gate), one subtree per commit, dependency order: overhead →
+  atk/basics+support → atk/text → insets → apps → atkams/ams → contrib.
+  Ratchet each completed subtree from `-Wno-*` to
+  `-Werror=implicit-int,strict-prototypes,int-conversion,incompatible-function-pointer-types`.
+- **M4 — Global strictness.** Tree-wide `-Werror` on the type-safety
+  set; `-Wformat` then catches any remaining scanf `%d`/`%ld` (Variant
+  4) automatically. Keep `-std=gnu89` until conversion completes;
+  consider c99 after. Writable-strings stays deferred.
 
-**Why now rather than long-term:** Variant 1 has cost debugging time on every
-subtree activation. The next activations (cui, any remaining contrib) will hit
-it again without this sweep.
-
-### Classpp: typed dispatch for all methods
-
-The classpp fix (2026-06-30) emits typed casts only for methods with ≥9
-arguments. Extending this to all methods would eliminate LP64 Variants 2, 3,
-and 5 *structurally* — no per-call-site sweep needed, and no `.c` implementation
-files need to change. This is the right architectural fix for the class dispatch
-bug family.
-
-Currently deferred because the per-inset sweep has been sufficient, but as AMS
-and contrib code is exercised more heavily, unswept Variant 3/5 sites will
-surface. Better to fix classpp once than sweep indefinitely.
+Scale: ~13,700 K&R definitions across ~1,301 of 1,544 `.c` files; ~5,100
+are class methods converted by `.ch` lookup, not inference. M2/M3 runs
+are delegable (Sonnet-class) under the §14 guardrails; M1 and
+`.ch`-vs-`.c` signature disagreements stay top-level.
 
 ### ~~Integration test: `Sherman.Alloc`~~ — proven
 All insets in `Sherman.Alloc` render correctly (fad, cel, arbiter, eq, table);
@@ -669,15 +678,10 @@ installing the PCF files into XQuartz's default font path
 ## Long-term / architectural
 
 ### ANSI C modernization (full K&R conversion)
-The medium-term prototype sweep (above) closes the safety-critical LP64
-Variant 1 class. This is the follow-on cosmetic/correctness pass: convert
-K&R parameter declarations to ANSI style (`foo(int x, char *y)` instead of
-`foo(x, y) int x; char *y;`), fix remaining implicit-int patterns, and
-generally bring the codebase to C99. No LP64 impact beyond what the prototype
-sweep already addresses. The `modernize` tool in `revival/tools/` is a
-starting point but has known parsing bugs that should be fixed before use
-at scale. Requires the working runtime baseline (now available) for
-regression validation.
+
+**Elevated to medium-term** — see Medium-term → ANSI C conversion
+(M1–M4). The `modernize` tool is no longer the starting point; see
+`porting-assessment.md` §14 tool verdicts.
 
 ### Messages application
 
