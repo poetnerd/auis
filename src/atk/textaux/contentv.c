@@ -279,7 +279,7 @@ char *type;
 	message_DisplayString(self,0,"Can't find buffer for source");
 	return;
     }
-    if((fr = frame_Enumerate(findframe,(long) bu)) == NULL){
+    if((fr = frame_Enumerate(findframe,bu)) == NULL){
 	message_DisplayString(self,0,"Can't find view for source");
 	return;
     }

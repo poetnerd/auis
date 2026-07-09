@@ -169,7 +169,7 @@ struct buffer *b;
   struct frame *f;
   struct im *im;
 
-  if ((f = frame_Enumerate(bufferFind, (long) b))==NULL) {
+  if ((f = frame_Enumerate(bufferFind, b))==NULL) {
     /* No frame--need to map buffer to new window */
 
     if((f = frame_New()) == NULL) {

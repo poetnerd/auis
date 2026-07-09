@@ -693,7 +693,7 @@ void frame_DeleteWindow(self)
 {
     long count = 0;
 
-    frame_Enumerate(countFrames, (long) &count);
+    frame_Enumerate(countFrames, &count);
     if (count > 1) {
 	struct im *im = frame_GetIM(self);
 	if(self->realBuffer) buffer_RemoveObserver(self->realBuffer, self);
@@ -756,7 +756,7 @@ void frame_Exit(self)
 {
     if(frame_GetQuitWindowFlag(self)) {
 	long count = 0; 
-	frame_Enumerate(countFrames, (long) &count);
+	frame_Enumerate(countFrames, &count);
 	if (count > 1) { /* if more than one window, don't quit */
 	    struct im *im = frame_GetIM(self);
 	    struct buffer *b = frame_GetBuffer(self);
@@ -1153,7 +1153,7 @@ static void ReplaceBuffer(oldBuffer, newBuffer)
         buffers.buffer1 = oldBuffer;
         if ((buffers.buffer2 = newBuffer) == oldBuffer)
             return;
-        frame_Enumerate(ReplaceBufferWork, (long) &buffers);
+        frame_Enumerate(ReplaceBufferWork, &buffers);
 }
 
 void frame_DeleteBuffer(self)
@@ -1763,7 +1763,7 @@ void frame_PreviousWindow(self)
 
     struct frame *desiredFrame;
 
-    desiredFrame = frame_Enumerate(FindFrame, (long) self);
+    desiredFrame = frame_Enumerate(FindFrame, self);
     if (desiredFrame != NULL)
         im_SetWMFocus(frame_GetIM( desiredFrame));
 }

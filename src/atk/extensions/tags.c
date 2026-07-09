@@ -94,7 +94,7 @@ static struct frame *FindByView(view)
     struct view *view;
 {
 
-    return frame_Enumerate(ViewEqual, (long) view);
+    return frame_Enumerate(ViewEqual, view);
 }
 
 

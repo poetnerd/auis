@@ -954,7 +954,7 @@ static struct frame *FindByView(view)
     struct view *view;
 {
 
-    return frame_Enumerate(ViewEqual, (long) view);
+    return frame_Enumerate(ViewEqual, view);
 }
 
 /* Find a window other that the one that contains this inset.  Create one if we have to. */
@@ -972,7 +972,7 @@ static struct view *PutInAnotherWindow(view, buffer, forceWindow)
     myInfo.otherFrame = NULL;
     myInfo.bestFrame = NULL;
     myInfo.myBuffer = buffer;
-    frame_Enumerate(FrameFinder, (long) &myInfo);
+    frame_Enumerate(FrameFinder, &myInfo);
     frame = (myInfo.bestFrame != NULL) ? myInfo.bestFrame : ((myInfo.otherFrame != NULL) ? myInfo.otherFrame : NULL);
     if (frame == NULL) {
 
