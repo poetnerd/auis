@@ -847,6 +847,44 @@ system's prefix-layout subtyping working as designed; these warnings
 are expected wherever inherited methods are dispatched and are not
 fallout.
 
+#### Point 5 findings (atk/frame, 2026-07-09)
+
+One new fallout pattern, and the first confirmation that Import fallout
+reaches outside the flagged directory:
+
+1. **`(long)` casts launder a rock through the interface, they don't
+   change its meaning.** `frame.ch Enumerate`'s `long functionData` is
+   a rock: every `mapFunction` callback treats it as a pointer, and
+   every real caller passes one — but four of the six call sites wrote
+   `frame_Enumerate(fn, (long) &x)`, matching the old `long` decl with
+   an explicit cast rather than passing the pointer bare. Retyping the
+   `.ch` to `void *` (the correct rock-idiom fix) turned those four
+   casts into `-Wint-conversion` errors, since a pointer laundered
+   through `long` no longer converts to `void *` implicitly. The
+   fifth call site (`framecmd.c:768`) had *no* cast at all — passing
+   the pointer bare, disagreeing with its four siblings — and was
+   what surfaced the pattern first, under the "implementations
+   disagree with dispatch callers" hard stop. Resolution (2026-07-09):
+   treat the cast as noise, not a second caller's type — delete it
+   along with the retype. Updated the runbook's rock-idiom rule to
+   pre-authorize this narrow class of `.c` edit (delete-only, rock
+   argument only) as part of the interface fix, rather than a full
+   hard stop each time.
+2. **Import fallout crossed into other directories, as predicted.**
+   Three more call sites of the same `(long)`-laundered pattern turned
+   up during the gate, outside `atk/frame` entirely:
+   `atk/textaux/contentv.c`, `atk/extensions/compile.c` (x2), and (one
+   more gate cycle later) `atk/extensions/tags.c` and
+   `atk/extensions/deskey.c` — `tags.c` and `compile.c` share a
+   near-identical `ViewEqual`/`FindByView` helper pair, evidently
+   copy-pasted at some point. This is the blast-radius asymmetry
+   `.ih`-vs-`.eh` split predicted above made concrete: a tree-wide
+   `grep` for the rock's call sites after the first fix, rather than
+   waiting for each to surface one gate cycle at a time, would have
+   caught all six in one pass. Recommendation for future rock-idiom
+   fixes: grep for the classproc's call sites tree-wide immediately
+   after retyping the `.ch`, not just within the flagged directory.
+
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 
 **Resolved 2026-07-04 for the local-store case — see `roadmap.md` Near-term →

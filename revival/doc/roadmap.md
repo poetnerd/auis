@@ -729,7 +729,21 @@ zero-consumer leaves, then the core, largest last.
        92Sep.ez raster inset and face.raster negate/flip-lr/flip-ud
        before and after. Pre-existing RF read hang logged under
        Little Annoyances pre-flip)
-5. [ ] `atk/frame` (5 classes, 95 external)
+5. [x] `atk/frame` (5 classes, 95 external; done 2026-07-09; gate
+       green, frame chrome (windows, menus, scrollbars) visually
+       verified. Findings — see porting-assessment §14: `Enumerate`'s
+       `long functionData` rock retyped to `void *`; six call sites
+       across five files (`framecmd.c` x4, `atk/textaux/contentv.c`,
+       `atk/extensions/{compile,tags,deskey}.c`) carried a redundant
+       `(long)` cast on the pointer they passed — a one-caller-in-five
+       omission (`framecmd.c:768`, bare pointer, no cast) is what
+       first exposed the pattern as a live disagreement, which in
+       turn prompted a runbook revision pre-authorizing deletion of
+       these casts as part of the rock-idiom interface fix, since
+       they launder a pointer through `long` rather than mean
+       anything. First rollout point with import fallout in
+       directories other than the flagged one, confirming the
+       blast-radius-asymmetry prediction in §14)
 6. [ ] `atk/supportviews` (17 classes, 178 external)
 7. [ ] `atk/text` (21 classes, 321 external)
 8. [ ] `atk/support` (19 classes, 450 external)
