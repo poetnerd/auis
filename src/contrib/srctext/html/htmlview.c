@@ -397,7 +397,7 @@ long key;
 
     printf("in SetImage()\n");
     if (!self->styleInQuestion) {
-	message_DisplayString(self, "This callback should be used only when editing attributes", 0);
+	message_DisplayString(self, 0, "This callback should be used only when editing attributes");
 	return;
     }
     printf("Getting attribute\n");
@@ -407,7 +407,7 @@ long key;
 
     /* Find the image here and tell it to load using the new src. */
     /* XXX: Not yet Implemented */
-    message_DisplayString(self, "Sorry, image updates not yet implemented", 0);
+    message_DisplayString(self, 0, "Sorry, image updates not yet implemented");
 }
 
 void
@@ -813,7 +813,7 @@ long key;
     struct html *html = (struct html *)self->header.view.dataobject;
     char* ptr;
     if (!self->styleInQuestion) {
-	message_DisplayString(self, "Need to use Edit Attributes to call this", 0);
+	message_DisplayString(self, 0, "Need to use Edit Attributes to call this");
 	return;
     }
     if (ptr = html_GetAttribute(html, self->styleInQuestion, "compact")) {
