@@ -194,7 +194,8 @@ static struct sigvec handler;/* pointer to signal handler, used to catch signals
 #endif
 
 static int usePrototypesImport;		/* TRUE: prototyped casts in dispatch macros (.ih) */
-static int usePrototypesExport;		/* TRUE: prototyped decls of user functions (.eh) */
+static int usePrototypesImportAll;	/* TRUE: prototyped casts for all methods, not only >= 8 args (-pi) */
+static int usePrototypesExport;		/* TRUE: prototyped decls of user functions (.eh) (-pe) */
 static int generateDescriptionFile;	/* TRUE if system is to generate a description file for the class */
 static int generateHeaderFiles = TRUE;	/* TRUE if system is to generate .ih and .eh files for the class */
 
@@ -878,7 +879,7 @@ int errvalCount[errval_NUM];	/* ??? */
 		if(mp->macrodef==NULL){
 		    char proto[10000];
 
-		    if (usePrototypesImport && mp->argcount >= 8) {
+		    if (usePrototypesImport && (usePrototypesImportAll || mp->argcount >= 8)) {
 			sprintf(proto, "struct %s *%s", FinalClassName, mp->argtypes);
 		    }
 		    else {
@@ -949,7 +950,7 @@ int errvalCount[errval_NUM];	/* ??? */
 	if (mp->type==ptype_classproc && mp->defined)  {
 	    char proto[10000];
 
-	    if (usePrototypesImport && mp->argcount >= 8) {
+	    if (usePrototypesImport && (usePrototypesImportAll || mp->argcount >= 8)) {
 		sprintf(proto, "struct classheader *%s", mp->argtypes);
 	    }
 	    else {
@@ -997,7 +998,7 @@ int errvalCount[errval_NUM];	/* ??? */
             if (mp->type==ptype_method && mp->inherited)  {
 		char proto[10000];
 
-		if (usePrototypesImport && mp->argcount >= 8) {
+		if (usePrototypesImport && (usePrototypesImportAll || mp->argcount >= 8)) {
 		    sprintf(proto, "struct %s *%s", FinalClassName, mp->argtypes);
 		}
 		else {
@@ -2973,7 +2974,9 @@ static void usage()
     (void) fprintf(stderr, "    -M creates dependency information for a makefile\n");
     (void) fprintf(stderr, "    -d sends dependency information to depfile instead of stdout\n");
     (void) fprintf(stderr, "    -s relax error checking (allowing most old code to work) (sets -B)\n");
-    (void) fprintf(stderr, "    -p generate prototypes for method/class procedure invocations\n");
+    (void) fprintf(stderr, "    -p generate full prototypes everywhere (same as -pi -pe)\n");
+    (void) fprintf(stderr, "    -pi prototyped casts for all methods in .ih dispatch macros\n");
+    (void) fprintf(stderr, "    -pe prototyped declarations of method implementations in .eh\n");
     (void) fprintf(stderr, "    -q suppresses printing of warning messages to stderr\n");
     (void) fprintf(stderr, "    -Q suppresses all messages except for error messages\n");
     (void) fprintf(stderr, "    -B allows this class to not have a superclass\n");
@@ -3054,6 +3057,12 @@ int i;	/* used to loop through array of args */
 		case 'p':	/* generate prototypes */
 		    if (argv[i][2] == '\0') {
 			usePrototypesImport = TRUE;
+			usePrototypesImportAll = TRUE;
+			usePrototypesExport = TRUE;
+		    } else if (argv[i][2] == 'i' && argv[i][3] == '\0') {
+			usePrototypesImport = TRUE;
+			usePrototypesImportAll = TRUE;
+		    } else if (argv[i][2] == 'e' && argv[i][3] == '\0') {
 			usePrototypesExport = TRUE;
 		    } else {
 			usage();
@@ -3170,6 +3179,7 @@ static void GlobalInit()
     IgnoreCurrentDirectory = FALSE;
     MakingBaseObject = FALSE;
     usePrototypesImport = TRUE;   /* always: fix arm64 dispatch ABI */
+    usePrototypesImportAll = FALSE; /* -pi: opt-in per directory via CLASSFLAGS until whole tree converts */
     usePrototypesExport = FALSE;  /* K&R decls: compatible with unconverted .c files */
 
     FinalClassName[0] = '\0';
