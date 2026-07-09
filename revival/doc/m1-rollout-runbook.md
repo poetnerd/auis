@@ -101,6 +101,13 @@ ONLY. Never edit a `.c` to match a `.ch`.
   callers: if ALL callers pass pointers, change to `void *rock`
   (K&R impls keep `long` internally; that round-trips on LP64 and is
   cleaned up at M3). If callers pass integers, leave it alone.
+  Callers passing `(long)&x` count as passing pointers — the cast is
+  laundering, not meaning (atk/frame `Enumerate`: four call sites
+  cast, a fifth passed the pointer bare for ~35 years). After the
+  `void *` retype, deleting such now-redundant `(long)`-style casts
+  on the rock argument at call sites IS part of the interface fix
+  and is pre-authorized, narrow exception to the `.c` hard stop
+  below (decided 2026-07-09). Touch nothing else in the caller.
 - **Signature drift** — wrong types, stray `*`, or transposed
   parameters vs the implementations (`eq.ch DoScript`,
   `figobj.ch Build`). Fix the `.ch` to match impls + callers.
