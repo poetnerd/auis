@@ -630,18 +630,41 @@ needed for the entire highest-risk cohort.
 | `fix-static-methods` | Keep as-is. Correct diagnosis (class methods need external linkage for the dispatch table and dynamic loader), narrow, line-based. |
 | `fix-missing-static-decl` | Keep as-is. Idempotent, brace-depth aware, libc-collision skip list, splits multi-name declaration lists. |
 
-Replacement is a new `ansify` driver — a per-file pipeline, not a merge
-of the old code:
+Replacement is the `ansify` driver (`revival/tools/ansify`, built
+2026-07-08) — a per-file pipeline, not a merge of the old code:
 
 1. `fix-static-methods`, then `fix-missing-static-decl`
-2. Class methods (`__` names): rewrite the definition header by *lookup*
-   in a signature database generated from the `.ch` files (a classpp
-   side output) — never by inference
-3. Remaining file-local functions: `cproto` (Homebrew; drives the real
-   preprocessor — the tool this job was done with in the 1990s)
-4. Compile the file; discard the changes on failure
+2. Class methods and class procedures (`__` names): rewrite the
+   definition header by *lookup* in the signature database
+   (`ansify --build-db` runs `class -D -N` over every `.ch` into
+   `build/desc/`; 565/566 classes covered — the one failure is
+   `contrib/atkbook/console/disk1.ch`, unresolvable superclass).
+   Never inference. Implicit first parameters are supplied by
+   convention (`struct CLASS *self` for methods, `struct classheader
+   *classID` for classprocs). A `.ch`-vs-`.c` argument-count mismatch
+   is reported as **DRIFT** and left unconverted — historically these
+   are real bugs (§12's `CUI_GetHeaders`).
+3. File-local helpers: converted from their own K&R declaration
+   block, which is authoritative for file-scope functions; the parser
+   is strict and bails with a report rather than guessing. (`cproto`
+   was evaluated for this job and rejected: its internal parser cannot
+   read modern macOS SDK headers — chokes on `__darwin_size_t` and
+   private includes.)
+4. Compile gate: `make base.o` in the file's directory; on failure
+   the original file is restored automatically.
 
 The per-file compile gate is the guardrail the June attempt lacked.
+
+**Validated 2026-07-08 on `atk/eq/eq.c`** (pilot-A directory): 20
+methods, 3 classprocs, 2 helpers converted; zero DRIFT. The first run
+failed the compile gate and auto-restored — exactly as designed —
+because `eq__WriteFILE`'s `char sep` is a promotable narrow type, so
+its ANSI definition conflicts with the typeless `.eh` declaration.
+Regenerating `eq.eh` with `-pe` resolved it: zero errors. This
+confirms the M3↔`-pe` coupling concretely: converting a class's `.c`
+requires regenerating its `.eh` with `-pe` in the same step (the
+roadmap already sequences them together). All test artifacts were
+restored; the committed tree is unchanged by the validation.
 
 #### Delegation
 

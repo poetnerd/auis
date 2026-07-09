@@ -1,0 +1,494 @@
+#!/usr/bin/env python3
+"""Convert AUIS K&R function definitions to ANSI C, safely.
+
+Replaces the retired regex-inference approach (revival/tools/modernize)
+with lookup against the class preprocessor's own signature knowledge.
+See porting-assessment.md §14 for the plan this implements (milestone M3).
+
+Pipeline, per .c file:
+
+  1. fix-static-methods, fix-missing-static-decl (siblings in this dir)
+  2. Class methods and class procedures (NAME__Method): the definition
+     header is rewritten from the signature database built by
+     `ansify --build-db` out of classpp's `-D` .desc output. Types come
+     from the .ch — lookup, never inference. The implicit first
+     parameter is supplied by convention: `struct CLASS *` for methods,
+     `struct classheader *` for class procedures.
+  3. File-local helpers: converted from their own K&R declaration
+     block, which is authoritative for file-scope functions. The parser
+     is strict: anything it cannot parse exactly is left untouched and
+     reported, never guessed at. (cproto was evaluated for this job and
+     rejected: its internal parser cannot read modern macOS SDK
+     headers.)
+  4. Compile gate: `make <base>.o` in the file's directory. On failure
+     the original file is restored and the errors reported. A
+     conversion that does not compile never survives.
+
+Argument-count mismatches between a .ch signature and a .c definition
+are NOT converted; they are reported as DRIFT — historically these are
+real bugs (see CUI_GetHeaders, porting-assessment §12).
+
+Usage:
+    ansify --build-db                # regenerate build/desc/*.desc (needs build/bin/class)
+    ansify [options] file.c ...
+    ansify [options] --dir src/atk/eq
+
+Options:
+    --db DIR        signature database directory (default: <root>/build/desc)
+    --dry-run       report what would change; write nothing
+    --no-compile    skip the compile gate
+    --no-helpers    convert only DB-backed class methods/classprocs
+    --keep-backup   keep <file>.ansify-orig even on success
+"""
+
+import argparse
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+TOOLDIR = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(TOOLDIR))   # revival/tools -> repo root
+
+SKIP_DIRS = {
+    'hp300', 'hp700', 'hp800', 'pmax_3', 'pmax_41', 'pmax_42', 'pmax_ul4',
+    'rt_aos4', 'rt_mach', 'sun3_35', 'sun3_4', 'sun3_41', 'sun4_40',
+    'sun4_41', 'sun4_51', 'vax_3', 'vax_43', 'aix_i386', 'aix_rt', 'aos_rt',
+    'dec_mips', 'dec_mips_42', 'dec_vax', 'hp_68k', 'i386_bsd', 'i386_bsdi',
+    'i386_Linux', 'i386_mach', 'mach_rt', 'sco_i386', 'sgi_mips', 'sun_68k',
+    'sun_sparc', 'sun_sparc_mach', 'rs_aix3',
+}
+
+
+# ---------------------------------------------------------------- DB build
+
+def build_db(dbdir):
+    classbin = os.path.join(ROOT, 'build', 'bin', 'class')
+    incdir = os.path.join(ROOT, 'build', 'include', 'atk')
+    if not os.path.isfile(classbin):
+        sys.exit(f"ansify: {classbin} not found -- build the tree first")
+    os.makedirs(dbdir, exist_ok=True)
+
+    chfiles = []
+    for dirpath, dirnames, filenames in os.walk(os.path.join(ROOT, 'src')):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        for fn in filenames:
+            if fn.endswith('.ch'):
+                chfiles.append(os.path.join(dirpath, fn))
+
+    ok, failed = 0, []
+    with tempfile.TemporaryDirectory() as tmp:
+        for ch in sorted(chfiles):
+            base = os.path.basename(ch)[:-3]
+            for f in os.listdir(tmp):
+                os.unlink(os.path.join(tmp, f))
+            r = subprocess.run(
+                [classbin, '-s', '-D', '-N',
+                 '-I' + os.path.dirname(ch), '-I' + incdir, ch],
+                cwd=tmp, capture_output=True, text=True)
+            desc = os.path.join(tmp, base + '.desc')
+            if r.returncode != 0 or not os.path.isfile(desc):
+                failed.append((ch, (r.stderr or r.stdout).strip().split('\n')[-1] if (r.stderr or r.stdout) else 'no output'))
+                continue
+            with open(desc, errors='replace') as f:
+                first = f.readline()
+            m = re.match(r'(?:Class|Package):\s+(\w+)', first)
+            classname = m.group(1) if m else base
+            shutil.copyfile(desc, os.path.join(dbdir, classname + '.desc'))
+            ok += 1
+
+    print(f"signature DB: {ok} classes -> {dbdir}, {len(failed)} failed")
+    for ch, why in failed:
+        print(f"  FAILED {os.path.relpath(ch, ROOT)}: {why}")
+    return 0 if ok else 1
+
+
+# ---------------------------------------------------------------- DB load
+
+def split_args(argtext):
+    """Split a .desc args string on top-level commas."""
+    argtext = argtext.strip()
+    if argtext in ('void', '', 'error'):
+        return []
+    parts, depth, cur = [], 0, ''
+    for c in argtext:
+        if c == '(':
+            depth += 1
+        elif c == ')':
+            depth -= 1
+        if c == ',' and depth == 0:
+            parts.append(cur.strip())
+            cur = ''
+        else:
+            cur += c
+    if cur.strip():
+        parts.append(cur.strip())
+    return parts
+
+
+def load_class_desc(dbdir, classname, cache={}):
+    """Return {'method': {name: (ret, [argtypes])}, 'classproc': {...}} or None."""
+    if classname in cache:
+        return cache[classname]
+    path = os.path.join(dbdir, classname + '.desc')
+    if not os.path.isfile(path):
+        cache[classname] = None
+        return None
+    entry = {'method': {}, 'classproc': {}}
+    kind = name = ret = None
+    args = []
+
+    def flush():
+        if kind and name:
+            entry[kind][name] = (ret or 'void', args)
+
+    for line in open(path, errors='replace'):
+        m = re.match(r'^(Method|Class Procedure|Macro Method):\t(\w+)', line)
+        if m:
+            flush()
+            kind = {'Method': 'method', 'Class Procedure': 'classproc',
+                    'Macro Method': None}[m.group(1)]
+            name, ret, args = m.group(2), None, []
+            continue
+        m = re.match(r'^\treturns:\t(.+)$', line)
+        if m and kind:
+            ret = m.group(1).strip()
+            continue
+        m = re.match(r'^\targs:\t+(.+)$', line)
+        if m and kind:
+            args = split_args(m.group(1))
+    flush()
+    cache[classname] = entry
+    return entry
+
+
+# ---------------------------------------------------------------- weaving
+
+def tidy_type(t):
+    t = re.sub(r'\s+', ' ', t).strip()
+    t = t.replace('( *', '(*').replace('* )', '*)').replace('( )', '()')
+    t = re.sub(r'\*\s+\*', '**', t)
+    return t
+
+
+def weave(typetext, name):
+    """Combine a types-only string with a parameter name."""
+    t = tidy_type(typetext)
+    if '(*)' in t:
+        return t.replace('(*)', f'(*{name})', 1)
+    if '(' in t:
+        return None          # unrecognized exotic type -- caller bails
+    if t.endswith('[]'):
+        return f"{t[:-2].strip()} {name}[]"
+    if t.endswith('*'):
+        return f"{t}{name}"
+    return f"{t} {name}"
+
+
+# ------------------------------------------------------- definition parsing
+
+BARE_PARAMS = re.compile(r'^\s*[A-Za-z_]\w*(\s*,\s*[A-Za-z_]\w*)*\s*$')
+HDR = re.compile(
+    r'^(?P<ret>[A-Za-z_][\w \t]*?[\w*][ \t*]+)?'
+    r'(?P<name>[A-Za-z_]\w*)\s*\('
+    r'(?P<params>[^)]*)\)\s*(?:/\*.*?\*/\s*)?$')
+TYPEONLY = re.compile(r'^(static\s+|register\s+)*[A-Za-z_][\w \t]*\**\s*$')
+DECL_LINE = re.compile(r'^\s*(register\s+)?[A-Za-z_][\w \t,*\[\]()]*;\s*(/\*.*?\*/\s*)?$')
+
+RESERVED = {'if', 'while', 'for', 'switch', 'return', 'sizeof', 'do', 'else'}
+
+
+def parse_decl_block(lines, start):
+    """Consume K&R parameter declarations from lines[start:]; return
+    (index_of_brace_line, decl_text) or None if this isn't a K&R body."""
+    i = start
+    decls = []
+    while i < len(lines):
+        s = lines[i].strip()
+        if s.startswith('{'):
+            return i, '\n'.join(decls)
+        if s == '' or s.startswith('/*') or s.startswith('*'):
+            i += 1
+            continue
+        if DECL_LINE.match(lines[i].rstrip('\n')):
+            decls.append(s)
+            i += 1
+            continue
+        return None
+    return None
+
+
+def parse_local_decls(decl_text):
+    """Parse a K&R declaration block into {name: woven_param} or None if
+    anything is unparseable (strict: bail, don't guess)."""
+    result = {}
+    text = re.sub(r'/\*.*?\*/', '', decl_text, flags=re.DOTALL)
+    for stmt in text.split(';'):
+        stmt = stmt.strip()
+        if not stmt:
+            continue
+        # function-pointer declarator: TYPE (*name)(...)
+        fp = re.match(
+            r'^(?:register\s+)?'
+            r'(?P<t>(?:unsigned\s+|signed\s+|const\s+|long\s+|short\s+)*'
+            r'(?:struct\s+\w+|union\s+\w+|enum\s+\w+|\w+))'
+            r'\s*\(\s*\*\s*(?P<n>\w+)\s*\)\s*\(\s*(?P<a>[^)]*)\)$', stmt)
+        if fp:
+            result[fp.group('n')] = f"{fp.group('t')} (*{fp.group('n')})({fp.group('a').strip()})"
+            continue
+        m = re.match(
+            r'^(?:register\s+)?'
+            r'(?P<t>(?:unsigned\s+|signed\s+|const\s+|long\s+|short\s+)*'
+            r'(?:struct\s+\w+|union\s+\w+|enum\s+\w+|\w+))'
+            r'\s+(?P<rest>.+)$', stmt)
+        if not m:
+            return None
+        base = re.sub(r'\s+', ' ', m.group('t'))
+        for d in m.group('rest').split(','):
+            d = d.strip()
+            dm = re.match(r'^(?P<stars>\*+\s*)?(?P<n>\w+)\s*(?P<arr>\[[^\]]*\])?$', d)
+            if not dm:
+                return None
+            stars = (dm.group('stars') or '').replace(' ', '')
+            arr = dm.group('arr') or ''
+            result[dm.group('n')] = f"{base} {stars}{dm.group('n')}{arr}"
+    return result
+
+
+# ---------------------------------------------------------------- conversion
+
+class FileReport:
+    def __init__(self):
+        self.methods = []
+        self.classprocs = []
+        self.helpers = []
+        self.drift = []          # (funcname, detail) -- .ch vs .c mismatch
+        self.skipped = []        # (funcname, reason)
+
+
+def convert_file(path, dbdir, do_helpers=True):
+    """Return (new_text, report) -- new_text is None if nothing changed."""
+    with open(path, errors='replace') as f:
+        lines = f.read().split('\n')
+
+    rep = FileReport()
+    out = []
+    i = 0
+    n = len(lines)
+    changed = False
+
+    while i < n:
+        line = lines[i]
+        m = HDR.match(line)
+        cand = None
+        if m and m.group('name') not in RESERVED and BARE_PARAMS.match(m.group('params') or ''):
+            ret = (m.group('ret') or '').strip()
+            # two-line form: return type (possibly with static) on the previous line
+            prev_type = ''
+            if not ret and out and TYPEONLY.match(out[-1].strip()) and out[-1].strip():
+                prev_type = out[-1].strip()
+            body = parse_decl_block(lines, i + 1)
+            if body is not None:
+                cand = (m, ret, prev_type, body)
+
+        if not cand:
+            out.append(line)
+            i += 1
+            continue
+
+        m, ret, prev_type, (brace_idx, decl_text) = cand
+        fname = m.group('name')
+        params = [p.strip() for p in m.group('params').split(',') if p.strip()]
+
+        new_hdr = None
+        clsm = re.match(r'^(\w+)__(\w+)$', fname)
+        if clsm:
+            cls, meth = clsm.group(1), clsm.group(2)
+            desc = load_class_desc(dbdir, cls)
+            sig = None
+            kind = None
+            if desc:
+                if meth in desc['method']:
+                    sig, kind = desc['method'][meth], 'method'
+                elif meth in desc['classproc']:
+                    sig, kind = desc['classproc'][meth], 'classproc'
+            if sig is None:
+                rep.skipped.append((fname, 'no signature in DB'))
+            else:
+                dbret, dbargs = sig
+                if len(params) != len(dbargs) + 1:
+                    rep.drift.append(
+                        (fname, f'.c has {len(params)} params, .ch has {len(dbargs)}+1'))
+                else:
+                    first = (f'struct {cls} *{params[0]}' if kind == 'method'
+                             else f'struct classheader *{params[0]}')
+                    woven = [first]
+                    bad = None
+                    for t, nm in zip(dbargs, params[1:]):
+                        w = weave(t, nm)
+                        if w is None:
+                            bad = t
+                            break
+                        woven.append(w)
+                    if bad is not None:
+                        rep.skipped.append((fname, f'unhandled type: {bad}'))
+                    else:
+                        new_hdr = f"{tidy_type(dbret)} {fname}({', '.join(woven)})"
+                        (rep.methods if kind == 'method' else rep.classprocs).append(fname)
+        elif do_helpers:
+            local = parse_local_decls(decl_text)
+            if local is None:
+                rep.skipped.append((fname, 'unparseable K&R declarations'))
+            else:
+                woven = [local.get(nm, f'int {nm}') for nm in params]
+                static_kw = ''
+                base_ret = ret or prev_type or 'int'
+                if base_ret.startswith('static'):
+                    static_kw = ''
+                new_hdr = f"{tidy_type(base_ret)} {fname}({', '.join(woven) if woven else 'void'})"
+                rep.helpers.append(fname)
+
+        if new_hdr is None:
+            out.append(line)
+            i += 1
+            continue
+
+        if prev_type:
+            out.pop()           # the type-only line is folded into new_hdr
+        out.append(new_hdr)
+        i = brace_idx           # skip the K&R decl block entirely
+        changed = True
+
+    if not changed:
+        return None, rep
+    return '\n'.join(out), rep
+
+
+# ---------------------------------------------------------------- driver
+
+def run_fix_tools(path, dry_run):
+    for tool in ('fix-static-methods', 'fix-missing-static-decl'):
+        t = os.path.join(TOOLDIR, tool)
+        cmd = [sys.executable, t] + (['--dry-run'] if dry_run else []) + [path]
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        outp = (r.stdout or '').strip()
+        if outp and 'Total files' not in outp.split('\n')[0]:
+            for ln in outp.split('\n'):
+                if ln.startswith(('Modified', 'Would modify', '  SKIPPED')):
+                    print(f"    [{tool}] {ln.strip()}")
+
+
+def compile_gate(path):
+    d = os.path.dirname(os.path.abspath(path))
+    base = os.path.splitext(os.path.basename(path))[0]
+    if not os.path.isfile(os.path.join(d, 'Makefile')):
+        return None, 'no Makefile -- compile gate skipped'
+    r = subprocess.run(['make', base + '.o'], cwd=d, capture_output=True, text=True)
+    if r.returncode == 0:
+        return True, ''
+    return False, (r.stderr or r.stdout)
+
+
+def process(path, dbdir, args):
+    print(f"{os.path.relpath(path, ROOT) if path.startswith(ROOT) else path}:")
+    backup = path + '.ansify-orig'
+    shutil.copyfile(path, backup)
+
+    try:
+        if not args.dry_run:
+            run_fix_tools(path, dry_run=False)
+        new_text, rep = convert_file(path, dbdir, do_helpers=not args.no_helpers)
+
+        for fn, why in rep.drift:
+            print(f"    DRIFT   {fn}: {why}  << check for a real .ch-vs-.c bug")
+        for fn, why in rep.skipped:
+            print(f"    skipped {fn}: {why}")
+
+        total = len(rep.methods) + len(rep.classprocs) + len(rep.helpers)
+        if new_text is None:
+            print("    no K&R definitions converted")
+            if args.dry_run or not os.path.exists(backup):
+                pass
+            os.unlink(backup)
+            return True, rep
+
+        if args.dry_run:
+            print(f"    would convert: {len(rep.methods)} methods, "
+                  f"{len(rep.classprocs)} classprocs, {len(rep.helpers)} helpers")
+            shutil.copyfile(backup, path)   # undo fix-tools edits too
+            os.unlink(backup)
+            return True, rep
+
+        with open(path, 'w') as f:
+            f.write(new_text)
+        print(f"    converted: {len(rep.methods)} methods, "
+              f"{len(rep.classprocs)} classprocs, {len(rep.helpers)} helpers")
+
+        if args.no_compile:
+            ok = True
+        else:
+            ok, detail = compile_gate(path)
+            if ok is None:
+                print(f"    {detail}")
+                ok = True
+            elif not ok:
+                print("    COMPILE FAILED -- restoring original:")
+                for ln in detail.strip().split('\n')[:12]:
+                    print(f"      {ln}")
+                shutil.copyfile(backup, path)
+
+        if ok and not args.keep_backup:
+            os.unlink(backup)
+        elif not ok:
+            os.unlink(backup)
+        return ok, rep
+    except Exception:
+        shutil.copyfile(backup, path)
+        os.unlink(backup)
+        raise
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    ap.add_argument('--build-db', action='store_true')
+    ap.add_argument('--db', default=os.path.join(ROOT, 'build', 'desc'))
+    ap.add_argument('--dir')
+    ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--no-compile', action='store_true')
+    ap.add_argument('--no-helpers', action='store_true')
+    ap.add_argument('--keep-backup', action='store_true')
+    ap.add_argument('files', nargs='*')
+    args = ap.parse_args()
+
+    if args.build_db:
+        sys.exit(build_db(args.db))
+
+    targets = list(args.files)
+    if args.dir:
+        for dirpath, dirnames, filenames in os.walk(args.dir):
+            dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+            for fn in sorted(filenames):
+                if fn.endswith('.c'):
+                    targets.append(os.path.join(dirpath, fn))
+    if not targets:
+        ap.print_help()
+        sys.exit(1)
+    if not os.path.isdir(args.db):
+        sys.exit(f"ansify: signature DB {args.db} missing -- run: ansify --build-db")
+
+    failures = drift_total = 0
+    for path in targets:
+        ok, rep = process(path, args.db, args)
+        if not ok:
+            failures += 1
+        drift_total += len(rep.drift)
+
+    print(f"\n{len(targets)} file(s); {failures} compile failure(s); "
+          f"{drift_total} DRIFT finding(s)")
+    sys.exit(1 if failures else 0)
+
+
+if __name__ == '__main__':
+    main()

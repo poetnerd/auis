@@ -637,12 +637,20 @@ call site and definition tree-wide *before* any mass file editing starts
   fix by adding `#include`s or `extern` declarations at call sites.
   Closes Variant 1 permanently — it has cost debugging time on every
   subtree activation so far.
-- **M3 — Definition conversion.** New `ansify` pipeline
-  (porting-assessment §14: static-fix tools → class methods by
-  signature-DB lookup → cproto for file-local functions → per-file
-  compile gate), one subtree per commit, dependency order: overhead →
-  atk/basics+support → atk/text → insets → apps → atkams/ams → contrib.
-  Ratchet each completed subtree from `-Wno-*` to
+- **M3 — Definition conversion.** `ansify` (`revival/tools/ansify`,
+  built and validated 2026-07-08 — see porting-assessment §14):
+  static-fix tools → class methods/classprocs by signature-DB lookup
+  (`ansify --build-db`, 565 classes) → file-local helpers from their
+  own K&R declarations, strict parser (cproto rejected: can't read
+  macOS SDK headers) → per-file compile gate with auto-restore.
+  Per-subtree step: add `-pe` to the directory's `CLASSFLAGS` (its
+  `.eh` must be prototyped in the same step — narrow param types like
+  `char` conflict with typeless `.eh` decls otherwise; proven on
+  `eq__WriteFILE`), force regen, `ansify --dir`, clean build, triage
+  DRIFT reports, commit. One subtree per commit, dependency order:
+  overhead → atk/basics+support → atk/text → insets → apps →
+  atkams/ams → contrib. Ratchet each completed subtree from `-Wno-*`
+  to
   `-Werror=implicit-int,strict-prototypes,int-conversion,incompatible-function-pointer-types`.
 - **M4 — Global strictness.** Tree-wide `-Werror` on the type-safety
   set; `-Wformat` then catches any remaining scanf `%d`/`%ld` (Variant
