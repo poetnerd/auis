@@ -55,7 +55,7 @@ methods:
     InsertTokensCarefully(long pos, char *s) returns long;
     Delete(long pos);
     DeleteCarefully(long start, long stop) returns long;
-    DoScript(long pos, enum script *script, char *string) returns long;
+    DoScript(long pos, enum script script, char *string) returns long;
     CreateMark(long pos, long length) returns struct mark *;
     RemoveMark(struct mark *mark);
     Erase();

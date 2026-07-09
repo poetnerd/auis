@@ -30,6 +30,9 @@
 CDEBUGFLAGS =
 #endif
 
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
+
 DOBJS = eq.do eqv.do
 IHFILES = eq.ih eqv.ih
 
