@@ -403,9 +403,9 @@ long delta;
     if(delta != USECURRENTMARK) self->cmark = delta;
     d1.m = self->m1[self->cmark];
     sprintf(d1.buf,"diff %d of %d",self->cmark + 1,self->nummarks);
-    buffer_EnumerateViews(self->buf[0], LocateInView, (long) &d1);
+    buffer_EnumerateViews(self->buf[0], LocateInView, &d1);
     d1.m = self->m2[self->cmark];
-    buffer_EnumerateViews(self->buf[1], LocateInView, (long) &d1);
+    buffer_EnumerateViews(self->buf[1], LocateInView, &d1);
 }
 static ezdiff_Current(v,delta)
 struct textview *v;

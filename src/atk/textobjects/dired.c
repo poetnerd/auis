@@ -345,7 +345,7 @@ long pos;
     if (self->flist == NULL)
         return NULL;
     return (struct fileinfo *)
-      list_Enumerate(self->flist, FindPosProc, pos);
+      list_Enumerate(self->flist, FindPosProc, (void *) pos);
 }
 
 /*

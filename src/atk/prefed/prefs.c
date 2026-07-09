@@ -510,7 +510,7 @@ char *newapp, *newcond;
     prefval_AddObserver(result->obj, self);
     if(pd->order>=0) {
 	long ipos=(-1);
-	list_Enumerate(self->prefs, FixOrderValues, pd->order);
+	list_Enumerate(self->prefs, FixOrderValues, (void *) pd->order);
 	self->maxorder++;
 	if(pd->app==star || pd->app==NULL) {
 	    result->order=pd->order;

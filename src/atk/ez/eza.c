@@ -176,14 +176,14 @@ void Checkpoint(dummyData)
     result.buffer = NULL;
     result.bufferclock = CkpLatency - 1; /* (number + 1) * CKPINTERVAL seconds is how often a given buffer can be checkpointed. */
 
-    buffer_Enumerate(FindCkpBuffer, (long) &result);
+    buffer_Enumerate(FindCkpBuffer, &result);
     if (result.buffer != NULL) {
 
         int closeCode;
 
         im_SetProcessCursor(waitCursor);
         if (buffer_Visible(result.buffer))
-            buffer_EnumerateViews(result.buffer, CkpMessage, (long) "Checkpointing...");
+            buffer_EnumerateViews(result.buffer, CkpMessage, "Checkpointing...");
         im_ForceUpdate();
 
         if ((closeCode = buffer_WriteToFile(result.buffer, buffer_GetCkpFilename(result.buffer), 0)) >= 0) {
@@ -192,7 +192,7 @@ void Checkpoint(dummyData)
         }
 
         if (buffer_Visible(result.buffer))
-            buffer_EnumerateViews(result.buffer, CkpMessage, (long)(closeCode ? "Checkpoint Failed." : "Checkpointed."));
+            buffer_EnumerateViews(result.buffer, CkpMessage, (closeCode ? "Checkpoint Failed." : "Checkpointed."));
         im_SetProcessCursor(NULL);
     }
     im_EnqueueEvent((procedure) Checkpoint, 0, event_SECtoTU(CkpInterval));

@@ -165,7 +165,7 @@ long value;
     else {
 	buf = buffer_FindBufferByData((struct dataobject *)ct->srctext);
 	if(buf)
-	    buffer_EnumerateViews(buf,LocateInView,(long) loc);
+	    buffer_EnumerateViews(buf,LocateInView,loc);
     }
 }
 static void denumerate(self,value)

@@ -145,7 +145,7 @@ static void InsertMessage(buffer, pos, string, len)
     }
     lengths.first = pos;
     lengths.second = pos + len + 1;
-    buffer_EnumerateViews(buffer, SetDotToEnd, (long) &lengths);
+    buffer_EnumerateViews(buffer, SetDotToEnd, &lengths);
     text_NotifyObservers(doc, 0);
 }
 
@@ -308,7 +308,7 @@ static void compile_BuildHandler(inputFile, processBuffer)
         text_InsertCharacters(logDoc, length, buffer, len = strlen(buffer));
         lengths.first = length;
         lengths.second = length + len;
-        buffer_EnumerateViews(processBuffer->buffer, SetDotToEnd, (long) &lengths);
+        buffer_EnumerateViews(processBuffer->buffer, SetDotToEnd, &lengths);
         text_NotifyObservers(logDoc, 0);
     }
     else {
@@ -406,7 +406,7 @@ static boolean SaveAllBuffers(view)
     struct view *view;
 {
 
-    return (buffer_Enumerate(SaveModifiedBuffer, (long) view) == NULL);
+    return (buffer_Enumerate(SaveModifiedBuffer, view) == NULL);
 }
 
 static struct view *PutInAnotherWindow();

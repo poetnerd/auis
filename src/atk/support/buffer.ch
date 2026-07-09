@@ -50,7 +50,7 @@ class buffer: observable[observe] {
     overrides:
         ObservedChanged(struct observable *object, long value);
     methods:
-        EnumerateViews(procedure mapFunction, long functionData) returns struct view *; /* ??? */
+        EnumerateViews(procedure mapFunction, void *functionData) returns struct view *; /* ??? */
         SetData(struct dataobject *data);
         SetName(char *name);
         SetFilename(char *fileName);
@@ -92,7 +92,7 @@ class buffer: observable[observe] {
 	GetIsModified() (self->isModified)
         GetIsRawFile() (self->isRawFile)
     classprocedures:
-        Enumerate(procedure mapFunction, long functionData) returns struct buffer *;
+        Enumerate(procedure mapFunction, void *functionData) returns struct buffer *;
 	Create(char *bufferName, char *fileName, char *objetName, struct dataobject *data) returns struct buffer *;
 	GetGlobalBufferList() returns struct bufferlist *;
 

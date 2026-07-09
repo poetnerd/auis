@@ -486,7 +486,7 @@ void buttonV__DrawNewValue( self )
 		rl->pushed = FALSE;
 		DrawButton(self,rl,0,0,0,0,FALSE,TRUE);
 	    }
-	    rl = (struct buttonV_rl *) list_Enumerate(self->list,findkey,i);
+	    rl = (struct buttonV_rl *) list_Enumerate(self->list,findkey,(void *) i);
 	    if(rl){
 		rl->pushed = TRUE;
 		DrawButton(self,rl,0,0,0,0,FALSE,TRUE);

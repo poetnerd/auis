@@ -70,7 +70,7 @@ methods:
     /* proc returns FALSE, enumerate terminates and */
     /* returns the piece of data responsible. */
 
-    Enumerate(procedure proc, char *rock) returns char *;
+    Enumerate(procedure proc, void *rock) returns char *;
 
     Clear();
 

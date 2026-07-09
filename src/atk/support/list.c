@@ -84,7 +84,7 @@ void list__Merge(classID, dst, src)
 struct classheader *classID;
 struct list *dst, *src;
 {
-    list_Enumerate(src, CopyEntry, (char *) dst);
+    list_Enumerate(src, CopyEntry, dst);
 }
 
 void list__Append(classID, dst, src)
@@ -284,7 +284,7 @@ procedure compare;
 
     if(a.list == NULL) return FALSE;
     
-    list_Enumerate(self, MoveNew, (char *) &a);
+    list_Enumerate(self, MoveNew, &a);
 
     qsort(a.list, self->size, sizeof(char *), rcompare);
 

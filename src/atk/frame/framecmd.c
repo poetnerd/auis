@@ -465,7 +465,7 @@ saveTheWorld(outputFrame)
     returnCode.anyModified = returnCode.modifiedWithoutFilenames = FALSE;
 
     im_SetProcessCursor(waitCursor);
-    buffer_Enumerate(saveAllWork, (long) &returnCode);
+    buffer_Enumerate(saveAllWork, &returnCode);
     im_SetProcessCursor(NULL);
 
     if (returnCode.lengthLeft != origLen) {
@@ -861,7 +861,7 @@ static enum message_CompletionCode BufferComplete(partial, dummyData,
     result.best = textBuffer;
     result.max = sizeof(textBuffer) - 1; /* Leave extra room for a NUL. */
 
-    buffer_Enumerate(BufferCompletionWork, (long) &result);
+    buffer_Enumerate(BufferCompletionWork, &result);
 
     strncpy(buffer, result.best, bufferSize);
     if (result.bestLen == bufferSize) /* Now make sure buffer ends in a NUL. */
@@ -939,7 +939,7 @@ long helpTextRock;
     helpData.textFunction = helpTextFunction;
     helpData.textRock = helpTextRock;
 
-    buffer_Enumerate(BufferHelpWork, (long) &helpData);
+    buffer_Enumerate(BufferHelpWork, &helpData);
 }
 
 static char lastBuffer[100] = "";
@@ -960,7 +960,7 @@ void frame_OldBuffer(self)
 
     if (*lastBuffer == '\0') {
         buffer = frame_GetBuffer(self);   /* Any except current */
-        buffer = buffer_Enumerate(FindFirstBuffer, (long) buffer);
+        buffer = buffer_Enumerate(FindFirstBuffer, buffer);
         if (buffer != NULL)
             strcpy(lastBuffer, buffer_GetName(buffer));
     }
@@ -991,7 +991,7 @@ void frame_VisitBuffer(self)
 
     if (*lastBuffer == '\0') {
         buffer = frame_GetBuffer(self);     /* Any except current */
-        buffer = buffer_Enumerate(FindFirstBuffer, (long) buffer);
+        buffer = buffer_Enumerate(FindFirstBuffer, buffer);
         if (buffer != NULL)
             strcpy(lastBuffer, buffer_GetName(buffer));
         else
@@ -1200,7 +1200,7 @@ void frame_DeleteBuffer(self)
         if (newBuffer == targetBuffer)
             newBuffer = NULL;
         if (newBuffer == NULL)
-            newBuffer = buffer_Enumerate(FindFirstBuffer, (long) targetBuffer);
+            newBuffer = buffer_Enumerate(FindFirstBuffer, targetBuffer);
         if (newBuffer == NULL)
             newBuffer = buffer_Create("Scratch", NULL, NULL, NULL);
         if (newBuffer == NULL) {
