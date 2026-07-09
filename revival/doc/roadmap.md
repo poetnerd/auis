@@ -41,6 +41,17 @@ history behind each completed item.
   symba PCF generation, or the `xset fp+` font-path setup. Other
   symbol glyphs render fine.
 
+### Raster converters:
+
+- `convertraster intype=RF` hangs reading back the `.ras` file the
+  same binary just wrote (observed 2026-07-09, logged *before* the
+  atk/raster/lib -pi rollout — pre-existing, not a regression).
+  Writer output also looks LP64-suspicious: header fields appear
+  8 bytes wide. Suspect `oldrf.c` raw struct I/O. Other codecs fine:
+  raster identity rewrite, PostScript, MacPaint, Xbitmap write and
+  Xbitmap→raster round-trip (byte-identical to identity output) all
+  pass; baseline captured in `~/src/AUIS/test-baselines/raster-pi/`.
+
 ### Input focus:
 
 - Figure inset menus post but commands are ignored until the inset
