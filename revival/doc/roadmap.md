@@ -41,6 +41,16 @@ history behind each completed item.
   symba PCF generation, or the `xset fp+` font-path setup. Other
   symbol glyphs render fine.
 
+### Input focus:
+
+- Figure inset menus post but commands are ignored until the inset
+  regains input focus (observed 2026-07-09 in `95Summer.ez`;
+  first-time test, so presumed pre-existing rather than a -pi
+  regression). Workaround that proves the diagnosis: scroll the
+  object off screen and back — the inset then takes focus and obeys
+  commands. Research: menu posting appears not to route/claim input
+  focus for the posting view.
+
 ---
 
 ## Questions
@@ -689,8 +699,15 @@ zero-consumer leaves, then the core, largest last.
        capture bug class, fixed structurally in classpp; DoScript
        stray-`*` DRIFT in `eq.ch`, a ~35-year-old typo caught by the
        first typed rebuild; two process wrinkles for the runbook)
-3. [ ] Pilot B — `atk/figure` (17 classes, 0 external; runtime check:
-       `95Summer.ez` figure; recently debugged, well understood)
+3. [x] Pilot B — `atk/figure` (done 2026-07-09; clean-build gate
+       green, figure inset visually verified in `95Summer.ez` —
+       behavior unchanged; new pre-existing menu-focus bug logged
+       under Little Annoyances. Findings — see
+       porting-assessment §14 "Pilot B findings": typeless `.ch`
+       declarations (`MoveHandle`), rock-idiom `long`→`void *`, and
+       a six-file `Build(action, v)` vs runtime `(v, action)`
+       transposition — the `.ch` was wrong for ~35 years; all fixes
+       interface-side only)
 4. [ ] First cross-directory step — `atk/raster/lib` (7 classes, 17
        external includers; runtime check: raster insets)
 5. [ ] `atk/frame` (5 classes, 95 external)

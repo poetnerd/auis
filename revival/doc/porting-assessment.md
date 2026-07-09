@@ -804,6 +804,49 @@ visually verified in `Sherman.Alloc`. Four findings for the runbook:
    time, and its demo step emits alarming-but-nonfatal `cui`/`ms`
    messages.
 
+#### Pilot B findings (atk/figure, 2026-07-09)
+
+Three new fallout patterns for the runbook, all interface-side (`.ch`
+fixes only, no `.c` changes needed):
+
+1. **Typeless `.ch` declarations exist** — a third DRIFT flavor.
+   `MoveHandle(x, y, ptref)` was declared with *no types at all* in
+   five `.ch` files (figobj + four overriders); classpp silently
+   treats each unknown token as a type name and rewrites it to
+   `void *` in the typed cast, so callers passing `long`s failed.
+   All five implementations agree on `long x, y, ptref`; typed the
+   declarations to match. Runbook rule: an all-`void *` cast for a
+   method whose callers pass integers usually means the `.ch` never
+   had types, not that the callers are wrong.
+2. **The rock idiom:** parameters declared `long rock` where every
+   caller passes a pointer (`figure.ch`
+   `Enumerate{Objects,ObjectGroup,ObjectTree}`, `figv.ch`
+   `EnumerateSelection` — 13 call sites). Changed to `void *rock`,
+   the LP64-correct direction; the K&R implementations keep `long`
+   internally, which round-trips pointers on LP64 and gets cleaned
+   up at M3. Counter-example in the same directory: `ToolName`/
+   `ToolModify`/`Instantiate` rocks are fed from a `long` field in
+   `objectlayout[]` — genuinely integers, left alone. Judge each
+   rock by its callers, not its name.
+3. **Whole-parameter transposition — the biggest DRIFT class yet.**
+   `figobj.ch` (and five subclass `.ch`s) declared
+   `Build(enum view_MouseAction action, struct figview *v, ...)`,
+   but all six implementations *and every dispatch caller* use
+   `(v, action, ...)`. The declaration has been wrong for ~35 years;
+   runtime was consistent because nothing ever read the `.ch` order.
+   Fixed the six declarations to the runtime truth. Consequence
+   worth stating: had M3 run before M1, the `.desc` signature DB
+   would have handed ansify the transposed order for every
+   `figobj__Build` conversion — the pilots are validating the
+   M1-before-M3 sequencing in exactly the way we hoped.
+
+Also observed (benign): `-Wincompatible-pointer-types` warnings where
+a subclass pointer is passed to a typed cast whose `self` parameter is
+the *defining* superclass (`struct traced *`). That is the class
+system's prefix-layout subtyping working as designed; these warnings
+are expected wherever inherited methods are dispatched and are not
+fallout.
+
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 
 **Resolved 2026-07-04 for the local-store case — see `roadmap.md` Near-term →
