@@ -673,7 +673,9 @@ done. Ordering is by external-consumer count (survey 2026-07-08,
 porting-assessment §14), not directory nesting: pilots on
 zero-consumer leaves, then the core, largest last.
 
-1. [ ] classpp: `-pi`/`-pe` split, `>= 8` gates dropped under `-pi`
+1. [x] classpp: `-pi`/`-pe` split, `>= 8` gates dropped under `-pi`
+       (done 2026-07-08; verified byte-identical default output,
+       binary installed)
 2. [ ] Pilot A — `atk/eq` (2 classes, 0 external consumers; runtime
        check: eq inset in `Sherman.Alloc`)
 3. [ ] Pilot B — `atk/figure` (17 classes, 0 external; runtime check:
