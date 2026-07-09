@@ -653,6 +653,84 @@ triage are Haiku class. Kept at the top level: the classpp codegen change
 (M1), `ansify` construction, and adjudicating `.ch`-vs-`.c` signature
 disagreements — those are real bugs, not conversion noise.
 
+#### M1 mechanics (clarified 2026-07-08)
+
+`fossil annotate` shows the classpp machinery already exists — checkin
+`f4bf876da4` (2026-07-01) built both halves and deliberately throttled
+them:
+
+- `usePrototypesImport` (typed casts in `.ih` dispatch macros): default
+  **on**, but the three general emitters (method macros, classprocs,
+  `super_`) are gated `argcount >= 8` — the minimum for the arm64 ABI
+  fix. The special classprocs (`New`/`Initialize`/`Destroy`/`Finalize`)
+  already emit full typed prototypes ungated.
+- `usePrototypesExport` (ANSI prototypes for method implementations in
+  the `.eh`, from `realargtypes`): fully implemented, default **off**,
+  commented `/* K&R decls: compatible with unconverted .c files */`.
+- `-p` switches both fully on. `-D` writes `classname.desc` — method
+  name, return type, full argument list, defined-by, vtable index —
+  which *is* the signature database `ansify` needs.
+- The `.ch.ih`/`.ch.eh` suffix rules in `config/andrew.rls` already pass
+  `$(CLASSFLAGS)`, so per-directory opt-in is one Imakefile variable.
+
+So M1's code component is small: split `-p` into `-pi` (Import, all
+methods — drops the `>= 8` gates) and `-pe` (Export), keep `-p` as both,
+defaults unchanged. The substance of M1 is the rollout below.
+
+**Design constraint (the one rule):** classpp's compiled-in defaults do
+not change until the whole tree is opted in. All rollout state lives in
+committed Imakefile `CLASSFLAGS`. Consequences:
+
+- Top-level builds — including `make Clean; make dependInstall` — are
+  always safe: every directory regenerates with its own committed
+  flags, so a clean build deterministically reproduces the committed
+  converted/unconverted mix. The clean build is the gold-standard
+  verification for each step, not a hazard. (Generated `.ih`/`.eh` are
+  untracked in-tree build products; regeneration cannot dirty fossil.)
+- The June failure mode cannot recur here: only generated, uncommitted
+  output changes; a mistake is cured by resetting a flag and
+  regenerating.
+
+**Timestamp wrinkle:** the suffix rules fire on `.ch`-newer-than-`.ih`,
+so flipping `CLASSFLAGS` does *not* regenerate by itself. Each opt-in
+step must force regeneration (delete the directory's generated
+`.ih`/`.eh`, or touch its `.ch` files). Step rhythm: set flag → force
+regen → clean build → fix fallout → runtime spot-check → commit.
+
+**Blast-radius asymmetry (why `-pi`/`-pe` split):** a class's `.eh` is
+included only by its own implementation files, so Export fallout is
+local to the flagged directory — it rides along with M3's per-subtree
+conversion. But its `.ih` is installed to `build/include` and included
+by every consumer tree-wide, so Import fallout surfaces at *call sites
+in other directories*: missing type visibility (`FILE *`, typedefs)
+where the `.ih` is included, and pointer-through-`long`-rock arguments
+that clang treats as errors once the cast is prototyped.
+
+**Import ordering — by consumer count, not directory tree:** classpp
+reads the whole parent `.ch` chain when generating a subclass's `.ih`,
+so a flagged leaf directory gets typed casts for inherited-method
+macros without its parents being flagged; nothing structurally forces
+bottom-up order. Fallout size of flagging a directory ≈ how many files
+include the `.ih`s it generates. A 2026-07-08 survey (counting
+`#include <X.ih>` across `src/` against each class's defining
+directory) ranks the tree:
+
+| Directory | external `.ih` includes | classes |
+|---|---|---|
+| `atk/basics/common` | 2,351 | 41 (`im` 257, `view` 245, `fontdesc` 187, `environ` 176, `message` 174, `proctbl` 148, `menulist` 135, ...) |
+| `atk/support` | 450 | 19 (`style` 94, `envrment` 81, `buffer` 60) |
+| `atk/text` | 321 | 21 (`text` 169, `textv` 94) |
+| `atk/supportviews` | 178 | 17 |
+| `atk/frame` | 95 | 5 (`frame` 85) |
+| ~50 leaf directories | 0 | (pilot candidates) |
+
+Strategy: pilot on zero-consumer leaves to learn the fix patterns
+cheaply, then invert to the most-consumed core — that is where LP64
+Variants 3/5 actually lived, and typing those `.ih`s protects all
+consumers tree-wide at once, including directories not yet converted.
+The ordered rollout checklist lives in `roadmap.md` → M1 rollout
+points.
+
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 
 **Resolved 2026-07-04 for the local-store case — see `roadmap.md` Near-term →

@@ -625,9 +625,13 @@ call site and definition tree-wide *before* any mass file editing starts
   `long text__Read();`) and typed casts in all `.ih` dispatch macros
   (extends the 2026-06-30 ≥9-arg fix to every method). Kills LP64
   Variants 2/3/5 structurally and catches signature drift (the
-  `CUI_GetHeaders` class of bug) at compile time. Side output: a
-  method-signature database for M3. Gate behind a classpp flag or
-  regenerate subtree-by-subtree so error burndown is incremental.
+  `CUI_GetHeaders` class of bug) at compile time. The machinery
+  already exists in classpp (`usePrototypesImport`/`Export`, `-p`,
+  `-D` signature/`.desc` files, `$(CLASSFLAGS)` hook in andrew.rls —
+  see porting-assessment §14 "M1 mechanics"); the code change is just
+  splitting `-p` into `-pi`/`-pe` and dropping the `>= 8` gates behind
+  `-pi`, defaults untouched. The real work is the per-directory
+  rollout — see "M1 rollout points" below.
 - **M2 — Prototype sweep.** `-Werror=implicit-function-declaration`
   subtree-by-subtree (`src/config/darwin/system.mcr` COMPILERFLAGS);
   fix by adding `#include`s or `extern` declarations at call sites.
@@ -649,6 +653,46 @@ Scale: ~13,700 K&R definitions across ~1,301 of 1,544 `.c` files; ~5,100
 are class methods converted by `.ch` lookup, not inference. M2/M3 runs
 are delegable (Sonnet-class) under the §14 guardrails; M1 and
 `.ch`-vs-`.c` signature disagreements stay top-level.
+
+#### M1 rollout points (Import half: `CLASSFLAGS = -pi` per directory)
+
+Rollout state lives only in committed Imakefiles; classpp defaults
+never change until step 10. Per-step rhythm: set `CLASSFLAGS` → force
+regen (delete the directory's generated `.ih`/`.eh` or touch its
+`.ch`s) → `make Clean; make dependInstall` → fix consumer fallout →
+runtime spot-check → commit. Clean build passing is the definition of
+done. Ordering is by external-consumer count (survey 2026-07-08,
+porting-assessment §14), not directory nesting: pilots on
+zero-consumer leaves, then the core, largest last.
+
+1. [ ] classpp: `-pi`/`-pe` split, `>= 8` gates dropped under `-pi`
+2. [ ] Pilot A — `atk/eq` (2 classes, 0 external consumers; runtime
+       check: eq inset in `Sherman.Alloc`)
+3. [ ] Pilot B — `atk/figure` (17 classes, 0 external; runtime check:
+       `95Summer.ez` figure; recently debugged, well understood)
+4. [ ] First cross-directory step — `atk/raster/lib` (7 classes, 17
+       external includers; runtime check: raster insets)
+5. [ ] `atk/frame` (5 classes, 95 external)
+6. [ ] `atk/supportviews` (17 classes, 178 external)
+7. [ ] `atk/text` (21 classes, 321 external)
+8. [ ] `atk/support` (19 classes, 450 external)
+9. [ ] `atk/basics/common` (41 classes, 2,351 external — `im`, `view`,
+       `fontdesc`, `environ`, `message`, `proctbl`, `menulist`,
+       `graphic`, `dataobj`, `keymap`; the LP64 Variant-3/5 epicenter.
+       Largest burndown, largest payoff: every consumer tree-wide is
+       protected once this lands)
+10. [ ] Breadth: remaining atk (`value`, `adew`, `apt`, `basics/wm`,
+       `basics/x`, `hyplink`, `syntax/parse`, ...), then `atkams`/
+       `ams`, `contrib` (`zip/lib` first), `examples` — delegable
+       batches
+11. [ ] Flip classpp default: Import-all becomes compiled-in, delete
+       the per-directory `-pi` flags (single mechanical commit)
+12. [ ] Export (`-pe`) is *not* sequenced here — it rides with each
+       subtree's M3 conversion, since its blast radius is only the
+       implementing directory
+
+Steps 2–4 are top-level work (learning the fix patterns); 5–10 are
+increasingly delegable once the patterns are documented.
 
 ### ~~Integration test: `Sherman.Alloc`~~ — proven
 All insets in `Sherman.Alloc` render correctly (fad, cel, arbiter, eq, table);
