@@ -131,9 +131,33 @@ ONLY. Never edit a `.c` to match a `.ch`.
   checking, and receive the same bits either way. Do NOT split the
   method or redesign callers to pass addresses — semantics must be
   preserved bit-for-bit; deeper cleanup belongs to M3.
+  **Integer-majority rock** (point 9, `keymap.ch BindToKey`, decided
+  2026-07-09): when genuine-integer callers dominate (161 int/zero vs
+  1 pointer there), the rock STAYS `long` and the minority pointer
+  site gets an explicit `(long)` cast on the argument — the mirror
+  image of the dual-use resolution, same pre-authorization.
+- **Dual-use attribute values** (point 9): a `long`-returning
+  attribute getter (`suite_ItemAttribute`, `chart_ItemAttribute`)
+  whose result feeds a correctly-pointer-typed parameter
+  (`char *string`, `char *Text`). The getter's class is out of
+  scope; the call site gets an explicit pointer cast on the
+  argument. Same class of fix as the dual-use casts above.
+  Sibling case: magic integer constants passed for a struct-pointer
+  parameter by convention (`graphic_BLACK`=0xFF as a `FillRect*`
+  Tile) — cast at the call site, convention preserved bit-for-bit.
+- **Missing prototype exposed by typing** (point 9, `clockv.c`
+  `NewString`): an undeclared pointer-returning function used inline
+  in a now-typed argument errors as int-to-pointer. This is the M2
+  bug class arriving early; fix by adding the `#include`/`extern`
+  declaration the sibling files already use. Semantics-restoring
+  (the pointer was truncating on LP64), so it is a fix, not drift.
 - **Signature drift** — wrong types, stray `*`, or transposed
   parameters vs the implementations (`eq.ch DoScript`,
   `figobj.ch Build`). Fix the `.ch` to match impls + callers.
+  Transposed args at a CALL site (impl+.ch agree, one caller wrong:
+  point 9 `htmlview.c` `DisplayString(self, "msg", 0)`) are a live
+  bug — hard stop; ruled 2026-07-09: fix the caller, as a separate
+  commit from the rollout commit.
 - **Benign, ignore:** `-Wincompatible-pointer-types` passing a
   subclass pointer where the cast names the *defining* superclass
   (`struct traced *` etc.) — prefix-layout subtyping, expected
@@ -142,6 +166,30 @@ ONLY. Never edit a `.c` to match a `.ch`.
   it after verifying the installed `.ih` actually contains typed
   casts and `_a1`-style positional args (guard against a vacuous
   rebuild, see step 2/3).
+
+## Methodology notes (point 9, large directories)
+
+- **The gate log under-reports.** A directory's build stops at its
+  first failing file, so later files' fallout is invisible until the
+  blocker is fixed — expect new errors on each re-gate. For any
+  method with fallout, run a static tree-wide call-site census
+  (grep + read each site) BEFORE retyping; classify every site as
+  bare-pointer / laundered `(long)` cast / genuine integer / zero.
+  Remember: laundered casts and integers compile silently against a
+  `long` rock — the gate only ever shows the bare-pointer sites, so
+  the census, not the error list, is the basis for the retype
+  decision.
+- **Census and mechanical edits delegate well** (Sonnet-class):
+  give exact file:line + expected argument text + replacement;
+  require skip-and-report on any mismatch. Retype rulings and
+  hard-stop calls stay with the operator.
+- **`-pi` emits `void *` for struct-pointer method args** (self is
+  fully typed; basic C types like `char *`/`long` are fully typed).
+  Consequence: wrong-struct-pointer mistakes are NOT caught, but
+  int-vs-pointer mistakes — the LP64 killers — all are. Also means
+  a typed macro can reach into unflagged directories via
+  macromethods that expand to a flagged class's dispatch
+  (`chartobj.ih` → `graphic_DrawString`).
 
 ## Hard stops — report instead of proceeding
 

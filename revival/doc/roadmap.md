@@ -52,6 +52,28 @@ history behind each completed item.
   Xbitmap→raster round-trip (byte-identical to identity output) all
   pass; baseline captured in `~/src/AUIS/test-baselines/raster-pi/`.
 
+### filetype.c DeleteEntry:
+
+- `filetype__DeleteEntry` (atk/basics/common/filetype.c:216,218,
+  observed 2026-07-09, logged *before* the basics/common -pi
+  rollout — pre-existing, not a regression): passes
+  `&defaultMapping.newAttributes` (a `struct attributes **`) to
+  `FreeAttributes()`, which walks it as a list node — UB/bogus
+  frees if that path ever runs. The enclosing
+  `if (strcmp(extension, "*"))` also looks inverted (wipes the
+  default mapping when the extension is NOT `"*"`). Compiler flags
+  it via -Wincompatible-pointer-types.
+
+### ~~htmlview DisplayString transposition~~ — fixed:
+
+- `contrib/srctext/html/htmlview.c:400,410,816` (observed 2026-07-09
+  during the basics/common -pi rollout; pre-existing live bug, not a
+  regression): three calls passed `message_DisplayString(self,
+  "string", 0)` — priority and string transposed, so these messages
+  had never displayed. Ruled same day: fixed the callers (separate
+  commit from the rollout). Those HTML-editing status messages now
+  display for the first time.
+
 ### Input focus:
 
 - Figure inset menus post but commands are ignored until the inset
@@ -797,11 +819,25 @@ zero-consumer leaves, then the core, largest last.
        `procedure` pointers outside `-pi` checking. Also: the gate
        surfaced an unrelated pre-existing hang — see `gendemo` below
        — worked around, not a rollout fallout.)
-9. [ ] `atk/basics/common` (41 classes, 2,351 external — `im`, `view`,
-       `fontdesc`, `environ`, `message`, `proctbl`, `menulist`,
-       `graphic`, `dataobj`, `keymap`; the LP64 Variant-3/5 epicenter.
-       Largest burndown, largest payoff: every consumer tree-wide is
-       protected once this lands)
+9. [x] `atk/basics/common` (41 classes, 2,351 external; done
+       2026-07-09; gate green after four cycles, `help`/`ez` runtime
+       battery visually verified. The directory's own `.ch`s had ZERO
+       local fallout; all fallout was consumer-side rock collisions.
+       16 rocks retyped `void *` across 10 `.ch`s (menulist
+       AddToML/Chain*/Unchain/GetChained, im HandleMenu/
+       AddZombieHandler/EnqueueEvent/SetInteractionEvent/
+       SetDeleteWindowCallback, keystate SetOverride, init Load,
+       view PostResource, namespace/proctable Enumerate, message
+       AskForStringCompleted); `keymap_BindToKey` stays `long` under
+       the new integer-majority ruling. ~100 call-site cast edits in
+       ~50 consumer files, driven by static censuses, not the gate
+       log (censuses + mechanical edits delegated to cheaper-model
+       agents — see §14 "Point 9 findings" and the runbook's new
+       methodology notes). Real bugs caught: clockv.c NewString
+       missing prototype (LP64 pointer truncation), suite.c laundered
+       out-params, htmlview.c DisplayString arg transposition (fixed
+       as separate commit per ruling), filetype.c DeleteEntry
+       attributes** misuse (logged, untouched))
 10. [ ] Breadth: remaining atk (`value`, `adew`, `apt`, `basics/wm`,
        `basics/x`, `hyplink`, `syntax/parse`, ...), then `atkams`/
        `ams`, `contrib` (`zip/lib` first), `examples` — delegable

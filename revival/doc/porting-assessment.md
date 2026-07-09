@@ -885,6 +885,54 @@ reaches outside the flagged directory:
    fixes: grep for the classproc's call sites tree-wide immediately
    after retyping the `.ch`, not just within the flagged directory.
 
+#### Point 9 findings (atk/basics/common, 2026-07-09)
+
+The core: 41 classes, 2,351 external consumers, four gate cycles.
+The directory's own `.ch`s were accurate (zero local fallout — like
+raster/lib, remarkable for the oldest interfaces in the tree); ALL
+fallout was consumers colliding with newly-typed rocks. New patterns,
+all now in the runbook:
+
+1. **The census supersedes the gate log.** A directory's build stops
+   at its first failing file, so each gate cycle reveals only the
+   shallowest error per directory (`tmv.c`'s bare-pointer
+   `SetOverride` hid behind `tm.c`'s zombie-handler error, etc.).
+   And `long` rocks accept laundered casts and integers silently —
+   the gate only ever shows bare-pointer callers. Decision basis for
+   every retype was therefore a static tree-wide call-site census
+   (~600 sites classified bare-pointer / laundered / integer / zero
+   across 23 methods), which also proved delegable to a
+   cheaper-model agent, as did the resulting ~100 mechanical
+   call-site edits (93/93 applied without deviation from spec).
+2. **Integer-majority rock** — `keymap_BindToKey`: 161 integer/zero
+   callers vs one bare pointer. The rock keeps `long`; the pointer
+   site gets `(long)`. Mirror of the point-8 dual-use ruling.
+   Contrast `menulist_AddToML` (236 sites: 139 pointer-ish, 51
+   integer) which went `void *` with `(void *)` casts at the
+   integer sites. Both directions now precedented; majority rules.
+3. **Dual-use attribute values** — `suite`/`chart` `ItemAttribute()`
+   returns `long` that is sometimes a string pointer; sites feeding
+   it to typed `char *` params get `(char *)` casts. Sibling: magic
+   int constants for struct-pointer params (`graphic_BLACK`=0xFF as
+   a Fill Tile) — cast at the site, convention preserved.
+4. **First M2-class catch:** `clockv.c` used `NewString()` (returns
+   `char *`) with no declaration in scope — implicit-int truncation
+   of the pointer on LP64, invisible until the argument position
+   became typed. Fixed with the `#include <util.h>` its sibling
+   files already had.
+5. **First live caller bug requiring a semantic `.c` fix:**
+   `htmlview.c` passed `DisplayString(self, "msg", 0)` — priority
+   and string transposed; the messages have never displayed. Ruled:
+   fix the caller, separate commit. (Transposition class previously
+   seen interface-side in Pilot B's `Build`; this is the caller-side
+   variant.)
+6. **`-pi` types struct-pointer method args as `void *`** (self and
+   scalar/char types are fully typed). So the rollout catches every
+   int/pointer confusion — the LP64 killer class — but not
+   wrong-struct-pointer mistakes; and typed checking reaches
+   unflagged directories through macromethods that expand into a
+   flagged class's dispatch (`chartobj.ih` → `graphic_DrawString`).
+
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 
 **Resolved 2026-07-04 for the local-store case — see `roadmap.md` Near-term →
