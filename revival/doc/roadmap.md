@@ -34,6 +34,13 @@ history behind each completed item.
 - The arrow keys don't work yet
 - We don't have a "Meta" key active yet
 
+### Fonts:
+
+- Integral symbol missing in eq insets (observed 2026-07-08 in
+  `Sherman.Alloc`, pre-existing — not a -pi regression). Suspects:
+  symba PCF generation, or the `xset fp+` font-path setup. Other
+  symbol glyphs render fine.
+
 ---
 
 ## Questions
@@ -676,8 +683,12 @@ zero-consumer leaves, then the core, largest last.
 1. [x] classpp: `-pi`/`-pe` split, `>= 8` gates dropped under `-pi`
        (done 2026-07-08; verified byte-identical default output,
        binary installed)
-2. [ ] Pilot A — `atk/eq` (2 classes, 0 external consumers; runtime
-       check: eq inset in `Sherman.Alloc`)
+2. [x] Pilot A — `atk/eq` (done 2026-07-08; clean-build gate green,
+       eq inset visually verified in `Sherman.Alloc`. Findings — see
+       porting-assessment §14 "Pilot A findings": macro-parameter
+       capture bug class, fixed structurally in classpp; DoScript
+       stray-`*` DRIFT in `eq.ch`, a ~35-year-old typo caught by the
+       first typed rebuild; two process wrinkles for the runbook)
 3. [ ] Pilot B — `atk/figure` (17 classes, 0 external; runtime check:
        `95Summer.ez` figure; recently debugged, well understood)
 4. [ ] First cross-directory step — `atk/raster/lib` (7 classes, 17

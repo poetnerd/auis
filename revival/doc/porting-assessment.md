@@ -754,6 +754,56 @@ consumers tree-wide at once, including directories not yet converted.
 The ordered rollout checklist lives in `roadmap.md` → M1 rollout
 points.
 
+#### Pilot A findings (atk/eq, 2026-07-08)
+
+Gate green (clean `make Clean; make dependInstall`, zero real compile
+errors, mixed typed/typeless install state verified), eq inset
+visually verified in `Sherman.Alloc`. Four findings for the runbook:
+
+1. **Macro-parameter capture (new bug class, fixed structurally).**
+   A `.ch` parameter name can collide with a type token in the typed
+   cast: `Changed(enum changed changed)` made the macro parameter
+   `changed` substitute the caller's argument into the cast's `enum
+   changed` (→ `enum EQVIEW_caret`, incomplete-type error; and
+   `DoScript`'s parameter `script` vs tag `enum script` would mangle
+   the same way). Struct tags are immune only because classpp already
+   rewrites `struct X *` cast params to `void *`. Fix: under `-pi`,
+   classpp emits positional macro parameters (`_a1, _a2, ...`) for
+   non-macrodef entries; macrodef macros keep declared names (their
+   hand-written bodies reference them). Default output remains
+   byte-identical — sanitization only activates with `-pi`, and the
+   legacy ≥8-arg typed casts pick up the protection when Import-all
+   becomes the default (rollout step 11).
+2. **First DRIFT catch, in the very first directory:** `eq.ch`
+   declared `DoScript(long pos, enum script *script, ...)` but the
+   implementation and all six callers use `enum script` **by value**
+   — a stray `*` in the interface, unnoticed for ~35 years because
+   nothing ever type-checked dispatch. Fixed in `eq.ch`. Rate so far:
+   one real interface bug per directory.
+3. **Make wrinkle:** `.o` files do not depend on the local `.ih`/`.eh`
+   in the generated Makefiles, so deleting the generated headers and
+   re-running `make` rebuilds *nothing*. A flagged directory needs
+   `make clean` locally (which also removes generated parser files —
+   run the parser target first if the directory has one) or the full
+   tree Clean. A local `make` alone can silently validate stale
+   objects.
+4. **Unkillable AUIS terminal apps are real — attribute hangs
+   carefully.** During the gate, a `cui` in unkillable
+   uninterruptible-exit state (`UE`, immune to all signals) was
+   found and initially blamed on the build's demo-reconstruction
+   step; it was actually a zombie from an earlier interactive test
+   whose start time happened to coincide with the build window. The
+   build completed exit-0 on its own (`ms` checkpoints past its
+   known pre-existing date-parser segfault during the demo step).
+   Two standing lessons: AUIS terminal apps can go `UE`-unkillable
+   under VS Code/sandboxed shells (`bglisp` precedent, §13), so
+   runtime checks belong in a real user terminal — the "user
+   verifies visually" protocol is the default for rollout steps;
+   and before killing anything during a slow gate, check provenance
+   (`ps` etime/PPID) — `dependInstall` legitimately takes a long
+   time, and its demo step emits alarming-but-nonfatal `cui`/`ms`
+   messages.
+
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 
 **Resolved 2026-07-04 for the local-store case — see `roadmap.md` Near-term →
