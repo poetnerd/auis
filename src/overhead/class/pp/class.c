@@ -222,12 +222,43 @@ static struct InfoStruct *ExtraInfoHead;   /* used to keep track other stuff in 
 static struct InfoStruct *ExtraInfoTail;
 
 
-/* 
- * 
- * 
+/*
+ * Capture-proof macro parameter names for generated dispatch macros.
+ * A .ch parameter name can collide with a type token in the prototyped
+ * cast -- e.g. 'Changed(enum changed changed)': the macro parameter
+ * 'changed' would be substituted into the cast's 'enum changed',
+ * turning it into 'enum <caller's argument>'.  Under -pi the dispatch
+ * macros therefore use positional parameter names (_a1, _a2, ...).
+ * Macros with hand-written bodies (macrodef) keep the declared names,
+ * which their bodies reference.  Not used without -pi, so default
+ * output stays byte-identical for unconverted directories.
+ */
+static char macroArgBuf[4096];
+
+static char *MacroArgs(mp, leadingComma)
+struct methods *mp;
+int leadingComma;
+{
+    int i;
+    char *p = macroArgBuf;
+
+    *p = '\0';
+    for (i = 1; i <= mp->argcount; i++) {
+	if (i > 1 || leadingComma)
+	    *p++ = ',';
+	sprintf(p, "_a%d", i);
+	p += strlen(p);
+    }
+    return macroArgBuf;
+}
+
+
+/*
+ *
+ *
  * Routines to deal with warnings and errors.
- * 
- * 
+ *
+ *
  */
 
 
@@ -875,7 +906,10 @@ int errvalCount[errval_NUM];	/* ??? */
 
         for (mp = methodlist->next; mp != NULL; mp = mp->next) {
             if (mp->type==ptype_method){
-                outstr3("#define %s_%s(self%s) \\\n", FinalClassName, mp->name, mp->methodargs);
+		char *margs = (usePrototypesImportAll && mp->macrodef == NULL)
+		    ? MacroArgs(mp, 1) : mp->methodargs;
+
+                outstr3("#define %s_%s(self%s) \\\n", FinalClassName, mp->name, margs);
 		if(mp->macrodef==NULL){
 		    char proto[10000];
 
@@ -890,9 +924,9 @@ int errvalCount[errval_NUM];	/* ??? */
 
 
 		    fprintf(importfile, "    ((* ((%s (*)(%s))((self)->header.%s_methods->routines[%d]))) (self%s))\n",
-			    mp->methodtype, proto, FinalClassName, mp->index, mp->methodargs);
+			    mp->methodtype, proto, FinalClassName, mp->index, margs);
 		    fprintf(exportfile, "    ((* ((%s (*)(%s))((self)->header.%s_methods->routines[%d]))) (self%s))\n",
-			    mp->methodtype, proto, FinalClassName, mp->index, mp->methodargs);
+			    mp->methodtype, proto, FinalClassName, mp->index, margs);
                 }else
                     outstr1("%s\n",mp->macrodef);
             }
@@ -949,6 +983,7 @@ int errvalCount[errval_NUM];	/* ??? */
     for (mp = methodlist->next; mp != NULL; mp = mp->next)  {
 	if (mp->type==ptype_classproc && mp->defined)  {
 	    char proto[10000];
+	    char *margs = usePrototypesImportAll ? MacroArgs(mp, 0) : mp->methodargs;
 
 	    if (usePrototypesImport && (usePrototypesImportAll || mp->argcount >= 8)) {
 		sprintf(proto, "struct classheader *%s", mp->argtypes);
@@ -957,13 +992,13 @@ int errvalCount[errval_NUM];	/* ??? */
 		proto[0] = '\0';
 	    }
 
-	    outstr3("#define %s_%s(%s) \\\n", FinalClassName, mp->name, mp->methodargs);
+	    outstr3("#define %s_%s(%s) \\\n", FinalClassName, mp->name, margs);
 	    if (mp->argcount != 0)
-		(void) fprintf(importfile, "    (*((%s (*)(%s)) (%s_CLASSPROCEDURES->routines[%d])))(&%s_classheader,%s)\n", mp->methodtype, proto, FinalClassName, mp->index, FinalClassName, mp->methodargs);
+		(void) fprintf(importfile, "    (*((%s (*)(%s)) (%s_CLASSPROCEDURES->routines[%d])))(&%s_classheader,%s)\n", mp->methodtype, proto, FinalClassName, mp->index, FinalClassName, margs);
 	    else
 		(void) fprintf(importfile, "    (*((%s (*)(%s)) (%s_CLASSPROCEDURES->routines[%d])))(&%s_classheader)\n", mp->methodtype, proto, FinalClassName, mp->index, FinalClassName);
 	    if (mp->argcount != 0)
-		(void) fprintf(exportfile, "    ((%s) %s(NULL, %s))\n", mp->methodtype, getFuncName(mp), mp->methodargs);
+		(void) fprintf(exportfile, "    ((%s) %s(NULL, %s))\n", mp->methodtype, getFuncName(mp), margs);
 	    else
 		(void) fprintf(exportfile, "    ((%s) %s(NULL))\n", mp->methodtype, getFuncName(mp));
 
@@ -997,6 +1032,7 @@ int errvalCount[errval_NUM];	/* ??? */
         for (mp = methodlist->next; mp != NULL; mp = mp->next)  {
             if (mp->type==ptype_method && mp->inherited)  {
 		char proto[10000];
+		char *margs = usePrototypesImportAll ? MacroArgs(mp, 1) : mp->methodargs;
 
 		if (usePrototypesImport && (usePrototypesImportAll || mp->argcount >= 8)) {
 		    sprintf(proto, "struct %s *%s", FinalClassName, mp->argtypes);
@@ -1005,11 +1041,11 @@ int errvalCount[errval_NUM];	/* ??? */
 		    proto[0] = '\0';
 		}
 
-                (void) fprintf(exportfile, "#define super_%s(self%s)  \\\n", mp->name, mp->methodargs);
+                (void) fprintf(exportfile, "#define super_%s(self%s)  \\\n", mp->name, margs);
                 if(mp->macrodef!=NULL)
-		    (void) fprintf(exportfile,"	   %s_%s((struct %s *)self%s)\n",FinalParentName,mp->name,FinalParentName,mp->methodargs);
+		    (void) fprintf(exportfile,"	   %s_%s((struct %s *)self%s)\n",FinalParentName,mp->name,FinalParentName,margs);
                 else{
-                    (void) fprintf(exportfile, "    ((* ((%s (*)(%s)) (%s_supermethods->routines[%d]))) (self%s))\n", mp->methodtype, proto, FinalClassName, mp->index, mp->methodargs);
+                    (void) fprintf(exportfile, "    ((* ((%s (*)(%s)) (%s_supermethods->routines[%d]))) (self%s))\n", mp->methodtype, proto, FinalClassName, mp->index, margs);
                 }
             }
         }
