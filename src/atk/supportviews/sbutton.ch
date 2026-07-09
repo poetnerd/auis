@@ -130,7 +130,7 @@ class sbutton: dataobject[dataobj] {
     SetLabel(int ind,char *txt);
     SetLit(int ind, boolean litp);
     SetPrefs(int ind, struct sbutton_prefs *prefs);
-    Enumerate(boolean (*func)(),long rock) returns int;
+    Enumerate(boolean (*func)(),void *rock) returns int;
     SetTrigger(int ind, char *name);
     Delete(int ind);
     Swap(int i1, int i2);
