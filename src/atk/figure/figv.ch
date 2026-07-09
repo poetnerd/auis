@@ -110,7 +110,7 @@ class figview [figv] : view {
       Unselect(struct figobj *o);
       UnselectByRef(long ref);
       IsSelected(long ref) returns boolean;
-      EnumerateSelection(procedure func, long rock);
+      EnumerateSelection(procedure func, void *rock);
       GetOneSelected() returns long;
       SetFocusByRef(long ref);
       SetExpertMode(boolean val);

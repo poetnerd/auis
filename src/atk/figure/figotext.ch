@@ -40,9 +40,9 @@ class figotext : figobj {
       ToolName(struct figtoolview *v, long rock) returns char *;
       Draw(struct figview *v); 
       Sketch(struct figview *v); 
-      Build(enum view_MouseAction action, struct figview *v, long x, long y, long clicks) returns enum figobj_Status; 
+      Build(struct figview *v, enum view_MouseAction action, long x, long y, long clicks) returns enum figobj_Status; 
       HitMe(long x, long y, long delta, long *ptref) returns enum figobj_HitVal;
-      MoveHandle(x, y, ptref);
+      MoveHandle(long x, long y, long ptref);
       Reshape(enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref) returns boolean;
       RecomputeBounds();
       GetBounds(struct figview *vv) returns struct rectangle *;

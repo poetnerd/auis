@@ -43,9 +43,9 @@ class figogrp : figobj {
       Draw(struct figview *v); 
       Sketch(struct figview *v);
       Select(struct figview *v); 
-      Build(enum view_MouseAction action, struct figview *v, long x, long y, long clicks) returns enum figobj_Status;
+      Build(struct figview *v, enum view_MouseAction action, long x, long y, long clicks) returns enum figobj_Status;
       Reshape(enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref) returns boolean;
-      MoveHandle(x, y, ptref);
+      MoveHandle(long x, long y, long ptref);
       GetHandleType(long num) returns enum figobj_HandleType;
       GetCanonicalHandles() returns long *;
       StabilizeAttachments(boolean keepproport);

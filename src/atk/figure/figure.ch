@@ -60,9 +60,9 @@ class figure : dataobject [dataobj] {
       AlwaysDeleteObject(struct figobj *o) returns boolean;
       AlwaysLinkObjectByRef(long ref, long parent, long depth);
       AlwaysUnlinkObjectByRef(long ref);
-      EnumerateObjects(struct rectangle *area, boolean allowoverlap, procedure func, long rock) returns struct figobj *;
-      EnumerateObjectGroup(long groupref, struct rectangle *area, boolean allowoverlap, procedure func, long rock) returns struct figobj *;
-      EnumerateObjectTree(long groupref, struct rectangle *area, boolean allowoverlap, procedure func, long rock) returns struct figobj *;
+      EnumerateObjects(struct rectangle *area, boolean allowoverlap, procedure func, void *rock) returns struct figobj *;
+      EnumerateObjectGroup(long groupref, struct rectangle *area, boolean allowoverlap, procedure func, void *rock) returns struct figobj *;
+      EnumerateObjectTree(long groupref, struct rectangle *area, boolean allowoverlap, procedure func, void *rock) returns struct figobj *;
       FindRefByObject(struct figobj *o) returns long;
       FindObjectByRef(long ref) returns struct figobj *;
       FindRefByPos(long gref, boolean recursive, enum figobj_HitVal howhit, long delta, long x, long y, long *ptref) returns long;
