@@ -45,10 +45,19 @@ compiled-in defaults do not change until rollout point 11.
    directory has yacc/lex targets, build those first (e.g.
    `make eqparse.c` in atk/eq). Then `make install`.
 
+   **Logging:** ALL build output — local rebuilds here and the gate in
+   step 5 — goes to the one canonical file
+   `~/src/AUIS/andrew-6.4/dependInstall.log`, overwritten each build.
+   Never invent per-step log names: the fixed path is already in the
+   user's permission allow-list, so reusing it keeps an unattended run
+   moving, while a new path stops work to ask permission. It also
+   gives the user one known place to watch progress.
+
 4. **Fix fallout** (see taxonomy below).
 
 5. **Gate.** From `src/`: `make Clean && make dependInstall`, output
-   overwriting `~/src/AUIS/andrew-6.4/dependInstall.log`. This is the
+   overwriting `~/src/AUIS/andrew-6.4/dependInstall.log` (same single
+   log file as step 3). This is the
    definition of done — it rebuilds every external consumer against
    the newly typed installed headers. It legitimately takes a long
    time; do not kill it. Before blaming any process for a hang, check
