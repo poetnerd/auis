@@ -108,6 +108,17 @@ ONLY. Never edit a `.c` to match a `.ch`.
   on the rock argument at call sites IS part of the interface fix
   and is pre-authorized, narrow exception to the `.c` hard stop
   below (decided 2026-07-09). Touch nothing else in the caller.
+  **Mirror case — dual-use rock** (atk/support `list.ch Enumerate`,
+  decided 2026-07-09): rock declared as a pointer type (`char *`)
+  with a minority of callers smuggling genuine integers through it
+  (values used numerically, not addresses). Same resolution: retype
+  the rock `void *`; pointer callers pass bare (drop launderings);
+  the integer call sites get an explicit `(void *)` cast on the
+  argument — also pre-authorized. Callbacks never need edits: they
+  are invoked through typeless `procedure` pointers, outside `-pi`
+  checking, and receive the same bits either way. Do NOT split the
+  method or redesign callers to pass addresses — semantics must be
+  preserved bit-for-bit; deeper cleanup belongs to M3.
 - **Signature drift** — wrong types, stray `*`, or transposed
   parameters vs the implementations (`eq.ch DoScript`,
   `figobj.ch Build`). Fix the `.ch` to match impls + callers.
