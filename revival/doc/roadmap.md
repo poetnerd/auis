@@ -606,6 +606,18 @@ use curses at all, and its one sgtty reference was already dead code
    (`ams/libs/ms/prsdate.c` from `prsdate.gra`, also untracked in fossil) —
    different generator, different subsystem, data-dependent rather than a
    fixed polarity bug. Not yet root-caused; needs its own lldb session.
+   **Escalated (2026-07-09, hit during the M1 point 8 gate):** this
+   crash doesn't just segfault cleanly — `ms` catches it and
+   checkpoints server state, but the `cui` process driving `recon`
+   then wedges in unkillable `UE` state (immune to all signals,
+   including `kill -9`) instead of exiting, hanging the whole
+   `dependInstall` chain behind it indefinitely. Worked around, not
+   fixed: `gendemo`'s auto-invocation from `src/ams/demo/Imakefile`'s
+   `install.time::` target is disabled (`#if 0`/`#endif`; the
+   harmless `cui rebuild` subscription-map step stays on), so
+   `dependInstall` no longer runs `recon` at all. `gendemo` the
+   script/utility is still installed and runnable by hand. Re-enable
+   once `prsdate.c` is root-caused and fixed.
 2. Once `recon` is fully stable, verify `messages` can actually browse and
    read the populated `amsdemo` folder end-to-end (captions, dates, bodies).
 
@@ -761,7 +773,30 @@ zero-consumer leaves, then the core, largest last.
        `atk/lookz/lookzv.c` passed the pointer bare, five callers in
        `atk/text` laundered via `(long)` — all five casts deleted per
        the point-5 pre-authorized exception). No new fallout pattern)
-8. [ ] `atk/support` (19 classes, 450 external)
+8. [x] `atk/support` (19 classes, 450 external; done 2026-07-09; gate
+       green, `help` app, `ia-archive/jan.90`'s `lset`/`buttonV`
+       widget (first proof of both, previously unproven insets), and
+       a `File > Save All` buffer command all visually verified. Two
+       rock-idiom fallouts: `buffer.ch` `Enumerate`/`EnumerateViews`
+       — same pattern as points 5-7 (8 of 9 callers laundered a
+       pointer via `(long)`, one bare-pointer omission at
+       `framecmd.c:552` exposed it). `list.ch` `Enumerate` — a
+       genuine hard stop, escalated mid-session: rock declared
+       `char *` but two callers (`dired.c` `FindPosProc`, `buttonv.c`
+       `findkey`) pass real `long` integers compared numerically,
+       disagreeing with ~40 pointer-passing callers elsewhere.
+       Resolved as a new **dual-use rock** pattern (ruling added to
+       the runbook's rock-idiom bullet): retype to `void *`; the
+       integer call sites get an explicit `(void *)` cast
+       (`dired.c:348`, `buttonv.c:489`, plus a third found while
+       sweeping, `prefs.c:513` in `atk/prefed`, which isn't part of
+       the default build — `MK_PREFS`/`MK_AUX_UTILS` are off — so
+       harmless but unverified locally); pointer call sites drop
+       their now-redundant casts; callbacks (`FindPosProc`,
+       `findkey`) untouched, since they're invoked through typeless
+       `procedure` pointers outside `-pi` checking. Also: the gate
+       surfaced an unrelated pre-existing hang — see `gendemo` below
+       — worked around, not a rollout fallout.)
 9. [ ] `atk/basics/common` (41 classes, 2,351 external — `im`, `view`,
        `fontdesc`, `environ`, `message`, `proctbl`, `menulist`,
        `graphic`, `dataobj`, `keymap`; the LP64 Variant-3/5 epicenter.

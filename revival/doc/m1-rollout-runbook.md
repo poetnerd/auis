@@ -78,6 +78,18 @@ compiled-in defaults do not change until rollout point 11.
    twice to prove determinism, diff after). Log any newly noticed
    pre-existing bug in `roadmap.md` Little Annoyances BEFORE flipping
    the flag, so it can't be mistaken for a regression.
+   Two more caveats for how the check is worded/scoped (found point
+   8, 2026-07-09):
+   - If directing the user to a spot in a test document via a search
+     string, the string must be in the surrounding *text*, not inside
+     an inset — `ez`'s search command does not descend into insets
+     (each inset type has its own, different search semantics, if any).
+   - Never direct the user to run a save/write action (e.g. "Save
+     All") against `ia-archive`/`PAPERS`/etc. test documents — they
+     are not under source control, and a save silently overwrites the
+     fixture on disk. Confirmed the hard way (point 8): required a
+     Time Machine restore. If a save path genuinely needs runtime
+     coverage, point at a scratch copy, never the shared archive.
 
 7. **Commit** (after user confirmation), two commits, terse one-line
    messages matching the fossil timeline style:
