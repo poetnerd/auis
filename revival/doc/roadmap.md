@@ -744,7 +744,13 @@ zero-consumer leaves, then the core, largest last.
        anything. First rollout point with import fallout in
        directories other than the flagged one, confirming the
        blast-radius-asymmetry prediction in §14)
-6. [ ] `atk/supportviews` (17 classes, 178 external)
+6. [x] `atk/supportviews` (17 classes, 178 external; done
+       2026-07-09; gate green, `help` app scrollbars/panel
+       expand-shrink/matte chrome and `ez` visually verified. One
+       fallout: `sbutton.ch Enumerate`'s `long rock` retyped to
+       `void *` — same rock-idiom pattern as `atk/frame`/`atk/figure`,
+       all three tree-wide callers already passed bare pointers, no
+       `(long)` casts to delete)
 7. [ ] `atk/text` (21 classes, 321 external)
 8. [ ] `atk/support` (19 classes, 450 external)
 9. [ ] `atk/basics/common` (41 classes, 2,351 external — `im`, `view`,
