@@ -751,7 +751,16 @@ zero-consumer leaves, then the core, largest last.
        `void *` — same rock-idiom pattern as `atk/frame`/`atk/figure`,
        all three tree-wide callers already passed bare pointers, no
        `(long)` casts to delete)
-7. [ ] `atk/text` (21 classes, 321 external)
+7. [x] `atk/text` (21 classes, 321 external; done 2026-07-09; gate
+       green, `help` regression checklist and `ez` (`Cattey.Writing`
+       fnote, `ex14.doc` textref) visually verified. Two rock-idiom
+       fallouts, same pattern as points 5/6: `pcompch.ch`
+       `ATKToASCII`/`ASCIIToATK` and `text.ch` `EnumerateEnvironments`
+       `long rock` retyped to `void *`; `EnumerateEnvironments` again
+       showed the bare-vs-laundered-cast split (one caller in
+       `atk/lookz/lookzv.c` passed the pointer bare, five callers in
+       `atk/text` laundered via `(long)` — all five casts deleted per
+       the point-5 pre-authorized exception). No new fallout pattern)
 8. [ ] `atk/support` (19 classes, 450 external)
 9. [ ] `atk/basics/common` (41 classes, 2,351 external — `im`, `view`,
        `fontdesc`, `environ`, `message`, `proctbl`, `menulist`,
