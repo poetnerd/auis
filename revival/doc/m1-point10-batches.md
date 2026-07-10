@@ -65,9 +65,27 @@ compile-unverified by the gate).
       layout inset has excess whitespace margin (zero atk/layout
       files touched). Checkins b73958943b (bug fixes), 79a7de90d1
       (rollout).
-- [ ] **Batch 6**: atk/textobjects (7/9), atk/textaux (2/0),
+- [x] **Batch 6** (2026-07-10): atk/textobjects (7/9), atk/textaux (2/0),
       atk/rofftext (4/13), atk/srctext (19/0), atk/typescript (5/7),
-      atk/lookz (3/5).
+      atk/lookz (3/5). Gate green first pass, no attribute-pair macros
+      anywhere. Three genuine drift fixes: rofftxta.ch's two typeless
+      ParseArgs/InitializeObject declarations; hlptext.ch and
+      rawtextv.ch each had InitializeObject/FinalizeObject typed to
+      the wrong sibling struct; dired.ch's Enumerate rock (long→void*,
+      all callers pointers); chlist.ch's AddItemAtIndex had a
+      ~35-year transposed-parameter drift; srctext.ch's Lookup was
+      missing `**` on its hash-table param (sibling classprocs had it
+      right). textaux, typescript zero-fallout. Runtime: lookz via
+      PAPERS/atk/Hansen.Algebra, contentv (Table of Contents) via
+      PAPERS/atk/Cattey.Writing, help app (panel) no regression;
+      srctext + dired/chlist/unknown accepted gate-only (no fixture
+      exists for srctext anywhere in ia-archive/PAPERS/NEWSLETTERS;
+      dired/chlist/unknown have no live consumer in the default
+      build). typescript crashes on launch — new pre-existing bug
+      (Create doesn't NULL-check New() after GetPtyandName fails),
+      zero atk/typescript files touched so not a regression; logged
+      under roadmap Little Annoyances. Checkins 135deef87d (bug
+      fixes), 1bf4c6384e (rollout).
 - [ ] **Batch 7**: atk/ez (1/2), atk/ezprint (1/0), atk/preview
       (2/1), atk/toez (1/0), atk/utils (3/8), atk/help/src (4/4),
       atk/datacat (1/0), atk/launchapp (1/0), atk/createinset/null

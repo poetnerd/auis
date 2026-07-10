@@ -100,6 +100,22 @@ history behind each completed item.
   look at this inset's rendering in the revival; needs its own
   investigation.
 
+### typescript crashes on launch (Create doesn't check New() for NULL):
+
+- First-ever launch of the `typescript` app (2026-07-10, point-10
+  batch-6 runtime checks; not a -pi regression: atk/typescript was
+  zero-fallout, no `.ch`/`.c` file in the directory was touched).
+  Prints `Can't connect subchannel` (from `GetPtyandName` failing —
+  suspect PTY allocation doesn't work the way this code expects
+  under the current terminal/sandbox), then `EXC_BAD_ACCESS` inside
+  `typescript__Create` at the `typescript_SetDataObject(self, ...)`
+  call: `self = typescript_New()` came back NULL because
+  `InitializeObject` returned FALSE (the pty failure above), and
+  `Create` never checks for that before dispatching through `self`.
+  Two bugs really — the underlying PTY/subchannel failure, and the
+  missing NULL check that turns any such failure into a crash
+  instead of a clean error return. Debug as its own task.
+
 ### filetype.c DeleteEntry:
 
 - `filetype__DeleteEntry` (atk/basics/common/filetype.c:216,218,
@@ -985,6 +1001,53 @@ zero-consumer leaves, then the core, largest last.
          (zero atk/layout files touched this batch, so presumed
          pre-existing). bush's pre-existing startup crash confirmed
          unchanged.
+       - Batch 6 (2026-07-10): `atk/textobjects`, `atk/textaux`,
+         `atk/rofftext`, `atk/srctext`, `atk/typescript`, `atk/lookz`.
+         Gate green first pass. No attribute-pair macros anywhere in
+         this batch. Three genuine drift fixes, no new patterns:
+         `rofftext/rofftxta.ch` had two typeless declarations
+         (`ParseArgs(argc,argv)`, `InitializeObject(self)`) typed to
+         match every sibling app's `ParseArgs(int argc, char **argv)`
+         and the impl's `struct rofftextapp *self`; `srctext/hlptext.ch`
+         and `srctext/rawtextv.ch` each had a signature-drift
+         `InitializeObject`/`FinalizeObject` typed to the WRONG
+         sibling struct (`struct srctext *`/`struct srctextview *`
+         instead of their own class), caught immediately by the
+         local rebuild since both are cast-incompatible pointer
+         types. `textobjects/dired.ch`'s `EnumerateAll`/
+         `EnumerateMarked` rock retyped `long`→`void *` (all three
+         tree-wide callers in `diredv.c` already pass pointers, same
+         rock-idiom precedent as frame/figure/supportviews).
+         `textobjects/chlist.ch`'s `AddItemAtIndex` had a ~35-year
+         transposed-parameter signature drift (`.ch` declared
+         `(str, index, ...)`, impl and its sole caller use
+         `(index, str, ...)`) — fixed to match. `srctext.ch`'s
+         `Lookup` classprocedure was missing the `**`/`[]` on its
+         hash-table parameter (declared `Dict hashTable` by value;
+         impl and all 8 tree-wide callers use `Dict *hashTable[]`,
+         and its two sibling classprocs `BuildTable`/`HashInsert`
+         already had it right) — an isolated typo, not a pattern.
+         `textaux`, `typescript` were zero-fallout. Runtime: lookz
+         verified via `PAPERS/atk/Hansen.Algebra`; textaux's
+         `contentv` (Table of Contents) verified via
+         `PAPERS/atk/Cattey.Writing` (Hansen.Algebra has no section
+         headings, so ToC has nothing to discover — Cattey.Writing is
+         the fixture to reuse); help app confirmed no regression
+         (textobjects' only live consumer, `panel`). srctext and
+         textobjects' `dired`/`chlist`/`unknown` accepted gate-only —
+         no srctext/ctext document exists anywhere in ia-archive,
+         PAPERS, or NEWSLETTERS, and `dired`/`chlist`/`unknown` have
+         no live consumer in the default build (chlist's only callers
+         are contrib/wpedit and contrib/bdffont, neither built; dired
+         and unknown have zero call sites anywhere, presumably
+         reflective/by-name loading for unknown). typescript crashes
+         on launch (new pre-existing bug, logged under Little
+         Annoyances): `typescript__Create` doesn't check `typescript_New()`
+         for NULL before calling `SetDataObject` on it, and `New()`
+         returns NULL because `InitializeObject` fails at
+         `GetPtyandName` ("Can't connect subchannel") — zero
+         atk/typescript files were touched this batch (fully
+         zero-fallout), so this cannot be caused by the diff.
 11. [ ] Flip classpp default: Import-all becomes compiled-in, delete
        the per-directory `-pi` flags (single mechanical commit)
 12. [ ] Export (`-pe`) is *not* sequenced here — it rides with each
