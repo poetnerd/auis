@@ -3215,7 +3215,7 @@ static void GlobalInit()
     IgnoreCurrentDirectory = FALSE;
     MakingBaseObject = FALSE;
     usePrototypesImport = TRUE;   /* always: fix arm64 dispatch ABI */
-    usePrototypesImportAll = FALSE; /* -pi: opt-in per directory via CLASSFLAGS until whole tree converts */
+    usePrototypesImportAll = TRUE;  /* M1 point 11: typed import casts are the default; whole active tree converted (-pi now a no-op) */
     usePrototypesExport = FALSE;  /* K&R decls: compatible with unconverted .c files */
 
     FinalClassName[0] = '\0';
