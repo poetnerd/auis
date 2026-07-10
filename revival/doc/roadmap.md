@@ -1106,6 +1106,27 @@ zero-consumer leaves, then the core, largest last.
          `hlptextview`-rendered topic with working hyperlinks. All
          three user-verified, no regressions. Checkins: bug fixes
          105b96414a, rollout 165e3862b6.
+       - Batch 9 (2026-07-10, live subset only, batch 8 skipped ahead
+         of per user request): pre-flag census found 21 of the 22
+         planned directories inert — all 19 `atk/examples/ex*` dirs
+         (`MK_EXAMPLES` off in `allsys.h`, no per-app override) and
+         both `rdemo` dirs (`rdemo` isn't referenced anywhere in
+         `src/Imakefile`'s `SUBDIRS` at all — a standalone package
+         with its own `config.csh`/`config.h` generation, never part
+         of `make dependInstall`). Only `overhead/class/testing` is
+         live. Same user ruling as batch 7: split, flag/verify the
+         live dir now, defer the rest as Batch 9b. Both `.ch` files
+         (testobj.ch, testobj2.ch) were already clean — no
+         `InitializeObject`/`FinalizeObject`, no pair macros, no
+         typeless params — zero fixes needed, pure flag-and-gate.
+         Gate green first pass; confirmed real typed casts in the
+         local `.ih` files directly (this directory has no
+         `InstallClassFiles`, so nothing copies to `build/include`).
+         Runtime check skipped by user choice: the only artifact,
+         `testmain`, is a class-loader self-test ending in
+         `while(1);`, not part of the normal install path — matches
+         the batch's own "gate is the whole verification" guidance.
+         Checkin: rollout-only, no bug-fix commit needed.
        the per-directory `-pi` flags (single mechanical commit)
 12. [ ] Export (`-pe`) is *not* sequenced here — it rides with each
        subtree's M3 conversion, since its blast radius is only the

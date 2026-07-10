@@ -121,8 +121,36 @@ compile-unverified by the gate).
 - [ ] **Batch 8**: atk/syntax/parse (2/13), atk/syntax/tlex (1/7),
       atk/syntax/sym (2/4), atk/ness/objects (7/31, inert),
       atk/ness/type (1/2, inert).
-- [ ] **Batch 9**: atk/examples/ex1–ex19, rdemo/hide (7/9),
-      rdemo/rdemosh (1/0), overhead/class/testing (2/0).
+- [x] **Batch 9**: atk/examples/ex1–ex19, rdemo/hide (7/9),
+      rdemo/rdemosh (1/0), overhead/class/testing (2/0). Done
+      2026-07-10, live subset only: pre-flag census found all 19
+      examples inert (`MK_EXAMPLES` off, no per-app override) and
+      both rdemo dirs entirely outside the build tree (`rdemo` isn't
+      referenced anywhere in `src/Imakefile`'s `SUBDIRS` — a
+      standalone package with its own `config.csh`, never touched by
+      `make dependInstall`). Only `overhead/class/testing` is live.
+      User decision: split, same as batch 7 — flag/verify the live
+      dir now, defer the rest as Batch 9b. Both `.ch` files
+      (testobj.ch, testobj2.ch) were already clean (no
+      InitializeObject/FinalizeObject, no pair macros, no typeless
+      params) — zero fixes needed, purely a flag-and-gate. Gate green
+      first pass; confirmed real typed casts in the local `.ih`
+      files (this dir has no InstallClassFiles, so they're never
+      copied to build/include). Runtime check skipped by user choice
+      — the only artifact, `testmain`, is a class-loader self-test
+      that ends in `while(1);` and isn't part of the normal
+      install/dependInstall path, matching the batch's own
+      "gate is the whole verification" guidance. Checkin:
+      rollout-only (no bug-fix commit needed) — see roadmap.md.
+- [ ] **Batch 9b**: the 21 directories deferred from Batch 9 —
+      atk/examples/ex1–ex19, rdemo/hide, rdemo/rdemosh. Revisit if
+      `MK_EXAMPLES` is ever turned on (rdemo would additionally need
+      wiring into `src/Imakefile`'s `SUBDIRS` and a `config.csh` run
+      to generate `config.h` — it has never been part of this
+      checkout's build at all); otherwise, census + Imakefile-flag-only
+      (controllers/wm precedent, no build to verify against) is the
+      fallback if this needs to be closed out without enabling the
+      macros.
 - [ ] **Batch 10**: contrib/zip/lib (21/24),
       contrib/zip/utility (6/6).
 - [ ] **Batch 11**: contrib remainder — mit/{neos,annot,util},
