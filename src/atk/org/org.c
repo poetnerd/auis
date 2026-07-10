@@ -244,7 +244,7 @@ Read_Body( self, file )
 	    }
 	    else fprintf(stderr, "org: couldn't open temp file for writing.\n");
 	}
-	tree_SetNodeDatum( Tree, node, (long) text );
+	tree_SetNodeDatum( Tree, node, text );
 	DEBUGst(Description, description);
 	break;
       case ']':

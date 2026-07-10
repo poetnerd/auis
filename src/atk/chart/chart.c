@@ -228,15 +228,15 @@ SetChartAttribute( self, attribute, value )
     case  chart_datum:
       ClientDatum = value;				break;
     case  chart_filename:
-      apts_CaptureString( value, &ChartFileName );	break;
+      apts_CaptureString( (char *) value, &ChartFileName );	break;
     case  chart_titlecaption:
-      apts_CaptureString( value, &ChartTitle );		break;
+      apts_CaptureString( (char *) value, &ChartTitle );		break;
     case  chart_titledataobjectname:
-      apts_CaptureString( value, &ChartTitleDataObjectName );break;
+      apts_CaptureString( (char *) value, &ChartTitleDataObjectName );break;
     case  chart_titleviewobjectname:
-      apts_CaptureString( value, &ChartTitleViewObjectName );break;
+      apts_CaptureString( (char *) value, &ChartTitleViewObjectName );break;
     case  chart_type:
-      apts_CaptureString( value, &ChartType );		break;
+      apts_CaptureString( (char *) value, &ChartType );		break;
     default:
       fprintf( stderr, "Chart: Unrecognized ChartAttribute (%d) -- Ignored\n", attribute );
     }
@@ -295,7 +295,7 @@ SetItemAttribute( self, item, attribute, value )
       case  chart_itemdatum:
 	ItemDatum(item) = value;				    break;
       case  chart_itemname:
-	apts_CaptureString( value, &ItemName(item) );		    break;
+	apts_CaptureString( (char *) value, &ItemName(item) );		    break;
       case  chart_itemposition:
 /*===*/  break;
       case  chart_itemvalue:

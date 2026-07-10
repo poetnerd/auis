@@ -373,7 +373,7 @@ getname( self, uid, cell )
       item->uid = uid;
       AllocNameSpace(pw->pw_name,&item->uname);
       AllocNameSpace(cell,&item->ucell);
-      vector_AddItem(UidUnameMap,(long)item);
+      vector_AddItem(UidUnameMap,item);
       uname = item->uname;
     }
     else {
@@ -384,7 +384,7 @@ getname( self, uid, cell )
       sprintf(uid_str,"%u@%s",uid,cell);
       AllocNameSpace(uid_str,&item->uname);
       AllocNameSpace(cell,&item->ucell);
-      vector_AddItem(UidUnameMap,(long)item);
+      vector_AddItem(UidUnameMap,item);
       uname = item->uname;
     }
   }
@@ -402,7 +402,7 @@ getname( self, uid, cell )
       item->uid = uid;
       AllocNameSpace(pw->pw_name,&item->uname);
       AllocNameSpace("",&item->ucell);
-      vector_AddItem(UidUnameMap,(long)item);
+      vector_AddItem(UidUnameMap,item);
       uname = item->uname;
     }
     else {
@@ -413,7 +413,7 @@ getname( self, uid, cell )
       sprintf(uid_str,"%u",uid);
       AllocNameSpace(uid_str,&item->uname);
       AllocNameSpace("",&item->ucell);
-      vector_AddItem(UidUnameMap,(long)item);
+      vector_AddItem(UidUnameMap,item);
       uname = item->uname;
     }
   }

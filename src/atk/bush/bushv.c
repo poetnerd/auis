@@ -445,7 +445,7 @@ ResetSelectedState( self, suite, item, datum )
 
   if(!suite || !item) return(status);
   dirEntry = (struct Dir_Entry*)
-    suite_ItemAttribute(suite,item,suite_ItemDatum(0));
+    suite_ItemAttribute(suite,item,suite_itemdatum);
   if(!suite_ItemExposed(suite,item) || 
      !suite_ItemHighlighted(suite,item) || 
      !suite_ItemActivated(suite,item)) 
@@ -472,7 +472,7 @@ EntriesHitHandler( self, suite, item, object, action, x, y, numClicks )
 	((action == view_LeftUp) || (action == view_RightUp))) {
     if(action == view_LeftUp) {
 	dirEntry = (struct Dir_Entry*) 
-	suite_ItemAttribute(EntriesView,item,suite_ItemDatum(0));
+	suite_ItemAttribute(EntriesView,item,suite_itemdatum);
 	if(EntrySelected(dirEntry) && (NumPrevSelected == 1)) {
 	  PostCursor(self,Cursor_Wait);
 	  CurrEntry = dirEntry;
@@ -643,7 +643,7 @@ TreeHitHandler( self, tree_view, node, object, action, x, y, numClicks )
 			       tree_NodeChildrenCreated);
       NotifyTreeObservers(self);
       suite_ChangeSuiteAttribute(ControlView,
-				  suite_TitleCaption(DirPath(CurrNode)));
+				  suite_titlecaption, (long) (DirPath(CurrNode)));
     }
     else Push(self);
     bushv_RetractCursor(self,Cursor);
@@ -668,7 +668,7 @@ ControlHitHandler( self, suite, item, object, action, x, y, numClicks )
     if(item && (object == suite_ItemObject)) {
       struct item_data	*itemData = NULL;
 
-      if(itemData = (struct item_data*) suite_ItemAttribute(suite, item, suite_ItemData(0)))
+      if(itemData = (struct item_data*) suite_ItemAttribute(suite, item, suite_itemdatum))
         switch(itemData->code) {
 	    case(edit_code):	PerformEdit(self);	break;
 	    case(exec_code):	PerformExec(self);	break;
@@ -752,8 +752,8 @@ SortByName( self, suite, e1, e2 )
   register long			 status = 0;
 
   if(!e1 || !e2) return(0);
-  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_ItemDatum(0));
-  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_ItemDatum(0));
+  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_itemdatum);
+  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_itemdatum);
   if(a && b) { 
     status = strcmp(a->name,b->name);
     if(status < 0) return(-1);
@@ -772,8 +772,8 @@ SortBySuffix( self, suite, e1, e2 )
   register long			 rc;
 
   if(!e1|| !e2) return(0);
-  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_ItemDatum(0));
-  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_ItemDatum(0));
+  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_itemdatum);
+  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_itemdatum);
   if(a && b)
     if(!(rc = strcmp(FileSuffix(a->name),FileSuffix(b->name)))) {
       rc = strcmp(a->name,b->name);
@@ -796,8 +796,8 @@ SortBySize( self, suite, e1, e2 )
   register struct Dir_Entry	*a = NULL, *b = NULL;
 
   if(!e1 || !e2) return(0);
-  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_ItemDatum(0));
-  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_ItemDatum(0));
+  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_itemdatum);
+  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_itemdatum);
   if(a && b) {
     if(a->size < b->size) return(1);
     else if(a->size > b->size) return(-1);
@@ -814,8 +814,8 @@ SortByDate( self, suite, e1, e2 )
   register struct Dir_Entry	*a = NULL, *b = NULL;
 
   if(!e1 || !e2) return(0);
-  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_ItemDatum(0));
-  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_ItemDatum(0));
+  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_itemdatum);
+  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_itemdatum);
   if(a && b) {
     if(a->time_stamp < b->time_stamp) return(1);
     if(a->time_stamp > b->time_stamp) return(-1);
@@ -834,8 +834,8 @@ SortByType( self, suite, e1, e2 )
   register long			 rc;
 
   if(!e1 || !e2) return(0);
-  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_ItemDatum(0));
-  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_ItemDatum(0));
+  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_itemdatum);
+  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_itemdatum);
   if(a && b) {
     strcpy(n1,a->name);
     strcpy(n2,b->name);
@@ -951,9 +951,9 @@ GetPreferredEditors( self )
     struct suite_item	*editorItem = NULL;
     char		 editorCaption[64];
 
-    if(editorItem = suite_ItemOfDatum(ControlView,&editor_data)) {
+    if(editorItem = suite_ItemOfDatum(ControlView,(long)&editor_data)) {
       sprintf(editorCaption,"Editor: %s",EditorProgram);
-      suite_SetItemAttribute(ControlView, editorItem, suite_ItemCaption(editorCaption));
+      suite_SetItemAttribute(ControlView, editorItem, suite_itemcaption, (long) (editorCaption));
     }
   }
   OUT(GetPreferredEditors);
@@ -973,15 +973,15 @@ GetPreferredFonts( self )
   tree_node_font = environ_GetProfile("treenodefont");
   listing_font = environ_GetProfile("listingfont");
   if(control_font && *control_font) {
-      suite_SetSuiteAttribute(ControlView, suite_TitleFontName(control_font));
-      suite_SetSuiteAttribute(ControlView, suite_ItemCaptionFontName(control_font));
+      suite_SetSuiteAttribute(ControlView, suite_titlefontname, (long) (control_font));
+      suite_SetSuiteAttribute(ControlView, suite_itemcaptionfontname, (long) (control_font));
   }
   if(listing_font && *listing_font) {
-      suite_SetSuiteAttribute(EntriesView, suite_TitleFontName(listing_font));
-      suite_SetSuiteAttribute(EntriesView, suite_ItemCaptionFontName(listing_font));
+      suite_SetSuiteAttribute(EntriesView, suite_titlefontname, (long) (listing_font));
+      suite_SetSuiteAttribute(EntriesView, suite_itemcaptionfontname, (long) (listing_font));
   }
   if(tree_node_font && *tree_node_font) {
-      treev_SetTreeAttribute(DirTreeView, treev_NodeFontName(tree_node_font));
+      treev_SetTreeAttribute(DirTreeView, treev_nodefontname, (long) (tree_node_font));
   }
   OUT(GetPreferredFont);
 }
@@ -1123,10 +1123,11 @@ bushv__FullUpdate( self, Type, left, top, width, height )
       sprintf(NewTitle,"%s%s%s",DirPath(CurrNode),
 	       CurrEntry ? "/" : "", CurrEntry ? CurrEntry->name : "");
       suite_ChangeSuiteAttribute(ControlView,
-				  suite_TitleCaption(NewTitle));
+				  suite_titlecaption, (long) (NewTitle));
     }
     else 
-	suite_ChangeSuiteAttribute(ControlView,"No Current Directory");
+	suite_ChangeSuiteAttribute(ControlView,
+				    suite_titlecaption, (long) ("No Current Directory"));
     PassivateControls(self);
     ClearMessageLine();
   }
@@ -1355,7 +1356,7 @@ PerformDestroy( self )
 			}
 			CurrNode = Parent(current_node);
 			treev_HighlightNode(DirTreeView, CurrNode);
-			suite_ChangeSuiteAttribute(ControlView, suite_TitleCaption(DirPath(CurrNode)));
+			suite_ChangeSuiteAttribute(ControlView, suite_titlecaption, (long) (DirPath(CurrNode)));
 			bushv_RetractCursor(self, Cursor);
 			PerformRescan(self);
 			sprintf(msg, "Destroyed Node '%s'", Dir_Entry->name);
@@ -1374,7 +1375,7 @@ PerformDestroy( self )
 		else sprintf(msg, "Destroy All %d Items ?", count);
 	    else {
 		Dir_Entry = (struct Dir_Entry*)
-		  suite_ItemAttribute(EntriesView, selected[0], suite_ItemDatum(0));
+		  suite_ItemAttribute(EntriesView, selected[0], suite_itemdatum);
 		sprintf(msg, "Destroy %s '%s' ?", EntryDirType(Dir_Entry)
 			? "Node" : "", Dir_Entry->name);
 	    }
@@ -1384,7 +1385,7 @@ PerformDestroy( self )
 		PostCursor(self, Cursor_Wait);
 		for( i = 0 ; i < count ; i++ ) {
 		    Dir_Entry = (struct Dir_Entry*) 
-		      suite_ItemAttribute(EntriesView, selected[i], suite_ItemDatum(0));
+		      suite_ItemAttribute(EntriesView, selected[i], suite_itemdatum);
 		    if(!DoDestroy(self, current_node, Dir_Entry, TRUE)) {
 			suite_PassivateItem(EntriesView, selected[i]);
 			EntrySelected(Dir_Entry) = FALSE;
@@ -1408,7 +1409,7 @@ PerformDestroy( self )
 			CurrEntry = NULL;
 			PerformPop(self);
 			suite_ChangeSuiteAttribute(ControlView,
-						   suite_TitleCaption(DirPath(CurrNode)));
+						   suite_titlecaption, (long) (DirPath(CurrNode)));
 			suite_PassivateItem(EntriesView, suite_CurrentItem(EntriesView));
 		    }
 		    bushv_RetractCursor(self, Cursor);
@@ -1572,9 +1573,9 @@ ResetEntriesCaptions( self )
       (count = DirEntriesCount(CurrNode)) >= 0)
     for(i = 0 ; i < count ; i++) 
 	if(DirEntryMode(CurrNode, i).destroyed == FALSE &&
-	    (item = suite_CreateItem(EntriesView, DirEntryName(CurrNode,i), DirEntry(CurrNode,i))))
+	    (item = suite_CreateItem(EntriesView, DirEntryName(CurrNode,i), (long)DirEntry(CurrNode,i))))
 	    suite_SetItemAttribute(EntriesView, item,
-				   suite_ItemCaption(FormatEntriesItem(self, CurrNode, i, NULL)));
+				   suite_itemcaption, (long) (FormatEntriesItem(self, CurrNode, i, NULL)));
   OUT(ResetEntriesCaptions);
 }
 
@@ -1668,7 +1669,7 @@ SwitchDirectory( self )
   SetTreeNotificationData(self,CurrNode,tree_NodeCreated);
   NotifyTreeObservers(self);
   suite_ChangeSuiteAttribute(ControlView,
-	suite_TitleCaption(DirPath(CurrNode)));
+	suite_titlecaption, (long) (DirPath(CurrNode)));
   if(TopLevelInset) 
     im_SetTitle(bushv_GetIM(self),DirName(CurrNode));
   bushv_RetractCursor(self,Cursor);
@@ -1700,9 +1701,9 @@ SetEditor( self )
     struct suite_item	*editorItem = NULL;
     char		 editorCaption[64];
 
-    if(editorItem = suite_ItemOfDatum(ControlView,&editor_data)) {
+    if(editorItem = suite_ItemOfDatum(ControlView,(long)&editor_data)) {
       sprintf(editorCaption,"Editor: %s",EditorProgram);
-      suite_ChangeItemAttribute(ControlView, editorItem, suite_ItemCaption(editorCaption));
+      suite_ChangeItemAttribute(ControlView, editorItem, suite_itemcaption, (long) (editorCaption));
     }
   }
   sprintf(msg,"Editor set to: '%s'",EditorProgram);
@@ -1775,7 +1776,7 @@ DoAutoRescan( self )
 	      selected = suite_SelectedItems(EntriesView, &count);
 	      names = (char**)calloc(count, sizeof(char*));
 	      for(i = 0; i < count; i++)
-		  AllocNameSpace( suite_ItemAttribute(EntriesView, selected[i], suite_ItemCaption(0)), &names[i] );
+		  AllocNameSpace( (char *) suite_ItemAttribute(EntriesView, selected[i], suite_itemcaption), &names[i] );
 	  }
 	  PerformRescan(self);
 	  if(Object == entries_object)
@@ -1807,11 +1808,11 @@ PushToEntries( self )
   IN(PushToEntries);
   if(EntriesView) {
     sorter = DetermineSortHandler(self,CurrNode);
-    suite_SetSuiteAttribute(EntriesView,suite_SortHandler(sorter));
+    suite_SetSuiteAttribute(EntriesView,suite_sorthandler, (long) (sorter));
     Object = entries_object;
     ResetEntriesCaptions(self);
     suite_SetSuiteAttribute(EntriesView,
-	    suite_TitleCaption(FormatEntriesInfo(self,CurrNode)));
+	    suite_titlecaption, (long) (FormatEntriesInfo(self,CurrNode)));
     lpair_SetNth(LP,1,(struct view*)EntriesView);
     DoAutoRescan(self);
     bushv_WantInputFocus(self,EntriesView);
@@ -1874,7 +1875,7 @@ PushToEntry( self )
       lpair_SetNth(LP, 1,
 	EntryViewAppLayer = view_GetApplicationLayer(EntryView));
       bushv_WantInputFocus(self, EntryView);
-      suite_ChangeSuiteAttribute(ControlView, suite_TitleCaption(file_name));
+      suite_ChangeSuiteAttribute(ControlView, suite_titlecaption, (long) (file_name));
       EntryObjectModified = EntryObjectLastCKP = dataobject_GetModified(EntryObject);
     }
   }
@@ -1898,7 +1899,7 @@ PopToNodes( self )
     Object = nodes_object;
     CurrEntry = NULL;
     suite_ChangeSuiteAttribute(ControlView,
-	suite_TitleCaption(DirPath(CurrNode)));
+	suite_titlecaption, (long) (DirPath(CurrNode)));
     lpair_SetNth(LP,1,(struct view*)DirTreeView);
     DoAutoRescan(self);
     NumPrevSelected = 0;
@@ -1927,7 +1928,7 @@ PopToEntries( self )
     Object = entries_object;
     lpair_SetNth(LP,1,(struct view*)EntriesView);
     suite_ChangeSuiteAttribute(ControlView,
-	suite_TitleCaption(DirPath(CurrNode)));
+	suite_titlecaption, (long) (DirPath(CurrNode)));
     DoAutoRescan(self);
     bushv_WantInputFocus(self,EntriesView);
   }
@@ -1950,7 +1951,7 @@ I set the item_data attribute, active, of the ControlView items to be the OR'ed 
   long int	     result = 0;
 
   if(suite && item) {
-    itemData = (struct item_data*) suite_ItemAttribute(suite, item, suite_ItemData(0));
+    itemData = (struct item_data*) suite_ItemAttribute(suite, item, suite_itemdatum);
     if(itemData && (itemData->activate & Object))
       suite_ActivateItem(suite,item);
     else suite_PassivateItem(suite,item);
@@ -2054,8 +2055,8 @@ ToggleCaptionDetail( self, suite, item, datum )
   IN(ToggleCaptionDetail);
   if(suite && item )
     suite_SetItemAttribute(suite,item,
-	suite_ItemCaption(FormatEntriesItem(self,NULL,0,(struct Dir_Entry*)
-		suite_ItemAttribute(suite,item,suite_ItemDatum(0)))));
+	suite_itemcaption, (long) (FormatEntriesItem(self,NULL,0,(struct Dir_Entry*)
+		suite_ItemAttribute(suite,item,suite_itemdatum))));
   OUT(ToggleCaptionDetail);
   return(result);
 }
@@ -2071,7 +2072,7 @@ SortDir( self, tn )
     sorter = DetermineSortHandler(self, tn);
     if(Object == entries_object)
 	suite_Sort(EntriesView, 0, sorter);
-    suite_ChangeSuiteAttribute(EntriesView, suite_TitleCaption(FormatEntriesInfo(self, CurrNode)));
+    suite_ChangeSuiteAttribute(EntriesView, suite_titlecaption, (long) (FormatEntriesInfo(self, CurrNode)));
     OUT(SortDir);
 }
 
@@ -2147,15 +2148,15 @@ PerformSort( self )
 	strcat(sortCaption, sorts[SortMode]);
 	if(Object == nodes_object) {
 	    sorter = DetermineSortHandler(self, CurrNode);
-	    suite_SetSuiteAttribute(EntriesView, suite_SortHandler(sorter));
+	    suite_SetSuiteAttribute(EntriesView, suite_sorthandler, (long) (sorter));
 	}
 	else if(Object == entries_object) {
 	    PostCursor(self, Cursor_Wait);
 	    SortDir(self, CurrNode);
 	    bushv_RetractCursor(self, Cursor);
 	}
-	if(sortItem = suite_ItemOfDatum(ControlView, &sort_data))
-	    suite_ChangeItemAttribute(ControlView, sortItem, suite_ItemCaption(sortCaption));
+	if(sortItem = suite_ItemOfDatum(ControlView, (long)&sort_data))
+	    suite_ChangeItemAttribute(ControlView, sortItem, suite_itemcaption, (long) (sortCaption));
     }
     ClearMessageLine();
     OUT(PerformSort);
@@ -2187,11 +2188,11 @@ PerformRescan( self )
 
 	*firstVisibleName = (char)0;
 	if(first) {
-	    f = suite_ItemAttribute(EntriesView, first, suite_ItemPosition(0));
+	    f = suite_ItemAttribute(EntriesView, first, suite_itemposition);
 	    while(first && suite_ItemActivated(EntriesView, first) == FALSE)
 		first = suite_ItemAtPosition(EntriesView, ++f);
 	    if(first)
-		strcpy(firstVisibleName, (char *) suite_ItemAttribute(EntriesView, first, suite_ItemName(0)));
+		strcpy(firstVisibleName, (char *) suite_ItemAttribute(EntriesView, first, suite_itemname));
 	}
 	if(Child(CurrNode)) {
 	    SetTreeNotificationData(self, CurrNode, tree_NodeChildrenDestroyed);
@@ -2270,7 +2271,7 @@ PerformRename( self )
 	strcat(msg,"'");
 	Announce(msg);
 	suite_ChangeSuiteAttribute(ControlView,
-				   suite_TitleCaption(DirPath(CurrNode)));
+				   suite_titlecaption, (long) (DirPath(CurrNode)));
 	tree_Apply(Tree,CurrNode,ResetChildDirPaths,
 		   self,strcpy(tmp_path,DirPath(CurrNode)));
       }
@@ -2281,7 +2282,7 @@ PerformRename( self )
 	for( i = 0 ; (i < count) && selected[i] ; i++ ) {
 	  suite_PassivateItem(EntriesView,selected[i]);
 	  dirEntry = (struct Dir_Entry *)
-	    suite_ItemAttribute(EntriesView,selected[i],suite_ItemDatum(0));
+	    suite_ItemAttribute(EntriesView,selected[i],suite_itemdatum);
 	  sprintf(msg,"Renaming '%s' to '",dirEntry->name);
 	  msg_status = bushv_Query(self,"New Name: ",
 				   dirEntry->name,&response);
@@ -2296,7 +2297,7 @@ PerformRename( self )
 	    suite_ActivateItem(EntriesView,selected[i]);
 	    suite_HighlightItem(EntriesView,selected[i]);
 	    suite_ChangeItemAttribute(EntriesView,selected[i],
-		suite_ItemCaption(FormatEntriesItem(self,NULL,0,dirEntry)));
+		suite_itemcaption, (long) (FormatEntriesItem(self,NULL,0,dirEntry)));
 	  }
 	  else {
 	    IssueError(self,"Renaming",dirEntry->name,TRUE);
@@ -2313,7 +2314,7 @@ PerformRename( self )
 	strcat(msg,response); strcat(msg,"'");
 	Announce(msg);
 	sprintf(msg,"%s/%s",DirPath(CurrNode),CurrEntry->name);
-	suite_ChangeSuiteAttribute(ControlView,suite_TitleCaption(msg));
+	suite_ChangeSuiteAttribute(ControlView,suite_titlecaption, (long) (msg));
       }
       else IssueError(self,"Renaming",CurrEntry->name,TRUE);
       break;
@@ -2645,11 +2646,11 @@ UpdateDetailCaption( self )
   struct suite_item	    *detailItem = NULL;
   char			     newCaption[16];
 
-  if(detailItem = suite_ItemOfDatum(ControlView, &detail_data)) {
+  if(detailItem = suite_ItemOfDatum(ControlView, (long)&detail_data)) {
     strcpy(newCaption, "Detail: ");
     if(Detail) strcat(newCaption, "on");
     else strcat(newCaption, "off");
-    suite_ChangeItemAttribute(ControlView, detailItem, suite_ItemCaption(newCaption));
+    suite_ChangeItemAttribute(ControlView, detailItem, suite_itemcaption, (long) (newCaption));
   }
 }
 
@@ -2661,8 +2662,8 @@ EntriesPageUp( self )
 	struct suite_item *first, *last, *newFirst;
 
 	if((first = suite_FirstVisible(EntriesView)) != NULL && (last = suite_LastVisible(EntriesView)) != NULL && first != last) {
-	    int f = suite_ItemAttribute(EntriesView, first, suite_ItemPosition(0));
-	    int l = suite_ItemAttribute(EntriesView, last, suite_ItemPosition(0));
+	    int f = suite_ItemAttribute(EntriesView, first, suite_itemposition);
+	    int l = suite_ItemAttribute(EntriesView, last, suite_itemposition);
 	    int total = suite_ItemCount(EntriesView);
 	    int span = l - f, n;
 
@@ -2684,8 +2685,8 @@ EntriesPageDown( self )
 	struct suite_item *first, *last, *newFirst;
 
 	if((first = suite_FirstVisible(EntriesView)) != NULL && (last = suite_LastVisible(EntriesView)) != NULL && first != last) {
-	    int f = suite_ItemAttribute(EntriesView, first, suite_ItemPosition(0));
-	    int l = suite_ItemAttribute(EntriesView, last, suite_ItemPosition(0));
+	    int f = suite_ItemAttribute(EntriesView, first, suite_itemposition);
+	    int l = suite_ItemAttribute(EntriesView, last, suite_itemposition);
 	    int total = suite_ItemCount(EntriesView);
 
 	    if(l != total) {

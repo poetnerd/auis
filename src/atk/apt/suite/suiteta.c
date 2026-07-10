@@ -652,10 +652,10 @@ Number_Test( self, suite, item, type, action, x, y, clicks )
   long test;
 
   if(action == view_LeftDown)
-    suite_ChangeItemAttribute(suite, item, suite_ItemCaption(""));
+    suite_ChangeItemAttribute(suite, item, suite_itemcaption, (long) (""));
   else {
-      if(suite_ItemAttribute(suite, item, suite_ItemCaption(0))) {
-	  test = atoi( (char *) suite_ItemAttribute( suite, item, suite_ItemCaption(0) ) );
+      if(suite_ItemAttribute(suite, item, suite_itemcaption)) {
+	  test = atoi( (char *) suite_ItemAttribute( suite, item, suite_itemcaption ) );
 	  if(test >= 0 || test <= last_test) {
 	      current_test = test;
 	      Change_Test(self);
@@ -732,8 +732,8 @@ Name_Choice( self, suite, item, type, action, x, y, clicks )
   long x, y, clicks;
 {
   printf("Title Caption '%s' Item Caption '%s'\n",
-	    suite_SuiteAttribute(suite, suite_TitleCaption(0)),
-	    suite_ItemAttribute(suite, item, suite_ItemCaption(0)));
+	    suite_SuiteAttribute(suite, suite_titlecaption),
+	    suite_ItemAttribute(suite, item, suite_itemcaption));
   return(NULL);
 }
 
@@ -747,8 +747,8 @@ RW_Hit_Handler( self, suite, item, type, action, x, y, clicks )
   long x, y, clicks;
 {
   printf("Title Caption '%s'  Item Caption '%s'\n",
-	    suite_SuiteAttribute(suite, suite_TitleCaption(0)),
-	    suite_ItemAttribute(suite, item, suite_ItemCaption(0)));
+	    suite_SuiteAttribute(suite, suite_titlecaption),
+	    suite_ItemAttribute(suite, item, suite_itemcaption));
   return(NULL);
 }
 
@@ -798,7 +798,7 @@ Alphabet_Sort( self, suite, item, type, action, x, y, clicks )
 	  sorted = forward;
       }
       suite_Sort(suite, suite_Alphabetic | sort, NULL);
-      suite_ChangeSuiteAttribute(suite, suite_TitleCaption(sorted));
+      suite_ChangeSuiteAttribute(suite, suite_titlecaption, (long) (sorted));
   }
   return(NULL);
 }

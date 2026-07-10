@@ -283,7 +283,7 @@ CopySelected(self, suite, item, datum)
   if(suite && item)
     if(Exposed(item) && Active(item) && Highlighted(item)) {
       sprintf(buffer,"%s ",(char*)suite_ItemAttribute(suite,item,
-				       suite_ItemCaption(0)));
+				       suite_itemcaption));
       fputs(buffer,(FILE*)datum);
     }
   OUT(CopySelected);
@@ -763,7 +763,7 @@ SetBreakPoint(self, item, end)
   register struct suite_item *item;
   register char *end;
 {
-  vector_AddItem(Breaks(item),(long)(end - item_Caption));
+  vector_AddItem(Breaks(item),(void *)(end - item_Caption));
 }
 
 static boolean

@@ -68,7 +68,7 @@ struct lset *self;
 	printf("Posting %d for %s (%s)\n",(long)self->dobj,buf,class_GetTypeName(self->dobj)); 
 #endif /* DEBUG */
 	rm_PostResource(al,(long)self->dobj,a_vp);
-	lset_Put(self,a_name,a_atomlist,al);
+	lset_Put(self,a_name,a_atomlist,(long)al);
     }
 }
 static struct dataobject *getregisteredobject(self)

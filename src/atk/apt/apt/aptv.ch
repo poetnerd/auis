@@ -156,9 +156,9 @@ methods:
   ExpandView( struct aptv *aptv );
   ClearBody();
 
-  PrintObject( FILE *file, char *processor, char *finalFormat, boolean topLevel, printer );
+  PrintObject( FILE *file, char *processor, char *finalFormat, boolean topLevel, void (*printer)() );
   PrintContinue();
-  OpenPrintStream( FILE *file, processor, format, level ) returns boolean;
+  OpenPrintStream( FILE *file, char *processor, char *format, long level ) returns boolean;
   ClosePrintStream();
   SetPrintStream( struct aptv_print_stream *stream );
   PreservePrintState();

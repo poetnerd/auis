@@ -139,7 +139,7 @@ register struct suite_item *item;
 {
     char msg[100];
     if(action == view_LeftUp) {
-	sprintf(msg, "Chosen Flavor is %s.", suite_ItemAttribute(suite, item, suite_ItemCaption(0)));
+	sprintf(msg, "Chosen Flavor is %s.", suite_ItemAttribute(suite, item, suite_itemcaption));
 	message_DisplayString(suite, 0, msg);
     }
     return(NULL);

@@ -114,12 +114,12 @@ overrides:
 methods:
 
   SetAreaTitle( char *title, long area );
-  SetAreaSpreadTitle( char **title, long count, long area, mode );
+  SetAreaSpreadTitle( char **title, long count, long area, long mode );
   SetAreaTitleFontName( char *font, long area );
   SetAreaLegend( char *legend, long area  );
-  SetAreaSpreadLegend( char **legend, long count, long area, mode );
+  SetAreaSpreadLegend( char **legend, long count, long area, long mode );
   SetAreaLegendFontName( char *font, long area );
-  ReadObject( FILE *file, long id, reader )    returns long;
+  ReadObject( FILE *file, long id, void (*reader)() )    returns long;
   ReadObjectField()				returns struct apt_field *;
   ParseFieldContent( char *string )		returns char **;
   ParseFieldContents( char *string )		returns struct apt_field_contents *;

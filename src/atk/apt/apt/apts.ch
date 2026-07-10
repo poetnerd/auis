@@ -69,7 +69,7 @@ classprocedures:
   CompareStrings( char *s1, char *s2 )			returns long;
   SubstringIndex( char *pattern, char *string )		returns long;
   StripString( char *string)				returns char *;
-  CaptureString( char *source, char *target )		returns long;
+  CaptureString( char *source, char **target )		returns long;
 
   HourMinuteSecond( long *hour, long *minute, long *second );
   HourOfDay( char *hour );

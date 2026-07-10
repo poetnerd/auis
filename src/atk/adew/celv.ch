@@ -72,7 +72,7 @@ methods:
     PromptForInfo(struct arbiter *arb,boolean promptForViewName,boolean changeRefName) returns int;
     PostParameters();
     Copy();
-    SetHitfunc(struct view * (*hitfunc)(),long hitrock);
+    SetHitfunc(struct view * (*hitfunc)(),void *hitrock);
     SetKeymap( struct keymap *km);
     SetMenulist( struct menulist *ml);
     Repost();

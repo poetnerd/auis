@@ -508,7 +508,7 @@ struct suite *
 suite__Create( ClassID, suite, anchor )
   struct classheader *ClassID;
   suite_Specification *suite;
-  unsigned anchor;
+  long anchor;
 { register struct suite *self = NULL;
   if(!(self = suite_New())) 
     HandleException(self,NULL,suite_InsufficientSpace);
@@ -901,7 +901,7 @@ suite__Reset( self, state )
   }
   if(state & suite_Clear) {
     suite_ClearAllItems(self);
-    suite_SetSuiteAttribute(self,suite_TitleCaption(NULL));
+    suite_SetSuiteAttribute(self,suite_titlecaption, (long) (NULL));
     doFullRedraw = TRUE;
   }
   if(state & suite_ClearItems) {
@@ -909,7 +909,7 @@ suite__Reset( self, state )
     doContainerRedraw = TRUE;
   }
   if(state & suite_ClearTitle) {
-    suite_SetSuiteAttribute(self,suite_TitleCaption(NULL));
+    suite_SetSuiteAttribute(self,suite_titlecaption, (long) (NULL));
     doFullRedraw = TRUE;
   }
   if(state & suite_Activate) {
@@ -1318,7 +1318,7 @@ void
 suite__Apply( self, proc, anchor, datum )
   register struct suite *self;
   register long (*proc)();
-  register unsigned anchor, datum;
+  register long anchor, datum;
 {
   register int i = 0;
   register struct suite_item *item = NULL;
@@ -2048,7 +2048,7 @@ suite__HighlightItem( self, item )
 
   if(!Items || !ITEM(0) || !item) return;
   if(IsLinked) {
-    i = vector_Subscript(Items,(long)FirstVisible);
+    i = vector_Subscript(Items,FirstVisible);
     if(SelectionMode & suite_Exclusive) 
       suite_Reset(self,suite_Normalize);
     while(this_one = ITEM(i++))
@@ -2088,7 +2088,7 @@ suite__NormalizeItem( self, item )
 
   if(!Items || !ITEM(0) || !item) return;
   if(IsLinked) {
-    i = vector_Subscript(Items,(long)FirstVisible);
+    i = vector_Subscript(Items,FirstVisible);
     if(SelectionMode & suite_Exclusive) 
       suite_Reset(self,suite_Normalize);
     while(this_one = ITEM(i++))
@@ -2386,7 +2386,7 @@ suite__ItemAttribute( self, item, attribute )
   switch(attribute) {
 	case suite_itemposition:
 	        if(Items)
-		    value = vector_Subscript(Items,(long)item);
+		    value = vector_Subscript(Items,item);
 		if(value != -1)	value += 1;		break;
 	case suite_itemcaption:
 		value = (long) item_Caption;		break;
@@ -2478,7 +2478,7 @@ suite__ItemOfName( self, name )
 
   if(Items && ITEM(0))
       while(item = ITEM(i++)) {
-	  item_name = (char*) suite_ItemAttribute(self, item, suite_ItemName(0));
+	  item_name = (char*) suite_ItemAttribute(self, item, suite_itemname);
 	  if((!name || !(*name)) && item_name == name)
 	      return(item);
 	  else if(!strcmp(name, item_name))
@@ -2498,7 +2498,7 @@ suite__ItemsOfName( self, name )
 
   if(Items && ITEM(0)) {
       while(item = ITEM(i++)) {
-	  item_name = (char*) suite_ItemAttribute(self, item, suite_ItemName(0));
+	  item_name = (char*) suite_ItemAttribute(self, item, suite_itemname);
 	  if((!name || !(*name)) && item_name == name)
 	      count++;
 	  else if(!strcmp(name, item_name)) 
@@ -2507,7 +2507,7 @@ suite__ItemsOfName( self, name )
     suiteev_AllocItemArray(SetView,count);
     i = count = 0;
     while(item = ITEM(i++)) {
-	item_name = (char*) suite_ItemAttribute(self, item, suite_ItemName(0));
+	item_name = (char*) suite_ItemAttribute(self, item, suite_itemname);
 	if((!name || !(*name)) && item_name == name)
 	    ItemArray[count++] = item;
 	else if(!strcmp(name, item_name))
@@ -2543,7 +2543,7 @@ DefaultExceptionHandler( self )
 	suite_ExceptionCode(self) );
   message_MultipleChoiceQuestion(self, 100, msg, 0, &result, continue_choice, NULL);
   if(ExceptionItem) {
-    sprintf(msg, "Suite: DefaultExceptionHandler:: exception item caption '%s'.", suite_ItemAttribute(self, ExceptionItem, suite_ItemCaption(0)));
+    sprintf(msg, "Suite: DefaultExceptionHandler:: exception item caption '%s'.", suite_ItemAttribute(self, ExceptionItem, suite_itemcaption));
     message_MultipleChoiceQuestion(self, 100, msg, 0, &result, continue_choice, NULL);
   }
 }
@@ -2567,7 +2567,7 @@ ValidateItem( self, item )
   register struct suite_item *item;
 {
   if(!item || !Items || 
-      (Items && (vector_Subscript(Items,(unsigned int)item)) == -1))
+      (Items && (vector_Subscript(Items,item)) == -1))
     HandleException(self,item,suite_NonExistentItem);
 }
 

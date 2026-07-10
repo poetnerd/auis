@@ -194,7 +194,7 @@ Build_Node( self, name, datum )
   DEBUGst(Name,name);
   if ( node = (struct tree_node *) calloc( 1, sizeof(struct tree_node) ) )
     {
-    tree_SetNodeDatum( self, node, datum );
+    tree_SetNodeDatum( self, node, (void *)datum );
     tree_SetNodeName( self, node, name );
     }
   OUT(Build_Node);
@@ -257,7 +257,7 @@ tree__CreateChildNode( self, name, datum, parent )
     }
     else
     if ( parent == NULL )
-      node = tree_CreateRootNode(  self, name, datum );
+      node = tree_CreateRootNode(  self, name, (void *)datum );
   OUT(tree_CreateChildNode);
   return  node;
   }

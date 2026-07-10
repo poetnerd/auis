@@ -465,13 +465,13 @@ Initialize_Palette( self ) /*=== CONVERT TO REAL FORM ===*/
       DEBUGst(RightAreaTitle,chart_AreaTitle( Chart, apt_RightArea ));
       DEBUGst(BottomAreaTitle,chart_AreaTitle( Chart, apt_BottomArea ));
       suite_SetItemAttribute( TitleSuite, suite_ItemOfDatum( TitleSuite, left_title_code ),
-	suite_ItemCaption( chart_AreaTitle( Chart, apt_LeftArea ) ) );
+	suite_itemcaption, (long) ( chart_AreaTitle( Chart, apt_LeftArea ) ) );
       suite_SetItemAttribute( TitleSuite, suite_ItemOfDatum( TitleSuite, top_title_code ),
-	suite_ItemCaption( chart_AreaTitle( Chart, apt_TopArea ) ) );
+	suite_itemcaption, (long) ( chart_AreaTitle( Chart, apt_TopArea ) ) );
       suite_SetItemAttribute( TitleSuite, suite_ItemOfDatum( TitleSuite, right_title_code ),
-	suite_ItemCaption( chart_AreaTitle( Chart, apt_RightArea ) ) );
+	suite_itemcaption, (long) ( chart_AreaTitle( Chart, apt_RightArea ) ) );
       suite_SetItemAttribute( TitleSuite, suite_ItemOfDatum( TitleSuite, bottom_title_code ),
-	suite_ItemCaption( chart_AreaTitle( Chart, apt_BottomArea ) ) );
+	suite_itemcaption, (long) ( chart_AreaTitle( Chart, apt_BottomArea ) ) );
       SetItemView( Palette, suite_ItemOfDatum(Palette,palette_item1_code), ControlSuite );
       SetItemView( Palette, suite_ItemOfDatum(Palette,palette_item2_code), TitleSuite );
       SetItemView( Palette, suite_ItemOfDatum(Palette,palette_item3_code), SortForm );
@@ -555,7 +555,7 @@ Palette_Hit( self, suite, item, type, action, x, y, clicks )
   DEBUGdt(Action,action);
   if ( type == suite_ItemObject  &&  action == view_LeftUp )
     {
-    switch ( suite_ItemAttribute( suite, item, suite_ItemDatum(0) ) )
+    switch ( suite_ItemAttribute( suite, item, suite_itemdatum ) )
       {
       case  add_code:			DEBUG(Add);
 	chartv_Add_Command( self );
@@ -570,7 +570,7 @@ Palette_Hit( self, suite, item, type, action, x, y, clicks )
 /*      case  map_code:*/
       case  stack_code:
       case  cartesian_code:		DEBUG(Types);
-	chartv_ReChart( self, suite_ItemAttribute( suite, item, suite_ItemCaption(0) ) );
+	chartv_ReChart( self, suite_ItemAttribute( suite, item, suite_itemcaption ) );
 	break;
       case  print_code:			DEBUG(Print);
 	chartv_Print_Command( self );
@@ -616,7 +616,7 @@ Palette_Hit( self, suite, item, type, action, x, y, clicks )
 	break;
       default:
 	sprintf( msg, "ChartV: ERROR -- Unknown control-code (%d)",
-		    suite_ItemAttribute( suite, item, suite_ItemDatum(0) ) );
+		    suite_ItemAttribute( suite, item, suite_itemdatum ) );
 	chartv_Announce( self, msg );
       } 
     if ( !InputFocus )  chartv_WantInputFocus( self, self );
@@ -637,12 +637,12 @@ Palette_Titles_Handler( self, suite, item, action )
 
   IN(Palette_Titles_Handler);
   DEBUGxt(suite==TitleSuite,suite==TitleSuite);
-  title = (char *)suite_ItemAttribute( suite, item, suite_ItemCaption(0) );
+  title = (char *)suite_ItemAttribute( suite, item, suite_itemcaption );
   DEBUGst(Title,title);
-  DEBUGdt(Code,suite_ItemAttribute( suite, item, suite_ItemDatum(0) ) );
+  DEBUGdt(Code,suite_ItemAttribute( suite, item, suite_itemdatum ) );
   if ( /*===action == */ 1 /*===s/b/suite_EndEntry,Also suite_BeginEntry is 0===*/ )
     {
-    switch ( suite_ItemAttribute( suite, item, suite_ItemDatum(0) ) )
+    switch ( suite_ItemAttribute( suite, item, suite_itemdatum ) )
       {
       case  top_title_code:      area = apt_TopArea;    break;
       case  bottom_title_code:   area = apt_BottomArea; break;

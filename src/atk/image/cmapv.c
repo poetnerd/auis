@@ -141,7 +141,7 @@ SliderChanged( rock, inten )
 	unsigned int R, G, B;
 	char title[128];
 	color_GetRGB(c, R, G, B);
-	switch(suite_ItemAttribute(s, item, suite_ItemDatum(0))) {
+	switch(suite_ItemAttribute(s, item, suite_itemdatum)) {
 	    case redCode:
 		if(R != inten)
 		    color_SetRGB(c, inten, G, B);
@@ -158,7 +158,7 @@ SliderChanged( rock, inten )
 	colormap_ChangeColor(cmap, c);
 	colormap_SetModified(cmap);
 	sprintf(title, "%ld", inten);
-	suite_ChangeItemAttribute(s, item, suite_ItemTitleCaption(title));
+	suite_ChangeItemAttribute(s, item, suite_itemtitlecaption, (long) (title));
     }
 }
 
@@ -271,7 +271,7 @@ Control_Choice( self, suite, item, type, action, x, y, clicks )
   long x, y, clicks;
 {
   if(item && action == view_LeftDown) {
-      message_DisplayString(self, 0, (char *)suite_ItemAttribute(suite, item, suite_ItemCaption(0)));
+      message_DisplayString(self, 0, (char *)suite_ItemAttribute(suite, item, suite_itemcaption));
   }
   return(NULL);
 }

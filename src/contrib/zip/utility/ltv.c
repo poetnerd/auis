@@ -144,7 +144,7 @@ static /*===*/struct ltv *SELF;
 #define  EnclosureHeight	    (self->enclosure.height)
 
 #define  ChangeItemCaption(o,i,c) \
-      suite_ChangeItemAttribute( o, i, suite_ItemCaption(c) )
+      suite_ChangeItemAttribute( o, i, suite_itemcaption, (long) (c) )
 
 static int				    Begin_Chain_Button(), End_Chain_Button(),
 				    Rename_Chain_Button(), Delete_Chain_Button(),
@@ -400,7 +400,7 @@ Detect( self, suite, item, datum )
   register long		    datum;
   {
   IN(Detect);
-  switch ( suite_ItemAttribute( Buttons/*===*/, item, suite_ItemDatum(0) ) )
+  switch ( suite_ItemAttribute( Buttons/*===*/, item, suite_itemdatum ) )
     {
     case  left_code:
       LeftNameItem = item;

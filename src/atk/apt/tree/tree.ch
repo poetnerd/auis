@@ -80,14 +80,14 @@ methods:
 
   /**  Methods Dealing with Individual Nodes  **/
 
-  CreateRootNode( char *name, long datum )			returns struct tree_node *;
-  CreateParentNode( char *name, long datum, struct tree_node *child ) 
+  CreateRootNode( char *name, void *datum )			returns struct tree_node *;
+  CreateParentNode( char *name, void *datum, struct tree_node *child ) 
 								returns struct tree_node *;
-  CreateChildNode( char *name, long datum, struct tree_node *parent ) 
+  CreateChildNode( char *name, void *datum, struct tree_node *parent ) 
 								returns struct tree_node *;
-  CreateRightNode( char *name, long datum, struct tree_node *left ) 
+  CreateRightNode( char *name, void *datum, struct tree_node *left ) 
 								returns struct tree_node *;
-  CreateLeftNode( char *name, long datum, struct tree_node *right ) 
+  CreateLeftNode( char *name, void *datum, struct tree_node *right ) 
 								returns struct tree_node *;
   DestroyNode( struct tree_node *node );
   DestroyNodeChildren( struct tree_node *node );
@@ -95,8 +95,8 @@ methods:
   PriorNode( struct tree_node *node )				returns struct tree_node *;
   NodeOfName( char *name, struct tree_node *node )		returns struct tree_node *;
   NodesOfName( char *name, struct tree_node *node )		returns struct tree_node **;
-  NodeOfDatum( long datum, struct tree_node *node )		returns struct tree_node *;
-  NodesOfDatum( long datum, struct tree_node *node )		returns struct tree_node **;
+  NodeOfDatum( void *datum, struct tree_node *node )		returns struct tree_node *;
+  NodesOfDatum( void *datum, struct tree_node *node )		returns struct tree_node **;
   HookNode( struct tree_node *node, struct tree_node *parent, 
 		struct tree_node *left, struct tree_node *right ) 
 								returns struct tree_node *;
@@ -107,12 +107,12 @@ methods:
   DuplicateNode( struct tree_node *node, struct tree_node *parent, 
 		struct tree_node *left, struct tree_node *right )
 								returns struct tree_node *;
-  Apply( struct tree_node *node, (long(*)()) proc, char *anchor, char *datum )
+  Apply( struct tree_node *node, long (*proc)(), void *anchor, void *datum )
 								returns long;
   SetNodeName( struct tree_node *node, char *name )		returns boolean;
   SetNodeCaption( struct tree_node *node, char *caption )	returns boolean;
   SetNodeTitle( struct tree_node *node, char *title )		returns boolean;
-  SetNodeDatum( struct tree_node *node, long datum )		returns boolean;
+  SetNodeDatum( struct tree_node *node, void *datum )		returns boolean;
   NodeCount( struct tree_node *node )				returns long;
   PeerNodeCount( struct tree_node *node )			returns long;
   ChildNodeCount( struct tree_node *node )			returns long;
@@ -142,7 +142,7 @@ macromethods:
 
 classprocedures:
 
-  Create( tree_Specification, char *anchor )   		returns struct tree *;
+  Create( tree_Specification *specification, struct dataobject *anchor ) returns struct tree *;
   InitializeObject( struct tree *self )			returns boolean;
   FinalizeObject( struct tree *Self );
 

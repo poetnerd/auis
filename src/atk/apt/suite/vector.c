@@ -175,7 +175,7 @@ vector__ItemExists( self, item )
   register struct vector	*self;
   register long			 item;
 {
-  if(vector_Subscript(self,item) != -1) 
+  if(vector_Subscript(self,(void *)item) != -1)
     return(TRUE);
   else 
     return(FALSE);

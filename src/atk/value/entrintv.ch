@@ -14,7 +14,7 @@ overrides:
    DoHit(enum view_MouseAction type, long x,y,hits) returns struct buttonV *;
    ObservedChanged( struct observable * observed, long status );
    LinkTree(struct view *parent);
-  DrawButtonText(char *text,long len,struct rectangle *rect,struct rectangle*rect2,pushd);
+  DrawButtonText(char *text,long len,struct rectangle *rect,struct rectangle*rect2,boolean pushd);
 Hit(enum view_MouseAction type, long x, long y, long numberOfClicks)
     returns struct view *;
 

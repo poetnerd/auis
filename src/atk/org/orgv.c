@@ -629,7 +629,7 @@ Control_Button_Hit( self, suite, item, type, action, x, y, clicks )
   IN(Control_Button_Hit);
   DEBUGdt(Action,action);
   if ( type == suite_ItemObject  &&  action == view_LeftUp ) {
-    switch ( suite_ItemAttribute( suite, item, suite_ItemDatum(0) ) ) {
+    switch ( suite_ItemAttribute( suite, item, suite_itemdatum ) ) {
       case  add_code:		Add_Command( self );		break;
       case  delete_code:	Delete_Command( self );		break;
       case  rename_code:	Rename_Command( self );		break;
@@ -641,7 +641,7 @@ Control_Button_Hit( self, suite, item, type, action, x, y, clicks )
       case  node_connector_code:Node_Connector_Command( self );	break;
       default:
 	sprintf( msg, "Unknown control-code (%d)",
-		    suite_ItemAttribute( suite, item, suite_ItemDatum(0) ) );
+		    suite_ItemAttribute( suite, item, suite_itemdatum ) );
 	orgv_Announce( self, msg );
     } 
     suite_NormalizeItem( suite, item );
@@ -774,12 +774,12 @@ Fold_Command( self )
 {
   IN(Fold_Command);
   if ( Fold = !Fold ) {
-    treev_SetTreeAttribute( TreeView, treev_NodeConnectorStyle( treev_Fold | NodeConnectorStyle ) );
+    treev_SetTreeAttribute( TreeView, treev_nodeconnectorstyle, (long) ( treev_Fold | NodeConnectorStyle ) );
     Alter_Control_Button( self, fold_code, UnFoldPhrase );
     menulist_SetMask( Menu, (menulist_GetMask( Menu ) & ~menu_unfolded) | menu_folded );
   }
   else {
-    treev_SetTreeAttribute( TreeView, treev_NodeConnectorStyle( treev_NoFold | NodeConnectorStyle ) );
+    treev_SetTreeAttribute( TreeView, treev_nodeconnectorstyle, (long) ( treev_NoFold | NodeConnectorStyle ) );
     Alter_Control_Button( self, fold_code, FoldPhrase );
     menulist_SetMask( Menu, (menulist_GetMask( Menu ) & ~menu_folded) | menu_unfolded );
   }
@@ -813,7 +813,7 @@ Node_Border_Command( self )
   }
   if ( response  &&  style != NodeBorderStyle )
     treev_SetTreeAttribute( TreeView,
-	treev_NodeBorderStyle( (NodeBorderStyle = style) ) );
+	treev_nodeborderstyle, (long) ( (NodeBorderStyle = style) ) );
   IgnoreLoseInputFocus = IgnoreFullUpdate = false;
   orgv_FullUpdate( self, view_FullRedraw, 0, 0, Width-3, Height-3 );
   OUT(Node_Border_Command);
@@ -841,7 +841,7 @@ Node_Connector_Command( self )
   if ( response  &&  style != NodeConnectorStyle ) {
     DEBUGxt(style,((Fold) ? treev_Fold : treev_NoFold) | (NodeConnectorStyle = style));
     treev_SetTreeAttribute( TreeView,
-	treev_NodeConnectorStyle( ((Fold) ? treev_Fold : treev_NoFold) |
+	treev_nodeconnectorstyle, (long) ( ((Fold) ? treev_Fold : treev_NoFold) |
 	    (NodeConnectorStyle = style) ) );
   }
   IgnoreLoseInputFocus = IgnoreFullUpdate = false;
@@ -901,15 +901,15 @@ Arrangement_Command( self )
   IN(Arrangement_Command);
   if ( HorizontalArrangement ) {
       Arrangement = treev_Vertical;
-      treev_SetTreeAttribute( TreeView, treev_Arrangement( treev_Vertical ) );
-      treev_SetTreeAttribute( TreeView, treev_Cursor( 'z' ) );
+      treev_SetTreeAttribute( TreeView, treev_arrangement, (long) ( treev_Vertical ) );
+      treev_SetTreeAttribute( TreeView, treev_cursor, (long) ( 'z' ) );
       Alter_Control_Button( self, arrangement_code, HorizontalPhrase );
       menulist_SetMask( Menu, (menulist_GetMask( Menu ) & ~menu_horizontal) | menu_vertical );
   }
   else {
       Arrangement = treev_Horizontal;
-      treev_SetTreeAttribute( TreeView, treev_Arrangement( treev_Horizontal ) );
-      treev_SetTreeAttribute( TreeView, treev_Cursor( 'b' ) );
+      treev_SetTreeAttribute( TreeView, treev_arrangement, (long) ( treev_Horizontal ) );
+      treev_SetTreeAttribute( TreeView, treev_cursor, (long) ( 'b' ) );
       Alter_Control_Button( self, arrangement_code, VerticalPhrase );
       menulist_SetMask( Menu, (menulist_GetMask( Menu ) & ~menu_vertical) | menu_horizontal );
   }
@@ -925,10 +925,10 @@ Alter_Control_Button( self, datum, new )
 {
   if ( PaletteExposed )
       suite_ChangeItemAttribute( Suite, suite_ItemOfDatum( Suite, datum ),
-				suite_ItemCaption(new) );
+				suite_itemcaption, (long) (new) );
   else
       suite_SetItemAttribute( Suite, suite_ItemOfDatum( Suite, datum ),
-	    suite_ItemCaption( new ) );
+	    suite_itemcaption, (long) ( new ) );
 }
 
 static
@@ -1011,7 +1011,7 @@ Prepare_Description( self, node )
   if ( DescriptionExposed ) {
     orgv_UseWaitCursor( self );
     if (( text = (struct text *) tree_NodeDatum(Tree, node)) == NULL )
-	tree_SetNodeDatum( Tree, node, (long) (text = text_New()));
+	tree_SetNodeDatum( Tree, node, (text = text_New()));
     textview_SetDataObject(DescriptionView, text);
     DescriptionLastModified = text_GetModified( text );
     orgv_UseNormalCursor( self );

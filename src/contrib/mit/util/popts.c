@@ -526,11 +526,11 @@ register long  left, top, width, height;
 	    o = self->check[i].obj;
 	    checkv_SetName(v, cname);
 	    atomlist_Destroy(cname);
-	    checkv_PostResource(v, AL_checktype, A_long, CheckType);
+	    checkv_PostResource(v, AL_checktype, A_long, (void *) CheckType);
 	    checkv_PostResource(v, AL_borderwidth, A_long, 0L);
 	    checkv_PostResource(v, AL_label, A_string, options[i].label);
 	    checkv_PostResource(v, AL_bodyfont, A_string, "andy");
-	    checkv_PostResource(v, AL_bodyfont_size, A_long, 12);
+	    checkv_PostResource(v, AL_bodyfont_size, A_long, (void *) 12);
 	    value_AddCallBackObserver(o, self, doValueChange, i);
 	    if (options[i].func)
 		value_AddCallBackObserver(o, self, options[i].func, i);
@@ -689,7 +689,7 @@ long x, y, clicks;
 {
     if ((action == view_LeftUp) || (action == view_RightUp)) {
 	if(item && (object == suite_ItemObject)) {
-	    switch(suite_ItemAttribute(suite, item, suite_ItemData(0))) {
+	    switch(suite_ItemAttribute(suite, item, suite_itemdatum)) {
 		case ApplyCode:
 		    ApplyValues(self, 0);
 		    break;

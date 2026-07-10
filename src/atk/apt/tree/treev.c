@@ -557,7 +557,7 @@ SetTreeAttribute( self, attribute, value )
     case  treev_scroll:
       Scroll = value;					break;
     case  treev_nodefontname:
-      apts_CaptureString( value, &NodeFontName );	break;
+      apts_CaptureString( (char *)value, &NodeFontName );	break;
     case  treev_hithandler:
       HitHandler = (struct view *(*)()) value;		break;
     case  treev_arrangement:
@@ -577,7 +577,7 @@ SetTreeAttribute( self, attribute, value )
 	}
       break;
     case  treev_cursorfontname:
-      apts_CaptureString( value, &TreeCursorFontName ); break;
+      apts_CaptureString( (char *)value, &TreeCursorFontName ); break;
     default:/*===*/
 	printf( "treev: Unrecognized Attribute (%d) (Ignored)\n", attribute );
     }
