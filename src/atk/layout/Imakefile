@@ -26,8 +26,6 @@
 * $
 */
 
-/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
-CLASSFLAGS = $(CLASSINCLUDES) -pi
 
 DOBJS = layoutv.do layout.do fillerv.do filler.do boxview.do box.do
 IHFILES = layoutv.ih layout.ih fillerv.ih filler.ih boxview.ih box.ih

@@ -27,8 +27,6 @@
 */
 
 
-/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
-CLASSFLAGS = $(CLASSINCLUDES) -pi
 
 DOBJS = compat.do vutils.do popts.do headrtv.do header.do
 

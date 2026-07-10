@@ -26,8 +26,6 @@
 * $
 */
 
-/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
-CLASSFLAGS = $(CLASSINCLUDES) -pi
 
 DOBJS		=	bush.do \
 			bushv.do \

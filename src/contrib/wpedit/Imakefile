@@ -30,8 +30,6 @@
 #ifdef AMS_DELIVERY_ENV
 #ifdef WHITEPAGES_ENV
 
-/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
-CLASSFLAGS = $(CLASSINCLUDES) -pi
 
 IHFILES		=	wpedita.ih
 DOBJS		=	wpedita.do

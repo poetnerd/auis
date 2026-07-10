@@ -3,8 +3,6 @@
  *        For full copyright information see:'andrew/config/COPYRITE'     *
 \* ********************************************************************** */
 
-/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
-CLASSFLAGS = $(CLASSINCLUDES) -pi
 
 DOBJS = ptext.do ptextv.do
 IHFILES = ptext.ih ptextv.ih

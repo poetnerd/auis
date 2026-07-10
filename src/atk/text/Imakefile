@@ -29,8 +29,6 @@
 BSDLIB = -lbsd
 #endif
 
-/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
-CLASSFLAGS = $(CLASSINCLUDES) -pi
 
 DOBJS = be1be2.do \
 	be1be2a.do \

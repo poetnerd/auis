@@ -26,8 +26,6 @@
 * $
 */
 
-/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
-CLASSFLAGS = $(CLASSINCLUDES) -pi
 
 AUXFILES = vallist helparb piano.txt piano.lst calc.lset calc.tbl
 DOBJS = helpcon.do pcontrol.do calccon.do

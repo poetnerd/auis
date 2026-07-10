@@ -29,8 +29,6 @@ BSDLIB = -lbsd
 /* uncomment this line to keep figobj and all its subclasses as separate objects, rather than linking them all into figure.do */
 /*#define SEPARATEFIGOBJECTS*/
 
-/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
-CLASSFLAGS = $(CLASSINCLUDES) -pi
 
 FIGOBJS =  figobj.o figogrp.o figorect.o figoell.o figorrec.o figoplin.o figospli.o figotext.o figoins.o
 FIGDOBJS =  figobj.do figogrp.do figorect.do figoell.do figorrec.do figoplin.do figospli.do figotext.do figoins.do
