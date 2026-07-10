@@ -41,7 +41,7 @@ class chlist:text {
     overrides:
       Clear();
     methods:
-      AddItemAtIndex(char *str, long index, procedure proc, long rock) returns boolean;
+      AddItemAtIndex(long index, char *str, procedure proc, long rock) returns boolean;
       AddItemToEnd(char *str, procedure proc, long rock) returns boolean;
       DeleteItem(char *str) returns boolean;
       DeleteItemByIndex(long index) returns boolean;

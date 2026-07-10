@@ -35,8 +35,8 @@ class rawtextview[rawtextv]: textview[textv] {
 
   classprocedures:
     InitializeClass() returns boolean;
-    InitializeObject(struct srctextview *self) returns boolean;
-    FinalizeObject(struct srctextview *self);
+    InitializeObject(struct rawtextview *self) returns boolean;
+    FinalizeObject(struct rawtextview *self);
 
   macromethods:
 

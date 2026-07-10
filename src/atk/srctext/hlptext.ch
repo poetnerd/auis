@@ -37,7 +37,7 @@ class hlptext: text {
   methods:
 
   classprocedures:
-    InitializeObject(struct srctext *self) returns boolean;
+    InitializeObject(struct hlptext *self) returns boolean;
 
   macromethods:
 
