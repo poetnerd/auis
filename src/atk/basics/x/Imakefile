@@ -32,6 +32,9 @@ LOCALINCLUDES = -I../common -I$(XFTINCDIR)
 LOCALINCLUDES = -I../common
 #endif
 
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
+
 DEFINES = -DXLIB_ILLEGAL_ACCESS -DANDREW_FONTS_X=\"/$(FONTDESTX)/\"
 
 COMOBJS = ../common/region.o ../common/rect.o ../common/point.o ../common/physical.o  ../common/imageaux.o 

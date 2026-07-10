@@ -33,6 +33,9 @@ MATHLIB = -lm
 
 LOCALINCLUDES = -I../common
 
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
+
 WMLIB = ${WMBASEDIR}/lib/libwm.a
 
 COMOBJS = ../common/rect.o ../common/point.o ../common/physical.o
