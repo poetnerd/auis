@@ -29,9 +29,21 @@ compile-unverified by the gate).
       reads the INSTALLED parent .ch, so atk/org needed
       `make install` to propagate). messages runtime fixture
       verified by user. Checkin a106ca615e (rollout).
-- [ ] **Batch 4**: atk/image (19/21), atk/hyplink (4/20),
+- [x] **Batch 4** (2026-07-10): atk/image (19/21), atk/hyplink (4/20),
       atk/console/lib (2/24), atk/console/cmd (2/0),
-      atk/raster/cmd (4/24).
+      atk/raster/cmd (4/24). Gate green first pass. console/lib and
+      console/cmd turned out inert (`MK_CONSOLE`/`MK_BASIC_UTILS`
+      off, no generated Makefile, no `console` binary) — flagged but
+      compile-unverified, same as `atk/controllers`/`atk/basics/wm`.
+      Two known-taxonomy fixes (image `sliderv.ch SetCallback` rock;
+      hyplink `pshbttn.ch ParseRGB` array-vs-value drift), no new
+      patterns. `convertraster` battery run but doesn't verify
+      raster/cmd (`convrast.c` never includes its headers) —
+      byte-identical regardless. Runtime: hyplink
+      (`PAPERS/conf/1995/widgets.ez`) and raster/cmd
+      (`NEWSLETTERS/EZ/92Sep.ez`) user-verified; image accepted
+      gate-only (no known fixture). Checkins ce9be43c7e (bug fixes),
+      d01f1a4958 (rollout).
 - [ ] **Batch 5**: atk/chart (12/4), atk/org (3/3), atk/bush (3/3),
       atk/fad (2/0), atk/layout (6/3), atk/table (2/7).
 - [ ] **Batch 6**: atk/textobjects (7/9), atk/textaux (2/0),

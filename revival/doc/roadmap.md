@@ -901,6 +901,26 @@ zero-consumer leaves, then the core, largest last.
          classpp reads the INSTALLED parent `.ch`, so the fix
          needed `make install` in atk/org). See porting-assessment
          §14 "Point 10 batch 3 findings".
+       - Batch 4 (2026-07-10): `atk/image`, `atk/hyplink`,
+         `atk/console/lib` + `atk/console/cmd` (both inert —
+         `MK_CONSOLE`/`MK_BASIC_UTILS` off, no generated Makefile, no
+         `console` binary), `atk/raster/cmd`. Gate green first pass.
+         Two known-taxonomy fallout fixes, no new patterns: `image`'s
+         `sliderv.ch SetCallback` rock (`long`→`void *`, sole caller
+         `cmapv.c` passes a bare pointer); `hyplink`'s `pshbttn.ch
+         ParseRGB` signature drift (`unsigned char rgb_vect` declared
+         by value, impl + all four callers use it as an array,
+         matching the already-correct `GetFGColor`/`GetBGColor`
+         siblings). `raster/cmd`'s own four `.ch`s were zero-fallout
+         (fully typed already). `convertraster` battery run for
+         due-diligence but doesn't actually verify `raster/cmd` —
+         `convrast.c` only includes `raster/lib` headers, never
+         `raster/cmd`'s; byte-identical regardless. Runtime: hyplink
+         verified via `PAPERS/conf/1995/widgets.ez`
+         (pushbutton→link→linkview), raster/cmd verified via
+         `NEWSLETTERS/EZ/92Sep.ez`'s raster inset; `image` accepted
+         gate-only (no known fixture for its picture-format codecs,
+         zero-caller local fix only).
 11. [ ] Flip classpp default: Import-all becomes compiled-in, delete
        the per-directory `-pi` flags (single mechanical commit)
 12. [ ] Export (`-pe`) is *not* sequenced here — it rides with each
