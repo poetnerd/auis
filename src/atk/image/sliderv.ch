@@ -36,7 +36,7 @@ overrides:
 	UnlinkNotification(struct view *unlinkedTree);
         Hit(enum view_MouseAction action, long x, long y, long numberOfClicks) returns struct view *;
 methods:
-        SetCallback(long (*callback)(), long rock);
+        SetCallback(long (*callback)(), void *rock);
         DoCallback(long arg);
 	SetCurval(long curval); /* scale of 0 to RANGE */
 	GetCurval() returns long;
