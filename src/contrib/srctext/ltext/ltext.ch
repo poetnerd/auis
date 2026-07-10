@@ -37,7 +37,7 @@ class ltext: text {
     Read(FILE *file, long id) returns long;
   methods:
     Indent(struct mark *range) returns long;
-    ReindentLine(struct mark *place);
+    ReindentLine(long pos);
     ReverseBalance(long pos, int type) returns long;
     RedoStyles();
     TabAndOptimizeWS(long pos, int inc) returns long;

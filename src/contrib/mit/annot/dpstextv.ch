@@ -40,7 +40,7 @@ class dpstextview[dpstextv] : view
     FullUpdate(enum view_UpdateType type, long left, long top, long width, long right);
     Hit(enum view_MouseAction action, long x, long y, long numberOfClicks) returns struct view *;
  methods:
-    SetDesired(w, h);
+    SetDesired(long w, long h);
   macromethods:
     SetScaling(x, y, w, h) ((self)->scale_width = (w), (self)->scale_height = (h), (self)->offset_y = (y), (self)->offset_x = (x));
   data:

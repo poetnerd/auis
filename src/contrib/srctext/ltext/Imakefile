@@ -2,6 +2,9 @@
  *         Copyright IBM Corporation 1988,1991 - All Rights Reserved      *
  *        For full copyright information see:'andrew/config/COPYRITE'     *
 \* ********************************************************************** */
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
+
 DOBJS = ltext.do ltextv.do
 IHFILES = ltext.ih ltextv.ih
 

@@ -45,8 +45,8 @@ class iconview : view
     ObservedChanged(struct thisobject * data, long value);
     LinkTree(struct view *parent);
  methods:
-    DecidedSize(w,h);
-    RecommendSize(w,h);
+    DecidedSize(long w, long h);
+    RecommendSize(long w, long h);
     Open();
     Close();
     SetIconFont(char *iconfont, int iconstyle, int iconpts);
@@ -57,7 +57,7 @@ class iconview : view
 classprocedures:
     InitializeObject(struct thisobject *self) returns boolean;
     InitializeClass() returns boolean;
-    FinalizeObject(struct view *self);
+    FinalizeObject(struct thisobject *self);
     CloseRelated(struct view *v);
     OpenRelated(struct view *v);
   data:

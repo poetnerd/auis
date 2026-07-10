@@ -1,5 +1,8 @@
 #define IHaveSubdirs
 
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
+
 SUBDIRS=doc lib #standalone
 
 OBJS = version.o

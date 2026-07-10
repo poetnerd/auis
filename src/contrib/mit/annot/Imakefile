@@ -34,6 +34,9 @@
 	char *sketch_ch_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/mit/annot/RCS/Imakefile,v 1.10 1994/03/29 04:45:24 rr2b Exp $";
 #endif /* !defined(lint) && !defined(LOCORE) && defined(RCS_HDRS) */
 
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
+
 #if !defined(hpux) || (HP_OS < 80)
 MATHLIB = -lm
 #endif

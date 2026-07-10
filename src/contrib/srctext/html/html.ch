@@ -43,7 +43,7 @@ class html : text {
 
     AddLink(long pos, long len, char* uri);
     AddEntity(long pos, long len, char* name, char* vars);
-      AddImage(long pos, char* path);
+      AddImage(long *pos, char* path);
     GetAnchorDest(long pos) returns char*;
     GetAttributeList(struct environment* env, char** list, int* count);
     ChangeAttribute(struct view* tv, struct environment* env, char* attr, char* value);

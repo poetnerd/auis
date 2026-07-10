@@ -1362,7 +1362,7 @@ long id;
     /* Set all the environments back with SetStyle to TRUE,
      * TRUE so that we behave like an editor
      */
-    html_EnumerateEnvironments(self, 0, html_GetLength(self), (procedure) fixStyles, 1);
+    html_EnumerateEnvironments(self, 0, html_GetLength(self), (procedure) fixStyles, (void *) 1);
     return dataobject_NOREADERROR;
 }
 
