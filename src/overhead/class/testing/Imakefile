@@ -26,6 +26,9 @@
 * $
 */
 
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
+
 CLASS=../pp/class
 MAKEDO=$(BASEDIR)/bin/makedo
 LOCALINCLUDES= -I../lib -I../machdep/machine -I.
