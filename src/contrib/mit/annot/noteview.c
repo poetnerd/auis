@@ -33,6 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 
 
 #include "class.h"
+#include <fontdesc.ih>
 #include "view.ih"
 #include "textv.ih"
 #include "note.ih"
@@ -45,11 +46,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include "proctbl.ih"
 
 #define ICONFONT "icon"
-#define ICONSTYLE "fontdesc_Plain"
+#define ICONSTYLE fontdesc_Plain
 #define ICONPTS 12
 #define ICONCHAR '4'
 #define TITLEFONT "andysans"
-#define TITLESTYLE "fontdesc_Plain"
+#define TITLESTYLE fontdesc_Plain
 #define TITLEPTS 12
 
 struct menulist *noteviewMenus;
