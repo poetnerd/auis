@@ -34,6 +34,16 @@ history behind each completed item.
 - The arrow keys don't work yet
 - We don't have a "Meta" key active yet
 
+### make Clean transiently deletes src/atk/adew/Arb:
+
+- adew's `clean::` rule does `$(RM) arb`, which on macOS's
+  case-insensitive filesystem deletes the version-controlled `Arb`
+  directory entry's file `Arb` (observed 2026-07-10 during the
+  batch-11 gate; dependInstall regenerates it and fossil is clean
+  again post-gate, so it's self-healing in a full gate but would
+  leave the tree dirty after a bare `make Clean`). Pre-existing;
+  fix is renaming one of the two or making the rule case-exact.
+
 ### filetype.c DeleteEntry:
 
 - `filetype__DeleteEntry` (atk/basics/common/filetype.c:216,218,
@@ -137,6 +147,28 @@ its own task; none block M1.
   build). Related loose end: `celv`'s only callers live in
   `ness/objects`, and `nevent.c` was edited in point-10 batch 1 —
   compile-unverified until ness builds.
+
+### htmlview — crashes reading any HTML file (ReadSubString overlapping strcpy)
+
+- First-ever real engagement of htmlview (2026-07-10, point-10
+  batch-11 runtime checks; needs a `~/.ezinit` to map `.html` at
+  all, per the help instructions — without it ez reads HTML as
+  plain text, which is why this never surfaced before). Crash is
+  NOT a -pi regression: `EXC_BREAKPOINT` in `__strcpy_chk` →
+  `__chk_fail_overlap` from `html__ReadSubString` ←
+  `html__Read` ← `bufferlist__GetBufferOnFile`, and the crash
+  happens *before* the batch's one html.c edit (a rock cast on
+  `EnumerateEnvironments`, called only after ReadSubString
+  returns) ever executes. Root cause located: `html.c` has three
+  literal `strcpy(buf, buf+pos)` in-place left-shifts inside
+  `ReadSubString`'s token loop (~lines 1420-1470) plus
+  `strcpy(posStart, posEnd+1)` in the entity parser (html.c:992)
+  — the same overlapping-strcpy-under-fortify class as bush's
+  InitTree and org's Read_Body crashes (see Applications to
+  Repair); needs `memmove` or a temp. A `.ezinit` in the home
+  directory does NOT affect regular non-HTML ez startup
+  (verified). Debug alongside the bush/org pair — likely the
+  same fix pattern at all four sites.
 
 ### layout — excess whitespace in complex layout (Sherman.Alloc)
 
@@ -938,7 +970,7 @@ zero-consumer leaves, then the core, largest last.
        out-params, htmlview.c DisplayString arg transposition (fixed
        as separate commit per ruling), filetype.c DeleteEntry
        attributes** misuse (logged, untouched))
-10. [ ] Breadth: remaining atk (`value`, `adew`, `apt`, `basics/wm`,
+10. [x] Breadth: remaining atk (`value`, `adew`, `apt`, `basics/wm`,
        `basics/x`, `hyplink`, `syntax/parse`, ...), then `atkams`/
        `ams`, `contrib` (`zip/lib` first), `examples` — delegable
        batches (one session + one gate per batch, ruled 2026-07-09;
@@ -1185,14 +1217,40 @@ zero-consumer leaves, then the core, largest last.
          coloring/indent user-verified on a scratch `.c` in ez.
          Checkins: d3386126d5 (.ch), 7ad519b869 (lexan.c),
          6b1564ec89 (rollout).
-       - **Remaining live gap (recensused 2026-07-10; batch 8 done
-         same day):** batch 11's live subset only —
+       - Batch 11 (2026-07-10, live subset — Sonnet-delegated):
          `contrib/{mit/annot, mit/util, srctext/html, srctext/ptext,
-         srctext/ltext, time, wpedit, demos/circlepi}`. Everything
-         else still unflagged is inert (batches 7b/9b, ness, zip,
-         atkbook, ...) and is NOT part of M1 — see "Active tree"
-         below. Batch 11 is Sonnet-delegable under the runbook
-         (patterns all documented, no novel rulings expected).
+         srctext/ltext, time, wpedit, demos/circlepi}`. Gate green,
+         ez2ascii battery byte-identical before/after (new baseline
+         `~/src/AUIS/test-baselines/ez2-pi/`; ez2ps excluded — it
+         execs inert ezprint + eqn/ditroff). Six .ch drift fixes
+         (typeless SetDesired/DecidedSize/RecommendSize; wrong-struct
+         FinalizeObject ×2 incl. wpedita.ch borrowing AMS `struct
+         folders *`; AddImage missing `*`; ReindentLine `struct
+         mark *`→`long pos` matching sibling ptext.ch) + one
+         pre-authorized dual-use rock cast (html.c). One hard stop
+         escalated and ruled: noteview.c/stroffetv.c defined
+         ICONSTYLE/TITLESTYLE as the STRING LITERAL
+         `"fontdesc_Plain"` — a ~35-year copy/paste bug truncating a
+         pointer into every note/troff inset's font-style `int`;
+         fixed to the bare symbol + the missing `<fontdesc.ih>`
+         includes, own commit. Census correction: wpedit is inert
+         one level deeper than the gate log shows — descent happens
+         but its Imakefile body is entirely
+         `#ifdef AMS_DELIVERY_ENV`-gated (flag committed inside the
+         guards, compile-unverified; runbook liveness rule refined:
+         descent ≠ compilation). ptext/time/circlepi/mit-util
+         zero-fallout, typed casts verified in all 27 installed
+         `.ih`s. Runtime: note inset (exercises the ICONSTYLE fix
+         path) and clock inset user-verified; htmlview surfaced a
+         NEW PRE-EXISTING crash (ReadSubString overlapping strcpy,
+         logged under Insets to Repair — crash precedes the batch's
+         only html.c edit in execution order, so mechanically not a
+         regression); ptext/ltext/circlepi/mit-util gate-only by
+         user sign-off. Checkins: 7eaec122fd (live-bug fix),
+         f46de124ed (rollout).
+       - **Point 10 is COMPLETE (2026-07-10):** every live `.ch`
+         directory in the active tree now builds under `-pi`. Only
+         point 11 remains for M1.
 11. [ ] Default flip: classpp emits typed import casts (`-pi`
        behavior) by default; delete the per-directory `-pi` flags
        from all ~40 Imakefiles (single mechanical commit). Full

@@ -225,8 +225,8 @@ ONLY. Never edit a `.c` to match a `.ch`.
 
 ## Methodology notes (point 9, large directories)
 
-- **Liveness check (added 2026-07-10):** a directory is in the
-  active tree iff the gate log contains
+- **Liveness check (added 2026-07-10; refined same day):** a
+  directory is in the active tree iff the gate log contains
   `building (dependInstall) (.../src/<dir>)` — grep
   `~/src/AUIS/andrew-6.4/dependInstall.log` after any full gate.
   Makefile presence is NOT evidence: stale Makefiles from before a
@@ -236,6 +236,12 @@ ONLY. Never edit a `.c` to match a `.ch`.
   allsys.h shows it commented out; a mis-census of exactly this
   produced the batch-7 "CONTRIB_ENV off" error). Census every
   batch's directories against the gate log BEFORE flagging.
+  Refinement (batch 11, wpedit): a `building (dependInstall)` line
+  proves directory DESCENT, not compilation — a directory can be in
+  `SUBDIRS` while its entire Imakefile body is `#ifdef`-gated off,
+  yielding a generated Makefile with no targets. Confirm liveness
+  by checking the regenerated Makefile for real build targets (or
+  `make -n install` doing more than touching install.time).
 
 - **The gate log under-reports.** A directory's build stops at its
   first failing file, so later files' fallout is invisible until the

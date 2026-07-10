@@ -175,20 +175,33 @@ compile-unverified by the gate).
       original prompt. Superseded by roadmap → Insets to Repair →
       zip: enabling `MK_ZIP` + first build + runbook census is one
       task there, and after point 11 no Imakefile flag is needed.
-- [ ] **Batch 11** (recensused 2026-07-10 from the gate log; the
-      old "mit/util … CONTRIB_ENV off" note was a mis-census —
-      CONTRIB_ENV is ON and contrib builds): live subset is exactly
-      8 directories — contrib/mit/annot, contrib/mit/util,
+- [x] **Batch 11** (2026-07-10, live subset, Sonnet-delegated):
+      contrib/mit/annot, contrib/mit/util,
       contrib/srctext/{html,ptext,ltext}, contrib/time,
-      contrib/wpedit, contrib/demos/circlepi. Note
-      srctext/html's htmlview.c already had its DisplayString
-      transposition fixed 2026-07-09; expect similar 1990s-era drift
-      density here. Inert remainder (atkbook ×18, mit/neos, calc,
-      champ, gestures/gtext, tm, bdffont, alink) is dropped per the
-      ruling below. Beware stale Makefiles: atkbook/tm/bdffont have
-      generated Makefiles left over from before they were
-      conditionalized out — liveness comes from the gate log, not
-      Makefile presence. Sonnet-delegable.
+      contrib/wpedit, contrib/demos/circlepi. Gate green; ez2ascii
+      byte-diff battery identical before/after
+      (`~/src/AUIS/test-baselines/ez2-pi/`; ez2ps is a csh wrapper
+      execing inert ezprint + eqn/ditroff — not a live target). Six
+      .ch drift fixes + one pre-authorized dual-use rock cast
+      (html.c EnumerateEnvironments `(void *) 1`). Hard stop ruled
+      by user: noteview.c/stroffetv.c ICONSTYLE/TITLESTYLE were the
+      string literal `"fontdesc_Plain"` (correct siblings
+      iconview.c/psview.c use the bare symbol) — pointer truncated
+      into the font-style `int` for ~35 years; fixed + missing
+      `<fontdesc.ih>` includes, separate live-bug commit. Census
+      correction: wpedit is INERT despite its gate-log "building"
+      line — Imakefile body entirely inside
+      `#ifdef AMS_DELIVERY_ENV`/`WHITEPAGES_ENV` (both off), so
+      descent compiles nothing; flag committed inside the guards,
+      wpedita.ch fix compile-unverified (controllers precedent).
+      Typed casts verified in all 27 generated .ih files, in-tree
+      and installed. Runtime: note inset + clock inset
+      user-verified; htmlview crashed on first-ever real use — NEW
+      pre-existing bug (ReadSubString overlapping strcpy, roadmap
+      Insets to Repair), not a regression (crash precedes the
+      batch's html.c edit in execution order);
+      ptext/ltext/circlepi/mit-util gate-only per user sign-off.
+      Checkins: 7eaec122fd (live-bug fix), f46de124ed (rollout).
 
 **Inert flagging is obsolete (ruled 2026-07-10):** once roadmap
 point 11 flips the classpp default and deletes the per-directory
