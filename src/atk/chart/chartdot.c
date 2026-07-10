@@ -157,7 +157,7 @@ chartdot__DrawChart( self )
   chartdot_SetFont( self, DotFont );
   while ( shadow )
     {
-    DEBUGdt(Value,chart_ItemAttribute( Data, shadow->item, chart_ItemValue(0) ));
+    DEBUGdt(Value,chart_ItemAttribute( Data, shadow->item, chart_itemvalue ));
     chartdot_MoveTo( self, ItemX(shadow), ItemY(shadow) );
     chartdot_DrawString( self, "C", NULL );
     shadow = NextItem(shadow);
@@ -186,8 +186,8 @@ chartdot__PrintChart( self )
   path_point = &path->points[0];
   for ( i = 0; i < chart_ItemCount( Data)  &&  chart_item; i++ )
     {
-    DEBUGdt(Value,chart_ItemAttribute( Data, chart_item, chart_ItemValue(0) ));
-    top = Bottom - (chart_ItemAttribute( Data, chart_item, chart_ItemValue(0) ) * PixelsPerUnit);
+    DEBUGdt(Value,chart_ItemAttribute( Data, chart_item, chart_itemvalue ));
+    top = Bottom - (chart_ItemAttribute( Data, chart_item, chart_itemvalue ) * PixelsPerUnit);
     path_point = &path->points[0];
     path_point->x = left;	    path_point->y = top;	    path_point++;
     path_point->x = left + 5;	    path_point->y = top;	    path_point++;

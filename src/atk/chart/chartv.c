@@ -507,7 +507,7 @@ Initialize( self )
   IN(Initialize);
   if ( Chart )
     {
-    moniker = (char *) chart_ChartAttribute( Chart, chart_Type(0) );
+    moniker = (char *) chart_ChartAttribute( Chart, chart_type );
     DEBUGst(Moniker,moniker);
     DEBUGst(Chart-module-name,chart_ModuleName( Chart, moniker ));
     }
@@ -584,7 +584,7 @@ chartv_Add_Command( self )
       chartv_Announce( self, "" );
       if ( reply == NULL  ||  *reply == 0 )
         break;
-      chart_SetItemAttribute( Chart, item, chart_ItemValue(atoi( reply )) );
+      chart_SetItemAttribute( Chart, item, chart_itemvalue, (long) (atoi( reply )) );
       chart_NotifyObservers( Chart, chart_ItemsSorted/*===*/ );
       }
       else
@@ -628,7 +628,7 @@ chartv_ReChart( self, moniker )
   DEBUGst(Moniker,moniker);
   if ( moniker  &&  *moniker )
     {
-    chart_SetChartAttribute( Chart, chart_Type(moniker) );
+    chart_SetChartAttribute( Chart, chart_type, (long) (moniker) );
     bounds.left = bounds.top = 0;
     bounds.width = Width; bounds.height = Height;
     if ( prior_viewer )
@@ -687,7 +687,7 @@ chartv_Print_Command( self )
 
   IN(Print_Command);
   chartv_UseWaitCursor( self );
-  chart_file_name = (char *) chart_ChartAttribute( Chart, chart_FileName(0) );
+  chart_file_name = (char *) chart_ChartAttribute( Chart, chart_filename );
   sprintf( msg, "Printing '%s' ...", chart_file_name );
   chartv_Announce( self, "Printing ..." );
   if ( file = fopen( tmpnam(file_name), "w" ) )
@@ -730,15 +730,15 @@ chartv_Save_Command( self )
   struct stat		      st;
 
   IN(Save_Command);
-  if ( chart_ChartAttribute( Chart, chart_FileName(0)) == NULL )
+  if ( chart_ChartAttribute( Chart, chart_filename) == NULL )
     { DEBUG(Need FileName);
     chartv_QueryFileName( self, "Enter FileName: ", &file_name );
     chartv_Announce( self, "" );
-    chart_SetChartAttribute( Chart, chart_FileName( file_name ) );
+    chart_SetChartAttribute( Chart, chart_filename, (long) (file_name) );
     }
   if ( Description_Modified( self ) )
     Preserve_Description( self );
-  file_name = (char *) chart_ChartAttribute( Chart, chart_FileName(0) );
+  file_name = (char *) chart_ChartAttribute( Chart, chart_filename );
   if ( file_name )
     {
     chartv_UseWaitCursor( self );
@@ -773,7 +773,7 @@ chartv_Save_Command( self )
         { DEBUG(File Open Failed);
         sprintf( msg, "Unable to Open '%s' (%s)", file_name, strerror(errno) );
         chartv_Announce( self, msg );
-        chart_SetChartAttribute( Chart, chart_FileName( NULL ) );
+        chart_SetChartAttribute( Chart, chart_filename, (long) (NULL) );
         }
       }
     chartv_UseNormalCursor( self );

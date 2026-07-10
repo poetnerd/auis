@@ -70,7 +70,8 @@ overrides:
 
   DrawChart();
   PrintChart();
-  HitChart( action, x, y, clicks )	    returns struct view *;
+  HitChart( enum view_MouseAction action, long x, long y, long clicks )
+					    returns struct view *;
   SetDebug( boolean state );
 
 methods:

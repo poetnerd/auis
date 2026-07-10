@@ -71,7 +71,7 @@ overrides:
 methods:
 
   SetDebug( boolean state );
-  NodeName( node )					returns char *;
+  NodeName( struct tree_node *node )			returns char *;
 
 classprocedures:
 

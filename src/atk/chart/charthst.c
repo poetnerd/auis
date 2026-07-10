@@ -176,8 +176,8 @@ charthst__HitChart( self, action, x, y, clicks )
 	initial_y = prior_y = y = ItemY(shadow);
 	charthst_MoveTo( self, Left, y );
 	charthst_DrawLineTo( self, Right, y );
-	name = (char *) chart_ItemAttribute( Data, shadow->item, chart_ItemName(0) );
-	value = value_original = chart_ItemAttribute( Data, shadow->item, chart_ItemValue(0) );
+	name = (char *) chart_ItemAttribute( Data, shadow->item, chart_itemname );
+	value = value_original = chart_ItemAttribute( Data, shadow->item, chart_itemvalue );
 	DEBUGdt(Initial-value,value);
         break;
       case  view_LeftMovement:
@@ -196,7 +196,7 @@ charthst__HitChart( self, action, x, y, clicks )
 	  value_original += (delta / PixelsPerInterval) *
 				chart_ItemValueRangeInterval( Data );
 	  DEBUGdt(Final-value,value);
-	  chart_SetItemAttribute( Data, shadow->item, chart_ItemValue((value = value_original)) );
+	  chart_SetItemAttribute( Data, shadow->item, chart_itemvalue, (long) ((value = value_original)) );
 	  chart_SetModified( Data );
 	  chart_NotifyObservers( Data, chart_ItemValueChanged );
 	  }
@@ -230,7 +230,7 @@ charthst__DrawChart( self )
   DEBUGdt(excess,excess);
   while ( shadow )
     {
-    DEBUGdt(Value,chart_ItemAttribute( Data, shadow->item, chart_ItemValue(0) ));
+    DEBUGdt(Value,chart_ItemAttribute( Data, shadow->item, chart_itemvalue ));
     fudge = (excess) ? ((i % excess) ? 0 : 1) : 0;
     top = (ItemY(shadow) < BaseLine) ? ItemY(shadow) : BaseLine;
     height = abs(BaseLine - ItemY(shadow));

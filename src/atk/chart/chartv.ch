@@ -74,8 +74,8 @@ overrides:
 
 methods:
 
-  SetChartAttribute( long code_value )			returns long;
-  ChangeChartAttribute( long code_value )		returns long;
+  SetChartAttribute( long code, long value )		returns long;
+  ChangeChartAttribute( long code, long value )	returns long;
   ChartAttribute( long attribute_code )			returns long;
   CurrentItem()						returns struct chart_item *;
   SetDebug( boolean state );
@@ -118,6 +118,10 @@ data:
 #define  chartv_Vertical		    (1<<0)
 
 /***  Attribute Macros  ***/
+/* These (code, value) pair macros are for chartv_Specification initializer
+ * tables ONLY.  Do not pass them as a dispatch-call argument: under typed
+ * dispatch (M1 -pi) the methods take attribute and value as separate real
+ * arguments (getters take the attribute code alone, no dummy value). */
 
 #define  chartv_Arrangement(x)		    chartv_arrangement,		(long) x
 #define  chartv_BackgroundShade(x)	    chartv_backgroundshade,	(long) x

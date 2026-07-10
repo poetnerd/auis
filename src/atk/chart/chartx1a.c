@@ -80,22 +80,22 @@ chartx1app__Start( self )
     education =	    Query( "Education" );
     vacation =	    Query( "Vacation" );
 
-    chart_SetChartAttribute( Chart, chart_Type( "Pie" ) );
-    chart_SetChartAttribute( Chart, chart_TitleCaption( "Home Budget" ) );
+    chart_SetChartAttribute( Chart, chart_type, (long) ( "Pie" ) );
+    chart_SetChartAttribute( Chart, chart_titlecaption, (long) ( "Home Budget" ) );
     chart_SetItemAttribute( Chart, chart_CreateItem( Chart, "Mortgage", NULL ),
-	chart_ItemValue( mortgage ) );
+	chart_itemvalue, (long) ( mortgage ) );
     chart_SetItemAttribute( Chart, chart_CreateItem( Chart, "Food", NULL ),
-	chart_ItemValue( food ) );
+	chart_itemvalue, (long) ( food ) );
     chart_SetItemAttribute( Chart, chart_CreateItem( Chart, "Insurance", NULL ),
-	chart_ItemValue( insurance ) );
+	chart_itemvalue, (long) ( insurance ) );
     chart_SetItemAttribute( Chart, chart_CreateItem( Chart, "Entertainment", NULL ),
-	chart_ItemValue( entertainment ) );
+	chart_itemvalue, (long) ( entertainment ) );
     chart_SetItemAttribute( Chart, chart_CreateItem( Chart, "Savings", NULL ),
-	chart_ItemValue( savings ) );
+	chart_itemvalue, (long) ( savings ) );
     chart_SetItemAttribute( Chart, chart_CreateItem( Chart, "Education", NULL ),
-	chart_ItemValue( education ) );
+	chart_itemvalue, (long) ( education ) );
     chart_SetItemAttribute( Chart, chart_CreateItem( Chart, "Vacation", NULL ),
-	chart_ItemValue( vacation ) );
+	chart_itemvalue, (long) ( vacation ) );
     if((Frame = frame_New()) == NULL) {
 	fprintf(stderr,"Could not allocate enough memory.\nexiting.\n");
 	exit(-1);

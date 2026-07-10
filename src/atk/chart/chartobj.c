@@ -560,8 +560,8 @@ chartobj__HitChart( self, action, x, y, clicks )
 	y = ShadowMiddle(shadow);
 	chartobj_MoveTo( self, Left, prior_y = y );
 	chartobj_DrawLineTo( self, Right, y );
-	name = (char *) chart_ItemAttribute( Chart, shadow->item, chart_ItemName(0) );
-	value = value_original = chart_ItemAttribute( Chart, shadow->item, chart_ItemValue(0) );
+	name = (char *) chart_ItemAttribute( Chart, shadow->item, chart_itemname );
+	value = value_original = chart_ItemAttribute( Chart, shadow->item, chart_itemvalue );
 	DEBUGdt(Initial-value,value);
         break;
       case  view_LeftMovement:
@@ -580,7 +580,7 @@ chartobj__HitChart( self, action, x, y, clicks )
 	  value_original += (delta / PixelsPerInterval) * chart_ItemValueRangeInterval( Chart );
 	  DEBUGdt(Final-value,value);
 	  chart_SetItemAttribute( Chart, shadow->item,
-	    chart_ItemValue( (value = value_original) ) );
+	    chart_itemvalue, (long) ( (value = value_original) ) );
 	  chart_SetModified( Chart );
 	  chart_NotifyObservers( Chart, chart_ItemValueChanged );
 	  }
@@ -652,9 +652,9 @@ Set_Shadows( self )
   DEBUGdt(BaseLine,ChartBaseLine);  DEBUGdt(Bottom,ChartBottom);
   for ( i = 0; i < count  &&  shadow; i++ )
     {
-    DEBUGdt(Value,chart_ItemAttribute( Chart, ShadowItem(shadow), chart_ItemValue(0) ));
+    DEBUGdt(Value,chart_ItemAttribute( Chart, ShadowItem(shadow), chart_itemvalue ));
     if ( (y = (ChartBottom -
-	(chart_ItemAttribute( Chart, ShadowItem(shadow), chart_ItemValue(0) ) *
+	(chart_ItemAttribute( Chart, ShadowItem(shadow), chart_itemvalue ) *
 	PixelsPerUnit)) + high_adjust - low_adjust) > ChartBottom - 2 )
       y = ChartBottom - 2;
     ShadowY(shadow) = y;
@@ -793,7 +793,7 @@ Draw_Horizontal_Labels( self, left, top, width, height )
       fudge = (excess) ? ((i % excess) ? 0 : 1) : 0;
       x += x_increment + fudge;
       chartobj_DrawString( self,
-	(char *)chart_ItemAttribute( Chart, chart_item, chart_ItemName(0) ), Balanced );
+	(char *)chart_ItemAttribute( Chart, chart_item, chart_itemname ), Balanced );
       chart_item = chart_NextItem( Chart, chart_item );
       i++;
       }
@@ -1064,7 +1064,7 @@ Print_Horizontal_Labels( self, left, width, middle )
     while ( chart_item )
       {
       chartobj_PrintString( self, x, y,
-	chart_ItemAttribute( Chart, chart_item, chart_ItemName(0) ), Balanced );
+	(char *)chart_ItemAttribute( Chart, chart_item, chart_itemname ), Balanced );
       x += x_increment;
       chart_item = chart_NextItem( Chart, chart_item );
       }

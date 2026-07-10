@@ -433,7 +433,7 @@ Parse_Name_Field( self, string )
   {
   IN(Parse_Name_Field);
   DEBUGst(Name,string);
-  chart_SetChartAttribute( self, chart_TitleCaption(string) );
+  chart_SetChartAttribute( self, chart_titlecaption, (long) (string) );
   OUT(Parse_Name_Field);
   }
 

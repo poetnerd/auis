@@ -265,13 +265,13 @@ Show_Pie_Chart( self, medium )
       else
       {
       degrees = 360.0 *
-	(chart_ItemAttribute( Data, item, chart_ItemValue(0) ) / DrawingSum);
+	(chart_ItemAttribute( Data, item, chart_itemvalue ) / DrawingSum);
       chartpie_PrintSlice( self, DrawingX, DrawingY, DrawingX - DrawingLeft,
 			     current_degree, current_degree += degrees,
 			     i, chart_ItemCount(Data), 0 );
       }
-    if ( chart_ItemAttribute( Data, item, chart_ItemName(0) ) )
-      { DEBUGst(Name,chart_ItemAttribute( Data, item, chart_ItemName(0) ));
+    if ( chart_ItemAttribute( Data, item, chart_itemname ) )
+      { DEBUGst(Name,chart_ItemAttribute( Data, item, chart_itemname ));
       if ( chart_ItemFontName( Data ) )
 	{
 	font = chartpie_BuildFont( self,
@@ -285,7 +285,7 @@ Show_Pie_Chart( self, medium )
       if ( medium == Screen )
 	{
 	chartpie_MoveTo( self, DrawingItemLabelX(i), DrawingItemLabelY(i) );
-	chartpie_DrawString( self, (char *)chart_ItemAttribute( Data, item, chart_ItemName(0) ),
+	chartpie_DrawString( self, (char *)chart_ItemAttribute( Data, item, chart_itemname ),
 	    view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBOTTOM );
 	chartpie_MoveTo( self, DrawingItemLabelX(i), DrawingItemLabelY(i) + height );
 	chartpie_DrawString( self, percent_string,
@@ -295,7 +295,7 @@ Show_Pie_Chart( self, medium )
 	{
 	chartpie_SetPrintGrayLevel( self, 0.0 );
 	chartpie_PrintString( self, DrawingItemLabelX(i), DrawingItemLabelY(i),
-				chart_ItemAttribute( Data, item, chart_ItemName(0) ), 0 );
+				(char *)chart_ItemAttribute( Data, item, chart_itemname ), 0 );
 	chartpie_PrintString( self, DrawingItemLabelX(i), DrawingItemLabelY(i) + height,
 				percent_string, 0 );
 	}
@@ -319,7 +319,7 @@ Compute_Pie_Points( self )
   for ( i = 0; i < chart_ItemCount( Data )  &&  item; i++ )
     {
     count++;
-    sum += chart_ItemAttribute( Data, item, chart_ItemValue(0) );
+    sum += chart_ItemAttribute( Data, item, chart_itemvalue );
     item = chart_NextItem( Data, item );
     }
   if ( Drawing )    free( Drawing );
@@ -347,9 +347,9 @@ Compute_Pie_Points( self )
   for ( i = 0; i < chart_ItemCount(Data)  &&  item; i++ )
     {
     DrawingItem(i) = item;
-    DEBUGdt(Value,chart_ItemAttribute( Data, item, chart_ItemValue(0) ));
+    DEBUGdt(Value,chart_ItemAttribute( Data, item, chart_itemvalue ));
     DrawingItemPercent(i) =
-	(chart_ItemAttribute( Data, item, chart_ItemValue(0) ) / DrawingSum) * 100;
+	(chart_ItemAttribute( Data, item, chart_itemvalue ) / DrawingSum) * 100;
     degrees = 3.6 * DrawingItemPercent(i);
     radian = 6.28318 * ((current_degree + degrees)/360.0);
     DrawingItemX(i) = DrawingX + radius * sin( radian );

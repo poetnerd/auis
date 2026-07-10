@@ -167,7 +167,7 @@ chartapp__Start( self )
     im_SetView( Im, Frame );
     if ( *Source )
       {
-      chart_SetChartAttribute( Chart, chart_FileName(Source) );
+      chart_SetChartAttribute( Chart, chart_filename, (long) (Source) );
       frame_SetTitle( Frame, Source );
       if ( file = fopen( Source, "r" ) )
         {

@@ -158,7 +158,7 @@ chartlin__DrawChart( self )
   prior_x = 0;
   while ( shadow )
     {
-    DEBUGdt(Value,chart_ItemAttribute( Data, shadow->item, chart_ItemValue(0) ));
+    DEBUGdt(Value,chart_ItemAttribute( Data, shadow->item, chart_itemvalue ));
     if ( prior_x )
       {
       chartlin_MoveTo( self, prior_x, prior_y );
@@ -192,8 +192,8 @@ chartlin__PrintChart( self )
   prior_point.x = 0;
   for ( i = 0; i < count  &&  chart_item; i++ )
     {
-    DEBUGdt(Value,chart_ItemAttribute( Data, chart_item, chart_ItemValue(0) ));
-    top = Bottom - (chart_ItemAttribute( Data, chart_item, chart_ItemValue(0) ) * PixelsPerUnit);
+    DEBUGdt(Value,chart_ItemAttribute( Data, chart_item, chart_itemvalue ));
+    top = Bottom - (chart_ItemAttribute( Data, chart_item, chart_itemvalue ) * PixelsPerUnit);
     if ( prior_point.x )
       chartlin_PrintLine( self, prior_point.x, prior_point.y, left, top );
     fudge = (excess) ? ((i % excess) ? 0 : 1) : 0;
