@@ -874,6 +874,14 @@ zero-consumer leaves, then the core, largest last.
          no-op; chartv `*X`-for-`&X` CaptureString corruption) — see
          porting-assessment §14 "Point 10 batch 1 findings" and the
          runbook's new unsigned-rock and variadic-by-macro bullets.
+       - Batch 2 (2026-07-10): `atk/basics/x`, `atk/basics/wm`
+         (inert — `WM_ENV` off). ZERO fallout: census clean (no pair
+         macros, no rocks, overrides match the point-9-typed
+         defining classes), gate green first pass, full ez + help
+         regression verified. Imakefile-only, like raster/lib.
+         Census note: classpp shares comma types like C
+         (`GrayPattern(short a, b)` casts as `(short, short)`) —
+         verified empirically, not drift.
 11. [ ] Flip classpp default: Import-all becomes compiled-in, delete
        the per-directory `-pi` flags (single mechanical commit)
 12. [ ] Export (`-pe`) is *not* sequenced here — it rides with each

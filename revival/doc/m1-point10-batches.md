@@ -17,7 +17,9 @@ compile-unverified by the gate).
       atk/apt/{apt,suite,tree}, atk/controllers (inert).
       Checkins d05f15c8cc (bug fixes), d111e78211 (rollout),
       41f1db2a29 (docs).
-- [ ] **Batch 2**: atk/basics/wm (6/35), atk/basics/x (7/40).
+- [x] **Batch 2** (2026-07-10): atk/basics/wm (6/35, inert —
+      `WM_ENV` off, no generated Makefile), atk/basics/x (7/40).
+      Zero fallout; Imakefile-only. Checkin 154c07674a (rollout).
 - [ ] **Batch 3**: atkams/messages/lib (17/95) — alone.
 - [ ] **Batch 4**: atk/image (19/21), atk/hyplink (4/20),
       atk/console/lib (2/24), atk/console/cmd (2/0),
