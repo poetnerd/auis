@@ -214,10 +214,13 @@ lists stay recorded in their entries above for whoever enables the
 gates. M1's finish line is therefore: batch 8 (live) → batch 11
 (live) → point 11.
 
-Then roadmap point 11 (classpp default flip + delete per-directory
-flags + full gate + ez/help/messages regression battery) as its own
-final session — top-level, not delegable (touches
-overhead/class/pp, a runbook hard-stop area). **Point 11 closes M1.**
+~~Then roadmap point 11 as its own final session.~~ **Point 11 done
+2026-07-10 — M1 IS COMPLETE.** Hybrid execution: classpp default
+flip + unit proof top-level, mechanical remainder (50 flag
+deletions, gate, header verification) Sonnet-delegated. Decisive
+proof: all 341 installed headers byte-identical to the pre-flip
+baseline. Checkins ff35ac3904 + 4f6c344e44; details in roadmap.md
+point 11.
 
 ## Delegation guide (2026-07-10)
 

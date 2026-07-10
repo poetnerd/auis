@@ -223,6 +223,15 @@ its own task; none block M1.
 
 ## Major milestones
 
+- **2026-07-10**: **M1 complete** — classpp emits fully typed dispatch
+  casts by default across the whole active tree (11 rollout points,
+  ~50 directories, ~35 years of `.ch` signature drift found and
+  fixed; five live LP64/caller bugs caught by the typed casts along
+  the way: suite unsigned rocks, htmlview DisplayString transposition,
+  clockv NewString, lexan ParseNumber int*/long*, noteview/stroffetv
+  ICONSTYLE string literal). The compiler now type-checks every
+  method call site tree-wide. Next: M2 prototype sweep.
+
 - **2026-07-05**: `messages` application running with local mail store —
   "mail (Private BB; 0 new of 0)" confirmed in the folder panel. All three
   prerequisite streams closed simultaneously: AMS local backend alive,
@@ -1251,12 +1260,20 @@ zero-consumer leaves, then the core, largest last.
        - **Point 10 is COMPLETE (2026-07-10):** every live `.ch`
          directory in the active tree now builds under `-pi`. Only
          point 11 remains for M1.
-11. [ ] Default flip: classpp emits typed import casts (`-pi`
-       behavior) by default; delete the per-directory `-pi` flags
-       from all ~40 Imakefiles (single mechanical commit). Full
-       gate + ez/help/messages regression battery. Top-level
-       session — it touches `overhead/class/pp`, a runbook
-       hard-stop area. **This closes M1.**
+11. [x] Default flip (done 2026-07-10): classpp emits typed import
+       casts (`-pi` behavior) by default (`class.c`
+       `usePrototypesImportAll = TRUE`; `-pi` accepted as a no-op);
+       all 50 per-directory `-pi` flags deleted. Hybrid execution:
+       classpp edit + unit proof top-level (flagless regeneration of
+       testobj.ch byte-identical to flag-era output), mechanical
+       remainder Sonnet-delegated. Gate green. **Decisive proof: all
+       341 installed `.ih`/`.eh` headers byte-identical to the
+       pre-flip baseline** (`~/src/AUIS/test-baselines/
+       point11-headers/before/`) — the default is bit-for-bit
+       equivalent to the flags it replaces. ez/help/messages
+       regression battery user-verified. Checkins: ff35ac3904
+       (classpp flip), 4f6c344e44 (flag deletions).
+       **M1 IS COMPLETE.**
 12. [ ] Export (`-pe`) is *not* sequenced here — it rides with each
        subtree's M3 conversion, since its blast radius is only the
        implementing directory
