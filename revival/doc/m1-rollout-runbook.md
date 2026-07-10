@@ -7,6 +7,9 @@ the fallout taxonomy below is empirical, from those directories.
 Background and rationale: `porting-assessment.md` §14.
 
 One directory per session. Never run two builds at once.
+(Point-10 amendment, ruled 2026-07-09: for the breadth sweep, a batch of
+related directories may share one session and one gate — census-first
+per directory still applies, and builds remain strictly serial.)
 
 ## What the flag does
 
@@ -43,7 +46,13 @@ compiled-in defaults do not change until rollout point 11.
    validates stale objects. Run `make clean` in the directory first.
    Caveat: `make clean` also deletes generated parser sources; if the
    directory has yacc/lex targets, build those first (e.g.
-   `make eqparse.c` in atk/eq). Then `make install`.
+   `make eqparse.c` in atk/eq). Then `make -k install`: with `-k`,
+   independent per-file fallout lands in one log pass instead of one
+   file per rebuild cycle (point 10 batch 1: suite took four cycles
+   without it). `-k` stays banned for routine builds where the tree is
+   expected clean and it would mask breakage; here errors are the
+   point. Success is still zero `error:` lines on the final rebuild,
+   never the exit code — see step 5.
 
    **Logging:** ALL build output — local rebuilds here and the gate in
    step 5 — goes to the one canonical file
@@ -63,8 +72,12 @@ compiled-in defaults do not change until rollout point 11.
    time; do not kill it. Before blaming any process for a hang, check
    provenance (`ps -axo pid,stat,etime,ppid,comm` — filter out
    Google/crashpad noise); its demo step emits alarming-but-nonfatal
-   `cui`/`ms` messages. Success = exit 0 and zero real `error:` lines
-   in the log. Known false positive: the string
+   `cui`/`ms` messages. Success = ZERO real `error:` lines in the log;
+   the exit code is untrustworthy — dependInstall keeps walking
+   directories after one fails and exited 0 over 20 real errors in
+   point 10 batch 1 (this also means the gate is already `-k`-like
+   across directories: one gate pass yields the full consumer error
+   list). Known false positive: the string
    `Internal error: unknown recognizer type` inside a
    `-Wdeprecated-non-prototype` warning.
 
@@ -136,6 +149,18 @@ ONLY. Never edit a `.c` to match a `.ch`.
   1 pointer there), the rock STAYS `long` and the minority pointer
   site gets an explicit `(long)` cast on the argument — the mirror
   image of the dual-use resolution, same pre-authorization.
+  **Unsigned rock** (point 10, `suite.ch` `Apply`/`Create`, ruled
+  2026-07-09): a rock declared `unsigned` in BOTH `.ch` and the K&R
+  impl, with pointer-passing callers. Unlike a `long` rock, `unsigned`
+  is 32-bit on LP64 — the callee itself truncates, so the `.ch`-only
+  retype would leave a typed interface that lies. Fix is `.ch` →
+  `void *` PLUS editing the impl's K&R param declaration `unsigned` →
+  `long` (semantics-restoring; goes in a separate live-bug commit, per
+  the clockv/htmlview precedents). The same authorization covers a
+  K&R definition MISSING a param declaration entirely (point 10,
+  `entrstrv.c`/`entrintv.c` `LinkTree`: `parent` undeclared → implicit
+  `int` truncating a view pointer): add the declaration the `.ch`
+  specifies.
 - **Dual-use attribute values** (point 9): a `long`-returning
   attribute getter (`suite_ItemAttribute`, `chart_ItemAttribute`)
   whose result feeds a correctly-pointer-typed parameter
@@ -158,6 +183,23 @@ ONLY. Never edit a `.c` to match a `.ch`.
   point 9 `htmlview.c` `DisplayString(self, "msg", 0)`) are a live
   bug — hard stop; ruled 2026-07-09: fix the caller, as a separate
   commit from the rollout commit.
+- **Variadic-by-macro-convention** (point 10, suite attribute family,
+  ruled 2026-07-09): methods whose callers pass a `(code, value)`
+  attribute-pair macro (`suite_ItemCaption(x)` → `suite_itemcaption,
+  (long) (x)`) through ONE macro argument, so the function call carries
+  more C arguments than the dispatch macro has parameters. Worked for
+  35 years only because the casts were unprototyped; incompatible with
+  `-pi` no matter what the `.ch` says (true arity breaks macro-argument
+  counting at pair-style call sites; historical arity breaks the
+  prototyped call). A variadic cast is NOT a fix — Darwin arm64 puts
+  variadic args on the stack while K&R impls read registers.
+  Resolution: declare the true arity in the `.ch` (setters gain
+  `long value`) and mechanically expand every dispatch call site —
+  setters pass `code, (long) (value)` as real arguments, getters pass
+  the bare code and DROP their never-read dummy pair. Pair macros stay,
+  fenced by comment, for `*_Specification` initializer tables, where
+  they remain exactly right. Ruling explicitly extends to
+  `atk/chart`'s identical attribute family.
 - **Benign, ignore:** `-Wincompatible-pointer-types` passing a
   subclass pointer where the cast names the *defining* superclass
   (`struct traced *` etc.) — prefix-layout subtyping, expected

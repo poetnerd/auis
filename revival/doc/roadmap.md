@@ -52,6 +52,26 @@ history behind each completed item.
   Xbitmap→raster round-trip (byte-identical to identity output) all
   pass; baseline captured in `~/src/AUIS/test-baselines/raster-pi/`.
 
+### bush crashes at startup (bush__InitTree overlapping strcpy):
+
+- First-ever launch attempt (2026-07-09, during point-10 batch-1
+  runtime checks — bush was previously untested; not a -pi
+  regression: the crash is in InitTree string handling our diff
+  never touched). `EXC_BREAKPOINT` in `__strcpy_chk` →
+  `__chk_fail_overlap`, called from `bush__InitTree`+456 ←
+  `bush__Create` ← `bushapp__Start`: an overlapping src/dst
+  `strcpy`, fatal under macOS fortify. Likely in-place path
+  surgery (`strcpy(p, p+n)` idiom); needs `memmove` or a temp.
+  Debug as its own task. Note the batch-1 suite anchor fix is a
+  prerequisite bush needs anyway — before it, every control-panel
+  handler got truncated pointers on arm64.
+
+### chart runtime coverage:
+
+- chart app launches (2026-07-09) but we have no chart example
+  document; find or author one to exercise chartp control suites
+  and the chartv font-attribute paths fixed in batch 1.
+
 ### filetype.c DeleteEntry:
 
 - `filetype__DeleteEntry` (atk/basics/common/filetype.c:216,218,
@@ -841,7 +861,17 @@ zero-consumer leaves, then the core, largest last.
 10. [ ] Breadth: remaining atk (`value`, `adew`, `apt`, `basics/wm`,
        `basics/x`, `hyplink`, `syntax/parse`, ...), then `atkams`/
        `ams`, `contrib` (`zip/lib` first), `examples` — delegable
-       batches
+       batches (one session + one gate per batch, ruled 2026-07-09)
+       - Batch 1 (2026-07-09): `atk/value`, `atk/adew`,
+         `atk/apt/{apt,suite,tree}`, `atk/controllers` (inert — not
+         in default build). Two live-LP64-bug classes fixed (suite
+         unsigned rocks feeding every handler callback; LinkTree
+         missing param decl), the suite+treev attribute-pair
+         convention expanded at 95 dispatch sites across 12 files,
+         and two long-dormant caller bugs caught (bushv title-as-code
+         no-op; chartv `*X`-for-`&X` CaptureString corruption) — see
+         porting-assessment §14 "Point 10 batch 1 findings" and the
+         runbook's new unsigned-rock and variadic-by-macro bullets.
 11. [ ] Flip classpp default: Import-all becomes compiled-in, delete
        the per-directory `-pi` flags (single mechanical commit)
 12. [ ] Export (`-pe`) is *not* sequenced here — it rides with each

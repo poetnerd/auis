@@ -933,6 +933,78 @@ all now in the runbook:
    unflagged directories through macromethods that expand into a
    flagged class's dispatch (`chartobj.ih` → `graphic_DrawString`).
 
+#### Point 10 batch 1 findings (atk/value+adew+apt/{apt,suite,tree}+controllers, 2026-07-09)
+
+First batch under the point-10 batch amendment (one session, one gate,
+census-first per directory). atk/controllers is flagged but inert —
+not in the default build (`MK_AUTHORING`/`MK_CONTROLLERS` off), like
+ness/objects (celv's only external callers). contrib/mit IS in the
+build (popts.c compiled and needed `(void *)` casts at two
+`PostResource` integer sites — the point-9 retype reaching contrib).
+Consumer fallout arrived in RINGS across three gates: gate 1 exposed
+org/bushv (treev pair macros), gate 2 exposed chart + popts
+(CaptureString/PostResource one ring further out) — the gate walks on
+past a failing directory, so its log is complete per-ring but blind to
+files behind each directory's first failure; local `make -k` rebuilds
+(runbook step-3 amendment, adopted mid-batch) flush a directory in one
+pass. Findings:
+
+1. **atk/value came in as predicted near-zero** (census-first works):
+   the lone rock, `value.ch AddCallBackObserver`, is integer-unanimous
+   across ~55 sites → stays `long`, zero edits; `SetValueType`'s
+   by-design dual-use rock is fully laundered by its own macromethods.
+   Actual fallout was two typeless override decls (`DrawButtonText`
+   `pushd` in entrstrv/entrintv vs the typed defining decl in
+   buttonv.ch) and one real LP64 bug: `enterstrV__LinkTree` (and the
+   unbuilt entrintv sibling) never declared `parent` — implicit int
+   truncated every view pointer passed through. Extends the clockv
+   precedent to missing K&R param declarations.
+2. **Typeless-decl cluster in apt**: `apt.ch` SetAreaSpread* `mode`,
+   `ReadObject` `reader`; `aptv.ch` `PrintObject` `printer`,
+   `OpenPrintStream` (3 of 4 params); `cel.ch` `SetVisibilityBit`;
+   plus `apts.ch CaptureString` declaring `char *target` where the
+   impl takes `char **` — worth noting that classpp never validated
+   `.ch` against impls, so a wrong declaration was FREE until now.
+3. **Unsigned rock — a live-bug variant of the rock idiom**
+   (`suite.ch` `Apply(unsigned anchor, unsigned datum)`,
+   `Create(..., unsigned anchor)`): unlike `long`, `unsigned` is
+   32-bit on LP64, and the impls declared it too, so every suite-based
+   control panel (bush, chart, org, cmap, zip ltv) handed truncated
+   `self` pointers to its Hit/Sort/Title/Exception handlers on arm64.
+   Ruled: `.ch` → `void *` AND impl K&R decls → `long` (separate
+   live-bug commit). A third truncation of the same species was found
+   laundered as `(unsigned int)item` at a suite.c vector call site.
+4. **Variadic-by-macro-convention attribute family** — the biggest
+   structural find of the rollout so far; see the runbook's new
+   signature-drift bullet for the mechanism (attribute-pair macros
+   riding one macro argument into unprototyped calls) and resolution
+   (true `.ch` arity + 95 dispatch sites mechanically expanded across
+   12 files; pair macros fenced for spec-table use only). Getter
+   sites had passed a never-read dummy pair (`suite_ItemName(0)`)
+   for 35 years. `treev.ch` turned out to carry its own copy of the
+   convention — its parameter was literally named
+   `attribute_codevalue` — caught by the gate one consumer ring out
+   (orgv/bushv), a reminder to sweep EVERY `.ch` in a flagged
+   directory for `#define X(x) code, (long)(x)` macros up front.
+   Caller bugs that fell out, each a separate caller-bug commit:
+   `bushv.c` passed a bare string as the attribute CODE (`"No
+   Current Directory"` title — silent no-op since 1989), and
+   `chartv.c` passed `*LabelFontName`/`*ScaleFontName`/
+   `*TitleFontName` (the string's first CHAR) where CaptureString
+   takes a `char **` target — memory corruption whenever those font
+   attribute cases executed; siblings correctly pass `&X`.
+   Ruling extends to atk/chart's identical `chart_ItemAttribute`
+   family when that directory is flagged.
+5. **Datum-rock families**: `tree.ch` Create*Node/NodeOfDatum/
+   SetNodeDatum datum → `void *` (pointer-unanimous incl. laundered
+   `(long)text` in org, `(char*)dir` in bush); `vector.ch` item
+   methods → `void *` (dual-use: 6 pointer callers, 1 genuine offset
+   in suiteev gets `(void *)`); `suite.ch` CreateItem/ItemOfDatum
+   datum STAYS `long` (integer-majority: ~35 code sites vs bushv's 5
+   pointer sites, which get `(long)` casts). Both `Create(spec, ...)`
+   classprocs also declared their spec param by-value where impls
+   take pointers (`tree_Specification *`, `suite_Specification *`).
+
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 
 **Resolved 2026-07-04 for the local-store case — see `roadmap.md` Near-term →
