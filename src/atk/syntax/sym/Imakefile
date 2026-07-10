@@ -27,6 +27,9 @@
 */
 
 
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
+
 DOBJS = sym.do toksym.do
 IHFILES = sym.ih toksym.ih
 OBJS = sym.o toksym.o

@@ -35,6 +35,9 @@
 		as used by testparse
 */
 
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
+
 OBJS = parse.o
 DOBJS = parse.do lexan.do
 IHFILES = parse.ih lexan.ih
