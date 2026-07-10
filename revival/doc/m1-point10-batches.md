@@ -44,8 +44,27 @@ compile-unverified by the gate).
       (`NEWSLETTERS/EZ/92Sep.ez`) user-verified; image accepted
       gate-only (no known fixture). Checkins ce9be43c7e (bug fixes),
       d01f1a4958 (rollout).
-- [ ] **Batch 5**: atk/chart (12/4), atk/org (3/3), atk/bush (3/3),
-      atk/fad (2/0), atk/layout (6/3), atk/table (2/7).
+- [x] **Batch 5** (2026-07-10): atk/chart (12/4), atk/org (3/3),
+      atk/bush (3/3), atk/fad (2/0), atk/layout (6/3), atk/table
+      (2/7). Gate green first pass. chart carried the suite-identical
+      variadic-by-macro attribute family (ruling already in hand,
+      applied without re-escalating) plus a signature-drift typo
+      (`struct char *` → `struct chart *`) and typeless declarations
+      (WhichItem/SetChartOptions/HitChart/ObserveChart, the latter
+      repeated across 5 subclasses); ~45 dispatch call sites
+      mechanically rewritten, all local to atk/chart. Two dual-use
+      attribute-value casts missing at `PrintString` call sites,
+      caught by chart's local rebuild. org.ch's typeless
+      `NodeName(node)` had zero callers — zero-risk retype. bush,
+      fad, layout, table were zero-fallout. Runtime: chart verified
+      interactively; fad+table verified via Sherman.Alloc. Two
+      pre-existing bugs surfaced by first-ever runtime tests (not
+      regressions, logged under roadmap Little Annoyances): org
+      crashes loading a file (same overlapping-strcpy-under-fortify
+      class as bush's already-logged crash); Sherman.Alloc's complex
+      layout inset has excess whitespace margin (zero atk/layout
+      files touched). Checkins b73958943b (bug fixes), 79a7de90d1
+      (rollout).
 - [ ] **Batch 6**: atk/textobjects (7/9), atk/textaux (2/0),
       atk/rofftext (4/13), atk/srctext (19/0), atk/typescript (5/7),
       atk/lookz (3/5).

@@ -66,11 +66,39 @@ history behind each completed item.
   prerequisite bush needs anyway — before it, every control-panel
   handler got truncated pointers on arm64.
 
-### chart runtime coverage:
+### ~~chart runtime coverage~~ — verified:
 
-- chart app launches (2026-07-09) but we have no chart example
-  document; find or author one to exercise chartp control suites
-  and the chartv font-attribute paths fixed in batch 1.
+- chart app launched and runtime-verified interactively (2026-07-10,
+  point-10 batch 5): startup, creating a chart, switching between
+  chart formats, and setting labels via the palette all worked —
+  exercises the `SetChartAttribute`/`SetItemAttribute` sites
+  rewritten in that batch.
+
+### org crashes loading a file (Read_Body overlapping strcpy):
+
+- First-ever test of org loading a document (2026-07-10, during
+  point-10 batch-5 runtime checks — `example1.org` via the org app;
+  not a -pi regression: org.c was never touched in that batch, and
+  the only org.ch edit, typing `NodeName`, has zero callers tree-wide).
+  `EXC_BREAKPOINT` in `__strcpy_chk` → `__chk_fail_overlap`, from
+  `org__Read` (statically-inlined `Read_Body`) ← `bufferlist__GetBufferOnFile`
+  ← `frame_VisitNamedFile`. Same bug class as bush's InitTree crash
+  above: `strcpy(fName, tmpnam(seed))` where `seed` is pre-filled
+  via `sprintf` — a `tmpnam()` misuse (the buffer-argument form just
+  overwrites `seed`, it isn't a naming template the way `tempnam()`'s
+  `pfx` is), fatal under macOS's fortified libc. Debug as its own task.
+
+### Sherman.Alloc complex layout has excess whitespace:
+
+- Noticed 2026-07-10 during point-10 batch-5 runtime checks: the
+  complex layout inset near the end of `Sherman.Alloc` renders with
+  much more whitespace margin around its contents than expected.
+  Presumed pre-existing, not a -pi regression — zero files in
+  atk/layout were touched in that batch (census found no pair
+  macros, rocks, or typeless declarations; the gate was zero-fallout,
+  meaning classpp needed no interface changes at all). First close
+  look at this inset's rendering in the revival; needs its own
+  investigation.
 
 ### filetype.c DeleteEntry:
 
@@ -921,6 +949,42 @@ zero-consumer leaves, then the core, largest last.
          `NEWSLETTERS/EZ/92Sep.ez`'s raster inset; `image` accepted
          gate-only (no known fixture for its picture-format codecs,
          zero-caller local fix only).
+       - Batch 5 (2026-07-10): `atk/chart`, `atk/org`, `atk/bush`,
+         `atk/fad`, `atk/layout`, `atk/table`. Gate green first pass
+         (all fallout caught and fixed during chart's local
+         `make -k install`, before the tree-wide gate ran). chart
+         carried the suite-identical variadic-by-macro attribute
+         family across two classes (`chart.ch` Chart/Item Attribute,
+         `chartv.ch` Chart/ChangeChart Attribute) — true arity
+         declared, ~45 dispatch call sites mechanically rewritten
+         (all local to atk/chart, zero external consumers), pair
+         macros fenced for `*_Specification`-table-only use, per the
+         ruling already in hand. `chartobj.ch` also had a ~35-year
+         signature-drift typo (`SetDataObject(struct char *)` →
+         `struct chart *`) and four typeless declarations
+         (`WhichItem`, `SetChartOptions`, `HitChart`, `ObserveChart`);
+         `HitChart`'s typeless override repeated across five
+         subclasses (chartcsn, charthst, chartmap, chartpie,
+         chartstk). Two dual-use-attribute-value call sites
+         (`chartobj.c`, `chartpie.c`, `PrintString` argument) were
+         missing the `(char *)` cast their siblings already had —
+         found only once the tree-wide gate walked past the local
+         rebuild's stopping point. `org.ch NodeName(node)` was fully
+         typeless (zero callers tree-wide, so zero fallout risk);
+         typed from the impl. `bush`, `fad`, `layout`, `table` were
+         all zero-fallout — census clean, gate green, no `.ch`/`.c`
+         edits needed. No new patterns for porting-assessment §14.
+         Runtime: chart verified interactively (create/format/label a
+         chart); fad+table verified via `Sherman.Alloc`. Two
+         pre-existing bugs surfaced by first-ever runtime tests, not
+         regressions (both logged under Little Annoyances): org
+         crashes loading a file (`Read_Body`'s `tmpnam`/`strcpy`
+         misuse, same overlapping-strcpy-under-fortify class as
+         bush's already-logged InitTree crash); Sherman.Alloc's
+         complex layout inset renders with excess whitespace margin
+         (zero atk/layout files touched this batch, so presumed
+         pre-existing). bush's pre-existing startup crash confirmed
+         unchanged.
 11. [ ] Flip classpp default: Import-all becomes compiled-in, delete
        the per-directory `-pi` flags (single mechanical commit)
 12. [ ] Export (`-pe`) is *not* sequenced here — it rides with each
