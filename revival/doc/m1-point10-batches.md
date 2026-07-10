@@ -117,13 +117,26 @@ compile-unverified by the gate).
       all inert (MK_BASIC_UTILS/MK_AUTHORING/MK_AUX_UTILS off). No
       flagging needed ever; runbook census happens if/when their
       MK_* macros are turned on.
-- [ ] **Batch 8** (recensused 2026-07-10, live subset):
-      atk/syntax/parse (2/13), atk/syntax/tlex (1/7),
-      atk/syntax/sym (2/4) — all three confirmed live (gate log
-      descends into them). atk/ness/objects (7/31) and atk/ness/type
-      (1/2) confirmed inert (bison blocker, roadmap Insets to
-      Repair → ness) — dropped from this batch per the
-      obsolete-inert-flagging ruling below. Sonnet-delegable.
+- [x] **Batch 8** (2026-07-10, live subset: atk/syntax/parse,
+      atk/syntax/tlex, atk/syntax/sym; ness/{objects,type} dropped —
+      inert, bison blocker, obsolete-inert-flagging ruling below).
+      First Sonnet-delegated batch (background agent, runbook-driven;
+      stopped at the pre-commit line as instructed). Gate green first
+      pass, zero real errors. Six drift fixes, all known taxonomy:
+      lexan.ch + tlex.ch InitializeObject/FinalizeObject wrong-sibling
+      struct (`struct parse *`); tlex.ch RecentPosition/RecentIndent/
+      Repeat `int`→`long index`; sym.ch five classprocs
+      `unsigned char *`→`char *name`; sym.ch FindAll rock `long`→
+      `long *` (impl truth); parse.ch Create error handler
+      `int (*)()`→`void (*)()`. All tlex/sym callers live in inert
+      atk/ness — zero live call sites. HARD STOP correctly escalated
+      and ruled: lexan.c ParseNumber passed `&len` (`long`) for
+      TransEscape's `int *plen` — live LP64 bug (upper-half garbage
+      into `buf[len-1]`); fixed with an `int` temporary, separate
+      live-bug commit per clockv/htmlview precedent. Runtime:
+      user-verified ctext syntax coloring + indentation on a scratch
+      `.c` copy in ez. Checkins: .ch fixes d3386126d5, lexan.c fix
+      7ad519b869, rollout 6b1564ec89.
 - [x] **Batch 9**: atk/examples/ex1–ex19, rdemo/hide (7/9),
       rdemo/rdemosh (1/0), overhead/class/testing (2/0). Done
       2026-07-10, live subset only: pre-flag census found all 19

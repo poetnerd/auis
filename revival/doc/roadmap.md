@@ -1172,16 +1172,27 @@ zero-consumer leaves, then the core, largest last.
          `while(1);`, not part of the normal install path — matches
          the batch's own "gate is the whole verification" guidance.
          Checkin: rollout-only, no bug-fix commit needed.
-       - **Remaining live gap (recensused 2026-07-10):** exactly 11
-         directories — batch 8's live subset
-         `atk/syntax/{parse,tlex,sym}` and batch 11's live subset
+       - Batch 8 (2026-07-10, live subset — first Sonnet-delegated
+         batch): `atk/syntax/{parse,tlex,sym}`; ness dropped (inert,
+         bison blocker). Gate green first pass. Six known-taxonomy
+         drift fixes (wrong-sibling structs, int/long index params,
+         unsigned name params, FindAll rock to impl's `long *`,
+         Create's error handler to `void (*)()`) — details in
+         m1-point10-batches.md. One hard stop escalated and ruled:
+         `lexan.c ParseNumber` passed a `long *` where
+         `TransEscape` takes `int *` — live LP64 bug, fixed with an
+         `int` temporary as its own commit. Runtime: ctext syntax
+         coloring/indent user-verified on a scratch `.c` in ez.
+         Checkins: d3386126d5 (.ch), 7ad519b869 (lexan.c),
+         6b1564ec89 (rollout).
+       - **Remaining live gap (recensused 2026-07-10; batch 8 done
+         same day):** batch 11's live subset only —
          `contrib/{mit/annot, mit/util, srctext/html, srctext/ptext,
          srctext/ltext, time, wpedit, demos/circlepi}`. Everything
          else still unflagged is inert (batches 7b/9b, ness, zip,
          atkbook, ...) and is NOT part of M1 — see "Active tree"
-         below. Both remaining batches are Sonnet-delegable under
-         the runbook (patterns all documented, no novel rulings
-         expected).
+         below. Batch 11 is Sonnet-delegable under the runbook
+         (patterns all documented, no novel rulings expected).
 11. [ ] Default flip: classpp emits typed import casts (`-pi`
        behavior) by default; delete the per-directory `-pi` flags
        from all ~40 Imakefiles (single mechanical commit). Full
