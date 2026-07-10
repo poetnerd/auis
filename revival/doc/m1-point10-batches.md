@@ -86,11 +86,38 @@ compile-unverified by the gate).
       zero atk/typescript files touched so not a regression; logged
       under roadmap Little Annoyances. Checkins 135deef87d (bug
       fixes), 1bf4c6384e (rollout).
-- [ ] **Batch 7**: atk/ez (1/2), atk/ezprint (1/0), atk/preview
-      (2/1), atk/toez (1/0), atk/utils (3/8), atk/help/src (4/4),
-      atk/datacat (1/0), atk/launchapp (1/0), atk/createinset/null
-      (3/5), atk/music (1/1), atk/extensions (10/0),
-      atk/prefed (21/15, inert).
+- [x] **Batch 7** (2026-07-10, live subset only): atk/ez, atk/utils,
+      atk/help/src, atk/extensions. Gate green first pass. 8 of the
+      12 originally-planned directories (ezprint, preview, toez,
+      datacat, launchapp, createinset/null, music, prefed) turned out
+      to be currently inert — MK_BASIC_UTILS/MK_AUTHORING/MK_AUX_UTILS
+      all off, no per-app override defined, none in SUBDIRS, no
+      generated Makefile — deferred to **Batch 7b** (below) rather
+      than flipping the macros on. ez2ascii/ez2ps in build/bin turned
+      out to be contrib/mit/util (batch 11) + CONTRIB_ENV leftovers,
+      not built from atk/ezprint at all, so the planned CLI byte-diff
+      battery had no live target either. Six drift fixes on the live
+      4: dialog.ch/dialogv.ch InitializeObject/FinalizeObject wrong
+      sibling struct (struct sbutton*); help/src/hlptextv.ch same
+      pattern (struct srctextview* — coincidentally similar name to
+      batch 6's srctext/hlptext.ch, different file); help.ch/helpdb.ch
+      InitializeClass bogus extra self param; ezdiff.ch FinalizeObject
+      missing its self param entirely; dialogv.ch PostInput choicerock
+      rock idiom (long->void*, sole caller frame.c:1746 passes a
+      pointer). Confirmed struct thisobject *self (pervasive idiom,
+      dozens of files) resolves to void* even under -pi — not a bug.
+      Runtime: ez launch + Extensions command, Quit-with-unsaved-changes
+      dialog (exercises the dialog/dialogv fix + PostInput rock
+      directly), help launch with hlptextview-rendered topic + working
+      hyperlinks — all user-verified, no regressions. Checkins
+      105b96414a (bug fixes), 165e3862b6 (rollout).
+- [ ] **Batch 7b** (deferred from batch 7): atk/ezprint, atk/preview,
+      atk/toez, atk/datacat, atk/launchapp, atk/createinset/null,
+      atk/music, atk/prefed — all currently inert (see batch 7 note).
+      Revisit if/when their MK_* macros are ever turned on; until
+      then, census + Imakefile-flag-only (controllers/wm precedent,
+      no build to verify against) is the fallback if this needs to be
+      closed out without enabling the macros.
 - [ ] **Batch 8**: atk/syntax/parse (2/13), atk/syntax/tlex (1/7),
       atk/syntax/sym (2/4), atk/ness/objects (7/31, inert),
       atk/ness/type (1/2, inert).

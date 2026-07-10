@@ -1048,7 +1048,64 @@ zero-consumer leaves, then the core, largest last.
          `GetPtyandName` ("Can't connect subchannel") — zero
          atk/typescript files were touched this batch (fully
          zero-fallout), so this cannot be caused by the diff.
-11. [ ] Flip classpp default: Import-all becomes compiled-in, delete
+       - Batch 7 (2026-07-10, live subset only): pre-flag census found
+         8 of the planned 12 directories (`ezprint`, `preview`, `toez`,
+         `datacat`, `launchapp`, `createinset/null`, `music`, `prefed`)
+         are currently inert — `MK_BASIC_UTILS`/`MK_AUTHORING`/
+         `MK_AUX_UTILS` are all off in `allsys.h` and no per-app
+         override (`MK_EZPRINT`, `MK_PREVIEW`, etc.) is defined, so none
+         are in `atk/Imakefile`'s `SUBDIRS` and none have a generated
+         Makefile; deferred to a future batch (user decision: split
+         rather than flip the macros on). The `ez2ascii`/`ez2ps`
+         binaries already in `build/bin` are leftovers from
+         `contrib/mit/util` (batch 11, gated by `CONTRIB_ENV`, also
+         off) plus a csh wrapper — not built from `atk/ezprint` at all,
+         so the planned CLI byte-diff battery had no live target and
+         was skipped along with the rest of the deferred 8. Ran the
+         full runbook on the 4 live directories instead: `atk/ez`,
+         `atk/utils`, `atk/help/src`, `atk/extensions` (all
+         unconditionally in `BASICS`). Gate green first pass. Six
+         genuine drift fixes caught by census before any build, no new
+         patterns: `utils/dialog.ch` and `utils/dialogv.ch` each had
+         `InitializeObject`/`FinalizeObject` typed to the wrong
+         sibling struct (`struct sbutton *self` instead of their own
+         class) — same pattern as batch 6's hlptext/rawtextv;
+         `help/src/hlptextv.ch` had the identical wrong-sibling-struct
+         drift (`struct srctextview *self` instead of
+         `struct hlptextview *self`) — a different file from batch 6's
+         srctext/hlptext.ch, just a confusingly similar name.
+         `help/src/help.ch` and `help/src/helpdb.ch` each declared
+         `InitializeClass(struct help(db) *self)` with a bogus extra
+         `self` param the implementation doesn't take (impls take only
+         `classID`, matching the universal zero-param
+         `InitializeClass()` convention every other class uses).
+         `extensions/ezdiff.ch` had the opposite arity drift:
+         `FinalizeObject()` was missing its `self` param entirely
+         (impl is `ezdiff__FinalizeObject(classID, self)`).
+         `utils/dialogv.ch`'s `PostInput` `choicerock` was a rock-idiom
+         retype (`long`→`void *`; its one tree-wide caller,
+         `frame.c:1746`, already passes a bare pointer). Traced how
+         `InitializeObject`/`FinalizeObject`/`InitializeClass` arity
+         actually matters under `-pi` despite the user-facing
+         convenience macros having zero external callers tree-wide:
+         classpp's auto-generated `Destroy`/`Finalize` wrapper code
+         (baked into the `.eh`) calls the raw `classname__FinalizeObject`
+         function by the fixed `(classID, self)` convention regardless
+         of what the `.ch` declares, so a `.ch` arity mismatch becomes a
+         real prototype conflict once `-pi` is on — not dormant.
+         Confirmed `struct thisobject *self` (used pervasively for
+         `InitializeObject`/`FinalizeObject`/`ObservedChanged` self
+         params across dozens of files, including several already
+         flagged in batch 1) is a real, working classpp idiom that
+         resolves to `void *` even under `-pi` — not a bug, left alone
+         everywhere it appears (`strinput.ch` included). Runtime:
+         `ez` launch confirmed (including an Extensions-menu command);
+         a Quit-with-unsaved-changes confirmation dialog exercised the
+         `dialog.ch`/`dialogv.ch` fix and the `PostInput` rock retype
+         directly; `help` launch confirmed, including a
+         `hlptextview`-rendered topic with working hyperlinks. All
+         three user-verified, no regressions. Checkins: bug fixes
+         105b96414a, rollout 165e3862b6.
        the per-directory `-pi` flags (single mechanical commit)
 12. [ ] Export (`-pe`) is *not* sequenced here — it rides with each
        subtree's M3 conversion, since its blast radius is only the
