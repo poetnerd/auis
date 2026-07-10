@@ -37,8 +37,8 @@ class hlptextview[hlptextv]: textview[textv] {
  
   classprocedures:
     InitializeClass() returns boolean;
-    InitializeObject(struct srctextview *self) returns boolean;
-    FinalizeObject(struct srctextview *self);
+    InitializeObject(struct hlptextview *self) returns boolean;
+    FinalizeObject(struct hlptextview *self);
  
   macromethods:
     SetHyperlinkCheck(boolean newValue) ((self)->checkForHyperlinks = (newValue))

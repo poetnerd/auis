@@ -38,7 +38,7 @@
 
 package helpdb {
     classprocedures:
-        InitializeClass(struct helpdb *self) returns boolean;
+        InitializeClass() returns boolean;
 	CheckIndex(struct view *v) returns int;
 	SetIndex(char *anindex) returns int;
 	SetupHelp(struct cache *c, char *aname, int strip) returns int;

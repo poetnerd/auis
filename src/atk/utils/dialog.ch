@@ -32,8 +32,8 @@
 class dialog : dataobject[dataobj] {
 classprocedures:
     InitializeClass() returns boolean;
-    InitializeObject(struct sbutton *self) returns boolean;
-    FinalizeObject(struct sbutton *self);
+    InitializeObject(struct dialog *self) returns boolean;
+    FinalizeObject(struct dialog *self);
     
 overrides:
     ViewName() returns char *;

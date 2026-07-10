@@ -64,7 +64,7 @@ class help : view {
     HelpappGetHelpOn(char *name, long number, int addToHistory, char *errmsg) returns int;
     GetHelpOnTerminal(char *akey, int list, int print);
     InitializeObject(struct help *self) returns boolean;
-    InitializeClass(struct help *self) returns boolean;
+    InitializeClass() returns boolean;
     FinalizeObject(struct help *self);
     SetIndex(char *indexName);
     SetAliasesFile(char *aliasName);
