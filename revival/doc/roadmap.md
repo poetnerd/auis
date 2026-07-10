@@ -861,7 +861,9 @@ zero-consumer leaves, then the core, largest last.
 10. [ ] Breadth: remaining atk (`value`, `adew`, `apt`, `basics/wm`,
        `basics/x`, `hyplink`, `syntax/parse`, ...), then `atkams`/
        `ams`, `contrib` (`zip/lib` first), `examples` — delegable
-       batches (one session + one gate per batch, ruled 2026-07-09)
+       batches (one session + one gate per batch, ruled 2026-07-09;
+       exhaustive batch list + per-session prompts:
+       revival/doc/m1-point10-batches.md)
        - Batch 1 (2026-07-09): `atk/value`, `atk/adew`,
          `atk/apt/{apt,suite,tree}`, `atk/controllers` (inert — not
          in default build). Two live-LP64-bug classes fixed (suite
