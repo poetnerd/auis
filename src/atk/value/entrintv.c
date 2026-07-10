@@ -124,6 +124,7 @@ struct enterintV *self;
 }
 void enterintV__LinkTree(self,parent)
 struct enterintV *self;
+struct view *parent;
 {
     super_LinkTree(self,parent);
     eintview_LinkTree(self->eintview,self);

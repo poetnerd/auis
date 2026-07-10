@@ -370,7 +370,7 @@ SetChartAttribute( self, attribute, value )
     case  chartv_cursor:
       ChartCursorByte = value;			break;
     case  chartv_cursorfontname:
-      apts_CaptureString( value, &ChartCursorFontName ); break;
+      apts_CaptureString( (char *) value, &ChartCursorFontName ); break;
     case  chartv_datum:
       ClientDatum = value;			break;
     case  chartv_hithandler:
@@ -382,15 +382,15 @@ SetChartAttribute( self, attribute, value )
     case  chartv_itemhighlightstyle:
       ItemHighlightStyle = value;		break;
     case  chartv_labelfontname:
-      apts_CaptureString( value, *LabelFontName ); break;
+      apts_CaptureString( (char *) value, &LabelFontName ); break;
     case  chartv_scalefontname:
-      apts_CaptureString( value, *ScaleFontName ); break;
+      apts_CaptureString( (char *) value, &ScaleFontName ); break;
     case  chartv_titleborderstyle:
       TitleBorderStyle = value;			break;
     case  chartv_titlebordersize:
       TitleBorderSize = value;			break;
     case  chartv_titlecaptionfontname:
-      apts_CaptureString( value, *TitleFontName ); break;
+      apts_CaptureString( (char *) value, &TitleFontName ); break;
     case  chartv_titledataobjecthandler:
       TitleDataObjectHandler = (struct view (*)()) value;break;
     case  chartv_titlehighlightstyle:

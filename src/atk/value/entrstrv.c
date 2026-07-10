@@ -148,6 +148,7 @@ struct enterstrV *self;
 }
 void enterstrV__LinkTree(self,parent)
 struct enterstrV *self;
+struct view *parent;
 {
     super_LinkTree(self,parent);
     etextview_LinkTree(self->etextview,self);
