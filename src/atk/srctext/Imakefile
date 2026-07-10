@@ -26,6 +26,8 @@
 * $
 */
 
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
 
 /*
  * NOTE:  toolcnt.h is a misc file used by IBM Rochester and is
