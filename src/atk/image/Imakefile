@@ -1,8 +1,12 @@
 /* ********************************************************************** *\ 
  *         Copyright IBM Corporation 1988,1992 - All Rights Reserved      * 
  *        For full copyright information see:'andrew/config/COPYRITE'     * 
-\* ********************************************************************** */ 
-DOBJS = imagev.do faces.do pbm.do sunraster.do rle.do xwd.do \ 
+\* ********************************************************************** */
+
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
+
+DOBJS = imagev.do faces.do pbm.do sunraster.do rle.do xwd.do \
 	fbm.do pcx.do img.do mac.do cmuwm.do mcidas.do colorv.do cmapv.do \ 
 	tif.do 
 
