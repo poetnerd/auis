@@ -26,6 +26,9 @@
 * $
 */
 
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
+
 DOBJS = fad.do fadv.do
 IHFILES = fad.ih fadv.ih
 
