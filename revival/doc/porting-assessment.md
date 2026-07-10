@@ -1005,6 +1005,51 @@ pass. Findings:
    classprocs also declared their spec param by-value where impls
    take pointers (`tree_Specification *`, `suite_Specification *`).
 
+#### Point 10 batch 3 findings (atkams/messages/lib, 2026-07-10)
+
+Gate green first pass; all fallout was local (19 errors, one ring),
+none of the 95 external consumers broke. No pair macros. Seven `.ch`
+drift fixes, mostly known taxonomy (cvEng typeless params;
+DisplayNewBody bare params; fldtreev PostMenus by-value unnamed
+struct; folders AlterSubscriptionStatus declared `(dir, shortname,
+status)` vs impl+all-four-callers `(dir, status, shortname)` — the
+pilot-B transposition class again; SetCUIRock `long` rock → `void *`
+with the laundered forward at ams.c:120 getting a pre-authorized
+`(char *)` cast). Two new mechanisms:
+
+1. **Unknown type tokens emit implicit-`int` cast params — a typed
+   cast that lies.** `CUI_Initialize(proc TimerFunction, ...)` (ams,
+   amsn, amss) and `orgv.ch SetHitHandler((long *handler)(), ...)`:
+   classpp copies an unrecognized type token verbatim into the cast,
+   where gnu89 parses the bare identifier as a parameter name with
+   implicit `int` — so the "typed" parameter is 32-bit and would
+   truncate any function pointer passed on LP64 (callers passing a
+   real function error visibly; callers passing NULL/0 compile
+   silently against the lying cast). Same species: `sendmsg.ch`
+   declared `Boolean`, a typedef private to sendmsg.c — any type
+   name in a `.ch` must resolve in EVERY consumer's translation
+   unit. Fix: the class-system typedef `procedure` for function
+   pointers (`keystate.ch`/`value.ch` are the existing convention),
+   the underlying public type (`short`) for private typedefs.
+   Census rule added: sweep flagged `.ch`s for type tokens that are
+   not C keywords / `struct|enum|union` / `FILE` / `boolean` /
+   `procedure`.
+2. **classpp does NOT comma-share types, and override macros take
+   the defining class's decl.** Minimal-case verified: `Foo(int a,
+   b, c)` emits `(int, void *, void *)` — each bare identifier is
+   treated as an unknown TYPE (pilot-B MoveHandle behavior), never
+   as a second name under the first type. Batch 2's contrary census
+   note (`GrayPattern(short a, b)` → `(short, short)`) observed a
+   different mechanism: that decl is an OVERRIDE in xgraphic.ch,
+   and a subclass's `.ih` macros for inherited/overridden methods
+   carry the DEFINING class's declared signature (graphic.ch, fully
+   typed). Consequence for the rollout: flagging a directory types
+   the casts of every ANCESTOR method into the subclass `.ih`, so a
+   malformed decl in an unflagged parent directory (orgv.ch here)
+   surfaces under the child's flag; and since classpp resolves
+   parent `.ch`s from the INSTALLED include tree, such a fix only
+   takes effect after `make install` in the parent's directory.
+
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 
 **Resolved 2026-07-04 for the local-store case — see `roadmap.md` Near-term →

@@ -881,7 +881,26 @@ zero-consumer leaves, then the core, largest last.
          regression verified. Imakefile-only, like raster/lib.
          Census note: classpp shares comma types like C
          (`GrayPattern(short a, b)` casts as `(short, short)`) —
-         verified empirically, not drift.
+         verified empirically, not drift. [Correction, batch 3:
+         classpp does NOT comma-share — override macros take the
+         defining class's typed decl, which is what GrayPattern
+         showed; see batch 3 findings.]
+       - Batch 3 (2026-07-10): `atkams/messages/lib` alone. Gate
+         green first pass, all fallout local (19 errors, one ring);
+         messages runtime fixture verified. Seven `.ch` drift fixes
+         (cvEng typeless, DisplayNewBody bare params, PostMenus
+         by-value struct, AlterSubscriptionStatus 35-year arg
+         transposition, ReadFromFile file-private `Boolean`,
+         SetCUIRock rock→`void *` + one pre-authorized `(char *)`
+         cast at ams.c:120). New pattern for the runbook: an
+         unknown type token in a `.ch` (`proc`, a file-private
+         typedef) emits an implicit-`int` cast param under gnu89 —
+         a typed cast that lies, truncating function pointers on
+         LP64; fixed `proc`→`procedure` in ams/amsn/amss.ch and
+         cross-directory in `orgv.ch` (fldtreev inherits it;
+         classpp reads the INSTALLED parent `.ch`, so the fix
+         needed `make install` in atk/org). See porting-assessment
+         §14 "Point 10 batch 3 findings".
 11. [ ] Flip classpp default: Import-all becomes compiled-in, delete
        the per-directory `-pi` flags (single mechanical commit)
 12. [ ] Export (`-pe`) is *not* sequenced here — it rides with each

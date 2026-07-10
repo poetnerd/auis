@@ -20,7 +20,15 @@ compile-unverified by the gate).
 - [x] **Batch 2** (2026-07-10): atk/basics/wm (6/35, inert —
       `WM_ENV` off, no generated Makefile), atk/basics/x (7/40).
       Zero fallout; Imakefile-only. Checkin 154c07674a (rollout).
-- [ ] **Batch 3**: atkams/messages/lib (17/95) — alone.
+- [x] **Batch 3** (2026-07-10): atkams/messages/lib (17/95) — alone.
+      Gate green first pass; all fallout local. Seven `.ch` drift
+      fixes + one pre-authorized dual-use cast; new pattern: `proc`
+      (and any unknown type token) emits an implicit-`int` cast
+      param — fixed to `procedure` in ams/amsn/amss.ch and
+      cross-directory in orgv.ch (fldtreev inherits it; classpp
+      reads the INSTALLED parent .ch, so atk/org needed
+      `make install` to propagate). messages runtime fixture
+      verified by user. Checkin a106ca615e (rollout).
 - [ ] **Batch 4**: atk/image (19/21), atk/hyplink (4/20),
       atk/console/lib (2/24), atk/console/cmd (2/0),
       atk/raster/cmd (4/24).

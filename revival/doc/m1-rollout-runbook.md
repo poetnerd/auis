@@ -121,7 +121,21 @@ ONLY. Never edit a `.c` to match a `.ch`.
   (no types at all). classpp maps the unknown tokens to `void *` in
   the cast; callers passing integers then fail. Type the declaration
   from the implementations. Telltale: an all-`void *` cast for a
-  method whose callers pass integers.
+  method whose callers pass integers. classpp does NOT comma-share
+  types (`Foo(int a, b, c)` → `(int, void *, void *)`; verified
+  point 10 batch 3) — every parameter needs its own type.
+- **Unknown type token — a typed cast that lies** (point 10 batch 3,
+  `CUI_Initialize(proc TimerFunction, ...)`, `sendmsg.ch Boolean`):
+  classpp copies an unrecognized type NAME verbatim into the cast,
+  where gnu89 parses the bare identifier as a parameter with
+  implicit `int` — 32-bit, silently truncating pointers on LP64
+  unless a caller happens to error visibly. Every type name in a
+  `.ch` must resolve in every consumer's translation unit. Use
+  `procedure` (the class.h typedef) for function pointers — `proc`
+  is not a type — and the underlying public type for file-private
+  typedefs. Census duty: sweep flagged `.ch`s for type tokens
+  outside C keywords / `struct|enum|union` / `FILE` / `boolean` /
+  `procedure`.
 - **Rock idiom** — `long rock` parameters. Judge each by its
   callers: if ALL callers pass pointers, change to `void *rock`
   (K&R impls keep `long` internally; that round-trips on LP64 and is
@@ -232,6 +246,14 @@ ONLY. Never edit a `.c` to match a `.ch`.
   a typed macro can reach into unflagged directories via
   macromethods that expand to a flagged class's dispatch
   (`chartobj.ih` → `graphic_DrawString`).
+- **A flagged subclass types its ANCESTORS' casts too** (point 10
+  batch 3, fldtreev : orgv). A subclass `.ih` regenerates macros for
+  every inherited/overridden method using the DEFINING class's
+  declaration, so a malformed decl in an unflagged parent directory
+  surfaces under the child's flag; the `.ch` fix belongs in the
+  parent. classpp resolves parent `.ch`s from the INSTALLED include
+  tree — the fix takes effect only after `make install` in the
+  parent's directory, not on editing the source copy.
 
 ## Hard stops — report instead of proceeding
 
