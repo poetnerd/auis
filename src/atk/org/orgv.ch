@@ -84,7 +84,7 @@ overrides:
 
 methods:
 
-  SetHitHandler( (long *handler)(), struct view *anchor );
+  SetHitHandler( procedure handler, struct view *anchor );
   SetDebug( boolean state );
 
 macromethods:

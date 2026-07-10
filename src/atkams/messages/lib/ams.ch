@@ -58,7 +58,7 @@ class ams {
       GetLastMenuClass() returns int;
       GetClassListEntry(int which) returns char*;
       GetClassListCount() returns int;
-      SetCUIRock(long r);
+      SetCUIRock(void *r);
       CommitState(boolean DoQuit, boolean MustQuit, boolean MayPurge, boolean OfferQuit);
       CountAMSViews() returns int;
       GetFolderName(char *prompt, char *buf, int buflen, char *defaultname, boolean MustMatch) returns int;
@@ -93,7 +93,7 @@ class ams {
       CUI_GetHeaders(char *dirname, char *date64, char *headbuf, int lim, long startbyte, long *nbytes, long *status, int RegisterCuids) returns long;
       CUI_GetSnapshotFromCUID(int cuid, char *Sbuf) returns long;
       CUI_HandleMissingFolder(char *dname) returns long;
-      CUI_Initialize(proc TimerFunction, char *rock) returns long;
+      CUI_Initialize(procedure TimerFunction, char *rock) returns long;
       CUI_LastCallFinished() returns long;
       CUI_MachineName() returns char *;
       CUI_MailDomain() returns char *;

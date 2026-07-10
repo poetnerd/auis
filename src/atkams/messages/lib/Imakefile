@@ -29,6 +29,9 @@
 
 LOCALINCLUDES	= -I$(BASEDIR)/include/ams
 
+/* M1 ANSI rollout: typed dispatch casts (revival/doc/roadmap.md, M1 rollout points) */
+CLASSFLAGS = $(CLASSINCLUDES) -pi
+
 #ifdef SNAP_ENV
     S_DOBJS	=	amss.do
     S_IHFILES	=	amss.ih

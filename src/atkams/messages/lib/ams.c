@@ -117,7 +117,7 @@ struct classheader *c;
 	}
 	myamsp = (struct ams *) amsn_New();
 #endif /* SNAP_ENV */
-	if (!myamsp || ams_CUI_Initialize(myamsp, NULL, MyRock)) {
+	if (!myamsp || ams_CUI_Initialize(myamsp, NULL, (char *) MyRock)) {
 	    if(myamsp) {
 		ams_ReportError(myamsp, "Error initializing; program terminated.", ERR_FATAL, FALSE, 0);
 	    } else fprintf(stderr, "Error initializing; program terminated.");
