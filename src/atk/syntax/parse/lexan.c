@@ -218,13 +218,14 @@ lexan__ParseNumber(ClassID, buf, plen, intval, dblval)
 	register int x;
 	register char *bx;
 	int success;
+	int tlen;	/* lexan_TransEscape's plen is int *, not long * */
 
 	if (*buf == '\'') {
 		/* process quoted character */
 		val = buf[1];
 		if (val == '\\') {
-			val = lexan_TransEscape(buf+2, &len);
-			len += 3;  /* two apostrophes and the backslash */
+			val = lexan_TransEscape(buf+2, &tlen);
+			len = tlen + 3;  /* two apostrophes and the backslash */
 		}
 		else len = 3;
 		if (plen) *plen = len;
