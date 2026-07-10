@@ -111,16 +111,19 @@ compile-unverified by the gate).
       directly), help launch with hlptextview-rendered topic + working
       hyperlinks — all user-verified, no regressions. Checkins
       105b96414a (bug fixes), 165e3862b6 (rollout).
-- [ ] **Batch 7b** (deferred from batch 7): atk/ezprint, atk/preview,
-      atk/toez, atk/datacat, atk/launchapp, atk/createinset/null,
-      atk/music, atk/prefed — all currently inert (see batch 7 note).
-      Revisit if/when their MK_* macros are ever turned on; until
-      then, census + Imakefile-flag-only (controllers/wm precedent,
-      no build to verify against) is the fallback if this needs to be
-      closed out without enabling the macros.
-- [ ] **Batch 8**: atk/syntax/parse (2/13), atk/syntax/tlex (1/7),
-      atk/syntax/sym (2/4), atk/ness/objects (7/31, inert),
-      atk/ness/type (1/2, inert).
+- [x] **Batch 7b** — closed 2026-07-10 by the obsolete-inert-flagging
+      ruling (below): atk/ezprint, atk/preview, atk/toez, atk/datacat,
+      atk/launchapp, atk/createinset/null, atk/music, atk/prefed —
+      all inert (MK_BASIC_UTILS/MK_AUTHORING/MK_AUX_UTILS off). No
+      flagging needed ever; runbook census happens if/when their
+      MK_* macros are turned on.
+- [ ] **Batch 8** (recensused 2026-07-10, live subset):
+      atk/syntax/parse (2/13), atk/syntax/tlex (1/7),
+      atk/syntax/sym (2/4) — all three confirmed live (gate log
+      descends into them). atk/ness/objects (7/31) and atk/ness/type
+      (1/2) confirmed inert (bison blocker, roadmap Insets to
+      Repair → ness) — dropped from this batch per the
+      obsolete-inert-flagging ruling below. Sonnet-delegable.
 - [x] **Batch 9**: atk/examples/ex1–ex19, rdemo/hide (7/9),
       rdemo/rdemosh (1/0), overhead/class/testing (2/0). Done
       2026-07-10, live subset only: pre-flag census found all 19
@@ -142,26 +145,66 @@ compile-unverified by the gate).
       install/dependInstall path, matching the batch's own
       "gate is the whole verification" guidance. Checkin:
       rollout-only (no bug-fix commit needed) — see roadmap.md.
-- [ ] **Batch 9b**: the 21 directories deferred from Batch 9 —
-      atk/examples/ex1–ex19, rdemo/hide, rdemo/rdemosh. Revisit if
-      `MK_EXAMPLES` is ever turned on (rdemo would additionally need
+- [x] **Batch 9b** — closed 2026-07-10 by the obsolete-inert-flagging
+      ruling (below): atk/examples/ex1–ex19, rdemo/hide,
+      rdemo/rdemosh. No flagging needed ever; runbook census happens
+      if `MK_EXAMPLES` is turned on (rdemo would additionally need
       wiring into `src/Imakefile`'s `SUBDIRS` and a `config.csh` run
       to generate `config.h` — it has never been part of this
-      checkout's build at all); otherwise, census + Imakefile-flag-only
-      (controllers/wm precedent, no build to verify against) is the
-      fallback if this needs to be closed out without enabling the
-      macros.
-- [ ] **Batch 10**: contrib/zip/lib (21/24),
-      contrib/zip/utility (6/6).
-- [ ] **Batch 11**: contrib remainder — mit/{neos,annot,util},
-      atkbook/* (18 dirs), champ, time, tm,
-      srctext/{html,ptext,ltext}, gestures/gtext, calc, bdffont,
-      alink, demos/circlepi, wpedit. Check build membership per
-      directory FIRST (mit/util is built; most atkbook is not);
-      split into two sessions if the built subset is heavy.
+      checkout's build at all).
+- [ ] ~~**Batch 10**: contrib/zip/lib, contrib/zip/utility.~~
+      **OBSOLETE (2026-07-10 census):** zip is entirely inert —
+      `contrib/Imakefile` gates it on `MK_ZIP`, which nothing
+      defines; it has never been in this checkout's build (this is
+      the root cause of the runtime "zip unsupported" message). The
+      batch-1 edits to `ltv.c`/`schedv.c` remain compile-unverified
+      — no gate has ever compiled them, contrary to this batch's
+      original prompt. Superseded by roadmap → Insets to Repair →
+      zip: enabling `MK_ZIP` + first build + runbook census is one
+      task there, and after point 11 no Imakefile flag is needed.
+- [ ] **Batch 11** (recensused 2026-07-10 from the gate log; the
+      old "mit/util … CONTRIB_ENV off" note was a mis-census —
+      CONTRIB_ENV is ON and contrib builds): live subset is exactly
+      8 directories — contrib/mit/annot, contrib/mit/util,
+      contrib/srctext/{html,ptext,ltext}, contrib/time,
+      contrib/wpedit, contrib/demos/circlepi. Note
+      srctext/html's htmlview.c already had its DisplayString
+      transposition fixed 2026-07-09; expect similar 1990s-era drift
+      density here. Inert remainder (atkbook ×18, mit/neos, calc,
+      champ, gestures/gtext, tm, bdffont, alink) is dropped per the
+      ruling below. Beware stale Makefiles: atkbook/tm/bdffont have
+      generated Makefiles left over from before they were
+      conditionalized out — liveness comes from the gate log, not
+      Makefile presence. Sonnet-delegable.
+
+**Inert flagging is obsolete (ruled 2026-07-10):** once roadmap
+point 11 flips the classpp default and deletes the per-directory
+flags, no Imakefile flag is ever needed again — any inert subtree
+enabled later (zip, ness, examples, ezprint, ...) gets typed casts
+automatically, and the runbook census/fix work happens at enable
+time as part of turning the gate on. Batches 7b and 9b and the
+inert parts of 8/10/11 are closed on that basis; their directory
+lists stay recorded in their entries above for whoever enables the
+gates. M1's finish line is therefore: batch 8 (live) → batch 11
+(live) → point 11.
 
 Then roadmap point 11 (classpp default flip + delete per-directory
-flags) as its own final session.
+flags + full gate + ez/help/messages regression battery) as its own
+final session — top-level, not delegable (touches
+overhead/class/pp, a runbook hard-stop area). **Point 11 closes M1.**
+
+## Delegation guide (2026-07-10)
+
+- Batches 8 and 11 (live subsets): Sonnet-class sessions using the
+  preamble + per-batch prompts below. All fallout patterns they can
+  hit are documented in the runbook taxonomy; hard stops go to the
+  user as usual.
+- Static censuses inside a batch (pair-macro sweep, call-site
+  classification for a rock retype): Haiku-class, given exact
+  file:line + expected text + skip-and-report-on-mismatch, per the
+  runbook's methodology note.
+- Point 11 and any `.ch`-vs-impl disagreement rulings: top-level
+  (operator) only.
 
 ## Shared prompt preamble (paste first, verbatim, for every batch)
 
@@ -249,13 +292,17 @@ flags) as its own final session.
 > pattern as raster-pi). prefed is inert (MK_PREFS off). Runtime:
 > ez + help launch, print-to-file battery diff.
 
-**Batch 8** (syntax/parse, syntax/tlex, syntax/sym, ness/objects, ness/type):
+**Batch 8** (syntax/parse, syntax/tlex, syntax/sym — live subset only):
 
-> ness is not in the default build (bison extension blocker,
-> roadmap) — flags there are inert but celv's only callers live in
-> ness/objects (nevent.c already edited in batch 1, unverified);
-> state that explicitly in the report. syntax/* is consumed by
-> srctext — gate covers it; runtime rides an ez srctext document.
+> ness/{objects,type} are OUT of this batch (inert, bison blocker;
+> see the obsolete-inert-flagging ruling) — note in the report that
+> celv's only callers live in ness/objects and batch 1's nevent.c
+> edit stays compile-unverified until ness is enabled. syntax/* is
+> consumed by srctext — the gate covers consumers. Runtime: no
+> srctext document exists in the archives (batch 6 finding); open a
+> SCRATCH COPY of a small `.c` file in ez (filetype maps `.c` to
+> ctext, which drives syntax parse/tlex/sym) and confirm syntax
+> coloring and indentation — never point ez at a file under src/.
 
 **Batch 9** (examples ex1–ex19, rdemo, overhead/class/testing):
 
@@ -265,20 +312,25 @@ flags) as its own final session.
 > optional (ask the user whether to run one example app as a
 > smoke test).
 
-**Batch 10** (contrib/zip/lib, contrib/zip/utility):
+**Batch 10** — OBSOLETE, do not run (see batch list): zip has never
+been in the build (`MK_ZIP` undefined), so there is nothing to flag
+or gate. The old claim that "the gate re-verifies" batch 1's
+ltv.c/schedv.c edits was wrong — they have never been compiled.
+Superseded by roadmap → Insets to Repair → zip (enable `MK_ZIP` +
+first build + runbook census as one task).
 
-> zip inset currently reports "not supported" at runtime (roadmap) —
-> the flag still types its .ih for consumers. ltv.c and schedv.c
-> were already edited in batch 1 (suite pair expansion + Create
-> anchor); the gate re-verifies them. Runtime check: whatever zip
-> fixture the user designates, else gate-only with user sign-off.
+**Batch 11** (contrib live subset: mit/annot, mit/util,
+srctext/{html,ptext,ltext}, time, wpedit, demos/circlepi):
 
-**Batch 11** (contrib remainder):
-
-> FIRST determine per-directory build membership (does the directory
-> have a generated Makefile / does the gate descend into it?). Flag
-> everything for consistency; report the built/inert split. atkbook
-> is a textbook's example code — expect crude .ch files and a high
-> typeless-declaration rate. popts.c (mit/util) was already edited
-> in batch 1. Gate-only verification plus one user-chosen app if any
-> of these are apps the user cares about.
+> Membership is already censused (2026-07-10, from the gate log) —
+> flag ONLY the 8 live directories listed; the inert remainder
+> (atkbook etc.) is closed by the obsolete-inert-flagging ruling, do
+> not flag it. popts.c (mit/util) was edited in batch 1 and has been
+> compiling in every gate since — already verified. Runtime/CLI
+> checks: `ez2ascii`/`ez2ps` (mit/util) are CLI — capture a
+> before/after byte-diff battery over 2-3 ia-archive documents
+> BEFORE flagging (raster-pi baseline pattern); htmlview rides an
+> HTML file opened in ez (its DisplayString fix of 2026-07-09 gives
+> a visible status-message check); time/wpedit/annot/circlepi are
+> user-driven GUI checks — ask the user which they care to exercise,
+> gate-only with sign-off for the rest.

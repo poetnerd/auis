@@ -225,6 +225,18 @@ ONLY. Never edit a `.c` to match a `.ch`.
 
 ## Methodology notes (point 9, large directories)
 
+- **Liveness check (added 2026-07-10):** a directory is in the
+  active tree iff the gate log contains
+  `building (dependInstall) (.../src/<dir>)` — grep
+  `~/src/AUIS/andrew-6.4/dependInstall.log` after any full gate.
+  Makefile presence is NOT evidence: stale Makefiles from before a
+  subtree was conditionalized out survive indefinitely (atkbook,
+  tm, bdffont, prefed all have them), and site.h/allsys.h must be
+  read together (site.h overrides — CONTRIB_ENV is ON there while
+  allsys.h shows it commented out; a mis-census of exactly this
+  produced the batch-7 "CONTRIB_ENV off" error). Census every
+  batch's directories against the gate log BEFORE flagging.
+
 - **The gate log under-reports.** A directory's build stops at its
   first failing file, so later files' fallout is invisible until the
   blocker is fixed — expect new errors on each re-gate. For any

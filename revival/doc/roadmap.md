@@ -34,88 +34,6 @@ history behind each completed item.
 - The arrow keys don't work yet
 - We don't have a "Meta" key active yet
 
-### Fonts:
-
-- Integral symbol missing in eq insets (observed 2026-07-08 in
-  `Sherman.Alloc`, pre-existing — not a -pi regression). Suspects:
-  symba PCF generation, or the `xset fp+` font-path setup. Other
-  symbol glyphs render fine.
-
-### Raster converters:
-
-- `convertraster intype=RF` hangs reading back the `.ras` file the
-  same binary just wrote (observed 2026-07-09, logged *before* the
-  atk/raster/lib -pi rollout — pre-existing, not a regression).
-  Writer output also looks LP64-suspicious: header fields appear
-  8 bytes wide. Suspect `oldrf.c` raw struct I/O. Other codecs fine:
-  raster identity rewrite, PostScript, MacPaint, Xbitmap write and
-  Xbitmap→raster round-trip (byte-identical to identity output) all
-  pass; baseline captured in `~/src/AUIS/test-baselines/raster-pi/`.
-
-### bush crashes at startup (bush__InitTree overlapping strcpy):
-
-- First-ever launch attempt (2026-07-09, during point-10 batch-1
-  runtime checks — bush was previously untested; not a -pi
-  regression: the crash is in InitTree string handling our diff
-  never touched). `EXC_BREAKPOINT` in `__strcpy_chk` →
-  `__chk_fail_overlap`, called from `bush__InitTree`+456 ←
-  `bush__Create` ← `bushapp__Start`: an overlapping src/dst
-  `strcpy`, fatal under macOS fortify. Likely in-place path
-  surgery (`strcpy(p, p+n)` idiom); needs `memmove` or a temp.
-  Debug as its own task. Note the batch-1 suite anchor fix is a
-  prerequisite bush needs anyway — before it, every control-panel
-  handler got truncated pointers on arm64.
-
-### ~~chart runtime coverage~~ — verified:
-
-- chart app launched and runtime-verified interactively (2026-07-10,
-  point-10 batch 5): startup, creating a chart, switching between
-  chart formats, and setting labels via the palette all worked —
-  exercises the `SetChartAttribute`/`SetItemAttribute` sites
-  rewritten in that batch.
-
-### org crashes loading a file (Read_Body overlapping strcpy):
-
-- First-ever test of org loading a document (2026-07-10, during
-  point-10 batch-5 runtime checks — `example1.org` via the org app;
-  not a -pi regression: org.c was never touched in that batch, and
-  the only org.ch edit, typing `NodeName`, has zero callers tree-wide).
-  `EXC_BREAKPOINT` in `__strcpy_chk` → `__chk_fail_overlap`, from
-  `org__Read` (statically-inlined `Read_Body`) ← `bufferlist__GetBufferOnFile`
-  ← `frame_VisitNamedFile`. Same bug class as bush's InitTree crash
-  above: `strcpy(fName, tmpnam(seed))` where `seed` is pre-filled
-  via `sprintf` — a `tmpnam()` misuse (the buffer-argument form just
-  overwrites `seed`, it isn't a naming template the way `tempnam()`'s
-  `pfx` is), fatal under macOS's fortified libc. Debug as its own task.
-
-### Sherman.Alloc complex layout has excess whitespace:
-
-- Noticed 2026-07-10 during point-10 batch-5 runtime checks: the
-  complex layout inset near the end of `Sherman.Alloc` renders with
-  much more whitespace margin around its contents than expected.
-  Presumed pre-existing, not a -pi regression — zero files in
-  atk/layout were touched in that batch (census found no pair
-  macros, rocks, or typeless declarations; the gate was zero-fallout,
-  meaning classpp needed no interface changes at all). First close
-  look at this inset's rendering in the revival; needs its own
-  investigation.
-
-### typescript crashes on launch (Create doesn't check New() for NULL):
-
-- First-ever launch of the `typescript` app (2026-07-10, point-10
-  batch-6 runtime checks; not a -pi regression: atk/typescript was
-  zero-fallout, no `.ch`/`.c` file in the directory was touched).
-  Prints `Can't connect subchannel` (from `GetPtyandName` failing —
-  suspect PTY allocation doesn't work the way this code expects
-  under the current terminal/sandbox), then `EXC_BAD_ACCESS` inside
-  `typescript__Create` at the `typescript_SetDataObject(self, ...)`
-  call: `self = typescript_New()` came back NULL because
-  `InitializeObject` returned FALSE (the pty failure above), and
-  `Create` never checks for that before dispatching through `self`.
-  Two bugs really — the underlying PTY/subchannel failure, and the
-  missing NULL check that turns any such failure into a crash
-  instead of a clean error return. Debug as its own task.
-
 ### filetype.c DeleteEntry:
 
 - `filetype__DeleteEntry` (atk/basics/common/filetype.c:216,218,
@@ -128,17 +46,111 @@ history behind each completed item.
   default mapping when the extension is NOT `"*"`). Compiler flags
   it via -Wincompatible-pointer-types.
 
-### ~~htmlview DisplayString transposition~~ — fixed:
+---
 
-- `contrib/srctext/html/htmlview.c:400,410,816` (observed 2026-07-09
-  during the basics/common -pi rollout; pre-existing live bug, not a
-  regression): three calls passed `message_DisplayString(self,
-  "string", 0)` — priority and string transposed, so these messages
-  had never displayed. Ruled same day: fixed the callers (separate
-  commit from the rollout). Those HTML-editing status messages now
-  display for the first time.
+## Applications to Repair
 
-### Input focus:
+Applications that currently crash instead of running. All are
+pre-existing failures surfaced by first-ever runtime tests during the
+M1 rollout — none are `-pi` regressions. Each needs its own dedicated
+debugging session. The two overlapping-`strcpy` crashes (bush, org)
+are the same bug class and likely the same fix pattern
+(`memmove`/temp buffer, or `tempnam()` for the org case) — a good
+paired task, delegable once the first one's fix is reviewed.
+
+### bush — crashes at startup (bush__InitTree overlapping strcpy)
+
+- First-ever launch attempt (2026-07-09, during point-10 batch-1
+  runtime checks — bush was previously untested; not a -pi
+  regression: the crash is in InitTree string handling our diff
+  never touched). `EXC_BREAKPOINT` in `__strcpy_chk` →
+  `__chk_fail_overlap`, called from `bush__InitTree`+456 ←
+  `bush__Create` ← `bushapp__Start`: an overlapping src/dst
+  `strcpy`, fatal under macOS fortify. Likely in-place path
+  surgery (`strcpy(p, p+n)` idiom); needs `memmove` or a temp.
+  Note the batch-1 suite anchor fix is a prerequisite bush needs
+  anyway — before it, every control-panel handler got truncated
+  pointers on arm64.
+
+### org — crashes loading a file (Read_Body overlapping strcpy)
+
+- First-ever test of org loading a document (2026-07-10, during
+  point-10 batch-5 runtime checks — `example1.org` via the org app;
+  not a -pi regression: org.c was never touched in that batch, and
+  the only org.ch edit, typing `NodeName`, has zero callers tree-wide).
+  `EXC_BREAKPOINT` in `__strcpy_chk` → `__chk_fail_overlap`, from
+  `org__Read` (statically-inlined `Read_Body`) ← `bufferlist__GetBufferOnFile`
+  ← `frame_VisitNamedFile`. Same bug class as bush's InitTree crash
+  above: `strcpy(fName, tmpnam(seed))` where `seed` is pre-filled
+  via `sprintf` — a `tmpnam()` misuse (the buffer-argument form just
+  overwrites `seed`, it isn't a naming template the way `tempnam()`'s
+  `pfx` is), fatal under macOS's fortified libc.
+
+### typescript — crashes on launch (PTY failure + missing NULL check)
+
+- First-ever launch of the `typescript` app (2026-07-10, point-10
+  batch-6 runtime checks; not a -pi regression: atk/typescript was
+  zero-fallout, no `.ch`/`.c` file in the directory was touched).
+  Prints `Can't connect subchannel` (from `GetPtyandName` failing —
+  suspect PTY allocation doesn't work the way this code expects
+  under the current terminal/sandbox), then `EXC_BAD_ACCESS` inside
+  `typescript__Create` at the `typescript_SetDataObject(self, ...)`
+  call: `self = typescript_New()` came back NULL because
+  `InitializeObject` returned FALSE (the pty failure above), and
+  `Create` never checks for that before dispatching through `self`.
+  Two bugs really — the underlying PTY/subchannel failure (macOS
+  PTY compat, not LP64), and the missing NULL check that turns any
+  such failure into a crash instead of a clean error return.
+
+---
+
+## Insets to Repair
+
+Insets with known breakage, or not buildable/enabled at all. Each is
+its own task; none block M1.
+
+### zip — not built at all (`MK_ZIP` never defined)
+
+- Root cause of the long-standing "zip unsupported" runtime message,
+  found 2026-07-10 during the active-tree census: `contrib/Imakefile`
+  gates `zip` behind `#ifdef MK_ZIP`, and nothing defines it —
+  `contrib/zip/{lib,utility}` have never been part of this checkout's
+  build, so the inset loader falls back to the unsupported
+  placeholder. Repair path: `#define MK_ZIP` in `config/site.h`,
+  regenerate Makefiles down contrib, build both directories and fix
+  the first-compile fallout (expect the usual K&R/LP64 crop), then
+  run the M1 runbook census over their ~30 `.ch` files (absorbs old
+  point-10 batch 10; after rollout point 11 the classpp default is
+  already typed, so no Imakefile flag is needed). Note:
+  `contrib/zip/lib/{ltv.c,schedv.c}` were edited in point-10 batch 1
+  (suite pair expansion) and are still compile-unverified — the
+  first build verifies them. Test fixture: `Sherman.Alloc` contains
+  a zip inset (currently renders as "not supported").
+
+### ness — bison grammar extension blocker
+
+- `atk/ness/objects/ness.gra` uses a multi-character string token
+  extension specific to the Andrew bison fork. Ness scripting is
+  unavailable until this is resolved. Options: implement the
+  extension in a bison `%skeleton` or rewrite the affected grammar
+  rules. `atk/ness/{objects,type}` are inert (not in the default
+  build). Related loose end: `celv`'s only callers live in
+  `ness/objects`, and `nevent.c` was edited in point-10 batch 1 —
+  compile-unverified until ness builds.
+
+### layout — excess whitespace in complex layout (Sherman.Alloc)
+
+- Noticed 2026-07-10 during point-10 batch-5 runtime checks: the
+  complex layout inset near the end of `Sherman.Alloc` renders with
+  much more whitespace margin around its contents than expected.
+  Presumed pre-existing, not a -pi regression — zero files in
+  atk/layout were touched in that batch (census found no pair
+  macros, rocks, or typeless declarations; the gate was zero-fallout,
+  meaning classpp needed no interface changes at all). First close
+  look at this inset's rendering in the revival; needs its own
+  investigation.
+
+### figure — menu commands ignored until inset regains input focus
 
 - Figure inset menus post but commands are ignored until the inset
   regains input focus (observed 2026-07-09 in `95Summer.ez`;
@@ -147,6 +159,26 @@ history behind each completed item.
   object off screen and back — the inset then takes focus and obeys
   commands. Research: menu posting appears not to route/claim input
   focus for the posting view.
+
+### eq — integral symbol missing (suspect font pipeline, not eq)
+
+- Integral symbol missing in eq insets (observed 2026-07-08 in
+  `Sherman.Alloc`, pre-existing — not a -pi regression). Suspects:
+  symba PCF generation, or the `xset fp+` font-path setup. Other
+  symbol glyphs render fine.
+
+### raster — convertraster RF read-back hang
+
+- `convertraster intype=RF` hangs reading back the `.ras` file the
+  same binary just wrote (observed 2026-07-09, logged *before* the
+  atk/raster/lib -pi rollout — pre-existing, not a regression).
+  Writer output also looks LP64-suspicious: header fields appear
+  8 bytes wide. Suspect `oldrf.c` raw struct I/O. Other codecs fine:
+  raster identity rewrite, PostScript, MacPaint, Xbitmap write and
+  Xbitmap→raster round-trip (byte-identical to identity output) all
+  pass; baseline captured in `~/src/AUIS/test-baselines/raster-pi/`.
+  The raster inset itself is proven working; this is the converter
+  CLI only.
 
 ---
 
@@ -192,6 +224,8 @@ history behind each completed item.
 - Andy symbol fonts (`symba*.pcf`) built and installed in `build/X11fonts/`
 - `overhead/malloc/malloc.ci` `addarena` arena-size pointer-arithmetic bug fixed (`patches/contrib/malloc.ci.auis6.3.diff`, 2026-07-04) — source-correctness only, see Historical patches audit below for why it has no runtime effect here
 - `messages` application: **running** (2026-07-05) — local mail store (`Private BB`) visible in folder panel; three-pane layout, menus, and help text all rendering; AMS local backend + atkams/ interface + ATK insets all working
+- `chart` application: launched and runtime-verified interactively (2026-07-10, point-10 batch 5) — startup, chart creation, format switching, palette labels; exercises the `SetChartAttribute`/`SetItemAttribute` rewrite
+- `htmlview` DisplayString transposition fixed (2026-07-09) — three `message_DisplayString` calls had priority/string transposed since the 1990s; those HTML-editing status messages display for the first time
 
 **LP64 bug classes identified and swept:**
 - Variant 1: Missing prototypes / pointer return truncation (23 sites)
@@ -447,7 +481,8 @@ Ordered by dependency depth; each step proves a layer the next relies on.
 — these need synthetic test files or targeted app launches.
 `srctext` is now [PROVEN].
 
-**Known non-starters:** `ness` (bison extension), `zip` (unsupported),
+**Known non-starters:** `ness` (bison extension) and `zip` (never
+built — `MK_ZIP` off) — both detailed under **Insets to Repair**;
 `clock`/`calc`/`timeoday` (contrib, lower priority).
 
 ---
@@ -727,9 +762,10 @@ Only remaining X core font path dependency is Andy symbol and cursor fonts.
 Remove resolved known-issues entries as each fix lands.
 
 ### Not current focus
-- `typescript` "Can't connect subchannel" crash — macOS PTY compat issue, not LP64; defer
-- `bush` shell application — defer until after messages
-- `org`, `chart`, `launchapp` — defer
+- `typescript`, `bush`, `org` crashes — details consolidated under
+  **Applications to Repair**; defer until after messages + M1 close
+- `chart` — runtime-verified 2026-07-10 (see Completed); `launchapp`
+  — inert (`MK_BASIC_UTILS` off), defer
 
 ---
 
@@ -1061,7 +1097,16 @@ zero-consumer leaves, then the core, largest last.
          `contrib/mit/util` (batch 11, gated by `CONTRIB_ENV`, also
          off) plus a csh wrapper — not built from `atk/ezprint` at all,
          so the planned CLI byte-diff battery had no live target and
-         was skipped along with the rest of the deferred 8. Ran the
+         was skipped along with the rest of the deferred 8.
+         [Correction, 2026-07-10 active-tree census: `CONTRIB_ENV`
+         is ON in `config/site.h` (since 2026-07-05) and
+         `contrib/mit/util` IS in the default build — the gate log
+         shows `building (dependInstall)` descents into it, and
+         `ez2ascii`/`ez2ps` are rebuilt live by every gate, not
+         leftovers. The "not built from atk/ezprint" half of the
+         finding stands; the "CONTRIB_ENV off" half was a
+         mis-census — see the Active tree section below for the
+         reliable liveness check.] Ran the
          full runbook on the 4 live directories instead: `atk/ez`,
          `atk/utils`, `atk/help/src`, `atk/extensions` (all
          unconditionally in `BASICS`). Gate green first pass. Six
@@ -1127,7 +1172,22 @@ zero-consumer leaves, then the core, largest last.
          `while(1);`, not part of the normal install path — matches
          the batch's own "gate is the whole verification" guidance.
          Checkin: rollout-only, no bug-fix commit needed.
-       the per-directory `-pi` flags (single mechanical commit)
+       - **Remaining live gap (recensused 2026-07-10):** exactly 11
+         directories — batch 8's live subset
+         `atk/syntax/{parse,tlex,sym}` and batch 11's live subset
+         `contrib/{mit/annot, mit/util, srctext/html, srctext/ptext,
+         srctext/ltext, time, wpedit, demos/circlepi}`. Everything
+         else still unflagged is inert (batches 7b/9b, ness, zip,
+         atkbook, ...) and is NOT part of M1 — see "Active tree"
+         below. Both remaining batches are Sonnet-delegable under
+         the runbook (patterns all documented, no novel rulings
+         expected).
+11. [ ] Default flip: classpp emits typed import casts (`-pi`
+       behavior) by default; delete the per-directory `-pi` flags
+       from all ~40 Imakefiles (single mechanical commit). Full
+       gate + ez/help/messages regression battery. Top-level
+       session — it touches `overhead/class/pp`, a runbook
+       hard-stop area. **This closes M1.**
 12. [ ] Export (`-pe`) is *not* sequenced here — it rides with each
        subtree's M3 conversion, since its blast radius is only the
        implementing directory
@@ -1135,20 +1195,54 @@ zero-consumer leaves, then the core, largest last.
 Steps 2–4 are top-level work (learning the fix patterns); 5–10 are
 increasingly delegable once the patterns are documented.
 
+#### Active tree — census 2026-07-10
+
+M1's scope is the **active tree**: directories the default build
+actually descends into. Liveness ground truth is the gate log —
+`grep '^building (dependInstall)' dependInstall.log` — NOT Makefile
+presence: stale Makefiles from before subtrees were conditionalized
+out survive in `atkbook`, `tm`, `bdffont`, and `prefed`, and a
+mis-census around exactly this fooled the batch-7 session into
+recording `CONTRIB_ENV` as off (it is on, and contrib builds — see
+the correction in batch 7 above).
+
+Census result: **108 directories contain `.ch` files.** 46 are live
+(35 flagged + the 11-directory gap above); 62 are inert (4 carry
+courtesy flags: `basics/wm`, `console/lib`, `console/cmd`,
+`controllers`). The inert 62 break down by gate:
+
+- Off in `allsys.h`: `MK_EXAMPLES` (ex1–ex19); `MK_BASIC_UTILS`/
+  `MK_AUTHORING`/`MK_AUX_UTILS` (ezprint, preview, toez, datacat,
+  launchapp, createinset/null, music, prefed); `WM_ENV`
+  (basics/wm); `MK_CONSOLE` (console/lib, console/cmd)
+- Off in `contrib/Imakefile`: `MK_ZIP` (zip/lib, zip/utility —
+  see Insets to Repair), `MK_CALC`, `MK_CHAMP`, `MK_GESTURES`
+  (gtext), `MK_TM`, `MK_BDFFONT`; `alink` is SunOS-only; `atkbook`
+  (18 dirs), `mit/neos`, `pobbconf`, `snap2` aren't in `SUBDIRS`
+  at all
+- Never wired into `src/Imakefile`: `rdemo/{hide,rdemosh}`
+
+**Consequence of point 11:** once the classpp default flips, inert
+directories need no Imakefile flag ever — any inert subtree enabled
+later gets typed casts automatically, and the runbook's census/fix
+work simply happens at enable time as part of turning it on.
+Batches 7b, 9b, 10, and 11's inert remainder are therefore obsolete
+as flagging exercises; each survives only as a "run the runbook
+census when enabling" note attached to its gate. **M1 ends at point
+11 with typed dispatch across the whole active tree.** Full ANSI C —
+prototypes everywhere (M2), K&R definition conversion (M3), global
+`-Werror` (M4) — continues from that foundation.
+
 ### ~~Integration test: `Sherman.Alloc`~~ — proven
 All insets in `Sherman.Alloc` render correctly (fad, cel, arbiter, eq, table);
 zip unsupported as expected. Multi-inset compound documents confirmed working.
 
-### zip inset
-Currently reports "not supported." Investigate whether the zip inset
-(compressed compound document container) is buildable from the 6.3.1
-source and what it would take to enable.
+### ~~zip inset~~ — root-caused, moved
+Moved to **Insets to Repair → zip**: it isn't broken, it was never
+built (`MK_ZIP` never defined anywhere). Repair path documented there.
 
-### ness.gra bison extension
-`atk/ness/objects/ness.gra` uses a multi-character string token extension
-specific to the Andrew bison fork. Ness scripting is unavailable until
-this is resolved. Options: implement the extension in a bison `%skeleton`
-or rewrite the affected grammar rules.
+### ~~ness.gra bison extension~~ — moved
+Moved to **Insets to Repair → ness** (same content).
 
 ### Andy font path automation
 `xset fp+ build/X11fonts && xset fp rehash` is currently a manual step
