@@ -203,7 +203,7 @@ methods:
 classprocedures:
 
 	Create(struct parse_tables *desc, struct lexan *lex,
-		int (*action)(), void *rock, int (*error)())
+		int (*action)(), void *rock, void (*error)())
 			returns struct parse *;
 		/* create a new parse object suitable 
 			for parsing the given lexan stream.

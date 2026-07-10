@@ -55,19 +55,19 @@ methods:
 			long pos, long len);
 		/* sets the source text for the lexeme stream */
 
-	RecentPosition(/* struct tlex *self, */ int index, long *len) returns long;
+	RecentPosition(/* struct tlex *self, */ long index, long *len) returns long;
 		/* for token 'index', set len to length and return position.
 		index = 0 is the most recent token,
 		its predecessors are indexed with negative numbers:
 			-1 -2 ... -tlex_RECENTSIZE+1*/
 
-	RecentIndent(/* struct tlex *self, */	int index)  returns long;
+	RecentIndent(/* struct tlex *self, */	long index)  returns long;
 		/* report the indentation of the 'index'th most recent token,
 		    where index is as for RecentPosition .
 		    A token preceded by anything other than white space
 		    is reported as having indentation 999. */
 
-	Repeat(/* struct tlex *self, */   int index);
+	Repeat(/* struct tlex *self, */   long index);
 		/* backup and repeat tokens starting with the index'th
 		    most recent token, where index is as for RecentPosition */
 
@@ -206,8 +206,8 @@ classprocedures:
 		The text, pos, and len specify a portion of a text to be processed */
 
 	InitializeClass() returns boolean;
-	InitializeObject(struct parse *self) returns boolean;
-	FinalizeObject(struct parse *self);
+	InitializeObject(struct tlex *self) returns boolean;
+	FinalizeObject(struct tlex *self);
 
 data:
 	struct tlex_tables *lextab;

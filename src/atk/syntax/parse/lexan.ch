@@ -76,8 +76,8 @@ macromethods:
 classprocedures:
 
 	InitializeClass() returns boolean;
-	InitializeObject(struct parse *self) returns boolean;
-	FinalizeObject(struct parse *self);
+	InitializeObject(struct lexan *self) returns boolean;
+	FinalizeObject(struct lexan *self);
 
 	ParseNumber(char *buf, long *plen, long *intval, double *dvlval)
 			returns int;
