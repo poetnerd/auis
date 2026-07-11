@@ -101,16 +101,16 @@ Boolean IsMyMail;
 		break;
 	    }
 	    free(DateHead); /* And drop through */
-	case DATETYPE_FROMFILE: 
+	case DATETYPE_FROMFILE:
 	    now = Msg->RawFileDate;
 	    tmbuf = localtime (&now);
-	    sprintf(Buf, "%2d-%s-%02d\t", tmbuf->tm_mday, months[tmbuf->tm_mon], tmbuf->tm_year);
+	    sprintf(Buf, "%2d-%s-%02d\t", tmbuf->tm_mday, months[tmbuf->tm_mon], tmbuf->tm_year % 100);
 	    break;
 	case DATETYPE_CURRENT:
 	default:
 	    now = time(0);
 	    tmbuf = localtime (&now);
-	    sprintf(Buf, "%2d-%s-%02d\t", tmbuf->tm_mday, months[tmbuf->tm_mon], tmbuf->tm_year);
+	    sprintf(Buf, "%2d-%s-%02d\t", tmbuf->tm_mday, months[tmbuf->tm_mon], tmbuf->tm_year % 100);
 	    break;
     }
     subjlim = (Template->basictype == BASICTEMPLATE_NOFROM) ? BIGCAPTPASTDATE : BIGSUBJECT;

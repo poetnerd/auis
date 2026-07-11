@@ -50,7 +50,7 @@ char *bigdate, *littledate;
 	return(-1);
     } else {
 	sprintf(littledate, "%2d-%s-%02d", TmBuf.tm_mday,
-	    months[TmBuf.tm_mon], TmBuf.tm_year);
+	    months[TmBuf.tm_mon], TmBuf.tm_year % 100);
 	return(0);
     }
 }
