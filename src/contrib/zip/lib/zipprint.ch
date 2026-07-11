@@ -61,41 +61,41 @@ overrides:
 methods:
 
   Set_Debug( boolean state );
-  Print_Figure( figure, pane )					    returns long;
-  Print_Image( image, pane )					    returns long;
-  Print_Stream( stream, pane )					    returns long;
-  Print_Pane( pane )						    returns long;
-  Set_Print_Resolution( resolution )				    returns long;
-  Set_Print_Dimensions( width, height )				    returns long;
-  Set_Print_Coordinates( x_origin, y_origin, width, height )	    returns long;
-  Set_Print_Orientation( orientation )				    returns long;
-  Set_Print_Language( language )				    returns long;
-  Set_Print_Processor( processor )				    returns long;
-  Set_Print_Level( level )					    returns long;
-  Set_Print_File( file )					    returns long;
+  Print_Figure( zip_type_figure figure, zip_type_pane pane )					    returns long;
+  Print_Image( zip_type_image image, zip_type_pane pane )					    returns long;
+  Print_Stream( zip_type_stream stream, zip_type_pane pane )					    returns long;
+  Print_Pane( zip_type_pane pane )						    returns long;
+  Set_Print_Resolution( long resolution )				    returns long;
+  Set_Print_Dimensions( float width, float height )				    returns long;
+  Set_Print_Coordinates( zip_type_percent x_origin, zip_type_percent y_origin, zip_type_percent width, zip_type_percent height )	    returns long;
+  Set_Print_Orientation( long orientation )				    returns long;
+  Set_Print_Language( char *language )				    returns long;
+  Set_Print_Processor( char *processor )				    returns long;
+  Set_Print_Level( long level )					    returns long;
+  Set_Print_File( FILE *file )					    returns long;
 
-  Set_Data_Object( data_object );
-  Set_View_Object( view_object );
-  Set_Line_Width( line_width )					    returns long;
-  Ensure_Line_Attributes( figure )				    returns long;
-  Set_Shade( line_width )					    returns long;
-  Move_To( x, y )						    returns long;
-  Draw_To( x, y )						    returns long;
-  Draw_Multi_Line( count, x, y, points )			    returns long;
-  Draw_String( x, y, string, mode )				    returns long;
-  Draw_Line( x1, y1, x2, y2 )					    returns long;
-  Draw_Rectangle( x1, y1, x2, y2 )				    returns long;
-  Draw_Round_Rectangle( x1, y1, x2, y2, xr, yr )		    returns long;
-  Draw_Circle( x, y, radius )					    returns long;
-  Draw_Ellipse( x, y, x_radius, y_radius )			    returns long;
-  Draw_Arc( x, y, x_radius,y_radius, x_start,y_start, x_end,y_end ) returns long;
-  Arc_To( x_center, y_center, x_radius,y_radius, x_start,y_start, x_end,y_end ) returns long;
-  Fill_Trapezoid( x1, y1, x2, y2, l1, l2, pattern )		    returns long;
+  Set_Data_Object( struct zip *data_object );
+  Set_View_Object( struct zipview *view_object );
+  Set_Line_Width( long line_width )					    returns long;
+  Ensure_Line_Attributes( zip_type_figure figure )				    returns long;
+  Set_Shade( long line_width )					    returns long;
+  Move_To( int x, int y )						    returns long;
+  Draw_To( long x, long y )						    returns long;
+  Draw_Multi_Line( int count, int x, int y, zip_type_point_pairs points )			    returns long;
+  Draw_String( int x, int y, char *string, long mode )				    returns long;
+  Draw_Line( int x1, int y1, int x2, int y2 )					    returns long;
+  Draw_Rectangle( long x1, long y1, long x2, long y2 )				    returns long;
+  Draw_Round_Rectangle( long x1, long y1, long x2, long y2, long xr, long yr )		    returns long;
+  Draw_Circle( int x, int y, int radius )					    returns long;
+  Draw_Ellipse( int x, int y, int x_radius, int y_radius )			    returns long;
+  Draw_Arc( long x, long y, long x_radius, long y_radius, long x_start, long y_start, long x_end, long y_end ) returns long;
+  Arc_To( int x_center, int y_center, int x_radius, int y_radius, int x_start, int y_start, int x_end, int y_end ) returns long;
+  Fill_Trapezoid( int x1, int y1, int x2, int y2, int l1, int l2, char pattern )		    returns long;
 
   Close_Path()							    returns long;
-  Change_Font( font_index )					    returns long;
+  Change_Font( struct fontdesc *font_index )					    returns long;
   Restore_Font()						    returns long;
-  Try_Printing_Exception_Handler( printing )			    returns long;
+  Try_Printing_Exception_Handler( zip_type_printing printing )			    returns long;
 
 macromethods:
 

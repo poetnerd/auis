@@ -646,6 +646,7 @@ Create_Font_Icon( self, containing_pane, pane, palette,
   register char				 *source;
   register char				  cursor;
   register int				  x, y, width, height;
+  register char				 *name;
   {
   register int				  status = zip_ok;
   zip_type_stream			  stream;
@@ -1103,6 +1104,7 @@ Create_Palette_Surround( self, pane, palette, name,
   register struct zipedit		 *self;
   register zip_type_pane		  pane;
   register zip_type_pane		 *palette;
+  register char				 *name;
   register int				  x_origin, y_origin, width, height;
   {
   register int				  status = zip_ok;

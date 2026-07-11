@@ -330,6 +330,7 @@ long
 zip__Set_Figure_Text( self, figure, text )
   register struct zip		     *self;
   register zip_type_figure	      figure;
+  register char			     *text;
   {
   register int			      status = zip_ok;
 

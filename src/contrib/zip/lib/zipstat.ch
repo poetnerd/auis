@@ -64,14 +64,14 @@ methods:
   Clear_Message()						    returns long;
   Issue_Status_Message( char *msg )				    returns long;
   Acknowledge_Status_Message( char *msg )			    returns long;
-  Issue_Figure_Status_Message( figure )				    returns long;
-  Acknowledge_Figure_Status_Message( figure )			    returns long;
-  Issue_Image_Status_Message( image )				    returns long;
-  Acknowledge_Image_Status_Message( image )			    returns long;
-  Issue_Stream_Status_Message( stream )				    returns long;
-  Acknowledge_Stream_Status_Message( stream )			    returns long;
-  Issue_Pane_Status_Message( pane )				    returns long;
-  Acknowledge_Pane_Status_Message( pane )			    returns long;
+  Issue_Figure_Status_Message( zip_type_figure figure )				    returns long;
+  Acknowledge_Figure_Status_Message( zip_type_figure figure )			    returns long;
+  Issue_Image_Status_Message( zip_type_image image )				    returns long;
+  Acknowledge_Image_Status_Message( zip_type_image image )			    returns long;
+  Issue_Stream_Status_Message( zip_type_stream stream )				    returns long;
+  Acknowledge_Stream_Status_Message( zip_type_stream stream )			    returns long;
+  Issue_Pane_Status_Message( zip_type_pane pane )				    returns long;
+  Acknowledge_Pane_Status_Message( zip_type_pane pane )			    returns long;
 macromethods:
 
 classprocedures:

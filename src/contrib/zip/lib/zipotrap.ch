@@ -58,17 +58,17 @@ overrides:
   Object_Icon_Cursor()					returns char;
   Object_Datastream_Code()				returns char;
 
-  Build_Object( pane, action, x, y, clicks, X, Y )	returns long;
-  Draw_Object( object, pane )				returns long;
-  Clear_Object( object, pane )				returns long;
-  Print_Object( object, pane )				returns long;
-  Proximate_Object_Points( object, pane, x, y )		returns long;
-  Highlight_Object_Points( object, pane )		returns long;
-  Normalize_Object_Points( object, pane )		returns long;
-  Expose_Object_Points( object, pane )			returns long;
-  Hide_Object_Points( object, pane )			returns long;
-  Set_Object_Point( object, point, x, y )		returns long;
-  Adjust_Object_Point_Suite( object, x_delta, y_delta )	returns long;
+  Build_Object( zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y )	returns long;
+  Draw_Object( zip_type_figure object, zip_type_pane pane )				returns long;
+  Clear_Object( zip_type_figure object, zip_type_pane pane )				returns long;
+  Print_Object( zip_type_figure object, zip_type_pane pane )				returns long;
+  Proximate_Object_Points( zip_type_figure object, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y )		returns long;
+  Highlight_Object_Points( zip_type_figure object, zip_type_pane pane )		returns long;
+  Normalize_Object_Points( zip_type_figure object, zip_type_pane pane )		returns long;
+  Expose_Object_Points( zip_type_figure object, zip_type_pane pane )			returns long;
+  Hide_Object_Points( zip_type_figure object, zip_type_pane pane )			returns long;
+  Set_Object_Point( zip_type_figure object, long point, zip_type_point x, zip_type_point y )		returns long;
+  Adjust_Object_Point_Suite( zip_type_figure object, zip_type_point x_delta, zip_type_point y_delta )	returns long;
 
   };
 

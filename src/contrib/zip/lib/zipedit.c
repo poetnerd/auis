@@ -1257,7 +1257,7 @@ Pending_Delete( self, pane )
   zipedit_Cancel_Enclosure( self, pane );
   zipview_Draw_Pane( View, pane );
   zipedit_Hide_Selection_Menu( self );
-  zip_NotifyObservers( Data, View );
+  zip_NotifyObservers( Data, (long) View );
   OUT(Pending_Delete);
   }
 

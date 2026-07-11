@@ -71,60 +71,60 @@ methods:
 
   Set_Debug( boolean state );
   Update();
-  Accept_Hit( pane, action, x, y, n )				    returns long;
+  Accept_Hit( zip_type_pane pane, long action, long x, long y, long n )				    returns long;
 
-  Set_Data_Object( data_object )				    returns long;
-  Set_View_Object( view_object )				    returns long;
+  Set_Data_Object( struct zip *data_object )				    returns long;
+  Set_View_Object( struct zipview *view_object )				    returns long;
 
-  Delete_Figure( figure, pane )					    returns long;
-  Undelete_Figure( figure, pane )				    returns long;
+  Delete_Figure( zip_type_figure figure, zip_type_pane pane )					    returns long;
+  Undelete_Figure( zip_type_figure figure, zip_type_pane pane )				    returns long;
 
-  Which_Figure_Point( figure, pane, x, y )			    returns long;
-  Highlight_Figure_Points( figure, pane )			    returns long;
-  Normalize_Figure_Points( figure, pane )			    returns long;
-  Hide_Figure_Points( figure, pane )				    returns long;
-  Expose_Figure_Points( figure, pane )				    returns long;
+  Which_Figure_Point( zip_type_figure figure, zip_type_pane pane, long x, long y )			    returns long;
+  Highlight_Figure_Points( zip_type_figure figure, zip_type_pane pane )			    returns long;
+  Normalize_Figure_Points( zip_type_figure figure, zip_type_pane pane )			    returns long;
+  Hide_Figure_Points( zip_type_figure figure, zip_type_pane pane )				    returns long;
+  Expose_Figure_Points( zip_type_figure figure, zip_type_pane pane )				    returns long;
 
-  Delete_Image( image, pane )					    returns long;
-  Undelete_Image( image, pane )					    returns long;
-  Highlight_Image_Points( image, pane )				    returns long;
-  Normalize_Image_Points( image, pane )				    returns long;
-  Hide_Image_Points( image, pane )				    returns long;
-  Expose_Image_Points( image, pane )				    returns long;
+  Delete_Image( zip_type_image image, zip_type_pane pane )					    returns long;
+  Undelete_Image( zip_type_image image, zip_type_pane pane )					    returns long;
+  Highlight_Image_Points( zip_type_image image, zip_type_pane pane )				    returns long;
+  Normalize_Image_Points( zip_type_image image, zip_type_pane pane )				    returns long;
+  Hide_Image_Points( zip_type_image image, zip_type_pane pane )				    returns long;
+  Expose_Image_Points( zip_type_image image, zip_type_pane pane )				    returns long;
 
-  Set_Pane_Highlight_Icon( pane, icon )   			    returns long;
+  Set_Pane_Highlight_Icon( zip_type_pane pane, char icon )   			    returns long;
 
-  Hide_Pane_Points( pane )					    returns long;
-  Expose_Pane_Points( pane )					    returns long;
-  Hide_Pane_Coordinates( pane )					    returns long;
-  Expose_Pane_Coordinates( pane )				    returns long;
-  Draw_Pane_Coordinates( pane )					    returns long;
-  Hide_Pane_Grid( pane )					    returns long;
-  Expose_Pane_Grid( pane )					    returns long;
-  Draw_Pane_Grid( pane )					    returns long;
-  Halve_Pane_Grid( pane )					    returns long;
-  Double_Pane_Grid( pane )					    returns long;
-  Lighten_Pane( pane, density )					    returns long;
-  Align_Pane( pane )						    returns long;
+  Hide_Pane_Points( zip_type_pane pane )					    returns long;
+  Expose_Pane_Points( zip_type_pane pane )					    returns long;
+  Hide_Pane_Coordinates( zip_type_pane pane )					    returns long;
+  Expose_Pane_Coordinates( zip_type_pane pane )				    returns long;
+  Draw_Pane_Coordinates( zip_type_pane pane )					    returns long;
+  Hide_Pane_Grid( zip_type_pane pane )					    returns long;
+  Expose_Pane_Grid( zip_type_pane pane )					    returns long;
+  Draw_Pane_Grid( zip_type_pane pane )					    returns long;
+  Halve_Pane_Grid( zip_type_pane pane )					    returns long;
+  Double_Pane_Grid( zip_type_pane pane )					    returns long;
+  Lighten_Pane( zip_type_pane pane, char density )					    returns long;
+  Align_Pane( zip_type_pane pane )						    returns long;
 
-  Handle_Editing( pane )					    returns long;
-  Expose_Palettes( pane )					    returns long;
-  Hide_Palettes( pane )						    returns long;
-  Set_Palettes( pane, palette_mode )				    returns long;
-  Redisplay_Panes( pane )					    returns long;
-  Initialize_Editing( pane )					    returns long;
-  Terminate_Editing( pane )					    returns long;
+  Handle_Editing( zip_type_pane pane )					    returns long;
+  Expose_Palettes( zip_type_pane pane )					    returns long;
+  Hide_Palettes( zip_type_pane pane )						    returns long;
+  Set_Palettes( zip_type_pane pane, int palette_mode )				    returns long;
+  Redisplay_Panes( zip_type_pane pane )					    returns long;
+  Initialize_Editing( zip_type_pane pane )					    returns long;
+  Terminate_Editing( zip_type_pane pane )					    returns long;
 
 
   /****  Following Facilities For Sub-class Usage Only  ****/
-  Expose_Point( pane, figure, x, y )				    returns long;
-  Hide_Point( pane, figure, x, y )				    returns long;
-  Highlight_Point( pane, x, y )					    returns long;
-  Normalize_Point( pane, x, y )					    returns long;
-  Highlight_Handles( pane, x1, x2, x3, y1, y2, y3 )		    returns long;
-  Highlight_Handle( pane, x, y )				    returns long;
-  Normalize_Handles( pane, x1, x2, x3, y1, y2, y3 )		    returns long;
-  Normalize_Handle( pane, x, y )				    returns long;
+  Expose_Point( zip_type_pane pane, zip_type_figure figure, zip_type_pixel x, zip_type_pixel y )				    returns long;
+  Hide_Point( zip_type_pane pane, zip_type_figure figure, zip_type_pixel x, zip_type_pixel y )				    returns long;
+  Highlight_Point( zip_type_pane pane, zip_type_pixel x, zip_type_pixel y )					    returns long;
+  Normalize_Point( zip_type_pane pane, zip_type_pixel x, zip_type_pixel y )					    returns long;
+  Highlight_Handles( zip_type_pane pane, zip_type_pixel x1, zip_type_pixel x2, zip_type_pixel x3, zip_type_pixel y1, zip_type_pixel y2, zip_type_pixel y3 )		    returns long;
+  Highlight_Handle( zip_type_pane pane, zip_type_pixel x, zip_type_pixel y )				    returns long;
+  Normalize_Handles( zip_type_pane pane, zip_type_pixel x1, zip_type_pixel x2, zip_type_pixel x3, zip_type_pixel y1, zip_type_pixel y2, zip_type_pixel y3 )		    returns long;
+  Normalize_Handle( zip_type_pane pane, zip_type_pixel x, zip_type_pixel y )				    returns long;
 
 macromethods:
 

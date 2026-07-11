@@ -532,6 +532,7 @@ long
 zip__Set_Image_Text( self, image, text )
   register struct zip		     *self;
   register struct zip_image	     *image;
+  register char			     *text;
   {
   register int			      status = zip_success;
 

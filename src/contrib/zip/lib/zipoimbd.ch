@@ -59,18 +59,18 @@ overrides:
   Object_Icon_Cursor()					returns char;
   Object_Datastream_Code()				returns char;
 
-  Object_Hit( object, action, x, y, clicks )		returns struct view *;
-  Object_Modified( object )				returns long;
+  Object_Hit( zip_type_figure object, enum view_MouseAction action, long x, long y, long clicks )		returns struct view *;
+  Object_Modified( zip_type_figure object )				returns long;
 
-  Build_Object( pane, action, x, y, clicks, X, Y )	returns long;
-  Destroy_Object( object );
-  Show_Object_Properties( pane, figure )		returns long;
-  Read_Object( object )					returns long;
-  Read_Object_Stream( object, file, id )		returns long;
-  Write_Object( object )				returns long;
-  Draw_Object( object, pane )				returns long;
-  Clear_Object( object, pane )				returns long;
-  Print_Object( object, pane )				returns long;
+  Build_Object( zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y )	returns long;
+  Destroy_Object( zip_type_figure object );
+  Show_Object_Properties( zip_type_pane pane, zip_type_figure figure )		returns long;
+  Read_Object( zip_type_figure object )					returns long;
+  Read_Object_Stream( zip_type_figure object, FILE *file, long id )		returns long;
+  Write_Object( zip_type_figure object )				returns long;
+  Draw_Object( zip_type_figure object, zip_type_pane pane )				returns long;
+  Clear_Object( zip_type_figure object, zip_type_pane pane )				returns long;
+  Print_Object( zip_type_figure object, zip_type_pane pane )				returns long;
 
 classprocedures:
   InitializeObject( struct zipoimbed *self )		returns boolean;

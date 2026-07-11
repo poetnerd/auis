@@ -193,9 +193,6 @@ zipprint_Write_Print_Datastream_Header( self )
 					  IW72 = 72*InchWidth, W, H;
   register char				  *cursor;
   char					  *ZIP_postscript_header;
-#ifndef _IBMR2
-  extern char				  *malloc();
-#endif  /* _IBMR2 */
 
   IN(zipprint_Write_Print_Datastream_Header);
   if ( PostScriptLanguage )

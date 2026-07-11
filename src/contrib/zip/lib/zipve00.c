@@ -891,7 +891,7 @@ zipedit__Expose_Point( self, pane, figure, x, y )
   zipview_MoveTo( View,
 		  5 + ((OriginX) + (x * (Flip) * (Multiplier) / (Divisor))),
 		  (OriginY) - (y * (Flop) * (Multiplier) / (Divisor)) );
-  zipview_DrawString( View, graphic_ATLEFT | graphic_BETWEENTOPANDBOTTOM, points );
+  zipview_DrawString( View, points, graphic_ATLEFT | graphic_BETWEENTOPANDBOTTOM );
   zipview_MoveTo( View,
 		  (OriginX) + (x * (Flip) * (Multiplier) / (Divisor)),
 		  (OriginY) - (y * (Flop) * (Multiplier) / (Divisor)) );
