@@ -147,6 +147,64 @@ specific file:
    anchor using the struct's declared order in its `.ih`/`.ch`. This is
    how the `figview` `originx` corruption (`0x100000000` instead of `0`)
    was found — see `project_figure_status` memory.
+10. **A subclass's ancestor fields live under a NAMED union member
+    `header`**, not a bare `self->field`: `struct zipview { union {
+    struct basicobject_methods *zipview_methods; struct traced traced;
+    struct observable observable; struct view view; } header; ...}`.
+    `self->drawable` (as written literally in a `.ch` macromethod, where
+    `self` is implicitly cast to the DEFINING ancestor's pointer type)
+    fails in lldb as `self->header.view.drawable` when `self`'s static
+    type in the current frame is the SUBCLASS. Check the generated
+    `.ih`'s struct definition before guessing a field path — lldb's
+    error ("no member named X in Y") tells you the wrong type, not the
+    wrong field name.
+11. **Mixed per-file optimization levels are a fast way to narrow
+    optimizer-sensitive bugs.** Recompile ONLY the suspect `.c` with a
+    different `CDEBUGFLAGS` (`make CDEBUGFLAGS="-O0 -g" foo.o`), then
+    relink just that file's `.do`/library (no need to touch the rest of
+    the directory's flags) and reinstall. Confirms/refutes "is this
+    specific file's codegen the problem" in one rebuild instead of
+    flipping the whole directory back and forth.
+12. **Conditional breakpoints silently degrade to unconditional ones
+    if the target file lacks debug info** — lldb can't parse the
+    condition expression without types in scope, and just stops on
+    EVERY hit instead of erroring loudly. The tell is buried in the log:
+    `error: stopped due to an error evaluating condition of breakpoint`.
+    Always confirm `-g` was used for that specific translation unit
+    before trusting a condition's silence.
+13. **Isolating "does this whole code path even matter" by literally
+    commenting it out** (`if (0 && real_condition) ...`), rebuilding
+    just that one file, relinking just its `.do`, and reinstalling is
+    often faster and higher-signal than chasing it through breakpoints
+    — a targeted single-file rebuild+relink+reinstall cycle is ~10s.
+    Use this to bisect BEFORE reaching for lldb, not just after.
+
+## Keeping an lldb session alive across multiple user-triggered events
+
+No clean way was found on macOS to keep one `lldb -s scriptfile` batch
+session alive indefinitely while a human triggers several separate UI
+actions over time:
+- A plain blocking `< fifo` redirect hangs the launching shell itself
+  (waiting for a writer) before `script`/`lldb` even start.
+- Opening the fifo read-write (`0<> fifo`) to dodge that avoids the
+  hang, but macOS's `script` command then fails outright:
+  `tcgetattr/ioctl: Operation not supported on socket` (a fifo isn't a
+  tty-like device; Linux's `script` tolerates this, macOS's doesn't).
+- `lldb -s scriptfile` (or piped via `script -q logfile lldb -s
+  scriptfile &` with `run_in_background: true`) runs its script's
+  commands, and a single top-level `continue` is enough to let ONE
+  `breakpoint command add ... continue` block fire and log once — but
+  once script input is exhausted, lldb reads (empty) interactive stdin,
+  hits EOF, and quits. Confirmed repeatedly: this quit does NOT kill or
+  otherwise disturb the still-running target process — `ps` right after
+  always showed it alive, unaffected, ready for a fresh `process attach`.
+
+**Working pattern instead:** attach fresh per round — one
+`script -q logfile lldb -s scriptfile` (`run_in_background: true`) per
+user-triggered event, script ending in exactly one `continue`, ask the
+user to do the one thing that should trigger the breakpoint, read the
+log, then `kill` the `lldb`/`script` PIDs (not the target) before the
+next round. Slower than a persistent session would be, but reliable.
 
 ## Killing processes cleanly
 

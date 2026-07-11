@@ -202,23 +202,55 @@ dependInstall`) run 2026-07-10: zero real `error:` lines tree-wide
 Insets with known breakage, or not buildable/enabled at all. Each is
 its own task; none block M1.
 
-### zip — not built at all (`MK_ZIP` never defined)
+### zip — builds and loads now; solid-black render bug at `-O`, UNRESOLVED
 
-- Root cause of the long-standing "zip unsupported" runtime message,
-  found 2026-07-10 during the active-tree census: `contrib/Imakefile`
-  gates `zip` behind `#ifdef MK_ZIP`, and nothing defines it —
-  `contrib/zip/{lib,utility}` have never been part of this checkout's
-  build, so the inset loader falls back to the unsupported
-  placeholder. Repair path: `#define MK_ZIP` in `config/site.h`,
-  regenerate Makefiles down contrib, build both directories and fix
-  the first-compile fallout (expect the usual K&R/LP64 crop), then
-  run the M1 runbook census over their ~30 `.ch` files (absorbs old
-  point-10 batch 10; after rollout point 11 the classpp default is
-  already typed, so no Imakefile flag is needed). Note:
-  `contrib/zip/lib/{ltv.c,schedv.c}` were edited in point-10 batch 1
-  (suite pair expansion) and are still compile-unverified — the
-  first build verifies them. Test fixture: `Sherman.Alloc` contains
-  a zip inset (currently renders as "not supported").
+- **Progress 2026-07-11:** `MK_ZIP` defined in `config/site.h`,
+  Makefiles regenerated down `contrib/zip/{lib,symbols,samples,utility}`.
+  `contrib/zip/lib`'s ~21 `.ch` files were **100% untyped 1990s K&R
+  style** (never touched by the M1 rollout since the directory was
+  inert) — typing them against real implementations took ~479 compile
+  errors down to 0 (Sonnet-delegated mechanical pass + 6 real `.c`-side
+  bug fixes: missing K&R param declarations in `zipdf00.c`/`zipdi00.c`/
+  `zipve02.c`, a pointer-through-`long`-rock laundering cast in
+  `zipedit.c`, a transposed-argument live bug in `zipve00.c`'s
+  `DrawString` call, and 13 files' `Build_Object` stub `peer` params
+  retyped from `long`/`int` to `zip_type_figure`). All installed and
+  indexed (`build/dlib/atk/index`), fonts installed, `zipview` class
+  loads — the "not supported" placeholder is gone for good. Full
+  details, including a Makefile `install.time`/`$?` staleness gotcha
+  that silently skips reinstalling files after a `-k` build error, in
+  memory `project_zip_inset_status`.
+- **Also fixed 2026-07-11, general core-ATK bug, not zip-specific:**
+  `atk/basics/x/xgraphic.c`'s Xft (anti-aliased text) drawing path
+  never applied the pane-level GC clip to its `XftDraw` — zoomed-in
+  text in any Xft-rendered, clip-relying view could bleed outside its
+  own bounds. Fixed with a new `xgraphic_GetClipBoundingRect` helper
+  mirroring `xgraphic_LocalSetClippingRect`'s clip computation;
+  required relinking `libbasics.a`/`runapp` (statically linked).
+  Runtime-confirmed: zip zoom no longer escapes its box.
+- **UNRESOLVED, real bug:** with `contrib/zip/lib` built at the default
+  `-O`, the whole zip inset renders as a **solid black rectangle**
+  instead of the diagram. Building the identical source at `-O0`
+  renders correctly. Extensive live lldb tracing (see memory
+  `project_zip_inset_status` for the full trail) confirmed pane
+  geometry, the fill call's transfer mode/pixel/GC state, and its exact
+  on-screen coordinates are ALL correct at the moment of the failing
+  render — yet the screen is still black. Disabling all figure/stream
+  drawing (leaving only `Clear_Pane`'s background fill) renders
+  correctly white, proving some figure-draw code path paints over the
+  correct fill, but tracing every oversized `FillRectSize` call caught
+  none from zip's own drawable — so the culprit is either a different
+  draw primitive (`FillTrapezoid`/`DrawPolygon`/arc fill — `ziporect.c`
+  `Draw()`'s shaded/patterned fill path is the top suspect, gated on
+  figure-mode bits not yet verified live for this fixture) or a
+  coordinate/scale bug making some shape effectively fill everything.
+  Test fixture: `src/doc/papers/atk/Cattey.turnin` (switched from
+  `Sherman.Alloc` — smaller, easier to iterate on; both should be
+  re-tested once resolved). NOT YET COMMITTED — compiles clean as a
+  full directory build, `fossil status` shows edits to `config/site.h`,
+  `atk/basics/x/xgraphic.c`, and ~24 files under `contrib/zip/lib/`.
+  `contrib/zip/utility` (`lt`/`sched`) not started; same untyped-`.ch`
+  treatment will likely be needed there too.
 
 ### ness — bison grammar extension blocker
 
