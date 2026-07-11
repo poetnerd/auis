@@ -151,7 +151,7 @@ zipofcapt__Build_Object( self, pane, action, x, y, clicks, X, Y )
   zip_type_figure			  figure;
   register long				  status = zip_ok;
   enum view_MouseAction			  Accept_Caption_Character();
-  int					  position = 0; /*===*/
+  zip_type_figure					  position = NULL; /*===*/
   char					  text[4];
 /*===debug=1;*/
   IN(zipofcapt__Build_Object);

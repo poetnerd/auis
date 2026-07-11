@@ -113,7 +113,7 @@ zipoarc__Build_Object( self, pane, action, x, y, clicks, X, Y )
   {
   register long				  status = zip_ok;
   register zip_type_figure		  figure;
-  register long				  position = 0;/*===*/
+  register zip_type_figure				  position = NULL;/*===*/
   register zip_type_point		  X_origin = 0, Y_origin = 0,
 					  X_start, Y_start;
 

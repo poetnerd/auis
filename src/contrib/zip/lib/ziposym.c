@@ -73,10 +73,6 @@ END-SPECIFICATION  ************************************************************/
 #include <ctype.h>
 #include <errno.h>
 
-#ifndef M_UNIX
-extern int				  sys_nerr;
-#endif
-extern char				 *sys_errlist[];
 static char				 *symbol_library_path = NULL;
 
 static struct symbol_set	         *symbol_sets = NULL;
@@ -246,7 +242,7 @@ ziposymbol__Build_Object( self, pane, action, x, y, clicks, X, Y )
   register zip_type_point		  X, Y;
   {
   register long				  status = zip_ok;
-  int					  position = 0; /*===*/
+  zip_type_figure					  position = NULL; /*===*/
   register zip_type_figure		  figure;
   char					  symbol_string[257];
 

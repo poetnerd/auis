@@ -185,7 +185,7 @@ zipopath__Build_Object( self, pane, action, x, y, clicks, X, Y )
   register zip_type_point		  X, Y;
   {
   register long				  status = zip_ok;
-  long					  position = 0;
+  zip_type_figure					  position = NULL;
   static long				  initial_x, initial_y,
 					  initial_X, initial_Y,
 					  prior_X, prior_Y;

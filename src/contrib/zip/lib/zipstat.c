@@ -122,9 +122,6 @@ END-SPECIFICATION  ************************************************************/
 */
 
 
-extern int			  sys_nerr;
-extern char			 *sys_errlist[];
-
 static char			 *zip_status_messages[] =
 					  {
 				/* 000 */ "Success",

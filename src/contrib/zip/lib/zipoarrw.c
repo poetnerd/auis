@@ -126,7 +126,7 @@ zipoarrow__Build_Object( self, pane, action, x, y, clicks, X, Y )
   register zip_type_point		  X, Y;
   {
   register long				  status = zip_ok;
-  int					  position = 0; /*===*/
+  zip_type_figure					  position = NULL; /*===*/
   static zip_type_point			  prior_X, prior_Y;
   static zip_type_pixel			  prior_x, prior_y;
   register zip_type_figure		  figure;

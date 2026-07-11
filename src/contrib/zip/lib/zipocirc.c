@@ -178,7 +178,8 @@ zipocirc__Build_Object( self, pane, action, x, y, clicks, X, Y )
   register zip_type_point		  X, Y;
   {
   register long				  status = zip_ok;
-  register long				  radial_point = 0, position = 0; /*===*/
+  register long				  radial_point = 0;
+  register zip_type_figure			  position = NULL; /*===*/
   register zip_type_figure		  figure;
 
   IN(zipocirc__Build_Object);

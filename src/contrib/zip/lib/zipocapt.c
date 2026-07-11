@@ -113,7 +113,7 @@ zipocapt__Build_Object( self, pane, action, x, y, clicks, X, Y )
   {
   zip_type_figure			  figure;
   register long				  status = zip_ok;
-  int					  position = 0; /*===*/
+  zip_type_figure					  position = NULL; /*===*/
   char					  text[4];
 
   IN(zipocapt_Build_Object);

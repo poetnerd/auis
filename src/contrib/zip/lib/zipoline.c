@@ -158,7 +158,7 @@ zipoline__Build_Object( self, pane, action, x, y, clicks, X, Y )
   register zip_type_point		  X, Y;
   {
   register long				  status = zip_ok;
-  int					  position = 0; /*===*/
+  zip_type_figure					  position = NULL; /*===*/
   register zip_type_figure		  figure;
 
   IN(zipoline__Build_Object);

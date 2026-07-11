@@ -193,7 +193,7 @@ ziporect__Build_Object( self, pane, action, x, y, clicks, X, Y )
   register long				  action, x, y, clicks;
   register zip_type_point		  X, Y;
   {
-  int					  position = 0; /*===*/
+  zip_type_figure					  position = NULL; /*===*/
   register zip_type_figure		  figure;
   register long				  status = zip_ok;
 

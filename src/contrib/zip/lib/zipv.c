@@ -568,6 +568,14 @@ zipview__FullUpdate( self, type, left, top, width, height )
   IN(zipview_FullUpdate);
   DEBUGdt( Type, type);
   DEBUGlt( Left,  left);   DEBUGlt( Top,   top);
+  /* Establish a known-clean transfer mode at the top of every redraw, the
+     same way figview does. Several helpers here (Clear_Pane, Invert_Pane,
+     Highlight_View) leave the GC in a constant-paint mode (graphic_BLACK/
+     graphic_WHITE) as a side effect and rely on a later call to reset it;
+     without this, a leftover constant-paint mode from the end of a prior
+     cycle (e.g. Highlight_View's focus border) can leak into the next
+     cycle's drawing. */
+  zipview_SetTransferMode( self, graphic_COPY );
   if ( type == view_FullRedraw || type == view_LastPartialRedraw )
     {
     zipview_GetLogicalBounds( self, &Block );
