@@ -85,11 +85,24 @@ if (! $?Me) then
 	endif
 endif
 
+# Count the parts first, so each one can be backdated relative to the
+# total: arpadate() only has one-second resolution, and this loop runs
+# fast enough that same-second Date: headers are common, which leaves
+# folder reconciliation's tie-breaking to filesystem directory order
+# (arbitrary) instead of the intended Part-N narrative order.
+@ NumParts = 0
+while (1)
+	@ probe = $NumParts + 1
+	if (! -e d$probe.heads) break
+	@ NumParts ++
+end
+
 @ i = 1
 while (1)
 	if (! -e d$i.heads) break
 	echo Processing post number $i
-	echo "Date: `$AndrewDir/etc/arpadate`" > /tmp/demotemp
+	@ minutesago = $NumParts - $i
+	echo "Date: `date -v-${minutesago}M +'%a, %d %b %Y %H:%M:%S %z'`" > /tmp/demotemp
 	echo From: ${Me} >> /tmp/demotemp
 	echo To: AMS Demo Part $i >> /tmp/demotemp
 	echo Content-Type: X-BE2\; 12 >> /tmp/demotemp
@@ -100,7 +113,13 @@ while (1)
 	mv /tmp/demotemp $targetdir/$i.post
 	@ i ++
 end
-$AndrewDir/bin/cui set level wizard \; set script on \; set term 0 \; recon $targetdir\; quit <<!
+# The trailing "2" tells reconstruct to sort by parsing each message's
+# Date: header (see ReconstructDirectory()/HowToVec in msclients/cui/cui.c)
+# instead of trusting the raw file mtime. Without it, non-interactive
+# runs default to mtime-based sorting, which silently ignores the
+# distinct per-part Date: headers staggered above and reintroduces the
+# same-second collisions this script is trying to avoid.
+$AndrewDir/bin/cui set level wizard \; set script on \; set term 0 \; recon $targetdir 2\; quit <<!
 
 
 !
