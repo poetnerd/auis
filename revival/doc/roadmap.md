@@ -62,39 +62,107 @@ history behind each completed item.
 
 Applications that currently crash instead of running. All are
 pre-existing failures surfaced by first-ever runtime tests during the
-M1 rollout — none are `-pi` regressions. Each needs its own dedicated
-debugging session. The two overlapping-`strcpy` crashes (bush, org)
-are the same bug class and likely the same fix pattern
-(`memmove`/temp buffer, or `tempnam()` for the org case) — a good
-paired task, delegable once the first one's fix is reviewed.
+M1 rollout — none are `-pi` regressions.
 
-### bush — crashes at startup (bush__InitTree overlapping strcpy)
+### Overlapping-strcpy crash family — FIXED 2026-07-10, runtime-confirmed
 
-- First-ever launch attempt (2026-07-09, during point-10 batch-1
-  runtime checks — bush was previously untested; not a -pi
-  regression: the crash is in InitTree string handling our diff
-  never touched). `EXC_BREAKPOINT` in `__strcpy_chk` →
-  `__chk_fail_overlap`, called from `bush__InitTree`+456 ←
-  `bush__Create` ← `bushapp__Start`: an overlapping src/dst
-  `strcpy`, fatal under macOS fortify. Likely in-place path
-  surgery (`strcpy(p, p+n)` idiom); needs `memmove` or a temp.
-  Note the batch-1 suite anchor fix is a prerequisite bush needs
-  anyway — before it, every control-panel handler got truncated
-  pointers on arm64.
+A tree-wide audit (grep for the same-variable idiom `strcpy(x, x+n)`
+plus manual read-through of every call site that derives its second
+argument from a pointer computed off the first, e.g. via
+`index()`/`strchr()`/`rindex()` in the enclosing function) found
+**15 overlapping-strcpy call sites across 9 files** — the 3 already
+logged here (bush, org, htmlview) plus 6 more never surfaced by a
+runtime test. All are the same idiom: an in-place left-shift
+(`strcpy(dst, dst+n)` or two differently-named pointers that alias
+the same buffer) to delete characters from a string. Apple's
+fortified libc's `strcpy` aborts (`EXC_BREAKPOINT` →
+`__strcpy_chk` → `__chk_fail_overlap`) whenever src/dst ranges
+overlap, even though the classic forward byte-copy this idiom relies
+on is safe *precisely for this direction* (dst < src) and has clearly
+worked for ~35 years on non-fortified libcs. Fix is mechanical and
+semantics-preserving everywhere: `strcpy(dst, src)` → `memmove(dst,
+src, strlen(src)+1)` — memmove is defined for overlapping ranges and
+produces byte-identical output to what the (unfortified) strcpy
+already produced. All 9 files compile clean (zero `error:` lines)
+after the fix, checked individually per file, **except** the two
+noted as dead-tree below. Full gate (`make Clean && make
+dependInstall`) run 2026-07-10: zero real `error:` lines tree-wide
+(one hit, the known `-Wdeprecated-non-prototype` false positive);
+`bush.do`, `org.do`, `htmlview.do`, `strtbl.do`, `label.do`, and
+`gentlex` all reinstalled with fresh timestamps.
 
-### org — crashes loading a file (Read_Body overlapping strcpy)
-
-- First-ever test of org loading a document (2026-07-10, during
-  point-10 batch-5 runtime checks — `example1.org` via the org app;
-  not a -pi regression: org.c was never touched in that batch, and
-  the only org.ch edit, typing `NodeName`, has zero callers tree-wide).
-  `EXC_BREAKPOINT` in `__strcpy_chk` → `__chk_fail_overlap`, from
-  `org__Read` (statically-inlined `Read_Body`) ← `bufferlist__GetBufferOnFile`
-  ← `frame_VisitNamedFile`. Same bug class as bush's InitTree crash
-  above: `strcpy(fName, tmpnam(seed))` where `seed` is pre-filled
-  via `sprintf` — a `tmpnam()` misuse (the buffer-argument form just
-  overwrites `seed`, it isn't a naming template the way `tempnam()`'s
-  `pfx` is), fatal under macOS's fortified libc.
+- **bush.c:269** (`bush__InitTree`) — root cause confirmed: not the
+  originally-guessed `strcpy(p, p+n)` shape. `GivenDirName` is
+  `self->given_dir_name`; `bush__Create` calls
+  `bush_InitTree(self, GivenDirName)`, so `root_path` and
+  `GivenDirName` are the *same pointer* inside `InitTree` — the
+  `strcpy(GivenDirName, root_path)` at line 269 is a full self-copy,
+  which fortify treats as total overlap. **Runtime-confirmed
+  2026-07-10: bush launches** (was: instant crash on every launch).
+  New pre-existing bug noticed during this check, NOT related to the
+  strcpy fix (bush.c's rendering code was untouched): bush is
+  confused about foreground/background colors, and leaf nodes draw
+  completely wrong. Needs its own dedicated debugging session —
+  logged here so it isn't mistaken for a side effect of this fix.
+- **org.c:396** (`Strip()`, called from `Read_Body` at line 192) —
+  root cause corrected from what was logged here previously. The
+  earlier note named `strcpy(fName, tmpnam(seed))` (org.c:231) as the
+  site; re-derivation found that call copies between two independent
+  stack buffers (not overlapping) and doesn't match the crash's
+  actual call path as convincingly as `Strip()`'s
+  `strcpy(string, ptr)` where `ptr = string + (leading whitespace
+  count)` — an exact instance of the same aliasing idiom as every
+  other confirmed site, sitting directly in `Read_Body`'s control
+  flow, and triggered by any node name with leading whitespace
+  (routine in org's indented tree format). Fixed at line 396.
+  **Runtime-confirmed 2026-07-10: all 3 example `.org` files load
+  and work 100%** (was: crash on load). **Separately noted, not
+  fixed:** `org.c:231`'s `strcpy(fName, tmpnam(seed))` is still a
+  real bug — `seed` is sprintf'd as if it were a naming template,
+  but `tmpnam()`'s buffer-argument form just overwrites it, so the
+  sprintf'd content is silently discarded. Not an overlap (doesn't
+  crash), but wasted work and a misleading read. Left alone pending
+  a deliberate decision on temp-file strategy
+  (`tempnam()`/`mkstemp()`) — out of scope for a mechanical overlap
+  fix.
+- **html.c** (`html__ReadSubString`/entity parser) — all 4 sites
+  fixed: line 992 (`posStart`/`posEnd+1` alias the same `buf`) and
+  the three `strcpy(buf, buf+pos)` sites (now ~1414, 1424, 1462).
+  **Runtime-confirmed 2026-07-10: htmlview launches without
+  crashing** (was: instant crash on any HTML content). New
+  pre-existing issue noticed during this check, NOT related to the
+  strcpy fix: no HTML file on hand actually rendered visible text —
+  real-world HTML has likely diverged too far from what this ~1994
+  parser understands. Separate task, needs its own fixture/triage
+  (does it choke on DOCTYPE/charset, on modern tag soup, or
+  something else); logged here so it isn't mistaken for a
+  regression.
+- **atk/supportviews/strtbl.c** (3 sites) and **label.c** (3 sites)
+  — identical escape-stripping idiom (`while (t = index(t, '\\'))
+  strcpy(t, t+1);` for `\`, `{`, `}`) in `stringtbl__AddString` and
+  `label__SetText`. Never hit a coredump — found only by the
+  tree-wide grep, and no fixture exists to exercise a label/string-
+  table entry containing `\`, `{`, or `}`. **Accepted gate-only**
+  (compiles clean, installed, mechanically identical to the 3
+  runtime-confirmed sites above) — same precedent as `ptext`/
+  `ltext`/`circlepi`/`mit-util` in point-10 batch 11.
+- **atk/syntax/tlex/readtlx.c:260** — quote-stripping in the tlex
+  grammar reader (`seq` line handling). `atk/syntax/tlex` is a
+  build-time code generator (not a runtime app); found only by grep.
+  Runtime check: rebuild whatever `.tlx` grammar exercises a quoted
+  `seq` argument.
+- **contrib/calc/calcv.c:502** and **contrib/mit/fxlib/server/commands.c:230**
+  — same idiom (leading-zero digit strip in the calculator inset;
+  `.@` realm stripping in the MIT `fx` course server). **Both
+  directories are currently outside the active build** (`contrib/calc`
+  has no generated Makefile — gated behind an unset `CALC` variable;
+  `contrib/mit/fxlib/server` fails to compile for an unrelated
+  reason, a missing generated `fxserver_err.h` from a Kerberos
+  code-gen step that's never been run in this checkout). Fixed by
+  the same mechanical edit for correctness/consistency, but **compile-
+  unverified** — no way to build either file right now. Verify
+  whenever `calc` or `fxlib/server` are ever brought into the active
+  tree (same precedent as `wpedita.ch` in point-10 batch 11).
 
 ### typescript — crashes on launch (PTY failure + missing NULL check)
 
@@ -148,27 +216,21 @@ its own task; none block M1.
   `ness/objects`, and `nevent.c` was edited in point-10 batch 1 —
   compile-unverified until ness builds.
 
-### htmlview — crashes reading any HTML file (ReadSubString overlapping strcpy)
+### htmlview — crashed reading any HTML file (ReadSubString overlapping strcpy) — FIXED 2026-07-10, runtime-confirmed
 
 - First-ever real engagement of htmlview (2026-07-10, point-10
   batch-11 runtime checks; needs a `~/.ezinit` to map `.html` at
   all, per the help instructions — without it ez reads HTML as
-  plain text, which is why this never surfaced before). Crash is
-  NOT a -pi regression: `EXC_BREAKPOINT` in `__strcpy_chk` →
-  `__chk_fail_overlap` from `html__ReadSubString` ←
-  `html__Read` ← `bufferlist__GetBufferOnFile`, and the crash
-  happens *before* the batch's one html.c edit (a rock cast on
-  `EnumerateEnvironments`, called only after ReadSubString
-  returns) ever executes. Root cause located: `html.c` has three
-  literal `strcpy(buf, buf+pos)` in-place left-shifts inside
-  `ReadSubString`'s token loop (~lines 1420-1470) plus
-  `strcpy(posStart, posEnd+1)` in the entity parser (html.c:992)
-  — the same overlapping-strcpy-under-fortify class as bush's
-  InitTree and org's Read_Body crashes (see Applications to
-  Repair); needs `memmove` or a temp. A `.ezinit` in the home
-  directory does NOT affect regular non-HTML ez startup
-  (verified). Debug alongside the bush/org pair — likely the
-  same fix pattern at all four sites.
+  plain text, which is why this never surfaced before). See
+  "Overlapping-strcpy crash family" under Applications to Repair for
+  the fix (all 4 sites in `html.c` now use `memmove`, compiles clean,
+  installed via the full gate). Runtime-confirmed 2026-07-10:
+  htmlview launches without crashing (was: instant crash). A
+  `.ezinit` in the home directory does NOT affect regular non-HTML
+  ez startup (verified). New follow-on, separate from this fix: no
+  HTML fixture on hand actually rendered visible text — likely
+  real-world HTML has diverged too far from this ~1994 parser (see
+  the html.c bullet under "Overlapping-strcpy crash family" above).
 
 ### layout — excess whitespace in complex layout (Sherman.Alloc)
 
