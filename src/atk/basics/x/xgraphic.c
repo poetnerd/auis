@@ -548,6 +548,62 @@ struct xfontdesc * ChosenFont;{
 #define xgraphic_NULLTERMINATED 0
 #define xgraphic_LENGTHGIVEN 1
 
+#ifdef HAVE_XFT
+/* Physical (global) bounding rectangle of the same effective clip that
+   xgraphic_LocalSetClippingRect applies to the plain-X11 GC (visual bounds
+   intersected with any client clipping region and the current update
+   region). XftDraw has no notion of a GC's clip, so callers that draw via
+   Xft need this to stay bounded to their pane instead of the whole window. */
+static void
+xgraphic_GetClipBoundingRect(self, xrect)
+struct xgraphic * self;
+XRectangle * xrect;
+{
+    struct rectangle Temp;
+    struct xgraphic_UpdateBlock *updateBlk;
+
+    updateBlk = xgraphic_FindUpdateBlock(xgraphic_XDisplay(self), xgraphic_XWindow(self));
+
+    if (self->header.graphic.visualRegion == NULL &&
+	self->header.graphic.clippingRegion == NULL &&
+	! updateBlk->updateRegionInUse) {
+	xgraphic_GetVisualBounds(self, &Temp);
+	physical_LogicalToGlobalRect(self, &Temp);
+	xrect->x = rectangle_Left(&Temp);
+	xrect->y = rectangle_Top(&Temp);
+	xrect->width = rectangle_Width(&Temp);
+	xrect->height = rectangle_Height(&Temp);
+    }
+    else {
+	struct region *clipRegion;
+
+	if (self->header.graphic.visualRegion == NULL) {
+	    clipRegion = region_CreateRectRegion(&self->header.graphic.visualBounds);
+	}
+	else {
+	    clipRegion = region_New();
+	    region_CopyRegion(clipRegion, self->header.graphic.visualRegion);
+	}
+
+	if (self->header.graphic.clippingRegion != NULL) {
+	    region_IntersectRegion(clipRegion, self->header.graphic.clippingRegion, clipRegion);
+	}
+
+	region_OffsetRegion(clipRegion, physical_LogicalXToGlobalX(self, 0),
+			    physical_LogicalYToGlobalY(self, 0));
+
+	if (updateBlk->updateRegionInUse) {
+	    XIntersectRegion(region_GetRegionData(clipRegion),
+			     updateBlk->updateRegionInUse,
+			     region_GetRegionData(clipRegion));
+	}
+
+	XClipBox(region_GetRegionData(clipRegion), xrect);
+	region_Destroy(clipRegion);
+    }
+}
+#endif /* HAVE_XFT */
+
 static void xgraphic_DrawChars(self,Text,Operation,StringMode,TextLength)
 struct xgraphic * self;
 char * Text;
@@ -615,6 +671,15 @@ long TextLength; {
 		int gx = physical_LogicalXToGlobalX(self, x);
 		int gy = physical_LogicalYToGlobalY(self, y);
 		int spaceShim = self->header.graphic.spaceShim;
+		XRectangle paneClip;
+
+		/* XftDraw has no notion of the GC clip the rest of this
+		   file maintains (xgraphic_LocalSetClippingRect) - without
+		   this, Xft-rendered text ignores the owning pane/inset's
+		   bounds entirely and can draw into surrounding content. */
+		xgraphic_GetClipBoundingRect(self, &paneClip);
+		XftDrawSetClipRectangles(xftd, 0, 0, &paneClip, 1);
+
 		/* Place each glyph at its X11-metric position and clip it
 		   to its advance cell.  Clipping prevents right-side bearing
 		   overflow from bleeding into the next character's area, which
@@ -632,10 +697,24 @@ long TextLength; {
 			if (ch == ' ' && spaceShim) adv += spaceShim;
 			if (adv > 0) {
 			    XRectangle clip;
+			    long x1, y1, x2, y2;
 			    clip.x = (short)cx;
 			    clip.y = (short)clip_y;
 			    clip.width  = (unsigned short)adv;
 			    clip.height = (unsigned short)fh;
+			    /* intersect the per-glyph cell with the pane clip */
+			    x1 = (clip.x > paneClip.x) ? clip.x : paneClip.x;
+			    y1 = (clip.y > paneClip.y) ? clip.y : paneClip.y;
+			    x2 = ((clip.x + clip.width) < (paneClip.x + paneClip.width)) ?
+				  (clip.x + clip.width) : (paneClip.x + paneClip.width);
+			    y2 = ((clip.y + clip.height) < (paneClip.y + paneClip.height)) ?
+				  (clip.y + clip.height) : (paneClip.y + paneClip.height);
+			    if (x2 > x1 && y2 > y1) {
+				clip.x = x1; clip.y = y1;
+				clip.width = x2 - x1; clip.height = y2 - y1;
+			    } else {
+				clip.width = clip.height = 0;
+			    }
 			    XftDrawSetClipRectangles(xftd, 0, 0, &clip, 1);
 			}
 			XftChar8 c8 = (XftChar8)ch;
