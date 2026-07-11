@@ -6,4 +6,5 @@
 #define AMS_ENV 1
 #define MK_CUI
 #define CONTRIB_ENV 1
+#define MK_ZIP
 #undef ANDREW_MALLOC_ENV
