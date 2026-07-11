@@ -546,7 +546,7 @@ parser_Parse(self, lexer, lexrock)
 			tact = desc->defred[tstate];
 
 			if (DebugFlag)
-				debugstate(desc, tstate, pendtok, 
+				debugstate(desc, tstate, pendtok,
 						   self->errorstate);
 		}
 		else {
@@ -555,19 +555,19 @@ parser_Parse(self, lexer, lexrock)
 				pendtok = lexer(lexrock, pendval);
 
 			if (DebugFlag)
-				debugstate(desc, tstate, pendtok, 
+				debugstate(desc, tstate, pendtok,
 						   self->errorstate);
 
 			x += pendtok;	/* index ptr by pending token */
 			if (x < 0 || x > desc->table_max
-					|| desc->valid[x] != pendtok) 	
+					|| desc->valid[x] != pendtok)
 				/* not in table, use default reduction */
 				tact = desc->defred[tstate];
 			else {
 				tact = desc->table[x];
 				if (tact > 0) {
 					/* shift token and go to state tact */
-					if (self->errorstate > 0) 
+					if (self->errorstate > 0)
 						self->errorstate--;
 					tstate = tact;
 					bcopy(pendval, tval, desc->eltsz);
@@ -576,11 +576,13 @@ parser_Parse(self, lexer, lexrock)
 					pendtok = NOTOK; /* absorb the token */
 					continue;
 				}
-				/* tact is 0, -(rule#), or defflag for error*/
-				if (tact == 0)
-					/* get action from default table */
-					tact = desc->defred[tstate];
-				else if (tact != desc->defflag)
+				/* tact <= 0: 0 or tblflag (YYTABLE_NINF) means
+				   syntax error; anything else is -(rule#).
+				   (0 is NOT "use default reduction" -- bison's
+				   own yyparse() treats it as an error too.) */
+				if (tact == 0 || tact == desc->tblflag)
+					tact = 0;
+				else
 					tact = -tact;
 			}
 		}
@@ -621,19 +623,25 @@ parser_Parse(self, lexer, lexrock)
 				goto exit;   /* (nothing to pop) */
 			}
 
-			/* new tstate is from nextx/defnext 
-				based on top state after popping */
+			/* new tstate is from nextx/defnext
+				based on top state after popping.
+				Matches bison's own yyparse() goto logic
+				exactly (yystate = yypgoto[lhs] + *yyssp;
+				bounds+yycheck test; else yydefgoto[lhs]):
+				nextx[lhs] (yypgoto) is NOT itself gated on
+				defflag the way actx[state] (yypact) is --
+				it can legitimately equal defflag by
+				coincidence for many nonterminals (confirmed:
+				21 of 47 in ams/libs/ms/prsdate.gra, including
+				date/yearday/partial_date/months/years/days),
+				and skipping the table/valid lookup for those
+				sent the parser to the wrong goto state. */
 			lhs = desc->lhs[tact] - desc->num_tokens;
-			x = desc->nextx[lhs];	/* index from nextx */
-			if (x == desc->defflag)
-				tstate = desc->defnext[lhs];
-			else {
-				x += *ssp;	/* index by new top state */
-				if (x >= 0 && x <= desc->table_max
-						&& desc->valid[x] == *ssp)
-					tstate = desc->table[x];
-				else tstate = desc->defnext[lhs];
-			}
+			x = desc->nextx[lhs] + *ssp;	/* index by new top state */
+			if (x >= 0 && x <= desc->table_max
+					&& desc->valid[x] == *ssp)
+				tstate = desc->table[x];
+			else tstate = desc->defnext[lhs];
 					/* tval was set in call to action() */
 			if (DebugFlag)
 				debugreduce(desc, tact, *ssp, tstate);

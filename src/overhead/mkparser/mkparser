@@ -128,6 +128,22 @@ afterdefault == 1 {
 	next
 }
 
+# Modern bison narrows some tables (yyr1, yyr2, yydefact here; can vary
+# by grammar) to yytype_uint8/int8/int16 based on each table's actual
+# value range. struct parser_tables casts every one of these tables to
+# (short *) uniformly, matching the 1994 bison this engine was written
+# for, which always emitted plain 'short'. Reading a uint8 array through
+# a short* cast merges two logical 1-byte entries into one bogus 2-byte
+# read, silently corrupting any table modern bison happened to narrow
+# (confirmed: defred[]/yydefact via this exact bug, for
+# ams/libs/ms/prsdate.gra -- a state with a valid default-reduce rule
+# read back as rule 0, i.e. "no action", triggering a false syntax error).
+# Force the type back to plain 'short' so the width always matches what
+# the engine assumes, regardless of which tables modern bison narrows.
+/yytype_u?int(8|16|32) yy(r1|r2|defact|pact|pgoto|defgoto|table|check|prhs|rhs|rline)\[\]/ {
+	sub(/yytype_u?int(8|16|32)/, "short")
+}
+
 # add '#if YYDEBUG != 0' ... '#endif' around  yyprhs, yyrhs, yyrline
 #	(but NOT arount yytname)
 # This script used to also strip any pre-existing '#if...YYDEBUG' it saw
@@ -175,6 +191,12 @@ END {
 	print "			   modern bison renamed it but it's the same"
 	print "			   sentinel (\"no pact entry, use default"
 	print "			   reduction\") that actx[]/yypact[] uses */"
+	print "	YYTABLE_NINF,	/* tblflag -- table[]'s own \"no valid entry\""
+	print "			   sentinel. Distinct from YYPACT_NINF in modern"
+	print "			   bison (one shared value in the old bison this"
+	print "			   engine was written for); conflating them lets"
+	print "			   a real table[] entry get misread as an error,"
+	print "			   or vice versa. */"
 	print "	YYLAST,		/* table_max */"
 	print ""
 	print "	(char **)yytname,	/* name */"
