@@ -393,7 +393,9 @@ Strip( string )
   register char *ptr = string;
 
   while ( *ptr == ' '  ||  *ptr == '\t' )  ptr++;
-  strcpy( string, ptr );
+  /* ptr aliases string+n; strcpy's overlap check aborts under macOS
+     fortify whenever leading whitespace was actually skipped. */
+  memmove( string, ptr, strlen(ptr)+1 );
   while ( *ptr )  ptr++;
   ptr--;
   while ( *ptr == ' '  ||  *ptr == '\t' ) *ptr-- = 0;

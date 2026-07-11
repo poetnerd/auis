@@ -266,7 +266,10 @@ bush__InitTree( self, root_path )
       im_GetDirectory(GivenDirName);
       AllocNameSpace(GivenDirName,&RootPath);
   }
-  else strcpy(GivenDirName,root_path);
+  /* root_path may alias GivenDirName itself (bush__Create passes
+     GivenDirName straight through) -- strcpy's overlap check aborts
+     under macOS fortify on the full self-copy; memmove tolerates it. */
+  else memmove(GivenDirName,root_path,strlen(root_path)+1);
   strcpy(tmp,RootPath);
   ExtractNodeName(tmp,&nodeName);
   AllocNameSpace(nodeName,&rootDir->name);

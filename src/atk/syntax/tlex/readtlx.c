@@ -257,7 +257,10 @@ ParseLine(fin, hdr)
 			val = ScanToken(kx, NULL);
 			if (*val == '"' || *val == '\'') {
 				/* remove quotes */
-				strcpy(val, val+1);
+				/* val+1 aliases val; strcpy's overlap check
+				   aborts under macOS fortify -- memmove
+				   tolerates it. */
+				memmove(val, val+1, strlen(val+1)+1);
 				*(val + strlen(val)-1) = '\0';
 			}
 			if (*val == '\0') ErrorA(ERROR, 

@@ -168,13 +168,19 @@ label__SetText(self, text)
 	s[length] = '\0';
 	t = s;
 	while ((t= index(t, '\\')))	/* delete backslashes */
-		strcpy(t, t+1);
+		/* t+1 aliases t; strcpy's overlap check aborts under
+		   macOS fortify -- memmove tolerates it. */
+		memmove(t, t+1, strlen(t+1)+1);
 	t = s;
 	while ((t= index(t, '{')))	/* delete left brackets */
-		strcpy(t, t+1);
+		/* t+1 aliases t; strcpy's overlap check aborts under
+		   macOS fortify -- memmove tolerates it. */
+		memmove(t, t+1, strlen(t+1)+1);
 	t = s;
 	while ((t= index(t, '}')))	/* delete right brackets */
-		strcpy(t, t+1);
+		/* t+1 aliases t; strcpy's overlap check aborts under
+		   macOS fortify -- memmove tolerates it. */
+		memmove(t, t+1, strlen(t+1)+1);
 	if (*s) self->text = s;
 	label_NotifyObservers(self, label_DATACHANGED);
 }

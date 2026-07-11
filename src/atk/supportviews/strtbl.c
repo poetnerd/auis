@@ -227,13 +227,19 @@ stringtbl__AddString(self, s)
 	s = t;
 	s[len] = '\0';					/* and terminate it ! */
 	while ((t= index(t, '\\')))	/* delete backslashes */
-		strcpy(t, t+1);
+		/* t+1 aliases t; strcpy's overlap check aborts under
+		   macOS fortify -- memmove tolerates it. */
+		memmove(t, t+1, strlen(t+1)+1);
 	t = s;
 	while ((t= index(t, '{')))	/* delete left brackets */
-		strcpy(t, t+1);
+		/* t+1 aliases t; strcpy's overlap check aborts under
+		   macOS fortify -- memmove tolerates it. */
+		memmove(t, t+1, strlen(t+1)+1);
 	t = s;
 	while ((t= index(t, '}')))	/* delete right brackets */
-		strcpy(t, t+1);
+		/* t+1 aliases t; strcpy's overlap check aborts under
+		   macOS fortify -- memmove tolerates it. */
+		memmove(t, t+1, strlen(t+1)+1);
 	if ((i=FindString(self, s, 0)) >= 0)
 	 	/* duplicate entry */
 		return self->accmap[i];

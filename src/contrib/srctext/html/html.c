@@ -989,7 +989,9 @@ char* vars;
 		    *s = tolower(*s);
 		}
 	    }
-	    strcpy(posStart, posEnd+1); /* delete the token from the string */
+	    /* posEnd+1 aliases the same buf[]; strcpy's overlap check
+	       aborts under macOS fortify -- memmove tolerates it. */
+	    memmove(posStart, posEnd+1, strlen(posEnd+1)+1); /* delete the token from the string */
 	    return htmlFoundEntity;
 	} else {
 	    return htmlPartialEntity;
@@ -1407,7 +1409,9 @@ int quoteCharacters;
 		    if (ep == 0) {
 			sprintf(errbuf, "a %s close entity was found with no matching start entity", entity);
 			html_Inform(self, errbuf);
-			strcpy(buf, buf+pos);
+			/* buf+pos aliases buf; strcpy's overlap check aborts
+			   under macOS fortify -- memmove tolerates it. */
+			memmove(buf, buf+pos, strlen(buf+pos)+1);
 			*vars = '\0';
 			break;
 		    }
@@ -1415,7 +1419,9 @@ int quoteCharacters;
 			sprintf(errbuf, "unmatched environments: a <%s> follows <%s>\n", entity, ep->string);
 			html_Inform(self, errbuf);
 			/* Get rid of the text that we've printed */
-			strcpy(buf, buf+pos);
+			/* buf+pos aliases buf; strcpy's overlap check aborts
+			   under macOS fortify -- memmove tolerates it. */
+			memmove(buf, buf+pos, strlen(buf+pos)+1);
 			*vars = '\0';
 			break;
 		    } else {
@@ -1453,7 +1459,9 @@ int quoteCharacters;
 		    myPos = newpar(self, eMapping, myPos);
 		}
 		/* Get rid of the text that we've printed */
-		strcpy(buf, buf+pos);
+		/* buf+pos aliases buf; strcpy's overlap check aborts
+		   under macOS fortify -- memmove tolerates it. */
+		memmove(buf, buf+pos, strlen(buf+pos)+1);
 		*vars = '\0';
 		break;
 	    case htmlNoEntity:

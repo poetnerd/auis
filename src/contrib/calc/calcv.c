@@ -499,7 +499,9 @@ Digit( self, area )
   Highlight_Area( self, area );
   if ( Expression[0] == '0'  &&  Expression[1] != '.'  &&
        *AreaString(area) != '.')
-    strcpy( Expression, Expression + 1 );
+    /* Expression+1 aliases Expression; strcpy's overlap check aborts
+       under macOS fortify -- memmove tolerates it. */
+    memmove( Expression, Expression + 1, strlen(Expression + 1) + 1 );
   if ( PendingOp )
     {
     if ( PendingOp == '=' )
