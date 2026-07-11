@@ -392,7 +392,14 @@ struct snapshotlistentry *sle1, *sle2;
 static int      MsgListEntry_CompareTimes(mle1, mle2)
 struct msglistentry *mle1, *mle2;
 {
-    return (strcmp(AMS_DATE(mle1->msg->Snapshot), AMS_DATE(mle2->msg->Snapshot)));
+    int cmp = strcmp(AMS_DATE(mle1->msg->Snapshot), AMS_DATE(mle2->msg->Snapshot));
+    /* AMS_DATE only has one-second resolution, so messages created within
+       the same second tie; break the tie with AMS_ID, which packs in
+       sub-second time bits and a monotonic per-process counter (see
+       ams_genid() in overhead/mail/lib/genid.c), to keep qsort's result
+       deterministic and creation-ordered instead of arbitrary. */
+    return (cmp ? cmp :
+            strcmp(AMS_ID(mle1->msg->Snapshot), AMS_ID(mle2->msg->Snapshot)));
 }
 
 /* Does a minor sort on AMSIDs */
