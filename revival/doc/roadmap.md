@@ -1,6 +1,6 @@
 # AUIS Revival Roadmap
 
-Current as of 2026-07-07. See `porting-changelog.md` for the detailed
+Current as of 2026-07-11. See `porting-changelog.md` for the detailed
 history behind each completed item.
 
 ---
@@ -14,11 +14,26 @@ history behind each completed item.
   plus a `cui recon` segfault (modern-flex init-flag polarity bug, new bug
   class, see `porting-assessment.md` §13); both fixed, demo folder populates
   and reconstructs cleanly
-- Then find the bugs in the demos. **In progress:** a second, unrelated,
-  intermittent crash already turned up in the date-header parser
-  (`prsdate.c`/`parser_Parse`, `memmove` overrun) — not yet root-caused.
+- ~~Then find the bugs in the demos~~ — done 2026-07-11. Chased through three
+  stacked bugs to find the real one:
+  1. Caption display: `tm_year` (years since 1900) printed via `%02d`
+     instead of `%02d` of `tm_year % 100` — harmless before 2000, wrong
+     ("7-Jul-126") once `tm_year` exceeds 99. Fixed in `bldcapt.c`/`shrkdate.c`.
+  2. Message ordering: `recon.c`'s sort-by-time comparator had no tiebreak
+     for messages sharing the same one-second-resolution `AMS_DATE`; fixed
+     with an `AMS_ID` fallback (kept as a general hardening, checked in
+     separately from the caption fix).
+  3. **The real root cause of both the "second, unrelated, intermittent
+     crash" below and, it turned out, most of the ordering symptom too:**
+     `parsedateheader()`/`parsedate()` — the bison-generated date-header
+     parser — failed on essentially *every* input, not just certain dates,
+     silently falling back to file-mtime dating every time. Root-caused to
+     a fixed-width-table assumption bug in the *shared* `mkparser`/
+     `cparser.c` parser engine used by five grammars tree-wide, not
+     anything specific to `prsdate.gra`. Full writeup: `porting-assessment.md`
+     §15. `gendemo`'s demo folder now populates with correct captions and
+     correct Part 1…23 ordering, verified interactively.
    - Inter-line spaceing in folders and message header panes is double wide.
-   - Timestamps are incorrect affects display and message ordering. "7-Jul-126" isn't right.
 
 ### Objective: Reliable operation
 
@@ -329,6 +344,7 @@ its own task; none block M1.
 - `messages` application: **running** (2026-07-05) — local mail store (`Private BB`) visible in folder panel; three-pane layout, menus, and help text all rendering; AMS local backend + atkams/ interface + ATK insets all working
 - `chart` application: launched and runtime-verified interactively (2026-07-10, point-10 batch 5) — startup, chart creation, format switching, palette labels; exercises the `SetChartAttribute`/`SetItemAttribute` rewrite
 - `htmlview` DisplayString transposition fixed (2026-07-09) — three `message_DisplayString` calls had priority/string transposed since the 1990s; those HTML-editing status messages display for the first time
+- `mkparser`/`cparser.c` fixed-width table bug (2026-07-11) — the shared parser engine used by all five AUIS grammars (`prsdate`, `eliy`, `eqparse`, `num`, `parsey`) assumed every bison table was a `short`; modern bison narrows some to 1 byte per grammar, corrupting every lookup into a narrowed table. Root-caused via `amsdemo`'s caption dates/ordering; fixed generically in the shared engine, not per-grammar. See `porting-assessment.md` §15 — a close cousin of the LP64 bug family (§12): different mechanism (generator-chosen storage width vs. ABI sign/zero-extension), same shape (1990s code assumed a fixed width; a modernized tool in the chain silently chose otherwise decades later).
 
 **LP64 bug classes identified and swept:**
 - Variant 1: Missing prototypes / pointer return truncation (23 sites)
@@ -824,26 +840,29 @@ use curses at all, and its one sgtty reference was already dead code
 
 **Next up — two threads:**
 
-1. **New, unrelated intermittent crash found while re-verifying `recon`:**
-   `parsedate` → `parser_Parse` → `memmove` heap overrun building the date
-   field (`BuildDateField`/`MS_ReconstructDirectory`). Bison-generated
-   (`ams/libs/ms/prsdate.c` from `prsdate.gra`, also untracked in fossil) —
-   different generator, different subsystem, data-dependent rather than a
-   fixed polarity bug. Not yet root-caused; needs its own lldb session.
-   **Escalated (2026-07-09, hit during the M1 point 8 gate):** this
-   crash doesn't just segfault cleanly — `ms` catches it and
-   checkpoints server state, but the `cui` process driving `recon`
-   then wedges in unkillable `UE` state (immune to all signals,
-   including `kill -9`) instead of exiting, hanging the whole
-   `dependInstall` chain behind it indefinitely. Worked around, not
-   fixed: `gendemo`'s auto-invocation from `src/ams/demo/Imakefile`'s
-   `install.time::` target is disabled (`#if 0`/`#endif`; the
-   harmless `cui rebuild` subscription-map step stays on), so
-   `dependInstall` no longer runs `recon` at all. `gendemo` the
-   script/utility is still installed and runnable by hand. Re-enable
-   once `prsdate.c` is root-caused and fixed.
+1. ~~New, unrelated intermittent crash found while re-verifying `recon`~~ —
+   **root-caused and fixed 2026-07-11.** The `memmove` heap overrun and
+   unkillable-`UE`-state hang (escalated 2026-07-09) were both symptoms of
+   the same bug: `mkparser`/`cparser.c` — the shared, hand-written parser
+   engine used by *every* AUIS grammar, not just `prsdate` — assumes every
+   LALR table is a `short`, but modern bison narrows several tables to
+   1-byte types when a grammar's value range allows it. Reading a 1-byte
+   array through a `(short *)` cast merges pairs of entries into garbage,
+   which manifested as `parsedateheader()` failing on *every* input (not
+   just certain years), sometimes cleanly (fast syntax error), sometimes by
+   a runaway state-machine loop that grew the parser stack without bound
+   (the `memmove` overrun) badly enough to occasionally take unbounded time
+   (the `UE` hang). Full root-cause writeup: `porting-assessment.md` §15.
+   Since the crash is gone, `gendemo`'s auto-invocation from
+   `src/ams/demo/Imakefile`'s `install.time::` target (disabled 2026-07-09,
+   `#if 0`/`#endif`) can likely be re-enabled — not done as part of this
+   fix; left as a follow-up decision since it changes `dependInstall`'s
+   default behavior.
 2. Once `recon` is fully stable, verify `messages` can actually browse and
    read the populated `amsdemo` folder end-to-end (captions, dates, bodies).
+   **Partially done 2026-07-11:** captions and Part 1…23 ordering verified
+   correct interactively. Body content for each message not separately
+   re-verified this session.
 
 ### IMAP / AMS backend investigation (week of 2026-07-14)
 

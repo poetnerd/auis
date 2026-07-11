@@ -1050,6 +1050,183 @@ with the laundered forward at ams.c:120 getting a pre-authorized
    parent `.ch`s from the INSTALLED include tree, such a fix only
    takes effect after `make install` in the parent's directory.
 
+### 15. mkparser/cparser.c: fixed-width table assumption vs. modern bison's per-table type narrowing (MEDIUM effort, closed 2026-07-11)
+
+#### Root cause
+
+`overhead/mkparser/` is a code-sharing layer, not a from-scratch parser
+generator: `mkparser` (an awk-based shell script) post-processes bison's own
+generated `.tab.c` output, stripping bison's `yyparse()` and rewriting its
+LALR tables into a `struct parser_tables` consumed by one shared,
+hand-written engine (`cparser.c`'s `parser_Parse()`). Every AUIS grammar
+compiles down to one instance of this same table struct plus one shared
+`parser_Parse()` — the point is to avoid N copies of parser machinery for N
+grammars.
+
+`cparser.h`'s `struct parser_tables` declares every table pointer uniformly
+as `short *`, matching the (Andrew-patched, circa-1994) bison version this
+was written against, which always emitted plain `short` for every generated
+LALR table regardless of its actual value range. Modern bison (2.3, verified
+on this build) does not: it picks the *narrowest* C integer type that fits
+each table's value range, per table, per grammar — `yytype_uint8` (1 byte)
+when all values fit 0–255, `yytype_int16` (2 bytes, i.e. an actual `short`)
+otherwise, and so on. For `ams/libs/ms/prsdate.gra` specifically, three
+tables (`yyr1`, `yyr2`, `yydefact`) narrow to `yytype_uint8` because their
+values (rule numbers, RHS lengths) are all small, while five others
+(`yypact`, `yypgoto`, `yydefgoto`, `yytable`, `yycheck`) still need the full
+16 bits and stay `yytype_int16`. `mkparser`'s generated struct initializer
+casts *all eight* to `(short *)` unconditionally:
+
+```c
+(short *)yydefact,	/* defred */
+```
+
+Reading a 1-byte array through a pointer with 2-byte element stride merges
+each *pair* of adjacent `yytype_uint8` entries into one bogus value. Every
+indexed access into any table modern bison happened to narrow returns
+effectively random data — for `prsdate.gra`, this is `lhs` (from `yyr1`),
+`rhssz` (from `yyr2`), and — the one that broke every single parse —
+`defred` (from `yydefact`): a state whose only valid action is "always
+reduce by rule 125" instead read back as rule 0 ("no action"), which the
+engine (before the fix below) misinterpreted as "no valid transition,"
+raising a false syntax error on a token sequence bison's own tables prove is
+perfectly well-formed.
+
+Two more bugs turned up in the same investigation, in the *hand-written
+engine logic* rather than the type-width mismatch, but from the same root
+pattern (code written against one bison version's exact conventions,
+silently violated by a later one):
+
+- **Goto-table (`nextx`/`yypgoto`) short-circuit.** The engine tested
+  `nextx[lhs] == defflag` (`defflag` holds `YYPACT_NINF`) and, if true,
+  skipped straight to the default-goto table without ever consulting the
+  compressed goto table. Bison's own `yyparse()` has no such short-circuit
+  for the goto table at all — it always computes `yypgoto[lhs] + *yyssp`,
+  bounds-checks it against `yycheck`, and only falls back to the default
+  (`yydefgoto`) if that specific check fails. `yypgoto` is not gated by
+  `YYPACT_NINF` the way `yypact` is; it can coincidentally *equal* that
+  sentinel value for a nonterminal with no special meaning at all. Confirmed
+  by direct inspection of `prsdate.gra`'s generated tables: 21 of 47
+  nonterminals collide with `YYPACT_NINF`, including — critically — `date`,
+  `yearday`, `partial_date`, `months`, `years`, and `days`, i.e. almost
+  every nonterminal a real date parse passes through. The short-circuit sent
+  the parser to the single generic default-goto state instead of the
+  context-correct one for all of them, whenever the specific state on the
+  stack wasn't the statistically-most-common case bison chose as the
+  default.
+- **Action-table sentinel conflation.** Bison uses *two different*
+  constants for two different "no entry" meanings: `YYPACT_NINF` (the
+  action table `yypact`'s "always use the default reduction" flag) and
+  `YYTABLE_NINF` (the compressed table `yytable`'s own, separate "no valid
+  action here — syntax error" flag) — `-179` and `-149` respectively for
+  `prsdate.gra`, i.e. genuinely different values. The engine only knew about
+  one (`defflag`/`YYPACT_NINF`) and used it to test a `yytable` lookup
+  result, so a real `YYTABLE_NINF` entry (which should mean "syntax error")
+  was never recognized as such and fell through to being (mis)treated as a
+  negative rule number to reduce by. Separately, the engine treated a raw
+  `yytable` entry of exactly `0` as "fall back to the default reduction" —
+  bison's own `yyparse()` treats `0` as a syntax error too, not a fallback.
+
+#### Fix
+
+- `struct parser_tables` (`cparser.h`) gained a new field, `tblflag`,
+  holding `YYTABLE_NINF` — distinct from the pre-existing `defflag`
+  (`YYPACT_NINF`). `mkparser`'s generated table initializer now emits both.
+- The goto-table lookup in `cparser.c` no longer special-cases `defflag` at
+  all; it now matches bison's own formula exactly — always index, bounds-
+  check, and consult `valid[]`/`yycheck`, falling back to `defnext`/
+  `yydefgoto` only when that check fails.
+- The action-table decode now treats `tact == 0 || tact == desc->tblflag`
+  as the syntax-error case (matching bison), instead of testing against
+  `defflag` and instead of treating `0` as "use the default reduction."
+- `mkparser`'s awk post-processor gained a rule that force-normalizes *any*
+  of the eight table declarations it pointer-casts to `(short *)` — `yyr1`,
+  `yyr2`, `yydefact`, `yypact`, `yypgoto`, `yydefgoto`, `yytable`, `yycheck`,
+  plus the debug-only `yyprhs`/`yyrhs`/`yyrline` — back to plain `short`,
+  regardless of which narrower `yytype_*` type modern bison assigned each
+  one for a given grammar:
+  ```awk
+  /yytype_u?int(8|16|32) yy(r1|r2|defact|pact|pgoto|defgoto|table|check|prhs|rhs|rline)\[\]/ {
+      sub(/yytype_u?int(8|16|32)/, "short")
+  }
+  ```
+  This makes the fix generic across grammars and bison versions/value-range
+  combinations, rather than a one-off patch for `prsdate.gra`'s specific
+  narrowing choices — a different grammar could have bison narrow a
+  completely different subset of these eight tables, and the fix still
+  holds because it forces *all* of them back to a consistent width.
+
+#### Scope: every mkparser-based grammar, tree-wide
+
+Because all AUIS grammars share this one engine, the fix applies tree-wide
+by construction — but the *generated* `.c` file for each grammar still had
+to be regenerated against the fixed `mkparser`, since Makefiles depend on
+each grammar's own `.gra` source, not on the `mkparser` tool itself; `make`
+had no reason to know these files were stale. Five grammars use `mkparser`,
+found by grepping every Imakefile for `bin/mkparser`:
+
+| Grammar | Location | Subsystem | Dynamically verified? |
+|---|---|---|---|
+| `prsdate` | `ams/libs/ms` | AMS date-header parsing | **Yes** — end-to-end via `gendemo`/`amsdemo`, captions and message ordering both confirmed correct |
+| `eliy` | `overhead/eli/lib` | ELI (Embedded Lisp Interpreter), the basis for FLAMES, AMS's mail-filtering/scripting language; linked into `ms`, `cui`, `vui`, `nns`, `messages` (`amsn.do`), and ELI's own `bglisp` test REPL | No — compiles/links clean against the fixed engine, not separately exercised. `bglisp` was noted hanging uninterruptibly at startup during §13's verification (2026-07-07), dismissed then as "a separate, pre-existing issue" — given how closely that symptom (uninterruptible hang, not a clean crash) matches this bug's signature, it may well be the same root cause. Not confirmed. |
+| `parsey`/`parseadd` | `overhead/mail/lib` | RFC822 address parsing (`ParseAddressList`) — alias/address-book resolution, self-address stripping, `From:`-header "pretty name" extraction for message captions, forwarding validation, `trymail`/`eatmail` delivery | No — same as above. Notable: the *original* `gendemo` crash found in this revival (§13, 2026-07-07) was in this exact code path (`ParseAddressList` → `FindPrettiestFromString` → `BuildCaption`), for an unrelated flex reason at the time; this engine bug may have been a latent second failure mode in the same call path all along. |
+| `eqparse` | `atk/eq` | Equation/math-formula typesetting inset grammar (ATK's analogue of troff's `eqn`) | No |
+| `num` | `atk/rofftext` | Numeric-expression evaluation inside roff-formatted document text (register arithmetic, akin to troff's `\n` expressions) | No |
+
+The other four are flagged as follow-up work if any user-facing symptom
+turns up in ELI/FLAMES filtering, address parsing, equation rendering, or
+roff numeric expressions — there is no reason to expect they *don't* work
+now that the shared engine is fixed, but none of them were exercised this
+session beyond a clean rebuild.
+
+#### How this was found
+
+Started from `roadmap.md`'s amsdemo thread: caption dates displaying wrong
+("7-Jul-126") and demo message ordering (Part 1…23) scrambled. Two real,
+smaller bugs were found and fixed first — a `tm_year % 100` Y2K display bug
+in `bldcapt.c`/`shrkdate.c`, and a missing tiebreak in `recon.c`'s
+sort-by-time comparator (`MsgListEntry_CompareTimes`) for messages sharing
+the same one-second-resolution `AMS_DATE`. Neither fully explained the
+ordering symptom: instrumenting `blddate.c` directly showed
+`parsedateheader()` returning failure for all 23 real `gendemo` messages,
+every time — not an occasional/data-dependent failure. A standalone test
+harness (linking a byte-for-byte-identical-to-deployed sandbox rebuild of
+`prsdate.c` against `libcparser.a`) reproduced the same universal failure
+outside the full application, confirming it wasn't specific to the `recon`
+call path. `parser_SetDebug(1)` state-machine tracing, cross-referenced
+against bison's own `-v`/`.output` state and rule listings and the raw
+generated tables (`yypact`, `yytable`, `yycheck`, `yydefact`, `yypgoto`,
+`yydefgoto`, `yyr1`), pinpointed each of the three engine bugs above by
+direct comparison against bison's documented/generated reference behavior
+for the identical grammar.
+
+#### Relationship to the LP64 bug family (§12)
+
+A close cousin, not a member of that family — same underlying *shape*, a
+different mechanism. Both are: 1990s C code that hardcoded an assumption
+about a fixed data width or representation, which a *different* tool
+further down the modern toolchain silently violated decades later, and
+which an untyped/blind access (here, a raw pointer cast across a width
+mismatch; there, register-level zero-extension through an untyped `void
+(*)()` vtable dispatch on an LP64 ABI) then corrupts without any compiler
+error to flag it. The lesson is identical even though the failure mode
+isn't: code that assumes "this will always be N bits" is fragile against
+*any* link in the toolchain — compiler, ABI, or in this case, a
+code-generator's own storage-optimization choices — deciding otherwise for
+reasons invisible at the point where the assumption was written.
+
+#### Verification
+
+Static: all five grammars' generated `.c` files recompile clean against the
+fixed engine (0 `error:` lines across a full `dependInstall`). Dynamic:
+`prsdate` verified end-to-end via `gendemo` — every previously-failing
+test input (including the literal `arpadate()` output format, `"Jul 10"`
+with no year, and pure-numeric `"7/10/1992"`) now parses to the correct
+`tm_year`/`tm_mon`/`tm_mday`/`tm_hour`/`tm_min`/`tm_sec`, both in the
+standalone harness and against the actual deployed `build/lib` libraries.
+The other four grammars (`eliy`, `parsey`, `eqparse`, `num`) are unverified
+beyond a clean compile/link — see the scope table above.
+
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 
 **Resolved 2026-07-04 for the local-store case — see `roadmap.md` Near-term →
