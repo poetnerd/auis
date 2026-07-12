@@ -1650,6 +1650,54 @@ two fonts; or (b) carve `console/fonts` out of the `MK_CONSOLE` gate in
 `atk/Imakefile` so it always builds regardless of whether `console`
 itself does — the smaller, more targeted fix.
 
+### clock inset's `InitializeObject` depends on the `icon12` font resolving, via its cursor
+
+Clock was manually bisected across 9 checkpoints from `6338ade7de`
+(2026-07-07, before the M1 rollout) through HEAD, each a full
+from-scratch rebuild, and found blank at every single one — logged as
+a confirmed pre-existing, not-yet-root-caused bug (see `roadmap.md` →
+Insets to Repair → clock). Reopened the same day: inserting a fresh
+clock via ez's `<ESC><TAB>clock` ("insert inset by name") rendered
+correctly in the same session and build where a *parsed* clock (from
+serialized datastream text in the test file) had been failing.
+
+Found the mechanism: `clockview__InitializeObject`
+(`contrib/time/clockv.c:288-289`) does
+```c
+if (!(self->cursor = cursor_Create(self))) return(FALSE);
+cursor_SetStandard(self->cursor, Cursor_Gunsight);
+```
+and `xcursor__SetStandard` (`atk/basics/x/xcursor.c:97-107`) hardcodes
+```c
+#define DEFAULTFONTNAME "icon"
+#define DEFAULTFONTSIZE 12
+...
+self->header.cursor.fillFont = fontdesc_Create(DEFAULTFONTNAME,0,DEFAULTFONTSIZE);
+```
+— i.e. clock's cursor shape (the "gunsight" cursor shown while
+interacting with it) depends on the `icon12` font resolving. If that
+lookup fails, `cursor_Create` returns null and `InitializeObject`
+returns `FALSE` immediately — the clockview never finishes
+initializing, so nothing in `Redraw` (hands, face, labels) ever runs.
+This matches the observed symptom precisely: a completely blank
+clock, not just missing labels.
+
+**Not fully closed.** `icon12` is not `MK_CONSOLE`-gated like
+`con10`/`con12` (different root cause than the note above) and was
+already confirmed present in `fonts.dir` and resolvable via `xlsfonts`
+*before* any of today's console-font work — so it isn't obviously
+"the font was missing" in the same way. Best current explanation: a
+transient X-server font-cache/session-state issue specific to
+whatever long-running `ez` process the old, broken clock instance
+lived in, cleared up as a side effect of today's repeated
+`mkfontdir`/`xset fp rehash` work for `con10`/`con12` — not a
+permanent gap, not a code defect, but not confirmed either. Not yet
+isolated: whether the *old* serialized-datastream clock (as opposed to
+one freshly created by name) also now renders correctly in a fresh
+`ez` launch, which would settle whether this is pure session/font-cache
+state versus something specific to how a clock gets instantiated from
+parsed data versus by-name insertion.
+
 ## Archive fetch: missing files (404)
 
 The following files were not available when the archive was mirrored from

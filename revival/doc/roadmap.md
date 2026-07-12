@@ -399,22 +399,45 @@ scripts: `revival/doc/calc-text-rendering-investigation.md`. Summary:
   The raster inset itself is proven working; this is the converter
   CLI only.
 
-### clock — face never draws; pre-existing, not a regression (confirmed 2026-07-12)
+### ~~clock — face never draws~~ — working again, likely font/session state, not code (2026-07-12)
 
-- Clock inset instantiates but its face/hands never render (observed
-  2026-07-12 in `build/testing.ez`). Manually bisected across the
-  entire M1 rollout plus all recent zip/calc/Xft work — 9 checkpoints
-  from `6338ade7de` (2026-07-07, before M1 point 1) through HEAD, each
-  a full from-scratch `make Clean && make World` rebuild — blank at
-  every single one, including the oldest. Confirmed pre-existing; no
-  commit in that range explains it. `clockview__Redraw`
-  (`contrib/time/clockv.c`) draws hands/face via `graphic_XOR`/
-  `graphic_SOURCE` transfer modes and line/arc primitives
-  (`DrawLineTo`, `DrawArc`, `EraseVisualRect`) — a different path from
-  the Xft text-drawing code the recent calc/zip fixes touched. Not yet
-  root-caused; next step is an lldb trace of `clockview__FullUpdate` →
-  `Redraw` to confirm it's even being called and with what
-  `clockview_GetLogicalBounds` rect.
+- Clock inset was observed instantiating with its face/hands never
+  rendering (2026-07-12, in `build/testing.ez`). Manually bisected
+  across the entire M1 rollout plus all recent zip/calc/Xft work — 9
+  checkpoints from `6338ade7de` (2026-07-07, before M1 point 1) through
+  HEAD, each a full from-scratch `make Clean && make World` rebuild —
+  blank at every single one, including the oldest. No commit in that
+  range explains it, so it was logged as a confirmed pre-existing,
+  not-yet-root-caused bug.
+- **Reopened same day:** inserting a brand-new clock inset via ez's
+  `<ESC><TAB>clock` ("insert inset by name") command rendered
+  correctly, in the same session, same build. The old inset (parsed
+  from serialized datastream text in the test file) and the new one
+  (created fresh through ez's own inset-creation code path) are not
+  the same code path, and only the old one was ever observed broken.
+- **Concrete mechanism found:** `clockview__InitializeObject`
+  (`contrib/time/clockv.c:288-289`) does
+  `if (!(self->cursor = cursor_Create(self))) return(FALSE);` followed
+  by `cursor_SetStandard(self->cursor, Cursor_Gunsight)`.
+  `xcursor__SetStandard` (`atk/basics/x/xcursor.c:97-107`) hardcodes
+  `fontdesc_Create("icon", 0, 12)` (font family `icon12`) to build the
+  cursor's fill pattern. If that font resolution fails for any reason,
+  `cursor_Create` returns null, `InitializeObject` returns `FALSE`
+  immediately, and the clockview never finishes initializing —
+  matching the observed symptom exactly (nothing draws at all, not
+  just labels: hands are drawn later in `Redraw`, which never runs on
+  an object that failed to initialize).
+- **Not fully closed:** `icon12` itself was already confirmed present
+  in `fonts.dir` and resolvable via `xlsfonts` before any of the
+  2026-07-12 `con10`/`con12` console-font work (see "`MK_CONSOLE` being
+  off..." below), so this isn't the same root cause as that issue.
+  Current best explanation is a transient X-server font-cache/session
+  state problem specific to whatever `ez` process the old, broken
+  clock instance lived in — not a permanent gap and not a code defect
+  — but this hasn't been isolated further (e.g. by testing whether the
+  *old* serialized datastream clock also now renders correctly in a
+  fresh `ez` launch, which would confirm it's session-state and not
+  something specific to the by-name insertion path).
 
 ---
 
@@ -880,8 +903,11 @@ htmlview testing, forgotten about) on 2026-07-12.
    "Media" submenu (Equation, Header/Footer, PostScript, Raster,
    Spreadsheet, Animation, Hyperlink, Layout, Ness, Note, Writestamp,
    By name...)
-2. **Clock inset**: currently fails — see Insets to Repair → clock
-   (pre-existing, unrelated to the above)
+2. **Clock inset**: insert fresh via `<ESC><TAB>clock` and confirm it
+   renders — see Insets to Repair → clock (unrelated to the Media
+   issue above; a *parsed* clock from serialized datastream text has
+   been seen failing to render even when a freshly-inserted one works,
+   root cause not fully isolated)
 
 ---
 

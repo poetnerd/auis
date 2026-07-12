@@ -1,45 +1,51 @@
-\begindata{text,105553131307232}
+\begindata{text,105553141956832}
 \textdsversion{12}
 \template{default}
 Hello World!
 
 Here's a clock:
 
-
-
+\begindata{clock,345000432}
+Datastream version: 1
+hand lengths, 60, 80, -20
+hand widths, 4, 2, 1
+ticks, 5, 12, 60
+border, 1, 2
+labels, 4, 0, Andy
+12
+3
+6
+9
+\enddata{clock,345000432}
+\view{clockview,4639967728,4,0,0}
 Here's an annotation:
 
-\begindata{note,105553146003456}
+\begindata{note,105553127276768}
 200 100 1 
 \title{wdc}
-\begindata{text,105553131307456}
+\begindata{text,105553141972992}
 \textdsversion{12}
 Hello\
-\enddata{text,15040960}
-\enddata{note,105553146003456}
-\view{noteview,105553146003456,0,0,0}
+\enddata{text,25706496}
+\enddata{note,105553127276768}
+\view{noteview,105553127276768,0,0,0}
 Here is a calc:
 
-\begindata{calc, 166741808}
-TopTitleFontName AndySans22b
-BottomLegendFontName Andy20i
-Value 0.000000
-\enddata{calc, 166741808}
-\view{calcv,4461709104,4,0,0}
+
 
 And more.
 
 
-\begindata{eq,105553146003792}
-{ lpile d_eqstyle { d s { cpile { d t } over { zilch } } } { zilch } { zilch } { zilch } { zilch } } \enddata{eq,105553146003792}
-\view{eqview,105553146003792,1,0,0}
+\begindata{eq,105553127277216}
+{ lpile d_eqstyle { d s { cpile { d t } over { zilch } } } { zilch } { zilch } { zilch } { zilch } } \enddata{eq,105553127277216}
+\view{eqview,105553127277216,1,0,0}
 <head> </head>
 
 <body>
 
 </body>
 
-\begindata{table,105553122934784}
+\begindata{table,105553133584384}
 ^aaa	 	 	 	 
 32	8	=[2,1]+[2,2]	 	 
  	 	 	 	 
@@ -51,12 +57,12 @@ And more.
  	 	 	 	 
  	 	 	 	 
  	 	 	 	 
-\enddata{table,105553122934784}
-\view{spread,105553122934784,2,0,0}
+\enddata{table,105553133584384}
+\view{spread,105553133584384,2,0,0}
 
-\begindata{eq,105553146003904}
-{ lpile d_eqstyle { y above { - } = 1 m m - y } { v sub { x } ( { y above { - } } ) = 4 . 9 9 5 { cpile { 1 } over { m m * s e c } } * ( { 2 * y above { - } m m - y above { - } sup { 2 } } ) } } \enddata{eq,105553146003904}
-\view{eqview,105553146003904,3,0,0}
+\begindata{eq,105553127293152}
+{ lpile d_eqstyle { y above { - } = 1 m m - y } { v sub { x } ( { y above { - } } ) = 4 . 9 9 5 { cpile { 1 } over { m m * s e c } } * ( { 2 * y above { - } m m - y above { - } sup { 2 } } ) } } \enddata{eq,105553127293152}
+\view{eqview,105553127293152,3,0,0}
 
 
-\enddata{text,15040736}
+\enddata{text,25690336}
