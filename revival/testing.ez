@@ -31,7 +31,12 @@ Hello\
 \view{noteview,105553127276768,0,0,0}
 Here is a calc:
 
-
+\begindata{calc, 346049200}
+TopTitleFontName AndySans22b
+BottomLegendFontName Andy20i
+Value 127.000000
+\enddata{calc, 346049200}
+\view{calcv,4641016496,5,0,0}
 
 And more.
 

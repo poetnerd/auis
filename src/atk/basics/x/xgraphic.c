@@ -699,25 +699,6 @@ long TextLength; {
 		xgraphic_GetClipBoundingRect(self, &paneClip);
 		XftDrawSetClipRectangles(xftd, 0, 0, &paneClip, 1);
 
-		/* XGDEBUG: temporary in-vivo diagnostics for the calc
-		   display bug -- remove when resolved */
-		{
-		    static int xgdebug = -1;
-		    if (xgdebug < 0) xgdebug = (getenv("XGDEBUG") != NULL);
-		    if (xgdebug && TextLength <= 10) {
-			FILE *dbg = fopen("/tmp/xgdebug.log", "a");
-			if (dbg) {
-			    fprintf(dbg,
-				"DrawChars mode=%d op=0x%x text=\"%.*s\" gx=%d gy=%d pane=[%d,%d %ux%u]\n",
-				(int)self->header.graphic.transferMode,
-				(unsigned)Operation, (int)TextLength, Text,
-				gx, gy, paneClip.x, paneClip.y,
-				paneClip.width, paneClip.height);
-			    fclose(dbg);
-			}
-		    }
-		}
-
 		/* Place each glyph at its X11-metric position and clip it
 		   to its advance cell.  Clipping prevents right-side bearing
 		   overflow from bleeding into the next character's area, which
@@ -753,21 +734,6 @@ long TextLength; {
 			    } else {
 				clip.width = clip.height = 0;
 			    }
-			    /* XGDEBUG: temporary diagnostics -- remove */
-			    {
-				static int xgdebug2 = -1;
-				if (xgdebug2 < 0) xgdebug2 = (getenv("XGDEBUG") != NULL);
-				if (xgdebug2 && TextLength <= 10) {
-				    FILE *dbg = fopen("/tmp/xgdebug.log", "a");
-				    if (dbg) {
-					fprintf(dbg,
-					    "  glyph '%c' cx=%d adv=%d clip=[%d,%d %ux%u]\n",
-					    ch, cx, adv, clip.x, clip.y,
-					    clip.width, clip.height);
-					fclose(dbg);
-				    }
-				}
-			    }
 			    if (self->header.graphic.transferMode == graphic_WHITE) {
 				/* Erase: AA overdraw can't restore edge pixels; fill
 				   the advance cell with the background color instead
@@ -787,6 +753,26 @@ long TextLength; {
 			cx += adv;
 		    }
 		    XftDrawDestroy(xftd);
+		    /* Xft/Render draws into a rootless XQuartz window are not
+		       reliably recomposited to the native window surface on their
+		       own -- the pixels land correctly in the server-side drawable
+		       (confirmed via XGetImage readback) but the visible window can
+		       lag until something else (e.g. a focus change) forces a full
+		       recomposite.  A self-copy of the drawn region through the
+		       core X11 path -- which reliably repaints -- kicks the
+		       compositor into picking up the already-correct pixels. */
+		    if (cx > gx) {
+			long kx1 = (gx > paneClip.x) ? gx : paneClip.x;
+			long ky1 = (clip_y > paneClip.y) ? clip_y : paneClip.y;
+			long kx2 = (cx < (paneClip.x + paneClip.width)) ?
+			    cx : (paneClip.x + paneClip.width);
+			long ky2 = ((clip_y + fh) < (paneClip.y + paneClip.height)) ?
+			    (clip_y + fh) : (paneClip.y + paneClip.height);
+			if (kx2 > kx1 && ky2 > ky1) {
+			    XCopyArea(dpy, xgraphic_XWindow(self), xgraphic_XWindow(self),
+				xgraphic_XGC(self), kx1, ky1, kx2 - kx1, ky2 - ky1, kx1, ky1);
+			}
+		    }
 		    return;
 		}
 		/* widths unavailable: string rendering fallback */

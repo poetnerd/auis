@@ -89,7 +89,29 @@ plausible, low-risk change in isolation (matches established
 precedent for exactly this symptom class) but wasn't isolated/tested
 independently of the other changes in this session.
 
-## Open bug #1: "ghost" text — old digits visible behind new ones
+## Open bug #1: "ghost" text — old digits visible behind new ones — RESOLVED 2026-07-12
+
+**Fully resolved.** This bug had two layered causes, fixed in two passes:
+
+1. **AA erase-by-overdraw residue** (the original "ghost" symptom) — fixed
+   by filling the erased glyph cell with a solid background rect
+   (`XftDrawRect`) instead of redrawing the glyph in white. See
+   `calc-ghost-fix-prompt.md`'s Outcome section for the original writeup.
+
+2. **Rootless XQuartz Xft recomposite lag** (the "leading characters
+   missing" regression that fix #1 exposed) — a live `XGetImage`
+   framebuffer readback proved the X server was painting the correct
+   pixels every time, even when the user visually saw them missing; the
+   screen just wasn't being recomposited without an external nudge (e.g. a
+   focus change). Fixed with a self-`XCopyArea` "kick" through the core
+   X11 path after each Xft draw in `xgraphic_DrawChars`, forcing the
+   rootless compositor to pick up the already-correct pixels. This also
+   fixed a second, independently-discovered symptom: text near a calc
+   inset staying invisible until unrelated nearby redraw activity
+   revealed it. Full writeup in `porting-changelog.md`'s 2026-07-12 entry.
+
+User-confirmed fixed for both symptoms. Original bug description below,
+left for context.
 
 **Symptom:** typing a multi-step calculation (e.g. `123+4=`) shows only
 the final answer clearly (`127`), with the previous expression (`123`)

@@ -203,14 +203,13 @@ dependInstall`) run 2026-07-10: zero real `error:` lines tree-wide
 Insets with known breakage, or not buildable/enabled at all. Each is
 its own task; none block M1.
 
-### calc — builds, loads, computes correctly; two open rendering bugs, UNRESOLVED (handoff 2026-07-12)
+### calc — builds, loads, computes correctly; text rendering fully fixed, one open cosmetic item (2026-07-12)
 
 Brought into the active build 2026-07-11 (see Completed → `contrib/calc`
 inset). First real interactive exercise (2026-07-11/12) found one real
-crash (fixed) and one real Xft rendering bug (fixed, confirmed via lldb
-trace), plus two more rendering bugs still open. Full trail, reproduction
-steps, what's been proven/disproven, and ready-to-adapt lldb tracing
-scripts: `revival/doc/calc-text-rendering-investigation.md`. Summary:
+crash (fixed) and three real Xft rendering bugs, all now fixed. Full
+trail, reproduction steps, and what was tried/disproven along the way:
+`revival/doc/calc-text-rendering-investigation.md`. Summary:
 
 - **Fixed, confirmed:** `calc.c Writer` NULL-pointer crash on every
   document checkpoint (`sprintf`'s `int` return cast to `char *`).
@@ -227,16 +226,23 @@ scripts: `revival/doc/calc-text-rendering-investigation.md`. Summary:
   with the background color (`XftDrawRect`) instead of redrawing glyph
   shapes, whenever `transferMode == graphic_WHITE`. User-confirmed: no
   more gray residue behind the final answer.
-- **New open bug, surfaced by the above fix:** during incremental
-  multi-keystroke redraws, the display now shows only a *suffix* of the
-  correct string — leading characters go missing. Typing `123+4=`
-  shows `1`, `2`, `23`, `3+`, `23+4` instead of `1`, `12`, `123`,
-  `123+`, `123+4`; the final `=` result (`127`) always draws correctly,
-  and a window focus-loss/regain forced repaint shows the correct full
-  string (proving calc's underlying value tracking is fine — this is
-  purely an incremental Clear/Draw redraw defect). Not yet root-caused;
-  see `calc-ghost-fix-prompt.md`'s "Outcome" section for the untested
-  hypothesis and next diagnostic step.
+- **Fixed and confirmed 2026-07-12:** a bug surfaced by the ghost fix
+  above — during incremental multi-keystroke redraws, the display showed
+  only a *suffix* of the correct string (typing `123+4=` showed `1`,
+  `2`, `23`, `3+`, `23+4` instead of `1`, `12`, `123`, `123+`, `123+4`),
+  and a window focus-loss/regain always corrected it. Root-caused via a
+  live `XGetImage` framebuffer readback added to `xgraphic_DrawChars`:
+  the server-side drawable consistently had the *correct* pixels even at
+  moments the screen showed them missing, proving this wasn't a drawing
+  defect but a rootless-XQuartz recomposite lag — Xft/Render-extension
+  draws don't reliably reach the visible native window surface without
+  an external nudge. Fixed with a self-`XCopyArea` "kick" through the
+  core X11 path (known to repaint reliably) after each Xft draw, forcing
+  the compositor to pick up the already-correct pixels. This also fixed
+  an independently-discovered, broader symptom: text near a calc inset
+  staying invisible until unrelated nearby redraw activity revealed it —
+  same root cause, not calc-specific. Full writeup:
+  `porting-changelog.md`'s 2026-07-12 entry.
 - **Open:** the "=" button stays in reverse video indefinitely after
   being pressed. Not investigated; may be original 1988 "last button
   pressed" UX rather than a bug — needs a clean-build check to establish

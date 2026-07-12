@@ -407,3 +407,53 @@ in fossil) — a different generator, different subsystem, different failure
 shape (data/size-dependent, not a fixed polarity flag) from the flex bug
 above. Not investigated further this session; flagged in `roadmap.md`'s
 gendemo section as the next thing to chase.
+
+### 2026-07-12 — calc inset "missing leading characters": rootless XQuartz Xft recomposite lag
+
+Follow-on to the same session's ghost-text fix (see `calc-text-rendering-
+investigation.md`, open bug #1, and its `Outcome` section). After the
+AA-erase-by-overdraw fix, a new symptom appeared: typing a multi-character
+expression showed only a trailing suffix of the correct string (e.g. typing
+`123` displayed `1`, `2`, `23` instead of `1`, `12`, `123`), though the
+final `=` result and any single-character string always drew correctly.
+Key diagnostic clue from the user: switching window focus away and back
+always corrected the display immediately.
+
+Root-caused via a live `XGetImage` framebuffer readback added directly
+inside `xgraphic_DrawChars`'s Xft path (`src/atk/basics/x/xgraphic.c`):
+after each glyph draw, `XSync` then read back the actual server-side pixel
+at the glyph's position. The readback consistently showed the *correct*
+painted pixel even at the exact moments the user visually saw the
+character missing on screen. That's conclusive: the X server's drawable
+genuinely has the right content — the bug is downstream, in getting that
+content onto the visible native window surface. Root cause: rootless
+XQuartz does not reliably recomposite the native window surface for
+Xft/Render-extension draws on their own; a focus change (or anything else
+that forces a full recomposite) is what was making the correct pixels
+visible.
+
+This also explains a second, broader symptom the user found independently
+while root-causing this: typing text on the line above a calc inset (an
+ordinary core-X/Xft mixed redraw, forcing a multi-line relayout near the
+inset) could leave text invisible until unrelated nearby redraw activity
+(typing more text) incrementally "revealed" it. Same root cause, not
+calc-specific — calc's display is just unusually exposed to it because
+nothing else nearby generates incidental redraw traffic to mask the lag.
+
+**Fix:** in `xgraphic_DrawChars`'s Xft per-glyph-width-table loop, after
+`XftDrawDestroy`, issue a self-`XCopyArea` (source and destination both the
+drawn region of the target window, through the *core* X11 path) to force
+the compositor to recognize the region as dirty and recomposite it. Core-X
+draws were already confirmed to repaint reliably (calc's buttons/borders
+render fine), so kicking Xft-drawn regions through that same path is a
+targeted, low-risk workaround — no change to *what* gets drawn, only an
+extra no-op-content copy to trigger recomposite. Scoped to the
+widths-table loop (the path calc and all normal text drawing use); the
+`widths == NULL` string-extents fallback was not touched (rare path, not
+observed to hit this symptom in testing).
+
+Confirmed fixed by the user for both the calc digit-display symptom and
+the text-near-inset symptom. Diagnostic scaffolding (the XGetImage
+readback and two prior-session `XGDEBUG`-gated logging blocks in the same
+function) was removed after confirmation; only the `XCopyArea` kick and
+its explanatory comment remain.
