@@ -7,4 +7,5 @@
 #define MK_CUI
 #define CONTRIB_ENV 1
 #define MK_ZIP
+#define MK_CALC
 #undef ANDREW_MALLOC_ENV

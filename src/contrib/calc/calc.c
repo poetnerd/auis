@@ -152,7 +152,7 @@ Reader( self )
   while ( field = calc_ReadObjectField( self ) )
     {
     if ( strcmp( "Value", field->name ) == 0 )
-       sscanf( field->content, "%F", &Value );
+       sscanf( field->content, "%lf", &Value );
     }
   OUT(Reader);
   }
@@ -184,7 +184,11 @@ Writer( self )
 
   IN(Writer);
   field.name = "Value";
-  field.content = (char *)sprintf( value, "%f", Value );
+  /* sprintf() returns the char count written, not a pointer -- the old
+     (char *) cast turned that small int into a bogus near-NULL pointer,
+     which apt_WriteObjectField's fprintf("%s", ...) then dereferenced. */
+  sprintf( value, "%f", Value );
+  field.content = value;
   calc_WriteObjectField( self, &field );
   OUT(Writer);
   }

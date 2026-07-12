@@ -72,8 +72,14 @@ END-SPECIFICATION  ************************************************************/
 #define  box			      2
 #define  roundbox		      3
 
-#define  Balanced		     (view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBASELINE)
-#define  RightMiddle		     (view_ATRIGHT | view_BETWEENTOPANDBASELINE)
+/* BETWEENTOPANDBOTTOM (not BETWEENTOPANDBASELINE) centers using both
+ * max_bounds ascent and descent, matching fnotev's DoUpdate fix: under
+ * Xft's scalable font metrics the max ascent can be much larger than
+ * a glyph's own ink, so a baseline placed at half-ascent-below-y (the
+ * BASELINE variant) no longer lands near the visual middle of the
+ * button. */
+#define  Balanced		     (view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBOTTOM)
+#define  RightMiddle		     (view_ATRIGHT | view_BETWEENTOPANDBOTTOM)
 
 #define  Data			    ((struct calc *)self->header.aptv.data_object)
 #define  Operand1	    	     (self->operand_1)
@@ -120,8 +126,18 @@ END-SPECIFICATION  ************************************************************/
 #define	 AreaSpecH(i)    	      Area(i).spec->height
 #define	 AreaHighlighted(i)    	      Area(i).states.highlighted
 
-void				      Digit(), Operator(), Clear(),
-				      Display();
+static void  Digit(struct calcv *self, long area);
+static void  Operator(struct calcv *self, long area);
+static void  Clear(struct calcv *self, long area);
+static void  Display(struct calcv *self, long area);
+static void  Shrink(char *string);
+static void  Replace_String(struct calcv *self, char *old, char *new, long area);
+static void  Highlight_Area(struct calcv *self, long area);
+static void  Normalize_Other_Areas(struct calcv *self, long area);
+static void  Normalize_Area(struct calcv *self, long area);
+static void  Draw_Calc(struct calcv *self);
+static void  Draw_Outline(struct calcv *self);
+
 static char			      digit_font[] = "andysans10b",
 				      oper_font[]  = "andysans16b",
 				      expr_font[]  = "andysans12b";
@@ -345,7 +361,7 @@ calcv__Update( self )
   OUT(calcv_Update);
   }
 
-static
+static void
 Replace_String( self, old, new, area )
   register struct calcv	     *self;
   register char		     *old,*new;
@@ -513,7 +529,7 @@ Digit( self, area )
       else  strcat( Operand2, AreaString(area) );
     }
     else  strcat( Operand1, AreaString(area) );
-  sscanf( Operand1, "%F", &calc_Value( Data ) );
+  sscanf( Operand1, "%lf", &calc_Value( Data ) );
   if ( !(*AreaString(area) == '.'  &&  PointPresent) )
     {
     if ( *AreaString(area) == '.' )   PointPresent = true;
@@ -535,7 +551,7 @@ Operator( self, area )
   Highlight_Area( self, area );
   if ( *Operand1 )
     {
-    sscanf( Operand1, "%F", &value );
+    sscanf( Operand1, "%lf", &value );
     DEBUGst(Operand1,Operand1);
     PointPresent = false;
     if ( PendingOp )
@@ -544,8 +560,8 @@ Operator( self, area )
       if ( *Operand2 )
         {
 	DEBUGst(Operand2,Operand2);
-        sscanf( Operand1, "%F", &operand_1 );
-        sscanf( Operand2, "%F", &operand_2 );
+        sscanf( Operand1, "%lf", &operand_1 );
+        sscanf( Operand2, "%lf", &operand_2 );
         switch ( PendingOp )
           {
           case  '+':  value = operand_1 + operand_2;        break;
@@ -576,7 +592,7 @@ Operator( self, area )
   OUT(Operator);
   }
 
-static
+static void
 Shrink( string )
   register char		     *string;
   {
@@ -618,20 +634,20 @@ Fill_Area( self, area, op )
   switch( AreaShape(area) )
     {
     case  circle:
-      calcv_FillOval( self, AreaBound(area), graphic_BLACK );
+      calcv_FillOval( self, AreaBound(area), (struct graphic *)graphic_BLACK );
       break;
     case  box:
       calcv_FillRectSize( self, AreaLeft(area) + 2, AreaTop(area) + 2,
-			    AreaWidth(area) - 3, AreaHeight(area) - 3, graphic_BLACK );
+			    AreaWidth(area) - 3, AreaHeight(area) - 3, (struct graphic *)graphic_BLACK );
       break;
     case  roundbox:
       calcv_FillRRectSize( self, AreaLeft(area), AreaTop(area),
-			AreaWidth(area), AreaHeight(area), 6,6, graphic_BLACK );
+			AreaWidth(area), AreaHeight(area), 6,6, (struct graphic *)graphic_BLACK );
       break;
     }
   }
 
-static
+static void
 Highlight_Area( self, area )
   register struct calcv	     *self;
   register long		      area;
@@ -644,7 +660,7 @@ Highlight_Area( self, area )
     }
   }
 
-static
+static void
 Normalize_Other_Areas( self, area )
   register struct calcv	     *self;
   register long		      area;
@@ -655,7 +671,7 @@ Normalize_Other_Areas( self, area )
       Normalize_Area( self, i );
   }
 
-static
+static void
 Normalize_Area( self, area )
   register struct calcv	     *self;
   register long			      area;
@@ -667,7 +683,7 @@ Normalize_Area( self, area )
     }
   }
 
-static
+static void
 Draw_Calc( self )
   register struct calcv	     *self;
   {
@@ -699,7 +715,7 @@ Draw_Calc( self )
   OUT(Draw_Calc);
   }
 
-static
+static void
 Draw_Outline( self )
   register struct calcv	     *self;
   {
