@@ -398,7 +398,13 @@ trail, reproduction steps, and what was tried/disproven along the way:
   same binary just wrote (observed 2026-07-09, logged *before* the
   atk/raster/lib -pi rollout — pre-existing, not a regression).
   Writer output also looks LP64-suspicious: header fields appear
-  8 bytes wide. Suspect `oldrf.c` raw struct I/O. Other codecs fine:
+  8 bytes wide. **Lead found 2026-07-12** (M2 point 0 triage, see
+  Medium-term → ANSI C conversion): `oldRF__WriteImage`
+  (`oldrf.c:221`) passes a `long buf[]` to `pixelimage_GetRow`,
+  whose real signature wants `short *dest` — a 4x size mismatch,
+  `-Wincompatible-pointer-types` flags it directly. Not yet traced
+  through `GetRow`'s bit-packing far enough to confirm/fix; likely
+  root cause or a major contributor. Other codecs fine:
   raster identity rewrite, PostScript, MacPaint, Xbitmap write and
   Xbitmap→raster round-trip (byte-identical to identity output) all
   pass; baseline captured in `~/src/AUIS/test-baselines/raster-pi/`.
@@ -1132,6 +1138,77 @@ call site and definition tree-wide *before* any mass file editing starts
   splitting `-p` into `-pi`/`-pe` and dropping the `>= 8` gates behind
   `-pi`, defaults untouched. The real work is the per-directory
   rollout — see "M1 rollout points" below.
+- **M2 point 0 — `-Wincompatible-pointer-types` triage (census
+  2026-07-12, not yet fixed).** A cheap, high-signal precursor to
+  the M2 sweep proper: 483 warnings tree-wide, a fixed enumerable
+  list, not requiring `-Wno-implicit-function-declaration` to come
+  off anywhere. This is M1's bug signature (real/pointer size
+  mismatches) surfacing in plain C calls that never went through a
+  Class dispatch macro, so M1's typed casts had no chance to catch
+  them. Grouping the log
+  (`grep -B1 "Wincompatible-pointer-types\]" dependInstall.log`) by
+  message pattern splits cleanly into benign-idiom noise and a few
+  real-bug clusters:
+  - **Benign, already covered by the M1 runbook's ruling — leave
+    alone:** ~150+ instances of a subclass pointer passed where the
+    cast names the defining superclass (prefix-layout subtyping,
+    expected tree-wide); ~55 instances of `struct X * → char *`
+    across many struct types (`egg`, `style`, `chartapp`, ...) plus
+    the `int () → char *` cluster (55, mostly `roffcmds.c`/
+    `rofftext.c`) — both are the pre-ANSI idiom of `char *` used as
+    a generic pointer (this codebase's `void *` substitute, e.g.
+    `hash.c`'s table API and roff command-handler tables). Cosmetic;
+    M3/M4 territory if ever cleaned up, not a bug hunt.
+  - **`fselect.c:65`(`overhead/util/lib`) — confirmed real, low
+    urgency.** `int *` passed where libc's `select()` now wants
+    `fd_set *`: 1988-era 4.2BSD int-bitmask `select()` calling
+    convention, never updated when the platform moved to POSIX
+    `fd_set`. Currently survives by coincidence, not correctness —
+    Darwin's `fd_set` word size is 32 bits and the code clamps its
+    fd count to `<= 32`, so the region `select()` actually
+    touches stays inside the 4 bytes of the `int` it was given.
+    Fragile, not an active corruption. Only live caller: `cui`
+    (`ams/msclients/cui/unixmach.c`). Fix: real `fd_set` +
+    `FD_SET`/`FD_ISSET`, own commit.
+  - **`oldrf.c:221` (`atk/raster/lib`) — strong new lead on the
+    already-logged raster RF bug, not yet root-caused.**
+    `oldRF__WriteImage` declares `long buf[BUFBITS>>5]` and passes
+    it straight to `pixelimage_GetRow`, whose real (Class-typed)
+    signature is `GetRow(long x, long y, long length, short *dest)`
+    — a `long`/`short` size mismatch (4x) landing directly in the
+    read/write path. This lines up with the existing Insets to
+    Repair → raster entry ("header fields appear 8 bytes wide";
+    `convertraster intype=RF` read-back hang) closely enough that
+    it's very likely the root cause or a major contributor — not
+    yet traced through `GetRow`'s bit-packing logic far enough to
+    hand over a fix. Same cluster (`long*`/`short*` mismatches,
+    11 instances) also touches `raster.c`, `rasterio.c`, `paint.c`,
+    `xwdio.c`, `suite.c` — worth surveying together once the
+    `oldrf.c` root cause is nailed down, in case it's one shared
+    bug pattern rather of five separate ones.
+  - **`int */long*` cluster, 67 instances, uninvestigated** —
+    scattered across `bushv.c`, `capaux.c`, `celv.c`, `chlistv.c`,
+    `captions.c`, `boxview.c`, and others. Same LP64 signature as
+    the two clusters above; no pilot fix done yet. Census the file
+    list before triaging (`grep -E "passing 'int \*' to parameter
+    of type 'long \*'|passing 'long \*' to parameter of type 'int
+    \*'" dependInstall.log`).
+  - **`char ** → char *; remove &` cluster, 18 instances,
+    uninvestigated** — an extra `&` at a call site; could be a real
+    "wrong indirection level" bug or a benign coincidence depending
+    on what's actually at that address. Needs sampling before
+    judging as a group.
+
+  **Suggested order:** fix `oldrf.c` and `fselect.c` first (already
+  scoped, one is tied to a known open bug) to nail the taxonomy the
+  way M1's pilots did, log any new pattern found, then census the
+  `int*/long*` and `&`-removal clusters the same way. Once the
+  taxonomy is proven on 1-2 fixes, the census-and-classify work for
+  the remaining clusters is Sonnet-delegable under the same
+  runbook-style protocol M1 used (exact file:line + expected
+  argument text + skip-and-report-on-mismatch); real-bug fixes and
+  any `.ch`-vs-impl ruling stay top-level.
+
 - **M2 — Prototype sweep.** `-Werror=implicit-function-declaration`
   subtree-by-subtree (`src/config/darwin/system.mcr` COMPILERFLAGS);
   fix by adding `#include`s or `extern` declarations at call sites.
