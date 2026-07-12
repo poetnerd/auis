@@ -1601,6 +1601,20 @@ required each XQuartz session. Automate via a wrapper script or by
 installing the PCF files into XQuartz's default font path
 (`/opt/X11/share/fonts/`).
 
+### ~~fad view "wrong icon" bug~~ — root-caused, not a regression (2026-07-12)
+Suspected `fad` (animation) drawing bug — `ams/demo/d10`'s diagram
+showed a literal "M" instead of an icon for its "Client Program" node.
+Traced to `con10` (a console-app icon font the diagram happens to
+reference) never being built, because `MK_CONSOLE` gates out all of
+`atk/console` including `console/fonts` — not a `fad` defect at all.
+Full root cause, fix recipe, and the two permanent-fix options:
+`porting-assessment.md` → "`MK_CONSOLE` being off silently breaks
+`con10`/`con12`...". Manually fixed and confirmed 2026-07-12: once
+`con10` resolves, the animation renders and plays correctly.
+**Not yet permanent** — will silently regress on the next full clean
+rebuild until `console/fonts` is carved out of the `MK_CONSOLE` gate
+(or `MK_CONSOLE` itself is enabled).
+
 ### ~~Frame size reporting in help~~ — fixed
 
 ---

@@ -1598,6 +1598,57 @@ Imake-bootstrapped, just `build/` and generated files cleared) took
 2026-07-12 — cheap enough that there's no excuse to skip it when
 bisecting.
 
+### `MK_CONSOLE` being off silently breaks `con10`/`con12` icon fonts used outside `console`
+
+`atk/Imakefile:132` gates the *entire* `atk/console` subtree (including
+`console/fonts`, not just `console/lib`/`console/cmd`) behind
+`#ifdef MK_CONSOLE`, which is undefined in this revival (`console` is
+an intentionally inert subsystem — see the directory census in
+`roadmap.md`). `console/fonts/Imakefile` already correctly declares
+`DeclareFont(con10)`/`DeclareFont(con12)` — nothing wrong with that
+recipe — but since the whole directory is never visited, `con10.fdb`/
+`con12.fdb` (custom `.fdb`-format icon fonts, a different format from
+the `.pcf` bitmap fonts everything else uses) never get compiled or
+installed to `build/X11fonts/`, and the fonts are silently absent.
+
+**Symptom (found 2026-07-12):** the `fad` (animation) inset in
+`ams/demo/d10` declares `con10` as one of its two icon fonts (`$N
+con10` — see `atk/fad/fad.c:341`, `fad__iconnum`) to draw a console/
+terminal-shaped icon for its "Client Program" node. With `con10`
+unresolvable, `fontdesc_Create` falls back to some default font, and
+the intended icon glyph code renders as a literal fallback-font
+character — looked exactly like a `fad`-view drawing bug (a wrong
+glyph appeared as "M") and was initially suspected as one during a
+bisection, before being traced to this font gap. `fad` itself has no
+drawing defect; once `con10` resolves, the animation renders and plays
+correctly — confirmed by direct testing, closing out that bisection.
+
+**Manual fix applied (2026-07-12, not yet permanent):**
+```
+cd src/atk/console/fonts
+sed -e 's/^$spacing \(.*\),.*$/$spacing \1,0/' con10.fdb > /tmp/con10.tfdb
+../../../../build/bin/fdbbdf /tmp/con10.tfdb > /tmp/con10.bdf
+/opt/X11/bin/bdftopcf /tmp/con10.bdf > con10.pcf
+cp con10.pcf ../../../../build/X11fonts/con10.pcf
+echo "con10.pcf con10" >> ../../../../build/X11fonts/fonts.dir   # + fix the leading count line
+xset fp rehash
+```
+(exactly replicates the `.fdb.$(FONTEXT):` rule in
+`config/andrew.rls:720-727`, using the already-built `build/bin/fdbbdf`
+and system `bdftopcf`).
+
+**This fix is fragile and will silently regress:** `make Clean`
+deletes `.pcf` files tree-wide, and nothing outside the never-visited
+`console` directory declares `con10`/`con12`, so any future full clean
+rebuild (exactly what [[project_clean_rebuild_bisection_method]] does
+routinely) wipes it again. Two options for a permanent fix, not yet
+decided: (a) define `MK_CONSOLE` to bring back the whole console/
+terminal-emulator subsystem, much bigger scope than needed just for
+two fonts; or (b) carve `console/fonts` out of the `MK_CONSOLE` gate in
+`atk/Imakefile` so it always builds regardless of whether `console`
+itself does — the smaller, more targeted fix. `con12` has the
+identical problem and hasn't been checked for other consumers yet.
+
 ## Archive fetch: missing files (404)
 
 The following files were not available when the archive was mirrored from
