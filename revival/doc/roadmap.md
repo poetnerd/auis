@@ -202,7 +202,7 @@ dependInstall`) run 2026-07-10: zero real `error:` lines tree-wide
 Insets with known breakage, or not buildable/enabled at all. Each is
 its own task; none block M1.
 
-### zip — builds and loads now; solid-black render bug at `-O`, UNRESOLVED
+### zip — builds and loads now; solid-black render bug at `-O`, RESOLVED 2026-07-11
 
 - **Progress 2026-07-11:** `MK_ZIP` defined in `config/site.h`,
   Makefiles regenerated down `contrib/zip/{lib,symbols,samples,utility}`.
@@ -228,29 +228,47 @@ its own task; none block M1.
   mirroring `xgraphic_LocalSetClippingRect`'s clip computation;
   required relinking `libbasics.a`/`runapp` (statically linked).
   Runtime-confirmed: zip zoom no longer escapes its box.
-- **UNRESOLVED, real bug:** with `contrib/zip/lib` built at the default
-  `-O`, the whole zip inset renders as a **solid black rectangle**
-  instead of the diagram. Building the identical source at `-O0`
-  renders correctly. Extensive live lldb tracing (see memory
-  `project_zip_inset_status` for the full trail) confirmed pane
-  geometry, the fill call's transfer mode/pixel/GC state, and its exact
-  on-screen coordinates are ALL correct at the moment of the failing
-  render — yet the screen is still black. Disabling all figure/stream
-  drawing (leaving only `Clear_Pane`'s background fill) renders
-  correctly white, proving some figure-draw code path paints over the
-  correct fill, but tracing every oversized `FillRectSize` call caught
-  none from zip's own drawable — so the culprit is either a different
-  draw primitive (`FillTrapezoid`/`DrawPolygon`/arc fill — `ziporect.c`
-  `Draw()`'s shaded/patterned fill path is the top suspect, gated on
-  figure-mode bits not yet verified live for this fixture) or a
-  coordinate/scale bug making some shape effectively fill everything.
-  Test fixture: `src/doc/papers/atk/Cattey.turnin` (switched from
-  `Sherman.Alloc` — smaller, easier to iterate on; both should be
-  re-tested once resolved). NOT YET COMMITTED — compiles clean as a
-  full directory build, `fossil status` shows edits to `config/site.h`,
-  `atk/basics/x/xgraphic.c`, and ~24 files under `contrib/zip/lib/`.
-  `contrib/zip/utility` (`lt`/`sched`) not started; same untyped-`.ch`
-  treatment will likely be needed there too.
+- **RESOLVED 2026-07-11 — root cause found and fixed.** With
+  `contrib/zip/lib` built at the default `-O`, the whole zip inset
+  rendered as a **solid black rectangle**; the identical source at
+  `-O0` rendered correctly. Root-caused via per-file, then
+  per-function, `-O0`/`optnone` bisection (whole-directory → single
+  file `zipd000.c` → single function
+  `zip__Contextual_Figure_Line_Width`) plus disassembly comparison —
+  full trail in `zip-black-render-investigation.md`. **Actual bug:**
+  `zip.ch` declared `Superior_Image_Line_Width(...) returns char;`
+  (signed), but its real implementation in `zipdf01.c` is explicitly
+  `unsigned char`-returning and uses `255` as its "no width configured
+  anywhere in the superior-image chain" sentinel. The signed
+  declaration made classpp's typed dispatch macro cast the vtable slot
+  to a *signed* `char` return, so at default `-O` the caller
+  (`zip__Contextual_Figure_Line_Width`, `zipd000.c`) optimized its
+  `!= 255` check into `cmn w0, #1` (`== -1`, the sign-extended form of
+  255-as-signed-char) instead of the plain `cmp w0, #0xff` used for the
+  figure's/image's own direct field reads a few lines earlier. The
+  callee actually zero-extends its `unsigned char` 255 to
+  `0x000000FF`, which never equals `0xFFFFFFFF`, so the caller always
+  concluded "found a real width" and returned **255** even when
+  nothing was configured — which flows straight into
+  `zipview_SetLineWidth(self, 255)` and paints every stroke as a
+  255-pixel-wide line, filling the whole figure black. `-O0` "fixed"
+  it only by accident (naive truncate-then-compare instead of the
+  sign-extension shortcut). **Fix:** one-line correction in `zip.ch`
+  (`returns char` → `returns unsigned char`) + classpp regeneration of
+  `zip.eh`/`zip.ih`; confirmed working end-to-end at normal default
+  optimization, no special flags anywhere. Tree-wide scan of all 566
+  `.ch` files for the same declared-vs-implemented narrow-return-type
+  mismatch (both signed/unsigned directions) found no other live
+  instances. Two incidental real bugs fixed along the way in
+  `zipd000.c` (kept, neither was *the* bug): an LP64 pointer-truncated
+  NULL check in `symtab_add` (`(int) entry <= 0` → `entry == NULL`),
+  and an uninitialized-output path in
+  `zip_Contextual_Figure_Line_Dash` when no dash pattern is set
+  anywhere in the chain. Test fixture:
+  `src/doc/papers/atk/Cattey.turnin` (also re-confirmed against
+  `contrib/zip/samples/dragon.zip`). Committed — see fossil log for
+  commit id. `contrib/zip/utility` (`lt`/`sched`) not started; same
+  untyped-`.ch` treatment will likely be needed there too.
 
 ### ness — bison grammar extension blocker
 

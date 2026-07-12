@@ -1227,6 +1227,127 @@ standalone harness and against the actual deployed `build/lib` libraries.
 The other four grammars (`eliy`, `parsey`, `eqparse`, `num`) are unverified
 beyond a clean compile/link — see the scope table above.
 
+### 16. classpp typed-dispatch signedness mismatch: `.ch` declared type vs. implementation's actual type (MEDIUM effort, closed 2026-07-11)
+
+#### Root cause
+
+M1's classpp typed-dispatch conversion (§12 point 11) generates each
+method's caller-side dispatch macro by casting the vtable slot to the
+return/parameter types declared in that class's `.ch` spec — e.g.
+`Superior_Image_Line_Width(zip_type_image image) returns char;` in
+`contrib/zip/lib/zip.ch` generates:
+
+```c
+#define zip_Superior_Image_Line_Width(self,_a1) \
+    ((* ((char (*)(struct zip *, zip_type_image))(...))) (self,_a1))
+```
+
+This assumes the `.ch` declaration and the real C implementation agree on
+type — but nothing enforces that. `zip__Superior_Image_Line_Width`
+(`zipdf01.c`) is explicitly defined `unsigned char`-returning, using `255`
+as its "nothing configured" sentinel, walking a figure→image→
+superior-image→stream inheritance chain. The `.ch` said plain (signed)
+`char`.
+
+At default optimization, the caller
+(`zip__Contextual_Figure_Line_Width`, `zipd000.c`) computed its
+`(width = zip_Superior_Image_Line_Width(...)) != 255` check by exploiting
+the *declared* signedness: since a signed `char` value of `255` sign-
+extends to `-1`, the optimizer rewrote the comparison as `cmn w0, #1`
+(`== -1`) instead of the plain `cmp w0, #0xff` used a few lines earlier
+for the figure's/image's own direct (correctly `unsigned char`-typed)
+field reads. But the callee's *actual* `unsigned char` return zero-extends
+`255` to `0x000000FF` in the return register, not `0xFFFFFFFF` — the two
+never compare equal, so the caller always concluded "found a real width"
+and returned **255** even when nothing was configured anywhere in the
+chain. That `255` flowed straight into `zipview_SetLineWidth(self, 255)`
+in `zipv000.c`'s `Ensure_Line_Attributes`, producing a 255-pixel-wide
+stroke that filled the entire figure with solid foreground color — the
+zip inset "solid black rectangle" bug (see `roadmap.md` → Insets to
+Repair → zip, and `zip-black-render-investigation.md` for the full
+bisection trail).
+
+`-O0` "fixed" the symptom by accident: at that optimization level the
+compiler emits a naive truncate-the-return-value-then-compare-as-unsigned
+sequence instead of the sign-extension shortcut, which happens to still
+produce the right answer regardless of the declared/actual signedness
+disagreement — which is exactly why this class of bug is easy to miss:
+the code *looks* correct, compiles clean, and only misbehaves once the
+optimizer is aggressive enough to exploit the (wrong) signedness contract
+implied by the `.ch` declaration.
+
+#### Fix
+
+One-line type correction in the `.ch` spec to match the implementation:
+```
+-  Superior_Image_Line_Width( zip_type_image image )   returns char;
++  Superior_Image_Line_Width( zip_type_image image )   returns unsigned char;
+```
+followed by `make zip.eh zip.ih` (classpp regeneration) and a normal
+rebuild — no source change needed in either the caller or the callee,
+since both were internally consistent; only the *contract between them*
+(the `.ch` declaration) was wrong. Confirmed working end-to-end at normal
+default optimization, no per-file/per-function flags needed anywhere.
+
+#### Scope: tree-wide, not zip-specific
+
+This is a systemic risk of the M1 typed-dispatch conversion itself, not a
+zip peculiarity — any class whose `.ch` narrow-type declaration
+(`char`/`short`) disagrees in signedness with its C implementation's
+actual return type is a candidate, *if* that method also uses a sentinel
+value whose sign-extended and zero-extended bit patterns differ (a
+narrow-type equivalent of the LP64 family's core failure shape, but not
+an LP64/pointer-width issue at all — this reproduces identically on
+ILP32). Swept tree-wide: compared all `returns char;`/`returns short;`
+(and the mirror, `returns unsigned char;`/`returns unsigned short;`)
+declarations across all 566 `.ch` files in the tree against their actual
+implementations' explicit return-type declarations, in both directions.
+**Zero other live instances found** — `Superior_Image_Line_Width` was the
+only one. Re-run after any future bulk `.ch` editing or when enabling a
+previously-inert subtree (M1's typed-dispatch flip only covers the
+*active* tree — see §12's census — so a `.ch`/implementation mismatch in
+an inert directory wouldn't have been caught by compilation and could
+still be latent there).
+
+**Audit query** (compares declared vs. actual return type for every
+narrow-typed method; adapt the risky-type set and search directories as
+needed):
+```
+# see revival/tools or ask for the scan script used for this sweep —
+# not yet checked in as a standalone tool; walks every .ch file's
+# "Method(...) returns TYPE;" lines for TYPE in {char, short, unsigned
+# char, unsigned short}, resolves the real class name from that .ch's
+# own "class NAME[...] : parent" line (NOT the filename — several zip
+# classes differ, e.g. zipofcap.ch declares class zipofcapt), and
+# diffs against the explicit return-type token on the implementation's
+# definition line in every .c file in the same directory.
+```
+
+#### Relationship to the LP64 bug family (§12)
+
+Same shape as §15's relationship to that family: a close cousin, not a
+member. The LP64 family (§12) is about *register width* — a 32-bit value
+crossing an untyped dispatch boundary into a 64-bit-declared parameter
+without the sign-extension a typed call would have inserted. This bug is
+about *signedness*, at a fixed width (8 bits) — a value crossing a
+*typed* (post-M1) dispatch boundary where the type itself, not just the
+call site's type-erasure, disagrees between declaration and
+implementation. Different mechanism, same lesson: any place where two
+sides of a call boundary can silently disagree about how to interpret the
+same bits is a latent bug, whether the disagreement is over width (LP64
+family) or signedness (this one) — and both are invisible until an
+optimizer is willing to exploit the (wrong) contract.
+
+#### Verification
+
+Static: tree-wide scan (566 `.ch` files, both signedness directions)
+found zero other instances after the fix. Dynamic: zip inset renders
+correctly at normal default `-O` (previously required `-O0` or
+per-function `__attribute__((optnone))` to work at all), confirmed
+end-to-end against both `src/doc/papers/atk/Cattey.turnin` and
+`contrib/zip/samples/dragon.zip`, and against a full `make Clean; make
+dependInstall` world rebuild.
+
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 
 **Resolved 2026-07-04 for the local-store case — see `roadmap.md` Near-term →

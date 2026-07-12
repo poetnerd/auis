@@ -195,6 +195,53 @@ flowing into view dispatch calls.
 
 ---
 
+## Related-but-distinct bug class: classpp typed-dispatch signedness mismatch
+
+**Not one of the five LP64 variants above** — this one reproduces
+identically on ILP32 too, so don't file it under LP64. Flagging it here
+because it's exactly the kind of thing a fresh instance doing bulk `.ch`
+conversion/typing work (which is what activating a new subtree's classes
+usually involves) is positioned to reintroduce or rediscover.
+
+**Root cause:** M1's typed-dispatch conversion generates each method's
+caller-side macro by casting the vtable slot to whatever return/parameter
+types the `.ch` spec declares. Nothing enforces that the `.ch` declaration
+actually matches the real C implementation's type. If a `.ch` declares a
+narrow return type as plain (signed) `char`/`short` but the implementation
+is actually `unsigned char`/`unsigned short` (or vice versa), and that
+method uses a sentinel value whose sign-extended and zero-extended bit
+patterns differ (e.g. `255` as `unsigned char` vs. `-1` as signed `char`
+— same bits, different comparison target), the optimizer can generate a
+caller-side comparison based on the *declared* (wrong) signedness. This
+silently breaks the sentinel check at higher optimization levels while
+still working at `-O0` (naive truncate-then-compare masks it). No compiler
+warning, no crash — just wrong behavior that looks environment/build-flag
+dependent.
+
+**No compiler signal.** Like Variant 3/5, this must be found by comparing
+declarations, not by reading warnings.
+
+**Grep/audit approach:** for every `.ch` method declared `returns char;`,
+`returns short;`, `returns unsigned char;`, or `returns unsigned short;`,
+find its real implementation (`grep -n "^ClassName__MethodName" *.c` in
+the same directory — **resolve `ClassName` from that `.ch` file's own
+`class NAME[...] : parent` line, not the filename**; several classes in
+this codebase differ, e.g. `zipofcap.ch` declares `class zipofcapt`) and
+check whether the explicit return-type token on the implementation's
+definition line matches the `.ch` declaration's signedness. Full case
+study, the scan methodology, and confirmation this was swept clean
+tree-wide (566 `.ch` files, zero other instances as of 2026-07-11) are in
+`porting-assessment.md` §16 and `zip-black-render-investigation.md`.
+
+**When to re-check:** any time you bulk-convert or hand-write a `.ch`
+spec's `returns` clauses for a subtree that wasn't part of M1's original
+active-tree pass (per `roadmap.md` §12's census — CONTRIB and AMS
+directories that were inert when M1 ran are exactly this situation), or
+whenever a figure/inset/view renders wrong or paints an oversized/wrong
+region only at some optimization levels.
+
+---
+
 ## Recommended triage order
 
 1. **Read the make log first** — `andrew-6.4/dependInstall.log` has all errors
