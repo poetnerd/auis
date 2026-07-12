@@ -1526,6 +1526,78 @@ names from the input extension and AUIS's grammars use the nonstandard
 investigation. One grammar, `atk/ness/objects/ness.gra`, uses the fork's
 multi-character-string-token extension and isn't yet handled.
 
+### `overhead/class/Imakefile` SUBDIRS order breaks a truly clean build
+
+`SUBDIRS = machdep lib cmd pp testing doc` — `machdep` (whose
+`machdep/darwin/classproc.c` does `#include <class.h>`, no relative
+include path of its own) is built *before* `lib`, which is the
+directory whose `InstallFile(class.h, ...)` actually populates
+`build/include/`. On a `build/` that already exists (the normal case
+— nobody has wiped it since the tree was first bootstrapped), this is
+invisible: `class.h` is already sitting in `build/include/` from long
+ago. On a genuinely empty `build/`, `make World` fails immediately
+with `classproc.c:12:10: fatal error: 'class.h' file not found` and
+`libclass.a` never gets built, cascading into dozens of unrelated
+"file not found" errors elsewhere. Confirmed present since initial
+import (`fossil finfo` on the Imakefile shows no changes ever).
+Workaround, not yet fixed upstream: seed it manually before `make
+World` —
+```
+mkdir -p build/include
+cp src/overhead/class/lib/class.h build/include/class.h
+```
+one-time per empty `build/`; the real `InstallFile` step overwrites it
+correctly once `overhead/class/lib` is reached.
+
+### `gendemo`'s `cui recon` step wedges unkillably on any checkout before 2026-07-11
+
+Same underlying bug family as the vendored-bison note above, different
+consumer: `prsdate.c` (mkparser-generated) segfaults inside `cui
+recon` on any checkout before the fixed-width-table fix
+(`abdc97546c`, 2026-07-11). The `cui` child process lands in
+uninterruptible (`UE`) kernel-wait state and **does not respond to
+`kill -9`** — confirmed by direct testing, not just inferred from the
+bison note. `make World`/`make dependInstall` on `ams/demo` blocks on
+it indefinitely. Fix: don't try to kill `cui` itself; `SIGTERM` the
+parent `/bin/csh -f gendemo` wrapper instead — the Imakefile's
+`install.time::` recipe line has a leading `-` (ignore exit status),
+so `make` continues past the now-failed step normally. The orphaned
+`cui` process is harmless afterward (detached, uses no CPU) and can be
+left running. Already fixed at and after `abdc97546c`; only bites
+when deliberately checking out something earlier.
+
+### Fossil checkout timestamps make incremental rebuilds untrustworthy across revisions
+
+Fossil sets a file's mtime to its **commit** timestamp, not to
+checkout wall-clock time. Every commit in this repo's history is
+necessarily "in the past" relative to whenever a rebuild session is
+actually happening — so after `fossil update <any-rev>`, any source
+file that changed relative to what's currently compiled gets an mtime
+*older* than the already-compiled `.o`/`.do` sitting in the tree from
+today. `make`'s timestamp-based dependency check then wrongly
+concludes the object is up to date and skips recompiling it — silently
+leaving stale, wrong-revision code linked into the binary. This isn't
+directional (doesn't matter whether the checkout moves forward or
+backward through history) and isn't hypothetical: it produced a
+confirmed false reading during the 2026-07-12 Media-menu bisection
+(an incremental rebuild at `f46de124ed` showed the bug present; a
+subsequent from-scratch rebuild of the identical revision showed it
+absent). It's most visible for dynamically-loaded `.do` classes gated
+by a build flag (e.g. `zip.do`/`calc.do` from `MK_ZIP`/`MK_CALC`
+persisting in `build/dlib/atk/` and loading successfully at a revision
+where they're not supposed to exist at all — `make Clean`'s recursive
+descent follows the *current* Imakefile's `SUBDIRS`, so it never even
+visits a now-degated directory to clean its old outputs), but applies
+to any statically-linked file too. **The only trustworthy way to test
+a different revision is a full wipe**: move or remove `build/` and
+`src/`'s generated `.o`/`.do`/`.eh`/`.ih`/`.a` (`make Clean`) before
+every `make World`, every time, regardless of which direction the
+checkout moves. A full from-scratch `make World` (tree already
+Imake-bootstrapped, just `build/` and generated files cleared) took
+**3m36s real** (1m20s user, 58s sys) on this machine as of
+2026-07-12 — cheap enough that there's no excuse to skip it when
+bisecting.
+
 ## Archive fetch: missing files (404)
 
 The following files were not available when the archive was mirrored from

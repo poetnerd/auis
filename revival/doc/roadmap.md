@@ -399,6 +399,23 @@ scripts: `revival/doc/calc-text-rendering-investigation.md`. Summary:
   The raster inset itself is proven working; this is the converter
   CLI only.
 
+### clock — face never draws; pre-existing, not a regression (confirmed 2026-07-12)
+
+- Clock inset instantiates but its face/hands never render (observed
+  2026-07-12 in `build/testing.ez`). Manually bisected across the
+  entire M1 rollout plus all recent zip/calc/Xft work — 9 checkpoints
+  from `6338ade7de` (2026-07-07, before M1 point 1) through HEAD, each
+  a full from-scratch `make Clean && make World` rebuild — blank at
+  every single one, including the oldest. Confirmed pre-existing; no
+  commit in that range explains it. `clockview__Redraw`
+  (`contrib/time/clockv.c`) draws hands/face via `graphic_XOR`/
+  `graphic_SOURCE` transfer modes and line/arc primitives
+  (`DrawLineTo`, `DrawArc`, `EraseVisualRect`) — a different path from
+  the Xft text-drawing code the recent calc/zip fixes touched. Not yet
+  root-caused; next step is an lldb trace of `clockview__FullUpdate` →
+  `Redraw` to confirm it's even being called and with what
+  `clockview_GetLogicalBounds` rect.
+
 ---
 
 ## Questions
@@ -840,6 +857,31 @@ Run: `DISPLAY=:0; build/bin/runapp helpa -d`
 7. **Expand/Shrink Programs pane**: use Panels menu → "Expand Programs" / "Shrink Programs" → pane resizes correctly
 8. **Show History**: use Panels menu → "Show History" → history pane appears listing previously visited topics
 9. **History links**: click an entry in the History pane → main panel navigates to that topic
+
+### ez application (menus)
+Run: `DISPLAY=:0; build/bin/ez build/testing.ez`
+
+**Before testing, check `~/.ezinit`.** If it exists, it must start
+with `include /Users/wdc/src/AUIS/andrew-6.4/build/lib/global.ezinit`
+or every global menu/keybinding — including "Media" — silently
+disappears. This is original 1988 `atk/basics/common/init.c` cascade
+design (`addmenu`/`addkey` docstring at line 76), not a bug: `app.c`
+loads `~/.ezinit` first, and if it loads successfully, **returns
+immediately** without ever reaching `global.ezinit` (where the
+`addmenu` lines for Media live — see `atk/ez/ezinit`). A personal
+init file replaces the global one unless it explicitly `include`s it.
+This looks exactly like a code regression in menu construction and
+cost a full manual bisection (`6338ade7de` through HEAD, 9 checkpoints,
+each a clean from-scratch rebuild, all showing Media present) before
+being traced to a stray one-line `~/.ezinit` (added earlier for
+htmlview testing, forgotten about) on 2026-07-12.
+
+1. **Media menu present**: textview "Insert"-area menu bar has a
+   "Media" submenu (Equation, Header/Footer, PostScript, Raster,
+   Spreadsheet, Animation, Hyperlink, Layout, Ness, Note, Writestamp,
+   By name...)
+2. **Clock inset**: currently fails — see Insets to Repair → clock
+   (pre-existing, unrelated to the above)
 
 ---
 
