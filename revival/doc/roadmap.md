@@ -218,13 +218,25 @@ scripts: `revival/doc/calc-text-rendering-investigation.md`. Summary:
   the stale `foregroundpixel` even in `graphic_WHITE` (erase) mode,
   since Xft never consults the core-X GC's color swap — erase-by-redraw
   was drawing in black, not white.
-- **Open:** "ghost" of prior expressions visible behind the current one
-  (e.g. typing `123+4=` leaves `123` visible behind `127`). Proven via
-  live tracing that content, color, and draw/erase pixel *position* are
-  all correct at the `aptv__DrawBoundedString`/`ClearBoundedString` API
-  level — the residue must be below that (Xft compositing, or an
-  unexplained second `FullUpdate` that fires after `=` and wasn't traced
-  to completion).
+- **Root-caused and fixed 2026-07-12:** the ghost was AA
+  erase-by-overdraw residue in `xgraphic_DrawChars`'s Xft path —
+  "erasing" a string by redrawing the same glyphs in background color
+  only exactly restores pixels where a glyph's alpha is 1; anti-aliased
+  edge pixels stay partially gray forever, accumulating with each
+  draw/erase cycle. Fixed by filling the glyph's advance-cell rectangle
+  with the background color (`XftDrawRect`) instead of redrawing glyph
+  shapes, whenever `transferMode == graphic_WHITE`. User-confirmed: no
+  more gray residue behind the final answer.
+- **New open bug, surfaced by the above fix:** during incremental
+  multi-keystroke redraws, the display now shows only a *suffix* of the
+  correct string — leading characters go missing. Typing `123+4=`
+  shows `1`, `2`, `23`, `3+`, `23+4` instead of `1`, `12`, `123`,
+  `123+`, `123+4`; the final `=` result (`127`) always draws correctly,
+  and a window focus-loss/regain forced repaint shows the correct full
+  string (proving calc's underlying value tracking is fine — this is
+  purely an incremental Clear/Draw redraw defect). Not yet root-caused;
+  see `calc-ghost-fix-prompt.md`'s "Outcome" section for the untested
+  hypothesis and next diagnostic step.
 - **Open:** the "=" button stays in reverse video indefinitely after
   being pressed. Not investigated; may be original 1988 "last button
   pressed" UX rather than a bug — needs a clean-build check to establish

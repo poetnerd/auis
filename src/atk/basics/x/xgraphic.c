@@ -699,6 +699,25 @@ long TextLength; {
 		xgraphic_GetClipBoundingRect(self, &paneClip);
 		XftDrawSetClipRectangles(xftd, 0, 0, &paneClip, 1);
 
+		/* XGDEBUG: temporary in-vivo diagnostics for the calc
+		   display bug -- remove when resolved */
+		{
+		    static int xgdebug = -1;
+		    if (xgdebug < 0) xgdebug = (getenv("XGDEBUG") != NULL);
+		    if (xgdebug && TextLength <= 10) {
+			FILE *dbg = fopen("/tmp/xgdebug.log", "a");
+			if (dbg) {
+			    fprintf(dbg,
+				"DrawChars mode=%d op=0x%x text=\"%.*s\" gx=%d gy=%d pane=[%d,%d %ux%u]\n",
+				(int)self->header.graphic.transferMode,
+				(unsigned)Operation, (int)TextLength, Text,
+				gx, gy, paneClip.x, paneClip.y,
+				paneClip.width, paneClip.height);
+			    fclose(dbg);
+			}
+		    }
+		}
+
 		/* Place each glyph at its X11-metric position and clip it
 		   to its advance cell.  Clipping prevents right-side bearing
 		   overflow from bleeding into the next character's area, which
@@ -734,18 +753,67 @@ long TextLength; {
 			    } else {
 				clip.width = clip.height = 0;
 			    }
-			    XftDrawSetClipRectangles(xftd, 0, 0, &clip, 1);
+			    /* XGDEBUG: temporary diagnostics -- remove */
+			    {
+				static int xgdebug2 = -1;
+				if (xgdebug2 < 0) xgdebug2 = (getenv("XGDEBUG") != NULL);
+				if (xgdebug2 && TextLength <= 10) {
+				    FILE *dbg = fopen("/tmp/xgdebug.log", "a");
+				    if (dbg) {
+					fprintf(dbg,
+					    "  glyph '%c' cx=%d adv=%d clip=[%d,%d %ux%u]\n",
+					    ch, cx, adv, clip.x, clip.y,
+					    clip.width, clip.height);
+					fclose(dbg);
+				    }
+				}
+			    }
+			    if (self->header.graphic.transferMode == graphic_WHITE) {
+				/* Erase: AA overdraw can't restore edge pixels; fill
+				   the advance cell with the background color instead
+				   of drawing the glyph shape. */
+				if (clip.width > 0 && clip.height > 0)
+				    XftDrawRect(xftd, &fgc, clip.x, clip.y,
+					clip.width, clip.height);
+			    } else {
+				XftChar8 c8 = (XftChar8)ch;
+				XftDrawSetClipRectangles(xftd, 0, 0, &clip, 1);
+				XftDrawString8(xftd, &fgc, xftfont, cx, gy, &c8, 1);
+			    }
+			} else {
+			    XftChar8 c8 = (XftChar8)ch;
+			    XftDrawString8(xftd, &fgc, xftfont, cx, gy, &c8, 1);
 			}
-			XftChar8 c8 = (XftChar8)ch;
-			XftDrawString8(xftd, &fgc, xftfont, cx, gy, &c8, 1);
 			cx += adv;
 		    }
 		    XftDrawDestroy(xftd);
 		    return;
 		}
 		/* widths unavailable: string rendering fallback */
-		XftDrawString8(xftd, &fgc, xftfont, gx, gy,
-		    (XftChar8 *)Text, TextLength);
+		if (self->header.graphic.transferMode == graphic_WHITE) {
+		    /* Erase: fill the string's advance band with the
+		       background color instead of AA-overdrawing it. */
+		    XGlyphInfo extents;
+		    XRectangle clip;
+		    long x1, y1, x2, y2;
+		    XftTextExtents8(dpy, xftfont, (XftChar8 *)Text,
+			TextLength, &extents);
+		    clip.x = (short)gx;
+		    clip.y = (short)(gy - xftfont->ascent);
+		    clip.width  = (unsigned short)extents.xOff;
+		    clip.height = (unsigned short)(xftfont->ascent + xftfont->descent);
+		    x1 = (clip.x > paneClip.x) ? clip.x : paneClip.x;
+		    y1 = (clip.y > paneClip.y) ? clip.y : paneClip.y;
+		    x2 = ((clip.x + clip.width) < (paneClip.x + paneClip.width)) ?
+			  (clip.x + clip.width) : (paneClip.x + paneClip.width);
+		    y2 = ((clip.y + clip.height) < (paneClip.y + paneClip.height)) ?
+			  (clip.y + clip.height) : (paneClip.y + paneClip.height);
+		    if (x2 > x1 && y2 > y1)
+			XftDrawRect(xftd, &fgc, x1, y1, x2 - x1, y2 - y1);
+		} else {
+		    XftDrawString8(xftd, &fgc, xftfont, gx, gy,
+			(XftChar8 *)Text, TextLength);
+		}
 		XftDrawDestroy(xftd);
 		return;
 	    }

@@ -1391,16 +1391,38 @@ Like §16, this is a general core-ATK bug, not specific to the inset that
 happened to surface it. Any Xft-rendered view using WHITE-mode
 erase-by-redraw was affected. Marked **partially** closed because a
 related symptom — a faint "ghost" of prior text remaining visible after
-an erase/redraw cycle — persists in `contrib/calc`'s display area even
-after this fix, and has been proven (via the same lldb-trace methodology)
+an erase/redraw cycle — persisted in `contrib/calc`'s display area even
+after this fix, and had been proven (via the same lldb-trace methodology)
 to **not** be a further instance of this same color bug, nor a content
 or draw/erase-position bug at the API level traced (`aptv__DrawBoundedString`/
-`ClearBoundedString` arguments are correct and self-consistent in every
-case checked). The residual ghost's cause is still open — see
-`calc-text-rendering-investigation.md` for the full trail, what's ruled
-out, and untried next leads (candidates: Xft's actual pixel compositing,
-or an unexplained second `FullUpdate` cascade that fires after calc's
-`=` button and wasn't traced to completion).
+`ClearBoundedString` arguments were correct and self-consistent in every
+case checked).
+
+#### Follow-up 2026-07-12: ghost root-caused and fixed; new redraw bug surfaced
+
+The residual ghost turned out to be a *different* bug in the same
+function: `xgraphic_DrawChars`'s Xft path erases text by redrawing the
+same glyphs in the background color, which only exactly restores pixels
+where a glyph's anti-aliasing alpha is 1 — partially-covered edge
+pixels stay gray forever and accumulate across draw/erase cycles. Fixed
+by filling the glyph's advance-cell rectangle with the background color
+(`XftDrawRect`) instead of redrawing glyph shapes, whenever
+`transferMode == graphic_WHITE`. User-confirmed in `ez`: the ghost is
+gone.
+
+That fix immediately surfaced a **new, distinct, still-open** bug:
+during incremental multi-keystroke redraws, the calc display now shows
+only a *suffix* of the correct string (leading characters go missing —
+e.g. typing `123+4=` shows `1`, `2`, `23`, `3+`, `23+4` instead of `1`,
+`12`, `123`, `123+`, `123+4`). The final `=` result always draws
+correctly, and a forced full repaint (window focus-loss/regain) shows
+the correct string, so calc's own value tracking is fine — this is
+purely a defect in the incremental Clear/Draw redraw path, most likely
+in how the new rect-fill erase interacts with the freshly-drawn new
+string's cells. Not yet root-caused. See
+`calc-ghost-fix-prompt.md`'s "Outcome" section and
+`calc-text-rendering-investigation.md` for the full trail and untried
+next leads.
 
 No tree-wide audit for *other* latent instances of the specific
 `GetXftForeColor` bug has been done (unlike §16's exhaustive `.ch` sweep)
