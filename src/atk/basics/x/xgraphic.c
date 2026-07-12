@@ -71,7 +71,15 @@ struct xgraphic *self;
 {
     static unsigned long cachedPixel = ~0UL;
     static XftColor cachedColor;
-    unsigned long fgpixel = self->foregroundpixel;
+    /* graphic_WHITE mode "erases" by swapping fore/background -- but only
+       via XSetForeground() on the X GC (xgraphic_LocalSetTransferFunction),
+       which Xft rendering never consults.  self->foregroundpixel itself is
+       never updated, so without this check Xft draws WHITE-mode text (e.g.
+       ClearBoundedString's erase-by-overdraw) in the old foreground color
+       instead of the background color -- the old text gets redrawn instead
+       of erased, then the new text draws on top: overstruck characters. */
+    unsigned long fgpixel = (self->header.graphic.transferMode == graphic_WHITE)
+        ? self->backgroundpixel : self->foregroundpixel;
     if (fgpixel != cachedPixel) {
 	XColor xc;
 	xc.pixel = fgpixel;
@@ -614,6 +622,22 @@ long TextLength; {
     register XCharStruct *maxChar;
     long x = point_X(&self->header.graphic.currentPoint);
     long y = point_Y(&self->header.graphic.currentPoint);
+#ifdef HAVE_XFT
+    /* Resolved once, up front, and reused by the Xft painting block
+       below, to avoid a second xfontdesc_GetXftFont lookup.  Alignment
+       math (below) intentionally still uses the core "dummy" XFontStruct's
+       metrics, not this font's -- matching what every other call site in
+       this file already assumes, and what the erase/redraw pairing in
+       ClearBoundedString/DrawBoundedString depends on being self-consistent. */
+    XftFont *xftfont = NULL;
+    if (self->header.graphic.currentFont != NULL &&
+	self->header.graphic.transferMode != graphic_XOR &&
+	self->header.graphic.transferMode != graphic_INVERT) {
+	xftfont = xfontdesc_GetXftFont(
+	    (struct xfontdesc *)self->header.graphic.currentFont,
+	    (struct graphic *)self);
+    }
+#endif
 
     VerifyUpdateClipping(self);
 
@@ -655,12 +679,7 @@ long TextLength; {
 
 #ifdef HAVE_XFT
     /* Try Xft anti-aliased rendering (scalable fonts, copy mode only) */
-    if (self->header.graphic.currentFont != NULL &&
-	self->header.graphic.transferMode != graphic_XOR &&
-	self->header.graphic.transferMode != graphic_INVERT) {
-	XftFont *xftfont = xfontdesc_GetXftFont(
-	    (struct xfontdesc *)self->header.graphic.currentFont,
-	    (struct graphic *)self);
+    {
 	if (xftfont) {
 	    Display *dpy = xgraphic_XDisplay(self);
 	    XftDraw *xftd = XftDrawCreate(dpy, xgraphic_XWindow(self),
