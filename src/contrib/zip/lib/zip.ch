@@ -109,7 +109,7 @@ methods:
   Set_Image_Font( zip_type_image image, char *font_name )				    returns long;
   Superior_Image_Pattern( zip_type_image image )				    returns char;
   Superior_Image_Shade( zip_type_image image )					    returns char;
-  Superior_Image_Line_Width( zip_type_image image )				    returns char;
+  Superior_Image_Line_Width( zip_type_image image )				    returns unsigned char;
   Superior_Image_Line_Dash( zip_type_image image, char **pattern, int *offset, short *type ) returns long;
   Superior_Image_Line_Cap( zip_type_image image )			    returns short;
   Superior_Image_Line_Join( zip_type_image image )			    returns short;

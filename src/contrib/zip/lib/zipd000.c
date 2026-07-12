@@ -173,6 +173,9 @@ zip__Contextual_Figure_Line_Dash( self, figure, pattern, offset, type )
   register short		 *type;
   {
   IN(zip_Contextual_Figure_Line_Dash);
+  *pattern = NULL;
+  *offset = 0;
+  *type = graphic_LineSolid;
   if ( figure->zip_figure_line_dash_pattern )
   {
     *pattern = figure->zip_figure_line_dash_pattern;
@@ -833,7 +836,7 @@ int symtab_add (symtab, symbol, data)
 
  /* allocate and initialize entry */
     entry = (symtab_entry_type *) palloc((pool_type *) symtab->pool, sizeof (symtab_entry_type));
-    if ((int) entry <= 0) {
+    if (entry == NULL) {
 	return (-1);
     }
     entry->image = symbol;
