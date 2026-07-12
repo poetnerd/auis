@@ -166,18 +166,19 @@ dependInstall`) run 2026-07-10: zero real `error:` lines tree-wide
   build-time code generator (not a runtime app); found only by grep.
   Runtime check: rebuild whatever `.tlx` grammar exercises a quoted
   `seq` argument.
-- **contrib/calc/calcv.c:502** and **contrib/mit/fxlib/server/commands.c:230**
-  — same idiom (leading-zero digit strip in the calculator inset;
-  `.@` realm stripping in the MIT `fx` course server). **Both
-  directories are currently outside the active build** (`contrib/calc`
-  has no generated Makefile — gated behind an unset `CALC` variable;
-  `contrib/mit/fxlib/server` fails to compile for an unrelated
-  reason, a missing generated `fxserver_err.h` from a Kerberos
-  code-gen step that's never been run in this checkout). Fixed by
-  the same mechanical edit for correctness/consistency, but **compile-
-  unverified** — no way to build either file right now. Verify
-  whenever `calc` or `fxlib/server` are ever brought into the active
-  tree (same precedent as `wpedita.ch` in point-10 batch 11).
+- **contrib/calc/calcv.c:502** — leading-zero digit strip in the
+  calculator inset. **Verified 2026-07-11**: `contrib/calc` is now in
+  the active build (`MK_CALC`, see "calc inset" under Completed) and
+  this fix compiles clean.
+- **contrib/mit/fxlib/server/commands.c:230** — same idiom (`.@` realm
+  stripping in the MIT `fx` course server). **Still outside the active
+  build**: fails to compile for an unrelated reason, a missing
+  generated `fxserver_err.h` from a Kerberos code-gen step that's
+  never been run in this checkout. Fixed by the same mechanical edit
+  for correctness/consistency, but **compile-unverified** — no way to
+  build the file right now. Verify whenever `fxlib/server` is ever
+  brought into the active tree (same precedent as `wpedita.ch` in
+  point-10 batch 11).
 
 ### typescript — crashes on launch (PTY failure + missing NULL check)
 
@@ -201,6 +202,42 @@ dependInstall`) run 2026-07-10: zero real `error:` lines tree-wide
 
 Insets with known breakage, or not buildable/enabled at all. Each is
 its own task; none block M1.
+
+### calc — builds, loads, computes correctly; two open rendering bugs, UNRESOLVED (handoff 2026-07-12)
+
+Brought into the active build 2026-07-11 (see Completed → `contrib/calc`
+inset). First real interactive exercise (2026-07-11/12) found one real
+crash (fixed) and one real Xft rendering bug (fixed, confirmed via lldb
+trace), plus two more rendering bugs still open. Full trail, reproduction
+steps, what's been proven/disproven, and ready-to-adapt lldb tracing
+scripts: `revival/doc/calc-text-rendering-investigation.md`. Summary:
+
+- **Fixed, confirmed:** `calc.c Writer` NULL-pointer crash on every
+  document checkpoint (`sprintf`'s `int` return cast to `char *`).
+- **Fixed, confirmed via lldb trace:** `xgraphic.c GetXftForeColor` used
+  the stale `foregroundpixel` even in `graphic_WHITE` (erase) mode,
+  since Xft never consults the core-X GC's color swap — erase-by-redraw
+  was drawing in black, not white.
+- **Open:** "ghost" of prior expressions visible behind the current one
+  (e.g. typing `123+4=` leaves `123` visible behind `127`). Proven via
+  live tracing that content, color, and draw/erase pixel *position* are
+  all correct at the `aptv__DrawBoundedString`/`ClearBoundedString` API
+  level — the residue must be below that (Xft compositing, or an
+  unexplained second `FullUpdate` that fires after `=` and wasn't traced
+  to completion).
+- **Open:** the "=" button stays in reverse video indefinitely after
+  being pressed. Not investigated; may be original 1988 "last button
+  pressed" UX rather than a bug — needs a clean-build check to establish
+  whether it's pre-existing.
+- **Tried and reverted:** a hypothesis that `xgraphic_DrawChars`'s
+  alignment math should use the Xft-resolved font's metrics instead of
+  the core "dummy" font's metrics (since Xft's fontconfig substitute for
+  a custom Andy font could plausibly have different ascent/descent).
+  Implemented, tested live, found to make **zero observable difference**
+  anywhere (not just calc) — reverted back to original core-only
+  metrics, then re-confirmed inert via a side-by-side Frame-animation
+  comparison in both states. Not the cause of anything seen this
+  session, in either direction.
 
 ### zip — builds and loads now; solid-black render bug at `-O`, RESOLVED 2026-07-11
 
@@ -269,6 +306,17 @@ its own task; none block M1.
   `contrib/zip/samples/dragon.zip`). Committed — see fossil log for
   commit id. `contrib/zip/utility` (`lt`/`sched`) not started; same
   untyped-`.ch` treatment will likely be needed there too.
+- **Confirmed 2026-07-11 (found while gating an unrelated `MK_CALC`
+  change):** `contrib/zip/utility/ltapp.c:115,123` —
+  `lt_Set_Debug(self->lt, debug)` / `ltv_Set_Debug(self->ltview,
+  debug)` pass a `boolean` (int) `debug` through an untyped `Set_Debug`
+  class method whose `.ch`-declared parameter is `void *` — same
+  untyped-K&R-`.ch` gap as the rest of `contrib/zip/lib` before its
+  M1-style typing pass, not a regression from anything touched this
+  session. Blocks a full top-to-bottom `make dependInstall` gate
+  (`SUBDIRS` order puts `zip` after `calc` in `contrib/Imakefile`).
+  Untouched — out of scope for the `MK_CALC` work; needs the same
+  `.ch`-typing treatment `contrib/zip/lib` already got.
 
 ### ness — bison grammar extension blocker
 
@@ -386,8 +434,8 @@ its own task; none block M1.
 - Srctext insets: **proven working** — indentation and syntax coloring render correctly (LP64 audit)
 - Figure insets: **proven working** — `95Summer.ez`'s figure renders correctly end to end (see Chronological log 2026-07-04). Two independent bugs stacked on top of each other: (1) parser-desync — official CMU `patch.633` (figattr tolerates unknown attributes from later format versions) plus new `smpltext.c` hardening (failed inset reads fall back to a raw `unknown` object instead of corrupting the rest of the parse); (2) LP64 — `figure__Read`'s `$origin` line was parsed with `sscanf(buf, "$origin %d %d", &val1, &val2)` into `long val1, val2`, the same %d-into-long pattern as the other LP64 audits, leaving stack garbage in the upper 32 bits of `originx`. That corrupted `originx` flows straight into `figview`'s `panx` (`SetDataObject` does `panx = originx`), pushing the entire figure's rendering ~4 billion pixels off-screen — content was being drawn, just nowhere near the visible clip region. Confirmed live via `lldb`: found `originx == 0x100000000` in the running `figview`'s memory. Fixed both `figure__Read` and the analogous `figure__ReadPartial`.
 - `Sherman.Alloc` integration test: text, eq, fad, cel/arbiter spreadsheet
-  all render; zip unsupported (expected); calc engine presumed working if
-  cel displays correctly
+  all render; zip unsupported (expected). Calc is a separate contrib
+  inset, not part of this document — see `contrib/calc` under Completed.
 - Xft phase 1: body text rendering via client-side Xft (anti-aliased)
 - Andy symbol fonts (`symba*.pcf`) built and installed in `build/X11fonts/`
 - `overhead/malloc/malloc.ci` `addarena` arena-size pointer-arithmetic bug fixed (`patches/contrib/malloc.ci.auis6.3.diff`, 2026-07-04) — source-correctness only, see Historical patches audit below for why it has no runtime effect here
@@ -395,6 +443,35 @@ its own task; none block M1.
 - `chart` application: launched and runtime-verified interactively (2026-07-10, point-10 batch 5) — startup, chart creation, format switching, palette labels; exercises the `SetChartAttribute`/`SetItemAttribute` rewrite
 - `htmlview` DisplayString transposition fixed (2026-07-09) — three `message_DisplayString` calls had priority/string transposed since the 1990s; those HTML-editing status messages display for the first time
 - `mkparser`/`cparser.c` fixed-width table bug (2026-07-11) — the shared parser engine used by all five AUIS grammars (`prsdate`, `eliy`, `eqparse`, `num`, `parsey`) assumed every bison table was a `short`; modern bison narrows some to 1 byte per grammar, corrupting every lookup into a narrowed table. Root-caused via `amsdemo`'s caption dates/ordering; fixed generically in the shared engine, not per-grammar. See `porting-assessment.md` §15 — a close cousin of the LP64 bug family (§12): different mechanism (generator-chosen storage width vs. ABI sign/zero-extension), same shape (1990s code assumed a fixed width; a modernized tool in the chain silently chose otherwise decades later).
+- `contrib/calc` inset — brought into the active build 2026-07-11:
+  `#define MK_CALC` in `config/site.h`, Makefiles regenerated down
+  `contrib/calc` (`make Makefiles` from `contrib/`). Unlike `zip`,
+  `calc.ch`/`calcv.ch` were already fully ANSI-typed (not 1990s K&R) —
+  no classpp typing pass needed. `calcv.c` had 11 K&R functions
+  forward-referenced (called before their `static` definition) via a
+  stale non-`static` forward declaration, which clang now rejects as a
+  linkage conflict (`static declaration ... follows non-static
+  declaration`); fixed by replacing the one non-static forward decl
+  with proper `static` ANSI prototypes for all 11 internal helpers.
+  Also fixed: three `graphic_BLACK` (0xFF int constant) arguments
+  passed directly to `void *` `Tile` parameters in `Fill_Area`,
+  needing the same `(struct graphic *)` cast already used at
+  `chart/charthst.c:238` for the identical idiom; and 5 sites
+  (`calc.c:155`, `calcv.c:526,548,557,558`) using `sscanf(...,"%F",
+  &x)` where `x` is `double` — `%F`/`%f` only fill 4 bytes, silently
+  leaving the upper 4 bytes of each `double` as stack garbage, the
+  same wrong-width-scanf shape as the documented LP64 Variant 4 class
+  (just float/double instead of int/long) — fixed to `%lf`. The
+  already-present `calcv.c:502` overlapping-strcpy fix (see
+  Overlapping-strcpy crash family above) compiles clean now that the
+  directory builds. `calc.do`/`calcv.do` build warning-clean of errors
+  and install (`make install` in `contrib/calc`); full top-level
+  `make dependInstall` gate confirms `contrib/calc` itself builds
+  clean, though the gate doesn't reach past `contrib/zip/utility`
+  (pre-existing, unrelated break — see Insets to Repair → zip).
+  **Compiling/installing is done; runtime rendering is not** — see
+  Insets to Repair → calc for the open bugs found once this got its
+  first real interactive exercise.
 
 **LP64 bug classes identified and swept:**
 - Variant 1: Missing prototypes / pointer return truncation (23 sites)
@@ -613,7 +690,7 @@ application [PROVEN via ez, help]
 
 contrib
     +-- writestamp [PROVEN]
-    +-- calc
+    +-- calc [builds and installs clean, 2026-07-11 — runtime untested]
 ```
 
 Note: `help` does not use `lset` — confirmed by source audit. `lset` is
@@ -643,16 +720,19 @@ Ordered by dependency depth; each step proves a layer the next relies on.
 | 13 | typescript | `bin/typescript -d` | terminal emulator; **crashes "Can't connect subchannel"** — likely macOS PTY compat issue, not LP64 | terminal window inset |
 | 14 | bush | `bin/bush -d` | shell application | interactive shell |
 | 15 | **figure** | `NEWSLETTERS/EZ/95Summer.ez` | **[PROVEN]** two stacked bugs fixed: parser desync (patch.633 + smpltext.c) and LP64 `$origin` scanf corruption (figure.c); renders correctly end to end | drawing/diagram insets in newsletter |
-| 16 | **Sherman.Alloc** | `PAPERS/atk/Sherman.Alloc` | **[PROVEN]** text+eq+fad+cel/arbiter all render; zip unsupported (expected); calc inset from contrib not yet working | multi-inset compound document |
+| 16 | **Sherman.Alloc** | `PAPERS/atk/Sherman.Alloc` | **[PROVEN]** text+eq+fad+cel/arbiter all render; zip unsupported (expected) | multi-inset compound document |
+| 18 | calc | Esc-Tab, type `calc`, Enter in any `ez` doc (see `contrib/calc/calc.help`) | builds/installs clean 2026-07-11, not yet runtime-tested | calculator button-grid inset |
 | 17 | **Cattey.Writing** | `PAPERS/atk/Cattey.Writing` | **[PROVEN]** writestamp, fnote, raster, |
 
 **No good test document exists for:** `lookz`, `launchapp`, `prefed`
 — these need synthetic test files or targeted app launches.
 `srctext` is now [PROVEN].
 
-**Known non-starters:** `ness` (bison extension) and `zip` (never
-built — `MK_ZIP` off) — both detailed under **Insets to Repair**;
-`clock`/`calc`/`timeoday` (contrib, lower priority).
+**Known non-starters:** `ness` (bison extension blocker, still inert)
+— detailed under **Insets to Repair**. `zip` now builds and loads
+(see Insets to Repair → zip) though `zip/utility` is still broken.
+`clock`/`timeoday` (contrib, lower priority, still inert). `calc` now
+builds (see row 18 above; row kept lower-priority pending runtime test).
 
 ---
 

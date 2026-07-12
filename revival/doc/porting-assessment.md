@@ -1348,6 +1348,78 @@ end-to-end against both `src/doc/papers/atk/Cattey.turnin` and
 `contrib/zip/samples/dragon.zip`, and against a full `make Clean; make
 dependInstall` world rebuild.
 
+### 17. Xft "erase by redraw" uses stale foreground color in WHITE transfer mode (LOW-MEDIUM effort, partially closed 2026-07-12)
+
+#### Root cause
+
+`graphic_WHITE` transfer mode is the "erase by redrawing in background
+color" convention used tree-wide (e.g. `aptv__ClearBoundedString`).
+`xgraphic_LocalSetTransferFunction` (`xgraphic.c`, ~line 408-417)
+implements the color swap for the *core X* rendering path only —
+`XSetForeground(GC, self->backgroundpixel)` — which changes the X
+graphics context's current foreground pixel, but never touches
+`self->foregroundpixel` itself. Xft rendering doesn't use the GC's
+foreground pixel at all; `GetXftForeColor` (`xgraphic.c`, ~line 68) read
+`self->foregroundpixel` directly, unconditionally — meaning a WHITE-mode
+Xft text draw was silently using the **old, unswapped foreground color**
+(typically black). "Erasing" text by redrawing it in white was actually
+redrawing it in black — reinforcing the old text rather than erasing it.
+
+Found via `contrib/calc`'s display area (see roadmap.md → Insets to
+Repair → calc, and `calc-text-rendering-investigation.md`), which
+exercises frequent `Clear`-then-`Draw` cycles as its digit display
+updates — a pattern uncommon enough elsewhere in the active tree that
+this had gone unnoticed.
+
+#### Fix
+
+`GetXftForeColor` now checks the current transfer mode and substitutes
+`self->backgroundpixel` when in `graphic_WHITE` mode:
+```c
+unsigned long fgpixel = (self->header.graphic.transferMode == graphic_WHITE)
+    ? self->backgroundpixel : self->foregroundpixel;
+```
+**Confirmed via live lldb trace**, not just static reasoning: breakpointed
+`XQueryColor` (the point where the resolved pixel value is actually used)
+across a full calc keystroke sequence — every `ClearBoundedString` call
+now requests `0xFFFFFF`, every `DrawBoundedString` call requests
+`0x000000`, perfectly alternating. This part of the bug is resolved.
+
+#### Scope: tree-wide, not calc-specific — partially closed
+
+Like §16, this is a general core-ATK bug, not specific to the inset that
+happened to surface it. Any Xft-rendered view using WHITE-mode
+erase-by-redraw was affected. Marked **partially** closed because a
+related symptom — a faint "ghost" of prior text remaining visible after
+an erase/redraw cycle — persists in `contrib/calc`'s display area even
+after this fix, and has been proven (via the same lldb-trace methodology)
+to **not** be a further instance of this same color bug, nor a content
+or draw/erase-position bug at the API level traced (`aptv__DrawBoundedString`/
+`ClearBoundedString` arguments are correct and self-consistent in every
+case checked). The residual ghost's cause is still open — see
+`calc-text-rendering-investigation.md` for the full trail, what's ruled
+out, and untried next leads (candidates: Xft's actual pixel compositing,
+or an unexplained second `FullUpdate` cascade that fires after calc's
+`=` button and wasn't traced to completion).
+
+No tree-wide audit for *other* latent instances of the specific
+`GetXftForeColor` bug has been done (unlike §16's exhaustive `.ch` sweep)
+— the fix is in the single shared function all Xft text rendering
+funnels through, so no other call sites need auditing; this note is
+about the fix's blast radius (affects every WHITE-mode Xft draw
+tree-wide) rather than about finding more instances.
+
+#### Verification
+
+Static: single fix in the one shared function
+(`xgraphic.c GetXftForeColor`) all Xft rendering funnels through — no
+other call sites to audit. Dynamic: `XQueryColor` lldb trace across a
+full `123+4=` keystroke sequence in `contrib/calc`, confirmed correct
+color alternation at every step. Full `make Clean && make dependInstall`
+world rebuild done 2026-07-12, zero new errors introduced (one
+pre-existing, unrelated `contrib/zip/utility/ltapp.c` error remains, see
+roadmap.md → Insets to Repair → zip).
+
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 
 **Resolved 2026-07-04 for the local-store case — see `roadmap.md` Near-term →
