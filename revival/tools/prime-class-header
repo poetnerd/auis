@@ -1,0 +1,25 @@
+#!/bin/sh
+# Seed build/include/class.h before a from-scratch `make World`.
+#
+# overhead/class/Imakefile's SUBDIRS = "machdep lib cmd pp testing doc"
+# builds machdep before lib. machdep/darwin/classproc.c does
+# `#include <class.h>` with no relative include path of its own, but
+# lib is the directory whose InstallFile(class.h, ...) actually
+# populates build/include/ -- so on a genuinely empty build/, machdep
+# fails immediately with "class.h file not found" and libclass.a never
+# gets built, cascading into dozens of unrelated errors elsewhere.
+#
+# This is invisible on the normal incremental case (build/ has existed
+# since the tree was first bootstrapped, long ago) -- only bites on a
+# truly clean build/. Run this once before `make World` whenever
+# build/ has just been created or wiped.
+#
+# See revival/doc/porting-assessment.md, "Primary build environment"
+# section, for the full writeup.
+
+set -e
+cd "$(dirname "$0")/../.."   # repo root (andrew-6.4/)
+
+mkdir -p build/include
+cp src/overhead/class/lib/class.h build/include/class.h
+echo "primed build/include/class.h"

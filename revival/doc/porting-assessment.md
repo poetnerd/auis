@@ -1596,7 +1596,9 @@ checkout moves. A full from-scratch `make World` (tree already
 Imake-bootstrapped, just `build/` and generated files cleared) took
 **3m36s real** (1m20s user, 58s sys) on this machine as of
 2026-07-12 — cheap enough that there's no excuse to skip it when
-bisecting.
+bisecting. Run `revival/tools/prime-class-header` (codifies the
+`class.h` seed above) right after clearing `build/`, before `make
+World`.
 
 ### `MK_CONSOLE` being off silently breaks `con10`/`con12` icon fonts used outside `console`
 
@@ -1623,31 +1625,30 @@ bisection, before being traced to this font gap. `fad` itself has no
 drawing defect; once `con10` resolves, the animation renders and plays
 correctly — confirmed by direct testing, closing out that bisection.
 
-**Manual fix applied (2026-07-12, not yet permanent):**
-```
-cd src/atk/console/fonts
-sed -e 's/^$spacing \(.*\),.*$/$spacing \1,0/' con10.fdb > /tmp/con10.tfdb
-../../../../build/bin/fdbbdf /tmp/con10.tfdb > /tmp/con10.bdf
-/opt/X11/bin/bdftopcf /tmp/con10.bdf > con10.pcf
-cp con10.pcf ../../../../build/X11fonts/con10.pcf
-echo "con10.pcf con10" >> ../../../../build/X11fonts/fonts.dir   # + fix the leading count line
-xset fp rehash
-```
-(exactly replicates the `.fdb.$(FONTEXT):` rule in
-`config/andrew.rls:720-727`, using the already-built `build/bin/fdbbdf`
-and system `bdftopcf`).
+**Codified fix: `revival/tools/install-console-fonts`.** Builds
+*only* `atk/console/fonts` (bypassing the `MK_CONSOLE` gate entirely —
+never touches `console/lib`/`cmd`/`stats`/`consoles`), installs both
+`con10.pcf` and `con12.pcf` to `build/X11fonts/`, regenerates
+`fonts.dir` via `mkfontdir` (not a hand-edited line count — `fonts.dir`
+itself isn't Imake-generated or tracked in source anywhere; it's
+always been a manually-maintained artifact, `mkfontdir` is the correct
+tool for it), and runs `xset fp rehash`. `console/fonts/Makefile` is
+checked in as an empty stub (the parent Imakefile never regenerates
+it, same root cause as the gate itself), so the script regenerates it
+in place with a direct `imake` invocation the first time it's run —
+`MK_CONSOLE` is irrelevant to that step since it only affects whether
+the *parent* recurses here, not this leaf directory's own contents.
+Safe to re-run any time after a clean rebuild wipes `build/X11fonts/`.
 
-**This fix is fragile and will silently regress:** `make Clean`
-deletes `.pcf` files tree-wide, and nothing outside the never-visited
-`console` directory declares `con10`/`con12`, so any future full clean
-rebuild (exactly what [[project_clean_rebuild_bisection_method]] does
-routinely) wipes it again. Two options for a permanent fix, not yet
-decided: (a) define `MK_CONSOLE` to bring back the whole console/
+**Still not truly permanent:** this only fixes `con10`/`con12`
+specifically; any *other* file outside `console` that happens to
+reference a console-only resource would still be silently broken, and
+nobody has checked for that. The real upstream fix, not yet decided
+between: (a) define `MK_CONSOLE` to bring back the whole console/
 terminal-emulator subsystem, much bigger scope than needed just for
 two fonts; or (b) carve `console/fonts` out of the `MK_CONSOLE` gate in
 `atk/Imakefile` so it always builds regardless of whether `console`
-itself does — the smaller, more targeted fix. `con12` has the
-identical problem and hasn't been checked for other consumers yet.
+itself does — the smaller, more targeted fix.
 
 ## Archive fetch: missing files (404)
 

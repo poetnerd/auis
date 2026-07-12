@@ -1607,13 +1607,15 @@ showed a literal "M" instead of an icon for its "Client Program" node.
 Traced to `con10` (a console-app icon font the diagram happens to
 reference) never being built, because `MK_CONSOLE` gates out all of
 `atk/console` including `console/fonts` — not a `fad` defect at all.
-Full root cause, fix recipe, and the two permanent-fix options:
-`porting-assessment.md` → "`MK_CONSOLE` being off silently breaks
-`con10`/`con12`...". Manually fixed and confirmed 2026-07-12: once
-`con10` resolves, the animation renders and plays correctly.
-**Not yet permanent** — will silently regress on the next full clean
-rebuild until `console/fonts` is carved out of the `MK_CONSOLE` gate
-(or `MK_CONSOLE` itself is enabled).
+Full root cause and permanent-fix options: `porting-assessment.md` →
+"`MK_CONSOLE` being off silently breaks `con10`/`con12`...". Fixed and
+confirmed 2026-07-12: once `con10` resolves, the animation renders and
+plays correctly. Codified as `revival/tools/install-console-fonts`
+(builds only `console/fonts`, never touches the rest of `console`) —
+re-run it any time a full clean rebuild wipes `build/X11fonts/`; not a
+true upstream fix (that needs `console/fonts` carved out of the
+`MK_CONSOLE` gate, or `MK_CONSOLE` itself enabled), but no longer a
+manual multi-step recipe either.
 
 ### ~~Frame size reporting in help~~ — fixed
 
