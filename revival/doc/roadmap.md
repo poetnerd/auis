@@ -1761,3 +1761,20 @@ collaborative implementation project once the core system is stable.
 `bush` (shell), `typescript` (terminal emulator), `org` (outliner),
 `chart`, `layout` -- each is a symlink to `runapp` and built; exercise
 and fix as interest warrants after core insets are stable.
+
+### ez2md improvements
+`ez2md` (`revival/tools/ez2md`) converts `.ez` documents to Markdown; text,
+page breaks, and footnotes are fully handled, but raster, table, eq,
+figure, fad, image, and link objects currently render as placeholder
+comments (orphaned from an earlier, pre-C-revival phase of this project;
+folded in here from a since-retired `revival/ROADMAP.md`). Three
+follow-ons, not started:
+
+- **Raster image extraction** — decode the run-length-encoded bitmap data
+  in `raster` objects to PNG, so `ez2md` can emit real images instead of
+  placeholders.
+- **Table rendering** — parse the ATK table/spreadsheet format into
+  Markdown tables.
+- **Batch conversion of archive documents** — convert the FAQ, README,
+  newsletters, and papers to Markdown for easier browsing (perhaps into
+  `revival/converted/`, alongside the originals).
