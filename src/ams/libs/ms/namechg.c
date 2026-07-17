@@ -32,9 +32,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <mailconf.h>
+/* andrewos.h before ms.h, matching convention elsewhere in this directory. */
+#include <andrewos.h>
 #include <ms.h>
 #include <stdio.h>
-#include <andrewos.h>
 
 extern char home[], *fixDate();
 extern int NumSubsInUse;

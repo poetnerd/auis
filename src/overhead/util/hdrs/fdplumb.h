@@ -32,6 +32,16 @@
 #ifndef PLUMBFDLEAKS
 #define PLUMBFDLEAKS
 
+/* fcntl.h must be parsed here, before the #define block below renames
+   open to dbg_open -- otherwise the preprocessor rewrites libc's own
+   (variadic) declaration of open() into a declaration for dbg_open,
+   handing it a variadic prototype its fixed 3-arg K&R definition in
+   fdplumb.c doesn't match. That caller/callee ABI mismatch silently
+   corrupts the mode argument. open is the only renamed function below
+   whose real libc signature is variadic, so it's the only one this
+   matters for; sys/types.h is here for mode_t. */
+#include <sys/types.h>
+#include <fcntl.h>
 #include <dirent.h>
 #include <stdio.h>
 extern DIR *dbg_opendir();
@@ -39,6 +49,7 @@ extern FILE *dbg_fopen();
 extern FILE *dbg_popen();
 extern FILE *dbg_qopen();
 extern FILE *dbg_topen();
+extern int dbg_open();
 
 #define open dbg_open
 #define fopen dbg_fopen

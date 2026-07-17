@@ -31,8 +31,9 @@
 static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/purge.c,v 2.26 1993/08/25 20:36:06 susan Exp $";
 #endif
 
-#include <ms.h>
+/* andrewos.h before ms.h, matching convention elsewhere in this directory. */
 #include <andrewos.h> /* sys/file.h */
+#include <ms.h>
 
 #ifndef _IBMR2
 extern char *malloc();

@@ -32,8 +32,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <stdio.h>
-#include <ms.h>
+/* andrewos.h before ms.h, matching convention elsewhere in this directory. */
 #include <andrewos.h> /* sys/file.h */
+#include <ms.h>
 
 MS_StorePartialFile(FileName, startpos, len, mode, Truncate, WhatToStore)
 char *FileName, *WhatToStore;
