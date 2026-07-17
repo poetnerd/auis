@@ -87,7 +87,7 @@ DynamicObject(options,,$(LEXLIB))
 DynamicObject(messwind,,$(LEXLIB))
 DynamicObject(mailobj,,$(LEXLIB))
 DynamicObject(mailobjv,,$(LEXLIB))
-DynamicMultiObject(amsn.do, amsn.o stubs.o, $(NLIBS), $(MMDFLIBS) $(LEXLIB) $(BSDLIB))
+DynamicMultiObject(amsn.do, amsn.o stubs.o, $(NLIBS), $(MMDFLIBS) $(LEXLIB) $(BSDLIB) $(SSLLIB) $(RESOLVER_LIB))
 
 #ifdef SNAP_ENV
 DynamicMultiObject(amss.do, amss.o stubs.o, $(SLIBS), $(MMDFLIBS) $(LEXLIB))

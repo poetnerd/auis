@@ -152,6 +152,10 @@ extern char *UnixError();
 
 #include <dropoff.h>
 
+/* SMTP dropoff (overhead/mail/lib/smtpsub.c); used below in the sendmail
+   else-clause of dropoff_auth() when the "smtphost" preference is set. */
+extern int smtp_dropoff();
+
 extern int errno;
 
 typedef unsigned char bool;
@@ -658,6 +662,8 @@ int dropoff_auth(tolist, mesgfile, returnpath, home, flags, auth)
 	FILE *fp;
 	char **SMVec, **list, ReadBuf[4096];
 	int argct, i, ct;
+
+	if (getprofile("smtphost") != NULL) return smtp_dropoff(f, tolist, returnpath);
 
 	argct = 0; list = tolist;
 	while (list[argct]) ++argct;
