@@ -221,16 +221,19 @@ its own group. Sending and storing are independent seams.
 
 ### Milestone 1 — SMTP send (self-contained; no IMAP modules involved)
 
-* `imap_transport.c` — TLS socket wrapper: connect, `SSL_connect`,
-  line-buffered read/write, timeouts. Written as the *shared* module from
-  the start (IMAP uses it at milestone 2) but SMTP is its first client.
-  TLS via Homebrew OpenSSL (consistent with the XQuartz dependency
-  posture). v1 uses port 465 implicit TLS — no STARTTLS state machine.
-* `smtp_submit.c` — the dialogue (EHLO/AUTH PLAIN/MAIL/RCPT/DATA),
+* `tlscon.c` (`overhead/mail/lib`) — protocol-neutral TLS socket wrapper:
+  connect, `SSL_connect`, line-buffered read/write, timeouts. The shared
+  transport module (earlier drafts called it `imap_transport.c`); IMAP
+  uses it at milestone 2 but SMTP is its first client. TLS via Homebrew
+  OpenSSL (consistent with the XQuartz dependency posture). v1 uses port
+  465 implicit TLS — no STARTTLS state machine.
+* `netrc.c` (`overhead/mail/lib`) — ~/.netrc credential lookup with
+  permission checking; shared with IMAP at milestone 2.
+* `smtpsub.c` — the dialogue (EHLO/AUTH PLAIN/MAIL/RCPT/DATA),
   dot-stuffing + CRLF conversion, reply parsing, mapping onto the `D_*`
-  codes `dropoff()`'s callers expect. App-password auth is a base64 line
-  inside this file, not a module; account/credential-file location via the
-  existing `getprofile()` preference machinery.
+  codes `dropoff()`'s callers expect. Preference gate + credential-file
+  location via the existing `getprofile()` preference machinery.
+  Implementation spec: `revival/doc/smtp-send-prompt.md`.
 * The `dropoff()` hook — a few lines in the `DT_NONAMS` branch of
   `overhead/mail/lib/dropoff.c`, behind a preference, with the sendmail
   pipe kept as fallback.
