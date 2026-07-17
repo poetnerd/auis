@@ -481,9 +481,10 @@ trail, reproduction steps, and what was tried/disproven along the way:
 
 ## Completed
 
-- `ez2md` converter (`revival/tools/ez2md.py`): converts `.ez` files to
-  Markdown; handles styles, footnotes, page breaks, nested insets; tested
-  against 51 archive documents
+- `ez2md` converter (`revival/tools/ez2md`): converts `.ez` files to
+  Markdown; handles styles, footnotes, page breaks, nested insets, and
+  raster images (decoded to inline PNG); tested against 51 archive
+  documents
 - Full build: 278 `.do` files, 0 errors, `make dependInstall` exit 0
 - `ez` launches, renders documents, scrollbar/menus/keyboard input all work
 - `help` application: multiple frames, topic navigation working
@@ -1764,17 +1765,25 @@ and fix as interest warrants after core insets are stable.
 
 ### ez2md improvements
 `ez2md` (`revival/tools/ez2md`) converts `.ez` documents to Markdown; text,
-page breaks, and footnotes are fully handled, but raster, table, eq,
+page breaks, footnotes, and raster images are fully handled, but table, eq,
 figure, fad, image, and link objects currently render as placeholder
 comments (orphaned from an earlier, pre-C-revival phase of this project;
-folded in here from a since-retired `revival/ROADMAP.md`). Three
+folded in here from a since-retired `revival/ROADMAP.md`). Two
 follow-ons, not started:
 
-- **Raster image extraction** — decode the run-length-encoded bitmap data
-  in `raster` objects to PNG, so `ez2md` can emit real images instead of
-  placeholders.
 - **Table rendering** — parse the ATK table/spreadsheet format into
   Markdown tables.
 - **Batch conversion of archive documents** — convert the FAQ, README,
   newsletters, and papers to Markdown for easier browsing (perhaps into
   `revival/converted/`, alongside the originals).
+
+Raster insets are decoded from their run-length-encoded 1bpp bitmap format
+and re-encoded as inline `data:image/png;base64,...` images (2026-07-16) —
+see `revival/tools/ez2md`'s `decode_raster`/`encode_png_1bit`. Version-1
+rasters and the `refer`/`share`/`file` keyword variants (rare in archived
+documents) still fall back to a placeholder comment. Chosen deliberately
+over sidecar `.png` files since `ez2md` is meant to be used as a stdin/stdout
+filter with no natural output directory to write sidecar files into; the
+tradeoff is that at least one browser Markdown-viewer extension with a
+restrictive CSP won't load `data:` image URIs; VS Code's built-in preview
+renders them correctly.

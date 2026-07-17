@@ -3,6 +3,9 @@
 
 import re
 import sys
+import struct
+import zlib
+import base64
 import argparse
 from dataclasses import dataclass, field
 
@@ -124,6 +127,156 @@ def process_embedded_objects(text, state):
     return ''.join(result)
 
 
+# raster (.raster / BE2 version 2) 1-bit-per-pixel run-length encoding.
+# Port of rasterio__ReadRow in src/atk/raster/lib/rasterio.c.
+RASTER_WHITEBYTE = 0x00
+RASTER_BLACKBYTE = 0xFF
+RASTER_WHITEZERO = ord('f')  # 'g'..'z' -> repeat WHITEBYTE 1..20 times
+RASTER_BLACKZERO = ord('F')  # 'G'..'Z' -> repeat BLACKBYTE 1..20 times
+RASTER_OTHERZERO = 0x1F      # '!'..'/' -> repeat next hex byte 2..16 times
+RASTER_INVERT = 1            # raster_INVERT option bit (exchange black/white)
+
+
+def raster_read_row(text, pos, length):
+    """Decode one RLE-encoded scanline of 'length' bytes starting at 'pos'.
+    Returns (row_bytes, new_pos, terminator) where terminator is '|' on a
+    clean end of row, or None if the text ran out before one was found.
+    """
+    row = bytearray()
+    state = 'ready'
+    pendinghex = 0
+    repeatcount = 0
+    n = len(text)
+
+    def emit(byte, count):
+        for _ in range(count):
+            if len(row) < length:
+                row.append(byte)
+
+    while pos < n:
+        c = text[pos]
+        o = ord(c)
+        pos += 1
+
+        if o <= 0x20:
+            continue  # control chars and space are spacing, ignored
+        if o in (0x7B, 0x5C, 0x7C):  # '{' '\' '|' -- end of row
+            if o != 0x7C:
+                pos -= 1  # leave the terminator in the stream, like ungetc
+            while len(row) < length:
+                row.append(RASTER_WHITEBYTE)
+            return bytes(row[:length]), pos, c
+        elif 0x21 <= o <= 0x2F:  # repeat-count prefix for a hex byte
+            repeatcount = o - RASTER_OTHERZERO
+            state = 'repeatpending'
+            continue
+        elif 0x67 <= o <= 0x7A:  # 'g'..'z': repeated WHITE bytes
+            emit(RASTER_WHITEBYTE, o - RASTER_WHITEZERO)
+            state = 'ready'
+            continue
+        elif 0x47 <= o <= 0x5A:  # 'G'..'Z': repeated BLACK bytes
+            emit(RASTER_BLACKBYTE, o - RASTER_BLACKZERO)
+            state = 'ready'
+            continue
+        elif 0x30 <= o <= 0x39:
+            hexval = o - 0x30
+        elif 0x41 <= o <= 0x46:
+            hexval = o - (0x41 - 0xA)
+        elif 0x61 <= o <= 0x66:
+            hexval = o - (0x61 - 0xA)
+        else:
+            state = 'ready'  # unrecognized code: reset, like the C reader
+            continue
+
+        if state == 'ready':
+            state = 'hexdigit'
+            pendinghex = hexval << 4
+        elif state == 'hexdigit':
+            emit(hexval | pendinghex, 1)
+            state = 'ready'
+        elif state == 'repeatpending':
+            state = 'repeatdigit'
+            pendinghex = hexval << 4
+        elif state == 'repeatdigit':
+            emit(hexval | pendinghex, repeatcount)
+            state = 'ready'
+
+    return bytes(row), pos, None
+
+
+RASTER_HEADER_RE = re.compile(
+    r'\s*(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s*\n')
+RASTER_BITS_RE = re.compile(r'\s*bits\s+(\d+)\s+(\d+)\s+(\d+)\s*\n?')
+
+
+def decode_raster(content):
+    """Decode a raster inset's data-stream body into (width, height, packed
+    1bpp rows, MSB-first, bit=1 meaning black). Returns None for variants
+    this doesn't handle (version 1, or a refer/share/file keyword instead
+    of inline 'bits').
+    """
+    m = RASTER_HEADER_RE.match(content)
+    if not m:
+        return None
+    version = int(m.group(1))
+    options = int(m.group(2))
+    if version < 2:
+        return None  # old version-1 / ITC RasterFile encoding, not handled
+    pos = m.end()
+
+    m2 = RASTER_BITS_RE.match(content, pos)
+    if not m2:
+        return None  # "refer"/"share"/"file" keyword: no inline bits to decode
+    width, height = int(m2.group(2)), int(m2.group(3))
+    pos = m2.end()
+
+    row_bytes = (width + 7) // 8
+    rows = bytearray()
+    for _ in range(height):
+        row, pos, term = raster_read_row(content, pos, row_bytes)
+        if term is None:
+            return None  # truncated data
+        rows.extend(row)
+
+    if options & RASTER_INVERT:
+        rows = bytearray(b ^ 0xFF for b in rows)
+
+    return width, height, bytes(rows)
+
+
+def encode_png_1bit(width, height, packed_rows):
+    """Wrap a packed 1bpp MSB-first bitmap (bit=1 meaning black) as a
+    minimal 1-bit grayscale PNG, using only the standard library.
+    """
+    def chunk(tag, data):
+        return (struct.pack('>I', len(data)) + tag + data
+                + struct.pack('>I', zlib.crc32(tag + data) & 0xffffffff))
+
+    row_bytes = (width + 7) // 8
+    raw = bytearray()
+    for y in range(height):
+        raw.append(0)  # filter type: None
+        start = y * row_bytes
+        # PNG 1-bit grayscale is 0=black/1=white; the raster convention is
+        # the opposite, so invert each byte going out.
+        raw.extend((~b) & 0xFF for b in packed_rows[start:start + row_bytes])
+
+    ihdr = struct.pack('>IIBBBBB', width, height, 1, 0, 0, 0, 0)
+    idat = zlib.compress(bytes(raw), 9)
+    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', ihdr)
+            + chunk(b'IDAT', idat) + chunk(b'IEND', b''))
+
+
+def render_raster(obj_id, content):
+    decoded = decode_raster(content)
+    if decoded is None:
+        return f'\n\n<!-- [embedded raster image: {obj_id} - unsupported raster variant] -->\n\n'
+    width, height, rows = decoded
+    png = encode_png_1bit(width, height, rows)
+    b64 = base64.b64encode(png).decode('ascii')
+    return f'\n\n![raster image {obj_id}](data:image/png;base64,{b64})\n\n'
+
+
 def render_embedded(obj_type, obj_id, content, state):
     if obj_type == 'bp':
         return '\n---\n\n'
@@ -138,7 +291,7 @@ def render_embedded(obj_type, obj_id, content, state):
         state.footnotes.append(note_text)
         return f'[^{len(state.footnotes)}]'
     elif obj_type == 'raster':
-        return f'\n\n<!-- [embedded raster image: {obj_id}] -->\n\n'
+        return render_raster(obj_id, content)
     elif obj_type == 'table':
         return f'\n\n<!-- [embedded table: {obj_id}] -->\n\n'
     elif obj_type == 'eq':
@@ -316,7 +469,12 @@ def collapse_blank_lines(text):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Convert ATK/ez documents to Markdown')
+    parser = argparse.ArgumentParser(
+        description='Convert ATK/ez documents to Markdown',
+        epilog='Inset support: text, formatting, footnotes, page breaks, and '
+               'raster (decoded to inline base64 PNG) are converted; table, '
+               'eq, figure, fad, image, and link insets are emitted as '
+               'placeholder comments.')
     parser.add_argument('input', nargs='?', help='Input .ez file (default: stdin)')
     parser.add_argument('-o', '--output', help='Output .md file (default: stdout)')
     args = parser.parse_args()
