@@ -214,31 +214,67 @@ Fastmail endpoints: `imap.fastmail.com:993` (SSL), `smtp.fastmail.com:465`
 (SSL) or `:587` (STARTTLS); proxy hostnames `imaps-proxy` /
 `smtps-proxy.fastmail.com` if ports are blocked.
 
-## 7. Implementation modules (C, tree conventions)
+## 7. Implementation modules, grouped by milestone dependency
 
-* `imap_transport.c` — socket + TLS + timeouts. TLS via OpenSSL/LibreSSL
-  from Homebrew (consistent with the XQuartz dependency posture).
+The modules below are NOT a prerequisite chain; each milestone needs only
+its own group. Sending and storing are independent seams.
+
+### Milestone 1 — SMTP send (self-contained; no IMAP modules involved)
+
+* `imap_transport.c` — TLS socket wrapper: connect, `SSL_connect`,
+  line-buffered read/write, timeouts. Written as the *shared* module from
+  the start (IMAP uses it at milestone 2) but SMTP is its first client.
+  TLS via Homebrew OpenSSL (consistent with the XQuartz dependency
+  posture). v1 uses port 465 implicit TLS — no STARTTLS state machine.
+* `smtp_submit.c` — the dialogue (EHLO/AUTH PLAIN/MAIL/RCPT/DATA),
+  dot-stuffing + CRLF conversion, reply parsing, mapping onto the `D_*`
+  codes `dropoff()`'s callers expect. App-password auth is a base64 line
+  inside this file, not a module; account/credential-file location via the
+  existing `getprofile()` preference machinery.
+* The `dropoff()` hook — a few lines in the `DT_NONAMS` branch of
+  `overhead/mail/lib/dropoff.c`, behind a preference, with the sendmail
+  pipe kept as fallback.
+* Imakefile plumbing for OpenSSL include/lib paths.
+
+Testable with a standalone driver program before cui or messages enter the
+picture.
+
+### Milestone 2–3 — IMAP browse + one-way sync
+
 * `imap_protocol.c` — tagged commands, line/literal parsing, response
-  routing.
-* `imap_auth.c` — app-password and XOAUTH2 behind one interface.
-* `imap_sync.c` — mailbox mirror + change-journal replay (architecture A).
-* `smtp_submit.c` — replaces the `DT_NONAMS` branch of `dropoff()`;
-  EHLO/STARTTLS/AUTH/MAIL/RCPT/DATA.
-* Change journal: small additions at the four mutation points in
-  `ams/libs/ms` (§2A).
+  routing. (Depends on `imap_transport.c` only.)
+* `imap_sync.c` — mailbox mirror into the account's mspath root
+  (architecture A), snapshot synthesis, watermark tracking.
 
-What we do NOT need: AMDS delivery, SNAP, and the maintenance surface
-(`MS_Rebuild*`, `MS_Scavenge*`, `MS_ConvertOldMail`, `MS_Epoch`, bboard
-machinery) — stub or leave untouched since libmssrv remains in place.
+### Milestone 4 — writeback
+
+* Change journal: small additions at the four mutation points in
+  `ams/libs/ms` (§2A); journal replay added to `imap_sync.c`.
+
+### Milestone 5 — OAuth2
+
+* `imap_auth.c` — materializes only here: app-password and XOAUTH2 behind
+  one interface, token refresh. Until then auth stays inline.
+
+What we do NOT need at any milestone: AMDS delivery, SNAP, and the
+maintenance surface (`MS_Rebuild*`, `MS_Scavenge*`, `MS_ConvertOldMail`,
+`MS_Epoch`, bboard machinery) — stub or leave untouched since libmssrv
+remains in place.
 
 ## 8. Library question — answered
 
-Candidates: **libetpan** (BSD-3, drifting) and UW **c-client** (Apache 2.0,
-Crispin's own library, era-appropriate C, unmaintained). Both bring porting
-baggage comparable to writing the fixed v1 slice by hand. Given the small
-command set in §5 a hand-rolled ~2k-line tagged-command client is tractable
-and matches the revival aesthetic. Plan: one-day spike on the hand-rolled
-transport/protocol pair before committing either way.
+Scope note: this question concerns **IMAP only**. For SMTP the decision is
+already made — hand-rolled. The protocol slice in milestone 1 is a few
+hundred lines; adopting c-client or libetpan for it would import more
+porting work than it saves.
+
+IMAP candidates: **libetpan** (BSD-3, drifting) and UW **c-client** (Apache
+2.0, Crispin's own library, era-appropriate C, unmaintained). Both bring
+porting baggage comparable to writing the fixed v1 slice by hand. Given the
+small command set in §5 a hand-rolled ~2k-line tagged-command client is
+tractable and matches the revival aesthetic. Plan: one-day spike on the
+hand-rolled transport/protocol pair (milestone 2) before committing either
+way.
 
 ## 9. Test strategy
 
