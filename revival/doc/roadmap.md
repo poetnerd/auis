@@ -57,10 +57,20 @@ mirrors IMAP; AMDS delivery remains excluded.
   `revival.md`, "Old bugs never found"), and client-side dest-host DNS
   validation (now defaults off when `smtphost` is set;
   `validatedesthosts` preference overrides).
-- Milestone 2 (next): IMAP spike — hand-rolled tagged-command client
-  over `tlscon`; go/no-go vs adopting libetpan/c-client.
-- Milestones 3–5: one-way folder sync into a new mspath root; writeback
-  via change journal; XOAUTH2.
+- ~~Milestone 2: IMAP spike~~ — **done 2026-07-17**. Full
+  CAPABILITY/LOGIN/LIST/EXAMINE/SEARCH/FETCH sequence (read-only,
+  including a real 9.6KB body literal) ran against live Fastmail;
+  decision: **hand-roll** the IMAP client (§8 of the plan doc now
+  records the reasoning). Key transport finding: tlscon's fixed 4KB
+  line buffer + missing resync primitive wedge the connection on
+  large single-line responses (`UID SEARCH ALL` on a 3,939-message
+  mailbox) — growable buffer + reconnect design is milestone 3's
+  first task, and sync will target Fastmail's `ESEARCH`/`CONDSTORE`
+  instead of naive SEARCH-ALL. Spike driver:
+  `src/overhead/mail/lib/imapspike.c`; `tlscon_ReadBytes` added
+  (additive; both SMTP regression suites re-passed).
+- Milestones 3–5 (next: 3): one-way folder sync into a new mspath
+  root; writeback via change journal; XOAUTH2.
 
 ### Objective: Reliable operation
 

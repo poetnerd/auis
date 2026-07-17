@@ -1,7 +1,9 @@
 # Enable IMAP as mail store for AMS: messages, cui — rev 2
 
-**Status: milestone 1 (SMTP send) COMPLETE 2026-07-17 — end-to-end
-acceptance passing. Milestone 2 (IMAP spike) is next. See §10.**
+**Status: milestones 1 (SMTP send) and 2 (IMAP spike) COMPLETE
+2026-07-17. §8 decided: hand-roll the IMAP client. Milestone 3 (one-way
+sync) is next; its opening tasks are the spike's transport findings —
+see §8 and §10.**
 
 Goal: teach the AMS clients about IMAP as a mail store and SMTP as a mail
 sender, with OAuth2-capable authentication. Test platform: Fastmail.
@@ -267,20 +269,38 @@ maintenance surface (`MS_Rebuild*`, `MS_Scavenge*`, `MS_ConvertOldMail`,
 `MS_Epoch`, bboard machinery) — stub or leave untouched since libmssrv
 remains in place.
 
-## 8. Library question — answered
+## 8. Library question — DECIDED 2026-07-17: hand-roll
 
-Scope note: this question concerns **IMAP only**. For SMTP the decision is
-already made — hand-rolled. The protocol slice in milestone 1 is a few
-hundred lines; adopting c-client or libetpan for it would import more
-porting work than it saves.
+The milestone-2 spike (`src/overhead/mail/lib/imapspike.c`, spec at
+`revival/doc/imap-spike-prompt.md`) ran the full sequence — CAPABILITY,
+LOGIN, LIST, EXAMINE, UID SEARCH, ENVELOPE fetch, full-body fetch through
+a real 9,686-byte literal — against the live Fastmail account. Verdict:
+nothing IMAP-inherent was hard enough to justify a library. Tagged/untagged
+routing was easy; literals were mechanical once `tlscon_ReadBytes` existed
+(the one additive transport extension, regression-proven); ENVELOPE
+parsing took a ~120-line scanner. libetpan (BSD-3, drifting) and UW
+c-client (Apache 2.0, unmaintained) would each bring porting baggage
+comparable to the hand-rolled effort without solving the one real gap
+found (below).
 
-IMAP candidates: **libetpan** (BSD-3, drifting) and UW **c-client** (Apache
-2.0, Crispin's own library, era-appropriate C, unmaintained). Both bring
-porting baggage comparable to writing the fixed v1 slice by hand. Given the
-small command set in §5 a hand-rolled ~2k-line tagged-command client is
-tractable and matches the revival aesthetic. Plan: one-day spike on the
-hand-rolled transport/protocol pair (milestone 2) before committing either
-way.
+Spike findings that set milestone 3's opening tasks:
+
+* **Transport gap (fix first):** `tlscon`'s fixed ~4KB line buffer
+  overflows on real-mailbox responses (`UID SEARCH ALL` on a
+  3,939-message INBOX returns every UID on one line), and a failed
+  ReadLine leaves the connection unrecoverably wedged — no resync
+  primitive. `imap_protocol.c` needs a growable line buffer and a
+  connection-recovery design before anything else is built on it.
+* **Sync should use the modern extensions Fastmail advertises:**
+  `ESEARCH` (compact ranges instead of exhaustive UID lists) and
+  `CONDSTORE` (`HIGHESTMODSEQ` arrives free in the EXAMINE response) —
+  not the naive SEARCH-ALL/FETCH-ALL pattern the spike used.
+* **Known stub:** a literal appearing *inside* an ENVELOPE response is
+  unhandled (never occurred against Fastmail); the real parser must
+  weave byte-counted reads into token-level parsing.
+* Revised milestone-3 estimate from the spike: ~1,500–2,500 LOC for
+  `imap_protocol.c`, ~1,000–2,000 for `imap_sync.c` (where the design
+  risk lives); multiple days, not one.
 
 ## 9. Test strategy
 
@@ -303,7 +323,11 @@ way.
    (now defaults off when `smtphost` is set; `validatedesthosts` pref
    overrides).
 2. **Spike** — hand-rolled IMAP transport+protocol: connect, LOGIN, LIST,
-   SELECT, FETCH one message. Go/no-go on §8.
+   SELECT, FETCH one message. Go/no-go on §8. **DONE 2026-07-17**:
+   full sequence ran against live Fastmail (read-only), decision is
+   hand-roll; transport findings recorded in §8 as milestone 3's
+   opening tasks. Spike driver committed as
+   `src/overhead/mail/lib/imapspike.c` (`make imapspike.test`).
 3. **One-way sync** — `imapsync` mirrors subscribed folders (INBOX
    included, per the §2A INBOX decision) into `~/.IMAP/fastmail/...` as a
    new mspath element; browse in cui, then messages.
