@@ -290,9 +290,15 @@ way.
 
 ## 10. Milestones
 
-1. **SMTP send** — `smtp_submit.c` behind `dropoff()`, app password, against
+1. **SMTP send** — `smtpsub.c` behind `dropoff()`, app password, against
    Fastmail. Small, self-contained, useful immediately, required by every
-   architecture.
+   architecture. **DONE 2026-07-17**: end-to-end cui→SMTP→Fastmail
+   acceptance passing (`revival/tools/smtp-send-test`). The acceptance
+   push also surfaced and fixed three latent bugs: NULL address-validation
+   results crashing cui, an arm64 variadic-ABI corruption via fdplumb.h's
+   open-rename macro, and obsolete client-side dest-host DNS validation
+   (now defaults off when `smtphost` is set; `validatedesthosts` pref
+   overrides).
 2. **Spike** — hand-rolled IMAP transport+protocol: connect, LOGIN, LIST,
    SELECT, FETCH one message. Go/no-go on §8.
 3. **One-way sync** — `imapsync` mirrors subscribed folders (INBOX
