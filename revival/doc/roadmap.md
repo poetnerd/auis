@@ -35,6 +35,33 @@ history behind each completed item.
      correct Part 1…23 ordering, verified interactively.
    - Inter-line spaceing in folders and message header panes is double wide.
 
+### Objective: AMS over IMAP/SMTP (kicked off 2026-07-16)
+
+Teach the AMS clients to use IMAP as a mail store and SMTP as a sender,
+Fastmail as the test platform. Plan of record:
+`revival/doc/ams-IMAP-project.md`; the MS_* server-client interface it
+builds on is documented in `revival/doc/ams-server-client-interface.md`
+(converted from `ServerCalls.d` via ez2md). Architecture decision: local
+`.MS_MsgDir` store stays as the cache (Thunderbird model), sync agent
+mirrors IMAP; AMDS delivery remains excluded.
+
+- ~~Milestone 1: SMTP send~~ — **done 2026-07-17**. `tlscon`/`netrc`/
+  `smtpsub` modules in `overhead/mail/lib`, `dropoff()` gated on the
+  `smtphost` preference, legacy sendmail pipe as fallback. End-to-end
+  acceptance passes (`revival/tools/smtp-send-test`: scripted cui →
+  SMTP → Fastmail, real send confirmed). Implementation delegated to a
+  Sonnet instance against `revival/doc/smtp-send-prompt.md` (three
+  stages, two review gates). The acceptance push flushed out and fixed
+  three latent legacy bugs: cui NULL address-validation crashes (7
+  sites), the fdplumb.h open-rename variadic-ABI corruption (see
+  `revival.md`, "Old bugs never found"), and client-side dest-host DNS
+  validation (now defaults off when `smtphost` is set;
+  `validatedesthosts` preference overrides).
+- Milestone 2 (next): IMAP spike — hand-rolled tagged-command client
+  over `tlscon`; go/no-go vs adopting libetpan/c-client.
+- Milestones 3–5: one-way folder sync into a new mspath root; writeback
+  via change journal; XOAUTH2.
+
 ### Objective: Reliable operation
 
 - Let's get all the function prototypes live with ANSI — plan of record
@@ -461,6 +488,13 @@ trail, reproduction steps, and what was tried/disproven along the way:
 ---
 
 ## Major milestones
+
+- **2026-07-17**: **First SMTP mail sent by AMS** — AMS/IMAP-project
+  milestone 1 complete: scripted cui composes and submits through the
+  real `dropoff()` path over TLS to Fastmail, authenticated,
+  end-to-end. Roughly 35 years after AMDS last moved a message by
+  copying files through a distributed filesystem, the Andrew Message
+  System speaks a mail protocol the rest of the world still speaks.
 
 - **2026-07-10**: **M1 complete** — classpp emits fully typed dispatch
   casts by default across the whole active tree (11 rollout points,

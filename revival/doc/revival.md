@@ -221,6 +221,26 @@ sample:
   back to a generic reader that resynchronizes by counting nested begin/end
   markers instead of assuming every read succeeds.
 
+- **A leak-tracking macro that could poison the C library's own
+  declarations.** A debugging header renames `open` to `dbg_open` with a
+  preprocessor macro, so that file-descriptor leaks can be traced through a
+  wrapper. In source files that happened to include this header before the
+  system's `fcntl.h`, the macro rewrote the C library's *own declaration*
+  of `open()` — producing a declaration of `dbg_open` with `open`'s
+  variadic signature, which the wrapper's fixed three-argument definition
+  does not have. For the code's whole prior life this was harmless twice
+  over: K&R compilation had no prototypes to mismatch, and the calling
+  conventions of the era passed fixed and variadic arguments identically
+  anyway. On Apple Silicon they differ — variadic arguments travel on the
+  stack, fixed arguments in registers — so caller and wrapper disagreed
+  about where the file-permission argument was. Files were silently
+  created with garbage permission bits, and code that had just written a
+  temporary file found itself unable to reopen it, an "impossible"
+  permission error that traced back, through the disassembly, to a macro
+  and an include order. Fixed at the root: the debugging header now parses
+  `fcntl.h` itself before performing the rename, making the poisoning
+  impossible in any include order.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

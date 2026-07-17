@@ -1,5 +1,8 @@
 # Enable IMAP as mail store for AMS: messages, cui — rev 2
 
+**Status: milestone 1 (SMTP send) COMPLETE 2026-07-17 — end-to-end
+acceptance passing. Milestone 2 (IMAP spike) is next. See §10.**
+
 Goal: teach the AMS clients about IMAP as a mail store and SMTP as a mail
 sender, with OAuth2-capable authentication. Test platform: Fastmail.
 
