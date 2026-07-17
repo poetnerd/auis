@@ -372,11 +372,17 @@ int OutNameLen, FwdNameLen, TolerableDelay;
     The idea behind all the configuration options is that the behavior of this procedure should mimic how the underlying mail delivery will handle a destination mail domain insofar as determining whether a host is good, bad, or indeterminate.
     */
     int Rslt, AddrDum, k, Len = 0;
+    int EffectiveValidate;
     enum MailHostQuality BestAnswer;
 
     CheckAMSConfiguration();
 
-    if (AMS_ValidateDestHosts == 0) {
+    /* A smarthost (smtphost set) validates recipients itself at RCPT
+       time, so client-side DNS validation defaults off in that case;
+       "validatedesthosts" overrides either way. */
+    EffectiveValidate = getprofileswitch("validatedesthosts",
+	getprofile("smtphost") != NULL ? 0 : AMS_ValidateDestHosts);
+    if (EffectiveValidate == 0) {
 	strncpy(OutName, InName, OutNameLen);
 	return mailhost_good;
     }
