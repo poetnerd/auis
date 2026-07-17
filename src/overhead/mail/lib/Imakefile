@@ -33,12 +33,17 @@ OBJS = amsauth.o amsconf.o \
 	parseadd.o parsel.o parseutl.o parsey.o \
 	qmail.o rsearch.o scan822.o stats.o \
 	sysexits.o usysex.o valhost.o \
-	vmail.o addrambig.o
+	vmail.o addrambig.o \
+	tlscon.o netrc.o smtpsub.o
+
+/* tlscon.c/netrc.c/smtpsub.c need OpenSSL (Homebrew); see SSLINCDIR/SSLLIB
+   in src/config/darwin/system.mcr. */
+LOCALINCLUDES = -I$(SSLINCDIR)
 
 NormalObjectRule()
 
 TESTLIBS = ${BASEDIR}/lib/libmail.a ${UTILLIB} ${PRSLIB}
-TestingOnlyTestingRule(${TESTLIBS},${BSDLIB})
+TestingOnlyTestingRule(${TESTLIBS},${BSDLIB} ${SSLLIB} ${RESOLVER_LIB})
 
 FlexOrLexFileRule(parsel)
 Parser(parsey,-d)
