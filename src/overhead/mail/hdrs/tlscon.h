@@ -62,6 +62,20 @@ extern int tlscon_Open();
    -1 on error, timeout, or a line that doesn't fit in the buffer. */
 extern int tlscon_ReadLine();
 
+/* int tlscon_ReadBytes(c, buf, n)
+       struct tlscon *c;
+       char *buf;
+       int n;
+
+   Reads exactly n raw bytes with no line/CRLF interpretation -- for
+   protocols with byte-counted literals (e.g. IMAP's "{n}" syntax).
+   buf is NOT null-terminated and may contain embedded CRLF/NUL.
+   Returns n on success, -1 on error/timeout (in which case some bytes
+   may have been consumed from the stream; the connection should be
+   treated as unusable). Added for milestone 2 (IMAP); milestone 1's
+   tlscon_ReadLine/_Write/_Open/_Close are unchanged. */
+extern int tlscon_ReadBytes();
+
 /* int tlscon_Write(c, buf, len)
        struct tlscon *c;
        char *buf;

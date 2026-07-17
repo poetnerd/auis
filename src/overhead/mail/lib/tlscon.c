@@ -240,6 +240,32 @@ int tlscon_ReadLine(c, buf, len)
     }
 }
 
+/* Milestone 2 addition: read exactly n raw bytes (IMAP literals).
+   Shares the same internal buffer/refill machinery as tlscon_ReadLine;
+   does not otherwise change that function's behavior. */
+int tlscon_ReadBytes(c, buf, n)
+    struct tlscon *c;
+    char *buf;
+    int n;
+{
+    int avail, tocopy, got;
+
+    got = 0;
+    while (got < n) {
+	avail = c->rend - c->rstart;
+	if (avail <= 0) {
+	    if (tlscon_refill(c) < 0) return -1;
+	    continue;
+	}
+	tocopy = avail;
+	if (tocopy > n - got) tocopy = n - got;
+	memcpy(buf + got, c->rbuf + c->rstart, tocopy);
+	c->rstart += tocopy;
+	got += tocopy;
+    }
+    return got;
+}
+
 int tlscon_Write(c, buf, len)
     struct tlscon *c;
     char *buf;
