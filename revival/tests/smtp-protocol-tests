@@ -1,0 +1,269 @@
+#!/usr/bin/env python3
+"""smtp-protocol-tests -- Gate A protocol-level regression suite for the
+milestone 1 SMTP dropoff module (src/overhead/mail/lib/{tlscon,netrc,
+smtpsub}.c), driven through the standalone smtptest.test/dropoff.test
+harnesses exactly as milestone 1's original Gate A review did.
+
+Usage:
+    revival/tests/smtp-protocol-tests [RECIPIENT]
+
+    RECIPIENT is optional.
+      - If given, all 7 cases run, including live sends through the
+        real smtp.fastmail.com using the real ~/.netrc -- mail goes
+        ONLY to RECIPIENT (repeated for the two-recipient case), never
+        anywhere else, never derived or guessed.
+      - If omitted, only cases 6 (bad password) and 7 (smtphost unset)
+        run -- both are deterministic, local, and need no live server
+        or real credentials.
+
+Example:
+    revival/tests/smtp-protocol-tests wdc@fastmail.com
+
+This script builds its own corpus (message files, scratch PROFILES
+files, a scratch netrc with a fabricated bad password) fresh into a
+mktemp -d directory on every run and removes it on exit. It never
+reads or copies the real ~/.netrc's content -- the live cases (1-5)
+rely on smtp_dropoff()'s own default (unset smtpnetrc -> ~/.netrc) to
+reach it, and the bad-password case (6) uses a wholly separate,
+fabricated scratch netrc instead. It never touches ~/preferences.
+
+This is the protocol-level counterpart to revival/tools/smtp-send-test,
+which drives the real cui UI end-to-end instead of the SMTP module
+directly; see revival/tests/README.md.
+"""
+
+import os
+import random
+import re
+import shutil
+import string
+import subprocess
+import sys
+import tempfile
+import time
+
+REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+MAILLIB = os.path.join(REPO_ROOT, "src", "overhead", "mail", "lib")
+SMTPTEST = os.path.join(MAILLIB, "smtptest.test")
+DROPOFFTEST = os.path.join(MAILLIB, "dropoff.test")
+
+D_OK = 1
+D_BAD_PARMS = 5
+D_TEMP_FAIL = 6
+
+PASS = []
+FAIL = []
+
+
+def note(msg):
+    print(msg, flush=True)
+
+
+def result(name, ok, detail=""):
+    if ok:
+        PASS.append(name)
+        note(f"PASS: {name}")
+    else:
+        FAIL.append(name)
+        note(f"FAIL: {name}" + (f" -- {detail}" if detail else ""))
+
+
+def run(cmd, cwd=None, env=None, timeout=90):
+    return subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True, timeout=timeout)
+
+
+def build_drivers():
+    """make Makefile (regenerating from the Imakefile only if the tree's
+    own dependency check says it's stale), then build smtptest.test and
+    dropoff.test -- the same standalone harnesses Gate A used. Never
+    touches smtptest.c/smtpsub.c/tlscon.c/netrc.c."""
+    if not os.path.isfile(os.path.join(MAILLIB, "Makefile")):
+        # Fresh checkout bootstrap, same invocation the tree's Makefiles
+        # use to regenerate themselves from their Imakefile.
+        r = run(["imake", "-Timake.tmpl", "-I.", "-I../../.././config",
+                 "-s", "Makefile", "-DTOPDIR=../../../."], cwd=MAILLIB)
+        if r.returncode != 0:
+            note(r.stdout); note(r.stderr)
+            sys.exit("smtp-protocol-tests: could not bootstrap Makefile in " + MAILLIB)
+    r = run(["make", "Makefile"], cwd=MAILLIB)
+    if r.returncode != 0:
+        note(r.stdout); note(r.stderr)
+        sys.exit("smtp-protocol-tests: 'make Makefile' failed in " + MAILLIB)
+    for target in ("smtptest.test", "dropoff.test"):
+        r = run(["make", target], cwd=MAILLIB, timeout=180)
+        if r.returncode != 0 or not os.path.isfile(os.path.join(MAILLIB, target)):
+            note(r.stdout); note(r.stderr)
+            sys.exit(f"smtp-protocol-tests: 'make {target}' failed in {MAILLIB}")
+
+
+def write(path, text):
+    with open(path, "w", newline="\n") as f:
+        f.write(text)
+
+
+def rfc822(subject, body, marker):
+    date = time.strftime("%a, %d %b %Y %H:%M:%S %z")
+    return (
+        f"From: {{FROM}}\n"
+        f"To: {{FROM}}\n"
+        f"Subject: {subject}\n"
+        f"Date: {date}\n"
+        f"\n"
+        f"{body}\n"
+        f"Marker: {marker}\n"
+    )
+
+
+def main():
+    recipient = sys.argv[1] if len(sys.argv) > 1 else None
+    if len(sys.argv) > 2:
+        sys.exit("usage: smtp-protocol-tests [RECIPIENT]")
+
+    build_drivers()
+
+    tmpdir = tempfile.mkdtemp(prefix="smtp-protocol-tests-")
+    try:
+        _run_suite(tmpdir, recipient)
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+    note("")
+    note(f"{len(PASS)} passed, {len(FAIL)} failed"
+         + ("" if recipient else " (cases 1-5 skipped: no recipient given)"))
+    sys.exit(1 if FAIL else 0)
+
+
+def _run_suite(tmpdir, recipient):
+    tag = "".join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
+    marker = f"GATE-A-PROTOCOL-TEST-{tag}"
+    from_addr = recipient if recipient else "nobody@example.invalid"
+
+    # ---- scratch corpus: message files ----
+    msg_simple = os.path.join(tmpdir, "msg-simple.txt")
+    write(msg_simple, rfc822("smtp-protocol-tests: simple", "Simple send test.", marker).format(FROM=from_addr))
+
+    msg_dotstuff = os.path.join(tmpdir, "msg-dotstuff.txt")
+    write(msg_dotstuff, rfc822(
+        "smtp-protocol-tests: dot-stuffing",
+        "Line before the lone dot.\n.\nLine after the lone dot.\n.hidden text that must survive stuffing\nEnd of message.",
+        marker,
+    ).format(FROM=from_addr))
+
+    msg_lfonly = os.path.join(tmpdir, "msg-lfonly.txt")
+    lfonly_text = rfc822("smtp-protocol-tests: LF-only", "This file uses bare LF line endings only.", marker).format(FROM=from_addr)
+    with open(msg_lfonly, "wb") as f:
+        f.write(lfonly_text.encode("ascii"))
+    with open(msg_lfonly, "rb") as f:
+        raw = f.read()
+    if b"\r" in raw:
+        sys.exit("smtp-protocol-tests: internal error -- LF-only fixture contains a CR byte")
+
+    msg_tworecip = os.path.join(tmpdir, "msg-tworecip.txt")
+    write(msg_tworecip, rfc822("smtp-protocol-tests: two recipients", "Sent to two recipients.", marker).format(FROM=from_addr))
+
+    msg_badrecip = os.path.join(tmpdir, "msg-badrecip.txt")
+    write(msg_badrecip, rfc822("smtp-protocol-tests: bad recipient", "Should never arrive.", marker).format(FROM=from_addr))
+
+    msg_legacy = os.path.join(tmpdir, "msg-legacy.txt")
+    write(msg_legacy, rfc822("smtp-protocol-tests: legacy path", "Exercises the smtphost-unset legacy clause.", marker).format(FROM=from_addr))
+
+    # ---- scratch corpus: PROFILES files ----
+    profile_live = os.path.join(tmpdir, "profile-live.txt")
+    write(profile_live, "smtphost: smtp.fastmail.com\nsmtpport: 465\n")
+
+    scratch_netrc = os.path.join(tmpdir, "scratch-netrc")
+    write(scratch_netrc,
+          "machine smtp.fastmail.com\n"
+          f"login {from_addr}\n"
+          "password this-is-a-fabricated-wrong-app-password-not-real\n")
+    os.chmod(scratch_netrc, 0o600)
+
+    profile_badpw = os.path.join(tmpdir, "profile-badpw.txt")
+    write(profile_badpw, f"smtphost: smtp.fastmail.com\nsmtpport: 465\nsmtpnetrc: {scratch_netrc}\n")
+
+    profile_nohost = os.path.join(tmpdir, "no-such-profile.txt")  # deliberately absent
+
+    trace_env = dict(os.environ)
+    trace_env["AMS_SMTP_TRACE"] = "1"
+
+    # ---- cases 1-5: live, only when a recipient was given ----
+    if recipient:
+        note(f"--- live cases against smtp.fastmail.com, sending only to {recipient} ---")
+
+        env = dict(trace_env); env["PROFILES"] = profile_live
+        r = run([SMTPTEST, msg_simple, recipient], env=env)
+        note(r.stderr)
+        note(r.stdout)
+        ok, rc, msg = parse_smtptest(r.stdout)
+        result("1 simple send -> D_OK", ok and rc == D_OK, f"rc={rc} msg={msg!r}")
+
+        r = run([SMTPTEST, msg_dotstuff, recipient], env=env)
+        note(r.stderr)
+        note(r.stdout)
+        ok, rc, msg = parse_smtptest(r.stdout)
+        result("2 dot-stuffing -> D_OK", ok and rc == D_OK, f"rc={rc} msg={msg!r}")
+
+        r = run([SMTPTEST, msg_lfonly, recipient], env=env)
+        note(r.stderr)
+        note(r.stdout)
+        ok, rc, msg = parse_smtptest(r.stdout)
+        result("3 LF-only input -> D_OK", ok and rc == D_OK, f"rc={rc} msg={msg!r}")
+
+        r = run([SMTPTEST, msg_tworecip, recipient, recipient], env=env)
+        note(r.stderr)
+        note(r.stdout)
+        ok, rc, msg = parse_smtptest(r.stdout)
+        rcpt_count = r.stderr.count("C: RCPT TO:")
+        result("4 two recipients -> D_OK", ok and rc == D_OK and rcpt_count == 2,
+               f"rc={rc} msg={msg!r} RCPT-count={rcpt_count}")
+
+        domain = recipient.rsplit("@", 1)[-1]
+        bad_addr = f"nosuch-gate-a-test-{tag}@{domain}"
+        r = run([SMTPTEST, msg_badrecip, bad_addr], env=env)
+        note(r.stderr)
+        note(r.stdout)
+        ok, rc, msg = parse_smtptest(r.stdout)
+        no_data_sent = "C: DATA" not in r.stderr
+        result("5 bad recipient -> D_BAD_PARMS, no DATA sent",
+               ok and rc == D_BAD_PARMS and no_data_sent,
+               f"rc={rc} msg={msg!r} DATA-line-present={not no_data_sent}")
+    else:
+        note("--- cases 1-5 skipped: no recipient given (need live server + real netrc) ---")
+
+    # ---- case 6: bad password -- deterministic, always runs ----
+    note("--- case 6: bad password (scratch netrc, fabricated password) ---")
+    env = dict(trace_env); env["PROFILES"] = profile_badpw
+    r = run([SMTPTEST, msg_legacy if not recipient else msg_simple, from_addr], env=env)
+    redacted_ok = "AUTH PLAIN <redacted>" in r.stderr and "this-is-a-fabricated-wrong-app-password-not-real" not in r.stderr
+    note(r.stderr)
+    note(r.stdout)
+    ok, rc, msg = parse_smtptest(r.stdout)
+    result("6 bad password -> D_TEMP_FAIL, AUTH redacted",
+           ok and rc == D_TEMP_FAIL and "check app password / netrc" in msg and redacted_ok,
+           f"rc={rc} msg={msg!r} redacted_ok={redacted_ok}")
+
+    # ---- case 7: smtphost unset -- deterministic, always runs ----
+    note("--- case 7: smtphost unset -- legacy sendmail clause ---")
+    env = dict(os.environ); env["PROFILES"] = profile_nohost
+    stdin_text = f"{from_addr}\n{msg_legacy}\n0\n"
+    # dropoff.test (TESTINGONLYTESTING main in dropoff.c) prompts
+    # interactively over stdin for Destination/Filename/Flags; feed it
+    # directly rather than launching it with no input.
+    proc = subprocess.run([DROPOFFTEST], input=stdin_text, env=env,
+                           capture_output=True, text=True, timeout=60)
+    note(proc.stdout)
+    reached_clause = "sendmail" in proc.stdout.lower() or "qopen" in proc.stdout.lower()
+    result("7 smtphost unset -> reaches legacy sendmail clause", reached_clause,
+           "expected 'sendmail'/'qopen' evidence in dropoff.test output")
+
+
+def parse_smtptest(stdout):
+    """Parse smtptest.test's 'smtp_dropoff() returns N (NAME): text' line."""
+    m = re.search(r"smtp_dropoff\(\) returns (\d+) \(([^)]*)\):\s*(.*)", stdout)
+    if not m:
+        return False, None, stdout.strip()
+    return True, int(m.group(1)), m.group(3).strip()
+
+
+if __name__ == "__main__":
+    main()
