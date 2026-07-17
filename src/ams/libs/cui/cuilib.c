@@ -1900,7 +1900,9 @@ int newsize, errcode, maxdealiases, *numfound, *externalct, *formatct, *stripct,
 			return(mserrcode);
 		    }
 		    *numfound = *numfound + mynumfound - 1;
-		    strncpy(newaddr, mytext, newsize);
+		    /* mytext can come back NULL (validation unavailable, not
+		       just a bad address); don't strncpy a NULL pointer. */
+		    strncpy(newaddr, mytext ? mytext : Qarray[i], newsize);
 		}
 		break;
 	    case MSWP_PERSONALALIAS : /* A personal mail alias */
@@ -1912,7 +1914,9 @@ int newsize, errcode, maxdealiases, *numfound, *externalct, *formatct, *stripct,
 		    return(mserrcode);
 		}
 		*numfound = *numfound + mynumfound - 1;
-		strncpy(newaddr, mytext, newsize);
+		/* mytext can come back NULL (validation unavailable, not
+		   just a bad address); don't strncpy a NULL pointer. */
+		strncpy(newaddr, mytext ? mytext : oldaddr, newsize);
 		break;
 		}
 	    case MSWP_PROBABLYGOOD: /* PARTIAL temporary failure */
@@ -3309,6 +3313,13 @@ char *Tolist;
     }
     if (CUI_RewriteHeaderLineInternal(Tolist, &NewToList, 25, &total, &external, &formatct, &stripct, &trustct)) {
 	return(-1);
+    }
+    if (!NewToList) {
+	/* validation unavailable (not just a bad address); fall back to
+	   the recipient list as given rather than propagating NULL into
+	   the strlen/fprintf/sprintf below. */
+	NewToList = malloc(strlen(Tolist)+1);
+	if (NewToList) strcpy(NewToList, Tolist);
     }
     if ((external > 0) && AMS_GET_ATTRIBUTE(SnapshotBuf, AMS_ATT_FORMATTED)) {
 	int ans;

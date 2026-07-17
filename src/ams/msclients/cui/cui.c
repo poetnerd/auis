@@ -2722,8 +2722,12 @@ char   *to;
 		    if (to == (char *) - 1) return(-1);
 		}
 		if (RealWhoIs(to, &realname) && !GetBooleanFromUser("Proceed with mail composition anyway", FALSE)) return(-1);
-		sprintf(HeadBuf, "To: %s\n", realname);
-		free(realname);
+		/* realname can come back NULL (validation unavailable, not
+		   just a bad address); fall back to the address as typed
+		   rather than writing the literal text "(null)" into the
+		   header. */
+		sprintf(HeadBuf, "To: %s\n", realname ? realname : to);
+		if (realname) free(realname);
 		CUI_GenTmpFileName(TmpName2);
 		if (PutStringToViceFile(TmpName2, HeadBuf)) return(-1);
 		moreprintf("Enter your prefix to the message and then %s\n", EOF_STRING);
@@ -2832,7 +2836,10 @@ int code, cuid;
     }
     if (RealWhoIs(to, &realname) && !GetBooleanFromUser("Proceed with mail composition anyway", FALSE))
 	return(-1);
-    sprintf(HeadBuf, "To: %s\n", realname);
+    /* realname can come back NULL (validation unavailable, not just a bad
+       address); fall back to the address as typed rather than writing the
+       literal text "(null)" into the header. */
+    sprintf(HeadBuf, "To: %s\n", realname ? realname : to);
     if (realname) free(realname);
     if (code==AMS_REPLY_FRESH) {
 	for (;;) {
@@ -2855,7 +2862,10 @@ int code, cuid;
         if (RealWhoIs(s, &realname) && !GetBooleanFromUser("Proceed with mail composition anyway", FALSE)) {
 	    return(-1);
 	}
-	strcat(BigBuf, realname);
+	/* realname can come back NULL (validation unavailable, not just a
+	   bad address) -- guard, don't strcat a NULL pointer. */
+	if (realname) strcat(BigBuf, realname);
+	if (realname) free(realname);
     } else {
 	GetSubject(cuid, BigBuf, 1000);
     }
@@ -3097,7 +3107,10 @@ char   *arg;
     CheckPrompted("Please enter one or more names to check")
     moreprintf("Verifying name list '%s'...\n", arg);
     badct = RealWhoIs(arg, &realname);
-    moreprintf("\n%s\n", realname);
+    /* realname can come back NULL (validation unavailable, not just a bad
+       address); fall back to the text as typed rather than printing the
+       literal text "(null)". */
+    moreprintf("\n%s\n", realname ? realname : arg);
     if (realname) free(realname);
     if (badct>1) moreprintf("Total of %d errors\n", badct);
     return(0);
