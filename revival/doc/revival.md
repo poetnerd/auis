@@ -1,6 +1,6 @@
 # AUIS Revival: What Was Done and Why
 
-*Last distilled: 2026-07-14.* A narrative account of reviving Carnegie
+*Last distilled: 2026-07-16.* A narrative account of reviving Carnegie
 Mellon's Andrew User Interface System (AUIS) on a modern Mac, for readers
 who already know ATK and readers encountering it for the first time. For
 the complete technical record this document summarizes, see
@@ -160,6 +160,31 @@ low volume of new code, comparatively high difficulty per defect.
 The project's own infrastructure was modernized in a smaller way as well:
 source control runs under Fossil, a self-contained modern system, in place
 of whatever distribution mechanism carried the source in the 1990s.
+
+## Finding ATK lessons in modern implementations
+
+Not every observation from this project has been about repairing decay.
+Occasionally, working through thirty-year-old code turns up a design
+decision that still holds up — quietly validated by a standard that didn't
+exist yet when ATK was written.
+
+- **Raster insets and PNG converged on the same bitmap encoding.** Adding
+  image support to `ez2md` (the tool that converts `.ez` documents to
+  Markdown) meant first decoding ATK's `raster` inset format: a
+  one-bit-per-pixel bitmap, packed eight pixels to a byte, most-significant
+  bit first, one bit value meaning "black." PNG's one-bit grayscale mode —
+  standardized in 1996, years after this raster format was written
+  (`rasterio.c` carries an IBM copyright of 1988) — packs pixels exactly
+  the same way: MSB-first, one bit each, a bit value mapping straight to
+  black or white. The only real work in the conversion was undoing ATK's
+  own run-length encoding (a compact ASCII scheme that made sense when
+  screen bitmaps had to move over modems and fit on small disks) back into
+  raw packed bits, then flipping which bit value means black, since the two
+  formats picked opposite conventions for that one detail. No resampling,
+  no color-model translation, no coordinate reconciliation — two systems,
+  designed for unrelated reasons the better part of a decade apart, landed
+  on the same underlying representation for a scanline bitmap, because it's
+  simply the obvious correct one.
 
 ## Old bugs never found till now
 
