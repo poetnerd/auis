@@ -29,6 +29,14 @@ XFTLIB = -lXft
 XFTINCDIR = $(XINCDIR)/freetype2
 STD_DEFINES = -DHAVE_XFT
 
+/* OpenSSL (Homebrew), used by overhead/mail/lib/tlscon.c for SMTP (and,
+   from milestone 2, IMAP).  Not part of X11/Xft; kept as its own macro
+   block so consumers can pull in just $(SSLLIB) without XLIB/XFTLIB. */
+SSLBASEDIR = /opt/homebrew/opt/openssl@3
+SSLINCDIR = $(SSLBASEDIR)/include
+SSLLIBDIR = $(SSLBASEDIR)/lib
+SSLLIB = -L$(SSLLIBDIR) -lssl -lcrypto
+
 /* No native Andrew bitmap fonts on this system; map andy* to X11 scalable fonts */
 #define ISO80_FONTS_ENV 1
 
