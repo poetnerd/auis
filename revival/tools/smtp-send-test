@@ -1,0 +1,216 @@
+#!/usr/bin/env python3
+"""smtp-send-test -- drive build/bin/cui to send a real end-to-end test
+message via the milestone-1 SMTP dropoff path (see revival/doc/
+smtp-send-prompt.md), using cui's own `mail <names>` command exactly as
+a person would type it.
+
+Usage:
+    revival/tools/smtp-send-test RECIPIENT [--cui PATH] [--marker TEXT]
+                                  [--timeout SECONDS]
+
+    RECIPIENT is required -- there is no default/hardcoded address.
+    Example:
+        revival/tools/smtp-send-test wdc@fastmail.com
+
+This assumes the real preferences file already has `smtphost` set (the
+smtp-send-prompt.md acceptance test runs against the real ~/preferences,
+real ~/.netrc, and the real smtp.fastmail.com) -- this script does not
+set PROFILES or touch any preferences/netrc file itself.
+
+Why a pty and not a plain pipe: cui's body-entry loop
+(StorePartialFile() in cui/cuifns.c) reads raw characters with
+getchar() until a real EOF condition, ended interactively by typing
+Ctrl-D. A plain pipe's EOF is permanent (nothing typed afterward, like
+the "submit" command, could ever be read again), whereas a pty's
+canonical-mode VEOF (Ctrl-D) delivers a single soft EOF without closing
+the underlying descriptor -- the known-good pattern already used
+elsewhere in this tree for driving interactive AUIS programs. Plain
+`script -q` piping can't express the precise "wait for this prompt,
+then answer" sequencing this needs, so this script open()s its own pty
+pair and drives cui with a small expect-style read loop instead.
+
+Known issue this script can hit (not caused by milestone 1, and out of
+this script's power to fix): entering anything at cui's `CC:` prompt
+during `mail` composition -- blank or not -- reliably segfaults cuin in
+this environment. Root cause traced to SendSomeLines() in
+src/ams/msclients/cui/cui.c doing `strcat(BigBuf, realname)` with no
+NULL check; `realname` comes back NULL here because the local
+temp-file round-trip inside MS_ValidateAndReplaceChunk()
+(src/ams/libs/ms/mswp.c) fails to reopen a file it just wrote
+(EACCES, cause not yet identified -- confirmed not sandbox-related, not
+a general /tmp permissions problem, and 100% reproducible regardless of
+CC content). This is address-validation code that runs before dropoff()
+is ever reached, so it is unrelated to the SMTP module and out of scope
+for this milestone (ams/libs/ms and cui client code are both off
+limits per the milestone-1 ground rules). This script answers CC with a
+blank line (the normal no-CC case) and will complete normally the
+moment that bug is fixed; until then it detects the crash and reports
+it plainly instead of hanging.
+"""
+
+import argparse
+import os
+import pty
+import select
+import subprocess
+import sys
+import time
+
+DEFAULT_CUI = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "build", "bin", "cui")
+)
+
+
+class Session:
+    def __init__(self, cui_path, timeout):
+        self.timeout = timeout
+        master, slave = pty.openpty()
+        self.master = master
+        self.proc = subprocess.Popen(
+            [cui_path], stdin=slave, stdout=slave, stderr=slave, close_fds=True
+        )
+        os.close(slave)
+        self.buf = b""
+
+    def _fill(self, idle=0.3):
+        r, _, _ = select.select([self.master], [], [], idle)
+        if self.master in r:
+            try:
+                chunk = os.read(self.master, 4096)
+            except OSError:
+                return False
+            if not chunk:
+                return False
+            sys.stdout.buffer.write(chunk)
+            sys.stdout.flush()
+            self.buf += chunk
+        return True
+
+    def expect_any(self, patterns, timeout=None):
+        """Wait until one of `patterns` (bytes) appears in the output seen
+        so far; return the matching pattern, or None on timeout/EOF."""
+        timeout = self.timeout if timeout is None else timeout
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            for p in patterns:
+                if p in self.buf:
+                    self.buf = b""
+                    return p
+            if not self._fill():
+                return None  # process closed its end (crash or exit)
+        return None
+
+    def send(self, text):
+        os.write(self.master, text.encode())
+
+    def drain(self, timeout=3):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if not self._fill():
+                return
+
+    def alive(self):
+        return self.proc.poll() is None
+
+    def close(self):
+        if self.alive():
+            try:
+                self.proc.terminate()
+                self.proc.wait(timeout=3)
+            except Exception:
+                self.proc.kill()
+
+
+def die(msg, code=1):
+    print(f"\nsmtp-send-test: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("recipient", help="address to send the test message to (required)")
+    ap.add_argument("--cui", default=DEFAULT_CUI, help="path to the cui binary (default: build/bin/cui)")
+    ap.add_argument("--marker", default="STAGE-3-CUI-TEST", help="distinctive marker string for subject/body")
+    ap.add_argument("--timeout", type=float, default=20.0, help="seconds to wait for each cui prompt")
+    args = ap.parse_args()
+
+    if not os.path.isfile(args.cui):
+        die(f"cui binary not found at {args.cui!r} -- build it first (see revival/doc/smtp-send-prompt.md)")
+
+    subject = f"{args.marker} -- AUIS milestone 1 SMTP acceptance test"
+    body = (
+        f"This message was sent by revival/tools/smtp-send-test to exercise\n"
+        f"the milestone 1 SMTP dropoff path end-to-end through the real cui\n"
+        f"binary, real ~/preferences (smtphost), and real ~/.netrc.\n\n"
+        f"Marker: {args.marker}\n"
+    )
+
+    sess = Session(args.cui, args.timeout)
+
+    if sess.expect_any([b"CUI> "]) is None:
+        die("cui did not print its startup prompt (CUI>); see transcript above.")
+
+    sess.send(f"mail {args.recipient}\n")
+
+    # Address validation may warn and ask to proceed anyway (a pre-existing,
+    # unrelated address-decode quirk in this environment -- see module
+    # docstring); or it may go straight to Subject:. Handle either.
+    hit = sess.expect_any([b"Proceed with mail composition anyway", b"Subject:"])
+    if hit is None:
+        die("cui did not respond to the 'mail' command (crashed or hung); see transcript above.")
+    if hit == b"Proceed with mail composition anyway":
+        sess.send("yes\n")
+        if sess.expect_any([b"Subject:"]) is None:
+            die("cui did not reach the Subject: prompt after confirming; see transcript above.")
+
+    sess.send(subject + "\n")
+    if sess.expect_any([b"CC:"]) is None:
+        die("cui did not reach the CC: prompt after Subject; see transcript above.")
+
+    sess.send("\n")  # no CC
+
+    hit = sess.expect_any([b"Proceed with mail composition anyway", b"press control-d"])
+    if hit is None:
+        die(
+            "cui did not respond after CC: (process likely crashed). This matches a known,\n"
+            "pre-existing segfault in SendSomeLines() (src/ams/msclients/cui/cui.c) triggered\n"
+            "by the CC prompt in this environment -- unrelated to the SMTP dropoff module; see\n"
+            "this script's module docstring for the full diagnosis. cui exit status: "
+            f"{sess.proc.poll()!r}."
+        )
+    if hit == b"Proceed with mail composition anyway":
+        sess.send("yes\n")
+        if sess.expect_any([b"press control-d"]) is None:
+            die(
+                "cui did not reach the body-entry prompt after confirming CC; process likely\n"
+                "crashed (see known CC segfault noted in this script's module docstring). cui\n"
+                f"exit status: {sess.proc.poll()!r}."
+            )
+
+    sess.send(body)
+    sess.send("\x04")  # Ctrl-D: soft EOF on the pty, ends body entry
+
+    if sess.expect_any([b"CUI SEND>"]) is None:
+        die("cui did not reach the CUI SEND> prompt after the message body; see transcript above.")
+
+    sess.send("submit\n")
+
+    hit = sess.expect_any(
+        [b"Your message has been sent.", b"Submission failed", b"probably failed"],
+        timeout=max(args.timeout, 30.0),  # network round trip to Fastmail
+    )
+    if hit is None:
+        die("cui did not report a submit result within the timeout; see transcript above.")
+    if hit != b"Your message has been sent.":
+        die(f"cui reported a submission failure ({hit.decode()}); see transcript above.")
+
+    sess.send("quit\n")
+    sess.drain(timeout=3)  # collect final output, if any
+    sess.close()
+
+    print(f"\nsmtp-send-test: OK -- cui reported the message as sent to {args.recipient}.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
