@@ -295,6 +295,38 @@ sample:
   store's native ids remain a documented, if astronomically unlikely,
   hazard on this platform.
 
+- **A 35-year memory leak on the duplicate-message path.** The message
+  store's append routine reads an entire message into memory, then — if
+  it discovers the message is already present — returns success without
+  freeing it. Every other exit from that function frees the buffer; the
+  duplicate path leaked the whole parsed message. Nobody ever saw it
+  because duplicate appends were rare, one-at-a-time events in
+  short-lived processes. The IMAP mirror made the path hot: a sync
+  recovering from lost state re-appends thousands of already-present
+  messages in one process, which would have transiently leaked
+  approximately the whole mailbox. Found by code review during the
+  mirror work, fixed with one `FreeMessage` call.
+
+- **The cleanup that destroyed what it collided with.** When the store
+  writes a message's body file, it opens with `O_CREAT|O_EXCL` — and if
+  the open *fails*, the error path does `unlink(File)` before returning.
+  That unlink is meant to remove a partially-written file, which is the
+  right cleanup everywhere later in the function, after the open has
+  succeeded. On the open-failure path there is no partial file — and in
+  the one failure mode where the target *does* exist, `EEXIST`, the file
+  belongs to an earlier message. So for thirty-five years, any append
+  that collided with an existing message file quietly deleted the
+  existing message. The author suspected something: the line above the
+  open reads `/* Bogus -- what if not overwrite? */`. It never fired
+  because the store's duplicate check (which keys on the RFC-822
+  Message-ID header) almost always intercepted true duplicates before
+  the filesystem could, and id collisions otherwise didn't happen. The
+  IMAP mirror lined up the holes: a message with no Message-ID slipped
+  the duplicate check, an RFC 3501 `n:*` range quirk re-presented an
+  already-mirrored message as new, and the mirror watched a message
+  file vanish from a directory nothing was supposed to delete from.
+  One deleted line fixed it — the rare bug you repair by removing code.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

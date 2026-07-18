@@ -1,10 +1,15 @@
 # Enable IMAP as mail store for AMS: messages, cui — rev 2
 
-**Status: milestones 1 (SMTP send), 2 (IMAP spike), and 3a (transport
-hardening + `imap_prot` protocol layer) COMPLETE as of 2026-07-18.
-Next: milestone 3b — `imap_sync.c` one-way mirror, coded against the
-`imap_prot.h` contract (fresh implementation instance; spec to be
-written). See §10.**
+**Status: milestones 1 (SMTP send), 2 (IMAP spike), 3a (transport
+hardening + `imap_prot` protocol layer), and 3b (one-way mirror)
+COMPLETE as of 2026-07-18. `imapsync` mirrors the real INBOX into
+`~/.IMAP/fastmail/.MESSAGES/`, and `messages` browses it via an mspath
+element (`$default:~/.IMAP/fastmail/.MESSAGES`), confirmed by hand.
+Next: milestone 3c — messages-GUI acceptance. Known 3c items from the
+first real browse: mirrored folders only appear after Message Folders →
+Expose All (subscription defaults for mirrored roots); metamail is
+launched for MIME display but shows nothing (pre-existing platform
+gap, out of AMS-IMAP scope). See §10.**
 
 Goal: teach the AMS clients about IMAP as a mail store and SMTP as a mail
 sender, with OAuth2-capable authentication. Test platform: Fastmail.
@@ -340,12 +345,24 @@ Spike findings that set milestone 3's opening tasks:
      fetch, IMAP_DEAD/imap_Reopen reconnect contract with
      UIDVALIDITY verification); `revival/tests/imap-protocol-tests`
      9/9 live, both SMTP suites still green.
-   * **3b (next)** — `imap_sync.c` one-way mirror of subscribed
-     folders (INBOX included, per the §2A INBOX decision) into
-     `~/.IMAP/fastmail/...` as a new mspath element; browse in cui.
-     Fresh implementation instance against the `imap_prot.h`
-     contract.
-   * **3c** — messages-GUI browse acceptance.
+   * **3b — DONE 2026-07-18** (spec: `revival/doc/imap-sync-prompt.md`;
+     commits ea8a6eb389, 28ff9f9e47, 852d887bb1 + close-out).
+     `imapsync` (`src/ams/msclients/imapsync/`) mirrors folders into
+     `<root>/.MESSAGES/<folder>` through the store's own code via one
+     additive MS entry point (`MS_AppendFileToFolderWithId`).
+     Deterministic ids f(UIDVALIDITY,UID) in base32hex — mixed-case
+     base64 collided on APFS case-insensitive filenames. Flags via
+     `MS_AlterSnapshot`; CONDSTORE/HIGHESTMODSEQ skip (modseq compare
+     only); `-full-check` expunge marking (never purges); empty-body
+     fetches (live Fastmail expunge-during-FETCH race) are
+     per-message skip-and-retry with the uid watermark capped below
+     the skipped uid. `revival/tests/imap-sync-tests` 6 cases live,
+     incl. scripted cui browse; real-mailbox browse in `messages`
+     confirmed by hand via `mspath: $default:~/.IMAP/fastmail/.MESSAGES`.
+   * **3c (next)** — messages-GUI acceptance: folder visibility
+     without Expose All (subscription defaults for mirrored roots),
+     broader browse/read behavior; metamail MIME display noted as a
+     separate pre-existing platform gap.
 4. **Writeback** — change journal + replay: flags, copy/move, append,
    delete/expunge.
 5. **XOAUTH2** auth module + token refresh.

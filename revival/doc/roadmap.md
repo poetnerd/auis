@@ -77,10 +77,71 @@ mirrors IMAP; AMDS delivery remains excluded.
   streaming body fetch, reconnect-with-UIDVALIDITY-check contract.
   `revival/tests/imap-protocol-tests` 9/9 live against Fastmail; both
   SMTP suites still green. Spec: `revival/doc/imap-protocol-prompt.md`.
-- Milestones 3b–5 (next: 3b, one-way sync via `imap_sync.c` against
-  the `imap_prot.h` contract): mirror into a new mspath root;
-  messages-GUI acceptance (3c); writeback via change journal (4);
-  XOAUTH2 (5).
+- Milestone 3b — **done 2026-07-18**: `imapsync`
+  (`src/ams/msclients/imapsync/`) mirrors IMAP one-way into a local
+  mspath root (`~/.IMAP/fastmail/.MESSAGES/...`) through the store's
+  own code via one additive MS entry point
+  (`MS_AppendFileToFolderWithId`, caller-supplied id/date). Ids are
+  deterministic f(UIDVALIDITY,UID) in base32hex — mixed-case base64
+  collided on APFS's case-insensitive filenames (two live pairs hit,
+  e.g. `...GvA`/`...Gva`). Flags mapping via `MS_AlterSnapshot`,
+  CONDSTORE/HIGHESTMODSEQ refresh skip, `-full-check` expunge marking,
+  skip-and-retry on empty body fetches (a live Fastmail
+  expunge-during-FETCH race). `revival/tests/imap-sync-tests` 6 cases
+  live incl. scripted cui browse; real-mailbox browse in `messages`
+  confirmed by hand. Spec: `revival/doc/imap-sync-prompt.md`.
+  - Latent hazard noted for the wider tree: the store's own
+    `ams_genid()` ids are mixed-case base64 too, so every natively
+    created message file carries the same (much rarer) case-collision
+    risk on case-insensitive filesystems. Not fixed; revisit if a
+    native-store collision is ever observed.
+  - Close-out regression run surfaced two more real bugs, both fixed
+    2026-07-18: (1) `WritePureFile` (`ams/libs/ms/rawdb.c`) unlinked
+    its target on *open* failure — under `O_CREAT|O_EXCL` an `EEXIST`
+    collision therefore deleted the existing message's body file
+    (35-year-old data-loss bug; see revival.md old-bugs); (2) RFC 3501
+    `UID n:*` always includes the highest existing uid, so an
+    idempotent re-run could re-present the top already-mirrored
+    message as a candidate — imapsync now filters candidates at/below
+    its watermark and pre-checks the deterministic `+<id>` body file
+    before appending (robust even when the store's Message-ID-based
+    duplicate check can't catch a re-append).
+  - M3c observations from first real browse: mirrored folders need
+    Message Folders → Expose All to appear (subscription defaults —
+    M3c work item); metamail launch is reported for MIME messages but
+    displays nothing (pre-existing platform gap, metamail not
+    functional here); first full mirror is slow-ish (~3,800 messages;
+    per-run incremental cost is near-zero thereafter).
+  - First real-send observations (2026-07-18, sending from `messages`):
+    1. **From-address is `wdc@Mac-mini.lan`** — RESOLVED 2026-07-18.
+       `MS_SubmitMessage` (`ams/libs/ms/submsg.c`) deletes any
+       user-supplied From and stamps `Me@MyMailDomain`; `MyMailDomain`
+       is the cell name = `ThisDomain`, an **AndrewSetup** key
+       (`overhead/util/lib/svcconf.c`), falling back to the hostname
+       when no AndrewSetup exists — hence the `.lan` From and
+       Fastmail's "551 5.7.1 Not authorised" on external relay. Fix
+       (no sudo needed): the AndrewSetup search path ends at
+       `${ANDREWDIR}/etc/AndrewSetup` (site.h points ANDREWDIR at the
+       build tree), so `build/etc/AndrewSetup` containing
+       `ThisDomain: fastmail.com` corrects every AMS client at once.
+       Verified live: cui send now arrives as
+       `From: William Cattey <wdc@fastmail.com>`. Belongs in the
+       quickstart doc (M3c deliverable).
+    2. **Formatted (ATK datastream) send is the default**, so external
+       recipients get an empty body plus a ~100-byte attachment of
+       ATK markup. The controls exist: "Send Formatted/Unformatted"
+       menus behind the `EXP_FORCESEND` expert option
+       (`atkams/messages/lib/options.c:147`). Work item: right default
+       for SMTP-era sending (unformatted unless recipient is known
+       AMS) + document the option.
+    3. **`<critical:fdplumb>` "File descriptor replaced!"** printed to
+       the launching terminal during compose/send (`/tmp/de*`/`/tmp/te*`
+       draft temp files, fds 5 and 2). Needs investigation: either a
+       genuine fd double-use in the compose/send path, another
+       fdplumb include-order ABI site, or fdplumb's ledger being
+       confused by library fds (Xft/fontconfig) it doesn't wrap.
+- Milestones 3c–5 (next: 3c, messages-GUI acceptance incl. folder
+  visibility): writeback via change journal (4); XOAUTH2 (5).
 
 ### Objective: Reliable operation
 
