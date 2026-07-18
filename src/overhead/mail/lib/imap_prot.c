@@ -212,6 +212,32 @@ static int imap_sendcmd(struct imapconn *conn, const char *tag,
     return 0;
 }
 
+/* Builds and sends "<before><var><after>" as one command, sized to
+   whatever length var actually is.  For commands that embed a
+   caller-supplied uidset or search criteria: those can exceed any fixed
+   staging buffer (a 100-uid uidset of 5-digit uids is ~700 bytes), and
+   snprintf truncation there produces a syntactically mangled command
+   the server rejects.  Same return convention as imap_sendcmd. */
+static int imap_sendcmd_var(struct imapconn *conn, const char *tag,
+                             const char *before, const char *var,
+                             const char *after)
+{
+    char *cmdtext;
+    int rc;
+
+    cmdtext = (char *) malloc(strlen(before) + strlen(var) + strlen(after) + 1);
+    if (cmdtext == NULL) {
+        imap_seterr(conn, "out of memory building command");
+        return -1;
+    }
+    strcpy(cmdtext, before);
+    strcat(cmdtext, var);
+    strcat(cmdtext, after);
+    rc = imap_sendcmd(conn, tag, cmdtext, NULL);
+    free(cmdtext);
+    return rc;
+}
+
 /* ---- physical-line reader with literal detection ---- */
 
 struct imap_linebuf {
@@ -1044,7 +1070,6 @@ static void imap_cb_search(struct imapconn *conn, const char *line, void *rockp)
 int imap_UidSearch(struct imapconn *conn, const char *criteria, unsigned long **uidsp, long *countp)
 {
     char tag[IMAP_TAG_SIZE];
-    char cmdtext[900];
     struct imap_search_rock rock;
     int rc;
 
@@ -1058,14 +1083,10 @@ int imap_UidSearch(struct imapconn *conn, const char *criteria, unsigned long **
     rock.cap = 0;
     rock.parse_error = 0;
 
-    if (imap_Capable(conn, "ESEARCH")) {
-        snprintf(cmdtext, sizeof(cmdtext), "UID SEARCH RETURN (ALL) %s", criteria);
-    } else {
-        snprintf(cmdtext, sizeof(cmdtext), "UID SEARCH %s", criteria);
-    }
-
     imap_nexttag(conn, tag, sizeof(tag));
-    if (imap_sendcmd(conn, tag, cmdtext, NULL) < 0) return IMAP_DEAD;
+    if (imap_sendcmd_var(conn, tag,
+                         imap_Capable(conn, "ESEARCH") ? "UID SEARCH RETURN (ALL) " : "UID SEARCH ",
+                         criteria, "") < 0) return IMAP_DEAD;
 
     rc = imap_await_tagged(conn, tag, imap_cb_search, &rock, NULL, 0);
     if (rc != IMAP_OK) {
@@ -1214,7 +1235,6 @@ int imap_UidFetchMeta(struct imapconn *conn, const char *uidset,
     void *rock)
 {
     char tag[IMAP_TAG_SIZE];
-    char cmdtext[512];
     char taglabel[IMAP_TAG_SIZE + 2];
     size_t taglen;
     struct imap_linebuf lb;
@@ -1223,9 +1243,9 @@ int imap_UidFetchMeta(struct imapconn *conn, const char *uidset,
     if (conn == NULL || uidset == NULL || cb == NULL) return IMAP_BAD;
     if (!conn->alive || conn->tls == NULL) { imap_seterr(conn, "connection is dead"); return IMAP_DEAD; }
 
-    snprintf(cmdtext, sizeof(cmdtext), "UID FETCH %s (FLAGS INTERNALDATE ENVELOPE)", uidset);
     imap_nexttag(conn, tag, sizeof(tag));
-    if (imap_sendcmd(conn, tag, cmdtext, NULL) < 0) return IMAP_DEAD;
+    if (imap_sendcmd_var(conn, tag, "UID FETCH ", uidset,
+                         " (FLAGS INTERNALDATE ENVELOPE)") < 0) return IMAP_DEAD;
 
     snprintf(taglabel, sizeof(taglabel), "%s ", tag);
     taglen = strlen(taglabel);
