@@ -148,3 +148,113 @@ int             TreatAsAlien;
                                         * message, though */
     return (0);
 }
+
+/*
+    MS_AppendFileToFolderWithId -- added for imapsync (ams/msclients/imapsync).
+
+    Identical to MS_AppendFileToFolder/AppendFileToFolder/AppendFileToMSDir/
+    AppendFileToMSDirInternal above, except the caller supplies the
+    message's AMS id and AMS_DATE instead of letting InventID()/
+    BuildDateField() invent them.  This lets a sync agent give a message a
+    deterministic identity (e.g. derived from an IMAP UIDVALIDITY+UID pair)
+    so that re-running the sync is idempotent.  Id must be an AMS_IDSIZE-1
+    (18) character string; Date64 must be an AMS_DATESIZE-1 (6) character
+    base-64 date string (see convlongto64() in overhead/mail/lib/genid.c).
+
+    Everything else -- parsing, caption building, chain hashing, index
+    update, the strictly-increasing-AMS_DATE-per-folder enforcement in
+    AppendMessageToMSDir() -- is exactly the existing store code; this
+    routine does not duplicate or bypass any of it.
+*/
+
+MS_AppendFileToFolderWithId(FileName, FolderName, Id, Date64)
+char           *FileName, *FolderName, *Id, *Date64;    /* ALL IN */
+{
+    debug(1, ("MS_AppendFileToFolderWithId %s %s %s %s\n", FileName, FolderName, Id, Date64));
+    return (AppendFileToFolderWithId(FileName, FolderName, TRUE, Id, Date64));
+}
+
+AppendFileToFolderWithId(FileName, FolderName, DoDelete, Id, Date64)
+char           *FileName, *FolderName, *Id, *Date64;
+int             DoDelete;
+{
+    int             errsave = 0;
+    struct MS_Directory *Dir = NULL;
+
+    CloseDirsThatNeedIt();
+    if (ReadOrFindMSDir(FolderName, &Dir, MD_APPEND)) {
+        errsave = mserrcode;
+        if(Dir) CloseMSDir(Dir, MD_APPEND);
+        return (errsave);
+    }
+    errsave = AppendFileToMSDirWithId(FileName, Dir, DoDelete, Id, Date64);
+    mserrcode = CloseMSDir(Dir, MD_APPEND);
+    return (errsave ? errsave : mserrcode);
+}
+
+AppendFileToMSDirWithId(FileName, Dir, DoDelete, Id, Date64)
+char           *FileName;
+struct MS_Directory *Dir;
+int             DoDelete;
+char           *Id, *Date64;
+{
+    struct MS_Message *Msg;
+    struct MS_CaptionTemplate CapTemplate;
+    int             saveerr;
+    char            NewFileName[1 + MAXPATHLEN];
+
+    Msg = (struct MS_Message *) malloc(sizeof(struct MS_Message));
+    if (Msg == NULL) {
+        AMS_RETURN_ERRCODE(ENOMEM, EIN_MALLOC, EVIA_APPENDMESSAGETOMSDIR);
+    }
+    bzero(Msg, sizeof(struct MS_Message));
+    Msg->OpenFD = -1;
+    bzero(&CapTemplate, sizeof(struct MS_CaptionTemplate));
+    CapTemplate.basictype = BASICTEMPLATE_NORMAL;
+    CapTemplate.datetype = DATETYPE_FROMHEADER;
+    if (ReadRawFile(FileName, Msg, DoDelete)
+        || ParseMessageFromRawBody(Msg)
+        || CheckAuthUid(Msg)
+        || BuildDateField(Msg, DATETYPE_FROMHEADER)
+        || BuildReplyField(Msg)
+        || BuildAttributesField(Msg)
+        || InventID(Msg)
+        || BuildCaption(Msg, &CapTemplate, TRUE)) {
+        saveerr = mserrcode;
+        FreeMessage(Msg, TRUE);
+        return (saveerr);
+    }
+    /* Override the invented id/date with the caller's -- this is the
+       one behavioral difference from AppendFileToMSDirInternal. Both
+       fields are fixed-width within the snapshot buffer; NUL-terminate
+       explicitly rather than relying on residue from InventID/
+       BuildDateField's own writes. */
+    strncpy(AMS_ID(Msg->Snapshot), Id, AMS_IDSIZE - 1);
+    AMS_ID(Msg->Snapshot)[AMS_IDSIZE - 1] = '\0';
+    strncpy(AMS_DATE(Msg->Snapshot), Date64, AMS_DATESIZE - 1);
+    AMS_DATE(Msg->Snapshot)[AMS_DATESIZE - 1] = '\0';
+
+    if (IsMessageAlreadyThere(Msg, Dir)) {
+        if (DoDelete)
+            unlink(FileName);
+        return (0);
+    }
+    sprintf(NewFileName, "%s/+%s", Dir->UNIXDir, AMS_ID(Msg->Snapshot));
+    if (WritePureFile(Msg, NewFileName, FALSE, 0664)) {
+        saveerr = mserrcode;
+        FreeMessage(Msg, TRUE);
+        return (saveerr);
+    }
+    if (AppendMessageToMSDir(Msg, Dir)) {
+        FreeMessage(Msg, TRUE);
+        unlink(NewFileName);           /* The old copy of the file is still in
+                                        * place */
+        return (mserrcode);
+    }
+    FreeMessage(Msg, TRUE);
+    if (DoDelete)
+        unlink(FileName);              /* Errors here are funny; better an
+                                        * orphan file than a bogus error
+                                        * message, though */
+    return (0);
+}
