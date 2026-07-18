@@ -34,7 +34,7 @@ OBJS = amsauth.o amsconf.o \
 	qmail.o rsearch.o scan822.o stats.o \
 	sysexits.o usysex.o valhost.o \
 	vmail.o addrambig.o \
-	tlscon.o netrc.o smtpsub.o
+	tlscon.o netrc.o smtpsub.o imap_prot.o
 
 /* tlscon.c/netrc.c/smtpsub.c need OpenSSL (Homebrew); see SSLINCDIR/SSLLIB
    in src/config/darwin/system.mcr. */

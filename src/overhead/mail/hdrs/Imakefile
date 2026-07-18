@@ -2,4 +2,4 @@
  *         Copyright IBM Corporation 1988,1991 - All Rights Reserved      *
  *        For full copyright information see:'andrew/config/COPYRITE'     *
 \* ********************************************************************** */
-InstallMultiple(ckndbm.h dropoff.h mail.h mailconf.h parseadd.h qmail.h netrc.h tlscon.h, $(INSTINCFLAGS), $(DESTDIR)/include)
+InstallMultiple(ckndbm.h dropoff.h mail.h mailconf.h parseadd.h qmail.h netrc.h tlscon.h imap_prot.h, $(INSTINCFLAGS), $(DESTDIR)/include)
