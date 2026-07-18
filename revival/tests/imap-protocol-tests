@@ -1,0 +1,263 @@
+#!/usr/bin/env python3
+"""imap-protocol-tests -- Gate 2 protocol-level regression suite for the
+milestone 3a IMAP module (src/overhead/mail/lib/{tlscon,imap_prot}.c),
+driven through the standalone imaptest.test harness exactly as
+milestone 3a's Gate 2 review did.
+
+Usage:
+    revival/tests/imap-protocol-tests
+
+Live cases (all except case 8) run automatically whenever ~/.netrc has
+a usable "machine imap.fastmail.com" stanza (the same netrc convention
+the milestone 2 spike and the milestone 3a spec use -- see
+revival/doc/imap-protocol-prompt.md). When no usable stanza is found,
+only case 8 (the fully offline canned-response literal-in-ENVELOPE
+unit test) runs, and the suite says so cleanly rather than failing.
+
+This suite is strictly READ-ONLY against the mailbox: only EXAMINE and
+BODY.PEEK[] ever reach the wire (no STORE/APPEND/CREATE/DELETE/EXPUNGE
+anywhere -- imap_prot.c has no such calls to make in this milestone).
+Cases 6-7 (subject search + fetch) rely on a message already present
+in INBOX with a subject containing STAGE-3-CUI-TEST -- the milestone 1
+SMTP acceptance suite (revival/tools/smtp-send-test) leaves exactly
+such a message when run against the real account. If that message
+isn't present, cases 6-7 are skipped with a clear note rather than
+failing; nothing in this suite ever sends mail itself.
+
+All numeric assertions (message counts, UID counts) are compared
+against what the server reports at runtime (e.g. EXAMINE's EXISTS),
+never hardcoded -- the mailbox's own message count drifts over time
+with ordinary use.
+"""
+
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+MAILLIB = os.path.join(REPO_ROOT, "src", "overhead", "mail", "lib")
+IMAPTEST = os.path.join(MAILLIB, "imaptest.test")
+
+HOST = "imap.fastmail.com"
+PORT = "993"
+MACHINE = "imap.fastmail.com"
+MAILBOX = "INBOX"
+SUBJECT_MARKER = "STAGE-3-CUI-TEST"
+
+NETRC = os.path.expanduser("~/.netrc")
+
+PASS = []
+FAIL = []
+SKIP = []
+
+
+def note(msg):
+    print(msg, flush=True)
+
+
+def result(name, ok, detail=""):
+    if ok:
+        PASS.append(name)
+        note(f"PASS: {name}")
+    else:
+        FAIL.append(name)
+        note(f"FAIL: {name}" + (f" -- {detail}" if detail else ""))
+
+
+def skip(name, reason):
+    SKIP.append(name)
+    note(f"SKIP: {name} -- {reason}")
+
+
+def build_driver():
+    """make Makefile (regenerating from the Imakefile only if the tree's
+    own dependency check says it's stale), then build imaptest.test --
+    the standalone harness Gate 2 used. Never touches imap_prot.c/.h
+    or tlscon.c/.h."""
+    if not os.path.isfile(os.path.join(MAILLIB, "Makefile")):
+        r = subprocess.run(["imake", "-Timake.tmpl", "-I.", "-I../../.././config",
+                             "-s", "Makefile", "-DTOPDIR=../../../."],
+                            cwd=MAILLIB, capture_output=True, text=True)
+        if r.returncode != 0:
+            note(r.stdout); note(r.stderr)
+            sys.exit("imap-protocol-tests: could not bootstrap Makefile in " + MAILLIB)
+    r = subprocess.run(["make", "Makefile"], cwd=MAILLIB, capture_output=True, text=True)
+    if r.returncode != 0:
+        note(r.stdout); note(r.stderr)
+        sys.exit("imap-protocol-tests: 'make Makefile' failed in " + MAILLIB)
+    r = subprocess.run(["make", "imaptest.test"], cwd=MAILLIB, capture_output=True, text=True, timeout=180)
+    if r.returncode != 0 or not os.path.isfile(IMAPTEST):
+        note(r.stdout); note(r.stderr)
+        sys.exit("imap-protocol-tests: 'make imaptest.test' failed in " + MAILLIB)
+
+
+def parse_kv(stdout):
+    """Parse 'KEY: value' lines into a dict (last occurrence wins).
+    imaptest.test prints its *-RC fields as "N (RCNAME)" (e.g.
+    "LOGIN-RC: 0 (IMAP_OK)"); for those, keep just the leading numeric
+    token so callers can compare kv["FOO-RC"] == "0" directly. Plain
+    text values (ENVELOPE-SUBJECT, PARSED-*, etc.) are untouched."""
+    d = {}
+    for line in stdout.splitlines():
+        if ": " in line:
+            k, v = line.split(": ", 1)
+            k = k.strip()
+            v = v.strip()
+            m = re.match(r'^(-?\d+)\s*\(', v)
+            if m:
+                v = m.group(1)
+            d[k] = v
+    return d
+
+
+def imaptest(args, timeout=120):
+    r = subprocess.run([IMAPTEST] + args, capture_output=True, text=True, timeout=timeout)
+    note(f"$ imaptest.test {' '.join(args)}")
+    note(r.stdout)
+    if r.stderr:
+        note(r.stderr)
+    return r, parse_kv(r.stdout)
+
+
+def have_live_credentials():
+    """Whether ~/.netrc has a usable imap.fastmail.com stanza. This
+    itself performs a real open+login (there is no cheaper way to
+    "peek" at netrc without duplicating netrc_Lookup outside
+    imap_prot.c, which the module's own contract forbids) -- its
+    result doubles as case 2's own evidence below."""
+    if not os.path.isfile(NETRC):
+        return False, None
+    r, kv = imaptest(["login", HOST, PORT, NETRC, MACHINE], timeout=30)
+    ok = kv.get("NETRC-RC") == "0" and kv.get("LOGIN-RC") == "0"
+    return ok, (r, kv)
+
+
+def main():
+    if len(sys.argv) > 1:
+        sys.exit("usage: imap-protocol-tests")
+
+    build_driver()
+
+    live, login_evidence = have_live_credentials()
+    if not live:
+        note(f"--- no usable netrc stanza for \"{MACHINE}\" in \"{NETRC}\" (or file absent); "
+             "running only case 8 (offline canned-response test) ---")
+    else:
+        note(f"--- live cases against {HOST}:{PORT}, mailbox {MAILBOX} (strictly read-only) ---")
+
+    # ---- case 1: Open + greeting + CAPABILITY (assert IMAP4rev1 present) ----
+    if live:
+        r, kv = imaptest(["capability", HOST, PORT])
+        result("1 open + greeting + CAPABILITY (IMAP4rev1 present)",
+               r.returncode == 0 and kv.get("OPEN-RC") == "0" and kv.get("CAPABLE-IMAP4REV1") == "yes",
+               f"rc={r.returncode} kv={kv}")
+    else:
+        skip("1 open + greeting + CAPABILITY", "no live credentials")
+
+    # ---- case 2: Login via netrc (machine imap.fastmail.com) ----
+    if live:
+        r, kv = login_evidence
+        result("2 login via netrc (machine imap.fastmail.com)",
+               r.returncode == 0 and kv.get("LOGIN-RC") == "0", f"rc={r.returncode} kv={kv}")
+    else:
+        skip("2 login via netrc", "no live credentials")
+
+    # ---- case 3: List -- INBOX present among results ----
+    if live:
+        r, kv = imaptest(["list", HOST, PORT, NETRC, MACHINE])
+        inbox_present = "LISTED: INBOX" in r.stdout.splitlines()
+        result("3 list -- INBOX present among results",
+               r.returncode == 0 and inbox_present, f"rc={r.returncode}")
+    else:
+        skip("3 list -- INBOX present", "no live credentials")
+
+    # ---- case 4: Examine INBOX (exists>0, uidvalidity!=0, highestmodseq!=0) ----
+    if live:
+        r, kv = imaptest(["examine", HOST, PORT, NETRC, MACHINE, MAILBOX])
+        ok = (r.returncode == 0 and kv.get("EXAMINE-RC") == "0"
+              and kv.get("EXISTS", "0").isdigit() and int(kv["EXISTS"]) > 0
+              and kv.get("UIDVALIDITY", "0").isdigit() and int(kv["UIDVALIDITY"]) != 0
+              and kv.get("HIGHESTMODSEQ", "0").isdigit() and int(kv["HIGHESTMODSEQ"]) != 0)
+        result("4 examine INBOX (exists>0, uidvalidity!=0, highestmodseq!=0 [CONDSTORE])", ok, f"kv={kv}")
+    else:
+        skip("4 examine INBOX", "no live credentials")
+
+    # ---- case 5: UID SEARCH ALL on full INBOX (the spike-breaking case) ----
+    if live:
+        r, kv = imaptest(["searchall", HOST, PORT, NETRC, MACHINE, MAILBOX], timeout=180)
+        ok = (r.returncode == 0 and kv.get("SEARCH-RC") == "0"
+              and kv.get("POST-SEARCH-EXAMINE-RC") == "0"
+              and "SEARCH-COUNT" in kv and "EXAMINE-EXISTS" in kv
+              and kv["SEARCH-COUNT"] == kv["EXAMINE-EXISTS"])
+        result("5 UID SEARCH ALL on full INBOX (count matches EXAMINE's EXISTS at runtime, connection survives)",
+               ok, f"kv={kv}")
+    else:
+        skip("5 UID SEARCH ALL on full INBOX", "no live credentials")
+
+    # ---- cases 6-7: subject search + fetch meta + fetch body ----
+    if live:
+        tmpdir = tempfile.mkdtemp(prefix="imap-protocol-tests-")
+        try:
+            bodyfile = os.path.join(tmpdir, "body.txt")
+            r, kv = imaptest(["searchfetch", HOST, PORT, NETRC, MACHINE, MAILBOX, SUBJECT_MARKER, bodyfile],
+                              timeout=60)
+            if kv.get("SEARCH-RC") != "0":
+                result("6 UID SEARCH SUBJECT marker (>=1 match, envelope subject contains marker)",
+                       False, f"search itself failed: kv={kv}")
+                result("7 fetch body of matched message", False, "depends on case 6")
+            elif kv.get("SEARCH-COUNT") == "0":
+                skip("6 UID SEARCH SUBJECT marker (>=1 match)",
+                     f"no message with subject marker {SUBJECT_MARKER!r} in {MAILBOX} -- "
+                     "run smtp-protocol-tests (or smtp-send-test) against the real account first")
+                skip("7 fetch body of matched message", "depends on case 6")
+            else:
+                count_ok = int(kv.get("SEARCH-COUNT", "0")) >= 1
+                subj_ok = SUBJECT_MARKER in kv.get("ENVELOPE-SUBJECT", "")
+                result("6 UID SEARCH SUBJECT marker (>=1 match, envelope subject contains marker)",
+                       count_ok and kv.get("FETCHMETA-RC") == "0" and subj_ok, f"kv={kv}")
+
+                size_ok = False
+                marker_in_body = False
+                if kv.get("FETCHBODY-RC") == "0" and "BODY-SIZE" in kv and os.path.isfile(bodyfile):
+                    actual_size = os.path.getsize(bodyfile)
+                    size_ok = actual_size == int(kv["BODY-SIZE"])
+                    with open(bodyfile, "rb") as f:
+                        marker_in_body = SUBJECT_MARKER.encode() in f.read()
+                result("7 fetch body of matched message (file size matches the literal's byte count, "
+                       "file contains the marker)",
+                       size_ok and marker_in_body,
+                       f"kv={kv} size_ok={size_ok} marker_in_body={marker_in_body}")
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+    else:
+        skip("6 UID SEARCH SUBJECT marker (>=1 match)", "no live credentials")
+        skip("7 fetch body of matched message", "no live credentials")
+
+    # ---- case 8: canned-response unit test (ENVELOPE containing a literal) -- always runs, offline ----
+    r, kv = imaptest(["canned"])
+    result("8 canned-response unit test: ENVELOPE containing a literal parses correctly (no live traffic)",
+           r.returncode == 0 and kv.get("PARSE-RC") == "0" and kv.get("SUBJECT-MATCH") == "yes",
+           f"rc={r.returncode} kv={kv}")
+
+    # ---- case 9: reconnect drill ----
+    if live:
+        r, kv = imaptest(["reconnect", HOST, PORT, NETRC, MACHINE, MAILBOX])
+        ok = (r.returncode == 0 and kv.get("POSTCLOSE-EXAMINE-RC") == "3"	# IMAP_DEAD
+              and kv.get("REOPEN-RC") == "0" and kv.get("REOPEN-UIDVALIDITY-MATCH") == "yes")
+        result("9 reconnect drill (force-close -> next call returns IMAP_DEAD -> "
+               "imap_Reopen restores a working session with matching UIDVALIDITY)",
+               ok, f"kv={kv}")
+    else:
+        skip("9 reconnect drill", "no live credentials")
+
+    note("")
+    note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped"
+         + ("" if live else f" (live cases skipped: no usable netrc credentials for {MACHINE})"))
+    sys.exit(1 if FAIL else 0)
+
+
+if __name__ == "__main__":
+    main()
