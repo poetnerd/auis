@@ -16,5 +16,8 @@ CUI = cui
 VUI = vui
 #endif
 
-SUBDIRS	=	$(CUI) nns $(VUI)
+/* imapsync is a batch command-line MS client with no curses/tty
+   dependency (like nns), so it is not gated behind MK_CUI -- only the
+   terminal-UI cui program needs that. */
+SUBDIRS	=	$(CUI) nns $(VUI) imapsync
 

@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+"""imap-sync-tests -- Gate 1 regression suite for the milestone 3b
+imapsync module (src/ams/msclients/imapsync/imap_sync.c), the one-way
+IMAP-to-local-store mirror. See revival/doc/imap-sync-prompt.md.
+
+Usage:
+    revival/tests/imap-sync-tests
+
+Live against the real Fastmail account via the committed netrc_Lookup
+and ~/.netrc, exactly as imap-protocol-tests and smtp-protocol-tests do.
+Strictly read-only against the mailbox: imapsync only ever issues
+EXAMINE/UID SEARCH/UID FETCH (FLAGS INTERNALDATE ENVELOPE)/UID FETCH
+BODY.PEEK[] -- no STORE/APPEND/CREATE/DELETE/EXPUNGE reaches the wire.
+
+Every case runs against a fresh `mktemp -d` scratch mspath root -- the
+real `~/.IMAP/fastmail` is never touched by this suite. The scratch root
+is removed on exit unless the environment variable IMAPSYNC_KEEP_SCRATCH
+is set (useful for inspecting a failure by hand).
+
+This is Gate 1 scope only (the spec's cases 1-2: fresh mirror,
+idempotent re-run). Cases 3-5 (incremental sync, flags mapping,
+UIDVALIDITY-change drill) and case 6 (cui browse) are Gate 2 work and
+are not attempted here.
+
+If ~/.netrc has no usable "machine imap.fastmail.com" stanza, this
+suite skips cleanly (like imap-protocol-tests) rather than failing.
+
+Because case 1 mirrors the *entire* real INBOX (several thousand
+messages as of this writing), this suite can take many minutes to run.
+"""
+
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+IMAPSYNCDIR = os.path.join(REPO_ROOT, "src", "ams", "msclients", "imapsync")
+IMAPSYNC = os.path.join(IMAPSYNCDIR, "imapsync")
+MAILLIB = os.path.join(REPO_ROOT, "src", "overhead", "mail", "lib")
+IMAPTEST = os.path.join(MAILLIB, "imaptest.test")
+
+HOST = "imap.fastmail.com"
+PORT = "993"
+MACHINE = "imap.fastmail.com"
+MAILBOX = "INBOX"
+SUBJECT_MARKER = "STAGE-3-CUI-TEST"
+
+NETRC = os.path.expanduser("~/.netrc")
+
+# Matches synth_id()'s format in imap_sync.c: "IMAP" + 14 base32hex chars
+# (7 for UIDVALIDITY, 7 for UID), 18 chars total, no lowercase anywhere
+# (the case-insensitive-filesystem fix -- see M3B-HANDOFF.md).
+ID_RE = re.compile(r"^IMAP[0-9A-V]{14}$")
+
+RUN_TIMEOUT = 1800  # the full INBOX fresh mirror can take many minutes live
+
+PASS = []
+FAIL = []
+SKIP = []
+
+
+def note(msg):
+    print(msg, flush=True)
+
+
+def result(name, ok, detail=""):
+    if ok:
+        PASS.append(name)
+        note(f"PASS: {name}")
+    else:
+        FAIL.append(name)
+        note(f"FAIL: {name}" + (f" -- {detail}" if detail else ""))
+
+
+def skip(name, reason):
+    SKIP.append(name)
+    note(f"SKIP: {name} -- {reason}")
+
+
+def build(dirpath, target, binpath, timeout=180):
+    """make Makefile (bootstrapping via imake if it's not there yet --
+    the tree's own dependency check regenerates it if the Imakefile
+    changed), then build target. Mirrors imap-protocol-tests'
+    build_driver()."""
+    if not os.path.isfile(os.path.join(dirpath, "Makefile")):
+        r = subprocess.run(["imake", "-Timake.tmpl", "-I.", "-I../../../config",
+                             "-s", "Makefile", "-DTOPDIR=../../../."],
+                            cwd=dirpath, capture_output=True, text=True)
+        if r.returncode != 0:
+            note(r.stdout); note(r.stderr)
+            sys.exit(f"imap-sync-tests: could not bootstrap Makefile in {dirpath}")
+    r = subprocess.run(["make", "Makefile"], cwd=dirpath, capture_output=True, text=True)
+    if r.returncode != 0:
+        note(r.stdout); note(r.stderr)
+        sys.exit(f"imap-sync-tests: 'make Makefile' failed in {dirpath}")
+    r = subprocess.run(["make", target], cwd=dirpath, capture_output=True, text=True, timeout=timeout)
+    if r.returncode != 0 or not os.path.isfile(binpath):
+        note(r.stdout); note(r.stderr)
+        sys.exit(f"imap-sync-tests: 'make {target}' failed in {dirpath}")
+
+
+def build_imaptest():
+    build(MAILLIB, "imaptest.test", IMAPTEST)
+
+
+def build_imapsync():
+    build(IMAPSYNCDIR, "imapsync", IMAPSYNC)
+
+
+def have_live_credentials():
+    if not os.path.isfile(NETRC):
+        return False
+    try:
+        r = subprocess.run([IMAPTEST, "login", HOST, PORT, NETRC, MACHINE],
+                            capture_output=True, text=True, timeout=30)
+    except subprocess.TimeoutExpired:
+        return False
+    return r.returncode == 0
+
+
+def examine_exists():
+    """Ground truth EXISTS count, via imaptest.test's own examine
+    subcommand -- independent of imapsync's own EXAMINE call, so case 1
+    isn't just checking imapsync agrees with itself."""
+    r = subprocess.run([IMAPTEST, "examine", HOST, PORT, NETRC, MACHINE, MAILBOX],
+                        capture_output=True, text=True, timeout=60)
+    if r.returncode != 0:
+        return None
+    m = re.search(r"^EXISTS: (\d+)$", r.stdout, re.MULTILINE)
+    return int(m.group(1)) if m else None
+
+
+def run_imapsync(root, timeout=RUN_TIMEOUT):
+    r = subprocess.run([IMAPSYNC, "-root", root, "-folders", MAILBOX, "-v"],
+                        capture_output=True, text=True, timeout=timeout)
+    return r
+
+
+def folder_dir(root):
+    return os.path.join(root, ".MESSAGES", MAILBOX)
+
+
+def msgdir_path(root):
+    return os.path.join(folder_dir(root), ".MS_MsgDir")
+
+
+def count_body_files(root):
+    d = folder_dir(root)
+    if not os.path.isdir(d):
+        return -1
+    return len([n for n in os.listdir(d) if n.startswith("+")])
+
+
+def find_marker_file(root):
+    d = folder_dir(root)
+    for name in os.listdir(d):
+        if not name.startswith("+"):
+            continue
+        path = os.path.join(d, name)
+        try:
+            with open(path, "rb") as f:
+                if SUBJECT_MARKER.encode() in f.read():
+                    return path
+        except OSError:
+            continue
+    return None
+
+
+def main():
+    if len(sys.argv) > 1:
+        sys.exit("usage: imap-sync-tests")
+
+    build_imaptest()
+    build_imapsync()
+
+    live = have_live_credentials()
+    if not live:
+        note(f'--- no usable netrc stanza for "{MACHINE}" in "{NETRC}" (or file absent); '
+             "skipping all cases (this suite has no offline case) ---")
+        skip("1 fresh mirror of INBOX", "no live credentials")
+        skip("2 idempotent re-run", "no live credentials")
+        note("")
+        note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped "
+             f"(live cases skipped: no usable netrc credentials for {MACHINE})")
+        sys.exit(0)
+
+    note(f"--- live cases against {HOST}:{PORT}, mailbox {MAILBOX} (strictly read-only) ---")
+
+    scratch = tempfile.mkdtemp(prefix="imap-sync-tests-")
+    note(f"scratch root: {scratch}")
+    try:
+        exists = examine_exists()
+        if exists is None:
+            sys.exit("imap-sync-tests: could not independently EXAMINE INBOX for a ground-truth count")
+        note(f"EXAMINE INBOX (ground truth, independent of imapsync): EXISTS={exists}")
+
+        # ---- case 1: fresh mirror ----
+        r1 = run_imapsync(scratch)
+        note(r1.stdout)
+        if r1.stderr:
+            note(r1.stderr)
+
+        local_count = count_body_files(scratch)
+        count_ok = local_count == exists
+        result("1a fresh mirror: local message count matches EXAMINE's EXISTS",
+               r1.returncode == 0 and count_ok,
+               f"imapsync exit={r1.returncode} local_count={local_count} EXISTS={exists}")
+
+        marker_path = find_marker_file(scratch)
+        if marker_path is None:
+            skip("1b spot-check marker message (STAGE-3-CUI-TEST)",
+                 f"no message with subject/body containing {SUBJECT_MARKER!r} found in the mirror -- "
+                 "run smtp-protocol-tests or smtp-send-test against the real account first")
+        else:
+            marker_id = os.path.basename(marker_path)[1:]  # strip leading '+'
+            id_ok = bool(ID_RE.match(marker_id))
+            msgdir_ok = os.path.isfile(msgdir_path(scratch))
+            caption_ok = False
+            if msgdir_ok:
+                with open(msgdir_path(scratch), "rb") as f:
+                    caption_ok = SUBJECT_MARKER.encode() in f.read()
+            body_readable = False
+            try:
+                with open(marker_path, "rb") as f:
+                    body_readable = SUBJECT_MARKER.encode() in f.read()
+            except OSError:
+                pass
+            result("1b spot-check marker message (STAGE-3-CUI-TEST): "
+                   "caption present, body file readable, id has the documented synthesized format",
+                   id_ok and caption_ok and body_readable,
+                   f"id={marker_id!r} id_ok={id_ok} caption_ok={caption_ok} body_readable={body_readable}")
+
+        # ---- case 2: idempotency ----
+        pre_size = os.path.getsize(msgdir_path(scratch)) if os.path.isfile(msgdir_path(scratch)) else -1
+        pre_count = count_body_files(scratch)
+
+        r2 = run_imapsync(scratch)
+        note(r2.stdout)
+        if r2.stderr:
+            note(r2.stderr)
+
+        post_size = os.path.getsize(msgdir_path(scratch)) if os.path.isfile(msgdir_path(scratch)) else -1
+        post_count = count_body_files(scratch)
+        no_new_candidates = "candidate uid(s)" not in r2.stdout or re.search(r": 0 candidate uid\(s\)", r2.stdout)
+        result("2 idempotent re-run: adds nothing, alters nothing "
+               "(.MS_MsgDir size and message count unchanged)",
+               r2.returncode == 0 and pre_size == post_size and pre_count == post_count,
+               f"exit={r2.returncode} pre_size={pre_size} post_size={post_size} "
+               f"pre_count={pre_count} post_count={post_count}")
+    finally:
+        if os.environ.get("IMAPSYNC_KEEP_SCRATCH"):
+            note(f"IMAPSYNC_KEEP_SCRATCH set; leaving scratch root at {scratch}")
+        else:
+            shutil.rmtree(scratch, ignore_errors=True)
+
+    note("")
+    note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped")
+    sys.exit(1 if FAIL else 0)
+
+
+if __name__ == "__main__":
+    main()
