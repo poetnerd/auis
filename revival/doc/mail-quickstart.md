@@ -147,10 +147,19 @@ server accepted it.
 **For recipients not using AMS** (that is: almost everyone), send
 **unformatted** — the default formatted send transmits the body as an
 ATK datastream attachment that other mail clients display as an empty
-message with a small attachment. The Send Unformatted menu appears via
-the "Send Formatted/Unformatted menus" option (messages → Set Options;
-it is an expert-level option). Making unformatted the SMTP-era default
-is a known work item.
+message with a small attachment. Making unformatted the SMTP-era
+default is a known work item; until then, the per-message controls
+must be enabled by hand:
+
+1. In `messages`, open **Set Options** and enable
+   **"Send Formatted/Unformatted menus"**, then save options.
+2. When composing, use the **Send Unformatted** menu item instead of
+   plain Send for any message whose recipients are not on AMS.
+
+There is no hand-editable preference line for this: messages persists
+its option checkboxes as an opaque hex bitmask
+(`messages.binaryoptions` in `~/preferences`, written by the Set
+Options interface), so the GUI is the supported way to set it.
 
 A good first test is a message to yourself, then `imapsync -v` and
 watch it appear in the mirrored INBOX.
