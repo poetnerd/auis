@@ -510,7 +510,12 @@ int             Mode;
         }
 #endif                                 /* AFS_ENV */
         myerrno = errno;
-        (void) unlink(File);
+        /* No unlink here: the open failed, so nothing was created.  The
+         * unlinks on the failure paths below clean up a partial write,
+         * but at this point File is either nonexistent or -- when open
+         * fails EEXIST under O_EXCL -- an EXISTING file that belongs to
+         * someone else (in this store, an earlier message's body, which
+         * the unlink that used to be here silently destroyed). */
         AMS_RETURN_ERRCODE(myerrno, EIN_OPEN, EVIA_WRITEPUREFILE);
     }
     if (!Msg->ParsedStuff->HeadBody[HP_AUTHENTICATED_AS]) {

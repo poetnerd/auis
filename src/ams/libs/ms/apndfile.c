@@ -123,6 +123,10 @@ int             TreatAsAlien;
         DoDelete = FALSE;              /* Cannot allow it! */
     }
     if (IsMessageAlreadyThere(Msg, Dir)) {
+        FreeMessage(Msg, TRUE);        /* every other exit path frees Msg;
+                                        * this one leaked it (and via
+                                        * ReadRawFile, the whole message
+                                        * body) for 35 years */
         if (DoDelete)
             unlink(FileName);
         return (0);
@@ -235,6 +239,7 @@ char           *Id, *Date64;
     AMS_DATE(Msg->Snapshot)[AMS_DATESIZE - 1] = '\0';
 
     if (IsMessageAlreadyThere(Msg, Dir)) {
+        FreeMessage(Msg, TRUE);
         if (DoDelete)
             unlink(FileName);
         return (0);
