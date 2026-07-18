@@ -1,9 +1,10 @@
 # Enable IMAP as mail store for AMS: messages, cui — rev 2
 
-**Status: milestones 1 (SMTP send) and 2 (IMAP spike) COMPLETE
-2026-07-17. §8 decided: hand-roll the IMAP client. Milestone 3 (one-way
-sync) is next; its opening tasks are the spike's transport findings —
-see §8 and §10.**
+**Status: milestones 1 (SMTP send), 2 (IMAP spike), and 3a (transport
+hardening + `imap_prot` protocol layer) COMPLETE as of 2026-07-18.
+Next: milestone 3b — `imap_sync.c` one-way mirror, coded against the
+`imap_prot.h` contract (fresh implementation instance; spec to be
+written). See §10.**
 
 Goal: teach the AMS clients about IMAP as a mail store and SMTP as a mail
 sender, with OAuth2-capable authentication. Test platform: Fastmail.
@@ -328,9 +329,23 @@ Spike findings that set milestone 3's opening tasks:
    hand-roll; transport findings recorded in §8 as milestone 3's
    opening tasks. Spike driver committed as
    `src/overhead/mail/lib/imapspike.c` (`make imapspike.test`).
-3. **One-way sync** — `imapsync` mirrors subscribed folders (INBOX
-   included, per the §2A INBOX decision) into `~/.IMAP/fastmail/...` as a
-   new mspath element; browse in cui, then messages.
+3. **One-way sync** — split into three sub-deliverables (2026-07-17
+   pacing decision):
+   * **3a — transport + protocol layer. DONE 2026-07-18.**
+     `tlscon_ReadLineAlloc` (growable, drain-before-refill — the
+     spike's wedge case `UID SEARCH ALL` now survives a 22KB response
+     line); `imap_prot.[ch]`, the tree's first born-ANSI module
+     (spec: `revival/doc/imap-protocol-prompt.md` — full-prototype
+     header, scanf banned, ESEARCH-aware UID search, streamed body
+     fetch, IMAP_DEAD/imap_Reopen reconnect contract with
+     UIDVALIDITY verification); `revival/tests/imap-protocol-tests`
+     9/9 live, both SMTP suites still green.
+   * **3b (next)** — `imap_sync.c` one-way mirror of subscribed
+     folders (INBOX included, per the §2A INBOX decision) into
+     `~/.IMAP/fastmail/...` as a new mspath element; browse in cui.
+     Fresh implementation instance against the `imap_prot.h`
+     contract.
+   * **3c** — messages-GUI browse acceptance.
 4. **Writeback** — change journal + replay: flags, copy/move, append,
    delete/expunge.
 5. **XOAUTH2** auth module + token refresh.

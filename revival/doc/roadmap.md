@@ -69,8 +69,18 @@ mirrors IMAP; AMDS delivery remains excluded.
   instead of naive SEARCH-ALL. Spike driver:
   `src/overhead/mail/lib/imapspike.c`; `tlscon_ReadBytes` added
   (additive; both SMTP regression suites re-passed).
-- Milestones 3–5 (next: 3): one-way folder sync into a new mspath
-  root; writeback via change journal; XOAUTH2.
+- Milestone 3a — **done 2026-07-18**: tlscon hardened
+  (`tlscon_ReadLineAlloc`, growable line reads — the spike's
+  `UID SEARCH ALL` wedge case now survives) and `imap_prot.[ch]`
+  landed: the tree's first born-ANSI module (full-prototype header,
+  scanf banned in favor of strtoul/strcasecmp), ESEARCH-aware,
+  streaming body fetch, reconnect-with-UIDVALIDITY-check contract.
+  `revival/tests/imap-protocol-tests` 9/9 live against Fastmail; both
+  SMTP suites still green. Spec: `revival/doc/imap-protocol-prompt.md`.
+- Milestones 3b–5 (next: 3b, one-way sync via `imap_sync.c` against
+  the `imap_prot.h` contract): mirror into a new mspath root;
+  messages-GUI acceptance (3c); writeback via change journal (4);
+  XOAUTH2 (5).
 
 ### Objective: Reliable operation
 
