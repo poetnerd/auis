@@ -266,6 +266,73 @@ int tlscon_ReadBytes(c, buf, n)
     return got;
 }
 
+/* Milestone 3a addition: read one CRLF-terminated line of any length
+   into a malloc'd, growable buffer (see tlscon.h).  Unlike
+   tlscon_ReadLine, this never leaves unconsumed bytes belonging to
+   the line sitting in the internal buffer on failure: each pass fully
+   drains whatever tlscon_refill() has already delivered into our own
+   heap buffer *before* asking for more, so the internal rbuf is always
+   empty (rstart==rend) when tlscon_refill() is called -- which is
+   exactly the condition under which it resets and reuses the whole
+   fixed-size buffer instead of ever reporting "buffer full" (see
+   tlscon_refill() above). No change to tlscon_refill() or to any
+   existing function was needed to get this. */
+#define TLSCON_LINEALLOC_MAX (16*1024*1024)	/* sanity cap */
+
+int tlscon_ReadLineAlloc(c, linep)
+    struct tlscon *c;
+    char **linep;
+{
+    char *out, *grown;
+    int outcap, outlen, i, n, chunk;
+
+    outcap = 4096;
+    out = malloc(outcap);
+    if (out == NULL) return -1;
+    outlen = 0;
+
+    for (;;) {
+	for (i = c->rstart; i < c->rend; i++) {
+	    if (c->rbuf[i] == '\n') {
+		chunk = i - c->rstart;
+		if (outlen + chunk + 1 > outcap) {
+		    while (outlen + chunk + 1 > outcap) outcap *= 2;
+		    if (outcap > TLSCON_LINEALLOC_MAX) { free(out); return -1; }
+		    grown = realloc(out, outcap);
+		    if (grown == NULL) { free(out); return -1; }
+		    out = grown;
+		}
+		memcpy(out + outlen, c->rbuf + c->rstart, chunk);
+		outlen += chunk;
+		if (outlen > 0 && out[outlen-1] == '\r') outlen--;
+		out[outlen] = '\0';
+		c->rstart = i + 1;
+		*linep = out;
+		return outlen;
+	    }
+	}
+
+	/* No newline in what's buffered; drain it all into *out* (so
+	   the internal buffer is empty before the next refill -- see
+	   the comment above) and go get more. */
+	chunk = c->rend - c->rstart;
+	if (chunk > 0) {
+	    if (outlen + chunk + 1 > outcap) {
+		while (outlen + chunk + 1 > outcap) outcap *= 2;
+		if (outcap > TLSCON_LINEALLOC_MAX) { free(out); return -1; }
+		grown = realloc(out, outcap);
+		if (grown == NULL) { free(out); return -1; }
+		out = grown;
+	    }
+	    memcpy(out + outlen, c->rbuf + c->rstart, chunk);
+	    outlen += chunk;
+	    c->rstart = c->rend;
+	}
+	n = tlscon_refill(c);
+	if (n < 0) { free(out); return -1; }
+    }
+}
+
 int tlscon_Write(c, buf, len)
     struct tlscon *c;
     char *buf;

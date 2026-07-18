@@ -76,6 +76,20 @@ extern int tlscon_ReadLine();
    tlscon_ReadLine/_Write/_Open/_Close are unchanged. */
 extern int tlscon_ReadBytes();
 
+/* Reads one full CRLF-terminated line of any length into a malloc'd
+   buffer (CRLF stripped, null-terminated); caller frees *linep on
+   success. Grows as needed -- no fixed cap beyond a ~16MB sanity
+   limit (returns -1 past that, same as any other failure). Because it
+   only ever returns after consuming a complete line (or fails without
+   claiming to have done so), it cannot leave the stream desynced the
+   way a fixed-buffer overflow can: any -1 from this function means
+   the connection is dead, not "partially read" -- reconnect, don't
+   retry. Added for milestone 3a (IMAP protocol layer); declared with
+   a full ANSI prototype per the tree's new-code convention, even
+   though tlscon.c's existing definitions stay K&R.
+   tlscon_ReadLine/_ReadBytes/_Write/_Open/_Close are unchanged. */
+extern int tlscon_ReadLineAlloc(struct tlscon *c, char **linep);
+
 /* int tlscon_Write(c, buf, len)
        struct tlscon *c;
        char *buf;
