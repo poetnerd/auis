@@ -138,19 +138,12 @@ int signum, *ActNormal;
 #define DEFAULT_FOLDERS "INBOX"
 #define DEFAULT_ROOT_TAIL "/.IMAP/fastmail"
 
-/* 40, not more: imap_UidFetchMeta() (overhead/mail/lib/imap_prot.c)
-   builds its command into a fixed `char cmdtext[512]` and snprintf()s
-   "UID FETCH <uidset> (FLAGS INTERNALDATE ENVELOPE)" into it --
-   silently truncating for uidsets much past ~470 bytes (a ~100-uid
-   batch of 5-digit UIDs already overflows), producing a malformed
-   command the server correctly rejects ("BAD Missing required argument
-   to Uid").  40 UIDs/batch is provably safe for that ceiling even in
-   the worst case (40 * 11 bytes/uid, allowing up to 10-digit UIDs +
-   comma, = 440 bytes, comfortably under the ~470 available after
-   "UID FETCH " + " (FLAGS INTERNALDATE ENVELOPE)" + NUL).  Do not
-   raise this without first widening cmdtext (or switching it to a
-   growable buffer) in imap_prot.c itself. */
-#define FETCH_BATCH 40
+/* Metadata UIDs per UID FETCH round trip.  imap_UidFetchMeta() sizes
+   its command buffer to the uidset it is given, so this is a tuning
+   knob, not a protocol-safety ceiling: bigger batches mean fewer round
+   trips on a large mirror, at the cost of larger per-batch stack
+   arrays in meta_batch_rock below. */
+#define FETCH_BATCH 100
 
 #define SF_OK 0
 #define SF_FAIL 1
@@ -930,6 +923,23 @@ static int sync_folder_once(struct imapconn *conn, const char *root,
     }
     vlog("UID SEARCH %s in %s: %ld candidate uid(s)", criteria, foldername, count);
 
+    /* RFC 3501 range semantics: "UID <n>:*" always includes the highest
+       existing uid, even when every uid is below n -- so an idempotent
+       re-run with no new mail can get the top already-mirrored message
+       echoed back as a "candidate" (observed live: search 77742:*
+       returned 77741 after a transient arrival+expunge bumped UIDNEXT).
+       Filter anything at or below the watermark before fetching. */
+    {
+        long in, out;
+
+        for (in = 0, out = 0; in < count; ++in) {
+            if (uids[in] > state.highestuid) uids[out++] = uids[in];
+            else vlog("ignoring candidate uid %lu <= watermark %lu (n:* range echo)",
+                      uids[in], state.highestuid);
+        }
+        count = out;
+    }
+
     for (batchstart = 0; batchstart < count; batchstart += FETCH_BATCH) {
         struct meta_batch_rock rock;
         char uidset[FETCH_BATCH * 12 + 16];
@@ -985,6 +995,27 @@ static int sync_folder_once(struct imapconn *conn, const char *root,
             date64[6] = '\0';
             synth_id(info.uidvalidity, uid, id);
             vlog("uid %lu -> id %s date64 %s", uid, id, date64);
+
+            /* Already mirrored?  Ids are deterministic, so the target
+               body file's existence is authoritative.  This matters when
+               re-covering ground (a lost/corrupt state file forces a
+               full re-scan over existing content): the store's own
+               duplicate check keys on the RFC-822 Message-ID header,
+               which a message can lack, and an append that gets past it
+               into an existing "+<id>" file fails EEXIST instead of
+               no-op'ing.  Check here and skip cleanly. */
+            {
+                char bodypath[MAXPATHLEN + 1];
+                struct stat stb;
+
+                snprintf(bodypath, sizeof(bodypath), "%s/+%s", localpath, id);
+                if (stat(bodypath, &stb) == 0) {
+                    vlog("uid %lu (id %s) already mirrored; skipping", uid, id);
+                    if (uid > state.highestuid && (first_skipped_uid == 0 || uid < first_skipped_uid))
+                        state.highestuid = uid;
+                    continue;
+                }
+            }
 
             snprintf(tmppath, sizeof(tmppath), "%s/.imapsync-fetch-XXXXXX", localpath);
             fd = mkstemp(tmppath);
@@ -1070,7 +1101,13 @@ static int sync_folder_once(struct imapconn *conn, const char *root,
             if (uid > state.highestuid && (first_skipped_uid == 0 || uid < first_skipped_uid))
                 state.highestuid = uid;
             state.uidvalidity = info.uidvalidity;
-            state.highestmodseq = info.highestmodseq;
+            /* Deliberately the PRIOR modseq, not info.highestmodseq: these
+               mid-pass writes exist only for crash safety, and persisting
+               the current modseq here would make a run that dies before
+               the flags-refresh pass below look, to the next run's
+               HIGHESTMODSEQ comparison, as though the refresh had already
+               happened. Only the end-of-pass write below may advance it. */
+            state.highestmodseq = prior_highestmodseq;
             if (write_state(statepath, &state) != 0) {
                 fprintf(stderr, "imapsync: could not write %s: %s\n", statepath, strerror(errno));
                 *anyerror = 1;
