@@ -87,19 +87,28 @@ struct atomlist *atomlist__StringToAtomlist(classID, string)
 struct classheader *classID;
 char *string;
 {
+    char *copy;
     char *atomstart;
     char *atomend;
     struct atom *atom;
     struct atomlist *newlist = atomlist_New();
 
+    /* Parse a private copy of the string.  The original code NUL'ed out
+     * each '.' in place (restoring it afterward), which requires the
+     * caller's string to be writable -- but callers routinely pass
+     * string literals, and modern toolchains place literals in
+     * read-only memory, making the in-place edit a bus error. */
     if (string != NULL)  {
-	for (atomstart = atomend = string; atomend != NULL; atomstart =  1 + atomend)  {
+	copy = malloc(1 + strlen(string));
+	if (copy == NULL) return newlist;
+	strcpy(copy, string);
+	for (atomstart = atomend = copy; atomend != NULL; atomstart =  1 + atomend)  {
 	    atomend = index(atomstart,'.');
 	    if (atomend != NULL) *atomend = '\0';
             atom = atom_Intern(atomstart);
-	    if (atomend != NULL) *atomend = '.';
             atomlist_Append(newlist, atom);
 	}
+	free(copy);
     }
     return newlist;
 }
