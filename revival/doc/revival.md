@@ -186,6 +186,37 @@ exist yet when ATK was written.
   on the same underlying representation for a scanline bitmap, because it's
   simply the obvious correct one.
 
+- **The Andrew Message System's 1988 client-server interface reads like a
+  preview of the modern IMAP extension stack.** AMS and IMAP were
+  contemporaries — Crispin's first IMAP drafts and Borenstein's message
+  server were designed in the same few years, for the same problem, at
+  different institutions — and the convergences run deep. Both settled on
+  durable per-message identifiers that survive reconnection (AMS's 18-
+  character unique ids; IMAP's UIDVALIDITY plus UID). Both retrieve
+  message bodies by offset with a bytes-remaining count — AMS's
+  `MS_GetPartialBody` has essentially the signature of IMAP's partial
+  `FETCH BODY[]<offset.size>`. Both use a two-phase delete: mark, then
+  purge (`AMS_ATT_DELETED` and `MS_PurgeDeletedMessages`; `\Deleted` and
+  `EXPUNGE`). Both maintain a per-user subscription list over a shared
+  folder space. Both send fixed-size summary records in place of messages
+  (AMS snapshots; IMAP's ENVELOPE/FLAGS/INTERNALDATE items). And the AMS
+  spec's engineering doctrine — every call idempotent, a server that "can
+  die at any moment, with the client automatically reconnecting and
+  continuing its work without any loss of context" — is precisely the
+  discipline that makes a modern IMAP client's reconnect logic workable.
+  Where the parallels reach past core IMAP is the striking part: AMS
+  computed reply-chain threading server-side in 1988 (the snapshot's
+  chain field), which IMAP added as the THREAD extension years later; its
+  "master update file" answering *what changed since I last looked* cheaply
+  is CONDSTORE's job description; its 168 user-defined per-folder
+  attributes are IMAP keywords. In one respect AMS remains ahead: the
+  server computed each message's one-line caption once, for every client
+  — a summary IMAP clients still each rebuild for themselves from
+  ENVELOPE, four decades on. The revival's IMAP work leaned on this
+  kinship directly: mapping the store's operations onto IMAP was mostly
+  transcription, because the two designs had already agreed on what a
+  mail store is.
+
 ## Old bugs never found till now
 
 Bringing 1994 code onto a 2026 machine did more than require accommodating
@@ -240,6 +271,29 @@ sample:
   and an include order. Fixed at the root: the debugging header now parses
   `fcntl.h` itself before performing the rename, making the poisoning
   impossible in any include order.
+
+- **A bet on the direction of filesystem history, quietly lost.** The
+  message store names each message's body file after its unique id — an
+  18-character string over a base-64 alphabet in which uppercase and
+  lowercase letters are distinct values. That scheme silently assumes
+  filenames are case-sensitive. In 1988 this looked less like an
+  assumption than an observation about progress: the case-insensitive
+  filesystems were the *older* systems — TOPS-10, VMS, CP/M, DOS — and
+  UNIX, the future, distinguished case. History went the other way.
+  The filesystems that won the desktop — HFS+, then APFS, and NTFS as
+  Windows uses it — are case-insensitive (case-*preserving*, which makes
+  the trap quieter still: names display exactly as written, they just
+  refuse to be distinct). On a Mac, two AMS ids differing only in letter
+  case are different strings and the same file. For thirty-five years
+  nothing noticed, because native ids derive from host and timestamp and
+  differ in many character positions at once. The revival's IMAP mirror
+  found it in an afternoon: it synthesized ids from dense sequential
+  message numbers, adjacent ids collided as filenames every time the
+  encoding walked the alphabet across a case pair, and a "new" message's
+  body file turned out to already exist — containing a different
+  message. The mirror's fix is an id alphabet with no case pairs; the
+  store's native ids remain a documented, if astronomically unlikely,
+  hazard on this platform.
 
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
