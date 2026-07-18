@@ -5,6 +5,9 @@ from the `andrew-6.4` revival checkout on macOS with XQuartz. It
 reflects the state of the revival as of mid-2026; consult
 `porting-changelog.md` for the history behind each decision.
 
+For getting `messages`/`cui` working against a real IMAP/SMTP mail
+account, see `mail-quickstart.md`.
+
 ## Prerequisites
 
 **XQuartz** — the X11 server for macOS. Install via:
