@@ -68,11 +68,12 @@ revival/tests/imap-protocol-tests
 ## imap-sync-tests
 
 `imap-sync-tests` -- the milestone 3b `imapsync` one-way IMAP mirror's
-Gate 1 suite (see `revival/doc/imap-sync-prompt.md`), packaged as a
-durable regression test. It builds `imaptest.test` (used only as an
-independent, cross-checking client -- never to drive imapsync itself)
-and `imapsync` (`src/ams/msclients/imapsync`), then exercises Gate 1's
-two cases against a fresh `mktemp -d` scratch mspath root, INBOX only:
+full acceptance suite (see `revival/doc/imap-sync-prompt.md`), packaged
+as a durable regression test. It builds `imaptest.test` (used only as
+an independent, cross-checking client -- never to drive imapsync
+itself), `imapsync` (`src/ams/msclients/imapsync`), and
+`smtptest.test`, then exercises all six spec cases against a fresh
+`mktemp -d` scratch mspath root, INBOX only:
 
 1. Fresh mirror: message count matches EXAMINE's EXISTS (checked
    independently via `imaptest.test examine`, never hardcoded); a
@@ -81,18 +82,41 @@ two cases against a fresh `mktemp -d` scratch mspath root, INBOX only:
    for a present caption, a readable body file, and an id matching the
    documented synthesized format (`IMAP` + 14 base32hex characters --
    see the case-insensitive-filesystem note below).
-2. Idempotency: an immediate second run adds nothing and alters nothing
-   (`.MS_MsgDir` size and on-disk message count compared before/after).
+2. Idempotency: an immediate second run must not alter or remove any
+   already-mirrored message, and any local growth must be exactly
+   accounted for by genuinely new server uids that arrived in the same
+   window (checked via an independent EXAMINE on each side of the
+   re-run) -- a live mailbox can grow between case 1 and this re-run,
+   and that is new mail, not an idempotency violation.
+3. Incremental sync: sends one marker message to self via the committed
+   SMTP path (`smtptest.test`, `wdc@fastmail.com` only), then re-runs
+   imapsync with bounded polling (tolerant of delivery delay) until
+   exactly one new message appears and it is the marker.
+4. Flags mapping: the newly-arrived marker has `AMS_ATT_UNSEEN` set
+   locally; an old, server-seen message does not (checked by decoding
+   `.MS_MsgDir` snapshot bytes directly, independent of imapsync's own
+   code).
+5. UIDVALIDITY change drill: corrupts the state file's `uidvalidity`,
+   re-runs, and checks for a loud full re-mirror and a correct final
+   state. A single message's body fetch or append can legitimately fail
+   mid-drill (e.g. a message expunged server-side between SEARCH and
+   FETCH); imapsync treats that as a per-message warn-and-skip rather
+   than a whole-folder failure, so this case still expects exit 0.
+6. cui browse: with mspath extended to the scratch root via a scratch
+   `PROFILES` file (never the real `~/preferences`), cui lists INBOX and
+   displays the marker's caption and body. Uses `headers INBOX since
+   <date>` (bracketing the marker's own `Date:` header, not a fixed
+   value) rather than a bare `headers INBOX`, since cui numbers messages
+   by session-local display order, not mailbox position -- a bare
+   `headers` would bury the marker's number thousands of messages deep
+   in a live INBOX this size.
 
-Cases 3-6 from the spec (incremental sync, flags mapping, the
-UIDVALIDITY-change drill, and cui-browse acceptance) are milestone 3b
-Gate 2 territory and are not attempted by this suite.
-
-Because case 1 mirrors the *entire* live INBOX, this suite can take
-many minutes to run. Skips cleanly (rather than failing) when `~/.netrc`
-has no usable `machine imap.fastmail.com` stanza. The real
-`~/.IMAP/fastmail` mirror root is never touched -- only the scratch
-root, removed on exit unless `IMAPSYNC_KEEP_SCRATCH` is set.
+Because case 1 mirrors the *entire* live INBOX and case 5 re-mirrors it
+again from scratch, this suite can take many minutes to run. Skips
+cleanly (rather than failing) when `~/.netrc` has no usable `machine
+imap.fastmail.com` stanza. The real `~/.IMAP/fastmail` mirror root is
+never touched -- only the scratch root, removed on exit unless
+`IMAPSYNC_KEEP_SCRATCH` is set.
 
 Note for anyone re-running this on a case-insensitive filesystem (macOS
 default APFS, as used for this revival): `imapsync`'s synthesized ids

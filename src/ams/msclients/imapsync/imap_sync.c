@@ -21,9 +21,17 @@
 	progress (uidvalidity, highest-synced uid, highestmodseq) lives in a
 	small text file ".MS_IMAPSync" inside each mirrored folder directory.
 
-	Implemented so far: fresh mirror + idempotent incremental re-run.
-	Flags mapping, server-side expunge detection, and the CONDSTORE-skip
-	optimization are follow-on work and are NOT implemented here.
+	Per-run work, in order: fresh/incremental mirror of new mail (with
+	\Seen/\Answered/\Deleted applied from the same FETCH that pulled
+	each new message's INTERNALDATE); a flags refresh pass over
+	previously-mirrored messages, skipped when HIGHESTMODSEQ shows
+	nothing changed since the last run (a modseq comparison only -- the
+	underlying FETCH has no CHANGEDSINCE modifier available to it); and,
+	only with -full-check, a full UID list comparison that marks
+	AMS_ATT_DELETED locally for any previously-mirrored message no
+	longer present on the server (never purges -- that stays a human or
+	later-milestone decision). A UIDVALIDITY change wipes and re-mirrors
+	a folder from scratch, loudly.
 
 	IMAP usage is strictly read-only: only imap_Examine/imap_UidSearch/
 	imap_UidFetchMeta/imap_UidFetchBody are called (EXAMINE and
@@ -44,6 +52,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <ctype.h>
 #include <time.h>
 #include <errno.h>
 #include <sys/param.h>		/* MAXPATHLEN */
@@ -84,6 +93,7 @@ extern int MS_UpdateState(void);
 extern int MS_CreateNewMessageDirectory(char *dirname, int overwrite, char *bodydirname);
 extern int MS_AppendFileToFolderWithId(char *filename, char *foldername,
                                         char *id, char *date64);
+extern int MS_AlterSnapshot(char *dirname, char *id, char *newsnapshot, int code);
 
 /* overhead/mail/lib/genid.c -- the tree's base-64 helpers (mail.h has
    only a K&R "extern char *convlongto64();"; declared ANSI here). Each
@@ -141,6 +151,10 @@ int signum, *ActNormal;
    raise this without first widening cmdtext (or switching it to a
    growable buffer) in imap_prot.c itself. */
 #define FETCH_BATCH 40
+
+#define SF_OK 0
+#define SF_FAIL 1
+#define SF_DEAD 2	/* connection died and could not be recovered */
 
 static int Verbose = 0;
 
@@ -548,6 +562,7 @@ struct meta_batch_rock {
     unsigned long *uids;	/* batch slice, ascending */
     int count;
     char internaldate[FETCH_BATCH][128];
+    char flags[FETCH_BATCH][256];
     int got[FETCH_BATCH];
 };
 
@@ -558,13 +573,15 @@ static int meta_batch_cb(unsigned long uid, const char *flags,
     struct meta_batch_rock *r = (struct meta_batch_rock *) rockp;
     int i;
 
-    (void) flags;
     (void) env;
     for (i = 0; i < r->count; ++i) {
         if (r->uids[i] == uid) {
             strncpy(r->internaldate[i], internaldate != NULL ? internaldate : "",
                     sizeof(r->internaldate[i]) - 1);
             r->internaldate[i][sizeof(r->internaldate[i]) - 1] = '\0';
+            strncpy(r->flags[i], flags != NULL ? flags : "",
+                    sizeof(r->flags[i]) - 1);
+            r->flags[i][sizeof(r->flags[i]) - 1] = '\0';
             r->got[i] = 1;
             break;
         }
@@ -573,25 +590,286 @@ static int meta_batch_cb(unsigned long uid, const char *flags,
 }
 
 /* ---------------------------------------------------------------- */
+/* flags mapping: IMAP system flags -> AMS attributes                   */
+/* ---------------------------------------------------------------- */
+
+/* flagstext is the parenthesized FLAGS list's contents, unparsed, e.g.
+   "\Seen \Answered" or "" -- tokenize on whitespace, compare
+   case-insensitively (IMAP flag atoms are technically case-sensitive
+   per RFC 3501, but real servers vary and case-insensitive compare
+   costs nothing here). */
+static void parse_flags(const char *flagstext, int *seen, int *answered, int *deleted)
+{
+    char buf[256];
+    char *tok, *save;
+
+    *seen = 0;
+    *answered = 0;
+    *deleted = 0;
+    if (flagstext == NULL) return;
+
+    strncpy(buf, flagstext, sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
+
+    for (tok = strtok_r(buf, " ", &save); tok != NULL; tok = strtok_r(NULL, " ", &save)) {
+        if (strcasecmp(tok, "\\Seen") == 0) *seen = 1;
+        else if (strcasecmp(tok, "\\Answered") == 0) *answered = 1;
+        else if (strcasecmp(tok, "\\Deleted") == 0) *deleted = 1;
+    }
+}
+
+/* Maps \Seen/\Answered/\Deleted onto AMS_ATT_UNSEEN (inverted)/
+   AMS_ATT_REPLIEDTO/AMS_ATT_DELETED via two MS_AlterSnapshot calls: one
+   ASS_OR_ATTRIBUTES (bits to turn on) and one ASS_AND_ATTRIBUTES (a
+   keep-mask -- a 0 bit there forces the corresponding attribute off).
+   Both calls only ever touch the attributes field of the target
+   snapshot (see MS_AlterSnapshot's own switch in
+   ams/libs/ms/altsnap.c) -- the rest of orbuf/andbuf is never
+   examined, so it is left zeroed/undefined. Returns 0 on success. */
+static long apply_flags(const char *dirpath, const char *id, const char *flagstext)
+{
+    char orbuf[AMS_SNAPSHOTSIZE];
+    char andbuf[AMS_SNAPSHOTSIZE];
+    int seen, answered, deleted;
+    long rc;
+
+    parse_flags(flagstext, &seen, &answered, &deleted);
+
+    memset(orbuf, 0, sizeof(orbuf));
+    memset(andbuf, 0xFF, sizeof(andbuf));
+
+    if (!seen) AMS_SET_ATTRIBUTE(orbuf, AMS_ATT_UNSEEN);
+    else       AMS_UNSET_ATTRIBUTE(andbuf, AMS_ATT_UNSEEN);
+
+    if (answered) AMS_SET_ATTRIBUTE(orbuf, AMS_ATT_REPLIEDTO);
+    else          AMS_UNSET_ATTRIBUTE(andbuf, AMS_ATT_REPLIEDTO);
+
+    if (deleted) AMS_SET_ATTRIBUTE(orbuf, AMS_ATT_DELETED);
+    else         AMS_UNSET_ATTRIBUTE(andbuf, AMS_ATT_DELETED);
+
+    rc = MS_AlterSnapshot((char *) dirpath, (char *) id, orbuf, ASS_OR_ATTRIBUTES);
+    if (rc != 0) return rc;
+    return MS_AlterSnapshot((char *) dirpath, (char *) id, andbuf, ASS_AND_ATTRIBUTES);
+}
+
+struct flags_refresh_rock {
+    const char *localpath;
+    const char *foldername;
+    unsigned long uidvalidity;
+    int *anyerror;
+};
+
+static int flags_refresh_cb(unsigned long uid, const char *flags,
+                             const char *internaldate,
+                             const struct imap_envelope *env, void *rockp)
+{
+    struct flags_refresh_rock *r = (struct flags_refresh_rock *) rockp;
+    char id[AMS_IDSIZE];
+    long rc;
+
+    (void) internaldate;
+    (void) env;
+
+    synth_id(r->uidvalidity, uid, id);
+    rc = apply_flags(r->localpath, id, flags);
+    if (rc != 0) {
+        mserrcode = rc;
+        if (AMS_ERRNO == EMSNOSUCHMESSAGE) {
+            /* Expected, not an error: this uid falls inside the
+               1:prior_highestuid refresh range but was never actually
+               mirrored locally (e.g. it was already expunged from the
+               server before this account's very first sync ever
+               reached it). Every real mailbox accumulates a few of
+               these over time; only a message this run actually wrote
+               to disk can be missing for any other reason. */
+            vlog("uid %lu (id %s) in %s: not locally mirrored (EMSNOSUCHMESSAGE); skipping", uid, id, r->foldername);
+        } else {
+            fprintf(stderr, "imapsync: apply_flags uid %lu (id %s) in %s: ", uid, id, r->foldername);
+            report_mserr("MS_AlterSnapshot", rc);
+            *r->anyerror = 1;
+        }
+    }
+    return 0;
+}
+
+/* Refetches FLAGS (in batches) for every uid in [lo, hi] and applies
+   the mapping above to each -- used to refresh already-mirrored
+   messages whose flags may have changed since the last run. Does
+   nothing if lo > hi (nothing to refresh). */
+static int refresh_flags(struct imapconn *conn, const char *localpath,
+                          const char *foldername, unsigned long uidvalidity,
+                          unsigned long lo, unsigned long hi, int *anyerror)
+{
+    unsigned long batchlo;
+    char criteria[64];
+    struct flags_refresh_rock rock;
+    int rc;
+
+    if (lo > hi) return SF_OK;
+
+    rock.localpath = localpath;
+    rock.foldername = foldername;
+    rock.uidvalidity = uidvalidity;
+    rock.anyerror = anyerror;
+
+    for (batchlo = lo; batchlo <= hi; batchlo += FETCH_BATCH) {
+        unsigned long batchhi = batchlo + FETCH_BATCH - 1;
+
+        if (batchhi > hi) batchhi = hi;
+        snprintf(criteria, sizeof(criteria), "%lu:%lu", batchlo, batchhi);
+        rc = imap_UidFetchMeta(conn, criteria, flags_refresh_cb, &rock);
+        if (rc == IMAP_DEAD) return SF_DEAD;
+        if (rc != IMAP_OK) {
+            fprintf(stderr, "imapsync: FLAGS refresh batch %s in %s failed: %d (%s) %s\n",
+                    criteria, foldername, rc, imap_rcname(rc), imap_ErrMsg(conn));
+            *anyerror = 1;
+            /* try the next batch anyway */
+        }
+    }
+    return SF_OK;
+}
+
+/* ---------------------------------------------------------------- */
+/* server-side expunge detection (-full-check only)                     */
+/* ---------------------------------------------------------------- */
+
+static int base32hex_digit(char c)
+{
+    const char *p;
+
+    c = (char) toupper((unsigned char) c);
+    p = strchr(Base32Hex, c);
+    return (p != NULL) ? (int) (p - Base32Hex) : -1;
+}
+
+static int decode_base32hex7(const char *s, unsigned long *out)
+{
+    unsigned long v = 0;
+    int i, d;
+
+    for (i = 0; i < 7; ++i) {
+        d = base32hex_digit(s[i]);
+        if (d < 0) return -1;
+        v = (v << 5) | (unsigned long) d;
+    }
+    *out = v & 0xFFFFFFFFUL;
+    return 0;
+}
+
+/* Inverse of synth_id(): recovers (uidvalidity, uid) from an 18-char id
+   this module generated. Returns -1 (and leaves the outputs untouched)
+   if id isn't in the expected format -- e.g. a locally
+   invented id from some other source, which this module never writes
+   but which the store's own hidden-file recovery could in principle
+   introduce; such ids are simply not ours to reconcile against IMAP
+   UIDs and are left alone. */
+static int decode_id(const char *id, unsigned long *uidvalidity, unsigned long *uid)
+{
+    if (strlen(id) != (size_t) (AMS_IDSIZE - 1)) return -1;
+    if (strncmp(id, "IMAP", 4) != 0) return -1;
+    if (decode_base32hex7(id + 4, uidvalidity) != 0) return -1;
+    if (decode_base32hex7(id + 11, uid) != 0) return -1;
+    return 0;
+}
+
+static int uid_present(const unsigned long *sorted, long count, unsigned long want)
+{
+    long lo = 0, hi = count - 1, mid;
+
+    while (lo <= hi) {
+        mid = lo + (hi - lo) / 2;
+        if (sorted[mid] == want) return 1;
+        if (sorted[mid] < want) lo = mid + 1;
+        else hi = mid - 1;
+    }
+    return 0;
+}
+
+/* For every locally-mirrored message (any "+<id>" file in localpath
+   whose id decodes to this folder's current uidvalidity) whose uid is
+   no longer present in a full server-side UID list, sets
+   AMS_ATT_DELETED locally. Does not purge -- v1 leaves that to a human
+   or a future milestone, matching how AMS's own mark-then-purge model
+   already works. This is the expensive full-mailbox check, hence
+   opt-in via -full-check rather than run on every pass. */
+static int check_expunged(struct imapconn *conn, const char *localpath,
+                           const char *foldername, unsigned long uidvalidity,
+                           int *anyerror)
+{
+    unsigned long *serveruids = NULL;
+    long servercount = 0;
+    DIR *d;
+    struct dirent *ent;
+    int rc;
+    long marked = 0;
+
+    rc = imap_UidSearch(conn, "ALL", &serveruids, &servercount);
+    if (rc == IMAP_DEAD) return SF_DEAD;
+    if (rc != IMAP_OK) {
+        fprintf(stderr, "imapsync: full-check UID SEARCH ALL in %s failed: %d (%s) %s\n",
+                foldername, rc, imap_rcname(rc), imap_ErrMsg(conn));
+        *anyerror = 1;
+        return SF_FAIL;
+    }
+
+    d = opendir(localpath);
+    if (d == NULL) {
+        fprintf(stderr, "imapsync: full-check could not open %s: %s\n", localpath, strerror(errno));
+        if (serveruids != NULL) free(serveruids);
+        *anyerror = 1;
+        return SF_FAIL;
+    }
+    while ((ent = readdir(d)) != NULL) {
+        unsigned long ev, euid;
+        char orbuf[AMS_SNAPSHOTSIZE];
+        long arc;
+
+        if (ent->d_name[0] != '+') continue;
+        if (decode_id(ent->d_name + 1, &ev, &euid) != 0) continue;
+        if (ev != uidvalidity) continue;	/* stale generation; ignore */
+        if (uid_present(serveruids, servercount, euid)) continue;
+
+        memset(orbuf, 0, sizeof(orbuf));
+        AMS_SET_ATTRIBUTE(orbuf, AMS_ATT_DELETED);
+        arc = MS_AlterSnapshot((char *) localpath, ent->d_name + 1, orbuf, ASS_OR_ATTRIBUTES);
+        if (arc != 0) {
+            fprintf(stderr, "imapsync: full-check mark-deleted uid %lu (id %s) in %s: ",
+                    euid, ent->d_name + 1, foldername);
+            report_mserr("MS_AlterSnapshot", arc);
+            *anyerror = 1;
+            continue;
+        }
+        ++marked;
+        vlog("full-check: uid %lu (id %s) no longer on server; marked AMS_ATT_DELETED locally",
+             euid, ent->d_name + 1);
+    }
+    closedir(d);
+    if (serveruids != NULL) free(serveruids);
+    if (marked > 0) loudlog("imapsync: full-check marked %ld message(s) deleted in \"%s\" "
+                             "(server-expunged; not purged)", marked, foldername);
+    return SF_OK;
+}
+
+/* ---------------------------------------------------------------- */
 /* per-folder sync                                                      */
 /* ---------------------------------------------------------------- */
 
-#define SF_OK 0
-#define SF_FAIL 1
-#define SF_DEAD 2	/* connection died and could not be recovered */
-
 static int sync_folder_once(struct imapconn *conn, const char *root,
-                             const char *foldername, int *anyerror)
+                             const char *foldername, int full_check, int *anyerror)
 {
     char localpath[MAXPATHLEN + 1];
     char statepath[MAXPATHLEN + 1];
     struct imap_mboxinfo info;
     struct sync_state state;
+    unsigned long prior_highestuid;
+    unsigned long long prior_highestmodseq;
     int rc;
     char criteria[64];
     unsigned long *uids = NULL;
     long count = 0;
     long batchstart;
+    unsigned long first_skipped_uid = 0;
+    long skipped_count = 0;
 
     rc = folder_local_path(conn, root, foldername, localpath);
     if (rc == IMAP_DEAD) return SF_DEAD;
@@ -634,6 +912,13 @@ static int sync_folder_once(struct imapconn *conn, const char *root,
         state.highestmodseq = 0;
     }
 
+    /* Captured before the new-mail pass below mutates state: this is
+       what a flags refresh needs to know which uids were already
+       mirrored coming into this run, and whether anything has changed
+       since the last run at all (the CONDSTORE/HIGHESTMODSEQ skip). */
+    prior_highestuid = state.highestuid;
+    prior_highestmodseq = state.highestmodseq;
+
     snprintf(criteria, sizeof(criteria), "UID %lu:*", state.highestuid + 1);
     rc = imap_UidSearch(conn, criteria, &uids, &count);
     if (rc == IMAP_DEAD) return SF_DEAD;
@@ -654,7 +939,7 @@ static int sync_folder_once(struct imapconn *conn, const char *root,
         n = (int) ((count - batchstart) < FETCH_BATCH ? (count - batchstart) : FETCH_BATCH);
         rock.uids = uids + batchstart;
         rock.count = n;
-        for (i = 0; i < n; ++i) { rock.got[i] = 0; rock.internaldate[i][0] = '\0'; }
+        for (i = 0; i < n; ++i) { rock.got[i] = 0; rock.internaldate[i][0] = '\0'; rock.flags[i][0] = '\0'; }
 
         up = uidset;
         uidset[0] = '\0';
@@ -721,24 +1006,69 @@ static int sync_folder_once(struct imapconn *conn, const char *root,
             fclose(outf);
             if (rc == IMAP_DEAD) { unlink(tmppath); if (uids != NULL) free(uids); return SF_DEAD; }
             if (rc != IMAP_OK) {
-                fprintf(stderr, "imapsync: FETCH BODY uid %lu in %s failed: %d (%s) %s\n",
+                loudlog("imapsync: WARN: FETCH BODY uid %lu in %s failed: %d (%s) %s -- "
+                        "skipping this message, will retry it next run",
                         uid, foldername, rc, imap_rcname(rc), imap_ErrMsg(conn));
                 unlink(tmppath);
-                *anyerror = 1;
+                if (first_skipped_uid == 0 || uid < first_skipped_uid) first_skipped_uid = uid;
+                ++skipped_count;
+                continue;
+            }
+            if (bodysize == 0) {
+                /* A zero-length BODY.PEEK[] fetch for a message that
+                   genuinely exists in the SEARCH result is a known
+                   server-side race (seen in practice for a message that
+                   is expunged, moved, or still being delivered between
+                   the SEARCH and this FETCH) rather than a local bug --
+                   the store itself refuses to append an empty message
+                   body (its own "young mail" sanity check), so there is
+                   nothing useful to append here. Skip and retry next
+                   run rather than failing the whole folder pass. */
+                loudlog("imapsync: WARN: uid %lu in %s fetched a zero-length body -- "
+                        "skipping this message, will retry it next run",
+                        uid, foldername);
+                unlink(tmppath);
+                if (first_skipped_uid == 0 || uid < first_skipped_uid) first_skipped_uid = uid;
+                ++skipped_count;
                 continue;
             }
 
             apprc = MS_AppendFileToFolderWithId(tmppath, (char *) localpath, id, date64);
             if (apprc != 0) {
-                fprintf(stderr, "imapsync: MS_AppendFileToFolderWithId uid %lu (id %s) in %s: ", uid, id, foldername);
+                fprintf(stderr, "imapsync: WARN: MS_AppendFileToFolderWithId uid %lu (id %s) in %s: ", uid, id, foldername);
                 report_mserr("MS_AppendFileToFolderWithId", apprc);
+                loudlog("imapsync: WARN: skipping uid %lu, will retry it next run", uid);
                 unlink(tmppath);
-                *anyerror = 1;
+                if (first_skipped_uid == 0 || uid < first_skipped_uid) first_skipped_uid = uid;
+                ++skipped_count;
                 continue;
             }
 
             vlog("appended uid %lu -> id %s date64 %s", uid, id, date64);
-            if (uid > state.highestuid) state.highestuid = uid;
+
+            apprc = apply_flags(localpath, id, rock.flags[i]);
+            if (apprc != 0) {
+                fprintf(stderr, "imapsync: apply_flags uid %lu (id %s) in %s: ", uid, id, foldername);
+                report_mserr("MS_AlterSnapshot", apprc);
+                *anyerror = 1;
+                /* the message itself is appended and correctly identified;
+                   a flags-application miss is logged but not fatal to the
+                   run -- it will be caught by the next refresh pass. */
+            }
+
+            /* Never advance the persisted watermark past a uid this same
+               pass has already skipped: once first_skipped_uid is set,
+               every later (necessarily higher, since candidates are
+               processed in ascending order) successful uid is still
+               appended locally -- that work is not wasted -- but the
+               watermark stays capped at (first_skipped_uid - 1) so the
+               next run's "UID SEARCH UID <highestuid+1>:*" sees the
+               skipped uid again. Re-appending an already-mirrored uid is
+               a deterministic no-op (same synthesized id -> the store's
+               already-there path), so re-covering this range costs
+               nothing but a little wasted fetch/search time. */
+            if (uid > state.highestuid && (first_skipped_uid == 0 || uid < first_skipped_uid))
+                state.highestuid = uid;
             state.uidvalidity = info.uidvalidity;
             state.highestmodseq = info.highestmodseq;
             if (write_state(statepath, &state) != 0) {
@@ -748,7 +1078,45 @@ static int sync_folder_once(struct imapconn *conn, const char *root,
         }
     }
 
+    if (skipped_count > 0) {
+        /* Belt-and-suspenders: the gated update above should already
+           keep state.highestuid below first_skipped_uid, but cap it
+           explicitly here too in case a future edit adds another path
+           that advances state.highestuid without going through that
+           check. */
+        if (state.highestuid >= first_skipped_uid) state.highestuid = first_skipped_uid - 1;
+        loudlog("imapsync: skipped %ld message(s) in \"%s\" due to an empty or failed body "
+                "fetch/append (lowest skipped uid %lu); the highestuid watermark is capped at "
+                "%lu so they will be retried next run", skipped_count, foldername,
+                first_skipped_uid, state.highestuid);
+    }
+
     if (uids != NULL) free(uids);
+
+    /* Flags refresh for already-mirrored messages (uids 1..prior_highestuid
+       -- freshly-appended messages above that already got their flags
+       applied inline, from the same UID FETCH that pulled INTERNALDATE).
+       CONDSTORE/HIGHESTMODSEQ skip: this is a modseq COMPARISON only --
+       imap_UidFetchMeta() has no CHANGEDSINCE modifier to pass through to
+       the FETCH itself, so "nothing changed" is decided purely by
+       comparing the last-seen and current HIGHESTMODSEQ, not by asking
+       the server to filter the FETCH. */
+    if (prior_highestuid == 0) {
+        vlog("no previously-mirrored messages in \"%s\"; nothing to refresh", foldername);
+    } else if (info.highestmodseq != 0 && prior_highestmodseq == info.highestmodseq) {
+        vlog("HIGHESTMODSEQ unchanged (%llu) for \"%s\"; skipping flags refresh",
+             info.highestmodseq, foldername);
+    } else {
+        vlog("refreshing flags for uids 1:%lu in \"%s\" (HIGHESTMODSEQ was %llu, now %llu)",
+             prior_highestuid, foldername, prior_highestmodseq, info.highestmodseq);
+        rc = refresh_flags(conn, localpath, foldername, info.uidvalidity, 1, prior_highestuid, anyerror);
+        if (rc == SF_DEAD) return SF_DEAD;
+    }
+
+    if (full_check) {
+        rc = check_expunged(conn, localpath, foldername, info.uidvalidity, anyerror);
+        if (rc == SF_DEAD) return SF_DEAD;
+    }
 
     state.uidvalidity = info.uidvalidity;
     state.highestmodseq = info.highestmodseq;
@@ -763,12 +1131,12 @@ static int sync_folder_once(struct imapconn *conn, const char *root,
 /* Wraps sync_folder_once with the reconnect contract: one imap_Reopen
    retry per folder pass. */
 static int sync_folder(struct imapconn *conn, const char *login, const char *passwd,
-                        const char *root, const char *foldername, int *anyerror)
+                        const char *root, const char *foldername, int full_check, int *anyerror)
 {
     int result;
     int rc;
 
-    result = sync_folder_once(conn, root, foldername, anyerror);
+    result = sync_folder_once(conn, root, foldername, full_check, anyerror);
     if (result != SF_DEAD) return result;
 
     loudlog("imapsync: connection to server lost while syncing \"%s\"; reconnecting...", foldername);
@@ -782,7 +1150,7 @@ static int sync_folder(struct imapconn *conn, const char *login, const char *pas
     /* IMAP_UIDCHANGED funnels into the ordinary UIDVALIDITY-mismatch path
        inside sync_folder_once (its own EXAMINE will see the new value and
        compare it against the persisted state). One retry only. */
-    result = sync_folder_once(conn, root, foldername, anyerror);
+    result = sync_folder_once(conn, root, foldername, full_check, anyerror);
     if (result == SF_DEAD) {
         fprintf(stderr, "imapsync: connection to server lost again while syncing \"%s\"; giving up\n",
                 foldername);
@@ -813,7 +1181,7 @@ static char *expand_home(const char *path, char *buf, size_t buflen)
 
 static void usage(const char *prog)
 {
-    fprintf(stderr, "usage: %s [-root <dir>] [-folders <comma,list>] [-v]\n", prog);
+    fprintf(stderr, "usage: %s [-root <dir>] [-folders <comma,list>] [-v] [-full-check]\n", prog);
 }
 
 int main(int argc, char **argv)
@@ -828,6 +1196,7 @@ int main(int argc, char **argv)
     struct imapconn *conn;
     char errbuf[512];
     int anyerror = 0;
+    int full_check = 0;
     int i;
     char *foldercopy, *tok, *save;
 
@@ -838,6 +1207,8 @@ int main(int argc, char **argv)
             folderlist = argv[++i];
         } else if (strcmp(argv[i], "-v") == 0) {
             Verbose = 1;
+        } else if (strcmp(argv[i], "-full-check") == 0) {
+            full_check = 1;
         } else {
             usage(argv[0]);
             return 2;
@@ -911,7 +1282,7 @@ int main(int argc, char **argv)
         if (*tok == '\0') continue;
 
         vlog("--- syncing folder \"%s\" ---", tok);
-        result = sync_folder(conn, login, passwd, rootbuf, tok, &anyerror);
+        result = sync_folder(conn, login, passwd, rootbuf, tok, full_check, &anyerror);
         if (result != SF_OK) anyerror = 1;
     }
     free(foldercopy);

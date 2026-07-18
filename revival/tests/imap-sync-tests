@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""imap-sync-tests -- Gate 1 regression suite for the milestone 3b
-imapsync module (src/ams/msclients/imapsync/imap_sync.c), the one-way
+"""imap-sync-tests -- the milestone 3b imapsync module's acceptance
+suite (src/ams/msclients/imapsync/imap_sync.c), the one-way
 IMAP-to-local-store mirror. See revival/doc/imap-sync-prompt.md.
 
 Usage:
@@ -8,45 +8,53 @@ Usage:
 
 Live against the real Fastmail account via the committed netrc_Lookup
 and ~/.netrc, exactly as imap-protocol-tests and smtp-protocol-tests do.
-Strictly read-only against the mailbox: imapsync only ever issues
-EXAMINE/UID SEARCH/UID FETCH (FLAGS INTERNALDATE ENVELOPE)/UID FETCH
-BODY.PEEK[] -- no STORE/APPEND/CREATE/DELETE/EXPUNGE reaches the wire.
+Strictly read-only against the mailbox from imapsync's own side: it only
+ever issues EXAMINE/UID SEARCH/UID FETCH (FLAGS INTERNALDATE ENVELOPE)/
+UID FETCH BODY.PEEK[] -- no STORE/APPEND/CREATE/DELETE/EXPUNGE reaches
+the wire from imapsync. Case 3 sends one real message via the committed
+SMTP path (smtptest.test) to wdc@fastmail.com only, as the spec
+prescribes for the incremental-sync case.
 
-Every case runs against a fresh `mktemp -d` scratch mspath root -- the
-real `~/.IMAP/fastmail` is never touched by this suite. The scratch root
-is removed on exit unless the environment variable IMAPSYNC_KEEP_SCRATCH
-is set (useful for inspecting a failure by hand).
+All six cases run against one fresh `mktemp -d` scratch mspath root
+(cases 3-6 build on the mirror cases 1-2 already produced) -- the real
+`~/.IMAP/fastmail` is never touched, and the real `~/preferences` is
+never touched (case 6 uses its own scratch PROFILES file). The scratch
+root is removed on exit unless the environment variable
+IMAPSYNC_KEEP_SCRATCH is set (useful for inspecting a failure by hand).
 
-This is Gate 1 scope only (the spec's cases 1-2: fresh mirror,
-idempotent re-run). Cases 3-5 (incremental sync, flags mapping,
-UIDVALIDITY-change drill) and case 6 (cui browse) are Gate 2 work and
-are not attempted here.
+Case 1 mirrors the *entire* real INBOX (several thousand messages as of
+this writing) and case 5's UIDVALIDITY drill re-mirrors it again from
+scratch, so this suite can take a long time (tens of minutes) to run
+live.
 
 If ~/.netrc has no usable "machine imap.fastmail.com" stanza, this
 suite skips cleanly (like imap-protocol-tests) rather than failing.
-
-Because case 1 mirrors the *entire* real INBOX (several thousand
-messages as of this writing), this suite can take many minutes to run.
 """
 
+import datetime
+import email.utils
 import os
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 IMAPSYNCDIR = os.path.join(REPO_ROOT, "src", "ams", "msclients", "imapsync")
 IMAPSYNC = os.path.join(IMAPSYNCDIR, "imapsync")
 MAILLIB = os.path.join(REPO_ROOT, "src", "overhead", "mail", "lib")
 IMAPTEST = os.path.join(MAILLIB, "imaptest.test")
+SMTPTEST = os.path.join(MAILLIB, "smtptest.test")
+CUI = os.path.join(REPO_ROOT, "build", "bin", "cui")
 
 HOST = "imap.fastmail.com"
 PORT = "993"
 MACHINE = "imap.fastmail.com"
 MAILBOX = "INBOX"
 SUBJECT_MARKER = "STAGE-3-CUI-TEST"
+SEND_RECIPIENT = "wdc@fastmail.com"  # case 3 sends only here, per the spec
 
 NETRC = os.path.expanduser("~/.netrc")
 
@@ -55,7 +63,7 @@ NETRC = os.path.expanduser("~/.netrc")
 # (the case-insensitive-filesystem fix -- see M3B-HANDOFF.md).
 ID_RE = re.compile(r"^IMAP[0-9A-V]{14}$")
 
-RUN_TIMEOUT = 1800  # the full INBOX fresh mirror can take many minutes live
+RUN_TIMEOUT = 1800  # a full INBOX mirror/re-mirror can take many minutes live
 
 PASS = []
 FAIL = []
@@ -133,8 +141,8 @@ def examine_exists():
     return int(m.group(1)) if m else None
 
 
-def run_imapsync(root, timeout=RUN_TIMEOUT):
-    r = subprocess.run([IMAPSYNC, "-root", root, "-folders", MAILBOX, "-v"],
+def run_imapsync(root, extra_args=(), timeout=RUN_TIMEOUT):
+    r = subprocess.run([IMAPSYNC, "-root", root, "-folders", MAILBOX, "-v", *extra_args],
                         capture_output=True, text=True, timeout=timeout)
     return r
 
@@ -147,26 +155,315 @@ def msgdir_path(root):
     return os.path.join(folder_dir(root), ".MS_MsgDir")
 
 
-def count_body_files(root):
+def statepath(root):
+    return os.path.join(folder_dir(root), ".MS_IMAPSync")
+
+
+def body_files(root):
     d = folder_dir(root)
     if not os.path.isdir(d):
-        return -1
-    return len([n for n in os.listdir(d) if n.startswith("+")])
+        return set()
+    return {n for n in os.listdir(d) if n.startswith("+")}
 
 
-def find_marker_file(root):
+def count_body_files(root):
+    return len(body_files(root))
+
+
+def find_marker_files(root, needle=SUBJECT_MARKER):
     d = folder_dir(root)
-    for name in os.listdir(d):
-        if not name.startswith("+"):
-            continue
+    found = []
+    for name in body_files(root):
         path = os.path.join(d, name)
         try:
             with open(path, "rb") as f:
-                if SUBJECT_MARKER.encode() in f.read():
-                    return path
+                if needle.encode() in f.read():
+                    found.append(path)
         except OSError:
             continue
-    return None
+    return found
+
+
+# ---- direct .MS_MsgDir snapshot decoding (read-only; independent of
+# cui/CUI_ so case 4's flag check isn't just re-trusting imapsync's own
+# apply_flags code path through a second layer of itself) ----
+#
+# Fixed-width record layout (ams/libs/hdrs/ams.h): date(7) + caption(89)
+# + chain(4) + midhash(4) + replyhash(4) + attributes(21) + id(19) = 148
+# bytes/record, records start at byte 1024+148=1172 in .MS_MsgDir.
+_DATESIZE, _CAPTIONSIZE, _CHAINSIZE, _MIDHASHSIZE, _REPLYHASHSIZE, _ATTRSIZE, _IDSIZE = 7, 89, 4, 4, 4, 21, 19
+_CAPTOFF = _DATESIZE
+_CHAINOFF = _CAPTOFF + _CAPTIONSIZE
+_MIDOFF = _CHAINOFF + _CHAINSIZE
+_REPLYOFF = _MIDOFF + _MIDHASHSIZE
+_ATTROFF = _REPLYOFF + _REPLYHASHSIZE
+_IDOFF = _ATTROFF + _ATTRSIZE
+_SNAPSIZE = _IDOFF + _IDSIZE
+_DIRHEADSIZE = 1024 + _SNAPSIZE
+_AMS_ATT_DELETED = 2
+_AMS_ATT_UNSEEN = 6
+_AMS_ATT_REPLIEDTO = 12
+
+
+def _has_attr(attrbytes, bitno):
+    return bool(attrbytes[bitno // 8] & (1 << (bitno % 8)))
+
+
+def read_snapshots(root):
+    """Returns {id: {"caption": str, "unseen": bool, "replied": bool,
+    "deleted": bool}} decoded directly from .MS_MsgDir."""
+    path = msgdir_path(root)
+    out = {}
+    with open(path, "rb") as f:
+        data = f.read()
+    n = (len(data) - _DIRHEADSIZE) // _SNAPSIZE
+    for i in range(n):
+        rec = data[_DIRHEADSIZE + i * _SNAPSIZE: _DIRHEADSIZE + (i + 1) * _SNAPSIZE]
+        ident = rec[_IDOFF:_IDOFF + 18].decode(errors="replace")
+        caption = rec[_CAPTOFF:_CAPTOFF + _CAPTIONSIZE].split(b"\x00")[0].decode(errors="replace")
+        attrs = rec[_ATTROFF:_ATTROFF + _ATTRSIZE]
+        out[ident] = {
+            "caption": caption,
+            "unseen": _has_attr(attrs, _AMS_ATT_UNSEEN),
+            "replied": _has_attr(attrs, _AMS_ATT_REPLIEDTO),
+            "deleted": _has_attr(attrs, _AMS_ATT_DELETED),
+        }
+    return out
+
+
+# ---- case 3: send a marker via the committed SMTP path, poll-sync ----
+
+def build_smtptest():
+    build(MAILLIB, "smtptest.test", SMTPTEST)
+
+
+def send_marker(tmpdir, tag):
+    """Sends a plaintext marker message to SEND_RECIPIENT via the
+    committed SMTP dropoff path, using a scratch PROFILES (smtphost
+    only -- smtpnetrc left unset so it falls through to the real
+    ~/.netrc, exactly as smtp-protocol-tests' live cases do). Returns
+    the exact subject line sent, for later matching."""
+    subject = f"{SUBJECT_MARKER} incremental probe {tag}"
+    msgfile = os.path.join(tmpdir, "marker.txt")
+    profile = os.path.join(tmpdir, "profile_smtp")
+    date = time.strftime("%a, %d %b %Y %H:%M:%S %z")
+    with open(msgfile, "w", newline="\n") as f:
+        f.write(
+            f"From: {SEND_RECIPIENT}\n"
+            f"To: {SEND_RECIPIENT}\n"
+            f"Subject: {subject}\n"
+            f"Date: {date}\n"
+            f"\n"
+            f"imap-sync-tests incremental-sync probe message.\n"
+            f"Marker: {SUBJECT_MARKER}\n"
+            f"Tag: {tag}\n"
+        )
+    with open(profile, "w", newline="\n") as f:
+        f.write("smtphost: smtp.fastmail.com\nsmtpport: 465\n")
+
+    env = dict(os.environ)
+    env["PROFILES"] = profile
+    r = subprocess.run([SMTPTEST, msgfile, SEND_RECIPIENT], capture_output=True, text=True,
+                        env=env, timeout=60)
+    ok = r.returncode == 0 and "D_OK" in r.stdout
+    return ok, subject, r.stdout + r.stderr
+
+
+def poll_sync_for_subject(root, subject, attempts=18, interval=10):
+    """Re-runs imapsync against root repeatedly until a body file
+    containing `subject` shows up, tolerant of delivery delay. Returns
+    (found_path_or_None, last_run_result)."""
+    last = None
+    for attempt in range(1, attempts + 1):
+        last = run_imapsync(root)
+        hits = find_marker_files(root, subject)
+        if hits:
+            return hits[0], last
+        note(f"poll {attempt}/{attempts}: marker not synced yet, waiting {interval}s")
+        time.sleep(interval)
+    return None, last
+
+
+# ---- case 6: cui browse, pty-driven (pattern from revival/tools/smtp-send-test) ----
+
+class CuiSession:
+    def __init__(self, profiles_path, timeout=20.0):
+        import pty
+        self.timeout = timeout
+        master, slave = pty.openpty()
+        self.master = master
+        env = dict(os.environ)
+        env["PROFILES"] = profiles_path
+        self.proc = subprocess.Popen([CUI], stdin=slave, stdout=slave, stderr=slave,
+                                      close_fds=True, env=env)
+        os.close(slave)
+        self.buf = b""
+
+    def _fill(self, idle=0.3):
+        import select
+        r, _, _ = select.select([self.master], [], [], idle)
+        if self.master in r:
+            try:
+                chunk = os.read(self.master, 4096)
+            except OSError:
+                return False
+            if not chunk:
+                return False
+            self.buf += chunk
+        return True
+
+    def expect_any(self, patterns, timeout=None):
+        timeout = self.timeout if timeout is None else timeout
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            for p in patterns:
+                if p in self.buf:
+                    self.buf = b""
+                    return p
+            if not self._fill():
+                return None
+        return None
+
+    def send(self, text):
+        os.write(self.master, text.encode())
+
+    def collect(self, t=3):
+        """Drain output for t seconds and return everything seen."""
+        deadline = time.time() + t
+        out = b""
+        while time.time() < deadline:
+            before = len(self.buf)
+            self._fill(idle=0.3)
+            out += self.buf[before:] if len(self.buf) >= before else b""
+        collected = out
+        self.buf = b""
+        return collected
+
+    def close(self):
+        if self.proc.poll() is None:
+            try:
+                self.proc.terminate()
+                self.proc.wait(timeout=3)
+            except Exception:
+                self.proc.kill()
+
+
+def since_cutoff_for_marker(raw_body_text, fallback_days=30):
+    """Derives a cui "since <date>" cutoff (format cui's MS_ParseDate/
+    parsedate accepts, e.g. "17-Jul-2026") one day before the marker
+    message's own Date: header, so `headers <dir> since <date>` shows
+    only a small tail of the mailbox around the marker instead of
+    however many thousand older messages the real INBOX holds. Falls
+    back to `fallback_days` before now if the Date: header is missing
+    or unparseable, which still narrows things down enormously versus
+    no filter at all."""
+    date_line = next((l for l in raw_body_text.splitlines() if l.lower().startswith("date:")), "")
+    when = None
+    if date_line:
+        try:
+            when = email.utils.parsedate_to_datetime(date_line.split(":", 1)[1].strip())
+        except (TypeError, ValueError):
+            when = None
+    if when is None:
+        when = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=fallback_days)
+    cutoff = when - datetime.timedelta(days=1)
+    return cutoff.strftime("%d-%b-%Y")
+
+
+def cui_browse_check(root, marker_subject, since_date, timeout=30.0):
+    """Points cui's mspath at the scratch mirror via a scratch PROFILES
+    file (never ~/preferences), lists INBOX, and reads the marker
+    message. Returns (listed_ok, subject_in_headers, subject_in_body,
+    transcript).
+
+    Uses "headers <dir> since <date>" rather than a bare "headers
+    <dir>": cui assigns each message its session-local display number
+    (cuid) in the order first encountered, not its absolute position in
+    the mailbox, so restricting the initial listing to a `since` window
+    keeps the marker's display number small and keeps the listing to a
+    handful of screens instead of however many thousand messages the
+    real mailbox holds. The listing can still span more than one
+    "-- More --" screen (e.g. other mail landed the same day), so this
+    pages through every screen before giving up on finding the marker,
+    exactly like the body-reading loop below already does."""
+    if not os.path.isfile(CUI):
+        return False, False, False, f"cui binary not found at {CUI}"
+
+    profiles_path = os.path.join(root, "PROFILES")
+    with open(profiles_path, "w", newline="\n") as f:
+        f.write(f"mspath: {os.path.join(root, '.MESSAGES')}\n")
+
+    transcript = []
+    sess = CuiSession(profiles_path, timeout=timeout)
+    try:
+        if sess.expect_any([b"CUI> "]) is None:
+            return False, False, False, "cui did not print its startup prompt (CUI>)"
+
+        sess.send(f"headers {MAILBOX} since {since_date}\n")
+        time.sleep(1.0)
+        headers_text = ""
+        sent_pages = 0
+        headers_deadline = time.time() + max(timeout, 90.0)
+        while time.time() < headers_deadline:
+            chunk = sess.collect(t=1)
+            headers_text += chunk.decode(errors="replace")
+            more_count = headers_text.count("-- More --")
+            if more_count > sent_pages:
+                sess.send("\n")
+                sent_pages = more_count
+                continue
+            if headers_text.rstrip().endswith("CUI> "):
+                break
+        transcript.append(headers_text)
+        subject_in_headers = marker_subject[:26] in headers_text or SUBJECT_MARKER in headers_text
+
+        # Find the message number next to the marker line.
+        msgnum = None
+        for line in headers_text.splitlines():
+            if SUBJECT_MARKER in line:
+                m = re.match(r"\s*(\d+)\s", line)
+                if m:
+                    msgnum = m.group(1)
+                break
+
+        subject_in_body = False
+        if msgnum is not None:
+            sess.send(f"type {msgnum}\n")
+            # Real delivered mail (including our own self-sent marker,
+            # once Fastmail's LMTP delivery attaches its usual ARC/DKIM/
+            # spam-score headers) can run many pager screens before the
+            # marker text scrolls into view -- poll in short bursts, page
+            # on every "-- More --" seen, and give this one message a
+            # generous overall budget (independent of the per-prompt
+            # `timeout` used elsewhere in this session).
+            body_text = ""
+            sent_pages = 0
+            body_deadline = time.time() + max(timeout, 90.0)
+            while time.time() < body_deadline:
+                chunk = sess.collect(t=1)
+                body_text += chunk.decode(errors="replace")
+                if SUBJECT_MARKER in body_text:
+                    break
+                # One space per "-- More --" screen seen so far -- counting
+                # cumulative occurrences (rather than testing only the
+                # latest chunk, or testing for the prompt at the very end
+                # of the buffer) survives the prompt text arriving split
+                # across reads.
+                more_count = body_text.count("-- More --")
+                if more_count > sent_pages:
+                    sess.send("\n")  # the prompt's own text: "Press Enter to continue"
+                    sent_pages = more_count
+                    continue
+                if body_text.rstrip().endswith("CUI> "):
+                    break
+            transcript.append(body_text)
+            subject_in_body = SUBJECT_MARKER in body_text
+
+        sess.send("quit\n")
+        transcript.append(sess.collect(t=2).decode(errors="replace"))
+        return True, subject_in_headers, subject_in_body, "\n".join(transcript)
+    finally:
+        sess.close()
 
 
 def main():
@@ -175,19 +472,21 @@ def main():
 
     build_imaptest()
     build_imapsync()
+    build_smtptest()
 
     live = have_live_credentials()
     if not live:
         note(f'--- no usable netrc stanza for "{MACHINE}" in "{NETRC}" (or file absent); '
              "skipping all cases (this suite has no offline case) ---")
-        skip("1 fresh mirror of INBOX", "no live credentials")
-        skip("2 idempotent re-run", "no live credentials")
+        for n in ("1 fresh mirror of INBOX", "2 idempotent re-run", "3 incremental sync",
+                  "4 flags mapping", "5 UIDVALIDITY change drill", "6 cui browse"):
+            skip(n, "no live credentials")
         note("")
         note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped "
              f"(live cases skipped: no usable netrc credentials for {MACHINE})")
         sys.exit(0)
 
-    note(f"--- live cases against {HOST}:{PORT}, mailbox {MAILBOX} (strictly read-only) ---")
+    note(f"--- live cases against {HOST}:{PORT}, mailbox {MAILBOX} (strictly read-only from imapsync) ---")
 
     scratch = tempfile.mkdtemp(prefix="imap-sync-tests-")
     note(f"scratch root: {scratch}")
@@ -209,19 +508,17 @@ def main():
                r1.returncode == 0 and count_ok,
                f"imapsync exit={r1.returncode} local_count={local_count} EXISTS={exists}")
 
-        marker_path = find_marker_file(scratch)
-        if marker_path is None:
+        marker_hits = find_marker_files(scratch)
+        if not marker_hits:
             skip("1b spot-check marker message (STAGE-3-CUI-TEST)",
                  f"no message with subject/body containing {SUBJECT_MARKER!r} found in the mirror -- "
-                 "run smtp-protocol-tests or smtp-send-test against the real account first")
+                 "expected: a previous run's case 3 will leave one, or run smtp-send-test first")
         else:
+            marker_path = marker_hits[0]
             marker_id = os.path.basename(marker_path)[1:]  # strip leading '+'
             id_ok = bool(ID_RE.match(marker_id))
-            msgdir_ok = os.path.isfile(msgdir_path(scratch))
-            caption_ok = False
-            if msgdir_ok:
-                with open(msgdir_path(scratch), "rb") as f:
-                    caption_ok = SUBJECT_MARKER.encode() in f.read()
+            snaps = read_snapshots(scratch)
+            caption_ok = marker_id in snaps and SUBJECT_MARKER in snaps[marker_id]["caption"]
             body_readable = False
             try:
                 with open(marker_path, "rb") as f:
@@ -234,8 +531,21 @@ def main():
                    f"id={marker_id!r} id_ok={id_ok} caption_ok={caption_ok} body_readable={body_readable}")
 
         # ---- case 2: idempotency ----
+        # A live mailbox can grow between case 1's fresh mirror and this
+        # re-run -- that is not a failure of imapsync's idempotency, it's
+        # new mail genuinely arriving. So instead of asserting the naive
+        # "nothing changed" (which false-fails on exactly that race), this
+        # bounds the re-run with an independent ground-truth EXAMINE on
+        # each side and asserts two things a race can't explain away:
+        # (1) nothing already-mirrored was removed or renamed (a true
+        # idempotency violation would show up here regardless of new
+        # mail), and (2) the local growth is fully accounted for by
+        # genuinely new server uids in that same window, not by
+        # imapsync duplicating or re-adding anything.
         pre_size = os.path.getsize(msgdir_path(scratch)) if os.path.isfile(msgdir_path(scratch)) else -1
         pre_count = count_body_files(scratch)
+        pre_files = body_files(scratch)
+        exists_before_r2 = examine_exists()
 
         r2 = run_imapsync(scratch)
         note(r2.stdout)
@@ -244,12 +554,124 @@ def main():
 
         post_size = os.path.getsize(msgdir_path(scratch)) if os.path.isfile(msgdir_path(scratch)) else -1
         post_count = count_body_files(scratch)
-        no_new_candidates = "candidate uid(s)" not in r2.stdout or re.search(r": 0 candidate uid\(s\)", r2.stdout)
-        result("2 idempotent re-run: adds nothing, alters nothing "
-               "(.MS_MsgDir size and message count unchanged)",
-               r2.returncode == 0 and pre_size == post_size and pre_count == post_count,
+        post_files = body_files(scratch)
+        exists_after_r2 = examine_exists()
+
+        removed_files = pre_files - post_files
+        added_files = post_files - pre_files
+        expected_growth = (
+            exists_after_r2 - exists_before_r2
+            if exists_before_r2 is not None and exists_after_r2 is not None
+            else None
+        )
+        growth_explained = expected_growth is not None and len(added_files) == expected_growth
+        result("2 idempotent re-run: alters nothing already-mirrored, and any local growth "
+               "is exactly accounted for by genuinely new server uids since the fresh mirror",
+               r2.returncode == 0 and not removed_files and post_size >= pre_size and growth_explained,
                f"exit={r2.returncode} pre_size={pre_size} post_size={post_size} "
-               f"pre_count={pre_count} post_count={post_count}")
+               f"pre_count={pre_count} post_count={post_count} removed={len(removed_files)} "
+               f"added={len(added_files)} exists_before={exists_before_r2} exists_after={exists_after_r2} "
+               f"expected_growth={expected_growth}")
+
+        # ---- case 3: incremental sync ----
+        before_files = body_files(scratch)
+        sendtag = str(int(time.time()))
+        sent_ok, marker_subject, send_log = send_marker(scratch, sendtag)
+        if not sent_ok:
+            result("3 incremental sync: send marker + poll-sync until it appears", False,
+                   f"smtptest.test send failed: {send_log}")
+            skip("4 flags mapping", "case 3's send failed; nothing to check")
+        else:
+            new_path, r3 = poll_sync_for_subject(scratch, marker_subject)
+            note(r3.stdout if r3 else "(no imapsync run captured)")
+            if r3 and r3.stderr:
+                note(r3.stderr)
+            after_files = body_files(scratch)
+            added = after_files - before_files
+            new_marker_id = os.path.basename(new_path)[1:] if new_path else None
+            result("3 incremental sync: exactly one new message added, and it is the marker",
+                   new_path is not None and len(added) == 1 and (os.path.basename(new_path) in added),
+                   f"new_path={new_path!r} added={added!r}")
+
+            # ---- case 4: flags mapping ----
+            if new_marker_id is None:
+                skip("4 flags mapping", "case 3's marker never synced; nothing to check")
+            else:
+                snaps = read_snapshots(scratch)
+                new_unseen_ok = new_marker_id in snaps and snaps[new_marker_id]["unseen"] is True
+                # An "old" message: anything from the case-1 mirror (not the
+                # just-added marker) that the server already shows read.
+                old_seen_ok = False
+                old_example = None
+                for ident, rec in snaps.items():
+                    if ident == new_marker_id:
+                        continue
+                    if rec["unseen"] is False:
+                        old_seen_ok = True
+                        old_example = ident
+                        break
+                result("4 flags mapping: newly-arrived message has AMS_ATT_UNSEEN set; "
+                       "an old, server-seen message does not",
+                       new_unseen_ok and old_seen_ok,
+                       f"new_marker_id={new_marker_id} new_unseen={snaps.get(new_marker_id, {}).get('unseen')} "
+                       f"old_example={old_example} old_seen_ok={old_seen_ok}")
+
+        # ---- case 5: UIDVALIDITY change drill ----
+        sp = statepath(scratch)
+        real_uidvalidity = None
+        if os.path.isfile(sp):
+            with open(sp) as f:
+                for line in f:
+                    if line.startswith("uidvalidity "):
+                        real_uidvalidity = line.split()[1].strip()
+                        break
+        if real_uidvalidity is None:
+            skip("5 UIDVALIDITY change drill", "could not read the current .MS_IMAPSync uidvalidity")
+        else:
+            lines = open(sp).read().splitlines()
+            corrupted = ["uidvalidity 1" if l.startswith("uidvalidity ") else l for l in lines]
+            with open(sp, "w", newline="\n") as f:
+                f.write("\n".join(corrupted) + "\n")
+
+            r5 = run_imapsync(scratch)
+            note(r5.stdout)
+            if r5.stderr:
+                note(r5.stderr)
+            loud = "UIDVALIDITY changed" in r5.stdout or "UIDVALIDITY changed" in r5.stderr
+
+            exists_after = examine_exists()
+            final_count = count_body_files(scratch)
+            final_uidvalidity = None
+            if os.path.isfile(sp):
+                with open(sp) as f:
+                    for line in f:
+                        if line.startswith("uidvalidity "):
+                            final_uidvalidity = line.split()[1].strip()
+                            break
+            result("5 UIDVALIDITY change drill: corrupting the state file triggers a loud re-mirror, "
+                   "final state is correct",
+                   r5.returncode == 0 and loud and final_uidvalidity == real_uidvalidity
+                   and exists_after is not None and final_count == exists_after,
+                   f"loud={loud} final_uidvalidity={final_uidvalidity} real_uidvalidity={real_uidvalidity} "
+                   f"final_count={final_count} exists_after={exists_after}")
+
+        # ---- case 6: cui browse ----
+        marker_hits = find_marker_files(scratch)
+        if not marker_hits:
+            skip("6 cui browse", "no marker message present in the mirror to look for")
+        else:
+            with open(marker_hits[0], "rb") as f:
+                body = f.read().decode(errors="replace")
+            subj_line = next((l for l in body.splitlines() if l.lower().startswith("subject:")), "")
+            since_date = since_cutoff_for_marker(body)
+            note(f"cui browse: using \"headers {MAILBOX} since {since_date}\" to keep the marker's "
+                 "display number small instead of paging the whole mailbox")
+            listed_ok, subj_in_headers, subj_in_body, transcript = cui_browse_check(scratch, subj_line, since_date)
+            note("--- cui transcript ---")
+            note(transcript)
+            result("6 cui browse: cui lists the folder and displays the marker's caption and body",
+                   listed_ok and subj_in_headers and subj_in_body,
+                   f"listed_ok={listed_ok} subj_in_headers={subj_in_headers} subj_in_body={subj_in_body}")
     finally:
         if os.environ.get("IMAPSYNC_KEEP_SCRATCH"):
             note(f"IMAPSYNC_KEEP_SCRATCH set; leaving scratch root at {scratch}")
