@@ -197,6 +197,26 @@ mirrors IMAP; AMDS delivery remains excluded.
        direct-file path should work.
 - Milestones 3c–5 (next: 3c, messages-GUI acceptance incl. folder
   visibility): writeback via change journal (4); XOAUTH2 (5).
+- **Delegated work queue (written 2026-07-19, for Sonnet-class
+  sessions during the budget crunch).** Standing briefing:
+  `revival/doc/sonnet-playbook.md` (launch instructions at the top;
+  one task per fresh session; STOP-gated; no fossil commits — each
+  session ends with a `<task>-session.diff` + `<task>-REPORT.md` in
+  the tree root for review). Task prompts, in suggested order of
+  attack (safest first):
+  1. `strlit-sweep-prompt.md` — writable-string-literal census then
+     gated fixes (mechanical, low risk).
+  2. `m2-census-prompt.md` — M2 point-0 warning classification
+     (read-only; fixes stay top-level).
+  3. `bcc-direct-insertion-prompt.md` — root-cause the blind-copy
+     direct-insertion failure (investigation-gated).
+  4. `folder-visibility-prompt.md` — subscriptions mechanism +
+     mirrored-folder default visibility (investigate, then gated
+     implementation).
+  5. `fdplumb-prompt.md` — the fd-ledger criticals and the
+     preference blackout (hardest; investigation only, honest
+     no-repro reports welcome; consider holding for a
+     Fable session if Gate 1 stalls).
 
 ### Objective: Reliable operation
 
