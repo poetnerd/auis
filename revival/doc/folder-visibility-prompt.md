@@ -12,6 +12,15 @@ default the folder list does not show it. Goal: folders in a
 mirrored root appear by default, without destroying the
 subscription customizations AMS users could historically make.
 
+**Known crash you may hit (2026-07-19, tracked in roadmap.md M3c —
+NOT yours to fix in this session):** messages crashes on exit —
+`EXC_BAD_ACCESS` in `MS_SetAssociatedTime` (amsn.do), via
+`ams__CommitState` → `captions__MakeCachedUpdates`, faulting address
+32-bit-truncated (LP64 pointer-truncation signature). If it fires
+during your runs: it does not invalidate folder-list findings made
+before the quit keystroke; capture the backtrace in your report if
+you can, note the folder set that was open, and move on.
+
 Starting points:
 - The subscription API surfaces in `ams/libs/cui/cuilib.c`
   (`CUI_GetSubscriptionEntry` / `CUI_SetSubscriptionEntry` /

@@ -112,6 +112,25 @@ mirrors IMAP; AMDS delivery remains excluded.
     displays nothing (pre-existing platform gap, metamail not
     functional here); first full mirror is slow-ish (~3,800 messages;
     per-run incremental cost is near-zero thereafter).
+  - **NEW BUG 2026-07-19: messages crashes on exit** —
+    `EXC_BAD_ACCESS` in `MS_SetAssociatedTime` (amsn.do), called from
+    `captions__MakeCachedUpdates` ← `ams__CommitState` during the
+    quit keystroke's `keystate__DoProc`. Faulting address
+    `0x16c34214` fits entirely in 32 bits on a platform where heap/
+    stack pointers don't — the classic LP64 pointer-truncation
+    signature (see porting-assessment §12); crash is at
+    `ldr w8, [x21, #0x14]`, i.e. dereferencing a bad struct pointer.
+    First observed right after the 2026-07-19 dependInstall (profile/
+    fdplumb/setprof fixes) while browsing mirrored folders; not yet
+    established whether it's new, newly-exercised (mirrored-folder
+    associated-time writes at exit), or long-latent. M3c-scope:
+    investigation note added to `folder-visibility-prompt.md` (that
+    session runs messages interactively); root-cause session should
+    start at `MS_SetAssociatedTime`'s callers and the captions
+    cached-update path.
+  - Startup noise logged 2026-07-19, unassessed: `Fontconfig warning:
+    using without calling FcInit()` and two `Not a JPEG file` lines
+    (libjpeg probing a non-JPEG — source not identified).
   - First real-send observations (2026-07-18, sending from `messages`):
     1. **From-address is `wdc@Mac-mini.lan`** — RESOLVED 2026-07-18.
        `MS_SubmitMessage` (`ams/libs/ms/submsg.c`) deletes any
@@ -174,6 +193,27 @@ mirrors IMAP; AMDS delivery remains excluded.
        be item 4 below, not this; the blackout evidence stands on its
        own (the cui sendmail fallback, the zeroed options) but it was
        not the cause of those send failures.
+       **Gate 1 CLOSED 2026-07-19** by Fable static analysis (report:
+       tree-root `fdplumb-REPORT.md`; fixes reviewed, committed, and
+       through a dependInstall). Corrections to the above: the
+       preferences fopen is NOT dbg_fopen (config.c doesn't include
+       fdplumb.h — raw libc), so fdplumb is exonerated for the
+       blackout; the fdplumb wrappers are detect-only and never act
+       on an fd; the trailing "2" in the critical triple is opencode
+       FOPEN, not stderr. "File descriptor replaced!" is structurally
+       false-positive-prone (per-TU instrumentation: a wrapped open
+       closed by unwrapped code leaves a stale ledger entry) —
+       occurrences like the 2026-07-19 startup one
+       (`(5, /tmp/9e..., 2)`, two send-path temp files trading fd 5)
+       are this known cosmetic class, to be de-noised someday, NOT
+       evidence of a real double-close. Fixed: profile.c now retries
+       instead of latching a transient (non-ENOENT) load failure and
+       prints the errno — the next blackout self-identifies on
+       stderr; also fixed dbg_dup2's wrong success test (`==0` vs
+       `>=0`, corrupted the ledger on every dup2) and a setprof.c
+       `fileno(NULL)` crash path. Remaining (runtime half, low
+       priority): let the new warning line tell us which ranked
+       hypothesis (EMFILE vs. env anomaly) was right.
     4. **FIXED 2026-07-18: RCPT TO built from a display-form address.**
        dropoff() callers pass full RFC 822 addresses; in particular the
        kept-blind-copy fallback (submsg.c) appends `MyPrettyAddress`
@@ -196,7 +236,13 @@ mirrors IMAP; AMDS delivery remains excluded.
        mails you the copy instead of failing the whole send, but the
        direct-file path should work.
 - Milestones 3c–5 (next: 3c, messages-GUI acceptance incl. folder
-  visibility): writeback via change journal (4); XOAUTH2 (5).
+  visibility): writeback via change journal (4) — **spec written
+  2026-07-19: `revival/doc/imap-writeback-prompt.md`** (gated,
+  Sonnet-executable: per-folder `.MS_Journal` capture at the four MS
+  mutation points, replay-then-mirror server-wins ordering,
+  drop-and-refetch identity for appends, purge safety valve, all
+  destructive tests confined to a dedicated `Revival/WritebackTest`
+  mailbox); XOAUTH2 (5).
 - **Delegated work queue (written 2026-07-19, for Sonnet-class
   sessions during the budget crunch).** Standing briefing:
   `revival/doc/sonnet-playbook.md` (launch instructions at the top;
@@ -213,10 +259,15 @@ mirrors IMAP; AMDS delivery remains excluded.
   4. `folder-visibility-prompt.md` — subscriptions mechanism +
      mirrored-folder default visibility (investigate, then gated
      implementation).
-  5. `fdplumb-prompt.md` — the fd-ledger criticals and the
-     preference blackout (hardest; investigation only, honest
-     no-repro reports welcome; consider holding for a
-     Fable session if Gate 1 stalls).
+  5. ~~`fdplumb-prompt.md`~~ — Gate 1 CLOSED 2026-07-19 by a Fable
+     session (static analysis; see tree-root `fdplumb-REPORT.md` and
+     M3c item 3 above). Fixes committed. Only the low-priority
+     runtime half remains (wait for the new profile warning line to
+     fire); do not re-queue as written — the prompt's dbg_fopen
+     premise was disproven.
+  6. `imap-writeback-prompt.md` — milestone 4 writeback (added
+     2026-07-19; the largest task in the queue — three gates, run it
+     only with a comfortable budget window).
 
 ### Objective: Reliable operation
 
