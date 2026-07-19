@@ -96,7 +96,7 @@ independently of the other changes in this session.
 1. **AA erase-by-overdraw residue** (the original "ghost" symptom) — fixed
    by filling the erased glyph cell with a solid background rect
    (`XftDrawRect`) instead of redrawing the glyph in white. See
-   `calc-ghost-fix-prompt.md`'s Outcome section for the original writeup.
+   `claude-history/calc-ghost-fix-prompt.md`'s Outcome section for the original writeup.
 
 2. **Rootless XQuartz Xft recomposite lag** (the "leading characters
    missing" regression that fix #1 exposed) — a live `XGetImage`

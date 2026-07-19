@@ -1420,7 +1420,7 @@ the correct string, so calc's own value tracking is fine — this is
 purely a defect in the incremental Clear/Draw redraw path, most likely
 in how the new rect-fill erase interacts with the freshly-drawn new
 string's cells. Not yet root-caused. See
-`calc-ghost-fix-prompt.md`'s "Outcome" section and
+`claude-history/calc-ghost-fix-prompt.md`'s "Outcome" section and
 `calc-text-rendering-investigation.md` for the full trail and untried
 next leads.
 

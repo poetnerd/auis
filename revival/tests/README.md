@@ -6,7 +6,7 @@ Committed, repeatable test scripts for the AUIS revival (as opposed to
 ## smtp-protocol-tests
 
 `smtp-protocol-tests [RECIPIENT]` -- the milestone 1 SMTP dropoff
-module's Gate A protocol suite (see `revival/doc/smtp-send-prompt.md`),
+module's Gate A protocol suite (see `revival/doc/claude-history/smtp-send-prompt.md`),
 packaged as a durable regression test. It builds `smtptest.test` and
 `dropoff.test` from `src/overhead/mail/lib`, generates its whole
 message/PROFILES/netrc corpus fresh into a temp directory on each run,
@@ -31,7 +31,7 @@ module directly -- see `revival/tools/smtp-send-test`.
 ## imap-protocol-tests
 
 `imap-protocol-tests` -- the milestone 3a IMAP protocol module's Gate 2
-suite (see `revival/doc/imap-protocol-prompt.md`), packaged as a
+suite (see `revival/doc/claude-history/imap-protocol-prompt.md`), packaged as a
 durable regression test. It builds `imaptest.test` from
 `src/overhead/mail/lib` (a standalone ANSI C driver exercising
 `imap_prot.c`'s API) and exercises nine cases: open + greeting +
@@ -68,7 +68,7 @@ revival/tests/imap-protocol-tests
 ## imap-sync-tests
 
 `imap-sync-tests` -- the milestone 3b `imapsync` one-way IMAP mirror's
-full acceptance suite (see `revival/doc/imap-sync-prompt.md`), packaged
+full acceptance suite (see `revival/doc/claude-history/imap-sync-prompt.md`), packaged
 as a durable regression test. It builds `imaptest.test` (used only as
 an independent, cross-checking client -- never to drive imapsync
 itself), `imapsync` (`src/ams/msclients/imapsync`), and

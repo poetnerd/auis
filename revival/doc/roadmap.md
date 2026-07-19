@@ -50,7 +50,7 @@ mirrors IMAP; AMDS delivery remains excluded.
   `smtphost` preference, legacy sendmail pipe as fallback. End-to-end
   acceptance passes (`revival/tools/smtp-send-test`: scripted cui →
   SMTP → Fastmail, real send confirmed). Implementation delegated to a
-  Sonnet instance against `revival/doc/smtp-send-prompt.md` (three
+  Sonnet instance against `revival/doc/claude-history/smtp-send-prompt.md` (three
   stages, two review gates). The acceptance push flushed out and fixed
   three latent legacy bugs: cui NULL address-validation crashes (7
   sites), the fdplumb.h open-rename variadic-ABI corruption (see
@@ -76,7 +76,7 @@ mirrors IMAP; AMDS delivery remains excluded.
   scanf banned in favor of strtoul/strcasecmp), ESEARCH-aware,
   streaming body fetch, reconnect-with-UIDVALIDITY-check contract.
   `revival/tests/imap-protocol-tests` 9/9 live against Fastmail; both
-  SMTP suites still green. Spec: `revival/doc/imap-protocol-prompt.md`.
+  SMTP suites still green. Spec: `revival/doc/claude-history/imap-protocol-prompt.md`.
 - Milestone 3b — **done 2026-07-18**: `imapsync`
   (`src/ams/msclients/imapsync/`) mirrors IMAP one-way into a local
   mspath root (`~/.IMAP/fastmail/.MESSAGES/...`) through the store's
@@ -89,7 +89,7 @@ mirrors IMAP; AMDS delivery remains excluded.
   skip-and-retry on empty body fetches (a live Fastmail
   expunge-during-FETCH race). `revival/tests/imap-sync-tests` 6 cases
   live incl. scripted cui browse; real-mailbox browse in `messages`
-  confirmed by hand. Spec: `revival/doc/imap-sync-prompt.md`.
+  confirmed by hand. Spec: `revival/doc/claude-history/imap-sync-prompt.md`.
   - Latent hazard noted for the wider tree: the store's own
     `ams_genid()` ids are mixed-case base64 too, so every natively
     created message file carries the same (much rarer) case-collision
@@ -272,7 +272,7 @@ mirrors IMAP; AMDS delivery remains excluded.
   4. `folder-visibility-prompt.md` — subscriptions mechanism +
      mirrored-folder default visibility (investigate, then gated
      implementation).
-  5. ~~`fdplumb-prompt.md`~~ — Gate 1 CLOSED 2026-07-19 by a Fable
+  5. ~~`fdplumb-prompt.md`~~ (now in `claude-history/`) — Gate 1 CLOSED 2026-07-19 by a Fable
      session (static analysis; see tree-root `fdplumb-REPORT.md` and
      M3c item 3 above). Fixes committed. Only the low-priority
      runtime half remains (wait for the new profile warning line to

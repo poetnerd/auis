@@ -10,7 +10,7 @@ Usage:
 Live cases (all except case 8) run automatically whenever ~/.netrc has
 a usable "machine imap.fastmail.com" stanza (the same netrc convention
 the milestone 2 spike and the milestone 3a spec use -- see
-revival/doc/imap-protocol-prompt.md). When no usable stanza is found,
+revival/doc/claude-history/imap-protocol-prompt.md). When no usable stanza is found,
 only case 8 (the fully offline canned-response literal-in-ENVELOPE
 unit test) runs, and the suite says so cleanly rather than failing.
 

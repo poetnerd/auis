@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """imap-sync-tests -- the milestone 3b imapsync module's acceptance
 suite (src/ams/msclients/imapsync/imap_sync.c), the one-way
-IMAP-to-local-store mirror. See revival/doc/imap-sync-prompt.md.
+IMAP-to-local-store mirror. See revival/doc/claude-history/imap-sync-prompt.md.
 
 Usage:
     revival/tests/imap-sync-tests

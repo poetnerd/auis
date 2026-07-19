@@ -10,7 +10,7 @@ of record: **server wins; the journal replays on top.**
 Read first, in order:
 1. `revival/doc/ams-IMAP-project.md` — §2A (journal at the four
    mutation points), §3 (deterministic ids f(UIDVALIDITY,UID)), §10.
-2. `revival/doc/imap-sync-prompt.md` — what 3b built; this spec
+2. `revival/doc/claude-history/imap-sync-prompt.md` — what 3b built; this spec
    extends that program and its conventions (state file, scratch
    roots, test style). The `.MS_IMAPSync` state file and the
    deterministic base32hex id format are load-bearing here.

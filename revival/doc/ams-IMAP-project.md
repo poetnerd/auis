@@ -244,7 +244,7 @@ its own group. Sending and storing are independent seams.
   dot-stuffing + CRLF conversion, reply parsing, mapping onto the `D_*`
   codes `dropoff()`'s callers expect. Preference gate + credential-file
   location via the existing `getprofile()` preference machinery.
-  Implementation spec: `revival/doc/smtp-send-prompt.md`.
+  Implementation spec: `revival/doc/claude-history/smtp-send-prompt.md`.
 * The `dropoff()` hook — a few lines in the `DT_NONAMS` branch of
   `overhead/mail/lib/dropoff.c`, behind a preference, with the sendmail
   pipe kept as fallback.
@@ -278,7 +278,7 @@ remains in place.
 ## 8. Library question — DECIDED 2026-07-17: hand-roll
 
 The milestone-2 spike (`src/overhead/mail/lib/imapspike.c`, spec at
-`revival/doc/imap-spike-prompt.md`) ran the full sequence — CAPABILITY,
+`revival/doc/claude-history/imap-spike-prompt.md`) ran the full sequence — CAPABILITY,
 LOGIN, LIST, EXAMINE, UID SEARCH, ENVELOPE fetch, full-body fetch through
 a real 9,686-byte literal — against the live Fastmail account. Verdict:
 nothing IMAP-inherent was hard enough to justify a library. Tagged/untagged
@@ -340,12 +340,12 @@ Spike findings that set milestone 3's opening tasks:
      `tlscon_ReadLineAlloc` (growable, drain-before-refill — the
      spike's wedge case `UID SEARCH ALL` now survives a 22KB response
      line); `imap_prot.[ch]`, the tree's first born-ANSI module
-     (spec: `revival/doc/imap-protocol-prompt.md` — full-prototype
+     (spec: `revival/doc/claude-history/imap-protocol-prompt.md` — full-prototype
      header, scanf banned, ESEARCH-aware UID search, streamed body
      fetch, IMAP_DEAD/imap_Reopen reconnect contract with
      UIDVALIDITY verification); `revival/tests/imap-protocol-tests`
      9/9 live, both SMTP suites still green.
-   * **3b — DONE 2026-07-18** (spec: `revival/doc/imap-sync-prompt.md`;
+   * **3b — DONE 2026-07-18** (spec: `revival/doc/claude-history/imap-sync-prompt.md`;
      commits ea8a6eb389, 28ff9f9e47, 852d887bb1 + close-out).
      `imapsync` (`src/ams/msclients/imapsync/`) mirrors folders into
      `<root>/.MESSAGES/<folder>` through the store's own code via one
