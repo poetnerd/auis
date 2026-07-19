@@ -184,6 +184,18 @@ watch it appear in the mirrored INBOX.
 - **netrc silently not used / auth failures** — check `~/.netrc` is
   mode 600 and has a stanza for the exact server hostname being
   contacted (SMTP and IMAP stanzas are separate).
+- **Seeing exactly what is said to the server** — set `AMS_SMTP_TRACE=1`
+  in the environment before launching `messages` or `cui` and the whole
+  SMTP dialogue (EHLO, MAIL FROM, each RCPT reply, the final verdict) is
+  printed to stderr, with the AUTH credential line redacted and the
+  message body omitted. This is the fastest way to see which identity
+  the server is objecting to when it refuses a send.
+- **`Can't write message to /usr/lib/sendmail`** — the send path
+  believed `smtphost` was unset and fell back to the (nonexistent)
+  sendmail binary. If your preferences file plainly has the line, the
+  process's preference reads have gone bad; quit and restart the
+  application (a failed preference load is cached for the life of the
+  process) and retry.
 - **Sends work to your own address but not externally** — that is the
   step-3 From-domain problem again; external relay is where providers
   enforce the header From.

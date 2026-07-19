@@ -140,6 +140,20 @@ mirrors IMAP; AMDS delivery remains excluded.
        genuine fd double-use in the compose/send path, another
        fdplumb include-order ABI site, or fdplumb's ledger being
        confused by library fds (Xft/fontconfig) it doesn't wrap.
+       Upgraded 2026-07-18 from noise to suspected real failure: one
+       reproduced cui run where `getprofile("smtphost")` came back NULL
+       at submit time (send fell back to the nonexistent
+       `/usr/lib/sendmail`) with a preferences file that the parser,
+       run standalone on the identical bytes, resolves fine; same-day
+       messages symptoms (all recipients "invalid" = DNS-era validation
+       resurrected, options bitmask read back as zero and re-saved as
+       `0x0`) all match a transient in-process all-preferences-NULL
+       state. profile.c caches a failed load for the life of the
+       process (`openprofile` NULL + `inited=1`), so one failed
+       `fopen` of `~/preferences` — and fopen there is fdplumb's
+       `dbg_fopen` — poisons every later preference read. Not
+       reproducible on demand (3 consecutive clean cui sends after);
+       chase it via the fdplumb ledger.
 - Milestones 3c–5 (next: 3c, messages-GUI acceptance incl. folder
   visibility): writeback via change journal (4); XOAUTH2 (5).
 
