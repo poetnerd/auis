@@ -174,6 +174,10 @@ char *prog, *pref, *val;
 	    }
 	}
     }
+    /* fopen can also fail with errno != ENOENT (EMFILE, EACCES, ...);
+       without this check fileno(NULL) below dereferences NULL */
+    if (oldR == NULL)
+	return(-3);
 
     if (osi_ExclusiveLockNoBlock(fileno(oldR))){
 	fclose(oldR);

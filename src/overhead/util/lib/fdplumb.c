@@ -208,7 +208,8 @@ int oldfd, newfd;
 
     RegisterCloseFile(newfd);
     res = dup2(oldfd, newfd);
-    if (res == 0) RegisterOpenFile(newfd, "via-dup2", FDLEAK_OPENCODE_DUP);
+    /* dup2 returns the new descriptor on success, not 0 */
+    if (res >= 0) RegisterOpenFile(newfd, "via-dup2", FDLEAK_OPENCODE_DUP);
     return(res);
 }
 

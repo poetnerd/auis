@@ -187,6 +187,11 @@ XFTLIB = -lXft
 XFTINCDIR = $(XINCDIR)/freetype2
 STD_DEFINES = -DHAVE_XFT
 
+SSLBASEDIR = /opt/homebrew/opt/openssl@3
+SSLINCDIR = $(SSLBASEDIR)/include
+SSLLIBDIR = $(SSLBASEDIR)/lib
+SSLLIB = -L$(SSLLIBDIR) -lssl -lcrypto
+
 DYN_LINK_LIB = -ldl
 LEXLIB = -ll
 
