@@ -80,7 +80,7 @@ carry work forward independently: `strlit-sweep`, `m2-census`,
 - `fdplumb-prompt.md` (2026-07-19, retired same day) — the
   fd-ledger criticals / preference-blackout investigation. Gate 1
   was closed by a Fable static-analysis session before any Sonnet
-  session ran it (see tree-root `fdplumb-REPORT.md`): fdplumb
+  session ran it (see `fdplumb-REPORT.md`, kept here): fdplumb
   exonerated, wrappers proven detect-only, profile.c
   failure-latching fixed. Retired with its premise corrections
   banner intact — a case study in a prompt being answered rather
@@ -112,3 +112,10 @@ Retired here 2026-07-19; in development order:
   calc-specific). All items resolved 2026-07-12; the one open
   cosmetic item ("=" reverse video) is tracked in `roadmap.md`, not
   here.
+- `fdplumb-REPORT.md` (2026-07-19) — the Gate-1 report that
+  answered `fdplumb-prompt.md` (above) by static analysis. Fixes it
+  staged were committed and runtime-verified the same day. Unlike
+  the other closed investigations, part of it is still live: its
+  "Untouched hazards" list (unchecked malloc in RegisterOpenFile,
+  openprofile's `~`-expansion comma bug, gethome's 100-byte buffer,
+  prefed's unverified save path) is documented nowhere else.

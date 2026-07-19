@@ -2,7 +2,7 @@
 
 > **STATUS 2026-07-19: Gate 1 CLOSED — do not run this prompt as
 > written.** A Fable session answered Gate 1 statically (report:
-> tree-root `fdplumb-REPORT.md`; fixes committed). Key corrections:
+> `fdplumb-REPORT.md`, same directory; fixes committed). Key corrections:
 > the preferences fopen is raw libc, NOT dbg_fopen (config.c doesn't
 > include fdplumb.h) — evidence item 2's premise below is wrong; the
 > wrappers are detect-only; the "2" in the critical triple is

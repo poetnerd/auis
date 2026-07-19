@@ -207,7 +207,7 @@ mirrors IMAP; AMDS delivery remains excluded.
        own (the cui sendmail fallback, the zeroed options) but it was
        not the cause of those send failures.
        **Gate 1 CLOSED 2026-07-19** by Fable static analysis (report:
-       tree-root `fdplumb-REPORT.md`; fixes reviewed, committed, and
+       `revival/doc/claude-history/fdplumb-REPORT.md`; fixes reviewed, committed, and
        through a dependInstall). Corrections to the above: the
        preferences fopen is NOT dbg_fopen (config.c doesn't include
        fdplumb.h — raw libc), so fdplumb is exonerated for the
@@ -273,7 +273,7 @@ mirrors IMAP; AMDS delivery remains excluded.
      mirrored-folder default visibility (investigate, then gated
      implementation).
   5. ~~`fdplumb-prompt.md`~~ (now in `claude-history/`) — Gate 1 CLOSED 2026-07-19 by a Fable
-     session (static analysis; see tree-root `fdplumb-REPORT.md` and
+     session (static analysis; see `revival/doc/claude-history/fdplumb-REPORT.md` and
      M3c item 3 above). Fixes committed. Only the low-priority
      runtime half remains (wait for the new profile warning line to
      fire); do not re-queue as written — the prompt's dbg_fopen
