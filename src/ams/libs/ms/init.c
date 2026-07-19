@@ -626,8 +626,17 @@ InitializeDeathSignals() {
 #endif /* SIGXCPU */
 }
 
+/* The out-parameters are long, not int: every caller passes long* --
+   cuilib's CUI_UseAmsDelivery/CUI_UseNameSep/CUI_DeliveryType globals
+   and the SNAP server's SNAP_integer locals are all long.  With int*
+   here, a 64-bit caller gets only the low 32 bits stored; the high
+   half keeps its old contents (CUI_DeliveryType's -1 initializer),
+   so DT_NONAMS read back as a huge non-DT value and "no AMS
+   delivery" (-1) read back positive -- and clients concluded they
+   could send raw ATK datastreams to the whole Internet. */
 MS_GetConfigurationParameters(MailDomain, len, UseAmsDelivery, UseNameSep, DelType)
-int *UseAmsDelivery, *UseNameSep, len, *DelType;
+long *UseAmsDelivery, *UseNameSep, *DelType;
+int len;
 char *MailDomain;
 {
     strncpy(MailDomain, MyMailDomain, len);
