@@ -1264,7 +1264,7 @@ chain. That `255` flowed straight into `zipview_SetLineWidth(self, 255)`
 in `zipv000.c`'s `Ensure_Line_Attributes`, producing a 255-pixel-wide
 stroke that filled the entire figure with solid foreground color — the
 zip inset "solid black rectangle" bug (see `roadmap.md` → Insets to
-Repair → zip, and `zip-black-render-investigation.md` for the full
+Repair → zip, and `claude-history/zip-black-render-investigation.md` for the full
 bisection trail).
 
 `-O0` "fixed" the symptom by accident: at that optimization level the
@@ -1366,7 +1366,7 @@ Xft text draw was silently using the **old, unswapped foreground color**
 redrawing it in black — reinforcing the old text rather than erasing it.
 
 Found via `contrib/calc`'s display area (see roadmap.md → Insets to
-Repair → calc, and `calc-text-rendering-investigation.md`), which
+Repair → calc, and `claude-history/calc-text-rendering-investigation.md`), which
 exercises frequent `Clear`-then-`Draw` cycles as its digit display
 updates — a pattern uncommon enough elsewhere in the active tree that
 this had gone unnoticed.
@@ -1421,7 +1421,7 @@ purely a defect in the incremental Clear/Draw redraw path, most likely
 in how the new rect-fill erase interacts with the freshly-drawn new
 string's cells. Not yet root-caused. See
 `claude-history/calc-ghost-fix-prompt.md`'s "Outcome" section and
-`calc-text-rendering-investigation.md` for the full trail and untried
+`claude-history/calc-text-rendering-investigation.md` for the full trail and untried
 next leads.
 
 No tree-wide audit for *other* latent instances of the specific

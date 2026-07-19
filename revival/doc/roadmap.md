@@ -456,7 +456,7 @@ Brought into the active build 2026-07-11 (see Completed → `contrib/calc`
 inset). First real interactive exercise (2026-07-11/12) found one real
 crash (fixed) and three real Xft rendering bugs, all now fixed. Full
 trail, reproduction steps, and what was tried/disproven along the way:
-`revival/doc/calc-text-rendering-investigation.md`. Summary:
+`revival/doc/claude-history/calc-text-rendering-investigation.md`. Summary:
 
 - **Fixed, confirmed:** `calc.c Writer` NULL-pointer crash on every
   document checkpoint (`sprintf`'s `int` return cast to `char *`).
@@ -537,7 +537,7 @@ trail, reproduction steps, and what was tried/disproven along the way:
   per-function, `-O0`/`optnone` bisection (whole-directory → single
   file `zipd000.c` → single function
   `zip__Contextual_Figure_Line_Width`) plus disassembly comparison —
-  full trail in `zip-black-render-investigation.md`. **Actual bug:**
+  full trail in `claude-history/zip-black-render-investigation.md`. **Actual bug:**
   `zip.ch` declared `Superior_Image_Line_Width(...) returns char;`
   (signed), but its real implementation in `zipdf01.c` is explicitly
   `unsigned char`-returning and uses `255` as its "no width configured
@@ -1613,7 +1613,7 @@ zero-consumer leaves, then the core, largest last.
        `ams`, `contrib` (`zip/lib` first), `examples` — delegable
        batches (one session + one gate per batch, ruled 2026-07-09;
        exhaustive batch list + per-session prompts:
-       revival/doc/m1-point10-batches.md)
+       revival/doc/claude-history/m1-point10-batches.md)
        - Batch 1 (2026-07-09): `atk/value`, `atk/adew`,
          `atk/apt/{apt,suite,tree}`, `atk/controllers` (inert — not
          in default build). Two live-LP64-bug classes fixed (suite
@@ -1848,7 +1848,7 @@ zero-consumer leaves, then the core, largest last.
          drift fixes (wrong-sibling structs, int/long index params,
          unsigned name params, FindAll rock to impl's `long *`,
          Create's error handler to `void (*)()`) — details in
-         m1-point10-batches.md. One hard stop escalated and ruled:
+         claude-history/m1-point10-batches.md. One hard stop escalated and ruled:
          `lexan.c ParseNumber` passed a `long *` where
          `TransEscape` takes `int *` — live LP64 bug, fixed with an
          `int` temporary as its own commit. Runtime: ctext syntax

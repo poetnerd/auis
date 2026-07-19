@@ -1,10 +1,11 @@
-# claude-history — retired Claude task prompts
+# claude-history — retired Claude-written working docs
 
-This directory holds task prompts (specs written for delegated
-Claude sessions) whose work is **complete or retired**. They are kept
-because they document how each piece was actually specified and
-gated — the specs are often the best surviving design document for
-the module they produced.
+This directory holds Claude-written working documents whose work is
+**complete or retired**: task prompts (specs written for delegated
+sessions), investigation write-ups, and rollout runbooks. They are
+kept because they document how each piece was actually specified,
+investigated, and gated — often the best surviving design document
+for the module or fix they produced.
 
 **Placement policy (decided 2026-07-19):** active prompts live
 directly in `revival/doc/` so a fresh instance finds its task where
@@ -84,3 +85,30 @@ carry work forward independently: `strlit-sweep`, `m2-census`,
   failure-latching fixed. Retired with its premise corrections
   banner intact — a case study in a prompt being answered rather
   than executed.
+
+## Runbook & Investigation History
+
+Retired here 2026-07-19; in development order:
+
+- `m1-rollout-runbook.md` (~2026-07-08) — the per-directory
+  procedure for the M1 typed-dispatch rollout, with the empirical
+  fallout taxonomy from the pilot directories. M1 completed
+  tree-wide 2026-07-10. **Residual use:** this remains the
+  procedure to follow when an inert directory (e.g.
+  `contrib/zip/utility`, ness) is first brought into the build and
+  needs its `.ch`-typing pass.
+- `m1-point10-batches.md` (2026-07-09) — point 10's exhaustive
+  batch list and paste-ready session prompts; all batches ticked
+  complete 2026-07-10. Its inert-directory survey is still the best
+  inventory of what's outside the default build.
+- `zip-black-render-investigation.md` (2026-07-11) — the
+  solid-black-at-`-O` bisection trail, ending at the signed/unsigned
+  `returns char` `.ch` declaration mismatch. Resolved and committed
+  2026-07-11.
+- `calc-text-rendering-investigation.md` (2026-07-11/12) — the calc
+  inset's crash + three Xft rendering bugs, including the
+  AA-erase-by-overdraw ghost and the XQuartz recomposite-lag
+  discovery (fixed with the self-XCopyArea kick, a general fix not
+  calc-specific). All items resolved 2026-07-12; the one open
+  cosmetic item ("=" reverse video) is tracked in `roadmap.md`, not
+  here.

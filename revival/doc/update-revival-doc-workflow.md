@@ -24,11 +24,10 @@ detailed docs it summarizes:
 - `porting-assessment.md` — bug-class analysis, strategy, the ANSI-C
   conversion plan (§14 especially)
 - `roadmap.md` — current status, open items, milestone list
-- `m1-rollout-runbook.md` / `m1-point10-batches.md` — the ANSI-C rollout
+- `claude-history/m1-rollout-runbook.md` / `claude-history/m1-point10-batches.md` — the ANSI-C rollout
   procedure and batch-by-batch findings
 - `quickstart.md`, `version-comparison.md`, `runtime-debugging-guide.md`
-- Any standalone investigation write-ups (e.g. `zip-black-render-
-  investigation.md`, `calc-text-rendering-investigation.md`)
+- Any standalone investigation write-ups (e.g. `claude-history/zip-black-render-investigation.md`, `claude-history/calc-text-rendering-investigation.md`)
 
 `revival.md` has eight fixed sections, in this order, and should keep this
 shape rather than growing new top-level structure casually:

@@ -410,8 +410,7 @@ gendemo section as the next thing to chase.
 
 ### 2026-07-12 — calc inset "missing leading characters": rootless XQuartz Xft recomposite lag
 
-Follow-on to the same session's ghost-text fix (see `calc-text-rendering-
-investigation.md`, open bug #1, and its `Outcome` section). After the
+Follow-on to the same session's ghost-text fix (see `claude-history/calc-text-rendering-investigation.md`, open bug #1, and its `Outcome` section). After the
 AA-erase-by-overdraw fix, a new symptom appeared: typing a multi-character
 expression showed only a trailing suffix of the correct string (e.g. typing
 `123` displayed `1`, `2`, `23` instead of `1`, `12`, `123`), though the
