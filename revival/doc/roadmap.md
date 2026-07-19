@@ -153,7 +153,32 @@ mirrors IMAP; AMDS delivery remains excluded.
        `fopen` of `~/preferences` — and fopen there is fdplumb's
        `dbg_fopen` — poisons every later preference read. Not
        reproducible on demand (3 consecutive clean cui sends after);
-       chase it via the fdplumb ledger.
+       chase it via the fdplumb ledger. NOTE: the user-visible "every
+       recipient flagged bad" send failures of 2026-07-18 turned out to
+       be item 4 below, not this; the blackout evidence stands on its
+       own (the cui sendmail fallback, the zeroed options) but it was
+       not the cause of those send failures.
+    4. **FIXED 2026-07-18: RCPT TO built from a display-form address.**
+       dropoff() callers pass full RFC 822 addresses; in particular the
+       kept-blind-copy fallback (submsg.c) appends `MyPrettyAddress`
+       (`William Cattey <wdc@fastmail.com>`) verbatim to the envelope
+       vector when direct insertion of the blind copy fails. smtpsub.c
+       then wrapped it in a second bracket pair — `RCPT
+       TO:<William Cattey <wdc@fastmail.com>>`. Fastmail answers 250 at
+       RCPT time and fails the whole transaction after DATA with
+       `501 5.1.3 Bad recipient address syntax`, so *every* recipient is
+       reported bad — which is exactly how it presented in the GUI.
+       Caught by the user reading an `AMS_SMTP_TRACE=1` transcript.
+       Fix: `smtp_addrspec()` in smtpsub.c reduces each tolist entry to
+       a bare addr-spec (ParseAddressList, strip comments and display
+       phrase, unparse unfolded) at the protocol boundary, healing all
+       callers. Reproduced and verified with `smtptest.test` and a
+       display-form recipient: 501 before, queued after. Follow-up
+       still open: why the blind copy's *direct insertion* fails in
+       this setup ("Sending your BCC through the mail after error in
+       direct insertion") — with the envelope fixed, keep-blind now
+       mails you the copy instead of failing the whole send, but the
+       direct-file path should work.
 - Milestones 3c–5 (next: 3c, messages-GUI acceptance incl. folder
   visibility): writeback via change journal (4); XOAUTH2 (5).
 

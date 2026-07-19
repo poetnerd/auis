@@ -53,6 +53,7 @@
 #include <dropoff.h>
 #include <tlscon.h>
 #include <netrc.h>
+#include <parseadd.h>
 
 #define SMTP_DEFAULT_PORT 465
 #define SMTP_LINE_MAX	1024
@@ -95,6 +96,60 @@ static void smtp_b64encode(in, inlen, out)
 	out[j++] = (i+2 < inlen) ? tbl[v & 0x3f] : '=';
     }
     out[j] = '\0';
+}
+
+/* ---- envelope address normalization ---- */
+
+/* RCPT TO takes a bare addr-spec, but dropoff() callers pass full
+   RFC 822 addresses -- the kept-blind-copy fallback, for one, submits
+   the user's own address as "Full Name <user@domain>".  The AMS queue
+   formats accepted those; an SMTP server answers them with 501 bad
+   recipient address syntax, failing every recipient in the
+   transaction.  Reduce one recipient to its addr-spec (strip comments
+   and display phrase, keep any source route); on any parse trouble,
+   pass the input through unchanged and let the server judge it. */
+static void smtp_addrspec(in, out, outlen)
+    char *in;
+    char *out;
+    int outlen;
+{
+    PARSED_ADDRESS *AddrList, *Addr;
+    ADDRESS_COMMENT *ThisComm, *NextComm;
+    char stripped[SMTP_LINE_MAX];
+    int naddrs;
+
+    strncpy(out, in, outlen-1);
+    out[outlen-1] = '\0';
+    if (ParseAddressList(in, &AddrList) != PA_OK) return;
+    naddrs = 0;
+    Addr = NULL;
+    FOR_ALL_ADDRESSES(TempAddr, AddrList, {
+	++naddrs;
+	Addr = TempAddr;
+    })
+    if (naddrs == 1 && Addr != NULL) {
+	ThisComm = Addr->Comments;
+	while (ThisComm) {
+	    NextComm = ThisComm->Next;
+	    if (ThisComm->Text) free(ThisComm->Text);
+	    free(ThisComm);
+	    ThisComm = NextComm;
+	}
+	Addr->Comments = NULL;
+	if (Addr->RoutePhrase) {
+	    free(Addr->RoutePhrase);
+	    Addr->RoutePhrase = NULL;
+	}
+	/* The large line length keeps the unparser from folding the
+	   address across lines, which would be as bad as the phrase. */
+	if (UnparseOneAddress(Addr, UP_SPACES_TO_DOTS, stripped,
+			      sizeof(stripped), "", 9999) == PA_OK
+	    && stripped[0] != '\0') {
+	    strncpy(out, stripped, outlen-1);
+	    out[outlen-1] = '\0';
+	}
+    }
+    FreeAddressList(AddrList);
 }
 
 /* ---- reply-line parsing ---- */
@@ -437,7 +492,10 @@ int smtp_dropoff(f, tolist, returnpath)
     anyAccepted = anyRejected = anyTempFail = 0;
     rejected[0] = '\0';
     for (i = 0; tolist[i] != NULL; i++) {
-	sprintf(line, "RCPT TO:<%.200s>\r\n", tolist[i]);
+	char rcptaddr[SMTP_LINE_MAX];
+
+	smtp_addrspec(tolist[i], rcptaddr, sizeof(rcptaddr));
+	sprintf(line, "RCPT TO:<%.200s>\r\n", rcptaddr);
 	smtp_writeline(conn, line);
 	code = smtp_getreply(conn, replytext, sizeof(replytext));
 	if (code / 100 == 2) {
