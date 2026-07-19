@@ -120,14 +120,27 @@ mirrors IMAP; AMDS delivery remains excluded.
     stack pointers don't — the classic LP64 pointer-truncation
     signature (see porting-assessment §12); crash is at
     `ldr w8, [x21, #0x14]`, i.e. dereferencing a bad struct pointer.
-    First observed right after the 2026-07-19 dependInstall (profile/
-    fdplumb/setprof fixes) while browsing mirrored folders; not yet
-    established whether it's new, newly-exercised (mirrored-folder
-    associated-time writes at exit), or long-latent. M3c-scope:
-    investigation note added to `folder-visibility-prompt.md` (that
-    session runs messages interactively); root-cause session should
-    start at `MS_SetAssociatedTime`'s callers and the captions
-    cached-update path.
+    **ROOT-CAUSED same day** (second capture showed the sign-extended
+    twin `0xffffffffb6c34214`, and the user isolated the trigger:
+    only after clicking into the mirrored INBOX's captions): LP64
+    Variant 1, missing prototype. `FindInDirCache` (defined
+    `msdir.c:680`, returns `struct MS_Directory *`) is declared in no
+    header; `setasct.c:48` calls it undeclared → implicit-int return
+    truncates the pointer to 32 bits, then the cast re-extends
+    (bit 31 decides zero- vs sign-extension — both observed
+    addresses). The elegant part: the cache-miss sentinel
+    `(struct MS_Directory *) -1` survives truncation intact, so the
+    `!= -1` guard works and nothing crashes until the directory is
+    actually IN the cache (i.e., you visited the folder) and a real
+    pointer gets mangled — exactly the observed "clicking into INBOX
+    lights the fuse." Long-latent (1991), not a regression; local
+    folders were exposed too but the garbage deref only faults when
+    the truncated address is unmapped. Fix: one-line
+    `extern struct MS_Directory *FindInDirCache();` in setasct.c
+    (sole external caller), compile-verified, in tree pending
+    runtime confirmation + commit. The build's
+    `-Wno-implicit-function-declaration` is why this class is silent
+    — standing argument for the M2 prototype sweep.
   - Startup noise logged 2026-07-19, unassessed: `Fontconfig warning:
     using without calling FcInit()` and two `Not a JPEG file` lines
     (libjpeg probing a non-JPEG — source not identified).
