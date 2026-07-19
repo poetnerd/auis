@@ -110,7 +110,9 @@ mirrors IMAP; AMDS delivery remains excluded.
     Message Folders → Expose All to appear (subscription defaults —
     M3c work item); metamail launch is reported for MIME messages but
     displays nothing (pre-existing platform gap, metamail not
-    functional here); first full mirror is slow-ish (~3,800 messages;
+    functional here — HTML mail display now has its own objective,
+    see "Objective: HTML mail rendering" below); first full mirror
+    is slow-ish (~3,800 messages;
     per-run incremental cost is near-zero thereafter).
   - **NEW BUG 2026-07-19: messages crashes on exit** —
     `EXC_BAD_ACCESS` in `MS_SetAssociatedTime` (amsn.do), called from
@@ -281,6 +283,50 @@ mirrors IMAP; AMDS delivery remains excluded.
   6. `imap-writeback-prompt.md` — milestone 4 writeback (added
      2026-07-19; the largest task in the queue — three gates, run it
      only with a comfortable budget window).
+
+### Objective: HTML mail rendering (added 2026-07-19; queued behind milestones 4–5)
+
+Essentially all real-world mail arrives as HTML (usually
+multipart/alternative with a text/html part). metamail is not
+functional on this platform (launches, displays nothing — see the
+M3c observations above), and even fixed it would remain an external
+button-press viewer. For `messages` to be genuinely useful as a
+daily reader, text/html bodies must render **inline** in the message
+pane via the htmlview/html inset machinery. Sequencing: start after
+writeback (4) and XOAUTH2 (5) close out the store work.
+
+Current state of the pieces:
+
+- htmlview no longer crashes (overlapping-strcpy family, fixed
+  2026-07-10) but renders essentially nothing from real-world HTML —
+  and that symptom has **never been root-caused**; it may be a few
+  gating bugs (DOCTYPE? charset meta? entity handling?) rather than
+  wholesale parser obsolescence. See Insets to Repair → htmlview.
+- messages' foreign-type display path shells out to metamail
+  (`atkams/messages/lib/mailobj.c`); AMS has a header parser
+  (`hdrparse`) but no MIME body parser (`ams-IMAP-project.md` §4).
+
+Proposed milestone shape (to be firmed into a gated prompt when its
+turn comes):
+
+1. **H1 — MIME body plumbing:** parse multipart structure and
+   Content-Transfer-Encoding (quoted-printable, base64) well enough
+   to extract the display part. Immediate quick win: prefer
+   text/plain from multipart/alternative (most HTML mail still
+   carries a plain sibling) — that alone makes most mail readable
+   before any htmlview work.
+2. **H2 — htmlview triage:** build a fixture corpus from real
+   Fastmail messages and establish what the ~1994 parser actually
+   does with each — root-cause the "renders nothing" symptom before
+   designing any rewrite.
+3. **H3 — good-enough rendering:** readable text with paragraphs,
+   links, emphasis, lists; unknown tags skipped cleanly,
+   script/style content dropped, UTF-8 and common entities handled.
+   Explicitly NOT: CSS, tables-as-layout fidelity, remote images.
+4. **H4 — inline integration:** route text/html parts to an inline
+   htmlview inset in the message pane, replacing the metamail button
+   for this type; metamail stays the fallback for other foreign
+   types (its macOS build remains a separate side quest).
 
 ### Objective: Reliable operation
 
@@ -609,6 +655,9 @@ trail, reproduction steps, and what was tried/disproven along the way:
   HTML fixture on hand actually rendered visible text — likely
   real-world HTML has diverged too far from this ~1994 parser (see
   the html.c bullet under "Overlapping-strcpy crash family" above).
+  **2026-07-19: this follow-on is now milestone H2 of "Objective:
+  HTML mail rendering" (Current action plan)** — triage/root-cause
+  happens there, driven by a real-mail fixture corpus.
 
 ### layout — excess whitespace in complex layout (Sherman.Alloc)
 
