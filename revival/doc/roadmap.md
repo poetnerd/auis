@@ -127,13 +127,29 @@ mirrors IMAP; AMDS delivery remains excluded.
        Verified live: cui send now arrives as
        `From: William Cattey <wdc@fastmail.com>`. Belongs in the
        quickstart doc (M3c deliverable).
-    2. **Formatted (ATK datastream) send is the default**, so external
-       recipients get an empty body plus a ~100-byte attachment of
-       ATK markup. The controls exist: "Send Formatted/Unformatted"
-       menus behind the `EXP_FORCESEND` expert option
-       (`atkams/messages/lib/options.c:147`). Work item: right default
-       for SMTP-era sending (unformatted unless recipient is known
-       AMS) + document the option.
+    2. **FIXED 2026-07-18: formatted (ATK datastream) send was the
+       default** — external recipients got an empty body plus a
+       ~100-byte attachment of ATK markup even for plain-text
+       messages. Root cause was not policy but LP64 corruption:
+       `MS_GetConfigurationParameters` (ams/libs/ms/init.c) declared
+       its out-parameters `int *` while every caller (cuilib's long
+       globals, the SNAP server's SNAP_integer locals) passes
+       `long *`. Only the low 32 bits were stored, so
+       `CUI_DeliveryType` read back as 0xFFFFFFFF00000002 (DT_NONAMS
+       under a stale -1 upper half, matching no DT_* case) and
+       `CUI_UseAmsDelivery` as 0xFFFFFFFF (-1 "no AMS delivery" read
+       back positive). sendmessage's Deliver() therefore fell to its
+       default branch, `UseAmsDelivery >= 0` was true, and every
+       plain-body send took "trust the delivery system" — emitting
+       `Content-Type: X-BE2; 12` raw datastream that AMDS would have
+       down-converted in 1991 and smtp.fastmail.com forwards
+       verbatim. Fix: parameters are now `long *`; verified live
+       (lldb on cui: DeliveryType 2, UseAmsDelivery -1). With
+       DT_NONAMS seen correctly, plain bodies auto-strip
+       ("Remove formatting & send") and formatted bodies offer the
+       strip/Andrew/MIME choice, honoring `mailsendingformat`. Same
+       K&R int*/long* out-parameter class as the scanf %d/%ld bugs —
+       the M2 ANSI prototype sweep is the systemic answer.
     3. **`<critical:fdplumb>` "File descriptor replaced!"** printed to
        the launching terminal during compose/send (`/tmp/de*`/`/tmp/te*`
        draft temp files, fds 5 and 2). Needs investigation: either a

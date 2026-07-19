@@ -144,22 +144,32 @@ Compose and send from `messages` or `cui` as normal. With `smtphost`
 set, "Your message has been sent" means the provider's submission
 server accepted it.
 
-**For recipients not using AMS** (that is: almost everyone), send
-**unformatted** — the default formatted send transmits the body as an
-ATK datastream attachment that other mail clients display as an empty
-message with a small attachment. Making unformatted the SMTP-era
-default is a known work item; until then, the per-message controls
-must be enabled by hand:
+**Plain messages go out as plain text automatically.** A message with
+no formatting is silently stripped and sent as ordinary text that any
+mail client can read. (If your sends arrive as an empty body with a
+small attachment of ATK markup, you are running a binary from before
+2026-07-18 — that was a 64-bit porting bug in
+`MS_GetConfigurationParameters` that made clients believe an AMS
+delivery system would down-convert for them; rebuild.)
 
-1. In `messages`, open **Set Options** and enable
-   **"Send Formatted/Unformatted menus"**, then save options.
-2. When composing, use the **Send Unformatted** menu item instead of
-   plain Send for any message whose recipients are not on AMS.
+**For messages with formatting** (fonts, insets), messages asks per
+send: remove the formatting, send Andrew format, or send MIME. Set
 
-There is no hand-editable preference line for this: messages persists
-its option checkboxes as an opaque hex bitmask
-(`messages.binaryoptions` in `~/preferences`, written by the Set
-Options interface), so the GUI is the supported way to set it.
+```
+mailsendingformat: mime
+```
+
+in `~/preferences` to pre-answer the Andrew-vs-MIME half of that
+question — MIME sends multipart/alternative with a plain-text first
+part, so non-ATK readers still get something readable. Recognized
+values: `mime`, `atk`, `ask` (the default).
+
+If you want explicit per-message **Send Formatted / Send Unformatted**
+menu items, enable "Send Formatted/Unformatted menus" in Set Options.
+There is no hand-editable preference line for option checkboxes:
+messages persists them as an opaque hex bitmask
+(`messages.BinaryOptions` in `~/preferences`, written by the Set
+Options interface), so the GUI is the supported way to set them.
 
 A good first test is a message to yourself, then `imapsync -v` and
 watch it appear in the mirrored INBOX.
@@ -171,7 +181,6 @@ watch it appear in the mirrored INBOX.
 | One-way sync: local flag changes revert to the server's view on next sync; don't file into or delete from mirror folders | Writeback is milestone 4 |
 | App passwords only | XOAUTH2 is milestone 5 |
 | Mirrored folders need Expose All | M3c work item |
-| Formatted send is the default | M3c work item |
 | MIME display shells out to metamail, which does nothing on this platform | Pre-existing gap, separate from the IMAP project |
 | No sync daemon | Re-run `imapsync` by hand or from cron |
 
