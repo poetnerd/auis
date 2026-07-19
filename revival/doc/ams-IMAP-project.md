@@ -190,9 +190,15 @@ parser — its native rich text is ATK datastream, flagged by
 * Side quest: get metamail building on macOS for non-Andrew attachment
   display.
 * Later optimization only if needed: BODYSTRUCTURE + selective part fetch.
-* 2026-07-19: inline HTML display (MIME body plumbing + htmlview
-  modernization) is now a post-milestone-5 objective of its own —
-  see roadmap.md → "Objective: HTML mail rendering".
+* 2026-07-19 (revised same day): the "no MIME parser work" stance
+  above is superseded for *display*. MIME body plumbing (multipart
+  walk, CTE decoding, alternative→text/plain preference, interim
+  tag-strip for html-only mail) is now the near-term `mime-display`
+  task — spec `revival/doc/mime-display-prompt.md`, queued in the
+  roadmap's delegated work queue with user priority to run early.
+  Real inline HTML *rendering* (htmlview modernization) remains a
+  post-milestone-5 objective — see roadmap.md → "Objective: HTML
+  mail rendering".
 
 ## 5. Connection handling and performance
 

@@ -283,6 +283,12 @@ mirrors IMAP; AMDS delivery remains excluded.
   6. `imap-writeback-prompt.md` — milestone 4 writeback (added
      2026-07-19; the largest task in the queue — three gates, run it
      only with a comfortable budget window).
+  7. `mime-display-prompt.md` — MIME body display in messages
+     (added 2026-07-19, moved forward out of the HTML-rendering
+     objective; **user priority: run early** — it is independent of
+     the writeback seams, needs no live IMAP, and its
+     alternative→text/plain preference makes most real mail
+     readable immediately).
 
 ### Objective: HTML mail rendering (added 2026-07-19; queued behind milestones 4–5)
 
@@ -306,27 +312,28 @@ Current state of the pieces:
   (`atkams/messages/lib/mailobj.c`); AMS has a header parser
   (`hdrparse`) but no MIME body parser (`ams-IMAP-project.md` §4).
 
-Proposed milestone shape (to be firmed into a gated prompt when its
-turn comes):
+**MIME body plumbing moved out of this objective 2026-07-19** (user
+priority: worked sooner, not gated behind milestones 4–5) — it is
+now the `mime-display` task in the delegated work queue above, spec
+`revival/doc/mime-display-prompt.md`. It carries the quick win
+(prefer text/plain from multipart/alternative — most mail readable
+with zero htmlview work) plus CTE decoding and an interim tag-strip
+shim for html-only mail. What remains here is the real HTML
+rendering:
 
-1. **H1 — MIME body plumbing:** parse multipart structure and
-   Content-Transfer-Encoding (quoted-printable, base64) well enough
-   to extract the display part. Immediate quick win: prefer
-   text/plain from multipart/alternative (most HTML mail still
-   carries a plain sibling) — that alone makes most mail readable
-   before any htmlview work.
-2. **H2 — htmlview triage:** build a fixture corpus from real
+1. **H1 — htmlview triage:** build a fixture corpus from real
    Fastmail messages and establish what the ~1994 parser actually
    does with each — root-cause the "renders nothing" symptom before
    designing any rewrite.
-3. **H3 — good-enough rendering:** readable text with paragraphs,
+2. **H2 — good-enough rendering:** readable text with paragraphs,
    links, emphasis, lists; unknown tags skipped cleanly,
    script/style content dropped, UTF-8 and common entities handled.
    Explicitly NOT: CSS, tables-as-layout fidelity, remote images.
-4. **H4 — inline integration:** route text/html parts to an inline
-   htmlview inset in the message pane, replacing the metamail button
-   for this type; metamail stays the fallback for other foreign
-   types (its macOS build remains a separate side quest).
+3. **H3 — inline integration:** route text/html parts to an inline
+   htmlview inset in the message pane, replacing both the metamail
+   button and mime-display's interim tag-strip shim for this type;
+   metamail stays the fallback for other foreign types (its macOS
+   build remains a separate side quest).
 
 ### Objective: Reliable operation
 
@@ -655,7 +662,7 @@ trail, reproduction steps, and what was tried/disproven along the way:
   HTML fixture on hand actually rendered visible text — likely
   real-world HTML has diverged too far from this ~1994 parser (see
   the html.c bullet under "Overlapping-strcpy crash family" above).
-  **2026-07-19: this follow-on is now milestone H2 of "Objective:
+  **2026-07-19: this follow-on is now milestone H1 of "Objective:
   HTML mail rendering" (Current action plan)** — triage/root-cause
   happens there, driven by a real-mail fixture corpus.
 
