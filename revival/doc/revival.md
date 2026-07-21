@@ -327,6 +327,43 @@ sample:
   file vanish from a directory nothing was supposed to delete from.
   One deleted line fixed it — the rare bug you repair by removing code.
 
+- **A header parser that assumed local mail's line endings, forever.**
+  The mail reader's rule for finding where headers end and the body
+  begins — read lines until a blank one — tested only for a bare LF
+  (`'\n'`). RFC 822's wire format specifies CRLF, and Andrew's own local
+  mail delivery had evidently always normalized incoming mail to
+  bare-LF line endings before this parser ever saw a message, because
+  the check had gone unexercised against genuine CRLF for the code's
+  whole life. Fetching raw messages directly from a live IMAP server,
+  CRLF intact, was new. Against such a message the blank-line check
+  never fires: the parser reads straight through the header/body
+  boundary and keeps going, consuming the entire body as if it were
+  more headers — each line displayed as an unrecognized header in tiny
+  type, undecoded, with a colon-triggered bolding rule occasionally
+  highlighting ordinary prose. The visible symptom (a screenful of raw
+  header lines, then unreadable body text with a literal `=20` where a
+  quoted-printable space belonged) took real mail, not local mail, to
+  produce — and was found the same way most of this list was: a user
+  looked at real output and described exactly what was wrong. Fixed by
+  recognizing CRLF as well as LF at both header/body boundary checks,
+  plus the same LF-only blindness in the quoted-printable soft-line-
+  break decoder one call downstream of it.
+
+- **A dynamic-loading convention that only ever worked by coincidence.**
+  Most of the mail reader's dynamically-loaded `.do` modules link with
+  no library list of their own at all — every external symbol resolves
+  at load time against whatever else the process happens to have
+  already loaded (`-undefined dynamic_lookup`, which lets a missing
+  library pass silently at build time and fail only at the first actual
+  call). One module in particular had never once, in its whole life,
+  called a symbol that wasn't already provided by something else loaded
+  earlier in the process — so the gap in its own link line was
+  invisible for as long as that held. The first new library call it
+  ever made jumped straight to address zero. Fixed by giving that one
+  module an explicit link line, and confirmed with `nm -m` that the
+  symbols it actually calls now resolve inside its own binary rather
+  than by chance.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or
