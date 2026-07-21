@@ -1,0 +1,379 @@
+#!/usr/bin/env python3
+"""mime-display-tests -- Gate 2 regression suite for the mimepart MIME
+body parser (src/ams/libs/hdrs/mimepart.h, src/ams/libs/shr/mimepart.c),
+driven through the standalone mimeparttest.test harness (see
+revival/doc/claude-history/mime-display-prompt.md).
+
+Usage:
+    revival/tests/mime-display-tests
+
+Entirely offline: every fixture is a synthetic RFC822 file this suite
+writes itself into a fresh temp directory on each run -- never real
+mail, never anything from a real mailbox. No network use.
+
+Cases (module-level, via mimeparttest.test's dump/select/decodepart/
+htmlstrip/charset subcommands -- see mimeparttest.c's usage comment):
+
+  1. multipart/alternative: text/plain preferred over a text/html
+     sibling.
+  2. multipart/alternative with no text/plain sibling: falls through
+     to text/html.
+  3. quoted-printable decode, including a soft line break and a
+     literal "=3D" hex escape.
+  4. base64-encoded text/plain part decodes back to the original text.
+  5. multipart/mixed containing a nested multipart/alternative as its
+     first part, plus a base64 attachment as its second -- checks the
+     parsed structure (nesting, and the attachment's Content-
+     Disposition/filename/size) in one fixture.
+  6. text/html-only message: tags dropped, <style>/<script>/<head>
+     content dropped entirely, entities decoded, blank-line runs
+     collapsed.
+  7. UTF-8 -> Latin-1: accented characters map exactly, an emoji (a
+     codepoint above U+00FF) becomes '?'.
+  8. A non-MIME message (no Content-Type at all) comes back as a
+     single text/plain leaf with its body byte-identical to the raw
+     input -- mimepart_Parse must not alter or split content it has no
+     business touching.
+  9. A message headed like an ATK datastream (Content-Type:
+     application/andrew-inset, a body containing literal
+     "\\begindata{text,...}" markup) likewise comes back as a single
+     untouched leaf.
+
+Cases 8-9 are parser-level regression proxies for the prompt's
+"non-MIME message byte-identical to today's display" / "ATK-datastream
+message untouched" acceptance cases -- mimepart.c has no ATK/X
+dependency and cannot drive the real text822.c ReadMessage() display
+path standalone (see mime-display-REPORT.md's Gate 1 section and its
+placement rationale). What these two cases actually prove: fed such a
+message, the new parser treats it as one opaque leaf and reproduces
+its bytes exactly, so it is safe for text822.c to hand a body to
+mimepart without first re-deriving "is this actually MIME" -- the
+parser's own defaults do no harm. The stronger claim (the real display
+pixel-for-pixel unchanged) rests on the Gate 1 finding that x-be2/
+application/andrew-inset messages are intercepted by an earlier branch
+in ReadMessage's dispatch chain that never calls mimepart at all, plus
+by-hand acceptance against a real mirrored message (see the report's
+acceptance instructions).
+"""
+
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+
+REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+SHRLIB = os.path.join(REPO_ROOT, "src", "ams", "libs", "shr")
+DRIVER = os.path.join(SHRLIB, "mimeparttest.test")
+
+PASS = []
+FAIL = []
+
+
+def note(msg):
+    print(msg, flush=True)
+
+
+def result(name, ok, detail=""):
+    if ok:
+        PASS.append(name)
+        note(f"PASS: {name}")
+    else:
+        FAIL.append(name)
+        note(f"FAIL: {name}" + (f" -- {detail}" if detail else ""))
+
+
+def build_driver():
+    """make Makefile (regenerating from the Imakefile only if the
+    tree's own dependency check says it's stale), then 'make install'
+    (so libmsshr.a picks up a rebuilt mimepart.o) and force a fresh
+    link of mimeparttest.test -- the suffix rule that builds it has no
+    prerequisite on libmsshr.a, so a stale binary would otherwise
+    silently survive a mimepart.c change."""
+    if not os.path.isfile(os.path.join(SHRLIB, "Makefile")):
+        r = subprocess.run(["imake", "-Timake.tmpl", "-I.", "-I../../.././config",
+                             "-s", "Makefile", "-DTOPDIR=../../../."],
+                            cwd=SHRLIB, capture_output=True, text=True)
+        if r.returncode != 0:
+            note(r.stdout); note(r.stderr)
+            sys.exit("mime-display-tests: could not bootstrap Makefile in " + SHRLIB)
+    r = subprocess.run(["make", "Makefile"], cwd=SHRLIB, capture_output=True, text=True)
+    if r.returncode != 0:
+        note(r.stdout); note(r.stderr)
+        sys.exit("mime-display-tests: 'make Makefile' failed in " + SHRLIB)
+    r = subprocess.run(["make", "install"], cwd=SHRLIB, capture_output=True, text=True, timeout=180)
+    if r.returncode != 0:
+        note(r.stdout); note(r.stderr)
+        sys.exit("mime-display-tests: 'make install' (libmsshr.a) failed in " + SHRLIB)
+    if os.path.isfile(DRIVER):
+        os.remove(DRIVER)
+    r = subprocess.run(["make", "mimeparttest.test"], cwd=SHRLIB, capture_output=True, text=True, timeout=180)
+    if r.returncode != 0 or not os.path.isfile(DRIVER):
+        note(r.stdout); note(r.stderr)
+        sys.exit("mime-display-tests: 'make mimeparttest.test' failed in " + SHRLIB)
+
+
+def parse_kv(stdout):
+    d = {}
+    for line in stdout.splitlines():
+        if ": " in line:
+            k, v = line.split(": ", 1)
+            d.setdefault(k.strip(), []).append(v.strip())
+    return d
+
+
+def run(args, timeout=30):
+    r = subprocess.run([DRIVER] + args, capture_output=True, text=True, timeout=timeout)
+    return r, parse_kv(r.stdout)
+
+
+def write_fixture(tmpdir, name, raw_bytes):
+    path = os.path.join(tmpdir, name)
+    with open(path, "wb") as f:
+        f.write(raw_bytes)
+    return path
+
+
+def read_bytes(path):
+    with open(path, "rb") as f:
+        return f.read()
+
+
+# ---- cases ----
+
+def case_alternative_plain_preferred(tmpdir):
+    name = "alternative-plain-preferred"
+    msg = (
+        b"Subject: alt\r\n"
+        b"Content-Type: multipart/alternative; boundary=\"B1\"\r\n"
+        b"\r\n"
+        b"--B1\r\n"
+        b"Content-Type: text/plain; charset=us-ascii\r\n"
+        b"\r\n"
+        b"plain wins\r\n"
+        b"--B1\r\n"
+        b"Content-Type: text/html; charset=us-ascii\r\n"
+        b"\r\n"
+        b"<p>html loses</p>\r\n"
+        b"--B1--\r\n"
+    )
+    fx = write_fixture(tmpdir, "alt-plain.eml", msg)
+    out = os.path.join(tmpdir, "alt-plain.sel")
+    r, kv = run(["select", fx, out])
+    # the CRLF right before "--B1" belongs to the boundary delimiter
+    # per RFC 2046, not the part -- correctly stripped by the parser
+    ok = (kv.get("SELECTED-TYPE") == ["text/plain"]
+          and read_bytes(out) == b"plain wins")
+    result(name, ok, r.stdout + r.stderr)
+
+
+def case_alternative_html_fallback(tmpdir):
+    name = "alternative-html-fallback-when-no-plain"
+    msg = (
+        b"Subject: alt2\r\n"
+        b"Content-Type: multipart/alternative; boundary=\"B2\"\r\n"
+        b"\r\n"
+        b"--B2\r\n"
+        b"Content-Type: text/html; charset=us-ascii\r\n"
+        b"\r\n"
+        b"<p>only html here</p>\r\n"
+        b"--B2--\r\n"
+    )
+    fx = write_fixture(tmpdir, "alt-html-only.eml", msg)
+    out = os.path.join(tmpdir, "alt-html-only.sel")
+    r, kv = run(["select", fx, out])
+    ok = (kv.get("SELECTED-TYPE") == ["text/html"]
+          and read_bytes(out) == b"<p>only html here</p>")
+    result(name, ok, r.stdout + r.stderr)
+
+
+def case_qp_decode(tmpdir):
+    name = "quoted-printable-decode-softbreak-and-hex-escape"
+    msg = (
+        b"Content-Type: text/plain; charset=us-ascii\r\n"
+        b"Content-Transfer-Encoding: quoted-printable\r\n"
+        b"\r\n"
+        b"5=3D5 is true, and this line has a soft=\r\n"
+        b" break in it.\r\n"
+    )
+    fx = write_fixture(tmpdir, "qp.eml", msg)
+    out = os.path.join(tmpdir, "qp.dec")
+    r, kv = run(["decodepart", fx, "0", out])
+    expected = b"5=5 is true, and this line has a soft break in it.\r\n"
+    ok = read_bytes(out) == expected
+    result(name, ok, f"got {read_bytes(out)!r} want {expected!r}\n" + r.stdout + r.stderr)
+
+
+def case_base64_text(tmpdir):
+    import base64
+    name = "base64-text-part-decode"
+    original = b"Base64 round trip check.\r\n"
+    msg = (
+        b"Content-Type: text/plain; charset=us-ascii\r\n"
+        b"Content-Transfer-Encoding: base64\r\n"
+        b"\r\n" + base64.b64encode(original) + b"\r\n"
+    )
+    fx = write_fixture(tmpdir, "b64.eml", msg)
+    out = os.path.join(tmpdir, "b64.dec")
+    r, kv = run(["decodepart", fx, "0", out])
+    ok = read_bytes(out) == original
+    result(name, ok, f"got {read_bytes(out)!r} want {original!r}\n" + r.stdout + r.stderr)
+
+
+def case_nested_alt_in_mixed(tmpdir):
+    import base64
+    name = "nested-alternative-in-mixed-plus-attachment"
+    att = b"\x00\x01\xffattachment-bytes"
+    msg = (
+        b"Subject: mixed\r\n"
+        b"Content-Type: multipart/mixed; boundary=\"OUTER\"\r\n"
+        b"\r\n"
+        b"--OUTER\r\n"
+        b"Content-Type: multipart/alternative; boundary=\"INNER\"\r\n"
+        b"\r\n"
+        b"--INNER\r\n"
+        b"Content-Type: text/plain\r\n"
+        b"\r\n"
+        b"nested plain\r\n"
+        b"--INNER\r\n"
+        b"Content-Type: text/html\r\n"
+        b"\r\n"
+        b"<p>nested html</p>\r\n"
+        b"--INNER--\r\n"
+        b"--OUTER\r\n"
+        b"Content-Type: application/octet-stream; name=\"a.bin\"\r\n"
+        b"Content-Transfer-Encoding: base64\r\n"
+        b"Content-Disposition: attachment; filename=\"a.bin\"\r\n"
+        b"\r\n" + base64.b64encode(att) + b"\r\n"
+        b"--OUTER--\r\n"
+    )
+    fx = write_fixture(tmpdir, "nested-mixed.eml", msg)
+    r, kv = run(["dump", fx])
+    # dump lines are "PART <n> TYPE: v" etc -- re-parse with the index folded in
+    lines = r.stdout.splitlines()
+    got = {}
+    for line in lines:
+        if line.startswith("PART "):
+            rest = line[len("PART "):]
+            idx_str, rest2 = rest.split(" ", 1)
+            key, val = rest2.split(": ", 1)
+            got.setdefault(int(idx_str), {})[key] = val
+    ok = (
+        kv.get("PARTCOUNT") == ["5"]
+        and got.get(0, {}).get("TYPE") == "multipart/mixed"
+        and got.get(1, {}).get("TYPE") == "multipart/alternative"
+        and got.get(1, {}).get("PARENT") == "0"
+        and got.get(2, {}).get("TYPE") == "text/plain"
+        and got.get(2, {}).get("PARENT") == "1"
+        and got.get(3, {}).get("TYPE") == "text/html"
+        and got.get(3, {}).get("PARENT") == "1"
+        and got.get(4, {}).get("TYPE") == "application/octet-stream"
+        and got.get(4, {}).get("PARENT") == "0"
+        and got.get(4, {}).get("DISPOSITION") == "attachment"
+        and got.get(4, {}).get("DISPPARAM filename") == "a.bin"
+        and got.get(4, {}).get("BODYLEN") == str(len(att))
+    )
+    result(name, ok, r.stdout + r.stderr)
+
+
+def case_html_only_strip(tmpdir):
+    name = "html-only-tag-strip-and-entity-decode"
+    msg = (
+        b"Content-Type: text/html; charset=us-ascii\r\n"
+        b"\r\n"
+        b"<html><head><style>body{color:red}</style></head>"
+        b"<body><p>Ben &amp; Jerry&#39;s &lt;3 tea&gt;</p>"
+        b"<script>evil()</script>"
+        b"<p>Second para</p>\r\n\r\n\r\n\r\n"
+        b"After blanks</body></html>\r\n"
+    )
+    fx = write_fixture(tmpdir, "html-only.eml", msg)
+    out = os.path.join(tmpdir, "html-only.txt")
+    r, kv = run(["htmlstrip", fx, out])
+    text = read_bytes(out).decode("latin-1")
+    ok = (
+        "color:red" not in text
+        and "evil()" not in text
+        and "<p>" not in text and "<html>" not in text
+        and "Ben & Jerry's <3 tea>" in text
+        and "Second para" in text
+        and "After blanks" in text
+        and "\n\n\n" not in text  # collapsed to at most one blank line
+    )
+    result(name, ok, repr(text) + "\n" + r.stdout + r.stderr)
+
+
+def case_utf8_to_latin1(tmpdir):
+    name = "utf8-to-latin1-accents-and-emoji"
+    original = "Café costs €5 today 😀 done"
+    msg = (b"Content-Type: text/plain; charset=utf-8\r\n\r\n"
+           + original.encode("utf-8"))
+    fx = write_fixture(tmpdir, "utf8.eml", msg)
+    out = os.path.join(tmpdir, "utf8.dec")
+    r, kv = run(["charset", fx, out])
+    got = read_bytes(out).decode("latin-1")
+    expected = "Caf\xe9 costs ?5 today ? done"
+    ok = got == expected
+    result(name, ok, f"got {got!r} want {expected!r}\n" + r.stdout + r.stderr)
+
+
+def case_nonmime_untouched(tmpdir):
+    name = "non-mime-message-body-byte-identical"
+    body = b"Just an ordinary plain-text message.\r\nSecond line.\r\n"
+    msg = b"Subject: no content-type here\r\n\r\n" + body
+    fx = write_fixture(tmpdir, "nonmime.eml", msg)
+    r, kv = run(["dump", fx])
+    out = os.path.join(tmpdir, "nonmime.dec")
+    r2, kv2 = run(["decodepart", fx, "0", out])
+    ok = (kv.get("PARTCOUNT") == ["1"]
+          and "PART 0 TYPE: text/plain" in r.stdout
+          and read_bytes(out) == body)
+    result(name, ok, r.stdout + r2.stdout + r.stderr)
+
+
+def case_atk_datastream_untouched(tmpdir):
+    name = "atk-datastream-headed-message-untouched"
+    body = (b"\\begindata{text,42}\r\n\\template{messages}\r\n"
+            b"Some ATK-native content, not MIME at all.\r\n"
+            b"\\enddata{text,42}\r\n")
+    msg = b"Content-Type: application/andrew-inset\r\n\r\n" + body
+    fx = write_fixture(tmpdir, "atk.eml", msg)
+    r, kv = run(["dump", fx])
+    out = os.path.join(tmpdir, "atk.dec")
+    r2, kv2 = run(["decodepart", fx, "0", out])
+    ok = (kv.get("PARTCOUNT") == ["1"]
+          and "PART 0 TYPE: application/andrew-inset" in r.stdout
+          and read_bytes(out) == body)
+    result(name, ok, r.stdout + r2.stdout + r.stderr)
+
+
+def main():
+    if len(sys.argv) > 1:
+        sys.exit("usage: mime-display-tests")
+
+    build_driver()
+
+    tmpdir = tempfile.mkdtemp(prefix="mime-display-tests-")
+    try:
+        note(f"--- fixtures in {tmpdir} (synthetic, deleted on exit) ---")
+        case_alternative_plain_preferred(tmpdir)
+        case_alternative_html_fallback(tmpdir)
+        case_qp_decode(tmpdir)
+        case_base64_text(tmpdir)
+        case_nested_alt_in_mixed(tmpdir)
+        case_html_only_strip(tmpdir)
+        case_utf8_to_latin1(tmpdir)
+        case_nonmime_untouched(tmpdir)
+        case_atk_datastream_untouched(tmpdir)
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+    note("")
+    note(f"--- {len(PASS)} passed, {len(FAIL)} failed ---")
+    if FAIL:
+        note("FAILED: " + ", ".join(FAIL))
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
