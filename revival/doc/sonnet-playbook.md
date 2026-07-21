@@ -23,7 +23,9 @@ porting classes: 1991 code that assumed int == long == pointer.
 
 - **No fossil commits, ever.** At session end run
   `fossil diff > <task>-session.diff` (in the tree root) and write
-  `<task>-REPORT.md` beside it. Leave the working tree as-is; revert
+  `<task>-REPORT.md` to `revival/doc/claude-history/` (not the tree
+  root — that's where findings live, active or retired; see that
+  directory's `README.md`). Leave the working tree as-is; revert
   nothing unless your prompt says so.
 - **Gates are STOP points.** Task prompts number their gates. At each
   gate: write/update the report, then stop and say you have stopped.
