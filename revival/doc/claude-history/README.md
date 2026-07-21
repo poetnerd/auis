@@ -16,7 +16,7 @@ is part of retiring it, done during the close-out doc update.
 ## Active Prompts (in `revival/doc/`, not here)
 
 Current queue and suggested order live in `roadmap.md` → "Delegated
-work queue". As of 2026-07-19:
+work queue". As of 2026-07-21:
 
 1. `strlit-sweep-prompt.md` — writable-string-literal census + fixes
 2. `m2-census-prompt.md` — M2 point-0 warning classification
@@ -25,6 +25,10 @@ work queue". As of 2026-07-19:
 4. `folder-visibility-prompt.md` — mirrored-folder default
    visibility
 5. `imap-writeback-prompt.md` — Milestone 4 change-journal writeback
+6. `mime-attachment-icon-prompt.md` — root-cause a `multipart/mixed`
+   attachment rendering as a bare `?` instead of an
+   `[attachment: ...]` line (added 2026-07-21, follow-on to the
+   just-retired `mime-display` task below)
 
 Standing (never retire on completion; they recur):
 `sonnet-playbook.md` (delegation briefing),
@@ -85,6 +89,26 @@ carry work forward independently: `strlit-sweep`, `m2-census`,
   failure-latching fixed. Retired with its premise corrections
   banner intact — a case study in a prompt being answered rather
   than executed.
+- `mime-display-prompt.md` (2026-07-19, retired 2026-07-21) — MIME
+  body display in `messages`: new born-ANSI `mimepart` module
+  (`src/ams/libs/hdrs/mimepart.h` + `src/ams/libs/shr/mimepart.c`,
+  multipart split/QP/base64/alternative-select/html-strip/UTF-8
+  conversion, standalone-tested), wired into `text822.c`'s
+  `ReadMessage`: multipart/alternative prefers text/plain, html-only
+  gets the interim strip shim, multipart/mixed lists non-text parts
+  as `[attachment: ...]` lines, UTF-8 text/plain finally renders
+  instead of falling to a metamail button. Three gates, all closed
+  (see `mime-display-REPORT.md`, kept here). Gate 3's by-hand
+  acceptance against wdc's real mailbox found and fixed two more
+  pre-existing, unrelated bugs load-bearing for this feature actually
+  working: `GetHeader`'s header/body-boundary check was CRLF-blind,
+  and `text822.do`'s Imakefile link line silently omitted
+  `libmsshr.a` (`-undefined dynamic_lookup` masked it at build time;
+  first real call to a new library symbol crashed at runtime). One
+  known follow-on left open, queued as its own prompt:
+  `../mime-attachment-icon-prompt.md` — a `multipart/mixed`
+  attachment renders as a bare `?` instead of the expected
+  `[attachment: ...]` line; root cause not yet found.
 
 ## Runbook & Investigation History
 

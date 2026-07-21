@@ -283,12 +283,31 @@ mirrors IMAP; AMDS delivery remains excluded.
   6. `imap-writeback-prompt.md` — milestone 4 writeback (added
      2026-07-19; the largest task in the queue — three gates, run it
      only with a comfortable budget window).
-  7. `mime-display-prompt.md` — MIME body display in messages
-     (added 2026-07-19, moved forward out of the HTML-rendering
-     objective; **user priority: run early** — it is independent of
-     the writeback seams, needs no live IMAP, and its
-     alternative→text/plain preference makes most real mail
-     readable immediately).
+  7. ~~`mime-display-prompt.md`~~ (now in `claude-history/`) — **done
+     2026-07-21.** MIME body display in `messages`: new `mimepart`
+     module (`src/ams/libs/hdrs/mimepart.h` +
+     `src/ams/libs/shr/mimepart.c`), wired into `text822.c`:
+     multipart/alternative prefers text/plain, html-only mail gets
+     the interim tag-strip shim, multipart/mixed lists non-text parts
+     as `[attachment: ...]` lines, UTF-8 `text/plain` finally renders
+     instead of falling to a dead metamail button. Three gates, all
+     closed — see `revival/doc/claude-history/mime-display-REPORT.md`.
+     By-hand acceptance against wdc's real mailbox (Gate 3) found and
+     fixed two more pre-existing, unrelated bugs that were blocking
+     this from working at all: `GetHeader`'s header/body-boundary
+     check was CRLF-blind (an entire CRLF-encoded body was being
+     swallowed into the "minor headers" display — explains the
+     wall-of-headers/tiny-font/undecoded-`=20`/stray-bold symptoms
+     wdc first saw, all at once), and `text822.do`'s Imakefile link
+     line silently omitted `libmsshr.a` (`-undefined dynamic_lookup`
+     masks missing libs at build time; the first real call to a new
+     library symbol crashed at runtime — fixed, verified with `nm
+     -m`). One follow-on left open: a `multipart/mixed` attachment
+     renders as a bare `?` instead of the expected `[attachment:
+     ...]` line — root cause not yet found, queued as
+     `mime-attachment-icon-prompt.md` (item 8 below).
+  8. `mime-attachment-icon-prompt.md` — root-cause the bare-`?`
+     attachment-rendering bug above (added 2026-07-21).
 
 ### Objective: HTML mail rendering (added 2026-07-19; queued behind milestones 4–5)
 
@@ -312,14 +331,16 @@ Current state of the pieces:
   (`atkams/messages/lib/mailobj.c`); AMS has a header parser
   (`hdrparse`) but no MIME body parser (`ams-IMAP-project.md` §4).
 
-**MIME body plumbing moved out of this objective 2026-07-19** (user
-priority: worked sooner, not gated behind milestones 4–5) — it is
-now the `mime-display` task in the delegated work queue above, spec
-`revival/doc/mime-display-prompt.md`. It carries the quick win
-(prefer text/plain from multipart/alternative — most mail readable
-with zero htmlview work) plus CTE decoding and an interim tag-strip
-shim for html-only mail. What remains here is the real HTML
-rendering:
+**MIME body plumbing moved out of this objective 2026-07-19, done
+2026-07-21** — was the `mime-display` task in the delegated work
+queue above, spec now retired to
+`revival/doc/claude-history/mime-display-prompt.md`, report at
+`revival/doc/claude-history/mime-display-REPORT.md`. Delivered: the
+quick win (prefer text/plain from multipart/alternative — most mail
+now readable with zero htmlview work), CTE decoding, UTF-8→Latin-1
+conversion, and an interim tag-strip shim for html-only mail —
+confirmed working against a real mailbox message (Gate 3 by-hand
+acceptance). What remains here is the real HTML rendering:
 
 1. **H1 — htmlview triage:** build a fixture corpus from real
    Fastmail messages and establish what the ~1994 parser actually
