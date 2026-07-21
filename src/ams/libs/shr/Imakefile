@@ -7,10 +7,14 @@ LOCALINCLUDES	=	-I${BASEDIR}/include/ams
 PRODUCT	=	libmsshr.a
 
 OBJS		= 	amserr.o brkdown.o findroot.o utils.o \
-			tildes.o
+			tildes.o mimepart.o
 
 NormalObjectRule()
 LibraryTarget(${PRODUCT}, ${OBJS})
 InstallLibrary(${PRODUCT}, ${DESTDIR}/lib)
+
+TESTLIBS = ${BASEDIR}/lib/libmsshr.a
+TestingOnlyTestingRule(${TESTLIBS},)
+
 DependTarget()
 
