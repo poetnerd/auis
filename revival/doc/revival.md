@@ -307,6 +307,27 @@ sample:
   approximately the whole mailbox. Found by code review during the
   mirror work, fixed with one `FreeMessage` call.
 
+- **A blocking dialog that outlived its answer.** Clicking a folder in the
+  mail overview brings up a "What do you want to do with 'X'?" menu —
+  implemented not as a native modal but as ordinary event dispatch, so
+  background timers and callbacks kept running while the mouse waited over
+  the choices. The function held onto the folder's name strings as raw
+  pointers straight out of the directory cache; if anything freed that
+  cache entry during the wait — another window's rename/remove
+  notification, a periodic refresh — the strings went stale in place, and
+  clicking "Subscribe" afterward walked the freed memory character-by-
+  character and crashed. One sibling path in the very same function,
+  reached by "see the messages," already defended against exactly this by
+  duplicating the strings before doing anything that could invalidate
+  them — a comment even says so — but the defense was never extended to
+  subscribe/unsubscribe or "alter subscription status." For decades this
+  raced against, at most, an occasional slow local change and rarely lost.
+  The revival's IMAP mirror gave the directory cache far more frequent
+  invalidation traffic than the original single-user model ever produced,
+  turning a latent race from 1994 into a reproducible crash the first time
+  someone tried to subscribe to INBOX. Fixed by giving the affected paths
+  the same heap-copy discipline the "see the messages" path already had.
+
 - **The cleanup that destroyed what it collided with.** When the store
   writes a message's body file, it opens with `O_CREAT|O_EXCL` — and if
   the open *fails*, the error path does `unlink(File)` before returning.

@@ -20,6 +20,30 @@ exit crash with this backtrace somehow recurs in your runs, STOP and
 report it (would mean the fix is incomplete) — any *other* crash,
 just capture the backtrace and move on.
 
+## Status update (2026-07-22)
+
+Tried the obvious manual step first: select INBOX in the folder list and
+choose **Subscribe**. That crashed `messages` (`EXC_BAD_ACCESS` in
+`StripWhiteEnds`, called from `SetFullProfileEntry` via
+`MS_SetSubscriptionEntry`). Root-caused and fixed: `folders__ActionHit`
+(`atkams/messages/lib/folders.c`) held raw `FullName`/`nickname` pointers
+straight out of `folders->MainDirCache[i]` across the blocking, event-pumping
+`ams_ChooseFromList` dialog; if anything freed that cache entry while the
+dialog was up (`RemoveFromBEDirCache`, reachable via
+`ams__DirectoryChangeHook` for any directory rename/remove elsewhere), the
+held pointers went stale and `StripWhiteEnds` walked freed memory. Fixed by
+heap-copying both strings on entry, matching a defensive-copy pattern one
+sibling case in the same function already used. Essay in `revival.md`
+("A blocking dialog that outlived its answer").
+
+**The actual visibility goal is still unmet.** After the crash fix, Subscribe
+works (confirms with "You are now ... subscribed to INBOX."), but on
+restarting `messages`, INBOX is *still not visible by default* — the
+original premise that subscription state is what gates default visibility
+does not hold, or isn't the whole story. Gate 1's questions (especially #3:
+"is it unsubscribed, or simply unknown to the subscription data?") are not
+yet answered; this task is still open at Gate 1.
+
 Starting points:
 - The subscription API surfaces in `ams/libs/cui/cuilib.c`
   (`CUI_GetSubscriptionEntry` / `CUI_SetSubscriptionEntry` /

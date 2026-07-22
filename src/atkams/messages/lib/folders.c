@@ -557,11 +557,19 @@ int substatus;
 char *FullName, *nickname;
 {
     char    ErrorText[256], *ActionVector[10], Question[100+MAXPATHLEN];
+    char    *FullNameCopy, *NicknameCopy;
     int result, quicknewstatus, vecsize;
     Boolean HasCurrent = FALSE, NowPlaying;
     struct captions *mainci;
     struct sendmessage *sm;
     long errcode;
+
+    /* FullName/nickname are borrowed from folders->MainDirCache[i].
+       ams_ChooseFromList() below blocks and pumps events, during which
+       background activity (e.g. ams__DirectoryChangeHook) can free that
+       cache entry out from under us. Take our own copies up front. */
+    FullName = FullNameCopy = strcpy(malloc(1+strlen(FullName)), FullName);
+    nickname = NicknameCopy = strcpy(malloc(1+strlen(nickname)), nickname);
 
     sprintf(Question, "What do you want to do with '%s'?", nickname);
     ActionVector[0] = Question;
@@ -616,10 +624,10 @@ char *FullName, *nickname;
 		} else {
 		    sprintf(ErrorText, "Cannot set subscription entry to %s", nickname);
 		    ams_ReportError(ams_GetAMS(), ErrorText, ERR_WARNING, TRUE, errcode);
-		    return;
+		    goto Done;
 		}
 		message_DisplayString(NULL, 75, ErrorText);
-		return;
+		goto Done;
 	    }
 	    ams_WaitCursor(FALSE);
 	    folders_AlterSubscriptionStatus(ci, FullName, quicknewstatus, nickname);
@@ -638,10 +646,10 @@ char *FullName, *nickname;
 		} else {
 		    sprintf(ErrorText, "Cannot set subscription entry to %s", nickname);
 		    ams_ReportError(ams_GetAMS(), ErrorText, ERR_WARNING, TRUE, errcode);
-		    return;
+		    goto Done;
 		}
 		message_DisplayString(NULL, 75, ErrorText);
-		return;
+		goto Done;
 	    }
 	    ams_WaitCursor(FALSE);
 	    folders_AlterSubscriptionStatus(ci, FullName, substatus, nickname);
@@ -649,7 +657,7 @@ char *FullName, *nickname;
 	case 5:
 	    /* Post on it */
 	    sm = folders_ExposeSend(ci);
-	    if (!sm) return;
+	    if (!sm) goto Done;
 	    sendmessage_ResetFromParameters(sm, nickname, NULL, NULL, NULL, 0);
 	    sendmessage_CheckRecipients(sm);
 	    break;
@@ -688,6 +696,9 @@ char *FullName, *nickname;
 	    ams_ReportError(ams_GetAMS(), "Unexpected return value from message handler.", ERR_WARNING, FALSE, 0);
 	    break;
     }
+Done:
+    free(FullNameCopy);
+    free(NicknameCopy);
     return;
 }
 

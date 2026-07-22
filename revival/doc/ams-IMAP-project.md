@@ -9,7 +9,16 @@ Next: milestone 3c — messages-GUI acceptance. Known 3c items from the
 first real browse: mirrored folders only appear after Message Folders →
 Expose All (subscription defaults for mirrored roots); metamail is
 launched for MIME display but shows nothing (pre-existing platform
-gap, out of AMS-IMAP scope). See §10.**
+gap, out of AMS-IMAP scope). See §10.
+
+**2026-07-22 update:** Subscribing to INBOX (the obvious manual fix)
+crashed `messages` — root-caused as a stale-pointer UAF in
+`folders__ActionHit` (`atkams/messages/lib/folders.c`, unrelated to IMAP;
+a pre-existing 1994 hazard the mirror's background refresh traffic finally
+made hot), fixed and committed. But subscribing does **not** solve the
+underlying goal: INBOX remains hidden on restart even once subscribed, so
+subscription state is not (or not solely) what gates default visibility.
+`folder-visibility-prompt.md` Gate 1 is still open.
 
 Goal: teach the AMS clients about IMAP as a mail store and SMTP as a mail
 sender, with OAuth2-capable authentication. Test platform: Fastmail.
