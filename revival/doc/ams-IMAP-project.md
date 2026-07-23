@@ -333,6 +333,41 @@ Committed 2026-07-23: `fb4876a` (code + tests), `aeef522` (docs).
 6 passed, 0 failed, 1 benign skip. See
 `revival/doc/claude-history/imap-writeback-REPORT.md` for the session detail.
 
+**MILESTONE 4 COMPLETE (2026-07-23).** Gate 2 (`83dc58c`/`6879cdf`)
+added `imap_prot`'s write entry points (`imap_UidStoreFlags`/
+`imap_UidExpunge`/`imap_Append`, plus `imap_Select`/`imap_Create`) and
+real flags/purge replay in `imap_sync.c`. Gate 3 (`df2a94c`/`164f736`)
+added append-record replay: APPEND the local body (CRLF-normalized —
+Fastmail rejects bare-LF literals, a real bug found live and fixed),
+then delete the local native-id copy through the suppressed purge
+path, so the message reappears under its proper deterministic id on
+the same run's mirror pass (a documented one-run flicker of identity,
+zero duplicate risk). Crash-safe resume (journal handoff, cursor
+byte-offset) and the 25-purge safety valve both proven live via
+fabricated-crash test cases.
+
+AMS-over-IMAP is now feature-complete end to end: browse (M2-3),
+one-way sync (M3b), two-way writeback (M4). SMTP send (M1) was already
+done. Only OAuth2 (M5) remains as a named milestone, plus the
+messages-GUI hand test, which is wdc's to run — see the Gate 3 report's
+two-line instruction.
+
+**A real incident happened mid-arc, fully resolved**: a Gate 1 test
+suite (`imap-writeback-tests`) mirrored a real, pre-existing folder
+rather than a sandbox — safe when written (no write code existed yet),
+not safe once Gate 2's replay went live. Running it as a required
+regression check permanently deleted one real ~2009-era message from
+the live account. Not recoverable (Time Machine excludes the scratch
+path by default policy; the local copy was already gone too, deleted
+by the same test's own local purge step before the server-side replay
+ran); wdc decided not to pursue further recovery. Fixed same day: the
+suite now targets `Revival/WritebackTest` exclusively, guarded by a
+hardcoded-literal assertion independent of the mutable folder variable
+— the pattern every subsequent destructive test in this project now
+follows. Full incident writeup, the retarget fix, and a related
+suppression-semantics test-design fix are all in
+`revival/doc/claude-history/imap-writeback-REPORT.md`'s dated sections.
+
 ### Milestone 5 — OAuth2
 
 * `imap_auth.c` — materializes only here: app-password and XOAUTH2 behind

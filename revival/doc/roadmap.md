@@ -227,9 +227,20 @@ mirrors IMAP; AMDS delivery remains excluded.
      runtime half remains (wait for the new profile warning line to
      fire); do not re-queue as written — the prompt's dbg_fopen
      premise was disproven.
-  6. `imap-writeback-prompt.md` — milestone 4 writeback (added
-     2026-07-19; the largest task in the queue — three gates, run it
-     only with a comfortable budget window).
+  6. ~~`imap-writeback-prompt.md`~~ — milestone 4 writeback. **DONE
+     2026-07-23**, all three gates closed and committed (`fb4876a`
+     Gate 1 code, `83dc58c`/`6879cdf` Gate 2, `df2a94c`/`164f736` Gate 3
+     — see `revival/doc/claude-history/imap-writeback-REPORT.md` for
+     the full history and `ams-IMAP-project.md` §7 for the design
+     summary). AMS-over-IMAP is feature-complete: capture, suppression,
+     flags/purge/append replay, crash-safe resume, all confined to
+     `Revival/WritebackTest` in test. One real incident happened and
+     was fully resolved mid-arc — a Gate 1 test suite that was safe
+     when written became unsafe once Gate 2's replay went live and
+     permanently deleted one real ~2009 message from the live account;
+     fixed same day, not recoverable, user chose not to pursue further
+     recovery. Remaining: a messages-GUI hand test (two-line
+     instruction in the Gate 3 report) is wdc's to run, not automated.
   7. ~~`mime-display-prompt.md`~~ (now in `claude-history/`) — **done
      2026-07-21.** MIME body display in `messages`: new `mimepart`
      module (`src/ams/libs/hdrs/mimepart.h` +
