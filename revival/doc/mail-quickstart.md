@@ -193,6 +193,17 @@ Alter Subscription → Show All to get the always-visible behavior.
 Captions, bodies, and seen/unseen state all come from the mirror;
 re-run `imapsync` to bring in new mail and updated flags.
 
+**Many menu items are grayed out until you enable them in Set
+Options** (Other menu → Set Options) — this is not folder- or
+message-specific, it's a global, off-by-default toggle per feature, a
+classic AUIS "experience level" progressive-disclosure design. Two
+you'll likely want early: **"File into... menus"** (`EXP_FILEINTOMENU`
+— without it, every "File Into" submenu item stays disabled no matter
+what's selected or displayed) and **"Mark as Unseen menu"**
+(`EXP_MARKASUNREAD` — same story for "This Message → Mark as Unread").
+If a menu item looks permanently disabled regardless of what you click
+on or select, suspect a Set Options toggle before suspecting a bug.
+
 ## Step 7: send
 
 Compose and send from `messages` or `cui` as normal. With `smtphost`
