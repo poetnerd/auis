@@ -89,8 +89,9 @@ an independent, cross-checking client -- never to drive imapsync
 itself), `imapsync` (`src/ams/msclients/imapsync`), and
 `smtptest.test`, then exercises all six spec cases against a fresh
 `mktemp -d` scratch mspath root, INBOX only (cases W2/W3/W4/W7, added
-for the writeback milestone's Gate 2, follow further down against a
-second, separate scratch root and mailbox):
+for the writeback milestone's Gate 2, and W5/W6, added for Gate 3,
+follow further down against a second, separate scratch root and
+mailbox):
 
 1. Fresh mirror: message count matches EXAMINE's EXISTS (checked
    independently via `imaptest.test examine`, never hardcoded); a
@@ -178,17 +179,57 @@ the long INBOX pass having completed first):
   than getting stuck on it), and a real, correctly-mirrored message
   elsewhere in the folder is left untouched.
 
-These four cases fabricate well-formed journal lines directly
-(following `msjournal.c`'s documented `"J1 ..."` grammar exactly) rather
-than driving a real `cui` session to produce them -- `imap-writeback-tests`
+W2/W3/W4/W7 fabricate well-formed journal lines directly (following
+`msjournal.c`'s documented `"J1 ..."` grammar exactly) rather than
+driving a real `cui` session to produce them -- `imap-writeback-tests`
 (below) already proves real capture end-to-end, so these cases test
-replay in isolation, faster and more deterministically. ALL destructive
-traffic in these four cases -- `STORE`/`EXPUNGE`/`APPEND`/`CREATE`, and
-every `imapsync` invocation that might replay a journal -- is confined
-to `Revival/WritebackTest`, created if absent; `INBOX` is never written
-to. Enforced twice, independently: `imaptest.c`'s own `guard_mailbox()`
-refuses at the C level regardless of caller, and this file's own
-`run_imapsync_wb()`/`imaptest_wb()` wrappers refuse, themselves, to be
+replay in isolation, faster and more deterministically.
+
+Cases W5/W6 (added for the writeback milestone's Gate 3 -- note the
+numbering gap after W4/W7 above, evidently reserved for exactly these)
+exercise append replay (`replay_append_line()`) and its crash-resume
+contract. Unlike W2/W3/W4/W7, append replay needs a real local
+native-id body file plus a real `.MS_MsgDir` entry (`MS_GetSnapshot`)
+to act on -- there is no safe way to fabricate that from Python without
+hand-writing `.MS_MsgDir` binary bytes, so both cases use
+`create_local_draft_via_cui()` (a real `cui` "mail" -> compose ->
+"draft" session -- `MS_AppendFileToFolder`, no IMAP, no SMTP) for the
+one real fixture message each needs:
+
+* **W5 append round-trip**: composes and saves one native-id draft
+  directly into `Revival/WritebackTest` via `cui` (its real capture
+  hook produces the `"J1 append"` line for free -- nothing here
+  fabricates it), then a plain `imapsync` run (replay+mirror in one
+  invocation). Verifies the journal is fully consumed, the native-id
+  local copy is gone, exactly one deterministic-id copy exists both
+  locally and server-side (`EXISTS` count consistent), and the
+  message's on-disk identity has "flickered" exactly as documented --
+  the deliberate one-run flicker, not a bug.
+* **W6 crash resume**: fabricates a `J1 flags` line that is
+  *deliberately never applied* server-side, followed by a real
+  `cui`-created native-id append (landing as the journal's second line
+  for free, after the fabricated first one). Simulates a crash between
+  a successful `APPEND` and its local cleanup/cursor-advance by direct
+  state-file surgery: renames `.MS_Journal` to
+  `.MS_Journal.replaying`, manually pre-applies the append server-side
+  (standing in for "the crashed run's own `APPEND`, which already
+  succeeded"), and sets `.MS_IMAPSync`'s `journal_offset` to point
+  exactly at the start of the append line. A real `imapsync`
+  invocation then resumes from there. Verifies: the already-past
+  `flags` line was *not* reapplied (the discriminating proof that
+  resume correctly started mid-file rather than restarting from
+  offset 0 -- if it had restarted, that line's forced `\Answered` would
+  now be set, and it is not); the append is duplicated *exactly once*
+  (the one documented accepted exposure, not more, not zero); and the
+  run completes cleanly (journal gone, cursor zeroed).
+
+ALL destructive traffic in W2/W3/W4/W5/W6/W7 -- `STORE`/`EXPUNGE`/
+`APPEND`/`CREATE`, and every `imapsync`/`cui` invocation that might
+touch the mailbox -- is confined to `Revival/WritebackTest`, created if
+absent; `INBOX` is never written to. Enforced twice, independently:
+`imaptest.c`'s own `guard_mailbox()` refuses at the C level regardless
+of caller, and this file's own `run_imapsync_wb()`/`imaptest_wb()`/
+`create_local_draft_via_cui()` wrappers refuse, themselves, to be
 pointed at any other folder name. A best-effort cleanup pass at the end
 (`expunge 1:*`) leaves `Revival/WritebackTest` empty again rather than
 accumulating each run's test messages.
@@ -243,19 +284,31 @@ Case 1 (the only case at Gate 1):
    contain exactly the four expected lines, byte for byte,
    independently recomputed in Python from the documented OR/AND-mask
    grammar (not by re-trusting `msjournal.c`'s own encoding).
-4. Suppression, two ways: an ordinary immediate re-run of `imapsync`,
-   and then a *forced* re-run with the scratch `.MS_IMAPSync` state
-   file's `highestmodseq` deliberately invalidated so the flags-refresh
-   pass genuinely re-applies real `MS_AlterSnapshot` calls from real
-   FETCH data. **Known, separate issue (not a safety concern): since
-   Gate 2, both of these re-runs really do replay and consume the
-   pending journal (real `STORE`/`EXPUNGE` against the sandbox), so the
-   "byte-identical afterward" assertions these two sub-cases make now
-   fail (comparing real journal content against the post-replay
-   consumed/deleted file) -- expect "1 passed, 2 failed" live.
-   Reconciling these assertions with real replay is a design decision
-   left to a future gate, tracked in `imap-writeback-REPORT.md`.**
-5. Cleanup: expunge everything this run added to `Revival/WritebackTest`
+4. Suppression, two ways -- resolved into two separately-checked
+   properties (2026-07-23's "suppression-semantics fix", see
+   `imap-writeback-REPORT.md`): **replay** (an ordinary `imapsync` run
+   right after capture must consume the pending journal for real --
+   file removed, cursor zeroed) and **suppression** (a *forced* re-run,
+   with the scratch `.MS_IMAPSync` state file's `highestmodseq`
+   deliberately invalidated so a real flags-refresh pass genuinely
+   re-applies real `MS_AlterSnapshot` calls from real FETCH data, must
+   not spuriously create a *new* journal entry, checked against the
+   now-empty baseline replay left behind, not the stale pre-replay
+   content).
+5. **Case 5 (Gate 3): append round-trip.** `run_cui_append()` composes
+   a fresh message via `cui`'s "mail" command and saves it as a draft
+   directly into `Revival/WritebackTest` (`SEND_SAVEDRAFT` ->
+   `MS_AppendFileToFolder`, no IMAP, no SMTP) -- a genuinely native-id
+   local message. A single `imapsync` run (replay+mirror in one
+   invocation) is verified to: consume the resulting `"J1 append"`
+   line; leave the local mirror with exactly one deterministic-id copy
+   (the native-id copy gone); and leave the server with exactly one
+   matching message (`EXISTS` consistent with the local count before +
+   1). Uses `cui`'s compose+save-as-draft path rather than a literal
+   "copy" -- see `run_cui_append()`'s own docstring for why (both
+   directions of a two-folder copy hit `MS_CloneMessage`'s own
+   id-collision guard, `EMSALREADYTHERE`).
+6. Cleanup: expunge everything this run added to `Revival/WritebackTest`
    (`expunge 1:*`), run in a `finally` block so it happens whether the
    cases above pass or fail.
 

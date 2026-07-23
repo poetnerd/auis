@@ -53,6 +53,23 @@ case 1), so these cases test replay_folder() in isolation, faster and
 more deterministically -- exactly the same testing strategy the
 milestone's own spec calls for in case 4 ("fabricate a journal with 26
 purges").
+
+Cases W5/W6 (added for the writeback milestone's Gate 3-- note the
+numbering gap left by W2/W3/W4/W7 above, evidently reserved for
+exactly these) exercise append replay and its crash-resume contract.
+Unlike W2/W3/W4/W7, replay_append_line() needs a real local native-id
+body file plus a real .MS_MsgDir entry (via MS_GetSnapshot) to act on
+-- there is no safe way to fabricate that from Python without
+hand-writing .MS_MsgDir binary bytes, so both cases use
+create_local_draft_via_cui() (a real cui "mail" -> compose -> "draft"
+session -- MS_AppendFileToFolder, no IMAP, no SMTP) for the one real
+fixture message each needs; W6 then fabricates the surrounding
+journal/state-file conditions (a flags line that is deliberately never
+applied, a renamed .MS_Journal.replaying, a manually pre-applied
+"crashed run's own APPEND", and a journal_offset cursor set to point
+exactly at the interrupted line) the same way W4 fabricates its own
+edge case, to prove the crash-resume contract deterministically rather
+than by timing a real process kill.
 """
 
 import datetime
@@ -427,6 +444,69 @@ def append_test_message(folder, subject, tmpdir, tag):
     return int(uv), int(uid)
 
 
+def crlf_normalize(raw_bytes):
+    """Python mirror of imap_sync.c's crlf_stage_body(): local MS_
+    storage is plain LF-terminated text, but a real APPEND literal
+    containing a bare LF is rejected server-side ("Message contains
+    bare newlines", confirmed live against Fastmail during Gate 3) --
+    used here only to prepare a manually-driven imaptest_wb("append",
+    ...) call in W6 that stands in for "the crashed run's own APPEND,
+    which already succeeded" (imap_Append itself has no such
+    normalization built in -- imap_sync.c's replay path is the one
+    responsible for it, mirrored here so this test's manual pre-apply
+    step hits the same real protocol requirement rather than assuming
+    it away)."""
+    text = raw_bytes.decode("latin-1")
+    lines = text.splitlines(keepends=False)
+    return ("\r\n".join(lines) + ("\r\n" if text.endswith(("\n", "\r")) else "")).encode("latin-1")
+
+
+def create_local_draft_via_cui(root, folder, subject, body):
+    """W5/W6 (Gate 3): lands a genuinely native-id (non-deterministic)
+    local message directly into folder via cui's "mail" -> compose ->
+    "draft" (SEND_SAVEDRAFT) path -- MS_AppendFileToFolder, no IMAP, no
+    SMTP (a draft is never submitted). Same mechanism, and the same
+    reasoning for why it's used instead of a literal cui "copy", as
+    imap-writeback-tests' run_cui_append() (see that function's
+    docstring in the sibling suite): there is no way to fabricate a
+    genuinely new native-id local message from Python alone without
+    hand-writing .MS_MsgDir binary bytes, which this suite avoids on
+    principle (see the module docstring's "fabricate journal lines
+    directly... rather than driving a real cui session" -- that
+    principle applies to REPLAY testing; there is no substitute for a
+    real store call to CREATE the one native-id fixture message replay
+    then acts on). Returns the transcript text."""
+    assert_write_mailbox(folder)
+    profiles_path = os.path.join(root, "PROFILES")
+    with open(profiles_path, "w", newline="\n") as f:
+        f.write(f"mspath: {os.path.join(root, '.MESSAGES')}\n")
+
+    transcript = []
+    sess = CuiSession(profiles_path)
+    try:
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("mail\n")
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send("wdc@fastmail.com\n")
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send(f"{subject}\n")
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send("\n")  # CC: blank
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send(f"{body}\n")
+        sess.send("\x04")  # a real Ctrl-D -- EOF_STRING is "press control-d"
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("draft\n")
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send(f"{folder}\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("quit\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+    finally:
+        sess.close()
+    return "\n".join(t for t in transcript if isinstance(t, str))
+
+
 # ---- case 3: send a marker via the committed SMTP path, poll-sync ----
 
 def build_smtptest():
@@ -677,7 +757,7 @@ def main():
         for n in ("1 fresh mirror of INBOX", "2 idempotent re-run", "3 incremental sync",
                   "4 flags mapping", "5 UIDVALIDITY change drill", "6 cui browse",
                   "W2 flags round-trip", "W3 purge round-trip", "W4 safety valve",
-                  "W7 stale-journal drill"):
+                  "W7 stale-journal drill", "W5 append round-trip", "W6 crash resume"):
             skip(n, "no live credentials")
         note("")
         note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped "
@@ -1052,6 +1132,184 @@ def main():
                    "(journal fully consumed), and the real message is untouched",
                    r_stale.returncode == 0 and loud_stale and journal_gone7 and still_present,
                    f"loud_stale={loud_stale} journal_gone7={journal_gone7} still_present={still_present}")
+
+        # ---- case W5: append round-trip (Gate 3) ----
+        # Unlike W2/W3/W4/W7, replay_append_line() needs a real local
+        # native-id body file + .MS_MsgDir entry (via MS_GetSnapshot) --
+        # there is no safe way to fabricate that from Python without
+        # hand-writing .MS_MsgDir binary bytes, so
+        # create_local_draft_via_cui() (real cui compose + "draft" ->
+        # MS_AppendFileToFolder) provides the one real fixture message;
+        # its own real capture hook produces a real "J1 append" line for
+        # free, so nothing here fabricates the journal line itself.
+        before_w5 = body_files_for(wb_scratch, WRITE_MAILBOX)
+        subject_w5 = f"GATE3-W5-APPEND-{wtag}"
+        transcript_w5 = create_local_draft_via_cui(
+            wb_scratch, WRITE_MAILBOX, subject_w5,
+            f"imap-sync-tests W5 append-round-trip probe body ({wtag}).")
+        note(transcript_w5[-1500:])
+
+        native_hits_w5 = find_marker_files_for(wb_scratch, WRITE_MAILBOX, subject_w5)
+        if len(native_hits_w5) != 1:
+            result("W5 append round-trip", False,
+                   f"expected exactly one local native-id file after the draft save, found {len(native_hits_w5)}")
+        else:
+            native_id_w5 = os.path.basename(native_hits_w5[0])[1:]
+            jpath_w5 = journalpath_for(wb_scratch, WRITE_MAILBOX)
+            jlines_w5 = []
+            if os.path.isfile(jpath_w5):
+                with open(jpath_w5) as f:
+                    jlines_w5 = [l.rstrip("\n") for l in f if l.strip()]
+            capture_ok_w5 = jlines_w5 == [f"J1 append {native_id_w5}"]
+
+            r_w5 = run_imapsync_wb(wb_scratch, WRITE_MAILBOX)
+            note(r_w5.stdout)
+            if r_w5.stderr:
+                note(r_w5.stderr)
+
+            journal_gone_w5 = (not os.path.isfile(jpath_w5)
+                                and not os.path.isfile(replayingpath_for(wb_scratch, WRITE_MAILBOX)))
+            cursor_zero_w5 = True
+            sp_w5 = statepath_for(wb_scratch, WRITE_MAILBOX)
+            if os.path.isfile(sp_w5):
+                with open(sp_w5) as f:
+                    cursor_zero_w5 = "journal_offset 0" in f.read()
+
+            deterministic_hits_w5 = find_marker_files_for(wb_scratch, WRITE_MAILBOX, subject_w5)
+            native_gone_w5 = not os.path.exists(
+                os.path.join(folder_dir_for(wb_scratch, WRITE_MAILBOX), "+" + native_id_w5))
+            exactly_once_w5 = len(deterministic_hits_w5) == 1 and native_gone_w5
+
+            _, ekv_w5 = imaptest_readonly("examine", WRITE_MAILBOX)
+            expected_count_w5 = len(before_w5) + 1
+            server_exists_w5 = int(ekv_w5["EXISTS"]) if ekv_w5.get("EXISTS", "").isdigit() else None
+            local_count_w5 = len(body_files_for(wb_scratch, WRITE_MAILBOX))
+            count_consistent_w5 = (server_exists_w5 == expected_count_w5 and local_count_w5 == expected_count_w5)
+
+            result("W5 append round-trip: a real cui-created native-id local message replays and "
+                   "mirrors in one imapsync run, converging on a deterministic id exactly once",
+                   capture_ok_w5 and r_w5.returncode == 0 and journal_gone_w5 and cursor_zero_w5
+                   and exactly_once_w5 and count_consistent_w5,
+                   f"capture_ok_w5={capture_ok_w5} jlines_w5={jlines_w5} journal_gone_w5={journal_gone_w5} "
+                   f"cursor_zero_w5={cursor_zero_w5} native_gone_w5={native_gone_w5} "
+                   f"deterministic_hits_w5={len(deterministic_hits_w5)} server_exists_w5={server_exists_w5} "
+                   f"expected_count_w5={expected_count_w5} local_count_w5={local_count_w5}")
+
+        # ---- case W6: crash resume (Gate 3) ----
+        # Simulates a crash between a successful APPEND and its local
+        # cleanup/cursor-advance (replay_append_line()'s own documented
+        # accepted-exposure window) by direct state-file surgery, the
+        # same style W4 already uses for its own edge case: a real
+        # fabricated "flags" line that is never actually applied before
+        # the simulated crash (idA), followed by a real cui-created
+        # native-id append (line 2) -- .MS_Journal is renamed to
+        # .MS_Journal.replaying, the append is manually pre-applied
+        # server-side (standing in for "the crashed run's own APPEND,
+        # which already succeeded"), and journal_offset is set to point
+        # exactly at the start of line 2 -- then a real imapsync
+        # invocation resumes from there.
+        uvA, uidA = append_test_message(WRITE_MAILBOX, f"GATE3-W6-FLAGS-{wtag}", wb_scratch, f"w6a-{wtag}")
+        if uvA is None:
+            result("W6 crash resume", False, "append_test_message failed to produce idA's uid")
+        else:
+            rmir_w6 = run_imapsync_wb(wb_scratch, WRITE_MAILBOX)
+            note(rmir_w6.stdout)
+            if rmir_w6.stderr:
+                note(rmir_w6.stderr)
+            hitsA = find_marker_files_for(wb_scratch, WRITE_MAILBOX, f"GATE3-W6-FLAGS-{wtag}")
+            if not hitsA:
+                result("W6 crash resume", False, "idA did not mirror locally after append")
+            else:
+                idA = os.path.basename(hitsA[0])[1:]
+
+                # Line 1 (fabricated, deliberately never applied
+                # server-side before the simulated crash): forces
+                # AMS_ATT_REPLIEDTO on (-> \Answered). If the resumed
+                # run incorrectly restarted replay from offset 0 instead
+                # of honoring the crash_offset set below, this line
+                # WOULD get applied for real -- the discriminating proof
+                # the assertions below check for.
+                ormaskA, andmaskA = or_mask_for_bit(_AMS_ATT_REPLIEDTO)
+                line1_w6 = f"J1 flags {idA} {ormaskA} {andmaskA}"
+                write_journal_lines(wb_scratch, WRITE_MAILBOX, [line1_w6])
+
+                subject_w6 = f"GATE3-W6-APPEND-{wtag}"
+                transcript_w6 = create_local_draft_via_cui(
+                    wb_scratch, WRITE_MAILBOX, subject_w6,
+                    f"imap-sync-tests W6 crash-resume probe body ({wtag}).")
+                note(transcript_w6[-1500:])
+
+                jpath_w6 = journalpath_for(wb_scratch, WRITE_MAILBOX)
+                with open(jpath_w6) as f:
+                    jlines_w6 = [l.rstrip("\n") for l in f if l.strip()]
+                two_lines = (len(jlines_w6) == 2 and jlines_w6[0] == line1_w6
+                             and jlines_w6[1].startswith("J1 append "))
+                if not two_lines:
+                    result("W6 crash resume", False,
+                           f"expected exactly 2 journal lines (fabricated flags + real cui "
+                           f"append), got {jlines_w6}")
+                else:
+                    native_id_w6 = jlines_w6[1].split(" ")[2]
+                    crash_offset = len((line1_w6 + "\n").encode())
+
+                    # ---- simulate the crash ----
+                    replayingpath_w6 = replayingpath_for(wb_scratch, WRITE_MAILBOX)
+                    os.rename(jpath_w6, replayingpath_w6)
+
+                    native_body_path = os.path.join(
+                        folder_dir_for(wb_scratch, WRITE_MAILBOX), "+" + native_id_w6)
+                    with open(native_body_path, "rb") as f:
+                        raw = f.read()
+                    tmp_eml = os.path.join(wb_scratch, "w6-precrash-append.eml")
+                    with open(tmp_eml, "wb") as f:
+                        f.write(crlf_normalize(raw))
+                    r_precrash, kv_precrash = imaptest_wb("append", WRITE_MAILBOX, tmp_eml)
+                    precrash_ok = r_precrash.returncode == 0 and kv_precrash.get("APPEND-RC") == "0"
+
+                    sp_w6 = statepath_for(wb_scratch, WRITE_MAILBOX)
+                    with open(sp_w6) as f:
+                        state_lines_w6 = f.readlines()
+                    with open(sp_w6, "w", newline="\n") as f:
+                        for line in state_lines_w6:
+                            if line.startswith("journal_offset"):
+                                f.write(f"journal_offset {crash_offset}\n")
+                            else:
+                                f.write(line)
+
+                    if not precrash_ok:
+                        result("W6 crash resume", False,
+                               "could not simulate the pre-crash APPEND: "
+                               f"exit={r_precrash.returncode} kv={kv_precrash}")
+                    else:
+                        # ---- resume: a real imapsync invocation ----
+                        r_resume = run_imapsync_wb(wb_scratch, WRITE_MAILBOX)
+                        note(r_resume.stdout)
+                        if r_resume.stderr:
+                            note(r_resume.stderr)
+
+                        journal_gone_w6 = (not os.path.isfile(jpath_w6)
+                                            and not os.path.isfile(replayingpath_w6))
+                        cursor_zero_w6 = True
+                        if os.path.isfile(sp_w6):
+                            with open(sp_w6) as f:
+                                cursor_zero_w6 = "journal_offset 0" in f.read()
+
+                        _, fkvA = imaptest_readonly("fetchflags", WRITE_MAILBOX, uidA)
+                        no_flags_damage = (fkvA.get("FOUND") == "yes"
+                                            and "\\Answered" not in fkvA.get("FLAGS", ""))
+
+                        dup_hits = find_marker_files_for(wb_scratch, WRITE_MAILBOX, subject_w6)
+                        exactly_one_duplicate = len(dup_hits) == 2
+
+                        result("W6 crash resume: a run interrupted between a successful APPEND "
+                               "and its local cleanup/cursor-advance, resumed, completes with no "
+                               "flags damage to an already-past journal line and at most the "
+                               "documented one duplicate append",
+                               r_resume.returncode == 0 and journal_gone_w6 and cursor_zero_w6
+                               and no_flags_damage and exactly_one_duplicate,
+                               f"resume_exit={r_resume.returncode} journal_gone_w6={journal_gone_w6} "
+                               f"cursor_zero_w6={cursor_zero_w6} no_flags_damage={no_flags_damage} "
+                               f"fkvA={fkvA} dup_hits={len(dup_hits)}")
 
         # Best-effort tidiness, not a test case: leave WRITE_MAILBOX
         # empty afterward rather than accumulating this run's test

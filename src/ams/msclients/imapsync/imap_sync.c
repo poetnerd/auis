@@ -36,15 +36,22 @@
 
 	Writeback (replay_folder() and its helpers, below): local mutations
 	captured by msjournal.c (src/ams/libs/ms) into a folder's
-	".MS_Journal" -- flags changes and purges made through messages/cui
-	against a mirrored folder -- get pushed to the server here, journal
-	first, so this run's own mirror pass immediately re-converges on
-	them ("server wins" falls out for free). Crash-safe: ".MS_Journal"
-	is renamed to ".MS_Journal.replaying" before anything is sent, and
-	a byte-offset cursor in ".MS_IMAPSync" only advances once a line's
-	op gets a definite answer from the server. Only "flags" and "purge"
-	records are replayed here; an "append" record halts replay in
-	place (append writeback is a later milestone). A per-folder,
+	".MS_Journal" -- flags changes, purges, and native-id appends made
+	through messages/cui against a mirrored folder -- get pushed to the
+	server here, journal first, so this run's own mirror pass
+	immediately re-converges on them ("server wins" falls out for
+	free). Crash-safe: ".MS_Journal" is renamed to
+	".MS_Journal.replaying" before anything is sent, and a byte-offset
+	cursor in ".MS_IMAPSync" only advances once a line's op gets a
+	definite answer from the server. "flags" and "purge" records are
+	replayed as STORE/EXPUNGE against the existing deterministic id;
+	"append" records APPEND the local native-id copy's body to the
+	server, then delete that local copy through the store's own purge
+	path (MS_AlterSnapshot + MS_PurgeDeletedMessages, suppressed for
+	free by this process's own MSJournal_Suppress(1)) -- the message
+	then reappears under its proper deterministic id on this same run's
+	very next mirror pass over the folder (a deliberate one-run
+	flicker of identity; see replay_append_line()). A per-folder,
 	per-run safety valve refuses to replay more than 25 pending purges
 	unless invoked with -force-purges. IMAP usage otherwise remains
 	read-only via EXAMINE (never SELECT) except during an active
@@ -107,6 +114,17 @@ extern int MS_CreateNewMessageDirectory(char *dirname, int overwrite, char *body
 extern int MS_AppendFileToFolderWithId(char *filename, char *foldername,
                                         char *id, char *date64);
 extern int MS_AlterSnapshot(char *dirname, char *id, char *newsnapshot, int code);
+extern int MS_GetSnapshot(char *dirname, char *id, char *snapshotbuf);
+extern int MS_PurgeDeletedMessages(char *dirname);
+
+/* rawdb.c (src/ams/libs/ms) -- the same body-file-path primitive
+   purge.c/getbody.c use: "<dirname>/+<id>" first, falling back (via
+   RetryBodyFileName) to the bare "<dirname>/<id>" form some older
+   messages are stored under. Neither is variadic (bug class #6 does
+   not apply); given full ANSI prototypes here anyway, matching this
+   file's own convention for every other K&R store entry point. */
+extern int QuickGetBodyFileName(char *dirname, char *id, char *filename);
+extern int RetryBodyFileName(char *filename);
 
 /* msjournal.c (src/ams/libs/ms) -- writeback capture. imapsync's own
    mirror writes (MS_AppendFileToFolderWithId, and the MS_AlterSnapshot
@@ -122,6 +140,7 @@ extern void MSJournal_Suppress(int on);
    the *next* call -- every call site below copies the result out
    immediately, before making another call, to avoid aliasing. */
 extern char *convlongto64(long num, int pad);
+extern unsigned long conv64tolong(char *s);
 
 /* getprofile() -- the tree's preference lookup (declared K&R all over
    the tree, e.g. ams/libs/ms/util.c); used only for the "imapsyncfolders"
@@ -452,6 +471,26 @@ static int parse_internaldate(const char *s, time_t *outp)
 
     *outp = t;
     return 0;
+}
+
+/* Inverse of parse_internaldate() above, needed for append replay:
+   formats a UTC time_t as an RFC 3501 INTERNALDATE string (e.g.
+   "23-Jul-2026 12:34:56 +0000") for imap_Append(). Always emits "+0000"
+   -- the store's own AMS_DATE field (see below) is itself a UTC unix
+   time with no separate timezone-of-origin recorded, so there is no
+   original offset to reproduce; UTC is what parse_internaldate() would
+   recover from this exact string on a later re-mirror, so the round
+   trip is exact regardless. Hand-rolled with the same Months3 table
+   parse_internaldate() uses, rather than strftime(), to keep this file's
+   date handling in one place and immune to locale month-name surprises. */
+static void format_internaldate(time_t t, char *out, size_t outsize)
+{
+    struct tm tmv;
+
+    tmv = *gmtime(&t);
+    snprintf(out, outsize, "%02d-%s-%04d %02d:%02d:%02d +0000",
+             tmv.tm_mday, Months3[tmv.tm_mon], tmv.tm_year + 1900,
+             tmv.tm_hour, tmv.tm_min, tmv.tm_sec);
 }
 
 /* ---------------------------------------------------------------- */
@@ -877,7 +916,7 @@ static int check_expunged(struct imapconn *conn, const char *localpath,
 }
 
 /* ---------------------------------------------------------------- */
-/* writeback: journal replay (flags + purge; append is Gate 3)          */
+/* writeback: journal replay (flags + purge + append)                   */
 /* ---------------------------------------------------------------- */
 
 /* Per-run, per-folder safety valve: a corrupt or stale journal must
@@ -1053,6 +1092,235 @@ static int replay_purge_line(struct imapconn *conn, unsigned long uidvalidity,
     return 0;
 }
 
+#define CRLF_LINEBUF 8192
+
+/* Copies fromf (the local body file -- MS_ storage, like the rest of
+   this Unix tree, is plain LF-terminated text) into a fresh temp file
+   with every bare LF converted to CRLF, and *outsize set to the
+   resulting byte count. A real APPEND against a bare-LF literal is
+   rejected live ("a2 NO Message contains bare newlines", confirmed
+   against Fastmail) -- RFC 3501 literals are wire bytes, and the wire
+   format is CRLF throughout, the same reason
+   overhead/mail/lib/smtpsub.c's smtp_send_body() already does this
+   exact LF->CRLF normalization for the SMTP DATA body (mirrored here
+   minus that function's SMTP-specific dot-stuffing, which APPEND's
+   literal framing has no equivalent of). The temp file is unlinked
+   immediately after being opened -- an ordinary Unix idiom, the fd
+   stays valid via the returned FILE* until fclose() -- so there is
+   nothing to clean up on any exit path, including every error return
+   below. Returns the open FILE* (rewound to the start), or NULL on
+   any I/O error. */
+static FILE *crlf_stage_body(FILE *fromf, long *outsize)
+{
+    char tmppath[MAXPATHLEN + 1];
+    char linebuf[CRLF_LINEBUF];
+    const char *tmpdir;
+    FILE *tmpf;
+    int fd;
+    long total;
+    int len, hadnl;
+
+    tmpdir = getenv("TMPDIR");
+    if (tmpdir == NULL || tmpdir[0] == '\0') tmpdir = "/tmp";
+    snprintf(tmppath, sizeof(tmppath), "%s/imapsync-append-XXXXXX", tmpdir);
+    fd = mkstemp(tmppath);
+    if (fd < 0) return NULL;
+    unlink(tmppath);
+    tmpf = fdopen(fd, "w+");
+    if (tmpf == NULL) { close(fd); return NULL; }
+
+    rewind(fromf);
+    total = 0;
+    while (fgets(linebuf, sizeof(linebuf), fromf) != NULL) {
+        len = (int) strlen(linebuf);
+        hadnl = (len > 0 && linebuf[len - 1] == '\n');
+        if (hadnl) linebuf[--len] = '\0';
+        if (len > 0 && linebuf[len - 1] == '\r') linebuf[--len] = '\0';
+        if (fwrite(linebuf, 1, (size_t) len, tmpf) != (size_t) len) { fclose(tmpf); return NULL; }
+        total += len;
+        if (hadnl) {
+            if (fwrite("\r\n", 1, 2, tmpf) != 2) { fclose(tmpf); return NULL; }
+            total += 2;
+        }
+    }
+    if (ferror(fromf) || fflush(tmpf) != 0 || fseek(tmpf, 0, SEEK_SET) != 0) {
+        fclose(tmpf);
+        return NULL;
+    }
+    *outsize = total;
+    return tmpf;
+}
+
+/* Replays one "J1 append <id>" record: id here is a native id (not one
+   synth_id() produced -- decode_id() is not used at all in this
+   function), invented by the store itself when messages/cui placed a
+   plain local message directly into this mirrored folder (a "copy" or
+   "append" cui command, a save-as-draft, or MS_CloneMessage's dest side
+   generally -- see msjournal.c's grammar comment and the four capture
+   hook sites for the full list). Pushes that local message to the
+   server with APPEND, flags from the local snapshot's own attributes
+   and INTERNALDATE from the local snapshot's own AMS_DATE field
+   (format_internaldate() above), then deletes the local native-id copy
+   through the store's own purge path -- MS_AlterSnapshot to mark it
+   AMS_ATT_DELETED, then MS_PurgeDeletedMessages -- both suppressed for
+   free (this whole process ran MSJournal_Suppress(1) once at startup,
+   see main()), not by any special-casing here.
+
+   Deliberate, documented one-run "flicker of identity": between the
+   local purge just below and this run's own subsequent mirror pass a
+   little further down sync_folder_once() (still within the very same
+   run), the message briefly has no local copy under ANY id at all --
+   harmless, since nothing else reads the local mirror mid-run -- and
+   then reappears via the ordinary "new mail" pass under its proper
+   deterministic id (the APPEND above advanced the server's UIDNEXT,
+   so that pass's own UID SEARCH sees it as new). Zero duplicate risk
+   in the ordinary case: exactly one APPEND happened, exactly one
+   deterministic copy results. The sole accepted exception is a crash
+   between a successful APPEND and the local purge/cursor-advance below
+   -- see replay_folder()'s crash-safety note -- which means a retried
+   run re-APPENDs the still-present local native copy: the one
+   documented duplicate-append exposure this milestone accepts (a
+   second, separate deterministic copy on the server; nothing is lost,
+   nothing crashes, no local state is left inconsistent).
+
+   Note on MS_PurgeDeletedMessages' own blast radius: it purges every
+   currently-\Deleted message in the folder, not just this one. In the
+   ordinary case this one is the only such message: a real "purge"
+   capture (see purge.c) unlinks its message's local copy at the moment
+   it captures the journal record, so any *earlier* "J1 purge" line in
+   this same journal has already left nothing local to re-purge here,
+   and any *later* one still has its real purge ahead of it. The one
+   genuine edge case is a locally-deleted-but-not-yet-purged message
+   (marked via a "delete" journaled as a "flags" record, with no
+   matching "purge" record yet queued) sitting in the same folder when
+   an append record is replayed: that message's local snapshot entry
+   is removed a little earlier than its own eventual purge would have
+   removed it. This is harmless -- the later purge (whenever the user
+   actually runs it) replays purely from its id's own decoded uid, not
+   from local file presence, and a subsequent flags refresh already
+   tolerates a locally-missing message (see flags_refresh_cb's own
+   EMSNOSUCHMESSAGE handling above) -- but worth knowing about if a
+   locally-deleted message's disappearance is ever traced back here.
+
+   Same 0/-1 return convention as replay_flags_line/replay_purge_line:
+   -1 only if the connection died outright (caller must not advance the
+   replay cursor); 0 covers every deliberate skip, including a
+   non-fatal APPEND failure logged and moved past (matching this
+   milestone's existing policy for a non-fatal STORE/EXPUNGE failure --
+   see replay_folder()'s own header comment) and the crash-resume case
+   below where the local native copy is already gone. */
+static int replay_append_line(struct imapconn *conn, const char *localpath,
+                               const char *foldername, const char *id, int *anyerror)
+{
+    char snapshot[AMS_SNAPSHOTSIZE];
+    char bodypath[MAXPATHLEN + 1];
+    char flagsbuf[64];
+    char internaldate[64];
+    char orbuf[AMS_SNAPSHOTSIZE];
+    FILE *bodyf;
+    FILE *crlfbodyf;
+    long bodysize;
+    long mrc;
+    int rc;
+    time_t t;
+    unsigned long out_uidvalidity, out_uid;
+
+    mrc = MS_GetSnapshot((char *) localpath, (char *) id, snapshot);
+    if (mrc != 0) {
+        mserrcode = mrc;
+        if (AMS_ERRNO == EMSNOSUCHMESSAGE) {
+            /* Crash-resume case: an earlier, interrupted run's APPEND
+               already succeeded and the local native copy was already
+               purged, but the journal cursor never advanced past this
+               line before the crash. Nothing left to send -- move the
+               cursor past it, matching the "re-purge of a gone uid is
+               a no-op" spirit of the flags/purge replay above. */
+            vlog("replay: \"%s\" append record for id %s: no local message under that id "
+                 "(already applied on a prior interrupted run); skipping", foldername, id);
+            return 0;
+        }
+        fprintf(stderr, "imapsync: replay: MS_GetSnapshot id %s in \"%s\": ", id, foldername);
+        report_mserr("MS_GetSnapshot", mrc);
+        *anyerror = 1;
+        return 0;
+    }
+
+    QuickGetBodyFileName((char *) localpath, (char *) id, bodypath);
+    bodyf = fopen(bodypath, "r");
+    if (bodyf == NULL && RetryBodyFileName(bodypath) == 0) {
+        bodyf = fopen(bodypath, "r");
+    }
+    if (bodyf == NULL) {
+        fprintf(stderr, "imapsync: replay: could not open local body file for id %s in \"%s\": %s\n",
+                id, foldername, strerror(errno));
+        *anyerror = 1;
+        return 0;
+    }
+    crlfbodyf = crlf_stage_body(bodyf, &bodysize);
+    fclose(bodyf);
+    if (crlfbodyf == NULL) {
+        fprintf(stderr, "imapsync: replay: could not stage a CRLF body copy for id %s in \"%s\": %s\n",
+                id, foldername, strerror(errno));
+        *anyerror = 1;
+        return 0;
+    }
+
+    /* Flags from the local snapshot's own attributes -- a direct,
+       forward mapping (this snapshot's actual bits, not an or/and-mask
+       delta like replay_flags_line decodes), same three server-mapped
+       attributes apply_flags()/replay_flags_line() use elsewhere. */
+    flagsbuf[0] = '\0';
+    if (!AMS_GET_ATTRIBUTE(snapshot, AMS_ATT_UNSEEN)) strcpy(flagsbuf, "\\Seen");
+    if (AMS_GET_ATTRIBUTE(snapshot, AMS_ATT_REPLIEDTO)) {
+        if (flagsbuf[0] != '\0') strcat(flagsbuf, " ");
+        strcat(flagsbuf, "\\Answered");
+    }
+    if (AMS_GET_ATTRIBUTE(snapshot, AMS_ATT_DELETED)) {
+        if (flagsbuf[0] != '\0') strcat(flagsbuf, " ");
+        strcat(flagsbuf, "\\Deleted");
+    }
+
+    t = (time_t) conv64tolong(AMS_DATE(snapshot));
+    format_internaldate(t, internaldate, sizeof(internaldate));
+
+    out_uidvalidity = 0;
+    out_uid = 0;
+    rc = imap_Append(conn, foldername, flagsbuf[0] != '\0' ? flagsbuf : NULL, internaldate,
+                      crlfbodyf, bodysize, &out_uidvalidity, &out_uid);
+    fclose(crlfbodyf);
+    if (rc == IMAP_DEAD) return -1;
+    if (rc != IMAP_OK) {
+        fprintf(stderr, "imapsync: replay: APPEND id %s in \"%s\": %d (%s) %s\n",
+                id, foldername, rc, imap_rcname(rc), imap_ErrMsg(conn));
+        *anyerror = 1;
+        return 0;	/* local native copy left in place; retried next run */
+    }
+    vlog("replay: APPEND id %s in \"%s\" -> uidvalidity %lu uid %lu (will re-mirror under its "
+         "own deterministic id on this run's mirror pass just below)",
+         id, foldername, out_uidvalidity, out_uid);
+
+    /* Delete the local native-id copy through the store's own purge
+       path -- suppressed for free (see this function's own header
+       comment); mirrors check_expunged()'s mark-then-purge idiom
+       above. */
+    memset(orbuf, 0, sizeof(orbuf));
+    AMS_SET_ATTRIBUTE(orbuf, AMS_ATT_DELETED);
+    mrc = MS_AlterSnapshot((char *) localpath, (char *) id, orbuf, ASS_OR_ATTRIBUTES);
+    if (mrc != 0) {
+        fprintf(stderr, "imapsync: replay: post-APPEND mark-deleted id %s in \"%s\": ", id, foldername);
+        report_mserr("MS_AlterSnapshot", mrc);
+        *anyerror = 1;
+        return 0;
+    }
+    mrc = MS_PurgeDeletedMessages((char *) localpath);
+    if (mrc != 0) {
+        fprintf(stderr, "imapsync: replay: post-APPEND purge in \"%s\": ", foldername);
+        report_mserr("MS_PurgeDeletedMessages", mrc);
+        *anyerror = 1;
+    }
+    return 0;
+}
+
 /* Crash-safe handoff: renames .MS_Journal to .MS_Journal.replaying so
    that messages/cui may keep appending fresh records to a brand-new
    .MS_Journal while this run replays the frozen snapshot (picked up
@@ -1080,16 +1348,21 @@ static int journal_handoff(const char *localpath, char *replayingpath, size_t re
    journal first (per the writeback design: journal first, then the
    ordinary mirror pass, so a push lands before the mirror pass reads
    server truth including it -- "server wins" falls out for free).
-   "flags" and "purge" records are replayed; "append" records are left
-   entirely alone -- their replay is a later milestone -- which halts
-   the whole replay at the first one encountered (not skipped past),
-   so the exact same line is retried, still unimplemented, every run
-   until append replay exists. journal_offset in *state is the
+   "flags" and "purge" records are replayed as STORE/EXPUNGE against
+   the id's own existing deterministic (uidvalidity, uid); "append"
+   records (see replay_append_line() above) APPEND the local native-id
+   copy's body to the server and then delete that local copy through
+   the store's own purge path, suppressed -- the message reappears
+   under its proper deterministic id on this very run's own subsequent
+   mirror pass (a deliberate one-run flicker of identity, documented in
+   full at replay_append_line()). journal_offset in *state is the
    crash-safety cursor: advanced (and .MS_IMAPSync atomically
    rewritten) only after each line's op gets a definite answer from
    the server, so a crash mid-replay re-sends at most one already-
    applied op on the next run -- accepted per the design (STORE is
-   idempotent; re-purging an already-gone uid is a no-op).
+   idempotent; re-purging an already-gone uid is a no-op; re-APPENDing
+   is the one case that can genuinely duplicate, also accepted --
+   see replay_append_line()).
 
    *info is both input (its uidvalidity is the "current" value every
    replayed record's own UIDVALIDITY is checked against) and output:
@@ -1225,11 +1498,15 @@ static int replay_folder(struct imapconn *conn, const char *localpath,
             rc = replay_purge_line(conn, uidvalidity, id, foldername, anyerror);
             if (rc < 0) { fclose(f); return SF_DEAD; }
         } else if (strcmp(kind, "append") == 0) {
-            vlog("replay: \"%s\" has a pending \"append\" record -- append replay is not yet "
-                 "implemented; stopping replay here, will retry from this line every run "
-                 "until it is", foldername);
-            stopped_early = 1;
-            break;
+            id = strtok_r(NULL, " ", &save);
+            if (id == NULL) {
+                loudlog("imapsync: replay: malformed \"append\" journal line in \"%s\": \"%s\" -- stopping",
+                        foldername, line);
+                stopped_early = 1;
+                break;
+            }
+            rc = replay_append_line(conn, localpath, foldername, id, anyerror);
+            if (rc < 0) { fclose(f); return SF_DEAD; }
         } else {
             loudlog("imapsync: replay: unrecognized journal record kind \"%s\" in \"%s\" -- stopping",
                     kind, foldername);
