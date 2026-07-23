@@ -16,14 +16,13 @@ is part of retiring it, done during the close-out doc update.
 ## Active Prompts (in `revival/doc/`, not here)
 
 Current queue and suggested order live in `roadmap.md` → "Delegated
-work queue". As of 2026-07-22:
+work queue". As of 2026-07-23:
 
 1. `strlit-sweep-prompt.md` — writable-string-literal census + fixes
 2. `m2-census-prompt.md` — M2 point-0 warning classification
 3. `bcc-direct-insertion-prompt.md` — blind-copy direct-insertion
    root cause
-4. `imap-writeback-prompt.md` — Milestone 4 change-journal writeback
-5. `mime-attachment-icon-prompt.md` — root-cause a `multipart/mixed`
+4. `mime-attachment-icon-prompt.md` — root-cause a `multipart/mixed`
    attachment rendering as a bare `?` instead of an
    `[attachment: ...]` line (added 2026-07-21, follow-on to the
    just-retired `mime-display` task below)
@@ -69,8 +68,56 @@ against live Fastmail and closed with its milestone:
   2026-07-18.
 - `imap-sync-prompt.md` (2026-07-18) — Milestone 3b, `imapsync`
   one-way mirror through the store's own code. Done 2026-07-18.
-- (`imap-writeback-prompt.md`, 2026-07-19, Milestone 4 — still
-  active, see above; will move here when M4 closes.)
+- `imap-writeback-prompt.md` (2026-07-19, retired 2026-07-23) —
+  Milestone 4, the change-journal writeback, three gates, the largest
+  and last of this milestone sequence (M1-4 now all closed; only M5
+  OAuth2 remains, and wdc is considering postponing it behind the ANSI
+  conversion project since it isn't needed for Fastmail).
+  - **Gate 1** (`fb4876a`/`aeef522`/`8a94941`): capture + suppression —
+    `msjournal.c`, hooks in the four `ams/libs/ms` mutation points.
+    Found the variadic-caller ABI hazard (bug class #6 in
+    `sonnet-playbook.md`, `porting-assessment.md` §18) — a K&R-style
+    extern declaration of a genuinely variadic function crashes on
+    arm64 regardless of word width, a caller-side counterpart to the
+    `fdplumb` include-order hazard above.
+  - **Gate 2** (`83dc58c`/`6879cdf`): `imap_prot`'s write entry points
+    plus real flags/purge replay. **A real incident happened here**: a
+    Gate 1 test suite that was safe when written (no write code
+    existed yet) became unsafe once replay went live, and running it
+    as a required regression check permanently deleted one real
+    message from wdc's live account. Not recoverable (Time Machine
+    excludes the scratch path by policy; the local copy was already
+    gone too) — wdc chose not to pursue further recovery. Fixed same
+    day: retargeted the suite to the dedicated `Revival/WritebackTest`
+    sandbox behind a hardcoded-literal assertion, independent of the
+    mutable folder variable, that every subsequent destructive test in
+    this project now follows; a related test-design bug (suppression
+    checks comparing pre/post journal bytes, broken once replay
+    started legitimately consuming the journal) was fixed alongside
+    it. See `imap-writeback-REPORT.md`'s "CRITICAL FINDING" section for
+    the full incident writeup.
+  - **Gate 3** (`df2a94c`/`164f736`): append-record replay — APPEND the
+    local body (CRLF-normalized; Fastmail rejects bare-LF literals, a
+    real bug found live), then delete the local native-id copy through
+    the suppressed purge path so the message reappears under its
+    proper deterministic id on the same run's mirror pass. Crash-safe
+    resume and the purge safety valve both proven via fabricated-crash
+    test cases.
+  - **wdc's own by-hand acceptance test** against the real account
+    (not delegated) surfaced several more real, now-documented findings:
+    two Set-Options toggles (`EXP_FILEINTOMENU`, `EXP_MARKASUNREAD`)
+    gate entire menus regardless of message/folder state, off by
+    default; "File Into → By Name"/"Append By Name" both delete the
+    original whenever you have modify rights (the only truly
+    non-destructive GUI copy path is "Send/File Marked → Copy All
+    Into"); an "unparsable id" replay warning turned out to be the
+    *correct*, harmless outcome of deleting a message before its first
+    sync, not a bug — traced to two genuinely different, deliberately
+    non-overlapping id alphabets (native `ams_genid` mixed-case
+    base64 vs. the new deterministic scheme's uppercase-only
+    base32hex, documented in `ams-IMAP-project.md` §3). All fixed or
+    documented same day; see `imap-writeback-REPORT.md`'s later dated
+    sections and `mail-quickstart.md`.
 
 ### 4. Budget-crunch delegation queue (July 19)
 

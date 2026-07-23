@@ -243,7 +243,7 @@ revival/tests/imap-sync-tests
 `imap-writeback-tests` -- milestone 4's Gate 1 capture/suppression
 suite for `msjournal.c` and its four hook sites in `src/ams/libs/ms/`
 (`altsnap.c`, `purge.c`, `clonemsg.c`, `apndfile.c`). See
-`revival/doc/imap-writeback-prompt.md`. Gate 1 scope: local capture
+`revival/doc/claude-history/imap-writeback-prompt.md`. Gate 1 scope: local capture
 into a per-folder `.MS_Journal` file and the `MSJournal_Suppress(1)`
 `imapsync` sets at startup. As of Gate 2, `imapsync`'s own
 `replay_folder()` also *acts on* a pending `.MS_Journal` on every

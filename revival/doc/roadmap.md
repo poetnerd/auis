@@ -188,7 +188,8 @@ mirrors IMAP; AMDS delivery remains excluded.
        direct-file path should work.
 - Milestones 3c–5 (next: 3c, messages-GUI acceptance incl. folder
   visibility): writeback via change journal (4) — **spec written
-  2026-07-19: `revival/doc/imap-writeback-prompt.md`** (gated,
+  2026-07-19: `revival/doc/claude-history/imap-writeback-prompt.md`**
+  (now in `claude-history/`, retired 2026-07-23 with M4) (gated,
   Sonnet-executable: per-folder `.MS_Journal` capture at the four MS
   mutation points, replay-then-mirror server-wins ordering,
   drop-and-refetch identity for appends, purge safety valve, all
@@ -227,7 +228,7 @@ mirrors IMAP; AMDS delivery remains excluded.
      runtime half remains (wait for the new profile warning line to
      fire); do not re-queue as written — the prompt's dbg_fopen
      premise was disproven.
-  6. ~~`imap-writeback-prompt.md`~~ — milestone 4 writeback. **DONE
+  6. ~~`imap-writeback-prompt.md`~~ (now in `claude-history/`) — milestone 4 writeback. **DONE
      2026-07-23**, all three gates closed and committed (`fb4876a`
      Gate 1 code, `83dc58c`/`6879cdf` Gate 2, `df2a94c`/`164f736` Gate 3
      — see `revival/doc/claude-history/imap-writeback-REPORT.md` for
