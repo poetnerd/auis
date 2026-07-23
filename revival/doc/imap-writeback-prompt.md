@@ -1,5 +1,18 @@
 # Milestone 4 spec: writeback — change journal + replay to IMAP
 
+**Status 2026-07-23: Gate 1 CLOSED and committed** (`fb4876a` code +
+tests, `aeef522`/`8a94941` docs). Capture + suppression are done and
+live-tested: `msjournal.c`, hooks in `altsnap.c`/`purge.c`/`apndfile.c`/
+`clonemsg.c`, suppression call in `imapsync`. `imap-writeback-tests`
+case 1 passes; `imap-sync-tests` (6 passed, 1 benign skip) and
+`imap-protocol-tests`/`smtp-protocol-tests` all still green. Full
+detail: `revival/doc/claude-history/imap-writeback-REPORT.md` (includes
+its "Follow-up 2026-07-23" section) and `revival/doc/ams-IMAP-project.md`
+§7 Milestone 4. **A fresh session starting now begins at Gate 2** — read
+the Gate 1 report for context (especially the variadic-ABI bug it found,
+now bug class #6 in the playbook and `porting-assessment.md` §18) but do
+not redo Gate 1's work.
+
 Scope: milestone 4 of the AMS-over-IMAP plan. Local mutations made in
 messages/cui against a mirrored folder (read, delete, purge, move,
 copy-in) get captured in a per-folder change journal and pushed to the
