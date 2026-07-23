@@ -120,6 +120,26 @@ Options:
   mailbox scan, so it is opt-in
 - `-root <dir>`: mirror somewhere else (used by the test suites)
 
+**There is no folder auto-discovery.** `imapsync` only ever mirrors
+folders you name explicitly — there is no "sync everything on the
+account" mode, and nothing watches the server for folders that didn't
+exist yet at your last `-folders`/`imapsyncfolders` edit. A folder
+created after the fact (via Thunderbird, a filter, webmail, anything
+other than this tool) will not appear in `messages` until you notice,
+add its name to the list, and re-run `imapsync`. If you have many
+folders and want to enumerate what actually exists on the server
+before building that list, `imaptest.test` (built alongside `imapsync`,
+in `src/overhead/mail/lib`) has a read-only `list` subcommand:
+
+```
+src/overhead/mail/lib/imaptest.test list imap.fastmail.com 993 ~/.netrc imap.fastmail.com
+```
+
+prints every real folder name via a plain IMAP `LIST "" "*"` — a
+one-time (or occasional, if you add folders later) way to build or
+refresh your `imapsyncfolders` value, not something `imapsync` does
+for you automatically.
+
 Through Milestone 3 the sync was strictly read-only on the IMAP side.
 **As of Milestone 4 (writeback, 2026-07-23), that's no longer true**:
 if a mirrored folder has a `.MS_Journal` (local mutations captured via
@@ -218,6 +238,7 @@ watch it appear in the mirrored INBOX.
 | Default folder-view visibility needs `AMS_OnlyMail: No` (AndrewSetup) plus Ask/Show-All subscription | M3c, resolved 2026-07-22 — see step 6 |
 | MIME display shells out to metamail, which does nothing on this platform | Pre-existing gap, separate from the IMAP project |
 | No sync daemon | Re-run `imapsync` by hand or from cron |
+| No folder auto-discovery — new server-side folders don't appear until named and synced | Use `imaptest.test list ...` to enumerate real folder names; see step 4 |
 
 ## Troubleshooting
 
