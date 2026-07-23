@@ -1,17 +1,46 @@
 # Milestone 4 spec: writeback — change journal + replay to IMAP
 
-**Status 2026-07-23: Gate 1 CLOSED and committed** (`fb4876a` code +
-tests, `aeef522`/`8a94941` docs). Capture + suppression are done and
-live-tested: `msjournal.c`, hooks in `altsnap.c`/`purge.c`/`apndfile.c`/
-`clonemsg.c`, suppression call in `imapsync`. `imap-writeback-tests`
-case 1 passes; `imap-sync-tests` (6 passed, 1 benign skip) and
-`imap-protocol-tests`/`smtp-protocol-tests` all still green. Full
-detail: `revival/doc/claude-history/imap-writeback-REPORT.md` (includes
-its "Follow-up 2026-07-23" section) and `revival/doc/ams-IMAP-project.md`
-§7 Milestone 4. **A fresh session starting now begins at Gate 2** — read
-the Gate 1 report for context (especially the variadic-ABI bug it found,
-now bug class #6 in the playbook and `porting-assessment.md` §18) but do
-not redo Gate 1's work.
+**Status 2026-07-23: Gate 1 and Gate 2 CLOSED and committed**
+(`fb4876a`/`aeef522`/`8a94941` Gate 1; `83dc58c`/`6879cdf` Gate 2). Full
+detail in `revival/doc/claude-history/imap-writeback-REPORT.md` (read
+it in full — it has several dated sections, all load-bearing) and
+`revival/doc/ams-IMAP-project.md` §7 Milestone 4.
+
+**Gate 1** built capture + suppression: `msjournal.c`, hooks in
+`altsnap.c`/`purge.c`/`apndfile.c`/`clonemsg.c`, suppression call in
+`imapsync`. Found a real bug class along the way (variadic-ABI hazard,
+now bug class #6 in the playbook and `porting-assessment.md` §18).
+
+**Gate 2** built `imap_prot`'s write entry points
+(`imap_UidStoreFlags`/`imap_UidExpunge`/`imap_Append`, plus
+`imap_Select`/`imap_Create`) and real flags/purge replay in
+`imap_sync.c`.
+
+**A real incident happened during Gate 2 and is now resolved — read the
+Gate 2 report's "CRITICAL FINDING" section before doing anything else.**
+Summary: Gate 1's own regression suite (`imap-writeback-tests`) mirrored
+a real, pre-existing folder (`INBOX/1-Admin/keys`) rather than a
+sandbox, which was safe when written (no write code existed yet) but
+was not safe once Gate 2's replay went live — running that suite as a
+required regression check permanently deleted one real message from the
+live account. Not recoverable (confirmed via multiple angles, closed
+out with the user 2026-07-23). Fixed same day: the suite now targets
+`Revival/WritebackTest` exclusively, with a hardcoded-literal assertion
+(`assert_folder_is_sandbox()`) as a second, independent enforcement
+layer beyond the C-level `guard_mailbox()` guard in `imaptest.c` — read
+both before writing any new destructive test code, and match the
+pattern rather than reinventing it. A related test-design bug (the
+"suppression" checks comparing pre/post journal bytes, which broke once
+replay started legitimately consuming the journal) was also found and
+fixed the same day — read the "Suppression-semantics fix" section for
+why, since Gate 3 will add more replay behavior that could hit the same
+kind of conflation if you're not deliberate about what each assertion
+is actually proving.
+
+**A fresh session starting now begins at Gate 3** — do not redo Gate 1
+or Gate 2's work. Given the incident above, treat any test you write or
+run against a real (non-`Revival/WritebackTest`) folder as something to
+stop and think hard about before executing, not just before committing.
 
 Scope: milestone 4 of the AMS-over-IMAP plan. Local mutations made in
 messages/cui against a mirrored folder (read, delete, purge, move,
