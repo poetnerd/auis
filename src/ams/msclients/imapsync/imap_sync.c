@@ -95,6 +95,14 @@ extern int MS_AppendFileToFolderWithId(char *filename, char *foldername,
                                         char *id, char *date64);
 extern int MS_AlterSnapshot(char *dirname, char *id, char *newsnapshot, int code);
 
+/* msjournal.c (src/ams/libs/ms) -- writeback capture. imapsync's own
+   mirror writes (MS_AppendFileToFolderWithId, and the MS_AlterSnapshot
+   flag-sync calls below) must never be journaled as if they were local
+   user mutations -- that would make the next replay try to push the
+   server's own state back at itself. MSJournal_Suppress(1) is called
+   once at startup, below, before any folder is touched. */
+extern void MSJournal_Suppress(int on);
+
 /* overhead/mail/lib/genid.c -- the tree's base-64 helpers (mail.h has
    only a K&R "extern char *convlongto64();"; declared ANSI here). Each
    returns a pointer into a static 7-byte buffer that is overwritten on
@@ -1280,6 +1288,7 @@ int main(int argc, char **argv)
         report_mserr("MS_Initialize", rc);
         return 1;
     }
+    MSJournal_Suppress(1);	/* this process's own mirror writes never journal */
 
     nrc = netrc_Lookup(netrcpath, DEFAULT_NETRC_MACHINE, login, sizeof(login), passwd, sizeof(passwd));
     if (nrc != NETRC_OK) {

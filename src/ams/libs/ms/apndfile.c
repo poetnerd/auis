@@ -34,6 +34,20 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 
+/* msjournal.c, this directory -- writeback capture (a no-op unless
+   Dir is a mirrored folder; see the grammar note there). Not used by
+   MS_AppendFileToFolderWithId below: that entry point exists solely
+   for imapsync's own mirror writes, which are always made with
+   MSJournal_Suppress(1) in effect. MSJournal_Record is genuinely
+   variadic, so it needs a real "..." prototype at every call site,
+   unlike the implicit-int K&R calls elsewhere in this file: on
+   Apple's arm64 ABI a variadic callee reads its variable arguments
+   off the stack, while a caller with no prototype in scope passes
+   them the normal-call way, in registers -- the same caller/callee
+   ABI mismatch already documented for dbg_open() in
+   overhead/util/hdrs/fdplumb.h. */
+extern void MSJournal_Record(const char *dir, const char *fmt, ...);
+
 MS_AppendFileToFolder(FileName, FolderName)
 char           *FileName, *FolderName;          /* BOTH IN */
 {
@@ -145,6 +159,7 @@ int             TreatAsAlien;
                                         * place */
         return (mserrcode);
     }
+    MSJournal_Record(Dir->UNIXDir, "J1 append %s", AMS_ID(Msg->Snapshot));
     FreeMessage(Msg, TRUE);
     if (DoDelete)
         unlink(FileName);              /* Errors here are funny; better an

@@ -35,13 +35,29 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 
-MS_AlterSnapshot(dirname, id, NewSnapshot, Code) 
+/* msjournal.c, this directory -- writeback capture (a no-op unless
+   dirname is a mirrored folder; see the grammar note there).
+   MSJournal_Record is genuinely variadic (va_start/va_arg in its own
+   ANSI definition), so -- unlike every implicit-int K&R call in this
+   file -- it needs a real prototype with "..." at every call site: on
+   Apple's arm64 ABI a variadic callee expects its variable arguments
+   on the stack, while a caller with no prototype in scope (or a fake
+   K&R empty-parens one) passes them the normal-call way, in registers.
+   That caller/callee mismatch silently hands the callee garbage --
+   the same ABI hazard already documented for dbg_open() in
+   overhead/util/hdrs/fdplumb.h, just triggered from the caller's side
+   instead of the callee's. */
+extern void MSJournal_Record(const char *dir, const char *fmt, ...);
+
+MS_AlterSnapshot(dirname, id, NewSnapshot, Code)
 char *dirname, *id, *NewSnapshot;
 int Code;
 {
     struct MS_Directory *Dir;
     int msgnum, errsave, i;
     char SnapshotDum[AMS_SNAPSHOTSIZE], *s, *t, DateBuf[AMS_DATESIZE];
+    char OrMask[AMS_ATTRIBUTESIZE], AndMask[AMS_ATTRIBUTESIZE];
+    char OrHex[1 + 2 * AMS_ATTRIBUTESIZE], AndHex[1 + 2 * AMS_ATTRIBUTESIZE];
 
     if (MSDebugging & 1) { /* Debugging SHOULD go to stdout -- nsb 5/16/86 */
 	printf("MS_AlterSnapshot %s %s code %d\n", dirname, id, Code);
@@ -81,6 +97,28 @@ int Code;
 	    }
 	    break;
     }
+    /* Writeback capture: express whatever this Code did to the
+       attribute bytes as a single (or-mask, and-mask) pair --
+       new = (old | or-mask) & and-mask -- so replay can recompute the
+       server-flag delta without needing to know which of the five
+       Codes produced it. The three REPLACE* variants force the result
+       to equal NewSnapshot's attribute bytes regardless of old_attrs,
+       which this formula gets right by setting or-mask = and-mask =
+       those bytes (old|new, then &new, leaves exactly new). */
+    switch(Code) {
+	case ASS_OR_ATTRIBUTES:
+	    bcopy(AMS_ATTRIBUTES(NewSnapshot), OrMask, AMS_ATTRIBUTESIZE);
+	    for (i=0; i<AMS_ATTRIBUTESIZE; ++i) AndMask[i] = (char) 0xff;
+	    break;
+	case ASS_AND_ATTRIBUTES:
+	    for (i=0; i<AMS_ATTRIBUTESIZE; ++i) OrMask[i] = 0;
+	    bcopy(AMS_ATTRIBUTES(NewSnapshot), AndMask, AMS_ATTRIBUTESIZE);
+	    break;
+	default: /* ASS_REPLACE_ALL, ASS_REPLACE_ATTRIBUTES, ASS_REPLACE_ATT_CAPT */
+	    bcopy(AMS_ATTRIBUTES(NewSnapshot), OrMask, AMS_ATTRIBUTESIZE);
+	    bcopy(AMS_ATTRIBUTES(NewSnapshot), AndMask, AMS_ATTRIBUTESIZE);
+	    break;
+    }
     debug(4, ("Altering snapshot of  message %d %s\n", msgnum, AMS_CAPTION(SnapshotDum)));
     if (RewriteSnapshotInDirectory(Dir, msgnum, SnapshotDum)) {
 	errsave = mserrcode;
@@ -90,5 +128,10 @@ int Code;
     if (CacheDirectoryForClosing(Dir, MD_WRITE)) {
 	return(mserrcode);
     }
+    for (i=0; i<AMS_ATTRIBUTESIZE; ++i) {
+	sprintf(OrHex+2*i, "%02x", (unsigned char) OrMask[i]);
+	sprintf(AndHex+2*i, "%02x", (unsigned char) AndMask[i]);
+    }
+    MSJournal_Record(Dir->UNIXDir, "J1 flags %s %s %s", id, OrHex, AndHex);
     return(0);
 }

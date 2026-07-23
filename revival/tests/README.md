@@ -128,3 +128,55 @@ milestone's Gate 1 testing (see `imap_sync.c`'s `synth_id()` comment).
 ```
 revival/tests/imap-sync-tests
 ```
+
+## imap-writeback-tests
+
+`imap-writeback-tests` -- milestone 4's Gate 1 capture/suppression
+suite for `msjournal.c` and its four hook sites in `src/ams/libs/ms/`
+(`altsnap.c`, `purge.c`, `clonemsg.c`, `apndfile.c`). See
+`revival/doc/imap-writeback-prompt.md`. Gate 1 scope only: local
+capture into a per-folder `.MS_Journal` file and the
+`MSJournal_Suppress(1)` `imapsync` sets at startup -- no IMAP write
+code exists anywhere in the tree yet, so this suite's only server
+traffic is `imapsync`'s own read-only EXAMINE/UID FETCH/UID SEARCH,
+exactly as in `imap-sync-tests`. Every mutation under test (delete,
+undelete, purge) is a pure local store operation, driven through the
+real, unmodified `cui` binary against a scratch-mirrored copy of a
+small, pre-existing real folder (`INBOX/1-Admin/keys`, chosen for its
+low message count so the whole suite runs in seconds rather than the
+many minutes a full INBOX mirror takes) -- never INBOX, and the
+server-side copy of that folder is never modified (imapsync issues no
+write commands in this milestone).
+
+Case 1 (the only case at Gate 1):
+
+1. Fresh mirror of the small folder into a `mktemp -d` scratch root
+   (never the real `~/.IMAP`), confirming `.MS_Journal` does not exist
+   right after -- imapsync's own append writes must never journal.
+2. A scripted `cui` session (scratch `PROFILES`, never the real
+   `~/preferences`) attempts `type 1` (mark-read; a no-op here since
+   this real, long-read mailbox already has the message `\Seen`
+   server-side -- proving the hook adds no spurious record when
+   nothing actually changes), then `delete 2` (the `ASS_OR_ATTRIBUTES`
+   path), `undelete 2` (the `ASS_AND_ATTRIBUTES` path), `delete 2`
+   again, and `purge`. `.MS_Journal` is asserted to contain exactly the
+   four expected lines, byte for byte, independently recomputed in
+   Python from the documented OR/AND-mask grammar (not by re-trusting
+   `msjournal.c`'s own encoding).
+3. Suppression, two ways: an ordinary immediate re-run of `imapsync`
+   (which may legitimately skip its own flags-refresh pass via the
+   HIGHESTMODSEQ shortcut -- a weak proof by itself), and then a
+   *forced* re-run with the scratch `.MS_IMAPSync` state file's
+   `highestmodseq` deliberately invalidated, so the flags-refresh pass
+   genuinely re-applies real `MS_AlterSnapshot` calls from real FETCH
+   data against every already-mirrored message -- confirmed via the
+   `-v` log's "refreshing flags for uids" line -- and `.MS_Journal`
+   must still come out byte-identical afterward.
+
+Skips cleanly (rather than failing) when `~/.netrc` has no usable
+`machine imap.fastmail.com` stanza. Leaves its scratch root in place on
+exit (path printed) for inspection.
+
+```
+revival/tests/imap-writeback-tests
+```

@@ -37,6 +37,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 extern FILE    *fopen();
 
+/* msjournal.c, this directory -- writeback capture (a no-op unless
+   the given directory is a mirrored folder; see the grammar note
+   there). MSJournal_Record is genuinely variadic, so it needs a real
+   "..." prototype at every call site, unlike the implicit-int K&R
+   calls elsewhere in this file: on Apple's arm64 ABI a variadic
+   callee reads its variable arguments off the stack, while a caller
+   with no prototype in scope passes them the normal-call way, in
+   registers -- the same caller/callee ABI mismatch already documented
+   for dbg_open() in overhead/util/hdrs/fdplumb.h. */
+extern void MSJournal_Record(const char *dir, const char *fmt, ...);
+
 MS_CloneMessage(SourceDirName, id, DestDirName, Code)
 char           *SourceDirName, *id, *DestDirName;
 int             Code;
@@ -197,8 +208,14 @@ int             Code;
         FreeMessage(Msg, TRUE);
         return (errsave);
     }
+    /* Dest side of the clone: decompose into a plain append record --
+       clone between two mirrored folders is not special-cased, this
+       plus (below) a purge record at the source is the whole of it. */
+    MSJournal_Record(DestDir->UNIXDir, "J1 append %s", id);
 
     if (Code == MS_CLONE_COPYDEL || Code == MS_CLONE_APPENDDEL) {
+        int closerc;
+
         AMS_SET_ATTRIBUTE(Msg->Snapshot, AMS_ATT_DELETED);
         if (RewriteSnapshotInDirectory(SourceDir, msgnum, Msg->Snapshot)) {
             errsave = mserrcode;
@@ -207,7 +224,13 @@ int             Code;
             return (errsave);
         }
         FreeMessage(Msg, TRUE);
-        return (CacheDirectoryForClosing(SourceDir, SourceDirMode));
+        closerc = CacheDirectoryForClosing(SourceDir, SourceDirMode);
+        /* Delete-original out of a mirrored source is recorded as a
+           purge now, not deferred to a later real
+           MS_PurgeDeletedMessages call (see msjournal.c's grammar
+           comment). */
+        if (!closerc) MSJournal_Record(SourceDir->UNIXDir, "J1 purge %s", id);
+        return (closerc);
     }
     else {
         FreeMessage(Msg, TRUE);

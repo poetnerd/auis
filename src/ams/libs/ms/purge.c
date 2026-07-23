@@ -39,6 +39,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 extern char *malloc();
 #endif /* _IBMR2 */
 
+/* msjournal.c, this directory -- writeback capture (a no-op unless
+   dirname is a mirrored folder; see the grammar note there).
+   MSJournal_Record is genuinely variadic, so it needs a real "..."
+   prototype at every call site, unlike the implicit-int K&R calls
+   elsewhere in this file: on Apple's arm64 ABI a variadic callee reads
+   its variable arguments off the stack, while a caller with no
+   prototype in scope passes them the normal-call way, in registers --
+   the same caller/callee ABI mismatch already documented for
+   dbg_open() in overhead/util/hdrs/fdplumb.h. */
+extern void MSJournal_Record(const char *dir, const char *fmt, ...);
+
 MS_PurgeDeletedMessages(dirname)
 char *dirname;
 {
@@ -68,6 +79,7 @@ char *dirname;
 	    (void) unlink(FileNameBuf);
 	}
 	debug(4, ("Unlinked: %s\n", FileNameBuf));
+	MSJournal_Record(Dir->UNIXDir, "J1 purge %s", AMS_ID(SnapshotDum));
     }
     CloseMSDir(Dir, MD_READ); /* ignore errors -- read only */
 
