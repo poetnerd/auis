@@ -195,6 +195,25 @@ UID (32) + an account/mailbox tag — so for synced messages the AMS id can
   is only day-granular.
 * On UIDVALIDITY change: re-mirror the folder (ids change; captions/dates
   preserve user context).
+* **Two id alphabets, intentionally non-overlapping (clarified
+  2026-07-23):** native `ams_genid` ids are mixed-case base64 (this
+  section, above). The M4 deterministic ids (`encode_base32hex7`/
+  `decode_id` in `imap_sync.c`) deliberately use a restricted,
+  uppercase-only base32hex alphabet instead — these ids become real
+  on-disk `+<id>` filenames, and macOS's default case-insensitive
+  filesystem would let two base64 ids differing only by case collide
+  as the same file; uppercase-only sidesteps that risk entirely for
+  values this sync/replay system needs to be bit-for-bit reliable
+  about. Consequence: `decode_id()` correctly rejects any native
+  base64 id as unparsable — this is the designed boundary between the
+  two namespaces, not a bug. A flags/purge replay line logging
+  "unparsable id" is the *expected* signal that the message in
+  question hasn't completed its append round-trip yet (still carries
+  its origin-scheme native id), not evidence of corruption. See
+  `revival/doc/claude-history/imap-writeback-REPORT.md`'s Gate 3
+  section for a live example (a message cloned in from another real
+  folder, still carrying that folder's own id, hit exactly this path
+  and was correctly, harmlessly handled).
 
 ## 4. MIME
 
