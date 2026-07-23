@@ -969,3 +969,375 @@ Live run: **3 passed, 0 failed, 0 skipped.** Post-run `EXAMINE` confirms
 scope unchanged (no new files touched beyond what Gate 2/the retarget
 already had in flight). All prior suites are now genuinely green;
 Gate 3 is unblocked pending wdc's go-ahead.
+
+## Gate 3 report (2026-07-23) -- END OF MILESTONE 4
+
+### Status
+
+**Gate 3 CLOSED, clean.** This is the end of Milestone 4: append
+replay is implemented, compile-verified, live-tested (including one
+real bug found and fixed), and all four required suites are green
+(`imap-writeback-tests`, `imap-sync-tests`, `imap-protocol-tests`,
+`smtp-protocol-tests`), plus the scripted-cui end-to-end acceptance
+test. Diff at `imap-writeback-gate3-session.diff` (tree root, `fossil
+diff --verbose`). Nothing fossil-committed. Breadcrumb handoff at
+`M4-HANDOFF.md` (tree root) kept current throughout, per the ground
+rules, in case of an interruption -- not needed this time, the gate
+finished in one continuous session.
+
+### What I did, in order
+
+1. Read `sonnet-playbook.md`, `imap-writeback-prompt.md`, and this
+   report in full (Gate 1 report, Gate 2 report including the
+   incident, the retarget fix, the suppression-semantics fix).
+   Confirmed a clean tree (`fossil status`/`fossil changes` empty) at
+   session start -- no leftover uncommitted work from a prior session.
+2. Read `imap_sync.c`'s `replay_folder()` and confirmed exactly where
+   Gate 2 left append replay: the "append" branch of the per-line loop
+   logged a message and halted (`stopped_early = 1; break;`)
+   unconditionally, every run, cursor never advanced past it.
+   `imap_prot.h`/`.c` already have `imap_Append` (built at Gate 2, only
+   used by `imaptest.test`'s own test subcommand so far) -- confirmed
+   no `imap_prot` changes were needed for replay itself.
+3. Found the exact store primitives append replay needed, none of
+   which `imap_sync.c` had used before: `MS_GetSnapshot` (read a
+   message's snapshot -- date + attributes + id -- by dirname+id;
+   `ams/libs/ms/getsnap.c`), `QuickGetBodyFileName`/`RetryBodyFileName`
+   (the same body-file-path primitive `purge.c`/`getbody.c` use;
+   `ams/libs/ms/rawdb.c`), `MS_PurgeDeletedMessages` (the store's own
+   purge path the spec names; `ams/libs/ms/purge.c`), and
+   `conv64tolong` (decode `AMS_DATE`'s compact-64 field to a Unix
+   `time_t`; `overhead/mail/lib/genid.c`). All four declared as new
+   externs in `imap_sync.c`, matching the file's own established
+   convention of giving every K&R store entry point a full ANSI
+   prototype regardless of whether the underlying function is
+   variadic (only genuinely variadic functions are subject to bug
+   class #6; these four are not, but the convention is followed
+   anyway for consistency).
+4. Wrote `format_internaldate()` (new static function, right after the
+   file's existing `parse_internaldate()`): the reverse conversion,
+   hand-rolled with the same `Months3[]` table `parse_internaldate()`
+   already uses (rather than `strftime()`, to keep this file's date
+   handling in one place and immune to locale month-name surprises).
+   Always emits `"+0000"` -- `AMS_DATE` is itself a UTC unix time with
+   no separate timezone-of-origin recorded, so there is no original
+   offset to reproduce, and UTC is exactly what
+   `parse_internaldate()` recovers from this exact string on a later
+   re-mirror.
+5. Wrote `replay_append_line()` (new static function, right after
+   `replay_purge_line()`, before `journal_handoff()`): `MS_GetSnapshot`
+   to read the local native-id message's attributes+date ->
+   `QuickGetBodyFileName` + `RetryBodyFileName` fallback to open its
+   body file -> build a `\Seen`/`\Answered`/`\Deleted` flags string
+   directly from the snapshot's own attribute bits (a forward mapping,
+   not the or/and-mask delta `replay_flags_line` decodes) ->
+   `format_internaldate` from `AMS_DATE` -> `imap_Append()` -> on
+   success, `MS_AlterSnapshot` (mark `AMS_ATT_DELETED`) +
+   `MS_PurgeDeletedMessages` to remove the local native-id copy, both
+   suppressed for free via this process's own
+   `MSJournal_Suppress(1)` (called once in `main()`, covering every
+   `MS_` call this process makes for its own life -- no extra suppress
+   call needed here). `EMSNOSUCHMESSAGE` from `MS_GetSnapshot` is the
+   crash-resume case (already applied on a prior interrupted run,
+   cursor never advanced) -- treated as a clean skip, not an error.
+   On a non-DEAD `APPEND` failure: log + `*anyerror=1` + return 0
+   (advance past it) -- matches this milestone's *existing* policy for
+   a non-fatal STORE/EXPUNGE failure in `replay_flags_line`/
+   `replay_purge_line` (established at Gate 2), not a new judgment
+   call made this gate.
+6. Wired the "append" branch in `replay_folder()`'s per-line loop to
+   parse the id and call `replay_append_line()`, advancing the cursor
+   exactly like flags/purge (previously: log + halt, unconditionally,
+   every run). Updated the surrounding header comments (top-of-file
+   overview, section-header comment, `replay_folder()`'s own big
+   comment) to describe append as implemented, not deferred.
+7. **Found and fixed a real bug via live smoke testing** (matching
+   every prior gate's own pattern -- see "The bare-LF APPEND bug"
+   below) before writing any automated test.
+8. Added case 5 (append round-trip) to `imap-writeback-tests`: new
+   `run_cui_append()` helper (cui "mail" -> compose -> "draft" ->
+   `MS_AppendFileToFolder`, no IMAP, no SMTP) + `find_marker_files()`/
+   `replayingpath()` helpers + a case-5 block in `main()`. Live: 4/4
+   (case 1's three sub-assertions + case 5).
+9. Added W5 (append round-trip, isolated) and W6 (crash resume) to
+   `imap-sync-tests`: new `crlf_normalize()`/`create_local_draft_via_cui()`
+   helpers + case blocks after W7. Pre-validated standalone via an
+   `importlib`-driven quick-check script (mirroring Gate 2's own
+   precedent) before wiring into the real suite -- caught one ordering
+   issue in the *quickcheck harness itself* (not the real suite: W5
+   needs an initial mirror pass to create `.MESSAGES` before cui can
+   use it; in the real suite W5 runs after W2's own mirror pass in the
+   same scratch root, so this was never an issue there). Both passed
+   on the first real wiring attempt.
+10. Added a self-contained acceptance-test block to
+    `imap-writeback-tests` (own scratch root, own seed/mirror/cleanup):
+    a single scripted cui session doing mark-read + delete+purge +
+    copy-in (compose+save-as-draft) together, then one fresh `imapsync`
+    run (replay+mirror in the same invocation), verifying local/server
+    convergence.
+11. Ran the full regression sweep: `smtp-protocol-tests` (offline
+    cases), `imap-sync-tests` (full live run, twice -- see "The two
+    transient INBOX failures" below), `imap-protocol-tests` (twice),
+    `imap-writeback-tests` (including the new acceptance block). All
+    results in full below.
+12. Found and fixed one documentation-only bug while re-reading my own
+    diff before the final live runs: `replay_append_line()`'s long
+    header comment had landed above `crlf_stage_body()` instead of
+    above `replay_append_line()` itself (an artifact of two separate
+    edits both anchoring near the same text). Fixed by moving the
+    comment to the function it actually describes; recompiled
+    (warning count unchanged, since comments don't affect object code)
+    and relinked.
+13. `fossil diff --verbose > imap-writeback-gate3-session.diff` in the
+    tree root; wrote this report section.
+
+### The bare-LF APPEND bug (found, fixed, confirmed)
+
+First version of `replay_append_line()` handed `imap_Append` the local
+body file's raw bytes directly. Local `MS_` storage in this tree is
+plain LF-terminated text (matching Unix convention everywhere else in
+the tree); a real IMAP `APPEND` literal is wire bytes, and RFC 3501's
+wire format is CRLF throughout. Live smoke test (scratch mirror of an
+empty `Revival/WritebackTest`, real cui compose + "draft"
+(`SEND_SAVEDRAFT` -> `MS_AppendFileToFolder`), replay) reproduced it
+immediately:
+
+```
+imapsync: replay: APPEND id ZeMX7xIE0U00ReZEEn in "Revival/WritebackTest": 1 (IMAP_NO) a6 NO Message contains bare newlines
+```
+
+Fixed with a new static `crlf_stage_body()` in `imap_sync.c` (right
+before `replay_append_line()`): copies the local body into a temp file
+(`mkstemp`, immediately `unlink`ed -- an ordinary Unix idiom, the fd
+stays valid via the returned `FILE*` until `fclose()`, so there is
+nothing to clean up on any exit path) with every bare LF converted to
+CRLF -- the exact same normalization
+`overhead/mail/lib/smtpsub.c`'s `smtp_send_body()` already does for the
+SMTP DATA body (credited in the comment), minus that function's
+SMTP-specific dot-stuffing (APPEND's literal framing has no equivalent
+of "a leading `.` needs escaping" -- a length-prefixed literal, unlike
+SMTP's dot-terminated DATA stream, needs no such escaping at all).
+Confirmed fixed: rebuilt, reran the identical smoke test end to end --
+`APPEND` succeeded, local dir ended with exactly one message under its
+proper deterministic id, `.MS_Journal` gone, cursor zeroed, server
+`EXISTS` matched. This became the mechanism every subsequent automated
+test (case 5, W5, W6, the acceptance test) relies on.
+
+This is a new, real live-protocol finding, not anticipated by either
+spec document -- the same pattern as Gate 1's variadic-ABI bug and
+Gate 2's `imap_Append` double-space bug: every gate's own live testing
+against the real server has found exactly one real bug that no amount
+of reading code would have caught.
+
+### `MS_PurgeDeletedMessages`'s blast radius (documented, not a stop-and-ask item)
+
+`replay_append_line()`'s own header comment in `imap_sync.c` documents
+this at length; summarized here since the ground rules ask for it to
+be stated plainly. `MS_PurgeDeletedMessages` (the store's own purge
+path, exactly what the spec names to reuse for deleting the local
+native-id copy after a successful `APPEND`) purges *every*
+currently-`\Deleted` message in the folder, not just the one this
+function marks. In the ordinary case this is harmless -- a real
+"purge" capture (`purge.c`) unlinks its message's local copy at the
+moment it captures the journal record, so by the time replay reaches
+any point in the journal, no earlier "purge" line has anything local
+left to re-purge, and no later one has been captured yet. The one
+genuine edge case: a locally-deleted-but-not-yet-purged message
+(marked via a "delete" journaled as a "flags" record, with no matching
+"purge" record queued yet) sitting in the same folder when an append
+record is replayed -- that message's local snapshot entry disappears a
+little earlier than its own eventual purge would have removed it.
+Analyzed and concluded harmless: the later purge (whenever it
+eventually replays) acts purely from its id's own decoded uid, not
+local file presence, so the server-side outcome is unaffected; a
+subsequent flags refresh already tolerates a locally-missing message
+(`flags_refresh_cb`'s own pre-existing `EMSNOSUCHMESSAGE` handling).
+Not a stop-and-ask item -- the spec explicitly names
+`MS_PurgeDeletedMessages` as "the store's own purge path" with no
+per-message variant available -- but flagged here per the instruction
+to document surprising behavior plainly.
+
+### Test results
+
+**Case 5 (append round-trip) and case 6 (crash resume), plus the full
+suite, per the gate's own requirements:**
+
+- **`imap-writeback-tests`** (case 5 lives here; real, cui-driven,
+  end-to-end): **5 passed, 0 failed, 0 skipped** (case 1's three
+  sub-assertions -- capture, replay, suppression -- + case 5 append
+  round-trip + the new acceptance-test block). Case 5 confirms: the
+  expected `"J1 append <nativeid>"` line was captured exactly; a
+  single `imapsync` run (replay+mirror together) consumed it; the
+  native-id local copy is gone; exactly one deterministic-id copy
+  exists both locally and server-side; server `EXISTS` matches
+  local count consistently (before-count + 1).
+- **`imap-sync-tests`** (W5/W6 live here, isolated/deterministic,
+  matching W2-W4/W7's own established fabrication style wherever
+  fabrication is safe -- see "W5/W6 test design" below for why the one
+  real fixture message each needs still comes from real `cui`):
+  - **First live attempt: 10 passed, 2 failed, 1 skipped.** All
+    Gate-3-relevant cases (**W5**, **W6**) passed clean on this very
+    first attempt, as did W2/W3/W4/W7 and cases 2/3/4/6. The two
+    failures -- "1a fresh mirror" (`local_count=3876` vs `EXISTS=3882`)
+    and "5 UIDVALIDITY change drill" (nonzero `imapsync` exit despite
+    `final_count == exists_after`) -- both trace to the *same*
+    pre-existing, entirely untouched code path: `imapsync`'s own
+    "uid ... fetched a zero-length body -- skipping this message, will
+    retry it next run" / "no metadata for uid ...; skipping" handling
+    (`imap_sync.c`, well outside this gate's diff -- confirmed via the
+    `fossil diff` hunk ranges). The *specific* uids affected differed
+    between the two occurrences within the same run (78005-78008 on
+    the first pass, 78009/78011 moments later on the from-scratch
+    re-mirror triggered by case 5's own UIDVALIDITY-corruption drill)
+    -- strong evidence of a live, currently-receiving-real-mail INBOX
+    condition (a race with real-time delivery/indexing over a 30+
+    minute live run against several thousand real messages), not a
+    regression from anything touched this gate.
+  - **Full retry: 13 passed, 0 failed, 0 skipped.** Confirms the first
+    attempt's two failures were exactly the transient live-account
+    condition suspected, not a structural defect -- **W5** ("a real
+    cui-created native-id local message replays and mirrors in one
+    imapsync run, converging on a deterministic id exactly once") and
+    **W6** ("a run interrupted between a successful APPEND and its
+    local cleanup/cursor-advance, resumed, completes with no flags
+    damage to an already-past journal line and at most the documented
+    one duplicate append") both PASS, along with every other case.
+    Writeback cleanup confirmed (`POSTEXPUNGE-STILL-PRESENT: no`).
+  - Per instruction, the full suite was not run a third time -- both
+    results (first attempt + clean retry) are cited as-is; the two
+    transient failures are resolved evidence, not an open item.
+- **`imap-protocol-tests`**: **14 passed, 0 failed, 0 skipped**, run
+  twice (both clean) -- unaffected by this gate (no `imap_prot`
+  changes were needed), confirming append replay's live use of
+  `imap_Append` didn't disturb anything at the protocol layer. Case 14
+  (mailbox guard drill) reconfirms `INBOX` is refused for every
+  destructive subcommand, independent of this session's own changes.
+- **`smtp-protocol-tests`** (offline cases only, no recipient given):
+  **2 passed, 0 failed** -- matches Gate 2's own baseline exactly.
+
+**W5/W6 test design** (documented in `imap-sync-tests`' own module
+docstring and case comments too): unlike W2/W3/W4/W7, append replay
+needs a real local native-id body file plus a real `.MS_MsgDir` entry
+(`MS_GetSnapshot`) to act on -- there is no safe way to fabricate that
+from Python without hand-writing `.MS_MsgDir` binary bytes, which this
+suite avoids on principle. Both cases use
+`create_local_draft_via_cui()` (the same cui "mail" -> compose ->
+"draft" mechanism as `imap-writeback-tests`' `run_cui_append()`) for
+the one real fixture message each needs, then do the actual
+FABRICATION at the level W4 already does it for its own edge case
+(direct `.MS_Journal`/`.MS_IMAPSync` state-file manipulation). W6 in
+particular: fabricates a `"J1 flags"` line that is *deliberately never
+applied* server-side, lets a real cui-created append land as the
+journal's second line for free (msjournal.c's own `O_APPEND`
+semantics), renames `.MS_Journal` to `.MS_Journal.replaying`, manually
+pre-applies the append server-side (standing in for "the crashed run's
+own APPEND, which already succeeded"), and sets `journal_offset` to
+point exactly at the interrupted line -- then a real `imapsync`
+invocation resumes from there. The discriminating proof that resume
+correctly honored the nonzero starting cursor (rather than restarting
+from 0): the fabricated flags line's forced `\Answered` never appears
+on the real message, because it was never applied and the resumed run
+correctly skipped past it. The numbering gap left by W2/W3/W4/W7 (no
+W5/W6 until now) was conspicuous evidence this was the intended
+location for exactly these two cases all along.
+
+### Scripted-cui end-to-end acceptance test
+
+Implemented as a new, self-contained block in `imap-writeback-tests`'
+`main()` (own `tempfile.mkdtemp()` scratch root, own two-message
+seeding, own cleanup in a `finally`, independent of the case-1/case-5
+scratch above so its outcome never depends on exactly what cuid
+position those cases happened to leave behind): one scripted cui
+session performs `type 1` (mark-read), `delete 2` + `purge` (the
+delete+purge pair), and `mail` -> compose -> `draft` (copy-in) all
+together, back to back, then exactly one subsequent `imapsync`
+invocation (replay+mirror in the same run). Verified: the journal
+(three record kinds -- flags, purge, append -- all in one file) is
+fully consumed; cursor zeroed; local mirror count matches server
+`EXISTS`, and both equal the pre-mutation count (mark-read: no count
+change; delete+purge: -1; copy-in: +1; net: unchanged) -- i.e. the
+local mirror converges exactly with server truth after one run, the
+whole point of Milestone 4. **PASS**, live, confirmed via the actual
+transcript (reproduced in full in the session's tool output, not
+reproduced here since it contains nothing beyond ordinary cui prompts
+and this account's own real address).
+
+### Hand-test instruction for wdc (messages GUI -- not run by this session)
+
+Per the ground rules, this session did not attempt to drive the actual
+`messages` GUI app. Exact two-line instruction:
+
+```
+1. Launch messages, open Revival/WritebackTest, mark a message read, delete + purge another, and copy a third message in from any other local folder (or compose a new message and save it as a draft into Revival/WritebackTest).
+2. Quit messages, run imapsync -folders Revival/WritebackTest -v from a terminal and confirm the log shows your mutations replaying (flags/purge/append lines, no errors), then reopen messages and confirm the folder now matches the server exactly -- the copied-in/composed message shows under a new id, with no duplicates.
+```
+
+### Files touched, with compile status
+
+- `src/ams/msclients/imapsync/imap_sync.c` -- edited. New:
+  `conv64tolong` extern, `MS_GetSnapshot`/`MS_PurgeDeletedMessages`/
+  `QuickGetBodyFileName`/`RetryBodyFileName` externs,
+  `format_internaldate()`, `crlf_stage_body()`, `replay_append_line()`.
+  Changed: the "append" branch in `replay_folder()`'s per-line loop
+  (now calls `replay_append_line()` and advances the cursor); header
+  comments updated throughout to describe append as implemented.
+  Compile-verified against the `fossil cat` original: baseline = 9
+  warnings, edited file = 11; the +2 are exactly the two new
+  `fopen()` call sites inside `replay_append_line()`, same
+  pre-existing `-Wdeprecated-non-prototype` (`dbg_fopen`) category as
+  every other `fopen()` already in this file -- no new warning
+  categories, no errors. `make install` in
+  `src/ams/msclients/imapsync` links clean; all new externs resolve
+  from `libmssrv.a`/`libmail.a`. No relink of `amsn.do`/`cuin` was
+  needed or done -- this gate touched only `imap_sync.c`, which links
+  directly against `libmssrv.a`/`libmail.a` and does not go through
+  either of those dynamic/relinked artifacts.
+- `revival/tests/imap-writeback-tests` -- edited. New:
+  `replayingpath()`, `find_marker_files()`, `run_cui_append()`,
+  `run_cui_acceptance()` helpers; case-5 block and the acceptance-test
+  block in `main()`; two new `skip(...)` entries in the
+  no-live-credentials path; module docstring updated.
+  `python3 -m py_compile` clean. Not C; n/a for compile-warning
+  status. Live: 5/5 (see above).
+- `revival/tests/imap-sync-tests` -- edited. New: `crlf_normalize()`,
+  `create_local_draft_via_cui()` helpers; W5/W6 case blocks after W7;
+  two new names in the no-live-credentials skip list; module
+  docstring updated. `python3 -m py_compile` clean. Live: 13/13 (full
+  suite, retry run -- see above).
+- `revival/tests/README.md` -- edited. Documented case 5,
+  the acceptance-test block, and W5/W6 in their respective sections;
+  fixed a stale note in the `imap-writeback-tests` section describing
+  the now-superseded pre-suppression-semantics-fix "1 passed, 2
+  failed" expectation.
+
+### Open questions / things that surprised me
+
+1. **The bare-LF APPEND bug** (detailed above) -- a genuine live-protocol
+   finding, fixed directly rather than reported, matching this
+   milestone's own established pattern of "every gate's live testing
+   finds exactly one real bug."
+2. **`MS_PurgeDeletedMessages`'s blast radius** (detailed above) --
+   analyzed at length and concluded safe/self-healing in its one edge
+   case; documented in code and here per the ground rules' "document
+   this behavior clearly" instruction, not raised as a design question
+   since the spec leaves no alternative purge primitive to reuse.
+3. **The two transient `imap-sync-tests` failures on the first live
+   attempt** (detailed above) -- resolved by a clean retry (13/0/0);
+   both trace to a pre-existing, untouched code path and a live
+   account actively receiving mail during a 30+ minute run, not a
+   Gate 3 regression. Not re-run a third time, per instruction.
+4. **A documentation-only bug in my own diff** (detailed above,
+   item 12 of "What I did") -- caught by re-reading my own diff before
+   trusting it, exactly the discipline the ground rules ask for around
+   this milestone's incident history. No functional effect (comments
+   only), fixed anyway before the final live runs.
+5. Nothing else surprised me -- append replay's design was fully
+   specified by Gate 1/Gate 2's own conventions (deterministic ids,
+   the suppression mechanism, the crash-safety cursor) plus the
+   spec's own explicit design decision 6; the only real unknowns this
+   gate turned up were the two bugs above (one live-protocol, one
+   documentation-only), both found and fixed within this session.
+
+**This closes Milestone 4.** All three gates (capture/suppression,
+flags+purge replay, append replay) are complete, live-tested, and
+covered by regression suites confirmed green in this session.
