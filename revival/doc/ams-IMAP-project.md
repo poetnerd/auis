@@ -6,8 +6,8 @@ COMPLETE as of 2026-07-18. `imapsync` mirrors the real INBOX into
 `~/.IMAP/fastmail/.MESSAGES/`, and `messages` browses it via an mspath
 element (`$default:~/.IMAP/fastmail/.MESSAGES`), confirmed by hand.
 Next: milestone 3c — messages-GUI acceptance. Known 3c items from the
-first real browse: mirrored folders only appear after Message Folders →
-Expose All (subscription defaults for mirrored roots); metamail is
+first real browse: mirrored folders only appeared after Message Folders
+→ Expose All — **resolved 2026-07-22, see below**; metamail is
 launched for MIME display but shows nothing (pre-existing platform
 gap, out of AMS-IMAP scope). See §10.
 
@@ -15,10 +15,20 @@ gap, out of AMS-IMAP scope). See §10.
 crashed `messages` — root-caused as a stale-pointer UAF in
 `folders__ActionHit` (`atkams/messages/lib/folders.c`, unrelated to IMAP;
 a pre-existing 1994 hazard the mirror's background refresh traffic finally
-made hot), fixed and committed. But subscribing does **not** solve the
-underlying goal: INBOX remains hidden on restart even once subscribed, so
-subscription state is not (or not solely) what gates default visibility.
-`folder-visibility-prompt.md` Gate 1 is still open.
+made hot), fixed and committed. Subscribing alone did **not** solve the
+underlying goal (INBOX stayed hidden on restart even once subscribed) —
+the real gate turned out to be a site-config global, `AMS_OnlyMail`
+(defaults to `1` without `RUN_AMDS_ENV`, which this revival never
+defines), that restricted the default "Expose New" view to
+`$HOME/.MESSAGES` regardless of subscription status. **Resolved same
+day**: `AMS_OnlyMail: No` in `build/etc/AndrewSetup` (no rebuild;
+`revival/tools/write-andrewsetup` regenerates it after `make Clean`),
+plus subscribing the mirrored folder at Ask or Show-All rather than
+plain Subscribe. Confirmed live. Full trace, including the falsified
+first proposal, in `revival/doc/claude-history/
+folder-visibility-REPORT.md`; the prompt itself has moved to
+`claude-history/` as retired. M3c's remaining item is broader
+browse/read acceptance beyond folder visibility.
 
 Goal: teach the AMS clients about IMAP as a mail store and SMTP as a mail
 sender, with OAuth2-capable authentication. Test platform: Fastmail.
@@ -377,10 +387,13 @@ Spike findings that set milestone 3's opening tasks:
      the skipped uid. `revival/tests/imap-sync-tests` 6 cases live,
      incl. scripted cui browse; real-mailbox browse in `messages`
      confirmed by hand via `mspath: $default:~/.IMAP/fastmail/.MESSAGES`.
-   * **3c (next)** — messages-GUI acceptance: folder visibility
-     without Expose All (subscription defaults for mirrored roots),
-     broader browse/read behavior; metamail MIME display noted as a
-     separate pre-existing platform gap.
+   * **3c (in progress)** — messages-GUI acceptance. Folder
+     visibility without Expose All — **DONE 2026-07-22**: real gate
+     was `AMS_OnlyMail` (site config), not subscription; see the
+     status block above and `revival/doc/claude-history/
+     folder-visibility-REPORT.md`. Remaining: broader browse/read
+     behavior; metamail MIME display noted as a separate pre-existing
+     platform gap.
 4. **Writeback** — change journal + replay: flags, copy/move, append,
    delete/expunge.
 5. **XOAUTH2** auth module + token refresh.

@@ -271,9 +271,20 @@ mirrors IMAP; AMDS delivery remains excluded.
      (read-only; fixes stay top-level).
   3. `bcc-direct-insertion-prompt.md` — root-cause the blind-copy
      direct-insertion failure (investigation-gated).
-  4. `folder-visibility-prompt.md` — subscriptions mechanism +
-     mirrored-folder default visibility (investigate, then gated
-     implementation).
+  4. ~~`folder-visibility-prompt.md`~~ (now in `claude-history/`) —
+     **done 2026-07-22.** Root cause was not subscriptions but a
+     site-config global, `AMS_OnlyMail` (defaults to `1` without
+     `RUN_AMDS_ENV`), which restricted the default "Expose New" view
+     to `$HOME/.MESSAGES` regardless of subscription status. The
+     Gate-1 report's own proposal (imapsync auto-subscribe at
+     creation) was tested live and falsified before this was found —
+     see `revival/doc/claude-history/folder-visibility-REPORT.md`'s
+     "Correction" section. Fixed via `AMS_OnlyMail: No` in
+     `build/etc/AndrewSetup` (new `revival/tools/write-andrewsetup`
+     regenerates it after `make Clean`); mirrored folders now need
+     that setting plus Ask/Show-All subscription (not plain Subscribe)
+     to appear by default. Documented in `quickstart.md` and
+     `mail-quickstart.md`.
   5. ~~`fdplumb-prompt.md`~~ (now in `claude-history/`) — Gate 1 CLOSED 2026-07-19 by a Fable
      session (static analysis; see `revival/doc/claude-history/fdplumb-REPORT.md` and
      M3c item 3 above). Fixes committed. Only the low-priority

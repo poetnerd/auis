@@ -16,16 +16,14 @@ is part of retiring it, done during the close-out doc update.
 ## Active Prompts (in `revival/doc/`, not here)
 
 Current queue and suggested order live in `roadmap.md` → "Delegated
-work queue". As of 2026-07-21:
+work queue". As of 2026-07-22:
 
 1. `strlit-sweep-prompt.md` — writable-string-literal census + fixes
 2. `m2-census-prompt.md` — M2 point-0 warning classification
 3. `bcc-direct-insertion-prompt.md` — blind-copy direct-insertion
    root cause
-4. `folder-visibility-prompt.md` — mirrored-folder default
-   visibility
-5. `imap-writeback-prompt.md` — Milestone 4 change-journal writeback
-6. `mime-attachment-icon-prompt.md` — root-cause a `multipart/mixed`
+4. `imap-writeback-prompt.md` — Milestone 4 change-journal writeback
+5. `mime-attachment-icon-prompt.md` — root-cause a `multipart/mixed`
    attachment rendering as a bare `?` instead of an
    `[attachment: ...]` line (added 2026-07-21, follow-on to the
    just-retired `mime-display` task below)
@@ -79,8 +77,31 @@ against live Fastmail and closed with its milestone:
 Five gated prompts plus the standing `sonnet-playbook.md`, written
 in one pass (commit 8e565c9fda) so Sonnet-class sessions could
 carry work forward independently: `strlit-sweep`, `m2-census`,
-`bcc-direct-insertion`, `folder-visibility` (all still active), and:
+`bcc-direct-insertion` (still active), and:
 
+- `folder-visibility-prompt.md` (2026-07-19, retired 2026-07-22) —
+  mirrored-folder default visibility. Gate 1's own premise
+  (subscription status gates default visibility) was investigated,
+  found real but incomplete, and a fix proposed
+  (`folder-visibility-REPORT.md`) — then *falsified* the same day by
+  wdc directly testing it live (Ask and Show-All subscription both
+  failed to make INBOX visible). Root-caused instead via live
+  instrumentation (temporarily hardcoded `foldersDebugging`/
+  `MSDebugging` debug levels, reverted after): the real gate is
+  `AMS_OnlyMail`, a site-config global defaulting to `1` without
+  `RUN_AMDS_ENV` (this revival never defines it), which silently
+  restricts the default "Expose New" view to `$HOME/.MESSAGES` only,
+  excluding every other mspath root before subscription status is
+  even checked. Fixed with `AMS_OnlyMail: No` in `build/etc/
+  AndrewSetup` (no rebuild needed); `revival/tools/write-andrewsetup`
+  added since that file lives outside `build/`'s tracked tree and
+  doesn't survive `make Clean`. Confirmed live: INBOX visible by
+  default with either Ask or Show-All subscription (Show-All chosen
+  — see the report's addendum for the semantic difference). See
+  `folder-visibility-REPORT.md`'s "Correction" section for the full
+  falsification-and-recovery trail — a second case study (after
+  fdplumb) in a prompt's own investigation needing to be corrected by
+  direct testing rather than more static reading.
 - `fdplumb-prompt.md` (2026-07-19, retired same day) — the
   fd-ledger criticals / preference-blackout investigation. Gate 1
   was closed by a Fable static-analysis session before any Sonnet
