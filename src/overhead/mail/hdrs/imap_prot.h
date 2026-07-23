@@ -46,10 +46,14 @@
 	"DIVERGENCE:" and are also summarized in the milestone's Gate 2
 	report.
 
-	Strictly read-only against the mailbox in this milestone: EXAMINE
-	only (never SELECT -- imap_Select is declared for API-shape
-	stability but is not implemented until the writeback milestone),
-	BODY.PEEK[] only, no STORE/APPEND/CREATE/DELETE/EXPUNGE anywhere.
+	Read-only entry points above this comment are unchanged from
+	milestone 3a: EXAMINE only (never SELECT -- imap_Select is
+	declared for API-shape stability but is not implemented),
+	BODY.PEEK[] only. The writeback milestone (M4) adds three
+	additive write entry points below (imap_UidStoreFlags,
+	imap_UidExpunge, imap_Append) -- STORE/EXPUNGE/APPEND now exist,
+	but only through those three named functions; nothing above this
+	comment sends them.
 
 	Optional protocol trace: if the environment variable IMAP_TRACE
 	is set, every line sent/received is written to stderr as "C: "/
@@ -153,20 +157,24 @@ struct imap_mboxinfo {
     unsigned long long highestmodseq;	/* 0 if the server has no CONDSTORE */
 };
 
-/* EXAMINE only (read-only select; never SELECT). *out is filled in on
-   success. Unsolicited "* n EXISTS" updates seen during any later
-   command on this conn update conn's own copy of mboxinfo.exists in
-   place (see the Parsing requirements note in the spec) -- callers
-   that want the freshest count can re-EXAMINE, but simple drift
-   tracking happens automatically. */
+/* EXAMINE (read-only select). *out is filled in on success. Unsolicited
+   "* n EXISTS" updates seen during any later command on this conn
+   update conn's own copy of mboxinfo.exists in place (see the Parsing
+   requirements note in the spec) -- callers that want the freshest
+   count can re-EXAMINE, but simple drift tracking happens
+   automatically. */
 int imap_Examine(struct imapconn *conn, const char *mailbox,
                   struct imap_mboxinfo *out);
 
-/* DIVERGENCE from the sketch, exactly as the spec pre-authorizes:
-   "imap_Select is declared in the header but may return a
-   not-implemented error until the writeback milestone." Declared now
-   so imap_sync.c's API shape is stable; calling it in M3a always
-   returns IMAP_BAD with imap_ErrMsg() explaining why. */
+/* SELECT (read-write select) -- same *out contract as imap_Examine.
+   Was a permanent not-implemented stub through milestone 3 (always
+   IMAP_BAD); real as of the writeback milestone (M4), needed because
+   imap_UidStoreFlags/imap_UidExpunge below require the mailbox be
+   selected read-write, not merely EXAMINEd -- a server may (Fastmail
+   does) reject STORE/EXPUNGE against a read-only EXAMINE. imap_Reopen
+   re-issues whichever of SELECT/EXAMINE was last in effect on this
+   conn, so a reconnect mid-replay comes back read-write, not
+   downgraded. */
 int imap_Select(struct imapconn *conn, const char *mailbox,
                  struct imap_mboxinfo *out);
 
@@ -227,6 +235,77 @@ int imap_UidFetchMeta(struct imapconn *conn, const char *uidset,
    what was written to out) on success. */
 int imap_UidFetchBody(struct imapconn *conn, unsigned long uid,
                        FILE *out, long *sizep);
+
+/* ---- Write entry points (writeback milestone) ----
+
+   Additive only -- every entry point above is unchanged and still
+   works exactly as before. These three are the whole of what the
+   writeback milestone's replay logic needs; same conventions as the
+   read-only entry points above (tagged dispatch, IMAP_DEAD contract,
+   growable command-text building for caller-supplied uidsets).
+
+   UIDPLUS: check with imap_Capable(conn, "UIDPLUS") -- exposed the
+   same generic way ESEARCH/CONDSTORE already are, no dedicated
+   accessor needed. imap_UidExpunge (below) also refuses on its own if
+   UIDPLUS isn't advertised, as a self-contained protocol-safety
+   backstop; callers that want a friendlier "skip this one purge and
+   keep going" behavior should still check imap_Capable themselves
+   first rather than relying on that refusal. */
+
+/* Issues "CREATE <mailbox>". A small fourth addition beyond the three
+   the milestone names -- needed only so a test driver can provision
+   its own dedicated mailbox (e.g. "Revival/WritebackTest") without a
+   human doing it by hand first; nothing in imap_sync.c's replay path
+   calls this. Returns IMAP_OK if created, IMAP_NO if the server
+   refused (most servers, including Fastmail, say NO ALREADYEXISTS for
+   an existing name) -- callers that want "ensure it exists" should
+   check via imap_List first and treat IMAP_NO from this call as
+   "someone else created it in the meantime", not a hard failure. */
+int imap_Create(struct imapconn *conn, const char *mailbox);
+
+/* Issues "UID STORE <uidset> {+,-}FLAGS.SILENT (<flagslist>)" --
+   .SILENT so the server doesn't send back an untagged FETCH per
+   message (nothing here wants it). add nonzero sends "+FLAGS.SILENT"
+   (set the listed flags), zero sends "-FLAGS.SILENT" (clear them).
+   flagslist is the space-separated flag atoms with no parens (e.g.
+   "\Seen" or "\Seen \Answered") -- this function adds the parens.
+   uidset may be a single uid or a range/list; sized dynamically so an
+   unusually large uidset can't overflow a fixed staging buffer, same
+   reasoning as imap_UidSearch's criteria argument. */
+int imap_UidStoreFlags(struct imapconn *conn, const char *uidset,
+                        int add, const char *flagslist);
+
+/* Issues "UID EXPUNGE <uidset>" (RFC 4315 UIDPLUS) -- expunges only
+   the named uid(s), never messages beyond them. Refuses with IMAP_BAD
+   (conn's errmsg explains why) if the server hasn't advertised
+   UIDPLUS: a bare EXPUNGE is not an acceptable fallback here since it
+   would expunge every \Deleted message in the mailbox, not just the
+   ones asked for -- silently doing more than the caller asked is
+   worse than refusing. Callers must STORE \Deleted on the same
+   uid(s) first (this function does not do that itself, so is safe to
+   compose with imap_UidStoreFlags -- see the replay logic that uses
+   both together). */
+int imap_UidExpunge(struct imapconn *conn, const char *uidset);
+
+/* Issues "APPEND <mailbox> (<flagslist>) "<internaldate>" {<bodysize>}"
+   using a standard synchronizing literal: waits for the server's "+"
+   continuation line before writing the literal's bytes, which are
+   streamed from bodyf via tlscon_Write in bounded chunks -- symmetric
+   with imap_UidFetchBody's streamed read, the whole body is never
+   resident in memory at once. flagslist may be NULL or "" for no
+   flags. internaldate is the quoted-string-ready date text (this
+   function adds the quotes); NULL/"" omits the INTERNALDATE clause
+   (server assigns "now"). If the server advertises UIDPLUS and the
+   tagged OK carries a "[APPENDUID uidvalidity uid]" response code,
+   *out_uidvalidity/*out_uid are filled in from it; otherwise both are
+   left at 0 (set on entry regardless of outcome) and the caller must
+   locate the appended message some other way (e.g. a follow-up
+   SEARCH) -- out_uidvalidity/out_uid may each be NULL if the caller
+   doesn't need that value. */
+int imap_Append(struct imapconn *conn, const char *mailbox,
+                 const char *flagslist, const char *internaldate,
+                 FILE *bodyf, long bodysize,
+                 unsigned long *out_uidvalidity, unsigned long *out_uid);
 
 /* DIVERGENCE from the sketch (additive, test-support only): parses a
    single canned ENVELOPE response -- bytes exactly as they would

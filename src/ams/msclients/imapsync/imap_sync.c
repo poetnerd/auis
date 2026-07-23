@@ -21,22 +21,35 @@
 	progress (uidvalidity, highest-synced uid, highestmodseq) lives in a
 	small text file ".MS_IMAPSync" inside each mirrored folder directory.
 
-	Per-run work, in order: fresh/incremental mirror of new mail (with
-	\Seen/\Answered/\Deleted applied from the same FETCH that pulled
-	each new message's INTERNALDATE); a flags refresh pass over
-	previously-mirrored messages, skipped when HIGHESTMODSEQ shows
-	nothing changed since the last run (a modseq comparison only -- the
-	underlying FETCH has no CHANGEDSINCE modifier available to it); and,
-	only with -full-check, a full UID list comparison that marks
-	AMS_ATT_DELETED locally for any previously-mirrored message no
-	longer present on the server (never purges -- that stays a human or
-	later-milestone decision). A UIDVALIDITY change wipes and re-mirrors
-	a folder from scratch, loudly.
+	Per-run work, in order, per folder: writeback replay (below), then
+	fresh/incremental mirror of new mail (with \Seen/\Answered/\Deleted
+	applied from the same FETCH that pulled each new message's
+	INTERNALDATE); a flags refresh pass over previously-mirrored
+	messages, skipped when HIGHESTMODSEQ shows nothing changed since the
+	last run (a modseq comparison only -- the underlying FETCH has no
+	CHANGEDSINCE modifier available to it); and, only with -full-check,
+	a full UID list comparison that marks AMS_ATT_DELETED locally for
+	any previously-mirrored message no longer present on the server
+	(never purges -- that stays a human or later-milestone decision). A
+	UIDVALIDITY change wipes and re-mirrors a folder from scratch,
+	loudly.
 
-	IMAP usage is strictly read-only: only imap_Examine/imap_UidSearch/
-	imap_UidFetchMeta/imap_UidFetchBody are called (EXAMINE and
-	BODY.PEEK[] on the wire), so a sync run can never alter or destroy
-	anything on the server.
+	Writeback (replay_folder() and its helpers, below): local mutations
+	captured by msjournal.c (src/ams/libs/ms) into a folder's
+	".MS_Journal" -- flags changes and purges made through messages/cui
+	against a mirrored folder -- get pushed to the server here, journal
+	first, so this run's own mirror pass immediately re-converges on
+	them ("server wins" falls out for free). Crash-safe: ".MS_Journal"
+	is renamed to ".MS_Journal.replaying" before anything is sent, and
+	a byte-offset cursor in ".MS_IMAPSync" only advances once a line's
+	op gets a definite answer from the server. Only "flags" and "purge"
+	records are replayed here; an "append" record halts replay in
+	place (append writeback is a later milestone). A per-folder,
+	per-run safety valve refuses to replay more than 25 pending purges
+	unless invoked with -force-purges. IMAP usage otherwise remains
+	read-only via EXAMINE (never SELECT) except during an active
+	replay, which briefly upgrades to SELECT (read-write) and
+	downgrades back to EXAMINE immediately after -- see replay_folder().
 
 	ANSI C (C89 prototypes), scanf family banned -- same policy as
 	imap_prot.c.  Numbers are parsed with strtoul/strtoull (+ endptr
@@ -449,6 +462,15 @@ struct sync_state {
     unsigned long uidvalidity;
     unsigned long highestuid;
     unsigned long long highestmodseq;
+    unsigned long journal_offset;	/* writeback: byte offset already
+					   replayed into .MS_Journal.replaying;
+					   0 if no replay is in progress. Absent
+					   in a pre-writeback state file, which
+					   load_state defaults to 0 -- correct,
+					   since a folder that predates this
+					   field can't have a .replaying file
+					   with real progress recorded anywhere
+					   else either. */
 };
 
 static void load_state(const char *path, struct sync_state *st)
@@ -460,6 +482,7 @@ static void load_state(const char *path, struct sync_state *st)
     st->uidvalidity = 0;
     st->highestuid = 0;
     st->highestmodseq = 0;
+    st->journal_offset = 0;
 
     f = fopen(path, "r");
     if (f == NULL) return;
@@ -473,6 +496,7 @@ static void load_state(const char *path, struct sync_state *st)
         if (strcmp(line, "uidvalidity") == 0) st->uidvalidity = strtoul(val, NULL, 10);
         else if (strcmp(line, "highestuid") == 0) st->highestuid = strtoul(val, NULL, 10);
         else if (strcmp(line, "highestmodseq") == 0) st->highestmodseq = strtoull(val, NULL, 10);
+        else if (strcmp(line, "journal_offset") == 0) st->journal_offset = strtoul(val, NULL, 10);
     }
     fclose(f);
 }
@@ -488,6 +512,7 @@ static int write_state(const char *path, const struct sync_state *st)
     fprintf(f, "uidvalidity %lu\n", st->uidvalidity);
     fprintf(f, "highestuid %lu\n", st->highestuid);
     fprintf(f, "highestmodseq %llu\n", st->highestmodseq);
+    fprintf(f, "journal_offset %lu\n", st->journal_offset);
     if (fclose(f) != 0) return -1;
     if (rename(tmppath, path) != 0) return -1;
     return 0;
@@ -852,11 +877,407 @@ static int check_expunged(struct imapconn *conn, const char *localpath,
 }
 
 /* ---------------------------------------------------------------- */
+/* writeback: journal replay (flags + purge; append is Gate 3)          */
+/* ---------------------------------------------------------------- */
+
+/* Per-run, per-folder safety valve: a corrupt or stale journal must
+   never mass-expunge a mailbox. Overridden by -force-purges. */
+#define REPLAY_PURGE_LIMIT 25
+#define REPLAY_LINEMAX 600
+
+static int hexval(char c)
+{
+    if (c >= '0' && c <= '9') return c - '0';
+    c = (char) tolower((unsigned char) c);
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    return -1;
+}
+
+/* Decodes exactly nbytes*2 lowercase hex characters into out[0..nbytes-1].
+   Returns 0 on success, -1 on any malformed byte or wrong length. */
+static int decode_hexmask(const char *hex, unsigned char *out, int nbytes)
+{
+    int i, hi, lo;
+
+    if ((int) strlen(hex) != nbytes * 2) return -1;
+    for (i = 0; i < nbytes; ++i) {
+        hi = hexval(hex[2 * i]);
+        lo = hexval(hex[2 * i + 1]);
+        if (hi < 0 || lo < 0) return -1;
+        out[i] = (unsigned char) ((hi << 4) | lo);
+    }
+    return 0;
+}
+
+/* Decodes msjournal.c's "new = (old|ormask)&andmask" two-mask grammar
+   for one attribute bit: returns 1 if the formula forces the bit ON
+   regardless of the (unknown, server-side) old value, 0 if it forces
+   the bit OFF, -1 if the bit is transparent (old value passes through
+   untouched -- ormask bit 0, andmask bit 1). Derivation: with old=0 the
+   result is (ormask&andmask)'s bit; with old=1 it's andmask's bit.
+   Those two agree (a deterministic force) exactly when andmask's bit is
+   0 (forcing off either way) or when ormask's bit is also 1 (forcing
+   on); they disagree only for ormask=0,andmask=1, which is transparency. */
+static int mask_bit_forced(const unsigned char *ormask, const unsigned char *andmask, int bit)
+{
+    int andbit = (andmask[bit / 8] >> (bit % 8)) & 1;
+    int orbit  = (ormask[bit / 8]  >> (bit % 8)) & 1;
+
+    if (!andbit) return 0;
+    if (orbit) return 1;
+    return -1;
+}
+
+/* Replays one "J1 flags <id> <orhex> <andhex>" record: maps the
+   decoded or/and masks' UNSEEN/DELETED/REPLIEDTO bits onto
+   \Seen/\Deleted/\Answered and issues at most one +FLAGS.SILENT and
+   one -FLAGS.SILENT STORE (only for the attributes actually forced
+   one way or the other -- a transparent bit is never mentioned to the
+   server at all). Returns 0 if the line was fully handled (including
+   a deliberate skip -- stale UIDVALIDITY, malformed fields, or a
+   non-fatal STORE failure logged and moved past), -1 if the
+   connection died (caller must not advance the replay cursor). */
+static int replay_flags_line(struct imapconn *conn, unsigned long uidvalidity,
+                              const char *id, const char *orhex, const char *andhex,
+                              const char *foldername, int *anyerror)
+{
+    unsigned long ev, euid;
+    unsigned char ormask[AMS_ATTRIBUTESIZE], andmask[AMS_ATTRIBUTESIZE];
+    int unseen_f, deleted_f, replied_f;
+    char addflags[64], remflags[64];
+    char uidset[24];
+    int rc;
+
+    if (decode_id(id, &ev, &euid) != 0) {
+        loudlog("imapsync: replay: unparsable id \"%s\" in \"%s\" flags record; skipping", id, foldername);
+        return 0;
+    }
+    if (ev != uidvalidity) {
+        loudlog("imapsync: replay: \"%s\" flags record for id %s references stale UIDVALIDITY "
+                "%lu (current %lu) -- server already re-mirrored past it; skipping",
+                foldername, id, ev, uidvalidity);
+        return 0;
+    }
+    if (decode_hexmask(orhex, ormask, AMS_ATTRIBUTESIZE) != 0
+        || decode_hexmask(andhex, andmask, AMS_ATTRIBUTESIZE) != 0) {
+        loudlog("imapsync: replay: malformed flags masks for id %s in \"%s\"; skipping", id, foldername);
+        return 0;
+    }
+
+    unseen_f  = mask_bit_forced(ormask, andmask, AMS_ATT_UNSEEN);
+    deleted_f = mask_bit_forced(ormask, andmask, AMS_ATT_DELETED);
+    replied_f = mask_bit_forced(ormask, andmask, AMS_ATT_REPLIEDTO);
+
+    addflags[0] = '\0';
+    remflags[0] = '\0';
+    if (unseen_f == 0) strcpy(addflags, "\\Seen");		/* not-unseen -> \Seen */
+    else if (unseen_f == 1) strcpy(remflags, "\\Seen");
+    if (deleted_f == 1) { if (addflags[0]) strcat(addflags, " "); strcat(addflags, "\\Deleted"); }
+    else if (deleted_f == 0) { if (remflags[0]) strcat(remflags, " "); strcat(remflags, "\\Deleted"); }
+    if (replied_f == 1) { if (addflags[0]) strcat(addflags, " "); strcat(addflags, "\\Answered"); }
+    else if (replied_f == 0) { if (remflags[0]) strcat(remflags, " "); strcat(remflags, "\\Answered"); }
+
+    snprintf(uidset, sizeof(uidset), "%lu", euid);
+
+    if (addflags[0] != '\0') {
+        rc = imap_UidStoreFlags(conn, uidset, 1, addflags);
+        if (rc == IMAP_DEAD) return -1;
+        if (rc != IMAP_OK) {
+            fprintf(stderr, "imapsync: replay: +FLAGS.SILENT (%s) uid %lu in \"%s\": %d (%s) %s\n",
+                    addflags, euid, foldername, rc, imap_rcname(rc), imap_ErrMsg(conn));
+            *anyerror = 1;
+        }
+    }
+    if (remflags[0] != '\0') {
+        rc = imap_UidStoreFlags(conn, uidset, 0, remflags);
+        if (rc == IMAP_DEAD) return -1;
+        if (rc != IMAP_OK) {
+            fprintf(stderr, "imapsync: replay: -FLAGS.SILENT (%s) uid %lu in \"%s\": %d (%s) %s\n",
+                    remflags, euid, foldername, rc, imap_rcname(rc), imap_ErrMsg(conn));
+            *anyerror = 1;
+        }
+    }
+    return 0;
+}
+
+/* Replays one "J1 purge <id>" record: UID STORE +FLAGS.SILENT
+   (\Deleted) then UID EXPUNGE -- only if the server advertises
+   UIDPLUS (checked here, ahead of imap_UidExpunge's own identical
+   check, purely so this can log a specific "skipping this uid"
+   message rather than a generic protocol-layer error). A bare
+   EXPUNGE is never used as a fallback: it would expunge every
+   \Deleted message in the mailbox, not just this one. Same 0/-1
+   return convention as replay_flags_line. */
+static int replay_purge_line(struct imapconn *conn, unsigned long uidvalidity,
+                              const char *id, const char *foldername, int *anyerror)
+{
+    unsigned long ev, euid;
+    char uidset[24];
+    int rc;
+
+    if (decode_id(id, &ev, &euid) != 0) {
+        loudlog("imapsync: replay: unparsable id \"%s\" in \"%s\" purge record; skipping", id, foldername);
+        return 0;
+    }
+    if (ev != uidvalidity) {
+        loudlog("imapsync: replay: \"%s\" purge record for id %s references stale UIDVALIDITY "
+                "%lu (current %lu) -- server already re-mirrored past it; skipping",
+                foldername, id, ev, uidvalidity);
+        return 0;
+    }
+    if (!imap_Capable(conn, "UIDPLUS")) {
+        loudlog("imapsync: replay: server has no UIDPLUS; refusing to purge uid %lu in \"%s\" "
+                "(a bare EXPUNGE would expunge more than this one message) -- skipping",
+                euid, foldername);
+        return 0;
+    }
+
+    snprintf(uidset, sizeof(uidset), "%lu", euid);
+
+    rc = imap_UidStoreFlags(conn, uidset, 1, "\\Deleted");
+    if (rc == IMAP_DEAD) return -1;
+    if (rc != IMAP_OK) {
+        fprintf(stderr, "imapsync: replay: +FLAGS.SILENT (\\Deleted) uid %lu in \"%s\": %d (%s) %s\n",
+                euid, foldername, rc, imap_rcname(rc), imap_ErrMsg(conn));
+        *anyerror = 1;
+        return 0;
+    }
+
+    rc = imap_UidExpunge(conn, uidset);
+    if (rc == IMAP_DEAD) return -1;
+    if (rc != IMAP_OK) {
+        fprintf(stderr, "imapsync: replay: UID EXPUNGE uid %lu in \"%s\": %d (%s) %s\n",
+                euid, foldername, rc, imap_rcname(rc), imap_ErrMsg(conn));
+        *anyerror = 1;
+    }
+    return 0;
+}
+
+/* Crash-safe handoff: renames .MS_Journal to .MS_Journal.replaying so
+   that messages/cui may keep appending fresh records to a brand-new
+   .MS_Journal while this run replays the frozen snapshot (picked up
+   next run). If .replaying already exists, a previous run died
+   mid-replay -- resume it rather than renaming again (which would
+   silently lose whatever .MS_Journal has accumulated since). Returns
+   0 (nothing pending), 1 (freshly handed off this call), 2 (resuming
+   an already-in-progress replay), or -1 (I/O error, logged by the
+   caller). */
+static int journal_handoff(const char *localpath, char *replayingpath, size_t replayingpathsize)
+{
+    char jpath[MAXPATHLEN + 1];
+    struct stat st;
+
+    snprintf(jpath, sizeof(jpath), "%s/.MS_Journal", localpath);
+    snprintf(replayingpath, replayingpathsize, "%s/.MS_Journal.replaying", localpath);
+
+    if (stat(replayingpath, &st) == 0) return 2;
+    if (stat(jpath, &st) != 0) return 0;
+    if (rename(jpath, replayingpath) != 0) return -1;
+    return 1;
+}
+
+/* Replays a mirrored folder's pending local mutations to the server,
+   journal first (per the writeback design: journal first, then the
+   ordinary mirror pass, so a push lands before the mirror pass reads
+   server truth including it -- "server wins" falls out for free).
+   "flags" and "purge" records are replayed; "append" records are left
+   entirely alone -- their replay is a later milestone -- which halts
+   the whole replay at the first one encountered (not skipped past),
+   so the exact same line is retried, still unimplemented, every run
+   until append replay exists. journal_offset in *state is the
+   crash-safety cursor: advanced (and .MS_IMAPSync atomically
+   rewritten) only after each line's op gets a definite answer from
+   the server, so a crash mid-replay re-sends at most one already-
+   applied op on the next run -- accepted per the design (STORE is
+   idempotent; re-purging an already-gone uid is a no-op).
+
+   *info is both input (its uidvalidity is the "current" value every
+   replayed record's own UIDVALIDITY is checked against) and output:
+   the connection starts this run EXAMINEd (read-only, from the
+   caller's own initial EXAMINE), which STORE/EXPUNGE will not survive
+   on a real server -- so, only when there is actually something to
+   replay, this upgrades to a real SELECT (read-write) first, then
+   downgrades back to EXAMINE afterward, refreshing *info in the
+   process (a STORE/EXPUNGE plausibly bumps HIGHESTMODSEQ/EXISTS, and
+   the rest of the per-folder pass after this call needs the fresh
+   values, not the pre-replay ones) -- zero extra round trips for the
+   common case of a folder with nothing pending. */
+static int replay_folder(struct imapconn *conn, const char *localpath,
+                          const char *foldername, struct imap_mboxinfo *info,
+                          const char *statepath, struct sync_state *state,
+                          int force_purges, int *anyerror)
+{
+    char replayingpath[MAXPATHLEN + 1];
+    int hstatus;
+    FILE *f;
+    char line[REPLAY_LINEMAX];
+    int stopped_early = 0;
+    unsigned long uidvalidity;
+    int rc;
+
+    hstatus = journal_handoff(localpath, replayingpath, sizeof(replayingpath));
+    if (hstatus < 0) {
+        fprintf(stderr, "imapsync: replay: could not hand off journal in \"%s\": %s\n",
+                foldername, strerror(errno));
+        *anyerror = 1;
+        return SF_FAIL;
+    }
+    if (hstatus == 0) return SF_OK;		/* nothing pending -- the common case */
+    if (hstatus == 1) state->journal_offset = 0;	/* freshly handed off: start at the top */
+
+    rc = imap_Select(conn, foldername, info);
+    if (rc == IMAP_DEAD) return SF_DEAD;
+    if (rc != IMAP_OK) {
+        fprintf(stderr, "imapsync: replay: SELECT %s failed: %d (%s) %s\n",
+                foldername, rc, imap_rcname(rc), imap_ErrMsg(conn));
+        *anyerror = 1;
+        return SF_FAIL;
+    }
+    uidvalidity = info->uidvalidity;
+
+    f = fopen(replayingpath, "r");
+    if (f == NULL) {
+        fprintf(stderr, "imapsync: replay: could not open %s: %s\n", replayingpath, strerror(errno));
+        *anyerror = 1;
+        return SF_FAIL;
+    }
+
+    if (!force_purges) {
+        int purge_count = 0;
+
+        if (fseek(f, (long) state->journal_offset, SEEK_SET) != 0) {
+            fprintf(stderr, "imapsync: replay: could not seek %s: %s\n", replayingpath, strerror(errno));
+            fclose(f);
+            *anyerror = 1;
+            return SF_FAIL;
+        }
+        while (fgets(line, sizeof(line), f) != NULL) {
+            if (strncmp(line, "J1 purge ", 9) == 0) ++purge_count;
+        }
+        if (purge_count > REPLAY_PURGE_LIMIT) {
+            loudlog("imapsync: replay: \"%s\" has %d pending purge(s) queued, over the safety "
+                    "valve of %d -- refusing to replay ANY of this folder's journal this run; "
+                    "re-run with -force-purges to override", foldername, purge_count, REPLAY_PURGE_LIMIT);
+            fclose(f);
+            *anyerror = 1;
+            /* Nothing was sent to the server, but the connection is
+               still left SELECTed from above -- downgrade back to
+               EXAMINE so the caller's *info reflects the ordinary
+               read-only contract the rest of the per-folder pass
+               expects (values are unchanged from the SELECT above,
+               nothing here could have altered them). */
+            rc = imap_Examine(conn, foldername, info);
+            if (rc == IMAP_DEAD) return SF_DEAD;
+            return SF_OK;	/* not fatal to the overall sync run */
+        }
+    }
+
+    if (fseek(f, (long) state->journal_offset, SEEK_SET) != 0) {
+        fprintf(stderr, "imapsync: replay: could not seek %s: %s\n", replayingpath, strerror(errno));
+        fclose(f);
+        *anyerror = 1;
+        return SF_FAIL;
+    }
+
+    for (;;) {
+        char linecopy[REPLAY_LINEMAX];
+        char *save, *ver, *kind, *id, *a1, *a2;
+        int rc;
+
+        if (fgets(line, sizeof(line), f) == NULL) break;		/* clean EOF -- done */
+        if (strchr(line, '\n') == NULL) { stopped_early = 1; break; }	/* incomplete trailing line */
+
+        strncpy(linecopy, line, sizeof(linecopy) - 1);
+        linecopy[sizeof(linecopy) - 1] = '\0';
+        linecopy[strcspn(linecopy, "\n")] = '\0';
+
+        save = NULL;
+        ver  = strtok_r(linecopy, " ", &save);
+        kind = (ver != NULL) ? strtok_r(NULL, " ", &save) : NULL;
+
+        if (ver == NULL || kind == NULL || strcmp(ver, "J1") != 0) {
+            loudlog("imapsync: replay: unrecognized journal line in \"%s\": \"%s\" -- "
+                    "stopping replay here, will retry from this line next run", foldername, line);
+            stopped_early = 1;
+            break;
+        }
+
+        if (strcmp(kind, "flags") == 0) {
+            id = strtok_r(NULL, " ", &save);
+            a1 = strtok_r(NULL, " ", &save);
+            a2 = strtok_r(NULL, " ", &save);
+            if (id == NULL || a1 == NULL || a2 == NULL) {
+                loudlog("imapsync: replay: malformed \"flags\" journal line in \"%s\": \"%s\" -- stopping",
+                        foldername, line);
+                stopped_early = 1;
+                break;
+            }
+            rc = replay_flags_line(conn, uidvalidity, id, a1, a2, foldername, anyerror);
+            if (rc < 0) { fclose(f); return SF_DEAD; }
+        } else if (strcmp(kind, "purge") == 0) {
+            id = strtok_r(NULL, " ", &save);
+            if (id == NULL) {
+                loudlog("imapsync: replay: malformed \"purge\" journal line in \"%s\": \"%s\" -- stopping",
+                        foldername, line);
+                stopped_early = 1;
+                break;
+            }
+            rc = replay_purge_line(conn, uidvalidity, id, foldername, anyerror);
+            if (rc < 0) { fclose(f); return SF_DEAD; }
+        } else if (strcmp(kind, "append") == 0) {
+            vlog("replay: \"%s\" has a pending \"append\" record -- append replay is not yet "
+                 "implemented; stopping replay here, will retry from this line every run "
+                 "until it is", foldername);
+            stopped_early = 1;
+            break;
+        } else {
+            loudlog("imapsync: replay: unrecognized journal record kind \"%s\" in \"%s\" -- stopping",
+                    kind, foldername);
+            stopped_early = 1;
+            break;
+        }
+
+        state->journal_offset = (unsigned long) ftell(f);
+        if (write_state(statepath, state) != 0) {
+            fprintf(stderr, "imapsync: replay: could not write %s: %s\n", statepath, strerror(errno));
+            *anyerror = 1;
+        }
+    }
+
+    fclose(f);
+
+    if (!stopped_early) {
+        unlink(replayingpath);
+        state->journal_offset = 0;
+        if (write_state(statepath, state) != 0) {
+            fprintf(stderr, "imapsync: replay: could not write final %s: %s\n", statepath, strerror(errno));
+            *anyerror = 1;
+        }
+    }
+
+    /* Downgrade back to EXAMINE (matching every other call's
+       expectations for the rest of this folder's pass) and refresh
+       *info -- any STORE/EXPUNGE just issued plausibly changed
+       HIGHESTMODSEQ/EXISTS, and the caller needs the current values,
+       not the ones from before this call ran. */
+    rc = imap_Examine(conn, foldername, info);
+    if (rc == IMAP_DEAD) return SF_DEAD;
+    if (rc != IMAP_OK) {
+        fprintf(stderr, "imapsync: replay: post-replay re-EXAMINE %s failed: %d (%s) %s\n",
+                foldername, rc, imap_rcname(rc), imap_ErrMsg(conn));
+        *anyerror = 1;
+    }
+
+    return SF_OK;
+}
+
+/* ---------------------------------------------------------------- */
 /* per-folder sync                                                      */
 /* ---------------------------------------------------------------- */
 
 static int sync_folder_once(struct imapconn *conn, const char *root,
-                             const char *foldername, int full_check, int *anyerror)
+                             const char *foldername, int full_check,
+                             int force_purges, int *anyerror)
 {
     char localpath[MAXPATHLEN + 1];
     char statepath[MAXPATHLEN + 1];
@@ -911,6 +1332,11 @@ static int sync_folder_once(struct imapconn *conn, const char *root,
         state.uidvalidity = 0;
         state.highestuid = 0;
         state.highestmodseq = 0;
+        /* Both journal files (if any) were just deleted along with
+           everything else in the folder directory -- any ids in them
+           reference uids under the old, now-dead UIDVALIDITY, so
+           there is nothing left to resume. */
+        state.journal_offset = 0;
     }
 
     /* Captured before the new-mail pass below mutates state: this is
@@ -919,6 +1345,19 @@ static int sync_folder_once(struct imapconn *conn, const char *root,
        since the last run at all (the CONDSTORE/HIGHESTMODSEQ skip). */
     prior_highestuid = state.highestuid;
     prior_highestmodseq = state.highestmodseq;
+
+    /* Writeback: replay any pending local mutations to the server
+       before this run's own mirror pass below reads server truth --
+       "server wins" then falls out for free, since the mirror pass
+       re-reads server state including whatever this just pushed. A
+       no-op (one stat, no network) for every folder without a pending
+       .MS_Journal/.MS_Journal.replaying, which is every folder that
+       isn't mirrored for writeback or has nothing queued. */
+    {
+        int rrc = replay_folder(conn, localpath, foldername, &info,
+                                 statepath, &state, force_purges, anyerror);
+        if (rrc == SF_DEAD) return SF_DEAD;
+    }
 
     snprintf(criteria, sizeof(criteria), "UID %lu:*", state.highestuid + 1);
     rc = imap_UidSearch(conn, criteria, &uids, &count);
@@ -1176,12 +1615,13 @@ static int sync_folder_once(struct imapconn *conn, const char *root,
 /* Wraps sync_folder_once with the reconnect contract: one imap_Reopen
    retry per folder pass. */
 static int sync_folder(struct imapconn *conn, const char *login, const char *passwd,
-                        const char *root, const char *foldername, int full_check, int *anyerror)
+                        const char *root, const char *foldername, int full_check,
+                        int force_purges, int *anyerror)
 {
     int result;
     int rc;
 
-    result = sync_folder_once(conn, root, foldername, full_check, anyerror);
+    result = sync_folder_once(conn, root, foldername, full_check, force_purges, anyerror);
     if (result != SF_DEAD) return result;
 
     loudlog("imapsync: connection to server lost while syncing \"%s\"; reconnecting...", foldername);
@@ -1195,7 +1635,7 @@ static int sync_folder(struct imapconn *conn, const char *login, const char *pas
     /* IMAP_UIDCHANGED funnels into the ordinary UIDVALIDITY-mismatch path
        inside sync_folder_once (its own EXAMINE will see the new value and
        compare it against the persisted state). One retry only. */
-    result = sync_folder_once(conn, root, foldername, full_check, anyerror);
+    result = sync_folder_once(conn, root, foldername, full_check, force_purges, anyerror);
     if (result == SF_DEAD) {
         fprintf(stderr, "imapsync: connection to server lost again while syncing \"%s\"; giving up\n",
                 foldername);
@@ -1226,7 +1666,8 @@ static char *expand_home(const char *path, char *buf, size_t buflen)
 
 static void usage(const char *prog)
 {
-    fprintf(stderr, "usage: %s [-root <dir>] [-folders <comma,list>] [-v] [-full-check]\n", prog);
+    fprintf(stderr, "usage: %s [-root <dir>] [-folders <comma,list>] [-v] [-full-check] "
+                    "[-force-purges]\n", prog);
 }
 
 int main(int argc, char **argv)
@@ -1242,6 +1683,7 @@ int main(int argc, char **argv)
     char errbuf[512];
     int anyerror = 0;
     int full_check = 0;
+    int force_purges = 0;
     int i;
     char *foldercopy, *tok, *save;
 
@@ -1254,6 +1696,8 @@ int main(int argc, char **argv)
             Verbose = 1;
         } else if (strcmp(argv[i], "-full-check") == 0) {
             full_check = 1;
+        } else if (strcmp(argv[i], "-force-purges") == 0) {
+            force_purges = 1;
         } else {
             usage(argv[0]);
             return 2;
@@ -1328,7 +1772,7 @@ int main(int argc, char **argv)
         if (*tok == '\0') continue;
 
         vlog("--- syncing folder \"%s\" ---", tok);
-        result = sync_folder(conn, login, passwd, rootbuf, tok, full_check, &anyerror);
+        result = sync_folder(conn, login, passwd, rootbuf, tok, full_check, force_purges, &anyerror);
         if (result != SF_OK) anyerror = 1;
     }
     free(foldercopy);

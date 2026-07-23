@@ -42,7 +42,15 @@ LOCALINCLUDES = -I$(SSLINCDIR)
 
 NormalObjectRule()
 
-TESTLIBS = ${BASEDIR}/lib/libmail.a ${UTILLIB} ${PRSLIB}
+/* smtptest.c/dropoff.c pull in ParseAddressList (parseadd.o) and
+   parsey_New (parsey.o) from libmail.a, both of which need the parser_*
+   entry points from libcparser.a (src/overhead/mkparser) -- the same
+   library cui's and messages' own Imakefiles link explicitly for the
+   identical reason. Not needed by imaptest.test/imapspike.test/
+   canned-response paths, which never reference address parsing, so
+   this was never exercised until a full clean rebuild of this
+   directory's .test targets. */
+TESTLIBS = ${BASEDIR}/lib/libmail.a ${BASEDIR}/lib/libcparser.a ${UTILLIB} ${PRSLIB}
 TestingOnlyTestingRule(${TESTLIBS},${BSDLIB} ${SSLLIB} ${RESOLVER_LIB})
 
 FlexOrLexFileRule(parsel)

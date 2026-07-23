@@ -29,6 +29,30 @@ live.
 
 If ~/.netrc has no usable "machine imap.fastmail.com" stanza, this
 suite skips cleanly (like imap-protocol-tests) rather than failing.
+
+Cases W2/W3/W4/W7 (added for the writeback milestone's Gate 2) exercise
+imap_sync.c's replay_folder() -- flags replay, purge replay, the
+25-purge safety valve, and the stale-UIDVALIDITY skip -- against their
+own fresh scratch root and mailbox, entirely separate from cases 1-6's
+INBOX mirror above (own tempdir, own imapsync run, no dependency on the
+long INBOX pass having completed). ALL destructive traffic in these
+cases -- STORE/EXPUNGE/APPEND/CREATE, and every imapsync invocation
+that might replay a journal -- is confined to one dedicated mailbox,
+WRITE_MAILBOX ("Revival/WritebackTest"), created if absent; INBOX is
+never written to anywhere in this suite. This is enforced twice,
+independently: imaptest.c's own guard_mailbox() refuses at the C level
+for the create/storeflags/expunge/append subcommands regardless of
+caller, and this file's own run_imapsync_wb()/imaptest_wb() wrappers
+refuse, themselves, to be called with any other mailbox/folder name --
+a safety rule this important should not have exactly one enforcement
+point. These four cases fabricate well-formed journal lines directly
+(following msjournal.c's documented "J1 ..." grammar exactly) rather
+than driving a real cui session to produce them: Gate 1's own
+imap-writeback-tests suite already proves real capture end-to-end (its
+case 1), so these cases test replay_folder() in isolation, faster and
+more deterministically -- exactly the same testing strategy the
+milestone's own spec calls for in case 4 ("fabricate a journal with 26
+purges").
 """
 
 import datetime
@@ -64,6 +88,10 @@ NETRC = os.path.expanduser("~/.netrc")
 ID_RE = re.compile(r"^IMAP[0-9A-V]{14}$")
 
 RUN_TIMEOUT = 1800  # a full INBOX mirror/re-mirror can take many minutes live
+
+# The one mailbox the writeback (Gate 2) cases below are allowed to
+# touch with anything destructive. See run_imapsync_wb()/imaptest_wb().
+WRITE_MAILBOX = "Revival/WritebackTest"
 
 PASS = []
 FAIL = []
@@ -229,6 +257,174 @@ def read_snapshots(root):
             "deleted": _has_attr(attrs, _AMS_ATT_DELETED),
         }
     return out
+
+
+# ---- writeback (Gate 2) cases W2/W3/W4/W7: folder-parametrized path
+# helpers, journal fabrication, and the write-mailbox guard ----
+
+def assert_write_mailbox(folder):
+    """The one enforcement point every writeback helper below funnels
+    through -- refuses, at the Python level, to run anything destructive
+    against any folder but WRITE_MAILBOX. Independent of imaptest.c's
+    own guard_mailbox(), which enforces the identical rule at the C
+    level for create/storeflags/expunge/append -- a safety rule this
+    important should not have exactly one enforcement point."""
+    if folder != WRITE_MAILBOX:
+        sys.exit(f"imap-sync-tests: REFUSING a writeback-case call against folder {folder!r} "
+                 f"-- only {WRITE_MAILBOX!r} is allowed for writeback (Gate 2) cases")
+
+
+def run_imapsync_wb(root, folder, extra_args=(), timeout=120):
+    assert_write_mailbox(folder)
+    return subprocess.run([IMAPSYNC, "-root", root, "-folders", folder, "-v", *extra_args],
+                          capture_output=True, text=True, timeout=timeout)
+
+
+def imaptest_wb(subcmd, folder, *rest, timeout=60):
+    """Runs a destructive (create/storeflags/expunge/append)
+    imaptest.test subcommand, guarded the same way run_imapsync_wb()
+    is. Returns (CompletedProcess, kv dict) like imap-protocol-tests'
+    own imaptest()/parse_kv() helpers."""
+    assert_write_mailbox(folder)
+    r = subprocess.run([IMAPTEST, subcmd, HOST, PORT, NETRC, MACHINE, folder] + [str(a) for a in rest],
+                        capture_output=True, text=True, timeout=timeout)
+    kv = {}
+    for line in r.stdout.splitlines():
+        if ": " in line:
+            k, v = line.split(": ", 1)
+            m = re.match(r'^(-?\d+)\s*\(', v.strip())
+            kv[k.strip()] = m.group(1) if m else v.strip()
+    return r, kv
+
+
+def imaptest_readonly(subcmd, folder, *rest, timeout=60):
+    """Like imaptest_wb but for read-only subcommands (examine,
+    fetchflags) that take a folder/mailbox argument -- no guard, since
+    these never write, but kept as a separate name so it's obvious at
+    each call site whether the guard is in play."""
+    r = subprocess.run([IMAPTEST, subcmd, HOST, PORT, NETRC, MACHINE, folder] + [str(a) for a in rest],
+                        capture_output=True, text=True, timeout=timeout)
+    kv = {}
+    for line in r.stdout.splitlines():
+        if ": " in line:
+            k, v = line.split(": ", 1)
+            m = re.match(r'^(-?\d+)\s*\(', v.strip())
+            kv[k.strip()] = m.group(1) if m else v.strip()
+    return r, kv
+
+
+def folder_dir_for(root, folder):
+    return os.path.join(root, ".MESSAGES", folder)
+
+
+def statepath_for(root, folder):
+    return os.path.join(folder_dir_for(root, folder), ".MS_IMAPSync")
+
+
+def journalpath_for(root, folder):
+    return os.path.join(folder_dir_for(root, folder), ".MS_Journal")
+
+
+def replayingpath_for(root, folder):
+    return os.path.join(folder_dir_for(root, folder), ".MS_Journal.replaying")
+
+
+def body_files_for(root, folder):
+    d = folder_dir_for(root, folder)
+    if not os.path.isdir(d):
+        return set()
+    return {n for n in os.listdir(d) if n.startswith("+")}
+
+
+def find_marker_files_for(root, folder, needle):
+    d = folder_dir_for(root, folder)
+    found = []
+    for name in body_files_for(root, folder):
+        path = os.path.join(d, name)
+        try:
+            with open(path, "rb") as f:
+                if needle.encode() in f.read():
+                    found.append(path)
+        except OSError:
+            continue
+    return found
+
+
+_BASE32HEX = "0123456789ABCDEFGHIJKLMNOPQRSTUV"
+
+
+def encode_base32hex7(v):
+    """Python mirror of imap_sync.c's encode_base32hex7() -- used only
+    to fabricate a deliberately-WRONG-UIDVALIDITY id for case W7; every
+    other case reads real ids back from the mirror's own body-file
+    names rather than re-deriving them, so this isn't load-bearing for
+    the id format itself."""
+    return "".join(_BASE32HEX[(v >> ((6 - i) * 5)) & 0x1F] for i in range(7))
+
+
+def synth_id_py(uidvalidity, uid):
+    return "IMAP" + encode_base32hex7(uidvalidity) + encode_base32hex7(uid)
+
+
+ATTRSIZE = 21
+
+
+def hexmask(bytelist):
+    return "".join("%02x" % b for b in bytelist)
+
+
+def or_mask_for_bit(bit):
+    """The OrMask/AndMask a real ASS_OR_ATTRIBUTES call setting `bit`
+    would produce (see altsnap.c's writeback-capture switch, and
+    imap-writeback-tests' identical helper): or-mask has just that bit
+    set, and-mask is all-1s -- forces the bit ON regardless of the
+    server's prior value."""
+    ormask = [0] * ATTRSIZE
+    ormask[bit // 8] |= (1 << (bit % 8))
+    andmask = [0xff] * ATTRSIZE
+    return hexmask(ormask), hexmask(andmask)
+
+
+def and_mask_clearing_bit(bit):
+    """The OrMask/AndMask a real ASS_AND_ATTRIBUTES call clearing `bit`
+    would produce: or-mask all-0s, and-mask all-1s except the cleared
+    bit -- forces the bit OFF regardless of the server's prior value."""
+    ormask = [0] * ATTRSIZE
+    andmask = [0xff] * ATTRSIZE
+    andmask[bit // 8] &= ~(1 << (bit % 8)) & 0xff
+    return hexmask(ormask), hexmask(andmask)
+
+
+def write_journal_lines(root, folder, lines):
+    path = journalpath_for(root, folder)
+    with open(path, "w", newline="\n") as f:
+        for line in lines:
+            f.write(line + "\n")
+
+
+def append_test_message(folder, subject, tmpdir, tag):
+    """APPENDs a small message with the given subject into folder via
+    imap_Append (imaptest.test's append subcommand), returning
+    (uidvalidity, uid) from the APPENDUID response code, or (None,
+    None) on failure."""
+    bodyfile = os.path.join(tmpdir, f"append-{tag}.eml")
+    with open(bodyfile, "wb") as f:
+        f.write(
+            f"Date: {time.strftime('%a, %d %b %Y %H:%M:%S %z')}\r\n"
+            f"From: wdc@fastmail.com\r\n"
+            f"To: wdc@fastmail.com\r\n"
+            f"Subject: {subject}\r\n"
+            f"\r\n"
+            f"imap-sync-tests writeback-case probe message ({tag}).\r\n"
+        .encode())
+    r, kv = imaptest_wb("append", folder, bodyfile)
+    if r.returncode != 0 or kv.get("APPEND-RC") != "0":
+        return None, None
+    uv = kv.get("APPEND-UIDVALIDITY")
+    uid = kv.get("APPEND-UID")
+    if uv is None or uid is None:
+        return None, None
+    return int(uv), int(uid)
 
 
 # ---- case 3: send a marker via the committed SMTP path, poll-sync ----
@@ -479,7 +675,9 @@ def main():
         note(f'--- no usable netrc stanza for "{MACHINE}" in "{NETRC}" (or file absent); '
              "skipping all cases (this suite has no offline case) ---")
         for n in ("1 fresh mirror of INBOX", "2 idempotent re-run", "3 incremental sync",
-                  "4 flags mapping", "5 UIDVALIDITY change drill", "6 cui browse"):
+                  "4 flags mapping", "5 UIDVALIDITY change drill", "6 cui browse",
+                  "W2 flags round-trip", "W3 purge round-trip", "W4 safety valve",
+                  "W7 stale-journal drill"):
             skip(n, "no live credentials")
         note("")
         note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped "
@@ -677,6 +875,198 @@ def main():
             note(f"IMAPSYNC_KEEP_SCRATCH set; leaving scratch root at {scratch}")
         else:
             shutil.rmtree(scratch, ignore_errors=True)
+
+    # ---- writeback (Gate 2) cases W2/W3/W4/W7 -- own scratch root and
+    # mailbox (WRITE_MAILBOX), entirely independent of the INBOX mirror
+    # above; see the module docstring for the fabricated-journal
+    # testing rationale and the guard rule. ----
+    wb_scratch = tempfile.mkdtemp(prefix="imap-sync-tests-wb-")
+    note(f"writeback scratch root: {wb_scratch}")
+    try:
+        cr, ckv = imaptest_wb("create", WRITE_MAILBOX)
+        if cr.returncode not in (0, 1) or ckv.get("CREATE-RC") not in ("0", "1"):
+            sys.exit(f"imap-sync-tests: could not create/confirm {WRITE_MAILBOX!r}: kv={ckv}")
+
+        wtag = str(int(time.time()))
+
+        # ---- case W2: flags round-trip ----
+        uv2, uid2 = append_test_message(WRITE_MAILBOX, f"GATE2-W2-FLAGS-{wtag}", wb_scratch, f"w2-{wtag}")
+        if uv2 is None:
+            result("W2 flags round-trip", False, "append_test_message failed to produce a uid")
+        else:
+            rmir = run_imapsync_wb(wb_scratch, WRITE_MAILBOX)
+            note(rmir.stdout)
+            if rmir.stderr:
+                note(rmir.stderr)
+            hits = find_marker_files_for(wb_scratch, WRITE_MAILBOX, f"GATE2-W2-FLAGS-{wtag}")
+            if not hits:
+                result("W2 flags round-trip", False, "message did not mirror locally after append")
+            else:
+                id2 = os.path.basename(hits[0])[1:]
+                # Force AMS_ATT_UNSEEN off (the ASS_AND_ATTRIBUTES path,
+                # exactly what CUI_MarkAsRead's own OrMask/AndMask pair
+                # would produce) -- replay must map that to adding \Seen.
+                ormask_hex, andmask_hex = and_mask_clearing_bit(_AMS_ATT_UNSEEN)
+                write_journal_lines(wb_scratch, WRITE_MAILBOX, [f"J1 flags {id2} {ormask_hex} {andmask_hex}"])
+
+                r_replay = run_imapsync_wb(wb_scratch, WRITE_MAILBOX)
+                note(r_replay.stdout)
+                if r_replay.stderr:
+                    note(r_replay.stderr)
+
+                _, fkv = imaptest_readonly("fetchflags", WRITE_MAILBOX, uid2)
+                seen_pushed = fkv.get("FOUND") == "yes" and "\\Seen" in fkv.get("FLAGS", "")
+
+                journal_gone = (not os.path.exists(journalpath_for(wb_scratch, WRITE_MAILBOX))
+                                 and not os.path.exists(replayingpath_for(wb_scratch, WRITE_MAILBOX)))
+                cursor_zero = True
+                sp2 = statepath_for(wb_scratch, WRITE_MAILBOX)
+                if os.path.isfile(sp2):
+                    with open(sp2) as f:
+                        cursor_zero = "journal_offset 0" in f.read()
+
+                r_noop = run_imapsync_wb(wb_scratch, WRITE_MAILBOX)
+                noop_ok = (r_noop.returncode == 0
+                           and not os.path.exists(journalpath_for(wb_scratch, WRITE_MAILBOX)))
+
+                result("W2 flags round-trip: replay pushes \\Seen, verified via a real IMAP FLAGS "
+                       "fetch; journal consumed and cursor zeroed; a second replay run is a no-op",
+                       r_replay.returncode == 0 and seen_pushed and journal_gone and cursor_zero and noop_ok,
+                       f"seen_pushed={seen_pushed} fkv={fkv} journal_gone={journal_gone} "
+                       f"cursor_zero={cursor_zero} noop_ok={noop_ok}")
+
+        # ---- case W3: purge round-trip ----
+        uv3, uid3 = append_test_message(WRITE_MAILBOX, f"GATE2-W3-PURGE-{wtag}", wb_scratch, f"w3-{wtag}")
+        if uv3 is None:
+            result("W3 purge round-trip", False, "append_test_message failed to produce a uid")
+        else:
+            rmir = run_imapsync_wb(wb_scratch, WRITE_MAILBOX)
+            note(rmir.stdout)
+            if rmir.stderr:
+                note(rmir.stderr)
+            hits = find_marker_files_for(wb_scratch, WRITE_MAILBOX, f"GATE2-W3-PURGE-{wtag}")
+            if not hits:
+                result("W3 purge round-trip", False, "message did not mirror locally after append")
+            else:
+                id3 = os.path.basename(hits[0])[1:]
+                # Simulate what MS_PurgeDeletedMessages itself would
+                # already have done locally (unlink the body file) --
+                # replay only pushes the removal to the server, it never
+                # touches local body files, so the local side of "purge
+                # locally" has to be done here explicitly to get a
+                # meaningful "count consistent" check below.
+                os.remove(hits[0])
+                write_journal_lines(wb_scratch, WRITE_MAILBOX, [f"J1 purge {id3}"])
+
+                r_replay = run_imapsync_wb(wb_scratch, WRITE_MAILBOX)
+                note(r_replay.stdout)
+                if r_replay.stderr:
+                    note(r_replay.stderr)
+
+                _, fkv = imaptest_readonly("fetchflags", WRITE_MAILBOX, uid3)
+                gone_server_side = fkv.get("FOUND") == "no"
+
+                _, ekv3 = imaptest_readonly("examine", WRITE_MAILBOX)
+                server_exists = int(ekv3["EXISTS"]) if ekv3.get("EXISTS", "").isdigit() else None
+                local_count = len(body_files_for(wb_scratch, WRITE_MAILBOX))
+                count_consistent = server_exists is not None and server_exists == local_count
+
+                result("W3 purge round-trip: purge locally (fabricated record), replay, uid gone "
+                       "server-side (verified via a real FETCH), local mirror count consistent "
+                       "with the server's EXISTS after the same run's mirror pass",
+                       r_replay.returncode == 0 and gone_server_side and count_consistent,
+                       f"gone_server_side={gone_server_side} server_exists={server_exists} "
+                       f"local_count={local_count}")
+
+        # ---- case W4: safety valve ----
+        _, ekv4 = imaptest_readonly("examine", WRITE_MAILBOX)
+        uidvalidity4 = int(ekv4["UIDVALIDITY"]) if ekv4.get("UIDVALIDITY", "").isdigit() else 0
+        fake_lines = [f"J1 purge {synth_id_py(uidvalidity4, 900000 + i)}" for i in range(26)]
+        write_journal_lines(wb_scratch, WRITE_MAILBOX, fake_lines)
+
+        r_refuse = run_imapsync_wb(wb_scratch, WRITE_MAILBOX)
+        note(r_refuse.stdout)
+        if r_refuse.stderr:
+            note(r_refuse.stderr)
+        loud_refused = ("over the safety valve" in r_refuse.stdout
+                         or "over the safety valve" in r_refuse.stderr)
+        replaying_path4 = replayingpath_for(wb_scratch, WRITE_MAILBOX)
+        still_pending = os.path.isfile(replaying_path4)
+        sp4 = statepath_for(wb_scratch, WRITE_MAILBOX)
+        cursor_untouched = True
+        if os.path.isfile(sp4):
+            with open(sp4) as f:
+                cursor_untouched = "journal_offset 0" in f.read()
+
+        # Bonus, folded into this same case rather than a separate
+        # numbered one: -force-purges overrides the refusal and clears
+        # the (fabricated, all-nonexistent-uid) journal cleanly.
+        r_force = run_imapsync_wb(wb_scratch, WRITE_MAILBOX, extra_args=("-force-purges",))
+        note(r_force.stdout)
+        if r_force.stderr:
+            note(r_force.stderr)
+        forced_cleared = (r_force.returncode == 0
+                          and not os.path.isfile(replaying_path4)
+                          and not os.path.isfile(journalpath_for(wb_scratch, WRITE_MAILBOX)))
+
+        result("W4 safety valve: 26 fabricated purges refused without -force-purges (journal "
+               "left untouched, cursor still 0, for a later run to resume); -force-purges "
+               "overrides and clears it",
+               r_refuse.returncode != 0 and loud_refused and still_pending and cursor_untouched
+               and forced_cleared,
+               f"loud_refused={loud_refused} still_pending={still_pending} "
+               f"cursor_untouched={cursor_untouched} forced_cleared={forced_cleared} "
+               f"refuse_exit={r_refuse.returncode} force_exit={r_force.returncode}")
+
+        # ---- case W7: stale-journal / UIDVALIDITY-mismatch drill ----
+        uv7, uid7 = append_test_message(WRITE_MAILBOX, f"GATE2-W7-STALE-{wtag}", wb_scratch, f"w7-{wtag}")
+        if uv7 is None:
+            result("W7 stale-journal drill", False, "append_test_message failed to produce a uid")
+        else:
+            rmir = run_imapsync_wb(wb_scratch, WRITE_MAILBOX)
+            note(rmir.stdout)
+            if rmir.stderr:
+                note(rmir.stderr)
+            wrong_uidvalidity = uv7 + 1  # guaranteed different from the folder's real UIDVALIDITY
+            stale_id = synth_id_py(wrong_uidvalidity, uid7)
+            write_journal_lines(wb_scratch, WRITE_MAILBOX, [f"J1 purge {stale_id}"])
+
+            r_stale = run_imapsync_wb(wb_scratch, WRITE_MAILBOX)
+            note(r_stale.stdout)
+            if r_stale.stderr:
+                note(r_stale.stderr)
+            loud_stale = ("stale UIDVALIDITY" in r_stale.stdout
+                          or "stale UIDVALIDITY" in r_stale.stderr)
+
+            journal_gone7 = (not os.path.exists(journalpath_for(wb_scratch, WRITE_MAILBOX))
+                              and not os.path.exists(replayingpath_for(wb_scratch, WRITE_MAILBOX)))
+
+            # A stale entry is SKIPPED, not acted on -- the real message
+            # (a genuinely different, correctly-mirrored uid) must still
+            # be present server-side afterward.
+            _, fkv7 = imaptest_readonly("fetchflags", WRITE_MAILBOX, uid7)
+            still_present = fkv7.get("FOUND") == "yes"
+
+            result("W7 stale-journal drill: a journal entry whose id has the wrong UIDVALIDITY "
+                   "is skipped with the loud log line, the cursor still advances past it "
+                   "(journal fully consumed), and the real message is untouched",
+                   r_stale.returncode == 0 and loud_stale and journal_gone7 and still_present,
+                   f"loud_stale={loud_stale} journal_gone7={journal_gone7} still_present={still_present}")
+
+        # Best-effort tidiness, not a test case: leave WRITE_MAILBOX
+        # empty afterward rather than accumulating this run's test
+        # messages (W2's own \Seen message in particular is never
+        # purged by any case above) across repeated suite runs.
+        _, ekv_clean = imaptest_readonly("examine", WRITE_MAILBOX)
+        if ekv_clean.get("EXISTS", "0").isdigit() and int(ekv_clean["EXISTS"]) > 0:
+            r_clean, ckv_clean = imaptest_wb("expunge", WRITE_MAILBOX, "1:*")
+            note(f"writeback cleanup: expunge 1:* in {WRITE_MAILBOX!r} -> "
+                 f"exit={r_clean.returncode} kv={ckv_clean}")
+    finally:
+        if os.environ.get("IMAPSYNC_KEEP_SCRATCH"):
+            note(f"IMAPSYNC_KEEP_SCRATCH set; leaving writeback scratch root at {wb_scratch}")
+        else:
+            shutil.rmtree(wb_scratch, ignore_errors=True)
 
     note("")
     note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped")

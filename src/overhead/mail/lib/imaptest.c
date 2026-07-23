@@ -18,6 +18,11 @@
 	    imaptest.test searchall   <host> <port> <netrcpath> <machine> <mailbox>
 	    imaptest.test searchfetch <host> <port> <netrcpath> <machine> <mailbox> <subjectmarker> <bodyoutfile>
 	    imaptest.test reconnect   <host> <port> <netrcpath> <machine> <mailbox>
+	    imaptest.test create      <host> <port> <netrcpath> <machine> <mailbox>
+	    imaptest.test storeflags  <host> <port> <netrcpath> <machine> <mailbox> <uid> <add|rem> <flag> [flag...]
+	    imaptest.test expunge     <host> <port> <netrcpath> <machine> <mailbox> <uid>
+	    imaptest.test append      <host> <port> <netrcpath> <machine> <mailbox> <bodyfile> [flags]
+	    imaptest.test fetchflags  <host> <port> <netrcpath> <machine> <mailbox> <uid>
 	    imaptest.test canned
 
 	Every subcommand (except "canned", which is fully offline) opens
@@ -26,8 +31,16 @@
 	protocol trace (if IMAP_TRACE is set in the environment) goes to
 	stderr via imap_prot.c itself. netrcpath is used as given (already
 	tilde-expanded by the caller) -- this driver does no path
-	expansion of its own. Strictly read-only against the mailbox:
-	only EXAMINE and BODY.PEEK[] ever reach the wire.
+	expansion of its own.
+
+	Read-only through "reconnect": only EXAMINE and BODY.PEEK[] ever
+	reach the wire. The four writeback-milestone subcommands
+	(create/storeflags/expunge/append) are destructive by design --
+	CREATE/STORE/EXPUNGE/APPEND reach the wire -- and each one
+	refuses (GUARD-REFUSED: yes, nonzero exit, no further action) to
+	run against any mailbox but "Revival/WritebackTest" (see
+	guard_mailbox() below). Never call them with any other mailbox
+	argument, including INBOX.
 
 	ANSI C (C89 prototypes) throughout, per the milestone's language
 	shift, which explicitly covers "any new test drivers" alongside
@@ -358,6 +371,235 @@ static int cmd_reconnect(int argc, char **argv)
     return (rc == IMAP_OK) ? 0 : 1;
 }
 
+/* ---- writeback milestone: write entry points (create/storeflags/
+   expunge/append). Every one of these refuses to run against any
+   mailbox but WRITE_MAILBOX_GUARD -- this driver is the thing that
+   actually issues CREATE/STORE/EXPUNGE/APPEND on the wire, so the
+   guard belongs here, not only in the Python test driver that calls
+   it (revival/tests/imap-sync-tests has its own copy of this same
+   assertion, independently, on the theory that a real safety rule
+   should not have exactly one enforcement point). ---- */
+
+#define WRITE_MAILBOX_GUARD "Revival/WritebackTest"
+
+static int guard_mailbox(const char *mailbox)
+{
+    if (strcmp(mailbox, WRITE_MAILBOX_GUARD) != 0) {
+        printf("GUARD-REFUSED: yes (mailbox \"%s\" != \"%s\")\n", mailbox, WRITE_MAILBOX_GUARD);
+        return -1;
+    }
+    printf("GUARD-REFUSED: no\n");
+    return 0;
+}
+
+/* ---- create ---- */
+
+static int cmd_create(int argc, char **argv)
+{
+    struct imapconn *conn;
+    int port, rc;
+
+    if (argc != 7) { fprintf(stderr, "usage: create <host> <port> <netrcpath> <machine> <mailbox>\n"); return 2; }
+    if (guard_mailbox(argv[6]) < 0) return 1;
+    port = atoi(argv[3]);
+
+    if (do_open(&conn, argv[2], port) < 0) return 1;
+    if (do_login(conn, argv[4], argv[5]) < 0) { imap_Close(conn); return 1; }
+
+    rc = imap_Create(conn, argv[6]);
+    printf("CREATE-RC: %d (%s)\n", rc, rcname(rc));
+    imap_Close(conn);
+    /* IMAP_NO (already exists) is an acceptable outcome for a
+       "provision if absent" caller -- only exit nonzero on a harder
+       failure. */
+    return (rc == IMAP_OK || rc == IMAP_NO) ? 0 : 1;
+}
+
+/* ---- shared FLAGS-verify fetch callback (storeflags/expunge) ---- */
+
+struct flags_rock {
+    char flags[256];
+    int got;
+};
+
+static int flags_verify_cb(unsigned long uid, const char *flags, const char *internaldate,
+                            const struct imap_envelope *env, void *rockp)
+{
+    struct flags_rock *r = (struct flags_rock *) rockp;
+
+    (void) uid;
+    (void) internaldate;
+    (void) env;
+    strncpy(r->flags, flags != NULL ? flags : "", sizeof(r->flags) - 1);
+    r->flags[sizeof(r->flags) - 1] = '\0';
+    r->got = 1;
+    return 0;
+}
+
+/* ---- storeflags ---- */
+
+static int cmd_storeflags(int argc, char **argv)
+{
+    struct imapconn *conn;
+    struct imap_mboxinfo info;
+    int port, rc, add;
+    struct flags_rock frock;
+    char flagsbuf[256];
+    int i;
+
+    if (argc < 9) {
+        fprintf(stderr, "usage: storeflags <host> <port> <netrcpath> <machine> <mailbox> <uid> <add|rem> <flag> [flag...]\n");
+        return 2;
+    }
+    if (guard_mailbox(argv[6]) < 0) return 1;
+    port = atoi(argv[3]);
+    if (strcmp(argv[8], "add") == 0) add = 1;
+    else if (strcmp(argv[8], "rem") == 0) add = 0;
+    else { fprintf(stderr, "seventh arg must be \"add\" or \"rem\"\n"); return 2; }
+
+    flagsbuf[0] = '\0';
+    for (i = 9; i < argc; ++i) {
+        if (i > 9) strncat(flagsbuf, " ", sizeof(flagsbuf) - strlen(flagsbuf) - 1);
+        strncat(flagsbuf, argv[i], sizeof(flagsbuf) - strlen(flagsbuf) - 1);
+    }
+
+    if (do_open(&conn, argv[2], port) < 0) return 1;
+    if (do_login(conn, argv[4], argv[5]) < 0) { imap_Close(conn); return 1; }
+
+    rc = imap_Select(conn, argv[6], &info);
+    printf("SELECT-RC: %d (%s)\n", rc, rcname(rc));
+    if (rc != IMAP_OK) { imap_Close(conn); return 1; }
+
+    rc = imap_UidStoreFlags(conn, argv[7], add, flagsbuf);
+    printf("STOREFLAGS-RC: %d (%s)\n", rc, rcname(rc));
+    if (rc != IMAP_OK) { imap_Close(conn); return 1; }
+
+    frock.got = 0;
+    frock.flags[0] = '\0';
+    rc = imap_UidFetchMeta(conn, argv[7], flags_verify_cb, &frock);
+    printf("VERIFY-FETCHMETA-RC: %d (%s)\n", rc, rcname(rc));
+    printf("VERIFY-FLAGS: %s\n", frock.flags);
+
+    imap_Close(conn);
+    return (rc == IMAP_OK) ? 0 : 1;
+}
+
+/* ---- fetchflags (read-only verification helper; no guard needed --
+   EXAMINE + FETCH only, never STORE/EXPUNGE/APPEND/CREATE) ---- */
+
+static int cmd_fetchflags(int argc, char **argv)
+{
+    struct imapconn *conn;
+    struct imap_mboxinfo info;
+    int port, rc;
+    struct flags_rock frock;
+
+    if (argc != 8) { fprintf(stderr, "usage: fetchflags <host> <port> <netrcpath> <machine> <mailbox> <uid>\n"); return 2; }
+    port = atoi(argv[3]);
+
+    if (do_open(&conn, argv[2], port) < 0) return 1;
+    if (do_login(conn, argv[4], argv[5]) < 0) { imap_Close(conn); return 1; }
+
+    rc = imap_Examine(conn, argv[6], &info);
+    printf("EXAMINE-RC: %d (%s)\n", rc, rcname(rc));
+    if (rc != IMAP_OK) { imap_Close(conn); return 1; }
+
+    frock.got = 0;
+    frock.flags[0] = '\0';
+    rc = imap_UidFetchMeta(conn, argv[7], flags_verify_cb, &frock);
+    printf("FETCHMETA-RC: %d (%s)\n", rc, rcname(rc));
+    printf("FOUND: %s\n", frock.got ? "yes" : "no");
+    printf("FLAGS: %s\n", frock.flags);
+
+    imap_Close(conn);
+    return (rc == IMAP_OK) ? 0 : 1;
+}
+
+/* ---- expunge ---- */
+
+static int cmd_expunge(int argc, char **argv)
+{
+    struct imapconn *conn;
+    struct imap_mboxinfo info;
+    int port, rc;
+    struct flags_rock frock;
+
+    if (argc != 8) { fprintf(stderr, "usage: expunge <host> <port> <netrcpath> <machine> <mailbox> <uid>\n"); return 2; }
+    if (guard_mailbox(argv[6]) < 0) return 1;
+    port = atoi(argv[3]);
+
+    if (do_open(&conn, argv[2], port) < 0) return 1;
+    if (do_login(conn, argv[4], argv[5]) < 0) { imap_Close(conn); return 1; }
+
+    rc = imap_Select(conn, argv[6], &info);
+    printf("SELECT-RC: %d (%s)\n", rc, rcname(rc));
+    if (rc != IMAP_OK) { imap_Close(conn); return 1; }
+    printf("UIDPLUS: %s\n", imap_Capable(conn, "UIDPLUS") ? "yes" : "no");
+
+    rc = imap_UidStoreFlags(conn, argv[7], 1, "\\Deleted");
+    printf("STOREFLAGS-RC: %d (%s)\n", rc, rcname(rc));
+    if (rc != IMAP_OK) { imap_Close(conn); return 1; }
+
+    rc = imap_UidExpunge(conn, argv[7]);
+    printf("EXPUNGE-RC: %d (%s)\n", rc, rcname(rc));
+    if (rc != IMAP_OK) { imap_Close(conn); return 1; }
+
+    /* Verify: a FETCH of the now-expunged uid should come back with no
+       matching FETCH line at all (haveuid stays 0 in the callback). */
+    frock.got = 0;
+    frock.flags[0] = '\0';
+    rc = imap_UidFetchMeta(conn, argv[7], flags_verify_cb, &frock);
+    printf("POSTEXPUNGE-FETCHMETA-RC: %d (%s)\n", rc, rcname(rc));
+    printf("POSTEXPUNGE-STILL-PRESENT: %s\n", frock.got ? "yes" : "no");
+
+    imap_Close(conn);
+    return (rc == IMAP_OK) ? 0 : 1;
+}
+
+/* ---- append ---- */
+
+static int cmd_append(int argc, char **argv)
+{
+    struct imapconn *conn;
+    struct imap_mboxinfo info;
+    int port, rc;
+    FILE *bodyf;
+    long bodysize;
+    unsigned long out_uidvalidity, out_uid;
+    const char *flags;
+
+    if (argc < 8) {
+        fprintf(stderr, "usage: append <host> <port> <netrcpath> <machine> <mailbox> <bodyfile> [flags]\n");
+        return 2;
+    }
+    if (guard_mailbox(argv[6]) < 0) return 1;
+    port = atoi(argv[3]);
+    flags = (argc > 8) ? argv[8] : "";
+
+    bodyf = fopen(argv[7], "rb");
+    if (bodyf == NULL) { fprintf(stderr, "cannot open %s for read\n", argv[7]); return 1; }
+    if (fseek(bodyf, 0, SEEK_END) != 0) { fclose(bodyf); return 1; }
+    bodysize = ftell(bodyf);
+    rewind(bodyf);
+
+    if (do_open(&conn, argv[2], port) < 0) { fclose(bodyf); return 1; }
+    if (do_login(conn, argv[4], argv[5]) < 0) { fclose(bodyf); imap_Close(conn); return 1; }
+
+    rc = imap_Append(conn, argv[6], flags, NULL, bodyf, bodysize, &out_uidvalidity, &out_uid);
+    fclose(bodyf);
+    printf("APPEND-RC: %d (%s)\n", rc, rcname(rc));
+    if (rc != IMAP_OK) { imap_Close(conn); return 1; }
+    printf("APPEND-UIDVALIDITY: %lu\n", out_uidvalidity);
+    printf("APPEND-UID: %lu\n", out_uid);
+
+    rc = imap_Examine(conn, argv[6], &info);
+    printf("VERIFY-EXAMINE-RC: %d (%s)\n", rc, rcname(rc));
+    if (rc == IMAP_OK) printf("VERIFY-EXISTS: %ld\n", info.exists);
+
+    imap_Close(conn);
+    return 0;
+}
+
 /* ---- canned (offline, no network) ---- */
 
 static int cmd_canned(int argc, char **argv)
@@ -416,7 +658,8 @@ int main(int argc, char **argv)
     setvbuf(stdout, (char *) NULL, _IOLBF, 0);
 
     if (argc < 2) {
-        fprintf(stderr, "usage: %s <capability|login|list|examine|searchall|searchfetch|reconnect|canned> ...\n", argv[0]);
+        fprintf(stderr, "usage: %s <capability|login|list|examine|searchall|searchfetch|reconnect|"
+                        "create|storeflags|expunge|append|fetchflags|canned> ...\n", argv[0]);
         exit(2);
     }
 
@@ -427,6 +670,11 @@ int main(int argc, char **argv)
     if (strcmp(argv[1], "searchall") == 0) exit(cmd_searchall(argc, argv));
     if (strcmp(argv[1], "searchfetch") == 0) exit(cmd_searchfetch(argc, argv));
     if (strcmp(argv[1], "reconnect") == 0) exit(cmd_reconnect(argc, argv));
+    if (strcmp(argv[1], "create") == 0) exit(cmd_create(argc, argv));
+    if (strcmp(argv[1], "storeflags") == 0) exit(cmd_storeflags(argc, argv));
+    if (strcmp(argv[1], "expunge") == 0) exit(cmd_expunge(argc, argv));
+    if (strcmp(argv[1], "append") == 0) exit(cmd_append(argc, argv));
+    if (strcmp(argv[1], "fetchflags") == 0) exit(cmd_fetchflags(argc, argv));
     if (strcmp(argv[1], "canned") == 0) exit(cmd_canned(argc, argv));
 
     fprintf(stderr, "%s: unknown subcommand \"%s\"\n", argv[0], argv[1]);

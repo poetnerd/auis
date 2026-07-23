@@ -14,15 +14,28 @@ revival/doc/claude-history/imap-protocol-prompt.md). When no usable stanza is fo
 only case 8 (the fully offline canned-response literal-in-ENVELOPE
 unit test) runs, and the suite says so cleanly rather than failing.
 
-This suite is strictly READ-ONLY against the mailbox: only EXAMINE and
-BODY.PEEK[] ever reach the wire (no STORE/APPEND/CREATE/DELETE/EXPUNGE
-anywhere -- imap_prot.c has no such calls to make in this milestone).
-Cases 6-7 (subject search + fetch) rely on a message already present
-in INBOX with a subject containing STAGE-3-CUI-TEST -- the milestone 1
-SMTP acceptance suite (revival/tools/smtp-send-test) leaves exactly
-such a message when run against the real account. If that message
-isn't present, cases 6-7 are skipped with a clear note rather than
-failing; nothing in this suite ever sends mail itself.
+Cases 1-9 are strictly READ-ONLY against the mailbox: only EXAMINE and
+BODY.PEEK[] ever reach the wire. Cases 6-7 (subject search + fetch)
+rely on a message already present in INBOX with a subject containing
+STAGE-3-CUI-TEST -- the milestone 1 SMTP acceptance suite
+(revival/tools/smtp-send-test) leaves exactly such a message when run
+against the real account. If that message isn't present, cases 6-7
+are skipped with a clear note rather than failing; nothing in this
+suite ever sends mail itself.
+
+Cases 10-14 (added for the writeback milestone's Gate 2) exercise the
+new write entry points (imap_Create/imap_UidStoreFlags/imap_UidExpunge/
+imap_Append) via imaptest.test's create/storeflags/expunge/append
+subcommands. ALL destructive traffic in this suite is confined to one
+dedicated mailbox, "Revival/WritebackTest" (created if absent) -- never
+INBOX. This is enforced twice, independently: imaptest.c's own
+guard_mailbox() refuses at the C level regardless of caller, and the
+imaptest_write() wrapper below refuses, itself, to invoke any of these
+subcommands against any other mailbox name -- a safety rule this
+important should not have exactly one enforcement point. Case 14
+deliberately calls the C driver directly with mailbox=INBOX to prove
+the C-level guard refuses on its own, independent of this file's own
+assertion.
 
 All numeric assertions (message counts, UID counts) are compared
 against what the server reports at runtime (e.g. EXAMINE's EXISTS),
@@ -46,6 +59,12 @@ PORT = "993"
 MACHINE = "imap.fastmail.com"
 MAILBOX = "INBOX"
 SUBJECT_MARKER = "STAGE-3-CUI-TEST"
+
+# The one mailbox any destructive (write) case in this suite is allowed
+# to touch. See imaptest_write() below -- this suite refuses, on its
+# own, to run a write case against anything else, independent of
+# imaptest.c's own guard_mailbox().
+WRITE_MAILBOX = "Revival/WritebackTest"
 
 NETRC = os.path.expanduser("~/.netrc")
 
@@ -120,6 +139,20 @@ def imaptest(args, timeout=120):
     if r.stderr:
         note(r.stderr)
     return r, parse_kv(r.stdout)
+
+
+def imaptest_write(subcmd, mailbox, *rest, timeout=60):
+    """Runs a destructive (create/storeflags/expunge/append) imaptest.test
+    subcommand -- refuses, itself, to run against any mailbox but
+    WRITE_MAILBOX, regardless of what a caller in this file passes in.
+    This suite's own copy of the same assertion imaptest.c's
+    guard_mailbox() makes at the C level (see case 14, which checks
+    that C-level guard directly, bypassing this wrapper on purpose)."""
+    if mailbox != WRITE_MAILBOX:
+        sys.exit(f"imap-protocol-tests: REFUSING to run a destructive \"{subcmd}\" case "
+                 f"against mailbox {mailbox!r} -- only {WRITE_MAILBOX!r} is allowed here")
+    return imaptest([subcmd, HOST, PORT, NETRC, MACHINE, mailbox] + [str(a) for a in rest],
+                     timeout=timeout)
 
 
 def have_live_credentials():
@@ -252,6 +285,89 @@ def main():
                ok, f"kv={kv}")
     else:
         skip("9 reconnect drill", "no live credentials")
+
+    # ---- cases 10-13: writeback milestone write entry points, all
+    # confined to WRITE_MAILBOX (created if absent) ----
+    if live:
+        r, kv = imaptest_write("create", WRITE_MAILBOX)
+        # IMAP_OK (created) or IMAP_NO (already exists, e.g. a prior
+        # run) are both acceptable; only exit 2 (usage) or a crash is not.
+        result("10 create \"Revival/WritebackTest\" (or confirm it already exists)",
+               r.returncode in (0, 1) and kv.get("CREATE-RC") in ("0", "1"), f"kv={kv}")
+
+        tmpdir = tempfile.mkdtemp(prefix="imap-protocol-tests-write-")
+        try:
+            bodyfile = os.path.join(tmpdir, "append-body.eml")
+            with open(bodyfile, "wb") as f:
+                f.write(
+                    b"Date: Thu, 23 Jul 2026 01:00:00 -0400\r\n"
+                    b"From: wdc@fastmail.com\r\n"
+                    b"To: wdc@fastmail.com\r\n"
+                    b"Subject: IMAP-PROTOCOL-TESTS-WRITEBACK-CASE\r\n"
+                    b"\r\n"
+                    b"Gate 2 imap_Append protocol-level test message.\r\n"
+                )
+            r, kv = imaptest_write("append", WRITE_MAILBOX, bodyfile)
+            append_ok = (r.returncode == 0 and kv.get("APPEND-RC") == "0"
+                         and kv.get("APPEND-UID", "0").isdigit() and int(kv["APPEND-UID"]) > 0)
+            result("11 APPEND into \"Revival/WritebackTest\" (APPENDUID present, uid > 0)",
+                   append_ok, f"kv={kv}")
+
+            test_uid = int(kv["APPEND-UID"]) if append_ok else None
+
+            if test_uid is not None:
+                r, kv = imaptest_write("storeflags", WRITE_MAILBOX, test_uid, "add", r"\Seen", r"\Answered")
+                add_ok = (r.returncode == 0 and kv.get("STOREFLAGS-RC") == "0"
+                          and r"\Seen" in kv.get("VERIFY-FLAGS", "")
+                          and r"\Answered" in kv.get("VERIFY-FLAGS", ""))
+                r2, kv2 = imaptest_write("storeflags", WRITE_MAILBOX, test_uid, "rem", r"\Answered")
+                rem_ok = (r2.returncode == 0 and kv2.get("STOREFLAGS-RC") == "0"
+                          and r"\Seen" in kv2.get("VERIFY-FLAGS", "")
+                          and r"\Answered" not in kv2.get("VERIFY-FLAGS", ""))
+                result("12 UID STORE flags round-trip (+FLAGS.SILENT then -FLAGS.SILENT, "
+                       "verified via a real FLAGS fetch each time)",
+                       add_ok and rem_ok, f"add kv={kv} rem kv={kv2}")
+            else:
+                skip("12 UID STORE flags round-trip", "case 11 (append) did not produce a usable uid")
+
+            if test_uid is not None:
+                r, kv = imaptest_write("expunge", WRITE_MAILBOX, test_uid)
+                ok = (r.returncode == 0 and kv.get("UIDPLUS") == "yes"
+                      and kv.get("STOREFLAGS-RC") == "0" and kv.get("EXPUNGE-RC") == "0"
+                      and kv.get("POSTEXPUNGE-STILL-PRESENT") == "no")
+                result("13 UID EXPUNGE round-trip (+FLAGS.SILENT \\Deleted, UID EXPUNGE, "
+                       "uid verified gone via a real FETCH)",
+                       ok, f"kv={kv}")
+            else:
+                skip("13 UID EXPUNGE round-trip", "case 11 (append) did not produce a usable uid")
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+    else:
+        skip("10 create \"Revival/WritebackTest\"", "no live credentials")
+        skip("11 APPEND into \"Revival/WritebackTest\"", "no live credentials")
+        skip("12 UID STORE flags round-trip", "no live credentials")
+        skip("13 UID EXPUNGE round-trip", "no live credentials")
+
+    # ---- case 14: mailbox guard drill -- the C-level guard_mailbox()
+    # in imaptest.c must refuse on its own, independent of this file's
+    # imaptest_write() wrapper (deliberately bypassed here by calling
+    # imaptest() directly with mailbox=INBOX) ----
+    if live:
+        results = {}
+        for subcmd, args in [
+            ("create", []),
+            ("storeflags", ["1", "add", r"\Seen"]),
+            ("expunge", ["1"]),
+            ("append", ["/dev/null"]),
+        ]:
+            r, kv = imaptest([subcmd, HOST, PORT, NETRC, MACHINE, "INBOX"] + args)
+            results[subcmd] = (r.returncode, kv.get("GUARD-REFUSED"))
+        ok = all(rc != 0 and (refused or "").startswith("yes") for rc, refused in results.values())
+        result("14 mailbox guard drill: create/storeflags/expunge/append all refuse "
+               "(GUARD-REFUSED: yes, nonzero exit, no wire traffic) against INBOX",
+               ok, f"results={results}")
+    else:
+        skip("14 mailbox guard drill", "no live credentials")
 
     note("")
     note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped"

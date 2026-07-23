@@ -58,6 +58,10 @@ struct imapconn {
     char *capabilities;		/* normalized " TOKEN1 TOKEN2 ... ", uppercased */
     char errmsg[512];
     char *examined_mailbox;	/* NULL if none currently examined */
+    int examined_readwrite;	/* 0 if examined_mailbox was EXAMINEd (read-only),
+				   1 if SELECTed (read-write) -- see imap_Select,
+				   added for the writeback milestone; imap_Reopen
+				   re-issues whichever mode was last in effect */
     struct imap_mboxinfo mboxinfo;
 
     /* Offline unit-test source (see imap_TestParseEnvelope): when
@@ -780,10 +784,15 @@ int imap_Reopen(struct imapconn *conn, const char *login, const char *passwd)
     if (conn->examined_mailbox != NULL) {
         struct imap_mboxinfo info;
         char *mailbox;
+        int wasreadwrite;
 
         old_uidvalidity = conn->mboxinfo.uidvalidity;
         mailbox = imap_strdup(conn->examined_mailbox);
-        rc = imap_Examine(conn, mailbox, &info);
+        wasreadwrite = conn->examined_readwrite;
+        /* Re-select in whatever mode was in effect before the drop --
+           a replay in progress needs read-write back, not a downgrade
+           to EXAMINE that would make its next STORE/EXPUNGE fail. */
+        rc = wasreadwrite ? imap_Select(conn, mailbox, &info) : imap_Examine(conn, mailbox, &info);
         if (mailbox != NULL) free(mailbox);
         if (rc != IMAP_OK) return rc;
         if (old_uidvalidity != 0 && info.uidvalidity != old_uidvalidity) {
@@ -921,7 +930,14 @@ static void imap_cb_examine(struct imapconn *conn, const char *line, void *rockp
     }
 }
 
-int imap_Examine(struct imapconn *conn, const char *mailbox, struct imap_mboxinfo *out)
+/* Shared by imap_Examine and imap_Select (writeback milestone):
+   identical wire dialogue and untagged-response parsing either way
+   (FLAGS/EXISTS/UIDVALIDITY/UIDNEXT/HIGHESTMODSEQ are returned the
+   same shape by both commands per RFC 3501 -- SELECT is EXAMINE plus
+   read-write permission), differing only in the command keyword and
+   in what gets remembered for imap_Reopen to replay on reconnect. */
+static int imap_do_select(struct imapconn *conn, const char *mailbox,
+                           struct imap_mboxinfo *out, int readwrite)
 {
     char tag[IMAP_TAG_SIZE];
     char cmdtext[300];
@@ -932,13 +948,14 @@ int imap_Examine(struct imapconn *conn, const char *mailbox, struct imap_mboxinf
     if (!conn->alive || conn->tls == NULL) { imap_seterr(conn, "connection is dead"); return IMAP_DEAD; }
 
     memset(&info, 0, sizeof(info));
-    snprintf(cmdtext, sizeof(cmdtext), "EXAMINE %s", mailbox);
+    snprintf(cmdtext, sizeof(cmdtext), "%s %s", readwrite ? "SELECT" : "EXAMINE", mailbox);
     imap_nexttag(conn, tag, sizeof(tag));
     if (imap_sendcmd(conn, tag, cmdtext, NULL) < 0) return IMAP_DEAD;
 
     rc = imap_await_tagged(conn, tag, imap_cb_examine, &info, NULL, 0);
     if (rc == IMAP_OK) {
         conn->mboxinfo = info;
+        conn->examined_readwrite = readwrite;
         if (conn->examined_mailbox != NULL) free(conn->examined_mailbox);
         conn->examined_mailbox = imap_strdup(mailbox);
         if (out != NULL) *out = info;
@@ -946,15 +963,24 @@ int imap_Examine(struct imapconn *conn, const char *mailbox, struct imap_mboxinf
     return rc;
 }
 
+int imap_Examine(struct imapconn *conn, const char *mailbox, struct imap_mboxinfo *out)
+{
+    return imap_do_select(conn, mailbox, out, 0);
+}
+
+/* Real implementation as of the writeback milestone (M4): previously a
+   permanent stub (see the DIVERGENCE comment this replaces in
+   imap_prot.h), always returning IMAP_BAD. Nothing in the tree ever
+   called it while it was a stub (grep confirms), so there is no prior
+   behavior to preserve here -- this is the first real behavior this
+   entry point has ever had. Needed because imap_UidStoreFlags/
+   imap_UidExpunge require a read-write-selected mailbox; EXAMINE's
+   mailbox access is read-only by protocol definition and a server may
+   (Fastmail does) reject STORE/EXPUNGE issued against an EXAMINEd
+   mailbox with a tagged NO. */
 int imap_Select(struct imapconn *conn, const char *mailbox, struct imap_mboxinfo *out)
 {
-    (void) mailbox;
-    (void) out;
-    if (conn != NULL) {
-        imap_seterr(conn, "imap_Select is not implemented until the writeback milestone (M4); "
-                           "use imap_Examine (read-only)");
-    }
-    return IMAP_BAD;
+    return imap_do_select(conn, mailbox, out, 1);
 }
 
 /* ---- UID SEARCH (ESEARCH-preferring, plain-SEARCH fallback) ---- */
@@ -1405,6 +1431,188 @@ int imap_UidFetchBody(struct imapconn *conn, unsigned long uid, FILE *out, long 
 
         if (imap_linebuf_read(conn, &lb) < 0) return IMAP_DEAD;
     }
+}
+
+/* ---- write entry points (writeback milestone; additive only) ---- */
+
+int imap_Create(struct imapconn *conn, const char *mailbox)
+{
+    char tag[IMAP_TAG_SIZE];
+    char qmailbox[300];
+    char cmdtext[350];
+
+    if (conn == NULL || mailbox == NULL) return IMAP_BAD;
+    if (!conn->alive || conn->tls == NULL) { imap_seterr(conn, "connection is dead"); return IMAP_DEAD; }
+
+    imap_quote(qmailbox, sizeof(qmailbox), mailbox);
+    snprintf(cmdtext, sizeof(cmdtext), "CREATE %s", qmailbox);
+
+    imap_nexttag(conn, tag, sizeof(tag));
+    if (imap_sendcmd(conn, tag, cmdtext, NULL) < 0) return IMAP_DEAD;
+
+    return imap_await_tagged(conn, tag, NULL, NULL, NULL, 0);
+}
+
+int imap_UidStoreFlags(struct imapconn *conn, const char *uidset, int add, const char *flagslist)
+{
+    char tag[IMAP_TAG_SIZE];
+    char after[160];
+
+    if (conn == NULL || uidset == NULL || flagslist == NULL) return IMAP_BAD;
+    if (!conn->alive || conn->tls == NULL) { imap_seterr(conn, "connection is dead"); return IMAP_DEAD; }
+
+    snprintf(after, sizeof(after), " %sFLAGS.SILENT (%s)", add ? "+" : "-", flagslist);
+
+    imap_nexttag(conn, tag, sizeof(tag));
+    if (imap_sendcmd_var(conn, tag, "UID STORE ", uidset, after) < 0) return IMAP_DEAD;
+
+    return imap_await_tagged(conn, tag, NULL, NULL, NULL, 0);
+}
+
+int imap_UidExpunge(struct imapconn *conn, const char *uidset)
+{
+    char tag[IMAP_TAG_SIZE];
+
+    if (conn == NULL || uidset == NULL) return IMAP_BAD;
+    if (!conn->alive || conn->tls == NULL) { imap_seterr(conn, "connection is dead"); return IMAP_DEAD; }
+    if (!imap_Capable(conn, "UIDPLUS")) {
+        imap_seterr(conn, "UID EXPUNGE requires UIDPLUS, which this server has not advertised");
+        return IMAP_BAD;
+    }
+
+    imap_nexttag(conn, tag, sizeof(tag));
+    if (imap_sendcmd_var(conn, tag, "UID EXPUNGE ", uidset, "") < 0) return IMAP_DEAD;
+
+    return imap_await_tagged(conn, tag, NULL, NULL, NULL, 0);
+}
+
+int imap_Append(struct imapconn *conn, const char *mailbox,
+                 const char *flagslist, const char *internaldate,
+                 FILE *bodyf, long bodysize,
+                 unsigned long *out_uidvalidity, unsigned long *out_uid)
+{
+    char tag[IMAP_TAG_SIZE];
+    char qmailbox[300];
+    char qdate[128];
+    char *cmdtext;
+    size_t cmdcap;
+    struct imap_linebuf lb;
+    char tagline[1024];
+    int rc;
+    long remaining;
+    char chunk[IMAP_BODY_CHUNK];
+
+    if (out_uidvalidity != NULL) *out_uidvalidity = 0;
+    if (out_uid != NULL) *out_uid = 0;
+
+    if (conn == NULL || mailbox == NULL || bodyf == NULL || bodysize < 0) return IMAP_BAD;
+    if (!conn->alive || conn->tls == NULL) { imap_seterr(conn, "connection is dead"); return IMAP_DEAD; }
+
+    imap_quote(qmailbox, sizeof(qmailbox), mailbox);
+    if (internaldate != NULL && internaldate[0] != '\0') {
+        imap_quote(qdate, sizeof(qdate), internaldate);
+    } else {
+        qdate[0] = '\0';
+    }
+
+    cmdcap = strlen(qmailbox) + strlen(qdate)
+             + (flagslist != NULL ? strlen(flagslist) : 0) + 64;
+    cmdtext = (char *) malloc(cmdcap);
+    if (cmdtext == NULL) {
+        imap_seterr(conn, "out of memory building APPEND command");
+        return IMAP_BAD;
+    }
+    /* Build the optional "(flags) " and "date " tokens only when
+       present -- an empty INTERNALDATE or flag list must not leave a
+       stray double space or an empty quoted-string-shaped gap in the
+       command text (a real server, tried live, answers BAD "Missing
+       required argument" to "APPEND mailbox  {n}" with the empty
+       date token still there as two bare spaces). */
+    {
+        char middle[416];
+        size_t mlen = 0;
+
+        middle[0] = '\0';
+        if (flagslist != NULL && flagslist[0] != '\0') {
+            snprintf(middle, sizeof(middle), "(%s) ", flagslist);
+            mlen = strlen(middle);
+        }
+        if (qdate[0] != '\0') {
+            snprintf(middle + mlen, sizeof(middle) - mlen, "%s ", qdate);
+        }
+        snprintf(cmdtext, cmdcap, "APPEND %s %s{%ld}", qmailbox, middle, bodysize);
+    }
+
+    imap_nexttag(conn, tag, sizeof(tag));
+    rc = imap_sendcmd(conn, tag, cmdtext, NULL);
+    free(cmdtext);
+    if (rc < 0) return IMAP_DEAD;
+
+    /* Synchronizing literal: uniquely among this module's commands, the
+       server must send a "+ " continuation line mid-command, before the
+       literal's bytes may be written -- not a tagged response yet. A
+       tagged BAD/NO here instead (a malformed mailbox name, quota,
+       etc.) is handled like any other early failure. */
+    memset(&lb, 0, sizeof(lb));
+    if (imap_linebuf_read(conn, &lb) < 0) return IMAP_DEAD;
+    if (lb.len == 0 || lb.data[0] != '+') {
+        char taglabel[IMAP_TAG_SIZE + 2];
+        size_t taglen;
+
+        snprintf(taglabel, sizeof(taglabel), "%s ", tag);
+        taglen = strlen(taglabel);
+        if (lb.len >= taglen && strncmp(lb.data, taglabel, taglen) == 0) {
+            if (strncmp(lb.data + taglen, "NO", 2) == 0) rc = IMAP_NO;
+            else rc = IMAP_BAD;
+            imap_seterr(conn, "%s", lb.data);
+        } else {
+            imap_seterr(conn, "expected \"+\" continuation for APPEND literal, got: %s", lb.data);
+            rc = IMAP_BAD;
+        }
+        imap_linebuf_free(&lb);
+        return rc;
+    }
+    imap_linebuf_free(&lb);
+
+    remaining = bodysize;
+    while (remaining > 0) {
+        long want = remaining > (long) sizeof(chunk) ? (long) sizeof(chunk) : remaining;
+        size_t got = fread(chunk, 1, (size_t) want, bodyf);
+
+        if (got == 0) {
+            imap_seterr(conn, "short read from local body file while streaming APPEND literal");
+            return IMAP_BAD;
+        }
+        if (tlscon_Write(conn->tls, chunk, (int) got) < 0) {
+            conn->alive = 0;
+            imap_seterr(conn, "write failed streaming APPEND literal; connection is now dead");
+            return IMAP_DEAD;
+        }
+        remaining -= (long) got;
+    }
+    if (tlscon_Write(conn->tls, "\r\n", 2) < 0) {
+        conn->alive = 0;
+        imap_seterr(conn, "write failed terminating APPEND; connection is now dead");
+        return IMAP_DEAD;
+    }
+
+    tagline[0] = '\0';
+    rc = imap_await_tagged(conn, tag, NULL, NULL, tagline, sizeof(tagline));
+    if (rc == IMAP_OK) {
+        char *p = strstr(tagline, "[APPENDUID ");
+        if (p != NULL) {
+            char *start = p + 11;
+            char *end;
+            unsigned long uv = strtoul(start, &end, 10);
+
+            if (end != start && *end == ' ') {
+                unsigned long ud = strtoul(end + 1, &end, 10);
+                if (out_uidvalidity != NULL) *out_uidvalidity = uv;
+                if (out_uid != NULL) *out_uid = ud;
+            }
+        }
+    }
+    return rc;
 }
 
 /* ---- offline unit test entry point (canned response, no network) ---- */
