@@ -81,11 +81,23 @@ access is needed. Create `build/etc/AndrewSetup` containing:
 
 ```
 ThisDomain: fastmail.com
+AMS_OnlyMail: No
 ```
 
 Your UNIX login name must match the local part of your mail address for
 this to compose correctly (`wdc` + `fastmail.com` → `wdc@fastmail.com`).
 The full name in the From display comes from your account's GECOS field.
+
+`AMS_OnlyMail` matters for mirrored folders specifically — see step 6.
+
+**`AndrewSetup` is hand-authored, not a build artifact** — no
+Imakefile installs or regenerates it, and it lives inside `build/`, so
+`make Clean` (or any other wipe of `build/`) deletes it silently along
+with everything else. Run `revival/tools/write-andrewsetup` any time
+after a clean to recreate it with these settings (it refuses to
+clobber a file that's already there; pass `-f` to overwrite). See
+"AndrewSetup settings" in `quickstart.md` for the full reference on
+what's in it and why.
 
 ## Step 4: first mirror
 
@@ -132,11 +144,24 @@ folder listings.
 cd build && bin/messages
 ```
 
-The mirrored INBOX does not appear in the folder list by default yet:
-use **Message Folders → Expose All**. (Subscription defaults for
-mirrored folders are a known work item.) Captions, bodies, and
-seen/unseen state all come from the mirror; re-run `imapsync` to bring
-in new mail and updated flags.
+The mirrored INBOX needs two things to appear in the default startup
+folder view ("Expose New"), rather than requiring **Message Folders →
+Expose All** every time:
+
+1. `AMS_OnlyMail: No` in `AndrewSetup` (step 3) — without it, Expose
+   New is hard-restricted to `$HOME/.MESSAGES` and excludes every other
+   mspath root outright, before subscription status is even checked.
+2. The folder subscribed at **Ask** or **Show All**, not plain
+   Subscribe — Expose New additionally filters on "has new mail since
+   last read," and only Ask/Show All bypass that check unconditionally.
+   A plain-subscribed folder only shows up in Expose New when it
+   genuinely has unread mail newer than the last time you looked at
+   it, same as any classic AMS folder.
+
+Select the folder (once visible via Expose All) → Message Folders →
+Alter Subscription → Show All to get the always-visible behavior.
+Captions, bodies, and seen/unseen state all come from the mirror;
+re-run `imapsync` to bring in new mail and updated flags.
 
 ## Step 7: send
 
@@ -180,7 +205,7 @@ watch it appear in the mirrored INBOX.
 |---|---|
 | One-way sync: local flag changes revert to the server's view on next sync; don't file into or delete from mirror folders | Writeback is milestone 4 |
 | App passwords only | XOAUTH2 is milestone 5 |
-| Mirrored folders need Expose All | M3c work item |
+| Default folder-view visibility needs `AMS_OnlyMail: No` (AndrewSetup) plus Ask/Show-All subscription | M3c, resolved 2026-07-22 — see step 6 |
 | MIME display shells out to metamail, which does nothing on this platform | Pre-existing gap, separate from the IMAP project |
 | No sync daemon | Re-run `imapsync` by hand or from cron |
 

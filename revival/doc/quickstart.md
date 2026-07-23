@@ -84,6 +84,44 @@ prototype, return value truncated to 32 bits). Fix with a local
 `extern TYPE FunctionName();` declaration. See `porting-changelog.md`
 and `porting-assessment.md` §LP64 for the full pattern.
 
+## AndrewSetup settings
+
+`build/etc/AndrewSetup` is a hand-authored site-config file, read at
+runtime by every AMS/ATK client (`GetConfiguration`, searching a fixed
+list of paths ending in `${ANDREWDIR}/etc/AndrewSetup` — this
+revival's `site.h` points `ANDREWDIR` at the build tree, so no root
+access is needed and no other candidate path on this list exists). It
+is **not a build artifact** — no Imakefile creates, installs, or
+regenerates it — but it lives inside `build/`, so `make Clean` (or any
+other wipe of `build/`) deletes it silently along with everything
+else, with no error or warning that it's gone.
+
+Run `revival/tools/write-andrewsetup` any time after a clean to
+recreate it (refuses to overwrite an existing file; pass `-f` to
+force). Current contents:
+
+```
+# AUIS revival local configuration
+ThisDomain: fastmail.com
+
+AMS_OnlyMail: No
+```
+
+- **`ThisDomain`** — the domain AMS stamps into outgoing `From:`
+  headers (`<unix-login>@<ThisDomain>`; any From you type is replaced).
+  Without it, mail goes out as `you@your-machine.lan`, which real SMTP
+  providers refuse to relay externally. See `mail-quickstart.md` step 3.
+- **`AMS_OnlyMail`** — boolean (`Yes`/`No`/`1`/`0`), defaults to `Yes`
+  unless the tree is built with `RUN_AMDS_ENV` (this revival never
+  defines it — see `allsys.h`). `Yes` hard-restricts the default
+  "Expose New" startup folder view to `$HOME/.MESSAGES` only,
+  excluding every other mspath root (e.g. an IMAP mirror) *regardless
+  of subscription status* — the check happens before subscription is
+  ever consulted. Sites that actually want bboards suppressed should
+  leave this `Yes`; a personal single-user setup wants `No`. Full
+  trace of how this was found: `claude-history/
+  folder-visibility-REPORT.md`.
+
 ## Terminal setup — important
 
 **Always run AUIS binaries from native Terminal.app or iTerm2**, not from

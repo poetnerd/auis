@@ -1,0 +1,53 @@
+#!/bin/sh
+# (Re-)create build/etc/AndrewSetup with this revival's local settings.
+#
+# AndrewSetup is a hand-authored config file, not a build artifact --
+# no Imakefile installs or regenerates it (see revival/doc/mail-quickstart.md
+# and quickstart.md, "AndrewSetup settings"). It lives inside build/, so
+# a full `make Clean` (or any other wipe of build/) takes it with it,
+# silently reverting two settings that matter a lot once gone:
+#
+#   ThisDomain    -- without it, AMS stamps outgoing From: addresses as
+#                    you@your-machine.lan instead of you@yourdomain,
+#                    which real SMTP providers refuse to relay externally.
+#   AMS_OnlyMail  -- defaults to Yes when built without RUN_AMDS_ENV (this
+#                    revival never defines it), which silently restricts
+#                    the default "Expose New" startup folder view to
+#                    $HOME/.MESSAGES only, hiding every other mspath root
+#                    (e.g. an IMAP mirror) regardless of subscription
+#                    status. See revival/doc/claude-history/
+#                    folder-visibility-REPORT.md for the full trace.
+#
+# Safe to run any time; refuses to overwrite an existing file unless -f
+# is given, so it never silently clobbers settings you added by hand.
+
+set -e
+cd "$(dirname "$0")/../.."   # repo root (andrew-6.4/)
+REPO="$(pwd)"
+TARGET="$REPO/build/etc/AndrewSetup"
+
+FORCE=0
+if [ "$1" = "-f" ]; then
+    FORCE=1
+fi
+
+if [ -e "$TARGET" ] && [ "$FORCE" -ne 1 ]; then
+    echo "$TARGET already exists; leaving it alone (pass -f to overwrite)." >&2
+    exit 1
+fi
+
+mkdir -p "$REPO/build/etc"
+
+cat > "$TARGET" <<'EOF'
+# AUIS revival local configuration
+ThisDomain: fastmail.com
+
+# Default (without RUN_AMDS_ENV) is "Yes", which restricts the default
+# Expose New / startup folder view to $HOME/.MESSAGES only, excluding
+# every other mspath root (including the IMAP mirror) regardless of
+# subscription status. This is a single-user personal setup, not an
+# install that wants bboards suppressed, so allow all mspath roots.
+AMS_OnlyMail: No
+EOF
+
+echo "wrote $TARGET"
