@@ -323,6 +323,13 @@ int count;
 	int result,foundchar = 0;
 	char cc[256];
 	register int i;
+	/* hexout() writes through its first arg (lowercasing in place); a
+	   string literal is read-only memory, so pad calls that don't
+	   have real character data pass this writable stand-in instead
+	   of "". */
+	char emptybuf[1];
+
+	emptybuf[0] = '\0';
 	fprintf(fout,"STARTFONT 2.1\nCOMMENT Created by fdbbdf\n");
 	
 	while((fgets(buf,256,fin)) != NULL){
@@ -380,7 +387,7 @@ int count;
 				break;
 			case 2:
 				if(padflag)
-					while(ypad--) hexout("",fout);
+					while(ypad--) hexout(emptybuf,fout);
 				fprintf(fout,"ENDCHAR\n");
 			case 0:
 				break;
@@ -418,7 +425,7 @@ int count;
 				break;
 			case 2:
 				if(padflag)
-					while(ypad--) hexout("",fout);
+					while(ypad--) hexout(emptybuf,fout);
 				fprintf(fout,"ENDCHAR\n");
 			case 0:
 				break;

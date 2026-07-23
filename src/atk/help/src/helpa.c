@@ -112,6 +112,10 @@ static struct sockaddr_in myaddr;
 static int helpSocket = -1;
 
 static char *helpKey="";	/* the topic */
+static char defaultKeyBuf[32];	/* writable copy of the default topic name --
+				   helpKey gets lowercased/parenthesis-mapped
+				   in place downstream, and string literals
+				   are read-only memory */
 static int moreMode=FALSE;	/* use the termcap-based interface? */
 static int listMode=FALSE;	/* just list files? */
 static int print=FALSE;		/* in termcap-based mode, prompt for printing? */
@@ -524,7 +528,9 @@ struct helpapp *self;
 
     DEBUG(("key: '%s' nodef: %d\n", helpKey, noDefault));
     if ((!helpKey || !(*helpKey)) && !noDefault) {
-	helpKey = (moreMode) ? NONWMDEFAULTFILE : WMDEFAULTFILE;
+	strncpy(defaultKeyBuf, (moreMode) ? NONWMDEFAULTFILE : WMDEFAULTFILE, sizeof(defaultKeyBuf) - 1);
+	defaultKeyBuf[sizeof(defaultKeyBuf) - 1] = '\0';
+	helpKey = defaultKeyBuf;
 	DEBUG(("ha: nodef: %s\n",helpKey));
     }
 
@@ -568,7 +574,9 @@ struct helpapp *self;
 	/* couldn't get help on that item, and it wasn't because of a server,
 	   so show the default file, which we 'know' exists */
 	sprintf(tbuffer, error, WMDEFAULTFILE);
-	help_HelpappGetHelpOn(WMDEFAULTFILE, help_NEW, help_HIST_NOADD, tbuffer);
+	strncpy(defaultKeyBuf, WMDEFAULTFILE, sizeof(defaultKeyBuf) - 1);
+	defaultKeyBuf[sizeof(defaultKeyBuf) - 1] = '\0';
+	help_HelpappGetHelpOn(defaultKeyBuf, help_NEW, help_HIST_NOADD, tbuffer);
     }
     super_Run(self);
     DEBUG(("ha: OUT run\n"));

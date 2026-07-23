@@ -486,8 +486,13 @@ char  **argv;
 	free(s);
     }
     else {
+	/* ReadCommandsFromFile mutates its arg in place via StripWhiteEnds;
+	   a string literal is read-only memory, so pass a writable copy. */
+	char rcname[16];
+	strcpy(rcname, "~/.cuirc");
+
 	Interactive = FALSE;
-	ReadCommandsFromFile("~/.cuirc", 0);
+	ReadCommandsFromFile(rcname, 0);
 	Interactive = TRUE;
     }
     if (ExpertiseLevel == (LEVEL_PARSECMDLINEARGS)) ExpertiseLevel = tmplevel;
