@@ -120,8 +120,18 @@ Options:
   mailbox scan, so it is opt-in
 - `-root <dir>`: mirror somewhere else (used by the test suites)
 
-The sync is strictly read-only on the IMAP side — nothing it does can
-alter or destroy anything on the server.
+Through Milestone 3 the sync was strictly read-only on the IMAP side.
+**As of Milestone 4 (writeback, 2026-07-23), that's no longer true**:
+if a mirrored folder has a `.MS_Journal` (local mutations captured via
+`messages`/`cui` — mark read, delete, purge, copy/compose in), the very
+next `imapsync` run on that folder replays those changes to the server
+for real (`STORE`/`EXPUNGE`/`APPEND`). Server-observed changes always
+win over local ones. Only mirror folders you're prepared to have
+written back to; see `revival/doc/ams-IMAP-project.md` §7 Milestone 4
+and `revival/doc/claude-history/imap-writeback-REPORT.md` for the full
+design and a real incident this caused during development (a
+now-fixed, unrelated test-suite bug — not a defect in `imapsync`
+itself).
 
 ## Step 5: point mspath at the mirror
 
