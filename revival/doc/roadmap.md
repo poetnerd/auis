@@ -23,16 +23,10 @@ history behind each completed item.
      for messages sharing the same one-second-resolution `AMS_DATE`; fixed
      with an `AMS_ID` fallback (kept as a general hardening, checked in
      separately from the caption fix).
-  3. **The real root cause of both the "second, unrelated, intermittent
-     crash" below and, it turned out, most of the ordering symptom too:**
-     `parsedateheader()`/`parsedate()` — the bison-generated date-header
-     parser — failed on essentially *every* input, not just certain dates,
-     silently falling back to file-mtime dating every time. Root-caused to
-     a fixed-width-table assumption bug in the *shared* `mkparser`/
-     `cparser.c` parser engine used by five grammars tree-wide, not
-     anything specific to `prsdate.gra`. Full writeup: `porting-assessment.md`
-     §15. `gendemo`'s demo folder now populates with correct captions and
-     correct Part 1…23 ordering, verified interactively.
+  3. **Parser bug in `parsedate()` — FIXED.** Root cause: mkparser/cparser.c 
+     fixed-width-table assumption affecting all bison-generated grammars tree-wide. 
+     Full analysis: porting-assessment.md §15. Result: `gendemo` populates with 
+     correct captions and Part 1…23 ordering.
    - Inter-line spaceing in folders and message header panes is double wide.
 
 ### Objective: AMS over IMAP/SMTP (kicked off 2026-07-16)
@@ -161,74 +155,16 @@ mirrors IMAP; AMDS delivery remains excluded.
        Verified live: cui send now arrives as
        `From: William Cattey <wdc@fastmail.com>`. Belongs in the
        quickstart doc (M3c deliverable).
-    2. **FIXED 2026-07-18: formatted (ATK datastream) send was the
-       default** — external recipients got an empty body plus a
-       ~100-byte attachment of ATK markup even for plain-text
-       messages. Root cause was not policy but LP64 corruption:
-       `MS_GetConfigurationParameters` (ams/libs/ms/init.c) declared
-       its out-parameters `int *` while every caller (cuilib's long
-       globals, the SNAP server's SNAP_integer locals) passes
-       `long *`. Only the low 32 bits were stored, so
-       `CUI_DeliveryType` read back as 0xFFFFFFFF00000002 (DT_NONAMS
-       under a stale -1 upper half, matching no DT_* case) and
-       `CUI_UseAmsDelivery` as 0xFFFFFFFF (-1 "no AMS delivery" read
-       back positive). sendmessage's Deliver() therefore fell to its
-       default branch, `UseAmsDelivery >= 0` was true, and every
-       plain-body send took "trust the delivery system" — emitting
-       `Content-Type: X-BE2; 12` raw datastream that AMDS would have
-       down-converted in 1991 and smtp.fastmail.com forwards
-       verbatim. Fix: parameters are now `long *`; verified live
-       (lldb on cui: DeliveryType 2, UseAmsDelivery -1). With
-       DT_NONAMS seen correctly, plain bodies auto-strip
-       ("Remove formatting & send") and formatted bodies offer the
-       strip/Andrew/MIME choice, honoring `mailsendingformat`. Same
-       K&R int*/long* out-parameter class as the scanf %d/%ld bugs —
-       the M2 ANSI prototype sweep is the systemic answer.
-    3. **`<critical:fdplumb>` "File descriptor replaced!"** printed to
-       the launching terminal during compose/send (`/tmp/de*`/`/tmp/te*`
-       draft temp files, fds 5 and 2). Needs investigation: either a
-       genuine fd double-use in the compose/send path, another
-       fdplumb include-order ABI site, or fdplumb's ledger being
-       confused by library fds (Xft/fontconfig) it doesn't wrap.
-       Upgraded 2026-07-18 from noise to suspected real failure: one
-       reproduced cui run where `getprofile("smtphost")` came back NULL
-       at submit time (send fell back to the nonexistent
-       `/usr/lib/sendmail`) with a preferences file that the parser,
-       run standalone on the identical bytes, resolves fine; same-day
-       messages symptoms (all recipients "invalid" = DNS-era validation
-       resurrected, options bitmask read back as zero and re-saved as
-       `0x0`) all match a transient in-process all-preferences-NULL
-       state. profile.c caches a failed load for the life of the
-       process (`openprofile` NULL + `inited=1`), so one failed
-       `fopen` of `~/preferences` — and fopen there is fdplumb's
-       `dbg_fopen` — poisons every later preference read. Not
-       reproducible on demand (3 consecutive clean cui sends after);
-       chase it via the fdplumb ledger. NOTE: the user-visible "every
-       recipient flagged bad" send failures of 2026-07-18 turned out to
-       be item 4 below, not this; the blackout evidence stands on its
-       own (the cui sendmail fallback, the zeroed options) but it was
-       not the cause of those send failures.
-       **Gate 1 CLOSED 2026-07-19** by Fable static analysis (report:
-       `revival/doc/claude-history/fdplumb-REPORT.md`; fixes reviewed, committed, and
-       through a dependInstall). Corrections to the above: the
-       preferences fopen is NOT dbg_fopen (config.c doesn't include
-       fdplumb.h — raw libc), so fdplumb is exonerated for the
-       blackout; the fdplumb wrappers are detect-only and never act
-       on an fd; the trailing "2" in the critical triple is opencode
-       FOPEN, not stderr. "File descriptor replaced!" is structurally
-       false-positive-prone (per-TU instrumentation: a wrapped open
-       closed by unwrapped code leaves a stale ledger entry) —
-       occurrences like the 2026-07-19 startup one
-       (`(5, /tmp/9e..., 2)`, two send-path temp files trading fd 5)
-       are this known cosmetic class, to be de-noised someday, NOT
-       evidence of a real double-close. Fixed: profile.c now retries
-       instead of latching a transient (non-ENOENT) load failure and
-       prints the errno — the next blackout self-identifies on
-       stderr; also fixed dbg_dup2's wrong success test (`==0` vs
-       `>=0`, corrupted the ledger on every dup2) and a setprof.c
-       `fileno(NULL)` crash path. Remaining (runtime half, low
-       priority): let the new warning line tell us which ranked
-       hypothesis (EMFILE vs. env anomaly) was right.
+    2. **FIXED 2026-07-18: formatted send was default.** 
+       Root cause: MS_GetConfigurationParameters LP64 int*/long* mismatch in out-parameters 
+       (see porting-assessment.md §12, "By-pointer case"). Plain bodies now auto-strip, 
+       formatted bodies offer choice per `mailsendingformat`.
+    3. **`<critical:fdplumb>` "File descriptor replaced!" and transient preferences blackout.**
+       Gate 1 CLOSED 2026-07-19 by Fable static analysis (see `revival/doc/claude-history/fdplumb-REPORT.md`).
+       Key finding: preferences fopen is raw libc (not dbg_fopen), so fdplumb is exonerated 
+       for the blackout. Fixes committed: profile.c now retries transient load failures, 
+       prints errno, and dbg_dup2/setprof.c crash paths fixed. Remaining: profile.c 
+       runtime monitoring of the new errno log (low priority).
     4. **FIXED 2026-07-18: RCPT TO built from a display-form address.**
        dropoff() callers pass full RFC 822 addresses; in particular the
        kept-blind-copy fallback (submsg.c) appends `MyPrettyAddress`
@@ -615,47 +551,13 @@ trail, reproduction steps, and what was tried/disproven along the way:
   mirroring `xgraphic_LocalSetClippingRect`'s clip computation;
   required relinking `libbasics.a`/`runapp` (statically linked).
   Runtime-confirmed: zip zoom no longer escapes its box.
-- **RESOLVED 2026-07-11 — root cause found and fixed.** With
-  `contrib/zip/lib` built at the default `-O`, the whole zip inset
-  rendered as a **solid black rectangle**; the identical source at
-  `-O0` rendered correctly. Root-caused via per-file, then
-  per-function, `-O0`/`optnone` bisection (whole-directory → single
-  file `zipd000.c` → single function
-  `zip__Contextual_Figure_Line_Width`) plus disassembly comparison —
-  full trail in `claude-history/zip-black-render-investigation.md`. **Actual bug:**
-  `zip.ch` declared `Superior_Image_Line_Width(...) returns char;`
-  (signed), but its real implementation in `zipdf01.c` is explicitly
-  `unsigned char`-returning and uses `255` as its "no width configured
-  anywhere in the superior-image chain" sentinel. The signed
-  declaration made classpp's typed dispatch macro cast the vtable slot
-  to a *signed* `char` return, so at default `-O` the caller
-  (`zip__Contextual_Figure_Line_Width`, `zipd000.c`) optimized its
-  `!= 255` check into `cmn w0, #1` (`== -1`, the sign-extended form of
-  255-as-signed-char) instead of the plain `cmp w0, #0xff` used for the
-  figure's/image's own direct field reads a few lines earlier. The
-  callee actually zero-extends its `unsigned char` 255 to
-  `0x000000FF`, which never equals `0xFFFFFFFF`, so the caller always
-  concluded "found a real width" and returned **255** even when
-  nothing was configured — which flows straight into
-  `zipview_SetLineWidth(self, 255)` and paints every stroke as a
-  255-pixel-wide line, filling the whole figure black. `-O0` "fixed"
-  it only by accident (naive truncate-then-compare instead of the
-  sign-extension shortcut). **Fix:** one-line correction in `zip.ch`
-  (`returns char` → `returns unsigned char`) + classpp regeneration of
-  `zip.eh`/`zip.ih`; confirmed working end-to-end at normal default
-  optimization, no special flags anywhere. Tree-wide scan of all 566
-  `.ch` files for the same declared-vs-implemented narrow-return-type
-  mismatch (both signed/unsigned directions) found no other live
-  instances. Two incidental real bugs fixed along the way in
-  `zipd000.c` (kept, neither was *the* bug): an LP64 pointer-truncated
-  NULL check in `symtab_add` (`(int) entry <= 0` → `entry == NULL`),
-  and an uninitialized-output path in
-  `zip_Contextual_Figure_Line_Dash` when no dash pattern is set
-  anywhere in the chain. Test fixture:
-  `src/doc/papers/atk/Cattey.turnin` (also re-confirmed against
-  `contrib/zip/samples/dragon.zip`). Committed — see fossil log for
-  commit id. `contrib/zip/utility` (`lt`/`sched`) not started; same
-  untyped-`.ch` treatment will likely be needed there too.
+- **RESOLVED 2026-07-11.** Solid-black rectangle at `-O` (correct at `-O0`). 
+  Root cause: classpp typed-dispatch signedness mismatch — `zip.ch` declared 
+  `returns char` but implementation is `unsigned char`. Full analysis: 
+  porting-assessment.md §16. Fix: one-line `.ch` type correction + classpp regeneration. 
+  Tree-wide scan of 566 `.ch` files found no other instances. Confirmed working 
+  end-to-end at normal default optimization. Tested against `Cattey.turnin` and 
+  `contrib/zip/samples/dragon.zip`.
 - **Confirmed 2026-07-11 (found while gating an unrelated `MK_CALC`
   change):** `contrib/zip/utility/ltapp.c:115,123` —
   `lt_Set_Debug(self->lt, debug)` / `ltv_Set_Debug(self->ltview,
