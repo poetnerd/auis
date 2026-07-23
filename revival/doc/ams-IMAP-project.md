@@ -293,6 +293,44 @@ picture.
 * Change journal: small additions at the four mutation points in
   `ams/libs/ms` (§2A); journal replay added to `imap_sync.c`.
 
+**Gate 1 status (2026-07-22, closed):** capture + suppression built and
+proven live. Design in brief, for anyone re-deriving this without reading
+the full spec/report:
+
+* The four hook points (`MS_AlterSnapshot`, `MS_PurgeDeletedMessages`,
+  `MS_AppendFileToFolder`, `MS_CloneMessage`) aren't an arbitrary sample —
+  they are the *complete* set of store-layer entry points through which
+  any AMS client mutates a folder's messages. Hooking here, not in
+  `cui`'s command dispatch, means every caller (interactive `cui`,
+  `messages`, future clients, scripts) is journaled for free; there is no
+  other way to mutate a folder that doesn't pass through one of these
+  four.
+* `MS_CloneMessage` gets two hook calls, not a "move" record: a copy into
+  a mirrored folder is an `append` at the dest; a COPYDEL out of a
+  mirrored source adds a `purge` at the source. Decomposed, not
+  special-cased.
+* All the "should this actually do anything" logic lives inside the new
+  `msjournal.c`, not at the four call sites — each call site is one
+  unconditional `MSJournal_Record(dir, ...)` line, kept deliberately
+  tiny since these are 35-year-old files every AMS client runs.
+  `MSJournal_Record` itself no-ops (cheapest check first) if a global
+  suppression flag is set (`imapsync` sets this at its own startup, so
+  its mirror-refresh writes don't re-journal what it just pulled down),
+  then no-ops again (one cached `stat` per directory per process) if the
+  folder has no `.MS_IMAPSync` marker, i.e. isn't mirrored. Local-only
+  mail folders: zero behavior change, zero I/O beyond the first cache
+  miss.
+* Bug found building this, worth flagging for future variadic AMS-layer
+  functions: a K&R-style extern declaration of the (genuinely variadic)
+  `MSJournal_Record` compiles clean but crashes on arm64 — the ABI
+  passes variadic args on the stack and fixed args in registers, so an
+  under-declared call site emits the wrong convention. Full prototype
+  with `...` at every call site fixed it. See
+  `revival/doc/claude-history/imap-writeback-REPORT.md` for the repro.
+
+Artifacts: `imap-writeback-session.diff` + `M4-HANDOFF.md` (tree root,
+uncommitted), `revival/doc/claude-history/imap-writeback-REPORT.md`.
+
 ### Milestone 5 — OAuth2
 
 * `imap_auth.c` — materializes only here: app-password and XOAUTH2 behind

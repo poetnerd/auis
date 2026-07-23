@@ -891,6 +891,20 @@ trail, reproduction steps, and what was tried/disproven along the way:
   dispatch (lpair, panel, dialog, table, fad, srctext, eq, metax, toez,
   typescript margins; style__ReadAttr operand; figure_NULLREF sentinel; full audit committed)
 
+**Related but not itself LP64 (2026-07-22):** a K&R-style empty-parens
+extern declaration of a *new* variadic function crashes on arm64 —
+the ABI passes variadic args on the stack and fixed args in registers,
+so an under-declared call site emits the wrong calling convention
+regardless of word width; symptom is a crash inside `vsnprintf`/
+`vfprintf`, not a truncated value. Found building the IMAP writeback
+change journal (`MSJournal_Record`, `ams/libs/ms/msjournal.c`); fixed
+with a full `...`-prototyped extern at every call site. Same root
+pathology as the LP64 family (K&R declarations under-specifying type
+info for a modern ABI) but a different mechanism — grouped here for
+visibility, not counted as Variant 6. Full writeup:
+`porting-assessment.md` §18; also in `sonnet-playbook.md`'s bug-class
+list (item 6) since that's what delegated sessions read first.
+
 **Variant 3 follow-up audit (2026-07-04) — bare `-1` literals at call sites,
 not just `#define`d sentinels:**
 

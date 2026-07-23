@@ -66,6 +66,14 @@ When a value reads as a huge positive number, or lldb shows
    `MS_GetConfigurationParameters`; no compiler warning exists).
 5. Writable-string-literal mutation → EXC_BAD_ACCESS code=2 at a
    `strb` instruction, faulting address inside a readable C string.
+6. A new variadic function called through a K&R (empty-parens) extern
+   declaration → arm64 passes variadic args on the stack but fixed
+   args in registers, so an under-declared call site emits the wrong
+   calling convention: silent garbage args, no compiler warning.
+   Different symptom signature from 1-5 above: a crash *inside*
+   `vsnprintf`/`vfprintf`/similar, one frame below a plausible call
+   site. Fix is a full prototype with `...` at every call site, not
+   just the definition (found 2026-07-22 in `MSJournal_Record`).
 
 ## Verification tools
 

@@ -1474,6 +1474,78 @@ depends entirely on whether there's a seam between the UI and the store.
 Previous experience suggests AMS internals are deeply complex — approach
 with caution and investigate the interface boundaries before committing.
 
+### 18. Variadic function called through a K&R (empty-parens) extern declaration — arm64 calling-convention mismatch (MEDIUM effort, found 2026-07-22)
+
+#### Root cause
+
+Apple's arm64 (AAPCS64) ABI passes variadic arguments differently from
+fixed arguments at the call site: named/fixed arguments go in registers,
+but once a call crosses into its variadic tail, the compiler must know
+that *at the call site* to generate the stack-passing code the callee's
+`va_start`/`va_arg` machinery expects. A K&R-style empty-parens
+declaration (`extern int Foo();`) gives the compiler no arity or
+variadic information, so a call through it is code-generated as if every
+argument were fixed (registers). If the actual definition is genuinely
+variadic (`Foo(fmt, ...)`, reading with `va_arg`), the callee reads
+arguments from the stack that the caller never put there — silent
+garbage, not a crash at the call site itself, and no compiler warning
+(an empty-parens extern is legal, unprototyped C).
+
+Found building the IMAP writeback change-journal (`ams/libs/ms/msjournal.c`,
+`revival/doc/ams-IMAP-project.md` Milestone 4): a first-cut K&R extern for
+the new variadic `MSJournal_Record(dir, fmt, ...)` compiled clean but
+crashed `cui` live on the first real folder mutation — `EXC_BAD_ACCESS`
+inside `vsnprintf`, called from `MSJournal_Record`, called from
+`MS_AlterSnapshot`. Confirmed via lldb backtrace; see
+`revival/doc/claude-history/imap-writeback-REPORT.md`.
+
+#### Symptom signature
+
+Distinct from the LP64 truncation family below: not a huge-positive-number
+value, but a crash *inside* a variadic libc function
+(`vsnprintf`/`vfprintf`/`vprintf`) one frame below a plausible, otherwise-
+correct-looking call site. The call site itself never looks wrong in the
+source.
+
+#### Fix
+
+A full prototype with `...` at every call site of the new function
+(`extern void MSJournal_Record(const char *dir, const char *fmt, ...);`),
+not just at its definition. Confirmed fixed by rebuilding and repeating
+the exact live crash repro cleanly, multiple times.
+
+#### Scope
+
+Applies to any *new* variadic function added anywhere in this tree, not
+to existing ones (existing variadic libc/AUIS functions already have
+correct prototypes wherever they're currently called, or they'd already
+be crashing). Relevant going forward whenever a delegated session or
+future porting work introduces a new function with a `...` parameter —
+check every call site has the real prototype in scope, not an
+empty-parens or otherwise unprototyped declaration.
+
+#### Relationship to the LP64 bug family (§12)
+
+Adjacent but distinct: §12 and its relatives are about `int`/`long`/
+pointer *width* mismatches surviving 32-to-64-bit widening. This bug is a
+*calling-convention* mismatch (register vs. stack argument passing) —
+it would reproduce identically even on a hypothetical ILP64 rebuild of
+the original 1991 code, because the defect is "declaration doesn't say
+variadic," not "declaration says the wrong width." Grouped here because
+both families share the same root pathology: K&R-era declarations
+carrying too little type information for a modern ABI to code-generate
+correctly. Recorded in `revival/doc/sonnet-playbook.md`'s LP64
+bug-class list as item 6 (with the same distinguishing note) since that
+list is what delegated sessions read first when debugging a crash.
+
+#### Verification
+
+Live lldb backtrace showing the fault inside `vsnprintf` before the fix;
+clean repeated live repro (real folder mutations via `cui` against a
+mirrored folder) after the fix, no further crashes. No tree-wide audit
+needed — this is the only new variadic function added in this work, and
+no existing variadic function in the tree was touched.
+
 ## Primary build environment: macOS/Darwin
 
 The initial development platform is macOS (POSIX Darwin), not Linux.
