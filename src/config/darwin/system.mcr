@@ -12,7 +12,7 @@
 /* Get parent inclusions */
 #include <allsys.mcr>
 
-CC = cc
+CC = cc -fwritable-strings
 COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Wno-implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
 LEX = flex
 RANLIB = ranlib

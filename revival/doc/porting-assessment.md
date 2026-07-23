@@ -60,7 +60,106 @@ to errors.
 
 ## Issues to address
 
-### 1. `gcc -fwritable-strings` (HIGH effort)
+### 1. `gcc -fwritable-strings` — RESOLVED 2026-07-23 by re-enabling the flag
+
+**Correction to the original assessment below: this was not, in fact,
+one of the issues a compiler flag can't paper over.** The Linux
+`system.mcr` specifies `CC = gcc -fwritable-strings`; real gcc dropped
+the flag in 4.0 (2005), which is what led to the "HIGH effort,
+tedious-but-mechanical, defer it" verdict this section originally
+recorded. But **Apple clang (the `cc` this tree actually builds
+with on Darwin) still implements `-fwritable-strings`** — verified
+directly: `char *p = "hello"; p[0] = 'H';` bus-errors when compiled
+plain, exits clean with `-fwritable-strings` added. `config/darwin/system.mcr`
+had never set it (only the legacy `i386_Linux`/`i386_bsdi`/`i386_bsd`/
+`i386_mach` configs did), which is exactly why the Gate-1 hand sweep
+below (`strlit-sweep-prompt.md` → `revival/doc/claude-history/strlit-REPORT.md`)
+kept finding live-if-narrow instances. Fix applied: `CC = cc -fwritable-strings`
+in `config/darwin/system.mcr`, full clean rebuild (`make Clean`,
+`rm -rf build`, `make World`) — confirmed the flag reached all 893
+compile invocations in the rebuild log. Two link/type-error failures
+surfaced by the full wipe (`ams/msclients/nns` missing `$(SSLLIB)`,
+`contrib/zip/utility/ltapp.c` incompatible-pointer-conversion) are
+pre-existing and unrelated to this flag; ez/messages/cui/help/runapp
+all built clean.
+
+**Scope, quantified after the fact** with a `-Wwrite-strings`
+(`-Wincompatible-pointer-types-discards-qualifiers`) compile-only scan
+across the same 849 translation units: 26,628 raw literal→`char*`
+sites; 13,937 of those are `struct classheader`-style fields in
+generated `.ih`/`.eh` (every class-based `.c` file inherits a couple
+from `traced.ih`/`observe.ih`/`atom.ih`/etc. — inert boilerplate, would
+need a `classpp` template change, not source-by-source fixes, to
+clean up "properly"). The remaining 12,691 are anchored in
+hand-written `.c` code across 444 files — but spot-checking the
+heaviest hitters (`atk/text/txtvcmds.c` 816, `atk/eq/symbols.c` 399)
+shows these are dominated by large static descriptor tables
+(keybinding tables, symbol tables, command tables: `{"name", "key",
+..., "description"}` rows) whose `char *` fields are never written
+back through — a struct-typing habit, not a mutation. The much
+smaller subset that's an actual mutate-through-the-pointer bug (the
+class the Gate-1 sweep targeted by tracing real mutator functions —
+`StripWhiteEnds`, `LowerCase`, `MapParens`, etc.) is a few dozen call
+sites at most, tree-wide.
+
+With the flag in place none of this — inert or genuinely
+mutate-in-place — is live risk anymore; the counts above are kept for
+context (why the flag is load-bearing, and roughly how much code
+leans on it) rather than as a remaining to-fix list. The Gate-1 sweep
+findings in `claude-history/strlit-REPORT.md` are superseded as action
+items by this fix; that report's per-site detail remains useful if the
+flag is ever dropped (e.g. a future toolchain migration away from
+Apple clang).
+
+**Considered and rejected: a full cleanup pass to make the tree
+`-fwritable-strings`-independent.** The 26,628 warnings break into
+three tiers of very different cost: (1) `struct classheader`'s two
+fields, centralized, ~13,937 warnings, one struct + one classpp
+codegen template — bounded and mechanical, reusable via the same
+byte-identical-header diffing the M1 rollout already proved out; (2) a
+dozen-ish table-owning struct types (`bind_Description` etc.) behind
+most of the remaining volume — per-type auditing, moderate effort; (3)
+the actual mutate-through-the-pointer functions (`StripWhiteEnds`,
+`ReduceWhiteSpace`, `LowerCase`, `MapParens`, `ProcessCommand`,
+`HandleAddress`, `hexout`, `html__ChangeAttribute`, ~150 call sites
+combined) — these can't just be retyped `const`, since they genuinely
+write through the pointer; each needs the atomlist private-copy
+treatment (fossil `f91cb255`) and per-call-site behavior verification,
+since several reuse the pointer in place
+(`arg = StripWhiteEnds(arg);`) and a copy-based rewrite changes memory
+ownership. Tier 3 alone is essentially Gate 2 of the original
+`strlit-sweep-prompt.md`. Net judgment: multiple sessions of real
+engineering effort to reach a state the compiler flag already gives
+for one line and ten minutes. Deferred — not needed unless/until a
+future toolchain genuinely can't provide an equivalent flag.
+
+**Future Linux port: does the safety net survive?** The concern that
+prompted the above: real gcc dropped `-fwritable-strings` in 4.0
+(2005), and a Linux port might default to gcc, silently losing the
+protection this section relies on. Resolution: `-fwritable-strings` is
+a standard upstream Clang driver flag (from LLVM's own `Options.td`,
+not an Apple SDK patch), so a Linux `clang` should have it too —
+distro packages (`apt install clang` / `dnf install clang`) are the
+same LLVM frontend for this purpose. **Not yet verified on an actual
+Linux box** (none available from this environment) — a 30-second
+`clang --help | grep writable-strings` check the day a Linux config is
+revived should confirm it before relying on it. If confirmed, the fix
+for that future config is the same one-line move made here:
+`CC = clang -fwritable-strings` instead of assuming the distro's
+default `gcc`, mirroring how `config/i386_Linux/system.mcr` already
+hardcoded a specific compiler for its own reasons. This is the same
+risk category as this build's existing reliance on `-std=gnu89` and
+other legacy-compatibility flags — not a new kind of fragility.
+
+*Editorial note (2026-07-23): this section has grown long in the
+telling. When the Linux port actually starts, it's worth condensing
+issue #1 down to current-state-and-decision (flag set where, why,
+what to check on the new platform) with the reasoning/history moved to
+`claude-history/` — a human skimming "issues to address" shouldn't have
+to read the full investigation to see the current picture.*
+
+<details>
+<summary>Original assessment (superseded, kept for history)</summary>
 
 The Linux `system.mcr` specifies `CC = gcc -fwritable-strings`. This flag
 was removed from gcc in version 4.0 (2005). It allowed code to modify
@@ -81,6 +180,8 @@ writing into a string literal is undefined behavior, not just a stricter
 diagnostic. Per the strategic decision above, defer fixing this broadly;
 address it only in files we touch for other reasons, until the follow-on
 ANSI/POSIX modernization effort.
+
+</details>
 
 ### 2. glibc `FILE` struct internals (LOW effort)
 
