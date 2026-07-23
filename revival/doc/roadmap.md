@@ -338,6 +338,21 @@ acceptance). What remains here is the real HTML rendering:
   leave the tree dirty after a bare `make Clean`). Pre-existing;
   fix is renaming one of the two or making the rule case-exact.
 
+### messages: X_OpenFont BadValue (observed 2026-07-23, not yet investigated)
+
+- `messages` printed `X error 2-BadValue ... Will ignore operation
+  45:0 on resource ID a005b3` (and a005b4, one right after) to the
+  terminal during otherwise-normal use (browsing folders after the M4
+  hand test). Request code 45 is `X_OpenFont`; the catch-all handler
+  (`XErrorsToConsole`, `atk/basics/x/xim.c:696`) logs and ignores any X
+  error rather than crashing, so this is non-fatal but real — two font
+  loads failed. Plausible candidate for another LP64-class bug (a
+  corrupted value reaching the OpenFont request) given this tree's
+  track record, and/or related to the known `MK_CONSOLE` font gap —
+  not yet distinguished. Not root-caused; needs a dedicated session
+  (breakpoint the font-open path, identify which font name/size
+  triggered it) before it goes in `porting-assessment.md`.
+
 ### filetype.c DeleteEntry:
 
 - `filetype__DeleteEntry` (atk/basics/common/filetype.c:216,218,
