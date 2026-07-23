@@ -18,11 +18,10 @@ is part of retiring it, done during the close-out doc update.
 Current queue and suggested order live in `roadmap.md` → "Delegated
 work queue". As of 2026-07-23:
 
-1. `strlit-sweep-prompt.md` — writable-string-literal census + fixes
-2. `m2-census-prompt.md` — M2 point-0 warning classification
-3. `bcc-direct-insertion-prompt.md` — blind-copy direct-insertion
+1. `m2-census-prompt.md` — M2 point-0 warning classification
+2. `bcc-direct-insertion-prompt.md` — blind-copy direct-insertion
    root cause
-4. `mime-attachment-icon-prompt.md` — root-cause a `multipart/mixed`
+3. `mime-attachment-icon-prompt.md` — root-cause a `multipart/mixed`
    attachment rendering as a bare `?` instead of an
    `[attachment: ...]` line (added 2026-07-21, follow-on to the
    just-retired `mime-display` task below)
@@ -123,9 +122,33 @@ against live Fastmail and closed with its milestone:
 
 Five gated prompts plus the standing `sonnet-playbook.md`, written
 in one pass (commit 8e565c9fda) so Sonnet-class sessions could
-carry work forward independently: `strlit-sweep`, `m2-census`,
-`bcc-direct-insertion` (still active), and:
+carry work forward independently: `m2-census`, `bcc-direct-insertion`
+(still active), and:
 
+- `strlit-sweep-prompt.md` (2026-07-19, retired 2026-07-23) —
+  writable-string-literal Gate-1 census. The premise (fix mutator
+  functions file-by-file) held for the census itself, but the actual
+  fix turned out to be one line up a level: `config/darwin/system.mcr`
+  never set `-fwritable-strings`, and Apple clang (unlike real gcc
+  since 4.0) still implements it. Flag added, full clean rebuild
+  verified live (`char *p = "hello"; p[0]='H';` bus-errors without it,
+  clean with it). A follow-up `-Wwrite-strings` compile-only scan
+  quantified the scope the census couldn't see by grep alone: 26,628
+  literal→`char*` sites tree-wide, 13,937 of them inert
+  `struct classheader` boilerplate in every class-based file's
+  generated `.ih`/`.eh`, most of the remaining 12,691 concentrated in
+  never-mutated static descriptor/keybinding tables. A full source
+  cleanup to become flag-independent was scoped and explicitly
+  rejected (multiple sessions of real work, including
+  memory-ownership-changing rewrites of ~8 real mutator functions, for
+  what the flag already gives for free) — see
+  `../porting-assessment.md` issue #1 for the full tiered breakdown
+  and the future-Linux-port contingency (expect `clang`, not `gcc`,
+  to carry the flag there too). The three confirmed
+  reachable-by-literal call sites (`help`'s default topic, cui's
+  `~/.cuirc`, fdbbdf's `hexout` padding) were fixed anyway as
+  belt-and-suspenders, despite not being required. See
+  `strlit-REPORT.md`.
 - `folder-visibility-prompt.md` (2026-07-19, retired 2026-07-22) —
   mirrored-folder default visibility. Gate 1's own premise
   (subscription status gates default visibility) was investigated,

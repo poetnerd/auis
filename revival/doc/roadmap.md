@@ -202,8 +202,18 @@ mirrors IMAP; AMDS delivery remains excluded.
   session ends with a `<task>-session.diff` + `<task>-REPORT.md` in
   the tree root for review). Task prompts, in suggested order of
   attack (safest first):
-  1. `strlit-sweep-prompt.md` — writable-string-literal census then
-     gated fixes (mechanical, low risk).
+  1. ~~`strlit-sweep-prompt.md`~~ (now in `claude-history/`) —
+     **done 2026-07-23.** Root cause wasn't a file-by-file mutation
+     bug after all: `config/darwin/system.mcr` had simply never set
+     `-fwritable-strings`, and Apple clang (unlike real gcc since 4.0)
+     still implements it — one-line fix plus a full rebuild, verified
+     live. A `-Wwrite-strings` scan afterward quantified the scope
+     (26,628 literal→`char*` sites, almost all inert boilerplate or
+     never-mutated static tables) and a full source cleanup was
+     considered and rejected as disproportionate. The three confirmed
+     reachable-by-literal call sites got belt-and-suspenders fixes
+     anyway. See `porting-assessment.md` issue #1 and
+     `claude-history/strlit-REPORT.md`.
   2. `m2-census-prompt.md` — M2 point-0 warning classification
      (read-only; fixes stay top-level).
   3. `bcc-direct-insertion-prompt.md` — root-cause the blind-copy

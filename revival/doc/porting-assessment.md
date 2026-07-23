@@ -73,8 +73,9 @@ directly: `char *p = "hello"; p[0] = 'H';` bus-errors when compiled
 plain, exits clean with `-fwritable-strings` added. `config/darwin/system.mcr`
 had never set it (only the legacy `i386_Linux`/`i386_bsdi`/`i386_bsd`/
 `i386_mach` configs did), which is exactly why the Gate-1 hand sweep
-below (`strlit-sweep-prompt.md` → `revival/doc/claude-history/strlit-REPORT.md`)
-kept finding live-if-narrow instances. Fix applied: `CC = cc -fwritable-strings`
+below (`revival/doc/claude-history/strlit-sweep-prompt.md` →
+`strlit-REPORT.md`, both retired there together) kept finding
+live-if-narrow instances. Fix applied: `CC = cc -fwritable-strings`
 in `config/darwin/system.mcr`, full clean rebuild (`make Clean`,
 `rm -rf build`, `make World`) — confirmed the flag reached all 893
 compile invocations in the rebuild log. Two link/type-error failures
