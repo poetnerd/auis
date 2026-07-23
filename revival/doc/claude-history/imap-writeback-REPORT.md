@@ -409,3 +409,563 @@ Both open items above closed out before Gate 2:
   case-3 leftover). Full live mirror of the real INBOX (3,871
   messages), idempotent re-run, incremental sync, flags mapping,
   UIDVALIDITY-change drill, and `cui` browse all correct.
+
+## Gate 2 report (2026-07-23)
+
+### Status
+
+Stopped at **Gate 2**, as instructed. Diff at
+`imap-writeback-gate2-session.diff` (tree root, `fossil diff --verbose`).
+Nothing fossil-committed.
+
+### CRITICAL FINDING -- read this before anything else
+
+**Regression-testing this gate caused a real message to be permanently
+expunged from the live account's `INBOX/1-Admin/keys` folder.** This
+was not a bug in the replay logic executing incorrectly -- it did
+exactly what it is designed to do -- it is a real, unanticipated
+interaction between Gate 2's new replay code and Gate 1's *existing,
+unmodified* `imap-writeback-tests` suite, which mirrors a real,
+pre-existing folder (`INBOX/1-Admin/keys`, chosen at Gate 1 specifically
+*because* it was safe to mirror when no writeback-execution code
+existed yet) rather than the dedicated `Revival/WritebackTest` sandbox.
+
+**Sequence of events:** `imap-writeback-tests`' own case 1 (capture
+proof) drives a real `cui` session that marks a message deleted,
+undeleted, deleted again, and purges it -- entirely local mutations
+against the scratch mirror, which is exactly what that suite was
+designed to prove (and still correctly proves: capture is unaffected by
+this gate). Its very next step, run to prove *suppression*
+("an ordinary imapsync run right after adds zero journal records"), is
+just another normal `imapsync` invocation -- but as of this gate,
+`imapsync` also replays any pending `.MS_Journal` on that same
+invocation. The journal case 1 had just written was sitting right
+there, still pending, in the same mirrored folder -- so this
+"suppression check" run also **replayed it for real**: `UID STORE
++FLAGS.SILENT (\Deleted)` (three times, matching the capture script's
+delete/undelete/delete dance) followed by `UID STORE +FLAGS.SILENT
+(\Deleted)` + `UID EXPUNGE` for the purge record, all against the real
+server. Confirmed via `imaptest.test examine ... "INBOX/1-Admin/keys"`:
+`EXISTS` dropped from 16 to 15 between the start and end of one
+`imap-writeback-tests` run.
+
+**What was lost:** one message from a folder of archived ~2009-era
+automated PGP key-signing-service notification emails (subject pattern
+`"Your signed PGP key 0xDCF97.."`, judging from the folder's
+surrounding, still-present messages with sequential ids on either side
+of the deleted one -- id `IMAP1HRE07D0000002`, between
+`IMAP1HRE07D0000001` "Yaakov M. Nemoy" and `IMAP1HRE07D0000003`
+"Charles Anderson@WPI.EDU", both that exact subject). No local or
+scratch copy of its exact body/headers survived (the suite's own
+"purge" step is what deleted the local copy, moments before this run's
+replay deleted the server copy) -- this description is inferred from
+the surrounding messages, not confirmed against the lost message's own
+content. **This is not recoverable via IMAP** (a raw `UID EXPUNGE` is
+not undoable through the protocol); Fastmail's own account-level
+"Restore"/backup feature, if enabled on this account, may be able to
+recover it -- that is between wdc and Fastmail, not something this
+session can act on.
+
+**Root cause, precisely:** Gate 1's `imap-writeback-tests` suite was
+correct and safe *at Gate 1*, when no code existed anywhere that would
+act on a `.MS_Journal`'s contents. Gate 2 makes any `.MS_Journal`
+left in *any* mirrored folder live ammunition on the very next
+`imapsync` run against that folder -- which is exactly the intended,
+correct, in-scope behavior for a real user's real mail. The suite
+itself was never updated to account for this, and nothing in either
+spec document flagged that Gate 2 would retroactively make a Gate-1-era
+test fixture unsafe. **I did not catch this myself before running it**
+-- I ran `imap-writeback-tests` as one of the "prior suites must still
+be green" regression checks the task explicitly calls for, and only
+saw the damage after the fact via `EXISTS` dropping and the
+suppression-check assertion failing (which is itself a real,
+if secondary, test failure: `imap-writeback-tests` case 1 now
+**FAILS**, 1 passed / 2 failed, because the suppression checks it
+performs are no longer sound now that the "ordinary run right after"
+step has a real side effect).
+
+**Do not run `imap-writeback-tests` again until this is fixed** -- a
+repeat run will mirror the now-15-message folder fresh, generate a new
+capture journal against whatever message now lands on cuid 2, and
+replay-expunge *that* one for real, and so on every time the suite
+runs. This needs a design decision, not a unilateral fix from me:
+options include (a) moving `imap-writeback-tests` to mirror
+`Revival/WritebackTest` instead of `INBOX/1-Admin/keys` now that a
+real write-safe sandbox exists, (b) having its "suppression" re-run
+step explicitly rename any pending `.MS_Journal` out of the way before
+invoking `imapsync` (defeats part of the original suppression proof,
+but avoids replay entirely), or (c) something else the spec owner
+prefers. I have made **no changes to `imap-writeback-tests` or
+`msjournal.c`/the four hook sites** (out of this gate's restricted
+write area regardless) -- flagging this rather than improvising a fix,
+per the ground rules' explicit STOP condition for exactly this kind of
+cross-cutting surprise.
+
+I did not attempt to compensate for or hide this -- the account is in
+whatever state the two `UID STORE`/`UID EXPUNGE` sequences above left
+it in, and `INBOX/1-Admin/keys` now has 15 messages instead of 16.
+
+### What I did, in order
+
+1. Read `imap_prot.h`/`imap_prot.c`, `imap_sync.c`, and
+   `imap-sync-prompt.md` in full for conventions (tagged dispatch via
+   `imap_await_tagged`, `imap_sendcmd_var` for growable command text,
+   `imap_Capable` for capability checks, the `.MS_IMAPSync` state file
+   format, `synth_id`/`decode_id`, and `apply_flags`'s existing
+   two-mask pattern, which the journal grammar had already been
+   modeled on at Gate 1).
+2. Implemented the three named `imap_prot` write entry points plus two
+   small, necessary additions (detailed under "imap_prot additions"
+   below), verified live against a freshly-created `Revival/WritebackTest`
+   mailbox via new `imaptest.test` subcommands
+   (`create`/`storeflags`/`expunge`/`append`/`fetchflags`), each
+   destructive one guarded to refuse any other mailbox (confirmed
+   refusing `INBOX` live, nonzero exit, `GUARD-REFUSED: yes`, no wire
+   traffic attempted).
+3. Implemented `replay_folder()` and its helpers in `imap_sync.c`
+   (journal handoff/rename, per-line flags/purge replay, the 25-purge
+   safety valve, the stale-UIDVALIDITY skip, and the
+   SELECT-upgrade/EXAMINE-downgrade around the write window -- detail
+   below). Manually smoke-tested live, end-to-end, against real
+   appended/mutated messages in `Revival/WritebackTest` (full
+   `IMAP_TRACE=1` wire traces captured and inspected) before writing
+   any automated test: flags round-trip, purge round-trip, the safety
+   valve (both the refusal and the `-force-purges` override), and the
+   stale-UIDVALIDITY skip all confirmed correct.
+4. Extended `imap-protocol-tests` with cases 10-14 (create, append,
+   flags round-trip, expunge round-trip, and the mailbox-guard drill),
+   all confined to `Revival/WritebackTest`, guarded twice (C-level
+   `guard_mailbox()` in `imaptest.c`, and an independent Python-level
+   assertion in the test driver). 14/14 pass live.
+5. Extended `imap-sync-tests` with cases `W2`/`W3`/`W4`/`W7` (flags
+   round-trip, purge round-trip, safety valve, stale-UIDVALIDITY
+   drill), against their own separate scratch root and mailbox
+   (`Revival/WritebackTest`), independent of that suite's existing
+   INBOX-mirroring cases 1-6. These fabricate well-formed `"J1 ..."`
+   journal lines directly rather than driving a real `cui` session --
+   Gate 1's own suite already proves real capture end-to-end, so these
+   cases test `replay_folder()` in isolation, faster and more
+   deterministically (the same strategy the milestone's own spec
+   prescribes for the safety-valve case). Validated standalone via an
+   `importlib`-driven quick-check script before wiring into the real
+   suite; found and fixed one test-design bug along the way (case W3's
+   "purge locally" step must actually unlink the local body file,
+   matching what `MS_PurgeDeletedMessages` would have done -- replay
+   only pushes to the server, it never touches local files, so the
+   local half of "purge locally" has to be simulated explicitly for a
+   meaningful "count consistent" assertion).
+6. Found and fixed a real, **pre-existing** build gap while
+   compile-verifying: `src/overhead/mail/lib/Imakefile`'s `TESTLIBS`
+   was missing `libcparser.a`, so a genuinely clean rebuild of
+   `smtptest.test`/`dropoff.test` fails to link (`_parser_New` etc.
+   undefined -- `ParseAddressList`/`parsey_New` need
+   `src/overhead/mkparser`'s `parser_*` entry points, which `cui`'s and
+   `messages`' own Imakefiles already link explicitly for the same
+   reason). Confirmed via `fossil cat` that the Imakefile had zero
+   drift from the committed version before my fix -- this gap has
+   existed since it was written, just never exercised because a
+   previously-linked `smtptest.test` binary was never relinked from
+   scratch until my own `make clean` (run mid-session for warning-diff
+   purposes) forced one. Fixed by adding
+   `${BASEDIR}/lib/libcparser.a` to `TESTLIBS`; rebuilt clean, no new
+   warning categories.
+7. Ran the full regression sweep: `imap-sync-tests` (all six INBOX
+   cases + the four new writeback cases, full live run) and
+   `imap-protocol-tests` (all 14 cases) both green;
+   `smtp-protocol-tests` (offline cases only) green;
+   `imap-writeback-tests` run once for regression per the task's own
+   instruction -- **1 passed, 2 failed**, for the reason detailed in
+   the CRITICAL FINDING above (a real Gate-1/Gate-2 interaction, not a
+   defect in this gate's own code).
+8. Captured `fossil diff --verbose > imap-writeback-gate2-session.diff`
+   in the tree root; wrote this report section.
+
+### imap_prot additions
+
+Three named entry points (`imap_UidStoreFlags`, `imap_UidExpunge`,
+`imap_Append`) plus two small, necessary additions beyond the named
+three:
+
+- **`imap_Select`** (declared since M3a as a permanent stub always
+  returning `IMAP_BAD`) now has a real implementation. This was not
+  optional: `imap_prot.h`'s own M3a-era comment already reserved this
+  exact moment ("may return a not-implemented error *until the
+  writeback milestone*"), and it is a hard prerequisite -- a server may
+  (Fastmail does) reject `STORE`/`EXPUNGE` issued against a mailbox
+  that was only `EXAMINE`d, not `SELECT`ed. Implemented by factoring
+  `imap_Examine`'s existing body into a shared `imap_do_select()`
+  helper parameterized on the command keyword, so `imap_Examine`'s own
+  observable behavior (wire command, return contract) is byte-for-byte
+  unchanged -- confirmed nothing in the tree ever called `imap_Select`
+  while it was a stub (grepped). Added one new `struct imapconn` field,
+  `examined_readwrite`, so `imap_Reopen` re-selects in whichever mode
+  (`SELECT` vs `EXAMINE`) was last in effect after a reconnect, rather
+  than silently downgrading a replay-in-progress connection.
+- **`imap_Create`** (`CREATE <mailbox>`) -- needed only so a test
+  driver can provision `Revival/WritebackTest` itself rather than a
+  human doing it by hand first; nothing in `imap_sync.c`'s replay path
+  calls it.
+
+Both are flagged in the diff/report rather than silently added,
+per the ground rule to surface anything beyond the named additions --
+I judged both as necessary, obvious completions of what the spec
+already anticipated (not new design territory), but the coordinator
+should confirm that reading is correct.
+
+`imap_UidStoreFlags`/`imap_UidExpunge`/`imap_Append` themselves follow
+the file's existing conventions exactly: `imap_sendcmd_var` for
+growable uidset text, `imap_await_tagged`'s existing tagged-dispatch
+driver, `imap_Capable(conn, "UIDPLUS")` (no new capability accessor
+needed -- confirmed live: Fastmail advertises it) for
+`imap_UidExpunge`'s own self-contained refusal when UIDPLUS is absent
+(a bare `EXPUNGE` fallback was rejected by design: it would expunge
+every `\Deleted` message in the mailbox, not just the one asked for).
+`imap_Append` uses a standard synchronizing literal (waits for the
+server's `+` continuation before writing body bytes) and parses
+`APPENDUID` out of the tagged `OK` response line the same way
+`imap_Login` already parses a post-auth `CAPABILITY` response code.
+One real bug found and fixed during live testing: the first version of
+`imap_Append` produced `"APPEND mailbox  {n}"` (a stray double space
+where an empty `INTERNALDATE`/flags token would have gone), which a
+real server answers `BAD "Missing required argument"` -- fixed by
+only emitting the `(flags) `/`date ` tokens when actually present,
+confirmed against a real live `APPEND` afterward.
+
+### Replay logic (`imap_sync.c`)
+
+`replay_folder()` (plus `journal_handoff()`, `replay_flags_line()`,
+`replay_purge_line()`, `mask_bit_forced()`, `decode_hexmask()`) is
+called once per folder, immediately after the existing UIDVALIDITY-
+mismatch/wipe handling and before the mirror pass's own `UID SEARCH`
+-- "journal first, then mirror," per the design. Behavior:
+
+- **Handoff**: `.MS_Journal` renamed to `.MS_Journal.replaying`
+  (skipped, resuming instead, if `.replaying` already exists from a
+  prior crashed run). A no-op (one `stat`, no network) when neither
+  file exists -- confirmed zero behavior change for every folder
+  without a pending journal via the full `imap-sync-tests` INBOX cases
+  passing unchanged.
+- **Read-write upgrade**: only when something is actually pending, the
+  connection is `imap_Select`ed (not just `EXAMINE`d) before any op,
+  and re-`EXAMINE`d afterward (refreshing `HIGHESTMODSEQ`/`EXISTS`,
+  which the just-issued `STORE`/`EXPUNGE` calls plausibly changed) --
+  zero extra round trips for every other folder.
+- **Safety valve**: the whole remaining `.replaying` file is
+  pre-scanned for `"J1 purge "` lines before executing anything; over
+  25 and no `-force-purges` refuses the *entire* folder's replay this
+  run (not just the excess), leaving the journal and cursor untouched
+  for a later run to resume or override.
+- **Per-line replay**: `flags` decodes the two hex masks into a
+  forced-on/forced-off/transparent verdict per bit (`mask_bit_forced()`)
+  for the three server-mapped attributes, and issues at most one
+  `+FLAGS.SILENT` and one `-FLAGS.SILENT` STORE covering only the
+  attributes actually forced one way (transparent bits are never
+  mentioned to the server). `purge` issues `+FLAGS.SILENT (\Deleted)`
+  then `UID EXPUNGE`, skipping (loud log, not fatal) if UIDPLUS is
+  absent. A record whose id decodes to a UIDVALIDITY other than the
+  folder's current one is dropped with a loud log line, cursor still
+  advances past it (case W7/case 7). `append` records are left
+  entirely alone -- replay halts at the first one, cursor not advanced
+  past it, so it (and everything after it) is retried, still
+  unimplemented, every run until Gate 3 exists.
+- **Crash safety**: the `journal_offset` cursor (new field in
+  `.MS_IMAPSync`) advances, and the state file is atomically rewritten,
+  only after each line's op gets a definite answer from the server
+  (including a deliberate skip) -- a crash mid-replay re-sends at most
+  one already-applied op next run, accepted per the design (`STORE` is
+  idempotent, re-purging an already-gone uid is a no-op).
+- A **folder-level UIDVALIDITY change** (the existing 3b path) is
+  already handled for free: `wipe_folder_contents()` deletes every file
+  in the folder directory, including both journal files, before
+  `replay_folder()` ever runs; `state.journal_offset` is explicitly
+  zeroed in that same reset block so a stale cursor can't survive it.
+
+New CLI flag: `-force-purges` (threaded through `sync_folder_once`/
+`sync_folder`/`main`), matching `-full-check`'s existing pattern.
+
+### Test results
+
+All against the real Fastmail account.
+
+- **imap-protocol-tests**: 14 passed, 0 failed, 0 skipped (cases 1-9
+  unchanged/still read-only; cases 10-14 new -- create, append+APPENDUID,
+  flags round-trip, expunge round-trip, mailbox-guard drill).
+- **imap-sync-tests**: 11 passed, 0 failed, 0 skipped -- cases 1a, 1b,
+  2, 3, 4, 5, 6 (the existing full-INBOX suite, unchanged, confirmed
+  still green) plus the four new writeback cases:
+  - **W2 flags round-trip**: PASS.
+  - **W3 purge round-trip**: PASS (message count consistent with
+    server `EXISTS` after the same run's mirror pass).
+  - **W4 safety valve**: PASS (26 fabricated purges refused without
+    `-force-purges`, journal/cursor left untouched; `-force-purges`
+    confirmed to override and clear it).
+  - **W7 stale-journal drill**: PASS (loud log line, journal fully
+    consumed, real message elsewhere in the folder left untouched).
+- **smtp-protocol-tests** (no recipient argument -- offline cases
+  only): 2 passed, 0 failed.
+- **imap-writeback-tests**: **1 passed, 2 failed** -- see the CRITICAL
+  FINDING above. Case 1's capture assertion itself still passes (the
+  four expected journal lines were written correctly); both suppression
+  assertions fail because "an ordinary imapsync run right after" is no
+  longer suppression-only as of this gate -- it also replays, for real,
+  against `INBOX/1-Admin/keys`.
+
+### Files touched, with compile status
+
+All compile-checked against `fossil cat` originals before/after.
+
+- `src/overhead/mail/hdrs/imap_prot.h` -- edited (three named entry
+  points + `imap_Create`, updated `imap_Select`/`imap_Examine`
+  comments). Header only; compiles as part of every `.c` file that
+  includes it (see below), no new warnings anywhere.
+- `src/overhead/mail/lib/imap_prot.c` -- edited (`imap_Create`,
+  `imap_UidStoreFlags`, `imap_UidExpunge`, `imap_Append`,
+  `imap_do_select`/real `imap_Select`, `examined_readwrite` field,
+  `imap_Reopen` mode-aware re-select). 12 -> 14 warnings, both new ones
+  the same pre-existing `-Wdeprecated-non-prototype` class (two new
+  `tlscon_Write` call sites in `imap_Append`); no new categories.
+- `src/overhead/mail/lib/imaptest.c` -- edited (five new subcommands:
+  `create`/`storeflags`/`expunge`/`append`/`fetchflags`, plus
+  `guard_mailbox()`). Compiles with only the same 3 pre-existing
+  warnings the file already had (none from the new code).
+- `src/overhead/mail/lib/Imakefile` -- edited (pre-existing build-gap
+  fix, see above: added `libcparser.a` to `TESTLIBS`). Not part of this
+  milestone's own scope, but necessary to make the required regression
+  suites buildable at all; flagged prominently as its own item.
+- `src/ams/msclients/imapsync/imap_sync.c` -- edited (`replay_folder()`
+  and helpers, `sync_state.journal_offset` field +
+  `load_state`/`write_state` support, `-force-purges` CLI flag threaded
+  through `main`/`sync_folder`/`sync_folder_once`). 8 -> 9 warnings (one
+  new instance of the pre-existing `dbg_fopen`-no-prototype class, for
+  the new `fopen(replayingpath, "r")` call); no new categories.
+- `revival/tests/imap-protocol-tests` -- edited (cases 10-14,
+  `imaptest_write()` guard wrapper). Not C; n/a for compile status.
+  14/14 live.
+- `revival/tests/imap-sync-tests` -- edited (cases W2/W3/W4/W7, guard
+  wrappers, journal-fabrication helpers, folder-parametrized path
+  helpers). Not C; n/a for compile status. 11/11 live.
+- `revival/tests/README.md` -- edited (documented cases 10-14 and
+  W2/W3/W4/W7 in their respective suite sections).
+- Build/link chain re-verified after every source change: `make
+  install` in `src/overhead/mail/lib`, then
+  `src/atkams/messages/lib` (relinks `amsn.do`) and
+  `src/ams/msclients/cui` (relinks `cuin`/`cui`), then
+  `src/ams/msclients/imapsync` (`imapsync` binary) -- each relinked
+  and reverified at least twice across the session's several `libmail.a`
+  changes.
+
+### Open questions / design decisions needing confirmation
+
+1. **The critical finding above is the primary open item.** Needs a
+   decision on how to make `imap-writeback-tests` safe to run again
+   (move it to `Revival/WritebackTest`, have it neutralize its own
+   journal before the suppression re-run, or something else), and
+   separately, whether/how to attempt recovery of the one lost message
+   in `INBOX/1-Admin/keys` (Fastmail-side, not something this session
+   can do).
+2. **`imap_Select`'s real implementation and `imap_Create`** are
+   additions beyond the three named entry points. I judged both as
+   necessary, spec-anticipated completions rather than new design
+   territory (detailed above) -- flagging for confirmation rather than
+   assuming it's fine.
+3. **The `Imakefile` `libcparser.a` fix** is outside this milestone's
+   subject matter (a pre-existing, unrelated gap) but was necessary to
+   get the required regression suites building at all from a clean
+   state. Flagging in case a different fix location/approach is
+   preferred.
+4. **Append replay (Gate 3)** is untouched, as scoped -- `replay_folder()`
+   halts at the first `J1 append` line it meets and does not advance
+   past it, so real journals containing appends (e.g. copy-in
+   operations) will accumulate an ever-growing unreplayed tail until
+   Gate 3 exists; flags/purges *after* an append in the same journal
+   file will not be replayed until the append ahead of them is handled.
+   This matches the gate's explicit scope boundary but is worth stating
+   plainly: Gate 2's replay is not a complete writeback story on its
+   own for any folder that also sees copy-in traffic.
+
+## Retarget fix report (2026-07-23)
+
+### Status
+
+Follow-up safety fix to the CRITICAL FINDING in the Gate 2 report
+above. Scope: `revival/tests/imap-writeback-tests` (test file only) and
+`revival/tests/README.md`'s matching section. No changes to
+`src/ams/libs/ms/`, `src/overhead/mail/lib|hdrs/`, or
+`src/ams/msclients/imapsync/` -- Gate 2's own uncommitted work there is
+untouched. No fossil commits. Diff at
+`revival/tests/imap-writeback-tests-retarget-session.diff` (tree root
+checkout, `fossil diff` scoped to the two changed files).
+
+### What changed
+
+1. **`FOLDER`** (line ~68) is now `"Revival/WritebackTest"`, not
+   `"INBOX/1-Admin/keys"`.
+2. **Hard safety assertion**: `assert_folder_is_sandbox(folder)`, a new
+   module-level helper, is the one enforcement point every
+   destructive/mutating call in the file funnels through --
+   `run_imapsync()`, `run_cui_mutations()`, `imaptest_wb()`, and the new
+   cleanup step all call it before doing anything. It compares against
+   a hardcoded literal (`SANDBOX_FOLDER = "Revival/WritebackTest"`),
+   deliberately not against the mutable `FOLDER` variable itself --
+   comparing a variable to itself would be a tautology and exactly
+   reproduce the failure mode that caused the incident (a folder name
+   sitting in `FOLDER` with only a code comment, no assertion, as
+   protection). `main()` additionally asserts the literal
+   `assert FOLDER == "Revival/WritebackTest"` right after the
+   live-credentials check, before any network or `cui` activity, per
+   the original spec's "assert it" requirement. Matches the guard
+   convention Gate 2 already established: `imaptest.c`'s own
+   `guard_mailbox()` (C level, hardcoded `WRITE_MAILBOX_GUARD`) and
+   `imap-sync-tests`' `assert_write_mailbox()`/`imap-protocol-tests`'
+   identical pattern (Python level) -- this is now the third,
+   independent copy of the same rule, consistent with the existing
+   "a safety rule this important should not have exactly one
+   enforcement point" philosophy.
+3. **Seeding**: `Revival/WritebackTest` starts empty, unlike the old
+   real folder, so `main()` now provisions it (`imaptest_wb("create",
+   FOLDER)`, idempotent) and appends two throwaway `\Seen`-flagged
+   messages via a new `append_seed_message()` helper before the fresh
+   mirror -- same `imap_Append`/`imaptest.test append` mechanism
+   `imap-sync-tests`' W-cases use (`append_test_message()`), adapted
+   with an explicit `\Seen` flag so case 1's existing "`type 1` is a
+   no-op" assumption (originally true because the old real folder was
+   long-read) still holds without depending on real mail history.
+4. **Cleanup**: `main()`'s body is now wrapped in `try/finally`; the
+   `finally` block re-asserts the sandbox guard, `EXAMINE`s the folder,
+   and `expunge`s `1:*` if non-empty -- mirroring `imap-sync-tests`' W-case
+   "writeback cleanup" step exactly, so the mailbox always ends a run
+   at 0 messages regardless of pass/fail.
+5. **Docstring/comments**: module docstring and the `FOLDER` block
+   comment rewritten to describe current reality (real writes, confined
+   to the sandbox, seeded/cleaned up by the suite itself) and to
+   reference this incident briefly rather than repeat the now-false
+   "no IMAP write code exists" framing. Left an explicit in-code NOTE at
+   the suppression-check call site (see "known, accepted mismatch"
+   below) so a future reader hits the explanation right where the
+   surprising behavior occurs, not just in this report.
+6. `revival/tests/README.md`'s `imap-writeback-tests` section rewritten
+   to match (sandbox mailbox, seeding, cleanup, the guard, and the
+   known suppression-check mismatch below).
+
+### Live run result
+
+1 passed, 2 failed, 0 skipped:
+
+- **PASS** -- "1 capture: `.MS_Journal` contains exactly the expected
+  records (mark-read no-op, delete, undelete, delete, purge)".
+- **FAIL** -- "1 suppression: an ordinary imapsync run right after adds
+  zero journal records" and "1 suppression: a forced flags-refresh run
+  ... still adds zero journal records".
+
+Every `EXAMINE`/`UID SEARCH`/`STORE`/`EXPUNGE`/`APPEND` in the run's
+output was against `Revival/WritebackTest` -- confirmed by inspecting
+the full transcript line by line; `INBOX` does not appear anywhere in
+the live output. Independently re-confirmed after the run via a bare
+`imaptest.test examine ... "Revival/WritebackTest"`: `EXISTS: 0`,
+matching the suite's own cleanup log line. Full transcript captured
+during this session; not attached here since it contains nothing beyond
+what's summarized above.
+
+### The two suppression FAILs are expected, not a regression of the incident
+
+This is the same "1 passed, 2 failed" pattern predicted in the Gate 2
+report's CRITICAL FINDING, now for a fully safe reason. Root cause:
+Gate 2's `replay_folder()` genuinely consumes a pending `.MS_Journal` on
+every ordinary `imapsync` run (`STORE`/`EXPUNGE` for real, then the
+journal file is removed/cursor zeroed). The suppression sub-cases'
+assertions (`post_plain == pre_journal`, `post_forced == pre_journal`)
+were written at Gate 1, when a captured journal simply sat there
+untouched forever -- they compare the real, non-empty pre-replay
+journal content against a post-replay state where the journal file no
+longer exists (`None`), which can never be equal. The *capture*
+half (case 1's own first assertion) is unaffected and passes correctly.
+This is a real, already-flagged (Gate 2 report, "Open questions" item
+1) test-design mismatch, not something this retarget was scoped to fix
+-- reconciling what "suppression" should even mean now that replay is
+real is a design decision (options already listed in the Gate 2
+report), left for a future gate. Left an inline NOTE comment at the
+call site in `imap-writeback-tests` pointing back here.
+
+### Diligence check: any other landmine in `revival/tests/`?
+
+Grepped `revival/tests/` for the combination that caused the incident:
+(a) real local `cui`/`messages` mutations against a mirrored copy of a
+real, non-sandbox folder, **and** (b) a subsequent `imapsync`
+re-invocation against that same folder.
+
+- **`imap-sync-tests`** (cases 1-6, the original INBOX-mirroring
+  suite): uses `cui` only via `cui_browse_check()`, which sends
+  `headers`/`type`/`quit` -- pure read-only browsing, no
+  `delete`/`undelete`/`purge` anywhere. No local mutation is ever
+  driven against the INBOX mirror, so nothing is ever journaled, so
+  `imapsync`'s replay path never has anything to act on for that
+  folder. Confirmed safe -- the belief stated in the task was correct,
+  verified by reading the file rather than assumed.
+- **`imap-sync-tests`' W2/W3/W4/W7 cases**: fabricate journal lines
+  directly (`write_journal_lines()`) rather than driving `cui`, and are
+  already confined to `Revival/WritebackTest` via
+  `assert_write_mailbox()`/`imaptest_wb()`. Safe by construction.
+- **`imap-protocol-tests`**: never invokes the `imapsync` binary at
+  all (no `IMAPSYNC`/replay-path constant anywhere in the file) -- it
+  drives `imap_prot.c` write entry points directly via
+  `imaptest.test`, confined to `Revival/WritebackTest`
+  (`imaptest_write()`'s own guard). Since `imapsync`'s replay is never
+  invoked here, there is no path from this file to a real folder's
+  `.MS_Journal` being acted on.
+- **`mime-display-tests`**, **`smtp-protocol-tests`**: no IMAP/`cui`
+  mutation combination present at all (grepped for `cui`/`CUI`/`IMAP`/
+  `imapsync`; only one incidental docstring hit in
+  `smtp-protocol-tests`, unrelated).
+
+**Conclusion: no other landmine of this kind exists in
+`revival/tests/`.** `imap-writeback-tests` (now fixed) was the only
+suite combining real local `cui` mutations with a subsequent real
+`imapsync` re-invocation against a non-sandbox folder.
+
+### What surprised me
+
+- How exactly the "1 passed, 2 failed" prediction in the Gate 2 report
+  played out live, down to the same shape -- good confirmation that the
+  retarget didn't accidentally paper over or hide the real semantic
+  question Gate 2 already flagged; it just made asking that question
+  safe to do repeatedly.
+- `imaptest_wb()`'s first draft (mirroring `imap-sync-tests`' helper
+  too literally) asserted a hardcoded constant against itself
+  (`assert_folder_is_sandbox(SANDBOX_FOLDER)`), which is vacuously true
+  and provides zero protection -- caught this on review before running
+  anything live and refactored `imaptest_wb()`/`imaptest_readonly()` to
+  take an explicit `folder` parameter asserted against, matching
+  `imap-sync-tests`' actual (non-vacuous) pattern. Worth noting as a
+  general lesson: copying a "guarded wrapper" convention without
+  copying *what* it guards against can silently produce a no-op guard.
+- Nothing else was unexpected -- the fix mechanically followed the
+  established `Revival/WritebackTest` conventions Gate 2 already built
+  (`imap-sync-tests`' W-cases, `imaptest.c`'s `guard_mailbox()`), and
+  the live run confirmed by direct inspection (transcript + independent
+  post-run `EXAMINE`) that nothing but the sandbox mailbox was ever
+  touched.
+
+## Suppression-semantics fix (2026-07-23)
+
+Resolved the "1 passed, 2 failed" test-design mismatch flagged above and
+in the Gate 2 report's open questions, ahead of dispatching Gate 3 (a
+fresh Gate 3 session would otherwise inherit a known-red regression
+suite and either misdiagnose it as its own bug or have to make this same
+call unprompted).
+
+Split the one conflated assertion into the two properties it was
+actually trying to prove: **replay** (an ordinary run right after
+capture must consume the pending journal for real -- file removed,
+cursor zeroed -- the opposite of Gate 1's old "unchanged" expectation)
+and **suppression** (with the journal now empty from replay, does a
+forced flags-refresh -- real `MS_AlterSnapshot` calls from real FETCH
+data -- spuriously create a *new* entry?). Checked against the
+now-empty baseline rather than the stale pre-replay content, which is
+what actually isolates "did suppression hold" from "did replay do its
+job."
+
+Live run: **3 passed, 0 failed, 0 skipped.** Post-run `EXAMINE` confirms
+`Revival/WritebackTest` empty; nothing else touched. `fossil status`
+scope unchanged (no new files touched beyond what Gate 2/the retarget
+already had in flight). All prior suites are now genuinely green;
+Gate 3 is unblocked pending wdc's go-ahead.
