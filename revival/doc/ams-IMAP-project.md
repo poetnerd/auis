@@ -328,8 +328,10 @@ the full spec/report:
   with `...` at every call site fixed it. See
   `revival/doc/claude-history/imap-writeback-REPORT.md` for the repro.
 
-Artifacts: `imap-writeback-session.diff` + `M4-HANDOFF.md` (tree root,
-uncommitted), `revival/doc/claude-history/imap-writeback-REPORT.md`.
+Committed 2026-07-23: `fb4876a` (code + tests), `aeef522` (docs).
+`imap-sync-tests` (not run at Gate 1 close) subsequently run clean:
+6 passed, 0 failed, 1 benign skip. See
+`revival/doc/claude-history/imap-writeback-REPORT.md` for the session detail.
 
 ### Milestone 5 — OAuth2
 
