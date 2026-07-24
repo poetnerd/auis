@@ -458,10 +458,10 @@ struct amsn *self;
     return(MS_FastUpdateState());
 }
 
-long amsn__MS_GetDirInfo(self, dirname, protcode, msgcount) 
+long amsn__MS_GetDirInfo(self, dirname, protcode, msgcount)
 struct amsn *self;
 char *dirname;
-long *protcode, *msgcount;
+int *protcode, *msgcount;
 {
     return(MS_GetDirInfo(dirname, protcode, msgcount));
 }
@@ -469,7 +469,8 @@ long *protcode, *msgcount;
 long amsn__MS_GetNewMessageCount(self, dirname, numnew, numtotal, lastolddate, InsistOnFetch)
 struct amsn *self;
 char *dirname, *lastolddate;
-long *numnew, *numtotal, InsistOnFetch;
+int *numnew, *numtotal;
+long InsistOnFetch;
 {
     return(MS_GetNewMessageCount(dirname, numnew, numtotal, lastolddate, InsistOnFetch));
 }
@@ -496,7 +497,7 @@ long amsn__MS_GetSubscriptionEntry(self, fullname, nickname, status)
 struct amsn *self;
 char *fullname;
 char *nickname;
-long *status;
+int *status;
 {
     return(MS_GetSubscriptionEntry(fullname, nickname, status));
 }
@@ -506,11 +507,11 @@ struct amsn *self;
 char *mapfile;
 long mailonly;
 long listall;
-long *numchanged;
-long *numunavailable;
-long *nummissing;
-long *numslowpokes;
-long *numfastfellas;
+int *numchanged;
+int *numunavailable;
+int *nummissing;
+int *numslowpokes;
+int *numfastfellas;
 {
     return(MS_NameChangedMapFile(mapfile, mailonly, listall, numchanged, numunavailable, nummissing, numslowpokes, numfastfellas));
 }

@@ -572,10 +572,10 @@ struct ams *self;
     return(0);
 }
 
-long ams__MS_GetDirInfo(self, dirname, protcode, msgcount) 
+long ams__MS_GetDirInfo(self, dirname, protcode, msgcount)
 struct ams *self;
 char *dirname;
-long *protcode, *msgcount;
+int *protcode, *msgcount;
 {
     ReportMissing("MS_GetDirInfo");
     return(0);
@@ -584,7 +584,8 @@ long *protcode, *msgcount;
 long ams__MS_GetNewMessageCount(self, dirname, numnew, numtotal, lastolddate, InsistOnFetch)
 struct ams *self;
 char *dirname, *lastolddate;
-long *numnew, *numtotal, InsistOnFetch;
+int *numnew, *numtotal;
+long InsistOnFetch;
 {
     ReportMissing("MS_GetNewMessageCount");
     return(0);
@@ -614,7 +615,7 @@ long ams__MS_GetSubscriptionEntry(self, fullname, nickname, status)
 struct ams *self;
 char *fullname;
 char *nickname;
-long *status;
+int *status;
 {
     ReportMissing("MS_GetSubscriptionEntry");
     return(0);
@@ -625,11 +626,11 @@ struct ams *self;
 char *mapfile;
 long mailonly;
 long listall;
-long *numchanged;
-long *numunavailable;
-long *nummissing;
-long *numslowpokes;
-long *numfastfellas;
+int *numchanged;
+int *numunavailable;
+int *nummissing;
+int *numslowpokes;
+int *numfastfellas;
 {
     ReportMissing("MS_NameChangedMapFile");
     return(0);

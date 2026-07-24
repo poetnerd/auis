@@ -132,12 +132,12 @@ class ams {
       MS_DebugMode(int mslevel, int snaplevel, int malloclevel) returns long;
       MS_DisambiguateFile(char *source, char *target, long MustBeDir) returns long;
       MS_FastUpdateState() returns long;
-      MS_GetDirInfo(char *dirname, long *protcode, long *msgcount) returns long;
-      MS_GetNewMessageCount(char *dirname, long *numnew, long *numtotal, char *lastolddate, long InsistOnFetch) returns long;
+      MS_GetDirInfo(char *dirname, int *protcode, int *msgcount) returns long;
+      MS_GetNewMessageCount(char *dirname, int *numnew, int *numtotal, char *lastolddate, long InsistOnFetch) returns long;
       MS_GetNthSnapshot(char *dirname, long which, char *snapshotbuf) returns long;
       MS_GetSearchPathEntry(long which, char *buf, long buflim) returns long;
-      MS_GetSubscriptionEntry(char *fullname, char *nickname, long *status) returns long;
-      MS_NameChangedMapFile(char *mapfile, long mailonly, long listall, long *numchanged, long *numunavailable, long * nummissing, long *numslowpokes, long *numfastfellas) returns long;
+      MS_GetSubscriptionEntry(char *fullname, char *nickname, int *status) returns long;
+      MS_NameChangedMapFile(char *mapfile, long mailonly, long listall, int *numchanged, int *numunavailable, int * nummissing, int *numslowpokes, int *numfastfellas) returns long;
       MS_NameSubscriptionMapFile(char *root, char *mapfile) returns long;
       MS_ParseDate(char *indate, int *year, int *month, int *day, int *hour, int *min, int *sec, int *wday, long *gtm) returns long;
       MS_PrefetchMessage(char *dirname, char *id, long getnext) returns long;
