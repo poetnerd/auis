@@ -361,8 +361,8 @@ long fontdesc__StringBoundingBox(font, graphic, string, width, height)
 struct fontdesc *font;
 struct graphic *graphic;
 char *string;
-int *width;
-int *height;
+long *width;
+long *height;
 {
   int w, a, d, ascent, descent, junk;
   register short *fwt, *fht;

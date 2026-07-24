@@ -171,7 +171,8 @@ struct figotext *self;
 
     if (self->textdirty) {
 	if (self->basis) {
-	    int tmp1, tmp2, count;
+	    long tmp1, tmp2;
+	    int count;
 	    char *cx, *cxend;
 
 	    self->textw = 0;

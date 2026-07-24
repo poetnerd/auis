@@ -89,7 +89,7 @@ methods:
     GetRealFontDesc(struct graphic *gr) returns struct font *;
 
     StringSize(struct graphic *gr, char * string, long * XWidth, long * YWidth) returns long;
-    StringBoundingBox(struct graphic *graphic, char *string, int *width, int *height) returns long;
+    StringBoundingBox(struct graphic *graphic, char *string, long *width, long *height) returns long;
     TextSize(struct graphic *gr, char * text, long TextLength, long *XWidth, long *YWidth)
 		returns long;
     WidthTable(struct graphic *gr) returns  short*; /* actually an array of short's */
