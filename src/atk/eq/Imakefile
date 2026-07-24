@@ -30,6 +30,8 @@
 CDEBUGFLAGS =
 #endif
 
+/* M2 ANSI sweep: catch implicit function declarations (revival/doc/roadmap.md, M2) */
+COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Werror=implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
 
 DOBJS = eq.do eqv.do
 IHFILES = eq.ih eqv.ih

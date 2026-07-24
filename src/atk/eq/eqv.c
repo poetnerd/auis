@@ -52,6 +52,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/eq/R
 #include <view.ih>
 #include <mark.ih>
 #include <im.ih>
+#include <string.h>
+
+/* eqview_Format is defined in draweqv.c; no header declares it,
+ * matching the same forward-reference style draweqv.c itself uses
+ * for its own internal call before the definition. */
+struct formula *eqview_Format();
 
 static int fudge = 5;		/* extra space: for visual balance and for cursor */
 static struct keymap *eqviewKeymap;

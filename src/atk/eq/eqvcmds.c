@@ -54,6 +54,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/eq/R
 #include <view.ih>
 #include <message.ih>
 #include <stdio.h>
+#include <string.h>
 
 #define MAXFILENAME 400
 
