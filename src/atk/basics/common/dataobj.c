@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <dataobj.eh>
 #include <attribs.h>
 #include <view.ih>
+#include <string.h>
 /* #include "dict.ih" */
 
 boolean dataobject__InitializeObject(classID, self)

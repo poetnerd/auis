@@ -71,6 +71,7 @@ static byte *pic = NULL;
 
 static void jselwxv();
 static int writeJFIF();
+int LoadJFIF();
 
 static int colorType, numColors, quality;
 static byte *image8, *image24;

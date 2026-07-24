@@ -27,6 +27,7 @@ char *fontsel_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 #endif
 
 #include <fontsel.eh>
+#include <string.h>
 
 #include <fontdesc.ih>
 

@@ -31,6 +31,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <andrewos.h>
 #include <class.h>
 #include <X11/Xlib.h>
+#include "atoms.h"
 
 main(argc, argv)
 int argc;

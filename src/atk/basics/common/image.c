@@ -61,6 +61,8 @@
 #include <andrewos.h>
 #include <class.h>
 #include <ctype.h>
+#include <math.h>
+#include <util.h>
 #include <netinet/in.h>	/* Get the definition for ntohl. */
 
 /* for maxpathlen */
@@ -73,6 +75,11 @@
 #include <image.eh>
 
 extern int errno;
+/* osi_GetTimes (overhead/util/lib/times.c) and to64/from64/fromqp
+   (overhead/util/lib/encode.c) have no declaring header anywhere in
+   the tree. */
+extern int osi_GetTimes();
+extern int to64(), from64(), fromqp();
 #define MAXFILELINE 255
 #define DEFAULT_SAVE_QUALITY (75)
 

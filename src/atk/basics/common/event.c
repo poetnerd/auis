@@ -40,6 +40,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
 #include <andrewos.h> /* sys/time.h */
 
+/* osi_GetTimes (overhead/util/lib/times.c) has no declaring header
+   anywhere in the tree. */
+extern int osi_GetTimes();
+
 static struct event *timerQueue = NULL;
 static long currSec;			/* seconds since last StartTimer call */
 static long tuBase;

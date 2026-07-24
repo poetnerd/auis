@@ -43,6 +43,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
 #include <class.h>
 #include <environ.eh>
+#include <string.h>
 
 extern ProgramName[];	/* blechhh */
 
@@ -51,6 +52,8 @@ extern char *AndrewDir();
 extern char *LocalDir();
 extern struct configurelist *ReadConfigureFile();
 extern char *GetConfig();
+extern int getprofileswitch(), getprofileint(), profileentryexists();
+extern int FreeConfigureList();
 
 /* used to avoid problems with null pointers expected to be
   treated as null strings */

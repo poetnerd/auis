@@ -60,6 +60,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 
 extern void PostMenus();
 extern void RotateCommand();
+extern void CenterCommand();
+extern void ZoomInCommand();
+extern void ZoomOutCommand();
+extern void ToolCommand();
+extern void PanCommand();
+extern void RegionSelectCommand();
+extern void TouchUpCommand();
+extern void ReflectChangesInExpansion();
+extern void FinishMovingDisplayBox();
+extern void MoveDisplayBoxCommand();
 
 void CenterViewSelection();
 void ViewHideHighlight();

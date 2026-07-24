@@ -97,6 +97,16 @@ typedef int (*XErrorHandler) ();
 #include <messitem.ih>
 #include <errprntf.h>
 
+/* errprntf.h has no prototype anywhere in the tree; ams.h's
+   "extern int errprintf();" is the only precedent found. */
+extern int errprintf();
+
+/* cmenu.h guards its typed prototypes with "#ifdef _STDC_", which is
+   never defined (the standard macro is __STDC__), so these two never
+   get declared through the header. */
+extern int cmenu_Destroy();
+extern int cmenu_Activate();
+
 static void HandleDropin();
 
 /* Note this constant also occurs in the cmenus package and in menubar.c */

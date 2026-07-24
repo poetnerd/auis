@@ -27,6 +27,7 @@ char *figv_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fig
 #endif 
 
 #include <math.h>
+#include <string.h>
 #include <figv.eh>
 
 #include <figure.ih>

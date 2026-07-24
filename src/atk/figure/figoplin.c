@@ -27,6 +27,7 @@ char *figoplin_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 #endif
 
 #include <math.h>
+#include <string.h>
 
 #include <figoplin.eh>
 

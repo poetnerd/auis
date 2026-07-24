@@ -27,6 +27,7 @@ char *figobj_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/f
 #endif 
 
 #include <figobj.eh>
+#include <string.h>
 
 #include <class.h>
 

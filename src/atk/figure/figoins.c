@@ -27,6 +27,7 @@ char *figoins_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 #endif
 
 #include <figoins.eh>
+#include <string.h>
 
 #include <view.ih>
 #include <dataobj.ih>

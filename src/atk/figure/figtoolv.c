@@ -29,6 +29,7 @@ char *figotoolv_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/at
 #include <figtoolv.eh>
 
 #include <ctype.h>
+#include <string.h>
 #include <class.h>
 #include <math.h>
 

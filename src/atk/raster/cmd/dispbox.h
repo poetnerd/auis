@@ -129,6 +129,16 @@ void DisplayBoxHideHighlight(/* self */);
 
 void UpdateDisplayBox(/* self, pix */);
 
+void DisplayBoxBlitOverlap(/* self, pix */);
+
+void DisplayBoxHide(/* self */);
+
+void DisplayBoxHideOverlappingHighlight(/* self, G, pix */);
+
+void DrawHighlightBehindDisplayBox(/* self, G, gray */);
+
+void SetPixelBehindDisplayBox(/* self, pix, x, y, bit */);
+
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   *

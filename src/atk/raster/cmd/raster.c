@@ -49,6 +49,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #define BUFBYTES	600	/* enough for 4792 bits */
 
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 #include <sys/param.h> /* Defines MAXPATHLEN among other things */
 #include <rect.h>
 
@@ -63,6 +65,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <oldrf.ih>
 #include <xwdio.ih> /* for WriteOtherFormat */
 #include <ctype.h>
+
+/* to64/from64/fromqp (overhead/util/lib/encode.c) have no declaring
+   header anywhere in the tree. */
+extern int to64(), from64(), fromqp();
 
 
 boolean raster__InitializeObject(ClassID, self)

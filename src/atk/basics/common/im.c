@@ -45,6 +45,7 @@ Figure out some way to handle levels of user.  Macros should probably not be an 
 #ifndef MAXPATHLEN
 #include <sys/param.h>
 #endif
+#include <sys/stat.h>
 #include <setjmp.h>
 #include <andyenv.h>
 #define INTERACTION_MANAGER

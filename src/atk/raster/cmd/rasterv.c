@@ -111,6 +111,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 
 #include <dispbox.h>
 
+/* os_system (overhead/util/lib/system.c) has no declaring header
+   anywhere in the tree. */
+extern int os_system();
+
 static void ToggleDebug();
 
 extern boolean FindFrameHelp();

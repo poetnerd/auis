@@ -43,6 +43,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <proctbl.eh>
 
 static struct proctable_Entry *LookupHash();
+/* FoldedEQ (overhead/util/lib/foldedeq.c) has no declaring header
+   anywhere in the tree -- only the FOLDEDEQ macro in util.h, which
+   calls it internally without prototyping it. */
+extern int FoldedEQ();
 static int ModuleClear();
 static int HashName();
 
