@@ -364,7 +364,8 @@ char *string;
 long *width;
 long *height;
 {
-  int w, a, d, ascent, descent, junk;
+  long w, junk;
+  int a, d, ascent, descent;
   register short *fwt, *fht;
   register char *p;
   static struct fontdesc_charInfo ci;
@@ -375,7 +376,7 @@ long *height;
   fht = fontdesc_HeightTable (font, graphic);
   if (fwt == NULL || fht == NULL)
     return 0;
-  fontdesc_StringSize (font, graphic, string, (long *) &w, (long *) &junk);
+  fontdesc_StringSize (font, graphic, string, &w, &junk);
   for (p = string, a = 0, d = 0;  *p != (char) 0;  p += 1)
     {
       fontdesc_CharSummary (font, graphic, *p, &ci);
