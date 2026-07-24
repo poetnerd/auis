@@ -14,12 +14,19 @@ needed the identical rhythm under a different flag. This file covers
 only what's specific to M2: the flag mechanics, the fallout taxonomy,
 the census, and ordering.
 
-**Status (2026-07-24):** mechanics and taxonomy below are seeded from
-a classification census, not yet validated by an actual fixing pass.
-Treat the taxonomy as a strong prior, not settled fact, until the
-first pilot directory (`atk/eq`) closes its gate — update this file
-with real findings the way `m1-rollout-runbook.md` was written
-*after* its pilots, not before.
+**Status (2026-07-24):** pilot (`atk/eq`, rollout point 1) closed its
+gate the same day. 10/10 predicted instances confirmed, both
+predicted categories hit (missing standard header, same-directory
+forward reference), gate green tree-wide and subtree-local. One
+process gap found and folded into `rollout-procedure.md`: directories
+with generated sources (`Parser()`/bison, presumably `LexFile` too)
+need `make depend` before a subtree-local `install`, or the missing
+generated header masks real fallout behind a fatal error. The
+"missing in-tree/project header" and "possible genuine bug" taxonomy
+categories below are still unexercised — one pilot, one small/leaf
+directory, all standard-library or single-precedent fallout. Treat
+those two categories as a prior until a directory that hits them
+closes its own gate.
 
 ## What the flag does
 
@@ -72,13 +79,18 @@ make dependInstall`. M2's flag only changes diagnostic severity for
 `.c` files compiled *inside* the flagged directory; the resulting
 `.o` and any installed headers are otherwise unchanged, so a flagged
 directory's fallout is local to itself. Corollary: a subtree-local
-`make clean; make -k install` is plausibly a sufficient per-directory
-gate, with a full tree-wide gate only at coarser checkpoints (session
-end, or every few directories) rather than after every single one.
-**Not yet ruled on** — the `atk/eq` pilot should run the full
-tree-wide gate anyway and report whether it caught anything the
-subtree-local build didn't, so the relaxation is decided from
-evidence, not assumption.
+`make clean && make depend && make -k install` (the `depend` step is
+required — see `rollout-procedure.md`) is plausibly a sufficient
+per-directory gate, with a full tree-wide gate only at coarser
+checkpoints (session end, or every few directories) rather than after
+every single one. **One data point so far, not yet a ruling**: the
+`atk/eq` pilot ran the full tree-wide gate anyway (first-ever M2
+session) and it caught nothing the corrected subtree-local build
+hadn't already shown — supports the relaxation, but from one small
+leaf directory with no other directories relinking against its
+objects. Still run the full tree-wide gate for at least the next
+directory or two, ideally one with more external consumers, before
+treating this as settled.
 
 ## Census (2026-07-24, `make -k`, tree-wide, not yet acted on)
 
@@ -173,10 +185,7 @@ above), so there's no equivalent asymmetry to sequence around.
 Proposed order, pending wdc's sign-off:
 
 1. **Pilot: `atk/eq`** (10 instances, 4 files: `eq.c`, `symbols.c`,
-   `eqv.c`, `eqvcmds.c`). Small, already well-understood (M1's own
-   pilot A), and its 10 instances already sample both the
-   missing-standard-header and same-directory-forward-reference
-   categories — a good cheap first read on the real taxonomy.
+   `eqv.c`, `eqvcmds.c`) — **done 2026-07-24**, see "Status" above.
 2. Small/leaf directories next (roughly 2–20 instances each): `atk/
    figure`, `atk/frame`, `atk/adew`, `atk/value`, `atk/lookz`,
    `atk/help/src`, `atk/extensions`, `overhead/cmenu`, `overhead/

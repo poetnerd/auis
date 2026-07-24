@@ -25,6 +25,21 @@ milestone runbook fills in the mechanics of "flag" and "force regen"
 for its own tool, and the fallout taxonomy for "fix fallout" — the
 surrounding rhythm doesn't change.
 
+**Generated-source directories need `depend` before a subtree-local
+build.** Found M2 pilot session, `atk/eq`, 2026-07-24: a directory
+using `Parser()`/bison (or, presumably, `LexFile`/flex) wires its
+generated header/source only into the `depend::` Makefile target, not
+`all`/`install`. `make clean` deletes the generated files; a bare
+`make -k install` afterward hits a *fatal* "file not found" on the
+generated header before the compiler ever reaches whatever real
+diagnostic the rollout point is looking for — silently hiding
+fallout behind an unrelated failure. The tree-wide gate never hits
+this (`dependInstall:: depend` in `config/imake.tmpl` always runs
+`depend` first), only a subtree-local recipe that skips straight to
+`install`. Use `make clean && make depend && make -k install` (or
+`make -k dependInstall`) for any directory-local rebuild, not just
+`make clean && make -k install`.
+
 ## Logging
 
 ALL build output — local rebuilds and the tree-wide gate alike —

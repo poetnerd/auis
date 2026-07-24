@@ -1550,7 +1550,23 @@ call site and definition tree-wide *before* any mass file editing starts
   subtree-by-subtree (`src/config/darwin/system.mcr` COMPILERFLAGS);
   fix by adding `#include`s or `extern` declarations at call sites.
   Closes Variant 1 permanently — it has cost debugging time on every
-  subtree activation so far.
+  subtree activation so far. Procedure, census (2,353 instances/396
+  files, 2026-07-24), fallout taxonomy, and ordering:
+  `m2-rollout-runbook.md` (shared session rhythm: `rollout-procedure.md`).
+  Rollout points:
+  1. [x] Pilot — `atk/eq` (done 2026-07-24; 10/10 census instances
+     fixed — 8 missing `<string.h>`, 2 `eqview_Format` cross-file
+     forward reference with no declaring header, fixed with an
+     untyped K&R forward decl matching the tree's one existing
+     precedent for it. Gate green, tree-wide and subtree-local both
+     clean — first data point (not yet a ruling) that M2 fallout
+     stays directory-local, unlike M1's cross-directory blast radius.
+     Found one procedure gap, folded into the runbook: directories
+     with bison/lex-generated sources need `make depend` before the
+     subtree-local `install`, or the generated header's absence masks
+     real warnings behind a fatal error.)
+  2. [ ] Small/leaf directories, batched (see runbook's proposed
+     ordering)
 - **M3 — Definition conversion.** `ansify` (`revival/tools/ansify`,
   built and validated 2026-07-08 — see porting-assessment §14):
   static-fix tools → class methods/classprocs by signature-DB lookup
