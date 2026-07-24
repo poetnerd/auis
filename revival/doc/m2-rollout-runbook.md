@@ -90,7 +90,7 @@ Verify the same way as M1's `CLASSFLAGS`: regenerate the Makefile,
 then `grep -n COMPILERFLAGS Makefile` and confirm the override line
 appears after `system.mcr`'s default (last assignment wins).
 
-## Gate scope — recommended settled, three data points
+## Gate scope — ruled 2026-07-24, checkpoint schedule below
 
 `rollout-procedure.md`'s "Gate definition" leaves the actual scope to
 each milestone. M1's typed `.ih` casts are installed to
@@ -122,9 +122,36 @@ fallout beyond the subtree-local builds — this time including
 `messages` app's actual mail-store logic), at 528 instances the
 largest single batch by volume so far. Four-for-four, including both
 of the two heaviest/most-widely-consumed directories examined to
-date. Strengthens the case for relaxing to per-checkpoint tree-wide
-gates rather than per-batch; still pending wdc's explicit sign-off
-before acting on it.
+date.
+
+**Ruling (2026-07-24, wdc):** relax to a checkpoint schedule for the
+remainder of M2 (bucket 4 + `ams/libs/ms`) rather than a full
+tree-wide gate on every session. Every directory still always gets its
+own subtree-local gate (`make clean && make depend && make -k
+install`) — that's never skipped. The full tree-wide gate
+(`make Clean && make dependInstall`) is skipped for routine bucket-4
+sessions and kept for sessions carrying elevated risk:
+
+- **Skip the tree-wide gate** (subtree-local only) for: `overhead/
+  util/lib`, `overhead/mail/metamail/metamail`, `atk/text`, `atk/
+  rofftext`, `atk/table`, `overhead/mail/lib` — structurally the same
+  shape as the four already-proven data points.
+- **Keep the tree-wide gate** for: `atkams/messages/lib` (the
+  `messages` app's actual backend, not just a linked consumer —
+  highest consequence if anything leaks), `contrib/zip/lib` (the
+  tree's own history flags this as the highest-defect-density
+  directory — see `porting-assessment.md` §17's Xft bug history), and
+  `ams/libs/ms` gated **both before and after** its session (~38% of
+  the entire M2 census, fdplumb include-order history — see the
+  Census section above).
+- **Fixed milestone checkpoints regardless of which directories
+  preceded them**: end of bucket 4 (before starting `ams/libs/ms`),
+  and end of `ams/libs/ms` — which is also the end of M2 entirely, so
+  it doubles as the definitive "M2 complete" gate before M3 starts.
+
+Net: roughly 5 of the remaining 9 sessions skip the full rebuild, the
+other 4 keep it, bracketing the riskiest/most consequential remaining
+work with full verification while cutting the routine cost elsewhere.
 
 ## Census (2026-07-24, `make -k`, tree-wide, not yet acted on)
 
@@ -338,12 +365,26 @@ Proposed order, pending wdc's sign-off:
      this bucket's stale "mid-size" estimate — `ams/libs/cui` alone
      was 350), see "Status" above and
      `claude-history/m2-batch3b-REPORT.md`.
-4. Large, dedicated-session territory (~70–140): `overhead/util/lib`,
-   `overhead/mail/metamail/metamail`, `atk/text`, `atk/rofftext`,
-   `atk/table`, `overhead/mail/lib`, `atkams/messages/lib`,
-   `contrib/zip/lib`.
+4. Large, dedicated-session territory (~70–140). Gate per the "Gate
+   scope" ruling above — subtree-local gate always required; tree-wide
+   gate only where marked:
+   - `overhead/util/lib` — subtree-local gate only.
+   - `overhead/mail/metamail/metamail` — subtree-local gate only.
+   - `atk/text` — subtree-local gate only.
+   - `atk/rofftext` — subtree-local gate only.
+   - `atk/table` — subtree-local gate only.
+   - `overhead/mail/lib` — subtree-local gate only.
+   - `atkams/messages/lib` — **tree-wide gate required** (the
+     `messages` app's actual backend).
+   - `contrib/zip/lib` — **tree-wide gate required** (tree's
+     highest-defect-density directory).
+   - After the last bucket-4 directory, regardless of which one it
+     was: **tree-wide gate required** (fixed milestone checkpoint,
+     before starting `ams/libs/ms`).
 5. **`ams/libs/ms` (892) last**, its own dedicated session, whoever
-   takes it briefed on the fdplumb history first.
+   takes it briefed on the fdplumb history first. **Tree-wide gate
+   required both before starting and after finishing** — the second
+   of these is also M2's own completion gate, before M3 starts.
 
 ## Hard stops specific to M2
 
