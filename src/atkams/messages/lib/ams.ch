@@ -139,7 +139,7 @@ class ams {
       MS_GetSubscriptionEntry(char *fullname, char *nickname, long *status) returns long;
       MS_NameChangedMapFile(char *mapfile, long mailonly, long listall, long *numchanged, long *numunavailable, long * nummissing, long *numslowpokes, long *numfastfellas) returns long;
       MS_NameSubscriptionMapFile(char *root, char *mapfile) returns long;
-      MS_ParseDate(char *indate, long *year, long *month, long *day, long *hour, long *min, long *sec, long *wday, long *gtm) returns long;
+      MS_ParseDate(char *indate, int *year, int *month, int *day, int *hour, int *min, int *sec, int *wday, long *gtm) returns long;
       MS_PrefetchMessage(char *dirname, char *id, long getnext) returns long;
       MS_SetAssociatedTime(char *fullname, char *newvalue) returns long;
       MS_SetCleanupZombies(long doclean);

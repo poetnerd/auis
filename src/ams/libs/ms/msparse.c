@@ -38,7 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 MS_ParseDate(indate, year, month, day, hour, min, sec, wday, gtm)
 char *indate;
-int *year, *month, *day, *hour, *min, *sec, *wday, *gtm;
+int *year, *month, *day, *hour, *min, *sec, *wday;
+long *gtm;
 {
     struct tm TmBuf;
 

@@ -1156,7 +1156,8 @@ struct captions *self;
     char ErrorText[256], Sdate[1+AMS_DATESIZE], Edate[1+AMS_DATESIZE], DBuf[400];
     long numfound, j, orgpos;
     struct CaptionCache *cc;
-    long year, month, day, hour, min, sec, wday, gtm;
+    int year, month, day, hour, min, sec, wday;
+    long gtm;
 
     captions_GuaranteeFetchedRange(self, 0, self->FolderSize);
     if (self->MarkCount > 0) {

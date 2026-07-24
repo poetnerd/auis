@@ -109,7 +109,7 @@ struct amss *self;
     return(CUI_DirectoriesToPurge());
 }
 
-long amss__CUI_DisambiguateDir(self, shortname, longname) 
+long amss__CUI_DisambiguateDir(self, shortname, longname)
 struct amss *self;
 char *shortname, *longname;
 {
@@ -324,7 +324,7 @@ char *tolist;
     return(CUI_ResendMessage(cuid, tolist));
 }
 
-long amss__CUI_RewriteHeaderLine(self, addr, newaddr) 
+long amss__CUI_RewriteHeaderLine(self, addr, newaddr)
 struct amss *self;
 char *addr, *newaddr;
 {
@@ -530,13 +530,13 @@ char *filename;
 long amss__MS_ParseDate(self, indate, year, month, day, hour, min, sec, wday, gtm)
 struct amss *self;
 char *indate;
-long *year;
-long *month;
-long *day;
-long *hour;
-long *min;
-long *sec;
-long *wday;
+int *year;
+int *month;
+int *day;
+int *hour;
+int *min;
+int *sec;
+int *wday;
 long *gtm;
 {
     return(MS_ParseDate(indate, year, month, day, hour, min, sec, wday, gtm));

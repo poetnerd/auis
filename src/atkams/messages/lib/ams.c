@@ -187,7 +187,7 @@ struct ams *self;
     return(0);
 }
 
-long ams__CUI_DisambiguateDir(self, shortname, longname) 
+long ams__CUI_DisambiguateDir(self, shortname, longname)
 struct ams *self;
 char *shortname, *longname;
 {
@@ -424,7 +424,7 @@ char *tolist;
     return(0);
 }
 
-long ams__CUI_RewriteHeaderLine(self, addr, newaddr) 
+long ams__CUI_RewriteHeaderLine(self, addr, newaddr)
 struct ams *self;
 char *addr, *newaddr;
 {
@@ -656,13 +656,13 @@ char *filename;
 long ams__MS_ParseDate(self, indate, year, month, day, hour, min, sec, wday, gtm)
 struct ams *self;
 char *indate;
-long *year;
-long *month;
-long *day;
-long *hour;
-long *min;
-long *sec;
-long *wday;
+int *year;
+int *month;
+int *day;
+int *hour;
+int *min;
+int *sec;
+int *wday;
 long *gtm;
 {
     ReportMissing("MS_ParseDate");
