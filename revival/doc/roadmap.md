@@ -1686,7 +1686,21 @@ call site and definition tree-wide *before* any mass file editing starts
      gate schedule ruled 2026-07-24, see `m2-rollout-runbook.md`'s
      "Gate scope" section — subtree-local gate always required,
      tree-wide gate only where marked below):
-     - [ ] `overhead/util/lib` — subtree-local gate only.
+     - [x] `overhead/util/lib` — subtree-local gate only (done
+       2026-07-24; 74/74 instances fixed across 29 files — first
+       bucket-4 directory where the real count matched the stale
+       estimate exactly — see `m2-utillib-REPORT.md`. Confirms rather
+       than undermines the gate-scope ruling: statically linked into
+       both `runapp` and `amsn.do`, same shape as the four directories
+       that already proved subtree-local sufficiency. Found a real
+       methodology blind spot: `malloc`/`realloc`/`free` are clang
+       builtins, so an undeclared call to one doesn't trigger the M2
+       diagnostic at all — invisible to the `-k` census (caught via a
+       `svcconf.c` near-miss before it became a bug; folded into
+       `rollout-procedure.md`). First live test of the new
+       command-style guidance: zero permission prompts across ~90 tool
+       calls, strongly positive. Runtime check user-verified (`ez`,
+       `messages`, test email sent), no regressions.)
      - [ ] `overhead/mail/metamail/metamail` — subtree-local gate only.
      - [ ] `atk/text` — subtree-local gate only.
      - [ ] `atk/rofftext` — subtree-local gate only.

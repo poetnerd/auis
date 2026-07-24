@@ -32,8 +32,10 @@ is sufficient") now has **four** data points, including
 common` (statically linked AND M1's own former largest-blast-radius
 directory), and batch B's `ams/libs/cui` (linked directly into
 `messages`'s `amsn.do`, at 528 instances the largest single-batch
-volume yet) — recommend settled, see "Gate scope" below; ruling still
-wdc's to make explicitly. Two process gaps found and folded into
+volume yet). **Ruled 2026-07-24 (wdc)**: checkpoint schedule for the
+rest of M2 rather than a tree-wide gate every session — see "Gate
+scope" below for the full per-directory schedule. Two process gaps
+found and folded into
 `rollout-procedure.md`: directories with generated sources
 (`Parser()`/bison) need `make depend` before a subtree-local
 `install` (pilot, reconfirmed by batch B's `overhead/eli/lib`); files
@@ -47,7 +49,24 @@ unrelated to this M2 work, root-caused and **fixed** 2026-07-24
 `overhead/eli/lib` has zero live runtime consumers in this build
 (`ams/ms`/`SNAP_ENV` disabled, `rdemo` unreferenced) — a structural
 finding, not a testing gap; flagged in `claude-history/
-m2-batch3b-REPORT.md` §10, not acted on (out of M2's scope).
+m2-batch3b-REPORT.md` §10, not acted on (out of M2's scope). Bucket
+4's first directory, `overhead/util/lib`, closed 2026-07-24: 74/74
+instances fixed (first bucket-4 directory where the real count
+matched the stale estimate exactly), subtree-local gate only per the
+ruling — see `claude-history/m2-utillib-REPORT.md`. Found a new
+methodology blind spot, folded into `rollout-procedure.md`'s
+"Logging" section: `malloc`/`realloc`/`free` are clang builtins, so a
+call with zero declaration anywhere doesn't trigger
+`-Werror=implicit-function-declaration` at all — invisible to the
+`-k` census (caught via a `svcconf.c` near-miss before it became a
+bug). Also the first live test of `rollout-procedure.md`'s new
+"Command style" guidance (separate tool calls instead of chained/
+looped shell commands): zero permission prompts across ~90 tool
+calls in that session, strongly positive — though the dedicated Grep/
+Glob tools the guidance recommends weren't actually available to that
+delegated session (only `Read` and individual `Bash grep` calls were;
+both worked with zero prompts), so the guidance's tool-substitution
+wording was softened to not assume Grep/Glob availability.
 
 ## What the flag does
 
@@ -196,10 +215,25 @@ instances shows most trace to a handful of project-local functions
 `project_fdplumb_include_order_abi` — the include-order ABI hazard
 already found there). **Do not treat `ams/libs/ms` as a naive
 pilot or early batch target** — whoever takes it should read the
-fdplumb history first (`fdplumb-REPORT.md`, `porting-assessment.md`
-§18) given the file's prior form with this exact function family.
-Likely a single missing/misordered `#include` fixes most of its 892
-at once, but confirm that empirically rather than assuming.
+fdplumb history first: `claude-history/fdplumb-REPORT.md` in full
+(the include-order ABI hazard, the fd-name ledger/`dbg_dup2` bug, and
+the fdplumb-unrelated preference-blackout investigation are all
+there). **Correction (2026-07-24, found by `overhead/util/lib`'s
+session):** the `porting-assessment.md` §18 citation this section
+used to carry is stale — that section contains zero occurrences of
+"fdplumb" and is actually about a different, related bug (the
+variadic-caller ABI hazard, `project_variadic_caller_abi_hazard`).
+Use `fdplumb-REPORT.md` as the sole background source, not
+`porting-assessment.md`. Also: `overhead/util/lib` (where `fdplumb.c`
+itself lives) is 6 files, `fdplumb.c` through `fdplumb6.c`, not 4 —
+found by the same session; its own report also found a second,
+`fdplumb.h`-unrelated gap worth reading before `ams/libs/ms`'s
+session: the implementation files' internal `RegisterOpenFile`/
+`RegisterCloseFile`/real-I/O-primitive calls are themselves
+undeclared same-directory forward references (`m2-utillib-REPORT.md`
+§7). Likely a single missing/misordered `#include` fixes most of
+`ams/libs/ms`'s 892 at once, but confirm that empirically rather than
+assuming.
 
 ## Fallout taxonomy (seeded from census text, unvalidated)
 
@@ -368,7 +402,9 @@ Proposed order, pending wdc's sign-off:
 4. Large, dedicated-session territory (~70–140). Gate per the "Gate
    scope" ruling above — subtree-local gate always required; tree-wide
    gate only where marked:
-   - `overhead/util/lib` — subtree-local gate only.
+   - `overhead/util/lib` — subtree-local gate only. **Done
+     2026-07-24**, see "Status" above and `claude-history/
+     m2-utillib-REPORT.md`.
    - `overhead/mail/metamail/metamail` — subtree-local gate only.
    - `atk/text` — subtree-local gate only.
    - `atk/rofftext` — subtree-local gate only.

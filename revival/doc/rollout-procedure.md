@@ -66,27 +66,36 @@ lever left, only a command-shape one:
   Chaining them into one `cd DIR && make clean && make depend && ...`
   line turns all of them into a single unmatched string. More tool
   calls in the transcript, but zero prompts, is the better trade here.
-- **Use the Read/Grep/Glob tools instead of shell `grep`/`sed -n`/
-  `cat` for census and file inspection.** They're a different
-  permission class from Bash and don't hit this gate at all. Anything
-  shaped like "for each of N files, check for a pattern/line" —
-  exactly the batch 3B census work (checking `#include`s, printing a
-  line number, grepping a function name across files) — is better
-  done as a Grep call with a multi-file glob, or a handful of separate
-  Grep/Read calls, than as a shell `for` loop. This is the fix for the
-  single largest source of prompts seen so far (multi-file `for`-loop
-  census commands), not a workaround for it.
-- **Avoid shell `for`/`while` loops and heredocs generally** where the
-  same result is reachable via repeated simple tool calls. They're not
-  just slower to get approved — a loop or heredoc is also the one
-  shape that can't safely be blanket-allowed even in principle (a
-  dangerous command buried inside a loop body wouldn't be caught by
-  any prefix-anchored `deny` rule), so it will always need either an
-  approval or a rewrite, never a config fix.
+- **Prefer the Read/Grep/Glob tools over shell `grep`/`sed -n`/`cat`
+  for census and file inspection, if they're available in your
+  session.** They're a different permission class from Bash and don't
+  hit this gate at all. **Correction (2026-07-24, `overhead/util/lib`
+  session):** Grep/Glob were not available in that delegated session
+  (`ToolSearch` found neither) — only `Read` was. Don't assume Grep/
+  Glob are on offer; check with `ToolSearch` early if unsure. Either
+  way, the fallback that matters is the next bullet.
+- **Avoid shell `for`/`while` loops and heredocs — issue one `Bash
+  grep`/`sed -n` call per file or pattern instead of looping.** This
+  is the fix for the single largest source of prompts seen so far
+  (multi-file `for`-loop census commands like batch 3B's), and it
+  works whether or not Grep/Glob are available: `overhead/util/lib`'s
+  session had neither tool, used ~25 separate `Bash grep` calls (one
+  pattern/file per call, never a loop) plus ~40 `Read` calls instead,
+  and got zero permission prompts on any of them. A loop or heredoc is
+  also the one shape that can't safely be blanket-allowed even in
+  principle (a dangerous command buried inside a loop body wouldn't be
+  caught by any prefix-anchored `deny` rule), so it will always need
+  either an approval or a rewrite, never a config fix.
 - When a genuine multi-step shell pipeline is unavoidable (e.g.,
   `grep | sed | sort > file` to build a dedup table from a build log),
-  it's fine to use one — just expect it to prompt once, and treat that
-  as the rare case rather than the routine one.
+  don't assume it'll just prompt once and pass — `overhead/util/lib`'s
+  session saw two piped/chained `nm` calls get denied outright with no
+  prompt at all (apparently how an unmatched compound command resolves
+  in a non-interactive/background session, not the interactive
+  "prompt and wait" behavior this doc originally assumed). Treat
+  "avoid chaining" as a hard rule in delegated sessions, not a
+  courtesy — reissue as separate calls rather than expecting a
+  pipeline to go through after one prompt.
 
 ## Logging
 
@@ -104,6 +113,24 @@ the blocker is fixed — confirmed twice now (M1 point 10 batch 1's
 `suite`, took four cycles without `-k`; M2's own pilot census,
 undercounted 367/74 vs. the real 2,353/396 on the first, non-`-k`
 attempt).
+
+A census can look complete and silently not be, via more than one
+mechanism — treat "the error count is 0/matches the stale estimate"
+as a reason to double-check, not to stop looking. Known so far,
+specific to M2's `-Werror=implicit-function-declaration` flag: (1)
+clang's default `-ferror-limit=20` truncates a single file's
+diagnostics past the 20th (see `m2-rollout-runbook.md`'s Census
+section — pass `-ferror-limit=0` on the fix-surfacing pass); (2)
+`malloc`/`realloc`/`free`/`calloc` are clang builtins, so a call with
+*zero* declaration anywhere in scope does not trigger the diagnostic
+at all — it's invisible to the census, not just truncated (found
+`overhead/util/lib` session, 2026-07-24, via a `svcconf.c` near-miss:
+four undeclared `malloc` calls, none in the error list). Practical
+consequence: whenever a file is already getting a `<stdlib.h>`/
+`<string.h>` edit for an unrelated reason, also grep that file for
+bare `malloc(`/`free(`/`realloc(`/`calloc(` call sites before moving
+on — don't trust "it wasn't in the error list" as proof a call is
+already correctly typed.
 
 ## Liveness census
 
