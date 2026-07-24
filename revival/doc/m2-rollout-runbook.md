@@ -14,19 +14,20 @@ needed the identical rhythm under a different flag. This file covers
 only what's specific to M2: the flag mechanics, the fallout taxonomy,
 the census, and ordering.
 
-**Status (2026-07-24):** pilot (`atk/eq`, rollout point 1) closed its
-gate the same day. 10/10 predicted instances confirmed, both
-predicted categories hit (missing standard header, same-directory
-forward reference), gate green tree-wide and subtree-local. One
-process gap found and folded into `rollout-procedure.md`: directories
+**Status (2026-07-24):** rollout points 1 (`atk/eq` pilot) and 2 (8-
+directory small/leaf batch) both closed their gates the same day.
+80/80 combined predicted instances confirmed across 9 directories, no
+volume surprises anywhere. All three taxonomy categories below are
+now validated by real fixing passes, not just the census-seeded prior
+they started as — see the taxonomy section for what changed. Gate
+scope ("subtree-local is sufficient") now has two data points,
+including one statically-linked, tree-wide-consumed directory
+(`overhead/cmenu`) with zero fallout beyond itself — see "Gate scope"
+below, recommended settled pending wdc's sign-off. One process gap
+found at the pilot and folded into `rollout-procedure.md`: directories
 with generated sources (`Parser()`/bison, presumably `LexFile` too)
 need `make depend` before a subtree-local `install`, or the missing
-generated header masks real fallout behind a fatal error. The
-"missing in-tree/project header" and "possible genuine bug" taxonomy
-categories below are still unexercised — one pilot, one small/leaf
-directory, all standard-library or single-precedent fallout. Treat
-those two categories as a prior until a directory that hits them
-closes its own gate.
+generated header masks real fallout behind a fatal error.
 
 ## What the flag does
 
@@ -83,14 +84,19 @@ directory's fallout is local to itself. Corollary: a subtree-local
 required — see `rollout-procedure.md`) is plausibly a sufficient
 per-directory gate, with a full tree-wide gate only at coarser
 checkpoints (session end, or every few directories) rather than after
-every single one. **One data point so far, not yet a ruling**: the
-`atk/eq` pilot ran the full tree-wide gate anyway (first-ever M2
-session) and it caught nothing the corrected subtree-local build
-hadn't already shown — supports the relaxation, but from one small
-leaf directory with no other directories relinking against its
-objects. Still run the full tree-wide gate for at least the next
-directory or two, ideally one with more external consumers, before
-treating this as settled.
+every single one. **Two data points now, recommend settled pending
+wdc's sign-off**: the `atk/eq` pilot and the rollout-point-2 batch
+(2026-07-24) both ran the full tree-wide gate anyway and it caught
+nothing the corrected subtree-local builds hadn't already shown. The
+batch is the stronger point — `overhead/cmenu` is statically linked
+into every ATK app via `runapp` (confirmed via `nm -g build/bin/
+runapp`), not a zero-consumer leaf like the pilot, and still showed
+zero fallout beyond its own subtree. Future rollout points can use
+subtree-local `make clean && make depend && make -k install` as the
+per-directory gate, with a full tree-wide gate at coarser checkpoints
+(session end, or every few directories) rather than after every
+single one — unless a future directory's fallout pattern gives reason
+to revisit.
 
 ## Census (2026-07-24, `make -k`, tree-wide, not yet acted on)
 
@@ -144,30 +150,68 @@ writing any declaration by hand.
   sibling files in the same directory already include, don't
   introduce a new include style. Zero semantic risk: these are
   well-known signatures, not guesses.
-- **Missing in-tree/project header.** Project-local functions defined
-  in another module (`errprintf`, `ReportError`, `dbg_fclose` family,
-  `mb_Destroy`, `index_Close`, `recordset_Free`, ...). Fix: find the
-  header that already declares it (grep the tree for its prototype)
-  and add that `#include`, matching how other callers in the tree
-  already reach it. If no header declares it, that itself is a
-  finding — escalate rather than hand-writing an extern from
-  inference.
+- **Missing in-tree/project header — three sub-cases, all validated
+  by rollout point 2 (2026-07-24).** Project-local functions defined
+  in another module. Check which sub-case applies before picking a
+  fix:
+  1. **A header exists, declares it, just isn't included.** Fix: add
+     the `#include`, matching how other callers in the tree already
+     reach it (`atk/adew/mkcon.c`'s `getprofileswitch`, declared in
+     `overhead/util/hdrs/util.h`, already reached the same way by
+     `atk/basics/common/environ.c`).
+  2. **A header exists in the flagged directory, declares sibling
+     functions from the same file, but not this one — and the
+     flagged directory already has its own local-`extern` habit for
+     that exact gap.** Don't extend the header from outside its own
+     directory (the M2 hard-stop against editing files outside the
+     flagged directory still applies) — match the existing local
+     precedent instead. Two confirmed instances: `overhead/cmenu`'s
+     `cmdraw.h` doesn't declare `FlipButton`/`DrawMenus`/
+     `SelectionPtrToNum` (all defined in sibling files `cmdraw.c`/
+     `cmmanip.c`), but `cmdraw.c` itself already had a hand-written
+     `extern int SelectionPtrToNum();` rather than adding it to the
+     header — followed that. `atk/help/src`'s `helpdb.c` already
+     includes `overhead/index/index.h`, which declares 11 sibling
+     `index_*`/`recordset_*` functions but not `index_Close`/
+     `index_Enumerate`/`index_GetData`/`recordset_Free` — added local
+     `extern`s in `helpdb.c` instead of editing `index.h`. Both cases:
+     the outside header looks stale/incomplete as its own finding,
+     worth a housekeeping pass whenever *that* directory is flagged,
+     but not an M2 fix.
+  3. **No header anywhere in the tree declares it, full stop.** Same
+     as the pilot's `eqview_Format`, just cross-directory instead of
+     same-directory: `osi_GetTimes` (`overhead/util/lib/times.c`,
+     called from `atk/frame`), `FoldedEQ` (`overhead/util/lib/
+     foldedeq.c`, called from `atk/lookz` — see below, this also
+     resolves the "possible typo" entry). Fix: local `extern`,
+     sourced from the real definition, same as the pilot's approach.
+  In all three sub-cases: confirm via `grep` before deciding — never
+  assume "no header found" without checking, and never hand-write a
+  declaration's types from inference when a real definition or
+  existing header can be read directly.
 - **Same-file/same-directory forward reference.** A function defined
   later in the same file, or in a sibling file in the same directory
-  with no shared header (M1 pilot found this shape too, in a
-  different guise — `atk/eq/eqv.c`'s `eqview_Format`, defined further
-  down in the same directory's sources but called before any
-  declaration is visible). Fix: whatever convention the directory
-  already uses for its other forward-declared functions — a
-  file-local prototype block, typically — not a new pattern.
-- **Possible genuine bug / typo — hard stop.** A called function that
-  doesn't exist anywhere in the tree, or the name is a close
-  misspelling of a real one (unconfirmed candidate from the census:
-  `pref.c:71`'s `FoldedEQ`). Before writing any declaration, `grep`
-  the tree for the exact name; if it isn't defined anywhere, this is
-  a real bug (dead code path, or a caller expecting a function that
-  was renamed/removed), not an M2 mechanical fix — report, don't
-  paper over it with a plausible-looking extern.
+  with no shared header (pilot: `atk/eq/eqv.c`'s `eqview_Format`,
+  same-directory; rollout point 2 added several same-*file* instances
+  — `atk/frame/framecmd.c`'s `frame_VisitFilePrompting`/
+  `frame_VisitNamedFile`/`frame_WriteFile`, `atk/lookz/tabrulv.c`'s
+  `FindClosestTab`, `overhead/fonts/cmd/fdbbdf.c`'s `fontcount`/
+  `fontcvt`). Fix: whatever convention the directory/file already
+  uses for its other forward-declared functions — a file-local
+  prototype block, typically — not a new pattern. Where no local
+  precedent exists in a single-file program (`fdbbdf.c`), plain
+  untyped K&R style matching the rest of the batch is the default.
+- **Possible genuine bug / typo — hard stop, category now EMPTY as of
+  rollout point 2.** A called function that doesn't exist anywhere in
+  the tree, or is a close misspelling of a real one. The runbook's
+  one named candidate, `pref.c:71`'s `FoldedEQ`, **is not a typo** —
+  confirmed real, correctly spelled, defined in
+  `overhead/util/lib/foldedeq.c`, just undeclared anywhere (see
+  "missing in-tree/project header" sub-case 3 above). No other
+  candidate turned up across 80 instances/9 directories so far.
+  Before writing any declaration, still `grep` the tree for the exact
+  name to confirm it resolves to sub-case 3, not this category — the
+  check matters even though the category is currently empty.
 - **Caution carried over from tonight's M2 point-0 session
   (`porting-assessment.md` §19):** a hand-written declaration with a
   wrong width/type (e.g. `int` vs `long`) compiles cleanly and fails
@@ -186,11 +230,15 @@ Proposed order, pending wdc's sign-off:
 
 1. **Pilot: `atk/eq`** (10 instances, 4 files: `eq.c`, `symbols.c`,
    `eqv.c`, `eqvcmds.c`) — **done 2026-07-24**, see "Status" above.
-2. Small/leaf directories next (roughly 2–20 instances each): `atk/
-   figure`, `atk/frame`, `atk/adew`, `atk/value`, `atk/lookz`,
-   `atk/help/src`, `atk/extensions`, `overhead/cmenu`, `overhead/
-   fonts/cmd`, etc. — batchable once the pilot proves the taxonomy,
-   same batching precedent as M1 point 10.
+2. Small/leaf directories: `atk/frame` (8), `atk/adew` (7), `atk/
+   value` (6), `atk/lookz` (7), `atk/help/src` (7), `atk/extensions`
+   (9), `overhead/cmenu` (18), `overhead/fonts/cmd` (8) — **done
+   2026-07-24 as one batch**, see "Status" above and
+   `claude-history/m2-batch2-REPORT.md`. (Corrected 2026-07-24 before
+   the batch ran: an earlier draft of this list also included
+   `atk/figure` here, using a stale count from the first,
+   undercounted non-`-k` census pass — its real count is 23, mid-size;
+   moved to bucket 3 below, where it already also appeared.)
 3. Mid-size (~20–70): `atk/basics/x`, `atk/basics/common`, `atk/
    figure`, `atk/syntax/tlex`, `atk/raster/cmd`, `overhead/eli/lib`,
    `ams/libs/cui`, `ams/msclients/nns`, `overhead/mail/metamail/

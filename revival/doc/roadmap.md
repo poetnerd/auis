@@ -1565,7 +1565,24 @@ call site and definition tree-wide *before* any mass file editing starts
      with bison/lex-generated sources need `make depend` before the
      subtree-local `install`, or the generated header's absence masks
      real warnings behind a fatal error.)
-  2. [ ] Small/leaf directories, batched (see runbook's proposed
+  2. [x] Small/leaf directory batch — `atk/frame`, `atk/adew`,
+     `atk/value`, `atk/lookz`, `atk/help/src`, `atk/extensions`,
+     `overhead/cmenu`, `overhead/fonts/cmd` (done 2026-07-24; 70/70
+     census instances fixed across 24 files, all three taxonomy
+     categories exercised — see `m2-batch2-REPORT.md`. Resolved the
+     runbook's open `FoldedEQ` question: real function, not a typo.
+     Found a third "missing in-tree/project header" sub-case: a
+     header exists but is stale/incomplete, and the flagged
+     directory already had its own local-extern habit for the gap
+     (`overhead/cmenu`'s `cmdraw.h`, `atk/help/src`'s `index.h`) —
+     matched that existing convention rather than editing the
+     outside header. Second data point for "subtree-local gate is
+     sufficient" — this time including a statically-linked,
+     tree-wide-consumed directory (`overhead/cmenu`) — zero fallout
+     beyond the flagged directories either time. Gate green,
+     8-directory runtime check user-verified (`ez`, `help`,
+     `fdbbdf`), no regressions.)
+  3. [ ] Mid-size directories, batched (see runbook's proposed
      ordering)
 - **M3 — Definition conversion.** `ansify` (`revival/tools/ansify`,
   built and validated 2026-07-08 — see porting-assessment §14):
