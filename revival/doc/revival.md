@@ -385,6 +385,32 @@ sample:
   symbols it actually calls now resolve inside its own binary rather
   than by chance.
 
+- **A four-function type mismatch that outlived the language it was
+  written for.** The mail server's directory-info, new-message-count,
+  subscription-entry, and changed-subscriptions calls were declared in
+  the class layer as returning their results through pointers to a
+  64-bit-wide integer, while every one of their actual C
+  implementations wrote through pointers to a plain 32-bit integer — a
+  disagreement present in the very first commit that ever brought this
+  source into version control, and certainly older than that. On the
+  machines this code was written for, the two integer sizes were the
+  same, so no data was ever lost no matter which one a caller believed;
+  the mismatch was invisible by coincidence, not by correctness. On a
+  modern 64-bit machine the two sizes differ, and coincidence stops
+  covering for the bug — except this one stayed hidden even here,
+  because the calling code had *also*, independently, been written
+  expecting the narrower size, restoring the coincidence one layer up.
+  It took a routine sweep fixing exactly the kind of caller/declaration
+  disagreement this bug produces — widening a caller to agree with the
+  class layer's declared type — to remove that second coincidence and
+  let the original one through: a folder's subscription-status line
+  began reporting a nonsensical negative count instead of a real one,
+  the first time in the software's history it had ever actually done
+  what its own interface claimed it did. Corrected by tracing every
+  affected function to its real C body and matching the class layer to
+  *that*, not the other way around — the class declaration, not the
+  implementation, was the thirty-year-old mistake.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

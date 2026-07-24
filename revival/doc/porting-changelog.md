@@ -17,7 +17,7 @@ See `porting-assessment.md` for bug-class analysis and strategy; `roadmap.md` fo
 
 ## LP64 bug classes fixed
 
-The codebase was written for ILP32 (32-bit int, long, pointer). Five distinct bug classes emerged on arm64 LP64. All five have been identified and swept. See `porting-assessment.md` §12 for full analysis.
+The codebase was written for ILP32 (32-bit int, long, pointer). Six distinct bug classes have emerged on arm64 LP64 so far; the first five have been identified and swept, the sixth is confirmed but not yet tree-wide audited. See `porting-assessment.md` §12–§19 for full analysis (the table below predates that section numbering; §19 covers variant #6).
 
 | Variant | Root cause | Scope |
 |---|---|---|
@@ -26,6 +26,7 @@ The codebase was written for ILP32 (32-bit int, long, pointer). Five distinct bu
 | #3 Zero-extension | `int -1` const through untyped dispatch, `long` receiver sees `0xFFFFFFFF` | `(-1L)` in observe.ch, value.ch, class.h |
 | #4 scanf %d | `%d` writes 32 bits into `long*`; upper 32 bits garbage | Full tree audit; 11 real bugs fixed |
 | #5 Dispatch int/long | Negative `int` arg through untyped dispatch to `long` param, sign bit lost | lpair, panel, dialog, dialogv, table, fad, srctext, eq, metax; full sweep committed |
+| #6 `.ch`/wrapper vs. real-impl width drift | Class wrapper forwards a `.ch`-typed pointer to an independently-declared bare K&R function whose real out-param width disagrees; invisible, no compiler warning either direction | 5 confirmed instances so far (`MS_GetConfigurationParameters` 07-18, `MS_ParseDate` + `MS_GetDirInfo`/`MS_GetNewMessageCount`/`MS_GetSubscriptionEntry`/`MS_NameChangedMapFile` 07-24), all in `ams/libs/ms`; not yet tree-wide audited — see porting-assessment.md §19 |
 
 ---
 
@@ -456,3 +457,80 @@ the text-near-inset symptom. Diagnostic scaffolding (the XGetImage
 readback and two prior-session `XGDEBUG`-gated logging blocks in the same
 function) was removed after confirmation; only the `XCopyArea` kick and
 its explanatory comment remain.
+
+### 2026-07-24 — M2 point 0: `-Wincompatible-pointer-types` census, three fixes, and the Group A rollout (with a live correction)
+
+**Note on the gap:** nothing was logged here between 07-12 and this entry;
+substantial work landed in that window (M1 rollout completion follow-ons,
+the AMS-over-IMAP writeback project through milestone 4, folder-visibility,
+mime-display, fdplumb, the `-fwritable-strings` fix) without a
+corresponding changelog entry. Not backfilled here — see each topic's
+`claude-history/*-REPORT.md` for what actually happened; a dedicated pass
+to backfill this file from those reports is still owed.
+
+**Census** (`revival/doc/claude-history/m2-census-REPORT.md`): classified
+all 483 `-Wincompatible-pointer-types` warnings from a fresh full build.
+67 `int*/long*` instances collapsed into 13 shared root shapes; 18
+`char** → char*` instances collapsed into one root cause. A stretch-goal
+sweep for LP64 variant #6 (see the table above) found `MS_ParseDate` live
+and reachable with uninitialized locals.
+
+**Three same-day fixes**, verified by full rebuild plus a live smoke test,
+committed separately (`0a6cf595ef`, `f4a9d6909b`, `c496c2a9ea`):
+- `fontdesc_StringBoundingBox`'s `.ch` signature widened to `long *`,
+  matching its `StringSize`/`TextSize` siblings (`fontdesc.ch`,
+  `fontdesc.c`); one caller (`atk/figure/figotext.c`) that genuinely used
+  `int` locals matching the *old* signature was widened to match, to
+  avoid turning a correct call into a new bug.
+- `MS_ParseDate` (LP64 variant #6, instance 2) — see porting-assessment.md
+  §19 for the full writeup.
+- `CUI_DisambiguateDir`/`CUI_RewriteHeaderLine`/`CUI_RewriteHeaderLineInternal`
+  — root cause was in `ams.ch` itself: three methods typed `char *` when
+  their real `ams/libs/cui/cuilib.c` implementations take `char **`.
+  Every one of the 18 callers was already correct; clang's own "remove &"
+  fix-it suggestion would have broken all of them. Fixed by widening the
+  three `.ch` signatures, not touching any caller.
+
+**Group A rollout**: the remaining 45 `int*/long*` instances (9 shapes,
+20 files) — caller declares `int`, callee's typed dispatch wants `long *`
+— fixed by widening each caller's local to `long`, after manually
+checking every secondary use of each variable (comparisons, array
+indexing, struct-field assignments, format strings) for width
+assumptions. Found and fixed 4 pre-existing `%d`-vs-the-new-`long`
+format-string mismatches along the way (`capaux.c` ×2, `folders.c` ×2,
+`foldaux.c`, `bushv.c`).
+
+**Live correction, same session:** wdc caught a garbled live message
+("Zero of your two subscriptions have changed, (-<huge number>) have
+nothing new") after the Group A rollout, from `folders.c`'s
+`MS_NameChangedMapFile` call. Root-caused to LP64 variant #6 (see table
+above and porting-assessment.md §19, instances 3–4): four `ams/libs/ms`
+functions (`MS_GetDirInfo`, `MS_GetNewMessageCount`,
+`MS_GetSubscriptionEntry`, `MS_NameChangedMapFile`) have real `int *`
+out-params despite `.ch` saying `long *` — invisible to the compiler,
+and previously harmless only because the affected callers still declared
+`int` (an accidental width match masking the `.ch` bug). `fossil blame`
+traces both the `.ch` spec and the real implementations to the initial
+2026-06-24 import (`b28115fb2e`) — original 1990s source, dormant on
+ILP32 (`int`==`long`==32 bits there) for ~35 years, not something any
+prior porting pass introduced. This session's own Group A rollout
+(above, same entry) is what widened the callers and made it live.
+Widening those
+callers to `long` (correctly fixing the *visible* warning) removed the
+accidental masking and exposed the *invisible* one: a 4-byte store into
+now-8-byte, uninitialized stack slots. Corrected by narrowing `.ch` and
+the three class wrappers back to `int *` (matching the real
+implementations and every non-class-dispatch caller in the tree) and
+reverting the three affected callers (`capaux.c`, `folders.c`,
+`foldaux.c`) back to `int`, rather than fixing the real implementations
+— unlike `MS_ParseDate`, here every other caller already agreed on
+`int`, so the `.ch` spec was the one that had drifted. After the
+correction, all other 7 Group A shapes were re-verified directly against
+their real implementations (not just `.ch`) as a precaution; no further
+instances of variant #6 were found among them. Full rebuild clean both
+before and after the correction; wdc confirmed live via Inbox that the
+message reads correctly post-fix.
+
+As of this entry: not yet committed (pending final smoke-test
+confirmation); the corrected state is described above, not the
+intermediate broken one.

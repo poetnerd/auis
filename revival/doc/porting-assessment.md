@@ -1648,6 +1648,175 @@ mirrored folder) after the fix, no further crashes. No tree-wide audit
 needed — this is the only new variadic function added in this work, and
 no existing variadic function in the tree was touched.
 
+### 19. `.ch`/wrapper vs. real K&R implementation out-param width drift — invisible across the untyped call boundary (MEDIUM effort, ongoing; 5 confirmed instances)
+
+#### Root cause
+
+Several `ams/libs/ms` functions are exposed as class methods: a hand-written
+K&R wrapper (`amss__Foo`/`ams__Foo`/`amsn__Foo`) whose parameter types are
+copied from the class's `.ch` spec, forwarding unchanged to a bare global
+function (`Foo(...)` in `ams/libs/ms/*.c`) that has its *own*,
+independently-written K&R parameter declaration. Nothing checks these two
+declarations agree — the wrapper-to-bare-function call is unprototyped
+K&R, so if the `.ch` spec says `long *x` and the real function says
+`int *x`, the compiler has no way to see the conflict. classpp's typed
+dispatch (§12/§16) only checks *caller → wrapper*; it has no visibility
+past the wrapper into the real implementation.
+
+**Confirmed via `fossil blame` to be original 1990s source, not a
+porting-introduced regression**: for every instance below, both the
+`.ch` `long *` declaration and the real function's `int *` parameter
+trace to `b28115fb2e`, "Initial import of AUIS sources" (2026-06-24) —
+before any Darwin/LP64 porting work existed. On the original ILP32
+targets this code shipped on, `int` and `long` are both 4 bytes, so the
+mismatch was byte-for-byte harmless there; it only becomes live on a
+platform where `sizeof(long) > sizeof(int)`, i.e. this LP64 port. A
+~35-year-old inconsistency, dormant until now.
+
+When this drifts, the real function only ever writes the low 4 bytes at
+the address it's given, regardless of what the caller allocated:
+- If the caller's local is genuinely `int`-sized (matching the *real*
+  function, not `.ch`), the write is correct by accident — this is how
+  three of the five instances below survived unnoticed until this port:
+  the `.ch`/wrapper mismatch produces a compiler warning at the *caller*
+  (`-Wincompatible-pointer-types`, since the caller's `int*` doesn't match
+  the wrapper's typed `long*`), but the actual runtime write was harmless
+  because the real function never touched more than 4 bytes anyway. This
+  warning is exactly what the M2 point-0 census's Group A category
+  catches and, by its general rule, fixes by widening the caller to
+  `long` to match `.ch`.
+- If the caller's local *is* widened to `long` — whether by hand, or (as
+  happened live in this tree) by mechanically applying Group A's general
+  rule without first checking the real implementation — the low 4 bytes
+  get the correct value and the upper 4 bytes keep whatever was already
+  on the stack: silently correct if the local happened to be
+  zero-initialized and the value never exceeds 2^31, silently wrong (a
+  huge garbage number) otherwise. **No compiler warning either way** —
+  this is the dangerous direction, and the one that bit this tree live
+  (see instances 3–4 below): the general Group A rule is only safe once
+  the real implementation has been checked, which the stretch-goal sweep
+  exists to do, but initially missed these four on a grep technicality.
+
+#### Symptom signature
+
+None at compile time. At runtime: either no symptom (accidental width
+match), or a value that reads as garbage — typically a huge number,
+sometimes negative — coming out of a `long` local that was passed by
+address to one of the affected functions and never itself written to
+afterward. Distinct from LP64 variant #4 (scanf) in that no `%d`/`%ld`
+format string is involved; distinct from §16 (classpp signedness) in
+that the mismatch is one hop further out, past the wrapper, into a
+second independently-declared K&R function.
+
+#### Instances found (chronological)
+
+1. **`MS_GetConfigurationParameters`** (`ams/libs/ms/init.c`) — first
+   found 2026-07-18. Recorded in `sonnet-playbook.md`'s LP64 bug-class
+   list as item 4, but never added here or to `porting-changelog.md`
+   until now.
+2. **`MS_ParseDate`** (`ams/libs/ms/msparse.c`) — found 2026-07-24
+   during the M2 point-0 census's stretch-goal sweep (grepping
+   `ams/libs/ms`/`ams/libs/cui` for `int *` out-params with no matching
+   warning). Real implementation: `int *year, *month, *day, *hour,
+   *min, *sec, *wday`, but `int *gtm` too — except every other caller in
+   the tree (`ms.c`, `cui.c` ×3, `vuibase.c`, `vuipnl.c`) already
+   declares `gtm` as `long` (it holds a `time_t`/`gtime()` result, which
+   genuinely needs 64 bits), leaving only `year`..`wday` as `int`.
+   **Fixed by widening the real implementation's `gtm` parameter to
+   `long *`** (matching `gtime()`'s actual return width and every
+   existing bare caller), and widening `.ch`/the three wrappers to
+   match, keeping `year`..`wday` as `int *` throughout. The one caller
+   reached through class dispatch (`captions__MarkRangeOfMessages`) had
+   all eight locals declared `long` — confirmed via `fossil blame` to be
+   original 1990s source (same initial-import commit as everything
+   else here), not a later widening — with **uninitialized** `year`..`wday`
+   locals, worse than the usual accidental-zero-init survival case, and
+   live (reached by the "mark messages since/through date" feature).
+3–4. **`MS_GetDirInfo`, `MS_GetNewMessageCount`, `MS_GetSubscriptionEntry`,
+   `MS_NameChangedMapFile`** (`ams/libs/ms/getdiri.c`, `getnmct.c`,
+   `getsubs.c`, `namechg.c`) — found 2026-07-24, initially *missed* by
+   the same stretch-goal grep because it only checked the line
+   immediately following a function's signature line; these four
+   declare their `int *` parameters two or more lines down (some behind
+   a `long    Foo (...)` return-type-prefixed signature line, which the
+   grep's pattern didn't match at all). All four real implementations
+   take `int *` out-params; `.ch` had all four typed `long *` — both
+   confirmed via `fossil blame` to be original 1990s source (same
+   initial-import commit), not a Darwin-era change. Every *other* caller
+   in the tree (`ms.c`, `cui.c`, `cuifns.c`, `vuibase.c`) already
+   correctly used `int` locals, matching the real functions — that's
+   exactly what let the mismatch sit dormant: it only produces a
+   compiler warning at the three class-dispatch callers
+   (`atkams/messages/lib/capaux.c`, `folders.c`, `foldaux.c`), which
+   originally also used `int` (matching the real functions and
+   accidentally correct). **This session's own Group A fixing pass**
+   — applying the M2 point-0 census's general rule of widening a
+   warning-flagged caller to match `.ch`'s `long *` — widened those
+   three callers' locals to `long` without first checking the real
+   implementation, which is exactly what turned the dormant mismatch
+   live. **Corrected the opposite way from `MS_ParseDate`: narrowed
+   `.ch` and the three wrappers back to `int *`** (since the real
+   implementations and every bare-call caller were unanimous), and
+   reverted the three `atkams/messages/lib` callers' locals back to
+   `int`, undoing that same-session widening. Confirmed live: after the
+   erroneous widening, opening `messages` and viewing Inbox produced
+   "Zero of your two subscriptions have changed, (-<huge number>) have
+   nothing new" from `MS_NameChangedMapFile`'s uninitialized upper 32
+   bits; after the correction, wdc confirmed the message reads correctly
+   ("Zero of your two subscriptions have changed. (2 have nothing
+   new.)").
+
+#### Fix
+
+No single fix — this bug class requires checking the *real* K&R
+implementation's declared types directly, not trusting `.ch`, before
+touching any out-param width. Direction determines the correct fix:
+- If the real implementation's width is idiosyncratic and every other
+  caller already independently agrees on the wider type for a specific
+  parameter (as `gtm` did), widen the real implementation to match —
+  the `.ch`/wrapper were "ahead of" a stale real body.
+- If the real implementation and every other caller agree on the
+  narrower type, and only the `.ch`-derived class-dispatch caller(s)
+  disagree, narrow `.ch`/the wrappers back — `.ch` was wrong from the
+  start (original source, not a porting artifact), and widening the
+  caller to match it (the general Group A rule) was the mistake, not
+  the real body.
+Either way, the caller-side local width must end up matching the *real*
+K&R function's declared width, not the class spec's, since it's the real
+function that ultimately performs the store.
+
+#### Scope
+
+Confirmed limited to `ams/libs/ms` functions exposed through the
+`amss`/`ams`/`amsn` class wrappers — this is where the wrapper-forwards-
+to-independently-declared-bare-function shape occurs. Not yet swept
+tree-wide; the two grep passes that found instances 2–4 (stretch-goal
+sweep during M2 point 0, `revival/doc/claude-history/m2-census-REPORT.md`)
+were both narrow and had to be run twice after the first missed instances
+3–4 on a declaration-style technicality. A thorough sweep would need to
+check every `ams/libs/ms` function's real parameter declaration against
+its `.ch` entry directly (e.g. diffing extracted signatures), not grep
+for a specific K&R declaration shape.
+
+#### Relationship to the LP64 bug family (§12)
+
+Same underlying pathology as items 4/6 in `sonnet-playbook.md`'s LP64
+list (`§12`'s cousins) — a width or ABI mismatch invisible to the
+compiler because it crosses an unprototyped K&R call. Distinguishing
+feature here: the mismatch is specifically between a `.ch` spec (and its
+mechanically-generated wrapper) and a *separately hand-written* real
+implementation one call further out, not between a caller and its
+immediate callee.
+
+#### Verification
+
+Instance 2 (`MS_ParseDate`): full rebuild clean, zero new warnings; live
+smoke test of "mark messages since/through date" not independently
+re-verified after the fix (recommended before relying on it further).
+Instances 3–4: full rebuild clean, zero new warnings; live smoke test by
+wdc — Inbox's subscription-status message read correctly after the
+correction, confirmed garbled before it (see above).
+
 ## Primary build environment: macOS/Darwin
 
 The initial development platform is macOS (POSIX Darwin), not Linux.
