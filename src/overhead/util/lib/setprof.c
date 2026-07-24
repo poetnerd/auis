@@ -68,6 +68,7 @@ extern char ProgramName[];
 extern char *GetProfileFileName();
 extern char *GetFirstProfileFileName();
 extern char *AndrewDir();
+extern int FoldedEQ();		/* foldedeq.c, no header declares it */
 
 #define BIGPREF 2000
 

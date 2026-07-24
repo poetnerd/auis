@@ -36,6 +36,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <signal.h>
 #include <errno.h>
 #include <setjmp.h>
+#include <stdlib.h>
+#include <sys/wait.h>
 extern int errno;
 #define	tst(a,b)	(*mode == 'r'? (b) : (a))
 #define	RDR	0

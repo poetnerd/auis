@@ -42,10 +42,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <errno.h>
 #include <util.h>
 #include <andrdir.h>
+#include <stdlib.h>
 
 char ProgramName[100];
 extern int errno;
 extern char *getenv();
+extern int FoldedEQ(), FoldedEQn();	/* foldedeq.c, no header declares them */
 
 #define MAXCONFIGSIZE 2000
 

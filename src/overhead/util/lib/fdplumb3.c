@@ -37,6 +37,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <fdplumbi.h>
 
+extern int RegisterOpenFile(), RegisterCloseFile();	/* fdplumb.c, no header declares them */
+
 FILE *dbg_popen(path, type)
 char *path, *type;
 {

@@ -59,6 +59,7 @@ extern char *malloc();
 #endif /* _IBMR2 */
 
 extern int errno;
+extern int CheckServiceConfiguration();	/* svcconf.c, no header declares it */
 
 /*
   * GetCurrentWSCell

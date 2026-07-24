@@ -34,6 +34,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #include <errno.h>
 #include <andrewos.h>		/* <strings.h> */
+#include <stdlib.h>
 
 char EH_Error_Msg[EH_ERR_MSG_BUF_SIZE];
 EH_environment *_error_handler_env;

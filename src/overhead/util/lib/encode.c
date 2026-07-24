@@ -40,7 +40,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 static char basis_64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-to64(infile, outfile) 
+int output64chunk();	/* defined below, in this file */
+int char64();		/* defined below, in this file */
+
+to64(infile, outfile)
 FILE *infile, *outfile;
 {
     int c1, c2, c3, ct=0;

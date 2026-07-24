@@ -61,6 +61,8 @@ extern char *malloc();
 extern char *realloc();
 #endif /* IBMR2 */
 
+extern int CheckServiceConfiguration();	/* svcconf.c, no header declares it */
+
 #define INITIALAUTHS	5
 struct CellAuth *myAuth = NULL;
 static int PrimIx = -1;

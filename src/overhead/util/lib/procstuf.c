@@ -42,6 +42,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif /* hpux */
 #include <ctype.h>
 #include <truth.h>
+#include <stdio.h>
 
 extern char *getenv();
 

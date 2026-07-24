@@ -28,10 +28,10 @@ static char system_c_rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3
 #endif
 
 #include <andrewos.h>
+#include <stdlib.h>
 
 /* work around a bug in system where if the parent process catches sigchld system returns a bogus exit status. */
 #ifdef hpux
-#include <stdlib.h>
 #include <errno.h>
 extern int errno;
 int os_system(cmd)

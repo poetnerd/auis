@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h>
 #include <errno.h>
 #include <signal.h>
+#include <stdio.h>
 
 char *UnixSignal(signalNumber)
 int	signalNumber;

@@ -46,16 +46,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <pwd.h>
 #include <util.h>
 #include <svcconf.h>
+#include <stdlib.h>
 #ifdef WHITEPAGES_ENV
 #include <wp.h>
 #endif /* WHITEPAGES_ENV */
 
 extern int errno;
-
-#ifndef _IBMR2
-extern char *malloc();
-extern char *realloc();
-#endif /* _IBMR2 */
 
 
 #ifdef AFS_ENV

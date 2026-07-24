@@ -37,6 +37,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <fdplumbi.h>
 
+extern int RegisterOpenFile(), RegisterCloseFile();	/* fdplumb.c, no header declares them */
+extern int t2open(), t2close();			/* t2open.c, no header declares them */
+
 dbg_t2open(name, argv, r, w)
 char *name, *argv[];
 FILE **r, **w;

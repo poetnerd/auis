@@ -37,10 +37,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <andrewos.h>
 #include <fdplumbi.h>
-
-#ifndef _IBMR2
-extern char *malloc();
-#endif /* _IBMR2 */
+#include <stdlib.h>
+#include <sys/socket.h>
 
 static int HasInitializedFDPlumbing = 0;
 int fdplumb_LogAllFileAccesses = 0;
@@ -67,6 +65,8 @@ int code;
 	default: return "unknown";
     }
 }
+
+int fdplumb_SpillGutsToFile();		/* defined below, in this file */
 
 int fdplumb_SpillGuts() {
     return fdplumb_SpillGutsToFile(stderr, 0);

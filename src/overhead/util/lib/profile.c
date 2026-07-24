@@ -45,6 +45,9 @@ extern char *getenv();
 #include <pwd.h>
 #include <ctype.h>
 #include <util.h>
+#include <stdlib.h>
+
+extern int FoldedEQ();		/* foldedeq.c, no header declares it */
 
 #define DEFAULTPROFILES "~/preferences:~/.preferences:~/.Xdefaults"
 #define GLOBALPROFILE AndrewDir("/lib/global.prf")

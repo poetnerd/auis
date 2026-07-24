@@ -34,10 +34,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 /* andydir.c */
 
 #include <stdio.h>
-
-#ifndef _IBMR2
-extern char *malloc();
-#endif /* _IBMR2 */
+#include <stdlib.h>
+#include <string.h>
 
 extern char *getenv();
 extern char *GetConfiguration();

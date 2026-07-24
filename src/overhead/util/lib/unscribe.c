@@ -46,6 +46,7 @@ version of the datastream interpretation.
 #include <andrewos.h> /* strings.h */
 #include <ctype.h>
 #include <util.h>
+#include <stdlib.h>
 #include <unscribe.h>
 
 /* #define SPECIALFACES 1 */
