@@ -214,8 +214,23 @@ mirrors IMAP; AMDS delivery remains excluded.
      reachable-by-literal call sites got belt-and-suspenders fixes
      anyway. See `porting-assessment.md` issue #1 and
      `claude-history/strlit-REPORT.md`.
-  2. `m2-census-prompt.md` — M2 point-0 warning classification
-     (read-only; fixes stay top-level).
+  2. ~~`m2-census-prompt.md`~~ (now in `claude-history/`) —
+     **done 2026-07-24.** Classified all 67 `int*/long*` and 18
+     `char**→char*` instances into 13 shared root shapes and fixed
+     three findings: the `char**` cluster's real bug was three
+     `CUI_*` methods in `ams.ch` typed `char *` when their `cuilib.c`
+     implementations take `char **` (clang's own "remove &" fix-it
+     would have broken all 18 correct callers); a live,
+     reachable bug via the stretch-goal sweep — `MS_ParseDate`
+     writing a class-typed `long *` into a real `int *`
+     implementation, hit by `captions__MarkRangeOfMessages`'s
+     uninitialized `long` locals; and `fontdesc_StringBoundingBox`'s
+     `.ch` signature, the odd one out among its long*-typed siblings.
+     All three verified via full rebuild and a human smoke test,
+     committed as three separate checkins. The other 45 `int*/long*`
+     instances (caller declares `int`, callee wants `long *` —
+     stack-overrun direction) are cataloged but not yet fixed. See
+     `claude-history/m2-census-REPORT.md`.
   3. `bcc-direct-insertion-prompt.md` — root-cause the blind-copy
      direct-insertion failure (investigation-gated).
   4. ~~`folder-visibility-prompt.md`~~ (now in `claude-history/`) —

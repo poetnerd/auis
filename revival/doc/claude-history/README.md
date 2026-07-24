@@ -16,12 +16,11 @@ is part of retiring it, done during the close-out doc update.
 ## Active Prompts (in `revival/doc/`, not here)
 
 Current queue and suggested order live in `roadmap.md` → "Delegated
-work queue". As of 2026-07-23:
+work queue". As of 2026-07-24:
 
-1. `m2-census-prompt.md` — M2 point-0 warning classification
-2. `bcc-direct-insertion-prompt.md` — blind-copy direct-insertion
+1. `bcc-direct-insertion-prompt.md` — blind-copy direct-insertion
    root cause
-3. `mime-attachment-icon-prompt.md` — root-cause a `multipart/mixed`
+2. `mime-attachment-icon-prompt.md` — root-cause a `multipart/mixed`
    attachment rendering as a bare `?` instead of an
    `[attachment: ...]` line (added 2026-07-21, follow-on to the
    just-retired `mime-display` task below)
@@ -122,7 +121,7 @@ against live Fastmail and closed with its milestone:
 
 Five gated prompts plus the standing `sonnet-playbook.md`, written
 in one pass (commit 8e565c9fda) so Sonnet-class sessions could
-carry work forward independently: `m2-census`, `bcc-direct-insertion`
+carry work forward independently: `bcc-direct-insertion`
 (still active), and:
 
 - `strlit-sweep-prompt.md` (2026-07-19, retired 2026-07-23) —
@@ -200,6 +199,28 @@ carry work forward independently: `m2-census`, `bcc-direct-insertion`
   `../mime-attachment-icon-prompt.md` — a `multipart/mixed`
   attachment renders as a bare `?` instead of the expected
   `[attachment: ...]` line; root cause not yet found.
+- `m2-census-prompt.md` (2026-07-19, retired 2026-07-24) — M2 point-0
+  `-Wincompatible-pointer-types` census. Classified all 67
+  `int*/long*` and 18 `char**→char*` instances into 13 shared root
+  shapes (`m2-census-REPORT.md`, kept here); found the `char**`
+  cluster's real bug was in `ams.ch` itself — three `CUI_*` methods
+  typed `char *` when their real `cuilib.c` implementations take
+  `char **`, so clang's own "remove &" fix-it would have broken all
+  18 correct callers — and a live, reachable bug via the
+  stretch-goal sweep: `MS_ParseDate` writing through a class-typed
+  `long *` into a real `int *` implementation, hit by
+  `captions__MarkRangeOfMessages`'s uninitialized `long` locals.
+  Also fixed `fontdesc_StringBoundingBox`'s `.ch` signature, the odd
+  one out among its `long *`-typed siblings, found while surveying
+  the `char**` cluster's `long*`/`int*` sibling group. All three
+  verified via full rebuild plus a human smoke test (folder
+  visiting/Expose All, mark-by-date, compose/send including a
+  rejected malformed address) and committed as three separate
+  checkins (`0a6cf595ef`, `f4a9d6909b`, `c496c2a9ea`). The other 45
+  `int*/long*` instances (caller declares `int`, callee wants
+  `long *` — the stack-overrun direction, worse than a half-fill)
+  are cataloged but not yet fixed; see the report's "Open questions"
+  for next steps.
 
 ## Runbook & Investigation History
 
