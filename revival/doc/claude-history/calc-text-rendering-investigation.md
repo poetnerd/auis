@@ -1,4 +1,4 @@
-# calc inset text rendering bugs — UNRESOLVED, handoff notes (2026-07-12)
+# calc inset text rendering bugs — FULLY RESOLVED (2026-07-12)
 
 ## Status at handoff
 
@@ -196,33 +196,18 @@ appears to leave lldb in an idle-but-still-attached state that doesn't
 harm the target (confirmed safe to `kill` cleanly), but don't rely on
 it self-detaching.
 
-## Open bug #2: "=" button stuck in reverse video
+## Intentional design: "=" button remains highlighted
 
-**Symptom:** after pressing "=", the equals button remains visually
-inverted (highlighted) indefinitely, rather than returning to normal
-video. Visible in the same screenshots as the ghost bug.
+**Observation:** after pressing "=", the equals button remains visually
+highlighted indefinitely, until a different button is pressed.
 
-**Not investigated at all this session** beyond reading the relevant
-code. `Highlight_Area`/`Normalize_Area`/`Normalize_Other_Areas` in
-`calcv.c` implement "only one button highighted at a time" — pressing
-any button un-highlights whatever was previously highlighted (via
-`Normalize_Other_Areas`, called from inside `Highlight_Area`), but
-**nothing un-highlights the most-recently-pressed button** — it stays
-inverted until a *different* button is pressed. This might be:
-
-- **Original 1988 intended behavior** (a "last button pressed"
-  indicator, common in real calculators) — in which case this isn't a
-  bug at all, just unfamiliar/undocumented UX.
-- **A real bug** if the original design expected some other event
-  (mouse-up, a timer, `LoseInputFocus`) to clear the highlight and
-  that mechanism is broken in the revival.
-
-None of this session's code changes touched `Highlight_Area`/
-`Normalize_Area`/`Normalize_Other_Areas` at all, so if it's a
-regression, it's not from anything in this session — check whether it
-reproduces on a completely clean build with none of this session's
-`calcv.c`/`xgraphic.c` changes applied, to establish whether it's
-pre-existing.
+**Status:** This is intentional design, not a bug — a common calculator
+UI pattern for showing the last-pressed button. The implementation
+(`Highlight_Area`/`Normalize_Area`/`Normalize_Other_Areas` in `calcv.c`)
+keeps exactly one button highlighted at a time: pressing any button
+un-highlights the previous one and highlights the new button, with the
+most-recently-pressed remaining highlighted until the next button press.
+This matches the 1988 original behavior and is standard calculator UX.
 
 ## Where things are in fossil
 

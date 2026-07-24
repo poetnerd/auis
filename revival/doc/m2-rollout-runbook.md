@@ -14,20 +14,27 @@ needed the identical rhythm under a different flag. This file covers
 only what's specific to M2: the flag mechanics, the fallout taxonomy,
 the census, and ordering.
 
-**Status (2026-07-24):** rollout points 1 (`atk/eq` pilot) and 2 (8-
-directory small/leaf batch) both closed their gates the same day.
-80/80 combined predicted instances confirmed across 9 directories, no
-volume surprises anywhere. All three taxonomy categories below are
-now validated by real fixing passes, not just the census-seeded prior
-they started as — see the taxonomy section for what changed. Gate
-scope ("subtree-local is sufficient") now has two data points,
-including one statically-linked, tree-wide-consumed directory
-(`overhead/cmenu`) with zero fallout beyond itself — see "Gate scope"
-below, recommended settled pending wdc's sign-off. One process gap
-found at the pilot and folded into `rollout-procedure.md`: directories
-with generated sources (`Parser()`/bison, presumably `LexFile` too)
-need `make depend` before a subtree-local `install`, or the missing
-generated header masks real fallout behind a fatal error.
+**Status (2026-07-24):** rollout points 1 (`atk/eq` pilot), 2 (8-
+directory small/leaf batch), and 3 batch A (5-directory mid-size
+batch) have all closed their gates the same day. 217/217 combined
+predicted instances confirmed across 14 directories, no volume
+surprises anywhere. All three taxonomy categories are validated by
+real fixing passes; sub-case 2 of "missing in-tree/project header"
+was refined at batch A after batch 2 under-specified it (see the
+taxonomy section). Gate scope ("subtree-local is sufficient") now has
+three data points, including `overhead/cmenu` (statically linked)
+and `atk/basics/x`/`atk/basics/common` (statically linked AND M1's
+own former largest-blast-radius directory) — recommend settled, see
+"Gate scope" below. Two process gaps found and folded into
+`rollout-procedure.md`: directories with generated sources
+(`Parser()`/bison) need `make depend` before a subtree-local
+`install` (pilot); files with 20+ diagnostics in one file need
+`-ferror-limit=0` on the fix-surfacing pass, or clang's default cap
+silently truncates the list (batch A). Batch A's runtime check also
+surfaced a real, pre-existing `atk/figure` text-rendering bug —
+confirmed via controlled revert/rebuild/fresh-restart test to be
+unrelated to this M2 work; tracked in `roadmap.md` → Insets to
+Repair → figure, not fixed here.
 
 ## What the flag does
 
@@ -70,7 +77,7 @@ Verify the same way as M1's `CLASSFLAGS`: regenerate the Makefile,
 then `grep -n COMPILERFLAGS Makefile` and confirm the override line
 appears after `system.mcr`'s default (last assignment wins).
 
-## Gate scope — likely lighter than M1's, needs a ruling
+## Gate scope — recommended settled, three data points
 
 `rollout-procedure.md`'s "Gate definition" leaves the actual scope to
 each milestone. M1's typed `.ih` casts are installed to
@@ -79,24 +86,22 @@ classes — that's why M1 always gates on a full tree-wide `make Clean;
 make dependInstall`. M2's flag only changes diagnostic severity for
 `.c` files compiled *inside* the flagged directory; the resulting
 `.o` and any installed headers are otherwise unchanged, so a flagged
-directory's fallout is local to itself. Corollary: a subtree-local
-`make clean && make depend && make -k install` (the `depend` step is
-required — see `rollout-procedure.md`) is plausibly a sufficient
-per-directory gate, with a full tree-wide gate only at coarser
-checkpoints (session end, or every few directories) rather than after
-every single one. **Two data points now, recommend settled pending
-wdc's sign-off**: the `atk/eq` pilot and the rollout-point-2 batch
-(2026-07-24) both ran the full tree-wide gate anyway and it caught
-nothing the corrected subtree-local builds hadn't already shown. The
-batch is the stronger point — `overhead/cmenu` is statically linked
-into every ATK app via `runapp` (confirmed via `nm -g build/bin/
-runapp`), not a zero-consumer leaf like the pilot, and still showed
-zero fallout beyond its own subtree. Future rollout points can use
-subtree-local `make clean && make depend && make -k install` as the
-per-directory gate, with a full tree-wide gate at coarser checkpoints
-(session end, or every few directories) rather than after every
-single one — unless a future directory's fallout pattern gives reason
-to revisit.
+directory's fallout is local to itself. **Three data points now,
+recommend treating this as settled (2026-07-24, not yet an explicit
+ruling)**: the `atk/eq` pilot, the
+rollout-point-2 batch, and rollout-point-3 batch A all ran the full
+tree-wide gate anyway and it caught nothing the corrected
+subtree-local builds hadn't already shown. Batch A is the strongest
+point — it includes `atk/basics/x`/`atk/basics/common`, statically
+linked into every ATK app via `runapp` (confirmed via `nm -g
+build/bin/runapp`), AND `atk/basics/common` is M1's own former
+largest-blast-radius directory (41 classes, 2,351 external `.ih`
+includes) — and still showed zero fallout beyond its own subtree.
+Future rollout points use subtree-local `make clean && make depend &&
+make -k install` (the `depend` step is required — see
+`rollout-procedure.md`) as the per-directory gate, with a full
+tree-wide gate at coarser checkpoints (session end, or every few
+directories) rather than after every single one.
 
 ## Census (2026-07-24, `make -k`, tree-wide, not yet acted on)
 
@@ -104,6 +109,17 @@ to revisit.
 undercounted at 367/74 — `rollout-procedure.md`'s "Logging" section
 now carries this as the general warning: always census/gate with
 `-k`, not just at M1's multi-file fallout collection.
+
+**A second, per-file variant of the same under-counting risk** (found
+rollout point 3 batch A, 2026-07-24): clang's default
+`-ferror-limit=20` silently truncates diagnostics once one file hits
+20 errors — the file still fails to compile, but only the first 20
+show. `atk/basics/x/xim.c` had 20 real instances; the 20th
+(`mb_SetGetDefault`) was invisible until the first 19 were fixed and
+the file rebuilt. For directories with an unusually large single
+file, pass `CDEBUGFLAGS="-ferror-limit=0 -g -O0"` on the
+fix-surfacing pass (not needed on the follow-up determinism passes,
+which should already be error-free).
 
 By directory (`.` = `src/`), heaviest first:
 
@@ -159,25 +175,42 @@ writing any declaration by hand.
      reach it (`atk/adew/mkcon.c`'s `getprofileswitch`, declared in
      `overhead/util/hdrs/util.h`, already reached the same way by
      `atk/basics/common/environ.c`).
-  2. **A header exists in the flagged directory, declares sibling
-     functions from the same file, but not this one — and the
-     flagged directory already has its own local-`extern` habit for
-     that exact gap.** Don't extend the header from outside its own
-     directory (the M2 hard-stop against editing files outside the
-     flagged directory still applies) — match the existing local
-     precedent instead. Two confirmed instances: `overhead/cmenu`'s
-     `cmdraw.h` doesn't declare `FlipButton`/`DrawMenus`/
-     `SelectionPtrToNum` (all defined in sibling files `cmdraw.c`/
-     `cmmanip.c`), but `cmdraw.c` itself already had a hand-written
-     `extern int SelectionPtrToNum();` rather than adding it to the
-     header — followed that. `atk/help/src`'s `helpdb.c` already
-     includes `overhead/index/index.h`, which declares 11 sibling
-     `index_*`/`recordset_*` functions but not `index_Close`/
-     `index_Enumerate`/`index_GetData`/`recordset_Free` — added local
-     `extern`s in `helpdb.c` instead of editing `index.h`. Both cases:
-     the outside header looks stale/incomplete as its own finding,
-     worth a housekeeping pass whenever *that* directory is flagged,
-     but not an M2 fix.
+  2. **A header declares sibling functions from the same file, but
+     not this one.** Two shapes, distinguished by rollout point 3
+     batch A (2026-07-24) after point 2 under-specified this as a
+     single rule — **check both the header's scope and the specific
+     consuming file's own local-extern precedent for *this* function
+     family before choosing**:
+     - *Header lives outside the flagged directory* (or is a broad,
+       many-callers utility header like `util.h`/`index.h`), **and**
+       the flagged directory already has its own local-`extern` habit
+       for this exact gap: don't extend the outside header (the M2
+       hard-stop against editing files outside the flagged directory
+       still applies) — match the existing local precedent instead.
+       Point 2's two instances: `overhead/cmenu`'s `cmdraw.h` doesn't
+       declare `FlipButton`/`DrawMenus`/`SelectionPtrToNum` (defined
+       in sibling files `cmdraw.c`/`cmmanip.c`), but `cmdraw.c` itself
+       already had a hand-written `extern int SelectionPtrToNum();`
+       — followed that. `atk/help/src`'s `helpdb.c` already includes
+       `overhead/index/index.h` (11 sibling `index_*`/`recordset_*`
+       declared, 4 not) — added local `extern`s instead of editing
+       `index.h`. Both: the outside header looks stale/incomplete as
+       its own finding, worth housekeeping whenever *that* directory
+       is flagged, not an M2 fix.
+     - *Header lives IN the flagged directory itself*, is small and
+       clearly a dedicated single-file public API (not a broad
+       utility header), and there's no *competing* local-extern habit
+       already established in the specific consuming file for *this*
+       specific function family: extend the header directly instead.
+       Point 3 batch A's two instances: `atk/basics/x/menubar.h`
+       (already declares 12 sibling `mb_*` functions in the same
+       style, in-directory) extended with 5 more; `atk/raster/cmd/
+       dispbox.h` (already declares 7 sibling `DisplayBox*`/
+       highlight functions) extended with 5 more, closing 11 of that
+       directory's 37 instances in one edit since all 4 consuming
+       files already included it. Neither directory had a competing
+       local-extern habit for these specific function names (batch A
+       also confirmed no such conflict by checking).
   3. **No header anywhere in the tree declares it, full stop.** Same
      as the pilot's `eqview_Format`, just cross-directory instead of
      same-directory: `osi_GetTimes` (`overhead/util/lib/times.c`,
@@ -239,10 +272,13 @@ Proposed order, pending wdc's sign-off:
    `atk/figure` here, using a stale count from the first,
    undercounted non-`-k` census pass — its real count is 23, mid-size;
    moved to bucket 3 below, where it already also appeared.)
-3. Mid-size (~20–70): `atk/basics/x`, `atk/basics/common`, `atk/
-   figure`, `atk/syntax/tlex`, `atk/raster/cmd`, `overhead/eli/lib`,
-   `ams/libs/cui`, `ams/msclients/nns`, `overhead/mail/metamail/
-   richmail`, `overhead/index`.
+3. Mid-size (~20–70), split into two batches of 5:
+   - Batch A — `atk/basics/x`, `atk/basics/common`, `atk/figure`,
+     `atk/syntax/tlex`, `atk/raster/cmd` — **done 2026-07-24**, see
+     "Status" above and `claude-history/m2-batch3a-REPORT.md`.
+   - Batch B — `overhead/eli/lib`, `ams/libs/cui`,
+     `ams/msclients/nns`, `overhead/mail/metamail/richmail`,
+     `overhead/index`.
 4. Large, dedicated-session territory (~70–140): `overhead/util/lib`,
    `overhead/mail/metamail/metamail`, `atk/text`, `atk/rofftext`,
    `atk/table`, `overhead/mail/lib`, `atkams/messages/lib`,

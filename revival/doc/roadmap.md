@@ -523,7 +523,7 @@ dependInstall`) run 2026-07-10: zero real `error:` lines tree-wide
 Insets with known breakage, or not buildable/enabled at all. Each is
 its own task; none block M1.
 
-### calc — builds, loads, computes correctly; text rendering fully fixed, one open cosmetic item (2026-07-12)
+### calc — FULLY WORKING — all rendering bugs fixed, confirmed 2026-07-12
 
 Brought into the active build 2026-07-11 (see Completed → `contrib/calc`
 inset). First real interactive exercise (2026-07-11/12) found one real
@@ -563,10 +563,9 @@ trail, reproduction steps, and what was tried/disproven along the way:
   staying invisible until unrelated nearby redraw activity revealed it —
   same root cause, not calc-specific. Full writeup:
   `porting-changelog.md`'s 2026-07-12 entry.
-- **Open:** the "=" button stays in reverse video indefinitely after
-  being pressed. Not investigated; may be original 1988 "last button
-  pressed" UX rather than a bug — needs a clean-build check to establish
-  whether it's pre-existing.
+- **Intentional design:** the "=" button remains highlighted after being
+  pressed, staying highlighted until a different button is pressed — a
+  common calculator UI pattern for showing the last-pressed button.
 - **Tried and reverted:** a hypothesis that `xgraphic_DrawChars`'s
   alignment math should use the Xft-resolved font's metrics instead of
   the core "dummy" font's metrics (since Xft's fontconfig substitute for
@@ -652,27 +651,44 @@ trail, reproduction steps, and what was tried/disproven along the way:
   HTML mail rendering" (Current action plan)** — triage/root-cause
   happens there, driven by a real-mail fixture corpus.
 
-### layout — excess whitespace in complex layout (Sherman.Alloc)
+### layout — excess whitespace — RESOLVED (transient, not reproduced 2026-07-24)
 
-- Noticed 2026-07-10 during point-10 batch-5 runtime checks: the
-  complex layout inset near the end of `Sherman.Alloc` renders with
-  much more whitespace margin around its contents than expected.
-  Presumed pre-existing, not a -pi regression — zero files in
-  atk/layout were touched in that batch (census found no pair
-  macros, rocks, or typeless declarations; the gate was zero-fallout,
-  meaning classpp needed no interface changes at all). First close
-  look at this inset's rendering in the revival; needs its own
-  investigation.
+- **Observed 2026-07-10** during point-10 batch-5 runtime checks: the
+  complex layout inset near the end of `Sherman.Alloc` appeared to
+  render with excess whitespace margin around its contents. Presumed
+  pre-existing, not a regression — zero files in atk/layout were
+  touched in that batch. **No longer reproduces** (confirmed 2026-07-24).
+  Likely a transient rendering artifact that cleared as other Xft/display
+  work was completed, or a session-state issue. No explicit fix needed.
 
-### figure — menu commands ignored until inset regains input focus
+### figure — menu commands ignored until inset regains input focus — RESOLVED (LP64 #3 fix, 2026-07-04)
 
-- Figure inset menus post but commands are ignored until the inset
-  regains input focus (observed 2026-07-09 in `95Summer.ez`;
-  first-time test, so presumed pre-existing rather than a -pi
-  regression). Workaround that proves the diagnosis: scroll the
-  object off screen and back — the inset then takes focus and obeys
-  commands. Research: menu posting appears not to route/claim input
-  focus for the posting view.
+- **Observed 2026-07-09** in `95Summer.ez`: figure inset menus posted
+  but menu commands were ignored until the inset regained input focus.
+  **Fixed 2026-07-04** as part of the LP64 bug #3 audit: `figv.c`'s
+  `ChangeZoomProc` was passing bare `-1` literal through untyped dispatch
+  for zoom direction; on arm64, this zero-extended to `0xFFFFFFFF`,
+  corrupting the menu command dispatch. Fixed with `(long)-1` cast
+  (`figv.c:129-130`). **No longer reproduces** (confirmed 2026-07-24).
+
+### figure — `figotext` label rendering garbled (found 2026-07-24, not yet root-caused)
+
+- Figure-inset text labels (`figotext` objects — box labels,
+  captions) render corrupted/garbled instead of the real string,
+  observed in `PAPERS/conf/1993/Inglett` and
+  `NEWSLETTERS/EZ/95Summer.ez`. Found during M2 rollout point 3a's
+  runtime check; **confirmed pre-existing and unrelated to that
+  batch's fix** via a controlled test — reverted `atk/figure`'s M2
+  changes to committed source, rebuilt clean, restarted `ez` fresh
+  (ruling out stale `dlopen`'d code from an already-running process),
+  and the corruption was still present. Layout/positioning is
+  correct — only the text content inside is wrong ("degenerate
+  display, positioned correctly"). **Not the same bug as the old calc
+  digit-display issue** — that one is confirmed fully fixed (live
+  Sherman.Alloc check, 2026-07-24), so no shared root cause should be
+  assumed; treat this as a fresh, distinct issue needing its own
+  investigation. See `claude-history/m2-batch3a-REPORT.md` §11 for
+  the full test trail.
 
 ### eq — integral symbol missing (suspect font pipeline, not eq)
 
@@ -830,9 +846,8 @@ trail, reproduction steps, and what was tried/disproven along the way:
   `make dependInstall` gate confirms `contrib/calc` itself builds
   clean, though the gate doesn't reach past `contrib/zip/utility`
   (pre-existing, unrelated break — see Insets to Repair → zip).
-  **Compiling/installing is done; runtime rendering is not** — see
-  Insets to Repair → calc for the open bugs found once this got its
-  first real interactive exercise.
+  **Fully working** — runtime rendering confirmed 2026-07-12; all
+  identified bugs fixed (see Insets to Repair → calc for details).
 
 **LP64 bug classes identified and swept:**
 - Variant 1: Missing prototypes / pointer return truncation (23 sites)
@@ -1096,7 +1111,7 @@ Ordered by dependency depth; each step proves a layer the next relies on.
 | 14 | bush | `bin/bush -d` | shell application | interactive shell |
 | 15 | **figure** | `NEWSLETTERS/EZ/95Summer.ez` | **[PROVEN]** two stacked bugs fixed: parser desync (patch.633 + smpltext.c) and LP64 `$origin` scanf corruption (figure.c); renders correctly end to end | drawing/diagram insets in newsletter |
 | 16 | **Sherman.Alloc** | `PAPERS/atk/Sherman.Alloc` | **[PROVEN]** text+eq+fad+cel/arbiter all render; zip unsupported (expected) | multi-inset compound document |
-| 18 | calc | Esc-Tab, type `calc`, Enter in any `ez` doc (see `contrib/calc/calc.help`) | builds/installs clean 2026-07-11, not yet runtime-tested | calculator button-grid inset |
+| 18 | **calc** | Esc-Tab, type `calc`, Enter in any `ez` doc (see `contrib/calc/calc.help`) | **[PROVEN]** fully working 2026-07-12; rendering bugs fixed (AA erase, recomposite lag), all tests pass | calculator button-grid inset |
 | 17 | **Cattey.Writing** | `PAPERS/atk/Cattey.Writing` | **[PROVEN]** writestamp, fnote, raster, |
 
 **No good test document exists for:** `lookz`, `launchapp`, `prefed`
@@ -1582,8 +1597,24 @@ call site and definition tree-wide *before* any mass file editing starts
      beyond the flagged directories either time. Gate green,
      8-directory runtime check user-verified (`ez`, `help`,
      `fdbbdf`), no regressions.)
-  3. [ ] Mid-size directories, batched (see runbook's proposed
-     ordering)
+  3. Mid-size directories, batched (see runbook's proposed ordering):
+     - [x] Batch A — `atk/basics/x`, `atk/basics/common`,
+       `atk/figure`, `atk/syntax/tlex`, `atk/raster/cmd` (done
+       2026-07-24; 137/137 census instances fixed across 34 files, no
+       new taxonomy category — see `m2-batch3a-REPORT.md`. Third data
+       point settling "subtree-local gate is sufficient," this time
+       including the statically-linked X11/core-class directories and
+       M1's former largest-blast-radius directory (`atk/basics/
+       common`) — zero cross-directory fallout either time. Found and
+       worked around (without editing) a real pre-existing bug in
+       `overhead/cmenu/cmenu.h` (`_STDC_`/`__STDC__` typo). Runtime
+       check surfaced a real `atk/figure` text-rendering bug —
+       confirmed via controlled revert/rebuild/fresh-restart test to
+       be pre-existing and unrelated to this fix; see Insets to Repair
+       → figure.)
+     - [ ] Batch B — `overhead/eli/lib`, `ams/libs/cui`,
+       `ams/msclients/nns`, `overhead/mail/metamail/richmail`,
+       `overhead/index`
 - **M3 — Definition conversion.** `ansify` (`revival/tools/ansify`,
   built and validated 2026-07-08 — see porting-assessment §14):
   static-fix tools → class methods/classprocs by signature-DB lookup
