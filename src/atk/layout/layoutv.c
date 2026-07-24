@@ -1171,7 +1171,7 @@ layoutview__Paste(self)
 struct layoutview *self;
 {
     FILE *pasteFile;
-    int objectID;
+    long objectID;
     char *objectName;
 
     if (layout_debug)

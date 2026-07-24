@@ -351,8 +351,8 @@ static struct bestfont *ClosestFonts(possibleNames, numNames, desiredFamily, des
 {
 
     int index;
-    int style;
-    int size;
+    long style;
+    long size;
     static struct bestfont bestFonts[MAXBEST + 1];
     int familyLength = strlen(desiredFamily);
     char familyName[MAXPATHLEN];

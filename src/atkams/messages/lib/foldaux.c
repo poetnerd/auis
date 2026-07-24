@@ -370,7 +370,8 @@ char *FullName, *nickname;
 		FILE *fp;
 		char SnapshotBuf[AMS_SNAPSHOTSIZE], LineBuf[2000], *objtype;
 		long numbytes, bytesleft;
-		int cuid, IsDup, myid = 0;
+		int cuid, IsDup;
+		long myid = 0;
 
 		QAddToDoc(d, &pos, E7, strlen(E7), self->ItalicStyle, strlen(E7)-1);
 		if (ams_CUI_GetHeaders(ams_GetAMS(), FullName, "000000", SnapshotBuf, AMS_SNAPSHOTSIZE, 0L, &numbytes, &bytesleft, TRUE)) {

@@ -461,7 +461,7 @@ struct celview *self;
 FILE *thisFile;
 char *iname;
 {
-    int objectID;
+    long objectID;
     char *objectName;
     struct cel *ls = Data(self);
     objectName = filetype_Lookup(thisFile, iname, &objectID, NULL); /* For now, ignore attributes. */

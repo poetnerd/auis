@@ -212,7 +212,8 @@ boolean IsLeftClick;
 	/* This code is kind of silly; it says if there are no captions on display, but there is some kind of text in the captions area, we will search through the bodies area for the contents of the current line and will scroll the body to start with that same line.  This is currently used only by the Set Options code, but it could in theory be used to make Messages able to view all sorts of things besides mail and bulletin boards... */
 	struct textview *tv = (struct textview *)captions;
 	struct text *t = (struct text *) captions_GetDataObject(captions);
-	int dot, len, tmpdot, retlen;
+	int dot, len, tmpdot;
+	long retlen;
 	char *str, *tp, BodyBuf[1000];
 	struct SearchPattern *Pattern = NULL;
 	struct text *bod;

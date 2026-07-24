@@ -458,7 +458,7 @@ boxview__Paste(self)
 struct boxview *self;
 {
     FILE *pasteFile;
-    int objectID;
+    long objectID;
     char *objectName;
 
     if (boxview_debug)

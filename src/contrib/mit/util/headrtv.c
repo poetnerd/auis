@@ -442,7 +442,7 @@ static void DrawBorder(self,vb)
 struct headrtv *self;
 struct rectangle *vb;
 {
-    int width,junk,left;
+    long width,junk,left;
     char *type;
    
     type=hdrtv_where[Data(self)->where];

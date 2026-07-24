@@ -2062,7 +2062,7 @@ SetSaveFormat( self, rock )
 {   struct image *image = self->orig;
     char *prompt = "New Image Save-Format: ", response[100];
     static char *choices[3] = {"GIF", "JPEG", NULL};
-    int result = 0;
+    long result = 0;
 
     if(message_MultipleChoiceQuestion(self, 100, prompt, 0,
 				      &result, choices, NULL) == -1)

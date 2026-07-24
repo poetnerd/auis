@@ -1277,7 +1277,7 @@ IssueError( self, what, where, overlay )
   register char *what, *where;
   boolean overlay;
 {
-  int result = 0;
+  long result = 0;
   static char *question[] = { "Continue", NULL };
 
   IN(IssueError);
@@ -1316,7 +1316,7 @@ PerformDestroy( self )
     static char *question[] = {"Confirm","Cancel",0};
     register int i = 0;
     long result = 0;
-    int count = 0;
+    long count = 0;
     register struct Dir_Entry *Dir_Entry = NULL, *current_entry = CurrEntry;
     register tree_type_node current_node = CurrNode, tn = NULL;
     register struct suite_item **selected = NULL;
@@ -1372,7 +1372,7 @@ PerformDestroy( self )
 	    if(count == 0) break;
 	    if(count > 1)
 		if(count == 2) sprintf(msg, "Destroy Both Items ?");
-		else sprintf(msg, "Destroy All %d Items ?", count);
+		else sprintf(msg, "Destroy All %ld Items ?", count);
 	    else {
 		Dir_Entry = (struct Dir_Entry*)
 		  suite_ItemAttribute(EntriesView, selected[0], suite_itemdatum);
@@ -1583,7 +1583,8 @@ static int
 HandleModifiedObject( self )
   register struct bushv	    *self;
 {
-  int			     result = 0, return_value = 0;
+  long			     result = 0;
+  int			     return_value = 0;
   static char		    *answers[] = { "Save to file.",
                                            "Save As...",
 					   "Don't save",
@@ -1766,7 +1767,7 @@ DoAutoRescan( self )
 {
   register struct suite_item	**selected = NULL, *item = NULL;
   register char			**names = NULL;
-  int				  count = 0;
+  long				  count = 0;
   register int			  i;
 
   IN(DoAutoRescan);
@@ -2116,7 +2117,8 @@ SortRequested( self, tn )
   struct bushv *self;
   tree_type_node tn;
 {
-  int sort = -1, result = 0, current_mode = SortMode;
+  int sort = -1, current_mode = SortMode;
+  long result = 0;
 
     IN(SortRequested);
     if(message_MultipleChoiceQuestion(self, 100, "Sort By: ", current_mode, &result, sorts, NULL) != -1)
@@ -2246,7 +2248,8 @@ static void
 PerformRename( self )
   struct bushv *self;
 {
-  int msg_status = 0, count = 0;
+  int msg_status = 0;
+  long count = 0;
   char *response = NULL;
   char tmp_path[MAXPATHLEN],*tmp = NULL;
   register struct suite_item **selected = NULL;

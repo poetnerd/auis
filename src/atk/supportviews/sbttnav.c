@@ -445,7 +445,7 @@ long param;
 	"OSF/Motif",
 	NULL
     };
-    int choice;
+    long choice;
      if(param>255) {
 	/* we have an arg assume it is the preferences group to modify. */
 	prefs=LookupGroupPrefs(self, (char *)param);

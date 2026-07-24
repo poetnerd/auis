@@ -852,7 +852,7 @@ zipedit__Expose_Point( self, pane, figure, x, y )
   register zip_type_pixel		  x, y;
   {
   char					  points[100];
-  int					  xp, yp;
+  long					  xp, yp;
   register struct fontdesc		 *current_font =
 					    zipview_GetFont( View );
 

@@ -469,7 +469,7 @@ long param;
     "Cancel autolink",
     NULL
   };
-  int answer;
+  long answer;
 
   if (autolink_source) {
     if (message_MultipleChoiceQuestion(self,99,"Already autolinking!", 2, &answer, conflict, NULL)>= 0) {

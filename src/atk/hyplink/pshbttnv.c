@@ -1042,7 +1042,7 @@ StyleProc(self, param)
         "OSF/Motif",
 	NULL
     };
-    int choice;
+    long choice;
 
     if (message_MultipleChoiceQuestion(self,99,"Pick a new style:", pushbutton_GetStyle(b), &choice, style_menu, NULL)>= 0) {
 #ifdef NOROUNDRECT

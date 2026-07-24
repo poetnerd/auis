@@ -421,7 +421,7 @@ struct lsetview *self;
 FILE *thisFile;
 char *iname;
 {
-    int objectID;
+    long objectID;
     char *objectName;
     struct lset *ls = Data(self);
     objectName = filetype_Lookup(thisFile, iname, &objectID, NULL); /* For now, ignore attributes. */

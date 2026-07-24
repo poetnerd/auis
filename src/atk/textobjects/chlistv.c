@@ -93,7 +93,8 @@ struct chlistview *self;
 enum view_MouseAction action;
 long x, y, nclicks;
 {
-    int pos, index, region;
+    int pos, index;
+    long region;
     struct chlist *l;
 
     super_Hit(self, action, x, y, nclicks);
@@ -113,7 +114,8 @@ void chlistview__ActivateItem(self, pos)
 struct chlistview *self;
 int pos;
 {
-    int region, index;
+    int index;
+    long region;
     struct chlist *l;
 
     l = (struct chlist *) chlistview_GetDataObject(self);

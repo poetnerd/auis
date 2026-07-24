@@ -169,7 +169,7 @@ ChooseFromList(QVec, def)
 char **QVec;
 int def;
 {
-    int myans;
+    long myans;
     struct view *v;
 
     v = GetIM();

@@ -392,7 +392,7 @@ long cel__ReadFile(self,thisFile)
 struct cel *self;
 FILE *thisFile;
 {  
-    int objectID;
+    long objectID;
     long result;
     char *objectName;
     objectName = filetype_Lookup(thisFile, NULL, &objectID, NULL); /* For now, ignore attributes. */

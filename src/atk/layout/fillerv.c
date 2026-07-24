@@ -185,7 +185,7 @@ struct graphicstuff *gc;
     static char *wfontname = NULL;
     struct FontSummary *fs;
     int i;
-    int w;
+    long w;
 
     DEBUGPRINTF(("fillerview_InitializeGraphics\n"));
 
