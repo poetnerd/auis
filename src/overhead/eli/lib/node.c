@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include  <node.h>
+#include <stdlib.h>
 
 EliSexp_t      *eliSexp_GetNew(st)
 EliState_t     *st;

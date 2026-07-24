@@ -33,8 +33,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <prmtives.h>
 #include <sys/errno.h>
+#include <stdlib.h>
 
 extern char *AndrewDir();
+extern int dbg_fclose();	/* overhead/util/lib/fdplumb.c; fdplumb.h
+				   #defines fclose to this but only
+				   declares part of its dbg_* family */
 
 static struct {
     char           *name;

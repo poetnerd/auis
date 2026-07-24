@@ -52,6 +52,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif /* WHITEPAGES_ENV */
 #include <mailconf.h>
 #include <mail.h>
+#include <stdlib.h>
+#include <sys/wait.h>
 
 #ifdef AFS_ENV
 #include <afs/param.h>
@@ -70,9 +72,31 @@ extern long CUI_LastCallFinished;
 extern int CUI_SnapIsRunning;
 extern char *getenv(), *getprofile();
 
-#ifndef _IBMR2
-extern char *malloc();
-#endif /* _IBMR2 */
+/* malloc's own declaration now comes from <stdlib.h> above, with the
+   correct void * return type -- the old #ifndef _IBMR2 extern char
+   *malloc(); here predates that include and would conflict with it. */
+
+/* overhead/util/lib/fpacheck.c: no header declares it. */
+extern int fpacheck();
+
+/* overhead/util/lib/fdplumb.c's dbg_* wrapper family; see cuilib.c's own
+   copy of this comment for why fdplumb.h doesn't reach these. */
+extern int dbg_close(), dbg_dup2();
+
+/* ams/libs/ms/update.c: no header declares it (int, not the long used by
+   cuilib.c's unrelated MS_* list -- see that file's own comment). */
+extern int MS_FastUpdateState();
+
+/* Defined in the sibling file cuilib.c, same directory, no header. */
+extern void CUI_SetMachineName(), CUI_SetMachineType();
+extern int CUI_GenTmpFileName();
+
+/* Consumer-supplied UI callback interface -- see cuilib.c's own copy of
+   this comment. */
+extern int ReportError(), ReportSuccess(), GetStringFromUser(), ReduceWhiteSpace(), SetTerminalParams();
+
+/* Defined later in this same file, used above their definitions. */
+extern int InitializeClientSignals(), GetNewPassword();
 
 int     SNAP_debuglevel=0,
         SNAP_socket=0,

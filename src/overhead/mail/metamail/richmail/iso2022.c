@@ -43,6 +43,12 @@
 #include <ctype.h>
 #include "richlex.h"
 #include "richset.h"
+#include <string.h>
+
+/* Defined in whichever program links this file -- richtext.c or
+   richtoatk.c, each supplying its own implementation; no header in the
+   directory declares this shared callback interface. */
+extern int controloutput(), controlputc();
 
 /*
  * Global data for this module.

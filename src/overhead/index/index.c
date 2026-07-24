@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h> /* sys/types.h sys/file.h */
 #include <stdio.h>
 #include "index.h"
+#include <stdlib.h>
 
 /* given an index and a record id, copy out key into abuffer, a buffer of max size alen */
 index_GetKey(ai, arid, abuffer, alen)

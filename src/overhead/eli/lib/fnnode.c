@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include  <fnnode.h>
+#include <stdlib.h>
 
 EliFn_t        *eliFn_GetNew(st)
 EliState_t     *st;

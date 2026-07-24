@@ -39,6 +39,21 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 #include <andrewos.h>
 #include <big.h>
 #include <sys/stat.h>
+#include <stdlib.h>
+
+/* overhead/util/lib/fdplumb.c's dbg_* wrapper family; overhead/util/hdrs/
+   fdplumb.h #defines close/closedir to these but doesn't declare them. */
+extern int dbg_close(), dbg_closedir();
+
+/* ams/libs/ms: no header in the tree declares any of these. */
+extern int MS_Initialize(), MS_UpdateState(), CloseMSDir(), OpenMSDirectory(),
+	ReadOldMSDirectoryHead(), ReadRawFile(), ParseMessageFromRawBody(),
+	InventID(), BuildDateField(), BuildReplyField(), BuildAttributesField(),
+	BuildCaption(), FreeMessage(), AddHeader(), IsMessageAlreadyThere(),
+	WritePureFile(), AppendMessageToMSDir();
+
+/* Defined later in this same file, used above their definitions. */
+extern int GetNewReadyBox(), AddNetnewsWideReplyHeader();
 
 #define ALT_GOURMAND_DIR ("/afs/andrew.cmu.edu/usr0/netbb/.MESSAGES/netnews/alt/gourmand")
 #define ALT_GOURMAND_STR ("RECIPE:")

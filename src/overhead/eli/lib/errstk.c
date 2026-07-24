@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include <errstk.h>
+#include <stdlib.h>
 
 static int eliTraceStk_Grow(s)
 eliTraceStack_t *s;

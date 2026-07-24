@@ -28,6 +28,9 @@
 
 LOCALINCLUDES = -I$(BASEDIR)/include/ams
 
+/* M2 ANSI sweep: catch implicit function declarations (revival/doc/roadmap.md, M2) */
+COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Werror=implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
+
 OBJS = conf.o gl.o gle.o mc.o mcb.o mcbe.o nns.o st.o stb.o stbe.o
 
 LIBS = $(BASEDIR)/lib/libmssrv.a \

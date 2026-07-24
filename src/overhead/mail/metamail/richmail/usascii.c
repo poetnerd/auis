@@ -37,6 +37,7 @@
 #include <ctype.h>
 #include "richlex.h"
 #include "richset.h"
+#include <string.h>
 
 /*
  * Initialise the US-ASCII character set processor.

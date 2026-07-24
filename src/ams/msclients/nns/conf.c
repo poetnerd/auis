@@ -33,6 +33,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 
 #include <big.h>
 #include <ctype.h>
+#include <stdlib.h>
+
+/* overhead/util/lib/fdplumb.c's dbg_* wrapper family; overhead/util/hdrs/
+   fdplumb.h #defines fclose to this but doesn't declare it. */
+extern int dbg_fclose();
 
 /* The various mailbox directories */
 static char RootDir[MAXPATHLEN + 1] = "/usr/net";

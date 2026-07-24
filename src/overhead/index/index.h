@@ -125,3 +125,12 @@ extern struct indexBucket *index_CGetHash();
 extern struct indexBucket *index_CGet();
 extern struct recordSet *recordset_New();
 extern long index_Hash();
+
+/* Added M2 ANSI sweep (revival/doc/roadmap.md, M2): these index_ and
+   recordset_ siblings were already defined in this directory but never
+   declared here alongside the rest of the family. */
+extern int index_Create(), index_AddPrimary(), index_Close(), index_Enumerate(),
+    index_AddSecondary(), recordset_Free(), index_GetData(), index_DeletePrimary(),
+    index_DeleteSecondary(), index_Dump(), index_CPut(), index_HashPresent(),
+    index_HashAdd(), index_PurgeBucket(), index_FreeHL(), index_HashRemove(),
+    index_CWrite(), index_FreeIndex(), recordset_Add();

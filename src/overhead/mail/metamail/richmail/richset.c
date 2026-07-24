@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include "richlex.h"
 #include "richset.h"
+#include <stdlib.h>
 
 /*
  * Define a list of all character set processors in memory.

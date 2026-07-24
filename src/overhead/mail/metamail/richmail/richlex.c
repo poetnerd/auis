@@ -45,6 +45,7 @@
 #include <ctype.h>
 #include "richlex.h"
 #include "richset.h"
+#include <string.h>
 
 int CorrectionEnabled = 1;	/* Zero if correction has been disabled */
 int RichtextLessThanFlag = 0;	/* Non-zero to turn on multi-byte '<' hack */

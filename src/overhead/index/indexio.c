@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <sys/stat.h>
 #include "index.h"
+#include <stdlib.h>
 
 /*
  * Internal routine: given a FILE * and an integer, write the integer in a machine-independent

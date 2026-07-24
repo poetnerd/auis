@@ -32,17 +32,23 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include <ecommon.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*
  * calls the appropriate version of decr_refcount based upon the type of the
- * thing whose refcount is being decr'd. 
+ * thing whose refcount is being decr'd.
  */
 
 /*
  * NOTE: stack nodes are not considered here.  They should never be referred
- * to by anything but the stack itself.  Same goes for bucketnodes 
+ * to by anything but the stack itself.  Same goes for bucketnodes
  */
 #include <eliy.h>
+
+/* eliyylex is the flex-generated scanner entry point, defined in the
+   sibling generated file elil.c; no header in the tree declares it. */
+extern int eliyylex(void);
 
 void            eliDecrRefcount_SexpRef(st, node)
 EliState_t     *st;

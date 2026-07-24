@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include  <cons.h>
+#include <stdlib.h>
 
 /*
  * Returns the first cons cell in the free area.  If one does not exist, a

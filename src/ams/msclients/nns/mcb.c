@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 /* BOGUS: include relevant AMS header(s) here */
 
 #include <big.h>
+#include <stdlib.h>
 
 void            MCBInit(mcb)
 MCacheBucket_t *mcb;

@@ -40,6 +40,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ctype.h>
 #include <cuimach.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+#include <util.h>
 #ifdef AFS_ENV
 #include <netinet/in.h>
 #include <afs/param.h>
@@ -68,6 +70,32 @@ extern long MS_ReInitialize(), MS_GetVersion(), MS_Die(), MS_GetConfigurationPar
    MS_GetHeaderContents(), MS_SubmitMessage(), MS_UnlinkFile(), MS_ReconstructDirectory(), MS_ValidateAndReplaceChunk(), MS_GetPartialFile(), MS_WriteAllMatchesToFile(), MS_InstallWelcomeMessage(), MS_CloneMessage(), MS_GetAssociatedTime(), MS_SetAssociatedTime(), MS_StorePartialFile(), MS_RenameDir(), MS_GetDirInfo(), MS_RemoveDirectory(),
    MS_CheckMissingFolder(), MS_GetSubscriptionEntry(), MS_PrefetchMessage(), MS_HandlePreference(), MS_SetSubscriptionEntry(), MS_MergeDirectories(), MS_StorePartialFile(), MS_GetDirAttributes(), MS_AddAttribute(),MS_GetVConfig();
 
+/* These three message-server functions are declared separately from the
+   list above: their real definitions (ams/libs/ms/gentname.c,
+   ams/libs/ms/unscrib.c) and the currently-linked ams/libs/nosnap/nosnap.c
+   are all plain int, not long -- kept apart from the existing long-typed
+   list above rather than widening them to match it. */
+extern int MS_GenTempFileName(), MS_WriteUnscribedBodyFile(), MS_CUI_Init();
+
+/* overhead/util/lib/fdplumb.c's dbg_* wrapper family; overhead/util/hdrs/
+   fdplumb.h #defines fclose/close/dup2/pipe/pclose/vfclose to these but
+   only declares part of the family (dbg_open, dbg_fopen, dbg_popen,
+   dbg_qopen, dbg_topen, dbg_opendir), not these six. */
+extern int dbg_fclose(), dbg_close(), dbg_dup2(), dbg_pipe(), dbg_pclose(), dbg_vfclose();
+
+/* ams/libs/shr/utils.c, ams/libs/shr/findroot.c: no header in the tree
+   declares any of these. */
+extern int BuildNickName(), LowerStringInPlace(), ReduceWhiteSpace(), bone(), lc2strncmp(), FindTreeRoot();
+
+/* Consumer-supplied UI callback interface: implemented by whichever
+   front end links libcui.a (ams/msclients/cui/cuifns.c and cui.c for the
+   interactive cui client, atkams/messages/lib/stubs.c for the GUI
+   messages app, etc.) -- no header in the tree declares this interface. */
+extern int ReportError(), ReportSuccess(), ChooseFromList(), GetStringFromUser(), GetBooleanFromUser(), DirectoryChangeHook(), SubscriptionChangeHook(), ConsiderLoggingRead();
+
+/* Defined in the sibling file andmchs.c, same directory, no header. */
+extern int Machine_Init(), CUI_InitializeKeepalives(), CUI_GenLocalTmpFileName();
+
 #if !POSIX_ENV
 extern char *malloc (), *realloc ();
 extern char *index (), *rindex();
@@ -83,6 +111,10 @@ static ValidateDirname();
 
 /* Any CUI functions that return a long should be in this list */
 long HandleAddress(), CUI_CacheDirName(), CUI_SetDirNode(), CUI_GetDirNode(), CUI_AlterSnapshot(), CUI_GetHeaders(), CUI_DisambiguateDir(), CUI_SetSubscriptionEntry(), CUI_MergeDirectories();
+
+/* Defined later in this same file, used above their definitions. */
+extern int CheckEmsgConsistency(), FindQuotedString(), FreeCustomizationHeaders(), GetHeaderContents(), GetViceFileToNewString(), PutStringToViceFile(), pfclose();
+extern int BumpNeedsPurging(), CUI_AppendFileToVice(), CUI_BuildNickName(), CUI_CheckNewMessages(), CUI_CopyViceFileTails(), CUI_FixAttribute(), CUI_FixAttributeByNumber(), CUI_GenTmpFileName(), CUI_GetBodyToLocalFile(), CUI_GetCuid(), CUI_HandleMissingFolder(), CUI_MarkDirectoryForPurging(), CUI_PrintBodyFromCUIDWithFlags(), CUI_PrintUpdatesWithFlags(), CUI_PurgeMarkedDirectories(), CUI_ReallyGetBodyToLocalFile(), CUI_ReportAmbig(), CUI_ResendMessage(), CUI_RewriteHeaderLineInternal();
 
 int (*CUI_GenericClientSignalHandler)() = NULL;
 

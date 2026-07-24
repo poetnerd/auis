@@ -32,6 +32,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include  <stk.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* Initialize a stack.  S must point to an existing structure */
 

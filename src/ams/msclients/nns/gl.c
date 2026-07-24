@@ -36,6 +36,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 
 #include <andrewos.h>
 #include <big.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+
+/* overhead/util/lib/fdplumb.c's dbg_* wrapper family; overhead/util/hdrs/
+   fdplumb.h #defines close/closedir to these but doesn't declare them. */
+extern int dbg_close(), dbg_closedir();
+
+/* ams/libs/ms/msparse.c: no header in the tree declares it. */
+extern int MS_ParseDate();
 
 static int      GLAddEntries();
 static int      GLAddEntry();

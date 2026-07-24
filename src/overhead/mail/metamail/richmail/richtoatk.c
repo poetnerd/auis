@@ -15,6 +15,10 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 #include <stdio.h>
 #include <ctype.h>
 #include "richlex.h"
+#include <string.h>
+
+/* Defined later in this same file, used above its definition. */
+extern int ignoretoken();
 
 char *translate(t)
 char *t;

@@ -19,6 +19,13 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 #include "richlex.h"
 #include "richset.h"
 #include <config.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <termcap.h>
+
+/* Defined later in this same file, used above their definitions. */
+extern int richtext_main(), controloutput();
 
 extern char *getenv();
 #ifdef AMIGA
