@@ -48,6 +48,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <rm.ih>
 #include <im.ih>
 #include <cursor.ih>
+#include <string.h>
 
 static boolean Inhibit;
 static struct atomlist *  AL_bodyfont;

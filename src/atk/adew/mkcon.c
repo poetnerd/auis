@@ -42,6 +42,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <stdio.h>
 #include <sys/param.h>
 #include <ctype.h>
+#include <sys/stat.h>
+#include <util.h>
 
 extern char *AndrewDir();
 char *cls,*viewname,*oldcls,*oldvw;

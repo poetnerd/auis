@@ -2,6 +2,10 @@
  *         Copyright IBM Corporation 1988,1991 - All Rights Reserved      *
  *        For full copyright information see:'andrew/config/COPYRITE'     *
 \* ********************************************************************** */
+
+/* M2 ANSI sweep: catch implicit function declarations (revival/doc/roadmap.md, M2) */
+COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Werror=implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
+
 NormalObjectRule()
 LibraryTarget(libcmenu.a, cmactiv.o cmcreate.o cmdraw.o cmerror.o cmmanip.o scache.o)
 LibraryTarget(libshadows.a, shadows.o)

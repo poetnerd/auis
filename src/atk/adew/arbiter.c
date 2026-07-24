@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <class.h>
 #include <cel.ih>
 #include <arbiter.eh>
+#include <string.h>
 static struct arbiter *master;
 
 struct arbiter *arbiter__GetMaster(classID)

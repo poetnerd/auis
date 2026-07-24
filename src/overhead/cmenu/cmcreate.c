@@ -37,9 +37,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <crsrimg.h>
 #include <wormimg.h>
 #include <shadows.h>
+#include <stdlib.h>
 
 char *getprofile();
 int getprofileswitch();
+int getprofileint();
 
 #define FONTHEIGHT(f) (f->max_bounds.ascent + f->max_bounds.descent)
 

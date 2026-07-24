@@ -60,6 +60,7 @@ preprocessor. */
 #include <stdio.h>
 #undef label
 #include <util.h>
+extern int FoldedEQ();	/* overhead/util/lib/foldedeq.c; no header declares it anywhere in the tree */
 #include <ctype.h>
 #include <class.h>
 #include <message.ih>

@@ -71,6 +71,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <helpdb.eh>
 
 #include <index.h>
+/* index.h declares several index_* siblings but not these; no header
+   declares them anywhere in the tree */
+extern int index_Close();
+extern int index_Enumerate();
+extern int index_GetData();
+extern int recordset_Free();
 
 boolean helpdb__InitializeClass();
 char *helpdb__MapAlias ();

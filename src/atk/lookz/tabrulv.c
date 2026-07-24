@@ -47,12 +47,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/look
 #include <lprruler.ih>
 
 #include <tabrulv.eh>
+#include <string.h>
 
 #define	IconString	"/"
 #define	ClearString	"AllClear"
 #define	CancelString	"Cancel"
 
 static void RemoveIcon(), RepaintIcon(), RedrawPark(), RedrawIcons(), RedrawCommands(), RedrawText(), RedrawRuler();
+int FindClosestTab();	/* defined below, used earlier in this file */
 
 #define ICONHEIGHT 14	/*C*//* height of area where icons move */
 #define PARKWIDTH  19	/*C*//* width of icon parking area */

@@ -40,6 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <envrment.ih>
 #include <text.ih>
 #include <hlptextv.eh>
+#include <string.h>
 
 boolean hlptextview__InitializeClass(classID)
 struct classheader *classID;

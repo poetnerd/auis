@@ -51,6 +51,7 @@ of the author */
 #include <page.ih>
 #include <im.ih>
 #include <dataobj.ih>
+#include <string.h>
 
 
 static void AddSwitchee(), NextSwitchee(),

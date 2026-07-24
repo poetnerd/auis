@@ -36,6 +36,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 static int Coffset = 0;
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* 
 *
@@ -160,6 +162,9 @@ FILE *fout;
 	}
     }
 }
+int fontcount();	/* defined below, used earlier in this file */
+int fontcvt();		/* defined below, used earlier in this file */
+
 main(argc,argv)
 char *argv[];
 {

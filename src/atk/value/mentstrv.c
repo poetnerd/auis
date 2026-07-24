@@ -40,6 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <observe.ih>
 #include <value.ih>
 #include <valuev.ih>
+#include <string.h>
 
 #include <mentstrv.eh>
 

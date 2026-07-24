@@ -43,6 +43,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <proctbl.ih>
 
 #include <dsearch.eh>
+#include <string.h>
 
 #define MAXSTRING	256
 /* Describe how the current seach string has failed. */

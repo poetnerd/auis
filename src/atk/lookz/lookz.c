@@ -44,6 +44,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/look
 #include <dataobj.ih>	/* for dataobject_NOREADERROR */
 #include <text.ih>
 #include <lookz.eh>
+#include <string.h>
 
 #define MAXFILELINE 255
 

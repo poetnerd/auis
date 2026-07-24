@@ -48,6 +48,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <owatch.ih>
 
 #include <gsearch.eh>
+#include <string.h>
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 

@@ -43,6 +43,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <sbuttonv.ih>
 #include <buttonv.ih>
 #include <entrstrv.eh>
+#include <string.h>
 
 
 

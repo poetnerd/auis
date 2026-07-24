@@ -55,6 +55,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fram
 #include <environ.ih>
 
 #include <framev.eh>
+#include <string.h>
 
 static struct keymap *frameviewKeymap;
 static struct menulist *frameviewMenulist;

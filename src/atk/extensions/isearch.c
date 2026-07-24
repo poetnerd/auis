@@ -46,6 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <environ.ih>
 
 #include <isearch.eh>
+#include <string.h>
 
 static boolean useSelectionRegion;
 

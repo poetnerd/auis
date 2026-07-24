@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <X11/Xlib.h>
 #include <cmintern.h>
 #include <scache.h>
+#include <stdlib.h>
 
 /* Need to handle movement of worm item in this code... */
 

@@ -164,6 +164,10 @@ static char *SyncChoices[] = {
 #define SYNC_LOSE  1
 
 static int LocalReadFile();
+int frame_VisitFilePrompting();	/* defined below, used earlier in this file */
+int frame_VisitNamedFile();		/* defined below, used earlier in this file */
+int frame_WriteFile();			/* defined below, used earlier in this file */
+extern int osi_GetTimes();		/* overhead/util/lib/times.c; no header declares it anywhere in the tree */
 
 static int
 preventOutofSyncLossage(outputFrame, buffer)

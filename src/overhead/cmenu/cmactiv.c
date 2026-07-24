@@ -36,6 +36,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <cmintern.h>
 #include <cmdraw.h>
 
+/* defined in cmdraw.c/cmmanip.c; neither cmdraw.h nor cmintern.h declares these */
+extern void FlipButton();
+extern int DrawMenus();
+extern int SelectionPtrToNum();
 
 #if !defined(PRE_X11R4_ENV) && defined(__STDC__)
 static Bool SuitableEvent(Display *, XEvent *, char *);
