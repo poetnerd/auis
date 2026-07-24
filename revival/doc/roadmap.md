@@ -1682,6 +1682,29 @@ call site and definition tree-wide *before* any mass file editing starts
        pre-existing SSLLIB link failure confirmed unrelated. Runtime
        check user-verified (`messages`, `cuin`, `help`, `richtext`/
        `richtoatk`), no regressions.)
+  4. [ ] Large, dedicated-session territory (~70–140 instances each;
+     gate schedule ruled 2026-07-24, see `m2-rollout-runbook.md`'s
+     "Gate scope" section — subtree-local gate always required,
+     tree-wide gate only where marked below):
+     - [ ] `overhead/util/lib` — subtree-local gate only.
+     - [ ] `overhead/mail/metamail/metamail` — subtree-local gate only.
+     - [ ] `atk/text` — subtree-local gate only.
+     - [ ] `atk/rofftext` — subtree-local gate only.
+     - [ ] `atk/table` — subtree-local gate only.
+     - [ ] `overhead/mail/lib` — subtree-local gate only.
+     - [ ] `atkams/messages/lib` — tree-wide gate required (the
+       `messages` app's actual backend).
+     - [ ] `contrib/zip/lib` — tree-wide gate required (tree's
+       highest-defect-density directory).
+     - [ ] Fixed checkpoint after the last bucket-4 directory: tree-wide
+       gate required regardless of which directory precedes it.
+  5. [ ] `ams/libs/ms` (892 instances, ~38% of the entire M2 census) —
+     its own dedicated session, whoever takes it briefed on the
+     fdplumb include-order ABI history first (`project_fdplumb_
+     include_order_abi`, `porting-assessment.md` §18). Tree-wide gate
+     required both before starting and after finishing — the second
+     of these also serves as M2's own completion gate, before M3
+     starts.
 - **M3 — Definition conversion.** `ansify` (`revival/tools/ansify`,
   built and validated 2026-07-08 — see porting-assessment §14):
   static-fix tools → class methods/classprocs by signature-DB lookup

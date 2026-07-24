@@ -40,6 +40,54 @@ this (`dependInstall:: depend` in `config/imake.tmpl` always runs
 `make -k dependInstall`) for any directory-local rebuild, not just
 `make clean && make -k install`.
 
+## Command style — minimize permission-prompt interruptions
+
+wdc is supervising these sessions live and wants to be able to let a
+session run longer unattended. The single biggest lever for that is
+*how* commands are issued, not which commands — confirmed empirically
+2026-07-24 across the M2 pilot through batch 3B: the user's
+`settings.json` allow-list covers every individual verb this rhythm
+needs (`cd`, `make clean/depend/install/dependInstall`, `grep`, `sed
+-n`/`sed -E`, `echo`, `cat`, `wc`, `head`/`tail`, `nm`, `otool`, `ps`/
+`pgrep`, `sort`/`uniq`/`cut`, `fossil status`/`diff`/`extras`), but a
+compound command — anything chained with `;`/`&&`, a `for`/`while`
+loop, or a heredoc — is matched as one opaque string against the
+allow-list, not decomposed into its parts. A `;`-chain built entirely
+from individually-allowed verbs still prompts, every time, because the
+whole string doesn't itself match any single rule. A prompt-type
+PreToolUse hook was tried as a fix and failed (it can restrict but
+can't grant extra trust to suppress the dialog) — there is no config
+lever left, only a command-shape one:
+
+- **Issue build steps as separate tool calls, not chained with `;` or
+  `&&`.** `make clean`, `make depend`, `make -k install`, `grep -c
+  "error:" ...`, `grep -n "error:" ...` each individually match an
+  allow rule and won't prompt *if issued as separate Bash calls*.
+  Chaining them into one `cd DIR && make clean && make depend && ...`
+  line turns all of them into a single unmatched string. More tool
+  calls in the transcript, but zero prompts, is the better trade here.
+- **Use the Read/Grep/Glob tools instead of shell `grep`/`sed -n`/
+  `cat` for census and file inspection.** They're a different
+  permission class from Bash and don't hit this gate at all. Anything
+  shaped like "for each of N files, check for a pattern/line" —
+  exactly the batch 3B census work (checking `#include`s, printing a
+  line number, grepping a function name across files) — is better
+  done as a Grep call with a multi-file glob, or a handful of separate
+  Grep/Read calls, than as a shell `for` loop. This is the fix for the
+  single largest source of prompts seen so far (multi-file `for`-loop
+  census commands), not a workaround for it.
+- **Avoid shell `for`/`while` loops and heredocs generally** where the
+  same result is reachable via repeated simple tool calls. They're not
+  just slower to get approved — a loop or heredoc is also the one
+  shape that can't safely be blanket-allowed even in principle (a
+  dangerous command buried inside a loop body wouldn't be caught by
+  any prefix-anchored `deny` rule), so it will always need either an
+  approval or a rewrite, never a config fix.
+- When a genuine multi-step shell pipeline is unavoidable (e.g.,
+  `grep | sed | sort > file` to build a dedup table from a build log),
+  it's fine to use one — just expect it to prompt once, and treat that
+  as the rare case rather than the routine one.
+
 ## Logging
 
 ALL build output — local rebuilds and the tree-wide gate alike —
