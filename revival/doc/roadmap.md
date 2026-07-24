@@ -671,24 +671,71 @@ trail, reproduction steps, and what was tried/disproven along the way:
   corrupting the menu command dispatch. Fixed with `(long)-1` cast
   (`figv.c:129-130`). **No longer reproduces** (confirmed 2026-07-24).
 
-### figure — `figotext` label rendering garbled (found 2026-07-24, not yet root-caused)
+### figure — `figotext` label rendering garbled — RESOLVED 2026-07-24
 
 - Figure-inset text labels (`figotext` objects — box labels,
-  captions) render corrupted/garbled instead of the real string,
+  captions) rendered corrupted/garbled instead of the real string,
   observed in `PAPERS/conf/1993/Inglett` and
   `NEWSLETTERS/EZ/95Summer.ez`. Found during M2 rollout point 3a's
-  runtime check; **confirmed pre-existing and unrelated to that
-  batch's fix** via a controlled test — reverted `atk/figure`'s M2
-  changes to committed source, rebuilt clean, restarted `ez` fresh
-  (ruling out stale `dlopen`'d code from an already-running process),
-  and the corruption was still present. Layout/positioning is
-  correct — only the text content inside is wrong ("degenerate
-  display, positioned correctly"). **Not the same bug as the old calc
-  digit-display issue** — that one is confirmed fully fixed (live
-  Sherman.Alloc check, 2026-07-24), so no shared root cause should be
-  assumed; treat this as a fresh, distinct issue needing its own
-  investigation. See `claude-history/m2-batch3a-REPORT.md` §11 for
-  the full test trail.
+  runtime check; confirmed pre-existing and unrelated to that batch's
+  fix via a controlled revert test (`claude-history/m2-batch3a-REPORT.md`
+  §11). **Root cause found and fixed same day**: `atk/basics/common/
+  fontdesc.c`'s `fontdesc__StringBoundingBox` computed its string
+  width via `fontdesc_StringSize(font, graphic, string, (long *) &w,
+  (long *) &junk)`, but `w`/`junk` were declared plain `int` (4 bytes);
+  the real implementation (`xfontdesc__StringSize`, `atk/basics/x/
+  xfontd.c`) writes through both out-params as genuine `long *`
+  (8 bytes), so every call overflowed 4 bytes past each stack slot —
+  a live memory-corruption bug on every label recompute. Confirmed via
+  `fossil artifact` against the original 2026-06-24 trunk import: the
+  cast is verbatim 1990s CMU source, not something this port
+  introduced — on the 32-bit hosts this code was written for, `int`
+  and `long` were the same width, so the cast was a no-op; LP64 is
+  what turns it into a real overflow. It evaded the M2 census's own
+  compiler-warning-based audit specifically because the explicit cast
+  suppresses `-Wincompatible-pointer-types`; see `porting-assessment.md`
+  §12's "New sub-variant (2026-07-24)" for the full writeup and a
+  tree-wide census of this masking pattern (21 hits, only this one
+  real). Fixed by widening `w`/`junk` to `long` and dropping the now-
+  unneeded casts. Rebuilt (`atk/basics/common`, `libbasics.a` relink,
+  `runapp` relink) and confirmed live: `95Summer.ez` renders
+  correctly; `Inglett` renders correctly except for the two items
+  below (both pre-existing, both narrower in scope than this fix).
+
+### figure — italic text: non-monotonic sizing, distinct from the fix above (found 2026-07-24, open)
+
+- While confirming the fix above against `Inglett`, two remaining,
+  narrower problems surfaced, both isolated to **italic** text
+  (`fontstyle:2`) specifically — every plain/bold `figotext` in the
+  document now renders correctly:
+  1. A modest (~3-5%) width overflow on the two italic runs in the
+     document (`andy`-16pt "The quick brown" lead-in and the
+     `andysans`-10pt-italic "The quick brown..." label), enough to
+     visibly overlap adjacent content but not a dramatic mismatch —
+     likely just the ordinary cost of substituting `times`/`helvetica`
+     for the (uninstalled at these sizes) `andy`/`andysans` font
+     family, not a code bug. Quantified via a standalone core-vs-Xft
+     width comparison tool; see below.
+  2. **Real, unexplained bug**: hand-testing in the figure toolset
+     (Figure → Toolset → ungroup → select text → font-size picker)
+     found that italic text size scaling is **not monotonic** —
+     10pt italic renders bigger than 12pt, and bigger than 20pt.
+     Plain and bold text both scale monotonically as expected; only
+     italic is affected. Root cause not yet found: the toolset's
+     size-selection code (`fontselv.c`'s `SetSizeProc`/`InsertSize`)
+     was checked and is not the cause (each menu entry resolves via
+     a stable string-table handle, not by position); a faithful
+     simulation of the core font-resolution engine
+     (`xfontdesc_LoadXFont`'s `ClosestFonts`/`XExplodeFontName`
+     fallback chain, `atk/basics/x/xfontd.c`) for one italic pair
+     (10pt vs 12pt) came out monotonic and correct, so the inversion
+     is not yet localized. Needs its own investigation session —
+     not chased further here at wdc's request. Diagnostic tools used
+     for both items above (not checked in, scratch-only):
+     `fontwidth_test.c` (core `XTextWidth` vs Xft `XftTextExtents8`
+     for the same resolved font) and `fontpick_test.c` (ports
+     `GetNthDash`/`XExplodeFontName`/`ClosestFonts` verbatim to show
+     which installed bitmap a given nominal size/style resolves to).
 
 ### eq — integral symbol missing (suspect font pipeline, not eq)
 

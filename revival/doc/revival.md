@@ -307,6 +307,25 @@ sample:
   approximately the whole mailbox. Found by code review during the
   mirror work, fixed with one `FreeMessage` call.
 
+- **A cast that used to be true.** The font toolkit's bounding-box
+  routine measured a string's width by calling its own sibling method
+  through an explicit `(long *) &w` cast, where `w` was a plain `int`
+  local. On the 32-bit hosts this was written for, `int` and `long`
+  were both four bytes, so the cast changed nothing — a stylistic
+  choice, not a mistake. On this LP64 port `long` is eight bytes, and
+  the same cast became a real four-byte stack overflow on every call,
+  silently corrupting whatever local variable happened to sit next to
+  it in the frame — every time a figure-inset text label recomputed
+  its size. It produced no crash, just gradually garbled label text,
+  and it evaded the ANSI conversion's own compiler-warning-driven
+  audit for a specific reason: that audit worked by grepping for
+  `-Wincompatible-pointer-types` warnings, and an explicit cast is
+  exactly what that warning exists to suppress. A census built
+  entirely from compiler diagnostics could not, by construction, see
+  a mismatch the programmer had already cast into silence; only
+  reading the function by hand, then checking the original 1990s
+  source to confirm the cast predated this project, found it.
+
 - **A blocking dialog that outlived its answer.** Clicking a folder in the
   mail overview brings up a "What do you want to do with 'X'?" menu —
   implemented not as a native modal but as ordinary event dispatch, so

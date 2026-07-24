@@ -530,6 +530,66 @@ active chain (`headers.c`, `.ch` interfaces, `.c` implementations, `capaux.c`,
 forward-compatibility. Full file list in `porting-changelog.md`'s 2026-07-05
 entries.
 
+#### New sub-variant (2026-07-24): explicit cast masks the mismatch from the compiler
+
+The M2 census (`revival/doc/claude-history/m2-census-REPORT.md`) found this
+family's by-pointer shape mechanically, via `-Wincompatible-pointer-types`
+warnings against typed `.ch`/`.ih` signatures — but that method has a blind
+spot: an explicit pointer cast at the call site silences the warning outright,
+so a real instance can sit in the tree indefinitely without ever showing up in
+a compiler-driven sweep.
+
+Found by hand while root-causing the `figotext` label-rendering corruption
+(figure-inset text showing as stray single characters, position correct):
+`fontdesc.c`'s `fontdesc__StringBoundingBox` calls its sibling method
+`fontdesc_StringSize` like this:
+
+```c
+int w, a, d, ascent, descent, junk;
+...
+fontdesc_StringSize (font, graphic, string, (long *) &w, (long *) &junk);
+```
+
+`StringSize`'s real implementation (`xfontdesc__StringSize`, `atk/basics/x/
+xfontd.c:960`) writes through both out-params as genuine `long *` (8-byte
+stores: `*XWidth = retWidth; *YWidth = 0;`). `w` and `junk` are `int` — 4-byte
+stack slots — so every call overflows 4 bytes past each one. Confirmed via
+`fossil artifact` against the original trunk import
+(`90afc0c28e`, both the 2026-06-24 initial import and the 2026-06-29
+"revert all .c to trunk" commit): this cast is verbatim 1990s CMU source, not
+something introduced during this port. On the original 32-bit platforms
+`int`/`long` were the same width, so the cast was always a no-op there; LP64
+is what turns it into a live stack overflow.
+
+**Census method for this sub-variant** (a compiler-warning sweep won't find
+it — it has to be syntactic): grep the tree for the masking shape itself,
+then manually check the target variable's real declared type at each hit.
+
+```
+grep -rnE '\((long|int|short)\s*\*\)\s*&[A-Za-z_]' --include=*.c .
+```
+
+Run tree-wide 2026-07-24: 21 hits total.
+- **1 confirmed bug**: `fontdesc.c:378` (above).
+- **14 safe**: `rm.c` (×4), `dataobj.c` (×2), `view.c` (×2), `frame/
+  framecmd.c` (×1, plus `osi_Times.Secs` which is already `unsigned long`)
+  all cast a `struct * pointer` to `(long *)` — pointers and `long` are both
+  8 bytes on this LP64 build, so these are the ordinary "store a pointer in
+  a long-typed slot" (`rock`-style) idiom, not a mismatch.
+- **6 hits are dead code**, confirmed not built in this configuration (no
+  `.o` under `build/` for any of them): `contrib/mit/fxlib/rpc3.9/*` (old
+  RPC library) and `overhead/class/machdep/next_mach/doload.c` (NeXT-only
+  machdep, never selected by `config/site.h` on Darwin).
+
+Narrow in this tree as of 2026-07-24 — one real site — but worth re-running
+this grep any time more of the tree gets ANSI-converted, since a `.ch`
+signature widening (like `StringBoundingBox`'s own `int*`→`long*` fix earlier
+the same day, `m2-census-REPORT.md` row 22) is exactly the kind of change
+that turns a previously-matched, harmless cast into a fresh mismatch. This
+method only catches concealment via an explicit narrowing/widening cast; it
+doesn't add coverage beyond what `m2-census`'s compiler-warning method
+already found for uncast mismatches.
+
 #### Strategic options
 
 **Option A — Fix the dispatch mechanism**: Change the generated `.ih` macros
