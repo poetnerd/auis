@@ -1659,9 +1659,29 @@ call site and definition tree-wide *before* any mass file editing starts
        confirmed via controlled revert/rebuild/fresh-restart test to
        be pre-existing and unrelated to this fix; see Insets to Repair
        → figure.)
-     - [ ] Batch B — `overhead/eli/lib`, `ams/libs/cui`,
+     - [x] Batch B — `overhead/eli/lib`, `ams/libs/cui`,
        `ams/msclients/nns`, `overhead/mail/metamail/richmail`,
-       `overhead/index`
+       `overhead/index` (done 2026-07-24; 528 instances fixed across
+       34 files — far past the runbook's stale "1–42 each" estimate
+       for this bucket (`ams/libs/cui` alone was 350) — see
+       `m2-batch3b-REPORT.md`. Fourth data point settling "subtree-
+       local gate is sufficient," this time including `ams/libs/cui`
+       (linked into `messages`'s `amsn.do`) at the largest volume yet
+       — zero cross-directory fallout. Two new taxonomy sub-shapes
+       found: a wrapper-family header (`fdplumb.h`) that only declares
+       part of its family, recurring with no local precedent across 3
+       directories; consumer-supplied callback interfaces with no
+       declaring header anywhere (`ReportError` et al., `richmail`'s
+       `controloutput`/`controlputc`). Resolved the open `overhead/
+       index`/`index.h` question from rollout point 2: now that
+       `overhead/index` is the flagged directory, extending `index.h`
+       directly was correct (no competing local-extern habit).
+       `overhead/eli/lib` found to have zero live runtime consumers in
+       this build (`ams/ms`/`SNAP_ENV` disabled, `rdemo` unreferenced)
+       — structural, not a testing gap. `ams/msclients/nns`'s
+       pre-existing SSLLIB link failure confirmed unrelated. Runtime
+       check user-verified (`messages`, `cuin`, `help`, `richtext`/
+       `richtoatk`), no regressions.)
 - **M3 — Definition conversion.** `ansify` (`revival/tools/ansify`,
   built and validated 2026-07-08 — see porting-assessment §14):
   static-fix tools → class methods/classprocs by signature-DB lookup

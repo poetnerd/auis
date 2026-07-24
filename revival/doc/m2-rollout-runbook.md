@@ -15,26 +15,39 @@ only what's specific to M2: the flag mechanics, the fallout taxonomy,
 the census, and ordering.
 
 **Status (2026-07-24):** rollout points 1 (`atk/eq` pilot), 2 (8-
-directory small/leaf batch), and 3 batch A (5-directory mid-size
-batch) have all closed their gates the same day. 217/217 combined
-predicted instances confirmed across 14 directories, no volume
-surprises anywhere. All three taxonomy categories are validated by
-real fixing passes; sub-case 2 of "missing in-tree/project header"
-was refined at batch A after batch 2 under-specified it (see the
-taxonomy section). Gate scope ("subtree-local is sufficient") now has
-three data points, including `overhead/cmenu` (statically linked)
-and `atk/basics/x`/`atk/basics/common` (statically linked AND M1's
-own former largest-blast-radius directory) — recommend settled, see
-"Gate scope" below. Two process gaps found and folded into
+directory small/leaf batch), 3 batch A (5-directory mid-size batch),
+and 3 batch B (5-directory mid-size batch) have all closed their gates
+the same day. 745/745 combined predicted-or-derived instances
+confirmed across 19 directories (528 of those batch B's, where no
+reliable stale count existed — see below), no volume surprises except
+batch B's own `ams/libs/cui` (350 actual vs. the runbook's stale
+"1–42" bucket) and `ams/msclients/nns` (51, also over that bucket).
+All three taxonomy categories are validated by real fixing passes;
+sub-case 2 of "missing in-tree/project header" was refined at batch A
+after batch 2 under-specified it, then re-confirmed by batch B's
+`overhead/index`/`index.h` re-evaluation (see the taxonomy section and
+`claude-history/m2-batch3b-REPORT.md` §4). Gate scope ("subtree-local
+is sufficient") now has **four** data points, including
+`overhead/cmenu` (statically linked), `atk/basics/x`/`atk/basics/
+common` (statically linked AND M1's own former largest-blast-radius
+directory), and batch B's `ams/libs/cui` (linked directly into
+`messages`'s `amsn.do`, at 528 instances the largest single-batch
+volume yet) — recommend settled, see "Gate scope" below; ruling still
+wdc's to make explicitly. Two process gaps found and folded into
 `rollout-procedure.md`: directories with generated sources
 (`Parser()`/bison) need `make depend` before a subtree-local
-`install` (pilot); files with 20+ diagnostics in one file need
-`-ferror-limit=0` on the fix-surfacing pass, or clang's default cap
-silently truncates the list (batch A). Batch A's runtime check also
-surfaced a real, pre-existing `atk/figure` text-rendering bug —
-confirmed via controlled revert/rebuild/fresh-restart test to be
-unrelated to this M2 work; tracked in `roadmap.md` → Insets to
-Repair → figure, not fixed here.
+`install` (pilot, reconfirmed by batch B's `overhead/eli/lib`); files
+with 20+ diagnostics in one file need `-ferror-limit=0` on the
+fix-surfacing pass, or clang's default cap silently truncates the list
+(batch A, reconfirmed by batch B's `ams/libs/cui`). Batch A's runtime
+check also surfaced a real, pre-existing `atk/figure` text-rendering
+bug — confirmed via controlled revert/rebuild/fresh-restart test to be
+unrelated to this M2 work, root-caused and **fixed** 2026-07-24
+(`fontdesc.c` LP64 cast bug; see `roadmap.md`). Batch B found
+`overhead/eli/lib` has zero live runtime consumers in this build
+(`ams/ms`/`SNAP_ENV` disabled, `rdemo` unreferenced) — a structural
+finding, not a testing gap; flagged in `claude-history/
+m2-batch3b-REPORT.md` §10, not acted on (out of M2's scope).
 
 ## What the flag does
 
@@ -102,6 +115,16 @@ make -k install` (the `depend` step is required — see
 `rollout-procedure.md`) as the per-directory gate, with a full
 tree-wide gate at coarser checkpoints (session end, or every few
 directories) rather than after every single one.
+
+**Update (2026-07-24, batch B):** fourth data point, again zero
+fallout beyond the subtree-local builds — this time including
+`ams/libs/cui`, linked into `atkams/messages/lib`'s `amsn.do` (the GUI
+`messages` app's actual mail-store logic), at 528 instances the
+largest single batch by volume so far. Four-for-four, including both
+of the two heaviest/most-widely-consumed directories examined to
+date. Strengthens the case for relaxing to per-checkpoint tree-wide
+gates rather than per-batch; still pending wdc's explicit sign-off
+before acting on it.
 
 ## Census (2026-07-24, `make -k`, tree-wide, not yet acted on)
 
@@ -241,10 +264,43 @@ writing any declaration by hand.
   confirmed real, correctly spelled, defined in
   `overhead/util/lib/foldedeq.c`, just undeclared anywhere (see
   "missing in-tree/project header" sub-case 3 above). No other
-  candidate turned up across 80 instances/9 directories so far.
+  candidate turned up across 80 instances/9 directories so far. Still
+  empty after batch B's 528 more instances (`claude-history/
+  m2-batch3b-REPORT.md` §7) — every unfamiliar name resolved to a
+  real, correctly-spelled definition once grepped.
   Before writing any declaration, still `grep` the tree for the exact
   name to confirm it resolves to sub-case 3, not this category — the
   check matters even though the category is currently empty.
+- **New sub-shape found by batch B (2026-07-24): a wrapper-family
+  header exists but only declares *some* of the family, and the gap
+  recurs across directories with no shared local-extern habit between
+  them.** `overhead/util/hdrs/fdplumb.h` `#define`s 16 `dbg_*` I/O
+  wrapper names but only declares 6 of them — the other 10 (`dbg_close`,
+  `dbg_fclose`, `dbg_dup2`, `dbg_pipe`, `dbg_pclose`, `dbg_vfclose`,
+  among others) are silently undeclared wherever used. Hit
+  independently in 3 of batch B's 5 directories (`overhead/eli/lib`,
+  `ams/libs/cui`, `ams/msclients/nns`), none of which had any
+  pre-existing local-extern precedent for the gap — unlike the two
+  previously-documented sub-case-2 shapes, which both matched an
+  established local habit. Fix is still local-extern by default (the
+  M2 hard-stop against editing outside headers still applies), but
+  "check for existing local precedent first" doesn't fully cover this
+  shape since there often isn't one yet. `fdplumb.h` itself is a good
+  housekeeping candidate (declare the missing 10 names) whenever a
+  session touches `overhead/util/lib`/`overhead/util/hdrs` or a
+  file-I/O-heavy directory — not done as part of M2.
+- **New sub-shape found by batch B: consumer-supplied callback
+  interfaces with *zero* declaring header anywhere** (distinct from
+  ordinary sub-case 3, where one real definition exists). `ams/libs/
+  cui`'s `ReportError`/`ReportSuccess`/`ChooseFromList`/etc. and
+  `overhead/mail/metamail/richmail`'s `controloutput`/`controlputc`:
+  each is implemented separately by every program that links the
+  library, with no canonical definition and no header, ever. Resolved
+  the same way as sub-case 3 (local extern, sourced from any one
+  consistent real implementation) since all found implementations
+  agreed on the untyped K&R shape — but "which implementation is the
+  real one" doesn't have a single answer the way it does for ordinary
+  sub-case 3, so flagging it as its own recognizable shape.
 - **Caution carried over from tonight's M2 point-0 session
   (`porting-assessment.md` §19):** a hand-written declaration with a
   wrong width/type (e.g. `int` vs `long`) compiles cleanly and fails
@@ -278,7 +334,10 @@ Proposed order, pending wdc's sign-off:
      "Status" above and `claude-history/m2-batch3a-REPORT.md`.
    - Batch B — `overhead/eli/lib`, `ams/libs/cui`,
      `ams/msclients/nns`, `overhead/mail/metamail/richmail`,
-     `overhead/index`.
+     `overhead/index` — **done 2026-07-24** (528 instances, well past
+     this bucket's stale "mid-size" estimate — `ams/libs/cui` alone
+     was 350), see "Status" above and
+     `claude-history/m2-batch3b-REPORT.md`.
 4. Large, dedicated-session territory (~70–140): `overhead/util/lib`,
    `overhead/mail/metamail/metamail`, `atk/text`, `atk/rofftext`,
    `atk/table`, `overhead/mail/lib`, `atkams/messages/lib`,
