@@ -1450,8 +1450,9 @@ call site and definition tree-wide *before* any mass file editing starts
   `-pi`, defaults untouched. The real work is the per-directory
   rollout — see "M1 rollout points" below.
 - **M2 point 0 — `-Wincompatible-pointer-types` triage (census
-  2026-07-12, not yet fixed).** A cheap, high-signal precursor to
-  the M2 sweep proper: 483 warnings tree-wide, a fixed enumerable
+  2026-07-12, extended and partly fixed 2026-07-23/24).** A cheap,
+  high-signal precursor to the M2 sweep proper: 483 warnings
+  tree-wide, a fixed enumerable
   list, not requiring `-Wno-implicit-function-declaration` to come
   off anywhere. This is M1's bug signature (real/pointer size
   mismatches) surfacing in plain C calls that never went through a
@@ -1497,25 +1498,41 @@ call site and definition tree-wide *before* any mass file editing starts
     `xwdio.c`, `suite.c` — worth surveying together once the
     `oldrf.c` root cause is nailed down, in case it's one shared
     bug pattern rather of five separate ones.
-  - **`int */long*` cluster, 67 instances, uninvestigated** —
-    scattered across `bushv.c`, `capaux.c`, `celv.c`, `chlistv.c`,
-    `captions.c`, `boxview.c`, and others. Same LP64 signature as
-    the two clusters above; no pilot fix done yet. Census the file
-    list before triaging (`grep -E "passing 'int \*' to parameter
-    of type 'long \*'|passing 'long \*' to parameter of type 'int
-    \*'" dependInstall.log`).
-  - **`char ** → char *; remove &` cluster, 18 instances,
-    uninvestigated** — an extra `&` at a call site; could be a real
-    "wrong indirection level" bug or a benign coincidence depending
-    on what's actually at that address. Needs sampling before
-    judging as a group.
+  - **`int */long*` cluster, 67 instances — censused 2026-07-24, 3 of
+    ~14 root shapes fixed.** Full classification in
+    `claude-history/m2-census-REPORT.md`: 13 shared root shapes
+    across two directions. 45 instances (9 shapes, e.g.
+    `bushv.c`/`capaux.c`/`chlistv.c`/`captions.c`/`boxview.c` and
+    others) are the caller-declares-`int`-but-callee-wants-`long *`
+    direction — an 8-byte write into a 4-byte stack slot, can stomp
+    an adjacent local — cataloged but **not yet fixed**. 22 instances
+    (one callee, `fontdesc_StringBoundingBox`) are the reverse —
+    caller has `long`, but the `.ch` signature was still `int *`,
+    the odd one out among its `StringSize`/`TextSize` siblings —
+    **fixed** by widening to match (commit `0a6cf595ef`). The
+    stretch-goal sweep (functions with *no* warning because the
+    mismatch crosses a K&R untyped call boundary, same shape as
+    `MS_GetConfigurationParameters` earlier in this doc) additionally found and
+    fixed a live, reachable bug: `MS_ParseDate` writing a
+    class-typed `long *` into a real `int *` implementation, hit by
+    `captions__MarkRangeOfMessages`'s **uninitialized** `long`
+    locals — worse than the usual zero-init-masked half-fill (commit
+    `f4a9d6909b`).
+  - **`char ** → char *; remove &` cluster, 18 instances — FIXED
+    2026-07-24.** Census found all 18 collapse to one root cause:
+    three `CUI_*` methods (`CUI_DisambiguateDir`,
+    `CUI_RewriteHeaderLine`, `CUI_RewriteHeaderLineInternal`) are
+    typed `char *` in `ams.ch` when their real `cuilib.c`
+    implementations take `char **` — every one of the 18 callers was
+    already correct; clang's own "remove &" fix-it would have broken
+    all of them. Fixed by widening the three `.ch` signatures
+    (commit `c496c2a9ea`).
 
-  **Suggested order:** fix `oldrf.c` and `fselect.c` first (already
-  scoped, one is tied to a known open bug) to nail the taxonomy the
-  way M1's pilots did, log any new pattern found, then census the
-  `int*/long*` and `&`-removal clusters the same way. Once the
-  taxonomy is proven on 1-2 fixes, the census-and-classify work for
-  the remaining clusters is Sonnet-delegable under the same
+  **Suggested order:** `oldrf.c` and `fselect.c` are still open
+  (already scoped, one is tied to a known open bug). The `int*/long*`
+  Group A stack-overrun instances (45, cataloged in
+  `claude-history/m2-census-REPORT.md`) are the next
+  census-and-classify-complete cluster ready for a fixing pass, same
   runbook-style protocol M1 used (exact file:line + expected
   argument text + skip-and-report-on-mismatch); real-bug fixes and
   any `.ch`-vs-impl ruling stay top-level.
