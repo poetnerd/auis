@@ -83,7 +83,7 @@ class ams {
       CUI_DeleteMessage(int cuid) returns long;
       CUI_DeliveryType() returns long;
       CUI_DirectoriesToPurge() returns long;
-      CUI_DisambiguateDir(char *shortname, char *longname) returns long;
+      CUI_DisambiguateDir(char *shortname, char **longname) returns long;
       CUI_DoesDirNeedPurging(char *name) returns long;
       CUI_EndConversation();
       CUI_GenLocalTmpFileName(char *name) returns long;
@@ -112,8 +112,8 @@ class ams {
       CUI_RenameDir(char *oldname, char *newname) returns long;
       CUI_ReportAmbig(char *name, char *atype);
       CUI_ResendMessage(int cuid, char *tolist) returns long;
-      CUI_RewriteHeaderLine(char *addr, char *newaddr) returns long;
-      CUI_RewriteHeaderLineInternal(char *addr, char *newaddr, int maxdealiases, int *numfound, int *externalcount, int *format, int *strip, int *trust) returns long;
+      CUI_RewriteHeaderLine(char *addr, char **newaddr) returns long;
+      CUI_RewriteHeaderLineInternal(char *addr, char **newaddr, int maxdealiases, int *numfound, int *externalcount, int *format, int *strip, int *trust) returns long;
       CUI_Rock() returns char *;
       CUI_SetClientVersion(char *vers);
       CUI_SetPrinter(char *printername) returns long;

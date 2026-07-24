@@ -189,7 +189,7 @@ struct ams *self;
 
 long ams__CUI_DisambiguateDir(self, shortname, longname)
 struct ams *self;
-char *shortname, *longname;
+char *shortname, **longname;
 {
     ReportMissing("CUI_DisambiguateDir");
     return(0);
@@ -426,7 +426,7 @@ char *tolist;
 
 long ams__CUI_RewriteHeaderLine(self, addr, newaddr)
 struct ams *self;
-char *addr, *newaddr;
+char *addr, **newaddr;
 {
     ReportMissing("CUI_RewriteHeaderLine");
     return(0);
@@ -434,7 +434,7 @@ char *addr, *newaddr;
 
 long ams__CUI_RewriteHeaderLineInternal(self, addr, newaddr, maxdealiases, numfound, externalcount, formatct, stripct, trustct)
 struct ams *self;
-char *addr, *newaddr;
+char *addr, **newaddr;
 int maxdealiases, *numfound, *externalcount, *formatct, *stripct, *trustct;
 {
     ReportMissing("CUI_RewriteHeaderLineInternal");

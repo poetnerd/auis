@@ -114,7 +114,7 @@ struct amsn *self;
 
 long amsn__CUI_DisambiguateDir(self, shortname, longname)
 struct amsn *self;
-char *shortname, *longname;
+char *shortname, **longname;
 {
     return(CUI_DisambiguateDir(shortname, longname));
 }
@@ -330,14 +330,14 @@ char *tolist;
 
 long amsn__CUI_RewriteHeaderLine(self, addr, newaddr)
 struct amsn *self;
-char *addr, *newaddr;
+char *addr, **newaddr;
 {
     return(CUI_RewriteHeaderLine(addr, newaddr));
 }
 
 long amsn__CUI_RewriteHeaderLineInternal(self, addr, newaddr, maxdealiases, numfound, externalcount, formatct, stripct, trustct)
 struct amsn *self;
-char *addr, *newaddr;
+char *addr, **newaddr;
 int maxdealiases, *numfound, *externalcount, *formatct, *stripct, *trustct;
 {
     return(CUI_RewriteHeaderLineInternal(addr, newaddr, maxdealiases, numfound, externalcount, formatct, stripct, trustct));
