@@ -1498,26 +1498,39 @@ call site and definition tree-wide *before* any mass file editing starts
     `xwdio.c`, `suite.c` — worth surveying together once the
     `oldrf.c` root cause is nailed down, in case it's one shared
     bug pattern rather of five separate ones.
-  - **`int */long*` cluster, 67 instances — censused 2026-07-24, 3 of
-    ~14 root shapes fixed.** Full classification in
+  - **`int */long*` cluster, 67 instances — CENSUS AND FIXES COMPLETE
+    2026-07-24.** Full classification in
     `claude-history/m2-census-REPORT.md`: 13 shared root shapes
-    across two directions. 45 instances (9 shapes, e.g.
-    `bushv.c`/`capaux.c`/`chlistv.c`/`captions.c`/`boxview.c` and
-    others) are the caller-declares-`int`-but-callee-wants-`long *`
-    direction — an 8-byte write into a 4-byte stack slot, can stomp
-    an adjacent local — cataloged but **not yet fixed**. 22 instances
-    (one callee, `fontdesc_StringBoundingBox`) are the reverse —
-    caller has `long`, but the `.ch` signature was still `int *`,
-    the odd one out among its `StringSize`/`TextSize` siblings —
-    **fixed** by widening to match (commit `0a6cf595ef`). The
+    across two directions, all now fixed. 22 instances (one callee,
+    `fontdesc_StringBoundingBox`) were caller-has-`long`-but-`.ch`-
+    still-`int *`, the odd one out among its `StringSize`/`TextSize`
+    siblings — fixed by widening to match (commit `0a6cf595ef`). The
     stretch-goal sweep (functions with *no* warning because the
     mismatch crosses a K&R untyped call boundary, same shape as
-    `MS_GetConfigurationParameters` earlier in this doc) additionally found and
-    fixed a live, reachable bug: `MS_ParseDate` writing a
+    `MS_GetConfigurationParameters` earlier in this doc) additionally
+    found and fixed a live, reachable bug: `MS_ParseDate` writing a
     class-typed `long *` into a real `int *` implementation, hit by
     `captions__MarkRangeOfMessages`'s **uninitialized** `long`
     locals — worse than the usual zero-init-masked half-fill (commit
-    `f4a9d6909b`).
+    `f4a9d6909b`). The remaining 45 instances (9 shapes) — the
+    caller-declares-`int`-but-callee-wants-`long *` stack-overrun
+    direction — were fixed 2026-07-24 by widening each caller's local
+    to `long` after checking every secondary use for width
+    assumptions (commit `d8af32c158`; also fixed 4 pre-existing
+    `%d`-vs-`long` format-string mismatches found along the way).
+    This rollout **caused a live regression, found and fixed the same
+    session**: widening three `atkams/messages/lib` callers exposed a
+    dormant 35-year-old `.ch`/real-implementation width drift (LP64
+    variant #6 — `MS_GetDirInfo`/`MS_GetNewMessageCount`/
+    `MS_GetSubscriptionEntry`/`MS_NameChangedMapFile` are `long *` in
+    `ams.ch` but `int *` in their real `ams/libs/ms` implementations),
+    producing a garbled subscription-status message in `messages`.
+    Corrected by narrowing `.ch`/wrappers back to `int *` and
+    reverting those three callers to `int` (commit `0f45da237d`); see
+    `porting-assessment.md` §19 for the full writeup and the general
+    rule it establishes — **before widening any Group-A-shaped caller,
+    check the real K&R implementation's declared width directly, not
+    just the `.ch`**, since `.ch` itself can be the stale side.
   - **`char ** → char *; remove &` cluster, 18 instances — FIXED
     2026-07-24.** Census found all 18 collapse to one root cause:
     three `CUI_*` methods (`CUI_DisambiguateDir`,
@@ -1528,14 +1541,10 @@ call site and definition tree-wide *before* any mass file editing starts
     all of them. Fixed by widening the three `.ch` signatures
     (commit `c496c2a9ea`).
 
-  **Suggested order:** `oldrf.c` and `fselect.c` are still open
-  (already scoped, one is tied to a known open bug). The `int*/long*`
-  Group A stack-overrun instances (45, cataloged in
-  `claude-history/m2-census-REPORT.md`) are the next
-  census-and-classify-complete cluster ready for a fixing pass, same
-  runbook-style protocol M1 used (exact file:line + expected
-  argument text + skip-and-report-on-mismatch); real-bug fixes and
-  any `.ch`-vs-impl ruling stay top-level.
+  **Status:** M2 point 0 is done except `oldrf.c` and `fselect.c`,
+  which remain open (already scoped, independent of the sweeps above;
+  one is tied to a known open bug — see Insets to Repair → raster).
+  Neither blocks starting the M2 sweep proper.
 
 - **M2 — Prototype sweep.** `-Werror=implicit-function-declaration`
   subtree-by-subtree (`src/config/darwin/system.mcr` COMPILERFLAGS);
