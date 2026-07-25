@@ -78,9 +78,14 @@ reasoning once batch size actually reflects it.
 
 ## Wave 1 — overhead (28 directories, 305 files, 4 batches)
 
-- [ ] **O1**: `overhead/util/lib` (83) — alone. Same directory M2 knew
+- [x] **O1**: `overhead/util/lib` (83) — alone. Same directory M2 knew
       as the `fdplumb` wrapper-family home; expect DRIFT/complexity
-      here again, not a routine batch.
+      here again, not a routine batch. **Done 2026-07-25**: 0 DRIFT (no
+      `.ch` files in this directory at all), 2 real compile-gate fixes
+      (`encode.c`, `unscribe.c`), 14 files correctly left K&R
+      (`#ifdef`-gated dead code, not reachable from the real build —
+      see `m3-rollout-runbook.md` "Findings from real sessions"),
+      fdplumb family itself converted clean. Committed.
 - [ ] **O2**: `overhead/image/jpeg` (46), `overhead/image/tiff` (32) —
       78 files. Vendored codec libraries.
 - [ ] **O3**: `overhead/mail/lib` (33), `overhead/mail/cmd` (3),

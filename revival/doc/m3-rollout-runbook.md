@@ -142,6 +142,80 @@ the rest of the plan.
   rather than M2's finer small/mid/large split. The first-step census
   above will confirm or correct this once real counts exist.
 
+## Findings from real sessions
+
+### O1 (`overhead/util/lib`, 2026-07-25) — first real (non-dry-run, non-pilot) M3 session
+
+- **Directories with no `.ch` files skip steps 1-2 entirely.** Not every
+  directory in the batch map is a class directory — `overhead/util/lib`
+  (83 files, all file-local helpers) has zero `.ch` files, so there is
+  no `-pe`/`CLASSFLAGS` line to add and no `.eh` to force-regenerate;
+  the whole rollout point reduces to `ansify --dir` plus its compile-gate
+  fallout. DRIFT is structurally impossible in such a directory (it only
+  fires on `__` class methods). Check `.ch` presence
+  (`find <dir> -maxdepth 1 -name '*.ch'`) before assuming the mechanics
+  section's steps 1-2 apply.
+
+- **`fix-missing-static-decl` (ansify's own pipeline step 1) is not
+  idempotent against a hand-typed fix.** It recognizes an existing
+  forward declaration as "already declared" only via a narrow
+  empty-parens pattern (`NAME()`); a full ANSI prototype for the same
+  name doesn't match, so it inserts a second, conflicting empty-parens
+  stub even when a correct typed declaration is already present.
+  Concretely: if a compile-gate failure is a promotion-narrowing
+  conflict (`char`/`short`-by-value parameter, C89 default-argument-
+  promotion mismatch — same species as the Pilot A `eq__WriteFILE`
+  finding) against a declaration that `fix-missing-static-decl` itself
+  inserted (a static helper forward-referenced with no pre-existing
+  declaration of its own), the general "retype the declaration, re-run
+  `ansify` on the file" guidance does NOT work — it reintroduces the
+  same failure at a new duplicate-stub location. Working sequence
+  instead: run `fix-missing-static-decl` once for real, hand-retype the
+  one declaration it inserted, then run only ansify's helper-
+  *conversion* step (not the top-level driver, which re-invokes
+  `fix-missing-static-decl` and duplicates the stub) and verify with a
+  direct `make <base>.o`. Found in `unscribe.c`'s `WriteFrag`; expect
+  it to recur anywhere else in the tree with the same shape. Tool fix
+  (recognize a typed prototype as satisfying "already declared") is
+  real but not done — flagging here per the Delegation ruling (tool
+  construction stays top-level), not fixed inline by the session that
+  found it.
+
+- **`ansify`'s per-file compile gate reaches files the real build
+  doesn't build at all — a compile failure there is not automatically
+  real fallout.** `NormalObjectRule()` provides a generic `.c.o:`
+  pattern rule for every file in a directory regardless of whether it's
+  in `$(OBJS)`, so `ansify --dir`'s `make base.o` gate will attempt
+  (and can fail on) files an `#ifdef`-gated Imakefile macro excludes
+  from the actual library/binary. O1 found 13 such files (the CMU
+  Whitepages family, gated behind `WHITEPAGES_ENV`, which is not
+  defined in this build — `WHITEPAGESFILES` is empty in the generated
+  Makefile) plus one more excluded a different way (`verbose.c`,
+  already commented out of `$(OBJS)` — old `varargs.h`-style variadic
+  code that cannot be mechanically converted at all, ANSI or otherwise,
+  without a rewrite). `ansify` correctly auto-reverted all 14; this is
+  the tool working as designed, not a gap needing a fix.
+
+  **Policy for such files, tree-wide, going forward:** leave them K&R,
+  same as `ansify` already does automatically. Do not use `--no-compile`
+  to force a conversion through — that discards the per-file compile
+  gate, the exact safety property that distinguishes `ansify` from the
+  June 2026 mass-conversion failure (§14), on files that structurally
+  cannot be typechecked with the gating macro off (the Whitepages case:
+  the type declarations themselves are `#ifdef`-gated, so nothing short
+  of a real build with `WHITEPAGES_ENV` on could verify a conversion).
+  If a gated subtree is ever activated for real, the right sequence is
+  activation-then-ansify, not ansify-then-activation: bring the macro
+  on, fix real compile fallout using the LP64 taxonomy in
+  `claude-history/new-tree-porting-prompt.md` (written for exactly this
+  situation — a newly-activated previously-inert subtree), confirm it
+  builds and runs, *then* run `ansify --dir` on it fresh as its own
+  small M3-style rollout point — the same order every other M3 batch
+  directory already implicitly satisfies (all were live in the build
+  before any M1/M2/M3 milestone touched them). No action item from
+  this file for the current M3 pass; noted so a future batch with a
+  similar gated-dead-file shape doesn't re-derive this from scratch.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)
