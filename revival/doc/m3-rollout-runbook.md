@@ -106,6 +106,14 @@ volume turns out large (mirroring M2's bucket-4 treatment of its 3
 biggest directories) — rather than pre-committing to a small/mid/large
 split before real per-wave data exists.
 
+**Exhaustive batch map, built 2026-07-25**: `m3-batches.md` — all 90
+active directories with `.c` files, grouped into 24 batches across the
+7 waves (plus the `atk/eq` pilot), sized by own-level `.c` file count
+(a proxy — no real `ansify` census exists yet, see "First concrete
+step" below). Built from the last full tree-wide gate log rather than
+guessed, so a fresh session can start executing immediately instead of
+re-deriving the directory tree.
+
 ## First concrete step — not yet done
 
 Get real per-directory instance counts before committing to session
