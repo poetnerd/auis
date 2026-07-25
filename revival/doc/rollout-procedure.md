@@ -70,15 +70,25 @@ lever left, only a command-shape one:
   -k install ...` still prompts, every time, despite both halves
   individually matching an allow rule — the session's own transcript
   showed this exact shape repeated ~10 times, all prompted. The Bash
-  tool's working directory persists across separate calls (confirmed
-  2026-07-24: a bare `cd` call followed by an unrelated later call
-  with no `cd` in it landed in the same directory) — so `cd DIR` into
-  its own call, once per directory, then issue every subsequent
-  command with no `cd` prefix at all, relying on the persisted cwd.
-  That leaves each later call as a plain `make -k install ...`/`grep
-  ...` string with nothing chained in front of it, which matches its
-  allow rule directly. More tool calls in the transcript, but zero
-  prompts, is the better trade here.
+  tool's working directory *can* persist across separate calls
+  (confirmed 2026-07-24 in an interactive orchestrator session: a bare
+  `cd` call followed by an unrelated later call with no `cd` in it
+  landed in the same directory) — so `cd DIR` into its own call, once
+  per directory, then issue every subsequent command with no `cd`
+  prefix at all, relying on the persisted cwd, *where that persistence
+  holds*. **Correction (2026-07-24, `atk/text` session):** it does
+  NOT hold in every session type — a delegated background session
+  found its own harness resets the working directory between every
+  Bash call (its own system instructions said so explicitly: "cwd
+  reset between bash calls... use absolute file paths"), so a bare
+  `cd` followed by a bare `make Makefile` failed with "No rule to make
+  target" because the cwd had already reverted. **Default to `make -C
+  <absolute-path> <target>` (and absolute paths generally) instead of
+  `cd`-then-bare-command** — it achieves the same "one unchained
+  command per call" goal without depending on cwd persistence, and
+  works whether or not persistence holds. If you're not sure which
+  kind of session you're in, check early (a throwaway `cd`+`pwd` pair,
+  before any real build step) rather than assuming either way.
 - **Prefer the Read/Grep/Glob tools over shell `grep`/`sed -n`/`cat`
   for census and file inspection, if they're available in your
   session.** They're a different permission class from Bash and don't
@@ -138,12 +148,23 @@ section — pass `-ferror-limit=0` on the fix-surfacing pass); (2)
 *zero* declaration anywhere in scope does not trigger the diagnostic
 at all — it's invisible to the census, not just truncated (found
 `overhead/util/lib` session, 2026-07-24, via a `svcconf.c` near-miss:
-four undeclared `malloc` calls, none in the error list). Practical
-consequence: whenever a file is already getting a `<stdlib.h>`/
-`<string.h>` edit for an unrelated reason, also grep that file for
-bare `malloc(`/`free(`/`realloc(`/`calloc(` call sites before moving
-on — don't trust "it wasn't in the error list" as proof a call is
-already correctly typed.
+four undeclared `malloc` calls, none in the error list). **This blind
+spot can dominate a directory's real fallout, not just cause a
+near-miss** — `atk/text`'s session (2026-07-24) found 106 more call
+sites across 18 of 30 files this way, more than double the 50
+census-visible instances, with *zero* prior symptom (no partial
+warning, no stale wrong-typed extern to trip over — the directory's
+census happened to contain no ordinary `<stdlib.h>` misses at all, so
+there was no file "already getting an edit for an unrelated reason"
+to trigger a look). Practical consequence, upgraded from a
+conditional check to an unconditional one: **grep every file in the
+directory for bare `malloc(`/`free(`/`realloc(`/`calloc(` call sites
+before closing out a rollout point, not just files already getting a
+`<stdlib.h>`/`<string.h>` edit** — a clean-looking census (even one
+that matches the stale estimate exactly) is not evidence this
+category is absent; `atk/text`'s census-visible count matched its
+stale estimate exactly while missing two-thirds of the directory's
+real fallout.
 
 ## Liveness census
 

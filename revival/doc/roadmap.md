@@ -1739,7 +1739,23 @@ call site and definition tree-wide *before* any mass file editing starts
        already documented before this session; root cause now
        identified, see "Objective: HTML mail rendering"). `mmencode`
        round-tripped correctly. User-verified, proceeding to commit.)
-     - [ ] `atk/text` — subtree-local gate only.
+     - [x] `atk/text` — subtree-local gate only (done 2026-07-24;
+       50 census-visible instances matched the stale estimate exactly
+       — but that match was misleading: a directory-wide sweep for
+       the malloc-family blind spot (see below) found 106 more
+       call sites across 18 files, invisible to the M2 census
+       entirely, real total 156 across 23 files — see
+       `m2-text-REPORT.md`. Cleanest gate-scope data point yet: every
+       function touched confirmed statically linked directly into
+       `runapp` via `nm -g`. Found a class family (`textv.do`/
+       `text.do`'s 8 files) with three independently-invented,
+       non-overlapping local-extern conventions — matched whichever
+       precedent existed per file. User-verified (`ez` editing/
+       read-only/save-restore/insert-file/style-editor, `Sherman.Alloc`
+       render, `indexpro` CLI), no regressions; `indexpro.c`'s
+       pre-existing `gets()` call triggers a macOS runtime deprecation
+       warning, unrelated to this fix, logged as a minor pre-existing
+       finding, not fixed here.)
      - [ ] `atk/rofftext` — subtree-local gate only.
      - [ ] `atk/table` — subtree-local gate only.
      - [ ] `overhead/mail/lib` — subtree-local gate only.

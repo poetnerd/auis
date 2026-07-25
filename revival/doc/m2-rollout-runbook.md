@@ -81,7 +81,26 @@ in `ExecuteMailcapEntry`'s `ioctl` call, 1980s BSD terminal
 job-control code, unrelated to this fix) and `mailto`/`splitmail`
 fail on a missing `/usr/lib/sendmail` — both confirmed pre-existing
 and out of scope (see `roadmap.md`'s "Objective: HTML mail
-rendering"), not blockers to committing the M2 fix itself.
+rendering"), not blockers to committing the M2 fix itself. Bucket 4's
+third directory, `atk/text`, closed 2026-07-24: 50 census-visible
+instances (matched the stale estimate exactly — but see below) plus
+106 more from the malloc-family blind spot across 18 files, real
+total 156 across 23 files — see `claude-history/m2-text-REPORT.md`.
+Two findings folded into `rollout-procedure.md`: (1) the malloc-family
+blind spot can *dominate* a directory's fallout with zero prior
+symptom, not just cause a near-miss — the existing "grep files
+already getting an edit" guidance is upgraded to "grep every file
+unconditionally"; (2) the `cd`-splitting command-style fix from the
+metamail session doesn't hold in every session type — a delegated
+background session's harness resets cwd between Bash calls entirely
+(confirmed by that session hitting an immediate "No rule to make
+target" failure) — `make -C <dir>` is now the portable default,
+`cd`-then-bare-command only where cwd persistence is confirmed to
+hold. Cleanest gate-scope data point yet: every function touched
+confirmed statically linked directly into `runapp`. User-verified, no
+regressions; `indexpro.c`'s pre-existing `gets()` call triggers a
+macOS runtime deprecation warning, unrelated, logged as a minor
+finding.
 
 ## What the flag does
 
@@ -422,7 +441,8 @@ Proposed order, pending wdc's sign-off:
      m2-utillib-REPORT.md`.
    - `overhead/mail/metamail/metamail` — subtree-local gate only.
      **Done 2026-07-24**, see `claude-history/m2-metamail-REPORT.md`.
-   - `atk/text` — subtree-local gate only.
+   - `atk/text` — subtree-local gate only. **Done 2026-07-24**, see
+     `claude-history/m2-text-REPORT.md`.
    - `atk/rofftext` — subtree-local gate only.
    - `atk/table` — subtree-local gate only.
    - `overhead/mail/lib` — subtree-local gate only.
