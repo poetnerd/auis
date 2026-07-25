@@ -21,6 +21,9 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
  ******************************************************* */
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <config.h>
 #include <patchlevel.h>
 
@@ -103,14 +106,27 @@ extern char **environ, *gets();
 #define CMDSIZE 1200 /* Maximum size of command to execute */
 
 #define LINE_BUF_SIZE       2000
-#ifndef MICROSOFT
-extern char *malloc();
-extern char *realloc();
-#endif
 extern char *AndrewDir();
 extern char *getenv();
 extern char *index();
 extern char *rindex();
+/* No header declares these; defined in sibling files in this directory */
+extern int from64(), fromqp(), fromuue(), PendingBoundary();
+extern int ExceptionalNewline(), DoesNeedPortableNewlines();
+extern int lc2strcmp(), lc2strncmp();
+/* Same-file forward references (defined later in this file) */
+extern int ExitWithError(), RestoreTtyState(), ProcessArguments();
+extern int HandleMessage(), PauseForUser(), Read822Prefix();
+extern int PrepareMessage(), ProcessMailcapFiles(), SaveSquirrelFile();
+extern int MkTmpFileName(), TryBuiltIns(), TranslateInputToOutput();
+extern int usage(), StripTrailingSpace(), RunInNewWindow();
+extern int CreateNewWindowPrefix(), SetUpEnvironment(), ProcessMailcapFile();
+extern int TryMailcapEntry(), GetMailcapEntry(), CtypeMatch();
+extern int PassesTest(), ExecuteMailcapEntry(), BuildCommand();
+extern int SaveTtyState(), NeedToAskBeforeExecuting(), OKToRun();
+extern int strcatquoting(), WriteTmpFile(), ExecuteCommand();
+extern int maybephead(), phead(), EliminateNastyChars();
+extern int strcpynoquotes(), StartRawStdin();
 char fileToDelete[MAX_FILE_NAME_SIZE];
 
 char *FindParam();

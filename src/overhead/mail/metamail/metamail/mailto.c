@@ -38,6 +38,11 @@ STILL NEED TO DO/SUPPORT:
 
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <time.h>
+#include <termcap.h>
 #include <config.h>
 #include <pwd.h>
 #include <signal.h>
@@ -46,7 +51,7 @@ STILL NEED TO DO/SUPPORT:
 #include <sys/file.h>
 #ifdef AMIGA
 #define Prototype   extern
-  
+
 #include <getfiles.h>
 #include <time.h>
 #include <lib_protos.h>
@@ -57,11 +62,28 @@ extern char *getenv();
 #ifdef SYSV
 /* Different people say different things about whether unistd.h lives in sys/ */
 /* #include <sys/unistd.h> */
-#include <unistd.h>
 #endif
 
-extern char *malloc(), *realloc(), *index(), *getmyname();
+extern char *index(), *getmyname();
 extern char *AndrewDir();
+/* No header declares these; defined in sibling files in this directory */
+extern int to64(), toqp(), from64(), fromqp();
+extern int DoesNeedPortableNewlines(), ExceptionalNewline();
+extern int lc2strcmp(), lc2strncmp();
+/* Same-file forward references (defined later in this file) */
+extern int nomemabort(), tfputs(), cleanexit();
+extern int ProcessInitFiles(), InitSignals(), FputsQuotingLT();
+extern int TryClosingStyle(), TryOpeningStyle(), TempCloseStyles();
+extern int ReopenStyles(), ToggleStyle(), TranslateInputToEncodedOutput();
+extern int EditCurrentMessage(), EndStyle(), StartStyle();
+extern int WriteOutMessage(), RestoreCurrentStyles(), WriteDeadLetter();
+extern int SwitchToEuropean(), EmitHeader(), EmitHeaderWithAliases();
+extern int WriteContentTypeAndEncoding(), WriteCtypeNicely();
+extern int finalize(), WhichEncodingForFile(), SetTextFlags();
+extern int ContainsEightBitChar(), ProcessOneMailRC();
+extern int HandleAliasCommand(), HandleSetCommand(), HeaderFputs();
+extern int PutQP(), EmitAddresses(), DeAlias(), fputsquoting();
+extern int ProcessMailcapFiles(), BuildCommand();
 struct mailpart *CreateNewPart();
 
 /* The main data structure for the multiple parts of the mail */

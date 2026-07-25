@@ -14,9 +14,12 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 */
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 #include <config.h>
 
 extern char *index();
+/* Same-file forward reference (defined later in this file) */
+extern int output64chunk();
 static char basis_64[] =
    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 

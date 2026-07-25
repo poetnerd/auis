@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <config.h>
 #ifdef SYSV
-#include <unistd.h>
 #include <sys/utsname.h>
 #endif
 
-extern char *malloc();
+/* Same-file forward references (defined later in this file) */
+extern int lc2strcmp(), lc2strncmp();
 char **Exceptions;
 int *NeedsPortableNewlines;
 int ExceptionsAlloced = 0, ExceptionsUsed = 0;

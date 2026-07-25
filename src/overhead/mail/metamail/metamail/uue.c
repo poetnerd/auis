@@ -1,9 +1,13 @@
 #include <stdio.h>
+#include <string.h>
 
 /*
  * hack to metamail to decode uuencoded bodyparts
  * Written by Keith Moore, February 1992
  */
+
+/* No header declares this; defined in the sibling file codes.c */
+extern int PendingBoundary();
 
 uueget (ptr, outfp, n)
 char *ptr;

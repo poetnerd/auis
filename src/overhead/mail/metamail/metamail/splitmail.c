@@ -21,6 +21,7 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
  ******************************************************* */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <config.h>
@@ -32,6 +33,11 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 
 #define MINCHUNKSIZE 20000 /* Better be enough to hold the headers, or we die! */
 extern char *getmyname();
+/* Same-file forward references (defined later in this file). ULstrcmp here
+   is this file's own private copy, unrelated to overhead/util/lib's
+   same-named function -- splitmail does not link libutil.a. */
+extern int ShareThisHeader(), HandleOnePart(), IllegalContentType();
+extern int ULstrcmp();
 
 #ifdef AMIGA
 #define Prototype   extern

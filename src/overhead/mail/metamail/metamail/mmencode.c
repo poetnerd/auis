@@ -13,6 +13,7 @@ OF THIS MATERIAL FOR ANY PURPOSE.  IT IS PROVIDED "AS IS",
 WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include <config.h>
 #ifdef MSDOS
 #include <fcntl.h>
@@ -20,6 +21,9 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 
 #define BASE64 1
 #define QP 2 /* quoted-printable */
+
+/* No header declares these; defined in the sibling file codes.c */
+extern int to64(), from64(), toqp(), fromqp();
 
 main(argc, argv)
 int argc;
