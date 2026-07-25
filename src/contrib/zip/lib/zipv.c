@@ -200,6 +200,8 @@ END-SPECIFICATION  ************************************************************/
 #include "zipstat.ih"
 #include "zipobj.ih"
 #include "zipv.eh"
+#include <string.h>
+#include <stdlib.h>
 
 static boolean debug=FALSE;
 #define	 Data			      (self->data_object)

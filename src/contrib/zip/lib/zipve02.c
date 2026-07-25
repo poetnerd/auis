@@ -159,6 +159,7 @@ END-SPECIFICATION  ************************************************************/
 #include <zipobj.ih>
 #include <zipedit.ih>
 #include <zipedit.h>
+#include <stdlib.h>
 
 static int Parse_Stream_Image_Ending();
 static Change_Shade();

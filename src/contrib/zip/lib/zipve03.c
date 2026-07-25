@@ -80,6 +80,7 @@ END-SPECIFICATION  ************************************************************/
 #include "zipedit.ih"
 #include "zipedit.h"
 #include <math.h>
+#include <stdlib.h>
 
 #define  InitialX		    (self->prior_x)
 #define  InitialY		    (self->prior_y)

@@ -78,6 +78,10 @@ END-SPECIFICATION  ************************************************************/
 #include <zip.eh>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <stdlib.h>
+
+/* M2: zip.do cross-file, no header declares this (defined zipds02.c) */
+extern long zip_Enparse_Stream();
 
 static boolean debug;
 

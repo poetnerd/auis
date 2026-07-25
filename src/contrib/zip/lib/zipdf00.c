@@ -123,6 +123,13 @@ END-SPECIFICATION  ************************************************************/
 #include "graphic.ih"
 #include "zipobj.ih"
 #include "zip.ih"
+#include <string.h>
+#include <stdlib.h>
+
+/* M2: zip.do cross-file, no header declares these (defined zipd000.c) */
+extern int symtab_delete();
+extern int symtab_find();
+extern int symtab_add();
 
 #define	 Data			      self
 #define	 Objects(i)		      ((*self->objects)[i])

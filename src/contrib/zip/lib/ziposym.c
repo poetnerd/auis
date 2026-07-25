@@ -72,6 +72,7 @@ END-SPECIFICATION  ************************************************************/
 #include <sys/stat.h>
 #include <ctype.h>
 #include <errno.h>
+#include <stdlib.h>
 
 static char				 *symbol_library_path = NULL;
 

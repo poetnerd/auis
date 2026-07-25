@@ -258,3 +258,30 @@ END-SPECIFICATION  ************************************************************/
 #define  ImageSelection			3
 
 zip_type_figure				zipedit_Next_Selected_Figure();
+
+/* M2: internal zipedit.do cross-file functions, no other header declares
+   these (same pattern as the pre-existing zipedit_Next_Selected_Figure
+   declaration above) */
+int					zipedit_Cancel_Enclosure();
+int					zipedit_Display_Background_Pane();
+int					zipedit_Enclose_Figure();
+int					zipedit_Expose_Figure_Palette();
+int					zipedit_Expose_Font_Palette();
+int					zipedit_Expose_Selection_Menu();
+int					zipedit_Expose_Shade_Palette();
+int					zipedit_Handle_Figure_Palette_Hit();
+int					zipedit_Handle_Font_Bold_Selection();
+int					zipedit_Handle_Font_Family_Selection();
+int					zipedit_Handle_Font_Height_Selection();
+int					zipedit_Handle_Font_Italic_Selection();
+int					zipedit_Handle_Font_Sample_Selection();
+int					zipedit_Handle_Shade_Palette_Hit();
+int					zipedit_Hide_Figure_Palette();
+int					zipedit_Hide_Font_Palette();
+int					zipedit_Hide_Selection_Menu();
+int					zipedit_Hide_Shade_Palette();
+int					zipedit_Prepare_Editing_Control();
+int					zipedit_Redisplay_Edit_Pane();
+int					zipedit_Reset_Editing_Control();
+int					zipedit_Reset_Editing_Selection();
+int					Show_Enclosure();

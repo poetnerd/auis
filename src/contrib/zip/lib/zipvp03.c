@@ -143,6 +143,15 @@ END-SPECIFICATION  ************************************************************/
 #include "zipv.ih"
 #include "zipedit.ih"
 
+/* M2: same-file forward references */
+int zipview_Preserve_Overlay();
+int zipview_Draw_Pane_Border();
+int zipview_Restore_Overlay();
+/* M2: zipv.do cross-file, no header declares these */
+extern int zipview_Compute_Pane_Stretch_Factors();	/* defined zipvp00.c */
+extern int zipview_Mark_Pane_Exposed();		/* defined zipv000.c */
+extern int zipview_Recoordinate_Panes();		/* defined zipvp00.c */
+extern int zipview_Mark_Pane_Hidden();			/* defined zipv000.c */
 
 #define	 Data			      (self->data_object)
 #define	 View			      (self)

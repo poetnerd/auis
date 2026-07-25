@@ -72,7 +72,14 @@ END-SPECIFICATION  ************************************************************/
 #include "zipobj.ih"
 #include "zip.ih"
 #include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
 
+/* M2: zip.do cross-file, no header declares these (defined zipds00.c) */
+extern int zip_Close_Stream_File();
+extern int zip_Set_Stream_File_Name();
+extern int zip_Open_Stream_File();
+extern int apt_MM_Compare();		/* defined zip.c */
 
 #define	 Data			      (self)
 #define	 Objects(i)		      ((*self->objects)[i])

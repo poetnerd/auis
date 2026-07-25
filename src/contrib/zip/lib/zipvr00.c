@@ -83,6 +83,8 @@ END-SPECIFICATION  ************************************************************/
 #include "zipv.ih"
 #include "zipprint.ih"
 #include "txttroff.ih"
+#include <string.h>
+#include <stdlib.h>
 
 #define  Data			(self->data_object)
 #define  View			(self->view_object)

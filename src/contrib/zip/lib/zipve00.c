@@ -135,8 +135,10 @@ END-SPECIFICATION  ************************************************************/
 #include "zipobj.ih"
 #include "zipedit.ih"
 #include "zipedit.h"
+#include <stdlib.h>
 
 static int Delete_Inferior_Image( );
+int Highlight_Inferior_Image_Points();	/* M2: same-file forward reference */
 static int Undelete_Inferior_Image();
 static int Normalize_Inferior_Image_Points();
 

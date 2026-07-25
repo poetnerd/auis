@@ -143,7 +143,13 @@ END-SPECIFICATION  ************************************************************/
 #include "environ.ih"
 #include "zip.ih"
 #include "zipv.ih"
+#include <string.h>
+#include <stdlib.h>
 
+int zipview_Compute_Pane_Stretch_Factors();	/* M2: same-file forward reference */
+/* M2: zipv.do cross-file, no header declares these */
+extern int zipview_Restore_Overlay();		/* defined zipvp03.c */
+extern int apt_MM_Compare();			/* defined zipv.c */
 
 #define	 Data			      (self->data_object)
 #define  View			      (self)

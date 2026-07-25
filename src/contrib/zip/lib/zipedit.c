@@ -178,6 +178,8 @@ END-SPECIFICATION  ************************************************************/
 #include "zipobj.ih"
 #include "zipedit.h"
 #include "zipedit.eh"
+#include <string.h>
+#include <stdlib.h>
 
 static boolean debug=FALSE;
 static struct menulist		     *class_menulist;

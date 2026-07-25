@@ -73,9 +73,13 @@ END-SPECIFICATION  ************************************************************/
 #include "view.ih"
 #include "fontdesc.ih"
 #include "zip.ih"
+#include <string.h>
+#include <stdlib.h>
 
 void symtab_scan_reset();
 static int ZIP_Default_Exception_Handler();
+int strhash();			/* M2: same-file forward reference */
+extern int apt_MM_Compare();	/* M2: zip.do cross-file, defined zip.c */
 
 #define	 Data			      self
 

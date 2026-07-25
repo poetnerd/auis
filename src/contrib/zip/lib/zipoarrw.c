@@ -62,6 +62,7 @@ END-SPECIFICATION  ************************************************************/
 #include <environ.ih>
 #include <zipobj.ih>
 #include <zipoarrw.eh>
+#include <stdlib.h>
 
 static Draw();
 static Draw_Basic_Style();

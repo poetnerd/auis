@@ -61,6 +61,7 @@ END-SPECIFICATION  ************************************************************/
 #include "fontdesc.ih"
 #include "zipobj.ih"
 #include "zipocapt.eh"
+#include <string.h>
 
 static Draw();
 static Compute_Handle_Positions();

@@ -137,6 +137,12 @@ END-SPECIFICATION  ************************************************************/
 #include "zipv.ih"
 #include "zipobj.ih"
 #include "zipprint.eh"
+#include <stdlib.h>
+
+int apt_MM_Compare();			/* M2: same-file forward reference */
+/* M2: zipprint.do cross-file, no header declares these (defined zipvr00.c) */
+extern int zipprint_Write_Print_Datastream_Header();
+extern int zipprint_Write_Print_Datastream_Trailer();
 
 static boolean debug=FALSE;
 #define	 Data			     (self->data_object)

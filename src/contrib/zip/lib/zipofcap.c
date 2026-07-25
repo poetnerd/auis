@@ -107,6 +107,7 @@ END-SPECIFICATION  ************************************************************/
 #include "fontdesc.ih"
 #include "zipobj.ih"
 #include "zipofcap.eh"
+#include <string.h>
 
 static enum view_MouseAction Accept_Caption_Character();
 static Draw();

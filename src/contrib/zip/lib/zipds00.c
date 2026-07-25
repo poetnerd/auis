@@ -78,8 +78,20 @@ END-SPECIFICATION  ************************************************************/
 #include "zip.ih"
 #include <errno.h>
 #include <sys/stat.h>
+#include <stdlib.h>
 
 extern int			      errno;
+
+/* M2: same-file forward references */
+int zip_Open_Stream_File();
+int zip_Close_Stream_File();
+int zip_Set_Stream_File_Name();
+/* M2: zip.do cross-file, no header declares these */
+extern long zip_Deparse_Stream();	/* defined zipds01.c */
+extern long zip_Enparse_Stream();	/* defined zipds02.c */
+extern int apt_MM_Compare();		/* defined zip.c */
+extern int symtab_create();		/* defined zipd000.c */
+extern int symtab_destroy();		/* defined zipd000.c */
 
 #define  zip_default_path	      "/usr/andrew/lib/zip"
 #define  zip_default_path_alternate   "/usr/local/lib/zip"

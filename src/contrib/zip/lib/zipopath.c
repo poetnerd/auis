@@ -137,6 +137,7 @@ END-SPECIFICATION  ************************************************************/
 #include <view.ih>
 #include <zipobj.ih>
 #include <zipopath.eh>
+#include <stdlib.h>
 
 static Draw();
 

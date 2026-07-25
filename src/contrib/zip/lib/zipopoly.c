@@ -127,6 +127,7 @@ END-SPECIFICATION  ************************************************************/
 #include <view.ih>
 #include <zipobj.ih>
 #include <zipopoly.eh>
+#include <stdlib.h>
 
 static long				  sides;
 

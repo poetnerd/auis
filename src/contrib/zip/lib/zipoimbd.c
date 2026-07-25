@@ -137,6 +137,7 @@ END-SPECIFICATION  ************************************************************/
 #include <dataobj.ih>
 #include <zipobj.ih>
 #include <zipoimbd.eh>
+#include <stdlib.h>
 
 struct imbed
   {
