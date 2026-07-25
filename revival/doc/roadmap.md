@@ -1693,12 +1693,15 @@ call site and definition tree-wide *before* any mass file editing starts
   one is tied to a known open bug — see Insets to Repair → raster).
   Neither blocks starting the M2 sweep proper.
 
-- **M2 — Prototype sweep.** `-Werror=implicit-function-declaration`
-  subtree-by-subtree (`src/config/darwin/system.mcr` COMPILERFLAGS);
-  fix by adding `#include`s or `extern` declarations at call sites.
-  Closes Variant 1 permanently — it has cost debugging time on every
-  subtree activation so far. Procedure, census (2,353 instances/396
-  files, 2026-07-24), fallout taxonomy, and ordering:
+- **M2 — Prototype sweep — COMPLETE 2026-07-25.**
+  `-Werror=implicit-function-declaration` subtree-by-subtree
+  (`src/config/darwin/system.mcr` COMPILERFLAGS); fixed by adding
+  `#include`s or `extern` declarations at call sites. Closed Variant 1
+  permanently — it had cost debugging time on every subtree activation
+  before this. Real total: 3,888 fallout instances fixed across 29
+  directories, well past the original census (2,353 instances/396
+  files, 2026-07-24) once every directory's malloc-family blind spot
+  was counted. Procedure, census, fallout taxonomy, and ordering:
   `claude-history/m2/m2-rollout-runbook.md` (shared session rhythm: `rollout-procedure.md`).
   Rollout points:
   1. [x] Pilot — `atk/eq` (done 2026-07-24; 10/10 census instances
@@ -1921,13 +1924,50 @@ call site and definition tree-wide *before* any mass file editing starts
        same 4 pre-existing baseline errors every M2 gate has
        documented, zero new ones anywhere in the tree. **Bucket 4
        fully closed.**
-  5. [ ] `ams/libs/ms` (892 instances, ~38% of the entire M2 census) —
-     its own dedicated session, whoever takes it briefed on the
-     fdplumb include-order ABI history first (`project_fdplumb_
-     include_order_abi`, `porting-assessment.md` §18). Tree-wide gate
-     required both before starting and after finishing — the second
-     of these also serves as M2's own completion gate, before M3
-     starts.
+  5. [x] `ams/libs/ms` (its own dedicated session; briefed on the
+     fdplumb history first via `claude-history/fdplumb-REPORT.md`).
+     Done 2026-07-25; 1567 census-visible instances (vs. stale
+     estimate 892) plus 2 more from the malloc-blind-spot sweep, real
+     total 1569 across 102 files — by far the largest single directory
+     in the whole sweep (114 `.c` files, ~38% of the original
+     tree-wide census) — see `claude-history/m2/m2-amsms-REPORT.md`.
+     Both gates required and both clean: subtree-local twice for
+     determinism, plus the full tree-wide gate (238,642-line log, same
+     4 pre-existing baseline errors every M2 gate has documented, zero
+     new ones, this directory's own build span independently confirmed
+     clean) — this gate doubles as **M2's own completion gate**.
+     Strongly confirmed the runbook's "a handful of functions
+     dominate" prediction (top 10 functions = 45.6% of the total, all
+     5 of the runbook's own named examples in the actual top 6); the
+     `fdplumb.h` partial-wrapper-family gap alone accounted for 300
+     instances, the largest such population found in the sweep.
+     Two more concrete LP64 mixed-width findings (`conv64tolong`,
+     `KRHash`, both `unsigned long`) plus three genuine near-misses
+     where a naive first-match grep would have picked the wrong
+     same-named function from an unrelated directory — all correctly
+     resolved by checking real definitions and call-site usage.
+     Self-caught and fixed a bulk-insertion bug (new declarations
+     briefly landing inside a dead `#ifdef AFS_ENV` block; caught by
+     the next rebuild, fixed with nesting-depth-aware insertion,
+     re-derived all affected files fresh). Notable open finding: the
+     malloc-family blind spot's invisibility itself stopped holding
+     partway through this session (`malloc`/`free`/`realloc` became
+     census-visible, independently reproduced on this machine) — most
+     likely a toolchain update mid-project; doesn't affect correctness
+     anywhere since the sweep was always run unconditionally regardless
+     of census visibility. User-verified (`messages` folder list and
+     message open, `cuin`, a test send, `imapsync`, folder
+     subscribe/unsubscribe), no regressions.
+
+**M2 — Prototype sweep is now COMPLETE (2026-07-25).** All 5 rollout
+points (13 sessions/batches across 29 directories, 3,888 fallout
+instances fixed tree-wide) closed; the final tree-wide gate is green.
+LP64 bug class 1 (undeclared function returning a pointer or other
+wide value, silently truncated through implicit `int`) is closed
+structurally, tree-wide, the same way M1 closed variants 2/3/5. Full
+per-point history retired to `claude-history/m2/` — see that
+directory's section in `claude-history/README.md` for the complete
+index. M3 has not been started.
 - **M3 — Definition conversion.** `ansify` (`revival/tools/ansify`,
   built and validated 2026-07-08 — see porting-assessment §14):
   static-fix tools → class methods/classprocs by signature-DB lookup

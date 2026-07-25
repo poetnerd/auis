@@ -593,8 +593,8 @@ The resulting plan runs in four stages:
   has been converted, which closes the remaining scanf-format-code bug
   family as a side effect.
 
-As of this writing, M1 is complete across the entire active codebase; M2
-and M3 are in progress.
+As of this writing, M1 and M2 are both complete across the entire
+active codebase; M3 has not yet started.
 
 ## Where things stand today
 
