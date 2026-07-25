@@ -81,6 +81,11 @@ extern         void MessagesFocusFolders();
 extern         void MessagesFoldersCommand();
 extern         void MessagesSendmessageCommand();
 
+/* same-directory (messages.o, linked into the same messages.do) cross-file
+   reference -- no header, defined in messages.c (which itself already
+   forward-declares its own untyped `extern CheckMenuMasks();`) */
+extern int CheckMenuMasks();
+
 void sm_SetMessagesOptions(self)
 struct messages *self;
 {

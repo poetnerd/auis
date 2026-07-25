@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #endif
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <cui.h>
 #include <fdphack.h>

@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
  
 
 #include <andrewos.h> /* sys/file.h */
+#include <stdlib.h>
 #include <cui.h>
 #include <fdphack.h>
 #include <sys/param.h>
@@ -76,6 +77,13 @@ extern void CapBeginText(), CapScrollBack();
 extern void PreviousCaptionLine();
 extern void CapGlitchDown();
 extern void OneTimeInitKeyMenus();
+
+/* same-file forward references -- all defined later in this file */
+extern int NextTextviewScreen(), RemoveHighlighting(), bcopyfromback();
+
+/* same-directory (capaux.o, linked into the same captions.do) cross-file
+   references -- no header, defined in capaux.c */
+extern int ClassifyMarkedByName(), captions_InsertCaptions();
 
 extern int (*captextv_PreviousLineCmd)(),
     (*captextv_ReverseSearchCmd)(),

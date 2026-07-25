@@ -33,6 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <andrewos.h>
 #include <mailconf.h>
 #include <class.h>
@@ -41,10 +42,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <proctbl.ih>
 #include <ams.ih>
 #include <ams.h> /* Could have been cui.h, but not yet necessary here */
+#include <util.h>
 
 extern char *StripWhiteEnds(), *convlongto64(), *cvEng();
 extern char **BreakDownResourcesIntoArray();
 extern FILE *dbg_fopen();
+extern int dbg_close(), dbg_fclose(), dbg_vclose(), dbg_vfclose();
+extern int fdplumb_SpillGutsToFile();
+/* ams/libs/shr -- no header declares these anywhere in the tree */
+extern int LowerStringInPlace(), ReduceWhiteSpace(), lc2strncmp();
+extern int BreakDownContentTypeField();
+extern int GetBinaryOptions();	/* same-file forward reference, defined below */
 extern long conv64tolong();
 
 static struct OptionState MyOpts;

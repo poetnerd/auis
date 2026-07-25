@@ -34,6 +34,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 /* Until I come up with a better scheme, new functions here have to be added to SIX files -- ams.ch, amss.ch, amsn.ch (all identical specs) and the corresponding c files */ 
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <util.h>
 #include <ctype.h>
@@ -64,6 +65,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 static int IWantSnap = 0;
 static int RestartTimer();
 static TimerReport();
+
+/* same-file forward reference -- defined later in this file */
+extern int AddToClassList();
 
 void ams__RemoveErrorDialogWindow(self)
 struct ams *self;

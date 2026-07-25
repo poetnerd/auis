@@ -32,7 +32,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <andrewos.h>
+#include <signal.h>
 #include <sys/signal.h>
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -89,11 +91,23 @@ extern char **unix_sys_errlist,
 	*ms_errvialist[], 
 	*rpc_errlist[];
 
-extern int unix_sys_nerr, 
-	ms_nerr, 
-	ms_nerrcause, 
-	ms_nerrvia, 
+extern int unix_sys_nerr,
+	ms_nerr,
+	ms_nerrcause,
+	ms_nerrvia,
 	rpc_nerr;
+
+/* same-file forward references -- all defined later in this file */
+extern int SubtleDialogs(), ChooseFromList(), WriteOutUserEnvironment(),
+	TildeResolve(), ReportError(), RealReportError(), ReportFailure(),
+	ReportSuccessNoLogging(), ReportSuccess(), RealReportSuccess(),
+	GenericCompoundAction(), GetBooleanFromUser(), GetStringFromUser(),
+	GetSeparators(), SnarfCommandOutputToFP();
+
+/* ams/libs/cui, ams/libs/ms, overhead/util/lib -- no header anywhere */
+extern int CUI_GenLocalTmpFileName(), CUI_SubmitMessage();
+extern int MS_CheckAuthentication();
+extern int dbg_tclose();
 
 static Messages_Global_Error_Count = 0;
 

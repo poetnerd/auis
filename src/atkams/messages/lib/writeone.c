@@ -55,6 +55,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <andrewos.h>                  /* sys/file.h */
 #include <amsutil.ih>
 #include <sys/param.h>
+#include <sys/stat.h>
 #include <util.h>
 #include <pwd.h>
 #include <ctype.h>
@@ -74,6 +75,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #define AUXMODULE 1
 #include <sendmsg.eh>
 
+/* same-directory (sendaux.o/sendmsg.o, linked into the same sendmsg.do)
+   cross-file references -- no header */
+extern int EnvViewCt();		/* sendaux.c */
+extern int ProduceUnscribedVersion();	/* sendmsg.c */
 
 WriteOneFile(sendmessage, ViceFileName, OnVice, MayOverwrite, Version, TrustDelivery, UseMultipartFormat, EightBitText)
 struct sendmessage *sendmessage;

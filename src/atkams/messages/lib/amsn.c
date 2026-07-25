@@ -40,8 +40,54 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <amsn.eh>
 #include <mailconf.h>
 #include <cui.h>
+#include <util.h>
+#include <mail.h>
+#include <unscribe.h>
 
 extern char ProgramName[];	/* Icky-poo! */
+
+/* same-.do (stubs.o) cross-file references -- no header, defined in stubs.c */
+extern int ChooseFromList(), GenericCompoundAction(), GetBooleanFromUser(),
+	GetStringFromUser(), ReportError(), ReportSuccess(), SubtleDialogs(),
+	TildeResolve(), WriteOutUserEnvironment(), SetProgramVersion();
+
+/* overhead/mail/lib -- no header anywhere */
+extern int CheckAMSConfiguration();
+
+/* ams/libs/cui -- no header anywhere declares the CUI_* function family
+   (only the CUI_* global variables above are declared locally elsewhere) */
+extern int CUI_BuildNickName(), CUI_CheckMailboxes(), CUI_CloneMessage(),
+	CUI_CreateNewMessageDirectory(), CUI_DeleteMessage(),
+	CUI_DirectoriesToPurge(), CUI_DoesDirNeedPurging(),
+	CUI_EndConversation(), CUI_GenLocalTmpFileName(), CUI_GenTmpFileName(),
+	CUI_GetAMSID(), CUI_GetCuid(), CUI_GetFileFromVice(),
+	CUI_GetHeaderContents(), CUI_GetSnapshotFromCUID(),
+	CUI_HandleMissingFolder(), CUI_MarkAsRead(), CUI_MarkAsUnseen(),
+	CUI_NameReplyFile(), CUI_PrefetchMessage(),
+	CUI_PrintBodyFromCUIDWithFlags(), CUI_PrintUpdates(),
+	CUI_ProcessMessageAttributes(), CUI_PurgeDeletions(),
+	CUI_PurgeMarkedDirectories(), CUI_ReallyGetBodyToLocalFile(),
+	CUI_RemoveDirectory(), CUI_RenameDir(), CUI_ReportAmbig(),
+	CUI_ResendMessage(), CUI_RewriteHeaderLine(),
+	CUI_RewriteHeaderLineInternal(), CUI_SetClientVersion(),
+	CUI_SetPrinter(), CUI_StoreFileToVice(), CUI_SubmitMessage(),
+	CUI_UndeleteMessage();
+/* these three are long-returning at their real definitions -- sourced from
+   ams/libs/cui/cuilib.c, not guessed (this class's own .ch methods already
+   declare their own amsn__CUI_* wrappers `long`, matching) */
+extern long CUI_DisambiguateDir(), CUI_GetHeaders(), CUI_Initialize();
+
+/* ams/libs/ms -- no header anywhere declares the MS_* function family
+   (ams/libs/hdrs/ms.h mentions FreeMessage only in a comment) */
+extern int MS_AppendFileToFolder(), MS_CheckAuthentication(), MS_DebugMode(),
+	MS_DisambiguateFile(), MS_DomainHandlesFormatting(),
+	MS_FastUpdateState(), MS_GetNewMessageCount(), MS_GetNthSnapshot(),
+	MS_GetSearchPathEntry(), MS_GetSubscriptionEntry(),
+	MS_NameChangedMapFile(), MS_NameSubscriptionMapFile(), MS_ParseDate(),
+	MS_PrefetchMessage(), MS_SetAssociatedTime(), MS_SetCleanupZombies(),
+	MS_SetSubscriptionEntry(), MS_UpdateState();
+/* these three are long-returning at their real definitions */
+extern long MS_GetDirInfo(), MS_MatchFolderName(), MS_UnlinkFile();
 
 extern char *CUI_MachineName, CUI_MailDomain[], *CUI_Rock, CUI_VersionString[], *CUI_WhoIAm, *ap_Shorten(), *DescribeProt(), *ams_genid();
 

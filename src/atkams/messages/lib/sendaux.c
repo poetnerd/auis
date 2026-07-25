@@ -53,6 +53,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 
 #include <andrewos.h>                  /* sys/file.h */
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <util.h>
 #include <pwd.h>
@@ -92,6 +93,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 
 static struct keymap *smkm, *smhkm;
 static struct menulist *sm_menulist, *sm_hmenulist;
+
+/* same-file forward references -- all defined later in this file */
+extern int DoPreview(), EnvViewCt(), QuoteProperly();
+
+/* same-directory (sendmsg.o, linked into the same sendmsg.do) cross-file
+   references -- no header, defined in sendmsg.c */
+extern int DirectlyInsertFile(), HandleButton(), ProduceUnscribedVersion();
 
 /* values for sendmessage menu mask */
 #define SMMASK_FEWSTYLES 1

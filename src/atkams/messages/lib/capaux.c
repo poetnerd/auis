@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
  
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <cui.h>
 #include <fdphack.h>
@@ -68,6 +69,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 static int AbsentProcedure();
 extern struct keymap *captions_privkeymap;
 extern struct menulist *captions_privmenulist;
+
+/* same-directory (captions.o, linked into the same captions.do) cross-file
+   references -- no header, defined in captions.c */
+extern int AddCaptionToCacheEntry(), GetSouthernmostPoint(), MakeCaptionLine(),
+	MarkVisibleMessageSeen(), MergeTwoCacheEntries(), RemoveHighlighting(),
+	ResetCaptionNotBody(), SetSouthernmostPoint();
 
 
 int (*captextv_PreviousLineCmd)() = AbsentProcedure,

@@ -91,6 +91,16 @@ extern void FoldersSendmessageCommand();
 extern void FoldersCaptionsCommand();
 extern int ConsiderResettingDescription();
 
+/* same-file forward references -- all defined later in this file */
+extern int AddSetupItem(), AlterSubStatus(), BEDC_AddComment(),
+	ClearFolders(), DoClick(), ExposeCap(), HighlightFolderName(),
+	HighlightSpecificFolderName(), InsertFolderNameInText(),
+	UnhighlightFolderName(), UpdateBEDirCachePositions();
+
+/* same-directory (foldaux.o, linked into the same folders.do) cross-file
+   references -- no header, defined in foldaux.c */
+extern int CreateFoldersCursor(), FinalizeProcStyleStuff();
+
 void folders__HandleAsyncPrefetch(ci)
 struct folders *ci;
 {

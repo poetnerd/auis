@@ -36,6 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 
 #include <andrewos.h> /* sys/file.h */
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <util.h>
 #include <pwd.h>
@@ -87,6 +88,18 @@ static UnlinkCKPFile();
 
 extern int WriteOneFile();
 extern void delete_sendmsg_win();
+
+/* same-file forward references -- all defined later in this file */
+extern int SetNotModified(), MakeHeaderFieldsBold(), MakeOneHeaderFieldBold(),
+	ValidateHeader(), RemoveUselessHeaderLines(), ProduceUnscribedVersion(),
+	AlreadyPS(), SaveForPS(), CheckAndCountRecipients(), Deliver(),
+	DirectlyInsertFile();
+
+/* same-directory (sendaux.o, linked into the same sendmsg.do) cross-file
+   references -- no header, defined in sendaux.c */
+extern int DestroyProcStuff(), DestroyStyles(), InitProcStuff(),
+	InitStylesAndFonts(), OneTimeProcInit(), PrepareBodyForSignature(),
+	SetMyFrameTitle(), EnvViewCt();
 
 void sendmessage_SetButtonFont(self, font)
 struct sendmessage *self;
