@@ -1877,6 +1877,122 @@ Instances 3–4: full rebuild clean, zero new warnings; live smoke test by
 wdc — Inbox's subscription-status message read correctly after the
 correction, confirmed garbled before it (see above).
 
+### 17. `ansify` DRIFT false-positive: classpp's own `InitializeClass`/`InitializeObject`/`FinalizeObject` special-casing (found 2026-07-25, M3 tree-wide census)
+
+A tree-wide `ansify --dry-run --dir src` census (M3's "first concrete
+step," run before any batch execution) found 56 DRIFT findings across
+1,486 files. Not all are real `.ch`-vs-`.c` bugs — a majority are a
+tool-side false positive with a confirmed, code-level root cause.
+
+#### Root cause
+
+`ansify`'s DRIFT check (`revival/tools/ansify`, `convert_file`) assumes
+exactly **one** implicit leading parameter for every class method/
+classproc — `self` for methods, `classID` for classprocs — and compares
+`len(.c params)` against `len(.ch declared args) + 1`. That convention
+is what classpp itself uses for ordinary methods and classprocs, but
+**not** for three specially-named classprocs, confirmed directly in
+`overhead/class/pp/class.c`:
+
+- `InitializeObject`/`FinalizeObject`: classpp hardcodes a full 2-arg
+  prototype (`struct classheader *`, `struct <class> *` — i.e. both
+  `classID` AND `self`) unconditionally (`class.c:1122`,
+  `"boolean %s__InitializeObject(struct classheader *, struct %s *);"`),
+  regardless of what the `.ch` declares. Every real implementation
+  therefore takes 2 implicit params, whether or not the `.ch` restates
+  them.
+- `InitializeClass`: dispatched via a fully untyped `(boolean (*)())`
+  cast (`class.c:1202`) with no compiler-enforced arg count at all —
+  the real-world convention is 1 implicit param (`classID` only, no
+  specific instance exists yet at class-init time), but nothing
+  enforces it.
+
+`ansify`'s DRIFT check doesn't know about this special-casing, so it
+misfires in two shapes depending on how the `.ch` happens to be
+written:
+
+- **`.ch` restates the implicit param by name** (e.g. `fldtreev.ch`'s
+  `InitializeClass(struct classheader *classID) returns boolean;`):
+  the tool counts `classID` as a real declared arg, then expects one
+  *more* on top (`dbargs + 1`) — one too many. Reported as `.c has N
+  params, .ch has N+1`.
+- **`.ch` uses empty parens** (the more common, "undecorated" form,
+  e.g. `suite.ch`'s `InitializeObject() returns boolean;`): the tool
+  expects only the single default implicit param, but
+  `InitializeObject`/`FinalizeObject`'s true convention is 2 — one too
+  few. Reported as `.c has 2 params, .ch has 0+1`.
+
+#### Scope of the false positive in the 2026-07-25 census
+
+42 of the 56 DRIFT findings name exactly `InitializeClass`,
+`InitializeObject`, or `FinalizeObject`. The mechanism above was
+directly verified against two of them end-to-end (`.ch`, `.c`, and the
+`class.c` codegen source all cross-checked) —
+`foldertreev__InitializeClass`/`InitializeObject`/`FinalizeObject`
+(`atkams/messages/lib/fldtreev.c`, restated-param shape) and
+`suite__InitializeObject`/`FinalizeObject` (`atk/apt/suite/suite.c`,
+empty-parens shape). The remaining ~39 share the identical DRIFT-
+message shape against the same three method names and are almost
+certainly the same mechanism, but were not each individually
+hand-verified — treat as very likely false positives, not certain
+ones, and do a 30-second sanity check (does the `.c` definition's real
+param count match 1 for `InitializeClass` or 2 for
+`InitializeObject`/`FinalizeObject`?) rather than blind-trusting the
+label when a batch actually reaches one.
+
+**One confirmed real exception**: `dialog__InitializeClass`
+(`atk/utils/dialog.c`) genuinely defines `(classID, self)` — 2 params
+— where the ordinary `InitializeClass` convention is 1. Since
+`InitializeClass` dispatch is untyped, this never mattered at runtime
+(the generated call site only ever passes `classID`; the extra `self`
+parameter reads whatever garbage is in that argument slot, but the
+implementation returns `TRUE` unconditionally without touching it) —
+a real, ~35-year-old, benign interface inconsistency, not a DRIFT-
+shaped tool artifact. Logged here, not fixed (out of scope, no
+observable effect).
+
+#### The other 14 DRIFT findings — mixed, ordinary per-batch triage
+
+The remaining 14 (not one of the three special names) are NOT covered
+by the mechanism above and should get normal DRIFT triage when their
+directory's batch runs. Two were checked now because they were cheap
+and instructive:
+
+- **`tree__TreeWidth`/`TreeHeight`** (`atk/apt/tree/tree.c`) —
+  confirmed genuine: `tree.ch` declares `TreeWidth() returns long;`
+  (zero explicit args) but the implementation takes `(self, node)` —
+  the interface is simply missing a real parameter, same species as
+  Pilot B's typeless-`.ch` findings.
+- **`menterstrV__WantInputFocus`/`clicklistV__WantInputFocus`**
+  (`atk/value/mentstrv.c`, `clklistv.c`) — confirmed genuine:
+  `view.ch`/`im.ch` declare `WantInputFocus(struct view *requestor)`,
+  but both overrides define only `(self)` and hardcode
+  `self->etextview` as the requestor argument to their delegated call
+  instead of accepting the caller's real `requestor` — the interface
+  parameter is silently dropped. Likely benign (compound-view focus
+  forwarding) but a real, live interface violation, not a tool
+  artifact — worth a closer look whenever `atk/value` is batched.
+
+Not yet individually checked: `valueview__Changed`,
+`valueview__DrawFromScratch` (`atk/value`), `type__GetDeclaration`
+(directory TBD), `zipobject__Print_Object`/
+`Normalize_Object_Points`/`Highlight_Object_Points`/
+`Expose_Object_Points`/`Hide_Object_Points`, and
+`zipstatus__Issue_Status_Message`/`Acknowledge_Status_Message`
+(`contrib/zip/lib`, Wave 7) — no reason to believe these are tool
+artifacts (none match the three-special-name pattern); handle as
+ordinary DRIFT when those batches run.
+
+#### Tool fix (not done)
+
+The real fix belongs in `ansify` itself — special-case
+`InitializeClass`/`InitializeObject`/`FinalizeObject` the same way
+classpp's own codegen does, rather than assuming a uniform
+one-implicit-param rule. Not fixed here, per the Delegation ruling
+(§14): tool construction stays top-level. Until fixed, any M3 session
+encountering a DRIFT report for one of these three names should
+consult this section before escalating it as a real interface bug.
+
 ## Primary build environment: macOS/Darwin
 
 The initial development platform is macOS (POSIX Darwin), not Linux.
