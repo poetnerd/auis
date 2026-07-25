@@ -49,8 +49,7 @@ extern int errno;
 
 static char home[100]="";
 
-char *gethome(name)
-char *name;
+char * gethome(char *name)
 {
     struct passwd *pw=NULL;
     char *h=NULL;

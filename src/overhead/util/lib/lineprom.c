@@ -47,8 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #define NULL 0
 #endif
 
-int BE2LinePromoteInit(refstate)
-struct LinePromState **refstate;
+int BE2LinePromoteInit(struct LinePromState **refstate)
 {/*		Returns < 0 for (malloc) failure, 0 for OK.  Initializes *refstate
 		to point to malloc'ed storage that will hold the LinePromote state.
 */
@@ -143,8 +142,7 @@ and, in fact, that only the first \begindata should be promoted.  This could be 
     }
 }
 
-int BE2LinePromoteEnd(state)
-struct LinePromState *state;
+int BE2LinePromoteEnd(struct LinePromState *state)
 {/*		Cleans up the malloc'ed storage and returns 0 if OK,
 		non-zero on errors.
 */

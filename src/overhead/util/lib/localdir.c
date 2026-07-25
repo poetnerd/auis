@@ -44,8 +44,7 @@ extern char *GetConfiguration();
 
 
 /* Return a string with the current value for LOCALDIR imbedded in it. */
-char *LocalDir(str)
-char *str;
+char * LocalDir(char *str)
 {
     char *p = NULL;
     int addLen;

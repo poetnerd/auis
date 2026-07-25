@@ -39,8 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 char EH_Error_Msg[EH_ERR_MSG_BUF_SIZE];
 EH_environment *_error_handler_env;
 
-char *emalloc(size)
-long size;
+char * emalloc(long size)
 {
   /* Returns a pointer to a hunk of memory of size. 
      Errors are signalled. */
@@ -52,9 +51,7 @@ long size;
   return(tmp_ptr);
 }
 
-char *erealloc(old, newsize)
-char *old;
-long newsize;
+char * erealloc(char *old, long newsize)
 {
   /* Returns a pointer to a hunk of memory of newsize, with
      the contents of old (trunc) copied into it. 
@@ -68,8 +65,7 @@ long newsize;
 }
 
 
-char *CopyString(old)
-char *old;
+char * CopyString(char *old)
 {
   /* Returns a newly emalloc'd copy of the string.
      Errors from emalloc are passed up. */

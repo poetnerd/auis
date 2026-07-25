@@ -72,8 +72,7 @@ extern int FoldedEQ();		/* foldedeq.c, no header declares it */
 
 #define BIGPREF 2000
 
-setprofilestring(prog, pref, val) 
-char *prog, *pref, *val;
+int setprofilestring(char *prog, char *pref, char *val)
 {
     FILE *oldR;
     FILE *newR;
@@ -254,8 +253,7 @@ Needs to compile with:
   cc -DTESTINGONLYTESTING setprof.c /usr/andrew/lib/libutil.a -o setprof 
 */
 char ProgramName[100] = "foobar";
-main(argc, argv)
-char **argv;
+int main(int argc, char **argv)
 {
     int x;
     extern int errno;

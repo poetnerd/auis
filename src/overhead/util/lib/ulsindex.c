@@ -38,18 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
  
 
-char *ULsindex(big, small)
-char *big, *small;
-/*  ULsindex  --  find index of one string within another, ignoring alphabetic case.
- *
- *  Usage:  p = ULsindex (big,small)
- *	char *p,*big,*small;
- *
- *  ULsindex searches for a substring of big which matches small,
- *  and returns a pointer to this substr.  If no matching
- *  substring is found, 0 is returned.
- *
- */
+char * ULsindex(char *big, char *small)
 {
     register char *bp, *bp1, *sp, bc, sc;
     register char c = *small;

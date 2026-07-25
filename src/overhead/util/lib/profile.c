@@ -46,6 +46,8 @@ extern char *getenv();
 #include <ctype.h>
 #include <util.h>
 #include <stdlib.h>
+static void initprofiles();
+static struct configurelist * openprofile();
 
 extern int FoldedEQ();		/* foldedeq.c, no header declares it */
 
@@ -63,11 +65,7 @@ static int profileLoadTransientErrno = 0;
 /* open a list of profile files, with an environment variable that can override
  * the default list.  "savefname" flag added 12/13/91 by cn0h
  */
-static struct configurelist *
-openprofile(filename, defaultname, savefname)
-    char *filename;
-    char *defaultname;
-    int savefname;
+static struct configurelist * openprofile(char *filename, char *defaultname, int savefname)
 {
     char *pl=(char *) getenv(filename);
     char *home=(char *) gethome(NULL);
@@ -250,9 +248,7 @@ char   *var; {
     return neg ? -n : n;
 }
 
-profileentryexists(var, usedefault)
-    char *var;
-    int usedefault;
+int profileentryexists(char *var, int usedefault)
 {
 
     initprofiles();

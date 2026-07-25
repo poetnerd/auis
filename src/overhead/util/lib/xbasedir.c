@@ -42,8 +42,7 @@ extern char *getenv();
 extern char *GetConfiguration();
 
 /* Return a string with the current value for XBASEDIR imbedded in it. */
-char *XBaseDir(str)
-    char *str;
+char * XBaseDir(char *str)
 {
     char *p = NULL;
     int addLen;

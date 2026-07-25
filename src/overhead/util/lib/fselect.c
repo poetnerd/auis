@@ -36,10 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 static int NOFILES;
 
-int fselect(nfds, rfiles, wfiles, xfiles, timeout)
-int	nfds;
-FILE	**rfiles, **wfiles, **xfiles;
-struct timeval	*timeout;
+int fselect(int nfds, FILE **rfiles, FILE **wfiles, FILE **xfiles, struct timeval *timeout)
 {
     int rmask = 0, wmask = 0, xmask = 0, ret = 0;
     register int	i;

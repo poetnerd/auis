@@ -40,9 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 extern int RegisterOpenFile(), RegisterCloseFile();	/* fdplumb.c, no header declares them */
 extern int t2open(), t2close();			/* t2open.c, no header declares them */
 
-dbg_t2open(name, argv, r, w)
-char *name, *argv[];
-FILE **r, **w;
+int dbg_t2open(char *name, char *argv[], FILE **r, FILE **w)
 {
     int code;
 
@@ -55,9 +53,7 @@ FILE **r, **w;
 }
 
 
-dbg_t2close(fp, seconds, timedout)
-FILE *fp;
-int seconds, *timedout;
+int dbg_t2close(FILE *fp, int seconds, int *timedout)
 {
     RegisterCloseFile(fileno(fp));
     return(t2close(fp, seconds, timedout));

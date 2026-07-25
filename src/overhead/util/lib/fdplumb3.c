@@ -39,8 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 extern int RegisterOpenFile(), RegisterCloseFile();	/* fdplumb.c, no header declares them */
 
-FILE *dbg_popen(path, type)
-char *path, *type;
+FILE * dbg_popen(char *path, char *type)
 {
     FILE *fp;
     extern FILE *popen();
@@ -50,8 +49,7 @@ char *path, *type;
     return(fp);
 }
 
-dbg_pclose(fp)
-FILE *fp;
+int dbg_pclose(FILE *fp)
 {
     RegisterCloseFile(fileno(fp));
     return(pclose(fp));

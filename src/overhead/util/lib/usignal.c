@@ -40,8 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <signal.h>
 #include <stdio.h>
 
-char *UnixSignal(signalNumber)
-int	signalNumber;
+char * UnixSignal(int signalNumber)
 {
 /* Returns a pointer to a static buffer containing English text describing the same signal condition that signalNumber describes (interpreted as a Unix signal number).  The text has no newlines in it.  We contend that this is what ``psignal'' should have been returning all along. */
     static char SigBuff[40];

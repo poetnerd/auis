@@ -65,9 +65,7 @@ static SignalReturnType (*oldfunc)();
 #endif
 
 
-FILE *topen(name, argv, mode, pgrp)
-char *name, *argv[], *mode;
-int *pgrp;
+FILE * topen(char *name, char *argv[], char *mode, int *pgrp)
 {
     int p[2];
     register myside, hisside;
@@ -118,9 +116,7 @@ lclalarm()
     longjmp(env, 1);
 }
 
-int tclose(ptr, seconds, timedout)
-FILE *ptr;
-int seconds, *timedout;
+int tclose(FILE *ptr, int seconds, int *timedout)
 {
     register f, r;
     int status;
@@ -188,22 +184,19 @@ int seconds, *timedout;
     return status;
 }
 
-FILE *qopen(name, argv, mode)
-char *name, *argv[], *mode;
+FILE * qopen(char *name, char *argv[], char *mode)
 {
     int dummy;
 
     return topen(name, argv, mode, &dummy);
 }
 
-int qclose(ptr)
-FILE *ptr;
+int qclose(FILE *ptr)
 {
     return tclose(ptr, 0, 0);
 }
 
-int getpidfromfp(ptr)
-FILE *ptr;
+int getpidfromfp(FILE *ptr)
 {
     return(popen_pid[fileno(ptr)]);
 }

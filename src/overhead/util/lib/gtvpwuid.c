@@ -51,8 +51,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 extern int errno;
 
 #ifdef WHITEPAGES_ENV
-struct passwd *getvpwuid(vuid)
-int vuid;
+struct passwd * getvpwuid(int vuid)
 {/* Return a struct passwd for vuid, a Vice UID */
     wp_ErrorCode Res;
     wp_PrimeKey KVal;

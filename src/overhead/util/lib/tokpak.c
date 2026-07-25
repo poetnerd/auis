@@ -42,6 +42,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <netinet/in.h>
 #include <svcconf.h>
+static int PackKTC();
 
 #ifdef AFS_ENV
 #include <afs/param.h>
@@ -267,10 +268,7 @@ int debug; char *PrimCell;
 #endif /* AFS_ENV */
 }
 
-int GetAndPackAllTokens(pWhere, pWhereLen, pWhereMax, debug)
-char **pWhere;
-int *pWhereLen, *pWhereMax;
-int debug;
+int GetAndPackAllTokens(char **pWhere, int *pWhereLen, int *pWhereMax, int debug)
 {/* Extend *pWhere with an array of all tokens in all cells. */
     return (GetAndPackAllTokens_Prim(pWhere, pWhereLen, pWhereMax, debug, NULL));
 }

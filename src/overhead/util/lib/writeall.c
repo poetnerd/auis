@@ -41,10 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 extern int errno;
 
-int writeall(fd, Buf, NBytes)
-int fd;
-char *Buf;
-int NBytes;
+int writeall(int fd, char *Buf, int NBytes)
 {
     int Code, ToWrite;
 

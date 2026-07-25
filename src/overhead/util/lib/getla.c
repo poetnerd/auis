@@ -45,8 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 /* No /dev/kmem or nlist() on modern Darwin (no _nlist symbol in libc at
    all); use the portable getloadavg(3) from <stdlib.h> instead. */
 #include <stdlib.h>
-double getla(indx)
-int indx;
+double getla(int indx)
 {
     double avenrun[3];
     if (getloadavg(avenrun, 3) < 0) return -1.0;
@@ -60,8 +59,7 @@ getla_ShutDown()
 #else /* __APPLE__ */
 
 #ifdef NeXT
-double getla(indx)
-int indx;
+double getla(int indx)
 {
     return (double) 0.0;
 }
@@ -80,8 +78,7 @@ static struct nlist Nl[] =
 
 static int kmem = -1, fpastate = -1, fpacount = 0;
 
-double getla(indx)
-int indx;
+double getla(int indx)
 {
 #ifdef sun
     long avenrun[3];	/* For any kind of sun */

@@ -58,9 +58,7 @@ static SignalReturnType (*oldfunc)(int);
 static SignalReturnType (*oldfunc)();
 #endif
 
-int t2open(name, argv, r, w)
-char *name, *argv[];
-FILE **r, **w;
+int t2open(char *name, char *argv[], FILE **r, FILE **w)
 {
     int p1[2], p2[2], pgrp;
 
@@ -128,9 +126,7 @@ lclalarm()
     longjmp(env, 1);
 }
 
-int t2close(ptr, seconds, timedout)
-    FILE *ptr;
-    int seconds, *timedout;
+int t2close(FILE *ptr, int seconds, int *timedout)
 {
     SIGSET_TYPE omask, nmask;
     int status;

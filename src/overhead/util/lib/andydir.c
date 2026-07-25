@@ -41,8 +41,7 @@ extern char *getenv();
 extern char *GetConfiguration();
 
 /* Return a string with the current value for ANDYDIR imbedded in it. */
-char *AndyDir(str)
-char *str;
+char * AndyDir(char *str)
 {
     char *p = NULL;
     int addLen;

@@ -47,11 +47,7 @@ extern int errno;
 
 #if !OSI_HAS_SYMLINKS
 
-int
-osi_readlink(path,buffer,bufsize)
-	char *path;
-	char *buffer;
-	int bufsize;
+int osi_readlink(char *path, char *buffer, int bufsize)
 {
 	errno = EINVAL;
 	return -1;
