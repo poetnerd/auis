@@ -1959,15 +1959,6 @@ call site and definition tree-wide *before* any mass file editing starts
      message open, `cuin`, a test send, `imapsync`, folder
      subscribe/unsubscribe), no regressions.
 
-**M2 — Prototype sweep is now COMPLETE (2026-07-25).** All 5 rollout
-points (13 sessions/batches across 29 directories, 3,888 fallout
-instances fixed tree-wide) closed; the final tree-wide gate is green.
-LP64 bug class 1 (undeclared function returning a pointer or other
-wide value, silently truncated through implicit `int`) is closed
-structurally, tree-wide, the same way M1 closed variants 2/3/5. Full
-per-point history retired to `claude-history/m2/` — see that
-directory's section in `claude-history/README.md` for the complete
-index. M3 has not been started.
 - **M3 — Definition conversion.** `ansify` (`revival/tools/ansify`,
   built and validated 2026-07-08 — see porting-assessment §14):
   static-fix tools → class methods/classprocs by signature-DB lookup
@@ -1983,6 +1974,11 @@ index. M3 has not been started.
   atkams/ams → contrib. Ratchet each completed subtree from `-Wno-*`
   to
   `-Werror=implicit-int,strict-prototypes,int-conversion,incompatible-function-pointer-types`.
+  Procedure, gate-scope reasoning (stronger locality guarantee than M2
+  had — `.eh` is never installed tree-wide, same-directory quoted
+  include only), ordering rationale, and batching plan:
+  `m3-rollout-runbook.md` (planned 2026-07-25, execution not yet
+  started — see that file's resource note before beginning).
 - **M4 — Global strictness.** Tree-wide `-Werror` on the type-safety
   set; `-Wformat` then catches any remaining scanf `%d`/`%ld` (Variant
   4) automatically. Keep `-std=gnu89` until conversion completes;
