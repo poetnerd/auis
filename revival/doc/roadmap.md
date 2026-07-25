@@ -1770,7 +1770,7 @@ call site and definition tree-wide *before* any mass file editing starts
        pre-existing SSLLIB link failure confirmed unrelated. Runtime
        check user-verified (`messages`, `cuin`, `help`, `richtext`/
        `richtoatk`), no regressions.)
-  4. [ ] Large, dedicated-session territory (~70–140 instances each;
+  4. [x] Large, dedicated-session territory (~70–140 instances each;
      gate schedule ruled 2026-07-24, see `claude-history/m2/m2-rollout-runbook.md`'s
      "Gate scope" section — subtree-local gate always required,
      tree-wide gate only where marked below):
