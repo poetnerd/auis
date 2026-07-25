@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #endif
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <class.h>
 #include <txtvcmds.h>
 #include <text.ih>
@@ -62,6 +63,8 @@ static void DoDisplayInsertEnvironment();
 
 extern long lcNewLine;
 extern long lcInsertEnvironment;
+extern boolean ConfirmReadOnly();	/* defined in txtvcmod.c */
+extern boolean textview_objecttest();	/* defined in txtvcmod.c */
 
 static boolean useOldInsertionRules;
 static long deletionDirection;

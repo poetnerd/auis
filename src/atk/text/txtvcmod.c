@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #endif
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <class.h>
 #include <ctype.h>
 #include <txtvcmds.h>
@@ -56,6 +57,14 @@ extern void textview_BackwardWordCmd();
 extern void textview_ForwardWSWordCmd();
 extern void textview_BackwardWSWordCmd();
 extern void textview_EndOfWSWordCmd();
+extern void textview_NextLineCmd();
+extern void textview_EndOfLineCmd();
+extern void textview_BeginningOfLineCmd();
+extern void textview_StartOfParaCmd();
+extern void textview_EndOfParaCmd();
+extern void textview_BeginningOfFirstWordCmd();
+extern void textview_PreviousLineCmd();
+extern int charType();		/* defined in txtvcmds.c */
 
 static void yankDeleteWord ();
 

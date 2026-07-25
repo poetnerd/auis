@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #endif
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <class.h>
 #include <ctype.h>
 #include <txtvcmds.h>
@@ -39,6 +40,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <im.ih>
 #include <message.ih>
 #include <search.ih>
+
+extern boolean ConfirmReadOnly();	/* defined in txtvcmod.c */
 #include <environ.ih>
 #include <mark.ih>
 

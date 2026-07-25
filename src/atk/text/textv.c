@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #endif
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <class.h>
 #include <ctype.h>
 #include <dict.ih>
@@ -87,6 +88,8 @@ static boolean alwaysDisplayStyleMenus;
 static boolean highlightToBorders;
 
 extern void textview__LookCmd(); /* Needed for menulist functions. */
+extern void InitializeMod();	/* defined in txtvcsty.c */
+extern int charType();		/* defined in txtvcmds.c */
 
 /* Scroll stuff. */
 static void getinfo(), setframe(), endzone();

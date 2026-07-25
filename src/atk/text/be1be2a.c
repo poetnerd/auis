@@ -36,6 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
  */
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <class.h>
 #include <be1be2.ih>
 #include <text.ih>

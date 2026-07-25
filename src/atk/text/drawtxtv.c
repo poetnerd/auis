@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #endif
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <class.h>
 #include <text.ih>
 #include <mark.ih>
@@ -48,6 +49,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <dataobj.ih>
 #define AUXMODULE 1
 #include <textv.eh>
+
+extern boolean textview_PrevCharIsNewline();	/* defined in textv.c */
 
 #define textview_MOVEVIEW 99999999
 static struct graphic *pat;

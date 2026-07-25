@@ -44,6 +44,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #define AUXMODULE 1
 #include <textv.eh>
 
+extern int charType();		/* defined in txtvcmds.c */
+
 void textview_EndOfWordCmd (self)
     register struct textview *self;
 {/**/
