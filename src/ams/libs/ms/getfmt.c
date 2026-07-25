@@ -36,6 +36,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <ms.h>
 #include <hdrparse.h>
+#include <string.h>
+extern int BreakDownContentTypeField();  /* ams/libs/shr/brkdown.c */
+extern int lc2strncmp();  /* ams/libs/shr/utils.c */
 
 extern char *StripWhiteEnds();
 

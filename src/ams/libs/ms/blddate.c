@@ -34,6 +34,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <hdrparse.h>
 #include <andrewos.h> /* sys/time.h */
+extern time_t gtime();  /* overhead/util/lib/gtime.c */
+extern int parsedateheader();
 
 extern char *convlongto64();
 

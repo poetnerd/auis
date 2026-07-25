@@ -35,6 +35,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <stdio.h>
 #include <sys/stat.h>
+extern int RetryBodyFileName();
+extern char *arpadate();  /* overhead/mail/lib/arpadate.c */
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
 
 extern int IsLoggingMailStats;
 extern char MAILLOGSTATFILE[];

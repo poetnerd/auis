@@ -38,6 +38,37 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <ctype.h>
 #include <util.h>
+#include <stdlib.h>
+extern int BadLine();
+extern int BuildNickName();  /* ams/libs/shr/utils.c */
+extern int CheckForInconsistentSubscriptions();
+extern int CheckForOldFashionedSubscriptions();
+extern int CheckGlobalSubscriptions();
+extern int CheckPathChanges();
+extern int CheckSubsDuplication();
+extern int ComputeSubsPriority();
+extern int DeSymLink();  /* overhead/util/lib/desym.c */
+extern int HandleChange();
+extern int HandlePathChange();
+extern int HandleSpecialProfileLine();
+extern int InitializeSubsPriorities();
+extern int InsertInSubsList();
+extern int LockProfile();
+extern int MS_DisambiguateFile();
+extern int MS_RebuildOneSubscriptionMap();
+extern int NonfatalBizarreError();
+extern int PreorderSubscriptionStrcmp();
+extern int ReadSubs();
+extern int RenameEvenInVice();
+extern int ResolveTildes();
+extern int ScoreMatch();
+extern int SetFullProfileEntry();
+extern int UnlockProfile();
+extern int WhichPath();
+extern int abspath();
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int lc2strncmp();  /* ams/libs/shr/utils.c */
 
 extern char *StripWhiteEnds(), *getprofile(), *convlongto64(), *fixDate();
 extern char home[], MyMailDomain[];

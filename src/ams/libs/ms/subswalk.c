@@ -35,6 +35,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <sys/stat.h>
 #include <ms.h>
+#include <stdlib.h>
+extern int DeSymLink();  /* overhead/util/lib/desym.c */
+extern int abspath();
+extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
 
 static int RealSubsTreeWalk();
 

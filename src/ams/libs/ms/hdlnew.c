@@ -49,6 +49,44 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <andrewos.h>                  /* sys/file.h */
 #include <system.h>
+#include <stdlib.h>
+extern int AddHeader();
+extern int AddParentalMessage();
+extern int AppendMessageToMSDir();
+extern int BuildAttributesField();
+extern int BuildCaption();
+extern int BuildDateField();
+extern int BuildNickName();  /* ams/libs/shr/utils.c */
+extern int BuildReplyField();
+extern int BuildWideReply();
+extern int CacheDirectoryForClosing();
+extern int CheckAuthUid();
+extern int CheckFolderIsCreatable();
+extern int CloseMSDir();
+extern int CreateNewMSDirectory();
+extern int DelHeaderByName();
+extern int FLAMES_TranslateArgs();
+extern int FindTreeRoot();  /* ams/libs/shr/findroot.c */
+extern int Flames_Initialize();
+extern int Flames_ReadDefault();
+extern int Flames_SlurpFlamesFile();
+extern int Flames_SlurpFlamesFileIfNecessary();
+extern int IsMessageAlreadyThere();
+extern int LowerStringInPlace();  /* ams/libs/shr/utils.c */
+extern int MS_DisambiguateFile();
+extern int NeedToReadFile();
+extern int NonfatalBizarreError();
+extern int ReadOrFindMSDir();
+extern int RejectMessage();
+extern int RememberRecentRead();
+extern int RenameEvenInVice();
+extern int ResendMessageFromMailbox();
+extern int TellEliAboutAMSError();
+extern int UnformatMessage();
+extern int WritePureFile();
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vclose();  /* overhead/util/lib/fdplumb2.c */
+extern int dropoff();  /* overhead/mail/lib/dropoff.c */
 
 extern char *AndrewDir();
 

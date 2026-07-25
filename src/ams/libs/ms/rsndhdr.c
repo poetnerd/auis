@@ -40,6 +40,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <hdrparse.h>
 #include <parseadd.h>
 #include <mail.h>
+#include <stdlib.h>
+extern int FreeAddressList();  /* overhead/mail/lib/parseadd.c */
+extern int ParseAddressList();  /* overhead/mail/lib/parseadd.c */
 #ifdef WHITEPAGES_ENV
 #include <wp.h>
 #endif /* #ifdef WHITEPAGES_ENV */

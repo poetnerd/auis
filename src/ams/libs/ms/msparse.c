@@ -35,6 +35,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h> /* sys/time.h */
 #include <stdio.h>
 #include <mail.h>
+extern time_t gtime();  /* overhead/util/lib/gtime.c */
+extern int parsedate();
+extern int parsedateheader();
 
 MS_ParseDate(indate, year, month, day, hour, min, sec, wday, gtm)
 char *indate;

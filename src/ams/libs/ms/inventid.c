@@ -9,6 +9,7 @@ $Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/inventid.c,v 
 $Source: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/inventid.c,v $
 */
 #include <ms.h>
+#include <string.h>
 
 extern char *ams_genid();
 

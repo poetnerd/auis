@@ -35,6 +35,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <mailconf.h>
 #include <sys/stat.h>
+extern int AppendFileToFolder();
+extern int BuildNickName();  /* ams/libs/shr/utils.c */
+extern int EnsurePrivacy();
+extern int FindDefaultDir();
+extern int GetSubsEntry();
+extern int MS_CreateNewMessageDirectory();
+extern int MS_FastUpdateState();
+extern int MS_SetSubscriptionEntry();
+extern int NonfatalBizarreError();
+extern int ReadOrFindMSDir();
+extern int vdown();  /* overhead/util/lib/vclose.c */
 #ifdef AFS_ENV
 #include <netinet/in.h>
 #include <afs/param.h>

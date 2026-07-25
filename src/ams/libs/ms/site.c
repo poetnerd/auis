@@ -43,6 +43,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mail.h>
 #include <mailconf.h>
 #include <pwd.h>
+#include <stdlib.h>
 
 /* Some useful functions and buffers */
 extern char *StripWhiteEnds();

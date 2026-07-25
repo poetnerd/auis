@@ -33,6 +33,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <andrewos.h>
 #include <ms.h>
+extern int ConsiderLoggingRead();
+extern int MS_GetPartialFile();
+extern int QuickGetBodyFileName();
+extern int ReadOrFindMSDir();
 
 MS_GetPartialBody(DirName, id, Buf, BufLim, offset, remaining, ct)
 char *DirName, *id, *Buf;

@@ -42,6 +42,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <ctype.h>
 #include <parseadd.h>
+extern int FreeAddressList();  /* overhead/mail/lib/parseadd.c */
+extern int NonfatalBizarreError();
+extern int ParseAddressList();  /* overhead/mail/lib/parseadd.c */
+extern char *ams_genid();  /* overhead/mail/lib/genid.c */
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_creat();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vclose();  /* overhead/util/lib/fdplumb2.c */
+extern int parsedateheader();
+extern int writeall();  /* overhead/util/lib/writeall.c */
 
 static int IsNewFrom();
 

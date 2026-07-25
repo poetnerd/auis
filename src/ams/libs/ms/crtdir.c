@@ -32,6 +32,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <ms.h>
+#include <string.h>
+extern int CreateNewMSDirectory();
 
 MS_CreateNewMessageDirectory(DirName, Overwrite, obsolete)
 char *DirName;

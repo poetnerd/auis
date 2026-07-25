@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
  
 
 #include <ms.h>
+#include <stdlib.h>
 
 CompareFileTimeStructs(ft1, ft2)
 struct FileTime *ft1, *ft2;

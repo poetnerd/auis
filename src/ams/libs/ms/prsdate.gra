@@ -93,6 +93,8 @@ static jmp_buf errbuf;			/* jump location for parse errors */
 extern char *nxtarg();
 extern long time();
 extern struct tm *localtime();
+extern char *foldup();
+extern int yearsize();
 struct stable { char *text;  int token;  int lexval; };
 static int shour, tmkey;
 static int zone;	/* Offset in minutes from GMT specified */

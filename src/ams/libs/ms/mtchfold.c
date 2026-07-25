@@ -35,6 +35,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <mailconf.h>
+extern int GenTempName();
+extern int NonfatalBizarreError();
+extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
 
 long MS_MatchFolderName(pat, filename)
 char *pat, *filename;

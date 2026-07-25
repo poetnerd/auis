@@ -36,6 +36,25 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ctype.h>
 #include <ms.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+extern int BuildReplyField();
+extern int BuildWideReply();
+extern int EmitHeader();
+extern int FreeMessage();
+extern int GenTempName();
+extern int InventID();
+extern int ParseMessageFromRawBody();
+extern int PrintFwdHeaders();
+extern int PrintQuotingFormatting();  /* overhead/util/lib/unscribe.c */
+extern int QuickGetBodyFileName();
+extern int ReadOrFindMSDir();
+extern int ReadRawFile();
+extern int StripMyselfFromAddressList();
+extern int UnformatMessage();
+extern char *ams_genid();  /* overhead/mail/lib/genid.c */
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
+extern int fwriteallchars();  /* overhead/util/lib/fwrtallc.c */
 
 #define ToLower(c) (isupper(c) ? tolower(c) : (c))
 

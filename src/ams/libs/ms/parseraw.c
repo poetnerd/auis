@@ -35,6 +35,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <hdrparse.h>
 #include <andrewos.h>
+#include <stdlib.h>
+extern int FreeParsedStuff();
+extern int LowerStringInPlace();  /* ams/libs/shr/utils.c */
+extern int OnlyParseMessageFromRawBody();
+extern int lc2strncmp();  /* ams/libs/shr/utils.c */
 
 extern char *StandardHeaderNames[];
 

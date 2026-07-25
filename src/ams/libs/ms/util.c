@@ -38,6 +38,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <andrewos.h> /* sys/file.h */
 #include <mailconf.h>
+#include <stdlib.h>
+extern int EnsureMailDirExists();
+extern int MS_CheckAuthentication();
+extern int NonfatalBizarreError();
+extern int ResolveTildes();
+extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
+extern int lc2strncmp();  /* ams/libs/shr/utils.c */
+extern int vdown();  /* overhead/util/lib/vclose.c */
 static int CheckLabel();
 
 extern char *getprofile(), *StripWhiteEnds();

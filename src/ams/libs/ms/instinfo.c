@@ -36,10 +36,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mailconf.h>
 #include <hdrparse.h>
 #include <stdio.h>
-
-#ifndef _IBMR2
-extern char *malloc();
-#endif /* _IBMR2 */
+#include <stdlib.h>
+extern int AddParentalMessageFromFile();
+extern int AppendFileToFolder();
+extern int GenTempName();
+extern char *arpadate();  /* overhead/mail/lib/arpadate.c */
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
 
 extern char Me[], *MyPrettyAddress, home[];
 

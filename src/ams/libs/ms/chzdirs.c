@@ -55,6 +55,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif                                 /* WHITEPAGES_ENV */
 #include <mail.h>
 #include <dropoff.h>
+#include <stdlib.h>
+extern int AddHeader();
+extern int AppendMessageToMSDir();
+extern int BuildAttributesField();
+extern int BuildCaption();
+extern int BuildDateField();
+extern int BuildReplyField();
+extern int CloseMSDir();
+extern int DeleteHeader();
+extern int EmitBE2PrefixAndLSeekPastIt();
+extern int GenTempName();
+extern int GetFormatFromMessage();
+extern int InventID();
+extern int IsMessageAlreadyThere();
+extern int PrintQuotingFormatting();  /* overhead/util/lib/unscribe.c */
+extern int ReadOrFindMSDir();
+extern int WritePureFile();
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int dropoff();  /* overhead/mail/lib/dropoff.c */
+extern int dropoff_auth();  /* overhead/mail/lib/dropoff.c */
+extern char *newmid();
 
 static int ConvertDropoffCode();
 

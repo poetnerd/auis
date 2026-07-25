@@ -39,6 +39,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <hdrparse.h>
 #include <andrewos.h>
+#include <stdlib.h>
+extern int CheckAuthUid();
+extern int Flames_HandleNewMessage();
+extern int FreeMessage();
+extern int InventID();
+extern int ParseMessageFromRawBody();
+extern int ReadRawFile();
 
 extern char    home[];
 extern struct MS_Directory *MyOpenDir;

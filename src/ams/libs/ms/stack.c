@@ -38,12 +38,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <ms.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+extern int Stack_MapHashPlusAsAppropriate();
 
 #define STACKSIZE 1000
 #define MAXSTACKS 2
 		/* MAXSTACKS is the number of stacks -- 2 stacks, stack 0 and 1 */
 #ifndef _IBMR2
-extern char *malloc(), *realloc();
 #endif /* _IBMR2 */
 
 static char *Stack[MAXSTACKS][STACKSIZE + 1];

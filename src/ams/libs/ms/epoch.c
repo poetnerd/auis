@@ -36,6 +36,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <util.h>
 #include <svcconf.h>
+#include <stdlib.h>
+extern int CloseDirsThatNeedIt();
+extern int CloseMSDir();
+extern int DescribeTimeInterval();
+extern int GetSnapshotByNumber();
+extern int MS_PurgeDeletedMessages();
+extern int NonfatalBizarreError();
+extern int ReadOrFindMSDir();
+extern int RewriteSnapshotInDirectory();
+extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
+extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
 #ifdef AFS_ENV
 #include <netinet/in.h>
 #include <afs/param.h>

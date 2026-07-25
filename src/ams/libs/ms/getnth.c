@@ -32,6 +32,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <ms.h>
+extern int CacheDirectoryForClosing();
+extern int GetSnapshotByNumber();
+extern int ReadOrFindMSDir();
 
 MS_GetNthSnapshot(DirName, n, SnapshotBuf)
 char *DirName, *SnapshotBuf;

@@ -35,6 +35,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <sys/stat.h>
 #include <mailconf.h>
+#include <stdlib.h>
+extern int CloseDirsThatNeedIt();
+extern int ConvertIncomingMail();
+extern int FlushClosableDir();
+extern int FreeFTList();
+extern int NonfatalBizarreError();
+extern int ProcessNewMail();
+extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
+extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
 #ifdef AFS_ENV
 #include <netinet/in.h>
 #include <afs/param.h>

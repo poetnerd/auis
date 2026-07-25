@@ -34,6 +34,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <stdio.h>
+#include <sys/stat.h>
+extern int DeSymLink();  /* overhead/util/lib/desym.c */
+extern int MS_GetSearchPathEntry();
+extern int MS_RebuildOneSubscriptionMap();
+extern int RenameEvenInVice();
+extern int SubsTreeWalk();
+extern int abspath();
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
 
 MS_RebuildSubscriptionMaps() {
     int i = 0, code;

@@ -33,6 +33,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <stdio.h>
 #include <errprntf.h>
+#include <stdlib.h>
+extern int MS_UpdateState();
+extern int errprintf();  /* overhead/errors/errprntf.c */
+extern int freepag();
 
 /* The following should never return, but should notify the postmaster
 	that an error has occurred. */

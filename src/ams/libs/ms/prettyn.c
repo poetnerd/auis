@@ -42,6 +42,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <wp.h>
 #endif /* WHITEPAGES_ENV */
 #include <parseadd.h>
+#include <stdlib.h>
+extern int FindPrettiestFromString();
+extern int FreeAddressList();  /* overhead/mail/lib/parseadd.c */
+extern int GetNameFromGecos();
+extern int ParseAddressList();  /* overhead/mail/lib/parseadd.c */
+extern int ShrinkName();
 
 #define BIGFROM 24  /* c.f. bldcapt.c */
 #define MINHOST 3

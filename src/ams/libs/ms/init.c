@@ -47,6 +47,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mail.h>
 #include <errprntf.h>
 #include <signal.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+extern int CheckAMSConfiguration();  /* overhead/mail/lib/mailconf.c */
+extern int CkAMSCellConfig();  /* overhead/mail/lib/mailconf.c */
+extern int DeSymLink();  /* overhead/util/lib/desym.c */
+extern int FatalError();
+extern int GetNameFromGecos();
+extern int InitializeDeathSignals();
+extern int InitializeDirCacheState();
+extern int InitializeSearchPaths();
+extern int MS_DisambiguateFile();
+extern int MS_SetDeathKnell();
+extern int Machine_HandleClientSignal();  /* ams/ms/ms.c */
+extern int NonfatalBizarreError();
+extern int RefreshSubs();
+extern int VitalCheckpoints();
+extern int abspath();
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int fdplumb_SpillGutsToFile();  /* overhead/util/lib/fdplumb.c */
+extern int safeexit();
+extern int test_dropoff();  /* overhead/mail/lib/dropoff.c */
 
 extern char **environ;
 extern char *getprofile(), *StripWhiteEnds();

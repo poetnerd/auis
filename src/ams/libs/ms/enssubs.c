@@ -34,6 +34,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <stdio.h>
+#include <sys/stat.h>
+extern int BadSubMapLine();
+extern int BuildNickName();  /* ams/libs/shr/utils.c */
+extern int CheckSubMapCorrect();
+extern int DeSymLink();  /* overhead/util/lib/desym.c */
+extern int EnsureSubMapCorrect();
+extern int FindTreeRoot();  /* ams/libs/shr/findroot.c */
+extern int PreorderSubscriptionStrcmp();
+extern int RenameEvenInVice();
+extern int abspath();
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
 
 EnsureInSubscriptionMap(DirName)
 char *DirName;

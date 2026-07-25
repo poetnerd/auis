@@ -33,6 +33,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <andrewos.h>
 #include <ms.h>
+#include <stdlib.h>
+extern int ReduceWhiteSpace();  /* ams/libs/shr/utils.c */
+extern int lc2strncmp();  /* ams/libs/shr/utils.c */
 
 extern char *StripWhiteEnds();
 

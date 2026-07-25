@@ -43,6 +43,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+extern int CheckAMSConfiguration();  /* overhead/mail/lib/mailconf.c */
+extern int FixSubsDate();
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
 
 #ifndef NORCSID
 #define NORCSID

@@ -36,6 +36,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <stdlib.h>
+extern int BadSubMapLine();
+extern int BadUpdFileLine();
+extern int CheckUpdateLine();
+extern int CloseMSDir();
+extern int CompareSubsAndUpdateLines();
+extern int CriticalBizarreError();
+extern int DeSymLink();  /* overhead/util/lib/desym.c */
+extern int DropHint();
+extern int GetSnapshotByNumber();
+extern int MS_GetSearchPathEntry();
+extern int MS_LockMUF();
+extern int NonfatalBizarreError();
+extern int ReadOrFindMSDir();
+extern int RebuildOneMasterUpdateFile();
+extern char *UnixError();  /* overhead/util/lib/uerror.c */
+extern int abspath();
+extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
+extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
 
 #define BIGLINE 1500
 

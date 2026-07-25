@@ -34,6 +34,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <andrewos.h>
 #include <sys/stat.h>
+extern int CacheDirectoryForClosing();
+extern int CloseMSDir();
+extern int GetSnapshotByNumber();
+extern int MS_GetAssociatedFileTime();
+extern int MS_GetAssociatedTime();
+extern int ReadOrFindMSDir();
+extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
+extern int vdown();  /* overhead/util/lib/vclose.c */
 
 MS_GetNewMessageCount(FullDirName, numnew, numtotal, LastOldDate, InsistOnFetch)
 char *FullDirName, *LastOldDate;

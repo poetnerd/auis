@@ -37,6 +37,33 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <netinet/in.h>
 #include <ms.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+extern int BuildAttributesField();
+extern int BuildCaption();
+extern int BuildDateField();
+extern int BuildReplyField();
+extern int CheckAuthUid();
+extern int CloseDirsThatNeedIt();
+extern int CloseMSDir();
+extern int FieldsDiffer();
+extern int FreeMessage();
+extern int GetRightMid();
+extern int GetSnapshotByNumber();
+extern int InventID();
+extern int IsDirAlien();
+extern unsigned long KRHash();
+extern int ParseMessageFromRawBody();
+extern int ReadOldMSDirectoryHead();
+extern int ReadOrFindMSDir_Complain();
+extern int ReadRawFile();
+extern int RenameEvenInVice();
+extern char *ams_genid();  /* overhead/mail/lib/genid.c */
+extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
+extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
+extern int dbg_vclose();  /* overhead/util/lib/fdplumb2.c */
+extern int itops();
+extern int writeall();  /* overhead/util/lib/writeall.c */
 
 static int MergeList_GrowIfNecessary();
 static int SetChains();

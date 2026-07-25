@@ -37,6 +37,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andyenv.h>
 #include <ms.h>
 #include <mailconf.h>
+extern int CloseNeedyDirs();
+extern int MS_UpdateState();
+extern int NonfatalBizarreError();
+extern int PrintPendingRequests();
+extern int UpdateState();
+extern int WriteSubs();
+extern void dropoff_Reset();  /* overhead/mail/lib/dropoff.c */
+extern int getla_ShutDown();  /* overhead/util/lib/getla.c */
+extern int safeexit();
 #if defined(hpux) && HP_OS < 70
 #include <sys/time.h>
 #include <signal.h>

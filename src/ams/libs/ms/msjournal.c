@@ -112,6 +112,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
+extern int writeall();  /* overhead/util/lib/writeall.c */
 
 #define MSJOURNAL_MARKER  ".MS_IMAPSync"
 #define MSJOURNAL_FILE    ".MS_Journal"

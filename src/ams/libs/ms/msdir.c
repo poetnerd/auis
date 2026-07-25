@@ -42,6 +42,32 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <netinet/in.h>                /* for htonl, etc. */
 #include <ctype.h>
+#include <stdlib.h>
+extern int AdjustIDs();
+extern int CacheDirectoryForClosing();
+extern int CloseMSDir();
+extern int CloseNeedyDirs();
+extern int CriticalBizarreError();
+extern int DestructivelyWriteDirectoryHead();
+extern int FieldsDiffer();
+extern int FreeMessage();
+extern int GetRightMid();
+extern int GetSnapshotByNumber();
+extern char *NiceTime();  /* overhead/util/lib/nicetime.c */
+extern int NonfatalBizarreError();
+extern int OpenMSDirectory();
+extern int ParseMessageFromRawBody();
+extern int QuickGetBodyFileName();
+extern int ReadOldMSDirectoryHead();
+extern int ReadOldMSDirectoryHead_Complain();
+extern int ReadOrFindMSDir_Complain();
+extern int ReadRawFile();
+extern int RewriteSnapshotInDirectory();
+extern int SetChainField();
+extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
+extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
+extern int vdown();  /* overhead/util/lib/vclose.c */
+extern int writeall();  /* overhead/util/lib/writeall.c */
 
 extern char    *permanentmalloc();
 extern char *convlongto64();

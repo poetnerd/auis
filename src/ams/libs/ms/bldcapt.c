@@ -51,6 +51,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 #endif /* AFS_ENV */
 #include <sys/stat.h>
+#include <stdlib.h>
+extern int AuthenticReSentHeader();
+extern int FindPrettiestFromString();
+extern int FindPrettiestName();
+extern int GetNameFromGecos();
+extern int ParseAndShrinkDate();
+extern int ReallyIsFromMe();
+extern int SeemsToBeFromMe();
+extern int ShrinkName();
 
 #define BIGSUBJECT 30
 #define BIGFROM 24  /* c.f. prettyn.c */

@@ -36,6 +36,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <util.h>
 #include <mailconf.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+extern int AddHeader();
+extern int GetCellularUserName();
+extern int ReduceWhiteSpace();  /* ams/libs/shr/utils.c */
 #ifdef AFS_ENV
 #include <afs/param.h>
 #ifdef CMUCS

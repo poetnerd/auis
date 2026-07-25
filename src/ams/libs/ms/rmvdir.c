@@ -34,6 +34,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <sys/stat.h>
 #include <ms.h>
+#include <stdlib.h>
+extern int BuildNickName();  /* ams/libs/shr/utils.c */
+extern int DropHint();
+extern int EnsureNotInSubscriptionMap();
+extern int NonfatalBizarreError();
+extern int ReadOrFindMSDir();
+extern int RemoveFromCrucialClassesPreference();
+extern int RemoveSubsEntry();
+extern int SetSubsEntry();
+extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
+extern int setprofilestring();  /* overhead/util/lib/setprof.c */
 
 extern char *getprofile(), *StripWhiteEnds();
 

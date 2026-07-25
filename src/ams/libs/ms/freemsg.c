@@ -34,6 +34,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+extern int CriticalBizarreError();
+extern int FreeMessageContents();
+extern int FreeParsedStuff();
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
 
 /* 2 routines for backward compatibility */
 

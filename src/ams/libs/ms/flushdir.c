@@ -33,9 +33,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <andrewos.h>
 #include <ms.h>
+#include <stdlib.h>
+extern int CloseMSDir();
+extern int FlushClosableDir();
+extern int NonfatalBizarreError();
+extern int RenameEvenInVice();
+extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
 
 #ifndef _IBMR2
-extern char *malloc();
 #endif /* _IBMR2 */
 
 #define MAXNUMWAITING 5

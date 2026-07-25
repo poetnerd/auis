@@ -34,6 +34,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+extern int BuildReplyField();
+extern int BuildWideReply();
+extern int FreeMessage();
+extern int ParseMessageFromRawBody();
+extern int QuickGetBodyFileName();
+extern int ReadOrFindMSDir();
+extern int ReadRawFile();
 
 MS_GetHeaderContents(dirname, id, HeaderName, HeaderTypeNumber, HeaderBuf, lim) 
 char *dirname, *id, *HeaderName; /* Passed in */

@@ -34,6 +34,23 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <ms.h>
 #include <andrewos.h>                  /* sys/time.h */
+#include <stdlib.h>
+extern int AppendMessageToMSDir();
+extern int CacheDirectoryForClosing();
+extern int CloseMSDir();
+extern int CopyMessageBody();
+extern int FreeMessage();
+extern int GetSnapshotByID();
+extern int GetSnapshotByNumber();
+extern int IsMessageAlreadyThere();
+extern int ParseMessageFromRawBody();
+extern int ReadOrFindMSDir();
+extern int ReadRawFile();
+extern int RewriteSnapshotInDirectory();
+extern int SetChainField();
+extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
 
 extern FILE    *fopen();
 

@@ -33,6 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <stdio.h>
 #include <errprntf.h>
+extern int BizarreError();  /* ams/ms/errmsgs.c */
 
 /* This is in a separate file to make it easy for a no-snap client to override it if it so desires. */
 

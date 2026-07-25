@@ -35,6 +35,26 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <stdio.h>
 #include <mailconf.h>
+extern int BuildNickName();  /* ams/libs/shr/utils.c */
+extern int DeSymLink();  /* overhead/util/lib/desym.c */
+extern int DeleteFromDirCache();
+extern int DropHint();
+extern int FindTreeRoot();  /* ams/libs/shr/findroot.c */
+extern int HandleOneChange();
+extern int HandleTreeNameChange();
+extern int MS_GetAssociatedTime();
+extern int MS_GetSubscriptionEntry();
+extern int MS_SetAssociatedTime();
+extern int MergeSubMaps();
+extern int NonfatalBizarreError();
+extern int ReadOrFindMSDir();
+extern int RemoveFromCrucialClassesPreference();
+extern int RenameEvenInVice();
+extern int SetSubsEntry();
+extern int StripWhiteEnds();  /* ams/libs/shr/utils.c */
+extern int abspath();
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
 
 long MS_RenameDir(OldName, NewName, NewFullName)
 char *OldName, *NewName, *NewFullName;

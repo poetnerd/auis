@@ -35,6 +35,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
  
 
 #include <ms.h>
+#include <string.h>
+extern int CacheDirectoryForClosing();
+extern int CloseMSDir();
+extern int DestructivelyWriteDirectoryHead();
+extern int GetSnapshotByNumber();
+extern int ReadOrFindMSDir();
+extern int RewriteSnapshotInDirectory();
 
 extern char *permanentmalloc();
 static char *UnusedAttrName = UNUSEDATTRNAME;

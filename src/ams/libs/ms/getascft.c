@@ -9,6 +9,7 @@ $Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/getascft.c,v 
 $Source: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/getascft.c,v $
 */
 #include <ms.h>
+extern int GetAssocFileTime();
 
 MS_GetAssociatedFileTime(FullName, fdate)
 char *FullName;

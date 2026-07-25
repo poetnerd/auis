@@ -42,6 +42,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <wp.h>
 #endif /* WHITEPAGES_ENV */
 #include <mailconf.h>
+#include <stdlib.h>
+extern int GetHeaderSize();
+extern int GetNameFromGecos();
+extern int IsOnVice();  /* overhead/util/lib/vclose.c */
+extern int NonfatalBizarreError();
+extern int RetryBodyFileName();
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
 
 #define OLDLOCK 1200 /* 20 minutes */
 

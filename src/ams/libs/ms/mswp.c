@@ -44,6 +44,30 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mail.h>
 #include <mailconf.h>
 #include <pwd.h>
+#include <stdlib.h>
+extern int AddHost();  /* overhead/mail/lib/parseadd.c */
+extern int FreeAddressList();  /* overhead/mail/lib/parseadd.c */
+extern int FreeHost();  /* overhead/mail/lib/parseadd.c */
+extern int GenTempName();
+extern int GetNameFromGecos();
+extern int LookupInLocalDatabase();
+extern int LowerStringInPlace();  /* ams/libs/shr/utils.c */
+extern int MS_CheckAuthentication();
+extern int MS_DisambiguateFile();
+extern int NonfatalBizarreError();
+extern int OKRoot();
+extern int ParseAddressList();  /* overhead/mail/lib/parseadd.c */
+extern int ReduceWhiteSpace();  /* ams/libs/shr/utils.c */
+extern int RemHost();  /* overhead/mail/lib/parseadd.c */
+extern int UnparseAddressList();  /* overhead/mail/lib/parseadd.c */
+extern int UnparseOneAddress();  /* overhead/mail/lib/parseadd.c */
+extern int ValidateSearchPath();
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vclose();  /* overhead/util/lib/fdplumb2.c */
+extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
+extern void la_FreeMD();  /* overhead/mail/lib/locnamex.c */
+extern int lc2strncmp();  /* ams/libs/shr/utils.c */
 
 #ifdef WHITEPAGES_ENV
 #include <wp.h>

@@ -59,6 +59,34 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif                                 /* AFS_ENV */
 #include <mail.h>
 #include <mailconf.h>
+#include <stdlib.h>
+extern int AddToDirCache();
+extern int AppendFileToMSDirInternal();
+extern int BuildNickName();  /* ams/libs/shr/utils.c */
+extern int CacheDirectoryForClosing();
+extern int CloseMSDir();
+extern int CriticalBizarreError();
+extern int DestructivelyWriteDirectoryHead();
+extern int DropHint();
+extern int EnsureInSubscriptionMap();
+extern int FindTreeRoot();  /* ams/libs/shr/findroot.c */
+extern int GetCellularUserName();
+extern int GetNameFromGecos();
+extern int GetSnapshotByNumber();
+extern int HandleMarksInProgress();
+extern int IsDirAlien();
+extern int MS_GetSearchPathEntry();
+extern int MarkInProgress();
+extern int NonfatalBizarreError();
+extern int OpenMSDirectory();
+extern int ReadOldMSDirectoryHead_Complain();
+extern int ReadOrFindMSDir();
+extern int UnmarkInProgress();
+extern int WhichPath();
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
+extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int itops();
 
 extern char    *permanentmalloc();
 extern char     MyMailDomain[];

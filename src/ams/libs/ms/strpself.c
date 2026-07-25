@@ -35,6 +35,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <parseadd.h>
 #include <mail.h>
+#include <stdlib.h>
+extern int FreeAddress();  /* overhead/mail/lib/parseadd.c */
+extern int FreeAddressList();  /* overhead/mail/lib/parseadd.c */
+extern int ParseAddressList();  /* overhead/mail/lib/parseadd.c */
+extern int ULstrcmp();  /* overhead/util/lib/ulstrcmp.c */
+extern int UnparseAddressList();  /* overhead/mail/lib/parseadd.c */
 
 extern char Me[], MeInFull[], MyMailDomain[], *MyShortAddress;
 

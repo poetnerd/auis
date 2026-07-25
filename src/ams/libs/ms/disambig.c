@@ -37,6 +37,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <stdio.h>
 #include <mail.h>
+#include <stdlib.h>
+extern int GenMSPathElts();
+extern int InitializeSearchPaths();
+extern int MS_AddToDsabgCache();
+extern int NonfatalBizarreError();
+extern int ResolveTildes();
+extern int ValidateSearchPath();
+extern int abspath();
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
 
 extern char *permanentmalloc();
 

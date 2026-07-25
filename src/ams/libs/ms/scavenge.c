@@ -35,6 +35,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <stdlib.h>
+extern int CloseMSDir();
+extern int DropHint();
+extern int HandleMarksInProgress();
+extern int MS_PurgeDeletedMessages();
+extern int NonfatalBizarreError();
+extern int ReadOrFindMSDir();
+extern int ScavengeDown();
+extern int ScavengeOneDirectory();
+extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
 
 #ifndef EVIA_SCAVENGE
 #define EVIA_SCAVENGE EVIA_UNKNOWN /* temp hack until first wash */

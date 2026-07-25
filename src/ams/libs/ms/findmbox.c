@@ -34,6 +34,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <andrewos.h> /* sys/file.h */
 #include <mailconf.h>
+#include <stdlib.h>
+extern int GetCellFromFileName();  /* overhead/util/lib/thiscell.c */
+extern int MS_GetSearchPathEntry();
+extern int ResolveTildes();
 
 extern char home[], *getprofile(), MyMailDomain[];
 

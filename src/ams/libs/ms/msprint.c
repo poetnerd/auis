@@ -38,6 +38,21 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mailconf.h>
 #include <errprntf.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+extern int CheckPrinterValidity();
+extern int FreePrintVec();
+extern int NonfatalBizarreError();
+extern int PrintPendingRequests();
+extern int PrintQuotingFormatting();  /* overhead/util/lib/unscribe.c */
+extern int PrinterInPrintcapLine();
+extern int QuickGetBodyFileName();
+extern int RetryBodyFileName();
+extern char *arpadate();  /* overhead/mail/lib/arpadate.c */
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
+extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
+extern int lc2strncmp();  /* ams/libs/shr/utils.c */
 
 extern char *AndrewDir();
 extern char *UnixError();

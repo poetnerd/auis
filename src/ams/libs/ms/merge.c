@@ -36,6 +36,28 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <ms.h>
 #include <mailconf.h>
+#include <stdlib.h>
+extern int BuildAttributesField();
+extern int BuildCaption();
+extern int CheckAuthUid();
+extern int CloseDirsThatNeedIt();
+extern int CloseMSDir();
+extern int DestructivelyWriteDirectoryHead();
+extern int EnsureNotInSubscriptionMap();
+extern int FreeMessage();
+extern int GetSnapshotByID();
+extern int GetSnapshotByNumber();
+extern int MS_AlterSnapshot();
+extern int ParseMessageFromRawBody();
+extern int ReadOrFindMSDir();
+extern int ReadRawFile();
+extern int RenameEvenInVice();
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
+extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vclose();  /* overhead/util/lib/fdplumb2.c */
+extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
+extern int writeall();  /* overhead/util/lib/writeall.c */
 
 extern char home[];
 

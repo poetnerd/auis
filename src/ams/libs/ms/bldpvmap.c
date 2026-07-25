@@ -34,6 +34,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <stdio.h>
 #include <ms.h>
+extern int BadSubMapLine();
+extern int MS_GetSearchPathEntry();
+extern int MakeSubsListInPathOrder();
+extern int PreorderSubscriptionStrcmp();
 
 #define MAXPUBLICLINE (MAXPATHLEN + 150)
 

@@ -41,6 +41,32 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mailconf.h>
 #include <parseadd.h>
 #include <mail.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+extern int AddHeader();
+extern int AppendMessageToMSDir();
+extern int BuildAttributesField();
+extern int BuildCaption();
+extern int BuildDateField();
+extern int CacheDirectoryForClosing();
+extern int CloseMSDir();
+extern int DeleteHeader();
+extern int FreeAddressList();  /* overhead/mail/lib/parseadd.c */
+extern int FreeMessage();
+extern int FreeSubmitVector();
+extern int GenTempName();
+extern int InventID();
+extern int IsMessageAlreadyThere();
+extern int NonfatalBizarreError();
+extern int ParseAddressList();  /* overhead/mail/lib/parseadd.c */
+extern int ParseMessageFromRawBody();
+extern int ReadOrFindMSDir();
+extern int ReadRawFile();
+extern int UnformatMessage();
+extern int UnparseOneAddress();  /* overhead/mail/lib/parseadd.c */
+extern int WritePureFile();
+extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int dropoff();  /* overhead/mail/lib/dropoff.c */
 
 extern FILE    *fopen();
 extern char     MAILLOGSTATFILE[], MyMailDomain[];

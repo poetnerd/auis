@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <ms.h>
+#include <stdlib.h>
 
 /* This routine frees a directory and the things it points to.  If the
 	directory is in the cache, it should be removed from the cache

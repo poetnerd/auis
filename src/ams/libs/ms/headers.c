@@ -34,6 +34,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h> /* sys/file.h */
 #include <ms.h>
 #include <sys/stat.h> 
+extern int CacheDirectoryForClosing();
+extern int CloseMSDir();
+extern int GetSnapshotByNumber();
+extern int MS_GetAssociatedFileTime();
+extern int MS_GetAssociatedTime();
+extern int MS_SetAssociatedTime();
+extern int ReadOrFindMSDir();
+extern int vdown();  /* overhead/util/lib/vclose.c */
 
 extern char *fixDate();
 

@@ -34,6 +34,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <andrewos.h>
 #include <ms.h>
+extern int CacheDirectoryForClosing();
+extern int CloseMSDir();
+extern int GetSnapshotByID();
+extern int ReadOrFindMSDir();
+extern int RewriteSnapshotInDirectory();
 
 /* msjournal.c, this directory -- writeback capture (a no-op unless
    dirname is a mirrored folder; see the grammar note there).

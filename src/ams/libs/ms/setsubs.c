@@ -33,6 +33,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <andrewos.h>
 #include <ms.h>
+extern int FindDefaultDir();
+extern int ReadOrFindMSDir();
+extern int SetSubsEntry();
 
 extern char home[];
 

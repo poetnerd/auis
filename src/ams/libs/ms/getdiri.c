@@ -34,6 +34,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <andrewos.h> /* sys/file.h */
 #include <mailconf.h>
+extern int CacheDirectoryForClosing();
+extern int FindTreeRoot();  /* ams/libs/shr/findroot.c */
+extern int GetAssocMailbox();
+extern int ReadOrFindMSDir();
+extern int TransformPathRootToMailbox();
 
 extern char home[], MyMailDomain[];
 

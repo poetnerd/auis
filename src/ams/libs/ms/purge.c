@@ -34,10 +34,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 /* andrewos.h before ms.h, matching convention elsewhere in this directory. */
 #include <andrewos.h> /* sys/file.h */
 #include <ms.h>
-
-#ifndef _IBMR2
-extern char *malloc();
-#endif /* _IBMR2 */
+#include <stdlib.h>
+extern int CloseDirsThatNeedIt();
+extern int CloseMSDir();
+extern int DestructivelyWriteDirectoryHead();
+extern int GetSnapshotByNumber();
+extern int MarkQuietlyInProgress();
+extern int QuickGetBodyFileName();
+extern int ReadOrFindMSDir();
+extern int RenameEvenInVice();
+extern int RetryBodyFileName();
+extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
+extern int writeall();  /* overhead/util/lib/writeall.c */
 
 /* msjournal.c, this directory -- writeback capture (a no-op unless
    dirname is a mirrored folder; see the grammar note there).
