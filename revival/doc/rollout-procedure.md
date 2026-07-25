@@ -166,6 +166,20 @@ category is absent; `atk/text`'s census-visible count matched its
 stale estimate exactly while missing two-thirds of the directory's
 real fallout.
 
+**Sweep pattern, corrected 2026-07-24 (`atk/table` session):** a naive
+`grep -n "malloc("`/`"realloc("` substring search false-positives on
+any project-local wrapper whose name ends in one of these words —
+`atk/table/table.c` defines its own `myrealloc()`, and `"realloc("` is
+a literal substring of `"myrealloc("`. It also misses the
+space-before-paren call style (`malloc (n)`), which coexists with
+`malloc(n)` even within a single file in this codebase. Use a
+word-boundary-anchored, space-tolerant pattern instead: `grep -nE
+"\bmalloc *\(|\bfree *\(|\brealloc *\(|\bcalloc *\("`, one call per
+file. A directory with its own `*alloc`-suffixed wrapper (`xrealloc`,
+`saferealloc`, etc.) is a plausible recurring shape, not unique to
+`atk/table` — always use the anchored pattern, not a plain substring
+match.
+
 ## Liveness census
 
 A directory is in the active tree iff the gate log contains

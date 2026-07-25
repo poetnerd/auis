@@ -1771,7 +1771,29 @@ call site and definition tree-wide *before* any mass file editing starts
        (well-formed `.ez` datastream output, brace-matched throughout
        — a good correctness signal for the `BeginStyle`/`EndStyle`/
        `CloseStyle` style-stack fixes specifically), no regressions.)
-     - [ ] `atk/table` — subtree-local gate only.
+     - [x] `atk/table` — subtree-local gate only (done 2026-07-24;
+       154 census-visible instances (vs. stale estimate 113) plus 32
+       more from the mandatory malloc-blind-spot sweep, real total 186
+       across 9 of 10 files (`print.c` needed zero fixes) — see
+       `m2-table-REPORT.md`. Two new findings: (1) malloc-sweep
+       methodology gap — `table.c`'s own `myrealloc()` wrapper false-
+       positives under a naive substring `grep`; sweep pattern is now
+       word-boundary-anchored and space-tolerant in
+       `rollout-procedure.md`; (2) new taxonomy sub-case — a
+       class-internal double-underscore method's declaration exists in
+       `spread.eh` but only outside an `AUXMODULE` guard, structurally
+       unreachable from the one `AUXMODULE`-consumer file (`update.c`)
+       that calls it via a macro that (unusually) dispatches directly
+       rather than through the routine table; fixed with a commented
+       local extern. Structurally the same `DynamicMultiObject`-only
+       shape as `atk/rofftext` (no `LibraryTarget`), confirmed zero
+       symbols in `runapp`. User-verified (menu-inserted spreadsheet,
+       formula evaluation incl. a deliberate malformed-formula error
+       case, save/reload round-trip, direct `table` binary launch,
+       `.table` file-type auto-load), no regressions; bare `table`
+       binary with no file opens a plain-text `ez` buffer with no
+       table-insert path — matches `ez`'s own bare-launch default,
+       not investigated further as a possible bug.)
      - [ ] `overhead/mail/lib` — subtree-local gate only.
      - [ ] `atkams/messages/lib` — tree-wide gate required (the
        `messages` app's actual backend).

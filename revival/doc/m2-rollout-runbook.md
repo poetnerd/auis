@@ -116,7 +116,29 @@ header) should get that `#include`, not a hand-written duplicate
 extern. Structurally the cleanest gate-scope case yet: no
 `LibraryTarget` at all, confirmed zero symbols in `runapp`.
 User-verified (`help`, standalone `rofftext` converter), no
-regressions.
+regressions. Bucket 4's fifth directory, `atk/table`, closed
+2026-07-24: 154 census-visible instances (vs. stale estimate 113) plus
+32 more from the malloc-blind-spot sweep, real total 186 across 9 of
+10 files (`print.c` needed zero fixes of any kind — the first
+bucket-4 file to come through completely clean) — see
+`claude-history/m2-table-REPORT.md`. Two findings folded in: (1) a
+malloc-sweep methodology gap — `table.c`'s own `myrealloc()` wrapper
+produces a false positive under a naive `grep "realloc("` substring
+match; the sweep pattern is now specified as word-boundary-anchored
+and space-before-paren-tolerant (`grep -nE "\bmalloc *\(|\bfree
+*\(|\brealloc *\(|\bcalloc *\("`) in `rollout-procedure.md`'s "Logging"
+section; (2) a new taxonomy sub-shape — see "Fallout taxonomy" below.
+Structurally the same `DynamicMultiObject`-only shape as `atk/rofftext`
+(no `LibraryTarget`), confirmed via `nm -g build/bin/runapp` showing
+zero symbols from either `.do`. User-verified (menu-inserted spreadsheet,
+formula evaluation including a deliberate malformed-formula error case,
+save/reload round-trip, direct `table` binary launch, `.table`
+file-type auto-load), no regressions — one non-regression observation
+(launching the bare `table` binary with no file opens a plain-text `ez`
+buffer with no visible way to insert a table; opening a `.table` file
+directly, or inserting via the **Media > Spreadsheet** menu, both work
+correctly) noted but not investigated further, consistent with `ez`'s
+own bare-launch default behavior.
 
 ## What the flag does
 
@@ -420,6 +442,31 @@ writing any declaration by hand.
   agreed on the untyped K&R shape — but "which implementation is the
   real one" doesn't have a single answer the way it does for ordinary
   sub-case 3, so flagging it as its own recognizable shape.
+- **New taxonomy sub-case found by `atk/table` (2026-07-24): a
+  class-internal (double-underscore) method's declaration exists in
+  its own generated `.eh`, but only outside an `AUXMODULE` guard,
+  making it structurally unreachable from the one file that needs
+  it.** Distinct from every "missing header" sub-case above — nothing
+  is missing, incomplete, or misspelled. Some class-method macros
+  (unusually) call the double-underscore implementation directly
+  rather than dispatching through the class's routine table; if the
+  real declaration for that implementation sits inside `#ifndef
+  AUXMODULE ... #endif` in the generated `.eh` (there to avoid
+  re-emitting static method tables in every file compiled into a
+  multi-file `.do`), any `AUXMODULE`-consumer file that calls the
+  macro is walled off from seeing its own declaration by the same
+  header's own design. `atk/table`'s instance: `update.c` (an
+  `AUXMODULE` consumer) calls the `spread_WantLimitedHighlighting()`
+  macro, which expands to a direct call of
+  `spread__WantLimitedHighlighting()`; `spread.eh` declares the latter
+  but only inside its `AUXMODULE`-excluded block. Fix: local `extern`,
+  same as ordinary sub-case 3, sourced from the real definition — but
+  worth a comment noting the `AUXMODULE` mechanics so a future reader
+  doesn't mistake it for a plain gap and try to "fix" it by editing the
+  generated `.eh`/`.ch` (out of scope, and already correct for their
+  own intended purpose). Check for this shape whenever a class method's
+  generated macro calls a double-underscore name directly instead of
+  through `classname_CLASSPROCEDURES->routines[n]`.
 - **Caution carried over from tonight's M2 point-0 session
   (`porting-assessment.md` §19):** a hand-written declaration with a
   wrong width/type (e.g. `int` vs `long`) compiles cleanly and fails
@@ -469,7 +516,8 @@ Proposed order, pending wdc's sign-off:
      `claude-history/m2-text-REPORT.md`.
    - `atk/rofftext` — subtree-local gate only. **Done 2026-07-24**,
      see `claude-history/m2-rofftext-REPORT.md`.
-   - `atk/table` — subtree-local gate only.
+   - `atk/table` — subtree-local gate only. **Done 2026-07-24**, see
+     `claude-history/m2-table-REPORT.md`.
    - `overhead/mail/lib` — subtree-local gate only.
    - `atkams/messages/lib` — **tree-wide gate required** (the
      `messages` app's actual backend).
