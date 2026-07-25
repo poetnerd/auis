@@ -8,6 +8,25 @@ below is confirmed ACTIVE (`grep -c "building (dependInstall)"` shows
 151 directories descend; 90 of those contain at least one `.c` file at
 their own level, which is what's batched here).
 
+**Revised 2026-07-25 (wdc feedback): batches consolidated to M2's own
+level of batching aggressiveness.** The first draft of this file split
+24 batches — more checkpoints than M2's 13 sessions, which read as a
+regression against the runbook's own "fewer subsets" argument. The
+scope comparison behind that argument was never actually checked
+before the first draft shipped: `grep -rl
+"Werror=implicit-function-declaration" --include=Imakefile .` shows M2
+only ever touched **28** directories, not the tree at large — its
+census found zero violations in the other ~120 active directories, so
+they needed no M2 attention at all. M3 has no equivalent narrowing:
+K&R-style definitions are the default style of this whole codebase,
+not an occasional defect, so all 90 directories with real `.c` content
+have genuine conversion work. **The directory count is not the lever
+— M2's real batches ran up to 8 unrelated small directories in one
+session (M2 rollout point 2) once early sessions proved it safe; this
+draft matches that aggressiveness from the start**, per the runbook's
+own reasoning that `ansify`'s per-file compile gate does most of the
+discovery labor a session would otherwise spend by hand.
+
 **Sizing proxy, not a real census.** No `ansify` instance count exists
 yet (that's the runbook's "first concrete step," not yet run) — the
 number after each directory is its own-level `.c` file count, the same
@@ -15,7 +34,8 @@ kind of coarse proxy M1 point 10 used (external `.ih`/`.ch` counts)
 before a real fixing pass ever ran. Treat batch boundaries as a
 starting point: split a batch further if its real DRIFT/conversion
 volume turns out large, same as M2's bucket-4 treatment of its three
-biggest directories.
+biggest directories — and merge further if a wave's real volume turns
+out small.
 
 **Out of scope for now:** directories not in the 151-directory active
 list (`MK_*`/site.h-gated inert subtrees — `atk/controllers`, `atk/
@@ -36,58 +56,66 @@ below (`atk/srctext`, `atk/org`, `atk/textobjects`, `atk/apps`); a
 session that finds one belongs elsewhere is free to say so and the
 batch list gets corrected, not treated as a fixed contract.
 
-Total: 90 directories, ~924 own-level `.c` files (excludes
-`class/pp`), 24 batches across 7 waves. Compare M2's 29 directories/13
-sessions — roughly 3x the directory count and 4x the batch count, but
-each M3 session should be cheaper per file than M2's (tool-driven
-conversion + auto-restore vs. M2's hand grep-and-declare), per the
-runbook's reasoning.
+**On validation cadence** (asked 2026-07-25): every batch below is one
+delegated session, and every session still ends with its own runtime
+check and commit — `rollout-procedure.md`'s per-session rhythm doesn't
+change. Waves are not checkpoints for your visual confirmation; they
+only group batches for ordering and mark where a tree-wide *build*
+gate additionally runs (a compile-log check I run myself, not
+something needing your hands-on testing). Some batches may turn out
+gate-only with no live/GUI-visible consumer — M1 point 10 found this
+repeatedly (`atk/srctext`, `dired`/`chlist` had none) — which would
+drop that batch's ask to a report, not a live-app check; not
+pre-decided here, each session determines it the way M1/M2 did (`nm
+-g` against `runapp`/the relevant `.do`).
 
-## Wave 1 — overhead (28 directories, 305 files, 8 batches)
+Total: 90 directories, ~924 own-level `.c` files (excludes
+`class/pp`), **16 batches across 7 waves + the `atk/eq` pilot = 17
+sessions.** Compare M2's 28 directories/13 sessions: ~3.2x the
+directory count for 1.3x the sessions (5.4 dirs/session here vs. M2's
+2.2), consistent with the runbook's "M3's per-instance labor is lower"
+reasoning once batch size actually reflects it.
+
+## Wave 1 — overhead (28 directories, 305 files, 4 batches)
 
 - [ ] **O1**: `overhead/util/lib` (83) — alone. Same directory M2 knew
       as the `fdplumb` wrapper-family home; expect DRIFT/complexity
       here again, not a routine batch.
 - [ ] **O2**: `overhead/image/jpeg` (46), `overhead/image/tiff` (32) —
-      78 files. Vendored codec libraries, natural pairing.
+      78 files. Vendored codec libraries.
 - [ ] **O3**: `overhead/mail/lib` (33), `overhead/mail/cmd` (3),
-      `overhead/mail/testing` (1) — 37 files.
-- [ ] **O4**: `overhead/eli/lib` (25), `overhead/eli/bglisp` (1) — 26
-      files.
-- [ ] **O5**: `overhead/bison` (23) — alone. Vendored parser generator,
-      unusual code shape; don't fold into a routine batch.
-- [ ] **O6**: `overhead/cmenu` (8), `overhead/mail/metamail/metamail`
+      `overhead/mail/testing` (1), `overhead/eli/lib` (25), `overhead/
+      eli/bglisp` (1), `overhead/bison` (23) — 86 files, 6 dirs.
+      Unrelated families bundled in one session, same shape as M2's
+      rollout point 2 (8 unrelated small directories, one session).
+- [ ] **O4**: `overhead/cmenu` (8), `overhead/mail/metamail/metamail`
       (7), `overhead/mail/metamail/richmail` (6), `overhead/malloc`
-      (4), `overhead/index` (4) — 29 files.
-- [ ] **O7**: `overhead/class/lib` (4), `overhead/class/testing` (3),
-      `overhead/class/cmd` (3), `overhead/class/machdep/darwin` (2) —
-      12 files. (Class-support family — NOT `class/pp` itself, see
-      exclusion above.)
-- [ ] **O8**: `overhead/rxp` (3), `overhead/fonts/cmd` (3), `overhead/
-      util/cmd` (2), `overhead/sys` (2), `overhead/mkparser` (2),
-      `overhead/util/hdrs` (1), `overhead/errors` (1), `overhead/
-      addalias` (1), `ossupport` (1), `inst` (1) — 17 files, small/leaf
-      grab-bag.
+      (4), `overhead/index` (4), `overhead/class/lib` (4), `overhead/
+      class/testing` (3), `overhead/class/cmd` (3), `overhead/class/
+      machdep/darwin` (2), `overhead/rxp` (3), `overhead/fonts/cmd`
+      (3), `overhead/util/cmd` (2), `overhead/sys` (2), `overhead/
+      mkparser` (2), `overhead/util/hdrs` (1), `overhead/errors` (1),
+      `overhead/addalias` (1), `ossupport` (1), `inst` (1) — 58 files,
+      19 dirs, small/leaf grab-bag (class-support family here is NOT
+      `class/pp` itself — see exclusion above).
 
-## Wave 2 — atk/basics+support (19 directories, 197 files, 5 batches)
+## Wave 2 — atk/basics+support (19 directories, 197 files, 3 batches)
 
 - [ ] **B1**: `atk/basics/common` (48) — alone. M1's own former
       largest-blast-radius directory (41 classes, 2,351 external `.ih`
       includes at M1 time); treat with the same caution even though
       M3's `.eh` mechanism is directory-local (see runbook).
-- [ ] **B2**: `atk/value` (27), `atk/support` (20) — 47 files.
-- [ ] **B3**: `atk/supportviews` (17), `atk/adew` (13), `atk/basics/x`
-      (11) — 41 files.
-- [ ] **B4**: `atk/extensions` (10), `atk/syntax/tlex` (8), `atk/
+- [ ] **B2**: `atk/value` (27), `atk/support` (20), `atk/supportviews`
+      (17), `atk/adew` (13), `atk/basics/x` (11) — 88 files, 5 dirs.
+- [ ] **B3**: `atk/extensions` (10), `atk/syntax/tlex` (8), `atk/
       textobjects` (7, judgment call — core text-embedded-object
-      infra, not a content-type inset), `atk/apt/suite` (6) — 31
-      files.
-- [ ] **B5**: `atk/lookz` (5), `atk/frame` (5), `atk/syntax/parse` (4),
-      `atk/apps` (4, judgment call — this is the `runapp`/app-loader
-      infra: `runapp.c`, `pathopen.c`, `statload.c`, `genstatl.c`, not
-      an application itself), `atk/utils` (3), `atk/apt/apt` (3),
-      `atk/textaux` (2), `atk/syntax/sym` (2), `atk/apt/tree` (2) — 30
-      files, small/leaf grab-bag.
+      infra, not a content-type inset), `atk/apt/suite` (6), `atk/
+      lookz` (5), `atk/frame` (5), `atk/syntax/parse` (4), `atk/apps`
+      (4, judgment call — this is the `runapp`/app-loader infra:
+      `runapp.c`, `pathopen.c`, `statload.c`, `genstatl.c`, not an
+      application itself), `atk/utils` (3), `atk/apt/apt` (3), `atk/
+      textaux` (2), `atk/syntax/sym` (2), `atk/apt/tree` (2) — 61
+      files, 13 dirs.
 
 ## Wave 3 — atk/text (1 directory, 30 files, 1 batch)
 
@@ -95,28 +123,27 @@ runbook's reasoning.
       dependency order (highest-consumed single directory in the
       insets/apps waves that follow).
 
-## Wave 4 — insets (16 directories, 133 files, 5 batches)
+## Wave 4 — insets (16 directories, 133 files, 3 batches)
 
 Note: `atk/eq` is deliberately NOT re-listed here as a batch — it's
 already the runbook's designated rollout-point-1 pilot (re-running the
 2026-07-08 dry-run validation for real, see `m3-rollout-runbook.md`),
-so it runs first and separately, not folded into I4.
+so it runs first and separately.
 
 - [ ] **I1**: `atk/image` (22), `atk/srctext` (20, judgment call — the
       roff/source-text viewer; grouped here as a content-display
       inset rather than core text infra) — 42 files.
-- [ ] **I2**: `atk/figure` (17), `atk/chart` (13) — 30 files. `atk/
-      figure` has known LP64/DRIFT history (M1 Pilot B, M2 batch3a) —
-      expect findings, not a routine batch.
-- [ ] **I3**: `atk/table` (10), `atk/rofftext` (9), `atk/raster/cmd`
-      (8) — 27 files. Same three-directory grouping M2's bucket 4
-      used.
-- [ ] **I4**: `atk/raster/lib` (7), `atk/layout` (6) — 13 files. (`atk/
-      eq`, 6 files, runs separately as the pilot — see note above.)
-- [ ] **I5**: `atk/hyplink` (4), `atk/org` (3, judgment call — outline/
-      tree navigation, grouped as inset-adjacent rather than basics),
-      `atk/bush` (3), `atk/raster/scan` (2), `atk/fad` (2), `atk/
-      raster/convert` (1) — 15 files, small/leaf grab-bag.
+- [ ] **I2**: `atk/figure` (17), `atk/chart` (13), `atk/table` (10),
+      `atk/rofftext` (9), `atk/raster/cmd` (8) — 57 files, 5 dirs.
+      `atk/figure` has known LP64/DRIFT history (M1 Pilot B, M2
+      batch3a) — expect findings, not a routine batch. `table`/
+      `rofftext`/`raster/cmd` is the same three-directory grouping
+      M2's bucket 4 used.
+- [ ] **I3**: `atk/raster/lib` (7), `atk/layout` (6), `atk/hyplink`
+      (4), `atk/org` (3, judgment call — outline/tree navigation,
+      grouped as inset-adjacent rather than basics), `atk/bush` (3),
+      `atk/raster/scan` (2), `atk/fad` (2), `atk/raster/convert` (1)
+      — 28 files, 8 dirs, small/leaf grab-bag.
 
 ## Wave 5 — apps (9 directories, 29 files, 1 batch)
 
@@ -137,21 +164,20 @@ so it runs first and separately, not folded into I4.
       tree-wide gate here too (mirrors M2's rule for `atkams/messages/
       lib` — the `messages` GUI app's actual backend).
 
-## Wave 7 — contrib (12 directories, 81 files, 3 batches)
+## Wave 7 — contrib (12 directories, 81 files, 2 batches)
 
 - [ ] **C1**: `contrib/zip/lib` (41) — alone, tree-wide gate kept
       (tree's known highest-defect-density directory, same as M2's
       rule for it).
 - [ ] **C2**: `contrib/mit/annot` (9), `contrib/zip/utility` (6),
-      `contrib/time` (6), `contrib/mit/util` (6) — 27 files.
-- [ ] **C3**: `contrib/srctext/html` (3), `contrib/srctext/ptext` (2),
-      `contrib/srctext/ltext` (2), `contrib/demos/circlepi` (2),
-      `contrib/calc` (2), `contrib/wpedit` (1), `contrib/eatmail` (1)
-      — 13 files, small/leaf grab-bag.
+      `contrib/time` (6), `contrib/mit/util` (6), `contrib/srctext/
+      html` (3), `contrib/srctext/ptext` (2), `contrib/srctext/ltext`
+      (2), `contrib/demos/circlepi` (2), `contrib/calc` (2), `contrib/
+      wpedit` (1), `contrib/eatmail` (1) — 40 files, 11 dirs.
 
 ## Session-count summary
 
-Pilot (`atk/eq`, already validated, re-run for real) + 24 batches = 25
+Pilot (`atk/eq`, already validated, re-run for real) + 16 batches = 17
 sessions total, across the 7 waves in dependency order (Wave 1 →
 Wave 6, with the eq pilot opening Wave 4). Tick batches here as they
 complete, same convention as `m1-point10-batches.md`; the runbook's
