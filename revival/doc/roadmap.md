@@ -1914,8 +1914,13 @@ call site and definition tree-wide *before* any mass file editing starts
        text-block drag locking at position 0 after the first drag
        (see "Little Annoyances" above). **Bucket 4 complete** — next
        is the fixed tree-wide checkpoint before `ams/libs/ms`.)
-     - [ ] Fixed checkpoint after the last bucket-4 directory: tree-wide
-       gate required regardless of which directory precedes it.
+     - [x] Fixed checkpoint after the last bucket-4 directory: tree-wide
+       gate required regardless of which directory precedes it. Done
+       2026-07-25, run directly by the orchestrator (pure verification,
+       no fix work): `make Clean && make dependInstall`, exactly the
+       same 4 pre-existing baseline errors every M2 gate has
+       documented, zero new ones anywhere in the tree. **Bucket 4
+       fully closed.**
   5. [ ] `ams/libs/ms` (892 instances, ~38% of the entire M2 census) —
      its own dedicated session, whoever takes it briefed on the
      fdplumb include-order ABI history first (`project_fdplumb_

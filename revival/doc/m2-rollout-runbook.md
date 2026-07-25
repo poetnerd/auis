@@ -233,8 +233,14 @@ completely separate and also pre-existing bug — see `roadmap.md`'s
 "Little Annoyances" section and memory
 `project_text_drag_horizontal_lock`. Both logged for dedicated
 investigation, not blocking this session's commit. **Bucket 4 is now
-complete** — the fixed tree-wide checkpoint before `ams/libs/ms`
-(see "Gate scope" above) is the next step.
+complete.** Fixed tree-wide checkpoint (before `ams/libs/ms`) run
+2026-07-25 directly by the orchestrator (no fix work, pure
+verification — no delegated session needed): `make Clean && make
+dependInstall`, 233,776-line log, exactly the same 4 pre-existing
+baseline errors every gate this M2 rollout has documented, zero new
+ones anywhere in the tree after all eight bucket-4 directories'
+combined fixes. Checkpoint green. Next: `ams/libs/ms`, its own
+dedicated session — see "Ordering" below.
 
 ## What the flag does
 
