@@ -138,7 +138,28 @@ file-type auto-load), no regressions — one non-regression observation
 buffer with no visible way to insert a table; opening a `.table` file
 directly, or inserting via the **Media > Spreadsheet** menu, both work
 correctly) noted but not investigated further, consistent with `ez`'s
-own bare-launch default behavior.
+own bare-launch default behavior. Bucket 4's sixth directory,
+`overhead/mail/lib`, closed 2026-07-25: 112 census-visible instances
+(matching the stale estimate exactly) plus 12 more from the
+malloc-blind-spot sweep, real total 124 across 22 of 33 files — see
+`claude-history/m2-mail-lib-REPORT.md`. Structurally the
+widest-fan-out directory examined yet: a real `LibraryTarget`
+(`libmail.a`) consumed by ~25 external directories. Extra `nm -g`
+verification (per the prompt's explicit ask given the fan-out size)
+rebuilt and checked 3 structurally distinct real consumers
+(`atkams/messages/lib`'s `amsn.do`, `ams/msclients/cui`'s `cuin`, and
+`overhead/mail/cmd`'s standalone tools) — zero symbol leakage in any,
+confirming the subtree-local-gate ruling holds even at this fan-out
+scale. Caught and fixed its own self-inflicted bug immediately (a
+literal `*/` inside an explanatory comment's prose prematurely closed
+a C comment; caught by the next rebuild). No new taxonomy category;
+malloc-sweep findings split cleanly into three shapes (genuinely
+invisible blind spot; a stale wrong-typed extern that became a hard
+conflict only once `<stdlib.h>` was added for an unrelated reason;
+completely dead/unused stale externs) — worth keeping distinct in
+future reports. User-verified (`arpadate` standalone date-format
+check, `cuin` startup/config-load, fresh `messages` process folder-list
+load), no regressions.
 
 ## What the flag does
 
@@ -518,7 +539,8 @@ Proposed order, pending wdc's sign-off:
      see `claude-history/m2-rofftext-REPORT.md`.
    - `atk/table` — subtree-local gate only. **Done 2026-07-24**, see
      `claude-history/m2-table-REPORT.md`.
-   - `overhead/mail/lib` — subtree-local gate only.
+   - `overhead/mail/lib` — subtree-local gate only. **Done
+     2026-07-25**, see `claude-history/m2-mail-lib-REPORT.md`.
    - `atkams/messages/lib` — **tree-wide gate required** (the
      `messages` app's actual backend).
    - `contrib/zip/lib` — **tree-wide gate required** (tree's

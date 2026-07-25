@@ -1794,7 +1794,23 @@ call site and definition tree-wide *before* any mass file editing starts
        binary with no file opens a plain-text `ez` buffer with no
        table-insert path — matches `ez`'s own bare-launch default,
        not investigated further as a possible bug.)
-     - [ ] `overhead/mail/lib` — subtree-local gate only.
+     - [x] `overhead/mail/lib` — subtree-local gate only (done
+       2026-07-25; 112 census-visible instances (matched the stale
+       estimate exactly) plus 12 more from the malloc-blind-spot
+       sweep, real total 124 across 22 of 33 files — see
+       `m2-mail-lib-REPORT.md`. Widest-fan-out directory examined yet
+       (`libmail.a`, ~25 consumer directories); extra `nm -g`
+       verification against 3 structurally distinct real consumers
+       (`amsn.do`, `cuin`, `overhead/mail/cmd`'s standalone tools)
+       found zero symbol leakage, confirming subtree-local gate holds
+       even at this scale. No new taxonomy category; malloc-sweep
+       findings cleanly split into three shapes (invisible blind spot;
+       stale wrong-typed extern that only became a hard conflict once
+       `<stdlib.h>` was added; dead/unused stale externs). Caught and
+       fixed its own self-inflicted `*/`-in-comment syntax error
+       immediately. User-verified (`arpadate` standalone check, `cuin`
+       startup, fresh `messages` process folder-list load), no
+       regressions.)
      - [ ] `atkams/messages/lib` — tree-wide gate required (the
        `messages` app's actual backend).
      - [ ] `contrib/zip/lib` — tree-wide gate required (tree's
