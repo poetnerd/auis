@@ -105,7 +105,8 @@ mirrors IMAP; AMDS delivery remains excluded.
     M3c work item); metamail launch is reported for MIME messages but
     displays nothing (pre-existing platform gap, metamail not
     functional here — HTML mail display now has its own objective,
-    see "Objective: HTML mail rendering" below); first full mirror
+    see "Objective: HTML mail rendering" below; root cause now
+    identified, see that section); first full mirror
     is slow-ish (~3,800 messages;
     per-run incremental cost is near-zero thereafter).
   - **NEW BUG 2026-07-19: messages crashes on exit** —
@@ -298,11 +299,12 @@ mirrors IMAP; AMDS delivery remains excluded.
 Essentially all real-world mail arrives as HTML (usually
 multipart/alternative with a text/html part). metamail is not
 functional on this platform (launches, displays nothing — see the
-M3c observations above), and even fixed it would remain an external
-button-press viewer. For `messages` to be genuinely useful as a
-daily reader, text/html bodies must render **inline** in the message
-pane via the htmlview/html inset machinery. Sequencing: start after
-writeback (4) and XOAUTH2 (5) close out the store work.
+M3c observations above, and the root-cause finding below), and even
+fixed it would remain an external button-press viewer. For
+`messages` to be genuinely useful as a daily reader, text/html
+bodies must render **inline** in the message pane via the
+htmlview/html inset machinery. Sequencing: start after writeback (4)
+and XOAUTH2 (5) close out the store work.
 
 Current state of the pieces:
 
@@ -314,6 +316,27 @@ Current state of the pieces:
 - messages' foreign-type display path shells out to metamail
   (`atkams/messages/lib/mailobj.c`); AMS has a header parser
   (`hdrparse`) but no MIME body parser (`ams-IMAP-project.md` §4).
+- **metamail root cause identified 2026-07-24** (found during M2
+  rollout point 4b's runtime check, `claude-history/
+  m2-metamail-REPORT.md`): a plain `text/plain` body run directly
+  (`printf ... | metamail`) already crashes with a Bus error before
+  any display happens. Under `lldb`, the actual first-hit signal is
+  `SIGTTOU` (terminal job-control — a background process group
+  attempting a terminal-control `ioctl`), stopped inside
+  `ExecuteMailcapEntry`'s `ioctl()` call (`metamail.c`), reached via
+  `HandleMessage` → `TryMailcapEntry` → `ExecuteMailcapEntry` — the
+  code that forks an external viewer for a mailcap entry and hands it
+  terminal control. This is 1980s/90s BSD job-control code
+  (companion to the `gtty`/`stty` legacy-syscall macros elsewhere in
+  the same file, `sgtty.h`/`sys/ioctl_compat.h`) that doesn't survive
+  contact with modern macOS process-group/terminal semantics — a
+  different failure category entirely from "displays nothing," and
+  unrelated to M2's implicit-declaration fixes (confirmed:
+  `ioctl` was already correctly declared before that session touched
+  the file, and M2's fixes are additive declarations only, no logic
+  changes). Root cause identified, not yet fixed — whoever picks up
+  metamail's "separate side quest" (H3 below) should start from this
+  finding rather than the mailcap-execution code in general.
 
 **MIME body plumbing moved out of this objective 2026-07-19, done
 2026-07-21** — was the `mime-display` task in the delegated work
@@ -1701,7 +1724,21 @@ call site and definition tree-wide *before* any mass file editing starts
        command-style guidance: zero permission prompts across ~90 tool
        calls, strongly positive. Runtime check user-verified (`ez`,
        `messages`, test email sent), no regressions.)
-     - [ ] `overhead/mail/metamail/metamail` — subtree-local gate only.
+     - [x] `overhead/mail/metamail/metamail` — subtree-local gate only
+       (done 2026-07-24; 338/338 instances fixed across 7 files — far
+       past the stale estimate of 70, mostly `metamail.c`/`mailto.c`'s
+       own large same-file forward-reference populations — see
+       `m2-metamail-REPORT.md`. Structurally strongest gate-scope data
+       point yet: this directory builds only `ProgramTarget`s, no
+       library at all, so cross-directory fallout is structurally
+       impossible, not just empirically absent. Runtime check found
+       metamail crashes (SIGTTOU in `ExecuteMailcapEntry`'s `ioctl`
+       call) and `mailto`/`splitmail` fail on a missing
+       `/usr/lib/sendmail` — both confirmed pre-existing and unrelated
+       to this fix (metamail's non-functionality on this platform was
+       already documented before this session; root cause now
+       identified, see "Objective: HTML mail rendering"). `mmencode`
+       round-tripped correctly. User-verified, proceeding to commit.)
      - [ ] `atk/text` — subtree-local gate only.
      - [ ] `atk/rofftext` — subtree-local gate only.
      - [ ] `atk/table` — subtree-local gate only.

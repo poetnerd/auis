@@ -66,7 +66,22 @@ calls in that session, strongly positive — though the dedicated Grep/
 Glob tools the guidance recommends weren't actually available to that
 delegated session (only `Read` and individual `Bash grep` calls were;
 both worked with zero prompts), so the guidance's tool-substitution
-wording was softened to not assume Grep/Glob availability.
+wording was softened to not assume Grep/Glob availability. Bucket 4's
+second directory, `overhead/mail/metamail/metamail`, closed
+2026-07-24: 338/338 instances fixed across 7 files — far past the
+stale estimate of 70, mostly `metamail.c`/`mailto.c`'s own large
+same-file forward-reference populations (both large single-file K&R
+programs with dozens of helpers defined after `main()`) — see
+`claude-history/m2-metamail-REPORT.md`. Structurally the strongest
+gate-scope data point yet: this directory builds only
+`ProgramTarget`s, no library at all, so cross-directory fallout is
+structurally impossible, not just empirically absent. Runtime check
+found metamail crashes at runtime (root cause identified: `SIGTTOU`
+in `ExecuteMailcapEntry`'s `ioctl` call, 1980s BSD terminal
+job-control code, unrelated to this fix) and `mailto`/`splitmail`
+fail on a missing `/usr/lib/sendmail` — both confirmed pre-existing
+and out of scope (see `roadmap.md`'s "Objective: HTML mail
+rendering"), not blockers to committing the M2 fix itself.
 
 ## What the flag does
 
@@ -406,6 +421,7 @@ Proposed order, pending wdc's sign-off:
      2026-07-24**, see "Status" above and `claude-history/
      m2-utillib-REPORT.md`.
    - `overhead/mail/metamail/metamail` — subtree-local gate only.
+     **Done 2026-07-24**, see `claude-history/m2-metamail-REPORT.md`.
    - `atk/text` — subtree-local gate only.
    - `atk/rofftext` — subtree-local gate only.
    - `atk/table` — subtree-local gate only.
