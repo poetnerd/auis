@@ -1811,8 +1811,28 @@ call site and definition tree-wide *before* any mass file editing starts
        immediately. User-verified (`arpadate` standalone check, `cuin`
        startup, fresh `messages` process folder-list load), no
        regressions.)
-     - [ ] `atkams/messages/lib` — tree-wide gate required (the
-       `messages` app's actual backend).
+     - [x] `atkams/messages/lib` — tree-wide gate required (the
+       `messages` app's actual backend) (done 2026-07-25; 212
+       census-visible instances (vs. stale estimate 140) plus 124 more
+       from the malloc-blind-spot sweep, real total 336 across 18 of
+       23 files — see `m2-messageslib-REPORT.md`. Both gates required
+       and both clean: subtree-local twice for determinism, plus the
+       full tree-wide `make Clean && make dependInstall`
+       (233,099-line log, same 4 pre-existing baseline errors every
+       prior session has documented, zero new ones, confirmed none
+       fall within this directory's own build span). `SNAP_ENV`
+       confirmed disabled empirically; `amss.c`/`amss.do` never enter
+       the build graph. Concrete LP64 finding: 6 functions (`CUI_
+       DisambiguateDir`, `CUI_GetHeaders`, `CUI_Initialize`,
+       `MS_GetDirInfo`, `MS_MatchFolderName`, `MS_UnlinkFile`) are
+       `long`-returning at their real definitions while ~65 sibling
+       functions in the same two families default to `int` — sourced
+       from two independent places before declaring. No new taxonomy
+       category; explicitly ruled out a recurrence of `atk/table`'s
+       `AUXMODULE` sub-case. User-verified (fresh `messages` process
+       with a real IMAP-backed folder list, opening a message,
+       composing/sending, folder tree, scrolling, options panel), no
+       regressions.)
      - [ ] `contrib/zip/lib` — tree-wide gate required (tree's
        highest-defect-density directory).
      - [ ] Fixed checkpoint after the last bucket-4 directory: tree-wide

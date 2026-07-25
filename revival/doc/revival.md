@@ -1,6 +1,6 @@
 # AUIS Revival: What Was Done and Why
 
-*Last distilled: 2026-07-16.* A narrative account of reviving Carnegie
+*Last distilled: 2026-07-25.* A narrative account of reviving Carnegie
 Mellon's Andrew User Interface System (AUIS) on a modern Mac, for readers
 who already know ATK and readers encountering it for the first time. For
 the complete technical record this document summarizes, see
@@ -457,14 +457,21 @@ to correctly widen a 32-bit value to 64 bits, or to preserve its sign. Five
 distinct, recurring failure patterns followed from this one root cause,
 each responsible for real, visible bugs during the revival:
 
-1. **A function returning a pointer, called with no declaration in
-   scope.** Pre-standard C assumes an undeclared function returns a plain
-   32-bit `int`. If the function actually returns a pointer (64 bits), the
-   upper half is silently discarded — typically producing a crash the
-   moment the truncated pointer is used. This was the single most common
-   defect in the codebase: more than twenty separate sites, all the same
-   shape, once the pattern was recognized in one core function used to
-   locate files on disk.
+1. **A function returning a pointer — or any other 64-bit value — called
+   with no declaration in scope.** Pre-standard C assumes an undeclared
+   function returns a plain 32-bit `int`. If the function actually returns
+   something wider, the upper half is silently discarded — typically
+   producing a crash the moment a truncated pointer is used, or a
+   silently wrong number when the return is an ordinary integer instead.
+   This was the single most common defect in the codebase: more than
+   twenty separate sites, all the same shape, once the pattern was
+   recognized in one core function used to locate files on disk. The
+   later, tree-wide sweep for exactly this class of gap (M2, below) found
+   the same shape recurring by the hundreds across the rest of the tree —
+   including several genuinely `long`-returning (not pointer-returning)
+   library functions, such as a mail client's directory-lookup and
+   session-initialization calls, each confirmed against its real
+   definition, independently, before any declaration was written.
 2. **More arguments than the processor's registers hold.** Apple Silicon
    passes the first eight integer/pointer arguments in registers and
    spills the remainder to the stack — but only if the compiler knows, at
@@ -564,7 +571,19 @@ The resulting plan runs in four stages:
   had lacked.
 - **M2 — sweep for missing function declarations** throughout the rest of
   the tree, not just class methods, closing the undeclared-function
-  pointer-truncation pattern for good.
+  pointer-truncation pattern for good. The sweep surfaced two
+  complications of its own along the way: `malloc`/`free`/`realloc`/
+  `calloc` are compiler built-ins, so a call to one with no declaration in
+  scope anywhere never triggers the diagnostic being swept for — invisible
+  to the compiler-driven pass, closed only by a second, deliberate search
+  across every file regardless of how clean a directory's compile already
+  looked; and one class's method-dispatch macro, an optimization that
+  calls its internal implementation directly instead of through the usual
+  indirect table, turned out to declare that implementation inside a
+  header guard whose actual purpose was unrelated — avoiding duplicate
+  method tables across a multi-file loadable module — which had the side
+  effect of hiding a real, correctly-typed declaration from the one
+  caller that needed it, harmlessly, for over thirty years.
 - **M3 — convert the function definitions themselves** from pre-standard
   to standard C, one subsystem at a time, using a purpose-built tool that
   looks up each function's real signature from the class-definition files
@@ -623,6 +642,16 @@ upstream fix.
   explanation, though not a settled one: this step wasn't always necessary
   earlier in the project, and it isn't yet certain whether the analysis
   has found the real root cause or only a reliable workaround.
+- **`metamail` has never successfully run in this environment.** Invoking
+  it — directly, or indirectly through `messages`' MIME-attachment
+  handling — raises `SIGTTOU` inside the routine that spawns a
+  mailcap-entry viewer subprocess: ordinary 1980s terminal job-control
+  code performing an `ioctl()` a foreground process doesn't expect.
+  Confirmed unrelated to the ANSI C conversion work happening alongside
+  it — the crash lives entirely in terminal/process-group handling,
+  untouched by any declaration or typing fix — and predates this project;
+  nobody has reported metamail working here at any point. Root cause
+  identified; not yet fixed.
 
 ## Further reading
 

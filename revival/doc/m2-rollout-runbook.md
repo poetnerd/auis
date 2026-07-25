@@ -159,7 +159,42 @@ conflict only once `<stdlib.h>` was added for an unrelated reason;
 completely dead/unused stale externs) — worth keeping distinct in
 future reports. User-verified (`arpadate` standalone date-format
 check, `cuin` startup/config-load, fresh `messages` process folder-list
-load), no regressions.
+load), no regressions. Bucket 4's seventh directory, `atkams/
+messages/lib`, closed 2026-07-25: 212 census-visible instances (vs.
+stale estimate 140) plus 124 more from the malloc-blind-spot sweep,
+real total 336 across 18 of 23 files — see `claude-history/
+m2-messageslib-REPORT.md`. This is the `messages` GUI app's actual
+backend (~15 separate `DynamicObject`/`DynamicMultiObject` classes,
+100% dynamically loaded, confirmed zero symbols in `runapp`), so per
+the gate-scope ruling it required **both** the subtree-local gate and
+the full tree-wide gate (`make Clean && make dependInstall`,
+233,099-line log, exactly the same 4 pre-existing baseline errors
+every prior session has documented, zero new ones, confirmed this
+directory's own build span contains none of them). Confirmed
+`SNAP_ENV` disabled empirically (`allsys.h`, commented out; `amss.c`/
+`amss.do` never enter the build graph). Concrete LP64 finding: 6
+functions (`CUI_DisambiguateDir`, `CUI_GetHeaders`, `CUI_Initialize`,
+`MS_GetDirInfo`, `MS_MatchFolderName`, `MS_UnlinkFile`) are
+`long`-returning at their real definitions while ~65 sibling functions
+in the same two families default to `int` — sourced from two
+independent places (the real library definitions and this class's own
+already-typed wrapper methods) before declaring. No new taxonomy
+category; explicitly checked for and ruled out a recurrence of
+`atk/table`'s `AUXMODULE` sub-case (every undeclared function here is
+a plain C function, not a class-internal double-underscore method).
+One process-management lesson: a `nohup ... &`-wrapped build inside a
+backgrounded Bash call caused a false "completed" notification (the
+launching shell exited, not the build) — caught via `ps aux`,
+corrected with a proper PID-polling wait; future sessions should rely
+on the Bash tool's own backgrounding, not an added shell-level `&`.
+On the live auto-mode question (see "Command style" note below): no
+detectable change in prompt/denial pattern from this session's
+vantage point — the agent noted it has no way to distinguish "nothing
+changed" from "the human wasn't prompted for allow-listed calls" from
+inside a single delegated session. User-verified (fresh `messages`
+process with a real IMAP-backed folder list, opening a message,
+composing/sending to `wdc@fastmail.com`, folder tree, scrolling,
+options panel), no regressions.
 
 ## What the flag does
 
@@ -542,7 +577,8 @@ Proposed order, pending wdc's sign-off:
    - `overhead/mail/lib` — subtree-local gate only. **Done
      2026-07-25**, see `claude-history/m2-mail-lib-REPORT.md`.
    - `atkams/messages/lib` — **tree-wide gate required** (the
-     `messages` app's actual backend).
+     `messages` app's actual backend). **Done 2026-07-25**, see
+     `claude-history/m2-messageslib-REPORT.md`.
    - `contrib/zip/lib` — **tree-wide gate required** (tree's
      highest-defect-density directory).
    - After the last bucket-4 directory, regardless of which one it
