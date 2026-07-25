@@ -13,6 +13,15 @@ the roadmap's Delegated work queue and `sonnet-playbook.md` say it
 is. Moving a prompt here (`fossil mv`, then repoint any references)
 is part of retiring it, done during the close-out doc update.
 
+**Subdirectory extension (decided 2026-07-25):** a milestone whose
+own prompt/report volume gets large enough to clutter this directory's
+flat listing gets its own subdirectory here instead (`fossil mv` into
+it, same repoint-references discipline). First and so far only case:
+`m2/`, holding all of M2's prompts, reports, and its own runbook — see
+the dedicated section below. Retired docs for milestones that don't
+reach that scale (M1's own runbook, most standalone investigations)
+stay flat at this directory's top level, as before.
+
 ## Active Prompts (in `revival/doc/`, not here)
 
 Current queue and suggested order live in `roadmap.md` → "Delegated
@@ -199,10 +208,11 @@ carry work forward independently: `bcc-direct-insertion`
   `../mime-attachment-icon-prompt.md` — a `multipart/mixed`
   attachment renders as a bare `?` instead of the expected
   `[attachment: ...]` line; root cause not yet found.
-- `m2-census-prompt.md` (2026-07-19, retired 2026-07-24) — M2 point-0
+- `m2-census-prompt.md` (2026-07-19, retired 2026-07-24, now in
+  `m2/` — see the dedicated M2 section below) — M2 point-0
   `-Wincompatible-pointer-types` census. Classified all 67
   `int*/long*` and 18 `char**→char*` instances into 13 shared root
-  shapes (`m2-census-REPORT.md`, kept here); found the `char**`
+  shapes (`m2/m2-census-REPORT.md`); found the `char**`
   cluster's real bug was in `ams.ch` itself — three `CUI_*` methods
   typed `char *` when their real `cuilib.c` implementations take
   `char **`, so clang's own "remove &" fix-it would have broken all
@@ -255,3 +265,106 @@ Retired here 2026-07-19; in development order:
   "Untouched hazards" list (unchecked malloc in RegisterOpenFile,
   openprofile's `~`-expansion comma bug, gethome's 100-byte buffer,
   prefed's unverified save path) is documented nowhere else.
+
+## M2 — ANSI C prototype sweep (`m2/` subdirectory)
+
+M2 (Medium-term → ANSI C conversion, `roadmap.md`) closed in its
+entirety 2026-07-25: every directory in the active tree now compiles
+with `-Werror=implicit-function-declaration`, closing LP64 bug class 1
+(an undeclared function returning a pointer or other wide value gets
+silently truncated through implicit `int`) for good, tree-wide. Retired
+as one batch the same day, moved into its own subdirectory rather than
+flat here given the volume: a shared runbook plus one prompt/report
+pair per rollout point, 29 files total. Read `m2/m2-rollout-runbook.md`
+first for any individual point below — it carries the flag mechanics,
+the full fallout taxonomy (with every sub-case/sub-shape found along
+the way), the gate-scope ruling, and a per-point status narrative more
+detailed than this summary. The milestone-shared session rhythm (build
+steps, command-style, logging conventions) lives in the still-active
+`../rollout-procedure.md`, not retired here since M3/M4 reuse it
+directly.
+
+**Final tally**: 3,888 fallout instances fixed across 29 directories
+(cross-checked: the running "possible genuine bug/typo" tracker in the
+final report reached exactly "3888 instances/29 directories," still
+empty — no real bug/typo ever found across the entire sweep, every
+name resolved to a real, correctly-spelled, findable definition).
+Every rollout point's own gate came back green; the tree-wide
+completion gate (2026-07-25) found zero new errors anywhere, only the
+same 4 pre-existing baseline errors every gate since rollout point 1
+has documented. Plus a separate, earlier point-0 census under a
+different flag (`-Wincompatible-pointer-types`, 85 instances, folded
+into M1/M2's boundary — see below).
+
+Rollout points, in order (each is `m2/m2-<name>-prompt.md` +
+`m2/m2-<name>-REPORT.md` unless noted):
+
+0. **`census`** (2026-07-19) — the point-0
+   `-Wincompatible-pointer-types` triage, described in full above
+   under "Budget-crunch delegation queue"; 85 instances, a different
+   diagnostic than the rest of M2, not counted in the 3,888.
+1. **`pilot-eq`**, `atk/eq` (2026-07-24) — 10 instances, 4 files. The
+   pilot that established the fallout taxonomy's first three
+   categories and the `depend`-before-`install` generated-source
+   lesson.
+2. **`batch2`**, 8 small/leaf directories — `atk/frame`, `atk/adew`,
+   `atk/value`, `atk/lookz`, `atk/help/src`, `atk/extensions`,
+   `overhead/cmenu`, `overhead/fonts/cmd` (2026-07-24) — 70 instances.
+3. **`batch3a`**, mid-size batch A — `atk/basics/x`, `atk/basics/
+   common`, `atk/figure`, `atk/syntax/tlex`, `atk/raster/cmd`
+   (2026-07-24) — 137 instances. Also found and fixed a real,
+   pre-existing `atk/figure` text-rendering bug (LP64 cast, unrelated
+   to M2 itself) during its runtime check.
+4. **`batch3b`**, mid-size batch B — `overhead/eli/lib`, `ams/libs/
+   cui`, `ams/msclients/nns`, `overhead/mail/metamail/richmail`,
+   `overhead/index` (2026-07-24) — 528 instances, the largest batch by
+   volume until bucket 4 began.
+5. **`utillib`**, `overhead/util/lib` (2026-07-24) — 74 instances.
+   Bucket 4's first directory; first exact stale-estimate match.
+6. **`metamail`**, `overhead/mail/metamail/metamail` (2026-07-24) —
+   338 instances. Runtime check found a real, pre-existing,
+   still-unfixed metamail crash (`SIGTTOU` in terminal job-control
+   code) — confirmed unrelated and out of scope, documented in
+   `roadmap.md`/`revival.md`.
+7. **`text`**, `atk/text` (2026-07-24) — 156 instances. First
+   directory where the malloc-family blind spot (clang treats
+   `malloc`/`free`/`realloc`/`calloc` as builtins, invisible to the
+   very diagnostic being swept for) dominated the real total rather
+   than causing a near-miss — upgraded the sweep from conditional to
+   unconditional for every later point.
+8. **`rofftext`**, `atk/rofftext` (2026-07-24) — 104 instances.
+9. **`table`**, `atk/table` (2026-07-24) — 186 instances. Found the
+   `AUXMODULE`-guarded double-underscore declaration sub-case (a real,
+   correctly-typed declaration hidden from the one caller that needed
+   it by an unrelated header-generation optimization).
+10. **`mail-lib`**, `overhead/mail/lib` (2026-07-25) — 124 instances.
+    Widest consumer fan-out examined up to that point (~25 directories
+    via `libmail.a`).
+11. **`messageslib`**, `atkams/messages/lib` (2026-07-25) — 336
+    instances. The `messages` GUI app's actual backend — both the
+    subtree-local and full tree-wide gate required. Concrete LP64
+    finding: 6 functions genuinely `long`-returning, not the default
+    `int`.
+12. **`ziplib`**, `contrib/zip/lib` (2026-07-25) — 256 instances. The
+    tree's known highest-defect-density directory; both gates
+    required. Runtime check found two new, real, pre-existing (not
+    regression) bugs unrelated to M2 — zip/calc insets failing to load
+    when embedded in a mixed-content document, and a text-block
+    horizontal-drag lock — both logged in `roadmap.md` for dedicated
+    investigation.
+13. **`amsms`**, `ams/libs/ms` (2026-07-25) — 1,569 instances, by far
+    the largest single directory in the whole sweep (114 files, ~38%
+    of the original tree-wide census). Confirmed the runbook's own
+    "a handful of functions dominate" prediction empirically (top 10
+    functions = 45.6% of the total). Both the subtree-local and final
+    tree-wide gate required — the latter doubling as M2's own
+    completion gate. Also where the malloc-family blind spot's
+    invisibility itself stopped holding (`malloc`/`free`/`realloc`
+    became census-visible partway through the project, most likely a
+    toolchain update mid-session — flagged as an open question, not
+    resolved).
+
+A fixed tree-wide checkpoint gate (run directly by the orchestrator,
+no delegated session — pure verification, no fix work) also closed out
+bucket 4 (points 5–12) before point 13 started, per the gate-scope
+ruling's own schedule.

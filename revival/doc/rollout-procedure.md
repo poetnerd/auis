@@ -6,7 +6,7 @@ gate, commit" rollout point in the ANSI C conversion plan
 2026-07-24 from `claude-history/m1-rollout-runbook.md` once M2 needed
 the same rhythm under a different flag/taxonomy — read alongside
 `sonnet-playbook.md` (the standing delegation briefing) and whichever
-milestone-specific runbook applies (`m2-rollout-runbook.md`, etc.).
+milestone-specific runbook applies (`claude-history/m2/m2-rollout-runbook.md`, etc.).
 Each milestone runbook covers what's specific to it: which flag/tool,
 its own fallout taxonomy, its own hard stops. This file covers what
 isn't specific to any of them.
@@ -142,7 +142,7 @@ mechanism — treat "the error count is 0/matches the stale estimate"
 as a reason to double-check, not to stop looking. Known so far,
 specific to M2's `-Werror=implicit-function-declaration` flag: (1)
 clang's default `-ferror-limit=20` truncates a single file's
-diagnostics past the 20th (see `m2-rollout-runbook.md`'s Census
+diagnostics past the 20th (see `claude-history/m2/m2-rollout-runbook.md`'s Census
 section — pass `-ferror-limit=0` on the fix-surfacing pass); (2)
 `malloc`/`realloc`/`free`/`calloc` are clang builtins, so a call with
 *zero* declaration anywhere in scope does not trigger the diagnostic

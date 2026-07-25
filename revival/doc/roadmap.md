@@ -215,7 +215,7 @@ mirrors IMAP; AMDS delivery remains excluded.
      reachable-by-literal call sites got belt-and-suspenders fixes
      anyway. See `porting-assessment.md` issue #1 and
      `claude-history/strlit-REPORT.md`.
-  2. ~~`m2-census-prompt.md`~~ (now in `claude-history/`) —
+  2. ~~`m2-census-prompt.md`~~ (now in `claude-history/m2/`) —
      **done 2026-07-24.** Classified all 67 `int*/long*` and 18
      `char**→char*` instances into 13 shared root shapes and fixed
      three findings: the `char**` cluster's real bug was three
@@ -231,7 +231,7 @@ mirrors IMAP; AMDS delivery remains excluded.
      committed as three separate checkins. The other 45 `int*/long*`
      instances (caller declares `int`, callee wants `long *` —
      stack-overrun direction) are cataloged but not yet fixed. See
-     `claude-history/m2-census-REPORT.md`.
+     `claude-history/m2/m2-census-REPORT.md`.
   3. `bcc-direct-insertion-prompt.md` — root-cause the blind-copy
      direct-insertion failure (investigation-gated).
   4. ~~`folder-visibility-prompt.md`~~ (now in `claude-history/`) —
@@ -318,7 +318,7 @@ Current state of the pieces:
   (`hdrparse`) but no MIME body parser (`ams-IMAP-project.md` §4).
 - **metamail root cause identified 2026-07-24** (found during M2
   rollout point 4b's runtime check, `claude-history/
-  m2-metamail-REPORT.md`): a plain `text/plain` body run directly
+  m2/m2-metamail-REPORT.md`): a plain `text/plain` body run directly
   (`printf ... | metamail`) already crashes with a Bus error before
   any display happens. Under `lldb`, the actual first-hit signal is
   `SIGTTOU` (terminal job-control — a background process group
@@ -763,7 +763,7 @@ trail, reproduction steps, and what was tried/disproven along the way:
   observed in `PAPERS/conf/1993/Inglett` and
   `NEWSLETTERS/EZ/95Summer.ez`. Found during M2 rollout point 3a's
   runtime check; confirmed pre-existing and unrelated to that batch's
-  fix via a controlled revert test (`claude-history/m2-batch3a-REPORT.md`
+  fix via a controlled revert test (`claude-history/m2/m2-batch3a-REPORT.md`
   §11). **Root cause found and fixed same day**: `atk/basics/common/
   fontdesc.c`'s `fontdesc__StringBoundingBox` computed its string
   width via `fontdesc_StringSize(font, graphic, string, (long *) &w,
@@ -1647,7 +1647,7 @@ call site and definition tree-wide *before* any mass file editing starts
     bug pattern rather of five separate ones.
   - **`int */long*` cluster, 67 instances — CENSUS AND FIXES COMPLETE
     2026-07-24.** Full classification in
-    `claude-history/m2-census-REPORT.md`: 13 shared root shapes
+    `claude-history/m2/m2-census-REPORT.md`: 13 shared root shapes
     across two directions, all now fixed. 22 instances (one callee,
     `fontdesc_StringBoundingBox`) were caller-has-`long`-but-`.ch`-
     still-`int *`, the odd one out among its `StringSize`/`TextSize`
@@ -1699,7 +1699,7 @@ call site and definition tree-wide *before* any mass file editing starts
   Closes Variant 1 permanently — it has cost debugging time on every
   subtree activation so far. Procedure, census (2,353 instances/396
   files, 2026-07-24), fallout taxonomy, and ordering:
-  `m2-rollout-runbook.md` (shared session rhythm: `rollout-procedure.md`).
+  `claude-history/m2/m2-rollout-runbook.md` (shared session rhythm: `rollout-procedure.md`).
   Rollout points:
   1. [x] Pilot — `atk/eq` (done 2026-07-24; 10/10 census instances
      fixed — 8 missing `<string.h>`, 2 `eqview_Format` cross-file
@@ -1716,7 +1716,7 @@ call site and definition tree-wide *before* any mass file editing starts
      `atk/value`, `atk/lookz`, `atk/help/src`, `atk/extensions`,
      `overhead/cmenu`, `overhead/fonts/cmd` (done 2026-07-24; 70/70
      census instances fixed across 24 files, all three taxonomy
-     categories exercised — see `m2-batch2-REPORT.md`. Resolved the
+     categories exercised — see `claude-history/m2/m2-batch2-REPORT.md`. Resolved the
      runbook's open `FoldedEQ` question: real function, not a typo.
      Found a third "missing in-tree/project header" sub-case: a
      header exists but is stale/incomplete, and the flagged
@@ -1733,7 +1733,7 @@ call site and definition tree-wide *before* any mass file editing starts
      - [x] Batch A — `atk/basics/x`, `atk/basics/common`,
        `atk/figure`, `atk/syntax/tlex`, `atk/raster/cmd` (done
        2026-07-24; 137/137 census instances fixed across 34 files, no
-       new taxonomy category — see `m2-batch3a-REPORT.md`. Third data
+       new taxonomy category — see `claude-history/m2/m2-batch3a-REPORT.md`. Third data
        point settling "subtree-local gate is sufficient," this time
        including the statically-linked X11/core-class directories and
        M1's former largest-blast-radius directory (`atk/basics/
@@ -1749,7 +1749,7 @@ call site and definition tree-wide *before* any mass file editing starts
        `overhead/index` (done 2026-07-24; 528 instances fixed across
        34 files — far past the runbook's stale "1–42 each" estimate
        for this bucket (`ams/libs/cui` alone was 350) — see
-       `m2-batch3b-REPORT.md`. Fourth data point settling "subtree-
+       `claude-history/m2/m2-batch3b-REPORT.md`. Fourth data point settling "subtree-
        local gate is sufficient," this time including `ams/libs/cui`
        (linked into `messages`'s `amsn.do`) at the largest volume yet
        — zero cross-directory fallout. Two new taxonomy sub-shapes
@@ -1768,13 +1768,13 @@ call site and definition tree-wide *before* any mass file editing starts
        check user-verified (`messages`, `cuin`, `help`, `richtext`/
        `richtoatk`), no regressions.)
   4. [ ] Large, dedicated-session territory (~70–140 instances each;
-     gate schedule ruled 2026-07-24, see `m2-rollout-runbook.md`'s
+     gate schedule ruled 2026-07-24, see `claude-history/m2/m2-rollout-runbook.md`'s
      "Gate scope" section — subtree-local gate always required,
      tree-wide gate only where marked below):
      - [x] `overhead/util/lib` — subtree-local gate only (done
        2026-07-24; 74/74 instances fixed across 29 files — first
        bucket-4 directory where the real count matched the stale
-       estimate exactly — see `m2-utillib-REPORT.md`. Confirms rather
+       estimate exactly — see `claude-history/m2/m2-utillib-REPORT.md`. Confirms rather
        than undermines the gate-scope ruling: statically linked into
        both `runapp` and `amsn.do`, same shape as the four directories
        that already proved subtree-local sufficiency. Found a real
@@ -1790,7 +1790,7 @@ call site and definition tree-wide *before* any mass file editing starts
        (done 2026-07-24; 338/338 instances fixed across 7 files — far
        past the stale estimate of 70, mostly `metamail.c`/`mailto.c`'s
        own large same-file forward-reference populations — see
-       `m2-metamail-REPORT.md`. Structurally strongest gate-scope data
+       `claude-history/m2/m2-metamail-REPORT.md`. Structurally strongest gate-scope data
        point yet: this directory builds only `ProgramTarget`s, no
        library at all, so cross-directory fallout is structurally
        impossible, not just empirically absent. Runtime check found
@@ -1807,7 +1807,7 @@ call site and definition tree-wide *before* any mass file editing starts
        the malloc-family blind spot (see below) found 106 more
        call sites across 18 files, invisible to the M2 census
        entirely, real total 156 across 23 files — see
-       `m2-text-REPORT.md`. Cleanest gate-scope data point yet: every
+       `claude-history/m2/m2-text-REPORT.md`. Cleanest gate-scope data point yet: every
        function touched confirmed statically linked directly into
        `runapp` via `nm -g`. Found a class family (`textv.do`/
        `text.do`'s 8 files) with three independently-invented,
@@ -1821,7 +1821,7 @@ call site and definition tree-wide *before* any mass file editing starts
      - [x] `atk/rofftext` — subtree-local gate only (done 2026-07-24;
        54 census-visible instances (vs. stale estimate 47) plus 50
        more from the mandatory malloc-blind-spot sweep, real total 104
-       across 9 files — see `m2-rofftext-REPORT.md`. New taxonomy
+       across 9 files — see `claude-history/m2/m2-rofftext-REPORT.md`. New taxonomy
        wrinkle: one same-file forward reference fixed by adding
        `#include <roffcmds.h>` (the file that defines the whole
        `*_cmd` family had never included its own already-complete
@@ -1837,7 +1837,7 @@ call site and definition tree-wide *before* any mass file editing starts
        154 census-visible instances (vs. stale estimate 113) plus 32
        more from the mandatory malloc-blind-spot sweep, real total 186
        across 9 of 10 files (`print.c` needed zero fixes) — see
-       `m2-table-REPORT.md`. Two new findings: (1) malloc-sweep
+       `claude-history/m2/m2-table-REPORT.md`. Two new findings: (1) malloc-sweep
        methodology gap — `table.c`'s own `myrealloc()` wrapper false-
        positives under a naive substring `grep`; sweep pattern is now
        word-boundary-anchored and space-tolerant in
@@ -1860,7 +1860,7 @@ call site and definition tree-wide *before* any mass file editing starts
        2026-07-25; 112 census-visible instances (matched the stale
        estimate exactly) plus 12 more from the malloc-blind-spot
        sweep, real total 124 across 22 of 33 files — see
-       `m2-mail-lib-REPORT.md`. Widest-fan-out directory examined yet
+       `claude-history/m2/m2-mail-lib-REPORT.md`. Widest-fan-out directory examined yet
        (`libmail.a`, ~25 consumer directories); extra `nm -g`
        verification against 3 structurally distinct real consumers
        (`amsn.do`, `cuin`, `overhead/mail/cmd`'s standalone tools)
@@ -1877,7 +1877,7 @@ call site and definition tree-wide *before* any mass file editing starts
        `messages` app's actual backend) (done 2026-07-25; 212
        census-visible instances (vs. stale estimate 140) plus 124 more
        from the malloc-blind-spot sweep, real total 336 across 18 of
-       23 files — see `m2-messageslib-REPORT.md`. Both gates required
+       23 files — see `claude-history/m2/m2-messageslib-REPORT.md`. Both gates required
        and both clean: subtree-local twice for determinism, plus the
        full tree-wide `make Clean && make dependInstall`
        (233,099-line log, same 4 pre-existing baseline errors every
@@ -1899,7 +1899,7 @@ call site and definition tree-wide *before* any mass file editing starts
        highest-defect-density directory) (done 2026-07-25; 145
        census-visible instances (vs. stale estimate 141) plus 111
        more from the malloc-blind-spot sweep, real total 256 across 24
-       of 41 files — see `m2-ziplib-REPORT.md`. Both gates clean,
+       of 41 files — see `claude-history/m2/m2-ziplib-REPORT.md`. Both gates clean,
        including the second subtree-local determinism pass at the
        directory's normal unmodified `-O` level to confirm no new
        anomaly near the known pre-existing `-O`-only rendering bug
