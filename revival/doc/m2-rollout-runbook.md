@@ -194,7 +194,47 @@ changed" from "the human wasn't prompted for allow-listed calls" from
 inside a single delegated session. User-verified (fresh `messages`
 process with a real IMAP-backed folder list, opening a message,
 composing/sending to `wdc@fastmail.com`, folder tree, scrolling,
-options panel), no regressions.
+options panel), no regressions. Bucket 4's eighth and final directory,
+`contrib/zip/lib`, closed 2026-07-25: 145 census-visible instances
+(vs. stale estimate 141) plus 111 more from the malloc-blind-spot
+sweep, real total 256 across 24 of 41 files — see `claude-history/
+m2-ziplib-REPORT.md`. This is the tree's known highest-defect-density
+directory, so per the gate-scope ruling it required both gates:
+subtree-local twice for determinism (the second pass at the
+directory's normal, unmodified `-O` level, specifically to confirm no
+new anomaly near the directory's known pre-existing, unrelated
+`-O`-only rendering bug — none found) plus the full tree-wide gate
+(233,776-line log, exactly the same 4 pre-existing baseline errors,
+zero new ones, explicitly disambiguated `contrib/zip/lib`'s own clean
+build span from `contrib/zip/utility`'s pre-existing `ltapp.c`
+errors — a different directory). Explicitly checked and ruled out a
+recurrence of `atk/table`'s `AUXMODULE` sub-case (zero files here even
+define `AUXMODULE`). A third concrete LP64 finding (`zip_Enparse_Stream`,
+`zip_Deparse_Stream`, both `long`-returning, sourced from real
+definitions) alongside `overhead/mail/lib`'s and `atkams/messages/lib`'s.
+Interesting taxonomy note: `zipedit.h` bills itself "Internal Macros"
+but already carried one working cross-file declaration, recognized as
+real precedent and extended with 22 more, closing 56 of 97 cross-file
+instances in one edit. Background-build mechanism fix from the prior
+session's self-correction (Bash tool's own `run_in_background`, no
+shell-level `nohup`/`&`) worked cleanly this time, no false-completion
+issue. **User-verified with two new, real, pre-existing (not
+regression) findings**: (1) `zip`/`calc` insets fail to load when
+embedded inside a mixed-content document, though each works fine
+standalone — confirmed unrelated to any M2 work via direct diff
+inspection (`smpltext.c`'s M2 diff is a single `#include` line;
+`contrib/zip/lib`'s M2 diff is 100% additive with zero deletions);
+working hypothesis points at `simpletext__HandleBegindata`'s
+embedding-vs-root-object code path, not yet confirmed — see
+`roadmap.md`'s "Insets to Repair" section and memory
+`project_embedded_inset_load_failure`; (2) `ez` horizontal text-block
+drag locks at position 0 after the first horizontal drag, a
+completely separate and also pre-existing bug — see `roadmap.md`'s
+"Little Annoyances" section and memory
+`project_text_drag_horizontal_lock`. Both logged for dedicated
+investigation, not blocking this session's commit. **Bucket 4 is now
+complete** — the fixed tree-wide checkpoint before `ams/libs/ms`
+(see "Gate scope" above) is the next step.
 
 ## What the flag does
 
@@ -580,7 +620,8 @@ Proposed order, pending wdc's sign-off:
      `messages` app's actual backend). **Done 2026-07-25**, see
      `claude-history/m2-messageslib-REPORT.md`.
    - `contrib/zip/lib` — **tree-wide gate required** (tree's
-     highest-defect-density directory).
+     highest-defect-density directory). **Done 2026-07-25**, see
+     `claude-history/m2-ziplib-REPORT.md`.
    - After the last bucket-4 directory, regardless of which one it
      was: **tree-wide gate required** (fixed milestone checkpoint,
      before starting `ams/libs/ms`).

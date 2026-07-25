@@ -1,4 +1,4 @@
-\begindata{text,4308173024}
+\begindata{text,4380214960}
 \textdsversion{12}
 \template{default}
 Hello World!
@@ -8,32 +8,57 @@ Here's a clock:
 
 Here's an annotation:
 
-\begindata{note,4308183888}
+\begindata{note,4380222016}
 200 100 1 
 \title{wdc}
-\begindata{text,4308191136}
+\begindata{text,4380231952}
 \textdsversion{12}
 Hello\
-\enddata{text,13223840}
-\enddata{note,4308183888}
-\view{noteview,4308183888,0,0,0}
+\enddata{text,85264656}
+\enddata{note,4380222016}
+\view{noteview,4380222016,0,0,0}
 Here is a calc:
 
+\begindata{calc, 113504256}
+TopTitleFontName AndySans22b
+BottomLegendFontName Andy20i
+Value 0.000000
+\enddata{calc, 113504256}
+\view{calcv,43063177216,4,0,0}
+Here is a zip:
 
+\begindata{zip,85390128}
+%ViewWidth 512
+%ViewHeight 512
+*D;-1000,1400
+N8.5X11
+>-1000,1400
+*C;-454,241
+>357,-323
+*G;-757,-454
+>508,62
+*A;-599,-179
+THello
+MCM
+*L;-1059,330
+>1313,419
+
+\enddata{zip,85390128}
+\view{zipview,4380357424,5,0,0}
 
 And more.
 
 
-\begindata{eq,4308193904}
-{ lpile d_eqstyle { d s { cpile { d t } over { zilch } } } { zilch } { zilch } { zilch } { zilch } } \enddata{eq,4308193904}
-\view{eqview,4308193904,1,0,0}
+\begindata{eq,4380232624}
+{ lpile d_eqstyle { d s { cpile { d t } over { zilch } } } { zilch } { zilch } { zilch } { zilch } } \enddata{eq,4380232624}
+\view{eqview,4380232624,1,0,0}
 <head> </head>
 
 <body>
 
 </body>
 
-\begindata{table,4308194288}
+\begindata{table,4380233008}
 ^aaa	 	 	 	 
 32	8	=[2,1]+[2,2]	 	 
  	 	 	 	 
@@ -45,12 +70,12 @@ And more.
  	 	 	 	 
  	 	 	 	 
  	 	 	 	 
-\enddata{table,4308194288}
-\view{spread,4308194288,2,0,0}
+\enddata{table,4380233008}
+\view{spread,4380233008,2,0,0}
 
-\begindata{eq,4308196736}
-{ lpile d_eqstyle { y above { - } = 1 m m - y } { v sub { x } ( { y above { - } } ) = 4 . 9 9 5 { cpile { 1 } over { m m * s e c } } * ( { 2 * y above { - } m m - y above { - } sup { 2 } } ) } } \enddata{eq,4308196736}
-\view{eqview,4308196736,3,0,0}
+\begindata{eq,4380237792}
+{ lpile d_eqstyle { y above { - } = 1 m m - y } { v sub { x } ( { y above { - } } ) = 4 . 9 9 5 { cpile { 1 } over { m m * s e c } } * ( { 2 * y above { - } m m - y above { - } sup { 2 } } ) } } \enddata{eq,4380237792}
+\view{eqview,4380237792,3,0,0}
 
 Let's add some text that has a couple lines so it becomes a paragraph. Is 
 this thing on? Testing testing, 1, 2, 3? Yes this is on.
@@ -58,4 +83,4 @@ this thing on? Testing testing, 1, 2, 3? Yes this is on.
 
 Yet another \bold{\bigger{paragraph}}. Insertion and deletion seems ok. Is 
 this thing on? Testing testing, 1, 2, 3?\
-\enddata{text,13205728}
+\enddata{text,85247664}

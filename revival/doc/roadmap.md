@@ -402,6 +402,21 @@ acceptance). What remains here is the real HTML rendering:
   (breakpoint the font-open path, identify which font name/size
   triggered it) before it goes in `porting-assessment.md`.
 
+### ez: horizontal text-block drag locks at position 0 after first drag (observed 2026-07-25, not yet investigated)
+
+- Selecting and dragging a block of text: vertical dragging works
+  correctly, but after the first horizontal drag the displayed
+  horizontal position reads 0 and stays locked there — further
+  horizontal drags have no visible effect (vertical dragging continues
+  to work). Found during M2 rollout point 4h's (`contrib/zip/lib`)
+  runtime check, unrelated to that session's own declaration-only
+  fix — no M2 session has touched any mouse-drag or cursor-position
+  code. Not yet root-caused; "locks at exactly 0" is suggestively
+  similar in shape to this project's other LP64 sign/width-corruption
+  bugs (a coordinate corrupted *to* zero rather than merely wrong),
+  but that's a hypothesis, not a finding — needs its own dedicated
+  investigation session. See memory `project_text_drag_horizontal_lock`.
+
 ### filetype.c DeleteEntry:
 
 - `filetype__DeleteEntry` (atk/basics/common/filetype.c:216,218,
@@ -643,6 +658,53 @@ trail, reproduction steps, and what was tried/disproven along the way:
   (`SUBDIRS` order puts `zip` after `calc` in `contrib/Imakefile`).
   Untouched — out of scope for the `MK_CALC` work; needs the same
   `.ch`-typing treatment `contrib/zip/lib` already got.
+
+### zip / calc — insets fail to load when embedded inside a mixed-content document (found 2026-07-25, open)
+
+- Found during M2 rollout point 4h's (`contrib/zip/lib`) runtime
+  check: a standalone zip-only document round-trips correctly
+  (save/reload confirmed working), but the same zip inset content
+  embedded inside a larger document — surrounded by ordinary text and
+  other inset types — fails to render at all, "as if there is no zip
+  inset present"; a subsequent save of that document loses the inset
+  entirely. `calc` shows the identical symptom in the same test
+  document; `annotation`, `eq`, and `table` insets in the same
+  document render correctly (`html` renders too, with its own
+  already-known incorrect behavior). Test file: wdc's `/tmp/t2.ez`.
+- **Confirmed not a regression from any M2 work**: `smpltext.c`
+  (`atk/text`), which owns the inset-embedding read path
+  (`simpletext__HandleBegindata`) this bug almost certainly lives in,
+  was touched by M2's `atk/text` session — but that session's entire
+  diff to the file is one line, `#include <stdlib.h>` (`fossil diff
+  --from 7f946352c9 --to fa80dac4d9 src/atk/text/smpltext.c`), zero
+  logic changed. `contrib/zip/lib`'s own M2 diff is 100% additive (new
+  `#include`s/`extern` declarations only, zero deletions, confirmed
+  via `m2-ziplib-session.diff`) — cannot have changed any runtime
+  behavior. `contrib/calc/lib` was not touched by any M2 session at
+  all. Pre-existing, not caused by the ANSI C conversion work.
+- **Working hypothesis, not yet confirmed**:
+  `simpletext__HandleBegindata` (`smpltext.c:901`) already has the
+  2026-07-05 figure-fix's resync-on-failed-read fallback (falls back
+  to a raw "unknown" object and prints a warning to stderr if
+  `dataobject_Read` returns anything other than `dataobject_NOREADERROR`)
+  — that fallback is what should fire here if `zip`'s/`calc`'s `Read`
+  fails partway through when called via this embedding path
+  specifically, as opposed to when either class is the top-level/root
+  object of its own file (a different code path through `app.c`,
+  bypassing `HandleBegindata` entirely — the likely explanation for
+  why zip-alone works but zip-embedded doesn't). Whether the "unknown"
+  fallback itself is what's silently losing the inset, or whether
+  `class_NewObject`/`dataobject_Read` fails earlier and more silently
+  for these two classes specifically when embedded, is not yet
+  determined. `table`/`eq`/`annotation` working correctly in the same
+  document is a real clue — worth checking what's different about
+  `zip`'s/`calc`'s registration or `Read` implementation versus those
+  three before assuming a purely `smpltext`-side cause.
+- Needs a dedicated investigation session (not done as part of M2,
+  which is declaration-only work) — start with the stderr warning
+  `simpletext__HandleBegindata` should print if the resync path is
+  actually firing, and `/tmp/t2.ez` as the reproduction case. See
+  memory `project_embedded_inset_load_failure`.
 
 ### ness — bison grammar extension blocker
 
@@ -1833,8 +1895,25 @@ call site and definition tree-wide *before* any mass file editing starts
        with a real IMAP-backed folder list, opening a message,
        composing/sending, folder tree, scrolling, options panel), no
        regressions.)
-     - [ ] `contrib/zip/lib` — tree-wide gate required (tree's
-       highest-defect-density directory).
+     - [x] `contrib/zip/lib` — tree-wide gate required (tree's
+       highest-defect-density directory) (done 2026-07-25; 145
+       census-visible instances (vs. stale estimate 141) plus 111
+       more from the malloc-blind-spot sweep, real total 256 across 24
+       of 41 files — see `m2-ziplib-REPORT.md`. Both gates clean,
+       including the second subtree-local determinism pass at the
+       directory's normal unmodified `-O` level to confirm no new
+       anomaly near the known pre-existing `-O`-only rendering bug
+       (none found). `AUXMODULE` sub-case explicitly ruled out
+       (structurally, zero files define it). Third concrete LP64
+       finding (`zip_Enparse_Stream`/`zip_Deparse_Stream`, both
+       `long`-returning). User-verified with two new, real,
+       pre-existing (confirmed unrelated to M2 via direct diff
+       inspection) findings logged for dedicated investigation: zip/
+       calc insets failing to load when embedded in a mixed-content
+       document (see "Insets to Repair" below), and `ez` horizontal
+       text-block drag locking at position 0 after the first drag
+       (see "Little Annoyances" above). **Bucket 4 complete** — next
+       is the fixed tree-wide checkpoint before `ams/libs/ms`.)
      - [ ] Fixed checkpoint after the last bucket-4 directory: tree-wide
        gate required regardless of which directory precedes it.
   5. [ ] `ams/libs/ms` (892 instances, ~38% of the entire M2 census) —
