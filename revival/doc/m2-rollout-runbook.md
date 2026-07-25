@@ -100,7 +100,23 @@ hold. Cleanest gate-scope data point yet: every function touched
 confirmed statically linked directly into `runapp`. User-verified, no
 regressions; `indexpro.c`'s pre-existing `gets()` call triggers a
 macOS runtime deprecation warning, unrelated, logged as a minor
-finding.
+finding. Bucket 4's fourth directory, `atk/rofftext`, closed
+2026-07-24: 54 census-visible instances (vs. stale estimate 47) plus
+50 more from the now-mandatory malloc-blind-spot sweep, real total
+104 across 9 files — see `claude-history/m2-rofftext-REPORT.md`.
+Second data point (after `atk/text`) where the blind spot is
+comparable in scale to the census-visible count, and the first where
+two individual files had zero census-visible errors yet real
+malloc-family fallout — the unconditional per-file sweep is doing
+real work, not just covering a hypothetical. New taxonomy sub-shape,
+folded into "Fallout taxonomy" below: a same-file forward reference
+whose function already has a real declaration sitting in an
+in-directory header (the defining file just never included its own
+header) should get that `#include`, not a hand-written duplicate
+extern. Structurally the cleanest gate-scope case yet: no
+`LibraryTarget` at all, confirmed zero symbols in `runapp`.
+User-verified (`help`, standalone `rofftext` converter), no
+regressions.
 
 ## What the flag does
 
@@ -352,6 +368,14 @@ writing any declaration by hand.
   prototype block, typically — not a new pattern. Where no local
   precedent exists in a single-file program (`fdbbdf.c`), plain
   untyped K&R style matching the rest of the batch is the default.
+  **Sub-shape found by `atk/rofftext` (2026-07-24)**: check whether
+  the function already has a real, complete declaration sitting in an
+  in-directory header before writing a fresh local extern — the
+  defining file may simply never have included its own header
+  (`roffcmds.c` defines the whole `*_cmd` family and declares them all
+  in its own `roffcmds.h`, already used correctly by a sibling file,
+  but never included the header itself; fix was `#include
+  <roffcmds.h>` in `roffcmds.c`, not a hand-written duplicate).
 - **Possible genuine bug / typo — hard stop, category now EMPTY as of
   rollout point 2.** A called function that doesn't exist anywhere in
   the tree, or is a close misspelling of a real one. The runbook's
@@ -443,7 +467,8 @@ Proposed order, pending wdc's sign-off:
      **Done 2026-07-24**, see `claude-history/m2-metamail-REPORT.md`.
    - `atk/text` — subtree-local gate only. **Done 2026-07-24**, see
      `claude-history/m2-text-REPORT.md`.
-   - `atk/rofftext` — subtree-local gate only.
+   - `atk/rofftext` — subtree-local gate only. **Done 2026-07-24**,
+     see `claude-history/m2-rofftext-REPORT.md`.
    - `atk/table` — subtree-local gate only.
    - `overhead/mail/lib` — subtree-local gate only.
    - `atkams/messages/lib` — **tree-wide gate required** (the

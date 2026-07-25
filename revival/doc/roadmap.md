@@ -1756,7 +1756,21 @@ call site and definition tree-wide *before* any mass file editing starts
        pre-existing `gets()` call triggers a macOS runtime deprecation
        warning, unrelated to this fix, logged as a minor pre-existing
        finding, not fixed here.)
-     - [ ] `atk/rofftext` — subtree-local gate only.
+     - [x] `atk/rofftext` — subtree-local gate only (done 2026-07-24;
+       54 census-visible instances (vs. stale estimate 47) plus 50
+       more from the mandatory malloc-blind-spot sweep, real total 104
+       across 9 files — see `m2-rofftext-REPORT.md`. New taxonomy
+       wrinkle: one same-file forward reference fixed by adding
+       `#include <roffcmds.h>` (the file that defines the whole
+       `*_cmd` family had never included its own already-complete
+       header) rather than a hand-written extern. Structurally the
+       cleanest gate-scope case yet: no `LibraryTarget` at all, only
+       dynamically-loaded `.do` targets, confirmed via `nm -g` to have
+       zero symbols in `runapp`. User-verified via `help` (roff
+       rendering correct) and the standalone `rofftext` converter
+       (well-formed `.ez` datastream output, brace-matched throughout
+       — a good correctness signal for the `BeginStyle`/`EndStyle`/
+       `CloseStyle` style-stack fixes specifically), no regressions.)
      - [ ] `atk/table` — subtree-local gate only.
      - [ ] `overhead/mail/lib` — subtree-local gate only.
      - [ ] `atkams/messages/lib` — tree-wide gate required (the
