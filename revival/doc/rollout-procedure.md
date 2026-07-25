@@ -60,12 +60,25 @@ can't grant extra trust to suppress the dialog) — there is no config
 lever left, only a command-shape one:
 
 - **Issue build steps as separate tool calls, not chained with `;` or
-  `&&`.** `make clean`, `make depend`, `make -k install`, `grep -c
-  "error:" ...`, `grep -n "error:" ...` each individually match an
-  allow rule and won't prompt *if issued as separate Bash calls*.
-  Chaining them into one `cd DIR && make clean && make depend && ...`
-  line turns all of them into a single unmatched string. More tool
-  calls in the transcript, but zero prompts, is the better trade here.
+  `&&` — and that includes `cd`.** `make clean`, `make depend`, `make
+  -k install`, `grep -c "error:" ...`, `grep -n "error:" ...` each
+  individually match an allow rule and won't prompt *if issued as
+  separate Bash calls*. Chaining them into one `cd DIR && make clean
+  && make depend && ...` line turns all of them into a single
+  unmatched string. **Correction (2026-07-24, `overhead/mail/
+  metamail/metamail` session):** even a bare two-part `cd DIR && make
+  -k install ...` still prompts, every time, despite both halves
+  individually matching an allow rule — the session's own transcript
+  showed this exact shape repeated ~10 times, all prompted. The Bash
+  tool's working directory persists across separate calls (confirmed
+  2026-07-24: a bare `cd` call followed by an unrelated later call
+  with no `cd` in it landed in the same directory) — so `cd DIR` into
+  its own call, once per directory, then issue every subsequent
+  command with no `cd` prefix at all, relying on the persisted cwd.
+  That leaves each later call as a plain `make -k install ...`/`grep
+  ...` string with nothing chained in front of it, which matches its
+  allow rule directly. More tool calls in the transcript, but zero
+  prompts, is the better trade here.
 - **Prefer the Read/Grep/Glob tools over shell `grep`/`sed -n`/`cat`
   for census and file inspection, if they're available in your
   session.** They're a different permission class from Bash and don't
