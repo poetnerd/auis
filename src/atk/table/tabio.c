@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 /* tabio.c - input/output for table */
 
 #include <class.h>
+#include <stdlib.h>
 
 #include <dataobj.ih>
 
@@ -46,6 +47,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #define AUXMODULE
 #include <table.eh>
+
+/* defined in table.c */
+extern int DestroyCell();
 
 static boolean debug=FALSE;
 

@@ -39,6 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #include <andrewos.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <ctype.h>
@@ -60,6 +61,15 @@ static int trydate();
 extern char * malloc();
 #endif
 extern double pow();
+
+/* defined in table.c */
+extern int MakeBogus();
+extern int MakeStandard();
+extern int rcref();
+
+/* defined in funs.c */
+extern int enterfuns();
+extern int idate();
 
 #define CASEBIT 040
 

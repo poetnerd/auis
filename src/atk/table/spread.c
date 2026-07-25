@@ -34,8 +34,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
  *        For full copyright information see:'andrew/config/COPYRITE'     *
 \* ********************************************************************** */
 
-#include <andrewos.h> 
+#include <andrewos.h>
 #include <class.h>
+#include <stdlib.h>
 #include <view.ih>
 #include <graphic.ih>
 #include <cursor.ih>
@@ -50,6 +51,23 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 #include <table.ih>
 
 #include <spread.eh>
+
+/* defined in keyboard.c */
+extern void k_DefineKeys();
+
+/* defined in menu.c */
+extern int DefineMenus();
+
+/* defined in hit.c */
+extern int ResetCurrentCell();
+
+/* defined in print.c */
+extern int WriteTroff();
+
+/* defined in update.c */
+extern int spread_update_FullUpdate();
+extern int spread_PartialUpdate();
+extern int spread_WantHighlight();
 
 /* initialize entire class */
 static char debug=0;

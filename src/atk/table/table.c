@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #include <andrewos.h>
 #include <class.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <dataobj.ih>
 #include <view.ih>
@@ -49,9 +50,22 @@ static int CreateCell();
 static int movetr();
 static char * myrealloc();
 
+/* not static: also called from tabio.c/eval.c/funs.c */
+int DestroyCell();
+int MakeBogus();
+int MakeStandard();
+
 extern double atof();
 
 struct table * ReadASCII ();
+
+/* defined in tabio.c */
+extern void WriteASCII();
+extern void WriteCell();
+extern void ReadCell();
+
+/* defined in eval.c */
+extern void eval();
 
 /* globals for entire package */
 

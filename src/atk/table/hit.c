@@ -36,6 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 
 #include <class.h>
+#include <stdlib.h>
 
 #include <graphic.ih>
 #include <view.ih>
@@ -57,7 +58,20 @@ static int moverowdown();
 static int moverowmove();
 static int moverowup();
 
+/* not static: also called from menu.c/keyboard.c */
+int CopyChunk();
+int SetCurrentCell();
+int CompareChunk();
+int extendCurrentCell();
+
 extern struct view *spread_FindSubview();
+
+/* defined in update.c */
+extern int spread_InvertRectangle();
+extern int spread_ClearSelectionBox();
+
+/* defined in keyboard.c */
+extern void k_SetMessageState();
 
 static boolean debug=FALSE;
 

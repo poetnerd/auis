@@ -33,6 +33,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 extern char * fcvt();
 
+#include <string.h>
+
 #include <class.h>
 
 #include <graphic.ih>
@@ -56,7 +58,21 @@ static int updateEdges();
 static int updateString();
 static int updateValue();
 
+/* not static: also called from spread.c */
+int spread_PartialUpdate();
+
 extern struct view *spread_FindSubview();
+
+/* spread__WantLimitedHighlighting is a class-internal (double-underscore)
+ * method; spread.eh only declares it outside AUXMODULE, so this file
+ * (an AUXMODULE consumer) needs its own declaration to reach the real
+ * definition in spread.c, which the spread_WantLimitedHighlighting()
+ * macro (spread.eh) calls directly. */
+extern boolean spread__WantLimitedHighlighting();
+
+/* defined in spread.c */
+extern void InitializeGraphic();
+extern int ComputeRowSizes();
 
 static boolean debug=0;
 

@@ -84,6 +84,17 @@ static void vlookup();
 extern int daysinmonth[];
 extern char *fcvt();
 
+/* defined in table.c */
+extern int MakeBogus();
+extern int MakeStandard();
+extern int rangeLimit();
+extern int rcref();
+
+/* defined in eval.c */
+extern void eval();
+extern int syntaxError();
+extern void enterfun();
+
 int isrange (x)
 extended_double *x;
 {

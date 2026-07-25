@@ -30,6 +30,9 @@
 DOBJS = spread.do table.do
 IHFILES = spread.ih table.ih
 
+/* M2 ANSI sweep: catch implicit function declarations (revival/doc/roadmap.md, M2) */
+COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Werror=implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
+
 NormalObjectRule()
 NormalATKRule()
 DynamicMultiObject(spread.do, spread.o print.o menu.o update.o hit.o keyboard.o, ${BASEDIR}/lib/atk/libbasics.a $(UTILLIB), $(MATHLIB))

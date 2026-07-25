@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 /* keyboard.c - keyboard input for table */
 
 #include <class.h>
+#include <stdlib.h>
 
 #include <bind.ih>
 #include <proctbl.ih>
@@ -47,6 +48,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #define AUXMODULE
 #include <spread.eh>
+
+/* defined in hit.c */
+extern int CopyChunk();
+extern int SetCurrentCell();
+extern int TellFormula();
+extern int GetFormula();
 
 /* Cancel old input and set new message buffer state */
 

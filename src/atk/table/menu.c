@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 /* menu.c - menu operations for table */
 
 #include <class.h>
+#include <string.h>
 FILE * popen ();
 
 #include <im.ih>
@@ -49,6 +50,20 @@ FILE * popen ();
 #include <spread.eh>
 
 extern struct view *spread_FindSubview();
+
+/* defined in keyboard.c */
+extern int k_AskUser();
+extern int k_WantToDiscard();
+extern void k_TellUser();
+extern int AddRows();
+extern int AddCols();
+
+/* defined in hit.c */
+extern int SetCurrentCell();
+extern int CopyChunk();
+
+/* defined in print.c */
+extern int WriteTroff();
 
 void m_rename(V, ch)
 register struct spread * V;
