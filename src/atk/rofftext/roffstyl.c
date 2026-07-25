@@ -44,6 +44,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #include <hash.ih>
 #include <rofftext.ih>
 
+/* forward references: both defined later in this file */
+extern int BeginStyle(), CloseStyle();
+
 /*
  *  fixed by cch@mtgzx.att.com 1/10/90
  *  program calling environment_InsertStyle with union environmentcontents 

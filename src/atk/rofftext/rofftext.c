@@ -52,6 +52,7 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ro
 
 #include <mmtext.ih>
 #include <mantext.ih>
+#include <stdlib.h>
 
 #include <rofftext.eh>
 /*#include "rofftext.h"*/
@@ -77,7 +78,16 @@ static int setfont();
 static int special();
 static int tclose();
 
-static int SCALE[8] = 
+/* forward references: get (this file, defined below), and cross-file
+   functions with no declaring header (roffstyl.c, num.c, roffchrs.c,
+   roffcmds.c) */
+extern int get();
+extern int EndStyle(), BeginStyle();
+extern int EvalString();
+extern int InitChars();
+extern int InsertTbl();
+
+static int SCALE[8] =
 {    1, /* u, basic unit */
    432, /* i, inch */
    170, /* c, centimeter */

@@ -30,6 +30,9 @@
 DOBJS = rofftext.do rofftxta.do mmtext.do mantext.do
 IHFILES = rofftext.ih rofftxta.ih mmtext.ih mantext.ih
 
+/* M2 ANSI sweep: catch implicit function declarations (revival/doc/roadmap.md, M2) */
+COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Werror=implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
+
 NormalObjectRule()
 NormalATKRule()
 #undef none

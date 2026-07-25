@@ -39,6 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 
 #include <mark.ih>
 #include <rofftext.ih>
+#include <stdlib.h>
 #include <mantext.eh>
 
 #define INITIAL 100

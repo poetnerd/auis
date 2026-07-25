@@ -47,10 +47,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #include <mmtext.ih>
 #include <link.ih>
 #include <ctype.h>
+#include <stdlib.h>
 #include <roffstyl.h>
 #include <rofftext.ih>
 #include <rofftext.h>
 #include <roffutil.h>
+#include <roffcmds.h>
+
+/* cross-file functions with no declaring header (roffutil.c, num.c,
+   roffstyl.c) */
+extern int FreeBuf();
+extern int EvalString();
+extern int Set_BOL();
+extern int BeginStyle(), EndStyle();
 
 /* define or re-define string
   * must parse its own arguments

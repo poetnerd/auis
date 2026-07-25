@@ -46,6 +46,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #include <mark.ih>
 #include <rofftext.ih>
 #include <text.ih>
+#include <string.h>
+#include <stdlib.h>
 
 #include <mmtext.eh>
 

@@ -41,6 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #include <class.h>
 #include <rofftext.ih>
 #include <hash.ih>
+#include <string.h>
 
 #define Mangle(self,name,def) hash_Store(self->SpecialChars,name,StrDup(def))
 

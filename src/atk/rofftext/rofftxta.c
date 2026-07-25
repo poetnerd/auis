@@ -44,6 +44,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #include <text.ih>
 #include <app.ih>
 #include <rofftext.ih>
+#include <stdlib.h>
 #include <rofftxta.eh>
 
 boolean rofftextapp__InitializeObject(classID,self)
