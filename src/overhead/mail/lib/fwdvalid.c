@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <andrewos.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <andyenv.h>
 #include <ctype.h>
 #include <pwd.h>
@@ -54,6 +55,13 @@ static char *wp_domain = NULL;
 #endif /* WHITEPAGES_ENV */
 
 extern PARSED_ADDRESS *SingleAddress();
+
+/* Cross-file, no header anywhere in the tree declares these. */
+extern int AddHost();			/* parseadd.c */
+extern void la_FreeMD();		/* locnamex.c */
+extern int UnparseAddressList();	/* parseadd.c */
+extern int ParseAddressList();		/* parseadd.c */
+extern int FreeAddressList();		/* parseadd.c */
 
 char fwdvalid_msgbuf[2000] = "";
 

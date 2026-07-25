@@ -56,6 +56,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <mail.h>	/* for ITC libmail */
 static int CreateAndInitFile();
 
+/* No header anywhere in the tree declares these. fdplumb.h renames
+   close()/fclose() via #define but only declares 6 of its 16 dbg_*
+   wrapper names -- dbg_close/dbg_fclose are not among them. */
+extern int CheckAMSConfiguration();	/* mailconf.c */
+extern int dbg_close();		/* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose();		/* overhead/util/lib/fdplumb.c */
+extern int IsOnVice();			/* overhead/util/lib/vclose.c */
+extern int GetRetPath();		/* authret.c */
+extern int GetAuthInfo();		/* authret.c */
+
 #ifdef AFS_ENV
 /* AFS-specific error codes */
 #include <afs/errors.h>

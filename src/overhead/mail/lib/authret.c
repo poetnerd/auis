@@ -50,10 +50,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 extern int errno;
 
-#ifndef _IBMR2
-extern char *malloc();
-extern char *realloc();
-#endif /* _IBMR2 */
+/* No header anywhere in the tree declares this (svcconf.h only declares
+   the cell-service globals such as AMS_ViceIsRunning, not the function
+   itself). */
+extern int CheckServiceConfiguration();	/* overhead/util/lib/svcconf.c */
+
+/* Note: this file never actually calls malloc()/realloc() -- removed a
+   dead #ifndef _IBMR2 extern char *malloc(); extern char *realloc();
+   pair that was producing an "incompatible redeclaration of library
+   function" warning against clang's builtin knowledge of their real
+   signatures, unrelated to any call site in this file. */
 
 
 int GetAuthInfo(FName, pBuff)

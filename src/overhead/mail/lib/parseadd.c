@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <andrewos.h>
 #include <parseadd.h>
 #include "parsey.h"
@@ -60,6 +61,29 @@ static int PrintLocalPart();
 #define NIL	0
 
 extern char *StrCopy();
+
+/* Same-file forward references (defined later in this file; not static --
+   several are also called from sibling files in this directory). */
+extern int UnparseAddressList();
+extern int PrintSimpleAddress();
+extern int RemHost();
+extern int FreeAddressList();
+extern int RemAddress();
+
+/* Cross-file, no header anywhere in the tree declares these. */
+extern int StrFree();		/* parseutl.c */
+extern int NoStorage();		/* parseutl.c */
+extern ADDRESS_HOST *AppendHosts();	/* parseutl.c */
+extern void la_FreeMD();	/* locnamex.c */
+
+/* Generated lexer (parsel.flex -> parsel.c) and its support routines --
+   no header declares any of these; parsey_New()'s locallexer() already
+   has a function-local extern for two sibling globals from the same
+   generated file, this extends the same untyped-K&R treatment to the
+   entry points themselves. */
+extern int mail_parseyylex();
+extern void SetNextLine();
+extern int pareset_lexer();
 
 
 static int locallexer(lexerrock, lval)

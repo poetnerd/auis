@@ -47,10 +47,17 @@ char *inet_ntoa();
 #include <arpa/inet.h>
 #endif /* hpux */
 #include <ctype.h>
+#include <stdlib.h>
 #include <util.h>
 #include "parseadd.h"
 #include "mailconf.h"
 #include "mail.h"
+
+/* No header anywhere in the tree declares these. */
+extern int CheckAMSConfiguration();	/* mailconf.c */
+extern void la_FreeMD();		/* locnamex.c */
+extern int FreeHost();			/* parseadd.c */
+extern int Unquote();			/* parseadd.c */
 
 static struct MailDom mdRoot = {NULL, NULL, 1, NULL, NULL};
 static char ThisHostName[250] = "";

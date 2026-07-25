@@ -28,6 +28,7 @@
 static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead/mail/lib/RCS/addrambig.c,v 1.3 1992/12/15 21:04:17 rr2b R6tape $";
 #endif
 #include <andrewos.h>
+#include <stdlib.h>
 
 #ifdef WHITEPAGES_ENV
 #include <wp.h>

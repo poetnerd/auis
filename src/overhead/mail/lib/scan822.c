@@ -35,11 +35,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <andrewos.h> /* strings.h */
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
-
-#ifndef _IBMR2
-extern char *malloc(), *realloc();
-#endif /* _IBMR2 */
 
 #include <util.h>
 #include "mail.h"

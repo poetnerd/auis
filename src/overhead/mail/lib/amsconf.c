@@ -40,9 +40,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <sys/param.h>
 #include <errprntf.h>
+#include <util.h>
 
 #define CALLMEMADAM "__AMS__EXP__"
 #define LOOKFOR "AMS-Binaries"
+
+/* No header anywhere in the tree declares these. */
+extern int CheckAMSConfiguration();	/* mailconf.c */
+extern int errprintf();		/* errprntf.h only defines the ERR_*
+					   macros, never the function itself;
+					   the only tree-wide precedent for
+					   this declaration is ams.h:170 */
 
 amsconfig(argc, argv, name)
 int argc;

@@ -51,8 +51,14 @@ Includes old routines from
 
 #include <mailconf.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <andrewos.h> /* sys/time.h */
 #include <netinet/in.h>	/* Get the definition for ntohl. */
+#include <util.h>	/* getaddr() */
+
+/* No header anywhere in the tree declares this. */
+extern int CheckAMSConfiguration();	/* mailconf.c */
+extern int osi_GetTimes();		/* overhead/util/lib/times.c */
 
 static char Basis[65] =
 	"0123456789:=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";

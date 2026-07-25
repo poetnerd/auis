@@ -39,6 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h> /* sys/types.h strings.h sys/file.h */
 #include <andyenv.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <util.h>
 #include <mailconf.h>
 #include <mail.h>
@@ -47,10 +48,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 extern int errno;
 
-#ifndef _IBMR2
-extern char *malloc();
-extern char *realloc();
-#endif /* _IBMR2 */
+/* No header anywhere in the tree declares this. */
+extern int CheckAMSConfiguration();	/* mailconf.c */
+
+/* This file's own malloc()/free() calls (malloc-family blind-spot sweep --
+   none were census-visible since a stale, now-removed
+   #ifndef _IBMR2 extern char *malloc(); extern char *realloc(); pair
+   already "declared" malloc, and free() is a clang builtin that never
+   triggers -Wimplicit-function-declaration at all) are covered by
+   <stdlib.h> above. */
 
 
 /* Private structure to retain information about each domain asked for. */

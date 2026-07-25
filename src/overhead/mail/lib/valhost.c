@@ -46,6 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <netinet/in.h>
 #include <sys/stat.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 #ifdef RESOLVER_ENV
 #define BIND_8_COMPAT
 #include <arpa/nameser.h>
@@ -54,6 +55,11 @@ extern int h_errno;
 #endif /* RESOLVER_ENV */
 
 extern int errno;
+
+/* No header anywhere in the tree declares these. */
+extern int cptres_search();	/* rsearch.c */
+extern int LCappend();		/* overhead/util/lib/lcappend.c */
+extern int CheckAMSConfiguration();	/* mailconf.c */
 
 #ifdef RESOLVER_ENV
 typedef union {

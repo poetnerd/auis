@@ -39,6 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h> /* sys/types.h sys/file.h */
 #include <andyenv.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <system.h>
 #include <sys/stat.h>
@@ -53,6 +54,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 extern char *AndrewDir();
 extern char *LocalDir();
+
+/* No header anywhere in the tree declares these. */
+extern int LCappend();			/* overhead/util/lib/lcappend.c */
+extern int CheckServiceConfiguration();	/* overhead/util/lib/svcconf.c */
 
 extern int errno;
 

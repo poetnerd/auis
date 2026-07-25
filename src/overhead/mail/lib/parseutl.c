@@ -37,13 +37,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "parseadd.h"
 
 #define NIL	0
-
-#ifndef _IBMR2
-extern char *malloc();
-#endif /* _IBMR2 */
 
 NoStorage(proc)
     char *proc;

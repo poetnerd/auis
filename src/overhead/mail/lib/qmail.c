@@ -154,6 +154,15 @@ These two routines are just like tryvicequeues_ext except that they implement tw
 
 extern int errno;
 extern char *UnixError(), *arpadate();
+
+/* No header anywhere in the tree declares these. fdplumb.h renames
+   closedir()/fclose() via #define but only declares 6 of its 16 dbg_*
+   wrapper names -- dbg_closedir/dbg_fclose are not among them. */
+extern int CheckAMSConfiguration();	/* mailconf.c */
+extern int GetAuthInfo();		/* authret.c */
+extern int LCappend();			/* overhead/util/lib/lcappend.c */
+extern void dbg_closedir();		/* overhead/util/lib/fdplumb6.c */
+extern int dbg_fclose();		/* overhead/util/lib/fdplumb.c */
 static int writesf();
 static int writeqf();
 static int writegf();

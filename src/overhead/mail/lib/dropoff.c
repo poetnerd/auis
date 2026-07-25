@@ -110,6 +110,7 @@ Returns an integer (one of the DT_xxx codes defined in dropoff.h) that says how 
 #include <andrewos.h>
 #include <fdplumb.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <pwd.h>
 #include <errno.h>
 #ifndef MAXPATHLEN
@@ -157,6 +158,12 @@ extern char *UnixError();
 extern int smtp_dropoff();
 
 extern int errno;
+
+/* No header anywhere in the tree declares these. fdplumb.h renames
+   close() to dbg_close() via #define but only declares 6 of the 16
+   dbg_* wrapper names it defines -- dbg_close is not one of them. */
+extern int CheckAMSConfiguration();	/* mailconf.c */
+extern int dbg_close();		/* overhead/util/lib/fdplumb.c */
 
 typedef unsigned char bool;
 

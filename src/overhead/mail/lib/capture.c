@@ -41,6 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <ctype.h>
 #include <util.h>
 #include <mailconf.h>
+#include <mail.h>
 
 void Capture(Hdr)
 char *Hdr;

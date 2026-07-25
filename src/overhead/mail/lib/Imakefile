@@ -26,6 +26,9 @@
 * $
 */
 
+/* M2 ANSI sweep: catch implicit function declarations (revival/doc/roadmap.md, M2) */
+COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Werror=implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
+
 OBJS = amsauth.o amsconf.o \
 	arpadate.o authret.o capture.o canon.o \
 	ckamsdel.o dropoff.o fwdvalid.o genid.o \

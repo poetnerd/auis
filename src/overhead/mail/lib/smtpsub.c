@@ -62,6 +62,11 @@
 
 extern int errno;
 
+/* Cross-file, no header anywhere in the tree declares these. */
+extern int ParseAddressList();		/* parseadd.c */
+extern int UnparseOneAddress();	/* parseadd.c */
+extern int FreeAddressList();		/* parseadd.c */
+
 /* ---- tiny protocol trace, off unless AMS_SMTP_TRACE is set ---- */
 
 static int smtp_tracing = -1;
