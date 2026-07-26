@@ -42,6 +42,7 @@ Options:
 """
 
 import argparse
+import filecmp
 import os
 import re
 import shutil
@@ -407,24 +408,33 @@ def process(path, dbdir, args):
             print(f"    skipped {fn}: {why}")
 
         total = len(rep.methods) + len(rep.classprocs) + len(rep.helpers)
+
+        # run_fix_tools() (fix-static-methods / fix-missing-static-decl) can
+        # modify the file on disk even when convert_file finds nothing left
+        # to convert. That's still a real on-disk change and needs the same
+        # compile-gate-and-restore guarantee as any other change -- don't
+        # take the early-return "nothing happened" path in that case.
+        fix_tools_changed = (not args.dry_run) and not filecmp.cmp(path, backup, shallow=False)
+
         if new_text is None:
-            print("    no K&R definitions converted")
-            if args.dry_run or not os.path.exists(backup):
-                pass
-            os.unlink(backup)
-            return True, rep
+            if not fix_tools_changed:
+                print("    no K&R definitions converted")
+                os.unlink(backup)
+                return True, rep
+            print("    no K&R definitions converted (fix-static-methods/"
+                  "fix-missing-static-decl modified the file -- gating anyway)")
+        else:
+            if args.dry_run:
+                print(f"    would convert: {len(rep.methods)} methods, "
+                      f"{len(rep.classprocs)} classprocs, {len(rep.helpers)} helpers")
+                shutil.copyfile(backup, path)   # undo fix-tools edits too
+                os.unlink(backup)
+                return True, rep
 
-        if args.dry_run:
-            print(f"    would convert: {len(rep.methods)} methods, "
+            with open(path, 'w') as f:
+                f.write(new_text)
+            print(f"    converted: {len(rep.methods)} methods, "
                   f"{len(rep.classprocs)} classprocs, {len(rep.helpers)} helpers")
-            shutil.copyfile(backup, path)   # undo fix-tools edits too
-            os.unlink(backup)
-            return True, rep
-
-        with open(path, 'w') as f:
-            f.write(new_text)
-        print(f"    converted: {len(rep.methods)} methods, "
-              f"{len(rep.classprocs)} classprocs, {len(rep.helpers)} helpers")
 
         if args.no_compile:
             ok = True
