@@ -40,12 +40,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <string.h>
 #include "tiffioP.h"
+static int JPEGPrintCTable();
+static int JPEGPrintQTable();
 
 #ifdef JPEG_SUPPORT
-static
-JPEGPrintQTable(fd, tab)
-	FILE *fd;
-	u_char tab[64];
+static JPEGPrintQTable(FILE *fd, u_char tab[64])
 {
 	int i, j;
 	char *sep;
@@ -61,10 +60,7 @@ JPEGPrintQTable(fd, tab)
 	}
 }
 
-static
-JPEGPrintCTable(fd, tab)
-	FILE *fd;
-	u_char *tab;
+static JPEGPrintCTable(FILE *fd, u_char *tab)
 {
 	int i, n, count;
 	char *sep;
@@ -121,11 +117,7 @@ static const char *orientNames[] = {
  * Print the contents of the current directory
  * to the specified stdio file stream.
  */
-void
-TIFFPrintDirectory(tif, fd, flags)
-	TIFF *tif;
-	FILE *fd;
-	long flags;
+void TIFFPrintDirectory(TIFF *tif, FILE *fd, long flags)
 {
 	register TIFFDirectory *td;
 	char *sep;

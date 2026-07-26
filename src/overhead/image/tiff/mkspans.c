@@ -9,9 +9,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 
 
-dumparray(name, runs)
-	char *name;
-	unsigned char runs[256];
+int dumparray(char *name, unsigned char runs[256])
 {
 	register int i;
 	register char *sep;

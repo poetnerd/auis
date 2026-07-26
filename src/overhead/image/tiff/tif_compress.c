@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * Compression Scheme Configuration Support.
  */
 #include "tiffioP.h"
+static int TIFFNoEncode();
 
 #if USE_PROTOTYPES
 extern	int TIFFInitDumpMode(TIFF*);
@@ -114,9 +115,7 @@ static const struct cscheme CompressionSchemes[] = {
 };
 #define	NSCHEMES (sizeof (CompressionSchemes) / sizeof (CompressionSchemes[0]))
 
-static struct cscheme const *
-findScheme(scheme)
-	int scheme;
+static struct cscheme const * findScheme(int scheme)
 {
 	register struct cscheme const *c;
 
@@ -126,10 +125,7 @@ findScheme(scheme)
 	return ((struct cscheme const *)0);
 }
 
-static int
-TIFFNoEncode(tif, method)
-	TIFF *tif;
-	char *method;
+static int TIFFNoEncode(TIFF *tif, char *method)
 {
 	struct cscheme const *c = findScheme(tif->tif_dir.td_compression);
 	TIFFError(tif->tif_name,
@@ -137,40 +133,22 @@ TIFFNoEncode(tif, method)
 	return (-1);
 }
 
-int
-TIFFNoRowEncode(tif, pp, cc, s)
-	TIFF *tif;
-	u_char *pp;
-	int cc;
-	u_int s;
+int TIFFNoRowEncode(TIFF *tif, u_char *pp, int cc, u_int s)
 {
 	return (TIFFNoEncode(tif, "scanline"));
 }
 
-int
-TIFFNoStripEncode(tif, pp, cc, s)
-	TIFF *tif;
-	u_char *pp;
-	int cc;
-	u_int s;
+int TIFFNoStripEncode(TIFF *tif, u_char *pp, int cc, u_int s)
 {
 	return (TIFFNoEncode(tif, "strip"));
 }
 
-int
-TIFFNoTileEncode(tif, pp, cc, s)
-	TIFF *tif;
-	u_char *pp;
-	int cc;
-	u_int s;
+int TIFFNoTileEncode(TIFF *tif, u_char *pp, int cc, u_int s)
 {
 	return (TIFFNoEncode(tif, "tile"));
 }
 
-int
-TIFFNoDecode(tif, method)
-	TIFF *tif;
-	char *method;
+int TIFFNoDecode(TIFF *tif, char *method)
 {
 	struct cscheme const *c = findScheme(tif->tif_dir.td_compression);
 	TIFFError(tif->tif_name,
@@ -178,39 +156,22 @@ TIFFNoDecode(tif, method)
 	return (-1);
 }
 
-int
-TIFFNoRowDecode(tif, pp, cc, s)
-	TIFF *tif;
-	u_char *pp;
-	int cc;
-	u_int s;
+int TIFFNoRowDecode(TIFF *tif, u_char *pp, int cc, u_int s)
 {
 	return (TIFFNoDecode(tif, "scanline"));
 }
 
-int
-TIFFNoStripDecode(tif, pp, cc, s)
-	TIFF *tif;
-	u_char *pp;
-	int cc;
-	u_int s;
+int TIFFNoStripDecode(TIFF *tif, u_char *pp, int cc, u_int s)
 {
 	return (TIFFNoDecode(tif, "strip"));
 }
 
-int
-TIFFNoTileDecode(tif, pp, cc, s)
-	TIFF *tif;
-	u_char *pp;
-	int cc;
-	u_int s;
+int TIFFNoTileDecode(TIFF *tif, u_char *pp, int cc, u_int s)
 {
 	return (TIFFNoDecode(tif, "tile"));
 }
 
-TIFFSetCompressionScheme(tif, scheme)
-	TIFF *tif;
-	int scheme;
+int TIFFSetCompressionScheme(TIFF *tif, int scheme)
 {
 	struct cscheme const *c = findScheme(scheme);
 

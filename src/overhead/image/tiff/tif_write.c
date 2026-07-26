@@ -40,6 +40,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "tiffioP.h"
 #include <stdio.h>
 #include <assert.h>
+static int TIFFAppendToStrip();
+static int TIFFBufferSetup();
+static int TIFFGrowStrips();
+static int TIFFSetupStrips();
+static int TIFFWriteCheck();
 
 #define	STRIPINCR	20		/* expansion factor on strip array */
 
@@ -56,10 +61,7 @@ static	TIFFAppendToStrip();
 #endif
 
 /*VARARGS3*/
-TIFFWriteScanline(tif, buf, row, sample)
-	register TIFF *tif;
-	u_char *buf;
-	u_int row, sample;
+int TIFFWriteScanline(TIFF *tif, u_char *buf, u_int row, u_int sample)
 {
 	static char module[] = "TIFFWriteScanline";
 	register TIFFDirectory *td;
@@ -179,11 +181,7 @@ TIFFWriteScanline(tif, buf, row, sample)
  *     interface does not support automatically growing
  *     the image on each write (as TIFFWriteScanline does).
  */
-TIFFWriteEncodedStrip(tif, strip, data, cc)
-	TIFF *tif;
-	u_int strip;
-	u_char *data;
-	u_int cc;
+int TIFFWriteEncodedStrip(TIFF *tif, u_int strip, u_char *data, u_int cc)
 {
 	static char module[] = "TIFFWriteEncodedStrip";
 	TIFFDirectory *td = &tif->tif_dir;
@@ -234,11 +232,7 @@ TIFFWriteEncodedStrip(tif, strip, data, cc)
  *     interface does not support automatically growing
  *     the image on each write (as TIFFWriteScanline does).
  */
-TIFFWriteRawStrip(tif, strip, data, cc)
-	TIFF *tif;
-	u_int strip;
-	u_char *data;
-	u_int cc;
+int TIFFWriteRawStrip(TIFF *tif, u_int strip, u_char *data, u_int cc)
 {
 	static char module[] = "TIFFWriteRawStrip";
 
@@ -256,11 +250,7 @@ TIFFWriteRawStrip(tif, strip, data, cc)
  * Write and compress a tile of data.  The
  * tile is selected by the (x,y,z,s) coordinates.
  */
-TIFFWriteTile(tif, buf, x, y, z, s)
-	TIFF *tif;
-	u_char *buf;
-	u_long x, y, z;
-	u_int s;
+int TIFFWriteTile(TIFF *tif, u_char *buf, u_long x, u_long y, u_long z, u_int s)
 {
 	if (!TIFFCheckTile(tif, x, y, z, s))
 		return (-1);
@@ -286,11 +276,7 @@ TIFFWriteTile(tif, buf, x, y, z, s)
  *     interface does not support automatically growing
  *     the image on each write (as TIFFWriteScanline does).
  */
-TIFFWriteEncodedTile(tif, tile, data, cc)
-	TIFF *tif;
-	u_int tile;
-	u_char *data;
-	u_int cc;
+int TIFFWriteEncodedTile(TIFF *tif, u_int tile, u_char *data, u_int cc)
 {
 	static char module[] = "TIFFWriteEncodedTile";
 	TIFFDirectory *td;
@@ -357,11 +343,7 @@ TIFFWriteEncodedTile(tif, tile, data, cc)
  *     interface does not support automatically growing
  *     the image on each write (as TIFFWriteScanline does).
  */
-TIFFWriteRawTile(tif, tile, data, cc)
-	TIFF *tif;
-	u_int tile;
-	u_char *data;
-	u_int cc;
+int TIFFWriteRawTile(TIFF *tif, u_int tile, u_char *data, u_int cc)
 {
 	static char module[] = "TIFFWriteRawTile";
 
@@ -375,9 +357,7 @@ TIFFWriteRawTile(tif, tile, data, cc)
 	return (TIFFAppendToStrip(tif, tile, data, cc) ? cc : -1);
 }
 
-static
-TIFFSetupStrips(tif)
-	TIFF *tif;
+static TIFFSetupStrips(TIFF *tif)
 {
 #define	isUnspecified(td, v) \
     (td->v == 0xffffffff || (td)->td_imagelength == 0)
@@ -416,11 +396,7 @@ TIFFSetupStrips(tif)
  * we also "freeze" the state of the directory so
  * that important information is not changed.
  */
-static
-TIFFWriteCheck(tif, tiles, module)
-	register TIFF *tif;
-	int tiles;
-	char module[];
+static TIFFWriteCheck(TIFF *tif, int tiles, char module[])
 {
 	if (tif->tif_mode == O_RDONLY) {
 		TIFFError(module, "%s: File not open for writing",
@@ -471,10 +447,7 @@ TIFFWriteCheck(tif, tiles, module)
 /*
  * Setup the raw data buffer used for encoding.
  */
-static
-TIFFBufferSetup(tif, module)
-	register TIFF *tif;
-	char module[];
+static TIFFBufferSetup(TIFF *tif, char module[])
 {
 	int size;
 
@@ -502,11 +475,7 @@ TIFFBufferSetup(tif, module)
 /*
  * Grow the strip data structures by delta strips.
  */
-static
-TIFFGrowStrips(tif, delta, module)
-	TIFF *tif;
-	int delta;
-	char module[];
+static TIFFGrowStrips(TIFF *tif, int delta, char module[])
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
@@ -533,12 +502,7 @@ TIFFGrowStrips(tif, delta, module)
  * NB: We don't check that there's space in the
  *     file (i.e. that strips do not overlap).
  */
-static
-TIFFAppendToStrip(tif, strip, data, cc)
-	TIFF *tif;
-	u_int strip;
-	u_char *data;
-	u_int cc;
+static TIFFAppendToStrip(TIFF *tif, u_int strip, u_char *data, u_int cc)
 {
 	TIFFDirectory *td = &tif->tif_dir;
 	static char module[] = "TIFFAppendToStrip";
@@ -574,8 +538,7 @@ TIFFAppendToStrip(tif, strip, data, cc)
  * called by ``encodestrip routines'' w/o concern
  * for infinite recursion.
  */
-TIFFFlushData1(tif)
-	register TIFF *tif;
+int TIFFFlushData1(TIFF *tif)
 {
 	if (tif->tif_rawcc > 0) {
 		if (tif->tif_dir.td_fillorder != tif->tif_fillorder &&

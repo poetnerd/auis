@@ -45,6 +45,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "t4.h"
 #define	G3STATES
 #include "g3states.h"
+static void bset();
+static int decode_black_run();
+static int decode_uncomp_code();
+static int decode_white_run();
+static int nextbit();
 
 typedef struct {
 	Fax3BaseState b;
@@ -94,8 +99,7 @@ static	void putspan();
 extern	int TIFFFlushData1();
 #endif
 
-TIFFInitCCITTFax3(tif)
-	TIFF *tif;
+int TIFFInitCCITTFax3(TIFF *tif)
 {
 	tif->tif_predecode = Fax3PreDecode;
 	tif->tif_decoderow = Fax3Decode;
@@ -113,9 +117,7 @@ TIFFInitCCITTFax3(tif)
 	return (1);
 }
 
-TIFFModeCCITTFax3(tif, isClassF)
-	TIFF *tif;
-	int isClassF;
+int TIFFModeCCITTFax3(TIFF *tif, int isClassF)
 {
 	if (isClassF)
 		tif->tif_options |= FAX3_CLASSF;
@@ -147,10 +149,7 @@ static u_char bitMask[8] =
  * an EOL because we can't assume much of anything
  * about our state (e.g. bit position).
  */
-static void
-skiptoeol(tif, len)
-	TIFF *tif;
-	int len;
+static void skiptoeol(TIFF *tif, int len)
 {
 	Fax3DecodeState *sp = (Fax3DecodeState *)tif->tif_data;
 	register int bit = sp->b.bit;
@@ -197,9 +196,7 @@ skiptoeol(tif, len)
  * used to extract 2D tag values and the color tag
  * at the end of a terminating uncompressed data code.
  */
-static int
-nextbit(tif)
-	TIFF *tif;
+static int nextbit(TIFF *tif)
 {
 	Fax3DecodeState *sp = (Fax3DecodeState *)tif->tif_data;
 	int bit;
@@ -212,11 +209,7 @@ nextbit(tif)
 	return (bit);
 }
 
-static void
-bset(cp, n, v)
-	register unsigned char *cp;
-	register int n;
-	register int v;
+static void bset(unsigned char *cp, int n, int v)
 {
 	while (n-- > 0)
 		*cp++ = v;
@@ -228,10 +221,7 @@ bset(cp, n, v)
  * is called once per image -- it sets up different
  * state based on whether or not 2D encoding is used.
  */
-static void *
-Fax3SetupState(tif, space)
-	TIFF *tif;
-	int space;
+static void * Fax3SetupState(TIFF *tif, int space)
 {
 	TIFFDirectory *td = &tif->tif_dir;
 	Fax3BaseState *sp;
@@ -290,9 +280,7 @@ Fax3SetupState(tif, space)
 /*
  * Setup state for decoding a strip.
  */
-static
-Fax3PreDecode(tif)
-	TIFF *tif;
+static Fax3PreDecode(TIFF *tif)
 {
 	Fax3DecodeState *sp = (Fax3DecodeState *)tif->tif_data;
 
@@ -325,10 +313,7 @@ Fax3PreDecode(tif)
 /*
  * Fill a span with ones.
  */
-static void
-fillspan(cp, x, count)
-	register char *cp;
-	register int x, count;
+static void fillspan(char *cp, int x, int count)
 {
 	static const unsigned char masks[] =
 	    { 0, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff };
@@ -354,12 +339,7 @@ fillspan(cp, x, count)
 /*
  * Decode the requested amount of data.
  */
-static
-Fax3Decode(tif, buf, occ, s)
-	TIFF *tif;
-	u_char *buf;
-	int occ;
-	u_int s;
+static Fax3Decode(TIFF *tif, u_char *buf, int occ, u_int s)
 {
 	Fax3DecodeState *sp = (Fax3DecodeState *)tif->tif_data;
 
@@ -393,9 +373,7 @@ Fax3Decode(tif, buf, occ, s)
 /*
  * Decode a run of white.
  */
-static int
-decode_white_run(tif)
-	TIFF *tif;
+static int decode_white_run(TIFF *tif)
 {
 	Fax3DecodeState *sp = (Fax3DecodeState *)tif->tif_data;
 	short state = sp->b.bit;
@@ -429,9 +407,7 @@ decode_white_run(tif)
 /*
  * Decode a run of black.
  */
-static int
-decode_black_run(tif)
-	TIFF *tif;
+static int decode_black_run(TIFF *tif)
 {
 	Fax3DecodeState *sp = (Fax3DecodeState *)tif->tif_data;
 	short state = sp->b.bit + 8;
@@ -466,11 +442,7 @@ decode_black_run(tif)
 /*
  * Process one row of 1d Huffman-encoded data.
  */
-static int
-Fax3Decode1DRow(tif, buf, npels)
-	TIFF *tif;
-	u_char *buf;
-	int npels;
+static int Fax3Decode1DRow(TIFF *tif, u_char *buf, int npels)
 {
 	Fax3DecodeState *sp = (Fax3DecodeState *)tif->tif_data;
 	int x = 0;
@@ -547,9 +519,7 @@ done:
 /*
  * Return the next uncompressed mode code word.
  */
-static int
-decode_uncomp_code(tif)
-	TIFF *tif;
+static int decode_uncomp_code(TIFF *tif)
 {
 	Fax3DecodeState *sp = (Fax3DecodeState *)tif->tif_data;
 	short code;
@@ -569,11 +539,7 @@ decode_uncomp_code(tif)
 /*
  * Process one row of 2d encoded data.
  */
-int
-Fax3Decode2DRow(tif, buf, npels)
-	TIFF *tif;
-	u_char *buf;
-	int npels;
+int Fax3Decode2DRow(TIFF *tif, u_char *buf, int npels)
 {
 #define	PIXEL(buf,ix)	((((buf)[(ix)>>3]) >> (7-((ix)&7))) & 1)
 	Fax3DecodeState *sp = (Fax3DecodeState *)tif->tif_data;
@@ -742,10 +708,7 @@ bad:
  * the output stream.  Values are
  * assumed to be at most 16 bits.
  */
-static void
-putbits(tif, bits, length)
-	TIFF *tif;
-	u_int bits, length;
+static void putbits(TIFF *tif, u_int bits, u_int length)
 {
 	Fax3BaseState *sp = (Fax3BaseState *)tif->tif_data;
 	static const int mask[9] =
@@ -766,9 +729,7 @@ putbits(tif, bits, length)
  * Write a code to the output stream.
  */
 static void
-putcode(tif, te)
-	TIFF *tif;
-	tableentry const *te;
+putcode(TIFF *tif, tableentry const *te)
 {
 	putbits(tif, te->code, te->length);
 }
@@ -780,10 +741,7 @@ putcode(tif, te)
  * terminating codes is supplied.
  */
 static void
-putspan(tif, span, tab)
-	TIFF *tif;
-	int span;
-	tableentry const *tab;
+putspan(TIFF *tif, int span, tableentry const *tab)
 {
 	while (span >= 2624) {
 		tableentry const *te = &tab[63 + (2560>>6)];
@@ -805,9 +763,7 @@ putspan(tif, span, tab)
  * here.  We also handle writing the tag bit for the next
  * scanline when doing 2d encoding.
  */
-void
-Fax3PutEOL(tif)
-	TIFF *tif;
+void Fax3PutEOL(TIFF *tif)
 {
 	Fax3BaseState *sp = (Fax3BaseState *)tif->tif_data;
 
@@ -871,9 +827,7 @@ static const u_char oneruns[256] = {
 /*
  * Reset encoding state at the start of a strip.
  */
-static
-Fax3PreEncode(tif)
-	TIFF *tif;
+static Fax3PreEncode(TIFF *tif)
 {
 	Fax3EncodeState *sp = (Fax3EncodeState *)tif->tif_data;
 
@@ -925,11 +879,7 @@ Fax3PreEncode(tif)
  * a sequence of all-white or all-black spans
  * of pixels encoded with Huffman codes.
  */
-static int
-Fax3Encode1DRow(tif, bp, bits)
-	TIFF *tif;
-	u_char *bp;
-	int bits;
+static int Fax3Encode1DRow(TIFF *tif, u_char *bp, int bits)
 {
 	Fax3EncodeState *sp = (Fax3EncodeState *)tif->tif_data;
 	int bs = 0, span;
@@ -967,11 +917,7 @@ static const tableentry vcodes[7] = {
  * 2d-encode a row of pixels.  Consult the CCITT
  * documentation for the algorithm.
  */
-int
-Fax3Encode2DRow(tif, bp, rp, bits)
-	TIFF *tif;
-	u_char *bp, *rp;
-	int bits;
+int Fax3Encode2DRow(TIFF *tif, u_char *bp, u_char *rp, int bits)
 {
 #define	PIXEL(buf,ix)	((((buf)[(ix)>>3]) >> (7-((ix)&7))) & 1)
 	short white = ((Fax3BaseState *)tif->tif_data)->white;
@@ -1016,12 +962,7 @@ Fax3Encode2DRow(tif, bp, rp, bits)
 /*
  * Encode a buffer of pixels.
  */
-static int
-Fax3Encode(tif, bp, cc, s)
-	TIFF *tif;
-	u_char *bp;
-	int cc;
-	u_int s;
+static int Fax3Encode(TIFF *tif, u_char *bp, int cc, u_int s)
 {
 	Fax3EncodeState *sp = (Fax3EncodeState *)tif->tif_data;
 
@@ -1052,9 +993,7 @@ Fax3Encode(tif, bp, cc, s)
 	return (1);
 }
 
-static int
-Fax3PostEncode(tif)
-	TIFF *tif;
+static int Fax3PostEncode(TIFF *tif)
 {
 	Fax3BaseState *sp = (Fax3BaseState *)tif->tif_data;
 
@@ -1063,9 +1002,7 @@ Fax3PostEncode(tif)
 	return (1);
 }
 
-static
-Fax3Close(tif)
-	TIFF *tif;
+static Fax3Close(TIFF *tif)
 {
 	if ((tif->tif_options & FAX3_CLASSF) == 0) {	/* append RTC */
 		int i;
@@ -1075,9 +1012,7 @@ Fax3Close(tif)
 	}
 }
 
-static
-Fax3Cleanup(tif)
-	TIFF *tif;
+static Fax3Cleanup(TIFF *tif)
 {
 	if (tif->tif_data) {
 		free(tif->tif_data);
@@ -1098,10 +1033,7 @@ Fax3Cleanup(tif)
  * value.
  */
 static int
-findspan(bpp, bs, be, tab)
-	u_char **bpp;
-	int bs, be;
-	register u_char const *tab;
+findspan(u_char **bpp, int bs, int be, u_char const *tab)
 {
 	register u_char *bp = *bpp;
 	register int bits = be - bs;
@@ -1151,10 +1083,7 @@ done:
  * color.  The end, be, is returned if no such bit
  * exists.
  */
-static int
-finddiff(cp, bs, be, color)
-	u_char *cp;
-	int bs, be, color;
+static int finddiff(u_char *cp, int bs, int be, int color)
 {
 	cp += bs >> 3;			/* adjust byte offset */
 	return (bs + findspan(&cp, bs, be, color ? oneruns : zeroruns));

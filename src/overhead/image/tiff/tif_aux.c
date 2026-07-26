@@ -47,10 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  *	explcit values so that defaults exist only one
  *	place in the library -- in TIFFDefaultDirectory.
  */
-TIFFVGetFieldDefaulted(tif, tag, ap)
-	TIFF *tif;
-	int tag;
-	va_list ap;
+int TIFFVGetFieldDefaulted(TIFF *tif, int tag, va_list ap)
 {
 	TIFFDirectory *td = &tif->tif_dir;
 	int i;
