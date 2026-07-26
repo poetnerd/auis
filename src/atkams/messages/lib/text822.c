@@ -1138,7 +1138,7 @@ int level;
 	    fprintf(fp, "\\template{%s}\n", ((struct text *) self)->styleSheet->templateName);
 	stylesheet_Write(((struct text *) self)->styleSheet, fp);
 	text822_WriteSubString(self, bodystart, text822_GetLength(self) - bodystart, fp, TRUE);
-	fprintf(fp, "\\enddata{%s,%d}\n", class_GetTypeName(self), self->header.dataobject.id);
+	fprintf(fp, "\\enddata{%s,%ld}\n", class_GetTypeName(self), self->header.dataobject.id);
 	fflush(fp);
     }
     return self->header.dataobject.id;
