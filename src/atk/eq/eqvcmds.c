@@ -844,12 +844,12 @@ struct eqview *self;
     len = eqview_GetDotLength(self);
 
     cutFile = im_ToCutBuffer(view_GetIM((struct view *) self));
-    fprintf(cutFile, "\\begindata{%s,%d}\n", class_GetTypeName(eqptr), dataobject_UniqueID(self));
+    fprintf(cutFile, "\\begindata{%s,%ld}\n", class_GetTypeName(eqptr), dataobject_UniqueID(self));
     fprintf(cutFile, "%s", eqview_cut_prefix);
     eqptr->header.dataobject.writeID = im_GetWriteID();
     eq_WriteFILE(eqptr, cutFile, pos, pos+len, ' ');
     fprintf(cutFile, "%s", eqview_cut_suffix);
-    fprintf(cutFile, "\\enddata{%s,%d}\n", class_GetTypeName(eqptr), dataobject_UniqueID(self));
+    fprintf(cutFile, "\\enddata{%s,%ld}\n", class_GetTypeName(eqptr), dataobject_UniqueID(self));
     im_CloseToCutBuffer(view_GetIM((struct view *) self), cutFile);
     eq_DeleteCarefully(eqptr, pos, pos+len);
     eqview_SetDotLength(self, 0);
@@ -868,12 +868,12 @@ struct eqview *self;
     len = eqview_GetDotLength(self);
 
     cutFile = im_ToCutBuffer(view_GetIM((struct view *) self));
-    fprintf(cutFile, "\\begindata{%s,%d}\n", class_GetTypeName(eqptr), dataobject_UniqueID(self));
+    fprintf(cutFile, "\\begindata{%s,%ld}\n", class_GetTypeName(eqptr), dataobject_UniqueID(self));
     fprintf(cutFile, "%s", eqview_cut_prefix);
     eqptr->header.dataobject.writeID = im_GetWriteID();
     eq_WriteFILE(eqptr, cutFile, pos, pos+len, ' ');
     fprintf(cutFile, "%s", eqview_cut_suffix);
-    fprintf(cutFile, "\\enddata{%s,%d}\n", class_GetTypeName(eqptr), dataobject_UniqueID(self));
+    fprintf(cutFile, "\\enddata{%s,%ld}\n", class_GetTypeName(eqptr), dataobject_UniqueID(self));
     im_CloseToCutBuffer(view_GetIM((struct view *) self), cutFile);
 }
 

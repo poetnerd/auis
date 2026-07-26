@@ -297,9 +297,9 @@ org__Write( self, file, writeID, level )
   DEBUGdt(Local-ID,id);
   if ( self->header.dataobject.writeID != writeID ) {
     self->header.dataobject.writeID = writeID;
-    fprintf( file, "\\begindata{%s,%d}\n", class_GetTypeName( self ), id );
+    fprintf( file, "\\begindata{%s,%ld}\n", class_GetTypeName( self ), id );
     status = Write_Body( self, file );
-    fprintf( file, "\n\\enddata{%s,%d}\n", class_GetTypeName( self ), id );
+    fprintf( file, "\n\\enddata{%s,%ld}\n", class_GetTypeName( self ), id );
   }
   DEBUGdt(Status,status);
   OUT(org_Write);

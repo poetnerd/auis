@@ -736,20 +736,20 @@ bush__Write( self, file, id, level )
   if(self->header.dataobject.writeID != id) {
     self->header.dataobject.writeID = id;
     if(level) {
-      fprintf(file,"\\begindata{%s,%d}\n",
+      fprintf(file,"\\begindata{%s,%ld}\n",
 	       class_GetTypeName(self),
 	       dataobject_UniqueID(&self->header.dataobject));
       fprintf(file,"%s",DirPath(bush_TreeRoot(self)));
-      fprintf(file,"\n\\enddata{%s,%d}\n",
+      fprintf(file,"\n\\enddata{%s,%ld}\n",
 	       class_GetTypeName(self),
 	       dataobject_UniqueID(&self->header.dataobject));
     }
     else {
-      fprintf(file,"\\begindata{%s,%d}\n",
+      fprintf(file,"\\begindata{%s,%ld}\n",
 	       class_GetTypeName(self),
 	       dataobject_UniqueID(&self->header.dataobject));
       fprintf(file,"\n%s\n",DirPath(bush_TreeRoot(self)));
-      fprintf(file,"\n\\enddata{%s,%d}\n",
+      fprintf(file,"\n\\enddata{%s,%ld}\n",
 	       class_GetTypeName(self),
 	       dataobject_UniqueID(&self->header.dataobject));
     }

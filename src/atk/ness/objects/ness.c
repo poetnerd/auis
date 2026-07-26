@@ -491,7 +491,7 @@ ness__Write(self, file, writeID, level)
 		else
 			text_WriteSubString((struct text *)self, 0, 
 				ness_GetLength(self), file, TRUE);
-		fprintf(file, "\\enddata{%s,%d}\n", class_GetTypeName(self),
+		fprintf(file, "\\enddata{%s,%ld}\n", class_GetTypeName(self),
 			ness_GetID(self));
 		fflush(file);
 	}

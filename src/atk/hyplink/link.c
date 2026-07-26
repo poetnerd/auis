@@ -234,14 +234,14 @@ int level;
     /* New Write Operation */
 #ifdef PL8
     if (self->new_ds == 0) {
-    fprintf(fp, "\\begindata{%s,%d}\nDatastream version: %d\n",
+    fprintf(fp, "\\begindata{%s,%ld}\nDatastream version: %d\n",
 	    class_GetTypeName(self), uniqueid, 1); /* lie! */
     WriteLine(fp, link_GetText(self) ? link_GetText(self) : "");
     WriteLine(fp, link_GetRawLink(self) ? link_GetRawLink(self) : "");
     WriteLine(fp, link_GetButtonFont(self) ? EncodeFont(self) : "");
     } else {
 #endif /* PL8 */
-    fprintf(fp, "\\begindata{%s,%d}\nDatastream version: %d\n",
+    fprintf(fp, "\\begindata{%s,%ld}\nDatastream version: %d\n",
 	    class_GetTypeName(self), uniqueid, DS_VERSION);
     WriteLine(fp, link_GetRawLink(self) ? link_GetRawLink(self) : "");
     fprintf(fp, "%d\n", link_GetPos(self));
@@ -251,7 +251,7 @@ int level;
     } /* if (self->new_ds == 0) */
 #endif /* PL8 */
 
-    fprintf(fp, "\\enddata{%s,%d}\n",
+    fprintf(fp, "\\enddata{%s,%ld}\n",
 	    class_GetTypeName(self), uniqueid);
     link_SetWriteID(self, id);
   }

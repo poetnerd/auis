@@ -223,9 +223,9 @@ int level;
   if (id != pushbutton_GetWriteID(self)) {
     /* New Write Operation */
     pushbutton_SetWriteID(self, id);
-    fprintf(fp, "\\begindata{%s,%d}\nDatastream version: %d\n",
-	    class_GetTypeName(self), 
-	    uniqueid, 
+    fprintf(fp, "\\begindata{%s,%ld}\nDatastream version: %d\n",
+	    class_GetTypeName(self),
+	    uniqueid,
 #ifndef PL8
 	    DS_VERSION);
 #else /* PL8 */
@@ -234,7 +234,7 @@ int level;
 
     pushbutton__WriteDataPart(self, fp);
 
-    fprintf(fp, "\\enddata{%s,%d}\n", class_GetTypeName(self), uniqueid);
+    fprintf(fp, "\\enddata{%s,%ld}\n", class_GetTypeName(self), uniqueid);
   }
   return(uniqueid);
 }
