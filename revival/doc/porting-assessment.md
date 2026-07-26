@@ -1993,6 +1993,95 @@ one-implicit-param rule. Not fixed here, per the Delegation ruling
 encountering a DRIFT report for one of these three names should
 consult this section before escalating it as a real interface bug.
 
+### 20. `%d` / `%ld` mismatch in the write direction — printf/fprintf family (MEDIUM effort, systemic; found 2026-07-26)
+
+Section 11 above (`scanf` family) noted in passing that "unlike `printf`
+mismatches (wrong output, no memory write), `scanf` mismatches corrupt
+the stack frame" — implying the `printf`-side mismatch was assumed
+lower-stakes, cosmetic at worst. That assumption doesn't hold for one
+important category: **ids that get written out and then read back and
+matched against each other later.** For those, "wrong output" *is* data
+loss, silently.
+
+#### Root cause
+
+The same ILP32-heritage mistake as #11, mirrored on the write side: code
+that serializes a `long`-typed unique id (`dataobject_UniqueID()` —
+literally `(long)(self)`, the object's own pointer — or
+`dataobject_GetID()`/a `self->header.dataobject.id` field, also `long`)
+into a `.ez` datastream's `\begindata{classname,ID}` / `\enddata{...}` /
+view-tag markers via `fprintf`/`sprintf`, using `%d` instead of `%ld`. On
+LP64 arm64, the caller still passes the full 64-bit value, but `%d` only
+reads back the low 32 bits, silently truncating the id to its bottom
+half. Harmless on the ILP32 platforms this shipped on (`long`/`int` both
+32 bits); live only on LP64.
+
+#### Why this one *does* corrupt data, unlike an ordinary printf typo
+
+Found while root-causing calc/zip insets vanishing when embedded in a
+mixed document and getting lost on save (`roadmap.md`'s "Insets to
+Repair" → zip/calc entry). The shared `apt__WriteObject` helper
+(`atk/apt/apt/apt.c:524`, used by `calc`) wrote a **truncated** id into
+`calc`'s own `\begindata`/`\enddata` tags, while the unrelated code that
+writes the paired `\view{calcv,id,...}` reference (`atk/text/
+text.c:1332`) computed the **full, untruncated** id fresh from the same
+live pointer. Verified numerically: `4346500352 = 0x103125500` (view,
+full) vs. `51533056 = 0x03125500` (calc's own tag, truncated) — identical
+bits, missing top word. On reload, `dictionary_Insert` (keyed by the
+truncated id) and the `\view{...}` line's `dictionary_LookUp` (keyed by
+the full id) never match — the lookup fails **completely silently**
+(`text.c:705-709`, a bare `return 0` on miss, no stderr) — so the object
+just vanishes, and a subsequent save has nothing left to write back. No
+crash, no error message, no stack corruption — just quietly wrong output
+in exactly the field whose correctness the rest of the file format
+depends on for cross-referencing. `zip` had an independent instance of
+the identical mistake in its own `zip__Write` (`contrib/zip/lib/
+zip.c:307,324`) — not shared code with `apt.c`, just the same K&R idiom
+copy-pasted into a second file.
+
+#### Confirmed systemic — tree-wide sweep (2026-07-26)
+
+Grepping for the same `\begindata{%s,%d}` / `\enddata{%s,%d}` idiom
+tree-wide turned up **~60 call sites across ~30 files** — essentially
+every inset type's `Write()` implementation that was hand-written against
+this same original template. All fixed (`%d`→`%ld`, spot-checked against
+each site's declared type rather than blind-replaced — a few sites have
+unrelated, genuinely-`int` `%d`s in the same format string, e.g. "
+`Datastream version: %d`", that must stay untouched):
+
+`atk/org/org.c`, `atk/eq/eqvcmds.c` (eq's Cut/Copy-to-cutbuffer path, not
+its ordinary save — eq's normal save was already correct), `atk/lookz/
+lookz.c`, `atk/utils/dialog.c`, `atk/supportviews/{label,lprruler,
+sbutton,strtbl}.c`, `atk/createinset/null/null.c`, `atk/hyplink/{link,
+pshbttn}.c`, `atk/bush/bush.c`, `atk/text/text.c` (the outer `text`
+wrapper's own begindata/enddata pair — same bit-split arithmetic
+confirmed independently), `atk/ness/objects/ness.c`, `atk/raster/cmd/
+raster.c` (6 sites — including `raster__Write`, raster's own independent
+main save path, meaning an embedded raster inset almost certainly had
+the identical vanish-on-embed symptom as calc/zip, just never
+previously reported/tested), `atkams/messages/lib/text822.c`,
+`contrib/{alink,time/clock,time/timeoday,tm,zip/lib,champ/{chimp,
+month},mit/util/header}`, and the `atk/examples/ex{11,12,13,16,17,18,19}/
+hello.c` tutorial files. One sibling bug found by checking parameter
+types rather than just format strings: `atk/basics/common/image.c`'s
+`SendEndData`'s `id` parameter was declared plain `int` in both the
+`.c` and the `.ch` class declaration, truncating the id before it ever
+reached the `%d` — retyped to `long` in both files.
+
+**Fix:** `%d`→`%ld` at each confirmed site; `image.ch`/`image.c`
+additionally needed `int id`→`long id`. Full file/line inventory and
+per-site skip/false-positive reasoning: `project_lp64_printf_id_truncation`
+memory (Claude auto-memory, this project).
+
+**To audit for regressions or missed sites:**
+```
+grep -rn '\\\\begindata{%s,%d}\|\\\\enddata{%s,%d}\|"data{%s, *%d}' src/ --include="*.c"
+```
+For each hit, confirm the argument bound to `%d` is genuinely `int` (fine)
+vs. a `long`/`dataobject_UniqueID()`/`*_GetID()` call (needs `%ld`) — do
+not blind-replace, several sites mix a genuine `int` (a version number, a
+count) with the `long` id in the same format string.
+
 ## Primary build environment: macOS/Darwin
 
 The initial development platform is macOS (POSIX Darwin), not Linux.

@@ -659,7 +659,7 @@ trail, reproduction steps, and what was tried/disproven along the way:
   Untouched — out of scope for the `MK_CALC` work; needs the same
   `.ch`-typing treatment `contrib/zip/lib` already got.
 
-### zip / calc — insets fail to load when embedded inside a mixed-content document (found 2026-07-25, open)
+### zip / calc / raster — insets fail to load when embedded inside a mixed-content document — RESOLVED 2026-07-26 (calc/zip runtime-confirmed; raster fixed, not yet runtime-tested)
 
 - Found during M2 rollout point 4h's (`contrib/zip/lib`) runtime
   check: a standalone zip-only document round-trips correctly
@@ -670,41 +670,77 @@ trail, reproduction steps, and what was tried/disproven along the way:
   entirely. `calc` shows the identical symptom in the same test
   document; `annotation`, `eq`, and `table` insets in the same
   document render correctly (`html` renders too, with its own
-  already-known incorrect behavior). Test file: wdc's `/tmp/t2.ez`.
-- **Confirmed not a regression from any M2 work**: `smpltext.c`
-  (`atk/text`), which owns the inset-embedding read path
-  (`simpletext__HandleBegindata`) this bug almost certainly lives in,
-  was touched by M2's `atk/text` session — but that session's entire
-  diff to the file is one line, `#include <stdlib.h>` (`fossil diff
-  --from 7f946352c9 --to fa80dac4d9 src/atk/text/smpltext.c`), zero
-  logic changed. `contrib/zip/lib`'s own M2 diff is 100% additive (new
-  `#include`s/`extern` declarations only, zero deletions, confirmed
-  via `m2-ziplib-session.diff`) — cannot have changed any runtime
-  behavior. `contrib/calc/lib` was not touched by any M2 session at
-  all. Pre-existing, not caused by the ANSI C conversion work.
-- **Working hypothesis, not yet confirmed**:
-  `simpletext__HandleBegindata` (`smpltext.c:901`) already has the
-  2026-07-05 figure-fix's resync-on-failed-read fallback (falls back
-  to a raw "unknown" object and prints a warning to stderr if
-  `dataobject_Read` returns anything other than `dataobject_NOREADERROR`)
-  — that fallback is what should fire here if `zip`'s/`calc`'s `Read`
-  fails partway through when called via this embedding path
-  specifically, as opposed to when either class is the top-level/root
-  object of its own file (a different code path through `app.c`,
-  bypassing `HandleBegindata` entirely — the likely explanation for
-  why zip-alone works but zip-embedded doesn't). Whether the "unknown"
-  fallback itself is what's silently losing the inset, or whether
-  `class_NewObject`/`dataobject_Read` fails earlier and more silently
-  for these two classes specifically when embedded, is not yet
-  determined. `table`/`eq`/`annotation` working correctly in the same
-  document is a real clue — worth checking what's different about
-  `zip`'s/`calc`'s registration or `Read` implementation versus those
-  three before assuming a purely `smpltext`-side cause.
-- Needs a dedicated investigation session (not done as part of M2,
-  which is declaration-only work) — start with the stderr warning
-  `simpletext__HandleBegindata` should print if the resync path is
-  actually firing, and `/tmp/t2.ez` as the reproduction case. See
-  memory `project_embedded_inset_load_failure`.
+  already-known incorrect behavior). Test file: wdc's `/tmp/t2.ez`,
+  later reproduced minimally with `revival/simple_calc.ez`.
+- **Confirmed not a regression from any M2 work** (unchanged from the
+  original triage — the M2 diffs to the relevant files were additive-
+  only or a single unrelated `#include` line). Pre-existing, original-
+  1988-import code, not caused by the ANSI C conversion work — traced
+  via `fossil annotate` to the initial-import commit, predating any
+  modernization work.
+- **Root-caused 2026-07-26, via lldb.** The earlier "resync-on-failed-
+  Read" hypothesis (below, for the record) was directly disproven:
+  `calc__Read` was breakpointed and confirmed to return `0`
+  (`dataobject_NOREADERROR`) cleanly — no resync fires, the read
+  genuinely succeeds. The real bug is on the **write** side: `calc`'s
+  shared `apt__WriteObject` helper (`atk/apt/apt/apt.c:524`) wrote a
+  `long` unique id into its own `\begindata`/`\enddata` tags using
+  `%d` instead of `%ld` — on this LP64 platform that silently
+  truncates the id to its low 32 bits. The separately-written
+  `\view{calcv,id,...}` reference tag (`atk/text/text.c:1332`) computes
+  the *same* id correctly with `%ld`. Result: the two tags disagree
+  (verified numerically — the view's id and the truncated id are
+  bit-identical except for the truncated id missing the top 32 bits),
+  so on reload `dictionary_LookUp` (keyed by the correct id from the
+  view tag) never finds the object registered under its truncated
+  begindata id — a completely silent miss
+  (`atk/text/text.c:705-709`, bare `return 0`, no stderr at all,
+  which is why nothing printed during the original triage). `zip` has
+  an independent instance of the identical mistake in its own
+  `zip__Write` (`contrib/zip/lib/zip.c:307,324`) — not shared code
+  with `apt.c`, the same K&R idiom copy-pasted into a second file.
+  Full writeup: `porting-assessment.md` §20, memory
+  `project_lp64_printf_id_truncation` (supersedes memory
+  `project_embedded_inset_load_failure`, which has the full
+  investigation trail).
+- **Fixed and runtime-confirmed 2026-07-26** for both `calc` and `zip`:
+  `apt.c` and `zip.c` fixed (`%d`→`%ld`), rebuilt, installed
+  (`apt.do`/`zip.do`); wdc confirmed both survive insert → save →
+  reload embedded in a mixed document.
+- **`raster` has the identical bug, independently found via a tree-
+  wide sweep for the same mistake** (`raster__Write`,
+  `atk/raster/cmd/raster.c` — its own independent Write function, not
+  shared with `apt.c` or `zip.c` either): almost certainly the same
+  vanish-on-embed/lost-on-save symptom would reproduce for an embedded
+  raster/image inset, but this was never previously reported or
+  tested — it was found by code inspection, not a runtime symptom.
+  Fixed and rebuilt (`raster.do` installed), but **not yet runtime-
+  confirmed** — needs the same insert → save → reload test in a mixed
+  document that confirmed calc/zip.
+- The tree-wide sweep also fixed ~30 other files carrying the same
+  copy-pasted mistake (most never previously reported broken, since
+  nobody had tested embedding those inset types the way this
+  investigation tested calc/zip) — see `porting-assessment.md` §20 for
+  the full inventory. Notably `eq`'s instance (`eqvcmds.c`) is in its
+  Cut/Copy-to-cutbuffer path, not its ordinary save (which was already
+  correct) — wdc confirmed eq Cut/Copy still works correctly after the
+  fix.
+
+<details>
+<summary>Original working hypothesis (2026-07-25, disproven — kept for the record)</summary>
+
+`simpletext__HandleBegindata` (`smpltext.c:901`) already has the
+2026-07-05 figure-fix's resync-on-failed-read fallback (falls back
+to a raw "unknown" object and prints a warning to stderr if
+`dataobject_Read` returns anything other than `dataobject_NOREADERROR`)
+— that fallback is what should fire here if `zip`'s/`calc`'s `Read`
+fails partway through when called via this embedding path
+specifically, as opposed to when either class is the top-level/root
+object of its own file. **Directly disproven via lldb 2026-07-26**:
+`calc__Read` returns `0` (success) cleanly; the resync path never
+fires. The real cause is the write-side `%d`/`%ld` truncation above.
+
+</details>
 
 ### ness — bison grammar extension blocker
 
