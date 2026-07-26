@@ -1130,7 +1130,7 @@ int level;
                 fprintf(file, "\\template{%s}\n", self->styleSheet->templateName);
             stylesheet_Write(self->styleSheet, file);
             text_WriteSubString(self, 0, text_GetLength(self), file, quoteCharacters);
-	    fprintf(file, "\\enddata{%s,%d}\n",
+	    fprintf(file, "\\enddata{%s,%ld}\n",
 		    (self->WriteAsText)?"text": class_GetTypeName(self),
 		    self->header.dataobject.id);
             fflush(file);

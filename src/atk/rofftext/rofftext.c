@@ -1830,7 +1830,7 @@ long rofftext__Write(self, file, writeID, level)
 	    fprintf(file, "\\template{%s}\n", self->text->styleSheet->templateName);
 	stylesheet_Write(self->text->styleSheet, file);
 	rofftext_WriteSubString(self, 0, self->header.simpletext.length, file, TRUE);
-        fprintf(file, "\\enddata{%s,%d}\n", "text", self->text->header.dataobject.id);
+        fprintf(file, "\\enddata{%s,%ld}\n", "text", self->text->header.dataobject.id);
 
 	fflush(file);
     }

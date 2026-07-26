@@ -240,7 +240,7 @@ int level;
 	pos = text_GetFence(textobj);
 	len = len - pos;
 	text_WriteSubString(textobj, pos, len, file, 1);
-	fprintf(file, "\\enddata{%s,%d}\n",
+	fprintf(file, "\\enddata{%s,%ld}\n",
 		(textobj->WriteAsText)?"text": class_GetTypeName(textobj),
 		textobj->header.dataobject.id);
 	fflush(file);
