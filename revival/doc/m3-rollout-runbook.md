@@ -216,6 +216,73 @@ the rest of the plan.
   this file for the current M3 pass; noted so a future batch with a
   similar gated-dead-file shape doesn't re-derive this from scratch.
 
+### O2 (`overhead/image/jpeg` + `overhead/image/tiff`, 2026-07-25/26) — vendored third-party codec libraries
+
+Full findings and file:line detail: `claude-history/m3-o2-imagecodecs-REPORT.md`.
+Three new `ansify` bugs, all specific to how vendored 1990s portable-C
+libraries write dual K&R/ANSI declarations — none seen in AUIS-native
+code through O1:
+
+1. **`(void)`-as-bare-parameter misparse — not fixed, self-healing.**
+   `convert_file`'s helper matcher reads an already-ANSI zero-argument
+   definition (`NAME (void)`) as K&R with one undeclared parameter
+   literally named `void`, producing `NAME(int void)` — a syntax
+   error. Always caught by the compile gate and auto-reverted (no
+   corruption risk), but wastes triage time inflating both the
+   dry-run census and the real-run failure count with false
+   positives. Found in `overhead/image/jpeg` (13 files, all already
+   fully ANSI, zero real changes needed — worked around with the
+   tool's own `--no-helpers` flag, no tool edit). Left unfixed
+   (2026-07-26, wdc's explicit call, resource-budget-driven): revisit
+   whenever it next costs a session real triage time.
+2. **`DECLARE<N>(name, type, arg, ...)` macro-invocation idiom
+   misparse — not fixed, self-healing.** Vendored libtiff's own
+   `USE_PROTOTYPES`-conditional prototype macro (`DECLARE2(f, t1, a1,
+   t2, a2)` expands to `f(t1 a1, t2 a2)`) is misread by both
+   `convert_file` (when every macro type-argument is a single bare
+   word) and `fix-missing-static-decl` (whenever `static` precedes
+   the invocation, regardless of argument types) as if the macro name
+   itself (`DECLARE2`, `DECLARE3`, ...) were the one real function
+   being defined, shared across every use of that arity in the file.
+   Also caught by the compile gate in the common case (see #3 for the
+   exception). Found in `overhead/image/tiff`, 8 files, ~30 instances
+   — resolved by hand-converting each invocation to its literal
+   expansion (the macro's own `USE_PROTOTYPES=1` output is ground
+   truth). Left unfixed in the tool itself, same resource-budget call
+   as #1.
+3. **Compile gate silently skipped when only `fix-missing-static-decl`/
+   `fix-static-methods` modify a file — FIXED 2026-07-26
+   (`948a6569`).** The one finding in this batch that rises above
+   "annoying but self-healing" to "can silently leave broken code on
+   disk with a success-looking report": `process()` took an early
+   return whenever `convert_file` found nothing to convert, without
+   checking whether the earlier `run_fix_tools()` step had already
+   changed the file on disk — so a file whose *only* needed change
+   came from `fix-missing-static-decl` (e.g. `tif_dirwrite.c`, which
+   already had its own correct, hand-written typed prototype block
+   that `fix-missing-static-decl`'s empty-parens-only recognizer
+   doesn't credit — the same underlying recognizer limitation as O1's
+   `unscribe.c` finding, different trigger) got the duplicate-stub
+   conflict inserted with **zero** compile verification and **zero**
+   auto-revert. Confirmed via isolated repro (a `char`-parameter
+   static helper with a pre-existing correct prototype): before the
+   fix, `ansify` reported "0 compile failures" while leaving a
+   conflicting-types duplicate declaration on disk; after, it
+   correctly fails the gate and restores. Fix: `process()` now also
+   gates whenever the file differs from its own backup post-
+   `run_fix_tools()`, even if `convert_file` itself found nothing.
+   Verified this doesn't change behavior for the ordinary cases
+   (nothing changed anywhere → still no gate call; a harmless
+   `fix-missing-static-decl` insertion with no corresponding
+   `convert_file` work → now gated, passes, kept — a stricter check,
+   not a new false-positive). This was a real gap in the safety
+   property that distinguishes `ansify` from the June 2026
+   mass-conversion failure (§14) — treat any `ansify` output from
+   before this fix (i.e., before verifying against a tree checked out
+   at or after `948a6569`) as needing a fresh compile-gate check on
+   any file where `fix-missing-static-decl` reported a modification,
+   even if `ansify`'s own report claimed success.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)
