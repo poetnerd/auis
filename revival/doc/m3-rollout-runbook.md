@@ -205,12 +205,12 @@ the rest of the plan.
   the type declarations themselves are `#ifdef`-gated, so nothing short
   of a real build with `WHITEPAGES_ENV` on could verify a conversion).
   If a gated subtree is ever activated for real, the right sequence is
-  activation-then-ansify, not ansify-then-activation: bring the macro
-  on, fix real compile fallout using the LP64 taxonomy in
-  `claude-history/new-tree-porting-prompt.md` (written for exactly this
-  situation — a newly-activated previously-inert subtree), confirm it
-  builds and runs, *then* run `ansify --dir` on it fresh as its own
-  small M3-style rollout point — the same order every other M3 batch
+  activation-then-ansify, not ansify-then-activation — now written up
+  in full as its own standing playbook, `activating-new-subtree.md`
+  (bring the macro on, fix real compile fallout using its LP64
+  taxonomy, catch up to M2's declaration sweep, confirm it builds and
+  runs, *then* run `ansify --dir` on it fresh as its own small
+  M3-style rollout point) — the same order every other M3 batch
   directory already implicitly satisfies (all were live in the build
   before any M1/M2/M3 milestone touched them). No action item from
   this file for the current M3 pass; noted so a future batch with a

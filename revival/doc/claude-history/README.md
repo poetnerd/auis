@@ -36,7 +36,11 @@ work queue". As of 2026-07-24:
 
 Standing (never retire on completion; they recur):
 `sonnet-playbook.md` (delegation briefing),
-`update-revival-doc-workflow.md` (revival.md refresh procedure).
+`update-revival-doc-workflow.md` (revival.md refresh procedure),
+`activating-new-subtree.md` (2026-07-25, generalizes
+`new-tree-porting-prompt.md` below into a repeatable playbook for
+bringing any gated/inert directory into the live build, including the
+M2/M3 catch-up steps that directory-specific prompt predates).
 
 ## Prompt History
 
