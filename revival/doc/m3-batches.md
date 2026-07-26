@@ -107,7 +107,7 @@ reasoning once batch size actually reflects it.
       fixed (`overhead/eli/lib/prmtives.c`'s `regcomp`/`regexec` typo —
       see `m3-rollout-runbook.md` "Findings from real sessions" → O3
       and `revival.md` "Old bugs never found till now"). Committed.
-- [ ] **O4**: `overhead/cmenu` (8), `overhead/mail/metamail/metamail`
+- [x] **O4**: `overhead/cmenu` (8), `overhead/mail/metamail/metamail`
       (7), `overhead/mail/metamail/richmail` (6), `overhead/malloc`
       (4), `overhead/index` (4), `overhead/class/lib` (4), `overhead/
       class/testing` (3), `overhead/class/cmd` (3), `overhead/class/
@@ -116,7 +116,19 @@ reasoning once batch size actually reflects it.
       mkparser` (2), `overhead/util/hdrs` (1), `overhead/errors` (1),
       `overhead/addalias` (1), `ossupport` (1), `inst` (1) — 58 files,
       19 dirs, small/leaf grab-bag (class-support family here is NOT
-      `class/pp` itself — see exclusion above).
+      `class/pp` itself — see exclusion above). **Done 2026-07-26**: 0
+      real DRIFT, 0 skipped tree-wide — cleanest baseline of any Wave 1
+      batch. First real `-pe`/`.eh` rollout in the project
+      (`overhead/class/testing`, a judgment call — see
+      `m3-rollout-runbook.md` "Findings from real sessions" → O4);
+      found and fixed a genuine ~35-year-old dead-branch bug
+      (`overhead/cmenu/cmenu.h`'s `_STDC_`/`__STDC__` macro typo, see
+      `revival.md` "Old bugs never found till now"), which in turn
+      required a small fix to one external consumer
+      (`atk/basics/x/xim.c`, outside this batch but verified). Two
+      directories turned out entirely inert in this build rather than
+      "already ANSI" (`overhead/malloc`, `inst`). **Completes Wave 1**
+      (O1-O4). Committed.
 
 ## Wave 2 — atk/basics+support (19 directories, 197 files, 3 batches)
 

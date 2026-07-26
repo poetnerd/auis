@@ -455,6 +455,31 @@ sample:
   Corrected to call the codebase's own, correctly named and typed,
   `reg_comp`/`reg_exec`.
 
+- **A misspelled preprocessor guard that quietly deleted a header's typed
+  half for over thirty years.** A menu library's header offered two
+  versions of its own function declarations, selected by `#ifdef`: a
+  fully typed set for a standards-conforming compiler, and an older,
+  untyped fallback set for one that predates function prototypes. The
+  guard tested `_STDC_` — one underscore short of `__STDC__`, the name
+  every C compiler that defines this macro at all has actually defined
+  since the 1989 standard. No compiler, then or since, has ever defined
+  the misspelled name, so the typed half of the header was dead on
+  arrival: every build silently took the untyped fallback, and one
+  function the fallback branch omitted entirely went undeclared
+  wherever a caller didn't supply its own local declaration. It surfaced
+  only when the ANSI C conversion effort's own `-pe` typed-prototype
+  mechanism, applied to a neighboring directory, made the header's
+  guard load-bearing for the first time — every caller that had been
+  quietly relying on the fallback branch's absence of type-checking now
+  needed the guard to actually pick the typed branch. Flipping the
+  fallback branch on for real then exposed a second, independent latent
+  mistake in that same never-before-compiled typed branch: one
+  declaration's return type had been omitted (silently defaulting to
+  `int`) while the real function was `void`, a mismatch nothing had ever
+  checked because the branch had never been live long enough to check
+  it against anything. Corrected both: the guard now reads `__STDC__`,
+  and the return type now matches the definition.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

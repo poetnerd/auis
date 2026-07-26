@@ -359,6 +359,87 @@ last:
    mechanism (turning implicit declarations into real ones) is
    positioned to surface.
 
+### O4 (overhead grab-bag, 19 directories, 2026-07-26) — completes Wave 1
+
+Full findings: `claude-history/m3-o4-overhead-grabbag-REPORT.md`.
+Cleanest dry-run baseline of any Wave 1 batch (0 DRIFT, 0 skipped
+tree-wide) but the batch that finally exercised the `-pe`/`.eh`
+mechanic for real, plus a standing action item for every batch after
+this one:
+
+1. **First real `-pe`/`.eh` rollout, and a new fallout shape it
+   surfaced.** `overhead/class/testing` was this project's first
+   directory to actually flip `CLASSFLAGS += -pe` and force a real
+   (non-dry-run) `.eh` regen — a judgment call to run this ahead of the
+   `atk/eq` Wave-4 "pilot," on the reasoning that Wave 1 legitimately
+   precedes Wave 4 in dependency order and the directory's blast radius
+   is a 3-file test/demo fixture. **wdc: please confirm this call after
+   the fact** — if you agree, `m3-batches.md`'s Wave 4 "eq pilot"
+   framing should be marked stale (this batch already proved the
+   mechanic live). The eq-shape narrow-type-promotion failure
+   (`porting-assessment.md`'s 2026-07-08 validation) did **not**
+   recur; instead: a class lifecycle method (`InitializeClass`/
+   `InitializeObject`) written with a **truly empty parameter list** —
+   no implicit `classID`/`self` placeholder at all — is invisible to
+   `ansify`'s own candidate detector (its parser requires at least one
+   bare identifier in the parens to treat a definition as K&R), so it
+   silently leaves such definitions alone with no DRIFT/skip report —
+   but the definition still conflicts with a `-pe`-regenerated `.eh`,
+   which emits a typed prototype for these names regardless (1 param
+   for ordinary classprocs, classpp's own hardcoded 2-param convention
+   for `InitializeObject`/`FinalizeObject` specifically — see
+   `porting-assessment.md` §17). This is `-pe`/`.eh`-regen-side fallout,
+   invisible to `ansify --dir`'s own report — before trusting a clean
+   `ansify --dir` result on a freshly-`-pe`-flagged directory, grep its
+   `.c` files for `Name__Method()` with nothing between the parens.
+2. **A misspelled preprocessor guard (`_STDC_` for `__STDC__`) had left
+   a header's typed declaration branch permanently dead for the
+   directory's entire history** (`overhead/cmenu/cmenu.h`) — written up
+   in full in `revival.md`'s "Old bugs never found till now." Two
+   things worth generalizing from this one instance: (a) it was found
+   by a session doing ordinary compile-fallout triage, not by any
+   automated check, the same way O3's `regcomp`/`regexec` finding was;
+   (b) **fixing a dead branch like this can surface a second,
+   independent bug inside that same branch**, because a branch that
+   has never once compiled has never had any of its own declarations
+   checked against anything — here, a lifecycle-adjacent function's
+   return type had been silently defaulting to `int` against a real
+   `void` definition, invisible until the branch went live. Treat any
+   `#ifdef`-gated-off branch you flip live as needing the same fallout
+   triage as a freshly-converted file, not a free pass because "it's
+   just a macro rename."
+3. **New standing task, effective now: grep every directory before/
+   during its M3 batch for single-underscore misspellings of standard
+   predefined macros** (`_STDC_` for `__STDC__` being the concrete
+   instance found; also worth checking for `_cplusplus`/`_FILE_`/other
+   common one-underscore-short typos of compiler-predefined macros)
+   **and fix them on sight, the same as any other ordinary compile-gate
+   fallout** — don't defer to a separate pass. This is now a permanent
+   line item in every M3 batch's task list going forward (Waves 2-7),
+   not a one-off. Rationale: unlike most K&R→ANSI fallout, a dead
+   `#ifdef` branch costs nothing to check (a grep, not a conversion)
+   but can hide an arbitrarily old, arbitrarily deep second bug the way
+   this one did — worth the small fixed cost on every remaining batch
+   rather than hoping the next one surfaces on its own.
+4. Two directories the dry-run's "0 helpers, already ANSI" framing made
+   look like ordinary clean conversions turned out to be **entirely
+   inert in this build** instead (`overhead/malloc`, `inst`) — gated
+   off tree-wide by their whole Imakefile body, not just individual
+   `#ifdef`s within it, a stronger variant of O1's WHITEPAGES pattern.
+   `overhead/malloc` in particular reconfirms `rollout-procedure.md`'s
+   Liveness-census caution about `site.h` overriding `allsys.h`
+   (`ANDREW_MALLOC_ENV` defined in one, `#undef`'d in the other) — a
+   second real occurrence of the exact mechanism M1 batch 7 first found.
+5. Four ordinary compile-gate fallout fixes (`overhead/cmenu/shadows.c`
+   +`shadows.h`, `overhead/mail/metamail/metamail/mailto.c`,
+   `overhead/index/index.c`+`index.h`, `overhead/rxp/regexp.c`) — all
+   recurrences of the already-documented non-idempotency/narrow-type/
+   same-directory-header shapes from O1-O3, just new files. One new,
+   self-healing parser-bailout shape (`overhead/class/lib`: a function-
+   pointer parameter whose return type is itself a pointer, e.g.
+   `struct classinfo *(*proc)()`, not recognized by the helper-
+   declaration regex — left K&R correctly, no action needed).
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)
