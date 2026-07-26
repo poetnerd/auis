@@ -195,7 +195,7 @@ WriteV1Stream(ras, file, id)
 	struct pixelimage *pix = (struct pixelimage *)raster_GetPix(ras);
 
 	rectangle_GetRectSize(&ras->subraster, &x, &y, &w, &h);
-	fprintf(file, "\\begindata{%s,%d}\n", class_GetTypeName(ras), id);
+	fprintf(file, "\\begindata{%s,%ld}\n", class_GetTypeName(ras), id);
 	fprintf(file, "%ld %u %d %d %d %d %ld %ld %d", 
 			1, 0, 1, 1, 0, 0, w, h, 1);
 		/* self->raster_version, self->raster_options, 
@@ -212,7 +212,7 @@ WriteV1Stream(ras, file, id)
 		plusspace_WriteRow(file, buf, nbytestofile);
 	}
 
-	fprintf(file, "\n\\enddata{%s,%d}\n", class_GetTypeName(ras), id);
+	fprintf(file, "\n\\enddata{%s,%ld}\n", class_GetTypeName(ras), id);
 }
 #endif /* NOTUSED */
 
@@ -245,7 +245,7 @@ raster__Write(self, file, writeID, level)
 (so it doesn't need to be put in the dictionary and retained forever) */
 
 		rectangle_GetRectSize(&self->subraster, &x, &y, &width, &height);
-		fprintf(file, "\\begindata{%s,%d}\n", name, id);
+		fprintf(file, "\\begindata{%s,%ld}\n", name, id);
 		fprintf(file, "%ld %ld %ld %ld ", RASTERVERSION, 
 				self->options, self->xScale, self->yScale);
 		if (rasterimage_GetWriteID(pix) == writeID) {
@@ -306,7 +306,7 @@ raster__Write(self, file, writeID, level)
 			rasterimage_SetWriteID(pix, writeID);
 			rasterimage_SetObjectID(pix, id);
 		}
-		fprintf(file, "\\enddata{%s, %d}\n", name, id);
+		fprintf(file, "\\enddata{%s, %ld}\n", name, id);
 	} /* end writeID != writeID */
 	return(id);
 }
@@ -335,7 +335,7 @@ raster__WriteSubRaster(self, file, objectid, sub)
 	rectangle_IntersectRect(&R, &self->subraster, sub);
 	rectangle_GetRectSize(&R, &x, &y, &width, &height);
 
-	fprintf(file, "\\begindata{%s,%d}\n", name, objectid);
+	fprintf(file, "\\begindata{%s,%ld}\n", name, objectid);
 	fprintf(file, "%ld %ld %ld %ld %ld %ld %ld %ld\n", RASTERVERSION, 
 			self->options, self->xScale, self->yScale,
 			 0, 0, width, height);	/* subraster is the whole */
@@ -346,7 +346,7 @@ raster__WriteSubRaster(self, file, objectid, sub)
 		rasterimage_GetRow(pix, x, y+r, width, rowbits);
 		rasterio_WriteRow(file, (unsigned char *)rowbits, nbytestofile);
 	}
-	fprintf(file, "\\enddata{%s, %d}\n", name, objectid);
+	fprintf(file, "\\enddata{%s, %ld}\n", name, objectid);
 	return objectid;
 }
 
