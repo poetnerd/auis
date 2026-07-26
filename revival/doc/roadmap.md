@@ -659,7 +659,7 @@ trail, reproduction steps, and what was tried/disproven along the way:
   Untouched — out of scope for the `MK_CALC` work; needs the same
   `.ch`-typing treatment `contrib/zip/lib` already got.
 
-### zip / calc / raster — insets fail to load when embedded inside a mixed-content document — RESOLVED 2026-07-26 (calc/zip runtime-confirmed; raster fixed, not yet runtime-tested)
+### zip / calc / raster — insets fail to load when embedded inside a mixed-content document — RESOLVED 2026-07-26 (calc/zip/raster all runtime-confirmed)
 
 - Found during M2 rollout point 4h's (`contrib/zip/lib`) runtime
   check: a standalone zip-only document round-trips correctly
@@ -714,9 +714,9 @@ trail, reproduction steps, and what was tried/disproven along the way:
   vanish-on-embed/lost-on-save symptom would reproduce for an embedded
   raster/image inset, but this was never previously reported or
   tested — it was found by code inspection, not a runtime symptom.
-  Fixed and rebuilt (`raster.do` installed), but **not yet runtime-
-  confirmed** — needs the same insert → save → reload test in a mixed
-  document that confirmed calc/zip.
+  Fixed and rebuilt (`raster.do` installed). **Runtime-confirmed
+  2026-07-26**: wdc tested an embedded raster insert → save → reload
+  in a mixed document — works correctly.
 - The tree-wide sweep also fixed ~30 other files carrying the same
   copy-pasted mistake (most never previously reported broken, since
   nobody had tested embedding those inset types the way this
