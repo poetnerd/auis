@@ -888,6 +888,41 @@ trail, reproduction steps, and what was tried/disproven along the way:
   fresh `ez` launch, which would confirm it's session-state and not
   something specific to the by-name insertion path).
 
+### image — JPEG/GIF import renders as a solid black box, TIFF import renders as a solid white box; raster renders correctly (found 2026-07-26, open)
+
+- Found during M3 batch O2's (`overhead/image/jpeg`, `overhead/image/
+  tiff`) runtime check: inserting an Image inset in `ez` and importing
+  a `.jpg`/`.jpeg` or `.gif` file renders a solid black box; importing
+  a `.tif`/`.tiff` file renders a solid white box. Importing an ATK
+  native raster (`.ras`) file renders correctly. This is the general
+  `image`/`igraphic` inset family (`atk/image`, `atk/basics/common`),
+  not specific to any one format's decoder — GIF and raster both go
+  through code untouched by O2 and show the same
+  broken/working split as JPEG and TIFF respectively, so the pattern
+  cuts across the O2 diff rather than following it.
+- **Confirmed NOT a regression from M3 O2**: bisected live (2026-07-26)
+  by stashing the batch's entire diff, rebuilding `libjpeg.a`/
+  `libtiff.a` and relinking `jpeg.do`/`tif.do` from pristine,
+  unmodified K&R source, and re-testing the identical JPEG/TIFF files
+  — same black-box/white-box symptom on the pristine build. This inset
+  family had never been exercised before in this revival (first-ever
+  runtime test, same situation M1/M2 kept finding elsewhere in the
+  tree); the bug is pre-existing, not introduced by the ANSI
+  conversion. O2's own diff is gate-green (gated twice, deterministic)
+  and unrelated to this finding — committed alongside this entry.
+- **Working hypothesis, not yet investigated**: wdc's own suspicion,
+  based on the black-vs-white split cutting cleanly across which
+  format renders solid black (JPEG, GIF) vs. solid white (TIFF) vs.
+  correctly (raster) — "something funky going on with drawables," and
+  possibly the same class of bug as the zip inset's solid-black
+  render bug (`porting-assessment.md` §16, a classpp typed-dispatch
+  signedness mismatch between a `.ch`'s declared `returns char`/`short`
+  and the real implementation's signedness — RESOLVED 2026-07-11, see
+  "zip" above). Not confirmed; needs its own dedicated debug session
+  before being written up as root-caused. `nm -g` consumer detail and
+  exact runtime-check commands are in
+  `claude-history/m3-o2-imagecodecs-REPORT.md`.
+
 ---
 
 ## Questions

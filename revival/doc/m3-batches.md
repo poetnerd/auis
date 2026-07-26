@@ -86,8 +86,15 @@ reasoning once batch size actually reflects it.
       (`#ifdef`-gated dead code, not reachable from the real build —
       see `m3-rollout-runbook.md` "Findings from real sessions"),
       fdplumb family itself converted clean. Committed.
-- [ ] **O2**: `overhead/image/jpeg` (46), `overhead/image/tiff` (32) —
-      78 files. Vendored codec libraries.
+- [x] **O2**: `overhead/image/jpeg` (46), `overhead/image/tiff` (32) —
+      78 files. Vendored codec libraries. **Done 2026-07-26**: 0 real
+      DRIFT; 5 pre-diagnosed parser bailouts plus ~30 more of the same
+      vendored `DECLARE<N>(...)`-macro shape hand-fixed; found and
+      fixed a real `ansify` safety-gate gap (see
+      `m3-rollout-runbook.md` "Findings from real sessions" → O2).
+      Runtime check found a real, confirmed-pre-existing (not a
+      regression) `image` inset bug — see `roadmap.md` → Insets to
+      Repair → "image". Committed.
 - [ ] **O3**: `overhead/mail/lib` (33), `overhead/mail/cmd` (3),
       `overhead/mail/testing` (1), `overhead/eli/lib` (25), `overhead/
       eli/bglisp` (1), `overhead/bison` (23) — 86 files, 6 dirs.
