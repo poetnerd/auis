@@ -521,7 +521,7 @@ apt__WriteObject( self, file, id, level, writer )
 /*===    if ( level )===*/ /* not parent, use datastream */
       {
       DEBUG( Write To Datastream );
-      sprintf( bracket, "data{%s, %d}\n", class_GetTypeName( self ),
+      sprintf( bracket, "data{%s, %ld}\n", class_GetTypeName( self ),
 			  dataobject_UniqueID( &self->header.dataobject ) );
       fprintf( file, "\\begin%s", bracket );
       for ( i = 0; i < 4; i++ )
