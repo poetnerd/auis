@@ -75,10 +75,10 @@ int level;
 {
     if(writeId!=helloworld_GetWriteID(hw)){ /* only write a given version once */
 	helloworld_SetWriteID(hw,writeId);
-	fprintf(file,"\\begindata{%s,%d}\n",
+	fprintf(file,"\\begindata{%s,%ld}\n",
 		class_GetTypeName(hw), helloworld_UniqueID(hw));
 	fprintf(file,"%d %d %d\n",hw->x,hw->y,hw->blackOnWhite);
-	fprintf(file,"\\enddata{%s,%d}\n",
+	fprintf(file,"\\enddata{%s,%ld}\n",
 		class_GetTypeName(hw), helloworld_UniqueID(hw));
     }
 
