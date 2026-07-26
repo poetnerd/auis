@@ -594,7 +594,7 @@ The resulting plan runs in four stages:
   family as a side effect.
 
 As of this writing, M1 and M2 are both complete across the entire
-active codebase; M3 has not yet started.
+active codebase; M3 is underway, one subsystem at a time.
 
 ## Where things stand today
 
