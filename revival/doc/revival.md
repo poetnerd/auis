@@ -430,6 +430,31 @@ sample:
   *that*, not the other way around — the class declaration, not the
   implementation, was the thirty-year-old mistake.
 
+- **A misspelled function call that silently linked to the wrong library
+  for thirty-five years.** Three mail-filtering primitives — regular-
+  expression search and decomposition operations available to the mail
+  system's rule-based filtering language — called functions named
+  `regcomp` and `regexec` to compile and run a pattern. No function by
+  either name has ever existed anywhere in this codebase; the regular-
+  expression engine actually built and shipped with the software, a few
+  directories over, is named `reg_comp` and `reg_exec`, with an
+  underscore neither call site had. Pre-standard C never checked that a
+  called function actually existed before compiling the call, so the
+  compiler raised no objection, and the linker simply resolved the
+  misspelled names against whatever else provided them — in this case,
+  the operating system's own built-in `regcomp`/`regexec`, a wholly
+  different regular-expression implementation expecting a different
+  kind of first argument than the plain string these call sites
+  actually pass. Every call, for the software's entire life, therefore
+  invoked the wrong function with the wrong argument shape — a defect
+  invisible to any compiler or linker, on this platform or any other,
+  because both misspelled names happened to already mean something.
+  It came to light not through an automated check (nothing about it
+  would trip one) but during a close reading of the file while fixing
+  unrelated compile errors as part of the ANSI C conversion effort.
+  Corrected to call the codebase's own, correctly named and typed,
+  `reg_comp`/`reg_exec`.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

@@ -283,6 +283,82 @@ code through O1:
    any file where `fix-missing-static-decl` reported a modification,
    even if `ansify`'s own report claimed success.
 
+### O3 (`overhead/mail/lib`+`cmd`+`testing`, `overhead/eli/lib`+`bglisp`, `overhead/bison`, 2026-07-26)
+
+Full findings: `claude-history/m3-o3-mail-eli-bison-REPORT.md`. Six
+unrelated directories, one session (M2 rollout-point-2 style
+batching). Five new patterns, all mechanical/self-healing except the
+last:
+
+1. **`fix-missing-static-decl` non-idempotency, variadic sub-case.**
+   O1's `unscribe.c` finding already showed the tool's "already
+   declared" recognizer only matches literal empty parens, so it can
+   insert a conflicting stub even over a correct existing declaration.
+   When the real definition is **variadic**, the inserted empty-parens
+   stub isn't just narrow-type-incompatible (fixable by retyping) — no
+   empty-parens declaration can ever be compatible with a `...` tail,
+   so the only fix is a full variadic prototype. Same repair sequence
+   as the non-variadic case, worth recognizing on sight.
+2. **Same non-idempotency bug, pre-existing-declaration trigger.** O1
+   and O2 both saw this misfire against a declaration the tool itself
+   had inserted on a prior pass. O3 found the identical failure
+   triggered by a **pre-existing, hand-written** empty-parens
+   declaration already in the pristine K&R source: retyping it to fix
+   an unrelated narrow-type-promotion conflict makes a second
+   `fix-missing-static-decl` pass fail to recognize the fix and insert
+   a fresh duplicate anyway. Confirms the bug isn't limited to
+   tool-inserted declarations — any full-prototype forward declaration
+   without a matching empty-parens block trips it, regardless of
+   origin.
+3. **Ordinary public C headers are not `.eh`-locality-guaranteed.**
+   This runbook's "Gate scope" section argues M3's blast radius stays
+   directory-local via the `.eh` mechanism specifically. That argument
+   does not extend to hand-maintained public headers: a non-static,
+   narrow-typed helper's ANSI conversion can surface a stale
+   empty-parens declaration in a **different, unbatched directory's**
+   header (`overhead/mail/lib/scan822.c`'s `IsOK822Atom` against
+   `overhead/mail/hdrs/mail.h`, safe and narrow here — one real
+   consumer, confirmed dead-code everywhere else — but a real gap in
+   the gate-scope argument). **New rule, effective now**: before
+   considering a directory's Import-side blast radius accounted for,
+   grep the installed header tree for a matching empty-parens
+   declaration of any non-static helper being converted, the same
+   spirit as M1's Import-fallout caution, now shown to apply to M3 too
+   via a different mechanism. Any such cross-directory header touch
+   should be flagged prominently in the session's report (as O3 did),
+   even when the fix is small and low-risk — treat it as worth a
+   second look, not routine, until this rule has more data points.
+4. **Poor-man's-varargs (`/*VARARGS1*/`) fixed-arity K&R functions.** A
+   K&R function declared with N fixed parameters but conventionally
+   *called* with fewer, relying on old-style calling convention to
+   silently ignore unsupplied trailing arguments. Once ANSI-typed, every
+   call site needs the full arity — `error: too few arguments...
+   expected N, have M`. Not a tool bug, not DRIFT, just the expected
+   consequence of arity-checking a function that was never really
+   variadic. Fix: pad every call site to full arity with a zero/NULL
+   sentinel already in scope (`overhead/mail/lib/stats.c`'s `warning`,
+   9 call sites). Likely to recur — this codebase has other
+   `/*VARARGS1*/`-annotated functions.
+5. **A real, non-`.ch` interface bug surfaced by ANSI arity-checking —
+   held for a ruling, now resolved.** `overhead/eli/lib/prmtives.c`
+   called `regcomp`/`regexec`, functions that don't exist anywhere in
+   this codebase — a ~35-year-old misspelling of the codebase's own
+   `reg_comp`/`reg_exec` (`overhead/rxp/regexp.h`), silently linked for
+   decades against macOS's own incompatible POSIX `regcomp`/`regexec`
+   instead, via K&R's implicit-declaration/linker-resolves-anything
+   behavior. This is the DRIFT/hard-stop taxonomy's "real bug, needs a
+   human ruling" class, but with **no `.ch` involved at all** — worth
+   remembering that this class isn't limited to class-method interface
+   disagreements; a plain call-site name typo against a
+   similarly-named sibling function is the same species. **Ruling
+   2026-07-26 (wdc): renamed to `reg_comp`/`reg_exec`.** Fixed and
+   verified (directory gated clean twice, deterministic); written up in
+   `revival.md`'s "Old bugs never found till now" per wdc's request.
+   Expect more instances as later waves reach older, less-visited
+   corners of the tree — this is exactly the kind of finding M3's own
+   mechanism (turning implicit declarations into real ones) is
+   positioned to surface.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)

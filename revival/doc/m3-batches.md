@@ -95,11 +95,18 @@ reasoning once batch size actually reflects it.
       Runtime check found a real, confirmed-pre-existing (not a
       regression) `image` inset bug — see `roadmap.md` → Insets to
       Repair → "image". Committed.
-- [ ] **O3**: `overhead/mail/lib` (33), `overhead/mail/cmd` (3),
+- [x] **O3**: `overhead/mail/lib` (33), `overhead/mail/cmd` (3),
       `overhead/mail/testing` (1), `overhead/eli/lib` (25), `overhead/
       eli/bglisp` (1), `overhead/bison` (23) — 86 files, 6 dirs.
       Unrelated families bundled in one session, same shape as M2's
       rollout point 2 (8 unrelated small directories, one session).
+      **Done 2026-07-26**: 0 real DRIFT; 4 pre-diagnosed `getopt`
+      bailouts plus 4 ordinary compile-gate fallout fixes, one reaching
+      outside the batch (`overhead/mail/hdrs/mail.h`, small/verified);
+      one real ~35-year-old non-`.ch` bug found and, per wdc's ruling,
+      fixed (`overhead/eli/lib/prmtives.c`'s `regcomp`/`regexec` typo —
+      see `m3-rollout-runbook.md` "Findings from real sessions" → O3
+      and `revival.md` "Old bugs never found till now"). Committed.
 - [ ] **O4**: `overhead/cmenu` (8), `overhead/mail/metamail/metamail`
       (7), `overhead/mail/metamail/richmail` (6), `overhead/malloc`
       (4), `overhead/index` (4), `overhead/class/lib` (4), `overhead/
