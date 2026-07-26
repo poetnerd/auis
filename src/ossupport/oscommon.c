@@ -47,8 +47,7 @@ long atkos_dummy_variable_for_ar=99;
 extern char *mktemp();
 #endif
 
-char *Andrew_tmpnam(buf)
-char *buf;
+char * Andrew_tmpnam(char *buf)
 {
     static char lbuf[L_tmpnam];
     char *ptr=buf;
@@ -80,9 +79,7 @@ FILE *Andrew_tmpfile()
  so the rename the function and use a #define trick won't help here -rr2b */
 #ifdef NEED_UTIMES
 #include <utime.h>
-int utimes(file, tvp)
-char *file;
-struct timeval *tvp;
+int utimes(char *file, struct timeval *tvp)
 {
 	struct utimbuf times;
 	times.actime = tvp[0].tv_sec;
@@ -99,8 +96,7 @@ long random()
     return lrand48();
 }
 
-void srandom(seed)
-int seed;
+void srandom(int seed)
 {
     srand48(seed);
 }
@@ -113,8 +109,7 @@ struct qelem {
     char q_data[1];
 };
 
-void insque(elq, pred)
-struct qelem *elq, *pred;
+void insque(struct qelem *elq, struct qelem *pred)
 {
     if(pred->next) pred->next->prev = elq;
     elq->next=pred->next;
@@ -122,8 +117,7 @@ struct qelem *elq, *pred;
     pred->next=elq;
 }
 
-void remque(elq)
-struct qelem *elq;
+void remque(struct qelem *elq)
 {
     if(elq->prev) elq->prev->next=elq->next;
     if(elq->next) elq->next->prev=elq->prev;

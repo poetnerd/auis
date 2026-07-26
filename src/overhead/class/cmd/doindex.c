@@ -49,6 +49,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <class.h>  /* this contains all the structs, etc. for the class system */
 #include <doload.h>
 #include <classind.h>
+static void AddEntry();
+static void DeleteEntry();
+static void Error();
+static void ParseArgs();
+static void ProcessEntry();
+static void Usage();
 
 
 /*
@@ -94,11 +100,7 @@ int lockfd;
  ** handle errors by printing the passed message to 
  ** stderr and exitting with a status of 1.
  **/
-static void
-Error(message, param)
-char * message;
-char * param;
-
+static void Error(char *message, char *param)
 {
     (void) fprintf(stderr, "%s: %s%s...program terminated!\n", ProgramName, message, param);
     (void) fflush(stderr);
@@ -127,10 +129,7 @@ Usage()
 /**
  ** Add a file to process the list of entries.
  **/
-static void
-AddEntry(name)
-char * name;
-
+static void AddEntry(char *name)
 {
 struct EntryStruct * ThisEntry;
 struct EntryStruct * NewEntry;
@@ -162,10 +161,7 @@ struct EntryStruct * NewEntry;
 /**
  ** Delete an entry.
  **/
-static void
-DeleteEntry(entry)
-struct EntryStruct * entry;
-
+static void DeleteEntry(struct EntryStruct *entry)
 {
     free(entry->Name);
     free(entry);
@@ -178,11 +174,7 @@ struct EntryStruct * entry;
  ** Try to be smart about this and allow the use to place a space between the 
  ** switch and it's argument.
  **/
-static void
-ParseArgs(argc, argv)
-int argc;
-char *argv[];
-
+static void ParseArgs(int argc, char *argv[])
 {
 int i;
 
@@ -356,10 +348,7 @@ RETRY:
  ** the creation of the new index file.  This lock must
  ** be set by the caller.
  **/
-static void
-ProcessEntry(entry)
-struct EntryStruct * entry;
-
+static void ProcessEntry(struct EntryStruct *entry)
 {
 int objfd;
 struct classinfo *info;	/* from the dynamic loaded code */
@@ -437,11 +426,7 @@ long keylen;
  ** main()
  **/
 
-int
-main(argc, argv)
-int argc;
-char *argv[];
-
+int main(int argc, char *argv[])
 {
 struct EntryStruct * TempEntry;
 

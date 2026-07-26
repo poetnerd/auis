@@ -101,11 +101,8 @@ typedef int (*XErrorHandler) ();
    "extern int errprintf();" is the only precedent found. */
 extern int errprintf();
 
-/* cmenu.h guards its typed prototypes with "#ifdef _STDC_", which is
-   never defined (the standard macro is __STDC__), so these two never
-   get declared through the header. */
-extern int cmenu_Destroy();
-extern int cmenu_Activate();
+/* cmenu.h's "_STDC_"/"__STDC__" typo is fixed (M3 O4, revival.md) --
+   these two are declared through the header now. */
 
 static void HandleDropin();
 
@@ -1914,7 +1911,7 @@ struct menulist *menulist;
 	    if((self->cshowinactive || menulist_ItemIsEnabled(menulist,item)) &&  self->cmenuson && self->cmenu) {
 		if(!self->menubaron || !self->PopupMenuList || CheckMenuChoice(self->PopupMenuList, self->PopupMenuListCount, pt)>=0) {
 		    selectionData->refs++;
-		    cmenu_AddSelection(self->cmenu, paneTitle, cmenuspanePriority, messitem_Replace(selectionString), selectionPriority, selectionData, cmenu_CreatePane | cmenu_DisallowDuplicates |(menulist_ItemIsEnabled(menulist, item)?cmenu_Active:0), self->cshowkeys?keys:NULL);
+		    cmenu_AddSelection(self->cmenu, paneTitle, cmenuspanePriority, messitem_Replace(selectionString), selectionPriority, (long)selectionData, cmenu_CreatePane | cmenu_DisallowDuplicates |(menulist_ItemIsEnabled(menulist, item)?cmenu_Active:0), self->cshowkeys?keys:NULL);
 		}
 	    }
 	    if(self->menubaron && self->menu) {

@@ -51,8 +51,7 @@ void scache_Init()
     bzero(scache,sizeof(scache));
 }
 
-char *scache_Hold(str)
-char *str;
+char * scache_Hold(char *str)
 {
     unsigned long len;
     unsigned long hash;
@@ -97,8 +96,7 @@ char *str;
     return e->str;
 }
 
-void scache_Free(str)
-char *str;
+void scache_Free(char *str)
 {
     scache_REFCOUNT(str)--;
 }

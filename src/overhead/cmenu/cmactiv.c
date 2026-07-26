@@ -35,6 +35,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <X11/Xlib.h>
 #include <cmintern.h>
 #include <cmdraw.h>
+static void EventLoop();
+static void HandleMovement();
+static int HandlePress();
 
 /* defined in cmdraw.c/cmmanip.c; neither cmdraw.h nor cmintern.h declares these */
 extern void FlipButton();
@@ -65,10 +68,7 @@ struct activationState {
 /* This function defines all events which are meaningful to the cmenuActivate
  * procedure's event loop.
  */
-static Bool SuitableEvent(display, event, args)
-    Display *display;
-    XEvent *event;
-    char *args; /* Should be void * */
+static Bool SuitableEvent(Display *display, XEvent *event, char *args)
 {
 
     struct activationState *state = (struct activationState *) args;
@@ -91,10 +91,7 @@ static Bool SuitableEvent(display, event, args)
 /* This function defines all events which should be cleared from the queue
  * when we are done.
  */
-static Bool DiscardableEvents(display, event, args)
-    Display *display;
-    XEvent *event;
-    char *args; /* Should be void * */
+static Bool DiscardableEvents(Display *display, XEvent *event, char *args)
 {
 
     struct activationState *state = (struct activationState *) args;
@@ -115,10 +112,7 @@ static Bool DiscardableEvents(display, event, args)
 }
 #endif /* ATTEMPTSAVEUNDERS */
 
-static int HandlePress(menu, buttonEvent, state)
-    struct cmenu *menu;
-    XButtonEvent *buttonEvent;
-    struct activationState *state;
+static int HandlePress(struct cmenu *menu, XButtonEvent *buttonEvent, struct activationState *state)
 {
 
     if (buttonEvent->button == state->buttonName) {
@@ -135,10 +129,7 @@ static int HandlePress(menu, buttonEvent, state)
     return(0);
 }
 
-static void HandleMovement(menu, motionEvent, state)
-    struct cmenu *menu;
-    XMotionEvent *motionEvent;
-    struct activationState *state;
+static void HandleMovement(struct cmenu *menu, XMotionEvent *motionEvent, struct activationState *state)
 {
 
     struct drawingState *drawingState = &state->drawingState;
@@ -216,10 +207,7 @@ static void HandleMovement(menu, motionEvent, state)
     SetSelectionPtrAndNum(drawingState, selectionPtr, selectionNum);
 }
 
-static void EventLoop(menu, display, state)
-    struct cmenu *menu;
-    Display *display;
-    struct activationState *state;
+static void EventLoop(struct cmenu *menu, Display *display, struct activationState *state)
 {
 
     XEvent events[2];
@@ -265,13 +253,7 @@ static void EventLoop(menu, display, state)
     }
 }
 
-int
-cmenu_Activate(menu, menuEvent, data, backgroundType, background)
-    struct cmenu *menu;
-    XButtonEvent *menuEvent;
-    long *data;
-    int backgroundType;
-    long background;
+int cmenu_Activate(struct cmenu *menu, XButtonEvent *menuEvent, long *data, int backgroundType, long background)
 {
 
     int ret_val;			/* Return value. */

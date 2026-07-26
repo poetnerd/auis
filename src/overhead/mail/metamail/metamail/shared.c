@@ -14,9 +14,7 @@ char **Exceptions;
 int *NeedsPortableNewlines;
 int ExceptionsAlloced = 0, ExceptionsUsed = 0;
 
-ExceptionalNewline(contenttype, needsportable)
-char *contenttype;
-int needsportable;
+int ExceptionalNewline(char *contenttype, int needsportable)
 {
     char *s;
     if (ExceptionsAlloced == 0) {
@@ -43,8 +41,7 @@ int needsportable;
     return(0);
 }
 
-DoesNeedPortableNewlines(ctype)
-char *ctype;
+int DoesNeedPortableNewlines(char *ctype)
 {
     int i;
 
@@ -68,9 +65,7 @@ char *ctype;
     return(0);
 }
 
-lc2strncmp(s1, s2, len)
-char *s1, *s2;
-int len;
+int lc2strncmp(char *s1, char *s2, int len)
 {
     if (!s1 || !s2) return (-1);
     while (*s1 && *s2 && len > 0) {
@@ -81,8 +76,7 @@ int len;
     return((*s1 == *s2) ? 0 : -1);
 }
 
-lc2strcmp(s1, s2)
-char *s1, *s2;
+int lc2strcmp(char *s1, char *s2)
 {
     if (!s1 || !s2) return (-1);
     while (*s1 && *s2) {

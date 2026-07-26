@@ -56,8 +56,7 @@ extern int errno;
 char *malloc(), *realloc();
 #endif
 
-err(f,a,b)
-char *f,*a,*b;
+int err(char *f, char *a, char *b)
 {
     char buf[1000];
     sprintf(buf,f,a,b);
@@ -66,8 +65,7 @@ char *f,*a,*b;
     exit(10);
 }
 
-syserr(f,a,b,c)
-char *f,*a,*b,*c;
+int syserr(char *f, char *a, char *b, char *c)
 {
     char buf[1000];
 
@@ -83,15 +81,12 @@ char *f,*a,*b,*c;
     exit(9);
 }
 
-qsLineCompare(l1,l2)
-char **l1, **l2;
+int qsLineCompare(char **l1, char **l2)
 {
     return strcmp(*l1,*l2);
 }
 
-char **readFromLines(fromFile,numP)
-char *fromFile;
-int *numP;
+char ** readFromLines(char *fromFile, int *numP)
 {
     FILE *fp;
     int fromLinesLen=0, fromLinesMax=LINESALLOCSTEP;
@@ -142,8 +137,7 @@ int *numP;
     return fromLines;
 }
 
-int strcmpFirstField(s1,s2)
-char *s1, *s2;
+int strcmpFirstField(char *s1, char *s2)
 {
     while(*s1==*s2 && isgraph(*s1))
 	s1++, s2++;
@@ -156,9 +150,7 @@ char *s1, *s2;
 	return *s1-*s2;
 }
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     int fd;
     FILE *newFp, *oldFp;

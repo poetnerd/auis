@@ -57,9 +57,7 @@ struct hashList *index_NewHL()
   * Internal routine: given a hash list and a hash value, return true if the value is
       * contained in the list, and false otherwise.
       */
-index_HashPresent(alist, ahash)
-register struct hashList *alist;
-register long ahash;
+int index_HashPresent(struct hashList *alist, long ahash)
 {
     register int i;
     for(;alist;alist=alist->next) {
@@ -74,9 +72,7 @@ register long ahash;
   * Internal routine: given a hash list and a hash value, delete the value from
   * the hash list.
   */
-index_HashRemove(alist, ahash)
-register struct hashList *alist;
-register long ahash;
+int index_HashRemove(struct hashList *alist, long ahash)
 {
     register int i;
     for(;alist;alist=alist->next) {
@@ -90,9 +86,7 @@ register long ahash;
 /*
   * Internal routine: given a hash list and a hash value, add the value to the list.
   */
-index_HashAdd(alist, ahash)
-register struct hashList *alist;
-register long ahash;
+int index_HashAdd(struct hashList *alist, long ahash)
 {
     register struct hashList *tlist;
     for(tlist=alist;tlist;tlist=tlist->next) {
@@ -111,8 +105,7 @@ register long ahash;
 /*
   * Internal routine: given a hash list, free it.
   */
-index_FreeHL(alist)
-register struct hashList *alist;
+int index_FreeHL(struct hashList *alist)
 {
     register struct hashList *next;
     for(;alist;alist=next) {
@@ -124,7 +117,7 @@ register struct hashList *alist;
 /*
   * Create a new, empty record set.
   */
-struct recordSet *recordset_New(asize)
+struct recordSet * recordset_New(int asize)
 {
     register struct recordSet *tr;
     if (asize <= 0) asize = 1;
@@ -138,8 +131,7 @@ struct recordSet *recordset_New(asize)
 /*
   * Free a record set.
   */
-recordset_Free(aset)
-register struct recordSet *aset;
+int recordset_Free(struct recordSet *aset)
 {
     free(aset->data);
     free(aset);
@@ -148,9 +140,7 @@ register struct recordSet *aset;
 /*
   * Add a record id to a record set.
   */
-recordset_Add(aset, arid)
-register struct recordSet *aset;
-register struct recordID *arid;
+int recordset_Add(struct recordSet *aset, struct recordID *arid)
 {
     register long c;
     register struct recordID *tid;

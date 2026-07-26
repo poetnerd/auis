@@ -23,12 +23,7 @@ int doload_trace = 0;
  * lenP  - set to a fake text length
  * path  - full pathname of the .do file
  */
-char *doload(inFD, name, bp, lenP, path)
-int inFD;
-char *name;
-char **bp;
-long *lenP;
-char *path;
+char * doload(int inFD, char *name, char **bp, long *lenP, char *path)
 {
     void *handle;
     char *EntryPoint = NULL;

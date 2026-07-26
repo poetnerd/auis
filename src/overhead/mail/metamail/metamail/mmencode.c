@@ -25,9 +25,7 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 /* No header declares these; defined in the sibling file codes.c */
 extern int to64(), from64(), toqp(), fromqp();
 
-main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     int encode = 1, which = BASE64, i, portablenewlines = 0;
     FILE *fp = stdin;

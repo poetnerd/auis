@@ -30,6 +30,7 @@
 CLASS=../pp/class
 MAKEDO=$(BASEDIR)/bin/makedo
 LOCALINCLUDES= -I../lib -I../machdep/machine -I.
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 #ifdef _IBMR2
 MAKEDOFLAGS= -g -b ../cmd -d $(BASEDIR)/lib $(SHARED_LIB_PATH)
 #else

@@ -124,7 +124,7 @@ extern struct indexBucket *index_ReadIndex();
 extern struct indexBucket *index_CGetHash();
 extern struct indexBucket *index_CGet();
 extern struct recordSet *recordset_New();
-extern long index_Hash();
+extern long index_Hash(char *astring, short hashSize);
 
 /* Added M2 ANSI sweep (revival/doc/roadmap.md, M2): these index_ and
    recordset_ siblings were already defined in this directory but never

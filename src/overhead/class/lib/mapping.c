@@ -59,6 +59,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <andrewos.h>
 #include <mapping.h>
+static char * ConstructLoadString();
+static struct MapEntryStruct * CreateMapEntry();
+static int HashName();
 
 
 /* 
@@ -105,9 +108,7 @@ static struct MapEntryStruct * KeyEntryRoots[HASHENTRIES];
  ** keep names that start the same way from hashing to
  ** same value.
  **/
-static int HashName(name)
-char * name;
-
+static int HashName(char *name)
 {
 char * p;
 unsigned int result;
@@ -126,14 +127,7 @@ unsigned int result;
  ** Create a new mapping entry and initialize the data.
  ** If the entry can not be created return NULL.
  **/
-static struct MapEntryStruct *
-CreateMapEntry(name, key, version, pathindex, data)
-char * name;
-char * key;
-class_VersionNumberType version;
-int pathindex;
-char * data;
-
+static struct MapEntryStruct * CreateMapEntry(char *name, char *key, class_VersionNumberType version, int pathindex, char *data)
 {
 struct MapEntryStruct * NewEntry;
 
@@ -186,10 +180,7 @@ struct MapEntryStruct * NewEntry;
  ** field are a special case.  These entries will not have the path and "/"
  ** prepended to the load string.
  **/
-static char *
-ConstructLoadString(entry)
-struct MapEntryStruct * entry;
-
+static char * ConstructLoadString(struct MapEntryStruct *entry)
 {
 char * ThisPath;
 char * ThisString;
@@ -304,10 +295,7 @@ int i;
  ** the index assigned to this path.  -1 is returned if 
  ** the path cannot be registered.
  **/
-int
-EnterPathEntry(path)
-char * path;
-
+int EnterPathEntry(char *path)
 {
 struct PathEntryStruct * ThisEntry;
 int i;
@@ -362,10 +350,7 @@ int i;
  ** with registered as index.  NULL is returned if
  ** something is wrong.
  **/
-char *
-GetPathEntry(index)
-int index; 
-
+char * GetPathEntry(int index)
 {
 struct PathEntryStruct * ThisEntry;
 int i;
@@ -409,14 +394,7 @@ int i;
  ** old entry will be inserted AFTER the existing entry so the
  ** existing entry will be used.
  **/
-int
-EnterMapEntry(name, key, version, pathindex, data)
-char * name;
-char * key;
-class_VersionNumberType version;
-int pathindex;
-char * data;
-
+int EnterMapEntry(char *name, char *key, class_VersionNumberType version, int pathindex, char *data)
 {
 struct MapEntryStruct * ThisEntry;
 struct MapEntryStruct * NewEntry;
@@ -483,11 +461,7 @@ int KeyHash;
  ** pointed to by the returned value must be 
  ** free'd by the caller.
  **/
-char *
-MapByName(name, version)
-char * name;
-class_VersionNumberType version;
-
+char * MapByName(char *name, class_VersionNumberType version)
 {
 struct MapEntryStruct * ThisEntry;
 
@@ -511,11 +485,7 @@ struct MapEntryStruct * ThisEntry;
  ** pointed to by the returned value must be 
  ** free'd by the caller.
  **/
-char *
-MapByKey(key, version)
-char * key;
-class_VersionNumberType version;
-
+char * MapByKey(char *key, class_VersionNumberType version)
 {
 struct MapEntryStruct * ThisEntry;
 
@@ -538,11 +508,7 @@ struct MapEntryStruct * ThisEntry;
  ** returned value points to a string that must not
  ** be modified or free'd by the caller.
  **/
-struct MapEntryStruct *
-RetrieveByName(name, version)
-char * name;
-class_VersionNumberType version;
-
+struct MapEntryStruct * RetrieveByName(char *name, class_VersionNumberType version)
 {
 struct MapEntryStruct * ThisEntry;
 
@@ -571,11 +537,7 @@ struct MapEntryStruct * ThisEntry;
  ** returned value points to a string that must not
  ** be modified or free'd by the caller.
  **/
-struct MapEntryStruct *
-RetrieveByKey(key, version)
-char * key;
-class_VersionNumberType version;
-
+struct MapEntryStruct * RetrieveByKey(char *key, class_VersionNumberType version)
 {
 struct MapEntryStruct * ThisEntry;
 
@@ -610,10 +572,7 @@ struct MapEntryStruct * ThisEntry;
  ** Dump a formatted list of the mapping entries
  ** to file.
  **/
-void
-DumpMappingInfo(file)
-FILE *file;
-
+void DumpMappingInfo(FILE *file)
 {
 struct PathEntryStruct * ThisPath;
 struct MapEntryStruct * ThisMap;
@@ -669,10 +628,7 @@ int i, j;
  ** Dump a formatted list of the mapping statistics
  ** to file.
  **/
-void
-DumpMappingStats(file)
-FILE *file;
-
+void DumpMappingStats(FILE *file)
 {
 struct PathEntryStruct * ThisPath;
 struct MapEntryStruct * ThisMap;

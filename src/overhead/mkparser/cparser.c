@@ -54,9 +54,7 @@ static void debugreduce(/* struct parser_tables  *desc, int  rule , int  reveale
 static void debugflush(/* struct parser_tables  *desc, int  state */);
 static void debugnewline();
 
-	int
-parser_SetDebug(value)
-	int value;
+int parser_SetDebug(int value)
 {
 	int oldval = DebugFlag;
 	DebugFlag = value;
@@ -68,12 +66,7 @@ parser_GetCurrentparser() {
 	return CurrentParser;
 }
 
-	void
-parser_ErrorGuts(self, severity, severityname, msg)
-	struct parser *self;
-	int severity;
-	char *severityname;
-	char *msg;
+void parser_ErrorGuts(struct parser *self, int severity, char *severityname, char *msg)
 {
 	if(self->errorfunc) 
 		self->errorfunc(self, severity, severityname, msg);
@@ -84,9 +77,7 @@ parser_ErrorGuts(self, severity, severityname, msg)
 	}
 }
 
-	void 
-parser_Init(self)
-	struct parser *self;
+void parser_Init(struct parser *self)
 {
 	self->tables = NULL;
 	self->rock = NULL;
@@ -106,18 +97,12 @@ parser_New() {
 	return self;
 }
 
-	void 
-parser_Destroy(self)
-	struct parser *self;
+void parser_Destroy(struct parser *self)
 {
 	free(self);
 }
 
-	void 
-parser_Error(self, severity, msg)
-	struct parser *self;
-	int severity;
-	char *msg;
+void parser_Error(struct parser *self, int severity, char *msg)
 {
 	int tsev = severity & (~parser_FREEMSG);
 	char *name;
@@ -140,11 +125,7 @@ parser_Error(self, severity, msg)
 	 the handler is called for each reserved word:
 		handler(rock, char *word, int tokennumber) 
 */
-	void 
-parser_EnumerateReservedWords(self, handler, rock)
-	struct parser *self;
-	parser_enumresfptr handler;
-	void *rock;
+void parser_EnumerateReservedWords(struct parser *self, parser_enumresfptr handler, void *rock)
 {
 	int i, nnames;
 	char **names;
@@ -184,10 +165,7 @@ parser_EnumerateReservedWords(self, handler, rock)
 	Returns the token number corresponding to the string;
 	Typical strings:  "function", "setID", "tokNULL", "'a'", "\":=\""  
 */
-	int 
-parser_TokenNumberFromName(self, name)
-	struct parser *self;
-	char *name;
+int parser_TokenNumberFromName(struct parser *self, char *name)
 {
 	int i, nnames, nmlen = strlen(name);
 	char **names;
@@ -228,10 +206,7 @@ parser_TokenNumberFromName(self, name)
 		  \o		  :  other characters, unchanged
 	if no character follows the \, return \ and length of zero
 */
-	int 
-parser_TransEscape(buf, plen)
-	char  *buf;
-	int  *plen;
+int parser_TransEscape(char *buf, int *plen)
 {
 	static char esctab[]
 	  = "r\rn\nf\ft\tb\bv\v\"\"\'\'\\\\?\177e\033E\033R\rN\nF\fT\tB\bV\v";
@@ -329,12 +304,7 @@ static char newstate [9][21] = {
 /*9 error halt */
 /*10 accept */
 };
-	int 
-parser_ParseNumber(buf, plen, intval, dblval)
-	char  *buf;
-	long  *plen;
-	long  *intval;
-	double  *dblval;
+int parser_ParseNumber(char *buf, long *plen, long *intval, double *dblval)
 {
 	long val;
 	int len;
@@ -415,12 +385,7 @@ parser_ParseNumber(buf, plen, intval, dblval)
 }
 
 
-	static void 
-debugstate(desc, state, pendtok, errorstate)
-	struct parser_tables *desc;
-	int state;
-	int pendtok;
-	int errorstate;
+static void debugstate(struct parser_tables *desc, int state, int pendtok, int errorstate)
 {
 	if (pendtok == NOTOK)
 		printf("(%d,--)", state);
@@ -434,21 +399,13 @@ debugstate(desc, state, pendtok, errorstate)
 	fflush(stdout);
 }
 
-	static void 
-debugshift(desc, tact)
-	struct parser_tables  *desc;
-	int  tact;
+static void debugshift(struct parser_tables *desc, int tact)
 {
 	printf(":   shift to state %d\n", tact);
 	fflush(stdout);
 }
 
-	static void 
-debugreduce(desc, rule, revealedstate, newstate)
-	struct parser_tables *desc;
-	int rule;
-	int revealedstate;
-	int newstate;
+static void debugreduce(struct parser_tables *desc, int rule, int revealedstate, int newstate)
 {
 	int i;
 	printf(":   reduce   %d->%d\n", revealedstate, newstate);
@@ -467,10 +424,7 @@ debugreduce(desc, rule, revealedstate, newstate)
 	fflush(stdout);
 }
 
-	static void 
-debugflush(desc, state)
-	struct parser_tables  *desc;
-	int  state;
+static void debugflush(struct parser_tables *desc, int state)
 {
 	printf("\t\tpop state %d\n", state);
 	fflush(stdout);
@@ -482,11 +436,7 @@ debugnewline() {
 	fflush(stdout);
 }
 
-	int 
-parser_Parse(self, lexer, lexrock)
-	struct parser *self;
-	parser_lexerfptr lexer;
-	void *lexrock;
+int parser_Parse(struct parser *self, parser_lexerfptr lexer, void *lexrock)
 {
 	register struct parser_tables *desc = self->tables;
 	register int x, tact;	/* temps */
