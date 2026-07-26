@@ -1500,7 +1500,7 @@ int level;
 
 	termulator_SetWriteID(self,writeID);
 
-	fprintf(fp,"\\begindata{%s,%d}\n",
+	fprintf(fp,"\\begindata{%s,%ld}\n",
 		class_GetTypeName(self), termulator_UniqueID(self));
 
 	if(self->args==NULL)
@@ -1508,7 +1508,7 @@ int level;
 	else
 	    argvtostr(self->args,buf,sizeof(buf));
 
-	fprintf(fp,"%s\n\\enddata{%s,%d}\n",
+	fprintf(fp,"%s\n\\enddata{%s,%ld}\n",
 		buf,class_GetTypeName(self), termulator_UniqueID(self));
     }
 

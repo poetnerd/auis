@@ -130,12 +130,12 @@ int level; {
   if (id != alink_GetWriteID(self)) {
     /* New Write Operation */
     alink_SetWriteID(self, id);
-    fprintf(fp, "\\begindata{%s,%d}\nDatastream version: %d\n",
+    fprintf(fp, "\\begindata{%s,%ld}\nDatastream version: %d\n",
 	    class_GetTypeName(self), uniqueid, DS_VERSION);
     WriteLine(fp, alink_GetText(self) ? alink_GetText(self) : "");
     fprintf(fp, "%ld\n", alink_GetAudioLength(self));
     WriteAudio(fp, alink_GetAudioLength(self), alink_GetAudio(self));
-    fprintf(fp, "\\enddata{%s,%d}\n",
+    fprintf(fp, "\\enddata{%s,%ld}\n",
 	    class_GetTypeName(self), uniqueid);
   }
   return(uniqueid);

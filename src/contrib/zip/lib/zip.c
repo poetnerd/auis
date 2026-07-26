@@ -304,7 +304,7 @@ zip__Write( self, file, id, level )
     self->header.dataobject.writeID = id;
     if ( level )
       { DEBUG(Not Parent -- Write To Datastream);
-      fprintf( file, "\\begindata{%s,%d}\n",
+      fprintf( file, "\\begindata{%s,%ld}\n",
 		class_GetTypeName( self ),
 		dataobject_UniqueID( &self->header.dataobject ) );
       Write_View_Info( self, file );
@@ -321,7 +321,7 @@ zip__Write( self, file, id, level )
         status = zip_Enparse_Stream( self, Stream );
 	}
       DEBUGdt(Status,status);
-      fprintf( file, "\n\\enddata{%s,%d}\n",
+      fprintf( file, "\n\\enddata{%s,%ld}\n",
 		class_GetTypeName( self ),
 		dataobject_UniqueID( &self->header.dataobject ) );
       }

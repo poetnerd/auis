@@ -117,7 +117,7 @@ int level;
 	/* New write operation */
 	chimp_SetWriteID(self, id);
 	if (level>0) {
-	    fprintf(fp, "\\begindata{%s,%d}\n", class_GetTypeName(self), chimp_UniqueID(self));
+	    fprintf(fp, "\\begindata{%s,%ld}\n", class_GetTypeName(self), chimp_UniqueID(self));
 	}
 	for (cm = self->comment; cm; cm = cm->next) {
 	    fprintf(fp, "%s", cm->line); /* newline already there */
@@ -127,7 +127,7 @@ int level;
 	    WriteOutEvent(fp, li[i].rock);
 	}
 	if (level > 0) {
-	    fprintf(fp, "\\enddata{%s,%d}\n", class_GetTypeName(self), chimp_UniqueID(self));
+	    fprintf(fp, "\\enddata{%s,%ld}\n", class_GetTypeName(self), chimp_UniqueID(self));
 	}
     }
     return(chimp_UniqueID(self));

@@ -408,12 +408,12 @@ int level;
   if (id != timeoday_GetWriteID(self)) {
     /* New Write Operation */
     timeoday_SetWriteID(self, id);
-    fprintf(fp, "\\begindata{%s,%d}\nDatastream version: %d\n",
+    fprintf(fp, "\\begindata{%s,%ld}\nDatastream version: %d\n",
 	    class_GetTypeName(self), uniqueid, DS_VERSION);
 
     timeoday_WriteDataPart(self, fp);
 
-    fprintf(fp, "\\enddata{%s,%d}\n", class_GetTypeName(self), uniqueid);
+    fprintf(fp, "\\enddata{%s,%ld}\n", class_GetTypeName(self), uniqueid);
   }
   return(uniqueid);
 }

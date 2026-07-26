@@ -220,12 +220,12 @@ int level;
   if (id != clock_GetWriteID(self)) {
     /* New Write Operation */
     clock_SetWriteID(self, id);
-    fprintf(fp, "\\begindata{%s,%d}\nDatastream version: %d\n",
+    fprintf(fp, "\\begindata{%s,%ld}\nDatastream version: %d\n",
 	    class_GetTypeName(self), uniqueid, DS_VERSION);
 
     clock__WriteDataPart(self, fp);
 
-    fprintf(fp, "\\enddata{%s,%d}\n", class_GetTypeName(self), uniqueid);
+    fprintf(fp, "\\enddata{%s,%ld}\n", class_GetTypeName(self), uniqueid);
   }
   return(uniqueid);
 }
