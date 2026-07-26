@@ -659,7 +659,7 @@ image__SendBeginData(self, file, writeID, level)
 {
     long id = image_UniqueID(self);
     self->header.dataobject.writeID = writeID;
-    if(fprintf(file, "\\begindata{image,%d}\n", id) < 0)
+    if(fprintf(file, "\\begindata{image,%ld}\n", id) < 0)
 	return(-1);
     else
 	return(id);
@@ -721,11 +721,11 @@ image__SendEndData(self, file, writeID, id)
     struct image *self;
     FILE *file;
     long writeID;
-    int id;
+    long id;
 {
     image_SetWriteID(self, writeID);
     image_SetID(self, id);
-    if(fprintf(file, "\\enddata{image, %d}\n", id) < 0)
+    if(fprintf(file, "\\enddata{image, %ld}\n", id) < 0)
 	return(-1);
     return(0);
 }
