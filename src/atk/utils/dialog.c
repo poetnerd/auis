@@ -128,8 +128,8 @@ int level;
 	/* New Write Operation */
 	sbutton_SetWriteID(self, id);
 	
-	fprintf(fp, "\\begindata{%s,%d}\nDatastream version: %d\n",
-		class_GetTypeName(self), 
+	fprintf(fp, "\\begindata{%s,%ld}\nDatastream version: %d\n",
+		class_GetTypeName(self),
 		uniqueid, dialog_DS_VERSION);
 
 	if(!self->text) {
@@ -147,7 +147,7 @@ int level;
 	} else {
 	    sbutton_Write(self->buttons, fp, id, level+1);
 	}
-	fprintf(fp, "\\enddata{%s,%d}\n", class_GetTypeName(self), uniqueid);
+	fprintf(fp, "\\enddata{%s,%ld}\n", class_GetTypeName(self), uniqueid);
     }
     return(uniqueid);
 }

@@ -129,7 +129,7 @@ stringtbl__Write( self, file, writeID, level )
 	if (self->header.dataobject.writeID != writeID) {
 		/* new instance of write, do it */
 		self->header.dataobject.writeID = writeID;
-		sprintf(head, "data{%s, %d}\n", class_GetTypeName(self), id);
+		sprintf(head, "data{%s, %ld}\n", class_GetTypeName(self), id);
 		fprintf(file, "\\begin%s", head);
 
 		fprintf(file, "%x\n", self->highlight);
