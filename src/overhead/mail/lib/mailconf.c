@@ -51,6 +51,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <pwd.h>
 
 #include <mailconf.h>
+static struct configurelist * openCellConfig();
 
 extern char *AndrewDir();
 extern char *LocalDir();
@@ -672,8 +673,7 @@ static struct ConfigStringArrays {
 /* Now, provide a mechanism to dynamically configure these guys. */
 
 /* First, a mechanism to get the cell-dependent stuff. */
-static struct configurelist *openCellConfig(cellN)
-char *cellN;
+static struct configurelist * openCellConfig(char *cellN)
 {
 	int mylen;
 	char *mybuf;

@@ -62,9 +62,7 @@ struct option longopts[] =
   {0, 0, 0, 0}
 };
 
-void
-usage (stream)
-     FILE *stream;
+void usage(FILE *stream)
 {
   fprintf (stream, "\
 Usage: %s [-dhklntvyV] [-b file-prefix] [-o outfile] [-p name-prefix]\n\
@@ -76,10 +74,7 @@ Usage: %s [-dhklntvyV] [-b file-prefix] [-o outfile] [-p name-prefix]\n\
 	   program_name);
 }
 
-void
-getargs(argc, argv)
-     int argc;
-     char *argv[];
+void getargs(int argc, char *argv[])
 {
   register int c;
 

@@ -334,10 +334,7 @@ set_goto_map()
 
 /*  Map_goto maps a state/symbol pair into its numeric representation.	*/
 
-int
-map_goto(state, symbol)
-int state;
-int symbol;
+int map_goto(int state, int symbol)
 {
   register int high;
   register int low;
@@ -536,11 +533,7 @@ build_relations()
 }
 
 
-void
-add_lookback_edge(stateno, ruleno, gotono)
-int stateno;
-int ruleno;
-int gotono;
+void add_lookback_edge(int stateno, int ruleno, int gotono)
 {
   register int i;
   register int k;
@@ -569,10 +562,7 @@ int gotono;
 
 
 
-short **
-transpose(R_arg, n)
-short **R_arg;
-int n;
+short ** transpose(short **R_arg, int n)
 {
   register short **new_R;
   register short **temp_R;
@@ -685,9 +675,7 @@ compute_lookaheads()
 }
 
 
-void
-digraph(relation)
-short **relation;
+void digraph(short **relation)
 {
   register int i;
 
@@ -712,9 +700,7 @@ short **relation;
 }
 
 
-void
-traverse(i)
-register int i;
+void traverse(int i)
 {
   register unsigned *fp1;
   register unsigned *fp2;

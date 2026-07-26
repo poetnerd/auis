@@ -45,9 +45,7 @@ extern char *inet_ntoa();
 #include <netdb.h>
 #include <andrewos.h> /* sys/time.h */
 
-main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     int i, j;
     unsigned long foo, bar, baz;

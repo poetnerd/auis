@@ -44,6 +44,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <mail.h>
 #include <parseadd.h>
 #include <svcconf.h>
+static void CanonicalizeList();
+static int FunkyParseAddressList();
+static char * ListUnparse();
+static int ResolveTilde();
+static void ValidateAddresses();
+static void ValidateRecipient();
 #ifdef WHITEPAGES_ENV
 #include <wp.h>
 #endif /* WHITEPAGES_ENV */
@@ -144,9 +150,7 @@ int laType; char **PrimePtr; char *Dom;
 }
 
 
-static void ValidateRecipient(Addr, PrevailingDomain)
-PARSED_ADDRESS *Addr;
-char *PrevailingDomain;
+static void ValidateRecipient(PARSED_ADDRESS *Addr, char *PrevailingDomain)
 {
     ADDRESS_HOST *HostPtr;
     char *CanonID;
@@ -502,9 +506,7 @@ char *PrevailingDomain;
     free(laPrime);
 }
 
-static void ValidateAddresses(AddrList, PrevailingDomain)
-PARSED_ADDRESS *AddrList;
-char *PrevailingDomain;
+static void ValidateAddresses(PARSED_ADDRESS *AddrList, char *PrevailingDomain)
 {
     FOR_ALL_ADDRESSES(ThisAddr, AddrList, {
 		       switch (ThisAddr->Kind) {
@@ -521,8 +523,7 @@ char *PrevailingDomain;
 }
 
 
-static void CanonicalizeList(newList)
-char *newList;
+static void CanonicalizeList(char *newList)
 {/* Canonicalize white space in the address list. */
     char *Src, *Dst, C;
     if (newList != NULL) {
@@ -626,8 +627,7 @@ char *Strg; PARSED_ADDRESS **OutAddr;
     return PACode;
 }
 
-void fwdvalid_SetTildeUser(s)
-char *s;
+void fwdvalid_SetTildeUser(char *s)
 {
   tildeuser = s;
   return;
@@ -689,9 +689,7 @@ char *NewAddr, **FixedAddr;
 }
 
 #ifdef TESTINGONLYTESTING
-main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     int err;
     char *out;

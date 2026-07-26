@@ -47,6 +47,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <sys/stat.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+static int GetDomainTranslation();
+static int GetRec();
+static char * anychar();
+static struct hostent * gettblbyname();
+static struct hostent * nexthtent();
 #ifdef RESOLVER_ENV
 #define BIND_8_COMPAT
 #include <arpa/nameser.h>
@@ -90,8 +95,7 @@ typedef union {
 #endif /* (defined(RES_DEFNAMES)) */
 #endif /* (defined(RES_DEFNAMES) || defined(RES_DNSRCH)) */
 
-static u_short get_ushort(ptr)
-char *ptr;
+static u_short get_ushort(char *ptr)
 {
     unsigned char *P = (unsigned char *) ptr;
     u_short Res;
@@ -229,10 +233,7 @@ static char line[512];
 static char hostaddr[10];
 static char *host_addrs[2];
 
-static char *
-anychar(cp, match)
-register char *cp;
-char *match;
+static char * anychar(char *cp, char *match)
 {
     register char *mp, c;
 
@@ -298,9 +299,7 @@ nexthtent()
     return (&host);
 }
 
-static struct hostent *
-gettblbyname(name)
-char *name;
+static struct hostent * gettblbyname(char *name)
 {
     register struct hostent *p;
     register char **cp;
@@ -334,11 +333,7 @@ char *name;
     return (p);
 }
 
-static int
-GetDomainTranslation(domain, name, namelen)
-char *name;
-int namelen;
-char *domain;
+static int GetDomainTranslation(char *domain, char *name, int namelen)
 {
     FILE *translationfile;
     char *p, buf[1024];
@@ -369,10 +364,7 @@ char *domain;
     return 0;
 }
 
-enum MailHostQuality
-ValidateDomainMail(InName, OutName, OutNameLen, FwdName, FwdNameLen, TolerableDelay)
-char *InName, *OutName, *FwdName;
-int OutNameLen, FwdNameLen, TolerableDelay;
+enum MailHostQuality ValidateDomainMail(char *InName, char *OutName, int OutNameLen, char *FwdName, int FwdNameLen, int TolerableDelay)
 {/* Validates InName as a destination domain for mail, returning the rewritten name in OutName (which is storage of size OutNameLen owned by the caller).  Possibly returns a forwarding host (if we're to do MX mail forwarding checks) in FwdName (which is storage of size FwdNameLen owned by the caller), if FwdName is not NULL.  Returns a code saying whether the given name was known-OK, known-bad, or unvalidatable in the given interval.  TolerableDelay is the caller's suggestion for how long this procedure should wait for an answer from name resolvers.
 
     The idea behind all the configuration options is that the behavior of this procedure should mimic how the underlying mail delivery will handle a destination mail domain insofar as determining whether a host is good, bad, or indeterminate.
@@ -553,10 +545,7 @@ int OutNameLen, FwdNameLen, TolerableDelay;
     return BestAnswer;
 }
 
-enum MailHostQuality
-ValidateMailHostName(InName, OutName, OutNameLen, TolerableDelay)
-char *InName, *OutName;
-int OutNameLen, TolerableDelay;
+enum MailHostQuality ValidateMailHostName(char *InName, char *OutName, int OutNameLen, int TolerableDelay)
 {
     return ValidateDomainMail(InName, OutName, OutNameLen, NULL, 0, TolerableDelay);
 }

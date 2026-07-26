@@ -43,8 +43,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <mailconf.h>
 #include <mail.h>
 
-void Capture(Hdr)
-char *Hdr;
+void Capture(char *Hdr)
 {/* Capture anything you like from the message header Hdr. */
     static struct flds {char *Name; char Abbr;} Fields[] = {
 	{"From:", 'f'},

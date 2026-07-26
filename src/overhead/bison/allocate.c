@@ -26,9 +26,7 @@ extern void done ();
 
 extern char *program_name;
 
-char *
-xmalloc (n)
-     register unsigned n;
+char * xmalloc(unsigned n)
 {
   register char *block;
 
@@ -45,10 +43,7 @@ xmalloc (n)
   return (block);
 }
 
-char *
-xrealloc (block, n)
-     register char *block;
-     register unsigned n;
+char * xrealloc(char *block, unsigned n)
 {
   /* Avoid uncertainty about what an arg of 0 will do.  */
   if (n == 0)

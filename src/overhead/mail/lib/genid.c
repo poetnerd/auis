@@ -74,9 +74,7 @@ static unsigned char DigVals[96] = {
 	53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 0, 0, 0, 0, 0	/* 0160 thru 0177 */
 };
 
-char *convlongto64(num, pad)
-/* unsigned */ long num;
-/* unsigned */ int pad;
+char * convlongto64(int num, int pad)
 {
     static char Answer[7];
 
@@ -93,8 +91,7 @@ char *convlongto64(num, pad)
 
 /* Note that the following routine throws away the first 4 of 36 bits */
 
-unsigned long conv64tolong(xnum)
-register char *xnum;
+unsigned long conv64tolong(char *xnum)
 {
     register int digits;
     unsigned long Answer = 0;
@@ -118,8 +115,7 @@ extern long random();
 #define ChooseRandomBits(n) (((unsigned long) random()) >> (32-n))
 
 
-char *ams_genid(IsFileName)
-int IsFileName;
+char * ams_genid(int IsFileName)
 {
     static char IDBuf[20];
     static long mycounter = 0, MyPid = -1;

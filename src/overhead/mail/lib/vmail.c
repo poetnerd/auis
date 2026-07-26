@@ -54,6 +54,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #include <mailconf.h>
 #include <mail.h>	/* for ITC libmail */
+static int CheckDirInAFS();
+static void Log();
+static int WriteHeaders();
+static char * host();
 static int CreateAndInitFile();
 
 /* No header anywhere in the tree declares these. fdplumb.h renames
@@ -110,8 +114,7 @@ int num; char *fmt, *p1, *p2, *p3, *p4, *p5, *p6;
 
 enum OnAFSCodes { ON_AFS, AFS_DOWN, NOT_ON_AFS, NOT_A_DIR, INACCESSIBLE };
 
-static enum OnAFSCodes dirinAFS(name)
-    register char *name;
+static enum OnAFSCodes dirinAFS(char *name)
 {
     static struct stat buf;
     static int statres, fd;
@@ -169,8 +172,7 @@ static enum OnAFSCodes dirinAFS(name)
     }
 }
 
-static int CheckDirInAFS(dir, proc)
-    char *dir, *proc;
+static int CheckDirInAFS(char *dir, char *proc)
 {
     static enum OnAFSCodes status;
 
@@ -195,8 +197,7 @@ static int CheckDirInAFS(dir, proc)
     }
 }
 
-int VM_SetTiming(param)
-int param;
+int VM_SetTiming(int param)
 {
 #if LogsYes
 	int OldValue;
@@ -209,8 +210,7 @@ int param;
 #endif /* LogsYes */
 }
 
-VM_open(User, Mailbox, ReturnPath, For, Authenticated, PgmName)
-    char *User, *Mailbox, *ReturnPath, *For, *Authenticated, *PgmName;
+int VM_open(char *User, char *Mailbox, char *ReturnPath, char *For, char *Authenticated, char *PgmName)
 {
     int rc, ExCode;
 
@@ -259,9 +259,7 @@ VM_open(User, Mailbox, ReturnPath, For, Authenticated, PgmName)
     return EX_OK;
 }
 
-int VM_write(s, n)
-    char *s;
-    int n;
+int VM_write(char *s, int n)
 {
     if (msgfile == NULL) {
 	strcpy(VM_text, "VM_open not called before VM_write");
@@ -295,8 +293,7 @@ int VM_write(s, n)
     return EX_OK;
 }
 
-int VM_printf(fmt, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
-    char *fmt;
+int VM_printf(char *fmt, int a0, int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9)
 {
     if (msgfile == NULL) {
 	strcpy(VM_text, "VM_open not called before VM_printf");
@@ -403,9 +400,7 @@ static char *host()
     return name;
 }
 
-static enum lockcodes lock(f, name)
-    int f;
-    char *name;
+static enum lockcodes lock(int f, char *name)
 {
     int SaveErrno;
 
@@ -431,9 +426,7 @@ static enum lockcodes lock(f, name)
 	return LOCK_OK;
 }
 
-static int WriteHeaders(f, fname, returnpath, four, auth, pgmname)
-    register FILE *f;
-    char *fname, *returnpath, *four, *auth, *pgmname;
+static int WriteHeaders(FILE *f, char *fname, char *returnpath, char *four, char *auth, char *pgmname)
 {
     int Res;
 
@@ -483,9 +476,7 @@ static int WriteHeaders(f, fname, returnpath, four, auth, pgmname)
 
 /* CreateAndInitFile -- create file & write headers */
 
-static int CreateAndInitFile(mailbox, returnpath, four, auth, pgmname)
-    char *mailbox;
-    char *returnpath, *four, *auth, *pgmname;
+static int CreateAndInitFile(char *mailbox, char *returnpath, char *four, char *auth, char *pgmname)
 {
     register int n, f;
     register bool gotfile;

@@ -45,23 +45,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * to by anything but the stack itself.  Same goes for bucketnodes
  */
 #include <eliy.h>
+static int locallexer();
 
 /* eliyylex is the flex-generated scanner entry point, defined in the
    sibling generated file elil.c; no header in the tree declares it. */
 extern int eliyylex(void);
 
-void            eliDecrRefcount_SexpRef(st, node)
-EliState_t     *st;
-EliSexp_t      *node;
+void eliDecrRefcount_SexpRef(EliState_t *st, EliSexp_t *node)
 {
     if (1 > eliDecrRefcount_SexpRef_aux(st, &(node->data.datum), node->data.type))
 	eliSexp_SetType(node, e_data_none);
 }
 
-int             eliDecrRefcount_SexpRef_aux(st, u, type)
-EliState_t     *st;
-eliSexpUnion_t *u;
-eliDataTypes_t  type;
+int eliDecrRefcount_SexpRef_aux(EliState_t *st, eliSexpUnion_t *u, eliDataTypes_t type)
 {
     int             result;
 
@@ -90,8 +86,7 @@ eliDataTypes_t  type;
  * thing whose refcount is being incr'd. 
  */
 
-void            eliIncrRefcount_SexpRef(node)
-EliSexp_t      *node;
+void eliIncrRefcount_SexpRef(EliSexp_t *node)
 {
     switch (EliSexp_GetType(node)) {
 	case e_data_symbol:
@@ -124,8 +119,7 @@ EliSexp_t      *node;
  * WARNING: At present, doesn't check for buffer overflow. 
  */
 
-char           *EliParseStr(s)
-char           *s;
+char * EliParseStr(char *s)
 {
     char           *p1, *p2, *buf = EliStringOpBuf(1 + eliParseStrLen(s, PARSESTRING));
     eliStringStates_t state = e_ps_begin;
@@ -191,8 +185,7 @@ char           *s;
  * internal static buffer, overwritten with each call. 
  */
 
-char           *EliUnParseStr(s)
-char           *s;
+char * EliUnParseStr(char *s)
 {
     char           *p1, *p2, *buf = EliStringOpBuf(1 + eliParseStrLen(s, UNPARSESTRING));
 
@@ -235,8 +228,7 @@ char           *s;
 
 /* DESTRUCTIVE conversion of str to upper-case */
 
-void            EliUpCaseStr(string)
-char           *string;
+void EliUpCaseStr(char *string)
 {
     char           *p;
 
@@ -251,9 +243,7 @@ char           *string;
  * return NULL. This function uses the default (global) stack and symtab. 
  */
 
-EliSym_t       *EliFindSym(st, name)
-EliState_t     *st;
-char           *name;
+EliSym_t * EliFindSym(EliState_t *st, char *name)
 {
     EliSym_t       *result;
 
@@ -265,8 +255,7 @@ char           *name;
 
 /* Return the length of a list [()'s length is zero] */
 
-int             EliListLen(l)
-EliCons_t      *l;
+int EliListLen(EliCons_t *l)
 {
     int             result = 0;
     EliCons_t      *tmp;
@@ -292,9 +281,7 @@ EliCons_t      *l;
 /*
  * Returns TRUE if node is NIL or (), FALSE otherwise. 
  */
-int             EliNilP(st, node)
-EliState_t     *st;
-EliSexp_t      *node;
+int EliNilP(EliState_t *st, EliSexp_t *node)
 {
     int             result;
     EliSexp_t      *a, *b;
@@ -317,17 +304,14 @@ EliSexp_t      *node;
 
 /* Tells if a cons cell is the last in a list (on its level) */
 
-int             EliLastCellP(l)
-EliCons_t      *l;
+int EliLastCellP(EliCons_t *l)
 {
     EliSexp_t      *tmp = EliCons_GetCdr(l);
 
     return (EliSexp_GetType(tmp) == e_data_none);
 }
 
-int             eliParseStrLen(s, action)
-char           *s;
-int             action;
+int eliParseStrLen(char *s, int action)
 {
     char           *p1;
     eliStringStates_t state = e_ps_begin;
@@ -384,8 +368,7 @@ int             action;
     return (result);
 }
 
-char           *EliSaveString(s)
-char           *s;
+char * EliSaveString(char *s)
 {
     char           *m = malloc(1 + strlen(s));
 
@@ -395,9 +378,7 @@ char           *s;
     return (m);
 }
 
-eliSetClientLibrary(st, var, ext, defpath)
-EliState_t     *st;
-char           *var, *ext, *defpath;
+int eliSetClientLibrary(EliState_t *st, char *var, char *ext, char *defpath)
 {
     st->ClientLibraryPreference = EliSaveString(var);
     st->DefaultClientExtension = EliSaveString(ext);
@@ -406,9 +387,7 @@ char           *var, *ext, *defpath;
 
 /* set up global vars and so on */
 
-void            EliInit(st, scheme)
-EliState_t     *st;
-eliMemSchemes_t scheme;
+void EliInit(EliState_t *st, eliMemSchemes_t scheme)
 {
     EliSexp_t      *nodetmp;
     EliFn_t        *fntmp;
@@ -579,23 +558,17 @@ eliMemSchemes_t scheme;
 	return;			/* Ha ha HA! */
 }
 
-void            EliSetCatchMask(st, errs)
-EliState_t     *st;
-int             errs;
+void EliSetCatchMask(EliState_t *st, int errs)
 {
     st->g_errcatchmask = errs;
 }
 
-void            EliSetCatchFn(st, fn)
-EliState_t     *st;
-void            (*fn) ();
-
+void EliSetCatchFn(EliState_t *st, void (*fn)())
 {
     st->g_errcatchfn = fn;
 }
 
-void            EliClearErr(st)
-EliState_t     *st;
+void EliClearErr(EliState_t *st)
 {
     if (st->g_errflag) {
 	st->g_errflag = FALSE;
@@ -607,16 +580,13 @@ EliState_t     *st;
     }
 }
 
-static int locallexer(lexerrock, pyylval)
-struct parser *lexerrock;
-void *pyylval;
+static int locallexer(struct parser *lexerrock, void *pyylval)
 {
     int res=eliyylex();
     return parser_TranslateTokenNumber(lexerrock, res);
 }
 
-EliSexp_t      *eliGetSexp(st)
-EliState_t     *st;
+EliSexp_t * eliGetSexp(EliState_t *st)
 {
     struct parser *p=eliy_New();
     if(p==NULL) return NULL;
@@ -629,9 +599,7 @@ EliState_t     *st;
     return (EliProcessInfo.u_parseval);
 }
 
-EliSexp_t      *eliFGetSexp(st, fp)
-EliState_t     *st;
-FILE           *fp;
+EliSexp_t * eliFGetSexp(EliState_t *st, FILE *fp)
 {
     struct parser *p=eliy_New();
     if(p==NULL) return NULL;
@@ -645,9 +613,7 @@ FILE           *fp;
     return (EliProcessInfo.u_parseval);
 }
 
-EliSexp_t      *eliSGetSexp(st, s)
-EliState_t     *st;
-char           *s;
+EliSexp_t * eliSGetSexp(EliState_t *st, char *s)
 {
     struct parser *p=eliy_New();
     if(p==NULL) return NULL;
@@ -661,8 +627,7 @@ char           *s;
     return (EliProcessInfo.u_parseval);
 }
 
-void            EliDisplaySexp(expr)
-EliSexp_t      *expr;
+void EliDisplaySexp(EliSexp_t *expr)
 {
     switch (EliSexp_GetType(expr)) {
 	case e_data_integer:
@@ -700,8 +665,7 @@ EliSexp_t      *expr;
     }
 }
 
-void            eliDisplayCons(expr)
-EliCons_t      *expr;
+void eliDisplayCons(EliCons_t *expr)
 {
     if (EliSexp_GetType(EliCons_GetCar(expr)) != e_data_none)
 	EliDisplaySexp(EliCons_GetCar(expr));
@@ -711,8 +675,7 @@ EliCons_t      *expr;
     }
 }
 
-int EliSexpEq(node1, node2)
-EliSexp_t *node1, *node2;
+int EliSexpEq(EliSexp_t *node1, EliSexp_t *node2)
 {
     int result = 0;
 
@@ -743,9 +706,7 @@ EliSexp_t *node1, *node2;
     return (result);
 }
 
-int             EliSexpEqual(st, node1, node2)
-EliState_t     *st;
-EliSexp_t      *node1, *node2;
+int EliSexpEqual(EliState_t *st, EliSexp_t *node1, EliSexp_t *node2)
 {
     int             result = 0;
     EliCons_t *c1, *c2;
@@ -813,11 +774,7 @@ EliSexp_t      *node1, *node2;
  * the function returns -1, otherwise it returns the length of the
  * list, which is also the number of nodes assigned
  */
-int             EliGetListCars(list, nodes, max)
-EliCons_t      *list;
-EliSexp_t      *nodes[];
-int             max;
-
+int EliGetListCars(EliCons_t *list, EliSexp_t *nodes[], int max)
 {
     int             l = EliListLen(list), i;
     EliSexp_t      *nodetmp;
@@ -836,8 +793,7 @@ int             max;
     return (l);
 }
 
-EliCons_t      *EliGetNextCell(cell)
-EliCons_t      *cell;
+EliCons_t * EliGetNextCell(EliCons_t *cell)
 {
     EliSexp_t      *tmpnode;
 
@@ -853,9 +809,7 @@ EliCons_t      *cell;
  * an empty argument list.
  */
 
-EliCons_t      *EliEvalListToList(st, list)
-EliState_t     *st;
-EliCons_t      *list;
+EliCons_t * EliEvalListToList(EliState_t *st, EliCons_t *list)
 {
     int             l = EliListLen(list), i;
     EliCons_t      *reslist = NULL, *thiscell, *newcell, *lastcell = NULL;
@@ -894,8 +848,7 @@ EliCons_t      *list;
  * If you need such a buffer (dynamically sized), use the result of
  * calling this function with an argument telling it how many bytes you need.
  */
-char           *EliStringOpBuf(size)
-int             size;
+char * EliStringOpBuf(int size)
 {
     static char    *buf = NULL;
     static int      buflen = 0;
@@ -910,80 +863,67 @@ int             size;
     return (buf);
 }
 
-eliHashTable_t *EliSymbolTable(st)
-EliState_t     *st;
+eliHashTable_t * EliSymbolTable(EliState_t *st)
 {
     return (st->g_symtab);
 }
 
-eliHashTable_t *EliStringTable(st)
-EliState_t     *st;
+eliHashTable_t * EliStringTable(EliState_t *st)
 {
     return (st->g_strtab);
 }
 
-eliHashTable_t *EliTempSymTable(st)
-EliState_t     *st;
+eliHashTable_t * EliTempSymTable(EliState_t *st)
 {
     return (st->g_tmptab);
 }
 
-eliEvalStack_t *EliEvalStack(st)
-EliState_t     *st;
+eliEvalStack_t * EliEvalStack(EliState_t *st)
 {
     return (st->g_stk);
 }
 
-EliSym_t       *EliNilSym(st)
-EliState_t     *st;
+EliSym_t * EliNilSym(EliState_t *st)
 {
     return (st->g_nilptr);
 }
 
-EliSym_t       *EliTSym(st)
-EliState_t     *st;
+EliSym_t * EliTSym(EliState_t *st)
 {
     return (st->g_tptr);
 }
 
-EliSym_t       *EliQuoteSym(st)
-EliState_t     *st;
+EliSym_t * EliQuoteSym(EliState_t *st)
 {
     return (st->g_quoteptr);
 }
 
-EliSym_t       *EliLambdaSym(st)
-EliState_t     *st;
+EliSym_t * EliLambdaSym(EliState_t *st)
 {
     return (st->g_lambdaptr);
 }
 
-EliSym_t       *EliLambdaqSym(st)
-EliState_t     *st;
+EliSym_t * EliLambdaqSym(EliState_t *st)
 {
     return (st->g_lambdaqptr);
 }
 
-EliSym_t       *EliLambdavSym(st)
-EliState_t     *st;
+EliSym_t * EliLambdavSym(EliState_t *st)
 {
     return (st->g_lambdavptr);
 }
 
-EliSym_t       *EliLambdavqSym(st)
-EliState_t     *st;
+EliSym_t * EliLambdavqSym(EliState_t *st)
 {
     return (st->g_lambdavqptr);
 }
 
-eliErrStuff_t  *EliErrNode(st)
-EliState_t     *st;
+eliErrStuff_t * EliErrNode(EliState_t *st)
 {
     return (st->g_err);
 }
 
-int             EliCatchMask(st)
-EliState_t     *st;
+int EliCatchMask(EliState_t *st)
 {
     return (st->g_errcatchmask);
 }
@@ -994,14 +934,12 @@ EliState_t     *st;
     return (st->g_errcatchfn);
 }
 
-eliTraceStack_t *EliTraceStk(st)
-EliState_t     *st;
+eliTraceStack_t * EliTraceStk(EliState_t *st)
 {
     return (st->g_errstk);
 }
 
-int             eliSexpStringLen(expr)
-EliSexp_t      *expr;
+int eliSexpStringLen(EliSexp_t *expr)
 {
     int             result = 0, foo;
 
@@ -1043,8 +981,7 @@ EliSexp_t      *expr;
     return (result);
 }
 
-int             eliConsStringLen(cell)
-EliCons_t      *cell;
+int eliConsStringLen(EliCons_t *cell)
 {
     int             result = 0;
 
@@ -1058,9 +995,7 @@ EliCons_t      *cell;
 /* Returns the number of digits in a standard ASCII representation
  * of the number num in base base.  Num must be non-negative.
  */
-int             eliNumDigits(num, base)
-long            num;
-int             base;
+int eliNumDigits(long num, int base)
 {
     int             result = 1;
     long            compare = (long) base;
@@ -1075,8 +1010,7 @@ int             base;
 /* Places expr in a static buffer in human-readable form.
  * Returns the buffer, or NULL if one couldn't be allocated.
  */
-char           *EliSPutSexp(expr)
-EliSexp_t      *expr;
+char * EliSPutSexp(EliSexp_t *expr)
 {
     int             len = eliSexpStringLen(expr);
     char           *buf = malloc(1 + len), *retBuf = NULL;
@@ -1092,10 +1026,7 @@ EliSexp_t      *expr;
 }
 
 /* This one gets a buffer passed in.  DOES NOT CHECK FOR OVERFLOW! */
-void            eliSPutSexp_buf(expr, buf, len)
-EliSexp_t      *expr;
-char           *buf;
-int             len;
+void eliSPutSexp_buf(EliSexp_t *expr, char *buf, int len)
 {
     switch (EliSexp_GetType(expr)) {
 	case e_data_integer:
@@ -1135,9 +1066,7 @@ int             len;
     }
 }
 
-void            eliSPutCons_buf(cell, buf)
-EliCons_t      *cell;
-char           *buf;
+void eliSPutCons_buf(EliCons_t *cell, char *buf)
 {
     int             len = 0;
 
@@ -1154,11 +1083,7 @@ char           *buf;
 /* Given a list of nodes, create a cons list with each
  * node as the car of each cell
  */
-EliCons_t      *EliListFromCars(st, nodes, numNodes)
-EliState_t     *st;
-EliSexp_t      *nodes[];
-int             numNodes;
-
+EliCons_t * EliListFromCars(EliState_t *st, EliSexp_t *nodes[], int numNodes)
 {
     EliCons_t      *listHead = NULL, *listEnd = NULL, *ptr;
     int             i;
@@ -1188,10 +1113,7 @@ int             numNodes;
  *
  * Also: if list is NULL to start, will create a new cons cell and return that.
  */
-EliCons_t      *EliAddToList(st, list, node)
-EliState_t     *st;
-EliCons_t      *list;
-EliSexp_t      *node;
+EliCons_t * EliAddToList(EliState_t *st, EliCons_t *list, EliSexp_t *node)
 {
     EliCons_t      *oldEnd, *newCell, *result;
     EliSexp_t      *nodeTmp;
@@ -1215,9 +1137,7 @@ EliSexp_t      *node;
 }
 
 /* Clean interface to eliEval */
-EliSexp_t      *EliEval(st, expr)
-EliState_t     *st;
-EliSexp_t      *expr;
+EliSexp_t * EliEval(EliState_t *st, EliSexp_t *expr)
 {
     EliSexp_t      *result = eliSexp_GetNew_trace(st, EliTraceStk(st));
 
@@ -1229,8 +1149,7 @@ EliSexp_t      *expr;
     return (result);
 }
 
-int EliGetStateNum(st)
-EliState_t     *st;
+int EliGetStateNum(EliState_t *st)
 {
     return (st->myNum);
 }
@@ -1239,8 +1158,7 @@ EliState_t     *st;
  * returns it; otherwise, returns NULL.
  * Zero refers to the latest debug message
  */
-char *EliDebugMessage(n)
-int n;
+char * EliDebugMessage(int n)
 {
     if (EliProcessInfo.debugStuff.numEntries > n)
         return (EliProcessInfo.debugStuff.entries[n].message);
@@ -1253,8 +1171,7 @@ int n;
  * otherwise returns 0.
  */
 
-int EliDebugStateNum(n)
-int n;
+int EliDebugStateNum(int n)
 {
     if (EliProcessInfo.debugStuff.numEntries > n)
         return (EliProcessInfo.debugStuff.entries[n].whichState);
@@ -1267,8 +1184,7 @@ int n;
  * otherwise returns 0.
  */
 
-long EliDebugHistNum(n)
-int n;
+long EliDebugHistNum(int n)
 {
     if (EliProcessInfo.debugStuff.numEntries > n)
         return (EliProcessInfo.debugStuff.entries[n].histNum);
@@ -1283,9 +1199,7 @@ int n;
  * Prints them in chronological order.
  * Returns the number printed.
  */
-int EliDebugFPrint(fp, num)
-FILE *fp;
-int num;
+int EliDebugFPrint(FILE *fp, int num)
 {
     int i, numToPrint = num;
 
@@ -1302,9 +1216,7 @@ int num;
  * number of the last debug message printed, or zero
  * if none were.
  */
-long EliDebugFPrintSince(fp, since)
-FILE *fp;
-long since;
+long EliDebugFPrintSince(FILE *fp, long since)
 {
     int i, latest = 0;
 
@@ -1316,11 +1228,7 @@ long since;
     return (latest);
 }
 
-void EliDebug(level, msg, st, freeP)
-int             level;
-char           *msg;
-EliState_t     *st;
-int freeP;
+void EliDebug(int level, char *msg, EliState_t *st, int freeP)
 {
     int             i, end;
     static long     histNum = 1;
@@ -1353,15 +1261,13 @@ int freeP;
     }
 }
 
-void EliVersion(maj, min)
-int *maj, *min;
+void EliVersion(int *maj, int *min)
 {
     *maj = EliProcessInfo.MajorVersion;
     *min = EliProcessInfo.MinorVersion;
 }
 
-int EliFreeAllEvalStackNodes(st)
-EliState_t *st;
+int EliFreeAllEvalStackNodes(EliState_t *st)
 {
     eliEvalStack_t *s = EliEvalStack(st);
 
@@ -1374,8 +1280,7 @@ EliState_t *st;
     return (TRUE);
 }
 
-int EliFreeAllTraceStackNodes(st)
-EliState_t *st;
+int EliFreeAllTraceStackNodes(EliState_t *st)
 {
     eliTraceStack_t *s = EliTraceStk(st);
 

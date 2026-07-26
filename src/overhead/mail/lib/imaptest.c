@@ -58,6 +58,23 @@
 
 #include <netrc.h>
 #include <imap_prot.h>
+static int cmd_append();
+static int cmd_canned();
+static int cmd_capability();
+static int cmd_create();
+static int cmd_examine();
+static int cmd_expunge();
+static int cmd_fetchflags();
+static int cmd_list();
+static int cmd_login();
+static int cmd_reconnect();
+static int cmd_searchall();
+static int cmd_searchfetch();
+static int cmd_storeflags();
+static int do_login();
+static int do_open();
+static int guard_mailbox();
+static int list_cb();
 
 static const char *rcname(int rc)
 {

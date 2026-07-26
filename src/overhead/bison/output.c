@@ -700,9 +700,7 @@ token_actions()
    considered lower-numbered rules last, and the last rule considered that likes
    a token gets to handle it.  */
 
-int
-action_row(state)
-int state;
+int action_row(int state)
 {
   register int i;
   register int j;
@@ -864,9 +862,7 @@ int state;
 }
 
 
-void
-save_row(state)
-int state;
+void save_row(int state)
 {
   register int i;
   register int count;
@@ -948,9 +944,7 @@ goto_actions()
 
 
 
-int
-default_goto(symbol)
-int symbol;
+int default_goto(int symbol)
 {
   register int i;
   register int m;
@@ -986,10 +980,7 @@ int symbol;
 }
 
 
-void
-save_column(symbol, default_state)
-int symbol;
-int default_state;
+void save_column(int symbol, int default_state)
 {
   register int i;
   register int m;
@@ -1121,9 +1112,7 @@ pack_table()
 
 
 
-int
-matching_state(vector)
-int vector;
+int matching_state(int vector)
 {
   register int i;
   register int j;
@@ -1162,9 +1151,7 @@ int vector;
 
 
 
-int
-pack_vector(vector)
-int vector;
+int pack_vector(int vector)
 {
   register int i;
   register int j;

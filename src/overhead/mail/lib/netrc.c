@@ -51,9 +51,7 @@
 
 #define NRC_TOKMAX 512
 
-int netrc_Lookup(path, machine, login, loginlen, passwd, passwdlen)
-    char *path, *machine, *login, *passwd;
-    int loginlen, passwdlen;
+int netrc_Lookup(char *path, char *machine, char *login, int loginlen, char *passwd, int passwdlen)
 {
     FILE *fp;
     struct stat st;

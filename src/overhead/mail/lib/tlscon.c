@@ -51,6 +51,8 @@
 #include <openssl/x509v3.h>
 
 #include <tlscon.h>
+static int tlscon_refill();
+static void tlscon_sslerr();
 
 #define TLSCON_RCVTIMEO 60	/* seconds */
 #define TLSCON_RBUFSIZE 4096
@@ -63,10 +65,7 @@ struct tlscon {
     int rstart, rend;		/* unread bytes are rbuf[rstart..rend) */
 };
 
-static void tlscon_sslerr(errbuf, errlen, prefix)
-    char *errbuf;
-    int errlen;
-    char *prefix;
+static void tlscon_sslerr(char *errbuf, int errlen, char *prefix)
 {
     unsigned long e;
     char ebuf[256];
@@ -77,12 +76,7 @@ static void tlscon_sslerr(errbuf, errlen, prefix)
     snprintf(errbuf, errlen, "%s: %s", prefix, ebuf);
 }
 
-int tlscon_Open(cp, host, port, errbuf, errlen)
-    struct tlscon **cp;
-    char *host;
-    int port;
-    char *errbuf;
-    int errlen;
+int tlscon_Open(struct tlscon **cp, char *host, int port, char *errbuf, int errlen)
 {
     struct addrinfo hints, *res, *ai;
     char portbuf[16];
@@ -194,8 +188,7 @@ int tlscon_Open(cp, host, port, errbuf, errlen)
 
 /* Refill the internal buffer with at least one more byte.  Returns
    the number of bytes read (>0), 0 on clean EOF, -1 on error/timeout. */
-static int tlscon_refill(c)
-    struct tlscon *c;
+static int tlscon_refill(struct tlscon *c)
 {
     int n;
 
@@ -216,10 +209,7 @@ static int tlscon_refill(c)
     return n;
 }
 
-int tlscon_ReadLine(c, buf, len)
-    struct tlscon *c;
-    char *buf;
-    int len;
+int tlscon_ReadLine(struct tlscon *c, char *buf, int len)
 {
     int i, n, outlen;
 
@@ -243,10 +233,7 @@ int tlscon_ReadLine(c, buf, len)
 /* Milestone 2 addition: read exactly n raw bytes (IMAP literals).
    Shares the same internal buffer/refill machinery as tlscon_ReadLine;
    does not otherwise change that function's behavior. */
-int tlscon_ReadBytes(c, buf, n)
-    struct tlscon *c;
-    char *buf;
-    int n;
+int tlscon_ReadBytes(struct tlscon *c, char *buf, int n)
 {
     int avail, tocopy, got;
 
@@ -279,9 +266,7 @@ int tlscon_ReadBytes(c, buf, n)
    existing function was needed to get this. */
 #define TLSCON_LINEALLOC_MAX (16*1024*1024)	/* sanity cap */
 
-int tlscon_ReadLineAlloc(c, linep)
-    struct tlscon *c;
-    char **linep;
+int tlscon_ReadLineAlloc(struct tlscon *c, char **linep)
 {
     char *out, *grown;
     int outcap, outlen, i, n, chunk;
@@ -333,10 +318,7 @@ int tlscon_ReadLineAlloc(c, linep)
     }
 }
 
-int tlscon_Write(c, buf, len)
-    struct tlscon *c;
-    char *buf;
-    int len;
+int tlscon_Write(struct tlscon *c, char *buf, int len)
 {
     int off, n;
 
@@ -349,8 +331,7 @@ int tlscon_Write(c, buf, len)
     return 0;
 }
 
-void tlscon_Close(c)
-    struct tlscon *c;
+void tlscon_Close(struct tlscon *c)
 {
     if (c == NULL) return;
     if (c->ssl != NULL) {

@@ -34,14 +34,14 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <dropoff.h>
+static char * rcname();
 
 extern int errno;
 
 extern char Dropoff_ErrMsg[];
 extern int smtp_dropoff();
 
-static char *rcname(rc)
-    int rc;
+static char * rcname(int rc)
 {
     switch (rc) {
     case D_OK:		return "D_OK";
@@ -56,9 +56,7 @@ static char *rcname(rc)
     }
 }
 
-main(argc, argv)
-    int argc;
-    char **argv;
+int main(int argc, char **argv)
 {
     int f, rc, i, ntos;
     char *tolist[16];

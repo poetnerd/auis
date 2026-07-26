@@ -37,6 +37,7 @@ The entry point is reader().  */
 #include "lex.h"
 #include "gram.h"
 #include "machine.h"
+static void skip_to_char();
 
 #define	LTYPESTR	"\n#ifndef YYLTYPE\ntypedef\n  struct yyltype\n\
     {\n      int timestamp;\n      int first_line;\n      int first_column;\
@@ -128,9 +129,7 @@ static int yylsp_needed;
 extern char *version_string;
 
 
-static void
-skip_to_char(target)
-	int target;
+static void skip_to_char(int target)
 {
 	int c;
 	if (target == '\n')
@@ -222,9 +221,7 @@ reader()
   free_symtab();
 }
 
-void
-reader_output_yylsp(f)
-	FILE *f;
+void reader_output_yylsp(FILE *f)
 {
 	if (yylsp_needed)
 		fprintf(f, LTYPESTR);
@@ -467,9 +464,7 @@ copy_definition ()
 For %token, what_is is STOKEN and what_is_not is SNTERM.
 For %nterm, the arguments are reversed.  */
 
-void
-parse_token_decl (what_is, what_is_not)
-     int what_is, what_is_not;
+void parse_token_decl(int what_is, int what_is_not)
 {
   register int token = 0;
   register int prev;
@@ -676,9 +671,7 @@ parse_type_decl ()
 /* read in a %left, %right or %nonassoc declaration and record its information.  */
 /* assoc is either LEFT_ASSOC, RIGHT_ASSOC or NON_ASSOC.  */
 
-void
-parse_assoc_decl (assoc)
-int assoc;
+void parse_assoc_decl(int assoc)
 {
   register int k;
   register char *name = NULL;
@@ -902,10 +895,7 @@ parse_expect_decl()
 
 /* Get the data type (alternative in the union) of the value for symbol n in rule rule.  */
 
-char *
-get_type_name(n, rule)
-int n;
-symbol_list *rule;
+char * get_type_name(int n, symbol_list *rule)
 {
   static char *msg = "invalid $ value";
 
@@ -943,10 +933,7 @@ stack_offset is the number of values in the current rule so far,
 which says where to find $0 with respect to the top of the stack,
 for the simple parser in which the stack is not popped until after the guard is run.  */
 
-void
-copy_guard(rule, stack_offset)
-symbol_list *rule;
-int stack_offset;
+void copy_guard(symbol_list *rule, int stack_offset)
 {
   register int c;
   register int n;
@@ -1176,10 +1163,7 @@ into the actions file.
 stack_offset is the number of values in the current rule so far,
 which says where to find $0 with respect to the top of the stack.  */
 
-void
-copy_action(rule, stack_offset)
-symbol_list *rule;
-int stack_offset;
+void copy_action(symbol_list *rule, int stack_offset)
 {
   register int c;
   register int n;
@@ -1917,9 +1901,7 @@ packsymbols()
 /* For named tokens, but not literal ones, define the name.  
    The value is the user token number.  
 */
-void
-output_token_defines(file)
-FILE *file;
+void output_token_defines(FILE *file)
 {
   bucket *bp;
   register char *cp, *symbol;
@@ -2023,9 +2005,7 @@ packgram()
 
 /* Read a signed integer from STREAM and return its value.  */
 
-int
-read_signed_integer (stream)
-     FILE *stream;
+int read_signed_integer(FILE *stream)
 {
   register int c = getc(stream);
   register int sign = 1;

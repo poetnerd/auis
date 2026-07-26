@@ -45,6 +45,21 @@
 #include <util.h>
 #include <tlscon.h>
 #include <netrc.h>
+static void cb_examine();
+static void cb_print();
+static void cb_search();
+static void handle_fetch_line();
+static int imap_await();
+static char * imap_expandpath();
+static void imap_quote();
+static int imap_readline();
+static void imap_send();
+static char * nexttag();
+static void parse_addrlist();
+static void parse_envelope_fields();
+static int reconnect_and_login();
+static void tok_init();
+static char * tok_next();
 
 #define IMAP_HOST	"imap.fastmail.com"
 #define IMAP_PORT	993
@@ -56,8 +71,7 @@ extern char *gethome();
 
 static int tagctr = 0;
 
-static char *nexttag(buf)
-    char *buf;
+static char * nexttag(char *buf)
 {
     sprintf(buf, "a%d", ++tagctr);
     return buf;
@@ -65,10 +79,7 @@ static char *nexttag(buf)
 
 /* ---- ~/-expansion, same pattern as smtpsub.c's smtp_expandpath ---- */
 
-static char *imap_expandpath(path, buf, buflen)
-    char *path;
-    char *buf;
-    int buflen;
+static char * imap_expandpath(char *path, char *buf, int buflen)
 {
     char *home;
 
@@ -86,10 +97,7 @@ static char *imap_expandpath(path, buf, buflen)
 
 /* ---- IMAP quoted-string escaping (backslash and doublequote) ---- */
 
-static void imap_quote(dst, dstsize, src)
-    char *dst;
-    int dstsize;
-    char *src;
+static void imap_quote(char *dst, int dstsize, char *src)
 {
     int i, j;
 
@@ -115,12 +123,7 @@ static void imap_quote(dst, dstsize, src)
    appended so the caller always gets one flattened, parseable line
    back regardless of whether a literal appeared in the middle of it. */
 
-static int imap_readline(conn, buf, bufsize, litbuf_out, litlen_out)
-    struct tlscon *conn;
-    char *buf;
-    int bufsize;
-    char **litbuf_out;
-    int *litlen_out;
+static int imap_readline(struct tlscon *conn, char *buf, int bufsize, char **litbuf_out, int *litlen_out)
 {
     char raw[IMAP_LINE_MAX];
     char scratch[1024];
@@ -179,9 +182,7 @@ static int imap_readline(conn, buf, bufsize, litbuf_out, litlen_out)
 
 /* ---- send a tagged command, trace it (optionally redacted) ---- */
 
-static void imap_send(conn, tag, cmd, traceoverride)
-    struct tlscon *conn;
-    char *tag, *cmd, *traceoverride;
+static void imap_send(struct tlscon *conn, char *tag, char *cmd, char *traceoverride)
 {
     char line[IMAP_LINE_MAX];
 
@@ -197,9 +198,7 @@ static void imap_send(conn, tag, cmd, traceoverride)
 
 static int (*untagged_hook)();
 
-static int imap_await(conn, tag)
-    struct tlscon *conn;
-    char *tag;
+static int imap_await(struct tlscon *conn, char *tag)
 {
     char line[IMAP_LINE_MAX];
     char taglabel[32];
@@ -218,16 +217,14 @@ static int imap_await(conn, tag)
 
 /* ---- untagged-line handlers for each command ---- */
 
-static void cb_print(line)
-    char *line;
+static void cb_print(char *line)
 {
     /* LIST/CAPABILITY: just echoed by imap_readline's own trace. */
 }
 
 static int exists_count = -1, uidvalidity = -1, uidnext = -1;
 
-static void cb_examine(line)
-    char *line;
+static void cb_examine(char *line)
 {
     int n;
     char word[32];
@@ -251,8 +248,7 @@ static void cb_examine(line)
 static int search_max = -1;
 static int search_matched = 0;
 
-static void cb_search(line)
-    char *line;
+static void cb_search(char *line)
 {
     char *p;
     int n;
@@ -273,8 +269,7 @@ static void cb_search(line)
 
 static char *tok_p;
 
-static void tok_init(s)
-    char *s;
+static void tok_init(char *s)
 {
     tok_p = s;
 }
@@ -316,9 +311,7 @@ static char *tok_next()
 /* Consumes one env-address-list (NIL, or "(" addr... ")") from the
    shared token cursor and formats it into outbuf. */
 
-static void parse_addrlist(outbuf, outbufsize)
-    char *outbuf;
-    int outbufsize;
+static void parse_addrlist(char *outbuf, int outbufsize)
 {
     char *t, name[200], mailbox[200], host[200];
     int first = 1;
@@ -378,8 +371,7 @@ static void parse_envelope_fields()
    silently skips everything else (the leading "*", sequence number,
    "FETCH", UID, and structural parens). */
 
-static void handle_fetch_line(line)
-    char *line;
+static void handle_fetch_line(char *line)
 {
     char *t;
 
@@ -414,9 +406,7 @@ static void handle_fetch_line(line)
    findings). Assumes login/passwd for IMAP_HOST are already known to
    work (the first LOGIN in main() already succeeded). */
 
-static int reconnect_and_login(connp, netrcpath)
-    struct tlscon **connp;
-    char *netrcpath;
+static int reconnect_and_login(struct tlscon **connp, char *netrcpath)
 {
     char errbuf[512];
     char login[256], passwd[256];
@@ -470,9 +460,7 @@ static int reconnect_and_login(connp, netrcpath)
     return 0;
 }
 
-main(argc, argv)
-    int argc;
-    char **argv;
+int main(int argc, char **argv)
 {
     struct tlscon *conn;
     char errbuf[512];

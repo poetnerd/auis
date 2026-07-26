@@ -31,9 +31,7 @@ bucket *lastsymbol;
 
 
 
-int
-hash(key)
-char *key;
+int hash(char *key)
 {
   register char *cp;
   register int k;
@@ -48,9 +46,7 @@ char *key;
 
 
 
-char *
-copys(s)
-char *s;
+char * copys(char *s)
 {
   register int i;
   register char *cp;
@@ -78,9 +74,7 @@ tabinit()
 }
 
 
-bucket *
-getsym(key)
-char *key;
+bucket * getsym(char *key)
 {
   register int hashval;
   register bucket *bp;

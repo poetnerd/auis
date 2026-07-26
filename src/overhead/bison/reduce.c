@@ -71,11 +71,7 @@ void dump_grammar();
 extern void fatals ();
 
 
-bool
-bits_equal (L, R, n)
-BSet L;
-BSet R;
-int n;
+bool bits_equal(BSet L, BSet R, int n)
 {
   int i;
 
@@ -86,9 +82,7 @@ int n;
 }
 
 
-int
-nbits (i)
-unsigned i;
+int nbits(unsigned i)
 {
   int count = 0;
 
@@ -100,10 +94,7 @@ unsigned i;
 }
 
 
-int
-bits_size (S, n)
-BSet S;
-int n;
+int bits_size(BSet S, int n)
 {
   int i, count = 0;
 
@@ -173,10 +164,7 @@ reduce_grammar ()
  * process takes only 2 seconds on my 8Mhz AT.
  */
 
-static bool 
-useful_production (i, N)
-int  i;
-BSet N;
+static bool useful_production(int i, BSet N)
 {
   rule  r;
   short n;

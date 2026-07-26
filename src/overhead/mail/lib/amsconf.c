@@ -52,9 +52,7 @@ extern int errprintf();		/* errprntf.h only defines the ERR_*
 					   the only tree-wide precedent for
 					   this declaration is ams.h:170 */
 
-amsconfig(argc, argv, name)
-int argc;
-char **argv, *name;
+int amsconfig(int argc, char **argv, char *name)
 {
     char *s, ExpDir[1+MAXPATHLEN], NewName[100];
 

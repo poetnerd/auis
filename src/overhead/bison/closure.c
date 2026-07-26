@@ -78,9 +78,7 @@ static int rulesetsize;
 static int varsetsize;
 
 
-void
-initialize_closure(n)
-int n;
+void initialize_closure(int n)
 {
   itemset = NEW2(n, short);
 
@@ -197,10 +195,7 @@ set_firsts()
 }
 
 
-void
-closure(core, n)
-short *core;
-int n;
+void closure(short *core, int n)
 {
   register int ruleno;
   register unsigned word;
@@ -293,8 +288,7 @@ finalize_closure()
 
 #ifdef	DEBUG
 
-print_closure(n)
-int n;
+int print_closure(int n)
 {
   register short *isp;
 

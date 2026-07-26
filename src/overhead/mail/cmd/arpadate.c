@@ -41,8 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 extern char *arpadate();
 
-int main(argc, argv)
-char *argv[];
+int main(int argc, char *argv[])
 {
     int AnyArgs, ac;
     unsigned long int Then;

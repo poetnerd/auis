@@ -121,7 +121,7 @@ extern int la_Resolve();	/* la_Resolve(Addr, PrimePart, outSearchToken, outMinFo
 
 extern int BracketField();	/* Searches for the contents of the named field. */
 
-extern int IsOK822Atom();	/* TRUE iff the char argument could be part of an RFC822 Atom */
+extern int IsOK822Atom(char ch);	/* TRUE iff the char argument could be part of an RFC822 Atom */
 #define is822Atom 1	/* Return codes from NextWord */
 #define is822QuotedString 2
 #define is822Special 3

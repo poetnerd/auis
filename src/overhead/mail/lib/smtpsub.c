@@ -54,6 +54,16 @@
 #include <tlscon.h>
 #include <netrc.h>
 #include <parseadd.h>
+static void smtp_abort();
+static void smtp_addrspec();
+static void smtp_b64encode();
+static char * smtp_expandpath();
+static int smtp_getreply();
+static int smtp_getreply_cap();
+static int smtp_readline1();
+static int smtp_send_body();
+static void smtp_trace();
+static void smtp_writeline();
 
 #define SMTP_DEFAULT_PORT 465
 #define SMTP_LINE_MAX	1024
@@ -71,8 +81,7 @@ extern int FreeAddressList();		/* parseadd.c */
 
 static int smtp_tracing = -1;
 
-static void smtp_trace(dir, text)
-    char *dir, *text;
+static void smtp_trace(char *dir, char *text)
 {
     if (smtp_tracing < 0) smtp_tracing = (getenv("AMS_SMTP_TRACE") != NULL);
     if (smtp_tracing) fprintf(stderr, "%s: %s\n", dir, text);
@@ -80,10 +89,7 @@ static void smtp_trace(dir, text)
 
 /* ---- standard (RFC 4648) base64, used only for AUTH PLAIN ---- */
 
-static void smtp_b64encode(in, inlen, out)
-    unsigned char *in;
-    int inlen;
-    char *out;
+static void smtp_b64encode(unsigned char *in, int inlen, char *out)
 {
     static char tbl[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -113,10 +119,7 @@ static void smtp_b64encode(in, inlen, out)
    transaction.  Reduce one recipient to its addr-spec (strip comments
    and display phrase, keep any source route); on any parse trouble,
    pass the input through unchanged and let the server judge it. */
-static void smtp_addrspec(in, out, outlen)
-    char *in;
-    char *out;
-    int outlen;
+static void smtp_addrspec(char *in, char *out, int outlen)
 {
     PARSED_ADDRESS *AddrList, *Addr;
     ADDRESS_COMMENT *ThisComm, *NextComm;
@@ -162,12 +165,7 @@ static void smtp_addrspec(in, out, outlen)
 /* Read exactly one line and split it into code/separator/text.  Returns
    0 on a well-formed line, -1 on a read error, timeout, or a line that
    doesn't start with a 3-digit code. */
-static int smtp_readline1(conn, pcode, psep, text, textlen)
-    struct tlscon *conn;
-    int *pcode;
-    char *psep;
-    char *text;
-    int textlen;
+static int smtp_readline1(struct tlscon *conn, int *pcode, char *psep, char *text, int textlen)
 {
     char line[SMTP_LINE_MAX];
     int n;
@@ -193,10 +191,7 @@ static int smtp_readline1(conn, pcode, psep, text, textlen)
 
 /* Read a (possibly multiline) reply.  textbuf receives the text of the
    last line.  Returns the reply code, or -1 on error/garbled reply. */
-static int smtp_getreply(conn, textbuf, textlen)
-    struct tlscon *conn;
-    char *textbuf;
-    int textlen;
+static int smtp_getreply(struct tlscon *conn, char *textbuf, int textlen)
 {
     int code, firstcode;
     char sep;
@@ -218,12 +213,7 @@ static int smtp_getreply(conn, textbuf, textlen)
 
 /* Like smtp_getreply(), but also accumulates every line's text (one per
    line, newline-separated) into capbuf, for scanning EHLO capabilities. */
-static int smtp_getreply_cap(conn, capbuf, capbuflen, textbuf, textlen)
-    struct tlscon *conn;
-    char *capbuf;
-    int capbuflen;
-    char *textbuf;
-    int textlen;
+static int smtp_getreply_cap(struct tlscon *conn, char *capbuf, int capbuflen, char *textbuf, int textlen)
 {
     int code, firstcode;
     char sep;
@@ -248,9 +238,7 @@ static int smtp_getreply_cap(conn, capbuf, capbuflen, textbuf, textlen)
     return firstcode;
 }
 
-static void smtp_writeline(conn, line)
-    struct tlscon *conn;
-    char *line;
+static void smtp_writeline(struct tlscon *conn, char *line)
 {
     smtp_trace("C", line);
     (void) tlscon_Write(conn, line, strlen(line));
@@ -259,9 +247,7 @@ static void smtp_writeline(conn, line)
 /* Best-effort RSET+QUIT (used when we're bailing out after RCPT but
    before DATA) or plain QUIT (used on earlier bail-outs).  Errors are
    ignored -- we're already returning an error to our own caller. */
-static void smtp_abort(conn, doReset)
-    struct tlscon *conn;
-    int doReset;
+static void smtp_abort(struct tlscon *conn, int doReset)
 {
     char text[SMTP_LINE_MAX];
 
@@ -275,10 +261,7 @@ static void smtp_abort(conn, doReset)
 }
 
 /* Expand a leading "~/" the same way the profile machinery does. */
-static char *smtp_expandpath(path, buf, buflen)
-    char *path;
-    char *buf;
-    int buflen;
+static char * smtp_expandpath(char *path, char *buf, int buflen)
 {
     char *home;
 
@@ -301,11 +284,7 @@ static char *smtp_expandpath(path, buf, buflen)
    closed on all paths, and this is the one place that does it once
    DATA streaming has begun.  Returns 0 on success, -1 on error (with a
    reason in errbuf). */
-static int smtp_send_body(conn, f, errbuf, errbuflen)
-    struct tlscon *conn;
-    int f;
-    char *errbuf;
-    int errbuflen;
+static int smtp_send_body(struct tlscon *conn, int f, char *errbuf, int errbuflen)
 {
     FILE *fp;
     char *buf, *outline;
@@ -365,10 +344,7 @@ static int smtp_send_body(conn, f, errbuf, errbuflen)
     return ok ? 0 : -1;
 }
 
-int smtp_dropoff(f, tolist, returnpath)
-    int f;
-    char **tolist;
-    char *returnpath;
+int smtp_dropoff(int f, char **tolist, char *returnpath)
 {
     char *host, *netrcpref;
     char netrcpath[MAXPATHLEN+1];

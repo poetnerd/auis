@@ -41,10 +41,7 @@ extern void output(), done();
 
 
 /* VMS complained about using `int'.  */
-int
-main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
   program_name = argv[0];
   failure = 0;
@@ -93,9 +90,7 @@ char *argv[];
 
 /* functions to report errors which prevent a parser from being generated */
 
-void
-fatal(s)
-char *s;
+void fatal(char *s)
 {
   extern char *infile;
 
@@ -113,9 +108,7 @@ char *s;
    functions.  This is the ONLY safe way to write such a function.  */
 /*VARARGS1*/
 
-void
-fatals(fmt,x1,x2,x3,x4,x5,x6,x7,x8)
-char *fmt;
+void fatals(char *fmt, int x1, int x2, int x3, int x4, int x5, int x6, int x7, int x8)
 {
   char buffer[200];
 
@@ -124,9 +117,7 @@ char *fmt;
 }
 
 
-void
-warn(s)
-	char *s;
+void warn(char *s)
 {
   extern char *infile;
 
@@ -139,9 +130,7 @@ warn(s)
 
 /*VARARGS1*/
 
-void
-warns(fmt,x1,x2,x3,x4,x5,x6,x7,x8)
-char *fmt;
+void warns(char *fmt, int x1, int x2, int x3, int x4, int x5, int x6, int x7, int x8)
 {
   char buffer[200];
 
@@ -151,9 +140,7 @@ char *fmt;
 
 
 
-void
-toomany(s)
-char *s;
+void toomany(char *s)
 {
   char buffer[200];
 
@@ -163,9 +150,7 @@ char *s;
 }
 
 
-void
-berror(s)
-char *s;
+void berror(char *s)
 {
   fprintf(stderr, "internal error, %s\n", s);
   abort();
