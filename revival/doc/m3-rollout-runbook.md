@@ -920,11 +920,9 @@ tool false positives, before writing the batch prompt.
    results — **no retrospective recheck needed**. B3 itself worked
    around it with the same stopgap mechanism established for the
    signature-glue variant (split the glued line in the original K&R
-   source, let `ansify` reconvert). A proper tool fix is written up and
-   queued: `m3-ansify-brace-body-corruption-fix-prompt.md` — narrow,
-   already verified end-to-end by the orchestrator (three scratch test
-   cases: corruption case now fixed, plain-bare-brace case unaffected,
-   original signature-glue case still works, no regression).
+   source, let `ansify` reconvert). **Fixed and committed same day** —
+   see the "`ansify` brace-body corruption fix" entry below for the
+   completed tool fix.
 6. **A real ~35-year-old `.ch`-vs-`.c` type mismatch, exposed only once
    `-pe` went live**: `atk/apt/tree/treev.ch`'s `SetHitHandler` declared
    its callback as `(long *handler)()`/`char *anchor`; the real `.c`

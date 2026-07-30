@@ -194,11 +194,11 @@ section.
       instances of a local variable declaration glued to the opening
       brace, silently deleted rather than just skipped) — traced back
       after the fact to a narrow regression in that same morning's
-      brace-glued tool fix; a follow-up fix is written up and queued
-      (`m3-ansify-brace-body-corruption-fix-prompt.md`), confirmed via
-      compilation that the corruption can never silently reach
-      committed code (always a hard, unsuppressible compile error), so
-      no retrospective recheck of prior batches is needed. See
+      brace-glued tool fix; confirmed via compilation that the
+      corruption can never silently reach committed code (always a
+      hard, unsuppressible compile error), so no retrospective recheck
+      of prior batches was needed. Follow-up fix completed and
+      committed same day (`8b0ce5f9`/`ef2cfa01`). See
       `m3-rollout-runbook.md` findings → B3 and
       `revival.md`/`porting-assessment.md` for full detail. Committed.
 
