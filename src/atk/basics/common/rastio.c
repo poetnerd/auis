@@ -82,12 +82,7 @@ To force the last byte out, the byte following it is temporarily replaced with a
 The data is encoded with 4 columns to a line and lines usually have about fifteen bytes.  Column entries can be longer if long runs of similar bytes are encountered.
 */
 
-void
-rastio__WriteRow(ClassID, file, byteaddr, nbytes)
-	struct classheader *ClassID;
-	FILE *file;
-	unsigned char *byteaddr;
-	long nbytes;
+void rastio__WriteRow(struct classheader *ClassID, FILE *file, unsigned char *byteaddr, long nbytes)
 {
 	unsigned char curbyte;	/* byte enqueued for output */
 	unsigned char c;		/* incoming byte */
@@ -180,12 +175,7 @@ If the terminator is '\' or '{', it is left at the front of the input.
 #define case6(v) case4(v): case ((v)+4): case ((v)+5)
 #define case8(v) case4(v): case4((v)+4)
 
-long
-rastio__ReadRow(ClassID, file, row, length)
-	struct classheader *ClassID;
-	register FILE *file;		/* where to get them from */
-	register unsigned char *row;	/* where to put bytes */
-	register long length;	/* how many bytes in row must be filled */
+long rastio__ReadRow(struct classheader *ClassID, FILE *file, unsigned char *row, long length)
 {
 	/* Each input character is processed by the central loop.  There are 
 		some input codes which require two or three characters for completion; 

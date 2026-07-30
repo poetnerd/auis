@@ -48,64 +48,43 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 static char *foregroundColorName = NULL; /* Name of the default foreground color. */
 static char *backgroundColorName = NULL; /* Name of the default background color. */
 
-void graphic__MoveToPt(self,NewPosition)
-struct graphic * self;
-struct point * NewPosition; 
+void graphic__MoveToPt(struct graphic *self, struct point *NewPosition)
 {
     graphic_MoveTo(self,point_X(NewPosition),point_Y(NewPosition));
 }
 
 
-void graphic__MoveTo(self, NewX, NewY)
-struct graphic * self;
-long NewY;
-long NewX;
+void graphic__MoveTo(struct graphic *self, long NewX, long NewY)
 {
     point_SetPt(&self->currentPoint,NewX,NewY);
 }
 
-void graphic__Move(self, DeltaX, DeltaY)
-struct graphic * self;
-long DeltaY; 
-long DeltaX;
+void graphic__Move(struct graphic *self, long DeltaX, long DeltaY)
 {
     point_OffsetPoint(&self->currentPoint,DeltaX,DeltaY);
 }
 
-void graphic__GetCurrentPt(self,Pt)
-struct graphic * self;
-struct point * Pt;
+void graphic__GetCurrentPt(struct graphic *self, struct point *Pt)
 {
     *Pt = self->currentPoint;
 }
 
-void graphic__DrawLineToPt(self,LineEnd)
-struct graphic * self;
-struct point * LineEnd;
+void graphic__DrawLineToPt(struct graphic *self, struct point *LineEnd)
 {
     graphic_DrawLineTo(self,point_X(LineEnd),point_Y(LineEnd));
 }
 
-void graphic__DrawLineTo(self, XEnd, YEnd)
-struct graphic * self;
-long YEnd; 
-long XEnd;
+void graphic__DrawLineTo(struct graphic *self, long XEnd, long YEnd)
 {
     point_SetPt(&self->currentPoint,XEnd,YEnd);
 }
 
-void graphic__DrawLine(self,DeltaX, DeltaY)
-struct graphic * self;
-long DeltaY; 
-long DeltaX;
+void graphic__DrawLine(struct graphic *self, long DeltaX, long DeltaY)
 {
     point_OffsetPoint(&self->currentPoint,DeltaX,DeltaY);
 }
 
-void graphic__DrawString(self, Text, Operation)
-struct graphic * self;
-char * Text;
-short Operation; 
+void graphic__DrawString(struct graphic *self, char *Text, short Operation)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -114,11 +93,7 @@ short Operation;
     }
 }
 
-void graphic__DrawText(self, Text, TextLength, Operation)
-struct graphic * self;
-char * Text;
-long TextLength;
-short Operation;
+void graphic__DrawText(struct graphic *self, char *Text, long TextLength, short Operation)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -127,24 +102,19 @@ short Operation;
     }
 }
 
-void graphic__SetSpaceShim(self,Amount)
-struct graphic * self;
-short Amount;
+void graphic__SetSpaceShim(struct graphic *self, short Amount)
 {
     self->spaceShim = Amount;
 }
 
-short graphic__GetSpaceShim(self)
-struct graphic * self;
+short graphic__GetSpaceShim(struct graphic *self)
 {
 
     return self->spaceShim;
 }
 
 
-void graphic__SetFont(self, ChosenFont)
-struct graphic * self;
-struct fontdesc * ChosenFont;
+void graphic__SetFont(struct graphic *self, struct fontdesc *ChosenFont)
 {
 
     if (ChosenFont) {
@@ -156,16 +126,13 @@ struct fontdesc * ChosenFont;
     }
 }
 
-struct fontdesc * graphic__GetFont(self)
-struct graphic * self;
+struct fontdesc * graphic__GetFont(struct graphic *self)
 {
     if (self->internalFont) return NULL;
     return self->currentFont;
 }
 
-void graphic__DrawRectSize(self,x, y,width,height)
-struct graphic * self;
-long x,y,width,height;
+void graphic__DrawRectSize(struct graphic *self, long x, long y, long width, long height)
 {
     long left = x;
     long right = x+width;
@@ -181,17 +148,12 @@ long x,y,width,height;
     graphic_DrawLineTo(self,left,top);
 }
 
-void graphic__DrawRect(self, Rect)
-struct graphic * self;
-struct rectangle * Rect;
+void graphic__DrawRect(struct graphic *self, struct rectangle *Rect)
 {
     graphic_DrawRectSize(self,rectangle_Left(Rect),rectangle_Top(Rect), rectangle_Width(Rect), rectangle_Height(Rect));
 }
 
-void graphic__DrawPolygon(self, PointArray, PointCount)
-struct graphic * self;
-struct point * PointArray;
-short PointCount;
+void graphic__DrawPolygon(struct graphic *self, struct point *PointArray, short PointCount)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -200,10 +162,7 @@ short PointCount;
     }
 }
 
-void graphic__DrawPath(self, PointArray, PointCount)
-struct graphic *self;
-struct point * PointArray;
-short PointCount; 
+void graphic__DrawPath(struct graphic *self, struct point *PointArray, short PointCount)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -212,39 +171,27 @@ short PointCount;
     }
 }
 
-void graphic__DrawOvalSize(self, x,y,width,height)
-struct graphic * self;
-long x,y,width,height;
+void graphic__DrawOvalSize(struct graphic *self, long x, long y, long width, long height)
 {
     /* An approximation for now */
     graphic_DrawRectSize(self,x,y,width,height);
 }
 
-void graphic__DrawOval(self, Rect)
-struct graphic * self;
-struct rectangle * Rect;
+void graphic__DrawOval(struct graphic *self, struct rectangle *Rect)
 {
     graphic_DrawOvalSize(self,rectangle_Left(Rect),
 			  rectangle_Top(Rect),rectangle_Width(Rect),
 			  rectangle_Height(Rect));
 }
 
-void graphic__DrawArcSize(self,x,y,width,height, StartAngle, OffsetAngle)
-struct graphic * self;
-long x,y,width,height;
-short StartAngle;
-short OffsetAngle;
+void graphic__DrawArcSize(struct graphic *self, long x, long y, long width, long height, short StartAngle, short OffsetAngle)
 {
     /* Cheap imitation by a diagonal line */
     graphic_MoveTo(self,x,y);
     graphic_DrawLineTo(self,x+width,y+height);
 }
 
-void graphic__DrawArc(self, EnclRect, StartAngle, OffsetAngle)
-struct graphic * self;
-struct rectangle * EnclRect;
-short StartAngle;
-short OffsetAngle;
+void graphic__DrawArc(struct graphic *self, struct rectangle *EnclRect, short StartAngle, short OffsetAngle)
 {
 
     graphic_DrawArcSize(self,rectangle_Left(EnclRect),
@@ -252,10 +199,7 @@ short OffsetAngle;
 			 rectangle_Height(EnclRect), StartAngle, OffsetAngle);
 }
 
-void graphic__DrawRRectSize(self,x,y,width,height,cornerWidth,cornerHeight)
-struct graphic * self;
-long x,y,width,height;
-long cornerHeight, cornerWidth;
+void graphic__DrawRRectSize(struct graphic *self, long x, long y, long width, long height, long cornerWidth, long cornerHeight)
 {
     /* Handle pathologic cases in system indepedent manner
       (luser desires to bite bullet in efficiency) */
@@ -316,17 +260,12 @@ long cornerHeight, cornerWidth;
     graphic_DrawLine(self,0,-(height-2*cornerHeight));
 }
 
-void graphic__DrawRRect(self,OuterBox, InnerBox)
-struct graphic * self;
-struct rectangle * OuterBox;
-struct rectangle * InnerBox;
+void graphic__DrawRRect(struct graphic *self, struct rectangle *OuterBox, struct rectangle *InnerBox)
 {
     graphic_DrawRRectSize(self,rectangle_Left(OuterBox), rectangle_Top(OuterBox), rectangle_Width(OuterBox), rectangle_Height(OuterBox), rectangle_Width(InnerBox), rectangle_Height(InnerBox));
 }
 
-void graphic__DrawRgn(self,Rgn)
-struct graphic * self;
-struct region * Rgn;
+void graphic__DrawRgn(struct graphic *self, struct region *Rgn)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -335,9 +274,7 @@ struct region * Rgn;
     }
 }
 
-void graphic__DrawTrapezoid(self,topX, topY, topWidth, bottomX, bottomY, bottomWidth)
-struct graphic *self;
-long topX, topY, topWidth, bottomX, bottomY, bottomWidth;
+void graphic__DrawTrapezoid(struct graphic *self, long topX, long topY, long topWidth, long bottomX, long bottomY, long bottomWidth)
 {
     graphic_MoveTo(self,topX,topY);
     graphic_DrawLine(self,topWidth,0);
@@ -347,10 +284,7 @@ long topX, topY, topWidth, bottomX, bottomY, bottomWidth;
 }
 
 
-void graphic__FillRectSize(self,x,y,width,height,Tile)
-struct graphic * self;
-long x,y,width,height;
-struct graphic * Tile; 
+void graphic__FillRectSize(struct graphic *self, long x, long y, long width, long height, struct graphic *Tile)
 {
     static boolean printed = FALSE;
 
@@ -361,21 +295,14 @@ struct graphic * Tile;
     }
 }
 
-void graphic__FillRect(self, Rect, Tile)
-struct graphic * self;
-struct rectangle * Rect;
-struct graphic * Tile;
+void graphic__FillRect(struct graphic *self, struct rectangle *Rect, struct graphic *Tile)
 {
     graphic_FillRectSize(self, rectangle_Left(Rect),
 			  rectangle_Top(Rect), rectangle_Width(Rect),
 			  rectangle_Height(Rect),Tile);
 }
 
-void graphic__FillPolygon(self, PointArray, PointCount, Tile)
-struct graphic * self;
-struct point * PointArray;
-short PointCount;
-struct graphic * Tile;
+void graphic__FillPolygon(struct graphic *self, struct point *PointArray, short PointCount, struct graphic *Tile)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -384,10 +311,7 @@ struct graphic * Tile;
     }
 }
 
-void graphic__FillOvalSize(self,x,y,width,height,Tile)
-struct graphic * self;
-long x,y,width,height;
-struct graphic * Tile;
+void graphic__FillOvalSize(struct graphic *self, long x, long y, long width, long height, struct graphic *Tile)
 {
     /* ************************
       **** test dummy code ****
@@ -395,20 +319,12 @@ struct graphic * Tile;
     graphic_FillRectSize(self,x,y,width,height,Tile);
 }
 
-void graphic__FillOval(self, Rect, Tile)
-struct graphic * self;
-struct rectangle * Rect;
-struct graphic * Tile;
+void graphic__FillOval(struct graphic *self, struct rectangle *Rect, struct graphic *Tile)
 {
     graphic_FillOvalSize(self, rectangle_Left(Rect), rectangle_Top(Rect), rectangle_Width(Rect), rectangle_Height(Rect), Tile);
 }
 
-void graphic__FillArcSize(self,x,y,width,height,StartAngle, OffsetAngle,Tile)
-struct graphic * self;
-long x,y,width,height;
-short StartAngle;
-short OffsetAngle;
-struct graphic * Tile;
+void graphic__FillArcSize(struct graphic *self, long x, long y, long width, long height, short StartAngle, short OffsetAngle, struct graphic *Tile)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -418,23 +334,14 @@ struct graphic * Tile;
     graphic_FillRectSize(self,x,y,width,height,Tile);
 }
 
-void graphic__FillArc(self, EnclRect,StartAngle, OffsetAngle,Tile)
-struct graphic * self;
-struct rectangle * EnclRect;
-short StartAngle;
-short OffsetAngle;
-struct graphic * Tile;
+void graphic__FillArc(struct graphic *self, struct rectangle *EnclRect, short StartAngle, short OffsetAngle, struct graphic *Tile)
 {
     graphic_FillArcSize(self, rectangle_Left(EnclRect), rectangle_Top(EnclRect),
 			 rectangle_Width(EnclRect), rectangle_Height(EnclRect),
 			 StartAngle, OffsetAngle, Tile);
 }
 
-void graphic__FillRRectSize(self,x,y,width,height,cornerWidth,cornerHeight,Tile)
-struct graphic * self;
-long x,y,width,height;
-long cornerWidth, cornerHeight;
-struct graphic * Tile;
+void graphic__FillRRectSize(struct graphic *self, long x, long y, long width, long height, long cornerWidth, long cornerHeight, struct graphic *Tile)
 {
     static boolean printed = FALSE;
 
@@ -475,21 +382,14 @@ struct graphic * Tile;
     }
 }
 
-void graphic__FillRRect(self,OuterBox,InnerBox,Tile)
-struct graphic * self;
-struct rectangle * OuterBox;
-struct rectangle * InnerBox;
-struct graphic * Tile;
+void graphic__FillRRect(struct graphic *self, struct rectangle *OuterBox, struct rectangle *InnerBox, struct graphic *Tile)
 {
     graphic_FillRRectSize(self, rectangle_Left(OuterBox),rectangle_Top(OuterBox),
 			   rectangle_Width(OuterBox), rectangle_Height(OuterBox),
 			   rectangle_Width(InnerBox), rectangle_Height(InnerBox), Tile);
 }
 
-void graphic__FillRgn(self,Rgn,Tile)
-struct graphic * self;
-struct region * Rgn;
-struct graphic * Tile;
+void graphic__FillRgn(struct graphic *self, struct region *Rgn, struct graphic *Tile)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -498,9 +398,7 @@ struct graphic * Tile;
     }
 }
 
-void graphic__FillTrapezoid(self, topX, topY, topWidth, bottomX, bottomY, bottomWidth, Tile)
-struct graphic * self, *Tile;
-long topX, topY, topWidth, bottomX, bottomY, bottomWidth; 
+void graphic__FillTrapezoid(struct graphic *self, long topX, long topY, long topWidth, long bottomX, long bottomY, long bottomWidth, struct graphic *Tile)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -510,22 +408,17 @@ long topX, topY, topWidth, bottomX, bottomY, bottomWidth;
 }
 
 
-void graphic__EraseRect(self, Rect)
-struct graphic * self;
-struct rectangle * Rect;
+void graphic__EraseRect(struct graphic *self, struct rectangle *Rect)
 {
     graphic_FillRect(self, Rect, graphic_WhitePattern(self));
 }
 
-void graphic__EraseRectSize(self, x, y, width, height)
-struct graphic * self;
-long x,y,width,height;
+void graphic__EraseRectSize(struct graphic *self, long x, long y, long width, long height)
 {
     graphic_FillRectSize(self, x, y, width, height, graphic_WhitePattern(self));
 }
 
-void graphic__EraseVisualRect(self)
-struct graphic *self;
+void graphic__EraseVisualRect(struct graphic *self)
 {
     graphic_FillRectSize(self,
 			  rectangle_Left(&self->visualBounds),
@@ -536,11 +429,7 @@ struct graphic *self;
 }
 
 
-void graphic__BitBltSize(self, srcX, srcY, dstX, dstY, Width, Height, DstGraphic, clipX, clipY, clipWidth, clipHeight)
-struct graphic * self;
-long srcX, srcY, dstX, dstY, Width, Height;
-struct graphic * DstGraphic;
-long clipX, clipY, clipWidth, clipHeight;
+void graphic__BitBltSize(struct graphic *self, long srcX, long srcY, long dstX, long dstY, long Width, long Height, struct graphic *DstGraphic, long clipX, long clipY, long clipWidth, long clipHeight)
 {
     struct rectangle tmpSrcRect, tmpClipRect;
     struct point tmpDestOrigin;
@@ -556,12 +445,7 @@ long clipX, clipY, clipWidth, clipHeight;
     graphic_BitBlt(self,&tmpSrcRect,DstGraphic,&tmpDestOrigin,passedClipRect);
 }
 
-void graphic__BitBlt(self, SrcRect, DstGraphic, DstOrigin, ClipRect)
-struct graphic * self;
-struct rectangle * SrcRect;
-struct graphic *DstGraphic;
-struct point * DstOrigin;
-struct rectangle * ClipRect;
+void graphic__BitBlt(struct graphic *self, struct rectangle *SrcRect, struct graphic *DstGraphic, struct point *DstOrigin, struct rectangle *ClipRect)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -571,10 +455,7 @@ struct rectangle * ClipRect;
 }
 
 
-void graphic__WriteImage(self, DestX, DestY, image, SrcX, SrcY, width, height)
-struct graphic *self;
-long DestX, DestY, SrcX, SrcY, width, height;
-struct image *image;
+void graphic__WriteImage(struct graphic *self, long DestX, long DestY, struct image *image, long SrcX, long SrcY, long width, long height)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -583,10 +464,7 @@ struct image *image;
     }
 }
 
-void graphic__ReadImage(self, DestX, DestY, DestImage, SrcX, SrcY, width, height)
-struct graphic *self;
-struct image *DestImage;
-long SrcX, SrcY, DestX, DestY, width, height;
+void graphic__ReadImage(struct graphic *self, long DestX, long DestY, struct image *DestImage, long SrcX, long SrcY, long width, long height)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -595,10 +473,7 @@ long SrcX, SrcY, DestX, DestY, width, height;
     }
 }
 
-void graphic__WritePixImage(self, DestX, DestY, SrcPixels, SrcX, SrcY, width, height)
-struct graphic *self;
-long DestX, DestY, SrcX, SrcY, width, height;
-struct pixelimage *SrcPixels;
+void graphic__WritePixImage(struct graphic *self, long DestX, long DestY, struct pixelimage *SrcPixels, long SrcX, long SrcY, long width, long height)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -607,10 +482,7 @@ struct pixelimage *SrcPixels;
     }
 }
 
-void graphic__ReadPixImage(self, SrcX, SrcY, DestPixels, DestX, DestY, width, height)
-struct graphic *self;
-struct pixelimage *DestPixels;
-long SrcX, SrcY, DestX, DestY, width, height;
+void graphic__ReadPixImage(struct graphic *self, long SrcX, long SrcY, struct pixelimage *DestPixels, long DestX, long DestY, long width, long height)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -619,11 +491,7 @@ long SrcX, SrcY, DestX, DestY, width, height;
     }
 }
 
-void graphic__SetBitAtLoc(self,XPos,YPos, NewValue)
-struct graphic * self;
-long YPos;
-long XPos;
-boolean NewValue;
+void graphic__SetBitAtLoc(struct graphic *self, long XPos, long YPos, boolean NewValue)
 {
     struct point * tempPt;
     short tempLineWidth, tempTMode, dashStyle, tempLineCap, tempLineJoin;
@@ -661,10 +529,7 @@ boolean NewValue;
 
 }
 
-void graphic__MoveLogicalOrigin(self,DeltaX, DeltaY)
-struct graphic * self;
-long DeltaY;
-long DeltaX;
+void graphic__MoveLogicalOrigin(struct graphic *self, long DeltaX, long DeltaY)
 {
     point_OffsetPoint(&self->savedOrigin,DeltaX,DeltaY);
     rectangle_OffsetRect(&self->localBounds,DeltaX,DeltaY);
@@ -689,44 +554,34 @@ long DeltaX;
     /* *************** */
 }
 
-void graphic__SetLogicalOrigin(self,NewX,NewY)
-struct graphic * self;
-long NewX, NewY;
+void graphic__SetLogicalOrigin(struct graphic *self, long NewX, long NewY)
 {
     graphic_MoveLogicalOrigin(self,NewX-graphic_GetLogicalLeft(self),
 			       NewY-graphic_GetLogicalTop(self));
 }
 
-void graphic__SetLogicalOriginPt(self,Pt)
-struct graphic * self;
-struct point * Pt;
+void graphic__SetLogicalOriginPt(struct graphic *self, struct point *Pt)
 {
     graphic_SetLogicalOrigin(self,point_X(Pt),point_Y(Pt));
 }
 
 
-void graphic__GetLogicalBounds(self,Rect)
-struct graphic * self;
-struct rectangle * Rect;
+void graphic__GetLogicalBounds(struct graphic *self, struct rectangle *Rect)
 {
     *Rect = self->localBounds;
 }
 
-long graphic__GetLogicalRight(self)
-struct graphic * self;
+long graphic__GetLogicalRight(struct graphic *self)
 {
     return graphic_GetLogicalLeft(self) + graphic_GetLogicalWidth(self);
 }
 
-long graphic__GetLogicalBottom(self)
-struct graphic * self;
+long graphic__GetLogicalBottom(struct graphic *self)
 {
     return graphic_GetLogicalTop(self) + graphic_GetLogicalHeight(self);
 }
 
-void graphic__GetEnclosedBounds(self,Rect)
-struct graphic * self;
-struct rectangle * Rect;
+void graphic__GetEnclosedBounds(struct graphic *self, struct rectangle *Rect)
 {
     rectangle_SetRectSize(Rect,
 			   point_X(&self->enclosedOrigin),
@@ -736,22 +591,18 @@ struct rectangle * Rect;
 }
 
 
-long graphic__GetEnclosedRight(self)
-struct graphic * self;
+long graphic__GetEnclosedRight(struct graphic *self)
 {
     return graphic_GetEnclosedLeft(self) + graphic_GetEnclosedWidth(self);
 }
 
-long graphic__GetEnclosedBottom(self)
-struct graphic * self;
+long graphic__GetEnclosedBottom(struct graphic *self)
 {
     return graphic_GetEnclosedTop(self) + graphic_GetEnclosedHeight(self);
 }
 
 
-void graphic__SetClippingRegion(self, region)
-struct graphic *self;
-struct region *region;
+void graphic__SetClippingRegion(struct graphic *self, struct region *region)
 {
     if (self->clippingRegion == NULL)  {
 	self->clippingRegion = region_New();
@@ -759,9 +610,7 @@ struct region *region;
     region_CopyRegion(self->clippingRegion, region);
 }
 
-struct region *graphic__GetClippingRegion(self, retRegion)
-struct graphic *self;
-struct region *retRegion;
+struct region * graphic__GetClippingRegion(struct graphic *self, struct region *retRegion)
 {
     if (retRegion != NULL)  {
 	if (self->clippingRegion != NULL)  {
@@ -774,9 +623,7 @@ struct region *retRegion;
     return retRegion;
 }
 
-void graphic__SetClippingRect(self, AdditionalRect)
-struct graphic * self;
-struct rectangle * AdditionalRect;
+void graphic__SetClippingRect(struct graphic *self, struct rectangle *AdditionalRect)
 {
     /* Note: we need some way to remove the clipping rectangle so that
       resizing does the "right" thing */
@@ -789,17 +636,14 @@ struct rectangle * AdditionalRect;
     }
 }
 
-void graphic__SetClippingRectSize(self, x, y, w, h)
-struct graphic * self;
-long x, y, w, h;
+void graphic__SetClippingRectSize(struct graphic *self, long x, long y, long w, long h)
 {
     struct rectangle r;
     rectangle_SetRectSize(&r, x, y, w, h);
     graphic_SetClippingRect(self, &r);
 }
 
-void graphic__ClearClippingRect(self)
-struct graphic * self;
+void graphic__ClearClippingRect(struct graphic *self)
 {
 
     if (self->clippingRegion)
@@ -807,34 +651,25 @@ struct graphic * self;
     self->clippingRegion = NULL;
 }
 
-void graphic__GetClippingRect(self,Rect)
-struct graphic * self;
-struct rectangle * Rect;
+void graphic__GetClippingRect(struct graphic *self, struct rectangle *Rect)
 {
     if (self->clippingRegion) region_GetBoundingBox(self->clippingRegion, Rect);
     else graphic_GetVisualBounds(self,Rect);
 }
 
-void graphic__SetLineWidth(self,NewLineWidth)
-struct graphic * self;
-short NewLineWidth;
+void graphic__SetLineWidth(struct graphic *self, short NewLineWidth)
 {
 
     self->lineWidth = NewLineWidth;
 
 }
 
-short graphic__GetLineWidth(self)
-struct graphic * self;
+short graphic__GetLineWidth(struct graphic *self)
 {
     return self->lineWidth;
 }
 
-void graphic__SetLineDash( self, dashPattern, dashOffset, dashType )
-struct graphic	*self;
-char		*dashPattern;
-int		dashOffset;
-short		dashType;
+void graphic__SetLineDash(struct graphic *self, char *dashPattern, int dashOffset, short dashType)
 {
 char		*oldDash = self->lineDashPattern;
 
@@ -848,11 +683,7 @@ char		*oldDash = self->lineDashPattern;
     else self->lineDashPattern = oldDash;
 }
 
-void graphic__GetLineDash( self, dashPattern, dashOffset, dashType )
-struct graphic	*self;
-char		**dashPattern;
-int		*dashOffset;
-short		*dashType;
+void graphic__GetLineDash(struct graphic *self, char **dashPattern, int *dashOffset, short *dashType)
 {
     if ( dashOffset ) *dashOffset = self->lineDashOffset;
     if ( dashType ) *dashType = self->lineDashType;
@@ -867,55 +698,42 @@ short		*dashType;
     }
 }
 
-void graphic__SetLineCap( self, newLineCap )
-struct graphic	*self;
-short		newLineCap;
+void graphic__SetLineCap(struct graphic *self, short newLineCap)
 {
     self->lineCap = newLineCap;
 }
 
-short graphic__GetLineCap( self )
-struct graphic	*self;
+short graphic__GetLineCap(struct graphic *self)
 {
     return self->lineCap;
 }
 
-void graphic__SetLineJoin( self, newLineJoin )
-struct graphic	*self;
-short		newLineJoin;
+void graphic__SetLineJoin(struct graphic *self, short newLineJoin)
 {
     self->lineJoin = newLineJoin;
 }
 
-short graphic__GetLineJoin( self )
-struct graphic	*self;
+short graphic__GetLineJoin(struct graphic *self)
 {
     return self->lineJoin;
 }
 
-void graphic__SetTransferMode(self,NewTransferMode)
-struct graphic * self;
-short NewTransferMode;
+void graphic__SetTransferMode(struct graphic *self, short NewTransferMode)
 {
     self->transferMode = 0xFF & NewTransferMode;
 }
 
-short graphic__GetTransferMode(self)
-struct graphic * self;
+short graphic__GetTransferMode(struct graphic *self)
 {
     return self->transferMode;
 }
 
-void graphic__SetPatternOrigin(self, xpos, ypos)
-struct graphic * self;
-long xpos, ypos;
+void graphic__SetPatternOrigin(struct graphic *self, long xpos, long ypos)
 {
     point_SetPt(&(self->patternOrigin), xpos, ypos);
 }
 
-void graphic__GetPatternOrigin(self, xpos, ypos)
-struct graphic * self;
-long *xpos, *ypos;
+void graphic__GetPatternOrigin(struct graphic *self, long *xpos, long *ypos)
 {
     if (xpos)
 	*xpos = point_X(&(self->patternOrigin));
@@ -923,31 +741,24 @@ long *xpos, *ypos;
 	*ypos = point_Y(&(self->patternOrigin));
 }
 
-void graphic__GetVisualBounds(self,Rect)
-struct graphic * self;
-struct rectangle *Rect;
+void graphic__GetVisualBounds(struct graphic *self, struct rectangle *Rect)
 {
     *Rect = self->visualBounds;
 }
 
 
-long graphic__GetVisualRight(self)
-struct graphic * self;
+long graphic__GetVisualRight(struct graphic *self)
 {
     return graphic_GetVisualLeft(self) + graphic_GetVisualWidth(self);
 }
 
-long graphic__GetVisualBottom(self)
-struct graphic * self;
+long graphic__GetVisualBottom(struct graphic *self)
 {
     return graphic_GetVisualTop(self) + graphic_GetVisualHeight(self);
 }
 
 
-void graphic__InsertGraphicRegion(self, EnclosingGraphic, region)
-struct graphic * self;
-struct graphic * EnclosingGraphic;
-struct region *region;
+void graphic__InsertGraphicRegion(struct graphic *self, struct graphic *EnclosingGraphic, struct region *region)
 {
     /* Fill in the local bounds for the rectangle (always 0,0 based
 						    upon creation) */
@@ -1036,10 +847,7 @@ long xOriginInParent, yOriginInParent, width, height;
     graphic_InsertGraphic(self,EnclosingGraphic,&r);
 }
 
-void graphic__InsertGraphic(self, EnclosingGraphic, EnclosedRectangle)
-struct graphic * self;
-struct graphic * EnclosingGraphic;
-struct rectangle * EnclosedRectangle;
+void graphic__InsertGraphic(struct graphic *self, struct graphic *EnclosingGraphic, struct rectangle *EnclosedRectangle)
 {
 
     /* Fill in the local bounds for the rectangle (always 0,0 based
@@ -1104,9 +912,7 @@ struct rectangle * EnclosedRectangle;
 
 }
 
-void graphic__SetVisualRegion(self, region)
-struct graphic *self;
-struct region *region;
+void graphic__SetVisualRegion(struct graphic *self, struct region *region)
 {
     if (region_IsRegionEmpty(region))  {
 	rectangle_SetWidth(&self->visualBounds, 0);
@@ -1124,9 +930,7 @@ struct region *region;
     }
 }
 
-struct region *graphic__GetVisualRegion(self, retRegion)
-struct graphic *self;
-struct region *retRegion;
+struct region * graphic__GetVisualRegion(struct graphic *self, struct region *retRegion)
 {
     if (retRegion != NULL)  {
 	if (self->visualRegion != NULL) {
@@ -1143,32 +947,26 @@ struct region *retRegion;
     return retRegion;
 }
 
-void graphic__RestoreGraphicsState(self)
-struct graphic * self;
+void graphic__RestoreGraphicsState(struct graphic *self)
 {
 
 }
 
-void graphic__FlushGraphics(self)
-struct graphic * self;
+void graphic__FlushGraphics(struct graphic *self)
 {
 }
 
-struct graphic * graphic__WhitePattern(self)
-struct graphic *self;
+struct graphic * graphic__WhitePattern(struct graphic *self)
 {
     return graphic_GrayPattern(self,0,100);
 }
 
-struct graphic * graphic__BlackPattern(self)
-struct graphic * self;
+struct graphic * graphic__BlackPattern(struct graphic *self)
 {
     return graphic_GrayPattern(self,100,100);
 }
 
-struct graphic * graphic__GrayPattern(self, IntensityNum, IntensityDenom)
-struct graphic *self;
-short IntensityNum, IntensityDenom; 
+struct graphic * graphic__GrayPattern(struct graphic *self, short IntensityNum, short IntensityDenom)
 {
     static boolean printed = FALSE;
     if (! printed) {
@@ -1178,10 +976,7 @@ short IntensityNum, IntensityDenom;
     return (struct graphic *) 0;
 }
 
-void graphic__SetDefaultColors(classID, foreground, background)
-struct classheader *classID;
-char *foreground;
-char *background;
+void graphic__SetDefaultColors(struct classheader *classID, char *foreground, char *background)
 {
 
     char *tempString;
@@ -1205,10 +1000,7 @@ char *background;
 	backgroundColorName = NULL;
 }
 
-void graphic__GetDefaultColors(classID, foreground, background)
-struct classheader *classID;
-char **foreground;
-char **background;
+void graphic__GetDefaultColors(struct classheader *classID, char **foreground, char **background)
 {
 
     if (foreground != NULL)
@@ -1227,10 +1019,7 @@ char **background;
 /* 5/1/90: the color names can now be gotten.  The RGB values are guarenteed to match
 the screen only when using an ASCII name. Otherwise they are as specified. -SG */
 
-void graphic__SetForegroundColor(self, colorName, red, green, blue)
-struct graphic *self;
-char *colorName;
-long red, blue, green;
+void graphic__SetForegroundColor(struct graphic *self, char *colorName, long red, long green, long blue)
 {
     if ( colorName )
     {
@@ -1248,10 +1037,7 @@ long red, blue, green;
     self->foreBlue = blue;
 }
 
-void graphic__GetForegroundColor(self, colorName, red, green, blue)
-struct graphic *self;
-char **colorName;
-long *red, *blue, *green;
+void graphic__GetForegroundColor(struct graphic *self, char **colorName, long *red, long *green, long *blue)
 {
 
     if ( colorName )
@@ -1261,10 +1047,7 @@ long *red, *blue, *green;
     if (blue) *blue = self->foreBlue;
 }
 
-void graphic__SetBackgroundColor(self, colorName, red, green, blue)
-struct graphic *self;
-char *colorName;
-long red, blue, green;
+void graphic__SetBackgroundColor(struct graphic *self, char *colorName, long red, long green, long blue)
 {
     if ( colorName )
     {
@@ -1282,10 +1065,7 @@ long red, blue, green;
     self->backBlue = blue;
 }
 
-void graphic__GetBackgroundColor(self, colorName, red, green, blue)
-struct graphic *self;
-char **colorName;
-long *red, *blue, *green;
+void graphic__GetBackgroundColor(struct graphic *self, char **colorName, long *red, long *green, long *blue)
 {
     if ( colorName )
 	*colorName = self->backName;
@@ -1294,45 +1074,35 @@ long *red, *blue, *green;
     if (blue) *blue = self->backBlue;
 }
 
-void graphic__SetFGColor( self, red, green, blue )
-struct graphic *self;
-double red, green, blue;
+void graphic__SetFGColor(struct graphic *self, double red, double green, double blue)
 {
     self->foreRed = ( long ) ( red * 65535.0 );
     self->foreGreen = ( long ) ( green * 65535.0 );
     self->foreBlue = ( long ) ( blue * 65535.0 );
 }
 
-void graphic__GetFGColor( self, red, green, blue )
-struct graphic *self;
-double *red, *green, *blue;
+void graphic__GetFGColor(struct graphic *self, double *red, double *green, double *blue)
 {
     if (red) *red = ( double ) self->foreRed / 65535.0;
     if (green) *green = ( double ) self->foreGreen / 65535.0;
     if (blue) *blue = ( double ) self->foreBlue / 65535.0;
 }
 
-void graphic__SetBGColor( self, red, green, blue )
-struct graphic	*self;
-double red, green, blue;
+void graphic__SetBGColor(struct graphic *self, double red, double green, double blue)
 {
     self->backRed = ( long ) ( red * 65535.0 );
     self->backGreen = ( long ) ( green * 65535.0 );
     self->backBlue = ( long ) ( blue * 65535.0 );
 }
 
-void graphic__GetBGColor( self, red, green, blue )
-struct graphic *self;
-double *red, *green, *blue;
+void graphic__GetBGColor(struct graphic *self, double *red, double *green, double *blue)
 {
     if (red) *red = ( double ) self->backRed / 65535.0;
     if (green) *green = ( double ) self->backGreen / 65535.0;
     if (blue) *blue = ( double ) self->backBlue / 65535.0;
 }
 
-void graphic__SetFGToShadow(self, shadow)
-struct graphic *self;
-int shadow;
+void graphic__SetFGToShadow(struct graphic *self, int shadow)
 {
     long br, bg, bb;
     unsigned short rr, rg, rb;
@@ -1344,21 +1114,12 @@ int shadow;
     graphic_SetForegroundColor(self, NULL, (long)rr, (long)rg, (long)rb);
 }
 
-void graphic__ClearColors(self)
-struct graphic *self;
+void graphic__ClearColors(struct graphic *self)
 {
     fprintf(stderr, "Missing method graphic_ClearColors.\n");
 }
 
-void graphic__ComputeShadow(classID, br, bg, bb, rr, rg, rb, shadow)
-struct classheader *classID;
-long  br;
-long  bg;
-long  bb;
-long  *rr;
-long  *rg;
-long  *rb;
-int  shadow;
+void graphic__ComputeShadow(struct classheader *classID, long br, long bg, long bb, long *rr, long *rg, long *rb, int shadow)
 {
     unsigned short srr, srg, srb;
     
@@ -1369,15 +1130,7 @@ int  shadow;
     *rb=(long)srb;
 }
 
-void graphic__ComputeShadowDouble(classID, br, bg, bb, rr, rg, rb, shadow)
-struct classheader *classID;
-double  br;
-double  bg;
-double  bb;
-double  *rr;
-double  *rg;
-double  *rb;
-int  shadow;
+void graphic__ComputeShadowDouble(struct classheader *classID, double br, double bg, double bb, double *rr, double *rg, double *rb, int shadow)
 {
     unsigned short srr, srg, srb;
     
@@ -1388,39 +1141,33 @@ int  shadow;
     *rb=((double)srb)/65535.0;
 }
 
-long graphic__GetHorizontalResolution(self)
-struct graphic * self;
+long graphic__GetHorizontalResolution(struct graphic *self)
 {
     return 80L;
 }
 
-long graphic__GetVerticalResolution(self)
-struct graphic * self;
+long graphic__GetVerticalResolution(struct graphic *self)
 {
     return 80L;
 }
 
-char * graphic__GetWindowManagerType(self)
-struct graphic * self;
+char * graphic__GetWindowManagerType(struct graphic *self)
 {
     return "";
 }
 
-long graphic__GetDevice(self)
-struct graphic * self;
+long graphic__GetDevice(struct graphic *self)
 {
     return 0;
 }
 
-long graphic__DisplayClass( self )
-struct graphic	    *self;
+long graphic__DisplayClass(struct graphic *self)
 {
     return graphic_Monochrome | graphic_StaticGray;
 }
 
 /* declares whether images pulled back from the server via graphic_ReadPixelImage() are inverted */
-boolean graphic__IsImageInverted(self)
-struct graphic *self;
+boolean graphic__IsImageInverted(struct graphic *self)
 {
     return FALSE;
 }
@@ -1429,9 +1176,7 @@ struct graphic *self;
 /*   Predefined procedures */
 /* -------------------------------------------------- */
 
-boolean graphic__InitializeObject(classID,self)
-struct classheader *classID;
-struct graphic *self;
+boolean graphic__InitializeObject(struct classheader *classID, struct graphic *self)
 {
     static struct fontdesc *defaultFont = NULL;
 
@@ -1471,18 +1216,14 @@ struct graphic *self;
 /*       Class procedures                  */
 /* ***************************************** */
 
-struct graphic * graphic__CreateGraphic(classID, v)
-struct classheader *classID;
-struct view *v;
+struct graphic * graphic__CreateGraphic(struct classheader *classID, struct view *v)
 {
     struct graphic *g;
     g = im_GetGraphic();
     return(g);
 }
 
-void graphic__FinalizeObject(classID,self)
-struct classheader *classID;
-struct graphic *self;
+void graphic__FinalizeObject(struct classheader *classID, struct graphic *self)
 {
     if (self->internalFont) fontdesc_Destroy(self->currentFont);
     if (self->clippingRegion) {

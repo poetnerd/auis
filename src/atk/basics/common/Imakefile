@@ -29,6 +29,9 @@
 /* M2 ANSI sweep: catch implicit function declarations (revival/doc/roadmap.md, M2) */
 COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Werror=implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
 
+/* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 DOBJS = app.do atom.do atomlist.do bind.do cursor.do dataobj.do describe.do \
 	environ.do event.do filetype.do fontdesc.do init.do keymap.do \
 	keyrec.do keystate.do menulist.do message.do msghndlr.do \

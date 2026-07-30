@@ -60,6 +60,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #endif
 
 #include <profile.eh>
+static int allocProfBuf();
 
 #define SCALE_1_TO_1 0x10000L
 
@@ -71,7 +72,7 @@ static struct phdr header;
 #endif /* SYSV */
 
 /* Allocate the profiling buffer */
-static int allocProfBuf(size)
+static int allocProfBuf(int size)
 {
 #if !defined(SYSV) && !defined(sys_darwin)
     if(profBuf!=NULL && size!=profBufSize)
@@ -91,9 +92,7 @@ static int allocProfBuf(size)
 #endif /* SYSV */
 }
 
-int profile__StartClass(classId,classname,filename)
-struct classheader *classId;
-char *classname,*filename;
+int profile__StartClass(struct classheader *classId, char *classname, char *filename)
 {
 #if !defined(SYSV) && !defined(sys_darwin)
     struct classinfo *info=class_Load(classname);
@@ -109,11 +108,7 @@ char *classname,*filename;
 #endif /* SYSV */
 }
 
-int profile__Start(classId,textbase,textlength,filename)
-struct classheader *classId;
-char *textbase;
-long textlength;
-char *filename;
+int profile__Start(struct classheader *classId, char *textbase, long textlength, char *filename)
 {
 #if !defined(SYSV) && !defined(sys_darwin)
     if(textbase == NULL){
@@ -146,14 +141,12 @@ char *filename;
 #endif /* SYSV */
 }
 
-int profile__Active(classId)
-struct classheader *classId;
+int profile__Active(struct classheader *classId)
 {
     return (profBuf!=NULL);
 }
 
-int profile__Stop(classId)
-struct classheader *classId;
+int profile__Stop(struct classheader *classId)
 {
 #if !defined(SYSV) && !defined(sys_darwin)
     if(profBuf!=NULL){
