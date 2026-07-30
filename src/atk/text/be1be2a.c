@@ -41,6 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <be1be2.ih>
 #include <text.ih>
 #include <be1be2a.eh>
+static void Convert();
 
 extern int errno;
 
@@ -52,10 +53,7 @@ char *progName = "be1be2";
 char *fileList[1000];
 int fileCount;
 
-boolean be1be2app__ParseArgs(self, argc, argv)
-struct be1be2app *self;
-int argc;
-char **argv;
+boolean be1be2app__ParseArgs(struct be1be2app *self, int argc, char **argv)
 {
     int i;
 
@@ -74,8 +72,7 @@ char **argv;
  * Ruotines to convert one file
  */
 
-char *OutputName(inputName)
-char *inputName;
+char * OutputName(char *inputName)
 {
     static char outName[256];
     int i;
@@ -98,8 +95,7 @@ char *inputName;
     return outName;
 }
 
-static void Convert(fileName)
-char *fileName;
+static void Convert(char *fileName)
 {
     char *outName;
     struct text *text;
@@ -162,8 +158,7 @@ char *fileName;
  * Convert each file
  */
 
-boolean be1be2app__Run(self)
-struct be1be2app *self;
+boolean be1be2app__Run(struct be1be2app *self)
 {
     int i;
 

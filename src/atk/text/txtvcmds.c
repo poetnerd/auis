@@ -45,6 +45,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #define AUXMODULE 1
 #include <textv.eh>
+static void CheckStylePreferences();
+static int TranslateKeySequence();
+static int adjustBindings();
 
 long lcKill;
 long lcYank;
@@ -184,8 +187,7 @@ extern void textview_ZapRegionCmd();
 
 static int parseBackslashed();
 
-void textview_NOOPCmd (self)
-register struct textview *self;
+void textview_NOOPCmd(struct textview *self)
 {
     /* Do nothing.  Used to rebind keys for no operation */
 }
@@ -195,8 +197,7 @@ register struct textview *self;
  * and is used or forward/backward word operations
  */
 
-charType(c)
-	register char c;
+int charType(char c)
 {
 
 	if (isspace(c))
@@ -378,9 +379,7 @@ static struct bind_Description textviewEmacsBindings[]={
     {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 };
 
-static void CheckStylePreferences(newKeymap, normalMenus)
-struct keymap *newKeymap;
-struct menulist **normalMenus;
+static void CheckStylePreferences(struct keymap *newKeymap, struct menulist **normalMenus)
 {
     struct proctable_Entry *pl;
 
@@ -410,9 +409,7 @@ struct menulist **normalMenus;
 
 /* These two procs ripped out of basics/common/init.c */
 /* Translate a key sequence that has ^A, \ddd, and \c conventions. */
-static int TranslateKeySequence(from, to)
-    char *from;
-    char *to;
+static int TranslateKeySequence(char *from, char *to)
 {
     while (*from != '\0') {
         if (*from == '\\') {
@@ -437,8 +434,7 @@ static int TranslateKeySequence(from, to)
     return 0;
 }
 
-static int parseBackslashed(fromChars)
-    char **fromChars;
+static int parseBackslashed(char **fromChars)
 {
 
     int returnChar;
@@ -482,8 +478,7 @@ static int parseBackslashed(fromChars)
     return returnChar;
 }
 
-static adjustBindings(bindings)
-struct bind_Description *bindings;
+static adjustBindings(struct bind_Description *bindings)
 {
     struct bind_Description *bd;
     char *stylePrefixPref;
@@ -514,9 +509,7 @@ struct bind_Description *bindings;
     }
 }
 
-struct keymap *textview_InitEmacsKeyMap(classInfo, normalMenus)
-struct textview_classinfo *classInfo;
-struct menulist **normalMenus;
+struct keymap * textview_InitEmacsKeyMap(struct textview_classinfo *classInfo, struct menulist **normalMenus)
 {
     struct keymap *newKeymap = keymap_New();
     register long i;
@@ -851,9 +844,7 @@ static struct bind_Description textviewViCommandModeBindings[]={
     {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL, NULL}
 };
 
-struct keymap *textview_InitViCommandModeKeyMap(classInfo, Menus)
-struct textview_classinfo *classInfo;
-struct menulist **Menus;
+struct keymap * textview_InitViCommandModeKeyMap(struct textview_classinfo *classInfo, struct menulist **Menus)
 {
     struct keymap *newKeymap = keymap_New();
     register long i;
@@ -922,9 +913,7 @@ static struct bind_Description textviewViInputModeBindings[] = {
     NULL
  };
  
-struct keymap *textview_InitViInputModeKeyMap(classInfo, Menus)
-struct textview_classinfo *classInfo;
-struct menulist **Menus;
+struct keymap * textview_InitViInputModeKeyMap(struct textview_classinfo *classInfo, struct menulist **Menus)
 {
     struct keymap *newKeymap = keymap_New();
     register long i;

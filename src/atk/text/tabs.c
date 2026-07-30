@@ -41,15 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 static struct tabs *DefaultTabs = NULL;
 
-int
-FindPrevTab(tabs, pos)
-struct tabs *tabs;
-long pos;
-/* Post: returns...
- *	-1 if no tabs
- *	n if found
- *	NumTabs if not found in list
- */
+int FindPrevTab(struct tabs *tabs, long pos)
 {
     register int i;
 
@@ -67,12 +59,7 @@ long pos;
 #define	RealityHack(x) ((x)*14)
 
 
-void
-tabs__OutputTroff(self, indent, file)
-struct tabs *self;
-long indent;
-FILE *file;
-/* Output all tabs past indent, with a tab at indent */
+void tabs__OutputTroff(struct tabs *self, long indent, FILE *file)
 {
     int i;
 
@@ -102,10 +89,7 @@ FILE *file;
 }
 
 
-int
-tabs__Different(a, b)
-struct tabs *a, *b;
-/* returns 1 if different, 0 if same */
+int tabs__Different(struct tabs *a, struct tabs *b)
 {
     if (a->number == b->number) {
 	int i;
@@ -119,13 +103,7 @@ struct tabs *a, *b;
 }
 
 
-struct tabs *
-tabs__Delete(self, n)
-struct tabs *self;
-int n;
-/* delete the n'th tab */
-/* precondition: n represents a valid tab: 0 <= n < CurNumTabs */
-/* post: the original tabs are destroyed, if links > 1 */
+struct tabs * tabs__Delete(struct tabs *self, int n)
 {
     register struct tabs *nt;
 
@@ -175,11 +153,7 @@ int n;
 }
 
 
-struct tabs *
-tabs__Add(self, pos, op)
-struct tabs *self;
-long pos;
-enum style_TabAlignment op;
+struct tabs * tabs__Add(struct tabs *self, long pos, enum style_TabAlignment op)
 {
     /* Add tab into the list */
     /* The original lists ARE DESTROYED */
@@ -249,12 +223,7 @@ enum style_TabAlignment op;
     }
 }
 
-struct tabs *
-tabs__Clear(self)
-struct tabs *self;
-/* 
- * Post: if links == 1, then list is destroyed, else links is kept
- */
+struct tabs * tabs__Clear(struct tabs *self)
 {
     if (self->number == 0)
 	/* Tabs are already cleared */
@@ -275,9 +244,7 @@ struct tabs *self;
 }
 
 
-struct tabs *
-tabs__Create(classID)
-struct classheader *classID;
+struct tabs * tabs__Create(struct classheader *classID)
 {
     register long x;
     register int i;
@@ -306,10 +273,7 @@ struct classheader *classID;
     return DefaultTabs;
 }
 
-boolean
-tabs__InitializeObject(classID, self)
-struct classheader *classID;
-struct tabs *self;
+boolean tabs__InitializeObject(struct classheader *classID, struct tabs *self)
 {
     self->Positions = NULL;
     self->Types = NULL;
@@ -318,10 +282,7 @@ struct tabs *self;
     return TRUE;
 }
 
-void
-tabs__FinalizeObject(classID, self)
-struct classheader *classID;
-struct tabs *self;
+void tabs__FinalizeObject(struct classheader *classID, struct tabs *self)
 {
     if (self->Positions) free(self->Positions);
     if (self->Types) free(self->Types);
@@ -329,10 +290,7 @@ struct tabs *self;
     self->Types=NULL;
 }
 
-void
-tabs__Death(classID, self)
-struct classheader *classID;
-struct tabs *self;
+void tabs__Death(struct classheader *classID, struct tabs *self)
 {
     if (--self->links > 0)
 	return;
@@ -347,10 +305,7 @@ struct tabs *self;
 }
 
 
-struct tabs *
-tabs__ApplyChange(self, tabChange)
-struct tabs *self;
-struct tabentry *tabChange;
+struct tabs * tabs__ApplyChange(struct tabs *self, struct tabentry *tabChange)
 {
     long Pos;	    /* Position for current tab */
     int PrevTab;   /* Tab location at or immediately before proposed tab */
@@ -394,9 +349,7 @@ struct tabentry *tabChange;
     return tabs;
 }
 
-struct tabs *
-tabs__Copy(self)
-struct tabs *self;
+struct tabs * tabs__Copy(struct tabs *self)
 {
     self->links++;
     return self;

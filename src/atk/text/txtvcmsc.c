@@ -51,8 +51,7 @@ extern boolean ConfirmReadOnly();	/* defined in txtvcmod.c */
 extern boolean textview_objecttest();	/* defined in txtvcmod.c */
 
 #ifdef CONVERSIONERROR
-void textview_PrintFile(self)
-struct textview *self;
+void textview_PrintFile(struct textview *self)
 {
     register struct text *d = Text(self);
     register struct buffer *b = (struct buffer *) buffer_FindData(d);
@@ -67,8 +66,7 @@ struct textview *self;
     doctroff_PrintDoc(d, 1, 1, filename, "");
 }
 
-void textview_PreviewCmd(self)
-register struct textview *self;
+void textview_PreviewCmd(struct textview *self)
 {
     register struct text *d = Text(self);
     register struct buffer *b = buffer_finddata(d);
@@ -83,8 +81,7 @@ register struct textview *self;
     doctroff_PrintDoc(d, 0, 1, filename, "");
 }
 
-void textview_SetPrinterCmd(self)
-struct textview *self;
+void textview_SetPrinterCmd(struct textview *self)
 {
     char p[200];
     char *currentprinter;
@@ -119,8 +116,7 @@ struct textview *self;
 }
 #endif /* CONVERSIONERROR */
 
-void textview_ToggleViModeCmd(self)
-struct textview *self;
+void textview_ToggleViModeCmd(struct textview *self)
 {
     long lcstate = im_GetLastCmd(textview_GetIM(self));
 
@@ -128,9 +124,7 @@ struct textview *self;
     im_SetLastCmd(textview_GetIM(self), lcstate);	/* be transparent */
 }
 
-void textview_ViCommandCmd(self, key)
-struct textview	*self;
-long		key;
+void textview_ViCommandCmd(struct textview *self, long key)
 {
     char tc;
 
@@ -152,15 +146,12 @@ long		key;
     }
 }
 
-void textview_ToggleEditorCmd(self)
-struct textview *self;
+void textview_ToggleEditorCmd(struct textview *self)
 {
     textview_ToggleEditor(self);
 }
 
-void textview_GrabReference(self,key)
-struct textview *self;
-long key;
+void textview_GrabReference(struct textview *self, long key)
 {
     long pos,len;
     struct viewref *vr;
@@ -174,9 +165,7 @@ long key;
         d->currentViewreference = vr;
 }
 
-void textview_PlaceReference(self,key)
-struct textview *self;
-long key;
+void textview_PlaceReference(struct textview *self, long key)
 {
     long pos;
     char p[250];
@@ -205,15 +194,13 @@ long key;
     text_NotifyObservers(d,observable_OBJECTCHANGED);
 }
 
-void textview_CheckSpelling(self)
-struct textview *self;
+void textview_CheckSpelling(struct textview *self)
 {
     message_DisplayString(self, 0,
        "Sorry; \"Check Spelling\" is not implemented.");
 }
 
-void textview_ToggleReadOnly(self)
-struct textview *self;
+void textview_ToggleReadOnly(struct textview *self)
 {
     boolean argp = im_ArgProvided(textview_GetIM(self)), arg;
     struct text *myText = Text(self);
@@ -245,8 +232,7 @@ struct textview *self;
     text_NotifyObservers(myText, observable_OBJECTCHANGED); /* Handles updating of menus on read only transition. */
 }
 
-void textview_InsertPageBreak (self)
-    register struct textview *self;
+void textview_InsertPageBreak(struct textview *self)
 {
     long pos;
     struct text *d;
@@ -275,8 +261,7 @@ void textview_InsertPageBreak (self)
     }
 }
 
-void textview_NextPage (self)
-    register struct textview *self;
+void textview_NextPage(struct textview *self)
 {
     long pos,len;
     struct text *d;
@@ -295,18 +280,14 @@ void textview_NextPage (self)
 	pos++;
     }
 }
-long text_rindex(txt,pos,c)
-register struct text *txt;
-register long pos;
-register char c;
+long text_rindex(struct text *txt, long pos, char c)
 {
     for(;pos > 0;pos--){
 	if(text_GetChar(txt,pos) == c) return pos;
     }
     return EOF;
 }
-void textview_LastPage (self)
-    register struct textview *self;
+void textview_LastPage(struct textview *self)
 {
     long pos,cnt;
     struct text *d;
@@ -327,11 +308,7 @@ void textview_LastPage (self)
     textview_SetTopPosition(self,0);
 }
 #if 0
-boolean lookforfootnote(self,text,pos,env)
-struct textview *self;
-struct text *text;
-long pos;
-struct environment *env;
+boolean lookforfootnote(struct textview *self, struct text *text, long pos, struct environment *env)
 {
     struct style *st;
     char *sn;
@@ -344,8 +321,7 @@ struct environment *env;
 }
 #endif
 
-void textview_InsertFootnote(self)
-    register struct textview *self;
+void textview_InsertFootnote(struct textview *self)
 {
     long pos;
     struct fnote *fn;
@@ -369,18 +345,15 @@ void textview_InsertFootnote(self)
     text_NotifyObservers(Text(self),observable_OBJECTCHANGED);
     textview_SetDotPosition(self,pos + 1);
 }
-void textview_OpenFootnotes(self)
-    register struct textview *self;
+void textview_OpenFootnotes(struct textview *self)
 {
     fnote_OpenAll(Text(self));
 }
-void textview_CloseFootnotes(self)
-    register struct textview *self;
+void textview_CloseFootnotes(struct textview *self)
 {
     fnote_CloseAll(Text(self));
 }
-void textview_WriteFootnotes(self)
-    register struct textview *self;
+void textview_WriteFootnotes(struct textview *self)
 {
     FILE *f,*fopen();
     struct text *tmpt;

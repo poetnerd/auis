@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <class.h>
 #include <smpltext.ih>
 #include <search.eh>
+static unsigned char * SkipOp();
 
 /* array to fold upper case to lower case 
 Now modified to handle the iso 8859 char set  # 1 */
@@ -77,15 +78,13 @@ int MatchLength;
 #define isop(c)	(((c) & 0200) && ((c) < 0205))	/* true if c is a special op */
 
 
-search__GetMatchLength (classID)
-struct classheader *classID;
+int search__GetMatchLength(struct classheader *classID)
 {
     return MatchLength;
 }
 
-static unsigned char *
-SkipOp (s)
-unsigned char *s; {
+static unsigned char * SkipOp(unsigned char *s)
+{
     switch (*s++) {
 	default: 
 	    return s;
@@ -103,11 +102,7 @@ unsigned char *s; {
     }
 }
 
-char *search__GetQuotedSearchString(classID, string, resString, resStrLen)
-struct classheader *classID;
-char *string;
-char *resString;
-long resStrLen;
+char * search__GetQuotedSearchString(struct classheader *classID, char *string, char *resString, long resStrLen)
 {
     long resultMaxLen;
     long resultLen = 0;
@@ -154,11 +149,8 @@ long resStrLen;
     return result;
 }
 
-char *
-search__CompilePattern (classID, string, result)
-struct classheader *classID;
-unsigned char *string;
-struct SearchPattern  **result; {
+char * search__CompilePattern(struct classheader *classID, char *string, struct SearchPattern **result)
+{
     struct SearchPattern  *p;
     long    used = 0;
     int     LastStart = -1;
@@ -264,11 +256,8 @@ struct SearchPattern  **result; {
     return 0;
 }
 
-search__MatchPattern (classID, d, pos, p)
-struct classheader *classID;
-struct simpletext *d;
-long pos;
-struct SearchPattern *p; {
+int search__MatchPattern(struct classheader *classID, struct simpletext *d, long pos, struct SearchPattern *p)
+{
     unsigned char *s;
     int canopt;
     unsigned char optchar;
@@ -301,11 +290,8 @@ struct SearchPattern *p; {
     return -1;
 }
 
-search__MatchPatternReverse (classID, d, pos, p)
-struct classheader *classID;
-struct simpletext *d;
-long pos;
-struct SearchPattern *p; {
+int search__MatchPatternReverse(struct classheader *classID, struct simpletext *d, long pos, struct SearchPattern *p)
+{
     unsigned char *s;
     int canopt;
     unsigned char optchar;
@@ -336,10 +322,8 @@ struct SearchPattern *p; {
     return -1;
 }
 
-static long TryMatch (d, pos, s, loop)
-struct simpletext *d;
-long pos;
-unsigned char **s; {
+static long TryMatch(struct simpletext *d, long pos, unsigned char **s, int loop)
+{
     unsigned char  c,
                             dc;
     unsigned char *buf = NULL;

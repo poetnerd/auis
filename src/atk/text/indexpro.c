@@ -63,15 +63,12 @@ Index\n\
 .in .2i	\n\
 .hy 0\
 ";
-int cmp(a,b)
-int *a,*b;
+int cmp(int *a, int *b)
 {
     return(*a - *b);
 }
 static char lbuf[512];
-output(buf,n,np)
-char *buf;
-int *n,*np;
+int output(char *buf, int *n, int *np)
 {
     int *tp;
     static char lastc = ' ';
@@ -125,9 +122,7 @@ int *n,*np;
     putchar('\n');
 }
 
-main(argc,argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
     char buf[BUFSIZE],rbuf[BUFSIZE],*begin, *end,*c;
     int num[NUMSIZE],*np;
