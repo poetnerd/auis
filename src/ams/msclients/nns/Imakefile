@@ -46,7 +46,7 @@ LIBS = $(BASEDIR)/lib/libmssrv.a \
 
 NormalObjectRule()
 
-ProgramTarget(nns, $(OBJS), $(LIBS), ${MMDFLIBS} ${BSDLIB} ${RESOLVER_LIB})
+ProgramTarget(nns, $(OBJS), $(LIBS), ${MMDFLIBS} ${BSDLIB} ${SSLLIB} ${RESOLVER_LIB})
 InstallProgram(nns, $(DESTDIR)/etc)
 
 DependTarget()
