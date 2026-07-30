@@ -205,7 +205,14 @@ RESERVED = {'if', 'while', 'for', 'switch', 'return', 'sizeof', 'do', 'else'}
 
 def parse_decl_block(lines, start):
     """Consume K&R parameter declarations from lines[start:]; return
-    (index_of_brace_line, decl_text) or None if this isn't a K&R body.
+    (index_of_brace_line, decl_text, needs_brace_split) or None if this
+    isn't a K&R body. needs_brace_split is True only when the returned
+    line is a brace-glued last-parameter declaration (safe to rewrite to
+    a bare '{' once the candidate is accepted, since its text was already
+    captured into decls); False when the line was matched by the plain
+    bare-brace check, which may have arbitrary trailing body content
+    (e.g. a local variable declaration sharing the line with the brace)
+    that must never be touched.
 
     Does not mutate `lines` -- a brace-glued line (last param declaration
     and the opening brace on one physical line) is only *identified* here;
@@ -221,7 +228,7 @@ def parse_decl_block(lines, start):
     while i < len(lines):
         s = lines[i].strip()
         if s.startswith('{'):
-            return i, '\n'.join(decls)
+            return i, '\n'.join(decls), False
         if s == '' or s.startswith('/*') or s.startswith('*'):
             i += 1
             continue
@@ -232,7 +239,7 @@ def parse_decl_block(lines, start):
         bg = BRACE_GLUED.match(lines[i].rstrip('\n'))
         if bg:
             decls.append(bg.group('decl').strip())
-            return i, '\n'.join(decls)
+            return i, '\n'.join(decls), True
         return None
     return None
 
@@ -315,7 +322,7 @@ def convert_file(path, dbdir, do_helpers=True):
             i += 1
             continue
 
-        m, ret, prev_type, (brace_idx, decl_text) = cand
+        m, ret, prev_type, (brace_idx, decl_text, needs_brace_split) = cand
         fname = m.group('name')
         params = [p.strip() for p in m.group('params').split(',') if p.strip()]
 
@@ -379,7 +386,7 @@ def convert_file(path, dbdir, do_helpers=True):
         # line) is only rewritten to a bare '{' now that this candidate is
         # definitely being used -- see parse_decl_block's docstring for why
         # this can't happen speculatively.
-        if lines[brace_idx].strip() != '{':
+        if needs_brace_split:
             lines[brace_idx] = '{'
         i = brace_idx           # skip the K&R decl block entirely
         changed = True
