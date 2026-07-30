@@ -1144,7 +1144,13 @@ int errvalCount[errval_NUM];	/* ??? */
 		continue;
 
 	    if (usePrototypesExport) {
-		sprintf(proto, "struct classheader *%s", mp->realargtypes);
+		if (strcmp(mp->name, "FinalizeObject") == 0
+		    && (mp->realargtypes == NULL || mp->realargtypes[0] == '\0')) {
+		    sprintf(proto, "struct classheader *, struct %s *", FinalClassName);
+		}
+		else {
+		    sprintf(proto, "struct classheader *%s", mp->realargtypes);
+		}
 	    }
 	    else {
 		proto[0] = '\0';
