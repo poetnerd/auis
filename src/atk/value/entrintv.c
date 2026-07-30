@@ -10,6 +10,7 @@
 static char *rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/value/RCS/entrintv.c,v 1.1 1993/08/20 20:05:27 susan Exp $ ";
 #endif /* lint */
 #include <class.h>
+#include <string.h>
 #include <lpair.ih>
 #include <entrint.ih>
 #include <eintv.ih>
@@ -22,19 +23,13 @@ static char *rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/val
 
 
 
-struct buttonV *enterintV__DoHit( self,type,x,y,hits )
-     struct enterintV * self;
-     enum view_MouseAction type;
-     long x,y,hits;
+struct buttonV * enterintV__DoHit(struct enterintV *self, enum view_MouseAction type, long x, long y, long hits)
 {
   if (self->eint &&(type == view_RightUp || type == view_LeftUp))
       enterint_updatebuf(self->eint);
   return (struct buttonV *)self;
 }
-void enterintV__ObservedChanged(self,changed,value)
-struct enterintV *self;
-struct observable *changed;
-long value;
+void enterintV__ObservedChanged(struct enterintV *self, struct observable *changed, long value)
 {
     struct value *val ;
     char *str,*os;
@@ -74,12 +69,7 @@ long value;
 	super_ObservedChanged(self,changed,value);
     }
 }
-void enterintV__DrawButtonText(self,text,len,rect,rect2,pushd)
-struct enterintV * self;
-char *text;
-long len;
-struct rectangle *rect,*rect2;
-boolean pushd;
+void enterintV__DrawButtonText(struct enterintV *self, char *text, long len, struct rectangle *rect, struct rectangle *rect2, boolean pushd)
 {
     struct rectangle r,r2;
     struct buttonV *ss;
@@ -99,9 +89,7 @@ boolean pushd;
     eintview_FullUpdate(self->eintview,view_FullRedraw, 0, 0, 0, 0);
 }
 
-boolean enterintV__InitializeObject(classID,self)
-struct classheader *classID;
-struct enterintV *self;
+boolean enterintV__InitializeObject(struct classheader *classID, struct enterintV *self)
 {
     self->eint = NULL;
     self->eintview = NULL;
@@ -114,25 +102,18 @@ struct enterintV *self;
     ((struct buttonV *)self)->buttontype = TRUE;
     return TRUE;
 }
-boolean enterintV__FinalizeObject(classID,self)
-struct classheader *classID;
-struct enterintV *self;
+boolean enterintV__FinalizeObject(struct classheader *classID, struct enterintV *self)
 {
     if(self->eint)
 	enterint_RemoveObserver(self->eint,self);
     return TRUE;
 }
-void enterintV__LinkTree(self,parent)
-struct enterintV *self;
-struct view *parent;
+void enterintV__LinkTree(struct enterintV *self, struct view *parent)
 {
     super_LinkTree(self,parent);
     eintview_LinkTree(self->eintview,self);
 }
-struct view * enterintV__Hit(self, type, x, y, numberOfClicks)
-struct enterintV * self;
-enum view_MouseAction type;
-long x, y, numberOfClicks;
+struct view * enterintV__Hit(struct enterintV *self, enum view_MouseAction type, long x, long y, long numberOfClicks)
 {
     if(self->eintview) 
 	eintview_WantInputFocus(self->eintview,self->eintview);

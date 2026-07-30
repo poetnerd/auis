@@ -52,10 +52,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #define MAXFILELINE 255
 
-	boolean
-label__InitializeObject(ClassID, self)
-	struct classheader *ClassID;
-	register struct label  *self;
+boolean label__InitializeObject(struct classheader *ClassID, struct label *self)
 {
 	/* here we give initial values to any fields that need them */
 	self->text = NULL;
@@ -65,30 +62,20 @@ label__InitializeObject(ClassID, self)
 	return TRUE;
 }
 
-	void 
-label__FinalizeObject(ClassID, self)
-	struct classheader *ClassID;
-	register struct label  *self;
+void label__FinalizeObject(struct classheader *ClassID, struct label *self)
 {
 	/* free any storage allocated to self */
 	if (self->text) free(self->text);
 }
 
-	void
-label__SetFlags( self, flags )
-        register struct label *self;
-        register int flags;
+void label__SetFlags(struct label *self, int flags)
 {
         self->flags = flags;
 }
 
 
 
-	long
-label__Read( self, file, id )
-	register struct label  *self;
-	register FILE  *file;
-	register long  id;			/* !0 if data stream, 0 if direct from file*/
+long label__Read(struct label *self, FILE *file, long id)
 {
 	unsigned char fontfamily[50];
 	long style, size;
@@ -126,12 +113,7 @@ label__Read( self, file, id )
 	return dataobject_NOREADERROR;
 }
 	  
-	long
-label__Write( self, file, writeID, level )
-	register struct label  *self;
-	FILE  *file;
- 	long  writeID;
-	int  level;
+long label__Write(struct label *self, FILE *file, long writeID, int level)
 {
 	char head[50];
 	char *fontfamily;
@@ -153,10 +135,7 @@ label__Write( self, file, writeID, level )
 	return id;
 }
 
-	void
-label__SetText(self, text)
-	register struct label *self;
-	char *text;
+void label__SetText(struct label *self, char *text)
 {
 	register char *s, *t;
 	int length = strlen(text);
@@ -184,25 +163,16 @@ label__SetText(self, text)
 	if (*s) self->text = s;
 	label_NotifyObservers(self, label_DATACHANGED);
 }
-	void
-label__SetFont(self, fontfamily, style, size)
-	register struct label *self;
-	char *fontfamily;
-	long style, size;
+void label__SetFont(struct label *self, char *fontfamily, long style, long size)
 {
 	self->font = fontdesc_Create(fontfamily, style, size);
 	label_NotifyObservers(self, label_DATACHANGED);
 }
-	char *
-label__GetText(self)
-	register struct label *self;
+char * label__GetText(struct label *self)
 {
 	return self->text;
 }
-	char *
-label__GetFont(self, style, size)
-	register struct label *self;
-	long *style, *size;
+char * label__GetFont(struct label *self, long *style, long *size)
 {
 	*style = fontdesc_GetFontStyle(self->font);
 	*size = fontdesc_GetFontSize(self->font);

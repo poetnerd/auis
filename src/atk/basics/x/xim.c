@@ -139,8 +139,7 @@ static boolean optimizeprotocol = FALSE;
 static boolean paranoidlocupdating = FALSE;
 
 static void LocateWindow();
-static void ForceLocUpdate(self)
-struct xim *self;
+static void ForceLocUpdate(struct xim *self)
 {
     if(paranoidlocupdating) {
 	LocateWindow(self);
@@ -261,6 +260,66 @@ static FILE *mf= NULL;	/* file to dump mouse info for debugging */
 #define INITIALCUTBUFFERSIZE 200
 
 #include "atoms.h"
+static void ButtonTimerFire();
+static long * CalculateIncrementList();
+static void CancelButtonTimeout();
+static void CancelProp();
+static int CheckMenuChoice();
+static struct proplistelt * DequeueProp();
+static void DoButton();
+static boolean DoCreateTransientWindow();
+static void DoGeometry();
+static void DoTransientGeometry();
+static void DumpPolyRect();
+static void ForceLocUpdate();
+static void FreeCardOrder();
+static void FreeMenuChoices();
+static void FreeSelectionData();
+static int GetCardPriority();
+static void GetValuesFromEvent();
+static void HandleExposure();
+static void HandleWindowEvent();
+static void InitDefaultColormap();
+static void InstallMenus();
+static struct menubar * MakeStartupMenu();
+static void Observe();
+static struct proplistelt * PostPropList();
+static void ProcessMultiple();
+static boolean ProcessRequest();
+static void PutUpPopups();
+static void QMenuChoice();
+static void ReConfigurePopups();
+static void RemovePNMask();
+static boolean RequestSelection();
+static void RequeueProp();
+static void SendButtonUp();
+static void SetForegroundBackground();
+static void SetPNMask();
+static void SetWMProperties();
+static struct cardorder * SetupCardOrder();
+static void StartButtonTimeout();
+static void TakeDownPopups();
+static int WakeUpIM();
+static int XErrorsToConsole();
+static void discardCachedML();
+static struct mlcacheNode * findCachedML();
+static void freeCacheRegions();
+static void freeMLCache();
+static void freeViewsMLCache();
+static void free_drop_files();
+static struct cacheregion * lastCacheRegion();
+static void linkCacheRegion();
+static char * mygetdefaults();
+static int mystrcmp();
+static struct mlcacheNode * newCacheNode();
+static boolean retrieveProperty();
+static void sendToCutBuffer();
+static void send_drop();
+static struct cacheregion * unlinkCacheRegion();
+static int updateGlobalCursors();
+static void updateMenus();
+static void xim_ActivateMenubar();
+static void xim_EstablishConsole();
 
 /* this has to track any changes to atoms.c */
 #define ATOMREF(self, atom) (self->AtomCache[atom])
@@ -333,16 +392,14 @@ static long xWindowCtr = 0;
 
 #ifdef LWP
 /* called on iomgr lwp's stack at a safe time*/
-static int WakeUpIM(dummy)
-    char *dummy;
+static int WakeUpIM(char *dummy)
 {
     if (imPid != NULL)
         im_IOMGRCancel(imPid);
 }
 #endif /* LWP */
 
-static int mystrcmp(x,y)
-char **x,**y;
+static int mystrcmp(char **x, char **y)
 {
     return strcmp(*x,*y);
 }
@@ -353,9 +410,7 @@ char **x,**y;
       '\'s.  '"'s and '\' must be escaped with a '\'.  Escaping any other character has no effect.
       Items are comma separated.
       */    
-static char **SetupMenuChoices(menulistname,count)
-char *menulistname;
-int *count;
+static char ** SetupMenuChoices(char *menulistname, int *count)
 {
     int maxchoices=8;
     char **list;
@@ -429,18 +484,13 @@ int *count;
     return list;
 }
 
-static void FreeMenuChoices(list,count)
-char **list;
-int count;
+static void FreeMenuChoices(char **list, int count)
 {
     while(--count>=0) free(list[count]);
     free(list);
 }
 
-static int CheckMenuChoice(list,count,choice)
-char **list;
-int count;
-char *choice;
+static int CheckMenuChoice(char **list, int count, char *choice)
 {
     int i;
     
@@ -458,8 +508,7 @@ struct cardorder {
     int priorities[1];
 };
 
-static struct cardorder *SetupCardOrder(prefname)
-char *prefname;
+static struct cardorder * SetupCardOrder(char *prefname)
 {
     int count,i;
     int curprio=10;
@@ -488,46 +537,37 @@ char *prefname;
     return result;
 }
 
-static int GetCardPriority(co, card, def)
-struct cardorder *co;
-char *card;
-int def;
+static int GetCardPriority(struct cardorder *co, char *card, int def)
 {
     int i=CheckMenuChoice(co->list, co->count, card);
     if(i<0) return def;
     else return co->priorities[i];
 }
 
-static void FreeCardOrder(co)
-struct cardorder *co;
+static void FreeCardOrder(struct cardorder *co)
 {
     FreeMenuChoices(co->list, co->count);
     free(co);
 }
 
-boolean xim__SupportsTransient(self)
-struct xim *self;
+boolean xim__SupportsTransient(struct xim *self)
 {
     return TRUE;
 }
 
-boolean xim__SupportsOverride(self)
-struct xim *self;
+boolean xim__SupportsOverride(struct xim *self)
 {
     return TRUE;
 }
 
-boolean xim__SupportsOffscreen(self)
-struct xim *self;
+boolean xim__SupportsOffscreen(struct xim *self)
 {
     return TRUE;
 }
 
 
 /* Place andrew fonts at the front of the font list */
-void xim__AddAndrewFontPath(classID,DisplayPtr)
-    struct classheader *classID;
-    Display * DisplayPtr; /* display for font path */
+void xim__AddAndrewFontPath(struct classheader *classID, Display *DisplayPtr)
 {
     char fontPath[256];	    /* Place where new font path will be built */
     char *andrewDir;	    /* Returned value of ANDREWDIR */
@@ -577,10 +617,7 @@ void xim__AddAndrewFontPath(classID,DisplayPtr)
   
 }
 
-static void
-SetWMProperties(self, nameChanged, iconic)
-struct xim *self;
-boolean nameChanged, iconic;
+static void SetWMProperties(struct xim *self, boolean nameChanged, boolean iconic)
 {
     Display *display = xim2display(self);
     Window window = xim2window(self);
@@ -700,9 +737,7 @@ static long Nerrors = 0;
 #define CONSPORT	2018		/* to avoid getservbyname calls */
 #endif /* USEGETSERV */
 
-static int XErrorsToConsole(DisplayPtr, ErrorBlock)
-	Display * DisplayPtr;
-	XErrorEvent * ErrorBlock; 
+static int XErrorsToConsole(Display *DisplayPtr, XErrorEvent *ErrorBlock)
 {
 	Nerrors++;
 	if (ErrorBlock->request_code == X_SetFontPath) {
@@ -935,9 +970,7 @@ static struct keybinding {
 
 };
 
-static struct xcolormap **
-ColormapForDisplay( display )
-Display *display;
+static struct xcolormap ** ColormapForDisplay(Display *display)
 {
     struct displayListItem *displayListItem = displayList;
     while( displayListItem ) {
@@ -948,9 +981,7 @@ Display *display;
     return(NULL);
 }
 
-static void
-InitDefaultColormap( self )
-  struct xim *self;
+static void InitDefaultColormap(struct xim *self)
 {
   struct xcolormap *xcmap;
   Display *disp = xim2display(self);
@@ -974,9 +1005,7 @@ InitDefaultColormap( self )
 }
 
 /* SetupDisplay: sets up  state ATK needs on a new X server returns NULL if the display cannot be opened. */
-static Display *SetupDisplay(self, host)
-struct xim *self;
-char *host;
+static Display * SetupDisplay(struct xim *self, char *host)
 {
     int i, Xfileno;
     struct mouseStatus *tmouse;
@@ -1164,10 +1193,7 @@ char *host;
     return xDisplay;
 }
 
-static void DoGeometry(self, left, top,sizehintsp, zoomhintsp)
-struct xim *self;
-int *top, *left;
-XSizeHints **sizehintsp, **zoomhintsp;
+static void DoGeometry(struct xim *self, int *left, int *top, XSizeHints **sizehintsp, XSizeHints **zoomhintsp)
 {   
     static char *PriorSpec = NULL;
     boolean GeometrySize, GeometryPosition;
@@ -1286,11 +1312,7 @@ XSizeHints **sizehintsp, **zoomhintsp;
     *zoomhintsp=(&zoomhints);
 }
 
-static void DoTransientGeometry(self, override, other, left, top, width, height, sizehintsp, zoomhintsp)
-struct xim *self, *other;
-boolean override;
-long *top, *left, *width, *height;
-XSizeHints **sizehintsp, **zoomhintsp;
+static void DoTransientGeometry(struct xim *self, boolean override, struct xim *other, long *left, long *top, long *width, long *height, XSizeHints **sizehintsp, XSizeHints **zoomhintsp)
 {
     Display *xDisplay=xim2display(self);
     Window oWindow=xim2window(other);
@@ -1409,10 +1431,7 @@ XSizeHints **sizehintsp, **zoomhintsp;
     *zoomhintsp=(&zoomhints);
 }
 
-static void SetForegroundBackground(self, foregroundColor, backgroundColor, foreground, background)
-struct xim *self;
-char **foregroundColor, **backgroundColor;
-struct xcolor **foreground, **background;
+static void SetForegroundBackground(struct xim *self, char **foregroundColor, char **backgroundColor, struct xcolor **foreground, struct xcolor **background)
 {
     long status;
     graphic_GetDefaultColors(foregroundColor, backgroundColor);
@@ -1445,9 +1464,7 @@ struct xcolor **foreground, **background;
 }
 
 
-static struct menubar *MakeStartupMenu(mbi, progname)
-struct mbinit *mbi;
-char *progname;
+static struct menubar * MakeStartupMenu(struct mbinit *mbi, char *progname)
 {
     char buf[256];
     char *Quit=messitem_Replace("Quit");
@@ -1462,15 +1479,12 @@ char *progname;
     return mb;
 }
 
-static void FreeSelectionData(seldata)
-struct seldata *seldata;
+static void FreeSelectionData(struct seldata *seldata)
 {
     if(!--(seldata->refs)) free(seldata);
 }
    
-boolean xim__CreateWindow(self, host)
-struct xim *self;
-char *host;
+boolean xim__CreateWindow(struct xim *self, char *host)
 {
     Display *xDisplay;
     Window newWindow;
@@ -1577,10 +1591,7 @@ char *host;
  It will get key and mouse events IN ADDITION TO the other
  window. */
 
-static boolean
-DoCreateTransientWindow(self, other, override)
-    struct xim *self, *other;
-    int override;
+static boolean DoCreateTransientWindow(struct xim *self, struct xim *other, int override)
 {
     Display *xDisplay;
     Window oWindow, newWindow;
@@ -1721,22 +1732,17 @@ DoCreateTransientWindow(self, other, override)
     return TRUE;
 }
 
-boolean
-xim__CreateTransientWindow(self, other)
-    struct xim *self, *other;
+boolean xim__CreateTransientWindow(struct xim *self, struct im *other)
 {
     return (DoCreateTransientWindow(self, other, FALSE));
 }
 
-boolean
-xim__CreateOverrideWindow(self, other)
-    struct xim *self, *other;
+boolean xim__CreateOverrideWindow(struct xim *self, struct im *other)
 {
     return (DoCreateTransientWindow(self, other, TRUE));
 }
 
-void xim__FlushAllWindows(classID)
-    struct classheader *classID;
+void xim__FlushAllWindows(struct classheader *classID)
 {
 
     int i;
@@ -1812,9 +1818,7 @@ ExplodeMenuString(str, paneStr, paneStrLen, panePriority,
 	}
 }
 
-static struct menuviews **menuviewp(self, obj)
-struct xim *self;
-struct view *obj;
+static struct menuviews ** menuviewp(struct xim *self, struct view *obj)
 {
     struct menuviews **mv;
     for(mv=(&(self->menuviewslist[MENUVIEWHASH(obj)])); *mv; mv=(&(*mv)->next)) {
@@ -1825,9 +1829,7 @@ struct view *obj;
     return NULL;
 }
 
-static void Observe(self, obj)
-struct xim *self;
-struct view *obj;
+static void Observe(struct xim *self, struct view *obj)
 {
     if(!menuviewp(self, (struct view *)obj)) {
 	int viewhash=MENUVIEWHASH(obj);
@@ -1843,10 +1845,7 @@ struct view *obj;
 
 
 /* Recursively installs a menu list and all its chainees. */
-static void 
-InstallMenus(self, menulist)
-struct xim *self;
-struct menulist *menulist;
+static void InstallMenus(struct xim *self, struct menulist *menulist)
 {
     register struct itemlist *item;
     struct headerlist *header;
@@ -1940,18 +1939,14 @@ struct cacheregion {
     struct cacheregion *next, **selfP;
 };
 
-	static struct cacheregion *
-lastCacheRegion(list)
-	struct cacheregion *list;
+static struct cacheregion * lastCacheRegion(struct cacheregion *list)
 {
 	while(list->next!=NULL)
 		list=list->next;
 	return list;
 }
 
-	static void
-linkCacheRegion(region, listP)
-	struct cacheregion *region, **listP;
+static void linkCacheRegion(struct cacheregion *region, struct cacheregion **listP)
 {
 	if (region->selfP != NULL)
 		*region->selfP = region->next;
@@ -1966,9 +1961,7 @@ linkCacheRegion(region, listP)
 	*listP = region;
 }
 
-	static struct cacheregion *
-unlinkCacheRegion(region)
-	struct cacheregion *region;
+static struct cacheregion * unlinkCacheRegion(struct cacheregion *region)
 {
 	if (region->selfP != NULL)
 		*region->selfP = region->next;
@@ -1981,9 +1974,7 @@ unlinkCacheRegion(region)
 	return region;
 }
 
-	static void
-freeCacheRegions(region)
-	struct cacheregion *region;
+static void freeCacheRegions(struct cacheregion *region)
 {
 	while(region != NULL) {
 		struct cacheregion *next = region->next;
@@ -2001,9 +1992,7 @@ struct mlcacheNode {
 	struct mlcacheNode *next, *prev, *others;
 };
 
-	static struct mlcacheNode *
-newCacheNode(prev)
-	struct mlcacheNode *prev;
+static struct mlcacheNode * newCacheNode(struct mlcacheNode *prev)
 	{
 	struct mlcacheNode *cache =
 	   (struct mlcacheNode *)malloc(sizeof(struct mlcacheNode)); 
@@ -2019,9 +2008,7 @@ newCacheNode(prev)
 	return cache;
 }
 
-static void freeMLCache(self,cache)
-struct xim *self;
-struct mlcacheNode *cache;
+static void freeMLCache(struct xim *self, struct mlcacheNode *cache)
 {
 /* printf("fmlc: freeing a cache\n"); */
 	if (cache->next != NULL)
@@ -2042,9 +2029,7 @@ struct mlcacheNode *cache;
 	free((char *)cache);
 }
 
-	static void 
-discardCachedML(cache, rootP)
-	struct mlcacheNode *cache, **rootP;
+static void discardCachedML(struct mlcacheNode *cache, struct mlcacheNode **rootP)
 {
 	struct mlcacheNode **backP;
 
@@ -2082,12 +2067,7 @@ discardCachedML(cache, rootP)
 	/* else printf("dcml: Avoiding blowing away the root.\n"); */
 }
 
-	static struct mlcacheNode *
-findCachedML(self, ml, cache, newVersionP)
-	struct xim *self;
-	struct menulist *ml;
-	struct mlcacheNode *cache;
-	boolean *newVersionP;
+static struct mlcacheNode * findCachedML(struct xim *self, struct menulist *ml, struct mlcacheNode *cache, boolean *newVersionP)
 {
 	struct headerlist *h;
 	struct mlcacheNode *unused = NULL;
@@ -2131,20 +2111,14 @@ findCachedML(self, ml, cache, newVersionP)
 	return cache;
 }
 	
-static void QMenuChoice(mb,idata,mdata)
-struct menubar *mb;
-char *idata;
-char *mdata;
+static void QMenuChoice(struct menubar *mb, char *idata, char *mdata)
 {
     struct xim *im=(struct xim *)mdata;
     struct seldata *sel=(struct seldata *)idata;
     enQuserMenu(im, sel->proc, sel->object, sel->data);
 }
 
-static void 
-updateMenus(self, ml)
-struct xim *self;
-struct menulist *ml;
+static void updateMenus(struct xim *self, struct menulist *ml)
 {
     boolean newVersion = FALSE;
     struct cacheregion *destroy = NULL;
@@ -2242,9 +2216,7 @@ struct menulist *ml;
 }
 
 
-void xim__PostMenus(self, menulist)
-	struct xim *self;
-	struct menulist *menulist;
+void xim__PostMenus(struct xim *self, struct menulist *menulist)
 {
 	struct im *imself = (struct im *)self;
 
@@ -2294,17 +2266,12 @@ void xim__PostMenus(self, menulist)
 /* xim__WhichWS()
 	returns a string for the current window system:  "X" 
 */
-	unsigned char *
-xim__WhichWS(self)
-	struct xim *self;
+unsigned char * xim__WhichWS(struct xim *self)
 {
 	return (unsigned char *)"X";
 }
 
-	boolean 
-xim__InitializeObject(classID, self)
-	struct classheader *classID;
-	struct xim *self;
+boolean xim__InitializeObject(struct classheader *classID, struct xim *self)
 {
     int i;
     char *name=im_GetProgramName();
@@ -2376,9 +2343,7 @@ xim__InitializeObject(classID, self)
     return TRUE;
 }
 
-void xim__FinalizeObject(classID, self)
-struct classheader *classID;
-struct xim *self;
+void xim__FinalizeObject(struct classheader *classID, struct xim *self)
 {
     Display *dpy=xim2display(self);
     register int i;
@@ -2546,8 +2511,7 @@ struct xim *self;
 
 static Region curUpdateRgn = NULL;
 
-void xim__HandleRedraw (im)
-register struct xim *im;
+void xim__HandleRedraw(struct xim *im)
 {
     long width;
     long height;
@@ -2644,21 +2608,14 @@ Get the size of the window. Note: this size should be good since HandleRedraw is
 	mf = fopen("/tmp/mouseout", "w");
 }
 
-	static void 
-DumpPolyRect(tempRect)
-	XPoint * tempRect; 
+static void DumpPolyRect(XPoint *tempRect)
 {
 	printf("DumpPolyRect: using rectangle (%d,%d), (%d,%d), (%d,%d), (%d,%d)\n",
 		tempRect[0].x, tempRect[0].y,tempRect[1].x, tempRect[1].y,tempRect[2].x,
 		tempRect[2].y,tempRect[3].x, tempRect[3].y);
 }
 
-	static void 
-GetValuesFromEvent(im, event,tempRect,retWidth,retHeight)
-	struct xim *im;
-	XEvent * event;
-	XPoint * tempRect;
-	long *retWidth, *retHeight; 
+static void GetValuesFromEvent(struct xim *im, XEvent *event, XPoint *tempRect, long *retWidth, long *retHeight)
 {
 	XExposeEvent * exposeEvent = (XExposeEvent *) event;
 	XGraphicsExposeEvent * graphicsEvent = (XGraphicsExposeEvent *) event;
@@ -2703,8 +2660,7 @@ GetValuesFromEvent(im, event,tempRect,retWidth,retHeight)
 	}
 }
 
-static void TakeDownPopups(im)
-struct xim *im;
+static void TakeDownPopups(struct xim *im)
 {
     struct xim *p=im->popup_active;
     while(p) {
@@ -2713,8 +2669,7 @@ struct xim *im;
     }
 }
 
-static void PutUpPopups(im)
-struct xim *im;
+static void PutUpPopups(struct xim *im)
 {
     struct xim *p=im->popup_active;
     while(p) {
@@ -2725,8 +2680,7 @@ struct xim *im;
 }
 
 
-static void ReConfigurePopups(im)
-struct xim *im;
+static void ReConfigurePopups(struct xim *im)
 {
     struct xim *p=im->popup_active;
     while(p) {
@@ -2746,11 +2700,7 @@ struct xim *im;
 	p=p->popup_active;
     }
 }
-static 	void
-HandleExposure(display, im, event)
-	Display *display;
-	struct xim *im;
-	XEvent *event;
+static void HandleExposure(Display *display, struct xim *im, XEvent *event)
 {
 	XPoint tempRect[4];	/* used to hold exposure rectangle */
 	XEvent tempEvent;
@@ -2888,9 +2838,7 @@ HandleExposure(display, im, event)
 
 /* timer queuing for mouse buttons */
 
-static void ButtonTimerFire(mfacts, now)
-struct mouseStatus *mfacts;
-long now;
+static void ButtonTimerFire(struct mouseStatus *mfacts, long now)
 {
     enum mouseState state = mfacts->state;
     
@@ -2918,8 +2866,7 @@ long now;
   }
 }
 
-static void DoButton(mfacts)
-struct mouseStatus *mfacts;
+static void DoButton(struct mouseStatus *mfacts)
 {
     if (mfacts->event != NULL) 
 	event_Cancel(mfacts->event);
@@ -2929,11 +2876,7 @@ struct mouseStatus *mfacts;
 
 /* start timer to fire in (MouseHysteresis) milliseconds 
 */
-	static void
-StartButtonTimeout(xim, button, x, y)
-	struct xim *xim;
-	unsigned int button;
-	long x, y;
+static void StartButtonTimeout(struct xim *xim, unsigned int button, long x, long y)
 {
 	struct mouseStatus *mfacts = xim->MouseFacts;
 	mfacts->xPending = x;
@@ -2946,9 +2889,7 @@ StartButtonTimeout(xim, button, x, y)
 			event_MSECtoTU(MouseHysteresis));
 }
 
-	static void
-CancelButtonTimeout(mfacts)
-	struct mouseStatus *mfacts;
+static void CancelButtonTimeout(struct mouseStatus *mfacts)
 {
 	if (mfacts->event != NULL) 
 		event_Cancel(mfacts->event);
@@ -2959,10 +2900,7 @@ CancelButtonTimeout(mfacts)
 
 /* requirement: state must be msLeftDown or msRightDown 
 */
-	static void
-SendButtonUp(mfacts, x, y)
-	struct mouseStatus *mfacts;
-	long x, y;
+static void SendButtonUp(struct mouseStatus *mfacts, long x, long y)
 {
 	switch (mfacts->state) {
 	case msLeftDown:
@@ -2975,11 +2913,7 @@ SendButtonUp(mfacts, x, y)
 	mfacts->state = msAllUp;
 }
 
-struct view *
-xim__Hit (self, action, x, y, clicks)
-struct xim *self;
-enum view_MouseAction action;
-long x, y, clicks;
+struct view * xim__Hit(struct xim *self, enum view_MouseAction action, long x, long y, long clicks)
 {
     if (self->popup_active)
 	return (struct view *)self;
@@ -2987,9 +2921,7 @@ long x, y, clicks;
 	return view_Hit(self->header.im.topLevel, action, x, y, clicks);
 }
 	
-static void HandleExposeFromMenubar(ee,im)
-XEvent *ee;
-struct xim *im;
+static void HandleExposeFromMenubar(XEvent *ee, struct xim *im)
 {
 
     im->CurrentlyMapped = TRUE;
@@ -2997,9 +2929,7 @@ struct xim *im;
 }
 
 
-static void
-HandleWindowEvent(display)
-Display *display;
+static void HandleWindowEvent(Display *display)
 {
 #define KEYEXPANSIONSIZE 80
     XEvent tempEvent, event;
@@ -3365,11 +3295,7 @@ Display *display;
     
     Function returns true if it invoked any handlers, false otherwise.
 */
-	boolean 
-xim__HandleFiles (ClassID, twait, beCheap)
-	struct classheader *ClassID;
-	long twait; 
-	boolean beCheap;
+boolean xim__HandleFiles(struct classheader *ClassID, long twait, boolean beCheap)
 {
 #if 1
 	/* use fd_set */
@@ -3583,9 +3509,7 @@ xim__HandleFiles (ClassID, twait, beCheap)
 #endif
 }
 
-	void
-xim__RedrawWindow(self)
-	struct xim *self;
+void xim__RedrawWindow(struct xim *self)
 {
 	XWindowAttributes attr;
 
@@ -3650,24 +3574,17 @@ xim__RedrawWindow(self)
 
 }
 
-static void xim_ActivateMenubar(xim, rock)
-struct xim *xim;
-long rock;
+static void xim_ActivateMenubar(struct xim *xim, long rock)
 {
     if(xim->menubaron) mb_KeyboardActivate(xim->menu);
 }
 
-static char *mygetdefaults(dpy, pname)
-Display *dpy;
-char *pname;
+static char * mygetdefaults(Display *dpy, char *pname)
 {
     return environ_GetProfile(pname);
 }
 
-static long *CalculateIncrementList(str, finalIncr, listCount)
-char *str;
-long finalIncr;
-long *listCount;
+static long * CalculateIncrementList(char *str, long finalIncr, long *listCount)
 {
     long incrList[1000];
     long count = 0;
@@ -3705,9 +3622,7 @@ long *listCount;
     return list;
 }
 
-    boolean 
-xim__InitializeClass(classID)
-    struct classheader *classID;
+boolean xim__InitializeClass(struct classheader *classID)
 {
     char *str;
     long LeftIncrement;
@@ -3751,10 +3666,9 @@ xim__InitializeClass(classID)
 /*     The following supplies cursor support.   */
 
 
-void xim__ClearCursors(self, C)
-	struct xim *self;
-	struct xcursor *C; 
+void xim__ClearCursors(struct xim *self, struct cursor *C_generic)
 {
+    struct xcursor *C = (struct xcursor *) C_generic;
     if (im_IsPlaying()) return;
 
     if (cursordebug) 
@@ -3765,11 +3679,9 @@ void xim__ClearCursors(self, C)
     C->Xw = 0;
 }
 
-void xim__PostCursor(self,rec,reqCursor)
-struct xim *self;
-struct rectangle *rec;
-struct xcursor *reqCursor;
+void xim__PostCursor(struct xim *self, struct rectangle *rec, struct cursor *reqCursor_generic)
 {
+    struct xcursor *reqCursor = (struct xcursor *) reqCursor_generic;
     struct rectangle vrec;
     struct cursor * plainCur = (struct cursor *) reqCursor;
     struct im * imself = (struct im *) self;
@@ -3876,8 +3788,7 @@ struct xcursor *reqCursor;
     XFlush(xim2display(self));
 }
 
-void xim__UpdateCursors(self)
-struct xim *self;
+void xim__UpdateCursors(struct xim *self)
 {
     if (im_IsPlaying()) return;
 
@@ -3886,8 +3797,7 @@ struct xim *self;
     XFlush(xim2display(self));
 }
 
-static updateGlobalCursors(self)
-struct xim *self;
+static updateGlobalCursors(struct xim *self)
 {
     struct xcursor * XProcessCursor = (struct xcursor *) ProcessCursor;
     struct xcursor * XWindowCursor = (struct xcursor *) self->header.im.WindowCursor;
@@ -3967,9 +3877,7 @@ struct xim *self;
 
 }
 
-void xim__SetTitle(self, title)
-struct xim *self;
-char *title;
+void xim__SetTitle(struct xim *self, char *title)
 {
     char *oldtitle=xim_GetTitle(self);
     if(oldtitle && title && !strcmp(oldtitle, title)) return;
@@ -4010,10 +3918,7 @@ for each elt:
 	for remote windows.  A count is maintained so the interest will not be 
 	turned off as a result of one operation while another is in progress.
 */
-	static void
-SetPNMask(display, window)
-	Display *display;
-	Window window;
+static void SetPNMask(Display *display, Window window)
 {
 	struct masklist *ml;
 	for (ml = MaskList; ml != NULL;  ml = ml->next)
@@ -4028,10 +3933,7 @@ SetPNMask(display, window)
 	MaskList = ml;
 	XSelectInput(display, window, PropertyChangeMask);
 }
-	static void
-RemovePNMask(display, window)
-	Display *display;
-	Window window;
+static void RemovePNMask(Display *display, Window window)
 {
 	struct masklist *ml, *prev = NULL;
 	for (ml = MaskList;  ml != NULL;  prev = ml, ml = ml->next)
@@ -4048,10 +3950,7 @@ RemovePNMask(display, window)
 	}
 }
 
-appendtostring(string, buffer, length)
-	struct expandstring *string;
-	char *buffer;
-	long length;
+int appendtostring(struct expandstring *string, char *buffer, long length)
 {
 	if (string->string == NULL) {
 		string->string = malloc(string->size = length+1);
@@ -4072,9 +3971,7 @@ appendtostring(string, buffer, length)
 
 	This sure is a stupid way to find out what time it is! 
 */
-	static Time
-xim_Now(self)
-	struct xim *self;
+static Time xim_Now(struct xim *self)
 {
 	Display *display = xim2display(self);
 	Window window =  RootWindow(display, 0);
@@ -4103,12 +4000,7 @@ xim_Now(self)
 	Post to PropList the information to await property 'prop' on window 'window'
 	Returns the newly enqueued element so the caller can add values.
 */
-	static struct proplistelt *
-PostPropList(window, prop, state, time)
-	Window window;
-	Atom prop;
-	enum PropState state;
-	Time time;
+static struct proplistelt * PostPropList(Window window, Atom prop, enum PropState state, Time time)
 {
 	struct proplistelt *elt;
 	if (FreeProps != NULL) {
@@ -4136,10 +4028,7 @@ PostPropList(window, prop, state, time)
 	(Note: if there are multiple waits on same window-atom pair, 
 		all are dequeued, but only the last (the earliest) is returned)
 */
-	static struct proplistelt *
-DequeueProp(window, atom)
-	Window window;
-	Atom atom;
+static struct proplistelt * DequeueProp(Window window, Atom atom)
 {
 	struct proplistelt *prev, *elt, *bingo = NULL;
 	for (prev = NULL, elt = PropList; elt != NULL; elt = elt->next)
@@ -4156,17 +4045,13 @@ DequeueProp(window, atom)
 /* RequeueProp(elt)
 	put the elt back on the queue
 */
-	static void
-RequeueProp(elt)
-	struct proplistelt *elt;
+static void RequeueProp(struct proplistelt *elt)
 {
 	elt->next = PropList;
 	PropList = elt;
 }
 
-	static void
-CancelProp(elt)
-	struct proplistelt *elt;
+static void CancelProp(struct proplistelt *elt)
 {
 	elt->next = FreeProps;
 	FreeProps = elt;
@@ -4210,14 +4095,7 @@ PropLoop()
 		and set *pXfree to TRUE
 	return TRUE for success, FALSE for failure or zero-length retrieval
 */
-	static boolean
-retrieveProperty(dpy, wndw, prop, del, cb, pXfree, pActualtype)
-	Display *dpy;
-	Window wndw;
-	Atom prop;
-	struct expandstring *cb;
-	boolean *pXfree;
-	Atom *pActualtype;
+static boolean retrieveProperty(Display *dpy, Window wndw, Atom prop, int del, struct expandstring *cb, boolean *pXfree, Atom *pActualtype)
 {
 	int actualformat;
 	unsigned long nitems, remainingbytes;
@@ -4258,8 +4136,7 @@ retrieveProperty(dpy, wndw, prop, del, cb, pXfree, pActualtype)
 }
 
 
-static Atom *FindAtomCache(dpy)
-Display *dpy;
+static Atom * FindAtomCache(Display *dpy)
 {
     int i;
     for(i=0;i<xWindowCtr;i++) {
@@ -4272,9 +4149,7 @@ Display *dpy;
 	We are being told by a selection owner that the selection value has
 	been stored on our window.  Find it and retrieve property value as cut value.
 */
-	static void
-HandleSelectionNotify(event)
-	XSelectionEvent *event;
+static void HandleSelectionNotify(XSelectionEvent *event)
 {
 	struct proplistelt *elt, *nelt;
 	long success;
@@ -4394,9 +4269,7 @@ HandleSelectionNotify(event)
 
 /* HandleProperty(event)
 */
-	static void
-HandleProperty(event)
-	XPropertyEvent *event;
+static void HandleProperty(XPropertyEvent *event)
 {
 	struct proplistelt *elt, *nelt;
 	Atom actualtype;
@@ -4475,10 +4348,7 @@ HandleProperty(event)
 		delete properties after value is retrieved
 */
 static boolean
-RequestSelection(self, cutBuff, xfree)
-	struct xim* self;
-	struct expandstring *cutBuff;
-	boolean *xfree;
+RequestSelection(struct xim *self, struct expandstring *cutBuff, boolean *xfree)
 {
 	Display *display = xim2display(self);
 	Window window = xim2window(self);
@@ -4528,9 +4398,7 @@ RequestSelection(self, cutBuff, xfree)
 		If req->property is NONE, use req->target as the property. 
 		If greater than MAXXFER bytes, use INCR scheme.
 */
-	static boolean
-ProcessRequest(req)
-	XSelectionRequestEvent *req;
+static boolean ProcessRequest(XSelectionRequestEvent *req)
 {
 	Atom targets[7];
 	struct expandstring cutBuffer;
@@ -4670,9 +4538,7 @@ ProcessRequest(req)
 	Call ProcessRequest for each target.
 	Write the request list back if there have been any failures.
 */
-	static void
-ProcessMultiple(req)
-	XSelectionRequestEvent *req;
+static void ProcessMultiple(XSelectionRequestEvent *req)
 {
 	long success;
 	Atom actualtype;
@@ -4720,9 +4586,7 @@ ProcessMultiple(req)
 	When done, send SelectionNotify event.  
 		If failed, its property field says None.
 */
-	static void
-RespondToSelectionRequest(req)
-	XSelectionRequestEvent *req;
+static void RespondToSelectionRequest(XSelectionRequestEvent *req)
 {
 	XSelectionEvent NotificationEvent;
 	Atom *AtomCache = FindAtomCache(req->display);
@@ -4747,8 +4611,7 @@ RespondToSelectionRequest(req)
 		   FALSE, NoEventMask, (XEvent *)&NotificationEvent);
 }
 
-FILE *xim__OnlyFromCutBuffer(self)
-struct xim *self;
+FILE * xim__OnlyFromCutBuffer(struct xim *self)
 {
     FILE *pasteFile=NULL;
     struct expandstring cutBuffer;
@@ -4774,8 +4637,7 @@ struct xim *self;
     return pasteFile;
 }
 
-FILE *xim__OnlyFromSelection(self)
-struct xim *self;
+FILE * xim__OnlyFromSelection(struct xim *self)
 {
 
     FILE *pasteFile;
@@ -4810,9 +4672,7 @@ struct xim *self;
     return pasteFile;
 }
 
-FILE *
-xim__FromCutBuffer(self)
-	struct xim *self;
+FILE * xim__FromCutBuffer(struct xim *self)
 {
 	FILE *pasteFile;
 	struct expandstring cutBuffer;
@@ -4856,11 +4716,7 @@ xim__FromCutBuffer(self)
 	return pasteFile;
 }
 
-	static void
-sendToCutBuffer(self, initialmode, cb)
-	struct xim *self;
-	int initialmode;
-	struct expandstring *cb;
+static void sendToCutBuffer(struct xim *self, int initialmode, struct expandstring *cb)
 {
 	Display *xDisplay = xim2display(self);
 	Window window =  RootWindow(xDisplay, 0);
@@ -4892,10 +4748,7 @@ sendToCutBuffer(self, initialmode, cb)
 	}
 }
 
-	void 
-xim__CloseToCutBuffer(self, writeFile)
-	struct xim *self;
-	FILE *writeFile;
+void xim__CloseToCutBuffer(struct xim *self, FILE *writeFile)
 {
 	Display *display = xim2display(self);
 	Window window = xim2window(self);
@@ -4919,19 +4772,13 @@ xim__CloseToCutBuffer(self, writeFile)
 	}
 }
 
-	void 
-xim__RotateCutBuffers(self, count)
-	struct xim *self;
-	long count;
+void xim__RotateCutBuffers(struct xim *self, long count)
 {
 	CBCacheValid = FALSE;
 	XRotateBuffers(xim2display(self), -count);
 }
 
-	void 
-xim__AppendToCutBuffer(self, writeFile)
-	struct xim *self;
-	FILE *writeFile;
+void xim__AppendToCutBuffer(struct xim *self, FILE *writeFile)
 {
 	im_vfileclose(writeFile, &writeCutBuffer);
 	sendToCutBuffer(self, PropModeAppend, &writeCutBuffer);
@@ -4947,8 +4794,7 @@ xim__AppendToCutBuffer(self, writeFile)
  * = * = * = * = * = * = * = * = * = * = * = * = */
 
 
-void xim__SetWMFocus(self)
-    struct xim *self;
+void xim__SetWMFocus(struct xim *self)
 {
     /* First make sure window is around! */
     if(self->IsOffscreenWindow) return;
@@ -4967,9 +4813,7 @@ void xim__SetWMFocus(self)
     XFlush(xim2display(self));
 }
 
-	void 
-xim__ExposeWindow(self)
-	struct xim *self;
+void xim__ExposeWindow(struct xim *self)
 {
 	Display *D = xim2display(self);
 	if(!self->EverMapped) {
@@ -5013,9 +4857,7 @@ xim__ExposeWindow(self)
 /* xim__HideWindow(self)
 	Iconify the window.
 */
-	void
-xim__HideWindow(self)
-	struct xim *self;
+void xim__HideWindow(struct xim *self)
 {
 	XClientMessageEvent cmsg;
 
@@ -5050,9 +4892,7 @@ xim__HideWindow(self)
 /* xim__VanishWindow(self)
 	cause a window to be completely hidden.  Not even an icon.
 */
-	void 
-xim__VanishWindow(self)
-	struct xim *self;
+void xim__VanishWindow(struct xim *self)
 {
 	    /* not necessary for offscreen win */
 	    if(self->IsOffscreenWindow) return;
@@ -5132,9 +4972,7 @@ static struct copstype {char *name; long op; char close;}
 	o remove entirety of:  \template, \origin, \view,  \textdsversion, \define
 	o remove \style{  and  corresponding }
 */
-	static void
-Unscribe(cb)
-	struct expandstring *cb;
+static void Unscribe(struct expandstring *cb)
 {
 	register char *cx, *tx;
 	char *brace;
@@ -5254,11 +5092,7 @@ Unscribe(cb)
 }
 	
 /*  */
-static void freeViewsMLCache(self,cachep, view, parent)
-struct xim *self;
-struct mlcacheNode **cachep;
-struct basicobject *view;
-struct mlcacheNode **parent;
+static void freeViewsMLCache(struct xim *self, struct mlcacheNode **cachep, struct basicobject *view, struct mlcacheNode **parent)
 {
     struct mlcacheNode *cache=(*cachep);
     if (cache->next != NULL)
@@ -5283,9 +5117,7 @@ struct mlcacheNode **parent;
     }
 }
 
-void xim__UnlinkNotification(self, tree)
-struct xim *self;
-struct view *tree;
+void xim__UnlinkNotification(struct xim *self, struct view *tree)
 {
     super_UnlinkNotification(self, tree);
     if(self->mlcache) {
@@ -5293,10 +5125,7 @@ struct view *tree;
     }
 }
 
-void xim__ObservedChanged(self, changed, value)
-struct xim *self;
-struct observable *changed;
-long value;
+void xim__ObservedChanged(struct xim *self, struct observable *changed, long value)
 {
     struct menuviews **mv, *mv2;
     struct view *owner=im_GetSelectionOwner();
@@ -5315,10 +5144,7 @@ long value;
     }
 }
 
-struct rectangle *xim__GetLoc(self, view, rect)
-struct xim *self;
-struct view *view;
-struct rectangle *rect;
+struct rectangle * xim__GetLoc(struct xim *self, struct view *view, struct rectangle *rect)
 {
     long x,y;
 
@@ -5339,8 +5165,7 @@ struct rectangle *rect;
     return rect;
 }
 
-static void LocateWindow(self)
-struct xim *self;
+static void LocateWindow(struct xim *self)
 {
     int x,y;
     Window child;
@@ -5354,9 +5179,7 @@ struct xim *self;
     return;
 }
 
-boolean xim__ResizeWindow(self, width, height)
-struct xim *self;
-int width, height;
+boolean xim__ResizeWindow(struct xim *self, int width, int height)
 {
     XSizeHints hints;
     Pixmap newMap;
@@ -5394,9 +5217,7 @@ int width, height;
     return TRUE;
 }
 
-boolean xim__MoveWindow(self, x, y)
-struct xim *self;
-long x,y;
+boolean xim__MoveWindow(struct xim *self, int x, int y)
 {
     XSizeHints hints;
 
@@ -5419,17 +5240,13 @@ long x,y;
     return TRUE;
 }
 
-void xim__SetBorderWidth(self, n)
-struct xim *self;
-long n;
+void xim__SetBorderWidth(struct xim *self, long n)
 {
     if(self->IsOffscreenWindow) return;
     XSetWindowBorderWidth(xim2display(self), xim2window(self), n);
 }
 
-boolean xim__CreateOffscreenWindow(self, other, width, height)
-struct xim *self, *other;
-long width, height;
+boolean xim__CreateOffscreenWindow(struct xim *self, struct im *other, long width, long height)
 {
     Display *xDisplay;
     Pixmap newPixmap;
@@ -5474,9 +5291,7 @@ long width, height;
  * freed.  This occurs when noone claims the files
  * and more files are dropped.
  */
-static void
-free_drop_files(xim)
-struct xim *xim;
+static void free_drop_files(struct xim *xim)
 {
     int i;
 
@@ -5504,10 +5319,7 @@ newstring(s)
     return ret;
 }
 
-static void
-HandleDropin(self, ev)
-struct xim *self;
-XClientMessageEvent *ev;
+static void HandleDropin(struct xim *self, XClientMessageEvent *ev)
 {
     int x_root, y_root;	/* absolute x,y coordinates of drop */
     int x, y;
@@ -5596,9 +5408,7 @@ XClientMessageEvent *ev;
  * only one caller is allowed to get the list.  (i.e. they
  * have 'taken' the files.
  */
-char **
-xim__GetDroppedFiles(self)
-	struct xim *self;
+char ** xim__GetDroppedFiles(struct xim *self)
 {
     char **files = self->dropfiles;
 
@@ -5606,10 +5416,7 @@ xim__GetDroppedFiles(self)
     return files;
 }
 
-void xim__DropFile(self, pathname, cursor)
-	struct xim *self;
-	char *pathname;
-	struct cursor *cursor;
+void xim__DropFile(struct xim *self, char *pathname, struct cursor *cursor)
 {
     char *pathnames[3];
 
@@ -5621,12 +5428,7 @@ void xim__DropFile(self, pathname, cursor)
 
 typedef enum {drop_notfound, drop_hostfile, drop_string} drop_t;
 
-static drop_t
-find_drop_window(dpy, topwin, x_coord, y_coord, win)
-Display *dpy;
-Window topwin;
-unsigned int x_coord, y_coord;
-Window *win;
+static drop_t find_drop_window(Display *dpy, Window topwin, unsigned int x_coord, unsigned int y_coord, Window *win)
 {
     Window srcwin, destwin, childwin;
     int srcx, srcy, destx, desty;
@@ -5682,12 +5484,7 @@ Window *win;
     return drop_type;
 }
 
-static void send_drop(dpy, my_win, dest_win, drop_type, x_coord, y_coord, button_state, pathnames)
-Display *dpy;
-Window my_win, dest_win;
-drop_t drop_type;
-unsigned int x_coord, y_coord, button_state;
-char **pathnames;   /* NULL terminated list */
+static void send_drop(Display *dpy, Window my_win, Window dest_win, drop_t drop_type, unsigned int x_coord, unsigned int y_coord, unsigned int button_state, char **pathnames)
 {
     XClientMessageEvent xmsg;
     Atom prop_type, prop;
@@ -5753,10 +5550,7 @@ char **pathnames;   /* NULL terminated list */
     XSendEvent(dpy, dest_win, FALSE, 0, (XEvent *)&xmsg);
 }
 
-void xim__DropFiles(self, pathnames, cursor)
-	struct xim *self;
-	char **pathnames;
-	struct cursor *cursor;
+void xim__DropFiles(struct xim *self, char **pathnames, struct cursor *cursor)
 {
 	struct xcursor *xcursor = (struct xcursor *)cursor;
 	Window win;
@@ -5808,9 +5602,7 @@ void xim__DropFiles(self, pathnames, cursor)
 	XUngrabPointer(xim2display(self), lastEventTime);
 }
 
-boolean xim__RequestSelectionOwnership(self, requestor)
-struct xim *self;
-struct view *requestor;
+boolean xim__RequestSelectionOwnership(struct xim *self, struct view *requestor)
 {
     Display *display = xim2display(self);
     Window window = xim2window(self);
@@ -5844,9 +5636,7 @@ struct view *requestor;
     return xim_RequestSelectionOwnership(self, NULL);
 }
 
-void xim__GiveUpSelectionOwnership(self, requestor)
-struct xim *self;
-struct view *requestor;
+void xim__GiveUpSelectionOwnership(struct xim *self, struct view *requestor)
 {
     Display *display = xim2display(self);
     Window window = xim2window(self);
@@ -5863,25 +5653,20 @@ struct view *requestor;
     }
 }
 
-void
-xim__ReceiveColormap( self, xcmap )
-    struct xim *self;
-    struct xcolormap *xcmap;
+void xim__ReceiveColormap(struct xim *self, struct colormap *xcmap_generic)
 {
+    struct xcolormap *xcmap = (struct xcolormap *) xcmap_generic;
     Display *disp = xim2display(self);
     Screen *s = DefaultScreenOfDisplay(disp);
     int cells = CellsOfScreen(s);
 
     xcolormap_SetSize(xcmap, cells);
-    super_ReceiveColormap(self, xcmap);
+    super_ReceiveColormap(self, xcmap_generic);
     /* Set menubar & cmenu colormap attribute here */
     xim_RedrawWindow(self);
 }
 
-void
-xim__LoseColormap( self, xcmap )
-    struct xim *self;
-    struct xcolormap *xcmap;
+void xim__LoseColormap(struct xim *self, struct colormap *xcmap)
 {
     /* Set back menubar & cmenu colormap attribute here; then redraw */
     xim_RedrawWindow(self);
@@ -5889,12 +5674,10 @@ xim__LoseColormap( self, xcmap )
 
     static int xinstallcolormaps=(-1);
     
-void
-xim__InstallColormap( self, cmap )
-struct xim *self;
-struct xcolormap *cmap;
+void xim__InstallColormap(struct xim *self, struct colormap *cmap_generic)
 {
-    super_InstallColormap(self, cmap);
+    struct xcolormap *cmap = (struct xcolormap *) cmap_generic;
+    super_InstallColormap(self, cmap_generic);
     if(cmap) {
 	if(!cmap->XColorMap) {
 	    Display *dpy = xim2display(self);

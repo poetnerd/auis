@@ -43,27 +43,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <cmap.ih>
 #include <xcmap.eh>
 
-boolean
-xcolormap__InitializeClass( classID )
-    struct classheader *classID;
+boolean xcolormap__InitializeClass(struct classheader *classID)
 {
     return(TRUE);
 }
 
-boolean
-xcolormap__InitializeObject( classID, self )
-    struct classheader *classID;
-    struct xcolormap *self;
+boolean xcolormap__InitializeObject(struct classheader *classID, struct xcolormap *self)
 {
     self->XColorMap = NULL;
     self->display = NULL;
     return(TRUE);
 }
 
-void
-xcolormap__FinalizeObject( classID, self )
-struct classheader *classID;
-struct xcolormap *self;
+void xcolormap__FinalizeObject(struct classheader *classID, struct xcolormap *self)
 {
     int i;
     struct xcolor *xc=NULL;
@@ -82,22 +74,15 @@ struct xcolormap *self;
     }
 }
 
-int
-xcolormap__Copy( self, source )
-    struct xcolormap *self, *source;
+int xcolormap__Copy(struct xcolormap *self, struct colormap *source)
 {
 }
 
-int
-xcolormap__Merge( self, other )
-    struct xcolormap *self, *other;
+int xcolormap__Merge(struct xcolormap *self, struct colormap *other)
 {
 }
 
-void
-xcolormap_GetClosestColor( self, xc )
-    struct xcolormap *self;
-    struct xcolor *xc;
+void xcolormap_GetClosestColor(struct xcolormap *self, struct xcolor *xc)
 {
     struct xcolor *tmp, *best = NULL;
     unsigned short R, G, B;
@@ -140,12 +125,7 @@ xcolormap_GetClosestColor( self, xc )
     if( defs ) free(defs);
 }
 
-struct xcolor *
-xcolormap__AllocColor( self, name, r, g, b, needpixel )
-    struct xcolormap *self;
-    char *name;
-    unsigned int r, g, b;
-    boolean needpixel;
+struct xcolor * xcolormap__AllocColor(struct xcolormap *self, char *name, unsigned int r, unsigned int g, unsigned int b, boolean needpixel)
 {
     struct xcolor *xc;
 
@@ -157,12 +137,7 @@ xcolormap__AllocColor( self, name, r, g, b, needpixel )
     return(xc);
 }
 
-struct xcolor *
-xcolormap__LookupColor( self, name, r, g, b, needpixel )
-    struct xcolormap *self;
-    char *name;
-    unsigned int r, g, b;
-    boolean needpixel;
+struct xcolor * xcolormap__LookupColor(struct xcolormap *self, char *name, unsigned int r, unsigned int g, unsigned int b, boolean needpixel)
 {
     struct xcolor *xc;
     Display *dpy = xcolormap_XDisplay(self);
@@ -185,12 +160,9 @@ xcolormap__LookupColor( self, name, r, g, b, needpixel )
     return(NULL);
 }
 
-int
-xcolormap__SetColor( self, xc, needpixel )
-    struct xcolormap *self;
-    struct xcolor *xc;
-    boolean needpixel;
+int xcolormap__SetColor(struct xcolormap *self, struct color *xc_generic, boolean needpixel)
 {
+    struct xcolor *xc = (struct xcolor *) xc_generic;
     XColor *color = &xc->color;
     Display *dpy = xcolormap_XDisplay(self);
     int scrn = DefaultScreen(dpy), status;
@@ -199,7 +171,7 @@ xcolormap__SetColor( self, xc, needpixel )
 
     pix[0] = 0;
     color->flags = DoRed | DoGreen | DoBlue;
-    super_SetColor(self, xc, needpixel);
+    super_SetColor(self, xc_generic, needpixel);
     xcolor_SetColormap(xc, self);
     xcolormap_AddObserver(self, xc);
     xcolor_AddObserver(xc, self);
@@ -252,11 +224,9 @@ xcolormap__SetColor( self, xc, needpixel )
     return(status);
 }
 
-int
-xcolormap__ChangeColor( self, xc )
-    struct xcolormap *self;
-    struct xcolor *xc;
+int xcolormap__ChangeColor(struct xcolormap *self, struct color *xc_generic)
 {
+    struct xcolor *xc = (struct xcolor *) xc_generic;
     Display *dpy = xcolormap_XDisplay(self);
     int scrn = DefaultScreen(dpy), status = 0;
 
@@ -274,33 +244,26 @@ xcolormap__ChangeColor( self, xc )
     return(status);
 }
 
-struct xcolormap *
-xcolormap__Create( classID, xim )
-    struct classheader *classID;
-    struct xim *xim;
+struct xcolormap * xcolormap__Create(struct classheader *classID, struct xim *xim)
 {
     struct xcolormap *xcmap = xcolormap_New();
     xcmap->display = xim2display(xim);
     return(xcmap);
 }
 
-void xcolormap__DestroyColor( self, xc )
-struct xcolormap *self;
-struct xcolor *xc;
+void xcolormap__DestroyColor(struct xcolormap *self, struct color *xc_generic)
 {
+    struct xcolor *xc = (struct xcolor *) xc_generic;
     unsigned long pixels[1];
     Display *disp = xcolormap_XDisplay(self);
     pixels[0] = xcolor_Pixel(xc);
     XFreeColors(disp, self->XColorMap, pixels, 1, 0);
-    super_DestroyColor(self, xc);
+    super_DestroyColor(self, xc_generic);
     xcolor_Destroy(xc);
 }
 
 
-void xcolormap__ObservedChanged(self, changed, value)
-struct xcolormap *self;
-struct observable *changed;
-long value;
+void xcolormap__ObservedChanged(struct xcolormap *self, struct observable *changed, long value)
 {
     super_ObservedChanged(self, changed, value);
     /* an xgraphic is being destroyed, make sure we don't notify it of future changes. */

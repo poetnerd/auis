@@ -33,9 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <X11/Xlib.h>
 #include "atoms.h"
 
-main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     char *dpyname;
     Display *dpy;

@@ -106,19 +106,13 @@ static struct TickTbl PointTbl = {36, 6, 36, {6, 3, 3, 5, 3, 3}, "%+3.0f p", "Pt
 static struct TickTbl CMTbl = {30, 6, 1, {6, 3, 3, 3, 3}, "%+5.2f c", "Cm."};
 
 
-static boolean
-BogusCallFromParent(self, where, msg)
-	struct lprrulerview *self;
-	char *where, *msg;
+static boolean BogusCallFromParent(struct lprrulerview *self, char *where, char *msg)
 {
 	fprintf(stderr, "<lprrulerview>Bogus call to %s, %s\n", where, msg);
 	return FALSE;
 }
 
-static boolean
-CheckWindow(self, where)
-	struct lprrulerview *self;
-	char *where;
+static boolean CheckWindow(struct lprrulerview *self, char *where)
 {
 	struct graphic *g
 		= (struct graphic *)lprrulerview_GetDrawable(self);
@@ -128,19 +122,14 @@ CheckWindow(self, where)
 
 
 
-boolean
-lprrulerview__InitializeClass(ClassID)
-	struct classheader *ClassID;
+boolean lprrulerview__InitializeClass(struct classheader *ClassID)
 {
 	TextFont = fontdesc_Create("andysans", fontdesc_Bold, 12);
 	IconFont = fontdesc_Create("icon", fontdesc_Plain, 12);
 	return TRUE;
 }
 
-boolean
-lprrulerview__InitializeObject(ClassID, self)
-	struct classheader *ClassID;
-	struct lprrulerview  *self;
+boolean lprrulerview__InitializeObject(struct classheader *ClassID, struct lprrulerview *self)
 {
 	struct icondata *i;
 	long cnt;
@@ -161,18 +150,11 @@ lprrulerview__InitializeObject(ClassID, self)
 	return TRUE;
 }
 
-void
-lprrulerview__FinalizeObject(ClassID, self)
-	struct classheader *ClassID;
-	struct lprrulerview  *self;
+void lprrulerview__FinalizeObject(struct classheader *ClassID, struct lprrulerview *self)
 {
 }
 
-void
-lprrulerview__ObservedChanged(self, dobj, status)
-	struct lprrulerview  *self;
-	struct lprruler *dobj;
-	long status;
+void lprrulerview__ObservedChanged(struct lprrulerview *self, struct observable *dobj, long status)
 {
 	if (status == lprruler_DATACHANGED) 
 		self->iconschanged = self->textchanged = TRUE;
@@ -181,22 +163,14 @@ lprrulerview__ObservedChanged(self, dobj, status)
 	lprrulerview_WantUpdate(self, self);
 }
 
-static void
-RepaintIcon(self, icon, color)
-	struct lprrulerview  *self;
-	enum iconcode icon;
-	short color;
+static void RepaintIcon(struct lprrulerview *self, enum iconcode icon, short color)
 {
 	struct icondata *i = &(self->iconloc[(short)icon]);
 	lprrulerview_SetTransferMode(self, color);
 	lprrulerview_MoveTo(self, i->x, self->icony);
 	lprrulerview_DrawText(self, &i->icon, 1, graphic_NOMOVEMENT);
 }
-static void
-RepaintPark(self, icon, color)
-	struct lprrulerview  *self;
-	enum iconcode icon;
-	short color;
+static void RepaintPark(struct lprrulerview *self, enum iconcode icon, short color)
 {
 	struct icondata *i = &(self->iconloc[(short)icon]);
 	struct rectangle r;		/* rectangle for parking lot */
@@ -220,10 +194,7 @@ RepaintPark(self, icon, color)
 }
 
 /* compute the x coordinate for an icon */
-static void
-RecomputeIconX(self, icon)
-	struct lprrulerview *self;
-	enum iconcode icon;
+static void RecomputeIconX(struct lprrulerview *self, enum iconcode icon)
 {
 	struct icondata *i = &(self->iconloc[(short)icon]);
 	if (icon == paraIcon) {
@@ -247,11 +218,7 @@ RecomputeIconX(self, icon)
 		i->x = i->zero + (i->value>>16);
 }
 /* set the range bounds for an icon */
-static void
-BoundIcon(self, icon, zeroloc, left, right)
-	struct lprrulerview *self;
-	enum iconcode icon;
-	short zeroloc, left, right;
+static void BoundIcon(struct lprrulerview *self, enum iconcode icon, short zeroloc, short left, short right)
 {
 	struct icondata *i = &(self->iconloc[(short)icon]);
 	i->zero = zeroloc;
@@ -260,9 +227,7 @@ BoundIcon(self, icon, zeroloc, left, right)
 }
 /* check each value to set isBlack for the icon.  
 	Remove icon if blackness changes */
-static void
-CheckBounds(self)
-	struct lprrulerview *self;
+static void CheckBounds(struct lprrulerview *self)
 {
 	struct icondata *i;
 	long cnt;
@@ -284,9 +249,7 @@ CheckBounds(self)
 
 /* check dirty bits and repaint all parks and icons that claim to need it 
 	never modifies isBlack */
-static void
-CleanUpIconArea(self)
-	struct lprrulerview *self;
+static void CleanUpIconArea(struct lprrulerview *self)
 {
 	struct icondata *i;
 	long cnt;
@@ -309,10 +272,7 @@ CleanUpIconArea(self)
 }
 
 /* paint an icon white and set dirty bits for all icons and parks that may be affected */
-static void
-RemoveIcon(self, icon) 
-	struct lprrulerview *self;
-	enum iconcode icon;
+static void RemoveIcon(struct lprrulerview *self, enum iconcode icon)
 {
 	struct icondata *i;
 	long cnt;
@@ -336,10 +296,7 @@ RemoveIcon(self, icon)
 	}
 }
 
-static void
-MoveLeftIcon(self, newx)
-	struct lprrulerview *self;
-	long newx;
+static void MoveLeftIcon(struct lprrulerview *self, long newx)
 {
 	long deltav = (newx - LEFT.x)<<16;
 	RemoveIcon(self, leftIcon);
@@ -351,20 +308,14 @@ MoveLeftIcon(self, newx)
 		RecomputeIconX(self, paraIcon);
 	}
 }
-static void
-MoveRightIcon(self, newx)
-	struct lprrulerview *self;
-	long newx;
+static void MoveRightIcon(struct lprrulerview *self, long newx)
 {
 	long deltav = (newx - RIGHT.x)<<16;
 	RemoveIcon(self, rightIcon);
 	RIGHT.value += deltav;
 	RecomputeIconX(self, rightIcon);
 }
-static void
-MoveParaIcon(self, newx)
-	struct lprrulerview *self;
-	long newx;
+static void MoveParaIcon(struct lprrulerview *self, long newx)
 {
 	long deltav = (newx - PARA.x)<<16;
 	RemoveIcon(self, paraIcon);
@@ -380,12 +331,7 @@ MoveParaIcon(self, newx)
 		each minor cycle within a major cycle.
 	The lengths of the cycles are given by -major- and -minor-
 	assume major % minor == 0 */
-static void
-DoTicks(self, zeroloc, left, right, tbl)
-	struct lprrulerview *self;
-	short zeroloc, right;
-	short left;
-	struct TickTbl *tbl;
+static void DoTicks(struct lprrulerview *self, short zeroloc, short left, short right, struct TickTbl *tbl)
 {
 	short cycmax = tbl->majorpix / tbl->minorpix;	/* number of minor cycles in a major */
 	short tickloc;					/* where to place next tick */
@@ -422,9 +368,7 @@ DoTicks(self, zeroloc, left, right, tbl)
 	}
 }
 
-static void
-RedrawRuler(self)
-	struct lprrulerview *self;
+static void RedrawRuler(struct lprrulerview *self)
 {
 	struct rectangle r;
 	short extra;
@@ -481,9 +425,7 @@ RedrawRuler(self)
 	DoTicks(self, self->rightzero, middle + 4/*C*/ + GAP, right, self->TickTbl);
 	self->rulerchanged = FALSE;
 }
-static void
-RedrawText(self)
-	struct lprrulerview  *self;
+static void RedrawText(struct lprrulerview *self)
 {
 	struct rectangle r;
 	r.top = self->topline, r.left = self->textloc;
@@ -501,9 +443,7 @@ RedrawText(self)
 	lprrulerview_DrawText(self, "\'", 1, graphic_NOMOVEMENT);
 	self->textchanged = FALSE;
 }
-static void
-RedrawIcons(self)
-	struct lprrulerview  *self;
+static void RedrawIcons(struct lprrulerview *self)
 {
 	struct icondata *i;
 	long cnt;
@@ -526,11 +466,7 @@ RedrawIcons(self)
 	CleanUpIconArea(self);
 }
 
-void 
-lprrulerview__FullUpdate( self, type, left, top, width, height )
-	struct lprrulerview  *self;
-	enum view_UpdateType  type;
-	long  left, top, width, height;
+void lprrulerview__FullUpdate(struct lprrulerview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
 	if (type == view_Remove) {
 		self->OnScreen = FALSE;
@@ -557,9 +493,7 @@ lprrulerview__FullUpdate( self, type, left, top, width, height )
 }
 
 
-void 
-lprrulerview__Update( self )
-	struct lprrulerview *self;
+void lprrulerview__Update(struct lprrulerview *self)
 {
 	if (! self->OnScreen || ! CheckWindow(self, "Update")) return;
 	if (self->rulerchanged) RedrawRuler(self);
@@ -567,11 +501,7 @@ lprrulerview__Update( self )
 	if (self->iconschanged) RedrawIcons(self);
 }
 
-struct view *
-lprrulerview__Hit(self, action, x, y, num_clicks)
-	struct lprrulerview  *self;
-	enum view_MouseAction  action;
-	long  x, y, num_clicks;
+struct view * lprrulerview__Hit(struct lprrulerview *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
 	if (action == view_NoMouseEvent)
 		return (struct view *)self;
@@ -743,10 +673,7 @@ lprrulerview__DesiredSize( self, width, height, pass,
 
 /* set the values for the icon positions.  Values lprrulerview_NoValue (-999<<16) and lower indicate
 			that no value is to be displayed */
-void
-lprrulerview__SetValues(self, leftmargin, rightmargin, paraindent)
-	struct lprrulerview *self;
-	long leftmargin, rightmargin, paraindent;
+void lprrulerview__SetValues(struct lprrulerview *self, long leftmargin, long rightmargin, long paraindent)
 {
 	LEFT.value = leftmargin;
 	RIGHT.value =  (rightmargin <= lprrulerview_NoValue) ? rightmargin : - rightmargin;
@@ -755,11 +682,7 @@ lprrulerview__SetValues(self, leftmargin, rightmargin, paraindent)
 	lprrulerview_WantUpdate(self, self);
 }
 
-void
-lprrulerview__GetValues(self, leftmargin, rightmargin, paraindent)
-		/* sets the three parameters to the values of the icon positions */
-	struct lprrulerview *self;
-	long *leftmargin, *rightmargin, *paraindent;
+void lprrulerview__GetValues(struct lprrulerview *self, long *leftmargin, long *rightmargin, long *paraindent)
 {
 	*leftmargin = LEFT.value;
 	*rightmargin = (RIGHT.value <= lprrulerview_NoValue) ? RIGHT.value : - RIGHT.value;

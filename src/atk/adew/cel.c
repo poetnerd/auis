@@ -47,15 +47,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <observe.ih>
 #include <arbiter.ih>
 #include <cel.eh>
+static int SetInvisible();
+static int SetVisible();
+static int searchatt();
 
 #define VALUE 10
 static long viewID = 0;
 
 
-void cel__ObservedChanged(self, changed, value)
-struct cel *self;
-struct observable *changed;
-long value;
+void cel__ObservedChanged(struct cel *self, struct observable *changed, long value)
 {
     if(changed==(struct	observable *)self->dataObject) {
 	
@@ -67,11 +67,7 @@ long value;
     super_ObservedChanged(self, changed, value);
 }
 
-short cel__Get(self,property, type, rock)
-struct cel *self;
-struct atom *property;
-struct atom **type;
-long *rock;
+short cel__Get(struct cel *self, struct atom *property, struct atom **type, long *rock)
 {
     short result=super_Get(self,property,type,rock);
     if(self->dataObject && !result)
@@ -79,9 +75,7 @@ long *rock;
     else return result;
 }
 
-void cel__FinalizeObject(classID,self)
-struct classheader *classID;
-struct cel *self;
+void cel__FinalizeObject(struct classheader *classID, struct cel *self)
 {
     if(self->dataObject) { dataobject_RemoveObserver(self->dataObject,self);
        dataobject_Destroy(self->dataObject);
@@ -108,19 +102,15 @@ struct cel *self;
     }
 }
 
-static SetVisible(self)
-struct cel *self;
+static SetVisible(struct cel *self)
 {
     cel_SetVisible(self);
 }
-static SetInvisible(self)
-struct cel *self;
+static SetInvisible(struct cel *self)
 {
     cel_SetInvisible(self);
 }
-boolean cel__InitializeObject(classID, self)
-struct classheader *classID;
-struct cel *self;
+boolean cel__InitializeObject(struct classheader *classID, struct cel *self)
 {
     self->refname = NULL;
     self->viewType = NULL;
@@ -148,10 +138,7 @@ struct cel *self;
     return TRUE;
 }
 
-struct cel *cel__Create(classID, viewType, dataObject)
-struct classheader *classID;
-    char *viewType;
-    struct dataobject *dataObject;
+struct cel * cel__Create(struct classheader *classID, char *viewType, struct dataobject *dataObject)
 {
     struct cel *newvr;
     
@@ -168,9 +155,7 @@ struct classheader *classID;
     fprintf(stderr, "Could not allocate cel structure - exiting\n");
     exit(1);
 }
-char *cel__SetRefName(self,refname)
-struct cel *self;
-char *refname;
+char * cel__SetRefName(struct cel *self, char *refname)
 {
     if(refname){
 	if((self->refatm = atom_Intern(refname)) != NULL)
@@ -178,23 +163,18 @@ char *refname;
 	}
     return self->refname;
 }
-void cel__UnsetRefName(self)
-struct cel *self;
+void cel__UnsetRefName(struct cel *self)
 {
     if(self->refname && *self->refname){
 	free(self->refname);
 	self->refname = NULL;
     }
 }
-struct dataobject *cel__GetObject(self)
-struct cel *self;
+struct dataobject * cel__GetObject(struct cel *self)
 {
     return (self->dataObject);
 }
-boolean cel__SetChildObject(self,newobject,viewName)
-struct cel *self;
-struct dataobject *newobject;
-char *viewName;
+boolean cel__SetChildObject(struct cel *self, struct dataobject *newobject, char *viewName)
 {
     if(viewName == NULL || *viewName == '\0')
 	cel_SetViewName(self,viewName,TRUE);
@@ -203,8 +183,7 @@ char *viewName;
     cel_SetRefName(self,self->dataType);
     return TRUE;
 }
-long cel__GetModified(self)
-register struct cel *self;
+long cel__GetModified(struct cel *self)
 {
     register long mod = super_GetModified(self);
     if(self->NoSave) return mod;
@@ -214,9 +193,7 @@ register struct cel *self;
 	mod += text_GetModified(self->script);
     return mod;
 }
-boolean cel__SetObject(self,newobject)
-struct cel *self;
-struct dataobject *newobject;
+boolean cel__SetObject(struct cel *self, struct dataobject *newobject)
 {
     if(newobject){
 	newobject->id = dataobject_UniqueID(newobject); 
@@ -237,9 +214,7 @@ struct dataobject *newobject;
     }
     return FALSE;
 }
-boolean cel__SetObjectByName(self,dataname)
-struct cel *self;
-char *dataname;
+boolean cel__SetObjectByName(struct cel *self, char *dataname)
 {
     struct dataobject *newobject;
     if((dataname == NULL || *dataname == '\0')) return FALSE;
@@ -250,9 +225,7 @@ char *dataname;
     }
     return FALSE;
 }
-void cel__SetObjectName(self,dataname)
-struct cel *self;
-char *dataname;
+void cel__SetObjectName(struct cel *self, char *dataname)
 {
     if(dataname && *dataname && 
 	(self->dataatm = atom_Intern(dataname))!= NULL) {
@@ -262,10 +235,7 @@ char *dataname;
     }
 }
     
-void cel__SetViewName(self,viewname,usedefaultview)
-struct cel *self;
-char *viewname;
-int usedefaultview;
+void cel__SetViewName(struct cel *self, char *viewname, boolean usedefaultview)
 {
     if(viewname && *viewname){
 	self->usedefaultview = FALSE;
@@ -280,9 +250,7 @@ int usedefaultview;
 	    self->viewType = atom_Name(self->viewatm);
     }
 }
-void cel__SetLinkName(self,linkname)
-struct cel *self;
-char *linkname;
+void cel__SetLinkName(struct cel *self, char *linkname)
 {
     if (linkname && *linkname && 
 	 (self->linkatm = atom_Intern(linkname))!= NULL) {
@@ -293,9 +261,7 @@ char *linkname;
 	self->linkname = NULL;
     }
 }
-void cel__SetApplication(self,app)
-struct cel *self;
-int app;
+void cel__SetApplication(struct cel *self, int app)
 {
     if(self->dataType != NULL){
 	if(app != cel_VALUE && strcmp(self->dataType,"value") == 0) {
@@ -306,12 +272,7 @@ int app;
     self->application = app;
 }
 
-void cel__InsertObject (self,newobject, dataname,viewname,usedefaultview)
-struct cel *self;
-struct dataobject *newobject;
-char *dataname;
-char *viewname;
-int usedefaultview;
+void cel__InsertObject(struct cel *self, struct dataobject *newobject, char *dataname, char *viewname, int usedefaultview)
 {
     char buf[128];
     if(newobject != NULL){
@@ -353,8 +314,7 @@ int usedefaultview;
 printf("Initing v = %s, d = %s, r = %s\n",self->viewType,self->dataType,self->refname);
 #endif /* DEBUG */
 }
-struct atom *cel_GetLine(place)
-char **place;
+struct atom * cel_GetLine(char **place)
 {
     char tmpbuf[512];
     char *c = tmpbuf;
@@ -381,16 +341,11 @@ printf("GETLINE GOT ---- %s XXXXXXX\n",*place);
     *place = buf;
     return atom_Intern(tmpbuf);
 }
-long cel__ReadSup(self, file, id)
-    struct cel *self;
-    FILE *file;
-    long id;
+long cel__ReadSup(struct cel *self, FILE *file, long id)
 {
 	return dataobject_NOREADERROR;
     }
-long cel__ReadFile(self,thisFile)
-struct cel *self;
-FILE *thisFile;
+long cel__ReadFile(struct cel *self, FILE *thisFile)
 {  
     long objectID;
     long result;
@@ -425,10 +380,7 @@ FILE *thisFile;
     return result;
 }
 
-long cel__Read(self, file, id)
-    struct cel *self;
-    FILE *file;
-    long id;
+long cel__Read(struct cel *self, FILE *file, long id)
 {
     long endcount = 1;
     boolean begindata;
@@ -593,11 +545,7 @@ long cel__Read(self, file, id)
     return dataobject_NOREADERROR;
 }
 
-long cel__WriteLink(self,file ,writeid,level)
-struct cel *self;
-FILE *file;
-long writeid;
-int level;
+long cel__WriteLink(struct cel *self, FILE *file, long writeid, int level)
 {
     long val;
     struct dataobject *dob;
@@ -607,19 +555,11 @@ int level;
     self->dataObject = dob;
     return val;
 }
-long cel__WriteSup(self,file ,writeid,level)
-struct cel *self;
-FILE *file;
-long writeid;
-int level;
+long cel__WriteSup(struct cel *self, FILE *file, long writeid, int level)
 {
 return TRUE;
 }
-long cel__Write(self,file ,writeid,level)
-struct cel *self;
-FILE *file;
-long writeid;
-int level;
+long cel__Write(struct cel *self, FILE *file, long writeid, int level)
 {
     long did;
     did = 0l;
@@ -662,27 +602,21 @@ int level;
     }
     return cel_GetID(self);
 }
-void cel__SetVisibilityBit(self,mode)
-struct cel *self;
-int mode;
+void cel__SetVisibilityBit(struct cel *self, int mode)
 {
     if(mode != self->mode){
 	self->mode = mode;
 	cel_NotifyObservers(self,0);
     }
 }
-boolean cel__InitializeClass(classID)
-struct classheader *classID;
+boolean cel__InitializeClass(struct classheader *classID)
 {
     proctable_DefineProc("cel-set-visible", SetVisible,&cel_classinfo,NULL, "Make cel visible");
     proctable_DefineProc("cel-set-invisible", SetInvisible,&cel_classinfo,NULL, "Make cel invisible");
     return TRUE;
 }
 
-static searchatt(self,attname,len)
-struct cel *self;
-char *attname;
-long *len;
+static searchatt(struct cel *self, char *attname, long *len)
 {
     long tlen,i,attlen,j;
     attlen = strlen(attname);
@@ -703,9 +637,7 @@ long *len;
     }
     return -1;
 }
-void cel__SetStringAtt(self,attname,attval)
-struct cel *self;
-char *attname,*attval;
+void cel__SetStringAtt(struct cel *self, char *attname, char *attval)
 {
     char buf[256];
     long i,len;
@@ -720,10 +652,7 @@ char *attname,*attval;
     }
     cel_NotifyObservers(self,cel_NeedsRepost);
 }
-void cel__SetLongAtt(self,attname,val)
-struct cel *self;
-char *attname;
-long val;
+void cel__SetLongAtt(struct cel *self, char *attname, long val)
 {
     char buf[256],attval[64];
     long i,len;
@@ -739,9 +668,7 @@ long val;
     }
     cel_NotifyObservers(self,cel_NeedsRepost);
 }
-long cel__GetLongAtt(self,attname)
-struct cel *self;
-char *attname;
+long cel__GetLongAtt(struct cel *self, char *attname)
 {
     long i,len;
     char buf[256],*c;
@@ -755,10 +682,7 @@ char *attname;
     }
     return cel_UNDEFINEDVALUE;
 }
-char * cel__GetStringAtt(self,attname,buf,buflen)
-struct cel *self;
-char *attname,*buf;
-long buflen;
+char * cel__GetStringAtt(struct cel *self, char *attname, char *buf, long buflen)
 {
     char *c;
     long i,len;
@@ -777,8 +701,7 @@ struct cel *self;
 {
     
 }
-long cel__InitDefault(self)
-struct cel *self;
+long cel__InitDefault(struct cel *self)
 {
     
     FILE *f;

@@ -58,9 +58,7 @@ static char *atomnames[]={
 
 static Atom xim_ATOMS;
 
-static Atom *SetAtoms(dpy, buf)
-Display *dpy;
-char *buf;
+static Atom * SetAtoms(Display *dpy, char *buf)
 {
     Atom *result;
     char *p;
@@ -82,9 +80,7 @@ char *buf;
     return result;
 }
 
-Atom *xim_SetupAtoms(dpy, force)
-Display *dpy;
-boolean force;
+Atom * xim_SetupAtoms(Display *dpy, boolean force)
 {
     int i;
     Atom RetAtom;

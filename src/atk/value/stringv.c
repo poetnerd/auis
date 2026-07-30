@@ -46,6 +46,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <rm.ih>
 #include <view.ih>
 #include <value.ih>
+static void CarveFonts();
+static void DrawLabel();
+static char * GetString();
 static struct atomlist *  AL_bodyfont;
 static struct atomlist *  AL_bodyfont_size;
 static struct atomlist *  AL_label;
@@ -73,8 +76,7 @@ static struct atom *  A_string;
 /*		private functions				*/
 /****************************************************************/
 
-static void CarveFonts(self)
-struct stringV * self;
+static void CarveFonts(struct stringV *self)
 {
     self->normalfont = fontdesc_Create( self->fontname, fontdesc_Plain, self->fontsize );
     self->boldfont   = fontdesc_Create( self->fontname, fontdesc_Bold,  self->fontsize );
@@ -82,8 +84,7 @@ struct stringV * self;
 }  
 
 
-static void DrawLabel(self)
-struct stringV * self;
+static void DrawLabel(struct stringV *self)
 {
     if(self->foreground) stringV_SetForegroundColor(self, self->foreground, 0, 0, 0);
     if(self->background) stringV_SetBackgroundColor(self, self->background, 0, 0, 0);
@@ -100,8 +101,7 @@ struct stringV * self;
 
 }
 
-static char *GetString(self)
-struct stringV * self;
+static char * GetString(struct stringV *self)
 {
     char *str;
     struct value *w = stringV_Value(self);
@@ -123,8 +123,7 @@ struct stringV * self;
 
 
 
-boolean stringV__InitializeClass(classID)
-struct classheader *classID;
+boolean stringV__InitializeClass(struct classheader *classID)
 {
     InternAtoms;
     return TRUE;
@@ -137,9 +136,7 @@ struct classheader *classID;
 /****************************************************************/
 /*		instance methods				*/
 /****************************************************************/
-boolean stringV__InitializeObject(classID, self )
-struct classheader *classID;
-struct stringV * self;
+boolean stringV__InitializeObject(struct classheader *classID, struct stringV *self)
 {
     self->plabel = NULL;
     self->label = NULL;
@@ -151,8 +148,7 @@ struct stringV * self;
 }
 
 
-void stringV__LookupParameters(self)
-struct stringV * self;
+void stringV__LookupParameters(struct stringV *self)
 {
     char * fontname;
     long fontsize;
@@ -206,9 +202,7 @@ struct stringV * self;
 }
 
 
-void stringV__DrawFromScratch(self,x,y,width,height)
-struct stringV * self;
-long x,y,width,height;
+void stringV__DrawFromScratch(struct stringV *self, long x, long y, long width, long height)
 {
     char *str;
     self->x = x; self->y = y;
@@ -227,22 +221,19 @@ long x,y,width,height;
 }
 
 
-void stringV__DrawDehighlight(self)
-struct stringV * self;
+void stringV__DrawDehighlight(struct stringV *self)
 {
     self->activefont = self->normalfont;
     DrawLabel( self );
 }
 
-void stringV__DrawHighlight(self)
-struct stringV * self;
+void stringV__DrawHighlight(struct stringV *self)
 {
     self->activefont = self->boldfont;
     DrawLabel( self );
 }
  
-void stringV__DrawNewValue( self )
-struct stringV * self;
+void stringV__DrawNewValue(struct stringV *self)
 {
     char *str;
     if(self->UseAlt) str = GetString(self);

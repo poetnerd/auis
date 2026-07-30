@@ -46,6 +46,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <graphic.ih>
 #include <rm.ih>
 #include <view.ih>
+static void CarveFonts();
+static int Drawpiano();
 static struct atomlist *  AL_bodyfont;
 static struct atomlist *  AL_bodyfont_size;
 static struct atomlist *  AL_label;
@@ -70,8 +72,7 @@ static struct atom *  A_string;
 /*		private functions				*/
 /****************************************************************/
 
-static void CarveFonts(self)
-struct pianoV * self;
+static void CarveFonts(struct pianoV *self)
 {
     self->normalfont = fontdesc_Create( self->fontname, fontdesc_Plain, self->fontsize );
     self->boldfont   = fontdesc_Create( self->fontname, fontdesc_Bold,  self->fontsize );
@@ -81,9 +82,7 @@ struct pianoV * self;
 static int masks[] = {1,2,4,8,16,32,64,128,256,512,1024,2048,4096 };
 static int wn[] = { 1,3,5,6,8,10,12,-1};
 static int bn[] = { 2,4,0,7,9,11,-1, 0 };
-locateHit(self,x,y)
-struct pianoV * self;
-int x,y;
+int locateHit(struct pianoV *self, int x, int y)
 {
     int hy,*ip;
     float wid,place;
@@ -103,9 +102,7 @@ int x,y;
     return(*ip);
 }
 
-parselabels(self,chr)
-struct pianoV * self;
-char *chr;
+int parselabels(struct pianoV *self, char *chr)
 { 
     int i,j;
     for(i = 0 ; i < pianov_NUMLABELS; i++){
@@ -127,9 +124,7 @@ char *chr;
 }
 #define NoteOn(self,i) (self->tmpval & masks[i])
 #define LabelChanged(self,i) ((self->tmpval & masks[i]) != (self->lastval & masks[i]))
-static Drawpiano(self,full)
-struct pianoV * self;
-boolean full;
+static Drawpiano(struct pianoV *self, boolean full)
 {
     int hy,*ip;
     float wid,place;
@@ -200,8 +195,7 @@ boolean full;
 
 
 
-boolean pianoV__InitializeClass(classID)
-struct classheader *classID;
+boolean pianoV__InitializeClass(struct classheader *classID)
 {
     InternAtoms;
     return TRUE;
@@ -214,10 +208,8 @@ struct classheader *classID;
 /****************************************************************/
 /*		instance methods				*/
 /****************************************************************/
-boolean pianoV__InitializeObject(classID, self )
-struct classheader *classID;
-struct pianoV * self;
-{   
+boolean pianoV__InitializeObject(struct classheader *classID, struct pianoV *self)
+{
     int i;
     for(i = 0 ; i < pianov_NUMLABELS; i++)
 	self->label[i] = NULL;
@@ -228,8 +220,7 @@ struct pianoV * self;
 }
 
 
-void pianoV__LookupParameters(self)
-struct pianoV * self;
+void pianoV__LookupParameters(struct pianoV *self)
 {
     char * fontname;
     long fontsize;
@@ -270,9 +261,7 @@ struct pianoV * self;
 }
 
 
-void pianoV__DrawFromScratch(self,x,y,width,height)
-struct pianoV * self;
-long x,y,width,height;
+void pianoV__DrawFromScratch(struct pianoV *self, long x, long y, long width, long height)
 {
     self->x = x;
     self->y = y;
@@ -291,8 +280,7 @@ long x,y,width,height;
 }
 
 
-void pianoV__DrawDehighlight(self)
-struct pianoV * self;
+void pianoV__DrawDehighlight(struct pianoV *self)
 {
 
     struct value *w = pianoV_Value(self);
@@ -302,8 +290,7 @@ struct pianoV * self;
 
 }
 
-void pianoV__DrawHighlight(self)
-struct pianoV * self;
+void pianoV__DrawHighlight(struct pianoV *self)
 {
 /*
     struct value *w = pianoV_Value(self);
@@ -314,8 +301,7 @@ struct pianoV * self;
 }
 
 
-void pianoV__DrawNewValue( self )
-struct pianoV * self;
+void pianoV__DrawNewValue(struct pianoV *self)
 {
     struct value *w = pianoV_Value(self);
     self->tmpval = value_GetValue(w);
@@ -324,10 +310,7 @@ struct pianoV * self;
 
 #define flipbit(A,B) ((A & B)? (A & ~B) : (A | B))
 
-struct pianoV * pianoV__DoHit( self,type,x,y,hits )
-struct pianoV * self;
-enum view_MouseAction type;
-long x,y,hits;
+struct pianoV * pianoV__DoHit(struct pianoV *self, enum view_MouseAction type, long x, long y, long hits)
 {
     struct value *tt = pianoV_Value(self);
     register int tmp,v,m;

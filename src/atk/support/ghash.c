@@ -38,6 +38,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <glist.ih>
 #include <util.h>
 #include <ghash.eh>
+static int DefaultHash();
+static boolean EnumProc();
+static int FindEgg();
+static int PrintAll();
+static int safestrcmp();
 
 struct egg {
     char *key,*value;
@@ -45,8 +50,7 @@ struct egg {
 
 
 
-static int DefaultHash(key)
-char *key;
+static int DefaultHash(char *key)
 {
     char c;
     int index=0;
@@ -59,14 +63,12 @@ char *key;
 }
 
 
-boolean ghash__InitializeClass(classID)
-struct classheader *classID;
+boolean ghash__InitializeClass(struct classheader *classID)
 {
     return TRUE;
 }
 
-static int safestrcmp(a,b)
-char *a, *b;
+static int safestrcmp(char *a, char *b)
 {
     if(a==NULL && b==NULL) return 0;
     if(a==NULL) return -1;
@@ -74,9 +76,7 @@ char *a, *b;
     return strcmp(a, b);
 }
 
-boolean ghash__InitializeObject(classID,self)
-struct classheader *classID;
-struct ghash *self;
+boolean ghash__InitializeObject(struct classheader *classID, struct ghash *self)
 {
     int i;
     for(i=0;i<ghash_BUCKETS;i++)
@@ -90,9 +90,7 @@ struct ghash *self;
     return TRUE;
 }
 
-void ghash__FinalizeObject(classID,self)
-struct classheader *classID;
-struct ghash *self;
+void ghash__FinalizeObject(struct classheader *classID, struct ghash *self)
 {
     int i;
     for (i=0;i<ghash_BUCKETS;i++)
@@ -100,10 +98,7 @@ struct ghash *self;
             glist_Destroy(self->buckets[i]);
 }
 
-boolean ghash__Store(self,key,value)
-struct ghash *self;
-char *key;
-char *value;
+boolean ghash__Store(struct ghash *self, char *key, char *value)
 {
     int bucket = (*self->hash)(key);
     struct egg *egg = (struct egg *)malloc(sizeof(struct egg));
@@ -125,9 +120,7 @@ char *value;
 
 static int (*compkey)()=NULL;
 
-static int FindEgg(egg,key)
-struct egg *egg;
-char *key;
+static int FindEgg(struct egg *egg, char *key)
 {
 
     if (compkey) {
@@ -142,9 +135,7 @@ char *key;
 
 
 
-char *ghash__Lookup(self,key)
-struct ghash *self;
-char *key;
+char * ghash__Lookup(struct ghash *self, char *key)
 {
     int bucket = (*self->hash)(key);
     struct egg *egg;
@@ -164,9 +155,7 @@ char *key;
     }
 }
 
-char *ghash__LookupKey(self,key)
-struct ghash *self;
-char *key;
+char * ghash__LookupKey(struct ghash *self, char *key)
 {
     int bucket = (*self->hash)(key);
     struct egg *egg;
@@ -186,9 +175,7 @@ char *key;
     }
 }
 
-char * ghash__Delete(self,key)
-struct ghash *self;
-char *key;
+char * ghash__Delete(struct ghash *self, char *key)
 {
     int bucket = (self->hash)(key);
     struct egg *egg;
@@ -216,9 +203,7 @@ struct enumerate {
     struct ghash *self;
 };
 
-static boolean EnumProc(e, rock)
-struct egg *e;
-struct enumerate *rock;
+static boolean EnumProc(struct egg *e, struct enumerate *rock)
 {
     boolean result;
     result=rock->proc(rock->rock, e->value,  e->key, rock->self);
@@ -226,10 +211,7 @@ struct enumerate *rock;
     return result;
 }
 
-char *ghash__Enumerate(self,proc,rock)
-struct ghash *self;
-procedure proc;
-long rock;
+char * ghash__Enumerate(struct ghash *self, procedure proc, long rock)
 {
     char *result;
     struct enumerate r;
@@ -247,9 +229,7 @@ long rock;
 }
     
 
-char *ghash__Rename(self,key,new)
-struct ghash *self;
-char *key,*new;
+char * ghash__Rename(struct ghash *self, char *key, char *new)
 {
     int bucket = (*self->hash)(key);
     struct egg *egg;
@@ -272,8 +252,7 @@ char *key,*new;
     }
 }
 
-void ghash__Clear(self)
-struct ghash *self;
+void ghash__Clear(struct ghash *self)
 {
     int i;
     struct egg *egg;
@@ -297,9 +276,7 @@ struct ghash *self;
 }
 
 
-static PrintAll(egg,nothing)
-struct egg *egg;
-int nothing;
+static PrintAll(struct egg *egg, int nothing)
 {
     printf("Egg (%s) contains (%s)\n",egg->key,egg->value);
     return FALSE;
@@ -307,8 +284,7 @@ int nothing;
 
 
 
-void ghash__Debug(self)
-struct ghash *self;
+void ghash__Debug(struct ghash *self)
 {
     int i;
     for (i=0;i<ghash_BUCKETS;i++) {

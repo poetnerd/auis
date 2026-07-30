@@ -65,8 +65,7 @@ static void lpair_ResetDimensions();
 	They are copied from lpair.c, with deletion of the line-between code,
 	code for movable borders, and the calls on DesiredSize   */
 
-static void lpair_ComputeSizes (l)
-register struct lpair *l;
+static void lpair_ComputeSizes(struct lpair *l)
 {
 
     int totalsize, i = 0;
@@ -104,8 +103,7 @@ register struct lpair *l;
     l->objcvt[1-i] = totalsize - l->objcvt[i];
 }
 
-static void lpair_ResetDimensions(self)
-register struct lpair *self;
+static void lpair_ResetDimensions(struct lpair *self)
 {
 
     register int i, x, y;
@@ -131,29 +129,19 @@ register struct lpair *self;
 }
 
 
-	boolean
-bpair__InitializeObject(ClassID, self)
-	struct classheader *ClassID;
-	register struct bpair  *self;
+boolean bpair__InitializeObject(struct classheader *ClassID, struct bpair *self)
 	{
 	    /* there is no need for the rest of the code which was here...
 	     lpair__InitializeObject will be called before this InitializeObject. */
     self->header.lpair.movable = FALSE;
     return TRUE;
 }
-	void
-bpair__FinalizeObject(ClassID, self)
-	struct classheader *ClassID;
-	register struct bpair  *self;
+void bpair__FinalizeObject(struct classheader *ClassID, struct bpair *self)
 {
 }
 
 
-void 
-bpair__FullUpdate(self, type, left, top, width, height)
-	register struct bpair  *self;
-	register enum view_UpdateType  type;
-	register long  left, top, width, height;
+void bpair__FullUpdate(struct bpair *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
 /* ( the following, including derogatory comment, is copied from lpair.c) */
 

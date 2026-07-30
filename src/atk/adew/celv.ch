@@ -69,7 +69,7 @@ overrides:
 methods:
     SetResizing(long key);
     makeview(struct cel *ls) returns struct view *;
-    PromptForInfo(struct arbiter *arb,boolean promptForViewName,boolean changeRefName) returns int;
+    PromptForInfo(struct arbiterview *arb,boolean promptForViewName,boolean changeRefName) returns int;
     PostParameters();
     Copy();
     SetHitfunc(struct view * (*hitfunc)(),void *hitrock);
@@ -88,8 +88,8 @@ macromethods:
     SetAppFlag(VAL)  ((self)->AddAppLayer = (VAL))
 classprocedures:
     InitializeClass()returns boolean;
-    FinalizeObject(struct cel *self);
-    InitializeObject(struct cel *self) returns boolean;
+    FinalizeObject(struct celview *self);
+    InitializeObject(struct celview *self) returns boolean;
     ResourceListToString(char *str,struct resourceList *rl) returns int;
     GetCelviewFromView(struct view *v) returns struct celview *;
 data:

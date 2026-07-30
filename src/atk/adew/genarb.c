@@ -40,11 +40,7 @@ else\n\
 exec ez $1  %s/lib/arbiters/Arb\n\
 endif\n"
 
-int
-main(argc, argv)
-int argc;
-char *argv[];
-
+int main(int argc, char *argv[])
 {
     /*
      * Check command line.

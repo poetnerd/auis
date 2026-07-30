@@ -49,39 +49,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <xcmap.ih>
 #include <xws.eh>
 
-	struct xcursor *
-xws__CreateCursor(self)
-	struct xws *self;
+struct xcursor * xws__CreateCursor(struct xws *self)
 {
 	return xcursor_New();
 }
 
-	struct xfontdesc *
-xws__CreateFontdesc(self)
-	struct xws *self;
+struct xfontdesc * xws__CreateFontdesc(struct xws *self)
 {
 	return xfontdesc_New();
 }
 
-	struct xgraphic *
-xws__CreateGraphic(self)
-	struct xws *self;
+struct xgraphic * xws__CreateGraphic(struct xws *self)
 {
 	return xgraphic_New();
 }
 
-	struct xim *
-xws__CreateIM(self)
-	struct xws *self;
+struct xim * xws__CreateIM(struct xws *self)
 {
 	return xim_New();
 }
 
-	struct xoffscrwin *
-xws__CreateOffScreenWindow(self,host,width,height)
-	struct xws *self;
-	char * host;
-	long width, height;
+struct xoffscrwin * xws__CreateOffScreenWindow(struct xws *self, char *host, long width, long height)
 {
 /*
 	return xoffscrwin_Create(host,width,height);
@@ -89,42 +77,27 @@ xws__CreateOffScreenWindow(self,host,width,height)
 	return NULL;
 }
 
-struct xcolor *
-xws__CreateColor( self, name, r, g, b)
-    struct xws *self;
-    char *name;
-    unsigned int r, g, b;
+struct xcolor * xws__CreateColor(struct xws *self, char *name, unsigned int r, unsigned int g, unsigned int b)
 {
     return(xcolor_Create(name, r, g, b));
 }
 
-struct xcolormap *
-xws__CreateColormap( self, xim )
-    struct xws *self;
-    struct xim *xim;
+struct xcolormap * xws__CreateColormap(struct xws *self, struct im *xim)
 {
     return(xcolormap_Create(xim));
 }
 
-	boolean 
-xws__HandleFiles(self, WaitTime, beCheap)
-	struct xws *self;
-	long WaitTime;
-	boolean beCheap;
+boolean xws__HandleFiles(struct xws *self, long WaitTime, boolean beCheap)
 {
 	return xim_HandleFiles(WaitTime, beCheap);
 }
 
-	void 
-xws__FlushAllWindows(self)
-	struct xws * self;
+void xws__FlushAllWindows(struct xws *self)
 {
 	xim_FlushAllWindows();
 }
 
-	boolean 
-xws__InitializeClass(classID)
-	struct classheader * classID;
+boolean xws__InitializeClass(struct classheader *classID)
 {
 	/* slimy way of getting all x related modules together */
 	xim_StaticLoadOnlyThisClass();

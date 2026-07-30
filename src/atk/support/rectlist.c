@@ -39,6 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include <graphic.ih>
 #include <view.ih>
+static void Intersect();
 
 struct rlist_rectangle {
     int bottom, top, left,right;
@@ -109,8 +110,7 @@ int oldnum, newnum;  {
     }
 }
 
-void rectlist__ResetList(classID)
-struct classheader *classID;
+void rectlist__ResetList(struct classheader *classID)
 {
     EndScan = 0;
     EndOld = 0;
@@ -147,9 +147,7 @@ long bottom, top, left, right, startscan; {
     }
 }
 
-void rectlist__InvertRectangles(classID, vPtr)
-struct classheader *classID;
-    struct view *vPtr;
+void rectlist__InvertRectangles(struct classheader *classID, struct view *vPtr)
 {
     register int i;
     struct rectangle invertRect;

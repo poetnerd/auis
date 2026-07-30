@@ -53,10 +53,7 @@ deferred:
 #define MAXFILELINE 255
 
 
-	boolean
-stringtbl__InitializeObject(ClassID, self)
-	struct classheader *ClassID;
-	register struct stringtbl  *self;
+boolean stringtbl__InitializeObject(struct classheader *ClassID, struct stringtbl *self)
 {
 	self->used = self->numacc = 0;
 	self->ContainsInitialStrings = FALSE;
@@ -68,10 +65,7 @@ stringtbl__InitializeObject(ClassID, self)
 	return TRUE;
 }
 
-	void 
-stringtbl__FinalizeObject(ClassID, self)
-	struct classheader *ClassID;
-	register struct stringtbl  *self;
+void stringtbl__FinalizeObject(struct classheader *ClassID, struct stringtbl *self)
 {
 	register short i;
 	for (i = 0; i < self->used; i++)
@@ -79,11 +73,7 @@ stringtbl__FinalizeObject(ClassID, self)
 }
 
 
-	long
-stringtbl__Read( self, file, id )
-	register struct stringtbl  *self;
-	register FILE  *file;
-	register long  id;			/* !0 if data stream, 0 if direct from file*/
+long stringtbl__Read(struct stringtbl *self, FILE *file, long id)
 {
 	/* reads a stringtbl from -file-.  See file format in strtbl.ch */
 	/* This routine reads the \enddata, if any. Its syntax is not checked */
@@ -116,12 +106,7 @@ stringtbl__Read( self, file, id )
 	return dataobject_NOREADERROR;
 }
 	  
-	long
-stringtbl__Write( self, file, writeID, level )
-	register struct stringtbl  *self;
-	FILE  *file;
- 	long  writeID;
-	int  level;
+long stringtbl__Write(struct stringtbl *self, FILE *file, long writeID, int level)
 {
 	char head[50];
 	register short i;
@@ -141,10 +126,7 @@ stringtbl__Write( self, file, writeID, level )
 	return id;
 }
 
-	void 
-stringtbl__Clear( self )
-  register struct stringtbl  *self;
-		/* Clears the string table of existing strings */
+void stringtbl__Clear(struct stringtbl *self)
 {
  	register short i;
 	for (i = self->used; --i >= 0; )
@@ -154,11 +136,7 @@ stringtbl__Clear( self )
 	self->ContainsInitialStrings = FALSE;
 }
 
-	static short
-FindString(self, s, startIndex)
-	register struct stringtbl *self;
-	register char *s;
-/* Finds string s in self and returns its index.   returns -1 for failure.*/
+static short FindString(struct stringtbl *self, char *s, int startIndex)
 {
 	register short i;
 	if (s == NULL || *s == '\0') return (-2);
@@ -187,10 +165,7 @@ SetIthBit(self, i, val)
 	}
 }
 
-short stringtbl__GetEntryOfString(self, s, startIndex)
-	register struct stringtbl *self;
-	register char *s;
-	short startIndex;
+short stringtbl__GetEntryOfString(struct stringtbl *self, char *s, short startIndex)
 {
 	register short i;
 
@@ -201,10 +176,7 @@ short stringtbl__GetEntryOfString(self, s, startIndex)
 	return -1;
 }
 
-	short
-stringtbl__AddString(self, s)
-	register struct stringtbl *self;
-	register char *s;
+short stringtbl__AddString(struct stringtbl *self, char *s)
 {
 	short len;
 	register char *t;
@@ -313,18 +285,13 @@ stringtbl__GetBit(self, s)
 	return ((self->highlight & mask) != 0L);
 }
 
-	void
-stringtbl__ClearBits( self )
-	struct stringtbl *self;
+void stringtbl__ClearBits(struct stringtbl *self)
 {
 	self->highlight = 0L;
 	stringtbl_NotifyObservers(self, stringtbl_BITSCHANGED);
 }
 
-	static short 
-FindEntry(self, accnum)
-	struct stringtbl *self;
-	short accnum;
+static short FindEntry(struct stringtbl *self, short accnum)
 {
 	int i;
 	for (i = self->used;  i--; )
@@ -386,8 +353,7 @@ stringtbl__GetStringOfEntry(self, accnum)
 }
 
 
-char *stringtbl__ViewName(self)
-struct stringtbl *self;
+char * stringtbl__ViewName(struct stringtbl *self)
 {
     return ("strtblview");
 }

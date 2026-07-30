@@ -45,10 +45,10 @@ overrides:
 			struct fontdesc_charInfo * returnedInfo);
 
 classprocedures:
-	InitializeObject(struct fontdesc * FontDescObject) returns boolean;
-	FinalizeObject(struct fontdesc * FontDescObject);
+	InitializeObject(struct xfontdesc * FontDescObject) returns boolean;
+	FinalizeObject(struct xfontdesc * FontDescObject);
 	InitializeClass() returns boolean;
         Allocate() returns struct xfontdesc *;
-        Deallocate(struct xfontdesc *);
+        Deallocate(struct xfontdesc *self);
 
 };

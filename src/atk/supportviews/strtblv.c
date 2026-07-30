@@ -59,6 +59,14 @@ known problems:
 #include <menulist.ih>
 #include <keymap.ih>
 #include <keystate.ih>
+static void AddItem_Command();
+static void AdjustHighlight();
+static boolean BogusCallFromParent();
+static boolean CheckWindow();
+static void ComputeItemSize();
+static int ComputeOrganization();
+static void RedrawTable();
+static int iRect();
 */
 
 /*
@@ -71,9 +79,7 @@ static struct keystate  *class_keystate;
 #define INTER 3		/* interline spacing */
 
 /* compute the parameters which say how big the largest item is */
-static void
-ComputeItemSize(self)
-	struct strtblview *self;
+static void ComputeItemSize(struct strtblview *self)
 {
 	struct stringtbl *st 
 			= (struct stringtbl *)self->header.view.dataobject;
@@ -98,10 +104,7 @@ ComputeItemSize(self)
 
 /* ComputeOrganization determines a good number of rows and columns
 	for a given width and height of area */
-static
-ComputeOrganization (self, width, height)
-	struct strtblview *self;
-	short width, height;
+static ComputeOrganization(struct strtblview *self, short width, short height)
 {
 	/* the algorithm is to minimize the difference between inter-column white space
 		and inter-row whitespace.  This is done by starting with one row, a situation
@@ -137,11 +140,7 @@ ComputeOrganization (self, width, height)
 
 /* iRect converts its argument rectangle from the 
 		entire logical image to the image for the i'th string */
-static
-iRect(self, i, r)
-	struct strtblview   *self;
-	short i;
-	struct rectangle *r;
+static iRect(struct strtblview *self, short i, struct rectangle *r)
 {
 	short col = i / self->rows;	/* strings run vertically */
 	short row = i % self->rows;
@@ -153,9 +152,7 @@ iRect(self, i, r)
 	r->height -= 1;
 }
 #ifdef NOTUSED
-static void
-AddItem_Command( self )
-	struct strtblview  *self;
+static void AddItem_Command(struct strtblview *self)
 {
 
 	/* XXX  prompt for string to add */
@@ -163,10 +160,7 @@ AddItem_Command( self )
 	strtblview_WantUpdate( self, self );
 }
 #endif /* NOTUSED ? */
-boolean
-strtblview__InitializeObject(ClassID, self)
-	struct classheader *ClassID;
-	struct strtblview  *self;
+boolean strtblview__InitializeObject(struct classheader *ClassID, struct strtblview *self)
 {
 	self->OnScreen = FALSE;
 	self->GaveSize = FALSE;
@@ -177,16 +171,11 @@ strtblview__InitializeObject(ClassID, self)
 	return TRUE;
 }
 
-void 
-strtblview__FinalizeObject(ClassID, self)
-	struct classheader *ClassID;
-	struct strtblview  *self;
+void strtblview__FinalizeObject(struct classheader *ClassID, struct strtblview *self)
 {
 }
 
-void 
-strtblview__Clear(self)
-	struct strtblview  *self;
+void strtblview__Clear(struct strtblview *self)
 {
 	struct stringtbl *st 
 			= (struct stringtbl *)self->header.view.dataobject;
@@ -198,11 +187,7 @@ strtblview__Clear(self)
 		stringtbl_Clear(st);
 }
 
-void
-strtblview__ObservedChanged(self, dobj, status)
-	struct strtblview  *self;
-	struct observable *dobj;
-	long status;
+void strtblview__ObservedChanged(struct strtblview *self, struct observable *dobj, long status)
 {
 	if (status == stringtbl_STRINGSCHANGED) {
 		self->sizeknown = FALSE;
@@ -216,19 +201,13 @@ strtblview__ObservedChanged(self, dobj, status)
 }
 
 
-static boolean
-BogusCallFromParent(self, where, msg)
-	struct strtblview *self;
-	char *where, *msg;
+static boolean BogusCallFromParent(struct strtblview *self, char *where, char *msg)
 {
 	fprintf(stderr, "<strtblview>Bogus call to %s, %s\n", where, msg);
 	return FALSE;
 }
 
-static boolean
-CheckWindow(self, where)
-	struct strtblview *self;
-	char *where;
+static boolean CheckWindow(struct strtblview *self, char *where)
 {
 	struct graphic *g
 		= (struct graphic *)strtblview_GetDrawable(self);
@@ -236,9 +215,7 @@ CheckWindow(self, where)
 	return TRUE;
 }
 
-static void 
-AdjustHighlight(self)
-	struct strtblview *self;
+static void AdjustHighlight(struct strtblview *self)
 {
 	struct stringtbl *st 
 			= (struct stringtbl *)self->header.view.dataobject;
@@ -261,9 +238,7 @@ AdjustHighlight(self)
 	self->BlackOnes = st->highlight;
 }
 
-static void
-RedrawTable(self)
-	struct strtblview *self;
+static void RedrawTable(struct strtblview *self)
 {
 	struct stringtbl *st 
 			= (struct stringtbl *)self->header.view.dataobject;
@@ -293,11 +268,7 @@ RedrawTable(self)
 	AdjustHighlight(self);
 }
 
-void 
-strtblview__FullUpdate( self, type, left, top, width, height )
-	struct strtblview  *self;
-	enum view_UpdateType  type;
-	long  left, top, width, height;
+void strtblview__FullUpdate(struct strtblview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
 	if (type == view_Remove) {
 		self->OnScreen = FALSE;
@@ -321,9 +292,7 @@ strtblview__FullUpdate( self, type, left, top, width, height )
 }
 
 
-void 
-strtblview__Update( self )
-	struct strtblview *self;
+void strtblview__Update(struct strtblview *self)
 {
 	if (! self->OnScreen || ! CheckWindow(self, "Update")) return;
 	if (self->tablechanged)
@@ -332,11 +301,7 @@ strtblview__Update( self )
 		AdjustHighlight(self);
 }
 
-struct view *
-strtblview__Hit(self, action, x, y, num_clicks)
-	struct strtblview  *self;
-	enum view_MouseAction  action;
-	long  x, y, num_clicks;
+struct view * strtblview__Hit(struct strtblview *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
 	if (action == view_NoMouseEvent)
 		return (struct view *)self;
@@ -457,25 +422,14 @@ width, height, self->rows, self->cols, *desiredWidth, *desiredHeight); fflush(st
 	}
 }
 
-void
-strtblview__Print( self, file, processor, format, level )
-	struct strtblview 	 *self;
-	FILE   *file;
-	char  	 *processor;
-	char  	 *format;
-	boolean  	level;
+void strtblview__Print(struct strtblview *self, FILE *file, char *processor, char *format, boolean level)
 {
 	
 }
 
 /* OneOnly - is a generic hitproc for a string table which guarantees that exactly
 	one bit is always on in the table */
-void
-strtblview__OneOnly(ClassID, st, stv, accnum)
-	struct classheader *ClassID;
-	struct stringtbl *st;
-	struct strtblview *stv;
-	short accnum;
+void strtblview__OneOnly(struct classheader *ClassID, struct stringtbl *st, struct strtblview *stv, short accnum)
 {
 	if (0 == stringtbl_GetBitOfEntry(st, accnum)) {
 		stringtbl_ClearBits(st);
@@ -485,12 +439,7 @@ strtblview__OneOnly(ClassID, st, stv, accnum)
 
 /* ZeroOrMany - is a generic hitproc for a string table 
 		which allows any number of bits to be on */
-void
-strtblview__ZeroOrMany(ClassID, st, stv, accnum)
-	struct classheader *ClassID;
-	struct stringtbl *st;
-	struct strtblview *stv;
-	short accnum;
+void strtblview__ZeroOrMany(struct classheader *ClassID, struct stringtbl *st, struct strtblview *stv, short accnum)
 {
 	stringtbl_SetBitOfEntry(st, accnum, ! stringtbl_GetBitOfEntry(st, accnum));
 }
@@ -498,12 +447,7 @@ strtblview__ZeroOrMany(ClassID, st, stv, accnum)
 
 /* ZeroOrOne - is a generic hitproc for a string table 
 		which guarantees that at most one bit is on */
-void
-strtblview__ZeroOrOne(ClassID, st, stv, accnum)
-	struct classheader *ClassID;
-	struct stringtbl *st;
-	struct strtblview *stv;
-	short accnum;
+void strtblview__ZeroOrOne(struct classheader *ClassID, struct stringtbl *st, struct strtblview *stv, short accnum)
 {
 	if (stringtbl_GetBitOfEntry(st, accnum))
 		stringtbl_ClearBits(st);

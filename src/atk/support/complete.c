@@ -47,15 +47,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include <sys/param.h>
 #include <sys/stat.h>
+static void FileHelp();
 
 static boolean useCurrentWorkingDirectory = FALSE;
 static struct cursor *waitCursor;
 
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 
-long completion__FindCommon(classID, string1, string2)
-    struct classheader *classID;
-    char *string1, *string2;
+long completion__FindCommon(struct classheader *classID, char *string1, char *string2)
 {
     long i = 0;
 
@@ -64,10 +63,7 @@ long completion__FindCommon(classID, string1, string2)
     return i;
 }
 
-void completion__CompletionWork(classID, string, data)
-    struct classheader *classID;
-    char *string;
-    struct result *data;
+void completion__CompletionWork(struct classheader *classID, char *string, struct result *data)
 {
 
     int partialCommon, nameLen;
@@ -110,11 +106,7 @@ void completion__CompletionWork(classID, string, data)
     }
 }
 
-static void FileHelp(partialPath, dummyData, helpTextFunction, helpTextRock)
-    char *partialPath;
-    long dummyData; /* Just along for the ride. */
-    int (*helpTextFunction)();
-    long helpTextRock;
+static void FileHelp(char *partialPath, long dummyData, int (*helpTextFunction)(), long helpTextRock)
 {
 
     int namelen;
@@ -209,21 +201,12 @@ static void FileHelp(partialPath, dummyData, helpTextFunction, helpTextRock)
     im_SetProcessCursor(NULL);
 }
 
-void completion__FileHelp(classID, partialPath, dummyData, helpTextFunction, helpTextRock)
-    struct classheader *classID;
-    char *partialPath;
-    long dummyData; /* Just along for the ride. */
-    int (*helpTextFunction)();
-    long helpTextRock;
+void completion__FileHelp(struct classheader *classID, char *partialPath, long dummyData, int (*helpTextFunction) (), long helpTextRock)
 {
     FileHelp(partialPath, dummyData, helpTextFunction, helpTextRock);
 }
 
-static enum message_CompletionCode FileComplete(pathname, directory, buffer, bufferSize)
-    char *pathname;
-    long directory;
-    char *buffer;
-    int bufferSize;
+static enum message_CompletionCode FileComplete(char *pathname, long directory, char *buffer, int bufferSize)
 {
 
     int len;
@@ -334,12 +317,7 @@ static enum message_CompletionCode FileComplete(pathname, directory, buffer, buf
     return result.code;
 }
 
-enum message_CompletionCode completion__FileComplete(classID, pathname, directory, buffer, bufferSize)
-    struct classheader *classID;
-    char *pathname;
-    boolean directory;
-    char *buffer;
-    int bufferSize;
+enum message_CompletionCode completion__FileComplete(struct classheader *classID, char *pathname, boolean directory, char *buffer, int bufferSize)
 {
     return FileComplete(pathname, (long) directory, buffer, bufferSize);
 }
@@ -350,11 +328,7 @@ struct fileRock {
     struct keystate *keystate;
 };
 
-static enum keymap_Types FileHack(rock, key, entry, rockP)
-    struct fileRock *rock;
-    long key;
-    struct basicobject **entry;
-    long *rockP;
+static enum keymap_Types FileHack(struct fileRock *rock, long key, struct basicobject **entry, long *rockP)
 {
     if (key == '/' || key == '~')
         message_DeleteCharacters(rock->view, 0, rock->messageLen);
@@ -362,15 +336,7 @@ static enum keymap_Types FileHack(rock, key, entry, rockP)
     return keymap_Empty;
 }
 
-int completion__GetFilename(classID, view, prompt, startPath, buffer, bufsiz, directoryP, mustMatch)
-    struct classheader *classID;
-    struct view *view;
-    char *prompt;
-    char *startPath;
-    char *buffer;
-    long bufsiz;
-    boolean directoryP;
-    boolean mustMatch;
+int completion__GetFilename(struct classheader *classID, struct view *view, char *prompt, char *startPath, char *buffer, long bufsiz, boolean directoryP, boolean mustMatch)
 {
 
     struct fileRock fileRock;
@@ -414,8 +380,7 @@ int completion__GetFilename(classID, view, prompt, startPath, buffer, bufsiz, di
     return code;
 }
 
-boolean completion__InitializeClass(classID)
-    struct classheader *classID;
+boolean completion__InitializeClass(struct classheader *classID)
 {
 
     waitCursor = cursor_Create(NULL);

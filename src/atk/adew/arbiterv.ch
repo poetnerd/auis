@@ -57,8 +57,8 @@ macromethods:
     SetCelMode(bool) self->CelMode = bool;
 classprocedures:
     InitializeClass()returns boolean;
-    FinalizeObject(struct arbiterv *self);
-    InitializeObject(struct arbiterv *self) returns boolean;
+    FinalizeObject(struct arbiterview *self);
+    InitializeObject(struct arbiterview *self) returns boolean;
     GetNamedObject(struct view *vw,char *ObjectName) returns struct dataobject *;
     GetNamedView(struct view *vw,char *ViewName) returns struct view *;
     GetNamedCelview(struct view *vw,char *ViewName) returns struct celview *;
