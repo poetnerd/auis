@@ -76,6 +76,19 @@ directory count for 1.3x the sessions (5.4 dirs/session here vs. M2's
 2.2), consistent with the runbook's "M3's per-instance labor is lower"
 reasoning once batch size actually reflects it.
 
+**Revised 2026-07-30 (wdc-approved amendments, after B3 closed Wave
+2):** the standalone `atk/eq` pilot is retired — O4/B1/B2 proved the
+`-pe`/`.eh` mechanic live at up to 81-class scale, fully serving the
+pilot's purpose — and `atk/eq` (6 files) joins I2 as an ordinary
+directory; I3 is merged into I1 (both leaf-scale; B3 proved a
+13-dir/61-file session comfortable). New totals: 91 directories
+(the original 90 + `atk/eq`), ~930 files, **15 sessions — 7 complete
+(O1–O4, B1–B3), 8 remaining (T1, I1, I2, A1, AMS1, AMS2, C1, C2).**
+Routine remaining batches run with a delegate-side Gate 0 replacing
+full orchestrator pre-diagnosis; T1/I2/AMS1/C1 keep full
+pre-diagnosis — see the runbook's "Session structure going forward"
+section.
+
 ## Wave 1 — overhead (28 directories, 305 files, 4 batches)
 
 - [x] **O1**: `overhead/util/lib` (83) — alone. Same directory M2 knew
@@ -195,27 +208,30 @@ reasoning once batch size actually reflects it.
       dependency order (highest-consumed single directory in the
       insets/apps waves that follow).
 
-## Wave 4 — insets (16 directories, 133 files, 3 batches)
+## Wave 4 — insets (17 directories, 139 files, 2 batches)
 
-Note: `atk/eq` is deliberately NOT re-listed here as a batch — it's
-already the runbook's designated rollout-point-1 pilot (re-running the
-2026-07-08 dry-run validation for real, see `m3-rollout-runbook.md`),
-so it runs first and separately.
+Note (revised 2026-07-30): `atk/eq` is no longer a separate pilot —
+it joins I2 below as an ordinary directory (wdc confirmed O4's call;
+the 2026-07-08 dry-run validation plus O4/B1/B2's live `-pe` rollouts
+fully served the pilot's purpose). Former I3 is merged into I1.
 
 - [ ] **I1**: `atk/image` (22), `atk/srctext` (20, judgment call — the
       roff/source-text viewer; grouped here as a content-display
-      inset rather than core text infra) — 42 files.
-- [ ] **I2**: `atk/figure` (17), `atk/chart` (13), `atk/table` (10),
-      `atk/rofftext` (9), `atk/raster/cmd` (8) — 57 files, 5 dirs.
+      inset rather than core text infra), `atk/raster/lib` (7),
+      `atk/layout` (6), `atk/hyplink` (4), `atk/org` (3, judgment
+      call — outline/tree navigation, grouped as inset-adjacent
+      rather than basics), `atk/bush` (3), `atk/raster/scan` (2),
+      `atk/fad` (2), `atk/raster/convert` (1) — 70 files, 10 dirs
+      (absorbed former I3's small/leaf grab-bag, 2026-07-30).
+- [ ] **I2**: `atk/eq` (6, formerly the standalone pilot — its
+      2026-07-08 dry-run found zero DRIFT), `atk/figure` (17),
+      `atk/chart` (13), `atk/table` (10), `atk/rofftext` (9),
+      `atk/raster/cmd` (8) — 63 files, 6 dirs.
       `atk/figure` has known LP64/DRIFT history (M1 Pilot B, M2
-      batch3a) — expect findings, not a routine batch. `table`/
+      batch3a) — expect findings, not a routine batch; full
+      orchestrator pre-diagnosis, not Gate 0. `table`/
       `rofftext`/`raster/cmd` is the same three-directory grouping
       M2's bucket 4 used.
-- [ ] **I3**: `atk/raster/lib` (7), `atk/layout` (6), `atk/hyplink`
-      (4), `atk/org` (3, judgment call — outline/tree navigation,
-      grouped as inset-adjacent rather than basics), `atk/bush` (3),
-      `atk/raster/scan` (2), `atk/fad` (2), `atk/raster/convert` (1)
-      — 28 files, 8 dirs, small/leaf grab-bag.
 
 ## Wave 5 — apps (9 directories, 29 files, 1 batch)
 
@@ -249,8 +265,9 @@ so it runs first and separately.
 
 ## Session-count summary
 
-Pilot (`atk/eq`, already validated, re-run for real) + 16 batches = 17
-sessions total, across the 7 waves in dependency order (Wave 1 →
-Wave 6, with the eq pilot opening Wave 4). Tick batches here as they
-complete, same convention as `m1-point10-batches.md`; the runbook's
-own summary gets the one-line rollup per wave, not per batch.
+Revised 2026-07-30: 15 sessions total (was 17 — pilot retired into
+I2, I3 merged into I1), across the 7 waves in dependency order.
+7 complete (O1–O4, B1–B3), 8 remaining: T1, I1, I2, A1, AMS1, AMS2,
+C1, C2. Tick batches here as they complete, same convention as
+`m1-point10-batches.md`; the runbook's own summary gets the one-line
+rollup per wave, not per batch.

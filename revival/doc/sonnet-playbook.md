@@ -98,3 +98,9 @@ When a value reads as a huge positive number, or lldb shows
 3. Findings/answers to the questions the prompt poses.
 4. Files touched (with per-file compile status) — or "none".
 5. Open questions / anything that surprised you.
+6. For rollout-batch tasks (M3 etc.): end with a "Suggested runtime
+   checks for wdc" section — the exact commands wdc can run to
+   exercise this batch's directories, per `rollout-procedure.md`'s
+   Runtime check rules (`nm -g` against `runapp`/the relevant `.do`
+   first to find live consumers; never launch GUI apps yourself; no
+   saves against unversioned fixtures — point at scratch copies).

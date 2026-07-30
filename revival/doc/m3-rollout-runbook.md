@@ -53,6 +53,90 @@ are explicitly NOT delegable (§14's "Delegation" ruling):
 6. Runtime check → user confirmation → commit (src, then docs — same
    two-commit convention as M1/M2).
 
+## Current standing per-batch checklist (live — edit in place)
+
+Added 2026-07-30 (wdc-approved amendment): the net list of standing
+checks a batch must run, maintained here so a fresh session doesn't
+have to reconstruct it from the findings narrative below. When a
+check is added or retired, edit this list in the same commit that
+documents the finding.
+
+Active:
+
+1. **`.ch` presence** (O1): `find <dir> -maxdepth 1 -name '*.ch'` —
+   a directory with no `.ch` files skips the `-pe`/`CLASSFLAGS` and
+   `.eh` force-regen steps entirely; DRIFT is structurally impossible
+   there.
+2. **Predefined-macro typo grep** (O4): single-underscore
+   misspellings of compiler-predefined macros (`_STDC_`,
+   `_cplusplus`, `_FILE_`, ...) — fix on sight as ordinary fallout;
+   a dead `#ifdef` branch flipped live gets full fallout triage, not
+   a free pass.
+3. **Empty-parens lifecycle-method grep** (O4; confirmed a real,
+   deterministic compile failure under `-pe` in B3):
+   `grep -nE '__(InitializeClass|InitializeObject|FinalizeObject)\(\s*\)' <dir>/*.c`
+   — invisible to `ansify`'s candidate detector; hand-fold to ANSI
+   with a named (unused) `classID` param.
+4. **Installed-header grep for converted non-static helpers** (O3 —
+   the one documented hole in the `.eh`-locality gate-scope argument
+   below): before treating a directory's blast radius as accounted
+   for, grep the installed header tree for an empty-parens
+   declaration of any non-static helper being converted; flag any
+   cross-directory header touch prominently in the report.
+5. **Restated-lifecycle-param `.ch` check** (B3): a `.ch` restating
+   `InitializeClass`'s (or both of `FinalizeObject`'s) implicit
+   param(s) over-counts through classpp's ordinary prototype loop —
+   check the real `.c` param count before ruling either way. Known
+   unresolved instances ahead: `fldtreev.ch` (Wave 6), `schedv.ch`/
+   `ltv.ch` (Wave 7).
+6. **Concurrent-commit merge check** (B1): if unrelated commits land
+   while a batch's review is in progress, spot-check the current
+   content of any file both touched before trusting the auto-merge
+   and committing.
+7. The milestone-agnostic standing checks in `rollout-procedure.md`
+   still apply (liveness census, `-k` on fallout collection, the
+   anchored `malloc`/`free`/`realloc`/`calloc` grep before
+   close-out, runtime-check rules).
+
+Retired (do NOT re-run; listed so older findings entries below don't
+mislead):
+
+- Brace-glued-`{` grep (B1) — tool fixed and retrospectively
+  recleared 2026-07-30; `ansify` now handles both the
+  parameter-glue and body-glue shapes itself.
+- `FinalizeObject()` empty-parens pre-grep (B2) — classpp fixed
+  centrally 2026-07-30.
+
+## Session structure going forward (amended 2026-07-30, wdc-approved)
+
+Adopted after B3 closed Wave 2, to move pre-diagnosis legwork off the
+top level now that the fallout taxonomy is mature (O1–B3) and the
+2026-07-30 tool fixes are in:
+
+- **Routine batches get a Gate 0 instead of full orchestrator
+  pre-diagnosis.** The delegated session itself runs
+  `ansify --dry-run --dir` on every directory in the batch plus the
+  standing checklist above, classifies every DRIFT/skip finding
+  against the documented taxonomy (citing the specific runbook/
+  `porting-assessment.md` entry it matches), test-compiles `.eh`
+  files under a temporary `-pe` flag where classification needs it,
+  and STOPs at Gate 0 with the classification in its report. The
+  orchestrator rules only on findings classified genuinely new — the
+  Delegation ruling (rulings stay top-level) is unchanged; only the
+  legwork moves. After the ruling(s), the session proceeds to the
+  real run and the subtree gates as before.
+- **Full orchestrator pre-diagnosis stays for the flagged-risky
+  batches**: T1 (`atk/text`), I2 (`atk/figure` history), AMS1
+  (`ams/libs/ms`), C1 (`contrib/zip/lib`).
+- **The delegate drafts the runtime-check guidance.** Every batch
+  REPORT ends with a "Suggested runtime checks for wdc" section —
+  exact commands, per `rollout-procedure.md`'s Runtime check rules
+  (`nm -g` against `runapp`/the relevant `.do` to find live
+  consumers first; never launch GUI apps from the session; no saves
+  against unversioned fixtures). The orchestrator vets that section
+  rather than authoring it from scratch, then presents it to wdc
+  before commit.
+
 ## Gate scope — stronger locality guarantee than M2 had at the start
 
 `.eh` files are never installed to `build/include` (`andrew.rls` has
@@ -75,6 +159,22 @@ lib` (tree's highest-defect-density directory) — plus fixed milestone
 checkpoints (end of each dependency-order wave below, and end of M3
 overall, which doubles as M3's completion gate before M4). Everything
 else: subtree-local only.
+
+**Wave-end gate status**: Waves 1 and 2 both closed without their
+tree-wide checkpoint at the time (O4's report explicitly deferred it
+as a top-level decision; B3 ran subtree-local only). Run retroactively
+2026-07-30 during the amendment pass — result: clean except (a) the
+two documented, pre-existing `contrib/zip/utility/ltapp.c` errors
+(roadmap's known standing gate blocker, queued for Wave 7 C2's
+`.ch`-typing treatment), and (b) a pre-existing `nns` link failure —
+`libmail.a`'s `tlscon.o` (added 2026-07-17 for SMTP/IMAP) needs
+OpenSSL, and `ams/msclients/nns`'s `ProgramTarget` lacked `${SSLLIB}`
+while `cui`'s had it; first exposed here because this was the first
+tree-wide relink of `nns` since the `dropoff`→`tlscon` dependency
+appeared. Fixed same day (one-line Imakefile change mirroring `cui`),
+`nns` relinks and installs clean. Not M3 fallout in either case — M3
+changes are declaration-level only. This gate doubles as T1's
+pre-flight baseline.
 
 ## Ordering — dependency order matters here, unlike M2
 
@@ -114,7 +214,15 @@ step" below). Built from the last full tree-wide gate log rather than
 guessed, so a fresh session can start executing immediately instead of
 re-deriving the directory tree.
 
-## First concrete step — not yet done
+## First concrete step — OVERTAKEN BY EVENTS (marked 2026-07-30)
+
+Superseded in practice: the per-batch `ansify --dry-run` passes became
+the census (O1–B3), and O4/B1/B2 proved the `-pe`/`.eh` mechanic live
+at up to 81-class scale, fully serving the pilot's purpose. wdc
+confirmed O4's judgment call 2026-07-30: the standalone `atk/eq`
+pilot is retired and `atk/eq` folds into batch I2 as an ordinary
+directory (see `m3-batches.md`). Original text kept below for the
+record.
 
 Get real per-directory instance counts before committing to session
 sizing: `ansify --build-db` (rebuild fresh — the signature DB is from
@@ -373,10 +481,10 @@ this one:
    (non-dry-run) `.eh` regen — a judgment call to run this ahead of the
    `atk/eq` Wave-4 "pilot," on the reasoning that Wave 1 legitimately
    precedes Wave 4 in dependency order and the directory's blast radius
-   is a 3-file test/demo fixture. **wdc: please confirm this call after
-   the fact** — if you agree, `m3-batches.md`'s Wave 4 "eq pilot"
-   framing should be marked stale (this batch already proved the
-   mechanic live). The eq-shape narrow-type-promotion failure
+   is a 3-file test/demo fixture. **Confirmed by wdc 2026-07-30** —
+   `m3-batches.md`'s Wave 4 "eq pilot" framing is retired (`atk/eq`
+   folded into I2 as an ordinary directory; see "First concrete step"
+   above). The eq-shape narrow-type-promotion failure
    (`porting-assessment.md`'s 2026-07-08 validation) did **not**
    recur; instead: a class lifecycle method (`InitializeClass`/
    `InitializeObject`) written with a **truly empty parameter list** —
