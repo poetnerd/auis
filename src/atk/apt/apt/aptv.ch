@@ -191,10 +191,10 @@ methods:
   UseWaitCursor();
   UseNormalCursor();
   UseInvisibleCursor();
-  Query( query, default_response, response )		    returns long;
-  QueryFileName( query, response )			    returns long;
-  QueryDirectoryName( query, response )			    returns long;
-  Announce( message )					    returns long;
+  Query( char *query, char *default_response, char **response )		    returns long;
+  QueryFileName( char *query, char **response )			    returns long;
+  QueryDirectoryName( char *query, char **response )			    returns long;
+  Announce( char *message )					    returns long;
 
 macromethods:
 

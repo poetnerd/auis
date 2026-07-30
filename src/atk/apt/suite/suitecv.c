@@ -95,9 +95,7 @@ struct bind_Description Bindings[] = {
     {"suitecv-insert-newline","\015",0,NULL,0,0,(void(*)())suitecv_InsertNLCmd,
 	"Insert a newline character","suitecv"},NULL};
 
-boolean 
-suitecv__InitializeClass( ClassID )
-    struct classheader *ClassID;
+boolean suitecv__InitializeClass(struct classheader *ClassID)
 {
     if(!(KeyMap =  keymap_New())) {
 	printf("suitecv:Could not create a keymap\n");
@@ -118,15 +116,11 @@ suitecv__InitializeObject( ClassID, self )
     return(TRUE);
 }
 
-void
-suitecv__FinalizeObject( self )
-    struct suitecv *self;
-{}
+void suitecv__FinalizeObject(struct classheader *classID, struct suitecv *self)
+{
+}
 
-void
-suitecv_InsertNLCmd( self, key )
-    struct suitecv *self;
-    long key;
+void suitecv_InsertNLCmd(struct suitecv *self, long key)
 {
 #if 0
     if(ClientAnchor)
@@ -138,10 +132,7 @@ suitecv_InsertNLCmd( self, key )
 #endif
 }
 
-void 
-suitecv__PostKeyState(self,kstate)
-    struct suitecv *self;
-    struct keystate *kstate;
+void suitecv__PostKeyState(struct suitecv *self, struct keystate *kstate)
 {
     if (kstate == self->header.textview.keystate) {
 	keystate_AddBefore(KeyState,kstate); 
@@ -150,8 +141,7 @@ suitecv__PostKeyState(self,kstate)
     else super_PostKeyState(self,kstate);
 }
 
-void UpdateCaption( self )
-    struct suitecv *self;
+void UpdateCaption(struct suitecv *self)
 {
     struct text *txt = (struct text *) ParentItem->dataobject;
     long len = text_GetLength( txt ), returnedLen;
@@ -164,9 +154,7 @@ void UpdateCaption( self )
     }
 }
 
-void
-suitecv__ReceiveInputFocus( self )
-    struct suitecv	    *self;
+void suitecv__ReceiveInputFocus(struct suitecv *self)
 {
     super_ReceiveInputFocus(self);
     if(!ParentItem->hithandler) suiteev_ItemHighlight(EV,ParentItem);
@@ -174,18 +162,13 @@ suitecv__ReceiveInputFocus( self )
     suitecv_CollapseDot(self);
 }
 
-void suitecv__FullUpdate( self, type, left, top, width, height )
-    struct suitecv *self;
-    enum view_UpdateType type;
-    long left, top, width, height;
+void suitecv__FullUpdate(struct suitecv *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     UpdateCaption( self );
     super_FullUpdate( self, type, left, top, width, height);
 }
 
-void
-suitecv__LoseInputFocus( self )
-    struct suitecv *self;
+void suitecv__LoseInputFocus(struct suitecv *self)
 {
     register struct text *RWtext = (struct text*) suitecv_GetDataObject(self);
     long len = 0;

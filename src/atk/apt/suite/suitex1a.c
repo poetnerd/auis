@@ -119,9 +119,7 @@ suite_Specification flavors[] = {
 };
 
 
-boolean
-suitex1app__Start( self )
-struct suitex1app *self;
+boolean suitex1app__Start(struct suitex1app *self)
 {
     struct frame *f = frame_New();
     frame_SetView(f, suite_Create(flavors, self));
@@ -131,11 +129,7 @@ struct suitex1app *self;
     return(TRUE);
 }
 
-struct view *
-Flavor_Choice( self, suite, item, type, action, x, y, clicks )
-struct suitex1app *self;
-register struct suite *suite;
-register struct suite_item *item;
+struct view * Flavor_Choice(struct suitex1app *self, struct suite *suite, struct suite_item *item, int type, int action, int x, int y, int clicks)
 {
     char msg[100];
     if(action == view_LeftUp) {

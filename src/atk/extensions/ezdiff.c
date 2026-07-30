@@ -52,6 +52,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <im.ih>
 #include <cursor.ih>
 #include <ezdiff.eh>
+static struct ezdiff * FindBufferDiff();
+static struct ezdiff * FindViewDiff();
+static int LocateInView();
+static int ezdiff_Change();
+static int ezdiff_Current();
+static int ezdiff_Last();
+static int ezdiff_Next();
+static int ezdiff_PointOut();
+static int ezdiff_Start();
+static int ezdiff_setupmarkers();
+static char * getpair();
+static struct mark * setmark();
 
 #define ObjectOf(V) (((struct view *)(V))->dataobject)
 #define USECURRENTMARK -32000l
@@ -65,9 +77,7 @@ struct diffinfo {
 };
 
 #define buffertext(BUF) (struct text *)buffer_GetData(BUF)
-static struct ezdiff *FindBufferDiff(b,which)
-struct buffer *b;
-int *which;
+static struct ezdiff * FindBufferDiff(struct buffer *b, int *which)
 {
     register struct ezdiff *ep;
     if(b == NULL) return NULL;
@@ -83,15 +93,11 @@ int *which;
     }
     return NULL;
 }
-static struct ezdiff *FindViewDiff(v,which)
-struct textview *v;
-int *which;
+static struct ezdiff * FindViewDiff(struct textview *v, int *which)
 {
     return FindBufferDiff(buffer_FindBufferByData(ObjectOf(v)),which);
 }
-static char *getpair(cp,ip)
-char *cp;
-int *ip;
+static char * getpair(char *cp, int *ip)
 {
     if(*cp == '\0') return(NULL);
     while  (*cp == ' ' || *cp ==  ',' || *cp == 'a' || *cp == 'd' || *cp == 'c' ){
@@ -111,10 +117,7 @@ int *ip;
     return(cp);
 }
 #define BUFSIZE 4096
-static struct mark *setmark (ip,d,pi,ppos)
-int *ip;
-struct text *d;
-int *pi , *ppos;
+static struct mark * setmark(int *ip, struct text *d, int *pi, int *ppos)
 {
     int spos, len;
     register int i, pos;
@@ -141,9 +144,7 @@ int *pi , *ppos;
 }
 
 /* Return -1 if something here fails.  Return 0 for success. */
-static int ezdiff_setupmarkers(self,s)
-struct ezdiff *self;
-char *s;
+static int ezdiff_setupmarkers(struct ezdiff *self, char *s)
 {
     struct text *d1,*d2;
     FILE *file,*fopen();
@@ -195,10 +196,7 @@ char *s;
     return 0;
 }
 
-struct ezdiff *ezdiff__Create(classID,buf1,buf2,ignoreblanks)
-struct classheader *classID;
-struct buffer *buf1,*buf2;
-boolean ignoreblanks;
+struct ezdiff * ezdiff__Create(struct classheader *classID, struct buffer *buf1, struct buffer *buf2, boolean ignoreblanks)
 {
     struct ezdiff *self;
     char name1[256],name2[256],fnm[512];
@@ -303,9 +301,7 @@ boolean ignoreblanks;
     unlink(name1); unlink(name2); unlink(fnm);
     return self;
 }
-boolean ezdiff__InitializeObject(classID,self)
-struct classheader *classID;
-struct ezdiff *self;
+boolean ezdiff__InitializeObject(struct classheader *classID, struct ezdiff *self)
 {
     if(lastlink != NULL) lastlink->next = self;
     self->next = NULL;
@@ -318,10 +314,7 @@ struct ezdiff *self;
     self->bname[0] = self->bname[1] = NULL;
     return TRUE;
 }
-void ezdiff__ObservedChanged(self, changed, value)
-struct ezdiff *self;
-struct observable *changed;
-long value;
+void ezdiff__ObservedChanged(struct ezdiff *self, struct observable *changed, long value)
 {
     /* If the buffer changes, Diff is probably wrong. So.. */
     if(value == observable_OBJECTDESTROYED){
@@ -341,9 +334,7 @@ long value;
     message_DisplayString(NULL,0,"Diff buffer being modified. Destroying diff");
     ezdiff_Destroy(self);
 }
-void ezdiff__FinalizeObject(ClassID,self)
-struct classheader *ClassID;
-struct ezdiff *self;
+void ezdiff__FinalizeObject(struct classheader *ClassID, struct ezdiff *self)
 {
     if(self->buf[0] != NULL) buffer_RemoveObserver(self->buf[0],self);
     if(self->buf[1] != NULL) buffer_RemoveObserver(self->buf[1],self);
@@ -365,9 +356,7 @@ struct ezdiff *self;
     if(self->bname[1]) free(self->bname[1]);
 
 }
-static int LocateInView(v1,v2,v3,dat)
-struct view *v1,*v2,*v3;
-long dat;
+static int LocateInView(struct view *v1, struct view *v2, struct view *v3, long dat)
 {
     struct diffinfo *d = (struct diffinfo *) dat;
     struct mark *m = d->m;
@@ -380,10 +369,7 @@ long dat;
     }
     return 0; /* go through all views */
 }
-static ezdiff_PointOut(self,v,delta)
-struct ezdiff *self;
-struct textview *v;
-long delta;
+static ezdiff_PointOut(struct ezdiff *self, struct textview *v, long delta)
 {
     static struct diffinfo d1;
     if(self == NULL){
@@ -407,15 +393,11 @@ long delta;
     d1.m = self->m2[self->cmark];
     buffer_EnumerateViews(self->buf[1], LocateInView, &d1);
 }
-static ezdiff_Current(v,delta)
-struct textview *v;
-long delta;
+static ezdiff_Current(struct textview *v, long delta)
 {
     ezdiff_PointOut(NULL,v,USECURRENTMARK);
 }
-static ezdiff_Next(v,delta)
-struct textview *v;
-long delta;
+static ezdiff_Next(struct textview *v, long delta)
 {
     int which,cmark,pos;
     struct ezdiff *self;
@@ -432,9 +414,7 @@ long delta;
     }
     ezdiff_PointOut(self,v,cmark);
 }
-static ezdiff_Change(v,delta)
-struct textview *v;
-long delta;
+static ezdiff_Change(struct textview *v, long delta)
 {
     int which,cmark;
     long szz;
@@ -468,9 +448,7 @@ long delta;
     text_NotifyObservers(dsttext,1);
     ezdiff_PointOut(NULL,v,USECURRENTMARK);
 }
-static ezdiff_Last(v,delta)
-struct textview *v;
-long delta;
+static ezdiff_Last(struct textview *v, long delta)
 {
     int which,cmark,pos;
     struct ezdiff *self;
@@ -489,9 +467,7 @@ long delta;
     ezdiff_PointOut(self,v,cmark);
 }
 
-static ezdiff_Start(v,dat)
-struct view *v;
-long dat;
+static ezdiff_Start(struct view *v, long dat)
 {
     struct ezdiff *self;
     char ans[100];
@@ -537,8 +513,7 @@ long dat;
 	*buffername = '\0';
     }
 }
-boolean ezdiff__InitializeClass(ClassID)
-struct classheader *ClassID;
+boolean ezdiff__InitializeClass(struct classheader *ClassID)
 {
     struct classinfo *textviewtype = class_Load("textview");
 

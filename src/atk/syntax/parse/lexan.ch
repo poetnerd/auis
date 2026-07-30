@@ -58,7 +58,7 @@ class lexan {
 
 methods:
 
-	NextToken(/* struct lexan *self, */ void *pyylval) returns int;
+	NextToken(/* struct lexan *self, */ void **pyylval) returns int;
 		/* get the next token from the lexan, set *pyylval to the
 		value returned by a hook routine and return the token number */
 

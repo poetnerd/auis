@@ -112,6 +112,50 @@ END-SPECIFICATION  ************************************************************/
 #include  <treev.eh>
 #include  <ctype.h>
 #include <atom.ih>
+static int Arrange_Exploded_Tree();
+static int Arrange_Horizontal_Exploded_SubTree();
+static int Arrange_Horizontal_Exploded_Tree();
+static int Arrange_Horizontal_Tree();
+static int Arrange_Tree();
+static int Arrange_Vertical_Exploded_SubTree();
+static int Arrange_Vertical_Exploded_Tree();
+static int Arrange_Vertical_Tree();
+static int Check_Dimensions();
+static int Clear_Shadow();
+static int Destroy_Children_Shadows();
+static int Destroy_Shadows();
+static int Draw_Background();
+static int Draw_Node_Border();
+static int Draw_Node_Caption();
+static int Draw_Node_Connector();
+static int Draw_Node_Title();
+static int Draw_Tree();
+static int Dump_Trees();
+static int Erase_Node_Children();
+static int Expose_Node_Children();
+static int Fill_Area();
+static int Fill_Background();
+static int Fill_Shadow();
+static int First_Time();
+static int Footprint_Node_Shadow();
+static int Generate_Children_Shadows();
+static int Generate_Shadows();
+static int Hide_Node_Children();
+static int Highlight_Node_Shadow();
+static int Initialize_Graphics();
+static int Mark_Child_Exposure();
+static int Name_Sizing();
+static int Normalize_Node_Shadow();
+static int Normalize_Other_Nodes();
+static int Print_Node_Border();
+static int Print_Node_Connector();
+static int Print_Tree();
+static int Printer();
+static int Redisplay_Node_Children();
+static int SetTreeAttribute();
+static int Set_Dimensions();
+static void treev_FlipColors();
+static void treev_RestoreColors();
 
 int treev_debug = 0;
 
@@ -385,8 +429,7 @@ static char *treev_fg=NULL, *treev_bg=NULL;
 static long treev_fgr, treev_fgg, treev_fgb;
 static long treev_bgr, treev_bgg, treev_bgb;
 
-static void treev_FlipColors(self)
-struct treev *self;
+static void treev_FlipColors(struct treev *self)
 {
     struct atom *a;
     treev_GetForegroundColor(self, &treev_fg, &treev_fgr, &treev_fgg, &treev_fgb);
@@ -405,19 +448,14 @@ struct treev *self;
     treev_SetBackgroundColor(self, treev_fg, treev_fgr, treev_fgg, treev_fgb);
 }
 
-static void treev_RestoreColors(self)
-struct treev *self;
+static void treev_RestoreColors(struct treev *self)
 {
     treev_SetForegroundColor(self, treev_fg, treev_fgr, treev_fgg, treev_fgb);
     treev_SetBackgroundColor(self, treev_bg, treev_bgr, treev_bgg, treev_bgb);
 }
 
 
-struct treev *
-treev__Create( ClassID, specification, anchor )
-  register struct  classheader	 *ClassID;
-  treev_Specification		 *specification;
-  register struct view		 *anchor;
+struct treev * treev__Create(struct classheader *ClassID, treev_Specification *specification, struct view *anchor)
   {
   register struct treev		 *self;
   register long			  mode = NULL;
@@ -446,10 +484,7 @@ treev__Create( ClassID, specification, anchor )
   return  self;
   }
 
-boolean
-treev__InitializeObject( classID, self)
-  register struct classheader *classID;
-  register struct treev	      *self;
+boolean treev__InitializeObject(struct classheader *classID, struct treev *self)
   {
   register long		       status = true;
 
@@ -473,10 +508,7 @@ BackgroundShade = 1; /*=== force to white because some clients neglect to clear 
   return  status;
   }
 
-void
-treev__FinalizeObject( classID, self )
-  register struct classheader *classID;
-  register struct treev	      *self;
+void treev__FinalizeObject(struct classheader *classID, struct treev *self)
   {
   IN(treev_FinalizeObject );
   if ( self->instance )
@@ -499,10 +531,7 @@ treev__FinalizeObject( classID, self )
   OUT(treev_FinalizeObject );
   }
 
-void
-treev__SetDataObject( self, data_object )
-  register struct treev	      *self;
-  register struct tree	      *data_object;
+void treev__SetDataObject(struct treev *self, struct dataobject *data_object)
   {
   IN(treev_SetDataObject);
   Tree = data_object;
@@ -513,10 +542,7 @@ treev__SetDataObject( self, data_object )
   OUT(treev_SetDataObject);
   }
 
-long
-treev__SetTreeAttribute( self, attribute, value )
-  register struct treev	     *self;
-  register long		      attribute, value;
+long treev__SetTreeAttribute(struct treev *self, long attribute, long value)
   {
   register long		      status = ok;
 
@@ -526,10 +552,7 @@ treev__SetTreeAttribute( self, attribute, value )
   return  status;
   }
 
-static
-SetTreeAttribute( self, attribute, value )
-  register struct treev	     *self;
-  register long		      attribute, value;
+static SetTreeAttribute(struct treev *self, long attribute, long value)
   {
   register long		      status = ok;
 
@@ -585,10 +608,7 @@ SetTreeAttribute( self, attribute, value )
   return  status;
   }
 
-long
-treev__TreeAttribute( self, attribute )
-  register struct treev	     *self;
-  register long		      attribute;
+long treev__TreeAttribute(struct treev *self, long attribute)
   {
   register long		      value = NULL;
 
@@ -629,10 +649,7 @@ treev__TreeAttribute( self, attribute )
   return  value;
   }
 
-void
-treev__SetDebug( self, state )
-  register struct treev	      *self;
-  register char		       state;
+void treev__SetDebug(struct treev *self, boolean state)
   {
   IN(treev_SetDebug);
   treev_debug = state;
@@ -641,9 +658,7 @@ treev__SetDebug( self, state )
   OUT(treev_SetDebug);
   }
 
-tree_type_node
-treev__CurrentNode( self )
-  register struct treev	      *self;
+struct tree_node * treev__CurrentNode(struct treev *self)
   {
   register tree_type_node      node;
 
@@ -654,11 +669,7 @@ treev__CurrentNode( self )
   return  node;
   }
 
-static
-Name_Sizing( self, tree, node, datum )
-  register struct treev	     *self;
-  register struct tree	     *tree;
-  register tree_type_node     node;
+static Name_Sizing(struct treev *self, struct tree *tree, tree_type_node node, int datum)
   {
   long			      width, height;
   register long		      peers, level;
@@ -676,9 +687,7 @@ Name_Sizing( self, tree, node, datum )
   return  NULL;
   }
 
-static
-Initialize_Graphics( self )
-  register struct treev	     *self;
+static Initialize_Graphics(struct treev *self)
   {
   char			      font_family[256];
   long			      font_type, font_size;
@@ -722,9 +731,7 @@ Initialize_Graphics( self )
   OUT(Initialize_Graphics);
   }
 
-static
-First_Time( self )
-  register struct treev	     *self;
+static First_Time(struct treev *self)
   {
   IN(First_Time);
   if ( RootNode )
@@ -740,9 +747,7 @@ First_Time( self )
   OUT(First_Time);
   }
 
-static void
-Redisplay( self )
-  register struct treev	     *self;
+static void Redisplay(struct treev *self)
   {
   PendingUpdate = NULL;
   VerticalOffset = PendingVerticalOffset;
@@ -754,9 +759,7 @@ Redisplay( self )
   Draw_Tree( self, ShadowRootNode );
   }
 
-static
-Set_Dimensions( self )
-  register struct treev	     *self;
+static Set_Dimensions(struct treev *self)
   {
   IN(Set_Dimensions);
   PendingHorizontalOffset = 0;
@@ -782,10 +785,7 @@ Set_Dimensions( self )
   OUT(Set_Dimensions);
   }
 
-static
-Check_Dimensions( self, node )
-  register struct treev	     *self;
-  register tree_type_node     node;
+static Check_Dimensions(struct treev *self, tree_type_node node)
   {
   long			      width, height;
   register struct tree_node  *peer;
@@ -839,11 +839,7 @@ treev__DesiredSize( self, given_width, given_height,
   return result;
   }
 
-void 
-treev__FullUpdate( self, type, left, top, width, height )
-  register struct treev	         *self;
-  register enum view_UpdateType   type;
-  register long			  left, top, width, height;
+void treev__FullUpdate(struct treev *self, enum view_UpdateType type, long left, long top, long width, long height)
   {
   IN(treev_FullUpdate);
   if ( Tree  &&  (type == view_FullRedraw || type == view_LastPartialRedraw) )
@@ -884,10 +880,7 @@ treev__FullUpdate( self, type, left, top, width, height )
   OUT(treev_FullUpdate);
   }
 
-static
-Erase_Node_Children( self, shadow_node )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
+static Erase_Node_Children(struct treev *self, struct tree_node *shadow_node)
   {
   register struct tree_node  *shadow_peer;
 
@@ -906,10 +899,7 @@ Erase_Node_Children( self, shadow_node )
   OUT(Erase_Node_Children);
   }
 
-static
-Redisplay_Node_Children( self, shadow_node )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
+static Redisplay_Node_Children(struct treev *self, struct tree_node *shadow_node)
   {
   register struct tree_node  *shadow_peer;
 
@@ -936,11 +926,7 @@ Redisplay_Node_Children( self, shadow_node )
   OUT(Redisplay_Node_Children);
   }
 
-void
-treev__ObservedChanged( self, changed, change )
-  register struct treev	     *self;
-  register struct observable *changed;
-  register long		      change;
+void treev__ObservedChanged(struct treev *self, struct observable *changed, long change)
   {
   register tree_type_node     parent, tmp_parent, node;
   register node_shadow_type   shadow;
@@ -1059,9 +1045,7 @@ treev__ObservedChanged( self, changed, change )
   OUT(treev_ObservedChanged);
   }
 
-void 
-treev__Update( self )
-  register struct treev	   *self;
+void treev__Update(struct treev *self)
   {
   IN(treev_Update);
   if ( ViewLinked && PendingUpdate )
@@ -1071,11 +1055,7 @@ treev__Update( self )
   OUT(treev_Update);
   }
 
-void
-treev__SetHitHandler( self, handler, anchor )
-  register struct treev	   *self;
-  register struct view	 *(*handler)();
-  register struct view	   *anchor;
+void treev__SetHitHandler(struct treev *self, procedure handler, struct view *anchor)
   {
   IN(treev_SetHitHandler);
   HitHandler = handler;
@@ -1083,10 +1063,7 @@ treev__SetHitHandler( self, handler, anchor )
   OUT(treev_SetHitHandler);
   }
 
-static struct tree_node *
-Which_Node_Hit( self, x, y )
-  register struct treev	      *self;
-  register long		       x, y;
+static struct tree_node * Which_Node_Hit(struct treev *self, long x, long y)
   {
   register struct tree_node   *node = NULL, *shadow_node;
   register node_shadow_type    shadow;
@@ -1108,11 +1085,7 @@ Which_Node_Hit( self, x, y )
   return  node;
   }
 
-struct view *
-treev__Hit( self, action, x, y, clicks )
-  register struct treev		  *self;
-  register enum view_MouseAction   action;
-  register long			   x, y, clicks;
+struct view * treev__Hit(struct treev *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   register struct tree_node	  *node = NULL;
   register struct view		  *hit;
@@ -1167,12 +1140,7 @@ treev__Hit( self, action, x, y, clicks )
   return  hit;
   }
 
-static
-Fill_Area( self, mode, tile, shape, left, top, width, height )
-  register struct treev	     *self;
-  register long		      mode, shape;
-  register struct graphic    *tile;
-  register long		      left, top, width, height;
+static Fill_Area(struct treev *self, long mode, struct graphic *tile, long shape, long left, long top, long width, long height)
   {
   register long		      current_mode;
 
@@ -1203,12 +1171,7 @@ Fill_Area( self, mode, tile, shape, left, top, width, height )
   OUT(Fill_Area);
   }
 
-static
-Fill_Shadow( self, shadow, mode, tile )
-  register struct treev	      *self;
-  register struct node_shadow *shadow;
-  register long		       mode;
-  register struct graphic     *tile;
+static Fill_Shadow(struct treev *self, struct node_shadow *shadow, long mode, struct graphic *tile)
   {
   register long		       offset = DropShadow * 2;
   
@@ -1218,10 +1181,7 @@ Fill_Shadow( self, shadow, mode, tile )
   OUT(Fill_Shadow);
   }
 
-static
-Clear_Shadow( self, shadow )
-  register struct treev		*self;
-  register struct node_shadow	*shadow;
+static Clear_Shadow(struct treev *self, struct node_shadow *shadow)
   {
   register long			 offset = DropShadow * 2;
   
@@ -1233,10 +1193,7 @@ Clear_Shadow( self, shadow )
   OUT(Clear_Shadow);
   }
 
-void
-treev__HighlightNode( self, node )
-  register struct treev	      *self;
-  register struct tree_node   *node;
+void treev__HighlightNode(struct treev *self, struct tree_node *node)
   {
   register struct node_shadow *shadow;
 
@@ -1254,10 +1211,7 @@ treev__HighlightNode( self, node )
   OUT(treev_HighlightNode);
   }
 
-boolean
-treev__NodeHighlighted( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+boolean treev__NodeHighlighted(struct treev *self, struct tree_node *node)
   {
   if ( ScrolledView )
     return  treev_NodeHighlighted( ScrolledView, node );
@@ -1266,10 +1220,7 @@ treev__NodeHighlighted( self, node )
       else  return false;
   }
 
-static
-Normalize_Other_Nodes( self, node_shadow )
-  register struct treev	        *self;
-  register struct node_shadow   *node_shadow;
+static Normalize_Other_Nodes(struct treev *self, struct node_shadow *node_shadow)
   {
   register struct tree_node	*shadow_node, *given_node;
   register struct node_shadow	*shadow;
@@ -1304,10 +1255,7 @@ Normalize_Other_Nodes( self, node_shadow )
   OUT(Normalize_Other_Nodes);
   }
 
-void
-treev__NormalizeNode( self, node )
-  register struct treev		 *self;
-  register struct tree_node	 *node;
+void treev__NormalizeNode(struct treev *self, struct tree_node *node)
   {
   register struct node_shadow	 *shadow;
 
@@ -1320,10 +1268,7 @@ treev__NormalizeNode( self, node )
   OUT(treev_NormalizeNode);
   }
 
-static
-Normalize_Node_Shadow( self, shadow )
-  register struct treev	      *self;
-  register struct node_shadow *shadow;
+static Normalize_Node_Shadow(struct treev *self, struct node_shadow *shadow)
   {
   register unsigned char       style = NULL;
 
@@ -1361,10 +1306,7 @@ Normalize_Node_Shadow( self, shadow )
   OUT(Normalize_Node_Shadow);
   }
 
-static
-Highlight_Node_Shadow( self, shadow )
-  register struct treev	      *self;
-  register struct node_shadow *shadow;
+static Highlight_Node_Shadow(struct treev *self, struct node_shadow *shadow)
   {
   IN(Highlight_Node_Shadow);
   if ( ShadowExposed(shadow) )
@@ -1394,10 +1336,7 @@ Highlight_Node_Shadow( self, shadow )
   OUT(Highlight_Node_Shadow);
   }
 
-static
-Footprint_Node_Shadow( self, shadow )
-  register struct treev		 *self;
-  register struct node_shadow	 *shadow;
+static Footprint_Node_Shadow(struct treev *self, struct node_shadow *shadow)
   {
   IN(Footprint_Node_Shadow);
   if ( ShadowExposed(shadow) )
@@ -1427,10 +1366,7 @@ Footprint_Node_Shadow( self, shadow )
   OUT(Footprint_Node_Shadow);
   }
 
-void
-treev__HighlightNodeCaption( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+void treev__HighlightNodeCaption(struct treev *self, struct tree_node *node)
   {
   IN(treev_HighlightNodeCaption);
   if ( node  &&  ! NodeViewObject(node) )
@@ -1440,10 +1376,7 @@ treev__HighlightNodeCaption( self, node )
   OUT(treev_HighlightNodeCaption);
   }
 
-boolean
-treev__NodeCaptionHighlighted( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+boolean treev__NodeCaptionHighlighted(struct treev *self, struct tree_node *node)
   {
   if ( node  &&  ! NodeViewObject(node) )
     {
@@ -1452,10 +1385,7 @@ treev__NodeCaptionHighlighted( self, node )
 return false;
   }
 
-void
-treev__NormalizeNodeCaption( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+void treev__NormalizeNodeCaption(struct treev *self, struct tree_node *node)
   {
   IN(treev_NormalizeNodeCaption);
   if ( node  &&  ! NodeViewObject(node) )
@@ -1465,10 +1395,7 @@ treev__NormalizeNodeCaption( self, node )
   OUT(treev_NormalizeNodeCaption);
   }
 
-void
-treev__HideNodeChildren( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+void treev__HideNodeChildren(struct treev *self, struct tree_node *node)
   {
   register struct tree_node  *shadow_node;
 
@@ -1487,10 +1414,7 @@ treev__HideNodeChildren( self, node )
   OUT(treev_HideNodeChildren);
   }
 
-static
-Hide_Node_Children( self, shadow_node )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
+static Hide_Node_Children(struct treev *self, struct tree_node *shadow_node)
   {
   register struct tree_node  *shadow_peer;
 
@@ -1510,10 +1434,7 @@ Hide_Node_Children( self, shadow_node )
   OUT(Hide_Node_Children);
   }
 
-void
-treev__ExposeNodeChildren( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+void treev__ExposeNodeChildren(struct treev *self, struct tree_node *node)
   {
   IN(treev_ExposeNodeChildren);
   if ( ScrolledView )
@@ -1527,10 +1448,7 @@ treev__ExposeNodeChildren( self, node )
   OUT(treev_ExposeNodeChildren);
   }
 
-static
-Expose_Node_Children( self, shadow_node )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
+static Expose_Node_Children(struct treev *self, struct tree_node *shadow_node)
   {
   register struct tree_node  *shadow_peer;
 
@@ -1563,10 +1481,7 @@ Expose_Node_Children( self, shadow_node )
   OUT(Expose_Node_Children);
   }
 
-boolean
-treev__NodeChildrenExposed( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+boolean treev__NodeChildrenExposed(struct treev *self, struct tree_node *node)
   {
   if ( ScrolledView )
     return  treev_NodeChildrenExposed( ScrolledView, node );
@@ -1575,10 +1490,7 @@ treev__NodeChildrenExposed( self, node )
       else  return false;
   }
 
-void
-treev__HideNode( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+void treev__HideNode(struct treev *self, struct tree_node *node)
   {
   register struct tree_node  *shadow_node;
   register struct tree_node  *parent;
@@ -1622,10 +1534,7 @@ treev__HideNode( self, node )
   OUT(treev_HideNode);
   }
 
-void
-treev__ExposeNode( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+void treev__ExposeNode(struct treev *self, struct tree_node *node)
   {
   register struct tree_node  *parent;
   register struct tree_node  *shadow_node;
@@ -1664,10 +1573,7 @@ might need to have parent hide its children, then expose them.
   OUT(treev_ExposeNode);
   }
 
-boolean
-treev__NodeExposed( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+boolean treev__NodeExposed(struct treev *self, struct tree_node *node)
   {
   if ( ScrolledView )
     return  treev_NodeExposed( ScrolledView, node );
@@ -1676,10 +1582,7 @@ treev__NodeExposed( self, node )
       else  return false;
   }
 
-void
-treev__ExplodeNode( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+void treev__ExplodeNode(struct treev *self, struct tree_node *node)
   {
   register struct tree_node  *shadow_node;
 
@@ -1700,10 +1603,7 @@ treev__ExplodeNode( self, node )
   OUT(treev_ExplodeNode);
   }
 
-void
-treev__ImplodeNode( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+void treev__ImplodeNode(struct treev *self, struct tree_node *node)
   {
   IN(treev_ImplodeNode);
   if ( ScrolledView )
@@ -1717,10 +1617,7 @@ treev__ImplodeNode( self, node )
   OUT(treev_ImplodeNode);
   }
 
-boolean
-treev__NodeExploded( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+boolean treev__NodeExploded(struct treev *self, struct tree_node *node)
   {
   if ( ScrolledView )
     return  treev_NodeExploded( ScrolledView, node );
@@ -1729,9 +1626,7 @@ treev__NodeExploded( self, node )
       else  return false;
   }
 
-static
-Printer( self )
-  register struct treev	     *self;
+static Printer(struct treev *self)
   {
   IN(Printer);
   treev_SetPrintOrigin( self, Left, Top );
@@ -1740,10 +1635,7 @@ Printer( self )
   OUT(Printer);
   }
 
-static
-Print_Tree( self, shadow_node )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
+static Print_Tree(struct treev *self, struct tree_node *shadow_node)
   {
   register struct node_shadow *shadow, *parent_shadow = NULL;
   register struct tree_node   *shadow_parent, *shadow_peer;
@@ -1793,10 +1685,7 @@ Print_Tree( self, shadow_node )
   OUT(Print_Tree);
   }
 
-static
-Print_Node_Border( self, shadow )
-  register struct treev	      *self;
-  register struct node_shadow *shadow;
+static Print_Node_Border(struct treev *self, struct node_shadow *shadow)
   {
   IN(Print_Node_Border);
   switch ( NodeBorderStyle )
@@ -1834,10 +1723,7 @@ Print_Node_Border( self, shadow )
   OUT(Print_Node_Border);
   }
 
-static
-Print_Node_Connector( self, shadow, parent_shadow )
-  register struct treev	      *self;
-  register struct node_shadow *shadow, *parent_shadow;
+static Print_Node_Connector(struct treev *self, struct node_shadow *shadow, struct node_shadow *parent_shadow)
   {
   IN(Print_Node_Connector);
   if ( !ShadowFolded(shadow)  &&  !ShadowFolded(parent_shadow) )
@@ -1884,13 +1770,7 @@ Print_Node_Connector( self, shadow, parent_shadow )
   OUT(Print_Node_Connector);
   }
 
-void
-treev__Print( self, file, processor, format, level )
-  register struct treev	     *self;
-  register FILE		     *file;
-  register char		     *processor;
-  register char		     *format;
-  register boolean	      level;
+void treev__Print(struct treev *self, FILE *file, char *processor, char *format, boolean level)
   {
   static struct aptv_print_stream   *print_stream;
 
@@ -1911,9 +1791,7 @@ treev__Print( self, file, processor, format, level )
   OUT(treev_Print);
   }
 
-struct view *
-treev__GetApplicationLayer( self )
-  register struct treev	     *self;
+struct view * treev__GetApplicationLayer(struct treev *self)
   {
   register struct scroll     *view;
   register long		      mode = NULL;
@@ -1937,10 +1815,7 @@ static struct scrollfns		      vertical_scroll_interface =
 static struct scrollfns		      horizontal_scroll_interface =
 		{ x_getinfo, x_setframe, x_endzone, x_whatisat };
 
-struct scrollfns *
-treev__GetInterface( self, interface_name )
-  register struct treev	     *self;
-  register char		     *interface_name;
+struct scrollfns * treev__GetInterface(struct treev *self, char *interface_name)
   {
   register struct scrollfns  *interface = NULL;
 
@@ -1957,10 +1832,7 @@ treev__GetInterface( self, interface_name )
   return  interface;
   }
 
-static void
-y_getinfo( self, total, seen, dot )
-  register struct treev	     *self;
-  register struct range	     *total, *seen, *dot;
+static void y_getinfo(struct treev *self, struct range *total, struct range *seen, struct range *dot)
   {
   register long		      extent = GreatestRow * RowHeight;
 /* debug=1; */
@@ -1977,10 +1849,7 @@ y_getinfo( self, total, seen, dot )
 /* debug=0; */
   }
 
-static long
-y_whatisat( self, pos, outof )
-  register struct treev	     *self;
-  register long		      pos, outof;
+static long y_whatisat(struct treev *self, long pos, long outof)
   {
   register long		      value, coord;
 /* debug=1; */
@@ -1997,11 +1866,7 @@ y_whatisat( self, pos, outof )
   return  value;
   }
 
-static void
-y_setframe( self, place, pos, outof )
-  register struct treev	     *self;
-  register int		      place;
-  register long		      pos, outof;
+static void y_setframe(struct treev *self, int place, long pos, long outof)
   {
 /* debug=1; */
   IN(y_setframe);
@@ -2016,10 +1881,7 @@ y_setframe( self, place, pos, outof )
 /* debug=0; */
   }
 
-static void
-y_endzone( self, zone, action )
-  register struct treev	     *self;
-  register int		      zone, action;
+static void y_endzone(struct treev *self, int zone, int action)
   {
   register long		      nrows, proposed_offset;
 /* debug=1; */
@@ -2047,10 +1909,7 @@ y_endzone( self, zone, action )
 
 /* HorizontalOffset will be positive to center image */
 
-static void
-x_getinfo( self, total, seen, dot )
-  register struct treev	     *self;
-  register struct range	     *total, *seen, *dot;
+static void x_getinfo(struct treev *self, struct range *total, struct range *seen, struct range *dot)
   {
   register long		      extent = GreatestColumn * ColumnWidth;
 /*debug=1;*/
@@ -2067,10 +1926,7 @@ x_getinfo( self, total, seen, dot )
 /*debug=0;*/
   }
 
-static long
-x_whatisat( self, pos, outof )
-  register struct treev	     *self;
-  register long		      pos, outof;
+static long x_whatisat(struct treev *self, long pos, long outof)
   {
   register long		      value, coord, extent = GreatestColumn * ColumnWidth;
 /*debug=1;*/
@@ -2087,10 +1943,7 @@ x_whatisat( self, pos, outof )
   return value;
   }
 
-static void
-x_setframe( self, place, pos, outof )
-  register struct treev	     *self;
-  register long		      place, pos, outof;
+static void x_setframe(struct treev *self, long place, long pos, long outof)
   {
   register long		      delta, ncols, extent = GreatestColumn * ColumnWidth;
 /*debug=1;*/
@@ -2107,10 +1960,7 @@ x_setframe( self, place, pos, outof )
 /*debug=0;*/
   }
 
-static void
-x_endzone( self, zone, action )
-  register struct treev	     *self;
-  register long		      zone, action;
+static void x_endzone(struct treev *self, long zone, long action)
   {
   register long		      proposed_offset, ncols;
 /*debug=1;*/
@@ -2136,11 +1986,7 @@ x_endzone( self, zone, action )
 /*debug=0;*/
   }
 
-static
-Arrange_Tree( self, shadow_node, left, top, width, height )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
-  register long		      left, top, width, height;
+static Arrange_Tree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height)
   {
   IN(Arrange_Tree);
   if ( VerticalArrangement )
@@ -2150,11 +1996,7 @@ Arrange_Tree( self, shadow_node, left, top, width, height )
   OUT(Arrange_Tree);
   }
 
-static
-Arrange_Horizontal_Tree( self, shadow_node, left, top, width, height )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
-  register long		      left, top, width, height;
+static Arrange_Horizontal_Tree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height)
   {
   register boolean	      folded = false;
   register long		      L = left, T = top, top_offset,
@@ -2242,11 +2084,7 @@ Arrange_Horizontal_Tree( self, shadow_node, left, top, width, height )
   OUT(Arrange_Horizontal_Tree);
   }
 
-static
-Arrange_Vertical_Tree( self, shadow_node, left, top, width, height )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
-  register long		      left, top, width, height;
+static Arrange_Vertical_Tree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height)
   {
   register boolean	      folded = false;
   register long		      L = left, T = top, left_offset,
@@ -2334,11 +2172,7 @@ Arrange_Vertical_Tree( self, shadow_node, left, top, width, height )
   OUT(Arrange_Vertical_Tree);
   }
 
-static
-Arrange_Exploded_Tree( self, shadow_node, left, top, width, height )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
-  register long		      left, top, width, height;
+static Arrange_Exploded_Tree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height)
   {
   if ( VerticalArrangement )
     Arrange_Vertical_Exploded_Tree( self, shadow_node, left, top, width, height );
@@ -2346,10 +2180,7 @@ Arrange_Exploded_Tree( self, shadow_node, left, top, width, height )
     Arrange_Horizontal_Exploded_Tree( self, shadow_node, left, top, width, height );
   }
 
-static long
-Compute_Horizontal_Exploded_SubTree_Heights( self, shadow_node )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
+static long Compute_Horizontal_Exploded_SubTree_Heights(struct treev *self, struct tree_node *shadow_node)
   {
   register struct tree_node  *shadow_peer;
   register struct node_shadow *shadow;
@@ -2370,11 +2201,7 @@ Compute_Horizontal_Exploded_SubTree_Heights( self, shadow_node )
   return  height;
   }
 
-static
-Arrange_Horizontal_Exploded_Tree( self, shadow_node, left, top, width, height )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
-  register long		      left, top, width, height;
+static Arrange_Horizontal_Exploded_Tree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height)
   {
   register long		      sub_height;
 
@@ -2389,11 +2216,7 @@ Arrange_Horizontal_Exploded_Tree( self, shadow_node, left, top, width, height )
   OUT(Arrange_Horizontal_Exploded_Tree);
   }
 
-static
-Arrange_Horizontal_Exploded_SubTree( self, shadow_node, left, top, width, height )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
-  register long		      left, top, width, height;
+static Arrange_Horizontal_Exploded_SubTree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height)
   {
   register struct node_shadow *shadow;
   register struct tree_node  *shadow_peer;
@@ -2421,10 +2244,7 @@ Arrange_Horizontal_Exploded_SubTree( self, shadow_node, left, top, width, height
   OUT(Arrange_Horizontal_Exploded_SubTree);
   }
 
-static long
-Compute_Vertical_Exploded_SubTree_Widths( self, shadow_node )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
+static long Compute_Vertical_Exploded_SubTree_Widths(struct treev *self, struct tree_node *shadow_node)
   {
   register struct tree_node  *shadow_peer;
   register struct node_shadow *shadow;
@@ -2445,11 +2265,7 @@ Compute_Vertical_Exploded_SubTree_Widths( self, shadow_node )
   return  width;
   }
 
-static
-Arrange_Vertical_Exploded_Tree( self, shadow_node, left, top, width, height )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
-  register long		      left, top, width, height;
+static Arrange_Vertical_Exploded_Tree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height)
   {
   register long		      sub_width;
 
@@ -2464,11 +2280,7 @@ Arrange_Vertical_Exploded_Tree( self, shadow_node, left, top, width, height )
   OUT(Arrange_Vertical_Exploded_Tree);
   }
 
-static
-Arrange_Vertical_Exploded_SubTree( self, shadow_node, left, top, width, height )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
-  register long		      left, top, width, height;
+static Arrange_Vertical_Exploded_SubTree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height)
   {
   register struct node_shadow *shadow;
   register struct tree_node  *shadow_peer;
@@ -2495,11 +2307,7 @@ Arrange_Vertical_Exploded_SubTree( self, shadow_node, left, top, width, height )
   OUT(Arrange_Vertical_Exploded_SubTree);
   }
 
-static
-Mark_Child_Exposure( self, shadow_node, state, recursive )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
-  register boolean	      state, recursive;
+static Mark_Child_Exposure(struct treev *self, struct tree_node *shadow_node, boolean state, boolean recursive)
   {
   register struct tree_node  *shadow_peer = ChildNode(shadow_node);
   register struct node_shadow *shadow = ShadowNodeDatum(shadow_node);
@@ -2524,10 +2332,7 @@ Mark_Child_Exposure( self, shadow_node, state, recursive )
   OUT(Mark_Child_Exposure);
   }
 
-static
-Draw_Tree( self, shadow_node )
-  register struct treev	     *self;
-  register struct tree_node  *shadow_node;
+static Draw_Tree(struct treev *self, struct tree_node *shadow_node)
   {
   register struct node_shadow *shadow, *parent_shadow = NULL;
   register struct tree_node   *shadow_parent, *shadow_peer;
@@ -2596,9 +2401,7 @@ Draw_Tree( self, shadow_node )
   OUT(Draw_Tree);
   }
 
-static
-Draw_Background( self )
-  register struct treev	     *self;
+static Draw_Background(struct treev *self)
   {
   register long		      left, top, width, height;
 
@@ -2638,9 +2441,7 @@ Draw_Background( self )
   OUT(Draw_Background);
   }
 
-static
-Fill_Background( self )
-  register struct treev	     *self;
+static Fill_Background(struct treev *self)
   {
   if ( BackgroundShade )
     {
@@ -2660,11 +2461,7 @@ Fill_Background( self )
     }
   }
 
-static
-Draw_Node_Caption( self, shadow, halo )
-  register struct treev	      *self;
-  register struct node_shadow *shadow;
-  register boolean	       halo;
+static Draw_Node_Caption(struct treev *self, struct node_shadow *shadow, boolean halo)
   {
   register short	       i, j;
 
@@ -2688,10 +2485,7 @@ Draw_Node_Caption( self, shadow, halo )
   OUT(Draw_Node_Caption);
   }
 
-static
-Draw_Node_Title( self, shadow )
-  register struct treev	      *self;
-  register struct node_shadow *shadow;
+static Draw_Node_Title(struct treev *self, struct node_shadow *shadow)
   {
   IN(Draw_Node_Title);
   if ( NodeTitle(ShadowedNode(shadow)) )
@@ -2702,10 +2496,7 @@ Draw_Node_Title( self, shadow )
   OUT(Draw_Node_Title);
   }
 
-static
-Draw_Node_Border( self, shadow )
-  register struct treev	      *self;
-  register struct node_shadow *shadow;
+static Draw_Node_Border(struct treev *self, struct node_shadow *shadow)
   {
   IN(Draw_Node_Border);
   switch ( NodeBorderStyle )
@@ -2750,10 +2541,7 @@ Draw_Node_Border( self, shadow )
   OUT(Draw_Node_Border);
   }
 
-static
-Draw_Node_Connector( self, shadow, parent_shadow )
-  register struct treev	      *self;
-  register struct node_shadow *shadow, *parent_shadow;
+static Draw_Node_Connector(struct treev *self, struct node_shadow *shadow, struct node_shadow *parent_shadow)
   {
   IN(Draw_Node_Connector);
   if ( !ShadowFolded(shadow)  &&  !ShadowFolded(parent_shadow) )
@@ -2795,10 +2583,7 @@ Draw_Node_Connector( self, shadow, parent_shadow )
   OUT(Draw_Node_Connector);
   }
 
-static struct node_shadow *
-Node_Shadow( self, node )   /*=== might want to optimize !!! ===*/
-  register struct treev	     *self;
-  register struct tree_node  *node;
+static struct node_shadow * Node_Shadow(struct treev *self, struct tree_node *node)
   {
   register struct tree_node  *candidate;
   register struct node_shadow *shadow = NULL, *shadow_candidate;
@@ -2823,10 +2608,7 @@ Node_Shadow( self, node )   /*=== might want to optimize !!! ===*/
   return  shadow;
   }
 
-tree_type_node
-Node_Shadow_Node( self, node )   /*=== might want to optimize !!! ===*/
-  register struct treev	     *self;
-  register struct tree_node  *node;
+tree_type_node Node_Shadow_Node(struct treev *self, struct tree_node *node)
   {
   register struct tree_node  *candidate, *shadow_node = NULL;
   register struct node_shadow *shadow = NULL;
@@ -2851,9 +2633,7 @@ Node_Shadow_Node( self, node )   /*=== might want to optimize !!! ===*/
   return  shadow_node;
   }
 
-static struct node_shadow *
-Create_Shadow( self )
-  register struct treev	      *self;
+static struct node_shadow * Create_Shadow(struct treev *self)
   {
   register struct node_shadow *shadow;
 
@@ -2866,10 +2646,7 @@ Create_Shadow( self )
   return  shadow;
   }
 
-static
-Generate_Shadows( self, node )
-  register struct treev	      *self;
-  register struct tree_node   *node;
+static Generate_Shadows(struct treev *self, struct tree_node *node)
   {
   register long		       status = ok;
   register struct node_shadow *shadow = NULL;
@@ -2915,10 +2692,7 @@ Generate_Shadows( self, node )
   return  status;
   }
 
-static
-Generate_Children_Shadows( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+static Generate_Children_Shadows(struct treev *self, struct tree_node *node)
   {
   register long		      status = ok, i, current_level, node_level, start_level;
   register struct node_shadow *shadow = NULL;
@@ -2963,10 +2737,7 @@ Generate_Children_Shadows( self, node )
   return  status;
   }
 
-static
-Destroy_Shadows( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+static Destroy_Shadows(struct treev *self, struct tree_node *node)
   {
   register struct tree_node  *shadow_node;
 
@@ -2985,10 +2756,7 @@ Destroy_Shadows( self, node )
   OUT(Destroy_Shadows);
   }
 
-static
-Destroy_Children_Shadows( self, node )
-  register struct treev	     *self;
-  register struct tree_node  *node;
+static Destroy_Children_Shadows(struct treev *self, struct tree_node *node)
   {
   register struct tree_node  *shadow_node, *next;
   register long		      level;
@@ -3013,9 +2781,7 @@ Destroy_Children_Shadows( self, node )
   OUT(Destroy_Children_Shadows);
   }
 
-static
-Dump_Trees( self )
-  register struct treev	     *self;
+static Dump_Trees(struct treev *self)
   {
   register struct tree_node  *node;
 
@@ -3043,10 +2809,7 @@ Dump_Trees( self )
   OUT(Dump_Trees);
   }
 
-void
-treev__LinkTree(self, parent)
-    struct treev *self;
-    struct view *parent;
+void treev__LinkTree(struct treev *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if(ScrollView) {
@@ -3058,9 +2821,7 @@ treev__LinkTree(self, parent)
     }
 }
 
-void
-treev__UnlinkTree(self)
-    struct treev *self;
+void treev__UnlinkTree(struct treev *self)
 {
     super_UnlinkTree(self);
     if(ScrollView) {

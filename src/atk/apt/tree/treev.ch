@@ -85,7 +85,7 @@ methods:
   SetTreeAttribute( long attribute_code, long attribute_value )	returns long;
   TreeAttribute( long attribute_code )				returns long;
   CurrentNode()							returns struct tree_node *;
-  SetHitHandler( (long *handler)(), char *anchor );
+  SetHitHandler( procedure handler, struct view *anchor );
   SetDebug( boolean state );
 
   /**  Methods Dealing with Individual Nodes  **/
@@ -110,7 +110,7 @@ macromethods:
 
 classprocedures:
 
-  Create( treev_Specification, struct view *anchor )		returns struct treev *;
+  Create( treev_Specification *specification, struct view *anchor )		returns struct treev *;
   InitializeObject( struct treev *self )			returns boolean;
   FinalizeObject( struct treev *self );
 

@@ -95,10 +95,7 @@ static struct symbol recognizer[] = {
 	return table->n for the successful table entry
 	if none found, return the table entry for NULL
 */
-	static int
-lookup(sx, ex, table)
-	char *sx, *ex;
-	struct symbol *table;
+static int lookup(char *sx, char *ex, struct symbol *table)
 {
 	for ( ; table->s; table++)
 		if (strncmp(sx, table->s, ex-sx) == 0)
@@ -116,10 +113,7 @@ lookup(sx, ex, table)
 		this works for C code, but not tlex stuff)
 	at eof, sets *InputBuffer = '\0'
 */
-	static void
-GetLine(f, deblank)
-	FILE *f;
-	boolean deblank;
+static void GetLine(FILE *f, boolean deblank)
 {
 	while (TRUE) {
 		/* increment LineNo if reached the end of the previous line */
@@ -158,9 +152,7 @@ GetLine(f, deblank)
 	Returns the list.
 	The InputBuffer is left containing the next input line.
 */
-	struct line *
-parseClines(f)
-	FILE *f;
+struct line * parseClines(FILE *f)
 {
 	int firstindent;	/* indent of first line */
 	char *cx;
@@ -211,10 +203,7 @@ Line types:
 	Elt	- any other line is parsed to: type, var, value
 	C	- parseClines
 */
-	boolean
-ParseLine(fin, hdr)
-	FILE *fin;
-	struct line *hdr;
+boolean ParseLine(FILE *fin, struct line *hdr)
 {
 	char *bx, *kx;
 	struct line *v;
@@ -433,9 +422,7 @@ ParseLine(fin, hdr)
 		set recognizer to tlex_RESWD 
 		(process further in defaults.c)
 */
-	static void 
-ParseTokenClass(f)
-	FILE *f;
+static void ParseTokenClass(FILE *f)
 {
 	struct line *hdr;
 	char *bx;
@@ -534,9 +521,7 @@ ParseTokenClass(f)
 	hdr->u.h.action = 0;
 }
 
-	void
-ReadTlx(f)
-	FILE *f;
+void ReadTlx(FILE *f)
 {
 	LineNo = 0;
 	InputText = InputBuffer;

@@ -109,9 +109,7 @@ struct lengthPair {
 static struct view *PopToMark();
 static void resetErrors();
 
-static boolean SetDotToEnd(applicationView, targetView, inputFocus, lengths)
-    struct view *applicationView, *targetView, *inputFocus;
-    struct lengthPair *lengths;
+static boolean SetDotToEnd(struct view *applicationView, struct view *targetView, struct view *inputFocus, struct lengthPair *lengths)
 {
 
     if (class_IsType(targetView, class_Load("textview"))) {
@@ -126,11 +124,7 @@ static boolean SetDotToEnd(applicationView, targetView, inputFocus, lengths)
     return FALSE; /* Keep on enumerating. */
 }
 
-static void InsertMessage(buffer, pos, string, len)
-    struct buffer *buffer;
-    long pos;
-    char *string;
-    long len;
+static void InsertMessage(struct buffer *buffer, long pos, char *string, long len)
 {
 
     struct environment *tempEnv;
@@ -165,9 +159,7 @@ struct processbuffer {
     struct buffer *buffer;
 };
 
-static struct process *StartProcess(command, inputFile, outputFile)
-    char *command;
-    FILE **inputFile, **outputFile;
+static struct process * StartProcess(char *command, FILE **inputFile, FILE **outputFile)
 {
 
     int inpipe[2], outpipe[2], pid;
@@ -230,8 +222,7 @@ static struct process *StartProcess(command, inputFile, outputFile)
 }
 
 /* Kills process with terminate signal. Trys to cleanup everything. */
-static int FinishProcess(process)
-    struct process *process;
+static int FinishProcess(struct process *process)
 {
 
     if (process->pid > 0) /* If we have a process running. */
@@ -254,9 +245,7 @@ static char *defaultCommand;
 static char *compileCommand;
 
 /* Starts a process dumping output into a buffer. */
-static struct buffer *MakeCommandBuffer(command, buffername, handler)
-    char *command, *buffername;
-    int (*handler)();
+static struct buffer * MakeCommandBuffer(char *command, char *buffername, int (*handler)())
 {
 
     struct text *commandLogDoc;
@@ -292,9 +281,7 @@ static struct buffer *MakeCommandBuffer(command, buffername, handler)
         return NULL;
 }
 
-static void compile_BuildHandler(inputFile, processBuffer)
-    FILE *inputFile;
-    struct processbuffer *processBuffer;
+static void compile_BuildHandler(FILE *inputFile, struct processbuffer *processBuffer)
 {
 
     char buffer[BUFSIZ];
@@ -321,9 +308,7 @@ static void compile_BuildHandler(inputFile, processBuffer)
     }
 }
 
-static void compile_KillBuild(view, key)
-    struct view *view;
-    long key;
+static void compile_KillBuild(struct view *view, long key)
 {
 
     if (currentProcess != NULL) {
@@ -357,8 +342,7 @@ static void compile_KillBuild(view, key)
         message_DisplayString(view, 0, "You don't have a subprocess to kill (or stop).");
 }
 
-static void compile_SetCommand(command)
-    char *command;
+static void compile_SetCommand(char *command)
 {
 
     if (compileCommand != defaultCommand)
@@ -371,9 +355,7 @@ static void compile_SetCommand(command)
     strcpy(compileCommand, command);
 }
 
-static boolean SaveModifiedBuffer(buffer, messageView)
-    struct buffer *buffer;
-    struct view *messageView;
+static boolean SaveModifiedBuffer(struct buffer *buffer, struct view *messageView)
 {
 
     if ((buffer_GetWriteVersion(buffer) < dataobject_GetModified(buffer_GetData(buffer))) && (buffer_GetFilename(buffer) != NULL))
@@ -402,8 +384,7 @@ static boolean SaveModifiedBuffer(buffer, messageView)
 }
 
 /* Save all modified buffers giving appropriate user feedback... */
-static boolean SaveAllBuffers(view)
-    struct view *view;
+static boolean SaveAllBuffers(struct view *view)
 {
 
     return (buffer_Enumerate(SaveModifiedBuffer, view) == NULL);
@@ -411,9 +392,7 @@ static boolean SaveAllBuffers(view)
 
 static struct view *PutInAnotherWindow();
 
-static void compile_Build(view, key)
-    struct view *view;
-    long key;
+static void compile_Build(struct view *view, long key)
 {
 
     char buffer[BUFSIZ];
@@ -511,9 +490,7 @@ static void resetErrors()
     lastParsedLink = &allErrors;
 }
 
-static int getlinepos(doc, line)
-    register struct text *doc;
-    int line;
+static int getlinepos(struct text *doc, int line)
 {
 
     register int pos, len, i = 1;
@@ -525,9 +502,7 @@ static int getlinepos(doc, line)
     return pos;
 }
 
-static long nextlinepos(doc, pos)
-    register struct text *doc;
-    register long pos;
+static long nextlinepos(struct text *doc, long pos)
 {
 
     register int tempChar;
@@ -540,11 +515,7 @@ static long nextlinepos(doc, pos)
 }
 
  /* "foo.c".*line.*123:... */
-static int ParseCCError(doc, startPos, fileName, maxSize)
-    struct text *doc;
-    long *startPos;
-    char *fileName;
-    int maxSize;
+static int ParseCCError(struct text *doc, long *startPos, char *fileName, int maxSize)
 {
 
     long docPos = *startPos, currentChar;
@@ -579,11 +550,7 @@ static int ParseCCError(doc, startPos, fileName, maxSize)
 }
 
 /* foo.c:123:... */
-static int ParseEgrepError(doc, startPos, fileName, maxSize)
-    struct text *doc;
-    long *startPos;
-    char *fileName;
-    int maxSize;
+static int ParseEgrepError(struct text *doc, long *startPos, char *fileName, int maxSize)
 {
 
     long docPos = *startPos, currentChar;
@@ -613,11 +580,7 @@ static int ParseEgrepError(doc, startPos, fileName, maxSize)
 #ifdef SGI_4D_ENV
 
 /* ccom: Error: file.c, line 123:... */
-static int ParseSGIError(doc, startPos, fileName, maxSize)
-    struct text *doc;
-    long *startPos;
-    char *fileName;
-    int maxSize;
+static int ParseSGIError(struct text *doc, long *startPos, char *fileName, int maxSize)
 {
     long docPos = *startPos, currentChar;
     long lineNumber;
@@ -674,11 +637,7 @@ static int ParseSGIError(doc, startPos, fileName, maxSize)
 #endif /* SGI_4D_ENV */
 
 /* <'E' or 'w'> "foo.c", L<line>,<character>... */
-static int ParseHCError(doc, startPos, fileName, maxSize)
-    struct text *doc;
-    long *startPos;
-    char *fileName;
-    int maxSize;
+static int ParseHCError(struct text *doc, long *startPos, char *fileName, int maxSize)
 {
 
     long docPos = *startPos, currentChar;
@@ -707,11 +666,7 @@ static int ParseHCError(doc, startPos, fileName, maxSize)
     return -1;
 }
 
-static int ParseCD(doc, startPos, directory, maxSize)
-    struct text *doc;
-    long *startPos;
-    char *directory;
-    int maxSize;
+static int ParseCD(struct text *doc, long *startPos, char *directory, int maxSize)
 {
 
     char *origDirectory = directory;
@@ -732,11 +687,7 @@ static int ParseCD(doc, startPos, directory, maxSize)
 }
 
 /* Parse input file text into line number and filename (or cd command). */
-static int ParseEntry(buffer, doc, startPos, maxSize)
-    char *buffer;
-    struct text *doc;
-    long *startPos;
-    int maxSize;
+static int ParseEntry(char *buffer, struct text *doc, long *startPos, int maxSize)
 {
 
     int line;
@@ -760,8 +711,7 @@ static int ParseEntry(buffer, doc, startPos, maxSize)
 }
 
 
-static struct errorList *MakeErrorList(errorBuffer)
-    struct buffer *errorBuffer;
+static struct errorList * MakeErrorList(struct buffer *errorBuffer)
 {
 
     long searchPos, startPos, lineNumber, lastLine = -1;
@@ -844,9 +794,7 @@ static struct errorList *MakeErrorList(errorBuffer)
 }
 
 /* Pop to the next set of marks on the error list. */
-static compile_NextError(view, key)
-    struct view *view;
-    int key;
+static compile_NextError(struct view *view, int key)
 {
 
     if (currentError != NULL)
@@ -877,9 +825,7 @@ static compile_NextError(view, key)
 }
 
 /* Pop to the previous set of marks on the error list. */
-static compile_PreviousError(view, key)
-    struct view *view;
-    int key;
+static compile_PreviousError(struct view *view, int key)
 {
 
     if (currentError == NULL) {
@@ -914,9 +860,7 @@ struct finderInfo {
     struct buffer *myBuffer;
 };
 
-static boolean FrameFinder(frame, info)
-    struct frame *frame;
-    struct finderInfo *info;
+static boolean FrameFinder(struct frame *frame, struct finderInfo *info)
 {
 
     struct rectangle bogus;
@@ -938,9 +882,7 @@ static boolean FrameFinder(frame, info)
     return FALSE;
 }
 
-static ViewEqual(frame, view)
-    struct frame *frame;
-    struct view *view;
+static ViewEqual(struct frame *frame, struct view *view)
 {
 
 #if 1
@@ -950,18 +892,14 @@ static ViewEqual(frame, view)
 #endif /* 1 */
 }
 
-static struct frame *FindByView(view)
-    struct view *view;
+static struct frame * FindByView(struct view *view)
 {
 
     return frame_Enumerate(ViewEqual, view);
 }
 
 /* Find a window other that the one that contains this inset.  Create one if we have to. */
-static struct view *PutInAnotherWindow(view, buffer, forceWindow)
-    struct view *view;
-    struct buffer *buffer;
-    int forceWindow;
+static struct view * PutInAnotherWindow(struct view *view, struct buffer *buffer, int forceWindow)
 {
 
     boolean FrameFinder();
@@ -1006,10 +944,7 @@ static struct view *PutInAnotherWindow(view, buffer, forceWindow)
  * Takes a mark, a flag and a window. The flag says whether to use the window,
  * or to not use the window if this mark's buffer is not already displayed.
  */
-static struct view *PopToMark(mark, useWindowFlag, textview)
-    struct mark *mark;
-    int useWindowFlag;
-    struct textview *textview;
+static struct view * PopToMark(struct mark *mark, int useWindowFlag, struct textview *textview)
 {
 
     struct buffer *buffer = buffer_FindBufferByData(mark->object);
@@ -1036,8 +971,7 @@ static struct view *PopToMark(mark, useWindowFlag, textview)
     return (struct view *) textview;
 }
 
-boolean compile__InitializeClass(classID)
-    struct classheader *classID;
+boolean compile__InitializeClass(struct classheader *classID)
 {
 
     struct classinfo *textviewType = class_Load("textview");

@@ -72,8 +72,8 @@ methods:
 
   SetTreeAttribute( long attribute_code, long attribute_value )	returns long;
   TreeAttribute( long attribute_code )				returns long;
-  TreeWidth()							returns long;
-  TreeHeight()							returns long;
+  TreeWidth(tree_type_node node)					returns long;
+  TreeHeight(tree_type_node node)				returns long;
   SetTreeModified( boolean state );
   TreeModified()						returns boolean;
   SetDebug( boolean state );

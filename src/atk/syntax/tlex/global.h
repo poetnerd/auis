@@ -143,7 +143,7 @@ void ComputeDefaults();
 void WriteTlc();
 
 /* thongs.c */
-struct line *ThongAdd();
+struct line *ThongAdd(char *thong, struct line *action, boolean fromset);
 void ThongReplaceNulls();
 void ThongOut();
 int ThongAction();

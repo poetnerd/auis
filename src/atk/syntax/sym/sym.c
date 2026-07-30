@@ -60,6 +60,11 @@ static char *rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/syn
 #include <sym.eh>
 
 #include <andrewos.h>
+static long hash();
+static void insert();
+static void removeScopeFromScopes();
+static void resizeArray();
+static void resizeTable();
 
 /*****************************************************************************\
  *
@@ -105,9 +110,7 @@ static long *tableSize;
  *
 \*****************************************************************************/
 
-static long
-hash(name)
-unsigned char *name;
+static long hash(unsigned char *name)
 {
     register unsigned long val;
     register unsigned char *pos;
@@ -118,11 +121,7 @@ unsigned char *name;
     return val % *tableSize;
 }
 
-static struct sym**
-lookup(name, scope, found)
-char *name;
-long scope;
-boolean *found;
+static struct sym** lookup(char *name, long scope, boolean *found)
 {
     register struct sym **s, **start = table+hash(name);
 
@@ -148,11 +147,7 @@ boolean *found;
     return s;
 }
 
-static struct sym**
-lookupInScope(name, scope, found)
-char *name;
-long scope;
-boolean *found;
+static struct sym** lookupInScope(char *name, long scope, boolean *found)
 {
     register struct sym **s;
 
@@ -174,9 +169,7 @@ boolean *found;
     return s;
 }
 
-static void
-insert(self)
-struct sym *self;
+static void insert(struct sym *self)
 {
     boolean found;
     struct sym** loc = lookupInScope(self->name, self->scope, &found);
@@ -211,9 +204,7 @@ resizeTable()
     free(old);
 }
 
-static void
-resizeArray(a, from, to)
-long **a, from, to;
+static void resizeArray(long **a, long from, long to)
 {
     long *new = (long*) malloc(sizeof(long) * to);
     long i;
@@ -227,9 +218,7 @@ long **a, from, to;
     *a = new;
 }
 
-static void
-removeScopeFromScopes(scope)
-sym_ScopeType scope;
+static void removeScopeFromScopes(sym_ScopeType scope)
 {
     register long i;
  
@@ -248,10 +237,7 @@ sym_ScopeType scope;
  *
 \*****************************************************************************/
 
-sym_ScopeType
-sym__NewScope(ClassID, scope)
-struct classhdr *ClassID;
-sym_ScopeType scope;
+sym_ScopeType sym__NewScope(struct classheader *ClassID, sym_ScopeType scope)
 {
     long new = nextFreeScope;
 
@@ -269,10 +255,7 @@ sym_ScopeType scope;
     return new;
 }
 
-void
-sym__DestroyScope(ClassID, scope)
-struct classhdr *ClassID;
-sym_ScopeType scope;
+void sym__DestroyScope(struct classheader *ClassID, sym_ScopeType scope)
 {
     register long i, s;
     register struct sym **pos;
@@ -296,21 +279,13 @@ sym_ScopeType scope;
     removeScopeFromScopes(scope);
 }
 
-sym_ScopeType
-sym__ParentScope(ClassID, scope)
-struct classhdr *ClassID;
-sym_ScopeType scope;
+sym_ScopeType sym__ParentScope(struct classheader *ClassID, sym_ScopeType scope)
 {
 	return enclosingScope[scope];
 }
 
 
-struct sym*
-sym__Define(ClassID, name, proto, scope)
-struct classhdr *ClassID;
-char *name;
-struct sym *proto;
-sym_ScopeType scope;
+struct sym* sym__Define(struct classheader *ClassID, char *name, struct sym *proto, sym_ScopeType scope)
 {
     boolean found;
     struct sym *newSym, **loc;
@@ -338,11 +313,7 @@ sym_ScopeType scope;
 }
 
 
-boolean
-sym__Undefine(ClassID, name, scope)
-struct classhdr *ClassID;
-char *name;
-sym_ScopeType scope;
+boolean sym__Undefine(struct classheader *ClassID, char *name, sym_ScopeType scope)
 {
     boolean found;
     struct sym **loc = lookupInScope(name, scope, &found);
@@ -361,11 +332,7 @@ sym_ScopeType scope;
 }
 
 
-struct sym*
-sym__Find(ClassID, name, scope)
-struct classhdr *ClassID;
-char *name;
-sym_ScopeType scope;
+struct sym* sym__Find(struct classheader *ClassID, char *name, sym_ScopeType scope)
 {
     boolean found;
     struct sym **loc = lookup(name, scope, &found);
@@ -376,13 +343,7 @@ sym_ScopeType scope;
 	return NULL;
 }
 
-struct sym*
-sym__Locate(ClassID, name, proto, scope, new)
-struct classhdr *ClassID;
-char *name;
-struct sym *proto;
-sym_ScopeType scope;
-boolean *new;
+struct sym* sym__Locate(struct classheader *ClassID, char *name, struct sym *proto, sym_ScopeType scope, boolean *new)
 {
     boolean found;
     struct sym *newSym, **loc;
@@ -410,13 +371,7 @@ boolean *new;
     }
 }
 
-long
-sym__FindAll(ClassID, name, scope, proc, rock)
-struct classhdr *ClassID;
-char *name;
-sym_ScopeType scope;
-long (*proc)();
-long *rock;
+long sym__FindAll(struct classheader *ClassID, char *name, sym_ScopeType scope, long (*proc) (), long *rock)
 {
     register long i, s;
     register struct sym **pos;
@@ -437,9 +392,7 @@ long *rock;
 }
 
 
-boolean
-sym__InitializeClass(ClassID)
-struct classhdr *ClassID;
+boolean sym__InitializeClass(struct classheader *ClassID)
 {
     long i;
 
@@ -461,10 +414,7 @@ struct classhdr *ClassID;
 }
 
 
-boolean
-sym__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-struct sym *self;
+boolean sym__InitializeObject(struct classheader *ClassID, struct sym *self)
 {
     self->name = NULL;
     self->next = NULL;
@@ -473,10 +423,7 @@ struct sym *self;
     return TRUE;
 }
 
-void
-sym__FinalizeObject(ClassID, self)
-struct classhdr *ClassID;
-struct sym *self;
+void sym__FinalizeObject(struct classheader *ClassID, struct sym *self)
 {
     if(self->name) {
 	free(self->name);
@@ -493,9 +440,7 @@ struct sym *self;
 
 
 
-void
-sym__printtable(ClassID)
-struct classhdr *ClassID;
+void sym__printtable(struct classheader *ClassID)
 {
         long i;
 	struct sym *pos;
@@ -518,8 +463,7 @@ struct classhdr *ClassID;
 }
 
 
-printdata(self)
-struct sym *self;
+int printdata(struct sym *self)
 {
     if (self == NULL)
 	printf("NULL\n");

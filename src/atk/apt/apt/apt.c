@@ -127,6 +127,11 @@ END-SPECIFICATION  ************************************************************/
 #include <apt.h>
 #include <apt.eh>
 #include <apts.ih>
+static int Assign_String();
+static int Assign_Strings();
+static int Free_Vector();
+static int Parse_Field();
+static int Write_Strings();
 
 int apt_debug = 0;
 #define debug apt_debug
@@ -185,9 +190,7 @@ Free_Vector( vector )
   OUT(Free_Vector);
   }
 
-boolean
-apt__InitializeClass( classID )
-  register struct classheader	    *classID;
+boolean apt__InitializeClass(struct classheader *classID)
   {
   IN(apt_InitializeClass);
   apt_debug = 0;
@@ -195,10 +198,7 @@ apt__InitializeClass( classID )
   return TRUE;
   }
 
-boolean
-apt__InitializeObject( classID, self )
-  register struct classheader	     *classID;
-  register struct apt		     *self;
+boolean apt__InitializeObject(struct classheader *classID, struct apt *self)
   {
   IN(apt_InitializeObject);
   DEBUGst(RCSID,rcsidapt);
@@ -209,10 +209,7 @@ apt__InitializeObject( classID, self )
   return TRUE;
   }
 
-void 
-apt__FinalizeObject( classID, self )
-  register struct classheader	      *classID;
-  register struct apt		      *self;
+void apt__FinalizeObject(struct classheader *classID, struct apt *self)
   {
   register long			       i,j;
 
@@ -237,11 +234,7 @@ apt__FinalizeObject( classID, self )
   OUT(apt_FinalizeObject);
   }
 
-void
-apt__SetAreaTitle( self, title, area )
-  register struct apt		     *self;
-  register char			     *title;
-  register long			      area;
+void apt__SetAreaTitle(struct apt *self, char *title, long area)
   {
   char				     *titles[2];
 
@@ -252,11 +245,7 @@ apt__SetAreaTitle( self, title, area )
   OUT(apt_SetAreaTitle);
   }
 
-void
-apt__SetAreaSpreadTitle( self, titles, count, area, mode )
-  register struct apt		     *self;
-  register char			    **titles;
-  register long			      count, area, mode;
+void apt__SetAreaSpreadTitle(struct apt *self, char **titles, long count, long area, long mode)
   {
   register long			      i = 0;
 
@@ -279,11 +268,7 @@ apt__SetAreaSpreadTitle( self, titles, count, area, mode )
   OUT(apt_SetAreaSpreadTitle);
   }
 
-void
-apt__SetAreaTitleFontName( self, font_name, area )
-  register struct apt		     *self;
-  register char			     *font_name;
-  register long			      area;
+void apt__SetAreaTitleFontName(struct apt *self, char *font_name, long area)
   {
   IN(apt_SetAreaTitleFontName);
   if ( TitleFontName(area) )  free( TitleFontName(area) );
@@ -297,11 +282,7 @@ apt__SetAreaTitleFontName( self, font_name, area )
   OUT(apt_SetAreaTitleFontName);
   }
 
-void
-apt__SetAreaLegend( self, legend, area )
-  register struct apt		     *self;
-  register char			     *legend;
-  register long			      area;
+void apt__SetAreaLegend(struct apt *self, char *legend, long area)
   {
   char				     *legends[2];
 
@@ -312,11 +293,7 @@ apt__SetAreaLegend( self, legend, area )
   OUT(apt_SetAreaLegend);
   }
 
-void
-apt__SetAreaSpreadLegend( self, legends, count, area, mode )
-  register struct apt		     *self;
-  register char			    **legends;
-  register long			      count, area, mode;
+void apt__SetAreaSpreadLegend(struct apt *self, char **legends, long count, long area, long mode)
   {
   register long			      i = 0;
 
@@ -339,11 +316,7 @@ apt__SetAreaSpreadLegend( self, legends, count, area, mode )
   OUT(apt_SetAreaSpreadLegend);
   }
 
-void
-apt__SetAreaLegendFontName( self, font_name, area )
-  register struct apt		     *self;
-  register char			     *font_name;
-  register long			      area;
+void apt__SetAreaLegendFontName(struct apt *self, char *font_name, long area)
   {
   IN(apt_SetAreaLegendFontName);
   if ( LegendFontName(area) )  free( LegendFontName(area) );
@@ -358,9 +331,7 @@ apt__SetAreaLegendFontName( self, font_name, area )
   }
 
 
-struct apt_field *
-apt__ReadObjectField( self )
-  register struct apt		     *self;
+struct apt_field * apt__ReadObjectField(struct apt *self)
   {
   register struct apt_field	     *field = NULL;
 
@@ -374,12 +345,7 @@ apt__ReadObjectField( self )
   return field;
   }
 
-long
-apt__ReadObject( self, file, id, reader )
-  register struct apt		     *self;
-  register FILE			     *file;
-  register long			      id;
-  register void			    (*reader)();
+long apt__ReadObject(struct apt *self, FILE *file, long id, void (*reader) ())
   {
   register long			      i, j, found, status = dataobject_NOREADERROR;
   char				      line[256 + 1];
@@ -443,10 +409,7 @@ apt__ReadObject( self, file, id, reader )
   return  status;
   }
 
-static
-Assign_String( self, prefix, desire, candidate, source, target )
-  register struct apt		     *self;
-  register char			     *prefix, *desire, *candidate, *source, **target;
+static Assign_String(struct apt *self, char *prefix, char *desire, char *candidate, char *source, char **target)
   {
   char				      name[257];
   register long			      status = 0;
@@ -466,12 +429,7 @@ Assign_String( self, prefix, desire, candidate, source, target )
   return status;
   }
 
-static
-Assign_Strings( self, prefix, desire, candidate, source, target, count )
-  register struct apt		     *self;
-  register char			     *prefix, *desire, *candidate, *source;
-  register char			   ***target;
-  register long			     *count;
+static Assign_Strings(struct apt *self, char *prefix, char *desire, char *candidate, char *source, char ***target, long *count)
   {
   char				      name[257], **strings;
   register long			      status = 0;
@@ -493,22 +451,14 @@ Assign_Strings( self, prefix, desire, candidate, source, target, count )
   return status;
   }
 
-void
-apt__WriteObjectField( self, field )
-  register struct apt		     *self;
-  register struct apt_field	     *field;
+void apt__WriteObjectField(struct apt *self, struct apt_field *field)
   {
   IN(apt_WriteObjectField);
   fprintf( FieldsFile, "%s %s\n", field->name, field->content );
   OUT(apt_WriteObjectField);
   }
 
-void
-apt__WriteObject( self, file, id, level, writer )
-  register struct apt		     *self;
-  register FILE			     *file;
-  register long			      id, level;
-  register void			    (*writer)();
+void apt__WriteObject(struct apt *self, FILE *file, long id, long level, void (*writer) ())
   {
   char				      bracket[256 + 2];
   register long			      i;
@@ -542,13 +492,7 @@ apt__WriteObject( self, file, id, level, writer )
   OUT(apt_WriteObject);
   }
 
-static
-Write_Strings( self, file, name, prefix, count, anchor )
-  register struct apt		     *self;
-  register FILE			     *file;
-  register char			     *name, *prefix;
-  register long			      count;
-  register char			     *anchor[];
+static Write_Strings(struct apt *self, FILE *file, char *name, char *prefix, long count, char *anchor[])
   {
   register long			      i;
 
@@ -567,11 +511,7 @@ Write_Strings( self, file, name, prefix, count, anchor )
   OUT(Write_Strings);
   }
 
-static
-Parse_Field( self, line, field )
-  register struct apt		     *self;
-  register char			     *line;
-  register struct apt_field	     *field;
+static Parse_Field(struct apt *self, char *line, struct apt_field *field)
   {
   register int			      status = 0;
   char				      work[257];
@@ -595,10 +535,7 @@ Parse_Field( self, line, field )
 
 #define  max_field_content_items    50
 
-char **
-apt__ParseFieldContent( self, string )
-  register struct apt		     *self;
-  register char			     *string;
+char ** apt__ParseFieldContent(struct apt *self, char *string)
   {
   register char			    **fields;
   register char			     *s = string, *s2, *t;
@@ -630,10 +567,7 @@ apt__ParseFieldContent( self, string )
   return  fields;
   }
 
-struct apt_field_contents *
-apt__ParseFieldContents( self, string )
-  register struct apt		     *self;
-  register char			     *string;
+struct apt_field_contents * apt__ParseFieldContents(struct apt *self, char *string)
   {
   register char			    **content, **field;
   register struct apt_field_contents *contents;

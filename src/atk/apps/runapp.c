@@ -58,6 +58,10 @@ void resetmstats()
 
 #include <sys/time.h>
 #include <sys/resource.h>
+static void initClass();
+static char * leaf();
+static void stripSuffix();
+static void usage();
 
 extern int errno;
 extern char *AndrewDir();
@@ -83,8 +87,7 @@ static void initClass()
     class_Init(classPath);
 }
 
-static char *leaf(path)
-char *path;
+static char * leaf(char *path)
 {
     char *p=rindex(path,'/');
     if(p==NULL)
@@ -94,17 +97,14 @@ char *path;
 }
 
 /* strip off the suffix, if any */
-static void stripSuffix(buf,suffix)
-char *buf,*suffix;
+static void stripSuffix(char *buf, char *suffix)
 {
     char *end=buf+strlen(buf)-strlen(suffix);
     if(strcmp(suffix,end)==0)
 	*end='\0';
 }
 
-main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     struct application *app;
     char appclass[200];

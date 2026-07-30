@@ -44,6 +44,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 
 #include <dsearch.eh>
 #include <string.h>
+static void dynsearch_SearchForward();
+static void dynsearch_SearchReverse();
 
 #define MAXSTRING	256
 /* Describe how the current seach string has failed. */
@@ -58,8 +60,7 @@ static int lastDirection = FORWARD;
 
 static int GetPattern();
 
-static void dynsearch_SearchForward(view)
-    register struct textview *view;
+static void dynsearch_SearchForward(struct textview *view)
 {
 
     int pos = 0, argument;
@@ -91,8 +92,7 @@ static void dynsearch_SearchForward(view)
     return;
 }
 
-static void dynsearch_SearchReverse(view)
-    register struct textview *view;
+static void dynsearch_SearchReverse(struct textview *view)
 {
 
     int argument, originalPos, pos = 0;
@@ -128,10 +128,7 @@ static void dynsearch_SearchReverse(view)
 }
 
 
-static int GetPattern(view, text, direction)
-    struct textview *view;		/* textview we're using */
-    struct text *text;		/* and doc */
-    int direction;			/* direction of the search */
+static int GetPattern(struct textview *view, struct text *text, int direction)
 {
 
     char string[MAXSTRING];
@@ -195,8 +192,7 @@ static int GetPattern(view, text, direction)
     return 0;
 }
 
-void dynsearch_SearchAgain(self)
-struct textview *self;
+void dynsearch_SearchAgain(struct textview *self)
 {
     struct text *d = (struct text *)textview_GetDataObject(self);
     long	savePos, pos;
@@ -231,8 +227,7 @@ struct textview *self;
         message_DisplayString(self, 0, "Must have searched at least once to search again.");
 }
 
-void dynsearch_SearchAgainOpposite(self)
-struct textview *self;
+void dynsearch_SearchAgainOpposite(struct textview *self)
 {
     if (lastDirection == FORWARD) {
 	lastDirection = REVERSE;
@@ -243,8 +238,7 @@ struct textview *self;
     dynsearch_SearchAgain(self);
 }
 
-boolean dynsearch__InitializeClass(classID)
-    struct classheader *classID;
+boolean dynsearch__InitializeClass(struct classheader *classID)
 {
     struct classinfo *textviewClassinfo;
 

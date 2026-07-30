@@ -103,10 +103,7 @@ END-SPECIFICATION  ************************************************************/
 *                                                                              *
 \******************************************************************************/
 
-long
-apts__CompareStrings( classID, s1, s2 )
-  register struct classheader	 *classID;
-  register char			 *s1, *s2;
+long apts__CompareStrings(struct classheader *classID, char *s1, char *s2)
   {
   register long			  result = 0;
   register unsigned char	  c1, c2;
@@ -127,10 +124,7 @@ apts__CompareStrings( classID, s1, s2 )
   return  result;
   }
 
-long
-apts__SubstringIndex( classID, pattern, string )
-  register struct classheader	 *classID;
-  register char		  	 *pattern, *string;
+long apts__SubstringIndex(struct classheader *classID, char *pattern, char *string)
   {
   register long			  i, position = -1;
   register char			 *origin = string;
@@ -152,10 +146,7 @@ apts__SubstringIndex( classID, pattern, string )
   return  position;
   }
 
-char *
-apts__StripString( classID, string )
-  register struct classheader	 *classID;
-  register char			 *string;
+char * apts__StripString(struct classheader *classID, char *string)
   {
   register char			 *source = string,
 				 *cursor = string;
@@ -174,10 +165,7 @@ apts__StripString( classID, string )
   return  string;
   }
 
-long
-apts__CaptureString( classID, source, target )
-  register struct classheader	 *classID;
-  register char			 *source, **target;
+long apts__CaptureString(struct classheader *classID, char *source, char **target)
   {
   register char			 *cursor;
   register long			  status = ok;
@@ -209,10 +197,7 @@ apts__CaptureString( classID, source, target )
 *                                                                              *
 \******************************************************************************/
 
-void
-apts__HourMinuteSecond( classID, hour, minute, second )
-  register struct classheader	 *classID;
-  register long		         *hour, *minute, *second;
+void apts__HourMinuteSecond(struct classheader *classID, long *hour, long *minute, long *second)
   {
   struct tm			 *time_units, *localtime();
   long				  clock;   
@@ -226,10 +211,7 @@ apts__HourMinuteSecond( classID, hour, minute, second )
   OUT(apts__HourMinuteSecond);
   }
 
-void
-apts__HourOfDay( classID, hour )
-  register struct classheader	 *classID;
-  register char		   	 *hour;
+void apts__HourOfDay(struct classheader *classID, char *hour)
   {
   long				  hours, minutes, seconds;
 
@@ -240,10 +222,7 @@ apts__HourOfDay( classID, hour )
   OUT(apts_HourOfDay);
   }
 
-void
-apts__MinuteOfHour( classID, minute )
-  register struct classheader	 *classID;
-  register char			 *minute;
+void apts__MinuteOfHour(struct classheader *classID, char *minute)
   {
   long				  hours, minutes, seconds;
 
@@ -253,10 +232,7 @@ apts__MinuteOfHour( classID, minute )
   OUT(apts_MinuteOfHour);
   }
 
-void
-apts__SecondOfMinute( classID, second )
-  register struct classheader	 *classID;
-  register char			 *second;
+void apts__SecondOfMinute(struct classheader *classID, char *second)
   {
   long				  hours, minutes, seconds;
 
@@ -278,10 +254,7 @@ static long			  days_per_month[2][13] =
     {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
     };
 
-long   /* Returns 1 if Leap-year, 0 otherwise */
-apts__YearMonthDay( classID, year, month, day )
-  register struct classheader	 *classID;
-  register long			 *year, *month, *day;
+long apts__YearMonthDay(struct classheader *classID, long *year, long *month, long *day)
   {
   register long			  leap; 
   struct tm			 *time_units, *localtime();
@@ -300,10 +273,7 @@ apts__YearMonthDay( classID, year, month, day )
   return  leap;
   }
 
-long
-apts__DaysInMonth( classID, year, month )
-  register struct classheader	 *classID;
-  register long			  year, month;
+long apts__DaysInMonth(struct classheader *classID, long year, long month)
   {
   register long			  leap;
 
@@ -315,10 +285,7 @@ apts__DaysInMonth( classID, year, month )
   return  days_per_month[leap][month];
   }
 
-long   /* Return 0 thru 6: 0=Sunday, 1=Monday, ..., 6=Saturday */
-apts__WeekDayOffset( classID, year, month, day )
-  register struct classheader	 *classID;
-  register long			  year, month, day;
+long apts__WeekDayOffset(struct classheader *classID, long year, long month, long day)
   {
   register long			  i, leap, years, offset = day;
 

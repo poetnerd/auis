@@ -84,29 +84,24 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/look
 #include <observe.ih>
 #include <updlist.ih>
 #include <bind.ih>
+static boolean PrintAStyle();
 
 #undef class_StaticEntriesOnly
 
-printdata(dobj)
-	register struct lookz *dobj;
+int printdata(struct lookz *dobj)
 {
 	printf("Image is %s\n", (lookz_GetVisibility(dobj) ? "visible" : "hidden"));
 	fflush(stdout);
 }
 
-static boolean
-PrintAStyle(s, v)
-	struct style *s;
-	register struct lookzview *v;
+static boolean PrintAStyle(struct style *s, struct lookzview *v)
 {
 	printf("%s\n", style_GetMenuName(s)); fflush(stdout);
 	return FALSE;
 }
 
 /* findDefine - parse file looking for "\define{" */
-boolean
-findDefine(f)
-	register FILE *f;
+boolean findDefine(FILE *f)
 {
 	register c;
 	register char *s;
@@ -123,9 +118,7 @@ findDefine(f)
 	}
 }
 
-main( argc, argv )
-	register int	  argc;
-	register char  **argv;
+int main(int argc, char **argv)
 {
 	register struct lookz *dobj;
 	register struct lookzview *dview;

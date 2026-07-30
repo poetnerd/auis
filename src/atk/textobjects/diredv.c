@@ -53,6 +53,21 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #include <dired.ih>
 #include <diredv.eh>
+static int DeleteProc();
+static char * GetFullName();
+static int RenameProc();
+static void SetMenuMask();
+static int VisitFile();
+static int ZoomProc();
+static void ptproc_Delete();
+static void ptproc_DownLine();
+static void ptproc_ModeChange();
+static void ptproc_Refresh();
+static void ptproc_RegexpSelect();
+static void ptproc_Rename();
+static void ptproc_ToggleSelect();
+static void ptproc_UpLine();
+static void ptproc_Zoom();
 
 extern int errno;
 
@@ -74,8 +89,7 @@ static struct cursor *waitCursor;
 #define mmask_LongModeOn        (1 << 3)
 #define mmask_LongModeOff       (1 << 4)
 
-static void SetMenuMask(self)
-struct diredview *self;
+static void SetMenuMask(struct diredview *self)
 {
     struct dired *dired = Dired(self);
     int mmask = 0;
@@ -102,9 +116,7 @@ struct diredview *self;
  * currently viewed directory.
  */
 
-static char *GetFullName(self, filename)
-struct diredview *self;
-char *filename;
+static char * GetFullName(struct diredview *self, char *filename)
 {
     static char fullName[256];
     char buf[256];
@@ -117,9 +129,7 @@ char *filename;
  * The `ptproc_' routines are the keyboard / menu handlers.
  */
 
-static void ptproc_Refresh(self, rock)
-struct diredview *self;
-long rock;
+static void ptproc_Refresh(struct diredview *self, long rock)
 {
     char *dir = dired_GetDir(Dired(self));
     WAITON();
@@ -135,8 +145,7 @@ long rock;
     WAITOFF();
 }
 
-static int ZoomProc(filename, foundp)
-char *filename, **foundp;
+static int ZoomProc(char *filename, char **foundp)
 {
     if (*foundp == NULL) {
         *foundp = filename;
@@ -147,9 +156,7 @@ char *filename, **foundp;
 
 /* Perform the excrutiating activities necessary to visit file */
 
-static int VisitFile(self, fname)
-struct diredview *self;
-char *fname;
+static int VisitFile(struct diredview *self, char *fname)
 {
     register struct buffer *buffer;
     char realName[1000], buf[1000];
@@ -202,9 +209,7 @@ char *fname;
     frame_SetBuffer(newFrame, buffer, TRUE);
 }
 
-static void ptproc_Zoom(self, rock)
-struct diredview *self;
-long rock;
+static void ptproc_Zoom(struct diredview *self, long rock)
 {
     struct dired *dired = Dired(self);
     struct stat stbuf;
@@ -298,9 +303,7 @@ long rock;
     WAITOFF();
 }
 
-static int DeleteProc(filename, self)
-char *filename;
-struct diredview *self;
+static int DeleteProc(char *filename, struct diredview *self)
 {
     char buf[256], ques[256];
 
@@ -327,9 +330,7 @@ struct diredview *self;
     return TRUE;
 }
 
-static void ptproc_Delete(self, rock)
-struct diredview *self;
-long rock;
+static void ptproc_Delete(struct diredview *self, long rock)
 {
     struct dired *dired = Dired(self);
 
@@ -346,9 +347,7 @@ long rock;
     ptproc_Refresh(self, 0);
 }
 
-static int RenameProc(filename, self)
-char *filename;
-struct diredview *self;
+static int RenameProc(char *filename, struct diredview *self)
 {
     char buf[256], ques[256], ans[256];
 
@@ -378,9 +377,7 @@ struct diredview *self;
     return TRUE;
 }
 
-static void ptproc_Rename(self, rock)
-struct diredview *self;
-long rock;
+static void ptproc_Rename(struct diredview *self, long rock)
 {
     struct dired *dired = Dired(self);
 
@@ -397,9 +394,7 @@ long rock;
     ptproc_Refresh(self, 0);
 }
 
-static void ptproc_DownLine(self, rock)
-struct diredview *self;
-long rock;
+static void ptproc_DownLine(struct diredview *self, long rock)
 {
     /* (textview-next-line proc handles the arg count) */
     struct proctable_Entry *NextPE =
@@ -408,9 +403,7 @@ long rock;
         (*NextPE->proc)(self);
 }
 
-static void ptproc_UpLine(self, rock)
-struct diredview *self;
-long rock;
+static void ptproc_UpLine(struct diredview *self, long rock)
 {
     /* (textview-previous-line proc handles the arg count) */
     struct proctable_Entry *NextPE =
@@ -419,9 +412,7 @@ long rock;
         (*NextPE->proc)(self);
 }
 
-static void ptproc_ToggleSelect(self, rock)
-struct diredview *self;
-long rock;
+static void ptproc_ToggleSelect(struct diredview *self, long rock)
 {
     struct dired *dired = Dired(self);
     long count = im_Argument(self->header.view.imPtr);
@@ -449,9 +440,7 @@ long rock;
     }
 }
 
-static void ptproc_RegexpSelect(self, rock)
-struct diredview *self;
-long rock;
+static void ptproc_RegexpSelect(struct diredview *self, long rock)
 {
     struct dired *dired = Dired(self);
     char buf[256], *res;
@@ -491,9 +480,7 @@ long rock;
     message_DisplayString(self, 0, "Done.\n");
 }
 
-static void ptproc_ModeChange(self, change)
-struct diredview *self;
-long change;
+static void ptproc_ModeChange(struct diredview *self, long change)
 {
     struct dired *dired = Dired(self);
     switch (change) {
@@ -558,8 +545,7 @@ static struct bind_Description diredBindings[] = {
     NULL
 };
 
-boolean diredview__InitializeClass(classID)
-struct classheader *classID;
+boolean diredview__InitializeClass(struct classheader *classID)
 {
     diredKeymap = keymap_New();
     diredMenus = menulist_Create(NULL);
@@ -572,9 +558,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean diredview__InitializeObject(classID, self)
-struct classheader *classID;
-struct diredview *self;
+boolean diredview__InitializeObject(struct classheader *classID, struct diredview *self)
 {
     self->keystate = keystate_Create(self, diredKeymap);
     self->menulist = menulist_DuplicateML(diredMenus, self);
@@ -582,9 +566,7 @@ struct diredview *self;
     return TRUE;
 }
 
-void diredview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct diredview *self;
+void diredview__FinalizeObject(struct classheader *classID, struct diredview *self)
 {
     if(self->menulist) menulist_Destroy(self->menulist);
 }
@@ -593,9 +575,7 @@ struct diredview *self;
  * Overrides
  */
 
-void diredview__SetDataObject(self, object)
-struct diredview *self;
-struct basicobject *object;
+void diredview__SetDataObject(struct diredview *self, struct dataobject *object)
 {
     struct dired *dired = (struct dired *) object;
     if (dired_GetDir(dired) == NULL)
@@ -604,10 +584,7 @@ struct basicobject *object;
     dired_NotifyObservers(dired, 0);
 }
 
-struct view *diredview__Hit(self, action, x, y, numberOfClicks)
-struct diredview *self;
-enum view_MouseAction action;
-long x, y, numberOfClicks;
+struct view * diredview__Hit(struct diredview *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     int button;
 
@@ -647,26 +624,19 @@ long x, y, numberOfClicks;
     return (struct view *) self;
 }
 
-void diredview__PostKeyState(self, keystate)
-struct diredview *self;
-struct keystate *keystate;
+void diredview__PostKeyState(struct diredview *self, struct keystate *keystate)
 {
     keystate_AddBefore(self->keystate, keystate);
     super_PostKeyState(self, self->keystate);
 }
 
-void diredview__PostMenus(self, menulist)
-struct diredview *self;
-struct menulist *menulist;
+void diredview__PostMenus(struct diredview *self, struct menulist *menulist)
 {
     menulist_ChainAfterML(self->menulist, menulist, 0);
     super_PostMenus(self, self->menulist);
 }
 
-void diredview__ObservedChanged(self, changed, value)
-struct diredview *self;
-struct observable *changed;
-long value;
+void diredview__ObservedChanged(struct diredview *self, struct observable *changed, long value)
 {
     SetMenuMask(self);
     super_ObservedChanged(self, changed, value);

@@ -32,6 +32,8 @@
 
 #include <global.h>
 #include <gentlex.h>
+static void WriteActions();
+static void WriteRectbl();
 
 static int defaultaction;  /* action for character \377 */
 static int HiChar;  /* last character for which there is an action other
@@ -73,10 +75,7 @@ static char *(RecName[]) = {
 		val,
 	};
 */
-	void
-WriteClass(fout, hdr)
-	FILE *fout;
-	struct line *hdr;
+void WriteClass(FILE *fout, struct line *hdr)
 {
 	struct line *elt;
 	char *procname = (hdr->u.h.Ccode)  ? GenSym()  : "NULL";
@@ -146,9 +145,7 @@ WriteClass(fout, hdr)
 	Warning: The traversal order of Classes must be the same as in 
 	assigning u.h.action values in defaults.c:ComputeDefaults.
 */
-	static void
-WriteRectbl(f)
-	FILE *f;
+static void WriteRectbl(FILE *f)
 {
 	struct line *lx;
 	int i;
@@ -177,9 +174,7 @@ WriteRectbl(f)
 	};
 
 */
-	static void
-WriteActions(f)
-	FILE *f;
+static void WriteActions(FILE *f)
 {
 	int i, action;
 	struct line *act;
@@ -224,10 +219,7 @@ WriteActions(f)
 }
 
 
-	void
-WriteTlc(fout, fname)
-	FILE *fout;
-	char *fname;
+void WriteTlc(FILE *fout, char *fname)
 {
 	struct line *hdr;
 	char **linep;

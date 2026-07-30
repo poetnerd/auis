@@ -33,6 +33,7 @@
 #include <ctype.h>
 #include <global.h>
 #include <gentlex.h>
+static void ProcessReserved();
 
 struct line *ResWords = NULL;
 
@@ -176,9 +177,7 @@ static struct tmpltbl {
 	normalize and expand Elt list as per template
 	add other unspecified fields as per table below
 */
-	void
-NormalizeStruct(hdr)
-	struct line *hdr;
+void NormalizeStruct(struct line *hdr)
 {
 	struct tmpltbl *ttx;
 	struct recparmtemplate *tpl;
@@ -364,9 +363,7 @@ BuildDefaultStructs()
 		and only one struct and function are actually generated
 	the Hdr for each reserved word has the token number for that word
 */
-	static void
-ProcessReserved(hdr)
-	struct line *hdr;
+static void ProcessReserved(struct line *hdr)
 {
 	struct line *clone, *last;
 	int i;

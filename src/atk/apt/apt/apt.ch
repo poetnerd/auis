@@ -123,7 +123,7 @@ methods:
   ReadObjectField()				returns struct apt_field *;
   ParseFieldContent( char *string )		returns char **;
   ParseFieldContents( char *string )		returns struct apt_field_contents *;
-  WriteObject( FILE *file, long id, long level, writer );
+  WriteObject( FILE *file, long id, long level, void (*writer)() );
   WriteObjectField(struct apt_field *field);
 
 macromethods:

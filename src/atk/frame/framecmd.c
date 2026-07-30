@@ -81,6 +81,34 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fram
 #include <signal.h> /* needed for hp - sometimes included in sys/param.h */
 #include <sys/stat.h>
 #include <sys/errno.h>
+static boolean BufferCompletionWork();
+static void BufferHelp();
+static boolean BufferHelpWork();
+static boolean FindFirstBuffer();
+static boolean HideWindow();
+static void ListBuffersWork();
+static struct buffer * LocalGetBufferOnFile();
+static void ReplaceBuffer();
+static boolean ReplaceBufferWork();
+static void bufferDirectory();
+static boolean bufferDirtyP();
+static void bufferFilename();
+static boolean countChangedBuffer();
+static int countFrames();
+static boolean countSpecificBuffers();
+static int frame_ReadFile();
+static void frame_RecursiveVisitWork();
+static void frame_SaveExcursion();
+static int frame_SwitchFile();
+static boolean frame_clear2exit();
+static boolean isString();
+static void myKeyboardProcessor();
+static boolean preventBufferLossage();
+static int preventOutofSyncLossage();
+static boolean preventOverwriteLossage();
+static boolean preventReversionLossage();
+static boolean saveAllWork();
+static int saveBuffer();
 
 extern int errno;
 static struct keymap *framecmdsKeymap, *framecmdsDefaultKeymap;
@@ -103,9 +131,7 @@ static void SigHandler(int sig) {longjmp(trap, 1);}
 static SigHandler() {longjmp(trap, 1);}
 #endif
 
-static boolean
-isString(arg)
-	char *arg;
+static boolean isString(char *arg)
 {
 #if defined(_ANSI_C_SOURCE) && !defined(_NO_PROTO)
 	void (*oldBus)(int sig), (*oldSeg)(int sig); /* save signal handlers */
@@ -138,8 +164,7 @@ isString(arg)
 	return (c >= ' ' && c < '\177');
 }
 
-static boolean bufferDirtyP(buffer)
-    struct buffer *buffer;
+static boolean bufferDirtyP(struct buffer *buffer)
 {
     return !buffer_GetScratch(buffer) &&
 	buffer_GetWriteVersion(buffer) <
@@ -169,10 +194,7 @@ int frame_VisitNamedFile();		/* defined below, used earlier in this file */
 int frame_WriteFile();			/* defined below, used earlier in this file */
 extern int osi_GetTimes();		/* overhead/util/lib/times.c; no header declares it anywhere in the tree */
 
-static int
-preventOutofSyncLossage(outputFrame, buffer)
-    struct frame *outputFrame;
-    struct buffer *buffer;
+static int preventOutofSyncLossage(struct frame *outputFrame, struct buffer *buffer)
 {
     if (buffer_GetFileDate(buffer) <= buffer_GetLastTouchDate(buffer))
 	return 0;
@@ -209,10 +231,7 @@ static char *ReversionChoices [] = {
 #define REVERSION_CANCEL 0
 #define REVERSION_LOSE 1
 
-static boolean
-preventReversionLossage(outputFrame, buffer)
-    struct frame *outputFrame;
-    struct buffer *buffer;
+static boolean preventReversionLossage(struct frame *outputFrame, struct buffer *buffer)
 {
     if (!bufferDirtyP(buffer))
 	return TRUE;
@@ -250,10 +269,7 @@ static char *OverwriteChoices[] = {
 #define OVERWRITE_CANCEL 0
 #define OVERWRITE_LOSE   1
 
-static boolean
-preventOverwriteLossage(outputFrame, buffer)
-    struct frame *outputFrame;
-    struct buffer *buffer;
+static boolean preventOverwriteLossage(struct frame *outputFrame, struct buffer *buffer)
 {
     long foo = buffer_GetFileDate(buffer);
     if ( foo == 0l || foo == buffer_GetLastTouchDate(buffer))
@@ -295,11 +311,7 @@ preventOverwriteLossage(outputFrame, buffer)
 #define DIR_MSG \
    "Write aborted: specified output file is a directory."
 
-static int
-saveBuffer(outputFrame, buffer, filename)
-    struct frame *outputFrame;
-    struct buffer *buffer;
-    char *filename;
+static int saveBuffer(struct frame *outputFrame, struct buffer *buffer, char *filename)
 {
     int result;
     long version;
@@ -424,10 +436,7 @@ struct saveTheWorldRock {
     boolean modifiedWithoutFilenames;
 };
 
-static boolean
-saveAllWork(buffer, returnBuf)
-    struct buffer *buffer;
-    struct saveTheWorldRock *returnBuf;
+static boolean saveAllWork(struct buffer *buffer, struct saveTheWorldRock *returnBuf)
 {
     int len;
 
@@ -452,9 +461,7 @@ saveAllWork(buffer, returnBuf)
  * direction of being conservative by returning FALSE if there are 
  * modified buffers without files.
  */
-boolean
-saveTheWorld(outputFrame)
-    struct frame *outputFrame;
+boolean saveTheWorld(struct frame *outputFrame)
 {
     struct saveTheWorldRock returnCode;
     char errors[1024];
@@ -529,18 +536,14 @@ static char *lossageChoices[] = {
 #define LOSSAGE_SAVE   1
 #define LOSSAGE_LOSE   2
 
-static boolean countChangedBuffer(buf, counter)
-struct buffer *buf;
-int *counter;
+static boolean countChangedBuffer(struct buffer *buf, int *counter)
 {
     if (bufferDirtyP(buf))
 	++(*counter);
     return FALSE;
 }
 
-static boolean preventBufferLossage(outputFrame, preciousBuffer)
-    struct frame *outputFrame;
-    struct buffer * preciousBuffer;
+static boolean preventBufferLossage(struct frame *outputFrame, struct buffer *preciousBuffer)
 {
     long answer;
     char *warningstring = lossageWarning;
@@ -582,10 +585,7 @@ static boolean preventBufferLossage(outputFrame, preciousBuffer)
     }
 }
 
-static void
-bufferFilename(buffer, filename)
-    struct buffer *buffer;
-    char *filename;		/* Output: MAXPATHLEN */
+static void bufferFilename(struct buffer *buffer, char *filename)
 {
     if (buffer_GetFilename(buffer) != NULL)
         strcpy(filename, buffer_GetFilename(buffer));
@@ -596,10 +596,7 @@ bufferFilename(buffer, filename)
 }
 
 
-static void
-bufferDirectory(buffer, dir)
-    struct buffer *buffer;
-    char *dir;			/* Output: At least MAXPATHLEN, please. */
+static void bufferDirectory(struct buffer *buffer, char *dir)
 {
     char *slash, *fname = buffer_GetFilename(buffer);
 
@@ -619,9 +616,7 @@ bufferDirectory(buffer, dir)
  * Executes function recursively and the pops back
  * to the current buffer.
  */
-static void frame_SaveExcursion(self, function)
-    struct frame *self;
-    void (*function)();
+static void frame_SaveExcursion(struct frame *self, void (*function)())
 {
     char bufferName[100];
     struct buffer *oldBuffer;
@@ -639,8 +634,7 @@ static void frame_SaveExcursion(self, function)
 }
 
 /* Auxilliary function for RecursiveVisitFile */
-static void frame_RecursiveVisitWork(self)
-    struct frame *self;
+static void frame_RecursiveVisitWork(struct frame *self)
 {
     long code;
 
@@ -650,8 +644,7 @@ static void frame_RecursiveVisitWork(self)
 }
 
 /* Allows you to visit a file and then pop back to the current buffer. */
-void frame_RecursiveVisitFile(self)
-    struct frame *self;
+void frame_RecursiveVisitFile(struct frame *self)
 {
     frame_SaveExcursion(self, frame_RecursiveVisitWork);
 }
@@ -666,15 +659,12 @@ static void myKeyboardProcessor()
 }
  
 /* A recursive edit... Plain, simple, and useless. */
-void frame_RecursiveEdit(self)
-    struct frame *self;
+void frame_RecursiveEdit(struct frame *self)
 {
     frame_SaveExcursion(self, myKeyboardProcessor);
 }
 
-static int countFrames(self, rock)
-    struct frame *self;
-    long *rock;
+static int countFrames(struct frame *self, long *rock)
 {
     (*rock)++;
     return 0;
@@ -692,8 +682,7 @@ static char *lastWindowChoices[] = {
 #define lastWindow_CANCEL 0
 #define lastWindow_QUIT   1
 
-void frame_DeleteWindow(self)
-    struct frame *self;
+void frame_DeleteWindow(struct frame *self)
 {
     long count = 0;
 
@@ -725,16 +714,13 @@ void frame_DeleteWindow(self)
 }
 
 
-void framecmds__DeleteWindow(classID, self)
-struct classheader *classID;
-struct frame *self;
+void framecmds__DeleteWindow(struct classheader *classID, struct frame *self)
 {
     frame_DeleteWindow(self);
 }
 
 
-void frame_ExitRecursiveEdit(self)
-    struct frame *self;
+void frame_ExitRecursiveEdit(struct frame *self)
 {
     if (im_KeyboardLevel() <= 1)
         message_DisplayString(self, 0, "Not in recursive edit");
@@ -747,16 +733,12 @@ struct findbuf {
     struct frame *exclude_frame;
 };
 
-static boolean
-countSpecificBuffers(f,fb)
-struct frame *f;
-struct findbuf *fb;
+static boolean countSpecificBuffers(struct frame *f, struct findbuf *fb)
 {
   return(f != fb->exclude_frame && frame_GetBuffer(f)==fb->buffer);
 }
 
-void frame_Exit(self)
-    struct frame *self;
+void frame_Exit(struct frame *self)
 {
     if(frame_GetQuitWindowFlag(self)) {
 	long count = 0; 
@@ -799,8 +781,7 @@ void frame_Exit(self)
     im_KeyboardExit();
 }
 
-void frame_NewWindow(self)
-    struct frame *self;
+void frame_NewWindow(struct frame *self)
 {
     register struct buffer *buffer;
     struct frame *newFrame;
@@ -838,9 +819,7 @@ void frame_NewWindow(self)
     frame_SetBuffer(newFrame, buffer, TRUE);
 }
 
-static boolean BufferCompletionWork(buffer, data)
-    struct buffer *buffer;
-    struct result *data;
+static boolean BufferCompletionWork(struct buffer *buffer, struct result *data)
 {
     completion_CompletionWork(buffer_GetName(buffer), data);
     return FALSE;
@@ -879,9 +858,7 @@ struct helpData {
     long textRock;
 };
 
-static boolean BufferHelpWork(buffer, helpData)
-struct buffer *buffer;
-struct helpData *helpData;
+static boolean BufferHelpWork(struct buffer *buffer, struct helpData *helpData)
 {
     char infoBuffer[1024];
 
@@ -931,11 +908,7 @@ struct helpData *helpData;
     return FALSE; /* Keep on enumerating. */
 }
 
-static void BufferHelp(partial, listInfo, helpTextFunction, helpTextRock)
-char *partial;
-long listInfo;
-int (*helpTextFunction)();
-long helpTextRock;
+static void BufferHelp(char *partial, long listInfo, int (*helpTextFunction)(), long helpTextRock)
 {
     struct helpData helpData;
 
@@ -948,15 +921,13 @@ long helpTextRock;
 
 static char lastBuffer[100] = "";
 
-static boolean FindFirstBuffer(tryBuffer, cannotMatchBuffer)
-struct buffer *tryBuffer, *cannotMatchBuffer;
+static boolean FindFirstBuffer(struct buffer *tryBuffer, struct buffer *cannotMatchBuffer)
 {
     /* Find first one not matching */
     return (tryBuffer != cannotMatchBuffer);
 }
 
-void frame_OldBuffer(self)
-    struct frame *self;
+void frame_OldBuffer(struct frame *self)
 {
 
     char bufferName[100], prompt[256];
@@ -987,8 +958,7 @@ void frame_OldBuffer(self)
     message_DisplayString(self, 0, "Done.");
 }
 
-void frame_VisitBuffer(self)
-    struct frame *self;
+void frame_VisitBuffer(struct frame *self)
 {
     char bufferName[100], prompt[100 + sizeof("Visit buffer [] : ") - 1];
     register struct buffer *buffer;
@@ -1019,11 +989,7 @@ void frame_VisitBuffer(self)
     message_DisplayString(self, 0, "Done.");
 }
 
-static void ListBuffersWork(helpDoc, dummyData, bufferInfo, dummyInfo)
-struct text *helpDoc;
-long dummyData;
-char *bufferInfo;
-char *dummyInfo;
+static void ListBuffersWork(struct text *helpDoc, long dummyData, char *bufferInfo, char *dummyInfo)
 {
     int c;
     int c2;
@@ -1053,9 +1019,7 @@ char *dummyInfo;
     text_InsertCharacters(helpDoc, initPos + inc, "\n", 1);
 }
 
-void frame_ListBuffers(self, key)
-    struct frame *self;
-    long key;
+void frame_ListBuffers(struct frame *self, long key)
 {
 
     struct buffer *helpBuffer = frame_GetHelpBuffer(self);
@@ -1121,8 +1085,7 @@ void frame_ListBuffers(self, key)
     }
 }
 
-void frame_DropBuffer(self)
-    struct frame *self;
+void frame_DropBuffer(struct frame *self)
 {
     struct buffer *b = frame_GetBuffer(self);
     struct im *im = frame_GetIM(self);
@@ -1139,9 +1102,7 @@ struct bufferPair {
     struct buffer *buffer1, *buffer2;
 };
 
-static boolean ReplaceBufferWork(frame, bufferPair)
-    struct frame *frame;
-    struct bufferPair *bufferPair;
+static boolean ReplaceBufferWork(struct frame *frame, struct bufferPair *bufferPair)
 {
 
     if (frame_GetBuffer(frame) == bufferPair->buffer1)
@@ -1149,8 +1110,7 @@ static boolean ReplaceBufferWork(frame, bufferPair)
     return FALSE;
 }
 
-static void ReplaceBuffer(oldBuffer, newBuffer)
-    struct buffer *oldBuffer, *newBuffer;
+static void ReplaceBuffer(struct buffer *oldBuffer, struct buffer *newBuffer)
 {
         struct bufferPair buffers;
 
@@ -1160,8 +1120,7 @@ static void ReplaceBuffer(oldBuffer, newBuffer)
         frame_Enumerate(ReplaceBufferWork, &buffers);
 }
 
-void frame_DeleteBuffer(self)
-    struct frame *self;
+void frame_DeleteBuffer(struct frame *self)
 {
     struct buffer *thisBuffer, *targetBuffer;
     char bufferName[100], *defaultName, prompt[356];
@@ -1225,10 +1184,7 @@ void frame_DeleteBuffer(self)
     message_DisplayString(self, 0, "Done.");
 }
 
-static struct buffer *LocalGetBufferOnFile(self, filename, flags)
-struct frame *self;
-char *filename;
-int flags;
+static struct buffer * LocalGetBufferOnFile(struct frame *self, char *filename, int flags)
 {
     struct buffer *buffer;
     int localerrno;
@@ -1304,10 +1260,7 @@ static char *MBufferChoices[]={
     NULL
 };
 
-static int LocalReadFile(self, fname, preserveBuffer)
-struct frame *self;
-char *fname;
-boolean preserveBuffer;
+static int LocalReadFile(struct frame *self, char *fname, boolean preserveBuffer)
 {
     struct buffer *buffer = frame_GetBuffer(self), *oldBuffer;
     char tempName[256];
@@ -1378,11 +1331,7 @@ boolean preserveBuffer;
 
 
 /* Not static so it can be used from eza.c */
-int frame_VisitFilePrompting(self, prompt, newWindow, rawMode)
-    struct frame *self;
-    char *prompt;
-    boolean newWindow;
-    boolean rawMode;
+int frame_VisitFilePrompting(struct frame *self, char *prompt, boolean newWindow, boolean rawMode)
 {
     char filename[MAXPATHLEN];
     struct buffer *buffer;
@@ -1401,11 +1350,7 @@ int frame_VisitFilePrompting(self, prompt, newWindow, rawMode)
     return frame_VisitNamedFile(self, filename, newWindow, rawMode);
 }
 
-int frame_VisitNamedFile(self, filename, newWindow, rawMode)
-    struct frame *self;
-    char *filename;
-    boolean newWindow;
-    boolean rawMode;
+int frame_VisitNamedFile(struct frame *self, char *filename, boolean newWindow, boolean rawMode)
 {
     struct buffer *buffer;
     long flags = 0;
@@ -1445,10 +1390,7 @@ int frame_VisitNamedFile(self, filename, newWindow, rawMode)
 }
 
 /* like frame_VisitFilePrompting, but won't prompt if arg is non-NULL */
-int frame_VisitAFile(self, arg, prompt, newWindow)
-    struct frame *self;
-    char *arg, *prompt;
-    boolean newWindow;
+int frame_VisitAFile(struct frame *self, char *arg, char *prompt, boolean newWindow)
 {
     if (isString(arg))
 	return frame_VisitNamedFile(self, arg, newWindow, FALSE);
@@ -1456,32 +1398,24 @@ int frame_VisitAFile(self, arg, prompt, newWindow)
 	return frame_VisitFilePrompting(self, prompt, newWindow, FALSE);
 }
 
-int frame_VisitFile(self, arg)
-    struct frame *self;
-    char *arg;
+int frame_VisitFile(struct frame *self, char *arg)
 {
     return frame_VisitAFile(self, arg, "Visit file: ",
 				    im_ArgProvided(frame_GetIM(self)));
 }
 
-int frame_VisitRawFile(self, arg)
-    struct frame *self;
-    char *arg;
+int frame_VisitRawFile(struct frame *self, char *arg)
 {
     return frame_VisitFilePrompting(self, "Visit file (raw mode): ",
 				    im_ArgProvided(frame_GetIM(self)), TRUE);
 }
 
-int frame_VisitFileNewWindow(self, arg)
-    struct frame *self;
-    char *arg;
+int frame_VisitFileNewWindow(struct frame *self, char *arg)
 {
     return frame_VisitAFile(self, arg, "Visit file: ", TRUE);
 }
 
-static int frame_SwitchFile(self, key)
-struct frame *self;
-long key;
+static int frame_SwitchFile(struct frame *self, long key)
 {
     char bufferfile[MAXPATHLEN];
     char filename[MAXPATHLEN];
@@ -1508,9 +1442,7 @@ long key;
     return LocalReadFile(self, filename, FALSE);
 }
 
-static int frame_ReadFile(self, key)
-struct frame *self;
-long key;
+static int frame_ReadFile(struct frame *self, long key)
 {
     char bufferfile[MAXPATHLEN];
     char filename[MAXPATHLEN];
@@ -1538,9 +1470,7 @@ long key;
 }
 
 
-int frame_SaveFile(self, key)
-struct frame *self;
-long key;
+int frame_SaveFile(struct frame *self, long key)
 {
     struct buffer *buffer = frame_GetBuffer(self);
 
@@ -1558,8 +1488,7 @@ long key;
  * WriteStyle attribute.
  */
 
-int frame_WritePlainestFile(self)
-struct frame *self;
+int frame_WritePlainestFile(struct frame *self)
 {
     struct buffer *buffer = frame_GetBuffer(self);
     struct dataobject *contents;
@@ -1585,8 +1514,7 @@ struct frame *self;
     }
 }
 
-int frame_WriteFile(self)
-struct frame *self;
+int frame_WriteFile(struct frame *self)
 {
     char filename[MAXPATHLEN], tempName[256];
     struct buffer *buffer = frame_GetBuffer(self);
@@ -1615,16 +1543,12 @@ struct frame *self;
 }
 
 
-void frame_SaveAll(self, key)
-    struct frame *self;
-    long key;
+void frame_SaveAll(struct frame *self, long key)
 {
     (void)saveTheWorld(self);
 }
 
-char *frame_pwd(self, key)
-    register struct frame *self;
-    long key;
+char * frame_pwd(struct frame *self, long key)
 {
 
     char wd[MAXPATHLEN];
@@ -1636,9 +1560,7 @@ char *frame_pwd(self, key)
     return wd;
 }
 
-boolean frame_cd (self, arg)
-    struct frame *self;
-    char *arg;
+boolean frame_cd(struct frame *self, char *arg)
 {
 
     char newdir[MAXPATHLEN];
@@ -1663,8 +1585,7 @@ boolean frame_cd (self, arg)
     }
 }
 
-void frame_PrintCmd(self)
-    struct frame *self;
+void frame_PrintCmd(struct frame *self)
 {
 
     struct buffer *buf;
@@ -1684,8 +1605,7 @@ void frame_PrintCmd(self)
     im_SetProcessCursor(NULL);
 }
 
-void frame_PreviewCmd(self)
-    struct frame *self;
+void frame_PreviewCmd(struct frame *self)
 {
 
     struct buffer *buf;
@@ -1706,8 +1626,7 @@ void frame_PreviewCmd(self)
     im_SetProcessCursor(NULL);
 }
 
-void frame_SetPrinter(self)
-    struct frame *self;
+void frame_SetPrinter(struct frame *self)
 {
     char *currentPrinter, *defaultPrinter, answer[256], prompt[sizeof("Current printer is . Set printer to []: ") + 128];
 
@@ -1742,8 +1661,7 @@ void frame_SetPrinter(self)
 }
 
 /* Finds the frame immediately before the one passed in as the rock (nextFrame). */
-int FindFrame(frame, nextFrame)
-    struct frame *frame, *nextFrame;
+int FindFrame(struct frame *frame, struct frame *nextFrame)
 {
 
     if (frame->next == nextFrame || frame->next == NULL)
@@ -1753,16 +1671,13 @@ int FindFrame(frame, nextFrame)
 }
 
 /* Trivially finds the first frame on the list... */
-FirstFrame(frame, rock)
-    struct frame *frame;
-    long rock;
+int FirstFrame(struct frame *frame, long rock)
 {
 
     return TRUE;
 }
 
-void frame_PreviousWindow(self)
-    struct frame *self;
+void frame_PreviousWindow(struct frame *self)
 {
 
     struct frame *desiredFrame;
@@ -1772,8 +1687,7 @@ void frame_PreviousWindow(self)
         im_SetWMFocus(frame_GetIM( desiredFrame));
 }
 
-void frame_NextWindow(self)
-    struct frame *self;
+void frame_NextWindow(struct frame *self)
 {
 
     struct frame *desiredFrame;
@@ -1786,16 +1700,14 @@ void frame_NextWindow(self)
         im_SetWMFocus(frame_GetIM(desiredFrame));
 }
 
-void frame_HideWindow(self)
-    struct frame *self;
+void frame_HideWindow(struct frame *self)
 {
 
     im_HideWindow(frame_GetIM(self));
     frame_NextWindow(self);
 }
 
-void frame_ExposeWindow(self)
-    struct frame *self;
+void frame_ExposeWindow(struct frame *self)
 {
 
     im_ExposeWindow(frame_GetIM( self));
@@ -1803,24 +1715,21 @@ void frame_ExposeWindow(self)
 }
 
 /* Can't use frame_HideWindow because it does input focus operations also. */
-static boolean HideWindow(frame)
-    struct frame *frame;
+static boolean HideWindow(struct frame *frame)
 {
 
     im_HideWindow(frame_GetIM( frame));
     return FALSE;
 }
 
-void frame_SingleWindow(self)
-    struct frame *self;
+void frame_SingleWindow(struct frame *self)
 {
 
     frame_Enumerate(HideWindow, 0);
     frame_ExposeWindow(self);
 }
 
-void frame_SetBufferModified(self)
-    struct frame *self;
+void frame_SetBufferModified(struct frame *self)
 {
 
     long version;
@@ -1842,9 +1751,7 @@ void frame_SetBufferModified(self)
 	commands (framecommand_Bindings) are enabled if this is true
 	arg is filename.   Returns im
 */
-	static struct frame *
-framecmd_OpenFile(filename)
-	char *filename;
+static struct frame * framecmd_OpenFile(char *filename)
 {
     struct buffer *buffer;
     struct frame *frame;
@@ -1877,9 +1784,7 @@ framecmd_OpenFile(filename)
 	Ness-callable: create a window and display the view in it.  
 	args:  object, buffer name
 */
-	static struct frame *
-framecmd_OpenView(v)
-	struct observable *v;
+static struct frame * framecmd_OpenView(struct observable *v)
 {
     struct buffer *buffer;
     struct frame *frame;
@@ -1929,10 +1834,7 @@ framecmd_OpenView(v)
 /* frame-set-window-title(frame, title)
 	Ness-callable: changes the title for the buffer currently displayed in the frame
 */
-	static void
-framecmd_SetTitle(self, title)
-	struct frame *self;
-	char *title;
+static void framecmd_SetTitle(struct frame *self, char *title)
 {
 	buffer_SetName(frame_GetBuffer(self), title);
 }
@@ -1940,9 +1842,7 @@ framecmd_SetTitle(self, title)
 /* framecmds-set-program-name
 	Ness-callable: set program name (for preferences).  args: name
 */
-	static void
-framecmd_SetProgramName(name)
-	char *name;
+static void framecmd_SetProgramName(char *name)
 {
 	im_SetProgramName(name);
 }
@@ -1951,10 +1851,7 @@ framecmd_SetProgramName(name)
 	Ness-callable: enables/disables the frame commands.  args: frame, boolean
 	returns prior state
 */
-	static boolean
-framecmd_SetCommands(self, enable)
-	struct frame *self;
-	boolean enable;
+static boolean framecmd_SetCommands(struct frame *self, boolean enable)
 {
 	boolean wasenabled = frame_GetCommandEnable(self);
 	frame_SetCommandEnable(self, enable);
@@ -1964,9 +1861,7 @@ framecmd_SetCommands(self, enable)
 /* framecmd_Interact(self)
 	call im_Interact()
 */
-	static void
-framecmd_Interact(self)
-	struct frame *self;
+static void framecmd_Interact(struct frame *self)
 {
 	im_KeyboardProcessor();
 }
@@ -2114,10 +2009,7 @@ struct proctable_DescriptionWithType procswithrandomarg[] = {
 };
 
 
-struct keymap *framecmds__InitKeymap(classID, menuOut, menuDefaultOut, defkeymap)
-struct classheader *classID;
-struct menulist **menuOut, **menuDefaultOut;
-struct keymap **defkeymap;
+struct keymap * framecmds__InitKeymap(struct classheader *classID, struct menulist **menuOut, struct menulist **menuDefaultOut, struct keymap **defkeymap)
 {
     *menuOut = framecmdsMenus;
     *menuDefaultOut = framecmdsDefaultMenus;
@@ -2125,8 +2017,7 @@ struct keymap **defkeymap;
     return framecmdsKeymap;
 }
 
-boolean framecmds__InitializeClass(classID)
-struct classheader *classID;
+boolean framecmds__InitializeClass(struct classheader *classID)
 {
     struct classinfo *classInfo;
     struct proctable_DescriptionWithType *pt;

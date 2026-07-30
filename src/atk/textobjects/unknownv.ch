@@ -25,7 +25,7 @@ class unknownv : textview [textv] {
     overrides:
       PostMenus(struct menulist *menus);
     classprocedures:
-      InitializeClass(struct unknownv *self) returns boolean;
+      InitializeClass() returns boolean;
     InitializeObject(struct unknownv *self) returns boolean;
     FinalizeObject(struct unknownv *self);
     data:
