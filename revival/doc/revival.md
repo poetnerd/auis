@@ -530,6 +530,35 @@ sample:
   six impossible to ignore. Corrected all six to name the class they
   actually belong to.
 
+- **A code-generation tool that silently contradicted its own
+  generated code, for one particular kind of destructor — invisible
+  until its own typed-declaration option was actually switched on for
+  the first time.** This software's class-generation tool
+  automatically writes, for every class, both the declaration of that
+  class's cleanup method and the internal code that calls it. For one
+  specific method name, the tool's two halves disagreed: the code it
+  generated to *call* the method always passed two pieces of
+  information, but the declaration it generated for that method —
+  whenever a class's own interface didn't spell out the second one
+  explicitly — only promised one. Nothing ever caught this, because
+  the tool's optional feature for emitting these fully spelled-out
+  declarations was essentially never turned on for real, anywhere,
+  until the current compiler-modernization effort began switching it
+  on one part of the software at a time, decades after the tool itself
+  was written. The first time it was turned on for a class using the
+  plain, undecorated form of this declaration, the tool's own generated
+  file contradicted itself and failed to compile. A related
+  complication made the obvious fix wrong: a handful of classes
+  legitimately override this same method with a different kind of
+  return value than the rest, and a fix assuming one universal shape
+  for it would have broken exactly those classes, which had been
+  working correctly the whole time. Corrected by making the tool
+  recognize only the specific shape that was actually broken, leaving
+  every other class's generated code exactly as it already was —
+  verified by regenerating every affected class's generated file and
+  confirming it came out byte-for-byte identical to before, except for
+  the one shape being fixed.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

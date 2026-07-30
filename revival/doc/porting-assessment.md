@@ -2034,17 +2034,49 @@ routes the prototype through the same ordinary-classproc path but now
 producing the matching 2-arg signature. Pure interface-side fix, no
 `.c`/runtime-behavior change.
 
-**Not fixed in classpp itself** — per the Delegation ruling, tool
-construction stays top-level, and this is a judgment call about
-*where* to fix it: patch every affected `.ch` as each directory's
-`-pe` rollout hits it (as B2 did, cheap and proven), or fix classpp
-once centrally (special-case `FinalizeObject`'s prototype emission the
-same way `InitializeObject`'s already is) and avoid rediscovering this
-per-directory. **Open question for wdc**: which approach for the
-remaining M3 waves? A proactive grep (`grep -rn "FinalizeObject()"
-src/**/*.ch`) before each future `-pe` rollout can catch instances
-before they surface as a confusing `.eh`-internal compile error either
-way.
+**Fixed centrally in classpp, 2026-07-30 (wdc's ruling)**: once the
+retest scope was bounded precisely (the bug lives entirely behind
+`usePrototypesExport`, i.e. `-pe`, which only 7 directories had turned
+on at the time — every other directory in the tree is structurally
+unreachable by this code path), fixing the tool once was clearly lower
+total cost/risk than re-diagnosing this per-`.ch` for the rest of M3.
+
+**The fix is narrower than mirroring `InitializeObject`'s full
+hardcoded treatment** — that would have been wrong. 7 classes in
+`atk/value` (`menttext.ch`, `entrtext.ch`, `clklistv.ch`, `entrintv.ch`,
+`entrint.ch`, `mentstrv.ch`, `entrstrv.ch`) declare
+`FinalizeObject(...) returns boolean` — a real, non-`void` return type
+already handled correctly by the *existing* ordinary-classproc-loop
+path (this is exactly what the code's own comment about
+`FinalizeObject`'s non-`void` return type was warning about). The fix
+only synthesizes the missing `self` parameter when `FinalizeObject` is
+declared with **literal empty parens** (`mp->realargtypes` empty),
+leaving every class that already restates `self` — with any return
+type — going through the unchanged path:
+
+```diff
+ 	    if (usePrototypesExport) {
+-		sprintf(proto, "struct classheader *%s", mp->realargtypes);
++		if (strcmp(mp->name, "FinalizeObject") == 0
++		    && (mp->realargtypes == NULL || mp->realargtypes[0] == '\0')) {
++		    sprintf(proto, "struct classheader *, struct %s *", FinalClassName);
++		}
++		else {
++		    sprintf(proto, "struct classheader *%s", mp->realargtypes);
++		}
+ 	    }
+```
+
+**Verified two ways** (`claude-history/m3-classpp-finalizeobject-fix-REPORT.md`,
+independently re-verified by the orchestrator): (1) zero retroactive
+effect — all 124 `.eh` files across the 7 already-`-pe`'d directories
+regenerate byte-identical before/after the fix, including `atk/value`'s
+7 non-`void` overrides; (2) the fix actually works — a standalone toy
+class reproduced the exact diagnosed compile error before the fix and
+compiled clean after. One more live empty-parens instance found beyond
+the two already known (`atk/org/orga.ch:72`) — not yet `-pe`'d, so not
+live fallout, but this fix will make it self-consistent for free
+whenever that directory's wave arrives.
 
 #### A third, distinct classpp bug: an unnamed classproc parameter loses its type entirely (found M3 batch B2, 2026-07-30)
 

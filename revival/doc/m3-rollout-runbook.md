@@ -624,6 +624,23 @@ the 6 corrected classes' `InitializeObject`/`FinalizeObject`/
 `.ch`-level edits in M3, carry no tree-wide blast radius in practice);
 confirmed `xgraphic.c` now has zero remaining brace-glued lines.
 
+### classpp `FinalizeObject` fix (tool fix, not a batch, 2026-07-30)
+
+B2's classpp `FinalizeObject` bug (above) is fixed centrally, not
+per-`.ch` — full detail in `porting-assessment.md`'s classpp-bugs
+subsection. **Standing task removed**: the "grep `FinalizeObject()`
+before each future `-pe` rollout" caution from B2's findings is no
+longer needed — any directory's `-pe` rollout from here on
+automatically gets a self-consistent `.eh` for the ordinary
+empty-parens `FinalizeObject()` convention, the same way
+`InitializeObject` always has. `buttonv.ch`/`sliderv.ch`'s existing
+explicit restatements (B2's workaround) don't need reverting — they're
+harmless, redundant documentation now, same status as
+`InitializeObject`'s own restated types per §17. One directory not yet
+`-pe`'d already known to have the empty-parens shape live:
+`atk/org/orga.ch:72` — no action needed now, will just work once that
+directory's wave arrives.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)
