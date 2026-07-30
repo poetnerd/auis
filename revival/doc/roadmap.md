@@ -958,6 +958,28 @@ fires. The real cause is the write-side `%d`/`%ld` truncation above.
   before being written up as root-caused. `nm -g` consumer detail and
   exact runtime-check commands are in
   `claude-history/m3-o2-imagecodecs-REPORT.md`.
+- **Re-tested 2026-07-26 after M3 batch B1** (`atk/basics/common`,
+  which owns `gif.c`/`image.c`, unlike O2's jpeg/tiff codec libraries):
+  importing a *different* GIF file (`foo.gif`) now renders a solid
+  **white** box, not black; re-importing the same JPEG test file
+  (`testorig.jpg`) still renders solid black, unchanged. **Not
+  attributed to B1**: `gif.c`'s B1 diff was reviewed function-by-function
+  and is pure K&R→ANSI signature syntax with zero semantic change (no
+  type, body, or logic differences); `jpeg.c` wasn't touched by B1 at
+  all (it's O2's file, a different directory) and shows no symptom
+  change either, consistent. A separate, concurrent session also
+  landed 11 commits touching `image.c`/`image.ch` (an LP64 `%d`→`%ld`
+  datastream-write fix, `image__SendBeginData`/`SendEndData`) between
+  B1's start and this re-test; confirmed via `fossil diff` that this
+  fix is about the *save/write* datastream path only, not the
+  `gif__Load` import/decode path, and gif's own file has no overlap
+  with that commit set at all. Most likely explanation: the new test
+  file simply exercises the still-unconfirmed underlying bug
+  differently (consistent with "something funky going on with
+  drawables" depending on file-specific state) rather than a code
+  change on either side — but this is inference, not a confirmed root
+  cause, same as the entry above. Still needs its own dedicated debug
+  session.
 
 ---
 

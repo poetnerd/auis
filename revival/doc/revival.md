@@ -480,6 +480,30 @@ sample:
   it against anything. Corrected both: the guard now reads `__STDC__`,
   and the return type now matches the definition.
 
+- **A stray dereference that only became visible once a call's argument
+  types were finally checked.** A function managing a window's color
+  table took a pointer to a color-table structure and, in one of its
+  three call sites, passed not the pointer itself but the structure
+  it pointed to — dereferencing it — to two operations that both
+  expect the pointer. Nothing caught this for the entirety of the
+  program's life: the era's compiler performed no argument-type
+  checking across these particular calls at all, so a whole structure
+  handed to a function expecting a pointer to one was simply
+  accepted and misinterpreted. The mistake surfaced only once these
+  calls were finally typed as part of the ANSI C conversion effort,
+  and only then because something forced the file to actually
+  recompile — for over two weeks after the typed calling convention
+  went into effect tree-wide, this file's own object code had never
+  been rebuilt, so the now-real type mismatch had nowhere to raise an
+  error until this session's work finally did. Confirmed against a
+  neighboring, correct call in the very same function, which passed
+  the pointer directly with no dereference — the same argument, spelled
+  two different ways four lines apart, only one of them right.
+  Corrected by removing the stray dereference at both incorrect call
+  sites; the third call in the function, structurally different (a
+  pointer to a pointer, correctly dereferenced once), was already
+  right and left untouched.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

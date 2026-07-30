@@ -440,6 +440,116 @@ this one:
    `struct classinfo *(*proc)()`, not recognized by the helper-
    declaration regex — left K&R correctly, no action needed).
 
+### B1 (`atk/basics/common`, 41 classes, 2026-07-26) — opens Wave 2, first large-scale `-pe`/`.eh` rollout
+
+Full findings: `claude-history/m3-b1-basics-common-REPORT.md`. M1's
+own former largest-blast-radius directory; the first M3 batch where
+`-pe` converted a real, sizeable class population (41, vs. O4's
+2-class trial) rather than a handful. All 6 pre-diagnosed dry-run
+findings resolved exactly as pre-computed (see the batch prompt,
+`m3-b1-basics-common-prompt.md`, for the diagnosis detail — worth
+reading alongside this entry since it shows the pre-flight-triage
+approach at real scale). Three genuinely new patterns:
+
+1. **A silent, unreported `ansify` helper-parser gap: K&R declaration
+   blocks with the opening brace glued to the last parameter's `;`.**
+   `parse_decl_block`'s line-by-line scanner only recognizes a bare `{`
+   line as the end of a K&R declaration block; a very common
+   1988-era style in this directory's oldest files puts the brace on
+   the *same* physical line as the last parameter (`long width;{` or
+   `struct point * LogicalPoint; {`). Neither the bare-`{` check nor the
+   `DECL_LINE` end-of-string check matches, so the candidate is silently
+   dropped — **no skip message, no DRIFT report, nothing at all**,
+   different from every previously-documented parser gap (O2's `(void)`
+   and `DECLARE<N>` misparses, O4's function-pointer-returning-pointer
+   gap, this same batch's own `gifin_load_cmap` multi-dim-array gap),
+   all of which at least produce a `skipped: ...` line. Confirmed in
+   the tool source (`parse_decl_block`, ~line 204). Found via two files
+   converting to literally nothing (`physical.c`, `point.c` — every
+   real function in each uses this brace style) plus partial conversion
+   in 8 others (`cursor.c`, `describe.c`, `im.c`, `observe.c`,
+   `owatch.c`, `rect.c`, `region.c`, `view.c`).
+   **Why it's bounded, not silently dangerous**: the same early-stage
+   gate runs before `convert_file` distinguishes a class method from a
+   file-local helper, so a `__`-named method written in this brace
+   style would be equally invisible — but that only means it stays K&R
+   through the `ansify --dir` pass; the *next* step (`-pe`'s `.eh`
+   regen) still emits a typed prototype for it regardless, so a real
+   instance surfaces as an ordinary compile failure at the subtree-local
+   gate, not a silent runtime bug. B1's own directory has none — the
+   double-clean gate proves it — but this pattern **could** recur in
+   B2/B3 (both have real class directories) and would currently need to
+   be tracked down cold, without any tool-side hint pointing at it. Not
+   fixed in the tool itself (Delegation ruling: tool construction stays
+   top-level) — **new standing task, effective now, alongside the O4
+   `_STDC_`-typo grep**: before a directory's `ansify --dir` run,
+   grep it for `grep -lE ';[ \t]*\{[ \t]*$'` and treat any match as
+   worth a manual look, the same spirit as the O4 macro-typo check.
+2. **Cross-`.ch` "rock" (`void *`/`long` opaque-data) type
+   disagreements** — a new sub-pattern of the already-documented rock
+   idiom (`porting-assessment.md` Pilot B/point-9): not a class's own
+   `.ch` vs. its `.c` (ordinary DRIFT), and not a parent/child override
+   disagreement (`point-10-batch-3`'s documented shape), but **two
+   unrelated classes'** `.ch` files disagreeing about the type of a
+   value passed between them at a call site (`im.c`'s `PostResource`
+   forwarding to `rm_PostResource`: `view.ch` says `void *`, `rm.ch`
+   says `long`, for what is semantically the same value; likewise
+   `message.c`'s `AskForStringCompleted` forwarding to
+   `msghandler_AskForStringCompleted`, `message.ch` vs. `msghndlr.ch`).
+   Both resolved with an ordinary `(long)` cast at the forwarding call
+   site, no `.ch` edit — but worth watching for at scale, since neither
+   shows up as DRIFT (each class's own `.ch`/`.c` agree internally) or
+   as a skip; it only surfaces as an ordinary compile failure once both
+   sides go typed.
+3. **A real ~35-year-old caller bug, found by the same mechanism O1
+   point-9 already established**: `im.c`'s `im__WantColormap` called
+   `im_InstallColormap(self, *cmap)`/`view_ReceiveColormap(requestor,
+   *cmap)` where `cmap` is already `struct colormap *cmap` — an extra,
+   incorrect dereference passing a struct by value where both macros
+   (typed since M1's tree-wide `-pi` rollout, 2026-07-10) expect a
+   pointer. Invisible the whole time because nothing had forced a clean
+   rebuild of `im.o` since M1 went live. Fixed (dropped the stray `*`
+   at both call sites); the function's third, structurally different
+   call (`im_InstallColormap(self, *inherited)`, where `inherited` is
+   `struct colormap **`) was correctly left alone.
+
+Also confirmed (2026-07-26, independently, by the orchestrator):
+re-ran the subtree-local gate twice more, spot-checked the colormap
+fix's correctness against a sibling call in the same function
+(`view_SetColormap(requestor, cmap)`, already using the un-dereferenced
+form — confirms the fix direction), and confirmed the new parser-gap
+claim directly (`grep -nE ';[ \t]*\{[ \t]*$' point.c` reproduces
+exactly as described).
+
+**Mid-batch complication, handled**: a concurrent, unrelated session
+landed 11 commits (an LP64 `%d`→`%ld` datastream-write fix, "widespread"
+per wdc) to the shared fossil repository while B1's review was in
+progress, including two commits touching `atk/basics/common/image.c`/
+`image.ch` — a file this batch also converted. `fossil`'s auto-sync
+fast-forwarded the local checkout and 3-way-merged the incoming commits
+against B1's uncommitted local edits automatically. Verified this
+merge was correct before proceeding to commit: confirmed both the
+concurrent session's `%ld` fix and B1's K&R→ANSI signature conversion
+are present together in the merged `image.c` (`image__SendEndData`'s
+parameter went from K&R `int id` all the way to ANSI `long id` — both
+changes, correctly composed), and re-ran the subtree-local gate twice
+more post-merge (clean both times). **Standing note for future
+batches**: if a long-running batch's review coincides with concurrent
+commits elsewhere in the tree, don't assume a clean `fossil status`
+(EDITED, not CONFLICT) is sufficient proof of a correct merge on its
+own — check whether any concurrently-landed commit touched a file this
+batch also touched, and if so, spot-check that file's current content
+directly before trusting the merge and committing.
+
+wdc separately re-tested the `image` inset bug (`roadmap.md`) after B1
+and found GIF import's failure symptom had changed (black → white,
+with a different test file); investigated and **not attributed to
+B1** — `gif.c`'s B1 diff is pure syntax with zero semantic change, and
+the concurrent session's `image.c` fix touches only the datastream
+*write* path, not `gif__Load`'s *import* path. Written up in
+`roadmap.md`'s `image` entry as a new data point, still unconfirmed as
+to root cause.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)

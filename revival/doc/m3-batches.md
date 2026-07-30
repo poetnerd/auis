@@ -132,10 +132,18 @@ reasoning once batch size actually reflects it.
 
 ## Wave 2 — atk/basics+support (19 directories, 197 files, 3 batches)
 
-- [ ] **B1**: `atk/basics/common` (48) — alone. M1's own former
+- [x] **B1**: `atk/basics/common` (48) — alone. M1's own former
       largest-blast-radius directory (41 classes, 2,351 external `.ih`
       includes at M1 time); treat with the same caution even though
-      M3's `.eh` mechanism is directory-local (see runbook).
+      M3's `.eh` mechanism is directory-local (see runbook). **Done
+      2026-07-26**: first large-scale `-pe`/`.eh` rollout (41 classes);
+      all 6 pre-diagnosed dry-run findings resolved as expected; found
+      and fixed a real ~35-year-old caller bug (`im.c`'s stray `*cmap`
+      dereference, invisible since M1's typed-`.ih` rollout went live);
+      found a new silent/unreported `ansify` parser gap (brace glued to
+      last K&R parameter, see runbook) and a new cross-`.ch` rock-type
+      disagreement sub-pattern, both bounded/non-silent, neither fixed
+      in the tool. Committed.
 - [ ] **B2**: `atk/value` (27), `atk/support` (20), `atk/supportviews`
       (17), `atk/adew` (13), `atk/basics/x` (11) — 88 files, 5 dirs.
 - [ ] **B3**: `atk/extensions` (10), `atk/syntax/tlex` (8), `atk/
