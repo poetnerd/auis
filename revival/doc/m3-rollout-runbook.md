@@ -476,15 +476,27 @@ approach at real scale). Three genuinely new patterns:
    through the `ansify --dir` pass; the *next* step (`-pe`'s `.eh`
    regen) still emits a typed prototype for it regardless, so a real
    instance surfaces as an ordinary compile failure at the subtree-local
-   gate, not a silent runtime bug. B1's own directory has none — the
-   double-clean gate proves it — but this pattern **could** recur in
-   B2/B3 (both have real class directories) and would currently need to
-   be tracked down cold, without any tool-side hint pointing at it. Not
-   fixed in the tool itself (Delegation ruling: tool construction stays
-   top-level) — **new standing task, effective now, alongside the O4
-   `_STDC_`-typo grep**: before a directory's `ansify --dir` run,
-   grep it for `grep -lE ';[ \t]*\{[ \t]*$'` and treat any match as
-   worth a manual look, the same spirit as the O4 macro-typo check.
+   gate, not a silent runtime bug.
+
+   At the time, this was treated as a **new standing task**: before a
+   directory's `ansify --dir` run, grep it for `grep -lE ';[ \t]*\{[
+   \t]*$'` and treat any match as worth a manual look, the same spirit
+   as the O4 macro-typo check.
+
+   **Correction (2026-07-30, orchestrator)**: the claim that "B1's own
+   directory has none — the double-clean gate proves it" was **wrong**.
+   Verified empirically that a K&R definition already matching its typed
+   prototype compiles clean under this project's flags with only a
+   `-Wdeprecated-non-prototype` *warning*, not an error — so "0 errors"
+   never actually proved nothing was silently left unconverted. B1's
+   own `atk/basics/common` in fact had ~20+ real class methods sitting
+   unconverted this way the whole time. Fixed in the tool itself and
+   retroactively cleared from all 7 already-`-pe`'d directories,
+   including this one — full detail in the new "ansify brace-glued
+   parser fix + retrospective recheck" entry below. **The standing grep
+   task above is now retired** for any directory processed after
+   2026-07-30 (the tool catches this itself); it remains useful
+   historical record for why B1/B2 needed it by hand.
 2. **Cross-`.ch` "rock" (`void *`/`long` opaque-data) type
    disagreements** — a new sub-pattern of the already-documented rock
    idiom (`porting-assessment.md` Pilot B/point-9): not a class's own
@@ -587,8 +599,10 @@ confirmed exactly matching on the real run); the session itself found
    parameter. `porting-assessment.md`, same new subsection as (1).
 4. **B1's predicted brace-glued parser gap, confirmed live for the
    first time**: `xgraphic.c` had 32 real class methods silently
-   invisible to `ansify` (B1 found the pattern but proved it inert in
-   its own directory; B2 hit a real, `-pe`-blocking instance). Fixed
+   invisible to `ansify` (B1 found the pattern; B2 hit a real,
+   `-pe`-blocking instance — B1's own directory turned out to have the
+   same gap too, just not yet blocking anything, see the correction
+   above and the retrospective-fix entry below). Fixed locally here
    by mechanically splitting the glued brace onto its own line, then
    letting `ansify` reconvert normally — confirms this is a viable
    stopgap for any future directory hitting the same gap without
@@ -640,6 +654,71 @@ harmless, redundant documentation now, same status as
 `-pe`'d already known to have the empty-parens shape live:
 `atk/org/orga.ch:72` — no action needed now, will just work once that
 directory's wave arrives.
+
+### ansify brace-glued parser fix + retrospective recheck (tool fix, not a batch, 2026-07-30)
+
+Fixed the parser gap named in B1's finding (1) and hit live in B2's
+finding (4) above, then re-ran `ansify --dir` across all 7 already-`-pe`'d
+directories to clear out whatever it had been silently leaving K&R the
+whole time. Full detail: `claude-history/m3-ansify-brace-glued-fix-REPORT.md`.
+
+- **The fix**: `parse_decl_block` now *recognizes* a brace-glued K&R
+  line (last parameter declaration and the opening `{` on one physical
+  line) without mutating anything; `convert_file` only rewrites that
+  line to a bare `{` once it has actually committed to using the
+  candidate. **This two-step design is not what was originally
+  specified** — the first version (specified and unit-tested by the
+  orchestrator before delegating) mutated the line the moment the shape
+  was recognized, unconditionally. The delegate found this had a real
+  defect the specified unit tests didn't cover: if a brace-glued
+  candidate was later *rejected* (no DB signature — which is exactly
+  what happens to every `InitializeObject`, the single most common
+  brace-glued shape in this codebase) in a file where something else
+  legitimately converted, the rejected candidate's parameter
+  declaration was silently deleted from the output, corrupting the
+  file. Caught immediately by `ansify`'s own per-file compile-gate-
+  and-restore (`atk/support/mark.c`, first real instance) — no
+  corrupted content ever reached disk — but the tool would have been
+  unable to convert *any* file hitting this combination without the
+  correction. Confirmed neither already-completed directory
+  (`atk/basics/common`, `atk/value`) was exposed to it: both directories'
+  only skips were either not brace-glued at all, or in files where
+  nothing else changed (so the corrupted-but-unused state was
+  discarded before ever reaching disk either way).
+- **Retrospective recheck results**: `overhead/class/testing` and
+  `atk/adew` confirmed genuine no-ops (0 conversions, matching what
+  each directory's original batch already implied). The other 5
+  directories had real, previously-invisible K&R left over: 10 files
+  in `atk/basics/common` (~20+ methods, e.g. `cursor__ChangeShape`,
+  several `im__*`/`observable__*`/`region__*`/`view__*`), 5 in
+  `atk/support` (incl. 3 more `InitializeObject` hand-folds, same
+  precedent as B1's `event.c`/`keystate.c`/`init.c`), 3 in `atk/value`,
+  1 each in `atk/supportviews` (`oscroll.c`) and `atk/basics/x`
+  (`xim.c` — confirmed `xgraphic.c` itself has zero remaining
+  brace-glued lines, B2's local hand-fix holds up). Zero DRIFT found
+  anywhere — every newly-surfaced candidate either converted cleanly
+  or was an already-understood `InitializeObject`/override-of-base-
+  classproc DB-miss skip.
+- **A genuine ~35-year-old bug found, but inert**: `atk/adew/cel.c`
+  has a second, misspelled, empty-bodied `cel__FinializeObject`
+  ("Finialize" for "Finalize") alongside the real, working
+  `cel__FinalizeObject` — never wired, never called, doesn't affect
+  behavior. A second instance of the same misspelling exists in
+  `atk/textaux/contentv.c:79` (`contentv__FinializeObject`) — outside
+  this task's 7 directories, **not yet fixed, not going to be fixed by
+  `ansify` either** (the misspelling means it will always fail the DB
+  lookup and get silently skipped, same as `cel.c`'s copy) — worth
+  knowing when B3 (which includes `atk/textaux`) gets pre-diagnosed, so
+  it isn't mistaken for something new. Both written up in `revival.md`'s
+  "Old bugs never found till now."
+- Independently re-verified by the orchestrator (2026-07-30): traced
+  the corrected `parse_decl_block`/`convert_file` interaction directly
+  in the tool source to confirm no other code path reads `lines[brace_idx]`
+  before the accept decision; spot-checked the `mark.c` and `point.c`
+  diffs directly; ran fresh double-clean gates on `atk/support` and
+  `atk/basics/common` (the two most consequential) and single clean
+  gates on the remaining 5; confirmed `fossil status`/`fossil extras`
+  match the report exactly, no stray files.
 
 ## Resource note (2026-07-25, wdc)
 

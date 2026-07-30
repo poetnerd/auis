@@ -142,8 +142,12 @@ reasoning once batch size actually reflects it.
       dereference, invisible since M1's typed-`.ih` rollout went live);
       found a new silent/unreported `ansify` parser gap (brace glued to
       last K&R parameter, see runbook) and a new cross-`.ch` rock-type
-      disagreement sub-pattern, both bounded/non-silent, neither fixed
-      in the tool. Committed.
+      disagreement sub-pattern, both bounded/non-silent. The parser gap
+      was later fixed in the tool and retroactively cleared tree-wide
+      2026-07-30 (see runbook's "ansify brace-glued parser fix" entry) —
+      B1's own directory turned out to have ~20+ real methods silently
+      left K&R by it, despite the batch's original "proved inert" call.
+      Committed.
 - [x] **B2**: `atk/value` (27), `atk/support` (20), `atk/supportviews`
       (17), `atk/adew` (13), `atk/basics/x` (11) — 88 files, 5 dirs.
       **Done 2026-07-30**: 81 classes, first M3 batch to edit `.ch`

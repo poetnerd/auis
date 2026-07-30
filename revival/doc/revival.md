@@ -559,6 +559,25 @@ sample:
   confirming it came out byte-for-byte identical to before, except for
   the one shape being fixed.
 
+- **A destructor that never woke up, twice.** Two unrelated classes in
+  two unrelated subsystems — one a diagram-editing element, the other
+  part of the text-content machinery — each carry a second cleanup
+  method alongside their real one, its name misspelled by one
+  transposed pair of letters: "Finialize" for "Finalize." Both
+  misspelled versions have empty bodies and were never called, in
+  either subsystem, in the decades since they were written — the
+  class machinery dispatches destructors by exact name, so a
+  misspelled one is simply invisible to it, never wired to anything,
+  never missed. Unlike every entry above, this one has no "corrected
+  by": there is nothing to fix, because nothing was ever broken —
+  the real, correctly-spelled destructor in each class already does
+  the actual cleanup work and always has. It's recorded here anyway
+  because it's the same shape of mistake as the six copy/paste typos
+  above — a plausible-looking wrong spelling that the era's tools had
+  no way to ever flag — just caught this time before it could do any
+  damage, by the same systematic method-by-method reading that the
+  ANSI C conversion effort required everywhere else.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or
