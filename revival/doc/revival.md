@@ -578,6 +578,23 @@ sample:
   damage, by the same systematic method-by-method reading that the
   ANSI C conversion effort required everywhere else.
 
+- **An interface that never mentioned the one argument its own
+  implementation always needed.** A tree-widget class declares two
+  measurement methods — one for a subtree's width, one for its
+  height — and describes both, in the file that's supposed to be their
+  authoritative interface, as taking no arguments beyond the object
+  itself. Every real implementation of both methods, from the day they
+  were written, took a second argument: which node in the tree to
+  measure. Nothing before this project ever compared the declared
+  interface against the working code, so a function that could not
+  possibly have worked with the interface as written ran, correctly,
+  for decades — because nothing ever called it through that interface
+  in the first place. Neither method has a single caller anywhere in
+  the source tree; whatever originally needed a subtree's dimensions
+  either used another path or was never finished. Corrected by adding
+  the always-present, never-declared second argument to the interface,
+  matching the implementation that was right all along.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

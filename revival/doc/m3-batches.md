@@ -158,7 +158,7 @@ reasoning once batch size actually reflects it.
       (`xgraphic.c`, 32 methods). See `m3-rollout-runbook.md` findings
       → B2 and `revival.md`/`porting-assessment.md` for full detail.
       Committed.
-- [ ] **B3**: `atk/extensions` (10), `atk/syntax/tlex` (8), `atk/
+- [x] **B3**: `atk/extensions` (10), `atk/syntax/tlex` (8), `atk/
       textobjects` (7, judgment call — core text-embedded-object
       infra, not a content-type inset), `atk/apt/suite` (6), `atk/
       lookz` (5), `atk/frame` (5), `atk/syntax/parse` (4), `atk/apps`
@@ -166,7 +166,28 @@ reasoning once batch size actually reflects it.
       `runapp.c`, `pathopen.c`, `statload.c`, `genstatl.c`, not an
       application itself), `atk/utils` (3), `atk/apt/apt` (3), `atk/
       textaux` (2), `atk/syntax/sym` (2), `atk/apt/tree` (2) — 61
-      files, 13 dirs.
+      files, 13 dirs. **Done 2026-07-30**: heaviest pre-diagnosis of
+      any M3 batch so far — orchestrator test-compiled several `.eh`
+      files under a temporary `-pe` flag before delegating and found a
+      new classpp-interaction bug class (a `.ch` restating
+      `InitializeClass`'s/`FinalizeObject`'s implicit param gets
+      over-counted by classpp's ordinary, non-hardcoded prototype loop,
+      producing a prototype/definition mismatch — 2 `InitializeClass`
+      instances, 1 `FinalizeObject` instance, all fixed by simplifying
+      the `.ch`). Delegate found 10 further categories of fallout
+      beyond the pre-diagnosis, including 2 genuine new `ansify` tool
+      bugs (a double-pointer drop, an array-bracket transposition) and
+      a much larger, more dangerous variant of the brace-glued gap (32
+      instances of a local variable declaration glued to the opening
+      brace, silently deleted rather than just skipped) — traced back
+      after the fact to a narrow regression in that same morning's
+      brace-glued tool fix; a follow-up fix is written up and queued
+      (`m3-ansify-brace-body-corruption-fix-prompt.md`), confirmed via
+      compilation that the corruption can never silently reach
+      committed code (always a hard, unsuppressible compile error), so
+      no retrospective recheck of prior batches is needed. See
+      `m3-rollout-runbook.md` findings → B3 and
+      `revival.md`/`porting-assessment.md` for full detail. Committed.
 
 ## Wave 3 — atk/text (1 directory, 30 files, 1 batch)
 

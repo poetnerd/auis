@@ -720,6 +720,156 @@ whole time. Full detail: `claude-history/m3-ansify-brace-glued-fix-REPORT.md`.
   gates on the remaining 5; confirmed `fossil status`/`fossil extras`
   match the report exactly, no stray files.
 
+### B3 (13 leaf directories, 61 files, closes Wave 2, 2026-07-30)
+
+Full findings: `claude-history/m3-b3-leaf-dirs-REPORT.md`. The heaviest
+pre-diagnosis of any M3 batch so far: rather than relying on
+`ansify --dry-run --dir`'s DRIFT/skip labels alone, the orchestrator
+test-compiled several `.eh` files under a temporary `-pe` flag (added to
+a directory's Imakefile, reverted after) to empirically confirm which
+DRIFT findings were real compile-blocking bugs versus already-documented
+tool false positives, before writing the batch prompt.
+
+1. **A new classpp-interaction bug class, sibling to the `FinalizeObject`
+   bug fixed earlier the same day**: `InitializeClass`'s real convention
+   is 1 implicit parameter (`classID` only, untyped dispatch) — but
+   unlike `InitializeObject`, classpp does not hardcode this; it runs
+   `InitializeClass` through the *ordinary* classproc-emission loop,
+   which always prefixes `struct classheader *` and appends whatever
+   the `.ch` declares verbatim. A `.ch` that "helpfully" restates the
+   implicit param by name (`InitializeClass(struct foo *self)`) gets
+   counted as an *extra* argument on top of the automatic prefix,
+   producing a 2-param exported prototype against a real 1-param `.c`
+   definition — confirmed by an actual failed test-compile of
+   `atk/textobjects/unknownv.eh`. Same mechanism hits `FinalizeObject`
+   when a `.ch` restates *both* implicit params (`atk/apt/suite/suiteev.ch`
+   restated `ClassID` *and* `self`, producing a 3-param prototype against
+   a real 2-param definition). **Not universal** — 3 pre-existing
+   instances in `atk/value` (`metextv.ch`/`eintv.ch`/`etextv.ch`) restate
+   `InitializeClass` the same way but are *not* bugs, because their `.c`
+   definitions already, correctly, take the full 2 real params (already
+   `-pe`'d in B2, confirmed safe by inspection — the unused 2nd param
+   just reads garbage, same harmless shape as `dialog__InitializeClass`).
+   Always check the real `.c` param count before assuming either shape is
+   safe. Fixed by simplifying the 3 broken `.ch` declarations
+   (`unknownv.ch`, `suiteev.ch` ×2) back to the true convention — no
+   tool-level fix, the instance count was small and bounded (tree-wide
+   grep confirmed exactly 8 total restated-`InitializeClass` instances
+   and exactly 1 double-restated-`FinalizeObject` instance exist anywhere
+   in the source tree; 3 more live outside B3's scope — `fldtreev.ch`
+   (Wave 6), `schedv.ch`/`ltv.ch` (Wave 7) — not yet checked for which
+   direction they resolve, worth a 30-second look when those waves
+   arrive).
+2. **A real ~35-year-old missing parameter**: `atk/apt/tree/tree.ch`'s
+   `TreeWidth`/`TreeHeight` declared zero explicit args; the real
+   implementation always took `(self, node)`. Zero callers anywhere in
+   the tree, so purely latent — fixed by adding the missing
+   `tree_type_node node` parameter to the `.ch`, matching the
+   always-correct implementation.
+3. **Two more empty-parens-lifecycle-method instances**
+   (`atk/extensions/gsearch.c`/`isearch.c`'s `InitializeClass()`,
+   literally zero named parameters) — same standing-task category as
+   B2's `runadewa.c`, invisible to `ansify`'s own HDR regex. Confirmed
+   for the first time (this batch) that this shape is a **real,
+   deterministic compile failure** under `-pe`, not merely a documented
+   caution — test-compiled directly, got `conflicting types`. (A K&R
+   definition with *named* parameters is compatible with nothing but an
+   exact prototype match; a K&R definition with *literally no* names is
+   not the universally-lenient case one might assume either — verified,
+   don't assume otherwise.) Hand-folded both to ANSI form with a named,
+   unused `classID` param.
+4. **Two genuine new `ansify` tool bugs**, unrelated to any previously
+   documented limitation: a double-pointer K&R parameter (`void
+   **pyylval`) silently lost one `*` during conversion
+   (`atk/syntax/tlex/tlex.c`, 1 instance, only occurrence tree-wide);
+   an array-parameter's brackets landed *before* the parameter name
+   instead of after (`unsigned char [ ] rgb_vect` instead of `unsigned
+   char rgb_vect[]`, a hard parse error — `atk/apt/suite/suite.c`, 7
+   instances, one file). Both hand-fixed per-instance; neither given a
+   tool-level fix (small, bounded instance counts) — flagged for
+   whoever next touches `ansify`'s parameter parser.
+5. **A more dangerous variant of the same-day brace-glued gap — traced
+   back to a regression in that morning's own fix.** Distinct from the
+   signature-glue shape (safe no-op skip): here a K&R function body
+   opens with its *first local variable declaration* on the same
+   physical line as the brace (`{ register struct suite *self = NULL;`).
+   `ansify`'s existing bare-brace check (`s.startswith('{')`, present
+   since before any of this day's fixes) correctly identifies the brace
+   line, but this morning's own two-step mutation fix — added to solve
+   the signature-glue case — cannot tell "a brace-glued *parameter*
+   line, safe to squash" apart from "a bare-brace-check hit with
+   unrelated trailing body content" and squashes both, **silently
+   deleting the local variable declaration**. Found in
+   `atk/apt/suite/suite.c` (30 instances) and `suiteev.c` (2) — by far
+   the largest-volume single finding of the day. Confirmed this can
+   never silently reach committed code: the resulting undeclared-
+   identifier reference is a hard, unsuppressible compile error under
+   every flag this project uses, always caught by `ansify`'s own
+   per-file compile-gate-and-restore. So B1/B2 (committed before this
+   morning's fix existed) were never exposed, and this morning's own
+   7-directory retrospective recheck (which *did* run with the
+   vulnerable code) is confirmed safe by its own clean, unreverted gate
+   results — **no retrospective recheck needed**. B3 itself worked
+   around it with the same stopgap mechanism established for the
+   signature-glue variant (split the glued line in the original K&R
+   source, let `ansify` reconvert). A proper tool fix is written up and
+   queued: `m3-ansify-brace-body-corruption-fix-prompt.md` — narrow,
+   already verified end-to-end by the orchestrator (three scratch test
+   cases: corruption case now fixed, plain-bare-brace case unaffected,
+   original signature-glue case still works, no regression).
+6. **A real ~35-year-old `.ch`-vs-`.c` type mismatch, exposed only once
+   `-pe` went live**: `atk/apt/tree/treev.ch`'s `SetHitHandler` declared
+   its callback as `(long *handler)()`/`char *anchor`; the real `.c`
+   implementation takes `struct view *(*handler)()`/`struct view
+   *anchor`. Originally pre-diagnosed as "leave K&R, don't fix" (a safe
+   `ansify` skip, no confirmed live callers found) — but once `-pe` was
+   live for the directory, classpp itself emitted syntactically invalid
+   C from the malformed `.ch` type directly into the `.eh`
+   (`( long *  ) ( )` is not valid C), failing the whole file's compile
+   — no longer a containable skip once the batch's own gate requires
+   `-pe` live. Fixed using a sibling class's already-established
+   convention for exactly this ambiguity (`atk/org/orgv.ch`'s
+   `SetHitHandler(procedure handler, struct view *anchor)`, the
+   codebase's generic function-pointer placeholder type) rather than
+   asserting an unverified concrete signature.
+7. Several untyped `.ch` parameters (bare identifiers, no type at all —
+   predates this work, K&R never checked it) defaulted by `ansify` to
+   `void *`, wrong when the real type is a function pointer — fixed
+   per-instance in `atk/apt/apt/apt.ch`/`aptv.ch`/`atk/apt/tree/treev.ch`
+   (one of which, `treev.ch`'s `Create`, was missing not just a type but
+   the parameter name entirely) using the same zero-blast-radius
+   methodology as every other `.ch` fix this project has made
+   (real `.c` implementation type + all real callers checked first).
+8. A function-prototype-scope struct-tag trap (`atk/textaux/compchar.c`)
+   — a genuine, subtle C-semantics gotcha (not an `ansify` bug): a
+   struct tag's first-ever appearance inside a bare declaration's
+   parameter list gets only function-prototype scope (C11 6.2.1p2) and
+   doesn't merge with the same tag defined later at file scope, even
+   though nothing looks different about the surface syntax. Fixed by
+   adding plain file-scope forward declarations before the affected
+   hand-fixed prototypes. Worth remembering for any future "add a
+   missing prototype by hand" repair.
+9. 4 more rock-idiom (`void*`/`long`) instances, all resolved per the
+   established B1/B2 precedent — one in the *opposite* direction from
+   usual (`atk/frame/frame.c`'s `FindFrameForBuffer` had a stray,
+   incorrect `(long)` cast laundering a good pointer down to `long`
+   before an unrelated `void *` parameter; removed the cast rather than
+   adding one).
+
+Independently re-verified by the orchestrator (2026-07-30): all 5
+pre-diagnosed fixes confirmed applied exactly as specified; both new
+`ansify` tool-bug fixes spot-checked directly in the diff; the 32-instance
+brace-glued-local-declaration fix spot-checked directly (confirmed the
+local variable and its rock-idiom cast both survived correctly); the
+`treev.eh` `SetHitHandler` fix confirmed to now emit valid C; the
+`compchar.c` struct-tag fix confirmed present; full gate re-run — double
+clean cycles on `atk/apt/suite` and `atk/apt/tree` (highest risk), single
+clean cycles on the remaining 11 (one apparent `error:` hit in
+`atk/syntax/tlex` traced to a string literal inside a benign warning, not
+a real error); `fossil status` matched exactly (78 edited files); `fossil
+extras` showed only ordinary build byproducts plus two pre-existing,
+unrelated untracked files predating this session by weeks.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)

@@ -1951,6 +1951,50 @@ a real, ~35-year-old, benign interface inconsistency, not a DRIFT-
 shaped tool artifact. Logged here, not fixed (out of scope, no
 observable effect).
 
+#### A second real exception, the opposite direction — found M3 batch B3 (2026-07-30)
+
+Unlike `InitializeObject`, `InitializeClass` is **not** hardcoded by
+classpp — it goes through the ordinary classproc-emission loop, which
+always prefixes `struct classheader *` and appends whatever the `.ch`
+declares verbatim. A `.ch` that restates the implicit param by name
+(`InitializeClass(struct foo *self) returns boolean;`) therefore gets
+counted as an *extra* argument on top of the automatic prefix,
+producing a 2-param exported prototype. Confirmed by directly
+test-compiling `atk/textobjects/unknownv.eh` under a temporary `-pe`
+flag: `boolean unknownv__InitializeClass(struct classheader *, struct
+unknownv *);` — 2 params — against `unknownv.c`'s real, correct,
+1-param definition (`unknownv__InitializeClass(c) struct classheader
+*c;`). Same mechanism hits `FinalizeObject` when a `.ch` restates
+*both* implicit params instead of just `self` (`atk/apt/suite/suiteev.ch`
+declared `FinalizeObject(struct classheader *ClassID, struct suiteev
+*self)`, producing a 3-param prototype against a real 2-param
+definition — confirmed the same way).
+
+**This is not universal — check the real `.c` param count before
+assuming either direction.** Three pre-existing instances of the
+restated-`InitializeClass` shape in `atk/value`
+(`metextv.ch`/`eintv.ch`/`etextv.ch`) are *not* bugs: their `.c`
+definitions already, correctly, take the full 2 real params (already
+`-pe`'d and committed in B2) — the unused 2nd param just reads
+garbage, exactly the same harmless shape as `dialog__InitializeClass`
+above. The difference between "safe" and "broken" is entirely whether
+the real `.c` definition happens to match the inflated count, which
+must be checked per instance, not assumed from the `.ch` shape alone.
+
+Fixed (B3) by simplifying the 3 broken `.ch` declarations
+(`atk/textobjects/unknownv.ch`'s `InitializeClass`,
+`atk/apt/suite/suiteev.ch`'s `InitializeClass` and `FinalizeObject`)
+back to the true convention, rather than a classpp-level fix — a
+tree-wide grep confirmed only 8 total restated-`InitializeClass`
+instances and 1 double-restated-`FinalizeObject` instance exist
+anywhere in the source tree, small and bounded enough not to warrant
+touching the tool a third time in one day. **3 more live instances
+exist outside any batch processed so far** — `atkams/messages/lib/fldtreev.ch`
+(Wave 6), `contrib/zip/utility/schedv.ch`/`ltv.ch` (Wave 7) — not yet
+checked for which direction (safe like `metextv.ch`, or broken like
+`unknownv.ch`) they resolve to; worth a 30-second per-instance check
+(matching the method above) whenever those waves are prepared.
+
 #### The other 14 DRIFT findings — mixed, ordinary per-batch triage
 
 The remaining 14 (not one of the three special names) are NOT covered
