@@ -149,12 +149,8 @@ void rectangle_IntersectRect(struct rectangle *Result, struct rectangle *LHS, st
 }
 
 /*
-void rectangle_SetRectSize(LHS, left,top,width,height)
-register struct rectangle * LHS;
-long top;
-long left;
-long height;
-long width;{
+void rectangle_SetRectSize(struct rectangle *LHS, long left, long top, long width, long height)
+{
     LHS->top = top;
     LHS->left = left;
     LHS->height = height;
@@ -162,22 +158,16 @@ long width;{
 }
 */
 
-void rectangle_SetRectSides(LHS, left,top,right,bottom)
-register struct rectangle * LHS;
-long top;
-long left;
-long bottom;
-long right;{
+void rectangle_SetRectSides(struct rectangle *LHS, long left, long top, long right, long bottom)
+{
     LHS->top = top;
     LHS->left = left;
     LHS->height = bottom-top;
     LHS->width = right-left;
 }
 
-void rectangle_SetRectCorners(LHS, OneCorner, OtherCorner)
-register struct rectangle * LHS;
-register struct point * OneCorner;
-register struct point * OtherCorner; {
+void rectangle_SetRectCorners(struct rectangle *LHS, struct point *OneCorner, struct point *OtherCorner)
+{
 
     long LeftEdge;
     long RightEdge;
@@ -201,37 +191,32 @@ register struct point * OtherCorner; {
     rectangle_SetRectSides(LHS,LeftEdge,TopEdge,RightEdge,BottomEdge);
 }
 
-void rectangle_InsetRect(LHS, DeltaX, DeltaY)
-register struct rectangle * LHS;
-long DeltaY;
-long DeltaX;{
+void rectangle_InsetRect(struct rectangle *LHS, long DeltaX, long DeltaY)
+{
     LHS->top += DeltaY;
     LHS->height -= 2*DeltaY;
     LHS->left += DeltaX;
     LHS->width -= 2*DeltaX;
 }
 
-void rectangle_OffsetRect(LHS, DeltaX, DeltaY)
-struct rectangle * LHS;
-long DeltaY;
-long DeltaX;{
+void rectangle_OffsetRect(struct rectangle *LHS, long DeltaX, long DeltaY)
+{
     LHS->top += DeltaY;
     LHS->left += DeltaX;
 }
 
-void rectangle_EmptyRect(Rect)
-struct rectangle * Rect; {
+void rectangle_EmptyRect(struct rectangle *Rect)
+{
     rectangle_SetRectSize(Rect,0,0,-1,-1);
 }
 
-boolean rectangle_IsEmptyRect(TestRect)
-struct rectangle * TestRect;{
+boolean rectangle_IsEmptyRect(struct rectangle *TestRect)
+{
     return (TestRect->width <= 0) || (TestRect->height <= 0);
 }
 
-boolean rectangle_IsEqualRect(LHS, RHS)
-struct rectangle * LHS;
-struct rectangle * RHS;{
+boolean rectangle_IsEqualRect(struct rectangle *LHS, struct rectangle *RHS)
+{
     return ( (LHS->left == RHS->left) && (LHS->top == RHS->top) &&
 	     (LHS->width == RHS->width) &&
 	     (LHS->height == RHS->height) ) ||
@@ -250,9 +235,8 @@ struct rectangle * OuterRect;{
     return TRUE;
 }
 
-boolean rectangle_IsPtInRect(TestPoint,TestRect)
-struct rectangle * TestRect;
-struct point * TestPoint; {
+boolean rectangle_IsPtInRect(struct point *TestPoint, struct rectangle *TestRect)
+{
     if (point_X(TestPoint) < TestRect->left) return FALSE;
     if (point_Y(TestPoint) < TestRect->top) return FALSE;
     if (point_X(TestPoint) >= TestRect->left+TestRect->width) return FALSE;
@@ -260,57 +244,49 @@ struct point * TestPoint; {
     return TRUE;
 }
 
-short rectangle_PtToAngle(SamplePoint,ReferenceRect)
-struct rectangle * ReferenceRect;
-struct point * SamplePoint; {
+short rectangle_PtToAngle(struct point *SamplePoint, struct rectangle *ReferenceRect)
+{
     /* I need a precise definition of this to implement it,
 	so for now, punt */
     return 30; /* 30 degrees is a nice number */
 }
 
 
-void rectangle_SetLeft(Rect,Value)
-struct rectangle * Rect;
-long Value; {
+void rectangle_SetLeft(struct rectangle *Rect, long Value)
+{
     Rect->left = Value;
 }
 
-void rectangle_SetRight(Rect,Value)
-struct rectangle * Rect;
-long Value; {
+void rectangle_SetRight(struct rectangle *Rect, long Value)
+{
     Rect->width = Value - Rect->left;
 }
 
-void rectangle_SetWidth(Rect,Value)
-struct rectangle * Rect;
-long Value; {
+void rectangle_SetWidth(struct rectangle *Rect, long Value)
+{
     Rect->width = Value;
 }
 
-void rectangle_SetHeight(Rect,Value)
-struct rectangle * Rect;
-long Value; {
+void rectangle_SetHeight(struct rectangle *Rect, long Value)
+{
     Rect->height = Value;
 }
 
-void rectangle_SetTop(Rect,Value)
-struct rectangle * Rect;
-long Value; {
+void rectangle_SetTop(struct rectangle *Rect, long Value)
+{
     Rect->top = Value;
 }
 
-void rectangle_SetBottom(Rect,Value)
-struct rectangle * Rect;
-long Value; {
+void rectangle_SetBottom(struct rectangle *Rect, long Value)
+{
     Rect->height = Value - Rect->top;
 }
 
 /************** class procedures *******************/
 
 
-struct rectangle * rectangle_CreateRectCorners(OneCorner,OtherCorner)
-struct point * OneCorner;
-struct point * OtherCorner; {
+struct rectangle * rectangle_CreateRectCorners(struct point *OneCorner, struct point *OtherCorner)
+{
     struct rectangle * RetValue;
 
     RetValue = (struct rectangle *) malloc(sizeof(struct rectangle));
@@ -318,11 +294,8 @@ struct point * OtherCorner; {
     return RetValue;
 }
 
-struct rectangle * rectangle_CreateRectSize(left,top,width,height)
-long top;
-long left;
-long height;
-long width;{
+struct rectangle * rectangle_CreateRectSize(long left, long top, long width, long height)
+{
     struct rectangle * RetValue;
 
     RetValue = (struct rectangle *) malloc(sizeof(struct rectangle));
@@ -331,11 +304,8 @@ long width;{
 }
 
 
-struct rectangle * rectangle_CreateRectSides(left,top,right, bottom)
-long top;
-long left;
-long bottom;
-long right;{
+struct rectangle * rectangle_CreateRectSides(long left, long top, long right, long bottom)
+{
     struct rectangle * RetValue;
 
     RetValue = (struct rectangle *) malloc(sizeof(struct rectangle));
@@ -343,8 +313,8 @@ long right;{
     return RetValue;
 }
 
-struct rectangle * rectangle_Duplicate(Rect)
-struct rectangle * Rect; {
+struct rectangle * rectangle_Duplicate(struct rectangle *Rect)
+{
     struct rectangle * RetValue;
 
     RetValue = (struct rectangle *) malloc(sizeof(struct rectangle));

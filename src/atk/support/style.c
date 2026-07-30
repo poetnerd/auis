@@ -73,10 +73,8 @@ static long CVDots(long amt, enum style_Unit unit)
     return 0;
 }
 
-static int style_freeattributes(procdata, curnamespace, indexvalue)
-long procdata;
-struct namespace * curnamespace;
-int indexvalue; {
+static int style_freeattributes(long procdata, struct namespace *curnamespace, int indexvalue)
+{
     char * tmpValue;
     if (namespace_BoundpAt(curnamespace,indexvalue)) {
 	tmpValue = (char *) namespace_ValueAt(curnamespace,indexvalue);
@@ -389,10 +387,8 @@ void style__Reset(struct style *self)
     }
 }
 
-static int style_copyattributes(procdata, curnamespace, indexvalue)
-long procdata;
-struct namespace * curnamespace;
-int indexvalue; {
+static int style_copyattributes(long procdata, struct namespace *curnamespace, int indexvalue)
+{
     char * tmpValue;
     char * tmpAttributeName;
     struct atom * tmpAttributeAtom;
@@ -529,11 +525,8 @@ void style__SetNewTopMargin(struct style *self, enum style_MarginValue Basis, lo
     self->NewTopMargin.DotCvtOperand = CVDots(Operand, Unit);
 }
 
-void style__GetNewTopMargin(self, RefBasis, RefOperand, RefUnit)
-struct style *self;
-enum style_MarginValue *RefBasis;
-long *RefOperand;
-enum style_Unit *RefUnit;{
+void style__GetNewTopMargin(struct style *self, enum style_MarginValue *RefBasis, long *RefOperand, enum style_Unit *RefUnit)
+{
     *RefBasis =  self->NewTopMargin.MarginBasis;
     *RefOperand = self->NewTopMargin.Operand;
     *RefUnit = self->NewTopMargin.MarginUnit;
@@ -827,10 +820,8 @@ void style__GetTabChangeList(struct style *self, long *RefNumTabChanges, struct 
     }
 }
 
-void style__AddAttribute(self,NewAttributeName, NewAttributeValue)
-struct style * self;
-char * NewAttributeName;
-char * NewAttributeValue; {
+void style__AddAttribute(struct style *self, char *NewAttributeName, char *NewAttributeValue)
+{
     struct atom *tmpAtom;
     char * tmpValue;
 
@@ -844,9 +835,8 @@ char * NewAttributeValue; {
     if(self->AdditionalAttributes)    namespace_SetValue(self->AdditionalAttributes,tmpAtom, (long) tmpValue);
 }
 
-void style__RemoveAttribute(self,OldAttributeName)
-struct style * self;
-char * OldAttributeName;{
+void style__RemoveAttribute(struct style *self, char *OldAttributeName)
+{
     struct atom * tmpAtom;
     long tmpValue;
 
@@ -858,9 +848,8 @@ char * OldAttributeName;{
 
 }
 
-char * style__GetAttribute(self,OldAttributeName)
-struct style * self;
-char * OldAttributeName; {
+char * style__GetAttribute(struct style *self, char *OldAttributeName)
+{
     struct atom * tmpAtom;
     long tmpValue;
 
@@ -872,9 +861,8 @@ char * OldAttributeName; {
     
 }
 
-boolean style__IsAttribute(self,TestAttributeName)
-struct style * self;
-char * TestAttributeName;{
+boolean style__IsAttribute(struct style *self, char *TestAttributeName)
+{
     struct atom * tmpAtom;
 
     if (!self->AdditionalAttributes) return FALSE;
@@ -915,10 +903,8 @@ long style__ReadMenu(struct style *self, FILE *fp)
 
 /* Datastream I/O: attribute fields */
 
-static int style_writeAdditionalAttribute(fileptr, curnamespace, indexvalue)
-FILE *fileptr;
-struct namespace * curnamespace;
-int indexvalue; {
+static int style_writeAdditionalAttribute(FILE *fileptr, struct namespace *curnamespace, int indexvalue)
+{
     char * tmpValue;
     char * tmpAttributeName;
     struct atom * tmpAttributeAtom;

@@ -39,10 +39,8 @@ static struct owatch *owo=NULL;
 #define owatch_BLOCKSIZE 8160
 #define owatch_WATCHESPERBLOCK (owatch_BLOCKSIZE/sizeof(struct owatch_data))
 
-void owatch__ObservedChanged(self, changed, value)
-struct owatch *self;
-struct observable *changed;
-long value;  {
+void owatch__ObservedChanged(struct owatch *self, struct observable *changed, long value)
+{
     struct owatch_data *o=useddata;
     if(value!=observable_OBJECTDESTROYED) return;
     while(o) {

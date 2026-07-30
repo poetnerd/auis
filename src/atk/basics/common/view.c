@@ -439,14 +439,14 @@ boolean view__IsAncestor(struct view *self, struct view *possibleAncestor)
     return self != NULL;
 }
 
-char * view__GetWindowManagerType(self)
-struct view * self;{
+char * view__GetWindowManagerType(struct view *self)
+{
     if ((self)->drawable) return graphic_GetWindowManagerType((self)->drawable);
     return "";
 }
 
-long view__GetDevice(self)
-struct view * self;{
+long view__GetDevice(struct view *self)
+{
     if ((self)->drawable) return graphic_GetDevice((self)->drawable);
     return 0;
 }

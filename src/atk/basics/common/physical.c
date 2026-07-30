@@ -45,9 +45,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
 #define SINGLEWINDOW 1
 
-long physical_LogicalPtToGlobalX(CoordinateSystem,LogicalPoint)
-struct graphic * CoordinateSystem;
-struct point * LogicalPoint; {
+long physical_LogicalPtToGlobalX(struct graphic *CoordinateSystem, struct point *LogicalPoint)
+{
 #if SINGLEWINDOW
     return point_X(LogicalPoint)+
 	   point_X(&CoordinateSystem->physicalOrigin)-
@@ -58,9 +57,8 @@ struct point * LogicalPoint; {
 #endif /* SINGLEWINDOW */
 }   
 
-long physical_LogicalPtToGlobalY(CoordinateSystem,LogicalPoint)
-struct graphic * CoordinateSystem;
-struct point * LogicalPoint; {
+long physical_LogicalPtToGlobalY(struct graphic *CoordinateSystem, struct point *LogicalPoint)
+{
 #if SINGLEWINDOW
     return point_Y(LogicalPoint)+
 	   point_Y(&CoordinateSystem->physicalOrigin)-
@@ -71,9 +69,8 @@ struct point * LogicalPoint; {
 #endif /* SINGLEWINDOW */
 }   
 
-void physical_LogicalPtToGlobalPt(CoordinateSystem,tempPoint)
-struct graphic * CoordinateSystem;
-struct point * tempPoint; {
+void physical_LogicalPtToGlobalPt(struct graphic *CoordinateSystem, struct point *tempPoint)
+{
 #if SINGLEWINDOW
     point_OffsetPoint(tempPoint,
 	   point_X(&CoordinateSystem->physicalOrigin)-
@@ -87,9 +84,8 @@ struct point * tempPoint; {
 #endif /* SINGLEWINDOW */
 }   
 
-void physical_GlobalPtToLogicalPt(CoordinateSystem,tempPoint)
-struct graphic * CoordinateSystem;
-struct point * tempPoint; {
+void physical_GlobalPtToLogicalPt(struct graphic *CoordinateSystem, struct point *tempPoint)
+{
 #if SINGLEWINDOW
     point_OffsetPoint(tempPoint,
 	   -(point_X(&CoordinateSystem->physicalOrigin)-
@@ -105,9 +101,8 @@ struct point * tempPoint; {
 
 
 
-long physical_LogicalXToGlobalX(CoordinateSystem,LogicalX)
-struct graphic * CoordinateSystem;
-long LogicalX; {
+long physical_LogicalXToGlobalX(struct graphic *CoordinateSystem, long LogicalX)
+{
 #if SINGLEWINDOW
     return LogicalX +
 	   point_X(&CoordinateSystem->physicalOrigin)-
@@ -118,9 +113,8 @@ long LogicalX; {
 #endif /* SINGLEWINDOW */
 }   
 
-long physical_LogicalYToGlobalY(CoordinateSystem,LogicalY)
-struct graphic * CoordinateSystem;
-long LogicalY; {
+long physical_LogicalYToGlobalY(struct graphic *CoordinateSystem, long LogicalY)
+{
 #if SINGLEWINDOW
     return LogicalY +
 	   point_Y(&CoordinateSystem->physicalOrigin)-
@@ -131,9 +125,8 @@ long LogicalY; {
 #endif /* SINGLEWINDOW */
 }   
 
-long physical_GlobalXToLogicalX(CoordinateSystem,PhysicalX)
-struct graphic * CoordinateSystem;
-long PhysicalX; {
+long physical_GlobalXToLogicalX(struct graphic *CoordinateSystem, long PhysicalX)
+{
 #if SINGLEWINDOW
     return PhysicalX - (
 	   point_X(&CoordinateSystem->physicalOrigin)-
@@ -144,9 +137,8 @@ long PhysicalX; {
 #endif /* SINGLEWINDOW */
 }
 
-long physical_GlobalYToLogicalY(CoordinateSystem,PhysicalY)
-struct graphic * CoordinateSystem;
-long PhysicalY; {
+long physical_GlobalYToLogicalY(struct graphic *CoordinateSystem, long PhysicalY)
+{
 #if SINGLEWINDOW
     return PhysicalY - (
 	   point_Y(&CoordinateSystem->physicalOrigin)-
@@ -157,9 +149,8 @@ long PhysicalY; {
 #endif /* SINGLEWINDOW */
 }
 
-void physical_LogicalToGlobalRect(CoordinateSystem,TempRect)
-struct graphic * CoordinateSystem;
-struct rectangle * TempRect; {
+void physical_LogicalToGlobalRect(struct graphic *CoordinateSystem, struct rectangle *TempRect)
+{
 #if SINGLEWINDOW
     rectangle_OffsetRect(TempRect,
 	   point_X(&CoordinateSystem->physicalOrigin)-
@@ -173,9 +164,8 @@ struct rectangle * TempRect; {
 #endif /* SINGLEWINDOW */
 }
 
-void physical_GlobalToLogicalRect(CoordinateSystem,TempRect)
-struct graphic * CoordinateSystem;
-struct rectangle * TempRect; {
+void physical_GlobalToLogicalRect(struct graphic *CoordinateSystem, struct rectangle *TempRect)
+{
 #if SINGLEWINDOW
     rectangle_OffsetRect(TempRect,
 	   -(point_X(&CoordinateSystem->physicalOrigin)-

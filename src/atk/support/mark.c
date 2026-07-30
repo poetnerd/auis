@@ -70,9 +70,8 @@ void mark__Deallocate(struct classheader *classID, struct mark *self)
     freeMarks = self;
 }
 
-boolean mark__InitializeObject(classID, self)
-struct classheader *classID;
-struct mark *self;  {
+boolean mark__InitializeObject(struct classheader *classID, struct mark *self)
+{
     self->next = NULL;
     self->pos = 0;
     self->length = 0;
@@ -84,18 +83,14 @@ struct mark *self;  {
     return TRUE;
 }
 
-void mark__SetStyle(self, beginning, ending)
-struct mark *self;
-boolean beginning;
-boolean ending;  {
+void mark__SetStyle(struct mark *self, boolean beginning, boolean ending)
+{
     self->includeBeginning = beginning;
     self->includeEnding = ending;
 }
 
-struct mark *mark__NewWithStyle(classID, beginning, ending)
-struct classheader *classID;
-boolean beginning;
-boolean ending;  {
+struct mark * mark__NewWithStyle(struct classheader *classID, boolean beginning, boolean ending)
+{
     struct mark *nmark;
 
     nmark = mark_New();

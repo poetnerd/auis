@@ -197,13 +197,25 @@ HDR = re.compile(
     r'(?P<params>[^)]*)\)\s*(?:/\*.*?\*/\s*)?$')
 TYPEONLY = re.compile(r'^(static\s+|register\s+)*[A-Za-z_][\w \t]*\**\s*$')
 DECL_LINE = re.compile(r'^\s*(register\s+)?[A-Za-z_][\w \t,*\[\]()]*;\s*(/\*.*?\*/\s*)?$')
+BRACE_GLUED = re.compile(
+    r'^(?P<decl>\s*(register\s+)?[A-Za-z_][\w \t,*\[\]()]*;)\s*\{\s*$')
 
 RESERVED = {'if', 'while', 'for', 'switch', 'return', 'sizeof', 'do', 'else'}
 
 
 def parse_decl_block(lines, start):
     """Consume K&R parameter declarations from lines[start:]; return
-    (index_of_brace_line, decl_text) or None if this isn't a K&R body."""
+    (index_of_brace_line, decl_text) or None if this isn't a K&R body.
+
+    Does not mutate `lines` -- a brace-glued line (last param declaration
+    and the opening brace on one physical line) is only *identified* here;
+    the caller rewrites it to a bare '{' itself, and only once it has
+    committed to actually using this candidate (see convert_file). This
+    candidate can still be rejected downstream (no DB signature, DRIFT,
+    unhandled type, unparseable helper decls) -- mutating here unconditionally
+    would silently destroy the glued declaration's text even on that
+    rejection path, since nothing else in the file re-derives it.
+    """
     i = start
     decls = []
     while i < len(lines):
@@ -217,6 +229,10 @@ def parse_decl_block(lines, start):
             decls.append(s)
             i += 1
             continue
+        bg = BRACE_GLUED.match(lines[i].rstrip('\n'))
+        if bg:
+            decls.append(bg.group('decl').strip())
+            return i, '\n'.join(decls)
         return None
     return None
 
@@ -359,6 +375,12 @@ def convert_file(path, dbdir, do_helpers=True):
         if prev_type:
             out.pop()           # the type-only line is folded into new_hdr
         out.append(new_hdr)
+        # A brace-glued decl block (last param and '{' on one physical
+        # line) is only rewritten to a bare '{' now that this candidate is
+        # definitely being used -- see parse_decl_block's docstring for why
+        # this can't happen speculatively.
+        if lines[brace_idx].strip() != '{':
+            lines[brace_idx] = '{'
         i = brace_idx           # skip the K&R decl block entirely
         changed = True
 

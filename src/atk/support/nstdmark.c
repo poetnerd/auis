@@ -49,9 +49,8 @@ static struct nestedmark *lastSelf;
 static long lastPos;
 static long ncrlength;
 
-boolean nestedmark__InitializeObject(classID, self)
-struct classheader *classID;
-struct nestedmark *self;  {
+boolean nestedmark__InitializeObject(struct classheader *classID, struct nestedmark *self)
+{
     self->children = NULL;
     self->position = NULL;
     self->length = 999999999;
@@ -75,8 +74,8 @@ static void DoFreeTree(struct nestedmark *self)
     nestedmark_FreeTree(self);
 }
 
-void nestedmark__FreeTree(self)
-struct nestedmark *self;  {
+void nestedmark__FreeTree(struct nestedmark *self)
+{
     if (self->children)  {
 	tree23int_Apply(self->children, (procedure) DoFreeTree);
 	tree23int_Free(self->children);
@@ -90,11 +89,8 @@ struct filterstruct {
     struct nestedmark *fpparent;
 };
 
-static void FilterProc(self, data, t, which)
-struct nestedmark *self;
-struct filterstruct *data;
-struct tree23int *t;
-struct tree23int *which;  {
+static void FilterProc(struct nestedmark *self, struct filterstruct *data, struct tree23int *t, struct tree23int *which)
+{
     self->position = t;
     if (which == data->fptree)
 	self->parent = data->fpparent;
@@ -219,8 +215,8 @@ struct nestedmark * nestedmark__Add(struct nestedmark *self, long pos, long leng
     return newnm;
 }
 
-void nestedmark__Delete(self)
-struct nestedmark *self;  {
+void nestedmark__Delete(struct nestedmark *self)
+{
 register struct nestedmark *pp;
     int relleft;
     struct filterstruct procdata;
@@ -312,9 +308,8 @@ void nestedmark__Update(struct nestedmark *self, long pos, long length)
     }
 }
 
-struct nestedmark *nestedmark__GetInnerMost(self, pos)
-struct nestedmark *self;
-long pos;  {
+struct nestedmark * nestedmark__GetInnerMost(struct nestedmark *self, long pos)
+{
     register struct nestedmark *tp;
     long  eleft;
 
@@ -343,9 +338,8 @@ long pos;  {
     return self;
 }
 
-struct nestedmark *nestedmark__GetEnclosing(self, pos)
-struct nestedmark *self;
-long pos;  {
+struct nestedmark * nestedmark__GetEnclosing(struct nestedmark *self, long pos)
+{
     register struct nestedmark *tp;
     long  eleft;
 
@@ -390,8 +384,8 @@ long pos;  {
     return self;
 }
 
-long nestedmark__Eval(self)
-struct nestedmark *self;  {
+long nestedmark__Eval(struct nestedmark *self)
+{
     register int i;
 
     i=0;
@@ -404,9 +398,8 @@ struct nestedmark *self;  {
     return i;
 }
 
-struct nestedmark *nestedmark__GetCommonParent(self, nmark)
-struct nestedmark *self;
-struct nestedmark *nmark;  {
+struct nestedmark * nestedmark__GetCommonParent(struct nestedmark *self, struct nestedmark *nmark)
+{
     register struct nestedmark *tp;
     register struct nestedmark *up;
 
@@ -423,15 +416,13 @@ struct nestedmark *nmark;  {
     return NULL;	/* no common parent */
 }
 
-void nestedmark__SetLength(self, length)
-struct nestedmark *self;
-long length;  {
+void nestedmark__SetLength(struct nestedmark *self, long length)
+{
     self->length = length;
 }
 
-long nestedmark__GetNextChange(self, pos)
-struct nestedmark *self;
-long pos;  {
+long nestedmark__GetNextChange(struct nestedmark *self, long pos)
+{
     if (self != lastSelf || pos != lastPos)
 	nestedmark_GetInnerMost(self, pos);
     return ncrlength;

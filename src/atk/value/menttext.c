@@ -177,10 +177,8 @@ boolean mentertext__InsertCharacters(struct mentertext *self, long pos, char *st
     if(!super_InsertCharacters(self, pos, str, len)) return FALSE;
     return TRUE;
 }
-boolean mentertext__DeleteCharacters(self, pos, len)
-struct mentertext *self;
-long pos;
-long len;  {
+boolean mentertext__DeleteCharacters(struct mentertext *self, long pos, long len)
+{
     long n;
     if(Enclosed(self,pos) || Enclosed(self,pos + 1)) return FALSE;
     if( (n = environment_GetNextChange(Root(self), pos)) > len + pos && n < 100000) return FALSE; /* Is this the right return value? --ghoti */

@@ -88,10 +88,8 @@ boolean enterint__InsertCharacters(struct enterint *self, long pos, char *str, l
     checkstyles(self);
     return TRUE;
 }
-boolean enterint__DeleteCharacters(self, pos, len)
-struct enterint *self;
-long pos;
-long len;  {
+boolean enterint__DeleteCharacters(struct enterint *self, long pos, long len)
+{
     if(!super_DeleteCharacters(self, pos, len)) return FALSE;
     if(enterint_GetLength(self) > 0)
 	checkstyles(self);

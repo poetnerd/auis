@@ -754,8 +754,8 @@ static int XErrorsToConsole(Display *DisplayPtr, XErrorEvent *ErrorBlock)
 		ErrorBlock->resourceid);
 }
 
-static void xim_EstablishConsole(xhost)
-char * xhost; {
+static void xim_EstablishConsole(char *xhost)
+{
     int i;
     char tmpHostName[255];
     unsigned long hostaddr;

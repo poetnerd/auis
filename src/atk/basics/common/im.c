@@ -195,8 +195,8 @@ static void InitGlobalStructure() {
 
 /* Everyone gets the global data pointer through the following im class procedure */
 
-struct im_GlobalDataType * im__GetGlobalData(classID)
-struct classheader * classID; {
+struct im_GlobalDataType * im__GetGlobalData(struct classheader *classID)
+{
     return gData;
 }
 
@@ -827,17 +827,15 @@ void im__vfilecleanup(struct classheader *classID)
 }
 
 
-void im__plumber(classID, reportFile)
-struct classheader * classID;
-FILE * reportFile; {
+void im__plumber(struct classheader *classID, FILE *reportFile)
+{
 #if defined(ANDREW_MALLOC_ENV) && defined(DEBUG_MALLOC_ENV)
     plumber(reportFile);
 #endif /* #if defined(ANDREW_MALLOC_ENV) && defined(DEBUG_MALLOC_ENV) */
 }
 
-void im__SetDefaultServerHost(classID, value)
-struct classheader *classID;
-char *value;  {
+void im__SetDefaultServerHost(struct classheader *classID, char *value)
+{
     char *buffer;
 
     buffer = malloc(strlen(value) + 1);
@@ -3065,9 +3063,8 @@ Under X it unmaps the inputonly window associated the cursor, since X handles th
 
 */
 
-void im__ClearCursors(self,C)
-struct im * self;
-struct cursor * C; {
+void im__ClearCursors(struct im *self, struct cursor *C)
+{
     printf("im_ClearCursors: missing method\n");
 }
 

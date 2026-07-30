@@ -106,10 +106,8 @@ boolean entertext__InsertCharacters(struct entertext *self, long pos, char *str,
     checkstyles(self);
     return TRUE;
 }
-boolean entertext__DeleteCharacters(self, pos, len)
-struct entertext *self;
-long pos;
-long len;  {
+boolean entertext__DeleteCharacters(struct entertext *self, long pos, long len)
+{
     if(!super_DeleteCharacters(self, pos, len)) return FALSE;
     if(entertext_GetLength(self) > 0)
 	checkstyles(self);

@@ -104,9 +104,8 @@ void observable__FinalizeObject(struct classheader *classID, struct observable *
 
 /* Finds the index of the observer in self observers table.  Returns -1 if observer is not in the list
  */
-static int FindObserver(self, observer)
-register struct observable *self;
-register struct observable *observer;  {
+static int FindObserver(struct observable *self, struct observable *observer)
+{
     register int i = 0;
     struct observable **observers;
 
@@ -116,15 +115,13 @@ register struct observable *observer;  {
     return -1;
 }
 
-boolean observable__IsObserver(self, observer)
-register struct observable *self;
-register struct observable *observer;  {
+boolean observable__IsObserver(struct observable *self, struct observable *observer)
+{
     return (FindObserver(self, observer) != -1 ? TRUE: FALSE);
 }
 
-void observable__AddObserver(self, observer)
-register struct observable *self;
-register struct observable *observer;  {
+void observable__AddObserver(struct observable *self, struct observable *observer)
+{
     if (self->maxObservers == 0)  {
 	self->maxObservers = INITIALNUMOBSERVERS;
 	self->observers = (struct observable **) malloc (INITIALNUMOBSERVERS * sizeof(struct observable *));
@@ -137,9 +134,8 @@ register struct observable *observer;  {
     self->observers[self->nObservers++] = observer;
 }
 
-void observable__RemoveObserver(self, observer)
-register struct observable *self;
-register struct observable *observer;  {
+void observable__RemoveObserver(struct observable *self, struct observable *observer)
+{
     register int i;
 
     if ((i = FindObserver(self, observer)) != -1)  {
@@ -150,9 +146,8 @@ register struct observable *observer;  {
     }
 }
 
-void observable__NotifyObservers(self, value)
-register struct observable *self;
-long value;  {
+void observable__NotifyObservers(struct observable *self, long value)
+{
     register struct observable **observers;
     register int i;
 
@@ -169,10 +164,8 @@ long value;  {
 }
 
 
-void observable__ObservedChanged(self, changed, value)
-struct observable *self;
-struct observable *changed;
-long value;  {
+void observable__ObservedChanged(struct observable *self, struct observable *changed, long value)
+{
     
 }
 	/* the following methods implement a scheme for "triggers", 

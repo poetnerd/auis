@@ -58,8 +58,8 @@ static int EndOld = 0;
 static int EndNew = 0;
 
 
-static void Intersect(oldnum, newnum)
-int oldnum, newnum;  {
+static void Intersect(int oldnum, int newnum)
+{
     int ob, ot, ol, or, nb, nt, nl, nr, ib, it;
     
     ob = OldList[oldnum].bottom;
@@ -117,18 +117,16 @@ void rectlist__ResetList(struct classheader *classID)
     EndNew = 0;
 }
 
-void rectlist__AddOldRectangle(classID, bottom, top, left, right)
-struct classheader *classID;
-long bottom, top, left, right;  {
+void rectlist__AddOldRectangle(struct classheader *classID, long bottom, long top, long left, long right)
+{
     OldList[EndOld].bottom = bottom;
     OldList[EndOld].top = top;
     OldList[EndOld].left = left;
     OldList[EndOld++].right = right;
 }
 
-void rectlist__AddNewRectangle(classID, bottom, top, left, right, startscan) 
-struct classheader *classID;
-long bottom, top, left, right, startscan; {
+void rectlist__AddNewRectangle(struct classheader *classID, long bottom, long top, long left, long right, long startscan)
+{
     /* This routine adds a new rectangle to the newlist and then intersects it with the elements in the OldList.  If startscan is -1 the intersection i not done.  Otherwise it gives the location in the OldList to start doing the intersection. */
 
     register int i;

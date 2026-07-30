@@ -46,8 +46,7 @@ enum view_DescriberErrs describer__Describe(struct describer *self, struct view 
     return view_NoDescriptionAvailable;
 }
 
-boolean describer_InitializeObject(classID,self)
-struct classheader * classID; 
-struct describer * self; {
+boolean describer_InitializeObject(struct classheader *classID, struct describer *self)
+{
     return TRUE;
 }

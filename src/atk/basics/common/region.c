@@ -49,45 +49,36 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 /************** methods *********************/
 
 
-void region__XorRegion(self, RHS, Result)
-struct region * self;
-struct region * RHS;
-struct region * Result;{
+void region__XorRegion(struct region *self, struct region *RHS, struct region *Result)
+{
     XXorRegion(self->regionData,RHS->regionData,Result->regionData);
 }
 
-void region__UnionRegion(self, RHS, Result)
-struct region * self;
-struct region * RHS; 
-struct region * Result; {
+void region__UnionRegion(struct region *self, struct region *RHS, struct region *Result)
+{
     XUnionRegion(self->regionData,RHS->regionData,Result->regionData);
 }
 
-void region__IntersectRegion(self, RHS, Result)
-struct region * self;
-struct region * RHS;
-struct region * Result; {
+void region__IntersectRegion(struct region *self, struct region *RHS, struct region *Result)
+{
     XIntersectRegion(self->regionData,RHS->regionData,Result->regionData);
 }
 
-void region__SubtractRegion(self, RHS, Result)
-struct region * self;
-struct region * RHS;
-struct region * Result; {
+void region__SubtractRegion(struct region *self, struct region *RHS, struct region *Result)
+{
     XSubtractRegion(self->regionData,RHS->regionData,Result->regionData);
 }
 
-void region__ClearRegion(self)
-struct region * self; {
+void region__ClearRegion(struct region *self)
+{
     if(self->regionData) {
 	XDestroyRegion(self->regionData);
     }
     self->regionData = XCreateRegion();
 }
 
-void region__RectRegion(self, NewRegnRect)
-struct region * self;
-struct rectangle * NewRegnRect;{
+void region__RectRegion(struct region *self, struct rectangle *NewRegnRect)
+{
     XPoint rectPoint[5];
     rectPoint[0].x = rectPoint[4].x = rectangle_Left(NewRegnRect);
     rectPoint[0].y = rectPoint[4].y = rectangle_Top(NewRegnRect);
@@ -103,8 +94,8 @@ struct rectangle * NewRegnRect;{
     self->regionData = XPolygonRegion(rectPoint, 5,  EvenOddRule);
 }
 
-struct region * region__DuplicateRegion(self)
-struct region * self;{
+struct region * region__DuplicateRegion(struct region *self)
+{
     struct region * retValue;
 
     retValue = region_CreateEmptyRegion();
@@ -113,40 +104,33 @@ struct region * self;{
 
 }
 
-void region__OffsetRegion(self, DeltaX,DeltaY)
-struct region * self;
-long DeltaY;
-long DeltaX;{
+void region__OffsetRegion(struct region *self, long DeltaX, long DeltaY)
+{
     XOffsetRegion(self->regionData,DeltaX,DeltaY);
 }
 
-void region__InsetRegion(self, DeltaX, DeltaY)
-struct region * self;
-long DeltaY;
-long DeltaX;{
+void region__InsetRegion(struct region *self, long DeltaX, long DeltaY)
+{
     XShrinkRegion(self->regionData,DeltaX,DeltaY);
 }
 
-boolean region__IsRegionEmpty(self)
-struct region * self;{
+boolean region__IsRegionEmpty(struct region *self)
+{
     return XEmptyRegion(self->regionData);
 }
 
-boolean region__IsPointInRegion(self,TestPt)
-struct region * self;
-struct point * TestPt;{
+boolean region__IsPointInRegion(struct region *self, struct point *TestPt)
+{
     return XPointInRegion(self->regionData,point_X(TestPt), point_Y(TestPt));
 }
 
-boolean region__IsRectInRegion(self, TestRect)
-struct region * self;
-struct rectangle * TestRect;{
+boolean region__IsRectInRegion(struct region *self, struct rectangle *TestRect)
+{
     return XRectInRegion(self->regionData, rectangle_Left(TestRect), rectangle_Top(TestRect), rectangle_Width(TestRect), rectangle_Height(TestRect));
 }
 
-boolean region__AreRegionsEqual(self,TestRegion)
-struct region * self;
-struct region * TestRegion;{
+boolean region__AreRegionsEqual(struct region *self, struct region *TestRegion)
+{
     return XEqualRegion(self->regionData, TestRegion->regionData);
 }
 

@@ -51,8 +51,8 @@ static char CursorTable[] = {  'a',
 
 
 
-void cursor__ChangeShape(self)
-struct cursor *self; {
+void cursor__ChangeShape(struct cursor *self)
+{
     printf("cursor_ChangeShape: missing method\n");
 }
 
