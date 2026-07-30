@@ -870,6 +870,39 @@ a real error); `fossil status` matched exactly (78 edited files); `fossil
 extras` showed only ordinary build byproducts plus two pre-existing,
 unrelated untracked files predating this session by weeks.
 
+### `ansify` brace-body corruption fix (tool fix, not a batch, 2026-07-30)
+
+B3's finding 5 above (the brace-glued-to-local-variable-declaration
+corruption) is fixed. Root cause was a narrow regression in that
+morning's own brace-glued-parameter fix: `parse_decl_block` can return
+`brace_idx` via two different code paths — the new brace-glued-parameter
+branch (safe to squash to a bare `{`, since the declaration text was
+already captured) or the original, pre-existing bare-brace check (which
+may have arbitrary trailing body content, like a local variable
+declaration, that was never captured and must not be touched) — and
+`convert_file`'s mutation-on-accept step couldn't tell them apart, so it
+squashed both. Fixed by having `parse_decl_block` return an explicit
+`needs_brace_split` boolean (`True` only for the brace-glued-parameter
+path) instead of inferring intent from the line's content after the
+fact. Verified end-to-end by the orchestrator *before* writing the task
+prompt (three scratch cases against a patched copy of the tool: the
+corruption case now preserves the local declaration, the plain-bare-brace
+case is unaffected, the original signature-glued case still splits
+correctly) and independently re-verified after the delegate's own
+application: diff matches exactly what was specified; the same three
+cases re-run directly against the real, on-disk fixed tool; `atk/apt/suite`
+and `atk/apt/tree` (the two directories that hit this corruption live in
+B3, already committed with B3's manual stopgap in place) both gated clean,
+twice each, both when the delegate ran it and independently by the
+orchestrator afterward. `fossil status` showed only `revival/tools/ansify`
+edited. **No retrospective recheck of any other directory is needed** —
+established when the bug was first found (see B3 finding 5): the
+corruption is always a hard, unsuppressible compile error, never able to
+silently reach committed code, so B1/B2 (predating this morning's
+vulnerable code) and the classpp-fix's own 7-directory retrospective
+recheck (which ran with the vulnerable code but gated clean throughout)
+are both confirmed unaffected.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)
