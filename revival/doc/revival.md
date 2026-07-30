@@ -504,6 +504,32 @@ sample:
   pointer to a pointer, correctly dereferenced once), was already
   right and left untouched.
 
+- **Six copy/paste typos in class interface files, each substituting
+  a plausible-looking wrong type name for the right one.** A class's
+  interface file declares, for its own constructor and destructor
+  methods, which structure type the object being built or torn down
+  actually is. In six places across two unrelated subsystems (form
+  widgets and a diagram-editing framework), that declared type was
+  wrong — not garbled, but a real, existing, *different* type: a
+  sibling class one character away in the alphabet, the class's own
+  parent, the short internal filename a class is stored under rather
+  than the class's real name, and in one case a type that does not
+  exist anywhere in the codebase at all. Every implementation was
+  already correct — these were declaration-only mistakes, and the
+  declared type for a constructor happens to be pure documentation to
+  the compiler that built this software originally, checked against
+  nothing, so a wrong entry there had no way to ever be caught. One of
+  the six was not a constructor or destructor but an ordinary method
+  used throughout its own file — its wrong declared type meant every
+  one of that method's own field accesses was, technically, accessing
+  the wrong structure's memory layout by name, silently correct only
+  because the two structures happened to be laid out compatibly by
+  coincidence. Found by systematically checking every such declaration
+  in two directories against the real class each belonged to, once the
+  ANSI C conversion effort's own type-checking made the first of the
+  six impossible to ignore. Corrected all six to name the class they
+  actually belong to.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

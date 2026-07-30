@@ -144,8 +144,16 @@ reasoning once batch size actually reflects it.
       last K&R parameter, see runbook) and a new cross-`.ch` rock-type
       disagreement sub-pattern, both bounded/non-silent, neither fixed
       in the tool. Committed.
-- [ ] **B2**: `atk/value` (27), `atk/support` (20), `atk/supportviews`
+- [x] **B2**: `atk/value` (27), `atk/support` (20), `atk/supportviews`
       (17), `atk/adew` (13), `atk/basics/x` (11) — 88 files, 5 dirs.
+      **Done 2026-07-30**: 81 classes, first M3 batch to edit `.ch`
+      files (7 of them); found a real classpp `FinalizeObject`
+      codegen bug and a second classpp bug (unnamed-parameter type
+      loss), 6 real ~35-year-old `.ch` typos, and confirmed live (for
+      the first time) B1's predicted brace-glued parser gap
+      (`xgraphic.c`, 32 methods). See `m3-rollout-runbook.md` findings
+      → B2 and `revival.md`/`porting-assessment.md` for full detail.
+      Committed.
 - [ ] **B3**: `atk/extensions` (10), `atk/syntax/tlex` (8), `atk/
       textobjects` (7, judgment call — core text-embedded-object
       infra, not a content-type inset), `atk/apt/suite` (6), `atk/

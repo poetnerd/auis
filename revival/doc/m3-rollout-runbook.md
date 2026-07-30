@@ -550,6 +550,80 @@ the concurrent session's `image.c` fix touches only the datastream
 `roadmap.md`'s `image` entry as a new data point, still unconfirmed as
 to root cause.
 
+### B2 (`atk/value`, `atk/support`, `atk/supportviews`, `atk/adew`, `atk/basics/x`, 81 classes, 2026-07-30)
+
+Full findings: `claude-history/m3-b2-value-support-REPORT.md`. The
+widest single M3 batch by class count so far (81 vs. B1's 41) and the
+**first batch to actually edit `.ch` files** — every prior batch's
+fixes stayed inside `.c`. Orchestrator pre-diagnosis resolved 37
+DRIFT/skip findings across all 5 directories before delegating (all
+confirmed exactly matching on the real run); the session itself found
+6 more genuinely new patterns:
+
+1. **A real classpp codegen bug, distinct from the DRIFT false-positive
+   already documented**: `FinalizeObject`'s exported `-pe` prototype is
+   built from whatever the `.ch` declares (the ordinary classproc
+   path), but the internal generated `__Finalize` call site
+   unconditionally passes 2 hardcoded args — self-inconsistent the
+   moment a class uses the ordinary empty-parens `FinalizeObject()`
+   convention. Confirmed directly in `overhead/class/pp/class.c`.
+   Full write-up and the open "fix classpp centrally vs. keep
+   patching `.ch` per-directory" question: `porting-assessment.md`,
+   new subsection after §17's Tool-fix note.
+2. **6 real ~35-year-old `.ch` copy/paste typos**, found via a
+   systematic audit triggered by investigating (1) — wrong class name
+   substituted in a restated `InitializeObject`/`FinalizeObject`/
+   ordinary-method parameter type, invisible until `-pe` actually
+   type-checked them. One (`celv.ch`'s `PromptForInfo`) was a live bug
+   (an ordinary method, not lifecycle-special-cased); the other five
+   were technically dead documentation for their `InitializeObject`
+   half (classpp ignores it) but live for `FinalizeObject`. Full table
+   in the B2 report §6; written up in `revival.md`'s "Old bugs never
+   found till now."
+3. **A third classpp bug**: an unnamed classproc parameter
+   (`xfontd.ch`'s `Deallocate(struct xfontdesc *)`, no parameter name)
+   causes classpp to drop the type name from the emitted prototype
+   entirely (`struct  *`, uncompilable). Workaround: name the
+   parameter. `porting-assessment.md`, same new subsection as (1).
+4. **B1's predicted brace-glued parser gap, confirmed live for the
+   first time**: `xgraphic.c` had 32 real class methods silently
+   invisible to `ansify` (B1 found the pattern but proved it inert in
+   its own directory; B2 hit a real, `-pe`-blocking instance). Fixed
+   by mechanically splitting the glued brace onto its own line, then
+   letting `ansify` reconvert normally — confirms this is a viable
+   stopgap for any future directory hitting the same gap without
+   needing the tool itself fixed first.
+5. **A new, named recurring shape: "override typed to the general base
+   interface, but the body needs the concrete subclass"** — 8 instances
+   across 4 directories (`buffer.c`, `sbuttonv.c`, `celv.c`,
+   `arbiterv.c`, `lsetv.c`, `xcmap.c`, `xim.c`). Distinct from both the
+   rock idiom (`void*`/`long`) and B1's cross-`.ch` disagreement
+   pattern: here the `.ch` is *correct* (the override's parameter really
+   is the general interface type, e.g. `struct color *`), but the
+   implementation always needs the concrete subtype for its own fields.
+   Resolved uniformly: rename the parameter to `..._generic`, add a
+   local cast to the concrete type for body use, keep `super_*`
+   forwarding calls on the `_generic` (correctly-typed) name. Zero
+   behavior change, same as every other type-safety-only fix in this
+   taxonomy.
+6. One real caller bug found alongside the above (`sbuttonv.c`'s
+   `sbuttonv__ObservedChanged` called `sbutton_GetTrigger(b, ...)` using
+   the method's own `b` parameter instead of the already-verified-equal
+   local `b2` four lines below where the two were confirmed identical)
+   — same species as B1's `im.c` colormap dereference: invisible under
+   K&R, surfaced the moment the call got typed for real.
+
+Also confirmed (2026-07-30, independently, by the orchestrator): full
+gate re-run (all 5 directories, twice each) came back clean and
+deterministic; verified the classpp `FinalizeObject` mechanism directly
+against `class.c`'s source (both the hardcoded call site and the
+non-hardcoded prototype loop); spot-checked 4 of the 6 `.ch` typo
+diffs directly; confirmed **zero cross-directory consumers** of any of
+the 6 corrected classes' `InitializeObject`/`FinalizeObject`/
+`PromptForInfo` (so the `.ch`/`.ih` fixes, despite being the first
+`.ch`-level edits in M3, carry no tree-wide blast radius in practice);
+confirmed `xgraphic.c` now has zero remaining brace-glued lines.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)

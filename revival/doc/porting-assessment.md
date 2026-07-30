@@ -1973,8 +1973,18 @@ and instructive:
   forwarding) but a real, live interface violation, not a tool
   artifact — worth a closer look whenever `atk/value` is batched.
 
-Not yet individually checked: `valueview__Changed`,
-`valueview__DrawFromScratch` (`atk/value`), `type__GetDeclaration`
+**`valueview__Changed`/`valueview__DrawFromScratch` (`atk/value`) — now
+checked, M3 batch B2 (2026-07-30)**: same species as the
+`WantInputFocus` pair above (a base-class virtual-method stub ignoring
+a declared parameter it doesn't need — `DrawFromScratch`'s body is
+literally `/* Subclass responsibility */`; every real subclass already
+overrides it with the full, correct signature; `Changed`'s body is
+similarly a no-op comment). Resolved with the same padding fix as
+`WantInputFocus` (add the unused parameter, no body change) — see
+`m3-rollout-runbook.md`'s B2 findings for full detail on all 4 of this
+shape found in that batch.
+
+Not yet individually checked: `type__GetDeclaration`
 (directory TBD), `zipobject__Print_Object`/
 `Normalize_Object_Points`/`Highlight_Object_Points`/
 `Expose_Object_Points`/`Hide_Object_Points`, and
@@ -1992,6 +2002,68 @@ one-implicit-param rule. Not fixed here, per the Delegation ruling
 (§14): tool construction stays top-level. Until fixed, any M3 session
 encountering a DRIFT report for one of these three names should
 consult this section before escalating it as a real interface bug.
+
+#### Related, but distinct: classpp's `FinalizeObject` prototype/call-site inconsistency (found M3 batch B2, 2026-07-30)
+
+Not a DRIFT false positive — a genuine classpp codegen bug, confirmed
+directly in `overhead/class/pp/class.c`. `InitializeObject` gets a
+fully hardcoded 2-arg (`classID`, `self`) **exported prototype**
+(`class.c:1121-1122`) regardless of what the `.ch` declares — this is
+the mechanism §17 above documents. `FinalizeObject` does **not** get
+the same treatment: its prototype is explicitly *not* skipped from the
+ordinary classproc-emission loop (`class.c:1139-1142`, comment:
+`"FinalizeObject is NOT skipped: it may have a non-void return type,
+so it must go through the loop to pick up the correct
+mp->methodtype"`), so its **prototype** is built from whatever the
+`.ch` actually declares. But the **internal call site** inside the
+generated `__Finalize` function (`class.c:1334`,
+`"    %s__FinalizeObject(classID, self);\n"`) is unconditionally
+hardcoded to pass 2 arguments, with no check against what the
+prototype above it declared. Any class using the ordinary empty-parens
+`FinalizeObject()` `.ch` convention (0 declared args → 1-arg
+prototype, `classID` only) therefore gets a **self-inconsistent
+`.eh`** the moment `-pe` is on: a hard compile error *inside the `.eh`
+itself* (too many arguments to the internal call), independent of
+anything the class's own `.c` does. Confirmed in `atk/value/buttonv.ch`/
+`sliderv.ch`.
+
+**Workaround** (applied twice so far, both in batch B2): restate
+`FinalizeObject`'s `self` parameter explicitly in the `.ch`, matching
+the class's real type (`FinalizeObject(struct buttonV *self);`) — this
+routes the prototype through the same ordinary-classproc path but now
+producing the matching 2-arg signature. Pure interface-side fix, no
+`.c`/runtime-behavior change.
+
+**Not fixed in classpp itself** — per the Delegation ruling, tool
+construction stays top-level, and this is a judgment call about
+*where* to fix it: patch every affected `.ch` as each directory's
+`-pe` rollout hits it (as B2 did, cheap and proven), or fix classpp
+once centrally (special-case `FinalizeObject`'s prototype emission the
+same way `InitializeObject`'s already is) and avoid rediscovering this
+per-directory. **Open question for wdc**: which approach for the
+remaining M3 waves? A proactive grep (`grep -rn "FinalizeObject()"
+src/**/*.ch`) before each future `-pe` rollout can catch instances
+before they surface as a confusing `.eh`-internal compile error either
+way.
+
+#### A third, distinct classpp bug: an unnamed classproc parameter loses its type entirely (found M3 batch B2, 2026-07-30)
+
+`atk/basics/x/xfontd.ch` declared `Deallocate(struct xfontdesc *);` —
+correctly typed, but with no parameter *name*. `Allocate`/`Deallocate`
+are (like `FinalizeObject`) call-site-hardcoded by classpp
+(`class.c:1316`/`1391`); the unnamed parameter confuses classpp's
+`realargtypes` construction enough that the emitted `.eh` prototype
+came out as `void xfontdesc__Deallocate(struct classheader *, struct
+*);` — the type name itself dropped, an uncompilable bare `struct *`.
+Root cause not traced further into classpp's parser internals (out of
+scope, same boundary as the finding above). **Workaround, confirmed
+working**: give the parameter a name (`Deallocate(struct xfontdesc
+*self);`) — routes it through classpp's normal named-parameter path
+and produces the correct prototype. Checked for the same shape
+elsewhere in batch B2 — not found again; may be rare (an unnamed
+classproc parameter is unusual style to begin with), but worth the
+same "note it if you see it" awareness as the other two classpp
+findings above whenever a future batch's `-pe` rollout hits it.
 
 ### 20. `%d` / `%ld` mismatch in the write direction — printf/fprintf family (MEDIUM effort, systemic; found 2026-07-26)
 
