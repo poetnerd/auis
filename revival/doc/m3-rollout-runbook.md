@@ -1613,6 +1613,122 @@ predates this batch) noticed during the report's `fossil extras`
 check. Full per-directory detail, gate output, and the runtime-check
 list are in `claude-history/m3-i2-insets-batch2-REPORT.md`.
 
+### A1 (`ams/msclients/nns`, `atk/typescript`, `atk/help/src`, `ams/msclients/cui`, `atk/help/maint`, `atkams/messages/cmd`, `ams/msclients/imapsync`, `atk/ez`, `doc/mkbrowse`, 9 directories, 29 files, 2026-07-31) — opens and closes Wave 5
+
+First batch to run the delegate-side Gate 0 pattern for a wave with
+only one batch — closes Wave 5 on its own. `-pe`/`.eh` added for real
+to the 3 directories with `.ch` files (`atk/typescript`, `atk/help/
+src`, `atk/ez`); the other 6 had none, matching the prompt's own
+prediction exactly.
+
+Gate 0 surfaced a genuinely new, more severe variant of the
+2026-07-30 `ansify` signature-DB case-collision bug (see that entry
+above): `build_db()`'s guard only catches classnames differing by
+*case*; it does not catch two `.ch` files declaring the **identical**
+classname, which fall through the guard entirely and silently
+overwrite with zero `failed`-list entry — worse than the case-collision
+variant, which was at least visible in the tool's own output. Live
+instance: `src/rdemo/hide/{tscript,typetext}.ch` — a dead/hidden demo
+tree — declare the same classnames as this batch's real `atk/
+typescript/{tscript,typetext}.ch`; `rdemo` sorting after `atk`
+silently corrupted `typescript.desc`/`typetext.desc` (6 real
+signatures dropped, 3 fabricated). The delegate found this via a
+tree-wide isolated-vs-real diff (27 mismatches, 100% correlated with
+duplicate `.ch` basenames), hand-patched the 2 in-scope `.desc` files
+to unblock its own Gate 0 read, and correctly stopped rather than
+guessing at a source-level fix (Delegation ruling: tool construction
+stays top-level). The orchestrator traced the root cause and fixed
+`build_db()` for real (branch on identical-vs-case-differing classname,
+both now report through `failed`) — see the dedicated "`ansify`
+signature-DB same-classname collision fix" entry above for full detail.
+Committed standalone (`fa0705b6`/`214801d5`), superseding the
+delegate's temporary hand-patch. A second Gate 0 finding (a new,
+bounded `ansify` parser-gap shape — `struct TYPE* name;`, asterisk
+glued to the type rather than the variable, 4 functions in `atk/
+help/src/help.c`) was ruled routine and self-classifiable (same
+family as prior bounded parser gaps: safe reported skip, zero-risk
+hand-fix, tool patch deferred until instance counts justify it) and
+fixed by hand at Gate 1.
+
+Gate 1 found further fallout invisible to Gate 0's static/dry-run
+pass, all matching already-documented species recurring in a new
+form: `atk/typescript/tscript.c`'s 3 predicted narrow-param stranded
+forward declarations (T1's shape) became real compile errors once
+`-pe` went live; `atk/help/src/helpa.c` hit a `fix-missing-static-decl`
+non-idempotency variant (the tool inserted 5 fresh empty-parens stubs
+for functions with *no* prior declaration at all, one of which
+immediately conflicted with its own narrow-param real definition — a
+same-run version of the standing item-8 hazard, self-inflicted by the
+tool rather than pre-existing); `ams/msclients/cui/{cui,cuifns}.c`
+had two ~35-year-old zero-forward-declaration gaps (`GetHeadersFn`,
+`MaybeFlagSomething`, called long before their real definitions with
+no declaration anywhere); `ams/msclients/imapsync/imap_sync.c` — the
+one file in this batch already almost entirely hand-written ANSI C —
+had a 25-entry stale K&R forward-declaration block hiding a variadic-
+stub conflict (O3's shape) and B3's function-prototype-scope
+struct-tag trap (`struct sync_state` first appearing inside a new
+forward declaration's parameter list); `doc/mkbrowse/browser.c`'s
+`<stdlib.h>` fix exposed a stale `char *malloc()` K&R redeclaration
+the file's own comment already flagged as wrong, removed. All 9
+directories gated clean twice, serially; wave-end tree-wide gate
+(twice) clean except the two already-documented, already-queued
+`contrib/zip/utility/ltapp.c` errors (unrelated, still queued for
+Wave 7 C2) — closes Wave 5.
+
+Independently re-verified by the orchestrator: `fossil status` matched
+exactly (32 files: 29 batch source + 3 Imakefiles), ~6 specific
+claimed fixes spot-checked directly against the diff (all matched),
+full from-scratch `clean`/`depend`/`install` rebuilds of the 3 most
+complex directories (`ams/msclients/imapsync`, `atk/typescript`,
+`atk/help/src`) done personally (all clean), and the wave-end
+tree-wide gate re-run directly (same 2 baseline errors, nothing new).
+
+wdc's runtime checks found one real bug the static/compile-time gates
+could not have caught: `cuin`'s `dirinfo` command crashed
+(`malloc: pointer being freed was not allocated`). Root-caused by the
+orchestrator: `cvEng()` (`ams/libs/shr/utils.c`, returns `char *`) is
+called in `cuifns.c` with **zero declaration anywhere in `ams/
+msclients/cui`** — this directory has never carried the M2-era
+`COMPILERFLAGS` implicit-declaration guard, so the call silently
+implicit-declared as `int cvEng()`, truncating the real pointer on
+arm64 — the same LP64-missing-prototype species this project has hit
+repeatedly, now caught live rather than latent. `dirinfo` was the
+first exercised path in this batch's checks to reach `cvEng`; no other
+tested command shares that code path. Checked systematically: of 141
+functions this directory calls without any declaration (scouted by
+temporarily flipping the COMPILERFLAGS guard on, the same technique
+used for `atk/chart`'s follow-up), `cvEng` is the **only** one that
+returns a pointer anywhere in the tree — everything else genuinely
+returns `int`/`void`/`boolean`, matching K&R's implicit-int default
+exactly, no truncation risk. Fixed with a single `extern char
+*cvEng();` declaration in `cuifns.c`, matching the file's own existing
+style and `ams/libs/cui/cuilib.c`'s identical declaration of the same
+function. Rebuilt clean twice. wdc re-ran `dirinfo` and confirmed
+clean output (and, incidentally, that an earlier `flag`/`unflag` test
+had genuinely persisted). **Correction to this batch's own COMPILERFLAGS
+scope note**: `ams/msclients/cui`'s gap is far larger than `atk/chart`'s
+was — 141 undeclared functions (essentially the whole `MS_*`/`CUI_*`
+AMS API, neither `ms.h` nor a full `cui.h` prototype set is included
+in any of this directory's 4 files) vs. chart's 10 same-directory
+helper calls — closer to `AMS1`'s scale than a quick same-day
+follow-up; not attempted in this batch, flagged for whoever scopes it.
+
+`typescript`/`ez`'s suggested runtime check in the batch report was
+wrong and corrected: `typescript` is not wired into `ez`; it's its
+own standalone `runapp`-loaded app (`build/bin/typescript -> runapp`,
+installed from `atk/apps/Imakefile`), unrelated to `ez`. It doesn't
+launch — traced to an already-known, already-tracked, pre-existing
+bug (`roadmap.md`'s "typescript — crashes on launch," first found
+2026-07-10, explicitly "not a regression" even then); confirmed the
+exact crash site (`GetPtyandName`/"Can't connect subchannel" at
+`tscript.c:1273-74`) is byte-identical, untouched by this batch's
+diff. Not a checkin blocker. `help`, `imapsync`, `mkbrowse`, and
+`mkindex` (no shipped docs — orchestrator read the source directly
+and gave wdc a safe `-n`/fake-it-mode example) all ran clean; `nns`
+untestable this session (no netnews access). Full per-directory
+detail, the `cvEng` fix, and the runtime-check writeup are in
+`claude-history/m3-a1-apps-REPORT.md`.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)

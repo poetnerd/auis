@@ -283,10 +283,25 @@ fully served the pilot's purpose). Former I3 is merged into I1.
 
 ## Wave 5 — apps (9 directories, 29 files, 1 batch)
 
-- [ ] **A1**: `ams/msclients/nns` (10), `atk/typescript` (5), `atk/
+- [x] **A1**: `ams/msclients/nns` (10), `atk/typescript` (5), `atk/
       help/src` (5), `ams/msclients/cui` (4), `atk/help/maint` (1),
       `atkams/messages/cmd` (1), `ams/msclients/imapsync` (1), `atk/ez`
       (1), `doc/mkbrowse` (1) — 29 files, one batch (all small/leaf).
+      **Done 2026-07-31**: `-pe`/`.eh` added to the 3 `.ch` directories;
+      found and fixed a more severe variant of the `ansify` signature-DB
+      collision bug (identical, not just case-differing, classnames —
+      a dead demo tree silently overwriting real DB entries with zero
+      error); found and fixed a real, live LP64 pointer-truncation bug
+      during wdc's runtime testing (`cuin`'s `dirinfo` crashed —
+      `cvEng()` called with no declaration anywhere in `ams/msclients/
+      cui`); corrected an earlier over-optimistic COMPILERFLAGS scope
+      estimate for that same directory (141 undeclared functions, not
+      a quick fix, closer to AMS1's scale). All 9 directories plus the
+      wave-end tree-wide gate ran clean twice each, independently
+      re-verified by the orchestrator. wdc ran every suggested runtime
+      check; all passed once the `cvEng` fix landed. Closes Wave 5. See
+      `m3-rollout-runbook.md` findings → A1 and
+      `claude-history/m3-a1-apps-REPORT.md` for full detail. Committed.
 
 ## Wave 6 — atkams/ams (5 directories, 148 files, 2 batches)
 
@@ -315,7 +330,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
 
 Revised 2026-07-30: 15 sessions total (was 17 — pilot retired into
 I2, I3 merged into I1), across the 7 waves in dependency order.
-10 complete (O1–O4, B1–B3, T1, I1, I2 — Wave 4 now closed), 5
-remaining: A1, AMS1, AMS2, C1, C2. Tick batches here as they
+11 complete (O1–O4, B1–B3, T1, I1, I2, A1 — Waves 1-5 now closed), 4
+remaining: AMS1, AMS2, C1, C2. Tick batches here as they
 complete, same convention as `m1-point10-batches.md`; the runbook's
 own summary gets the one-line rollup per wave, not per batch.
