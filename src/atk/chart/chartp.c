@@ -77,6 +77,14 @@ END-SPECIFICATION  ************************************************************/
 #include  <chart.ih>
 #include  <chartv.ih>
 #include  <suite.ih>
+
+/* defined in chartv.c, this directory */
+void chartv_Add_Command(struct chartv *self);
+void chartv_Delete_Command(struct chartv *self);
+int chartv_ReChart(struct chartv *self, char *moniker);
+void chartv_Print_Command(struct chartv *self);
+void chartv_Save_Command(struct chartv *self);
+
 static long Initialize_Palette();
 static int Activate();
 static int Passivate();
@@ -557,7 +565,7 @@ struct view * Palette_Hit(struct chartv *self, struct suite *suite, struct suite
 /*      case  map_code:*/
       case  stack_code:
       case  cartesian_code:		DEBUG(Types);
-	chartv_ReChart( self, suite_ItemAttribute( suite, item, suite_itemcaption ) );
+	chartv_ReChart( self, (char *) suite_ItemAttribute( suite, item, suite_itemcaption ) );
 	break;
       case  print_code:			DEBUG(Print);
 	chartv_Print_Command( self );

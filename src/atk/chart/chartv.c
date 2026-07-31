@@ -102,6 +102,13 @@ END-SPECIFICATION  ************************************************************/
 #include <chartobj.ih>
 #include <chart.ih>
 #include <chartv.eh>
+
+/* defined in chartp.c, this directory */
+int Destroy_Palette(struct chartv *self);
+int Activate_Viewer(struct chartv *self);
+void Hide_Palette(struct chartv *self);
+void Expose_Palette(struct chartv *self);
+
 static int ChangeChartAttribute();
 static int Description_Modified();
 static int Initialize();
