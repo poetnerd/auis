@@ -197,8 +197,12 @@ def weave(typetext, name):
         return t.replace('(*)', f'(*{name})', 1)
     if '(' in t:
         return None          # unrecognized exotic type -- caller bails
-    if t.endswith('[]'):
-        return f"{t[:-2].strip()} {name}[]"
+    # classpp's own '-D' describe output renders an array-of-T parameter
+    # type as 'T [ ]' (space between the brackets) rather than 'T[]', so
+    # match loosely here instead of a literal endswith('[]').
+    m = re.search(r'\[\s*\]\s*$', t)
+    if m:
+        return f"{t[:m.start()].strip()} {name}[]"
     if t.endswith('*'):
         return f"{t}{name}"
     return f"{t} {name}"
