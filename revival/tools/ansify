@@ -100,17 +100,29 @@ def build_db(dbdir):
             classname = m.group(1) if m else base
             lower = classname.lower()
             prior = seen_lower.get(lower)
-            if prior is not None and prior[0] != classname:
-                # dbdir is written with one file per classname; on a
-                # case-insensitive filesystem two classes differing only in
-                # case collide onto the same .desc path and silently
-                # overwrite each other's signatures. Keep the
-                # first-processed one, report the loser instead of letting
-                # it clobber silently.
-                failed.append((ch, f"case-insensitive DB collision with "
-                                    f"{prior[1]} -- class {classname!r} vs "
-                                    f"{prior[0]!r} both map to "
-                                    f"{lower}.desc on this filesystem"))
+            if prior is not None:
+                if prior[0] != classname:
+                    # dbdir is written with one file per classname; on a
+                    # case-insensitive filesystem two classes differing only
+                    # in case collide onto the same .desc path and silently
+                    # overwrite each other's signatures. Keep the
+                    # first-processed one, report the loser instead of
+                    # letting it clobber silently.
+                    failed.append((ch, f"case-insensitive DB collision with "
+                                        f"{prior[1]} -- class {classname!r} "
+                                        f"vs {prior[0]!r} both map to "
+                                        f"{lower}.desc on this filesystem"))
+                else:
+                    # Same classname declared in two different .ch files --
+                    # e.g. a dead/hidden demo tree shadowing the real one
+                    # (src/rdemo/hide/tscript.ch vs atk/typescript/tscript.ch,
+                    # both "class typescript"). sorted(chfiles) means
+                    # whichever sorts later would silently overwrite the
+                    # correct entry with zero warning. Keep the
+                    # first-processed one, report the loser instead.
+                    failed.append((ch, f"duplicate class {classname!r} also "
+                                        f"declared in {prior[1]} -- keeping "
+                                        f"that one, this one ignored"))
                 continue
             seen_lower[lower] = (classname, ch)
             shutil.copyfile(desc, os.path.join(dbdir, classname + '.desc'))
