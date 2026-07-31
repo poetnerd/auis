@@ -132,6 +132,45 @@ def find_static_defined_names(lines):
     return names
 
 
+FULL_PROTOTYPE_RE = re.compile(
+    r'^\s*(static\s+)?(' + TYPE_RE + r')([A-Za-z_]\w*)\s*\(([^;()]+)\)\s*;\s*'
+    + TRAILING_COMMENT + r'\s*$'
+)
+
+
+def find_full_prototype_names(lines):
+    """Names already declared file-scope with a real (non-empty-parens)
+    prototype -- e.g. a stranded K&R forward declaration that's already
+    been hand-upgraded to a full ANSI prototype ahead of this tool running.
+    try_parse_decl_block only recognizes the traditional empty-parens
+    'NAME();' shape as an existing declaration (by design -- its rewrite
+    path re-emits entries as bare 'NAME()' and would silently drop real
+    parameter types if it tried to handle these too), so a full prototype
+    falls through unmatched and looks 'missing', causing a duplicate
+    (and conflicting-types-error-causing) empty-parens declaration to get
+    inserted right on top of an already-correct one. Scanned independently
+    at file scope only, so a same-shaped function *call* statement
+    ('foo(a, b);') inside a function body is never mistaken for a
+    declaration."""
+    names = set()
+    ifdef_depth = 0
+    brace_depth = 0
+    for line in lines:
+        raw = line.rstrip('\n')
+        if re.match(r'^\s*#\s*(if|ifdef|ifndef)\b', raw):
+            ifdef_depth += 1
+            continue
+        if re.match(r'^\s*#\s*endif\b', raw):
+            ifdef_depth -= 1
+            continue
+        if brace_depth == 0:
+            m = FULL_PROTOTYPE_RE.match(raw)
+            if m:
+                names.add(m.group(3))
+        brace_depth += raw.count('{') - raw.count('}')
+    return names
+
+
 def try_parse_decl_block(lines, start, static_names):
     """If lines[start:] begins a forward-declaration block, return
     (end_index, type_text, entries, already_static) where entries is a
@@ -235,6 +274,8 @@ def fix_file(path, dry_run=False):
         brace_depth += lines[i].count('{') - lines[i].count('}')
         out.append(lines[i])
         i += 1
+
+    matched_names |= find_full_prototype_names(lines) & static_names
 
     skipped = []
     missing = static_names - matched_names
