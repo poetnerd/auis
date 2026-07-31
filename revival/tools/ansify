@@ -80,6 +80,7 @@ def build_db(dbdir):
                 chfiles.append(os.path.join(dirpath, fn))
 
     ok, failed = 0, []
+    seen_lower = {}  # lowercased classname -> (real classname, source .ch path)
     with tempfile.TemporaryDirectory() as tmp:
         for ch in sorted(chfiles):
             base = os.path.basename(ch)[:-3]
@@ -97,6 +98,21 @@ def build_db(dbdir):
                 first = f.readline()
             m = re.match(r'(?:Class|Package):\s+(\w+)', first)
             classname = m.group(1) if m else base
+            lower = classname.lower()
+            prior = seen_lower.get(lower)
+            if prior is not None and prior[0] != classname:
+                # dbdir is written with one file per classname; on a
+                # case-insensitive filesystem two classes differing only in
+                # case collide onto the same .desc path and silently
+                # overwrite each other's signatures. Keep the
+                # first-processed one, report the loser instead of letting
+                # it clobber silently.
+                failed.append((ch, f"case-insensitive DB collision with "
+                                    f"{prior[1]} -- class {classname!r} vs "
+                                    f"{prior[0]!r} both map to "
+                                    f"{lower}.desc on this filesystem"))
+                continue
+            seen_lower[lower] = (classname, ch)
             shutil.copyfile(desc, os.path.join(dbdir, classname + '.desc'))
             ok += 1
 
