@@ -1162,6 +1162,66 @@ one of the already-documented dead/conditionalized-out directories
 (`rollout-procedure.md`'s Liveness census list), not M3 fallout, not
 new.
 
+### `ansify` signature-DB same-classname collision fix (tool fix, not a batch, 2026-07-31)
+
+Found at A1's Gate 0 (Wave 5): the 2026-07-30 case-collision fix above
+only guards `prior[0] != classname` — two *different* classnames that
+collide once lowercased. It does not catch two `.ch` files declaring
+the **identical** classname, which the original code (and the fixed
+code, unchanged in this respect) treats as an ordinary re-write: no
+case-difference means the guard's `if` is false, so `seen_lower[lower]
+= (classname, ch)` and `shutil.copyfile(...)` run unconditionally, and
+`sorted(chfiles)` order silently decides the winner — with zero
+`failed`-list entry, unlike the case-collision variant, which was at
+least visible in the tool's own output.
+
+Live instance: `src/rdemo/hide/tscript.ch` and `src/rdemo/hide/
+typetext.ch` — a dead/hidden demo tree (the directory is literally
+named `hide`, not in `m3-batches.md`'s 90-directory active list) —
+declare `class typescript[tscript]` and `class typetext`, the exact
+same classnames as the real, active `atk/typescript/tscript.ch`/
+`typetext.ch` (this batch's own scope). Because `rdemo` sorts after
+`atk`, the dead tree's stale content silently overwrote the real
+one's `.desc` entries with no error: `typescript.desc` lost 6 genuine
+signatures (`SetTitle`, `GetTitle`, `SetFrame`, `GetFrame`, `Create`,
+`CreatePipescript`) that the dead copy's older revision never had, and
+`typetext.desc` gained 3 fabricated lifecycle entries (`InitializeObject`/
+`InitializeClass`/`FinalizeObject`, `defined by:` with no `declared
+by:` line — a shape no genuine DB entry has) from the dead copy's
+different `.ch` structure. The delegate found this by a tree-wide
+isolated-vs-real diff over all 566 `.ch` files: 27 mismatches, 100%
+correlated with `.ch` files whose bare filename recurs elsewhere in
+the tree — hand-patched just the 2 in-scope `.desc` files (non-source,
+non-fossil-tracked derived artifacts) to unblock its own Gate 0 read,
+then correctly stopped and flagged the general mechanism as
+UNCLASSIFIED tool-construction work per the Delegation ruling, rather
+than guessing at a source-level fix.
+
+The orchestrator traced the root cause before ruling (confirmed via
+`head` on both file pairs: identical `class typescript[tscript]`/
+`class typetext` declarations) and fixed `build_db()` for real,
+mirroring the existing case-collision guard's shape rather than
+inventing a new mechanism: on a same-lowercased-key hit, branch on
+whether the classname is identical (this fix, new) or merely
+case-different (2026-07-30's fix, unchanged) — both branches now
+report through the `failed` list instead of one of them clobbering
+silently. Verified with a real `--build-db` run: 496 classes written,
+70 reported failures (up from the pre-fix run's 564 ok/2 failed — most
+of the newly-caught 70 were previously silent same-classname
+overwrites, not new problems). Confirmed all 70 are confined to 4
+non-active-batch directory trees (`atk/examples`, `contrib/atkbook`,
+`rdemo/hide` — all dead/demo, none in the 90-directory active list —
+plus `atk/value`'s already-known, already-documented `sliderv`/
+`sliderV` case-collision, unaffected by this change). `typescript.desc`/
+`typetext.desc` now regenerate correctly and directly from the real
+tool (112 and 78 `Method:`/`Class Procedure:` lines respectively,
+matching the delegate's hand-patched read) — superseding the
+delegate's temporary hand-patch, and lifting its "don't rerun
+`--build-db`" operational caveat: the DB can be freely rebuilt from
+here on. Committed standalone (`fa0705b6`), same pattern as the
+2026-07-30 fix and every other tool-construction fix this rollout —
+tool changes stay top-level, never inside a batch's delegate session.
+
 ### `fix-missing-static-decl` duplicate-declaration fix (tool fix, not a batch, 2026-07-30)
 
 Found continuing I1's Gate 1 on `atk/image` (the orchestrator ran this
