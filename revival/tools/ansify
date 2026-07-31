@@ -215,7 +215,8 @@ HDR = re.compile(
     r'^(?P<ret>[A-Za-z_][\w \t]*?[\w*][ \t*]+)?'
     r'(?P<name>[A-Za-z_]\w*)\s*\('
     r'(?P<params>[^)]*)\)\s*(?:/\*.*?\*/\s*)?$')
-TYPEONLY = re.compile(r'^(static\s+|register\s+)*[A-Za-z_][\w \t]*\**\s*$')
+TYPEONLY = re.compile(
+    r'^(static\s+|register\s+)*[A-Za-z_][\w \t]*\**\s*(?:/\*.*?\*/\s*)?$')
 DECL_LINE = re.compile(r'^\s*(register\s+)?[A-Za-z_][\w \t,*\[\]()]*;\s*(/\*.*?\*/\s*)?$')
 BRACE_GLUED = re.compile(
     r'^(?P<decl>\s*(register\s+)?[A-Za-z_][\w \t,*\[\]()]*;)\s*\{\s*$')
