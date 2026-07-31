@@ -1300,6 +1300,98 @@ directory that happens to share this idiom would only have hit it if
 it also happened to use the two-line-with-comment return style, which
 no committed batch (O1-T1) did.
 
+### I1 (10 inset-adjacent directories, 70 files, 2026-07-30) — opens Wave 4
+
+First batch to actually run under the delegate-side Gate 0 pattern
+(the amendment was adopted after B3 but T1, its first candidate, was
+itself one of the flagged-risky batches and got full orchestrator
+pre-diagnosis instead). Gate 0 went as designed: the delegate ran the
+standing checklist plus `ansify --dry-run` across all 10 directories
+and classified everything against the documented taxonomy, correctly
+flagging exactly one genuinely new item for a ruling — see the
+`ansify` signature-DB case-collision fix entry above (§3.1 in the
+batch's own report), found and ruled on before Gate 1.
+
+**Gate 1 was run by the orchestrator directly, not the delegate.**
+Resuming the delegated session after the §3.1 ruling, the real
+(non-dry-run, file-mutating) `ansify --dir` invocation was denied
+outright by Claude Code's auto-mode permission classifier, with no
+interactive prompt available in a background subagent session. The
+orchestrator hit the identical block attempting the same command
+directly — confirmed transient (cleared after a session resource-limit
+reset, not a durable policy) — and completed the rest of Gate 1
+personally rather than re-attempting delegation. Noted here as a
+process fact, not a new finding class: unlike every prior M3 batch,
+this one has no separate "delegate result, independently re-verified
+by the orchestrator" structure, because the orchestrator did the work
+firsthand.
+
+Three more tool bugs found and fixed during Gate 1, all committed
+standalone ahead of this batch's own commit (see their own entries
+above for full detail): `fix-missing-static-decl` inserting a
+duplicate declaration on top of an already-fixed full prototype
+(`d6b52e03`/`25f56793`); `weave()` mis-rendering an array-of-pointer
+classproc parameter because classpp's own `-D` dump puts a space
+inside the brackets (`bda581c2`/`8a39c68e`); and the most
+consequential, `TYPEONLY` not tolerating a trailing comment on a
+two-line K&R return-type declaration, which reverted every file in
+`atk/layout` at once (`4caa5b0d`/`cd05b37e`). Combined with the
+`sliderv`/`sliderV` DB-collision fix from Gate 0, **I1 found four
+tool bugs**, more than any prior single M3 batch — plausibly because
+it's the first batch spanning enough directories and stylistic
+variety at once (10 directories, several distinct authors' idioms) to
+hit shapes a single-directory batch wouldn't surface.
+
+Real (`.ch`-vs-implementation or caller-vs-callee) bugs found, same
+species as T1's `ViewMove`/`HandleSelection` and B1/B2's caller-bug
+findings:
+- `atk/image/cmapv.ch` restated `InitializeObject`/`FinalizeObject`'s
+  `self` as `struct colormap *` — a real, unrelated, already-`-pe`'d
+  class (`atk/basics/common/cmap.ch`) — instead of its own `struct
+  colormapv *`.
+- `atk/image/pbm.c`'s `pbm__Ident` called the file-local `isPBM` with
+  a stray, always-ignored 6th argument at one of its two call sites.
+- `atk/srctext/asmtextv.ch` and `srctextv.ch` both restated
+  `SetDataObject`'s parameter as a covariant, class-specific type
+  rather than the base `view` class's generic `struct dataobject *`
+  every other already-`-pe`'d class in the tree uses for this same
+  override (`atk/adew/celv.c`, `atk/text/textv.c` both confirmed use
+  the safe, generic-type-plus-internal-cast pattern). classpp's own
+  `-pe` always exports the base type for an overridden method
+  regardless of what the override's `.ch` claims, so the covariant
+  declaration was always going to be misleading — K&R just never
+  checked it.
+
+Ordinary standing-checklist-item-8 (stranded narrow-param forward
+declaration) fallout, mostly anticipated at Gate 0 but with a few
+misses corrected during Gate 1: `atk/image/img.c`,
+`atk/srctext/cpptext.c` (`isOperatorOverload`, missed at Gate 0),
+`atk/srctext/srctext.c` (`base64value`, missed at Gate 0),
+`atk/srctext/{cpptextv,ctextv,m3textv,modtextv,mtextv,srctextv}.c`
+(the 12 Gate-0-predicted instances, all confirmed), `atk/bush/bushv.c`
+(`Format_Tags`, missed at Gate 0), `atk/fad/fadv.c`
+(`MySetStandardCursor`, Gate-0-predicted). `m3textv.c`/`mtextv.c` each
+also had a duplicate declaration (once alone, once again in a shared
+comma-list) for the same name — pre-existing, harmless-under-K&R
+redundancy, both instances fixed; `srctextv.c` had a full 23-name
+comma-list block that was entirely redundant with individual
+declarations already present above it, deleted outright.
+
+Four confirmed pre-existing dead-code instances, not M3 fallout:
+`atk/image/g3.c`, `sliderv.c`, `xpixmap.c` (fail to compile even
+unconverted, absent from the Imakefile's `DOBJS`) and
+`atk/org/orga.c` (the already-anticipated §17 empty-parens DRIFT,
+also absent from its Imakefile) — same "present in the directory,
+absent from the real build" shape as the dead-file discovery in
+`atk/image`.
+
+All 10 directories gated clean, twice each, after fixes landed. Per
+the "Gate scope" section, no tree-wide gate for this batch — I1 and
+I2 together are Wave 4; the wave-end tree-wide gate is deferred to
+whenever I2 closes the wave. Full per-directory detail, gate output,
+and the "Suggested runtime checks for wdc" section are in
+`claude-history/m3-i1-insets-batch1-REPORT.md`.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)

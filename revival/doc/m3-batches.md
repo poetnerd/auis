@@ -229,14 +229,34 @@ it joins I2 below as an ordinary directory (wdc confirmed O4's call;
 the 2026-07-08 dry-run validation plus O4/B1/B2's live `-pe` rollouts
 fully served the pilot's purpose). Former I3 is merged into I1.
 
-- [ ] **I1**: `atk/image` (22), `atk/srctext` (20, judgment call — the
+- [x] **I1**: `atk/image` (22), `atk/srctext` (20, judgment call — the
       roff/source-text viewer; grouped here as a content-display
       inset rather than core text infra), `atk/raster/lib` (7),
       `atk/layout` (6), `atk/hyplink` (4), `atk/org` (3, judgment
       call — outline/tree navigation, grouped as inset-adjacent
       rather than basics), `atk/bush` (3), `atk/raster/scan` (2),
       `atk/fad` (2), `atk/raster/convert` (1) — 70 files, 10 dirs
-      (absorbed former I3's small/leaf grab-bag, 2026-07-30).
+      (absorbed former I3's small/leaf grab-bag, 2026-07-30). **Done
+      2026-07-30**: first batch to run the delegate-side Gate 0
+      pattern for real; Gate 0 found one genuinely new item (an
+      `ansify` signature-DB case-collision bug), ruled on and fixed
+      before Gate 1. Gate 1 hit a Claude Code auto-mode permission
+      block on the real `ansify --dir` call in the background
+      delegate session (confirmed transient, cleared after a session
+      resource-limit reset); the orchestrator completed Gate 1
+      directly. Found and fixed 4 `ansify`/`fix-missing-static-decl`
+      tool bugs (most consequential: a two-line K&R return-type-plus-
+      comment idiom that reverted all 6 files in `atk/layout` at
+      once) and 3 real `.ch`-vs-implementation/caller bugs
+      (`atk/image/cmapv.ch` wrong restated self type,
+      `atk/image/pbm.c` stray call argument, `atk/srctext/
+      {asmtextv,srctextv}.ch` covariant `SetDataObject` overrides
+      diverging from classpp's actual exported type). All 10
+      directories gated clean, twice each; no tree-wide gate this
+      batch (deferred to I2's close, per Wave 4's two-batch split).
+      See `m3-rollout-runbook.md` findings → I1 and
+      `claude-history/m3-i1-insets-batch1-REPORT.md` for full detail.
+      Committed.
 - [ ] **I2**: `atk/eq` (6, formerly the standalone pilot — its
       2026-07-08 dry-run found zero DRIFT), `atk/figure` (17),
       `atk/chart` (13), `atk/table` (10), `atk/rofftext` (9),
@@ -281,7 +301,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
 
 Revised 2026-07-30: 15 sessions total (was 17 — pilot retired into
 I2, I3 merged into I1), across the 7 waves in dependency order.
-8 complete (O1–O4, B1–B3, T1), 7 remaining: I1, I2, A1, AMS1, AMS2,
+9 complete (O1–O4, B1–B3, T1, I1), 6 remaining: I2, A1, AMS1, AMS2,
 C1, C2. Tick batches here as they complete, same convention as
 `m1-point10-batches.md`; the runbook's own summary gets the one-line
 rollup per wave, not per batch.
