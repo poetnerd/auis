@@ -85,6 +85,37 @@
 #include <imap_prot.h>
 #include <ams.h>		/* AMS_IDSIZE, AMS_DATESIZE, mserrcode/AMS_ERR* macros */
 
+struct sync_state;	/* file-scope tag, defined below -- forward declared
+			   here so the prototypes below share it rather than
+			   each independently introducing a prototype-scoped
+			   (and therefore distinct) incomplete type */
+
+static long apply_flags(const char *dirpath, const char *id, const char *flagstext);
+static int base32hex_digit(char c);
+static int decode_base32hex7(const char *s, unsigned long *out);
+static int decode_hexmask(const char *hex, unsigned char *out, int nbytes);
+static int decode_id(const char *id, unsigned long *uidvalidity, unsigned long *uid);
+static void encode_base32hex7(unsigned long v, char *out);
+static int ensure_folder_dir(const char *path);
+static char *expand_home(const char *path, char *buf, size_t buflen);
+static void format_internaldate(time_t t, char *out, size_t outsize);
+static int hexval(char c);
+static int journal_handoff(const char *localpath, char *replayingpath, size_t replayingpathsize);
+static int list_delim_cb(const char *name, const char *delim, const char *flags, void *rockp);
+static void load_state(const char *path, struct sync_state *st);
+static void loudlog(const char *fmt, ...);
+static int mask_bit_forced(const unsigned char *ormask, const unsigned char *andmask, int bit);
+static int mkdir_p(const char *path);
+static void parse_flags(const char *flagstext, int *seen, int *answered, int *deleted);
+static int parse_internaldate(const char *s, time_t *outp);
+static void report_mserr(const char *what, long code);
+static void synth_id(unsigned long uidvalidity, unsigned long uid, char *out);
+static int uid_present(const unsigned long *sorted, long count, unsigned long want);
+static void usage(const char *prog);
+static void vlog(const char *fmt, ...);
+static int wipe_folder_contents(const char *path);
+static int write_state(const char *path, const struct sync_state *st);
+
 /* ---- ANSI declarations for the K&R library entry points this program
    calls, at the "extern declaration site" the ground rules mention.
    Neither ms.h nor cui.h prototypes any MS_ call anywhere in the tree
@@ -159,15 +190,12 @@ extern char *getprofile(char *name);
 int MSDebugging = 0;
 unsigned char *SnapVersionString = NULL;
 
-BizarreError(text, level)		/* dummy, as in nns.c -- libmssrv.a needs it */
-char *text;
-int level;
+int BizarreError(char *text, int level)
 {
     fprintf(stderr, "imapsync: %s (%d)\n", text, level);
 }
 
-Machine_HandleClientSignal(signum, ActNormal)		/* ditto */
-int signum, *ActNormal;
+int Machine_HandleClientSignal(int signum, int *ActNormal)
 {
     fprintf(stderr, "imapsync: Machine_HandleClientSignal signum=%d\n", signum);
 }

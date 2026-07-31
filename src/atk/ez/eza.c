@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ez/R
  
 
 #include <andrewos.h> /* sys/types.h sys/file.h */
+#include <stdlib.h>
 
 #include <sys/errno.h>
 #include <sys/param.h> /* For MAXPATHLEN. */
@@ -62,6 +63,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ez/R
 #include <complete.ih>
 
 #include <eza.eh>
+static void GotoLine();
+static void StartupError();
+static int VisitFilePrompting();
+static void addFile();
+static void bufferDirectory();
+static void makeErrorBuf();
 
 static struct cursor *waitCursor;
 
@@ -124,9 +131,7 @@ static long CkpLatency; /* The minimum amount of time to wait to checkpoint a bu
 #define DEFAULTCKPLATENCY 4 /* Default fo CkpLatency. */
 
 
-static void StartupError(errorDoc, string)
-    struct text *errorDoc;
-    char *string;
+static void StartupError(struct text *errorDoc, char *string)
 {
 
     text_InsertCharacters(errorDoc, text_GetLength(errorDoc), string, strlen(string));
@@ -137,9 +142,7 @@ struct bestbuffer {
     long bufferclock;
 };
 
-boolean FindCkpBuffer(buffer, best)
-    struct buffer *buffer;
-    struct bestbuffer *best;
+boolean FindCkpBuffer(struct buffer *buffer, struct bestbuffer *best)
 {
 
     if (!buffer_GetScratch(buffer) && dataobject_GetModified(buffer_GetData(buffer)) > buffer_GetCkpVersion(buffer)) {
@@ -154,9 +157,7 @@ boolean FindCkpBuffer(buffer, best)
 
 #define view_Visible(view) (!rectangle_IsEmptyRect(&(((struct graphic *) view)->visualBounds)))
 
-boolean CkpMessage(applicationView, targetView, inputFocusView, message)
-    struct view *applicationView, *targetView, *inputFocusView;
-    char *message;
+boolean CkpMessage(struct view *applicationView, struct view *targetView, struct view *inputFocusView, char *message)
 {
     if (inputFocusView == NULL) /* Handles case where input focus is not set... */
         inputFocusView = targetView;
@@ -168,8 +169,7 @@ boolean CkpMessage(applicationView, targetView, inputFocusView, message)
     return FALSE;
 }
 
-void Checkpoint(dummyData)
-    long dummyData;
+void Checkpoint(long dummyData)
 {
     struct bestbuffer result;
 
@@ -198,9 +198,7 @@ void Checkpoint(dummyData)
     im_EnqueueEvent((procedure) Checkpoint, 0, event_SECtoTU(CkpInterval));
 }
 
-void SetBufferCkpLatency(frame, key)
-    struct frame *frame;
-    long key;
+void SetBufferCkpLatency(struct frame *frame, long key)
 {
 
     struct buffer *buffer;
@@ -225,10 +223,7 @@ void SetBufferCkpLatency(frame, key)
 }
 
 
-static void
-bufferDirectory(buffer, dir)
-    struct buffer *buffer;
-    char *dir;			/* Output: At least MAXPATHLEN, please. */
+static void bufferDirectory(struct buffer *buffer, char *dir)
 {
     char *slash, *fname = buffer_GetFilename(buffer);
 
@@ -243,11 +238,7 @@ bufferDirectory(buffer, dir)
     }
 }
 
-static int VisitFilePrompting(self, prompt, newWindow, rawMode)
-    struct frame *self;
-    char *prompt;
-    boolean newWindow;
-    boolean rawMode;
+static int VisitFilePrompting(struct frame *self, char *prompt, boolean newWindow, boolean rawMode)
 {
     char filename[MAXPATHLEN];
     struct buffer *buffer;
@@ -269,8 +260,7 @@ static int VisitFilePrompting(self, prompt, newWindow, rawMode)
     return frame_VisitNamedFile(self, filename, newWindow, rawMode);
 }
 
-void Startup(frame)
-    struct frame *frame;
+void Startup(struct frame *frame)
 {
     struct buffer *buffer;
     long count = 0;
@@ -323,11 +313,7 @@ void Startup(frame)
         message_DisplayString(frame, 0, "New file.");
 }
 
-static void addFile(self,name,newWin,ro,initline)
-struct ezapp *self;
-char *name;
-boolean newWin,ro;
-int initline;
+static void addFile(struct ezapp *self, char *name, boolean newWin, boolean ro, int initline)
 {
     /* Its a file right? */
     struct ezapp_fileList *fileEntry=
@@ -343,10 +329,7 @@ int initline;
     self->fileLink=(&(fileEntry->next));
 }
 
-boolean ezapp__ParseArgs(self,argc,argv)
-struct ezapp *self;
-int argc;
-char **argv;
+boolean ezapp__ParseArgs(struct ezapp *self, int argc, char **argv)
 {
     int maxInitWindows=environ_GetProfileInt("MaxInitWindows", 2);
     boolean useNewWindow = FALSE;
@@ -403,15 +386,13 @@ char **argv;
     return TRUE;
 }
 
-static void makeErrorBuf(self)
-struct ezapp *self;
+static void makeErrorBuf(struct ezapp *self)
 {
     self->errorBuffer = buffer_Create("Startup-Errors", NULL, "text", NULL);
     buffer_SetScratch(self->errorBuffer, TRUE);
 }
 
-void ezapp__ReadInitFile(self)
-struct ezapp *self;
+void ezapp__ReadInitFile(struct ezapp *self)
 {
     makeErrorBuf(self);
 
@@ -421,10 +402,7 @@ struct ezapp *self;
     super_ReadInitFile(self);
 }
 
-static void GotoLine(text, view, line)
-struct text *text;
-struct textview *view;
-int line;
+static void GotoLine(struct text *text, struct textview *view, int line)
 {
 
     int argument, pos, endpos;
@@ -442,8 +420,7 @@ int line;
     return;
 }
 
-boolean ezapp__Start(self)
-struct ezapp *self;
+boolean ezapp__Start(struct ezapp *self)
 {
     struct ezapp_fileList *fileEntry, *next;
     struct text *errtext;
@@ -606,8 +583,7 @@ struct ezapp *self;
     return TRUE;
 }
 
-int ezapp__Run(self)
-struct ezapp *self;
+int ezapp__Run(struct ezapp *self)
 {
  
     if(!ezapp_Fork(self))
@@ -642,8 +618,7 @@ struct ezapp *self;
     return 0;
 }
 
-boolean ezapp__InitializeClass(classID)
-struct classheader *classID;
+boolean ezapp__InitializeClass(struct classheader *classID)
 {
 
     proctable_DefineProc("ezapp-set-buffer-checkpoint-latency", (procedure) SetBufferCkpLatency, class_Load("frame"), NULL, "Set the number of checkpoint intervals to wait before checkpointing the current buffer.");

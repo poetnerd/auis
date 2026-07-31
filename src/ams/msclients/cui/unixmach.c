@@ -52,9 +52,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
  the string stripper preprocessor has pulled out all the double quote
  literals load them in before anyone touches them
 */
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
  return(cui_prog_main(argc,argv));
 }

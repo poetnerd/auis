@@ -36,31 +36,22 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 
 #include <big.h>
 
-void            GLESetBefore(gle, val)
-GListEntry_t   *gle;
-int             val;
+void GLESetBefore(GListEntry_t *gle, int val)
 {
     gle->before = val;
 }
 
-void            GLESetAhead(gle, val)
-GListEntry_t   *gle;
-int             val;
+void GLESetAhead(GListEntry_t *gle, int val)
 {
     gle->ahead = val;
 }
 
-char           *GLEGetFilename(gle)
-GListEntry_t   *gle;
+char * GLEGetFilename(GListEntry_t *gle)
 {
     return (gle->filename);
 }
 
-void            GLESet(gle, filename, folder, ahead, before, ignore, time)
-GListEntry_t   *gle;
-char           *filename, *folder;
-int             ahead, before, ignore;
-long            time;
+void GLESet(GListEntry_t *gle, char *filename, char *folder, int ahead, int before, int ignore, long time)
 {
     gle->filename = filename;
     gle->folder = folder;
@@ -70,39 +61,32 @@ long            time;
     gle->time = time;
 }
 
-void            GLESetIgnore(gle, ignore)
-GListEntry_t   *gle;
-int             ignore;
+void GLESetIgnore(GListEntry_t *gle, int ignore)
 {
     gle->ignore = ignore;
 }
 
-int             GLEGetIgnore(gle)
-GListEntry_t   *gle;
+int GLEGetIgnore(GListEntry_t *gle)
 {
     return (gle->ignore);
 }
 
-char           *GLEGetFolder(gle)
-GListEntry_t   *gle;
+char * GLEGetFolder(GListEntry_t *gle)
 {
     return (gle->folder);
 }
 
-int             GLEGetBefore(gle)
-GListEntry_t   *gle;
+int GLEGetBefore(GListEntry_t *gle)
 {
     return (gle->before);
 }
 
-int             GLEGetAhead(gle)
-GListEntry_t   *gle;
+int GLEGetAhead(GListEntry_t *gle)
 {
     return (gle->ahead);
 }
 
-int             GLECompare(gle1, gle2)
-GListEntry_t   *gle1, *gle2;
+int GLECompare(GListEntry_t *gle1, GListEntry_t *gle2)
 {
     int             result = strcmp(gle1->folder, gle2->folder);
 

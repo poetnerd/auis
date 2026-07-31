@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
  
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <cui.h>
 #include <hdrparse.h>
 #include <errprntf.h>
@@ -144,6 +145,10 @@ int	CUI_CheckNewMessages (),
 	Scavenge(),
 	ListCmd();
 
+int GetHeadersFn(char *arg, char fn);	/* not in the block above -- had no
+					   forward declaration at all; needed
+					   ahead of its first use below */
+
 extern int  SNAP_debugmask,
 	    CUI_SnapIsRunning,
 	    CUI_OnSameHost;
@@ -211,11 +216,7 @@ struct InputParse {
 static struct InputParse *add_command_scan=Commands;
 static int num_cmds=0;
 
-void newcmd(xCommand,xFunction,xHelpText,xLevel)
-char   *xCommand;
-int     (*xFunction)();
-char   *xHelpText;
-int     xLevel;
+void newcmd(char *xCommand, int (*xFunction)(), char *xHelpText, int xLevel)
 {
     add_command_scan->Command=xCommand;
     add_command_scan->Function=xFunction;
@@ -411,8 +412,7 @@ int	BBDaemon = FALSE;
 char	Prompt[80] = "CUI> ";
 Boolean IgnoreMissingSourceFile = TRUE;
 
-HandleCUISignal(signum, ActNormal) 
-int signum, *ActNormal;
+int HandleCUISignal(int signum, int *ActNormal)
 {
 #ifndef DISABLELONGJUMPS
     if (signum == SIGINT) {
@@ -430,9 +430,7 @@ int signum, *ActNormal;
 }
 
     
-cui_prog_main(argc, argv)
-int	argc;
-char  **argv;
+int cui_prog_main(int argc, char **argv)
 {
     char   *s;
     int tmplevel;
@@ -516,9 +514,7 @@ char  **argv;
     }
 }
 
-ProcessMultipleCommands(s, AliasCt)
-char   *s;
-int	AliasCt;
+int ProcessMultipleCommands(char *s, int AliasCt)
 {
     char    CurrentCommand[CMDBUF];
     int     bytesleft, result;
@@ -558,9 +554,7 @@ int	AliasCt;
     return(0);
 }
 
-ProcessCommand(CurrentCommand, AliasCount)
-char   *CurrentCommand;
-int	AliasCount;
+int ProcessCommand(char *CurrentCommand, int AliasCount)
 {
     int     Matches,
 	    LastMatch = 0,
@@ -667,17 +661,12 @@ int	AliasCount;
     return(-1);
 }
 
-ReadCommandsFromFile(arg, AliasCt)
-char   *arg;
-int	AliasCt;
+int ReadCommandsFromFile(char *arg, int AliasCt)
 {
     MapcarFunctionToFileLines(ProcessCommand, arg, AliasCt);
 }
 
-MapcarFunctionToFileLines(ProcessFunc, arg, AliasCt)
-int	(*ProcessFunc)();
-char   *arg;
-int	AliasCt;
+int MapcarFunctionToFileLines(int (*ProcessFunc)(), char *arg, int AliasCt)
 {
     char   *filenam,
 	    Buf[MAXBODY + 1],
@@ -755,8 +744,7 @@ int	AliasCt;
     return(0);
 }
 
-GracefulExit(arg)
-char   *arg;
+int GracefulExit(char *arg)
 {
     debug(1,("GracefulExit\n"));
     CUI_PurgeMarkedDirectories(TRUE, FALSE);
@@ -764,8 +752,7 @@ char   *arg;
     exit(0);
 }
 
-SetOption(arg)
-char   *arg;
+int SetOption(char *arg)
 {
 char  AnsBuf[ANSBUFMAX], AnsBuf2[ANSBUFMAX], ErrorText[256];
 FILE *LogFP;
@@ -939,8 +926,7 @@ int	Ans;
 
 static int MyMallocLevel=0, MSDebug=0, MSSnapDebug=0, MSMalloc=0;
 
-SetDebugMode(arg)
-char   *arg;
+int SetDebugMode(char *arg)
 {
     char   *s;
     int newpipescript = 0;
@@ -1024,8 +1010,7 @@ char   *arg;
     return(0);
 }
 
-HelpUser(arg)
-char   *arg;
+int HelpUser(char *arg)
 {
     int     i, NoCmd = TRUE;
 
@@ -1070,8 +1055,7 @@ char   *arg;
     return(0);
 }
 
-PrintBody(arg)
-char   *arg;
+int PrintBody(char *arg)
 {
     int     cuid, rc;
     char    ErrorText[256], *arg2;
@@ -1100,8 +1084,7 @@ struct head_list {
 	};
 struct head_list *HeadList=NULL;
 
-KeepHeader(arg)
-char *arg;
+int KeepHeader(char *arg)
 {
     debug(1,("KeepHeader of %s\n",arg));
     CheckPrompted("Please enter a list of headers")
@@ -1112,8 +1095,7 @@ char *arg;
     return(0);
 }
 
-OmitHeader(arg)
-char *arg;
+int OmitHeader(char *arg)
 {
     debug(1,("OmitHeader of %s\n",arg));
     CheckPrompted("Please enter a list of headers")
@@ -1150,8 +1132,7 @@ DescribeHeads() {
     }
 }
 
-AddHeads(arg)
-char *arg;
+int AddHeads(char *arg)
 {
 char *s, *s2;
 struct head_list *t, *t2, *last;
@@ -1190,8 +1171,7 @@ struct head_list *t, *t2, *last;
     }
 }
 
-CheckHead(arg)
-char *arg;
+int CheckHead(char *arg)
 {
     struct head_list *t;
     for (t=HeadList; (t!=NULL); t=t->next) {
@@ -1201,8 +1181,7 @@ char *arg;
     return(HeadKeep && t);
 }
 
-GetBody(arg)
-char   *arg;
+int GetBody(char *arg)
 {
     int     cuid, rc;
     char *arg2;
@@ -1223,8 +1202,7 @@ char   *arg;
     return(rc);
 }
 
-DescribeFlags(cuid) 
-int cuid;
+int DescribeFlags(int cuid)
 {
     char Snapshot[AMS_SNAPSHOTSIZE], *id, *dir, AttrName[AMS_ATTRNAMEMAX], ErrorText[256];
     int i, started = 0;
@@ -1255,8 +1233,7 @@ int cuid;
 }
 		
 
-GetBodyFromCUID(cuid)
-int	cuid;
+int GetBodyFromCUID(int cuid)
 {
     char    SnapshotBuf[AMS_SNAPSHOTSIZE], FileName[1+MAXPATHLEN], *dir, *id, ErrorText[256];
 
@@ -1327,16 +1304,14 @@ int	cuid;
     return(0);
 }
 
-ViewMessageCmd(arg)
-char *arg;
+int ViewMessageCmd(char *arg)
 {
 int cuid;
     if ((cuid = ParseMessageNumber(arg))<0) return(-1);
     return(ViewMessage(cuid));
 }
 
-ViewMessage(cuid)
-int cuid;
+int ViewMessage(int cuid)
 {
     Boolean FinishedElsewhere;
     int     bodylen, fd;
@@ -1383,8 +1358,7 @@ int cuid;
     return(0);
 }
 
-StoreMessageCmd(arg)
-char *arg;
+int StoreMessageCmd(char *arg)
 {
 char *FileName;
 int cuid;
@@ -1398,10 +1372,7 @@ int cuid;
     return(StoreMessage(cuid,FileName, 0L));
 }
 
-StoreMessage(cuid, fname, offset)
-int cuid;
-char *fname;
-long offset;
+int StoreMessage(int cuid, char *fname, long offset)
 {
     int     bodylen;
     long    offset_in, bytesunfetched;	/* *** Added for PC 8/20/86 *** */
@@ -1439,8 +1410,7 @@ long offset;
     return(0);
 }
 
-DisplayFile(arg)
-char   *arg;
+int DisplayFile(char *arg)
 {
     char Buf[MAXBODY],
 	    ErrorText[256],
@@ -1474,8 +1444,7 @@ char   *arg;
     return(0);
 }
 
-DisplayMessage(arg)
-char   *arg;
+int DisplayMessage(char *arg)
 {
     char   *cl, *nl,
 	    Buf[MAXBODY],
@@ -1529,16 +1498,14 @@ char   *arg;
     return(0);
 }
 
-BrowseMsgs(arg)
-char   *arg;
+int BrowseMsgs(char *arg)
 {
     debug(1,("BrowseMsgs %s\n", arg));
     CheckPrompted("Please enter message group name (and since date)")
     return(GetHeadersFn(arg,'s'));
 }
 
-GetHeaders(arg)
-char   *arg;
+int GetHeaders(char *arg)
 {
     debug(1,("GetHeaders %s\n", arg));
     CheckPrompted("Please enter message group name (and since date)")
@@ -1548,8 +1515,7 @@ char   *arg;
 #define DATELEN  7
 #define TIMELEN 10
 
-GetHeadersFn(arg, fn)
-char   *arg, fn;
+int GetHeadersFn(char *arg, char fn)
 {
     char   *date,
 	   date64[DATELEN],
@@ -1608,8 +1574,7 @@ char   *arg, fn;
 		       GetHeadersSinceDate(DirName, date, ErrorText));
 }
 
-GetHeadersSinceDate(DirName, date64, NothingMessage)
-char *DirName, *date64, *NothingMessage;
+int GetHeadersSinceDate(char *DirName, char *date64, char *NothingMessage)
 {
     char headbuf[HEADBUFSIZE], ErrorText[256], *s;
     int     cuid, IsDup;
@@ -1645,10 +1610,7 @@ char *DirName, *date64, *NothingMessage;
     return(0);
 }
 
-GetNextCommand(sptr, buf, lim)
-char  **sptr;
-char   *buf;
-int	lim;
+int GetNextCommand(char **sptr, char *buf, int lim)
 {
     int     i = 0;
     char   *s;
@@ -1712,9 +1674,7 @@ PrintVersionNumbers() {
     return(0);
 }
 
-DemonLoop(arg, AliasCt)
-char   *arg;
-int	AliasCt;
+int DemonLoop(char *arg, int AliasCt)
 {
     int     Period,
 	    Passes;
@@ -1763,8 +1723,7 @@ int	AliasCt;
     }
 }
 
-MakeAlias(arg)
-char   *arg;
+int MakeAlias(char *arg)
 {
     char   *word,
 	   *s,
@@ -1883,9 +1842,7 @@ int	AliasCt;
     return(status);
 }
 
-UpdateMess(FullName, NickName, substatus)
-char   *FullName, *NickName;
-int	substatus;
+int UpdateMess(char *FullName, char *NickName, int substatus)
 {
     Boolean IsDone = FALSE;
     int     code;
@@ -1951,9 +1908,7 @@ int	substatus;
     return(code);
 }
 
-int StepThroughMsgs(DirName, date64, ErrorText, newdate, IsDone)
-char *DirName, *date64, *ErrorText, *newdate;
-Boolean *IsDone;
+int StepThroughMsgs(char *DirName, char *date64, char *ErrorText, char *newdate, Boolean *IsDone)
 {
     Boolean StayHere;
     char    AnsBuf[ANSBUFMAX],
@@ -2135,10 +2090,7 @@ Boolean *IsDone;
     return(0);
 }
 
-CalcSkip(skipvalue,s,headbuf,numbytes,StayHere,totalbytes,status)
-long *totalbytes, skipvalue, numbytes, *status;
-char **s, *headbuf;
-Boolean *StayHere;
+int CalcSkip(long skipvalue, char **s, char *headbuf, long numbytes, Boolean *StayHere, long *totalbytes, long *status)
 {
 /* * debug(1,("<CalcSkip> skipvalue=%ld, %ld bytes buffered\n", skipvalue, numbytes));
  *  debug(1,("<CalcSkip> %ld bytes remaining, current buffer ended at %ld\n",
@@ -2177,9 +2129,7 @@ Boolean *StayHere;
  *  debug(1,("<CalcSkip> and %ld bytes remaining\n", *status));   ******* */
 }
 
-UpdateMsgs(arg, AliasCt)
-char   *arg;
-int	AliasCt;
+int UpdateMsgs(char *arg, int AliasCt)
 {
     char   *dname;
     char mapFile[1+MAXPATHLEN], lmapFile[1+MAXPATHLEN];
@@ -2266,9 +2216,7 @@ int	AliasCt;
     return(0);
 }
 
-AlterSubscription(arg, AliasCt)
-char   *arg;
-int	AliasCt;
+int AlterSubscription(char *arg, int AliasCt)
 {
     long    spcode;
     int     i = 0;
@@ -2306,8 +2254,7 @@ int	AliasCt;
     return(0);
 }
 
-AlterSubscriptionLine(text)
-char   *text;
+int AlterSubscriptionLine(char *text)
 {
     int code;
     code = AlterSubLine(text);
@@ -2319,8 +2266,7 @@ char   *text;
     return(code);
 }
 
-AlterSubLine(text)
-char   *text;
+int AlterSubLine(char *text)
 {
     char   *Full,
 	    Nick[MAXPATHLEN + 1],
@@ -2441,8 +2387,7 @@ KillServer() {
     return(0);
 }
 
-EchoArgs(arg)
-char   *arg;
+int EchoArgs(char *arg)
 {
     moreprintf("%s\n", arg);
     return(0);
@@ -2456,8 +2401,7 @@ ForkYourself() {
     return(0);
 }
 
-DeleteMessages(arg)
-char   *arg;
+int DeleteMessages(char *arg)
 {
     int     cuid,
 	rc;
@@ -2481,8 +2425,7 @@ char   *arg;
     return(0);
 }
 
-UndeleteMessages(arg)
-char   *arg;
+int UndeleteMessages(char *arg)
 {
     int     cuid,
 	rc;
@@ -2506,8 +2449,7 @@ char   *arg;
     return(0);
 }
 
-Epoch(arg)
-char   *arg;
+int Epoch(char *arg)
 {
     char *dname,
         *date,
@@ -2571,8 +2513,7 @@ char   *arg;
     return(0);
 }
 
-WhenIs(arg)
-char   *arg;
+int WhenIs(char *arg)
 {
     int year, month, day, hour, min, sec, wday;
     long gtm;
@@ -2593,9 +2534,7 @@ char   *arg;
     return(0);
 }
 
-WriteFile(arg, AliasCt)
-char   *arg;
-int	AliasCt;
+int WriteFile(char *arg, int AliasCt)
 {
     long offset = 0L;
     char FullName[1+MAXPATHLEN];
@@ -2616,16 +2555,14 @@ int	AliasCt;
     return(0);
 }
 
-MailCmd(arg)
-char   *arg;
+int MailCmd(char *arg)
 {
     debug(1,("MailCmd %s\n", arg));
     CheckQuestion("Press enter, or enter a name or network address")
     SendSomeMail(0, arg, AMS_REPLY_FRESH);
 }
 
-ReplyMailCmd(arg)
-char   *arg;
+int ReplyMailCmd(char *arg)
 {
     int     cuid;
 
@@ -2634,8 +2571,7 @@ char   *arg;
     return(SendSomeMail(cuid, NULL, AMS_REPLY_SENDER));
 }
 
-WideReplyMailCmd(arg)
-char   *arg;
+int WideReplyMailCmd(char *arg)
 {
     int     cuid;
 
@@ -2644,8 +2580,7 @@ char   *arg;
     return(SendSomeMail(cuid, NULL, AMS_REPLY_WIDE));
 }
 
-WiderReplyMailCmd(arg)
-char   *arg;
+int WiderReplyMailCmd(char *arg)
 {
     int     cuid;
 
@@ -2654,8 +2589,7 @@ char   *arg;
     return(SendSomeMail(cuid, NULL, AMS_REPLY_WIDER));
 }
 
-ForwardMailCmd(arg)
-char   *arg;
+int ForwardMailCmd(char *arg)
 {
     char *addr;
     int     cuid, code;
@@ -2673,8 +2607,7 @@ char   *arg;
     return(code);
 }
 
-Redraft(arg)
-char   *arg;
+int Redraft(char *arg)
 {
     int     cuid;
 
@@ -2826,10 +2759,7 @@ char   *to;
     return(0);
 }
 
-SendSomeLines(TmpName, to, offset_p, code, cuid)
-char *TmpName, *to;
-long *offset_p;
-int code, cuid;
+int SendSomeLines(char *TmpName, char *to, long *offset_p, int code, int cuid)
 {
     char *s, HeadBuf[3000], *realname, BigBuf[1000];
     if (!to || !*to) {
@@ -2889,9 +2819,7 @@ int code, cuid;
     return(0);
     }
 
-GetSubject(cuid, strbuf, strbuflen)
-int cuid, strbuflen;
-char *strbuf;
+int GetSubject(int cuid, char *strbuf, int strbuflen)
 {
     int     bodylen;
     long    offset,
@@ -2930,8 +2858,7 @@ char *strbuf;
     strncpy(strbuf, scr, strbuflen);
 }
 
-CreateNewMessageDirectory(arg)
-char   *arg;
+int CreateNewMessageDirectory(char *arg)
 {
     int cuid, HasParent = TRUE;
     char   *s, *id, *dir,
@@ -3033,9 +2960,7 @@ char   *arg;
 #define PADTOCOLUMNB 29
 #define LOTSASPACE "                                                                "
 
-PrintCaption(cuid, Snapshot, IsDup)
-int	cuid, IsDup;
-char   *Snapshot;
+int PrintCaption(int cuid, char *Snapshot, int IsDup)
 {
     int     len, padlen;
     char   *s,
@@ -3103,8 +3028,7 @@ char   *Snapshot;
     return(moreprintf("%s\n", CaptionBuffer));
 }
 
-WhoIs(arg)
-char   *arg;
+int WhoIs(char *arg)
 {
     char    *realname;
     int badct;
@@ -3131,15 +3055,12 @@ char   *text,
 }
 
 
-EditFileCmd(arg)
-char *arg;
+int EditFileCmd(char *arg)
 {
      return(EditFile(arg, EDIT_MODE ));
 }
 
-EditFile(arg, edittype)
-char   *arg;
-int edittype;
+int EditFile(char *arg, int edittype)
 {
     Boolean FinishedElsewhere;
     char    FileName[MAXPATHLEN + 1], LocalName[MAXPATHLEN + 1];
@@ -3160,33 +3081,27 @@ int edittype;
 }
 
 
-ClassifyMessage(arg)
-char *arg;
+int ClassifyMessage(char *arg)
 {
     return(CloneMessage(arg, MS_CLONE_COPYDEL));
 }
 
-AppendMessage(arg)
-char *arg;
+int AppendMessage(char *arg)
 {
     return(CloneMessage(arg, MS_CLONE_APPEND));
 }
 
-CopyMessage(arg)
-char *arg;
+int CopyMessage(char *arg)
 {
     return(CloneMessage(arg, MS_CLONE_COPY));
 }
 
-AppendDelMessage(arg)
-char *arg;
+int AppendDelMessage(char *arg)
 {
     return(CloneMessage(arg, MS_CLONE_APPENDDEL));
 }
 
-CloneMessage(arg, Code)
-char *arg;
-int Code;
+int CloneMessage(char *arg, int Code)
 {
     int cuid;
     char SnapshotBuf[AMS_SNAPSHOTSIZE];
@@ -3219,16 +3134,14 @@ int Code;
     return(CUI_CloneMessage(cuid, arg, Code));
  }
 
-DirectoryChangeHook(adddir, deldir, rock)
-char *adddir, *deldir, *rock;
+int DirectoryChangeHook(char *adddir, char *deldir, char *rock)
 {
     debug(1, ("Directory change hook adding %s deleting %s\n", adddir ? adddir : "<NULL>", deldir ? deldir : "<NULL>"));
 }
 
 extern int LinesOnTerminal, TerminalLineWidth;
 
-ShowOptSettings(arg)
-char *arg;
+int ShowOptSettings(char *arg)
 {
     int i, SaidSomething = 0, len;
 
@@ -3301,8 +3214,7 @@ char *arg;
     }
 }
 
-TakeHints(arg)
-char *arg;
+int TakeHints(char *arg)
 {
     int DoAll, ProtFailures;
 
@@ -3317,8 +3229,7 @@ char *arg;
     }
 }
 
-FindBodyStartInForwardedViceFile(ViceFile)
-char *ViceFile;
+int FindBodyStartInForwardedViceFile(char *ViceFile)
 {
     char    Buf[MAXBODY], *s;
     int     bodylen;
@@ -3350,9 +3261,7 @@ char *ViceFile;
     return(0);
 }
 
-MatchFolder(arg, aliasct)
-char *arg;
-int aliasct;
+int MatchFolder(char *arg, int aliasct)
 {
     char Fname[1+MAXPATHLEN];
 
@@ -3366,8 +3275,7 @@ int aliasct;
     }
 }
 
-ReconstructDirectory(arg)
-char *arg;
+int ReconstructDirectory(char *arg)
 {
     static char   *HowToVec[] = {
 	"How do you want to sort the reconstructed folder",
@@ -3388,8 +3296,7 @@ char *arg;
     return(CUI_ReconstructDirectory(arg, TrustTimeStamp));
 }
 
-Scavenge(arg)
-char *arg;
+int Scavenge(char *arg)
 {
     int Recurse = -1, numgood, numbad, Purge = -1;
     char *s, *t, *DirName;
@@ -3437,8 +3344,7 @@ char *arg;
 SubscriptionChangeHook() {} /* satisfy the linker */
 
 #ifdef METAMAIL_ENV
-nontext(s)
-char *s;
+int nontext(char *s)
 {
     char *t;
     if (!s) return(1);

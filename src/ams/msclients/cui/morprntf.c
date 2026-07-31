@@ -55,8 +55,7 @@ NoMore() {
     CharsOnLine = 1;
 }
 
-SetTerminalParams(h, w)
-int h, w;
+int SetTerminalParams(int h, int w)
 {
     LinesOnTerminal = h;
     TerminalLineWidth = w;
@@ -85,9 +84,7 @@ int  a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
     return(0);
 }
 
-SpitOutChars(t, len)
-char *t;
-int len;
+int SpitOutChars(char *t, int len)
 {
     char *myline;
     int newlen;

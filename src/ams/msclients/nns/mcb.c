@@ -39,15 +39,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 #include <big.h>
 #include <stdlib.h>
 
-void            MCBInit(mcb)
-MCacheBucket_t *mcb;
+void MCBInit(MCacheBucket_t *mcb)
 {
     *mcb = NULL;
 }
 
-struct MS_Message *MCBFind(mcb, string)
-MCacheBucket_t *mcb;
-char           *string;
+struct MS_Message * MCBFind(MCacheBucket_t *mcb, char *string)
 {
     MCacheBucketEntry_t *mcbe = *mcb;
     struct MS_Message *result = NULL;
@@ -61,10 +58,7 @@ char           *string;
     return (result);
 }
 
-int             MCBMake(mcb, string, Msg)
-MCacheBucket_t *mcb;
-char           *string;
-struct MS_Message *Msg;
+int MCBMake(MCacheBucket_t *mcb, char *string, struct MS_Message *Msg)
 {
     MCacheBucketEntry_t *tmp = (MCacheBucketEntry_t *) malloc(sizeof(MCacheBucketEntry_t));
 
@@ -76,9 +70,7 @@ struct MS_Message *Msg;
     return (FALSE);
 }
 
-void            MCBDelete(mcb, string)
-MCacheBucket_t *mcb;
-char           *string;
+void MCBDelete(MCacheBucket_t *mcb, char *string)
 {
     MCacheBucketEntry_t *mcbe = *mcb, *prevmcbe = NULL;
 
@@ -98,8 +90,7 @@ char           *string;
     }
 }
 
-void            MCBPurge(mcb)
-MCacheBucket_t *mcb;
+void MCBPurge(MCacheBucket_t *mcb)
 {
     MCacheBucketEntry_t *mcbe = *mcb, *next;
 

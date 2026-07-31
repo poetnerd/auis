@@ -47,11 +47,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/type
 #include <style.ih>
 #include <stylesht.ih>
 
-long typetext__HandleKeyWord(self, pos, keyword, file)
-struct typetext *self;
-long pos;
-char *keyword;
-FILE *file;  {
+long typetext__HandleKeyWord(struct typetext *self, long pos, char *keyword, FILE *file)
+{
     register long c;
     if ((strcmp(keyword, "textdsversion") == 0) || 
 	(strcmp(keyword, "define") == 0) ||
@@ -65,23 +62,17 @@ FILE *file;  {
     return 0;
 }
 
-long typetext__HandleCloseBrace(self, pos, file)
-struct typetext *self;
-long pos;
-FILE *file;  {
+long typetext__HandleCloseBrace(struct typetext *self, long pos, FILE *file)
+{
     return 0;
 }
 
-long typetext__HandleBegindata(self,pos,file)
-struct typetext *self;
-long pos;
-FILE *file;
+long typetext__HandleBegindata(struct typetext *self, long pos, FILE *file)
 {
 return super_HandleBegindata(self,pos,file);
 }
 
-char *typetext__ViewName(self)
-    struct typetext *self;
+char * typetext__ViewName(struct typetext *self)
 {
     return "typescript";
 }
@@ -98,8 +89,7 @@ boolean typetext__InitializeObject(classID, self)
     return TRUE;
 }
 
-long typetext__GetModified(self)
-    struct typetext *self;
+long typetext__GetModified(struct typetext *self)
 {
     return 0;
 }

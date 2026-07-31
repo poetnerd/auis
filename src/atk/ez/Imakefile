@@ -27,6 +27,8 @@
 */
 
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 DOBJS = eza.do
 IHFILES = eza.ih
 OBJS = eza.o

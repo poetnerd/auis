@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/type
  
 
 #include <andrewos.h> /* sys/types.h sys/time.h */
+#include <stdlib.h>
 #include <class.h>
 #include <text.ih>
 #include <mark.ih>
@@ -115,8 +116,8 @@ static void TypescriptReturnCommand();
 static void TypescriptSTOPCommand();
 static void TypescriptUnboundCommand();
 static void TypescriptZapCommand();
-static void Typescript_DigitCmd();
-static void Typescript_SelfInsertCmd();
+static void Typescript_DigitCmd(struct typescript *self, char a);
+static void Typescript_SelfInsertCmd(struct typescript *self, char a);
 static int WritePty();
 static int doprint();
 static void smashReadOnlyBuf();
@@ -135,7 +136,7 @@ static void typescript_RuboutCmd();
 static int typescript_SaveAs();
 static int typescript_SetPrinterCmd();
 static void typescript_YankCmd();
-static void typescript_handlereadonly();
+static void typescript_handlereadonly(struct typescript *self, char c);
 
 #if defined(POSIX_ENV) && !defined(sun)
 #include <termios.h>
@@ -185,8 +186,8 @@ static struct menulist *typescriptMenus;
 static FILE *df = NULL;
 static FILE *odf = NULL;
 
-static void Typescript_SelfInsertCmd();
-static void MyCanOutHandler();	
+static void Typescript_SelfInsertCmd(struct typescript *self, char a);
+static void MyCanOutHandler();
 static void SendSig();
 static int WritePty();
 static int typescriptAddtypescriptMenus();
@@ -219,10 +220,7 @@ static int CmdSize;
 static boolean FileMenu = FALSE;
 #define	SetCmdSize(A) if(A>CmdSize) cmd = (char*)realloc(cmd,(CmdSize = 64 + A))
 
-static int
-typescriptAddMenu(nbuf, proc)
-char *nbuf;
-struct proctable_Entry *proc;
+static int typescriptAddMenu(char *nbuf, struct proctable_Entry *proc)
 {
     char *c, *bf, *cp, *retstr;
 
@@ -242,24 +240,17 @@ struct proctable_Entry *proc;
     else free(bf);
 }
     
-static int
-typescript_PreviewCmd(self)
-struct typescript *self;
+static int typescript_PreviewCmd(struct typescript *self)
 {
     doprint(self,0);
 }
 
-static int
-typescript_PrintCmd(self)
-struct typescript *self;
+static int typescript_PrintCmd(struct typescript *self)
 {
     doprint(self,1);
 }
 
-static int
-doprint(self, porp)
-struct typescript *self;
-int porp;
+static int doprint(struct typescript *self, int porp)
 {
     message_DisplayString(self, 0, "Processing request.");
     im_ForceUpdate();
@@ -274,9 +265,7 @@ int porp;
 	message_DisplayString(self, 0, "Preview window should appear soon.");
 }
 
-static int
-typescript_SaveAs(self)
-struct typescript *self;
+static int typescript_SaveAs(struct typescript *self)
 {
     char frs[256], mes[256];
     FILE *f;
@@ -301,9 +290,7 @@ struct typescript *self;
     message_DisplayString(self, 0, frs);
 }
 
-static int
-typescript_SetPrinterCmd(self)
-struct typescript *self;
+static int typescript_SetPrinterCmd(struct typescript *self)
 {
     struct msghandler *messageLine = (struct msghandler *) typescript_WantHandler(self, "message");
     char *currentPrinter, *defaultPrinter, answer[256], prompt[sizeof("Current printer is . Set printer to []: ") + 128];
@@ -377,9 +364,7 @@ typescriptAddFileMenu()
 #endif /* PRINTER_SETUP_DIALOG_ENV */
 }
 
-static int
-AnounceDeath(self)
-struct typescript *self;
+static int AnounceDeath(struct typescript *self)
 {
     char buf[512];
     char *shell = environ_Get("SHELL");
@@ -400,11 +385,7 @@ struct typescript *self;
     }    
 }
 
-static struct environment *
-GetCommandEnv(self, pos, start, end)
-register struct typescript *self;
-register long pos;
-long *start, *end;
+static struct environment * GetCommandEnv(struct typescript *self, long pos, long *start, long *end)
 {
     register struct environment *te;
 
@@ -421,9 +402,7 @@ long *start, *end;
     return te;
 }
 
-static void 
-typescript_RuboutCmd(self)
-register struct typescript *self;
+static void typescript_RuboutCmd(struct typescript *self)
 {
     if(self->readOnlyLen != -1) {
 #ifdef SENDRAW
@@ -437,12 +416,7 @@ register struct typescript *self;
 	textview_RuboutCmd((struct textview *)self);
 }
 
-struct typescript *
-typescript__Create(classID, arglist, diskf, filemenu)
-struct classheader *classID;
-char **arglist;
-FILE *diskf;
-boolean filemenu;
+struct typescript * typescript__Create(struct classheader *classID, char **arglist, FILE *diskf, boolean filemenu)
 {
     struct typescript *self;
     struct typetext *tt;
@@ -456,12 +430,7 @@ boolean filemenu;
     return(self);
 }
 
-struct typescript *
-typescript__CreatePipescript(classID, indiskf, outdiskf, filemenu)
-struct classheader *classID;
-FILE *indiskf;
-FILE *outdiskf;
-boolean filemenu;
+struct typescript * typescript__CreatePipescript(struct classheader *classID, FILE *indiskf, FILE *outdiskf, boolean filemenu)
 {
     struct typescript *self;
 
@@ -470,9 +439,7 @@ boolean filemenu;
     return self;
 }
 
-static void
-MaintainLastEnv(td)
-struct typescript *td; 
+static void MaintainLastEnv(struct typescript *td)
 {
     long len, spos;
     struct text *mydoc;
@@ -491,9 +458,7 @@ struct typescript *td;
 
 }
 
-void
-SaveCommand(td)
-struct typescript *td;
+void SaveCommand(struct typescript *td)
 {
     long len, spos;
     struct text *mydoc;
@@ -516,9 +481,7 @@ struct typescript *td;
     }
 }
 
-static void
-TypescriptLeftCommand(tsv)
-register struct typescript *tsv; 
+static void TypescriptLeftCommand(struct typescript *tsv)
 {
     register long pos;
     long start,end;
@@ -538,9 +501,7 @@ register struct typescript *tsv;
     textview_BeginningOfLineCmd((struct textview *)tsv);
 }
 
-static void 
-TypescriptEndOfLineCommand(tsv)
-register struct typescript *tsv; 
+static void TypescriptEndOfLineCommand(struct typescript *tsv)
 {
     register long pos;
     long start,end;
@@ -556,9 +517,7 @@ register struct typescript *tsv;
 	textview_EndOfLineCmd((struct textview *)tsv);
 }
 
-static void
-TypescriptEOTCommand(tv)
-struct typescript   *tv; 
+static void TypescriptEOTCommand(struct typescript *tv)
 {
     static struct timeval t = { 0, 0 };
     int wfds = 1 << tv->SubChannel;
@@ -590,16 +549,12 @@ struct typescript   *tv;
 	textview_DeleteCmd(tv);
 }
 
-static void
-TypescriptINTCommand(tv)
-register struct typescript *tv; 
+static void TypescriptINTCommand(struct typescript *tv)
 {
     SendSig(tv, SIGINT);
 }
 
-static void
-TypescriptSTOPCommand (tv)
-register struct typescript *tv; 
+static void TypescriptSTOPCommand(struct typescript *tv)
 {
 #if SY_AIX221
 /* %%%%%%  must changed if AIX supports the STOP signal */
@@ -609,16 +564,12 @@ register struct typescript *tv;
 #endif /* if SY_AIX221 */
 }
 
-static void
-TypescriptQUITCommand (tv)
-register struct typescript *tv; 
+static void TypescriptQUITCommand(struct typescript *tv)
 {
     SendSig(tv, SIGQUIT);
 }
 
-static void
-SendSig (tv, sig) 
-register struct typescript *tv; 
+static void SendSig(struct typescript *tv, int sig)
 {
 #if defined(POSIX_ENV) && !defined(sun)
 /* The non-SunOS POSIX pty is in cooked mode, so query the
@@ -666,14 +617,11 @@ register struct typescript *tv;
 #endif /* defined(POSIX_ENV) && !defined(sun) */
 }
 
-static void 
-TypescriptUnboundCommand(tv)
-register struct typescript *tv; {
+static void TypescriptUnboundCommand(struct typescript *tv)
+{
 }
 
-static void 
-smashReadOnlyBuf(tv)
-register struct typescript *tv; 
+static void smashReadOnlyBuf(struct typescript *tv)
 {   /* Clear out the buf when no longer needed since it probably contains a password */
     register char *c;
     register int i = READONLYMAX;
@@ -686,10 +634,7 @@ register struct typescript *tv;
 #ifdef CONTRIB_ENV
 #define PRINTER_SETUP_DIALOG_ENV 1
 #endif
-static void
-TypescriptDoReturnCommand (tv,endpos)
-register struct typescript *tv;
-register long endpos;
+static void TypescriptDoReturnCommand(struct typescript *tv, long endpos)
 {
     register struct text *d;
     int maxpos, vfp, wfds;
@@ -781,26 +726,18 @@ register long endpos;
 	typetext_AlwaysDeleteCharacters((struct typetext*) d, 0, text_GetLength(d) - maxSize + extraRoom);
 }
 
-static void
-TypescriptReturnCommand (tv)
-register struct typescript *tv; 
+static void TypescriptReturnCommand(struct typescript *tv)
 {
     TypescriptDoReturnCommand(tv, -1);
 }
 
-static void 
-TypescriptReturnAndPositionCommand(self, data)
-struct typescript *self;
-long data;
+static void TypescriptReturnAndPositionCommand(struct typescript *self, long data)
 {
     TypescriptDoReturnCommand(self, text_GetFence(TEXT(self)));
     textview_LineToTop((struct textview*)self, data); 
 } 
 
-static int
-typescript_HandleMenus(self, data)
-struct typescript *self;
-long data;
+static int typescript_HandleMenus(struct typescript *self, long data)
 {
     char *s = (char*) data;
 
@@ -813,9 +750,7 @@ long data;
     }
 }
 
-static void
-TypescriptZapCommand(tv)
-register struct typescript *tv;
+static void TypescriptZapCommand(struct typescript *tv)
 {
     register struct text *d;
     int maxpos;
@@ -843,10 +778,7 @@ register struct typescript *tv;
     text_NotifyObservers(d , 0); 
 }
 
-static void
-GrabCommandHere(tv, where)
-long where;
-register struct typescript *tv; 
+static void GrabCommandHere(struct typescript *tv, long where)
 {
     register int i;
     long start, size,len;
@@ -875,12 +807,7 @@ register struct typescript *tv;
     text_NotifyObservers(TEXT(tv), 0);
 }
 
-static int
-GrabCommand(tv, fromText, start, end)
-register struct typescript   *tv;
-struct text *fromText;
-long start;
-long end;
+static int GrabCommand(struct typescript *tv, struct text *fromText, long start, long end)
 {
     long size, len, pos;
 
@@ -900,9 +827,7 @@ long end;
     text_NotifyObservers(TEXT(tv), 0);
 }
 
-static void
-GrabLastCommand (tv)
-register struct typescript *tv;
+static void GrabLastCommand(struct typescript *tv)
 {
     long cmdEnd;
 
@@ -913,9 +838,7 @@ register struct typescript *tv;
     GrabCommand(tv, tv->cmdText, tv->lastCmdPos, cmdEnd);
 }
 
-static void
-GrabNextCommand (tv)
-register struct typescript   *tv;
+static void GrabNextCommand(struct typescript *tv)
 {
     long cmdEnd;
 
@@ -927,9 +850,7 @@ register struct typescript   *tv;
 	GrabCommand(tv, tv->cmdText, tv->lastCmdPos, cmdEnd);
 }
 
-static void
-GrabCurrentCommand(tv)
-struct typescript *tv; 
+static void GrabCurrentCommand(struct typescript *tv)
 {
     register int i;
     register struct text *d;
@@ -973,19 +894,14 @@ struct typescript *tv;
     /* MaintainLastEnv(tv); */
 }
 
-static void
-ExecuteCurrentCommand(tv)
-struct typescript *tv; 
+static void ExecuteCurrentCommand(struct typescript *tv)
 {
     if(typescript_GetDotPosition(tv) < text_GetFence(TEXT(tv)))
 	GrabCurrentCommand(tv);
     TypescriptReturnCommand (tv);
 }
 
-static void 
-SetTitle(self, titleLine)
-struct typescript *self;
-char *titleLine;
+static void SetTitle(struct typescript *self, char *titleLine)
 {
 
 #define WMTITLELEN 70 /* Can you say "Magic hack?" */
@@ -1047,12 +963,7 @@ char *titleLine;
 #define StartMagicChar 1 /* Ctrl A */
 #define EndMagicChar 2  /* Ctrl B */
 
-static char * 
-ReadDirName(self, f, buf, bufsiz)
-struct typescript *self;
-FILE *f;
-char *buf;
-int *bufsiz;
+static char * ReadDirName(struct typescript *self, FILE *f, char *buf, int *bufsiz)
 {
     register char *cp;
     register c;
@@ -1079,10 +990,7 @@ int *bufsiz;
     return(cp);
 }
 
-static void
-ReadFromProcess(f, td)
-FILE *f;
-register struct typescript *td;
+static void ReadFromProcess(FILE *f, struct typescript *td)
 {
     char buf[4000];
     register char *bp = buf;
@@ -1191,9 +1099,7 @@ register struct typescript *td;
     mark_IncludeBeginning(td->cmdStart) = TRUE;
 }
 
-static void
-ClearTypescriptText(tv)
-struct typescript *tv;
+static void ClearTypescriptText(struct typescript *tv)
 {
     struct text *d = TEXT(tv);
     int p;
@@ -1205,9 +1111,7 @@ struct typescript *tv;
     }
 }
 
-static void
-ClearTypescript(tv)
-struct typescript *tv;
+static void ClearTypescript(struct typescript *tv)
 {
     ClearTypescriptText(tv);
     if (tv->cmdText != NULL) {
@@ -1216,9 +1120,7 @@ struct typescript *tv;
     tv->lastCmdPos = 0;
 }
 
-static void
-NoEchoCommand(tv)
-struct typescript *tv;
+static void NoEchoCommand(struct typescript *tv)
 {
     if(tv->readOnlyLen == -1)
         tv->readOnlyLen = 0;
@@ -1229,9 +1131,7 @@ struct typescript *tv;
  *
  * This is really vendor-dependent stuff.
  */
-static void
-ResetTTY(fd)
-int fd;	    /* file descriptor for the tty */
+static void ResetTTY(int fd)
 {
 #if defined(POSIX_ENV) && !defined(sun)
 	/* Reset pty with Posix termios ioctl's */
@@ -1299,10 +1199,7 @@ int fd;	    /* file descriptor for the tty */
 #endif /* defined(POSIX_ENV) && !defined(sun) */
 }
 
-boolean
-typescript__InitializeObject(classID, tp)
-struct classheader *classID;
-struct typescript *tp;
+boolean typescript__InitializeObject(struct classheader *classID, struct typescript *tp)
 {
     int pid;
     char **arglist = NULL;
@@ -1566,10 +1463,7 @@ struct typescript *tp;
 /* Called when can send to pty.  Removes handler when no more data remains to be sent. */
 
 
-static void 
-MyCanOutHandler(afile, ad)
-FILE *afile;
-struct typescript *ad; 
+static void MyCanOutHandler(FILE *afile, struct typescript *ad)
 {
     long start;
     register struct text *myd;
@@ -1605,10 +1499,7 @@ struct typescript *ad;
     WritePty(ad, buffer, tp-buffer);
 }
 
-void
-typescript__FinalizeObject(classID, ap)
-struct classheader *classID;
-struct typescript *ap; 
+void typescript__FinalizeObject(struct classheader *classID, struct typescript *ap)
 {
   /* dataobject_Destroy(TEXTOBJ(ap)); */ /* the doc will destroy it's own marks */
     if(ap->title)
@@ -1623,11 +1514,7 @@ struct typescript *ap;
     }
 }
 
-void 
-typescript__ObservedChanged(ap, ov, value)
-register struct typescript *ap;
-struct observable *ov;
-long value; 
+void typescript__ObservedChanged(struct typescript *ap, struct observable *ov, long value)
 {
     register long fencepos;
 
@@ -1647,10 +1534,7 @@ long value;
     }
 }
 
-void 
-typescript__PostMenus(self, menulist)
-struct typescript *self;
-struct menulist *menulist;
+void typescript__PostMenus(struct typescript *self, struct menulist *menulist)
 {
     /* Ignore the textviews menus,
       but take advantage of the fact that it knows when to
@@ -1667,9 +1551,7 @@ struct menulist *menulist;
     }
 }
 
-void 
-typescript__ReceiveInputFocus(me)
-register struct typescript *me; 
+void typescript__ReceiveInputFocus(struct typescript *me)
 {
     super_ReceiveInputFocus(me);
     me->keystate->next = NULL;
@@ -1679,10 +1561,7 @@ register struct typescript *me;
     menulist_SetMask(me->menulist, textview_NoMenus);
 }
 
-static void 
-typescript_handlereadonly(self ,c)
-register struct typescript *self;
-char c;
+static void typescript_handlereadonly(struct typescript *self, char c)
 {   /* This will put characters in the read-only buffer without displaying them.
       Deals with the no-echo mode for entering passwords and the like. */
 #ifdef SENDRAW
@@ -1696,9 +1575,7 @@ char c;
 #endif
 }
 
-static int
-PositionDot(self)
-register struct typescript *self;
+static int PositionDot(struct typescript *self)
 {    
     register long dotpos,markpos;
     struct text *d = TEXT(self);
@@ -1721,18 +1598,13 @@ register struct typescript *self;
     }
 }
 
-static void 
-typescript_YankCmd(self)
-register struct typescript *self;
+static void typescript_YankCmd(struct typescript *self)
 {    
     PositionDot(self);
     textview_YankCmd(self);
 }
 
-static void 
-Typescript_SelfInsertCmd(self, a)
-register struct typescript *self;
-register char a;
+static void Typescript_SelfInsertCmd(struct typescript *self, char a)
 {
     PositionDot(self);
     if(self->readOnlyLen != -1)
@@ -1741,10 +1613,7 @@ register char a;
    	textview_SelfInsertCmd(self, a);
 }
 
-static void 
-Typescript_DigitCmd(self, a)
-register struct typescript *self;
-char a;
+static void Typescript_DigitCmd(struct typescript *self, char a)
 {
     PositionDot(self);
     if(self->readOnlyLen != -1)
@@ -1753,18 +1622,14 @@ char a;
 	textview_DigitCmd(self, a);
 }
 
-static int
-typescript_BackwardsRotatePasteCmd(self)
-    struct typescript *self;
+static int typescript_BackwardsRotatePasteCmd(struct typescript *self)
 {
     if(typescript_GetDotPosition(self) < text_GetFence(TEXT(self)))
 	return;
     textview_BackwardsRotatePasteCmd(self);
 }
 
-static int
-typescript_RotatePasteCmd(self)
-struct typescript *self;
+static int typescript_RotatePasteCmd(struct typescript *self)
 {
     if(typescript_GetDotPosition(self) < text_GetFence(TEXT(self)))
 	return;
@@ -1772,10 +1637,7 @@ struct typescript *self;
 }
 
 /* What to do when the textview hasn't defined something... */
-int 
-typescript_NoTextviewKey(self, key)
-struct typescript *self;
-long key;
+int typescript_NoTextviewKey(struct typescript *self, long key)
 {
     message_DisplayString(self, 0, "Could not execute command. Failure in looking up textview command.");
     return 0;
@@ -1786,8 +1648,7 @@ long key;
  * Drag current working directory (or at least what we think is
  * the current working directory) out onto another window.
  */
-static void typescript_DragCwdCmd(self)
-struct typescript *self;
+static void typescript_DragCwdCmd(struct typescript *self)
 {
     struct im *im = typescript_GetIM(self);
     char wd[4096];
@@ -1798,8 +1659,7 @@ struct typescript *self;
     }
 }
 
-static int typescript_ResetTTY(self)
-struct typescript *self;
+static int typescript_ResetTTY(struct typescript *self)
 {
     ResetTTY(self->SlaveChannel);
 }
@@ -1837,9 +1697,7 @@ typescriptAddtypescriptMenus()
     keymap_BindToKey(ssmap, "\033`", tempProc, 0);
 }
 
-boolean 
-typescript__InitializeClass(classID)
-struct classheader *classID;
+boolean typescript__InitializeClass(struct classheader *classID)
 {
     struct proctable_Entry *tempProc, *si, *dig;
     struct classinfo *classInfo = &typescript_classinfo;
@@ -2010,21 +1868,13 @@ struct classheader *classID;
     return TRUE;
 }
 
-void 
-typescript__Update(self)
-struct typescript *self;
+void typescript__Update(struct typescript *self)
 {
     self->lastPosition = -1;
     super_Update(self);
 }
 
-struct view *
-typescript__Hit(self, action, x, y, numberOfClicks)
-struct typescript *self;
-enum view_MouseAction action;
-long x;
-long y;
-long numberOfClicks;
+struct view * typescript__Hit(struct typescript *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     struct view *v;
     struct im *im;
@@ -2061,14 +1911,7 @@ NullWinSizeProc()
 }
 #endif /* TIOCGWINSZ */
 
-void 
-typescript__FullUpdate(self, type, left, top, width, height)
-struct typescript *self;
-enum view_UpdateType type;
-long left;
-long top;
-long width;
-long height;
+void typescript__FullUpdate(struct typescript *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     self->lastPosition = -1;
     super_FullUpdate(self, type, left, top, width, height);
@@ -2104,16 +1947,7 @@ long height;
 #endif /* TIOCGWINSZ */
 }
 
-void 
-typescript__GetClickPosition(self, position, numberOfClicks, action, startLeft, startRight, leftPos, rightPos)
-struct typescript *self;
-long position;
-long numberOfClicks;
-enum view_MouseAction action;
-long startLeft;
-long startRight;
-long *leftPos;
-long *rightPos;
+void typescript__GetClickPosition(struct typescript *self, long position, long numberOfClicks, enum view_MouseAction action, long startLeft, long startRight, long *leftPos, long *rightPos)
 {
     if(numberOfClicks  %3) {
 	super_GetClickPosition(self, position, numberOfClicks, action, startLeft, startRight, leftPos, rightPos);
@@ -2124,11 +1958,7 @@ long *rightPos;
 }
 
 
-static int 
-WritePty(tv, buf, len)
-struct typescript *tv;
-char *buf;
-int len;
+static int WritePty(struct typescript *tv, char *buf, int len)
 {
 #if defined(POSIX_ENV) && !defined(sun)
 /* Write to a non-SunOS POSIX pty.  Turn off echo before the write,
@@ -2155,10 +1985,7 @@ int len;
 #endif /* defined(POSIX_ENV) && !defined(sun) */
 }
 
-void 
-typescript__SetDataObject(tp, obj)
-struct typescript *tp;
-struct dataobject *obj;
+void typescript__SetDataObject(struct typescript *tp, struct dataobject *obj)
 {
     struct style *defaultStyle;
     char bodyFont[100];
@@ -2207,10 +2034,7 @@ struct dataobject *obj;
     im_ForceUpdate();
 }
 
-void 
-typescript__SetTitle(self, title)
-struct typescript *self;
-char *title;
+void typescript__SetTitle(struct typescript *self, char *title)
 {
     if(self->title != NULL)
 	free(self->title);
@@ -2223,9 +2047,7 @@ char *title;
 	self->title = NULL;
 }
 
-char *
-typescript__GetTitle(self)
-struct typescript *self;
+char * typescript__GetTitle(struct typescript *self)
 {
     return self->title;
 }
@@ -2236,17 +2058,12 @@ struct typescript *self;
  * changes (via the ^A(pwd)^B hack), typescript then has
  * a frame which can be given the new title.
  */
-void 
-typescript__SetFrame(self, frame)
-struct typescript *self;
-struct frame *frame;
+void typescript__SetFrame(struct typescript *self, struct frame *frame)
 {
     self->frame = frame;
 }
 
-struct frame *
-typescript__GetFrame(self)
-struct typescript *self;
+struct frame * typescript__GetFrame(struct typescript *self)
 {
     return self->frame;
 }
@@ -2257,10 +2074,7 @@ struct typescript *self;
  * Since typescript should never be setuid root (implying ez and everything else is),
  * this will only work on relaxed systems where /etc/utmp is open.
  */
-int 
-utmp_add(ptyname, pid)
-char *ptyname;
-int pid;
+int utmp_add(char *ptyname, int pid)
 {
     struct utmp utmp;
     char *username;
@@ -2285,9 +2099,7 @@ int pid;
     }
 }
 
-int 
-utmp_delete(ptyname)
-char *ptyname;
+int utmp_delete(char *ptyname)
 {
     struct utmp utmp;
 

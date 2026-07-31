@@ -27,6 +27,8 @@
 */
 
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 DOBJS = pscripta.do \
 	tscript.do \
 	tscripta.do \

@@ -56,6 +56,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 /*---------------------------------------------------------------------------*/
 
 #include <class.h>
+#include <stdlib.h>
 
 #define label gezornenplatz
 /* sys/types.h in AIX PS2 defines "struct label", causing a type name clash.
@@ -96,6 +97,28 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <helpsys.h>
 #include <help.h>
 #include <helpdb.ih>
+static char * AndyCopy();
+static char * CopyString();
+static boolean EnsurePanelListSize();
+static void Expander();
+static void ExpanderAux();
+static void FilterPanel();
+static char * FindEntryInDirs();
+static char * MapParens();
+static void Quit();
+static int ScanLine();
+static void SearchOverviews();
+static void SearchPrograms();
+static void SendComments();
+static void ShowChanges();
+static int ShowFile();
+static void ShowTutorial();
+static void TextviewProc();
+static int mysystem();
+static void nono();
+static int panelCompare();
+static int safesystem();
+static char * sindex();
 
 /*---------------------------------------------------------------------------*/
 /*				GLOBALS					     */
@@ -190,9 +213,7 @@ int HELPDEBUG = 0;
  * copy protoname into aresult, prepending /usr/andy or whatever,
  * as appropriate
  */
-static char *
-AndyCopy(aproto, aresult)
-register char *aproto, *aresult;
+static char * AndyCopy(char *aproto, char *aresult)
 {
     register char *tp;
 
@@ -204,9 +225,7 @@ register char *aproto, *aresult;
 /*
  * allocate new string
  */
-static char *
-CopyString(as)
-register char *as;
+static char * CopyString(char *as)
 {
     register char *tp;
     tp = (char*) malloc(strlen(as)+1);
@@ -219,10 +238,7 @@ register char *as;
 /*
  * parse comma terminated field followed by new-line terminated field
  */
-static int 
-ScanLine(afile, ae1, ae2)
-register FILE *afile;
-char *ae1, *ae2;
+static int ScanLine(FILE *afile, char *ae1, char *ae2)
 {
     register int state;		/* 0->reading ae1, 1->reading ae2 */
     register int tc;		/* char we're reading */
@@ -250,8 +266,7 @@ char *ae1, *ae2;
 }
 
 /* just like system, but fail if the command to be executed has a '`' in it. */
-static int safesystem(acmd)
-char *acmd;
+static int safesystem(char *acmd)
 {
     if(index(acmd, '`')) {
 	fprintf(stderr, "help: command execution failed due to illegal character '`' in command.\n");
@@ -263,9 +278,7 @@ char *acmd;
 /*
  * just like system(3) only closes fds 3..., and doesn't wait
  */
-static int 
-mysystem(acmd)
-register char *acmd;
+static int mysystem(char *acmd)
 {
     register long pid;
     if(index(acmd, '`')) {
@@ -288,9 +301,7 @@ register char *acmd;
 /*
  * lowercases's a string.
  */
-char *
-LowerCase(astring)
-register char *astring;
+char * LowerCase(char *astring)
 {
     register char *tp = astring;
 
@@ -307,9 +318,7 @@ register char *astring;
 /*
  * maps string(n) to string.n in place
  */
-static char *
-MapParens(s)
-char *s;
+static char * MapParens(char *s)
 {
     char *lpp, *rpp;
 
@@ -326,9 +335,7 @@ char *s;
 /*
  * stolen from libcs.  Returns the index of string small in big, 0 otherwise
  */
-static char *
-sindex(big, small) 
-char *big, *small;
+static char * sindex(char *big, char *small)
 {
     register char *bp, *bp1, *sp;
     register char c = *small++;
@@ -346,11 +353,7 @@ char *big, *small;
 /*
  * add an item to the history buffer
  */
-void 
-AddHistoryItem (self, marcp, flash)
-register struct help *self;
-int marcp;			/* is this a bookmark? */
-int flash;			/* should we expose the history panel? */
+void AddHistoryItem(struct help *self, int marcp, int flash)
 {
     struct history_entry *ent;
     register struct cache *c = self->info;
@@ -749,10 +752,7 @@ char *extension;    The extension that will be concatenated to entry for searchi
    Used in: HistoryHelp(), ShowTutorial(), GetHelpOn(). NOTE: this routine is currently only used to find tutorial files because it is useful to be able to place tutorials in various places ( /usr/local/help, /usr/andrew/help, ...).  In the future other files (like .help files) may have various homes and this routine should be used to access them.
 */
 
-static char *
-FindEntryInDirs(dirs, entry , extension)
-char	*dirs[];
-char	*entry, *extension;
+static char * FindEntryInDirs(char *dirs[], char *entry, char *extension)
 {
   static char	fullPath[MAXPATHLEN];
   char		*returnPath = NULL;
@@ -893,9 +893,7 @@ char *errmsg;	/* error to print if failure. "Error" if this is NULL */
 /*
  * setup the menumask based on internal flags
  */
-void 
-SetupMenus(c)
-register struct cache *c;
+void SetupMenus(struct cache *c)
 {
     DEBUG(("IN setupmenus.."));
     menulist_SetMask(c->menus, c->flags);
@@ -907,9 +905,7 @@ register struct cache *c;
 /*
  * Do a search in the overview panel
  */
-static void 
-SearchOverviews(self)
-register struct help* self;
+static void SearchOverviews(struct help *self)
 {
     if (!self->showPanels)
 	TogglePanels(self, help_ALWAYS_TOGGLE);
@@ -922,9 +918,7 @@ register struct help* self;
 /*
  * Do a search in the programs panel
  */
-static void 
-SearchPrograms(self)
-register struct help* self;
+static void SearchPrograms(struct help *self)
 {
     if (!self->showPanels)
 	TogglePanels(self, help_ALWAYS_TOGGLE);
@@ -941,10 +935,7 @@ register struct help* self;
  * like this, rather than just binding in a call to proctable_GetProc(...)
  */
 
-static void 
-TextviewProc(self, rock)
-register struct help* self;
-long rock;
+static void TextviewProc(struct help *self, long rock)
 {
     switch(rock) {
       case help_SEARCH:
@@ -983,9 +974,7 @@ long rock;
 /*
  * quit help
  */
-static void 
-Quit(self)
-register struct help *self;
+static void Quit(struct help *self)
 {
     im_SetProcessCursor(help_waitCursor);
     im_KeyboardExit();
@@ -994,9 +983,7 @@ register struct help *self;
 /*
  * send gripes/kudos to the help maintainers
  */
-static void 
-SendComments(self)
-register struct help *self;
+static void SendComments(struct help *self)
 {
     char cmd[MAXPATHLEN], *prof;
     
@@ -1014,9 +1001,7 @@ register struct help *self;
 /*
  * show a tutorial, if it exists
  */
-static void 
-ShowTutorial(self)
-register struct help *self;
+static void ShowTutorial(struct help *self)
 {
     static char tbuffer[MAXPATHLEN];
     char *tmp = NULL;
@@ -1032,9 +1017,7 @@ register struct help *self;
 /*
  * show changes doc
  */
-static void 
-ShowChanges(self)
-register struct help *self;
+static void ShowChanges(struct help *self)
 {
     static char tbuffer[MAXPATHLEN];
     
@@ -1047,8 +1030,7 @@ register struct help *self;
 /*
  * show next file in list
  */
-void NextHelp(self)
-register struct help *self;
+void NextHelp(struct help *self)
 {
     if (!(self->info->flags & MENU_SwitchMoreMenu)) {
 	return;
@@ -1061,11 +1043,7 @@ register struct help *self;
 /*
  * get help on a clicked-on history item
  */
-void 
-HistoryHelp(self, ent, apanel)
-struct help *self;		/* callback rock */
-struct history_entry *ent;	/* panelEntry rock */
-struct panel *apanel;		/* appropriate panel */
+void HistoryHelp(struct help *self, struct history_entry *ent, struct panel *apanel)
 {
     char buf[HNSIZE + HELP_MAX_ERR_LENGTH];
     char fnbuf[MAXPATHLEN];
@@ -1121,11 +1099,7 @@ struct panel *apanel;		/* appropriate panel */
 /*
  * show overview or a help file from the program list panel
  */
-void 
-OverviewHelp(self, name, apanel)
-struct panel *apanel;
-register char *name;		/* which topic to request - panelEntry rock */
-register struct help *self;
+void OverviewHelp(struct help *self, char *name, struct panel *apanel)
 {
     char buf[HNSIZE + HELP_MAX_ERR_LENGTH];
     
@@ -1194,12 +1168,7 @@ FreePanelListData()
  
 	returns the number of entries added to the panel
  */
-long
-SetupPanel(readpairs, fname, panel, def)
-	boolean readpairs;
-	char *fname;
-	struct panel *panel;		/* the panel to add entries to */
-	char **def;
+long SetupPanel(boolean readpairs, char *fname, struct panel *panel, char **def)
 {
 	char **defptr;
 	register FILE *tfile;
@@ -1277,8 +1246,7 @@ SetupPanel(readpairs, fname, panel, def)
 /*
  * Setup the lpairs for the side panel(s)
  */
-struct view *SetupLpairs(self)
-register struct help *self;
+struct view * SetupLpairs(struct help *self)
 {
     long which = 0;
 
@@ -1338,10 +1306,7 @@ register struct help *self;
 /*
  * turn side panels on and off
  */
-static void 
-TogglePanels(self, rock)
-register struct help *self;
-long rock;
+static void TogglePanels(struct help *self, long rock)
 {
     if ((self->showPanels && (rock == help_SHOW_PANEL)) ||
 	(!self->showPanels && (rock == help_HIDE_PANEL)))
@@ -1386,10 +1351,7 @@ long rock;
 /*
  * toggle overview panel on and off
  */
-static void 
-ToggleOverviews(self, rock)
-register struct help *self;
-long rock;
+static void ToggleOverviews(struct help *self, long rock)
 {
     struct view *v;
     boolean doUpdate = FALSE;
@@ -1424,10 +1386,7 @@ long rock;
 /*
  * toggle program list panel on and off
  */
-static void 
-TogglePrograms(self, rock)
-register struct help *self;
-long rock;
+static void TogglePrograms(struct help *self, long rock)
 {
     struct view *v;
     boolean doUpdate = FALSE;
@@ -1463,10 +1422,7 @@ long rock;
 /*
  * toggle history panel on and off
  */
-static void 
-ToggleHistory(self, rock)
-register struct help *self;
-long rock;
+static void ToggleHistory(struct help *self, long rock)
 {
     struct view *v;
     boolean doUpdate = FALSE;
@@ -1502,9 +1458,7 @@ long rock;
 /*
  * Used to add all files in a directory to the expanded program list
  */
-static void 
-ExpanderAux(dname)
-char *dname;
+static void ExpanderAux(char *dname)
 {
     DIR *tmpdir;
     DIRENT_TYPE *tde;
@@ -1531,9 +1485,7 @@ char *dname;
 /*
  * comparison function for qsort
  */
-static int 
-panelCompare(s1, s2)
-char **s1, **s2;
+static int panelCompare(char **s1, char **s2)
 {
     return (strcmp(*s1, *s2));
 }
@@ -1542,9 +1494,7 @@ char **s1, **s2;
 /*
  * terminates and then sorts the panelList
  */
-static void 
-SortAndMakePanel(p)
-struct panel *p;
+static void SortAndMakePanel(struct panel *p)
 {
     register int i;
 
@@ -1574,9 +1524,7 @@ struct panel *p;
 /*
  * just adds a string to the global panelList
  */
-static char *
-AddToPanelList(s)
-char *s;
+static char * AddToPanelList(char *s)
 {
     if(EnsurePanelListSize()) {
 	if(!(help_panelList[help_panelIndex] = (char*)malloc(strlen(s) + 1))) {
@@ -1597,11 +1545,7 @@ char *s;
 /*
  * Index library callback helper for 'expand the program list'
  */
-static void 
-Expander(aindex, ac, self)
-struct Index *aindex;
-struct indexComponent *ac;
-struct help *self;
+static void Expander(struct Index *aindex, struct indexComponent *ac, struct help *self)
 {
     if(ac && ac->name && (*(ac->name) != '\0')) {
 	AddToPanelList(ac->name);
@@ -1612,10 +1556,7 @@ struct help *self;
 /*
  * toggle programs list size.  Like da name dun say.
  */
-void 
-ToggleProgramListSize(self, rock)
-register struct help* self;
-long rock;
+void ToggleProgramListSize(struct help *self, long rock)
 {
     struct helpDir *thd;
 
@@ -1718,9 +1659,7 @@ long rock;
 /*
  * restores the original program panel (unfiltered)
  */
-static void 
-RestorePanel(self)
-register struct help *self;
+static void RestorePanel(struct help *self)
 {
     if (!self->oldpanel) {
 	DEBUG(("already have old panel\n"));
@@ -1747,10 +1686,7 @@ register struct help *self;
  * replaces the program panel with a new panel that contains only those
  * entries from the old panel specified by the user
  */
-static void 
-FilterPanel(self, rock)
-register struct help *self;
-long rock;
+static void FilterPanel(struct help *self, long rock)
 {
     int code;
     char buf[255];
@@ -1824,9 +1760,7 @@ long rock;
 /*
  * random key hit proc to chastise the user
  */
-static void 
-nono(self)
-register struct help *self;
+static void nono(struct help *self)
 {
     message_DisplayString(self, 0, err_readonly);
 }
@@ -2041,9 +1975,7 @@ static struct bind_Description helpBindings[] = {
  * to menus and keys, and adds a default filetype so that all files will have
  * at least the default template when they are displayed.
  */
-boolean 
-help__InitializeClass(classID)
-struct classheader *classID;
+boolean help__InitializeClass(struct classheader *classID)
 {
     unsigned char c[2];
     struct proctable_Entry *pe;

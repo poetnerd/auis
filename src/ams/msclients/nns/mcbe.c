@@ -36,37 +36,29 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 
 #include <big.h>
 
-char           *MCBEGetFilename(mcbe)
-MCacheBucketEntry_t *mcbe;
+char * MCBEGetFilename(MCacheBucketEntry_t *mcbe)
 {
     return (mcbe->filename);
 }
 
-MCacheBucketEntry_t *MCBEGetNext(mcbe)
-MCacheBucketEntry_t *mcbe;
+MCacheBucketEntry_t * MCBEGetNext(MCacheBucketEntry_t *mcbe)
 {
     return (mcbe->next);
 }
 
-struct MS_Message *MCBEGetMsg(mcbe)
-MCacheBucketEntry_t *mcbe;
+struct MS_Message * MCBEGetMsg(MCacheBucketEntry_t *mcbe)
 {
     return (mcbe->Msg);
 }
 
-void            MCBESet(mcbe, filename, Msg, next)
-MCacheBucketEntry_t *mcbe;
-char           *filename;
-struct MS_Message *Msg;
-MCacheBucketEntry_t *next;
+void MCBESet(MCacheBucketEntry_t *mcbe, char *filename, struct MS_Message *Msg, MCacheBucketEntry_t *next)
 {
     mcbe->filename = filename;
     mcbe->Msg = Msg;
     mcbe->next = next;
 }
 
-void            MCBESetNext(mcbe, next)
-MCacheBucketEntry_t *mcbe, *next;
+void MCBESetNext(MCacheBucketEntry_t *mcbe, MCacheBucketEntry_t *next)
 {
     mcbe->next = next;
 }

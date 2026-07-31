@@ -59,6 +59,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <andrewos.h> /* sys/types.h sys/time.h strings.h */
 #undef label
 #include <class.h>
+#include <stdlib.h>
 
 #include <app.ih>
 #include <environ.ih>
@@ -82,6 +83,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <config.h>
 #include <helpsys.h>
 #include <helpa.eh>
+static int AddPath(char *astr);
+static void ncproc();
+static int send_pack(char c, char *s, int sock);
+static void show_usage(struct helpapp *self);
+static void unique_help(struct helpapp *self);
 
 #define	IPPORT_HELPNAME	"andrewhelp"
 /*---------------------------------------------------------------------------*/
@@ -132,9 +138,7 @@ struct help *helpobj;		/* global help object for ncproc use */
 /*
  * usage statement
  */
-static void 
-show_usage(self)
-struct helpapp *self;
+static void show_usage(struct helpapp *self)
 {
 #ifdef DEBUGGING
     fprintf(stderr,
@@ -209,9 +213,7 @@ ncproc ()
 /*
  * add a path to those to be searched
  */
-static 
-AddPath(astr)
-register char *astr;
+static AddPath(char *astr)
 {
     char tname[MAXPATHLEN];
     register char *np;
@@ -239,11 +241,7 @@ register char *astr;
 /*
  * send_pack: send a command packet to an existing help instance
  */
-static int 
-send_pack(c, s, sock)
-char c;				/* the command char */
-char *s;			/* the string to send */
-int sock;			/* the socket to send to */
+static int send_pack(char c, char *s, int sock)
 {
     long len;
     /* buf needs to be an array of longs so that it will be
@@ -275,9 +273,7 @@ int sock;			/* the socket to send to */
 #endif /* MAXHOSTNAMELEN */
 #define MAXHOSTNAMELEN 64	/* some people just don't */
 
-static void 
-unique_help(self)
-struct helpapp *self;
+static void unique_help(struct helpapp *self)
 {
     register int i;
     char *wmHost = NULL, *dpyHost = NULL, displayHost[MAXHOSTNAMELEN], *colon;
@@ -384,11 +380,7 @@ struct helpapp *self;
 /*
  * parse command line arguments
  */
-boolean 
-helpapp__ParseArgs(self, argc, argv)
-struct helpapp *self;
-int argc;
-char **argv;
+boolean helpapp__ParseArgs(struct helpapp *self, int argc, char **argv)
 {
     char *helpPath;
 
@@ -465,9 +457,7 @@ char **argv;
     return TRUE;
 }
 
-boolean 
-helpapp__Start(self)
-struct helpapp *self;
+boolean helpapp__Start(struct helpapp *self)
 {
     char *tp;
     struct helpDir *thd, *nhd;
@@ -557,9 +547,7 @@ struct helpapp *self;
     return TRUE;
 }
 
-int 
-helpapp__Run(self)
-struct helpapp *self;
+int helpapp__Run(struct helpapp *self)
 {
     char tbuffer[200];
     int code;
@@ -583,10 +571,7 @@ struct helpapp *self;
     return(0);
 }
 
-boolean 
-helpapp__InitializeObject(classID, self)
-struct classheader *classID;
-struct helpapp *self;
+boolean helpapp__InitializeObject(struct classheader *classID, struct helpapp *self)
 {
     helpapp_SetMajorVersion(self, MAJOR_VERSION);
     helpapp_SetMinorVersion(self, MINOR_VERSION);

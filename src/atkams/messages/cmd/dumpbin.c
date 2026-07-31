@@ -45,9 +45,7 @@ extern char *index();
 static char pref[]="messages.binaryoptions";
 long hatol();
 
-main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
 FILE *f;
 char line[256];
@@ -88,8 +86,7 @@ register int i, offset=0;
 
 /***********************************************************************/
 
-long hatol(s)
-char *s;
+long hatol(char *s)
 {
     long n;
     char c;
@@ -108,8 +105,7 @@ char *s;
 
 /***********************************************************************/
 
-fold(s)
-register char *s;
+int fold(char *s)
 {
     while (*s) {
 	if (isupper(*s)) *s = tolower(*s);

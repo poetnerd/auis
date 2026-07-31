@@ -35,9 +35,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 */
 
 #include <big.h>
+static int STHash();
 
-static int      STHash(string)
-char           *string;
+static int STHash(char *string)
 {
     int             result = 0;
     char           *p = string;
@@ -46,8 +46,7 @@ char           *string;
     return (result % NUMSTBUCKETS);
 }
 
-void            STInit(st)
-STable_t       *st;
+void STInit(STable_t *st)
 {
     int             i;
 
@@ -56,8 +55,7 @@ STable_t       *st;
 	STBInit(&(st->buckets[i]));
 }
 
-void            STPurge(st)
-STable_t       *st;
+void STPurge(STable_t *st)
 {
     int             i;
 
@@ -65,9 +63,7 @@ STable_t       *st;
 	STBPurge(&(st->buckets[i]));
 }
 
-char           *STFindOrMake(st, string)
-STable_t       *st;
-char           *string;
+char * STFindOrMake(STable_t *st, char *string)
 {
     char           *tmp = STFind(st, string);
 
@@ -76,9 +72,7 @@ char           *string;
     return (tmp);
 }
 
-char           *STFind(st, string)
-STable_t       *st;
-char           *string;
+char * STFind(STable_t *st, char *string)
 {
     int             hash = (*(st->HashFn)) (string);
     char           *tmp = STBFind(&(st->buckets[hash]), string);
@@ -86,9 +80,7 @@ char           *string;
     return (tmp);
 }
 
-char           *STMake(st, string)
-STable_t       *st;
-char           *string;
+char * STMake(STable_t *st, char *string)
 {
     return (STBMake(&(st->buckets[(*(st->HashFn)) (string)]), string));
 }

@@ -79,15 +79,12 @@ int             level;
     fprintf(stderr, "<nns:warning>%s (%d)\n", text, level);
 }
 
-Machine_HandleClientSignal(signum, ActNormal)   /* Ditto */
-int             signum, *ActNormal;
+int Machine_HandleClientSignal(int signum, int *ActNormal)
 {
     printf("Machine_HandleClientSignal was called (signum=%d)\n", signum);
 }
 
-main(argc, argv, envp)
-int             argc;
-char          **argv, **envp;
+int main(int argc, char **argv, char **envp)
 {
     int             opt, status, dummy;
     GList_t         GList;
@@ -205,9 +202,7 @@ int	       GetNewReadyBox()
     return 1;
 }
  
-int            ProcessDir(dir, GListp)
-char           *dir;
-GList_t        *GListp;
+int ProcessDir(char *dir, GList_t *GListp)
 {
     int status;
 
@@ -226,9 +221,7 @@ GList_t        *GListp;
     return status;
 }
 
-void            ProcessList(gl, dir)
-GList_t        *gl;
-char           *dir;
+void ProcessList(GList_t *gl, char *dir)
 {
     GListEntry_t   *gle;
     int             i, numUnlinks, numPosts, numFolders;
@@ -320,12 +313,7 @@ char           *dir;
 
 /* Returns success/failure */
 
-int             ProcessEntry(gle, fullFilename, Dir, mc, UnlinkP)
-GListEntry_t   *gle;
-char           *fullFilename;
-struct MS_Directory *Dir;
-MCache_t       *mc;
-int            *UnlinkP;
+int ProcessEntry(GListEntry_t *gle, char *fullFilename, struct MS_Directory *Dir, MCache_t *mc, int *UnlinkP)
 {
     struct MS_Message *Msg;
     int             shouldWrite, inCache;
@@ -484,8 +472,7 @@ int            *UnlinkP;
     return (TRUE);
 }
 
-void            DotsToSlashesInPlace(string)
-char           *string;
+void DotsToSlashesInPlace(char *string)
 {
     char           *p = string;
 
@@ -493,40 +480,33 @@ char           *string;
 	*(p++) = '/';
 }
 
-int             ShouldAlreadyBeCached(gle)
-GListEntry_t   *gle;
+int ShouldAlreadyBeCached(GListEntry_t *gle)
 {
     return (GLEGetBefore(gle) > 0);
 }
 
-int             ShouldBeCached(gle)
-GListEntry_t   *gle;
+int ShouldBeCached(GListEntry_t *gle)
 {
     return (GLEGetAhead(gle) > 0);
 }
 
-int             ShouldRename(gle)
-GListEntry_t   *gle;
+int ShouldRename(GListEntry_t *gle)
 {
     return (!GLEGetAhead(gle));
 }
 
-int             ShouldUnlink(gle)
-GListEntry_t   *gle;
+int ShouldUnlink(GListEntry_t *gle)
 {
     return (!(GLEGetAhead(gle) || GLEGetIgnore(gle)));
 }
 
-void            Verbiage(level, string)
-int             level;
-char           *string;
+void Verbiage(int level, char *string)
 {
     if (level <= Globals.Options.verbose)
 	fprintf(stderr, "nns (%d): %s (ms: %d, %d, %d)\n", level, string, AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
 }
 
-int             AddNetnewsWideReplyHeader(Msg)
-struct MS_Message *Msg;
+int AddNetnewsWideReplyHeader(struct MS_Message *Msg)
 {
     char            header[GROUPSLINESIZE], *gptr, tmpchar, tmpchar2, *endptr, *end2, *folder, *p;
     int             first = TRUE, delay;
@@ -577,8 +557,7 @@ struct MS_Message *Msg;
     return (0);
 }
 
-char *xmalloc(size)
-int size;
+char * xmalloc(int size)
 {
     char *retval = malloc(size);
     if (!retval) {
