@@ -97,6 +97,18 @@ Active:
    still apply (liveness census, `-k` on fallout collection, the
    anchored `malloc`/`free`/`realloc`/`calloc` grep before
    close-out, runtime-check rules).
+8. **Stranded old-style forward declaration vs. newly-ANSI'd narrow
+   parameter** (T1): `ansify` converts K&R function *definitions* to
+   ANSI but doesn't touch separate, old-style (empty-parens) forward
+   *declarations* of the same name earlier in the file. Normally
+   harmless — but once the definition gains a narrow by-value
+   parameter (`char`, `short`, `unsigned char`), the stale declaration
+   and the new definition become a real ISO C conflicting-types error
+   (default-argument-promotion incompatibility). Grep a directory for
+   `static\s+\w[\w ]*\s+\w+\(\);` (bare empty-parens static forward
+   declarations) before or after a batch's `ansify` pass, and
+   cross-check any hit against its matching definition's parameter
+   types.
 
 Retired (do NOT re-run; listed so older findings entries below don't
 mislead):
@@ -1008,6 +1020,98 @@ silently reach committed code, so B1/B2 (predating this morning's
 vulnerable code) and the classpp-fix's own 7-directory retrospective
 recheck (which ran with the vulnerable code but gated clean throughout)
 are both confirmed unaffected.
+
+### T1 (`atk/text`, 30 files, 21 classes, 2026-07-30) — opens Wave 3
+
+Full findings: `claude-history/m3-t1-atk-text-REPORT.md`. The first
+full-pre-diagnosis batch since B3 (per the "Session structure going
+forward" section above) — the orchestrator's pre-diagnosis found this
+directory unusually clean (zero required `.ch`/`.c` fixes before the
+real run, unlike B1/B2/B3), and the real run confirmed it on every
+metric the dry-run pass could see (0 DRIFT, the 3 pre-diagnosed
+confirmed-safe skips, all ~12 double-pointer parameters intact — the
+orchestrator's specific investigation of that risk, prompted by this
+directory having far more double-pointer K&R parameters than B3's
+single `tlex.c` instance, held up under the real compile-gated
+conversion too). Two things a dry-run structurally cannot see surfaced
+once the real, `-pe`-live, compile-gated run actually happened:
+
+1. **Real bug: `textv.ch`'s `ViewMove` declared the wrong parameter
+   type.** `struct mark *currentLine` in the `.ch`, but the real
+   implementation and all 7 real call sites always used
+   `struct linedesc *` (an unrelated structure — the implementation
+   dereferences fields, `data`/`nChars`/`height`/`xMax`/`containsView`,
+   that exist only on `linedesc`). Same species as B3's `treev.ch`
+   `SetHitHandler` finding: a `.ch` parameter *type* mismatch, not a
+   DRIFT-shaped argument-*count* mismatch, so invisible to `ansify`'s
+   own check and only caught once `-pe` type-checked the exported
+   prototype against real usage. Fixed by correcting the `.ch` to match
+   the implementation and every caller (which all already agreed with
+   each other); zero behavior change.
+2. **Real bug: `textv.c`'s file-local `HandleSelection` called with a
+   stray extra argument at all 5 call sites.** Not a `.ch` issue at
+   all — a plain file-local static helper whose real 2-parameter
+   definition never referenced a 3rd argument every caller nonetheless
+   passed, silently tolerated by K&R's lenient calling convention for
+   the function's entire life. Same species as B1's `im.c`
+   colormap-dereference finding and B2's `sbuttonv.c` wrong-variable
+   finding: a real caller bug, invisible under K&R, that becomes a hard
+   "too many arguments" compile error the moment the callee gets a real
+   ANSI prototype. Fixed by dropping the stray argument at all 5 call
+   sites (matching the function's own always-correct behavior) rather
+   than adding an unused parameter to the callee.
+3. **New tooling-interaction pattern, not a source bug: stranded
+   old-style forward declarations vs. newly-ANSI'd narrow parameters.**
+   `ansify` converts K&R *definitions* to ANSI but does not touch
+   separate, old-style (empty-parens) forward *declarations* of the
+   same function earlier in the file. Normally harmless — an
+   unprototyped declaration is compatible with any later definition —
+   but once the definition gains a narrow by-value parameter (`char`,
+   `short`, `unsigned char`), the two become a genuine ISO C
+   conflicting-types error (default-argument-promotion incompatibility,
+   not a compiler quirk or tool bug). Found in exactly 3 isolated
+   instances (`drawtxtv.c`'s `CharToOctal`, `pcompch.c`'s `scanerr`,
+   `txttroff.c`'s `quote`), each fixed by hand-updating the stale
+   forward declaration to match its real definition. Confirmed via a
+   full `make -k` across the whole directory that this was the complete
+   set. Not tool-patched (3 bounded instances, same proportionality
+   precedent as B3's array-bracket/double-pointer hand-fixes) — now a
+   permanent standing checklist item (see item 8 above) for future
+   batches.
+4. **A non-deterministic `ansify` compile-gate flake, not a code bug**:
+   across two otherwise-identical real `ansify --dir` runs against the
+   same `-pe`-live environment, the same 3 files reported
+   `COMPILE FAILED` both times but against a *different* set of
+   specific functions each time, while isolated single-file re-tests of
+   the exact same converted content consistently compiled clean.
+   Root cause not chased down (the authoritative signal — the full
+   directory gate, run twice — was unambiguous and clean both times);
+   flagged for whoever next investigates `ansify`'s compile-gate
+   reliability at scale, not blocking.
+5. **A build-state gap specific to a directory's very first M3 session
+   in this checkout**: `atk/text` had never had a local build pass run
+   over it before, so `ansify --dir`'s own compile-gate had no
+   `.eh`/`.ih` to test against at all (`fatal error: file not found`
+   across 29/30 files on the first attempt) — fixed by running a plain
+   `make depend && make -k install` baseline first. Not previously
+   anticipated by any prior batch (all of which happened to already
+   have a build present); worth remembering for any future batch that
+   turns out to be a directory's first-ever M3 touch.
+
+Also confirmed (2026-07-30, independently, by the orchestrator): both
+`textv.ch`'s `ViewMove` fix and `textv.c`'s `HandleSelection` fix
+verified directly against the real implementation and every real call
+site (not just the diff); the 3 forward-declaration fixes confirmed to
+match their definitions exactly; full gate re-run — double clean cycles
+on `atk/text` itself, both independently reproducing the delegate's
+result; `-pe` confirmed live and all lifecycle/double-pointer prototypes
+confirmed correctly typed in the regenerated `.eh` files; `fossil
+status` matched exactly (32 edited files, no commit made); a retroactive
+tree-wide `dependInstall` gate run to close out Wave 3 (per "Gate
+scope"'s wave-end-checkpoint rule) came back clean except for the same
+two already-documented, pre-existing `contrib/zip/utility/ltapp.c`
+errors noted at the Wave 1/2 retroactive gate above (still queued for
+Wave 7 C2, not T1 fallout).
 
 ## Resource note (2026-07-25, wdc)
 

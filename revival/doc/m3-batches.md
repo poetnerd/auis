@@ -204,9 +204,23 @@ section.
 
 ## Wave 3 — atk/text (1 directory, 30 files, 1 batch)
 
-- [ ] **T1**: `atk/text` (30) — alone, its own wave per the plan's
+- [x] **T1**: `atk/text` (30) — alone, its own wave per the plan's
       dependency order (highest-consumed single directory in the
-      insets/apps waves that follow).
+      insets/apps waves that follow). **Done 2026-07-30**: matched the
+      orchestrator's pre-diagnosis exactly on the metrics that mattered
+      (0 DRIFT, 3 confirmed-safe skips, all ~12 double-pointer
+      parameters intact); found and fixed 2 real ~35-year-old bugs
+      (`textv.ch`'s `ViewMove` declared the wrong parameter type,
+      `textv.c`'s file-local `HandleSelection` was called with a stray
+      extra argument at all 5 sites) and a new tooling-interaction
+      pattern (3 stranded old-style forward declarations left
+      incompatible by their own newly-ANSI'd narrow-parameter
+      definitions — now a standing checklist item). Closes Wave 3;
+      retroactive tree-wide `dependInstall` gate run clean except the
+      already-known, already-queued `contrib/zip/utility/ltapp.c`
+      errors (Wave 7 C2, not T1 fallout). See
+      `m3-rollout-runbook.md` findings → T1 and `revival.md` for full
+      detail. Committed.
 
 ## Wave 4 — insets (17 directories, 139 files, 2 batches)
 
@@ -267,7 +281,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
 
 Revised 2026-07-30: 15 sessions total (was 17 — pilot retired into
 I2, I3 merged into I1), across the 7 waves in dependency order.
-7 complete (O1–O4, B1–B3), 8 remaining: T1, I1, I2, A1, AMS1, AMS2,
+8 complete (O1–O4, B1–B3, T1), 7 remaining: I1, I2, A1, AMS1, AMS2,
 C1, C2. Tick batches here as they complete, same convention as
 `m1-point10-batches.md`; the runbook's own summary gets the one-line
 rollup per wave, not per batch.

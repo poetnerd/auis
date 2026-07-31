@@ -595,6 +595,42 @@ sample:
   the always-present, never-declared second argument to the interface,
   matching the implementation that was right all along.
 
+- **A view-scrolling method whose interface named the wrong structure
+  for its own parameter, from the day it was written.** A text view's
+  interface file declares a method that repositions one on-screen line
+  during scrolling, taking a pointer to the line being moved. The
+  declared type was the structure used elsewhere in the same interface
+  for a position within a document — but the method's own
+  implementation, and every one of its seven call sites, always passed
+  a pointer to an unrelated structure: the type used for an on-screen
+  line's own layout bookkeeping (its height, character count, screen
+  position). The two types share no relationship; a correct call
+  compiled and ran fine under K&R only because pre-standard C never
+  checked a call's arguments against the interface it declared. Every
+  real caller agreed with the implementation and always had — only the
+  interface was wrong, invisible until the ANSI C conversion effort's
+  typed-prototype mechanism finally checked it. Corrected by changing
+  the interface's declared type to match the implementation and every
+  caller.
+
+- **A helper function called with an argument it never had, for the
+  entirety of its life.** A text view's internal helper for finalizing
+  a selection takes exactly two arguments: the view itself and the
+  selected length. Every one of the five places in the same file that
+  called it, for as long as the file has existed, passed a third — a
+  true/false flag left over from some earlier shape of the function
+  that its actual body has never referenced. Pre-standard C's calling
+  convention accepted extra arguments silently, so the mismatch cost
+  nothing: the stray value landed nowhere the function ever looked, and
+  the two real parameters arrived exactly where expected. It became a
+  compile error, not a runtime mystery, only once the ANSI C conversion
+  effort gave the function a fixed, checked argument count — the same
+  conversion that exposes an interface's wrong argument *type* elsewhere
+  in this list, here exposing a caller passing the wrong argument
+  *count* instead. Corrected by dropping the stray argument at all five
+  call sites, matching the function's own long-unchanging, correct
+  behavior.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or
