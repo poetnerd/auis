@@ -1162,6 +1162,59 @@ one of the already-documented dead/conditionalized-out directories
 (`rollout-procedure.md`'s Liveness census list), not M3 fallout, not
 new.
 
+### `fix-missing-static-decl` duplicate-declaration fix (tool fix, not a batch, 2026-07-30)
+
+Found continuing I1's Gate 1 on `atk/image` (the orchestrator ran this
+directly rather than through a delegate — see below): fixing a
+standing-checklist-item-8 stranded forward declaration by hand (`img.c`'s
+`IMG_WriteByte`, upgrading `static void IMG_WriteByte();` to the real
+full prototype, T1's established fix pattern) before running `ansify
+--dir` for real caused a *second*, unrelated tool bug to fire.
+`run_fix_tools()` runs `fix-missing-static-decl` before `convert_file`
+on every real (non-dry-run) `ansify` invocation; that tool's own
+"is this name already declared" scan
+(`try_parse_decl_block`'s inner regex) only recognizes the traditional
+K&R empty-parens shape (`NAME();`), by design (its rewrite path
+re-emits recognized entries as bare `NAME()`, so teaching it to also
+*rewrite* non-empty-parens declarations would risk silently dropping
+real parameter types — deliberately out of scope). A full, already-fixed
+ANSI prototype therefore doesn't match, falls through as "no forward
+declaration found," and the tool inserts a brand-new *duplicate*
+`static void IMG_WriteByte();` right after the `#include` block —
+conflicting with the very declaration that was just hand-fixed.
+Confirmed via the standard `.ansify-orig`-backup / isolated-recompile
+technique (backup gets deleted on failure so the isolated repro used
+`fix-missing-static-decl` directly against a scratch copy to see the
+duplicate insertion, then a second scratch test to confirm the full
+`fix-tools → convert_file → compile` pipeline reproduced the same
+"conflicting types" error the batch run showed).
+
+This is not a one-off: it would recur for every one of I1's other
+already-catalogued narrow-param stranded-forward-declaration instances
+(`atk/srctext`'s 12, `atk/fad`'s `MySetStandardCursor`, etc.) the
+moment any of them got the same hand-fix-then-reconvert treatment, so
+worth a tool-level fix rather than a per-instance workaround. Fixed by
+adding a second, independent recognizer,
+`find_full_prototype_names()` — a brace-depth-gated, file-scope-only
+scan for a complete single-line `TYPE NAME(args);` declaration — whose
+results are unioned into `matched_names` before the "missing declare"
+set is computed. Deliberately kept separate from
+`try_parse_decl_block`'s own matching/rewrite path rather than
+broadening that regex in place, so the existing (working, already
+retrospectively-verified) empty-parens rewrite behavior is untouched;
+this only ever *removes* names from the "missing" set, so it cannot
+regress a case where a real declaration was genuinely absent and
+needed inserting. Verified: `img.c` reprocessed through
+`fix-missing-static-decl` standalone now reports zero changes (correctly
+recognizes the existing prototype), and the real `ansify --dir
+src/atk/image` run immediately after converts `img.c` cleanly with no
+compile failure. A first version of the fix used `\s*;\s*$` without
+accounting for a trailing `/* comment */` (this codebase's very common
+style on a forward-declaration line, including `img.c`'s own line) and
+so didn't fire at all on the first attempt — corrected by borrowing the
+file's existing `TRAILING_COMMENT` pattern, the same fix already used
+elsewhere in this file for exactly this reason.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)
