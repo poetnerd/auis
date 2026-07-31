@@ -51,6 +51,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 #include <table.ih>
 
 #include <spread.eh>
+static void DestroySubviews();
+static void xGetInfo();
+static void xSetFrame();
+static long xWhatIsAt();
+static void yGetInfo();
+static void ySetFrame();
+static long yWhatIsAt();
 
 /* defined in keyboard.c */
 extern void k_DefineKeys();
@@ -77,8 +84,7 @@ static struct menulist *mainmenus = (struct menulist *) NULL;
 
 static boolean LimitedHighlighting = FALSE;
 
-boolean spread__InitializeClass(classID)
-struct classheader *classID;
+boolean spread__InitializeClass(struct classheader *classID)
 {
     if (debug)
 	printf("spread__InitializeClass(%x)\n", classID);
@@ -94,17 +100,14 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean spread__WantLimitedHighlighting(c)
-struct classheader *c;
+boolean spread__WantLimitedHighlighting(struct classheader *c)
 {
     return (LimitedHighlighting);
 }
 
 /* initialize table view */
 
-boolean spread__InitializeObject(classID, V)
-struct classheader *classID;
-register struct spread * V;
+boolean spread__InitializeObject(struct classheader *classID, struct spread *V)
 {
     if (debug)
 	printf("spread__InitializeObject(%x, %x)\n", classID, V);
@@ -139,8 +142,7 @@ register struct spread * V;
 
 /* initialize graphic-dependent data */
 
-void InitializeGraphic(V)
-struct spread *V;
+void InitializeGraphic(struct spread *V)
 {
     struct fontdesc *tempFont;
     char *wfontname = NULL;
@@ -166,9 +168,7 @@ struct spread *V;
 }
 
 /* recompute thickness of rows */
-struct view * spread_FindSubview (V, cell)
-struct spread * V;
-register struct cell * cell;
+struct view * spread_FindSubview(struct spread *V, struct cell *cell)
 {
     register struct viewlist *vl;
     char *viewname;
@@ -206,8 +206,7 @@ register struct cell * cell;
 }
 
 
-ComputeRowSizes(V)
-register struct spread *V;
+int ComputeRowSizes(struct spread *V)
 {
     struct table *T = MyTable(V);
     int r, c;
@@ -271,9 +270,7 @@ register struct spread *V;
 
 /* filter update requests */
 
-void spread__WantUpdate(V, requestor)
-register struct spread * V;
-struct view *requestor;
+void spread__WantUpdate(struct spread *V, struct view *requestor)
 {
 
     if (debug)
@@ -288,11 +285,7 @@ struct view *requestor;
 
 /* negotiate size of view */
 
-enum view_DSattributes spread__DesiredSize(V, width, height, pass, dWidth, dHeight)
-register struct spread * V;
-long width, height;
-enum view_DSpass pass;
-long *dWidth, *dHeight;
+enum view_DSattributes spread__DesiredSize(struct spread *V, long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight)
 {
     long GrossWidth;
     long GrossHeight;
@@ -317,9 +310,7 @@ long *dWidth, *dHeight;
 
 /* handle child's request for a new size */
 
-void spread__WantNewSize(V, requestor)
-struct spread *V;
-struct view *requestor;
+void spread__WantNewSize(struct spread *V, struct view *requestor)
 {
     struct table *T = MyTable(V);
 
@@ -335,12 +326,7 @@ struct view *requestor;
 
 /* print as part of larger document */
 
-void spread__Print(V, f, proc, format, toplevel)
-register struct spread * V;
-FILE * f;
-char *proc;		/* processor */
-char *format;		/* final format */
-boolean toplevel;	/* am I the top level view? */
+void spread__Print(struct spread *V, FILE *f, char *proc, char *format, boolean toplevel)
 {
     if (debug)
 	printf("spread_Print(%x, %x, %s, %s, %d)\n", V, f, proc, format, toplevel);
@@ -350,10 +336,7 @@ boolean toplevel;	/* am I the top level view? */
 
 /* full update when window changes */
 
-void spread__FullUpdate(V, how, left, top, width, height)
-register struct spread * V;
-enum view_UpdateType how;
-long left, top, width, height;
+void spread__FullUpdate(struct spread *V, enum view_UpdateType how, long left, long top, long width, long height)
 {
     struct rectangle cliprect;
     if (debug)
@@ -367,8 +350,7 @@ long left, top, width, height;
 
 /* partial update */
 
-void spread__Update(V)
-register struct spread * V;
+void spread__Update(struct spread *V)
 {
     struct rectangle cliprect;
     if (debug)
@@ -381,11 +363,7 @@ register struct spread * V;
 
 extern struct view * MouseHit();
 
-struct view * spread__Hit(V, action, x, y, numberOfClicks)
-register struct spread * V;
-enum view_MouseAction action;
-long x, y;
-long numberOfClicks;
+struct view * spread__Hit(struct spread *V, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     if (debug)
 	printf("spread_Hit(%x, %d, %ld, %ld, %ld)\n", V, (int) action, x, y, numberOfClicks);
@@ -394,8 +372,7 @@ long numberOfClicks;
 
 /* input focus lost; remove highlighting */
 
-void spread__LoseInputFocus(V)
-register struct spread * V;
+void spread__LoseInputFocus(struct spread *V)
 {
     if (debug)
 	printf("spread_LoseInputFocus(%x)\n", V);
@@ -409,8 +386,7 @@ register struct spread * V;
 
 /* input focus obtained; highlight something */
 
-void spread__ReceiveInputFocus(V)
-register struct spread * V;
+void spread__ReceiveInputFocus(struct spread *V)
 {
     if (debug)
 	printf("spread_ReceiveInputFocus(%x)\n", V);
@@ -427,8 +403,7 @@ register struct spread * V;
 
 /* application layer for main program */
 
-struct view *spread__GetApplicationLayer(V)
-register struct spread *V;
+struct view * spread__GetApplicationLayer(struct spread *V)
 {
     if (debug)
 	printf("spread_GetApplicationLayer(%x)\n", V);
@@ -438,11 +413,7 @@ register struct spread *V;
 
 /* scroll vertically */
 
-static void ySetFrame(V, pos, coord, denom)
-register struct spread * V;
-long pos;		/* pel within view to move */
-long coord;		/* where to move it to (numerator) */
-long denom;		/* where to move it to (denominator) */
+static void ySetFrame(struct spread *V, long pos, long coord, long denom)
 {
     long k = spread_Height(V, 0, table_NumberOfRows(MyTable(V))) + spread_BORDER + spread_SPACING - localHeight(V);
     V->vOffset = pos - (coord * localHeight(V)) / denom;
@@ -459,11 +430,7 @@ long denom;		/* where to move it to (denominator) */
 
 /* scroll horizontally */
 
-static void xSetFrame(V, pos, coord, denom)
-register struct spread * V;
-long pos;		/* pel within view to move */
-long coord;		/* where to move it to (numerator) */
-long denom;		/* where to move it to (denominator) */
+static void xSetFrame(struct spread *V, long pos, long coord, long denom)
 {
     long k = spread_Width(V, 0, table_NumberOfColumns(MyTable(V))) + spread_BORDER + spread_SPACING - localWidth(V);
     V->hOffset = pos - (coord * localWidth(V)) / denom;
@@ -480,11 +447,7 @@ long denom;		/* where to move it to (denominator) */
 
 /* get vertical scrolling information */
 
-static void yGetInfo(V, total, seen, dot)
-register struct spread * V;
-struct range *total;	/* overall inset bounds */
-struct range *seen;	/* visible region */
-struct range *dot;	/* selected region */
+static void yGetInfo(struct spread *V, struct range *total, struct range *seen, struct range *dot)
 {
     total->beg = 0;
     total->end = spread_Height(V, 0, table_NumberOfRows(MyTable(V))) + spread_BORDER;
@@ -510,11 +473,7 @@ struct range *dot;	/* selected region */
 
 /* get horizontal scrolling information */
 
-static void xGetInfo(V, total, seen, dot)
-register struct spread * V;
-struct range *total;	/* overall inset bounds */
-struct range *seen;	/* visible region */
-struct range *dot;	/* selected region */
+static void xGetInfo(struct spread *V, struct range *total, struct range *seen, struct range *dot)
 {
     total->beg = 0;
     total->end = spread_Width(V, 0, table_NumberOfColumns(MyTable(V))) + spread_BORDER;
@@ -539,10 +498,7 @@ struct range *dot;	/* selected region */
 
 /* convert vertical window position to view position */
 
-static long yWhatIsAt(V, coord, denom)
-register struct spread * V;
-long coord;
-long denom;
+static long yWhatIsAt(struct spread *V, long coord, long denom)
 {
     long pos = (coord * localHeight(V)) / denom + V->vOffset;
 
@@ -553,10 +509,7 @@ long denom;
 
 /* convert horizontal window position to view position */
 
-static long xWhatIsAt(V, coord, denom)
-register struct spread * V;
-long coord;
-long denom;
+static long xWhatIsAt(struct spread *V, long coord, long denom)
 {
     long pos = (coord * localWidth(V)) / denom + V->hOffset;
 
@@ -581,9 +534,7 @@ static struct scrollfns horizontalInterface = {
     xWhatIsAt,
 };
 
-struct scrollfns *spread__GetInterface(V, type)
-register struct spread * V;
-char * type;
+struct scrollfns * spread__GetInterface(struct spread *V, char *type)
 {
     if (debug)
 	printf("spread_GetInterface(%x, %s)\n", V, type);
@@ -598,9 +549,7 @@ char * type;
 
 
 
-static void DestroySubviews(V,T)
-register struct spread * V;
-struct table *T;
+static void DestroySubviews(struct spread *V, struct table *T)
 {
     register struct cell * cell;
     register struct viewlist *vl;
@@ -636,9 +585,7 @@ struct table *T;
 
 /* tear down a spreadsheet */
 
-void spread__FinalizeObject (classID, V)
-struct classheader *classID;
-register struct spread *V;
+void spread__FinalizeObject(struct classheader *classID, struct spread *V)
 {
     if (debug)
 	printf("spread_FinalizeObject(%x, %x)\n", classID, V);
@@ -648,9 +595,7 @@ register struct spread *V;
     DestroySubviews(V,MyTable(V));
 }
 
-void spread__LinkTree(V, parent)
-register struct spread * V;
-struct view * parent;
+void spread__LinkTree(struct spread *V, struct view *parent)
 {
     register struct viewlist *vl;
     int r, c;
@@ -677,9 +622,7 @@ struct view * parent;
 }
 
 
-void spread__UnlinkNotification(V,tree)
-struct spread *V;
-struct view *tree;
+void spread__UnlinkNotification(struct spread *V, struct view *tree)
 {
     if(!V->finalizing) table_RemoveViewFromTable(MyTable(V),tree);
     super_UnlinkNotification((struct view *)V,tree);
@@ -687,10 +630,7 @@ struct view *tree;
     spread_WantUpdate(V, &getView(V));
 }
 
-void spread__ObservedChanged(V, changed, status)
-register struct spread *V;
-struct observable *changed;
-long status;
+void spread__ObservedChanged(struct spread *V, struct observable *changed, long status)
 {
     if (debug)
 	printf("spread_ObservedChanged(%x, %x, %ld)\n", V, changed, status);

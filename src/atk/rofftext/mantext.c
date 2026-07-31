@@ -45,9 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #define INITIAL 100
 #define INCREMENT 1000
 
-boolean mantext__InitializeObject(classID,self)
-struct classheader *classID;
-struct mantext *self;
+boolean mantext__InitializeObject(struct classheader *classID, struct mantext *self)
 {
     self->nLines = 0;
     self->nAlloc = INITIAL;
@@ -58,10 +56,8 @@ struct mantext *self;
     return TRUE;
 }
 
-long mantext__Read(self, file, id)
-struct mantext *self;
-FILE *file;
-long id; {
+long mantext__Read(struct mantext *self, FILE *file, long id)
+{
     long tmpRetValue;
     struct rofftext *r = (struct rofftext *)self;
 
@@ -83,19 +79,16 @@ long id; {
 
 }
 
-long mantext__GetLinePos(self, line)
-struct mantext *self;
-long line; {
+long mantext__GetLinePos(struct mantext *self, long line)
+{
     line -= 2;
     if (line > self->nLines) line = self->nLines;
     if (line < 0) line = 0;
     return mark_GetPos(self->lineMark[line]);
 }
 
-void mantext__SetLinePos(self, line, pos)
-struct mantext *self;
-long line;
-long pos; {
+void mantext__SetLinePos(struct mantext *self, long line, long pos)
+{
     if (line < 0) return;
     if (line >= self->nAlloc) {
 	self->nAlloc += INCREMENT;
@@ -108,8 +101,7 @@ long pos; {
 }
 
 
-void mantext__GetFilename(self, filename)
-struct mantext *self;
-char *filename; {
+void mantext__GetFilename(struct mantext *self, char *filename)
+{
     strcpy(filename, self->filename);
 }

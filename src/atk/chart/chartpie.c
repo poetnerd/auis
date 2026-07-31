@@ -62,6 +62,7 @@ HISTORY
 END-SPECIFICATION  ************************************************************/
 
 #include <math.h>
+#include <stdlib.h>
 #include "graphic.ih"
 #include "view.ih"
 #include "apt.h"
@@ -126,10 +127,7 @@ struct chartpie_drawing
 #define  Center			(chartpie_ChartCenter(self))
 
 
-boolean 
-chartpie__InitializeObject( classID, self)
-  register struct classheader	 *classID;
-  register struct chartpie	 *self;
+boolean chartpie__InitializeObject(struct classheader *classID, struct chartpie *self)
   {
   IN(chartpie_InitializeObject);
   chartpie_SetShrinkIcon( self, 'e', "icon12", "PieChart", "andysans10b" );
@@ -140,31 +138,21 @@ chartpie__InitializeObject( classID, self)
   return  TRUE;
   }
 
-void 
-chartpie__FinalizeObject( classID, self )
-  register struct classheader	 *classID;
-  register struct chartpie	 *self;
+void chartpie__FinalizeObject(struct classheader *classID, struct chartpie *self)
   {
   IN(chartpie_FinalizeObject);
   if ( Drawing )  free( Drawing );
   OUT(chartpie_FinalizeObject);
   }
 
-void
-chartpie__SetDebug( self, state )
-  register struct chartpie	 *self;
-  register char			  state;
+void chartpie__SetDebug(struct chartpie *self, boolean state)
   {
   IN(chartpie_SetDebug);
   super_SetDebug( self, debug = state );
   OUT(chartpie_SetDebug);
   }
 
-struct view *
-chartpie__HitChart( self, action, x, y, clicks )
-  register struct chartpie	     *self;
-  register enum view_MouseAction      action;
-  register long			      x, y, clicks;
+struct view * chartpie__HitChart(struct chartpie *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   static long			      prior_x, prior_y, candidate;
   register double		      radius = DrawingX - DrawingLeft,
@@ -215,28 +203,21 @@ chartpie__HitChart( self, action, x, y, clicks )
   return  hit;
   }
 
-void
-chartpie__DrawChart( self )
-  register struct chartpie	     *self;
+void chartpie__DrawChart(struct chartpie *self)
   {
   IN(chartpie_DrawChart);
   Show_Pie_Chart( self, Screen );
   OUT(chartpie_DrawChart);
   }
 
-void
-chartpie__PrintChart( self )
-  register struct chartpie	     *self;
+void chartpie__PrintChart(struct chartpie *self)
   {
   IN(chartpie_PrintChart);
   Show_Pie_Chart( self, Paper );
   OUT(chartpie_PrintChart);
   }
 
-static
-Show_Pie_Chart( self, medium )
-  register struct chartpie	     *self;
-  register long			      medium;
+static Show_Pie_Chart(struct chartpie *self, long medium)
   {
   register long			      i;
   short				      height;
@@ -305,9 +286,7 @@ Show_Pie_Chart( self, medium )
   OUT(Show_Pie_Chart);
   }
 
-static
-Compute_Pie_Points( self )
-  register struct chartpie	     *self;
+static Compute_Pie_Points(struct chartpie *self)
   {
   register long			      i, count = 0;
   register struct chart_item	     *item;

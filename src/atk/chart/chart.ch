@@ -76,7 +76,7 @@ methods:
   SetChartAttribute( long code, long value )		returns long;
   ChartAttribute( long attribute_code )			returns long;
 
-  Apply( (long(*)())proc, long anchor, long datum );
+  Apply( long (*proc)(), long anchor, long datum );
   Reset( long mode );
   Sort( long mode, long (*handler)() );
   Monikers()						returns struct chart_monikers *;
@@ -112,7 +112,7 @@ classprocedures:
 
   InitializeObject( struct chart *self )		returns boolean;
   FinalizeObject( struct chart *self );
-  Create( chart_Specification, char *anchor )		returns struct chart *;
+  Create( struct chart_specification *specification, char *anchor )		returns struct chart *;
 
 data:
 

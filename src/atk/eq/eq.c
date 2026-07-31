@@ -45,6 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/eq/R
 
 #include <dataobj.ih>
 #include <mark.ih>
+#include <stdlib.h>
 #include <string.h>
 
 #define SIZE 10
@@ -52,9 +53,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/eq/R
 static char *init_string = "{ lpile d_eqstyle { zilch ^} }";
 
 /* Create a new equation */
-boolean eq__InitializeObject(classID, self)
-struct classheader *classID;
-struct eq *self;
+boolean eq__InitializeObject(struct classheader *classID, struct eq *self)
 {
     register struct formula *f = (struct formula *) malloc(SIZE*sizeof(struct formula));
 
@@ -70,9 +69,7 @@ struct eq *self;
     return TRUE;
 }
 
-void eq__FinalizeObject(classID, self)
-struct classheader *classID;
-struct eq *self;
+void eq__FinalizeObject(struct classheader *classID, struct eq *self)
 {
     struct mark *mark;
 
@@ -85,10 +82,7 @@ struct eq *self;
 }
 
 /* Insert a formula in an equation at position n  */
-void eq__Insert(self, pos, f)
-struct eq *self;
-long pos;
-struct formula *f;
+void eq__Insert(struct eq *self, long pos, struct formula *f)
 {
     if (pos > self->p1 + self->p2)
 	pos = self->p1 + self->p2;
@@ -120,10 +114,7 @@ struct formula *f;
 
 /* Insert tokens */
 
-long eq__InsertTokens(self, pos, s)
-struct eq *self;
-long pos;
-char *s;
+long eq__InsertTokens(struct eq *self, long pos, char *s)
 {
     char buf[100], *p;
     int inserted = 0;
@@ -164,10 +155,7 @@ char *s;
  * the two are inconsistent wrt scripted zilches.
  */
 
-long eq__InsertTokensCarefully(self, pos, s)
-struct eq *self;
-long pos;
-char *s;
+long eq__InsertTokensCarefully(struct eq *self, long pos, char *s)
 {
     long evenup = 0, inserted = 0;
     short zilch_removed = 0;
@@ -190,9 +178,7 @@ char *s;
 }
 
 /* Delete formula at position n from an equation */
-void eq__Delete(self, pos)
-struct eq *self;
-long pos;
+void eq__Delete(struct eq *self, long pos)
 {
     if (pos == self->p1 - 1) {
 	self->p1 -= 1;
@@ -217,9 +203,7 @@ long pos;
  * Delete an item but preserve structure
  */
 
-long eq__DeleteCarefully(self, start, stop)
-struct eq *self;
-long start, stop;
+long eq__DeleteCarefully(struct eq *self, long start, long stop)
 {
     long was_zilch;
     register int i, j;
@@ -298,11 +282,7 @@ long start, stop;
  * inserts string and returns new position.
  */
 
-long eq__DoScript(self, pos, script, string)
-struct eq *self;
-long pos;
-enum script script;
-char *string;
+long eq__DoScript(struct eq *self, long pos, enum script script, char *string)
 {
     long i, added, found = -1;
 
@@ -333,10 +313,8 @@ char *string;
     }
 }
 
-struct mark *eq__CreateMark(self, pos, length)
-struct eq *self;
-long pos;
-long length;  {
+struct mark * eq__CreateMark(struct eq *self, long pos, long length)
+{
     struct mark *mark;
     
     mark = mark_New();
@@ -348,9 +326,8 @@ long length;  {
     return mark;
 }
 
-void eq__RemoveMark(self, mark)
-struct eq *self;
-struct mark *mark;  {
+void eq__RemoveMark(struct eq *self, struct mark *mark)
+{
     struct mark *mp;
     struct mark *tp;
 
@@ -372,9 +349,7 @@ struct mark *mark;  {
 
 #ifdef notyet
 /* Maintain the current cursor geometry */
-void eq_SetCursor(self, left, top, width, height)
-struct eq *self;
-long left, top, width, height;
+void eq_SetCursor(struct eq *self, long left, long top, long width, long height)
 {
     self->cursor.left = left;
     self->cursor.top = top;
@@ -382,9 +357,7 @@ long left, top, width, height;
     self->cursor.height = height;
 }
 
-void eq_GetCursor(self, leftp, topp, widthp, heightp)
-struct eq *self;
-long *leftp, *topp, *widthp, *heightp;
+void eq_GetCursor(struct eq *self, long *leftp, long *topp, long *widthp, long *heightp)
 {
     *leftp = self->cursor.left;
     *topp = self->cursor.top;
@@ -394,8 +367,7 @@ long *leftp, *topp, *widthp, *heightp;
 #endif /* notyet */
 
 /* Forget a whole equation */
-void eq__Erase(self)
-struct eq *self;
+void eq__Erase(struct eq *self)
 {
     self->gap = self->p1 + self->gap + self->p2;
     self->p1 = 0;
@@ -403,9 +375,7 @@ struct eq *self;
 }
 
 /* Get formula n from an equation */
-struct formula *eq__Access(self, n)
-struct eq *self;
-long n;
+struct formula * eq__Access(struct eq *self, long n)
 {
     if (n < 0) return 0;
     if (n < self->p1)
@@ -417,16 +387,13 @@ long n;
 }
 
 /* Determine the number of formulas in an equation */
-long eq__Size(self)
-struct eq *self;
+long eq__Size(struct eq *self)
 {
     return self->p1 + self->p2;
 }
 
 /* Given an equation and a formula, return the next formula. */
-struct formula *eq__NextFormula(self, f)
-struct eq *self;
-struct formula *f;
+struct formula * eq__NextFormula(struct eq *self, struct formula *f)
 {
     register int n, p1 = self->p1, gap = self->gap, p2 = self->p2;
 
@@ -441,11 +408,7 @@ struct formula *f;
 }
 
 /* Convert to printable representation.  Returns length in bytes, including trailing null. */
-long eq__GetTokens(self, startp, stop, string, size)
-struct eq *self;
-long *startp, stop;
-char *string;
-long size;
+long eq__GetTokens(struct eq *self, long *startp, long stop, char *string, long size)
 {
     register char *s = string;
     register int i, len;
@@ -470,9 +433,7 @@ long size;
  * x's at right find the }.	   x x x x
  */
 
-long eq__FindEndGroup(self, i)
-struct eq *self;
-long i;
+long eq__FindEndGroup(struct eq *self, long i)
 {
     register int j, level = 0;
     for (j=i; ; j++) {
@@ -495,9 +456,7 @@ long i;
  * x's at right find the {.		  x x x x
  */
 
-long eq__FindBeginGroup(self, i)
-struct eq *self;
-long i;
+long eq__FindBeginGroup(struct eq *self, long i)
 {
     register int j, level = 0;
     for (j=i-1; ; j--) {
@@ -520,9 +479,7 @@ long i;
  * Returns pointer to a begin group.
  */
 
-long eq__FindLeftSibling(self, i)
-struct eq *self;
-long i;
+long eq__FindLeftSibling(struct eq *self, long i)
 {
     register int j;
     if (i==0)
@@ -537,9 +494,7 @@ long i;
     }
 }
 
-long eq__FindRightSibling(self, i)
-struct eq *self;
-long i;
+long eq__FindRightSibling(struct eq *self, long i)
 {
     register int j;
     if (i==0)
@@ -555,11 +510,7 @@ long i;
 }
 
 /* Write to a file */
-void eq__WriteFILE(self, f, start, stop, sep)
-struct eq *self;
-FILE *f;
-long start, stop;
-char sep;
+void eq__WriteFILE(struct eq *self, FILE *f, long start, long stop, char sep)
 {
     while (start<stop) {
 	char buf[4000];
@@ -572,10 +523,7 @@ char sep;
 }
 
 /* Read from a FILE */
-long eq__ReadFILE(self, file, start)
-struct eq *self;
-FILE *file;
-long start;
+long eq__ReadFILE(struct eq *self, FILE *file, long start)
 {
     char word[100];
     long n = start, i, c;
@@ -619,10 +567,7 @@ long start;
     return n-start;
 }
 
-long eq__Read(self, file, id)
-struct eq *self;
-FILE *file;
-long id;
+long eq__Read(struct eq *self, FILE *file, long id)
 {
     eq_Erase(self);
     if (id != 0L)
@@ -632,11 +577,7 @@ long id;
     return dataobject_NOREADERROR; /* probably should get a status value from eq_ReadFILE */
 }
 
-long eq__Write(self, file, writeid, level)
-struct eq *self;
-FILE *file;
-long writeid;
-long level;
+long eq__Write(struct eq *self, FILE *file, long writeid, int level)
 {
     if ((self->header.dataobject.writeID != writeid)) {
 	self->header.dataobject.writeID = writeid;
@@ -648,9 +589,7 @@ long level;
 }
 
 /* Dump info */
-void eq__Dump(self, name)
-struct eq *self;
-char *name;
+void eq__Dump(struct eq *self, char *name)
 {
     FILE *file = NULL;
     int n = eq_Size(self), i;
@@ -689,8 +628,7 @@ char *name;
 	fclose(file);
 }
 
-boolean eq__InitializeClass(classID)
-struct classheader *classID;
+boolean eq__InitializeClass(struct classheader *classID)
 {
     if (zilch == NULL)
 	zilch = eq_Lookup("zilch");

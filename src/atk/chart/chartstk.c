@@ -110,10 +110,7 @@ END-SPECIFICATION  ************************************************************/
 #define  ItemMiddle(shadow)	(chartstk_ItemMiddle(self,(shadow)))
 #define  NextItem(shadow)	(chartstk_NextItem(self,(shadow)))
 
-boolean 
-chartstk__InitializeObject( classID, self)
-  register struct classheader	 *classID;
-  register struct chartstk	 *self;
+boolean chartstk__InitializeObject(struct classheader *classID, struct chartstk *self)
   {
   IN(chartstk_InitializeObject);
   chartstk_SetShrinkIcon( self, 'e', "icon12", "StackChart", "andysans10b" );
@@ -128,21 +125,14 @@ chartstk__FinalizeObject( classID, self )
   register struct chartstk	 *self;
   {}
 
-void
-chartstk__SetDebug( self, state )
-  register struct chartstk	 *self;
-  register char			  state;
+void chartstk__SetDebug(struct chartstk *self, boolean state)
   {
   IN(chartstk_SetDebug);
   super_SetDebug( self, debug = state );
   OUT(chartstk_SetDebug);
   }
 
-struct view *
-chartstk__HitChart( self, action, x, y, clicks )
-  register struct chartstk	     *self;
-  register enum view_MouseAction      action;
-  register long			      x, y, clicks;
+struct view * chartstk__HitChart(struct chartstk *self, enum view_MouseAction action, long x, long y, long clicks)
   {
 
   IN(chartstk_HitChart);
@@ -151,18 +141,14 @@ chartstk__HitChart( self, action, x, y, clicks )
   return  (struct view *) self;
   }
 
-void
-chartstk__DrawChart( self )
-  register struct chartstk	     *self;
+void chartstk__DrawChart(struct chartstk *self)
   {
   IN(chartstk_DrawChart);
 /*===*/
   OUT(chartstk_DrawChart);
   }
 
-void
-chartstk__PrintChart( self )
-  register struct chartstk	     *self;
+void chartstk__PrintChart(struct chartstk *self)
   {
   IN(chartstk_PrintChart);
 /*===*/

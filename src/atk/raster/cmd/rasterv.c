@@ -110,6 +110,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <xbm.ih>
 
 #include <dispbox.h>
+static void CopyCommand();
+static void CropCommand();
+static void ExtendToMatCommand();
+static void RasterIOCommand();
+static void ReadFileCommand();
+static void ReplaceCommand();
+static void ScaleCommand();
+static void ScaleReplaceCommand();
+static void SetPrintSizeCommand();
+static void ShrinkCommand();
+static void UncropCommand();
 
 /* os_system (overhead/util/lib/system.c) has no declaring header
    anywhere in the tree. */
@@ -184,9 +195,7 @@ static void ToggleDebug()
     printf("Debugging is now %s\n", (debug) ? "On" : "Off");  fflush (stdout);
 }
 
-static void CropCommand(self, rock)
-struct rasterview *self;
-long rock;
+static void CropCommand(struct rasterview *self, long rock)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     if (ras == NULL) return;
@@ -208,9 +217,7 @@ long rock;
     }
 }
 
-static void UncropCommand(self, rock)
-struct rasterview *self;
-long rock;
+static void UncropCommand(struct rasterview *self, long rock)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     if (ras == NULL) return;
@@ -234,9 +241,7 @@ long rock;
     }
 }
 
-static void ShrinkCommand(self, rock)
-struct rasterview *self;
-long rock;
+static void ShrinkCommand(struct rasterview *self, long rock)
 {
     self->Shrunken = TRUE;
     self->needsFullUpdate = TRUE;
@@ -247,9 +252,7 @@ long rock;
 	rasterview_WantUpdate(self, self);
 }
 
-void CenterCommand(self, rock)
-struct rasterview *self;
-long rock;
+void CenterCommand(struct rasterview *self, long rock)
 {
     struct rectangle VB;
     rasterview_GetVisualBounds(self, &VB);
@@ -272,9 +275,7 @@ long rock;
     rasterview_WantUpdate(self, self);
 }
 
-void UpperLeftCommand(self, rock)
-struct rasterview *self;
-long rock;
+void UpperLeftCommand(struct rasterview *self, long rock)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
 
@@ -292,9 +293,7 @@ long rock;
     rasterview_WantUpdate(self, self);
 }
 
-void SelectAllCommand(self, rock)
-struct rasterview *self;
-long rock;
+void SelectAllCommand(struct rasterview *self, long rock)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
 
@@ -306,9 +305,7 @@ long rock;
     rasterview_WantUpdate(self, self);
 }
 
-void rasterview__SetScale(self, newscale)
-struct rasterview *self;
-long newscale;
+void rasterview__SetScale(struct rasterview *self, long newscale)
 {
     long x, y;
     struct rectangle VB;
@@ -375,9 +372,7 @@ long newscale;
 
 } /* rasterview__SetScale */
 
-void ZoomInCommand(self, rock)
-struct rasterview *self;
-long rock;
+void ZoomInCommand(struct rasterview *self, long rock)
 {
     DEBUG(("Scroll: (%d,%d)\n", self->Xscroll, self->Yscroll));
     DEBUG(("Zoom In Scale: %d VS: (%d,%d,%d,%d)\n", self->Scale * 2,
@@ -389,10 +384,7 @@ long rock;
     rasterview_SetScale(self, self->Scale * 2);
 }
 
-void ReflectChangesInExpansion(self, R)
-struct rasterview *self;
-struct rectangle *R;
-/* R is the rectangle within the full image which has been changed */
+void ReflectChangesInExpansion(struct rasterview *self, struct rectangle *R)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rasterimage *pix, *new;
@@ -424,17 +416,14 @@ struct rectangle *R;
 	DisplayBoxBlitOverlap(self, pix);
 }
 
-void HideDisplayBox(self)
-struct rasterview *self;
+void HideDisplayBox(struct rasterview *self)
 {
     if (RegionSelect(self))
 	ViewHideHighlight(self);
     DisplayBoxHide(self);
 }
 
-void MoveDisplayBoxCommand(self, rock)
-struct rasterview *self;
-long rock;
+void MoveDisplayBoxCommand(struct rasterview *self, long rock)
 {
     if (rock == 1 && FullSize(self)) return;
 
@@ -447,9 +436,7 @@ long rock;
     self->MovingDisplayBox = TRUE;
 }
 
-void FinishMovingDisplayBox(self, x, y)
-struct rasterview *self;
-long x, y;
+void FinishMovingDisplayBox(struct rasterview *self, long x, long y)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rasterimage *pix;
@@ -503,9 +490,7 @@ long x, y;
     PostMenus(self);
 }
 
-void HideDisplayBoxCommand(self, rock)
-struct rasterview *self;
-long rock;
+void HideDisplayBoxCommand(struct rasterview *self, long rock)
 {
     HideDisplayBox(self);
     SetLeftRect(&self->DisplayBox, -3*rectangle_Width(&self->DisplayBox));
@@ -515,26 +500,20 @@ long rock;
     PostMenus(self);
 }
 
-void ZoomOutCommand(self, rock)
-struct rasterview *self;
-long rock;
+void ZoomOutCommand(struct rasterview *self, long rock)
 {
     DEBUG(("Zoom Out Scale: %d\n", self->Scale / 2));
     rasterview_SetScale(self, self->Scale / 2);
 }
 
-void NormalSizeCommand(self, rock)
-struct rasterview *self;
-long rock;
+void NormalSizeCommand(struct rasterview *self, long rock)
 {
     if (NotFullSize(self)) {
 	rasterview_SetScale(self, 1);
     }
 }
 
-void RegionSelectCommand(self, rock)
-struct rasterview *self;
-long rock;
+void RegionSelectCommand(struct rasterview *self, long rock)
 {
     struct rectangle r;
     rasterview_GetVisualBounds(self, &r);
@@ -554,9 +533,7 @@ long rock;
     PostMenus(self);
 }
 
-void TouchUpCommand(self, rock)
-struct rasterview *self;
-long rock;
+void TouchUpCommand(struct rasterview *self, long rock)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rectangle r;
@@ -581,9 +558,7 @@ long rock;
     PostMenus(self);
 }
 
-void PanCommand(self, rock)
-struct rasterview *self;
-long rock;
+void PanCommand(struct rasterview *self, long rock)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rectangle r;
@@ -606,9 +581,7 @@ long rock;
     PostMenus(self);
 }
 
-void ToolCommand(self, rock)
-struct rasterview *self;
-long rock;
+void ToolCommand(struct rasterview *self, long rock)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rectangle r;
@@ -637,9 +610,7 @@ long rock;
     PostMenus(self);
 }
 
-void ModifyCommand(self, rock)
-struct rasterview *self;
-long rock;
+void ModifyCommand(struct rasterview *self, long rock)
 {
     /* -1 = negative, 0 = white, 1 = black, 2 = Gray */
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
@@ -686,9 +657,7 @@ long rock;
 	bit array (which is attached to the original rasterimage).
 	Finally, the clone and the old bit array are discarded.
 */
-void RotateCommand(self, rock)
-struct rasterview *self;
-long rock;
+void RotateCommand(struct rasterview *self, long rock)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rasterimage *pix;
@@ -718,10 +687,7 @@ long rock;
     rasterimage_NotifyObservers(pix, raster_BITSCHANGED);
 }
 
-void ReadRaster(self, ras, filename)
-struct rasterview *self;
-struct raster *ras;
-char *filename;
+void ReadRaster(struct rasterview *self, struct raster *ras, char *filename)
 {
     /* need to use FindFile XXX */
     long readresult = dataobject_OBJECTCREATIONFAILED;
@@ -774,9 +740,7 @@ char *filename;
 	message_DisplayString((struct view *)self, 50, err); }
 }
 
-static void ReadFileCommand(self, rock)
-struct rasterview *self;
-long rock;
+static void ReadFileCommand(struct rasterview *self, long rock)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     char filename[MAXPATHLEN];
@@ -812,8 +776,7 @@ long rock;
     LEAVE(ReadFileCommand);
 }
 
-void WriteFileCommand(self)
-struct rasterview *self ;
+void WriteFileCommand(struct rasterview *self)
 {
     /* write using filename from read as default. */
     message_DisplayString((struct view *)self, 0, "Write Raster not yet implemented");
@@ -853,9 +816,7 @@ static char *prompts[] = {
 #endif
 };
 
-static void RasterIOCommand(self, rock)
-struct rasterview *self;
-enum RasterIOType rock;
+static void RasterIOCommand(struct rasterview *self, enum RasterIOType rock)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     FILE *f;
@@ -1042,8 +1003,7 @@ enum RasterIOType rock;
     LEAVE(RasterIOCommand);
 }
 
-static void CopyCommand(self) 
-struct rasterview *self;
+static void CopyCommand(struct rasterview *self)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     FILE *copyFile;
@@ -1061,8 +1021,7 @@ struct rasterview *self;
     }
 }
 
-static void ReplaceCommand (self)
-struct rasterview *self;
+static void ReplaceCommand(struct rasterview *self)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     FILE *pasteFile;
@@ -1093,8 +1052,7 @@ struct rasterview *self;
     im_CloseFromCutBuffer(rasterview_GetIM(self), pasteFile);
 }
 
-boolean MatExtendPossible(self)
-struct rasterview *self;
+boolean MatExtendPossible(struct rasterview *self)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rectangle VB;
@@ -1119,9 +1077,7 @@ struct rasterview *self;
 	     || self->Yscroll < 0);
 }
 
-void rasterview__ResizeRaster(self, width, height)
-struct rasterview *self;
-long width, height;
+void rasterview__ResizeRaster(struct rasterview *self, long width, long height)
 {
     struct raster *ras;
     struct rasterimage *pix;
@@ -1175,8 +1131,7 @@ long width, height;
 /* ExtendToMatCommand(self)
 	Extend the raster size to the size of the matte, if bigger 
 */
-static void ExtendToMatCommand(self)
-struct rasterview *self;
+static void ExtendToMatCommand(struct rasterview *self)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     long l, t, w, h, r, b;
@@ -1214,8 +1169,7 @@ struct rasterview *self;
 	prompts for print size and sets scaling accordingly
 	Note that the subraster is either the entire raster or the cropped raster.
 */
-static void SetPrintSizeCommand(self)
-struct rasterview *self;
+static void SetPrintSizeCommand(struct rasterview *self)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     long w = rectangle_Width(&self->ViewSelection);
@@ -1283,8 +1237,7 @@ struct rasterview *self;
 /* This keeps the orignal pixel image around so that
   one can extrapolate from the original rather then the
   scaled version of the image. */
-static void ScaleCommand(self)
-struct rasterview *self;
+static void ScaleCommand(struct rasterview *self)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rasterimage *pix;
@@ -1401,8 +1354,7 @@ struct rasterview *self;
     rasterimage_NotifyObservers(pix, rasterview_SCALECHANGED);
 }
 
-static void ScaleReplaceCommand(self)
-struct rasterview *self;
+static void ScaleReplaceCommand(struct rasterview *self)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rasterimage *pix;
@@ -1450,8 +1402,7 @@ struct rasterview *self;
     im_CloseFromCutBuffer(rasterview_GetIM(self), pasteFile);
 }
 
-void PostMenus(self)
-struct rasterview *self;
+void PostMenus(struct rasterview *self)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rasterimage *pix = NULL;
@@ -1561,9 +1512,7 @@ struct rasterview *self;
 	rasterview_PostMenus(self, NULL);
 }
 
-void rasterview__PostMenus(self, ml)
-struct rasterview *self;
-struct menulist *ml;
+void rasterview__PostMenus(struct rasterview *self, struct menulist *ml)
 {
     /* Enable the menus for this object. */
     menulist_ClearChain(self->Menus);
@@ -1579,8 +1528,7 @@ struct menulist *ml;
  *	
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-boolean rasterview__InitializeClass(ClassID)
-struct classhdr *ClassID;
+boolean rasterview__InitializeClass(struct classheader *ClassID)
 {
     struct proctable_Entry *proc = NULL;
     DEBUG(("ENTER rasterview__InitializeClass\n"));
@@ -1989,9 +1937,7 @@ struct classhdr *ClassID;
 }
 
 
-boolean rasterview__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-register struct rasterview  *self;
+boolean rasterview__InitializeObject(struct classheader *ClassID, struct rasterview *self)
 {
     ENTER(rasterview__InitializeObject);
     self->Menus = menulist_DuplicateML(Menus, self);
@@ -2045,9 +1991,7 @@ register struct rasterview  *self;
     return TRUE;
 }
 
-void rasterview__FinalizeObject(ClassID, self)
-struct classhdr *ClassID;
-register struct rasterview  *self;
+void rasterview__FinalizeObject(struct classheader *ClassID, struct rasterview *self)
 {
     int ix;
 
@@ -2074,8 +2018,7 @@ register struct rasterview  *self;
     LEAVE(rasterview__FinalizeObject);
 }
 
-struct view * rasterview__GetApplicationLayer(self)
-register struct rasterview *self;
+struct view * rasterview__GetApplicationLayer(struct rasterview *self)
 {
     register struct scroll *view;
     ENTER(rasterview__GetApplicationLayer);
@@ -2090,14 +2033,12 @@ register struct rasterview *self;
 
 /* ------ following material was added 5/28/92 ------ */
 
-int rasterview__GetMode(self)
-struct rasterview *self;
+int rasterview__GetMode(struct rasterview *self)
 {
     return self->Mode;
 }
 
-void rasterview__CopySelection(self)
-struct rasterview *self;
+void rasterview__CopySelection(struct rasterview *self)
 {
     CopyCommand(self);
 }

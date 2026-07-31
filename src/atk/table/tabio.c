@@ -47,6 +47,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #define AUXMODULE
 #include <table.eh>
+static int ReadAboveColor();
+static int ReadLeftColor();
+static int ReadSlice();
+static void ReadString();
+static void SkipRest();
+static void WriteAboveColor();
+static void WriteThickness();
+static void refill();
 
 /* defined in table.c */
 extern int DestroyCell();
@@ -108,11 +116,7 @@ static boolean debug=FALSE;
 
 /* write thickness data */
 
-static void WriteThickness(f, tag, slice, first, last, def)
-FILE *f;
-char *tag;
-struct slice * slice;
-int first, last;
+static void WriteThickness(FILE *f, char *tag, struct slice *slice, int first, int last, int def)
 {
     int i;
     int alldef;
@@ -133,11 +137,7 @@ int first, last;
 
 /* write color information */
 
-static void WriteAboveColor(T, f, r, first, last)
-register struct table * T;
-FILE *f;
-int r;
-int first, last;
+static void WriteAboveColor(struct table *T, FILE *f, int r, int first, int last)
 {
     int c, clast;
 
@@ -183,12 +183,7 @@ char *x=x2;\
 
 /* write contents of one cell */
 
-void WriteCell (T, f, cell, buff, level)
-register struct table * T;
-FILE *f;
-struct cell * cell;
-char **buff;
-int level;
+void WriteCell(struct table *T, FILE *f, struct cell *cell, char **buff, int level)
 {
     int size=1000, pos=0;
     char *cp;
@@ -281,11 +276,7 @@ int level;
 
 /* write subrectangle */
 
-void WriteASCII (T, f, chunk, level)
-register struct table * T;
-FILE *f;
-Chunk chunk;
-int level;
+void WriteASCII(struct table *T, FILE *f, Chunk chunk, int level)
 {
     int r, c;
     int fr = max(0, chunk->TopRow);
@@ -346,11 +337,7 @@ int level;
 
 /* by reading starting at buff+1 we leave one character worth of putback */
 
-static void refill(f, buff, cpp, cl)
-FILE *f;
-char buff[];
-char **cpp;
-char *cl;
+static void refill(FILE *f, char buff[], char **cpp, char *cl)
 {
     char *cp;
     int inc = 0;
@@ -372,11 +359,7 @@ char *cl;
 
 /* read end of line and refill buffer */
 
-static void SkipRest(f, buff, cpp, cl)
-FILE *f;
-char buff[];
-char **cpp;
-char *cl;
+static void SkipRest(FILE *f, char buff[], char **cpp, char *cl)
 {
     char *cp = *cpp;
 
@@ -394,12 +377,7 @@ char *cl;
 
 /* read thickness vector */
 
-static int ReadSlice(f, buff, cpp, cl, sp)
-FILE *f;
-char buff[];
-char **cpp;
-char *cl;
-struct slice **sp;
+static int ReadSlice(FILE *f, char buff[], char **cpp, char *cl, struct slice **sp)
 {
     int i, t;
     char *cp = *cpp;
@@ -435,13 +413,7 @@ struct slice **sp;
 
 /* read color information */
 
-static int ReadLeftColor(T, f, buff, cpp, cl, r, c)
-struct table *T;
-FILE *f;
-char buff[];
-char **cpp;
-char *cl;
-int r, c;
+static int ReadLeftColor(struct table *T, FILE *f, char buff[], char **cpp, char *cl, int r, int c)
 {
     int color;
     char lastc;
@@ -479,13 +451,7 @@ int r, c;
 
 /* read horizontal colors and return true if there were some */
 
-static int ReadAboveColor(T, f, buff, cpp, cl, r)
-register struct table * T;
-FILE *f;
-char buff[];
-char **cpp;
-char *cl;
-int r;
+static int ReadAboveColor(struct table *T, FILE *f, char buff[], char **cpp, char *cl, int r)
 {
     int c;
     int cmax;
@@ -535,12 +501,7 @@ int r;
 
 /* read string */
 
-static void ReadString(f, buff, cpp, cl, result)
-FILE *f;
-char buff[];
-char **cpp;
-char *cl;
-char **result;
+static void ReadString(FILE *f, char buff[], char **cpp, char *cl, char **result)
 {
     char *x;
     int k;
@@ -593,13 +554,7 @@ char **result;
 
 /* read a cell */
 
-void ReadCell(T, f, buff, cpp, cl, cell)
-register struct table *T;
-FILE *f;
-char *buff;
-char **cpp;
-char *cl;
-struct cell *cell;
+void ReadCell(struct table *T, FILE *f, char *buff, char **cpp, char *cl, struct cell *cell)
 {
     char *cp = *cpp;
 
@@ -752,9 +707,7 @@ struct cell *cell;
 
 /* read subrectangle */
 
-struct table * ReadASCII (T, f)
-register struct table * T;
-FILE *f;
+struct table * ReadASCII(struct table *T, FILE *f)
 {
     char buff[1000];
     char *cp;

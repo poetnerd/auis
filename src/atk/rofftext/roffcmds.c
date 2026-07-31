@@ -53,6 +53,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #include <rofftext.h>
 #include <roffutil.h>
 #include <roffcmds.h>
+static void gettblfmt(int argc, char argv[80][80]);
+static char gettblopts(int argc, char argv[80][80]);
+static char * parsetbl();
 
 /* cross-file functions with no declaring header (roffutil.c, num.c,
    roffstyl.c) */
@@ -65,12 +68,7 @@ extern int BeginStyle(), EndStyle();
   * must parse its own arguments
  */
 
-ds_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int ds_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     register int c;
     static BUF b = NULL;
@@ -106,12 +104,7 @@ char *argv[];
 }
 
 /*  append to string */
-as_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int as_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     register int c;
     static BUF b = NULL;
@@ -150,12 +143,7 @@ char *argv[];
 }
 
 /* rename or remove request, string, macro */
-rm_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int rm_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     char *value,*str = "removing",*v;
     boolean rename = FALSE;
@@ -197,12 +185,7 @@ char *argv[];
 
 
 /* define register */
-nr_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int nr_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     int value,inc;
     boolean relative;
@@ -219,12 +202,7 @@ char *argv[];
 }
 
 /* assign format */
-af_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int af_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     struct reg *r = (Reg)hash_Lookup(self->Registers,argv[1]);
     enum RegFmt fmt;
@@ -262,24 +240,14 @@ char *argv[];
 }
 
 /* remove register */
-rr_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int rr_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {    
     hash_Delete(self->Registers, argv[1]);
 }
 
 
 /* read from a file */
-so_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int so_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     tpush(self,t,argv[1],NULL,NULL,FALSE,NULL,NULL);
 }
@@ -287,34 +255,19 @@ char *argv[];
 
 
 /* line break */
-br_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int br_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     DoBreak(self);
 }
 
 /* exit be2roff ??? */
-ex_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int ex_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
 }
 
 
 /* Do a macro */
-DoMacro(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int DoMacro(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
 
     char *macro = hash_Lookup(self->Macros,argv[0]);
@@ -325,12 +278,7 @@ char *argv[];
 
 
 /* define or re-define macro */
-de_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int de_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     char *macro,*existing,*name = StrDup(argv[1]);
     char *end = StrDup(argv[2]);
@@ -377,12 +325,7 @@ char *argv[];
 }
 
 /* append to macro */
-am_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int am_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     char *macro,*existing,*name = StrDup(argv[1]);
     char *end = StrDup(argv[2]);
@@ -423,12 +366,7 @@ char *argv[];
 
 /* divert output into a macro */
 
-di_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int di_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     char *macro;
     static BUF b = NULL;
@@ -473,12 +411,7 @@ char *argv[];
 }
 
 /* divert and append output into a macro */
-da_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int da_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     char *macro;
     char *existing;
@@ -527,22 +460,12 @@ char *argv[];
 
 
 /* debugging */
-c0_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int c0_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     self->v_CopyMode = 0;
 }
 
-c1_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int c1_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     self->v_CopyMode = 1;
 }
@@ -550,12 +473,7 @@ char *argv[];
 
 /* if-else  -- special syntax */
 
-ie_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int ie_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     int c,delim,delimcount;
     char *str,*string2;
@@ -661,12 +579,7 @@ char *argv[];
 
 
 /* if command -- special syntax */
-if_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int if_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     boolean tmp = self->v_LastIfResult;
     ie_cmd(self,t,br,argc,argv);
@@ -674,12 +587,7 @@ char *argv[];
 }
 
 /* else command -- special syntax */
-el_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int el_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     int c;
 
@@ -709,12 +617,7 @@ char *argv[];
 /* table macros */
 
 /* create a table */
-Ct_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int Ct_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     int i;
     self->Tbl = table_New();
@@ -724,9 +627,8 @@ char *argv[];
     for (i = 0; i < MAX_COLS; i++) self->colWidth[i] = 1;
 }
 
-static char gettblopts(argc, argv)
-int argc;
-char argv[80][80]; {
+static char gettblopts(int argc, char argv[80][80])
+{
     int i;
     for (i = 0; i < argc; i++) {
 	if (strncmp(argv[i], "tab(", 4) == 0)
@@ -735,9 +637,8 @@ char argv[80][80]; {
     return '\t';
 }
 
-static void gettblfmt(argc, argv)
-int argc;
-char argv[80][80]; {
+static void gettblfmt(int argc, char argv[80][80])
+{
 }
 
 static char *parsetbl(line, sep, multi, out)
@@ -760,9 +661,7 @@ char *out; {	/* the output */
 
 
 /* insert a row in the table */
-InsertTbl(self,t)
-struct rofftext *self;
-Trickle t;
+int InsertTbl(struct rofftext *self, Trickle t)
 {
     int row, col, colmax;
     char line[500], tabstr[10];
@@ -823,12 +722,7 @@ DEBUG(1, (stderr, "about to parse [%s]\n", line));
 }
 
 /* end the table */
-Et_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int Et_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     int colmax = table_NumberOfColumns(self->Tbl);
     int col;
@@ -841,12 +735,7 @@ char *argv[];
 }
 
 /* Heading command */
-Hd_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int Hd_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     int style = 0;
     int lev;
@@ -882,12 +771,7 @@ char *argv[];
 }
 
 /* Begin Page command */
-bp_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int bp_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     put(self, '\n');	    /* this is necessary; otherwise font changes are one off */
     text_InsertObject(self->text, self->pos++, "bp", "bpv");
@@ -895,12 +779,7 @@ char *argv[];
 }
 
 /* Footnote command */
-Fn_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int Fn_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     int sw = 0;
     if (argc > 1) sw = atoi(argv[1]);
@@ -914,12 +793,7 @@ char *argv[];
 }
 
 /*  Turn off escape processing in GC mode */
-Gc_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int Gc_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     int newval = 1;
     if (argc > 1) newval = atoi(argv[1]);
@@ -927,12 +801,7 @@ char *argv[];
 }
 
 /*  Pic command */
-Ps_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int Ps_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     struct link *l;
     int open = 0;
@@ -960,12 +829,7 @@ char *argv[];
 }
 
 /*  Hypertext link buttons */
-Bu_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int Bu_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     struct link * l;
     if (argc < 3) return;
@@ -977,12 +841,7 @@ char *argv[];
 
 #ifdef TROFF_TAGS_ENV
 /*  Tag command -- definition */
-Tag_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int Tag_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     char *tag;
     int count;
@@ -1001,10 +860,7 @@ char *argv[];
 }
 
 /*  Tag reference */
-Tag_ref(self,t, sym)
-struct rofftext *self;
-Trickle t;
-char *sym;
+int Tag_ref(struct rofftext *self, Trickle t, char *sym)
 {
     struct link * l;
     char *tag;
@@ -1036,8 +892,8 @@ char *sym;
 /*
  *  Fix up tags
  */
-Tag_fixup(self)
-struct rofftext *self; {
+int Tag_fixup(struct rofftext *self)
+{
     int i;
     for (i = 0; i < self->tag_count; i++) {
 	if (! self->tags[i].def) {
@@ -1056,12 +912,7 @@ struct rofftext *self; {
 #endif /* TROFF_TAGS_ENV */	
 
 /* print macro -- for debugging */
-PM_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int PM_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     char *m;
     printf("Macro named (%s) ----->\n",argv[1]);
@@ -1074,12 +925,7 @@ char *argv[];
 }
 
 
-PA_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int PA_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     printf("::::::::::::::::Printing all macros:::::::::::::::::\n");
     hash_Debug((self->Macros));
@@ -1089,12 +935,7 @@ char *argv[];
 
 /* title command -- special syntax */
 
-tl_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int tl_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     register int c,style;
     char *str,*string1=NULL,*string2=NULL,*string3=NULL,*end=NULL;
@@ -1158,8 +999,7 @@ char *argv[];
 
 }
 
-SortTraps(trap1,trap2)
-struct trap *trap1,*trap2;
+int SortTraps(struct trap *trap1, struct trap *trap2)
 {
     if (trap1->loc > trap2->loc)
         return 1;
@@ -1169,12 +1009,7 @@ struct trap *trap1,*trap2;
 }
 
 /* set a trap -- beginning or end of page */
-wh_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int wh_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     int result;
     boolean absolute,relative;
@@ -1196,12 +1031,7 @@ char *argv[];
 }
 
 /* space, the final frontier (ugh) */
-sp_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int sp_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     if (self->CurrentDiversion->NoSpaceMode) {
         DEBUG(1, (stderr,"Space: no space mode is on...\n"));
@@ -1211,12 +1041,7 @@ char *argv[];
         sv_cmd(self,t,br,argc,argv);
 }
 
-sv_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int sv_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     int result;
     int lines = 1;
@@ -1242,12 +1067,7 @@ char *argv[];
 }
 
 
-it_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int it_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     int result;
 
@@ -1266,12 +1086,7 @@ char *argv[];
 
 /* set global font */
 
-ft_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int ft_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     char *font;
     font = "P";
@@ -1318,12 +1133,7 @@ char *argv[];
 
 /* set global indent */
 
-in_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int in_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     /* this is bogus for now */
     int result;
@@ -1355,12 +1165,7 @@ char *argv[];
 }
 
 /* temporary indent */
-ti_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int ti_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     /* this is bogus for now */
     int result;
@@ -1387,12 +1192,7 @@ char *argv[];
 
 
 /* no-fill mode */
-nf_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int nf_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     if (br)
         DoBreak(self);
@@ -1400,12 +1200,7 @@ char *argv[];
 }
 
 /* fill mode */
-fi_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int fi_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     if (br)
         DoBreak(self);
@@ -1414,12 +1209,7 @@ char *argv[];
 
 
 /* set no-space mode */
-ns_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int ns_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     DEBUG(1, (stderr,"===Turning on no-space mode===\n"));
     self->CurrentDiversion->NoSpaceMode = TRUE;
@@ -1427,12 +1217,7 @@ char *argv[];
 
 
 /* restore spacing */
-rs_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int rs_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     DEBUG(1, (stderr,"=Resetting Space Mode=\n"));
     self->CurrentDiversion->NoSpaceMode = FALSE;
@@ -1440,24 +1225,14 @@ char *argv[];
 
 
 /* center text */
-ce_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int ce_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     if (br)
         DoBreak(self);
 }
 
 /* center text */
-Ce_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int Ce_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     int result;
     static int styleID = 0;
@@ -1477,12 +1252,7 @@ char *argv[];
 }
 
 /* ignore input */
-ig_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int ig_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     char *end = StrDup(argv[1]);
     static BUF b = NULL;
@@ -1505,12 +1275,7 @@ char *argv[];
 
 
 /* translate characters  - special syntax */
-tr_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int tr_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     register int c;
     unsigned char source,new;
@@ -1576,12 +1341,7 @@ char *argv[];
 }
 
 /* switch environment */
-ev_cmd(self,t,br,argc,argv)
-struct rofftext *self;
-Trickle t;
-boolean br;
-int argc;
-char *argv[];
+int ev_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 {
     int result;
     int i;

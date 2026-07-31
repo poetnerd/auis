@@ -316,9 +316,7 @@ struct symbol symbols[] = {
 };
 
 
-struct symbol *eq__Lookup(classID, name)
-struct classheader *classID;
-char *name;
+struct symbol * eq__Lookup(struct classheader *classID, char *name)
 {
     register struct symbol *s;
     for (s=symbols;  s->name;  s++)

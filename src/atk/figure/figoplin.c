@@ -28,8 +28,7 @@ char *figoplin_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 
 #include <math.h>
 #include <string.h>
-
-#include <figoplin.eh>
+#include <stdlib.h>
 
 #include <figattr.ih>
 #include <view.ih>
@@ -40,6 +39,11 @@ char *figoplin_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 #include <print.ih>
 
 #include <rect.h>
+#include <figoplin.eh>
+static int FindLineHit();
+static void MoveHandle();
+static void PartialSketch();
+static void RegularizePolygon();
 
 #define TWOPI (6.28318530718)
 #define ClearOldPoints(self)  ((((self)->orpts) ? (free((self)->orpts), 1) : 0), ((self)->orpts) = NULL)
@@ -49,8 +53,7 @@ static void SetNumPts();
 static struct point *ptemp;
 static int ptemp_size;
 
-boolean figoplin__InitializeClass(ClassID)
-struct classhdr *ClassID;
+boolean figoplin__InitializeClass(struct classheader *ClassID)
 {
     ptemp_size = 0;
     ptemp = NULL;
@@ -58,9 +61,7 @@ struct classhdr *ClassID;
     return TRUE;
 }
 
-boolean figoplin__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-struct figoplin *self;
+boolean figoplin__InitializeObject(struct classheader *ClassID, struct figoplin *self)
 {
     figoplin_AttributesUsed(self) = (1<<figattr_LineWidth) | (1<<figattr_Color); /* add (1<<figattr_Shade) if closed is true */
 
@@ -86,11 +87,7 @@ struct figoplin *self;
     return TRUE;
 }
 
-struct figoplin *figoplin__Create(classID, pointlist, numpoints, isclosed)
-struct classheader *classID;
-struct point *pointlist;
-long numpoints;
-boolean isclosed;
+struct figoplin * figoplin__Create(struct classheader *classID, struct point *pointlist, long numpoints, boolean isclosed)
 {
     int ix;
     struct figoplin *res = figoplin_New();
@@ -112,9 +109,7 @@ boolean isclosed;
     return res;
 }
 
-void figoplin__FinalizeObject(ClassID, self)
-struct classhdr *ClassID;
-struct figoplin *self;
+void figoplin__FinalizeObject(struct classheader *ClassID, struct figoplin *self)
 {
     if (self->pts)
 	free(self->pts);
@@ -122,10 +117,7 @@ struct figoplin *self;
 	free(self->orpts);
 }
 
-char *figoplin__ToolName(dummy, v, rock)
-struct figoplin *dummy;
-struct figtoolview *v;
-long rock;
+char * figoplin__ToolName(struct figoplin *dummy, struct figtoolview *v, long rock)
 {
     if (rock & 2) {
 	if (rock & 1)
@@ -141,9 +133,7 @@ long rock;
 }
 
 /* ### ought to be inherited from figobj, probably. Or maybe not. */
-void figoplin__CopyData(self, src) 
-struct figoplin *self;
-struct figoplin *src;
+void figoplin__CopyData(struct figoplin *self, struct figoplin *src)
 {   
     int ix, num;
     struct figattr *vtmp;
@@ -165,10 +155,7 @@ struct figoplin *src;
     figoplin_SetModified(self);
 }   
 
-void figoplin__ToolModify(dummy, v, rock) 
-struct figoplin *dummy;
-struct figtoolview *v;
-long rock;
+void figoplin__ToolModify(struct figoplin *dummy, struct figtoolview *v, long rock)
 {
     char buffer[32];
     char obuffer[256];
@@ -199,10 +186,7 @@ long rock;
     message_DisplayString(v, 10, obuffer);
 }
 
-struct figobj *figoplin__Instantiate(dummy, v, rock) 
-struct figoplin *dummy;
-struct figtoolview *v;
-long rock;
+struct figobj * figoplin__Instantiate(struct figoplin *dummy, struct figtoolview *v, long rock)
 {
     struct figoplin *res = (struct figoplin *)super_Instantiate(dummy, v, rock);
 
@@ -219,9 +203,7 @@ long rock;
     return (struct figobj *)res;
 }
 
-static void SetNumPts(self, num)
-struct figoplin *self;
-long num;
+static void SetNumPts(struct figoplin *self, long num)
 {
     ClearOldPoints(self);
 
@@ -253,8 +235,7 @@ long num;
 }
 
 /* set bounding box and handle list in fig coordinates */
-void figoplin__RecomputeBounds(self)
-struct figoplin *self;
+void figoplin__RecomputeBounds(struct figoplin *self)
 {
     long basex, basey, left, right, top, bot, wid, hgt;
     long lwid;
@@ -304,9 +285,7 @@ static enum figobj_HandleType handletypes[4]={
     figobj_LRCorner
 };
 
-enum figobj_HandleType figoplin__GetHandleType(self, num)
-struct figoplin *self;
-long num;
+enum figobj_HandleType figoplin__GetHandleType(struct figoplin *self, int num)
 {
     if(num>=0 && num<=3) return handletypes[num];
     else return figobj_None;
@@ -319,8 +298,7 @@ static long canonical_line[] = {
     4, 5, figobj_NULLREF
 };
 
-long *figoplin__GetCanonicalHandles(self)
-struct figoplin *self;
+long * figoplin__GetCanonicalHandles(struct figoplin *self)
 {
     if (figoplin_NumPts(self)==2)
 	return canonical_line;
@@ -328,9 +306,7 @@ struct figoplin *self;
 	return canonical_poly;
 }
 
-void figoplin__Draw(self, v) 
-struct figoplin *self;
-struct figview *v;
+void figoplin__Draw(struct figoplin *self, struct figview *v)
 {
     long basex, basey;
     long ix, shad, lw;
@@ -385,9 +361,7 @@ struct figview *v;
     figview_SetLineJoin(v, graphic_JoinMiter);
 }
 
-void figoplin__Sketch(self, v) 
-struct figoplin *self;
-struct figview *v;
+void figoplin__Sketch(struct figoplin *self, struct figview *v)
 {
     long x, y, basex, basey;
     long ix;
@@ -412,10 +386,7 @@ struct figview *v;
 }
 
 /* sketch all lines touching ptref */
-static void PartialSketch(self, v, ptref)
-struct figoplin *self;
-struct figview *v;
-long ptref;
+static void PartialSketch(struct figoplin *self, struct figview *v, long ptref)
 {
     long x, y, basex, basey;
 
@@ -457,9 +428,7 @@ long ptref;
     }
 }
 
-void figoplin__Select(self, v)
-struct figoplin *self;
-struct figview *v;
+void figoplin__Select(struct figoplin *self, struct figview *v)
 {
     long ix;
     long x, y;
@@ -486,9 +455,7 @@ struct figview *v;
 }
 
 /* create a regular polygon, using self->cen{x,y} as the center and (endx, endy) as the [offset] vector. */
-static void RegularizePolygon(self, endx, endy)
-struct figoplin *self;
-long endx, endy;
+static void RegularizePolygon(struct figoplin *self, long endx, long endy)
 {
     int ix;
     double radius, divvy, offset;
@@ -506,12 +473,7 @@ long endx, endy;
     }
 }
 
-enum figobj_Status figoplin__Build(self, v, action, x, y, clicks)   
-struct figoplin *self;
-struct figview *v;
-enum view_MouseAction action;
-long x, y; /* in fig coords */
-long clicks;
+enum figobj_Status figoplin__Build(struct figoplin *self, struct figview *v, enum view_MouseAction action, long x, long y, long clicks)
 {
     long px, py, apx, apy;
     int ix;
@@ -681,10 +643,7 @@ long clicks;
 }
 
 /* return the ptref of the first point on the line segment within delta of (x, y). This will be in [0, numpts-1] if the polygon is closed, in [0, numpts-2] if it's open. If no segment is found, return figobj_NULLREF. */
-static int FindLineHit(self, x, y, delta)
-struct figoplin *self;
-long x, y;
-long delta;
+static int FindLineHit(struct figoplin *self, long x, long y, long delta)
 {
 
 #define IABS(v) (((v) < 0) ? (-(v)) : (v))
@@ -730,11 +689,7 @@ long delta;
     return figobj_NULLREF;
 }
 
-enum figobj_HitVal figoplin__HitMe(self, x, y, delta, ptref) 
-struct figoplin *self;
-long x, y;
-long delta;
-long *ptref;
+enum figobj_HitVal figoplin__HitMe(struct figoplin *self, long x, long y, long delta, long *ptref)
 {
     int ix;
     enum figobj_HitVal res = figoplin_BasicHitMe(self, x, y, delta, ptref);
@@ -754,9 +709,7 @@ long *ptref;
 }
 
 /* basic procedure to move a handle -- used by figoplin__MoveHandle(), figoplin__Reshape() */
-static void MoveHandle(self, x, y, ptref)
-struct figoplin *self;
-long x, y, ptref;
+static void MoveHandle(struct figoplin *self, long x, long y, long ptref)
 {
     long ix;
     long noffx, noffy, offx, offy;
@@ -840,12 +793,7 @@ long x, y, ptref;
     }
 }
 
-boolean figoplin__Reshape(self, action, v, x, y, handle, ptref)
-struct figoplin *self;
-enum view_MouseAction action;
-struct figview *v;
-boolean handle; 
-long x, y, ptref;
+boolean figoplin__Reshape(struct figoplin *self, enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref)
 {
     if (!handle)
 	return FALSE;
@@ -903,9 +851,7 @@ long x, y, ptref;
     }
 }
 
-void figoplin__MoveHandle(self, x, y, ptref)
-struct figoplin *self;
-long x, y, ptref;
+void figoplin__MoveHandle(struct figoplin *self, long x, long y, long ptref)
 {
     if (figoplin_GetReadOnly(self))
 	return;
@@ -914,12 +860,7 @@ long x, y, ptref;
     figoplin_RecomputeBounds(self);
 }
 
-boolean figoplin__AddParts(self, action, v, x, y, handle, ptref)
-struct figoplin *self;
-enum view_MouseAction action;
-struct figview *v;
-boolean handle; 
-long x, y, ptref;
+boolean figoplin__AddParts(struct figoplin *self, enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref)
 {
     int ix;
     long offx, offy;
@@ -980,12 +921,7 @@ long x, y, ptref;
     }
 }
 
-boolean figoplin__DeleteParts(self, action, v, x, y, handle, ptref)
-struct figoplin *self;
-enum view_MouseAction action;
-struct figview *v;
-boolean handle; 
-long x, y, ptref;
+boolean figoplin__DeleteParts(struct figoplin *self, enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref)
 {
     int ix;
     long offx, offy;
@@ -1040,9 +976,7 @@ long x, y, ptref;
     return TRUE;
 }
 
-void figoplin__Reposition(self, xd, yd)
-struct figoplin *self;
-long xd, yd;
+void figoplin__Reposition(struct figoplin *self, long xd, long yd)
 {
     if (figoplin_GetReadOnly(self))
 	return;
@@ -1052,10 +986,7 @@ long xd, yd;
     figoplin_SetModified(self);
 }
 
-void figoplin__InheritVAttributes(self, attr, mask)
-struct figoplin *self;
-struct figattr *attr;
-unsigned long mask;
+void figoplin__InheritVAttributes(struct figoplin *self, struct figattr *attr, unsigned long mask)
 {
     super_InheritVAttributes(self, attr, mask);
 
@@ -1064,10 +995,7 @@ unsigned long mask;
     }
 }
 
-unsigned long figoplin__UpdateVAttributes(self, attr, mask)
-struct figoplin *self;
-struct figattr *attr;
-unsigned long mask;
+unsigned long figoplin__UpdateVAttributes(struct figoplin *self, struct figattr *attr, unsigned long mask)
 {
     mask = super_UpdateVAttributes(self, attr, mask);
     
@@ -1077,9 +1005,7 @@ unsigned long mask;
     return mask;
 }
 
-void figoplin__WriteBody(self, fp)
-struct figoplin *self;
-FILE *fp;
+void figoplin__WriteBody(struct figoplin *self, FILE *fp)
 {
    /* we don't call super_WriteBody() because that just outputs PosX and PosY, which aren't being used */
     int ix;
@@ -1089,10 +1015,7 @@ FILE *fp;
 	fprintf(fp, "$ %d %d\n", self->pts[ix].x, self->pts[ix].y);
 }
 
-long figoplin__ReadBody(self, fp, recompute)
-struct figoplin *self;
-FILE *fp;
-boolean recompute;
+long figoplin__ReadBody(struct figoplin *self, FILE *fp, boolean recompute)
 {
     int	ix, jx; 
     long num, num2, xp, yp;
@@ -1133,11 +1056,7 @@ boolean recompute;
 
 #define FadeColor(col, shad)  (1.0 - (1.0-(shad)) * (1.0-(col)))
 
-void figoplin__PrintObject(self, v, file, prefix)
-struct figoplin *self;
-struct figview *v;
-FILE *file;
-char *prefix;
+void figoplin__PrintObject(struct figoplin *self, struct figview *v, FILE *file, char *prefix)
 {
     long ix, x, y, xbase, ybase, nump;
     struct point *pts;

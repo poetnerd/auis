@@ -26,7 +26,6 @@
 char *figoins_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/figure/RCS/figoins.c,v 1.3 1994/04/17 18:02:49 rr2b Exp $";
 #endif
 
-#include <figoins.eh>
 #include <string.h>
 
 #include <view.ih>
@@ -36,10 +35,9 @@ char *figoins_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 #include <figattr.ih>
 #include <text.ih>
 #include <message.ih>
+#include <figoins.eh>
 
-boolean figoins__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-struct figoins *self;
+boolean figoins__InitializeObject(struct classheader *ClassID, struct figoins *self)
 {
     figoins_IsInset(self) = TRUE;
     figoins_AttributesUsed(self) = 0;
@@ -48,10 +46,7 @@ struct figoins *self;
     return TRUE;
 }
 
-struct figoins *figoins__Create(classID, left, top, width, height, dataobjectname)
-struct classheader *classID;
-long left, top, width, height;
-char *dataobjectname;
+struct figoins * figoins__Create(struct classheader *classID, long left, long top, long width, long height, char *dataobjectname)
 {
     struct figoins *res = figoins_New();
     if (!res) return NULL;
@@ -69,17 +64,13 @@ char *dataobjectname;
     return res;
 }
 
-char *figoins__ToolName(dummy, v, rock)
-struct figoins *dummy;
-struct figtoolview *v;
-long rock;
+char * figoins__ToolName(struct figoins *dummy, struct figtoolview *v, long rock)
 {
     return "Inset";
 }
 
 /* set bounding box and handle list in fig coordinates */
-void figoins__RecomputeBounds(self)
-struct figoins *self;
+void figoins__RecomputeBounds(struct figoins *self)
 {
     long left, width, top, height;
 
@@ -118,9 +109,7 @@ struct figoins *self;
     figoins_UpdateParentBounds(self);
 }
 
-void figoins__Draw(self, v) 
-struct figoins *self;
-struct figview *v;
+void figoins__Draw(struct figoins *self, struct figview *v)
 {
     long x, y, w, h;
 
@@ -153,12 +142,7 @@ struct figview *v;
     }
 }
 
-enum figobj_Status figoins__Build(self, v, action, x, y, clicks)   
-struct figoins *self;
-struct figview *v;
-enum view_MouseAction action;
-long x, y; /* in fig coords */
-long clicks;
+enum figobj_Status figoins__Build(struct figoins *self, struct figview *v, enum view_MouseAction action, long x, long y, long clicks)
 {
     enum figobj_Status res;
 
@@ -211,9 +195,7 @@ long clicks;
 	return res;
 }
 
-void figoins__WriteBody(self, fp)
-struct figoins *self;
-FILE *fp;
+void figoins__WriteBody(struct figoins *self, FILE *fp)
 {
     super_WriteBody(self, fp);
 
@@ -225,10 +207,7 @@ FILE *fp;
     }
 }
 
-long figoins__ReadBody(self, fp, recompute)
-struct figoins *self;
-FILE *fp;
-boolean recompute;
+long figoins__ReadBody(struct figoins *self, FILE *fp, boolean recompute)
 {
 #define LINELENGTH (250)
     char buf[LINELENGTH+1];
@@ -266,11 +245,7 @@ boolean recompute;
     return dataobject_NOREADERROR;
 }
 
-void figoins__PrintObject(self, v, file, prefix)
-struct figoins *self;
-struct figview *v;
-FILE *file;
-char *prefix;
+void figoins__PrintObject(struct figoins *self, struct figview *v, FILE *file, char *prefix)
 {
     long x, y, w, h;
     long shad, lw;

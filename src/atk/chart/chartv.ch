@@ -82,7 +82,7 @@ methods:
 
 classprocedures:
 
-  Create( chartv_Specification, char *anchor )		returns struct chartv *;
+  Create( struct chartv_specification *specification, char *anchor )		returns struct chartv *;
   InitializeClass()					returns boolean;
   InitializeObject( struct chartv *self )		returns boolean;
   FinalizeObject( struct chartv *self );

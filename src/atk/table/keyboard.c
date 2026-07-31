@@ -48,6 +48,23 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #define AUXMODULE
 #include <spread.eh>
+static int k_CheckSelection();
+static int k_ReadFormula();
+static void k_backspace(struct spread *V, char ch);
+static void k_bottom(struct spread *V, char ch);
+static void k_debug(struct spread *V, char ch);
+static void k_downarrow(struct spread *V, char ch);
+static void k_endline(struct spread *V, char ch);
+static void k_enterchar(struct spread *V, char ch);
+static void k_exit();
+static void k_home(struct spread *V, char ch);
+static void k_killbuff(struct spread *V, char ch);
+static void k_leftarrow(struct spread *V, char ch);
+static void k_newline(struct spread *V, char ch);
+static void k_rightarrow(struct spread *V, char ch);
+static void k_tab(struct spread *V, char ch);
+static void k_top(struct spread *V, char ch);
+static void k_uparrow(struct spread *V, char ch);
 
 /* defined in hit.c */
 extern int CopyChunk();
@@ -59,9 +76,7 @@ extern int GetFormula();
 
 static boolean debug=FALSE;
 
-void k_SetMessageState (V, newstate)
-register struct spread * V;
-int newstate;
+void k_SetMessageState(struct spread *V, int newstate)
 {
     if (V->bufferstatus != BUFFEREMPTY) {
 	if (debug)
@@ -75,9 +90,7 @@ int newstate;
 
 /* message to user */
 
-void k_TellUser (V, s)
-register struct spread * V;
-char   *s;
+void k_TellUser(struct spread *V, char *s)
 {
     k_SetMessageState (V, BUFFERHASMESSAGE);
     message_DisplayString (&getView(V), 0, s);
@@ -85,12 +98,7 @@ char   *s;
 
 /* ask for and read keyboard input */
 
-k_AskUser (V, prompt, def, buff, n)
-register struct spread * V;
-char prompt[];
-char def[];
-char buff[];
-int n;
+int k_AskUser(struct spread *V, char prompt[], char def[], char buff[], int n)
 {
     int notOK;
 
@@ -106,9 +114,7 @@ int n;
 
 /* Are you sure? */
 
-k_AreYouSure (V, why)
-register struct spread * V;
-char *why;
+int k_AreYouSure(struct spread *V, char *why)
 {
     char buff[10];
 
@@ -119,8 +125,7 @@ char *why;
 
 /* Verify that user wants to discard changes */
 
-k_WantToDiscard (V)
-register struct spread * V;
+int k_WantToDiscard(struct spread *V)
 {
     if (table_WriteTimestamp(MyTable(V)) < table_CellsTimestamp(MyTable(V))
      || table_WriteTimestamp(MyTable(V)) < table_EdgesTimestamp(MyTable(V)))
@@ -129,9 +134,7 @@ register struct spread * V;
 }
 
 #ifdef NOTUSED
-static void k_exit(V, ch)
-register struct spread * V;
-char ch;
+static void k_exit(struct spread *V, char ch)
 {
     if (k_WantToDiscard (V))
 	exit (0);
@@ -139,9 +142,7 @@ char ch;
 #endif /* NOTUSED */
 /* add rows to table */
 
-AddRows(V, after, count)
-register struct spread * V;
-int after, count;
+int AddRows(struct spread *V, int after, int count)
 {
     if (after < 0) after = 0;
     table_ChangeSize (MyTable(V), table_NumberOfRows(MyTable(V)) + count, table_NumberOfColumns(MyTable(V)));
@@ -165,9 +166,7 @@ int after, count;
 
 /* add columns to table */
 
-AddCols(V, after, count)
-register struct spread * V;
-int after, count;
+int AddCols(struct spread *V, int after, int count)
 {
     if (after < 0) after = 0;
     table_ChangeSize (MyTable(V), table_NumberOfRows(MyTable(V)), table_NumberOfColumns(MyTable(V)) + count);
@@ -191,8 +190,7 @@ int after, count;
 
 /* verify there is a selection to enter data into */
 
-static int k_CheckSelection (V)
-register struct spread * V;
+static int k_CheckSelection(struct spread *V)
 {
     struct chunk newselection;
 
@@ -220,9 +218,7 @@ register struct spread * V;
 
 /* Read new formula for cell */
 
-static k_ReadFormula (V, startstring)
-register struct spread * V;
-char *startstring;
+static k_ReadFormula(struct spread *V, char *startstring)
 {
     char   keybuff[1000];
     struct cell * cell;
@@ -265,9 +261,7 @@ char *startstring;
     return 1;
 }
 
-static void k_enterchar(V, ch)
-register struct spread * V;
-char ch;
+static void k_enterchar(struct spread *V, char ch)
 {
     char   *startstring=NULL;
     register char *cp=NULL;
@@ -298,9 +292,7 @@ char ch;
       
 }
 
-static void k_backspace(V, ch)
-register struct spread * V;
-char ch;
+static void k_backspace(struct spread *V, char ch)
 {
     char *keybuff=NULL;
 
@@ -309,9 +301,7 @@ char ch;
     free(keybuff);
 }
 
-static void k_tab(V, ch)
-register struct spread * V;
-char ch;
+static void k_tab(struct spread *V, char ch)
 {
     struct chunk newselection;
 
@@ -324,9 +314,7 @@ char ch;
     SetCurrentCell (V, &newselection);
 }
 
-static void k_newline(V, ch)
-register struct spread * V;
-char ch;
+static void k_newline(struct spread *V, char ch)
 {
     struct chunk newselection;
 
@@ -340,16 +328,12 @@ char ch;
     SetCurrentCell (V, &newselection);
 }
 
-static void k_killbuff (V, ch)
-register struct spread * V;
-char ch;
+static void k_killbuff(struct spread *V, char ch)
 {
     k_SetMessageState (V, BUFFEREMPTY);
 }
 
-static void k_rightarrow (V, ch)
-register struct spread * V;
-char ch;
+static void k_rightarrow(struct spread *V, char ch)
 {
     struct chunk chunk;
 
@@ -364,9 +348,7 @@ char ch;
     SetCurrentCell (V, &chunk);
 }
 
-static void k_leftarrow (V, ch)
-register struct spread * V;
-char ch;
+static void k_leftarrow(struct spread *V, char ch)
 {
     struct chunk chunk;
 
@@ -381,9 +363,7 @@ char ch;
     SetCurrentCell (V, &chunk);
 }
 
-static void k_downarrow (V, ch)
-register struct spread * V;
-char ch;
+static void k_downarrow(struct spread *V, char ch)
 {
     struct chunk chunk;
 
@@ -398,9 +378,7 @@ char ch;
     SetCurrentCell (V, &chunk);
 }
 
-static void k_uparrow (V, ch)
-register struct spread * V;
-char ch;
+static void k_uparrow(struct spread *V, char ch)
 {
     struct chunk chunk;
 
@@ -415,9 +393,7 @@ char ch;
     SetCurrentCell (V, &chunk);
 }
 
-static void k_home (V, ch)
-register struct spread * V;
-char ch;
+static void k_home(struct spread *V, char ch)
 {
     struct chunk chunk;
 
@@ -429,9 +405,7 @@ char ch;
     SetCurrentCell (V, &chunk);
 }
 
-static void k_endline (V, ch)
-register struct spread * V;
-char ch;
+static void k_endline(struct spread *V, char ch)
 {
     struct chunk chunk;
 
@@ -443,9 +417,7 @@ char ch;
 	SetCurrentCell (V, &chunk);
 }
 
-static void k_top (V, ch)
-register struct spread * V;
-char ch;
+static void k_top(struct spread *V, char ch)
 {
     struct chunk chunk;
 
@@ -456,9 +428,7 @@ char ch;
     SetCurrentCell (V, &chunk);
 }
 
-static void k_bottom (V, ch)
-register struct spread * V;
-char ch;
+static void k_bottom(struct spread *V, char ch)
 {
     struct chunk chunk;
 
@@ -471,9 +441,7 @@ char ch;
 
 /* toggle debug */
 
-static void k_debug (V, ch)
-register struct spread * V;
-char ch;
+static void k_debug(struct spread *V, char ch)
 {
 
 /*
@@ -520,9 +488,7 @@ static struct bind_Description keytable[] = {
     {NULL, NULL, 0, NULL, 0, NULL, NULL}
 };
 
-void k_DefineKeys (mainmap, classinfo)
-struct keymap * mainmap;
-struct spread_classinfo *classinfo;
+void k_DefineKeys(struct keymap *mainmap, struct spread_classinfo *classinfo)
 {
     char ch;
     struct proctable_Entry *tempProc;

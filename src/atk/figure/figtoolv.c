@@ -30,6 +30,7 @@ char *figotoolv_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/at
 
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 #include <class.h>
 #include <math.h>
 
@@ -58,13 +59,44 @@ char *figotoolv_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/at
 
 #include <point.h>
 #include <rect.h>
+static void ATSPSplot();
+static boolean CSA_Splot();
+static boolean CacheContentsProc();
+static void CacheSelectProc();
+static void ClearAnchorSplot();
+static void DefaultAnchorSplot();
+static void FindHitObjAnchProc();
+static void FindHitObjProc();
+static void IncreaseTmpProc();
+static void InsertColor();
+static void InsertLineWidth(struct figtoolview *self, short val);
+static void InsertRRectCorner(struct figtoolview *self, short val);
+static void InsertSnapGrid(struct figtoolview *self, short val);
+static void MakeBoxListProc();
+static void MoveObjsProc();
+static void ProportAnchorSplot();
+static boolean SelAddProc();
+static boolean SelTogProc();
+static void Toolsub_AddAnch();
+static void Toolsub_DelAnch();
+static void Toolsub_Drag();
+static void Toolsub_Reshape();
+static void Toolsub_Select();
 
 #define figtoolview_SelectClickDistance (6)
 
 static struct menulist *Menus;
 static struct keymap *Keymap;
 
-static void SetToolProc(), SetShadeProc(), SetTextPosProc(), SetColorProc(), SetLineWidthProc(), SetRRectCornerProc(), CallCmdProc(), SetSnapGridProc(), SetExpertModeProc(), ApplyToSelProc(), RepostMenus();
+static void SetToolProc(struct stringtbl *st, struct figtoolview *self, short accnum);
+static void SetShadeProc(struct stringtbl *st, struct figtoolview *self, short accnum);
+static void SetTextPosProc(struct stringtbl *st, struct figtoolview *self, short accnum);
+static void SetColorProc(struct stringtbl *st, struct figtoolview *self, short accnum);
+static void SetLineWidthProc(struct stringtbl *st, struct figtoolview *self, short accnum);
+static void SetRRectCornerProc(struct stringtbl *st, struct figtoolview *self, short accnum);
+static void CallCmdProc(struct stringtbl *st, struct figtoolview *self, short accnum);
+static void SetSnapGridProc(struct stringtbl *st, struct figtoolview *self, short accnum);
+static void SetExpertModeProc(), ApplyToSelProc(), RepostMenus();
 static void Toolsub_Add(), Toolsub_Del();
 static struct view *Tool_CreateProc(), *Tool_Select(), *Tool_AddPoints(), *Tool_DelPoints(), *Tool_AddAnchor(), *Tool_DelAnchor();
 static void AbortObjectProc(), ToggleClosedProc(), ToggleSmoothProc();
@@ -265,8 +297,7 @@ static struct snapgridlayout_t snapgridlayout[FIGSNAPGRIDS_NUM_INIT] = {
 #define ML_expertmode (1)
 #define ML_objectcreating (2)
 
-boolean figtoolview__InitializeClass(ClassID)
-struct classhdr *ClassID;
+boolean figtoolview__InitializeClass(struct classheader *ClassID)
 {
     struct proctable_Entry *proc = NULL;
     
@@ -293,9 +324,7 @@ struct classhdr *ClassID;
     return TRUE;
 }
 
-boolean figtoolview__InitializeObject(c, self)
-struct classheader *c;
-struct figtoolview *self;
+boolean figtoolview__InitializeObject(struct classheader *c, struct figtoolview *self)
 {
     int ix;
     struct stringtbl *tl;
@@ -543,9 +572,7 @@ struct figtoolview *self;
     return TRUE;
 }
 
-void figtoolview__FinalizeObject(c, self)
-struct classheader *c;
-struct figtoolview *self;
+void figtoolview__FinalizeObject(struct classheader *c, struct figtoolview *self)
 {
     int ix;
 
@@ -612,9 +639,7 @@ struct figtoolview *self;
 	free(self->tmplist);
 }
 
-void figtoolview__SetExpertMode(self, val)
-struct figtoolview *self;
-boolean val;
+void figtoolview__SetExpertMode(struct figtoolview *self, boolean val)
 {
     int ix;
 
@@ -653,16 +678,13 @@ boolean val;
     RepostMenus(self);
 }
 
-static void SetExpertModeProc(self, val)
-struct figtoolview *self;
-long val;
+static void SetExpertModeProc(struct figtoolview *self, long val)
 {
     figtoolview_SetExpertMode(self, val);
 }
 
 /* assumes self is input focus */
-static void RepostMenus(self)
-struct figtoolview *self;
+static void RepostMenus(struct figtoolview *self)
 {
     long menumask = 0;
 
@@ -677,9 +699,7 @@ struct figtoolview *self;
     }
 }
 
-void figtoolview__PostMenus(self, ml)
-struct figtoolview *self;
-struct menulist *ml;
+void figtoolview__PostMenus(struct figtoolview *self, struct menulist *ml)
 {
 /* Enable the menus for this object. */
 
@@ -688,9 +708,7 @@ struct menulist *ml;
     super_PostMenus(self, self->Menus);
 }
 
-void figtoolview__PostKeyState(self, ks)
-struct figtoolview *self;
-struct keystate *ks;
+void figtoolview__PostKeyState(struct figtoolview *self, struct keystate *ks)
 {
 /* Enable the keys for this object. */
 
@@ -699,9 +717,7 @@ struct keystate *ks;
     super_PostKeyState(self, self->Keystate);
 }
 
-boolean figtoolview__SetPrimaryView(self, view)
-struct figtoolview *self;
-struct figview *view;
+boolean figtoolview__SetPrimaryView(struct figtoolview *self, struct figview *view)
 {
     if (self->primaryview) {
 	figtoolview_RemoveObserver(self, self->primaryview);
@@ -722,10 +738,7 @@ struct figview *view;
     return TRUE;
 }
 
-void figtoolview__ObservedChanged(self, observed, status)
-struct figtoolview *self;
-struct observable *observed;
-long status;
+void figtoolview__ObservedChanged(struct figtoolview *self, struct observable *observed, long status)
 {
     if (observed == (struct observable *)self->primaryview) {
 	if (status==observable_OBJECTDESTROYED) {
@@ -802,8 +815,7 @@ long status;
     }
 }
 
-void figtoolview__UnlinkTree(self)
-struct figtoolview *self;
+void figtoolview__UnlinkTree(struct figtoolview *self)
 {
     super_UnlinkTree(self);
 
@@ -814,10 +826,7 @@ struct figtoolview *self;
  */
 }
 
-static void SetToolProc(st, self, accnum)
-struct stringtbl *st;
-struct figtoolview *self;
-short accnum;
+static void SetToolProc(struct stringtbl *st, struct figtoolview *self, short accnum)
 {
     int toolnum, objnum;
     struct figure *fig = (struct figure *)figtoolview_GetDataObject(self);
@@ -892,10 +901,7 @@ short accnum;
     }
 }
 
-static void SetShadeProc(st, self, accnum)
-struct stringtbl *st;
-struct figtoolview *self;
-short accnum;
+static void SetShadeProc(struct stringtbl *st, struct figtoolview *self, short accnum)
 {
     int shadenum;
 
@@ -932,10 +938,7 @@ short accnum;
     AdjustToMenus(self, (1<<figattr_Shade));
 }
 
-static void SetTextPosProc(st, self, accnum)
-struct stringtbl *st;
-struct figtoolview *self;
-short accnum;
+static void SetTextPosProc(struct stringtbl *st, struct figtoolview *self, short accnum)
 {
     int textposnum;
 
@@ -969,9 +972,7 @@ short accnum;
     AdjustToMenus(self, (1<<figattr_TextPos));
 }
 
-static void InsertLineWidth(self, val)
-struct figtoolview *self;
-short val;
+static void InsertLineWidth(struct figtoolview *self, short val)
 {
     struct stringtbl *st = self->linewidthtbl;   
     char name[24];
@@ -990,10 +991,7 @@ short val;
     self->linewidths_num++;
 }
 
-static void SetLineWidthProc(st, self, accnum)
-struct stringtbl *st;
-struct figtoolview *self;
-short accnum;
+static void SetLineWidthProc(struct stringtbl *st, struct figtoolview *self, short accnum)
 {
     int linewidthnum;
 
@@ -1066,9 +1064,7 @@ short accnum;
     AdjustToMenus(self, (1<<figattr_LineWidth));
 }
 
-static void InsertRRectCorner(self, val)
-struct figtoolview *self;
-short val;
+static void InsertRRectCorner(struct figtoolview *self, short val)
 {
     struct stringtbl *st = self->rrectcornertbl;   
     char name[24];
@@ -1087,10 +1083,7 @@ short val;
     self->rrectcorners_num++;
 }
 
-static void SetRRectCornerProc(st, self, accnum)
-struct stringtbl *st;
-struct figtoolview *self;
-short accnum;
+static void SetRRectCornerProc(struct stringtbl *st, struct figtoolview *self, short accnum)
 {
     int rrectcornernum;
 
@@ -1163,9 +1156,7 @@ short accnum;
     AdjustToMenus(self, (1<<figattr_RRectCorner));
 }
 
-static void InsertColor(self, val)
-struct figtoolview *self;
-char *val;
+static void InsertColor(struct figtoolview *self, char *val)
 {
     struct stringtbl *st = self->colortbl;   
     int ix;
@@ -1182,10 +1173,7 @@ char *val;
     self->colors_num++;
 }
 
-static void SetColorProc(st, self, accnum)
-struct stringtbl *st;
-struct figtoolview *self;
-short accnum;
+static void SetColorProc(struct stringtbl *st, struct figtoolview *self, short accnum)
 {
     int colornum;
 
@@ -1254,9 +1242,7 @@ short accnum;
     AdjustToMenus(self, (1<<figattr_Color));
 }
 
-static void InsertSnapGrid(self, val)
-struct figtoolview *self;
-short val;
+static void InsertSnapGrid(struct figtoolview *self, short val)
 {
     struct stringtbl *st = self->snapgridtbl;   
     char name[24];
@@ -1278,10 +1264,7 @@ short val;
     self->snapgrids_num++;
 }
 
-static void SetSnapGridProc(st, self, accnum)
-struct stringtbl *st;
-struct figtoolview *self;
-short accnum;
+static void SetSnapGridProc(struct stringtbl *st, struct figtoolview *self, short accnum)
 {
     int snapgridnum;
     int ix;
@@ -1374,10 +1357,7 @@ short accnum;
     self->snapgrid = self->snapgridlist[self->snapgridnum];
 }
 
-static void CallCmdProc(st, self, accnum)
-struct stringtbl *st;
-struct figtoolview *self;
-short accnum;
+static void CallCmdProc(struct stringtbl *st, struct figtoolview *self, short accnum)
 {
     int cmdnum;
     void (*comproc)();
@@ -1398,9 +1378,7 @@ short accnum;
 	(*comproc)(self, cmdlayout[cmdnum].rock);
 }
 
-static void Command_Quit(self, rock)
-struct figtoolview *self;
-char *rock;
+static void Command_Quit(struct figtoolview *self, char *rock)
 {
     if (self->primaryview) {
 	figview_DestroyToolset(self->primaryview);
@@ -1411,19 +1389,13 @@ char *rock;
     }
 }
 
-static boolean CSA_Splot(o, ref, fig, figv)
-struct figobj *o;
-long ref;
-struct figure *fig;
-struct figview *figv;
+static boolean CSA_Splot(struct figobj *o, long ref, struct figure *fig, struct figview *figv)
 {
     figview_SelectByRef(figv, ref);
     return FALSE;
 }
 
-static void Command_LockCreate(self, rock)
-struct figtoolview *self;
-char *rock;
+static void Command_LockCreate(struct figtoolview *self, char *rock)
 {
     if (!self->LockCreateMode) {
 	if (self->toolproc != Tool_CreateProc) {
@@ -1444,9 +1416,7 @@ char *rock;
     }
 }
 
-static void Command_CutNPaste(self, rock)
-struct figtoolview *self;
-long rock;
+static void Command_CutNPaste(struct figtoolview *self, long rock)
 {
     struct figview *figv = self->primaryview;
     if (!figv) return;
@@ -1454,9 +1424,7 @@ long rock;
     figview_CutNPaste(figv, rock, 0);
 }
 
-static void Command_SelectAll(self, rock)
-struct figtoolview *self;
-char *rock;
+static void Command_SelectAll(struct figtoolview *self, char *rock)
 {
     struct figview *figv = self->primaryview;
     struct figure *fig;
@@ -1471,9 +1439,7 @@ char *rock;
     AdjustToSelection(self);
 }
 
-static void Command_Refresh(self, rock)
-struct figtoolview *self;
-char *rock;
+static void Command_Refresh(struct figtoolview *self, char *rock)
 {
     struct figview *figv = self->primaryview;
 
@@ -1483,9 +1449,7 @@ char *rock;
     figview_WantUpdate(figv, figv);
 }
 
-static void Command_Zoom(self, rock)
-struct figtoolview *self;
-long rock;
+static void Command_Zoom(struct figtoolview *self, long rock)
 {
     struct figview *figv = self->primaryview;
 
@@ -1493,9 +1457,7 @@ long rock;
     figview_ChangeZoom(figv, rock);
 }
 
-static void Command_PanToOrigin(self, rock)
-struct figtoolview *self;
-long rock;
+static void Command_PanToOrigin(struct figtoolview *self, long rock)
 {
     struct figview *figv = self->primaryview;
 
@@ -1509,18 +1471,12 @@ long rock;
     figview_WantUpdate(figv, figv);
 }
 
-static void ATSPSplot(o, ref, vv, attr)
-struct figobj *o;
-long ref;
-struct figview *vv;
-struct menuatt *attr;
+static void ATSPSplot(struct figobj *o, long ref, struct figview *vv, struct menuatt *attr)
 {
     figobj_UpdateVAttributes(o, attr, figattr_MaskAll);
 }
 
-static void ApplyToSelProc(self, rock)
-struct figtoolview *self;
-long rock;
+static void ApplyToSelProc(struct figtoolview *self, long rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self->primaryview);
     if (!fig) return;
@@ -1534,9 +1490,7 @@ long rock;
     figure_NotifyObservers(fig, figure_DATACHANGED);
 }
 
-static void AdjustToMenus(self, mask)
-struct figtoolview *self;
-long mask;
+static void AdjustToMenus(struct figtoolview *self, long mask)
 {
     struct figure *fig = (struct figure *)figtoolview_GetDataObject(self);
     boolean changed = FALSE;
@@ -1559,8 +1513,7 @@ long mask;
 	figure_NotifyObservers(fig, figure_DATACHANGED);
 }
 
-static void AdjustToSelection(self)
-struct figtoolview *self;
+static void AdjustToSelection(struct figtoolview *self)
 {
     long ref = figview_GetOneSelected(self->primaryview);
     long ix, vnum, accnum;
@@ -1701,9 +1654,7 @@ struct figtoolview *self;
     /* ##new */
 }
 
-static void IncreaseTmpProc(self, num)
-struct figtoolview *self;
-long num;
+static void IncreaseTmpProc(struct figtoolview *self, long num)
 {
     if (self->tmplist == NULL) {
 	self->tmp_size = num+8;
@@ -1719,11 +1670,7 @@ long num;
     }
 }
 
-static void CacheSelectProc(o, ref, vv, figt)
-struct figobj *o;
-long ref;
-struct figview *vv;
-struct figtoolview *figt;
+static void CacheSelectProc(struct figobj *o, long ref, struct figview *vv, struct figtoolview *figt)
 {
     int ix;
     struct figure *fig = (struct figure *)figview_GetDataObject(vv);
@@ -1737,9 +1684,7 @@ struct figtoolview *figt;
     figt->tmpnum = ix+1;
 }
 
-static void Command_GroupSel(self, rock)
-struct figtoolview *self;
-char *rock;
+static void Command_GroupSel(struct figtoolview *self, char *rock)
 {
     struct figview *figv = self->primaryview;
     struct figure *fig;
@@ -1777,11 +1722,7 @@ char *rock;
     figure_NotifyObservers(fig, figure_DATACHANGED);
 }
 
-static boolean CacheContentsProc(o, ref, fig, figt)
-struct figobj *o;
-long ref;
-struct figure *fig;
-struct figtoolview *figt;
+static boolean CacheContentsProc(struct figobj *o, long ref, struct figure *fig, struct figtoolview *figt)
 {
     int ix;
 
@@ -1792,9 +1733,7 @@ struct figtoolview *figt;
     return FALSE;
 }
 
-static void Command_UngroupSel(self, rock)
-struct figtoolview *self;
-char *rock;
+static void Command_UngroupSel(struct figtoolview *self, char *rock)
 {
     struct figview *figv = self->primaryview;
     struct figure *fig;
@@ -1831,9 +1770,7 @@ char *rock;
     figure_NotifyObservers(fig, figure_DATACHANGED);
 }
 
-static void Command_MoveToExtreme(self, infront)
-struct figtoolview *self;
-long infront;
+static void Command_MoveToExtreme(struct figtoolview *self, long infront)
 {
     struct figview *figv = self->primaryview;
     struct figure *fig;
@@ -1868,9 +1805,7 @@ long infront;
     figure_NotifyObservers(fig, figure_DATACHANGED);
 }
 
-static void ToggleSmoothProc(self, rock)
-struct figtoolview *self;
-long rock;
+static void ToggleSmoothProc(struct figtoolview *self, long rock)
 {
     struct figview *figv = self->primaryview;
     struct figure *fig;
@@ -1939,9 +1874,7 @@ long rock;
     }
 }
 
-static void ToggleClosedProc(self, rock)
-struct figtoolview *self;
-long rock;
+static void ToggleClosedProc(struct figtoolview *self, long rock)
 {
     struct figview *figv = self->primaryview;
     struct figure *fig;
@@ -2004,9 +1937,7 @@ long rock;
     }
 }
 
-static void Command_SetDoConstraint(self, rock)
-struct figtoolview *self;
-boolean rock;
+static void Command_SetDoConstraint(struct figtoolview *self, boolean rock)
 {
     struct figview *vv = self->primaryview;
     struct figure *fig = (struct figure *)figview_GetDataObject(vv);
@@ -2039,11 +1970,7 @@ boolean rock;
     }
 }
 
-static void DefaultAnchorSplot(o, ref, self, rock)
-struct figobj *o;
-long ref;
-struct figview *self;
-long rock;
+static void DefaultAnchorSplot(struct figobj *o, long ref, struct figview *self, long rock)
 {
     long diff1, diff2;
     struct figogrp *vg = figobj_GetParent(o);
@@ -2119,11 +2046,7 @@ long rock;
     figobj_SetModified(o);
 }
 
-static void ProportAnchorSplot(o, ref, self, rock)
-struct figobj *o;
-long ref;
-struct figview *self;
-long rock;
+static void ProportAnchorSplot(struct figobj *o, long ref, struct figview *self, long rock)
 {
     long diff1, diff2;
     struct figogrp *vg = figobj_GetParent(o);
@@ -2145,20 +2068,14 @@ long rock;
     figobj_SetModified(o);
 }
 
-static void ClearAnchorSplot(o, ref, self, rock)
-struct figobj *o;
-long ref;
-struct figview *self;
-long rock;
+static void ClearAnchorSplot(struct figobj *o, long ref, struct figview *self, long rock)
 {
     figobj_ClearAttachments(o);
     figobj_ComputeSelectedBounds(o);
     figobj_SetModified(o);
 }
 
-static void Command_ClearAnchors(self, rock) 
-struct figtoolview *self;
-char *rock;
+static void Command_ClearAnchors(struct figtoolview *self, char *rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self->primaryview);
     int numsel = figview_GetNumSelected(self->primaryview);
@@ -2178,9 +2095,7 @@ char *rock;
 	message_DisplayString(self->primaryview, 0, "Anchors cleared for selected objects.");
 }
 
-static void Command_DefaultAnchors(self, rock)
-struct figtoolview *self;
-char *rock;
+static void Command_DefaultAnchors(struct figtoolview *self, char *rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self->primaryview);
     int numsel = figview_GetNumSelected(self->primaryview);
@@ -2200,9 +2115,7 @@ char *rock;
 	message_DisplayString(self->primaryview, 0, "Standard anchors created for selected objects.");
 }
 
-static void Command_ProportAnchors(self, rock)
-struct figtoolview *self;
-char *rock;
+static void Command_ProportAnchors(struct figtoolview *self, char *rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self->primaryview);
     int numsel = figview_GetNumSelected(self->primaryview);
@@ -2222,31 +2135,19 @@ char *rock;
 	message_DisplayString(self->primaryview, 0, "Proportional anchors created for selected objects.");
 }
 
-static boolean SelAddProc(o, ref, fig, vv)
-struct figobj *o;
-long ref;
-struct figure *fig;
-struct figview *vv;
+static boolean SelAddProc(struct figobj *o, long ref, struct figure *fig, struct figview *vv)
 {
     figview_SelectByRef(vv, ref);
     return FALSE;
 }
 
-static boolean SelTogProc(o, ref, fig, vv)
-struct figobj *o;
-long ref;
-struct figure *fig;
-struct figview *vv;
+static boolean SelTogProc(struct figobj *o, long ref, struct figure *fig, struct figview *vv)
 {
     figview_ToggleSelectByRef(vv, ref);
     return FALSE;
 }
 
-static void MakeBoxListProc(o, ref, vv, rec)
-struct figobj *o;
-long ref;
-struct figview *vv;
-struct rectangle **rec;
+static void MakeBoxListProc(struct figobj *o, long ref, struct figview *vv, struct rectangle **rec)
 {
     struct rectangle *src = figobj_GetBounds(o, vv);
     if (rectangle_Width(src)<=0 || rectangle_Height(src)<=0)
@@ -2261,21 +2162,13 @@ struct rectangle **rec;
     (*rec)++;
 }
 
-static void MoveObjsProc(o, ref, vv, pt)
-struct figobj *o;
-long ref;
-struct figview *vv;
-struct point *pt;
+static void MoveObjsProc(struct figobj *o, long ref, struct figview *vv, struct point *pt)
 {
     figobj_Reposition(o, point_X(pt), point_Y(pt));
     figobj_StabilizeAttachments(o, FALSE);
 }
 
-static void Toolsub_Reshape(self, action, x, y, oref, ptref)
-struct figtoolview *self;
-enum view_MouseAction action;
-long x, y;
-long oref, ptref;
+static void Toolsub_Reshape(struct figtoolview *self, enum view_MouseAction action, long x, long y, long oref, long ptref)
 {
     struct figobj *o = self->primaryview->objs[oref].o;
     struct figure *fig;
@@ -2307,12 +2200,7 @@ long oref, ptref;
     }
 }
 
-static void Toolsub_AddAnch(self, action, x, y, onhandle, oref, ptref)
-struct figtoolview *self;
-enum view_MouseAction action;
-long x, y;
-boolean onhandle;
-long oref, ptref;
+static void Toolsub_AddAnch(struct figtoolview *self, enum view_MouseAction action, long x, long y, boolean onhandle, long oref, long ptref)
 {
     struct figobj *o = self->primaryview->objs[oref].o;
     struct figure *fig;
@@ -2370,12 +2258,7 @@ long oref, ptref;
     }
 }
 
-static void Toolsub_DelAnch(self, action, x, y, onhandle, oref, ptref)
-struct figtoolview *self;
-enum view_MouseAction action;
-long x, y;
-boolean onhandle;
-long oref, ptref;
+static void Toolsub_DelAnch(struct figtoolview *self, enum view_MouseAction action, long x, long y, boolean onhandle, long oref, long ptref)
 {
     struct figobj *o = self->primaryview->objs[oref].o;
     struct figure *fig;
@@ -2407,12 +2290,7 @@ long oref, ptref;
     }
 }
 
-static void Toolsub_Add(self, action, x, y, onhandle, oref, ptref)
-struct figtoolview *self;
-enum view_MouseAction action;
-long x, y;
-boolean onhandle;
-long oref, ptref;
+static void Toolsub_Add(struct figtoolview *self, enum view_MouseAction action, long x, long y, boolean onhandle, long oref, long ptref)
 {
     struct figobj *o = self->primaryview->objs[oref].o;
     struct figure *fig;
@@ -2443,12 +2321,7 @@ long oref, ptref;
     }
 }
 
-static void Toolsub_Del(self, action, x, y, onhandle, oref, ptref)
-struct figtoolview *self;
-enum view_MouseAction action;
-long x, y;
-boolean onhandle;
-long oref, ptref;
+static void Toolsub_Del(struct figtoolview *self, enum view_MouseAction action, long x, long y, boolean onhandle, long oref, long ptref)
 {
     struct figobj *o = self->primaryview->objs[oref].o;
     struct figure *fig;
@@ -2480,10 +2353,7 @@ long oref, ptref;
 }
 
 /* at this point, we know objects are selected */
-static void Toolsub_Drag(self, action, x, y, numclicks)
-struct figtoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Toolsub_Drag(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     long ix;
     struct rectangle *tmp;
@@ -2543,10 +2413,7 @@ long x, y, numclicks;
     }
 }
 
-static void Toolsub_Select(self, action, x, y, numclicks)
-struct figtoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static void Toolsub_Select(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     long w, h;
     struct rectangle area;
@@ -2645,11 +2512,7 @@ struct FHOP_lump {
     long delta;
 };
 
-static void FindHitObjProc(o, ref, vv, val)
-struct figobj *o;
-long ref;
-struct figview *vv;
-struct FHOP_lump *val;
+static void FindHitObjProc(struct figobj *o, long ref, struct figview *vv, struct FHOP_lump *val)
 {
     enum figobj_HitVal res;
     long tmp;
@@ -2664,11 +2527,7 @@ struct FHOP_lump *val;
     val->ptref = tmp;
 }
 
-static void FindHitObjAnchProc(o, ref, vv, val) /* about the most unpleasant function name I've ever come up with. This counts a hit on an anchor as a hit on the handle. */
-struct figobj *o;
-long ref;
-struct figview *vv;
-struct FHOP_lump *val;
+static void FindHitObjAnchProc(struct figobj *o, long ref, struct figview *vv, struct FHOP_lump *val)
 {
     enum figobj_HitVal res;
     long tmp;
@@ -2705,10 +2564,7 @@ Left-down in a selected object:
 Left-down in no selected object is select mode.
 If the action is a mouse movement or mouse-up, continue in the mode determined by the mouse-down.
 */
-static struct view *Tool_Select(self, action, x, y, numclicks)
-struct figtoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static struct view * Tool_Select(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct FHOP_lump val;
     struct figure *fig;
@@ -2767,10 +2623,7 @@ long x, y, numclicks;
     return (struct view *)(self->primaryview);
 }
 
-static struct view *Tool_AddPoints(self, action, x, y, numclicks)
-struct figtoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static struct view * Tool_AddPoints(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct FHOP_lump val;
 
@@ -2816,10 +2669,7 @@ long x, y, numclicks;
     return (struct view *)(self->primaryview);
 }
 
-static struct view *Tool_DelPoints(self, action, x, y, numclicks)
-struct figtoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static struct view * Tool_DelPoints(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct FHOP_lump val;
 
@@ -2865,10 +2715,7 @@ long x, y, numclicks;
     return (struct view *)(self->primaryview);
 }
 
-static struct view *Tool_AddAnchor(self, action, x, y, numclicks)
-struct figtoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static struct view * Tool_AddAnchor(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct FHOP_lump val;
 
@@ -2939,10 +2786,7 @@ long x, y, numclicks;
     return (struct view *)(self->primaryview);
 }
 
-static struct view *Tool_DelAnchor(self, action, x, y, numclicks)
-struct figtoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static struct view * Tool_DelAnchor(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     struct FHOP_lump val;
 
@@ -3013,9 +2857,7 @@ long x, y, numclicks;
     return (struct view *)(self->primaryview);
 }
 
-static void Toolmod_Select(self, rock)
-struct figtoolview *self;
-long rock;
+static void Toolmod_Select(struct figtoolview *self, long rock)
 {
     if (self->expertmode) {
 	if (self->selectdeep == FALSE) {
@@ -3029,10 +2871,7 @@ long rock;
     }
 }
 
-static struct view *Tool_CreateProc(self, action, x, y, numclicks)
-struct figtoolview *self;
-enum view_MouseAction action;
-long x, y, numclicks;
+static struct view * Tool_CreateProc(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
     enum figobj_Status result;
     struct figure *fig = (struct figure *)figtoolview_GetDataObject(self);
@@ -3097,8 +2936,7 @@ long x, y, numclicks;
 }
 
 /* either abort or complete the object being built. */
-void figtoolview__AbortObjectBuilding(self)
-struct figtoolview *self;
+void figtoolview__AbortObjectBuilding(struct figtoolview *self)
 {
     enum figobj_Status result;
     struct figure *fig = (struct figure *)figtoolview_GetDataObject(self);
@@ -3131,15 +2969,12 @@ struct figtoolview *self;
     RepostMenus(self);
 }
 
-static void AbortObjectProc(self, rock)
-struct figtoolview *self;
-long rock;
+static void AbortObjectProc(struct figtoolview *self, long rock)
 {
     figtoolview_AbortObjectBuilding(self);
 }
 
-static char *CopyString(str)
-char *str;
+static char * CopyString(char *str)
 {
     char *tmp;
 
@@ -3152,8 +2987,7 @@ char *str;
     return tmp;
 }
 
-static void LowerString(str)
-char *str;
+static void LowerString(char *str)
 {
     char *cx;
 
@@ -3163,8 +2997,7 @@ char *str;
 }
 
 /* trim whitespace off the front and back of a string. This modifies the buffer (trimming the back) and returns an updated pointer */
-static char *WhiteKillString(buf)
-char *buf;
+static char * WhiteKillString(char *buf)
 {
     char *cx;
     for (cx = buf; *cx && !isgraph(*cx); cx++);

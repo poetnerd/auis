@@ -50,10 +50,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/char
 #define  Frame		    (self->frame)
 #define  Im		    (self->im)
 
-boolean 
-chartx1app__InitializeObject( classID, self )
-  struct classheader	 *classID;
-  struct chartx1app	 *self;
+boolean
+chartx1app__InitializeObject(struct classheader *classID, struct chartx1app *self)
   {
   chartx1app_SetMajorVersion( self, 0 );
   chartx1app_SetMinorVersion( self, 0 );
@@ -62,9 +60,7 @@ chartx1app__InitializeObject( classID, self )
   return TRUE;
   }
 
-boolean
-chartx1app__Start( self )
-  struct chartx1app	  *self;
+boolean chartx1app__Start(struct chartx1app *self)
   {
   long			   status = TRUE, mortgage, food, insurance,
 			   entertainment, savings, education, vacation;
@@ -118,8 +114,7 @@ chartx1app__Start( self )
   }
 
 
-Query( topic )
-  char			     *topic;
+int Query(char *topic)
   {
   char			      response[255];
 

@@ -54,9 +54,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #define INITIAL 100
 #define INCREMENT 1000
 
-boolean mmtext__InitializeObject(classID,self)
-struct classheader *classID;
-struct mmtext *self;
+boolean mmtext__InitializeObject(struct classheader *classID, struct mmtext *self)
 {
     self->nLines = 0;
     self->nAlloc = INITIAL;
@@ -67,10 +65,8 @@ struct mmtext *self;
     return TRUE;
 }
 
-long mmtext__Read(self, file, id)
-struct mmtext *self;
-FILE *file;
-long id; {
+long mmtext__Read(struct mmtext *self, FILE *file, long id)
+{
     long tmpRetValue;
     struct rofftext *r = (struct rofftext *)self;
     struct buffer *buf = buffer_FindBufferByData(self);
@@ -101,19 +97,16 @@ long id; {
 
 }
 
-long mmtext__GetLinePos(self, line)
-struct mmtext *self;
-long line; {
+long mmtext__GetLinePos(struct mmtext *self, long line)
+{
     line -= 2;
     if (line > self->nLines) line = self->nLines;
     if (line < 0) line = 0;
     return mark_GetPos(self->lineMark[line]);
 }
 
-void mmtext__SetLinePos(self, line, pos)
-struct mmtext *self;
-long line;
-long pos; {
+void mmtext__SetLinePos(struct mmtext *self, long line, long pos)
+{
     if (line < 0) return;
     if (line >= self->nAlloc) {
 	self->nAlloc += INCREMENT;
@@ -126,8 +119,7 @@ long pos; {
 }
 
 
-void mmtext__GetFilename(self, filename)
-struct mmtext *self;
-char *filename; {
+void mmtext__GetFilename(struct mmtext *self, char *filename)
+{
     strcpy(filename, self->filename);
 }

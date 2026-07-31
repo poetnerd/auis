@@ -77,6 +77,7 @@ END-SPECIFICATION  ************************************************************/
 #include  <chart.ih>
 #include  <chartv.ih>
 #include  <suite.ih>
+static long Initialize_Palette();
 static int Activate();
 static int Passivate();
 
@@ -436,9 +437,7 @@ static suite_Specification		  sort_suite[] =
 #define SetItemView(suite,item,v) \
   suite_ItemViewObject(suite,item) = ((struct view*)v)
 
-static long
-Initialize_Palette( self ) /*=== CONVERT TO REAL FORM ===*/
-  register struct chartv	 *self;
+static long Initialize_Palette(struct chartv *self)
   {
   register long			  status = ok;
 
@@ -489,8 +488,7 @@ Initialize_Palette( self ) /*=== CONVERT TO REAL FORM ===*/
   return  status;
   }
 
-Destroy_Palette( self )
-  register struct chartv	  *self;
+int Destroy_Palette(struct chartv *self)
   {
   if ( ControlSuite )	        suite_Destroy( ControlSuite );
   if ( TitleSuite )		suite_Destroy( TitleSuite );
@@ -502,9 +500,7 @@ Destroy_Palette( self )
   if ( SortForm )		suite_Destroy( SortForm );
   }
 
-void
-Expose_Palette( self )
-  register struct chartv	  *self;
+void Expose_Palette(struct chartv *self)
   {
   IN(Expose_Palette);
   if ( ! PaletteExposed  &&  Initialize_Palette( self ) == ok )
@@ -523,9 +519,7 @@ Expose_Palette( self )
   OUT(Expose_Palette);
   }
 
-void
-Hide_Palette( self )
-  register struct chartv	  *self;
+void Hide_Palette(struct chartv *self)
   {
   IN(Hide_Palette);
   if ( PaletteExposed  &&  PaletteIm )
@@ -540,14 +534,7 @@ Hide_Palette( self )
   OUT(Hide_Palette);
   }
 
-struct view *
-Palette_Hit( self, suite, item, type, action, x, y, clicks )
-  register struct chartv	  *self;
-  register struct suite		  *suite;
-  register struct suite_item	  *item;
-  register long			   type;
-  register enum view_MouseAction   action;
-  register long			   x, y, clicks;
+struct view * Palette_Hit(struct chartv *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
   {
   char				   msg[512];
 
@@ -625,12 +612,7 @@ Palette_Hit( self, suite, item, type, action, x, y, clicks )
   return ((struct view*)NULL);
   }
 
-long
-Palette_Titles_Handler( self, suite, item, action )
-  register struct chartv	  *self;
-  register struct suite		  *suite;
-  register struct suite_item	  *item;
-  register long			   action;
+long Palette_Titles_Handler(struct chartv *self, struct suite *suite, struct suite_item *item, long action)
   {
   register char			  *title;
   register long			   area = NULL;
@@ -659,24 +641,19 @@ Palette_Titles_Handler( self, suite, item, action )
   return 0;
   }
 
-Activate_Viewer( self )
-  register struct chartv	 *self;
+int Activate_Viewer(struct chartv *self)
   {
   Activate( self, delete_code );
   Activate( self, print_code );
   Activate( self, save_code );
   }
 
-static Passivate( self, code )
-  register struct chartv	 *self;
-  register long			  code;
+static Passivate(struct chartv *self, long code)
   {
   suite_PassivateItem( ControlSuite, suite_ItemOfDatum( ControlSuite, code ) );
   }
 
-static Activate( self, code )
-  register struct chartv	 *self;
-  register long			  code;
+static Activate(struct chartv *self, long code)
   {
   suite_ActivateItem( ControlSuite, suite_ItemOfDatum( ControlSuite, code ) );
   }

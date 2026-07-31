@@ -114,7 +114,7 @@ class figobj : dataobject [dataobj] {
       GetSelectedBounds(struct figview *vv) returns struct rectangle *;
       ComputeSelectedBounds();
       UpdateParentBounds();
-      SetParent(long parentref, struct *fig ancestor);
+      SetParent(long parentref, struct figure *ancestor);
       GetHandleType(int ptref) returns enum figobj_HandleType;
       GetCanonicalHandles() returns long *;
       StabilizeAttachments(boolean keepproport);

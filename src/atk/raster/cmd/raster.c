@@ -71,9 +71,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 extern int to64(), from64(), fromqp();
 
 
-boolean raster__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-register struct raster  *self;
+boolean raster__InitializeObject(struct classheader *ClassID, struct raster *self)
 {
     self->pix = NULL;
     self->readOnly = FALSE;
@@ -84,25 +82,19 @@ register struct raster  *self;
     return TRUE;
 }
 
-void raster__FinalizeObject(ClassID, self)
-struct classhdr *ClassID;
-register struct raster  *self;
+void raster__FinalizeObject(struct classheader *ClassID, struct raster *self)
 {
     raster_SetPix(self, NULL);
 }
 
-struct raster * raster__Create(ClassID, width, height)
-struct classhdr *ClassID;
-register long width, height;
+struct raster * raster__Create(struct classheader *ClassID, long width, long height)
 {
     register struct raster *self = raster_New();
     raster_Resize(self, width, height);
     return self;
 }
 
-void raster__Resize(self, width, height)
-register struct raster  *self;
-register long width, height;
+void raster__Resize(struct raster *self, long width, long height)
 {
     struct rasterimage *pix = raster_GetPix(self);
     if (pix == NULL) 
@@ -113,22 +105,21 @@ register long width, height;
 	self->options = 0; }
 }
 
-void raster__ObservedChanged(self, pix, status)
-register struct raster  *self;
-struct rasterimage *pix;
-long status;
+void raster__ObservedChanged(struct raster *self, struct observable *pix, long status)
 {
+    struct rasterimage *ripix = (struct rasterimage *) pix;
+
     if (status == observable_OBJECTDESTROYED) {
 	/* the observed rasterimage is going away
 	 we must not use raster_SetPix because
-	 it will tinker the refcnt and try again to 
+	 it will tinker the refcnt and try again to
 	 destroy the object */
 	self->pix = NULL;
 	return; }
     /* inform my own observers that the underlying rasterimage has changed */
-    if (rasterimage_GetResized(pix)) {
-	rectangle_SetRectSize(&self->subraster, 0, 0, 
-			      rasterimage_GetWidth(pix), rasterimage_GetHeight(pix));
+    if (rasterimage_GetResized(ripix)) {
+	rectangle_SetRectSize(&self->subraster, 0, 0,
+			      rasterimage_GetWidth(ripix), rasterimage_GetHeight(ripix));
 	self->options = 0;
 	self->xScale = raster_UNITSCALE / 2;
 	self->yScale = raster_UNITSCALE / 2;
@@ -140,16 +131,14 @@ long status;
 	    of pix intersects with the subraster of self */
 	struct rectangle R;
 	R = self->subraster;
-	rectangle_IntersectRect(&R, &R, rasterimage_GetChanged(pix));
+	rectangle_IntersectRect(&R, &R, rasterimage_GetChanged(ripix));
 	if ( ! rectangle_IsEmptyRect(&R))
 	    /* pasieka's changing this to status. */
 	    raster_NotifyObservers(self, raster_BITSCHANGED);
 	    raster_NotifyObservers(self, status); }
 }
 
-void raster__SetPix(self, newpix)
-struct raster *self;
-struct rasterimage *newpix;
+void raster__SetPix(struct raster *self, struct rasterimage *newpix)
 {
     struct rasterimage *pix = raster_GetPix(self);
     if (newpix == pix) return;
@@ -183,11 +172,7 @@ struct rasterimage *newpix;
 #ifdef NOTUSED
 /*	WriteV1Stream(struct raster *ras, FILE *file, long id);
 		write to 'file' the plusspace representation of 'ras' */
-	static void
-WriteV1Stream(ras, file, id)
-	struct raster *ras;
-	FILE *file;
-	long id;
+static void WriteV1Stream(struct raster *ras, FILE *file, long id)
 {
 	register long nbytestofile;
 	short buf[400];
@@ -223,12 +208,7 @@ WriteV1Stream(ras, file, id)
 	Assigns an object identifier for the data object, writes it in the header,
 	Returns the assigned object identifier.
 */
-	long
-raster__Write(self, file, writeID, level)
-	 struct raster *self;
-	 FILE *file;
-	 long writeID;
-	 int level;
+long raster__Write(struct raster *self, FILE *file, long writeID, int level)
 {
 	register struct rasterimage *pix = raster_GetPix(self);
 	long id = raster_UniqueID(self);
@@ -316,12 +296,7 @@ raster__Write(self, file, writeID, level)
 		Use the object identifier 'objectid'.
 		Returns the objectid.
 */
-	long
-raster__WriteSubRaster(self, file, objectid, sub)
-	struct raster *self;
-	register FILE *file;
-	long objectid;
-	struct rectangle *sub;
+long raster__WriteSubRaster(struct raster *self, FILE *file, long objectid, struct rectangle *sub)
 {
 	register struct rasterimage *pix = raster_GetPix(self);
 	char *name = class_GetTypeName(self);
@@ -353,11 +328,7 @@ raster__WriteSubRaster(self, file, objectid, sub)
 /* raster__WriteShare(self, file, sub)
 		write a "share" record for the indicated 'subraster' of 'self'
 */
-	void
-raster__WriteShare(self, file, sub)
-	struct raster *self;
-	register FILE *file;
-	struct rectangle *sub;
+void raster__WriteShare(struct raster *self, FILE *file, struct rectangle *sub)
 {
 	register struct rasterimage *pix = raster_GetPix(self);
 	char *name = class_GetTypeName(self);
@@ -396,11 +367,7 @@ raster__WriteShare(self, file, sub)
 	the leading 0xF1 has already been read.
 
 */
-	static long
-ReadRasterFile(self, file, id)
-	register struct raster  *self;
-	FILE  *file;
-	long id;
+static long ReadRasterFile(struct raster *self, FILE *file, long id)
 {
 	register struct rasterimage *pix = raster_GetPix(self);
 	long retval;
@@ -457,11 +424,7 @@ ReadRasterFile(self, file, id)
 	The subraster, options, and expansion/contraction are set
 	fromthe values in the record.
 */
-	static long
-ReadV1Raster(self, file, id)
-	register struct raster  *self;
-	FILE  *file;
-	long id;
+static long ReadV1Raster(struct raster *self, FILE *file, long id)
 {
 	register struct rasterimage *pix = raster_GetPix(self);
 	unsigned long options;
@@ -523,11 +486,7 @@ ReadV1Raster(self, file, id)
 	NOT IMPLEMENTED     XXX
 	It now just skips the image in the file 
 */
-	static long
-ReadV1SubRaster(self, file, r)
-	struct raster *self;
-	FILE *file;
-	register struct rectangle *r;
+static long ReadV1SubRaster(struct raster *self, FILE *file, struct rectangle *r)
 {
 	char s[MAXFILELINE + 2];
 	while (getc(file) != '\\') {}
@@ -548,11 +507,7 @@ ReadV1SubRaster(self, file, r)
 
 	XXX should check for read errors
 */
-	long
-raster__Read(self, file, id)
-	struct raster  *self;
-	register FILE  *file;
-	long  id;			/* !0 if data stream, 0 if direct from file*/
+long raster__Read(struct raster *self, FILE *file, long id)
 {
 	register struct rasterimage *pix = raster_GetPix(self);
 	long version, width, height;
@@ -721,11 +676,7 @@ raster__Read(self, file, id)
 		Read from 'file' into the upper left corner of subraster 'r' of 'self' 
 		See other comments in raster_Read, above.
 */
-	long
-raster__ReadSubRaster(self, file, r)
-	struct raster *self;
-	FILE *file;
-	struct rectangle *r;
+long raster__ReadSubRaster(struct raster *self, FILE *file, struct rectangle *r)
 {
 	register struct rasterimage *pix = raster_GetPix(self);
 	long version, width, height;
@@ -789,10 +740,7 @@ raster__ReadSubRaster(self, file, r)
 	return result;
 }
 
-void 
-raster__SetAttributes(self, attributes)
-  struct raster	    *self;
-  struct attributes *attributes;
+void raster__SetAttributes(struct raster *self, struct attributes *attributes)
 {
   struct rasterimage *pix = raster_GetPix(self);
 
@@ -808,13 +756,7 @@ raster__SetAttributes(self, attributes)
 
 static int tmpfilectr = 0;
 
-long raster__WriteOtherFormat(self, file, writeID, level, usagetype, boundary)
-struct raster *self;
-FILE *file;
-long writeID;
-int level;
-int usagetype;
-char *boundary;
+long raster__WriteOtherFormat(struct raster *self, FILE *file, long writeID, int level, int usagetype, char *boundary)
 {
     FILE *tmpfp;
     char Fnam[1000];
@@ -839,12 +781,7 @@ char *boundary;
     return(self->header.dataobject.id);
 }
 
-boolean raster__ReadOtherFormat(self, file, fmt, encoding, desc)
-struct raster *self;
-FILE *file;
-char *fmt;
-char *encoding;
-char *desc;
+boolean raster__ReadOtherFormat(struct raster *self, FILE *file, char *fmt, char *encoding, char *desc)
 {
     char TmpFile[250];
     FILE *tmpfp = NULL;

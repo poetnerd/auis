@@ -56,7 +56,7 @@ class figogrp : figobj {
       GetSelectedBounds(struct figview *vv) returns struct rectangle *;
       InheritVAttributes(struct figattr *attr, unsigned long mask);
       UpdateVAttributes(struct figattr *attr, unsigned long mask) returns unsigned long;
-      SetParent(long parentref, struct *fig ancestor);
+      SetParent(long parentref, struct figure *ancestor);
 
     methods:
       SetConstraintsActive(boolean val);
