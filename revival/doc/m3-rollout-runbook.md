@@ -1254,6 +1254,52 @@ behavior succeeding: it always produced invalid syntax, which the
 compile-gate's restore-on-failure property would have caught and
 reverted every time, the same way it caught this one.
 
+### `ansify` two-line-return-type comment fix (tool fix, not a batch, 2026-07-30)
+
+Found continuing I1's Gate 1 on `atk/layout`: the real `ansify --dir`
+run reverted all 6 files in the directory, every one with cascading
+parse errors (`redefinition of 'boolean' as different kind of
+symbol`, `expected identifier or '('`, etc.) starting from a literal
+duplicated return-type token. Traced to this codebase's common K&R
+idiom of putting a classproc's return type alone on its own line with
+a trailing comment, name and params starting the next line:
+
+    boolean					/* always returns TRUE */
+    layoutview__InitializeClass(classID)
+    struct classheader *classID;
+    {
+
+`convert_file` already has a mechanism for this exact "two-line form"
+(`prev_type` detection against the immediately preceding emitted
+line, `TYPEONLY.match(out[-1].strip())`, popping that line once a new
+typed header replaces it) — but `TYPEONLY`'s regex required the
+previous line to be *only* a type token with nothing else on it, no
+tolerance for a trailing comment. `HDR` (the main declaration-header
+regex, three lines above `TYPEONLY`) already tolerates exactly this
+shape (`(?:/\*.*?\*/\s*)?$`); `TYPEONLY` was simply never given the
+same allowance. So the old `boolean .../* comment */` line was never
+recognized as "the type half of a two-line declaration," never
+popped, and a second, fully-typed header line got emitted right below
+it — two `boolean` tokens back to back, guaranteed invalid C, and
+(because this parse failure cascades) enough to corrupt the compiler's
+sense of every following top-level declaration in the file too. Fixed
+by widening `TYPEONLY` to accept the same optional trailing-comment
+suffix `HDR` already does. Verified: `layoutview__InitializeClass`
+converts to a single correctly-typed header line with no duplication;
+all 6 files in `atk/layout` (5 of the 6 hit this shape) now convert
+and compile cleanly where all 6 failed before.
+
+Same character as the `weave()` array-bracket fix above: a
+long-standing idiom in this codebase (return type alone on its own
+commented line) that no earlier M3 batch happened to contain,
+surfaced by I1 rather than being new. Worth a standing-checklist watch
+item for any later batch that reverts *every* file in a directory at
+once with `boolean`/`void`/etc.-adjacent duplication-flavored parse
+errors — the fix is now in place tree-wide, but any earlier-processed
+directory that happens to share this idiom would only have hit it if
+it also happened to use the two-line-with-comment return style, which
+no committed batch (O1-T1) did.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)
