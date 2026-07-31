@@ -257,15 +257,29 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       See `m3-rollout-runbook.md` findings → I1 and
       `claude-history/m3-i1-insets-batch1-REPORT.md` for full detail.
       Committed.
-- [ ] **I2**: `atk/eq` (6, formerly the standalone pilot — its
+- [x] **I2**: `atk/eq` (6, formerly the standalone pilot — its
       2026-07-08 dry-run found zero DRIFT), `atk/figure` (17),
       `atk/chart` (13), `atk/table` (10), `atk/rofftext` (9),
-      `atk/raster/cmd` (8) — 63 files, 6 dirs.
-      `atk/figure` has known LP64/DRIFT history (M1 Pilot B, M2
-      batch3a) — expect findings, not a routine batch; full
-      orchestrator pre-diagnosis, not Gate 0. `table`/
-      `rofftext`/`raster/cmd` is the same three-directory grouping
-      M2's bucket 4 used.
+      `atk/raster/cmd` (8) — 63 nominal (72 files edited: `eqparse.c`/
+      `num.c` excluded as bison-generated, not fossil-tracked), 6
+      dirs. `atk/figure` has known LP64/DRIFT history (M1 Pilot B, M2
+      batch3a) — got full orchestrator pre-diagnosis, not Gate 0, per
+      the flagged-risky-batch amendment. **Done 2026-07-31**: all
+      three Pilot B fixes confirmed intact; found one genuinely new
+      M3 fallout shape (enum prototype-scope vs. `.eh` include order,
+      7 files in `atk/figure`), 8 real `.ch`-vs-implementation bugs,
+      2 bounded/single-instance tool quirks (`classpp -D` blank-tag
+      bug, `ansify` cast-style-K&R-function-pointer rendering bug —
+      both worked around, not tool-fixed), and confirmed a
+      pre-existing, out-of-scope gap (`atk/chart` never had the M2
+      `COMPILERFLAGS` implicit-declaration guard). All 6 directories
+      plus the Wave-4-closing tree-wide gate ran clean twice each,
+      independently re-verified by the orchestrator (full from-scratch
+      rebuilds of 4 of the 6 directories, spot-checked fixes against
+      diff). wdc ran every suggested runtime check, all passed. See
+      `m3-rollout-runbook.md` findings → I2 and
+      `claude-history/m3-i2-insets-batch2-REPORT.md` for full detail.
+      Committed.
 
 ## Wave 5 — apps (9 directories, 29 files, 1 batch)
 
@@ -301,7 +315,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
 
 Revised 2026-07-30: 15 sessions total (was 17 — pilot retired into
 I2, I3 merged into I1), across the 7 waves in dependency order.
-9 complete (O1–O4, B1–B3, T1, I1), 6 remaining: I2, A1, AMS1, AMS2,
-C1, C2. Tick batches here as they complete, same convention as
-`m1-point10-batches.md`; the runbook's own summary gets the one-line
-rollup per wave, not per batch.
+10 complete (O1–O4, B1–B3, T1, I1, I2 — Wave 4 now closed), 5
+remaining: A1, AMS1, AMS2, C1, C2. Tick batches here as they
+complete, same convention as `m1-point10-batches.md`; the runbook's
+own summary gets the one-line rollup per wave, not per batch.

@@ -1392,6 +1392,150 @@ whenever I2 closes the wave. Full per-directory detail, gate output,
 and the "Suggested runtime checks for wdc" section are in
 `claude-history/m3-i1-insets-batch1-REPORT.md`.
 
+### I2 (`atk/eq`, `atk/figure`, `atk/chart`, `atk/table`, `atk/rofftext`, `atk/raster/cmd`, 6 directories, 72 files edited, 2026-07-31) — closes Wave 4
+
+One of the four flagged-risky batches (full orchestrator pre-diagnosis,
+not delegate-side Gate 0), chosen for `atk/figure`'s M1 Pilot B
+history. Pre-diagnosis's single most consequential finding: `atk/eq`'s
+`eqparse.c`/`.h` and `atk/rofftext`'s `num.c`/`.h` are bison-generated
+build artifacts (`Parser()` Imake macro, confirmed via `fossil finfo`
+returning "no history for file" for both) — same shape M2's own pilot
+and rofftext batch already documented. Excluded from `ansify`
+entirely; the subtree-local gate recipe needs an explicit `make
+depend` between `clean` and `install` for these two directories
+specifically, or the regenerated `.h` never reappears and downstream
+`#include` failures mask real fallout. Independently re-confirmed by
+the orchestrator post-batch: `make clean` deletes both generated
+pairs, `make depend` regenerates them, both directories gate clean.
+
+`atk/figure` got the extra scrutiny its history warranted: all three
+of Pilot B's original fixes (typeless `MoveHandle`, the `ToolName`/
+`Instantiate` rock idiom, `Build`'s `(v, action, ...)` parameter
+order) confirmed still intact, no regression. It surfaced six new real
+bugs anyway (below) plus the batch's one genuinely new fallout shape:
+
+**New fallout shape — enum prototype-scope vs. include order (not
+previously in the M3 taxonomy).** Seven `atk/figure` files `#include`d
+their own `.eh` *before* the header fully defining an `enum` type used
+in one of their typed method prototypes (`enum view_MouseAction` from
+`view.ih`, `enum figobj_HitVal` from `figobj.ih`). Harmless under K&R;
+under `-pe`'s typed prototypes, C's rule that an enum tag first
+mentioned inside a function-prototype parameter list gets prototype
+scope means the early mention creates a distinct incomplete type from
+the one the real definition later uses — `conflicting types` on every
+method touching that enum. Fixed by moving each file's own `.eh`
+include to the end of its include block, matching the already-`-pe`'d
+working precedent (`atk/text/textv.c` includes `view.ih` before
+`textv.eh`). Two of the seven instances (`figorect.c`, `figoins.c`)
+were missed on a first pass because an individual `make X.o`
+spot-check "succeeded" against a stale `.o` — restates Pilot A finding
+#3 as a hard rule: an untouched file's isolated `make X.o` proves
+nothing, only a post-`clean` full gate does.
+
+Real `.ch`-vs-implementation bugs, same species as prior batches'
+mistyped-self and generic-param-plus-cast findings: `eqv.ch`'s
+`InitializeObject` restated `self` as `struct eq *` instead of `struct
+eqview *`; `figobj.ch`/`figogrp.ch`'s `SetParent` both had a malformed
+`struct *fig ancestor` (missing the actual struct tag, should be
+`struct figure *`); `figorrec.ch`'s `InitializeObject` restated `self`
+as a sibling class's type (`struct figoell *`, should be `struct
+figorrec *`); `figv.c`'s `SetDataObject` and `fontselv.c`'s
+`ObservedChanged` both accessed covariant-typed fields through the
+generic base-class parameter `-pe` actually exports (same rule I1's
+`srctextv.ch`/`asmtextv.ch` finding established), fixed with a local
+cast, matching `celv.c`'s convention; two file-local helpers in
+`figv.c`/`figure.c` had their own `rock` parameter still `long` where
+the `.ch`-declared method they're called from already correctly took
+`void *rock` (the file-local-helper counterpart of Pilot B's original
+rock-idiom finding). `atk/chart`: `chart.ch`/`chartv.ch`'s `Create`
+classprocs had a bare, untyped specification-typedef token as their
+parameter (Pilot B finding #1's typeless-`.ch` shape, confirmed real
+typedefs with real K&R pointer usage). `atk/raster/cmd`:
+`raster.c`'s `ObservedChanged` and `rastvaux.c`'s `SetDataObject` both
+had the same generic-param-plus-cast shape as `atk/figure` above.
+
+**Two new tool-adjacent quirks, both bounded/single-instance, neither
+tool-fixed** (worked around by hand in the affected `.ch`/`.c` file
+instead — per Delegation, tool construction stays top-level and a
+one-occurrence shape doesn't justify a standalone fix commit; flagged
+here in case either shape recurs in a later wave):
+- **`classpp -D`'s signature dump blanks the class tag when a
+  classproc parameter's declared type textually equals the class's
+  own self type.** `chartapp.ch`'s `InitializeObject(struct chartapp
+  *)` (type given, no parameter name) round-trips through the dump as
+  `args: struct  *` — the tag itself goes missing, confirmed directly
+  in `build/desc/chartapp.desc`. `ansify` faithfully converts the
+  malformed text it's handed; the bug is upstream, in `classpp -D`'s
+  dump itself. Worked around by hand-fixing `chartapp.c`'s definition
+  directly rather than chasing a fix in `class.c`.
+- **`ansify` mis-renders cast-style K&R function-pointer parameter
+  syntax.** `chart.ch`'s `Apply` used `(long(*)())proc` (a cast-style
+  K&R declarator, not the conventional `long (*proc)()`); both
+  `classpp` and `ansify` render this awkwardly with redundant grouping
+  parens in the generated `.c` definition (`( long (*proc) () )`),
+  which C parses as an unnamed abstract declarator — `proc` never
+  becomes a real parameter name, a genuine parse-level failure. Worked
+  around by rewriting `chart.ch`'s declaration to the conventional
+  syntax before conversion; not investigated as a tool fix (single
+  instance, tree-wide grep for the same cast-style shape elsewhere
+  turned up nothing).
+
+Two confirmed-dead/confirmed-live edge cases, same "declared-vs-wired"
+family as I1's dead-file findings but at function granularity:
+`figospli.c` defines `figospli__InitializeClass`, but `figospli.ch`
+never declares `InitializeClass` and (unlike `InitializeObject`/
+`FinalizeObject`, always auto-wired per the §17 mechanics note)
+`InitializeClass` is only wired if declared — confirmed dead via
+`figospli.eh` having zero mentions, left as K&R, flagged as a
+possible-but-out-of-scope behavior question (a once-per-class setup
+that silently never runs). `chartx1a.ch` has no `classprocedures`
+section at all, yet `chartx1a.c` defines
+`chartx1app__InitializeObject` — this one **is live** (confirmed via
+`chartx1a.eh`'s standard classpp-generated `New()` wiring, same M1
+mechanics note), a genuine `ansify` signature-DB coverage gap (the DB
+only captures classprocs a `.ch` explicitly declares) rather than dead
+code; hand-converted to ANSI directly.
+
+Also confirmed pre-existing, not M3 fallout: `atk/raster/cmd`'s
+`rastervt.c` (`rasterviewtest`, wired only into the Imakefile's
+`test::` target, never `install::`/`all::`) fails to compile even in
+its pristine committed K&R form — an `environ_AndrewDir` macro
+suppressed by its own `class_StaticEntriesOnly` define, contradicting
+its own comment — same "ansify's gate reaches a file the real build
+never builds" shape as O1's precedent; left untouched, the subtree
+gate never builds it either way. And, unrelated to M3: `atk/chart`'s
+Imakefile has never had the M2-era `COMPILERFLAGS =
+-Werror=implicit-function-declaration` guard every other `-pe`'d
+directory has — no `m2-*-REPORT.md` mentions it, so this directory has
+run without an implicit-declaration compiler net this whole time.
+Out of scope for a `-pe`-only batch to fix (wdc confirmed 2026-07-31:
+turning it on would likely surface real latent bugs requiring its own
+investigation, same as every M2 directory that picked up this flag —
+not a drive-by one-liner). Flagged here as a standing follow-up item,
+not scheduled into any current wave.
+
+Anchored `malloc`/`free`/`realloc`/`calloc` grep (checklist item, the
+clang-builtin blind spot) found and fixed 24 files across `eq`
+(4/4), `figure` (12/17), `chart` (6/13), and `raster/cmd` (2/8) missing
+`#include <stdlib.h>`; `table`/`rofftext` already had it everywhere it
+was needed.
+
+All 6 directories gated clean, twice each. Wave-end tree-wide gate
+(`make -C src dependInstall`, twice) clean except the two
+already-documented, already-queued `contrib/zip/utility/ltapp.c`
+errors (Wave-1/2 baseline, unchanged) — closes Wave 4. Independently
+re-verified by the orchestrator: re-ran the tree-wide gate directly
+(same 2 baseline errors, nothing new), did full from-scratch
+`clean`/`depend`/`install` rebuilds of `atk/figure`, `atk/chart`,
+`atk/eq`, `atk/rofftext` personally (all clean), and spot-checked
+roughly a dozen of the specific claimed fixes directly against the
+diff (all matched exactly). wdc ran every suggested runtime check in
+§8 of the batch report and confirmed all passed; also removed a
+pre-existing untracked `fontselv.c.orig` stray file (dated 2026-07-24,
+predates this batch) noticed during the report's `fossil extras`
+check. Full per-directory detail, gate output, and the runtime-check
+list are in `claude-history/m3-i2-insets-batch2-REPORT.md`.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)
