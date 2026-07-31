@@ -1113,6 +1113,55 @@ two already-documented, pre-existing `contrib/zip/utility/ltapp.c`
 errors noted at the Wave 1/2 retroactive gate above (still queued for
 Wave 7 C2, not T1 fallout).
 
+### `ansify` signature-DB case-collision fix (tool fix, not a batch, 2026-07-30)
+
+Found at I1's Gate 0 (the first batch to use the delegate-side Gate 0
+pattern): `ansify --build-db` names each class's `.desc` file after
+the class name with no collision check
+(`shutil.copyfile(desc, os.path.join(dbdir, classname + '.desc'))`),
+and `build/desc/` lives on this checkout's default case-insensitive
+macOS filesystem. Two classes whose names differ only in case collide
+onto the same file on disk, and whichever `.ch` is processed later in
+`sorted(chfiles)` order silently wins — the earlier one's signature
+data is gone with no error. Found live: `atk/image/sliderv.ch`
+(`class sliderv : view`) and `atk/value/sliderv.ch` (already `-pe`'d
+in B2, `class sliderV[sliderv] : valueview[valuev]`) both map to
+`sliderv.desc`; since `atk/value` sorts after `atk/image`, the DB held
+atk/value's data (`Class: sliderV`, `Subclass of: valueview, view,
+observable, traced`) under atk/image's filename. Confirmed a real,
+non-cosmetic consequence, not just a display artifact: the delegate
+ran `convert_file()` directly against a scratch copy of
+`atk/image/sliderv.c` and it emitted
+`void sliderv__FinalizeObject(struct classheader *classID, struct sliderV *self)`
+— atk/value's capitalized struct tag, undefined in atk/image's scope,
+a hard compile error had the real batch run proceeded. The
+orchestrator independently re-verified by reading the live
+`build/desc/sliderv.desc` directly (its `FinalizeObject` entry read
+`args: struct sliderV *`, confirmed wrong against the real `.c`
+definition's `struct sliderv *self`) before ruling.
+
+Fixed in `build_db()`: track a lowercased-classname → (real classname,
+source `.ch`) map; on a second write to the same lowercased key from a
+different real classname, refuse the overwrite and report it through
+the existing `failed` list (visible in `--build-db`'s normal output,
+not silent) instead of clobbering. First-processed-in-sort-order class
+keeps its `.desc` file. A tree-wide lowercase-collision scan (both by
+the delegate and re-confirmed by the orchestrator) found this is the
+**only** colliding pair anywhere in `src/` — `atk/image/sliderv`
+against `atk/value/sliderV` — so the fix's practical effect is exactly
+one file: rerunning `--build-db` now correctly gives `atk/image` its
+own data (verified: `sliderv.desc` now reads `Class: sliderv`,
+`FinalizeObject` args `struct sliderv *`). No regression risk to
+`atk/value`'s already-committed B2 conversion — that batch's `-pe`/
+`.eh` rollout went through classpp directly against the `.ch` file,
+never through this DB, so it never depended on `sliderv.desc` holding
+its data. One unrelated pre-existing failure surfaced by the same
+rebuild, confirmed harmless: `contrib/atkbook/console/disk1.ch` fails
+classpp itself (`can not open the file getstatsob.ch`) — `atkbook` is
+one of the already-documented dead/conditionalized-out directories
+(`rollout-procedure.md`'s Liveness census list), not M3 fallout, not
+new.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)
