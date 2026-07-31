@@ -90,12 +90,7 @@ static unsigned char hex[16] = {
 		usually have about fifteen bytes.  Column entries can be longer
 		if long runs of similar bytes are encountered.
 */
-	void
-rasterio__WriteRow(ClassID, file, byteaddr, nbytes)
-	struct classhdr *ClassID;
-	FILE *file;
-	unsigned char *byteaddr;
-	long nbytes;
+void rasterio__WriteRow(struct classheader *ClassID, FILE *file, unsigned char *byteaddr, long nbytes)
 {
 	unsigned char curbyte;	/* byte enqueued for output */
 	unsigned char c;		/* incoming byte */
@@ -191,12 +186,7 @@ rasterio__WriteRow(ClassID, file, byteaddr, nbytes)
 #define case6(v) case4(v): case ((v)+4): case ((v)+5)
 #define case8(v) case4(v): case4((v)+4)
 
-	long
-rasterio__ReadRow(ClassID, file, row, length)
-	struct classhdr *ClassID;
-	register FILE *file;		/* where to get them from */
-	register unsigned char *row;	/* where to put bytes */
-	register long length;	/* how many bytes in row must be filled */
+long rasterio__ReadRow(struct classheader *ClassID, FILE *file, unsigned char *row, long length)
 {
 	/* Each input character is processed by the central loop.  There are 
 		some input codes which require two or three characters for completion; 
@@ -351,11 +341,7 @@ store:
 	Read a raster image from 'file' and put it in 'pix' 
 		return error code
 */
-	long
-rasterio__ReadImage(ClassID, file, pix)
-	struct classhdr *ClassID;
-	register FILE *file;			/* where to get bits from */
-	register struct pixelimage *pix;	/* where to put them */
+long rasterio__ReadImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix)
 {
 	register unsigned char *byteaddr;	/* where to store next row */
 	register long row, W, nbytesfromfile;	/* count rows;  byte length of row */
@@ -424,12 +410,7 @@ rasterio__ReadImage(ClassID, file, pix)
 /* rasterio__WriteImage(file, pix, sub) 
 	Write a raster image from 'pix' to 'file'
 */
-	void
-rasterio__WriteImage(ClassID, file, pix, sub)
-	struct classhdr *ClassID;
-	register FILE *file;		/* where to put bits  */
-	register struct pixelimage *pix;/* where to get them from */
-	register struct rectangle *sub;
+void rasterio__WriteImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix, struct rectangle *sub)
 {
 	long left, top, width, height;
 	long buf[1000];

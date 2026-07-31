@@ -58,28 +58,20 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 
 static FILE *f;	/* to avoid passing 'file' to all PutXxxx functions */
 
-	static void
-PutNibblePair(byte)
-	register unsigned char byte;
+static void PutNibblePair(unsigned char byte)
 {
 	putc((byte&0xF) + ' ', f);		/* put low four bits before the upper ! */
 	putc(((byte>>4)&0xF) + ' ', f);
 }
 
-	static void
-PutSame(byte, count)
-	register unsigned char byte;
-	register long count;
+static void PutSame(unsigned char byte, long count)
 {
 	while (count > 129) 
 		PutNibblePair(257-129), PutNibblePair(~byte), count -= 129;
 	PutNibblePair(257-count), PutNibblePair(~byte);
 }
 
-	static void
-PutDiffer(start, length)
-	register unsigned char *start;
-	register long length;
+static void PutDiffer(unsigned char *start, long length)
 {
 	while (length > 0) {
 		register long tlength = (length>128) ? 128 : length;
@@ -104,12 +96,7 @@ PutDiffer(start, length)
 
 		This code is virutally identical to that in paint.c.
 */
-	void
-plusspace__WriteRow(ClassID, file, byteaddr, nbytes)
-	struct classhdr *ClassID;
-	FILE *file;
-	register unsigned char *byteaddr;
-	long nbytes;
+void plusspace__WriteRow(struct classheader *ClassID, FILE *file, unsigned char *byteaddr, long nbytes)
 {
 	register enum state {SameBytes, Differ, Differ1} CurSt;
 	register unsigned char thischar;	/* current input char */
@@ -182,9 +169,7 @@ plusspace__WriteRow(ClassID, file, byteaddr, nbytes)
 	bytes of with a single bit set.  (Vertical stripes.)
 */
 #define ERRORBYTE 128
-	static long
-GetPrintableNibblePair(fp)
-	register FILE *fp;
+static long GetPrintableNibblePair(FILE *fp)
 {
 	register  long a, b;
 	a = getc(fp);
@@ -206,12 +191,7 @@ GetPrintableNibblePair(fp)
 	If c>= 128, then 257-c copies of the next byte are stored.
 	returns 0 for success.  -1 for failure
 */
-	long
-plusspace__ReadRow(ClassID, file, row, length)
-	struct classhdr *ClassID;
-	register FILE *file;		/* where to get them from */
-	register unsigned char *row;	/* where to put bytes */
-	register long length;	/* how many bytes in row must be filled */
+long plusspace__ReadRow(struct classheader *ClassID, FILE *file, unsigned char *row, long length)
 {
 	register int sofar;		/* length unpacked so far */
 	register curr;		/* current char from in stream */

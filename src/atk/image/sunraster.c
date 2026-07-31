@@ -63,13 +63,13 @@ static char *Copyright= "Copyright 1989, 1993 Jim Frost";
 #include <image.ih>
 #include <sunraster.h>
 #include <sunraster.eh>
+static void babble();
+static void sunread();
 
 /* SUPPRESS 558 */
 /* SUPPRESS 560 */
 
-static void babble(name, header)
-     char           *name;
-     struct rheader *header;
+static void babble(char *name, struct rheader *header)
 {
   printf("%s is a", name);
   switch (memToVal(header->type, 4)) {
@@ -118,10 +118,7 @@ static void babble(name, header)
   printf(" Sun rasterfile\n");
 }
 
-int 
-sunraster__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+int sunraster__Ident(struct classheader *classID, char *fullname)
 { FILE          *f;
   struct rheader  header;
   int             r;
@@ -156,11 +153,7 @@ sunraster__Ident( classID, fullname )
 /* read either rl-encoded or normal image data
  */
 
-static void sunread(f, buf, len, enc)
-     FILE        *f;
-     byte         *buf;
-     unsigned int  len;
-     unsigned int  enc;  /* true if encoded file */
+static void sunread(FILE *f, byte *buf, unsigned int len, unsigned int enc)
 { static byte repchar, remaining= 0;
 
   /* rl-encoded read
@@ -208,11 +201,7 @@ static void sunread(f, buf, len, enc)
   }
 }
 
-int
-sunraster__Load( self, fullname, fp )
-    struct sunraster *self;
-    char *fullname;
-    FILE *fp;
+int sunraster__Load(struct sunraster *self, char *fullname, FILE *fp)
 { FILE          *f;
   struct rheader  header;
   unsigned int    mapsize;
@@ -374,11 +363,7 @@ sunraster__Load( self, fullname, fp )
   return(0);
 }
 
-long
-sunraster__Read( self, file, id )
-    struct sunraster *self;
-    FILE *file;
-    long id;
+long sunraster__Read(struct sunraster *self, FILE *file, long id)
 {
     if(sunraster_Load(self, NULL, file) == 0)
 	return(dataobject_NOREADERROR);
@@ -386,21 +371,12 @@ sunraster__Read( self, file, id )
 	return(dataobject_BADFORMAT);
 }
 
-long
-sunraster__Write( self, file, writeID, level )
-    struct sunraster *self;
-    FILE *file;
-    long writeID;
-    int level;
+long sunraster__Write(struct sunraster *self, FILE *file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
-long
-sunraster__WriteNative( self, file, filename )
-    struct sunraster *self;
-    FILE *file;
-    char *filename;
+long sunraster__WriteNative(struct sunraster *self, FILE *file, char *filename)
 {
 return(0);
 }

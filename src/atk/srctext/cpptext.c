@@ -43,12 +43,14 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 
 #include "srctext.ih"
 #include "cpptext.eh"
+static void SetupStyles();
+static void fn_name();
+static boolean isOperatorOverload(struct cpptext *self, char ch);
+static long skipJunk();
 
 static Dict *words[TABLESIZE];
 
-void cpptext__SetAttributes(self,atts)
-struct cpptext	*self;
-struct attributes   *atts;
+void cpptext__SetAttributes(struct cpptext *self, struct attributes *atts)
 {
     super_SetAttributes(self,atts);
     while (atts!=NULL) {
@@ -58,8 +60,7 @@ struct attributes   *atts;
     }
 }
 
-static void SetupStyles(self)
-struct cpptext *self;
+static void SetupStyles(struct cpptext *self)
 {
     if ((self->header.srctext.kindStyle[CLASS]= stylesheet_Find(self->header.text.styleSheet, "class")) == NULL) {
 	self->header.srctext.kindStyle[CLASS]= style_New();
@@ -70,15 +71,13 @@ struct cpptext *self;
     }
 }
 
-void cpptext__SetupStyles(self)
-struct cpptext *self;
+void cpptext__SetupStyles(struct cpptext *self)
 {
     super_SetupStyles(self);
     SetupStyles(self);
 }
 
-boolean cpptext__InitializeClass(classID)
-struct classheader *classID;
+boolean cpptext__InitializeClass(struct classheader *classID)
 {
     static Dict cppkeywords[]={
 	{"asm",0,KEYWRD},
@@ -135,9 +134,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean cpptext__InitializeObject(classID, self)
-struct classheader *classID;
-struct cpptext *self;
+boolean cpptext__InitializeObject(struct classheader *classID, struct cpptext *self)
 {
     self->header.srctext.words= (Dict **)words;
     self->acsctrlOutdent= 2;
@@ -149,9 +146,7 @@ struct cpptext *self;
 
 /* override */
 /* cpptext_ReflowComment is identical to srctext's, but it will also flow double-slash comments.  pos is the beginning of the line we want to try to flow into the previous one */
-boolean cpptext__ReflowComment(self,pos)
-struct cpptext *self;
-long pos;
+boolean cpptext__ReflowComment(struct cpptext *self, long pos)
 {
     long startcomment=cpptext_InCommentStart(self,pos);
     long skipws= cpptext_SkipWhitespace(self,pos, cpptext_GetLength(self));
@@ -182,9 +177,7 @@ long pos;
 
 /* override */
 /* BreakLine breaks up a line so it fits within the specified max-length. endofline is a mark (so it stays put during reindenting) pointing to the newline at the end of the line to be broken. */
-void cpptext__BreakLine(self,endofline)
-struct cpptext *self;
-struct mark *endofline;
+void cpptext__BreakLine(struct cpptext *self, struct mark *endofline)
 {
     long end;
     int c;
@@ -243,9 +236,7 @@ struct mark *endofline;
 }
 
 /* skipJunk finds the position of the next "significant" character */
-static long skipJunk(self, pos, len)
-struct cpptext *self;
-long pos, len;
+static long skipJunk(struct cpptext *self, long pos, long len)
 {
     int ch=cpptext_GetChar(self,pos++), prev;
     int incomment=FALSE;
@@ -271,16 +262,12 @@ long pos, len;
     return len;
 }
 
-static boolean isOperatorOverload(self,ch)
-struct cpptext *self;
-char ch;
+static boolean isOperatorOverload(struct cpptext *self, char ch)
 {
     return (index("!%&,^|~()[]*/+-<=>",ch) != NULL);
 }
 
-static void fn_name(self, posn, backtoofar)
-struct cpptext *self;
-long posn, backtoofar;
+static void fn_name(struct cpptext *self, long posn, long backtoofar)
 {
     long end=posn, length=cpptext_GetLength(self);
     int c, parencount=0;
@@ -340,8 +327,7 @@ long posn, backtoofar;
 static boolean inClassDef; /* TRUE to flag that "class" keyword was found.  reset to FALSE once inside definition itself */
 static int inTplArgList; /* -1 to flag that "template" keyword was found.  + values count <> nesting */ /* this check is probably unnecessary, since the keyword "class" only implies a class decl if it has a : or { after the class name */
 
-void cpptext__RedoStyles(self)
-struct cpptext *self;
+void cpptext__RedoStyles(struct cpptext *self)
 {
     long posn, len=cpptext_GetLength(self), readyForFName=1;
     int prev=0, c='\n', braces=0; /* c is initialized to a newline so the start of the file looks like the start of line. */
@@ -456,9 +442,7 @@ struct cpptext *self;
 
 /* override */
 /* cpptext_CheckWord does everything that srctext's would have, but also checks for class names */
-long cpptext__CheckWord(self,i,end)
-struct cpptext *self;
-long i,end;
+long cpptext__CheckWord(struct cpptext *self, long i, long end)
 {
     long j, start, endstr;
     long filelen=cpptext_GetLength(self);
@@ -489,9 +473,7 @@ long i,end;
 
 /* override */
 /* cpp's RedoStyles won't call this for scope resolution operators (::), but it DOES still get called when user TYPES a colon */
-void cpptext__BackwardCheckLabel(self, pos)
-struct cpptext *self;
-long pos;
+void cpptext__BackwardCheckLabel(struct cpptext *self, long pos)
 {
     if (cpptext_GetChar(self,pos-1)!=':')
 	super_BackwardCheckLabel(self,pos);
@@ -518,10 +500,7 @@ long pos;
 #define match(self,pos,str) ((pos==0 || !cpptext_IsTokenChar(self, cpptext_GetChar(self, pos-1))) && !cpptext_IsTokenChar(self, cpptext_GetChar(self, pos+cstrlen(str))) && cpptext_DoMatch(self,pos,str,cstrlen(str))) /*RSK91fix: use IsTokenChar, not isalnum*/
 
 /* Indentation returns the proper indentation of the line that starts at pos */ /*RSK91rewrite*/
-int cpptext__Indentation(self,pos)
-struct cpptext *self;
-long pos;
-/*boolean reindent,indentEmptyLines;*/ /*RSK91remove*/
+int cpptext__Indentation(struct cpptext *self, long pos)
 {
     int c;
     long savedPos=(-1), parensFollowedBy=(-1), colonFollowedBy=(-1);

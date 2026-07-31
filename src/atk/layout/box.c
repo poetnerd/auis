@@ -47,6 +47,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 #include <graphic.ih>
 
 #include <box.eh>
+static boolean fgetstring();
+static void objectto();
+static long readASCII();
 
 static boolean debug=FALSE;
 
@@ -55,9 +58,7 @@ static boolean debug=FALSE;
 
 /* initialize entire class */
 
-boolean
-box__InitializeClass(classID)
-struct classheader *classID;	    /* unused */
+boolean box__InitializeClass(struct classheader *classID)
 {
     if (debug)
 	printf("box_InitializeClass()\n");
@@ -67,19 +68,14 @@ struct classheader *classID;	    /* unused */
 
 /* get corresponding view name */
 
-char *					/* returns "boxview */
-box__ViewName(self)
-struct box *self;
+char * box__ViewName(struct box *self)
 {
     return "boxview";
 }
 
 /* Initialize new data box */
 
-boolean					/* returns TRUE for success */
-box__InitializeObject(classID, self)
-struct classheader *classID;		/* unused */
-struct box *self;
+boolean box__InitializeObject(struct classheader *classID, struct box *self)
 {
 
     if (debug)
@@ -92,10 +88,7 @@ struct box *self;
 
 /* tear down a box */
 
-void
-box__FinalizeObject(classID, self)
-struct classheader *classID;	/* unused */
-struct box *self;
+void box__FinalizeObject(struct classheader *classID, struct box *self)
 {
     if (debug)
 	printf("box_FinalizeObject\n");
@@ -103,9 +96,7 @@ struct box *self;
 
 /* toggle debugging flag */
 
-void
-box__ToggleDebug(self)
-struct box *self;
+void box__ToggleDebug(struct box *self)
 {
     if (debug) {
 	printf("box debugging off\n");
@@ -118,12 +109,7 @@ struct box *self;
 
 /* write box to file */
 
-long					/* returns id of object written */
-box__Write(self, f, writeID, level)
-struct box *self;
-FILE * f;				/* file to be written */
-long writeID;				/* unique ID of object in output file */
-int level;				/* nesting level */
+long box__Write(struct box *self, FILE *f, long writeID, int level)
 {
 
     if (debug)
@@ -144,10 +130,7 @@ int level;				/* nesting level */
 
 /* object to and print out bad input */
 
-static void
-objectto(f, message)
-FILE *f;				/* input file containing offending material */
-char *message;				/* error message */
+static void objectto(FILE *f, char *message)
 {
     int ch;
 
@@ -163,10 +146,7 @@ char *message;				/* error message */
 
 /* scan input for a specific string */
 
-static boolean			    /* returns TRUE for success */
-fgetstring(f, string)
-FILE *f;			    /* input file */
-char *string;			    /* desired input string */
+static boolean /* returns TRUE for success */ fgetstring(FILE *f, char *string)
 {
     int ch;
 
@@ -192,11 +172,7 @@ ending with an enddata directive.  In between comes the contained object.
 
 */
 
-static long			    /* returns read error status */
-readASCII(self, f, id)
-struct box *self;
-FILE *f;			    /* input file */
-long id;			    /* unique identifier in data stream */
+static long /* returns read error status */ readASCII(struct box *self, FILE *f, long id)
 {
     int ch;
     char dataname[256];
@@ -278,11 +254,7 @@ long id;			    /* unique identifier in data stream */
 
 /* read box from file */
 
-long				    /* returns read error status */
-box__Read(self, f, id)
-struct box *self;
-FILE * f;			    /* input file */
-long id;			    /* unique identifier in data stream */
+long box__Read(struct box *self, FILE *f, long id)
 {
     long rc;
 
@@ -302,9 +274,7 @@ long id;			    /* unique identifier in data stream */
 
 /* check to see if modified */
 
-long
-box__GetModified(self)
-struct box *self;
+long box__GetModified(struct box *self)
 {
     long rc, cc;
 
@@ -324,10 +294,7 @@ struct box *self;
 
 /* fill in contents */
 
-void
-box__FillInContents(self, name)
-struct box *self;
-char *name;
+void box__FillInContents(struct box *self, char *name)
 {
     struct dataobject *newobject;
 

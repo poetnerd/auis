@@ -93,9 +93,7 @@ static struct bind_Description textviewBindings[] = {
 };
 #endif
 
-boolean
-linkview__InitializeClass(c)
-struct classheader *c;
+boolean linkview__InitializeClass(struct classheader *c)
 {
 /* 
   Initialize all the class data, particularly, set up the proc table entries 
@@ -129,10 +127,7 @@ struct classheader *c;
 }
 
 
-boolean
-linkview__InitializeObject(c, self)
-struct classheader *c;
-struct linkview *self;
+boolean linkview__InitializeObject(struct classheader *c, struct linkview *self)
 {
 /*
   Set up the data for each instance of the object (i.e.: clone the menu
@@ -144,20 +139,14 @@ struct linkview *self;
 }
 
 
-void
-linkview__FinalizeObject(c, self)
-struct classheader *c;
-struct linkview *self;
+void linkview__FinalizeObject(struct classheader *c, struct linkview *self)
 {
   return;
 }
 
 
 
-void
-linkview__PostMenus(self, ml)
-struct linkview *self;
-struct menulist *ml;
+void linkview__PostMenus(struct linkview *self, struct menulist *ml)
 {
 /*
   Enable the menus for this object.
@@ -169,10 +158,7 @@ struct menulist *ml;
 }
 
 
-	static void
-LinkProc(self, param)
-	struct linkview *self;
-	char *param;
+static void LinkProc(struct linkview *self, char *param)
 {
 /*
   This is the routine which asks the user for the target of the link.
@@ -231,10 +217,7 @@ LinkProc(self, param)
 
 
 
-static boolean
-FindBuffer(f,b)
-struct frame *f;
-struct buffer *b;
+static boolean FindBuffer(struct frame *f, struct buffer *b)
 {
 /*
   Little, dippy routine passed to frame_Enumerate to find the
@@ -245,9 +228,7 @@ struct buffer *b;
 }
 
 
-static struct view *
-FindViewofBuffer(b)
-struct buffer *b;
+static struct view * FindViewofBuffer(struct buffer *b)
 {
 /*
   I don't know why *I* have to do this, it should be a buffer method.
@@ -281,11 +262,7 @@ struct buffer *b;
 }
 
 
-static void
-WarpLink(self, triggerer, rock)
-struct linkview *self;
-struct observable *triggerer;
-long rock;
+static void WarpLink(struct linkview *self, struct observable *triggerer, long rock)
 {
 /*
   Do the actual "warp".  The semantics I want are:
@@ -360,9 +337,7 @@ long rock;
 }
 
 
-static char *
-FileName(path)
-char *path;
+static char * FileName(char *path)
 {
 /*
   Returns the filename portion of path (i.e.: strips leading
@@ -384,10 +359,7 @@ char *path;
 }
 
 
-static void
-InsertProc(tv,l)
-struct textview *tv;
-long l;
+static void InsertProc(struct textview *tv, long l)
 {
     long pos;
     struct text *t = (struct text *) textview_GetDataObject(tv);
@@ -397,10 +369,7 @@ long l;
 }
 
 
-static void
-TargetProc(v, param)
-struct view *v;
-long param;
+static void TargetProc(struct view *v, long param)
 {
 /*
   First, checks to see if there is a link object waiting for an
@@ -454,10 +423,7 @@ long param;
 }
 
 
-static void
-AutolinkProc(self, param)
-struct linkview *self;
-long param;
+static void AutolinkProc(struct linkview *self, long param)
 {
 /*
   Start the autolink process.  Check to make sure we're not trouncing
@@ -502,18 +468,17 @@ long param;
   return;
 }
 
-void linkview__Link(self)
-struct linkview *self; {
+void linkview__Link(struct linkview *self)
+{
     LinkProc(self, 0);
 }
 
-void linkview__AutoLink(self)
-struct linkview *self; {
+void linkview__AutoLink(struct linkview *self)
+{
     AutolinkProc(self, 0);
 }
 
-void linkview__LinkFile(self, dest)
-struct linkview *self;
-char *dest; {
+void linkview__LinkFile(struct linkview *self, char *dest)
+{
     LinkProc(self, dest);
 }

@@ -121,6 +121,11 @@ END-SPECIFICATION  ************************************************************/
 #include <tree.ih>
 #include <treev.ih>
 #include <suite.ih>
+static int Activate();
+static int Alter_Control_Button();
+static int FullUpdate_Tree();
+static int Passivate();
+static int Prepare_Description();
 
 static  struct menulist		 *class_menulist;
 static  struct keymap		 *class_keymap;
@@ -351,9 +356,7 @@ static struct bind_Description view_menu[] = {
   NULL
 };
 
-boolean
-orgv__InitializeClass( classID )
-  register struct classheader *classID;
+boolean orgv__InitializeClass(struct classheader *classID)
 {
   IN(orgv_InitializeClass );
   DEBUGst(RCSID,rcsid);
@@ -364,10 +367,7 @@ orgv__InitializeClass( classID )
   return(TRUE);
 }
 
-boolean
-orgv__InitializeObject( classID, self)
-  register struct classheader *classID;
-  register struct orgv *self;
+boolean orgv__InitializeObject(struct classheader *classID, struct orgv *self)
 {
   register boolean status = true;
 
@@ -417,10 +417,7 @@ orgv__InitializeObject( classID, self)
   return(status);
 }
 
-void
-orgv__FinalizeObject( classID, self )
-  register struct classheader *classID;
-  register struct orgv *self;
+void orgv__FinalizeObject(struct classheader *classID, struct orgv *self)
 {
   IN(orgv_FinalizeObject );
   if ( Description ) {
@@ -436,10 +433,7 @@ orgv__FinalizeObject( classID, self )
   OUT(orgv_FinalizeObject );
 }
 
-void
-orgv__SetDataObject( self, data )
-  register struct orgv *self;
-  register struct org *data;
+void orgv__SetDataObject(struct orgv *self, struct dataobject *data)
 {
   IN(orgv_SetDataObject);
   super_SetDataObject( self, data );
@@ -450,9 +444,7 @@ orgv__SetDataObject( self, data )
   OUT(orgv_SetDataObject);
 }
 
-void
-orgv__ReceiveInputFocus( self )
-  register struct orgv *self;
+void orgv__ReceiveInputFocus(struct orgv *self)
 {
   IN(orgv_ReceiveInputFocus);
   InputFocus = true;
@@ -474,9 +466,7 @@ orgv__ReceiveInputFocus( self )
   OUT(orgv_ReceiveInputFocus);
 }
 
-void
-orgv__LoseInputFocus( self )
-  register struct orgv *self;
+void orgv__LoseInputFocus(struct orgv *self)
 {
   IN(orgv_LoseInputFocus);
   InputFocus = false; 
@@ -486,10 +476,7 @@ orgv__LoseInputFocus( self )
   OUT(orgv_LoseInputFocus);
 }
 
-void
-orgv__SetDebug( self, state )
-  register struct orgv *self;
-  register char state;
+void orgv__SetDebug(struct orgv *self, boolean state)
 {
   IN(orgv_SetDebug);
   debug = state;
@@ -499,11 +486,7 @@ orgv__SetDebug( self, state )
   OUT(orgv_SetDebug);
 }
 
-void
-orgv__SetHitHandler( self, handler, anchor )
-  register struct orgv *self;
-  register struct view *(*handler)();
-  register struct view *anchor;
+void orgv__SetHitHandler(struct orgv *self, procedure handler, struct view *anchor)
 {
   IN(orgv_SetHitHandler);
   HitHandler = handler;
@@ -512,11 +495,7 @@ orgv__SetHitHandler( self, handler, anchor )
   OUT(orgv_SetHitHandler);
 }
 
-void
-orgv__FullUpdate( self, type, left, top, width, height )
-  register struct orgv *self;
-  register enum view_UpdateType type;
-  register long left, top, width, height;
+void orgv__FullUpdate(struct orgv *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
   register long controls = PaletteExposed * PaletteHeight;
 
@@ -565,11 +544,7 @@ orgv__FullUpdate( self, type, left, top, width, height )
   OUT(orgv_FullUpdate);
 }
 
-struct view *
-orgv__Hit( self, action, x, y, clicks )
-  register struct orgv *self;
-  register enum view_MouseAction action;
-  register long x, y, clicks;
+struct view * orgv__Hit(struct orgv *self, enum view_MouseAction action, long x, long y, long clicks)
 {
   register struct view *hit = (struct view *) self;
 
@@ -600,12 +575,7 @@ orgv__Hit( self, action, x, y, clicks )
   return(hit);
 }
 
-enum view_DSattributes
-orgv__DesiredSize( self, given_width, given_height, pass, desired_width, desired_height )
-  register struct orgv	    *self;
-  register long		     given_width, given_height;
-  register enum view_DSpass  pass;
-  register long		    *desired_width, *desired_height;
+enum view_DSattributes orgv__DesiredSize(struct orgv *self, long given_width, long given_height, enum view_DSpass pass, long *desired_width, long *desired_height)
 {
   register enum view_DSattributes result = view_WidthFlexible | view_HeightFlexible;
   IN(orgv_DesiredSize);
@@ -615,14 +585,7 @@ orgv__DesiredSize( self, given_width, given_height, pass, desired_width, desired
   return(result);
 }
 
-static long
-Control_Button_Hit( self, suite, item, type, action, x, y, clicks )
-  register struct orgv		  *self;
-  register struct suite		  *suite;
-  register struct suite_item	  *item;
-  register long			   type;
-  register enum view_MouseAction   action;
-  register long			   x, y, clicks;
+static long Control_Button_Hit(struct orgv *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
 {
   char msg[512];
 
@@ -652,9 +615,7 @@ Control_Button_Hit( self, suite, item, type, action, x, y, clicks )
   return(0);
 }
 
-static void
-Add_Command( self )
-  register struct orgv *self;
+static void Add_Command(struct orgv *self)
 {
   register struct tree_node *node;
   char *reply;
@@ -682,9 +643,7 @@ Add_Command( self )
   OUT(Add_Command);
 }
 
-static void
-Delete_Command( self )
-  register struct orgv *self;
+static void Delete_Command(struct orgv *self)
 {
   register struct tree_node *current_node = treev_CurrentNode( TreeView );
   IN(Delete_Command);
@@ -706,9 +665,7 @@ Delete_Command( self )
   OUT(Delete_Command);
 }
 
-static void
-Rename_Command( self )
-  register struct orgv *self;
+static void Rename_Command(struct orgv *self)
 {
   register struct tree_node *current_node = treev_CurrentNode( TreeView );
   char *reply;
@@ -731,22 +688,14 @@ Rename_Command( self )
   OUT(Rename_Command);
 }
 
-void
-orgv__Print( self, file, processor, format, level )
-  register struct orgv	     *self;
-  register FILE		     *file;
-  register char		     *processor;
-  register char		     *format;
-  register boolean	      level;
+void orgv__Print(struct orgv *self, FILE *file, char *processor, char *format, boolean level)
 {
   IN(orgv_Print);
   treev_Print( TreeView, file, processor, format, level );
   OUT(orgv_Print);
 }
 
-static void
-Plode_Command( self )
-  register struct orgv *self;
+static void Plode_Command(struct orgv *self)
 {
   IN(Plode_Command);
   if ( treev_CurrentNode( TreeView ) ) {
@@ -768,9 +717,7 @@ Plode_Command( self )
   OUT(Plode_Command);
 }
 
-static void
-Fold_Command( self )
-  register struct orgv *self;
+static void Fold_Command(struct orgv *self)
 {
   IN(Fold_Command);
   if ( Fold = !Fold ) {
@@ -787,9 +734,7 @@ Fold_Command( self )
   OUT(Fold_Command);
 }
 
-static void
-Node_Border_Command( self )
-  register struct orgv *self;
+static void Node_Border_Command(struct orgv *self)
 {
   static char *choices[] = {"Cancel", "Rectangle", "Round", "Oval", "Circle", 0};
   long response = 0, style, state = 0;
@@ -819,9 +764,7 @@ Node_Border_Command( self )
   OUT(Node_Border_Command);
 }
 
-static void
-Node_Connector_Command( self )
-  register struct orgv *self;
+static void Node_Connector_Command(struct orgv *self)
 {
   static char *choices[] = {"Cancel", "Dog Leg", "Direct", 0};
   long response = 0, style, state = 0;
@@ -849,9 +792,7 @@ Node_Connector_Command( self )
   OUT(Node_Connector_Command);
 }
 
-static void
-DEBUG_Command( self )
-  register struct orgv	     *self;
+static void DEBUG_Command(struct orgv *self)
 {
   IN(DEBUG_Command);
   orgv_SetDebug( self, !debug );
@@ -859,9 +800,7 @@ DEBUG_Command( self )
   OUT(DEBUG_Command);
 }
 
-static void
-Palette_Command( self )
-  register struct orgv *self;
+static void Palette_Command(struct orgv *self)
 {
   IN(Palette_Command);
   if ( PaletteExposed = !PaletteExposed )
@@ -873,9 +812,7 @@ Palette_Command( self )
   OUT(Palette_Command);
 }
 
-static void
-Description_Command( self )
-  register struct orgv *self;
+static void Description_Command(struct orgv *self)
 {
   IN(Description_Command);
   if ( DescriptionExposed = !DescriptionExposed ) {
@@ -894,9 +831,7 @@ Description_Command( self )
 }
 
 
-static void
-Arrangement_Command( self )
-  register struct orgv *self;
+static void Arrangement_Command(struct orgv *self)
 {
   IN(Arrangement_Command);
   if ( HorizontalArrangement ) {
@@ -917,11 +852,7 @@ Arrangement_Command( self )
   OUT(Arrangement_Command);
 }
 
-static
-Alter_Control_Button( self, datum, new )
-  register struct orgv *self;
-  register long datum;
-  register char *new;
+static Alter_Control_Button(struct orgv *self, long datum, char *new)
 {
   if ( PaletteExposed )
       suite_ChangeItemAttribute( Suite, suite_ItemOfDatum( Suite, datum ),
@@ -931,9 +862,7 @@ Alter_Control_Button( self, datum, new )
 	    suite_itemcaption, (long) ( new ) );
 }
 
-static
-Passivate( self )
-  register struct orgv *self;
+static Passivate(struct orgv *self)
   {
   if ( PaletteExposed ) {
     suite_PassivateItem( Suite, suite_ItemOfDatum( Suite, plode_code   ) );
@@ -944,9 +873,7 @@ Passivate( self )
   }
 }
 
-static
-Activate( self )
-  register struct orgv *self;
+static Activate(struct orgv *self)
 {
     if ( PaletteExposed ) {
 	suite_ActivateItem( Suite, suite_ItemOfDatum( Suite, plode_code   ) );
@@ -957,9 +884,7 @@ Activate( self )
     }
 }
 
-static
-FullUpdate_Tree( self )
-  register struct orgv *self;
+static FullUpdate_Tree(struct orgv *self)
 {
   struct rectangle bounds;
 
@@ -969,14 +894,7 @@ FullUpdate_Tree( self )
   orgv_PostMenus( self, Menu );
 }
 
-static long
-Tree_Hit( self, tree_view, node, type, action, x, y, clicks )
-  register struct orgv		 *self;
-  register struct treev	         *tree_view;
-  register struct tree_node	 *node;
-  register long			  type;
-  register enum view_MouseAction  action;
-  register long			  x, y, clicks;
+static long Tree_Hit(struct orgv *self, struct treev *tree_view, struct tree_node *node, long type, enum view_MouseAction action, long x, long y, long clicks)
 {
   IN(Tree_Hit);
   DEBUGdt(Type,type);
@@ -999,10 +917,7 @@ Tree_Hit( self, tree_view, node, type, action, x, y, clicks )
   return(NULL);
 }
 
-static
-Prepare_Description( self, node )
-  register struct orgv *self;
-  register struct tree_node *node;
+static Prepare_Description(struct orgv *self, struct tree_node *node)
 {
   register FILE *file;
   struct text *text;
@@ -1019,21 +934,14 @@ Prepare_Description( self, node )
   OUT(Prepare_Description);
 }
 
-void
-orgv__ObservedChanged( self, changed, change )
-  register struct orgv		     *self;
-  register struct observable	     *changed;
-  register long			      change;
+void orgv__ObservedChanged(struct orgv *self, struct observable *changed, long change)
   {
   IN(orgv_ObservedChanged);
 /*=== needed ? */
   OUT(orgv_ObservedChanged);
   }
 
-void
-orgv__LinkTree(self, parent)
-    struct orgv *self;
-    struct view *parent;
+void orgv__LinkTree(struct orgv *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if(parent && orgv_GetIM(self)) {

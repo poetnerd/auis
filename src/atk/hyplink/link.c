@@ -41,6 +41,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/hypl
 #include <fontdesc.ih>
 #include <path.ih>
 #include <link.eh>
+static long ReadOldFormat();
+static long link_SanelyReturnReadError();
 
 extern char *getenv();
 
@@ -58,9 +60,7 @@ static char *EncodeFont();
 /* Global variables */
 
 
-boolean
-link__InitializeClass(c)
-struct classheader *c;
+boolean link__InitializeClass(struct classheader *c)
 {
 /* 
   Initialize all the class data.
@@ -69,10 +69,7 @@ struct classheader *c;
 }
 
 
-boolean
-link__InitializeObject(c, self)
-struct classheader *c;
-struct link *self;
+boolean link__InitializeObject(struct classheader *c, struct link *self)
 {
 /*
   Inititialize the object instance data.
@@ -90,10 +87,7 @@ struct link *self;
 }
 
 
-void
-link__FinalizeObject(c, self)
-struct classheader *c;
-struct link *self;
+void link__FinalizeObject(struct classheader *c, struct link *self)
 {
 /*
   Finalize the object instance data.
@@ -105,9 +99,7 @@ struct link *self;
 
 
 #if 0
-char *
-link__GetResolvedLink(self)
-struct link *self;
+char * link__GetResolvedLink(struct link *self)
 {
 /*  Returns the filename stored in the link, except that
     substrings of the form $FOO or $(FOO) or ${FOO} are
@@ -168,8 +160,7 @@ struct link *self;
 }
 
 #else
-char *link__GetResolvedLink(self)
-struct link *self;
+char * link__GetResolvedLink(struct link *self)
 {
     static char localbuf[MAXPATHLEN+1];
     if(link_GetRawLink(self)) {
@@ -178,12 +169,7 @@ struct link *self;
 }
 #endif
 
-long
-link__Write(self, fp, id, level)
-struct link *self;
-FILE *fp;
-long id;
-int level;
+long link__Write(struct link *self, FILE *fp, long id, int level)
 {
 /*
   Write the object data out onto the datastream.
@@ -260,12 +246,7 @@ int level;
 
 
 
-static long
-link_SanelyReturnReadError(self, fp, id, code)
-     struct link *self;
-     FILE *fp;
-     long id;
-     long code;
+static long link_SanelyReturnReadError(struct link *self, FILE *fp, long id, long code)
 {
     /*
       Suck up the file until our enddata, then return the error code.
@@ -290,11 +271,7 @@ link_SanelyReturnReadError(self, fp, id, code)
 }
 
 
-static long
-ReadOldFormat(self, fp, id)
-     struct link *self;
-     FILE *fp;
-     long id;
+static long ReadOldFormat(struct link *self, FILE *fp, long id)
 {
     char *buf;
 
@@ -334,11 +311,7 @@ ReadOldFormat(self, fp, id)
 }
 
 
-long
-link__Read(self, fp, id)
-struct link *self;
-FILE *fp;
-long id;
+long link__Read(struct link *self, FILE *fp, long id)
 {
 /*
   Read in the object from the file.
@@ -418,10 +391,7 @@ long id;
 
 
 
-void
-link__SetLink(self, link)
-struct link *self;
-char *link;
+void link__SetLink(struct link *self, char *link)
 {
 /*
   Set the link target (a filename) for this object.
@@ -455,10 +425,7 @@ long len; { /*  Set the link length for this object. */
 }
 
 
-static void
-WriteLine(f, l)
-FILE *f;
-char *l;
+static void WriteLine(FILE *f, char *l)
 {
 /* 
   Output a single line onto the data stream, quoting
@@ -505,9 +472,7 @@ char *l;
 }
 
 
-static char *
-GlomStrings(s, t)
-char *s, *t;
+static char * GlomStrings(char *s, char *t)
 {
 /* 
   Safely (allocs more memory) concatenates the two strings, 
@@ -525,9 +490,7 @@ char *s, *t;
 }
 
 
-static char *
-ReadLine(f)
-FILE *f;
+static char * ReadLine(FILE *f)
 {
 /* 
   Reads from the datastream, attempting to return a single string.
@@ -587,9 +550,7 @@ FILE *f;
 
 #ifdef PL8
 
-static char *
-EncodeFont(self)
-struct link *self;
+static char * EncodeFont(struct link *self)
 {
 /*
   Returns a string representing the name of the font for this object.

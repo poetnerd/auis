@@ -51,6 +51,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 
 #include <X11/Xlib.h>
 #include <X11/XWDFile.h>
+static void _swaplong();
+static void _swapshort();
+static void pixmap_to_bitmap();
+static void reverse_bit_order();
+static void reverse_video();
 #define XWD_FILE_VERSION 7
 
 #define MaxIntensity  65536	/* maximum possible Intensity */
@@ -176,12 +181,7 @@ static unsigned short BlueIntensity[256]= {
 #define colorIntensity(R,G,B) \
   (RedIntensity[(R) >> 8] + GreenIntensity[(G) >> 8] + BlueIntensity[(B) >> 8])
 
-long xwdio__ReadRow(ClassID, file, row, nbytes)
-
-struct classheader *ClassID;
-FILE *file;		
-unsigned char *row;	
-long nbytes;   
+long xwdio__ReadRow(struct classheader *ClassID, FILE *file, unsigned char *row, long nbytes)
 {
 
     if (fread(row, sizeof(char), nbytes, file) < 0) 
@@ -204,12 +204,7 @@ long nbytes;
 
 }
 
-void xwdio__WriteRow(ClassID, file, row, nbytes)
-
-struct classheader *ClassID;
-FILE *file;
-unsigned char *row;
-long nbytes;
+void xwdio__WriteRow(struct classheader *ClassID, FILE *file, unsigned char *row, long nbytes)
 {
 
     unsigned char reversebuf[BUFBITS >> 3];
@@ -219,9 +214,7 @@ long nbytes;
 
 }
 
-static void _swapshort (bp, n)
-     register char *bp;
-     register unsigned n;
+static void _swapshort(char *bp, unsigned n)
 {
   register char c;
   register char *ep = bp + n;
@@ -235,9 +228,7 @@ static void _swapshort (bp, n)
     }
 }
 
-static void _swaplong (bp, n)
-register char *bp;
-register unsigned n;
+static void _swaplong(char *bp, unsigned n)
 {
     register char c;
     register char *ep = bp + n;
@@ -258,9 +249,7 @@ register unsigned n;
     }
 }
 
-static void reverse_bit_order(location, output, nbytes)
-unsigned char *location, *output;
-long nbytes;
+static void reverse_bit_order(unsigned char *location, unsigned char *output, long nbytes)
 {
 unsigned char *end = location + nbytes;
 static unsigned char reverse_table[256] = {
@@ -286,11 +275,7 @@ while(location < end)
     *output++ = reverse_table[*location++];
 }
 
-long xwdio__ReadImage(ClassID, file, pix)
-
-struct classheader *ClassID;
-FILE *file;		
-struct pixelimage *pix;	
+long xwdio__ReadImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix)
 {
     unsigned char *row;
     unsigned int rownum, rowsize, i = 0;
@@ -464,12 +449,7 @@ struct pixelimage *pix;
     return dataobject_NOREADERROR;
 }
 
-void xwdio__WriteImage(ClassID, file, pix, sub)
-
-struct classheader *ClassID;
-register FILE *file;		
-register struct pixelimage *pix;
-register struct rectangle *sub;
+void xwdio__WriteImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix, struct rectangle *sub)
 {
     long left, top, width, height;
     long buf[BUFBITS>>5];		
@@ -573,9 +553,7 @@ register struct rectangle *sub;
 
 
 
-static void pixmap_to_bitmap(location, output, nbytes)
-unsigned char *location, *output;
-long nbytes;
+static void pixmap_to_bitmap(unsigned char *location, unsigned char *output, long nbytes)
 {
   register int x, c, b;
 
@@ -607,8 +585,7 @@ of each eight such converted values */
  * 
  * this should help things look a bit better on most displays.
  */
-static unsigned int tone_scale_adjust(val)
-     unsigned int val;
+static unsigned int tone_scale_adjust(unsigned int val)
 {
   unsigned int rslt;
   
@@ -625,10 +602,7 @@ static unsigned int tone_scale_adjust(val)
 /*
  * dither a line from left to right
  */
-static void LeftToRight(curr, next, width)
-     int *curr;
-     int *next;
-     int  width;
+static void LeftToRight(int *curr, int *next, int width)
 {
   int idx;
   int error;
@@ -650,10 +624,7 @@ static void LeftToRight(curr, next, width)
 /*
  * dither a line from right to left
  */
-static void RightToLeft(curr, next, width)
-     int *curr;
-     int *next;
-     int  width;
+static void RightToLeft(int *curr, int *next, int width)
 {
   int idx;
   int error;

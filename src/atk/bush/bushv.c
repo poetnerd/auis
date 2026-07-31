@@ -90,6 +90,24 @@ END-SPECIFICATION  ******************************************************/
 #include <apts.ih>
 #include <bush.ih>
 #include <bushv.eh>
+static void DoAutoRescan();
+static void DoEdit();
+static int DoExecute();
+static int DoPrint();
+static char * FileSuffix();
+static char * FileType();
+static char* FormatEntriesItem();
+static char* Format_Tags(u_short tag);
+static void GetPreferences();
+static void GetPreferredEditors();
+static void GetPreferredFonts();
+static long Passivator();
+static void PostCursor();
+static void ResetEntriesCaptions();
+static long ResetSelectedState();
+static void SortDir();
+static void StartDirMove();
+static long ToggleCaptionDetail();
 
 #define	by_name					    0
 #define	by_size					    1
@@ -416,10 +434,7 @@ treev_Specification tree_spec[] = {
     NULL
 };
 
-static void
-PostCursor( self, type )
-  register struct bushv   *self;
-  register int		   type;
+static void PostCursor(struct bushv *self, int type)
 {
   struct rectangle	   r;
 
@@ -454,14 +469,7 @@ ResetSelectedState( self, suite, item, datum )
   return(status);
 }
 
-static long
-EntriesHitHandler( self, suite, item, object, action, x, y, numClicks )
-  register struct bushv		*self;
-  register struct suite		*suite;
-  register struct suite_item	*item;
-  register long			 object;
-  register enum view_MouseAction action;
-  register long			 x, y, numClicks;
+static long EntriesHitHandler(struct bushv *self, struct suite *suite, struct suite_item *item, long object, enum view_MouseAction action, long x, long y, long numClicks)
 {
   register struct Dir_Entry	*dirEntry = NULL;
   register int			 numSelected = 0, count = 0, i = 0;
@@ -499,10 +507,7 @@ EntriesHitHandler( self, suite, item, object, action, x, y, numClicks )
   return(0);
 }
 
-static void
-StartDirMove( self, tn )
-  register struct bushv    *self;
-  register tree_type_node   tn;
+static void StartDirMove(struct bushv *self, tree_type_node tn)
 {
   IN(StartDirMove);
   if(tn) {
@@ -514,10 +519,7 @@ StartDirMove( self, tn )
   OUT(StartDirMove);
 }
 
-static int
-FinishDirMove( self, tn )
-  register struct bushv	    *self;
-  register tree_type_node    tn;
+static int FinishDirMove(struct bushv *self, tree_type_node tn)
 {
   register int		     status = 0;
   char			     finalLocation[MAXPATHLEN];
@@ -572,14 +574,7 @@ FinishDirMove( self, tn )
   return(status);
 }
 
-static long
-TreeHitHandler( self, tree_view, node, object, action, x, y, numClicks )
-  register struct bushv		    *self;
-  register struct treev		    *tree_view;
-  register tree_type_node	     node;
-  register long			     object;
-  register enum view_MouseAction     action;
-  register long			     x, y, numClicks;
+static long TreeHitHandler(struct bushv *self, struct treev *tree_view, tree_type_node node, long object, enum view_MouseAction action, long x, long y, long numClicks)
 {
   register tree_type_node	     old_CurrNode = NULL;
   register tree_type_node	     peer = NULL;
@@ -652,14 +647,7 @@ TreeHitHandler( self, tree_view, node, object, action, x, y, numClicks )
   return(0);
 }
 
-static long
-ControlHitHandler( self, suite, item, object, action, x, y, numClicks )
-  register struct bushv		    *self;
-  register struct suite		    *suite;
-  register struct suite_item	    *item;
-  register long			     object;
-  register enum view_MouseAction     action;
-  register long			     x, y, numClicks;
+static long ControlHitHandler(struct bushv *self, struct suite *suite, struct suite_item *item, long object, enum view_MouseAction action, long x, long y, long numClicks)
 {
 
   IN(ControlHitHandler);
@@ -710,9 +698,7 @@ ControlHitHandler( self, suite, item, object, action, x, y, numClicks )
   return(0);
 }
 
-static char *
-FileSuffix( file_name )
-  register char   *file_name;
+static char * FileSuffix(char *file_name)
 {
   register char   *suffix;
 
@@ -721,9 +707,7 @@ FileSuffix( file_name )
   return(suffix);
 }
 
-static char *
-FileType( file_name )
-  register char	    *file_name;
+static char * FileType(char *file_name)
 {
   static char	    *suffixes[] = {"BAK","CKP",0};
   register char	    *suffix, **suffix_ptr;
@@ -742,11 +726,7 @@ FileType( file_name )
   return(suffix);
 }
 
-int
-SortByName( self, suite, e1, e2 )
-  register struct bushv		*self;
-  register struct suite		*suite;
-  register struct suite_item    *e1,*e2;
+int SortByName(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
   register long			 status = 0;
@@ -762,11 +742,7 @@ SortByName( self, suite, e1, e2 )
   return(0);
 }
 
-int
-SortBySuffix( self, suite, e1, e2 )
-  register struct bushv		*self;
-  register struct suite		*suite;
-  register struct suite_item    *e1,*e2;
+int SortBySuffix(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
   register long			 rc;
@@ -787,11 +763,7 @@ SortBySuffix( self, suite, e1, e2 )
   return(0);
 }
 
-int
-SortBySize( self, suite, e1, e2 )
-  register struct bushv		*self;
-  register struct suite		*suite;
-  register struct suite_item    *e1,*e2;
+int SortBySize(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
 
@@ -805,11 +777,7 @@ SortBySize( self, suite, e1, e2 )
   return(0);
 }
 
-int
-SortByDate( self, suite, e1, e2 )
-  register struct bushv		*self;
-  register struct suite		*suite;
-  register struct suite_item    *e1,*e2;
+int SortByDate(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
 
@@ -823,11 +791,7 @@ SortByDate( self, suite, e1, e2 )
   return(0);
 }
 
-int
-SortByType( self, suite, e1, e2 )
-  register struct bushv		*self;
-  register struct suite		*suite;
-  register struct suite_item    *e1,*e2;
+int SortByType(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
   char				 n1[MAXPATHLEN+1], n2[MAXPATHLEN+1];
@@ -864,9 +828,7 @@ static struct bind_Description bushvBindings[] = {
   NULL
 };
 
-boolean
-bushv__InitializeClass( ClassID )
-  struct classheader	    *ClassID;
+boolean bushv__InitializeClass(struct classheader *ClassID)
 {
   struct classinfo	    *classInfo = NULL;
   struct proctable_Entry *pe;
@@ -896,9 +858,7 @@ bushv__InitializeClass( ClassID )
   return(TRUE);
 }
 
-static void
-GetPreferredEditors( self )
-  register struct bushv	 *self;
+static void GetPreferredEditors(struct bushv *self)
 {
   register char		 *tmp = NULL, *colon = NULL;
   char			 *myCopy = NULL;
@@ -959,9 +919,7 @@ GetPreferredEditors( self )
   OUT(GetPreferredEditors);
 }
 
-static void
-GetPreferredFonts( self )
-  register struct bushv	*self;
+static void GetPreferredFonts(struct bushv *self)
 {
   char *control_font;
   char *tree_node_font;
@@ -986,9 +944,7 @@ GetPreferredFonts( self )
   OUT(GetPreferredFont);
 }
 
-static void
-GetPreferences( self )
-  register struct bushv	*self;
+static void GetPreferences(struct bushv *self)
 {
   IN(GetPreferences);
   GetPreferredEditors(self);
@@ -997,10 +953,7 @@ GetPreferences( self )
   OUT(GetPreferences);
 }
 
-boolean
-bushv__InitializeObject( ClassID, self )
-  register struct classheader	*ClassID;
-  register struct bushv		*self;
+boolean bushv__InitializeObject(struct classheader *ClassID, struct bushv *self)
 {
 
   Kmap = kmap;
@@ -1036,10 +989,7 @@ bushv__InitializeObject( ClassID, self )
   return(TRUE);
 }   
 
-void
-bushv__FinalizeObject( ClassID, self )
-  register struct classheader	*ClassID;
-  register struct bushv		*self;
+void bushv__FinalizeObject(struct classheader *ClassID, struct bushv *self)
 {
   IN(bushv_FinalizeObject);
   if(LP) lpair_Destroy(LP);
@@ -1052,10 +1002,7 @@ bushv__FinalizeObject( ClassID, self )
   OUT(bushv_FinalizeObject);
 }
 
-struct bushv *
-bushv__Create( ClassID, object )
-  register struct classheader	*ClassID;
-  register char			 object;
+struct bushv * bushv__Create(struct classheader *ClassID, char object)
 {
   struct bushv	*self = NULL;
 
@@ -1064,10 +1011,7 @@ bushv__Create( ClassID, object )
   return(self);
 }
 
-void
-bushv__PostMenus( self, menulist )
-  struct bushv		*self;
-  struct menulist	*menulist;
+void bushv__PostMenus(struct bushv *self, struct menulist *menulist)
 {
   int			 mask = 0;
 
@@ -1085,21 +1029,13 @@ bushv__PostMenus( self, menulist )
   OUT(bushv_PostMenus);
 }
 
-struct view *
-bushv__Hit( self, action, x, y, numberOfClicks )
-  struct bushv		    *self;
-  enum view_MouseAction      action;
-  long			     x, y, numberOfClicks;
+struct view * bushv__Hit(struct bushv *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
   IN(bushv_Hit);
   return(lpair_Hit(LP,action,x,y,numberOfClicks));
 }
 
-void
-bushv__FullUpdate( self, Type, left, top, width, height )
-  struct bushv		    *self;
-  enum view_UpdateType       Type;
-  long			     left, top, width, height;
+void bushv__FullUpdate(struct bushv *self, enum view_UpdateType Type, long left, long top, long width, long height)
 {
   struct rectangle	     r;
   char		     RootPathIfInset[MAXPATHLEN];
@@ -1136,10 +1072,7 @@ bushv__FullUpdate( self, Type, left, top, width, height )
   OUT(bushv_FullUpdate);
 }
 
-static void
-DoEdit( self, path, name )
-  struct bushv	*self;
-  char		*path, *name; 
+static void DoEdit(struct bushv *self, char *path, char *name)
 {
   char		 full_path[MAXPATHLEN * 2];
 
@@ -1153,9 +1086,7 @@ DoEdit( self, path, name )
   OUT(DoEdit);
 }
 
-static void
-PerformEdit( self )
-  struct bushv	*self;
+static void PerformEdit(struct bushv *self)
 {
   register int	 i = 0;
 
@@ -1181,9 +1112,7 @@ PerformEdit( self )
   OUT(PerformEdit);
 }
 
-static void
-PerformPrint( self )
-  struct bushv	*self;
+static void PerformPrint(struct bushv *self)
 {
   register int	 i = 0;
   register FILE	*file = NULL;
@@ -1216,10 +1145,7 @@ PerformPrint( self )
   OUT(PerformPrint);
 }
 
-static
-DoPrint( self, path, name )
-  struct bushv *self;
-  char *path, *name; 
+static DoPrint(struct bushv *self, char *path, char *name)
 {
   char full_path[MAXPATHLEN];
   int i = 0;
@@ -1234,9 +1160,7 @@ DoPrint( self, path, name )
   OUT(DoPrint);
 }
 
-static void
-PerformCreate( self )
-  struct bushv *self;
+static void PerformCreate(struct bushv *self)
 {
   register int f = 0;
   char *response = NULL;
@@ -1271,11 +1195,7 @@ PerformCreate( self )
   OUT(PerformCreate);
 }
 
-static void
-IssueError( self, what, where, overlay )
-  register struct bushv *self;
-  register char *what, *where;
-  boolean overlay;
+static void IssueError(struct bushv *self, char *what, char *where, boolean overlay)
 {
   long result = 0;
   static char *question[] = { "Continue", NULL };
@@ -1291,12 +1211,7 @@ IssueError( self, what, where, overlay )
   OUT(IssueError);
 }
 
-static int
-DoDestroy( self, tn, Entry, overlay )
-  register struct bushv *self;
-  register tree_type_node tn;
-  register struct Dir_Entry *Entry;
-  boolean overlay;
+static int DoDestroy(struct bushv *self, tree_type_node tn, struct Dir_Entry *Entry, boolean overlay)
 {
   register int status = 0;
 
@@ -1309,9 +1224,7 @@ DoDestroy( self, tn, Entry, overlay )
   return(status);
 }
 
-static void
-PerformDestroy( self )
-  struct bushv *self;
+static void PerformDestroy(struct bushv *self)
 {
     static char *question[] = {"Confirm","Cancel",0};
     register int i = 0;
@@ -1421,9 +1334,7 @@ PerformDestroy( self )
     OUT(PerformDestroy);
 }
 
-static void
-PerformExec( self )
-  struct bushv *self;
+static void PerformExec(struct bushv *self)
 {
   register int i = 0;
 
@@ -1447,11 +1358,7 @@ PerformExec( self )
   OUT(PerformExec);
 }
 
-static
-DoExecute( self, tn, Entry )
-  struct bushv		*self;
-  tree_type_node	 tn; 
-  struct Dir_Entry	*Entry; 
+static DoExecute(struct bushv *self, tree_type_node tn, struct Dir_Entry *Entry)
 {
   char			 full_path[MAXPATHLEN * 2];
 
@@ -1464,20 +1371,13 @@ DoExecute( self, tn, Entry )
   OUT(DoExecute);
 }
 
-static int
-PerformSystemAction( self, name, argv, msg )
-  struct bushv	*self;
-  char		*name;
-  char		*argv[];
-  char		*msg;
+static int PerformSystemAction(struct bushv *self, char *name, char *argv[], char *msg)
 {
   Announce(msg);
   return(bush_PerformSystemAction(Bush,name,argv));
 }
 
-static char*
-Format_Tags( tag )
-  u_short	    tag;
+static char* Format_Tags(u_short tag)
 {
   static char	    tags[11];
 
@@ -1508,12 +1408,7 @@ Format_Tags( tag )
   return(tags);
 }
 
-static char*
-FormatEntriesItem( self, tn, i, dirEntry )
-  register struct bushv	*self;
-  tree_type_node	 tn;
-  int			 i;
-  struct Dir_Entry	*dirEntry;
+static char* FormatEntriesItem(struct bushv *self, tree_type_node tn, int i, struct Dir_Entry *dirEntry)
 {
   static char		 entries_item[257], trailer[5];
   register char		*entries_ptr = NULL, *time_ptr = NULL;
@@ -1560,9 +1455,7 @@ FormatEntriesItem( self, tn, i, dirEntry )
   return(entries_ptr);
 }
 
-static void
-ResetEntriesCaptions( self )
-  struct bushv *self;
+static void ResetEntriesCaptions(struct bushv *self)
 {
   register int i = 0, count = 0;
   struct suite_item *item = NULL;
@@ -1579,9 +1472,7 @@ ResetEntriesCaptions( self )
   OUT(ResetEntriesCaptions);
 }
 
-static int
-HandleModifiedObject( self )
-  register struct bushv	    *self;
+static int HandleModifiedObject(struct bushv *self)
 {
   long			     result = 0;
   int			     return_value = 0;
@@ -1615,9 +1506,7 @@ HandleModifiedObject( self )
   return(return_value);
 }
 
-static void
-PerformExit( self )
-  struct bushv	*self;
+static void PerformExit(struct bushv *self)
 {
   IN(PerformExit);
   if(Object == entry_object)
@@ -1628,9 +1517,7 @@ PerformExit( self )
   OUT(PerformExit);
 }
 
-static void
-SwitchDirectory( self )
-  struct bushv	    *self;
+static void SwitchDirectory(struct bushv *self)
 {
   static char	    *question[] = {"Continue",NULL};
   int		     msg_status = 0;
@@ -1678,9 +1565,7 @@ SwitchDirectory( self )
   OUT(SwitchDirectory);
 }
 
-static void
-SetEditor( self )
-  struct bushv	*self;
+static void SetEditor(struct bushv *self)
 {
   long		 result = 0;
   char		*response = NULL;
@@ -1712,10 +1597,7 @@ SetEditor( self )
   OUT(SetEditor);
 }
 
-void
-bushv__PostKeyState( self, kstate )
-  struct bushv		*self;
-  struct keystate	*kstate;
+void bushv__PostKeyState(struct bushv *self, struct keystate *kstate)
 {
   IN(bushv_KeyState);
   keystate_AddBefore(Kstate,kstate);
@@ -1723,10 +1605,7 @@ bushv__PostKeyState( self, kstate )
   OUT(bushv_KeyState);
 }
 
-char *
-FormatEntriesInfo( self, tn )
-  struct bushv		*self;
-  tree_type_node	 tn;
+char * FormatEntriesInfo(struct bushv *self, tree_type_node tn)
 {
   static char		 entries_info[257];
   register long		 i = 0, total_bytes = 0, count = 0;
@@ -1761,9 +1640,7 @@ static int
   return(sorter);
 }
 
-static void
-DoAutoRescan( self )
-  register struct bushv		 *self;
+static void DoAutoRescan(struct bushv *self)
 {
   register struct suite_item	**selected = NULL, *item = NULL;
   register char			**names = NULL;
@@ -1800,9 +1677,7 @@ DoAutoRescan( self )
   IN(DoAutoRescan);
 }
 
-static void
-PushToEntries( self )
-  struct bushv	      *self;
+static void PushToEntries(struct bushv *self)
 {
   register int       (*sorter)();
 
@@ -1821,9 +1696,7 @@ PushToEntries( self )
   OUT(PushToEntries);
 }
 
-static void
-PushToEntry( self )
-  struct bushv *self;
+static void PushToEntry(struct bushv *self)
 {
   char file_name[MAXPATHLEN];
   char *objectName = NULL;
@@ -1889,9 +1762,7 @@ PushToEntry( self )
   OUT(PushToEntry);
 }
 
-static int
-PopToNodes( self )
-  struct bushv	*self;
+static int PopToNodes(struct bushv *self)
 {
   int		 status = 0;
 
@@ -1910,9 +1781,7 @@ PopToNodes( self )
   return(status);
 }
 
-static int
-PopToEntries( self )
-  struct bushv	*self;
+static int PopToEntries(struct bushv *self)
 {
   int		 status = 0;
 
@@ -1960,9 +1829,7 @@ I set the item_data attribute, active, of the ControlView items to be the OR'ed 
   return(result);
 }
 
-static void
-PassivateControls( self )
-  struct bushv    *self;
+static void PassivateControls(struct bushv *self)
 {
   IN(PassivateControls);
   suite_Apply(ControlView,Passivator,self,NULL);
@@ -1970,9 +1837,7 @@ PassivateControls( self )
   OUT(PassivateControls);
 }
 
-static void
-Push( self )
-  register struct bushv	    *self;
+static void Push(struct bushv *self)
 {
   register tree_type_node    tn = NULL;
   char			    *name = NULL;
@@ -2013,9 +1878,7 @@ Push( self )
   OUT(Push);
 }
 
-static void
-Pop( self )
-  struct bushv    *self;
+static void Pop(struct bushv *self)
 {
   int		   status = 0;
 
@@ -2033,9 +1896,7 @@ Pop( self )
   OUT(Pop);
 }
 
-static void
-PerformPop( self )
-  struct bushv	*self;
+static void PerformPop(struct bushv *self)
 {
   IN(PerformPop);
   PostCursor(self,Cursor_Wait);
@@ -2044,12 +1905,7 @@ PerformPop( self )
   OUT(PerformPop);
 }
 
-static long
-ToggleCaptionDetail( self, suite, item, datum )
-  struct bushv		*self;
-  struct suite		*suite;
-  struct suite_item	*item;
-  unsigned		 datum;
+static long ToggleCaptionDetail(struct bushv *self, struct suite *suite, struct suite_item *item, unsigned datum)
 {
   long int		 result = 0;
 
@@ -2062,10 +1918,7 @@ ToggleCaptionDetail( self, suite, item, datum )
   return(result);
 }
 
-static void
-SortDir( self, tn )
-  struct bushv *self;
-  tree_type_node tn;
+static void SortDir(struct bushv *self, tree_type_node tn)
 {
   register int (*sorter)();
 
@@ -2078,9 +1931,7 @@ SortDir( self, tn )
 }
 
 
-static void
-PerformDetail( self )
-  struct bushv *self;
+static void PerformDetail(struct bushv *self)
 {
     IN(PerformDetail);
     PostCursor(self, Cursor_Wait);
@@ -2098,10 +1949,7 @@ PerformDetail( self )
     OUT(PerformDetail);
 }
 
-void
-bushv__SetDataObject( self, bush )
-  struct bushv *self;
-  struct bush *bush;
+void bushv__SetDataObject(struct bushv *self, struct dataobject *bush)
 {
     IN(bushv_SetDataObject);
     Bush = bush;
@@ -2112,10 +1960,7 @@ bushv__SetDataObject( self, bush )
     OUT(bushv_SetDataObject);
 }
 
-static int
-SortRequested( self, tn )
-  struct bushv *self;
-  tree_type_node tn;
+static int SortRequested(struct bushv *self, tree_type_node tn)
 {
   int sort = -1, current_mode = SortMode;
   long result = 0;
@@ -2134,9 +1979,7 @@ SortRequested( self, tn )
     return(sort);
 }
 
-static void
-PerformSort( self )
-  struct bushv *self;
+static void PerformSort(struct bushv *self)
 {
   int (*sorter)(), sMode = 0;
   struct suite_item *sortItem = NULL;
@@ -2164,9 +2007,7 @@ PerformSort( self )
     OUT(PerformSort);
 }
 
-static void
-PerformRescan( self )
-  struct bushv *self;
+static void PerformRescan(struct bushv *self)
 {
   struct stat stats;
 
@@ -2222,12 +2063,7 @@ PerformRescan( self )
     OUT(PerformRescan);
 }
 
-static int
-ResetChildDirPaths( self, tree, tn, datum )
-  struct bushv      *self;
-  struct tree	    *tree;
-  tree_type_node     tn;
-  long		     datum;
+static int ResetChildDirPaths(struct bushv *self, struct tree *tree, tree_type_node tn, long datum)
 {
   long int	     status = 0;
   char		     tmp_path[MAXPATHLEN];
@@ -2244,9 +2080,7 @@ ResetChildDirPaths( self, tree, tn, datum )
 }
 
 
-static void
-PerformRename( self )
-  struct bushv *self;
+static void PerformRename(struct bushv *self)
 {
   int msg_status = 0;
   long count = 0;
@@ -2325,9 +2159,7 @@ PerformRename( self )
   OUT(PerformRename);
 }
 
-static void
-ToggleDebug( self )
-  struct bushv    *self;
+static void ToggleDebug(struct bushv *self)
 {
   IN(ToggleDebug);
   Debug = !Debug;
@@ -2335,9 +2167,7 @@ ToggleDebug( self )
   OUT(ToggleDebug);
 }
 
-struct view *
-bushv__GetApplicationLayer( self )
-  struct bushv    *self;
+struct view * bushv__GetApplicationLayer(struct bushv *self)
 {
   IN(bushv_GetApplicationLayer);
   TopLevelInset = FALSE;
@@ -2345,19 +2175,14 @@ bushv__GetApplicationLayer( self )
   return((struct view *)self);
 }
 
-void
-bushv__ReceiveInputFocus( self )
-  struct bushv    *self;
+void bushv__ReceiveInputFocus(struct bushv *self)
 {
   IN(bushv_ReceiveInputFocus);
   super_ReceiveInputFocus(self);
   OUT(bushv_ReceiveInputFocus);
 }
 
-static void
-HandleChangeDir( self, dirName )
-  register struct bushv   *self;
-  register char		  *dirName;
+static void HandleChangeDir(struct bushv *self, char *dirName)
 {
   IN(HandleChangeDir);
   if(dirName && (*dirName != '\0'))
@@ -2365,10 +2190,7 @@ HandleChangeDir( self, dirName )
   OUT(HandleChangeDir);
 }
 
-static int 
-bushv_WriteToFile( self, filename )
-  struct bushv  *self;
-  char		*filename;
+static int bushv_WriteToFile(struct bushv *self, char *filename)
 {
   char		 realName[MAXPATHLEN],tempFilename[MAXPATHLEN];
   char		*originalFilename = NULL, *endString, *basename;
@@ -2453,9 +2275,7 @@ bushv_WriteToFile( self, filename )
 #define DIR_MSG \
    "Write aborted: specified output file is a directory."
     
-static int
-bushv_SaveFile( self )
-  struct bushv	*self;
+static int bushv_SaveFile(struct bushv *self)
 {
   int		 result = 0, return_value = 0;
   char		 message[sizeof("Wrote file ''.") + sizeof("Could not save file") + MAXPATHLEN];
@@ -2518,9 +2338,7 @@ bushv_SaveFile( self )
   return(return_value);
 }
 
-static int
-bushv_WriteFile( self )
-  struct bushv	*self;
+static int bushv_WriteFile(struct bushv *self)
 {
   char		 filename[MAXPATHLEN];
   char		 message[sizeof("Wrote file ''.") + sizeof("Could not save file") + MAXPATHLEN];
@@ -2579,9 +2397,7 @@ bushv_WriteFile( self )
   return(return_value);
 }
 
-static int
-bushv_SetPrinter(self)
-  struct bushv	*self;
+static int bushv_SetPrinter(struct bushv *self)
 {
   char		*currentPrinter, *defaultPrinter, answer[256];
   char		 prompt[sizeof("Current printer is . Set printer to []: ") + 128];
@@ -2619,9 +2435,7 @@ bushv_SetPrinter(self)
   return(return_value);
 }
 
-static void 
-Checkpoint( dummyData )
-  long dummyData;
+static void Checkpoint(long dummyData)
 {
   struct bushv	*self = (struct bushv*)dummyData;
   char		 CkpFileName[MAXPATHLEN];
@@ -2642,9 +2456,7 @@ Checkpoint( dummyData )
   }
 }
 
-static void
-UpdateDetailCaption( self )
-  struct bushv		    *self;
+static void UpdateDetailCaption(struct bushv *self)
 {
   struct suite_item	    *detailItem = NULL;
   char			     newCaption[16];
@@ -2657,9 +2469,7 @@ UpdateDetailCaption( self )
   }
 }
 
-static void
-EntriesPageUp( self )
-    struct bushv *self;
+static void EntriesPageUp(struct bushv *self)
 {
     if(Object == entries_object) {
 	struct suite_item *first, *last, *newFirst;
@@ -2680,9 +2490,7 @@ EntriesPageUp( self )
     }
 }
 
-static void
-EntriesPageDown( self )
-    struct bushv *self;
+static void EntriesPageDown(struct bushv *self)
 {
     if(Object == entries_object) {
 	struct suite_item *first, *last, *newFirst;
@@ -2709,10 +2517,7 @@ EntriesPageDown( self )
     }
 }
 
-void
-bushv__LinkTree(self, parent)
-    struct bushv *self;
-    struct view *parent;
+void bushv__LinkTree(struct bushv *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if(parent && bushv_GetIM(self)) 

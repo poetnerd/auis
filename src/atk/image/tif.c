@@ -64,6 +64,25 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 #include <andrewos.h>
 #include <tiffio.h>
 #include <tif.eh>
+static int checkcmap();
+static int gtStripContig();
+static int gtStripSeparate();
+static int gtTileContig();
+static int gtTileSeparate();
+static void put1bitbwtile();
+static void put1bitcmaptile();
+static void put2bitbwtile();
+static void put2bitcmaptile();
+static void put4bitbwtile();
+static void put4bitcmaptile();
+static void put8bitcmaptile();
+static void putRGBContigYCbCrClump();
+static void putRGBcontig16bittile();
+static void putRGBcontig8bittile();
+static void putRGBseparate16bittile();
+static void putRGBseparate8bittile();
+static void putcontig8bitYCbCrtile();
+static void putgreytile();
 
 #ifndef _VA_LIST
 #if defined(__STDC__) && !defined(NOSTDHDRS)
@@ -83,12 +102,7 @@ static long filesize;
 byte r[256], g[256], b[256];
 byte *pic, *pic24;
 
-int
-tif__Load( self, fullname, fp )
-  struct tif *self;
-  char *fullname;
-  FILE *fp;
-/*******************************************/
+int tif__Load(struct tif *self, char *fullname, FILE *fp)
 {
   register int i;
   for(i = 0; i < 256; i++)
@@ -100,12 +114,7 @@ tif__Load( self, fullname, fp )
 
 
 /*******************************************/
-int LoadTIFF( self, fname, f, nc )
-    struct tif *self;
-    char *fname;
-    FILE *f;
-    int   nc;
-/*******************************************/
+int LoadTIFF(struct tif *self, char *fname, FILE *f, int nc)
 {
   TIFF *tif;
   long w, h;
@@ -210,10 +219,7 @@ int LoadTIFF( self, fname, f, nc )
 
 
 /*******************************************/
-static int loadPalette(tif, w, h, photo, bps)
-TIFF *tif;
-long  w,h;
-int   photo,bps;
+static int loadPalette(TIFF *tif, long w, long h, int photo, int bps)
 {
   /* load up the XV global variables */
 
@@ -224,10 +230,7 @@ int   photo,bps;
 }
 
 /*******************************************/
-static int loadColor(tif, w, h, photo, bps, nc)
-TIFF *tif;
-long  w,h;
-int   photo,bps,nc;
+static int loadColor(TIFF *tif, long w, long h, int photo, int bps, int nc)
 {
   int  rv;
 
@@ -240,10 +243,7 @@ int   photo,bps,nc;
 
 
 /*******************************************/
-static void _TIFFerr(module, fmt, ap)
-char *module;
-char *fmt;
-va_list ap;
+static void _TIFFerr(char *module, char *fmt, va_list ap)
 {
   char buf[2048];
   char *cp = buf;
@@ -258,10 +258,7 @@ va_list ap;
 }
 
 /*******************************************/
-static void _TIFFwarn(module, fmt, ap)
-char *module;
-char *fmt;
-va_list ap;
+static void _TIFFwarn(char *module, char *fmt, va_list ap)
 {
   char buf[2048];
   char *cp = buf;
@@ -298,11 +295,7 @@ static	byte **PALmap;
 
 static	int gt();
 
-static int loadImage(tif, rwidth, rheight, raster, stop)
-	TIFF *tif;
-	u_long rwidth, rheight;
-	byte *raster;
-	int stop;
+static int loadImage(TIFF *tif, u_long rwidth, u_long rheight, byte *raster, int stop)
 {
 	int ok;
 	u_long width, height;
@@ -358,10 +351,7 @@ static int loadImage(tif, rwidth, rheight, raster, stop)
 	return (ok);
 }
 
-static int
-checkcmap(n, r, g, b)
-	int n;
-	u_short *r, *g, *b;
+static int checkcmap(int n, u_short *r, u_short *g, u_short *b)
 {
 	while (n-- >= 0)
 		if (*r++ >= 256 || *g++ >= 256 || *b++ >= 256)
@@ -376,11 +366,7 @@ static	gtStripContig();
 static	gtStripSeparate();
 static	void initYCbCrConversion();
 
-static
-gt(tif, w, h, raster)
-	TIFF *tif;
-	int w, h;
-	u_char *raster;
+static gt(TIFF *tif, int w, int h, u_char *raster)
 {
 	u_short minsamplevalue, maxsamplevalue, planarconfig;
 	RGBvalue *Map;
@@ -488,10 +474,7 @@ gt(tif, w, h, raster)
 	return (e);
 }
 
-u_long
-setorientation(tif, h)
-	TIFF *tif;
-	u_long h;
+u_long setorientation(TIFF *tif, u_long h)
 {
 	u_long y;
 
@@ -535,13 +518,7 @@ static tileContigRoutine pickTileContigCase();
  * or
  *	SamplesPerPixel == 1
  */	
-static
-gtTileContig(tif, raster, Map, h, w, bpp)
-	TIFF *tif;
-	byte *raster;
-	RGBvalue *Map;
-	u_long h, w;
-	int bpp;
+static gtTileContig(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w, int bpp)
 {
 	u_long col, row, y;
 	u_long tw, th;
@@ -604,13 +581,7 @@ static tileSeparateRoutine pickTileSeparateCase();
  *	 PlanarConfiguration separated
  * We assume that all such images are RGB.
  */	
-static
-gtTileSeparate(tif, raster, Map, h, w, bpp)
-	TIFF *tif;
-	byte *raster;
-	RGBvalue *Map;
-	u_long h, w;
-	int bpp;
+static gtTileSeparate(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w, int bpp)
 {
 	u_long col, row, y;
 	u_long tw, th;
@@ -672,13 +643,7 @@ gtTileSeparate(tif, raster, Map, h, w, bpp)
  * or
  *	SamplesPerPixel == 1
  */	
-static
-gtStripContig(tif, raster, Map, h, w, bpp)
-	TIFF *tif;
-	byte *raster;
-	RGBvalue *Map;
-	u_long h, w;
-	int bpp;
+static gtStripContig(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w, int bpp)
 {
 	u_long row, y, nrow;
 	u_char *buf;
@@ -721,13 +686,7 @@ gtStripContig(tif, raster, Map, h, w, bpp)
  *	 PlanarConfiguration separated
  * We assume that all such images are RGB.
  */
-static
-gtStripSeparate(tif, raster, Map, h, w, bpp)
-	TIFF *tif;
-	byte *raster;
-	register RGBvalue *Map;
-	u_long h, w;
-	int bpp;
+static gtStripSeparate(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w, int bpp)
 {
 	u_char *buf;
 	u_char *r, *g, *b;
@@ -943,13 +902,7 @@ makecmap()
 /*
  * 8-bit palette => colormap/RGB
  */
-static void
-put8bitcmaptile(cp, pp, Map, w, h, fromskew, toskew)
-	register byte *cp;
-	register u_char *pp;
-	RGBvalue *Map;
-	u_long w, h;
-	int fromskew, toskew;
+static void put8bitcmaptile(byte *cp, u_char *pp, RGBvalue *Map, u_long w, u_long h, int fromskew, int toskew)
 {
 	while (h-- > 0) {
 		UNROLL8(w,, *cp++ = PALmap[*pp++][0]);
@@ -961,13 +914,7 @@ put8bitcmaptile(cp, pp, Map, w, h, fromskew, toskew)
 /*
  * 4-bit palette => colormap/RGB
  */
-static void
-put4bitcmaptile(cp, pp, Map, w, h, fromskew, toskew)
-	register byte *cp;
-	register u_char *pp;
-	register RGBvalue *Map;
-	u_long w, h;
-	int fromskew, toskew;
+static void put4bitcmaptile(byte *cp, u_char *pp, RGBvalue *Map, u_long w, u_long h, int fromskew, int toskew)
 {
 	register byte *bw;
 
@@ -982,13 +929,7 @@ put4bitcmaptile(cp, pp, Map, w, h, fromskew, toskew)
 /*
  * 2-bit palette => colormap/RGB
  */
-static void
-put2bitcmaptile(cp, pp, Map, w, h, fromskew, toskew)
-	register byte *cp;
-	register u_char *pp;
-	register RGBvalue *Map;
-	u_long w, h;
-	int fromskew, toskew;
+static void put2bitcmaptile(byte *cp, u_char *pp, RGBvalue *Map, u_long w, u_long h, int fromskew, int toskew)
 {
 	register byte *bw;
 
@@ -1003,13 +944,7 @@ put2bitcmaptile(cp, pp, Map, w, h, fromskew, toskew)
 /*
  * 1-bit palette => colormap/RGB
  */
-static void
-put1bitcmaptile(cp, pp, Map, w, h, fromskew, toskew)
-	register byte *cp;
-	register u_char *pp;
-	register RGBvalue *Map;
-	u_long w, h;
-	int fromskew, toskew;
+static void put1bitcmaptile(byte *cp, u_char *pp, RGBvalue *Map, u_long w, u_long h, int fromskew, int toskew)
 {
 	register byte *bw;
 
@@ -1024,13 +959,7 @@ put1bitcmaptile(cp, pp, Map, w, h, fromskew, toskew)
 /*
  * 8-bit greyscale => colormap/RGB
  */
-static void
-putgreytile(cp, pp, Map, w, h, fromskew, toskew)
-	register byte *cp;
-	register u_char *pp;
-	RGBvalue *Map;
-	u_long w, h;
-	int fromskew, toskew;
+static void putgreytile(byte *cp, u_char *pp, RGBvalue *Map, u_long w, u_long h, int fromskew, int toskew)
 {
 	while (h-- > 0) {
 		register u_long x;
@@ -1044,13 +973,7 @@ putgreytile(cp, pp, Map, w, h, fromskew, toskew)
 /*
  * 1-bit bilevel => colormap/RGB
  */
-static void
-put1bitbwtile(cp, pp, Map, w, h, fromskew, toskew)
-	byte *cp;
-	u_char *pp;
-	RGBvalue **Map;
-	u_long w, h;
-	int fromskew, toskew;
+static void put1bitbwtile(byte *cp, u_char *pp, RGBvalue **Map, u_long w, u_long h, int fromskew, int toskew)
 {
 	register byte *bw;
 
@@ -1065,13 +988,7 @@ put1bitbwtile(cp, pp, Map, w, h, fromskew, toskew)
 /*
  * 2-bit greyscale => colormap/RGB
  */
-static void
-put2bitbwtile(cp, pp, Map, w, h, fromskew, toskew)
-	byte *cp;
-	u_char *pp;
-	RGBvalue **Map;
-	u_long w, h;
-	int fromskew, toskew;
+static void put2bitbwtile(byte *cp, u_char *pp, RGBvalue **Map, u_long w, u_long h, int fromskew, int toskew)
 {
 	register byte *bw;
 
@@ -1086,13 +1003,7 @@ put2bitbwtile(cp, pp, Map, w, h, fromskew, toskew)
 /*
  * 4-bit greyscale => colormap/RGB
  */
-static void
-put4bitbwtile(cp, pp, Map, w, h, fromskew, toskew)
-	byte *cp;
-	u_char *pp;
-	RGBvalue **Map;
-	u_long w, h;
-	int fromskew, toskew;
+static void put4bitbwtile(byte *cp, u_char *pp, RGBvalue **Map, u_long w, u_long h, int fromskew, int toskew)
 {
 	register byte *bw;
 
@@ -1107,13 +1018,7 @@ put4bitbwtile(cp, pp, Map, w, h, fromskew, toskew)
 /*
  * 8-bit packed samples => RGB
  */
-static void
-putRGBcontig8bittile(cp, pp, Map, w, h, fromskew, toskew)
-	register byte *cp;
-	register u_char *pp;
-	register RGBvalue *Map;
-	u_long w, h;
-	int fromskew, toskew;
+static void putRGBcontig8bittile(byte *cp, u_char *pp, RGBvalue *Map, u_long w, u_long h, int fromskew, int toskew)
 {
 	fromskew *= samplesperpixel;
 	if (Map) {
@@ -1144,13 +1049,7 @@ putRGBcontig8bittile(cp, pp, Map, w, h, fromskew, toskew)
 /*
  * 16-bit packed samples => RGB
  */
-static void
-putRGBcontig16bittile(cp, pp, Map, w, h, fromskew, toskew)
-	register byte *cp;
-	register u_short *pp;
-	register RGBvalue *Map;
-	u_long w, h;
-	int fromskew, toskew;
+static void putRGBcontig16bittile(byte *cp, u_short *pp, RGBvalue *Map, u_long w, u_long h, int fromskew, int toskew)
 {
 	register u_int x;
 
@@ -1183,14 +1082,7 @@ putRGBcontig16bittile(cp, pp, Map, w, h, fromskew, toskew)
 /*
  * 8-bit unpacked samples => RGB
  */
-static void
-putRGBseparate8bittile(cp, r, g, b, Map, w, h, fromskew, toskew)
-	register byte *cp;
-	register u_char *r, *g, *b;
-	register RGBvalue *Map;
-	u_long w, h;
-	int fromskew, toskew;
-
+static void putRGBseparate8bittile(byte *cp, u_char *r, u_char *g, u_char *b, RGBvalue *Map, u_long w, u_long h, int fromskew, int toskew)
 {
 	if (Map) {
 		while (h-- > 0) {
@@ -1219,13 +1111,7 @@ putRGBseparate8bittile(cp, r, g, b, Map, w, h, fromskew, toskew)
 /*
  * 16-bit unpacked samples => RGB
  */
-static void
-putRGBseparate16bittile(cp, r, g, b, Map, w, h, fromskew, toskew)
-	register byte *cp;
-	register u_short *r, *g, *b;
-	register RGBvalue *Map;
-	u_long w, h;
-	int fromskew, toskew;
+static void putRGBseparate16bittile(byte *cp, u_short *r, u_short *g, u_short *b, RGBvalue *Map, u_long w, u_long h, int fromskew, int toskew)
 {
 	register u_long x;
 
@@ -1272,13 +1158,7 @@ initYCbCrConversion()
 	D4 = D2*LumaBlue / LumaGreen;
 }
 
-static void
-putRGBContigYCbCrClump(cp, pp, cw, ch, w, n, fromskew, toskew)
-	register byte *cp;
-	register u_char *pp;
-	int cw, ch;
-	u_long w;
-	int n, fromskew, toskew;
+static void putRGBContigYCbCrClump(byte *cp, u_char *pp, int cw, int ch, u_long w, int n, int fromskew, int toskew)
 {
 	float Cb, Cr;
 	int j, k;
@@ -1310,13 +1190,7 @@ putRGBContigYCbCrClump(cp, pp, cw, ch, w, n, fromskew, toskew)
 /*
  * 8-bit packed YCbCr samples => RGB
  */
-static void
-putcontig8bitYCbCrtile(cp, pp, Map, w, h, fromskew, toskew)
-	register byte *cp;
-	register u_char *pp;
-	register RGBvalue *Map;
-	u_long w, h;
-	int fromskew, toskew;
+static void putcontig8bitYCbCrtile(byte *cp, u_char *pp, RGBvalue *Map, u_long w, u_long h, int fromskew, int toskew)
 {
 	u_int Coff = YCbCrVertSampling * YCbCrHorizSampling;
 	byte *tp;
@@ -1421,11 +1295,7 @@ pickTileSeparateCase(Map)
 	return (put);
 }
 
-long
-tif__Read( self, file, id )
-    struct tif *self;
-    FILE *file;
-    long id;
+long tif__Read(struct tif *self, FILE *file, long id)
 {
     if(tif_Load(self, NULL, file) == 0)
 	return(dataobject_NOREADERROR);
@@ -1433,20 +1303,12 @@ tif__Read( self, file, id )
 	return(dataobject_BADFORMAT);
 }
 
-long
-tif__Write( self, file, writeID, level )
-    struct tif *self;
-    FILE *file;
-    long writeID;
-    int level;
+long tif__Write(struct tif *self, FILE *file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
-int 
-tif__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+int tif__Ident(struct classheader *classID, char *fullname)
 { 
     return(TRUE);
 }

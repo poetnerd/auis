@@ -57,7 +57,7 @@ static int DoAnimation();
 static int EndTroff();
 static int KeyIn();
 static int MySetCursor();
-static int MySetStandardCursor();
+static int MySetStandardCursor(struct fadview *self, short i);
 static int PrintVec();
 static int ReadIcons();
 static void UpdateCursor();
@@ -133,10 +133,7 @@ static int samplefont_failed ;
 
 
 
-static MySetCursor(self,f,i)
-struct fadview *self;
-struct fontdesc *f;
-int i;
+static MySetCursor(struct fadview *self, struct fontdesc *f, int i)
 {
     cursor_SetGlyph(self->cursor,f,i);
     if(!cursor_IsPosted(self->cursor)){
@@ -145,9 +142,7 @@ int i;
 	fadview_PostCursor(self,&tr,self->cursor);
     }
 }
-static MySetStandardCursor(self,i)
-struct fadview *self;
-short i;
+static MySetStandardCursor(struct fadview *self, short i)
 {
     cursor_SetStandard(self->cursor,i);
     if(!cursor_IsPosted(self->cursor)){
@@ -156,8 +151,7 @@ short i;
 	fadview_PostCursor(self,&tr,self->cursor);
     }
 }
-static int CurrentFrame(self)
-struct fadview *self;
+static int CurrentFrame(struct fadview *self)
 {
     register int i;
     register struct fad_frame *fra;
@@ -165,8 +159,7 @@ struct fadview *self;
 	i++;
     return i;
 }
-static struct fontdesc *my_DefineFont(fname)
-char *fname;
+static struct fontdesc * my_DefineFont(char *fname)
 {
     char familyname[256];
     long fontStyle;
@@ -174,8 +167,7 @@ char *fname;
     fontdesc_ExplodeFontName(fname,familyname, sizeof(familyname), &fontStyle, &fontSize);
     return fontdesc_Create(familyname,  fontStyle, fontSize);
 }
-static void UpdateCursor(self)
-struct fadview *self;
+static void UpdateCursor(struct fadview *self)
 {
     struct fad *cp;
     static struct fontdesc *i12font = NULL;
@@ -205,12 +197,7 @@ struct fadview *self;
     else MySetStandardCursor(self,Cursor_Arrow);
 }
 
-enum view_DSattributes fadview__DesiredSize(self, width, height, pass, desiredwidth, desiredheight)
-struct fadview *self;
-long width, height;
-enum view_DSpass pass;
-long *desiredwidth, *desiredheight;
-
+enum view_DSattributes fadview__DesiredSize(struct fadview *self, long width, long height, enum view_DSpass pass, long *desiredwidth, long *desiredheight)
 {
     struct fad *cp;
     cp = findpic(self);
@@ -224,8 +211,7 @@ long *desiredwidth, *desiredheight;
     return(view_Fixed);
 }
 
-static fontinit(cp)
-struct fad *cp;
+static fontinit(struct fad *cp)
 {
     while(cp->initializedfonts < cp->topinmp){
 	cp->fontpt[cp->initializedfonts]  = my_DefineFont(cp->inmp[cp->initializedfonts]);
@@ -233,8 +219,7 @@ struct fad *cp;
     }
     if(cp->currentfont == NULL && cp->initializedfonts > 1) cp->currentfont = cp->fontpt[cp->initializedfonts - 1] ;
 }
-HaltAnimation(self)
-struct fadview *self;
+int HaltAnimation(struct fadview *self)
 {
     if(self->nextevent){
 	event_Cancel(self->nextevent);
@@ -256,9 +241,7 @@ struct fadview *self;
 	fadview_WantUpdate(self,self);
     }
 }
-void	
-fadview__Update(self)
-struct fadview *self;
+void fadview__Update(struct fadview *self)
 {
     struct vector *vc;
     struct fad *cp;
@@ -291,10 +274,7 @@ struct fadview *self;
 
     fadview_FlushGraphics(self);
 }
-void fadview__FullUpdate(self,type,left,top,width,height)
-struct fadview *self;
-enum view_UpdateType type;
-long left,top,width,height;
+void fadview__FullUpdate(struct fadview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     if(type == view_MoveNoRedraw){
 	UpdateCursor(self);
@@ -315,9 +295,7 @@ long left,top,width,height;
     }
     fadview_Update(self);
 }
-void fadview__aniframe(self,framecount,startat,gofor,mtm)
-struct fadview *self;
-int framecount,startat,gofor,mtm;
+void fadview__aniframe(struct fadview *self, int framecount, int startat, int gofor, int mtm)
 {
     self->framecount = framecount;
     self->startat = startat;
@@ -327,8 +305,7 @@ int framecount,startat,gofor,mtm;
     fadview_WantUpdate(self,self);
 }
 static int dodoan();
-queup(self)
-struct fadview *self;
+int queup(struct fadview *self)
 {
 	struct fad *cp = findpic(self);
 	/* frtime=0 meant "as fast as possible" when X11 round-trips provided
@@ -337,9 +314,7 @@ struct fadview *self;
 	self->nextevent = im_EnqueueEvent(dodoan,self,event_MSECtoTU(frtime));
 }
 
-static int
-dodoan(self)
-struct fadview *self;
+static int dodoan(struct fadview *self)
 {
     self->nextevent = NULL;
     if(self->anobj){
@@ -351,8 +326,7 @@ struct fadview *self;
     }
 }
 
-static DoAnimation(self)
-struct fadview *self;
+static DoAnimation(struct fadview *self)
 {
 
     struct fad *cp;
@@ -445,8 +419,7 @@ struct fadview *self;
     return FALSE;
  /*    */
 }
-doan(anobj)
-struct aniinfo *anobj;
+int doan(struct aniinfo *anobj)
 {
     struct fadview *self;
     struct fad_frame *lf,*sf;
@@ -515,9 +488,7 @@ struct aniinfo *anobj;
 	queup(self);
 
 }
-void fadview__nextframe(self,cp)
-struct fadview *self;
-struct fad *cp;
+void fadview__nextframe(struct fadview *self, struct fad *cp)
 {
     struct fad_frame *lf;
     char resp[64];
@@ -534,9 +505,7 @@ struct fad *cp;
     self->FrameChanged = TRUE;
     fadview_WantUpdate(self,self);
 }
-void fadview__lastframe(self,cp)
-struct fadview *self;
-struct fad *cp;
+void fadview__lastframe(struct fadview *self, struct fad *cp)
 {
     struct fad_frame *lf;
     if(self->f == cp->bf){
@@ -549,8 +518,7 @@ struct fad *cp;
     fadview_WantUpdate(self,self);
 }
 
-static recalc(self)
-struct fadview *self;
+static recalc(struct fadview *self)
 {
     struct fad_frame *frr;
     struct fadpoint *pp;
@@ -599,9 +567,7 @@ struct fadview *self;
     picset(self,1);
     return(2);
 }
-static picset(self,flag)
-struct fadview *self;
-int flag;
+static picset(struct fadview *self, int flag)
 {
     struct fad *pc = findpic(self);
     if(flag){
@@ -617,8 +583,7 @@ int flag;
 	pc->h  = fadview_GetLogicalHeight(self);
     }
 }
-static clearfad(self)
-struct fadview *self;
+static clearfad(struct fadview *self)
 {
     fadview_SetTransferMode(self,graphic_WHITE);
     fadview_EraseVisualRect(self);	
@@ -628,18 +593,14 @@ struct fadview *self;
     }
 }
 
-void fadview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct fadview *self;
+void fadview__FinalizeObject(struct classheader *classID, struct fadview *self)
 {
     HaltAnimation(self);
     if(self->menulist) menulist_Destroy(self->menulist);
 
 }
 
-boolean fadview__InitializeObject(classID, self)
-struct classheader *classID;
-struct fadview *self;
+boolean fadview__InitializeObject(struct classheader *classID, struct fadview *self)
 {
     self->keystate = keystate_Create(self, fadviewKeymap);
     self->menulist = NULL;
@@ -660,10 +621,7 @@ struct fadview *self;
     return TRUE;
 }
 
-static AddMenus(self,ml,menuProc)
-struct fadview *self;
-struct menulist *ml;
-struct proctable_Entry *menuProc;
+static AddMenus(struct fadview *self, struct menulist *ml, struct proctable_Entry *menuProc)
 {
     int readonly = 0;
     if(self && findpic(self))
@@ -697,11 +655,7 @@ struct proctable_Entry *menuProc;
     /* 	menulist_AddToML(ml,"Fad,Copy last frame",menuProc,(long) 'c'); */
 }
 
-void 
-fadview__showfad(self,i,cp)
-struct fadview *self;
-int i;
-struct fad *cp;
+void fadview__showfad(struct fadview *self, int i, struct fad *cp)
 {
     register struct fad_frame *fra;
     for(fra = cp->bf;fra != NULL && i > 1 ; fra = fra->f)
@@ -712,10 +666,7 @@ struct fad *cp;
     }
 }
 
-static
-KeyIn(self,cr)
-struct fadview *self;
-long cr;
+static KeyIn(struct fadview *self, long cr)
 {
     char frs[256],fff[256];
     int i,startas = 0,gofor = 0;
@@ -948,9 +899,7 @@ long cr;
     }
     return/* ((struct view *)self) */;
 }
-void
-fadview__ReceiveInputFocus(self)
-struct fadview *self;
+void fadview__ReceiveInputFocus(struct fadview *self)
 {
     self->HasFocus = 1;
     self->FocusChanged = TRUE;
@@ -960,9 +909,7 @@ struct fadview *self;
     fadview_PostKeyState(self, self->keystate);
     fadview_PostMenus(self,self->menulist);
 }
-void
-fadview__LoseInputFocus(self)
-struct fadview *self;
+void fadview__LoseInputFocus(struct fadview *self)
 {
     self->HasFocus = 0;
     self->FocusChanged = TRUE;
@@ -970,17 +917,13 @@ struct fadview *self;
     fadview_WantUpdate(self,(struct view *)self);
 }
 
-static nameframe(self)
-struct fadview *self;
+static nameframe(struct fadview *self)
 {
     char frs[32];
     sprintf(frs,"at frame #%d",CurrentFrame(self));
     TellUser(frs);
 }
-QueueAnimation(self,action,mousex,mousey)
-struct fadview *self;
-enum view_MouseAction action;
-long mousex, mousey;
+int QueueAnimation(struct fadview *self, enum view_MouseAction action, long mousex, long mousey)
 {
     struct fadpoint *pt;
     struct vector *vc;
@@ -1008,10 +951,7 @@ long mousex, mousey;
 
 	   
 
-struct fadview *fadview__Hit(self,action,mousex,mousey,numberOfClicks) 
-struct fadview *self;
-enum view_MouseAction action;
-long mousex, mousey, numberOfClicks;
+struct fadview * fadview__Hit(struct fadview *self, enum view_MouseAction action, long mousex, long mousey, long numberOfClicks)
 {
     static struct fadpoint ptmp;
     struct vector *cv;
@@ -1142,9 +1082,7 @@ long mousex, mousey, numberOfClicks;
     }
     return(self);
 }
-static drawlist(self,cpic)
-struct fadview *self;
-register struct fad *cpic;
+static drawlist(struct fadview *self, struct fad *cpic)
 {
     register int i;
     static struct vector tempvec;
@@ -1160,9 +1098,7 @@ register struct fad *cpic;
 	vecdraw(self,cpic->veclist[i]);
     }
 }
-static getlist(self,ppt)
-register struct fadview *self;
-register struct fadpoint *ppt;
+static getlist(struct fadview *self, struct fadpoint *ppt)
 {
     register int i = 0;
     register struct vector *vc;
@@ -1173,8 +1109,7 @@ register struct fadpoint *ppt;
     cpic->pltnum = i;
 }
 
-static seticon(self)
-struct fadview *self;
+static seticon(struct fadview *self)
 {
     char frs[256];
     struct fad *cp = findpic(self);
@@ -1185,9 +1120,7 @@ struct fadview *self;
     }
 }
 
-static ReadIcons(f,self)
-FILE *f;
-struct fadview *self;
+static ReadIcons(FILE *f, struct fadview *self)
 {
     register int c;
     struct fad *cpic = findpic(self);
@@ -1211,9 +1144,7 @@ struct fadview *self;
 	else fadview_WantUpdate(self,self);
     }
 }
-int fadview__geticons(self,s)
-struct fadview *self;
-char *s;
+int fadview__geticons(struct fadview *self, char *s)
 {
     char bb[512],samp[512],*cp,*andrewdir;
     FILE *ff;
@@ -1247,9 +1178,7 @@ char *s;
 }
 
 
-static void idraw(self,A) 
-register struct fadview *self;
-register struct anivect *A;
+static void idraw(struct fadview *self, struct anivect *A)
 {
     static char cc;
     struct fad *cp = findpic(self);
@@ -1264,9 +1193,7 @@ register struct anivect *A;
 	fadview_DrawText(self,&cc,1,0);
     }
 }	
-static vecdraw(self,v)
-register struct fadview *self;
-register struct vector *v;
+static vecdraw(struct fadview *self, struct vector *v)
 {
     static char cc;
     register struct fad *cp = findpic(self);
@@ -1291,10 +1218,7 @@ register struct vector *v;
 	fadview_DrawLineTo(self,v->p2->x,v->p2->y);
     }
 }
-void
-fadview__fileread(self,fnm)
-struct fadview *self;
-char *fnm;
+void fadview__fileread(struct fadview *self, char *fnm)
 {
     FILE *ff,*fopen();
     struct fad *cp = findpic(self);
@@ -1306,12 +1230,7 @@ char *fnm;
 	strcpy(cp->fadname,fnm);
     }
 }
-void
-fadview__Print(self,file, processor,finalFormat,topLevel)
-struct fadview *self;
-FILE *file;
-char *processor,*finalFormat;
-boolean topLevel;
+void fadview__Print(struct fadview *self, FILE *file, char *processor, char *finalFormat, boolean topLevel)
 {
     struct fad *cp;
     register struct vector *vc;
@@ -1322,9 +1241,7 @@ boolean topLevel;
     EndTroff(cp->desh);
 }
 
-static labelfonttype(self)
-struct fadview *self;
-
+static labelfonttype(struct fadview *self)
 {
     struct fad *cp;
     char *c;
@@ -1340,8 +1257,7 @@ struct fadview *self;
 	    return('R');
     }
 }
-static labelfontsize(self)
-struct fadview *self;
+static labelfontsize(struct fadview *self)
 {
     struct fad *cp;
     char *c;
@@ -1372,10 +1288,7 @@ static long xorg=0, yorg=0;		/* offsets in fractional screen units */
 #define STARTLINE  fprintf(printout,"\\h'%0.4fi'\\v'%0.4fi'",curx,cury);
 
 static FILE *printout = NULL;
-static
-PrintVec(cp,v)
-struct fad *cp;
-struct vector *v;
+static PrintVec(struct fad *cp, struct vector *v)
 {
     if(v->label) {
 	xx_MoveTo((v->p1->x - cp->ox )<<16,(v->p1->y - cp->oy) <<16);
@@ -1397,9 +1310,7 @@ struct vector *v;
 }
 
 
-static
-xx_MoveTo(x,y)
-long x, y;			/* in fractional screen units */
+static xx_MoveTo(long x, long y)
 {
     x -= xorg, y -= yorg;
     if (npoints) FINISHLINE;
@@ -1407,9 +1318,7 @@ long x, y;			/* in fractional screen units */
 }
 
 
-static
-xx_DrawTo(x,y)
-long x, y;			/* in fractional screen units */
+static xx_DrawTo(long x, long y)
 {
     x -= xorg, y -= yorg;
     if (npoints==0) STARTLINE;
@@ -1418,10 +1327,7 @@ long x, y;			/* in fractional screen units */
     if (++npoints>=10) FINISHLINE;
     curx = x*fxmul,  cury = y*fymul;
 }
-static BeginTroff(file,yneed,self)
-FILE *file;
-int yneed;			/* dots per inch */
-struct fadview *self;
+static BeginTroff(FILE *file, int yneed, struct fadview *self)
 {
 
     printout = file;
@@ -1449,10 +1355,7 @@ struct fadview *self;
 
 }
 
-void fadview__ObservedChanged(self, changed, value)
-struct fadview *self;
-struct observable *changed;
-long value;
+void fadview__ObservedChanged(struct fadview *self, struct observable *changed, long value)
 {
     struct fad *cpic = findpic(self);
     if (value == observable_OBJECTDESTROYED)
@@ -1467,9 +1370,7 @@ long value;
 	    fadview_showfad(self,value,cpic);
     }
 }
-void fadview__SetDataObject(self, dataObject)
-    struct fadview *self;
-    struct dataobject *dataObject;
+void fadview__SetDataObject(struct fadview *self, struct dataobject *dataObject)
 {
     if (!class_IsTypeByName(class_GetTypeName(dataObject), "fad"))  {
 	fprintf(stderr, "Incompatible dataobject associated with fadview\n");
@@ -1482,7 +1383,7 @@ void fadview__SetDataObject(self, dataObject)
     self->menulist = menulist_DuplicateML(fadviewMenulist, self);
     }
 
-static EndTroff(yneed)
+static EndTroff(int yneed)
 {
     if (npoints) FINISHLINE;
     fprintf(printout,".sp %0.4fi\n",((yneed << 16 ) * fymul));
@@ -1500,17 +1401,14 @@ static EndTroff(yneed)
 
     xorg = 0,  yorg = 0;
 }
-void fadview__WantUpdate(self, requestor)
-    struct fadview *self;
-    struct view *requestor;
+void fadview__WantUpdate(struct fadview *self, struct view *requestor)
 {
     if (self->needUpdate && (struct view *)self == requestor) return;
     super_WantUpdate(self, requestor);
     if((struct view *)self == requestor) self->needUpdate = TRUE;
 }
 
-boolean fadview__InitializeClass(classID)
-struct classheader *classID;
+boolean fadview__InitializeClass(struct classheader *classID)
 {
     char *c,buf[2];
 

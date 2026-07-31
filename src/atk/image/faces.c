@@ -61,6 +61,8 @@ static char *Copyright= "Copyright 1989, 1993 Jim Frost";
 #include <andrewos.h>
 #include <image.ih>
 #include <faces.eh>
+static void initHexTable();
+static int nextInt();
 
 /* SUPPRESS 560 */
 
@@ -106,9 +108,7 @@ static void initHexTable()
 /* read a hex value and return its value
  */
 
-static int nextInt(f, len)
-     FILE        *f;
-     unsigned int  len;
+static int nextInt(FILE *f, unsigned int len)
 { int c;
   int value= 0;
   int count;
@@ -134,11 +134,7 @@ static int nextInt(f, len)
   return(value);
 }
 
-int
-faces__Load( faces, fullname, fp )
-    struct faces *faces;
-    char *fullname;
-    FILE *fp;
+int faces__Load(struct faces *faces, char *fullname, FILE *fp)
 { 
   FILE         *f;
   char          fname[BUFSIZ];
@@ -230,10 +226,7 @@ faces__Load( faces, fullname, fp )
   return(0);
 }
 
-int 
-faces__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+int faces__Ident(struct classheader *classID, char *fullname)
 { struct faces *faces = faces_New();
 
   if (faces_Load(faces, fullname, NULL) == 0) {
@@ -243,11 +236,7 @@ faces__Ident( classID, fullname )
   return(0);
 }
 
-long
-faces__Read( self, file, id )
-    struct faces *self;
-    FILE *file;
-    long id;
+long faces__Read(struct faces *self, FILE *file, long id)
 {
     if(faces_Load(self, NULL, file) == 0)
 	return(dataobject_NOREADERROR);
@@ -255,21 +244,12 @@ faces__Read( self, file, id )
 	return(dataobject_BADFORMAT);
 }
 
-long
-faces__Write( self, file, writeID, level )
-    struct faces *self;
-    FILE *file;
-    long writeID;
-    int level;
+long faces__Write(struct faces *self, FILE *file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
-long
-faces__WriteNative( self, file, filename )
-    struct faces *self;
-    FILE *file;
-    char *filename;
+long faces__WriteNative(struct faces *self, FILE *file, char *filename)
 {
 return(0);
 }

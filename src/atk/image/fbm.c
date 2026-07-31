@@ -113,8 +113,7 @@ static char *fbmin_img_credit;		/* credit for image */
  * open FBM image in the input stream; returns FBMIN_SUCCESS if
  * successful. (might also return various FBMIN_ERR codes.)
  */
-static int fbmin_open_image(s)
-FILE *s;
+static int fbmin_open_image(FILE *s)
 {
   char *hp;		/* header pointer */
 
@@ -230,18 +229,13 @@ static fbmin_image_test()
  * descriptive but I don't care
  */
 
-static void tellAboutImage(name)
-     char *name;
+static void tellAboutImage(char *name)
 {
   printf("%s is a %dx%d FBM image with %d colors\n", name,
     fbmin_img_width, fbmin_img_height, fbmin_img_clrlen / 3);
 }
 
-int
-fbm__Load( fbm, fullname, fp )
-    struct fbm *fbm;
-    char *fullname;
-    FILE *fp;
+int fbm__Load(struct fbm *fbm, char *fullname, FILE *fp)
 { 
   FILE *f;
   register int x, y, j, k, rowlen, plnlen;
@@ -311,10 +305,7 @@ fbm__Load( fbm, fullname, fp )
   return(0);
 }
 
-int 
-fbm__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+int fbm__Ident(struct classheader *classID, char *fullname)
 {
   FILE        *f;
   unsigned int  ret;
@@ -331,11 +322,7 @@ fbm__Ident( classID, fullname )
   return(ret);
 }
 
-long
-fbm__Read( self, file, id )
-    struct fbm *self;
-    FILE *file;
-    long id;
+long fbm__Read(struct fbm *self, FILE *file, long id)
 {
     if(fbm_Load(self, NULL, file) == 0)
 	return(dataobject_NOREADERROR);
@@ -343,21 +330,12 @@ fbm__Read( self, file, id )
 	return(dataobject_BADFORMAT);
 }
 
-long
-fbm__Write( self, file, writeID, level )
-    struct fbm *self;
-    FILE *file;
-    long writeID;
-    int level;
+long fbm__Write(struct fbm *self, FILE *file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
-long
-fbm__WriteNative( self, file, filename )
-    struct fbm *self;
-    FILE *file;
-    char *filename;
+long fbm__WriteNative(struct fbm *self, FILE *file, char *filename)
 {
 return(0);
 }

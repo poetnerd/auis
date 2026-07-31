@@ -68,6 +68,7 @@ static char *Copyright= "Copyright 1989, 1993 Jim Frost";
 #include <xwd.h>
 #include <X11/X.h>
 #include <xwd.eh>
+static int isXWD();
 
 /* SUPPRESS 558 */
 
@@ -75,10 +76,7 @@ static char *Copyright= "Copyright 1989, 1993 Jim Frost";
  * an XWD file.
  */
 
-static int isXWD(name, f, header)
-     char      *name;
-     FILE      *f;
-     XWDHeader *header;
+static int isXWD(char *name, FILE *f, XWDHeader *header)
 { GenericXWDHeader  gh;
   int               a;
 
@@ -169,10 +167,7 @@ static int isXWD(name, f, header)
   return(1);
 }
 
-int 
-xwd__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+int xwd__Ident(struct classheader *classID, char *fullname)
 { FILE     *f;
   XWDHeader  header;
   int ret;
@@ -184,12 +179,7 @@ xwd__Ident( classID, fullname )
   return(ret);
 }
 
-void
-loadXYBitmap( self, fullname, f, header )
-    struct xwd *self;
-    char *fullname;
-    FILE *f;
-    XWDHeader  header;
+void loadXYBitmap(struct xwd *self, char *fullname, FILE *f, XWDHeader header)
 { int    dlinelen;       /* length of scan line in data file */
   int    ilinelen;       /* length of line within image structure */
   int    unit;           /* # of bytes in a bitmap unit */
@@ -257,12 +247,7 @@ loadXYBitmap( self, fullname, f, header )
  * build the destination.  1-bit images are handled by XYBitmap.
  */
 
-void
-loadXYPixmap( self, fullname, f, header )
-    struct xwd *self;
-    char *fullname;
-    FILE *f;
-    XWDHeader header;
+void loadXYPixmap(struct xwd *self, char *fullname, FILE *f, XWDHeader header)
 { int plane;
   int    dlinelen;       /* length of scan line in data file */
   int    ilinelen;       /* length of line within image structure */
@@ -346,12 +331,7 @@ loadXYPixmap( self, fullname, f, header )
  * you gotta problem.  1-bit images are handled by XYBitmap.
  */
 
-void
-loadZPixmap( self, fullname, f, header )
-    struct xwd *self;
-    char *fullname;
-    FILE *f;
-    XWDHeader header;
+void loadZPixmap(struct xwd *self, char *fullname, FILE *f, XWDHeader header)
 { int    dlinelen;       /* length of scan line in data file */
   int    ilinelen;       /* length of scan line in image file */
   int    depth;          /* depth rounded up to 8-bit value */
@@ -442,11 +422,7 @@ loadZPixmap( self, fullname, f, header )
   free(line);
 }
 
-int
-xwd__Load( self, fullname, fp )
-    struct xwd *self;
-    char *fullname;
-    FILE *fp;
+int xwd__Load(struct xwd *self, char *fullname, FILE *fp)
 { FILE      *f;
   XWDHeader  header;
   int        cmaplen;
@@ -544,11 +520,7 @@ xwd__Load( self, fullname, fp )
   return(0);
 }
 
-long
-xwd__Read( self, file, id )
-    struct xwd *self;
-    FILE *file;
-    long id;
+long xwd__Read(struct xwd *self, FILE *file, long id)
 {
     if(xwd_Load(self, NULL, file) == 0)
 	return(dataobject_NOREADERROR);
@@ -556,21 +528,12 @@ xwd__Read( self, file, id )
 	return(dataobject_BADFORMAT);
 }
 
-long
-xwd__Write( self, file, writeID, level )
-    struct xwd *self;
-    FILE *file;
-    long writeID;
-    int level;
+long xwd__Write(struct xwd *self, FILE *file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
-long
-xwd__WriteNative( self, file, filename )
-    struct xwd *self;
-    FILE *file;
-    char *filename;
+long xwd__WriteNative(struct xwd *self, FILE *file, char *filename)
 {
 return(0);
 }

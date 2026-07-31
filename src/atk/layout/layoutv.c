@@ -65,6 +65,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 
 #include <layout.ih>
 #include <layoutv.eh>
+static void DestroySubviews();
+static void DrawRubberBox();
+static struct component * FindContainingComponent();
+static char * GetClassName();
+static void InitComponent();
+static void InitializeGraphic();
+static void PrintComponents();
+static void SetAuthoringMask();
+static void SetRubberBox();
+static void Update();
 
 static char layout_debug=0;
 
@@ -113,9 +123,7 @@ static struct bind_Description layoutview_bindings[] = {
 
 /* initialize static data shared by all instances of layoutview */
 
-boolean					/* always returns TRUE */
-layoutview__InitializeClass(classID)
-struct classheader *classID;		/* unused */
+boolean layoutview__InitializeClass(struct classheader *classID)
 {
 
     if (layout_debug)
@@ -130,10 +138,7 @@ struct classheader *classID;		/* unused */
 
 /* initialize layout view */
 
-boolean					/* always returns TRUE */
-layoutview__InitializeObject(classID, self)
-struct classheader *classID;		/* unused */
-struct layoutview *self;
+boolean layoutview__InitializeObject(struct classheader *classID, struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_InitializeObject(%x)\n", classID);
@@ -155,9 +160,7 @@ struct layoutview *self;
 
 /* initialize graphic-dependent data */
 
-static void 
-InitializeGraphic(self)
-struct layoutview *self;
+static void InitializeGraphic(struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_InitializeGraphic\n");
@@ -172,10 +175,7 @@ struct layoutview *self;
 
 /* get printable class name of an object */
 
-static char *
-GetClassName(self, object)
-struct layoutview *self;
-struct dataobject *object;
+static char * GetClassName(struct layoutview *self, struct dataobject *object)
 {
     char *result;
 
@@ -192,10 +192,7 @@ struct dataobject *object;
 
 /* find or create new viewlist entry */
 
-struct view *		    /* returns view, or NULL if error */
-layoutview__FindSubview(self, c)
-struct layoutview *self;
-struct component *c;		    /* component for which view is needed */
+struct view * layoutview__FindSubview(struct layoutview *self, struct component *c)
 {
     struct viewlist *vl;
     char *subviewname;			/* name for new view */
@@ -238,10 +235,7 @@ struct component *c;		    /* component for which view is needed */
 
 /* remove viewlist entry */
 
-struct component *
-layoutview__RemoveSubview(self, child)
-struct layoutview *self;
-struct view *child;
+struct component * layoutview__RemoveSubview(struct layoutview *self, struct view *child)
 {
     struct viewlist *vl, *uvl;
     struct component *c;
@@ -274,11 +268,7 @@ struct view *child;
 
 /* replace contents of a component */
 
-void
-layoutview__ReplaceComponent(self, c, dataname)
-struct layoutview *self;
-struct component *c;
-char *dataname;
+void layoutview__ReplaceComponent(struct layoutview *self, struct component *c, char *dataname)
 {
     struct view *child;
     char foo[81];
@@ -307,9 +297,7 @@ char *dataname;
 
 /* Init new component */
 
-static void
-InitComponent(self)
-struct layoutview *self;
+static void InitComponent(struct layoutview *self)
 {
     struct view *child;
     child = layoutview_FindSubview(self, layoutview_Selection(self));
@@ -319,17 +307,7 @@ struct layoutview *self;
 
 /* negotiate size of view */
 
-enum view_DSattributes			/* returns indication of what it wants */
-layoutview__DesiredSize(self, width, height, pass, dWidth, dHeight)
-struct layoutview *self;
-long width;				/* width being offered by parent */
-long height;				/* height being offered */
-enum view_DSpass pass;			/* what parent is willing to give */
-long *dWidth;				/* set to desired width */
-long *dHeight;				/* set to desired height */
-
-/*  layoutview asks for just enough space to display all contained components */
-
+enum view_DSattributes layoutview__DesiredSize(struct layoutview *self, long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight)
 {
     struct component *c;
     long desiredWidth;
@@ -356,9 +334,7 @@ long *dHeight;				/* set to desired height */
 
 /* draw rubber-band box */
 
-static void
-DrawRubberBox(self)
-struct layoutview *self;
+static void DrawRubberBox(struct layoutview *self)
 {
     short savetransfermode;
 
@@ -374,12 +350,7 @@ struct layoutview *self;
 
 #define ReallyDrawing(how, updateRect) (updateRect == NULL || how != view_Remove && how != view_MoveNoRedraw)
 
-static void
-Update(self, how, updateRect, geometryChanged)
-struct layoutview *self;
-enum view_UpdateType how;		/* kind of update */
-struct rectangle *updateRect;		/* rectangle affected; or NULL for update */
-boolean geometryChanged;		/* geometry changed since last update */
+static void Update(struct layoutview *self, enum view_UpdateType how, struct rectangle *updateRect, boolean geometryChanged)
 {
     struct component *c;
     struct view *child;
@@ -495,14 +466,7 @@ boolean geometryChanged;		/* geometry changed since last update */
 
 /* full update when window changes */
 
-void
-layoutview__FullUpdate(self, how, left, top, width, height)
-struct layoutview *self;
-enum view_UpdateType how;		/* kind of update */
-long left;				/* updated rectangle (for certain kinds) */
-long top;
-long width;
-long height;
+void layoutview__FullUpdate(struct layoutview *self, enum view_UpdateType how, long left, long top, long width, long height)
 {
     struct rectangle cliprect;		/* actual updated rectangle */
 
@@ -538,9 +502,7 @@ long height;
 
 /* partial update in response to WantUpdate request */
 
-void
-layoutview__Update(self)
-struct layoutview *self;
+void layoutview__Update(struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_Update requested=%d\n", self->updateRequested);
@@ -551,10 +513,7 @@ struct layoutview *self;
 
 /* request update */
 
-void
-layoutview__WantUpdate(self, requestor)
-register struct layoutview *self;
-struct view *requestor;
+void layoutview__WantUpdate(struct layoutview *self, struct view *requestor)
 {
 
     if (layout_debug)
@@ -571,9 +530,7 @@ struct view *requestor;
 
 /* set authoring menu mask */
 
-static void
-SetAuthoringMask(self)
-struct layoutview *self;
+static void SetAuthoringMask(struct layoutview *self)
 {
     int m;
 
@@ -596,10 +553,7 @@ struct layoutview *self;
 
 /* make new selection */
 
-void
-layoutview__SetSelection(self, c)
-struct layoutview *self;
-struct component *c;			/* component to selected, or NULL */
+void layoutview__SetSelection(struct layoutview *self, struct component *c)
 {
     if (layoutview_Selection(self) != c) {
 	layoutview_Selection(self) = c;
@@ -612,10 +566,7 @@ struct component *c;			/* component to selected, or NULL */
 
 /* set new selection size and position */
 
-boolean				/*  returns TRUE if real selection created */
-layoutview__SetSelectionSize(self, x, y, w, h)
-struct layoutview *self;
-long x, y, w, h;
+boolean layoutview__SetSelectionSize(struct layoutview *self, long x, long y, long w, long h)
 {
     if (w < 0) {
 	w = -w;
@@ -651,11 +602,7 @@ long x, y, w, h;
 
 /* set rubber band box size and position */
 
-static void
-SetRubberBox(self, x, y)
-struct layoutview *self;
-long x;			/* current position relative to self->dragx */
-long y;			/* current position relative to self->dragy */
+static void SetRubberBox(struct layoutview *self, long x, long y)
 {
     struct component *c = layoutview_Selection(self);
     long xx, yy, rr, bb;
@@ -674,12 +621,7 @@ long y;			/* current position relative to self->dragy */
 
 /* Find component containing (x, y) */
 
-static struct component *	/* returns component containing x, y or NULL */
-FindContainingComponent(self, x, y, thresh)
-struct layoutview *self;
-long x;				/* point to be found */
-long y;
-long thresh;			/* tolerance outside component allowed */
+static struct component * /* returns component containing x, y or NULL */ FindContainingComponent(struct layoutview *self, long x, long y, long thresh)
 {
     struct component *c;
 
@@ -693,13 +635,7 @@ long thresh;			/* tolerance outside component allowed */
 
 /* process mouse hit */
 
-struct view *			/* returns view which should get follow-up events*/
-layoutview__Hit(self, action, x, y, numberOfClicks)
-struct layoutview *self;
-enum view_MouseAction action;	/* which button; what it did */
-long x;				/* where the mouse points */
-long y;
-long numberOfClicks;		/* number of hits at same place */
+struct view * layoutview__Hit(struct layoutview *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     struct component *c;
     struct view *result;
@@ -887,9 +823,7 @@ long numberOfClicks;		/* number of hits at same place */
 
 /* input focus obtained; highlight something and post menus */
 
-void
-layoutview__ReceiveInputFocus(self)
-struct layoutview *self;
+void layoutview__ReceiveInputFocus(struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_ReceiveInputFocus\n");
@@ -904,9 +838,7 @@ struct layoutview *self;
 
 /* input focus lost; remove highlighting */
 
-void
-layoutview__LoseInputFocus(self)
-struct layoutview *self;
+void layoutview__LoseInputFocus(struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_LoseInputFocus\n");
@@ -918,10 +850,7 @@ struct layoutview *self;
 
 /* handle request to post menus */
 
-void
-layoutview__PostMenus(self, ml)
-struct layoutview *self;
-struct menulist	*ml;			/* list of menus to post */
+void layoutview__PostMenus(struct layoutview *self, struct menulist *ml)
 {
     if (layout_debug) {
 	if (ml == NULL)
@@ -939,10 +868,7 @@ struct menulist	*ml;			/* list of menus to post */
 
 /* handle child's request for a new size */
 
-void
-layoutview__WantNewSize(self, requestor)
-struct layoutview *self;
-struct view *requestor;			/* view requesting a new size */
+void layoutview__WantNewSize(struct layoutview *self, struct view *requestor)
 {
     struct viewlist *vl;
     struct component *c;
@@ -963,9 +889,7 @@ struct view *requestor;			/* view requesting a new size */
 
 /* destroy selected component including its view */
 
-void
-layoutview__DestroyComponent(self)
-struct layoutview *self;
+void layoutview__DestroyComponent(struct layoutview *self)
 {
     struct viewlist *vl;
     struct view *child;
@@ -1003,9 +927,7 @@ struct layoutview *self;
 
 /* destroy all subviews of a layout */
 
-static void
-DestroySubviews(self)
-struct layoutview *self;
+static void DestroySubviews(struct layoutview *self)
 {
     struct viewlist *vl;
     struct view *child;
@@ -1020,10 +942,7 @@ struct layoutview *self;
 
 /* tear down a layoutview */
 
-void
-layoutview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct layoutview *self;
+void layoutview__FinalizeObject(struct classheader *classID, struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_FinalizeObject\n");
@@ -1035,10 +954,7 @@ struct layoutview *self;
 
 /* build tree of views */
 
-void
-layoutview__LinkTree(self, parent)
-struct layoutview *self;
-struct view *parent;		/* parent into which to link self */
+void layoutview__LinkTree(struct layoutview *self, struct view *parent)
 {
     struct viewlist *vl;
 
@@ -1053,11 +969,7 @@ struct view *parent;		/* parent into which to link self */
 
 /* notification that observed object changed */
 
-void
-layoutview__ObservedChanged(self, changed, status)
-struct layoutview *self;
-struct observable *changed;		/* that which changed */
-long status;				/* OBJECTDESTROYED is used to signal deletion */
+void layoutview__ObservedChanged(struct layoutview *self, struct observable *changed, long status)
 {
     struct component *c;
 
@@ -1088,9 +1000,7 @@ long status;				/* OBJECTDESTROYED is used to signal deletion */
 
 /* toggle layout_debug */
 
-void
-layoutview__ToggleDebug(self)
-struct layoutview *self;
+void layoutview__ToggleDebug(struct layoutview *self)
 {
 
 /*
@@ -1109,9 +1019,7 @@ struct layoutview *self;
 
 /* enter execution mode */
 
-void
-layoutview__SetRunMode(self)
-struct layoutview *self;
+void layoutview__SetRunMode(struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_SetRunMode() hitmode=%d\n", layoutview_Hitmode(self));
@@ -1127,9 +1035,7 @@ struct layoutview *self;
 
 /* enter initialization mode */
 
-void
-layoutview__SetInitMode(self)
-struct layoutview *self;
+void layoutview__SetInitMode(struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_SetInitMode() hitmode=%d\n", layoutview_Hitmode(self));
@@ -1147,9 +1053,7 @@ struct layoutview *self;
 
 /* enter authoring mode */
 
-void
-layoutview__SetAuthoringMode(self)
-struct layoutview *self;
+void layoutview__SetAuthoringMode(struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_SetAuthoringMode() hitmode=%d\n", layoutview_Hitmode(self));
@@ -1166,9 +1070,7 @@ struct layoutview *self;
 
 /* past object into selected component */
 
-void
-layoutview__Paste(self)
-struct layoutview *self;
+void layoutview__Paste(struct layoutview *self)
 {
     FILE *pasteFile;
     long objectID;
@@ -1192,10 +1094,7 @@ struct layoutview *self;
 
 /* insert dataobject by name */
 
-void
-layoutview__SetChildByName(self, dataname)
-struct layoutview *self;
-char *dataname;				/* dataobject name */
+void layoutview__SetChildByName(struct layoutview *self, char *dataname)
 {
     if (dataname == NULL || *dataname == '\0')
 	dataname = "filler";
@@ -1209,9 +1108,7 @@ char *dataname;				/* dataobject name */
 
 /* prompt for name and insert data object */
 
-void
-layoutview__SetChild(self)
-struct layoutview *self;
+void layoutview__SetChild(struct layoutview *self)
 {
     char dataname[100];
     
@@ -1223,9 +1120,7 @@ struct layoutview *self;
 
 /* promote selection to front */
 
-void
-layoutview__Promote(self)
-struct layoutview *self;
+void layoutview__Promote(struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_Promote()\n");
@@ -1237,9 +1132,7 @@ struct layoutview *self;
 
 /* demote selection to back of list */
 
-void
-layoutview__Demote(self)
-struct layoutview *self;
+void layoutview__Demote(struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_Demote()\n");
@@ -1250,9 +1143,7 @@ struct layoutview *self;
 
 /* fill background of layout with selection */
 
-void
-layoutview__MakeBackground(self)
-struct layoutview *self;
+void layoutview__MakeBackground(struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_MakeBackground()\n");
@@ -1266,9 +1157,7 @@ struct layoutview *self;
 
 /* Allow selected component to vary */
 
-void
-layoutview__MakeVariable(self)
-struct layoutview *self;
+void layoutview__MakeVariable(struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_MakeVariable()\n");
@@ -1281,9 +1170,7 @@ struct layoutview *self;
 
 /* Require selected component to vary only when authoring */
 
-void
-layoutview__MakeFixed(self)
-struct layoutview *self;
+void layoutview__MakeFixed(struct layoutview *self)
 {
     if (layout_debug)
 	printf("layoutview_MakeFixed()\n");
@@ -1296,10 +1183,7 @@ struct layoutview *self;
 
 /* Do not fill newly created data objects */
 
-void
-layoutview__SetCreateMode(self, createmode)
-struct layoutview *self;
-enum createmode_enum createmode;
+void layoutview__SetCreateMode(struct layoutview *self, enum createmode_enum createmode)
 {
     if (layout_debug)
 	printf("layoutview_SetCreateMode(%d)\n", createmode);
@@ -1309,10 +1193,7 @@ enum createmode_enum createmode;
 
 /* Set granularity */
 
-void
-layoutview__SetGranularity(self, granularity)
-struct layoutview *self;
-int granularity;
+void layoutview__SetGranularity(struct layoutview *self, int granularity)
 {
     if (layout_debug)
 	printf("layoutview_SetGranularity(%d)\n", granularity);
@@ -1322,14 +1203,7 @@ int granularity;
 
 /* print components back to front */
 
-static void
-PrintComponents(self, f, processor, finalFormat, c, saveno)
-struct layoutview *self;
-FILE *f;
-char *processor;			/* processor */
-char *finalFormat;			/* final format */
-struct component *c;			/* current component to be printed */
-int saveno;				/* number of state-restoring macro */
+static void PrintComponents(struct layoutview *self, FILE *f, char *processor, char *finalFormat, struct component *c, int saveno)
 {
     struct view *child;
     struct rectangle childRect;
@@ -1364,13 +1238,7 @@ int saveno;				/* number of state-restoring macro */
 
 /* print as part of larger document */
 
-void
-layoutview__Print(self, f, processor, finalFormat, toplevel)
-struct layoutview *self;
-FILE *f;					/* output file */
-char *processor;				/* processor */
-char *finalFormat;				/* final format */
-boolean	toplevel;				/* am I the top level view? */
+void layoutview__Print(struct layoutview *self, FILE *f, char *processor, char *finalFormat, boolean toplevel)
 {
     long height;
     struct component *c;

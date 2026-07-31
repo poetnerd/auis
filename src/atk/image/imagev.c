@@ -407,10 +407,7 @@ static struct bind_Description imagevBindings[] = {
 #define RETRACTWAITCURSOR(self) im_SetProcessCursor(NULL)
 
 /* Post a cursor of the specified type */
-static void
-PostCursor( self, type )
-  struct imagev *self;
-  int type;
+static void PostCursor(struct imagev *self, int type)
 { struct rectangle r;
   if (self->cursorPosted) {
       self->cursorPosted = FALSE;
@@ -422,9 +419,7 @@ PostCursor( self, type )
   self->cursorPosted = TRUE;
 }
 
-boolean
-imagev__InitializeClass( classID )
-    struct classheader *classID;
+boolean imagev__InitializeClass(struct classheader *classID)
 {
   struct classinfo *classInfo = NULL;
   keymap = keymap_New();
@@ -439,10 +434,7 @@ imagev__InitializeClass( classID )
 /* This is the internal sbutton label, used to specify the image "pane" */
 static char panebutton[]="panebutton";
 
-boolean
-imagev__InitializeObject( classID, self )
-    struct classheader *classID;
-    struct imagev *self;
+boolean imagev__InitializeObject(struct classheader *classID, struct imagev *self)
 {
   self->orig = self->scaled = NULL;
   if(! (self->keystate = keystate_Create(self, keymap)) )
@@ -476,10 +468,7 @@ imagev__InitializeObject( classID, self )
 }
 
 
-void
-imagev__FinalizeObject( classID, self )
-    struct classheader *classID;
-    struct imagev *self;
+void imagev__FinalizeObject(struct classheader *classID, struct imagev *self)
 {
   if(self->scaled) {
       image_Destroy(self->scaled);
@@ -537,10 +526,7 @@ graphic_WriteImage(imagev_GetDrawable(self),		\
 
 /* Draw the outside of sbutton such that it looks like a window pane */
 
-void
-DrawBorder( self, outer, inner )
-    struct imagev *self;
-    struct rectangle *outer, *inner;
+void DrawBorder(struct imagev *self, struct rectangle *outer, struct rectangle *inner)
 {
     struct region *rgn1 = region_CreateEmptyRegion();
     struct region *rgn2 = region_CreateEmptyRegion();
@@ -576,10 +562,7 @@ DrawBorder( self, outer, inner )
 }
 
 /* Get coordinates of image relative to pane */
-void
-GetScreenCoordinates( self, pixRect )
-    struct imagev *self;
-    struct rectangle *pixRect;
+void GetScreenCoordinates(struct imagev *self, struct rectangle *pixRect)
 {
     struct image *image = IMAGE(self);
     struct rectangle imageRect;
@@ -594,11 +577,7 @@ GetScreenCoordinates( self, pixRect )
 	rectangle_EmptyRect(pixRect);
 }
 
-void
-imagev__FullUpdate( self, type, left, top, width, height )
-    struct imagev *self;
-    enum view_UpdateType type;
-    long left, top, width, height;
+void imagev__FullUpdate(struct imagev *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     self->isLinked = TRUE;
     if(type == view_FullRedraw || type == view_LastPartialRedraw) {
@@ -695,13 +674,7 @@ imagev__FullUpdate( self, type, left, top, width, height )
     self->do_fullupdate = self->do_renderupdate = FALSE;
 }
 
-struct view *
-imagev__Hit( self, action, x, y, numberOfClicks)
-    struct imagev *self;
-    enum view_MouseAction action;
-    long x;
-    long y;
-    long numberOfClicks;
+struct view * imagev__Hit(struct imagev *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     long iw, ih, ix, iy, px, py;
     iw = self->canvas->width;
@@ -776,9 +749,7 @@ imagev__Hit( self, action, x, y, numberOfClicks)
      short-circuited to us */
 }
 
-void
-imagev__ReceiveInputFocus( self )
-    struct imagev *self;
+void imagev__ReceiveInputFocus(struct imagev *self)
 {
     if(self->haveFocus == FALSE) { /* Ask parent for input focus */
 	self->haveFocus = TRUE;
@@ -793,9 +764,7 @@ imagev__ReceiveInputFocus( self )
     }
 }
 
-void
-imagev__LoseInputFocus( self )
-    struct imagev *self;
+void imagev__LoseInputFocus(struct imagev *self)
 {   
     if(self->haveFocus == TRUE) { /* Ask parent to take away input focus. */
 	self->haveFocus = FALSE;
@@ -811,12 +780,7 @@ imagev__LoseInputFocus( self )
     }
 }
 
-enum view_DSattributes 
-imagev__DesiredSize( self, width, height, pass, desiredWidth, desiredHeight )
-     struct imagev *self;
-     long width, height;
-     enum view_DSpass pass;
-     long *desiredWidth, *desiredHeight;
+enum view_DSattributes imagev__DesiredSize(struct imagev *self, long width, long height, enum view_DSpass pass, long *desiredWidth, long *desiredHeight)
 {
     /* This routine needs to be smarter.  Now we just DEMAND that we be given
      enough space to accomodate our image dimensions.  In future, we may
@@ -832,10 +796,7 @@ imagev__DesiredSize( self, width, height, pass, desiredWidth, desiredHeight )
     return(view_Fixed);
 }
 
-void
-imagev__PostMenus( self, menulist )
-    struct imagev *self;
-    struct menulist *menulist;
+void imagev__PostMenus(struct imagev *self, struct menulist *menulist)
 {
     int mask = imagev_DefaultMenus;
 
@@ -865,11 +826,7 @@ imagev__PostMenus( self, menulist )
     super_PostMenus(self, self->menulist);
 }
 
-void
-imagev__ObservedChanged( self, changed, value )
-    struct imagev *self;
-    struct image *changed;
-    long value;
+void imagev__ObservedChanged(struct imagev *self, struct observable *changed, long value)
 {
     if(changed == self->orig)
 	switch(value) { /* A new image has been bounds to us.  Render it. */
@@ -894,9 +851,7 @@ imagev__ObservedChanged( self, changed, value )
 	}
 }
 
-void
-imagev__Update( self )
-    struct imagev *self;
+void imagev__Update(struct imagev *self)
 {
     if(self->do_fullupdate) { /* Render from scratch the complete image */
 	struct rectangle r;
@@ -910,9 +865,7 @@ imagev__Update( self )
 }
 
 /* This needs to be table-driven.  For now, blow it off. */
-static char *
-imageTypeName(type)
-    enum image_fileType type;
+static char * imageTypeName(enum image_fileType type)
 {
     static char *objName = NULL;
     switch (type) {
@@ -971,10 +924,7 @@ imageTypeName(type)
 /* This routine imports the given file as a particular image type. We don't
 bother with automatic recognition, we just have the user say what type of image
 it is. This should ultimately go away. */
-static struct image *
-image_Import( filename, type )
-    char *filename;
-    enum image_fileType type;
+static struct image * image_Import(char *filename, enum image_fileType type)
 {
     int ret = -1;
     struct image *image;
@@ -987,11 +937,7 @@ image_Import( filename, type )
 }
 
 /* Write the given image to file with the specified output format (JPEG, GIF) */
-static int
-image_Export( image, filename, type )
-    struct image *image;
-    char *filename;
-    enum image_fileType type;
+static int image_Export(struct image *image, char *filename, enum image_fileType type)
 {
     int ret = -1;
     struct image *newimage;
@@ -1008,10 +954,7 @@ image_Export( image, filename, type )
 
 /* Callback bound to each item on the Import menu card.. Passed in type
 specifies which item (image format) was chosen */
-static void
-Import_Cmd( self, type )
-    struct imagev *self;
-    enum image_fileType type;
+static void Import_Cmd(struct imagev *self, enum image_fileType type)
 {
     struct image *image = self->orig;
     char filename[MAXPATHLEN + 1];
@@ -1063,10 +1006,7 @@ Import_Cmd( self, type )
 
 /* Callback bound to each item on the Export menu card.  Passed in type
 specifies which item (image format) was chosen */
-static void
-Export_Cmd( self, type )
-    struct imagev *self;
-    enum image_fileType type;
+static void Export_Cmd(struct imagev *self, enum image_fileType type)
 {
     struct image *image = self->orig;
     char filename[MAXPATHLEN + 1];
@@ -1086,10 +1026,7 @@ Export_Cmd( self, type )
 }
 
 /* Callback bound to "Save As" menu item. */
-static void
-SaveAs( self, rock )
-    struct imagev *self;
-    long rock;
+static void SaveAs(struct imagev *self, long rock)
 {
     char filename[MAXPATHLEN + 1];
     char message[MAXPATHLEN];
@@ -1113,10 +1050,7 @@ SaveAs( self, rock )
 }
 
 /* Save current image data to named file */
-static int 
-WriteToFile( self, filename )
-  struct imagev  *self;
-  char *filename;
+static int WriteToFile(struct imagev *self, char *filename)
 { struct image *image = self->orig;
   char realName[MAXPATHLEN], tempFilename[MAXPATHLEN];
   char *originalFilename = NULL, *endString, *basename;
@@ -1198,9 +1132,7 @@ WriteToFile( self, filename )
 
 /* Callback bound to proctable entry "imagev-dither."  Operates on original data
 and possibly scaled version. */
-static void
-Dither( self )
-    struct imagev *self;
+static void Dither(struct imagev *self)
 {
     struct image *image = self->orig;
 
@@ -1220,9 +1152,7 @@ Dither( self )
 
 /* Callback bound to proctable entry "imagev-halftone."  Operates on original data
 and possibly scaled version. */
-static void
-Halftone( self )
-    struct imagev *self;
+static void Halftone(struct imagev *self)
 {
     struct image *image = self->orig;
 
@@ -1242,9 +1172,7 @@ Halftone( self )
 
 /* Callback bound to proctable entry "imagev-reduce."  Operates on original data
 and possibly scaled version. */
-static void
-Reduce( self )
-    struct imagev *self;
+static void Reduce(struct imagev *self)
 {
     struct image *image = self->orig;
     char *prompt = "Reduce to how many colors?", answer[MAXPATHLEN];
@@ -1270,9 +1198,7 @@ Reduce( self )
 
 /* Callback bound to proctable entry "imagev-gray."  Operates on original data
 and possibly scaled version. */
-static void
-Gray( self )
-    struct imagev *self;
+static void Gray(struct imagev *self)
 {
     struct image *image = self->orig;
 
@@ -1292,9 +1218,7 @@ Gray( self )
 
 /* Callback bound to proctable entry "imagev-normalize."  Operates on original data
 and possibly scaled version. */
-static void
-Normalize( self )
-    struct imagev *self;
+static void Normalize(struct imagev *self)
 {
     struct image *image = self->orig;
 
@@ -1314,9 +1238,7 @@ Normalize( self )
 
 /* Callback bound to proctable entry "imagev-brighten."  Operates on original data
 and possibly scaled version. */
-static void
-Brighten( self )
-    struct imagev *self;
+static void Brighten(struct imagev *self)
 {
     struct image *image = self->orig;
     char *prompt = "Brighten percent?", answer[MAXPATHLEN];
@@ -1342,9 +1264,7 @@ Brighten( self )
 
 /* Callback bound to proctable entry "imagev-gamma-correct."  Operates on
 original data and possibly scaled version. */
-static void
-GammaCorrect( self )
-    struct imagev *self;
+static void GammaCorrect(struct imagev *self)
 {
     struct image *image = self->orig;
     char *prompt = "Gamma level?", answer[MAXPATHLEN];
@@ -1370,9 +1290,7 @@ GammaCorrect( self )
 
 /* Callback bound to proctable entry "imagev-scale-to-fit."  If there's
 a scaled version, it's destroyed and a new scaled version is created. */
-static void
-ScaleToFit( self )
-    struct imagev *self;
+static void ScaleToFit(struct imagev *self)
 {
     struct image *image = self->orig, *zoomed;
     struct rectangle r;
@@ -1403,13 +1321,7 @@ ScaleToFit( self )
 }
 
 /* Print the image as Postscript to the passed file descriptor */
-void
-imagev__Print( self, f, process, final, toplevel )
-    struct imagev *self;
-    FILE *f;
-    char *process;
-    char *final;
-    int toplevel;
+void imagev__Print(struct imagev *self, FILE *f, char *process, char *final, boolean toplevel)
 {
     FILE *tmpFile;
     char tmpName[MAXPATHLEN];
@@ -1446,9 +1358,7 @@ imagev__Print( self, f, process, final, toplevel )
 
 /* This routine not yet used.  In future will display colormap for current
 image and allow for the editing of its entries. */
-static void
-InfoCmd( self )
-    struct imagev *self;
+static void InfoCmd(struct imagev *self)
 {
     struct im *im = im_Create(NULL);
     struct frame *frame = frame_New();
@@ -1469,19 +1379,14 @@ InfoCmd( self )
     }
 }
 
-static void
-ShowTrue( self )
-    struct imagev *self;
+static void ShowTrue(struct imagev *self)
 {
     self->privateCmap = im_CreateColormap(imagev_GetIM(self));
     imagev_WantColormap(self, self, &self->privateCmap);
     imagev_WantUpdate(self, self);
 }
 
-void
-imagev__ReceiveColormap( self, cmap )
-    struct imagev *self;
-    struct colormap *cmap;
+void imagev__ReceiveColormap(struct imagev *self, struct colormap *cmap)
 {
     struct image *image = IMAGE(self);
 
@@ -1494,9 +1399,7 @@ imagev__ReceiveColormap( self, cmap )
     imagev_PostMenus(self, NULL);
 }
 
-static void
-ShowFixed( self )
-    struct imagev *self;
+static void ShowFixed(struct imagev *self)
 {
 
     imagev_WantColormap(self, self , NULL);
@@ -1507,10 +1410,7 @@ ShowFixed( self )
     }
 }
 
-void
-imagev__LoseColormap( self, cmap )
-    struct imagev *self;
-    struct colormap *cmap;
+void imagev__LoseColormap(struct imagev *self, struct colormap *cmap)
 {
     struct image *image = IMAGE(self);
     struct graphic *g = imagev_GetDrawable(self);
@@ -1535,9 +1435,7 @@ imagev__LoseColormap( self, cmap )
 
 /* Write out current image data as Postscript.  See ps.c for implementation
 of writePS that was ripped off from xv */
-static void
-Write_Postscript( self )
-    struct imagev *self;
+static void Write_Postscript(struct imagev *self)
 {
     struct image *image = self->orig;
     char filename[MAXPATHLEN + 1];
@@ -1565,9 +1463,7 @@ Write_Postscript( self )
 }
 
 /* Create a scrollbar or other scroll class for this view */
-struct view *
-imagev__GetApplicationLayer( self )
-    struct imagev *self;
+struct view * imagev__GetApplicationLayer(struct imagev *self)
 {
     struct scroll *view;
 
@@ -1598,10 +1494,7 @@ static struct scrollfns horizontal_scroll_interface = {
     x_whatisat
 };
 
-struct scrollfns *
-imagev__GetInterface( self, interface_name )
-    struct imagev *self;
-    char *interface_name;
+struct scrollfns * imagev__GetInterface(struct imagev *self, char *interface_name)
 {
     struct scrollfns *interface = NULL;
     
@@ -1612,10 +1505,7 @@ imagev__GetInterface( self, interface_name )
     return(interface);
 }
 
-static void
-x_getinfo(self, total, seen, dot)
-    struct imagev *self;
-    struct range *total, *seen, *dot;
+static void x_getinfo(struct imagev *self, struct range *total, struct range *seen, struct range *dot)
 {
     struct rectangle *imageRect = imagev_GetImageRect(self);
     struct rectangle visualRect;
@@ -1660,21 +1550,14 @@ x_getinfo(self, total, seen, dot)
     }
 }
 
-static long
-x_whatisat(self, coordinate, outof)
-    struct imagev *self;
-    long coordinate, outof;
+static long x_whatisat(struct imagev *self, long coordinate, long outof)
 {
     struct rectangle *imageRect = imagev_GetImageRect(self);
 
     return imagev_ToImageX(self, coordinate) - imageRect->left;
 }
 
-static void
-x_setframe(self, position, coordinate, outof) 
-    struct imagev *self;
-    int position;
-    long coordinate, outof;
+static void x_setframe(struct imagev *self, int position, long coordinate, long outof)
 {
     long diffpos;
     struct rectangle *imageRect = imagev_GetImageRect(self);
@@ -1691,10 +1574,7 @@ x_setframe(self, position, coordinate, outof)
     }
 }
 
-static void
-y_getinfo(self, total, seen, dot)
-    struct imagev *self;
-    struct range *total, *seen, *dot;
+static void y_getinfo(struct imagev *self, struct range *total, struct range *seen, struct range *dot)
 {
     struct rectangle *imageRect = imagev_GetImageRect(self);
     struct rectangle visualRect;
@@ -1741,21 +1621,14 @@ y_getinfo(self, total, seen, dot)
     }
 }
 
-static long
-y_whatisat(self, coordinate, outof)
-    struct imagev *self;
-    long coordinate, outof;
+static long y_whatisat(struct imagev *self, long coordinate, long outof)
 {
     struct rectangle *imageRect = imagev_GetImageRect(self);
 
     return imagev_ToImageY(self, coordinate) - imageRect->top;
 }
 
-static void
-y_setframe(self, position, coordinate, outof) 
-    struct imagev *self;
-    int position;
-    long coordinate, outof;
+static void y_setframe(struct imagev *self, int position, long coordinate, long outof)
 {
     long diffpos;
     struct rectangle *imageRect = imagev_GetImageRect(self);
@@ -1775,9 +1648,7 @@ y_setframe(self, position, coordinate, outof)
 /* End Scroll Interface */
 
 /* We are being removed from the view tree */
-void
-imagev__UnlinkTree( self )
-    struct imagev *self;
+void imagev__UnlinkTree(struct imagev *self)
 {
     self->onScreen = self->isLinked = FALSE;
     rectangle_EmptyRect(&self->imagerect);
@@ -1785,10 +1656,7 @@ imagev__UnlinkTree( self )
 }
 
 /* We're about to be removed from the view tree */
-void
-imagev__UnlinkNotification( self, unlinkedTree )
-    struct imagev *self;
-    struct view *unlinkedTree;
+void imagev__UnlinkNotification(struct imagev *self, struct view *unlinkedTree)
 {
     self->onScreen = self->isLinked = FALSE;
     super_UnlinkNotification(self, unlinkedTree);
@@ -1796,10 +1664,7 @@ imagev__UnlinkNotification( self, unlinkedTree )
 
 /* We're being placed into the view tree.  Set imagerect to something
 reasonable. */
-void
-imagev__LinkTree( self, parent )
-    struct imagev *self;
-    struct view *parent;
+void imagev__LinkTree(struct imagev *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if(parent && imagev_GetIM(self)) {
@@ -1823,9 +1688,7 @@ imagev__LinkTree( self, parent )
 }
 
 /* Read a native ATK image from file and view it */
-static void
-ReadCmd( self )
-    struct imagev *self;
+static void ReadCmd(struct imagev *self)
 {
     struct image *image = self->orig;
     char filename[MAXPATHLEN + 1];
@@ -1893,9 +1756,7 @@ ReadCmd( self )
     message_DisplayString(self, 0, message);
 }
 
-static void InternalZoomCmd(self, rock)
-struct imagev *self;
-long rock;
+static void InternalZoomCmd(struct imagev *self, long rock)
 {
     long newscale, fact;
     long midx, midy, offx, offy;
@@ -1945,10 +1806,7 @@ long rock;
 }
 
 /* Bind us to passed in image */
-void
-imagev__SetDataObject( self, image )
-struct imagev *self;
-struct image *image;
+void imagev__SetDataObject(struct imagev *self, struct dataobject *image)
 {
     self->orig = image;
     super_SetDataObject(self, (struct dataobject *) image);
@@ -1974,10 +1832,7 @@ struct image *image;
     0: go to normal scale
    +1: scale up by half
 */
-static void
-ChangeZoomCmd( self, rock )
-    struct imagev *self;
-    long rock;
+static void ChangeZoomCmd(struct imagev *self, long rock)
 {
     if (rock == 0 && self->scale == imagev_NormScale)
 	return;
@@ -1989,10 +1844,7 @@ ChangeZoomCmd( self, rock )
 
 /* Callback bound to "imagev-pan-to-origin."  Upper-left of image
 is set to upper-left of our screen region. */
-static void
-PanToOriginCmd( self, rock )
-    struct imagev *self;
-    long rock;
+static void PanToOriginCmd(struct imagev *self, long rock)
 {
     if (self->panx == self->originx &&
 	self->pany == self->originy)
@@ -2005,10 +1857,7 @@ PanToOriginCmd( self, rock )
 }
 
 /* Post our keystate up the view tree to parent */
-void
-imagev__PostKeyState(self, ks)
-    struct imagev *self;
-    struct keystate *ks;
+void imagev__PostKeyState(struct imagev *self, struct keystate *ks)
 {
     struct keystate *new;
     new = keystate_AddAfter(self->keystate, ks);
@@ -2016,9 +1865,7 @@ imagev__PostKeyState(self, ks)
 }
 
 /* convert a rectangle in image coords to pix coords. */
-static void RectToPix(self, dest, src)
-    struct imagev *self;
-    struct rectangle *dest, *src;
+static void RectToPix(struct imagev *self, struct rectangle *dest, struct rectangle *src)
 {
     if (rectangle_IsEmptyRect(src)) {
 	rectangle_EmptyRect(dest);
@@ -2034,10 +1881,7 @@ static void RectToPix(self, dest, src)
 /* SaveFormat and JPEG SaveQuality only apply to self->orig. Save quality
 is an integer between 5-95 and determines how much information JPEG
 compressor will save. */
-static void
-SetSaveQuality( self, rock )
-    struct imagev *self;
-    long rock;
+static void SetSaveQuality(struct imagev *self, long rock)
 {   struct image *image = self->orig;
     char *prompt = "Save quality [5-95]: ", answer[MAXPATHLEN];
     int q;
@@ -2055,10 +1899,7 @@ SetSaveQuality( self, rock )
 /* Callback bound to proctable entry "imagev-set-save-format."  Prompt for
 either JPEG or GIF.  Additional saveformats may be added later.  ATK image
 datastream format is a base64-enoded, mail-safe JPEG or GIF. */
-static void
-SetSaveFormat( self, rock )
-    struct imagev *self;
-    long rock;
+static void SetSaveFormat(struct imagev *self, long rock)
 {   struct image *image = self->orig;
     char *prompt = "New Image Save-Format: ", response[100];
     static char *choices[3] = {"GIF", "JPEG", NULL};

@@ -27,6 +27,8 @@
 */
 
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 DOBJS		=	org.do \
 			orgv.do
 

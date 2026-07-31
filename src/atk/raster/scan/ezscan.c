@@ -95,10 +95,7 @@ int   WriteImage();
 int   WriteRow();
 
 
-main(ARGC, ARGV)
-int   ARGC;
-char *ARGV[];
-
+int main(int ARGC, char *ARGV[])
 {
 struct ScanInitParamsType SIP;
 int    rc;
@@ -242,11 +239,7 @@ unsigned char   *buffer_ptr;
 }
 
 
-int 
-ParseArgs(ARGC, ARGV)
-int   ARGC;
-char *ARGV[];
-
+int ParseArgs(int ARGC, char *ARGV[])
 {
 int index;
 int i, j;
@@ -507,11 +500,7 @@ int rowcount;
 
 
 
-int
-WriteRow(file, byteaddr, nbytes)
-	FILE *file;
-	unsigned char *byteaddr;
-	int nbytes;
+int WriteRow(FILE *file, unsigned char *byteaddr, int nbytes)
 {
 	unsigned char curbyte;		/* byte enqueued for output */
 	unsigned char c;		/* incoming byte */

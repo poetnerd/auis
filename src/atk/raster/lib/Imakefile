@@ -32,6 +32,8 @@ MATHLIB = -lm
 #endif
 
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 DOBJS = heximage.do \
 	oldrf.do \
 	paint.do \

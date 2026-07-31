@@ -32,13 +32,12 @@
 #include <image.ih>
 #include <mcidas.h>
 #include <mcidas.eh>
+static unsigned long vhtonl();
 
 /*
  * convert from little endian to big endian four byte object
  */
-static unsigned long
-vhtonl(lend)
-unsigned long lend ;
+static unsigned long vhtonl(unsigned long lend)
 {
 	unsigned long bend ;
 	unsigned char *lp, *bp ;
@@ -56,10 +55,7 @@ unsigned long lend ;
 
 
 /* ARGSUSED */
-int 
-mcidas__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+int mcidas__Ident(struct classheader *classID, char *fullname)
 { FILE          *f;
   struct area_dir dir ;
   int             r;
@@ -90,11 +86,7 @@ mcidas__Ident( classID, fullname )
 }
 
 
-int
-mcidas__Load( mcidas, fullname, fp )
-    struct mcidas *mcidas;
-    char *fullname;
-    FILE *fp;
+int mcidas__Load(struct mcidas *mcidas, char *fullname, FILE *fp)
 { FILE          *f;
   struct area_dir  dir;
   struct navigation  nav;
@@ -169,11 +161,7 @@ mcidas__Load( mcidas, fullname, fp )
   return(0);
 }
 
-long
-mcidas__Read( self, file, id )
-    struct mcidas *self;
-    FILE *file;
-    long id;
+long mcidas__Read(struct mcidas *self, FILE *file, long id)
 {
     if(mcidas_Load(self, NULL, file) == 0)
 	return(dataobject_NOREADERROR);
@@ -181,21 +169,12 @@ mcidas__Read( self, file, id )
 	return(dataobject_BADFORMAT);
 }
 
-long
-mcidas__Write( self, file, writeID, level )
-    struct mcidas *self;
-    FILE *file;
-    long writeID;
-    int level;
+long mcidas__Write(struct mcidas *self, FILE *file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
-long
-mcidas__WriteNative( self, file, filename )
-    struct mcidas *self;
-    FILE *file;
-    char *filename;
+long mcidas__WriteNative(struct mcidas *self, FILE *file, char *filename)
 {
 return(0);
 }

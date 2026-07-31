@@ -27,6 +27,8 @@
 */
 
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 DOBJS		=	bush.do \
 			bushv.do \
 			bushapp.do

@@ -39,6 +39,10 @@
 #include <image.ih>
 #include <pbm.h>
 #include <pbm.eh>
+static void initializeTable();
+static int isPBM();
+static int pbmReadChar();
+static int pbmReadInt();
 
 /* SUPPRESS 558 */
 
@@ -82,8 +86,7 @@ static void initializeTable()
   Initialized = 1;
 }
 
-static int pbmReadChar(f)
-     FILE *f;
+static int pbmReadChar(FILE *f)
 { int c;
 
   if ((c = fgetc(f)) == EOF) {
@@ -98,8 +101,7 @@ static int pbmReadChar(f)
   return(c);
 }
 
-static int pbmReadInt(f)
-     FILE *f;
+static int pbmReadInt(FILE *f)
 { int c, value;
 
   for (;;) {
@@ -119,10 +121,7 @@ static int pbmReadInt(f)
   }
 }
 
-static int isPBM(f, name, width, height, maxval)
-     FILE         *f;
-     char         *name;
-     unsigned int *width, *height, *maxval;
+static int isPBM(FILE *f, char *name, unsigned int *width, unsigned int *height, unsigned int *maxval)
 { byte buf[4];
 
   if(!Initialized)
@@ -177,26 +176,19 @@ static int isPBM(f, name, width, height, maxval)
   return(NOTPBM);
 }
 
-int 
-pbm__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+int pbm__Ident(struct classheader *classID, char *fullname)
 { FILE *f;
   unsigned int  width, height, maxval, ret;
 
   if(!(f = fopen(fullname, "r")))
     return(0);
 
-  ret = isPBM(f, fullname, &width, &height, &maxval, (unsigned int)1);
+  ret = isPBM(f, fullname, &width, &height, &maxval);
   fclose(f);
   return(ret != NOTPBM);
 }
 
-int
-pbm__Load( self, fullname, fp )
-    struct pbm *self;
-    char *fullname;
-    FILE *fp;
+int pbm__Load(struct pbm *self, char *fullname, FILE *fp)
 { FILE         *f;
   int           pbm_type;
   unsigned int  x, y;
@@ -454,11 +446,7 @@ pbm__Load( self, fullname, fp )
   return(0);
 }
 
-long
-pbm__Read( self, file, id )
-    struct pbm *self;
-    FILE *file;
-    long id;
+long pbm__Read(struct pbm *self, FILE *file, long id)
 {
     if(pbm_Load(self, NULL, file) == 0)
 	return(dataobject_NOREADERROR);
@@ -466,21 +454,12 @@ pbm__Read( self, file, id )
 	return(dataobject_BADFORMAT);
 }
 
-long
-pbm__Write( self, file, writeID, level )
-    struct pbm *self;
-    FILE *file;
-    long writeID;
-    int level;
+long pbm__Write(struct pbm *self, FILE *file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
-long
-pbm__WriteNative( self, file, filename )
-    struct pbm *self;
-    FILE *file;
-    char *filename;
+long pbm__WriteNative(struct pbm *self, FILE *file, char *filename)
 {
 
 

@@ -33,6 +33,8 @@
  *        installed anywhere.
  */
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 DOBJS = asmtext.do asmtextv.do \
         compress.do compressv.do \
         cpptext.do cpptextv.do \

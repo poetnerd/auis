@@ -67,20 +67,14 @@ static unsigned char masks[] = {0xFF, 0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE};
 
 static FILE *outf;	/* to avoid passing 'file' to two PutXxxx functions */
 
-	static void
-PutSame(byte, count)
-	register unsigned char byte;
-	register long count;
+static void PutSame(unsigned char byte, long count)
 {
 	while (count > 129) 
 		putc(257-129, outf), putc(byte, outf), count -= 129;
 	putc(257-count, outf), putc(byte, outf);
 }
 
-	static void
-PutDiffer(start, length)
-	register unsigned char *start;
-	register long length;
+static void PutDiffer(unsigned char *start, long length)
 {
 	while (length > 0) {
 		register long tlength = (length>128) ? 128 : length;
@@ -104,12 +98,7 @@ PutDiffer(start, length)
 
 		This code is virtually identical to that in plusspc.c.
 */
-	void
-paint__WriteRow(ClassID, file, byteaddr, nbits)
-	struct classhdr *ClassID;
-	FILE *file;
-	register unsigned char *byteaddr;
-	long nbits;
+void paint__WriteRow(struct classheader *ClassID, FILE *file, unsigned char *byteaddr, long nbits)
 {
 	register enum state {SameBytes, Differ, Differ1} CurSt;
 	register unsigned char thischar;	/* current input char */
@@ -178,12 +167,7 @@ paint__WriteRow(ClassID, file, byteaddr, nbits)
 	Copies one row of bits from 'file' to 'pix'
 	returns status as in dataobj.H
 */
-	long
-paint__ReadRow(ClassID, file, row, length)
-	struct classhdr *ClassID;
-	register FILE *file;			/* where to get bytes from */
-	register unsigned char *row;		/* where to put them */
-	register long length;		/* how many bits in row must be filled */
+long paint__ReadRow(struct classheader *ClassID, FILE *file, unsigned char *row, long length)
 {
 	register long sofar;		/* length unpacked so far */
 	int retval = dataobject_NOREADERROR;	/* no error so far */
@@ -246,11 +230,7 @@ paint__ReadRow(ClassID, file, row, length)
 	Read a raster image from 'file' and put it in 'pix'
 	return error code, as defined in dataobj.ih
 */
-	long
-paint__ReadImage(ClassID, file, pix)
-	struct classhdr *ClassID;
-	FILE *file;
-	struct pixelimage *pix;
+long paint__ReadImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix)
 {
 	register unsigned char *where;	/* where to store next row */
 	register long row;		/* count rows */
@@ -272,12 +252,7 @@ paint__ReadImage(ClassID, file, pix)
 	Write the subraster 'sub' image to 'file' from 'pix'
 	Truncate or pad with zero to PAINTWIDTH x PAINTHEIGHT
 */
-	void
-paint__WriteImage(ClassID, file, pix, sub)
-	struct classhdr *ClassID;
-	FILE *file;
-	struct pixelimage *pix;
-	struct rectangle *sub;
+void paint__WriteImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix, struct rectangle *sub)
 {
 	long left, top, width, height;
 	unsigned char buf[PAINTWIDTHINBYTES + 2];

@@ -71,6 +71,10 @@ END-SPECIFICATION  ************************************************************/
 #include <tree.ih>
 #include <filetype.ih>
 #include <org.eh>
+static int Free_Elements();
+static int Read_Body();
+static int Strip();
+static int Write_Body();
 
 #define Tree (self->tree_data_object)
 
@@ -87,17 +91,12 @@ static Read_Body();
 static Write_Body();
 static Strip();
 
-char *
-org__ViewName( self )
-  register struct org *self;
+char * org__ViewName(struct org *self)
 {
     return ( "orgv" );
 }
 
-boolean 
-org__InitializeObject( classID, self )
-  register struct classheader *classID;
-  register struct org *self;
+boolean org__InitializeObject(struct classheader *classID, struct org *self)
 {
   register boolean status = true;
 
@@ -111,21 +110,14 @@ org__InitializeObject( classID, self )
   return(status);
 }
 
-static
-Free_Elements( self, tree, node, datum )
-  register struct org *self;
-  register struct tree *tree;
-  register tree_type_node node;
+static Free_Elements(struct org *self, struct tree *tree, tree_type_node node, int datum)
 {
   if ( tree_NodeDatum( tree, node ) )
     free( (void *) tree_NodeDatum( tree, node ) );
   return(NULL);
 }
 
-void
-org__FinalizeObject( classID, self )
-  register struct classheader *classID;
-  register struct org *self;
+void org__FinalizeObject(struct classheader *classID, struct org *self)
 {
   IN(org_FinalizeObject );
   if ( Tree ) {
@@ -135,11 +127,7 @@ org__FinalizeObject( classID, self )
   OUT(org_FinalizeObject );
 }
 
-long
-org__Read( self, file, id )
-  register struct org *self;
-  register FILE *file;
-  register long id;
+long org__Read(struct org *self, FILE *file, long id)
 {
   register long status;
 
@@ -149,10 +137,7 @@ org__Read( self, file, id )
   return(status);
 }
 
-static
-Read_Body( self, file )
-  register struct org		     *self;
-  register FILE			     *file;
+static Read_Body(struct org *self, FILE *file)
   {
   register boolean		      done = false;
   register long			      c, count, braces = 0, brackets = 0, status = ok,
@@ -280,12 +265,7 @@ Read_Body( self, file )
   return(status);
   }
 
-long
-org__Write( self, file, writeID, level )
-  register struct org		     *self;
-  register FILE			     *file;
-  register long			      writeID;
-  register long			      level;
+long org__Write(struct org *self, FILE *file, long writeID, int level)
 {
   register long			      status, id;
 
@@ -306,10 +286,7 @@ org__Write( self, file, writeID, level )
   return  self->header.dataobject.id;
 }
 
-static
-Write_Body( self, file )
-  register struct org *self;
-  register FILE *file;
+static Write_Body(struct org *self, FILE *file)
 {
   register long status = ok;
   register tree_type_node node = tree_RootNode( Tree );
@@ -361,10 +338,7 @@ Write_Body( self, file )
   return(status);
 }
 
-char *
-org__NodeName( self, node )
-  register struct org *self;
-  register struct tree_node *node;
+char * org__NodeName(struct org *self, struct tree_node *node)
 {
   register char *name = NULL;
 
@@ -375,10 +349,7 @@ org__NodeName( self, node )
   return  name;
 }
 
-void
-org__SetDebug( self, state )
-  register struct org *self;
-  register char state;
+void org__SetDebug(struct org *self, boolean state)
 {
   IN(org_SetDebug);
   debug = state;
@@ -386,9 +357,7 @@ org__SetDebug( self, state )
   OUT(org_SetDebug);
 }
 
-static
-Strip( string )
-  register char *string;
+static Strip(char *string)
 {
   register char *ptr = string;
 

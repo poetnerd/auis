@@ -114,9 +114,7 @@ struct rectangle crop;	/* -c(l,t,w,h) */
 float PSscale;		/* -p */
 
 
-	static void
-ProcessPix(pix)
-	struct pixelimage *pix;
+static void ProcessPix(struct pixelimage *pix)
 {
 	struct pixelimage *tix;
 	char *sx;
@@ -172,10 +170,7 @@ ProcessPix(pix)
 	}
 }
 
-	static long
-ReadInputFile(InputFile, pix)
-	FILE * InputFile;
-	struct pixelimage *pix;
+static long ReadInputFile(FILE *InputFile, struct pixelimage *pix)
 {
 	switch (inType) {
 	case typePostscript: 
@@ -194,10 +189,7 @@ ReadInputFile(InputFile, pix)
 	}
 }
 
-	static void
-WriteOutputFile(OutputFile, pix)
-	FILE * OutputFile;
-	struct pixelimage *pix;
+static void WriteOutputFile(FILE *OutputFile, struct pixelimage *pix)
 {
 	struct rectangle r;
 	rectangle_SetRectSize(&r, 0, 0, pixelimage_GetWidth(pix), pixelimage_GetHeight(pix));
@@ -229,9 +221,7 @@ WriteOutputFile(OutputFile, pix)
 
 
 
-	static void
-fail(msg)
-	char *msg;
+static void fail(char *msg)
 {
 	fprintf(stderr, "%s\n", msg);
 	exit(1);
@@ -258,19 +248,13 @@ struct symentry {
 static struct symentry *FindSym();
 
 
-	static void
-storename(arg, sym)
-	char *arg;
-	struct symentry *sym;
+static void storename(char *arg, struct symentry *sym)
 {
 	strcpy(sym->target, arg+1);
 	if (strlen(sym->target) > 1023)
 		fail ("file name too long");
 }
-	static void
-storetype(arg, sym)
-	char *arg;
-	struct symentry *sym;
+static void storetype(char *arg, struct symentry *sym)
 {
 	struct symentry *typesym;
 	char buf[20];
@@ -307,9 +291,7 @@ SymTable[] = {
 	"", NULL, NULL, typeUnknown
 };
 
-	static struct symentry *
-FindSym(s)
-	char *s;
+static struct symentry * FindSym(char *s)
 {
 	char buf[12];
 	char *bx = buf;
@@ -325,10 +307,7 @@ FindSym(s)
 }
 
 
-	static void
-ParseSwitches(argc, argv)
-	int argc;
-	char **argv;
+static void ParseSwitches(int argc, char **argv)
 {
 	struct symentry *sym;
 	char buf[20];
@@ -437,9 +416,7 @@ OpenOutputFile()
 }
 
 
-main(argc, argv)
-	int argc;
-	char **argv;
+int main(int argc, char **argv)
 {
 	FILE *infile, *outfile;
 	long ret;
