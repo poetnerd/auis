@@ -310,6 +310,28 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       M2's total there), `fdplumb` include-order history — read that
       history first (`claude-history/fdplumb-REPORT.md`), same
       briefing the M2 runbook required.
+
+      **Amendment (2026-07-31, wdc-approved): fold in the
+      `ams/msclients/cui` COMPILERFLAGS closure as an add-on to this
+      batch, not a separate session.** Found at A1: `ams/msclients/cui`
+      (already `-pe`'d/ansify'd, committed) has never carried the M2-
+      era `COMPILERFLAGS` implicit-declaration guard and has 141
+      distinct undeclared functions across its 4 files (essentially the
+      entire `MS_*`/`CUI_*` AMS API — neither `ms.h` nor a full `cui.h`
+      prototype set is included). One of those 141 (`cvEng`, pointer-
+      returning) was a live LP64 truncation bug, caught via a real
+      `cuin` crash and already fixed standalone (`c34b1636`); the other
+      140 are confirmed safe (`int`/`void`/`boolean` returns, matching
+      K&R's implicit-int default, no truncation risk) — so this is now
+      hardening, not live-bug-fixing. Lowest-cost path: since AMS1's
+      session is already deep in `ms.h`/the real `MS_*` signatures, it
+      should determine whether `ms.h`+`cui.h` can just be `#include`d
+      into `ams/msclients/cui`'s 4 files without conflict, add the
+      COMPILERFLAGS line, and gate — rather than a from-scratch
+      standalone investigation. Not required to block AMS1's own
+      close-out if it turns out bigger than expected; may be split into
+      its own follow-up commit same-day (same pattern as the `atk/chart`
+      follow-up) if warranted.
 - [ ] **AMS2**: `atkams/messages/lib` (23), `ams/libs/shr` (7), `ams/
       libs/cui` (3), `ams/libs/nosnap` (1) — 34 files. Keep the
       tree-wide gate here too (mirrors M2's rule for `atkams/messages/
