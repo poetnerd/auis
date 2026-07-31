@@ -1508,11 +1508,28 @@ Imakefile has never had the M2-era `COMPILERFLAGS =
 -Werror=implicit-function-declaration` guard every other `-pe`'d
 directory has — no `m2-*-REPORT.md` mentions it, so this directory has
 run without an implicit-declaration compiler net this whole time.
-Out of scope for a `-pe`-only batch to fix (wdc confirmed 2026-07-31:
-turning it on would likely surface real latent bugs requiring its own
-investigation, same as every M2 directory that picked up this flag —
-not a drive-by one-liner). Flagged here as a standing follow-up item,
-not scheduled into any current wave.
+Out of scope for a `-pe`-only batch to fix. **Closed out same day as a
+standalone follow-up (`0b40b488`, 2026-07-31), not folded into I2**:
+scouted first (temporarily flipped the flag, gated, reverted) rather
+than guessed at — turned out much smaller than the "could be a real
+investigation" caution above implied. 10 `implicit-function-declaration`
+errors, all cross-file, same-directory, non-static helper calls with
+no shared declaration: `chartv.c` calls 4 functions defined in
+`chartp.c` (`Destroy_Palette`, `Activate_Viewer`, `Hide_Palette`,
+`Expose_Palette`); `chartp.c` calls 5 defined in `chartv.c`
+(`chartv_Add_Command`, `chartv_Delete_Command`, `chartv_ReChart`,
+`chartv_Print_Command`, `chartv_Save_Command`); `chartx1a.c`'s `Query`
+is used before its own later same-file definition. All 10 return
+`int`/`void` (no pointer-returning functions), so no actual LP64
+truncation risk in this set — fixed by adding proper ANSI forward
+declarations at each site. One knock-on fix once `chartv_ReChart`
+became properly typed: `chartp.c:568` passed `suite_ItemAttribute()`'s
+`long` return value (a dual-use attribute value, same pattern as B1
+finding #3) directly to `chartv_ReChart`'s `char *moniker` parameter —
+added the precedented `(char *)` cast. Gated clean, twice. wdc smoke
+tested the `chart` app's palette (add/delete/rechart/print/save/hide/
+show) plus the `chartx1a` "Home Budget" example program directly — all
+passed.
 
 Anchored `malloc`/`free`/`realloc`/`calloc` grep (checklist item, the
 clang-builtin blind spot) found and fixed 24 files across `eq`
