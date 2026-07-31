@@ -1215,6 +1215,45 @@ so didn't fire at all on the first attempt — corrected by borrowing the
 file's existing `TRAILING_COMMENT` pattern, the same fix already used
 elsewhere in this file for exactly this reason.
 
+### `ansify` array-parameter `weave()` fix (tool fix, not a batch, 2026-07-30)
+
+Found continuing I1's Gate 1 on `atk/srctext`: the real (non-dry-run)
+`ansify --dir` run reverted `srctext.c` entirely with a hard parse
+error (`expected ')'`, cascading into several bogus "undeclared
+identifier" errors past that point). Traced to `srctext__HashInsert`
+and `srctext__BuildTable`, both declared in `srctext.ch` as
+`classprocedures` taking an array-of-pointer parameter
+(`HashInsert(Dict *hashTable[], Dict *word);`). `convert_file`'s
+`weave()` helper (responsible for combining a signature-DB types-only
+string with a parameter name for exported classprocs) mis-rendered
+the array parameter as `Dict * [ ] hashTable` — brackets floating
+*before* the name, invalid C. Root cause is one level further back
+than `ansify` itself: classpp's own `-D` describe output renders an
+array-of-T parameter's type as `T  [ ]` (**with a space between the
+brackets**, confirmed directly in `build/desc/srctext.desc`:
+`args:		Dict *  [ ], Dict *`) rather than the bracket-adjacent `T[]`
+`weave()` was written to expect (`t.endswith('[]')`) — so the
+recognizer silently missed it and fell through to the generic
+`f"{t} {name}"` case, which is correct for an ordinary type but wrong
+for a floating array suffix. Fixed by matching loosely
+(`re.search(r'\[\s*\]\s*$', t)`) instead of a literal `endswith('[]')`,
+splitting on the match position rather than a hardcoded 2-character
+slice. Verified: `weave('Dict *  [ ]', 'hashTable')` now returns
+`'Dict * hashTable[]'`; the real (non-dry-run) `ansify --dir
+src/atk/srctext` run converts `srctext.c` cleanly, no compile failure.
+
+Not a one-off inside this one file: a tree-wide grep of `build/desc/
+*.desc` for this shape found roughly a dozen more array-of-`char`
+class-procedure parameters, concentrated in the same `atk/srctext`
+class family (`asmtextview`, `ctextview`, `cpptext`, `m3textview`,
+`mtextview`, `modtextview`, `srctextview` — all in this same I1
+batch) plus one instance in `folders` (a not-yet-converted directory,
+queued for later — the fix is already in place for whenever that
+batch arrives). No prior batch could have depended on the old broken
+behavior succeeding: it always produced invalid syntax, which the
+compile-gate's restore-on-failure property would have caught and
+reverted every time, the same way it caught this one.
+
 ## Resource note (2026-07-25, wdc)
 
 Evening-of-2026-07-22-to-now work (M2's back half plus this planning)
