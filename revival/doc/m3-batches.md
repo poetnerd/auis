@@ -305,7 +305,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
 
 ## Wave 6 — atkams/ams (5 directories, 148 files, 2 batches)
 
-- [ ] **AMS1**: `ams/libs/ms` (114) — alone, own dedicated session.
+- [x] **AMS1**: `ams/libs/ms` (114) — alone, own dedicated session.
       Mirrors M2's own treatment: largest single directory (~38% of
       M2's total there), `fdplumb` include-order history — read that
       history first (`claude-history/fdplumb-REPORT.md`), same
@@ -317,21 +317,78 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       (already `-pe`'d/ansify'd, committed) has never carried the M2-
       era `COMPILERFLAGS` implicit-declaration guard and has 141
       distinct undeclared functions across its 4 files (essentially the
-      entire `MS_*`/`CUI_*` AMS API — neither `ms.h` nor a full `cui.h`
-      prototype set is included). One of those 141 (`cvEng`, pointer-
-      returning) was a live LP64 truncation bug, caught via a real
-      `cuin` crash and already fixed standalone (`c34b1636`); the other
-      140 are confirmed safe (`int`/`void`/`boolean` returns, matching
-      K&R's implicit-int default, no truncation risk) — so this is now
-      hardening, not live-bug-fixing. Lowest-cost path: since AMS1's
-      session is already deep in `ms.h`/the real `MS_*` signatures, it
-      should determine whether `ms.h`+`cui.h` can just be `#include`d
-      into `ams/msclients/cui`'s 4 files without conflict, add the
-      COMPILERFLAGS line, and gate — rather than a from-scratch
-      standalone investigation. Not required to block AMS1's own
-      close-out if it turns out bigger than expected; may be split into
-      its own follow-up commit same-day (same pattern as the `atk/chart`
-      follow-up) if warranted.
+      entire `MS_*`/`CUI_*` AMS API). One of those 141 (`cvEng`,
+      pointer-returning) was a live LP64 truncation bug, caught via a
+      real `cuin` crash and already fixed standalone (`c34b1636`); the
+      other 140 are confirmed safe (`int`/`void`/`boolean` returns,
+      matching K&R's implicit-int default, no truncation risk) — so
+      this is now hardening, not live-bug-fixing.
+
+      **Correction (2026-07-31, orchestrator pre-diagnosis before
+      delegating AMS1): the originally-proposed mechanism doesn't
+      work — scouted directly, don't re-derive.** `cui.h` is already
+      `#include`d in all 4 files; adding `#include <ms.h>` on top
+      (tested empirically: temporary edit, temporary COMPILERFLAGS,
+      real `make -k all`, reverted after) leaves the same ~141 names
+      undeclared. Root cause: neither header contains a *single*
+      function prototype — both are type/struct/macro-only (confirmed
+      by grepping for `(` after `extern`/return-type patterns in each:
+      zero hits). `ms.h`'s own header comment even says "This is only
+      for the message server, not the CUI. CUI clients should include
+      cui.h instead" — but `cui.h` doesn't declare the MS_*/CUI_* API
+      either. The tree's actual established convention for this API
+      (confirmed in `ams/libs/cui/cuilib.c` and `ams/msclients/vui/
+      vui.c`) is scattered old-style per-file `extern RETTYPE
+      FuncName();` declarations, not a shared header — the same
+      pattern the `cvEng` fix already used. So the real lowest-cost
+      path is: once AMS1 converts each `ams/libs/ms` function
+      definition to ANSI (real typed signature now known first-hand),
+      cross-reference cui's 141 call sites against those signatures
+      and write proper `extern RETTYPE FuncName(ARGTYPES);`
+      declarations directly into whichever of cui's 4 files call them,
+      then add the COMPILERFLAGS line and gate — not a header
+      `#include`. `ams/libs/cui/cuilib.c` (Wave 6 AMS2 scope, already
+      COMPILERFLAGS-guarded) already declares the large majority of
+      this same function set and is a ready-made cross-check for
+      correct return types. Still not required to block AMS1's own
+      close-out if it turns out bigger than expected; may be split
+      into its own follow-up commit same-day (same pattern as the
+      `atk/chart` follow-up) if warranted.
+
+      **Done 2026-07-31.** Both tasks completed in one session, gated
+      clean twice each, no split needed. `ams/libs/ms`: 113 real files
+      (`prsdate.c` excluded, bison-generated — same mechanism as I2's
+      `eqparse.c`/`num.c`), 415 helpers converted. Found and hand-fixed
+      a genuinely new, previously-uncatalogued `ansify` parser gap (K&R
+      declarations spanning multiple physical lines, or multiple
+      declarations on one physical line, are silently dropped with
+      *zero* skip/DRIFT report — worse than every prior parser-gap
+      variant) — 16 functions across 11 files, found only after three
+      successive hand-written greps each missed real instances,
+      definitively closed by importing `ansify`'s own parsing logic and
+      re-scanning directly. Also found the standing item-8 check
+      (stranded forward declaration vs. narrow ANSI param) had two real
+      blind spots — `extern`-prefixed declarations (the grep only
+      matched `static`) and typedef'd narrow types (`Boolean` not
+      resolved through to `short`) — 12 real conflicts this shape,
+      fixed. One genuine ~30-year-old bug found and fixed:
+      `unscrib.c`'s `UnformatMessage` called `FreeMessageContents` with
+      1 of its real 2 arguments (`Msg, FALSE)` applied, conservative
+      choice — wdc runtime-confirmed `cuin dirinfo` and `messages` both
+      clean afterward. `ams/msclients/cui`: all 140 undeclared calls
+      categorized (36 `ams/libs/ms`, 46 `ams/libs/cui`, 55 same-
+      directory, 7 `overhead/util/lib`, 3 other AMS libs, 1 libc) and
+      declared; `moreprintf`/`errprintf2` (1988-era pseudo-variadic,
+      177 call sites) needed old-style unspecified-args declarations
+      specifically — confirmed C-standard-correct, not a shortcut (an
+      empty-parens declaration is the only form compatible with both a
+      fixed-arity ANSI definition in the same file and call sites
+      supplying fewer arguments). Independently re-verified by the
+      orchestrator: both directories' gates re-run clean twice
+      directly, ~6 specific fixes spot-checked against the diff (all
+      matched), `fossil status` confirmed exact file scope. See
+      `m3-rollout-runbook.md` findings → AMS1 and
+      `claude-history/m3-ams1-REPORT.md` for full detail. Committed.
 - [ ] **AMS2**: `atkams/messages/lib` (23), `ams/libs/shr` (7), `ams/
       libs/cui` (3), `ams/libs/nosnap` (1) — 34 files. Keep the
       tree-wide gate here too (mirrors M2's rule for `atkams/messages/
@@ -352,7 +409,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
 
 Revised 2026-07-30: 15 sessions total (was 17 — pilot retired into
 I2, I3 merged into I1), across the 7 waves in dependency order.
-11 complete (O1–O4, B1–B3, T1, I1, I2, A1 — Waves 1-5 now closed), 4
-remaining: AMS1, AMS2, C1, C2. Tick batches here as they
+12 complete (O1–O4, B1–B3, T1, I1, I2, A1, AMS1), 3
+remaining: AMS2, C1, C2. Tick batches here as they
 complete, same convention as `m1-point10-batches.md`; the runbook's
 own summary gets the one-line rollup per wave, not per batch.

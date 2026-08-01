@@ -98,17 +98,43 @@ Active:
    anchored `malloc`/`free`/`realloc`/`calloc` grep before
    close-out, runtime-check rules).
 8. **Stranded old-style forward declaration vs. newly-ANSI'd narrow
-   parameter** (T1): `ansify` converts K&R function *definitions* to
-   ANSI but doesn't touch separate, old-style (empty-parens) forward
-   *declarations* of the same name earlier in the file. Normally
-   harmless — but once the definition gains a narrow by-value
-   parameter (`char`, `short`, `unsigned char`), the stale declaration
-   and the new definition become a real ISO C conflicting-types error
-   (default-argument-promotion incompatibility). Grep a directory for
-   `static\s+\w[\w ]*\s+\w+\(\);` (bare empty-parens static forward
-   declarations) before or after a batch's `ansify` pass, and
-   cross-check any hit against its matching definition's parameter
-   types.
+   parameter** (T1; grep broadened AMS1 2026-07-31): `ansify` converts
+   K&R function *definitions* to ANSI but doesn't touch separate,
+   old-style (empty-parens) forward *declarations* of the same name
+   earlier in the file. Normally harmless — but once the definition
+   gains a narrow by-value parameter (`char`, `short`, `unsigned
+   char`, or a `typedef` of one — **resolve typedefs, don't read the
+   literal keyword**; `Boolean` (`typedef short Boolean`) is the
+   standing example), the stale declaration and the new definition
+   become a real ISO C conflicting-types error (default-argument-
+   promotion incompatibility). Grep a directory for
+   `(static|extern)\s+\w[\w ]*\s+\w+\(\);` (bare empty-parens forward
+   declarations — **both keywords, not just `static`**; AMS1 found 10
+   of 12 real conflicts were `extern`-prefixed, which the original
+   `static`-only pattern structurally could not match) before or after
+   a batch's `ansify` pass, and cross-check any hit against its
+   matching definition's parameter types.
+9. **Definitive completeness re-scan for large directories** (AMS1,
+   2026-07-31): `ansify`'s own report of what it converted/skipped/
+   drifted is not proof of completeness — `parse_decl_block` silently
+   drops (zero skip, zero DRIFT, no trace at all) any K&R declaration
+   block that isn't exactly "one complete, semicolon-terminated
+   statement per physical line" (a single declaration spanning
+   multiple lines, or multiple declarations crammed onto one line, both
+   qualify and are common in this 1988-era codebase). Ad-hoc greps for
+   this shape are unreliable — AMS1 needed three successive attempts,
+   each missing real instances, before a **definitive** check closed
+   it: import `ansify`'s own `HDR`/`parse_decl_block` (the real
+   functions, not a re-derived approximation) and run them directly
+   against every file in the directory, diffing against what the real
+   `ansify` pass actually converted. Any directory large enough that a
+   manual per-function review isn't practical should run this before
+   considering the directory converted — **C1 (`contrib/zip/lib`,
+   already flagged as the tree's highest-defect-density directory)
+   should use this without question.** Not itself a tool fix — see
+   `ansify`'s parser-gap findings entry under AMS1 above for why a
+   real `parse_decl_block` rewrite was deliberately deferred instead of
+   attempted.
 
 Retired (do NOT re-run; listed so older findings entries below don't
 mislead):
@@ -1728,6 +1754,112 @@ and gave wdc a safe `-n`/fake-it-mode example) all ran clean; `nns`
 untestable this session (no netnews access). Full per-directory
 detail, the `cvEng` fix, and the runtime-check writeup are in
 `claude-history/m3-a1-apps-REPORT.md`.
+
+### AMS1 (`ams/libs/ms`, 113 real files, plus the `ams/msclients/cui`
+COMPILERFLAGS closure add-on, 2026-07-31) — opens Wave 6
+
+One of the four flagged-risky batches (full orchestrator
+pre-diagnosis, not delegate-side Gate 0). Pre-diagnosis found
+`prsdate.c` is bison-generated (same `Parser()`-macro mechanism as
+I2's `eqparse.c`/`num.c`, excluded from `ansify`) and that the old
+`fdplumb` caller-include-order concern this directory's history flags
+is now stale — the 2026-07-17 fix (`6782de786a`) made `fdplumb.h`
+self-contained (it includes `fcntl.h`/`sys/types.h` itself before its
+own rename macros), so caller include order no longer matters; a
+17-file audit finding "wrong" order was confirmed not a live risk.
+
+Pre-diagnosis also scouted the folded-in `ams/msclients/cui`
+COMPILERFLAGS amendment (from A1) and found its originally-proposed
+mechanism doesn't work: `ms.h`/`cui.h` contain zero function
+prototypes between them (both are type/struct/macro-only), so
+`#include`ing them fixes nothing — verified empirically before
+delegating. The real fix is scattered per-file `extern RETTYPE
+FuncName();` declarations, the same idiom the `cvEng` fix already
+used, cross-referenced against `ams/libs/ms`'s real signatures once
+converted. See `m3-batches.md`'s Wave 6 section for the full
+correction writeup.
+
+**Gate 1 found a genuinely new, more dangerous `ansify` parser gap**:
+K&R declarations spanning multiple physical lines (only the last line
+terminated by `;`), or multiple complete declaration statements
+crammed onto one physical line, are silently dropped by
+`parse_decl_block` — **zero skip message, zero DRIFT entry, nothing**
+in `ansify`'s own report. Worse than every prior parser-gap variant
+(`(void)`-misparse, `DECLARE<N>` macro, brace-glued, double-pointer,
+array-brackets, space-before-asterisk), all of which at least
+self-report as a skip. 16 functions across 11 files were silently
+left K&R this way; three successive hand-written greps each missed
+real instances before the session imported `ansify`'s own
+`HDR`/`parse_decl_block` logic and ran it directly against all 113
+files to definitively close the sweep (0 misses on re-scan, confirmed
+twice). All 16 hand-converted, matching `ansify`'s own weave/tidy_type
+conventions exactly, plus ~16 more stale cross-file forward
+declarations for the same 16 functions fixed for consistency (not
+required for the gate).
+
+**Orchestrator ruling (2026-07-31): do NOT fix `ansify`'s parser for
+this** — unlike bug 2 (brace-glued) or bug 4 (brace-body corruption),
+neither of which self-reported and both of which risked *silently
+deleting or corrupting* real code, this gap's failure mode is a
+compiling-but-incomplete conversion (the K&R definition still compiles
+fine under `-std=gnu89` with no `-pe` requiring typed prototypes) —
+annoying and effort-costly to find, but not a correctness landmine.
+A real fix means reworking `parse_decl_block` from
+one-physical-line-is-one-statement matching into a statement/
+continuation-accumulation model — real regression risk to a tool
+500+ files already depend on, to fix a completeness bug rather than a
+corrupting one. **Standing mitigation instead**: promote the
+delegate's "import `ansify`'s own `HDR`/`parse_decl_block` and re-scan
+directly" technique to the standing checklist (new item 9, below) for
+any future large batch — C1 (`contrib/zip/lib`, already flagged as the
+tree's highest-defect-density directory) should use it without
+question.
+
+**Standing item-8 check had two real blind spots**, found via 12 real
+stranded-declaration compile failures the pre-diagnosis's grep
+predicted zero of: the grep only matched `static`-prefixed
+declarations (10 of the 12 real conflicts were `extern`-prefixed), and
+it read parameter types literally without resolving `typedef`s (2 more
+used `Boolean`, `typedef short Boolean` — a narrow, promotion-risky
+type invisible to a literal-keyword read). Item 8's wording is now
+broadened below.
+
+**One genuine ~30-year-old bug found**: `unscrib.c`'s
+`UnformatMessage` called `FreeMessageContents(Msg)` with 1 of its real
+2 arguments (surfaced only once `FreeMessageContents` got a real
+2-arg prototype via the item-8 fix above — invisible under K&R's
+unchecked argument count). Fixed as `FreeMessageContents(Msg, FALSE)`
+— `FreeSnapshot` controls only whether `Msg->Snapshot` gets freed, and
+`UnformatMessage` reuses `Msg` afterward, so the conservative
+(don't-free) choice was applied and flagged for confirmation. wdc
+runtime-confirmed `cuin dirinfo` and the `messages` GUI app both clean
+afterward.
+
+**Task 2 (`ams/msclients/cui` COMPILERFLAGS closure) completed in the
+same session**, no split needed: all 140 undeclared calls categorized
+(36 `ams/libs/ms`, 46 `ams/libs/cui`, 55 same-directory helpers — this
+directory was already `ansify`-converted by A1, not mentioned in this
+batch's prompt, discovered directly — 7 `overhead/util/lib`, 3 other
+AMS libs, 1 libc) and declared. Hit one real complication:
+`moreprintf`/`errprintf2` are 1988-era pseudo-variadic functions (many
+fixed named params, called with far fewer args, relying on K&R's
+unchecked-trailing-args tolerance) — a typed or `...`-variadic
+declaration broke 177 call sites and conflicted with `errprintf2`'s
+real fixed-13-arg ANSI definition in the same file. **Resolved with
+old-style empty-parens "unspecified arguments" declarations**
+(`extern int moreprintf();` / `extern int errprintf2();`) — confirmed
+by the orchestrator to be C-standard-correct, not a shortcut: this is
+the only declaration form simultaneously compatible with a fixed-arity
+ANSI definition in the same translation unit *and* call sites
+supplying fewer arguments than the full parameter list. Both
+directories gated clean twice each; `cuin` confirmed relinked and
+reinstalled against the converted `libmssrv.a` both times.
+Independently re-verified by the orchestrator: both gates re-run
+clean directly (not just trusted from the delegate's own run), ~6
+specific fixes spot-checked against the diff (all matched exactly),
+`fossil status` confirmed exact file scope (115 files: 110 in
+`ams/libs/ms`, 5 in `ams/msclients/cui`). Full detail in
+`claude-history/m3-ams1-REPORT.md`.
 
 ## Resource note (2026-07-25, wdc)
 
