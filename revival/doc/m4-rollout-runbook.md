@@ -62,17 +62,21 @@ flag:
   conventions), plus 16 more stale cross-file forward declarations for
   those same functions. Both subtree gates (this directory and
   `ams/msclients/cui`) ran clean twice. Nothing left to do here.
-- **`FreeMessageContents` — FIXED, but carries one open semantic
-  ruling, still needs wdc's call.** §6 of the same report: giving the
-  function its real 2-arg prototype surfaced a real ~30-year-old bug —
-  `unscrib.c:163`'s `UnformatMessage` was calling it with only 1
-  argument (the 2nd, `FreeSnapshot`, was reading garbage under K&R's
-  no-arity-check calling convention). Fixed as
-  `FreeMessageContents(Msg, FALSE)` — the conservative reading (don't
-  free the snapshot during an in-place reformat) — but the delegate
-  explicitly flagged this as a behavioral guess about 1988 code intent,
-  not a mechanical fix, and asked for confirmation rather than treating
-  it as settled. **Still open — see the ruling section below.**
+- **`FreeMessageContents` — FIXED, ruling CONFIRMED (2026-08-01, wdc).**
+  §6 of `m3-ams1-REPORT.md`: giving the function its real 2-arg
+  prototype surfaced a real ~30-year-old bug — `unscrib.c:163`'s
+  `UnformatMessage` was calling it with only 1 argument (the 2nd,
+  `FreeSnapshot`, was reading garbage under K&R's no-arity-check
+  calling convention). Fixed as `FreeMessageContents(Msg, FALSE)` —
+  don't free the snapshot during an in-place reformat, since `Msg`
+  survives and is reused and the snapshot summary shouldn't be
+  invalidated by a reformat that doesn't change the message's actual
+  content. wdc's ruling confirms this reading and adds the likely
+  history: `FreeSnapshot` was probably added to the signature later for
+  other call sites that do need it, and this one call site simply never
+  got updated — a missed update at one site, not an unfinished
+  `UnformatMessage`. Verified still applied in the tree
+  (`unscrib.c:163`). Closed, no further action.
 - **`fix-missing-static-decl`'s non-idempotency — ruled out of scope
   for M4.** This is an `ansify`-pipeline bug; M4 does not re-run
   `ansify` or perform any further K&R *conversion* (that was M3's job,
