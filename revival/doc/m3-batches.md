@@ -482,18 +482,57 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       implementation. See `m3-rollout-runbook.md` findings → C1 and
       `claude-history/m3-c1-REPORT.md` for full detail. Committed
       (`869fa824`). **Opens Wave 7.**
-- [ ] **C2**: `contrib/mit/annot` (9), `contrib/zip/utility` (6),
+- [x] **C2**: `contrib/mit/annot` (9), `contrib/zip/utility` (6),
       `contrib/time` (6), `contrib/mit/util` (6), `contrib/srctext/
       html` (3), `contrib/srctext/ptext` (2), `contrib/srctext/ltext`
       (2), `contrib/demos/circlepi` (2), `contrib/calc` (2), `contrib/
       wpedit` (1), `contrib/eatmail` (1) — 40 files, 11 dirs.
 
+      **Done 2026-08-01.** Routine Gate-0 batch; caught and corrected a
+      wrong claim in the delegation prompt's own pre-diagnosis before
+      Gate 1 wasted any build time on it (`contrib/zip/utility`'s
+      `ltv.ch`/`schedv.ch` `InitializeClass`/`FinalizeObject`
+      restatements were not the safe shape as stated — same species of
+      mistake C1 had just caught and fixed one batch earlier, verified
+      independently two ways: source read of `class.c` and a live `-pe`
+      compile probe). One genuinely new, deliberately-not-tool-fixed
+      `ansify` parser gap found (`contrib/srctext/html`'s star-glued-to-
+      type K&R style, `struct html* self` vs. the tree's usual
+      `struct html *self`, broke 45 file-local helpers — hand-fixed,
+      tool left alone, same treatment as O2's `DECLARE<N>` finding).
+      Two more genuine ~35-year-old interface bugs found and fixed:
+      `html.ch`'s `EnvStart`/`EnvEnd` declared `char *envname` where the
+      real implementation and all 4 call sites always pass
+      `struct style *` (silently wrong since it's pointer-width-
+      compatible on LP64); `ltapp.ch`/`schedapp.ch` hit the known
+      unnamed-classproc-parameter classpp bug (B2 finding 3, recurring).
+      Closed this project's standing `contrib/zip/utility/ltapp.c`
+      2-error gate blocker (open since 2026-07-11, `roadmap.md`) via the
+      `Set_Debug` untyped-`.ch`-parameter fix. `contrib/wpedit` confirmed
+      entirely inert (no real Makefile targets, no binary) — left
+      untouched. All 10 active directories gated clean twice each, the
+      tree-wide `dependInstall` gate ran clean, and — since this closes
+      M3 and hands off to M4 — a full `make Clean; make World` clean
+      rebuild also ran clean, the first since Wave 6's close.
+      Independently re-verified by the orchestrator: the two `class.c`-
+      dependent rulings confirmed by direct source read, `fossil status`
+      confirmed exact 54-file scope, and `contrib/srctext/html` and
+      `contrib/zip/utility` (the two directories with real bug fixes)
+      independently rebuilt from clean by the orchestrator directly,
+      both 0 errors. wdc ran the suggested runtime checks (`ez` HTML/
+      srctext/annot/time insets, `sched` launch, `calc`) and approved
+      checkin — `html`'s handling of modern HTML content is confirmed
+      pre-existing/expected (never a full modern renderer), not a
+      regression. See `m3-rollout-runbook.md` findings → C2 and
+      `claude-history/m3-c2-REPORT.md` for full detail. Committed
+      (`1fd8dd2a`). **Closes Wave 7 and M3.**
+
 ## Session-count summary
 
-Revised 2026-07-30: 15 sessions total (was 17 — pilot retired into
-I2, I3 merged into I1), across the 7 waves in dependency order.
-14 complete (O1–O4, B1–B3, T1, I1, I2, A1, AMS1, AMS2, C1), 1
-remaining: C2 (Wave 7, the last wave — closes M3). Tick batches here as
+**M3 complete, 2026-08-01.** 15 sessions total (was 17 — pilot retired
+into I2, I3 merged into I1), across the 7 waves in dependency order, all
+complete: O1–O4, B1–B3, T1, I1, I2, A1, AMS1, AMS2, C1, C2. All 91
+active directories with `.c` files accounted for. Tick batches here as
 they complete, same convention as `m1-point10-batches.md`; the
 runbook's own summary gets the one-line rollup per wave, not per
 batch.

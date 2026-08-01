@@ -733,6 +733,21 @@ sample:
   against that field at all. Corrected by retyping both declarations
   to the class they actually belong to.
 
+- **An HTML-rendering method's interface declared a formatting record as
+  a plain string, and it went unnoticed for decades because both are
+  ordinary pointers of the same size.** The method that opens and closes
+  a nested markup region (blockquotes, lists) took its second argument
+  as a bare string in its interface file, but the real implementation
+  and every one of its four call sites always passed a style/formatting
+  record instead — direct field access, calls that only make sense for
+  that record type. Nothing ever caught the mismatch because the
+  interface only checks argument *counts*, not types, and both a string
+  pointer and a record pointer are the same width — so the wrong-typed
+  interface compiled, linked, and ran correctly by accident for as long
+  as the code has existed. Corrected by retyping the interface to match
+  the record every real caller and the implementation itself already
+  agreed on.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

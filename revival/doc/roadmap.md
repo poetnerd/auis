@@ -648,16 +648,19 @@ trail, reproduction steps, and what was tried/disproven along the way:
   end-to-end at normal default optimization. Tested against `Cattey.turnin` and 
   `contrib/zip/samples/dragon.zip`.
 - **Confirmed 2026-07-11 (found while gating an unrelated `MK_CALC`
-  change):** `contrib/zip/utility/ltapp.c:115,123` —
+  change), RESOLVED 2026-08-01 (M3 Wave 7 batch C2):**
+  `contrib/zip/utility/ltapp.c:115,123` —
   `lt_Set_Debug(self->lt, debug)` / `ltv_Set_Debug(self->ltview,
   debug)` pass a `boolean` (int) `debug` through an untyped `Set_Debug`
   class method whose `.ch`-declared parameter is `void *` — same
   untyped-K&R-`.ch` gap as the rest of `contrib/zip/lib` before its
   M1-style typing pass, not a regression from anything touched this
-  session. Blocks a full top-to-bottom `make dependInstall` gate
+  session. Blocked a full top-to-bottom `make dependInstall` gate
   (`SUBDIRS` order puts `zip` after `calc` in `contrib/Imakefile`).
-  Untouched — out of scope for the `MK_CALC` work; needs the same
-  `.ch`-typing treatment `contrib/zip/lib` already got.
+  Fixed by M3 C2's `.ch`-typing treatment (`Set_Debug( boolean debug
+  );` across `lt`/`ltv`/`sched`/`schedv`) — the same treatment
+  `contrib/zip/lib` already got. Confirmed gone from both the subtree
+  and tree-wide gates; see `m3-rollout-runbook.md`'s C2 findings entry.
 
 ### zip / calc / raster — insets fail to load when embedded inside a mixed-content document — RESOLVED 2026-07-26 (calc/zip/raster all runtime-confirmed)
 

@@ -98,7 +98,18 @@ Active:
    `FinalizeObject` is the self-only restatement (matches
    `fldtreev.ch`); if the real `.c` definition only has 1 param, widen
    the `.c` to 2 (`classID` unused), don't simplify the `.ch` further.
-   Known unresolved instances ahead: `schedv.ch`/`ltv.ch` (Wave 7 C2).
+   **`schedv.ch`/`ltv.ch` (Wave 7 C2, 2026-08-01) turned out to be the
+   broken shape, not the safe one** — a double restatement
+   (`InitializeClass(struct classheader *classID)`,
+   `FinalizeObject(struct classheader *classID, struct CLASS *self)`)
+   over-counts for *both* methods (2 params vs. real 1 for
+   `InitializeClass`, 3 vs. real 2 for `FinalizeObject`), because
+   neither shape hits `FinalizeObject`'s hardcoded-empty branch and
+   `InitializeClass` has no hardcoded branch at all — fixed by
+   simplifying both to the established-safe forms (true empty parens,
+   self-only restatement). This recurred despite being pre-diagnosed
+   (wrongly) as safe in that batch's own delegation prompt; see the C2
+   findings entry below for the full correction.
 6. **Concurrent-commit merge check** (B1): if unrelated commits land
    while a batch's review is in progress, spot-check the current
    content of any file both touched before trusting the auto-merge
@@ -962,9 +973,10 @@ tool false positives, before writing the batch prompt.
    grep confirmed exactly 8 total restated-`InitializeClass` instances
    and exactly 1 double-restated-`FinalizeObject` instance exist anywhere
    in the source tree; 3 more live outside B3's scope — `fldtreev.ch`
-   (Wave 6), `schedv.ch`/`ltv.ch` (Wave 7) — not yet checked for which
-   direction they resolve, worth a 30-second look when those waves
-   arrive).
+   (Wave 6, resolved AMS2 2026-08-01: restated both implicit params,
+   was the broken shape, fixed), `schedv.ch`/`ltv.ch` (Wave 7,
+   resolved C2 2026-08-01: same broken shape, fixed — see the C2
+   findings entry below).
 2. **A real ~35-year-old missing parameter**: `atk/apt/tree/tree.ch`'s
    `TreeWidth`/`TreeHeight` declared zero explicit args; the real
    implementation always took `(self, node)`. Zero callers anywhere in
@@ -2122,6 +2134,125 @@ own (never-called) real implementation. Full detail in
 **Opens Wave 7.** One batch remains in M3: C2 (`contrib/zip/utility`
 and 10 other small directories) — closes Wave 7, M3, and hands off to
 M4.
+
+### C2 (`contrib/mit/annot` + 10 other small `contrib` dirs, 40 files, 11 dirs, 2026-08-01) — closes Wave 7 and M3
+
+Full findings and file:line detail: `claude-history/m3-c2-REPORT.md`.
+Routine Gate-0 batch, but the last M3 batch turned out to be one of the
+more consequential "routine" ones — two rulings, two more genuine
+~35-year-old bugs, and a milestone-closing full clean rebuild.
+
+1. **The delegation prompt's own pre-diagnosis was wrong, same species
+   of mistake C1 corrected one batch earlier.** The prompt told the
+   delegate `contrib/zip/utility`'s `ltv.ch`/`schedv.ch` lifecycle-method
+   restatements were the established-safe shape. They weren't — see the
+   correction to checklist item 5 above. The delegate caught this itself
+   at Gate 0 (both via a direct read of `class.c`'s codegen and a live
+   `-pe` compile probe, the prompt's own sanctioned method for a
+   classification that "genuinely needs a compile check"), and the
+   orchestrator independently re-derived the same conclusion by hand
+   before ruling to proceed. Lesson for M4: even a routine batch's
+   "already confirmed" prompt context can be wrong — the C1/C2 pair
+   shows this specific mechanism (verbatim-restatement over-counting) is
+   easy to misjudge by eye even with the rule written down, and worth a
+   live compile check whenever a claim is checkable that way, not only
+   when Gate 0 explicitly calls for it.
+2. **A genuinely new, deliberately-not-tool-fixed `ansify` parser gap**:
+   `contrib/srctext/html`'s `html.c`/`htmlview.c` use a star-glued-to-
+   type K&R declaration style (`struct html* self;`, not the tree-wide
+   `struct html *self;`) — confirmed directly against
+   `parse_local_decls`'s regex (requires whitespace between the type
+   token and the rest of the declarator; a glued star leaves none),
+   silently breaking 45 file-local helpers (none class methods, so zero
+   DRIFT/interface risk). Ruled: hand-fix the declaration style (45
+   sites, mechanical `TYPE* name;` → `TYPE *name;`) rather than touch
+   the tool, given this is the last M3 batch and the shape appears
+   concentrated in one directory's idiosyncratic style rather than being
+   tree-wide — same treatment as O2's `DECLARE<N>` finding. Documented
+   here for the record in case a future gated-dead subtree with this
+   style is ever activated (see `activating-new-subtree.md`).
+3. **Two more genuine ~35-year-old interface bugs, applied directly and
+   reported** (same posture as B1's `im.c` fix and C1's typo cluster —
+   overwhelming evidence, no cross-directory consumer, holding the batch
+   for a single-item ruling round-trip would have stalled the remaining
+   directories and both build gates):
+   - `contrib/srctext/html/html.ch`'s `EnvStart`/`EnvEnd` declared their
+     second parameter `char *envname`, but the real implementation and
+     all 4 call sites (`html.c:1600,1618,1642,1730`) always pass
+     `curenv->data.style`, a `struct style *`, with direct field access
+     and calls that only make sense for that type. Invisible to
+     `ansify`'s DRIFT check because the *parameter count* already
+     matched (6, including implicit `self`) — DRIFT only checks counts,
+     not types — and both pointer types are the same width on LP64, so
+     this compiled and ran "correctly" for ~35 years by accident. Fixed
+     by retyping both declarations to `struct style *style`. Written up
+     in `revival.md`.
+   - `contrib/zip/utility/ltapp.ch`/`schedapp.ch`'s `InitializeObject`
+     classproc parameters were declared with no parameter name (`struct
+     ltapp *)`, not `struct ltapp *self)`) — B2 finding 3's already-
+     documented classpp bug recurring (an unnamed classproc parameter
+     causes classpp to drop the type name from the emitted prototype
+     entirely, `struct  *`, uncompilable). Fixed by naming both
+     parameters, the same workaround as B2 (not a tool fix).
+4. **Closed this project's oldest standing M3-era gate blocker**:
+   `contrib/zip/utility/ltapp.c`'s 2 compile errors (`roadmap.md`,
+   confirmed 2026-07-11, blocking a full top-to-bottom `dependInstall`
+   ever since) were the `Set_Debug` untyped-`.ch`-parameter shape
+   (`porting-assessment.md` point 4 finding 1 — "an all-`void *` cast
+   for a method whose callers pass integers usually means the `.ch`
+   never had types") across all four `contrib/zip/utility` classes
+   (`lt`, `ltv`, `sched`, `schedv`). Typed all four `.ch` declarations
+   `boolean debug`; hand-verified the real `.c` definitions' `mode`
+   parameter converts to `boolean` too, since none of the four K&R
+   blocks declared it locally (implicit K&R `int`) for `ansify`'s
+   helper-conversion path to read — needed the now-typed `.ch` to drive
+   it, same as an ordinary DB-signature-driven class-method conversion.
+   Confirmed gone from both the subtree and tree-wide gates.
+5. **`contrib/wpedit` turned out fully inert**, not just small — no real
+   Makefile targets (`make -n install` only touches `install.time`/
+   `install.doc`), no binary in `build/bin`. `rollout-procedure.md`
+   names this exact directory as historical precedent for this failure
+   mode, and Gate 0 still initially assumed liveness from the
+   `dependInstall.log` "building" line alone (the same insufficient
+   signal that document warns against) — caught before any wasted `-pe`/
+   `.eh` work, but confirms the liveness census needs a positive check
+   (real Makefile targets, not just a descent-order log line) as a
+   mandatory Gate 0 step, not an optional deeper dive, joining
+   `overhead/malloc`/`inst` (O4) as the second M3-era instance of this
+   exact gap.
+6. **`fix-missing-static-decl` non-idempotency (O1, 2026-07-25) is still
+   live and still recurring**: 5 more instances this batch alone (4
+   files across `contrib/zip/utility`/`contrib/srctext/{ptext,ltext}`),
+   each resolved by O1's established workaround (hand-retype the
+   inserted stub, verify with a direct `make <base>.o`). Now recurred in
+   enough M3 batches (O1, O2, O3, B1/B2's brace-glue variant, C2) that a
+   real tool fix is worth reconsidering if M4's scope includes further
+   K&R conversion exposure — noted for the record, not actioned here.
+
+Subtree gates clean twice each for all 10 active directories (`wpedit`
+correctly excluded); tree-wide `dependInstall` gate clean, `ltapp.c`
+baseline confirmed gone. **Full `make Clean; make World` clean
+rebuild** (the M3-to-M4 handoff gate, first since Wave 6's close): 0
+real errors across the whole tree. Independently re-verified by the
+orchestrator: both `class.c`-dependent rulings confirmed by direct
+source read before resuming the delegate for Gate 1; `fossil status`
+confirmed exact 54-file scope; `contrib/srctext/html` and
+`contrib/zip/utility` (the two directories carrying real bug fixes)
+independently rebuilt from a clean state by the orchestrator directly,
+both 0 errors. wdc ran the suggested runtime checks (`ez` HTML/srctext/
+annot/time insets, `sched` launch, `calc`) and approved checkin —
+`html`'s difficulty with modern HTML content is confirmed pre-existing/
+expected behavior (this was never a full modern HTML renderer), not a
+regression from this batch. Full detail in `claude-history/
+m3-c2-REPORT.md`. Committed (`1fd8dd2a`).
+
+**Closes Wave 7 and M3.** 15 sessions total across 7 dependency-order
+waves (O1–O4, B1–B3, T1, I1, I2, A1, AMS1, AMS2, C1, C2), all 91 active
+directories accounted for. Hands off to M4 — see `m3-c2-REPORT.md`
+§21 for the lessons carried forward (live-compile-check habit, liveness
+census rigor, `fix-missing-static-decl`'s recurrence, always confirming
+a backgrounded build is genuinely alive via `pgrep`+log-tail before
+waiting on it).
 
 ## Resource note (2026-07-25, wdc)
 
