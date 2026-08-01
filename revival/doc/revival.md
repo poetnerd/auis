@@ -1,6 +1,6 @@
 # AUIS Revival: What Was Done and Why
 
-*Last distilled: 2026-07-25.* A narrative account of reviving Carnegie
+*Last distilled: 2026-08-01.* A narrative account of reviving Carnegie
 Mellon's Andrew User Interface System (AUIS) on a modern Mac, for readers
 who already know ATK and readers encountering it for the first time. For
 the complete technical record this document summarizes, see
@@ -906,13 +906,18 @@ The resulting plan runs in four stages:
   to standard C, one subsystem at a time, using a purpose-built tool that
   looks up each function's real signature from the class-definition files
   rather than inferring it — the safer approach the original mass-
-  conversion attempt should have taken.
+  conversion attempt should have taken. Completed tree-wide August 2026,
+  15 sessions across all 91 active directories. Consistent with M1's
+  experience, real type/arity checking surfaced numerous decades-old
+  interface bugs along the way — several are recounted below — and the
+  conversion tool itself needed two rounds of fixes for K&R declaration
+  shapes its own parser had missed.
 - **M4 — enable full compiler strictness** tree-wide, once every subsystem
   has been converted, which closes the remaining scanf-format-code bug
-  family as a side effect.
+  family as a side effect. Not yet started.
 
-As of this writing, M1 and M2 are both complete across the entire
-active codebase; M3 is underway, one subsystem at a time.
+As of this writing, M1, M2, and M3 are all complete across the entire
+active codebase; M4 has not yet started.
 
 ## Where things stand today
 

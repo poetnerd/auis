@@ -2080,7 +2080,10 @@ call site and definition tree-wide *before* any mass file editing starts
 - **M4 — Global strictness.** Tree-wide `-Werror` on the type-safety
   set; `-Wformat` then catches any remaining scanf `%d`/`%ld` (Variant
   4) automatically. Keep `-std=gnu89` until conversion completes;
-  consider c99 after. Writable-strings stays deferred.
+  consider c99 after. Writable-strings stays deferred. Task breakdown,
+  verified starting state, and why this milestone skips a pre-built
+  directory batch map (unlike M2/M3): `m4-rollout-runbook.md` (written
+  2026-08-01, not yet started).
 
 Scale: ~13,700 K&R definitions across ~1,301 of 1,544 `.c` files; ~5,100
 are class methods converted by `.ch` lookup, not inference. M2/M3 runs
