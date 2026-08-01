@@ -1,6 +1,6 @@
 # M3 Wave 2 batch B2: `atk/value`, `atk/support`, `atk/supportviews`, `atk/adew`, `atk/basics/x`
 
-Read `sonnet-playbook.md`, `rollout-procedure.md` (in full), `m3-rollout-runbook.md` (including its full "Findings from real sessions" — O1 through O4 and B1 are all there now), `m3-batches.md`, and `porting-assessment.md` §14 and §17 before starting. Also skim `claude-history/m3-b1-basics-common-REPORT.md` — B1 just did the first large-scale (41-class) `-pe`/`.eh` rollout and found real new patterns you'll need.
+Read `sonnet-playbook.md`, `rollout-procedure.md` (in full), `m3-rollout-runbook.md` (including its full "Findings from real sessions" — O1 through O4 and B1 are all there now), `m3-batches.md`, and `porting-assessment.md` §14 and §17 before starting. Also skim `m3-b1-basics-common-REPORT.md` — B1 just did the first large-scale (41-class) `-pe`/`.eh` rollout and found real new patterns you'll need.
 
 This is Wave 2's second batch: 5 directories, 88 files, ~81 classes total — the widest single M3 batch by class count so far (more than B1's 41). All 5 get `-pe` added and are class-heavy, so treat this with the same care B1 needed, not like a Wave-1-style grab-bag.
 
@@ -88,7 +88,7 @@ None of the 5 currently has a `CLASSFLAGS` line (all inherit the tree default). 
 
 ## Report
 
-Write `revival/doc/claude-history/m3-b2-value-support-REPORT.md` per `sonnet-playbook.md`'s standard format, plus:
+Write `m3-b2-value-support-REPORT.md` per `sonnet-playbook.md`'s standard format, plus:
 - Real instance counts vs. the dry-run baseline for all 5 directories, confirmation all 37 pre-diagnosed findings resolved as expected.
 - Full detail on the `runadewapp__InitializeClass` `-pe`-invisible fix and confirmation no other instance of this pattern turned up elsewhere in the batch.
 - Any new cross-`.ch` rock-type disagreements or other new fallout patterns, given this batch's much denser class-interaction graph than any prior batch.

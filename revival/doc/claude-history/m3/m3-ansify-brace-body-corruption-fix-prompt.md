@@ -1,6 +1,6 @@
 # `ansify` fix: brace-glued-to-local-variable-declaration corruption (regression in this morning's own fix)
 
-Read `sonnet-playbook.md` and `rollout-procedure.md` in full before starting (same hard rules as every M3 task: no fossil commits ever, stop at the gate, write `m3-ansify-brace-body-corruption-fix-session.diff` in the tree root and `m3-ansify-brace-body-corruption-fix-REPORT.md` in `revival/doc/claude-history/`, command style for an unattended session). This is a fix to `revival/tools/ansify` itself, **not** an ansify batch on new directories. Read `m3-rollout-runbook.md`'s "ansify brace-glued parser fix + retrospective recheck" entry (2026-07-30) for background on the *original* brace-glued bug and fix before touching anything — this task fixes a narrow regression introduced by that same fix, found later the same day during M3 batch B3 (`revival/doc/claude-history/m3-b3-leaf-dirs-REPORT.md`, §4.5).
+Read `sonnet-playbook.md` and `rollout-procedure.md` in full before starting (same hard rules as every M3 task: no fossil commits ever, stop at the gate, write `m3-ansify-brace-body-corruption-fix-session.diff` in the tree root and `m3-ansify-brace-body-corruption-fix-REPORT.md` in `revival/doc/claude-history/`, command style for an unattended session). This is a fix to `revival/tools/ansify` itself, **not** an ansify batch on new directories. Read `m3-rollout-runbook.md`'s "ansify brace-glued parser fix + retrospective recheck" entry (2026-07-30) for background on the *original* brace-glued bug and fix before touching anything — this task fixes a narrow regression introduced by that same fix, found later the same day during M3 batch B3 (`m3-b3-leaf-dirs-REPORT.md`, §4.5).
 
 ## The bug, already fully diagnosed and the fix already verified end-to-end — do not re-derive
 
@@ -115,7 +115,7 @@ Already established and worth restating so you don't redo this analysis: this co
 
 ## Report
 
-Write `revival/doc/claude-history/m3-ansify-brace-body-corruption-fix-REPORT.md` per `sonnet-playbook.md`'s standard format, plus:
+Write `m3-ansify-brace-body-corruption-fix-REPORT.md` per `sonnet-playbook.md`'s standard format, plus:
 - The exact diff to `revival/tools/ansify`.
 - Your own confirmation of all three scratch test cases (corruption case fixed, plain-brace case unaffected, signature-glued case still works).
 - The `atk/apt/suite`/`atk/apt/tree` dry-run comparison against B3's documented findings.

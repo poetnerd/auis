@@ -255,7 +255,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       directories gated clean, twice each; no tree-wide gate this
       batch (deferred to I2's close, per Wave 4's two-batch split).
       See `m3-rollout-runbook.md` findings → I1 and
-      `claude-history/m3-i1-insets-batch1-REPORT.md` for full detail.
+      `m3-i1-insets-batch1-REPORT.md` for full detail.
       Committed.
 - [x] **I2**: `atk/eq` (6, formerly the standalone pilot — its
       2026-07-08 dry-run found zero DRIFT), `atk/figure` (17),
@@ -278,7 +278,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       rebuilds of 4 of the 6 directories, spot-checked fixes against
       diff). wdc ran every suggested runtime check, all passed. See
       `m3-rollout-runbook.md` findings → I2 and
-      `claude-history/m3-i2-insets-batch2-REPORT.md` for full detail.
+      `m3-i2-insets-batch2-REPORT.md` for full detail.
       Committed.
 
 ## Wave 5 — apps (9 directories, 29 files, 1 batch)
@@ -301,7 +301,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       re-verified by the orchestrator. wdc ran every suggested runtime
       check; all passed once the `cvEng` fix landed. Closes Wave 5. See
       `m3-rollout-runbook.md` findings → A1 and
-      `claude-history/m3-a1-apps-REPORT.md` for full detail. Committed.
+      `m3-a1-apps-REPORT.md` for full detail. Committed.
 
 ## Wave 6 — atkams/ams (5 directories, 148 files, 2 batches)
 
@@ -390,7 +390,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       directly, ~6 specific fixes spot-checked against the diff (all
       matched), `fossil status` confirmed exact file scope. See
       `m3-rollout-runbook.md` findings → AMS1 and
-      `claude-history/m3-ams1-REPORT.md` for full detail. Committed.
+      `m3-ams1-REPORT.md` for full detail. Committed.
 
       **Open item, not yet closed: the `FreeMessageContents(Msg,
       FALSE)` semantic judgment call above needs real verification.**
@@ -432,7 +432,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       tree-wide gate re-run clean directly, 7 specific fixes
       spot-checked against the diff, `fossil status` confirmed exact
       file scope (37 files). Full detail in
-      `claude-history/m3-ams2-REPORT.md` and
+      `m3-ams2-REPORT.md` and
       `m3-rollout-runbook.md`'s AMS2 entry.
 
       **Wave 6 complete.**
@@ -480,7 +480,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       real subclass override supplied, and a status-message method pair
       whose interface never matched its own (never-called) real
       implementation. See `m3-rollout-runbook.md` findings → C1 and
-      `claude-history/m3-c1-REPORT.md` for full detail. Committed
+      `m3-c1-REPORT.md` for full detail. Committed
       (`869fa824`). **Opens Wave 7.**
 - [x] **C2**: `contrib/mit/annot` (9), `contrib/zip/utility` (6),
       `contrib/time` (6), `contrib/mit/util` (6), `contrib/srctext/
@@ -524,7 +524,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       checkin — `html`'s handling of modern HTML content is confirmed
       pre-existing/expected (never a full modern renderer), not a
       regression. See `m3-rollout-runbook.md` findings → C2 and
-      `claude-history/m3-c2-REPORT.md` for full detail. Committed
+      `m3-c2-REPORT.md` for full detail. Committed
       (`1fd8dd2a`). **Closes Wave 7 and M3.**
 
 ## Session-count summary

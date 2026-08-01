@@ -660,7 +660,7 @@ trail, reproduction steps, and what was tried/disproven along the way:
   Fixed by M3 C2's `.ch`-typing treatment (`Set_Debug( boolean debug
   );` across `lt`/`ltv`/`sched`/`schedv`) — the same treatment
   `contrib/zip/lib` already got. Confirmed gone from both the subtree
-  and tree-wide gates; see `m3-rollout-runbook.md`'s C2 findings entry.
+  and tree-wide gates; see `claude-history/m3/m3-rollout-runbook.md`'s C2 findings entry.
 
 ### zip / calc / raster — insets fail to load when embedded inside a mixed-content document — RESOLVED 2026-07-26 (calc/zip/raster all runtime-confirmed)
 
@@ -2073,8 +2073,10 @@ call site and definition tree-wide *before* any mass file editing starts
   Procedure, gate-scope reasoning (stronger locality guarantee than M2
   had — `.eh` is never installed tree-wide, same-directory quoted
   include only), ordering rationale, and batching plan:
-  `m3-rollout-runbook.md` (planned 2026-07-25, execution not yet
-  started — see that file's resource note before beginning).
+  `claude-history/m3/m3-rollout-runbook.md`. **M3 complete 2026-08-01**
+  — 15 sessions, all 91 active directories converted; retired to
+  `claude-history/m3/` (prompts, reports, `m3-batches.md`, the runbook
+  itself) now that the milestone is closed.
 - **M4 — Global strictness.** Tree-wide `-Werror` on the type-safety
   set; `-Wformat` then catches any remaining scanf `%d`/`%ld` (Variant
   4) automatically. Keep `-std=gnu89` until conversion completes;

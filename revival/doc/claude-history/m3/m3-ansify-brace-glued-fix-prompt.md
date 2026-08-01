@@ -110,7 +110,7 @@ Procedure per directory:
 
 ## Report
 
-Write `revival/doc/claude-history/m3-ansify-brace-glued-fix-REPORT.md` per `sonnet-playbook.md`'s standard format, plus:
+Write `m3-ansify-brace-glued-fix-REPORT.md` per `sonnet-playbook.md`'s standard format, plus:
 - The exact diff to `revival/tools/ansify`.
 - Your own confirmation of the fix on a scratch test, before touching the real tree.
 - Per-directory: dry-run output summary, every DRIFT/skip finding and how you resolved it, real-run conversion counts (methods/classprocs/helpers), gate results (twice each).

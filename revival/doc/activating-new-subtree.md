@@ -125,7 +125,7 @@ ran was never `ansify`-converted.
    auto-update).
 2. Check for `.ch` files in the directory. If none: skip straight to
    the `ansify --dir` helper-conversion pass, no `-pe`/`.eh` step
-   needed (see `m3-rollout-runbook.md`'s O1 finding — not every
+   needed (see `claude-history/m3/m3-rollout-runbook.md`'s O1 finding — not every
    directory is a class directory). If it has `.ch` files: add `-pe`
    to `CLASSFLAGS`, force `.eh` regeneration, same as any other M3
    batch.

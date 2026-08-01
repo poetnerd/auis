@@ -182,7 +182,7 @@ re-verifying your work.
 
 ## Report
 
-Write `revival/doc/claude-history/m3-i2-insets-batch2-REPORT.md` per
+Write `m3-i2-insets-batch2-REPORT.md` per
 `sonnet-playbook.md`'s standard format, plus:
 - Per-directory `ansify --dir` results vs. the pre-diagnosis above
   (flag any drift from what was expected, especially in `atk/figure`

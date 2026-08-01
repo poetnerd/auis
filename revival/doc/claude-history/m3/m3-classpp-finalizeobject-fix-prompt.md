@@ -58,7 +58,7 @@ Do **not** touch the `if (strcmp(mp->name, "InitializeObject") == 0) continue;` 
 
 ## Report
 
-Write `revival/doc/claude-history/m3-classpp-finalizeobject-fix-REPORT.md` per `sonnet-playbook.md`'s standard format, plus:
+Write `m3-classpp-finalizeobject-fix-REPORT.md` per `sonnet-playbook.md`'s standard format, plus:
 - The exact diff to `class.c`.
 - Full detail on the byte-identical `.eh` verification (which files were compared, confirmation of zero differences, or full detail on any difference found).
 - Full detail on the positive test (the toy `.ch` used, the `.eh` it produced before and after the fix).

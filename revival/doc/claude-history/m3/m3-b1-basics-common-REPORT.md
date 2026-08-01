@@ -21,7 +21,7 @@ finding for why). Session diff at tree root:
    "Command style" section), `m3-rollout-runbook.md` (including its
    full "Findings from real sessions" — O1 through O4), `m3-batches.md`,
    `porting-assessment.md` §14 and §17, and skimmed
-   `claude-history/m3-o4-overhead-grabbag-REPORT.md` — all before
+   `m3-o4-overhead-grabbag-REPORT.md` — all before
    starting.
 2. Confirmed the 41 `.ch` count and re-verified all 6 pre-diagnosed
    findings via a fresh `ansify --dry-run --dir src/atk/basics/common`

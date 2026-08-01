@@ -16,11 +16,13 @@ is part of retiring it, done during the close-out doc update.
 **Subdirectory extension (decided 2026-07-25):** a milestone whose
 own prompt/report volume gets large enough to clutter this directory's
 flat listing gets its own subdirectory here instead (`fossil mv` into
-it, same repoint-references discipline). First and so far only case:
-`m2/`, holding all of M2's prompts, reports, and its own runbook — see
-the dedicated section below. Retired docs for milestones that don't
-reach that scale (M1's own runbook, most standalone investigations)
-stay flat at this directory's top level, as before.
+it, same repoint-references discipline). Two cases so far: `m2/`
+(2026-07-25), holding all of M2's prompts, reports, and its own
+runbook, and `m3/` (2026-08-01), holding M3's prompts, reports, its
+runbook, and its batch/wave map — see the dedicated sections below.
+Retired docs for milestones that don't reach that scale (M1's own
+runbook, most standalone investigations) stay flat at this directory's
+top level, as before.
 
 ## Active Prompts (in `revival/doc/`, not here)
 
@@ -372,3 +374,101 @@ A fixed tree-wide checkpoint gate (run directly by the orchestrator,
 no delegated session — pure verification, no fix work) also closed out
 bucket 4 (points 5–12) before point 13 started, per the gate-scope
 ruling's own schedule.
+
+## M3 — K&R→ANSI definition conversion + `-pe`/`.eh` Export rollout (`m3/` subdirectory)
+
+M3 (Medium-term → ANSI C conversion, `roadmap.md`) closed in its
+entirety 2026-08-01: every active directory's K&R function definitions
+converted to ANSI via `ansify` (`revival/tools/ansify`), plus the
+`-pe`/`.eh` classpp Export-side rollout giving every class directory
+typed dispatch prototypes. Retired as one batch the same day, moved
+into its own subdirectory rather than flat here, same pattern as
+`m2/`: a shared runbook, a batch/wave map, and one prompt/report pair
+per session, 38 files total. Read `m3/m3-rollout-runbook.md` first —
+it carries the flag mechanics, the full fallout taxonomy (parser gaps,
+classpp codegen bugs, the DRIFT/stranded-declaration checklist, every
+sub-case found along the way), the gate-scope ruling, and a per-batch
+findings narrative more detailed than this summary. `m3/m3-batches.md`
+is the exhaustive directory-to-batch/wave map. The milestone-shared
+session rhythm lives in the still-active `../rollout-procedure.md`,
+not retired here since M4 reuses it directly.
+
+**Final tally**: 15 sessions across 7 dependency-order waves, all 91
+active directories with `.c` files converted. Unlike M2 (zero real
+bugs found), M3's typed-dispatch/arity checking surfaced numerous
+genuine ~30-to-35-year-old interface bugs along the way — see
+`revival.md`'s "Old bugs never found till now" for the narrative
+write-ups, and the runbook's per-batch findings entries for full
+technical detail. Also found and fixed several real bugs in the
+project's own tooling (`ansify` parser gaps, two `classpp`/`class.c`
+codegen bugs) — three of those got their own standalone fix-and-verify
+sessions rather than riding along inside a batch (see below).
+
+Sessions, in order (each is `m3/m3-<name>-prompt.md` +
+`m3/m3-<name>-REPORT.md` unless noted):
+
+**Wave 1 — overhead** (28 dirs, 305 files): `o1-utillib`
+(`overhead/util/lib`, 2026-07-25) — first real M3 session, 0 DRIFT,
+found a critical `ansify` compile-gate safety-gap bug (fixed in the
+tool). `o2-imagecodecs` (`overhead/image/jpeg`+`tiff`, 2026-07-25/26) —
+vendored codec libraries, 3 new tool-parser quirks. `o3-mail-eli-bison`
+(6 dirs, 2026-07-26) — found the `regcomp`/`regexec` 35-year-old typo.
+`o4-overhead-grabbag` (19 dirs, 2026-07-26) — completes Wave 1; first
+real `-pe`/`.eh` rollout, found the `cmenu.h` `_STDC_`/`__STDC__` macro
+typo.
+
+**Wave 2 — atk/basics+support** (19 dirs, 197 files): `b1-basics-common`
+(`atk/basics/common`, 41 classes, 2026-07-26) — first large-scale
+`-pe`/`.eh` rollout, found the `ansify` brace-glued parser gap.
+`b2-value-support` (5 dirs, 81 classes, 2026-07-30) — first batch to
+edit `.ch` files, found the classpp `FinalizeObject` codegen bug and 6
+real `.ch` type-name typos. `b3-leaf-dirs` (13 dirs, 61 files,
+2026-07-30) — completes Wave 2; found the `InitializeClass`/
+`FinalizeObject` restated-param over-counting bug and a brace-glued-fix
+regression (both same-day tool fixes, see below).
+
+**Wave 3 — atk/text** (1 dir, 30 files): `t1-atk-text` (2026-07-30) —
+one of four flagged-risky batches (full orchestrator pre-diagnosis);
+closes Wave 3, found 2 real ~35-year-old bugs plus the
+stranded-forward-declaration tooling-interaction pattern.
+
+**Wave 4 — insets** (17 dirs, 139 files): `i1-insets-batch1` (10 dirs,
+70 files, 2026-07-30) — first delegate-side Gate 0 batch, found 4 tool
+bugs and 3 real `.ch`-vs-implementation bugs. `i2-insets-batch2` (6
+dirs, 2026-07-31) — flagged-risky (`atk/figure` history), completes
+Wave 4, found 8 real bugs plus 2 bounded tool quirks.
+
+**Wave 5 — apps** (9 dirs, 29 files): `a1-apps` (2026-07-31) — only
+batch in the wave; found a live LP64 runtime crash (`cvEng()`, `cuin
+dirinfo`) via wdc's own testing, not static analysis.
+
+**Wave 6 — atkams/ams** (5 dirs, 148 files): `ams1` (`ams/libs/ms`, 113
+files + the `ams/msclients/cui` COMPILERFLAGS closure, 2026-08-01) —
+flagged-risky, largest single directory in M3, found a genuinely new
+"worse than every prior" silent parser gap (16 functions, zero trace)
+and a real ~30-year-old bug still open/unverified
+(`FreeMessageContents`). `ams2` (4 dirs, 34 files, 2026-08-01) —
+completes Wave 6, routine Gate-0, 2 real `.ch`-vs-usage bugs.
+
+**Wave 7 — contrib** (12 dirs, 81 files): `c1` (`contrib/zip/lib`, 41
+files, 2026-08-01) — flagged-risky (tree's highest-defect-density
+directory), opens Wave 7, corrected the orchestrator's own wrong
+pre-diagnosis of the `FinalizeObject` codegen rule, found 2 more real
+~35-year-old bugs. `c2` (11 dirs, 40 files, 2026-08-01) — closes Wave 7
+and M3 entirely; caught the same `FinalizeObject`/`InitializeClass`
+mistake recurring in its own prompt, one new deliberately-not-tool-
+fixed parser gap, 2 more real bugs, and closed the project's oldest
+standing M3-era gate blocker (`contrib/zip/utility/ltapp.c`, open since
+2026-07-11). Full `make Clean; make World` clean rebuild — the
+M3-to-M4 handoff gate.
+
+**Standalone tool-fix sessions** (not batch conversions — fixes to
+`ansify`/`class.c` themselves, per the Delegation ruling that tool
+construction stays a dedicated task, not batch-riding fallout):
+`classpp-finalizeobject-fix` (2026-07-30) — the `FinalizeObject`
+prototype/call-site self-inconsistency found in `b2-value-support`.
+`ansify-brace-glued-fix` (2026-07-30) — the brace-glued-to-parameter
+parser gap found in `b1-basics-common`, plus a retrospective re-run
+across all 7 already-`-pe`'d directories. `ansify-brace-body-corruption-fix`
+(2026-07-30) — a same-day regression in the brace-glued fix, found live
+in `b3-leaf-dirs`.

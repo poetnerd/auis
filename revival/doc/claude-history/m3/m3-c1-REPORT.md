@@ -8,7 +8,7 @@ exactly), definitive `parse_decl_block` completeness re-scan clean (0
 misses after fixes). No `fossil commit` made. No GUI/terminal AUIS
 binary launched. Session diff at `andrew-6.4/m3-c1-session.diff` (15222
 lines), this report at
-`revival/doc/claude-history/m3-c1-REPORT.md`.
+`m3-c1-REPORT.md`.
 
 This batch is one of the four flagged-risky batches (full orchestrator
 pre-diagnosis, no delegate-side Gate 0) — went straight to the real

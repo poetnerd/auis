@@ -129,7 +129,7 @@ For each of the 4 directories, in the order above:
    NOT need a fresh ruling on whether to patch the tool; that
    question is already closed.)
 
-Write the report (`revival/doc/claude-history/m3-ams2-REPORT.md`, per
+Write the report (`m3-ams2-REPORT.md`, per
 `sonnet-playbook.md`'s format) with a per-directory classification
 table, then **STOP at Gate 0**. Do not run the real `ansify --dir`
 pass, do not add `-pe` permanently anywhere, do not touch any `.ch`/

@@ -434,7 +434,7 @@ the rest of the plan.
 
 ### O2 (`overhead/image/jpeg` + `overhead/image/tiff`, 2026-07-25/26) — vendored third-party codec libraries
 
-Full findings and file:line detail: `claude-history/m3-o2-imagecodecs-REPORT.md`.
+Full findings and file:line detail: `m3-o2-imagecodecs-REPORT.md`.
 Three new `ansify` bugs, all specific to how vendored 1990s portable-C
 libraries write dual K&R/ANSI declarations — none seen in AUIS-native
 code through O1:
@@ -501,7 +501,7 @@ code through O1:
 
 ### O3 (`overhead/mail/lib`+`cmd`+`testing`, `overhead/eli/lib`+`bglisp`, `overhead/bison`, 2026-07-26)
 
-Full findings: `claude-history/m3-o3-mail-eli-bison-REPORT.md`. Six
+Full findings: `m3-o3-mail-eli-bison-REPORT.md`. Six
 unrelated directories, one session (M2 rollout-point-2 style
 batching). Five new patterns, all mechanical/self-healing except the
 last:
@@ -577,7 +577,7 @@ last:
 
 ### O4 (overhead grab-bag, 19 directories, 2026-07-26) — completes Wave 1
 
-Full findings: `claude-history/m3-o4-overhead-grabbag-REPORT.md`.
+Full findings: `m3-o4-overhead-grabbag-REPORT.md`.
 Cleanest dry-run baseline of any Wave 1 batch (0 DRIFT, 0 skipped
 tree-wide) but the batch that finally exercised the `-pe`/`.eh`
 mechanic for real, plus a standing action item for every batch after
@@ -658,7 +658,7 @@ this one:
 
 ### B1 (`atk/basics/common`, 41 classes, 2026-07-26) — opens Wave 2, first large-scale `-pe`/`.eh` rollout
 
-Full findings: `claude-history/m3-b1-basics-common-REPORT.md`. M1's
+Full findings: `m3-b1-basics-common-REPORT.md`. M1's
 own former largest-blast-radius directory; the first M3 batch where
 `-pe` converted a real, sizeable class population (41, vs. O4's
 2-class trial) rather than a handful. All 6 pre-diagnosed dry-run
@@ -780,7 +780,7 @@ to root cause.
 
 ### B2 (`atk/value`, `atk/support`, `atk/supportviews`, `atk/adew`, `atk/basics/x`, 81 classes, 2026-07-30)
 
-Full findings: `claude-history/m3-b2-value-support-REPORT.md`. The
+Full findings: `m3-b2-value-support-REPORT.md`. The
 widest single M3 batch by class count so far (81 vs. B1's 41) and the
 **first batch to actually edit `.ch` files** — every prior batch's
 fixes stayed inside `.c`. Orchestrator pre-diagnosis resolved 37
@@ -876,7 +876,7 @@ directory's wave arrives.
 Fixed the parser gap named in B1's finding (1) and hit live in B2's
 finding (4) above, then re-ran `ansify --dir` across all 7 already-`-pe`'d
 directories to clear out whatever it had been silently leaving K&R the
-whole time. Full detail: `claude-history/m3-ansify-brace-glued-fix-REPORT.md`.
+whole time. Full detail: `m3-ansify-brace-glued-fix-REPORT.md`.
 
 - **The fix**: `parse_decl_block` now *recognizes* a brace-glued K&R
   line (last parameter declaration and the opening `{` on one physical
@@ -938,7 +938,7 @@ whole time. Full detail: `claude-history/m3-ansify-brace-glued-fix-REPORT.md`.
 
 ### B3 (13 leaf directories, 61 files, closes Wave 2, 2026-07-30)
 
-Full findings: `claude-history/m3-b3-leaf-dirs-REPORT.md`. The heaviest
+Full findings: `m3-b3-leaf-dirs-REPORT.md`. The heaviest
 pre-diagnosis of any M3 batch so far: rather than relying on
 `ansify --dry-run --dir`'s DRIFT/skip labels alone, the orchestrator
 test-compiled several `.eh` files under a temporary `-pe` flag (added to
@@ -1120,7 +1120,7 @@ are both confirmed unaffected.
 
 ### T1 (`atk/text`, 30 files, 21 classes, 2026-07-30) — opens Wave 3
 
-Full findings: `claude-history/m3-t1-atk-text-REPORT.md`. The first
+Full findings: `m3-t1-atk-text-REPORT.md`. The first
 full-pre-diagnosis batch since B3 (per the "Session structure going
 forward" section above) — the orchestrator's pre-diagnosis found this
 directory unusually clean (zero required `.ch`/`.c` fixes before the
@@ -1547,7 +1547,7 @@ the "Gate scope" section, no tree-wide gate for this batch — I1 and
 I2 together are Wave 4; the wave-end tree-wide gate is deferred to
 whenever I2 closes the wave. Full per-directory detail, gate output,
 and the "Suggested runtime checks for wdc" section are in
-`claude-history/m3-i1-insets-batch1-REPORT.md`.
+`m3-i1-insets-batch1-REPORT.md`.
 
 ### I2 (`atk/eq`, `atk/figure`, `atk/chart`, `atk/table`, `atk/rofftext`, `atk/raster/cmd`, 6 directories, 72 files edited, 2026-07-31) — closes Wave 4
 
@@ -1719,7 +1719,7 @@ diff (all matched exactly). wdc ran every suggested runtime check in
 pre-existing untracked `fontselv.c.orig` stray file (dated 2026-07-24,
 predates this batch) noticed during the report's `fossil extras`
 check. Full per-directory detail, gate output, and the runtime-check
-list are in `claude-history/m3-i2-insets-batch2-REPORT.md`.
+list are in `m3-i2-insets-batch2-REPORT.md`.
 
 ### A1 (`ams/msclients/nns`, `atk/typescript`, `atk/help/src`, `ams/msclients/cui`, `atk/help/maint`, `atkams/messages/cmd`, `ams/msclients/imapsync`, `atk/ez`, `doc/mkbrowse`, 9 directories, 29 files, 2026-07-31) — opens and closes Wave 5
 
@@ -1835,7 +1835,7 @@ diff. Not a checkin blocker. `help`, `imapsync`, `mkbrowse`, and
 and gave wdc a safe `-n`/fake-it-mode example) all ran clean; `nns`
 untestable this session (no netnews access). Full per-directory
 detail, the `cvEng` fix, and the runtime-check writeup are in
-`claude-history/m3-a1-apps-REPORT.md`.
+`m3-a1-apps-REPORT.md`.
 
 ### AMS1 (`ams/libs/ms`, 113 real files, plus the `ams/msclients/cui`
 COMPILERFLAGS closure add-on, 2026-07-31) — opens Wave 6
@@ -1948,7 +1948,7 @@ clean directly (not just trusted from the delegate's own run), ~6
 specific fixes spot-checked against the diff (all matched exactly),
 `fossil status` confirmed exact file scope (115 files: 110 in
 `ams/libs/ms`, 5 in `ams/msclients/cui`). Full detail in
-`claude-history/m3-ams1-REPORT.md`.
+`m3-ams1-REPORT.md`.
 
 ### AMS2 (`atkams/messages/lib`, `ams/libs/shr`, `ams/libs/cui`,
 `ams/libs/nosnap`, 34 files, 2026-08-01) — closes Wave 6
@@ -2040,7 +2040,7 @@ confirmed exact file scope (37 files: 27 in `atkams/messages/lib`
 Session was interrupted once mid-Gate-1 by an unrelated
 orchestrator-side usage-limit event; resumed cleanly by re-deriving
 state from `fossil status`/`fossil diff` before continuing, no rework.
-Full detail in `claude-history/m3-ams2-REPORT.md`.
+Full detail in `m3-ams2-REPORT.md`.
 
 **Wave 6 complete.** M3 remaining: Wave 7 (C1, C2).
 
@@ -2129,7 +2129,7 @@ bugs beyond the typo cluster, both written up in `revival.md`: the
 5-method base-class stub argument-drop, and the `Issue_Status_Message`/
 `Acknowledge_Status_Message` pair whose interface never matched its
 own (never-called) real implementation. Full detail in
-`claude-history/m3-c1-REPORT.md`. Committed (`869fa824`).
+`m3-c1-REPORT.md`. Committed (`869fa824`).
 
 **Opens Wave 7.** One batch remains in M3: C2 (`contrib/zip/utility`
 and 10 other small directories) — closes Wave 7, M3, and hands off to
@@ -2137,7 +2137,7 @@ M4.
 
 ### C2 (`contrib/mit/annot` + 10 other small `contrib` dirs, 40 files, 11 dirs, 2026-08-01) — closes Wave 7 and M3
 
-Full findings and file:line detail: `claude-history/m3-c2-REPORT.md`.
+Full findings and file:line detail: `m3-c2-REPORT.md`.
 Routine Gate-0 batch, but the last M3 batch turned out to be one of the
 more consequential "routine" ones — two rulings, two more genuine
 ~35-year-old bugs, and a milestone-closing full clean rebuild.

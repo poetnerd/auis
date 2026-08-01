@@ -145,7 +145,7 @@ Stop after all 13 directories gate clean, twice each. **Do NOT commit. Do NOT ru
 
 ## Report
 
-Write `revival/doc/claude-history/m3-b3-leaf-dirs-REPORT.md` per `sonnet-playbook.md`'s standard format, plus:
+Write `m3-b3-leaf-dirs-REPORT.md` per `sonnet-playbook.md`'s standard format, plus:
 - Confirmation that each of the 5 pre-diagnosed `.ch`/`.c` fixes was applied exactly as specified, and that `ansify`'s real run subsequently converted the previously-blocked methods cleanly.
 - Any new DRIFT/skip finding not covered above, and how you resolved (or, if genuinely unresolved, clearly flagged) it.
 - Per-directory `ansify` conversion counts (methods/classprocs/helpers) and gate results (twice each, all 13).

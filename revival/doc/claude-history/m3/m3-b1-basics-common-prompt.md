@@ -6,7 +6,7 @@ Read `sonnet-playbook.md`, `rollout-procedure.md` (in full — the
 sessions" section — O1 through O4 are all there now), `m3-batches.md`,
 and `porting-assessment.md` §14 and §17 (the DRIFT false-positive
 write-up — you will hit exactly this pattern, see below) before
-starting. Also skim `claude-history/m3-o4-overhead-grabbag-REPORT.md`
+starting. Also skim `m3-o4-overhead-grabbag-REPORT.md`
 in particular — it's the most recent session and the first to actually
 exercise the `-pe`/`.eh` mechanic for real; you're about to do that at
 much larger scale (41 classes here vs. O4's 2), so its lessons matter
@@ -231,7 +231,7 @@ runtime-check command(s) in your report. Stop after the gate is green
 
 ## Report
 
-Write `revival/doc/claude-history/m3-b1-basics-common-REPORT.md` per
+Write `m3-b1-basics-common-REPORT.md` per
 `sonnet-playbook.md`'s standard format, plus:
 - Real instance counts vs. the dry-run baseline above, and confirmation
   all 6 pre-diagnosed findings resolved as expected (or a clear

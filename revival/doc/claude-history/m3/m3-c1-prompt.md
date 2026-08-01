@@ -226,7 +226,7 @@ re-verifying your work.
 
 ## Report
 
-Write `revival/doc/claude-history/m3-c1-REPORT.md` per
+Write `m3-c1-REPORT.md` per
 `sonnet-playbook.md`'s standard format, plus:
 - `ansify --dir` results vs. the pre-diagnosis above (flag any drift
   from what's predicted here).

@@ -50,7 +50,7 @@ Stop after `atk/text` gates clean, twice. **Do NOT commit. Do NOT run any AUIS G
 
 ## Report
 
-Write `revival/doc/claude-history/m3-t1-atk-text-REPORT.md` per `sonnet-playbook.md`'s standard format, plus:
+Write `m3-t1-atk-text-REPORT.md` per `sonnet-playbook.md`'s standard format, plus:
 - Confirmation that the real `ansify --dir` run matched the pre-diagnosed shape (0 DRIFT, the 3 confirmed-safe skips) — or, if it didn't, full detail on what differed.
 - Confirmation that the double-pointer-parameter investigation in §3 held up under the real (non-dry-run, compile-gated) conversion — i.e., that none of the ~12 double-pointer parameters lost a `*`.
 - Any new DRIFT/skip/compile-fallout finding not covered above, and how you resolved (or, if genuinely unresolved, clearly flagged) it.

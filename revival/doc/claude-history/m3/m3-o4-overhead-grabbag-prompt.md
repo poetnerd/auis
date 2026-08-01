@@ -5,7 +5,7 @@ Read `sonnet-playbook.md`, `rollout-procedure.md` (in full — the
 `m3-rollout-runbook.md` (including its full "Findings from real
 sessions" section — O1, O2, O3 are all there now), `m3-batches.md`,
 and `porting-assessment.md` §14 and §17 before starting. Also skim
-`claude-history/m3-o1-utillib-REPORT.md`, `m3-o2-imagecodecs-REPORT.md`,
+`m3-o1-utillib-REPORT.md`, `m3-o2-imagecodecs-REPORT.md`,
 and `m3-o3-mail-eli-bison-REPORT.md` for what these sessions look like
 in practice.
 
@@ -214,7 +214,7 @@ and say you have stopped.
 
 ## Report
 
-Write `revival/doc/claude-history/m3-o4-overhead-grabbag-REPORT.md` per
+Write `m3-o4-overhead-grabbag-REPORT.md` per
 `sonnet-playbook.md`'s standard format, plus:
 - Real instance counts vs. the dry-run baselines above for all 19
   directories.

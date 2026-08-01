@@ -34,7 +34,7 @@ them. Full detail in §6.
 1. Read `sonnet-playbook.md`, `rollout-procedure.md`,
    `m3-rollout-runbook.md` (full "Findings from real sessions", O1–O4
    and B1), `m3-batches.md`, `porting-assessment.md` §14 and §17, and
-   `claude-history/m3-b1-basics-common-REPORT.md`.
+   `m3-b1-basics-common-REPORT.md`.
 2. Confirmed the `.ch` counts (27/19/17/11/7 = 81, matching "~81
    classes total") and all 37 pre-diagnosed DRIFT/skip findings via a
    fresh `ansify --dry-run --dir` per directory — exact match to the

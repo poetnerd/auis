@@ -807,7 +807,7 @@ directories (9 Imakefiles — every `.ch`-bearing directory except
 revival/doc/m3-c2-prompt.md`, not from this session. Nothing outside
 this batch's 11 directories touched. `fossil extras`: this session's
 own `clean-rebuild.log`, `dependInstall.log`, and
-`revival/doc/claude-history/m3-c2-REPORT.md` (this file) appear as
+`m3-c2-REPORT.md` (this file) appear as
 expected untracked additions; everything else in the (long) extras list
 is pre-existing build byproducts and prior-session artifacts (other
 `*-REPORT.md`/`*-session.diff` files, regenerated per-directory

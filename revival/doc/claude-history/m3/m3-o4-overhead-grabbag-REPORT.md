@@ -24,7 +24,7 @@ O2, O3, O4 all done) — see §9.
    "Command style" section), `m3-rollout-runbook.md` (including its
    full "Findings from real sessions" — O1, O2, O3), `m3-batches.md`,
    and `porting-assessment.md` §14 and §17 in full, plus skimmed
-   `claude-history/m3-o1-utillib-REPORT.md`, `-o2-imagecodecs-REPORT.md`,
+   `m3-o1-utillib-REPORT.md`, `-o2-imagecodecs-REPORT.md`,
    and `-o3-mail-eli-bison-REPORT.md` — all before starting.
 2. Confirmed `.ch` presence per directory (`find <dir> -maxdepth 1
    -name '*.ch'`): only `overhead/class/testing` has any (2 —

@@ -1919,7 +1919,7 @@ exact mechanism behind `ansify`'s "no signature in DB" skip for a
 class with a `data:` section but no declared `InitializeObject`
 (`atk/apt/chart/chartx1a.ch`/`chartx1app`, I2;
 `atkams/messages/lib`'s `messagesapp`/`text822`, AMS2 — see
-`m3-rollout-runbook.md`'s I2 and AMS2 entries) — the DB only captures classprocs a `.ch` explicitly
+`claude-history/m3/m3-rollout-runbook.md`'s I2 and AMS2 entries) — the DB only captures classprocs a `.ch` explicitly
 declares, but classpp wires the call regardless of the `.ch`, so these
 are genuine live gaps, not dead code, and need hand-conversion.
 
@@ -2076,7 +2076,7 @@ literally `/* Subclass responsibility */`; every real subclass already
 overrides it with the full, correct signature; `Changed`'s body is
 similarly a no-op comment). Resolved with the same padding fix as
 `WantInputFocus` (add the unused parameter, no body change) — see
-`m3-rollout-runbook.md`'s B2 findings for full detail on all 4 of this
+`claude-history/m3/m3-rollout-runbook.md`'s B2 findings for full detail on all 4 of this
 shape found in that batch.
 
 Not yet individually checked: `type__GetDeclaration`

@@ -180,7 +180,7 @@ For each of the 11 directories, in the order above:
    Delegation section, retype/signature rulings and hard-stop
    adjudication stay top-level.
 
-Write the report (`revival/doc/claude-history/m3-c2-REPORT.md`, per
+Write the report (`m3-c2-REPORT.md`, per
 `sonnet-playbook.md`'s format) with a per-directory classification
 table, then **STOP at Gate 0**. Do not run the real `ansify --dir`
 pass, do not add `-pe` permanently anywhere, do not touch any `.ch`/
