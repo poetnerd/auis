@@ -138,6 +138,8 @@ END-SPECIFICATION  ************************************************************/
 #include <zipobj.ih>
 #include <zipoimbd.eh>
 #include <stdlib.h>
+static int Draw();
+static int Load_Object();
 
 struct imbed
   {
@@ -149,10 +151,7 @@ struct imbed
 static Load_Object();
 static Draw();
 
-boolean
-zipoimbed__InitializeObject( classID, self )
-  register struct classheader	         *classID;
-  register struct zipoimbed	         *self;
+boolean zipoimbed__InitializeObject(struct classheader *classID, struct zipoimbed *self)
   {
   IN(zipoimbed_InitializeObject);
   self->no_outline = false;
@@ -160,10 +159,7 @@ zipoimbed__InitializeObject( classID, self )
   return  true;
   }
 
-void
-zipoimbed__Destroy_Object( self, figure )
-  register struct zipoimbed	         *self;
-  register zip_type_figure		  figure;
+void zipoimbed__Destroy_Object(struct zipoimbed *self, zip_type_figure figure)
   {
   register struct imbed			 *imbed =
 		     (struct imbed *)figure->zip_figure_datum.zip_figure_anchor;
@@ -174,38 +170,28 @@ zipoimbed__Destroy_Object( self, figure )
   OUT(zipoimbed_Destroy_Object);
   }
 
-char
-zipoimbed__Object_Icon( self )
-  register struct zipoimbed		 *self;
+char zipoimbed__Object_Icon(struct zipoimbed *self)
   {
   IN(zipoimbed__Object_Icon);
   OUT(zipoimbed__Object_Icon);
   return  'E';
   }
 
-char
-zipoimbed__Object_Icon_Cursor( self )
-  register struct zipoimbed		 *self;
+char zipoimbed__Object_Icon_Cursor(struct zipoimbed *self)
   {
   IN(zipoimbed__Object_Icon_Cursor);
   OUT(zipoimbed__Object_Icon_Cursor);
   return  'B';
   }
 
-char
-zipoimbed__Object_Datastream_Code( self )
-  register struct zipoimbed		 *self;
+char zipoimbed__Object_Datastream_Code(struct zipoimbed *self)
   {
   IN(zipoimbed__Object_Datastream_Code);
   OUT(zipoimbed__Object_Datastream_Code);
   return  'I';
   }
 
-long
-zipoimbed__Show_Object_Properties( self, pane, figure )
-  register struct zipoimbed		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
+long zipoimbed__Show_Object_Properties(struct zipoimbed *self, zip_type_pane pane, zip_type_figure figure)
   {
   char					 *response;
 
@@ -220,12 +206,7 @@ zipoimbed__Show_Object_Properties( self, pane, figure )
   return  zip_ok;
   }
 
-long
-zipoimbed__Build_Object( self, pane, action, x, y, clicks, X, Y )
-  register struct zipoimbed		 *self;
-  register zip_type_pane		  pane;
-  register long				  action, x, y, clicks;
-  register zip_type_point		  X, Y;
+long zipoimbed__Build_Object(struct zipoimbed *self, zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y)
   {
   register long				  status = zip_ok;
   register zip_type_figure		  figure;
@@ -285,12 +266,7 @@ zipoimbed__Build_Object( self, pane, action, x, y, clicks, X, Y )
   return  status;
   }
 
-struct view *
-zipoimbed__Object_Hit( self, figure, action, x, y, clicks )
-  register struct zipoimbed		 *self;
-  register zip_type_figure		  figure;
-  register enum view_MouseAction	  action;
-  register long			          x, y, clicks;
+struct view * zipoimbed__Object_Hit(struct zipoimbed *self, zip_type_figure figure, enum view_MouseAction action, long x, long y, long clicks)
   {
   register struct imbed			 *imbed = (struct imbed *)
 						   figure->zip_figure_datum.zip_figure_anchor;
@@ -316,10 +292,7 @@ zipoimbed__Object_Hit( self, figure, action, x, y, clicks )
   return  view;
   }
 
-long
-zipoimbed__Read_Object( self, figure )
-  register struct zipoimbed		 *self;
-  register zip_type_figure		  figure;
+long zipoimbed__Read_Object(struct zipoimbed *self, zip_type_figure figure)
   {
   register long				  status = zip_ok;
 
@@ -329,12 +302,7 @@ zipoimbed__Read_Object( self, figure )
   return  status;
   }
 
-long
-zipoimbed__Read_Object_Stream( self, figure, file, id )
-  register struct zipoimbed		 *self;
-  register zip_type_figure		  figure;
-  register FILE				 *file;
-  register long				  id;
+long zipoimbed__Read_Object_Stream(struct zipoimbed *self, zip_type_figure figure, FILE *file, long id)
   {
   register long				  status = zip_ok, imbed_id;
   register struct imbed			 *imbed = (struct imbed *)
@@ -378,12 +346,7 @@ zipoimbed__Read_Object_Stream( self, figure, file, id )
   return  status;
   }
 
-static
-Load_Object( self, figure, name, announce )
-  register zip_type_figure		  figure;
-  register struct zipoimbed		 *self;
-  register char				 *name;
-  register boolean			  announce;
+static Load_Object(struct zipoimbed *self, zip_type_figure figure, char *name, boolean announce)
   {
   register long				  status = zip_ok;
   register struct imbed			 *imbed;
@@ -435,10 +398,7 @@ Load_Object( self, figure, name, announce )
   return  status;
   }
 
-long
-zipoimbed__Write_Object( self, figure )
-  register struct zipoimbed		 *self;
-  register zip_type_figure		  figure;
+long zipoimbed__Write_Object(struct zipoimbed *self, zip_type_figure figure)
   {
   register long				  status = zip_ok;
   register struct imbed			 *imbed =
@@ -461,10 +421,7 @@ zipoimbed__Write_Object( self, figure )
   return  status;
   }
 
-long
-zipoimbed__Object_Modified( self, figure  )
-  register struct zipoimbed		 *self;
-  register zip_type_figure		  figure;
+long zipoimbed__Object_Modified(struct zipoimbed *self, zip_type_figure figure)
   {
   register struct imbed			 *imbed =
 		     (struct imbed *)figure->zip_figure_datum.zip_figure_anchor;
@@ -477,11 +434,7 @@ zipoimbed__Object_Modified( self, figure  )
   return  modified;
   }
 
-long
-zipoimbed__Draw_Object( self, figure, pane )
-  register struct zipoimbed		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoimbed__Draw_Object(struct zipoimbed *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -492,11 +445,7 @@ zipoimbed__Draw_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipoimbed__Clear_Object( self, figure, pane )
-  register struct zipoimbed		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoimbed__Clear_Object(struct zipoimbed *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -507,12 +456,7 @@ zipoimbed__Clear_Object( self, figure, pane )
   return  status;
   }
 
-static
-Draw( self, figure, pane, action )
-  register struct zipoimbed		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register long				  action;
+static Draw(struct zipoimbed *self, zip_type_figure figure, zip_type_pane pane, long action)
   {
   register long				  status = zip_ok;
   register struct imbed			 *imbed;
@@ -573,11 +517,7 @@ Draw( self, figure, pane, action )
   return  status;
   }
 
-long
-zipoimbed__Print_Object( self, figure, pane )
-  register struct zipoimbed		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoimbed__Print_Object(struct zipoimbed *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register char				 *language, *processor;

@@ -123,6 +123,8 @@ END-SPECIFICATION  ************************************************************/
 #include <view.ih>
 #include <zipobj.ih>
 #include <zipoelli.eh>
+static int Compute_Handle_Positions();
+static int Draw();
 
 /*LIBS: -lm
 */
@@ -130,49 +132,34 @@ END-SPECIFICATION  ************************************************************/
 static Draw();
 static Compute_Handle_Positions();
 
-char
-zipoelli__Object_Icon( self )
-  register struct zipoelli		 *self;
+char zipoelli__Object_Icon(struct zipoelli *self)
   {
   IN(zipoelli__Object_Icon);
   OUT(zipoelli__Object_Icon);
   return  'K';
   }
 
-char
-zipoelli__Object_Icon_Cursor( self )
-  register struct zipoelli		 *self;
+char zipoelli__Object_Icon_Cursor(struct zipoelli *self)
   {
   IN(zipoelli__Object_Icon_Cursor);
   OUT(zipoelli__Object_Icon_Cursor);
   return  'H';
   }
 
-char
-zipoelli__Object_Datastream_Code( self )
-  register struct zipoelli		 *self;
+char zipoelli__Object_Datastream_Code(struct zipoelli *self)
   {
   IN(zipoelli__Object_Datastream_Code);
   OUT(zipoelli__Object_Datastream_Code);
   return  'L';
   }
 
-long
-zipoelli__Show_Object_Properties( self, pane, figure )
-  register struct zipoelli		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
+long zipoelli__Show_Object_Properties(struct zipoelli *self, zip_type_pane pane, zip_type_figure figure)
   {
   zipview_Announce( View, "Draw Ellipse from Center outward." );
   return  zip_ok;
   }
 
-long
-zipoelli__Build_Object( self, pane, action, x, y, clicks, X, Y )
-  register struct zipoelli		 *self;
-  register zip_type_pane		  pane;
-  register long				  action, x, y, clicks;
-  register zip_type_point		  X, Y;
+long zipoelli__Build_Object(struct zipoelli *self, zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y)
   {
   register long				  status = zip_ok;
   register zip_type_figure				  position = NULL; /*===*/
@@ -229,10 +216,7 @@ zipoelli__Build_Object( self, pane, action, x, y, clicks, X, Y )
   return  status;
   }
 
-long
-zipoelli__Read_Object( self, figure )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
+long zipoelli__Read_Object(struct zipoelli *self, zip_type_figure figure)
   {
   register long				  status = zip_ok;
 
@@ -250,10 +234,7 @@ zipoelli__Read_Object( self, figure )
   return  status;
   }
 
-long
-zipoelli__Write_Object( self, figure )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
+long zipoelli__Write_Object(struct zipoelli *self, zip_type_figure figure)
   {
   register long				  status = zip_ok;
 
@@ -263,11 +244,7 @@ zipoelli__Write_Object( self, figure )
   return  status;
   }
 
-long
-zipoelli__Draw_Object( self, figure, pane )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoelli__Draw_Object(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -278,11 +255,7 @@ zipoelli__Draw_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipoelli__Clear_Object( self, figure, pane )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoelli__Clear_Object(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -293,12 +266,7 @@ zipoelli__Clear_Object( self, figure, pane )
   return  status;
   }
 
-static
-Draw( self, figure, pane, action )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register long				  action;
+static Draw(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane, long action)
   {
   register long				  status = zip_ok;
   register int				  x_start_end, minor_radius, major_radius;
@@ -342,11 +310,7 @@ Draw( self, figure, pane, action )
   return  status;
   }
 
-long
-zipoelli__Print_Object( self, figure, pane )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoelli__Print_Object(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -359,12 +323,7 @@ zipoelli__Print_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipoelli__Proximate_Object_Points( self, figure, pane, x, y )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long zipoelli__Proximate_Object_Points(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register int				  point = 0;
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
@@ -402,12 +361,7 @@ zipoelli__Proximate_Object_Points( self, figure, pane, x, y )
   return  point;
   }
 
-boolean
-zipoelli__Enclosed_Object( self, figure, pane, x, y, w, h )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y, w, h;
+boolean zipoelli__Enclosed_Object(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y, zip_type_pixel w, zip_type_pixel h)
   {
   register boolean			  enclosed = false;
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
@@ -420,12 +374,7 @@ zipoelli__Enclosed_Object( self, figure, pane, x, y, w, h )
   return  enclosed;
   }
 
-long
-zipoelli__Object_Enclosure( self, figure, pane, x, y, w, h )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		 *x, *y, *w, *h;
+long zipoelli__Object_Enclosure(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *x, zip_type_pixel *y, zip_type_pixel *w, zip_type_pixel *h)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
 
@@ -436,11 +385,7 @@ zipoelli__Object_Enclosure( self, figure, pane, x, y, w, h )
   return  zip_ok;
   }
 
-long
-zipoelli__Highlight_Object_Points( self, figure, pane )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoelli__Highlight_Object_Points(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
   register long				  status = zip_ok;
@@ -452,11 +397,7 @@ zipoelli__Highlight_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipoelli__Normalize_Object_Points( self, figure, pane )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoelli__Normalize_Object_Points(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
   register long				  status = zip_ok;
@@ -468,11 +409,7 @@ zipoelli__Normalize_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipoelli__Expose_Object_Points( self, figure, pane )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoelli__Expose_Object_Points(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -487,11 +424,7 @@ zipoelli__Expose_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipoelli__Hide_Object_Points( self, figure, pane )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoelli__Hide_Object_Points(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -505,12 +438,7 @@ zipoelli__Hide_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipoelli__Set_Object_Point( self, figure, point, x, y )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register int				  point;
-  register zip_type_point		  x, y;
+long zipoelli__Set_Object_Point(struct zipoelli *self, zip_type_figure figure, long point, zip_type_point x, zip_type_point y)
   {
   register long				  status = zip_ok;
   register zip_type_point		  x_radius, y_radius, Rx, Ry,
@@ -584,11 +512,7 @@ zipoelli__Set_Object_Point( self, figure, point, x, y )
   return  status;
   }
 
-long
-zipoelli__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_point		  x_delta, y_delta;
+long zipoelli__Adjust_Object_Point_Suite(struct zipoelli *self, zip_type_figure figure, zip_type_point x_delta, zip_type_point y_delta)
   {
   register long				  status = zip_ok;
 
@@ -602,12 +526,7 @@ zipoelli__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
   return  status;
   }
 
-static
-Compute_Handle_Positions( self, figure, pane, X1, X2, X3, Y1, Y2, Y3 )
-  register struct zipoelli		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		 *X1, *X2, *X3, *Y1, *Y2, *Y3;
+static Compute_Handle_Positions(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3)
   {
   *X1 = zipview_X_Point_To_Pixel( View, pane, figure, figure_x_point - figure_x_points(0) );
   *X2 = window_x_point;

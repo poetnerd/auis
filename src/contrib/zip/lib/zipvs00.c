@@ -123,11 +123,7 @@ END-SPECIFICATION  ************************************************************/
 #define	 View			      (self)
 
 
-long
-zipview__Display_Stream( self, stream, pane )
-  register struct zipview		 *self;
-  register zip_type_stream		  stream;
-  register zip_type_pane		  pane;
+long zipview__Display_Stream(struct zipview *self, zip_type_stream stream, zip_type_pane pane)
   {
   register int				  status = zip_success;
 
@@ -150,11 +146,7 @@ zipview__Display_Stream( self, stream, pane )
   return status;
   }
 
-long
-zipview__Draw_Stream( self, stream, pane )
-  register struct zipview		 *self;
-  register zip_type_stream		  stream;
-  register zip_type_pane		  pane;
+long zipview__Draw_Stream(struct zipview *self, zip_type_stream stream, zip_type_pane pane)
   {
   register int				  status = zip_success;
 
@@ -176,37 +168,22 @@ zipview__Draw_Stream( self, stream, pane )
   return status;
   }
 
-long
-zipview__Clear_Stream( self, stream, pane )
-  register struct zipview		 *self;
-  register zip_type_stream		  stream;
-  register zip_type_pane		  pane;
+long zipview__Clear_Stream(struct zipview *self, zip_type_stream stream, zip_type_pane pane)
   {
 return zip_ok;/*===*/
   }
 
-long
-zipview__Hide_Stream( self, stream, pane )
-  register struct zipview		 *self;
-  register zip_type_stream		  stream;
-  register zip_type_pane		  pane;
+long zipview__Hide_Stream(struct zipview *self, zip_type_stream stream, zip_type_pane pane)
   {
 return zip_ok;/*===*/
   }
 
-long
-zipview__Expose_Stream( self, stream, pane )
-  register struct zipview		 *self;
-  register zip_type_stream		  stream;
-  register zip_type_pane		  pane;
+long zipview__Expose_Stream(struct zipview *self, zip_type_stream stream, zip_type_pane pane)
   {
 return zip_ok;/*===*/
   }
 
-zip_type_stream
-zipview__Which_Stream( self, x, y )
-  register struct zipview		 *self;
-  register long				  x, y;
+struct zip_stream * zipview__Which_Stream(struct zipview *self, long x, long y)
   {
   register int				  status = zip_success;
   register zip_type_stream		  stream = NULL;
@@ -227,19 +204,12 @@ zipview__Which_Stream( self, x, y )
   return stream;
   }
 
-zip_type_stream
-zipview__Within_Which_Stream( self, x, y )
-  register struct zipview		 *self;
-  register long				  x, y;
+zip_type_stream zipview__Within_Which_Stream(struct zipview *self, long x, long y)
   {
 return zip_ok;/*===*/
   }
 
-boolean
-zipview__Stream_Visible( self, stream, pane )
-  register struct zipview		    *self;
-  register zip_type_stream		    stream;
-  register zip_type_pane		    pane;
+boolean zipview__Stream_Visible(struct zipview *self, zip_type_stream stream, zip_type_pane pane)
   {
   register boolean			    status = FALSE;
 

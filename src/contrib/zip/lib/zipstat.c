@@ -117,6 +117,11 @@ END-SPECIFICATION  ************************************************************/
 #include "zip.ih"
 #include "zipv.ih"
 #include "zipstat.eh"
+static char * Format_Figure_Status_Message();
+static char * Format_Image_Status_Message();
+static char * Format_Message();
+static char * Format_Pane_Status_Message();
+static char * Format_Stream_Status_Message();
 
 /*LIBS: libapt.a
 */
@@ -339,10 +344,7 @@ char				 *zip_pane_facility_names[] =
 			/* 050 */ "zip_Which_Pane"
 				};
 
-boolean
-zipstatus__InitializeObject( classID, self )
-  register struct classheader	     *classID;
-  register struct zipstatus	     *self;
+boolean zipstatus__InitializeObject(struct classheader *classID, struct zipstatus *self)
   {
   register long			      status = zip_ok;
   IN(zipstatus__InitializeObject);
@@ -351,20 +353,14 @@ zipstatus__InitializeObject( classID, self )
   return  (status == zip_ok);
   }
 
-void
-zipstatus__FinalizeObject( self )
-  register struct zipstatus	     *self;
+void zipstatus__FinalizeObject(struct classheader *classID, struct zipstatus *self)
   {
   IN(zipstatus__FinalizeObject);
 /*===*/
   OUT(zipstatus__FinalizeObject);
   }
 
-static char *
-Format_Message( self, facility, status )
-  register struct zipstatus	     *self;
-  register int			      facility;
-  register int			      status;
+static char * Format_Message(struct zipstatus *self, int facility, int status)
   {
   static char				  msg[1001];
   char					 *facility_name;
@@ -403,57 +399,38 @@ Format_Message( self, facility, status )
   return msg;
   }
 
-long
-zipstatus__Issue_Message( self, msg )
-  register struct zipstatus		 *self;
-  register char				 *msg;
+long zipstatus__Issue_Message(struct zipstatus *self, char *msg)
   {
 /*===  return (*MessageWriter)( self, msg );*/
 return 0;
   }
 
 
-long
-zipstatus__Acknowledge_Message( self, msg )
-  register struct zipstatus		 *self;
-  register char				 *msg;
+long zipstatus__Acknowledge_Message(struct zipstatus *self, char *msg)
   {
 /*===  return (*MessageAcknowledger)( self, msg );*/
 return 0;
   }
 
 
-long
-zipstatus__Clear_Message( self )
-  register struct zipstatus		 *self;
+long zipstatus__Clear_Message(struct zipstatus *self)
   {
 /*===  return (*MessageClearer)( self );*/
 return 0;
   }
 
-long
-zipstatus__Issue_Status_Message( self, facility, status )
-  register struct zipstatus		 *self;
-  register long				  facility;
-  register long				  status;
+long zipstatus__Issue_Status_Message(struct zipstatus *self, long facility, long status)
   {
   return zipstatus_Issue_Message( self, Format_Message( self, facility, status ) );
   }
 
 
-long
-zipstatus__Acknowledge_Status_Message( self, facility, status )
-  register struct zipstatus		 *self;
-  register long				  facility;
-  register long				  status;
+long zipstatus__Acknowledge_Status_Message(struct zipstatus *self, long facility, long status)
   {
   return zipstatus_Acknowledge_Message( self, Format_Message( self, facility, status ) );
   }
 
-static char *
-Format_Figure_Status_Message ( self, figure )
-  register struct zipstatus		 *self;
-  register zip_type_figure		  figure;
+static char * Format_Figure_Status_Message(struct zipstatus *self, zip_type_figure figure)
   {
   char					  msg[1001];
 /*===
@@ -492,27 +469,18 @@ Format_Figure_Status_Message ( self, figure )
   return msg;
   }
 
-long
-zipstatus__Issue_Figure_Status_Message( self, figure )
-  register struct zipstatus		 *self;
-  register zip_type_figure		  figure;
+long zipstatus__Issue_Figure_Status_Message(struct zipstatus *self, zip_type_figure figure)
   {
   return zipstatus_Issue_Message( self, Format_Figure_Status_Message( self, figure ));
   }
 
 
-long
-zipstatus__Acknowledge_Figure_Status_Message( self, figure )
-  register struct zipstatus		 *self;
-  register zip_type_figure		  figure;
+long zipstatus__Acknowledge_Figure_Status_Message(struct zipstatus *self, zip_type_figure figure)
   {
   return zipstatus_Acknowledge_Message( self, Format_Figure_Status_Message( self, figure ));
   }
 
-static char *
-Format_Image_Status_Message ( self, image )
-  register struct zipstatus		 *self;
-  register zip_type_image		  image;
+static char * Format_Image_Status_Message(struct zipstatus *self, zip_type_image image)
   {
   char					  msg[1001];
 /*===
@@ -549,28 +517,19 @@ Format_Image_Status_Message ( self, image )
   return msg;
   }
 
-long
-zipstatus__Issue_Image_Status_Message( self, image )
-  register struct zipstatus		 *self;
-  register zip_type_image		  image;
+long zipstatus__Issue_Image_Status_Message(struct zipstatus *self, zip_type_image image)
   {
   return zipstatus_Issue_Message( self, Format_Image_Status_Message( self, image ) );
   }
 
 
-long
-zipstatus__Acknowledge_Image_Status_Message( self, image )
-  register struct zipstatus		 *self;
-  register zip_type_image		  image;
+long zipstatus__Acknowledge_Image_Status_Message(struct zipstatus *self, zip_type_image image)
   {
   return zipstatus_Acknowledge_Message( self, Format_Image_Status_Message( self, image ) );
   }
 
 
-static char *
-Format_Pane_Status_Message ( self, pane)
-  register struct zipstatus		 *self;
-  register zip_type_pane		  pane;
+static char * Format_Pane_Status_Message(struct zipstatus *self, zip_type_pane pane)
   {
   char					  msg[1001];
 /*===
@@ -607,27 +566,18 @@ Format_Pane_Status_Message ( self, pane)
  return msg;
   }
 
-long
-zipstatus__Issue_Pane_Status_Message( self, pane)
-  register struct zipstatus		 *self;
-  register zip_type_pane		  pane;
+long zipstatus__Issue_Pane_Status_Message(struct zipstatus *self, zip_type_pane pane)
   {
   return zipstatus_Issue_Message( self, Format_Pane_Status_Message( self, pane ) );
   }
 
 
-long
-zipstatus__Acknowledge_Pane_Status_Message( self, pane )
-  register struct zipstatus		 *self;
-  register zip_type_pane		  pane;
+long zipstatus__Acknowledge_Pane_Status_Message(struct zipstatus *self, zip_type_pane pane)
   {
   return zipstatus_Acknowledge_Message( self, Format_Pane_Status_Message( self, pane ));
   }
 
-static char *
-Format_Stream_Status_Message( self, stream )
-  register struct zipstatus		 *self;
-  register zip_type_stream		  stream;
+static char * Format_Stream_Status_Message(struct zipstatus *self, zip_type_stream stream)
   {
   char					  msg[1001];
 /*===
@@ -666,19 +616,13 @@ Format_Stream_Status_Message( self, stream )
   return msg;
   }
 
-long
-zipstatus__Issue_Stream_Status_Message( self, stream )
-  register struct zipstatus		 *self;
-  register zip_type_stream		  stream;
+long zipstatus__Issue_Stream_Status_Message(struct zipstatus *self, zip_type_stream stream)
   {
   return zipstatus_Issue_Message( self, Format_Stream_Status_Message( self, stream ) );
   }
 
 
-long
-zipstatus__Acknowledge_Stream_Status_Message( self, stream )
-  register struct zipstatus		 *self;
-  register zip_type_stream		  stream;
+long zipstatus__Acknowledge_Stream_Status_Message(struct zipstatus *self, zip_type_stream stream)
   {
   return zipstatus_Acknowledge_Message( self, Format_Stream_Status_Message( self, stream ) );
   }

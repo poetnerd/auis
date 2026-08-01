@@ -126,53 +126,39 @@ END-SPECIFICATION  ************************************************************/
 #include <view.ih>
 #include <zipobj.ih>
 #include <ziporang.eh>
+static int Draw();
 
 
 static Draw();
 
-char
-ziporang__Object_Icon( self )
-  register struct ziporang		 *self;
+char ziporang__Object_Icon(struct ziporang *self)
   {
   IN(ziporang__Object_Icon);
   OUT(ziporang__Object_Icon);
   return  'I';
   }
 
-char
-ziporang__Object_Icon_Cursor( self )
-  register struct ziporang		 *self;
+char ziporang__Object_Icon_Cursor(struct ziporang *self)
   {
   IN(ziporang__Object_Icon_Cursor);
   OUT(ziporang__Object_Icon_Cursor);
   return  'S';
   }
 
-char
-ziporang__Object_Datastream_Code( self )
-  register struct ziporang		 *self;
+char ziporang__Object_Datastream_Code(struct ziporang *self)
   {
   IN(ziporang__Object_Datastream_Code);
   OUT(ziporang__Object_Datastream_Code);
   return  'N';
   }
 
-long
-ziporang__Show_Object_Properties( self, pane, figure )
-  register struct ziporang		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
+long ziporang__Show_Object_Properties(struct ziporang *self, zip_type_pane pane, zip_type_figure figure)
   {
   zipview_Announce( View, "Draw RoundAngle from Upper-left to Lower-right." );
   return  zip_ok;
   }
 
-long
-ziporang__Build_Object( self, pane, action, x, y, clicks, X, Y )
-  register struct ziporang		 *self;
-  register zip_type_pane		  pane;
-  register long				  action, x, y, clicks;
-  register zip_type_point		  X, Y;
+long ziporang__Build_Object(struct ziporang *self, zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y)
   {
   register long				  status = zip_ok;
   zip_type_figure					  position = NULL; /*===*/
@@ -223,11 +209,7 @@ ziporang__Build_Object( self, pane, action, x, y, clicks, X, Y )
   return  status;
   }
 
-long
-ziporang__Draw_Object( self, figure, pane )
-  register struct ziporang		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long ziporang__Draw_Object(struct ziporang *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -237,11 +219,7 @@ ziporang__Draw_Object( self, figure, pane )
   return  status;
   }
 
-long
-ziporang__Clear_Object( self, figure, pane )
-  register struct ziporang		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long ziporang__Clear_Object(struct ziporang *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -252,12 +230,7 @@ ziporang__Clear_Object( self, figure, pane )
   return  status;
   }
 
-static
-Draw( self, figure, pane, action )
-  register struct ziporang		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register long				  action;
+static Draw(struct ziporang *self, zip_type_figure figure, zip_type_pane pane, long action)
   {
   register long				  status = zip_ok;
   register long				  radius, left, top, width, height;
@@ -314,11 +287,7 @@ Draw( self, figure, pane, action )
   return  status;
   }
 
-long
-ziporang__Print_Object( self, figure, pane )
-  register struct ziporang		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long ziporang__Print_Object(struct ziporang *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register long				  radius, left, right, top, bottom;

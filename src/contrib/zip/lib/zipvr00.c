@@ -85,6 +85,7 @@ END-SPECIFICATION  ************************************************************/
 #include "txttroff.ih"
 #include <string.h>
 #include <stdlib.h>
+static char * zipprint_Line_Attributes_String();
 
 #define  Data			(self->data_object)
 #define  View			(self->view_object)
@@ -186,9 +187,7 @@ static char					  ZIP_postscript_header2[] =
 \\!% Begin Zip Drawing\n\
 ";
 
-int
-zipprint_Write_Print_Datastream_Header( self )
-  register struct zipprint	         *self;
+int zipprint_Write_Print_Datastream_Header(struct zipprint *self)
   {
   register int				  status = zip_ok;
   register long				  IH72 = 72*InchHeight,
@@ -255,9 +254,7 @@ zipprint_Write_Print_Datastream_Header( self )
   return status;
   }
 
-int
-zipprint_Write_Print_Datastream_Trailer( self )
-  register struct zipprint	         *self;
+int zipprint_Write_Print_Datastream_Trailer(struct zipprint *self)
   {
   register int				  status = zip_ok;
 
@@ -284,18 +281,14 @@ zipprint_Write_Print_Datastream_Trailer( self )
   return status;
   }
 
-zipprint__Set_Line_Width( self, line_width )
-  register struct zipprint	         *self;
-  register long				  line_width;
+long zipprint__Set_Line_Width(struct zipprint *self, long line_width)
   {
   IN(zipprint_Set_Line_Width);
   Printing->zip_printing_line_width = line_width;
   OUT(zipprint_Set_Line_Width);
   }
 
-zipprint__Ensure_Line_Attributes( self, figure )
-  register struct zipprint		*self;
-  register zip_type_figure		figure;
+long zipprint__Ensure_Line_Attributes(struct zipprint *self, zip_type_figure figure)
   {
   register unsigned char		lwidth;
   register long				status = zip_ok;
@@ -324,9 +317,7 @@ zipprint__Ensure_Line_Attributes( self, figure )
     return status;
   }
 
-static char *
-zipprint_Line_Attributes_String( self )
-  register struct zipprint	         *self;
+static char * zipprint_Line_Attributes_String(struct zipprint *self)
   {
   static char			string[300];
   char				temp[100], *p;
@@ -368,9 +359,7 @@ zipprint_Line_Attributes_String( self )
     return string;
   }
 
-zipprint__Set_Shade( self, shade )
-  register struct zipprint	         *self;
-  register long				  shade;
+long zipprint__Set_Shade(struct zipprint *self, long shade)
   {
   IN(zipprint_Set_Shade);
   if ( shade )
@@ -384,9 +373,7 @@ zipprint__Set_Shade( self, shade )
   OUT(zipprint_Set_Shade);
   }
 
-zipprint__Move_To( self, x, y )
-  register struct zipprint	         *self;
-  register int				  x, y;
+long zipprint__Move_To(struct zipprint *self, int x, int y)
   {
   IN(zipprint__Move_To);
   if ( PostScriptLanguage )
@@ -394,9 +381,7 @@ zipprint__Move_To( self, x, y )
   OUT(zipprint__Move_To);
   }
 
-zipprint__Draw_To( self, x, y )
-  register struct zipprint	         *self;
-  register long	    			  x, y;
+long zipprint__Draw_To(struct zipprint *self, long x, long y)
   {
   IN(zipprint__Draw_To);
   if ( PostScriptLanguage )
@@ -404,8 +389,7 @@ zipprint__Draw_To( self, x, y )
   OUT(zipprint__Draw_To);
   }
 
-zipprint__Close_Path( self )
-  register struct zipprint	         *self;
+long zipprint__Close_Path(struct zipprint *self)
   {
   IN(zipprint__Close_Path);
   if ( PostScriptLanguage )
@@ -413,10 +397,7 @@ zipprint__Close_Path( self )
   OUT(zipprint__Close_Path);
   }
 
-zipprint__Draw_Multi_Line( self, npoints, x_origin, y_origin, points )
-  register struct zipprint	         *self;
-  register int				  npoints, x_origin, y_origin;
-  register zip_type_point_pairs		  points;
+long zipprint__Draw_Multi_Line(struct zipprint *self, int npoints, int x_origin, int y_origin, zip_type_point_pairs points)
   {
   register long				  i, count, nchunks, remainder;
   register float			  shade = 0.0;
@@ -460,11 +441,7 @@ zipprint__Draw_Multi_Line( self, npoints, x_origin, y_origin, points )
 static   char   ZIP_pending_font[100] = ".ft R\n.ps 12"; /*=== improve ===*/
 static   int CURRENTFONTSIZE;/*===*/
 
-zipprint__Draw_String( self, x, y, string, mode )
-  register struct zipprint	         *self;
-  register int				  x, y;
-  register char				 *string;
-  register long				  mode;
+long zipprint__Draw_String(struct zipprint *self, int x, int y, char *string, long mode)
   {
   char					 *expansion,
 					 *s, *t;
@@ -509,9 +486,7 @@ zipprint__Draw_String( self, x, y, string, mode )
 #define ZIP_FixedWidthFace 010
 
 
-zipprint__Change_Font( self, font )
-  register struct zipprint	         *self;
-  struct fontdesc			 *font;
+long zipprint__Change_Font(struct zipprint *self, struct fontdesc *font)
   {
   register char				 *font_family;
   char					  face[50], ItalObl[20], Default[20];
@@ -564,16 +539,13 @@ if(apts_CompareStrings("andy",font_family)==0)strcpy(font_family,"Times");
   return status;
   }
 
-zipprint__Restore_Font( self )
-  register struct zipprint	         *self;
+long zipprint__Restore_Font(struct zipprint *self)
   {
   IN(zipprint__Restore_Font);
   OUT(zipprint__Restore_Font);
   }
 
-zipprint__Draw_Line( self, x1, y1, x2, y2 )
-  register struct zipprint	         *self;
-  register int				  x1, y1, x2, y2;
+long zipprint__Draw_Line(struct zipprint *self, int x1, int y1, int x2, int y2)
   {
   IN(zipprint__Draw_Line);
   if ( PostScriptLanguage )
@@ -588,9 +560,7 @@ zipprint__Draw_Line( self, x1, y1, x2, y2 )
   OUT(zipprint_Draw_Line);
   }
 
-zipprint__Draw_Rectangle( self, left, top, right, bottom )
-  register struct zipprint	         *self;
-  register long				  left, top, right, bottom;
+long zipprint__Draw_Rectangle(struct zipprint *self, long left, long top, long right, long bottom)
   {
   static char				  format[] =
 "%s %.2f %.2f %.2f %.2f %.2f zip_Rectangle\n";
@@ -607,9 +577,7 @@ zipprint__Draw_Rectangle( self, left, top, right, bottom )
   OUT(zipprint_Draw_Rectangle);
   }
 
-zipprint__Draw_Round_Rectangle( self, left, top, right, bottom, x_radius, y_radius )
-  register struct zipprint	         *self;
-  register long				  left, top, right, bottom, x_radius, y_radius;
+long zipprint__Draw_Round_Rectangle(struct zipprint *self, long left, long top, long right, long bottom, long x_radius, long y_radius)
   {
   static char				  format[] =
 "%s %.2f %.2f %.2f %.2f %.2f %.2f %.2f zip_Round_Rectangle\n";
@@ -626,17 +594,12 @@ zipprint__Draw_Round_Rectangle( self, left, top, right, bottom, x_radius, y_radi
   OUT(zipprint__DrawRound_Rectangle);
   }
 
-zipprint__Draw_Circle( self, x_center, y_center, x_radius )
-  register struct zipprint	         *self;
-  register int				  x_center, y_center, x_radius;
+long zipprint__Draw_Circle(struct zipprint *self, int x_center, int y_center, int x_radius)
   {
   zipprint_Draw_Ellipse( self, x_center, y_center, x_radius, x_radius );
   }
 
-zipprint__Draw_Ellipse( self, x_center, y_center, x_radius, y_radius )
-  register struct zipprint	         *self;
-  register int				  x_center, y_center;
-  register int				  x_radius, y_radius;
+long zipprint__Draw_Ellipse(struct zipprint *self, int x_center, int y_center, int x_radius, int y_radius)
   {
   register float			  x_scale, y_scale;
 
@@ -745,11 +708,7 @@ zipprint__Arc_To( self, x_center, y_center, x_radius,
     }
   }
 
-int
-zipprint__Fill_Trapezoid( self, x1, y1, x2, y2, l1, l2, pattern )
-  register struct zipprint	         *self;
-  register int				  x1, y1, x2, y2, l1, l2;
-  register char				  pattern;
+long zipprint__Fill_Trapezoid(struct zipprint *self, int x1, int y1, int x2, int y2, int l1, int l2, char pattern)
   {
   register long				  x3, x4;
   register float			  gray = 1.0;
@@ -780,10 +739,7 @@ zipprint__Fill_Trapezoid( self, x1, y1, x2, y2, l1, l2, pattern )
   return 0;
   }
 
-int
-zipprint__Try_Printing_Exception_Handler( self, printing )
-  register struct zipprint	         *self;
-  register zip_type_printing		  printing;
+long zipprint__Try_Printing_Exception_Handler(struct zipprint *self, zip_type_printing printing)
   {
 /*===
   if ( PrintingExceptionHandler )

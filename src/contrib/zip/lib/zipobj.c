@@ -132,10 +132,7 @@ static boolean debug=FALSE;
 #define  Print				(self->print_object)
 
 
-boolean
-zipobject__InitializeObject( classID, self )
-  register struct classheader	         *classID;
-  register struct zipobject	         *self;
+boolean zipobject__InitializeObject(struct classheader *classID, struct zipobject *self)
   {
 /*===debug=1;===*/
   IN(zipobject__InitializeObject);
@@ -147,70 +144,49 @@ zipobject__InitializeObject( classID, self )
   return  true;
   }
 
-void
-zipobject__Destroy_Object( self, object )
-  register struct zipobject	         *self;
-  register zip_type_figure		  object;
+void zipobject__Destroy_Object(struct zipobject *self, zip_type_figure object)
   {
   IN(zipobject__Destroy_Object);
   /*=== NULL ===*/
   OUT(zipobject__Destroy_Object);
   }
 
-void
-zipobject__Set_Data_Object( self, data_object )
-  register struct zipobject	         *self;
-  register struct zip		         *data_object;
+void zipobject__Set_Data_Object(struct zipobject *self, struct zip *data_object)
   {
   IN(zipobject__Set_Data_Object);
   Data = data_object;
   OUT(zipobject__Set_Data_Object);
   }
 
-void
-zipobject__Set_View_Object( self, view_object )
-  register struct zipobject		 *self;
-  register struct zipview	         *view_object;
+void zipobject__Set_View_Object(struct zipobject *self, struct zipview *view_object)
   {
   IN(zipobject__Set_View_Object);
   View = view_object;
   OUT(zipobject__Set_View_Object);
   }
 
-void
-zipobject__Set_Edit_Object( self, edit_object )
-  register struct zipobject		 *self;
-  register struct zipedit	         *edit_object;
+void zipobject__Set_Edit_Object(struct zipobject *self, struct zipedit *edit_object)
   {
   IN(zipobject__Set_Edit_Object);
   Edit = edit_object;
   OUT(zipobject__Set_Edit_Object);
   }
 
-void
-zipobject__Set_Print_Object( self, print_object )
-  register struct zipobject		 *self;
-  register struct zipprint	         *print_object;
+void zipobject__Set_Print_Object(struct zipobject *self, struct zipprint *print_object)
   {
   IN(zipobject__Set_Print_Object);
   Print = print_object;
   OUT(zipobject__Set_Print_Object);
   }
 
-void
-zipobject__Set_Debug( self, state )
-  register struct zipobject		 *self;
-  register char				  state;
+void zipobject__Set_Debug(struct zipobject *self, char state)
   {
   IN(zipobject__Set_Debug);
   debug = state;
   OUT(zipobject__Set_Debug);
   }
 
-long
-zipobject__Object_Modified( self, object )
-  register struct zipobject	 *self;
-  register zip_type_figure	  object;
+long zipobject__Object_Modified(struct zipobject *self, zip_type_figure object)
   {
   IN(zipobject_Object_Modified);
   OUT(zipobject_Object_Modified);
@@ -231,32 +207,21 @@ zipobject__Object_DesiredSize( self, given_width, given_height,
   return  0;
   }
 
-void 
-zipobject__Object_FullUpdate( self, type, left, top, width, height )
-  register struct zipobject	     *self;
-  register enum view_UpdateType	      type;
-  register long			      left, top, width, height;
+void zipobject__Object_FullUpdate(struct zipobject *self, enum view_UpdateType type, long left, long top, long width, long height)
   {
   IN(zipobject__Object_FullUpdate);
   /*=== NULL ===*/
   OUT(zipobject__Object_FullUpdate);
   }
 
-void 
-zipobject__Object_Update( self )
-  register struct zipobject	   *self;
+void zipobject__Object_Update(struct zipobject *self)
   {
   IN(zipobject__Object_Update);
   /*=== NULL ===*/
   OUT(zipobject__Object_Update);
   }
 
-struct view *
-zipobject__Object_Hit( self, figure, action, x, y, clicks )
-  register struct zipobject	     *self;
-  register zip_type_figure	      figure;
-  register enum view_MouseAction      action;
-  register long			      x, y, clicks;
+struct view * zipobject__Object_Hit(struct zipobject *self, zip_type_figure figure, enum view_MouseAction action, long x, long y, long clicks)
   {
   IN(zipobject__Object_Hit );
   /*=== NULL ===*/
@@ -264,9 +229,7 @@ zipobject__Object_Hit( self, figure, action, x, y, clicks )
   return  NULL;
   }
 
-char
-zipobject__Object_Icon( self )
-  register struct zipobject		 *self;
+char zipobject__Object_Icon(struct zipobject *self)
   {
   IN(zipobject__Object_Icon);
   /****   NULL  ****/
@@ -274,18 +237,14 @@ zipobject__Object_Icon( self )
   return  NULL;
   }
 
-char *
-zipobject__Object_Icon_Font_Name( self )
-  register struct zipobject		 *self;
+char * zipobject__Object_Icon_Font_Name(struct zipobject *self)
   {
   IN(zipobject__Object_Icon_Font_Name);
   OUT(zipobject__Object_Icon_Font_Name);
   return  IconFontName;
   }
 
-char
-zipobject__Object_Icon_Cursor( self )
-  register struct zipobject		 *self;
+char zipobject__Object_Icon_Cursor(struct zipobject *self)
   {
   IN(zipobject__Object_Icon_Cursor);
   /****   NULL  ****/
@@ -293,18 +252,14 @@ zipobject__Object_Icon_Cursor( self )
   return  NULL;
   }
 
-char *
-zipobject__Object_Icon_Cursor_Font_Name( self )
-  register struct zipobject		 *self;
+char * zipobject__Object_Icon_Cursor_Font_Name(struct zipobject *self)
   {
   IN(zipobject__Object_Icon_Cursor_Font_Name);
   OUT(zipobject__Object_Icon_Cursor_Font_Name);
   return  CursorFontName;
   }
 
-char
-zipobject__Object_Datastream_Code( self )
-  register struct zipobject		 *self;
+char zipobject__Object_Datastream_Code(struct zipobject *self)
   {
   IN(zipobject__Object_Datastream_Code);
   /****   NULL  ****/
@@ -312,12 +267,7 @@ zipobject__Object_Datastream_Code( self )
   return  NULL;
   }
 
-long
-zipobject__Build_Object( self, pane, action, x, y, clicks, X, Y )
-  register struct zipobject		 *self;
-  register zip_type_pane		  pane;
-  register long				  action, x, y;
-  register zip_type_point		  X, Y;
+long zipobject__Build_Object(struct zipobject *self, zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y)
   {
   IN(zipobject__Build_Object);
   /****   NULL  ****/
@@ -325,11 +275,7 @@ zipobject__Build_Object( self, pane, action, x, y, clicks, X, Y )
   return zip_failure;
   }
 
-long
-zipobject__Show_Object_Properties( self, pane, figure )
-  register struct zipobject		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
+long zipobject__Show_Object_Properties(struct zipobject *self, zip_type_pane pane, zip_type_figure figure)
   {
   IN(zipobject__Show_Object_Properties);
   /****   NULL  ****/
@@ -337,10 +283,7 @@ zipobject__Show_Object_Properties( self, pane, figure )
   return  zip_ok;
   }
 
-long
-zipobject__Read_Object( self, figure )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
+long zipobject__Read_Object(struct zipobject *self, zip_type_figure figure)
   {
   register long				  status;
 
@@ -350,12 +293,7 @@ zipobject__Read_Object( self, figure )
   return  status;
   }
 
-long
-zipobject__Read_Object_Stream( self, figure, file, id )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
-  register FILE				 *file;
-  register long				  id;
+long zipobject__Read_Object_Stream(struct zipobject *self, zip_type_figure figure, FILE *file, long id)
   {
   IN(zipobject__Read_Object_Stream);
   /****   NULL  ****/
@@ -363,10 +301,7 @@ zipobject__Read_Object_Stream( self, figure, file, id )
   return  zip_failure;
   }
 
-long
-zipobject__Write_Object( self, figure )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
+long zipobject__Write_Object(struct zipobject *self, zip_type_figure figure)
   {
   register long				  status = zip_ok;
 
@@ -376,11 +311,7 @@ zipobject__Write_Object( self, figure )
   return  status;
   }
 
-long
-zipobject__Draw_Object( self, figure, pane )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipobject__Draw_Object(struct zipobject *self, zip_type_figure figure, zip_type_pane pane)
   {
   IN(zipobject__Draw_Object);
   /****   NULL  ****/
@@ -388,11 +319,7 @@ zipobject__Draw_Object( self, figure, pane )
   return zip_failure;
   }
 
-long
-zipobject__Clear_Object( self, figure, pane )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipobject__Clear_Object(struct zipobject *self, zip_type_figure figure, zip_type_pane pane)
   {
   IN(zipobject__Clear_Object);
   /****   NULL  ****/
@@ -400,10 +327,7 @@ zipobject__Clear_Object( self, figure, pane )
   return zip_failure;
   }
 
-long
-zipobject__Print_Object( self, figure )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
+long zipobject__Print_Object(struct zipobject *self, zip_type_figure figure, zip_type_pane pane)
   {
   IN(zipobject__Print_Object);
   /****   NULL  ****/
@@ -411,12 +335,7 @@ zipobject__Print_Object( self, figure )
   return zip_failure;
   }
 
-long
-zipobject__Proximate_Object_Points( self, figure, pane, x, y )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long zipobject__Proximate_Object_Points(struct zipobject *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   IN(zipobject__Proximate_Object_Points);
   /****   NULL  ****/
@@ -424,12 +343,7 @@ zipobject__Proximate_Object_Points( self, figure, pane, x, y )
   return zip_failure;
   }
 
-long
-zipobject__Within_Object( self, figure, pane, x, y )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long zipobject__Within_Object(struct zipobject *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   IN(zipobject__Within_Object);
   /****   NULL   ****/
@@ -437,12 +351,7 @@ zipobject__Within_Object( self, figure, pane, x, y )
   return  -1;
   }
 
-boolean
-zipobject__Enclosed_Object( self, figure, pane, x, y, w, h )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y, w, h;
+boolean zipobject__Enclosed_Object(struct zipobject *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y, zip_type_pixel w, zip_type_pixel h)
   {
   IN(zipobject__Enclosed_Object);
   /****   NULL   ****/
@@ -450,12 +359,7 @@ zipobject__Enclosed_Object( self, figure, pane, x, y, w, h )
   return  false;
   }
 
-long
-zipobject__Object_Enclosure( self, figure, pane, x, y, w, h )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  *x, *y, *w, *h;
+long zipobject__Object_Enclosure(struct zipobject *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *x, zip_type_pixel *y, zip_type_pixel *w, zip_type_pixel *h)
   {
   IN(zipobject__Object_Enclosure);
   /****   NULL   ****/
@@ -464,10 +368,7 @@ zipobject__Object_Enclosure( self, figure, pane, x, y, w, h )
   return  zip_failure;
   }
 
-long
-zipobject__Highlight_Object_Points( self, figure )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
+long zipobject__Highlight_Object_Points(struct zipobject *self, zip_type_figure figure, zip_type_pane pane)
   {
   IN(zipobject__Highlight_Object_Points);
   /****   NULL  ****/
@@ -475,10 +376,7 @@ zipobject__Highlight_Object_Points( self, figure )
   return zip_failure;
   }
 
-long
-zipobject__Normalize_Object_Points( self, figure )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
+long zipobject__Normalize_Object_Points(struct zipobject *self, zip_type_figure figure, zip_type_pane pane)
   {
   IN(zipobject__Normalize_Object_Points);
   /****   NULL  ****/
@@ -486,10 +384,7 @@ zipobject__Normalize_Object_Points( self, figure )
   return zip_failure;
   }
 
-long
-zipobject__Expose_Object_Points( self, figure )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
+long zipobject__Expose_Object_Points(struct zipobject *self, zip_type_figure figure, zip_type_pane pane)
   {
   IN(zipobject__Expose_Object_Points);
   /****   NULL  ****/
@@ -497,10 +392,7 @@ zipobject__Expose_Object_Points( self, figure )
   return zip_failure;
   }
 
-long
-zipobject__Hide_Object_Points( self, figure )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
+long zipobject__Hide_Object_Points(struct zipobject *self, zip_type_figure figure, zip_type_pane pane)
   {
   IN(zipobject__Hide_Object_Points);
   /****   NULL  ****/
@@ -508,11 +400,7 @@ zipobject__Hide_Object_Points( self, figure )
   return zip_failure;
   }
 
-long
-zipobject__Set_Object_Shade( self, figure, shade )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
-  register long				  shade;
+long zipobject__Set_Object_Shade(struct zipobject *self, zip_type_figure figure, long shade)
   {
   IN(zipobject__Set_Object_Shade);
   /****   NULL  ****/
@@ -520,11 +408,7 @@ zipobject__Set_Object_Shade( self, figure, shade )
   return  zip_failure;
   }
 
-long
-zipobject__Set_Object_Font( self, figure, font )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
-  register short			  font;
+long zipobject__Set_Object_Font(struct zipobject *self, zip_type_figure figure, short font)
   {
   IN(zipobject__Set_Object_Font);
   /****   NULL  ****/
@@ -556,12 +440,7 @@ zipobject__Set_Object_Font( self, figure, font )
 
 */
 
-long
-zipobject__Set_Object_Point( self, figure, point, x, y )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
-  register long				  point;
-  register zip_type_point		  x, y;
+long zipobject__Set_Object_Point(struct zipobject *self, zip_type_figure figure, long point, zip_type_point x, zip_type_point y)
   {
   register long				  status = zip_ok;
 
@@ -624,12 +503,7 @@ zipobject__Set_Object_Point( self, figure, point, x, y )
   return  status;
   }
 
-long
-zipobject__Object_Point( self, figure, point, x, y )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
-  register long				  point;
-  register zip_type_point		  *x, *y;
+long zipobject__Object_Point(struct zipobject *self, zip_type_figure figure, long point, zip_type_point *x, zip_type_point *y)
   {
   IN(zipobject__Object_Point);
   if ( figure )
@@ -642,11 +516,7 @@ zipobject__Object_Point( self, figure, point, x, y )
   return zip_failure;
   }
 
-long
-zipobject__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
-  register struct zipobject		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_point		  x_delta, y_delta;
+long zipobject__Adjust_Object_Point_Suite(struct zipobject *self, zip_type_figure figure, zip_type_point x_delta, zip_type_point y_delta)
   {
   register long				  status = zip_ok;
 
@@ -662,13 +532,7 @@ zipobject__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
   return  status;
   }
 
-boolean
-zipobject__Contains( self, figure, pane, x, y )
-  register struct zipobject		*self;
-  register zip_type_figure		figure;
-  register zip_type_pane		pane;
-  register zip_type_pixel		x, y;
-
+boolean zipobject__Contains(struct zipobject *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
     return FALSE;
   }

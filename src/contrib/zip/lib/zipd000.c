@@ -83,24 +83,17 @@ extern int apt_MM_Compare();	/* M2: zip.do cross-file, defined zip.c */
 
 #define	 Data			      self
 
-struct zip_color_values *
-zip__Allocate_Color_Values( self )
-register struct	zip		    *self;
+struct zip_color_values * zip__Allocate_Color_Values(struct zip *self)
 {
   return ( struct zip_color_values * ) calloc( 1, sizeof( struct zip_color_values ));
 }
 
-struct zip_color *
-zip__Allocate_Color( self )
-register struct	zip		    *self;
+struct zip_color * zip__Allocate_Color(struct zip *self)
 {
   return ( struct zip_color * ) calloc( 1, sizeof( struct zip_color ));
 }
 
-char
-zip__Contextual_Figure_Pattern( self, figure )
-  register struct zip	    	 *self;
-  register zip_type_figure	  figure;
+char zip__Contextual_Figure_Pattern(struct zip *self, zip_type_figure figure)
   {
   register char			  pattern = NULL;
 
@@ -120,10 +113,7 @@ zip__Contextual_Figure_Pattern( self, figure )
   return  pattern;
   }
 
-char
-zip__Contextual_Figure_Shade( self, figure )
-  register struct zip	    	 *self;
-  register zip_type_figure	  figure;
+char zip__Contextual_Figure_Shade(struct zip *self, zip_type_figure figure)
   {
   register char			  shade = NULL;
 
@@ -143,10 +133,7 @@ zip__Contextual_Figure_Shade( self, figure )
   return  shade;
   }
 
-unsigned char
-zip__Contextual_Figure_Line_Width( self, figure )
-  register struct zip	    	 *self;
-  register zip_type_figure	  figure;
+unsigned char zip__Contextual_Figure_Line_Width(struct zip *self, zip_type_figure figure)
   {
   register unsigned char	  width = 0;
 
@@ -168,13 +155,7 @@ zip__Contextual_Figure_Line_Width( self, figure )
   return  width;
   }
 
-void
-zip__Contextual_Figure_Line_Dash( self, figure, pattern, offset, type )
-  register struct zip	    	 *self;
-  register zip_type_figure	  figure;
-  register char			 **pattern;
-  register int			 *offset;
-  register short		 *type;
+void zip__Contextual_Figure_Line_Dash(struct zip *self, zip_type_figure figure, char **pattern, int *offset, short *type)
   {
   IN(zip_Contextual_Figure_Line_Dash);
   *pattern = NULL;
@@ -206,10 +187,7 @@ zip__Contextual_Figure_Line_Dash( self, figure, pattern, offset, type )
   OUT(zip_Contextual_Figure_Line_Dash);
   }
 
-short
-zip__Contextual_Figure_Line_Join( self, figure )
-  register struct zip	    	 *self;
-  register zip_type_figure	  figure;
+short zip__Contextual_Figure_Line_Join(struct zip *self, zip_type_figure figure)
   {
   register short	  join = -1;
 
@@ -231,10 +209,7 @@ zip__Contextual_Figure_Line_Join( self, figure )
   return  join;
   }
 
-short
-zip__Contextual_Figure_Line_Cap( self, figure )
-  register struct zip	    	 *self;
-  register zip_type_figure	  figure;
+short zip__Contextual_Figure_Line_Cap(struct zip *self, zip_type_figure figure)
   {
   register short	  cap = -1;
 
@@ -256,11 +231,7 @@ zip__Contextual_Figure_Line_Cap( self, figure )
   return  cap;
   }
 
-long
-zip__Contextual_Figure_Line_Color( self, figure, red, green, blue )
-  register struct zip		    *self;
-  register zip_type_figure	    figure;
-  register double		    *red, *green, *blue;
+long zip__Contextual_Figure_Line_Color(struct zip *self, zip_type_figure figure, double *red, double *green, double *blue)
   {
   register struct zip_color	    *color;
   register long			    status = zip_ok;
@@ -298,11 +269,7 @@ zip__Contextual_Figure_Line_Color( self, figure, red, green, blue )
   return status;
   }
 
-long
-zip__Contextual_Figure_FillFG_Color( self, figure, red, green, blue )
-  register struct zip		    *self;
-  register zip_type_figure	    figure;
-  register double		    *red, *green, *blue;
+long zip__Contextual_Figure_FillFG_Color(struct zip *self, zip_type_figure figure, double *red, double *green, double *blue)
   {
   register struct zip_color	    *color;
   register long			    status = zip_ok;
@@ -341,11 +308,7 @@ zip__Contextual_Figure_FillFG_Color( self, figure, red, green, blue )
   }
 
 
-long
-zip__Contextual_Figure_FillBG_Color( self, figure, red, green, blue )
-  register struct zip		    *self;
-  register zip_type_figure	    figure;
-  register double		    *red, *green, *blue;
+long zip__Contextual_Figure_FillBG_Color(struct zip *self, zip_type_figure figure, double *red, double *green, double *blue)
   {
   register struct zip_color	    *color;
   register long			    status = zip_ok;
@@ -383,11 +346,7 @@ zip__Contextual_Figure_FillBG_Color( self, figure, red, green, blue )
   return status;
   }
 
-struct fontdesc *
-zip__Define_Font( self, font_name, font_index )
-  register struct zip	    	 *self;
-  register char			 *font_name;
-  register short             	 *font_index;
+struct fontdesc * zip__Define_Font(struct zip *self, char *font_name, short *font_index)
   {
   register int			  loop_index;
   char				  family_name[257];
@@ -442,10 +401,7 @@ zip__Define_Font( self, font_name, font_index )
   return  font;
   }
 
-int	
-zip__Try_Figure_Exception_Handler( self, figure )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
+long zip__Try_Figure_Exception_Handler(struct zip *self, zip_type_figure figure)
   {
   IN(zip__Try_Figure_Exception_Handler);
   if ( FigureExceptionHandler )
@@ -461,10 +417,7 @@ zip__Try_Figure_Exception_Handler( self, figure )
     }
   }
 
-int
-zip__Try_Image_Exception_Handler( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+long zip__Try_Image_Exception_Handler(struct zip *self, zip_type_image image)
   {
   IN(zip__Try_Image_Exception_Handler);
   if ( ImageExceptionHandler )
@@ -480,10 +433,7 @@ zip__Try_Image_Exception_Handler( self, image )
     }
   }
 
-int
-zip__Try_Stream_Exception_Handler( self, stream )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
+long zip__Try_Stream_Exception_Handler(struct zip *self, zip_type_stream stream)
   {
   IN(zip__Try_Stream_Exception_Handler);
   if ( StreamExceptionHandler )
@@ -499,9 +449,7 @@ zip__Try_Stream_Exception_Handler( self, stream )
     }
   }
 
-int
-zip__Try_general_Exception_Handler( self )
-  register struct zip	    	 *self;
+long zip__Try_general_Exception_Handler(struct zip *self)
   {
   IN(zip__Try_general_Exception_Handler);
   if ( generalExceptionHandler )
@@ -518,8 +466,7 @@ zip__Try_general_Exception_Handler( self )
     }
   }
 
-static int ZIP_Default_Exception_Handler( self )
-register struct zip	    	 *self;
+static int ZIP_Default_Exception_Handler(struct zip *self)
 {
     IN(ZIP_Default_Exception_Handler);
     /*===*/
@@ -595,9 +542,7 @@ typedef struct {
     struct block first_block;
 } pool_type;
 
-int palloc_create_pool (pool, expected_size)
-    register pool_type **pool;
-    register unsigned int expected_size;
+int palloc_create_pool(pool_type **pool, unsigned int expected_size)
 {
 /*===
     /* allocate the pool discriptor including the first block !/
@@ -627,9 +572,7 @@ int palloc_create_pool (pool, expected_size)
     return (0);
 }
 
-unsigned char *palloc (pool, size)
-    register pool_type *pool;
-    register unsigned int size;
+unsigned char * palloc(pool_type *pool, unsigned int size)
 {
 return (unsigned char *) malloc( (size + 3) & (~3) );
 /*===
@@ -663,8 +606,7 @@ return (unsigned char *) malloc( (size + 3) & (~3) );
 ===*/
 }
 
-unsigned int palloc_destroy_pool (pool)
-    register pool_type *pool;
+unsigned int palloc_destroy_pool(pool_type *pool)
 {
 /*===
     register struct block *this_block;
@@ -775,9 +717,7 @@ typedef struct {
 * symtab_create	 *
 * 		 *
 \****************/
-int symtab_create (symtab, expected_size)
-  register symtab_type **symtab;
-  register int expected_size;
+int symtab_create(symtab_type **symtab, int expected_size)
 {
     register int     i;
     pool_type *pool;
@@ -800,8 +740,7 @@ if (rc < 0) {
 return 0;
 }
 
-symtab_destroy( symtab )
-  register symtab_type	         *symtab;
+int symtab_destroy(symtab_type *symtab)
   {
   register int			  i;
   register symtab_entry_type	 *entry, *ptr;
@@ -829,10 +768,7 @@ symtab_destroy( symtab )
 * symtab_add  *
 * 	      *
 \*************/
-int symtab_add (symtab, symbol, data)
-  register symtab_type *symtab;
-  register unsigned char *symbol;
-  register struct user_data *data;
+int symtab_add(symtab_type *symtab, unsigned char *symbol, struct user_data *data)
 {
     register symtab_entry_type * entry;
     register int     tabrow;		/* row in symtab->table where this symbols
@@ -852,10 +788,7 @@ int symtab_add (symtab, symbol, data)
     (symtab->table)[tabrow] = entry;
 }
 
-int
-symtab_delete( symtab, symbol )
-  register symtab_type *symtab;
-  register unsigned char *symbol;
+int symtab_delete(symtab_type *symtab, unsigned char *symbol)
   {
   register symtab_entry_type *entry, *ptr;
   register int  tabrow;
@@ -891,10 +824,7 @@ symtab_delete( symtab, symbol )
 * symtab_find  *
 * 	       *
 \**************/
-int symtab_find (symtab, symbol, data)
-  register symtab_type *symtab;
-  register unsigned char *symbol;
-  register struct user_data **data;
+int symtab_find(symtab_type *symtab, unsigned char *symbol, struct user_data **data)
 {
     register symtab_entry_type * entry;
     register int     tabrow;		/* row in symbol table where symbol should
@@ -926,8 +856,7 @@ int symtab_find (symtab, symbol, data)
 * symtab_scan_reset  *
 * 		     *
 \********************/
-void symtab_scan_reset (symtab)
-  symtab_type *symtab;
+void symtab_scan_reset(symtab_type *symtab)
 {
     symtab->row = -1;
     symtab->next = 0;
@@ -938,10 +867,7 @@ void symtab_scan_reset (symtab)
 * symtab_scan_next  *
 * 		    *
 \*******************/
-int symtab_scan_next (symtab, symbol, data)
-  symtab_type *symtab;
-  unsigned char **symbol;
-  struct user_data **data;
+int symtab_scan_next(symtab_type *symtab, unsigned char **symbol, struct user_data **data)
 {
     symtab_entry_type * entry = NULL;
     int     rc = 0;
@@ -983,10 +909,7 @@ int symtab_scan_next (symtab, symbol, data)
 * 							      *
 \*************************************************************/
 
-int strhash (string, size)
-  register char *string;
-  register unsigned int size;
-
+int strhash(char *string, unsigned int size)
 {
     register unsigned int    temp_sum = 0;
 

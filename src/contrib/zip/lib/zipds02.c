@@ -136,10 +136,7 @@ static int Write_Inferior_Image();
 static int Write_Image_Beginning();
 static int Write_Image_Ending();
 
-long
-zip__Write_Figure( self, figure )
-  register struct zip		     *self;
-  register struct zip_figure	     *figure;
+long zip__Write_Figure(struct zip *self, zip_type_figure figure)
   {
   register int			     i, status = zip_ok;
   register FILE			     *file =
@@ -270,10 +267,7 @@ zip__Write_Figure( self, figure )
   return status;
   }
 
-long
-zip_Enparse_Stream( self, stream )
-  register struct zip		     *self;
-  register struct zip_stream	     *stream;
+long zip_Enparse_Stream(struct zip *self, struct zip_stream *stream)
   {
   register int			      status = zip_ok;
   register zip_type_image	      image = stream->zip_stream_image_anchor;
@@ -299,10 +293,7 @@ zip_Enparse_Stream( self, stream )
   return status;
   }
 
-static int
-Write_Inferior_Image( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+static int Write_Inferior_Image(struct zip *self, zip_type_image image)
   {
   register int			      status = zip_ok;
   register zip_type_figure	      figure = image->zip_image_figure_anchor;
@@ -325,10 +316,7 @@ Write_Inferior_Image( self, image )
   return status;
   }
 
-static int
-Write_Image_Beginning( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+static int Write_Image_Beginning(struct zip *self, zip_type_image image)
   {
   register FILE			     *file =
 	image->zip_image_stream->zip_stream_file;
@@ -423,10 +411,7 @@ Write_Image_Beginning( self, image )
   return status;
   }
 
-static int
-Write_Image_Ending( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+static int Write_Image_Ending(struct zip *self, zip_type_image image)
   {
   register FILE			     *file =
 	image->zip_image_stream->zip_stream_file;

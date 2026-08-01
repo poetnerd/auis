@@ -109,53 +109,40 @@ END-SPECIFICATION  ************************************************************/
 #include "class.h"
 #include "zipobj.ih"
 #include "zipoline.eh"
+static int Compute_Handle_Positions();
+static int Draw();
 
 static Draw();
 static Compute_Handle_Positions();
 
-char
-zipoline__Object_Icon( self )
-  register struct zipoline		 *self;
+char zipoline__Object_Icon(struct zipoline *self)
   {
   IN(zipoline__Object_Icon);
   OUT(zipoline__Object_Icon);
   return  'C';
   }
 
-char
-zipoline__Object_Icon_Cursor( self )
-  register struct zipoline		 *self;
+char zipoline__Object_Icon_Cursor(struct zipoline *self)
   {
   IN(zipoline__Object_Icon_Cursor);
   OUT(zipoline__Object_Icon_Cursor);
   return  'I';
   }
 
-char
-zipoline__Object_Datastream_Code( self )
-  register struct zipoline		 *self;
+char zipoline__Object_Datastream_Code(struct zipoline *self)
   {
   IN(zipoline__Object_Datastream_Code);
   OUT(zipoline__Object_Datastream_Code);
   return  'C';
   }
 
-long
-zipoline__Show_Object_Properties( self, pane, figure )
-  register struct zipoline		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
+long zipoline__Show_Object_Properties(struct zipoline *self, zip_type_pane pane, zip_type_figure figure)
   {
   zipview_Announce( View, "Draw Line from Left to Right." );
   return  zip_ok;
   }
 
-long
-zipoline__Build_Object( self, pane, action, x, y, clicks, X, Y )
-  register struct zipoline		 *self;
-  register zip_type_pane		  pane;
-  register long				  action, x, y, clicks;
-  register zip_type_point		  X, Y;
+long zipoline__Build_Object(struct zipoline *self, zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y)
   {
   register long				  status = zip_ok;
   zip_type_figure					  position = NULL; /*===*/
@@ -201,11 +188,7 @@ zipoline__Build_Object( self, pane, action, x, y, clicks, X, Y )
   return  status;
   }
 
-long
-zipoline__Draw_Object( self, figure, pane )
-  register struct zipoline		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoline__Draw_Object(struct zipoline *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -216,11 +199,7 @@ zipoline__Draw_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipoline__Clear_Object( self, figure, pane )
-  register struct zipoline		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoline__Clear_Object(struct zipoline *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -231,11 +210,7 @@ zipoline__Clear_Object( self, figure, pane )
   return  status;
   }
 
-static
-Draw( self, figure, pane )
-  register struct zipoline		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+static Draw(struct zipoline *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register unsigned char		  width;
@@ -254,11 +229,7 @@ Draw( self, figure, pane )
   return  status;
   }
 
-long
-zipoline__Print_Object( self, figure, pane )
-  register struct zipoline		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoline__Print_Object(struct zipoline *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -270,12 +241,7 @@ zipoline__Print_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipoline__Proximate_Object_Points( self, figure, pane, x, y )
-  register struct zipoline		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long zipoline__Proximate_Object_Points(struct zipoline *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register int				  point = 0;
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
@@ -305,12 +271,7 @@ zipoline__Proximate_Object_Points( self, figure, pane, x, y )
   return  point;
   }
 
-boolean
-zipoline__Enclosed_Object( self, figure, pane, x, y, w, h )
-  register struct zipoline		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y, w, h;
+boolean zipoline__Enclosed_Object(struct zipoline *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y, zip_type_pixel w, zip_type_pixel h)
   {
   register boolean			  enclosed = false;
   register zip_type_pixel		  X1, Y1, X2, Y2;
@@ -324,12 +285,7 @@ zipoline__Enclosed_Object( self, figure, pane, x, y, w, h )
   return  enclosed;
   }
 
-long
-zipoline__Object_Enclosure( self, figure, pane, x, y, w, h )
-  register struct zipoline		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		 *x, *y, *w, *h;
+long zipoline__Object_Enclosure(struct zipoline *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *x, zip_type_pixel *y, zip_type_pixel *w, zip_type_pixel *h)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
 
@@ -340,11 +296,7 @@ zipoline__Object_Enclosure( self, figure, pane, x, y, w, h )
   return  zip_ok;
   }
 
-long
-zipoline__Highlight_Object_Points( self, figure, pane )
-  register struct zipoline		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoline__Highlight_Object_Points(struct zipoline *self, zip_type_figure figure, zip_type_pane pane)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
   register long				  status = zip_ok;
@@ -356,11 +308,7 @@ zipoline__Highlight_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipoline__Normalize_Object_Points( self, figure, pane )
-  register struct zipoline		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoline__Normalize_Object_Points(struct zipoline *self, zip_type_figure figure, zip_type_pane pane)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
   register long				  status = zip_ok;
@@ -372,11 +320,7 @@ zipoline__Normalize_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipoline__Expose_Object_Points( self, figure, pane )
-  register struct zipoline		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoline__Expose_Object_Points(struct zipoline *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -387,11 +331,7 @@ zipoline__Expose_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipoline__Hide_Object_Points( self, figure, pane )
-  register struct zipoline		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoline__Hide_Object_Points(struct zipoline *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -402,12 +342,7 @@ zipoline__Hide_Object_Points( self, figure, pane )
   return  status;
   }
 
-static
-Compute_Handle_Positions( self, figure, pane, X1, X2, X3, Y1, Y2, Y3 )
-  register struct zipoline		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		 *X1, *X2, *X3, *Y1, *Y2, *Y3;
+static Compute_Handle_Positions(struct zipoline *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3)
   {
   *X1 = zipview_X_Point_To_Pixel( View, pane, figure, figure_x_point );
   *X2 = *X1 + (window_x_points(0) - window_x_point)/2;
@@ -417,13 +352,7 @@ Compute_Handle_Positions( self, figure, pane, X1, X2, X3, Y1, Y2, Y3 )
   *Y3 = zipview_Y_Point_To_Pixel( View, pane, figure, figure_y_points(0) );
   }
 
-boolean
-zipoline__Contains( self, figure, pane, x, y )
-  register struct zipoline		*self;
-  register zip_type_figure		figure;
-  register zip_type_pane		pane;
-  register zip_type_pixel		x, y;
-
+boolean zipoline__Contains(struct zipoline *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register boolean			status = FALSE;
   register int				x1, y1, x2, y2;

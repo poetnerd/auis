@@ -63,7 +63,7 @@ overrides:
 
 classprocedures:
 
-  InitializeObject( struct zipobject *self )		returns boolean;
+  InitializeObject( struct zipoplin *self )		returns boolean;
 
 data:
 

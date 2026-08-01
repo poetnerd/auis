@@ -128,9 +128,11 @@ END-SPECIFICATION  ************************************************************/
 #include <fontdesc.ih>
 #include <zipobj.ih>
 #include <ziporect.eh>
+static int Compute_Handle_Positions( struct ziporect *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3 );
+static int Draw( struct ziporect *self, zip_type_figure figure, zip_type_pane pane, short action );
 
-static Draw();
-static Compute_Handle_Positions();
+static int Draw( struct ziporect *self, zip_type_figure figure, zip_type_pane pane, short action );
+static int Compute_Handle_Positions( struct ziporect *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3 );
 
 static char				*rect_attributes[] =
 					{
@@ -138,10 +140,7 @@ static char				*rect_attributes[] =
 					"iconfontname", IconFontName,
 					NULL
 					};
-char
-ziporect__Object_Attributes( self, attributes )
-  register struct ziporect		 *self;
-  register char				**attributes[];
+char ziporect__Object_Attributes(struct ziporect *self, char **attributes[])
   {
   IN(ziporect__Object_Attributes);
   *attributes = rect_attributes;
@@ -149,49 +148,34 @@ ziporect__Object_Attributes( self, attributes )
   return  zip_ok;
   }
 
-char
-ziporect__Object_Icon( self )
-  register struct ziporect		 *self;
+char ziporect__Object_Icon(struct ziporect *self)
   {
   IN(ziporect__Object_Icon);
   OUT(ziporect__Object_Icon);
   return  'G';
   }
 
-char
-ziporect__Object_Icon_Cursor( self )
-  register struct ziporect		 *self;
+char ziporect__Object_Icon_Cursor(struct ziporect *self)
   {
   IN(ziporect__Object_Icon_Cursor);
   OUT(ziporect__Object_Icon_Cursor);
   return  'B';
   }
 
-char
-ziporect__Object_Datastream_Code( self )
-  register struct ziporect		 *self;
+char ziporect__Object_Datastream_Code(struct ziporect *self)
   {
   IN(ziporect__Object_Datastream_Code);
   OUT(ziporect__Object_Datastream_Code);
   return  'G';
   }
 
-long
-ziporect__Show_Object_Properties( self, pane, figure )
-  register struct ziporect		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
+long ziporect__Show_Object_Properties(struct ziporect *self, zip_type_pane pane, zip_type_figure figure)
   {
   zipview_Announce( View, "Draw Rectangle from Upper-left to Lower-right." );
   return  zip_ok;
   }
 
-long
-ziporect__Build_Object( self, pane, action, x, y, clicks, X, Y )
-  register struct ziporect		 *self;
-  register zip_type_pane		  pane;
-  register long				  action, x, y, clicks;
-  register zip_type_point		  X, Y;
+long ziporect__Build_Object(struct ziporect *self, zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y)
   {
   zip_type_figure					  position = NULL; /*===*/
   register zip_type_figure		  figure;
@@ -242,11 +226,7 @@ ziporect__Build_Object( self, pane, action, x, y, clicks, X, Y )
   return  status;
   }
 
-long
-ziporect__Draw_Object( self, figure, pane )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long ziporect__Draw_Object(struct ziporect *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -257,11 +237,7 @@ ziporect__Draw_Object( self, figure, pane )
   return  status;
   }
 
-long
-ziporect__Clear_Object( self, figure, pane )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long ziporect__Clear_Object(struct ziporect *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -272,12 +248,7 @@ ziporect__Clear_Object( self, figure, pane )
   return  status;
   }
 
-static
-Draw( self, figure, pane, action )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register short			  action;
+static Draw(struct ziporect *self, zip_type_figure figure, zip_type_pane pane, short action)
   {
   register long				  status = zip_ok,
 					  left = window_x_point, top = window_y_point,
@@ -330,11 +301,7 @@ Draw( self, figure, pane, action )
   return  status;
   }
 
-long
-ziporect__Print_Object( self, figure, pane )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long ziporect__Print_Object(struct ziporect *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register long				  left, right, top, bottom;
@@ -359,12 +326,7 @@ ziporect__Print_Object( self, figure, pane )
   return  status;
   }
 
-long
-ziporect__Proximate_Object_Points( self, figure, pane, x, y )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long ziporect__Proximate_Object_Points(struct ziporect *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register int				  point = 0;
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
@@ -401,12 +363,7 @@ ziporect__Proximate_Object_Points( self, figure, pane, x, y )
   return  point;
   }
 
-long
-ziporect__Within_Object( self, figure, pane, x, y )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long ziporect__Within_Object(struct ziporect *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register long				  distance = -1,
 					  X1, Y1, X2, Y2,
@@ -431,12 +388,7 @@ ziporect__Within_Object( self, figure, pane, x, y )
   return  distance;
   }
 
-boolean
-ziporect__Enclosed_Object( self, figure, pane, x, y, w, h )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y, w, h;
+boolean ziporect__Enclosed_Object(struct ziporect *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y, zip_type_pixel w, zip_type_pixel h)
   {
   register boolean			  enclosed = false;
   register zip_type_pixel		  X1, Y1, X2, Y2;
@@ -450,12 +402,7 @@ ziporect__Enclosed_Object( self, figure, pane, x, y, w, h )
   return  enclosed;
   }
 
-long
-ziporect__Object_Enclosure( self, figure, pane, x, y, w, h )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		 *x, *y, *w, *h;
+long ziporect__Object_Enclosure(struct ziporect *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *x, zip_type_pixel *y, zip_type_pixel *w, zip_type_pixel *h)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
 
@@ -466,11 +413,7 @@ ziporect__Object_Enclosure( self, figure, pane, x, y, w, h )
   return  zip_ok;
   }
 
-long
-ziporect__Highlight_Object_Points( self, figure, pane )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long ziporect__Highlight_Object_Points(struct ziporect *self, zip_type_figure figure, zip_type_pane pane)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
   register long				  status = zip_ok;
@@ -482,11 +425,7 @@ ziporect__Highlight_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-ziporect__Normalize_Object_Points( self, figure, pane )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long ziporect__Normalize_Object_Points(struct ziporect *self, zip_type_figure figure, zip_type_pane pane)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
   register long				  status = zip_ok;
@@ -498,11 +437,7 @@ ziporect__Normalize_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-ziporect__Expose_Object_Points( self, figure, pane )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long ziporect__Expose_Object_Points(struct ziporect *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -515,11 +450,7 @@ ziporect__Expose_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-ziporect__Hide_Object_Points( self, figure, pane )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long ziporect__Hide_Object_Points(struct ziporect *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -532,12 +463,7 @@ ziporect__Hide_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-ziporect__Set_Object_Point( self, figure, point, x, y )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register int				  point;
-  register zip_type_point		  x, y;
+long ziporect__Set_Object_Point(struct ziporect *self, zip_type_figure figure, long point, zip_type_point x, zip_type_point y)
   {
   register long				  status = zip_ok;
 
@@ -604,11 +530,7 @@ ziporect__Set_Object_Point( self, figure, point, x, y )
   return  status;
   }
 
-long/*=== MUST RATIONALIZE POINTS VS HANDLES ===*/
-ziporect__Object_Point( self, figure, point, x, y )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register long				  point, *x, *y;
+long ziporect__Object_Point(struct ziporect *self, zip_type_figure figure, long point, zip_type_point *x, zip_type_point *y)
   {
   register long				  status = zip_ok;
 
@@ -622,11 +544,7 @@ ziporect__Object_Point( self, figure, point, x, y )
   return  status;
   }
 
-long
-ziporect__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_point		  x_delta, y_delta;
+long ziporect__Adjust_Object_Point_Suite(struct ziporect *self, zip_type_figure figure, zip_type_point x_delta, zip_type_point y_delta)
   {
   register long				  status = zip_ok;
 
@@ -644,13 +562,7 @@ ziporect__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
   return  status;
   }
 
-static
-Compute_Handle_Positions( self, figure, pane, X1, X2, X3, Y1, Y2, Y3 )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		 *X1, *X2, *X3,
-					 *Y1, *Y2, *Y3;
+static int Compute_Handle_Positions(struct ziporect *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3)
   {
   *X1 = zipview_X_Point_To_Pixel( View, pane, figure, figure_x_point );
   *X2 = *X1 + (window_x_points(0) - window_x_point)/2;
@@ -661,10 +573,7 @@ Compute_Handle_Positions( self, figure, pane, X1, X2, X3, Y1, Y2, Y3 )
   }
 
 
-long
-ziporect__Set_Object_Shade( self, figure, shade )
-  register struct ziporect		 *self;
-  register zip_type_figure		  figure;
+long ziporect__Set_Object_Shade(struct ziporect *self, zip_type_figure figure, long shade)
   {
   IN(ziporect__Set_Object_Shade);
   figure->zip_figure_fill.zip_figure_shade = shade;
@@ -676,13 +585,7 @@ ziporect__Set_Object_Shade( self, figure, shade )
   return  zip_ok;
   }
 
-boolean
-ziporect__Contains( self, figure, pane, x, y )
-  register struct ziporect		*self;
-  register zip_type_figure		figure;
-  register zip_type_pane		pane;
-  register zip_type_pixel		x, y;
-
+boolean ziporect__Contains(struct ziporect *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register boolean			status = FALSE;
   register int				x1, y1, x2, y2;

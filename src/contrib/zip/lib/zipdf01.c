@@ -78,10 +78,7 @@ END-SPECIFICATION  ************************************************************/
 #define	 Data			      self
 
 
-char
-zip__Superior_Image_Pattern( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+char zip__Superior_Image_Pattern(struct zip *self, zip_type_image image)
   {
   register char			      pattern = NULL;
 
@@ -97,10 +94,7 @@ zip__Superior_Image_Pattern( self, image )
   return pattern;
   }
 
-char
-zip__Superior_Image_Shade( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+char zip__Superior_Image_Shade(struct zip *self, zip_type_image image)
   {
   register char			      shade = NULL;
 
@@ -116,10 +110,7 @@ zip__Superior_Image_Shade( self, image )
   return shade;
   }
 
-unsigned char
-zip__Superior_Image_Line_Width( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+unsigned char zip__Superior_Image_Line_Width(struct zip *self, zip_type_image image)
   {
   register unsigned char	      width = 255;
 
@@ -135,13 +126,7 @@ zip__Superior_Image_Line_Width( self, image )
   return width;
   }
 
-long
-zip__Superior_Image_Line_Dash( self, image, pattern, offset, type )
-  register struct zip		     *self;
-  register zip_type_image	      image;
-  register char			     **pattern;
-  register int			     *offset;
-  register short		     *type;
+long zip__Superior_Image_Line_Dash(struct zip *self, zip_type_image image, char **pattern, int *offset, short *type)
   {
   register long			    status = zip_failure;
 
@@ -160,10 +145,7 @@ zip__Superior_Image_Line_Dash( self, image, pattern, offset, type )
   return status;
   }
 
-short
-zip__Superior_Image_Line_Cap( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+short zip__Superior_Image_Line_Cap(struct zip *self, zip_type_image image)
   {
   register short	      cap = -1;
 
@@ -179,10 +161,7 @@ zip__Superior_Image_Line_Cap( self, image )
   return cap;
   }
 
-short
-zip__Superior_Image_Line_Join( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+short zip__Superior_Image_Line_Join(struct zip *self, zip_type_image image)
   {
   register short	      join = -1;
 
@@ -198,10 +177,7 @@ zip__Superior_Image_Line_Join( self, image )
   return join;
   }
 
-struct zip_color *
-zip__Superior_Image_Line_Color( self, image )
-  register struct zip		    *self;
-  register zip_type_image	    image;
+struct zip_color * zip__Superior_Image_Line_Color(struct zip *self, zip_type_image image)
   {
   register struct zip_color	    *color = NULL;
 
@@ -217,10 +193,7 @@ zip__Superior_Image_Line_Color( self, image )
   return color;
   }
 
-struct zip_color *
-zip__Superior_Image_FillFG_Color( self, image )
-  register struct zip		    *self;
-  register zip_type_image	    image;
+struct zip_color * zip__Superior_Image_FillFG_Color(struct zip *self, zip_type_image image)
   {
   register struct zip_color	    *color = NULL;
 
@@ -236,10 +209,7 @@ zip__Superior_Image_FillFG_Color( self, image )
   return color;
   }
 
-struct zip_color *
-zip__Superior_Image_FillBG_Color( self, image )
-  register struct zip		    *self;
-  register zip_type_image	    image;
+struct zip_color * zip__Superior_Image_FillBG_Color(struct zip *self, zip_type_image image)
   {
   register struct zip_color	    *color = NULL;
 
@@ -255,10 +225,7 @@ zip__Superior_Image_FillBG_Color( self, image )
   return color;
   }
 
-char *
-zip__Superior_Image_Text( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+char * zip__Superior_Image_Text(struct zip *self, zip_type_image image)
   {
   register char			     *text = NULL;
 
@@ -275,10 +242,7 @@ zip__Superior_Image_Text( self, image )
   }
 
 
-struct fontdesc *
-zip__Superior_Image_Font( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+struct fontdesc * zip__Superior_Image_Font(struct zip *self, zip_type_image image)
   {
   register struct fontdesc 	     *font = NULL;
 

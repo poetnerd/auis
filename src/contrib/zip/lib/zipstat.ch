@@ -62,8 +62,8 @@ methods:
   Issue_Message( char *msg )					    returns long;
   Acknowledge_Message( char *msg )				    returns long;
   Clear_Message()						    returns long;
-  Issue_Status_Message( char *msg )				    returns long;
-  Acknowledge_Status_Message( char *msg )			    returns long;
+  Issue_Status_Message( long facility, long status )		    returns long;
+  Acknowledge_Status_Message( long facility, long status )	    returns long;
   Issue_Figure_Status_Message( zip_type_figure figure )				    returns long;
   Acknowledge_Figure_Status_Message( zip_type_figure figure )			    returns long;
   Issue_Image_Status_Message( zip_type_image image )				    returns long;

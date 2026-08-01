@@ -137,13 +137,7 @@ extern int symtab_add();
 					figure->zip_figure_image->zip_image_stream->\
 					zip_stream_states.zip_stream_state_modified = 1;}
 
-long
-zip__Create_Figure( self, figure, name, type, image, peer )
-  register struct zip		     *self;
-  register zip_type_figure	     *figure;
-  register char			     *name;
-  register zip_type_image	      image;
-  register zip_type_figure	      peer;
+long zip__Create_Figure(struct zip *self, zip_type_figure *figure, char *name, long type, zip_type_image image, zip_type_figure peer)
   {
   register int			      status = zip_ok;
   register zip_type_figure	      peer_ptr = peer;
@@ -185,10 +179,7 @@ zip__Create_Figure( self, figure, name, type, image, peer )
   return status;
   }
 
-long
-zip__Destroy_Figure( self, figure )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
+long zip__Destroy_Figure(struct zip *self, zip_type_figure figure)
   {
   register int			      status = zip_ok;
 
@@ -217,10 +208,7 @@ zip__Destroy_Figure( self, figure )
   return status;
   }
 
-long
-zip__Hook_Figure( self, figure, peer_figure )
-  register struct zip		     *self;
-  register zip_type_figure	      figure,  peer_figure;
+long zip__Hook_Figure(struct zip *self, zip_type_figure figure, zip_type_figure peer_figure)
   {
   register int				  status = zip_ok;
 
@@ -246,10 +234,7 @@ zip__Hook_Figure( self, figure, peer_figure )
   return status;
   }
 
-long
-zip__Unhook_Figure( self, figure )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
+long zip__Unhook_Figure(struct zip *self, zip_type_figure figure)
   {
   register int			      status = zip_ok;
   register zip_type_figure	      figure_ptr;
@@ -279,11 +264,7 @@ zip__Unhook_Figure( self, figure )
   return status;
   }
 
-long
-zip__Set_Figure_Name( self, figure, name )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
-  register char			     *name;
+long zip__Set_Figure_Name(struct zip *self, zip_type_figure figure, char *name)
   {
   register int			      status = zip_ok;
   zip_type_figure		      duplicate;
@@ -333,11 +314,7 @@ name, figure->zip_figure_image->zip_image_stream->zip_stream_name,duplicate->zip
   return status;
   }
 
-long
-zip__Set_Figure_Text( self, figure, text )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
-  register char			     *text;
+long zip__Set_Figure_Text(struct zip *self, zip_type_figure figure, char *text)
   {
   register int			      status = zip_ok;
 
@@ -361,11 +338,7 @@ zip__Set_Figure_Text( self, figure, text )
   return status;
   }
 
-long
-zip__Set_Figure_Pattern( self, figure, pattern )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
-  register char			      pattern;
+long zip__Set_Figure_Pattern(struct zip *self, zip_type_figure figure, char pattern)
   {
   register int			      status = zip_ok;
 
@@ -388,11 +361,7 @@ zip__Set_Figure_Pattern( self, figure, pattern )
   return status;
   }
 
-long
-zip__Set_Figure_Shade( self, figure, shade )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
-  register long			      shade;
+long zip__Set_Figure_Shade(struct zip *self, zip_type_figure figure, long shade)
   {
   register int			      status = zip_ok;
 
@@ -412,11 +381,7 @@ zip__Set_Figure_Shade( self, figure, shade )
   return status;
   }
 
-long
-zip__Set_Figure_Font( self, figure, name )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
-  register char			     *name;
+long zip__Set_Figure_Font(struct zip *self, zip_type_figure figure, char *name)
   {
   register int			     status = zip_ok;
   short				     font = NULL;
@@ -443,10 +408,7 @@ zip__Set_Figure_Font( self, figure, name )
   return status;
   }
 
-long
-zip__Set_Figure_Mode( self, figure, mode )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
+long zip__Set_Figure_Mode(struct zip *self, zip_type_figure figure, long mode)
   {
   register int			      status = zip_ok;
 
@@ -484,11 +446,7 @@ zip__Set_Figure_Mode( self, figure, mode )
   return status;
   }
 
-long
-zip__Set_Figure_Line_Width( self, figure, width )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
-  register long			      width;
+long zip__Set_Figure_Line_Width(struct zip *self, zip_type_figure figure, long width)
   {
   register int			      status = zip_ok;
 
@@ -507,13 +465,7 @@ zip__Set_Figure_Line_Width( self, figure, width )
   return status;
   }
 
-long
-zip__Set_Figure_Line_Dash( self, figure, pattern, offset, type )
-  register struct zip			*self;
-  register zip_type_figure		figure;
-  register char				*pattern;
-  register int				offset;
-  register short			type;
+long zip__Set_Figure_Line_Dash(struct zip *self, zip_type_figure figure, char *pattern, int offset, short type)
   {
   register int			      status = zip_ok;
 
@@ -537,11 +489,7 @@ zip__Set_Figure_Line_Dash( self, figure, pattern, offset, type )
       return status;
   }
 
-long
-zip__Set_Figure_Line_Cap( self, figure, cap )
-  register struct zip			*self;
-  register zip_type_figure		figure;
-  register short			cap;
+long zip__Set_Figure_Line_Cap(struct zip *self, zip_type_figure figure, short cap)
   {
   register int			      status = zip_ok;
 
@@ -558,11 +506,7 @@ zip__Set_Figure_Line_Cap( self, figure, cap )
       return status;
   }
 
-long
-zip__Set_Figure_Line_Join( self, figure, join )
-  register struct zip			*self;
-  register zip_type_figure		figure;
-  register short			join;
+long zip__Set_Figure_Line_Join(struct zip *self, zip_type_figure figure, short join)
   {
   register int			      status = zip_ok;
 
@@ -579,11 +523,7 @@ zip__Set_Figure_Line_Join( self, figure, join )
       return status;
   }
 
-long
-zip__Set_Figure_Line_Color( self, figure, red, green, blue )
-  register struct zip			*self;
-  register zip_type_figure		figure;
-  register double			red, green, blue;
+long zip__Set_Figure_Line_Color(struct zip *self, zip_type_figure figure, double red, double green, double blue)
   {
   register int			      status = zip_ok;
 
@@ -611,11 +551,7 @@ zip__Set_Figure_Line_Color( self, figure, red, green, blue )
       return status;
   }
 
-long
-zip__Set_Figure_FillFG_Color( self, figure, red, green, blue )
-  register struct zip			*self;
-  register zip_type_figure		figure;
-  register double			red, green, blue;
+long zip__Set_Figure_FillFG_Color(struct zip *self, zip_type_figure figure, double red, double green, double blue)
   {
   register int			      status = zip_ok;
 
@@ -643,11 +579,7 @@ zip__Set_Figure_FillFG_Color( self, figure, red, green, blue )
       return status;
   }
 
-long
-zip__Set_Figure_FillBG_Color( self, figure, red, green, blue )
-  register struct zip			*self;
-  register zip_type_figure		figure;
-  register double			red, green, blue;
+long zip__Set_Figure_FillBG_Color(struct zip *self, zip_type_figure figure, double red, double green, double blue)
   {
   register int			      status = zip_ok;
 
@@ -675,10 +607,7 @@ zip__Set_Figure_FillBG_Color( self, figure, red, green, blue )
       return status;
   }
 
-long
-zip__Set_Figure_Point( self, figure, point, x, y )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
+long zip__Set_Figure_Point(struct zip *self, zip_type_figure figure, long point, zip_type_point x, zip_type_point y)
   {
   register int			      status = zip_ok;
 
@@ -695,10 +624,7 @@ zip__Set_Figure_Point( self, figure, point, x, y )
   return status;
   }
 
-long
-zip__Adjust_Figure_Point_Suite( self, figure, x_delta, y_delta )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
+long zip__Adjust_Figure_Point_Suite(struct zip *self, zip_type_figure figure, zip_type_point x_delta, zip_type_point y_delta)
   {
   register int			      status = zip_ok;
 
@@ -715,41 +641,26 @@ zip__Adjust_Figure_Point_Suite( self, figure, x_delta, y_delta )
   return status;
   }
 
-long
-zip__Change_Figure_Point( self, figure, old_x, old_y, new_x, new_y )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
-  register long			      old_x, old_y, new_x, new_y;
+long zip__Change_Figure_Point(struct zip *self, zip_type_figure figure, long old_x, long old_y, long new_x, long new_y)
   {
     SetStreamModified;
 return  zip_failure;/*===*/
   }
 
-long
-zip__Remove_Figure_Point( self, figure, old_x, old_y )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
-  register long			      old_x, old_y;
+long zip__Remove_Figure_Point(struct zip *self, zip_type_figure figure, long old_x, long old_y)
   {
     SetStreamModified;
 return  zip_failure;/*===*/
   }
 
-long
-zip__Add_Figure_Point( self, figure, new_x, new_y )
-  register struct zip		     *self;
-  register zip_type_figure	      figure;
-  register long			      new_x, new_y;
+long zip__Add_Figure_Point(struct zip *self, zip_type_figure figure, long new_x, long new_y)
   {
     SetStreamModified;
 return  zip_failure;/*===*/
   }
 
 
-struct zip_figure *
-zip__Figure( self, name )
-  register struct zip		     *self;
-  register char			     *name;
+struct zip_figure * zip__Figure(struct zip *self, char *name)
   {
   zip_type_figure		      figure = NULL;
   register zip_type_stream_chain      stream_link = StreamAnchor;
@@ -768,11 +679,7 @@ zip__Figure( self, name )
   return figure;
   }
 
-struct zip_figure *
-zip__Image_Figure( self, image, name )
-  register struct zip		     *self;
-  register struct zip_image	     *image;
-  register char			     *name;
+struct zip_figure * zip__Image_Figure(struct zip *self, struct zip_image *image, char *name)
   {
   zip_type_figure		      figure = NULL;
 
@@ -784,11 +691,7 @@ zip__Image_Figure( self, image, name )
   return figure;
   }
 
-struct zip_figure *
-zip__Stream_Figure( self, stream, name )
-  register struct zip		     *self;
-  register struct zip_stream	     *stream;
-  register char			     *name;
+struct zip_figure * zip__Stream_Figure(struct zip *self, struct zip_stream *stream, char *name)
   {
   zip_type_figure		      figure = NULL;
 
@@ -800,10 +703,7 @@ zip__Stream_Figure( self, stream, name )
   return figure;
   }
 
-long
-zip__Allocate_Figure_Points_Vector( self, anchor )
-  register struct zip		     *self;
-  register zip_type_point_pairs	     *anchor;
+long zip__Allocate_Figure_Points_Vector(struct zip *self, zip_type_point_pairs *anchor)
   {
   register int			      status = zip_ok;
 
@@ -819,10 +719,7 @@ zip__Allocate_Figure_Points_Vector( self, anchor )
   }
 
 
-int
-zip__Enlarge_Figure_Points_Vector( self, anchor )
-  register struct zip		     *self;
-  register zip_type_point_pairs	     *anchor;
+long zip__Enlarge_Figure_Points_Vector(struct zip *self, zip_type_point_pairs *anchor)
   {
   register int			      status = zip_ok;
 

@@ -132,6 +132,10 @@ END-SPECIFICATION  ************************************************************/
 #include "zip.ih"
 #include <string.h>
 #include <stdlib.h>
+static int Allocate_Image();
+static int Free_Image();
+static int Propagate_Image_Stream_Ptr();
+static int ZIP_Balance_Image_Extrema();
 
 /* M2: zip.do cross-file, no header declares these (defined zipd000.c) */
 extern int symtab_delete();
@@ -149,12 +153,7 @@ static Free_Image();
 static Propagate_Image_Stream_Ptr();
 static int Adjust_Inferior_Image_Point_Suite();
 
-static
-Allocate_Image( self, stream, image, name )
-  register struct zip		     *self;
-  register struct zip_stream	     *stream;
-  register struct zip_image	    **image;
-  register char			     *name;
+static Allocate_Image(struct zip *self, struct zip_stream *stream, struct zip_image **image, char *name)
   {
   register int			      status = zip_ok;
 
@@ -178,13 +177,7 @@ Allocate_Image( self, stream, image, name )
   return  status;
   }
 
-long
-zip__Create_Peer_Image( self, image, name, stream, peer )
-  register struct zip		     *self;
-  register struct zip_image	    **image;
-  register char			     *name;
-  register struct zip_stream	     *stream;
-  register struct zip_image	     *peer;
+long zip__Create_Peer_Image(struct zip *self, zip_type_image *image, char *name, zip_type_stream stream, zip_type_image peer)
   {
   register long			      status = zip_success;
   register zip_type_image	      peer_ptr = peer;
@@ -211,13 +204,7 @@ zip__Create_Peer_Image( self, image, name, stream, peer )
   return status;
   }
 
-long
-zip__Create_Inferior_Image( self, image, name, stream, superior )
-  register struct zip		     *self;
-  register struct zip_image	    **image;
-  register char			     *name;
-  register struct zip_stream	     *stream;
-  register struct zip_image	     *superior;
+long zip__Create_Inferior_Image(struct zip *self, zip_type_image *image, char *name, zip_type_stream stream, zip_type_image superior)
   {
   register long			      status = zip_success;
   register zip_type_image	      superior_ptr = superior, image_ptr;
@@ -261,10 +248,7 @@ zip__Create_Inferior_Image( self, image, name, stream, superior )
   return status;
   }
 
-long
-zip__Destroy_Image( self, image )
-  register struct zip		     *self;
-  register struct zip_image	     *image;
+long zip__Destroy_Image(struct zip *self, zip_type_image image)
   {
   register int			      status = zip_success;
   register zip_type_figure	      figure, figure_ptr;
@@ -291,10 +275,7 @@ zip__Destroy_Image( self, image )
   return status;
   }
 
-static int
-Destroy_Inferior_Image( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+static int Destroy_Inferior_Image(struct zip *self, zip_type_image image)
   {
   register int			      status = zip_success;
   register zip_type_figure	      figure_ptr, figure;
@@ -318,10 +299,7 @@ Destroy_Inferior_Image( self, image )
   return  status;
   }
 
-static
-Free_Image( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+static Free_Image(struct zip *self, zip_type_image image)
   {
   IN(Free_Image);
   if ( image->zip_image_name )
@@ -339,10 +317,7 @@ Free_Image( self, image )
   OUT(Free_Image);
   }
 
-long /*=== HOOK s/b in EDITING module???  ====*/
-zip__Hook_Peer_Image( self, image, peer_image )
-  register struct zip		     *self;
-  register struct zip_image	     *image, *peer_image;
+long zip__Hook_Peer_Image(struct zip *self, zip_type_image image, zip_type_image peer_image)
   {
   register int			      status = zip_success;
 
@@ -373,10 +348,7 @@ zip__Hook_Peer_Image( self, image, peer_image )
   return status;
   }
 
-long
-zip__Hook_Inferior_Image( self, image, superior_image )
-  register struct zip		     *self;
-  register struct zip_image	     *image, *superior_image;
+long zip__Hook_Inferior_Image(struct zip *self, zip_type_image image, zip_type_image superior_image)
   {
   register int			      status = zip_success;
 
@@ -407,10 +379,7 @@ zip__Hook_Inferior_Image( self, image, superior_image )
   return status;
   }
 
-static
-Propagate_Image_Stream_Ptr( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+static Propagate_Image_Stream_Ptr(struct zip *self, zip_type_image image)
   {
   register zip_type_image	      image_ptr;
   register zip_type_image	      superior_image, peer_image;
@@ -429,10 +398,7 @@ Propagate_Image_Stream_Ptr( self, image )
   return zip_success;
   }
 
-long
-zip__Unhook_Image( self, image )
-  register struct zip		     *self;
-  register struct zip_image	     *image;
+long zip__Unhook_Image(struct zip *self, zip_type_image image)
   {
   register struct zip_image	     *image_ptr;
   register int			      status = zip_success;
@@ -479,11 +445,7 @@ zip__Unhook_Image( self, image )
   return status;
   }
 
-long
-zip__Set_Image_Name( self, image, name )
-  register struct zip		     *self;
-  register struct zip_image	     *image;
-  register char			     *name;
+long zip__Set_Image_Name(struct zip *self, zip_type_image image, char *name)
   {
   register int			      status = zip_success;
   zip_type_image		      duplicate;
@@ -535,11 +497,7 @@ image->zip_image_stream->zip_stream_name);
   return status;
   }
 
-long
-zip__Set_Image_Text( self, image, text )
-  register struct zip		     *self;
-  register struct zip_image	     *image;
-  register char			     *text;
+long zip__Set_Image_Text(struct zip *self, zip_type_image image, char *text)
   {
   register int			      status = zip_success;
 
@@ -562,10 +520,7 @@ zip__Set_Image_Text( self, image, text )
   return status;
   }
 
-long
-zip__Set_Image_Pattern( self, image, pattern )
-  register struct zip		     *self;
-  register struct zip_image	     *image;
+long zip__Set_Image_Pattern(struct zip *self, zip_type_image image, char pattern)
   {
   register int			      status = zip_success;
 
@@ -584,10 +539,7 @@ zip__Set_Image_Pattern( self, image, pattern )
   return status;
   }
 
-long
-zip__Set_Image_Shade( self, image, shade )
-  register struct zip		     *self;
-  register struct zip_image	     *image;
+long zip__Set_Image_Shade(struct zip *self, zip_type_image image, long shade)
   {
   register int			      status = zip_success;
 
@@ -606,11 +558,7 @@ zip__Set_Image_Shade( self, image, shade )
   return status;
   }
 
-long
-zip__Set_Image_Font( self, image, font_name )
-  register struct zip		     *self;
-  register struct zip_image	     *image;
-  register char			     *font_name;
+long zip__Set_Image_Font(struct zip *self, zip_type_image image, char *font_name)
   {
   register int			      status = zip_success;
 
@@ -630,11 +578,7 @@ zip__Set_Image_Font( self, image, font_name )
   return status;
   }
 
-long
-zip__Set_Image_Line_Width( self, image, width )
-  register struct zip		     *self;
-  register struct zip_image	     *image;
-  register long			      width;
+long zip__Set_Image_Line_Width(struct zip *self, zip_type_image image, long width)
   {
   register int			      status = zip_success;
 
@@ -652,13 +596,7 @@ zip__Set_Image_Line_Width( self, image, width )
   return status;
   }
 
-long
-zip__Set_Image_Line_Dash( self, image, pattern, offset, type )
-  register struct zip			*self;
-  register zip_type_image		image;
-  register char				*pattern;
-  register int				offset;
-  register short			type;
+long zip__Set_Image_Line_Dash(struct zip *self, zip_type_image image, char *pattern, int offset, short type)
   {
   register int			      status = zip_ok;
 
@@ -682,11 +620,7 @@ zip__Set_Image_Line_Dash( self, image, pattern, offset, type )
       return status;
   }
 
-long
-zip__Set_Image_Line_Cap( self, image, cap )
-  register struct zip			*self;
-  register zip_type_image		image;
-  register short			cap;
+long zip__Set_Image_Line_Cap(struct zip *self, zip_type_image image, short cap)
   {
   register int			      status = zip_ok;
 
@@ -703,11 +637,7 @@ zip__Set_Image_Line_Cap( self, image, cap )
       return status;
   }
 
-long
-zip__Set_Image_Line_Join( self, image, join )
-  register struct zip			*self;
-  register zip_type_image		image;
-  register short			join;
+long zip__Set_Image_Line_Join(struct zip *self, zip_type_image image, short join)
   {
   register int			      status = zip_ok;
 
@@ -724,11 +654,7 @@ zip__Set_Image_Line_Join( self, image, join )
       return status;
   }
 
-long
-zip__Set_Image_Line_Color( self, image, red, green, blue )
-  register struct zip			*self;
-  register zip_type_image		image;
-  register double			red, green, blue;
+long zip__Set_Image_Line_Color(struct zip *self, zip_type_image image, double red, double green, double blue)
   {
   register int			      status = zip_ok;
 
@@ -756,11 +682,7 @@ zip__Set_Image_Line_Color( self, image, red, green, blue )
       return status;
   }
 
-long
-zip__Set_Image_FillFG_Color( self, image, red, green, blue )
-  register struct zip			*self;
-  register zip_type_image		image;
-  register double			red, green, blue;
+long zip__Set_Image_FillFG_Color(struct zip *self, zip_type_image image, double red, double green, double blue)
   {
   register int			      status = zip_ok;
 
@@ -788,11 +710,7 @@ zip__Set_Image_FillFG_Color( self, image, red, green, blue )
       return status;
   }
 
-long
-zip__Set_Image_FillBG_Color( self, image, red, green, blue )
-  register struct zip			*self;
-  register zip_type_image		image;
-  register double			red, green, blue;
+long zip__Set_Image_FillBG_Color(struct zip *self, zip_type_image image, double red, double green, double blue)
   {
   register int			      status = zip_ok;
 
@@ -820,10 +738,7 @@ zip__Set_Image_FillBG_Color( self, image, red, green, blue )
       return status;
   }
 
-long
-zip__Adjust_Image_Point_Suite( self, image, x_delta, y_delta )
-  register struct zip		     *self;
-  register struct zip_image	     *image;
+long zip__Adjust_Image_Point_Suite(struct zip *self, zip_type_image image, zip_type_point x_delta, zip_type_point y_delta)
   {
   register int			      status = zip_success;
   register zip_type_figure	      figure_ptr;
@@ -848,11 +763,7 @@ zip__Adjust_Image_Point_Suite( self, image, x_delta, y_delta )
   return status;
   }
 
-static int
-Adjust_Inferior_Image_Point_Suite( self, image, x_delta, y_delta )
-  register struct zip		     *self;
-  register zip_type_image	      image;
-  register int			      x_delta, y_delta;
+static int Adjust_Inferior_Image_Point_Suite(struct zip *self, zip_type_image image, int x_delta, int y_delta)
   {
   register int			      status = zip_success;
   register zip_type_figure	      figure_ptr;
@@ -874,10 +785,7 @@ Adjust_Inferior_Image_Point_Suite( self, image, x_delta, y_delta )
   return status;
   }
 
-struct zip_image *
-zip__Image( self, name )
-  register struct zip		     *self;
-  register char			     *name;
+struct zip_image * zip__Image(struct zip *self, char *name)
   {
   zip_type_image		      image = NULL;
   register zip_type_stream_chain      stream_link =
@@ -898,11 +806,7 @@ zip__Image( self, name )
   return  image;
   }
 
-struct zip_image *
-zip__Stream_Image( self, stream, name )
-  register struct zip		     *self;
-  register struct zip_stream	     *stream;
-  register char			     *name;
+struct zip_image * zip__Stream_Image(struct zip *self, zip_type_stream stream, char *name)
   {
   zip_type_image		      image = NULL;
   register int			      status = zip_success;
@@ -916,10 +820,7 @@ zip__Stream_Image( self, stream, name )
   return  image;
   }
 
-struct zip_image *
-zip__Next_Image( self, image )
-  register struct zip		     *self;
-  register struct zip_image	     *image;
+struct zip_image * zip__Next_Image(struct zip *self, zip_type_image image)
   {
   register zip_type_image	      next_image = NULL;
 
@@ -941,10 +842,7 @@ zip__Next_Image( self, image )
   return  next_image;
   }
 
- zip_type_image 
-zip__Image_Left_Peer( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+struct zip_image * zip__Image_Left_Peer(struct zip *self, zip_type_image image)
   {
   register zip_type_image	      peer = NULL, candidate;
 
@@ -962,11 +860,7 @@ zip__Image_Left_Peer( self, image )
   return  peer;
   }
 
-int
-zip__Set_Image_Extrema( self, image, x, y )
-  register struct zip		     *self;
-  register zip_type_image	      image;
-  register zip_type_point	      x, y;
+long zip__Set_Image_Extrema(struct zip *self, zip_type_image image, zip_type_point x, zip_type_point y)
   {
   IN(zip__Set_Image_Extrema);
   if ( x < image->zip_image_least_x )
@@ -996,10 +890,7 @@ zip__Set_Image_Extrema( self, image, x, y )
   }
 
 /*===
-static int
-ZIP_Balance_Image_Extrema( self, image )
-  register struct zip		     *self;
-  register zip_type_image		  image;
+static int ZIP_Balance_Image_Extrema(struct zip *self, zip_type_image image)
   {
   IN(ZIP_Balance_Image_Extrema);
   if ( abs(image->zip_image_least_x) < abs(image->zip_image_greatest_x) )

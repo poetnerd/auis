@@ -257,31 +257,31 @@ END-SPECIFICATION  ************************************************************/
 #define  FigureSelection		2
 #define  ImageSelection			3
 
-zip_type_figure				zipedit_Next_Selected_Figure();
+zip_type_figure				zipedit_Next_Selected_Figure(struct zipedit *self, zip_type_pane pane, zip_type_figure figure);
 
 /* M2: internal zipedit.do cross-file functions, no other header declares
    these (same pattern as the pre-existing zipedit_Next_Selected_Figure
    declaration above) */
-int					zipedit_Cancel_Enclosure();
-int					zipedit_Display_Background_Pane();
-int					zipedit_Enclose_Figure();
-int					zipedit_Expose_Figure_Palette();
-int					zipedit_Expose_Font_Palette();
-int					zipedit_Expose_Selection_Menu();
-int					zipedit_Expose_Shade_Palette();
-int					zipedit_Handle_Figure_Palette_Hit();
-int					zipedit_Handle_Font_Bold_Selection();
-int					zipedit_Handle_Font_Family_Selection();
-int					zipedit_Handle_Font_Height_Selection();
-int					zipedit_Handle_Font_Italic_Selection();
-int					zipedit_Handle_Font_Sample_Selection();
-int					zipedit_Handle_Shade_Palette_Hit();
-int					zipedit_Hide_Figure_Palette();
-int					zipedit_Hide_Font_Palette();
-int					zipedit_Hide_Selection_Menu();
-int					zipedit_Hide_Shade_Palette();
-int					zipedit_Prepare_Editing_Control();
-int					zipedit_Redisplay_Edit_Pane();
-int					zipedit_Reset_Editing_Control();
-int					zipedit_Reset_Editing_Selection();
-int					Show_Enclosure();
+int					zipedit_Cancel_Enclosure(struct zipedit *self, zip_type_pane pane);
+int					zipedit_Display_Background_Pane(struct zipedit *self, zip_type_pane pane);
+int					zipedit_Enclose_Figure(struct zipedit *self, zip_type_figure figure, zip_type_pane pane);
+int					zipedit_Expose_Figure_Palette(struct zipedit *self, zip_type_pane pane);
+int					zipedit_Expose_Font_Palette(struct zipedit *self, zip_type_pane pane);
+int					zipedit_Expose_Selection_Menu(struct zipedit *self);
+int					zipedit_Expose_Shade_Palette(struct zipedit *self, zip_type_pane pane);
+int					zipedit_Handle_Figure_Palette_Hit(struct zipedit *self, zip_type_pane pane, int action, int x, int y, int clicks);
+int					zipedit_Handle_Font_Bold_Selection(struct zipedit *self, zip_type_pane pane, enum view_MouseAction action, long x, long y, long clicks);
+int					zipedit_Handle_Font_Family_Selection(struct zipedit *self, zip_type_pane pane, enum view_MouseAction action, long x, long y, long clicks);
+int					zipedit_Handle_Font_Height_Selection(struct zipedit *self, zip_type_pane pane, enum view_MouseAction action, long x, long y, long clicks);
+int					zipedit_Handle_Font_Italic_Selection(struct zipedit *self, zip_type_pane pane, int action, int x, int y, int clicks);
+int					zipedit_Handle_Font_Sample_Selection(struct zipedit *self, zip_type_pane pane, enum view_MouseAction action, long x, long y, long clicks);
+int					zipedit_Handle_Shade_Palette_Hit(struct zipedit *self, zip_type_pane pane, enum view_MouseAction action, long x, long y, long clicks);
+int					zipedit_Hide_Figure_Palette(struct zipedit *self, zip_type_pane pane);
+int					zipedit_Hide_Font_Palette(struct zipedit *self, zip_type_pane pane);
+int					zipedit_Hide_Selection_Menu(struct zipedit *self);
+int					zipedit_Hide_Shade_Palette(struct zipedit *self, zip_type_pane pane);
+int					zipedit_Prepare_Editing_Control(struct zipedit *self, zip_type_pane pane);
+int					zipedit_Redisplay_Edit_Pane(struct zipedit *self, zip_type_pane pane);
+int					zipedit_Reset_Editing_Control(struct zipedit *self, zip_type_pane pane);
+int					zipedit_Reset_Editing_Selection(struct zipedit *self, zip_type_pane pane);
+int					Show_Enclosure(struct zipedit *self, zip_type_pane pane);

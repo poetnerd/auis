@@ -138,52 +138,41 @@ END-SPECIFICATION  ************************************************************/
 #include <zipobj.ih>
 #include <zipopath.eh>
 #include <stdlib.h>
+static int Draw( struct zipopath *self, zip_type_figure figure, zip_type_pane pane, short action );
+static boolean intersect();
+static long same();
+static long signum();
 
-static Draw();
+static int Draw( struct zipopath *self, zip_type_figure figure, zip_type_pane pane, short action );
 
-char
-zipopath__Object_Icon( self )
-  register struct zipopath		 *self;
+char zipopath__Object_Icon(struct zipopath *self)
   {
   IN(zipopath__Object_Icon);
   OUT(zipopath__Object_Icon);
   return  'F';
   }
 
-char
-zipopath__Object_Icon_Cursor( self )
-  register struct zipopath		 *self;
+char zipopath__Object_Icon_Cursor(struct zipopath *self)
   {
   IN(zipopath__Object_Icon_Cursor);
   OUT(zipopath__Object_Icon_Cursor);
   return  'L';
   }
 
-char
-zipopath__Object_Datastream_Code( self )
-  register struct zipopath		 *self;
+char zipopath__Object_Datastream_Code(struct zipopath *self)
   {
   IN(zipopath__Object_Datastream_Code);
   OUT(zipopath__Object_Datastream_Code);
   return  'H';
   }
 
-long
-zipopath__Show_Object_Properties( self, pane, figure )
-  register struct zipopath		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
+long zipopath__Show_Object_Properties(struct zipopath *self, zip_type_pane pane, zip_type_figure figure)
   {
   zipview_Announce( View, "Draw Path from Start to Finish in free-form." );
   return  zip_ok;
   }
 
-long
-zipopath__Build_Object( self, pane, action, x, y, clicks, X, Y )
-  register struct zipopath		 *self;
-  register zip_type_pane		  pane;
-  register long				  action, x, y, clicks;
-  register zip_type_point		  X, Y;
+long zipopath__Build_Object(struct zipopath *self, zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y)
   {
   register long				  status = zip_ok;
   zip_type_figure					  position = NULL;
@@ -237,11 +226,7 @@ zipopath__Build_Object( self, pane, action, x, y, clicks, X, Y )
   return  status;
   }
 
-long
-zipopath__Draw_Object( self, figure, pane )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipopath__Draw_Object(struct zipopath *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -251,11 +236,7 @@ zipopath__Draw_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipopath__Clear_Object( self, figure, pane )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipopath__Clear_Object(struct zipopath *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -266,12 +247,7 @@ zipopath__Clear_Object( self, figure, pane )
   return  status;
   }
 
-static
-Draw( self, figure, pane, action )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register short			  action;
+static Draw(struct zipopath *self, zip_type_figure figure, zip_type_pane pane, short action)
   {
   register long				  status = zip_ok, i, count, id;
   register unsigned char		  shade, allocated = false,
@@ -354,11 +330,7 @@ Draw( self, figure, pane, action )
   return  status;
   }
 
-long
-zipopath__Print_Object( self, figure, pane )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipopath__Print_Object(struct zipopath *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  pc, status = zip_ok;
   zip_type_point_pairs	    		  points = NULL;
@@ -387,12 +359,7 @@ zipopath__Print_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipopath__Within_Object( self, figure, pane, x, y )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long zipopath__Within_Object(struct zipopath *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register long				  distance = -1,
 					  X1, Y1, X2, Y2,
@@ -417,12 +384,7 @@ zipopath__Within_Object( self, figure, pane, x, y )
   return  distance;
   }
 
-long
-zipopath__Proximate_Object_Points( self, figure, pane, x, y )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long zipopath__Proximate_Object_Points(struct zipopath *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register int				  i, point = 0;
 
@@ -447,12 +409,7 @@ zipopath__Proximate_Object_Points( self, figure, pane, x, y )
   return  point;
   }
 
-boolean
-zipopath__Enclosed_Object( self, figure, pane, x, y, w, h )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y, w, h;
+boolean zipopath__Enclosed_Object(struct zipopath *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y, zip_type_pixel w, zip_type_pixel h)
   {
   register boolean			  enclosed = true;
   register long				  i, right = x + w, bottom = y + h;
@@ -473,12 +430,7 @@ zipopath__Enclosed_Object( self, figure, pane, x, y, w, h )
   return  enclosed;
   }
 
-long
-zipopath__Object_Enclosure( self, figure, pane, x, y, w, h )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		 *x, *y, *w, *h;
+long zipopath__Object_Enclosure(struct zipopath *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *x, zip_type_pixel *y, zip_type_pixel *w, zip_type_pixel *h)
   {
   register zip_type_pixel		  max_x, min_x, max_y, min_y, X, Y;
   register long				  i;
@@ -505,11 +457,7 @@ zipopath__Object_Enclosure( self, figure, pane, x, y, w, h )
   return  zip_ok;
   }
 
-long
-zipopath__Highlight_Object_Points( self, figure, pane )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipopath__Highlight_Object_Points(struct zipopath *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  i, status = zip_ok;
 
@@ -521,11 +469,7 @@ zipopath__Highlight_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipopath__Normalize_Object_Points( self, figure, pane )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipopath__Normalize_Object_Points(struct zipopath *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  i, status = zip_ok;
 
@@ -537,11 +481,7 @@ zipopath__Normalize_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipopath__Expose_Object_Points( self, figure, pane )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipopath__Expose_Object_Points(struct zipopath *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  i, status = zip_ok;
 
@@ -553,11 +493,7 @@ zipopath__Expose_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipopath__Hide_Object_Points( self, figure, pane )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipopath__Hide_Object_Points(struct zipopath *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  i, status = zip_ok;
 
@@ -569,12 +505,7 @@ zipopath__Hide_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipopath__Set_Object_Point( self, figure, point, x, y )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register int				  point;
-  register zip_type_point		  x, y;
+long zipopath__Set_Object_Point(struct zipopath *self, zip_type_figure figure, long point, zip_type_point x, zip_type_point y)
   {
   register long				  status = zip_ok;
 
@@ -644,12 +575,7 @@ zipopath__Set_Object_Point( self, figure, point, x, y )
   return  status;
   }
 
-long
-zipopath__Object_Point( self, figure, point, x, y )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register long				  point;
-  register zip_type_point		  *x, *y;
+long zipopath__Object_Point(struct zipopath *self, zip_type_figure figure, long point, zip_type_point *x, zip_type_point *y)
   {
   register long				  status = zip_ok;
 
@@ -664,11 +590,7 @@ zipopath__Object_Point( self, figure, point, x, y )
   return  status;
   }
 
-long
-zipopath__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_point		  x_delta, y_delta;
+long zipopath__Adjust_Object_Point_Suite(struct zipopath *self, zip_type_figure figure, zip_type_point x_delta, zip_type_point y_delta)
   {
   register long				  i, status = zip_ok;
 
@@ -691,10 +613,7 @@ zipopath__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
   return  status;
   }
 
-long
-zipopath__Set_Object_Shade( self, figure, shade )
-  register struct zipopath		 *self;
-  register zip_type_figure		  figure;
+long zipopath__Set_Object_Shade(struct zipopath *self, zip_type_figure figure, long shade)
   {
   IN(zipopath__Set_Object_Shade);
   figure->zip_figure_fill.zip_figure_shade = shade;
@@ -706,18 +625,14 @@ zipopath__Set_Object_Shade( self, figure, shade )
   return  zip_ok;
   }
 
-static long
-signum(a)
-register long a;
+static long signum(long a)
 {
   if (a < 0) return -1;
   else if (a > 0) return 1;
   else return 0;
 }
 
-static long
-same( p1, p2, p3, p4 )
-register zip_type_point_pair		p1, p2, p3, p4;
+static long same(zip_type_point_pair p1, zip_type_point_pair p2, zip_type_point_pair p3, zip_type_point_pair p4)
 {
 register long				dx, dx1, dx2, dy, dy1, dy2;
 
@@ -730,9 +645,7 @@ register long				dx, dx1, dx2, dy, dy1, dy2;
   return (signum(dx*dy1 - dy*dx1)*signum(dx*dy2 - dy*dx2 ));
 }
 
-static boolean
-intersect( p1, p2, p3, p4 )
-register zip_type_point_pair		p1, p2, p3, p4;
+static boolean intersect(zip_type_point_pair p1, zip_type_point_pair p2, zip_type_point_pair p3, zip_type_point_pair p4)
 {
 register boolean			status = FALSE;
 
@@ -741,12 +654,7 @@ register boolean			status = FALSE;
 }
 
 /* Closed poly-lines need to be normalized, to work in all cases */
-boolean
-zipopath__Contains( self, figure, pane, x, y )
-register struct	zipopath		*self;
-register zip_type_figure		figure;
-register zip_type_pane			pane;
-register zip_type_pixel			x,y;
+boolean zipopath__Contains(struct zipopath *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
 {
 register long				x1, y1, x2, y2, i, j = 0, count = 0;
 register boolean			status = FALSE;

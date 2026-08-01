@@ -77,7 +77,7 @@ overrides:
 
 classprocedures:
 
-  InitializeObject( struct zipobject *self )		returns boolean;
+  InitializeObject( struct zipoarrow *self )		returns boolean;
 
 data:
 
