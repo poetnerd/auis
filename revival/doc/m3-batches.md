@@ -439,9 +439,49 @@ fully served the pilot's purpose). Former I3 is merged into I1.
 
 ## Wave 7 — contrib (12 directories, 81 files, 2 batches)
 
-- [ ] **C1**: `contrib/zip/lib` (41) — alone, tree-wide gate kept
+- [x] **C1**: `contrib/zip/lib` (41) — alone, tree-wide gate kept
       (tree's known highest-defect-density directory, same as M2's
-      rule for it).
+      rule for it). Full orchestrator pre-diagnosis (one of the four
+      flagged-risky batches).
+
+      **Done 2026-08-01.** First `-pe`/`.eh` rollout for this
+      directory. `ansify --dry-run` matched the pre-diagnosis's 8 DRIFT
+      findings exactly; skip count came in at 15, not the
+      pre-diagnosed 14 (an off-by-one in the prompt's own recount, not
+      a new finding). 2 of 3 pre-ruled DRIFT fixes applied as
+      specified; the third (`zipstatus__FinalizeObject`) was corrected
+      by the delegate after independent verification against
+      `class.c`'s own source — the pre-diagnosis's "simplify `.ch` to
+      empty parens" instruction was wrong (both empty-parens and
+      self-only restatement hardcode to the same 2-param export
+      prototype for `FinalizeObject` specifically; only the `.c` needed
+      widening). All 15 dead-code skips verified and hand-converted. 2
+      more self-type `.ch` typos found (`zipoarrw.ch`/`zipoplin.ch`,
+      same shape as B2 finding 2/AMS2's cluster). Item 8 (stranded
+      forward declarations): 10 real conflicts found across 9 files,
+      including the project's first `float`-typed instance and a
+      block-scope (function-local) stale redeclaration, both new
+      variants of the existing pattern. The mandatory definitive
+      `parse_decl_block` completeness re-scan (flagged in the runbook
+      as required for this directory) found 10 genuine silent misses,
+      including one live class method (`zip__Close_Stream`) invisible
+      to every one of `ansify`'s own reports. Item 4 (installed-header
+      grep) found 23 stale declarations in the installed `zipedit.h`,
+      currently inert (no cross-directory consumer) but fixed anyway.
+      Subtree gate and the tree-wide gate both ran clean twice,
+      independently re-verified by the orchestrator directly (not just
+      trusted from the report) — matched the known
+      `contrib/zip/utility/ltapp.c` 2-error baseline exactly both
+      times. The corrected `FinalizeObject` fix and the 2 new self-type
+      typos were independently confirmed by the orchestrator against
+      `class.c`'s source and the real diffs before commit. Two genuine
+      ~35-year-old bugs found and fixed beyond the typo cluster: a
+      5-method base-class stub silently dropping an argument every
+      real subclass override supplied, and a status-message method pair
+      whose interface never matched its own (never-called) real
+      implementation. See `m3-rollout-runbook.md` findings → C1 and
+      `claude-history/m3-c1-REPORT.md` for full detail. Committed
+      (`869fa824`). **Opens Wave 7.**
 - [ ] **C2**: `contrib/mit/annot` (9), `contrib/zip/utility` (6),
       `contrib/time` (6), `contrib/mit/util` (6), `contrib/srctext/
       html` (3), `contrib/srctext/ptext` (2), `contrib/srctext/ltext`
@@ -452,7 +492,8 @@ fully served the pilot's purpose). Former I3 is merged into I1.
 
 Revised 2026-07-30: 15 sessions total (was 17 — pilot retired into
 I2, I3 merged into I1), across the 7 waves in dependency order.
-13 complete (O1–O4, B1–B3, T1, I1, I2, A1, AMS1, AMS2), 2
-remaining: C1, C2 (Wave 7, the last wave). Tick batches here as they
-complete, same convention as `m1-point10-batches.md`; the runbook's
-own summary gets the one-line rollup per wave, not per batch.
+14 complete (O1–O4, B1–B3, T1, I1, I2, A1, AMS1, AMS2, C1), 1
+remaining: C2 (Wave 7, the last wave — closes M3). Tick batches here as
+they complete, same convention as `m1-point10-batches.md`; the
+runbook's own summary gets the one-line rollup per wave, not per
+batch.

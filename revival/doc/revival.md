@@ -685,6 +685,54 @@ sample:
   just caught here for a second time, and this time affecting the
   class's constructor too.
 
+- **A drawing library's abstract base class silently dropped an
+  argument every one of its real subclasses used.** Five related
+  methods — highlighting, normalizing, exposing, hiding, and printing
+  a figure's selection points — are declared by the drawing library's
+  interface file with two arguments: the figure and the pane it's
+  drawn in. The base class's own versions, meant only as placeholders
+  for figure types that don't override them, took just the figure,
+  silently dropping the pane. Every one of the roughly fifteen real
+  figure types in the library — arcs, rectangles, polygons, arrows,
+  and the rest — override all five and correctly take both arguments;
+  only the never-overridden base placeholders were short. Pre-standard
+  C's calling convention let this go unnoticed for the same reason as
+  the helper function above: a call always supplied both arguments,
+  and the placeholder's body, which does nothing but return a fixed
+  failure code, never looked for the one it lacked. Corrected by
+  giving all five placeholder definitions the same two arguments as
+  the interface and every real override already agreed on.
+
+- **A status-message variant whose interface never matched the code
+  it was calling, and nothing ever called either one.** The same
+  drawing library's status-line class declares two message-issuing
+  methods — one for a raw string, several more for typed variants
+  (a figure, an image, a stream, a pane). The raw-string pair's
+  interface entry took a single string argument, copied from a
+  differently-named sibling method just above it in the same file.
+  Its real implementation instead took two numeric codes and built the
+  string internally, the same shape every one of the typed variants
+  below it uses — not the string-based one it was declared to match.
+  Neither name, under either signature, was ever called anywhere in
+  the source tree: a rare case in this project where a `.ch`-vs-`.c`
+  disagreement isn't a live bug at all, just two halves of a method
+  that was apparently redesigned once, in code, and never updated in
+  its own interface file. Corrected by retyping the interface to match
+  the real, working implementation, the only side with any evidence of
+  intent behind it.
+
+- **Two more copy/paste type typos, in a fifth subsystem.** The same
+  mistake as the six, then three, documented earlier in this list —
+  this time in the drawing library's arrow and polyline figure
+  classes, each declaring its own one-time setup method with its
+  parent class's type instead of its own, both apparently copied from
+  the same line in a shared ancestor file. Both real implementations
+  used the correct type, and each reads a field that only its own
+  class has — which is what confirmed the interface files were wrong
+  rather than the code: neither placeholder type could have compiled
+  against that field at all. Corrected by retyping both declarations
+  to the class they actually belong to.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

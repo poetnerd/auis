@@ -1997,6 +1997,34 @@ above. The difference between "safe" and "broken" is entirely whether
 the real `.c` definition happens to match the inflated count, which
 must be checked per instance, not assumed from the `.ch` shape alone.
 
+#### `FinalizeObject` is not symmetric with `InitializeClass` — found M3 batch C1 (2026-08-01)
+
+`InitializeClass` and `FinalizeObject` look like the same shape (both
+go through the ordinary classproc-emission loop, both get an automatic
+`struct classheader *` prefix) but their *safe* `.ch` forms differ, and
+conflating them produces a wrong fix. Traced directly against
+`class.c` (~line 1146-1153): for `FinalizeObject` specifically, when
+the `.ch`'s restated arg list is empty (`mp->realargtypes == NULL ||
+mp->realargtypes[0] == '\0'`), classpp takes a **special hardcoded
+branch** that emits `struct classheader *, struct CLASSNAME *self` —
+2 params — regardless of whether the `.ch` used true empty parens
+(`FinalizeObject();`) or restated just `self`
+(`FinalizeObject( struct CLASSNAME *self );`); both produce identical
+`realargtypes` state and hit the same branch. `InitializeClass` has no
+such hardcoded branch for the ordinary classproc loop — empty parens
+there really does mean 1 param (`classID` only), and *any* restatement
+(even self-only) genuinely over-counts. **The safe/established `.ch`
+form for `FinalizeObject` is the self-only restatement, not empty
+parens** — confirmed against 11 real precedents tree-wide (`atk/eq/
+eq.c`, `atkams/messages/lib/fldtreev.c`/`mailobjv.c`, and 8 more), all
+using the 2-param form with a self-only-restated `.ch`. A `.ch` whose
+`FinalizeObject` genuinely has only 1 real `.c` param needs the `.c`
+widened to 2 (`classID` unused) — not the `.ch` simplified further to
+empty parens, which would change nothing about the exported prototype
+and leave the arity mismatch in place. (`contrib/zip/lib/zipstat.ch`
+was exactly this case: already correctly self-only-restated; only
+`zipstat.c`'s definition needed widening from 1 param to 2.)
+
 Fixed (B3) by simplifying the 3 broken `.ch` declarations
 (`atk/textobjects/unknownv.ch`'s `InitializeClass`,
 `atk/apt/suite/suiteev.ch`'s `InitializeClass` and `FinalizeObject`)

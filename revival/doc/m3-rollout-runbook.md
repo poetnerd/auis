@@ -83,12 +83,22 @@ Active:
    for, grep the installed header tree for an empty-parens
    declaration of any non-static helper being converted; flag any
    cross-directory header touch prominently in the report.
-5. **Restated-lifecycle-param `.ch` check** (B3): a `.ch` restating
-   `InitializeClass`'s (or both of `FinalizeObject`'s) implicit
-   param(s) over-counts through classpp's ordinary prototype loop —
-   check the real `.c` param count before ruling either way. Known
-   unresolved instances ahead: `fldtreev.ch` (Wave 6), `schedv.ch`/
-   `ltv.ch` (Wave 7).
+5. **Restated-lifecycle-param `.ch` check** (B3; `FinalizeObject`
+   mechanism corrected C1, 2026-08-01): a `.ch` restating
+   `InitializeClass`'s implicit param over-counts through classpp's
+   ordinary prototype loop — check the real `.c` param count before
+   ruling either way. **`FinalizeObject` is a special case, don't
+   apply `InitializeClass`'s empty-parens fix to it**: `class.c`
+   (~line 1146-1153) hardcodes `FinalizeObject`'s exported prototype to
+   2 params (`classID, self`) whenever the `.ch`'s restated arg list is
+   empty, and this fires identically for true empty parens
+   (`FinalizeObject();`) and for a self-only restatement
+   (`FinalizeObject( struct CLASS *self );`) — both resolve to the same
+   final 2-param signature. The established, correct `.ch` form for
+   `FinalizeObject` is the self-only restatement (matches
+   `fldtreev.ch`); if the real `.c` definition only has 1 param, widen
+   the `.c` to 2 (`classID` unused), don't simplify the `.ch` further.
+   Known unresolved instances ahead: `schedv.ch`/`ltv.ch` (Wave 7 C2).
 6. **Concurrent-commit merge check** (B1): if unrelated commits land
    while a batch's review is in progress, spot-check the current
    content of any file both touched before trusting the auto-merge
@@ -127,7 +137,15 @@ Active:
    `foldaux.c`'s `ConsiderResettingDescription`) that never conflict at
    compile time because the two types are never visible together in
    one file — worth noting for completeness but not a Gate-1 blocker;
-   only flag same-file pairs as must-fix.
+   only flag same-file pairs as must-fix. **Narrow-promotion type list
+   broadened C1, 2026-08-01**: `float` also qualifies (promotes to
+   `double` under default argument promotion, same hazard class as
+   `char`/`short`/`Boolean`) — don't assume the list is closed to the
+   three types named so far. **Declaration scope broadened C1**: the
+   grep is file-level and won't distinguish a **block-scope**
+   (function-local) stale redeclaration from a file-top-level one —
+   both are real compile-blocking conflicts if the narrow-param
+   definition is in scope; cross-check block-scope hits too.
 9. **Definitive completeness re-scan for large directories** (AMS1,
    2026-07-31): `ansify`'s own report of what it converted/skipped/
    drifted is not proof of completeness — `parse_decl_block` silently
@@ -148,7 +166,17 @@ Active:
    should use this without question.** Not itself a tool fix — see
    `ansify`'s parser-gap findings entry under AMS1 above for why a
    real `parse_decl_block` rewrite was deliberately deferred instead of
-   attempted.
+   attempted. **Confirmed load-bearing, not belt-and-braces, at C1**
+   (2026-08-01): found 10 genuine silent misses, including one live
+   class method (`zip.ch`'s `Close_Stream`) — zero trace in `ansify`'s
+   own report. Two more parser-gap shapes found, both variants of the
+   same underlying hazard (a K&R declaration block `parse_decl_block`
+   can't parse as "one complete statement per physical line"), not new
+   tool bugs: a multi-line C comment whose continuation lines don't
+   start with `*` (the naive comment-skip check doesn't verify the
+   comment actually closes before the scan resumes), and a single K&R
+   parameter declaration split across two physical lines with no
+   semicolon on the first.
 
 Retired (do NOT re-run; listed so older findings entries below don't
 mislead):
@@ -2003,6 +2031,97 @@ state from `fossil status`/`fossil diff` before continuing, no rework.
 Full detail in `claude-history/m3-ams2-REPORT.md`.
 
 **Wave 6 complete.** M3 remaining: Wave 7 (C1, C2).
+
+### C1 (`contrib/zip/lib`, 41 files, 21 classes, 2026-08-01) — opens Wave 7
+
+One of the four flagged-risky batches (full orchestrator pre-diagnosis,
+no delegate-side Gate 0) — the tree's known highest-defect-density
+directory, same directory M2 singled out for the same reason, and the
+first `-pe`/`.eh` rollout here. Its `.ch` files were already hand-typed
+for M1's `-pi` dispatch back on 2026-07-11 (a real, working live
+inset), which is why this directory's own DRIFT count (8, on 41 files)
+came in low relative to its reputation — that prior session already
+fixed several `.ch`-vs-`.c` bugs while typing it.
+
+`ansify --dry-run` matched the pre-diagnosis's 8 DRIFT findings
+exactly (same functions, same shapes). The skip count came in at 15,
+not the pre-diagnosed 14 — traced to an off-by-one in the prompt's own
+recount of its own findings list, not a new function; all 15 were
+independently verified dead (no `.ch` declaration anywhere, no caller
+anywhere) and hand-converted.
+
+**One of the 3 pre-ruled DRIFT fixes was wrong, caught and corrected
+by the delegate, independently re-confirmed by the orchestrator
+directly against `class.c`'s source before commit — see
+`porting-assessment.md` §17 for the mechanism.** In short:
+`overhead/class/pp/class.c` (~line 1146-1153) hardcodes
+`FinalizeObject`'s exported prototype to 2 params (`classID, self`)
+whenever the `.ch`'s restated arg list is empty — and this fires
+identically whether the `.ch` uses true empty parens (`FinalizeObject
+();`) or restates just `self` (`FinalizeObject( struct CLASS *self
+);`), because the empty-realargtypes hardcoded branch and the
+self-only branch both resolve to the same final signature. The
+pre-diagnosis assumed empty-parens would leave the `.c` at 1 param;
+that's false. The delegate left `zipstat.ch` exactly as it already was
+(self-only, already matching the established `fldtreev.ch` convention
+— no `.ch` edit needed at all) and widened the `.c` definition from 1
+param to the real 2. This refines, not contradicts, checklist item 5's
+existing guidance — re-worded below.
+
+Two other findings not in the pre-diagnosis:
+
+- **2 more self-type `.ch` typos** (`zipoarrw.ch`/`zipoplin.ch`'s
+  `InitializeObject`, both restating the parent class's type instead
+  of their own) — same shape as B2 finding 2 and AMS2's 3-instance
+  cluster, confirmed real via each class's own `tolerance` data field
+  failing to compile against the wrong type. Both fixed.
+- **Item 8 (stranded forward declarations): 10 real conflicts across 9
+  files**, including two new variants worth folding into the standing
+  checklist wording: a `float`-typed parameter (`zipv.c`'s
+  `Scale_Pane` — every prior instance of this bug named only
+  `char`/`short`/`Boolean`; `float` is also subject to default
+  argument promotion, to `double`) and a **block-scope** (function-
+  local) stale redeclaration (`zipofcap.c`'s `Accept_Caption_Character`
+  redeclared inside `Build_Object`'s own body) — item 8's grep, being
+  file-level, doesn't distinguish declaration scope; both shapes are
+  real compile-blocking conflicts, cross-check block-scope
+  redeclarations too, not just file-top-level ones.
+
+**The mandatory definitive `parse_decl_block` completeness re-scan
+(flagged in checklist item 9 as required "without question" for this
+directory) earned that flagging**: found 10 genuine silent misses
+invisible to every one of `ansify`'s own reports (zero DRIFT, zero
+skip, zero trace) — two new parser-gap shapes (a multi-line comment
+whose continuation lines don't start with `*`, and a K&R parameter
+declaration split across two physical lines with no semicolon on the
+first) — including **one live class method** (`zip.ch`'s
+`Close_Stream`) that would otherwise have stayed silently K&R
+indefinitely. Both shapes are variants of AMS1's already-documented
+multi-line-declaration hazard, not new tool bugs.
+
+Item 4 (installed-header grep): `contrib/zip/lib` does install headers
+(11 of them) — found 23 stale empty-parens declarations in
+`zipedit.h`, currently inert (zero cross-directory consumers currently
+include it) but fixed anyway per the checklist's "flag prominently
+even if inert" instruction.
+
+Subtree gate clean twice; tree-wide gate clean twice, exactly matching
+the known `contrib/zip/utility/ltapp.c` 2-error baseline both times.
+Independently re-verified by the orchestrator: both gates re-run
+directly (not trusted from the report), the corrected `FinalizeObject`
+fix confirmed against `class.c`'s own source, the 2 self-type typo
+fixes and the 5 `zipobj.c` DRIFT stub-widenings spot-checked against
+the diff, `fossil status` confirmed exact file scope (46 files: 41
+`.c` + `zipedit.h` + 3 `.ch` + `Imakefile`). Two genuine ~35-year-old
+bugs beyond the typo cluster, both written up in `revival.md`: the
+5-method base-class stub argument-drop, and the `Issue_Status_Message`/
+`Acknowledge_Status_Message` pair whose interface never matched its
+own (never-called) real implementation. Full detail in
+`claude-history/m3-c1-REPORT.md`. Committed (`869fa824`).
+
+**Opens Wave 7.** One batch remains in M3: C2 (`contrib/zip/utility`
+and 10 other small directories) — closes Wave 7, M3, and hands off to
+M4.
 
 ## Resource note (2026-07-25, wdc)
 
