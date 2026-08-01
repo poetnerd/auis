@@ -36,9 +36,7 @@ extern int CacheDirectoryForClosing();
 extern int GetSnapshotByNumber();
 extern int ReadOrFindMSDir();
 
-MS_GetNthSnapshot(DirName, n, SnapshotBuf)
-char *DirName, *SnapshotBuf;
-int n;
+int MS_GetNthSnapshot(char *DirName, int n, char *SnapshotBuf)
 {
     struct MS_Directory *Dir;
     long errsave;

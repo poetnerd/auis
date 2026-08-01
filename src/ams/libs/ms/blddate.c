@@ -39,9 +39,7 @@ extern int parsedateheader();
 
 extern char *convlongto64();
 
-BuildDateField(Msg, datetype)
-struct MS_Message *Msg;
-int datetype;
+int BuildDateField(struct MS_Message *Msg, int datetype)
 {
     unsigned long when;
     char DateBuf[250];

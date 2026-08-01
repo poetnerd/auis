@@ -10,10 +10,7 @@ $Source: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/getnsub.c,v $
 */
 extern int GetNextSubsEntry();
 
-MS_GetNextSubsEntry(FullName, NickName, status)
-char *FullName; /* Value passed in to MS AND returned */
-char *NickName; /* RETURN BUFFER returned from MS */
-int *status; /* RETURN VALUE returned from MS */
+int MS_GetNextSubsEntry(char *FullName, char *NickName, int *status)
 {
     return(GetNextSubsEntry(FullName, NickName, status));
 }

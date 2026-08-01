@@ -57,10 +57,7 @@ extern struct MS_Directory *MyOpenDir;
   * Code, NumDirInsertions and IsReconstruction are all superfluous.
   */
 
-ProcessNewMail(ThisFileName, ParseSpec, Code, UnlinkFailures, EliErrBuf, EliErrBufLim)
-char           *ThisFileName, *ParseSpec, *EliErrBuf;
-int             Code, EliErrBufLim;
-int            *UnlinkFailures;
+int ProcessNewMail(char *ThisFileName, char *ParseSpec, int Code, int *UnlinkFailures, char *EliErrBuf, int EliErrBufLim)
 {
     char *s;
     Boolean         IsReconstruction;

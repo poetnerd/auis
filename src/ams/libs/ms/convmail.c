@@ -37,14 +37,13 @@ extern int EnsureMailDirExists();
 extern int MS_ReconstructDirectory();
 extern int MS_SetSubscriptionEntry();
 extern int NonfatalBizarreError();
-extern int RenameEvenInVice();
+extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
 extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
 extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
 
 extern char home[];
 
-MS_ConvertOldMail(good, bad)
-int *good, *bad;
+int MS_ConvertOldMail(int *good, int *bad)
 {
     char OldName[1+MAXPATHLEN], NewName[1+MAXPATHLEN], DirName[1+MAXPATHLEN], NewDirName[1+MAXPATHLEN], ErrorText[256];
     DIR *dirp;

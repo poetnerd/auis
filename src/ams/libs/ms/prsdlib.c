@@ -77,9 +77,7 @@ char *fold(),*foldup(),*folddown();
 
 /* continuation of fold.c */
 
-char *fold (out,in,whichway)
-char *in,*out;
-FOLDMODE whichway;
+char * fold(char *out, char *in, FOLDMODE whichway)
 {
 	register char *i,*o;
 	register char lower = 0;
@@ -110,14 +108,12 @@ FOLDMODE whichway;
 	return (out);
 }
 
-char *foldup (out,in)
-char *in,*out;
+char * foldup(char *out, char *in)
 {
 	return (fold(out,in,FOLDUP));
 }
 
-char *folddown (out,in)
-char *in,*out;
+char * folddown(char *out, char *in)
 {
 	return (fold(out,in,FOLDDOWN));
 }
@@ -162,8 +158,7 @@ char *in,*out;
 char _argbreak;
 char *skipto();
 
-char *nxtarg (q,brk)
-char **q,*brk;
+char * nxtarg(char **q, char *brk)
 {
 	register char *front,*back;
 	front = *q;			/* start of string */
@@ -219,8 +214,7 @@ char **q,*brk;
 static unsigned char tab[256] = {
 	0};
 
-char *skipto (string,charset)
-unsigned char *string, *charset;
+char * skipto(unsigned char *string, unsigned char *charset)
 {
 	register unsigned char *setp,*strp;
 
@@ -231,8 +225,7 @@ unsigned char *string, *charset;
 	return ((char *)strp);
 }
 
-char *skipover (string,charset)
-unsigned char *string, *charset;
+char * skipover(unsigned char *string, unsigned char *charset)
 {
 	register unsigned char *setp,*strp;
 

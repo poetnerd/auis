@@ -38,8 +38,7 @@ extern int SetProfileEntry();
 
 extern struct MS_Directory *FindInDirCache();
 
-MS_SetAssociatedTime(FullName, newvalue)
-char *FullName, *newvalue;
+int MS_SetAssociatedTime(char *FullName, char *newvalue)
 {
     struct MS_Directory *Dir;
     struct stat statbuf;

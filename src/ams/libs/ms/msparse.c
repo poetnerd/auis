@@ -39,10 +39,7 @@ extern time_t gtime();  /* overhead/util/lib/gtime.c */
 extern int parsedate();
 extern int parsedateheader();
 
-MS_ParseDate(indate, year, month, day, hour, min, sec, wday, gtm)
-char *indate;
-int *year, *month, *day, *hour, *min, *sec, *wday;
-long *gtm;
+int MS_ParseDate(char *indate, int *year, int *month, int *day, int *hour, int *min, int *sec, int *wday, long *gtm)
 {
     struct tm TmBuf;
 
@@ -68,11 +65,7 @@ long *gtm;
 
 /* A standin for parsedate() that gets rid of RFC822 comments */
 
-parsedateheader(str, tmp, settm, select, err, gmt)
-char *str;
-struct tm *tmp;
-int settm, select, err;
-long *gmt;
+int parsedateheader(char *str, struct tm *tmp, int settm, int select, int err, long *gmt)
 {
     char *strstart, *strend, TokenBuf[500], FinalBuf[1500];
     int code822 = is822Atom, prevcode = is822Special;

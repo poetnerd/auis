@@ -43,10 +43,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <netinet/in.h>                /* for htonl, etc. */
 #include <ctype.h>
 #include <stdlib.h>
+static int CloseEntireDirCache();
+static int HashDir();
 extern int AdjustIDs();
 extern int CacheDirectoryForClosing();
 extern int CloseMSDir();
-extern int CloseNeedyDirs();
+extern int CloseNeedyDirs(Boolean InsistOnCloses);
 extern int CriticalBizarreError();
 extern int DestructivelyWriteDirectoryHead();
 extern int FieldsDiffer();
@@ -63,7 +65,7 @@ extern int ReadOldMSDirectoryHead_Complain();
 extern int ReadOrFindMSDir_Complain();
 extern int ReadRawFile();
 extern int RewriteSnapshotInDirectory();
-extern int SetChainField();
+extern int SetChainField(struct MS_Message *Msg, struct MS_Directory *Dir, Boolean PlanningHeadWrite);
 extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
 extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
 extern int vdown();  /* overhead/util/lib/vclose.c */
@@ -90,9 +92,7 @@ struct dcnode {
 };
 
 
-int             CheckOpenMSDirectory(Dir, Code)
-struct MS_Directory *Dir;
-int             Code;
+int CheckOpenMSDirectory(struct MS_Directory *Dir, int Code)
 {
     struct stat     statbuf;
     char            fname[MAXPATHLEN + 1];
@@ -146,9 +146,7 @@ int             Code;
   be closed by this routine.
   */
 
-int             AppendMessageToMSDir(Msg, Dir)
-struct MS_Message *Msg;
-struct MS_Directory *Dir;
+int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir)
 {
     char            SBuf[AMS_SNAPSHOTSIZE];
     unsigned long int mTime, timeTemp, bumpLastMsgDate = (unsigned long) 0;
@@ -264,10 +262,7 @@ struct MergeList {
     struct MergeEntry *merges;
 };
 
-int             SetChainField(Msg, Dir, PlanningHeadWrite)
-struct MS_Message *Msg;
-struct MS_Directory *Dir;
-Boolean         PlanningHeadWrite;
+int SetChainField(struct MS_Message *Msg, struct MS_Directory *Dir, Boolean PlanningHeadWrite)
 {
     struct HashList h;
     struct MergeList m;
@@ -469,9 +464,7 @@ Boolean         PlanningHeadWrite;
     return (0);
 }
 
-static int      AlreadyMergingChain(chain, m)
-int             chain;
-struct MergeList *m;
+static int AlreadyMergingChain(int chain, struct MergeList *m)
 {
     int             result = FALSE, i;
 
@@ -480,9 +473,7 @@ struct MergeList *m;
     return (result);
 }
 
-static int      NeedToMerge(chain, snapshotNum, m)
-int             chain, snapshotNum;
-struct MergeList *m;
+static int NeedToMerge(int chain, int snapshotNum, struct MergeList *m)
 {
     int             i, decided = FALSE, result = FALSE;
 
@@ -496,9 +487,7 @@ struct MergeList *m;
 }
 
 /* Returns TRUE on success, FALSE on failure */
-static int      ConstructHashList(Msg, h)
-struct MS_Message *Msg;
-struct HashList *h;
+static int ConstructHashList(struct MS_Message *Msg, struct HashList *h)
 {
     int             len = 0;
     char           *LineBuf = NULL, *s = NULL, *t = NULL;
@@ -576,9 +565,7 @@ struct HashList *h;
 #define GROWARRAY (16)
 
 /* Returns TRUE on success, FALSE on failure */
-static int      AddHash(hash, h)
-unsigned long   hash;
-struct HashList *h;
+static int AddHash(unsigned long hash, struct HashList *h)
 {
     if (h->num == h->size) {
 	if (h->size) {
@@ -596,9 +583,7 @@ struct HashList *h;
     return (TRUE);
 }
 
-static int      AddMerge(chain, snapshotNum, m)
-int             chain, snapshotNum;
-struct MergeList *m;
+static int AddMerge(int chain, int snapshotNum, struct MergeList *m)
 {
     if (m->num == m->size) {
 	if (m->size) {
@@ -617,9 +602,7 @@ struct MergeList *m;
     return (TRUE);
 }
 
-static int      AnythingMatches(midHash, repHash, h)
-unsigned long   midHash, repHash;
-struct HashList *h;
+static int AnythingMatches(unsigned long midHash, unsigned long repHash, struct HashList *h)
 {
     int             i, result = FALSE;
 
@@ -689,8 +672,7 @@ static int      CloseEntireDirCache()
     return 0;
 }
 
-static int      HashDir(name)
-char           *name;
+static int HashDir(char *name)
 {
     int             total = 0;
     char           *s;
@@ -702,9 +684,7 @@ char           *name;
     return (total & (DIRHASHSIZE - 1));
 }
 
-struct MS_Directory *
-FindInDirCache(FullName)
-char           *FullName;
+struct MS_Directory * FindInDirCache(char *FullName)
 {
     int             hval;
     struct dcnode  *dc;
@@ -725,9 +705,7 @@ char           *FullName;
 }
 
 
-AddToDirCache(Dir, ReplaceIfExists)
-struct MS_Directory *Dir;
-Boolean         ReplaceIfExists;
+int AddToDirCache(struct MS_Directory *Dir, Boolean ReplaceIfExists)
 {
     int             hval;
     struct dcnode  *dc, *prevdc;
@@ -780,8 +758,7 @@ static struct MS_Directory *LastFind = NULL;
 
 /* Which occasionally needs to be corrected */
 
-static int      EnsureNotInCache(Dir)
-struct MS_Directory *Dir;
+static int EnsureNotInCache(struct MS_Directory *Dir)
 {
     if (Dir == LastFind)
 	LastFind = NULL;
@@ -790,18 +767,12 @@ struct MS_Directory *Dir;
 
 /* Note that in the following, pDir is a pointer to a pointer -- this routine
   actually sets the pointer */
-int             ReadOrFindMSDir(Name, pDir, Code)
-char           *Name;
-struct MS_Directory **pDir;
-int             Code;
+int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code)
 {
     return (ReadOrFindMSDir_Complain(Name, pDir, Code, TRUE));
 }
 
-int             ReadOrFindMSDir_Complain(Name, pDir, Code, DoComplain)
-char           *Name;
-struct MS_Directory **pDir;
-int             Code, DoComplain;
+int ReadOrFindMSDir_Complain(char *Name, struct MS_Directory **pDir, int Code, int DoComplain)
 {
     int             saveerr;
 
@@ -880,8 +851,7 @@ static int      ClosesPending = 0;
 /* The following is called by CheckOpenMSDirectory to remove the directory
    from the list of pending closes */
 
-static int NoteRecentDirUse(Dir)
-struct MS_Directory *Dir;
+static int NoteRecentDirUse(struct MS_Directory *Dir)
 {
     int             i;
 
@@ -900,9 +870,7 @@ struct MS_Directory *Dir;
     return 0;
 }
 
-int             CacheDirectoryForClosing(Dir, CloseCode)
-struct MS_Directory *Dir;
-int             CloseCode;
+int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode)
 {
     char            ErrorText[256];
     int             i;
@@ -957,8 +925,7 @@ int             CloseDirsThatNeedIt()
     return (CloseNeedyDirs(TRUE));
 }
 
-int             CloseNeedyDirs(InsistOnCloses)
-Boolean         InsistOnCloses;
+int CloseNeedyDirs(Boolean InsistOnCloses)
 {
     int             i, mycode = 0, errct = 0;
     struct MS_Directory *StillPendingCloses[MAXPENDINGCLOSES];
@@ -1005,8 +972,7 @@ Boolean         InsistOnCloses;
     return (0);
 }
 
-int             DeleteFromDirCache(Dir)
-struct MS_Directory *Dir;
+int DeleteFromDirCache(struct MS_Directory *Dir)
 {
     int             hval;
     struct dcnode  *dc, *prevdc;
@@ -1033,9 +999,7 @@ struct MS_Directory *Dir;
 
 /* Get message-id or resent-mid (if any resent-xxx) or null string if no appropriate mid */
 
-int             GetRightMid(Msg, mid)
-struct MS_Message *Msg;
-char          **mid;
+int GetRightMid(struct MS_Message *Msg, char **mid)
 {
     char           *start, *end, *ats;
     int             len;
@@ -1079,9 +1043,7 @@ char          **mid;
 }
 
 
-int             IsMessageAlreadyThere(Msg, Dir)
-struct MS_Message *Msg;
-struct MS_Directory *Dir;
+int IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir)
 {
     char           *TxtMsg, *mid, *secondmid, SBuf[AMS_SNAPSHOTSIZE + 1], SourceFileName[1 + MAXPATHLEN];
     int             i;
@@ -1172,9 +1134,7 @@ struct MS_Directory *Dir;
     return (0);
 }
 
-int             FieldsDiffer(M1, M2, field)
-struct MS_Message *M1, *M2;
-int             field;
+int FieldsDiffer(struct MS_Message *M1, struct MS_Message *M2, int field)
 {
     char           *paranoid1, *paranoid2;
     int             plen1, plen2;

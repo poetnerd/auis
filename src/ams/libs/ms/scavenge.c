@@ -50,9 +50,7 @@ extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
 #define EVIA_SCAVENGE EVIA_UNKNOWN /* temp hack until first wash */
 #endif
 
-long MS_ScavengeDirectory(DirName, Recurse, numgood, numbad, quiet, Purge)
-char *DirName;
-int Recurse, *numgood, *numbad, quiet, Purge;
+long MS_ScavengeDirectory(char *DirName, int Recurse, int *numgood, int *numbad, int quiet, int Purge)
 {
     *numgood = *numbad = 0;
     if (!Recurse) {
@@ -63,9 +61,7 @@ int Recurse, *numgood, *numbad, quiet, Purge;
     }
 }
 
-ScavengeDown(DirName, numgood, numbad, quiet, Purge)
-char *DirName;
-int *numgood, *numbad, quiet, Purge;
+int ScavengeDown(char *DirName, int *numgood, int *numbad, int quiet, int Purge)
 {
     DIR *dirp;
     DIRENT_TYPE *dirent;
@@ -126,9 +122,7 @@ int *numgood, *numbad, quiet, Purge;
     return(0);
 }
 
-ScavengeOneDirectory(DirName, numgood, numbad, quiet, Purge)
-char *DirName;
-int *numgood, *numbad, quiet, Purge;
+int ScavengeOneDirectory(char *DirName, int *numgood, int *numbad, int quiet, int Purge)
 {
     struct MS_Directory *Dir;
     char ErrorText[100+MAXPATHLEN];

@@ -39,10 +39,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <errprntf.h>
 #include <hdrparse.h>
 #include <stdlib.h>
+static int RotBuf13();
 extern int CheckPrinterValidity();
 extern int FreePrintVec();
 extern int NonfatalBizarreError();
-extern int PrintPendingRequests();
+extern int PrintPendingRequests(Boolean MustPrint);
 extern int PrintQuotingFormatting();  /* overhead/util/lib/unscribe.c */
 extern int PrinterInPrintcapLine();
 extern int QuickGetBodyFileName();
@@ -67,9 +68,7 @@ extern char *StripWhiteEnds(), *getenv();
 extern double getla();
 extern int DelayPrinting, AlwaysPrintImmediately;
 
-MS_PrintMessage(DirName, id, flags, printer)
-char *DirName, *id, *printer;
-int flags;
+int MS_PrintMessage(char *DirName, char *id, int flags, char *printer)
 {
     char RawFileName[1+MAXPATHLEN], PrintQueueFileName[1+MAXPATHLEN], LineBuf[2000];
     int errsave, myid;
@@ -132,10 +131,7 @@ static char SEPARATOR[] = "\n___________________________________________________
 
 /* The following routine used to be needed for printing messages; it is still needed for generating reply templates, in reply.c */
 
-PrintSpecialStuff(fp, prcode, FormatVersion)
-FILE *fp;
-int prcode;
-char *FormatVersion;
+int PrintSpecialStuff(FILE *fp, int prcode, char *FormatVersion)
 {
     Boolean OldStyle = FALSE;
 
@@ -191,8 +187,7 @@ char *FormatVersion;
     more-or-less inhibited by the PRINTCOLLISIONTIME hack */
 #define PRINTCOLLISIONTIME 30
 #define PRINTVECMAX 100
-PrintPendingRequests(MustPrint) 
-Boolean MustPrint;
+int PrintPendingRequests(Boolean MustPrint)
 {
     DIR *dirp;
     DIRENT_TYPE *dirent;
@@ -286,9 +281,7 @@ Boolean MustPrint;
     return(0);
 }
 
-FreePrintVec(PrintVector, VecIndex)
-char *PrintVector[];
-int VecIndex;
+int FreePrintVec(char *PrintVector[], int VecIndex)
 {
     while (VecIndex > 3) {
 	if (PrintVector[VecIndex] && strcmp(PrintVector[VecIndex], "-z") ) {
@@ -298,9 +291,7 @@ int VecIndex;
     }
 }
 /*
-static RotBuf13(buf, ct)
-char *buf;
-int ct;
+static RotBuf13(char *buf, int ct)
 {
     register char *s = buf;
     while (*s) {
@@ -311,8 +302,7 @@ int ct;
     }
 }
 */
-CheckPrinterValidity(printer)
-char *printer;
+int CheckPrinterValidity(char *printer)
 {
     int i, Checked;
     char FName[1+MAXPATHLEN];
@@ -371,8 +361,7 @@ char *printer;
     }
 }
 
-PrinterInPrintcapLine(printer, line)
-char *printer, *line;
+int PrinterInPrintcapLine(char *printer, char *line)
 {
     char *start, *s;
 

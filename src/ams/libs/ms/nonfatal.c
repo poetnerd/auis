@@ -38,8 +38,7 @@ extern int BizarreError();  /* ams/ms/errmsgs.c */
 /* This is in a separate file to make it easy for a no-snap client to override it if it so desires. */
 
 
-NonfatalBizarreError(text)
-char *text;
+int NonfatalBizarreError(char *text)
 {
     BizarreError(text, ERR_WARNING);
 }

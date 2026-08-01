@@ -70,8 +70,7 @@ extern char MyMailDomain[];
 */
 
 
-CheckAuthUid(NewMessage)
-struct MS_Message *NewMessage;
+int CheckAuthUid(struct MS_Message *NewMessage)
 {
     char *cellname, *s;
     char CopyOfAuthHeader[1000];

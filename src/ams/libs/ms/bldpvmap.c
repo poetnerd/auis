@@ -35,7 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <ms.h>
 extern int BadSubMapLine();
-extern int MS_GetSearchPathEntry();
+extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
 extern int MakeSubsListInPathOrder();
 extern int PreorderSubscriptionStrcmp();
 
@@ -44,9 +44,7 @@ extern int PreorderSubscriptionStrcmp();
 extern int NumSubsInUse;
 extern struct SubscriptionProfile **SubsInPathOrder;
 
-BuildPrivateSubscriptionMap(public, private, Root)
-FILE *public, *private;
-char *Root;
+int BuildPrivateSubscriptionMap(FILE *public, FILE *private, char *Root)
 {
     char   *name,
            *s,

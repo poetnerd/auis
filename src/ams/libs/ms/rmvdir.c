@@ -48,9 +48,7 @@ extern int setprofilestring();  /* overhead/util/lib/setprof.c */
 
 extern char *getprofile(), *StripWhiteEnds();
 
-long    MS_RemoveDirectory (DirName, MaxRemovals)
-char   *DirName;
-int MaxRemovals;
+long MS_RemoveDirectory(char *DirName, int MaxRemovals)
 {
     struct MS_Directory *Dir;
     DIR *dirp;
@@ -113,8 +111,7 @@ int MaxRemovals;
     return(EnsureNotInSubscriptionMap(DirName));
 }
 
-RemoveFromCrucialClassesPreference(DirName, NewName)
-char *DirName, *NewName;
+int RemoveFromCrucialClassesPreference(char *DirName, char *NewName)
 {
     char *s, *t, *t2, NickName[1+MAXPATHLEN], NewPref[2500];
     Boolean FoundIt = FALSE, IsMagic;

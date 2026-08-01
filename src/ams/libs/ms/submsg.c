@@ -43,6 +43,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mail.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+static int AddNamesToVector();
+static char    * newreceived();
 extern int AddHeader();
 extern int AppendMessageToMSDir();
 extern int BuildAttributesField();
@@ -92,8 +94,7 @@ char           *newmid()
     return (MidText);
 }
 
-static char    *newreceived(ClientVersion)
-char           *ClientVersion;
+static char * newreceived(char *ClientVersion)
 {
     static char     RecText[500];
 
@@ -113,10 +114,7 @@ char           *ClientVersion;
 
 static char     LastGoodDeliveryFileName[1 + MAXPATHLEN] = "";
 
-static          AddNamesToVector(pVec, index, maxindex, namelist, len)
-char         ***pVec;
-int            *index, *maxindex, len;
-char           *namelist;
+static AddNamesToVector(char ***pVec, int *index, int *maxindex, char *namelist, int len)
 {
     char          **Vec, *onerecip, TempBuf[4000], SaveChar;
     PARSED_ADDRESS *AddrList;
@@ -186,12 +184,7 @@ char           *namelist;
     return (0);
 }
 
-MS_SubmitMessage(FileName, DeliveryOptions, ErrorMessage, ErrMsgLimit, ClientProgram)
-char           *FileName;              /* Passed in */
-int             DeliveryOptions;       /* Passed in */
-char           *ErrorMessage;          /* Passed out */
-int             ErrMsgLimit;           /* Passed in */
-char           *ClientProgram;         /* Passed in */
+int MS_SubmitMessage(char *FileName, int DeliveryOptions, char *ErrorMessage, int ErrMsgLimit, char *ClientProgram)
 {
     struct MS_Message *Msg;
     int             which = 0, maxwhich = 0, badparse = 0, linelen = 0, sawbadchar = 0, longlines = 0, code, errcode, bytesleft, bytestoread;
@@ -558,9 +551,7 @@ char           *ClientProgram;         /* Passed in */
     AMS_RETURN_ERRCODE(errcode, EIN_DROPOFF, EVIA_SUBMITMESSAGE);
 }
 
-FreeSubmitVector(SubmitVector, which)
-char          **SubmitVector;
-int             which;
+int FreeSubmitVector(char **SubmitVector, int which)
 {
     if (!SubmitVector)
         return;

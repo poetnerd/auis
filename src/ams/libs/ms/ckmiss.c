@@ -40,9 +40,7 @@ extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
 
 /* This routine checks to see if a nonexistent folder has been replaced */
 
-MS_CheckMissingFolder(OldName, NewName)
-char *OldName; /* IN */
-char *NewName; /* OUT */
+int MS_CheckMissingFolder(char *OldName, char *NewName)
 {
     FILE *fp;
     struct stat statbuf;

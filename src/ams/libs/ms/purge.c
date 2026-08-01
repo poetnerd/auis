@@ -42,7 +42,7 @@ extern int GetSnapshotByNumber();
 extern int MarkQuietlyInProgress();
 extern int QuickGetBodyFileName();
 extern int ReadOrFindMSDir();
-extern int RenameEvenInVice();
+extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
 extern int RetryBodyFileName();
 extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
 extern int writeall();  /* overhead/util/lib/writeall.c */
@@ -58,8 +58,7 @@ extern int writeall();  /* overhead/util/lib/writeall.c */
    dbg_open() in overhead/util/hdrs/fdplumb.h. */
 extern void MSJournal_Record(const char *dir, const char *fmt, ...);
 
-MS_PurgeDeletedMessages(dirname)
-char *dirname;
+int MS_PurgeDeletedMessages(char *dirname)
 {
     char SnapshotDum[AMS_SNAPSHOTSIZE], FileNameBuf[1+MAXPATHLEN],
 	TmpFileName[1+MAXPATHLEN], HeadDum[AMS_DIRHEADSIZE];

@@ -52,7 +52,6 @@ extern char home[], Me[], MyMailDomain[];
 extern ADDRESS_HOST *MakeHost();
 extern PARSED_ADDRESS *SingleAddress();
 
-int LookupInLocalDatabase(Addr, laType, IDpart, PostID, Domain, UnderAMSDelivery, NameSep, MaxNameMatches, Answered, MswpCodeP)
 /* This routine, LookupInLocalDatabase, is a site-dependent routine for performing non-standard name validation. */
 /* A trivial change to this would validate all local names as OK.  The body would have 3 lines:
 
@@ -64,16 +63,18 @@ int LookupInLocalDatabase(Addr, laType, IDpart, PostID, Domain, UnderAMSDelivery
 
 Of course, the AMS_LocalDatabaseValidation variable would also have to be turned on in mailconf.c, also, either statically or via an AndrewSetup or AMS-Server file.
 */
-PARSED_ADDRESS *Addr; /* IN-OUT.  The address structure, from parseadd.h.  Parts should be rewritten if needed, as this will be unparsed to produce the address in the header. */
-int laType; /* IN. latype_ value defined in mail.h, flags type of local address */
-char *IDpart; /* IN. The part preceding the + in nsb+foobar */
-char *PostID; /* IN. The part following the + in nsb+foobar */
-char *Domain; /* IN. the address domain (used, e.g. in choosing white pages to open) */
-int UnderAMSDelivery; /* IN. >0 if this address should be treated as an AMS_DeliverySystem one, <0 if not as one, 0 if unknown. */
-int NameSep; /* IN.  >0 means it's the character to separate firstname and lastname in the validated name; <0 means use the userid; 0 means unknown. */
-int MaxNameMatches; /* IN. Maximum number of matches expected */
-int *Answered; /* OUT.  Boolean that says whether or not this routine actually provided an answer. */
-int *MswpCodeP; /* OUT.  Integer giving the MSWP_xxx code that best describes this Boolean that says whether or not this routine actually provided an answer. */
+/* Addr: IN-OUT.  The address structure, from parseadd.h.  Parts should be rewritten if needed, as this will be unparsed to produce the address in the header.
+   laType: IN. latype_ value defined in mail.h, flags type of local address
+   IDpart: IN. The part preceding the + in nsb+foobar
+   PostID: IN. The part following the + in nsb+foobar
+   Domain: IN. the address domain (used, e.g. in choosing white pages to open)
+   UnderAMSDelivery: IN. >0 if this address should be treated as an AMS_DeliverySystem one, <0 if not as one, 0 if unknown.
+   NameSep: IN.  >0 means it's the character to separate firstname and lastname in the validated name; <0 means use the userid; 0 means unknown.
+   MaxNameMatches: IN. Maximum number of matches expected
+   Answered: OUT.  Boolean that says whether or not this routine actually provided an answer.
+   MswpCodeP: OUT.  Integer giving the MSWP_xxx code that best describes this Boolean that says whether or not this routine actually provided an answer.
+*/
+int LookupInLocalDatabase(PARSED_ADDRESS *Addr, int laType, char *IDpart, char *PostID, char *Domain, int UnderAMSDelivery, int NameSep, int MaxNameMatches, int *Answered, int *MswpCodeP)
 {
     *Answered = 0;
     return(0);
@@ -82,17 +83,7 @@ int *MswpCodeP; /* OUT.  Integer giving the MSWP_xxx code that best describes th
 #ifdef USE_MMDF_ENV
 #include <mmdf.h>
 
-int LookupInMMDFDatabase(Addr, laType, IDpart, PostID, Domain, UnderAMSDelivery, NameSep, MaxNameMatches, Answered, MswpCodeP)
-PARSED_ADDRESS *Addr;
-int laType;
-char *IDpart;
-char *PostID;
-char *Domain;
-int UnderAMSDelivery;
-int NameSep;
-int MaxNameMatches;
-int *Answered;
-int *MswpCodeP;
+int LookupInMMDFDatabase(PARSED_ADDRESS *Addr, int laType, char *IDpart, char *PostID, char *Domain, int UnderAMSDelivery, int NameSep, int MaxNameMatches, int *Answered, int *MswpCodeP)
 {
 
     struct rp_bufstruct reply;
@@ -123,12 +114,7 @@ int *MswpCodeP;
 }
 
 #endif /* USE_MMDF_ENV */
-int GetNameFromGecos(GecosField, LoginID, Domain, PersonalNameP)
-/* Find the User name in a gecos field, if posible, returning the malloced result */
-char *GecosField;	/* IN   The gecos field from the password file for userid */
-char *LoginID;	/* IN   The login id of the user */
-char *Domain;	/* IN   Name of this domain */
-char **PersonalNameP;	/* OUT  The users full name, freshly allocated. */
+int GetNameFromGecos(char *GecosField, char *LoginID, char *Domain, char **PersonalNameP)
 {
     if (AMS_GecosHacks && ULstrcmp(Domain, ThisDomain) == 0) {
 	char *ampersand, *strt, *othr;

@@ -43,10 +43,7 @@ extern int QuickGetBodyFileName();
 extern int ReadOrFindMSDir();
 extern int ReadRawFile();
 
-MS_GetHeaderContents(dirname, id, HeaderName, HeaderTypeNumber, HeaderBuf, lim) 
-char *dirname, *id, *HeaderName; /* Passed in */
-char *HeaderBuf; /* Passed out */
-int HeaderTypeNumber, lim; /* Passed in  (I play with the former but do not pass it back) */
+int MS_GetHeaderContents(char *dirname, char *id, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim)
 {
     struct MS_Directory *Dir;
     struct MS_Message *Msg;

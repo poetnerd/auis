@@ -10,10 +10,7 @@ $Source: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/getsubs.c,v $
 */
 extern int GetSubsEntry();
 
-MS_GetSubscriptionEntry(FullName, NickName, status)
-char *FullName; /* Value passed in to MS */
-char *NickName; /* RETURN BUFFER returned from MS */
-int *status; /* RETURN VALUE returned from MS */
+int MS_GetSubscriptionEntry(char *FullName, char *NickName, int *status)
 {
     return(GetSubsEntry(FullName, NickName, status));
 }

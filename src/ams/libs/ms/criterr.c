@@ -40,8 +40,7 @@ extern int BizarreError();  /* ams/ms/errmsgs.c */
 
 /* This is in a separate file to make it easy for a no-snap client to override it if it so desires. */
 
-CriticalBizarreError(text)
-char *text;
+int CriticalBizarreError(char *text)
 {
     BizarreError(text, ERR_CRITICAL);
 }

@@ -51,7 +51,7 @@ extern int MS_AlterSnapshot();
 extern int ParseMessageFromRawBody();
 extern int ReadOrFindMSDir();
 extern int ReadRawFile();
-extern int RenameEvenInVice();
+extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
 extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
 extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
 extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
@@ -61,9 +61,7 @@ extern int writeall();  /* overhead/util/lib/writeall.c */
 
 extern char home[];
 
-long    MS_MergeDirectories (SourceDirName, DestDirName)
-char   *SourceDirName,
-       *DestDirName;
+long MS_MergeDirectories(char *SourceDirName, char *DestDirName)
 {
     Boolean UseDest;
     int errsave;
@@ -245,11 +243,7 @@ char   *SourceDirName,
     return(EnsureNotInSubscriptionMap(SourceDirName));
 }
 
-long    MS_EditMessage (dirname, id, NewBodyFile, Reparse)
-char   *dirname,
-       *id,
-       *NewBodyFile;
-int	Reparse;
+long MS_EditMessage(char *dirname, char *id, char *NewBodyFile, int Reparse)
 {
     int saveerr, c;
     struct MS_Directory *Dir;

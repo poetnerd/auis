@@ -91,9 +91,7 @@ extern char     Me[], *MyPrettyAddress, home[], MyMailDomain[];
 #define PARSESTACK 0
 #define NESTSTACK 1
 
-int             RejectMessage(Msg, Text, RejectionsTo, RejectCC)
-struct MS_Message *Msg;
-char           *Text, *RejectionsTo, *RejectCC;
+int RejectMessage(struct MS_Message *Msg, char *Text, char *RejectionsTo, char *RejectCC)
 {
     FILE           *fp;
     char            RejTo[1500], BBM[500], TempFile[1 + MAXPATHLEN], *Cmd[3], ThisFormat[50], BigBuf[5000];
@@ -236,8 +234,7 @@ char           *Text, *RejectionsTo, *RejectCC;
     return (0);
 }
 
-static int      ConvertDropoffCode(code)
-int             code;
+static int ConvertDropoffCode(int code)
 {
     switch (code) {
         case D_OK:
@@ -259,10 +256,7 @@ int             code;
     }
 }
 
-int             ResendMessageFromMailbox(Msg, Addressee, AddResendHeads)
-struct MS_Message *Msg;
-char           *Addressee;
-Boolean         AddResendHeads;
+int ResendMessageFromMailbox(struct MS_Message *Msg, char *Addressee, Boolean AddResendHeads)
 {
     FILE           *fp;
     char            TempFile[1 + MAXPATHLEN], *retpath = NULL, *Cmd[2], BigBuf[5000], *authfield;

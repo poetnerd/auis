@@ -37,7 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 extern int CloseMSDir();
 extern int FlushClosableDir();
 extern int NonfatalBizarreError();
-extern int RenameEvenInVice();
+extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
 extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
 extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
 
@@ -55,11 +55,7 @@ struct {
     Boolean IsLast;
 } ThingsToDo[MAXNUMWAITING];
 
-PlanToCloseDir(Dir, lockfd, oldname, newname, DidRewrite, UnlinkFailures, IsLast)
-struct MS_Directory *Dir;
-int lockfd, DidRewrite, *UnlinkFailures;
-char *oldname, *newname;
-Boolean IsLast;
+int PlanToCloseDir(struct MS_Directory *Dir, int lockfd, char *oldname, char *newname, int DidRewrite, int *UnlinkFailures, Boolean IsLast)
 {
     debug(256, ("PlanToCloseDir %s (%d), myopen is %s (%d)\noldname is %s, newname is %s, IsLast is %d\n",
 	Dir->UNIXDir, Dir, MyOpenDir ? MyOpenDir->UNIXDir : "none", MyOpenDir, oldname, newname, IsLast));
@@ -91,8 +87,7 @@ Boolean IsLast;
     return(0);
 }
 
-FlushClosableDir(UnlinkFailures) 
-int *UnlinkFailures;
+int FlushClosableDir(int *UnlinkFailures)
 {
     char ErrorText[100+MAXPATHLEN];
     int i;

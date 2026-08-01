@@ -47,8 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 extern char home[];
 
-MS_CheckAuthentication(Authenticated)
-int *Authenticated;
+int MS_CheckAuthentication(int *Authenticated)
 {
 #ifdef AFS_ENV
     struct ViceIoctl    blob;

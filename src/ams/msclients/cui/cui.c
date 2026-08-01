@@ -170,6 +170,131 @@ extern long gtime (), time (), atol();
 #endif
 
 extern char CUI_VersionString[];
+
+/* Undeclared-external-call closure (COMPILERFLAGS -Werror=implicit-function-declaration):
+   these names are defined in ams/libs/ms, ams/libs/cui, other overhead/AMS
+   libraries, or elsewhere in this file/directory ahead of their first use
+   here, and none of those headers declare them. */
+extern int AddHeads(char *arg);
+extern int AlterSubLine(char *text);
+extern int CUI_CheckMailboxes(char *ForWhat);
+extern int CUI_CheckVersion(void);
+extern int CUI_CloneMessage(int cuid, char *OrigDirName, int Code);
+extern int CUI_CopyViceFileTails(char *FromFile, long FromSkip, char *ToFile, long ToSkip);
+extern int CUI_CreateNewMessageDirectory(char *dir, char *bodydir);
+extern int CUI_DeleteMessage(int cuid);
+extern long CUI_DisambiguateDir(char *shortname, char **longname);
+extern int CUI_EndConversation(void);
+extern int CUI_GenLocalTmpFileName(char *nmbuf);
+extern int CUI_GenTmpFileName(char *nmbuf);
+extern int CUI_GetAMSID(int cuid, char **id, char **dir);
+extern int CUI_GetAttrName(char *dir, int which, char *buf);
+extern int CUI_GetBodyToLocalFile(int cuid, char *FileName, int *ShouldDelete);
+extern int CUI_GetCuid(char *amsid, char *dirname, int *IsDup);
+extern int CUI_GetFileFromVice(char *LocalFile, char *ViceFile);
+extern int CUI_GetHeaderContents(int cuid, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim);
+extern int CUI_GetHeaders(char *DirName, char *date64, char *headbuf, int limit, long startbyte, long *nbytes, long *status, int RegisterCuids);
+extern int CUI_GetPartialBody(char *Buf, int Max, int cuid, long offset, long *bytesunfetched, int *bodylen);
+extern int CUI_GetSnapshotFromCUID(int cuid, char *SnapshotBuf);
+extern int CUI_HandleMissingFolder(char *OldName);
+extern long CUI_Initialize(int (*TimerFunction)(), char *rock);
+extern int CUI_MarkAsRead(int cuid);
+extern int CUI_MarkRepliedTo(int cuid);
+extern int CUI_NameReplyFile(int cuid, int code, char *FileName);
+extern int CUI_PrintBodyFromCUIDWithFlags(int cuid, int flags, char *printer);
+extern int CUI_PrintUpdatesWithFlags(char *dname, char *nickname, int flags, char *printer);
+extern int CUI_ProcessMessageAttributes(int cuid, char *Snapshot);
+extern int CUI_PurgeMarkedDirectories(Boolean Ask, Boolean OfferQuit);
+extern int CUI_ReconstructDirectory(char *arg, int TrustTimeStamp);
+extern int CUI_ReportAmbig(char *name, char *atype);
+extern int CUI_RewriteHeaderLine(char *text, char **newtext);
+extern int CUI_SetClientSignalHandler(int (*h)());
+extern void CUI_SetClientVersion(char *Vers);
+extern int CUI_SetPrinter(char *printername);
+extern int CUI_StoreFileToVice(char *LocalFile, char *ViceFile);
+extern int CUI_SubmitMessage(char *InFile, int DeliveryOpts);
+extern int CUI_UndeleteMessage(int cuid);
+extern int CUI_ValidateFile(char *InFileName, char *OutFileName);
+extern int CalcSkip(long skipvalue, char **s, char *headbuf, long numbytes, Boolean *StayHere, long *totalbytes, long *status);
+extern int ChooseFromList(char **QVec, int def);
+extern int CloneMessage(char *arg, int Code);
+extern int DescribeFlags(int cuid);
+extern int DescribeHeads(void);
+extern int DisplayMessage(char *arg);
+extern int EditFile(char *arg, int edittype);
+extern int EditLocalFile(char *LocalName, Boolean *FinishedElsewhere);
+extern int FindBodyStartInForwardedViceFile(char *ViceFile);
+extern int GetBodyFromCUID(int cuid);
+extern int GetBooleanFromUser(char *prompt, Boolean DefaultAns);
+extern int GetHeadersSinceDate(char *DirName, char *date64, char *NothingMessage);
+extern int GetNextCommand(char **sptr, char *buf, int lim);
+extern int GetStringFromUser(char *prompt, char *buf, int len, int IsPassword);
+extern int GetSubject(int cuid, char *strbuf, int strbuflen);
+extern int LowerStringInPlace(char *string, int len);
+extern int MS_AppendFileToFolder(char *FileName, char *FolderName);
+extern int MS_DebugMode(int level, int snap, int malloc);
+extern int MS_Die(void);
+extern int MS_DisambiguateFile(char *source, char *target, short AccessCode);
+extern int MS_Epoch(char *dirname, char *date64);
+extern int MS_FastUpdateState(void);
+extern int MS_GetAssociatedTime(char *FullName, char *Answer, int lim);
+extern int MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, int *remaining, int *ct);
+extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
+extern int MS_GetSubscriptionEntry(char *FullName, char *NickName, int *status);
+extern int MS_GetVersion(char *Buf, int lim);
+extern int MS_InstallWelcomeMessage(char *ParentName, char *InitDir, char *InitFile, char *ShortName);
+extern long MS_MatchFolderName(char *pat, char *filename);
+extern int MS_NameChangedMapFile(char *MapFile, int MailOnly, int ListAll, int *NumChanged, int *NumUnavailable, int *NumMissingFolders, int *NumSlowpokes, int *NumFastFellas);
+extern int MS_NameSubscriptionMapFile(char *Root, char *MapFile);
+extern int MS_OpenDebuggingPipescript(int DoIt);
+extern int MS_ParseDate(char *indate, int *year, int *month, int *day, int *hour, int *min, int *sec, int *wday, long *gtm);
+extern long MS_ScavengeDirectory(char *DirName, int Recurse, int *numgood, int *numbad, int quiet, int Purge);
+extern int MS_SetAssociatedTime(char *FullName, char *newvalue);
+extern int MS_SetSubscriptionEntry(char *FullName, char *NickName, int status);
+extern int MS_StorePartialFile(char *FileName, int startpos, int len, int mode, int Truncate, char *WhatToStore);
+extern int MS_TakeHints(int DoAll, int *ProtFailures);
+extern long MS_UnlinkFile(char *FileName);
+extern int MS_WriteUnscribedBodyFile(char *DirName, char *id, char *FileName);
+extern int MapcarFunctionToFileLines(int (*ProcessFunc)(), char *arg, int AliasCt);
+extern int MarkSeenLast(char *ans);
+extern int MoreSelect(int Default, char *AnsBuf, int AnsMax, char *MoreOptions[], char *s, char *Prompt_string);
+extern int ParseDirName(char *arg, char **Dirname);
+extern int ParseFileName(char *arg, char *FileName, int code);
+extern int ParseMessageNumber(char *arg);
+extern int PrintCaption(int cuid, char *Snapshot, int IsDup);
+extern int ProcessCommand(char *CurrentCommand, int AliasCount);
+extern int ProcessMultipleCommands(char *s, int AliasCt);
+extern int PutStringToViceFile(char *ViceFile, char *text);
+extern int RealWhoIs(char *text, char **newtext);
+extern int RedirectOutput(void);
+extern int ReportError(char *text, int level, Boolean Decode);
+extern int ReportSuccess(char *text);
+extern int ResetTerminalParams(char *arg);
+extern int SendSomeLines(char *TmpName, char *to, long *offset_p, int code, int cuid);
+extern int SendSomeMail(int cuid, char *to, int code);
+extern int SetDebugMode(char *arg);
+extern int SetEditorToUse(char *ed);
+extern int StepThroughMsgs(char *DirName, char *date64, char *ErrorText, char *newdate, Boolean *IsDone);
+extern int StoreMessage(int cuid, char *fname, long offset);
+extern int StorePartialFile(char *fname, long *offset_p, int mode);
+extern int ULstrcmp(char *s1, char *s2);
+extern int ULstrncmp(char *s1, char *s2, int n);
+extern int ViewMessage(int cuid);
+extern int amsconfig(int argc, char **argv, char *name);
+extern int dbg_close(int fd);
+extern int dbg_fclose(FILE *fp);
+/* moreprintf is a 1988-era "many fixed named params" pseudo-varargs function
+   (like ams/libs/ms's dbgprintf): real call sites supply only as many
+   trailing args as their format string references. An old-style
+   empty-parens ("unspecified arguments") declaration is the deliberately-
+   correct choice here -- it's compatible with any call-site argument count,
+   unlike a typed or `...`-variadic form (see cuifns.c for the fuller
+   explanation, including why this matters for errprintf2's same-file
+   definition too). */
+extern int moreprintf();
+extern int nontext(char *s);
+extern int writeall(int fd, char *Buf, int NBytes);
+
 static int ShowChainInfo = 0, PrintFixed = 0, PrintRot13 = 0;
 #define MAXCOMMANDS 100
 /* during startup be sure this many free command slots exist

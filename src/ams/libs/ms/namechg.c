@@ -66,9 +66,7 @@ of open should greatly reduce the frequency of the bugs that result.
 
 */
 
-mustopen(path, flags, mode)
-char *path;
-int flags, mode;
+int mustopen(char *path, int flags, int mode)
 {
     int numtries = 5, code;
 
@@ -79,9 +77,7 @@ int flags, mode;
 }
 
 
-FILE *
-mustfopen(fname, ftype)
-char *fname, *ftype;
+FILE * mustfopen(char *fname, char *ftype)
 {
     int numtries = 5;
     FILE *fp;
@@ -92,15 +88,7 @@ char *fname, *ftype;
     }
 }
 
-MS_NameChangedMapFile(MapFile, MailOnly, ListAll, NumChanged, NumUnavailable, NumMissingFolders, NumSlowpokes, NumFastFellas)
-char *MapFile; /* passed out */
-int MailOnly; /* passed in */
-int ListAll;  /* Passed in */
-int *NumChanged; /* Passed out */
-int *NumUnavailable; /* Passed out */
-int *NumMissingFolders; /* ditto */
-int *NumSlowpokes; /* ditto */
-int *NumFastFellas; /* ditto */
+int MS_NameChangedMapFile(char *MapFile, int MailOnly, int ListAll, int *NumChanged, int *NumUnavailable, int *NumMissingFolders, int *NumSlowpokes, int *NumFastFellas)
 {
     int i, subdiff, mailpathelt = 0, patheltinuse = -1, unavail = 0, code = 0;
     FILE *fp = NULL, *outfp;

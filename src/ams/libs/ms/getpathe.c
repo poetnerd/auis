@@ -38,10 +38,7 @@ extern int InitializeSearchPaths();
 extern char home[];
 extern Boolean DidInit;
 
-MS_GetSearchPathEntry(which, buf, lim)
-int     which,
-        lim;
-char   *buf;
+int MS_GetSearchPathEntry(int which, char *buf, int lim)
 {
     int     i;
 

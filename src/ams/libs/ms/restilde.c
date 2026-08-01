@@ -46,9 +46,7 @@ MessagesBE.c as well. */
 /* This routine takes a path name and resolves leading ~ references, e.g.
 	~/foo and ~nsb/bar, returning a freshly malloced version */
 
-ResolveTildes(old, new, domain)
-char   *old,
-      **new, *domain;
+int ResolveTildes(char *old, char **new, char *domain)
 {
     char   *t, user[2*MAXUSERNAME], *udir;
     struct CellAuth *ca;

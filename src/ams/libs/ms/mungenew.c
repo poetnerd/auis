@@ -36,6 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <mailconf.h>
 #include <stdlib.h>
+static int ReallyTruly_ProcessNewMessages();
 extern int CloseDirsThatNeedIt();
 extern int ConvertIncomingMail();
 extern int FlushClosableDir();
@@ -64,9 +65,7 @@ int MS_DataCollectionHackInProgress = 0;
 int MS_UnreportedCollections = 0;
 char *MS_UnreportedMailbox = "";
 
-MS_ProcessNewMessages(SourceDir, NumGood, NumBad, NumLocks, ParseSpecFile, resultcode, FirstError, NumInProgress, EliErrBuf, EliErrBufLim)
-char *SourceDir, *ParseSpecFile, *EliErrBuf;
-int *NumGood, *NumBad, *NumLocks, *resultcode, *FirstError, *NumInProgress, EliErrBufLim;
+int MS_ProcessNewMessages(char *SourceDir, int *NumGood, int *NumBad, int *NumLocks, char *ParseSpecFile, int *resultcode, int *FirstError, int *NumInProgress, char *EliErrBuf, int EliErrBufLim)
 {
     MS_UnreportedCollections = 0;
     MS_DataCollectionHackInProgress = 1;
@@ -77,9 +76,7 @@ int *NumGood, *NumBad, *NumLocks, *resultcode, *FirstError, *NumInProgress, EliE
     return (mserrcode);
 }
 
-static ReallyTruly_ProcessNewMessages(SourceDir, NumGood, NumBad, NumLocks, ParseSpecFile, resultcode, FirstError, NumInProgress, EliErrBuf, EliErrBufLim)
-char *SourceDir, *ParseSpecFile, *EliErrBuf;
-int *NumGood, *NumBad, *NumLocks, *resultcode, *FirstError, *NumInProgress, EliErrBufLim;
+static ReallyTruly_ProcessNewMessages(char *SourceDir, int *NumGood, int *NumBad, int *NumLocks, char *ParseSpecFile, int *resultcode, int *FirstError, int *NumInProgress, char *EliErrBuf, int EliErrBufLim)
 {
     int i, numfiles = 0, MailboxFilesAllocated, UnlinkFailures = 0, OldErrno;
     struct stat statbuf;

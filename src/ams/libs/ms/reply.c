@@ -63,10 +63,7 @@ extern char *RewriteSubject(), *getprofile(), *StripWhiteEnds();
 extern char MeInFull[];
 static char *ForwardString = "---------- Forwarded message begins here ----------\n\n";
 
-MS_NameReplyFile(DirName, id, code, FileName)
-char *DirName, *id, *FileName; 
-	/* The first two char * arguments are passed in, the last returned */
-int code; /* passed in */
+int MS_NameReplyFile(char *DirName, char *id, int code, char *FileName)
 {
     struct MS_Directory *Dir;
     struct MS_Message *Msg;
@@ -440,11 +437,7 @@ int code; /* passed in */
     return(0);
 }
 
-EmitHeader(Msg, which, fp, head)
-struct MS_Message *Msg;
-int which;
-FILE *fp;
-char *head;
+int EmitHeader(struct MS_Message *Msg, int which, FILE *fp, char *head)
 {
     int len;
 
@@ -456,11 +449,7 @@ char *head;
     }
 }
 
-PrintFwdHeaders(fp, headers, BE2Format, hdrlen)
-int fp;
-char *headers;
-char *BE2Format;
-int hdrlen;
+int PrintFwdHeaders(int fp, char *headers, char *BE2Format, int hdrlen)
 {
     char *hdr, *s, *t, *h, *wh;
     int numhdrs, len, match;

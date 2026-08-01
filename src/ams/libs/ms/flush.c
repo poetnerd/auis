@@ -45,8 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <afs/venus.h>
 #endif /* AFS_ENV */
 
-ViceFlush(fname)
-char *fname;
+int ViceFlush(char *fname)
 {
 #ifdef AFS_ENV
     struct ViceIoctl blob;
@@ -67,8 +66,7 @@ char *fname;
     return(0);
 }
 
-ViceFlushPlusParent(fname)
-char *fname;
+int ViceFlushPlusParent(char *fname)
 {
     long code = 0;
 #ifdef AFS_ENV

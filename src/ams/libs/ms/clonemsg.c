@@ -47,7 +47,7 @@ extern int ParseMessageFromRawBody();
 extern int ReadOrFindMSDir();
 extern int ReadRawFile();
 extern int RewriteSnapshotInDirectory();
-extern int SetChainField();
+extern int SetChainField(struct MS_Message *Msg, struct MS_Directory *Dir, Boolean PlanningHeadWrite);
 extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
 extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
 extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
@@ -65,9 +65,7 @@ extern FILE    *fopen();
    for dbg_open() in overhead/util/hdrs/fdplumb.h. */
 extern void MSJournal_Record(const char *dir, const char *fmt, ...);
 
-MS_CloneMessage(SourceDirName, id, DestDirName, Code)
-char           *SourceDirName, *id, *DestDirName;
-int             Code;
+int MS_CloneMessage(char *SourceDirName, char *id, char *DestDirName, int Code)
 {
     struct MS_Directory *SourceDir, *DestDir;
     struct MS_Message *Msg;
@@ -255,10 +253,7 @@ int             Code;
     }
 }
 
-CopyMessageBody(SourceDir, DestDir, id, timetoset)
-struct MS_Directory *SourceDir, *DestDir;
-char           *id;
-long            timetoset;
+int CopyMessageBody(struct MS_Directory *SourceDir, struct MS_Directory *DestDir, char *id, long timetoset)
 {
     char            FromName[1 + MAXPATHLEN], ToName[1 + MAXPATHLEN];
     int             saveerr, c;

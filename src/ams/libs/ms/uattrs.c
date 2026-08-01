@@ -46,11 +46,7 @@ extern int RewriteSnapshotInDirectory();
 extern char *permanentmalloc();
 static char *UnusedAttrName = UNUSEDATTRNAME;
 
-MS_GetDirAttributes(Dirname, AttrCt, Attrs, SepChar, ShowEmpty)
-char *Dirname; /* IN */
-int *AttrCt; /* OUT */
-char *Attrs; /* OUT */
-int SepChar, ShowEmpty; /* IN */
+int MS_GetDirAttributes(char *Dirname, int *AttrCt, char *Attrs, int SepChar, int ShowEmpty)
 {
     struct MS_Directory *Dir;
     int i;
@@ -76,9 +72,7 @@ int SepChar, ShowEmpty; /* IN */
     return(0);
 }
 
-MS_AddAttribute(Dirname, Newname, AttNum)
-char *Dirname, *Newname; /* both IN */
-int *AttNum; /* OUT */
+int MS_AddAttribute(char *Dirname, char *Newname, int *AttNum)
 {
     int i, errsave;
     Boolean Reusing = FALSE;
@@ -136,8 +130,7 @@ int *AttNum; /* OUT */
     return(0);
 }
 
-MS_DeleteAttr(DirName, AttrName)
-char *DirName, *AttrName; /* BOTH IN */
+int MS_DeleteAttr(char *DirName, char *AttrName)
 {
     int i, errsave;
     char snapshot[AMS_SNAPSHOTSIZE];

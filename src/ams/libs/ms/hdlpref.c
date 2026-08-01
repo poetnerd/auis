@@ -43,11 +43,7 @@ extern int setprofilestring();  /* overhead/util/lib/setprof.c */
 
 extern char *getprofile();
 
-MS_HandlePreference(prog, pref, InVal, OutVal, OutLim, opcode, resulti, defaulti)
-char *prog, *pref, *InVal; /* Passed IN */
-char *OutVal; /* Passed OUT */
-int OutLim, opcode, defaulti; /* Passed IN */
-int *resulti; /* Passed OUT */
+int MS_HandlePreference(char *prog, char *pref, char *InVal, char *OutVal, int OutLim, int opcode, int *resulti, int defaulti)
 {
     char *s, *key;
 

@@ -54,10 +54,7 @@ extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
 
 extern char MyMailDomain[];
 
-ReadRawFile(File, NewMessage, DoLocking)
-char *File;
-struct MS_Message *NewMessage;
-Boolean DoLocking;
+int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking)
 {
     struct stat statbuf;
 #ifdef AFS_ENV
@@ -195,8 +192,7 @@ Boolean DoLocking;
 
 #define READCHUNKSIZE (1024)
 
-GetHeaderSize(fd, size)
-int fd, *size;
+int GetHeaderSize(int fd, int *size)
 {
     int oldpos, result, looping = TRUE, NLAtEnd = FALSE;
     char buffer[1 + READCHUNKSIZE + 1];

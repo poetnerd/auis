@@ -54,9 +54,7 @@ extern int RewriteSnapshotInDirectory();
    instead of the callee's. */
 extern void MSJournal_Record(const char *dir, const char *fmt, ...);
 
-MS_AlterSnapshot(dirname, id, NewSnapshot, Code)
-char *dirname, *id, *NewSnapshot;
-int Code;
+int MS_AlterSnapshot(char *dirname, char *id, char *NewSnapshot, int Code)
 {
     struct MS_Directory *Dir;
     int msgnum, errsave, i;

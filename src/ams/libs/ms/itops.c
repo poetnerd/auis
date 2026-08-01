@@ -36,10 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 static char Digits[] = "0123456789";
 
-itops(num, buf, len)
-long    num;
-char   *buf;
-int     len;
+int itops(long num, char *buf, int len)
 {
     int     i,
             mod,

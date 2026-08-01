@@ -39,14 +39,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdlib.h>
 extern int BadSubMapLine();
 extern int BadUpdFileLine();
-extern int CheckUpdateLine();
+extern int CheckUpdateLine(char *line, int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood, Boolean LineIsFromUpdateFile);
 extern int CloseMSDir();
 extern int CompareSubsAndUpdateLines();
 extern int CriticalBizarreError();
 extern int DeSymLink();  /* overhead/util/lib/desym.c */
 extern int DropHint();
 extern int GetSnapshotByNumber();
-extern int MS_GetSearchPathEntry();
+extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
 extern int MS_LockMUF();
 extern int NonfatalBizarreError();
 extern int ReadOrFindMSDir();
@@ -62,8 +62,7 @@ extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
 
 extern char *StripWhiteEnds(), *fixDate();
 
-MS_RebuildMasterUpdateFiles(NumFastGood, NumSlowGood, NumBad, NumAbsent, NumProbablyGood) 
-int *NumFastGood, *NumSlowGood, *NumBad, *NumAbsent, *NumProbablyGood;
+int MS_RebuildMasterUpdateFiles(int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood)
 {
     char PathElt[1+MAXPATHLEN];
     int i=0;
@@ -76,17 +75,13 @@ int *NumFastGood, *NumSlowGood, *NumBad, *NumAbsent, *NumProbablyGood;
     return(0);
 }
 
-MS_RebuildOneMasterUpdateFile(PathElt, NumFastGood, NumSlowGood, NumBad, NumAbsent, NumProbablyGood) 
-char *PathElt;
-int *NumFastGood, *NumSlowGood, *NumBad, *NumAbsent, *NumProbablyGood;
+int MS_RebuildOneMasterUpdateFile(char *PathElt, int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood)
 {
     *NumSlowGood = *NumFastGood = *NumBad = *NumAbsent = *NumProbablyGood = 0;
     return(RebuildOneMasterUpdateFile(PathElt, NumFastGood, NumSlowGood, NumBad, NumAbsent, NumProbablyGood));
 }
 
-RebuildOneMasterUpdateFile(PathElt, NumFastGood, NumSlowGood, NumBad, NumAbsent, NumProbablyGood) 
-char *PathElt;
-int *NumFastGood, *NumSlowGood, *NumBad, *NumAbsent, *NumProbablyGood;
+int RebuildOneMasterUpdateFile(char *PathElt, int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood)
 {
     int code, errsave, lockfd;
     char SubMapFile[MAXPATHLEN+1], *sdum,
@@ -208,8 +203,7 @@ int *NumFastGood, *NumSlowGood, *NumBad, *NumAbsent, *NumProbablyGood;
     < 0 if the subs line comes first, and 0 if they refer to the same thing.
 */
 
-CompareSubsAndUpdateLines(sline, uline)
-char *sline, *uline;
+int CompareSubsAndUpdateLines(char *sline, char *uline)
 {
     char *s;
     int code, len;
@@ -230,9 +224,7 @@ char *sline, *uline;
     return(code);
 }
 
-char *
-DescribeTimeInterval(interval)
-long interval;
+char * DescribeTimeInterval(long interval)
 {
     static char DescBuf[30];
 
@@ -263,10 +255,7 @@ long interval;
     out a hint when necessary.
 */
 
-CheckUpdateLine(line, NumFastGood, NumSlowGood, NumBad, NumAbsent, NumProbablyGood, LineIsFromUpdateFile)
-char *line;
-int *NumFastGood, *NumSlowGood, *NumBad, *NumAbsent, *NumProbablyGood;
-Boolean LineIsFromUpdateFile;
+int CheckUpdateLine(char *line, int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood, Boolean LineIsFromUpdateFile)
 {
     char *date, *stamp, SnapshotDum[AMS_SNAPSHOTSIZE], ErrorText[200+MAXPATHLEN], *s;
     long timestamp, errsave;

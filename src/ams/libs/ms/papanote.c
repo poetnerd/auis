@@ -52,9 +52,7 @@ extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
 
 extern char home[];
 
-AddParentalMessage(Msg, PDirName, bbname, bbpath)
-struct MS_Message *Msg;
-char *PDirName, *bbname, *bbpath;
+int AddParentalMessage(struct MS_Message *Msg, char *PDirName, char *bbname, char *bbpath)
 {
     char TempFile[1+MAXPATHLEN];
 
@@ -67,8 +65,7 @@ char *PDirName, *bbname, *bbpath;
     return(mserrcode);
 }
 
-AddParentalMessageFromFile(FileName, PDirName, bbname, bbpath)
-char *FileName, *PDirName, *bbname, *bbpath;
+int AddParentalMessageFromFile(char *FileName, char *PDirName, char *bbname, char *bbpath)
 {
     char NewFileName[MAXPATHLEN+1], ThisFormat[50], LineBuf[1000];
     struct MS_Message *Msg;

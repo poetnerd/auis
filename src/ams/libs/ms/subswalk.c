@@ -51,9 +51,7 @@ static int RealSubsTreeWalk();
 
 
 
-SubsTreeWalk(outfile, dirname)
-FILE *outfile;
-char *dirname;
+int SubsTreeWalk(FILE *outfile, char *dirname)
 {/* Driver for the real recursive procedure, below. */
     int RC;
     char Name1[MAXPATHLEN+1], Name2[MAXPATHLEN+1];
@@ -68,10 +66,7 @@ char *dirname;
 }
 
 
-static int RealSubsTreeWalk(outfile, dirname, rootlen)
-FILE *outfile;
-char *dirname;
-int rootlen;
+static int RealSubsTreeWalk(FILE *outfile, char *dirname, int rootlen)
 {
     DIR *dirp;
     DIRENT_TYPE *dirent;

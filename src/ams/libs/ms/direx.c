@@ -35,9 +35,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <mailconf.h>
 #include <sys/stat.h>
+static void AddWelcomeMail();
 extern int AppendFileToFolder();
 extern int BuildNickName();  /* ams/libs/shr/utils.c */
-extern int EnsurePrivacy();
+extern int EnsurePrivacy(char *DirName, Boolean SemiPrivate);
 extern int FindDefaultDir();
 extern int GetSubsEntry();
 extern int MS_CreateNewMessageDirectory();
@@ -56,8 +57,7 @@ extern int vdown();  /* overhead/util/lib/vclose.c */
 
 extern char home[], Me[], *GetPersonalMailbox();
 
-static void AddWelcomeMail(mdir)
-char *mdir;
+static void AddWelcomeMail(char *mdir)
 {
     char ErrorText[256];
 
@@ -167,9 +167,7 @@ int EnsureMailDirExists() {
     return(0);
 }
 
-EnsurePrivacy(DirName, SemiPrivate)
-char *DirName;
-Boolean SemiPrivate;
+int EnsurePrivacy(char *DirName, Boolean SemiPrivate)
 {
 #ifdef AFS_ENV
     struct ViceIoctl blob;

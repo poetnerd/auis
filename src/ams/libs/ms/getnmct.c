@@ -43,9 +43,7 @@ extern int ReadOrFindMSDir();
 extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
 extern int vdown();  /* overhead/util/lib/vclose.c */
 
-MS_GetNewMessageCount(FullDirName, numnew, numtotal, LastOldDate, InsistOnFetch)
-char *FullDirName, *LastOldDate;
-int *numnew, *numtotal, InsistOnFetch;
+int MS_GetNewMessageCount(char *FullDirName, int *numnew, int *numtotal, char *LastOldDate, int InsistOnFetch)
 {
     struct MS_Directory *Dir = NULL;
     struct stat statbuf;

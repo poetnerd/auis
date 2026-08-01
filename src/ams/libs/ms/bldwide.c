@@ -37,9 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdlib.h>
 extern int StripMyselfFromAddressList();
 
-BuildWideReply(Msg, IncludeFrom)
-struct MS_Message *Msg;
-Boolean IncludeFrom;
+int BuildWideReply(struct MS_Message *Msg, Boolean IncludeFrom)
 {
     struct ParsedMsg *PStuff;
     char *NewWide;

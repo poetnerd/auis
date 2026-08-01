@@ -42,10 +42,7 @@ extern int lc2strncmp();  /* ams/libs/shr/utils.c */
 
 extern char *StripWhiteEnds();
 
-GetFormatFromMessage(Msg, ThisFormat, bufsize, IsBE2)
-struct MS_Message *Msg;
-char *ThisFormat;
-int bufsize, *IsBE2;
+int GetFormatFromMessage(struct MS_Message *Msg, char *ThisFormat, int bufsize, int *IsBE2)
 {
     char HeadBuf[2000], fmttype[25], fmtvers[25], fmtresources[200];
     int len;

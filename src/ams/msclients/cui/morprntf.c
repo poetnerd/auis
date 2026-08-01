@@ -47,6 +47,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 extern int CUI_SnapIsRunning;
 extern char *GetLine();
 
+/* Undeclared-external-call closure (COMPILERFLAGS -Werror=implicit-function-declaration):
+   defined later in this same file, ahead of its first use here. */
+extern int SpitOutChars(char *t, int len);
+
 int LinesOnTerminal = 24, LinesSincePause = 3,
     CharsOnLine = 1, TerminalLineWidth = 80;
 

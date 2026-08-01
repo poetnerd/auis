@@ -41,9 +41,7 @@ extern char *StripWhiteEnds();
 
 #define MAXPARTS 10
 
-ShrinkName(longname, shortname, limit)
-char *longname, *shortname;
-int limit;
+int ShrinkName(char *longname, char *shortname, int limit)
 {
     int i, len, numparts = 0, ComponentLengths[MAXPARTS], commalen = 0, looking;
     char *space, *comma, *Components[MAXPARTS], *lastpart, *tmp;

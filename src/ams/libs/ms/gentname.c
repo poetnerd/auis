@@ -37,15 +37,13 @@ extern int GenTempName();
 
 extern char *getprofile();
 
-MS_GenTempFileName(Buf)
-char *Buf; /* Out */
+int MS_GenTempFileName(char *Buf)
 {
     GenTempName(Buf);
     return(0);
 }
 
-GenTempName(Buf)
-char   *Buf;
+int GenTempName(char *Buf)
 {
     static char *TempFileLocation = NULL;
     if (!TempFileLocation) {

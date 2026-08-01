@@ -60,6 +60,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mail.h>
 #include <mailconf.h>
 #include <stdlib.h>
+static int ComparePathsByElts();
+static int CompareStrings();
+static int CompareTakenUpdates();
+static int CompareTimes();
+static int FreeCheckList();
+static int FreeCheckLists();
 extern int AddToDirCache();
 extern int AppendFileToMSDirInternal();
 extern int BuildNickName();  /* ams/libs/shr/utils.c */
@@ -75,7 +81,7 @@ extern int GetNameFromGecos();
 extern int GetSnapshotByNumber();
 extern int HandleMarksInProgress();
 extern int IsDirAlien();
-extern int MS_GetSearchPathEntry();
+extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
 extern int MarkInProgress();
 extern int NonfatalBizarreError();
 extern int OpenMSDirectory();
@@ -94,7 +100,7 @@ static int CheckHintDroppingPermission();
 static int CheckPathForMUFHints();
 static int ClearUpdates();
 static int CheckForMUFHints();
-static int SetProgressMark();
+static int SetProgressMark(char *dirname, Boolean TurnOnMark, Boolean Quietly);
 static int CheckMarksInProgress();
 static int AddToCheckList();
 static FreeCheckLists();
@@ -127,9 +133,7 @@ static void     BuildAttrNameBuf();
 
 #define MS_DB_VERSION 4
 
-int             AdjustIDs(Dir, HowMany)
-struct MS_Directory *Dir;
-int             HowMany;
+int AdjustIDs(struct MS_Directory *Dir, int HowMany)
 {                                      /* Makes sure that HowMany entries
                                         * are allocated in the IDs array
                                         * hanging off Dir->IDs.  Returns 0
@@ -159,8 +163,7 @@ int             HowMany;
     return 0;
 }
 
-void            FreeIDs(Dir)
-struct MS_Directory *Dir;
+void FreeIDs(struct MS_Directory *Dir)
 {                                      /* Deallocated the IDs. */
     if (Dir->NumIDs > 0 && Dir->IDs != NULL)
         free(Dir->IDs);
@@ -172,10 +175,7 @@ struct MS_Directory *Dir;
         zero-record initialization, but with no messages.
 */
 
-CreateNewMSDirectory(Dirname, NewDir, Overwrite)
-char           *Dirname;
-struct MS_Directory **NewDir;
-int             Overwrite;
+int CreateNewMSDirectory(char *Dirname, struct MS_Directory **NewDir, int Overwrite)
 {
     int             status;
     struct stat     stbuf;
@@ -259,8 +259,7 @@ int             Overwrite;
 
 #define PADSIZE 10
 
-DestructivelyWriteDirectoryHead(Dir)
-struct MS_Directory *Dir;
+int DestructivelyWriteDirectoryHead(struct MS_Directory *Dir)
 {
     char            DirectoryHeader[AMS_DIRHEADSIZE + 2];
     char            majstr[PADSIZE + 1], minstr[PADSIZE + 1], killstr[PADSIZE + 1], AttrBuf[ATTNAMESLEN + 1];
@@ -320,15 +319,12 @@ struct MS_Directory *Dir;
         use for updating an old representation of a directory
 */
 
-ReadOldMSDirectoryHead(Dir)
-struct MS_Directory *Dir;
+int ReadOldMSDirectoryHead(struct MS_Directory *Dir)
 {
     return (ReadOldMSDirectoryHead_Complain(Dir, TRUE));
 }
 
-ReadOldMSDirectoryHead_Complain(Dir, DoComplain)
-struct MS_Directory *Dir;
-int             DoComplain;
+int ReadOldMSDirectoryHead_Complain(struct MS_Directory *Dir, int DoComplain)
 {
     int             numbytes;
     char            DirHead[AMS_DIRHEADSIZE + 1], AttrBuf[ATTNAMESLEN + 1];
@@ -473,8 +469,7 @@ int             DoComplain;
     return (0);
 }
 
-char           *GenAuthField(Msg)
-struct MS_Message *Msg;
+char * GenAuthField(struct MS_Message *Msg)
 {
     char            NameBuf[1000], *aname, *abuf;
 
@@ -509,11 +504,7 @@ struct MS_Message *Msg;
     return (abuf);
 }
 
-WritePureFile(Msg, File, Overwrite, Mode)
-struct MS_Message *Msg;
-char           *File;
-Boolean         Overwrite;
-int             Mode;
+int WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode)
 {
     int             fd, myerrno, bytestoread, bytesleft;
     char            BigBuf[5000];
@@ -613,9 +604,7 @@ int             Mode;
     return (0);
 }
 
-int             OpenMSDirectory(Dir, Code)
-struct MS_Directory *Dir;
-int             Code;
+int OpenMSDirectory(struct MS_Directory *Dir, int Code)
 {
     int             openmode, fd, errsave, cleanupmess, Quietly;
     char            DirPath[1 + MAXPATHLEN];
@@ -720,9 +709,7 @@ int             Code;
     return (0);
 }
 
-CloseMSDir(Dir, CloseMode)
-struct MS_Directory *Dir;
-int             CloseMode;
+int CloseMSDir(struct MS_Directory *Dir, int CloseMode)
 {
     Dir->CurPos = -1;
     if (Dir->fd < 0) {
@@ -766,8 +753,7 @@ int             CloseMode;
     return (0);
 }
 
-char           *fixDate(dPtr)
-char           *dPtr;
+char * fixDate(char *dPtr)
 {                                      /* Fix up the base-64 value (size
                                         * AMS_DATESIZE) at dPtr.  Return a
                                         * pointer to it. */
@@ -783,10 +769,7 @@ char           *dPtr;
     return dPtr;
 }
 
-GetSnapshotByID(Dir, id, msgnum, snapshot)
-struct MS_Directory *Dir;
-char           *id, *snapshot;
-int            *msgnum;
+int GetSnapshotByID(struct MS_Directory *Dir, char *id, int *msgnum, char *snapshot)
 {
     int             i, startpt, readct;
     long            fpos;
@@ -907,10 +890,7 @@ int            *msgnum;
 /* Note in the following routine that numbers start a zero
         and go to Dir->MessageCount -1 */
 
-GetSnapshotByNumber(Dir, msgnum, snapshot)
-struct MS_Directory *Dir;
-char           *snapshot;
-int             msgnum;
+int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot)
 {
     int             readct;
     long            fpos;
@@ -967,10 +947,7 @@ int             msgnum;
     return (0);
 }
 
-RewriteSnapshotInDirectory(Dir, num, snapshot)
-struct MS_Directory *Dir;
-int             num;
-char           *snapshot;
+int RewriteSnapshotInDirectory(struct MS_Directory *Dir, int num, char *snapshot)
 {
     long fpos;
 
@@ -994,8 +971,7 @@ char           *snapshot;
     return (0);
 }
 
-static int      CheckHintDroppingPermission(Dirname)
-char           *Dirname;
+static int CheckHintDroppingPermission(char *Dirname)
 {
     char            UpdateFileName[1 + MAXPATHLEN];
 
@@ -1026,8 +1002,7 @@ char           *GetMyHost()
     return (ThisHost);
 }
 
-DropHint(Dirname)
-char           *Dirname;
+int DropHint(char *Dirname)
 {
     char            ScratchBuf[1 + MAXPATHLEN], UpdateFileName[1 + MAXPATHLEN], *maybehere;
     struct stat statbuf;
@@ -1079,9 +1054,7 @@ char           *Dirname;
 #define NUMLOCKRETRIES 60
 #define LOCKSLEEPPERIOD 60
 
-int      MS_LockMUF(LockDirName, lockfd)
-char           *LockDirName;
-int            *lockfd;
+int MS_LockMUF(char *LockDirName, int *lockfd)
 {
     int             errsave, locktriesleft = NUMLOCKRETRIES;
     char            LockFileName[1 + MAXPATHLEN], ErrorText[1 + MAXPATHLEN];
@@ -1110,9 +1083,7 @@ int            *lockfd;
     }
 }
 
-MS_TakeHints(DoAll, ProtFailures)
-int             DoAll;
-int            *ProtFailures;
+int MS_TakeHints(int DoAll, int *ProtFailures)
 {
     int             i = 0;
     char            PathElt[1 + MAXPATHLEN];
@@ -1132,9 +1103,7 @@ int            *ProtFailures;
     return (0);
 }
 
-static int      CheckPathForMUFHints(PathElt, DoAll)
-char           *PathElt;
-int             DoAll;
+static int CheckPathForMUFHints(char *PathElt, int DoAll)
 {
     char            MUFDir[1 + MAXPATHLEN];
     int             i, lockfd;
@@ -1169,8 +1138,7 @@ static struct takenupdate {
 
 static int      UpdatesPending = 0;
 
-PlanHint(PathElt, shortname, MUFDir, MUFHint)
-char           *PathElt, *shortname, *MUFDir, *MUFHint;
+int PlanHint(char *PathElt, char *shortname, char *MUFDir, char *MUFHint)
 {
     char           *fulldir, *fullhint;
     struct MS_Directory *Dir;
@@ -1251,8 +1219,7 @@ char           *PathElt, *shortname, *MUFDir, *MUFHint;
  * traversal. -- bobg, 10/18/88
  */
 
-static int      ComparePathsByElts(p1, p2)
-char           *p1, *p2;
+static int ComparePathsByElts(char *p1, char *p2)
 {
     char           *elt1start, *elt1end, *elt2start, *elt2end;
     int             result = 0;
@@ -1286,14 +1253,12 @@ char           *p1, *p2;
                                                  * positive) */
 }
 
-static int      CompareTakenUpdates(t1, t2)
-struct takenupdate *t1, *t2;
+static int CompareTakenUpdates(struct takenupdate *t1, struct takenupdate *t2)
 {
     return (ComparePathsByElts(t1->FullDirName, t2->FullDirName));
 }
 
-static int      ClearUpdates(PathElt)
-char           *PathElt;
+static int ClearUpdates(char *PathElt)
 {
     char            UpdateFileName[1 + MAXPATHLEN], NewUpdateFileName[1 + MAXPATHLEN], LineBuf[100 + MAXPATHLEN], NewLine[1 + MAXPATHLEN + 50], *Dirname, ErrorText[200 + MAXPATHLEN + MAXPATHLEN], *s, *t, *u, *v, PrevLine[100 + MAXPATHLEN];
     FILE           *oldR, *newW;
@@ -1477,8 +1442,7 @@ char           *PathElt;
     return (0);
 }
 
-static void     FreeUpdates(UnlinkHints)
-int             UnlinkHints;
+static void FreeUpdates(int UnlinkHints)
 {
     while (--UpdatesPending >= 0) {
         if (UnlinkHints)
@@ -1489,9 +1453,7 @@ int             UnlinkHints;
     UpdatesPending = 0;
 }
 
-static int      CheckForMUFHints(MUFDir, DoAll, PathElt)
-char           *MUFDir, *PathElt;
-int             DoAll;
+static int CheckForMUFHints(char *MUFDir, int DoAll, char *PathElt)
 {
     DIR            *dirp;
     DIRENT_TYPE    *dp;
@@ -1542,8 +1504,7 @@ int             DoAll;
     return (0);
 }
 
-static void     AnnounceBadDirFormat(line)
-char           *line;
+static void AnnounceBadDirFormat(char *line)
 {
     char            ErrorText[100 + MAXPATHLEN];
 
@@ -1551,9 +1512,7 @@ char           *line;
     CriticalBizarreError(ErrorText);
 }
 
-static void     BuildAttrNameBuf(Dir, AttrBuf)
-struct MS_Directory *Dir;
-char           *AttrBuf;
+static void BuildAttrNameBuf(struct MS_Directory *Dir, char *AttrBuf)
 {
     int             i;
     char           *s = AttrBuf;
@@ -1568,10 +1527,7 @@ char           *AttrBuf;
     }
 }
 
-EmitBE2PrefixAndLSeekPastIt(fd, fp, SkippedBytes)
-int             fd;
-FILE           *fp;
-int            *SkippedBytes;
+int EmitBE2PrefixAndLSeekPastIt(int fd, FILE *fp, int *SkippedBytes)
 {
     struct LinePromState *lps;
     char            Lbuf[2000];        /* actually, 120 *should* suffice */
@@ -1606,9 +1562,7 @@ int            *SkippedBytes;
     return (0);
 }
 
-GetCellularUserName(uid, cell, NameBuf, lim)
-int             uid, lim;
-char           *cell, *NameBuf;
+int GetCellularUserName(int uid, char *cell, char *NameBuf, int lim)
 {
     struct passwd  *p;
     char           *newName;
@@ -1628,20 +1582,17 @@ char           *cell, *NameBuf;
     }
 }
 
-int             MarkInProgress(dirname)
-char           *dirname;
+int MarkInProgress(char *dirname)
 {
     return (SetProgressMark(dirname, TRUE, FALSE));
 }
 
-int             MarkQuietlyInProgress(dirname)
-char           *dirname;
+int MarkQuietlyInProgress(char *dirname)
 {
     return (SetProgressMark(dirname, TRUE, TRUE));
 }
 
-int             UnmarkInProgress(dirname)
-char           *dirname;
+int UnmarkInProgress(char *dirname)
 {
     return (SetProgressMark(dirname, FALSE, FALSE));
 }
@@ -1649,9 +1600,7 @@ char           *dirname;
 static char     MS_DIRINPROGRESSFILE[] = ".AMS_DIRMOD";
 static char     QuietMark[] = "shhh\n";
 
-static int      SetProgressMark(dirname, TurnOnMark, Quietly)
-char           *dirname;
-Boolean         TurnOnMark, Quietly;
+static int SetProgressMark(char *dirname, Boolean TurnOnMark, Boolean Quietly)
 {
     char            MarkFile[1 + MAXPATHLEN];
     int             fd;
@@ -1678,9 +1627,7 @@ Boolean         TurnOnMark, Quietly;
     return (0);
 }
 
-static int      CheckMarksInProgress(Dir, pQuietly)
-struct MS_Directory *Dir;
-int            *pQuietly;
+static int CheckMarksInProgress(struct MS_Directory *Dir, int *pQuietly)
 {
     auto char       MarkFile[1 + MAXPATHLEN];
     auto struct stat sbuf;
@@ -1720,9 +1667,7 @@ Missing = {
     "missing", 0, 0, 0, 0
 };
 
-int             HandleMarksInProgress(Dir, Quiet)
-struct MS_Directory *Dir;
-int             Quiet;
+int HandleMarksInProgress(struct MS_Directory *Dir, int Quiet)
 {
     DIR            *dirp;
     DIRENT_TYPE  *dp;
@@ -1786,9 +1731,7 @@ int             Quiet;
     return (CheckCheckLists(Dir, Quiet, alien));
 }
 
-static int      AddToCheckList(name, CheckList)
-char           *name;
-struct CheckList *CheckList;
+static int AddToCheckList(char *name, struct CheckList *CheckList)
 {
     if (CheckList->Used >= CheckList->Allocated) {
         CheckList->Allocated *= 2;
@@ -1820,8 +1763,7 @@ static          FreeCheckLists()
     FreeCheckList(&FilesToCheck);
 }
 
-static          FreeCheckList(CheckList)
-struct CheckList *CheckList;
+static FreeCheckList(struct CheckList *CheckList)
 {
     int             i;
 
@@ -1836,21 +1778,17 @@ struct CheckList *CheckList;
     CheckList->Allocated = 0;
 }
 
-static int      CompareStrings(s1, s2)
-struct FileInfo *s1, *s2;
+static int CompareStrings(struct FileInfo *s1, struct FileInfo *s2)
 {
     return (strcmp(s1->Name, s2->Name));
 }
 
-static int      CompareTimes(s1, s2)
-struct FileInfo *s1, *s2;
+static int CompareTimes(struct FileInfo *s1, struct FileInfo *s2)
 {
     return (s1->FileDate - s2->FileDate);
 }
 
-static int      CheckCheckLists(Dir, Quiet, alien)
-struct MS_Directory *Dir;
-int             Quiet, alien;
+static int CheckCheckLists(struct MS_Directory *Dir, int Quiet, int alien)
 {
     char            FileName[1 + MAXPATHLEN], *partstart, ErrorText[200 + MAXPATHLEN], FileBuf2[1 + MAXPATHLEN];
     int             foundct = 0, errs = 0, i, j, code, missingct = 0;
@@ -1948,9 +1886,7 @@ int             Quiet, alien;
     return (0);
 }
 
-IsDirAlien(Dir, alien)
-char *Dir;
-int            *alien;
+int IsDirAlien(char *Dir, int *alien)
 {
     static int     *pathcodes = NULL;
     int             i, whichpath;
@@ -1991,8 +1927,7 @@ int            *alien;
 }
 
 #if 0
-GetBodyFileName(DirName, id, FileName)
-char           *DirName, *id, *FileName;
+int GetBodyFileName(char *DirName, char *id, char *FileName)
 {
     struct stat statbuf;
 
@@ -2006,16 +1941,14 @@ char           *DirName, *id, *FileName;
 /* The following two functions added to replace the old
  * GetBodyFileName() with something faster.  cn0h--11/22/91
  */
-QuickGetBodyFileName(DirName, id, FileName)
-char           *DirName, *id, *FileName;
+int QuickGetBodyFileName(char *DirName, char *id, char *FileName)
 {
     sprintf(FileName, "%s/+%s", DirName, id);
 }
 
 /* returns -1 on failure, 0 on success
  */
-int RetryBodyFileName(FileName)
-    char *FileName;
+int RetryBodyFileName(char *FileName)
 {
     char *s;
 

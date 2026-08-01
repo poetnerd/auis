@@ -41,8 +41,7 @@ extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
 extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
 extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
 
-long MS_MatchFolderName(pat, filename)
-char *pat, *filename;
+long MS_MatchFolderName(char *pat, char *filename)
 {
     int i, patlen;
     long errsave;

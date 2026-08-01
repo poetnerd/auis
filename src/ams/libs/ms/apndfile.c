@@ -69,16 +69,13 @@ extern int WritePureFile();
    overhead/util/hdrs/fdplumb.h. */
 extern void MSJournal_Record(const char *dir, const char *fmt, ...);
 
-MS_AppendFileToFolder(FileName, FolderName)
-char           *FileName, *FolderName;          /* BOTH IN */
+int MS_AppendFileToFolder(char *FileName, char *FolderName)
 {
     debug(1, ("MS_AppendFileToFolder %s %s\n", FileName, FolderName));
     return (AppendFileToFolder(FileName, FolderName, TRUE));
 }
 
-AppendFileToFolder(FileName, FolderName, DoDelete)
-char           *FileName, *FolderName;
-int             DoDelete;
+int AppendFileToFolder(char *FileName, char *FolderName, int DoDelete)
 {
     int             errsave = 0;
     struct MS_Directory *Dir = NULL;
@@ -95,27 +92,17 @@ int             DoDelete;
 }
 
 
-AppendFileToMSDir(FileName, Dir, DoDelete)
-char           *FileName;
-struct MS_Directory *Dir;
-int             DoDelete;
+int AppendFileToMSDir(char *FileName, struct MS_Directory *Dir, int DoDelete)
 {
     return (AppendFileToMSDirInternal(FileName, Dir, DoDelete, FALSE));
 }
 
-AppendFileToMSDirPreservingFileName(FileName, Dir, DoDelete)
-char           *FileName;
-struct MS_Directory *Dir;
-int             DoDelete;
+int AppendFileToMSDirPreservingFileName(char *FileName, struct MS_Directory *Dir, int DoDelete)
 {
     return (AppendFileToMSDirInternal(FileName, Dir, DoDelete, TRUE));
 }
 
-AppendFileToMSDirInternal(FileName, Dir, DoDelete, TreatAsAlien)
-char           *FileName;
-struct MS_Directory *Dir;
-int             DoDelete;
-int             TreatAsAlien;
+int AppendFileToMSDirInternal(char *FileName, struct MS_Directory *Dir, int DoDelete, int TreatAsAlien)
 {
     struct MS_Message *Msg;
     struct MS_CaptionTemplate CapTemplate;
@@ -207,16 +194,13 @@ int             TreatAsAlien;
     routine does not duplicate or bypass any of it.
 */
 
-MS_AppendFileToFolderWithId(FileName, FolderName, Id, Date64)
-char           *FileName, *FolderName, *Id, *Date64;    /* ALL IN */
+int MS_AppendFileToFolderWithId(char *FileName, char *FolderName, char *Id, char *Date64)
 {
     debug(1, ("MS_AppendFileToFolderWithId %s %s %s %s\n", FileName, FolderName, Id, Date64));
     return (AppendFileToFolderWithId(FileName, FolderName, TRUE, Id, Date64));
 }
 
-AppendFileToFolderWithId(FileName, FolderName, DoDelete, Id, Date64)
-char           *FileName, *FolderName, *Id, *Date64;
-int             DoDelete;
+int AppendFileToFolderWithId(char *FileName, char *FolderName, int DoDelete, char *Id, char *Date64)
 {
     int             errsave = 0;
     struct MS_Directory *Dir = NULL;
@@ -232,11 +216,7 @@ int             DoDelete;
     return (errsave ? errsave : mserrcode);
 }
 
-AppendFileToMSDirWithId(FileName, Dir, DoDelete, Id, Date64)
-char           *FileName;
-struct MS_Directory *Dir;
-int             DoDelete;
-char           *Id, *Date64;
+int AppendFileToMSDirWithId(char *FileName, struct MS_Directory *Dir, int DoDelete, char *Id, char *Date64)
 {
     struct MS_Message *Msg;
     struct MS_CaptionTemplate CapTemplate;

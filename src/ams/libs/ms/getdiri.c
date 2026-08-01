@@ -42,10 +42,7 @@ extern int TransformPathRootToMailbox();
 
 extern char home[], MyMailDomain[];
 
-long    MS_GetDirInfo (DirName, ProtCode, MsgCount)
-char   *DirName;
-int    *ProtCode,
-       *MsgCount;
+long MS_GetDirInfo(char *DirName, int *ProtCode, int *MsgCount)
 {
     struct MS_Directory *Dir;
     char BoxName[1+MAXPATHLEN], RootName[1+MAXPATHLEN];

@@ -11,9 +11,7 @@ $Source: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/getascft.c,v 
 #include <ms.h>
 extern int GetAssocFileTime();
 
-MS_GetAssociatedFileTime(FullName, fdate)
-char *FullName;
-long *fdate;
+int MS_GetAssociatedFileTime(char *FullName, long *fdate)
 {
     debug(1, ("MS_GetAssociatedFileTime %s\n", FullName));
     return(GetAssocFileTime(FullName, fdate));

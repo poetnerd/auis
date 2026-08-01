@@ -31,8 +31,7 @@
 static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/redslash.c,v 2.6 1992/12/15 21:20:51 rr2b R6tape $";
 #endif
 
-ReduceSlashes(filename)
-char *filename;
+int ReduceSlashes(char *filename)
 {
     char *old = filename, *new = filename;
     int AtSlash = 0;

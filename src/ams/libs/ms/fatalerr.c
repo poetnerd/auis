@@ -41,8 +41,7 @@ extern int freepag();
 /* The following should never return, but should notify the postmaster
 	that an error has occurred. */
 
-FatalError(text)
-char *text;
+int FatalError(char *text)
 {
     errprintf("ms", ERR_CRITICAL, 0, 0, "Message server terminating: %s\n", text);
     fflush(stdout);

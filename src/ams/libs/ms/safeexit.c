@@ -50,8 +50,7 @@ extern int freepag();
 
 extern int MS_SnapIsRunning;
 
-safeexit(code)
-int code;
+int safeexit(int code)
 {
     freepag();
     exit(code);

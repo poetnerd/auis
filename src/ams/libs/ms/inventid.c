@@ -13,8 +13,7 @@ $Source: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/inventid.c,v 
 
 extern char *ams_genid();
 
-InventID(msg)
-struct MS_Message *msg;
+int InventID(struct MS_Message *msg)
 {
     debug(1, ("Invent ID\n"));
 

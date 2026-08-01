@@ -37,8 +37,7 @@ extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
 
 extern char home[], *GetPersonalMailbox();
 
-MS_DoIHaveMail(count)
-int *count;
+int MS_DoIHaveMail(int *count)
 {
     DIR *dirp;
     DIRENT_TYPE *dirent;

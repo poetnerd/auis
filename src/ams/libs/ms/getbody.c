@@ -38,9 +38,7 @@ extern int MS_GetPartialFile();
 extern int QuickGetBodyFileName();
 extern int ReadOrFindMSDir();
 
-MS_GetPartialBody(DirName, id, Buf, BufLim, offset, remaining, ct)
-char *DirName, *id, *Buf;
-int BufLim, offset, *remaining, *ct;
+int MS_GetPartialBody(char *DirName, char *id, char *Buf, int BufLim, int offset, int *remaining, int *ct)
 {
     struct MS_Directory *Dir;
     char FileName[MAXPATHLEN+1];

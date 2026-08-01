@@ -36,8 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 extern int SNAP_debugmask;
 
-MS_DebugMode(level, snap, malloc)
-int level, snap, malloc;
+int MS_DebugMode(int level, int snap, int malloc)
 {
     debug(1, ("MS_DebugMode %d %d %d\n", level, snap, malloc));
     MSDebugging = level;

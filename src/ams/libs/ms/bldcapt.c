@@ -68,10 +68,7 @@ extern int ShrinkName();
 extern int postmanvuid, myvuid, homeUsesAMSDelivery;
 extern char *months[], MyMailDomain[], *MyPrettyAddress;
 
-BuildCaption(Msg, Template, IsMyMail)
-struct MS_Message *Msg;
-struct MS_CaptionTemplate *Template;
-Boolean IsMyMail;
+int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail)
 {
     struct passwd *p;
     struct MS_CaptionTemplate DefaultTemplate;
@@ -263,8 +260,7 @@ Boolean IsMyMail;
     return(0);
 }
 
-SeemsToBeFromMe(Msg)
-struct MS_Message *Msg;
+int SeemsToBeFromMe(struct MS_Message *Msg)
 {
     if (Msg->ParsedStuff->HeadBody[HP_FROM]
 	 && !strncmp(Msg->ParsedStuff->HeadBody[HP_FROM], MyPrettyAddress, Msg->ParsedStuff->HeadBodyLen[HP_FROM])) {
@@ -281,8 +277,7 @@ struct MS_Message *Msg;
     return(0);
 }
 	
-ReallyIsFromMe(Msg, InMyCell)
-struct MS_Message *Msg;
+int ReallyIsFromMe(struct MS_Message *Msg, int InMyCell)
 {
     if ((!(Msg->AuthUid <= 0	/* the BCC case */
 	    || (Msg->AuthCell == NULL)

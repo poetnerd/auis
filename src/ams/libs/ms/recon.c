@@ -38,6 +38,49 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <hdrparse.h>
 #include <stdlib.h>
+static int CaptionIsHealthy();
+static int ContainsOnlyBase64Chars();
+static void ElimDups();
+static int GetOldIDSomehow();
+static int HashList_Add();
+static int HashList_AnyMatches();
+static void HashList_Free();
+static int HashList_GrowIfNecessary();
+static void HashList_Init();
+static int HashList_Size();
+static int MergeList_Add();
+static int MergeList_ContainsChain();
+static void MergeList_Free();
+static void MergeList_Init();
+static int MergeList_NeedToMerge();
+static int MsgListEntry_CompareAMSIDs();
+static int MsgListEntry_CompareMIDs();
+static int MsgListEntry_CompareTimes();
+static int MsgList_Add();
+static void MsgList_Free();
+static struct hashlist * MsgList_GetHashList();
+static struct MS_Message * MsgList_GetMsg();
+static char    * MsgList_GetSnapshot();
+static int MsgList_GrowIfNecessary();
+static void MsgList_Init();
+static void MsgList_Remove();
+static int MsgList_Size();
+static void MsgList_SortByAMSID();
+static void MsgList_SortByMID();
+static void MsgList_SortByTime();
+static int MyConstructHashList();
+static int OKAMSFileName();
+static void SalvageOldSnapshot();
+static int SameMsg();
+static int SetFileTimeStamp();
+static int SnapshotListEntry_CompareAMSIDs();
+static int SnapshotList_Add();
+static void SnapshotList_Free();
+static char    * SnapshotList_GetSnapshot();
+static int SnapshotList_GrowIfNecessary();
+static void SnapshotList_Init();
+static int SnapshotList_Size();
+static void SnapshotList_SortByAMSID();
 extern int BuildAttributesField();
 extern int BuildCaption();
 extern int BuildDateField();
@@ -56,7 +99,7 @@ extern int ParseMessageFromRawBody();
 extern int ReadOldMSDirectoryHead();
 extern int ReadOrFindMSDir_Complain();
 extern int ReadRawFile();
-extern int RenameEvenInVice();
+extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
 extern char *ams_genid();  /* overhead/mail/lib/genid.c */
 extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
 extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
@@ -125,8 +168,7 @@ struct mergelist {
     int             used, size;
 };
 
-static int      ContainsOnlyBase64Chars(str)
-char           *str;
+static int ContainsOnlyBase64Chars(char *str)
 {
     char           *p;
     int             result;
@@ -137,8 +179,7 @@ char           *str;
     return (result);
 }
 
-static int      OKAMSFileName(name)
-char           *name;
+static int OKAMSFileName(char *name)
 {
     int             len;
 
@@ -148,10 +189,7 @@ char           *name;
             && (ContainsOnlyBase64Chars(name + 1)));
 }
 
-static int      GetOldIDSomehow(Msg, FileName, DirName)
-struct MS_Message *Msg;
-char           *FileName;
-char *DirName;
+static int GetOldIDSomehow(struct MS_Message *Msg, char *FileName, char *DirName)
 {
     char           *result;
     int             alien = FALSE;
@@ -180,8 +218,7 @@ char *DirName;
                        EVIA_RECONSTRUCTDIRECTORY);
 }
 
-static int      CaptionIsHealthy(caption)
-char           *caption;
+static int CaptionIsHealthy(char *caption)
 {
     int             len, numtabs = 0;
     char           *cptr = caption;
@@ -203,9 +240,7 @@ char           *caption;
     return (1);
 }
 
-static int      MergeList_ContainsChain(m, chain)
-struct mergelist *m;
-int             chain;
+static int MergeList_ContainsChain(struct mergelist *m, int chain)
 {
     int             i;
 
@@ -216,16 +251,13 @@ int             chain;
     return (FALSE);
 }
 
-static void     MergeList_Free(m)
-struct mergelist *m;
+static void MergeList_Free(struct mergelist *m)
 {
     if (m->entries)
         free(m->entries);
 }
 
-static int      MergeList_Add(m, chain, num)
-struct mergelist *m;
-int             chain, num;
+static int MergeList_Add(struct mergelist *m, int chain, int num)
 {
     if (!MergeList_GrowIfNecessary(m))
         return (0);
@@ -234,9 +266,7 @@ int             chain, num;
     return (1);
 }
 
-static int      MergeList_NeedToMerge(m, chain, num)
-struct mergelist *m;
-int             chain, num;
+static int MergeList_NeedToMerge(struct mergelist *m, int chain, int num)
 {
     int             i, decided = FALSE, result = FALSE;
 
@@ -249,30 +279,22 @@ int             chain, num;
     return (result);
 }
 
-static struct hashlist *MsgList_GetHashList(mlist, num)
-struct msglist *mlist;
-int             num;
+static struct hashlist * MsgList_GetHashList(struct msglist *mlist, int num)
 {
     return (&(mlist->entries[num].h));
 }
 
-static struct MS_Message *MsgList_GetMsg(mlist, num)
-struct msglist *mlist;
-int             num;
+static struct MS_Message * MsgList_GetMsg(struct msglist *mlist, int num)
 {
     return (mlist->entries[num].msg);
 }
 
-static char    *MsgList_GetSnapshot(mlist, num)
-struct msglist *mlist;
-int             num;
+static char * MsgList_GetSnapshot(struct msglist *mlist, int num)
 {
     return (mlist->entries[num].msg->Snapshot);
 }
 
-static void     MsgList_Remove(mlist, num, FreeSnapshot)
-struct msglist *mlist;
-int             num, FreeSnapshot;
+static void MsgList_Remove(struct msglist *mlist, int num, int FreeSnapshot)
 {
     int             i;
 
@@ -283,47 +305,39 @@ int             num, FreeSnapshot;
     }
 }
 
-static int      MsgList_Size(mlist)
-struct msglist *mlist;
+static int MsgList_Size(struct msglist *mlist)
 {
     return (mlist->used);
 }
 
-static void     MergeList_Init(m)
-struct mergelist *m;
+static void MergeList_Init(struct mergelist *m)
 {
     m->used = m->size = 0;
     m->entries = (struct mergelistentry *) 0;
 }
 
-static char    *SnapshotList_GetSnapshot(slist, num)
-struct snapshotlist *slist;
-int             num;
+static char * SnapshotList_GetSnapshot(struct snapshotlist *slist, int num)
 {
     return (slist->entries[num].snapshot);
 }
 
-static int      SnapshotList_Size(slist)
-struct snapshotlist *slist;
+static int SnapshotList_Size(struct snapshotlist *slist)
 {
     return (slist->used);
 }
 
-static void     HashList_Free(h)
-struct hashlist *h;
+static void HashList_Free(struct hashlist *h)
 {
     if (h->hashes)
         free(h->hashes);
 }
 
-static int      HashList_Size(h)
-struct hashlist *h;
+static int HashList_Size(struct hashlist *h)
 {
     return (h->used);
 }
 
-static int      HashList_AnyMatches(h1, h2)
-struct hashlist *h1, *h2;
+static int HashList_AnyMatches(struct hashlist *h1, struct hashlist *h2)
 {
     int             i, j;
     unsigned long   cmp1, cmp2;
@@ -356,8 +370,7 @@ struct hashlist *h1, *h2;
     return (FALSE);
 }
 
-static int      MsgList_GrowIfNecessary(mlist)
-struct msglist *mlist;
+static int MsgList_GrowIfNecessary(struct msglist *mlist)
 {
     struct msglistentry *tmp;
 
@@ -380,8 +393,7 @@ struct msglist *mlist;
     return (1);
 }
 
-static int      MergeList_GrowIfNecessary(mlist)
-struct mergelist *mlist;
+static int MergeList_GrowIfNecessary(struct mergelist *mlist)
 {
     struct mergelistentry *tmp;
 
@@ -404,20 +416,17 @@ struct mergelist *mlist;
     return (1);
 }
 
-static int      MsgListEntry_CompareAMSIDs(mle1, mle2)
-struct msglistentry *mle1, *mle2;
+static int MsgListEntry_CompareAMSIDs(struct msglistentry *mle1, struct msglistentry *mle2)
 {
     return (strcmp(AMS_ID(mle1->msg->Snapshot), AMS_ID(mle2->msg->Snapshot)));
 }
 
-static int      SnapshotListEntry_CompareAMSIDs(sle1, sle2)
-struct snapshotlistentry *sle1, *sle2;
+static int SnapshotListEntry_CompareAMSIDs(struct snapshotlistentry *sle1, struct snapshotlistentry *sle2)
 {
     return (strcmp(AMS_ID(sle1->snapshot), AMS_ID(sle2->snapshot)));
 }
 
-static int      MsgListEntry_CompareTimes(mle1, mle2)
-struct msglistentry *mle1, *mle2;
+static int MsgListEntry_CompareTimes(struct msglistentry *mle1, struct msglistentry *mle2)
 {
     int cmp = strcmp(AMS_DATE(mle1->msg->Snapshot), AMS_DATE(mle2->msg->Snapshot));
     /* AMS_DATE only has one-second resolution, so messages created within
@@ -430,8 +439,7 @@ struct msglistentry *mle1, *mle2;
 }
 
 /* Does a minor sort on AMSIDs */
-static int      MsgListEntry_CompareMIDs(mle1, mle2)
-struct msglistentry *mle1, *mle2;
+static int MsgListEntry_CompareMIDs(struct msglistentry *mle1, struct msglistentry *mle2)
 {
     char           *mid1, *mid2;
     int             result;
@@ -463,8 +471,7 @@ struct msglistentry *mle1, *mle2;
                    AMS_ID(mle2->msg->Snapshot)));
 }
 
-static void     MsgList_SortByAMSID(mlist)
-struct msglist *mlist;
+static void MsgList_SortByAMSID(struct msglist *mlist)
 {
     qsort(mlist->entries, mlist->used,
           sizeof(struct msglistentry),
@@ -472,32 +479,28 @@ struct msglist *mlist;
 }
 
 /* Does a minor sort on AMSIDs */
-static void     MsgList_SortByMID(mlist)
-struct msglist *mlist;
+static void MsgList_SortByMID(struct msglist *mlist)
 {
     qsort(mlist->entries, mlist->used,
           sizeof(struct msglistentry),
           MsgListEntry_CompareMIDs);
 }
 
-static void     MsgList_SortByTime(mlist)
-struct msglist *mlist;
+static void MsgList_SortByTime(struct msglist *mlist)
 {
     qsort(mlist->entries, mlist->used,
           sizeof(struct msglistentry),
           MsgListEntry_CompareTimes);
 }
 
-static void     SnapshotList_SortByAMSID(slist)
-struct snapshotlist *slist;
+static void SnapshotList_SortByAMSID(struct snapshotlist *slist)
 {
     qsort(slist->entries, slist->used,
           sizeof(struct snapshotlistentry),
           SnapshotListEntry_CompareAMSIDs);
 }
 
-static int      SnapshotList_GrowIfNecessary(slist)
-struct snapshotlist *slist;
+static int SnapshotList_GrowIfNecessary(struct snapshotlist *slist)
 {
     struct snapshotlistentry *tmp;
 
@@ -521,22 +524,19 @@ struct snapshotlist *slist;
     return (1);
 }
 
-static void     MsgList_Init(mlist)
-struct msglist *mlist;
+static void MsgList_Init(struct msglist *mlist)
 {
     mlist->entries = (struct msglistentry *) 0;
     mlist->used = mlist->size = 0;
 }
 
-static void     HashList_Init(hlist)
-struct hashlist *hlist;
+static void HashList_Init(struct hashlist *hlist)
 {
     hlist->hashes = (unsigned long *) 0;
     hlist->used = hlist->size = 0;
 }
 
-static int      HashList_GrowIfNecessary(hlist)
-struct hashlist *hlist;
+static int HashList_GrowIfNecessary(struct hashlist *hlist)
 {
     unsigned long  *tmp;
 
@@ -560,9 +560,7 @@ struct hashlist *hlist;
     return (1);
 }
 
-static int      HashList_Add(hlist, val)
-struct hashlist *hlist;
-unsigned long   val;
+static int HashList_Add(struct hashlist *hlist, unsigned long val)
 {
     if (!HashList_GrowIfNecessary(hlist))
         return (0);
@@ -570,16 +568,13 @@ unsigned long   val;
     return (1);
 }
 
-static void     SnapshotList_Init(slist)
-struct snapshotlist *slist;
+static void SnapshotList_Init(struct snapshotlist *slist)
 {
     slist->entries = (struct snapshotlistentry *) 0;
     slist->used = slist->size = 0;
 }
 
-static int      MyConstructHashList(msg, h)
-struct MS_Message *msg;
-struct hashlist *h;
+static int MyConstructHashList(struct MS_Message *msg, struct hashlist *h)
 {
     int             len = 0;
     char           *LineBuf = NULL, *s = NULL, *t = NULL;
@@ -650,9 +645,7 @@ struct hashlist *h;
     return (TRUE);                     /* Success! */
 }
 
-static int      MsgList_Add(mlist, msg)
-struct msglist *mlist;
-struct MS_Message *msg;
+static int MsgList_Add(struct msglist *mlist, struct MS_Message *msg)
 {
     if (!MsgList_GrowIfNecessary(mlist))
         return (0);
@@ -661,9 +654,7 @@ struct MS_Message *msg;
     return (MyConstructHashList(msg, &(mlist->entries[(mlist->used)++].h)));
 }
 
-static int      SnapshotList_Add(slist, snapshot)
-struct snapshotlist *slist;
-char           *snapshot;
+static int SnapshotList_Add(struct snapshotlist *slist, char *snapshot)
 {
     if (!SnapshotList_GrowIfNecessary(slist))
         return (0);
@@ -671,9 +662,7 @@ char           *snapshot;
     return (1);
 }
 
-static void     SnapshotList_Free(slist, Free)
-struct snapshotlist *slist;
-int             Free;
+static void SnapshotList_Free(struct snapshotlist *slist, int Free)
 {
     int             i;
 
@@ -685,9 +674,7 @@ int             Free;
         free(slist->entries);
 }
 
-static void     MsgList_Free(mlist, FreeSnapshots)
-struct msglist *mlist;
-int             FreeSnapshots;
+static void MsgList_Free(struct msglist *mlist, int FreeSnapshots)
 {
     int             i;
 
@@ -703,8 +690,7 @@ int             FreeSnapshots;
     mlist->used = mlist->size = 0;
 }
 
-static int      SameMsg(m1, m2)
-struct MS_Message *m1, *m2;
+static int SameMsg(struct MS_Message *m1, struct MS_Message *m2)
 {
     char           *mid1, *mid2;
 
@@ -730,10 +716,7 @@ struct MS_Message *m1, *m2;
     return (1);
 }
 
-static void     ElimDups(dirname, mlist, alienDir)
-char           *dirname;
-struct msglist *mlist;
-int             alienDir;
+static void ElimDups(char *dirname, struct msglist *mlist, int alienDir)
 {
     int             i = 0;
     char            fname[1 + MAXPATHLEN], *amsid;
@@ -769,8 +752,7 @@ int             alienDir;
  * Resets the "deleted" attribute.
  */
 
-static void     SalvageOldSnapshot(oldsnap, newsnap)
-char           *oldsnap, *newsnap;
+static void SalvageOldSnapshot(char *oldsnap, char *newsnap)
 {
     if (strcmp(AMS_CAPTION(oldsnap), AMS_CAPTION(newsnap))) {   /* If they differ */
         if (CaptionIsHealthy(AMS_CAPTION(oldsnap))) {
@@ -781,9 +763,7 @@ char           *oldsnap, *newsnap;
     AMS_UNSET_ATTRIBUTE(newsnap, AMS_ATT_DELETED);
 }
 
-static int      SetFileTimeStamp(filename, time)
-char           *filename;
-long            time;
+static int SetFileTimeStamp(char *filename, long time)
 {
 #if defined(hpux)
     return (utime(filename, 0));
@@ -798,9 +778,7 @@ long            time;
 #endif                                 /* hpux */
 }
 
-MS_ReconstructDirectory(DirName, NumGood, NumBad, TrustTimeStamp)
-char           *DirName;
-int            *NumGood, *NumBad, TrustTimeStamp;
+int MS_ReconstructDirectory(char *DirName, int *NumGood, int *NumBad, int TrustTimeStamp)
 {
     struct msglist  newMsgList;
     struct snapshotlist oldSnapshots;
@@ -1329,8 +1307,7 @@ int            *NumGood, *NumBad, TrustTimeStamp;
 
 /* Returns the maxchainval */
 
-static int      SetChains(mlist)
-struct msglist *mlist;
+static int SetChains(struct msglist *mlist)
 {
     int             i, curmax = 0, newval;
 
@@ -1342,9 +1319,7 @@ struct msglist *mlist;
 
 /* Returns the chain val it used */
 
-static int      SetChain(mlist, mnum, maxchainval)
-struct msglist *mlist;
-int             mnum, maxchainval;
+static int SetChain(struct msglist *mlist, int mnum, int maxchainval)
 {
     struct hashlist *hlCurrent = MsgList_GetHashList(mlist, mnum), *hlTemp;
     int             i, thisChain = 0, chosenChain = 0, goBackTo = mnum;

@@ -37,31 +37,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 extern int BadSubMapLine();
 extern int BuildNickName();  /* ams/libs/shr/utils.c */
-extern int CheckSubMapCorrect();
+extern int CheckSubMapCorrect(char *DirName, char *MapFileName, char *NickName, Boolean DoesExist);
 extern int DeSymLink();  /* overhead/util/lib/desym.c */
-extern int EnsureSubMapCorrect();
+extern int EnsureSubMapCorrect(char *DirName, Boolean DoesExist);
 extern int FindTreeRoot();  /* ams/libs/shr/findroot.c */
 extern int PreorderSubscriptionStrcmp();
-extern int RenameEvenInVice();
+extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
 extern int abspath();
 extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
 extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
 
-EnsureInSubscriptionMap(DirName)
-char *DirName;
+int EnsureInSubscriptionMap(char *DirName)
 {
     return(EnsureSubMapCorrect(DirName, TRUE));
 }
 
-EnsureNotInSubscriptionMap(DirName)
-char *DirName;
+int EnsureNotInSubscriptionMap(char *DirName)
 {
     return(EnsureSubMapCorrect(DirName, FALSE));
 }
 
-EnsureSubMapCorrect(DirName, DoesExist)
-char *DirName;
-Boolean DoesExist;
+int EnsureSubMapCorrect(char *DirName, Boolean DoesExist)
 {
 
     FILE * rfp, *wfp;
@@ -149,9 +145,7 @@ Boolean DoesExist;
     return(0);
 }
 
-CheckSubMapCorrect(DirName, MapFileName, NickName, DoesExist)
-char *DirName, *MapFileName, *NickName;
-Boolean DoesExist;
+int CheckSubMapCorrect(char *DirName, char *MapFileName, char *NickName, Boolean DoesExist)
 {
     FILE * rfp;
     Boolean Answer = DoesExist ? FALSE : TRUE;

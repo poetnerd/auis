@@ -46,9 +46,7 @@ extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
 
 extern FILE *fopen();
 
-MS_NameSubscriptionMapFile(Root, MapFile)
-char *Root;  /* Parameter passed in from CUI */
-char *MapFile; /* Buffer to be filled and sent back by this routine */
+int MS_NameSubscriptionMapFile(char *Root, char *MapFile)
 {
     char    PublicMap[MAXPATHLEN + 1], File1[MAXPATHLEN+1], File2[MAXPATHLEN+1];
     int     code;

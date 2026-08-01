@@ -48,9 +48,7 @@ struct {
     "fwd: re:", "Fwd:",
     0, 0};
 
-char *
-RewriteSubject(oldsub)
-char *oldsub;
+char * RewriteSubject(char *oldsub)
 {
     char *newsub, *tempsub;
     Boolean DidSomething = TRUE;

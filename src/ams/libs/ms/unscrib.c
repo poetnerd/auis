@@ -41,14 +41,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 extern int ConsiderLoggingRead();
 extern int DeleteHeader();
 extern int FreeMessage();
-extern int FreeMessageContents();
+extern int FreeMessageContents(struct MS_Message *Msg, Boolean FreeSnapshot);
 extern int GenTempName();
 extern int GetFormatFromMessage();
 extern int ParseMessageFromRawBody();
 extern int QuickGetBodyFileName();
 extern int ReadOrFindMSDir();
 extern int ReadRawFile();
-extern int WriteUnscribedBodyFile();
+extern int WriteUnscribedBodyFile(struct MS_Message *Msg, char *FileName);
 extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
 extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
 extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
@@ -56,10 +56,7 @@ extern int fwriteallchars();  /* overhead/util/lib/fwrtallc.c */
 
 extern char *StripWhiteEnds();
 
-MS_WriteUnscribedBodyFile(DirName, id, FileName)
-char *DirName, /* IN */
-     *id, /* IN */
-     *FileName; /* OUT */
+int MS_WriteUnscribedBodyFile(char *DirName, char *id, char *FileName)
 {
     struct MS_Directory *Dir;
     struct MS_Message *Msg;
@@ -86,9 +83,7 @@ char *DirName, /* IN */
     return(code);
 }
 
-WriteUnscribedBodyFile(Msg, FileName)
-struct MS_Message *Msg;
-char *FileName;
+int WriteUnscribedBodyFile(struct MS_Message *Msg, char *FileName)
 {
     struct ScribeState ScribeState;
     int bytesleft, bytestoread, code = 0, IsBE2;
@@ -160,13 +155,12 @@ char *FileName;
     return(0);
 }
 
-UnformatMessage(Msg)
-struct MS_Message *Msg;
+int UnformatMessage(struct MS_Message *Msg)
 {
     char FileName[1+MAXPATHLEN];
 
     if (WriteUnscribedBodyFile(Msg, FileName)) return(mserrcode);
-    FreeMessageContents(Msg);
+    FreeMessageContents(Msg, FALSE);
     if (Msg->OpenFD) close(Msg->OpenFD);
     if (ReadRawFile(FileName, Msg, FALSE)) {
 	unlink(FileName);

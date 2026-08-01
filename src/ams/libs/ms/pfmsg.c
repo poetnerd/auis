@@ -45,9 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <afs/venus.h>
 #endif /* AFS_ENV */
 
-MS_PrefetchMessage(DirName, id, GetNext) /* prefetch a vice file */
-char *DirName, *id;
-int GetNext;
+int MS_PrefetchMessage(char *DirName, char *id, int GetNext)
 {
 #ifdef AFS_ENV
     struct MS_Directory *Dir;

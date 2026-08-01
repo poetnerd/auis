@@ -42,7 +42,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 extern int EnsureMailDirExists();
 extern int MS_CheckAuthentication();
 extern int NonfatalBizarreError();
-extern int ResolveTildes();
+extern int ResolveTildes(char *old, char **new, char *domain);
 extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
 extern int lc2strncmp();  /* ams/libs/shr/utils.c */
 extern int vdown();  /* overhead/util/lib/vclose.c */
@@ -257,8 +257,7 @@ InitializeSearchPaths() {
     return(0);
 }
 
-static int CheckLabel(i)
-int i;
+static int CheckLabel(int i)
 {
     if (!SearchPathElements[i].label) {
 	char FBuf[1+MAXPATHLEN];
@@ -283,8 +282,7 @@ int i;
     return 0;
 }
 
-OKRoot(Name)
-char *Name;
+int OKRoot(char *Name)
 {/* Check (mspath) root Name.  Return TRUE if all was OK, or FALSE, after having printed a message, if there was a problem. */
     char ErrorText[100+MAXPATHLEN];
     struct stat statbuf;
@@ -311,8 +309,7 @@ char *Name;
     }
 }
 
-ValidateSearchPath(i)
-int i;
+int ValidateSearchPath(int i)
 {
     if (i<0 || i>= MS_NumDirsInSearchPath) {
 	AMS_RETURN_ERRCODE(EINVAL, EIN_PARAMCHECK, EVIA_DISAMB);

@@ -42,6 +42,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <ctype.h>
 #include <parseadd.h>
+static int CheckMailrcHold();
+static int SetHoldFromFile(char *fname, int *holdP);
+static int lock(char *file, char *lockedFile, int *lockedFDp);
+static int rmlock(char name[], int lockFD);
 extern int FreeAddressList();  /* overhead/mail/lib/parseadd.c */
 extern int NonfatalBizarreError();
 extern int ParseAddressList();  /* overhead/mail/lib/parseadd.c */
@@ -62,8 +66,7 @@ extern char home[];
   * Remove the mail lock, and note that we no longer
   * have it locked.
   */
-static int rmlock(name, lockFD)
-char name[]; int lockFD;
+static int rmlock(char name[], int lockFD)
 {
     struct stat statb;
 
@@ -93,8 +96,7 @@ char name[]; int lockFD;
  * Attempt to set the lock by creating the temporary file,
  * then doing a link/unlink.  If it fails, return -1 else 0
  */
-static int lock(file, lockedFile, lockedFDp)
-char *file, *lockedFile; int *lockedFDp;
+static int lock(char *file, char *lockedFile, int *lockedFDp)
 {
     register int f, g;
     char	locktmp[1+MAXPATHLEN];	    /* Usable lock temporary */
@@ -129,8 +131,7 @@ char *file, *lockedFile; int *lockedFDp;
     return(0);
 }
 
-static int SetHoldFromFile(fname, holdP)
-char *fname; int *holdP;
+static int SetHoldFromFile(char *fname, int *holdP)
 {/* Set or unset ``hold'' as in the file ``fname''. */
     FILE *fp;
     char InBuf[300];
@@ -199,9 +200,7 @@ static int CheckMailrcHold()
 #define buffsize 1024
 #define MAXTRIES 25
 
-int ConvertIncomingMail(MailSpoolFile, MailDir, FilesReadIn)
-char *MailSpoolFile, *MailDir;
-int *FilesReadIn;
+int ConvertIncomingMail(char *MailSpoolFile, char *MailDir, int *FilesReadIn)
 {
     FILE *fp;
     int		wfd = 0, i, errsave, tfd, AnyWrittenToThisOne, LockFD,blen;
@@ -358,8 +357,7 @@ int *FilesReadIn;
     return(0);
 }
 
-static int IsNewFrom(line)
-char *line;
+static int IsNewFrom(char *line)
 {
     PARSED_ADDRESS *ListHead = NULL;
     struct tm TmBuf;

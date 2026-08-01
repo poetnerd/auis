@@ -37,9 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 extern int errno;
 
-RenameEvenInVice(ThisFileName, NewFileName)
-char   *ThisFileName,
-       *NewFileName;
+int RenameEvenInVice(char *ThisFileName, char *NewFileName)
 {
     int     ReallyBad = 5;
 

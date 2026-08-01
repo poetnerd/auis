@@ -46,6 +46,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 #define CUI_SOURCE_CUIFNS_C
 #include <cuimach.h>
 
+/* Undeclared-external-call closure (COMPILERFLAGS -Werror=implicit-function-declaration):
+   these names are defined in ams/libs/ms, cui.c, or overhead/util/lib and
+   none of the included headers declare them. */
+extern int MS_FastUpdateState(void);
+extern int ReportError(char *text, int level, Boolean Decode);
+extern int cui_prog_main(int argc, char **argv);
+extern int fselect(int nfds, FILE **rfiles, FILE **wfiles, FILE **xfiles, struct timeval *timeout);
+extern int getcharwithpausecheck(void);
+
 /*
  main is machine dependant because on the macintosh we need
  to allocate the heap between heap and stack space.  also, if

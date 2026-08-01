@@ -38,11 +38,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <mail.h>
 #include <stdlib.h>
+static int ReadSubsFile();
 extern int GenMSPathElts();
 extern int InitializeSearchPaths();
 extern int MS_AddToDsabgCache();
 extern int NonfatalBizarreError();
-extern int ResolveTildes();
+extern int ResolveTildes(char *old, char **new, char *domain);
 extern int ValidateSearchPath();
 extern int abspath();
 extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
@@ -68,9 +69,7 @@ char *MS_LookupInDsabgCache();
 /* This routine should be cleaned up to set error codes properly, and then
 	the routines that call it should pass on its error codes */
 
-MS_DisambiguateFile(source, target, AccessCode)
-char *source, *target;
-short AccessCode;
+int MS_DisambiguateFile(char *source, char *target, short AccessCode)
 {
     int     i, RC;
     char   *tempname, *SlashPtr = NULL, possiblename[MAXPATHLEN + 1];
@@ -350,8 +349,7 @@ short AccessCode;
     return(0);
 }
 
-static unsigned hashfunc(s)
-char *s;
+static unsigned hashfunc(char *s)
 {
     int c;
     unsigned int result = 0;
@@ -361,9 +359,7 @@ char *s;
     return result;
 }
 
-MS_AddToDsabgCache(folder, index)
-char *folder;
-int index;
+int MS_AddToDsabgCache(char *folder, int index)
 {
     unsigned hashval = hashfunc(folder);
     struct DsabgCacheEntry *thisentry;
@@ -394,8 +390,7 @@ int index;
     *insertentry = thisentry;
 }
 
-char *MS_LookupInDsabgCache(folder)
-char *folder;
+char * MS_LookupInDsabgCache(char *folder)
 {
     static char retbuf[MAXPATHLEN + 1];
     unsigned hashval = hashfunc(folder);
@@ -412,8 +407,7 @@ char *folder;
     return 0;
 }
 
-static ReadSubsFile(idx)
-int idx;
+static ReadSubsFile(int idx)
 {
     char MapFileName[MAXPATHLEN + 1];
     char LineBuf[2 * MAXPATHLEN];

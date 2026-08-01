@@ -51,10 +51,7 @@ extern char *fixDate();
 	will provide a very quick way to do simple things with minimal parsing.
 */
 
-MS_HeadersSince(FullDirName, datefield, ReturnBuf, MaxReturn, startbyte, numbytes, bytesleft)
-char *FullDirName, *datefield, *ReturnBuf;
-int MaxReturn;
-long startbyte, *numbytes, *bytesleft;
+int MS_HeadersSince(char *FullDirName, char *datefield, char *ReturnBuf, int MaxReturn, long startbyte, long *numbytes, long *bytesleft)
 {
     struct MS_Directory *Dir = NULL;
     struct stat statbuf;

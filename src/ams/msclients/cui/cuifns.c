@@ -41,6 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/param.h>
+#include <stdlib.h>
 #define CUI_SOURCE_CUIFNS_C
 #include <cuimach.h>
 
@@ -67,6 +68,67 @@ extern int  unix_sys_nerr,
 	    ms_nerrcause,
 	    ms_nerrvia,
 	    rpc_nerr;
+
+/* Undeclared-external-call closure (COMPILERFLAGS -Werror=implicit-function-declaration):
+   these names are defined in ams/libs/ms, ams/libs/cui, other overhead/AMS
+   libraries, or elsewhere in this file/directory ahead of their first use
+   here, and none of those headers declare them. */
+extern long CUI_DisambiguateDir(char *shortname, char **longname);
+extern int CUI_FixAttribute(int cuid, char *attname, Boolean Set);
+extern int CUI_FlagUrgency(int cuid, int urgency);
+extern int CUI_GetAMSID(int cuid, char **id, char **dir);
+extern int CUI_GetSnapshotFromCUID(int cuid, char *SnapshotBuf);
+extern int CUI_RemoveDirectory(char *DirName);
+extern int CUI_RenameDir(char *old, char *new);
+extern int CUI_ReportAmbig(char *name, char *atype);
+extern int CUI_ResendMessage(int cuid, char *Tolist);
+extern int DisplayFile(char *arg);
+extern int ExposeSubscriptions(char *dir_template, int code);
+extern int FlagUrgency(char *arg, int urgency);
+extern int MS_CheckAuthentication(int *Authenticated);
+extern int MS_ConvertOldMail(int *good, int *bad);
+extern int MS_DeleteAttr(char *DirName, char *AttrName);
+extern int MS_DisambiguateFile(char *source, char *target, short AccessCode);
+extern int MS_DoIHaveMail(int *count);
+extern long MS_EditMessage(char *dirname, char *id, char *NewBodyFile, int Reparse);
+extern int MS_FastUpdateState(void);
+extern int MS_GetDirAttributes(char *Dirname, int *AttrCt, char *Attrs, int SepChar, int ShowEmpty);
+extern long MS_GetDirInfo(char *DirName, int *ProtCode, int *MsgCount);
+extern int MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, int *remaining, int *ct);
+extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
+extern long MS_MergeDirectories(char *SourceDirName, char *DestDirName);
+extern int MS_NameChangedMapFile(char *MapFile, int MailOnly, int ListAll, int *NumChanged, int *NumUnavailable, int *NumMissingFolders, int *NumSlowpokes, int *NumFastFellas);
+extern int MS_NameSubscriptionMapFile(char *Root, char *MapFile);
+extern int MS_RebuildMasterUpdateFiles(int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood);
+extern int MS_RebuildOneMasterUpdateFile(char *PathElt, int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood);
+extern int MS_RebuildOneSubscriptionMap(char *PathElt);
+extern int MS_RebuildSubscriptionMaps(void);
+extern int MS_SetAssociatedTime(char *FullName, char *newvalue);
+extern int MS_StorePartialFile(char *FileName, int startpos, int len, int mode, int Truncate, char *WhatToStore);
+extern long MS_UnlinkFile(char *FileName);
+extern int ParseFileName(char *arg, char *FileName, int code);
+extern int PrintTimeStampAndNewline(FILE *fp);
+extern int SetTerminalParams(int h, int w);
+extern int ULstrcmp(char *s1, char *s2);
+extern int ULstrncmp(char *s1, char *s2, int n);
+extern int dbg_fclose(FILE *fp);
+/* errprintf2/moreprintf are 1988-era "many fixed named params" pseudo-varargs
+   (like ams/libs/ms's dbgprintf): every real call site supplies only as many
+   of the trailing params as its format string references, relying on K&R's
+   tolerance for omitted trailing arguments (never read, since the format
+   string doesn't reference those slots). A typed or `...`-variadic
+   declaration breaks every under-supplied call site (177 across this
+   directory) and, for errprintf2 specifically, also conflicts with its own
+   later full-prototype definition in this same file (K&R's "unspecified
+   arguments" form is compatible with any call-site argument count AND with
+   a later full-prototype definition, which is exactly why this compiled
+   cleanly for decades before -Werror=implicit-function-declaration existed;
+   a typed or `...` form is not compatible with that later definition). Old-
+   style empty-parens declarations are therefore the deliberately-correct
+   choice here, not a shortcut. */
+extern int errprintf2();
+extern int moreprintf();
+extern int vdown(int err);
 
 int ResetTerminalParams(char *arg)
 {

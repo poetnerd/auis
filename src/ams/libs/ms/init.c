@@ -148,9 +148,7 @@ static char *CurArena=NULL;
 static int LeftInCurArena=0, WastedByPermanentMalloc=0;
 #define EVENBREAK sizeof(char **)
 
-char *
-permanentmalloc(ct)
-int ct;
+char * permanentmalloc(int ct)
 {
     int AmtToGrab;
     char *retstr;
@@ -259,9 +257,7 @@ MS_ReInitialize() {
 }
 
 
-MS_Initialize(MaxBufSize, UsingSnap) 
-int *MaxBufSize;
-Boolean UsingSnap;
+int MS_Initialize(int *MaxBufSize, Boolean UsingSnap)
 {
 #ifdef AFS_ENV
     struct passwd *p;
@@ -509,8 +505,7 @@ Boolean UsingSnap;
     return(MS_ReInitialize());
 }
 
-DieYouHeathenSwine(signum) 
-int signum;
+int DieYouHeathenSwine(int signum)
 {
     FILE *fp;
     char *Text, ErrorText[25+MAXPATHLEN], Fname[1+MAXPATHLEN];
@@ -655,10 +650,7 @@ InitializeDeathSignals() {
    so DT_NONAMS read back as a huge non-DT value and "no AMS
    delivery" (-1) read back positive -- and clients concluded they
    could send raw ATK datastreams to the whole Internet. */
-MS_GetConfigurationParameters(MailDomain, len, UseAmsDelivery, UseNameSep, DelType)
-long *UseAmsDelivery, *UseNameSep, *DelType;
-int len;
-char *MailDomain;
+int MS_GetConfigurationParameters(char *MailDomain, int len, long *UseAmsDelivery, long *UseNameSep, long *DelType)
 {
     strncpy(MailDomain, MyMailDomain, len);
     *UseAmsDelivery = homeUsesAMSDelivery;
@@ -667,9 +659,7 @@ char *MailDomain;
     return(0);
 }
 
-MS_AndrewDir(Dir, len)
-char *Dir;
-int len;
+int MS_AndrewDir(char *Dir, int len)
 {
     char *adir;
 

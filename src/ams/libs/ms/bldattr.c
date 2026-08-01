@@ -46,8 +46,7 @@ extern char *index(), *rindex();
 #define strrchr(s,c) rindex(s,c)
 #endif
 
-BuildAttributesField(msg)
-struct MS_Message *msg;
+int BuildAttributesField(struct MS_Message *msg)
 {
     debug(1, ("Building Attributes field ptrs\n"));
     if (msg->ParsedStuff->HeadBody[HP_ACKTO]) {
@@ -95,8 +94,7 @@ struct MS_Message *msg;
 
 /* #define MyPrime 2147483629 */
 
-unsigned long KRHash(s)
-register char *s;
+unsigned long KRHash(char *s)
 {
     register unsigned long sum = 0;
     register unsigned int Bit;
@@ -113,8 +111,7 @@ register char *s;
     return(sum+1);
 }
 
-static int BuildHashVals(Msg)
-struct MS_Message *Msg;
+static int BuildHashVals(struct MS_Message *Msg)
 {
     char LineBuf[2000], *s, *t, *mid;
     unsigned long midhash = 0, rephash = 0;
@@ -158,8 +155,7 @@ struct MS_Message *Msg;
 }
 
 #ifdef TESTINGHASHES
-ReportHashes(s, label)
-char *s, *label;
+int ReportHashes(char *s, char *label)
 {
     char *t;
     int i;

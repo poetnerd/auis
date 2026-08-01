@@ -36,8 +36,7 @@ extern int MS_ReconstructDirectory();
 extern int NonfatalBizarreError();
 extern int ReadOrFindMSDir();
 
-FindDefaultDir(Root, Name)
-char *Root, *Name;
+int FindDefaultDir(char *Root, char *Name)
 {
     int NumGood, NumBad;
     struct MS_Directory *Dir;

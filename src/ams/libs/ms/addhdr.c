@@ -45,23 +45,17 @@ extern int lc2strncmp();  /* ams/libs/shr/utils.c */
 #define ALTER_ADD 0
 #define ALTER_DEL 1
 
-AddHeader(Msg, Head)
-struct MS_Message *Msg;
-char *Head;
+int AddHeader(struct MS_Message *Msg, char *Head)
 {
     return(AlterMessage(Msg, ALTER_ADD, 0, Head));
 }
 
-DeleteHeader(Msg, num)
-struct MS_Message *Msg;
-int num;
+int DeleteHeader(struct MS_Message *Msg, int num)
 {
     return(AlterMessage(Msg, ALTER_DEL, num, NULL));
 }
 
-DelHeaderByName(Msg, Head)
-struct MS_Message *Msg;
-char *Head;
+int DelHeaderByName(struct MS_Message *Msg, char *Head)
 {
     int i, len;
 
@@ -77,10 +71,7 @@ char *Head;
     return(DeleteHeader(Msg, i));
 }
 
-AlterMessage(Msg, code, delhead, Head)
-struct MS_Message *Msg;
-int code, delhead;
-char *Head;
+int AlterMessage(struct MS_Message *Msg, int code, int delhead, char *Head)
 {
     char *newRawBits;
 

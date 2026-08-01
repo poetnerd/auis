@@ -40,8 +40,7 @@ char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
 	"Sep", "Oct", "Nov", "Dec", 0};
 
 
-ParseAndShrinkDate(bigdate, littledate) 
-char *bigdate, *littledate;
+int ParseAndShrinkDate(char *bigdate, char *littledate)
 {
     struct tm TmBuf;
 

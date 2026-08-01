@@ -39,6 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ctype.h>
 #include <util.h>
 #include <stdlib.h>
+static int GetSubsFileName();
 extern int BadLine();
 extern int BuildNickName();  /* ams/libs/shr/utils.c */
 extern int CheckForInconsistentSubscriptions();
@@ -59,10 +60,10 @@ extern int MS_RebuildOneSubscriptionMap();
 extern int NonfatalBizarreError();
 extern int PreorderSubscriptionStrcmp();
 extern int ReadSubs();
-extern int RenameEvenInVice();
-extern int ResolveTildes();
+extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
+extern int ResolveTildes(char *old, char **new, char *domain);
 extern int ScoreMatch();
-extern int SetFullProfileEntry();
+extern int SetFullProfileEntry(Boolean DoSubs, char *FullName, char *NickName, int status, Boolean DoProf, char *time64, int filedate, Boolean NeedToCheckPath);
 extern int UnlockProfile();
 extern int WhichPath();
 extern int abspath();
@@ -96,9 +97,7 @@ static Boolean PathsHaveChanged = FALSE;
 
 int CompareSubsPtrPriority();
 
-FindSubsEntry(name, findcode)
-char *name;
-int findcode; /* one of FIND_ codes defined above */
+int FindSubsEntry(char *name, int findcode)
 {
     int i, top, bottom, split, code, splen;
     static struct SubscriptionProfile subs;
@@ -294,9 +293,7 @@ WriteSubs()
 
 /* Routine used to fix future dates in AMS profiles -- added 12/12/91 by cn0h
  */
-FixSubsDate(sub, time64)
-    struct SubscriptionProfile *sub;
-    char *time64;
+int FixSubsDate(struct SubscriptionProfile *sub, char *time64)
 {
     char tomorrow[AMS_DATESIZE];
 
@@ -544,8 +541,7 @@ ReadSubs()
     return(CheckGlobalSubscriptions());
 }
 
-HandleSpecialProfileLine(line)
-char *line;
+int HandleSpecialProfileLine(char *line)
 {
     char *parm, *val, ErrorText[100+MAXPATHLEN];
     static char NomeM[] = "NO MEMORY TO HANDLE PATH CHANGES";
@@ -624,8 +620,7 @@ CheckPathChanges() {
     oldextlen = strlen(oldexternal);
 }
 
-HandlePathChange(sub)
-struct SubscriptionProfile *sub;
+int HandlePathChange(struct SubscriptionProfile *sub)
 {
     if (MailPathChanged) {
 	char MP[1+MAXPATHLEN];
@@ -639,10 +634,7 @@ struct SubscriptionProfile *sub;
     return(0);
 }
 
-HandleChange(sub, oldpath, newpath, oldlen)
-struct SubscriptionProfile *sub;
-char *oldpath, *newpath;
-int oldlen;
+int HandleChange(struct SubscriptionProfile *sub, char *oldpath, char *newpath, int oldlen)
 {
     char ErrorText[3000], NewName[1+MAXPATHLEN], *s;
 
@@ -691,8 +683,7 @@ CheckSubsDuplication() {
 
 /* For the qsort call */
 
-CompareSubsPtrPriority(sub1, sub2)
-struct SubscriptionProfile *sub1, *sub2;
+int CompareSubsPtrPriority(struct SubscriptionProfile *sub1, struct SubscriptionProfile *sub2)
 {
     if (!sub1 || !sub1->key) return(1);
     if (!sub2 || !sub2->key) return(-1);
@@ -703,8 +694,7 @@ struct SubscriptionProfile *sub1, *sub2;
     return(PreorderSubscriptionStrcmp(sub1->key, sub2->key));
 }
 
-CompareSubsPtrInternalPriority(sub1, sub2)
-struct SubscriptionProfile **sub1, **sub2;
+int CompareSubsPtrInternalPriority(struct SubscriptionProfile **sub1, struct SubscriptionProfile **sub2)
 {
     if (!*sub1 || !(*sub1)->key) return(1);
     if (!*sub2 || !(*sub2)->key) return(-1);
@@ -713,8 +703,7 @@ struct SubscriptionProfile **sub1, **sub2;
     return(PreorderSubscriptionStrcmp((*sub1)->key, (*sub2)->key));
 }
 
-int PreorderSubscriptionStrcmp(s, t)
-char *s, *t;
+int PreorderSubscriptionStrcmp(char *s, char *t)
 {
     register char sc, tc;
     if (!s || !t)
@@ -739,8 +728,7 @@ char *s, *t;
     return((int) sc - tc);
 }
 
-RemoveSubsEntry(FullName)
-char *FullName;
+int RemoveSubsEntry(char *FullName)
 {
     int i;
 
@@ -761,17 +749,13 @@ char *FullName;
 }
 
 
-SetSubsEntry(FullName, NickName, status)
-char *FullName, *NickName;
-int status;
+int SetSubsEntry(char *FullName, char *NickName, int status)
 {
 
     return(SetFullProfileEntry(TRUE, FullName, NickName, status, FALSE, NULL, 0, FALSE));
 }
 
-SetProfileEntry(FullName, newvalue, newdate)
-char *FullName, *newvalue;
-long newdate;
+int SetProfileEntry(char *FullName, char *newvalue, long newdate)
 {
     char MyBuf[1+AMS_DATESIZE];
 
@@ -787,10 +771,7 @@ long newdate;
     return(SetFullProfileEntry(FALSE, FullName, NULL, 0, TRUE, newvalue, newdate, FALSE));
 }
 
-SetFullProfileEntry(DoSubs, FullName, NickName, status, DoProf, time64, filedate, NeedToCheckPath)
-Boolean DoSubs, DoProf, NeedToCheckPath;
-char *FullName, *NickName, *time64;
-int status, filedate;
+int SetFullProfileEntry(Boolean DoSubs, char *FullName, char *NickName, int status, Boolean DoProf, char *time64, int filedate, Boolean NeedToCheckPath)
 {
     int i, j, IsNew = 0;
     int splen;
@@ -886,9 +867,7 @@ int status, filedate;
     return(0);
 }
 
-InsertInSubsList(subs, index)
-struct SubscriptionProfile *subs;
-int *index;
+int InsertInSubsList(struct SubscriptionProfile *subs, int *index)
 {
     int i, j;
 
@@ -919,9 +898,7 @@ int *index;
     return(0);
 }
 
-GetSubsEntry(FullName, NickName, status)
-char *FullName, *NickName;
-int *status;
+int GetSubsEntry(char *FullName, char *NickName, int *status)
 {
     int i;
 
@@ -939,9 +916,7 @@ int *status;
 }
 
 
-GetAssocFileTime(FullName, fdate)
-char *FullName;
-long *fdate;
+int GetAssocFileTime(char *FullName, long *fdate)
 {
     int i;
 
@@ -956,9 +931,7 @@ long *fdate;
     return(0);
 }
 
-GetAssocTime(FullName, Answer, lim)
-char *FullName, *Answer;
-int lim;
+int GetAssocTime(char *FullName, char *Answer, int lim)
 {
     int i;
 
@@ -976,8 +949,7 @@ int lim;
 
 /* This writes it out in an old & simpler format, for direct use by clients */
 
-WriteSimpleSubsMap(fname)
-char *fname;
+int WriteSimpleSubsMap(char *fname)
 {
     FILE *fp;
     int subsindex;
@@ -1005,9 +977,7 @@ char *fname;
 
 }
 
-GetNextSubsEntry(FullName, NickName, status)
-char *FullName, *NickName;
-int *status;
+int GetNextSubsEntry(char *FullName, char *NickName, int *status)
 {
     static int i = 0;
 
@@ -1098,9 +1068,7 @@ MakeSubsListInPathOrder() {
     return(0);
 }
 
-ComputeSubsPriority(sname, pathelt)
-char *sname;
-int pathelt;
+int ComputeSubsPriority(char *sname, int pathelt)
 {
     int i, bestmatch=32767, bestmatchscore = -1, matchscore, dum;
 
@@ -1133,9 +1101,7 @@ int pathelt;
     return(bestmatch);
 }
 
-ScoreMatch(pattern, string, matchct)
-register char *pattern, *string;
-int *matchct;
+int ScoreMatch(char *pattern, char *string, int *matchct)
 {
 /*     debug(256, ("Matching pattern %s against name %s\n", pattern, string)); */
     if (!pattern || !string) return(0);
@@ -1230,8 +1196,7 @@ InitializeSubsPriorities() {
     return(0);
 }
 
-WhichPath(s)
-char *s;
+int WhichPath(char *s)
 {
     char Fnam[1+MAXPATHLEN], *fresh = NULL, *extraslash = NULL;
     int i;
@@ -1291,8 +1256,7 @@ CheckGlobalSubscriptions() {
     return(0);
 }
 
-CheckForInconsistentSubscriptions(SubsFileName)
-char *SubsFileName;
+int CheckForInconsistentSubscriptions(char *SubsFileName)
 {
     char OldStuff[1+MAXPATHLEN];
     struct stat st1, st2;
@@ -1353,8 +1317,7 @@ char *SubsFileName;
 }
 
 
-CheckForOldFashionedSubscriptions(foundthem) 
-int *foundthem;
+int CheckForOldFashionedSubscriptions(int *foundthem)
 {
     char SFile[1+MAXPATHLEN], PFile[1+MAXPATHLEN], LineBuf[100+MAXPATHLEN], *full, *nick, *time64;
     FILE *rfp;
@@ -1447,20 +1410,17 @@ int *foundthem;
     return(0);
 }
 
-BadSubMapLine(s)
-char *s;
+int BadSubMapLine(char *s)
 {
     return(BadLine(s, "subscription map"));
 }
 
-BadUpdFileLine(s)
-char *s;
+int BadUpdFileLine(char *s)
 {
     return(BadLine(s, "master update file"));
 }
 
-BadLine(s, what)
-char *s, *what;
+int BadLine(char *s, char *what)
 {
     char *tmp, ErrorText[256];
     int mistakes = 0;

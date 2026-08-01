@@ -49,15 +49,14 @@ extern int MergeSubMaps();
 extern int NonfatalBizarreError();
 extern int ReadOrFindMSDir();
 extern int RemoveFromCrucialClassesPreference();
-extern int RenameEvenInVice();
+extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
 extern int SetSubsEntry();
 extern int StripWhiteEnds();  /* ams/libs/shr/utils.c */
 extern int abspath();
 extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
 extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
 
-long MS_RenameDir(OldName, NewName, NewFullName)
-char *OldName, *NewName, *NewFullName;
+long MS_RenameDir(char *OldName, char *NewName, char *NewFullName)
 {
     struct MS_Directory *Dir;
     char *s;
@@ -86,8 +85,7 @@ char *OldName, *NewName, *NewFullName;
     return(0);
 }
 
-HandleTreeNameChange(OldName, NewName)
-char *OldName, *NewName;
+int HandleTreeNameChange(char *OldName, char *NewName)
 {
     char OldNick[1+MAXPATHLEN], NewNick[1+MAXPATHLEN], NewFullName[1+MAXPATHLEN], SubMapFile[1+MAXPATHLEN], NewSubMapFile[1+MAXPATHLEN], NewSubMapFile2[1+MAXPATHLEN], LineBuf[10+MAXPATHLEN+MAXPATHLEN], *fn, *suffix, OldRoot[1+MAXPATHLEN];
     FILE *rfp, *wfp, *wfp2, *chfp;
@@ -204,8 +202,7 @@ char *OldName, *NewName;
     return(0);
 }
 
-HandleOneChange(NewFullName, NewNick, OldFullName, OldNick)
-char *NewFullName, *NewNick, *OldFullName, *OldNick;
+int HandleOneChange(char *NewFullName, char *NewNick, char *OldFullName, char *OldNick)
 {
     int status;
     char Scratch[1+MAXPATHLEN], dbuf[1+AMS_DATESIZE];
@@ -225,8 +222,7 @@ char *NewFullName, *NewNick, *OldFullName, *OldNick;
     return(0);
 }
 
-MergeSubMaps(r1, r2, target)
-char *r1, *r2, *target;
+int MergeSubMaps(char *r1, char *r2, char *target)
 {
     char TempName[1+MAXPATHLEN], LBuf1[MAXPATHLEN+MAXPATHLEN+10], LBuf2[MAXPATHLEN+MAXPATHLEN+10], *s1, *s2;
     FILE *rf1, *rf2, *w;

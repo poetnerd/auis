@@ -50,8 +50,7 @@ extern int ParseAddressList();  /* overhead/mail/lib/parseadd.c */
 extern PARSED_ADDRESS *SingleAddress();
 extern char MyMailDomain[];
 
-AuthenticReSentHeader(msg)
-struct MS_Message *msg;
+int AuthenticReSentHeader(struct MS_Message *msg)
 {
     char *s;
     int len, outType, numitems;

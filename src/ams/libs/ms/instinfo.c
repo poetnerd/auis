@@ -46,8 +46,7 @@ extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
 
 extern char Me[], *MyPrettyAddress, home[];
 
-MS_InstallWelcomeMessage(ParentName, InitDir, InitFile, ShortName)
-char *ParentName, *InitDir, *InitFile, *ShortName;
+int MS_InstallWelcomeMessage(char *ParentName, char *InitDir, char *InitFile, char *ShortName)
 {
     char DirName[MAXPATHLEN+1], SourceFileName[1+MAXPATHLEN], LineBuf[1000];
     FILE *rfp, *wfp;

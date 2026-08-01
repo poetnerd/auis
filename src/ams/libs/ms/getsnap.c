@@ -37,9 +37,7 @@ extern int CloseMSDir();
 extern int GetSnapshotByID();
 extern int ReadOrFindMSDir();
 
-MS_GetSnapshot(dirname, id, SnapshotBuf) 
-char *dirname, *id; /* Passed in */
-char *SnapshotBuf; /* Passed out */
+int MS_GetSnapshot(char *dirname, char *id, char *SnapshotBuf)
 {
     struct MS_Directory *Dir;
     int msgnum, errsave;

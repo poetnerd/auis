@@ -39,10 +39,7 @@ extern int SetSubsEntry();
 
 extern char home[];
 
-MS_SetSubscriptionEntry(FullName, NickName, status)
-char *FullName; /* Value passed in to MS */
-char *NickName; /* Value passed in to MS */
-int status; /* Ditto */
+int MS_SetSubscriptionEntry(char *FullName, char *NickName, int status)
 {
     struct MS_Directory *Dir;
 

@@ -43,6 +43,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/param.h>
 #include <netinet/in.h>
 #include <netdb.h>
+static void ams_log_add();
+static void ams_log_add_num();
+static void ams_log_init();
 
 #ifdef CMU_ENV
 
@@ -53,8 +56,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #ifndef AMS_LOG_LOCATION
-void logging_hook(s)
-char *s;
+void logging_hook(char *s)
 {
 }
 #else
@@ -67,8 +69,7 @@ static struct {
     char *out_limit;
 } ams_log_gl;
 
-static void ams_log_add(s)
-char *s;
+static void ams_log_add(char *s)
 {
     char ch;
     if ((ams_log_gl.out_limit-ams_log_gl.out_buf) < 0)
@@ -90,8 +91,7 @@ char *s;
     *ams_log_gl.out_buf++ = ',';
 }
 
-static void ams_log_add_num(anum)
-long anum;
+static void ams_log_add_num(long anum)
 {
     char buf[30];
     sprintf(buf, "%ld", anum);

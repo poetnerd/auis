@@ -34,8 +34,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <unistd.h>
 
-long    MS_UnlinkFile (FileName)
-char   *FileName;
+long MS_UnlinkFile(char *FileName)
 {
     debug(1, ("Entering MS_UnlinkFile %s\n", FileName));
     if (unlink(FileName)) {

@@ -51,8 +51,7 @@ extern char *StandardHeaderNames[];
 	must later free.  (The other stuff will be freed when you free the
 	RawMessage, which is malloced by the first of these routines.) */
 
-ParseMessageFromRawBody(NewMessage)
-struct MS_Message *NewMessage;
+int ParseMessageFromRawBody(struct MS_Message *NewMessage)
 {
     if (NewMessage->Snapshot) free(NewMessage->Snapshot);
     NewMessage->Snapshot = malloc(AMS_SNAPSHOTSIZE);
@@ -78,8 +77,7 @@ struct MS_Message *NewMessage;
 
 /* The following does the real work of the above routine, without all the aggressive malloc'ing and freeing; it is separated primarily for use by AlterMessage */
 
-OnlyParseMessageFromRawBody(NewMessage)
-struct MS_Message *NewMessage;
+int OnlyParseMessageFromRawBody(struct MS_Message *NewMessage)
 {
     char   *s,
            *t,

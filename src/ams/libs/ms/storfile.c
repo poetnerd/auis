@@ -38,9 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 extern int dbg_vclose();  /* overhead/util/lib/fdplumb2.c */
 extern int writeall();  /* overhead/util/lib/writeall.c */
 
-MS_StorePartialFile(FileName, startpos, len, mode, Truncate, WhatToStore)
-char *FileName, *WhatToStore;
-int startpos, len, mode, Truncate;
+int MS_StorePartialFile(char *FileName, int startpos, int len, int mode, int Truncate, char *WhatToStore)
 {
     int fd, errsave;
 

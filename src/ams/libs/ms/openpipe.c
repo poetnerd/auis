@@ -45,8 +45,7 @@ extern char *AndrewDir();
 extern char *getenv();
 extern FILE *popen();
 
-MS_OpenDebuggingPipescript(DoIt) 
-int DoIt;  /* Turns it on or off */
+int MS_OpenDebuggingPipescript(int DoIt)
 {
     static FILE *ftmp = NULL;
 

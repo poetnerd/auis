@@ -65,15 +65,13 @@ Stack_MapNoChars() {
     DoMapping = 0;
 }
 
-StackSize(which)
-int which;
+int StackSize(int which)
 {
     debug(1, ("StackSize %d\n", which));
     return(StackTop[which]);
 }
 
-clearstack(which) 
-int which;
+int clearstack(int which)
 {
     int i;
 
@@ -86,10 +84,7 @@ int which;
 
 
 
-push(string, maplc, which)
-char *string;
-Boolean maplc;
-int which;
+int push(char *string, Boolean maplc, int which)
 {
     char *s;
 
@@ -114,9 +109,7 @@ int which;
 static char *LatestPop[MAXSTACKS];
 static int NeedToInitStacks = 1;
 
-char *
-pop(which) 
-int which;
+char * pop(int which)
 {
 
     debug(1, ("pop %d\n", which));
@@ -143,8 +136,7 @@ int which;
     return (LatestPop[which]);
 }
 
-StackTopSize(which)
-int which;
+int StackTopSize(int which)
 {
     if (StackTop[which] <= 0) {
 	return(0);
@@ -153,8 +145,7 @@ int which;
 }
     
 
-PushNonEmptiness(which)
-int which;
+int PushNonEmptiness(int which)
 {
     int st;
 
@@ -167,8 +158,7 @@ int which;
     }
 }
 
-Stack_MapHashPlusAsAppropriate(s)
-char *s;
+int Stack_MapHashPlusAsAppropriate(char *s)
 {
     if (s && DoMapping) {
 	if (FavorHashes) {

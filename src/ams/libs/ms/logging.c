@@ -43,8 +43,7 @@ extern int IsLoggingMailStats;
 extern char MAILLOGSTATFILE[];
 extern char home[], Me[];
 
-ConsiderLoggingRead(FileName)
-char *FileName;
+int ConsiderLoggingRead(char *FileName)
 {
     char LineBuf[1000], *s;
     int size = 0;
