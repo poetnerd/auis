@@ -50,47 +50,130 @@ M3 both eventually did it right, just later than they should have.)
 
 ## Task breakdown
 
-### Phase 0 — Pre-flip audit (top-level, cheap, before touching any flag)
+### Phase 0 — Pre-flip audit — RUN 2026-08-01, results below
 
 Specific known risks flagged in M3's own closing lessons
-(`claude-history/m3/m3-c2-REPORT.md` §21), worth resolving or at least
-scoping before the global flip surfaces them as build failures instead
-of known findings:
+(`claude-history/m3/m3-c2-REPORT.md` §21), scoped before touching any
+flag:
 
-- `ams/libs/ms`'s "worse than every prior" silent parser gap — 16
-  functions `ansify` never even reported as skipped, zero trace. Found
-  during `AMS1`; confirm it's been fully hand-converted, not just
-  logged.
-- `FreeMessageContents` — a real ~30-year-old bug found during `AMS1`,
-  logged as open/unverified. Rule on it before the flip makes its
-  build behavior change out from under an open finding.
-- `fix-missing-static-decl`'s non-idempotency — recurred in at least 5
-  M3 batches (O1, O2, O3, B1/B2's brace-glue variant, C2). M3's own
-  closing note says this is worth a real tool fix "if M4's scope
-  includes further K&R conversion exposure" — decide that here, before
-  Phase 1, not mid-fixing-pass.
-- Directory liveness — confirm real Makefile targets (`make -n
-  install` doing more than touching `install.time`), not just a
-  `dependInstall.log` "building" line. Two M3 directories
-  (`overhead/malloc`/`inst` at O4, `contrib/wpedit` at C2) were false
-  positives on the log-grep signal alone. Cheap to re-verify across
-  all 91 directories once, before a global flip makes liveness
-  mistakes more consequential than a per-directory one.
+- **`ams/libs/ms`'s silent parser gap — CLOSED.** Read
+  `m3-ams1-REPORT.md` §4 directly: all 16 functions were hand-converted
+  that same session (verified against `ansify`'s own formatting
+  conventions), plus 16 more stale cross-file forward declarations for
+  those same functions. Both subtree gates (this directory and
+  `ams/msclients/cui`) ran clean twice. Nothing left to do here.
+- **`FreeMessageContents` — FIXED, but carries one open semantic
+  ruling, still needs wdc's call.** §6 of the same report: giving the
+  function its real 2-arg prototype surfaced a real ~30-year-old bug —
+  `unscrib.c:163`'s `UnformatMessage` was calling it with only 1
+  argument (the 2nd, `FreeSnapshot`, was reading garbage under K&R's
+  no-arity-check calling convention). Fixed as
+  `FreeMessageContents(Msg, FALSE)` — the conservative reading (don't
+  free the snapshot during an in-place reformat) — but the delegate
+  explicitly flagged this as a behavioral guess about 1988 code intent,
+  not a mechanical fix, and asked for confirmation rather than treating
+  it as settled. **Still open — see the ruling section below.**
+- **`fix-missing-static-decl`'s non-idempotency — ruled out of scope
+  for M4.** This is an `ansify`-pipeline bug; M4 does not re-run
+  `ansify` or perform any further K&R *conversion* (that was M3's job,
+  now closed). The bug is real and worth fixing before any *future*
+  K&R conversion work, but nothing in M4's own task list exercises it.
+  No action needed now.
+- **Directory liveness — RE-CHECKED, no new surprises.** A `make -n
+  install` dry run is not, on its own, a reliable liveness signal — it
+  reads as trivial ("touch install.time / install.doc") for directories
+  that are fully up to date from the last build, live or not (confirmed
+  directly: `overhead/util/lib`, the most heavily-worked M2/M3
+  directory, gives the identical trivial output). Corrected to a real
+  signal instead: does the directory's own `.c` source actually have
+  matching `.o` output from the last full build. Across all 91
+  directories, only 4 show zero `.o` files: `contrib/wpedit` and
+  `overhead/malloc` (both already known-inert, flagged during M3's
+  O4/C2) plus `inst` (same O4 finding — grouped with `overhead/malloc`
+  there) — all three reconfirmed, nothing new. One minor, harmless new
+  observation: `atkams/messages/cmd/dumpbin.c` exists but is never
+  compiled by the directory's `all::` target (only `NormalObjectRule()`
+  is present, no `ProgramTarget` invoking it) — the directory itself is
+  live (installs real fonts/templates for `messages`), this one file is
+  just dead weight. No action needed.
+- **NEW finding, not in M3's carried-forward list — `-Wstrict-prototypes`
+  has a scope M4's original flag set didn't account for.** See its own
+  section below; this is the one Phase 0 result that changes the plan.
+
+### `-Wstrict-prototypes` — scope finding, 2026-08-01, changes the flag set below
+
+`roadmap.md`'s M4 bullet named `strict-prototypes` as one of the four
+"type-safety set" flags to flip alongside `implicit-int`,
+`int-conversion`, and `incompatible-function-pointer-types`. Checked
+directly before including it: `-Wstrict-prototypes` doesn't only flag
+leftover K&R-style function *definitions* (the small, real residual
+list — `atk/image/tif.c`'s two functions, `overhead/class/lib`'s
+`class_EnterInfo`, both already known from M3 as harmless "self-healing"
+parser bailouts) — it *also* flags every plain empty-parens
+`extern int foo();` **declaration**, which this codebase uses
+extensively and deliberately as the C89-legal "unspecified arguments"
+idiom. M2 and M3 both used this idiom repeatedly and correctly on
+purpose — `AMS1`'s own `moreprintf`/`errprintf2` fix (`m3-ams1-REPORT.md`
+§7.3) picked it *specifically because* it's the C-standard-correct
+answer for a pseudo-variadic function compatible with a later full
+prototype. Flipping `-Werror=strict-prototypes` globally would turn
+every one of those intentional declarations into a build error too —
+there's no compiler-flag granularity that separates "leftover K&R
+definition" from "deliberate unspecified-args declaration"; `clang`
+raises the identical diagnostic for both.
+
+**Measured, not guessed**: a declaration-shaped grep
+(`^\s*(extern|static)?\s*(void|int|char|long|short|unsigned|struct\s+\w+
+|boolean|Boolean|float|double)\s*\*{0,2}\s*\w+\s*\(\s*\)\s*;`) finds
+**~6,024 matches tree-wide, ~1,055 inside installed headers alone**.
+Directly confirmed with the compiler, not just the grep: compiling
+`atk/value/entrtext.c` with `-Werror=strict-prototypes` fails
+immediately — not from anything in the file itself, but from
+`build/include/class.h`'s own `extern int class_EnterInfo();` and three
+sibling declarations, a foundational header included nearly everywhere.
+**The other three flags, checked the same way on three real files
+across three different risk tiers (`atk/value/entrtext.c`,
+`ams/libs/ms/freemsg.c`, `contrib/zip/lib/zipobj.c`, all compiled with
+`-Werror=implicit-int,int-conversion,incompatible-function-pointer-types`),
+all exit 0** — only benign `-Wdeprecated-non-prototype` informational
+warnings, nothing blocking. Those three flags behave exactly like M4's
+original "small residual" expectation. `strict-prototypes` alone does
+not.
+
+**Recommendation, not yet ruled on**: drop `strict-prototypes` from
+M4's initial global flip. It doesn't close a correctness bug class the
+way the other three do (M2/M3's whole finding pattern was real
+~30-to-35-year-old bugs; `strict-prototypes`'s fallout here is almost
+entirely intentional, correct 1988-era idiom, not latent defects) —
+converting ~6,000 legitimate declarations to satisfy it would be
+exactly the "wholesale modernization" this project's own strategic
+decision (`porting-assessment.md` §"compiler leniency over wholesale
+modernization") already chose not to do elsewhere (writable-strings,
+c99). If ever wanted, it's its own separately-scoped effort, sized
+similarly to M2/M3, not a same-day addition to M4's flip. The small
+*definition*-only residual list (`tif.c`, `class_EnterInfo`) can be
+hand-fixed on its own regardless of this ruling — those are real
+leftover K&R, not idiom, and are cheap either way.
 
 ### Phase 1 — Global flip + one tree-wide census
 
 Edit `system.mcr` directly (not a per-directory override this time —
-that's the whole point of doing it globally):
+that's the whole point of doing it globally). Pending confirmation of
+the recommendation above, this is the corrected flag set (dropping
+`strict-prototypes`):
 
 ```
-COMPILERFLAGS = -std=gnu89 -Werror=implicit-int,strict-prototypes,int-conversion,incompatible-function-pointer-types,implicit-function-declaration -Wformat
+COMPILERFLAGS = -std=gnu89 -Werror=implicit-int,int-conversion,incompatible-function-pointer-types,implicit-function-declaration -Wformat
 ```
 
 (Folding `implicit-function-declaration` into the global default too,
 not just the 28 M2-flagged directories — M3 means the whole tree
 should now be ready for it. `-Wformat` catches the remaining scanf
-`%d`/`%ld` LP64 Variant 4 automatically, per the existing roadmap
-note.)
+`%d`/`%ld` LP64 Variant 4 automatically — checked too, ~368 raw `%d`/
+`%ld` sites across a two-directory sample but only 3 real `-Wformat`
+hits in a spot-checked file, in line with M1's already-completed
+printf/scanf id-truncation sweep, not a surprise like `strict-prototypes`
+was.)
 
 One `make Clean && make -k dependInstall` (always `-k`, per
 `rollout-procedure.md`'s "Logging" section — a single first-failing

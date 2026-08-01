@@ -2077,13 +2077,19 @@ call site and definition tree-wide *before* any mass file editing starts
   — 15 sessions, all 91 active directories converted; retired to
   `claude-history/m3/` (prompts, reports, `m3-batches.md`, the runbook
   itself) now that the milestone is closed.
-- **M4 — Global strictness.** Tree-wide `-Werror` on the type-safety
-  set; `-Wformat` then catches any remaining scanf `%d`/`%ld` (Variant
-  4) automatically. Keep `-std=gnu89` until conversion completes;
-  consider c99 after. Writable-strings stays deferred. Task breakdown,
-  verified starting state, and why this milestone skips a pre-built
-  directory batch map (unlike M2/M3): `m4-rollout-runbook.md` (written
-  2026-08-01, not yet started).
+- **M4 — Global strictness.** Tree-wide `-Werror` on
+  `implicit-int,int-conversion,incompatible-function-pointer-types,implicit-function-declaration`;
+  `-Wformat` then catches any remaining scanf `%d`/`%ld` (Variant 4)
+  automatically. **`strict-prototypes` dropped from the set (Phase 0
+  finding, 2026-08-01, pending confirmation)** — unlike the other three,
+  it doesn't isolate real bugs here: ~6,024 tree-wide matches, almost
+  all the deliberate C89 "unspecified arguments" idiom M2/M3 used
+  correctly and on purpose, not leftover K&R. Keep `-std=gnu89` until
+  conversion completes; consider c99 after. Writable-strings stays
+  deferred. Task breakdown, verified starting state, the
+  `strict-prototypes` finding in full, and why this milestone skips a
+  pre-built directory batch map (unlike M2/M3): `m4-rollout-runbook.md`
+  (Phase 0 complete 2026-08-01; Phase 1 not yet started).
 
 Scale: ~13,700 K&R definitions across ~1,301 of 1,544 `.c` files; ~5,100
 are class methods converted by `.ch` lookup, not inference. M2/M3 runs
