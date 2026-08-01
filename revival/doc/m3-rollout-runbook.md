@@ -98,14 +98,15 @@ Active:
    anchored `malloc`/`free`/`realloc`/`calloc` grep before
    close-out, runtime-check rules).
 8. **Stranded old-style forward declaration vs. newly-ANSI'd narrow
-   parameter** (T1; grep broadened AMS1 2026-07-31): `ansify` converts
-   K&R function *definitions* to ANSI but doesn't touch separate,
-   old-style (empty-parens) forward *declarations* of the same name
-   earlier in the file. Normally harmless — but once the definition
-   gains a narrow by-value parameter (`char`, `short`, `unsigned
-   char`, or a `typedef` of one — **resolve typedefs, don't read the
-   literal keyword**; `Boolean` (`typedef short Boolean`) is the
-   standing example), the stale declaration and the new definition
+   parameter** (T1; grep broadened AMS1 2026-07-31; comma-list blind
+   spot and same-file/cross-file scope added AMS2 2026-08-01): `ansify`
+   converts K&R function *definitions* to ANSI but doesn't touch
+   separate, old-style (empty-parens) forward *declarations* of the
+   same name earlier in the file. Normally harmless — but once the
+   definition gains a narrow by-value parameter (`char`, `short`,
+   `unsigned char`, or a `typedef` of one — **resolve typedefs, don't
+   read the literal keyword**; `Boolean` (`typedef short Boolean`) is
+   the standing example), the stale declaration and the new definition
    become a real ISO C conflicting-types error (default-argument-
    promotion incompatibility). Grep a directory for
    `(static|extern)\s+\w[\w ]*\s+\w+\(\);` (bare empty-parens forward
@@ -113,7 +114,20 @@ Active:
    of 12 real conflicts were `extern`-prefixed, which the original
    `static`-only pattern structurally could not match) before or after
    a batch's `ansify` pass, and cross-check any hit against its
-   matching definition's parameter types.
+   matching definition's parameter types. **The grep only catches
+   single-name declarations** (`NAME();`) — AMS2 found real conflicts
+   hiding inside **multi-name comma-list declarations**
+   (`extern int A(), B(), C(), ...;`, up to 19 names on one line in
+   `ams/libs/cui/cuilib.c`) that a name-per-line pattern structurally
+   can't see; check every name in any comma list against its real
+   definition, not just lines that already look like a single bare
+   declaration. **The hazard is same-translation-unit only**: AMS2
+   found two cross-file instances (declaration in one `.c`, narrow-
+   typed definition in another, e.g. `folders.c`'s forward reference to
+   `foldaux.c`'s `ConsiderResettingDescription`) that never conflict at
+   compile time because the two types are never visible together in
+   one file — worth noting for completeness but not a Gate-1 blocker;
+   only flag same-file pairs as must-fix.
 9. **Definitive completeness re-scan for large directories** (AMS1,
    2026-07-31): `ansify`'s own report of what it converted/skipped/
    drifted is not proof of completeness — `parse_decl_block` silently
@@ -1580,7 +1594,18 @@ section at all, yet `chartx1a.c` defines
 `chartx1a.eh`'s standard classpp-generated `New()` wiring, same M1
 mechanics note), a genuine `ansify` signature-DB coverage gap (the DB
 only captures classprocs a `.ch` explicitly declares) rather than dead
-code; hand-converted to ANSI directly.
+code; hand-converted to ANSI directly. **Precise mechanism traced by
+AMS2 (2026-08-01), confirming two more instances**
+(`msgsa.ch`/`messagesapp`, `text822.ch`/`text822`): `class.c:2814` sets
+the `initializeobject` flag `TRUE` for **any** class with a non-empty
+`data:` section, independent of whether `InitializeObject` appears in
+the `.ch`'s `classprocedures` section at all (the flag's own comment,
+`class.c:165`: `"TRUE if this class has data or initializeobject
+procedure was found"`). Any class with real instance data therefore
+gets a live, auto-wired `InitializeObject` call regardless of what its
+`.ch` declares — the same DB-coverage gap as `chartx1a`, now with the
+exact codegen trigger identified rather than just the observable
+effect.
 
 Also confirmed pre-existing, not M3 fallout: `atk/raster/cmd`'s
 `rastervt.c` (`rasterviewtest`, wired only into the Imakefile's
@@ -1867,6 +1892,100 @@ specific fixes spot-checked against the diff (all matched exactly),
 `fossil status` confirmed exact file scope (115 files: 110 in
 `ams/libs/ms`, 5 in `ams/msclients/cui`). Full detail in
 `claude-history/m3-ams1-REPORT.md`.
+
+### AMS2 (`atkams/messages/lib`, `ams/libs/shr`, `ams/libs/cui`,
+`ams/libs/nosnap`, 34 files, 2026-08-01) — closes Wave 6
+
+Routine Gate-0 batch, zero UNCLASSIFIED items at Gate 0 (every finding
+matched existing taxonomy, several confirmed with a live `-pe` compile
+check rather than a read-by-hand alone). `atkams/messages/lib` (23
+files, 17 `.ch`, real `-pe`/`.eh` rollout) is one of the two permanent
+tree-wide-gate directories (with `contrib/zip/lib`), kept regardless
+of wave-end status; this batch also happens to close Wave 6.
+
+**Two `.ch`-vs-real-usage bugs, both confirmed via live `-pe` compile
+checks before the real run**:
+
+- `fldtreev.ch`'s `InitializeClass`/`FinalizeObject` restated the
+  auto-supplied `classID` argument by name — same mechanism as B3's
+  `unknownv.ch`/`suiteev.ch` finding (porting-assessment.md §17,
+  "second real exception"), doubling `classID` in the exported
+  prototype against the real 1-param/2-param definitions. Fixed by
+  removing the redundant restatement (empty parens for
+  `InitializeClass`, `self`-only for `FinalizeObject`), matching every
+  other `.ch` in the directory's own convention. `InitializeObject`'s
+  own restatement was left untouched — irrelevant, since classpp
+  hardcodes that one's exported signature regardless of `.ch` text.
+- 3 more self-type copy/paste typos (`messages.ch`, `mailobjv.ch`,
+  `text822v.ch`, all restating `self` as the wrong sibling/unrelated
+  class) — matches B2 finding 2 exactly. 2 of 3 were live and
+  compile-blocking (`mailobjv.ch`, `text822v.ch` — the `.eh` and the
+  real definition are visible together in the same file); the third
+  (`messages.ch`) was live but non-blocking, only a warning (`
+  messaux.c`, which defines the real `FinalizeObject`, never itself
+  `#include`s `messages.eh`). All 3 corrected to their real class
+  name.
+
+**Two genuinely new fallout shapes, both resolved by extending
+existing taxonomy rather than needing a fresh ruling** (found only
+once the real, non-dry-run `ansify --dir` and `-pe` gate actually ran
+— not visible at Gate 0):
+
+- A **plain classproc** with truly-empty K&R parens and zero
+  parameters (`ams__CountAMSViews`) — generalizes the O4/B3
+  "invisible to `ansify`'s candidate detector" finding
+  (`BARE_PARAMS` requires at least one bare identifier) beyond the
+  three special lifecycle names to an ordinary classproc for the
+  first time.
+- A same-run, tool-self-inflicted stranded-declaration conflict:
+  `fix-missing-static-decl` inserted a **fresh** empty-parens stub for
+  `hexchar` (no pre-existing declaration at all) that then conflicted
+  with `hexchar`'s own narrow `char c` real definition — the same
+  "same-run, tool-self-inflicted" variant AMS1 already documented for
+  `atk/help/src/helpa.c`.
+
+**Item 8 blind spots found for real** (both folded into the standing
+checklist's item 8 wording above): multi-name comma-list stranded
+declarations (`stubs.c`'s 15-name list, `cuilib.c`'s two lists of 17
+and 19 names — 6 real narrow-param conflicts hiding inside them,
+invisible to a single-name grep) and confirmation that the hazard is
+same-translation-unit only (2 cross-file instances found non-blocking:
+`ConsiderResettingDescription`, `WriteOneFile`).
+
+Two "generic-param-plus-cast" fixes, same species as B2 finding 5/I1's
+`srctextv.ch` finding (override/classproc typed to the general base
+interface for correct caller compatibility, body needs the concrete
+subclass): `text822.c`'s `ReadIntoText`/`ResetGlobalStyle`,
+`text822v.c`'s `DeleteApplicationLayer` — confirmed against real
+caller argument types and sibling-class convention before fixing, not
+a guess.
+
+`amss.c` and `ams/libs/cui/pcmchs.c` both confirmed dead code
+requiring their own out-of-scope "subtree activation"
+(`SNAP_ENV`/`IBMPC` never defined in this build) — left K&R exactly as
+predicted; `pcmchs.c`'s stdlib.h/stale-`malloc()`/parser-gap fixes
+were applied anyway for consistency (harmless, file is unlinked from
+`libcui.a`'s real `OBJS`) and confirmed to survive `ansify`'s
+auto-revert-on-failure independently.
+
+All 4 subtrees gated clean twice each; tree-wide gate clean twice
+(only the 2 known pre-existing `contrib/zip/utility/ltapp.c` errors,
+unrelated, queued for Wave 7 C2). Independently re-verified by the
+orchestrator: all 4 subtree gates and the tree-wide gate re-run
+clean directly (not just trusted from the delegate's own run), 7
+specific fixes spot-checked against the diff (`fldtreev.ch`,
+`messages.ch`, `ams.c`'s rock-cast/`AddToClassList`, `mailobj.c`'s
+`char64`/`hexchar`, `stubs.c`'s comma-list split, `text822.c`'s
+generic-param-plus-cast fix — all matched exactly), `fossil status`
+confirmed exact file scope (37 files: 27 in `atkams/messages/lib`
+[22 `.c` + 4 `.ch` + 1 `Imakefile`], 6 in `ams/libs/shr`, 3 in
+`ams/libs/cui`, 1 in `ams/libs/nosnap`).
+Session was interrupted once mid-Gate-1 by an unrelated
+orchestrator-side usage-limit event; resumed cleanly by re-deriving
+state from `fossil status`/`fossil diff` before continuing, no rework.
+Full detail in `claude-history/m3-ams2-REPORT.md`.
+
+**Wave 6 complete.** M3 remaining: Wave 7 (C1, C2).
 
 ## Resource note (2026-07-25, wdc)
 

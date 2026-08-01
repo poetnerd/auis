@@ -1907,6 +1907,22 @@ is what classpp itself uses for ordinary methods and classprocs, but
   specific instance exists yet at class-init time), but nothing
   enforces it.
 
+A related but distinct mechanism, traced precisely by AMS2
+(2026-08-01): whether `InitializeObject` gets a live, auto-wired call
+at all — independent of the DRIFT-vs-signature question above —
+is controlled by `class.c:2814`, which sets the `initializeobject`
+flag `TRUE` for **any** class with a non-empty `data:` section,
+whether or not `InitializeObject` appears in the `.ch`'s
+`classprocedures` section (`class.c:165`'s own comment: `"TRUE if this
+class has data or initializeobject procedure was found"`). This is the
+exact mechanism behind `ansify`'s "no signature in DB" skip for a
+class with a `data:` section but no declared `InitializeObject`
+(`atk/apt/chart/chartx1a.ch`/`chartx1app`, I2;
+`atkams/messages/lib`'s `messagesapp`/`text822`, AMS2 — see
+`m3-rollout-runbook.md`'s I2 and AMS2 entries) — the DB only captures classprocs a `.ch` explicitly
+declares, but classpp wires the call regardless of the `.ch`, so these
+are genuine live gaps, not dead code, and need hand-conversion.
+
 `ansify`'s DRIFT check doesn't know about this special-casing, so it
 misfires in two shapes depending on how the `.ch` happens to be
 written:
@@ -1988,12 +2004,19 @@ back to the true convention, rather than a classpp-level fix — a
 tree-wide grep confirmed only 8 total restated-`InitializeClass`
 instances and 1 double-restated-`FinalizeObject` instance exist
 anywhere in the source tree, small and bounded enough not to warrant
-touching the tool a third time in one day. **3 more live instances
-exist outside any batch processed so far** — `atkams/messages/lib/fldtreev.ch`
-(Wave 6), `contrib/zip/utility/schedv.ch`/`ltv.ch` (Wave 7) — not yet
-checked for which direction (safe like `metextv.ch`, or broken like
+touching the tool a third time in one day. **`atkams/messages/lib/
+fldtreev.ch` (Wave 6) resolved 2026-08-01 (AMS2): broken, same shape
+as `unknownv.ch`/`suiteev.ch`** — `InitializeClass` restated `classID`
+by name (1 param) producing a 2-param exported prototype against the
+real 1-param definition, and `FinalizeObject` restated both
+`classID`/`self` (matching the double-restatement shape) producing 3
+params against the real 2. Both fixed to the true convention (empty
+parens / `self`-only), confirmed via a live `-pe` compile check before
+the real run. **2 more live instances remain unchecked** —
+`contrib/zip/utility/schedv.ch`/`ltv.ch` (Wave 7) — not yet checked
+for which direction (safe like `metextv.ch`, or broken like
 `unknownv.ch`) they resolve to; worth a 30-second per-instance check
-(matching the method above) whenever those waves are prepared.
+(matching the method above) whenever that wave is prepared.
 
 #### The other 14 DRIFT findings — mixed, ordinary per-batch triage
 

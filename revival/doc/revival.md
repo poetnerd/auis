@@ -631,6 +631,60 @@ sample:
   call sites, matching the function's own long-unchanging, correct
   behavior.
 
+- **Three more copy/paste type typos, found later in a fourth
+  subsystem.** The same mistake as the six above, this time in the
+  mail reader's own view classes: the ones that display a message
+  body, a mail object, and a decoded 822-format body each declare, in
+  their own interface file, a constructor and destructor whose object
+  parameter is typed as a different class entirely. Two of the three
+  copied the exact same wrong type from an unrelated sibling class
+  declared earlier in the same file; the third named two different
+  wrong types for its two methods, neither one its own. Every real
+  implementation, as always, used the correct type and always had. The
+  constructor half of all three stayed pure documentation even after
+  this project's type-checking arrived, for the same reason as
+  before — the class-generation tool supplies the real type itself
+  regardless of what a constructor's interface claims. The destructor
+  half was more exposed: for one of the three it stayed a silent
+  disagreement, because the file containing the real destructor never
+  happens to look at the file containing the wrong declaration in the
+  same compile; for the other two, declaration and destructor share a
+  file, the two disagreed inside a single compile, and the build
+  failed until this was fixed. Corrected by retyping all three
+  declarations to the class they actually belong to.
+
+- **A folder-tree class whose interface file redundantly named an
+  argument its own code generator was already going to supply —
+  wrong in two different ways for two of its three startup/teardown
+  methods.** The class-generation tool automatically prefixes every
+  startup and teardown method's generated declaration with a hidden
+  first argument — the class itself — whether or not the interface
+  file spells it out by name; every other class in the same directory
+  leaves it out, as the tool expects. This one class's interface
+  explicitly restated that argument anyway, for two of its three
+  lifecycle methods, doubling it in the generated declaration each
+  time: once for the plain, once-per-class initializer (declared with
+  one named argument where the convention — and the working code —
+  wanted none), and once for the per-object destructor (declared with
+  its own restated first argument *plus* the required second one, for
+  three total against the real function's two). A third restatement,
+  on the one lifecycle method the tool always re-types from scratch
+  regardless of what the interface says, looked like the identical
+  mistake but never actually mattered. Neither of the two real
+  mistakes was ever caught by the original compiler, which built a
+  call from whatever the interface said and never checked it against
+  the function actually being called. The destructor half surfaced
+  first and most visibly: once this project's typed-header generation
+  finally emitted this particular class's declarations, the generated
+  file contradicted itself internally — its own generated call to the
+  destructor, four lines above, still used the correct two-argument
+  form. Corrected by removing the redundant restated argument from
+  both declarations, restoring the interface every other class in the
+  directory already followed — the same species of code-generator
+  self-contradiction as the destructor described earlier in this list,
+  just caught here for a second time, and this time affecting the
+  class's constructor too.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

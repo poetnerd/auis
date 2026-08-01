@@ -405,10 +405,37 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       real exercise of `cuin`'s reformat/edit-in-place command (if one
       exists) against a real message, or a direct ruling from wdc's own
       knowledge of the original semantics.
-- [ ] **AMS2**: `atkams/messages/lib` (23), `ams/libs/shr` (7), `ams/
+- [x] **AMS2**: `atkams/messages/lib` (23), `ams/libs/shr` (7), `ams/
       libs/cui` (3), `ams/libs/nosnap` (1) — 34 files. Keep the
       tree-wide gate here too (mirrors M2's rule for `atkams/messages/
       lib` — the `messages` GUI app's actual backend).
+
+      **Done 2026-08-01.** Routine Gate-0 batch, zero UNCLASSIFIED
+      items. Two `.ch`-vs-real-usage bugs fixed: `fldtreev.ch`'s
+      `InitializeClass`/`FinalizeObject` doubled the auto-supplied
+      `classID` argument (same shape as B3's `unknownv.ch`/
+      `suiteev.ch`), and 3 more self-type copy/paste typos
+      (`messages.ch`/`mailobjv.ch`/`text822v.ch`, matches B2 finding
+      2). Two genuinely new fallout shapes, both resolved by extending
+      existing taxonomy: a plain classproc with truly-empty K&R parens
+      (generalizes O4/B3's finding beyond the 3 special lifecycle
+      names) and a same-run tool-self-inflicted stranded-declaration
+      conflict on `hexchar` (same variant AMS1 documented for
+      `helpa.c`). Item 8's standing checklist wording broadened again:
+      multi-name comma-list declarations can hide narrow-param
+      conflicts a single-name grep can't see, and the hazard is
+      same-translation-unit only (cross-file stranded declarations are
+      not blockers). wdc ran the messages smoke tests and approved
+      checkin — no open runtime-verification items this batch (unlike
+      AMS1's still-open `FreeMessageContents` item). Independently
+      re-verified by the orchestrator: all 4 subtree gates and the
+      tree-wide gate re-run clean directly, 7 specific fixes
+      spot-checked against the diff, `fossil status` confirmed exact
+      file scope (37 files). Full detail in
+      `claude-history/m3-ams2-REPORT.md` and
+      `m3-rollout-runbook.md`'s AMS2 entry.
+
+      **Wave 6 complete.**
 
 ## Wave 7 — contrib (12 directories, 81 files, 2 batches)
 
@@ -425,7 +452,7 @@ fully served the pilot's purpose). Former I3 is merged into I1.
 
 Revised 2026-07-30: 15 sessions total (was 17 — pilot retired into
 I2, I3 merged into I1), across the 7 waves in dependency order.
-12 complete (O1–O4, B1–B3, T1, I1, I2, A1, AMS1), 3
-remaining: AMS2, C1, C2. Tick batches here as they
+13 complete (O1–O4, B1–B3, T1, I1, I2, A1, AMS1, AMS2), 2
+remaining: C1, C2 (Wave 7, the last wave). Tick batches here as they
 complete, same convention as `m1-point10-batches.md`; the runbook's
 own summary gets the one-line rollup per wave, not per batch.
