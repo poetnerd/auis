@@ -374,8 +374,10 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       fixed. One genuine ~30-year-old bug found and fixed:
       `unscrib.c`'s `UnformatMessage` called `FreeMessageContents` with
       1 of its real 2 arguments (`Msg, FALSE)` applied, conservative
-      choice — wdc runtime-confirmed `cuin dirinfo` and `messages` both
-      clean afterward. `ams/msclients/cui`: all 140 undeclared calls
+      choice — **not runtime-verified**, still an open judgment call
+      (see below; `cuin dirinfo` and `messages` were runtime-confirmed
+      clean, but neither exercises this specific code path).
+      `ams/msclients/cui`: all 140 undeclared calls
       categorized (36 `ams/libs/ms`, 46 `ams/libs/cui`, 55 same-
       directory, 7 `overhead/util/lib`, 3 other AMS libs, 1 libc) and
       declared; `moreprintf`/`errprintf2` (1988-era pseudo-variadic,
@@ -389,6 +391,20 @@ fully served the pilot's purpose). Former I3 is merged into I1.
       matched), `fossil status` confirmed exact file scope. See
       `m3-rollout-runbook.md` findings → AMS1 and
       `claude-history/m3-ams1-REPORT.md` for full detail. Committed.
+
+      **Open item, not yet closed: the `FreeMessageContents(Msg,
+      FALSE)` semantic judgment call above needs real verification.**
+      This is a genuine 1988-code-intent question (should a message's
+      cached snapshot survive `UnformatMessage`'s in-place reformat?)
+      that can't be settled from source reading alone. Neither runtime
+      check wdc ran for this batch's approval (`cuin dirinfo`,
+      `messages` general use) exercises `UnformatMessage`/
+      `FreeMessageContents` — this was caught and corrected 2026-08-01
+      after an earlier pass through this same doc conflated it with
+      the unrelated, already-confirmed `dirinfo` check. Needs either a
+      real exercise of `cuin`'s reformat/edit-in-place command (if one
+      exists) against a real message, or a direct ruling from wdc's own
+      knowledge of the original semantics.
 - [ ] **AMS2**: `atkams/messages/lib` (23), `ams/libs/shr` (7), `ams/
       libs/cui` (3), `ams/libs/nosnap` (1) — 34 files. Keep the
       tree-wide gate here too (mirrors M2's rule for `atkams/messages/

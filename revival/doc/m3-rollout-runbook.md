@@ -1831,9 +1831,16 @@ broadened below.
 unchecked argument count). Fixed as `FreeMessageContents(Msg, FALSE)`
 — `FreeSnapshot` controls only whether `Msg->Snapshot` gets freed, and
 `UnformatMessage` reuses `Msg` afterward, so the conservative
-(don't-free) choice was applied and flagged for confirmation. wdc
-runtime-confirmed `cuin dirinfo` and the `messages` GUI app both clean
-afterward.
+(don't-free) choice was applied and flagged for confirmation.
+**Still open, not yet runtime-verified** — corrected 2026-08-01 after
+an earlier pass through this doc wrongly conflated wdc's actual
+runtime checks (`cuin dirinfo`, which exercises the unrelated
+`MS_GetDirInfo` fix, and general `messages` non-regression) with
+confirmation of this specific fix. Neither check reaches
+`UnformatMessage`/`FreeMessageContents`. Needs either a real exercise
+of a reformat/edit-in-place `cuin` command against a live message, or
+a direct ruling from wdc on the original 1988 semantics (does a
+message's cached snapshot summary survive an in-place reformat?).
 
 **Task 2 (`ams/msclients/cui` COMPILERFLAGS closure) completed in the
 same session**, no split needed: all 140 undeclared calls categorized
