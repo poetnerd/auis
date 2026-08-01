@@ -216,6 +216,24 @@ any process for a hang, check provenance
 — some demo steps emit alarming-but-nonfatal messages. A long-running
 gate legitimately takes minutes; do not kill it.
 
+## Wave/milestone close-out gate — full clean rebuild (adopted 2026-08-01, wdc)
+
+Whatever gate scope a milestone's own runbook specifies for individual
+batches (subtree-local, tree-wide `dependInstall`, etc.), the
+close-out of each wave/milestone boundary must **additionally**
+include a genuine full clean rebuild — `make Clean; make World` (or
+whatever the milestone's own from-scratch equivalent is) run from the
+tree root, not just the incremental tree-wide `dependInstall` used for
+per-batch/wave-end gates. `dependInstall`, even run tree-wide, only
+rebuilds what its own dependency tracking considers stale — it is not
+proof the whole tree still builds from nothing. A full clean rebuild
+is a meaningfully bigger operation (minutes, not seconds) and is not
+required at every batch, only at wave/milestone boundaries. This
+convention is milestone-agnostic and expected to persist past M3 into
+M4 and beyond, regardless of how future milestones get batched — don't
+let it get dropped just because a milestone-specific runbook doesn't
+happen to repeat it.
+
 ## Runtime check
 
 Give the user the exact command(s) to try and STOP until they confirm

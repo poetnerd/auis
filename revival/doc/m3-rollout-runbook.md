@@ -210,7 +210,8 @@ consequence/defect-density, not expected mechanism leakage):
 lib` (tree's highest-defect-density directory) — plus fixed milestone
 checkpoints (end of each dependency-order wave below, and end of M3
 overall, which doubles as M3's completion gate before M4). Everything
-else: subtree-local only.
+else: subtree-local only. **Wave/milestone checkpoints get a full
+clean rebuild, not just tree-wide `dependInstall`** — see below.
 
 **Wave-end gate status**: Waves 1 and 2 both closed without their
 tree-wide checkpoint at the time (O4's report explicitly deferred it
@@ -227,6 +228,22 @@ appeared. Fixed same day (one-line Imakefile change mirroring `cui`),
 `nns` relinks and installs clean. Not M3 fallout in either case — M3
 changes are declaration-level only. This gate doubles as T1's
 pre-flight baseline.
+
+**Full clean rebuild now also required at every wave close, adopted
+2026-08-01 (wdc), during Wave 6's close-out** — see
+`rollout-procedure.md`'s new "Wave/milestone close-out gate" section
+for the milestone-agnostic version (this convention is meant to
+outlive M3). The tree-wide `dependInstall` gate described above is
+**not** a substitute: it's incremental, and only proves the specific
+directories `ansify`/`-pe` touched still build against what was
+already sitting in `build/`. A `make Clean; make World` from the tree
+root is a materially stronger check — it has never actually been run
+at any prior wave boundary in M3 (Waves 1-5's tree-wide checks were
+all `dependInstall`, including the retroactive Waves 1+2 run above),
+so Wave 6 is the first wave to get one. Going forward: run it at every
+wave close, and at M3's own completion (Wave 7's C2, which doubles as
+the M3-to-M4 handoff gate) in particular — the bar for handing off to
+M4 should be higher than a mid-wave checkpoint's.
 
 ## Ordering — dependency order matters here, unlike M2
 
