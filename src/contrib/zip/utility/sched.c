@@ -52,17 +52,12 @@ END-SPECIFICATION  ************************************************************/
 #include "zip.ih"
 #include <errno.h>
 static boolean debug=FALSE;
-void
-sched__Set_Debug( self, mode )
-  register struct sched		     *self;
+void sched__Set_Debug(struct sched *self, boolean mode)
   {
   debug = mode;
   }
 
-struct sched *
-sched__Create( ClassID, stream_name )
-  register struct  classheader	     *ClassID;
-  register char			     *stream_name;
+struct sched * sched__Create(struct classheader *ClassID, char *stream_name)
   {
   register struct sched		     *self;
   register long			      status;
@@ -87,10 +82,7 @@ sched__Create( ClassID, stream_name )
   }
 
 
-boolean
-sched__InitializeObject( classID, self )
-  register struct classheader	     *classID;
-  register struct sched		     *self;
+boolean sched__InitializeObject(struct classheader *classID, struct sched *self)
   {
   register long			      status = false;
 

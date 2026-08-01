@@ -51,6 +51,8 @@ LIBS		=	$(DESTDIR)/lib/libutil.a
 
 INCDIR = $(DESTDIR)/include/atk
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 NormalHelpRule()
 NormalObjectRule()
 NormalATKRule()

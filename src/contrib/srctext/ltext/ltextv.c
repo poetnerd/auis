@@ -46,17 +46,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <bind.ih>
 
 #include <ltextv.eh>
+static void match_parens(struct ltextview *self, char key);
 
-static void redo();
-static void paren();
-static void tab();
-static void newline();
+static void redo(struct ltextview *self);
+static void paren(struct ltextview *self, char key);
+static void tab(struct ltextview *self, int key);
+static void newline(struct ltextview *self, long key);
 
 static long BounceTime = 0;
 static struct keymap *L_Map;
 static struct menulist *L_Menus;
 
-void paren(), newline(), redo(), tab();
 #ifdef NOTUSED
 static void indent_paren();
 #endif /* NOTUSED */
@@ -73,8 +73,7 @@ static struct bind_Description ltextBindings[]={
     NULL
 };
 
-boolean ltextview__InitializeClass(classID)
-    struct classheader *classID;
+boolean ltextview__InitializeClass(struct classheader *classID)
 {
     L_Menus = menulist_New();
     L_Map = keymap_New();
@@ -83,9 +82,7 @@ boolean ltextview__InitializeClass(classID)
     return TRUE;
 }
 
-boolean ltextview__InitializeObject(classID, self)
-    struct classheader *classID;
-    struct ltextview *self;
+boolean ltextview__InitializeObject(struct classheader *classID, struct ltextview *self)
 {
     self->l_state = keystate_Create(self, L_Map);
     self->l_menus = menulist_DuplicateML(L_Menus, self);
@@ -93,9 +90,7 @@ boolean ltextview__InitializeObject(classID, self)
     return TRUE;
 }
 
-long ltextview__SetBounceTime(classID, time)
-    struct classheader *classID;
-    long time;
+long ltextview__SetBounceTime(struct classheader *classID, long time)
 {
     long retval = BounceTime;
 
@@ -105,25 +100,20 @@ long ltextview__SetBounceTime(classID, time)
 }
 
 
-void ltextview__PostKeyState(self, keystate)
-struct ltextview *self;
-struct keystate *keystate;
+void ltextview__PostKeyState(struct ltextview *self, struct keystate *keystate)
 {
     keystate_AddBefore(self->l_state, keystate);
     super_PostKeyState(self, self->l_state);
 }
 
-void ltextview__PostMenus(self, menulist)
-struct ltextview *self;
-struct menulist *menulist;
+void ltextview__PostMenus(struct ltextview *self, struct menulist *menulist)
 {
     menulist_ChainAfterML(self->l_menus, menulist, 0);
     super_PostMenus(self, self->l_menus);
 }
 
 
-static void redo(self)
-struct ltextview *self;
+static void redo(struct ltextview *self)
 {
     struct ltext *c = (struct ltext *)self->header.view.dataobject;
 
@@ -133,9 +123,7 @@ struct ltextview *self;
 }
 
 
-static void match_parens(self, key)
-struct ltextview *self;
-char key;
+static void match_parens(struct ltextview *self, char key)
 {
     struct ltext *ct = (struct ltext *)self->header.view.dataobject;
     long start = ltextview_GetDotPosition(self), openparen = ltext_ReverseBalance(ct, start, EOF), pos;
@@ -183,9 +171,7 @@ char key;
         }
 }
     
-static void paren(self, key)
-struct ltextview *self;
-char key; /* must be char for "&" to work. */
+static void paren(struct ltextview *self, char key)
 {
     struct ltext *ct = (struct ltext *)self->header.view.dataobject;
     int count = im_Argument(ltextview_GetIM(self)), i, pos;
@@ -205,9 +191,7 @@ char key; /* must be char for "&" to work. */
 }
 
 #ifdef NOTUSED
-static void indent_paren(self, key)
-struct ltextview *self;
-char key; /* must be char for "&" to work. */
+static void indent_paren(struct ltextview *self, char key)
 {
     struct ltext *ct = (struct ltext *)self->header.view.dataobject;
     int count = im_Argument(ltextview_GetIM(self)), i, pos = ltextview_GetDotPosition(self);
@@ -229,9 +213,7 @@ char key; /* must be char for "&" to work. */
 }
 #endif /* NOTUSED */
 
-static void tab(self, key)
-struct ltextview *self;
-int key;
+static void tab(struct ltextview *self, int key)
 {
     struct ltext *ct = (struct ltext *)self->header.view.dataobject;
     int pos = ltextview_GetDotPosition(self), len = ltextview_GetDotLength(self), c = 0;
@@ -260,9 +242,7 @@ int key;
 }
 
 
-static void newline(self, key)
-struct ltextview *self;
-long key;
+static void newline(struct ltextview *self, long key)
 {
     int newlines = im_Argument(ltextview_GetIM(self));
     struct ltext *ct = (struct ltext *)self->header.view.dataobject;

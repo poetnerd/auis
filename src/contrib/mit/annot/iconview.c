@@ -26,6 +26,10 @@ static char *iconview_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.
 #include <buffer.ih>
 #include <im.ih>
 #include <iconview.eh>
+static int AdoptNewChild();
+static void DrawClosed();
+static void DrawOpen();
+static int SlayChild();
 
 static struct iconview *First;
 
@@ -49,11 +53,7 @@ static int iconopen = TRUE;    /* default initial closed */
 /****************************************************************/
 
 /* Draw the iconview in the case when its open (subview visable) */
-static void
-DrawOpen(self, type, ax, ay, aw, ah)
-     struct iconview * self;
-     enum view_UpdateType type;
-     long ax,ay,aw,ah;  /* area "A"ffected by this fullupdate */
+static void DrawOpen(struct iconview *self, enum view_UpdateType type, long ax, long ay, long aw, long ah)
 {  
     long x,y,w,h;   /* my coordinate space */
     long cx, cy, cw, ch; /* my "C"hilds coordinate space */
@@ -142,11 +142,7 @@ DrawOpen(self, type, ax, ay, aw, ah)
 
 
 /* Draw the iconview when it is closed (subview invisible) */
-static void
-DrawClosed(self, type, ax, ay, aw, ah)
-     struct iconview * self;
-     enum view_UpdateType type;
-     long ax,ay,aw,ah;  /* area "A"ffected by this fullupdate */
+static void DrawClosed(struct iconview *self, enum view_UpdateType type, long ax, long ay, long aw, long ah)
 {  
     long x,y;
     struct fontdesc_charInfo iconinfo;
@@ -176,9 +172,7 @@ DrawClosed(self, type, ax, ay, aw, ah)
 } 
 
 
-static
-SlayChild(self)
-    struct iconview * self;
+static SlayChild(struct iconview *self)
 {  
     int twoviews;
     if (self->child != (struct view *)0) {
@@ -194,10 +188,7 @@ SlayChild(self)
 }
 
 
-static
-AdoptNewChild(self,dobj)
-    struct iconview * self;
-    struct icon * dobj;
+static AdoptNewChild(struct iconview *self, struct icon *dobj)
 {  
     long x,y;
     char * viewclass;
@@ -226,10 +217,7 @@ AdoptNewChild(self,dobj)
 }
 
 
-string_width(string, font, graphic)
-char * string;
-struct fontdesc * font;
-struct graphic * graphic;
+int string_width(char *string, struct fontdesc *font, struct graphic *graphic)
 {
     short * widthtable, totalwidth = 0;
     widthtable = fontdesc_WidthTable(font, graphic);
@@ -243,30 +231,20 @@ struct graphic * graphic;
 /*		class procedures				*/
 /****************************************************************/
 
-boolean
-iconview__InitializeClass(classID)
-    struct classheader * classID;
+boolean iconview__InitializeClass(struct classheader *classID)
 {
 First = NULL;
 return TRUE;
 } 
 
 
-void iconview__GetOrigin(self, width, height, originX, originY)
-    struct view *self;
-    long width;
-    long height;
-    long *originX;
-    long *originY;
+void iconview__GetOrigin(struct iconview *self, long width, long height, long *originX, long *originY)
 {
     *originX = 0;
     *originY = 14;
 }
 
-boolean
-iconview__InitializeObject(classID, self)
-    struct classheader * classID;
-    struct iconview * self;
+boolean iconview__InitializeObject(struct classheader *classID, struct iconview *self)
 {  
     self->isopen = iconopen;
     self->dw = WIDTH;
@@ -283,10 +261,7 @@ iconview__InitializeObject(classID, self)
 }
 
 
-void
-iconview__FinalizeObject(classID, self)
-    struct classheader * classID;
-    struct iconview * self;
+void iconview__FinalizeObject(struct classheader *classID, struct iconview *self)
 {  
     struct iconview *p;
     if(self == First){
@@ -303,10 +278,7 @@ iconview__FinalizeObject(classID, self)
     SlayChild(self);
 }
 
-void
-iconview__CloseRelated(classID, v)
-struct classheader * classID;
-struct view *v;
+void iconview__CloseRelated(struct classheader *classID, struct view *v)
 {
     struct iconview *p;
     struct im *im;
@@ -320,10 +292,7 @@ struct view *v;
     }
 }
 
-void
-iconview__OpenRelated(classID, v)
-struct classheader * classID;
-struct view *v;
+void iconview__OpenRelated(struct classheader *classID, struct view *v)
 {
     struct iconview *p;
     struct im *im;
@@ -340,17 +309,12 @@ struct view *v;
 /*		instance methods				*/
 /****************************************************************/
 
-struct view *
-iconview__GetChild(self)
-    struct iconview * self;
+struct view * iconview__GetChild(struct iconview *self)
 {
     return self->child;
 }
 
-void
-iconview__SetChild(self, viewclass)
-     struct iconview * self;
-     char *viewclass;
+void iconview__SetChild(struct iconview *self, char *viewclass)
 {
     struct icon * dobj = (struct icon *)iconview_GetDataObject(self);
     struct dataobject * d;
@@ -374,9 +338,7 @@ iconview__SetChild(self, viewclass)
     iconview_WantUpdate(self, self);
 }
 
-void
-iconview__Update(self)
-     struct iconview * self;
+void iconview__Update(struct iconview *self)
 {
     struct rectangle r;
 
@@ -386,11 +348,7 @@ iconview__Update(self)
     iconview_FullUpdate(self, view_FullRedraw, r.left, r.top, r.width, r.height);
 } /* iconview_Update */
 
-void
-iconview__FullUpdate(self, type, x, y, w, h)
-     struct iconview *self;
-     enum view_UpdateType type;
-     long x, y, w, h;
+void iconview__FullUpdate(struct iconview *self, enum view_UpdateType type, long x, long y, long w, long h)
 {  
     switch(type) {
 	case view_FullRedraw:
@@ -412,12 +370,7 @@ iconview__FullUpdate(self, type, x, y, w, h)
 }
 
 
-enum view_DSattributes
-iconview__DesiredSize(self, w, h, pass, dw, dh)
-    struct iconview * self;
-    long w, h;
-    enum view_DSpass pass;
-    long *dw, *dh;
+enum view_DSattributes iconview__DesiredSize(struct iconview *self, long w, long h, enum view_DSpass pass, long *dw, long *dh)
 {  
 	struct fontdesc_charInfo iconinfo;
 	if (!self->isopen) {
@@ -436,12 +389,7 @@ iconview__DesiredSize(self, w, h, pass, dw, dh)
 }
 
 
-struct view *
-iconview__Hit(self, action, x, y, clicks)
-    struct iconview * self;
-    enum view_MouseAction action;
-    long x,y;
-    long clicks;
+struct view * iconview__Hit(struct iconview *self, enum view_MouseAction action, long x, long y, long clicks)
 {  
     if (self->isopen) {
 	if (self->child != (struct view *)0 &&
@@ -483,9 +431,7 @@ iconview__Hit(self, action, x, y, clicks)
     return (struct view *)self;
 }
 
-void
-iconview__ReceiveInputFocus(self)
-struct iconview *self;
+void iconview__ReceiveInputFocus(struct iconview *self)
 {
     if (self->isopen && self->child != (struct view *)0) {
 	view_WantInputFocus(self->bottomview,
@@ -499,9 +445,7 @@ struct iconview *self;
 }
     
 
-void
-iconview__Close(self)
-struct iconview *self;
+void iconview__Close(struct iconview *self)
 {
     if(self->isopen == TRUE){
 	self->isopen = FALSE;
@@ -511,9 +455,7 @@ struct iconview *self;
     }
 }
 
-void
-iconview__Open(self)
-struct iconview *self;
+void iconview__Open(struct iconview *self)
 {
     if(self->isopen == FALSE){
 	self->isopen = TRUE;
@@ -524,11 +466,7 @@ struct iconview *self;
     }
 }
 
-void
-iconview__RecommendSize(self, w, h)
-    struct iconview * self;
-    long w;
-    long h;
+void iconview__RecommendSize(struct iconview *self, long w, long h)
 {  
 	if (w > 0 && h > 0) {
 	    self->dw = w;
@@ -538,32 +476,21 @@ iconview__RecommendSize(self, w, h)
 
 
 
-void
-iconview__DecidedSize(self, w, h)
-    struct iconview * self;
-    long w;
-    long h;
+void iconview__DecidedSize(struct iconview *self, long w, long h)
 {  
     icon_SetSize((struct icon *)self->header.view.dataobject,w,h);
 }
 
 
 
-void
-iconview__SetDataObject(self,dobj)
-    struct iconview * self;
-    struct dataobject * dobj;
+void iconview__SetDataObject(struct iconview *self, struct dataobject *dobj)
 {  
     super_SetDataObject(self,dobj);
     AdoptNewChild(self,(struct icon *)dobj);
 }
 
 
-void
-iconview__ObservedChanged(self, data, value)
-    struct iconview * self;
-    struct observable * data;
-    long value; 
+void iconview__ObservedChanged(struct iconview *self, struct observable *data, long value)
 {  
     if (value == observable_OBJECTDESTROYED) {
 	SlayChild(self);
@@ -585,21 +512,13 @@ iconview__ObservedChanged(self, data, value)
     }
 }
 
-void
-iconview__LinkTree(self, parent)
-    struct iconview * self;
-    struct view *parent;
+void iconview__LinkTree(struct iconview *self, struct view *parent)
 {
 	super_LinkTree(self, parent);
 	if(self->child) view_LinkTree(self->child, self);
 }
 
-void
-iconview__SetIconFont(self,iconfont,iconstyle,iconpts)
- struct iconview * self;
- char * iconfont;
- int iconstyle;
- int iconpts;
+void iconview__SetIconFont(struct iconview *self, char *iconfont, int iconstyle, int iconpts)
 {
  
     self->iconfont = fontdesc_Create(iconfont, iconstyle, iconpts);
@@ -618,20 +537,12 @@ iconview__SetIconFontname (self,name)
 }
 #endif 
 
-void
-iconview__SetIconChar(self,iconchar)
-struct iconview * self;
-char iconchar;
+void iconview__SetIconChar(struct iconview *self, int iconchar)
 {
     self->iconchar = iconchar;
 }
 
-void
-iconview__SetTitleFont(self,titlefont,titlestyle,titlepts)
- struct iconview * self;
- char * titlefont;
- int titlestyle;
- int titlepts;
+void iconview__SetTitleFont(struct iconview *self, char *titlefont, int titlestyle, int titlepts)
 {
  
     self->titlefont = fontdesc_Create(titlefont, titlestyle, titlepts);

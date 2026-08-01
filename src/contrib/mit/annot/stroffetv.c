@@ -46,6 +46,10 @@ static char *stroffetview_rcsid = "$Header";
 #include "keymap.ih"
 #include "text.ih"
 #include "proctbl.ih"
+static void Close();
+static void closeall();
+static void insert();
+static void openall();
 
 #define ICONFONT "icon"
 #define ICONSTYLE fontdesc_Plain
@@ -63,39 +67,24 @@ static struct keymap *stroffetviewKeyMap;
 /*		private functions				*/
 /****************************************************************/
 
-static void
-Close(v,l)
-struct stroffetview *v;
-long l;
+static void Close(struct stroffetview *v, long l)
 {
     stroffetview_Close(v);
 }
-static void
-open(v,l)
-struct stroffetview *v;
-long l;
+static void open(struct stroffetview *v, long l)
 {
     stroffetview_Open(v);
 }
-static void
-closeall(v,l)
-struct view *v;
-long l;
+static void closeall(struct view *v, long l)
 {
     iconview_CloseRelated(v);
 }
-static void
-openall(v,l)
-struct view *v;
-long l;
+static void openall(struct view *v, long l)
 {
     iconview_OpenRelated(v);
 }
 
-static void
-insert(tv,l)
-struct textview *tv;
-long l;
+static void insert(struct textview *tv, long l)
 {
     struct text *t;
     long pos;
@@ -111,9 +100,7 @@ static struct bind_Description stroffetviewBindings[]={
     {"stroffetview-openall",NULL,0,"stroffets,open all~11", 0,0,openall,"open all the stroffets"},
     NULL
 };
-void stroffetview__PostMenus(self, menulist)
-struct stroffetview *self;
-struct menulist *menulist;
+void stroffetview__PostMenus(struct stroffetview *self, struct menulist *menulist)
 {
     menulist_ClearChain(self->menus);
     menulist_ChainBeforeML(self->menus, menulist, menulist);
@@ -125,9 +112,7 @@ struct menulist *menulist;
 /*		class procedures				*/
 /****************************************************************/
 
-boolean
-stroffetview__InitializeClass(classID)
-    struct classheader * classID;
+boolean stroffetview__InitializeClass(struct classheader *classID)
 {
     struct classinfo *textviewtype = class_Load("textview");
     struct classinfo *viewtype = class_Load("view");
@@ -142,10 +127,7 @@ stroffetview__InitializeClass(classID)
 }
 
 
-boolean
-stroffetview__InitializeObject(classID,self)
-struct classheader * classID;
-struct stroffetview * self;
+boolean stroffetview__InitializeObject(struct classheader *classID, struct stroffetview *self)
 {
 
     self->menus = menulist_DuplicateML(stroffetviewMenus, self);
@@ -161,13 +143,7 @@ struct stroffetview * self;
 /*		instance methods				*/
 /****************************************************************/
 
-void
-stroffetview__Print(self, file, processor, finalformat, toplevel)
-    struct stroffetview * self;
-    FILE * file;
-    char * processor;
-    char * finalformat;
-    boolean toplevel;
+void stroffetview__Print(struct stroffetview *self, FILE *file, char *processor, char *finalformat, boolean toplevel)
 {
   struct textview * textvobj;
   struct text * textobj;

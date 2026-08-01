@@ -30,7 +30,7 @@
 class ltapp : application [app]
   {
   classprocedures:
-    InitializeObject( struct ltapp *)	returns boolean;
+    InitializeObject( struct ltapp *self)	returns boolean;
 
   overrides:
     ParseArgs( int argc, char **argv)	returns boolean;

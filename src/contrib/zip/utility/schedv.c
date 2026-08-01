@@ -65,6 +65,12 @@ END-SPECIFICATION  ************************************************************/
 #include <zip.ih>
 #include <zipv.ih>
 #include <andrewos.h>
+static int Handle_Slot_Hit();
+static int Initialize();
+static int Move_Slot();
+static int Normalize_Current_Slot_Figure();
+static int Normalize_Previous_Slot_Figure();
+static int Remember_Slot_Hit();
 
 static boolean debug=FALSE;
 static struct menulist		     *class_menulist;
@@ -175,16 +181,12 @@ suite_Specification		    control_buttons[] =
   suite_Arrangement( suite_Row ),
   NULL
   };
-void
-schedv__Set_Debug( self, mode )
-  register struct schedv		     *self;
+void schedv__Set_Debug(struct schedv *self, boolean mode)
   {
   debug = mode;
   }
 
-boolean
-schedv__InitializeClass( classID )
-  register struct classheader		     *classID;
+boolean schedv__InitializeClass(struct classheader *classID)
   {
   IN(schedv_InitializeClass);
   class_menulist = menulist_New();
@@ -213,10 +215,7 @@ SELF=self;
   return  TRUE;
   }
 
-void
-schedv__FinalizeObject( classID, self )
-  register struct classheader	*classID;
-  register struct schedv	*self;
+void schedv__FinalizeObject(struct classheader *classID, struct schedv *self)
 {
   if(Menu) menulist_Destroy(Menu);
   if(ZipView) {
@@ -226,19 +225,14 @@ schedv__FinalizeObject( classID, self )
   }
 }
 
-void
-schedv__SetDataObject( self, data )
-  register struct schedv	      *self;
-  register struct sched		      *data;
+void schedv__SetDataObject(struct schedv *self, struct dataobject *data)
   {
   self->data = data;
   zipview_SetDataObject( ZipView, Zip );
   zip_Set_general_Exception_Handler( Zip, Exceptions );
   }
 
-void
-schedv__ReceiveInputFocus( self )
-  register struct schedv	     *self;
+void schedv__ReceiveInputFocus(struct schedv *self)
   {
   IN(schedv_ReceiveInputFocus);
   InputFocus = true;
@@ -246,20 +240,14 @@ schedv__ReceiveInputFocus( self )
   OUT(schedv_ReceiveInputFocus);
   }
 
-void
-schedv__LoseInputFocus( self )
-  register struct schedv	     *self;
+void schedv__LoseInputFocus(struct schedv *self)
   {
   IN(schedv_LoseInputFocus);
   InputFocus = false;
   OUT(schedv_LoseInputFocus);
   }
 
-void
-schedv__FullUpdate( self, type, left, top, width, height )
-  register struct schedv	     *self;
-  register enum view_UpdateType	      type;
-  register long			      left, top, width, height;
+void schedv__FullUpdate(struct schedv *self, enum view_UpdateType type, long left, long top, long width, long height)
   {
   IN(schedv_FullUpdate);
   if ( type == view_FullRedraw || type == view_LastPartialRedraw )
@@ -278,9 +266,7 @@ schedv__FullUpdate( self, type, left, top, width, height )
   OUT(schedv_FullUpdate);
   }
 
-static
-Initialize( self )
-  register struct schedv	     *self;
+static Initialize(struct schedv *self)
   {
   register long			      status = 0;
   char				     *reply;
@@ -300,11 +286,7 @@ Initialize( self )
   return  status;
   }
 
-struct view *
-schedv__Hit( self, action, x, y, clicks )
-  register struct schedv	     *self;
-  register enum view_MouseAction      action;
-  register long			      x, y, clicks;
+struct view * schedv__Hit(struct schedv *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   register struct view		     *hit = (struct view *) self;
   register zip_type_figure	      figure;
@@ -365,10 +347,7 @@ schedv__Hit( self, action, x, y, clicks )
   return  hit;
   }
 
-static
-Handle_Slot_Hit( self, slot_figure )
-  register struct schedv	     *self;
-  register zip_type_figure	      slot_figure;
+static Handle_Slot_Hit(struct schedv *self, zip_type_figure slot_figure)
   {
   char				      reply[512], string[512];
   register long			      shade;
@@ -412,10 +391,7 @@ Handle_Slot_Hit( self, slot_figure )
   OUT(Handle_Slot_Hit);
   }
 
-static
-Remember_Slot_Hit( self, slot_figure )
-  register struct schedv	     *self;
-  register zip_type_figure	      slot_figure;
+static Remember_Slot_Hit(struct schedv *self, zip_type_figure slot_figure)
   {
   char				      string[512];
   register zip_type_figure	      text_figure;
@@ -436,10 +412,7 @@ Remember_Slot_Hit( self, slot_figure )
   OUT(Remember_Slot_Hit);
   }
  
-static
-Move_Slot( self, slot_figure )
-  register struct schedv	     *self;
-  register zip_type_figure	      slot_figure;
+static Move_Slot(struct schedv *self, zip_type_figure slot_figure)
   {
   char				      string[512];
   register zip_type_figure	      text_figure;
@@ -482,9 +455,7 @@ Move_Slot( self, slot_figure )
   OUT(Move_Slot);
   }
 
-static
-Normalize_Previous_Slot_Figure( self )
-  register struct schedv	     *self;
+static Normalize_Previous_Slot_Figure(struct schedv *self)
   {
   IN(Normalize_Previous_Slot_Figure);
   zipview_Clear_Figure( ZipView, PreviousSlotFigure, ChartPane );
@@ -496,9 +467,7 @@ Normalize_Previous_Slot_Figure( self )
   OUT(Normalize_Previous_Slot_Figure);
   }
 
-static
-Normalize_Current_Slot_Figure( self )
-  register struct schedv	     *self;
+static Normalize_Current_Slot_Figure(struct schedv *self)
   {
   register long			      shade = 0;
 
@@ -517,12 +486,7 @@ Normalize_Current_Slot_Figure( self )
   OUT(Normalize_Current_Slot_Figure);
   }
 
-static
-Extend_Button( self, suite, item, type, action, x, y, clicks )
-  register struct schedv	     *self;
-  register struct suite		     *suite;
-  register struct suite_item	     *item;
-  register enum view_MouseAction      action;
+static Extend_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Extend_Button);
   switch ( action )
@@ -538,12 +502,7 @@ Extend_Button( self, suite, item, type, action, x, y, clicks )
   OUT(Extend_Button);
   }
 
-static
-Split_Button( self, suite, item, type, action, x, y, clicks )
-  register struct schedv	     *self;
-  register struct suite		     *suite;
-  register struct suite_item	     *item;
-  register enum view_MouseAction      action;
+static Split_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Split_Button);
   switch ( action )
@@ -559,12 +518,7 @@ Split_Button( self, suite, item, type, action, x, y, clicks )
   OUT(Split_Button);
   }
 
-static
-Clear_Button( self, suite, item, type, action, x, y, clicks )
-  register struct schedv	     *self;
-  register struct suite		     *suite;
-  register struct suite_item	     *item;
-  register enum view_MouseAction      action;
+static Clear_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   register zip_type_image	      image = zip_Image_Root( Zip, ScheduleStream );
   register zip_type_figure	      figure,
@@ -600,12 +554,7 @@ Clear_Button( self, suite, item, type, action, x, y, clicks )
   OUT(Clear_Button);
   }
 
-static
-Save_Button( self, suite, item, type, action, x, y, clicks )
-  register struct schedv	     *self;
-  register struct suite		     *suite;
-  register struct suite_item	     *item;
-  register enum view_MouseAction      action;
+static Save_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   char				      msg[512];
   register long			      status;
@@ -626,12 +575,7 @@ Save_Button( self, suite, item, type, action, x, y, clicks )
   OUT(Save_Button);
   }
 
-static
-Print_Button( self, suite, item, type, action, x, y, clicks )
-  register struct schedv	     *self;
-  register struct suite		     *suite;
-  register struct suite_item	     *item;
-  register enum view_MouseAction      action;
+static Print_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   char				      msg[512];
   register long			      status;
@@ -662,12 +606,7 @@ Print_Button( self, suite, item, type, action, x, y, clicks )
   OUT(Print_Button);
   }
 
-static
-Quit_Button( self, suite, item, type, action, x, y, clicks )
-  register struct schedv	     *self;
-  register struct suite		     *suite;
-  register struct suite_item	     *item;
-  register enum view_MouseAction      action;
+static Quit_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   static char			     *choices[] =
 		{"Cancel", "Save", "Save & Quit", "Quit Anyway", 0};
@@ -697,28 +636,21 @@ Quit_Button( self, suite, item, type, action, x, y, clicks )
   OUT(Quit_Button);
   }
 
-static void
-Debug_Command( self )
-  register struct schedv	     *self;
+static void Debug_Command(struct schedv *self)
   {
   IN(Debug_Command);
   debug = !debug;
   OUT(Debug_Command);
   }
 
-static void
-Quit_Command( self )
-  register struct schedv	     *self;
+static void Quit_Command(struct schedv *self)
   {
   IN(Quit_Command);
   Quit_Button( self, NULL, NULL, suite_ItemObject, view_LeftUp, NULL, NULL, NULL );
   OUT(Quit_Command);
   }
 
-static long
-Exceptions( self, facility, status )
-  register struct schedv	     *self;
-  register long			      status, facility;
+static long Exceptions(struct schedv *self, long facility, long status)
   {
   char				      msg[512];
 

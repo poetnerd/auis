@@ -51,7 +51,7 @@ overrides:
 
 methods:
 
-  Set_Debug( debug );
+  Set_Debug( boolean debug );
   Read_Visuals( foreground, background )	returns long;
 
 macromethods:

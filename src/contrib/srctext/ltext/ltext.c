@@ -49,6 +49,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <proctbl.ih>
 
 #include <ltext.eh>
+static void DoFreeTree();
+static boolean Quoted();
+static void SetupStyles();
+static void addindent();
+static int current_column();
+static long findsexpr();
+static boolean inmark();
+static long nextline();
+static long skipsexpr();
 
 #define LOW(ch) (isupper(ch)?tolower(ch):(ch))
 
@@ -63,9 +72,7 @@ static struct indent {
 /* Varables used to control the indenting style. */
 boolean useTabs = TRUE;
 
-void ltext__SetAttributes(self,atts)
-struct ltext *self;
-struct attributes *atts;
+void ltext__SetAttributes(struct ltext *self, struct attributes *atts)
 {
     char *key;
     super_SetAttributes(self,atts);
@@ -82,8 +89,7 @@ struct attributes *atts;
     }
 }
 
-static void SetupStyles(self)
-    struct ltext *self;
+static void SetupStyles(struct ltext *self)
 {
     self->comment_style = stylesheet_Find(self->header.text.styleSheet, "comment");
     self->fnname_style = stylesheet_Find(self->header.text.styleSheet, "function");
@@ -91,9 +97,7 @@ static void SetupStyles(self)
     ltext_SetGlobalStyle(self, stylesheet_Find(self->header.text.styleSheet, "global"));
 }
 
-boolean ltext__InitializeObject(classID, self)
-    struct classheader *classID;
-    struct ltext *self;
+boolean ltext__InitializeObject(struct classheader *classID, struct ltext *self)
 {
     struct attributes templateAttribute;
 
@@ -107,18 +111,14 @@ boolean ltext__InitializeObject(classID, self)
     return TRUE;
 }
 
-void ltext__Clear(self)
-struct ltext *self;
+void ltext__Clear(struct ltext *self)
 {
     super_Clear(self); /* This destroyes all styles in the stylesheet. */
 
     SetupStyles(self);
 }
 
-long ltext__Read(self, file, id)
-struct ltext *self;
-FILE *file;
-long id;
+long ltext__Read(struct ltext *self, FILE *file, long id)
 {
     long tmpRetValue;
 
@@ -137,14 +137,12 @@ long id;
  ****************************************************************/
 
 
-static void DoFreeTree(self)
-struct nestedmark *self;
+static void DoFreeTree(struct nestedmark *self)
 {
     nestedmark_FreeTree(self);
 }
 
-void ltext__RedoStyles(self)
-struct ltext *self;
+void ltext__RedoStyles(struct ltext *self)
 {
     struct nestedmark *root = (struct nestedmark *)self->header.text.rootEnvironment;
     struct environment *newenv;
@@ -319,9 +317,7 @@ struct paren_node {
     struct paren_node *next;
 };
 
-static boolean Quoted(self, pos)
-struct ltext *self;
-long pos;
+static boolean Quoted(struct ltext *self, long pos)
 {
     /* returns true iff the character at pos is quoted (ie. "\"). Takes into account the slash being quoted. (ie "\\"). */
 
@@ -336,10 +332,7 @@ long pos;
     return retval;
 }
 
-long ltext__ReverseBalance(self, pos, type)
-struct ltext *self;
-long pos;
-int type;
+long ltext__ReverseBalance(struct ltext *self, long pos, int type)
 {
     /* Balance parens backwards. If type is EOF, scan back to the start of the previous paren pair, otherwise scan back to the matching open paren. Never look at characters positioned at "pos" or later. */
 
@@ -431,9 +424,7 @@ int type;
  * Indenter.  
  *****************************************************************/
 
-static int current_column(self,pos)
-struct ltext *self;
-long pos;
+static int current_column(struct ltext *self, long pos)
 {
     int ind=0, oldPos=pos;
 
@@ -450,9 +441,7 @@ long pos;
     return ind;
 }
 
-static long nextline(self, pos)
-struct ltext *self;
-long pos;
+static long nextline(struct ltext *self, long pos)
 {
     /* Returns the start of the line following this one, or EOF if this line doesn't end. */
 
@@ -467,9 +456,7 @@ long pos;
         return pos+1;
 }
 
-static boolean inmark(mark, pos)
-struct mark *mark;
-long pos;
+static boolean inmark(struct mark *mark, long pos)
 {
     /* Returns true if the pos is inside the mark. */
 
@@ -479,9 +466,7 @@ long pos;
         return TRUE;
 }
 
-static long findsexpr(self, pos, limit)
-struct ltext *self;
-long pos, limit;
+static long findsexpr(struct ltext *self, long pos, long limit)
 {
     /* Returns the start of the next sexpr before limit. Takes into account comments and ws. */
 
@@ -500,9 +485,7 @@ long pos, limit;
     return EOF;
 }
 
-static long skipsexpr(self, pos, limit)
-struct ltext *self;
-long pos, limit;
+static long skipsexpr(struct ltext *self, long pos, long limit)
 {
     /* Returns the first position after the end of the current sexpr. */
 
@@ -549,9 +532,7 @@ long pos, limit;
     return EOF;
 }
 
-long indent(self, pos)
-struct ltext *self;
-long pos;
+long indent(struct ltext *self, long pos)
 {
     /* Return the correct indentation for the line containing pos assuming nothing exists beyond pos. Note: Assumed that the text object is not modified while we are doing our stuff so that longs can be used instead of marks. */
 
@@ -631,9 +612,7 @@ long pos;
     return current_column(self, firstarg);
 }
 
-long ltext__Indent(self, mark)
-struct ltext *self;
-struct mark *mark;
+long ltext__Indent(struct ltext *self, struct mark *mark)
 {
     /* Every line that overlaps the mark is indented. Returns the position of the first non-whitespace character on the last line indented. */
 
@@ -665,9 +644,7 @@ struct mark *mark;
     }
 }
 
-void ltext__ReindentLine(self, pos)
-struct ltext *self;
-long pos;
+void ltext__ReindentLine(struct ltext *self, long pos)
 {
     /* Indents the line that pos is in. On top of the newline counts as the previous line. Acts as if the text ends at the end of the line. */
 
@@ -715,10 +692,7 @@ static char *spaces="        ";
 	pos+=(col-oldcol);\
     }
 
-long ltext__TabAndOptimizeWS(self,pos,inc)
-struct ltext    *self;
-long	pos;
-int	inc;
+long ltext__TabAndOptimizeWS(struct ltext *self, long pos, int inc)
 {
     int     home=0, oldPos, col=0, oldCol=0, target;
 
@@ -774,9 +748,7 @@ int	inc;
 /* --- */
 
 
-static void addindent(name, args)
-char *name;
-int args;
+static void addindent(char *name, int args)
 {
     struct indent *newindent = new(struct indent);
     char *ptr;
@@ -790,8 +762,7 @@ int args;
     Indents = newindent;
 }
 
-boolean ltext__InitializeClass(classID)
-struct classheader *classID;
+boolean ltext__InitializeClass(struct classheader *classID)
 {
     int indent;
     char *t, *t2, *s = environ_GetProfile("ltextindents");

@@ -40,6 +40,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <view.ih>
 #include <clockv.eh>
 #include <util.h>
+static void MenuSetLabels();
+static void MenuSetSeconds();
+static void MenuSetShape();
+static void MenuSetTicks();
+static void PlotLabels();
+static void PlotPoints();
+static void Redraw();
 
 /* Defined constants and macros */
 #define MENUTITLE "Clock %s,%s"
@@ -65,9 +72,7 @@ static char *label_set12[3][12] = {{"12", "1", "2", "3", "4", "5", "6", "7", "8"
 				      "Nine", "Ten", "Eleven"}};
 
 
-static void MenuSetShape(self, format)
-     struct clockview *self;
-     char *format;
+static void MenuSetShape(struct clockview *self, char *format)
 {
   struct clock *b = (struct clock *) clockview_GetDataObject(self);
   struct clock_options *options;
@@ -94,9 +99,7 @@ static void MenuSetShape(self, format)
 }
 
 
-static void MenuSetLabels(self, format)
-     struct clockview *self;
-     char *format;
+static void MenuSetLabels(struct clockview *self, char *format)
 {
   struct clock *b = (struct clock *) clockview_GetDataObject(self);
   struct clock_options *options;
@@ -160,9 +163,7 @@ static void MenuSetLabels(self, format)
 }
 
 
-static void MenuSetTicks(self, format)
-     struct clockview *self;
-     char *format;
+static void MenuSetTicks(struct clockview *self, char *format)
 {
   struct clock *b = (struct clock *) clockview_GetDataObject(self);
   struct clock_options *options;
@@ -190,9 +191,7 @@ static void MenuSetTicks(self, format)
 }
 
 
-static void MenuSetSeconds(self, format)
-     struct clockview *self;
-     char *format;
+static void MenuSetSeconds(struct clockview *self, char *format)
 {
   struct clock *b = (struct clock *) clockview_GetDataObject(self);
   struct clock_options *options;
@@ -213,9 +212,7 @@ static void MenuSetSeconds(self, format)
 }
 
 
-boolean
-clockview__InitializeClass(c)
-struct classheader *c;
+boolean clockview__InitializeClass(struct classheader *c)
 {
 /* 
   Initialize all the class data.
@@ -276,10 +273,7 @@ struct classheader *c;
 }
 
 
-boolean
-clockview__InitializeObject(c, self)
-struct classheader *c;
-struct clockview *self;
+boolean clockview__InitializeObject(struct classheader *c, struct clockview *self)
 {
 /*
   Set up the data for each instance of the object.
@@ -294,10 +288,7 @@ struct clockview *self;
 }
 
 
-void
-clockview__FinalizeObject(c, self)
-struct classheader *c;
-struct clockview *self;
+void clockview__FinalizeObject(struct classheader *c, struct clockview *self)
 {
   if (self->cursor) cursor_Destroy(self->cursor);
   self->cursor = NULL;
@@ -308,13 +299,7 @@ struct clockview *self;
 
 
 
-static void
-PlotLabels(self, theta, radius, label, shape)
-struct clockview *self;
-double theta;
-int radius;
-char *label;
-enum border_shapes shape;
+static void PlotLabels(struct clockview *self, double theta, int radius, char *label, enum border_shapes shape)
 {
   struct rectangle rect;
   long max_radius;
@@ -370,12 +355,7 @@ enum border_shapes shape;
 }
 
 
-static void
-PlotPoints(self, theta, radius, thickness, shape)
-struct clockview *self;
-double theta;
-int radius, thickness;
-enum border_shapes shape;
+static void PlotPoints(struct clockview *self, double theta, int radius, int thickness, enum border_shapes shape)
 {
   struct rectangle rect;
   long max_radius;
@@ -433,9 +413,7 @@ enum border_shapes shape;
 }
 
 
-static void
-Redraw(self)
-struct clockview *self;
+static void Redraw(struct clockview *self)
 {
 /*
   Redisplay this object.
@@ -520,11 +498,7 @@ struct clockview *self;
 }
 
 
-void
-clockview__FullUpdate(self, type, left, top, width, height)
-struct clockview *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void clockview__FullUpdate(struct clockview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
 /*
   Do an update.
@@ -536,20 +510,13 @@ long left, top, width, height;
 }
 
 
-void
-clockview__Update(self)
-struct clockview *self;  
+void clockview__Update(struct clockview *self)
 {
   Redraw(self);
 }
 
 
-struct view *
-clockview__Hit(self, action, x, y, numclicks)
-struct clockview *self;
-long x, y;
-enum view_MouseAction action;
-long numclicks;  
+struct view * clockview__Hit(struct clockview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
 /*
   Handle the button event.  Currently, semantics are:
@@ -559,12 +526,7 @@ long numclicks;
 }
 
 
-void
-clockview__Print(self, file, processor, finalFormat, topLevel)
-struct clockview *self;
-FILE *file;
-char *processor, *finalFormat;
-boolean topLevel;
+void clockview__Print(struct clockview *self, FILE *file, char *processor, char *finalFormat, boolean topLevel)
 {
   long t;
 
@@ -574,10 +536,7 @@ boolean topLevel;
 
 
 
-void
-clockview__PostMenus(self, ml)
-struct clockview *self;
-struct menulist *ml;
+void clockview__PostMenus(struct clockview *self, struct menulist *ml)
 {
 /*
   Enable the menus for this object.

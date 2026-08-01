@@ -79,6 +79,16 @@
 #include <message.ih>
 #include <htmlview.ih>
 #include <html.eh>
+static void PutsRange();
+static void addVars();
+static struct entityElement* entityPeek();
+static int fixStyles();
+static char* getHTML();
+static void maybeDisplay();
+static int newpar();
+static void storeVar();
+static struct entityElement* withinEntityClass();
+static void writeHeader();
 
 #define NEED_STRING_PROTO
 
@@ -316,9 +326,7 @@ static char* HTMLMagicCharacters = 0;
  * between special characters (e.g. >, <, and &) and the HTML entity which 
  * represents them (e.g. "&gt;", "&lt;" and "&amp;").
  */
-boolean 
-html__InitializeClass(classID)
-struct classheader *classID;
+boolean html__InitializeClass(struct classheader *classID)
 {
     struct HTMLMagicMapping* HTMLCharMap = 0;
     struct HTMLMagicMapping* hmap;
@@ -397,10 +405,7 @@ struct classheader *classID;
  * which represents that character.  len is set to the length of the return
  * string.
  */  
-char*
-html_MagicToString(x,len)
-char* x;
-int* len;
+char* html_MagicToString(char *x, int *len)
 {
     struct HTMLMagicMapping* hm;
     static char buf[32];
@@ -420,9 +425,7 @@ int* len;
  * If it is, then the "magic" string which the html translates to is returned.
  * else 0 is returned
  */
-char*
-html_StringToMagic(str)
-char* str;
+char* html_StringToMagic(char *str)
 {
     struct HTMLMagicMapping* hm;
     for (hm = HTMLCharMap; hm && hm->magicstring; hm++) {
@@ -435,10 +438,7 @@ char* str;
 
 /*
 */
-void
-html__Inform(self, msg)
-struct html* self;
-char* msg;
+void html__Inform(struct html *self, char *msg)
 {
     struct text* errtext;
     static char buf[256];
@@ -462,9 +462,7 @@ char* msg;
     }
 }
 
-boolean
-html__HasErrors(self)
-struct html* self;
+boolean html__HasErrors(struct html *self)
 {
     if (self->errorBuffer) {
 	return TRUE;
@@ -480,11 +478,7 @@ struct html* self;
 
 /* Attach a variable assignment to a style */
 /* If the value is NULL, then empty string ("") is placed as value */
-static void 
-storeVar(style, key, value)
-struct style* style;
-char* key;
-char* value;
+static void storeVar(struct style *style, char *key, char *value)
 {
     struct keylist* k = keyList;
     char* s;
@@ -510,10 +504,7 @@ char* value;
 }
 
 /* Parse a variable list from a tag calling storeVar on all the variables */
-static void
-addVars(style, vars)
-struct style* style;
-char* vars;
+static void addVars(struct style *style, char *vars)
 {
     char* s = vars;
     char* value = 0;
@@ -541,9 +532,7 @@ char* vars;
     }
 }
 
-char*
-html_StyleToVariables(style)
-struct style* style;
+char* html_StyleToVariables(struct style *style)
 {
     /* XXX: We don't watch to see if buf is overrun! */
     struct keylist* k;
@@ -572,10 +561,7 @@ struct style* style;
 /* Some routines for outside use.  I.e. the view object                     */
 /* ------------------------------------------------------------------------ */
 
-void
-html__ChangeTitle(self, name)
-struct html* self;
-char* name;
+void html__ChangeTitle(struct html *self, char *name)
 {
     struct buffer* buf = buffer_FindBufferByData(self);
     if (self->title)  {
@@ -594,22 +580,14 @@ char* name;
     }
 }
 
-void
-html__ChangeIndexable(self, flag)
-struct html* self;
-int flag;
+void html__ChangeIndexable(struct html *self, int flag)
 {
     self->isindex = flag;
     html_SetModified(self);
     html_NotifyObservers(self, observable_OBJECTCHANGED);
 }
 
-void
-html__AddLink(self, inpos, len, uri)
-struct html* self;
-long inpos;
-long len;
-char* uri;
+void html__AddLink(struct html *self, long inpos, long len, char *uri)
 {
     int pos = inpos;
     char vars[256];
@@ -626,10 +604,7 @@ char* uri;
     html_NotifyObservers(self, observable_OBJECTCHANGED);
 }
 
-char*
-html__GetAnchorDest(self, pos)
-struct html* self;
-long pos;
+char* html__GetAnchorDest(struct html *self, long pos)
 {
     struct environment* env;
 
@@ -644,11 +619,7 @@ long pos;
     return html_StyleToVariables(env->data.style);
 }
 
-char*
-html__GetAttribute(self, env, attr)
-struct html* self;
-struct environment* env;
-char* attr;
+char* html__GetAttribute(struct html *self, struct environment *env, char *attr)
 {
     if (env->type != environment_Style) {
 	return 0;
@@ -657,13 +628,7 @@ char* attr;
     }
 }
 
-void
-html__ChangeAttribute(self, tv, env, attr, value)
-struct html* self;
-struct view* tv;
-struct environment* env;
-char* attr;
-char* value;
+void html__ChangeAttribute(struct html *self, struct view *tv, struct environment *env, char *attr, char *value)
 {
     char cb[256];
     char* ptr;
@@ -710,12 +675,7 @@ char* value;
     }
 }
 
-void
-html__GetAttributeList(self, env, list, count)
-struct html* self;
-struct environment* env;
-char* list[];
-int* count;
+void html__GetAttributeList(struct html *self, struct environment *env, char **list, int *count)
 {
     struct keylist* k;
     char* s;
@@ -742,12 +702,7 @@ int* count;
  * a parse run, you should make sure you call the SetModified and
  * NotifyObservers methods.                                                 */
 /* ------------------------------------------------------------------------ */
-static void
-ChangeTitle(self, ep, buf, len) /* Internal Callback */
-struct html* self;
-struct entityElement* ep;
-char* buf;
-long len;
+static void ChangeTitle(struct html *self, struct entityElement *ep, char *buf, long len)
 {
     if (self->title)  {
 	free(self->title);
@@ -757,12 +712,7 @@ long len;
     self->title[len]='\0';
 }
 
-static void
-ChangeIndexable(self, ep, buf, len) /* Internal Callback */
-struct html* self;
-struct entityElement* ep;
-char* buf;
-long len;
+static void ChangeIndexable(struct html *self, struct entityElement *ep, char *buf, long len)
 {
     self->isindex = 1;
 }
@@ -773,9 +723,7 @@ long len;
 /* ------------------------------------------------------------------------ */
 
 /* getEntityCode: take a string, do a lookup and return the code */
-static struct entityMapping*
-getEntityMapping(string)
-char* string;
+static struct entityMapping* getEntityMapping(char *string)
 {
     struct entityMapping* b;
     for (b = basicEntities; b->string; b++) {
@@ -787,9 +735,7 @@ char* string;
 }
 
 /* Take an entity off the stack */
-static void 
-popEntity(self)
-struct html* self;
+static void popEntity(struct html *self)
 {
     struct entityElement* e = self->entities;
     if (e) {
@@ -803,14 +749,7 @@ struct html* self;
  * It records the current position and prepares a style to plop down
  * when the end of the entity is known
  */
-static struct entityElement*
-pushEntity(self, pos, em, name, vars, force)
-struct html* self;
-long* pos;
-struct entityMapping* em;
-char* name;
-char* vars;
-int force;
+static struct entityElement* pushEntity(struct html *self, long *pos, struct entityMapping *em, char *name, char *vars, int force)
 {   
     char* string;
     char buf[256];
@@ -900,18 +839,13 @@ int force;
     return e;
 }
 
-static struct entityElement*
-entityPeek(self)
-struct html* self;
+static struct entityElement* entityPeek(struct html *self)
 {
     return self->entities;
 }
 
 /* Run down the stack, returns TRUE if we can find the entityCode anywhere */
-static struct entityElement*
-withinEntity(self, code)
-struct html* self;
-enum entityCode code;
+static struct entityElement* withinEntity(struct html *self, enum entityCode code)
 {
     struct entityElement* e;
     for (e = self->entities; e; e=e->prev) {
@@ -923,10 +857,7 @@ enum entityCode code;
 }
 
 /* Run down the stack, returns entity if we can find the entityCode anywhere */
-static struct entityElement*
-withinEntityClass(self, code)
-struct html* self;
-enum entityCode code;
+static struct entityElement* withinEntityClass(struct html *self, enum entityCode code)
 {
     struct entityElement* e;
     for (e = self->entities; e; e=e->prev) {
@@ -946,12 +877,7 @@ enum entityCode code;
   set to the character position at which the token should take effect.
   Note: The following routine is destructive to buf.
  */
-int
-html_FindEntity(buf, pos, entity, vars)
-char* buf;
-long* pos;
-char* entity;
-char* vars;
+int html_FindEntity(char *buf, long *pos, char *entity, char *vars)
 {
     char* s;
     /* .....<idXXXXXX varsXXXXXXX>.....  */
@@ -1004,11 +930,7 @@ char* vars;
  * it takes the entity and plops a style into the text object
  * to represent the entity
  */
-static void closeEntity(self, ep, pos, force)
-struct html* self;
-struct entityElement* ep;
-long* pos;
-int force;
+static void closeEntity(struct html *self, struct entityElement *ep, long *pos, int force)
 {
     struct entityElement* e;
     struct environment *env;
@@ -1055,13 +977,7 @@ int force;
     }
 }
 
-void
-html__AddEntity(self, pos, len, name, vars)
-struct html* self;
-long pos;
-long len;
-char* name;
-char* vars;
+void html__AddEntity(struct html *self, long pos, long len, char *name, char *vars)
 {   
     /* Map name to style */
     struct entityMapping* em = getEntityMapping(name);
@@ -1080,10 +996,7 @@ char* vars;
 /* The class maintenance methods                                            */
 /* ------------------------------------------------------------------------ */
 
-boolean 
-html__InitializeObject(classID, self)
-struct classheader* classID;
-struct html* self;
+boolean html__InitializeObject(struct classheader *classID, struct html *self)
 {
     char tbuf[32];
     struct style* is;
@@ -1123,10 +1036,7 @@ struct html* self;
     return TRUE;
 }
 
-void
-html__FinalizeObject(classID, self)
-struct classheader* classID;
-struct html* self;
+void html__FinalizeObject(struct classheader *classID, struct html *self)
 {
     if (self->title) {
 	free(self->title);
@@ -1139,9 +1049,7 @@ struct html* self;
     }
 }
 
-void
-html__Clear(self)
-struct html* self;
+void html__Clear(struct html *self)
 {
     super_Clear(self);
 }
@@ -1157,12 +1065,7 @@ struct html* self;
  * single whitespace character.  All whitespace is mapped into ' ' (spaces).
  * Magic HTML thangs (such as "&lt;") are mapped into real characters.
  */
-static void
-maybeDisplay(self, pos, buf, inlen)
-struct html* self;
-long* pos;
-char* buf;
-long* inlen;
+static void maybeDisplay(struct html *self, long *pos, char *buf, long *inlen)
 {
     long realLen = *inlen;
     long len = *inlen;
@@ -1241,11 +1144,7 @@ long* inlen;
 
 /* Output a paragraph break or a small line break */
 /* Calling this will only output newlines if the entityMapping indicates that it is a good time to do this */
-static int
-newpar(self, eMapping, pos) 
-struct html* self;
-struct entityMapping* eMapping;
-long pos;
+static int newpar(struct html *self, struct entityMapping *eMapping, long pos)
 {
     char c;
     long xpos;
@@ -1273,10 +1172,7 @@ long pos;
     return pos;
 }
 
-static void
-hrule(self, pos)
-struct html* self;
-long* pos;
+static void hrule(struct html *self, long *pos)
 {
     if (html_GetChar(self, (*pos)-1) != '\n') {
 	html_AlwaysInsertCharacters(self, *pos, "\n", 1);
@@ -1289,11 +1185,7 @@ long* pos;
     html_NotifyObservers(self, 0);
 }
 
-void
-html__AddImage(self, pos, file)
-struct html* self;
-long* pos;
-char* file;
+void html__AddImage(struct html *self, long *pos, char *file)
 {
     long objectID = 0;
     struct image* dat;
@@ -1335,12 +1227,7 @@ char* file;
     }
 }
 
-static int 
-fixStyles(rock, self, pos, curenv)
-long rock;
-struct text* self;
-long pos;
-struct environment* curenv;
+static int fixStyles(long rock, struct text *self, long pos, struct environment *curenv)
 {
     if(curenv->type == environment_Style)
     {
@@ -1352,11 +1239,7 @@ struct environment* curenv;
 }
 
 
-long
-html__Read(self, file, id)
-struct html* self;
-FILE* file;
-long id;
+long html__Read(struct html *self, FILE *file, long id)
 {
     html_SetID(self, html_UniqueID(self));
     html_ReadSubString(self, 0, file, 1);
@@ -1368,12 +1251,7 @@ long id;
     return dataobject_NOREADERROR;
 }
 
-long
-html__ReadSubString(self, startPos, file, quoteCharacters)
-struct html* self;
-long startPos;
-FILE* file;
-int quoteCharacters;
+long html__ReadSubString(struct html *self, long startPos, FILE *file, boolean quoteCharacters)
 {
     char buf[1024];
     char entity[80]; /* The entity names are usually small. Badness */
@@ -1481,10 +1359,7 @@ int quoteCharacters;
     return myPos-startPos;
 }
 
-static void
-writeHeader(self, file)
-struct html* self;
-FILE* file;
+static void writeHeader(struct html *self, FILE *file)
 {
     fprintf(file, "<head>\n");
     if (self->title) {
@@ -1503,12 +1378,7 @@ FILE* file;
 }
 
 /* Used by the write method to write some stuff */
-static void 
-PutsRange(self, p, fp, ep)
-struct html* self;
-char *p;
-FILE *fp;
-char *ep;
+static void PutsRange(struct html *self, char *p, FILE *fp, char *ep)
 {
     if (!self->adornment) {
 	while (p < ep)
@@ -1516,12 +1386,7 @@ char *ep;
     }
 }
 
-long
-html__Write(self, file, id, level)
-struct html* self;
-FILE* file;
-long id;
-int level;
+long html__Write(struct html *self, FILE *file, long id, int level)
 {
     writeHeader(self, file);
 
@@ -1532,9 +1397,7 @@ int level;
 }
 
 /* Take a style and produce the html entity name which corresponds to it */
-static char*
-getHTML(style)
-struct style* style;
+static char* getHTML(struct style *style)
 {
     char* s = style_GetAttribute(style, "html");
     if (s && *s) {
@@ -1551,14 +1414,7 @@ struct style* style;
     }
 }
 
-char*
-html__EnvStart(self, outp, style, parImply, brImply, newlines)
-struct html* self;
-char* outp;
-struct style* style;
-int* parImply;
-int* brImply;
-int* newlines;
+char* html__EnvStart(struct html *self, char *outp, struct style *style, int *parImply, int *brImply, int *newlines)
 {
     char* temp;
     char* name;
@@ -1616,13 +1472,7 @@ int* newlines;
     return outp;
 }
 
-char*
-html__EnvEnd(self, outp, style, parImply, brImply)
-struct html* self;
-char* outp;
-struct style* style;
-int* parImply;
-int* brImply;
+char* html__EnvEnd(struct html *self, char *outp, struct style *style, int *parImply, int *brImply)
 {
     char* temp;
     char* s;
@@ -1661,12 +1511,7 @@ int* brImply;
     return outp;
 }
 
-static char*
-outputNewlines(newlines, parImplied, brImplied, outp)
-int newlines;
-int parImplied;
-int brImplied;
-char* outp;
+static char* outputNewlines(int newlines, int parImplied, int brImplied, char *outp)
 {
     char* temp;
     if (newlines >= 2) {
@@ -1689,13 +1534,7 @@ char* outp;
     return outp;
 }
 
-void
-html__WriteSubString(self, pos, len, file, quoteCharacters)
-struct html* self;
-long pos;
-long len;
-FILE* file;
-int quoteCharacters;
+void html__WriteSubString(struct html *self, long pos, long len, FILE *file, boolean quoteCharacters)
 {
     struct environment* rootenv;
     struct environment *startenv;
@@ -1897,13 +1736,7 @@ int quoteCharacters;
 
 
 /* Make the (pos,len) region a list item, with a tagged bit inserted at the start */
-boolean
-html__TagItem(self, pos, len, text, itemS, extraStyle)
-struct html* self;
-long pos, len;
-char* text;
-char* itemS;
-struct style* extraStyle;
+boolean html__TagItem(struct html *self, long pos, long len, char *text, char *itemS, struct style *extraStyle)
 {
     struct environment *env;
     int tlen = strlen(text);
@@ -1936,9 +1769,7 @@ struct style* extraStyle;
     return TRUE;
 }
 
-int
-html_StyleToCodes(style)
-struct style* style;
+int html_StyleToCodes(struct style *style)
 {
     char* s = style_GetAttribute(style, styleHTMLCodes);
     if (!s) {
@@ -1949,10 +1780,7 @@ struct style* style;
 }
 
 /* Look at pos and untag the paragraph, getting rid of tag and styles */
-int
-html__UntagItem(self, pos)
-struct html* self;
-long pos;
+int html__UntagItem(struct html *self, long pos)
 {
     struct environment* env;
     struct environment* item;
@@ -2028,11 +1856,7 @@ long pos;
 }
 
 
-struct environment*
-html__GetEntityEnvironment(self, pos, env)
-struct html* self;
-long pos;
-struct environment* env;
+struct environment* html__GetEntityEnvironment(struct html *self, long pos, struct environment *env)
 {
     struct environment* e, *parent;
     char* s;
@@ -2060,10 +1884,7 @@ struct environment* env;
  * Find a file by looking either at the relative file passed in as
  * second parameter, or by looking along a list of pseudo-roots
  */
-static char*
-findLocalFile(path, relativeRoot)
-char* path;
-char* relativeRoot;
+static char* findLocalFile(char *path, char *relativeRoot)
 {
     static char buf[256];
     char* s;

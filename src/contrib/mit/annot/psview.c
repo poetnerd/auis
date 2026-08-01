@@ -68,6 +68,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <txttroff.ih>
 #include <message.ih>
 #include <search.ih>
+static void Close();
+static void autobounds();
+static void closeall();
+static void display();
+static void edit();
+static void inchsize();
+static void insert();
+static void openall();
+static void pixelsize();
+static void ps_open();
+static void update_dpstextview();
 
 #ifdef DPS_ENV
 #include <dpstextv.ih>
@@ -111,39 +122,24 @@ static struct keymap *psviewKeyMap;
 /*		private functions				*/
 /****************************************************************/
 
-static void
-Close(v,l)
-struct psview *v;
-long l;
+static void Close(struct psview *v, long l)
 {
     psview_Close(v);
 }
-static void
-ps_open(v,l)
-struct psview *v;
-long l;
+static void ps_open(struct psview *v, long l)
 {
     psview_Open(v);
 }
-static void
-closeall(v,l)
-struct view *v;
-long l;
+static void closeall(struct view *v, long l)
 {
     iconview_CloseRelated(v);
 }
-static void
-openall(v,l)
-struct view *v;
-long l;
+static void openall(struct view *v, long l)
 {
     iconview_OpenRelated(v);
 }
 
-static void
-insert(tv,l)
-struct textview *tv;
-long l;
+static void insert(struct textview *tv, long l)
 {
     struct text *t;
     long pos;
@@ -153,8 +149,7 @@ long l;
     text_NotifyObservers(t,0);
 }
 
-static void update_dpstextview(self)
-     struct psview *self;
+static void update_dpstextview(struct psview *self)
 {
 #ifdef DPS_ENV
     struct ps *psobj = (struct ps *)psview_GetDataObject(self);
@@ -176,8 +171,7 @@ static void update_dpstextview(self)
     return;
 } /* update_dpstextview */
 
-static void inchsize(self)
-struct psview *self;
+static void inchsize(struct psview *self)
 {
     struct ps *psobj = (struct ps *)psview_GetDataObject(self);
     long w = ps_GetPixelWidth(psobj);
@@ -214,8 +208,7 @@ struct psview *self;
     update_dpstextview(self);
 }
 
-static void pixelsize(self)
-struct psview *self;
+static void pixelsize(struct psview *self)
 {
     struct ps *psobj = (struct ps *)psview_GetDataObject(self);
     long w = ps_GetPixelWidth(psobj);
@@ -251,9 +244,7 @@ struct psview *self;
 
 
 #ifdef DPS_ENV
-static void display(self, rock)
-     struct psview *self;
-     long rock;
+static void display(struct psview *self, long rock)
 {
     struct ps *psobj = (struct ps *)psview_GetDataObject(self);
     long w = ps_GetPixelWidth(psobj);
@@ -268,9 +259,7 @@ static void display(self, rock)
     update_dpstextview(self);
 } /* display */
 
-static void edit(self, rock)
-     struct psview *self;
-     long rock;
+static void edit(struct psview *self, long rock)
 {
     struct style * ds;
 
@@ -288,9 +277,7 @@ static void edit(self, rock)
 } /* edit */
 #endif /* DPS_ENV */
 
-static void autobounds(self, rock)
-     struct psview *self;
-     long rock;
+static void autobounds(struct psview *self, long rock)
 {
     struct textview *tvobj = (struct textview *)(((struct iconview *)self)->bottomview);
     struct ps *psobj = (struct ps *)psview_GetDataObject(self);
@@ -370,9 +357,7 @@ static struct bind_Description psviewBindings[]={
 };
 
 
-void psview__PostMenus(self, menulist)
-struct psview *self;
-struct menulist *menulist;
+void psview__PostMenus(struct psview *self, struct menulist *menulist)
 {
     menulist_ClearChain(self->menus);
     if (menulist) menulist_ChainBeforeML(self->menus, menulist, menulist);
@@ -384,9 +369,7 @@ struct menulist *menulist;
 /*		class procedures				*/
 /****************************************************************/
 
-boolean
-psview__InitializeClass(classID)
-    struct classheader * classID;
+boolean psview__InitializeClass(struct classheader *classID)
 {
     struct classinfo *textviewtype = class_Load("textview");
     struct classinfo *viewtype = class_Load("view");
@@ -399,10 +382,7 @@ psview__InitializeClass(classID)
 }
 
 
-boolean
-psview__InitializeObject(classID,self)
-struct classheader * classID;
-struct psview * self;
+boolean psview__InitializeObject(struct classheader *classID, struct psview *self)
 {
 
     self->menus = menulist_DuplicateML(psviewMenus, self);
@@ -414,9 +394,7 @@ struct psview * self;
     return TRUE;
 }
 
-void psview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct psview *self;
+void psview__FinalizeObject(struct classheader *classID, struct psview *self)
 {
     if(self->menus) menulist_Destroy(self->menus);
 }
@@ -424,13 +402,7 @@ struct psview *self;
 /****************************************************************/
 /*		instance methods				*/
 /****************************************************************/
-void 
-psview__Print(self, file, processor, format, toplevel)
-register struct psview	*self;	
-register FILE   *file;
-register char	*processor;
-register char	*format;
-register boolean toplevel;
+void psview__Print(struct psview *self, FILE *file, char *processor, char *format, boolean toplevel)
 {
 
     static char *PSheader[] = {
@@ -492,10 +464,7 @@ register boolean toplevel;
 }
 
 
-void
-psview__SetDataObject(self,dobj)
-struct psview * self;
-struct dataobject * dobj;
+void psview__SetDataObject(struct psview *self, struct dataobject *dobj)
 {
     struct style * ds;
     super_SetDataObject(self,dobj);

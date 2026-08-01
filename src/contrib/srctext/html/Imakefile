@@ -11,6 +11,8 @@ DOBJS	=	htmlview.do \
 IHFILES	=	htmlview.ih \
 			html.ih
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 NormalObjectRule()
 NormalATKRule()
 

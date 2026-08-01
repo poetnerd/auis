@@ -47,6 +47,8 @@ IHFILES = note.ih icon.ih ps.ih noteview.ih iconview.ih psview.ih stroffet.ih st
 #endif /* DPS_ENV */
 
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 NormalObjectRule()
 NormalATKRule()
 

@@ -39,6 +39,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <environ.ih>
 #include <fontdesc.ih>
 #include <clock.eh>
+static long SanelyReturnReadError();
+static void UpdateTime();
 
 /* Defined constants and macros */
 #define MAX_LINE_LENGTH 70  /* can't be less than 6 */
@@ -62,9 +64,7 @@ static char *GlomStrings(), *ReadLine();
 /* Global variables */
 
 
-boolean
-clock__InitializeClass(c)
-struct classheader *c;
+boolean clock__InitializeClass(struct classheader *c)
 {
 /* 
   Initialize all the class data.
@@ -73,9 +73,7 @@ struct classheader *c;
 }
 
 
-static void
-UpdateTime(self)
-struct clock *self;
+static void UpdateTime(struct clock *self)
 {
   struct tm *the_time;
   
@@ -89,10 +87,7 @@ struct clock *self;
 }
 
 
-boolean
-clock__InitializeObject(c, self)
-struct classheader *c;
-struct clock *self;
+boolean clock__InitializeObject(struct classheader *c, struct clock *self)
 {
 /*
   Inititialize the object instance data.
@@ -123,10 +118,7 @@ struct clock *self;
 }
 
 
-void
-clock__FinalizeObject(c, self)
-struct classheader *c;
-struct clock *self;
+void clock__FinalizeObject(struct classheader *c, struct clock *self)
 {
 /*
   Finalize the object instance data.
@@ -141,7 +133,7 @@ struct clock *self;
 }
 
 
-static void
+void
 clock__WriteDataPart(self, fp)
 struct clock *self;
 FILE *fp;
@@ -189,12 +181,7 @@ FILE *fp;
 }
 
 
-long
-clock__Write(self, fp, id, level)
-struct clock *self;
-FILE *fp;
-long id;
-int level;
+long clock__Write(struct clock *self, FILE *fp, long id, int level)
 {
 /*
   Write the object data out onto the datastream.
@@ -231,7 +218,7 @@ int level;
 }
 
 
-static long
+long
 clock__ReadDataPart(self, fp)
 struct clock *self;
 FILE *fp;
@@ -305,12 +292,7 @@ FILE *fp;
 
 
 
-static long
-SanelyReturnReadError(self, fp, id, code)
-     struct clock *self;
-     FILE *fp;
-     long id;
-     long code;
+static long SanelyReturnReadError(struct clock *self, FILE *fp, long id, long code)
 {
     /*
       Suck up the file until our enddata, then return the error code.
@@ -335,11 +317,7 @@ SanelyReturnReadError(self, fp, id, code)
 }
 
 
-long
-clock__Read(self, fp, id)
-struct clock *self;
-FILE *fp;
-long id;
+long clock__Read(struct clock *self, FILE *fp, long id)
 {
 /*
   Read in the object from the file.
@@ -362,10 +340,7 @@ long id;
 
 
 
-void
-clock__SetOptions(self, options)
-struct clock *self;
-struct clock_options *options;
+void clock__SetOptions(struct clock *self, struct clock_options *options)
 {
   /* BUG Pass back the same struct clock_options * that was returned via
      GetOptions! */
@@ -377,10 +352,7 @@ struct clock_options *options;
 
 
 
-static void
-WriteLine(f, l)
-FILE *f;
-char *l;
+static void WriteLine(FILE *f, char *l)
 {
 /* 
   Output a single line onto the data stream, quoting
@@ -427,9 +399,7 @@ char *l;
 }
 
 
-static char *
-GlomStrings(s, t)
-char *s, *t;
+static char * GlomStrings(char *s, char *t)
 {
 /* 
   Safely (allocs more memory) concatenates the two strings, 
@@ -451,9 +421,7 @@ char *s, *t;
 }
 
 
-static char *
-ReadLine(f)
-FILE *f;
+static char * ReadLine(FILE *f)
 {
 /* 
   Reads from the datastream, attempting to return a single string.

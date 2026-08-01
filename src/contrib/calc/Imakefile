@@ -6,6 +6,8 @@ DOBJS		=	calc.do calcv.do
 
 IHFILES		=	calc.ih calcv.ih
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 NormalObjectRule()
 NormalATKRule()
 DependTarget()

@@ -45,6 +45,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <ctype.h>
 #include <parseadd.h>
 #include <pwd.h>
+static int CheckMailrcHold();
+static int SetHoldFromFile();
+static int lock();
+static int rmlock();
 
 static int IsNewFrom();
 /* for completeness */
@@ -64,9 +68,7 @@ long mserrcode;
 #define AMS_RETURN_ERRCODE(x,y,z) return(-1);
 #define CTIME_LEN 25		/* one less than actual size to avoid NULL */
 
-main(argc, argv)
-int	argc;
-char  **argv;
+int main(int argc, char **argv)
 {
     char SpoolFileName[1 + MAXPATHLEN], SourceDir[1+MAXPATHLEN], *SpoolFile = NULL, *MailboxDir = NULL;
     int numfound = 0, errcode;
@@ -149,8 +151,7 @@ char  **argv;
   * Remove the mail lock, and note that we no longer
   * have it locked.
   */
-static int rmlock(name, lockFD)
-char name[]; int lockFD;
+static int rmlock(char name[], int lockFD)
 {
     struct stat statb;
 
@@ -180,8 +181,7 @@ char name[]; int lockFD;
  * Attempt to set the lock by creating the temporary file,
  * then doing a link/unlink.  If it fails, return -1 else 0
  */
-static int lock(file, lockedFile, lockedFDp)
-char *file, *lockedFile; int *lockedFDp;
+static int lock(char *file, char *lockedFile, int *lockedFDp)
 {
     register int f, g;
     char	locktmp[1+MAXPATHLEN];	    /* Usable lock temporary */
@@ -216,8 +216,7 @@ char *file, *lockedFile; int *lockedFDp;
     return(0);
 }
 
-static int SetHoldFromFile(fname, holdP)
-char *fname; int *holdP;
+static int SetHoldFromFile(char *fname, int *holdP)
 {/* Set or unset ``hold'' as in the file ``fname''. */
     FILE *fp;
     char InBuf[300];
@@ -286,9 +285,7 @@ static int CheckMailrcHold()
 #define buffsize 1024
 #define MAXTRIES 25
 
-int ConvertIncomingMail(MailSpoolFile, MailDir, FilesReadIn)
-char *MailSpoolFile, *MailDir;
-int *FilesReadIn;
+int ConvertIncomingMail(char *MailSpoolFile, char *MailDir, int *FilesReadIn)
 {
     FILE *fp;
     int		wfd = 0, i, errsave, tfd, AnyWrittenToThisOne, LockFD;
@@ -437,8 +434,7 @@ int *FilesReadIn;
     return(0);
 }
 
-static int IsNewFrom(line)
-char *line;
+static int IsNewFrom(char *line)
 {
     PARSED_ADDRESS *ListHead = NULL;
     struct tm TmBuf;

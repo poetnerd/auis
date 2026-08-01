@@ -8,6 +8,8 @@ DOBJS		=	lt.do ltv.do ltapp.do \
 IHFILES		=	lt.ih ltv.ih ltapp.ih \
 			sched.ih schedv.ih schedapp.ih
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 NormalObjectRule()
 NormalATKRule()
 DependTarget()

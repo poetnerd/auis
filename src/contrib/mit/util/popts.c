@@ -77,6 +77,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <view.ih>	/* Our parent */
 
 #include <popts.eh>
+static struct buttonList * printopts_MakeButton();
+static struct lplist * printopts_MakeLpair();
 
 static boolean  debug = FALSE;
 #define DEBUG(s) {if (debug) {printf s ; fflush(stdout);}}
@@ -220,14 +222,7 @@ static char *printopts_bNames[] =
 static void (*printopts_bFuncs[])()=
 { MenuDone, MenuCancel, NULL };
 
-static struct buttonList *printopts_MakeButton(blist, text, function, object) 
-struct buttonList *blist;
-char *text;
-void (*function)();
-struct view *object;
-/* Creates a new button and with given attributes
-   returns [newbutton::blist]
- */
+static struct buttonList * printopts_MakeButton(struct buttonList *blist, char *text, void (*function)(), struct view *object)
 {
     struct buttonList *button = (struct buttonList *)     malloc(sizeof(struct buttonList));
 
@@ -242,10 +237,7 @@ struct view *object;
     return button;
 }
 
-static struct lplist *printopts_MakeLpair(lpl)
-struct lplist *lpl;
-/* Creates a new lpair and returns [newlpair::lplist]
- */
+static struct lplist * printopts_MakeLpair(struct lplist *lpl)
 {
     struct lplist *lpair = (struct lplist *) malloc(sizeof(struct lplist));
     
@@ -257,9 +249,7 @@ struct lplist *lpl;
 
 #endif /* POPTS_USE_SUITE */
 
-boolean
-printopts__InitializeClass(classID)
-struct classheader *classID;
+boolean printopts__InitializeClass(struct classheader *classID)
 {
     struct classinfo *viewClassinfo;
    
@@ -283,10 +273,7 @@ struct classheader *classID;
 
 #define CheckHeight 18
 
-boolean
-printopts__InitializeObject(classID, self)
-struct classheader *classID;
-register struct printopts  *self;
+boolean printopts__InitializeObject(struct classheader *classID, struct printopts *self)
 {
     long i;
     struct view *dummy;
@@ -391,10 +378,7 @@ LEAVE(printopts__InitializeObject);
     return TRUE;
 }
 
-void 
-printopts__FinalizeObject(ClassID, self)
-struct classhdr *ClassID;
-register struct printopts  *self;
+void printopts__FinalizeObject(struct classheader *ClassID, struct printopts *self)
 {
     struct bpair *checklist, *nextlist;
     struct lpair *leftSide = (struct lpair*) lpair_GetNth(self->image,0);
@@ -468,9 +452,7 @@ register struct printopts  *self;
     LEAVE(printopts__FinalizeObject);
 }
 
-struct frame *
-printopts__GetApplicationLayer(self)
-struct printopts *self;
+struct frame * printopts__GetApplicationLayer(struct printopts *self)
 {
     struct frame *frame;
 
@@ -482,29 +464,19 @@ struct printopts *self;
     return frame;
 }
 
-void
-printopts__PostMenus(self, ml)
-struct printopts *self;
-struct menulist *ml;
+void printopts__PostMenus(struct printopts *self, struct menulist *ml)
 {
     super_PostMenus(self, self->menus);
 }
 
-void printopts__PostKeyState(self, ks)
-struct printopts *self;
-struct keystate *ks;
-/* Want to add our own keybindings into the chain that gets passed to us */
+void printopts__PostKeyState(struct printopts *self, struct keystate *ks)
 {
     self->keys->next = NULL;
     keystate_AddBefore(self->keys, ks); 
     super_PostKeyState(self, self->keys);
 }
 
-void 
-printopts__FullUpdate(self, type, left, top, width, height)
-register struct printopts  *self;
-register enum view_UpdateType  type;
-register long  left, top, width, height;
+void printopts__FullUpdate(struct printopts *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct rectangle r;
     self->OnScreen = (type != view_Remove);
@@ -563,9 +535,7 @@ register long  left, top, width, height;
 }
 
 
-void 
-printopts__Update( self )
-register struct printopts *self;
+void printopts__Update(struct printopts *self)
 {
     ENTER(printopts__Update);
     lpair_Update(self->image);
@@ -573,11 +543,7 @@ register struct printopts *self;
 }
 
 
-struct view *
-printopts__Hit(self, action, x, y, num_clicks)
-register struct printopts  *self;
-register enum view_MouseAction  action;
-register long  x, y, num_clicks;
+struct view * printopts__Hit(struct printopts *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
     lpair_Hit(self->image, action, x-INSET_X, y-INSET_Y, num_clicks);
     printopts_WantInputFocus(self, self->printername);
@@ -599,47 +565,28 @@ long *desiredHeight;
     return view_Fixed;
 }
 
-void
-printopts__Print( self, file, processor, format, level )
-register struct printopts 	 *self;
-register FILE   file;
-register char  	 *processor;
-register char  	 *format;
-register boolean  	level;
+void printopts__Print(struct printopts *self, FILE *file, char *processor, char *format, boolean level)
 {
     /* never print anything */
 }
 
 
-int
-doValueChange(self, observed, rock, rock2)
-register struct printopts *self;
-register struct value *observed;
-register long rock;
-register long rock2;
+int doValueChange(struct printopts *self, struct value *observed, long rock, long rock2)
 {
     self->values[rock] = value_GetValue(observed);
 }
 
-void
-PrinterSet(self, rock)
-register struct printopts *self;
-register long rock;
+void PrinterSet(struct printopts *self, long rock)
 {
     strcpy(self->pnamevalue, strinput_GetInput(self->printername, 80));
 }
 
 /* We use this to override newline self-insert. */
-void
-printopts_Nop(self, rock)
-register struct printopts *self;
-register long rock;
+void printopts_Nop(struct printopts *self, long rock)
 {
 }
 
-void
-ResetValues(self)
-register struct printopts *self;
+void ResetValues(struct printopts *self)
 {
     int i;
     char *t;
@@ -679,13 +626,7 @@ register struct printopts *self;
 }
 
 #ifdef POPTS_USE_SUITE
-struct view *
-Control(self, suite, item, object, action, x, y, clicks)
-register struct printopts *self;
-register struct suite *suite;
-register long object;
-enum view_MouseAction action;
-long x, y, clicks;
+struct view * Control(struct printopts *self, struct suite *suite, int item, long object, enum view_MouseAction action, long x, long y, long clicks)
 {
     if ((action == view_LeftUp) || (action == view_RightUp)) {
 	if(item && (object == suite_ItemObject)) {
@@ -707,10 +648,7 @@ long x, y, clicks;
 }
 #endif /* POPTS_USE_SUITE */
 
-void
-MenuDone(self, rock)
-register struct printopts *self;
-register long rock;
+void MenuDone(struct printopts *self, long rock)
 {
     ApplyValues(self, 0);
 
@@ -719,10 +657,7 @@ register long rock;
     im_EnqueueEvent(DestroyWindow, self, 0);
 }
 
-void
-MenuCancel(self, rock)
-register struct printopts *self;
-register long rock;
+void MenuCancel(struct printopts *self, long rock)
 {
     int i;
 
@@ -737,10 +672,7 @@ register long rock;
 }
 
 
-void
-ApplyValues(self, rock)
-register struct printopts *self;
-register long rock;
+void ApplyValues(struct printopts *self, long rock)
 {
     int i;
     for (i = 0; i < NumberOfChecks; i++) {
@@ -765,10 +697,7 @@ register long rock;
     }
 }
 
-void
-CreateWindow(vp, rock)
-struct view *vp;
-long rock;
+void CreateWindow(struct view *vp, long rock)
 {
     long left, top, width, height;
     struct printopts *self;
@@ -815,9 +744,7 @@ long rock;
     printopts_WantInputFocus(self, self->printername);
 }   
 
-void
-DestroyWindow( self )
-register struct printopts *self;
+void DestroyWindow(struct printopts *self)
 {
     struct im *pim=printopts_GetIM(self);
     if(pim) im_SetView(pim, NULL);
@@ -825,10 +752,7 @@ register struct printopts *self;
     if(pim) im_Destroy(pim);
 }
 
-void
-printopts__LinkTree( self, parent )
-register struct printopts *self;
-register struct view *parent;
+void printopts__LinkTree(struct printopts *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if(self->image)

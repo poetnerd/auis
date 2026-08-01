@@ -63,13 +63,13 @@ overrides:
 
 methods:
 
-  Set_Debug( debug );
+  Set_Debug( boolean debug );
 
 classprocedures:
 
-  InitializeClass( struct classheader *classID )			    returns boolean;
+  InitializeClass()							    returns boolean;
   InitializeObject( struct classheader *classID, struct ltv *self )   returns boolean;
-  FinalizeObject( struct classheader *classID, struct ltv *self );
+  FinalizeObject( struct ltv *self );
 
 data:
 

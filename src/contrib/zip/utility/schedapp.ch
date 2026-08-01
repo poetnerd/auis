@@ -30,7 +30,7 @@
 class schedapp : application [app]
   {
   classprocedures:
-    InitializeObject( struct schedapp *)	returns boolean;
+    InitializeObject( struct schedapp *self)	returns boolean;
 
   overrides:
     ParseArgs( int argc, char **argv)	returns boolean;

@@ -11,6 +11,8 @@ IHFILES		=	circpiv.ih \
 
 INCDIR = $(DESTDIR)/include/atk
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 NormalObjectRule()
 NormalATKRule()
 DependTarget()

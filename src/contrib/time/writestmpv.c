@@ -36,6 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <writestmp.ih>
 #include <proctbl.ih>
 #include <util.h>
+static void MenuSetFormat();
 
 /* Defined constants and macros */
 
@@ -53,9 +54,7 @@ static char *formats[] = {
   NULL, NULL};
 
 
-static void MenuSetFormat(self, format)
-     struct writestampview *self;
-     char *format;
+static void MenuSetFormat(struct writestampview *self, char *format)
 {
   struct writestamp *b = (struct writestamp *) writestampview_GetDataObject(self);
 
@@ -64,9 +63,7 @@ static void MenuSetFormat(self, format)
 }
 
 
-boolean
-writestampview__InitializeClass(c)
-struct classheader *c;
+boolean writestampview__InitializeClass(struct classheader *c)
 {
 /* 
   Initialize all the class data.
@@ -95,10 +92,7 @@ struct classheader *c;
 }
 
 
-boolean
-writestampview__InitializeObject(c, self)
-struct classheader *c;
-struct writestampview *self;
+boolean writestampview__InitializeObject(struct classheader *c, struct writestampview *self)
 {
 /*
   Set up the data for each instance of the object.
@@ -113,10 +107,7 @@ struct writestampview *self;
 }
 
 
-void
-writestampview__FinalizeObject(c, self)
-struct classheader *c;
-struct writestampview *self;
+void writestampview__FinalizeObject(struct classheader *c, struct writestampview *self)
 {
   return;
 }

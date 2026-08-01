@@ -35,8 +35,8 @@ class html : text {
     WriteSubString(long pos, long len, FILE* file, int quoteChars);
 
   methods:
-    EnvStart(char* buf, char* envname, int* wantpar, int* br, int* newlines) returns char* ;
-    EnvEnd(char* buf, char* envname, int* par, int* br) returns char* ;
+    EnvStart(char* buf, struct style* style, int* wantpar, int* br, int* newlines) returns char* ;
+    EnvEnd(char* buf, struct style* style, int* par, int* br) returns char* ;
 
     ChangeTitle(char* name);
     ChangeIndexable(int flag);
