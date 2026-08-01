@@ -57,9 +57,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 
 #include <msgsvers.h>
 
-boolean messagesapp__InitializeObject(cid, m)
-struct classheader *cid;
-struct messagesapp *m;
+boolean messagesapp__InitializeObject(struct classheader *cid, struct messagesapp *m)
 {
     m->MailOnly = FALSE;
     m->SendOnly = FALSE;
@@ -76,8 +74,7 @@ struct messagesapp *m;
     return(TRUE);
 }
 
-boolean messagesapp__Start(m)
-struct messagesapp *m;
+boolean messagesapp__Start(struct messagesapp *m)
 {
     struct folders *fold = NULL;
     struct sendmessage *sm = NULL;
@@ -167,10 +164,7 @@ struct messagesapp *m;
     return(TRUE);
 }
  
-boolean messagesapp__ParseArgs(m, argc, argv)  
-struct messagesapp *m;
-int argc;
-char **argv;
+boolean messagesapp__ParseArgs(struct messagesapp *m, int argc, char **argv)
 {
     int HeadersToAdd = 0;
     super_ParseArgs(m, argc, argv);

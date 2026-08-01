@@ -93,15 +93,13 @@ extern char *CUI_MachineName, CUI_MailDomain[], *CUI_Rock, CUI_VersionString[], 
 
 extern long CUI_DeliveryType, CUI_LastCallFinished, CUI_OnSameHost, CUI_SnapIsRunning, CUI_UseAmsDelivery, CUI_UseNameSep, mserrcode;
 
-void amsn__RemoveErrorDialogWindow(self)
-struct amsn *self;
+void amsn__RemoveErrorDialogWindow(struct amsn *self)
 {
     extern void ams_RemoveErrorWindow();
     ams_RemoveErrorWindow();
 }
 
-boolean amsn__InitializeClass(c)
-struct classheader *c;
+boolean amsn__InitializeClass(struct classheader *c)
 {
     CheckAMSConfiguration();
     SetProgramVersion();
@@ -109,136 +107,93 @@ struct classheader *c;
     return(TRUE);
 }
 
-void amsn__CUI_BuildNickName(self, shortname, longname)
-struct amsn *self;
-char *shortname, *longname;
+void amsn__CUI_BuildNickName(struct amsn *self, char *shortname, char *longname)
 {
     CUI_BuildNickName(shortname, longname);
 }
 
-int amsn__CUI_CheckMailboxes(self, forwhat) 
-struct amsn *self;
-char *forwhat;
+int amsn__CUI_CheckMailboxes(struct amsn *self, char *forwhat)
 {
     return(CUI_CheckMailboxes(forwhat));
 }
 
-long amsn__CUI_CloneMessage(self, cuid, DirName, code) 
-struct amsn *self;
-int cuid;
-char *DirName;
-int code;
+long amsn__CUI_CloneMessage(struct amsn *self, int cuid, char *DirName, int code)
 {
     return(CUI_CloneMessage(cuid, DirName, code));
 }
 
-long amsn__CUI_CreateNewMessageDirectory(self, dir, bodydir) 
-struct amsn *self;
-char *dir, *bodydir;
+long amsn__CUI_CreateNewMessageDirectory(struct amsn *self, char *dir, char *bodydir)
 {
     return(CUI_CreateNewMessageDirectory(dir, bodydir));
 }
 
-long amsn__CUI_DeleteMessage(self, cuid) 
-struct amsn *self;
-int cuid;
+long amsn__CUI_DeleteMessage(struct amsn *self, int cuid)
 {
     return(CUI_DeleteMessage(cuid));
 }
 
-long amsn__CUI_DeliveryType(self) 
-struct amsn *self;
+long amsn__CUI_DeliveryType(struct amsn *self)
 {
     return(CUI_DeliveryType);
 }
 
-long amsn__CUI_DirectoriesToPurge(self) 
-struct amsn *self;
+long amsn__CUI_DirectoriesToPurge(struct amsn *self)
 {
     return(CUI_DirectoriesToPurge());
 }
 
-long amsn__CUI_DisambiguateDir(self, shortname, longname)
-struct amsn *self;
-char *shortname, **longname;
+long amsn__CUI_DisambiguateDir(struct amsn *self, char *shortname, char **longname)
 {
     return(CUI_DisambiguateDir(shortname, longname));
 }
 
-long amsn__CUI_DoesDirNeedPurging(self, name) 
-struct amsn *self;
-char *name;
+long amsn__CUI_DoesDirNeedPurging(struct amsn *self, char *name)
 {
     return(CUI_DoesDirNeedPurging(name));
 }
 
-void amsn__CUI_EndConversation(self)
-struct amsn *self;
+void amsn__CUI_EndConversation(struct amsn *self)
 {
     CUI_EndConversation();
 }
 
-long amsn__CUI_GenLocalTmpFileName(self, name) 
-struct amsn *self;
-char *name;
+long amsn__CUI_GenLocalTmpFileName(struct amsn *self, char *name)
 {
     return(CUI_GenLocalTmpFileName(name));
 }
 
-long amsn__CUI_GenTmpFileName(self, name) 
-struct amsn *self;
-char *name;
+long amsn__CUI_GenTmpFileName(struct amsn *self, char *name)
 {
     return(CUI_GenTmpFileName(name));
 }
 
-long amsn__CUI_GetFileFromVice(self, tmp_file, vfile) 
-struct amsn *self;
-char *tmp_file, *vfile;
+long amsn__CUI_GetFileFromVice(struct amsn *self, char *tmp_file, char *vfile)
 {
     return(CUI_GetFileFromVice(tmp_file, vfile));
 }
 
-long amsn__CUI_GetHeaderContents(self, cuid, hdrname, hdrnum, hdrbuf, lim)
-struct amsn *self;
-int cuid;
-char *hdrname;
-int hdrnum;
-char *hdrbuf;
-int lim;
+long amsn__CUI_GetHeaderContents(struct amsn *self, int cuid, char *hdrname, int hdrnum, char *hdrbuf, int lim)
 {
     return(CUI_GetHeaderContents(cuid, hdrname, hdrnum, hdrbuf, lim));
 }
 
-long amsn__CUI_GetHeaders(self, dirname, date64, headbuf, lim, startbyte, nbytes, status, RegisterCuids)
-struct amsn *self;
-char *dirname, *date64, *headbuf;
-int lim, RegisterCuids;
-long startbyte, *nbytes, *status;
+long amsn__CUI_GetHeaders(struct amsn *self, char *dirname, char *date64, char *headbuf, int lim, long startbyte, long *nbytes, long *status, int RegisterCuids)
 {
     return(CUI_GetHeaders(dirname, date64, headbuf, lim, startbyte, nbytes, status, RegisterCuids));
 }
 
-long amsn__CUI_GetSnapshotFromCUID(self, cuid, Sbuf) 
-struct amsn *self;
-int cuid;
-char *Sbuf;
+long amsn__CUI_GetSnapshotFromCUID(struct amsn *self, int cuid, char *Sbuf)
 {
     return(CUI_GetSnapshotFromCUID(cuid, Sbuf));
 }
 
-long amsn__CUI_HandleMissingFolder(self, dname) 
-struct amsn *self;
-char *dname;
+long amsn__CUI_HandleMissingFolder(struct amsn *self, char *dname)
 {
     return(CUI_HandleMissingFolder(dname));
 }
 
 static int TimerInit();
-long amsn__CUI_Initialize(self, TimerFunction, rock) 
-struct amsn *self;
-int (*TimerFunction)();
-char *rock;
+long amsn__CUI_Initialize(struct amsn *self, procedure TimerFunction, char *rock)
 {
     message_DisplayString(NULL, 10, "Initializing Internal Message Server...");
     im_ForceUpdate();
@@ -247,578 +202,382 @@ char *rock;
     return(CUI_Initialize(TimerFunction, rock));
 }
 
-long amsn__CUI_LastCallFinished(self) 
-struct amsn *self;
+long amsn__CUI_LastCallFinished(struct amsn *self)
 {
     return(CUI_LastCallFinished);
 }
 
-char * amsn__CUI_MachineName(self) 
-struct amsn *self;
+char * amsn__CUI_MachineName(struct amsn *self)
 {
     return(CUI_MachineName);
 }
 
-char * amsn__CUI_MailDomain(self) 
-struct amsn *self;
+char * amsn__CUI_MailDomain(struct amsn *self)
 {
     return(CUI_MailDomain);
 }
 
-long amsn__CUI_MarkAsRead(self, cuid) 
-struct amsn *self;
-int cuid;
+long amsn__CUI_MarkAsRead(struct amsn *self, int cuid)
 {
     return(CUI_MarkAsRead(cuid));
 }
 
-long amsn__CUI_MarkAsUnseen(self, cuid) 
-struct amsn *self;
-int cuid;
+long amsn__CUI_MarkAsUnseen(struct amsn *self, int cuid)
 {
     return(CUI_MarkAsUnseen(cuid));
 }
 
-long amsn__CUI_NameReplyFile(self, cuid, code, fname) 
-struct amsn *self;
-int cuid, code;
-char *fname;
+long amsn__CUI_NameReplyFile(struct amsn *self, int cuid, int code, char *fname)
 {
     return(CUI_NameReplyFile(cuid, code, fname));
 }
 
-long amsn__CUI_OnSameHost(self) 
-struct amsn *self;
+long amsn__CUI_OnSameHost(struct amsn *self)
 {
     return(CUI_OnSameHost);
 }
 
-long amsn__CUI_PrefetchMessage(self, cuid, ReallyNext) 
-struct amsn *self;
-int cuid, ReallyNext;
+long amsn__CUI_PrefetchMessage(struct amsn *self, int cuid, int ReallyNext)
 {
     return(CUI_PrefetchMessage(cuid, ReallyNext));
 }
 
-long amsn__CUI_PrintBodyFromCUIDWithFlags(self, cuid, flags, printer)
-struct amsn *self;
-int cuid, flags;
-char *printer; 
+long amsn__CUI_PrintBodyFromCUIDWithFlags(struct amsn *self, int cuid, int flags, char *printer)
 {
     return(CUI_PrintBodyFromCUIDWithFlags(cuid, flags, printer));
 }
 
-void amsn__CUI_PrintUpdates(self, dname, nickname)
-struct amsn *self;
-char *dname, *nickname;
+void amsn__CUI_PrintUpdates(struct amsn *self, char *dname, char *nickname)
 {
     CUI_PrintUpdates(dname, nickname);
 }
 
-long amsn__CUI_ProcessMessageAttributes(self, cuid, snapshot) 
-struct amsn *self;
-int cuid;
-char *snapshot;
+long amsn__CUI_ProcessMessageAttributes(struct amsn *self, int cuid, char *snapshot)
 {
     return(CUI_ProcessMessageAttributes(cuid, snapshot));
 }
 
-long amsn__CUI_PurgeDeletions(self, dirname) 
-struct amsn *self;
-char *dirname;
+long amsn__CUI_PurgeDeletions(struct amsn *self, char *dirname)
 {
     return(CUI_PurgeDeletions(dirname));
 }
 
-long amsn__CUI_PurgeMarkedDirectories(self, ask, OfferQuit) 
-struct amsn *self;
-boolean ask, OfferQuit;
+long amsn__CUI_PurgeMarkedDirectories(struct amsn *self, boolean ask, boolean OfferQuit)
 {
     return(CUI_PurgeMarkedDirectories(ask, OfferQuit));
 }
 
-long amsn__CUI_ReallyGetBodyToLocalFile(self, cuid, fname, ShouldDelete, MayFudge) 
-struct amsn *self;
-int cuid;
-char *fname;
-int *ShouldDelete, MayFudge;
+long amsn__CUI_ReallyGetBodyToLocalFile(struct amsn *self, int cuid, char *fname, int *ShouldDelete, int MayFudge)
 {
     return(CUI_ReallyGetBodyToLocalFile(cuid, fname, ShouldDelete, MayFudge));
 }
 
-long amsn__CUI_RemoveDirectory(self, dirname)
-struct amsn *self;
-char *dirname;
+long amsn__CUI_RemoveDirectory(struct amsn *self, char *dirname)
 {
     return(CUI_RemoveDirectory(dirname));
 }
-long amsn__CUI_RenameDir(self, oldname, newname) 
-struct amsn *self;
-char *oldname, *newname;
+long amsn__CUI_RenameDir(struct amsn *self, char *oldname, char *newname)
 {
     return(CUI_RenameDir(oldname, newname));
 }
 
-void amsn__CUI_ReportAmbig(self, name, atype)
-struct amsn *self;
-char *name, *atype;
+void amsn__CUI_ReportAmbig(struct amsn *self, char *name, char *atype)
 {
     CUI_ReportAmbig(name, atype);
 }
 
-long amsn__CUI_ResendMessage(self, cuid, tolist) 
-struct amsn *self;
-int cuid;
-char *tolist;
+long amsn__CUI_ResendMessage(struct amsn *self, int cuid, char *tolist)
 {
     return(CUI_ResendMessage(cuid, tolist));
 }
 
-long amsn__CUI_RewriteHeaderLine(self, addr, newaddr)
-struct amsn *self;
-char *addr, **newaddr;
+long amsn__CUI_RewriteHeaderLine(struct amsn *self, char *addr, char **newaddr)
 {
     return(CUI_RewriteHeaderLine(addr, newaddr));
 }
 
-long amsn__CUI_RewriteHeaderLineInternal(self, addr, newaddr, maxdealiases, numfound, externalcount, formatct, stripct, trustct)
-struct amsn *self;
-char *addr, **newaddr;
-int maxdealiases, *numfound, *externalcount, *formatct, *stripct, *trustct;
+long amsn__CUI_RewriteHeaderLineInternal(struct amsn *self, char *addr, char **newaddr, int maxdealiases, int *numfound, int *externalcount, int *formatct, int *stripct, int *trustct)
 {
     return(CUI_RewriteHeaderLineInternal(addr, newaddr, maxdealiases, numfound, externalcount, formatct, stripct, trustct));
 }
 
-char *amsn__CUI_Rock(self)
-struct amsn *self;
+char * amsn__CUI_Rock(struct amsn *self)
 {
     return(CUI_Rock);
 }
 
-void amsn__CUI_SetClientVersion(self, vers)
-struct amsn *self;
-char *vers;
+void amsn__CUI_SetClientVersion(struct amsn *self, char *vers)
 {
     CUI_SetClientVersion(vers);
 }
 
-long amsn__CUI_SetPrinter(self, printername) 
-struct amsn *self;
-char *printername;
+long amsn__CUI_SetPrinter(struct amsn *self, char *printername)
 {
     return(CUI_SetPrinter(printername));
 }
 
-long amsn__CUI_SnapIsRunning(self) 
-struct amsn *self;
+long amsn__CUI_SnapIsRunning(struct amsn *self)
 {
     return(CUI_SnapIsRunning);
 }
 
-long amsn__CUI_StoreFileToVice(self, localfile, vicefile) 
-struct amsn *self;
-char *localfile, *vicefile;
+long amsn__CUI_StoreFileToVice(struct amsn *self, char *localfile, char *vicefile)
 {
     return(CUI_StoreFileToVice(localfile, vicefile));
 }
 
-long amsn__CUI_SubmitMessage(self, infile, DeliveryOpts) 
-struct amsn *self;
-char *infile;
-long DeliveryOpts;
+long amsn__CUI_SubmitMessage(struct amsn *self, char *infile, long DeliveryOpts)
 {
     return(CUI_SubmitMessage(infile, DeliveryOpts));
 }
 
-long amsn__CUI_UndeleteMessage(self, cuid) 
-struct amsn *self;
-int cuid;
+long amsn__CUI_UndeleteMessage(struct amsn *self, int cuid)
 {
     return(CUI_UndeleteMessage(cuid));
 }
 
-long amsn__CUI_UseAmsDelivery(self) 
-struct amsn *self;
+long amsn__CUI_UseAmsDelivery(struct amsn *self)
 {
     return(CUI_UseAmsDelivery);
 }
 
-long amsn__CUI_UseNameSep(self) 
-struct amsn *self;
+long amsn__CUI_UseNameSep(struct amsn *self)
 {
     return(CUI_UseNameSep);
 }
 
-char * amsn__CUI_VersionString(self) 
-struct amsn *self;
+char * amsn__CUI_VersionString(struct amsn *self)
 {
     return(CUI_VersionString);
 }
 
-char* amsn__CUI_WhoIAm(self) 
-struct amsn *self;
+char* amsn__CUI_WhoIAm(struct amsn *self)
 {
     return(CUI_WhoIAm);
 }
 
-int amsn__CUI_GetCuid(self, id, fullname, isdup)
-struct amsn *self;
-char *id, *fullname;
-int *isdup;
+int amsn__CUI_GetCuid(struct amsn *self, char *id, char *fullname, int *isdup)
 {
     return(GetCuid(id, fullname, isdup));
 }
 
-long amsn__MS_AppendFileToFolder(self, filename, foldername) 
-struct amsn *self;
-char *filename, *foldername;
+long amsn__MS_AppendFileToFolder(struct amsn *self, char *filename, char *foldername)
 {
     return(MS_AppendFileToFolder(filename, foldername));
 }
 
-long amsn__MS_CheckAuthentication(self, auth) 
-struct amsn *self;
-long *auth;
+long amsn__MS_CheckAuthentication(struct amsn *self, long *auth)
 {
     return(MS_CheckAuthentication(auth));
 }
 
-long amsn__MS_DebugMode(self, mslevel, snaplevel, malloclevel) 
-struct amsn *self;
-int mslevel, snaplevel, malloclevel;
+long amsn__MS_DebugMode(struct amsn *self, int mslevel, int snaplevel, int malloclevel)
 {
     return(MS_DebugMode(mslevel, snaplevel, malloclevel));
 }
 
-long amsn__MS_DisambiguateFile(self, source, target, MustBeDir) 
-struct amsn *self;
-char *source, *target;
-long MustBeDir;
+long amsn__MS_DisambiguateFile(struct amsn *self, char *source, char *target, long MustBeDir)
 {
     return(MS_DisambiguateFile(source, target, MustBeDir));
 }
 
-long amsn__MS_FastUpdateState(self) 
-struct amsn *self;
+long amsn__MS_FastUpdateState(struct amsn *self)
 {
     return(MS_FastUpdateState());
 }
 
-long amsn__MS_GetDirInfo(self, dirname, protcode, msgcount)
-struct amsn *self;
-char *dirname;
-int *protcode, *msgcount;
+long amsn__MS_GetDirInfo(struct amsn *self, char *dirname, int *protcode, int *msgcount)
 {
     return(MS_GetDirInfo(dirname, protcode, msgcount));
 }
 
-long amsn__MS_GetNewMessageCount(self, dirname, numnew, numtotal, lastolddate, InsistOnFetch)
-struct amsn *self;
-char *dirname, *lastolddate;
-int *numnew, *numtotal;
-long InsistOnFetch;
+long amsn__MS_GetNewMessageCount(struct amsn *self, char *dirname, int *numnew, int *numtotal, char *lastolddate, long InsistOnFetch)
 {
     return(MS_GetNewMessageCount(dirname, numnew, numtotal, lastolddate, InsistOnFetch));
 }
 
-long amsn__MS_GetNthSnapshot(self, dirname, which, snapshotbuf)
-struct amsn *self;
-char *dirname;
-long which;
-char *snapshotbuf;
+long amsn__MS_GetNthSnapshot(struct amsn *self, char *dirname, long which, char *snapshotbuf)
 {
     return(MS_GetNthSnapshot(dirname, which, snapshotbuf));
 }
 
-long amsn__MS_GetSearchPathEntry(self, which, buf, buflim) 
-struct amsn *self;
-long which;
-char *buf;
-long buflim;
+long amsn__MS_GetSearchPathEntry(struct amsn *self, long which, char *buf, long buflim)
 {
     return(MS_GetSearchPathEntry(which, buf, buflim));
 }
 
-long amsn__MS_GetSubscriptionEntry(self, fullname, nickname, status)
-struct amsn *self;
-char *fullname;
-char *nickname;
-int *status;
+long amsn__MS_GetSubscriptionEntry(struct amsn *self, char *fullname, char *nickname, int *status)
 {
     return(MS_GetSubscriptionEntry(fullname, nickname, status));
 }
 
-long amsn__MS_NameChangedMapFile(self, mapfile, mailonly, listall, numchanged, numunavailable, nummissing, numslowpokes, numfastfellas)
-struct amsn *self;
-char *mapfile;
-long mailonly;
-long listall;
-int *numchanged;
-int *numunavailable;
-int *nummissing;
-int *numslowpokes;
-int *numfastfellas;
+long amsn__MS_NameChangedMapFile(struct amsn *self, char *mapfile, long mailonly, long listall, int *numchanged, int *numunavailable, int *nummissing, int *numslowpokes, int *numfastfellas)
 {
     return(MS_NameChangedMapFile(mapfile, mailonly, listall, numchanged, numunavailable, nummissing, numslowpokes, numfastfellas));
 }
 
-long amsn__MS_NameSubscriptionMapFile(self, root, mapfile) 
-struct amsn *self;
-char *root;
-char *mapfile;
+long amsn__MS_NameSubscriptionMapFile(struct amsn *self, char *root, char *mapfile)
 {
     return(MS_NameSubscriptionMapFile(root, mapfile));
 }
 
-long amsn__MS_MatchFolderName(self, pat, filename) 
-struct amsn *self;
-char *pat;
-char *filename;
+long amsn__MS_MatchFolderName(struct amsn *self, char *pat, char *filename)
 {
     return(MS_MatchFolderName(pat, filename));
 }
 
-long amsn__MS_ParseDate(self, indate, year, month, day, hour, min, sec, wday, gtm)
-struct amsn *self;
-char *indate;
-int *year;
-int *month;
-int *day;
-int *hour;
-int *min;
-int *sec;
-int *wday;
-long *gtm;
+long amsn__MS_ParseDate(struct amsn *self, char *indate, int *year, int *month, int *day, int *hour, int *min, int *sec, int *wday, long *gtm)
 {
     return(MS_ParseDate(indate, year, month, day, hour, min, sec, wday, gtm));
 }
 
-long amsn__MS_PrefetchMessage(self, dirname, id, getnext) 
-struct amsn *self;
-char *dirname;
-char *id;
-long getnext;
+long amsn__MS_PrefetchMessage(struct amsn *self, char *dirname, char *id, long getnext)
 {
     return(MS_PrefetchMessage(dirname, id, getnext));
 }
 
-long amsn__MS_SetAssociatedTime(self, fullname, newvalue) 
-struct amsn *self;
-char *fullname;
-char *newvalue;
+long amsn__MS_SetAssociatedTime(struct amsn *self, char *fullname, char *newvalue)
 {
     return(MS_SetAssociatedTime(fullname, newvalue));
 }
 
-void amsn__MS_SetCleanupZombies(self, doclean)
-struct amsn *self;
-long doclean;
+void amsn__MS_SetCleanupZombies(struct amsn *self, long doclean)
 {
     MS_SetCleanupZombies(doclean);
 }
 
-long amsn__MS_SetSubscriptionEntry(self, fullname, nickname, status)
-struct amsn *self;
-char *fullname;
-char *nickname;
-long status;
+long amsn__MS_SetSubscriptionEntry(struct amsn *self, char *fullname, char *nickname, long status)
 {
     return(MS_SetSubscriptionEntry(fullname, nickname, status));
 }
 
-long amsn__MS_UnlinkFile(self, filename) 
-struct amsn *self;
-char *filename;
+long amsn__MS_UnlinkFile(struct amsn *self, char *filename)
 {
     return(MS_UnlinkFile(filename));
 }
 
-long amsn__MS_UpdateState(self)
-struct amsn *self;
+long amsn__MS_UpdateState(struct amsn *self)
 {
     return(MS_UpdateState());
 }
 
-void amsn__ReportSuccess(self, s)
-struct amsn *self;
-char *s;
+void amsn__ReportSuccess(struct amsn *self, char *s)
 {
     ReportSuccess(s);
 }
 
 
-long amsn__MS_DomainHandlesFormatting(self, domname, retval)
-struct amsn *self;
-char *domname;
-long *retval;
+long amsn__MS_DomainHandlesFormatting(struct amsn *self, char *domname, long *retval)
 {
     return(MS_DomainHandlesFormatting(domname, retval));
 }
 
-void amsn__ReportError(self, s, level, decode, err)
-struct amsn *self;
-char *s;
-int level, decode;
-long err;
+void amsn__ReportError(struct amsn *self, char *s, int level, int decode, long err)
 {
     if (decode) mserrcode = err;
     ReportError(s, level, decode);
 }
 
-int amsn__GenericCompoundAction(self, v, prefix, cmds)
-struct amsn *self;
-struct view *v;
-char *prefix;
-char *cmds;
+int amsn__GenericCompoundAction(struct amsn *self, struct view *v, char *prefix, char *cmds)
 {
     return(GenericCompoundAction(v, prefix, cmds));
 }
 
-int amsn__GetBooleanFromUser(self, prompt, defaultans)
-struct amsn *self;
-char *prompt;
-int defaultans;
+int amsn__GetBooleanFromUser(struct amsn *self, char *prompt, int defaultans)
 {
     return(GetBooleanFromUser(prompt, defaultans));
 }
 
-int amsn__GetStringFromUser(self, prompt, buf, len, ispass)
-struct amsn *self;
-char *prompt, *buf;
-int len, ispass;
+int amsn__GetStringFromUser(struct amsn *self, char *prompt, char *buf, int len, int ispass)
 {
     return(GetStringFromUser(prompt, buf, len, ispass));
 }
 
-int amsn__TildeResolve(self, in, out)
-struct amsn *self;
-char *in, *out;
+int amsn__TildeResolve(struct amsn *self, char *in, char *out)
 {
     return(TildeResolve(in, out));
 }
 
-int amsn__OnlyMail(self)
-struct amsn *self;
+int amsn__OnlyMail(struct amsn *self)
 {
     return(AMS_OnlyMail);
 }
 
-char *amsn__ap_Shorten(self, fname)
-struct amsn *self;
-char *fname;
+char* amsn__ap_Shorten(struct amsn *self, char *fname)
 {
     return(ap_Shorten(fname));
 }
 
-int amsn__fwriteallchars(self, s, len, fp)
-struct amsn *self;
-char *s;
-int len;
-FILE *fp;
+int amsn__fwriteallchars(struct amsn *self, char *s, int len, FILE *fp)
 {
     return(fwriteallchars(s, len, fp));
 }
 
-long amsn__mserrcode(self)
-struct amsn *self;
+long amsn__mserrcode(struct amsn *self)
 {
     return(mserrcode);
 }
 
-int amsn__vdown(self, errnum)
-struct amsn *self;
-int errnum;
+int amsn__vdown(struct amsn *self, int errnum)
 {
     return(vdown(errnum));
 }
 
-int amsn__AMS_ERRNO(self)
-struct amsn *self;
+int amsn__AMS_ERRNO(struct amsn *self)
 {
     return(AMS_ERRNO);
 }
 
-void amsn__SubtleDialogs(self, besubtle)
-struct amsn *self;
-boolean besubtle;
+void amsn__SubtleDialogs(struct amsn *self, boolean besubtle)
 {
     SubtleDialogs(besubtle);
 }
 
-char *amsn__DescribeProt(self, code)
-struct amsn *self;
-int code;
+char * amsn__DescribeProt(struct amsn *self, int code)
 {
     return(DescribeProt(code));
 }
 
-int amsn__ChooseFromList(self, QVec, defans)
-struct amsn *self;
-char **QVec;
-int defans;
+int amsn__ChooseFromList(struct amsn *self, char **QVec, int defans)
 {
     return(ChooseFromList(QVec, defans));
 }
-int amsn__CUI_GetAMSID(self, cuid, id, dir)
-struct amsn *self;
-int cuid;
-char **id, **dir;
+int amsn__CUI_GetAMSID(struct amsn *self, int cuid, char **id, char **dir)
 {
     return(CUI_GetAMSID(cuid, id, dir));
 }
 
-char *amsn__MessagesAutoBugAddress(self)
-struct amsn *self;
+char * amsn__MessagesAutoBugAddress(struct amsn *self)
 {
     return(MessagesAutoBugAddress);
 }
 
-int amsn__UnScribe(self, ucode, ss, LineBuf, ct, fout)
-struct amsn *self;
-int ucode;
-struct ScribeState *ss;
-char *LineBuf;
-int ct;
-FILE *fout;
+int amsn__UnScribe(struct amsn *self, int ucode, struct ScribeState *ss, char *LineBuf, int ct, FILE *fout)
 {
     return(UnScribe(ucode, ss, LineBuf, ct, fout));
 }
 
-int amsn__UnScribeFlush(self, ucode, ss, fout)
-struct amsn *self;
-int ucode;
-struct ScribeState *ss;
-FILE *fout;
+int amsn__UnScribeFlush(struct amsn *self, int ucode, struct ScribeState *ss, FILE *fout)
 {
     return(UnScribeFlush(ucode, ss, fout));
 }
 
-int amsn__UnScribeInit(self, vers, ss)
-struct amsn *self;
-char *vers;
-struct ScribeState *ss;
+int amsn__UnScribeInit(struct amsn *self, char *vers, struct ScribeState *ss)
 {
     return(UnScribeInit(vers, ss));
 }
 
-void amsn__WriteOutUserEnvironment(self, fp, IsAboutMessages)
-struct amsn *self;
-FILE *fp;
-boolean IsAboutMessages;
+void amsn__WriteOutUserEnvironment(struct amsn *self, FILE *fp, boolean IsAboutMessages)
 {
     WriteOutUserEnvironment(fp, IsAboutMessages);
 }
 
-char *amsn__ams_genid(self, isfilename)
-struct amsn *self;
-boolean isfilename;
+char * amsn__ams_genid(struct amsn *self, boolean isfilename)
 {
     return(ams_genid(isfilename));
 }
 
-int amsn__CheckAMSUseridPlusWorks(self, dom)
-struct amsn *self;
-char *dom;
+int amsn__CheckAMSUseridPlusWorks(struct amsn *self, char *dom)
 {
     return(CheckAMSUseridPlusWorks(dom));
 }

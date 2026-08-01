@@ -73,8 +73,7 @@ extern int QAddToDoc();
    references -- no header, defined in folders.c */
 extern int ClearFolders(), DoClick(), ExposeCap(), SetupList();
 
-void folders_Warp(im)
-struct im *im;
+void folders_Warp(struct im *im)
 {
 
     if(im) {
@@ -84,20 +83,17 @@ struct im *im;
 
 }
 
-void folders_Expose(im)
-struct im *im;
+void folders_Expose(struct im *im)
 {
     if(im) im_ExposeWindow(im);
 }
 
-void folders_Hide(im)
-struct im *im;
+void folders_Hide(struct im *im)
 {
     if(im) im_HideWindow(im);
 }
 
-void folders_Vanish(im)
-struct im *im;
+void folders_Vanish(struct im *im)
 {
     if(im) im_VanishWindow(im);
 }
@@ -107,58 +103,44 @@ void folders_ForceUpdate()
     im_ForceUpdate();
 }
 
-void folders_TextviewCompound(tv, cmds)
-struct textview *tv;
-char *cmds;
+void folders_TextviewCompound(struct textview *tv, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), tv, "textview", cmds);
 }
 
-void folders_FoldersCompound(self, cmds)
-struct folders *self;
-char *cmds;
+void folders_FoldersCompound(struct folders *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), self, "folders", cmds);
 }
 
-void FoldersTextviewCommand(self, cmds)
-struct folders *self;
-char *cmds;
+void FoldersTextviewCommand(struct folders *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), self, "textview", cmds);
 }
 
-void FoldersMessagesCommand(self, cmds)
-struct folders *self;
-char *cmds;
+void FoldersMessagesCommand(struct folders *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), self, "messages", cmds);
 }
 
-void FoldersSendmessageCommand(self, cmds)
-struct folders *self;
-char *cmds;
+void FoldersSendmessageCommand(struct folders *self, char *cmds)
 {
     if (self->sm) {
 	ams_GenericCompoundAction(ams_GetAMS(), self->sm, "sendmessage", cmds);
     }
 }
 
-void FoldersCaptionsCommand(self, cmds)
-struct folders *self;
-char *cmds;
+void FoldersCaptionsCommand(struct folders *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), folders_GetCaptions(self), "captions", cmds);
 }
 
-void folders_DownFocus(self)
-struct folders *self;
+void folders_DownFocus(struct folders *self)
 {
     ams_Focus(folders_GetCaptions(self));
 }
 
-void folders_UpFocus(self)
-struct folders *self;
+void folders_UpFocus(struct folders *self)
 {
     if (self->sm) {
 	ams_Focus(self->sm->BodyTextview);
@@ -167,15 +149,12 @@ struct folders *self;
     }
 }
 
-void folders_SimulateLeftClick(self)
-struct folders *self;
+void folders_SimulateLeftClick(struct folders *self)
 {
     DoClick(self, TRUE, TRUE);
 }
 
-void folders__PostKeyState(self, ks)
-struct folders *self;
-struct keystate *ks;
+void folders__PostKeyState(struct folders *self, struct keystate *ks)
 {
     self->mykeys->next = NULL;
     if (amsutil_GetOptBit(EXP_KEYSTROKES)) {
@@ -186,17 +165,14 @@ struct keystate *ks;
     }
 }
 
-void folders__PostMenus(self, ml)
-struct folders *self;
-struct menulist *ml;
+void folders__PostMenus(struct folders *self, struct menulist *ml)
 {
     menulist_ClearChain(self->mymenulist);
     if (ml) menulist_ChainAfterML(self->mymenulist, ml, ml);
     super_PostMenus(self, self->mymenulist);
 }
 
-FinalizeProcStyleStuff(self)
-struct folders *self;
+int FinalizeProcStyleStuff(struct folders *self)
 {
     keystate_Destroy(self->mykeys);
     menulist_Destroy(self->mymenulist);
@@ -211,8 +187,7 @@ struct folders *self;
     cursor_Destroy(self->mycursor);
 }
 
-CreateFoldersCursor(self)
-struct folders *self;
+int CreateFoldersCursor(struct folders *self)
 {
     struct fontdesc *fd;
 
@@ -223,9 +198,7 @@ struct folders *self;
 
 static int lastconfiguration = -999;
 
-void folders__Reconfigure(self, listcode)
-struct folders *self;
-int listcode;
+void folders__Reconfigure(struct folders *self, int listcode)
 {
     if (lastconfiguration == listcode) return;
     ams_WaitCursor(TRUE);
@@ -236,11 +209,7 @@ int listcode;
     ams_WaitCursor(FALSE);
 }
 
-void folders__UpdateMsgs(self, mailonly, thingstoread, ShowHelp) 
-struct folders *self;
-int mailonly;
-char *thingstoread[];
-boolean ShowHelp;
+void folders__UpdateMsgs(struct folders *self, int mailonly, char * thingstoread[], boolean ShowHelp)
 {
     if (ShowHelp) {
 	if (self->mycaps) {
@@ -296,9 +265,7 @@ static char *E6 = "\n\nExplanation of this message folder:\n\n";
 static char *E7 = "\n\nNo explanation of this folder is available, but here is the first message:\n\n";
 static char *E8 = "\n\nNo explanation of this folder is available.";
 
-void folders__ExplainDir(self, FullName, nickname)
-struct folders *self;
-char *FullName, *nickname;
+void folders__ExplainDir(struct folders *self, char *FullName, char *nickname)
 {
     int ProtCode, MsgCount;
     char ErrorText[100+MAXPATHLEN], *TypeStr, *SubsStr, ExpFileName[1+MAXPATHLEN], LocalFileName[1+MAXPATHLEN];
@@ -450,11 +417,7 @@ char *FullName, *nickname;
     ExposeCap(self);
 }
 
-QAddToDoc(d, pos, text, tlen, ss, stylelen)
-struct text *d;
-char *text;
-int tlen, stylelen, *pos;
-struct style *ss;
+int QAddToDoc(struct text *d, int *pos, char *text, int tlen, struct style *ss, int stylelen)
 {
     struct environment *et;
 
@@ -466,9 +429,7 @@ struct style *ss;
     *pos += tlen;
 }
 
-folders__WriteFormattedBodyFile(self, fname, captbuf)
-struct folders *self;
-char *fname, *captbuf;
+int folders__WriteFormattedBodyFile(struct folders *self, char *fname, char *captbuf)
 {
     FILE *fp;
     struct text *t, *new = text_New();
@@ -497,10 +458,7 @@ char *fname, *captbuf;
     return(fclose(fp));
 }
 
-ConsiderResettingDescription(ci, code, FirstTime)
-struct folders *ci;
-int code;
-Boolean FirstTime;
+int ConsiderResettingDescription(struct folders *ci, int code, Boolean FirstTime)
 {
     char Label[256], MessageText[256];
     char *PluralString;

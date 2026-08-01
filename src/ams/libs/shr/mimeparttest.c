@@ -43,6 +43,13 @@
 #include <string.h>
 
 #include <mimepart.h>
+static int do_charset();
+static int do_decodepart();
+static int do_dump();
+static int do_htmlstrip();
+static int do_select();
+static void dump_one();
+static void writefile();
 
 static const char *encname(int enc)
 {

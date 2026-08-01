@@ -80,11 +80,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 extern int EnvViewCt();		/* sendaux.c */
 extern int ProduceUnscribedVersion();	/* sendmsg.c */
 
-WriteOneFile(sendmessage, ViceFileName, OnVice, MayOverwrite, Version, TrustDelivery, UseMultipartFormat, EightBitText)
-struct sendmessage *sendmessage;
-char *ViceFileName;
-Boolean OnVice, MayOverwrite, TrustDelivery, UseMultipartFormat;
-int Version, *EightBitText;
+int WriteOneFile(struct sendmessage *sendmessage, char *ViceFileName, Boolean OnVice, Boolean MayOverwrite, int Version, Boolean TrustDelivery, Boolean UseMultipartFormat, int *EightBitText)
 {
     FILE *fp;
     int i, lim, c = 0;

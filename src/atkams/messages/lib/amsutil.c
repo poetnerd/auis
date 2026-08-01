@@ -58,122 +58,89 @@ extern long conv64tolong();
 static struct OptionState MyOpts;
 static char **KeyHeaders = NULL;
 
-boolean amsutil__InitializeClass(c) 
-struct classheader *c;
+boolean amsutil__InitializeClass(struct classheader *c)
 {
     GetBinaryOptions();
     KeyHeaders = amsutil_ParseKeyHeaders();
     return(TRUE);
 }
 
-char **amsutil__GetKeyHeadsArray(c) 
-struct classheader *c;
+char ** amsutil__GetKeyHeadsArray(struct classheader *c)
 {
     return(KeyHeaders);
 }
 
-int amsutil__GetOptBit(c, opt)
-struct classheader *c;
-int opt;
+int amsutil__GetOptBit(struct classheader *c, int opt)
 {
     return(GETOPTBIT(MyOpts.Opts, opt));
 }
 
-void amsutil__SetOptBit(c, opt, val)
-struct classheader *c;
-int opt, val;
+void amsutil__SetOptBit(struct classheader *c, int opt, int val)
 {
     SETOPTBIT(MyOpts.Opts, opt, val);
 }
 
-int amsutil__GetPermOptBit(c, opt)
-struct classheader *c;
-int opt;
+int amsutil__GetPermOptBit(struct classheader *c, int opt)
 {
     return(GETOPTBIT(MyOpts.PermOpts, opt));
 }
 
-void amsutil__SetPermOptBit(c, opt, val)
-struct classheader *c;
-int opt, val;
+void amsutil__SetPermOptBit(struct classheader *c, int opt, int val)
 {
     SETOPTBIT(MyOpts.PermOpts, opt, val);
 }
 
-int amsutil__GetOptMaskBit(c, opt)
-struct classheader *c;
-int opt;
+int amsutil__GetOptMaskBit(struct classheader *c, int opt)
 {
     return(GETOPTBIT(MyOpts.OptMask, opt));
 }
 
-void amsutil__SetOptMaskBit(c, opt, val)
-struct classheader *c;
-int opt, val;
+void amsutil__SetOptMaskBit(struct classheader *c, int opt, int val)
 {
     SETOPTBIT(MyOpts.OptMask, opt, val);
 }
 
-void amsutil__BreakDownContentTypeField(c, override, fmttype, fmttypelen, fmtvers, fmtverslen, fmtresources, fmtresourceslen)
-struct classheader *c;
-char *override, *fmttype, *fmtvers, *fmtresources;
-int fmttypelen, fmtverslen, fmtresourceslen;
+void amsutil__BreakDownContentTypeField(struct classheader *c, char *override, char *fmttype, int fmttypelen, char *fmtvers, int fmtverslen, char *fmtresources, int fmtresourceslen)
 {
     BreakDownContentTypeField(override, fmttype, fmttypelen, fmtvers, fmtverslen, fmtresources, fmtresourceslen);
 }
 
-char **amsutil__BreakDownResourcesIntoArray(c, res)
-struct classheader *c;
-char *res;
+char ** amsutil__BreakDownResourcesIntoArray(struct classheader *c, char *res)
 {
     return(BreakDownResourcesIntoArray(res));
 }
 
-int amsutil__lc2strncmp(c, s1, s2, len)
-struct classheader *c;
-char *s1, *s2;
-int len;
+int amsutil__lc2strncmp(struct classheader *c, char *s1, char *s2, int len)
 {
     return(lc2strncmp(s1, s2, len));
 }
 
-char *amsutil__StripWhiteEnds(c, s)
-struct classheader *c;
-char *s;
+char * amsutil__StripWhiteEnds(struct classheader *c, char *s)
 {
     return(StripWhiteEnds(s));
 }
 
-char *amsutil__cvEng(c, num, min, max)
-struct classheader *c;
-int num, min, max;
+char * amsutil__cvEng(struct classheader *c, int num, int min, int max)
 {
     return(cvEng(num, min, max));
 }
 
-char *amsutil__convlongto64(c, t, p)
-struct classheader *c;
-long t, p;
+char * amsutil__convlongto64(struct classheader *c, long t, long p)
 {
     return(convlongto64(t, p));
 }
 
-long amsutil__conv64tolong(c, s64)
-struct classheader *c;
-char *s64;
+long amsutil__conv64tolong(struct classheader *c, char *s64)
 {
     return(conv64tolong(s64));
 }
 
-int amsutil__setprofilestring(c, prog, pref, val)
-struct classheader *c;
-char *prog, *pref, *val;
+int amsutil__setprofilestring(struct classheader *c, char *prog, char *pref, char *val)
 {
     return(setprofilestring(prog, pref, val));
 }
 
-char **amsutil__ParseKeyHeaders(c)
-struct classheader *c;
+char ** amsutil__ParseKeyHeaders(struct classheader *c)
 {
     int numkeys = 0;
     char *s, *t;
@@ -205,8 +172,7 @@ struct classheader *c;
     return(KeyHeads);
 }
 
-long hatol(s)
-char *s;
+long hatol(char *s)
 {
     long n;
     char c;
@@ -329,9 +295,7 @@ GetBinaryOptions()
 }
 
 
-void amsutil__BuildOptionPreference(c, buf)
-struct classheader *c;
-char *buf;
+void amsutil__BuildOptionPreference(struct classheader *c, char *buf)
 {
     int whichbyte;
     char MyBuf[50];
@@ -344,68 +308,47 @@ char *buf;
     }
 }
 
-void amsutil__ReduceWhiteSpace(c, s)
-struct classheader *c;
-char *s;
+void amsutil__ReduceWhiteSpace(struct classheader *c, char *s)
 {
     ReduceWhiteSpace(s);
 }
 
-void amsutil__LowerStringInPlace(c, s, slen)
-struct classheader *c;
-char *s;
-int slen;
+void amsutil__LowerStringInPlace(struct classheader *c, char *s, int slen)
 {
     LowerStringInPlace(s, slen);
 }
 
-int amsutil__dbg_open(c, name, flags, mode)
-struct classheader *c;
-char *name;
-int flags, mode;
+int amsutil__dbg_open(struct classheader *c, char *name, int flags, int mode)
 {
     return(dbg_open(name, flags, mode));
 }
 
-FILE *amsutil__dbg_fopen(c, name, mode)
-struct classheader *c;
-char *name, *mode;
+FILE * amsutil__dbg_fopen(struct classheader *c, char *name, char *mode)
 {
     return(dbg_fopen(name, mode));
 }
 
-int amsutil__dbg_close(c, fd)
-struct classheader *c;
-int fd;
+int amsutil__dbg_close(struct classheader *c, int fd)
 {
     return(dbg_close(fd));
 }
 
-int amsutil__dbg_vclose(c, fd)
-struct classheader *c;
-int fd;
+int amsutil__dbg_vclose(struct classheader *c, int fd)
 {
     return(vclose(fd));
 }
 
-int amsutil__dbg_fclose(c, fp)
-struct classheader *c;
-FILE *fp;
+int amsutil__dbg_fclose(struct classheader *c, FILE *fp)
 {
     return(dbg_fclose(fp));
 }
 
-int amsutil__dbg_vfclose(c, fp)
-struct classheader *c;
-FILE *fp;
+int amsutil__dbg_vfclose(struct classheader *c, FILE *fp)
 {
     return(dbg_vfclose(fp));
 }
 
-void amsutil__fdplumb_SpillGutsToFile(c, fp, doublenewlines)
-struct classheader *c;
-FILE *fp;
-boolean doublenewlines;
+void amsutil__fdplumb_SpillGutsToFile(struct classheader *c, FILE *fp, boolean doublenewlines)
 {
 #ifdef PLUMBFDLEAKS
     fdplumb_SpillGutsToFile(fp, doublenewlines);
@@ -414,8 +357,7 @@ boolean doublenewlines;
 #endif /* #ifdef PLUMBFDLEAKS */
 }
 
-void amsutil__fdplumb_SpillGuts(c)
-struct classheader *c;
+void amsutil__fdplumb_SpillGuts(struct classheader *c)
 {
 #ifdef PLUMBFDLEAKS
     fdplumb_SpillGuts();
@@ -424,8 +366,7 @@ struct classheader *c;
 #endif /* #ifdef PLUMBFDLEAKS */
 }
 
-char * amsutil__GetDefaultFontName(c)
-struct classheader *c;
+char * amsutil__GetDefaultFontName(struct classheader *c)
 {
     static char *myfontname = NULL;
 
@@ -480,11 +421,7 @@ static char *BabySubsVec[] = {
     0,
 };
 
-int amsutil__ChooseNewStatus(c, nickname, GivenDefault, ShowAllChoices)
-struct classheader *c;
-int GivenDefault;
-char *nickname;
-boolean ShowAllChoices;
+int amsutil__ChooseNewStatus(struct classheader *c, char *nickname, int GivenDefault, boolean ShowAllChoices)
 {
     int ans, defaultans;
     char QBuf[200];

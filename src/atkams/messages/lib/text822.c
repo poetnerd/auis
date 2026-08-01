@@ -52,6 +52,23 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <ams.h>
 #include <mimepart.h>
 #include <fdphack.h>
+static int FindParam();
+static char * GetHeader();
+static int InsertProperObject();
+static int ParseEncoding();
+static int PlainAsciiText();
+static int RotateThirteen();
+static int char64();
+static int getc64();
+static int getcdecoding();
+static int getcqp();
+static int hexchar();
+static int ignoretoken();
+static char * paramend();
+static char * translate();
+static int ungetc64();
+static int ungetcdecoding();
+static int ungetcqp();
 
 static char *EmptyMsgString = "<empty message>";
 static struct style *FixedStyle, *BoldStyle, *FormatStyle, *TinyStyle, *GlobalStyle;
@@ -76,9 +93,7 @@ static int ForceMetamail();
 static int InsertDecodedText();
 static void InsertAttachmentLine();
 
-boolean text822__InitializeObject(c, self)
-struct classheader *c;
-struct text822 *self;
+boolean text822__InitializeObject(struct classheader *c, struct text822 *self)
 {
     if (text822_ReadTemplate(self, "messages", FALSE)) {
 	fprintf(stderr, "Could not read messages template!\n");
@@ -94,8 +109,7 @@ struct text822 *self;
     return(TRUE);
 }
 
-boolean text822__InitializeClass(c)
-struct classheader *c;
+boolean text822__InitializeClass(struct classheader *c)
 {
     UsingFootNote = environ_GetProfileSwitch("usefootnote", TRUE);
     PrintMinorHeaders = environ_GetProfileSwitch("printminorheaders", TRUE);
@@ -124,10 +138,7 @@ struct classheader *c;
     return(TRUE);
 }
 
-long text822__Read(self, fp, id)
-struct text822 *self;
-FILE *fp;
-long id;
+long text822__Read(struct text822 *self, FILE *fp, long id)
 {
     int len, bs, ig;
 
@@ -139,11 +150,7 @@ long id;
     return(dataobject_BADFORMAT);
 }
 
-long text822__ReadSubString(self, pos, fp, quoteCharacters)
-struct text822 *self;
-long pos;
-FILE *fp;
-boolean quoteCharacters;
+long text822__ReadSubString(struct text822 *self, long pos, FILE *fp, boolean quoteCharacters)
 {
 #ifdef OLDCODE
     int len, bs, ig;
@@ -155,8 +162,7 @@ boolean quoteCharacters;
 #endif
 }
 
-char *StripWhiteSpace( t )
-char *t;
+char * StripWhiteSpace(char *t)
 {
     boolean inquotes = FALSE;
     char *s = t;
@@ -181,10 +187,7 @@ char *t;
     return t;
 }
 
-static char *GetHeader(LineBuf, lim, fp)
-char *LineBuf;
-int lim;
-FILE *fp;
+static char * GetHeader(char *LineBuf, int lim, FILE *fp)
 {
     char *s, *lb;
     int c;
@@ -209,17 +212,10 @@ FILE *fp;
     }
 }
 
-boolean text822__ReadIntoText(ch, d, fp, Mode, ContentTypeOverride, len, IsReallyTextObject, BodyStart, IgnorePosition, AuxHeadText)
-struct classheader *ch;
-struct text822 *d;
-FILE *fp;
-int Mode;
-char *ContentTypeOverride;
-int *len;
-boolean IsReallyTextObject;
-int *BodyStart, *IgnorePosition;
-struct text *AuxHeadText;
+boolean text822__ReadIntoText(struct classheader *ch, struct text *d_generic, FILE *fp, int Mode, char *ContentTypeOverride, int *len, boolean IsReallyTextObject, int *BodyStart, int *IgnorePosition, struct text *AuxHeadText)
 {
+    struct text822 *d = (struct text822 *) d_generic;
+
     if (text822_ReadTemplate(d, "messages", FALSE)) {
 	fprintf(stderr, "Could not read messages template!\n");
     }
@@ -228,8 +224,7 @@ struct text *AuxHeadText;
 }
 
 /* Auxilliary routines for text/richtext */
-static ignoretoken(t)
-char *t;
+static ignoretoken(char *t)
 {
     if (*t == '/') ++t;
     if (!strcmp(t, "us-ascii")) return(1);
@@ -237,8 +232,7 @@ char *t;
     return(0);
 }
 
-static char *translate(t)
-char *t;
+static char * translate(char *t)
 {
     if (!strcmp(t, "fixed")) return("typewriter");
     if (!strcmp(t, "excerpt")) return("quotation");
@@ -246,16 +240,7 @@ char *t;
     return(t);
 }
 
-static boolean ReadMessage(d, fp, Mode, ContentTypeOverride, len, IsReallyTextObject, BodyStart, IgnorePosition, AuxHeadText, InsideRecursion, AlternativeNumber, JunkAtEnd, DisplayAllHeaders)
-struct text822 *d;
-FILE *fp;
-int Mode;
-char *ContentTypeOverride;
-int *len;
-boolean IsReallyTextObject;
-int *BodyStart, *IgnorePosition;
-struct text *AuxHeadText;
-int InsideRecursion, AlternativeNumber, JunkAtEnd, DisplayAllHeaders;
+static boolean ReadMessage(struct text822 *d, FILE *fp, int Mode, char *ContentTypeOverride, int *len, boolean IsReallyTextObject, int *BodyStart, int *IgnorePosition, struct text *AuxHeadText, int InsideRecursion, int AlternativeNumber, int JunkAtEnd, int DisplayAllHeaders)
 {
     struct environment *et;
     char LineBuf[10000], ScribeFormatVersion[100], *ColonLocation, c, ContentType[400], ContentEncoding[50], ContentDescription[200], Subject[200];
@@ -1098,17 +1083,12 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
     return(TRUE);
 }
 
-char *text822__ViewName(t)
-struct text822 *t;
+char * text822__ViewName(struct text822 *t)
 {
     return("textview"); /* t822view is not necessary */
 }
 
-long text822__Write(self, fp, writeID, level)
-struct text822 *self;
-FILE *fp;
-long writeID;
-int level;
+long text822__Write(struct text822 *self, FILE *fp, long writeID, int level)
 {
     int bodystart, len;
     unsigned char ch;
@@ -1144,9 +1124,7 @@ int level;
     return self->header.dataobject.id;
 }
 
-static RotateThirteen(d, start)
-struct text *d;
-int start;
+static RotateThirteen(struct text *d, int start)
 {
     register char *cp,*ecp;
     long len, lengotten;
@@ -1168,8 +1146,7 @@ int start;
     }
 }
 
-void text822__Clear(self)
-struct text822 *self;
+void text822__Clear(struct text822 *self)
 {
     super_Clear(self);
     if (text822_ReadTemplate(self, "messages", FALSE)) {
@@ -1178,8 +1155,7 @@ struct text822 *self;
     text822_SetGlobalStyle(self, GlobalStyle);
 }
 
-void text822__ClearCompletely(self)
-struct text822 *self;
+void text822__ClearCompletely(struct text822 *self)
 {
     super_ClearCompletely(self);
     if (text822_ReadTemplate(self, "messages", FALSE)) {
@@ -1188,23 +1164,19 @@ struct text822 *self;
     text822_SetGlobalStyle(self, GlobalStyle);
 }
 
-long text822__ReadAsText(self, fp, id)
-struct text822 *self;
-FILE *fp;
-long id;
+long text822__ReadAsText(struct text822 *self, FILE *fp, long id)
 {
     return(super_Read(self, fp, id));
 }
 
-void text822__ResetGlobalStyle(c, t)
-struct classheader *c;
-struct text822 *t;
+void text822__ResetGlobalStyle(struct classheader *c, struct text *t_generic)
 {
+    struct text822 *t = (struct text822 *) t_generic;
+
     text822_SetGlobalStyle(t, GlobalStyle);
 }
 
-static char *paramend(s)
-char *s;
+static char * paramend(char *s)
 {
     int inquotes=0;
     while (*s) {
@@ -1224,8 +1196,7 @@ char *s;
     return(NULL);
 }        
 
-static FindParam(ct, paramname, ValueBuf)
-char *ct, *paramname, *ValueBuf;
+static FindParam(char *ct, char *paramname, char *ValueBuf)
 {
     char *s, *t, *t2, *eq, BigBuf[1000];
 
@@ -1260,13 +1231,7 @@ char *ct, *paramname, *ValueBuf;
     return(1);
 }
 
-static InsertProperObject(d, fp, ShowPos, ctype, encoding, descrip) 
-struct text822 *d;
-FILE *fp;
-int *ShowPos;
-char *ctype;
-char *encoding;
-char *descrip;
+static InsertProperObject(struct text822 *d, FILE *fp, int *ShowPos, char *ctype, char *encoding, char *descrip)
 {
     int pos;
 
@@ -1312,8 +1277,7 @@ char *descrip;
     return(-1);
 }
 
-static ParseEncoding(enc)
-char *enc;
+static ParseEncoding(char *enc)
 {
     /* These codes are defined in mailobj.ch */
     /* strip leading white space */
@@ -1326,9 +1290,7 @@ char *enc;
     return ENC_NONE;
 }
 
-static getcdecoding(fp, code)
-FILE *fp;
-int code;
+static getcdecoding(FILE *fp, int code)
 {
     switch(code) {
 	case ENC_B64:
@@ -1340,10 +1302,7 @@ int code;
     }
 }
 
-static ungetcdecoding(c, fp, code)
-int c;
-FILE *fp;
-int code;
+static ungetcdecoding(int c, FILE *fp, int code)
 {
     switch(code) {
 	case ENC_B64:
@@ -1359,8 +1318,7 @@ static int charspending=0, nextpending=0;
 static int pendingchars[80];
 static FILE *lastfp = NULL;
 
-static getc64(fp)
-FILE *fp;
+static getc64(FILE *fp)
 {
     int c1, c2, c3, c4;
 
@@ -1404,9 +1362,7 @@ FILE *fp;
     return(c1);
 }
 
-static ungetc64(c, fp)
-int c;
-FILE *fp;
+static ungetc64(int c, FILE *fp)
 {
     int i;
     for (i=nextpending+charspending; i>nextpending; --i) {
@@ -1416,8 +1372,7 @@ FILE *fp;
     ++charspending;
 }
 
-static getcqp(fp)
-FILE *fp;
+static getcqp(FILE *fp)
 {
     int c1, c2;
 
@@ -1454,18 +1409,12 @@ FILE *fp;
     }
 }
 
-static ungetcqp(c, fp)
-int c;
-FILE *fp;
+static ungetcqp(int c, FILE *fp)
 {
     pendingchars[charspending++] = c;
 }
 
-static char *
-fgetsdecoding(buf, size, fp, code)
-char *buf;
-int size, code;
-FILE *fp;
+static char * fgetsdecoding(char *buf, int size, FILE *fp, int code)
 {
     char *s=buf, *end = buf+size -1;
     int c;
@@ -1488,8 +1437,7 @@ FILE *fp;
 static char basis_hex[] = "0123456789ABCDEF";
 static char basis_64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-static hexchar(c)
-int c;
+static hexchar(int c)
 {
     char *s;
     if (islower(c)) c = toupper(c);
@@ -1498,16 +1446,14 @@ int c;
     return(-1);
 }
 
-static char64(c)
-int c;
+static char64(int c)
 {
     char *s = (char *) strchr(basis_64, c);
     if (s) return(s-basis_64);
     return(-1);
 }
 
-static char *UnquoteString(s)
-char *s;
+static char * UnquoteString(char *s)
 {
     char *ans, *t;
 
@@ -1530,8 +1476,7 @@ char *s;
     return(ans);
 }
 
-static PlainAsciiText(s, currentcharset)
-char *s, *currentcharset;
+static PlainAsciiText(char *s, char *currentcharset)
 {
     char *t, *semi;
     char Buf[1000];
@@ -1559,8 +1504,7 @@ char *s, *currentcharset;
     return(1);
 }
 
-static int ForceMetamail(ctype)
-char *ctype;
+static int ForceMetamail(char *ctype)
 {
     static char **ForceTypes = NULL;
     int i = 0, len = strlen(ctype), complen;
@@ -1608,12 +1552,7 @@ char *ctype;
    above that); ISO-8859-1/US-ASCII/absent/anything else passes
    through as bytes unchanged, per the charset policy in
    revival/doc/mime-display-prompt.md. charset may be NULL. */
-static int InsertDecodedText(d, ShowPos, bytes, len, charset)
-struct text822 *d;
-int *ShowPos;
-unsigned char *bytes;
-long len;
-char *charset;
+static int InsertDecodedText(struct text822 *d, int *ShowPos, unsigned char *bytes, long len, char *charset)
 {
     long i, o;
 
@@ -1651,11 +1590,7 @@ char *charset;
    line (plus trailing newline) at *ShowPos, advancing it. Saving
    attachments is out of scope for this display path (see the mime-
    display task); this is a label only. */
-static void InsertAttachmentLine(d, ShowPos, filename, ctype, nbytes)
-struct text822 *d;
-int *ShowPos;
-char *filename, *ctype;
-long nbytes;
+static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename, char *ctype, long nbytes)
 {
     char Line[600];
 

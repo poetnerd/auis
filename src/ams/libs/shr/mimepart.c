@@ -40,6 +40,21 @@
 #include <ctype.h>
 
 #include <mimepart.h>
+static void append_child();
+static int b64val();
+static void emit();
+static void emit_entity();
+static int hdrnamecmp();
+static int hexval();
+static void mimeparam_free();
+static char * mp_strdup();
+static char * paramend();
+static int parse_encoding();
+static unsigned char * read_all();
+static struct mimepart * split_multipart();
+static int tag_is();
+static char * trimdup();
+static char * unquote();
 
 /* ---- small local helpers (no libc extensions assumed) ---- */
 

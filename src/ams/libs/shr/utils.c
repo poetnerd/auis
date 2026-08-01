@@ -47,9 +47,7 @@ char *ErrDebugString = "Returning error codes %d %d %d\n";
 	the beginning nor ending have white space.  It is destructive in the sense that
 	the old string will also appear with the trailing white space deleted. */
 
-char *
-StripWhiteEnds(string)
-char *string;
+char * StripWhiteEnds(char *string)
 {
     char *stripped;
     int len;
@@ -66,9 +64,7 @@ char *string;
     return(stripped);
 }
 
-bone(buf, len)
-register char *buf;
-int len;
+int bone(char *buf, int len)
 {
     register char *s;
 
@@ -76,8 +72,7 @@ int len;
     while (s >= buf) *s-- = '\377';
 }
 
-ReduceWhiteSpace(string)
-char *string;
+int ReduceWhiteSpace(char *string)
 {
     char *old = string, *new = string;
     int InWhite = 1;
@@ -109,9 +104,7 @@ char *string;
 
 /* like rindex, but finds any of chars in second arg */
 
-char *
-multrindex(s, t)
-char *s, *t;
+char * multrindex(char *s, char *t)
 {
     char *u, *v;
 
@@ -132,9 +125,7 @@ char *s, *t;
 
 #define MAGICNAME ".MESSAGES"  /* This matches .MESSAGES*  */
 
-BuildNickName(FullName, NickName)
-char   *FullName,
-       *NickName;
+BuildNickName(char *FullName, char *NickName)
 {
     char   *s, *t;
 
@@ -164,9 +155,7 @@ char   *FullName,
 	to be all lower case, to a second string which is not, and
 	returns 0 if they are a case insensitive match */
 
-lc2strncmp(s1, s2, len)
-char *s1, *s2;
-int len;
+int lc2strncmp(char *s1, char *s2, int len)
 {
     while (len && *s1 && *s2 && (*s1 == *s2 || *s1 == tolower(*s2))) {
 	++s1; ++s2; --len;
@@ -174,9 +163,7 @@ int len;
     return(len && (*s1 || *s2));
 }
 
-LowerStringInPlace(string, len)
-char *string;
-int len;
+int LowerStringInPlace(char *string, int len)
 {
     while (len--) {
 	if (isupper(*string)) {
@@ -186,9 +173,7 @@ int len;
     }
 }
 
-char *
-NextAddress(add)
-char *add;
+char * NextAddress(char *add)
 {
     int parenlevel = 0, inquotes = 0;
 
@@ -226,8 +211,7 @@ static char *Nms[] = {"zero", "one", "two", "three", "four", "five", "six",
 static char *Tens[] = {"twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"};
 static char NmBuff[22];
 
-char *cvEng(foo, Capitalized, MaxToSpellOut)
-int foo, Capitalized, MaxToSpellOut;
+char * cvEng(int foo, int Capitalized, int MaxToSpellOut)
 {
 	if (foo < 0 || foo >= 100 || foo >= MaxToSpellOut) {
 		sprintf(NmBuff, "%d", foo);

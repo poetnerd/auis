@@ -107,8 +107,7 @@ static char ReconnNameBuf[256];
 static char UserNameBuf[200];
 char EditorBuf[200] = "";
 
-SetEditorToUse(ed)
-char *ed;
+int SetEditorToUse(char *ed)
 {
     strncpy(EditorBuf, ed, sizeof(EditorBuf));
 }
@@ -119,9 +118,7 @@ union alignme {
     long dummy;
 } AlignBuf;
 
-Machine_Init(ThisHost, ThisUser, ThisPassword, len, type, IsRecon)
-char **ThisHost, **ThisUser, **ThisPassword;
-int *len, *type, IsRecon;
+int Machine_Init(char **ThisHost, char **ThisUser, char **ThisPassword, int *len, int *type, int IsRecon)
 {
     char ErrorText[600], *s;
     struct passwd *pw;
@@ -279,17 +276,14 @@ int *len, *type, IsRecon;
 /* This routine generates a temporary file name to be written on the 
 	local machine.  */
 
-CUI_GenLocalTmpFileName(nmbuf)
-char   *nmbuf;
+int CUI_GenLocalTmpFileName(char *nmbuf)
 {
     /* On Andrew/UNIX, we can use a normal /tmp file */
 
     return(CUI_GenTmpFileName(nmbuf));
 }
 
-EditLocalFile(LocalName, FinishedElsewhere)
-char   *LocalName;
-Boolean    *FinishedElsewhere;
+int EditLocalFile(char *LocalName, Boolean *FinishedElsewhere)
 {
     int     pid,
             pid2 = 0,
@@ -358,8 +352,7 @@ LogStart() {
     }
 }
 
-LogEnd(name) 
-char *name;
+int LogEnd(char *name)
 {
     if (MSLogFP) {
 	lastfinish = time(0) - inittime;
@@ -396,9 +389,7 @@ RedirectOutput() {
 
 static char PasswordBuf[100];
 
-GetNewPassword(ptr, IsRecon, ThisUser, ThisHost)
-char **ptr, *ThisUser, *ThisHost;
-int IsRecon;
+int GetNewPassword(char **ptr, int IsRecon, char *ThisUser, char *ThisHost)
 {
     char ErrorText[256];
 
@@ -438,17 +429,14 @@ CUI_InitializeKeepalives() {
     }
 }
 
-Machine_HandleClientSignal(signum, ActNormal)
-int signum;
-int *ActNormal;
+int Machine_HandleClientSignal(int signum, int *ActNormal)
 {
     *ActNormal = 1;
     if (CUI_GenericClientSignalHandler) (*CUI_GenericClientSignalHandler)(signum, ActNormal);
 }
 
     
-SnapifiedClientSignalHandler(signum) 
-int signum;
+int SnapifiedClientSignalHandler(int signum)
 {
     int ActNormal = 1;
     char *Text;

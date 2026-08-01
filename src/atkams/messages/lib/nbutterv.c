@@ -38,10 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <sbutton.ih>
 #include "nbutterv.eh"
 
-boolean nbutterv__Touch(self, ind, action)
-struct nbutterv *self;
-int ind;
-enum view_MouseAction action;
+boolean nbutterv__Touch(struct nbutterv *self, int ind, enum view_MouseAction action)
 { 
     struct sbutton *b=nbutterv_ButtonData(self);
 

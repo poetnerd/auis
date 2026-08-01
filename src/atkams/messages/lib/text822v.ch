@@ -41,8 +41,8 @@ class t822view[text822v]: messages {
       GetCaptions() returns struct captions *;
     classprocedures:
       InitializeClass() returns boolean;
-      InitializeObject(struct textview *self) returns boolean;
-      FinalizeObject(struct captions *self);
+      InitializeObject(struct t822view *self) returns boolean;
+      FinalizeObject(struct t822view *self);
     data:
       struct captions *mycaps;
       struct keystate *myks;

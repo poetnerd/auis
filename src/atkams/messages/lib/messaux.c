@@ -86,8 +86,7 @@ extern         void MessagesSendmessageCommand();
    forward-declares its own untyped `extern CheckMenuMasks();`) */
 extern int CheckMenuMasks();
 
-void sm_SetMessagesOptions(self)
-struct messages *self;
+void sm_SetMessagesOptions(struct messages *self)
 {
     captions_ResetVisibleCaption(GetCaptions(self));
     options_SetMessagesOptions(GetBodies(self));
@@ -95,9 +94,7 @@ struct messages *self;
 
 extern  int  (*messtextv_ForwardSearchCmd)(), (*messtextv_ReverseSearchCmd)();
 
-void messages__PostKeyState(self, ks)
-struct messages *self;
-struct keystate *ks;
+void messages__PostKeyState(struct messages *self, struct keystate *ks)
 {
     struct keystate *tmp;
     if (!ks) return;
@@ -115,9 +112,7 @@ struct keystate *ks;
     }
 }
 
-void messages__FinalizeObject(c, self)
-struct classheader *c;
-struct messages *self;
+void messages__FinalizeObject(struct classheader *c, struct messages *self)
 {
     menulist_ClearChain(self->mymenulist);
     menulist_ClearChain(self->mypermmenulist);
@@ -128,9 +123,7 @@ struct messages *self;
     if (self->fileintomenulist) menulist_Destroy(self->fileintomenulist);
 }
 
-void messages__PostMenus(mess, ml)
-struct messages *mess;
-struct menulist *ml;
+void messages__PostMenus(struct messages *mess, struct menulist *ml)
 {
     CheckMenuMasks(mess);
     menulist_ClearChain(mess->mymenulist);
@@ -143,8 +136,7 @@ struct menulist *ml;
     super_PostMenus(mess, mess->mymenulist);
 }
 
-struct captions *GetCaptions(self)
-struct messages *self;
+struct captions * GetCaptions(struct messages *self)
 {
     struct captions *c = NULL;
     switch(self->WhatIAm) {
@@ -164,8 +156,7 @@ struct messages *self;
     return(c);
 }
 
-struct t822view *GetBodies(self)
-struct messages *self;
+struct t822view * GetBodies(struct messages *self)
 {
     struct t822view *tv = NULL;
     switch(self->WhatIAm) {
@@ -185,16 +176,13 @@ struct messages *self;
     return(tv);
 }
 
-void MessagesFocusFolders(self)
-struct messages *self;
+void MessagesFocusFolders(struct messages *self)
 {
     struct folders *f = GetFolders(self);
     folders_WantInputFocus(f, f);
 }
 
-void MessagesSendmessageCommand(self, cmds)
-struct messages *self;
-char *cmds;
+void MessagesSendmessageCommand(struct messages *self, char *cmds)
 {
     struct sendmessage *sm = folders_ExposeSend(GetFolders(self));
     if (sm) {
@@ -202,8 +190,7 @@ char *cmds;
     }
 }
 
-void BSM_ShowHelp(self)
-struct messages *self;
+void BSM_ShowHelp(struct messages *self)
 {
     if (GetCaptions(self)->FullName) {
 	folders_ExplainDir(GetFolders(self), GetCaptions(self)->FullName, GetCaptions(self)->ShortName);
@@ -212,8 +199,7 @@ struct messages *self;
     }
 }
 
-boolean ClearSM(self)
-struct captions *self;
+boolean ClearSM(struct captions *self)
 {
     struct sendmessage *sm = folders_ExposeSend(captions_GetFolders(self));
     if (!sm) return(TRUE);
@@ -222,14 +208,12 @@ struct captions *self;
     return(FALSE);
 }
 
-void BSM_CheckNewPlease(self)
-struct messages *self;
+void BSM_CheckNewPlease(struct messages *self)
 {
     folders_UpdateMsgs(GetFolders(self), 0, NULL, TRUE);
 }
 
-void BSM_ReadMailPlease(self)
-struct messages *self;
+void BSM_ReadMailPlease(struct messages *self)
 {
     if(environ_GetProfileSwitch("ReadMailFolders", FALSE))
 	folders_UpdateMsgs(GetFolders(self), TRUE, NULL, TRUE);
@@ -237,32 +221,27 @@ struct messages *self;
 	folders_ReadMail(GetFolders(self), TRUE);
 }
 
-void BSM_ShowNewPlease(self)
-struct messages *self;
+void BSM_ShowNewPlease(struct messages *self)
 {
     folders_Reconfigure(GetFolders(self), LIST_NEWONLY);
 }
 
-void BSM_ShowPersonalPlease(self)
-struct messages *self;
+void BSM_ShowPersonalPlease(struct messages *self)
 {
     folders_Reconfigure(GetFolders(self), LIST_MAIL_FOLDERS);
 }
 
-void BSM_ShowAllPlease(self)
-struct messages *self;
+void BSM_ShowAllPlease(struct messages *self)
 {
     folders_Reconfigure(GetFolders(self), LIST_ALL_FOLDERS);
 }
 
-void BSM_ShowSubscribedPlease(self)
-struct messages *self;
+void BSM_ShowSubscribedPlease(struct messages *self)
 {
     folders_Reconfigure(GetFolders(self), LIST_SUBSCRIBED);
 }
 
-void messages_DuplicateWindow(self)
-struct messages *self;
+void messages_DuplicateWindow(struct messages *self)
 {
     if (self->WhatIAm == WHATIAM_FOLDERS) {
 	struct folders *f = folders_New();
@@ -282,8 +261,7 @@ struct messages *self;
 	
 }
 
-struct captions *GetCaptionsNoCreate(self)
-struct messages *self;
+struct captions * GetCaptionsNoCreate(struct messages *self)
 {
     struct captions *c = NULL;
     switch(self->WhatIAm) {
@@ -300,8 +278,7 @@ struct messages *self;
     return(c);
 }
 
-struct folders *GetFolders(self)
-struct messages *self;
+struct folders * GetFolders(struct messages *self)
 {
     struct folders *f = NULL;
     switch(self->WhatIAm) {
@@ -321,22 +298,18 @@ struct messages *self;
     return(f);
 }
 
-void MessagesFoldersCommand(self, cmds)
-struct messages *self;
-char *cmds;
+void MessagesFoldersCommand(struct messages *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), GetFolders(self), "folders", cmds);
 }
 
-void FSearchFPlease(self)
-struct messages *self;
+void FSearchFPlease(struct messages *self)
 {
     messtextv_ForwardSearchCmd((struct textview *) GetFolders(self));
     messages_WantInputFocus(self, self);
 }
 
-void FSearchRPlease(self)
-struct messages *self;
+void FSearchRPlease(struct messages *self)
 {
     messtextv_ReverseSearchCmd((struct textview *) GetFolders(self));
     messages_WantInputFocus(self, self);

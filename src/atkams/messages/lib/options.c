@@ -155,10 +155,7 @@ static struct OptionChoice Options[] = {
 	{NULL, 0, 0, 0, NULL}
 };
 
-ExpLevelHit(self, val, which, hisrock)
-long self;
-struct value *val;
-int which, hisrock;
+int ExpLevelHit(long self, struct value *val, int which, int hisrock)
 {
     int parm = Options[which].OptParm;
     char MyBuf[500];
@@ -177,10 +174,7 @@ int which, hisrock;
     ams_WaitCursor(FALSE);
 }
 
-IntegerHit(self, val, which, hisrock)
-long self;
-struct value *val;
-int which, hisrock;
+int IntegerHit(long self, struct value *val, int which, int hisrock)
 {
     char Msg[1000], AnsBuf[25], *pref;
     int parm, numval;
@@ -227,10 +221,7 @@ int which, hisrock;
     ams_WaitCursor(FALSE);
 }
    
-ButtonHit(self, val, which, hisrock)
-long self;
-struct value *val;
-int which, hisrock;
+int ButtonHit(long self, struct value *val, int which, int hisrock)
 {
     char Msg[1000], AnsBuf[5000], *pref, *defaultans = "bogus", *prompt = "bogus";
     int parm, numans;
@@ -281,9 +272,7 @@ int which, hisrock;
     ams_WaitCursor(FALSE);
 }
    
-options__SetMessagesOptions(c, bv) 
-struct classheader *c;
-struct t822view *bv;
+int options__SetMessagesOptions(struct classheader *c, struct t822view *bv)
 {
     static char *Intro1 = "Setting Messages Options";
     static char *Intro2 = "\nThe Messages program has a large number of options that you can alter to tailor the program's behavior to suit your needs.  A list of the options appears in the caption area, above.  Clicking on an option in the list above will scroll in this area to show you that option.\n\nTo set an option, you need to either left click a switch On or Off, change a slider value by dragging the slider or by clicking on the slider with the left button to increase the value or the right to decrease the value, or click on the Alter button which will prompt you to change the option's value.\n";
@@ -443,9 +432,7 @@ struct t822view *bv;
     ams_WaitCursor(FALSE);
 }
 
-saveprofilestring(prog, pref, val, warn)
-char *prog, *pref, *val;
-int warn;
+int saveprofilestring(char *prog, char *pref, char *val, int warn)
 {
     char ErrorText[256];
     int code;
@@ -465,8 +452,7 @@ int warn;
     }	
 }
 
-CountCommas(s)
-char *s;
+int CountCommas(char *s)
 {
     int commas = 0;
     if (s) {

@@ -60,12 +60,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <bind.ih>
 #include <im.ih>
 #include <view.ih>
+static void DeleteWindow();
+static void DuplicateWindow();
 
 /* same-file forward reference -- defined later in this file */
 extern int CheckVerticalHorizontal();
 
-static void DuplicateWindow(self)
-struct messwind *self;
+static void DuplicateWindow(struct messwind *self)
 {
     struct messwind *m = (struct messwind *) messwind_New();
 
@@ -75,9 +76,7 @@ struct messwind *self;
 static struct keymap *messwind_standardkeymap;
 static struct menulist *messwind_standardmenulist;
 
-boolean messwind__InitializeObject(c, mess)
-struct classheader *c;
-struct messwind *mess;
+boolean messwind__InitializeObject(struct classheader *c, struct messwind *mess)
 {
     int hbsplit;
     struct text *t;
@@ -107,8 +106,7 @@ struct messwind *mess;
     return(TRUE);
 }
 
-CheckVerticalHorizontal(mess)
-struct messwind *mess;
+int CheckVerticalHorizontal(struct messwind *mess)
 {
     int foldpix = environ_GetProfileInt("messages.folderpixels", mess->SideBySide ? 200 : 80);
 
@@ -120,8 +118,7 @@ struct messwind *mess;
     folders_SetVeryNarrow(mess->folders, mess->SideBySide);
 }
 
-void messwind__ToggleSideBySide(mess)
-struct messwind *mess;
+void messwind__ToggleSideBySide(struct messwind *mess)
 {
     struct im *myim = messwind_GetIM(mess);
     struct view *v = myim ? im_GetInputFocus(myim) : NULL;
@@ -132,16 +129,12 @@ struct messwind *mess;
     if (myim) im_RedrawWindow(myim);
 }
 
-void messwindCompound(mess, cmds)
-struct messwindn *mess;
-char *cmds;
+void messwindCompound(struct messwindn *mess, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), mess, "messwind", cmds);
 }
 
-void messwindFoldersCommand(mess, cmds)
-struct messwind *mess;
-char *cmds;
+void messwindFoldersCommand(struct messwind *mess, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), mess->folders, "folders", cmds);
 }
@@ -155,8 +148,7 @@ static char *lastWindowChoices[] = {
 #define lastWindow_CANCEL 0
 #define lastWindow_QUIT   1
 
-static void DeleteWindow(self)
-struct messwind *self;
+static void DeleteWindow(struct messwind *self)
 {
     if (ams_CountAMSViews() > 3) {
 	ams_CommitState(FALSE, FALSE, FALSE, FALSE);
@@ -191,8 +183,7 @@ static struct bind_Description messwind_standardbindings [] = {
     {NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL},
 };
 
-boolean messwind__InitializeClass(c) 
-struct classheader *c;
+boolean messwind__InitializeClass(struct classheader *c)
 {
     messwind_standardmenulist = menulist_New();
     messwind_standardkeymap = keymap_New();
@@ -200,10 +191,7 @@ struct classheader *c;
     return(TRUE);
 }
 
-void
-messwind__PostKeyState(self, ks)
-struct messwind *self;
-struct keystate *ks;
+void messwind__PostKeyState(struct messwind *self, struct keystate *ks)
 {
     if (!ks) return;
     if (amsutil_GetOptBit(EXP_KEYSTROKES)
@@ -215,18 +203,14 @@ struct keystate *ks;
     }
 }
 
-void messwind__PostMenus(mess, ml)
-struct messwind *mess;
-struct menulist *ml;
+void messwind__PostMenus(struct messwind *mess, struct menulist *ml)
 {
     menulist_ClearChain(mess->mymenulist);
     if (ml) menulist_ChainAfterML(mess->mymenulist, ml, ml);
     super_PostMenus(mess, mess->mymenulist);
 }
 
-void messwind__FinalizeObject(c, self)
-struct classheader *c;
-struct messwind *self;
+void messwind__FinalizeObject(struct classheader *c, struct messwind *self)
 {
     messwind_SetNth(self, 0, NULL);
     messwind_SetNth(self, 1, NULL);
