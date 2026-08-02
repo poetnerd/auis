@@ -71,15 +71,20 @@ extern int to64(), toqp(), from64(), fromqp();
 extern int DoesNeedPortableNewlines(), ExceptionalNewline();
 extern int lc2strcmp(), lc2strncmp();
 /* Same-file forward references (defined later in this file) */
-extern int nomemabort(), tfputs(), cleanexit();
-extern int ProcessInitFiles(), InitSignals(), FputsQuotingLT();
+extern int tfputs(), cleanexit();
+extern void nomemabort();
+extern void ProcessInitFiles(), InitSignals();
+extern int FputsQuotingLT();
 extern int TryClosingStyle(), TryOpeningStyle(), TempCloseStyles();
 extern int ReopenStyles(), ToggleStyle(), TranslateInputToEncodedOutput();
 extern int EditCurrentMessage(), EndStyle(), StartStyle();
-extern int WriteOutMessage(), RestoreCurrentStyles(), WriteDeadLetter();
-extern int SwitchToEuropean(), EmitHeader(), EmitHeaderWithAliases();
+extern int WriteOutMessage(), WriteDeadLetter();
+extern void RestoreCurrentStyles();
+extern void SwitchToEuropean();
+extern int EmitHeader(), EmitHeaderWithAliases();
 extern int WriteContentTypeAndEncoding(), WriteCtypeNicely();
-extern int finalize(), WhichEncodingForFile(), SetTextFlags();
+extern void finalize();
+extern int WhichEncodingForFile(), SetTextFlags();
 extern int ContainsEightBitChar(), ProcessOneMailRC();
 extern int HandleAliasCommand(), HandleSetCommand(), HeaderFputs();
 extern int PutQP(unsigned char c, FILE *fp);
@@ -162,7 +167,7 @@ int  V_askcc=0, /* To ask about the Cc field */
 int JustificationState = JUST_LEFT;
 
 
-EightBitCharHelp() {
+void EightBitCharHelp() {
     if (!CharacterSet || !strcmp(CharacterSet, "us-ascii")) {
         printf("There are no extended characters available for your US-ASCII terminal.\n\n");
         printf("If you are actually using a terminal or terminal emulator with a richer\ncharacter set, you must use the '-a' option or the 'MM_CHARSET' environment\nvariable to inform this program of that fact.\n");
@@ -223,7 +228,7 @@ tmpname() {
     return(s);
 }
 
-TildeHelp() {
+void TildeHelp() {
     char *pager = getenv("PAGER");
     char TmpName[100], CmdBuf[150];
     FILE *fp;
@@ -322,7 +327,7 @@ char *gethome() {
 static char standoutbuf[50], standendbuf[50], StartUnderline[50], StopUnderline[50], BoldOn[50], BoldOff[50], KS[50], KE[50];
 static int termcolumns, termrows;
 
-InitTerminal() {
+void InitTerminal() {
 #ifdef AMIGA
     strcpy(standoutbuf, "\x9b\x37m");   /* Enter standout (highlighted) mode */
     strcpy(standendbuf, "\x9b\x30m");   /* Exit standout mode */
@@ -374,7 +379,7 @@ InitTerminal() {
 #endif
 }
 
-FinalizeTerminal() {
+void FinalizeTerminal() {
     tfputs(standendbuf);
     tfputs(BoldOff);
     tfputs(StopUnderline);
@@ -399,7 +404,7 @@ NewPart() {
     return(p);
 }
 
-nomemabort() {
+void nomemabort() {
     fprintf(stderr, "mailto: Out of memory\n");
     cleanexit(-1);
 }
@@ -1205,7 +1210,7 @@ int TempCloseStyles(FILE *fp)
     fflush(stdout);
 }
 
-RestoreCurrentStyles() {
+void RestoreCurrentStyles() {
     int i=0;
     while (i<StackSize) {
         if (EnvStartStack[i]) {
@@ -1225,7 +1230,7 @@ int ReopenStyles(FILE *fp, struct mailpart *part)
     }
 }
 
-richtextreset()
+void richtextreset()
 {
     StackSize = 0;
 }
@@ -1376,7 +1381,7 @@ int cleanexit(int code)
     exit(code);
 }
 
-finalize() {
+void finalize() {
     while (FirstPart) {
         unlink(FirstPart->filename);
         FirstPart = FirstPart->next;
@@ -1410,7 +1415,7 @@ void cleanup(int signum)
 #endif
 }
 
-InitSignals() {
+void InitSignals() {
     signal(SIGINT, cleanup);
 #ifndef AMIGA
     signal(SIGPIPE, cleanup);
@@ -1430,7 +1435,7 @@ InitSignals() {
 #endif
 }
 
-WriteDeadLetter()
+int WriteDeadLetter()
 {
     FILE *fp;
 #ifdef AMIGA
@@ -1629,7 +1634,7 @@ struct MailcapEntry * GetMailcapEntry(FILE *fp)
     return(mc);
 }
 
-ProcessMailcapFiles() 
+int ProcessMailcapFiles()
 {
     char *s, *path = getenv("MAILCAPS"), *origpath;
     static char *stdpath = STDPATH;
@@ -2114,7 +2119,7 @@ int EditCurrentMessage(int UseVisual)
 }
 
 
-ProcessInitFiles() {
+void ProcessInitFiles() {
 #ifdef AMIGA
     ProcessOneMailRC(mailRC, 0);
 #else
@@ -2481,7 +2486,7 @@ int systemWithStdin(char *cmd)
 }
 #endif
 
-int controlputc(char c)
+int controlputc(int c)
 {
     fputc(c, stdout);
 }
@@ -2518,7 +2523,7 @@ int ContainsEightBitChar(char *fname)
     return(eightBitSeen);
 }
 
-SwitchToEuropean() {
+void SwitchToEuropean() {
     printf("WARNING:  You have entered 8-bit characters in what is supposed to be\n");
     printf("plain ASCII text.  If you are using a non-ASCII character set, you should\n");
     printf("declare this to be the case with the MM_CHARSET environment variable.\n");

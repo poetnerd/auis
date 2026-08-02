@@ -115,15 +115,21 @@ extern int from64(), fromqp(), fromuue(), PendingBoundary();
 extern int ExceptionalNewline(), DoesNeedPortableNewlines();
 extern int lc2strcmp(), lc2strncmp();
 /* Same-file forward references (defined later in this file) */
-extern int ExitWithError(), RestoreTtyState(), ProcessArguments();
-extern int HandleMessage(), PauseForUser(), Read822Prefix();
-extern int PrepareMessage(), ProcessMailcapFiles(), SaveSquirrelFile();
+extern int ExitWithError(), ProcessArguments();
+extern void RestoreTtyState();
+extern int HandleMessage(), Read822Prefix();
+extern void PauseForUser();
+extern int ProcessMailcapFiles(), SaveSquirrelFile();
+extern void PrepareMessage();
 extern int MkTmpFileName(), TryBuiltIns(), TranslateInputToOutput();
-extern int usage(), StripTrailingSpace(), RunInNewWindow();
-extern int CreateNewWindowPrefix(), SetUpEnvironment(), ProcessMailcapFile();
+extern int StripTrailingSpace(), RunInNewWindow();
+extern void usage();
+extern int CreateNewWindowPrefix(), ProcessMailcapFile();
+extern void SetUpEnvironment();
 extern int TryMailcapEntry(), GetMailcapEntry(), CtypeMatch();
 extern int PassesTest(), ExecuteMailcapEntry(), BuildCommand();
-extern int SaveTtyState(), NeedToAskBeforeExecuting(), OKToRun();
+extern int NeedToAskBeforeExecuting(), OKToRun();
+extern void SaveTtyState();
 extern int strcatquoting(), WriteTmpFile(), ExecuteCommand();
 extern int maybephead(), phead(), EliminateNastyChars();
 extern int strcpynoquotes(), StartRawStdin();
@@ -212,7 +218,7 @@ void PrintHeader();
 void ConsumeRestOfPart();
 void ParseContentParameters();
 
-sigtype cleanup();
+void cleanup(int signum);
 
 char * Cleanse(char *s)
 {
@@ -253,7 +259,7 @@ char * UnquoteString(char *s)
     return(ans);
 }
 
-sigtype cleanup(int signum)
+void cleanup(int signum)
 {
     RestoreTtyState();
 #if defined(MSDOS) || defined(AMIGA)
@@ -932,7 +938,7 @@ int ProcessArguments(int argc, char **argv)
     return(0);
 }
 
-usage() {
+void usage() {
     fprintf(stderr, "Usage:  metamail [-b] [-B] [-d] [-e] [-h] [-r] [-R] [-p]  [-P] [-x] [-y] [-z] [-c content-type] [-E content-transfer-encoding] [-f from-name] [-m mailername] [-s subject] [message-file-name]\n");
     ExitWithError(NULL);
 }
@@ -1172,9 +1178,9 @@ int SaveSquirrelFile(char *SquirrelFile)
     fprintf(outfp, "Content-type: %s", ContentType);
     for (j=0; j<CParamsUsed; ++j) {
         fprintf(outfp, " ; ");
-        fprintf(outfp, CParams[j]);
+        fprintf(outfp, "%s", CParams[j]);
         fprintf(outfp, " = ");
-        fprintf(outfp, CParamValues[j]);
+        fprintf(outfp, "%s", CParamValues[j]);
     }
     fprintf(outfp, "\n\n"); 
     TranslateInputToOutput(InputFP, outfp, EncodingCode, ContentType);
@@ -1587,7 +1593,7 @@ yankagain:
     }
 }
 
-PrepareMessage() {
+void PrepareMessage() {
     int c;
 
     EncodingCode = ENCODING_NONE;
@@ -1621,7 +1627,7 @@ PrepareMessage() {
     SetUpEnvironment();  
 }
 
-SetUpEnvironment() { 
+void SetUpEnvironment() {
     int i, j, environsize;
     char **newenviron, *mailervar, *summaryvar, *ctypevar, *s;
     static char ttyenv[15], debugenv[15], *noaskenv, pagerenv[15], *quietenv, rootenv[25];
@@ -1953,7 +1959,7 @@ void PrintHeader(char *s, int ShowLeadingWhitespace)
         }
     }
     if (ecode == ENCODING_NONE) {
-        printf(txt+1);
+        printf("%s", txt+1);
     } else {
         /* What follows is REALLY bogus, but all my encoding stuff is pipe-oriented right now... */
         MkTmpFileName(TmpFile);
@@ -2285,7 +2291,7 @@ static struct sgttyb MyTtyStateIn, MyTtyStateOut;
 #endif
 #endif
 
-SaveTtyState() {
+void SaveTtyState() {
     /* Bogus -- would like a good portable way to reset the terminal state here */
 #if !defined(AMIGA) && !defined(MSDOS)
 #ifdef SYSV
@@ -2299,7 +2305,7 @@ SaveTtyState() {
 #endif
 }
 
-RestoreTtyState() {
+void RestoreTtyState() {
 #if !defined(AMIGA) && !defined(MSDOS)
 #ifdef SYSV
     if (HasSavedTtyState) {
@@ -2539,7 +2545,7 @@ int strcatquoting(char *s1, char *s2)
 #endif
 }
 
-PauseForUser() {
+void PauseForUser() {
 #if defined(MSDOS) || defined(AMIGA)
     char Buf[100];
     printf("Press RETURN to go on\n");
@@ -2559,7 +2565,7 @@ PauseForUser() {
 #endif
 }
 
-StartRawStdin() {
+int StartRawStdin() {
 #if !defined(AMIGA) && !defined(MSDOS)
 #ifdef SYSV
     struct termio   orterm, fterm;

@@ -62,10 +62,10 @@ static int StartUnparse();
 static int UnparseAddress(PARSED_ADDRESS *Addr, int Mode, bool Last, bool NewLine);
 static int UnparseSimpleAddress(PARSED_ADDRESS *Addr, int Mode, bool Last, bool NewLine);
 static int UnparseGroupAddress(PARSED_ADDRESS *Addr, int Mode, bool Last);
-static PrintWith0Hosts();
-static PrintWith1Host();
-static PrintWithManyHosts();
-static int Fold(bool NewLine);
+static int PrintWith0Hosts();
+static int PrintWith1Host();
+static int PrintWithManyHosts();
+static void Fold(bool NewLine);
 static int PrintRoutePhrase();
 static int PrintLocalPart();
 
@@ -434,7 +434,7 @@ int PrintSimpleAddress(PARSED_ADDRESS *Addr, int Mode)
     return PA_OK;
 }
 
-static PrintWith0Hosts(PARSED_ADDRESS *Addr, int Mode)
+static int PrintWith0Hosts(PARSED_ADDRESS *Addr, int Mode)
 {
     bool RoutePhrase;
     int result;
@@ -448,7 +448,7 @@ static PrintWith0Hosts(PARSED_ADDRESS *Addr, int Mode)
     return PA_OK;
 }
 
-static PrintWith1Host(PARSED_ADDRESS *Addr, int Mode)
+static int PrintWith1Host(PARSED_ADDRESS *Addr, int Mode)
 {
     bool RoutePhrase;
     int result;
@@ -463,7 +463,7 @@ static PrintWith1Host(PARSED_ADDRESS *Addr, int Mode)
     return PA_OK;
 }
 
-static PrintWithManyHosts(PARSED_ADDRESS *Addr, int Mode, int Nhosts)
+static int PrintWithManyHosts(PARSED_ADDRESS *Addr, int Mode, int Nhosts)
 {
     IFPUTC('<');
     FOR_ALL_REVERSE_HOSTS(host, Addr, {
@@ -494,7 +494,7 @@ static int Shift(char *Start, int Dist)
     return PA_OK;
 }
 
-static DoFold(char *Break)
+static int DoFold(char *Break)
 {
     int Dist, result;
     char *AddrStart;
@@ -528,7 +528,7 @@ static char * NextSpace(char *c)
     return NIL;
 }
 
-static Fold(bool NewLine)
+static void Fold(bool NewLine)
 {
     bool JustFolded;
 

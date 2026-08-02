@@ -209,7 +209,7 @@ void SetNextLine(line)
 #undef unput
 #endif
 
-static unput(c)
+static void unput(c)
     char c;
 {
     /* Only push back if not at beginning or end of line */

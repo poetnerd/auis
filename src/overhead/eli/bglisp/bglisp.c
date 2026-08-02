@@ -32,6 +32,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include  <bglisp.h>
+#include  <string.h>
+#include  <stdlib.h>
 
 EliProcessInfo_t EliProcessInfo;
 char            ProgramName[100] = "bglisp";
@@ -39,6 +41,11 @@ char            ProgramName[100] = "bglisp";
 int Terse, Report, Free;
 
 EliSexp_t *lastBacktrace;
+
+static void Welcome();
+static void ReadEvalPrint(EliState_t *st);
+static void DisplayPrompt();
+static void Cleanup();
 
 /* Change in command-line options:
  * -m means use malloc-based allocation;
@@ -111,7 +118,7 @@ int main(int argc, char **argv)
 	Cleanup();
 }
 
-Welcome()
+static void Welcome()
 {
     puts("BGLisp by Bob Glickstein and the Andrew Message System Group.");
     puts("This scaled-down Lisp interpreter is built upon ELI, the");
@@ -123,7 +130,7 @@ Welcome()
     printf("This is ELI version %d.%d\n\n", EliProcessInfo.MajorVersion, EliProcessInfo.MinorVersion);
 }
 
-int ReadEvalPrint(EliState_t *st)
+static void ReadEvalPrint(EliState_t *st)
 {				/* Main interpreter loop */
     EliSexp_t      *sexp1, *sexp2;
     int             exit = FALSE, q;
@@ -189,7 +196,7 @@ int ReadEvalPrint(EliState_t *st)
     }
 }
 
-DisplayPrompt()
+static void DisplayPrompt()
 {
     printf("BGLisp> ");
 }
@@ -197,7 +204,7 @@ DisplayPrompt()
 
 /* Say goodbye */
 
-Cleanup()
+static void Cleanup()
 {
     printf("\nThank you for using this fine software.\n    -Bob Glickstein\n\n");
 }

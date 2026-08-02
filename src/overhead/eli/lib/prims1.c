@@ -34,11 +34,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <prmtives.h>
 #include <sys/errno.h>
 #include <stdlib.h>
-static int AlarmHandler();
-static int BrokenPipeHandler();
+static void AlarmHandler(int);
+static void BrokenPipeHandler(int);
 static int eliCountElts();
 static int eliInitLibraries();
-static int eliLoadFromLibrary();
+static void eliLoadFromLibrary();
 
 extern char *AndrewDir();
 extern int dbg_fclose();	/* overhead/util/lib/fdplumb.c; fdplumb.h
@@ -369,7 +369,7 @@ char * eliStrCat(char *s1, char *s2)
 
 /* The next bit deals with the library mechanism. */
 
-static eliCountElts(char *s)
+static int eliCountElts(char *s)
 {
     int             tot = 0;
 
@@ -384,7 +384,7 @@ static eliCountElts(char *s)
 }
 
 
-static eliInitLibraries(EliState_t *st)
+static int eliInitLibraries(EliState_t *st)
 {
     int             numelts, whichelt;
     char           *elilib = NULL, *clientlib = NULL, *s;
@@ -431,7 +431,7 @@ static eliInitLibraries(EliState_t *st)
     return (0);
 }
 
-static eliLoadFromLibrary(EliState_t *st, EliSexp_t *resbuf, EliSexp_t *loadfileSexp)
+static void eliLoadFromLibrary(EliState_t *st, EliSexp_t *resbuf, EliSexp_t *loadfileSexp)
 {
     char            FileName[1 + MAXPATHLEN], *loadfile;
     int             i, unixErr = 0;
@@ -1730,12 +1730,12 @@ void Prim_LOAD(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
     eliLoadFromLibrary(st, resbuf, resbuf2);
 }
 
-static int      BrokenPipeHandler()
+static void     BrokenPipeHandler(int sig)
 {
     longjmp(brokenPipeEnv, 1);
 }
 
-static int      AlarmHandler()
+static void     AlarmHandler(int sig)
 {
     longjmp(alarmEnv, 1);
 }
@@ -1896,7 +1896,8 @@ void Prim_FILTER(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
         int             selectval, writing = (stdinstring != NULL), readingstdout = TRUE;
         int             readingstderr = TRUE, stdoutstrsize = 0, waitval;
         int             numdescriptors, stdoutstrused = 0, stderrstrsize = 0;
-        int             stderrstrused = 0, (*oldpipefunc) (), (*oldalarmfunc) ();
+        int             stderrstrused = 0;
+        void            (*oldpipefunc) (int), (*oldalarmfunc) (int);
         char           *stdinstrptr = stdinstring, *stdoutstr;
         char           *stderrstr, buffer[1 + FILTERBUFSIZ];
 #if POSIX_ENV
@@ -1972,8 +1973,8 @@ void Prim_FILTER(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
             }
             /* Bogus: should this timeout be real time or virtual time? */
             setitimer(ITIMER_REAL, &itimer, &olditimer);
-            oldalarmfunc = (int (*)()) signal(SIGALRM, AlarmHandler);
-            if (((int) oldalarmfunc) == -1) {
+            oldalarmfunc = signal(SIGALRM, AlarmHandler);
+            if (oldalarmfunc == SIG_ERR) {
                 EliError(st, ELI_ERR_SYSERROR, (EliSexp_t *) 0,
                           "ELI-PRIMITIVE [FILTER (setting up timeout)]", errno);
                 if (writing)
@@ -2010,8 +2011,8 @@ void Prim_FILTER(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 
             return;
         }
-        oldpipefunc = (int (*)()) signal(SIGPIPE, BrokenPipeHandler);
-        if (((int) oldpipefunc) == -1) {
+        oldpipefunc = signal(SIGPIPE, BrokenPipeHandler);
+        if (oldpipefunc == SIG_ERR) {
             EliError(st, ELI_ERR_SYSERROR, (EliSexp_t *) 0,
                   "ELI-PRIMITIVE [FILTER (setting up broken-pipe catcher)]", errno);
             if (writing)

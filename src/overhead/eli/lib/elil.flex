@@ -5,7 +5,7 @@
 #include <eliy.h>
 #include <stdlib.h>
 
-static DoString();
+static void DoString();
 #undef YY_INPUT
 #define YY_INPUT(buf,result,max_size) \
       (result = my_yy_input(buf, max_size, yyin))
@@ -106,7 +106,7 @@ static char elil[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhea
 #undef unput
 #endif
 
-static unput(c)		/* Replaces the lex macro */
+static void unput(c)		/* Replaces the lex macro */
     YY_CHAR  c;
 {
     switch (EliProcessInfo.u_source)
@@ -153,7 +153,7 @@ int c, grow;
     EliProcessInfo.yparsebuf[len + 1] = '\0';
 }
 
-static DoString()
+static void DoString()
 {
     int sawbslash = 0, c;
 

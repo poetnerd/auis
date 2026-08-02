@@ -6,6 +6,9 @@
 LIBS	=	${BASEDIR}/lib/libmail.a \
 		${UTILLIB}
 
+/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 NormalObjectRule()
 ProgramTarget(arpadate, arpadate.o, $(LIBS), $(BSDLIB))
 InstallProgram(arpadate, $(DESTDIR)/etc)

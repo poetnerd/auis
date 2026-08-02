@@ -55,7 +55,7 @@ extern FILE *fopen();
 #include "errprntf.h"
 static int OpenSocket();
 static void warning();
-static int Format();
+static void Format();
 
 /* No header anywhere in the tree declares these (errprntf.h only
    defines the ERR_* macros, never the function itself -- the only
@@ -127,7 +127,7 @@ static bool GetMyName()
     return TRUE;
 }
 
-static Format(char *to, char *from, int len)
+static void Format(char *to, char *from, int len)
 {
     register int flen;
 
@@ -381,14 +381,14 @@ int Logstat(char *module, int call, char *format, int a0, int a1, int a2, int a3
     Format(ModuleName, module, LOGSTRLEN);
 #if POSIX_ENV || defined(SGI_4D_ENV)
     sprintf(buffer,
-	    "%04d-%02d-%02d %02d:%02d:%02d.%02d %s %10d %6d %6d %s %5d %11d %s; ",
+	    "%04d-%02d-%02d %02d:%02d:%02d.%02lu %s %10d %6d %6d %s %5d %11d %s; ",
 	    now->tm_year+1900, now->tm_mon+1, now->tm_mday,
 	    now->tm_hour, now->tm_min, now->tm_sec, tp.USecs/10000,
 	    ProgName, TransactionNumber, getpid(), getpgrp(),
 	    ModuleName, call, Sequence++, MyName);
 #else
     sprintf(buffer,
-	    "%04d-%02d-%02d %02d:%02d:%02d.%02d %s %10d %6d %6d %s %5d %11d %s; ",
+	    "%04d-%02d-%02d %02d:%02d:%02d.%02lu %s %10d %6d %6d %s %5d %11d %s; ",
 	    now->tm_year+1900, now->tm_mon+1, now->tm_mday,
 	    now->tm_hour, now->tm_min, now->tm_sec, tp.USecs/10000,
 	    ProgName, TransactionNumber, getpid(), getpgrp(0),

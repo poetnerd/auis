@@ -202,7 +202,7 @@ int qmail_ext(char *dir, char *tolist[], int file, char *returnpath, char *auth,
     /* Do 1-time initialization */
     if (virgin) {
 	if (GetHostDomainName(host, sizeof host) < 0) {
-	    sprintf(Qmail_ErrMsg, "Can't find host name: %d", UnixError(errno));
+	    sprintf(Qmail_ErrMsg, "Can't find host name: %s", UnixError(errno));
 	    return Q_OSERR;
 	}
 	virgin = FALSE;

@@ -54,7 +54,7 @@ extern char *getenv();
 #define VERBOSEDELIVERYCMD "/usr/lib/sendmail -t -v -oi"
 #endif
 
-usageexit() {
+void usageexit() {
     fprintf(stderr, "Usage:  splitmail [-d] [-v] [-s splitsize] [-i id-suffix] [-p prefix] [file-name]\n");
     exit(-1);
 }
