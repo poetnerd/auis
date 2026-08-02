@@ -38,8 +38,17 @@ original census, not a small residual. Per this section's own original
 fallback plan ("if Phase 1 turns up enough fallout to need batching,
 build that map then, from real per-directory counts"), that map now
 exists: **`m4-batches.md`**, built entirely from real Phase 1 error
-counts, not a guessed proxy. 24 batches across the same 7
-dependency-order waves M3 used.
+counts, not a guessed proxy. Originally 24 batches across the same 7
+dependency-order waves M3 used; consolidated 2026-08-02 to **Batch 0 +
+18 sessions** (small/mid mechanical batches merged within their waves —
+per-session fixed overhead dominated exactly there, and M2/M3's own
+late-stage throughput of 300–500+ mechanical instances per session
+proves the merged 65–181-error sizes conservative; the 8 outlier
+singles and the two deliberately-unmerged risk batches I3/C2 are
+unchanged). The waves are grouping convention in M4, not dependency —
+`COMPILERFLAGS` doesn't propagate, so batches can legally run in any
+order, and C1/AMS1 may be pulled earlier if front-loading discovery of
+new fallout shapes becomes worth it.
 
 (Original reasoning, kept for the record: M2 and M3 needed per-directory
 rollout because each directory's fallout was independent and
@@ -65,8 +74,8 @@ single build — but it is the **wrong mechanism for landing the actual
 fix**, and using it that way is what produced the broken-tree state
 wdc had me revert on 2026-08-02: a global default change makes every
 one of the 91 directories fail at once, so the tree stays fully
-unbuildable from the moment it's committed until every one of the 24
-batches is fixed — a single long unbuildable window with no safe place
+unbuildable from the moment it's committed until every one of the
+batch map's sessions is fixed — a single long unbuildable window with no safe place
 to pause, unlike M2 or M3.
 
 M2 and M3 never had this problem because they never touched the global
@@ -85,20 +94,47 @@ between any two batches indefinitely (across a resource-budget
 boundary, a week, whatever) with zero risk — exactly the concern that
 prompted this correction.
 
-Per-batch override line (restate in full, same four flags Phase 1
-proved safe minus `strict-prototypes`):
+**Define the flag string once, not 82 times (added 2026-08-02).** The
+original draft had every batch restate the full flag string in each
+directory's Imakefile. Across 18 delegated sessions and ~82 Imakefiles
+that's copy-paste drift waiting to happen — and this exact flag string
+already has a known silent-failure trap (below). Instead, Batch 0
+defines the string once in `src/config/darwin/system.mcr`:
 
 ```
-COMPILERFLAGS = -std=gnu89 -Wno-return-type -Werror=implicit-int -Werror=int-conversion -Werror=incompatible-function-pointer-types -Werror=implicit-function-declaration -Wformat
+STRICT_COMPILERFLAGS = -std=gnu89 -Wno-return-type -Werror=implicit-int -Werror=int-conversion -Werror=incompatible-function-pointer-types -Werror=implicit-function-declaration -Werror=format
 ```
 
-Note this is a **separate `-Werror=` flag per warning name, not a
-comma-separated list** — `-Werror=a,b,c` is silently treated as one
-unrecognized warning option and does nothing (found and fixed live
-during Phase 1's first attempt; the "unknown warning option" text
-appears as a warning, not an error, so it's easy to miss — always spot
-check one real file compiles clean with the exact flag string before
-trusting a build's silence).
+(the full flag set Phase 1 proved safe, minus `strict-prototypes`,
+with `-Wformat` promoted to `-Werror=format` per the scope ruling
+below; `system.mcr`'s definitions land in every generated Makefile, so the
+macro is visible tree-wide while the *default* `COMPILERFLAGS` stays
+suppressed and untouched until Phase 3). Each batch directory's
+override is then one line in its Imakefile:
+
+```
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+```
+
+Batch 0 must verify the mechanism once before any batch relies on it:
+add the override to one directory, regenerate its Makefile, and
+confirm a known-bad file **actually errors** — not just that the build
+is quiet. The reason for that paranoia: `-Werror=a,b,c` (one flag,
+comma-separated list) is silently treated as a single unrecognized
+warning option and does nothing; the flag string must be a **separate
+`-Werror=` flag per warning name** (found and fixed live during Phase
+1's first attempt; the "unknown warning option" text appears as a
+warning, not an error, so it's easy to miss). Every batch session
+still spot-checks one real file fires an expected error before
+trusting its build's silence.
+
+**M2-era overrides (28 directories): replace, don't stack.** Those
+Imakefiles already carry a narrower `COMPILERFLAGS` override
+(`-Werror=implicit-function-declaration` only). When such a directory
+comes up in a batch, its existing override line is **replaced** by the
+`$(STRICT_COMPILERFLAGS)` line — two assignments in one Imakefile
+means the last silently wins and the diff misleads. The strict set is
+a superset, so nothing is lost.
 
 ## Task breakdown
 
@@ -211,6 +247,81 @@ similarly to M2/M3, not a same-day addition to M4's flip. The small
 hand-fixed on its own regardless of this ruling — those are real
 leftover K&R, not idiom, and are cheap either way.
 
+### `-Wformat` scope — measured 2026-08-02, operative ruling below
+
+The per-batch flag set carries `-Wformat` as warning-only, and Phase
+2's expected-shapes list names "real format-string width bugs" — but
+the 1,743-error batch sizing counts none of it, which left each
+delegate to decide independently whether format warnings are in scope.
+Measured against the current baseline build log (clang reports
+`-Wformat` by default, so the post-revert `dependInstall.log` already
+contains them): **~715 unique warning sites tree-wide**, dominated by
+exactly the known-dangerous LP64 width class ("format specifies type
+'int' but the argument has type 'long'") that already produced real
+runtime bugs in this tree (the embedded-inset printf id-truncation,
+the scanf `%d`-into-`long*` half-write class). Heavily skewed: the top
+three files (`rastvaux.c` 201, `dispbox.c` 84, `rasterv.c` 66) are all
+in `atk/raster/cmd` (batch I1), and #4 (`figorrec.c` 58) is
+`atk/figure` (batch I3).
+
+**Operative ruling (wdc, 2026-08-02): all `-Wformat` sites are
+in-batch must-fix, enforced as `-Werror=format` in
+`STRICT_COMPILERFLAGS`.** An earlier draft of this ruling proposed
+treating printf-direction sites as log-only ("display truncation, not
+corruption"); wdc overruled it from direct experience: a datastream
+writer using `%d` for a `long` object/view id truncated the ids on
+write, the reader then found object and view ids that didn't match,
+and **the file silently lost the object and its view** — real data
+loss, from a printf. In this codebase printf is a *serialization*
+path, not just a display path (datastream writers, `.ez` files,
+journals), and classifying each site as "display-only vs. re-parsed"
+costs more judgment than the mechanical `%d`→`%ld` fix it would avoid.
+The 2026-07-26 id-truncation sweep (~60 sites) caught the instances
+that were then reachable; the ~715 residual sites are the same class.
+The scanf direction is must-fix a fortiori (a `%d` into a `long*`
+writes 32 bits and leaves the upper half garbage — LP64 bug variant
+#4, memory corruption).
+
+Consequences: batch effective sizes grow by their share of the ~715
+sites (skewed hard toward I1 and I3 — see `m4-batches.md`); the
+per-directory format counts were never censused, so each batch's
+Gate-0 dry run under `-Werror=format` is what reveals its real total.
+The work is M2-shaped mechanical volume, well inside proven
+throughput. Enforcing via `-Werror=format` (not bare `-Wformat`) means
+the batch gates prove the directory clean and regressions can't creep
+back in.
+
+### Fix policy for `incompatible-function-pointer-types` (added 2026-08-02)
+
+The 515 function-pointer-type errors are M4's judgment-heavy third,
+and the one shape where a careless "fix" can *reintroduce* the exact
+hazard M1 existed to eliminate: casting a mismatched function pointer
+back to an untyped type silences the compiler while preserving — or
+creating — the arm64 untyped-dispatch ABI bugs this project has
+already root-caused twice (the classpp >8-arg stack-spill vtable bug;
+the `(-1)` zero-extension observer bug). Rules for every batch, in
+order of preference:
+
+1. **Treat each site as a potential real interface bug first.** M3's
+   experience was that arity/type disagreements were *constantly*
+   genuine ~30-to-35-year-old bugs, not noise. Read the callee's real
+   signature and the caller's real intent before touching anything.
+2. **Prefer fixing the true signature end-to-end** — the function's
+   definition, its declaration(s), and the `.ch` method type if one is
+   involved — so the types simply agree. This is the M2/M3 house
+   pattern (DRIFT checklist, `m3-rollout-runbook.md`).
+3. **A cast is acceptable only for genuinely polymorphic dispatch
+   tables** (a table field deliberately holding functions of differing
+   signatures), and then **always to the full, correct target
+   prototype** — a cast that states the real parameter list the call
+   site uses.
+4. **Bare `(void(*)())` or otherwise argument-untyped casts are
+   banned.** No exceptions inside M4 batches; a site that seems to
+   need one is a finding to escalate to the orchestrator, not a fix.
+5. **Every cast that does land is listed in the batch report** with
+   one line on why the table is genuinely polymorphic — so the
+   orchestrator can audit the judgment calls cheaply.
+
 ### Phase 1 — One-time census probe — RUN 2026-08-01/02, then REVERTED, results preserved below
 
 Temporarily edited `system.mcr`'s global default directly (see
@@ -227,7 +338,10 @@ COMPILERFLAGS = -std=gnu89 -Wno-return-type -Werror=implicit-int -Werror=int-con
 `-ferror-limit=0` for a census — a single file's diagnostics silently
 truncate past clang's default cap of 20, undercounting real volume).
 
-**Result: 1,778 real errors across 83 of 91 directories** —
+**Result: 1,778 real errors across 83 build directories** (82 of the
+91 source directories with their own `.c` files, plus `atk/basics/lib`,
+which has no `.c` of its own and only duplicates `atk/basics/x`'s
+errors — see `m4-batches.md`'s corrected accounting) —
 `implicit-int` 1,079, `incompatible-function-pointer-types` 515,
 `implicit-function-declaration` 183, `int-conversion` 0 (clean,
 confirmed tree-wide). Far past the "small residual" this plan
@@ -248,14 +362,16 @@ not the circular "running `ansify` on classpp" problem M3 correctly
 avoided): added `#include <stdlib.h>`, two `extern` forward
 declarations, two `int` return types. Verified: `class.c` compiles
 clean in both directories, `class` builds and installs, `overhead/
-class/testing`'s cascade failure is gone. **This fix should be
-reapplied as its own first small batch when Phase 2 resumes** (it's
-independent of any specific wave/batch — do it first, since every
-other `-pe`/`-pi` batch depends on classpp actually building).
+class/testing`'s cascade failure is gone. **This fix is now Batch 0 in
+`m4-batches.md`** — reverted with everything else below, so it must be
+reapplied and committed first when Phase 2 starts (it's independent of
+any specific wave/batch, and every other batch depends on classpp
+actually building).
 
-**Reverted 2026-08-02** (wdc, resource-budget concern — M4 alone had
-already consumed 75% of the week's budget and Phase 2 couldn't
-complete this week): all 33 edited files (`system.mcr`, the 29 M2-era
+**Reverted 2026-08-02** (wdc, resource-budget concern — the week's
+budget was already ~75% consumed by M3's final waves and close-out
+plus M4's Phase 0/1, and Phase 2 couldn't complete this week): all 33
+edited files (`system.mcr`, the 29 M2-era
 Imakefile overrides, both `class.c` fixes, two fossil-tracked generated
 `machdep` Makefiles) reverted via `fossil revert` to the last commit.
 Verified via a full rebuild afterward: back to the exact pre-M4
@@ -267,39 +383,60 @@ point from this doc alone.
 
 ### Phase 2 — Per-batch rollout (the actual fixing work, not yet started)
 
-For each of `m4-batches.md`'s 24 batches, same shape as every M2/M3
-session:
+**Batch 0 first, once, committed**: reapply the classpp fix (Phase 1
+above) and add the `STRICT_COMPILERFLAGS` macro to `system.mcr`,
+verifying on one directory that the macro propagates and a known-bad
+file genuinely errors (see "Execution mechanism" above).
+Orchestrator-sized; everything else depends on it.
 
-1. Re-apply the classpp fix first if not already done this session
-   (see Phase 1 above) — everything else depends on it.
-2. Add the per-directory `COMPILERFLAGS` override (full flag set
-   above) to each directory in the batch's own `Imakefile`. `system.mcr`
+Then for each of `m4-batches.md`'s 18 sessions, same shape as every
+M2/M3 session:
+
+1. For a merged batch (or any batch large enough to warrant it), run
+   the Gate-0 dry-run shape first — flip the batch's flags, build,
+   triage the error mix *before* fixing. If a merged batch's
+   function-pointer share looks judgment-heavy, split it back to its
+   original halves and re-brief; that's the intended hedge, not a
+   failure.
+2. Add `COMPILERFLAGS = $(STRICT_COMPILERFLAGS)` to each batch
+   directory's `Imakefile` (replacing, not stacking on, any M2-era
+   override — see "Execution mechanism"). `system.mcr`'s *default*
    stays untouched until Phase 3 — every directory outside the current
    batch keeps building under the old suppressed default the whole
    time.
-3. Force regen (`make clean` picks up the new `COMPILERFLAGS` on next
-   build).
+3. Regenerate the directory's Makefile from the edited Imakefile, then
+   `make clean` so the next build compiles under the new flags; spot
+   check one file fires an expected error before trusting silence.
 4. Fix that batch's real fallout. Expected shapes, per M3's own
    pattern: genuine remaining K&R spots `ansify` silently missed (the
    recurring parser-gap theme — multi-line declarations, brace-glued/
    star-glued styles, comment-continuation lines — `atk/image/tif.c`'s
    `pickTileContigCase`/`pickTileSeparateCase` already known from Phase
-   0), real format-string width bugs from `-Wformat`, and any last
-   `.ch`-vs-implementation DRIFT-shaped disagreements this milestone's
-   stricter type checking newly exposes. M3's own experience: arity/
-   type checking found genuine ~30-to-35-year-old interface bugs
-   constantly, not rarely — budget for this, don't treat a "routine"
-   batch as unlikely to find anything, per the C2 session's explicit
-   lesson.
+   0), function-pointer mismatches under the fix policy above (real
+   signatures preferred, untyped casts banned), format-string width
+   fixes under `-Werror=format` (all must-fix, both directions — see
+   the `-Wformat` scope ruling; printf is a serialization path in this
+   codebase, wdc's datastream data-loss ruling), and any last
+   `.ch`-vs-implementation
+   DRIFT-shaped disagreements this milestone's stricter type checking
+   newly exposes. M3's own experience: arity/type checking found
+   genuine ~30-to-35-year-old interface bugs constantly, not rarely —
+   budget for this, don't treat a "routine" batch as unlikely to find
+   anything, per the C2 session's explicit lesson.
 5. Gate: subtree-local (`make clean && make depend && make -k install`)
    always required. Tree-wide gate reserved for the same class of
    elevated-risk batch M2/M3 both used it for — `m4-batches.md` already
    flags `C1` (`contrib/zip/lib`) and `AMS2` (`atkams/messages/lib`) for
-   this — plus a checkpoint at the end of each wave. `COMPILERFLAGS`
-   doesn't propagate to consumers the way M1's typed `.ih` casts did
-   (it only affects `.c` files compiled inside the flagged directory
-   itself), so subtree-local is structurally sufficient for everything
-   else, same reasoning M2 established and reused by M3.
+   this. Full `make Clean; make World` + runtime-pass checkpoints run
+   after waves 2, 4, and 6 (consolidated 2026-08-02 from every-wave:
+   with the batch count down to 18 and no cross-directory propagation,
+   seven full-rebuild cycles were pure overhead — waves 1/3/5 are
+   covered by the checkpoint that follows them, wave 7 by the Phase 5
+   completion gate). `COMPILERFLAGS` doesn't propagate to consumers
+   the way M1's typed `.ih` casts did (it only affects `.c` files
+   compiled inside the flagged directory itself), so subtree-local is
+   structurally sufficient for everything else, same reasoning M2
+   established and reused by M3.
 6. Runtime check, user confirmation, commit — two commits (src, then
    docs ticking the batch in `m4-batches.md`), same convention as
    every prior milestone.
@@ -308,12 +445,13 @@ Tree stays fully buildable after every one of these commits — a
 resource-budget pause between any two batches is always safe, which is
 the entire point of this correction.
 
-### Phase 3 — Global flip + cleanup (only after all 24 batches are done)
+### Phase 3 — Global flip + cleanup (only after all 18 sessions are done)
 
 Once every batch in `m4-batches.md` is checked off: flip `system.mcr`'s
-global default to the real flag set (folding `implicit-function-
-declaration` in too, not just the M2-flagged directories), then delete
-all the now-redundant per-directory `COMPILERFLAGS` overrides
+default `COMPILERFLAGS` to `$(STRICT_COMPILERFLAGS)` (folding
+`implicit-function-declaration` in tree-wide too, not just the
+M2-flagged directories), then delete all the now-redundant one-line
+per-directory `COMPILERFLAGS = $(STRICT_COMPILERFLAGS)` overrides
 (mirroring the cleanup M2 still owes `system.mcr` for its own
 `implicit-function-declaration`-only overrides — do both at once,
 they're the same mechanical cleanup) in one commit, verified by a
