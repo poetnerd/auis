@@ -102,8 +102,27 @@ proof-of-mechanics step M3's `atk/eq` pilot provided.
 
 ## Wave 1 — overhead (22 directories, 266 errors, 3 sessions)
 
-- [ ] **O1**: `overhead/mail/metamail/richmail` (81) — alone, largest
-      in this wave.
+- [x] **O1** — DONE 2026-08-02, committed e473083e3078: `overhead/mail/
+      metamail/richmail` (81 census) — 82 raw errors (81 implicit-int +
+      1 `-Werror=format`), 31 unique fix sites, matching the census
+      almost exactly, no surprise fallout. All mechanical implicit-int
+      → explicit `int`/`void` return-type fixes (verified per-site via
+      grep for real `return <expr>` and address-of use, not blind
+      `int`-stamping), plus one genuine bug: `richlex.c`'s ISO-2022
+      charset-designator handler called `sprintf(token,
+      ISO2022_CHARSET, newc)` where `ISO2022_CHARSET` is
+      `"x-iso-charset-"` (no `%` specifier) — a real `-Werror=format`
+      violation, the extra arg was silently dropped. Fixed to
+      `strcpy`, verified by feeding a real `ESC $ ) C` KSC-5601
+      designator through the rebuilt `richtoatk` and confirming the
+      output token is exactly `x-iso-charset-` with no truncation/
+      garbage. No function-pointer casts needed (0
+      incompatible-function-pointer-types errors in this directory).
+      Gate clean (`make clean && make depend && make -k install`,
+      exit 0), independently reproduced by the orchestrator. Not
+      reachable from the live `messages` app (which has its own inline
+      `text822.c` richtext handling, doesn't exec these binaries), so
+      no further runtime test required before check-in.
 - [ ] **O2** (former O2+O3): `overhead/eli/lib` (53),
       `overhead/mail/metamail/metamail` (32), `overhead/mail/lib` (11),
       `overhead/eli/bglisp` (10), `overhead/mail/cmd` (9),
