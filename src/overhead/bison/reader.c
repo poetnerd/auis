@@ -29,6 +29,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 The entry point is reader().  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include "andrewos.h"
 #include "files.h"

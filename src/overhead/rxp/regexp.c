@@ -56,6 +56,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * regular-expression syntax might require a total rethink.
  */
 #include <stdio.h>
+#include <string.h>
 #include <regexp.h>
 #include "regmagic.h"
 

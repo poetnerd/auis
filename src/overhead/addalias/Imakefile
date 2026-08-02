@@ -3,6 +3,9 @@
  *        For full copyright information see:'andrew/config/COPYRITE'     *
 \* ********************************************************************** */
 
+/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 NormalObjectRule()
 ProgramTarget(addalias,addalias.o,,$(BSDLIB))
 InstallProgram(addalias,$(DESTDIR)/etc)

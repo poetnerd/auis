@@ -74,6 +74,9 @@ CONF_LIBRARY=\
 
 DEFINES = -Dunix  ${CONF_LIBRARY}
 
+/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 INCS=	tiff.h tiffio.h
 OBJS=	tif_fax3.o \
 	tif_fax4.o \

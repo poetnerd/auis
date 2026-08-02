@@ -167,7 +167,7 @@ char *GetFirstProfileFileName()
     return firstProfileFileName;
 }
 
-refreshprofile() {  /* Force rereading */
+int refreshprofile() {  /* Force rereading */
     if (profileHead != NULL)  {
 	FreeConfigureList(profileHead);
 	profileHead = NULL;
@@ -198,7 +198,7 @@ char *var; {
     return (char *) GetConfig(GloprofileHead, var, 1) ;
 }
 
-getprofileswitch (var, DefaultValue)
+int getprofileswitch (var, DefaultValue)
 char   *var; {
     char   *val;
     static struct keys {
@@ -224,11 +224,11 @@ char   *var; {
     return DefaultValue;
 }
 
-getprofileint (var, DefaultValue)
+int getprofileint (var, DefaultValue)
 char   *var; {
     register char  *val;
-    register    n = 0;
-    register    neg = 0;
+    register int   n = 0;
+    register int   neg = 0;
 
     if (var == 0 || (val = getprofile(var)) == 0)  {
 	return DefaultValue;

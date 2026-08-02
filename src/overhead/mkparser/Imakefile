@@ -1,6 +1,9 @@
 /* cparser 
 		AUIS parser
 */
+/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 DependTarget()
 NormalObjectRule()
 

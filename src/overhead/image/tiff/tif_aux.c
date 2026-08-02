@@ -171,6 +171,7 @@ int TIFFVGetFieldDefaulted(TIFF *tif, int tag, va_list ap)
  * value if the tag is not present in the directory.
  */
 /*VARARGS2*/
+int
 DECLARE2V(TIFFGetFieldDefaulted, TIFF*, tif, int, tag)
 {
 	int ok;

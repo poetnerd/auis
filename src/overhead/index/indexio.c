@@ -49,7 +49,7 @@ static int writeRecordID();
  * Internal routine: given a FILE * and an integer, write the integer in a machine-independent
  * form to the file.  Make sure this works for vaxes as well as normal machines.
  */
-static writeInteger(FILE *afile, long ai)
+static int writeInteger(FILE *afile, long ai)
 {
     register long tc;
 
@@ -67,7 +67,7 @@ static writeInteger(FILE *afile, long ai)
   * Internal routine: given a FILE * and a record id pointer, write the external representation
   * of the record ID to the file.
   */
-static writeRecordID(FILE *afile, struct recordID *arid)
+static int writeRecordID(FILE *afile, struct recordID *arid)
 {
     register long code;
     register long tc;
@@ -97,7 +97,7 @@ static writeRecordID(FILE *afile, struct recordID *arid)
   * Internal routine: given a FILE * and a pointer to an integer, read the external representation
   * of the integer from the file and return it in the place provided.
   */
-static readInteger(FILE *afile, long *ai)
+static int readInteger(FILE *afile, long *ai)
 {
     register long code;
     register long tc;
@@ -416,7 +416,7 @@ int index_CWrite(struct Index *ai, struct indexBucket *ab)
   * Internal routine: Clear out the contents of an index file.  This routine does not
   * delete the directory itself, but does delete all of its contents.
   */
-static Purge(char *apath)
+static int Purge(char *apath)
 {
     register DIR *td;
     register DIRENT_TYPE *tde;
@@ -454,14 +454,14 @@ int index_Create(char *apath, long aHashSize)
     Purge(apath);		/* clear out old junk */
     mkdir(apath, 0755);
     strcpy(tbuffer, apath);
-    sprintf(sb, "/V%d.%d", aHashSize, INDEXVERSION);
+    sprintf(sb, "/V%ld.%d", aHashSize, INDEXVERSION);
     strcat(tbuffer, sb);
     tfile = fopen(tbuffer, "w+");
     if (tfile == (FILE*) 0) return INDEXNOENT;
     fclose(tfile);
     for(i=0;i<aHashSize;i++) {
 	strcpy(tbuffer, apath);
-	sprintf(sb, "/H%d", i);
+	sprintf(sb, "/H%ld", i);
 	strcat(tbuffer, sb);
 	tfile = fopen(tbuffer, "w+");
 	if (tfile == (FILE *) 0) return 1;

@@ -68,7 +68,7 @@ static SignalReturnType (*oldfunc)();
 FILE * topen(char *name, char *argv[], char *mode, int *pgrp)
 {
     int p[2];
-    register myside, hisside;
+    register int myside, hisside;
 
     if (popen_pid == NULL) {
 	dtablesize = getdtablesize();
@@ -118,7 +118,7 @@ lclalarm()
 
 int tclose(FILE *ptr, int seconds, int *timedout)
 {
-    register f, r;
+    register int f, r;
     int status;
     SIGSET_TYPE omask, nmask;
     extern int errno;

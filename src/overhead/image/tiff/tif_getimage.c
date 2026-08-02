@@ -81,6 +81,8 @@ static	u_long **BWmap;
 static	u_long **PALmap;
 
 static	int gt();
+int makebwmap(RGBvalue *Map);
+int makecmap(u_short *rmap, u_short *gmap, u_short *bmap);
 
 int TIFFReadRGBAImage(TIFF *tif, u_long rwidth, u_long rheight, u_long *raster, int stop)
 {
@@ -147,13 +149,13 @@ static int checkcmap(int n, u_short *r, u_short *g, u_short *b)
 	return (8);
 }
 
-static	gtTileContig();
-static	gtTileSeparate();
-static	gtStripContig();
-static	gtStripSeparate();
+static	int gtTileContig();
+static	int gtTileSeparate();
+static	int gtStripContig();
+static	int gtStripSeparate();
 static	void initYCbCrConversion();
 
-static gt(TIFF *tif, int w, int h, u_long *raster)
+static int gt(TIFF *tif, int w, int h, u_long *raster)
 {
 	u_short minsamplevalue, maxsamplevalue, planarconfig;
 	RGBvalue *Map;
@@ -296,7 +298,7 @@ static tileContigRoutine pickTileContigCase();
  * or
  *	SamplesPerPixel == 1
  */	
-static gtTileContig(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long w)
+static int gtTileContig(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long w)
 {
 	u_long col, row, y;
 	u_long tw, th;
@@ -357,7 +359,7 @@ static tileSeparateRoutine pickTileSeparateCase();
  *	 PlanarConfiguration separated
  * We assume that all such images are RGB.
  */	
-static gtTileSeparate(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long w)
+static int gtTileSeparate(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long w)
 {
 	u_long col, row, y;
 	u_long tw, th;
@@ -418,7 +420,7 @@ static gtTileSeparate(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long
  * or
  *	SamplesPerPixel == 1
  */	
-static gtStripContig(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long w)
+static int gtStripContig(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long w)
 {
 	u_long row, y, nrow;
 	u_char *buf;
@@ -460,7 +462,7 @@ static gtStripContig(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long 
  *	 PlanarConfiguration separated
  * We assume that all such images are RGB.
  */
-static gtStripSeparate(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long w)
+static int gtStripSeparate(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long w)
 {
 	u_char *buf;
 	u_char *r, *g, *b;

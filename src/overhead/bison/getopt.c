@@ -177,6 +177,12 @@ static enum
 /* Avoid depending on library functions or files
    whose names are inconsistent.  */
 
+/* M4 strict rollout: strcmp/strncmp are called below (Darwin/clang
+   doesn't define __GNU_LIBRARY__, so the branch above never pulls in
+   string.h); the real libc header is safe to include unconditionally
+   here regardless of the my_index/strlen hand-rolled fallbacks below. */
+#include <string.h>
+
 char *getenv ();
 
 static char * my_index(const char *str, int chr)

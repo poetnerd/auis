@@ -2,6 +2,9 @@
  *         Copyright IBM Corporation 1988,1991 - All Rights Reserved      *
  *        For full copyright information see:'andrew/config/COPYRITE'     *
 \* ********************************************************************** */
+/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 OBJS	=	regerror.o regexp.o regsub.o
 
 InstallFile(regexp.h, $(INSTINCFLAGS), $(DESTDIR)/include)

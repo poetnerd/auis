@@ -41,6 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
 #include <andrewos.h>
@@ -81,8 +82,10 @@ int syserr(char *f, char *a, char *b, char *c)
     exit(9);
 }
 
-int qsLineCompare(char **l1, char **l2)
+int qsLineCompare(const void *p1, const void *p2)
 {
+    char * const *l1 = (char * const *) p1;
+    char * const *l2 = (char * const *) p2;
     return strcmp(*l1,*l2);
 }
 

@@ -126,7 +126,7 @@ static char comments[2048];
 static int maskflag = 0;
 static int padflag = 0;
 int padsize,ypad;
-static used[256];
+static int used[256];
 int HeaderPrinted = 0;
 int minChar;
 
@@ -135,7 +135,7 @@ int usage(char *s)
 	fprintf(stderr,"usage: %s [-mask] [-Soffset] [filename]  \n",s);
 	exit(1);
 }
-initlst(){
+int initlst(){
 	register struct st *lstp;
 	register char **c;
 	*comments = '\0';

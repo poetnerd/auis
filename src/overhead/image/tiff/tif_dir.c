@@ -170,7 +170,7 @@ setJPEGCTable(u_char ***cpp, u_char **cp, int nc)
 }
 #endif
 
-static TIFFSetField1(TIFF *tif, int tag, va_list ap)
+static int TIFFSetField1(TIFF *tif, int tag, va_list ap)
 {
 	TIFFDirectory *td = &tif->tif_dir;
 	int i, status = 1;
@@ -481,7 +481,7 @@ badvalue:
  * has commenced, unless its value has no effect
  * on the format of the data that is written.
  */
-static OkToChangeTag(TIFF *tif, int tag)
+static int OkToChangeTag(TIFF *tif, int tag)
 {
 	if (tag != TIFFTAG_IMAGELENGTH &&
 	    (tif->tif_flags & TIFF_BEENWRITING)) {
@@ -506,6 +506,7 @@ static OkToChangeTag(TIFF *tif, int tag)
  * updated.
  */
 /*VARARGS2*/
+int
 DECLARE2V(TIFFSetField, TIFF*, tif, int, tag)
 {
 	int status = 0;
@@ -547,7 +548,7 @@ int TIFFVSetField(TIFF *tif, int tag, va_list ap)
 	return (status);
 }
 
-static TIFFGetField1(TIFFDirectory *td, int tag, va_list ap)
+static int TIFFGetField1(TIFFDirectory *td, int tag, va_list ap)
 {
 
 	switch (tag) {
@@ -776,6 +777,7 @@ static TIFFGetField1(TIFFDirectory *td, int tag, va_list ap)
  * internal directory structure.
  */
 /*VARARGS2*/
+int
 DECLARE2V(TIFFGetField, TIFF*, tif, int, tag)
 {
 	TIFFFieldInfo const *fip = TIFFFindFieldInfo(tag, TIFF_ANY);

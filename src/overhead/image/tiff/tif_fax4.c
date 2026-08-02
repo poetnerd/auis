@@ -106,7 +106,7 @@ static int Fax4Encode(TIFF *tif, u_char *bp, int cc, u_int s)
 	return (1);
 }
 
-static Fax4PostEncode(TIFF *tif)
+static int Fax4PostEncode(TIFF *tif)
 {
 	Fax3BaseState *sp = (Fax3BaseState *)tif->tif_data;
 

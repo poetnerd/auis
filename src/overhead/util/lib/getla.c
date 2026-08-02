@@ -52,7 +52,7 @@ double getla(int indx)
     return avenrun[indx];
 }
 
-getla_ShutDown()
+int getla_ShutDown()
 {
     /* no persistent handle to close: getloadavg() is stateless */
 }
@@ -127,7 +127,7 @@ double getla(int indx)
 #endif /* SUN_ENV */
 }
 
-getla_ShutDown()
+int getla_ShutDown()
 {
     if (kmem >= 0) {
 	close(kmem);

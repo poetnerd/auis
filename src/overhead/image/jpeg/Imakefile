@@ -48,6 +48,9 @@ ansi2knr: ansi2knr.c
 clean:: ; $(RM) ansi2knr
 #endif
 
+/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 /* headers to install */
 INCS = jinclude.h jconfig.h jpegdata.h
 

@@ -49,10 +49,10 @@ static int TIFFWriteCheck();
 #define	STRIPINCR	20		/* expansion factor on strip array */
 
 #if USE_PROTOTYPES
-static	TIFFWriteCheck(TIFF *, int, char []);
-static	TIFFBufferSetup(TIFF *, char []);
-static	TIFFGrowStrips(TIFF *, int, char []);
-static	TIFFAppendToStrip(TIFF *, u_int, u_char *, u_int);
+static	int TIFFWriteCheck(TIFF *, int, char []);
+static	int TIFFBufferSetup(TIFF *, char []);
+static	int TIFFGrowStrips(TIFF *, int, char []);
+static	int TIFFAppendToStrip(TIFF *, u_int, u_char *, u_int);
 #else
 static	TIFFWriteCheck();
 static	TIFFBufferSetup();
@@ -357,7 +357,7 @@ int TIFFWriteRawTile(TIFF *tif, u_int tile, u_char *data, u_int cc)
 	return (TIFFAppendToStrip(tif, tile, data, cc) ? cc : -1);
 }
 
-static TIFFSetupStrips(TIFF *tif)
+static int TIFFSetupStrips(TIFF *tif)
 {
 #define	isUnspecified(td, v) \
     (td->v == 0xffffffff || (td)->td_imagelength == 0)
@@ -396,7 +396,7 @@ static TIFFSetupStrips(TIFF *tif)
  * we also "freeze" the state of the directory so
  * that important information is not changed.
  */
-static TIFFWriteCheck(TIFF *tif, int tiles, char module[])
+static int TIFFWriteCheck(TIFF *tif, int tiles, char module[])
 {
 	if (tif->tif_mode == O_RDONLY) {
 		TIFFError(module, "%s: File not open for writing",
@@ -447,7 +447,7 @@ static TIFFWriteCheck(TIFF *tif, int tiles, char module[])
 /*
  * Setup the raw data buffer used for encoding.
  */
-static TIFFBufferSetup(TIFF *tif, char module[])
+static int TIFFBufferSetup(TIFF *tif, char module[])
 {
 	int size;
 
@@ -475,7 +475,7 @@ static TIFFBufferSetup(TIFF *tif, char module[])
 /*
  * Grow the strip data structures by delta strips.
  */
-static TIFFGrowStrips(TIFF *tif, int delta, char module[])
+static int TIFFGrowStrips(TIFF *tif, int delta, char module[])
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
@@ -502,7 +502,7 @@ static TIFFGrowStrips(TIFF *tif, int delta, char module[])
  * NB: We don't check that there's space in the
  *     file (i.e. that strips do not overlap).
  */
-static TIFFAppendToStrip(TIFF *tif, u_int strip, u_char *data, u_int cc)
+static int TIFFAppendToStrip(TIFF *tif, u_int strip, u_char *data, u_int cc)
 {
 	TIFFDirectory *td = &tif->tif_dir;
 	static char module[] = "TIFFAppendToStrip";

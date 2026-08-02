@@ -65,6 +65,7 @@ extern int      cpw_error;
 #endif                                 /* WHITEPAGES_ENV */
 
 extern int     FoldTRT[256];
+extern int     FoldedEQ(), FoldedEQn();
 
 #define FOLDEDEQ(s1,s2) (FoldTRT[s1[0]]==FoldTRT[s2[0]] && FoldedEQ(s1,s2))
 #define FOLDEDEQN(s1,s2,n) (n <= 0 || (FoldTRT[s1[0]]==FoldTRT[s2[0]] && FoldedEQn(s1,s2,n)))

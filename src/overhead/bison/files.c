@@ -33,10 +33,18 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "andrewos.h"
 #include "files.h"
 #include "new.h"
 #include "gram.h"
+
+/* M4 strict rollout: AndrewDir() is invoked via the XPFILE/XPFILE1
+   macros (see Imakefile DEFINES) with no declaration anywhere in
+   scope -- on LP64 that would implicitly declare it returning int
+   and truncate the real char* pointer (the same bug class fixed
+   tree-wide under "LP64 Missing Prototypes"). */
+extern char *AndrewDir();
 
 FILE *finput = NULL;
 FILE *foutput = NULL;

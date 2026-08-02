@@ -13,6 +13,9 @@ OBJECTS = LR0.o allocate.o closure.o conflicts.o derives.o files.o	\
 	  main.o nullable.o output.o print.o reader.o reduce.o symtab.o	\
 	  version.o warshall.o
 
+/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 NormalObjectRule()
 
 /*  make and install the program */

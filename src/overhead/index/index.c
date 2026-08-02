@@ -84,7 +84,7 @@ int index_GetData(struct Index *ai, struct recordID *arid, char *abuffer, long a
 /* internal routine: given a bucket, tell if there are any references from a secondary
     * record the given record id.
     */
-static index_RecordInUse(struct indexBucket *ab, struct recordID *arid)
+static int index_RecordInUse(struct indexBucket *ab, struct recordID *arid)
 {
     register struct indexComponent *tc;
     for(tc = ab->list; tc; tc=tc->next) {
@@ -110,7 +110,7 @@ struct indexComponent * index_FindID(struct indexBucket *ab, struct recordID *ar
   * Internal routine: given a bucket pointer and a record id, generate the next unique
   * record id for records placed in that bucket.
       */
-static index_GenerateKey(struct indexBucket *ab, struct recordID *arid)
+static int index_GenerateKey(struct indexBucket *ab, struct recordID *arid)
 {
     arid->word1 = ab->hashIndex;
     arid->word2 = ab->nextID++;
@@ -312,7 +312,7 @@ FILE * index_HashOpen(struct Index *ai, long ahash, long awrite)
     char tbuffer[20];
     strcpy(tpath, ai->pathName);
     strcat(tpath, "/");
-    sprintf(tbuffer, "H%d", ahash);
+    sprintf(tbuffer, "H%ld", ahash);
     strcat(tpath, tbuffer);
     return fopen(tpath, (awrite? "w+" : "r"));
 }
@@ -362,7 +362,7 @@ struct Index * index_Open(char *apath)
 		return (struct Index *) 0;
 	    }
 	    foundFlag = 1;
-	    code = sscanf(tde->d_name, "V%d.%d", &htSize, &version);
+	    code = sscanf(tde->d_name, "V%ld.%ld", &htSize, &version);
 	    if (code != 2) {
 		closedir(td);
 		return (struct Index *) 0;
@@ -454,13 +454,13 @@ int index_Dump(struct Index *ai)
     long j;
     for(i=0;i<ai->hashTableSize;i++) {
 	tb = index_CGetHash(ai, i);
-	if (!tb) printf("Failed to get bucket %d\n", i);
+	if (!tb) printf("Failed to get bucket %ld\n", i);
 	else {
-	    printf("Bucket %d next id %d\n", i, tb->nextID);
+	    printf("Bucket %ld next id %ld\n", i, tb->nextID);
 	    for(tc=tb->list;tc;tc=tc->next) {
 		printf(" Record named '%s' ", tc->name);
 		if (tc->primary) {
-		    printf("id %d.%d data '%s'\n", tc->id.word1, tc->id.word2, tc->data);
+		    printf("id %ld.%ld data '%s'\n", tc->id.word1, tc->id.word2, tc->data);
 		    printf("  hashes:");
 		    for(th=tc->hashes;th;th=th->next) {
 			for(j=0;j<th->nentries;j++) {
@@ -470,7 +470,7 @@ int index_Dump(struct Index *ai)
 		    printf("\n");
 		}
 		else {
-		    printf("refers to %d.%d\n", tc->id.word1, tc->id.word2);
+		    printf("refers to %ld.%ld\n", tc->id.word1, tc->id.word2);
 		}
 	    }
 	}

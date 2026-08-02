@@ -64,15 +64,15 @@ typedef struct {
 } Fax3EncodeState;
 
 #if USE_PROTOTYPES
-static	Fax3PreDecode(TIFF *);
-static	Fax3Decode(TIFF*, u_char *, int, u_int);
+static	int Fax3PreDecode(TIFF *);
+static	int Fax3Decode(TIFF*, u_char *, int, u_int);
 static	int Fax3Decode1DRow(TIFF*, u_char *, int);
-static	Fax3PreEncode(TIFF *);
-static	Fax3PostEncode(TIFF *);
-static	Fax3Encode(TIFF*, u_char *, int, u_int);
+static	int Fax3PreEncode(TIFF *);
+static	int Fax3PostEncode(TIFF *);
+static	int Fax3Encode(TIFF*, u_char *, int, u_int);
 static	int Fax3Encode1DRow(TIFF *, u_char *, int);
-static	Fax3Close(TIFF *);
-static	Fax3Cleanup(TIFF *);
+static	int Fax3Close(TIFF *);
+static	int Fax3Cleanup(TIFF *);
 static	void *Fax3SetupState(TIFF *, int);
 static	void fillspan(char *, int, int);
 static	int findspan(u_char **, int, int, u_char const *);
@@ -280,7 +280,7 @@ static void * Fax3SetupState(TIFF *tif, int space)
 /*
  * Setup state for decoding a strip.
  */
-static Fax3PreDecode(TIFF *tif)
+static int Fax3PreDecode(TIFF *tif)
 {
 	Fax3DecodeState *sp = (Fax3DecodeState *)tif->tif_data;
 
@@ -339,7 +339,7 @@ static void fillspan(char *cp, int x, int count)
 /*
  * Decode the requested amount of data.
  */
-static Fax3Decode(TIFF *tif, u_char *buf, int occ, u_int s)
+static int Fax3Decode(TIFF *tif, u_char *buf, int occ, u_int s)
 {
 	Fax3DecodeState *sp = (Fax3DecodeState *)tif->tif_data;
 
@@ -827,7 +827,7 @@ static const u_char oneruns[256] = {
 /*
  * Reset encoding state at the start of a strip.
  */
-static Fax3PreEncode(TIFF *tif)
+static int Fax3PreEncode(TIFF *tif)
 {
 	Fax3EncodeState *sp = (Fax3EncodeState *)tif->tif_data;
 
@@ -1002,7 +1002,7 @@ static int Fax3PostEncode(TIFF *tif)
 	return (1);
 }
 
-static Fax3Close(TIFF *tif)
+static int Fax3Close(TIFF *tif)
 {
 	if ((tif->tif_options & FAX3_CLASSF) == 0) {	/* append RTC */
 		int i;
@@ -1012,7 +1012,7 @@ static Fax3Close(TIFF *tif)
 	}
 }
 
-static Fax3Cleanup(TIFF *tif)
+static int Fax3Cleanup(TIFF *tif)
 {
 	if (tif->tif_data) {
 		free(tif->tif_data);

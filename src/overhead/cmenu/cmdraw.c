@@ -289,7 +289,7 @@ void ShowASelection(struct cmenudata *globalData, struct pane *pane, struct sele
     }
 }
 
-static DrawWormHole();
+static int DrawWormHole();
 void ShowAPane(struct cmenu *menu, struct drawingState *state, struct pane *pane, long x, long y, int position)
 {
     struct cmenudata *globalData = menu->gMenuData;
@@ -422,7 +422,7 @@ void ShowAPane(struct cmenu *menu, struct drawingState *state, struct pane *pane
 
 }
 
-static DrawWormHole(struct cmenu *menu, struct drawingState *state)
+static int DrawWormHole(struct cmenu *menu, struct drawingState *state)
 {
     if (menu->wormPane != -1 && menu->wormSelection != -1)
         XCopyArea(menu->gMenuData->dpy, menu->gMenuData->wormIcon, menu->gMenuData->menuWindow, menu->gMenuData->blackGC, 0, 0, menu->gMenuData->wormWidth, menu->gMenuData->wormHeight, state->wormLeft, state->wormTop);

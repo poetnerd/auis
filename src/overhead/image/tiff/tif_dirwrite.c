@@ -45,36 +45,44 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "tiffioP.h"
 #include "prototypes.h"
 
+#if USE_PROTOTYPES
+extern	int TIFFDefaultDirectory(TIFF*);
+extern	int TIFFFreeDirectory(TIFF*);
+#else
+extern	int TIFFDefaultDirectory();
+extern	int TIFFFreeDirectory();
+#endif
+
 #if HAVE_IEEEFP
 #define	TIFFCvtNativeToIEEEFloat(tif, n, fp)
 #endif
 
 #if USE_PROTOTYPES
-static	TIFFWriteNormalTag(TIFF*, TIFFDirEntry*, TIFFFieldInfo*);
-static	TIFFSetupShortLong(TIFF *, u_short, TIFFDirEntry *, u_long);
-static	TIFFSetupShortPair(TIFF *, u_short, TIFFDirEntry *);
-static	TIFFWriteRational(TIFF *,
+static	int TIFFWriteNormalTag(TIFF*, TIFFDirEntry*, TIFFFieldInfo*);
+static	int TIFFSetupShortLong(TIFF *, u_short, TIFFDirEntry *, u_long);
+static	int TIFFSetupShortPair(TIFF *, u_short, TIFFDirEntry *);
+static	int TIFFWriteRational(TIFF *,
 	    TIFFDataType, u_short, TIFFDirEntry *, float);
-static	TIFFWritePerSampleShorts(TIFF *, u_short, TIFFDirEntry *);
-static	TIFFWriteShortTable(TIFF *, u_short, TIFFDirEntry *, int, u_short **);
-static	TIFFWriteShortArray(TIFF *,
+static	int TIFFWritePerSampleShorts(TIFF *, u_short, TIFFDirEntry *);
+static	int TIFFWriteShortTable(TIFF *, u_short, TIFFDirEntry *, int, u_short **);
+static	int TIFFWriteShortArray(TIFF *,
 	    TIFFDataType, u_short, TIFFDirEntry *, int, u_short *);
-static	TIFFWriteLongArray(TIFF *,
+static	int TIFFWriteLongArray(TIFF *,
 	    TIFFDataType, u_short, TIFFDirEntry *, int, u_long *);
-static	TIFFWriteRationalArray(TIFF *,
+static	int TIFFWriteRationalArray(TIFF *,
 	    TIFFDataType, u_short, TIFFDirEntry *, int, float *);
-static	TIFFWriteFloatArray(TIFF *,
+static	int TIFFWriteFloatArray(TIFF *,
 	    TIFFDataType, u_short, TIFFDirEntry *, int, float *);
-static	TIFFWriteString(TIFF *, u_short, TIFFDirEntry *, char *);
+static	int TIFFWriteString(TIFF *, u_short, TIFFDirEntry *, char *);
 #ifdef JPEG_SUPPORT
-static	TIFFWriteJPEGQTables(TIFF *, TIFFDirEntry *);
-static	TIFFWriteJPEGCTables(TIFF *, u_short, TIFFDirEntry *, u_char **);
+static	int TIFFWriteJPEGQTables(TIFF *, TIFFDirEntry *);
+static	int TIFFWriteJPEGCTables(TIFF *, u_short, TIFFDirEntry *, u_char **);
 #endif
 #ifdef COLORIMETRY_SUPPORT
-static	TIFFWriteTransferFunction(TIFF*, TIFFDirEntry*);
+static	int TIFFWriteTransferFunction(TIFF*, TIFFDirEntry*);
 #endif
-static	TIFFWriteData(TIFF *, TIFFDirEntry *, char *);
-static	TIFFLinkDirectory(TIFF *);
+static	int TIFFWriteData(TIFF *, TIFFDirEntry *, char *);
+static	int TIFFLinkDirectory(TIFF *);
 #else
 static	TIFFWriteNormalTag();
 static	TIFFSetupShortLong();
@@ -727,7 +735,7 @@ TIFFWriteTransferFunction(TIFF *tif, TIFFDirEntry *dir)
 /*
  * Write a contiguous directory item.
  */
-static TIFFWriteData(TIFF *tif, TIFFDirEntry *dir, char *cp)
+static int TIFFWriteData(TIFF *tif, TIFFDirEntry *dir, char *cp)
 {
 	int cc;
 
@@ -747,7 +755,7 @@ static TIFFWriteData(TIFF *tif, TIFFDirEntry *dir, char *cp)
  * Link the current directory into the
  * directory chain for the file.
  */
-static TIFFLinkDirectory(TIFF *tif)
+static int TIFFLinkDirectory(TIFF *tif)
 {
 	static char module[] = "TIFFLinkDirectory";
 	u_short dircount;

@@ -38,6 +38,7 @@ Author: Tom Neuendorffer
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <andrewos.h> /* sys/file.h */
 
 extern char *getenv();
@@ -49,6 +50,7 @@ struct PathEntry {
 };
 static struct PathEntry *globalPath = 0;
 static char *pathopen();
+int Initialize();
 
 int main(int argc, char *argv[])
 {
@@ -129,7 +131,7 @@ void myclass_Init(char *defaultPath)
 
 }
 
-Initialize()
+int Initialize()
 {
     myclass_Init((char *)AndrewDir("/dlib/atk"));
 }

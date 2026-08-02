@@ -44,14 +44,14 @@ static int TIFFStartStrip();
 static int TIFFStartTile();
 
 #if USE_PROTOTYPES
-static	TIFFSeek(TIFF *, u_int, u_int);
+static	int TIFFSeek(TIFF *, u_int, u_int);
 static	int TIFFReadRawStrip1(TIFF *, u_int, u_char *, u_int, char []);
 static	int TIFFReadRawTile1(TIFF *, u_int, u_char *, u_int, char []);
-static	TIFFFillStrip(TIFF *, u_int);
-static	TIFFFillTile(TIFF *, u_int);
-static	TIFFStartStrip(TIFF *, u_int);
-static	TIFFStartTile(TIFF *, u_int);
-static	TIFFCheckRead(TIFF *, int);
+static	int TIFFFillStrip(TIFF *, u_int);
+static	int TIFFFillTile(TIFF *, u_int);
+static	int TIFFStartStrip(TIFF *, u_int);
+static	int TIFFStartTile(TIFF *, u_int);
+static	int TIFFCheckRead(TIFF *, int);
 #else
 static	TIFFSeek();
 static	int TIFFReadRawStrip1();
@@ -223,7 +223,7 @@ static int TIFFReadRawStrip1(TIFF *tif, u_int strip, u_char *buf, u_int size, ch
  * The data buffer is expanded, as necessary, to
  * hold the strip's data.
  */
-static TIFFFillStrip(TIFF *tif, u_int strip)
+static int TIFFFillStrip(TIFF *tif, u_int strip)
 {
 	static char module[] = "TIFFFillStrip";
 	TIFFDirectory *td = &tif->tif_dir;
@@ -399,7 +399,7 @@ static int TIFFReadRawTile1(TIFF *tif, u_int tile, u_char *buf, u_int size, char
  * The data buffer is expanded, as necessary, to
  * hold the tile's data.
  */
-static TIFFFillTile(TIFF *tif, u_int tile)
+static int TIFFFillTile(TIFF *tif, u_int tile)
 {
 	static char module[] = "TIFFFillTile";
 	TIFFDirectory *td = &tif->tif_dir;
@@ -502,7 +502,7 @@ int TIFFReadBufferSetup(TIFF *tif, char *bp, u_int size)
  * Set state to appear as if a
  * strip has just been read in.
  */
-static TIFFStartStrip(TIFF *tif, u_int strip)
+static int TIFFStartStrip(TIFF *tif, u_int strip)
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
@@ -517,7 +517,7 @@ static TIFFStartStrip(TIFF *tif, u_int strip)
  * Set state to appear as if a
  * tile has just been read in.
  */
-static TIFFStartTile(TIFF *tif, u_int tile)
+static int TIFFStartTile(TIFF *tif, u_int tile)
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
@@ -533,7 +533,7 @@ static TIFFStartTile(TIFF *tif, u_int tile)
 	return (tif->tif_predecode == NULL || (*tif->tif_predecode)(tif));
 }
 
-static TIFFCheckRead(TIFF *tif, int tiles)
+static int TIFFCheckRead(TIFF *tif, int tiles)
 {
 	if (tif->tif_mode == O_WRONLY) {
 		TIFFError(tif->tif_name, "File not open for reading");

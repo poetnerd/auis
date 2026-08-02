@@ -40,7 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "index.h"
 static int listerproc();
 
-static listerproc(struct Index *ai, struct indexComponent *ac, char *arock)
+static int listerproc(struct Index *ai, struct indexComponent *ac, char *arock)
 {
     if ((long) arock != 17) printf("arock was trashed\n");
     printf("Record keyed by %s\n", ac->name);
@@ -90,10 +90,10 @@ int main(int argc, char **argv)
 	ts = index_GetAnySet(idx, argv[3]);
 	printf("Printing individual records:\n");
 	for(i=0;i<ts->count;i++) {
-	    printf("Record %d.%d", ts->data[i].word1, ts->data[i].word2);
+	    printf("Record %ld.%ld", ts->data[i].word1, ts->data[i].word2);
 	    code = index_GetData(idx, &ts->data[i], buffer, sizeof(buffer));
 	    if (code) {
-		printf("...failed with code %d\n", code);
+		printf("...failed with code %ld\n", code);
 	    }
 	    else printf(" data='%s'\n", buffer);
 	}

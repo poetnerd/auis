@@ -363,7 +363,7 @@ horizontalAccumulate16(char *cp, int cc, int stride)
 /*
  * Setup state for decoding a strip.
  */
-static LZWPreDecode(TIFF *tif)
+static int LZWPreDecode(TIFF *tif)
 {
 	register LZWDecodeState *sp = (LZWDecodeState *)tif->tif_data;
 
@@ -464,7 +464,7 @@ static LZWPreDecode(TIFF *tif)
 	nextbits -= nbits;					\
 }
 
-static LZWDecode(TIFF *tif, u_char *op0, int occ0, u_int s)
+static int LZWDecode(TIFF *tif, u_char *op0, int occ0, u_int s)
 {
 	LZWDecodeState *sp = (LZWDecodeState *)tif->tif_data;
 	char *op = (char *)op0;
@@ -632,7 +632,7 @@ static LZWDecode(TIFF *tif, u_char *op0, int occ0, u_int s)
 	nextbits -= nbits;					\
 }
 
-static LZWDecodeCompat(TIFF *tif, u_char *op0, int occ0, u_int s)
+static int LZWDecodeCompat(TIFF *tif, u_char *op0, int occ0, u_int s)
 {
 	LZWDecodeState *sp = (LZWDecodeState *)tif->tif_data;
 	char *op = (char *)op0;
@@ -781,7 +781,7 @@ static LZWDecodeCompat(TIFF *tif, u_char *op0, int occ0, u_int s)
 /*
  * Decode a scanline and apply the predictor routine.
  */
-static LZWDecodePredRow(TIFF *tif, u_char *op0, int occ0, u_int s)
+static int LZWDecodePredRow(TIFF *tif, u_char *op0, int occ0, u_int s)
 {
 	LZWDecodeState *sp = (LZWDecodeState *)tif->tif_data;
 
@@ -801,7 +801,7 @@ static LZWDecodePredRow(TIFF *tif, u_char *op0, int occ0, u_int s)
  * been calculated at pre-decode time according to the
  * strip/tile dimensions.
  */
-static LZWDecodePredTile(TIFF *tif, u_char *op0, int occ0, u_int s)
+static int LZWDecodePredTile(TIFF *tif, u_char *op0, int occ0, u_int s)
 {
 	LZWDecodeState *sp = (LZWDecodeState *)tif->tif_data;
 	int rowsize;
@@ -884,7 +884,7 @@ horizontalDifference16(char *cp, int cc, int stride)
 /*
  * Reset encoding state at the start of a strip.
  */
-static LZWPreEncode(TIFF *tif)
+static int LZWPreEncode(TIFF *tif)
 {
 	register LZWEncodeState *sp = (LZWEncodeState *)tif->tif_data;
 
@@ -957,7 +957,7 @@ static LZWPreEncode(TIFF *tif)
  * are re-sized at this point, and a CODE_CLEAR is generated
  * for the decoder. 
  */
-static LZWEncode(TIFF *tif, u_char *bp, int cc, u_int s)
+static int LZWEncode(TIFF *tif, u_char *bp, int cc, u_int s)
 {
 	static char module[] = "LZWEncode";
 	register LZWEncodeState *sp = (LZWEncodeState *)tif->tif_data;
@@ -1102,7 +1102,7 @@ static LZWEncode(TIFF *tif, u_char *bp, int cc, u_int s)
 	return (1);
 }
 
-static LZWEncodePredRow(TIFF *tif, u_char *bp, int cc, u_int s)
+static int LZWEncodePredRow(TIFF *tif, u_char *bp, int cc, u_int s)
 {
 	LZWEncodeState *sp = (LZWEncodeState *)tif->tif_data;
 
@@ -1113,7 +1113,7 @@ static LZWEncodePredRow(TIFF *tif, u_char *bp, int cc, u_int s)
 	return (LZWEncode(tif, bp, cc, s));
 }
 
-static LZWEncodePredTile(TIFF *tif, u_char *bp0, int cc0, u_int s)
+static int LZWEncodePredTile(TIFF *tif, u_char *bp0, int cc0, u_int s)
 {
 	LZWEncodeState *sp = (LZWEncodeState *)tif->tif_data;
 	int cc = cc0, rowsize;
@@ -1135,7 +1135,7 @@ static LZWEncodePredTile(TIFF *tif, u_char *bp0, int cc0, u_int s)
  * Finish off an encoded strip by flushing the last
  * string and tacking on an End Of Information code.
  */
-static LZWPostEncode(TIFF *tif)
+static int LZWPostEncode(TIFF *tif)
 {
 	register LZWEncodeState *sp = (LZWEncodeState *)tif->tif_data;
 	char *op = tif->tif_rawcp;
@@ -1184,7 +1184,7 @@ static void cl_hash(LZWEncodeState *sp)
 		hp->hash = -1;
 }
 
-static LZWCleanup(TIFF *tif)
+static int LZWCleanup(TIFF *tif)
 {
 	if (tif->tif_data) {
 		free(tif->tif_data);

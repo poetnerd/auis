@@ -85,8 +85,8 @@ XCOMM systypes.o
 
 AFS_OBJS =  lcstring.o ucstring.o
 
-/* M2 ANSI sweep: catch implicit function declarations (revival/doc/roadmap.md, M2) */
-COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Werror=implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
+/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 DependTarget()
 

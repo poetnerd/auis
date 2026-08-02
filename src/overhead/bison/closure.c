@@ -49,6 +49,7 @@ Frees itemset, ruleset and internal data.
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "andrewos.h"
 #include "machine.h"
 #include "new.h"

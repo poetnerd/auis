@@ -48,6 +48,7 @@ If LA[l, i] and LA[l, j] are both 1 for i != j, it is a conflict.
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "andrewos.h"
 #include "machine.h"
 #include "types.h"
