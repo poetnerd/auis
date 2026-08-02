@@ -123,10 +123,41 @@ proof-of-mechanics step M3's `atk/eq` pilot provided.
       reachable from the live `messages` app (which has its own inline
       `text822.c` richtext handling, doesn't exec these binaries), so
       no further runtime test required before check-in.
-- [ ] **O2** (former O2+O3): `overhead/eli/lib` (53),
-      `overhead/mail/metamail/metamail` (32), `overhead/mail/lib` (11),
-      `overhead/eli/bglisp` (10), `overhead/mail/cmd` (9),
-      `overhead/mail/testing` (5) — 120, 6 directories.
+- [x] **O2** — DONE 2026-08-02, committed 61fda88897d6: `overhead/eli/lib`
+      (53), `overhead/mail/metamail/metamail` (32), `overhead/mail/lib`
+      (11), `overhead/eli/bglisp` (10), `overhead/mail/cmd` (9),
+      `overhead/mail/testing` (5) — 120 census, 6 directories, 25 files
+      touched (24 in-batch + `overhead/eli/hdrs/elifns.h`, a shared
+      header dependency of `eli/lib` rebuilt via its own tiny
+      header-install directory to propagate). Built in dependency order
+      (`mail/lib` → `mail/cmd`/`mail/testing` → `eli/lib` → `eli/bglisp`
+      → `metamail`, since `bglisp`/`cmd`/`testing` link the libs). Mostly
+      mechanical implicit-int/void return-type fixes verified against
+      real call sites, plus three genuine bugs: `mail/lib/qmail.c`
+      printed `UnixError()` (returns `char *`, confirmed against ~40
+      other correct call sites) with `%d` instead of `%s`; two format-
+      string injection sites (CWE-134) in `metamail.c`'s
+      `SaveSquirrelFile` and RFC-2047 encoded-word display, where
+      attacker-controlled MIME header text (a `Content-Type` parameter,
+      an encoded-word payload) was passed directly as a `printf`/
+      `fprintf` format string — fixed to `"%s"`. One function-pointer
+      fix (`eli/lib/prims1.c` signal handlers: real `void handler(int)`
+      signatures + `SIG_ERR` comparison, replacing the old `(int(*)())`
+      cast-and-compare-to-`-1` hack); no bare casts, nothing escalated.
+      All 6 directories gate clean (`make clean && make depend && make
+      -k install`, exit 0), independently reproduced by the orchestrator
+      along with every diff and format-width fix (checked against real
+      field types: `time_t`, `long int`, `unsigned long int`).
+      `overhead/mail/metamail/metamail` is genuinely on the live
+      `messages` app's runtime path (`popen("metamail ...")` in
+      `atkams/messages/lib/mailobj.c`, which via metamail's own mailcap
+      dispatches `text/richtext` to O1's `richtext` binary) — orchestrator
+      ran the rebuilt `metamail` directly against a synthetic multipart
+      MIME message (including the `%s%s%s%n` injection shape) with no
+      crash/garbage output. wdc confirmed the `messages` app's own
+      multipart-parsing rewrite has since disabled the UI hook that
+      invokes metamail, so no live end-to-end app test was required
+      before check-in.
 - [ ] **O3** (former O4+O5): `overhead/bison` (17), `overhead/util/lib`
       (11), `overhead/index` (7), `overhead/mkparser` (4),
       `overhead/addalias` (4), `overhead/util/cmd` (3), `overhead/sys`
