@@ -229,13 +229,43 @@ proof-of-mechanics step M3's `atk/eq` pilot provided.
       polymorphic-table exception already used elsewhere, not a banned
       bare cast. No CWE-134 sites. Gate independently reproduced clean
       from a fresh `make clean && make depend && make -k install`.
-- [ ] **B2** (former B2+B5): `atk/adew` (51), `atk/basics/common` (37),
-      `atk/apt/suite` (9), `atk/basics/x` (6) — **fixing basics/x
-      closes `atk/basics/lib`'s 35 duplicate errors too, confirm both
-      gates clean** — `atk/utils` (4), `atk/apps` (3), `atk/syntax/tlex`
-      (1), `atk/syntax/parse` (1), `atk/syntax/sym` (1) — 113, 9
-      directories. `atk/basics/common` carries M1's own former
-      largest-blast-radius history — same caution as M3's B1.
+- [x] **B2 COMPLETE 2026-08-02, fossil `2b2e570ca739`**: `atk/adew`,
+      `atk/basics/common`, `atk/apt/suite`, `atk/basics/x` (+
+      `atk/basics/lib`, verified separately — no `.c` files of its
+      own, closed automatically), `atk/utils`, `atk/apps`,
+      `atk/syntax/{tlex,parse,sym}` — 9 directories. Census (113) badly
+      undercounted; real total was 259, almost entirely from
+      `atk/basics/x` (89 real vs. 6 census — Xlib-typedef `%d`/`%X`
+      format mismatches on `Window`/`Cursor`/`Time`/`Atom`, all
+      `unsigned long` on LP64, concentrated in `xim.c`/`xcursor.c`/
+      `xfontd.c`/`xgraphic.c`). All mechanical, no architectural
+      surprise. Five genuine bugs found and fixed: LP64 `sscanf %d`
+      truncation in three on-disk save/cache formats (`basics/common`'s
+      path-truncation cache, `adew`'s cel and lset document formats —
+      reader+writer fixed symmetrically in each); the same class
+      cross-process instead of on-disk in `basics/x`'s `atoms.c`/
+      `xgraphic.c` (X root-window properties `ATK_ATOMS`/`ATK_SHADES`
+      written with `%d`, read with `atol()`); and three signal handlers
+      in `basics/common/im.c` silently compiling with wrong K&R
+      signatures instead of POSIX `void(*)(int)` (the correct `#if`
+      branch's guard macro was never defined under any build this tree
+      actually uses). One out-of-batch prototype fix required
+      (`class_PrependClassPath` added to `overhead/class/lib/class.h`
+      to unblock `atk/apps/runapp.c`). All function-pointer casts
+      verified against real `.ch`/`.ih` slot types per policy; two
+      sites retyped to true signatures instead of cast
+      (`basics/x/menubar.c`'s `mcomp`, `basics/common/path.c`'s
+      `CompareFileNames` — both real qsort comparators, not class
+      dispatch slots). Orchestrator independently re-verified all 50
+      changed files against source headers, re-ran all 10 directory
+      gates clean from scratch. Given this batch's wide blast radius
+      through `basics/common`+`basics/x` (input dispatch, signal
+      handling, X11, image codecs — statically linked into every app),
+      wdc required a manual runtime smoke test before check-in (not
+      just the compile gate) — ez relinked and hand-tested (input,
+      scrollbar, menus, text) before commit; passed. Confirmed
+      pre-existing (not a regression): GIF/JPEG-into-`image`-inset
+      import still renders blank, same as before this batch.
 - [ ] **B3** (former B3+B4): `atk/value` (30), `atk/apt/apt` (23),
       `atk/textaux` (22), `atk/supportviews` (21), `atk/support` (20),
       `atk/lookz` (18), `atk/textobjects` (17), `atk/extensions` (16),
