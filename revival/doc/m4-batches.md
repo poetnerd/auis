@@ -54,6 +54,11 @@ same as M3), `ossupport` (1 file, compiles clean), and
 `overhead/class/testing` — the last four **only after Batch 0 below is
 reapplied**: the classpp fix that made them clean during Phase 1 was
 part of the 2026-08-02 revert and is NOT currently in the tree.
+**Correction 2026-08-02 (post Batch 0)**: the Phase 1 record's
+pathopen-only fix was incomplete — under the promoted
+`-Werror=format`, both `class.c` files needed additional fixes beyond
+what Phase 1 found (see Batch 0's own entry below); reapplying only
+the originally-recorded fix does not reach zero errors.
 
 Total: **Batch 0 + 18 sessions across 7 waves** (same dependency-order
 wave grouping as M3: overhead → atk/basics+support → atk/text → insets
@@ -66,17 +71,34 @@ proof-of-mechanics step M3's `atk/eq` pilot provided.
 
 ## Batch 0 — classpp prerequisite (do first, commit once)
 
-- [ ] **Batch 0**: reapply the Phase 1 classpp fix to
-      `overhead/class/pp/class.c` and `overhead/class/lib/class.c`
-      (`#include <stdlib.h>`, two `extern` forward declarations for
-      `PushFile`/`PopFile`, two `int` return types on `static
-      pathopen`), verify `class` builds and installs and
-      `overhead/class/testing`'s cascade failure stays gone, and
-      **commit it** — it was reverted 2026-08-02 with everything else
-      and every later batch depends on classpp building. Same session:
-      add the `STRICT_COMPILERFLAGS` macro to `system.mcr` and verify
-      it propagates and genuinely fires (runbook "Execution mechanism"
-      section). Orchestrator-sized, no delegation needed.
+- [x] **Batch 0** — DONE 2026-08-02, committed f6bad47b273b: reapplied
+      the Phase 1 classpp fix to `overhead/class/pp/class.c`
+      (`#include <stdlib.h>`, removed the now-conflicting manual
+      `char *malloc(),*realloc();` decl, `extern` forward declarations
+      for `PushFile`/`PopFile`) and `overhead/class/lib/class.c`
+      (`static pathopen()` → `static int pathopen()` at both the
+      forward decl and definition). **Beyond the Phase 1 record**:
+      `-Werror=format` surfaced real bugs neither file's original fix
+      addressed — `pp/class.c`'s `outstr0()` passed a non-literal to
+      `fprintf` as the format string (fixed to `"%s", str`) and three
+      call sites passed an unused extra vararg (dropped, ~30-year-old
+      copy/paste leftovers); `lib/class.c` had three LP64
+      pointer/id-truncation sites (`%x`/`%d` on `unsigned long`
+      fields/pointer-casts, fixed to `%lx`/`%lu`, confirmed against
+      `class.h`'s field types) plus one message referencing `error %d`
+      with no `errno` argument supplied (added). Verified: both files
+      compile clean under the full strict flag set standalone, `class`
+      builds/installs from a full clean rebuild, `overhead/class/
+      testing`'s cascade failure is gone (clean rebuild confirmed
+      independently). Added `STRICT_COMPILERFLAGS` to `system.mcr`
+      exactly as specified (separate `-Werror=<name>` flags, not
+      comma-joined) and verified propagation + genuine firing on
+      `overhead/class/cmd` (temporary override reproduced its 3 known
+      census errors verbatim, then reverted, directory rebuilt green).
+      Two fossil-tracked generated machdep Makefiles
+      (`overhead/class/machdep/{,darwin/}Makefile`) picked up the
+      propagated macro on rebuild and were committed alongside, same
+      as Phase 1's own record of touching them.
 
 ## Wave 1 — overhead (22 directories, 266 errors, 3 sessions)
 
