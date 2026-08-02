@@ -28,7 +28,7 @@ char * translate(char *t)
     return(t);
 }
 
-main() {
+int main() {
     RCHAR c;
     int i, JustDidNewline = 0;
     char tok[MAX_TOKEN_SIZE + 1],*token;

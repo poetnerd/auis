@@ -89,25 +89,25 @@ struct	charsetmember
  * a particular base processor.  The initialisation function of all
  * character set processors is called.
  */
-extern	charsetinit	( /* struct charsetproc *charset, char *name */ );
+extern	int	charsetinit	( /* struct charsetproc *charset, char *name */ );
 
 /*
  * Initialise the stack, starting with a character set processor with
  * a particular name.
  */
-extern	charsetnameinit	( /* char *name */ );
+extern	int	charsetnameinit	( /* char *name */ );
 
 /*
  * Push a new character set processor onto the stack.
  */
-extern	charsetpush	( /* struct charsetproc *charset */ );
+extern	int	charsetpush	( /* struct charsetproc *charset */ );
 
 /*
  * Pop the top-most character set processor off the stack
  * if it matches the given processor.  Note: the base
  * processor is never popped off.
  */
-extern	charsetpop	( /* struct charsetproc *charset */ );
+extern	int	charsetpop	( /* struct charsetproc *charset */ );
 
 /*
  * See if the character set processor on the top of the stack
@@ -119,18 +119,18 @@ extern	int	charsettop ( /* struct charsetproc *charset */ );
  * Set the details for a character set member in the top-most
  * character set.
  */
-extern	charmember	( /* struct charsetmember *member, RCHAR ch */ );
+extern	int	charmember	( /* struct charsetmember *member, RCHAR ch */ );
 
 /*
  * Set the details for a member of a specific character set.
  */
-extern	charmemberspec	( /* struct charsetmember *member, RCHAR ch,
+extern	int	charmemberspec	( /* struct charsetmember *member, RCHAR ch,
 			     struct charset *charset */ );
 
 /*
  * Set the details for a output control code character.
  */
-extern	charmemberctrl	( /* struct charsetmember *member, RCHAR ch */ );
+extern	int	charmemberctrl	( /* struct charsetmember *member, RCHAR ch */ );
 
 /*
  * Determine if the given character is a control code character.

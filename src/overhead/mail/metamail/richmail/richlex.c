@@ -48,7 +48,7 @@
 #include <string.h>
 static int richtextgetback();
 static int richtextmatchup();
-static int richtextoutstr();
+static void richtextoutstr();
 static void richtextpushback();
 static int richtextsingle();
 static void richtextunget();
@@ -113,7 +113,7 @@ static	int	PushbackExtract=0;
 /*
  * Reset the richtext parsing mechanism.
  */
-richtextreset()
+void richtextreset()
 {
     StackSize = 0;
     FlushStack = 0;
@@ -196,7 +196,7 @@ static int richtextmatchup()
  * Determine if the current token is one of the singleton
  * richtext commands: <nl>, <lt>, <np>.
  */
-static richtextsingle()
+static int richtextsingle()
 {
     return (charsetsingle (NextToken) ||
 	    !strcmp(NextToken,"nl") ||
@@ -353,7 +353,7 @@ RCHAR richtextlex(void *file, char *token)
 		newc = RGET(file);
 		if (newc == ')') {
 		    newc = RGET(file);	/* 4-byte ESC-$-)-? sequence */
-		    sprintf(token,ISO2022_CHARSET,newc);
+		    strcpy(token,ISO2022_CHARSET);
 		} else {
 		    sprintf(token,ISO2022_GENERIC,newc);
 		}
@@ -399,7 +399,7 @@ RCHAR richtextlex(void *file, char *token)
 /*
  * Output a string via "RichtextPutc".
  */
-static richtextoutstr(char *str, void *outparam)
+static void richtextoutstr(char *str, void *outparam)
 {
     while (*str) {
 	RPUT(*str,outparam);

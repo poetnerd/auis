@@ -101,7 +101,7 @@ extern	int (*RichtextPutc) ();
 /*
  * Reset the richtext parsing mechanism.
  */
-extern	richtextreset();
+extern	void	richtextreset();
 
 /*
  * Get the next token from the input stream.  RICHTEXT_COMMAND
@@ -123,7 +123,7 @@ extern	RCHAR	richtextlex( /* void *file,char *token */ );
  * "RichtextPutc" function as the second argument, and "inparam"
  * is passed to "richtextlex" during parsing.
  */
-extern	richtextcorrect( /* void *inparam,void *outparam */ );
+extern	int	richtextcorrect(void *inparam, void *outparam);
 
 #define	RICH_ENC_US_ASCII	0	/* US-ASCII encoding: one-byte */
 #define	RICH_ENC_JP_ASCII	1	/* JP-ASCII encoding: one-byte */
@@ -143,7 +143,7 @@ extern	int	RichtextCharEncoding;
  * Change the encoding used for characters not present in
  * richtext command sequences.
  */
-extern	richtextencoding( /* int encoding */ );
+extern	int	richtextencoding(int encoding);
 
 /*
  * Define a number of macros for decoding multi-byte character

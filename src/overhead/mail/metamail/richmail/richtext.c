@@ -23,22 +23,23 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 #include <string.h>
 #include <unistd.h>
 #include <termcap.h>
-static int FPUTS();
-static int FinalizeTerminal();
-static int FlushOut();
+static void FPUTS();
+static void FinalizeTerminal();
+static void FlushOut();
 static void InitGlobals();
-static int InitSignals();
-static int MakeWorkingMargins();
-static int Pause();
+static void InitSignals();
+static void MakeWorkingMargins();
+static void Pause();
 static int calc_column();
 static void cleanup();
 static int folding_point();
-static int fputsmovingright();
+static void fputsmovingright();
 static int immediate_controlputc();
-static int nomemabort();
-static int outputc();
-static int outputstr();
-static int realoutputc();
+static void nomemabort();
+static void outputc();
+static void outputstr();
+static void realoutputc();
+static void ResetTerminalCodes();
 
 /* Defined later in this same file, used above their definitions. */
 extern int richtext_main(), controloutput();
@@ -101,8 +102,6 @@ static int FakeTerminal;
 extern tputs();
 #endif
 
-static outputc(), realoutputc(), MakeWorkingMargins(), Pause(), fputsmovingright(), ResetTerminalCodes(), FinalizeTerminal(), outputstr(), FPUTS();
-
 #define	OUTC(c)		(outputc((RCHAR)(c)))
 
 static void
@@ -143,7 +142,7 @@ static void cleanup(int signum)
 #endif
 }
 
-static InitSignals() {
+static void InitSignals() {
     signal(SIGINT, cleanup);
 #if !defined(AMIGA)
 #if !defined(__MSDOS__)
@@ -164,7 +163,7 @@ static InitSignals() {
 #endif
 }
 
-static nomemabort() {
+static void nomemabort() {
     fprintf(stderr, "richtext: Out of memory\n");
     FinalizeTerminal();
 #ifdef AMIGA
@@ -625,7 +624,7 @@ int controlputc(int c)
     ++PendingControls;
 }
 
-static immediate_controlputc(int c)
+static int immediate_controlputc(int c)
 {
     (*RichtextPutc) (c, stdout);
 }
@@ -635,7 +634,7 @@ int controloutput(char *s, int immediate)
     tputs(s, 1, immediate ? immediate_controlputc : controlputc);
 }
 
-static folding_point(struct charsetmember *buf, int pos)
+static int folding_point(struct charsetmember *buf, int pos)
 {
     int i;
     for (i = pos; i > 0; --i) {
@@ -645,7 +644,7 @@ static folding_point(struct charsetmember *buf, int pos)
     return (0);
 }
 
-static calc_column(struct charsetmember *buf, int pos)
+static int calc_column(struct charsetmember *buf, int pos)
 {
     struct charsetmember *s;
     int col = 0;
@@ -658,7 +657,7 @@ static calc_column(struct charsetmember *buf, int pos)
     return (col);
 }
 
-static FlushOut() {
+static void FlushOut() {
     int i, j, x;
     static struct charsetmember NewOutputBuf[1000];
     struct charsetmember *s;
@@ -748,14 +747,14 @@ static FlushOut() {
                         StopUnderline, 0, BoldOn, BoldOff, 0);
 }
 
-static outputc(RCHAR c)
+static void outputc(RCHAR c)
 {
     struct charsetmember member;
     charmember (&member,c);
     realoutputc(member, 0);
 }
 
-static realoutputc(struct charsetmember c, int alreadyformatted)
+static void realoutputc(struct charsetmember c, int alreadyformatted)
 {
     int i, newinspace;
 
@@ -825,7 +824,7 @@ static realoutputc(struct charsetmember c, int alreadyformatted)
     }
 }
 
-static MakeWorkingMargins() {
+static void MakeWorkingMargins() {
     int oldworkingleft=workingleft, i;
 
     workingleft = leftmargin;
@@ -839,7 +838,7 @@ static MakeWorkingMargins() {
     }
 }
 
-static Pause()
+static void Pause()
 {
     int	c;
 
@@ -853,7 +852,7 @@ static Pause()
 /* Leading spaces should be output as MoveRight, to avoid 
    having margins that are underlined or reverse video */
 
-static fputsmovingright(struct charsetmember *s, FILE *fp)
+static void fputsmovingright(struct charsetmember *s, FILE *fp)
 {
     int inmargin=1;
     if (!s) return;
@@ -871,7 +870,7 @@ static fputsmovingright(struct charsetmember *s, FILE *fp)
     }
 }
 
-static ResetTerminalCodes(FakeTerminal, standout, underline, bold, standoutbuf, standendbuf,
+static void ResetTerminalCodes(FakeTerminal, standout, underline, bold, standoutbuf, standendbuf,
                     modifiedstandout, StartUnderline, StopUnderline, modifiedunderline,
                     BoldOn, BoldOff, modifiedbold)
 char *standoutbuf, *standendbuf, *StartUnderline, *StopUnderline,
@@ -899,14 +898,14 @@ char *standoutbuf, *standendbuf, *StartUnderline, *StopUnderline,
     }
 }
 
-static FinalizeTerminal() {
+static void FinalizeTerminal() {
     tputs(standendbuf, 1, immediate_controlputc);
     tputs(BoldOff, 1, immediate_controlputc);
     tputs(StopUnderline, 1, immediate_controlputc);
     FPUTS(KE, stdout);
 }
 
-static outputstr(char *s)
+static void outputstr(char *s)
 {
     while (*s) OUTC(*s++);
 }
@@ -924,7 +923,7 @@ int tputs(char *s, int n, int (*func)())
 }
 #endif
 
-static FPUTS(unsigned char *s, FILE *fp)
+static void FPUTS(unsigned char *s, FILE *fp)
 {
     while(*s) (*RichtextPutc)((int)(*s++),fp);
 }
