@@ -180,7 +180,7 @@ static int mystrcmp(char *s1, char *s2)
     if(s1 == NULL || s2 == NULL) return 1;
     return strcmp(s1,s2);
 }
-static findinlist(char **lst, int cnt, char *str)
+static int findinlist(char **lst, int cnt, char *str)
 {
     int i;
     for(i = 0; i < cnt; i++,lst++){
@@ -208,7 +208,7 @@ static char * parseobv(char *str, char *buf)
     return NULL;
 }
     
-static SetNotice(char *str)
+static int SetNotice(char *str)
 {
     if(Gself == NULL) return;
     if(str) {
@@ -238,7 +238,7 @@ static SetNotice(char *str)
     value_SetString(Gself->ArbTextEdit,Gself->arr);
     message_DisplayString(NULL,0,"");
 }
-static appendlist(char **lst, int cnt, char *str, int TEST)
+static int appendlist(char **lst, int cnt, char *str, int TEST)
 {   /* BUG -- OVERFLOWS NOT DETECTED */
     int next = 1;
     if(TEST){
@@ -259,7 +259,7 @@ static appendlist(char **lst, int cnt, char *str, int TEST)
     }
     return cnt;
 }
-static SetName(struct celview *cv, struct arbiterview *abv, char *name)
+static int SetName(struct celview *cv, struct arbiterview *abv, char *name)
 {
 
     int count = 0;
@@ -341,7 +341,7 @@ static void handleclicks(struct arbcon *self, struct cltextview *ct, long *posit
 	}
     }
 }
-static NewWindow(char *filename, int bflags, boolean AddArb)
+static int NewWindow(char *filename, int bflags, boolean AddArb)
 {
 
     struct frame *newFrame;
@@ -408,7 +408,7 @@ static NewWindow(char *filename, int bflags, boolean AddArb)
 	fprintf(stderr,"Could not allocate enough memory.\n");
     }
 }
-arbcon_Create(){
+void arbcon_Create(){
     char foo[1024];
     if(Gself) return;
     strcpy(foo,ARBCONNAME);
@@ -486,7 +486,7 @@ void arbcon__InitArbiters(struct classheader *ClassID)
     if(Gself->CurrentArbiterview == NULL && cab != NULL)
 	arbcon_SetCurrentArbiterview(cab);
 }
-static addtypes(struct cel *cl)
+static int addtypes(struct cel *cl)
 {
 /*  Not Currently Supported
     char *obstr,*vwstr;
@@ -501,7 +501,7 @@ static addtypes(struct cel *cl)
     }
 */
 }
-static setupcel(struct cel *cl)
+static int setupcel(struct cel *cl)
 {
     char *obstr,*vwstr;
     char *name,*str;
@@ -844,7 +844,7 @@ void arbcon__DestroyCurrentCelview(struct classheader *ClassID)
 	celview_Destroy(cv);
     }
 }
-static setobview(struct arbcon *self, char *str, boolean docopy)
+static int setobview(struct arbcon *self, char *str, boolean docopy)
 {
     char *vw,*obs,*vws;
     static char buf[128];
@@ -992,7 +992,7 @@ static void showcels(struct view *v)
     }
     Gself->ArbCelListView = cltextview_New();
     cltextview_SetDataObject(Gself->ArbCelListView,Gself->ArbCelList);
-    cltextview_AddClickObserver(Gself->ArbCelListView,Gself,handleclicks,0);
+    cltextview_AddClickObserver(Gself->ArbCelListView,Gself,(procedure)handleclicks,0);
     rec.width = arbiterview_GetLogicalWidth(abv);
     rec.height = arbiterview_GetLogicalHeight(abv);
     rec.top = 0;rec.left = 0;
@@ -1281,28 +1281,28 @@ if(r2 == value_OBJECTDESTROYED) {
     arbcon_SaveCurrentCelview();
 /* user code ends here for ArbTextEditCallBack */
 }
-static initself(struct arbcon *self, struct view *v)
+static int initself(struct arbcon *self, struct view *v)
 {
 	self->v = v;
 	self->ArbLinkCelView = (struct onoffV *)arbiterview_GetNamedView(v,"ArbLinkCel");
 	self->ArbLinkCel = (struct value *)arbiterview_GetNamedObject(v,"ArbLinkCel");
-	if(self->ArbLinkCel) value_AddCallBackObserver(self->ArbLinkCel, self,ArbLinkCelCallBack,0);
+	if(self->ArbLinkCel) value_AddCallBackObserver(self->ArbLinkCel, self,(procedure)ArbLinkCelCallBack,0);
 	if(self->ArbLinkCelView) view_AddObserver((struct view *)self->ArbLinkCelView,self);
 	self->ArbCutCelView = (struct buttonV *)arbiterview_GetNamedView(v,"ArbCutCel");
 	self->ArbCutCel = (struct value *)arbiterview_GetNamedObject(v,"ArbCutCel");
-	if(self->ArbCutCel) value_AddCallBackObserver(self->ArbCutCel, self,ArbCutCelCallBack,0);
+	if(self->ArbCutCel) value_AddCallBackObserver(self->ArbCutCel, self,(procedure)ArbCutCelCallBack,0);
 	if(self->ArbCutCelView) view_AddObserver((struct view *)self->ArbCutCelView,self);
 	self->ArbApplicationChoiceView = (struct onoffV *)arbiterview_GetNamedView(v,"ArbApplicationChoice");
 	self->ArbApplicationChoice = (struct value *)arbiterview_GetNamedObject(v,"ArbApplicationChoice");
-	if(self->ArbApplicationChoice) value_AddCallBackObserver(self->ArbApplicationChoice, self,ArbApplicationChoiceCallBack,0);
+	if(self->ArbApplicationChoice) value_AddCallBackObserver(self->ArbApplicationChoice, self,(procedure)ArbApplicationChoiceCallBack,0);
 	if(self->ArbApplicationChoiceView) view_AddObserver((struct view *)self->ArbApplicationChoiceView,self);
 	self->ArbobviewlistView = (struct clicklistV *)arbiterview_GetNamedView(v,"Arbobviewlist");
 	self->Arbobviewlist = (struct value *)arbiterview_GetNamedObject(v,"Arbobviewlist");
-	if(self->Arbobviewlist) value_AddCallBackObserver(self->Arbobviewlist, self,ArbobviewlistCallBack,0);
+	if(self->Arbobviewlist) value_AddCallBackObserver(self->Arbobviewlist, self,(procedure)ArbobviewlistCallBack,0);
 	if(self->ArbobviewlistView) clicklistV_AddObserver(self->ArbobviewlistView,self);
 	self->ArbTextEditView = (struct menterstrV *)arbiterview_GetNamedView(v,"ArbTextEdit");
 	self->ArbTextEdit = (struct value *)arbiterview_GetNamedObject(v,"ArbTextEdit");
-	if(self->ArbTextEdit) value_AddCallBackObserver(self->ArbTextEdit, self,ArbTextEditCallBack,0);
+	if(self->ArbTextEdit) value_AddCallBackObserver(self->ArbTextEdit, self,(procedure)ArbTextEditCallBack,0);
 	if(self->ArbTextEditView) view_AddObserver((struct view *)self->ArbTextEditView,self);
 }
 int arbcon_copycon(struct view *v, long dat)
@@ -1358,7 +1358,7 @@ struct classinfo *viewtype = class_Load("view");
 firstarbcon = NULL;
 proctable_DefineProc("arbcon-copycon",arbcon_copycon, viewtype,NULL,"arbcon copycon");
 /* user code begins here for InitializeClass */
-proctable_DefineProc("arbcon-create",arbcon_Create, viewtype,NULL,"Create an Arbcon");
+proctable_DefineProc("arbcon-create",(procedure)arbcon_Create, viewtype,NULL,"Create an Arbcon");
 Gself= NULL;
 /* user code ends here for InitializeClass */
 return TRUE;

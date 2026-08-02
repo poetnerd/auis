@@ -26,6 +26,9 @@
 * $
 */
 
+/* M4 strict rollout: revival/doc/m4-batches.md, Wave 2 B2 */
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 ATKLIBS = ${BASEDIR}/lib/atk/libtscript.a \
 	${BASEDIR}/lib/atk/libez.a \
 	${BASEDIR}/lib/atk/libframe.a \

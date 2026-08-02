@@ -80,7 +80,7 @@ void application__PrintVersionNumber(struct application *self)
 	    break;
 	default:
 	    fprintf(stderr,
-		    "Starting %s (Version %d.%d, ATK %s); please wait...\n",
+		    "Starting %s (Version %ld.%ld, ATK %s); please wait...\n",
 		    application_GetName(self),
 		    application_GetMajorVersion(self),
 		    application_GetMinorVersion(self),

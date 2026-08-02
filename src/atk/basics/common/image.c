@@ -902,7 +902,7 @@ void image__Brighten(struct image *self, unsigned int percent)
  * Outputs:
  *  Changes gamma array entries.
  */
-static make_gamma(double gamma, int gammamap[256])
+static int make_gamma(double gamma, int gammamap[256])
 {   register int i;
 
     for (i = 0; i < 256; i++ ) {
@@ -1396,7 +1396,7 @@ struct color_area {
 /* predicate functions for qsort
  */
 
-static sortRGB(unsigned short *p1, unsigned short *p2)
+static int sortRGB(unsigned short *p1, unsigned short *p2)
 { unsigned int red1, green1, blue1, red2, green2, blue2;
 
   red1 = RED_INTENSITY(*p1);
@@ -1422,7 +1422,7 @@ static sortRGB(unsigned short *p1, unsigned short *p2)
     return(1);
 }
 
-static sortRBG(unsigned short *p1, unsigned short *p2)
+static int sortRBG(unsigned short *p1, unsigned short *p2)
 { unsigned int red1, green1, blue1, red2, green2, blue2;
 
   red1 = RED_INTENSITY(*p1);
@@ -1448,7 +1448,7 @@ static sortRBG(unsigned short *p1, unsigned short *p2)
     return(1);
 }
 
-static sortGRB(unsigned short *p1, unsigned short *p2)
+static int sortGRB(unsigned short *p1, unsigned short *p2)
 { unsigned int red1, green1, blue1, red2, green2, blue2;
 
   red1 = RED_INTENSITY(*p1);
@@ -1474,7 +1474,7 @@ static sortGRB(unsigned short *p1, unsigned short *p2)
     return(1);
 }
 
-static sortGBR(unsigned short *p1, unsigned short *p2)
+static int sortGBR(unsigned short *p1, unsigned short *p2)
 { unsigned int red1, green1, blue1, red2, green2, blue2;
 
   red1 = RED_INTENSITY(*p1);
@@ -1500,7 +1500,7 @@ static sortGBR(unsigned short *p1, unsigned short *p2)
     return(1);
 }
 
-static sortBRG(unsigned short *p1, unsigned short *p2)
+static int sortBRG(unsigned short *p1, unsigned short *p2)
 { unsigned int red1, green1, blue1, red2, green2, blue2;
 
   red1 = RED_INTENSITY(*p1);
@@ -1526,7 +1526,7 @@ static sortBRG(unsigned short *p1, unsigned short *p2)
     return(1);
 }
 
-static sortBGR(unsigned short *p1, unsigned short *p2)
+static int sortBGR(unsigned short *p1, unsigned short *p2)
 { unsigned int red1, green1, blue1, red2, green2, blue2;
 
   red1 = RED_INTENSITY(*p1);
@@ -1556,7 +1556,7 @@ static sortBGR(unsigned short *p1, unsigned short *p2)
  * the color area in the list of color areas.
  */
 
-static insertColorArea(unsigned long *pixel_counts, struct color_area **rlargest, struct color_area **rsmallest, struct color_area *area)
+static int insertColorArea(unsigned long *pixel_counts, struct color_area **rlargest, struct color_area **rsmallest, struct color_area *area)
 { int a;
   unsigned int red, green, blue;
   unsigned int min_red, min_green, min_blue;

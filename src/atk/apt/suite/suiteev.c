@@ -235,7 +235,7 @@ static void ReadWriteHandler();
 static void MaxSubStringSize();
 static long MaxListSubStringWidth();
 static struct menulist *menulist = NULL;
-static ItemFullUpdate();
+static int ItemFullUpdate();
 
 static void AllocNameSpace(char **target, char *source)
 {
@@ -318,7 +318,7 @@ boolean suiteev__InitializeClass(struct classheader *ClassID)
 
   IN(suiteev_InitializeClass);
   menulist = menulist_New();
-  tempProc = proctable_DefineProc( "suiteev-copy", Copy, 
+  tempProc = proctable_DefineProc( "suiteev-copy", (procedure)Copy,
 	&suiteev_classinfo, NULL, "copy selected region to cut buffer" );
   menulist_AddToML( menulist, "Copy~10", tempProc, NULL, NULL );
   OUT(suiteev_InitializeClass);
@@ -1390,7 +1390,7 @@ struct view * suiteev__Hit(struct suiteev *self, enum view_MouseAction action, l
     return(ret);
 }
 
-static ItemFullUpdate(struct suiteev *self, struct suite_item *item, enum view_UpdateType type, long left, long top, long width, long height)
+static int ItemFullUpdate(struct suiteev *self, struct suite_item *item, enum view_UpdateType type, long left, long top, long width, long height)
 {
   struct rectangle *r = NULL;
 
@@ -2185,7 +2185,7 @@ void suiteev__MaxStringSize(struct suiteev *self, long *width, long *height)
   register struct suite_item *item = NULL;
   register long maxWidth = 0, maxHeight = 0;
   long XWidth = 0, YWidth = 0;
-  register numLines = 0;
+  register long numLines = 0;
 
   IN(MaxStringSize);
   while(item = ITEM(i++))

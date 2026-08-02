@@ -675,16 +675,16 @@ struct view * Quit_Test(struct suitetapp *self, struct suite *suite, struct suit
 struct view * Name_Choice(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
 {
   printf("Title Caption '%s' Item Caption '%s'\n",
-	    suite_SuiteAttribute(suite, suite_titlecaption),
-	    suite_ItemAttribute(suite, item, suite_itemcaption));
+	    (char *)suite_SuiteAttribute(suite, suite_titlecaption),
+	    (char *)suite_ItemAttribute(suite, item, suite_itemcaption));
   return(NULL);
 }
 
 struct view * RW_Hit_Handler(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
 {
   printf("Title Caption '%s'  Item Caption '%s'\n",
-	    suite_SuiteAttribute(suite, suite_titlecaption),
-	    suite_ItemAttribute(suite, item, suite_itemcaption));
+	    (char *)suite_SuiteAttribute(suite, suite_titlecaption),
+	    (char *)suite_ItemAttribute(suite, item, suite_itemcaption));
   return(NULL);
 }
 

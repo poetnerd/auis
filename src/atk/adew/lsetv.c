@@ -91,7 +91,7 @@ static struct types typearray[] = {
     {"",0}
 };
 
-static lookuptype(char *ty)
+static int lookuptype(char *ty)
 {
     struct types *tp;
     for(tp = typearray;tp->val != 0; tp++)
@@ -140,7 +140,7 @@ struct lsetview * lsetview__Create(struct classheader *classID, int level, struc
    lv->level = level;
     return(lv);
 }
-static initkids(struct lsetview *self, struct lset *ls)
+static int initkids(struct lsetview *self, struct lset *ls)
 {
 	struct lsetview *v1,*v2;
 	v1 = lsetview_Create(self->level+1,(struct lset *) ls->left,(struct view *)self);
@@ -152,7 +152,7 @@ static initkids(struct lsetview *self, struct lset *ls)
 	self->mode = lsetview_IsSplit;
 	lsetview_WantUpdate(self,self);
     }	
-static dolink(struct lsetview *self)
+static int dolink(struct lsetview *self)
 {
     struct lset *ls;
     ls = Data(self);
@@ -234,7 +234,7 @@ struct view *vw;
 
     return((struct view *)self);
 }
-static objecttest(struct lsetview *self, char *name, char *desiredname)
+static int objecttest(struct lsetview *self, char *name, char *desiredname)
 {
     if(class_Load(name) == NULL){
         char foo[640];
@@ -250,27 +250,27 @@ static objecttest(struct lsetview *self, char *name, char *desiredname)
     }
     return(TRUE);
 }
-static lsetview_PlaceApplication(struct lsetview *self)
+static int lsetview_PlaceApplication(struct lsetview *self)
 {
     if(self->child || self->mode == lsetview_IsSplit) return;
     Data(self)->application = TRUE;
     lsetview_PlaceView(self);
 }
-static lsetview_PlaceCel(struct lsetview *self)
+static int lsetview_PlaceCel(struct lsetview *self)
 {
     if(self->child || self->mode == lsetview_IsSplit) return;
     Data(self)->application = CEL;
     lsetview_PlaceView(self);
 }
 
-static lsetview_PlaceValue(struct lsetview *self)
+static int lsetview_PlaceValue(struct lsetview *self)
 {
     if(self->child || self->mode == lsetview_IsSplit) return;
     Data(self)->application = VALUE;
     self->promptforparameters = 1;
     lsetview_PlaceView(self);
 }
-static lsetview_DestroyView(struct lsetview *self)
+static int lsetview_DestroyView(struct lsetview *self)
 {
     struct lset *ls = Data(self);
 /*    struct lpair *lp = (struct lpair *) self; */
@@ -299,7 +299,7 @@ static lsetview_DestroyView(struct lsetview *self)
         view_UnlinkTree(lp->obj[1]);
 */
 }
-static lsetview_PlaceView(struct lsetview *self)
+static int lsetview_PlaceView(struct lsetview *self)
 {
 /* if(self->level == 0) return; */
 /* prompt for dataobject */
@@ -707,10 +707,10 @@ boolean lsetview__InitializeClass(struct classheader *classID)
 /*    keymap_BindToKey(newKeymap,cmdString,NULL,"\030\t"); */
     menulist_AddToML(newMenus,"lset,Insert File~35",tempProc,NULL,0);
 
-    tempProc = proctable_DefineProc(cmdString = "lsetview-Split-Horz", lsetview_SplitHorz,&lsetview_classinfo,NULL, "split the lpair Horizontally");
+    tempProc = proctable_DefineProc(cmdString = "lsetview-Split-Horz", (procedure)lsetview_SplitHorz,&lsetview_classinfo,NULL, "split the lpair Horizontally");
 /*    keymap_BindToKey(newKeymap,cmdString,NULL,"\033\t"); */
     menulist_AddToML(newMenus,"lset,Split Horizontal~11",tempProc,NULL,0);
-    tempProc = proctable_DefineProc(cmdString = "lsetview-Split-Vert", lsetview_SplitVert,&lsetview_classinfo,NULL, "split the lpair Vertically");
+    tempProc = proctable_DefineProc(cmdString = "lsetview-Split-Vert", (procedure)lsetview_SplitVert,&lsetview_classinfo,NULL, "split the lpair Vertically");
 /*    keymap_BindToKey(newKeymap,cmdString,NULL,"\033\t"); */
     menulist_AddToML(newMenus,"lset,Split Vertically~10",tempProc,NULL,0);
     return TRUE;

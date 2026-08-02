@@ -205,14 +205,14 @@ struct keystate * keystate__Create(struct classheader *classID, struct basicobje
 void keystate__SetOverride(struct keystate *self, procedure function, void *functionData)
 {
 
-    self->function = function;
+    self->function = (enum keymap_Types (*)())function;
     self->functionData = (long)functionData;
 }
 
 void keystate__GetOverride(struct keystate *self, procedure *function, long *functionData)
 {
 
-    *function = self->function;
+    *function = (procedure)self->function;
     *functionData = self->functionData;
 }
 

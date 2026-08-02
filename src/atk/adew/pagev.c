@@ -71,7 +71,7 @@ boolean pagev__InitializeClass(struct classheader *c)
     pagev_menulist = menulist_New();
 
     proc = proctable_DefineProc("pagev-next-page",
-	NextSwitchee, &pagev_classinfo, NULL,
+	(procedure)NextSwitchee, &pagev_classinfo, NULL,
 	"Changes the page to look at the next object.");
     keymap_BindToKey(pagev_keymap, "^X^N", proc, 0);
     menulist_AddToML(pagev_menulist,
@@ -92,18 +92,18 @@ boolean pagev__InitializeClass(struct classheader *c)
 	"page~95,Insert File~92", proc, NULL, 0);
 */
     proc = proctable_DefineProc("pagev-paste",
-	PasteSwitchee, &pagev_classinfo, NULL,
+	(procedure)PasteSwitchee, &pagev_classinfo, NULL,
 	"Pastes a switchee from the cut-buffer");
     keymap_BindToKey(pagev_keymap, "^X5", proc, 0);
     menulist_AddToML(pagev_menulist,
 	"Flip~95,Paste~80", proc, NULL, 0);
 
     proctable_DefineProc("pagev-SetCurrentView",
-	SetCurrentView, &pagev_classinfo, NULL,
+	(procedure)SetCurrentView, &pagev_classinfo, NULL,
 	"Takes a string argument and calls page_SetNowPlayingByName");
 
     switchobjproc = proctable_DefineProc(
-	"pagev-switch-object", SwitchObject,
+	"pagev-switch-object", (procedure)SwitchObject,
 	&pagev_classinfo, NULL,
 	"Switches to a given object.");
     return(TRUE);

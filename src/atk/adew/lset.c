@@ -53,7 +53,7 @@ static int registerobject();
 #define CEL 5
 static struct atom *a_vp,*a_name,*a_atomlist;
 
-static registerobject(struct lset *self)
+static int registerobject(struct lset *self)
 {
     struct atomlist *al;
     char buf[256];
@@ -244,7 +244,7 @@ putchar(c);
                     /* Call the read routine for the object */
                     status = dataobject_Read(newobject, file, objectid);
 		    if (status != dataobject_NOREADERROR){
-			printf("ERROR reading %s, %d\n",objectname,status);
+			printf("ERROR reading %s, %ld\n",objectname,status);
 			return status; 
 		    }
 		}
@@ -267,7 +267,7 @@ putchar(c);
 	    *buf++ = c;
 	}
     }
-    sscanf(cbuf,"%d %d %d %ld %ld %ld %d\n" ,&(self->type),&(self->pct),&(self->application),
+    sscanf(cbuf,"%d %d %d %ld %ld %ld %ld\n" ,&(self->type),&(self->pct),&(self->application),
 	 &did,&lid,&rid,&textpending);
     cp = strchr(cbuf,'\n'); cp++;
     cp = lset_GetLine(cp,self->dataname);

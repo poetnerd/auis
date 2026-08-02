@@ -514,7 +514,7 @@ static int gifin_push_string(int code)
  * add a new string to the string table
  */
 
-static gifin_add_string(int p, int e)
+static int gifin_add_string(int p, int e)
 {
   prefix[table_size] = p;
   extnsn[table_size] = e;
@@ -532,7 +532,7 @@ static gifin_add_string(int p, int e)
  * semi-graceful fatal error mechanism
  */
 
-static gifin_fatal(char *msg)
+static int gifin_fatal(char *msg)
 {
   printf("Error reading GIF file: %s\n", msg);
   exit(0);

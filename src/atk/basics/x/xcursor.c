@@ -129,7 +129,7 @@ void xcursor__Make(struct xcursor *self, struct xim *im)
     long x, y;
     struct xfontdesc * xfillFont = (struct xfontdesc *) self->header.cursor.fillFont;
 
-    if (cursordebug) printf("xim_MakeXCursor: making cursor for %d in %X for %X\n", self->header.cursor.fillChar, xfillFont, self);
+    if (cursordebug) printf("xim_MakeXCursor: making cursor for %d in %lx for %lx\n", self->header.cursor.fillChar, (unsigned long)xfillFont, (unsigned long)self);
 
     if (self->valid && self->Xc != None && self->im == im) {
 	if(!self->header.cursor.changed) return; /* Already valid cursor */
@@ -167,11 +167,11 @@ void xcursor__Make(struct xcursor *self, struct xim *im)
 	    x = -ci->lbearing + 1;
 	    y = ci->ascent + 1;
 	    if (width == 0) {
-		fprintf(stderr,"xim_MakeXCursor: pixmap of width 0 requested by %X\n", im);
+		fprintf(stderr,"xim_MakeXCursor: pixmap of width 0 requested by %lx\n", (unsigned long)im);
 		width++;
 	    }
 	    if (height == 0) {
-		fprintf(stderr,"xim_MakeXCursor: pixmap of height 0 requested by %X\n", im);
+		fprintf(stderr,"xim_MakeXCursor: pixmap of height 0 requested by %lx\n", (unsigned long)im);
 		height++;
 	    }
 

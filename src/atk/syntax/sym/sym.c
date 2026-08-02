@@ -440,6 +440,8 @@ void sym__FinalizeObject(struct classheader *ClassID, struct sym *self)
 
 
 
+static int printdata(struct sym *self);
+
 void sym__printtable(struct classheader *ClassID)
 {
         long i;
@@ -447,12 +449,12 @@ void sym__printtable(struct classheader *ClassID)
 
 	printf("enclosingScope:");
 	for (i = 0; i < maxScopes; ++i)
-	    printf(" %d", enclosingScope[i]);
-	printf(" <%d> \n", nextFreeScope);
+	    printf(" %ld", enclosingScope[i]);
+	printf(" <%ld> \n", nextFreeScope);
 
-	printf("table <%d>:\n", noOfEntries);
+	printf("table <%ld>:\n", noOfEntries);
 	for (i = 0; i < *tableSize; ++i) {
-	    printf("%d:\n",i);
+	    printf("%ld:\n",i);
 	    for(pos = table[i]; pos != NULL; pos = pos->next)
 		printdata(pos);
 	}
@@ -463,12 +465,12 @@ void sym__printtable(struct classheader *ClassID)
 }
 
 
-int printdata(struct sym *self)
+static int printdata(struct sym *self)
 {
     if (self == NULL)
 	printf("NULL\n");
     else
-	printf("%x:%s,%d\n", self, self->name, self->scope);
+	printf("%p:%s,%ld\n", (void *)self, self->name, self->scope);
 }
 
 /*****************************************************************************\

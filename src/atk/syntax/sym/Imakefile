@@ -29,6 +29,9 @@
 /* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
+/* M4 strict rollout: revival/doc/m4-batches.md, Wave 2 B2 */
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 DOBJS = sym.do toksym.do
 IHFILES = sym.ih toksym.ih
 OBJS = sym.o toksym.o

@@ -195,7 +195,7 @@ long vector__Sort(struct vector *self)
   if(!Sorter) 
     status = vector_status_no_sort_routine;
   else 
-    qsort(Data,DataUsed,sizeof(long),Sorter);
+    qsort(Data,DataUsed,sizeof(long),(int(*)(const void *,const void *))Sorter);
   return(status);
 }
 

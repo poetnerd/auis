@@ -257,7 +257,7 @@ static void jselwxv(decompress_info_ptr cinfo)
   cinfo->methods->output_term = output_term;
 }
 
-static void JPEG_Message(char *msgtext)
+static void JPEG_Message(const char *msgtext)
 {
   char tempstr[200];
 
@@ -270,7 +270,7 @@ static void JPEG_Message(char *msgtext)
 
 
 /**************************************************/
-static void JPEG_Error(char *msgtext)
+static void JPEG_Error(const char *msgtext)
 {
   char tempstr[200];
   
@@ -501,8 +501,8 @@ static int writeJFIF(FILE *fp)
   c_methods.c_ui_method_selection = c_ui_method_selection;
 
   /* set up our progress-monitoring function */
-  cinfo.methods->progress_monitor = xv_jpeg_monitor;
-  
+  cinfo.methods->progress_monitor = (void (*)(compress_info_ptr, long, long))xv_jpeg_monitor;
+
   /* Select input and output */
   cinfo.input_file  = NULL;
   cinfo.output_file = fp;       /* already open */

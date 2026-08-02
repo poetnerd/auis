@@ -202,7 +202,7 @@ static struct FontSummary * GetFontSummary(struct xfontdesc *self)
 
 }
 
-static AddStyleModifiers(char *string, int styles)
+static int AddStyleModifiers(char *string, int styles)
 {
 
     char *oldString = string;
@@ -763,11 +763,11 @@ struct graphic * xfontdesc__CvtCharToGraphic(struct xfontdesc *self, struct grap
 	y = ci->ascent;
 	/* Note: we could have an empty character, in which case, we simulate it with a 1 by 1 character. Too bad X doesn't allow 0 sized pixmaps */
 	if (!width) {
-	    fprintf(stderr,"xfontdesc_CvtCharToGraphic: 0 width character %d in %X\n", SpecialChar, self);
+	    fprintf(stderr,"xfontdesc_CvtCharToGraphic: 0 width character %d in %lx\n", SpecialChar, (unsigned long)self);
 	    width++;
 	}
 	if (!height) {
-	    fprintf(stderr,"xfontdesc_CvtCharToGraphic: 0 height character %d in %X\n", SpecialChar, self);
+	    fprintf(stderr,"xfontdesc_CvtCharToGraphic: 0 height character %d in %lx\n", SpecialChar, (unsigned long)self);
 	    height++;
 	}
 	newPixmap = XCreatePixmap(xgraphic_XDisplay(graphic), xgraphic_XWindow(graphic), width, height, depth);

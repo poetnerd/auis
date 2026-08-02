@@ -283,8 +283,8 @@ static char * strip(char *str)
 
 boolean suite__InitializeClass(struct classheader *ClassID)
 {
-  proctable_DefineProc("suite-set-items", 
-			SetItems, &suite_classinfo,
+  proctable_DefineProc("suite-set-items",
+			(procedure)SetItems, &suite_classinfo,
 			"suite", "Set item list (colon separated list)");
   return(TRUE);
 }
@@ -1726,7 +1726,7 @@ static void SetSuiteAttribute(struct suite *self, long attribute, long value)
 	      }
 	  }
 	  }
-      default: fprintf( stderr, "Suite: Unknown Suite Attribute (%d)\n",attribute);
+      default: fprintf( stderr, "Suite: Unknown Suite Attribute (%ld)\n",attribute);
   }
   OUT(SetSuiteAttribute);
 }
@@ -1824,7 +1824,7 @@ static void ChangeSuiteAttribute(struct suite *self, long attribute, long value)
 	case suite_titlehithandler:
 	case suite_datum:
 	    break;
-	default: fprintf(stderr,"Suite: Unknown Suite Attribute (%d)\n",attribute);
+	default: fprintf(stderr,"Suite: Unknown Suite Attribute (%ld)\n",attribute);
   }
 }
 
@@ -1890,7 +1890,7 @@ long suite__SuiteAttribute(struct suite *self, long attribute)
       case suite_rows:		    value = (long)Rows;			    break;    
       case suite_columns:		    value = (long)Columns;		    break;    
       default:
-	  fprintf(stderr,"Suite: Unknown Suite Attribute (%d)\n",attribute);
+	  fprintf(stderr,"Suite: Unknown Suite Attribute (%ld)\n",attribute);
 	  break;
   }
   return(value);
@@ -2158,7 +2158,7 @@ static void SetItemAttribute(struct suite *self, struct suite_item *item, long a
 		}
 		break;
 	default:
-		fprintf(stderr, "Suite: Unknown Item Attribute (%d)\n", attribute);
+		fprintf(stderr, "Suite: Unknown Item Attribute (%ld)\n", attribute);
 		break;
   }
 }
@@ -2225,7 +2225,7 @@ static void ChangeItemAttribute(struct suite *self, struct suite_item *item, lon
 	    suiteev_ItemUpdate(SetView,item);
 	    break;
 	default:
-	    fprintf(stderr,"Suite: Unknown Item Attribute (%d)\n",attribute);
+	    fprintf(stderr,"Suite: Unknown Item Attribute (%ld)\n",attribute);
 	    break;
   }
 }
@@ -2285,7 +2285,7 @@ long suite__ItemAttribute(struct suite *self, struct suite_item *item, long attr
 	case suite_itemcursorbyte:
 		value = (long) item->cursorbyte;	break;
 	default:
-		fprintf(stderr,"Suite: Unknown Item Attribute (%d)\n",attribute);
+		fprintf(stderr,"Suite: Unknown Item Attribute (%ld)\n",attribute);
 		break;
   }
   return(value);
@@ -2380,11 +2380,11 @@ static void DefaultExceptionHandler(struct suite *self)
   long result;
   static char *continue_choice[2] = {"continue", 0};
 
-  sprintf(msg, "Suite: DefaultExceptionHandler:: exception code '%d' detected.",
+  sprintf(msg, "Suite: DefaultExceptionHandler:: exception code '%ld' detected.",
 	suite_ExceptionCode(self) );
   message_MultipleChoiceQuestion(self, 100, msg, 0, &result, continue_choice, NULL);
   if(ExceptionItem) {
-    sprintf(msg, "Suite: DefaultExceptionHandler:: exception item caption '%s'.", suite_ItemAttribute(self, ExceptionItem, suite_itemcaption));
+    sprintf(msg, "Suite: DefaultExceptionHandler:: exception item caption '%s'.", (char *)suite_ItemAttribute(self, ExceptionItem, suite_itemcaption));
     message_MultipleChoiceQuestion(self, 100, msg, 0, &result, continue_choice, NULL);
   }
 }
@@ -2499,7 +2499,7 @@ static void DrawRect(struct suite *self, struct rectangle *Rect, int border_size
       region_Destroy(re2);
   }
   else {
-      register i = border_size;
+      register int i = border_size;
       while(i > 0) {
 	  DrawRectSize(self, rectangle_Left(Rect), rectangle_Top(Rect), rectangle_Width(Rect), rectangle_Height(Rect));
 	  DecrementRect(Rect, 1);

@@ -137,7 +137,7 @@ void keymap__RemoveBinding(struct keymap *self, char *keys)
     bindKey(self,keys,NULL,NULL,keymap_Empty);
 }
 
-static ExpandTable(struct keymap *self)
+static int ExpandTable(struct keymap *self)
 {
 
 /* Don't even try to expand a full table... */

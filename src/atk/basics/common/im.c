@@ -76,7 +76,7 @@ Figure out some way to handle levels of user.  Macros should probably not be an 
 #include <netinet/in.h>	/* for byte ordering in logs */
 static void set_logical_wd();
 static struct action * ConsumeMacroEvent();
-static int DeathInTheFamily();
+static void DeathInTheFamily(int sig);
 static struct im * DoCreate();
 static void DumpActions();
 static void EditRecording();
@@ -89,7 +89,7 @@ static int HandleArgumentProcessing();
 static struct im * HandleProc();
 static void InitGlobalStructure();
 static void InteractionEventWork();
-static int InternalSignal();
+static void InternalSignal(int asigno);
 static void PlayKeyboardMacro();
 static void RecordCharacter();
 static void RecordProc();
@@ -155,7 +155,7 @@ static boolean allowCtrlUCmds;
 static void userKey(), userMouse(), userMenu();
 static char *getMenuEntryName();
 static boolean getMenuEntry();
-static SetArgProvided();
+static int SetArgProvided();
 static void FreeInteractionEvents();
 /* Everyone uniformly references this data through a pointer, 
 		declared below and statically allocated in im */
@@ -273,13 +273,13 @@ void WriteLogEntry(struct im *self, unsigned char code, char *str)
 	    if (str[1] == '\0') 
 		str = charToPrintable(*str);
 	}
-	fprintf(self->LogFile, "%d%c%s\n", now - LogStart, code, str);
+	fprintf(self->LogFile, "%ld%c%s\n", now - LogStart, code, str);
 }
 
 void WriteLogXY(struct im *self, unsigned char code, long x, long y)
 {
 	if (self->LogFile == NULL) return;
-	fprintf(self->LogFile, "%d%c%d,%d\n", time(0) - LogStart, code, x>>4, y>>4);
+	fprintf(self->LogFile, "%ld%c%ld,%ld\n", time(0) - LogStart, code, x>>4, y>>4);
 }
 
 
@@ -860,7 +860,7 @@ static void DeathInTheFamily(int sig) {
     childDied = TRUE;
 }
 #else
-static DeathInTheFamily() {
+static void DeathInTheFamily(int sig) {
     childDied = TRUE;
 }
 #endif
@@ -882,10 +882,10 @@ static void echoKey(struct im *self, long key, int pending)
 {
     if(self->keyEchoState==im_KeyEchoOff){
 	if(self->argState.argProvided) {
-	    sprintf(self->keyEcho,"%d ",self->argState.argument);
+	    sprintf(self->keyEcho,"%ld ",self->argState.argument);
 	}
 	else if (self->argState.argPending) {
-	    sprintf(self->keyEcho,"%d ",self->argState.tmpArgument);
+	    sprintf(self->keyEcho,"%ld ",self->argState.tmpArgument);
 	}
 	else {
 	    self->keyEcho[0]='\0';
@@ -938,7 +938,7 @@ static boolean stillexists(struct im *self)
 
 static char argbuf[30];
 
-static HandleArgumentProcessing(struct im *self, long key)
+static int HandleArgumentProcessing(struct im *self, long key)
 {
     long newArg;
 
@@ -955,7 +955,7 @@ static HandleArgumentProcessing(struct im *self, long key)
 	self->argState.argPending = TRUE;
 	self->argState.processCmd = allowCtrlUCmds;
 
-	sprintf(argbuf, "Arg: %d", newArg);
+	sprintf(argbuf, "Arg: %ld", newArg);
 	/* message_DisplayString(self, 0, buf); */
     }
     else if (self->argState.argPending && self->argState.cmdpos == 0 && key >= '0' && key <= '9') {
@@ -970,7 +970,7 @@ static HandleArgumentProcessing(struct im *self, long key)
 	}
 	self->argState.tmpArgument = newArg;
 
-	sprintf(argbuf, "Arg: %d", newArg);
+	sprintf(argbuf, "Arg: %ld", newArg);
 	message_DisplayString(self, 0, argbuf);
     }
     else if (self->argState.argPending) {
@@ -1916,13 +1916,12 @@ static void InternalSignal (int asigno)
     PollTime.tv_usec = 0;
 }
 #else /* POSIX_ENV */
-static int InternalSignal(int asigno)
+static void InternalSignal(int asigno)
 {
     anyDelivered = 1;
     sigDelivered[asigno] = 1;
     PollTime.tv_sec = 0;
     PollTime.tv_usec = 0;
-    return 0;
 }
 #endif /* POSIX_ENV */
 
@@ -2509,21 +2508,21 @@ static void DumpActions(struct action *a)
     while(a) {
 	switch(a->type) {
 	    case im_KeyboardEvent:
-		printf("key:'%c'\n",a->v.key);
+		printf("key:'%c'\n",(int)a->v.key);
 		break;
 	    case im_ProcEvent:
 		printf("proc %s\n",proctable_GetName(a->v.proc.procTableEntry));
-		printf("rock %d '%c'\n",a->v.proc.rock, a->v.proc.rock);
+		printf("rock %ld '%c'\n",a->v.proc.rock, (int)a->v.proc.rock);
 		break;
 	    case im_MenuEvent:
 		printf("menu proc %s\n",proctable_GetName(a->v.proc.procTableEntry));
-		printf("rock %d '%c'\n",a->v.proc.rock, a->v.proc.rock);
+		printf("rock %ld '%c'\n",a->v.proc.rock, (int)a->v.proc.rock);
 		break;
 	    case im_MouseEvent:
 		printf("mouse event!!\n");
 		break;
 	    case im_AnswerEvent:
-		printf("answer:%x\n",a->v.answer);
+		printf("answer:%p\n",(void *)a->v.answer);
 		printf("answer:'%s'\n",a->v.answer);
 		break;
 	    case im_SuspendEvent:
@@ -2594,7 +2593,7 @@ void im__CancelMacro(struct classheader *classID)
 This section deals with the global command argument, usually set by the ^U command.
  */
 
-static SetArgProvided(struct im *self, boolean value)
+static int SetArgProvided(struct im *self, boolean value)
 {
     if (self->argState.argProvided != value) {
 	keystate_Reset(self->keystate);
@@ -2639,7 +2638,7 @@ void im__DisplayArg(struct im *self)
 
     struct im_ArgState *as = im_GetArgState(self);
 
-    sprintf(buf, "Arg: %d", as->argument);
+    sprintf(buf, "Arg: %ld", as->argument);
     message_DisplayString(self, 0, buf);
 }
 
@@ -3614,7 +3613,7 @@ static jmp_buf trap;
 #if defined(_ANSI_C_SOURCE) && !defined(_NO_PROTO)
 static void SigHandler(int sig) {longjmp(trap, 1);}
 #else
-static SigHandler() {longjmp(trap, 1);}
+static void SigHandler(int sig) {longjmp(trap, 1);}
 #endif
 
 static boolean isString(char *arg)
@@ -3622,7 +3621,7 @@ static boolean isString(char *arg)
 #if defined(_ANSI_C_SOURCE) && !defined(_NO_PROTO)
     void (*oldBus)(int sig), (*oldSeg)(int sig); /* save signal handlers */
 #else
-    int (*oldBus)(), (*oldSeg)(); /* save signal handlers */
+    void (*oldBus)(int), (*oldSeg)(int); /* save signal handlers */
 #endif
     char c;
     int badflag=0;

@@ -261,7 +261,7 @@ int debugflush(struct parse_tables *desc, int state)
 	fflush(stdout);
 }
 
-debugnewline()
+int debugnewline()
 {
 	printf("\n");
 	fflush(stdout);

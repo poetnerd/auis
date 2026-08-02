@@ -72,6 +72,7 @@ HISTORY
 END-SPECIFICATION  ************************************************************/
 
 #include <class.h>
+#include <string.h>
 #include <rect.h>
 #include <keystate.ih>
 #include <keymap.ih>

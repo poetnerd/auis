@@ -115,7 +115,7 @@ struct overlay *next;
 #define SCALEWID
 #define DOINDENT(SELF) (SELF->drawing  || SELF->resizing)
 #define celview_COVERCHILD 1
-static scaleoverlay(struct celview *self, struct overlay *ov, struct rectangle *or)
+static int scaleoverlay(struct celview *self, struct overlay *ov, struct rectangle *or)
 {
     struct rectangle *nr = &(self->enclosingRect);
     struct rectangle *sr = &(ov->rect);
@@ -304,7 +304,7 @@ void celview__LoseInputFocus(struct celview *self)
 }
 
 
-static UpdateDrawing(struct celview *self)
+static int UpdateDrawing(struct celview *self)
 {
     if(self->OldMode != self->drawing || self->child == NULL){
 	if(self->child == NULL){
@@ -419,7 +419,7 @@ struct view * celview__makeview(struct celview *self, struct cel *ls)
     else self->mode = 0;
     return self->child;
 }
-static initchild(struct celview *self)
+static int initchild(struct celview *self)
 {
     struct cel *vr = Cel(self);
     if(vr->viewType == NULL) return;
@@ -578,7 +578,7 @@ void celview__Update(struct celview *self)
 
 }
 #define OFFSET 5
-static drawshadow(struct celview *self, struct rectangle *r)
+static int drawshadow(struct celview *self, struct rectangle *r)
 {
     celview_SetTransferMode(self,graphic_INVERT);
     celview_FillRectSize(self,r->left + OFFSET,r->top + r->height,r->width,OFFSET,celview_GrayPattern(self,8,16));
@@ -795,12 +795,12 @@ static struct bind_Description celviewBindings[]={
     {"celview-InsertFile",NULL,0,"celview,Insert File",0,1,celview_PromptForFile,"Read Child" },
 NULL
 };
-static SetVisible(struct celview *self)
+static int SetVisible(struct celview *self)
 {
     if(Cel(self))
 	cel_SetVisible(Cel(self));
 }
-static SetInvisible(struct celview *self)
+static int SetInvisible(struct celview *self)
 {
     if(Cel(self))
 	cel_SetInvisible(Cel(self));
@@ -817,7 +817,7 @@ boolean celview__InitializeClass(struct classheader *classID)
     return TRUE;
 }
 
-static objecttest(struct celview *self, char *name, char *desiredname)
+static int objecttest(struct celview *self, char *name, char *desiredname)
 {
     if(class_Load(name) == NULL){
         char foo[640];
@@ -846,7 +846,7 @@ static struct types typearray[] = {
     {"",0}
 };
 
-static lookuptype(char *ty)
+static int lookuptype(char *ty)
 {
     struct types *tp;
     for(tp = typearray;tp->val != 0; tp++)
@@ -903,7 +903,7 @@ printf("out of sprintf\n");
 		    (float) rl->data);
 	    break;
 	case LONG:
-	    sprintf(str,"[%s] <%s> (%d)",rl->type->name,atomlisttostring(rl->name),
+	    sprintf(str,"[%s] <%s> (%ld)",rl->type->name,atomlisttostring(rl->name),
 		    rl->data);
 	    break;
 	default:   
@@ -934,7 +934,7 @@ void celview__GetManyParameters(struct celview *self, struct resourceList *resou
 	appendresourceList( self, resources);
     }
 }
-static appendresourceList(struct celview *self, struct resourceList *resources)
+static int appendresourceList(struct celview *self, struct resourceList *resources)
 {   /* append new entries onto the cels text */
     char *buf,tbuf[1024],*obp,*cp,*el;
     struct resourceList rl;
@@ -981,7 +981,7 @@ static appendresourceList(struct celview *self, struct resourceList *resources)
     }	
 
 }
-static editresourceList(struct celview *self, struct resourceList *resources, int askres, int maxcount)
+static int editresourceList(struct celview *self, struct resourceList *resources, int askres, int maxcount)
 {
     struct resourceList *rl;
     char buf[1024],iname[512],*cp;
@@ -1058,7 +1058,7 @@ static boolean StringToResourceList(struct resourceList *rl, char *str)
     }
     return TRUE;
 }
-static GetParameters(struct celview *self)
+static int GetParameters(struct celview *self)
 {
     struct valueview *wv = (struct valueview *)self->truechild;
     struct resourceList *resources;
@@ -1105,7 +1105,7 @@ self->NeedsPost = TRUE;
 celview_WantUpdate(self,self);
 }
 /* #define DEBUG  */
-static PostParameters(struct celview *self)
+static int PostParameters(struct celview *self)
 {
     int len;
     struct resourceList rl;

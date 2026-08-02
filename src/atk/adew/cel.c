@@ -102,11 +102,11 @@ void cel__FinalizeObject(struct classheader *classID, struct cel *self)
     }
 }
 
-static SetVisible(struct cel *self)
+static int SetVisible(struct cel *self)
 {
     cel_SetVisible(self);
 }
-static SetInvisible(struct cel *self)
+static int SetInvisible(struct cel *self)
 {
     cel_SetInvisible(self);
 }
@@ -465,7 +465,7 @@ long cel__Read(struct cel *self, FILE *file, long id)
 		    dataobject_UnReference(newobject);
                     status = dataobject_Read(newobject, file, objectid);
 		    if (status != dataobject_NOREADERROR) {
-			printf("ERROR reading %s, %d\n",objectname,status);
+			printf("ERROR reading %s, %ld\n",objectname,status);
 			return status;
 		    }
 		}
@@ -494,11 +494,11 @@ long cel__Read(struct cel *self, FILE *file, long id)
     if (*cp == '\n') cp++;
     switch(version){
 	case 2:
-	    sscanf(cp,"%d %ld %d %d %d %d\n" ,&(self->application),
+	    sscanf(cp,"%d %ld %ld %ld %ld %d\n" ,&(self->application),
 		   &did,&textpending,&(self->desw), &(self->desh),&(self->mode));
 	    break;
 	default:
-	    sscanf(cp,"%d %ld %d %d %d\n" ,&(self->application),
+	    sscanf(cp,"%d %ld %ld %ld %ld\n" ,&(self->application),
 		   &did,&textpending,&(self->desw), &(self->desh));
     }
     while (*cp != '\n') cp++;
@@ -590,10 +590,10 @@ long cel__Write(struct cel *self, FILE *file, long writeid, int level)
 #endif /* WOULDWORKBUT */
     if(level != -1){
 	if(self->linkname)
-	    fprintf(file,"%d %ld %d %d %d %d \n>OBJ< %s\n>VIEW< %s\n>REF< %s\n>LINK< %s\n" ,self->application,
+	    fprintf(file,"%d %ld %d %ld %ld %d \n>OBJ< %s\n>VIEW< %s\n>REF< %s\n>LINK< %s\n" ,self->application,
 		    did,(self->script != NULL),self->desw, self->desh,self->mode,(self->dataType)?self->dataType:"", (self->viewType)?self->viewType:"",(self->refname)?self->refname:"",(self->linkname)?self->linkname:"");
 	else 
-	    fprintf(file,"%d %ld %d %d %d %d \n>OBJ< %s\n>VIEW< %s\n>REF< %s\n" ,self->application,
+	    fprintf(file,"%d %ld %d %ld %ld %d \n>OBJ< %s\n>VIEW< %s\n>REF< %s\n" ,self->application,
 		    did,(self->script != NULL),self->desw, self->desh,self->mode,(self->dataType)?self->dataType:"", (self->viewType)?self->viewType:"",(self->refname)?self->refname:"");
 	if(self->script){
 	    text_Write(self->script,file,writeid,level+1);
@@ -616,7 +616,7 @@ boolean cel__InitializeClass(struct classheader *classID)
     return TRUE;
 }
 
-static searchatt(struct cel *self, char *attname, long *len)
+static int searchatt(struct cel *self, char *attname, long *len)
 {
     long tlen,i,attlen,j;
     attlen = strlen(attname);

@@ -551,7 +551,7 @@ int dialogv__PostChoice(struct dialogv *dv, struct im *im, struct view *client, 
     dialogv_LinkTree(dv, client);
 
     /* Set the default configuration function temporarily so that the configuration function here will get called to determine the desired size for the window */
-    oldconfigfunc=im_DefaultConfigureFunction(ConfigureFunc);
+    oldconfigfunc=im_DefaultConfigureFunction((procedure)ConfigureFunc);
     oldconfigrock=im_DefaultConfigureRock(pos);
     oldcustomrock=im_DefaultConfigureCustomRock((long)dv);
 
@@ -604,7 +604,7 @@ int dialogv__PostInput(struct dialogv *dv, struct im *im, struct view *client, p
     /* Horrible hack to get desired size for the dialog box! */
     dialogv_LinkTree(dv, client);
 
-    oldconfigfunc=im_DefaultConfigureFunction(ConfigureFunc);
+    oldconfigfunc=im_DefaultConfigureFunction((procedure)ConfigureFunc);
     oldconfigrock=im_DefaultConfigureRock(pos);
     oldcustomrock=im_DefaultConfigureCustomRock((long)dv);
     

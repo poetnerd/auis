@@ -133,7 +133,7 @@ struct view * Flavor_Choice(struct suitex1app *self, struct suite *suite, struct
 {
     char msg[100];
     if(action == view_LeftUp) {
-	sprintf(msg, "Chosen Flavor is %s.", suite_ItemAttribute(suite, item, suite_itemcaption));
+	sprintf(msg, "Chosen Flavor is %s.", (char *)suite_ItemAttribute(suite, item, suite_itemcaption));
 	message_DisplayString(suite, 0, msg);
     }
     return(NULL);

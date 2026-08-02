@@ -84,7 +84,7 @@ static int WaitTillReady();
 static char * defaultgetdefault();
 static int getdefaultbool();
 static int getdefaultint();
-static int mcomp();
+static int mcomp(const void *a, const void *b);
 
 #define MOREMENUPRIORITY 127
 #define MAXPANEPRIORITY 100
@@ -454,9 +454,11 @@ void mb_DeleteSelection(struct menubar *mb, char *title, char *item)
 }
 
 /* mcomp: decide which menu comes first. if a<b return -X else return 0 or +Y */
-static int mcomp(struct tmenu **a, struct tmenu **b)
+static int mcomp(const void *a, const void *b)
 {
-    return (*a)->prio - (*b)->prio;
+    struct tmenu * const *ta = (struct tmenu * const *)a;
+    struct tmenu * const *tb = (struct tmenu * const *)b;
+    return (*ta)->prio - (*tb)->prio;
 }
 
 #define SetSeg(seg, x, y, xb, yb) do { (seg).x1=(x);(seg).y1=(y);(seg).x2=(xb);(seg).y2=(yb); } while(False);

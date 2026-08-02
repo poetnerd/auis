@@ -111,7 +111,7 @@ int FindResource(struct atomlist *name, struct atoms *namecar, struct atomlist *
 #if DEBUG_RM
 	  if (debug_rm)
 	    {
-	      printf("Found at name: %x ",namecar);
+	      printf("Found at name: %lx ",(unsigned long)namecar);
 	      Patom(atomlist_TraversalAtom(name,namecar));
 	      printf("\n");
 	    }
@@ -131,7 +131,7 @@ int FindResource(struct atomlist *name, struct atoms *namecar, struct atomlist *
 #if DEBUG_RM
 	      if (debug_rm)
 		{
-		  printf("Found at class: %x ",classcar);
+		  printf("Found at class: %lx ",(unsigned long)classcar);
 		  Patom(atomlist_TraversalAtom(class,classcar));
 		  printf("\n");
 		}
@@ -146,7 +146,7 @@ int FindResource(struct atomlist *name, struct atoms *namecar, struct atomlist *
 #if DEBUG_RM
 	      if (debug_rm)
 		{
-		  printf("discarded at name: %x ",namecar);
+		  printf("discarded at name: %lx ",(unsigned long)namecar);
 		  Patom(atomlist_TraversalAtom(name,namecar));
 		  printf("\n");
 		}
@@ -217,7 +217,7 @@ int FindManyResources(struct resourceList *resources, struct atomlist *name, str
 #if DEBUG_RM
 	  if (debug_rm)
 	    {
-	      printf("Found at name: %x ",namecar);
+	      printf("Found at name: %lx ",(unsigned long)namecar);
 	      Patom(atomlist_TraversalAtom(name,namecar));
 	      printf("\n");
 	    }
@@ -238,7 +238,7 @@ int FindManyResources(struct resourceList *resources, struct atomlist *name, str
 #if DEBUG_RM
 	      if (debug_rm)
 		{
-		  printf("Found at class: %x ",classcar);
+		  printf("Found at class: %lx ",(unsigned long)classcar);
 		  Patom(atomlist_TraversalAtom(class,classcar));
 		  printf("\n");
 		}
@@ -253,7 +253,7 @@ int FindManyResources(struct resourceList *resources, struct atomlist *name, str
 #if DEBUG_RM
 	      if (debug_rm)
 		{
-		  printf("discarded at name: %x ",namecar);
+		  printf("discarded at name: %lx ",(unsigned long)namecar);
 		  Patom(atomlist_TraversalAtom(name,namecar));
 		  printf("\n");
 		}
@@ -396,7 +396,7 @@ void rm__PostResource(struct classheader *classID, struct atomlist *path, long d
     {
       printf("Posting resource: ");
       Plist( path );
-      printf("\nType: %x ",type);
+      printf("\nType: %lx ",(unsigned long)type);
       Patom(type);
       putchar('\n');
     }
@@ -419,7 +419,7 @@ short rm__GetResource(struct classheader *classID, struct atomlist *name, struct
       Plist( name );
       printf("\nClass: ");
       Plist(class);
-      printf("\nType: %x ",type);
+      printf("\nType: %lx ",(unsigned long)type);
       Patom(type);
       printf("\n");
     }
@@ -432,7 +432,7 @@ short rm__GetResource(struct classheader *classID, struct atomlist *name, struct
   if (debug_rm)
     {
       if (x)
-	printf("Found such a resource %x\n", tree);
+	printf("Found such a resource %lx\n", (unsigned long)tree);
       else
 	printf("no such resource\n");
     }

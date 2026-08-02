@@ -46,7 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <string.h>
 static boolean varcmp();
 
-extern ProgramName[];	/* blechhh */
+extern char ProgramName[];	/* blechhh */
 
 extern char *GetConfiguration();
 extern char *AndrewDir();

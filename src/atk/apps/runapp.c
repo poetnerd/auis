@@ -62,6 +62,7 @@ static void initClass();
 static char * leaf();
 static void stripSuffix();
 static void usage();
+extern void doStaticLoads();
 
 extern int errno;
 extern char *AndrewDir();

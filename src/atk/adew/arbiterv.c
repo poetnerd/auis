@@ -304,7 +304,7 @@ printf(" exiting Register name \n");
 #endif /* DEBUG */
     return TRUE;
 }
-static appendlist(char **lst, int cnt, char *str)
+static int appendlist(char **lst, int cnt, char *str)
 {
     int next = 1;
     while(*str){
@@ -374,7 +374,7 @@ void arbiterview__FinalizeObject(struct classheader *classID, struct arbiterview
     arbcon_DeleteArbiter(self);
 }
 
-static addlist(struct arbiterview *self, struct celview *cv)
+static int addlist(struct arbiterview *self, struct celview *cv)
 {
     register struct celview **v;
     register int i = 0;
@@ -390,7 +390,7 @@ static addlist(struct arbiterview *self, struct celview *cv)
     arbiterview_NotifyObservers(self,0);
     return self->celcount - 1;
 }
-static deletelist(struct arbiterview *self, struct celview *cv)
+static int deletelist(struct arbiterview *self, struct celview *cv)
 {
     register struct celview **v;
     register int i = self->celcount;

@@ -81,7 +81,7 @@ void wincelview__popchild(struct wincelview *self)
     }
 }
 
-static DoUpdate(struct wincelview *self)
+static int DoUpdate(struct wincelview *self)
 {
     struct rectangle enclosingRect;
     long xsize,ysize;

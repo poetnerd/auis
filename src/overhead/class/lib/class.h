@@ -168,6 +168,7 @@ struct basicobject {
  */
 extern class_ErrorType class_Init(/* void */);
 extern class_ErrorType class_SetClassPath(/* char * path */);
+extern void class_PrependClassPath(/* char * path */);
 extern char * class_GetClassPath(/* void */);
 extern class_ErrorType class_SetDebugLevel(/* class_DebugLevelType level */);
 extern class_DebugLevelType class_GetDebugLevel(/* void */);
