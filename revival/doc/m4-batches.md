@@ -207,13 +207,28 @@ proof-of-mechanics step M3's `atk/eq` pilot provided.
 
 ## Wave 2 — atk/basics+support (19 directories, 381 errors, 3 sessions)
 
-- [ ] **B1**: `atk/apt/tree` (87) — alone. Biggest surprise in this
-      wave — M3's own `.c`-file-count proxy estimated this directory
-      as small (2 files); real M4 fallout is the third-largest single
-      directory in the whole census. **Orchestrator pre-diagnoses the
-      why before briefing the session** (same flagged-risky pattern
-      that worked in M3), rather than leaving the delegate to discover
-      it.
+- [x] **B1 COMPLETE 2026-08-02, fossil `d45d25635594`**: `atk/apt/tree`
+      (census 87, real 94 — clang's default `-ferror-limit=20` was
+      truncating the initial dry-run count to 23, hence the "biggest
+      surprise" framing). Orchestrator pre-diagnosis found the real
+      cause before briefing the delegate: `treev.c` (2833 lines)
+      carried two forward-declaration blocks for the same ~40 static
+      helpers — a correctly-typed one and a stale untyped duplicate
+      further down — plus each function's actual K&R-style definition
+      still lacking a return type. Fix: deleted the dead block, folded
+      its 6 non-`int` entries (`void`/`long`/struct-pointer returns)
+      into the correct block, added `int` to the 42 definitions that
+      needed it (verified each against real `return` behavior, not
+      just the pre-existing block's say-so). Plus 7 LP64 `%d`→`%ld`
+      fixes verified against `tree.ch`'s real `long`-typed fields
+      (display/outline-index strings, not an on-disk format — unlike
+      O3's `index` bug) and 3 function-pointer casts (`tree_Apply`,
+      `treev__SetHitHandler`'s `HitHandler`, `treev_PrintObject`'s
+      `Printer` arg) checked byte-for-byte against the real classpp-
+      generated `.ih`/`.eh` dispatch-macro slot types — same genuinely-
+      polymorphic-table exception already used elsewhere, not a banned
+      bare cast. No CWE-134 sites. Gate independently reproduced clean
+      from a fresh `make clean && make depend && make -k install`.
 - [ ] **B2** (former B2+B5): `atk/adew` (51), `atk/basics/common` (37),
       `atk/apt/suite` (9), `atk/basics/x` (6) — **fixing basics/x
       closes `atk/basics/lib`'s 35 duplicate errors too, confirm both
