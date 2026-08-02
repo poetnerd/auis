@@ -266,15 +266,56 @@ proof-of-mechanics step M3's `atk/eq` pilot provided.
       scrollbar, menus, text) before commit; passed. Confirmed
       pre-existing (not a regression): GIF/JPEG-into-`image`-inset
       import still renders blank, same as before this batch.
-- [ ] **B3** (former B3+B4): `atk/value` (30), `atk/apt/apt` (23),
-      `atk/textaux` (22), `atk/supportviews` (21), `atk/support` (20),
-      `atk/lookz` (18), `atk/textobjects` (17), `atk/extensions` (16),
-      `atk/frame` (14) — 181, 9 directories. Largest merged batch;
-      Gate-0 dry run first, split back to the original B3/B4 halves if
-      the function-pointer share looks heavy.
+- [x] **B3 COMPLETE 2026-08-02, fossil `2f65c929c095`**: `atk/value`,
+      `atk/apt/apt`, `atk/textaux`, `atk/supportviews`, `atk/support`,
+      `atk/lookz`, `atk/textobjects`, `atk/extensions`, `atk/frame` — 9
+      directories. Census (181) undercounted only mildly this time
+      (real 218, +20%, 0%–60% per-directory spread, no B2-style hidden
+      outlier) — Gate-0 dry run confirmed the function-pointer share
+      (74/218, 34%) tracked the tree-wide census ratio and was
+      overwhelmingly one already-precedented shape (concrete function →
+      generic `procedure`/`void(*)()` dispatch slot), so proceeded
+      without splitting back to the original B3/B4 halves. Eleven
+      genuine bugs found and fixed: LP64 on-disk format bugs in
+      `value.c` (button/slider widget save format), `supportviews/
+      label.c` (font style/size write/read asymmetry), and
+      `supportviews/strtbl.c` (`%x`-on-`unsigned long` highlight
+      bitmask — the exact scanf-into-long memory-corruption variant);
+      two stale duplicate untyped forward-declaration blocks in
+      `apt/apt/apt.c` and `aptv.c` (same shape as B1's `treev.c`
+      finding — checked each function's real return behavior rather
+      than trusting the "correct" block, which was itself wrong for 8
+      of the functions); a dead-branch signal-handler bug in
+      `frame/framecmd.c` (`_ANSI_C_SOURCE`/`_NO_PROTO` never defined,
+      identical root cause to B2's `basics/common/im.c` finding); a
+      real writable-string-literal crash bug in `extensions/filter.c`
+      (`sprintf("literal", buf)` — format string and destination
+      buffer swapped); a format-extra-args copy/paste bug in
+      `support/print.c`; and assorted mechanical `%d`→`%ld` LP64
+      fixes. ~30 function-pointer casts, all verified against real
+      `.ch`/`.eh`/`.ih` declared types; one pre-existing **bare**
+      `(void(*)())` cast in `lookz/lookzv.c` was removed outright
+      (became unnecessary once the callee's implicit-int was fixed to
+      its real `void` type) rather than re-justified. One out-of-batch
+      prerequisite fix: `overhead/util/hdrs/util.h` gained a missing
+      `lc_strcmp` prototype (same shape as B2's
+      `class_PrependClassPath` fix). Orchestrator independently
+      re-verified the highest-risk claims against real header
+      declarations (`value.ch`, `strtbl.ch`, `panel.ch`, `im.ch`,
+      `keystate.ch`, `dialogv.ch`, `framemsg.ch`, `proctbl.ch`) and
+      re-ran all 9 directory gates clean from scratch. `atk/
+      supportviews`, `atk/support`, and `atk/frame` are statically
+      linked into `runapp` (every app); wdc ran the same manual
+      smoke-test tier B2 required (scrollbar auto-repeat, style
+      editing, a button/slider dialog, a message-line prompt) — all
+      passed, before this wave's checkpoint.
 
-**Checkpoint** after this wave: full `make Clean; make World` +
-runtime pass (see runbook Phase 2 gate schedule).
+**Checkpoint after Wave 2, 2026-08-02**: full `make Clean; make World`
+from the tree root — clean, zero real errors (only the known
+`"Internal error: unknown recognizer type"` string-literal false
+positive). wdc then ran a broader runtime pass across `ez`, `help`,
+`messages`, and `cuin` (all share the freshly-relinked `runapp` binary)
+— all behave as before. **Closes Wave 2.**
 
 ## Wave 3 — atk/text (1 directory, 57 errors, 1 session)
 
