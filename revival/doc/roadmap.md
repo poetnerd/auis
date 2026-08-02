@@ -2086,10 +2086,22 @@ call site and definition tree-wide *before* any mass file editing starts
   all the deliberate C89 "unspecified arguments" idiom M2/M3 used
   correctly and on purpose, not leftover K&R. Keep `-std=gnu89` until
   conversion completes; consider c99 after. Writable-strings stays
-  deferred. Task breakdown, verified starting state, the
-  `strict-prototypes` finding in full, and why this milestone skips a
-  pre-built directory batch map (unlike M2/M3): `m4-rollout-runbook.md`
-  (Phase 0 complete 2026-08-01; Phase 1 not yet started).
+  deferred. **Phase 0 (audit) and Phase 1 (global flip + census) both
+  complete 2026-08-01.** Real census: 1,778 errors across 83 of 91
+  directories (`implicit-int` 1,079, `incompatible-function-pointer-types`
+  515, `implicit-function-declaration` 183, `int-conversion` 0 clean) —
+  far past the "small residual" the plan hoped for, so this milestone
+  does need a real directory batch map after all: `m4-batches.md`, 24
+  batches across the same 7 dependency-order waves M3 used, built from
+  the real per-directory counts. Also found and fixed a real prerequisite
+  blocker along the way: classpp itself (`overhead/class/pp/class.c` and
+  `overhead/class/lib/class.c`) failed to compile under the new flags,
+  cascading into every `-pe`/`-pi` consumer — fixed (missing `stdlib.h`,
+  two missing forward declarations, two missing return types), verified,
+  not yet committed. Task breakdown, verified starting state, the
+  `strict-prototypes` finding, and the classpp fix in full:
+  `m4-rollout-runbook.md`. Phase 3 (fixing the real fallout) not yet
+  started.
 
 Scale: ~13,700 K&R definitions across ~1,301 of 1,544 `.c` files; ~5,100
 are class methods converted by `.ch` lookup, not inference. M2/M3 runs

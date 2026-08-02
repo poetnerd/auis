@@ -26,27 +26,35 @@ clean slate, not a partially-done ratchet** — don't assume any
 directory is pre-verified against the full flag set just because it
 went through M2 or M3.
 
-## Why this milestone doesn't need a directory batch map (unlike M2/M3)
+## Why this milestone didn't PRE-build a directory batch map (unlike M2/M3) — updated 2026-08-01
 
-M2 and M3 needed per-directory rollout because each directory's
-fallout was independent and unpredictable in advance, and the fix
-itself required per-instance judgment (M2: find the real declaration;
-M3: tool-driven conversion with real interface bugs surfacing
-constantly). M4 is different in kind: it's flipping a global default
-in one file, on a tree that's already had two full milestones of
-preparation (M1's typed dispatch, M3's ANSI conversion) specifically
-so this flip lands close to clean. The right shape is **flip once,
-census once, then react to whatever's actually left** — not
-pre-build another wave/batch map the way `m3-batches.md` did.
+The original plan below argued M4 might not need a directory batch map
+at all: it's flipping a global default in one file, on a tree that's
+already had two full milestones of preparation (M1's typed dispatch,
+M3's ANSI conversion), so the flip might land close to clean. **Phase 1
+ran and disproved that** — 1,778 real errors across 83 of 91
+directories, comparable in scale to a meaningful fraction of M2's
+original census, not a small residual. Per this section's own original
+fallback plan ("if Phase 1 turns up enough fallout to need batching,
+build that map then, from real per-directory counts"), that map now
+exists: **`m4-batches.md`**, built entirely from real Phase 1 error
+counts, not a guessed proxy. 24 batches across the same 7
+dependency-order waves M3 used.
 
-(That file's own first draft *did* over-plan before checking real
-scope — it split into 24 batches, more checkpoints than M2's 13,
-before anyone had verified M3's actual footprint was even comparable
-to M2's. It wasn't, and the map had to be redone. The lesson carries
-directly here: don't build M4's batch structure before the census in
-Phase 1 exists. If Phase 1 turns up enough fallout to need batching,
-build that map then, from real per-directory counts — the way M2 and
-M3 both eventually did it right, just later than they should have.)
+(Original reasoning, kept for the record: M2 and M3 needed per-directory
+rollout because each directory's fallout was independent and
+unpredictable in advance, and the fix itself required per-instance
+judgment. `m3-batches.md`'s own first draft over-plans before checking
+real scope — 24 batches, more checkpoints than M2's 13, before anyone
+had verified M3's actual footprint was even comparable to M2's — and
+had to be redone once corrected. M4's plan tried to apply that lesson
+by not pre-building a map at all, deferring to a real census first.
+That part of the lesson held: the map wasn't built until real numbers
+existed. The part that didn't hold was the *guess* that M4's residual
+would be small — coincidentally, the corrected batch count landed on
+the same number, 24, as `m3-batches.md`'s own over-eager first draft,
+this time for real reasons: 8 outlier directories each needing their
+own session, not an estimation error.)
 
 ## Task breakdown
 
