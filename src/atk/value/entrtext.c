@@ -87,7 +87,7 @@ void entertext__SetChars(struct entertext *self, char *str, int len)
     if(len && str && *str) entertext_InsertCharacters(self,0,str,len);
     self->needswrap = TRUE;
 }
-static checkstyles(struct entertext *self)
+static int checkstyles(struct entertext *self)
 {
     
     if(self->needswrap && entertext_GetGlobalStyle(self) == NULL){

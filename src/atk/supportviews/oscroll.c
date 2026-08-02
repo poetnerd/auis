@@ -1735,7 +1735,7 @@ static void RepeatScroll(struct oscroll *self, long cTime)
 	  (((maxContScrollTime - minContScrollTime) * self->hitcoord) /
 	   (PIXELSPERINCH * 10));
 
-	self->scrollEvent = im_EnqueueEvent(RepeatScroll, self,
+	self->scrollEvent = im_EnqueueEvent((procedure) RepeatScroll, self,
 					    event_MSECtoTU(timeInterval));
 
 	RepeatEvent(self);
@@ -2116,7 +2116,7 @@ long x, y, num_clicks;
 
 		if (startScrollTime > 0)  {
 		    self->scrollEvent =
-		      im_EnqueueEvent(RepeatScroll, self,
+		      im_EnqueueEvent((procedure) RepeatScroll, self,
 				      event_MSECtoTU(startScrollTime));
 		}
 

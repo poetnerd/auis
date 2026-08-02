@@ -276,7 +276,7 @@ void ghash__Clear(struct ghash *self)
 }
 
 
-static PrintAll(struct egg *egg, int nothing)
+static int PrintAll(struct egg *egg, int nothing)
 {
     printf("Egg (%s) contains (%s)\n",egg->key,egg->value);
     return FALSE;

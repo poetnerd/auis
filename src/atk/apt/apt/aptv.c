@@ -101,14 +101,14 @@ END-SPECIFICATION  ************************************************************/
 #include <apt.ih>
 #include <aptv.eh>
 #include <ctype.h>
-static int Draw_Enclosures();
-static int Draw_String();
-static int Help();
-static int Help_FullUpdate();
+static void Draw_Enclosures();
+static void Draw_String();
+static void Help();
+static void Help_FullUpdate();
 static struct aptv * Parent_AptView();
-static int Print_Area();
-static int Size_Enclosures();
-static int Unhelp();
+static void Print_Area();
+static void Size_Enclosures();
+static void Unhelp();
 
 #define  Balanced		    (view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBOTTOM)
 
@@ -257,14 +257,6 @@ static int Unhelp();
 
 #define  Troff			      (1<<0)
 #define  PostScript		      (1<<1)
-
-static Size_Enclosures();
-static Print_Area();
-static Help();
-static Help_FullUpdate();
-static Unhelp();
-static Draw_String();
-static Draw_Enclosures();
 
 struct  aptv_print_stream
   {
@@ -685,7 +677,7 @@ void aptv__PrintObject(struct aptv *self, FILE *file, char *processor, char *for
   OUT(aptv_PrintObject);
   }
 
-static Print_Area(struct aptv *self, long enclosure, long area)
+static void Print_Area(struct aptv *self, long enclosure, long area)
   {
   register long		      i, width, center;
 
@@ -831,7 +823,7 @@ boolean aptv__OpenPrintStream(struct aptv *self, FILE *file, char *processor, ch
     }
     else
     {
-    fprintf( PrintFile, "%s%d %d translate  %% Portrait Orientation\n",
+    fprintf( PrintFile, "%s%d %ld translate  %% Portrait Orientation\n",
 	     PrintPrefix, 0, -Height(Outer) );
     if ( PrintTopLevel )
       fprintf( PrintFile, "%s%g %g translate  %% Centering\n",
@@ -958,7 +950,7 @@ void aptv__PrintRoundBox(struct aptv *self, long left, long top, long width, lon
 void aptv__PrintFilledRoundBox(struct aptv *self, long left, long top, long width, long height, long mode, long shade)
   {
   fprintf( PrintFile,"%s/left %g def /top %g def /right %g def /bottom\
-	    %g def /shade %d def fillroundbox\n",
+	    %g def /shade %ld def fillroundbox\n",
 	    PrintPrefix, PRF(left), PRF(top),
 			 PRF(left) + (PRF(width) - 1), PRF(top) + (PRF(height) - 1), shade );
   }
@@ -1015,7 +1007,7 @@ void aptv__SetPrintFont(struct aptv *self, char *font_name)
     *style_name = 0;
     if ( style & fontdesc_Bold )    strcat( style_name, "b" );
     if ( style & fontdesc_Italic )  strcat( style_name, "i" );
-    fprintf( PrintFile, "%s %d %s%s  setfont\n", PrintPrefix, size, family, style_name );
+    fprintf( PrintFile, "%s %ld %s%s  setfont\n", PrintPrefix, size, family, style_name );
     }
   OUT(aptv_SetPrintFont);
   }
@@ -1087,7 +1079,7 @@ aptv__DesiredSize( self, given_width, given_height,
   return  result;
   }
 
-static Size_Enclosures(struct aptv *self)
+static void Size_Enclosures(struct aptv *self)
   {
   register long		      i;
   long			      w, h;
@@ -1143,7 +1135,7 @@ static Size_Enclosures(struct aptv *self)
   OUT(Size_Enclosures);
   }
 
-static Help(struct aptv *self)
+static void Help(struct aptv *self)
   {
   static char		     *notice = "Sorry, No help available for this Object.";
   FILE			     *file;
@@ -1180,7 +1172,7 @@ static Help(struct aptv *self)
   aptv_UseNormalCursor( self );
   }
 
-static Help_FullUpdate(struct aptv *self)
+static void Help_FullUpdate(struct aptv *self)
   {
   aptv_ClearClippingRect( self );
   aptv_SetTransferMode( self, graphic_WHITE );
@@ -1195,7 +1187,7 @@ static Help_FullUpdate(struct aptv *self)
   textview_WantInputFocus( HelpTextView, HelpTextView );
   }
 
-static Unhelp(struct aptv *self)
+static void Unhelp(struct aptv *self)
   {
   HelpDisplayed = false;
   BypassUpdate = false;
@@ -1263,7 +1255,7 @@ void aptv__ClearBoundedString(struct aptv *self, char *string, struct fontdesc *
   OUT(aptv_ClearBoundedString);
   }
 
-static Draw_String(struct aptv *self, char *string, struct fontdesc *font, struct rectangle *bounds, long x, long y, long mode)
+static void Draw_String(struct aptv *self, char *string, struct fontdesc *font, struct rectangle *bounds, long x, long y, long mode)
   {
   struct rectangle	      bound_interior;
 
@@ -1281,7 +1273,7 @@ static Draw_String(struct aptv *self, char *string, struct fontdesc *font, struc
   OUT(Draw_String);
   }
 
-static Draw_Enclosures(struct aptv *self)
+static void Draw_Enclosures(struct aptv *self)
   {
   register long		      e, a, i, width, center, alignment;
   register char		     *string;

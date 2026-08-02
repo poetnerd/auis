@@ -83,7 +83,7 @@ struct finderInfo {
     struct buffer *myBuffer;
 };
 
-static ViewEqual(struct frame *frame, struct view *view)
+static int ViewEqual(struct frame *frame, struct view *view)
 {
 
 #if 1
@@ -195,7 +195,7 @@ void tags_RebuildTagsFile(struct view *view, long key)
         execlp("/bin/csh","csh","-f", "-c",command,">>& /dev/console",0);
 	exit(0);
     }
-    im_AddZombieHandler(pid, tags_finished, view);
+    im_AddZombieHandler(pid, (procedure) tags_finished, view);
 }
 
 

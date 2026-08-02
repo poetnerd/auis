@@ -145,7 +145,7 @@ static void filter(struct textview *tv, char *command, short method)
 	fd->infp=fopen("/dev/null","r");
     if(fd->infp==NULL){
 	char mbuf[200];
-	sprintf("Can't open %s.",buf);
+	sprintf(mbuf, "Can't open %s.",buf);
 	message_DisplayString(tv,1,mbuf);
 	return;
     }
@@ -158,7 +158,7 @@ static void filter(struct textview *tv, char *command, short method)
 	fd->outfp=fopen("/dev/null","w");
     if(fd->outfp==NULL){
 	char mbuf[200];
-	sprintf("Can't open %s.",buf);
+	sprintf(mbuf, "Can't open %s.",buf);
 	message_DisplayString(tv,1,mbuf);
 	fclose(fd->infp);
 	return;

@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <andrewos.h>
 #include <class.h>
 #include <ctype.h>
+#include <util.h>
 
 #include <signal.h>
 #include <sys/stat.h>
@@ -181,7 +182,7 @@ static long mystrtol16(char *p, char **pp)
     return result;
 }
 
-static insert(char *src, char *c)
+static int insert(char *src, char *c)
 {   /* inserts string src into the begining of string c , assumes enough space */
     char *p,*enddest;
     enddest = c + strlen(c);
@@ -359,7 +360,7 @@ fflush(stdout);
 		    if(dofork)
 			sprintf(q,"%s %s; rm \"%s\"",pp,prarg,tmpname);
 		    else
-			sprintf(q,"%s \"%s\"",pp,prarg,tmpname);
+			sprintf(q,"%s \"%s\"",pp,prarg);
 		}
 	    }
 	    strcpy(p, q);

@@ -86,46 +86,46 @@ boolean sbttnav__InitializeClass(struct classheader *c)
 
     if ((menulist = menulist_New()) == NULL) return(FALSE);
 
-    if ((bgpe = proctable_DefineProc("sbuttonv-set-button-group", GroupProc, &sbttnav_classinfo, NULL, "Choose which group the button will take its appearance from.")) == NULL) return FALSE;
+    if ((bgpe = proctable_DefineProc("sbuttonv-set-button-group", (procedure) GroupProc, &sbttnav_classinfo, NULL, "Choose which group the button will take its appearance from.")) == NULL) return FALSE;
     
-    if ((labelpe = proctable_DefineProc("sbuttonv-set-label", LabelProc, &sbttnav_classinfo, NULL, "Prompts for user to set the text string of the sbutton.")) == NULL) return(FALSE);
+    if ((labelpe = proctable_DefineProc("sbuttonv-set-label", (procedure) LabelProc, &sbttnav_classinfo, NULL, "Prompts for user to set the text string of the sbutton.")) == NULL) return(FALSE);
     menulist_AddToML(menulist, "SButton~20,Set Label~10", labelpe, NULL, 0);
 
-    if ((triggerpe = proctable_DefineProc("sbuttonv-set-trigger", TriggerProc, &sbttnav_classinfo, NULL, "Prompts for user to set the text string of the sbutton.")) == NULL) return(FALSE);
+    if ((triggerpe = proctable_DefineProc("sbuttonv-set-trigger", (procedure) TriggerProc, &sbttnav_classinfo, NULL, "Prompts for user to set the text string of the sbutton.")) == NULL) return(FALSE);
     menulist_AddToML(menulist, "SButton~20,Set Trigger~11", triggerpe, NULL, 0);
 
-    if ((fontpe = proctable_DefineProc("sbuttonv-set-font", FontProc, &sbttnav_classinfo, NULL, "Prompts for user to set the font of the sbutton.")) == NULL) return(FALSE);
+    if ((fontpe = proctable_DefineProc("sbuttonv-set-font", (procedure) FontProc, &sbttnav_classinfo, NULL, "Prompts for user to set the font of the sbutton.")) == NULL) return(FALSE);
 
-    if ((stylepe = proctable_DefineProc("sbuttonv-set-style", StyleProc, &sbttnav_classinfo, NULL, "Prompts for user to set the appearance of the SButton.")) == NULL) return(FALSE);
-    if ((colorpe = proctable_DefineProc("sbuttonv-set-colors", ColorProc, &sbttnav_classinfo, NULL, "Prompts for user to set the foreground and background color of the SButton.")) == NULL) return(FALSE);
+    if ((stylepe = proctable_DefineProc("sbuttonv-set-style", (procedure) StyleProc, &sbttnav_classinfo, NULL, "Prompts for user to set the appearance of the SButton.")) == NULL) return(FALSE);
+    if ((colorpe = proctable_DefineProc("sbuttonv-set-colors", (procedure) ColorProc, &sbttnav_classinfo, NULL, "Prompts for user to set the foreground and background color of the SButton.")) == NULL) return(FALSE);
 
-    if ((scpe = proctable_DefineProc("sbuttonv-set-shadow-colors", ShadowColorProc, &sbttnav_classinfo, NULL, "Prompts for user to set the top, bottom and middle shadow colors of the SButton.")) == NULL) return(FALSE);
+    if ((scpe = proctable_DefineProc("sbuttonv-set-shadow-colors", (procedure) ShadowColorProc, &sbttnav_classinfo, NULL, "Prompts for user to set the top, bottom and middle shadow colors of the SButton.")) == NULL) return(FALSE);
 
-    if ((lcpe = proctable_DefineProc("sbuttonv-set-label-color", LabelColorProc, &sbttnav_classinfo, NULL, "Prompts for user to set the foreground and background color of the SButton's label.")) == NULL) return(FALSE);
+    if ((lcpe = proctable_DefineProc("sbuttonv-set-label-color", (procedure) LabelColorProc, &sbttnav_classinfo, NULL, "Prompts for user to set the foreground and background color of the SButton's label.")) == NULL) return(FALSE);
     
-    if ((proc = proctable_DefineProc("sbuttonv-add-button", AddButtonProc, &sbttnav_classinfo, NULL, "Prompts for user to name a new button.")) == NULL) return(FALSE);
+    if ((proc = proctable_DefineProc("sbuttonv-add-button", (procedure) AddButtonProc, &sbttnav_classinfo, NULL, "Prompts for user to name a new button.")) == NULL) return(FALSE);
 
     menulist_AddToML(menulist, "SButton~20,Add Button~30", proc, NULL, 0);
 
-    if ((proc = proctable_DefineProc("sbuttonv-set-rows", SetRowsProc, &sbttnav_classinfo, NULL, "Sets the number of rows to be used for buttons. Enough columns will be used to ensure that all buttons are visible.")) == NULL) return(FALSE);
+    if ((proc = proctable_DefineProc("sbuttonv-set-rows", (procedure) SetRowsProc, &sbttnav_classinfo, NULL, "Sets the number of rows to be used for buttons. Enough columns will be used to ensure that all buttons are visible.")) == NULL) return(FALSE);
 
     menulist_AddToML(menulist, "SButton~20,Set Rows~71", proc, NULL, 0);
     
-    if ((proc = proctable_DefineProc("sbuttonv-set-columns", SetColsProc, &sbttnav_classinfo, NULL, "Sets the number of columns to be used for buttons. Enough rows will be used to ensure that all buttons are visible.")) == NULL) return(FALSE);
+    if ((proc = proctable_DefineProc("sbuttonv-set-columns", (procedure) SetColsProc, &sbttnav_classinfo, NULL, "Sets the number of columns to be used for buttons. Enough rows will be used to ensure that all buttons are visible.")) == NULL) return(FALSE);
 
     menulist_AddToML(menulist, "SButton~20,Set Columns~72", proc, NULL, 0);
 
-    if ((proc = proctable_DefineProc("sbuttonv-new-group", NewGroupProc, &sbttnav_classinfo, NULL, "Creates a new button group.")) == NULL) return FALSE;
+    if ((proc = proctable_DefineProc("sbuttonv-new-group", (procedure) NewGroupProc, &sbttnav_classinfo, NULL, "Creates a new button group.")) == NULL) return FALSE;
 
     menulist_AddToML(menulist, "SButton~20,New group~95", proc, NULL, 0);
 
-    if ((proc = proctable_DefineProc("sbuttonv-delete", BDeleteProc, &sbttnav_classinfo, NULL, "Deletes the selected button.")) == NULL) return FALSE;
+    if ((proc = proctable_DefineProc("sbuttonv-delete", (procedure) BDeleteProc, &sbttnav_classinfo, NULL, "Deletes the selected button.")) == NULL) return FALSE;
 
     menulist_AddToML(menulist, "SButton~20,Delete button~31", proc, NULL, 0);
 
-    if ((renamepe = proctable_DefineProc("sbuttonv-rename-group", RenameProc, &sbttnav_classinfo, NULL, "Renames the group specified by the rock given.")) == NULL) return FALSE;
+    if ((renamepe = proctable_DefineProc("sbuttonv-rename-group", (procedure) RenameProc, &sbttnav_classinfo, NULL, "Renames the group specified by the rock given.")) == NULL) return FALSE;
 
-    if ((gdeletepe = proctable_DefineProc("sbuttonv-delete-group", GDeleteProc, &sbttnav_classinfo, NULL, "Deletes the group specified by the string given as a rock.")) == NULL) return FALSE;
+    if ((gdeletepe = proctable_DefineProc("sbuttonv-delete-group", (procedure) GDeleteProc, &sbttnav_classinfo, NULL, "Deletes the group specified by the string given as a rock.")) == NULL) return FALSE;
     return(TRUE);
 }
 

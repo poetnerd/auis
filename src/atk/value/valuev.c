@@ -201,7 +201,7 @@ void valueview__RequestUpdateFunction(struct valueview *self, procedure fp)
 void valueview__RequestFullUpdate(struct valueview *self)
 {
   updateq_ClearUpdateQueue( self->updateq );
-  valueview_RequestUpdateFunction( self, DrawFromScratch );
+  valueview_RequestUpdateFunction( self, (procedure) DrawFromScratch );
 }
 
 
@@ -276,30 +276,30 @@ void valueview__ObservedChanged(struct valueview *self, struct observable *obser
     }
 }
 
-static DA(struct valueview *self)
+static int DA(struct valueview *self)
 {
     valueview_DrawActivation(self);
 }
 
-static DDA(struct valueview *self)
+static int DDA(struct valueview *self)
 {
     valueview_DrawDeactivation(self);
 }
-static DNV(struct valueview *self)
+static int DNV(struct valueview *self)
 {
     valueview_DrawNewValue(self);
 }
 
-static DBV(struct valueview *self)
+static int DBV(struct valueview *self)
 {
     valueview_DrawBadValue(self);
 }
-static DH(struct valueview *self)
+static int DH(struct valueview *self)
 {
     valueview_DrawHighlight(self);
 }
 
-static DDH(struct valueview *self)
+static int DDH(struct valueview *self)
 {
     valueview_DrawDehighlight(self);
 }
@@ -399,7 +399,7 @@ void valueview__DeactivationMask(struct valueview *self, struct graphic *map)
 {
   self->deactivationMask = map;
   if (!self->active)
-    valueview_RequestUpdateFunction( self, DrawFromScratch );
+    valueview_RequestUpdateFunction( self, (procedure) DrawFromScratch );
 }
 
 
@@ -407,7 +407,7 @@ void valueview__SetDeactivationTransfer(struct valueview *self, short mode)
 {
   self->deactivationTransferMode = mode;
   if (!self->active)
-    valueview_RequestUpdateFunction( self, DrawFromScratch );
+    valueview_RequestUpdateFunction( self, (procedure) DrawFromScratch );
 }
 
 void valueview__NewValue(struct valueview *self)

@@ -101,7 +101,7 @@ static getcount(char **str, long size)
     return cnt;
 }
 #endif /* USEGETCOUNT */
-static SetArray(struct clicklistV *self, char **str, long size)
+static int SetArray(struct clicklistV *self, char **str, long size)
 {
     struct text *txt;
     long i,end,sl,textchanged;
@@ -207,7 +207,7 @@ struct view * clicklistV__GetApplicationLayer(struct clicklistV *self)
     lpair_VTFixed(lp,self,cltextview_GetApplicationLayer(ev),h,TRUE);
     lpair_SetLPState(lp,lpair_TOPFIXED,lpair_HORIZONTAL,lpair_NOCHANGE);
     self->cltextview = ev;
-    cltextview_AddClickObserver(ev,self,handleclicks,0);
+    cltextview_AddClickObserver(ev,self,(procedure) handleclicks,0);
     cltextview_AddObserver(ev,self);
     return (struct view *)lp;
 }

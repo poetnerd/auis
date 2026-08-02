@@ -165,7 +165,7 @@ static void DrawValue(struct thumbV *self)
 }
 #define HGH 3
 #define SPACE 6
-static DrawKnurl(struct thumbV *self)
+static int DrawKnurl(struct thumbV *self)
 {
 #ifdef USELINES
     long y,x1,x2,end,nl, hn,change,inc,minx,maxx;
@@ -214,7 +214,7 @@ static DrawKnurl(struct thumbV *self)
 
 }
 
-static DrawThumbwheel(struct thumbV *self, int DoAll)
+static int DrawThumbwheel(struct thumbV *self, int DoAll)
 {
     thumbV_SetTransferMode( self, graphic_COPY );
 #if 0

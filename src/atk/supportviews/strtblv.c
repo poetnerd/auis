@@ -64,9 +64,9 @@ static void AdjustHighlight();
 static boolean BogusCallFromParent();
 static boolean CheckWindow();
 static void ComputeItemSize();
-static int ComputeOrganization();
+static void ComputeOrganization();
 static void RedrawTable();
-static int iRect();
+static void iRect();
 */
 
 /*
@@ -104,7 +104,7 @@ static void ComputeItemSize(struct strtblview *self)
 
 /* ComputeOrganization determines a good number of rows and columns
 	for a given width and height of area */
-static ComputeOrganization(struct strtblview *self, short width, short height)
+static void ComputeOrganization(struct strtblview *self, short width, short height)
 {
 	/* the algorithm is to minimize the difference between inter-column white space
 		and inter-row whitespace.  This is done by starting with one row, a situation
@@ -140,7 +140,7 @@ static ComputeOrganization(struct strtblview *self, short width, short height)
 
 /* iRect converts its argument rectangle from the 
 		entire logical image to the image for the i'th string */
-static iRect(struct strtblview *self, short i, struct rectangle *r)
+static void iRect(struct strtblview *self, short i, struct rectangle *r)
 {
 	short col = i / self->rows;	/* strings run vertically */
 	short row = i % self->rows;

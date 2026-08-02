@@ -111,7 +111,7 @@ static boolean clearrl(struct buttonV_rl *rl, struct buttonV *self)
     free(rl);
     return TRUE;
 }
-static vsetrec(struct buttonV_rl *rl, struct buttonV *self)
+static int vsetrec(struct buttonV_rl *rl, struct buttonV *self)
 {
     if(!self->topdown) self->rtl += -self->rhw;
     rectangle_SetRectSize(&(rl->rect),self->header.valueview.x + self->offset ,self->rtl,
@@ -155,7 +155,7 @@ void buttonV__HandleStyleString(struct buttonV *self, char *s)
 	s++;
     }
 }
-static wsetrec(struct buttonV_rl *rl, struct buttonV *self)
+static int wsetrec(struct buttonV_rl *rl, struct buttonV *self)
 {
     rectangle_SetRectSize(&(rl->rect),self->rtl,self->header.valueview.y + self->offset,
 		   self->rhw,self->bsize);
@@ -167,7 +167,7 @@ static wsetrec(struct buttonV_rl *rl, struct buttonV *self)
     }
     return TRUE;
 }
-static calcRec(struct buttonV *self)
+static int calcRec(struct buttonV *self)
 {
     if(self->columns == 0) return;
     self->offset = 0;
@@ -306,20 +306,20 @@ static boolean enclosed(struct buttonV_rl *rl, long x, long y)
     return TRUE;
 }
 
-static drl(struct buttonV_rl *rl, struct buttonV *self)
+static int drl(struct buttonV_rl *rl, struct buttonV *self)
 {
     DrawButton(self,rl,0,0,0,0,FALSE,FALSE);
     return TRUE;
 }
-static findcurrent(struct buttonV_rl *rl, struct buttonV *self)
+static int findcurrent(struct buttonV_rl *rl, struct buttonV *self)
 {
     return !enclosed(rl,self->x,self->y);
 }
-static findkey(struct buttonV_rl *rl, long i)
+static int findkey(struct buttonV_rl *rl, long i)
 {
     return !(i == rl->key);
 }
-static DrawAllButtons(struct buttonV *self)
+static int DrawAllButtons(struct buttonV *self)
 {
     list_Enumerate(self->list,drl,self);
 }

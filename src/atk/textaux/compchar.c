@@ -469,7 +469,7 @@ static void compchar_compose(struct textview *tv, char *ptr)
 					      sizeof(buf),
 					      NULL, /* no special keymap */
 					      NULL,/* no completion */
-					      helpProc, /* will give help */
+					      (procedure) helpProc, /* will give help */
 					      &myrock,
 					      message_NoInitialString);
     if(result<0) {
@@ -662,7 +662,7 @@ static void compchar_ATKToASCII(struct textview *tv, long rock)
     if(rock<BADCHAR) r.ask=TRUE;
     else r.ask=FALSE;
     pos=textview_GetDotPosition(tv);
-    pcompch_ATKToASCII(textview_GetDataObject(tv), pos, textview_GetDotLength(tv), doatkreplacement, &r);
+    pcompch_ATKToASCII(textview_GetDataObject(tv), pos, textview_GetDotLength(tv), (procedure) doatkreplacement, &r);
     len=text_GetLength((struct text *)textview_GetDataObject(tv));
     if(pos>=len) pos=len-1;
     textview_SetDotPosition(tv,pos);
@@ -719,7 +719,7 @@ static void compchar_ASCIIToATK(struct textview *tv, long rock)
     if(rock<BADCHAR) r.ask=TRUE;
     else r.ask=FALSE;
     pos=textview_GetDotPosition(tv);
-    pcompch_ASCIIToATK(textview_GetDataObject(tv), pos, textview_GetDotLength(tv), doasciireplacement, &r);
+    pcompch_ASCIIToATK(textview_GetDataObject(tv), pos, textview_GetDotLength(tv), (procedure) doasciireplacement, &r);
     len=text_GetLength((struct text *)textview_GetDataObject(tv));
     if(pos>=len) pos=len-1;
     textview_SetDotPosition(tv,pos);
@@ -763,27 +763,27 @@ boolean compchar__InitializeClass(struct classheader *ClassID)
 	return FALSE;
     }
 
-    nop=proctable_DefineProc("compchar-nop",compchar_nop, textviewtype,NULL,"nop for use with compchar.");
+    nop=proctable_DefineProc("compchar-nop",(procedure) compchar_nop, textviewtype,NULL,"nop for use with compchar.");
 
 
-    proctable_DefineProc("compchar-ASCIIToATK",compchar_ASCIIToATK, textviewtype,NULL,"map local ASCII conventions to ATK ISO characters"); 
-    proctable_DefineProc("compchar-ATKToASCII",compchar_ATKToASCII, textviewtype,NULL,"map ATK ISO characters to local ASCII");
-    proctable_DefineProc("compchar-compose2", compchar_compose2, textviewtype,NULL,"improved compchar-compose.");
-    proctable_DefineProc("compchar-compose",compchar_compose, textviewtype,NULL,"start the composition of a character");
-    
-    proctable_DefineProc("compchar-acuteaccent-after", compchar_leftaccentafter,textviewtype,NULL,"put a left accent over the next character");
-    proctable_DefineProc("compchar-graveaccent-after", compchar_rightaccentafter,textviewtype,NULL,"put a right accent over the next character");
-    proctable_DefineProc("compchar-circumflex-after", compchar_hatafter,textviewtype,NULL,"put a hat over the next character");
-    proctable_DefineProc("compchar-tilde-after", compchar_tildeafter,textviewtype,NULL,"put a tilde over the next character");
-    proctable_DefineProc("compchar-umlaut-after", compchar_umlautafter,textviewtype,NULL,"put an umlaut over the next character");
-   
-    proctable_DefineProc("compchar-acuteaccent",compchar_leftaccent, textviewtype,NULL,"add a left accent to the character to the left of the cursor.");
-    proctable_DefineProc("compchar-graveaccent", compchar_rightaccent, textviewtype,NULL,"add a right accent to the character to the left of the cursor.");
-    proctable_DefineProc("compchar-circumflex",compchar_hat, textviewtype,NULL,"add a hat to the character to the left of the cursor.");
-    proctable_DefineProc("compchar-tilde",compchar_tilde, textviewtype,NULL,"add a tilde to the character to the left of the cursor.");
-    proctable_DefineProc("compchar-umlaut",compchar_umlaut, textviewtype,NULL,"add a umlaut to the character to the left of the cursor.");
-       
-    proctable_DefineProc("compchar-insert",compchar_insert, textviewtype,NULL,"inserts an arbitrary character specified in an initfile.");
+    proctable_DefineProc("compchar-ASCIIToATK",(procedure) compchar_ASCIIToATK, textviewtype,NULL,"map local ASCII conventions to ATK ISO characters");
+    proctable_DefineProc("compchar-ATKToASCII",(procedure) compchar_ATKToASCII, textviewtype,NULL,"map ATK ISO characters to local ASCII");
+    proctable_DefineProc("compchar-compose2", (procedure) compchar_compose2, textviewtype,NULL,"improved compchar-compose.");
+    proctable_DefineProc("compchar-compose",(procedure) compchar_compose, textviewtype,NULL,"start the composition of a character");
+
+    proctable_DefineProc("compchar-acuteaccent-after", (procedure) compchar_leftaccentafter,textviewtype,NULL,"put a left accent over the next character");
+    proctable_DefineProc("compchar-graveaccent-after", (procedure) compchar_rightaccentafter,textviewtype,NULL,"put a right accent over the next character");
+    proctable_DefineProc("compchar-circumflex-after", (procedure) compchar_hatafter,textviewtype,NULL,"put a hat over the next character");
+    proctable_DefineProc("compchar-tilde-after", (procedure) compchar_tildeafter,textviewtype,NULL,"put a tilde over the next character");
+    proctable_DefineProc("compchar-umlaut-after", (procedure) compchar_umlautafter,textviewtype,NULL,"put an umlaut over the next character");
+
+    proctable_DefineProc("compchar-acuteaccent",(procedure) compchar_leftaccent, textviewtype,NULL,"add a left accent to the character to the left of the cursor.");
+    proctable_DefineProc("compchar-graveaccent", (procedure) compchar_rightaccent, textviewtype,NULL,"add a right accent to the character to the left of the cursor.");
+    proctable_DefineProc("compchar-circumflex",(procedure) compchar_hat, textviewtype,NULL,"add a hat to the character to the left of the cursor.");
+    proctable_DefineProc("compchar-tilde",(procedure) compchar_tilde, textviewtype,NULL,"add a tilde to the character to the left of the cursor.");
+    proctable_DefineProc("compchar-umlaut",(procedure) compchar_umlaut, textviewtype,NULL,"add a umlaut to the character to the left of the cursor.");
+
+    proctable_DefineProc("compchar-insert",(procedure) compchar_insert, textviewtype,NULL,"inserts an arbitrary character specified in an initfile.");
 
     return TRUE;
 }

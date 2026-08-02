@@ -543,18 +543,18 @@ void tree23int__Dump(struct tree23int *self, long offset)
 {
     register int i;
 
-    printf("%8x (%8x^): ",self,self->parent);
+    printf("%8p (%8p^): ",self,self->parent);
     if(self->leaf) {
-    	printf("(LEAF %x %x)\n",self->bump+offset, self->data);
+    	printf("(LEAF %lx %lx)\n",self->bump+offset, self->data);
 	return;
     }
-    printf("(INT (%d) %x)\n",self->nKids,self->bump+offset);
+    printf("(INT (%d) %lx)\n",self->nKids,self->bump+offset);
     i = 0;
     while (i<self->nKids)  {
 	tree23int_Dump(self->kid[i],self->bump+offset);
 	i++;
     }
-    printf("End of %x\n",self);
+    printf("End of %p\n",self);
 }
 
 

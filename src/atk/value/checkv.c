@@ -82,7 +82,7 @@ static void CarveFonts(struct checkv *self)
     self->normalfont = fontdesc_Create( self->fontname, fontdesc_Plain, self->fontsize );
 }  
 
-static Drawcheck(struct checkv *self)
+static int Drawcheck(struct checkv *self)
 {
     register int side;
     register int gap;

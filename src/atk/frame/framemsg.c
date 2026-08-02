@@ -354,7 +354,7 @@ int framemessage__AskForStringCompleted(struct framemessage *self, int priority,
         self->keystate = keystate;
     }
 
-    self->completionProc = completionProc;
+    self->completionProc = (enum message_CompletionCode (*)()) completionProc;
     self->helpProc = helpProc;
     self->completionData = completionData;
 

@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 /* A hash table */
 
 #include <class.h>
+#include <string.h>
 #include <hash.eh>
 #include <glist.ih>
 static int DefaultHash();
@@ -193,7 +194,7 @@ void hash__Clear(struct hash *self, procedure valFree)
 }
 
 
-static PrintAll(struct egg *egg, int nothing)
+static int PrintAll(struct egg *egg, int nothing)
 {
     printf("Egg (%s) contains (%s)\n",egg->key,egg->value);
     return FALSE;

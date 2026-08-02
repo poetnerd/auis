@@ -794,7 +794,7 @@ static struct errorList * MakeErrorList(struct buffer *errorBuffer)
 }
 
 /* Pop to the next set of marks on the error list. */
-static compile_NextError(struct view *view, int key)
+static int compile_NextError(struct view *view, int key)
 {
 
     if (currentError != NULL)
@@ -825,7 +825,7 @@ static compile_NextError(struct view *view, int key)
 }
 
 /* Pop to the previous set of marks on the error list. */
-static compile_PreviousError(struct view *view, int key)
+static int compile_PreviousError(struct view *view, int key)
 {
 
     if (currentError == NULL) {
@@ -882,7 +882,7 @@ static boolean FrameFinder(struct frame *frame, struct finderInfo *info)
     return FALSE;
 }
 
-static ViewEqual(struct frame *frame, struct view *view)
+static int ViewEqual(struct frame *frame, struct view *view)
 {
 
 #if 1

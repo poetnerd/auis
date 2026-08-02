@@ -53,6 +53,7 @@ deferred features:
 */
 
 #include <class.h>
+#include <string.h>
 #include <graphic.ih>
 #include <view.ih>
 #include <fontdesc.ih>

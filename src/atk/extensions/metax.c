@@ -122,7 +122,7 @@ static void helpProc(char *partial, struct helpRock *myrock, procedure HelpWork,
     myrock->rock=rock;
     myrock->partial=partial;
     (void) LoadClass(partial);
-    (void)proctable_Enumerate(match,myrock);
+    (void)proctable_Enumerate((procedure) match,myrock);
     if(!fixed) return;
     text_SetGlobalStyle(t,fixed);
     text_AddStyle(t,0,17,heading);
@@ -187,7 +187,7 @@ static boolean getfunction(struct view *v, char *buf, int size, char *prompt, ch
 	myrock.text=(struct text *)buffer_GetData(b);
     } else myrock.text=NULL;
     
-    if(message_AskForStringCompleted(v, 0, prompt, initial, buf, size, NULL, mycomplete, helpProc, &myrock, message_MustMatch | (initial?0:message_NoInitialString))) {
+    if(message_AskForStringCompleted(v, 0, prompt, initial, buf, size, NULL, (procedure) mycomplete, (procedure) helpProc, &myrock, message_MustMatch | (initial?0:message_NoInitialString))) {
 	message_DisplayString(v,0,"Cancelled");
 	return FALSE;
     }
@@ -292,7 +292,7 @@ boolean metax__InitializeClass(struct classheader *classID)
     style_Copy(fixed,boldulined);
     style_AddUnderline(boldulined);
     style_AddNewFontFace(boldulined,fontdesc_Bold);
-    proctable_DefineProc("metax", metax, info, NULL, "Executes a proctable function by name.");
-    proctable_DefineProc("metax-with-arg", metax2, info, NULL, "Executes a function by name, prompting for an argument.");
+    proctable_DefineProc("metax", (procedure) metax, info, NULL, "Executes a proctable function by name.");
+    proctable_DefineProc("metax-with-arg", (procedure) metax2, info, NULL, "Executes a function by name, prompting for an argument.");
     return TRUE;
 }

@@ -218,7 +218,7 @@ void apts__HourOfDay(struct classheader *classID, char *hour)
   IN(apts_HourOfDay);
   apts_HourMinuteSecond( &hours, &minutes, &seconds );
   if ( hours == 0 )  hours = 12;
-  sprintf( hour, "%02d", hours );
+  sprintf( hour, "%02ld", hours );
   OUT(apts_HourOfDay);
   }
 
@@ -228,7 +228,7 @@ void apts__MinuteOfHour(struct classheader *classID, char *minute)
 
   IN(apts_MinuteOfHour);
   apts_HourMinuteSecond( &hours, &minutes, &seconds );
-  sprintf( minute, "%02d", minutes );
+  sprintf( minute, "%02ld", minutes );
   OUT(apts_MinuteOfHour);
   }
 
@@ -238,7 +238,7 @@ void apts__SecondOfMinute(struct classheader *classID, char *second)
 
   IN(apts_SecondOfMinute);
   apts_HourMinuteSecond( &hours, &minutes, &seconds );
-  sprintf( second, "%02d", seconds );
+  sprintf( second, "%02ld", seconds );
   OUT(apts_SecondOfMinute);
   }
 

@@ -124,7 +124,7 @@ int parselabels(struct pianoV *self, char *chr)
 }
 #define NoteOn(self,i) (self->tmpval & masks[i])
 #define LabelChanged(self,i) ((self->tmpval & masks[i]) != (self->lastval & masks[i]))
-static Drawpiano(struct pianoV *self, boolean full)
+static int Drawpiano(struct pianoV *self, boolean full)
 {
     int hy,*ip;
     float wid,place;

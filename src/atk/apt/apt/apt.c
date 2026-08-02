@@ -129,9 +129,9 @@ END-SPECIFICATION  ************************************************************/
 #include <apts.ih>
 static int Assign_String();
 static int Assign_Strings();
-static int Free_Vector();
+static void Free_Vector();
 static int Parse_Field();
-static int Write_Strings();
+static void Write_Strings();
 
 int apt_debug = 0;
 #define debug apt_debug
@@ -164,13 +164,9 @@ int apt_debug = 0;
 static char			     *areas[] =
 				     { "Left", "Top", "Right", "Bottom" };
 
-static Assign_String();
-static Assign_Strings();
-static Write_Strings();
-static Parse_Field();
-
 
 static
+void
 Free_Vector( vector )
   register char			    *((*vector)[]);
   {
@@ -409,7 +405,7 @@ long apt__ReadObject(struct apt *self, FILE *file, long id, void (*reader) ())
   return  status;
   }
 
-static Assign_String(struct apt *self, char *prefix, char *desire, char *candidate, char *source, char **target)
+static int Assign_String(struct apt *self, char *prefix, char *desire, char *candidate, char *source, char **target)
   {
   char				      name[257];
   register long			      status = 0;
@@ -429,7 +425,7 @@ static Assign_String(struct apt *self, char *prefix, char *desire, char *candida
   return status;
   }
 
-static Assign_Strings(struct apt *self, char *prefix, char *desire, char *candidate, char *source, char ***target, long *count)
+static int Assign_Strings(struct apt *self, char *prefix, char *desire, char *candidate, char *source, char ***target, long *count)
   {
   char				      name[257], **strings;
   register long			      status = 0;
@@ -492,7 +488,7 @@ void apt__WriteObject(struct apt *self, FILE *file, long id, long level, void (*
   OUT(apt_WriteObject);
   }
 
-static Write_Strings(struct apt *self, FILE *file, char *name, char *prefix, long count, char *anchor[])
+static void Write_Strings(struct apt *self, FILE *file, char *name, char *prefix, long count, char *anchor[])
   {
   register long			      i;
 
@@ -511,7 +507,7 @@ static Write_Strings(struct apt *self, FILE *file, char *name, char *prefix, lon
   OUT(Write_Strings);
   }
 
-static Parse_Field(struct apt *self, char *line, struct apt_field *field)
+static int Parse_Field(struct apt *self, char *line, struct apt_field *field)
   {
   register int			      status = 0;
   char				      work[257];

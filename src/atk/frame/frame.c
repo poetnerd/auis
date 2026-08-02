@@ -450,7 +450,7 @@ void frame__FullUpdate(struct frame *self, enum view_UpdateType type, long left,
 	DoUpdate(self);
     }
 }
-static handleNewData(struct frame *self)
+static int handleNewData(struct frame *self)
 {
     struct view *inputFocus, *targetView,*oldchild;
     oldchild = self->childView;
@@ -1049,7 +1049,7 @@ static boolean InRectangle(struct rectangle *r, long x, long y)
     }
     return(1);
 }
-static drawshadow(struct frame *self, struct rectangle *r)
+static int drawshadow(struct frame *self, struct rectangle *r)
 {
     frame_FillRectSize(self,r->left + OFFSET,r->top + r->height,r->width,OFFSET,frame_GrayPattern(self,8,16));
     frame_FillRectSize(self,r->left + r->width,r->top + OFFSET,OFFSET,r->height - OFFSET,frame_GrayPattern(self,8,16));
@@ -1523,7 +1523,7 @@ static void TidyUp(struct frame *self)
     self->hasDialogMessage = 0;
     self->PotentialChoice = 0;
 }
-static isDialogChild(struct frame *self, struct view *v)
+static int isDialogChild(struct frame *self, struct view *v)
 {
     while(v->parent != NULL && v->parent != (struct view *) self) 
 	v = v->parent;
@@ -1566,7 +1566,7 @@ void frame__LinkTree(struct frame *self, struct view *parent)
 	im_SetDeleteWindowCallback(oldim, NULL, NULL);
     }
     if(frame_GetIM(self) && im_GetDeleteWindowCallback(frame_GetIM(self)) == NULL) {
-	im_SetDeleteWindowCallback(frame_GetIM(self), delete_window_request, self);
+	im_SetDeleteWindowCallback(frame_GetIM(self), (procedure) delete_window_request, self);
     }
 }
 
@@ -1650,7 +1650,7 @@ static struct view * PrepareForStringInput(struct frame *self, char *prompt, int
 	    default:
 		break;
 	}
-	dialogv_PostInput(self->dv, frame_GetIM(self), frame_GetIM(self), ReturnInterface, self, self->IsBlocking, pos);
+	dialogv_PostInput(self->dv, frame_GetIM(self), frame_GetIM(self), (procedure) ReturnInterface, self, self->IsBlocking, pos);
 	dialogv_PostDefaultHandler(self->dv, "message", self->messageLine);
     }
     if(!self->UpdateRequested)frame_WantUpdate(self, self);

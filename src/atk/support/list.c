@@ -47,7 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include "list.eh"
 static int CopyEntry();
 static boolean MoveNew();
-static int rcompare();
+static int rcompare(const void *, const void *);
 
 #define new() \
   (struct list_Entry *) malloc(sizeof (struct list_Entry))
@@ -235,10 +235,12 @@ static boolean MoveNew(char *data, struct arg *ap)
 
 static procedure tcompare=NULL;
 
-static int rcompare(char **d1, char **d2)
+static int rcompare(const void *d1, const void *d2)
 {
+    char * const *cd1 = (char * const *)d1;
+    char * const *cd2 = (char * const *)d2;
     procedure lcompare=tcompare;
-    int result=tcompare?tcompare(*d1, *d2):0;
+    int result=tcompare?tcompare(*cd1, *cd2):0;
     tcompare=lcompare;
     return result;
 }

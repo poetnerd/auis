@@ -1080,7 +1080,7 @@ static char * EncodeFont(struct fontdesc *font)
     if (myfonttype & fontdesc_Italic) strcpy(type,"i");
     if (myfonttype & fontdesc_Fixed) strcpy(type,"f");
     if (buf = (char *)malloc(strlen(myfontname)+25)) {
-	sprintf(buf,"%s%d%s", myfontname, myfontsize, type);
+	sprintf(buf,"%s%ld%s", myfontname, myfontsize, type);
 	return (buf);
     } else {
 	return(NULL);

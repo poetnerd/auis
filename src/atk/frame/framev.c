@@ -305,7 +305,7 @@ static void TransientMessage(struct frameview *self, char *message)
     pos = text_GetLength(Text(self));
     mark_SetPos(self->transientMark, pos);
     text_AlwaysInsertCharacters(Text(self), pos, message, len = strlen(message));
-    keystate_SetOverride(self->keystate, KeyEraseMessage, self);
+    keystate_SetOverride(self->keystate, (procedure) KeyEraseMessage, self);
      frameview_WantUpdate(self, self);
     mark_SetLength(self->transientMark, len);
     self->event = im_EnqueueEvent((procedure) EraseMessage, (char *) self, event_SECtoTU(4));

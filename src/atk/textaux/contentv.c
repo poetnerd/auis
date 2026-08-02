@@ -40,6 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
  */
 #include <class.h>
 #include <ctype.h>
+#include <string.h>
 #include <bind.ih>
 #include <view.ih>
 #include <menulist.ih>
@@ -317,7 +318,7 @@ boolean contentv__InitializeClass(struct classheader *classID)
     contentvMenus = menulist_New();
     contentvKeyMap =  keymap_New();
     bind_BindList(contentvBindings, contentvKeyMap , contentvMenus, &contentv_classinfo);
-  proctable_DefineProc("contentv-make-window",contentv_MakeContents,textviewtype,NULL,"Make a table of contents window");
+  proctable_DefineProc("contentv-make-window",(procedure) contentv_MakeContents,textviewtype,NULL,"Make a table of contents window");
     ScrollTop = environ_GetProfileSwitch("ContentsScrollTop", FALSE);
 
     return TRUE;

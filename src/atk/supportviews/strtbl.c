@@ -87,7 +87,7 @@ long stringtbl__Read(struct stringtbl *self, FILE *file, long id)
 	else ungetc(c, file);
 
 	stringtbl_Clear(self);
-	fscanf(file, " %x ", &highlight);
+	fscanf(file, " %lx ", &highlight);
 	while (TRUE) {
 		char s[MAXSTRINGENTRYLENGTH + 2], *nl;
 		if ((fgets(s, MAXSTRINGENTRYLENGTH + 2, file)) == 0) 
@@ -117,7 +117,7 @@ long stringtbl__Write(struct stringtbl *self, FILE *file, long writeID, int leve
 		sprintf(head, "data{%s, %ld}\n", class_GetTypeName(self), id);
 		fprintf(file, "\\begin%s", head);
 
-		fprintf(file, "%x\n", self->highlight);
+		fprintf(file, "%lx\n", self->highlight);
 		for (i = 0; i < self->used; i++)
 			fprintf(file, "%s\n", self->item[i]);
 

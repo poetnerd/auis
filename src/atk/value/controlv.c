@@ -78,7 +78,7 @@ static struct cursor *WaitCursor;
    A_long = atom_Intern("long") ,\
    A_string = atom_Intern("string") )
 
-static DoFunc(struct controlV *self)
+static int DoFunc(struct controlV *self)
 {
     char iname[256];
     struct proctable_Entry *pr;

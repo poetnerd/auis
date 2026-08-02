@@ -126,7 +126,7 @@ boolean metextview__InitializeClass(struct classheader *classID, struct metextvi
     struct proctable_Entry *tempProc;
 
     ssmap = keymap_New();
-    tempProc=proctable_DefineProc("metextview-return-cmd", metextview_ReturnCommand, classInfo, NULL, "Handle menter key");
+    tempProc=proctable_DefineProc("metextview-return-cmd", (procedure) metextview_ReturnCommand, classInfo, NULL, "Handle menter key");
     keymap_BindToKey(ssmap, "\015", tempProc, 0);
 /*
     tempProc=proctable_DefineProc("metextview-cancel-cmd", metextview_CancelCommand, classInfo, NULL, "Handle ^G");

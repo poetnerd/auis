@@ -195,7 +195,7 @@ static long RealRead(struct unknown *uself, struct text *self, FILE *file, long 
 		    if((ch=tgetc(self, file))!=EOF && ch!='\n') tungetc(self, ch, file);
 		    else if(ch==EOF) return dataobject_PREMATUREEOF;
 		    if(eid!=id) {
-			fprintf(stderr, "warning: %s__Read: enddata id %d doesn't match begindata id %d.\n", class_GetTypeName(self), eid, id);
+			fprintf(stderr, "warning: %s__Read: enddata id %d doesn't match begindata id %ld.\n", class_GetTypeName(self), eid, id);
 		    }
 		    return dataobject_NOREADERROR;
 		}

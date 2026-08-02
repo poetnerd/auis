@@ -47,7 +47,7 @@ static int DrawKnurl();
 #define FUDGE4 8
 #define MAXWID 36
 
-static DrawKnurl(struct bargraphV *self, boolean fullupdate, struct rectangle *rr)
+static int DrawKnurl(struct bargraphV *self, boolean fullupdate, struct rectangle *rr)
 {
     long start,height;
     struct rectangle r,clipper;

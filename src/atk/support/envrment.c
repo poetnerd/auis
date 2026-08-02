@@ -326,7 +326,7 @@ void environment__Dump(self, level)
 
     while (i-- > 0)
 	printf("    ");
-    printf("Env %x (%x ^) position: %d length: %d ib: %c ie: %c type: %d value %d\n", nself, nself->parent, environment_Eval(self), nself->length, (nself->includeBeginning) ? 'T' : 'F', (nself->includeEnding) ? 'T' : 'F', self->type, self->data.style);
+    printf("Env %p (%p ^) position: %ld length: %ld ib: %c ie: %c type: %d value %p\n", nself, nself->parent, environment_Eval(self), nself->length, (nself->includeBeginning) ? 'T' : 'F', (nself->includeEnding) ? 'T' : 'F', self->type, self->data.style);
     if (nself->children != NULL)
         tree23int_Enumerate(nself->children, (procedure) environment__Dump, (char *) level + 1);
 }

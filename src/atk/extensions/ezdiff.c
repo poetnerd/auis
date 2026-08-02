@@ -369,7 +369,7 @@ static int LocateInView(struct view *v1, struct view *v2, struct view *v3, long 
     }
     return 0; /* go through all views */
 }
-static ezdiff_PointOut(struct ezdiff *self, struct textview *v, long delta)
+static int ezdiff_PointOut(struct ezdiff *self, struct textview *v, long delta)
 {
     static struct diffinfo d1;
     if(self == NULL){
@@ -393,11 +393,11 @@ static ezdiff_PointOut(struct ezdiff *self, struct textview *v, long delta)
     d1.m = self->m2[self->cmark];
     buffer_EnumerateViews(self->buf[1], LocateInView, &d1);
 }
-static ezdiff_Current(struct textview *v, long delta)
+static int ezdiff_Current(struct textview *v, long delta)
 {
     ezdiff_PointOut(NULL,v,USECURRENTMARK);
 }
-static ezdiff_Next(struct textview *v, long delta)
+static int ezdiff_Next(struct textview *v, long delta)
 {
     int which,cmark,pos;
     struct ezdiff *self;
@@ -414,7 +414,7 @@ static ezdiff_Next(struct textview *v, long delta)
     }
     ezdiff_PointOut(self,v,cmark);
 }
-static ezdiff_Change(struct textview *v, long delta)
+static int ezdiff_Change(struct textview *v, long delta)
 {
     int which,cmark;
     long szz;
@@ -448,7 +448,7 @@ static ezdiff_Change(struct textview *v, long delta)
     text_NotifyObservers(dsttext,1);
     ezdiff_PointOut(NULL,v,USECURRENTMARK);
 }
-static ezdiff_Last(struct textview *v, long delta)
+static int ezdiff_Last(struct textview *v, long delta)
 {
     int which,cmark,pos;
     struct ezdiff *self;
@@ -467,7 +467,7 @@ static ezdiff_Last(struct textview *v, long delta)
     ezdiff_PointOut(self,v,cmark);
 }
 
-static ezdiff_Start(struct view *v, long dat)
+static int ezdiff_Start(struct view *v, long dat)
 {
     struct ezdiff *self;
     char ans[100];

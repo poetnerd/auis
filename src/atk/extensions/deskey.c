@@ -444,7 +444,7 @@ void describeBinding(char *bind, int len, int runKey, struct proctable_Entry *pt
     makePrefix(keys + strlen(keys),bind,len - 1);
     strcat(keys,charToPrintable(bind[len - 1]));
 
-    fprintf(f, "%7s\001%d\001%-28s\001%s\001\n", keys, mapno, proctable_GetName(pte), getProcDoc(pte));
+    fprintf(f, "%7s\001%ld\001%-28s\001%s\001\n", keys, mapno, proctable_GetName(pte), getProcDoc(pte));
 }
 
 /* recursive function to go through entire active keymap */

@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #endif
 
 #include <class.h>
+#include <string.h>
 
 #include <cursor.ih>
 #include <envrment.ih>
@@ -193,7 +194,7 @@ boolean panel__InitializeClass(struct classheader *classID)
         unsigned char s[2];
 
         pte = proctable_DefineProc("key-dispatch",
-          KeyDispatch, &panel_classinfo, NULL, NULL);
+          (procedure) KeyDispatch, &panel_classinfo, NULL, NULL);
 
         s[1] = '\0';
         for (s[0] = '\0'; s[0] < 128; s[0]++)
@@ -224,16 +225,16 @@ boolean panel__InitializeObject(struct classheader *classID, struct panel *self)
     panel_SetBorder(self, 5, 5);
     if(newover) panel_SetDefaultStyle(self, newover);
 
-    panel_AssignKey(self, 'P' - 64, ProcPrev, 0);
-    panel_AssignKey(self, 'P', ProcPrev, 0);
-    panel_AssignKey(self, 'p', ProcPrev, 0);
-    panel_AssignKey(self, 'B', ProcPrev, 0);
-    panel_AssignKey(self, 'b', ProcPrev, 0);
-    panel_AssignKey(self, 'N' - 64, ProcNext, 0);
-    panel_AssignKey(self, 'N', ProcNext, 0);
-    panel_AssignKey(self, 'n', ProcNext, 0);
-    panel_AssignKey(self, 'F', ProcNext, 0);
-    panel_AssignKey(self, 'f', ProcNext, 0);
+    panel_AssignKey(self, 'P' - 64, (void (*)()) ProcPrev, 0);
+    panel_AssignKey(self, 'P', (void (*)()) ProcPrev, 0);
+    panel_AssignKey(self, 'p', (void (*)()) ProcPrev, 0);
+    panel_AssignKey(self, 'B', (void (*)()) ProcPrev, 0);
+    panel_AssignKey(self, 'b', (void (*)()) ProcPrev, 0);
+    panel_AssignKey(self, 'N' - 64, (void (*)()) ProcNext, 0);
+    panel_AssignKey(self, 'N', (void (*)()) ProcNext, 0);
+    panel_AssignKey(self, 'n', (void (*)()) ProcNext, 0);
+    panel_AssignKey(self, 'F', (void (*)()) ProcNext, 0);
+    panel_AssignKey(self, 'f', (void (*)()) ProcNext, 0);
 
     return TRUE;
 }

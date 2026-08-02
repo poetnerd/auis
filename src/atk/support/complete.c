@@ -352,7 +352,7 @@ int completion__GetFilename(struct classheader *classID, struct view *view, char
 
     fileRock.view = view;
     fileRock.keystate = keystate_New();
-    keystate_SetOverride(fileRock.keystate, FileHack, &fileRock);
+    keystate_SetOverride(fileRock.keystate, (procedure) FileHack, &fileRock);
 
     if (startPath == NULL)
         startPath = "";

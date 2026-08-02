@@ -61,7 +61,7 @@ boolean mentertext__InitializeObject(struct classheader *classID, struct mentert
     self->bufp[0] = "";
     return TRUE;
 }
-static checkstyles(struct mentertext *self)
+static int checkstyles(struct mentertext *self)
 {
 
     if ((self->Style = stylesheet_Find(self->header.text.styleSheet, "italic")) == NULL){

@@ -106,11 +106,11 @@ boolean etextview__InitializeClass(struct classheader *classID, struct etextview
     struct proctable_Entry *tempProc;
 
     ssmap = keymap_New();
-    tempProc=proctable_DefineProc("etextview-return-cmd", etextview_ReturnCommand, classInfo, NULL, "Handle enter key");
+    tempProc=proctable_DefineProc("etextview-return-cmd", (procedure) etextview_ReturnCommand, classInfo, NULL, "Handle enter key");
     keymap_BindToKey(ssmap, "\015", tempProc, 0);
-    tempProc=proctable_DefineProc("etextview-cancel-cmd", etextview_CancelCommand, classInfo, NULL, "Handle ^G");
+    tempProc=proctable_DefineProc("etextview-cancel-cmd", (procedure) etextview_CancelCommand, classInfo, NULL, "Handle ^G");
     keymap_BindToKey(ssmap, "\007", tempProc, 0);
-    tempProc=proctable_DefineProc("etextview-clear-cmd", etextview_ClearCommand, classInfo, NULL, "Handle ^U");
+    tempProc=proctable_DefineProc("etextview-clear-cmd", (procedure) etextview_ClearCommand, classInfo, NULL, "Handle ^U");
     keymap_BindToKey(ssmap, "\025", tempProc, 0);
     return TRUE;
 }

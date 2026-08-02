@@ -128,7 +128,7 @@ static jmp_buf trap;
 #if defined(_ANSI_C_SOURCE) && !defined(_NO_PROTO)
 static void SigHandler(int sig) {longjmp(trap, 1);}
 #else
-static SigHandler() {longjmp(trap, 1);}
+static void SigHandler(int sig) {longjmp(trap, 1);}
 #endif
 
 static boolean isString(char *arg)
@@ -136,7 +136,7 @@ static boolean isString(char *arg)
 #if defined(_ANSI_C_SOURCE) && !defined(_NO_PROTO)
 	void (*oldBus)(int sig), (*oldSeg)(int sig); /* save signal handlers */
 #else
-	int (*oldBus)(), (*oldSeg)(); /* save signal handlers */
+	void (*oldBus)(int), (*oldSeg)(int); /* save signal handlers */
 #endif
 	char c;
 
@@ -888,7 +888,7 @@ static boolean BufferHelpWork(struct buffer *buffer, struct helpData *helpData)
 
         sizeBuf[0] = '\0';
         if (class_IsTypeByName(className, "text"))
-            sprintf(sizeBuf, "%d",
+            sprintf(sizeBuf, "%ld",
               text_GetLength((struct text *) buffer_GetData(buffer)));
 
         fileName = buffer_GetFilename(buffer);

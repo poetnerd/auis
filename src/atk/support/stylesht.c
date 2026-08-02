@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
  
 
 #include <class.h>
+#include <string.h>
 
 #include <style.ih>
 #include <menulist.ih>

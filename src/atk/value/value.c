@@ -186,7 +186,7 @@ long value__Write(struct value *self, FILE *file, long writeID, int level)
     if (value_GetWriteID(self) != writeID)  {
 	value_SetWriteID( self,writeID);
         fprintf(file, "\\begindata{%s,%ld}\n", class_GetTypeName(self),value_GetID(self));
-	fprintf(file,">%d\n",value_GetValue(self));
+	fprintf(file,">%ld\n",value_GetValue(self));
         fprintf(file, "\\enddata{%s,%ld}\n",  class_GetTypeName(self),value_GetID(self));
     }
 
@@ -198,7 +198,7 @@ long value__Read(struct value *self, FILE *file, long id)
     while(1){
 	if(fgets(buf,256,file) == NULL) return dataobject_PREMATUREEOF;
 	if(*buf == '>') {
-	    self->rock1 = atoi(buf + 1);
+	    self->rock1 = atol(buf + 1);
 	    value_Put(self,valueatom,rock1atom,self->rock1);
 	}
 	else if(strncmp(buf,"\\enddata",8) == 0)return dataobject_NOREADERROR;

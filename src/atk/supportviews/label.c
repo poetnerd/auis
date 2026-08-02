@@ -126,7 +126,7 @@ long label__Write(struct label *self, FILE *file, long writeID, int level)
 		fprintf(file, "\\begin%s", head);
 
 		fontfamily = label_GetFont(self, &style, &size);
-		fprintf(file, " %s %d %d\n", fontfamily, style, size);
+		fprintf(file, " %s %ld %ld\n", fontfamily, style, size);
 	
 		fprintf(file, "%s\n", label_GetText(self));
 
