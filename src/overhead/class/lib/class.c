@@ -75,7 +75,7 @@ extern char etext;
 #endif /* _IBMR2 */
 
 extern int errno;
-static pathopen();
+static int pathopen();
 
 /*
  * additional defined constants
@@ -266,7 +266,7 @@ char * class_Lookup(struct classheader *header, int cpindex)
 	return (char *) &(ClassList[index].info->procs->routines[0]);
     }
     else {
-	fprintf(stderr, "Could not find the class methods for %s version 0x%x (%d)!\n", header->name, header->versionnumber, header->versionnumber);
+	fprintf(stderr, "Could not find the class methods for %s version 0x%lx (%lu)!\n", header->name, header->versionnumber, header->versionnumber);
 
 	return NULL;
     }
@@ -391,7 +391,7 @@ FILE *file;  {
 }
 
 /* support for the dynamic loading code */
-static pathopen(char *aname, char *tname, char *ext, unsigned long version)
+static int pathopen(char *aname, char *tname, char *ext, unsigned long version)
 {
 char * ThisPath;
 int fn;
@@ -537,7 +537,7 @@ void class_ProcessClassPath(char *path)
 	    char sname[100];
 
 	    if (errno != ENOENT) {
-		fprintf(stderr, "CLASS RUNTIME: No index file found in '%s': error %d; some objects in this directory may be ignored.\n", ThisPath->name);
+		fprintf(stderr, "CLASS RUNTIME: No index file found in '%s': error %d; some objects in this directory may be ignored.\n", ThisPath->name, errno);
 	    }
 	    if ((dirp = opendir(ThisPath->name)) == NULL) {
 		fprintf(stderr, "CLASS runtime warning:  CLASSPATH directory %s is not readable (error %d); ignoring it.\n", ThisPath->name, errno);
@@ -714,20 +714,20 @@ struct classinfo *ThisEntry;
     if (ThisEntry != NULL) {
 	fprintf(file, "    class name:          %s\n", ThisEntry->name);
 	fprintf(file, "    class name key:      %s\n", ThisEntry->namekey);
-	fprintf(file, "    class info at:       0x%x\n", (unsigned long) ThisEntry);
+	fprintf(file, "    class info at:       0x%lx\n", (unsigned long) ThisEntry);
 	if (ThisEntry->superclassname != NULL) {
 	    fprintf(file, "    superclass name:     %s\n", ThisEntry->superclassname);
 	    fprintf(file, "    superclass name key: %s\n", ThisEntry->superclassnamekey);
-	    fprintf(file, "    superclass info at:  0x%x\n", (unsigned long) ThisEntry->superclass);
+	    fprintf(file, "    superclass info at:  0x%lx\n", (unsigned long) ThisEntry->superclass);
 	} else {
 	    fprintf(file, "    This class has no superclass\n");
 	}
 	fprintf(file, "\n");
-	fprintf(file, "    version:             0x%x (%d)\n", ThisEntry->versionnumber, ThisEntry->versionnumber);
-	fprintf(file, "    methods table at:    0x%x\n", (unsigned long) ThisEntry->methods);
-	fprintf(file, "    procedures table at: 0x%x\n", (unsigned long) ThisEntry->procs);
-	fprintf(file, "    text base:           0x%x\n", (unsigned long) ThisEntry->textbase);
-	fprintf(file, "    text length:         0x%x (%d)\n", ThisEntry->textlength, ThisEntry->textlength);
+	fprintf(file, "    version:             0x%lx (%lu)\n", ThisEntry->versionnumber, ThisEntry->versionnumber);
+	fprintf(file, "    methods table at:    0x%lx\n", (unsigned long) ThisEntry->methods);
+	fprintf(file, "    procedures table at: 0x%lx\n", (unsigned long) ThisEntry->procs);
+	fprintf(file, "    text base:           0x%lx\n", (unsigned long) ThisEntry->textbase);
+	fprintf(file, "    text length:         0x%lx (%lu)\n", ThisEntry->textlength, ThisEntry->textlength);
     } else {
 	fprintf(file, "    ** This class is statically loaded and has not yet  **\n");
 	fprintf(file, "    ** been used therefore it has not been initialized. **\n");

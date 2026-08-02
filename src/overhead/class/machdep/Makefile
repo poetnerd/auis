@@ -175,6 +175,8 @@ AS_FLAGS =
 #
 CC = cc -fwritable-strings
 COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Wno-implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
+
+STRICT_COMPILERFLAGS = -std=gnu89 -Wno-return-type -Werror=implicit-int -Werror=int-conversion -Werror=incompatible-function-pointer-types -Werror=implicit-function-declaration -Werror=format
 LEX = flex
 RANLIB = ranlib
 XBASEDIR = /opt/X11

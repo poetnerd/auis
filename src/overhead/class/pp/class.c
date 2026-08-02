@@ -35,21 +35,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <sys/param.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <signal.h>
 
-/*
- * define these for the compiler 
- */
-#ifndef _IBMR2
-char *malloc(),*realloc();  /* should include stdlib.h */
-#endif /* _IBMR2 */
 extern int yylex();	    /* using lex */
 #ifndef FLEX_ENV
-extern char yytext[];	    
+extern char yytext[];
 #else
 extern char *yytext;
 #endif /* FLEX_ENV */
+extern void PushFile();    /* defined in classpp.l */
+extern void PopFile();	    /* defined in classpp.l */
 
 /*
  * pick up parameters and constants
@@ -634,8 +631,8 @@ static void outstr0(str)	    /* just the string */
 char *str;
 
 {
-    (void) fprintf(importfile, str);
-    (void) fprintf(exportfile, str);
+    (void) fprintf(importfile, "%s", str);
+    (void) fprintf(exportfile, "%s", str);
 }
 
 static void outstr1(str, a)	    /* 1 arg version */
@@ -1097,7 +1094,7 @@ int errvalCount[errval_NUM];	/* ??? */
         }
 
         (void) fprintf(exportfile, "\nstatic struct %s_methods %s_methodtable = {\n", FinalClassName, FinalClassName);
-        (void) fprintf(exportfile, "    NULL", FinalClassName);
+        (void) fprintf(exportfile, "    NULL");
 
         for (mp = methodlist->next; mp != NULL; mp = mp->next)  {
             if (mp->type==ptype_method && mp->macrodef==NULL)  {
@@ -1245,7 +1242,7 @@ int errvalCount[errval_NUM];	/* ??? */
 		proto[0] = '\0';
 	    }
 
-            (void) fprintf(exportfile, "    /* %s_Initialize(self); */\n", FinalParentName, FinalParentName);
+            (void) fprintf(exportfile, "    /* %s_Initialize(self); */\n", FinalParentName);
 	    (void) fprintf(exportfile, "    if(!(*((boolean (*)(%s)) (%s_CLASSPROCEDURES->routines[2])))(&%s_classheader,self, %s_VERSION))\n", proto, FinalParentName, FinalParentName, FinalParentName);
 	    (void) fprintf(exportfile, "\treturn FALSE;\n");
 	}
@@ -1310,7 +1307,7 @@ int errvalCount[errval_NUM];	/* ??? */
 /*        (void) fprintf(exportfile, "\treturn NULL;\n"); %%%%% think about this ...  */
         (void) fprintf(exportfile, "    }\n");
         if (allocate)
-            (void) fprintf(exportfile, "    self = %s__Allocate(classID);\n", FinalClassName, FinalClassName);
+            (void) fprintf(exportfile, "    self = %s__Allocate(classID);\n", FinalClassName);
         else
             (void) fprintf(exportfile, "    self = (struct %s *) malloc (sizeof(struct %s));\n", FinalClassName, FinalClassName);
         (void) fprintf(exportfile,"    if (! self)  {\n");

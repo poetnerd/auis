@@ -14,6 +14,16 @@
 
 CC = cc -fwritable-strings
 COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Wno-implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
+
+/* M4 rollout: per-directory opt-in to the strict flag set (see
+   revival/doc/m4-rollout-runbook.md, "Execution mechanism corrected
+   2026-08-02"). A directory flips over via its own Imakefile:
+       COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+   Must stay as separate -Werror=<name> flags, not a comma-joined
+   -Werror=a,b,c -- the latter is silently treated as one unrecognized
+   warning option and does nothing. The default COMPILERFLAGS above
+   stays untouched until Phase 3. */
+STRICT_COMPILERFLAGS = -std=gnu89 -Wno-return-type -Werror=implicit-int -Werror=int-conversion -Werror=incompatible-function-pointer-types -Werror=implicit-function-declaration -Werror=format
 LEX = flex
 RANLIB = ranlib
 
