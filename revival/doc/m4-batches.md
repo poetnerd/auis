@@ -158,15 +158,52 @@ proof-of-mechanics step M3's `atk/eq` pilot provided.
       multipart-parsing rewrite has since disabled the UI hook that
       invokes metamail, so no live end-to-end app test was required
       before check-in.
-- [ ] **O3** (former O4+O5): `overhead/bison` (17), `overhead/util/lib`
-      (11), `overhead/index` (7), `overhead/mkparser` (4),
-      `overhead/addalias` (4), `overhead/util/cmd` (3), `overhead/sys`
-      (3), `overhead/rxp` (3), `overhead/class/cmd` (3),
-      `overhead/image/tiff` (2), `overhead/fonts/cmd` (2),
-      `overhead/errors` (2), `overhead/cmenu` (2), `overhead/util/hdrs`
-      (1), `overhead/image/jpeg` (1) — 65, small/leaf grab-bag, 15
-      directories (many Imakefile touches, but each is the one-line
-      macro override).
+- [x] **O3** — DONE 2026-08-02, committed 4c5c0272c887: (former O4+O5)
+      `overhead/bison` (17), `overhead/util/lib` (11), `overhead/index`
+      (7), `overhead/mkparser` (4), `overhead/addalias` (4),
+      `overhead/util/cmd` (3), `overhead/sys` (3), `overhead/rxp` (3),
+      `overhead/class/cmd` (3), `overhead/image/tiff` (2),
+      `overhead/fonts/cmd` (2), `overhead/errors` (2), `overhead/cmenu`
+      (2), `overhead/util/hdrs` (1), `overhead/image/jpeg` (1) — 65
+      census, 15 directories, 64 files touched (15 Imakefiles + 49
+      source/header files). Real counts matched census almost exactly
+      everywhere except one outlier: `overhead/image/tiff` (census 2,
+      real 109) — this vendored libtiff hadn't actually been recompiled
+      since before the strict flags existed, so forcing it clean
+      exposed a library-wide "typed forward-decl already said `int`,
+      the definition just never caught up" idiom repeated across ~20
+      files; fixed via two library-internal header additions
+      (`tiffcompat.h`, `tiffioP.h`: missing includes, cross-file
+      declarations for `TIFFInitCCITTFax3/4`/`TIFFFlushData1`/
+      `TIFFSetCompressionScheme`) plus per-file `static int` retypes,
+      rather than touching all 20 files' logic individually. Genuine
+      bugs found: `overhead/bison/files.c`'s `AndrewDir()` (a
+      pointer-returning function) was invoked via the `XPFILE`/
+      `XPFILE1` macros with no declaration anywhere in scope — the
+      same LP64 pointer-truncation class fixed tree-wide elsewhere,
+      fixed with `extern char *AndrewDir();`; `overhead/index`'s
+      on-disk hash-bucket (`H%d`) and version (`V%d.%d`) filenames were
+      built/parsed with `%d`/`sscanf %d` against `long` fields (hash
+      index, version, record ids) — fixed to `%ld`, verified against
+      `struct recordID`/`struct indexBucket` in `index.h`; `tif_print.c`
+      had 11 `%u`-vs-`u_long` mismatches in `TIFFPrintDirectory`
+      (display/debug path only). One function-pointer fix
+      (`overhead/addalias/addalias.c`'s `qsLineCompare` rewritten to a
+      real `(const void*, const void*)` qsort comparator, not a bare
+      cast); nothing escalated. No CWE-134 injection sites found in
+      this batch. `overhead/bison` confirmed first-party-maintained
+      (Andrew Consortium's own fork, not upstream-vendored per the
+      Imakefile's own comment) — fixed like any other directory;
+      `lex.c`/`gram.c` (bootstrap-generated parser tables) needed zero
+      changes. All 15 directories gate clean (`make clean && make
+      depend && make -k install`, exit 0), independently reproduced by
+      the orchestrator from a fresh rebuild of all 15, along with every
+      diff and format-width fix checked against real declarations. None
+      of these 15 directories sit on a live GUI-app runtime path (build
+      tools/libraries, not exec'd by `ez`/`messages`), so no additional
+      runtime test was applicable beyond the gate rebuilds. **Closes
+      Wave 1** — no full `Clean; make World` checkpoint due yet (that's
+      after Waves 2/4/6).
 
 ## Wave 2 — atk/basics+support (19 directories, 381 errors, 3 sessions)
 
