@@ -64,7 +64,7 @@ void tabs__OutputTroff(struct tabs *self, long indent, FILE *file)
     int i;
 
     if (indent < 0) {
-	fprintf(file, "'ta %dp", -indent);
+	fprintf(file, "'ta %ldp", -indent);
     }
     else{
 	fprintf(file, "'ta");
@@ -74,13 +74,13 @@ void tabs__OutputTroff(struct tabs *self, long indent, FILE *file)
 	if (self->Positions[i] > indent)
 	    switch(self->Types[i]) {
 		case style_LeftAligned:
-		    fprintf(file, " %dp", self->Positions[i] - indent);
+		    fprintf(file, " %ldp", self->Positions[i] - indent);
 		    break;
 		case style_RightAligned:
-		    fprintf(file, " %dpR", self->Positions[i] - indent);
+		    fprintf(file, " %ldpR", self->Positions[i] - indent);
 		    break;
 		case style_CenteredOnTab:
-		    fprintf(file, " %dpC", self->Positions[i] - indent);
+		    fprintf(file, " %ldpC", self->Positions[i] - indent);
 		    break;
 		default:
 		    ; /* Ignoring all others for now... XXX */

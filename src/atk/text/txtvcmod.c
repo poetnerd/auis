@@ -502,7 +502,7 @@ void textview_YankCmd(struct textview *self)
     YankCmd(self, FALSE);
 }
 
-static textview_DoRotatePaste(struct textview *self, int count)
+static int textview_DoRotatePaste(struct textview *self, int count)
 {
     register struct text *d = Text(self);
 
@@ -1241,7 +1241,7 @@ void textview_YankEndOfWSWordCmd(struct textview *self)
     yankDeleteWord(self, YANK, textview_EndOfWSWordCmd);
 }
 
-static viYankDeleteLine(struct textview *self, int action)
+static int viYankDeleteLine(struct textview *self, int action)
 {
     register int  count, pos, endpos, lastpos, numNLs, applen = 0;
     register struct text *d;

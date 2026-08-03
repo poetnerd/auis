@@ -83,8 +83,8 @@ static long text_ListObjects();
 #define MAX_QP_CHARS 76 /* The Quoted-Printable encoding REQUIRES that encoded lines be no more than 76 characters long */
 #define LAST_QP_CHAR (MAX_QP_CHARS - 1)
 
-static stylesIncludeBeginning = text_UNSET;
-static stylesIncludeEnd = text_UNSET;
+static int stylesIncludeBeginning = text_UNSET;
+static int stylesIncludeEnd = text_UNSET;
 
 /* Place holder character for viewrefs */
 /* All viewrefs contain this char, but the presence of this */
@@ -113,7 +113,7 @@ static struct environmentelement *envptr = NULL;
 
 static long HighBitStart = -1;
 static void ClearStyles();
-PushLevel();
+int PushLevel();
 int ComingNext();
 
 static int DataStreamVersion = 0;
@@ -606,21 +606,21 @@ long text__HandleKeyWord(struct text *self, long pos, char *keyword, FILE *file)
                 viewname[i++] = c;
         viewname[i] = '\0';
         if (c == EOF) {
-            fprintf(stderr, EOFerror);
+            fprintf(stderr, "%s", EOFerror);
             return -1;
         }
 
         objectid = 0;
         c = ParseInteger(file, &objectid);
         if (c == EOF || c == '}') {
-            fprintf(stderr, EOFerror);
+            fprintf(stderr, "%s", EOFerror);
             return -1;
         }
 
         viewid = 0;
         c = ParseInteger(file, &viewid);
         if (c == EOF) {
-            fprintf(stderr, EOFerror);
+            fprintf(stderr, "%s", EOFerror);
             return -1;
         }
 
@@ -630,12 +630,12 @@ long text__HandleKeyWord(struct text *self, long pos, char *keyword, FILE *file)
             /* New format with desired view size saved */
 
             if ((c = ParseInteger(file, &desw)) == EOF) {
-                fprintf(stderr, EOFerror);
+                fprintf(stderr, "%s", EOFerror);
                 return -1;
             }	
 
             if (c == ',' && ((c = ParseInteger(file, &desh)) == EOF)) {
-                fprintf(stderr, EOFerror);
+                fprintf(stderr, "%s", EOFerror);
                 return -1;
             }
 
@@ -649,7 +649,7 @@ long text__HandleKeyWord(struct text *self, long pos, char *keyword, FILE *file)
                 }
 
                 if (c == EOF) {
-                    fprintf(stderr, EOFerror);
+                    fprintf(stderr, "%s", EOFerror);
                     return -1;
                 }	
             }
@@ -696,7 +696,7 @@ long text__HandleKeyWord(struct text *self, long pos, char *keyword, FILE *file)
             templatename[i++] = c;
         templatename[i] = '\0';
         if (c == EOF)  {
-            fprintf(stderr, EOFerror);
+            fprintf(stderr, "%s", EOFerror);
             return -1;
         }
 
@@ -1333,7 +1333,7 @@ void text__WriteSubString(struct text *self, long pos, long len, FILE *file, boo
         putc('}', file);
 }
 
-static WrapStyle(struct text *self, struct environment *curenv, long pos)
+static int WrapStyle(struct text *self, struct environment *curenv, long pos)
 {
     struct environment *newenv;
     if (curenv->type == environment_Style){
@@ -1689,7 +1689,7 @@ void text__FinalizeStateVector(struct classheader *classID, struct text_statevec
     }
 }
 
-static PlayTabs(struct text_statevector *sv, struct text_statevector *oldsv, struct style *styleptr)
+static int PlayTabs(struct text_statevector *sv, struct text_statevector *oldsv, struct style *styleptr)
 {
     /* Tab updating is defined as copying over all of the old tabs and then */
     /* applying the modifiers in the style to the new tabs. */

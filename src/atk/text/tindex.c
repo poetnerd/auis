@@ -172,7 +172,7 @@ static void tindex_IndexTermCmd(struct view *v)
     }
     else {
 	if(i == 1) sprintf(thisString,"one instance indexed");
-	else sprintf(thisString,"%d instances found",i);
+	else sprintf(thisString,"%ld instances found",i);
 	message_DisplayString(v,0,thisString);
 	if(v != (struct view *)self) content_reinit(Data(v));
 	text_RegionModified(d,0,text_GetLength(d));
@@ -274,7 +274,7 @@ void tindex_ExposeInvIndex(struct view *v)
     if((self = getrealview(v)) == NULL) return ;
     tindex_FudgeFonts(Text(self),"indexi", tindex_VISIBLE);
 }
-static indexstyle(char *name)
+static int indexstyle(char *name)
 {
     register char **sp;
     register int which = 0;
@@ -346,7 +346,7 @@ int tindex__IndexTerm(struct classheader *classID, struct text *d, char *term, c
     }
     return(j);
 }
-static skipchapnumber(struct text *d, long *pos, long *len)
+static int skipchapnumber(struct text *d, long *pos, long *len)
 {
     long i;
     int c;

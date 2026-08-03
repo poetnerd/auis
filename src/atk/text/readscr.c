@@ -57,7 +57,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 static int finishenv();
 static int goshdarn();
 static int linefix();
+static int longscribe();
 static int scribefix();
+static int shortscribe();
 static int startenv();
 static int textfix();
 
@@ -81,15 +83,7 @@ static struct StackItem {
     int Delimiter, Position, CheckMode;
 } *Stack[STACKSIZE + 1];
 
-static textfix();
-static linefix();
-static scribefix();
-static longscribe();
-static shortscribe();
-static startenv();
-static finishenv();
-
-static goshdarn(char *errmsg)
+static int goshdarn(char *errmsg)
 {
     fprintf(stderr, "<warning:readscr>%s\n", errmsg);
 }
@@ -157,7 +151,7 @@ int readscr__PrintFile(struct classheader *classID, char *filename, struct textv
 
 
 /* ** textfix - reads chars in and handles them appropriately ** */
-static textfix(struct text *d, int len)
+static int textfix(struct text *d, int len)
 {
     register int i, tmp;
 
@@ -248,7 +242,7 @@ static textfix(struct text *d, int len)
 }
 
 /* ** linefix - if single \n, output space, if multiple \n's, output n-1 \n's ** */
-static linefix(struct text *d)
+static int linefix(struct text *d)
 {
     if (OldFormat) {
 	if (LineFeeds == 1) {
@@ -284,7 +278,7 @@ static linefix(struct text *d)
 }
 
 /* ** scribefix - deal with @commands ** */
-static scribefix(struct text *d)
+static int scribefix(struct text *d)
 {
     register int i, next, lowernext;
     char shortcommand[STRINGSIZE], realstring[STRINGSIZE];
@@ -338,7 +332,7 @@ static scribefix(struct text *d)
 }
 
 /* ** longscribe - deal with @begin and @end scribe environments ** */
-static longscribe(struct text *d, char *shortcommand)
+static int longscribe(struct text *d, char *shortcommand)
 {
     register int i;
     struct style *tempstyle;
@@ -445,7 +439,7 @@ static longscribe(struct text *d, char *shortcommand)
 
 
 /* ** shortscribe - deal with all other environments ** */
-static shortscribe(struct text *d, char *shortcommand)
+static int shortscribe(struct text *d, char *shortcommand)
 {
     struct style *tempstyle;
     int delim;
@@ -479,7 +473,7 @@ static shortscribe(struct text *d, char *shortcommand)
 }
 
 /* ** startenv - add an environment to the stack ** */
-static startenv(int delim, struct style *tempstyle)
+static int startenv(int delim, struct style *tempstyle)
 {
     int rpos;
 
@@ -502,7 +496,7 @@ static startenv(int delim, struct style *tempstyle)
 }
 
 /* ** finishenv - remove an environment from the stack ** */
-static finishenv()
+static int finishenv()
 {
     int length;
 

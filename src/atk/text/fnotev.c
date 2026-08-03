@@ -69,7 +69,7 @@ struct impair {
     struct impair *next;
 };
 static struct impair *list;
-static endnotes = FALSE;
+static boolean endnotes = FALSE;
 void initci(struct fnotev *self)
 {
     if(fnotev_GetDrawable(self) != NULL){
@@ -297,7 +297,7 @@ void fnotev__popchild(struct fnotev *self)
 {
 }
 
-static DoUpdate(struct fnotev *self, boolean full)
+static int DoUpdate(struct fnotev *self, boolean full)
 {
     struct rectangle enclosingRect;
 /*     long xsize,ysize; 

@@ -115,7 +115,7 @@ static void Convert(char *fileName)
 
     if (text_ReadSubString(text, 0, fp, FALSE) <= 0) {
         text_Destroy(text);
-        fprintf(stderr, "%s: Unable to read from %d\n", progName, fileName);
+        fprintf(stderr, "%s: Unable to read from %s\n", progName, fileName);
         return;
     }
 
@@ -163,7 +163,7 @@ boolean be1be2app__Run(struct be1be2app *self)
     int i;
 
     if (fileCount == 0) {
-        fprintf(stderr, "%s: No files specified\n");
+        fprintf(stderr, "%s: No files specified\n", progName);
         return TRUE;
     }
 

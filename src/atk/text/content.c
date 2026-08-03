@@ -51,7 +51,7 @@ static int clear();
 static int copymark();
 static int denumber();
 static int doshuffle();
-static int erestingstyle();
+static int interestingstyle();
 static struct content_chapentry * findcp();
 static struct content_chapentry * findindexcp();
 static int findinlist();
@@ -92,7 +92,7 @@ static int unindent();
 static void NoteStyle();
 static int ensure();
 
-static findinlist(char **lst, int cnt, char *str)
+static int findinlist(char **lst, int cnt, char *str)
 {
     int i;
     for(i = 0; i < cnt; i++,lst++){
@@ -103,7 +103,7 @@ static findinlist(char **lst, int cnt, char *str)
     }
     return -1;
 }
-static appendlist(char **lst, int cnt, char *ostr, int TEST)
+static int appendlist(char **lst, int cnt, char *ostr, int TEST)
 {   /* BUG -- OVERFLOWS NOT DETECTED */
 #ifndef _IBMR2
 #endif /* _IBMR2 */
@@ -217,7 +217,7 @@ long content__StringToInts(struct content *self, long pos, int *lev)
 return StoI(self,&pos,lev,(struct text *)self);
 }
     
-static denumber(struct content *self, struct content_chapentry *cp)
+static int denumber(struct content *self, struct content_chapentry *cp)
 {
     long pos,len,opos,olen;
     opos = pos = mark_GetPos(cp->rem);
@@ -320,7 +320,7 @@ void content__Denumerate(struct content *self, long pos, long len)
     if(!self->isindented) doindent(self);   
     text_NotifyObservers(self->srctext,0);
 }
-static number(struct content *self, char *string, struct content_chapentry *cp)
+static int number(struct content *self, char *string, struct content_chapentry *cp)
 {
     char c;
     long pos,npos,end;
@@ -487,7 +487,7 @@ static struct content_chapentry * newentry(struct content *self, struct content_
     cp->space = -1;
     return cp;
 }
-static freeentry(struct content *self, struct content_chapentry *cp, struct content_chapentry *lastcp)
+static int freeentry(struct content *self, struct content_chapentry *cp, struct content_chapentry *lastcp)
 {
     if(cp->loc) content_RemoveMark(self,cp->loc);
     if(self->srctext && cp->rem ) text_RemoveMark(self->srctext,cp->rem);
@@ -526,7 +526,7 @@ static int ensure(struct content *self, struct content_chapentry **base, long po
     self->InUpdate = FALSE;
     return count;
 }
-static copymark(struct text *desttext, struct mark *destmark, struct text *srctext, struct mark *srcmark, boolean cap)
+static int copymark(struct text *desttext, struct mark *destmark, struct text *srctext, struct mark *srcmark, boolean cap)
 {
     char *c,buf[256],*cp;
     long len = mark_GetLength(srcmark);
@@ -544,7 +544,7 @@ static copymark(struct text *desttext, struct mark *destmark, struct text *srcte
     mark_SetModified(destmark,0);
     text_NotifyObservers(desttext,0);
 }
-static freeentrys(struct content *self)
+static int freeentrys(struct content *self)
 {
     struct content_chapentry *cp,*lastcp;
     lastcp = NULL;
@@ -569,7 +569,7 @@ static freeentrys(struct content *self)
     }
     self->entry = self->indexentry = NULL;
 }
-static clear(struct content *self)
+static int clear(struct content *self)
 {
     content_SetReadOnly(self,FALSE);
     freeentrys(self);
@@ -614,7 +614,7 @@ void content__reinit(struct content *self)
 
 }
 
-static interestingstyle(struct content *self, char *name)
+static int interestingstyle(struct content *self, char *name)
 {
     register char **sp;
     register int which = 0;
@@ -627,7 +627,7 @@ static interestingstyle(struct content *self, char *name)
     }
     return 0;
 }
-static indexstyle(char *name)
+static int indexstyle(char *name)
 {
     register char **sp;
     register int which = 0;
@@ -732,12 +732,12 @@ static void NoteStyle(struct content *self, long pos, long len, struct style *st
 	 */
     }
 }
-static doshuffle(struct content *self)
+static int doshuffle(struct content *self)
 {
     /* punt for now */
  /*   content_reinit(self);  */
 }
-static checknewline(struct content *self, struct content_chapentry *cp)
+static int checknewline(struct content *self, struct content_chapentry *cp)
 {
     /* punt for now */
 }
@@ -754,7 +754,7 @@ static boolean updatemark(struct text *d, struct mark *m, boolean nonum)
     }
     else return FALSE;
 }
-static mod(struct content *self, struct content_chapentry **base, boolean nonum)
+static int mod(struct content *self, struct content_chapentry **base, boolean nonum)
 {
     struct content_chapentry *cp,*lastcp;
 /*    int shuffle = 0; */

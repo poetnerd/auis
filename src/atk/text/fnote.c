@@ -165,7 +165,7 @@ static boolean copy(struct fnote *self, struct text *text)
     if(tmptext){
 	len = (self->loc + environment_GetLength(self->env) - 1 ) - self->ownloc;
 	if(donumber){
-	    sprintf(buf,"%d\t",self->notecount);
+	    sprintf(buf,"%ld\t",self->notecount);
 	    /* should probably superscript this number */
 	}
 	text_InsertCharacters(tmptext,text_GetLength(tmptext),buf,strlen(buf));
@@ -222,7 +222,7 @@ long fnote__GetLocLength(struct fnote *self)
 	return environment_GetLength(self->env) - 1;
     return 0L;
 }
-static DoAll(struct text *text, boolean (*callBack)(), int order)
+static int DoAll(struct text *text, boolean (*callBack)(), int order)
 {
     struct fnote *st[MAXNOTES];
     stack = st;

@@ -373,8 +373,10 @@ void pcompch__ASCIIToATK(struct classheader *classID, struct text *text, long po
     mark_Destroy(area);
 }
 
-static int lenorder(unsigned char *e1, unsigned char *e2)
+static int lenorder(const void *p1, const void *p2)
 {
+    const unsigned char *e1 = (const unsigned char *) p1;
+    const unsigned char *e2 = (const unsigned char *) p2;
     if(!asciimagic[*e2] || !asciimagic[*e1]) return 0;
     return strlen(asciimagic[*e2])-strlen(asciimagic[*e1]);
 }

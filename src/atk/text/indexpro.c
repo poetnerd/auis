@@ -63,8 +63,10 @@ Index\n\
 .in .2i	\n\
 .hy 0\
 ";
-int cmp(int *a, int *b)
+int cmp(const void *ap, const void *bp)
 {
+    const int *a = (const int *) ap;
+    const int *b = (const int *) bp;
     return(*a - *b);
 }
 static char lbuf[512];

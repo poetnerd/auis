@@ -478,7 +478,7 @@ static int parseBackslashed(char **fromChars)
     return returnChar;
 }
 
-static adjustBindings(struct bind_Description *bindings)
+static int adjustBindings(struct bind_Description *bindings)
 {
     struct bind_Description *bd;
     char *stylePrefixPref;
