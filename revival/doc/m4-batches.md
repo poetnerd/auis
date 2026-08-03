@@ -319,7 +319,67 @@ positive). wdc then ran a broader runtime pass across `ez`, `help`,
 
 ## Wave 3 — atk/text (1 directory, 57 errors, 1 session)
 
-- [ ] **T1**: `atk/text` (57) — alone, same as M3's own treatment.
+- [x] **T1 COMPLETE 2026-08-03, fossil `623f242eba34`**: `atk/text` —
+      alone. Census (57) badly undercounted (real 102, +79%, the
+      largest gap-to-floor ratio of any Wave 1–3 batch), almost
+      entirely because the census predates the `-Werror=format` ruling:
+      45 of the 102 real errors were format-related (37 width, 7
+      format-security non-literal strings, 1 insufficient-args),
+      concentrated in `txttroff.c` (44 errors alone, a ~2000-line
+      troff-stream writer that's essentially one long chain of
+      `fprintf`s against `long` statevector fields). Two genuine
+      standalone bugs found and fixed: `content.c:54`'s dead forward
+      declaration `static int erestingstyle();` — a ~30-year-old typo
+      that never matched the real function `interestingstyle`, silently
+      unused since whenever it was introduced (no compiler warning
+      exists for an unused `static` prototype); and two broken
+      diagnostics in `be1be2a.c` (the standalone BE1→BE2 CLI tool) —
+      `%d` used for a `char *` filename, and an `fprintf` missing its
+      `progName` argument entirely, both ~30-year-old copy/paste bugs
+      with no data-loss implication (stderr-only). Also: a dead
+      duplicate untyped K&R forward-declaration block in `readscr.c`
+      (same shape as B1's `treev.c`/B3's `apt.c`/`aptv.c` findings —
+      folded its 2 unique entries into the correct block, added `int`
+      to all 7 real definitions after checking each against its actual
+      return behavior). Two `incompatible-function-pointer-types` sites
+      (`pcompch.c`'s `lenorder`, `indexpro.c`'s `cmp`, both `qsort`
+      comparators) fixed via true-signature retyping to
+      `int(*)(const void*,const void*)` per fix-policy rule 2 — neither
+      is a class-dispatch slot, so the cast/polymorphic-table exception
+      didn't apply and wasn't used; **zero function-pointer casts
+      landed in this batch**, nothing to escalate under rule 4. All
+      remaining ~50 fixes were mechanical `%d`→`%ld` (verified against
+      real `long`-typed statevector fields in `txtstvec.h` and similar)
+      or missing-`int`-on-definition (each already correctly
+      forward-declared elsewhere in the same file). Swept for the
+      directory-specific malloc/stdlib.h blind spot flagged in
+      `rollout-procedure.md` (106 sites found there in an earlier
+      session) — confirmed already closed, all 19 malloc-calling files
+      already include `<stdlib.h>`. Orchestrator independently
+      re-verified the two genuine bugs and both qsort retypes against
+      the diff, confirmed the dead-decl-block cleanup, checked the
+      `txttroff.c` field types directly against `txtstvec.h`, and
+      re-ran the directory gate clean from scratch. `atk/text` is
+      statically linked into `runapp` (every app) per this project's
+      own prior `nm -g runapp` finding; `runapp`/`ez`/`be1be2`/
+      `typescript`/`pipescript` relinked before commit. wdc ran a
+      broader-than-usual manual pass given this directory's size and
+      centrality: text insertion/deletion, style set/clear, multi-page
+      scrolling, a Contents inset, a footnote, and an index-term mark —
+      all passed (the Contents and index-term paths hadn't been
+      exercised in a long time and both worked correctly). Troff/print
+      output byte-diffing and the `be1be2` CLI were left unexercised —
+      no printing pipeline currently wired up (separate future project,
+      either troff or a direct-to-PostScript backport from the C++
+      codeline) and no BE1 sample file exists anywhere in the tree (an
+      ancient pre-`ez` format) — judged not worth hand-crafting one for
+      two stderr-message fixes on a standalone converter tool; both
+      deferred without blocking check-in.
+
+**Checkpoint after Wave 3**: none due — Wave 3 is a single one-directory
+session, covered by the next full checkpoint after Wave 4 per the
+consolidated gate schedule (waves 1/3/5 ride the checkpoint that
+follows them). **Closes Wave 3.**
 
 ## Wave 4 — insets (16 directories, 447 errors, 4 sessions)
 
