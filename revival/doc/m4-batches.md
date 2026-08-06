@@ -383,15 +383,35 @@ follows them). **Closes Wave 3.**
 
 ## Wave 4 — insets (16 directories, 447 errors, 4 sessions)
 
-- [ ] **I1**: `atk/raster/cmd` (112) — alone, largest in this wave and
-      second-largest overall after `contrib/zip/lib`. Also carries 351
-      of the tree's ~715 `-Wformat` sites (`rastvaux.c` 201,
-      `dispbox.c` 84, `rasterv.c` 66) — all must-fix under the format
-      ruling, so this session's real size is ~460 items. Mostly
-      mechanical `%d`→`%ld` (well inside M2's proven single-session
-      throughput), but raster is a datastream-heavy inset — treat its
-      writer/reader format pairs with the id-truncation incident in
-      mind.
+- [x] **I1 COMPLETE 2026-08-05, fossil `6a5fbc4c9c02`**: `atk/raster/cmd`
+      alone. Census (112) + the ~351 estimated `-Wformat` sites landed
+      close: real total 493 (7% over ~460, the closest census match of
+      any M4 batch so far) — 379 format, 107 function-pointer, 5
+      implicit-int, 2 format-extra-args. All 107 function-pointer sites
+      were one uniform shape (`proctable_DefineProc`/`im_EnqueueEvent`
+      callback registrations against the toolkit's `procedure` generic-
+      dispatch type, already the established tree-wide idiom) — fixed
+      with `(procedure)` casts, zero bare/escalated casts. Genuine bugs:
+      `raster__WriteShare` silently dropped the `height` field from its
+      datastream write (7 `%ld` conversions for 8 args) — real
+      corruption on the "share" (same-machine shared-memory) write path,
+      exactly the class the format ruling exists to catch; 4 scanf-
+      direction LP64 half-writes (`options`/`depth` fields, the Scale
+      and Gray dialogs' numeric entry); an id-truncation write bug; a
+      shared `ENTER`/`LEAVE` debug-macro pointer-format bug in
+      `dispbox.h` fixed once for 31 call sites. Also flagged, not fixed
+      (out of compiler-error scope): the same macros' `"r"`-vs-`#r`
+      literal bug, which has printed the wrong function name in every
+      raster debug trace for ~35 years — cosmetic, left for a future
+      sweep. `rastimg.c`/`rastervt.c` were already clean, untouched.
+      Orchestrator independently verified the `procedure`-cast precedent
+      against `class.h` and sibling files, the `WriteShare` bug against
+      both writer and reader, the macro fix, and the Imakefile override,
+      then re-ran the gate clean from scratch. `atk/raster/cmd` is
+      dynamically loaded (`.do`, not statically linked into `runapp`) —
+      no relink needed. wdc ran a raster-specific runtime pass (inset
+      display/save/reload, Scale and Gray dialogs, several Raster menu
+      commands) given the genuine read/write bugs found — all passed.
 - [ ] **I2**: `atk/table` (81) — alone. Historically the directory
       with the `AUXMODULE` classpp sub-case (M2) — expect similar
       class-internal-dispatch findings here.
