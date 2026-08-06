@@ -218,7 +218,7 @@ static int k_CheckSelection(struct spread *V)
 
 /* Read new formula for cell */
 
-static k_ReadFormula(struct spread *V, char *startstring)
+static int k_ReadFormula(struct spread *V, char *startstring)
 {
     char   keybuff[1000];
     struct cell * cell;
@@ -460,31 +460,31 @@ static void k_debug(struct spread *V, char ch)
 
 static struct bind_Description keytable[] = {
 
-    {"table-begin-row", "\001", 0, NULL, 0, 0, k_home, "Beginning of row"},
-    {"table-left", "\002", 0, NULL, 0, 0, k_leftarrow, "Left one column"},
-    {"table-end-row", "\005", 0, NULL, 0, 0, k_endline, "End of row"},
-    {"table-right", "\006", 0, NULL, 0, 0, k_rightarrow, "Right one column"},
-    {"table-down", "\016", 0, NULL, 0, 0, k_downarrow, "Down one row"},
-    {"table-up", "\020", 0, NULL, 0, 0, k_uparrow, "Up one row"},
+    {"table-begin-row", "\001", 0, NULL, 0, 0, (void (*)())k_home, "Beginning of row"},
+    {"table-left", "\002", 0, NULL, 0, 0, (void (*)())k_leftarrow, "Left one column"},
+    {"table-end-row", "\005", 0, NULL, 0, 0, (void (*)())k_endline, "End of row"},
+    {"table-right", "\006", 0, NULL, 0, 0, (void (*)())k_rightarrow, "Right one column"},
+    {"table-down", "\016", 0, NULL, 0, 0, (void (*)())k_downarrow, "Down one row"},
+    {"table-up", "\020", 0, NULL, 0, 0, (void (*)())k_uparrow, "Up one row"},
 
-    {"table-backspace", "\010", 0, NULL, 0, 0, k_backspace, "Backspace"},
-    {"table-tab", "\011", 0, NULL, 0, 0, k_tab, "Tab"},
-    {"table-newline", "\012", 0, NULL, 0, 0, k_newline, "New line"},
-    {"table-return", "\015", 0, NULL, 0, 0, k_newline, "Carriage return"},
-    {"table-DELchar", "\177", 0, NULL, 0, 0, k_backspace, "DEL"},
+    {"table-backspace", "\010", 0, NULL, 0, 0, (void (*)())k_backspace, "Backspace"},
+    {"table-tab", "\011", 0, NULL, 0, 0, (void (*)())k_tab, "Tab"},
+    {"table-newline", "\012", 0, NULL, 0, 0, (void (*)())k_newline, "New line"},
+    {"table-return", "\015", 0, NULL, 0, 0, (void (*)())k_newline, "Carriage return"},
+    {"table-DELchar", "\177", 0, NULL, 0, 0, (void (*)())k_backspace, "DEL"},
 
-    {"table-erase", "\025", 0, NULL, 0, 0, k_killbuff, "Erase"},
+    {"table-erase", "\025", 0, NULL, 0, 0, (void (*)())k_killbuff, "Erase"},
 
-    {"table-up", "\033A", 0, NULL, 0, 0, k_uparrow, "Up"},
-    {"table-down", "\033B", 0, NULL, 0, 0, k_downarrow, "Down"},
-    {"table-right", "\033C", 0, NULL, 0, 0, k_rightarrow, "Right"},
-    {"table-left", "\033D", 0, NULL, 0, 0, k_leftarrow, "Left"},
-    {"table-end-row", "\033J", 0, NULL, 0, 0, k_endline, "End"},
-    {"table-begin-row", "\033H", 0, NULL, 0, 0, k_home, "home"},
-    {"table-top", "\033<", 0, NULL, 0, 0, k_top, "Top"},
-    {"table-bottom", "\033>", 0, NULL, 0, 0, k_bottom, "Bottom"},
+    {"table-up", "\033A", 0, NULL, 0, 0, (void (*)())k_uparrow, "Up"},
+    {"table-down", "\033B", 0, NULL, 0, 0, (void (*)())k_downarrow, "Down"},
+    {"table-right", "\033C", 0, NULL, 0, 0, (void (*)())k_rightarrow, "Right"},
+    {"table-left", "\033D", 0, NULL, 0, 0, (void (*)())k_leftarrow, "Left"},
+    {"table-end-row", "\033J", 0, NULL, 0, 0, (void (*)())k_endline, "End"},
+    {"table-begin-row", "\033H", 0, NULL, 0, 0, (void (*)())k_home, "home"},
+    {"table-top", "\033<", 0, NULL, 0, 0, (void (*)())k_top, "Top"},
+    {"table-bottom", "\033>", 0, NULL, 0, 0, (void (*)())k_bottom, "Bottom"},
 
-    {"table-toggle-debug", "\033\033", 0, NULL, 0, 0, k_debug, "Toggle Debug"},
+    {"table-toggle-debug", "\033\033", 0, NULL, 0, 0, (void (*)())k_debug, "Toggle Debug"},
     {NULL, NULL, 0, NULL, 0, NULL, NULL}
 };
 
@@ -493,7 +493,7 @@ void k_DefineKeys(struct keymap *mainmap, struct spread_classinfo *classinfo)
     char ch;
     struct proctable_Entry *tempProc;
 
-    tempProc = proctable_DefineProc("self_insert", k_enterchar, classinfo, NULL, "Enter character");
+    tempProc = proctable_DefineProc("self_insert", (procedure) k_enterchar, classinfo, NULL, "Enter character");
     for (ch = ' '; ch < 127; ch++) {		/* self-insert */
 	if (ch != '/') {
 	    char foo[2];

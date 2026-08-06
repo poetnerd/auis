@@ -129,10 +129,10 @@ struct view * MouseHit(struct spread *V, enum view_MouseAction action, long x, l
     if (CompareChunk(&extendedchunk, &(V->anchor)) == 0 && extendedchunk.LeftCol >= 0 && extendedchunk.TopRow >= 0 && extendedchunk.LeftCol <= extendedchunk.RightCol && extendedchunk.TopRow <= extendedchunk.BotRow && hitcell->celltype == table_ImbeddedObject) {
 	if ((child = spread_FindSubview(V, hitcell))) {
 	    if (debug)
-		printf("Passing hit at %d %d to child at %x\n", view_EnclosedXToLocalX(child, x), view_EnclosedYToLocalY(child, y), child);
+		printf("Passing hit at %ld %ld to child at %lx\n", view_EnclosedXToLocalX(child, x), view_EnclosedYToLocalY(child, y), (unsigned long) child);
 	    result = view_Hit(child, action, view_EnclosedXToLocalX(child, x), view_EnclosedYToLocalY(child, y), numberOfClicks);
 	    if (debug)
-		printf("Child hit returned %x\n", result);
+		printf("Child hit returned %lx\n", (unsigned long) result);
 	    return result;
 	}
     }
@@ -155,10 +155,10 @@ struct view * MouseHit(struct spread *V, enum view_MouseAction action, long x, l
 	if (chunk.TopRow >= 0 && chunk.LeftCol >= 0 && chunk.TopRow <= chunk.BotRow && chunk.LeftCol <= chunk.RightCol && hitcell->celltype == table_ImbeddedObject) {
 	    if ((child = spread_FindSubview(V, hitcell))) {
 		if (debug)
-		    printf("Passing hit at %d %d to child at %x\n", view_EnclosedXToLocalX(child, x), view_EnclosedYToLocalY(child, y), child);
+		    printf("Passing hit at %ld %ld to child at %lx\n", view_EnclosedXToLocalX(child, x), view_EnclosedYToLocalY(child, y), (unsigned long) child);
 		result = view_Hit(child, action, view_EnclosedXToLocalX(child, x), view_EnclosedYToLocalY(child, y), numberOfClicks);
 		if (debug)
-		    printf("Child hit returned %x\n", result);
+		    printf("Child hit returned %lx\n", (unsigned long) result);
 		return result;
 	    }
 	}
@@ -269,7 +269,7 @@ int CompareChunk(Chunk to, Chunk from)
 		to->BotRow != from->BotRow);
 }
 
-static movecoldown(struct spread *V, int x, int y, Chunk chunk)
+static int movecoldown(struct spread *V, int x, int y, Chunk chunk)
 {
     int index;
 
@@ -290,7 +290,7 @@ static movecoldown(struct spread *V, int x, int y, Chunk chunk)
     }
 }
 
-static movecolmove(struct spread *V, int x, int y)
+static int movecolmove(struct spread *V, int x, int y)
 {
     if (debug)
 	printf("movecolmove\n");
@@ -301,7 +301,7 @@ static movecolmove(struct spread *V, int x, int y)
     spread_InvertRectangle (V, V->currentoffset, V->icy, V->icx - V->currentoffset, 2);
 }
 
-static movecolup(struct spread *V, int x, int y)
+static int movecolup(struct spread *V, int x, int y)
 {
     movecolcancel (V);
     table_ChangeThickness (MyTable(V), 1, V->currentslice,
@@ -309,7 +309,7 @@ static movecolup(struct spread *V, int x, int y)
     view_WantNewSize(getView(V).parent, &getView(V));
 }
 
-static movecolcancel(struct spread *V)
+static int movecolcancel(struct spread *V)
 {
     if (debug)
 	printf("movecolcancel\n");
@@ -318,7 +318,7 @@ static movecolcancel(struct spread *V)
     spread_InvertRectangle (V, V->currentoffset, V->icy, V->icx - V->currentoffset, 2);
 }
 
-static moverowdown(struct spread *V, int x, int y, Chunk chunk)
+static int moverowdown(struct spread *V, int x, int y, Chunk chunk)
 {
     int index;
 
@@ -341,7 +341,7 @@ static moverowdown(struct spread *V, int x, int y, Chunk chunk)
 }
 
 
-static moverowmove(struct spread *V, int x, int y)
+static int moverowmove(struct spread *V, int x, int y)
 {
     if (debug)
 	printf("moverowmove\n");
@@ -352,7 +352,7 @@ static moverowmove(struct spread *V, int x, int y)
     spread_InvertRectangle (V, V->icx, V->currentoffset, 2, V->icy - V->currentoffset);
 }
 
-static moverowup(struct spread *V, int x, int y)
+static int moverowup(struct spread *V, int x, int y)
 {
     if (debug)
 	printf("moverowup\n");
@@ -361,7 +361,7 @@ static moverowup(struct spread *V, int x, int y)
     view_WantNewSize(getView(V).parent, &getView(V));
 }
 
-static moverowcancel(struct spread *V)
+static int moverowcancel(struct spread *V)
 {
     if (debug)
 	printf("moverowcancel\n");
@@ -390,7 +390,7 @@ int GetFormula(struct spread *V, Chunk chunk, char **keybuff)
 
 /* true if character is not a separator */
 
-static IsNotSeparator(char ch)
+static int IsNotSeparator(char ch)
 {
     return (ch != '=' && ch != '+' && ch != '-' && ch != '*' && ch != '^' && ch != '/' && ch != ':' && ch != ',' && ch != '(' && ch != '[');
 }
@@ -399,7 +399,7 @@ static IsNotSeparator(char ch)
 
 Note that this routine is useful only if bufferstatus = BUFFERHASINPUT
  */
-static EnterCellName(struct spread *V, Chunk chunk)
+static int EnterCellName(struct spread *V, Chunk chunk)
 {
     char buf[10], rbuf[5], cbuf[5];
     int i;
@@ -422,7 +422,7 @@ static EnterCellName(struct spread *V, Chunk chunk)
     sprintf (buf, "[r%s,c%s]", rbuf, cbuf);
     i = message_GetCurrentString (&getView(V), keybuff, sizeof keybuff);
     if (debug)
-	printf("GetCurrentString returned %d and '%s' length %d", i, keybuff, strlen(keybuff));
+	printf("GetCurrentString returned %d and '%s' length %lu", i, keybuff, strlen(keybuff));
     i += strlen(keybuff);
     if (i > 0 && IsNotSeparator(keybuff[i - 1]))
 	message_InsertCharacters (&getView(V), i++, "+", 1);

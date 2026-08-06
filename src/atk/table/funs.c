@@ -584,7 +584,7 @@ static double   today ()
     return (double) (25568 + tv.tv_sec / 86400);
 }
 
-enterfuns () {
+int enterfuns () {
     enterfun("r", getrow, -1);
     enterfun("c", getcol, -1);
     enterfun("abs", fabs, 1);

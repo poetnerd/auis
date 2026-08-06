@@ -536,7 +536,7 @@ void m_precision(struct spread *V, char ch)
 	table_SetPrecision (MyTable(V), (param >= 0 ? param : 0), &(V->selection));
 }
 
-static objecttest(struct spread *V, char *name, char *desiredname)
+static int objecttest(struct spread *V, char *name, char *desiredname)
 {
     if(class_Load(name) == NULL){
         char foo[640];
@@ -601,39 +601,39 @@ void m_lock(struct spread *V, char ch)
 
 static struct bind_Description menutable[] = {
 
-    {"table-cut", "\027", 0, "Cut~10", 0, 0, m_cut, "Save and erase cells"},
-    {"table-copy", "\033w", 0, "Copy~11", 0, 0, m_copy, "Copy cells to cutbuffer"},
-    {"table-paste", "\031", 0, "Paste~12", 0, 0, m_paste, "Copy cutbuffer to cells"},
-    {"table-write", "/fw", 0, "Write table~80", 0, 0, m_write, "Write table file"},
-    {"table-read", "/fr", 0, "Read table~81", 0, 0, m_read, "Read table file"},
-    {"table-writeTroff", NULL, 0, "Write Troff~82", 0, 0, m_writeTroff, "Write .trf file"},
-    {"table-rename", NULL, 0, "Rename~84", 0, 0, m_rename, "Rename table"},
-    {"table-changedim", NULL, 0, "Change Rows & Cols~85", 0, 0, m_changedim, "Fix number of rows and cols in table"},
-    {"table-drawboxes", NULL, 0, "Draw All boxes~86", 0, 0, m_drawboxes, "Draw all boxes in table"},
-    {"table-eraseboxes", NULL, 0, "Erase All boxes~87", 0, 0, m_eraseboxes, "Erase all boxes in table"},
-    {"table-combine", "/rc", 0, "Cells~1,Combine~10", 0, 0, m_combine, "Combine several cells into one",NULL},
-    {"table-separate", "/rs", 0, "Cells~1,Separate~11", 0, 0, m_separate, "Separate combined cells"},
-    {"table-drawedges", "/rbd", 0, "Cells~1,Draw box~20", 0, 0, m_drawedges, "Draw box around cells"},
-    {"table-eraseedges", "/rbe", 0, "Cells~1,Erase box~21", 0, 0, m_eraseedges, "Erase box around cells"},
-    {"table-drawalledges", "/rad", 0, "Cells~1,Draw boxes~22", 0, 0, m_drawalledges, "Draw all boxes around cells"},
-    {"table-erasealledges", "/rae", 0, "Cells~1,Erase boxes~23", 0, 0, m_erasealledges, "Erase all boxes around cells"},
-    {"table-lock", "/rl", TRUE, "Cells~1,Lock~30", TRUE, 0, m_lock, "Protect cells against modification"},
-    {"table-unlock", "/ru", FALSE, "Cells~1,Unlock~31", FALSE, 0, m_lock, "Allow cells to be modified"},
-    {"table-imbed", "\033\t", 0, "Cells~1,Imbed~40", 0, 0, m_imbed, "Place BE2 object in cell"},
-    {"table-reset-height", 0, 0, "Cells~1,Reset Heights~41", 0, 0, m_resetheights, "Comput row heights automatically"},
+    {"table-cut", "\027", 0, "Cut~10", 0, 0, (void (*)())m_cut, "Save and erase cells"},
+    {"table-copy", "\033w", 0, "Copy~11", 0, 0, (void (*)())m_copy, "Copy cells to cutbuffer"},
+    {"table-paste", "\031", 0, "Paste~12", 0, 0, (void (*)())m_paste, "Copy cutbuffer to cells"},
+    {"table-write", "/fw", 0, "Write table~80", 0, 0, (void (*)())m_write, "Write table file"},
+    {"table-read", "/fr", 0, "Read table~81", 0, 0, (void (*)())m_read, "Read table file"},
+    {"table-writeTroff", NULL, 0, "Write Troff~82", 0, 0, (void (*)())m_writeTroff, "Write .trf file"},
+    {"table-rename", NULL, 0, "Rename~84", 0, 0, (void (*)())m_rename, "Rename table"},
+    {"table-changedim", NULL, 0, "Change Rows & Cols~85", 0, 0, (void (*)())m_changedim, "Fix number of rows and cols in table"},
+    {"table-drawboxes", NULL, 0, "Draw All boxes~86", 0, 0, (void (*)())m_drawboxes, "Draw all boxes in table"},
+    {"table-eraseboxes", NULL, 0, "Erase All boxes~87", 0, 0, (void (*)())m_eraseboxes, "Erase all boxes in table"},
+    {"table-combine", "/rc", 0, "Cells~1,Combine~10", 0, 0, (void (*)())m_combine, "Combine several cells into one",NULL},
+    {"table-separate", "/rs", 0, "Cells~1,Separate~11", 0, 0, (void (*)())m_separate, "Separate combined cells"},
+    {"table-drawedges", "/rbd", 0, "Cells~1,Draw box~20", 0, 0, (void (*)())m_drawedges, "Draw box around cells"},
+    {"table-eraseedges", "/rbe", 0, "Cells~1,Erase box~21", 0, 0, (void (*)())m_eraseedges, "Erase box around cells"},
+    {"table-drawalledges", "/rad", 0, "Cells~1,Draw boxes~22", 0, 0, (void (*)())m_drawalledges, "Draw all boxes around cells"},
+    {"table-erasealledges", "/rae", 0, "Cells~1,Erase boxes~23", 0, 0, (void (*)())m_erasealledges, "Erase all boxes around cells"},
+    {"table-lock", "/rl", TRUE, "Cells~1,Lock~30", TRUE, 0, (void (*)())m_lock, "Protect cells against modification"},
+    {"table-unlock", "/ru", FALSE, "Cells~1,Unlock~31", FALSE, 0, (void (*)())m_lock, "Allow cells to be modified"},
+    {"table-imbed", "\033\t", 0, "Cells~1,Imbed~40", 0, 0, (void (*)())m_imbed, "Place BE2 object in cell"},
+    {"table-reset-height", 0, 0, "Cells~1,Reset Heights~41", 0, 0, (void (*)())m_resetheights, "Comput row heights automatically"},
 
-    {"table-general-format", "/rfg", GENERALFORMAT, "Number Format~2,general~10", GENERALFORMAT, 0, m_format, "general number format"},
-    {"table-currency-format", "/rfc", CURRENCYFORMAT, "Number Format~2,Dollar~11", CURRENCYFORMAT, 0, m_format, "Dollar sign before number"},
-    {"table-percent-format", "/rfp", PERCENTFORMAT, "Number Format~2,Percent~12", PERCENTFORMAT, 0, m_format, "Multiply by 100 and display %"},
-    {"table-exponential-format", "/rfe", EXPFORMAT, "Number Format~2,Exp~13", EXPFORMAT, 0, m_format, "Exponential format (not implemented)"},
-    {"table-fixed-format", "/rff", FIXEDFORMAT, "Number Format~2,Fixed~14", FIXEDFORMAT, 0, m_format, "Always display decimal places"},
-    {"table-hbar-format", "/rfh", HORIZONTALBARFORMAT, "Number Format~2,H-Bar~15", HORIZONTALBARFORMAT, 0, m_format, "Display as horizontal bar"},
-    {"table-vbar-format", "/rfv", VERTICALBARFORMAT, "Number Format~2,V-Bar~16", VERTICALBARFORMAT, 0, m_format, "Display as vertical bar"},
-    {"table-precision", "/rp", 0, "Number Format~2,Precision~20", 0, 0, m_precision, "Set number of decimal places"},
+    {"table-general-format", "/rfg", GENERALFORMAT, "Number Format~2,general~10", GENERALFORMAT, 0, (void (*)())m_format, "general number format"},
+    {"table-currency-format", "/rfc", CURRENCYFORMAT, "Number Format~2,Dollar~11", CURRENCYFORMAT, 0, (void (*)())m_format, "Dollar sign before number"},
+    {"table-percent-format", "/rfp", PERCENTFORMAT, "Number Format~2,Percent~12", PERCENTFORMAT, 0, (void (*)())m_format, "Multiply by 100 and display %"},
+    {"table-exponential-format", "/rfe", EXPFORMAT, "Number Format~2,Exp~13", EXPFORMAT, 0, (void (*)())m_format, "Exponential format (not implemented)"},
+    {"table-fixed-format", "/rff", FIXEDFORMAT, "Number Format~2,Fixed~14", FIXEDFORMAT, 0, (void (*)())m_format, "Always display decimal places"},
+    {"table-hbar-format", "/rfh", HORIZONTALBARFORMAT, "Number Format~2,H-Bar~15", HORIZONTALBARFORMAT, 0, (void (*)())m_format, "Display as horizontal bar"},
+    {"table-vbar-format", "/rfv", VERTICALBARFORMAT, "Number Format~2,V-Bar~16", VERTICALBARFORMAT, 0, (void (*)())m_format, "Display as vertical bar"},
+    {"table-precision", "/rp", 0, "Number Format~2,Precision~20", 0, 0, (void (*)())m_precision, "Set number of decimal places"},
 
-    {"table-day-month-year", "/rfda", DDMMMYYYYFORMAT, "Date Format~3,19 Jun 1970~10", DDMMMYYYYFORMAT, 0, m_format, "Display day,  month, and year"},
-    {"table-month-year", "/rfdb", MMMYYYYFORMAT, "Date Format~3,Jun 1970~11", MMMYYYYFORMAT, 0, m_format, "Display month and year"},
-    {"table-day-month", "/rfdc", DDMMMFORMAT, "Date Format~3,19 Jun~12", DDMMMFORMAT, 0, m_format, "Display day and month"},
+    {"table-day-month-year", "/rfda", DDMMMYYYYFORMAT, "Date Format~3,19 Jun 1970~10", DDMMMYYYYFORMAT, 0, (void (*)())m_format, "Display day,  month, and year"},
+    {"table-month-year", "/rfdb", MMMYYYYFORMAT, "Date Format~3,Jun 1970~11", MMMYYYYFORMAT, 0, (void (*)())m_format, "Display month and year"},
+    {"table-day-month", "/rfdc", DDMMMFORMAT, "Date Format~3,19 Jun~12", DDMMMFORMAT, 0, (void (*)())m_format, "Display day and month"},
 
     {NULL, NULL, 0, NULL, 0, NULL, NULL}
 };

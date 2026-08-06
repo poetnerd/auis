@@ -87,7 +87,7 @@ static boolean LimitedHighlighting = FALSE;
 boolean spread__InitializeClass(struct classheader *classID)
 {
     if (debug)
-	printf("spread__InitializeClass(%x)\n", classID);
+	printf("spread__InitializeClass(%lx)\n", (unsigned long) classID);
 
     LimitedHighlighting = environ_GetProfileSwitch("limitedspreadhighlight",
 						   FALSE);
@@ -110,7 +110,7 @@ boolean spread__WantLimitedHighlighting(struct classheader *c)
 boolean spread__InitializeObject(struct classheader *classID, struct spread *V)
 {
     if (debug)
-	printf("spread__InitializeObject(%x, %x)\n", classID, V);
+	printf("spread__InitializeObject(%lx, %lx)\n", (unsigned long) classID, (unsigned long) V);
 
     V->finalizing = FALSE;
     V->hasInputFocus = FALSE;
@@ -149,7 +149,7 @@ void InitializeGraphic(struct spread *V)
     struct FontSummary *fs;
 
     if (debug)
-	printf("InitializeGraphic(%x)\n", V);
+	printf("InitializeGraphic(%lx)\n", (unsigned long) V);
 
     if (!getDrawable(V)) {
 	printf("InitializeGraphic called without drawable.\n");
@@ -195,13 +195,13 @@ struct view * spread_FindSubview(struct spread *V, struct cell *cell)
 	    view_SetDataObject(vl->child, cell->interior.ImbeddedObject.data);
 	    view_LinkTree(vl->child, vl->parent);
 	    if (debug)
-		printf("FindSubview created %s at %x for %x\n", viewname, vl->child, vl->parent); 
+		printf("FindSubview created %s at %lx for %lx\n", viewname, (unsigned long) vl->child, (unsigned long) vl->parent);
 	    vl->next = cell->interior.ImbeddedObject.views;
 	    cell->interior.ImbeddedObject.views = vl;
 	}
     }
     else if (debug)
-	printf("FindSubview< found %x for %x\n", vl->child, vl->parent);
+	printf("FindSubview< found %lx for %lx\n", (unsigned long) vl->child, (unsigned long) vl->parent);
     return vl->child;
 }
 
@@ -215,7 +215,7 @@ int ComputeRowSizes(struct spread *V)
     struct view *child;
 
     if (debug)
-	printf("ComputeRowSizes(%x) with standardHeight = %d\n", V, V->standardHeight);
+	printf("ComputeRowSizes(%lx) with standardHeight = %ld\n", (unsigned long) V, V->standardHeight);
 
     if (V->rowInfoCount != table_NumberOfRows(T) || V->rowInfo == NULL) {
 	if (V->rowInfo != NULL)
@@ -274,7 +274,7 @@ void spread__WantUpdate(struct spread *V, struct view *requestor)
 {
 
     if (debug)
-	printf("spread__WantUpdate(%x,%x) requests = %d\n", V, requestor, V->updateRequests);
+	printf("spread__WantUpdate(%lx,%lx) requests = %d\n", (unsigned long) V, (unsigned long) requestor, V->updateRequests);
 
     if ((&getView(V) != requestor || !(V->updateRequests++)) && getView(V).parent != NULL)
 	view_WantUpdate(getView(V).parent, requestor);
@@ -291,7 +291,7 @@ enum view_DSattributes spread__DesiredSize(struct spread *V, long width, long he
     long GrossHeight;
 
     if (debug)
-	printf("spread_DesiredSize(%x, %d, %d, %d, .. )\n", V, width, height, (int)pass);
+	printf("spread_DesiredSize(%lx, %ld, %ld, %d, .. )\n", (unsigned long) V, width, height, (int)pass);
 
     if (V->grayPix == NULL)
 	InitializeGraphic(V);
@@ -315,7 +315,7 @@ void spread__WantNewSize(struct spread *V, struct view *requestor)
     struct table *T = MyTable(V);
 
     if (debug)
-	printf("spread_WantNewSize(%x, %x)\n", V, requestor);
+	printf("spread_WantNewSize(%lx, %lx)\n", (unsigned long) V, (unsigned long) requestor);
 
     table_StampEverything(T);
 #if 0
@@ -329,7 +329,7 @@ void spread__WantNewSize(struct spread *V, struct view *requestor)
 void spread__Print(struct spread *V, FILE *f, char *proc, char *format, boolean toplevel)
 {
     if (debug)
-	printf("spread_Print(%x, %x, %s, %s, %d)\n", V, f, proc, format, toplevel);
+	printf("spread_Print(%lx, %lx, %s, %s, %d)\n", (unsigned long) V, (unsigned long) f, proc, format, toplevel);
     putc('\n', f);
     WriteTroff(V, f, proc, format, toplevel);
 }
@@ -340,7 +340,7 @@ void spread__FullUpdate(struct spread *V, enum view_UpdateType how, long left, l
 {
     struct rectangle cliprect;
     if (debug)
-	printf("spread_FullUpdate(%x, %d, %d, %d, %d, %d)\n", V, (int)how, left, top, width, height);
+	printf("spread_FullUpdate(%lx, %d, %ld, %ld, %ld, %ld)\n", (unsigned long) V, (int)how, left, top, width, height);
     if (how == view_PartialRedraw || how == view_LastPartialRedraw)
 	rectangle_SetRectSize(&cliprect, left, top, width, height);
     else
@@ -354,7 +354,7 @@ void spread__Update(struct spread *V)
 {
     struct rectangle cliprect;
     if (debug)
-	printf("spread_Update(%x)\n", V);
+	printf("spread_Update(%lx)\n", (unsigned long) V);
     rectangle_SetRectSize(&cliprect, view_GetVisualLeft(&getView(V)), view_GetVisualTop(&getView(V)), view_GetVisualWidth(&getView(V)), view_GetVisualHeight(&getView(V)));
     spread_PartialUpdate(V, view_FullRedraw, &cliprect);
 }
@@ -366,7 +366,7 @@ extern struct view * MouseHit();
 struct view * spread__Hit(struct spread *V, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     if (debug)
-	printf("spread_Hit(%x, %d, %ld, %ld, %ld)\n", V, (int) action, x, y, numberOfClicks);
+	printf("spread_Hit(%lx, %d, %ld, %ld, %ld)\n", (unsigned long) V, (int) action, x, y, numberOfClicks);
     return MouseHit(V, action, x, y, numberOfClicks);
 }
 
@@ -375,7 +375,7 @@ struct view * spread__Hit(struct spread *V, enum view_MouseAction action, long x
 void spread__LoseInputFocus(struct spread *V)
 {
     if (debug)
-	printf("spread_LoseInputFocus(%x)\n", V);
+	printf("spread_LoseInputFocus(%lx)\n", (unsigned long) V);
 
     if(V->hasInputFocus) {
 	V->hasInputFocus = 0;
@@ -389,7 +389,7 @@ void spread__LoseInputFocus(struct spread *V)
 void spread__ReceiveInputFocus(struct spread *V)
 {
     if (debug)
-	printf("spread_ReceiveInputFocus(%x)\n", V);
+	printf("spread_ReceiveInputFocus(%lx)\n", (unsigned long) V);
 
     if (!(V->hasInputFocus)) {
 	if (!spread_WantHighlight(V))
@@ -406,7 +406,7 @@ void spread__ReceiveInputFocus(struct spread *V)
 struct view * spread__GetApplicationLayer(struct spread *V)
 {
     if (debug)
-	printf("spread_GetApplicationLayer(%x)\n", V);
+	printf("spread_GetApplicationLayer(%lx)\n", (unsigned long) V);
 
     return (struct view *)scroll_Create(V, scroll_LEFT | scroll_TOP);
 }
@@ -422,7 +422,7 @@ static void ySetFrame(struct spread *V, long pos, long coord, long denom)
     if (V->vOffset < 0)
 	V->vOffset = 0;
     if (debug)
-	printf ("ySetFrame(%x, %ld, %ld, %ld) = %ld\n", V, pos, coord, denom, V->vOffset);
+	printf ("ySetFrame(%lx, %ld, %ld, %ld) = %ld\n", (unsigned long) V, pos, coord, denom, V->vOffset);
     V->lastTime = -1;		/* for full update */
     spread_WantUpdate(V, &getView(V));
 }
@@ -439,7 +439,7 @@ static void xSetFrame(struct spread *V, long pos, long coord, long denom)
     if (V->hOffset < 0)
 	V->hOffset = 0;
     if (debug)
-	printf ("xSetFrame(%x, %ld, %ld, %ld) = %ld\n", V, pos, coord, denom, V->hOffset);
+	printf ("xSetFrame(%lx, %ld, %ld, %ld) = %ld\n", (unsigned long) V, pos, coord, denom, V->hOffset);
     V->lastTime = -1;
     spread_WantUpdate(V, &getView(V));
 }
@@ -503,7 +503,7 @@ static long yWhatIsAt(struct spread *V, long coord, long denom)
     long pos = (coord * localHeight(V)) / denom + V->vOffset;
 
     if (debug)
-	printf ("yWhatIsAt(%x, %ld, %ld) = %ld\n", V, coord, denom, pos);
+	printf ("yWhatIsAt(%lx, %ld, %ld) = %ld\n", (unsigned long) V, coord, denom, pos);
     return pos;
 }
 
@@ -514,7 +514,7 @@ static long xWhatIsAt(struct spread *V, long coord, long denom)
     long pos = (coord * localWidth(V)) / denom + V->hOffset;
 
     if (debug)
-	printf ("xWhatIsAt(%x, %ld, %ld) = %ld\n", V, coord, denom, pos);
+	printf ("xWhatIsAt(%lx, %ld, %ld) = %ld\n", (unsigned long) V, coord, denom, pos);
     return pos;
 }
 
@@ -537,7 +537,7 @@ static struct scrollfns horizontalInterface = {
 struct scrollfns * spread__GetInterface(struct spread *V, char *type)
 {
     if (debug)
-	printf("spread_GetInterface(%x, %s)\n", V, type);
+	printf("spread_GetInterface(%lx, %s)\n", (unsigned long) V, type);
 
     if (strcmp(type, "scroll,vertical") == 0) {
 	return &verticalInterface;
@@ -563,7 +563,7 @@ static void DestroySubviews(struct spread *V, struct table *T)
 		for (vl = cell->interior.ImbeddedObject.views, prevvl = NULL; vl != NULL; vl = nextvl) {
 		    if (vl->parent == &getView(V)) {
 			if (debug)
-			    printf("destroying subview %x for %x\n", vl->child, cell->interior.ImbeddedObject.data);
+			    printf("destroying subview %lx for %lx\n", (unsigned long) vl->child, (unsigned long) cell->interior.ImbeddedObject.data);
 			nextvl = vl->next;
 			view_UnlinkTree(vl->child);
 			view_Destroy(vl->child);
@@ -588,7 +588,7 @@ static void DestroySubviews(struct spread *V, struct table *T)
 void spread__FinalizeObject(struct classheader *classID, struct spread *V)
 {
     if (debug)
-	printf("spread_FinalizeObject(%x, %x)\n", classID, V);
+	printf("spread_FinalizeObject(%lx, %lx)\n", (unsigned long) classID, (unsigned long) V);
     V->finalizing=TRUE;
     if (V->rowInfo)
 	free(V->rowInfo);
@@ -602,7 +602,7 @@ void spread__LinkTree(struct spread *V, struct view *parent)
     struct cell *cell;
 
     if (debug)
-	printf("spread_LinkTree(%x, %x)\n", V, parent);
+	printf("spread_LinkTree(%lx, %lx)\n", (unsigned long) V, (unsigned long) parent);
 
     super_LinkTree(&getView(V), parent);
     if (MyTable(V) == NULL)
@@ -633,7 +633,7 @@ void spread__UnlinkNotification(struct spread *V, struct view *tree)
 void spread__ObservedChanged(struct spread *V, struct observable *changed, long status)
 {
     if (debug)
-	printf("spread_ObservedChanged(%x, %x, %ld)\n", V, changed, status);
+	printf("spread_ObservedChanged(%lx, %lx, %ld)\n", (unsigned long) V, (unsigned long) changed, status);
 
     if(status == observable_OBJECTDESTROYED && !strcmp(class_GetTypeName(changed),"table")) {
 	DestroySubviews(V,(struct table *)changed);

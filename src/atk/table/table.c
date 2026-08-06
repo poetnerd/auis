@@ -520,7 +520,7 @@ long table__Write(struct table *T, FILE *f, long writeID, int level)
 long table__Read(struct table *T, FILE *f, long id)
 {
     if (table_debug)
-	printf("table_Read(%s,, %d)\n", table_Name(T), id);
+	printf("table_Read(%s,, %ld)\n", table_Name(T), id);
 
     table_SetID(T, table_UniqueID(T));
     table_SetModified(T);
@@ -546,7 +546,7 @@ void table__WriteASCII(struct table *T, FILE *f, Chunk chunk)
 struct table * table__ReadASCII(struct table *T, FILE *f)
 {
     if (table_debug)
-	printf("table_ReadASCII(%s, , %d, %d)\n", table_Name(T));
+	printf("table_ReadASCII(%s)\n", table_Name(T));
 
     return ReadASCII(T, f);
 }
@@ -577,7 +577,7 @@ void table__ParseCell(struct table *T, struct cell *cell, char *buff)
 /* create and copy a cell */
 
 
-static CreateCell(struct table *T, struct cell *newcell, struct cell *oldcell)
+static int CreateCell(struct table *T, struct cell *newcell, struct cell *oldcell)
 {
     if (oldcell) {
 	newcell->format = oldcell->format;
@@ -683,7 +683,7 @@ int DestroyCell(struct table *T, struct cell *oldcell)
 	    }
 	    while (vl = oldcell->interior.ImbeddedObject.views) {
 		if (table_debug)
-		    printf("**MISUSE** removing imbedded view ref by %x\n", vl);
+		    printf("**MISUSE** removing imbedded view ref by %lx\n", (unsigned long) vl);
 		    view_UnlinkTree(vl->child);
 		    view_Destroy(vl->child);
 		/* end of misuse */
@@ -1122,7 +1122,7 @@ long table__GetModified(struct table *self)
     }
 
     if (table_debug)
-	printf("table_GetModified = %d\n", rc);
+	printf("table_GetModified = %ld\n", rc);
 
     return rc;
 }

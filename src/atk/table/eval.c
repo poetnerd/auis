@@ -123,7 +123,7 @@ struct jbstruct {
 };
 static struct jbstruct *jbs = NULL;
 
-syntaxError ()
+int syntaxError ()
 {
     MakeBogus(jbs -> result, "SYNTAX!");
     longjmp (jbs -> env, 1);
@@ -132,7 +132,7 @@ syntaxError ()
 #if defined(_ANSI_C_SOURCE) && !defined(_NO_PROTO)
 void Exception (int sig)
 #else
-Exception ()
+void Exception (int sig)
 #endif
 {
     MakeBogus(jbs -> result, "ARITH!");
@@ -179,7 +179,7 @@ static void expr(struct table *T, extended_double *result, char **inptr, int r, 
 #if defined(_ANSI_C_SOURCE) && !defined(_NO_PROTO)
     void (*oldsig) (int sig);
 #else
-    int (*oldsig) ();
+    void (*oldsig) (int sig);
 #endif
 
     old_jbs = jbs;
@@ -288,7 +288,7 @@ static double factor(struct table *T, char **inptr, int r, int c)
     return x;
 }
 
-static cellref(struct table *T, char **inptr, int rr, int cc, double *r, double *c)
+static int cellref(struct table *T, char **inptr, int rr, int cc, double *r, double *c)
 {
     *r = relexpr(T, inptr, rr, cc);
     skipb(*inptr);
@@ -429,7 +429,7 @@ void enterfun(char *name, double (*fptr)(), int argc)
     p -> next = &sentinal;
 }
 
-inithash () {
+void inithash () {
     int     i;
     for (i = 0; i <= HASHMASK; i++)
 	htable[i] = &sentinal;
