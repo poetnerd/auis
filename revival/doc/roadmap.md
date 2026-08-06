@@ -868,18 +868,28 @@ fires. The real cause is the write-side `%d`/`%ld` truncation above.
   symba PCF generation, or the `xset fp+` font-path setup. Other
   symbol glyphs render fine.
 
-### contentv (Table of Contents) — ignores headings with enumerated styles (found 2026-08-06, open)
+### contentv (Table of Contents) — ignores headings with enumerated styles (found 2026-08-06, needs further testing)
 
 - Found during the M4 Wave 4 close-out smoke pass. A document whose
-  section headings use an enumerated (auto-numbered) style produces
+  section headings use an enumerated (auto-numbered) style produced
   an empty Table of Contents view; hand-editing the same document to
-  remove the enumeration makes the same headings appear in the ToC.
+  remove the enumeration made the same headings appear in the ToC.
   Not root-caused yet — the earlier "`contentv` verified" note under
   Medium-term → ANSI C conversion (M3 batch, `PAPERS/atk/
   Cattey.Writing` fixture) only confirmed contentv discovers
   non-enumerated headings; enumerated-style headings were never
-  exercised by that check. Needs a dedicated session with a fixture
-  containing enumerated heading styles.
+  exercised by that check.
+- **2026-08-06 (wdc, during A1 smoke testing): reverted the hand-edit
+  to `revival/testing.ez`** (the file used to reproduce this — see
+  above) back to its original enumerated form, and the ToC now shows
+  the enumerated sections fine. The symptom did not reproduce on the
+  reverted file. Inconclusive either way: the original report was
+  real (empty ToC observed against the hand-edited file), but nothing
+  else changed between the two observations except the file content
+  itself and whatever `.ezinit`/session state was live at the time —
+  no root cause was ever found for either state. Needs a fresh,
+  deliberate repro attempt (new fixture, not a hand-edited working
+  file) before concluding either "real bug" or "false alarm."
 
 ### raster — convertraster RF read-back hang
 

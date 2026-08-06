@@ -578,12 +578,60 @@ logged in `roadmap.md` (see I4's entry above).
 
 ## Wave 5 — apps (8 directories, 59 errors, 1 session)
 
-- [ ] **A1**: `ams/msclients/imapsync` (18), `ams/msclients/cui` (14),
-      `atk/typescript` (13), `atk/help/src` (6), `doc/mkbrowse` (3),
-      `atk/help/maint` (2), `atk/ez` (2), `ams/msclients/nns` (1) — 59,
-      one batch (`atkams/messages/cmd` already clean, not included;
-      the original draft's "9 directories" header miscounted — the
-      list is and was 8).
+- [x] **A1 COMPLETE 2026-08-06, fossil `bd430e1d6112`**:
+      `ams/msclients/imapsync`, `ams/msclients/cui`, `atk/typescript`,
+      `atk/help/src`, `doc/mkbrowse`, `atk/help/maint`, `atk/ez`,
+      `ams/msclients/nns` — 8 directories, closes Wave 5
+      (`atkams/messages/cmd` already clean, not included; the original
+      draft's "9 directories" header miscounted — the list is and was
+      8). Real total 82 vs. 59 census (39% over, usual
+      pre-`-Werror=format` gap), biggest single jump `ams/msclients/
+      nns` (1→7, all 6 new sites the `AMS_ERRNO`/`AMS_ERRCAUSE`/
+      `AMS_ERRVIA` macro family's `long`-masked expressions printed via
+      `%d`). Recurring "no header declares this" pattern hit 3 more
+      instances of the shape Batch 0's `classpp.l`/`PushFile`/
+      `PopFile` fix already established: `imap_sync.c`'s
+      `dbg_close`/`dbg_fclose`/`dbg_closedir` (the known `fdplumb.h`
+      declaration gap already carried by `ams/libs/cui`/`overhead/
+      mail/lib`), `tscript.c`'s `vclose`/`GetPtyandName`, `eza.c`'s
+      `frame_VisitNamedFile`/`UnixError`, and `mkbrowse/browser.c`'s
+      own `PushFile`/`PopFile` (a second, independent flex grammar
+      with the identical gap). 3 `qsort` comparators retyped to the
+      real `int(const void*, const void*)` contract (rule 2, not a
+      cast — `fcomp.c`'s `mystrcmp`, `help.c`'s `panelCompare`,
+      `browser.c`'s `compareclasses`); 4 `procedure`-typed dispatch
+      casts in `atk/help/src`, the same tree-wide idiom I1 already
+      documented. **5 genuine bugs**, all UI/diagnostic-text
+      correctness rather than memory corruption: `cui.c`'s epoch
+      delete-confirmation prompt dropped the seconds field (format
+      string had 5 `%d`s for 6 args); `mkindex.c` had `code` and
+      `lineNo[fsPtr]` swapped relative to their own diagnostic labels
+      in two error messages (both real `long` fields, confirmed
+      against their declarations); `helpdb.c`'s `sprintf(msg,
+      "Running command: %0.230s", ...)` carried a meaningless/UB `0`
+      flag on an `s` conversion; `helpa.c`'s duplicate-index error
+      path dropped the actual offending switch text; `cui.c`'s
+      `SubscriptionChangeHook` was a bare 0-arg stub despite every
+      call site (`ams/libs/cui/cuilib.c`) passing 4 real arguments,
+      silently tolerated by K&R's no-arity-check convention — given
+      its real signature, body stays a no-op (`cui` has no
+      subscription-change UI). Plus 3 `-Wformat-security` sites
+      (non-literal format string, zero args) in `help.c`/`helpaux.c`/
+      `helpdb.c`, fixed with `"%s"` templates. Orchestrator
+      independently re-verified every bug against real source (the
+      `code`/`lineNo` `long` declarations, the `fdplumb.c`/`fdplumb6.c`/
+      `vclose.c`/`browserpp.l` real prototypes matching each new
+      `extern`, the `ATKLIBS` static-link claim in `atk/apps/
+      Imakefile`), then re-ran the gate clean from scratch for all 8
+      directories. Linkage: `atk/typescript` and `atk/ez` both
+      statically link into `runapp` via `ATKLIBS` (relinked); the
+      other 6 are standalone binaries or `.do`-dynamic only, no relink
+      needed. wdc's own smoke pass (cui, typescript-in-ez, help,
+      mkbrowse) found no regressions. Also, during this smoke pass wdc
+      reverted the hand-edited `revival/testing.ez` from the I4
+      close-out's ToC bug report and the symptom didn't reproduce —
+      that bug's `roadmap.md` entry is now marked "needs further
+      testing" rather than "open" (inconclusive, not resolved).
 
 ## Wave 6 — atkams/ams (5 directories, 185 errors, 3 sessions)
 
