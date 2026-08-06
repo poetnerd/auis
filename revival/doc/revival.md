@@ -988,6 +988,23 @@ sample:
   reports over the software's lifetime simply never took this branch.
   Fixed by supplying the already-resolved filename that every sibling
   message in the same function already uses.
+- **An error message that named everything except the thing that went
+  wrong.** The mail client's printer-setup routine has two error paths:
+  one for "no such printer," which correctly names the printer in its
+  message, and a second, broader one for every other kind of failure —
+  a spooler that isn't responding, a permissions problem, anything
+  else. That second message's format string carried no conversions at
+  all, even though the printer name was passed to it as an argument;
+  the string simply read "Error: could not set printer," full stop. A
+  user hitting this branch — which requires a printer-setup failure
+  that isn't the common "no such printer" case — would see only that
+  fixed sentence, with no way to tell which printer had failed to set
+  if more than one had been tried. It went unnoticed because the
+  common failure mode (a mistyped or nonexistent printer name) takes
+  the *other*, correctly-worded branch; this one only fires for rarer
+  operational failures further down the same call. Fixed by adding the
+  missing conversion so the message names the printer, matching its
+  sibling branch immediately above.
 
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because

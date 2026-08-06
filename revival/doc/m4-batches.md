@@ -722,11 +722,62 @@ logged in `roadmap.md` (see I4's entry above).
       impractical, same reasoning as AMS1's `subs.c` — accepted on code
       read-through alone). Both are open for a future opportunistic
       smoke pass, not blocking.
-- [ ] **AMS3**: `ams/libs/cui` (35), `ams/libs/nosnap` (10), `ams/libs/
-      shr` (1) — 46.
+- [x] **AMS3 COMPLETE 2026-08-06**: `ams/libs/cui` (35 census; 43 real,
+      23% over — same range as prior batches once `-Werror=format` is
+      counted), `ams/libs/nosnap` (10), `ams/libs/shr` (1) — 54 real, 44
+      unique fixes across 7 files. Unlike AMS1/AMS2, all three build
+      products are static libraries (`libcui.a`, `libcuin.a`,
+      `libmsshr.a`), not `.do` dynamic objects, so real downstream
+      consumers needed relinking rather than just a flag-visibility
+      check. `cui`'s pre-existing M2-era override
+      (`-Wno-implicit-int -Werror=implicit-function-declaration
+      -Wno-incompatible-function-pointer-types -Wno-return-type`) was
+      replaced (not stacked) with `$(STRICT_COMPILERFLAGS)`; `nosnap`/
+      `shr` got the line fresh. Fixes: 26 `implicit-int` (all true-
+      signature, sourced from existing in-scope `extern` declarations —
+      zero guesses), 10 `incompatible-function-pointer-types` collapsing
+      to 2 real signature fixes (`AlarmSignalHandler`/
+      `SnapifiedClientSignalHandler` retyped to the real `void(*)(int)`
+      `sigaction`/`signal()` contract, zero casts needed), 7 format
+      fixes (`%d`→`%p`/`%lu`/`%ld` on pointer/`unsigned long`/`long`
+      arguments), plus `nosnap.c`'s missing `<string.h>` and 4 `extern`
+      prototypes for functions genuinely defined elsewhere. 1 genuine
+      pre-existing bug found and fixed (independently re-verified by the
+      orchestrator against real source, now narrated in `revival.md`'s
+      "Old bugs never found till now"): `cuilib.c:713`,
+      `CUI_SetPrinter`'s catch-all failure path had a format string with
+      zero conversions, silently dropping the printer name from the
+      user-visible error message whenever printer setup failed for any
+      reason other than "no such printer" — fixed to include `%s`.
+      Checked for another `.ch`-vs-implementation width-drift instance
+      (three `CUI_*` functions declared `returns long` in
+      `atkams/messages/lib`'s `.ch` files but genuinely `int` here) and
+      correctly determined it is *not* a live bug, unlike the earlier
+      `MS_UpdateState` case: every real call site already has its own
+      `extern int` declaration in scope before the `long`-returning
+      class-dispatch wrapper's `return`, so the widening happens via
+      ordinary safe C conversion, not raw-register reinterpretation —
+      re-verified by the orchestrator directly against
+      `atkams/messages/lib/amsn.c`'s extern block and all three `.ch`
+      files; left alone (AMS2's directory, already closed, and not
+      actually buggy). Not flagged elevated-risk, so only subtree-local
+      gates were required (all 3 clean, independently rebuilt from
+      scratch by both the delegate and the orchestrator); downstream
+      relink instead covered the real risk surface: `ams/msclients/cui`
+      (`cuin`), `atkams/messages/lib` (`amsn.do`), and
+      `ams/msclients/imapsync` (`libmsshr.a` only) all relinked clean by
+      both the delegate and the orchestrator independently.
+      `ams/msclients/vui`, a real consumer in principle, could not be
+      relinked or confirmed — confirmed pre-existing and unrelated (a
+      termcap `CM`/`SO` undeclared-identifier failure in `andpnlm.c`, no
+      `COMPILERFLAGS` override present, no `vui`/`vuin` binary has ever
+      existed in `build/bin`), not a regression from this batch. wdc ran
+      the wave's full `make Clean; make World` checkpoint themselves
+      (completed clean) plus a basic smoke pass of `cuin` and `messages`
+      with no observed regressions.
 
 **Checkpoint** after this wave: full `make Clean; make World` +
-runtime pass.
+runtime pass — done by wdc alongside the AMS3 check-in.
 
 ## Wave 7 — contrib (11 directories, 348 errors, 3 sessions)
 
