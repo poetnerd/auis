@@ -4,6 +4,8 @@
 \* ********************************************************************** */
 LOCALINCLUDES	=	-I${BASEDIR}/include/ams
 
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 PRODUCT	=	libcuin.a
 
 OBJS		= 	nosnap.o

@@ -125,6 +125,7 @@ char * multrindex(char *s, char *t)
 
 #define MAGICNAME ".MESSAGES"  /* This matches .MESSAGES*  */
 
+int
 BuildNickName(char *FullName, char *NickName)
 {
     char   *s, *t;

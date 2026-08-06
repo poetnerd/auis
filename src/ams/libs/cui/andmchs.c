@@ -332,6 +332,7 @@ static long laststart = 0,
             lastfinish = 0,
             inittime = 0;
 
+int
 InitializeLogging() {
     if (getprofileswitch("cuimslog", 0)) {
 	MSLogFP = fopen("/tmp/cuims.log", "w");
@@ -342,13 +343,14 @@ InitializeLogging() {
 }
 
 
+int
 LogStart() {
     if (!inittime) {
 	inittime = time(0);
     }
     if (MSLogFP) {
 	laststart = time(0) - inittime;
-	fprintf(MSLogFP, "%d\t%d\t", laststart - lastfinish, laststart);
+	fprintf(MSLogFP, "%ld\t%ld\t", laststart - lastfinish, laststart);
     }
 }
 
@@ -356,11 +358,12 @@ int LogEnd(char *name)
 {
     if (MSLogFP) {
 	lastfinish = time(0) - inittime;
-	fprintf(MSLogFP, "%d\t%d\t%s\n", lastfinish, lastfinish - laststart, name);
+	fprintf(MSLogFP, "%ld\t%ld\t%s\n", lastfinish, lastfinish - laststart, name);
 	fflush(MSLogFP);
     }
 }
 
+int
 RedirectOutput() {
     int cfd = 0;
 
@@ -402,7 +405,8 @@ int GetNewPassword(char **ptr, int IsRecon, char *ThisUser, char *ThisHost)
 
 #define ALARMPERIOD 180		/* 3 minutes */
 
-AlarmSignalHandler() {
+void
+AlarmSignalHandler(int signum) {
     if (CUI_LastCallFinished && (time(0) - CUI_LastCallFinished > ALARMPERIOD)) {
 	if (mserrcode = MS_FastUpdateState()) {
 	    ReportError("Could not update message server state", ERR_WARNING, TRUE);
@@ -411,6 +415,7 @@ AlarmSignalHandler() {
     alarm(ALARMPERIOD);
 }
 
+int
 CUI_InitializeKeepalives() {
     if (CUI_SnapIsRunning) {
 #ifdef POSIX_ENV
@@ -436,7 +441,7 @@ int Machine_HandleClientSignal(int signum, int *ActNormal)
 }
 
     
-int SnapifiedClientSignalHandler(int signum)
+void SnapifiedClientSignalHandler(int signum)
 {
     int ActNormal = 1;
     char *Text;
@@ -495,6 +500,7 @@ int SnapifiedClientSignalHandler(int signum)
     kill(getpid(), signum);
 }
 
+int
 InitializeClientSignals() {
     if (CUI_SnapIsRunning) {
 #ifdef POSIX_ENV

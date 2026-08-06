@@ -4,6 +4,8 @@
 \* ********************************************************************** */
 LOCALINCLUDES	=	-I${BASEDIR}/include/ams
 
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 PRODUCT	=	libmsshr.a
 
 OBJS		= 	amserr.o brkdown.o findroot.o utils.o \

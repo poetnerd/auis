@@ -33,10 +33,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <mserrno.h>
 #include <errprntf.h>
 #define TRUE 1
 #define FALSE 0
+
+extern int ReportSuccess(char *text);
+extern int ReportError(char *text, int level, int Decode);
+extern int MS_Initialize(int *MaxBufSize, short UsingSnap);
+extern int MS_UpdateState(void);
 
 char *ReconHost = "<this host>";
 int MSDebugging = 0;
@@ -55,6 +61,7 @@ int BizarreError(char *text, int level)
     }
 }
 
+int
 ReconnectMS(s) char *s; {}  /* Dummy function here to satisfy the linker */
 
 int MS_CUI_Init(char *host, char *user, char *passwd, int len, int type, int bufsize)
@@ -117,8 +124,10 @@ int MS_CUI_Init(char *host, char *user, char *passwd, int len, int type, int buf
     return(0);
 }
 
+int
 AMS_getandpackALLtokens() {} /* Not needed for standalone version */
 
+int
 CUI_EndConversation() {
     MS_UpdateState();
 }

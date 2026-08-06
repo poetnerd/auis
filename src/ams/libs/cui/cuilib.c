@@ -111,8 +111,8 @@ extern char *index (), *rindex();
 extern char *NextAddress(), *cvEng();
 extern char *SnapVersionString;
 extern char *ap_Shorten();
-static OutputLine();
-static ValidateDirname();
+static int OutputLine();
+static int ValidateDirname();
 
 /* Any CUI functions that return a long should be in this list */
 long HandleAddress(), CUI_CacheDirName(), CUI_SetDirNode(), CUI_GetDirNode(), CUI_AlterSnapshot(), CUI_GetHeaders(), CUI_DisambiguateDir(), CUI_SetSubscriptionEntry(), CUI_MergeDirectories();
@@ -369,7 +369,7 @@ long CUI_Initialize(int (*TimerFunction)(), char *rock)
     return(0);
   }
 
-CheckEmsgConsistency()
+int CheckEmsgConsistency()
 {
     char ErrorText[256], *s;
     extern int	ms_nerr,
@@ -400,7 +400,7 @@ CheckEmsgConsistency()
     }
 }
 
-CUI_CreateNewMessageDirectory(char *dir, char *bodydir) /* bodydir Ignored 4/22/88 */
+int CUI_CreateNewMessageDirectory(char *dir, char *bodydir) /* bodydir Ignored 4/22/88 */
 {
     char    ErrorText[256], *slash;
 
@@ -611,14 +611,14 @@ int HashAmsID(char *id)
     return(total & (CUIDHASHMAX - 1));
 }
 
-CUI_GetCuid(char *amsid, char *dirname, int *IsDup)
+int CUI_GetCuid(char *amsid, char *dirname, int *IsDup)
 {
     static int hashconflicts = 0;
     int     hashval;
     struct cuidnode *ctmp;
     struct CUIDirNode  *DNtmp;
 
-    debug(1,("GetCUID %s %s %d", amsid, dirname, IsDup));
+    debug(1,("GetCUID %s %s %p", amsid, dirname, IsDup));
     *IsDup = 0;
     hashval = HashAmsID(amsid);
     debug(4,("Hashed to %d\n", hashval));
@@ -661,7 +661,7 @@ CUI_GetCuid(char *amsid, char *dirname, int *IsDup)
     return(ctmp->index);
 }
 
-CUI_GetAMSID(int cuid, char **id, char **dir)
+int CUI_GetAMSID(int cuid, char **id, char **dir)
 {
     debug(1,("GetAMSID %d\n", cuid));
     if (cuid > CUI_CuidsInUse || cuid <= 0)
@@ -671,7 +671,7 @@ CUI_GetAMSID(int cuid, char **id, char **dir)
     return(0);
 }
 
-CUI_GetPartialBody(char *Buf, int Max, int cuid, long offset, long *bytesunfetched, int *bodylen) /* bytesunfetched Added for PC 8/20/86 */
+int CUI_GetPartialBody(char *Buf, int Max, int cuid, long offset, long *bytesunfetched, int *bodylen) /* bytesunfetched Added for PC 8/20/86 */
 {
     char   *id,
 	   *dir,
@@ -710,7 +710,7 @@ int CUI_SetPrinter(char *printername)
 	ReportSuccess(ErrorText);
 	return(-1);
     } else if (AMS_ERRNO != EINVAL) {
-	sprintf(ErrorText, "Error: could not set printer", printername);
+	sprintf(ErrorText, "Error: could not set printer '%s'", printername);
 	ReportError(ErrorText, ERR_WARNING, TRUE);
 	return(-1);
     }
@@ -771,7 +771,7 @@ int CUI_PrintBodyFromCUIDWithFlags(int cuid, int flags, char *printer)
     return(0);
 }
 
-CUI_NameReplyFile(int cuid, int code, char *FileName)
+int CUI_NameReplyFile(int cuid, int code, char *FileName)
 {
     char   *id,
 	   *dir;
@@ -1043,7 +1043,7 @@ int CUI_DoesDirNeedPurging(char *Dname)
     return(0);
 }
 
-CUI_DirectoriesToPurge() {
+int CUI_DirectoriesToPurge() {
     int     total = 0;
     struct CUIDirNode  *DNtmp;
     int bucket;
@@ -1193,12 +1193,12 @@ int CUI_GetSnapshotFromCUID(int cuid, char *SnapshotBuf)
     return(0);
 }
 
-CUI_GetHeaderContents(int cuid, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim)
+int CUI_GetHeaderContents(int cuid, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim)
 {
     return(GetHeaderContents(cuid, HeaderName, HeaderTypeNumber, HeaderBuf, lim, TRUE));
 }
 
-GetHeaderContents(int cuid, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim, int barfmissing)
+int GetHeaderContents(int cuid, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim, int barfmissing)
 {
     char   *id,
 	   *dir,
@@ -1224,7 +1224,7 @@ GetHeaderContents(int cuid, char *HeaderName, int HeaderTypeNumber, char *Header
     return(0);
 }
 
-CUI_BuildNickName(char *FullName, char *NickName)
+int CUI_BuildNickName(char *FullName, char *NickName)
 {
     return(BuildNickName(FullName, NickName));
 }
@@ -1241,7 +1241,7 @@ int CUI_GenTmpFileName(char *nmbuf)
 	if (userid == 0) userid = getuid();
 	if (procid == 0) procid = getpid();
 	ReportError("Message server could not generate temporary file name", ERR_WARNING, TRUE);
-	sprintf(nmbuf, "/tmp/AMS.%d", hostid ^ ((userid & 0xFF) << 24) | ((procid &0xFF) << 16) | (((ctr++) & 0xFF) << 8));
+	sprintf(nmbuf, "/tmp/AMS.%lu", hostid ^ ((userid & 0xFF) << 24) | ((procid &0xFF) << 16) | (((ctr++) & 0xFF) << 8));
     }
 }
 
@@ -2068,7 +2068,7 @@ int CUI_PrintUpdatesWithFlags(char *dname, char *nickname, int flags, char *prin
 	    cuid = GetCuid(AMS_ID(s), DirName, &IsDup);
 /* 	    sprintf(ErrorText, "Printing '%s'", AMS_CAPTION(s)); */
 /* The above line was simply too verbose to make PCMessages happy... */
-	    sprintf(ErrorText, "Printing %d", cuid);
+	    sprintf(ErrorText, "Printing %ld", cuid);
 	    ReportSuccess(ErrorText);
 	    if (CUI_PrintBodyFromCUIDWithFlags(cuid, flags, printer)) break;
 	    strncpy(newdate, AMS_DATE(s), AMS_DATESIZE);
@@ -2267,7 +2267,7 @@ int CUI_RemoveDirectory(char *DirName)
     return(0);
 }
 
-CUI_FreeCaches() {
+int CUI_FreeCaches() {
     struct cuidnode *cdnp, *cdnp2;
     struct CUIDirNode *cdp;
     int i, bucket;
@@ -2774,7 +2774,7 @@ struct CustomizationHeader {
     struct CustomizationHeader *next;
 } *FirstCustomizationHeader = NULL;
 
-FillInCustomizationProcs() {
+int FillInCustomizationProcs() {
     static int HasFilledIn = FALSE;
 
     if (!HasFilledIn) {
@@ -2853,7 +2853,7 @@ FillInCustomizationProcs() {
     return(0);
 }
 
-FreeCustomizationHeaders() {
+int FreeCustomizationHeaders() {
     struct CustomizationHeader *oldch, *tmpch = FirstCustomizationHeader;
 
     while (tmpch) {
@@ -2987,7 +2987,7 @@ int pfclose(FILE *fp, Boolean DoPclose)
 #endif /* ENABLEFILTERING */
     return(vfclose(fp));
 }
-static Bogus_MakeBodyFileName(char *dir, char *id, char *buf)
+static int Bogus_MakeBodyFileName(char *dir, char *id, char *buf)
 {
     sprintf(buf, "%s/+%s", dir, id);
 }
@@ -3836,7 +3836,7 @@ int CUI_ValidateFile(char *InFileName, char *OutFileName)
     return(-1);
 }
 
-static OutputLine(char *fname, long *offset, char *buffer)
+static int OutputLine(char *fname, long *offset, char *buffer)
 {
     int bodylen;
 
@@ -3850,7 +3850,7 @@ static OutputLine(char *fname, long *offset, char *buffer)
     return(0);
 }
 
-static ValidateDirname(char *dirname, char **result)
+static int ValidateDirname(char *dirname, char **result)
 {
     int len;
     char *result2;
