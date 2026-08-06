@@ -412,9 +412,44 @@ follows them). **Closes Wave 3.**
       no relink needed. wdc ran a raster-specific runtime pass (inset
       display/save/reload, Scale and Gray dialogs, several Raster menu
       commands) given the genuine read/write bugs found — all passed.
-- [ ] **I2**: `atk/table` (81) — alone. Historically the directory
-      with the `AUXMODULE` classpp sub-case (M2) — expect similar
-      class-internal-dispatch findings here.
+- [x] **I2 COMPLETE 2026-08-06, fossil `b2d41d7242e0`**: `atk/table`
+      alone. Real total 137 vs. 81 census (69% over — this batch's
+      census predated the `-Werror=format` ruling entirely, same root
+      cause as T1's gap) — 56 format, 55 function-pointer, 26
+      implicit-int. Function-pointer share 40%, above the "~30-35%
+      typical" flag — consistent with the batch map's own advance
+      warning about this directory's `AUXMODULE`/M2-classpp history —
+      but all 55 sites resolved to two already-precedented shapes with
+      zero escalations: the tree-wide `bind_Description.proc` K&R
+      dispatch-table cast (52 sites, `menutable`/`keytable`, matching
+      `atk/frame`'s Wave 2 B3 fix) and the `procedure`/
+      `proctable_DefineProc` cast (1 site, matching I1's precedent);
+      the remaining 3 were really a signal-handler dead-`#if`-branch
+      bug (`eval.c`'s `Exception`/`oldsig`), the same root cause
+      already found in B2/`im.c` and B3/`framecmd.c` — the one fix
+      this batch with real behavioral surface (a K&R-typed `SIGFPE`
+      handler under a dead guard, now ABI-correct). `#define AUXMODULE`
+      confirmed present/load-bearing in `keyboard.c`/`hit.c` but
+      produced no AUXMODULE-specific fallout beyond the two idioms
+      above. Genuine bugs found, all debug-trace-only or type-only (no
+      datastream read/write path affected, unlike I1's `WriteShare`
+      bug): `table.c`'s `table_ReadASCII` trace had two stray `%d`s
+      with no arguments; `tabio.c`'s `WriteCell` trace printed a
+      `char **` pointer instead of the string it points at (`*buff`),
+      a ~30-year-old always-wrong debug message; several pointer/width
+      DEBUG-trace mismatches in `table.c`/`hit.c`/`spread.c` (24 of the
+      137 in `spread.c` alone, all `if(debug)`-guarded). Orchestrator
+      independently verified the `bind.ch:39` `proc` field type and
+      the cast's struct-field position, the `framecmd.c`/I1 cast
+      precedents, the `eval.c` signal-handler fix against both `#if`
+      branches, the `tabio.c` `ENSURESIZE`/`*buff` reasoning, and the
+      `table__Read`/`table__GetModified` field types, then re-ran the
+      gate clean from scratch. `atk/table` is dynamically loaded
+      (`DynamicMultiObject`, no `LibraryTarget`) — no relink needed.
+      wdc ran a table-specific runtime pass (divide-by-zero formula
+      error state, cell editing, several Table/Cells menu commands,
+      save/reload round-trip) given the signal-handler fix's
+      behavioral surface — all passed.
 - [ ] **I3**: `atk/figure` (48), `atk/chart` (38) — 86. `atk/figure`
       carries known LP64/DRIFT history (M1 Pilot B, M2 batch3a, M3
       i2) — expect findings, not a routine batch. Kept unmerged for
