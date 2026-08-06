@@ -1,11 +1,37 @@
-\begindata{text,4375641456}
+\begindata{text,4349574832}
 \textdsversion{12}
 \template{default}
-Hello World!
+\define{footnote
+
+attr:[Flags OverBar Int Set]
+attr:[FontSize PreviousFontSize Point -2]}
+\majorheading{Hello World!}
+
+
+\majorheading{Major heading}
+
+\heading{Heading,}
+
+\subheading{Subheading \
+
+
+}\chapter{1	chapter}
+
+\section{1.1	Lets make some sections}
+
+\subsection{1.1.1	and subsections.}
+
+
+Text to play with a 
+footnote\footnote{\
+\begindata{fnote,4349746048}
+\textdsversion{12}
+\enddata{fnote,4349746048}
+\view{fnotev,4349746048,11,0,0}HEllo footnote.} in the middle.
 
 Here's a clock:
 
-\begindata{clock,4375653360}
+\begindata{clock,4349581568}
 Datastream version: 1
 hand lengths, 60, 80, -20
 hand widths, 4, 2, 1
@@ -16,32 +42,32 @@ labels, 4, 0, Andy
 3
 6
 9
-\enddata{clock,4375653360}
-\view{clockview,4375653360,0,0,0}
+\enddata{clock,4349581568}
+\view{clockview,4349581568,0,0,0}
 Here's an annotation:
 
-\begindata{note,4375656880}
+\begindata{note,4349585120}
 200 100 1 
 \title{wdc}
-\begindata{text,4375665840}
+\begindata{text,4349595504}
 \textdsversion{12}
 Hello\
-\enddata{text,4375665840}
-\enddata{note,4375656880}
-\view{noteview,4375656880,1,0,0}
+\enddata{text,4349595504}
+\enddata{note,4349585120}
+\view{noteview,4349585120,1,0,0}
 Here is a calc:
 
-\begindata{calc, 4375666544}
+\begindata{calc, 4349596352}
 TopTitleFontName AndySans22b
 BottomLegendFontName Andy20i
 Value 0.000000
-\enddata{calc, 4375666544}
-\view{calcv,4375666544,2,0,0}
+\enddata{calc, 4349596352}
+\view{calcv,4349596352,2,0,0}
 Here is a raster:
 
-\begindata{raster,37211914560}
+\begindata{raster,4349598400}
 2 0 65536 65536 0 0 1152 900
-bits 37211914560 1152 900
+bits 4349598400 1152 900
 zlJc0zzzzzs |
 zk0fJ80zzzzzs |
 zk3fJzzzzzt |
@@ -1129,12 +1155,12 @@ v3001Sfbe941g	0438m01gbe7873	Hd0k0c10018304	1871e7cf1c18e3
 xRf7a0tfbIf980	m0cg60820e1e70	e79c061820gPfe	7fefK3f7dNfdH
  fe3dfbRbfGfbZI |
 ZZZZZZZJ |
-\enddata{raster, 37211914560}
-\view{rasterview,37211914560,9,0,0}
+\enddata{raster, 4349598400}
+\view{rasterview,4349598400,3,0,0}
 
 Here is a zip:
 
-\begindata{zip,4375668560}
+\begindata{zip,4349599744}
 %ViewWidth 430
 %ViewHeight 512
 *D;-1000,1400
@@ -1150,14 +1176,14 @@ MCM
 *L;-1059,330
 >1313,419
 
-\enddata{zip,4375668560}
-\view{zipview,4375668560,3,0,0}
+\enddata{zip,4349599744}
+\view{zipview,4349599744,4,0,0}
 
 And more.
 
 Here is another zip:
 
-\begindata{zip,4375682032}
+\begindata{zip,4349616896}
 %ViewWidth 512
 %ViewHeight 512
 *D;-1000,1400
@@ -1172,22 +1198,22 @@ MCM
 T|
 MCM
 
-\enddata{zip,4375682032}
-\view{zipview,4375682032,4,0,0}
+\enddata{zip,4349616896}
+\view{zipview,4349616896,5,0,0}
 
 Here are equation bits:
 
 
-\begindata{eq,4375687680}
-{ lpile d_eqstyle { d s { cpile { d t } over { zilch } } } { zilch } { zilch } { zilch } { zilch } } \enddata{eq,4375687680}
-\view{eqview,4375687680,5,0,0}
+\begindata{eq,47123152896}
+{ lpile d_eqstyle { d s { cpile { d t } over { zilch } } } { zilch } { zilch } { zilch } { zilch } } \enddata{eq,47123152896}
+\view{eqview,47123152896,6,0,0}
 <head> </head>
 
 <body>
 
 </body>
 
-\begindata{table,4375688992}
+\begindata{table,4349622960}
 ^aaa	 	 	 	 
 32	8	=[2,1]+[2,2]	 	 
  	 	 	 	 
@@ -1199,12 +1225,12 @@ Here are equation bits:
  	 	 	 	 
  	 	 	 	 
  	 	 	 	 
-\enddata{table,4375688992}
-\view{spread,4375688992,6,0,0}
+\enddata{table,4349622960}
+\view{spread,4349622960,7,0,0}
 
-\begindata{eq,4375689344}
-{ lpile d_eqstyle { y above { - } = 1 m m - y { cpile { 1 } over { m m * s e c } } } { v sub { x } ( { y above { - } } ) = 4 . 9 9 5 { cpile { 1 } over { m m * s e c } } * ( { 2 * y above { - } m m - y above { - } sup { 2 } } ) } } \enddata{eq,4375689344}
-\view{eqview,4375689344,7,0,0}
+\begindata{eq,47123153008}
+{ lpile d_eqstyle { y above { - } = 1 m m - y { cpile { 1 } over { m m * s e c } } } { v sub { x } ( { y above { - } } ) = 4 . 9 9 5 { cpile { 1 } over { m m * s e c } } * ( { 2 * y above { - } m m - y above { - } sup { 2 } } ) } } \enddata{eq,47123153008}
+\view{eqview,47123153008,8,0,0}
 
 Let's add some text that has a couple lines so it becomes a paragraph. Is 
 this thing on? Testing testing, 1, 2, 3? Yes this is on.
@@ -1214,7 +1240,7 @@ Yet another \bold{\bigger{paragraph}}. Insertion and deletion seems ok. Is
 this thing on? Testing testing, 1, 2, 3?
 
 
-\begindata{eq,4375689536}
-{ lpile d_eqstyle { { cpile { 1 } over { m m * s e c } } } } \enddata{eq,4375689536}
-\view{eqview,4375689536,8,0,0\
-}\enddata{text,4375641456}
+\begindata{eq,47123153120}
+{ lpile d_eqstyle { { cpile { 1 } over { m m * s e c } } } } \enddata{eq,47123153120}
+\view{eqview,47123153120,9,0,0\
+}\enddata{text,4349574832}
