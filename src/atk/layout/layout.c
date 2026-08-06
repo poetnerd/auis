@@ -242,7 +242,7 @@ static long /* returns read error status */ readASCII(struct layout *self, FILE 
 		    };
 		}
 		if (debug)
-		    printf("Got <%ld,%ld,%ld,%ld,%c%c> havechild=%d\n", cLeft(c), cTop(c), cWidth(c), cHeight(c), (cVaries(c) ? 'V' : 'F'), havechild);
+		    printf("Got <%ld,%ld,%ld,%ld,%c> havechild=%d\n", cLeft(c), cTop(c), cWidth(c), cHeight(c), (cVaries(c) ? 'V' : 'F'), havechild);
 		if (fgetstring(f, "\n") != 0) {
 		    objectto(f, "layout:  trash after coordinates");
 		    layout_RemoveComponent(self, c);
@@ -321,7 +321,7 @@ long layout__Read(struct layout *self, FILE *f, long id)
     long rc;
 
     if (debug)
-	printf("layout_Read(%d)\n", id);
+	printf("layout_Read(%ld)\n", id);
 
     layout_SetID(self, layout_UniqueID(self));
     layout_SetModified(self);
@@ -329,7 +329,7 @@ long layout__Read(struct layout *self, FILE *f, long id)
     rc = readASCII(self, f, id);
     layout_NotifyObservers(self, observable_OBJECTCHANGED);
     if (debug)
-	printf("layout_Read rc = %d\n", rc);
+	printf("layout_Read rc = %ld\n", rc);
 
     return rc;
 }
@@ -419,7 +419,7 @@ struct component * layout__CreateComponent(struct layout *self)
 void layout__SetComponentSize(struct layout *self, struct component *c, long x, long y, long w, long h)
 {
     if (debug)
-	printf("layout_SetComponentSize(%s, %d, %d, %d, %d)\n", classname(cData(c)), x, y, w, y);
+	printf("layout_SetComponentSize(%s, %ld, %ld, %ld, %ld)\n", classname(cData(c)), x, y, w, h);
 
     if (cLeft(c) != x || cTop(c) != y || cWidth(c) != w || cHeight(c) != h) {
 	c->left = x;
@@ -451,7 +451,7 @@ long layout__GetModified(struct layout *self)
     }
 
     if (debug)
-	printf("layout_GetModified = %d\n", rc);
+	printf("layout_GetModified = %ld\n", rc);
 
     return rc;
 }

@@ -815,7 +815,7 @@ int Ps_cmd(struct rofftext *self, Trickle t, boolean br, int argc, char *argv[])
 		    struct mmtext *doc = (struct mmtext *) self;
 		    mmtext_GetFilename(doc, filename);
 	} else filename[0] = '\0';
-	sprintf(cmd, "$tail <%s +%d|head -%d|pic|troff|preview", filename,
+	sprintf(cmd, "$tail <%s +%ld|head -%ld|pic|troff|preview", filename,
 		self->picBegin,	t->t->LineNumber - self->picBegin+1);	/* include .PE */
 	link_SetLink(self->picButton, cmd);
 	return;

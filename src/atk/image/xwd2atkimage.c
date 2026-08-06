@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 #include <proctbl.ih>
 #include <dataobj.ih>
 #undef class_StaticEntriesOnly
+extern char *AndrewDir();
 
 int main(int argc, char **argv)
 {
@@ -100,7 +101,7 @@ int main(int argc, char **argv)
     if(xwd_Load(self = xwd_New(), NULL, f) == 0) {
 	if(saveQuality > 0) {
 	     xwd_SetJPEGSaveQuality(self, saveQuality);
-	     fprintf(stderr, "saveQ: %d\n", saveQuality);
+	     fprintf(stderr, "saveQ: %ld\n", saveQuality);
 	}
 	if(saveformat)
 	    xwd_SetSaveFormatString(self, saveformat);

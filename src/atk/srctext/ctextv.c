@@ -55,7 +55,7 @@ static struct menulist *c_Menus;
 static void startPreproc(struct ctextview *self, char key);
 
 static struct bind_Description ctextBindings[]={
-    {"ctextview-start-preproc","#",'#', NULL,0,0, startPreproc, "Start preprocessor style if pressed at start of line."},
+    {"ctextview-start-preproc","#",'#', NULL,0,0, (void (*)())startPreproc, "Start preprocessor style if pressed at start of line."},
     {"srctextview-self-insert-reindent","{",'{'},
     {"srctextview-start-comment", "*",'*'},
     {"srctextview-end-comment", "/",'/'},

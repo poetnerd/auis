@@ -311,14 +311,14 @@ void srctext__BuildTable(struct classheader *classID, char *classname, Dict * ha
 	++wordPtr;
     }
     /* add user-defined keywords (from "preferences" file) to hash table */
-    sprintf(profilename,"%s_userdef\0", classname);
+    sprintf(profilename,"%s_userdef", classname);
     p=environ_GetProfile(profilename);
     if(p) {
 	strcpy(preflist,p);
 	PutPrefStringIntoHashTable(hashTable, preflist, USRDEF);
     }
     /* add uppercase-words (from "preferences" file) to hash table */
-    sprintf(profilename,"%s_uppercase\0", classname);
+    sprintf(profilename,"%s_uppercase", classname);
     p=environ_GetProfile(profilename);
     if(p) {
 	strcpy(preflist,p);
@@ -775,7 +775,7 @@ void srctext__CheckLineLengths(struct srctext *self, int maxlen, struct view *vi
 	if (!filename)
 	    filename= pathname; /* just in case pathname has no slashes */
 	else ++filename; /* skip over that slash */
-	sprintf(msg,"Warning: saving `%s' with lines exceeding %d characters.", filename, srctext_GetMaxLineLength(self));
+	sprintf(msg,"Warning: saving `%s' with lines exceeding %ld characters.", filename, srctext_GetMaxLineLength(self));
 	message_DisplayString(view, 65 /*probably a dialog box*/, msg);
     }
 }

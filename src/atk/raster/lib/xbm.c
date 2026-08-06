@@ -98,7 +98,7 @@ static short hexTable[256];		/* conversion value */
 static boolean initialized = FALSE;	/* easier to fill in at run time */
   
 /* from X11R5 XRdBitF.c */
-static NextInt(FILE *fstream)
+static int NextInt(FILE *fstream)
 {
     int	ch;
     int	value = 0;
@@ -242,8 +242,8 @@ void xbm__WriteImage(struct classheader *ClassID, FILE *file, struct pixelimage 
 
     /* Write out X Bitmap header, with the arbitrary title 'raster'.
       Note that no hot spot is defined. */
-    fprintf(file, "#define %s_width %d\n", title, width);
-    fprintf(file, "#define %s_height %d\n", title, height);
+    fprintf(file, "#define %s_width %ld\n", title, width);
+    fprintf(file, "#define %s_height %ld\n", title, height);
     fprintf(file, "static char %s_bits[] = {",title);
 
 

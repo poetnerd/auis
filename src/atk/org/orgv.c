@@ -205,11 +205,6 @@ static char			  ExplodePhrase[]   = "Explode",
 #define  InitialNodeCount	  (self->initial_node_count)
 
 static long Tree_Hit();
-static Alter_Control_Button();
-static Passivate();
-static Activate();
-static FullUpdate_Tree();
-static Prepare_Description();
 
 
 static treev_Specification specification[] = {
@@ -603,7 +598,7 @@ static long Control_Button_Hit(struct orgv *self, struct suite *suite, struct su
       case  node_border_code:	Node_Border_Command( self );	break;
       case  node_connector_code:Node_Connector_Command( self );	break;
       default:
-	sprintf( msg, "Unknown control-code (%d)",
+	sprintf( msg, "Unknown control-code (%ld)",
 		    suite_ItemAttribute( suite, item, suite_itemdatum ) );
 	orgv_Announce( self, msg );
     } 
@@ -852,7 +847,7 @@ static void Arrangement_Command(struct orgv *self)
   OUT(Arrangement_Command);
 }
 
-static Alter_Control_Button(struct orgv *self, long datum, char *new)
+static int Alter_Control_Button(struct orgv *self, long datum, char *new)
 {
   if ( PaletteExposed )
       suite_ChangeItemAttribute( Suite, suite_ItemOfDatum( Suite, datum ),
@@ -862,7 +857,7 @@ static Alter_Control_Button(struct orgv *self, long datum, char *new)
 	    suite_itemcaption, (long) ( new ) );
 }
 
-static Passivate(struct orgv *self)
+static int Passivate(struct orgv *self)
   {
   if ( PaletteExposed ) {
     suite_PassivateItem( Suite, suite_ItemOfDatum( Suite, plode_code   ) );
@@ -873,7 +868,7 @@ static Passivate(struct orgv *self)
   }
 }
 
-static Activate(struct orgv *self)
+static int Activate(struct orgv *self)
 {
     if ( PaletteExposed ) {
 	suite_ActivateItem( Suite, suite_ItemOfDatum( Suite, plode_code   ) );
@@ -884,7 +879,7 @@ static Activate(struct orgv *self)
     }
 }
 
-static FullUpdate_Tree(struct orgv *self)
+static int FullUpdate_Tree(struct orgv *self)
 {
   struct rectangle bounds;
 
@@ -917,7 +912,7 @@ static long Tree_Hit(struct orgv *self, struct treev *tree_view, struct tree_nod
   return(NULL);
 }
 
-static Prepare_Description(struct orgv *self, struct tree_node *node)
+static int Prepare_Description(struct orgv *self, struct tree_node *node)
 {
   register FILE *file;
   struct text *text;

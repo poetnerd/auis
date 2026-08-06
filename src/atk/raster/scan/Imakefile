@@ -30,6 +30,8 @@
 
 OBJS = ezscan.o scan3117.o
 
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 NormalObjectRule()
 
 ProgramTarget(ezscan, ${OBJS},,)

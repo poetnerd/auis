@@ -115,7 +115,7 @@ enum view_DSattributes compressv__DesiredSize(struct compressv *self, long width
     return(view_HeightFlexible | view_WidthFlexible);
 }
 
-static DoUpdate(struct compressv *self, boolean full)
+static int DoUpdate(struct compressv *self, boolean full)
 {
     struct rectangle enclosingRect;
     enclosingRect.top = 0; enclosingRect.left = 0;

@@ -48,6 +48,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
  */
 #include <stdio.h>
 
+#include <andrewos.h> /* strings.h */
 #include <class.h>
 #include <rasterio.eh>
 #include <pixelimg.ih>
@@ -201,7 +202,7 @@ long rasterio__ReadRow(struct classheader *ClassID, FILE *file, unsigned char *r
 			RepeatAndDigit};	/* have seen repeat code and its first
 					following digit */
 	enum stateCode InputState;	/* current state */
-	register c;		/* the current input character */
+	register int c;		/* the current input character */
 	register long repeatcount = 0;	/* current repeat value */
 	register long hexval;	/* current hex value */
 	long pendinghex = 0;		/* the first of a pair of hex characters */
@@ -362,8 +363,8 @@ long rasterio__ReadImage(struct classheader *ClassID, FILE *file, struct pixelim
 		return dataobject_BADFORMAT;
 
 	/* ignore all these features: */
-	fscanf(file, " %u %ld %ld %ld %ld %ld %ld",  
-		&options, &xscale, &yscale, &xoffset, 
+	fscanf(file, " %ld %ld %ld %ld %ld %ld %ld",
+		&options, &xscale, &yscale, &xoffset,
 		&yoffset, &subwidth, &subheight);
 
 	/* scan to end of line in case this is actually something beyond V2 */
@@ -421,11 +422,11 @@ void rasterio__WriteImage(struct classheader *ClassID, FILE *file, struct pixeli
 	rectangle_GetRectSize(sub, &left, &top, &width, &height);
 
 	fprintf(file, "\\begindata{raster,%d}\n", id);
-	fprintf(file, "%ld %ld %ld %ld ", RASTERVERSION, 
-			0, DEFAULTSCALE, DEFAULTSCALE);
+	fprintf(file, "%ld %ld %ld %ld ", (long)RASTERVERSION,
+			(long)0, (long)DEFAULTSCALE, (long)DEFAULTSCALE);
 	fprintf(file, "%ld %ld %ld %ld\n",
-		 0, 0, width, height);	/* subraster */
-	fprintf(file, "bits %ld %ld %ld\n", id, width, height);
+		 (long)0, (long)0, width, height);	/* subraster */
+	fprintf(file, "bits %ld %ld %ld\n", (long)id, width, height);
 
 	nbytestofile = (width+7)>>3;
 	bottom = top + height;

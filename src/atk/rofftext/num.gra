@@ -180,7 +180,7 @@ char *s;{
 }
 
        
-EvalString(self,str,result,scale,absolute,relative)
+int EvalString(self,str,result,scale,absolute,relative)
 struct rofftext *self;
 char *str;
 int *result;

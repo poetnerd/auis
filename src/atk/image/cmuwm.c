@@ -95,7 +95,7 @@ int cmuwm__Load(struct cmuwm *image, char *fullname, FILE *fp)
 	    free(buf);
 	}
 	else {
-	    fprintf(stderr, "cmuwm: Read error (%d)\n", status);
+	    fprintf(stderr, "cmuwm: Read error (%ld)\n", status);
 	    fclose(f);
 	    return(-1);
 	}
@@ -156,7 +156,7 @@ long cmuwm__WriteNative(struct cmuwm *self, FILE *file, char *filename)
 	}
 	if((status = raster_Write(ras, f, raster_UniqueID(ras), -1)) != raster_UniqueID(ras)) {
 	    if(file==NULL) fclose(f);
-	    fprintf(stderr, "raster: Write error (%d)\n", status);
+	    fprintf(stderr, "raster: Write error (%ld)\n", status);
 	    return(-1);
 	}
 	raster_Destroy(ras);

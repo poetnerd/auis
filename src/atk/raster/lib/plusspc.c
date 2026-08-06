@@ -194,7 +194,7 @@ static long GetPrintableNibblePair(FILE *fp)
 long plusspace__ReadRow(struct classheader *ClassID, FILE *file, unsigned char *row, long length)
 {
 	register int sofar;		/* length unpacked so far */
-	register curr;		/* current char from in stream */
+	register int curr;		/* current char from in stream */
 
 	sofar = 0;
 	while (sofar < length)	{
@@ -214,7 +214,7 @@ long plusspace__ReadRow(struct classheader *ClassID, FILE *file, unsigned char *
 		}
 		else {
 			/* next char repeats (257-curr) times */
-			register repchar = ~GetPrintableNibblePair(file);
+			register int repchar = ~GetPrintableNibblePair(file);
 			curr = 257 - curr;
 			if (curr > length - sofar) {
 				/* ERROR: code gives line longer than length

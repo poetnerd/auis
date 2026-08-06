@@ -188,20 +188,18 @@ static int			    bushv_WriteFile(),
                                     bushv_SaveFile(),
                                     bushv_SetPrinter();
 
-int				    SortByName(),
+long				    SortByName(),
 				    SortBySize(),
 				    SortBySuffix(),
 				    SortByType(),
 				    SortByDate();
 
-static DoPrint();
-static DoExecute();
 static int PerformSystemAction();
 static int FinishDirMove();
 static int DoDestroy();
 static int HandleModifiedObject();
 static int SortRequested();
-static int ResetChildDirPaths();
+static long ResetChildDirPaths();
 static int bushv_WriteToFile();
 static int bushv_SaveFile();
 static int bushv_WriteFile();
@@ -726,7 +724,7 @@ static char * FileType(char *file_name)
   return(suffix);
 }
 
-int SortByName(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
+long SortByName(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
   register long			 status = 0;
@@ -742,7 +740,7 @@ int SortByName(struct bushv *self, struct suite *suite, struct suite_item *e1, s
   return(0);
 }
 
-int SortBySuffix(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
+long SortBySuffix(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
   register long			 rc;
@@ -763,7 +761,7 @@ int SortBySuffix(struct bushv *self, struct suite *suite, struct suite_item *e1,
   return(0);
 }
 
-int SortBySize(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
+long SortBySize(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
 
@@ -777,7 +775,7 @@ int SortBySize(struct bushv *self, struct suite *suite, struct suite_item *e1, s
   return(0);
 }
 
-int SortByDate(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
+long SortByDate(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
 
@@ -791,7 +789,7 @@ int SortByDate(struct bushv *self, struct suite *suite, struct suite_item *e1, s
   return(0);
 }
 
-int SortByType(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
+long SortByType(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
   char				 n1[MAXPATHLEN+1], n2[MAXPATHLEN+1];
@@ -837,22 +835,22 @@ boolean bushv__InitializeClass(struct classheader *ClassID)
   menulist = menulist_New();
   classInfo = class_Load("bushv");
   bind_BindList(bushvBindings, kmap, menulist, classInfo);
-  proctable_DefineProc("bushv-DEBUG", ToggleDebug, 
+  proctable_DefineProc("bushv-DEBUG", (procedure)ToggleDebug,
     &bushv_classinfo, NULL, "Toggle Bush debug flag.");
-  proctable_DefineProc("bushv-pop", PerformPop, 
+  proctable_DefineProc("bushv-pop", (procedure)PerformPop,
     &bushv_classinfo, NULL, "Pop up a level.");
-  proctable_DefineProc("bushv-switch", SwitchDirectory, 
+  proctable_DefineProc("bushv-switch", (procedure)SwitchDirectory,
     &bushv_classinfo, NULL, "Switch to a new directory.");
-  proctable_DefineProc("bushv-rescan", PerformRescan, 
+  proctable_DefineProc("bushv-rescan", (procedure)PerformRescan,
     &bushv_classinfo, NULL, "Rescan the current directory.");
-  proctable_DefineProc("bushv-destroy", PerformDestroy, 
+  proctable_DefineProc("bushv-destroy", (procedure)PerformDestroy,
     &bushv_classinfo, NULL, "Destroy the current directory/files.");
 
-  pe = proctable_DefineProc("bushv-entries-page-up", EntriesPageUp, &bushv_classinfo, NULL, "Page up file entries list");
+  pe = proctable_DefineProc("bushv-entries-page-up", (procedure)EntriesPageUp, &bushv_classinfo, NULL, "Page up file entries list");
   keymap_BindToKey(kmap, "\033v", pe, 0);
   keymap_BindToKey(kmap, "\033G", pe, 0);
 
-  pe = proctable_DefineProc("bushv-entries-page-down", EntriesPageDown, &bushv_classinfo, NULL, "Page down file entries list");
+  pe = proctable_DefineProc("bushv-entries-page-down", (procedure)EntriesPageDown, &bushv_classinfo, NULL, "Page down file entries list");
   keymap_BindToKey(kmap, "\026", pe, 0);
   keymap_BindToKey(kmap, "\033E", pe, 0);
   return(TRUE);
@@ -1145,7 +1143,7 @@ static void PerformPrint(struct bushv *self)
   OUT(PerformPrint);
 }
 
-static DoPrint(struct bushv *self, char *path, char *name)
+static int DoPrint(struct bushv *self, char *path, char *name)
 {
   char full_path[MAXPATHLEN];
   int i = 0;
@@ -1358,7 +1356,7 @@ static void PerformExec(struct bushv *self)
   OUT(PerformExec);
 }
 
-static DoExecute(struct bushv *self, tree_type_node tn, struct Dir_Entry *Entry)
+static int DoExecute(struct bushv *self, tree_type_node tn, struct Dir_Entry *Entry)
 {
   char			 full_path[MAXPATHLEN * 2];
 
@@ -1424,7 +1422,7 @@ static char* FormatEntriesItem(struct bushv *self, tree_type_node tn, int i, str
     if(Detail) {
       time_ptr = (char*) ctime(&DirEntryTimeStamp(tn,i));
       time_ptr[24] = '\0';
-      sprintf(entries_item,"%s %2d %8s %8d %s %s%s%s",
+      sprintf(entries_item,"%s %2d %8s %8zu %s %s%s%s",
 	       Format_Tags(DirEntryPerms(tn,i)),
 	       DirEntryNLinks(tn,i),DirEntryOwner(tn,i),
 	       DirEntrySize(tn,i),time_ptr,DirEntryName(tn,i),
@@ -1442,7 +1440,7 @@ static char* FormatEntriesItem(struct bushv *self, tree_type_node tn, int i, str
     if(Detail) {
       time_ptr = (char*) ctime(&dirEntry->time_stamp);
       time_ptr[24] = '\0';
-      sprintf(entries_item,"%s %2d %8s %8d %s %s%s%s",
+      sprintf(entries_item,"%s %2d %8s %8zu %s %s%s%s",
 	       Format_Tags(dirEntry->permissions),
 	       dirEntry->nlinks,dirEntry->owner,
 	       dirEntry->size,time_ptr,dirEntry->name,
@@ -1614,19 +1612,20 @@ char * FormatEntriesInfo(struct bushv *self, tree_type_node tn)
   if(tn) {
     if(DirEntries(tn)) count = DirEntriesCount(tn);
       for( i = 0; i < count; i++ ) total_bytes += DirEntrySize(tn,i);
-        sprintf(entries_info,"%d %s    %d %s    %s %s",count,
+        sprintf(entries_info,"%ld %s    %ld %s    %s %s",count,
 		 "Entries",total_bytes,"Bytes","Sorted by", sorts[SortMode]);
   }
   OUT(FormatEntriesInfo);
   return(entries_info);
 }
 
-static int
+static long
 (*DetermineSortHandler( self, tn ))()
   struct bushv		*self;
   tree_type_node	 tn;
 {
-  int		       (*sorter)(), sMode = SortMode;
+  long		       (*sorter)();
+  int		       sMode = SortMode;
 
   IN(DetermineSortHandler);
   switch(sMode) {
@@ -1679,7 +1678,7 @@ static void DoAutoRescan(struct bushv *self)
 
 static void PushToEntries(struct bushv *self)
 {
-  register int       (*sorter)();
+  register long       (*sorter)();
 
   IN(PushToEntries);
   if(EntriesView) {
@@ -1743,7 +1742,7 @@ static void PushToEntry(struct bushv *self)
 	readWriteAttr.value.integer = FALSE; /* Read Write */
 	menulist_SetMask(Menulist, bushv_RWEntryMenus);
 	if(CkpInterval != 0)
-	  im_EnqueueEvent(Checkpoint, self, event_SECtoTU(CkpInterval));
+	  im_EnqueueEvent((procedure)Checkpoint, self, event_SECtoTU(CkpInterval));
       }
       dataobject_SetAttributes(EntryObject, &readWriteAttr);
       lpair_SetNth(LP, 1,
@@ -1920,7 +1919,7 @@ static long ToggleCaptionDetail(struct bushv *self, struct suite *suite, struct 
 
 static void SortDir(struct bushv *self, tree_type_node tn)
 {
-  register int (*sorter)();
+  register long (*sorter)();
 
     IN(SortDir);
     sorter = DetermineSortHandler(self, tn);
@@ -1981,7 +1980,8 @@ static int SortRequested(struct bushv *self, tree_type_node tn)
 
 static void PerformSort(struct bushv *self)
 {
-  int (*sorter)(), sMode = 0;
+  long (*sorter)();
+  int sMode = 0;
   struct suite_item *sortItem = NULL;
   char sortCaption[16];
 
@@ -2063,7 +2063,7 @@ static void PerformRescan(struct bushv *self)
     OUT(PerformRescan);
 }
 
-static int ResetChildDirPaths(struct bushv *self, struct tree *tree, tree_type_node tn, long datum)
+static long ResetChildDirPaths(struct bushv *self, struct tree *tree, tree_type_node tn, long datum)
 {
   long int	     status = 0;
   char		     tmp_path[MAXPATHLEN];
@@ -2452,7 +2452,7 @@ static void Checkpoint(long dummyData)
       bushv_RetractCursor(self,Cursor);
       EntryObjectLastCKP = dataobject_GetModified(EntryObject);
     }
-    im_EnqueueEvent(Checkpoint,self,event_SECtoTU(CkpInterval));
+    im_EnqueueEvent((procedure)Checkpoint,self,event_SECtoTU(CkpInterval));
   }
 }
 

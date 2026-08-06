@@ -95,6 +95,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <proctbl.ih>
 #include <dataobj.ih>
 #undef class_StaticEntriesOnly
+extern char *AndrewDir();
 
 
 char inname[1025], outname[1025];
@@ -320,7 +321,7 @@ static void ParseSwitches(int argc, char **argv)
 		switch (*arg) {
 		case 'c': {
 			long left, top, width, height;
-			if (sscanf(arg+1, "(%d,%d,%d,%d)", 
+			if (sscanf(arg+1, "(%ld,%ld,%ld,%ld)",
 					&left, &top, &width, &height) != 4)
 				fail("crop with  -c(left,top,width,height)");
 			rectangle_SetRectSize(&crop, left, top, width, height);
@@ -360,7 +361,7 @@ static void ParseSwitches(int argc, char **argv)
 OpenInputFile()
 {
 	FILE *infile;
-	register c;
+	register int c;
 
 	if ( ! *inname)  
 		infile = stdin;
@@ -454,7 +455,7 @@ int main(int argc, char **argv)
 		(*inname) ? inname : "stdin" , 
 		(*outname) ? outname : "stdout" );
 	if ( ! rectangle_IsEmptyRect(&crop))
-		fprintf(stderr, "	Crop input to (%d, %d, %d,%d)\n",
+		fprintf(stderr, "	Crop input to (%ld, %ld, %ld,%ld)\n",
 				crop.left, crop.top, crop.width, crop.height);
 	if (*opSwitches) 
 		fprintf(stderr, "	Process with \"%s\"\n", opSwitches);
@@ -463,7 +464,7 @@ int main(int argc, char **argv)
 
 	ret = ReadInputFile(infile, pix);
 	if (ret != dataobject_NOREADERROR) {
-		fprintf (stderr, "Read of %s failed with code %d\n", inname, ret);
+		fprintf (stderr, "Read of %s failed with code %ld\n", inname, ret);
 		exit(3);
 	}
 	fclose(infile);

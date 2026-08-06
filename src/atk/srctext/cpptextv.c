@@ -53,7 +53,7 @@ static struct menulist *cpp_Menus;
 static void slash(struct cpptextview *self, char key);
 
 static struct bind_Description cpptextBindings[]={
-    {"cpptextview-slash","/",'/',NULL,0,0,slash,"Insert a slash, possibly an end comment delimiter or the start of a line comment."},
+    {"cpptextview-slash","/",'/',NULL,0,0,(void (*)())slash,"Insert a slash, possibly an end comment delimiter or the start of a line comment."},
     NULL
 };
 

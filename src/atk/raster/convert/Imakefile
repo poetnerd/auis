@@ -29,6 +29,8 @@
 
 OBJS = convrast.o
 
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 LIBS = $(BASEDIR)/lib/atk/libbasics.a \
 	$(MALLOCLIB) \
 	$(BASEDIR)/lib/liberrors.a \

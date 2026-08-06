@@ -29,6 +29,7 @@
 static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/srctext/RCS/asmtext.c,v 1.10 1994/02/28 21:02:02 rr2b Exp $";
 #endif
 
+#include <andrewos.h> /* strings.h */
 #include <class.h>
 
 

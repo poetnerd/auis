@@ -104,7 +104,7 @@ static int  fbmin_img_bits;	       /* color bits */
 static int  fbmin_img_rowlen;	       /* length of one row of data */
 static int  fbmin_img_plnlen;	       /* length of one plane of data */
 static int  fbmin_img_clrlen;	       /* length of the colormap */
-static int  fbmin_img_aspect;	       /* image aspect ratio */
+static double fbmin_img_aspect;	       /* image aspect ratio */
 static int  fbmin_img_physbits;	       /* physical bits per pixel */
 static char *fbmin_img_title;		/* name of image */
 static char *fbmin_img_credit;		/* credit for image */
@@ -141,7 +141,7 @@ static int fbmin_open_image(FILE *s)
   fbmin_img_rowlen   = atoi(phdr.rowlen);
   fbmin_img_plnlen   = atoi(phdr.plnlen);
   fbmin_img_clrlen   = atoi(phdr.clrlen);
-  fbmin_img_aspect   = atoi(phdr.aspect);
+  fbmin_img_aspect   = atof(phdr.aspect);
   fbmin_img_physbits = atoi(phdr.physbits);
   fbmin_img_title    = phdr.title;
   fbmin_img_credit   = phdr.credits;
@@ -170,7 +170,7 @@ static int fbmin_close_file()
   return FBMIN_SUCCESS;
 }
     
-static fbmin_image_test()
+static int fbmin_image_test()
 {
   if (fbmin_img_width < 1 || fbmin_img_width > 32767) {
     fprintf (stderr, "Invalid width (%d) on input\n", fbmin_img_width);

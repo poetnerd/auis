@@ -123,16 +123,16 @@ boolean pushbuttonview__InitializeClass(struct classheader *c)
 
     if ((menulist = menulist_New()) == NULL) return(FALSE);
 
-    if ((proc = proctable_DefineProc("pushbuttonview-set-label-text", LabelProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the text string of the pushbutton.")) == NULL) return(FALSE);
+    if ((proc = proctable_DefineProc("pushbuttonview-set-label-text", (procedure)LabelProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the text string of the pushbutton.")) == NULL) return(FALSE);
     menulist_AddToML(menulist, "Pushbutton~1,Set Label~11", proc, NULL, 0);
-    
-    if ((proc = proctable_DefineProc("pushbuttonview-set-font", FontProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the font of the pushbutton.")) == NULL) return(FALSE);
+
+    if ((proc = proctable_DefineProc("pushbuttonview-set-font", (procedure)FontProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the font of the pushbutton.")) == NULL) return(FALSE);
     menulist_AddToML(menulist, "Pushbutton~1,Set Font~12", proc, NULL, 0);
-    
-    if ((proc = proctable_DefineProc("pushbuttonview-set-style", StyleProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the appearance of the pushbutton.")) == NULL) return(FALSE);
+
+    if ((proc = proctable_DefineProc("pushbuttonview-set-style", (procedure)StyleProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the appearance of the pushbutton.")) == NULL) return(FALSE);
     menulist_AddToML(menulist, "Pushbutton~1,Set Style~13", proc, NULL, 0);
-    
-    if ((proc = proctable_DefineProc("pushbuttonview-set-color", ColorProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the foreground and background color of the pushbutton.")) == NULL) return(FALSE);
+
+    if ((proc = proctable_DefineProc("pushbuttonview-set-color", (procedure)ColorProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the foreground and background color of the pushbutton.")) == NULL) return(FALSE);
 #ifndef PL8			/* users of PL8 can't set color */
     menulist_AddToML(menulist, "Pushbutton~1,Set Color~14", proc, NULL, 0);
 #endif /* PL8 */
@@ -1137,7 +1137,7 @@ void pushbuttonview__Print(struct pushbuttonview *self, FILE *file, char *proces
 	    adddash = TRUE;
 	}
 
-	fprintf(file, "%s  /%s%c%s%s findfont %d scalefont setfont\n", prefix, psfam, (adddash ? '-' : ' '), mod1, mod2, fsiz);
+	fprintf(file, "%s  /%s%c%s%s findfont %ld scalefont setfont\n", prefix, psfam, (adddash ? '-' : ' '), mod1, mod2, fsiz);
 
 	fprintf(file, "%s  0 0 moveto (", prefix);	
 	OutputLabel(file, pushbutton_GetText(dobj));

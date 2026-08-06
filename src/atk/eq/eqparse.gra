@@ -290,7 +290,7 @@ static struct eq *eqptr;
 static long which;
  
 static int yylex();
-eq__Parse(self, file, w)
+void eq__Parse(self, file, w)
 struct eq *self;
 FILE *file;
 long w;
@@ -376,7 +376,7 @@ static int is_node(addr)
     return 0;
 }
 
-static
+static int
 print(file, ptr)
 FILE *file;
 union ptr ptr;

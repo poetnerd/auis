@@ -939,7 +939,7 @@ long eqview__Find(struct eqview *self, struct eq *eqptr, long mx, long my, long 
 
 static int min_x, min_y, max_x, max_y;
 
-static eqview_Box(struct eq *eqptr, long pos, long start, long stop, long x, long y)
+static int eqview_Box(struct eq *eqptr, long pos, long start, long stop, long x, long y)
 {
     register int i;
     for (i=start; i<stop; i++) {

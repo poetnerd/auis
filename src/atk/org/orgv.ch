@@ -108,7 +108,7 @@ data:
   struct tree_node		 *previous_node, *exploded_node;
   struct suite			 *suite_object;
   struct view			 *anchor;
-  struct view		       *(*hit_handler)();
+  procedure			  hit_handler;
   struct rectangle		  bounds;
   struct menulist		 *menu;
   struct keystate		 *keystate;

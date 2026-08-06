@@ -119,7 +119,7 @@ boolean boxview__InitializeClass(struct classheader *classID)
 {
 
     if (boxview_debug)
-	printf("boxview_InitializeClass(%x)\n", classID);
+	printf("boxview_InitializeClass(%lx)\n", (long)classID);
 
     return TRUE;
 }
@@ -129,7 +129,7 @@ boolean boxview__InitializeClass(struct classheader *classID)
 boolean boxview__InitializeObject(struct classheader *classID, struct boxview *self)
 {
     if (boxview_debug)
-	printf("boxview_InitializeObject(%x)\n", classID);
+	printf("boxview_InitializeObject(%lx)\n", (long)classID);
 
     self->updateNeeded = FALSE;
     self->lastUpdate = 0;
@@ -155,7 +155,7 @@ enum view_DSattributes boxview__DesiredSize(struct boxview *self, long width, lo
     int tw = boxview_BoxWidth(self);
 
     if (boxview_debug)
-	printf("boxview_DesiredSize(, %d, %d, %d, .. )\n", width, height, (int)pass);
+	printf("boxview_DesiredSize(, %ld, %ld, %d, .. )\n", width, height, (int)pass);
 
     InitChild(self);
     if (self->child == NULL) {
@@ -247,7 +247,7 @@ void boxview__FullUpdate(struct boxview *self, enum view_UpdateType how, long le
     struct rectangle cliprect;		/* actual updated rectangle */
 
     if (boxview_debug)
-	printf("boxview_FullUpdate(%d, %d, %d, %d, %d)\n", (int)how, left, top, width, height);
+	printf("boxview_FullUpdate(%d, %ld, %ld, %ld, %ld)\n", (int)how, left, top, width, height);
 
     /* define rectangle actually being updated */
 
@@ -419,7 +419,7 @@ void boxview__Print(struct boxview *self, FILE *f, char *processor, char *finalF
     int tw = boxview_BoxWidth(self);
 
     if (boxview_debug)
-	printf("boxview_Print(%x, %x, %s, %s, %d)\n", self, f, processor, finalFormat, toplevel);
+	printf("boxview_Print(%lx, %lx, %s, %s, %d)\n", (long)self, (long)f, processor, finalFormat, toplevel);
 
     /* set up  top-level stuff */
 
@@ -431,10 +431,10 @@ void boxview__Print(struct boxview *self, FILE *f, char *processor, char *finalF
     InitChild(self);
 
     fprintf(f, ".sp -\\n(VSu\n");	/* move up one line */
-    fprintf(f, "\\D'l %dp 0'", boxview_GetLogicalWidth(self));  /* draw box */
-    fprintf(f, "\\D'l 0 %dp'", boxview_GetLogicalHeight(self));
-    fprintf(f, "\\D'l %dp 0'", -boxview_GetLogicalWidth(self));
-    fprintf(f, "\\D'l 0 %dp'", -boxview_GetLogicalHeight(self));
+    fprintf(f, "\\D'l %ldp 0'", boxview_GetLogicalWidth(self));  /* draw box */
+    fprintf(f, "\\D'l 0 %ldp'", boxview_GetLogicalHeight(self));
+    fprintf(f, "\\D'l %ldp 0'", -boxview_GetLogicalWidth(self));
+    fprintf(f, "\\D'l 0 %ldp'", -boxview_GetLogicalHeight(self));
     fprintf(f, "\n");			/* I think this moves back down a line */
 
     fprintf(f, ".sp %dp\n", tw);	/* vertical down to enclosed object */

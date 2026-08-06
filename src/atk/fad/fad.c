@@ -31,6 +31,7 @@
 static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fad/RCS/fad.c,v 2.9 1992/12/15 21:35:02 rr2b R6tape $";
 #endif
 
+#include <andrewos.h> /* strings.h */
 #include <class.h>
 #include <dataobj.ih>
 #include <fad.eh>
@@ -160,7 +161,7 @@ struct fadpoint * fad__setpoint(struct fad *self, long x, long y, int type, stru
 	pt->p = fad_newpoint(self,x,y);
 	return(pt->p);
 	}
-static pointmatch(struct fad *self, struct fadpoint *pt, long x, long y)
+static int pointmatch(struct fad *self, struct fadpoint *pt, long x, long y)
 {
 	if(ISICONORLABEL(x))
 		return(x == pt->x && y == pt->y);

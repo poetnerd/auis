@@ -29,6 +29,7 @@
 
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 DOBJS		=	pshbttn.do \
 			pshbttnv.do \

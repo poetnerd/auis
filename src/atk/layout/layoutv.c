@@ -43,6 +43,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 #ifndef _IBMR2
 #endif /* _IBMR2 */
 
+#include <andrewos.h> /* strings.h */
 #include <class.h>
 #include <rect.h>
 #include <assert.h>
@@ -127,7 +128,7 @@ boolean layoutview__InitializeClass(struct classheader *classID)
 {
 
     if (layout_debug)
-	printf("layoutview_InitializeClass(%x)\n", classID);
+	printf("layoutview_InitializeClass(%lx)\n", (long)classID);
 
     mainmap = keymap_New();
     mainmenus = menulist_New();
@@ -141,7 +142,7 @@ boolean layoutview__InitializeClass(struct classheader *classID)
 boolean layoutview__InitializeObject(struct classheader *classID, struct layoutview *self)
 {
     if (layout_debug)
-	printf("layoutview_InitializeObject(%x)\n", classID);
+	printf("layoutview_InitializeObject(%lx)\n", (long)classID);
 
     self->hasInputFocus = FALSE;
     self->updateRequested = FALSE;
@@ -314,7 +315,7 @@ enum view_DSattributes layoutview__DesiredSize(struct layoutview *self, long wid
     long desiredHeight;
 
     if (layout_debug)
-	printf("layoutview_DesiredSize(, %d, %d, %d, .. )\n", width, height, (int)pass);
+	printf("layoutview_DesiredSize(, %ld, %ld, %d, .. )\n", width, height, (int)pass);
 
     desiredWidth = desiredHeight = layoutview_MINIMUMSIZE;
     forallcomponents(getLayout(self), c) {
@@ -471,7 +472,7 @@ void layoutview__FullUpdate(struct layoutview *self, enum view_UpdateType how, l
     struct rectangle cliprect;		/* actual updated rectangle */
 
     if (layout_debug)
-	printf("layoutview_FullUpdate(%d, %d, %d, %d, %d)\n", (int)how, left, top, width, height);
+	printf("layoutview_FullUpdate(%d, %ld, %ld, %ld, %ld)\n", (int)how, left, top, width, height);
 
     self->updateRequested = FALSE;
 
@@ -517,7 +518,7 @@ void layoutview__WantUpdate(struct layoutview *self, struct view *requestor)
 {
 
     if (layout_debug)
-	printf("layoutview_WantUpdate(%x,%x) requested = %d\n", self, requestor, self->updateRequested);
+	printf("layoutview_WantUpdate(%lx,%lx) requested = %d\n", (long)self, (long)requestor, self->updateRequested);
 
     if (&getView(self) == requestor) {
 	if (self->updateRequested)
@@ -668,18 +669,18 @@ struct view * layoutview__Hit(struct layoutview *self, enum view_MouseAction act
 
 	if (child == NULL) {
 	    if (layout_debug)
-		printf("Null hit at %d %d\n", x - vLeft(self, c), y - vTop(self, c));
+		printf("Null hit at %ld %ld\n", x - vLeft(self, c), y - vTop(self, c));
 	    result = NULL;
 	}
 
 	else {
 	    if (layout_debug)
-		printf("Passing hit to child %x at %d %d\n", child, x - vLeft(self, c), y - vTop(self, c));
+		printf("Passing hit to child %lx at %ld %ld\n", (long)child, x - vLeft(self, c), y - vTop(self, c));
 	    result = view_Hit(child, action, x - vLeft(self, c), y - vTop(self, c), numberOfClicks);
 	}
 
 	if (layout_debug)
-	    printf("Child hit returned %x\n", result);
+	    printf("Child hit returned %lx\n", (long)result);
 	if (result != NULL)
 	    return result;
     }
@@ -804,17 +805,17 @@ struct view * layoutview__Hit(struct layoutview *self, enum view_MouseAction act
 	DrawRubberBox(self);
 	*whereline = '\0';
 	if (self->dragleft)
-	    sprintf(whereline + strlen(whereline), "left =%4d ", self->rubberleft);
+	    sprintf(whereline + strlen(whereline), "left =%4ld ", self->rubberleft);
 	if (self->dragright)
-	    sprintf(whereline + strlen(whereline), "right =%4d ", self->rubberleft + self->rubberwidth);
+	    sprintf(whereline + strlen(whereline), "right =%4ld ", self->rubberleft + self->rubberwidth);
 	if (self->dragtop)
-	    sprintf(whereline + strlen(whereline), "top =%4d ", self->rubbertop);
+	    sprintf(whereline + strlen(whereline), "top =%4ld ", self->rubbertop);
 	if (self->dragbottom)
-	    sprintf(whereline + strlen(whereline), "bottom =%4d ", self->rubbertop + self->rubberheight);
+	    sprintf(whereline + strlen(whereline), "bottom =%4ld ", self->rubbertop + self->rubberheight);
 	if (self->dragleft != self->dragright)
-	    sprintf(whereline + strlen(whereline), "width =%4d ", self->rubberwidth);
+	    sprintf(whereline + strlen(whereline), "width =%4ld ", self->rubberwidth);
 	if (self->dragtop != self->dragbottom)
-	    sprintf(whereline + strlen(whereline), "height =%4d ", self->rubberheight);
+	    sprintf(whereline + strlen(whereline), "height =%4ld ", self->rubberheight);
 	message_DisplayString(&getView(self), 0, whereline);
     }
 
@@ -856,7 +857,7 @@ void layoutview__PostMenus(struct layoutview *self, struct menulist *ml)
 	if (ml == NULL)
 	    printf("layoutview_PostMenus NULL\n");
 	else
-	    printf("layoutview_PostMenus %x %s\n", ml, viewname((struct view *)ml->object));
+	    printf("layoutview_PostMenus %lx %s\n", (long)ml, viewname((struct view *)ml->object));
     }
 
     menulist_UnchainML(self->menulist, (void *)CHILD_MENULIST_KEY);
@@ -882,7 +883,7 @@ void layoutview__WantNewSize(struct layoutview *self, struct view *requestor)
 	    c = vComponent(vl);
 	    view_DesiredSize(requestor, vWidth(self, c), vHeight(self, c), view_NoSet, &dWidth, &dHeight);
 	    if (layout_debug)
-		printf(" .. ignored %d %d\n", dWidth, dHeight);
+		printf(" .. ignored %ld %ld\n", dWidth, dHeight);
 	}
     }
 }
@@ -1220,10 +1221,10 @@ static void PrintComponents(struct layoutview *self, FILE *f, char *processor, c
     fprintf(f, "\\\"component: %s\n", viewname(child));
 
     fprintf(f, ".rs\n");			/* be sure we are really spacing */
-    fprintf(f, ".sp %dp\n", vTop(self, c));		/* space to top of component */
-    fprintf(f, ".in \\n(.iu+%dp\n", vLeft(self, c));	/* indent to left of component */
+    fprintf(f, ".sp %ldp\n", vTop(self, c));		/* space to top of component */
+    fprintf(f, ".in \\n(.iu+%ldp\n", vLeft(self, c));	/* indent to left of component */
     if (cWidth(c) > 0)
-	fprintf(f, ".ll \\n(.iu+%dp\n", cWidth(c));	/* set width for component */
+	fprintf(f, ".ll \\n(.iu+%ldp\n", cWidth(c));	/* set width for component */
 
     if (child) {
 	rectangle_SetRectSize(&childRect, vLeft(self, c), vTop(self, c), vWidth(self, c), vHeight(self, c));
@@ -1245,7 +1246,7 @@ void layoutview__Print(struct layoutview *self, FILE *f, char *processor, char *
     static int saveno = 89;
 
     if (layout_debug)
-	printf("layoutview_Print(%x, %x, %s, %s, %d)\n", self, f, processor, finalFormat, toplevel);
+	printf("layoutview_Print(%lx, %lx, %s, %s, %d)\n", (long)self, (long)f, processor, finalFormat, toplevel);
 
     /* set up  top-level stuff */
 
@@ -1286,14 +1287,14 @@ void layoutview__Print(struct layoutview *self, FILE *f, char *processor, char *
 
     fprintf(f, ".rs\n");		/* be sure we are really spacing */
     fprintf(f, ".sp -\\n(VSu\n");	/* compensate for baseline offset */
-    fprintf(f, ".ne %dp\n", height);	/* insure enough space to next trap */
+    fprintf(f, ".ne %ldp\n", height);	/* insure enough space to next trap */
     fprintf(f, ".mk\n");		/* mark this starting position */
 
     /* print all components back to front */
 
     PrintComponents(self, f, processor, finalFormat, layout_GetFirstComponent(getLayout(self)), saveno);
 
-    fprintf(f, ".sp %dp\n", height);	/* space to bottom of layout */
+    fprintf(f, ".sp %ldp\n", height);	/* space to bottom of layout */
     saveno -= 1;
     fprintf(f, "\\\"layout ends\n");
 

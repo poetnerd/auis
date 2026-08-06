@@ -57,7 +57,7 @@ static void asterisk(struct mtextview *self, char key); /* must be char for "&" 
 static void definition(), implementation();
 
 static struct bind_Description mtextBindings[]={
-    {"mtextview-asterisk","*",'*', NULL,0, 0, asterisk,"If preceded by an open-paren, start a comment."},
+    {"mtextview-asterisk","*",'*', NULL,0, 0, (void (*)())asterisk,"If preceded by an open-paren, start a comment."},
     {"mtextview-display-definition",NULL,0, "Source Text,Display Definition~30", 0,0, definition, "Find the definition module where selected identifier is declared."},
     {"mtextview-display-implementation",NULL,0, "Source Text,Display Implementation~31", 0,0, implementation, "Find the implementation module where selected procedure's code lies."},
     NULL

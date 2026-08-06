@@ -117,8 +117,8 @@ long heximage__ReadRow(struct classheader *ClassID, FILE *file, unsigned char *r
 	register unsigned char *tbl = (unsigned char *)unhex;
 
 	while (n--) {
-		register c = getc(file);
-		register c2 = getc(file);
+		register int c = getc(file);
+		register int c2 = getc(file);
 		if (c == EOF ||  c2 == EOF) return -1;
 		*where++ = (*(tbl+c)<<4) | *(tbl+c2);
 	}
@@ -220,19 +220,19 @@ void heximage__WritePostscript(struct classheader *ClassID, FILE *file, struct p
 	/* write the header */
 
 	hx = PSheader;
-/* 1*/	fprintf(file, *hx++);
+/* 1*/	fprintf(file, "%s", *hx++);
 /* 2*/	fprintf(file, *hx++,
-		0, 
-		0, 
+		0,
+		0,
 		(int) ceil((double) width * xfrac),
 		(int) ceil((double) height * yfrac));
-/* 3*/	fprintf(file, *hx++);
-/* 4*/	fprintf(file, *hx++);
+/* 3*/	fprintf(file, "%s", *hx++);
+/* 4*/	fprintf(file, "%s", *hx++);
 /* 5*/	fprintf(file, *hx++, width * xfrac / 72.0, height * yfrac / 72.0);
 /* 6*/	fprintf(file, *hx++, width, height);
 /* 7*/	fprintf(file, *hx++, xfrac, yfrac);
 /* 8+*/	for (; *hx; hx++)
-		fprintf(file, *hx);
+		fprintf(file, "%s", *hx);
 
 	/* write the data */
 
@@ -246,6 +246,6 @@ void heximage__WritePostscript(struct classheader *ClassID, FILE *file, struct p
 
 	hx = PStrailer;
 	for (; *hx; hx++)
-		fprintf(file, *hx);
+		fprintf(file, "%s", *hx);
 }
 

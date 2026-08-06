@@ -28,6 +28,7 @@
 
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 DOBJS		=	bush.do \
 			bushv.do \

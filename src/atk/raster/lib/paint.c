@@ -176,8 +176,8 @@ long paint__ReadRow(struct classheader *ClassID, FILE *file, unsigned char *row,
 
 	sofar = 0;
 	while (sofar < length)	{
-		register curr = getc(file);
-		register databyte = 0;
+		register int curr = getc(file);
+		register int databyte = 0;
 		if (curr == EOF) {
 			retval = dataobject_PREMATUREEOF;
 			break;

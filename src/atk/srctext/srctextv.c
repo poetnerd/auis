@@ -98,16 +98,16 @@ static struct cursor *waitCursor;
 static void toggleOverstrike(), overstrikeOn(), overstrikeOff();
 
 static struct bind_Description srctextBindings[]={
-    {"srctextview-self-insert"," ",' ', NULL,0,0, selfinsert, "Insert a character and check for a preceding keyword."},
+    {"srctextview-self-insert"," ",' ', NULL,0,0, (void (*)())selfinsert, "Insert a character and check for a preceding keyword."},
     {"srctextview-self-insert","(",'('},
     {"srctextview-self-insert","[",'['},
     {"srctextview-self-insert","{",'{'},
     {"srctextview-self-insert",".",'.'},
     {"srctextview-self-insert",",",','},
     {"srctextview-self-insert",";",';'},
-    {"srctextview-self-insert-reindent", NULL,0, NULL,0,0, selfinsertreindent, "Insert a character, check for preceding keyword, and reindent this line."},
+    {"srctextview-self-insert-reindent", NULL,0, NULL,0,0, (void (*)())selfinsertreindent, "Insert a character, check for preceding keyword, and reindent this line."},
     {"srctextview-redo-styles","\033r",0,"Source Text,Redo styles~10", 0,0, redo, "Wrap styles around comments, functions, keywords, etc in the source code."},
-    {"srctextview-paren",")",')',NULL,0,0,paren,"Insert a paren, with balancing."},
+    {"srctextview-paren",")",')',NULL,0,0,(void (*)())paren,"Insert a paren, with balancing."},
     {"srctextview-paren","]",']'},
     {"srctextview-paren","}",'}'},
     {"srctextview-reformat", "\033\022",0, "Source Text,Format line/region~12",0,0, reformat, "Indent line or region and reflow comments."},
@@ -129,11 +129,11 @@ static struct bind_Description srctextBindings[]={
     {"srctextview-goto-column", 0,0, NULL,0,0, gotoColumn,"Prompt for a column number and move the cursor there, appending whitespace to if needed."},
     {"srctextview-insert-comment", "\0331", 0, NULL,0, 0, insertComment, "Inserts a comment at the end of the line."},
     {"srctextview-insert-linecomment", "\0332", 0, NULL,0, 0, insertLineComment, "Inserts a comment-to-end-of-line."},
-    {"srctextview-start-comment", 0,0, NULL,0,0, startComment, "Begins comment style if part of a comment delimiter."},
-    {"srctextview-end-comment", 0,0, NULL,0,0, endComment, "Ends a comment style if part of a comment delimiter."},
-    {"srctextview-start-linecomment", 0,0, NULL,0,0, startLineComment, "Begins a comment to end of line."},
-    {"srctextview-style-label", 0,0, NULL,0,0, styleLabel, "Puts a style on labels."},
-    {"srctextview-style-string", 0,0, NULL,0,0, styleString, "Starts or ends a string style."},
+    {"srctextview-start-comment", 0,0, NULL,0,0, (void (*)())startComment, "Begins comment style if part of a comment delimiter."},
+    {"srctextview-end-comment", 0,0, NULL,0,0, (void (*)())endComment, "Ends a comment style if part of a comment delimiter."},
+    {"srctextview-start-linecomment", 0,0, NULL,0,0, (void (*)())startLineComment, "Begins a comment to end of line."},
+    {"srctextview-style-label", 0,0, NULL,0,0, (void (*)())styleLabel, "Puts a style on labels."},
+    {"srctextview-style-string", 0,0, NULL,0,0, (void (*)())styleString, "Starts or ends a string style."},
     NULL
 };
 
@@ -566,7 +566,7 @@ void srctextview__ForceUpperOn(struct srctextview *self)
     menulist_DeleteFromML(self->src_menus, "Source Text,Force Upper On~90");
 
     /* define the procedure for the new menu option */
-    proc = proctable_DefineProc("srctextview-force-upper-off", forceupperoff, &srctextview_classinfo, NULL, "Turn off auto upper casing of keywords");
+    proc = proctable_DefineProc("srctextview-force-upper-off", (procedure)forceupperoff, &srctextview_classinfo, NULL, "Turn off auto upper casing of keywords");
 
     /* add Force Upper Off option to Source Text menu card */
     menulist_AddToML(self->src_menus, "Source Text,Force Upper Off~90", proc, 0, 0);
@@ -591,7 +591,7 @@ void srctextview__ForceUpperOff(struct srctextview *self)
     menulist_DeleteFromML(self->src_menus, "Source Text,Force Upper Off~90");
 
     /* define the procedure for the new menu option */
-    proc = proctable_DefineProc("srctextview-force-upper-on", forceupperon, &srctextview_classinfo, NULL, "Turn on auto upper casing of keywords");
+    proc = proctable_DefineProc("srctextview-force-upper-on", (procedure)forceupperon, &srctextview_classinfo, NULL, "Turn on auto upper casing of keywords");
 
     /* add Force Upper On option to Source Text menu card */
     menulist_AddToML(self->src_menus, "Source Text,Force Upper On~90", proc, 0, 0);
@@ -844,7 +844,7 @@ static boolean FrameFinder(struct frame *frame, struct finderInfo *info)
         }
     return FALSE;
 }
-static ViewEqual(struct frame *frame, struct view *view)
+static int ViewEqual(struct frame *frame, struct view *view)
 {
 #if 1
     return (frame_GetView(frame) == view);
@@ -1373,9 +1373,9 @@ void srctextview__WhatColumn(struct srctextview *self)
     char s[128];
     /* note that 1 is added to all columns to translate to left-margin-is-column-one system */
     if (len>0)
-	sprintf(s,"Selected region starts in column %d and ends in column %d.\0", srctext_CurrentColumn(ct,pos)+1, srctext_CurrentColumn(ct,pos+len)+1);
+	sprintf(s,"Selected region starts in column %d and ends in column %d.", srctext_CurrentColumn(ct,pos)+1, srctext_CurrentColumn(ct,pos+len)+1);
     else
-	sprintf(s,"Column %d.\0", srctext_CurrentColumn(ct,pos)+1);
+	sprintf(s,"Column %d.", srctext_CurrentColumn(ct,pos)+1);
     message_DisplayString(self,0,s);
 }
 
@@ -1418,7 +1418,7 @@ void srctextview__GotoColumn(struct srctextview *self, int rock)
 	if (srctext_GetReadOnly(ct)) {
 	    char msg[128];
 	    srctextview_SetDotPosition(self, p);
-	    sprintf(msg, "Document is read only.  Moved to column %d.\0", srctext_CurrentColumn(ct,p)+1);
+	    sprintf(msg, "Document is read only.  Moved to column %d.", srctext_CurrentColumn(ct,p)+1);
 	    message_DisplayString(self, 0, msg);
 	}
 	else

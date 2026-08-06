@@ -44,6 +44,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 #ifndef _IBMR2
 #endif /* _IBMR2 */
 
+#include <andrewos.h> /* strings.h */
 #include <class.h>
 #include <assert.h>
 
@@ -155,7 +156,7 @@ boolean fillerview__InitializeClass(struct classheader *classID)
 
     mainmenus = menulist_New();
 
-    replaceProc = proctable_DefineProc("fillerview-set-data-object-by-name", fillerview__SetDataObjectByName, &fillerview_classinfo, NULL, "Insert named inset");
+    replaceProc = proctable_DefineProc("fillerview-set-data-object-by-name", (procedure)fillerview__SetDataObjectByName, &fillerview_classinfo, NULL, "Insert named inset");
     initializeInsets();
 
     return TRUE;

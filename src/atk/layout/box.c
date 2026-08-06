@@ -259,7 +259,7 @@ long box__Read(struct box *self, FILE *f, long id)
     long rc;
 
     if (debug)
-	printf("box_Read(%d)\n", id);
+	printf("box_Read(%ld)\n", id);
 
     box_SetID(self, box_UniqueID(self));
     box_SetModified(self);
@@ -267,7 +267,7 @@ long box__Read(struct box *self, FILE *f, long id)
     rc = readASCII(self, f, id);
     box_NotifyObservers(self, observable_OBJECTCHANGED);
     if (debug)
-	printf("box_Read rc = %d\n", rc);
+	printf("box_Read rc = %ld\n", rc);
 
     return rc;
 }
@@ -287,7 +287,7 @@ long box__GetModified(struct box *self)
     }
 
     if (debug)
-	printf("box_GetModified = %d\n", rc);
+	printf("box_GetModified = %ld\n", rc);
 
     return rc;
 }

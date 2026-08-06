@@ -53,7 +53,7 @@ static struct menulist *mod_Menus;
 static void startPreproc(struct modtextview *self, char key);
 
 static struct bind_Description modtextBindings[]={
-    {"modtextview-start-preproc","#",'#', NULL,0,0, startPreproc, "Start preprocessor style if pressed at start of line."},
+    {"modtextview-start-preproc","#",'#', NULL,0,0, (void (*)())startPreproc, "Start preprocessor style if pressed at start of line."},
     {"srctextview-self-insert-reindent","|",'|'},
     {"srctextview-style-string","\"",'"'},
     {"srctextview-style-string","'",'\''},

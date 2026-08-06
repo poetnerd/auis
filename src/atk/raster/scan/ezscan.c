@@ -756,8 +756,9 @@ return(0);
 #else /* #ifdef SUPPORTTED_PLATFORM */
 
 #include <stdio.h>
+#include <stdlib.h>
 
-main()
+int main()
 {
     printf("\nscan:   The scan command is not supported on this machine.\n");
     exit(128);

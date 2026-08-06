@@ -107,15 +107,15 @@ boolean linkview__InitializeClass(struct classheader *c)
   linkview_menulist = menulist_New();
 
 #ifndef ATTBL_ENV
-  proc = proctable_DefineProc("linkview-set-target", TargetProc, proctype, NULL, "Execute this proc from the frame of the the buffer for the target file of a link.  To be called after linkview-autolink.");
+  proc = proctable_DefineProc("linkview-set-target", (procedure)TargetProc, proctype, NULL, "Execute this proc from the frame of the the buffer for the target file of a link.  To be called after linkview-autolink.");
 
-  proc = proctable_DefineProc("linkview-insert-link", InsertProc, textviewtype, NULL, "Insert a link object in the current document.");
+  proc = proctable_DefineProc("linkview-insert-link", (procedure)InsertProc, textviewtype, NULL, "Insert a link object in the current document.");
 #endif
 
-  proc = proctable_DefineProc("linkview-autolink", AutolinkProc, &linkview_classinfo, NULL, "Starts the autolink process.  Waits for linkview-set-target to be invoked, which tells this link what file to link to.");
+  proc = proctable_DefineProc("linkview-autolink", (procedure)AutolinkProc, &linkview_classinfo, NULL, "Starts the autolink process.  Waits for linkview-set-target to be invoked, which tells this link what file to link to.");
   menulist_AddToML(linkview_menulist, "Link~1,Autolink~1", proc, NULL, 0);
 
-  proc = proctable_DefineProc("linkview-set-link", LinkProc, &linkview_classinfo, NULL, "Prompts for user to set target filename of the link button.");
+  proc = proctable_DefineProc("linkview-set-link", (procedure)LinkProc, &linkview_classinfo, NULL, "Prompts for user to set target filename of the link button.");
   menulist_AddToML(linkview_menulist, "Link~1,Set Link~11", proc, NULL, 0);
 
 #ifdef ATTBL_ENV

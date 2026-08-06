@@ -90,6 +90,12 @@ static char * match();
 void dithermap();
 static void bfill();
 void make_square();
+int rle_get_setup(struct sv_globals *globals);
+int rle_getrow(struct sv_globals *globals, rle_pixel *scanline[]);
+int bw_m_line(unsigned char *dp, int number);
+int c_m_line(unsigned char *dp, int number, int line);
+int make_gamma(double gamma, int gammamap[256]);
+void make_magic(int size, int magic[16][16]);
 
 /* input file stuff */
 static int ptype;				/* picture type : */
@@ -1233,7 +1239,7 @@ int magic16x16[16][16] =
  * Algorithm:
  * 	Chose sub cell of 16 by 16 magic square
      */
-make_magic( size, magic )
+void make_magic( size, magic )
 int size;
 int magic[16][16];
 {

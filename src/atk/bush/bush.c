@@ -76,7 +76,7 @@ struct map_item {
 #include <bush.eh>  /* includes tree.ih */
 static int ExtractNodeName();
 static int ExtractNodePath();
-static int NodeFilter();
+static int NodeFilter(const DIRENT_TYPE *dir);
 static char * getname();
 
 #define	GivenDirName		    (self->given_dir_name)
@@ -136,7 +136,7 @@ char				baseName[] = "/afs"; /*Pathname to give to pioctl()*/
 #define	MAX_PIOCTL_BUFF_SIZE	1000
 static char			*gethomecell(), *getcell();
 
-static int NodeFilter(DIRENT_TYPE *dir)
+static int NodeFilter(const DIRENT_TYPE *dir)
 {
   return(!(*dir->d_name == '.' && 
 	  (*(dir->d_name+1) == '.' || 
@@ -264,7 +264,7 @@ void bush__InitTree(struct bush *self, char *root_path)
   ExtractNodeName(tmp,&nodeName);
   AllocNameSpace(nodeName,&rootDir->name);
   if(stat(RootPath,&stats) < 0) {
-      printf("bush: error '%s' encountered while scanning '%s'.\n", strerror(errno));
+      printf("bush: error '%s' encountered while scanning '%s'.\n", strerror(errno), RootPath);
       return;
   }
   else {

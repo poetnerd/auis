@@ -180,6 +180,8 @@ static long y_whatisat();
 static void InternalZoomCmd();
 static void RectToPix();
 
+extern void writePS(struct imagev *self, FILE *fp, int *wpts, int *hpts, int toplevel);
+
 #define CONTINUOUS_PAN	0
 #define DISCREET_PAN	1
 #define PURE_POSTSCRIPT (-1) /* When this is passed to writePS as the

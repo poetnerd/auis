@@ -58,8 +58,8 @@ static void interface(), module();
 static void m3pragma(struct m3textview *self, char key); /* must be char for "&" to work. */
 
 static struct bind_Description m3textBindings[]={
-    {"m3textview-asterisk","*",'*', NULL,0, 0, asterisk,""},
-    {"m3textview-pragma",">",'>', NULL,0, 0, m3pragma, ""},
+    {"m3textview-asterisk","*",'*', NULL,0, 0, (void (*)())asterisk,""},
+    {"m3textview-pragma",">",'>', NULL,0, 0, (void (*)())m3pragma, ""},
     {"m3textview-display-interface",NULL,0, "Source Text,Display Interface~30", 0,0, interface, "Find the interface where selected identifier is declared."},
     {"m3textview-display-module",NULL,0, "Source Text,Display Module~31", 0,0, module, "Find the module where selected procedure's code lies."},
     NULL

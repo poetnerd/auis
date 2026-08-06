@@ -97,6 +97,9 @@ static int loadColor();
 static int loadImage();
 static void _TIFFerr();
 static void _TIFFwarn();
+int LoadTIFF(struct tif *self, char *fname, FILE *f, int nc);
+static int makebwmap();
+static int makecmap();
 
 static long filesize;
 byte r[256], g[256], b[256];
@@ -360,13 +363,9 @@ static int checkcmap(int n, u_short *r, u_short *g, u_short *b)
 	return (8);
 }
 
-static	gtTileContig();
-static	gtTileSeparate();
-static	gtStripContig();
-static	gtStripSeparate();
 static	void initYCbCrConversion();
 
-static gt(TIFF *tif, int w, int h, u_char *raster)
+static int gt(TIFF *tif, int w, int h, u_char *raster)
 {
 	u_short minsamplevalue, maxsamplevalue, planarconfig;
 	RGBvalue *Map;
@@ -518,7 +517,7 @@ static tileContigRoutine pickTileContigCase();
  * or
  *	SamplesPerPixel == 1
  */	
-static gtTileContig(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w, int bpp)
+static int gtTileContig(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w, int bpp)
 {
 	u_long col, row, y;
 	u_long tw, th;
@@ -581,7 +580,7 @@ static tileSeparateRoutine pickTileSeparateCase();
  *	 PlanarConfiguration separated
  * We assume that all such images are RGB.
  */	
-static gtTileSeparate(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w, int bpp)
+static int gtTileSeparate(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w, int bpp)
 {
 	u_long col, row, y;
 	u_long tw, th;
@@ -643,7 +642,7 @@ static gtTileSeparate(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w
  * or
  *	SamplesPerPixel == 1
  */	
-static gtStripContig(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w, int bpp)
+static int gtStripContig(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w, int bpp)
 {
 	u_long row, y, nrow;
 	u_char *buf;
@@ -686,7 +685,7 @@ static gtStripContig(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w,
  *	 PlanarConfiguration separated
  * We assume that all such images are RGB.
  */
-static gtStripSeparate(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w, int bpp)
+static int gtStripSeparate(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long w, int bpp)
 {
 	u_char *buf;
 	u_char *r, *g, *b;
@@ -741,6 +740,7 @@ static gtStripSeparate(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long 
  * pixel values simply by indexing into the table with one
  * number.
  */
+static int
 makebwmap()
 {
 	register int i;
@@ -794,6 +794,7 @@ makebwmap()
  * pixel values simply by indexing into the table with one
  * number.
  */
+static int
 makecmap()
 {
 	register int i;

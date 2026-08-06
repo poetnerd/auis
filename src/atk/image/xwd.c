@@ -69,6 +69,7 @@ static char *Copyright= "Copyright 1989, 1993 Jim Frost";
 #include <X11/X.h>
 #include <xwd.eh>
 static int isXWD();
+extern void flipBits(unsigned char *p, unsigned int len);
 
 /* SUPPRESS 558 */
 
@@ -89,7 +90,7 @@ static int isXWD(char *name, FILE *f, XWDHeader *header)
    */
 
   if (memToVal(gh.file_version, 4) != XWD_VERSION) {
-      printf("version mismatch: %d, %d\n", memToVal(gh.file_version, 4), XWD_VERSION);
+      printf("version mismatch: %lu, %d\n", memToVal(gh.file_version, 4), XWD_VERSION);
     return(0);
   }
 

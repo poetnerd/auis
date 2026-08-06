@@ -1169,7 +1169,7 @@ static struct bind_Description eqviewBindings[]={
     {"eqview-above-script", "!",0,"Formulae,Above~41",0,0,eqview_AboveScript, "Insert an abovescript."},
     {"eqview-below-script", "#",0,"Formulae,Below~42",0,0,eqview_BelowScript, "Insert a belowscript."},
 
-    {"eqview-special", "\033a",0,"Formulae,Insert Symbol...~51",0,0,eqview_Special, "Special symbol (dialog)."},
+    {"eqview-special", "\033a",0,"Formulae,Insert Symbol...~51",0,0,(void (*)())eqview_Special, "Special symbol (dialog)."},
 
     /* FRONT menu card */
     {"eqview-cut", "\027",0,NULL,0,0,eqview_Cut, "Cut~11"},
@@ -1204,9 +1204,9 @@ static struct bind_Description eqviewBindings[]={
     /*{"eqview-undelete", "\025",0,NULL,0,0,eqview_UnDelete, "Undelete."}, */
 
     {"eqview-left-brace", "{",0,NULL,0,0,eqview_lbrace, "Insert a left brace."},
-    {"eqview-close-paren", ")",')',NULL,0,0,eqview_Close, "Insert a close paren."},
-    {"eqview-close-bracket", "]",']',NULL,0,0,eqview_Close, "Insert a close bracket."},
-    {"eqview-close-brace", "}",'}',NULL,0,0,eqview_Close, "Insert a close brace."},
+    {"eqview-close-paren", ")",')',NULL,0,0,(void (*)())eqview_Close, "Insert a close paren."},
+    {"eqview-close-bracket", "]",']',NULL,0,0,(void (*)())eqview_Close, "Insert a close bracket."},
+    {"eqview-close-brace", "}",'}',NULL,0,0,(void (*)())eqview_Close, "Insert a close brace."},
 
     {"eqview-prime", "\'",0,NULL,0,0,eqview_Prime,"Insert a prime."}, 
     NULL
@@ -1249,7 +1249,7 @@ struct keymap * eqview_InitKeyMap(struct eqview_classinfo *classInfo, struct men
     if(eqviewCutMenus!=NULL)
 	*eqviewCutMenus=menulist_New();
 
-    def=proctable_DefineProc("eqview-default", eqview_Default, classInfo, NULL, "Insert a character.");
+    def=proctable_DefineProc("eqview-default", (procedure)eqview_Default, classInfo, NULL, "Insert a character.");
 
     str[0] = ' ';
     str[1] = '\0';

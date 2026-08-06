@@ -247,14 +247,14 @@ static Trickle topen(struct rofftext *self, char *filename, FILE *f, char *s)
     return t;
 }
 
-static tclose(struct rofftext *self, Trickle t)
+static int tclose(struct rofftext *self, Trickle t)
 {
 }
 
 
 /* Get a character from the trickle */
 
-static g(struct rofftext *self, Trickle t)
+static int g(struct rofftext *self, Trickle t)
 {
     register int c = 0;
     register struct _trickle *cur = t->t;
@@ -423,7 +423,7 @@ int tpush(struct rofftext *self, Trickle t, char *filename, FILE *f, char *s, bo
 }
 
 /* munch to end of line */
-static munch(struct rofftext *self, Trickle t)
+static int munch(struct rofftext *self, Trickle t)
 {
     register int c;
 
@@ -433,7 +433,7 @@ static munch(struct rofftext *self, Trickle t)
 
 /* read the next two input characters and output the corresponding special character */
 
-static special(struct rofftext *self, Trickle t)
+static int special(struct rofftext *self, Trickle t)
 {
     char temp[3],*result;
     temp[0] = g(self,t);
@@ -451,7 +451,7 @@ static special(struct rofftext *self, Trickle t)
 
 /* set font according to \\f request */
 
-static setfont(struct rofftext *self, Trickle t)
+static int setfont(struct rofftext *self, Trickle t)
 {
     char name[3],*font;
     getname(self,t,name);
@@ -487,7 +487,7 @@ static setfont(struct rofftext *self, Trickle t)
 }
 
 /*  do sub/super scripts */
-static setbase(struct rofftext *self, int inc)
+static int setbase(struct rofftext *self, int inc)
 {
     if (self->basestyle != 0) EndStyle(self, self->basestyle);
     self->baseline += inc;
@@ -499,7 +499,7 @@ static setbase(struct rofftext *self, int inc)
 
 /* get the width of a string */
 
-static getwidth(struct rofftext *self, Trickle t)
+static int getwidth(struct rofftext *self, Trickle t)
 {
     register int c,delim = get(self,t); /*read until this */
     int length = 0;
@@ -515,7 +515,7 @@ static getwidth(struct rofftext *self, Trickle t)
 }
 
 /* get alpha characters up to white space */
-static getsym(struct rofftext *self, Trickle t, char *str)
+static int getsym(struct rofftext *self, Trickle t, char *str)
 {
     register int c;
     while ((c = g(self,t)) != '\n' && c != EOF) {
@@ -530,7 +530,7 @@ static getsym(struct rofftext *self, Trickle t, char *str)
 
 }
 
-static dohmove(struct rofftext *self, Trickle t)
+static int dohmove(struct rofftext *self, Trickle t)
 {
     static BUF Buffer = NULL;
     register int c,delim = get(self,t);
@@ -558,7 +558,7 @@ static dohmove(struct rofftext *self, Trickle t)
 
 /* munch requests for movement */
 
-static munchmove(struct rofftext *self, Trickle t)
+static int munchmove(struct rofftext *self, Trickle t)
 {
     static BUF Buffer = NULL;
     register int c,delim = get(self,t);
@@ -584,7 +584,7 @@ static munchmove(struct rofftext *self, Trickle t)
 
 /* returns a 1- or 2-character name, as in \nX or \n(XX */
 
-static getname(struct rofftext *self, Trickle t, char *name)
+static int getname(struct rofftext *self, Trickle t, char *name)
 {
     if ((name[0] = g(self,t)) == '(') {
         name[0] = g(self,t);
@@ -597,7 +597,7 @@ static getname(struct rofftext *self, Trickle t, char *name)
 
 /* get point size change request */
 
-static getsize(struct rofftext *self, Trickle t)
+static int getsize(struct rofftext *self, Trickle t)
 {
     register int c,d;
 
@@ -1104,7 +1104,7 @@ int get(struct rofftext *self, Trickle t)
 
 /* Put the default commands in the dictionary */
 
-static CreateDefaultCommands(struct rofftext *self)
+static int CreateDefaultCommands(struct rofftext *self)
 {
     CMD(ex,ex_cmd);
     CMD(rm,rm_cmd);
@@ -1330,7 +1330,7 @@ boolean rofftext__InitializeObject(struct classheader *classID, struct rofftext 
  *
  */
 
-static DoCommand(struct rofftext *self, Trickle t, char *name, boolean br)
+static int DoCommand(struct rofftext *self, Trickle t, char *name, boolean br)
 {
     int i=0,j;
     char temp[128];

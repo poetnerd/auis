@@ -230,8 +230,8 @@ long link__Write(struct link *self, FILE *fp, long id, int level)
     fprintf(fp, "\\begindata{%s,%ld}\nDatastream version: %d\n",
 	    class_GetTypeName(self), uniqueid, DS_VERSION);
     WriteLine(fp, link_GetRawLink(self) ? link_GetRawLink(self) : "");
-    fprintf(fp, "%d\n", link_GetPos(self));
-    fprintf(fp, "%d\n", link_GetLen(self));
+    fprintf(fp, "%ld\n", link_GetPos(self));
+    fprintf(fp, "%ld\n", link_GetLen(self));
     super_Write(self, fp, id, level);
 #ifdef PL8
     } /* if (self->new_ds == 0) */

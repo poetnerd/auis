@@ -87,10 +87,6 @@ int Org_Debug = 0;
 
 #define debug Org_Debug
 
-static Read_Body();
-static Write_Body();
-static Strip();
-
 char * org__ViewName(struct org *self)
 {
     return ( "orgv" );
@@ -110,7 +106,7 @@ boolean org__InitializeObject(struct classheader *classID, struct org *self)
   return(status);
 }
 
-static Free_Elements(struct org *self, struct tree *tree, tree_type_node node, int datum)
+static int Free_Elements(struct org *self, struct tree *tree, tree_type_node node, int datum)
 {
   if ( tree_NodeDatum( tree, node ) )
     free( (void *) tree_NodeDatum( tree, node ) );
@@ -121,7 +117,7 @@ void org__FinalizeObject(struct classheader *classID, struct org *self)
 {
   IN(org_FinalizeObject );
   if ( Tree ) {
-      tree_Apply( Tree, tree_RootNode( Tree ), Free_Elements, self, NULL );
+      tree_Apply( Tree, tree_RootNode( Tree ), (long (*)(struct org *, struct tree *, tree_type_node, int))Free_Elements, self, NULL );
       tree_Destroy( Tree );
   }
   OUT(org_FinalizeObject );
@@ -137,7 +133,7 @@ long org__Read(struct org *self, FILE *file, long id)
   return(status);
 }
 
-static Read_Body(struct org *self, FILE *file)
+static int Read_Body(struct org *self, FILE *file)
   {
   register boolean		      done = false;
   register long			      c, count, braces = 0, brackets = 0, status = ok,
@@ -254,11 +250,11 @@ static Read_Body(struct org *self, FILE *file)
     }
   if ( braces ) {
     status = failure;
-/*===*/printf("ORG: ERROR  %d Unbalanced Braces\n", braces);
+/*===*/printf("ORG: ERROR  %ld Unbalanced Braces\n", braces);
   }
   if ( brackets ) {
       status = failure;
-/*===*/printf("ORG: ERROR  %d Unbalanced Brackets\n", brackets);
+/*===*/printf("ORG: ERROR  %ld Unbalanced Brackets\n", brackets);
   }
 /*===*/
   OUT(Read_Body);
@@ -286,7 +282,7 @@ long org__Write(struct org *self, FILE *file, long writeID, int level)
   return  self->header.dataobject.id;
 }
 
-static Write_Body(struct org *self, FILE *file)
+static int Write_Body(struct org *self, FILE *file)
 {
   register long status = ok;
   register tree_type_node node = tree_RootNode( Tree );
@@ -297,13 +293,13 @@ static Write_Body(struct org *self, FILE *file)
   IN(Write_Body);
   while ( node ) {
     if ( (level = tree_NodeLevel( Tree, node )) > current_level )
-	fprintf( file, "%*s{\n", 2 * level, "" );
-    else 
+	fprintf( file, "%*s{\n", (int)(2 * level), "" );
+    else
 	if ( level < current_level )
 	    for ( ; current_level > level; current_level-- )
-		fprintf( file, "%*s}\n", 2 * current_level, "" );
+		fprintf( file, "%*s}\n", (int)(2 * current_level), "" );
     current_level = level;
-    fprintf( file, "%*s%s\n", 2 * level, "", tree_NodeName( Tree, node ) );
+    fprintf( file, "%*s%s\n", (int)(2 * level), "", tree_NodeName( Tree, node ) );
     if ( (text = (struct text *) tree_NodeDatum(Tree, node)) && 
 	 (size = text_GetLength(text)) > 0 ) {
 	long realSize = 0;
@@ -327,13 +323,13 @@ static Write_Body(struct org *self, FILE *file)
 		unlink(fName);
 	    }	
 	}
-	fprintf( file, "%*s[%d\n%s]\n", 2 * level, "", realSize, description);
+	fprintf( file, "%*s[%ld\n%s]\n", (int)(2 * level), "", realSize, description);
 	free(description);
     }
     node = tree_NextNode( Tree, node );
   }
   for ( ; current_level > 1; current_level-- )
-    fprintf( file, "%*s}\n", 2 * current_level, "" );
+    fprintf( file, "%*s}\n", (int)(2 * current_level), "" );
   OUT(Write_Body);
   return(status);
 }
@@ -357,7 +353,7 @@ void org__SetDebug(struct org *self, boolean state)
   OUT(org_SetDebug);
 }
 
-static Strip(char *string)
+static int Strip(char *string)
 {
   register char *ptr = string;
 
