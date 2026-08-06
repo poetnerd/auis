@@ -868,6 +868,19 @@ fires. The real cause is the write-side `%d`/`%ld` truncation above.
   symba PCF generation, or the `xset fp+` font-path setup. Other
   symbol glyphs render fine.
 
+### contentv (Table of Contents) — ignores headings with enumerated styles (found 2026-08-06, open)
+
+- Found during the M4 Wave 4 close-out smoke pass. A document whose
+  section headings use an enumerated (auto-numbered) style produces
+  an empty Table of Contents view; hand-editing the same document to
+  remove the enumeration makes the same headings appear in the ToC.
+  Not root-caused yet — the earlier "`contentv` verified" note under
+  Medium-term → ANSI C conversion (M3 batch, `PAPERS/atk/
+  Cattey.Writing` fixture) only confirmed contentv discovers
+  non-enumerated headings; enumerated-style headings were never
+  exercised by that check. Needs a dedicated session with a fixture
+  containing enumerated heading styles.
+
 ### raster — convertraster RF read-back hang
 
 - `convertraster intype=RF` hangs reading back the `.ras` file the
@@ -886,6 +899,33 @@ fires. The real cause is the write-side `%d`/`%ld` truncation above.
   pass; baseline captured in `~/src/AUIS/test-baselines/raster-pi/`.
   The raster inset itself is proven working; this is the converter
   CLI only.
+
+### raster — convertraster crop option produces blank output; CLI syntax undocumented (found 2026-08-06, open)
+
+- Found during M4 Wave 4 batch I4's runtime check (the batch fixed a
+  genuine LP64 scanf-into-`long*` memory-corruption bug in the crop
+  option's argument parser, `convrast.c`'s `case 'c':`, `-c(left,top,
+  width,height)` read via `%d` into `long` locals — see
+  `revival/doc/m4-batches.md`'s I4 entry). That fix compiles and
+  parses correctly, but wdc's actual crop test
+  (`convertraster -c'(10,10,100,100)' infile=/tmp/flag.raster
+  outfile=/tmp/nflag.raster`) produced a basically blank output
+  raster — the crop parse itself is no longer the bug (or isn't the
+  whole bug), and `convertraster` had never actually been runtime-
+  tested before this. Two things noted, not yet root-caused:
+  1. The crop rectangle parses correctly (confirmed by the I4 fix)
+     but the cropped image content is blank/missing — a separate,
+     unconfirmed bug somewhere in the crop-then-write path.
+  2. The command's actual required syntax differs from what a naive
+     `-c(left,top,width,height) infile outfile` reading of the code
+     suggests: the crop argument must be shell-quoted
+     (`-c'(10,10,100,100)'`, since the shell would otherwise parse
+     the parens/commas), and the input/output files must be given as
+     `infile=...`/`outfile=...`, with the file extension driving
+     format detection (not positional arguments). Undocumented
+     anywhere in the tree as far as known; worth a `--help`/usage
+     message and/or a note in the relevant doc once someone picks
+     this up.
 
 ### ~~clock — face never draws~~ — working again, likely font/session state, not code (2026-07-12)
 

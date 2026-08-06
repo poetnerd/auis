@@ -503,16 +503,78 @@ follows them). **Closes Wave 3.**
       `WritePartial`'s separate `$origin` path; insert/save/reload plus
       ascending/descending sort for chart) given the genuine datastream
       findings — all passed.
-- [ ] **I4** (former I4+I5): `atk/image` (31), `atk/fad` (29),
-      `atk/srctext` (22), `atk/org` (19), `atk/bush` (16),
-      `atk/rofftext` (15), `atk/raster/lib` (9), `atk/hyplink` (8),
-      `atk/eq` (8, the M3 pilot directory — clean under M3's own
-      flags, but has real M4 fallout like everywhere else),
-      `atk/layout` (7), `atk/raster/scan` (2), `atk/raster/convert`
-      (2) — 168, small/leaf grab-bag, 12 directories.
+- [x] **I4 COMPLETE 2026-08-06, fossil `35ed1bbdc5bf`**: `atk/image`,
+      `atk/fad`, `atk/srctext`, `atk/org`, `atk/bush`, `atk/rofftext`,
+      `atk/raster/lib`, `atk/hyplink`, `atk/eq`, `atk/layout`,
+      `atk/raster/scan`, `atk/raster/convert` — 12 directories, closes
+      Wave 4. Real total 281 vs. 168 census (67% over, the usual
+      pre-`-Werror=format` gap), dominated by `-Wformat` (~60%) and
+      `implicit-int`. `atk/layout` alone was 7 census vs. 64 real
+      (+814%, the largest census/real gap of any M4 batch) — almost
+      entirely one shape, parallel debug-trace `printf`/`fprintf`
+      calls across `layoutv.c`/`boxview.c`/`layout.c`/`box.c` printing
+      `long` coordinates via `%d` and pointers via `%x`, never
+      censused. **4 genuine memory-corruption/datastream bugs**,
+      smaller in count than I1/I3 but real: `atk/raster/lib/
+      rasterio.c`'s `rasterio__ReadImage` read the `long options`
+      field with `%u` (scanf-direction LP64 corruption, on the shared
+      raster datastream reader used by every embedded/standalone
+      raster), with a paired writer-side fix (7 literal args cast to
+      `(long)` to match the already-correct `%ld` format); `atk/
+      hyplink/link.c`'s `link__Write` wrote the `long pos`/`len`
+      fields with `%d` (truncation-on-write, paired reader already
+      long-safe via `atol()`); `atk/raster/convert/convrast.c`'s
+      standalone crop-option parser (`-c(left,top,width,height)`)
+      read all four `long` locals with `%d` (same scanf-corruption
+      class, on `convertraster`'s CLI). Function-pointer share stayed
+      low and resolved entirely to precedented shapes (23
+      `(procedure)` sites, 17 `bind_Description.proc` `(void (*)())`
+      sites, 1 full-prototype `tree_Apply` cast in `org.c`) plus two
+      zero-cast end-to-end retypes matching real established contracts
+      (`bush.c`'s `NodeFilter` to BSD `scandir()`'s real `const
+      struct dirent *`; `bushv.c`'s 5 sort comparators + helper,
+      `int`→`long` to match `suite.ch`'s real `sort_handler` field) —
+      zero bare/escalated casts. Other real findings: 4 duplicate
+      stale K&R forward-declaration blocks removed (`tif.c`, `org.c`,
+      `orgv.c`, `bushv.c`); `atk/image/fbm.c`'s `fbmin_img_aspect`
+      was `int`+`atoi()` for a field documented as fractional,
+      retyped to `double`/`atof` (the validation against `<0.01`/
+      `>100.0` could never fire correctly as `int`); `atk/raster/lib/
+      heximage.c`'s 5 non-literal `fprintf(file, *hx++)` calls fixed
+      with an explicit `"%s"` (real `-Wformat-security`/CWE-134 shape,
+      template array not attacker input but still worth the fix);
+      `atk/layout/layout.c` had two independent genuine debug-trace
+      bugs found incidentally (a stray unmatched `%c` conversion, and
+      a copy-paste `y` printed in place of `h`). Orchestrator
+      independently re-verified all 4 datastream bugs against real
+      `.ch` field types, several cast/retype shapes against their real
+      target signatures (`procedure` typedef, `tree.ch`'s `Apply`,
+      `suite.ch`'s `sort_handler`, `orgv.ch`'s `hit_handler`), the
+      `tif.c` duplicate-block removal and `heximage.c`'s format-
+      security fix directly against the diff, then re-ran the gate
+      clean from scratch for all 12 directories in dependency-safe
+      order (`atk/raster/lib` before `atk/raster/scan`/`atk/raster/
+      convert`, which statically link `libraster.a`). Linkage: 10
+      directories `.do`-dynamic only; `atk/raster/lib` is mixed (a
+      real `LibraryTarget(libraster.a,...)` plus 2 of its own objects
+      also independently `.do`-loaded); `atk/raster/scan`/`atk/
+      raster/convert` are standalone programs (`ProgramTarget`/
+      `ClassProgramTarget`, not `runapp`-linked, not `.do`) — no
+      relink needed anywhere. wdc ran `make Clean; make World` (the
+      Wave-4-close checkpoint) himself, confirmed it built clean, and
+      ran a basic smoke pass — no regressions, but found two new,
+      pre-existing bugs unrelated to this batch's own fixes, logged in
+      `roadmap.md`: `contentv` (Table of Contents) shows nothing for
+      documents using enumerated heading styles; `convertraster`'s
+      crop option (this batch's own fix target) parses correctly now
+      but the actual crop output is blank, and the tool's real CLI
+      syntax (`infile=`/`outfile=`, shell-quoted crop arg) differs
+      from what the code alone suggests — both open, deferred.
 
 **Checkpoint** after this wave: full `make Clean; make World` +
-runtime pass.
+runtime pass. **DONE 2026-08-06** (wdc, after I4) — clean build,
+smoke pass found no regressions; two new pre-existing bugs found and
+logged in `roadmap.md` (see I4's entry above).
 
 ## Wave 5 — apps (8 directories, 59 errors, 1 session)
 
