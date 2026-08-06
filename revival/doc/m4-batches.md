@@ -450,12 +450,59 @@ follows them). **Closes Wave 3.**
       error state, cell editing, several Table/Cells menu commands,
       save/reload round-trip) given the signal-handler fix's
       behavioral surface — all passed.
-- [ ] **I3**: `atk/figure` (48), `atk/chart` (38) — 86. `atk/figure`
-      carries known LP64/DRIFT history (M1 Pilot B, M2 batch3a, M3
-      i2) — expect findings, not a routine batch. Kept unmerged for
-      that reason. `figorrec.c` is the tree's #4 `-Wformat` file (58
-      sites, all must-fix — and figure's datastream `$origin %d→%ld`
-      history makes it the poster child for the format ruling).
+- [x] **I3 COMPLETE 2026-08-06, fossil `da6852bf98b2`**: `atk/figure`
+      (census 48, real 191 — 298% over, the largest census/real gap of
+      any I-wave batch) + `atk/chart` (census 38, real 58 — 53% over).
+      Combined 249 vs. 86 census, gap fully explained the usual way
+      (census predates the `-Werror=format` ruling); `figorrec.c`
+      confirmed as exactly the tree's #4 `-Wformat` file (58 sites, all
+      PostScript print-stream, no datastream exposure). This batch
+      earned its "risk batch" label: **11 genuine on-disk datastream
+      bugs found and fixed**, all the LP64 `%d`-for-`long`
+      truncation/corruption class the format ruling exists to catch —
+      8 in `atk/figure`, 3 in `atk/chart`. Highest-impact:
+      `figobj.c:517`'s base-class `figobj__WriteBody` (inherited by
+      nearly every figure object type) truncated the `x`/`y` position
+      fields on every save; paired reader was already correct. Also:
+      `figure.c:714`/`:742`'s `$origin` field — the *write* side
+      (`figure__Write`/`figure__WritePartial`) was still `%d %d` even
+      though the read side was already fixed in an earlier milestone
+      (project memory's fix was read-only, not caught until this
+      session re-checked both directions of the pair). `atk/chart`,
+      despite no flagged prior history, turned out not clean: `chart.c`
+      `Parse_Item_Field`'s `sscanf(extract, "%d", &value)` read into an
+      **uninitialized `long`** (item Value/Position fields) — genuine
+      memory corruption on read, not just truncation, with a symmetric
+      write-side truncation in `Writer`. 6 more figure `WriteBody`
+      truncations (`figorect.c`, `figotext.c`, `figoplin.c`,
+      `figogrp.c`) and `figattr.c`'s 6-field write rounded out the
+      figure findings. Function-pointer share was low in both
+      directories (25%/7%, below the "~30-35%" escalation flag) and
+      every site resolved cleanly: 47 `(procedure)` casts across two
+      precedented idioms (`proctable_DefineProc` registration,
+      `figview_EnumerateSelection`'s polymorphic callback slot per
+      `figv.ch:113`), 2 `(void (*)(struct chart *))` casts on `apt.ch`'s
+      deliberately-generic `ReadObject`/`WriteObject` reader/writer
+      slot (full prototype stated, not bare), and two zero-cast
+      end-to-end retypes — `figv.c`'s `EnumSelSplot` helper (matched to
+      its caller's `procedure` type) and `chart.c`'s six `Sort_By_*`
+      qsort comparators (retyped from a mismatched
+      `long(*)(struct chart_item**,...)` to the real libc
+      `int(*)(const void*,const void*)` contract). Zero bare/escalated
+      casts. Orchestrator independently re-verified the `figobj.ch`/
+      `figure.ch`/`chart.ch`/`apt.ch`/`figv.ch` field and slot types
+      against the diff, confirmed the `$origin` half-fix history, the
+      uninitialized-`long` scanf bug, the qsort retype's bounded
+      -1/0/1 return values, and the `figoplin.c` near-miss (a
+      structurally similar but genuinely-`int` field correctly left
+      unchanged), then re-ran both directory gates clean from scratch.
+      Both directories are `.do`-loaded (`DynamicObject`/
+      `DynamicMultiObject`, no `LibraryTarget`) — no relink needed. wdc
+      ran a figure+chart-specific runtime pass (insert/draw/save/
+      reload round-trip for figure incl. a Cut/Copy exercising
+      `WritePartial`'s separate `$origin` path; insert/save/reload plus
+      ascending/descending sort for chart) given the genuine datastream
+      findings — all passed.
 - [ ] **I4** (former I4+I5): `atk/image` (31), `atk/fad` (29),
       `atk/srctext` (22), `atk/org` (19), `atk/bush` (16),
       `atk/rofftext` (15), `atk/raster/lib` (9), `atk/hyplink` (8),
