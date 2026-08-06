@@ -42,6 +42,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/doc/mkbr
 
 extern int yylex();	    /* using lex */
 
+/* browserpp.l (flex-generated into browserpp.c) -- no header declares
+   either, same gap classpp.l's own PushFile/PopFile had. */
+extern void PushFile(FILE *file);
+extern void PopFile(void);
+
 #ifdef FLEX_ENV
 extern char *yytext;
 #else
@@ -767,8 +772,12 @@ static void GlobalInit()
 }
 
 
-static int compareclasses(struct EntryStruct **x, struct EntryStruct **y)
+/* qsort() below expects the standard int(const void*, const void*)
+   comparator; both arguments actually point at struct EntryStruct*
+   elements of sortedlist (an array of pointers). */
+static int compareclasses(const void *vx, const void *vy)
 {
+    struct EntryStruct * const *x = vx, * const *y = vy;
     return strcmp((*x)->Name,(*y)->Name);
 }
 

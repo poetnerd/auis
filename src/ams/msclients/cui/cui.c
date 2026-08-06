@@ -219,7 +219,7 @@ extern int CalcSkip(long skipvalue, char **s, char *headbuf, long numbytes, Bool
 extern int ChooseFromList(char **QVec, int def);
 extern int CloneMessage(char *arg, int Code);
 extern int DescribeFlags(int cuid);
-extern int DescribeHeads(void);
+extern void DescribeHeads(void);
 extern int DisplayMessage(char *arg);
 extern int EditFile(char *arg, int edittype);
 extern int EditLocalFile(char *LocalName, Boolean *FinishedElsewhere);
@@ -1231,7 +1231,7 @@ int OmitHeader(char *arg)
     return(0);
 }
 
-DescribeHeads() {
+void DescribeHeads() {
     struct head_list *thl;
 
     if (!Interactive) return;
@@ -1786,7 +1786,7 @@ int GetNextCommand(char **sptr, char *buf, int lim)
     return(i);
 }
 
-PrintVersionNumbers() {
+int PrintVersionNumbers() {
     char    msv[80];
 
     debug(1,("Print version numbers\n"));
@@ -1941,7 +1941,7 @@ int MakeAlias(char *arg)
     return(0);
 }
 
-ExecuteAlias(Arguments, AliasCt, Definition)
+int ExecuteAlias(Arguments, AliasCt, Definition)
 char   *Arguments,
        *Definition;
 int	AliasCt;
@@ -2505,7 +2505,7 @@ tryagain:
     return(0);
 }
 
-KillServer() {
+int KillServer() {
     if ((mserrcode = MS_Die()) != 0) {
 	ReportError("Could not kill message server", ERR_WARNING, TRUE);
     }
@@ -2518,7 +2518,7 @@ int EchoArgs(char *arg)
     return(0);
 }
 
-ForkYourself() {
+int ForkYourself() {
     if (fork()) {
 	exit(0);
     }
@@ -2623,7 +2623,7 @@ int Epoch(char *arg)
     debug(2,("Converted date %s to %s\n", date, date64));
 
     if (Interactive) {
-	sprintf(ErrorText, "Warning.  You are about to delete all messages in the folder \n\t%s\nand all its subfolders dated before\n\t%d/%d/%d %d:%02d.\n\nAre you sure you want to do this",
+	sprintf(ErrorText, "Warning.  You are about to delete all messages in the folder \n\t%s\nand all its subfolders dated before\n\t%d/%d/%d %d:%02d:%02d.\n\nAre you sure you want to do this",
 	    dname, month + 1, day, year,
 	    hour, min, sec);
 	if (!GetBooleanFromUser(ErrorText, FALSE)) {
@@ -2652,7 +2652,7 @@ int WhenIs(char *arg)
 	ReportError(ErrorText, ERR_WARNING, TRUE);
 	return(-1);
     }
-    debug(1, ("Day of week is %d; unix time is %d\n", wday, gtm));
+    debug(1, ("Day of week is %d; unix time is %ld\n", wday, gtm));
     moreprintf("%d/%d/%d %d:%02d:%02d\n",
 	    month + 1, day, year,
 	    hour, min, sec);
@@ -2741,7 +2741,7 @@ int Redraft(char *arg)
     return(SendSomeMail(cuid, NULL, AMS_REPLY_REDRAFT));
 }
 
-SendSomeMail(cuid, to, code)
+int SendSomeMail(cuid, to, code)
 int	cuid,
 	code;
 char   *to;
@@ -3170,7 +3170,7 @@ int WhoIs(char *arg)
     return(0);
 }
 
-RealWhoIs(text, newtext)
+int RealWhoIs(text, newtext)
 char   *text,
        **newtext;
 {
@@ -3466,7 +3466,11 @@ int Scavenge(char *arg)
     return(mserrcode);
 }
 
-SubscriptionChangeHook() {} /* satisfy the linker */
+/* True 4-arg signature matches every call site (ams/libs/cui/cuilib.c:3397,
+   SubscriptionChangeHook(Name, NickName, status, CUI_Rock)) -- cui itself
+   has no subscription-change UI, so the body stays a no-op, same shape as
+   DirectoryChangeHook() just above. */
+int SubscriptionChangeHook(char *Name, char *NickName, int status, char *rock) {} /* satisfy the linker */
 
 #ifdef METAMAIL_ENV
 int nontext(char *s)

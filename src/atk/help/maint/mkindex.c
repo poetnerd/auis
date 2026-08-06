@@ -38,8 +38,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #define BUCKETS		11	/* number of hash buckets */
 #define MANSUBS "12345678nolpx"	/* array of possible subdirectories of MANDIR, ie man1, mann */
 
-#include <andrewos.h> /* sys/types.h sys/file.h */ 
+#include <andrewos.h> /* sys/types.h sys/file.h */
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -82,7 +83,7 @@ void AddPrimary(struct Index *newIndex, char *key, char *path)
     
 }
 
-static BuildIndex(struct Index *aindex, char *srcDirName, char *targetDirName)
+static int BuildIndex(struct Index *aindex, char *srcDirName, char *targetDirName)
 {
     register DIR *srcDir;
     register DIRENT_TYPE *sde;
@@ -273,7 +274,7 @@ int main(int argc, char **argv)
         if (!strcmp(opcode, "dir")) {
             code = fscanf(inputFile[fsPtr], "%s %s", path1, path2);
             if (code != 2) {
-                fprintf(stderr, "%s: input line %d: wrong number of parameters (%d should be 2) to dir operation\n", prog, code, lineNo[fsPtr]);
+                fprintf(stderr, "%s: input line %ld: wrong number of parameters (%ld should be 2) to dir operation\n", prog, lineNo[fsPtr], code);
 		exit(1);
             } else 
 		BuildIndex(newIndex, path1, path2);
@@ -283,7 +284,7 @@ int main(int argc, char **argv)
         else if (!strcmp(opcode, "key")) {
             code = fscanf(inputFile[fsPtr], "%s %s", path1, path2);
             if (code != 2) {
-                fprintf(stderr, "%s: line %d: wrong number of parameters (%d should be 2) to key operation\n", prog, code, lineNo[fsPtr]);
+                fprintf(stderr, "%s: line %ld: wrong number of parameters (%ld should be 2) to key operation\n", prog, lineNo[fsPtr], code);
 		exit(1);
             } else {
 		if (verbose)
@@ -297,12 +298,12 @@ int main(int argc, char **argv)
         else if (!strcmp(opcode, "include")) {
             code = fscanf(inputFile[fsPtr], "%s", path1);
             if (code != 1) {
-                fprintf(stderr, "%s: line %d: syntax error in include command\n", prog, lineNo[fsPtr]);
+                fprintf(stderr, "%s: line %ld: syntax error in include command\n", prog, lineNo[fsPtr]);
                 exit(1);
             }
             tfile = fopen(path1, "r");
             if (!tfile) {
-                fprintf(stderr, "%s: line %d: include file %s not found.\n", prog, lineNo[fsPtr], path1);
+                fprintf(stderr, "%s: line %ld: include file %s not found.\n", prog, lineNo[fsPtr], path1);
                 exit(1);
             }
             if (verbose)
@@ -311,7 +312,7 @@ int main(int argc, char **argv)
             lineNo[fsPtr] = 0;
         }
         else {
-            printf("%s: line %d -- unknown opcode in input file '%s'\n", prog, lineNo[fsPtr], opcode);
+            printf("%s: line %ld -- unknown opcode in input file '%s'\n", prog, lineNo[fsPtr], opcode);
             exit(1);
         }
     }

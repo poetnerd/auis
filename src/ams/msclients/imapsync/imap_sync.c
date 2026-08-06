@@ -178,6 +178,16 @@ extern unsigned long conv64tolong(char *s);
    default when -folders is not given. */
 extern char *getprofile(char *name);
 
+/* overhead/util/lib/fdplumb.c/fdplumb6.c's dbg_* wrapper family:
+   fdplumb.h #defines close/fclose/closedir to these but only declares
+   6 of its 16 dbg_* names (dbg_open, dbg_fopen, dbg_popen, dbg_qopen,
+   dbg_topen, dbg_opendir) -- not these three, the same gap
+   ams/libs/cui/cuilib.c and overhead/mail/lib/qmail.c already work
+   around with their own local externs. */
+extern int dbg_close(int fd);
+extern int dbg_fclose(FILE *fp);
+extern void dbg_closedir(DIR *d);
+
 /* ---- Client-provided glue that libmssrv.a expects any direct linker
    (cui gets these from libcui.a/andmchs.c; a minimal client like
    ams/msclients/nns/nns.c -- imapsync's model, see the Imakefile note --

@@ -213,7 +213,7 @@ ncproc ()
 /*
  * add a path to those to be searched
  */
-static AddPath(char *astr)
+static int AddPath(char *astr)
 {
     char tname[MAXPATHLEN];
     register char *np;
@@ -369,7 +369,7 @@ static void unique_help(struct helpapp *self)
 		     */
 		    tfile = fdopen(helpSocket, "r");
 		    if (tfile) {
-			im_AddFileHandler(tfile, ncproc, 0, 0);
+			im_AddFileHandler(tfile, (procedure) ncproc, 0, 0);
 		    }
 		}
 	    }
@@ -410,7 +410,7 @@ boolean helpapp__ParseArgs(struct helpapp *self, int argc, char **argv)
 	    switch((*argv)[1]){
 		case 'i':
 		    if (indexName != NULL) {
-			fprintf(stderr,"%s: only one index allowed\n",
+			fprintf(stderr,"%s: only one index allowed: %s\n",
 				helpapp_GetName(self),*argv);
 			exit(-1);
 		    }

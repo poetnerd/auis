@@ -42,6 +42,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/type
 #define GETANDTEST(C,file) ((C = getc(file)) != EOF && C != NULL)
 #define TESTEND(C) (C == EOF || C == NULL)
 
+#include <string.h>
+
 #include <class.h>
 #include <typetext.eh>
 #include <style.ih>

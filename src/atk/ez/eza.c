@@ -76,6 +76,13 @@ static struct cursor *waitCursor;
 
 extern int errno;
 
+/* atk/frame/framecmd.c: no header declares this (framecmd.c itself
+   only has a local K&R forward declaration). */
+extern int frame_VisitNamedFile(struct frame *self, char *filename, boolean newWindow, boolean rawMode);
+
+/* overhead/util/lib/uerror.c: no header declares this either. */
+extern char *UnixError(int errorNumber);
+
 boolean ezapp__InitializeObject(classID,self)
 struct classheader *classID;
 struct ezapp *self;
@@ -212,7 +219,7 @@ void SetBufferCkpLatency(struct frame *frame, long key)
  * the code waits (latency + CkpLatency) * CkpInterval seconds before
  * considering checkpointing this buffer. 
  */
-    sprintf(answer, "%d", (CkpLatency - buffer_GetCkpLatency(buffer)) * CkpInterval);
+    sprintf(answer, "%ld", (CkpLatency - buffer_GetCkpLatency(buffer)) * CkpInterval);
     if (message_AskForString(frame, 0, "Minimum checkpoint time in seconds: ", answer, answer, sizeof(answer)) != -1) {
 
         long latencyIntervals = atoi(answer) / CkpInterval;

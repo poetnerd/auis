@@ -147,7 +147,7 @@ struct helpstat {
   strcmp(item, "./") && strcmp(item, "../") && \
   (item[0] != '.' || !rock->refusedot)
 
-static GatherStats(struct helpstat *rock, enum message_HelpItem itemtype, char *item, long dummy)
+static int GatherStats(struct helpstat *rock, enum message_HelpItem itemtype, char *item, long dummy)
 {
     if (acceptitem(rock, item, itemtype)) {
         long itemlen = strlen(item);
@@ -179,7 +179,7 @@ struct repCookie {
 
 #define COLSPACE    1
 
-static MakeReport(struct repCookie *cookie, enum message_HelpItem itemtype, char *item, long dummy)
+static int MakeReport(struct repCookie *cookie, enum message_HelpItem itemtype, char *item, long dummy)
 {
     long widthinpix;
 
@@ -226,8 +226,13 @@ static char * SaveLastCommand(struct typescript *td)
     return cmdStr;
 }
 
-static int mystrcmp(char **s1, char **s2)
+/* qsort() below expects the standard int(const void*, const void*)
+   comparator; both arguments actually point at char* elements of
+   cookie.report (an array of strings), matching qsort's normal
+   "array of pointers" idiom. */
+static int mystrcmp(const void *v1, const void *v2)
 {
+  char * const *s1 = v1, * const *s2 = v2;
   if(s1 && *s1 && s2 && *s2)
       return(strcmp(*s1,*s2));
   else return(0);

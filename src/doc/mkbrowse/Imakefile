@@ -29,6 +29,9 @@
 
 /* Copyright Carnegie Mellon University 1992 - All rights Reserved */
 
+/* M4 strictness sweep (revival/doc/roadmap.md, M4) */
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 FlexOrLexFileRule(browserpp)
 
 DependTarget()

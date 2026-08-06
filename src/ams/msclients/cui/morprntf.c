@@ -54,7 +54,7 @@ extern int SpitOutChars(char *t, int len);
 int LinesOnTerminal = 24, LinesSincePause = 3,
     CharsOnLine = 1, TerminalLineWidth = 80;
 
-NoMore() {
+void NoMore() {
     LinesSincePause = 3;
     CharsOnLine = 1;
 }
@@ -66,7 +66,7 @@ int SetTerminalParams(int h, int w)
 }
 
 /* VARARGS */
-moreprintf(format, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+int moreprintf(format, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 char *format;
 int  a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
      a13, a14, a15, a16, a17, a18, a19, a20;

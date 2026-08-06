@@ -29,6 +29,9 @@
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
+/* M4 strictness sweep (revival/doc/roadmap.md, M4) */
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 DOBJS = eza.do
 IHFILES = eza.ih
 OBJS = eza.o

@@ -2,6 +2,9 @@
  *         Copyright IBM Corporation 1988,1991 - All Rights Reserved      *
  *        For full copyright information see:'andrew/config/COPYRITE'     *
 \* ********************************************************************** */
+/* M4 strictness sweep (revival/doc/roadmap.md, M4) */
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 NormalObjectRule()
 DEFINES=-DCURRENTANDREWDIR=\"$(BASEDIR)\"
 

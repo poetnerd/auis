@@ -742,7 +742,7 @@ void help__GetHelpOnTerminal(struct classheader *classID, char *akey, int list, 
     if (alias) {
 	DEBUG(("alias: %s\n", alias));
         if (alias[0] == '#') {
-            fprintf(stderr,err_terminal);
+            fprintf(stderr,"%s",err_terminal);
 	    putchar('\n');
             exit(1);
 	    /*NOTREACHED*/
@@ -1200,7 +1200,7 @@ void help_aux_NewHelp(struct help *self, long type)
 	}
 	helpName[code++] = '\0';
     } else {			/* prompt for topic */
-	code = message_AskForStringCompleted(self, 0, msg_ask_prompt, 0, helpName, HNSIZE, NULL, HelpCompletionProc, HelpHelpProc, self, 0);
+	code = message_AskForStringCompleted(self, 0, msg_ask_prompt, 0, helpName, HNSIZE, NULL, (procedure) HelpCompletionProc, (procedure) HelpHelpProc, self, 0);
 	if ((code < 0) || (helpName[0] == '\0')) return;
     }
 

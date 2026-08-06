@@ -91,7 +91,7 @@ char   *GetLine () {
     return(InBuf);
 }
 extern int CUI_SnapIsRunning;
-getcharwithpausecheck() {
+int getcharwithpausecheck() {
 #ifdef CUI_KEEPALIVE_WITHOUT_SNAP
     int nfs = 0;
     FILE *rf[2];

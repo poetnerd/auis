@@ -379,7 +379,7 @@ void AddHistoryItem(struct help *self, int marcp, int flash)
     } else {			/* a bookmark */
 	char tfname[HNSIZE + 11];
 
-	sprintf(tfname, "%s @ %d", c->histent, ent->top);
+	sprintf(tfname, "%s @ %ld", c->histent, ent->top);
 	/* now add the item */
 	c->lastHist = panel_Add(c->hist, tfname, ent, TRUE);
     }
@@ -876,7 +876,7 @@ char *errmsg;	/* error to print if failure. "Error" if this is NULL */
     
     if (code == 0) {		/* error */
 	DEBUG(("ERROR\n"));
-        sprintf(helpBuffer, (errmsg == NULL) ? err_generic : errmsg);
+        sprintf(helpBuffer, "%s", (errmsg == NULL) ? err_generic : errmsg);
 	ERRORBOX(c->view, helpBuffer);
     } else if(code == 2) /* ran command-alias */
 	code = 0;
@@ -1483,10 +1483,14 @@ static void ExpanderAux(char *dname)
 
 
 /*
- * comparison function for qsort
+ * comparison function for qsort -- both arguments actually point at
+ * char* elements of help_panelList (an array of strings), matching
+ * qsort's normal "array of pointers" idiom; written to the standard
+ * int(const void*, const void*) comparator signature qsort expects.
  */
-static int panelCompare(char **s1, char **s2)
+static int panelCompare(const void *v1, const void *v2)
 {
+    char * const *s1 = v1, * const *s2 = v2;
     return (strcmp(*s1, *s2));
 }
 
@@ -1995,7 +1999,7 @@ boolean help__InitializeClass(struct classheader *classID)
 
     /* make all printing keys put a readonly message in the message line */
     c[1] = '\0';
-    pe = proctable_DefineProc("help-readonly-key", nono, &help_classinfo, 0, "fake readonliness");
+    pe = proctable_DefineProc("help-readonly-key", (procedure) nono, &help_classinfo, 0, "fake readonliness");
     for (c[0] = (unsigned char)0; c[0] <= (unsigned char)127; c[0]++)
 	if (isprint(c[0]) || c[0] == '\n' || c[0] == ' ')
 	    keymap_BindToKey(Help_Map, c, pe, NULL);

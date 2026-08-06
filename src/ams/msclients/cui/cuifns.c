@@ -461,7 +461,7 @@ int MoreSelect(int Default, char *AnsBuf, int AnsMax, char *MoreOptions[], char 
     }  /* End While */
 }
 
-HandleTimeout(name, retries, restarts)
+int HandleTimeout(name, retries, restarts)
 char   *name;
 int	retries,
 	restarts;
@@ -479,7 +479,7 @@ int	retries,
 				   propogate error */
 }
 
-DidRestart() {
+void DidRestart() {
     ReportSuccess("Reconnected to Message Server!");
 }
 
@@ -920,7 +920,7 @@ int MarkSeenLast(char *ans)
     }
 }
 
-ConvertOldStuff() {
+int ConvertOldStuff() {
     int good, bad;
 
     ReportSuccess("Warning:  Converting from ReadMail to Messages/CUI will LOSE all of your old classification information.");

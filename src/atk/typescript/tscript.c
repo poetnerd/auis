@@ -85,6 +85,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/type
 #endif /* sys_telmat */
 
 #include <signal.h>
+
+/* overhead/util/lib/vclose.c: "no header declares them" per its own
+   fdplumb2.c comment -- this file doesn't include fdplumb.h (so the
+   plain name here really is vclose(), not a #define to dbg_vclose). */
+extern int vclose(int fd);
+
+/* overhead/util/lib/getpty.c: no header in the tree declares this
+   either (atk/console/lib/errormon.c and contrib/tm/tm.c call it the
+   same undeclared way). */
+extern int GetPtyandName(int *masterFD, int *slaveFD, char *name, int len);
+
 static int AnounceDeath();
 static void ClearTypescript();
 static void ClearTypescriptText();
@@ -638,7 +649,7 @@ static void TypescriptDoReturnCommand(struct typescript *tv, long endpos)
 {
     register struct text *d;
     int maxpos, vfp, wfds;
-    register stpos, len;
+    register int stpos, len;
     static struct timeval t = { 0, 0};
 
     if(tv->SubChannel < 0) {
@@ -754,7 +765,7 @@ static void TypescriptZapCommand(struct typescript *tv)
 {
     register struct text *d;
     int maxpos;
-    register stpos;
+    register int stpos;
 #ifdef SENDRAW
     if(tv->readOnlyLen == 0) {
 	write(tv->SubChannel,"\025",1);
@@ -966,7 +977,7 @@ static void SetTitle(struct typescript *self, char *titleLine)
 static char * ReadDirName(struct typescript *self, FILE *f, char *buf, int *bufsiz)
 {
     register char *cp;
-    register c;
+    register int c;
     register int i = *bufsiz;
     for(cp = buf; --i && FILE_HAS_IO(f); cp++) {
 	if((c = getc(f)) == EOF) {
@@ -995,7 +1006,7 @@ static void ReadFromProcess(FILE *f, struct typescript *td)
     char buf[4000];
     register char *bp = buf;
     register long dotpos, vfp;
-    register c = getc(f), i = 3999;
+    register int c = getc(f), i = 3999;
     int reframe = 0;
     char *input;
     int cpos;
@@ -1430,7 +1441,7 @@ boolean typescript__InitializeObject(struct classheader *classID, struct typescr
 
 	UserMenuProc = proctable_DefineProc("Read-User-Menus", typescript_HandleMenus, &typescript_classinfo, NULL, "Handle user supplied menus"); 
 	while(fgets(nbuf, sizeof nbuf, df)) {
-	    register pos = strlen(nbuf) - 1;
+	    register int pos = strlen(nbuf) - 1;
 	    if(pos > 0) {
 		if(nbuf[pos-1] == '\\')
 		    nbuf[pos-1] = '\0';

@@ -343,7 +343,7 @@ void helpdb__PrintSearchDirs(struct classheader *classID)
     struct helpDir *thd;
 
     for (thd = firstHelpDirs; thd; thd=thd->next) {
-	printf(thd->dirName);
+	printf("%s", thd->dirName);
     }
 }
 
@@ -591,7 +591,7 @@ int helpdb__SetupHelp(struct classheader *classID, struct cache *c, char *aname,
 	DEBUG(("db: alias: %s\n", alias));
 	if (alias[0] == '#') {
 	    char msg[256];
-	    sprintf(msg, "Running command: %0.230s", &alias[1]);
+	    sprintf(msg, "Running command: %.230s", &alias[1]);
 	    im_SetProcessCursor(waitCursor);
 	    message_DisplayString(c->view, 0, msg);
 	    im_ForceUpdate();
