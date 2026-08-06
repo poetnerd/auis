@@ -114,7 +114,7 @@ static char * newreceived(char *ClientVersion)
 
 static char     LastGoodDeliveryFileName[1 + MAXPATHLEN] = "";
 
-static AddNamesToVector(char ***pVec, int *index, int *maxindex, char *namelist, int len)
+static int AddNamesToVector(char ***pVec, int *index, int *maxindex, char *namelist, int len)
 {
     char          **Vec, *onerecip, TempBuf[4000], SaveChar;
     PARSED_ADDRESS *AddrList;
@@ -407,7 +407,7 @@ int MS_SubmitMessage(char *FileName, int DeliveryOptions, char *ErrorMessage, in
             if (BCCto) {
                 char            ErrorText[500];
 
-                sprintf(ErrorText, "Sending your BCC through the mail after error in direct insertion. (%d, %d, %d)", AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
+                sprintf(ErrorText, "Sending your BCC through the mail after error in direct insertion. (%ld, %ld, %ld)", AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
                 NonfatalBizarreError(ErrorText);
             }
             if (!SubmitVector) {

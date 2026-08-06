@@ -68,16 +68,16 @@ int MS_SetCleanupZombies(int value)
     MS_ShouldCleanZombies = value;
 }
 
-MS_Die() {
+int MS_Die() {
     MS_UpdateState();
     safeexit(0);
 }
 
-MS_FastUpdateState() {
+int MS_FastUpdateState() {
     return(UpdateState(FALSE));
 }
 
-MS_UpdateState() {
+int MS_UpdateState() {
     return(UpdateState(TRUE));
 }
 

@@ -53,15 +53,15 @@ static int StackTop[MAXSTACKS];
 static int DoMapping = 1;
 static int FavorHashes = 0;
 
-Stack_MapHashes() {
+void Stack_MapHashes() {
     DoMapping = 1;
     FavorHashes = 0;
 }
-Stack_MapPluses() {
+void Stack_MapPluses() {
     DoMapping = 1;
     FavorHashes = 1;
 }
-Stack_MapNoChars() {
+void Stack_MapNoChars() {
     DoMapping = 0;
 }
 

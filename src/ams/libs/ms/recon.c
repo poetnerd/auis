@@ -416,18 +416,21 @@ static int MergeList_GrowIfNecessary(struct mergelist *mlist)
     return (1);
 }
 
-static int MsgListEntry_CompareAMSIDs(struct msglistentry *mle1, struct msglistentry *mle2)
+static int MsgListEntry_CompareAMSIDs(const void *p1, const void *p2)
 {
+    const struct msglistentry *mle1 = p1, *mle2 = p2;
     return (strcmp(AMS_ID(mle1->msg->Snapshot), AMS_ID(mle2->msg->Snapshot)));
 }
 
-static int SnapshotListEntry_CompareAMSIDs(struct snapshotlistentry *sle1, struct snapshotlistentry *sle2)
+static int SnapshotListEntry_CompareAMSIDs(const void *p1, const void *p2)
 {
+    const struct snapshotlistentry *sle1 = p1, *sle2 = p2;
     return (strcmp(AMS_ID(sle1->snapshot), AMS_ID(sle2->snapshot)));
 }
 
-static int MsgListEntry_CompareTimes(struct msglistentry *mle1, struct msglistentry *mle2)
+static int MsgListEntry_CompareTimes(const void *p1, const void *p2)
 {
+    const struct msglistentry *mle1 = p1, *mle2 = p2;
     int cmp = strcmp(AMS_DATE(mle1->msg->Snapshot), AMS_DATE(mle2->msg->Snapshot));
     /* AMS_DATE only has one-second resolution, so messages created within
        the same second tie; break the tie with AMS_ID, which packs in
@@ -439,8 +442,9 @@ static int MsgListEntry_CompareTimes(struct msglistentry *mle1, struct msglisten
 }
 
 /* Does a minor sort on AMSIDs */
-static int MsgListEntry_CompareMIDs(struct msglistentry *mle1, struct msglistentry *mle2)
+static int MsgListEntry_CompareMIDs(const void *p1, const void *p2)
 {
+    const struct msglistentry *mle1 = p1, *mle2 = p2;
     char           *mid1, *mid2;
     int             result;
 

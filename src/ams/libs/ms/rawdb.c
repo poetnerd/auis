@@ -103,8 +103,8 @@ static int CheckForMUFHints();
 static int SetProgressMark(char *dirname, Boolean TurnOnMark, Boolean Quietly);
 static int CheckMarksInProgress();
 static int AddToCheckList();
-static FreeCheckLists();
-static FreeCheckList();
+static int FreeCheckLists();
+static int FreeCheckList();
 static int CheckCheckLists();
 
 static char    *EFBIGFormat = "Maximum number of files per directory may have been exceeded closing %s";
@@ -553,7 +553,7 @@ int WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mod
     if (strlen(Msg->RawBits) > Msg->HeadSize) {
         char            ErrorText[1000];
 
-        sprintf(ErrorText, "Warning!  Message amt read in is %d but should be at least %d, reading %s.", Msg->HeadSize, strlen(Msg->RawBits), ap_Shorten(File));
+        sprintf(ErrorText, "Warning!  Message amt read in is %d but should be at least %lu, reading %s.", Msg->HeadSize, strlen(Msg->RawBits), ap_Shorten(File));
         NonfatalBizarreError(ErrorText);
         Msg->HeadSize = strlen(Msg->RawBits);
     }
@@ -1253,8 +1253,9 @@ static int ComparePathsByElts(char *p1, char *p2)
                                                  * positive) */
 }
 
-static int CompareTakenUpdates(struct takenupdate *t1, struct takenupdate *t2)
+static int CompareTakenUpdates(const void *p1, const void *p2)
 {
+    const struct takenupdate *t1 = p1, *t2 = p2;
     return (ComparePathsByElts(t1->FullDirName, t2->FullDirName));
 }
 
@@ -1301,7 +1302,7 @@ static int ClearUpdates(char *PathElt)
         NewLine[0] = '\0';
     }
     else {
-        sprintf(NewLine, "%s %s %d\n", Dirname, TakenUpdates[whichupdate].date64, TakenUpdates[whichupdate].modtime);
+        sprintf(NewLine, "%s %s %ld\n", Dirname, TakenUpdates[whichupdate].date64, TakenUpdates[whichupdate].modtime);
     }
 
     PrevLine[0] = '\0';
@@ -1397,7 +1398,7 @@ static int ClearUpdates(char *PathElt)
                     NewLine[0] = '\0';
                 }
                 else {
-                    sprintf(NewLine, "%s %s %d\n", Dirname, TakenUpdates[whichupdate].date64, TakenUpdates[whichupdate].modtime);
+                    sprintf(NewLine, "%s %s %ld\n", Dirname, TakenUpdates[whichupdate].date64, TakenUpdates[whichupdate].modtime);
                 }
             }
         }
@@ -1413,7 +1414,7 @@ static int ClearUpdates(char *PathElt)
                 NewLine[0] = '\0';
             }
             else {
-                sprintf(NewLine, "%s %s %d\n", TakenUpdates[whichupdate].FullDirName, TakenUpdates[whichupdate].date64, TakenUpdates[whichupdate].modtime);
+                sprintf(NewLine, "%s %s %ld\n", TakenUpdates[whichupdate].FullDirName, TakenUpdates[whichupdate].date64, TakenUpdates[whichupdate].modtime);
             }
         }
     }
@@ -1755,7 +1756,7 @@ static int AddToCheckList(char *name, struct CheckList *CheckList)
     return (0);
 }
 
-static          FreeCheckLists()
+static int      FreeCheckLists()
 {
     FreeCheckList(&Orphans);
     FreeCheckList(&Missing);
@@ -1763,7 +1764,7 @@ static          FreeCheckLists()
     FreeCheckList(&FilesToCheck);
 }
 
-static FreeCheckList(struct CheckList *CheckList)
+static int FreeCheckList(struct CheckList *CheckList)
 {
     int             i;
 
@@ -1778,13 +1779,15 @@ static FreeCheckList(struct CheckList *CheckList)
     CheckList->Allocated = 0;
 }
 
-static int CompareStrings(struct FileInfo *s1, struct FileInfo *s2)
+static int CompareStrings(const void *p1, const void *p2)
 {
+    const struct FileInfo *s1 = p1, *s2 = p2;
     return (strcmp(s1->Name, s2->Name));
 }
 
-static int CompareTimes(struct FileInfo *s1, struct FileInfo *s2)
+static int CompareTimes(const void *p1, const void *p2)
 {
+    const struct FileInfo *s1 = p1, *s2 = p2;
     return (s1->FileDate - s2->FileDate);
 }
 

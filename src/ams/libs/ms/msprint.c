@@ -204,7 +204,7 @@ int PrintPendingRequests(Boolean MustPrint)
     }
     homelen = strlen(home)+2;
     prefixsize = sizeof(PRINTPREFIX) -1;
-    sprintf(PrintProg, AndrewDir("/bin/ezprint"));
+    sprintf(PrintProg, "%s", AndrewDir("/bin/ezprint"));
     PrintVector[0] = PrintProg;
     PrintVector[1] = "-o";
     PrintVector[2] = "Messages_You_Wanted_To_Print";

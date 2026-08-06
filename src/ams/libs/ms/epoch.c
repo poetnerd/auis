@@ -43,7 +43,7 @@ static int dirCmp();
 static int tempErr();
 extern int CloseDirsThatNeedIt();
 extern int CloseMSDir();
-extern int DescribeTimeInterval();
+extern char *DescribeTimeInterval();
 extern int GetSnapshotByNumber();
 extern int MS_PurgeDeletedMessages();
 extern int NonfatalBizarreError();
@@ -60,8 +60,9 @@ extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
 static int RealEpoch();
 static int DeleteThrough(char *dirname, char *date64, int anyKids);
 
-static int dirCmp(char **s1, char **s2)
+static int dirCmp(const void *p1, const void *p2)
 {
+	char * const *s1 = p1, * const *s2 = p2;
 	return strcmp(*s1, *s2);
 }
 
@@ -290,7 +291,7 @@ static int RealEpoch(char *dirname, char *date64, int depth, int Persist, int Re
 	|| MS_PurgeDeletedMessages(dirname))
     {
 	if (depth > 0 || AMS_ERRNO != ENOENT) {
-	    sprintf(ErrorText, "Epoch on %s: [%d/%d] ", ap_Shorten(dirname), AMS_ERRCAUSE, AMS_ERRVIA);
+	    sprintf(ErrorText, "Epoch on %s: [%ld/%ld] ", ap_Shorten(dirname), AMS_ERRCAUSE, AMS_ERRVIA);
 	    if (vdown(AMS_ERRNO)) strcat(ErrorText, "(AFS down) ");
 	    strcat(ErrorText, UnixError(AMS_ERRNO));
 	    strcat(ErrorText, ";");

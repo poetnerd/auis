@@ -172,7 +172,7 @@ char * permanentmalloc(int ct)
     return(retstr);
 }
 
-ReportPermanentMallocWaste() {
+int ReportPermanentMallocWaste() {
     return(WastedByPermanentMalloc);
 }
 
@@ -185,7 +185,7 @@ ReportPermanentMallocWaste() {
     hacks in the first line that attempt to avoid doing it twice in
     such circumstances. */
 
-MS_ReInitialize() {
+int MS_ReInitialize() {
     char FileNameBuf[1+MAXPATHLEN], *s;
     int mycode;
 
@@ -505,7 +505,7 @@ int MS_Initialize(int *MaxBufSize, Boolean UsingSnap)
     return(MS_ReInitialize());
 }
 
-int DieYouHeathenSwine(int signum)
+void DieYouHeathenSwine(int signum)
 {
     FILE *fp;
     char *Text, ErrorText[25+MAXPATHLEN], Fname[1+MAXPATHLEN];
@@ -604,7 +604,7 @@ int DieYouHeathenSwine(int signum)
     kill(getpid(), signum);
 }
 
-InitializeDeathSignals() {
+int InitializeDeathSignals() {
     /* Originally, I handled sighups.  As of 7/22/87, mas/jr changed it.  Now, I change it back.  -- nsb, 9/30/88.  CFE removed it 10/7/88 so that CUI will work even when /etc/rc processing sends CUI a signal. */
 #ifdef POSIX_ENV
     struct sigaction oldV;

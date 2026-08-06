@@ -56,7 +56,7 @@ int safeexit(int code)
     exit(code);
 }
 
-freepag() {
+int freepag() {
 #ifdef AFS_ENV
     struct ViceIoctl blob;
 

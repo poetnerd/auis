@@ -53,7 +53,7 @@ int MS_OpenDebuggingPipescript(int DoIt)
 	char *TypescriptVector[2];
 	char TypescriptCommand[100];
 
-	sprintf(TypescriptCommand, AndrewDir("/bin/typescript"));
+	sprintf(TypescriptCommand, "%s", AndrewDir("/bin/typescript"));
 	TypescriptVector[0] = TypescriptCommand;
 	TypescriptVector[1] = NULL;
 	if (! osi_vfork()) {
@@ -69,7 +69,7 @@ int MS_OpenDebuggingPipescript(int DoIt)
     }
     if (DoIt) {
 	char PipescriptCommand[100];
-	sprintf(PipescriptCommand, AndrewDir("/bin/pipescript -t 'MessageServer Debugging'"));
+	sprintf(PipescriptCommand, "%s", AndrewDir("/bin/pipescript -t 'MessageServer Debugging'"));
 	if (ftmp) pclose(ftmp);
 	ftmp = popen(PipescriptCommand, "w");
 	if (ftmp == NULL) {

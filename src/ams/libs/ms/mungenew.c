@@ -53,7 +53,7 @@ extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
 #include <afs/prs_fs.h>
 #endif /* AFS_ENV */
 
-static ReallyTruly_ProcessNewMessages();
+static int ReallyTruly_ProcessNewMessages();
 
 #define MAILBOXFILECHUNK 1000
 
@@ -76,7 +76,7 @@ int MS_ProcessNewMessages(char *SourceDir, int *NumGood, int *NumBad, int *NumLo
     return (mserrcode);
 }
 
-static ReallyTruly_ProcessNewMessages(char *SourceDir, int *NumGood, int *NumBad, int *NumLocks, char *ParseSpecFile, int *resultcode, int *FirstError, int *NumInProgress, char *EliErrBuf, int EliErrBufLim)
+static int ReallyTruly_ProcessNewMessages(char *SourceDir, int *NumGood, int *NumBad, int *NumLocks, char *ParseSpecFile, int *resultcode, int *FirstError, int *NumInProgress, char *EliErrBuf, int EliErrBufLim)
 {
     int i, numfiles = 0, MailboxFilesAllocated, UnlinkFailures = 0, OldErrno;
     struct stat statbuf;

@@ -63,7 +63,7 @@ struct DsabgCacheEntry {
     struct DsabgCacheEntry *next;
 };
 static struct DsabgCacheEntry *DsabgCache[DSABGCACHESIZE];
-static ReadSubsFile();
+static int ReadSubsFile();
 char *MS_LookupInDsabgCache();
 
 /* This routine should be cleaned up to set error codes properly, and then
@@ -407,7 +407,7 @@ char * MS_LookupInDsabgCache(char *folder)
     return 0;
 }
 
-static ReadSubsFile(int idx)
+static int ReadSubsFile(int idx)
 {
     char MapFileName[MAXPATHLEN + 1];
     char LineBuf[2 * MAXPATHLEN];

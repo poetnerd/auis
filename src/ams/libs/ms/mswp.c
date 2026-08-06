@@ -843,7 +843,7 @@ static int RefreshAliasFile()
 		    firstpart = ++s;
 		    while (*s != '\0' && *s != '\n') ++s;
 		    if (*s != '\0') *s++ = '\0';
-		    sprintf(ErrorText, "Unparsable $force line '%0.700s': ignored", firstpart);
+		    sprintf(ErrorText, "Unparsable $force line '%.700s': ignored", firstpart);
 		    NonfatalBizarreError(ErrorText);
 		    continue;
 		}
@@ -865,7 +865,7 @@ static int RefreshAliasFile()
 		tempalias->nick = firstpart;
 		if (*s == '\0' || *s == '\n') {
 		    if (*s != '\0') *s++ = '\0';
-		    sprintf(ErrorText, "Unparsable alias line '%0.700s': ignored (length %d)", tempalias->nick, strlen(tempalias->nick));
+		    sprintf(ErrorText, "Unparsable alias line '%.700s': ignored (length %lu)", tempalias->nick, strlen(tempalias->nick));
 		    NonfatalBizarreError(ErrorText);
 		    free(tempalias);
 		    continue;

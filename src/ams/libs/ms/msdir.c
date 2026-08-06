@@ -176,7 +176,7 @@ int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir)
     if (mTime > timeTemp) {
 	mTime = timeTemp;
 	if (mTime > (unsigned long) 0xc0000000) {
-	    sprintf(ErrBuf, "Date in message %s, %d=%s, seems bogus.", AMS_ID(Msg->Snapshot), mTime, NiceTime(mTime));
+	    sprintf(ErrBuf, "Date in message %s, %lu=%s, seems bogus.", AMS_ID(Msg->Snapshot), mTime, NiceTime(mTime));
 	    NonfatalBizarreError(ErrBuf);
 	}
 	strncpy(AMS_DATE(Msg->Snapshot), convlongto64(mTime, 0), AMS_DATESIZE);
@@ -194,7 +194,7 @@ int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir)
                 mTime = timeTemp + 1;
                 debug(16, ("New message is older than LastMsgDate, bumping both...\n"));
 		if (mTime > (unsigned long) 0xc0000000 || mTime > ((unsigned long) time(0) + 7 * 24 * 60 * 60)) {
-		    sprintf(ErrBuf, "Dates in folder %s, %d=%s, are bogus; folder needs reconstruction.", ap_Shorten(Dir->UNIXDir), mTime, NiceTime(mTime));
+		    sprintf(ErrBuf, "Dates in folder %s, %lu=%s, are bogus; folder needs reconstruction.", ap_Shorten(Dir->UNIXDir), mTime, NiceTime(mTime));
 		    NonfatalBizarreError(ErrBuf);
 		}
 		strncpy(AMS_DATE(Msg->Snapshot), convlongto64(mTime, 0), AMS_DATESIZE);
@@ -212,7 +212,7 @@ int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir)
                 mTime = timeTemp + 1;
                 debug(16, ("New message is older than LastMsgDate, bumping both...\n"));
                 if (mTime > (unsigned long) 0xc0000000 || mTime > ((unsigned long) time(0) + 7 * 24 * 60 * 60)) {
-                    sprintf(ErrBuf, "Dates in folder %s, %d=%s, are bogus; folder needs reconstruction.", ap_Shorten(Dir->UNIXDir), mTime, NiceTime(mTime));
+                    sprintf(ErrBuf, "Dates in folder %s, %lu=%s, are bogus; folder needs reconstruction.", ap_Shorten(Dir->UNIXDir), mTime, NiceTime(mTime));
                     NonfatalBizarreError(ErrBuf);
                 }
                 strncpy(AMS_DATE(Msg->Snapshot), convlongto64(mTime, 0), AMS_DATESIZE);
@@ -632,7 +632,7 @@ static int      CacheAccesses = 0;     /* Incremented for each cache access,
 
 struct dcnode  *Darray[DIRHASHSIZE];
 
-InitializeDirCacheState()
+int InitializeDirCacheState()
 {
     bzero(Darray, DIRHASHSIZE * sizeof(struct dcnode *));
 }
@@ -654,7 +654,7 @@ static int      CloseEntireDirCache()
 		if (dc->Dir->fd >= 0) {
 		    ++count;
 		    if (CloseMSDir(dc->Dir, dc->Dir->OpenMode)) {
-			sprintf(ErrorText, "Unexpectedly found folder %s open; close FAILED! (%d, %d, %d).", dc->Dir->UNIXDir, AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
+			sprintf(ErrorText, "Unexpectedly found folder %s open; close FAILED! (%ld, %ld, %ld).", dc->Dir->UNIXDir, AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
 		    }
 		    else {
 			sprintf(ErrorText, "Unexpectedly found folder %s open; closed it satisfactorily.", ap_Shorten(dc->Dir->UNIXDir));
@@ -903,7 +903,7 @@ int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode)
 		sprintf(ErrorText, "MS directory %s was closed prematurely; everything should still be OK.", ap_Shorten(PendingCloses[0]->UNIXDir));
 	    }
 	    else {
-		sprintf(ErrorText, "Could not close directory %s; some state may have been lost (%d %d %d).", ap_Shorten(PendingCloses[0]->UNIXDir), AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
+		sprintf(ErrorText, "Could not close directory %s; some state may have been lost (%ld %ld %ld).", ap_Shorten(PendingCloses[0]->UNIXDir), AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
 	    }
 	    NonfatalBizarreError(ErrorText);
 	}

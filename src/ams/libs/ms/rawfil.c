@@ -125,7 +125,7 @@ int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking)
 	    if (ct >= 0) {
 		char ErrorText[200+MAXPATHLEN];
 
-		sprintf(ErrorText, "Stat of file %s said it had %d bytes, but I could only read %d bytes!", ap_Shorten(File), statbuf.st_size, ct);
+		sprintf(ErrorText, "Stat of file %s said it had %lld bytes, but I could only read %d bytes!", ap_Shorten(File), (long long)statbuf.st_size, ct);
 		NonfatalBizarreError(ErrorText);
 		errsave = EMSBADFILESIZE;
 	    }

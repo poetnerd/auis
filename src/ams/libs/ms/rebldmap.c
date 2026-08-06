@@ -44,7 +44,7 @@ extern int abspath();
 extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
 extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
 
-MS_RebuildSubscriptionMaps() {
+int MS_RebuildSubscriptionMaps() {
     int i = 0, code;
     char PathElt[1+MAXPATHLEN];
 

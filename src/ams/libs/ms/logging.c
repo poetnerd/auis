@@ -77,7 +77,7 @@ int ConsiderLoggingRead(char *FileName)
     fclose(fp);
     s = strrchr(FileName, '/');
     if (s) *s = '\0';
-    fprintf(logfp, "X-StatTrace: %s READ %d bytes %s %s ; %s", Me, statbuf.st_size - size, strncmp(FileName, home, strlen(home)) ? "BBOARD" : "MAIL", FileName, arpadate());
+    fprintf(logfp, "X-StatTrace: %s READ %ld bytes %s %s ; %s", Me, (long)(statbuf.st_size - size), strncmp(FileName, home, strlen(home)) ? "BBOARD" : "MAIL", FileName, arpadate());
     if (s) *s = '/';
     fclose(logfp);
 }
