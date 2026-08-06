@@ -967,6 +967,27 @@ sample:
   and flagged all eleven places this same handler is installed. Fixed
   by giving the function its true, and functionally uncontroversial,
   `void` return type.
+- **A diagnostic message that quietly dropped its own subject.** The
+  mail reader's automatic bug-report generator, when it snarfs a
+  handful of the user's configuration files into the report for
+  inspection, has a fallback line for the case where one of those
+  paths exists but isn't a plain file — a directory, a broken symbolic
+  link, a device node. That fallback's error message named the file
+  and its file-permission mode with two conversions in its format
+  string, but only ever supplied the mode; the filename argument had
+  simply been left off. Every other error message in the same routine,
+  a few lines above and below, gets this right — the omission is a
+  one-line slip in an otherwise-consistent block, not a systemic
+  mistake. Left as written, the permission-mode value would have been
+  read by the missing filename's conversion as if it were a string
+  pointer, and the real mode value would have then been read from
+  whatever happened to sit next on the stack — a near-certain crash or
+  garbled report. It went unnoticed because triggering it requires one
+  of a handful of specific dotfiles to exist as something other than a
+  regular file, a condition rare enough that the vast majority of bug
+  reports over the software's lifetime simply never took this branch.
+  Fixed by supplying the already-resolved filename that every sibling
+  message in the same function already uses.
 
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because

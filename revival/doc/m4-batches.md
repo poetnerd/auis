@@ -675,9 +675,53 @@ logged in `roadmap.md` (see I4's entry above).
       regressions; the `subs.c` fix was accepted on code read-through
       alone, given its narrow/hard-to-safely-reproduce trigger
       condition.
-- [ ] **AMS2**: `atkams/messages/lib` (65) — alone. Tree-wide gate
-      required (the `messages` GUI app's actual backend, same rule
-      M2/M3 both applied).
+- [x] **AMS2 COMPLETE 2026-08-06**: `atkams/messages/lib` (65 census;
+      74 real, a much smaller pre-`-Werror=format` undercount than
+      AMS1's — 14% over vs. 66%). 59 `implicit-int` (all true-signature
+      fixes sourced from an existing in-scope declaration — zero
+      guesses; two `stubs.c` forward declarations were themselves wrong
+      and corrected to `void` to match every real caller/body rather
+      than propagated), 6 `incompatible-function-pointer-types` (all
+      `(procedure)` casts against `atk/basics`' own genuinely
+      polymorphic callback-slot typedef — `message_AskForStringCompleted`,
+      `im_SetDeleteWindowCallback`, `im_AddFileHandler` — matching
+      dozens of already-committed pre-M4 sites, no bare untyped casts),
+      9 `-Wformat`/`-Wformat-insufficient-args` diagnostics across 6
+      sites (5 mechanical width fixes, 1 genuine bug, see below). 1
+      genuine pre-existing bug found and fixed (independently
+      re-verified by the orchestrator against real source, now narrated
+      in `revival.md`'s "Old bugs never found till now"): `stubs.c:554`,
+      `SnarfFile`'s "not a regular file" diagnostic in the automatic
+      bug-report path dropped its filename argument entirely, leaving a
+      `mode_t` value read through `%s` and the real mode read from
+      stack garbage — fixed by supplying the already-resolved filename
+      every sibling message in the function already uses. Also resolved
+      AMS1's flagged `.ch`-vs-implementation width-drift lead
+      (re-verified against current source first, not trusted blindly):
+      narrowed `ams.ch`/`amsn.ch`/`amss.ch`'s `MS_FastUpdateState`/
+      `MS_UpdateState` from `returns long;` to `returns int;` and their
+      six wrapper definitions in `ams.c`/`amsn.c`/`amss.c` to match,
+      confirmed via the regenerated `.ih` dispatch macros and every live
+      caller's truthiness-only usage. Note: `amss.c`/`amss.ch` are only
+      compiled under `SNAP_ENV` (off in this build) — their half of the
+      width-drift fix is consistency-only, unverified by compilation.
+      This batch was flagged elevated-risk (same tier as C1) and given
+      a mandatory tree-wide gate: both the delegate's `make
+      dependInstall` and the orchestrator's independent from-scratch
+      rerun (subtree + tree-wide) came back clean, 0 errors. Downstream
+      linkage: this directory produces zero static libraries (all 14
+      outputs are `.do` dynamic objects) — independently confirmed via
+      `nm -g runapp` (zero matching symbols) and a tree-wide grep for
+      static consumers of its outputs; no relink needed anywhere. wdc's
+      smoke test covered the general `messages` GUI pass and the
+      folder-into-completion/compose-window-close `(procedure)`-cast
+      sites; the third cast site (`MetaOutput`, MIME-attachment
+      metamail invocation) and the `SnarfFile` fix itself were not
+      live-tested this pass (MIME attachments hard to test right now;
+      `SnarfFile`'s narrow/rare trigger condition made a live repro
+      impractical, same reasoning as AMS1's `subs.c` — accepted on code
+      read-through alone). Both are open for a future opportunistic
+      smoke pass, not blocking.
 - [ ] **AMS3**: `ams/libs/cui` (35), `ams/libs/nosnap` (10), `ams/libs/
       shr` (1) — 46.
 
