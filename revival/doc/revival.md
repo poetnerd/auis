@@ -748,6 +748,171 @@ sample:
   the record every real caller and the implementation itself already
   agreed on.
 
+- **The same dead branch, copy-pasted into three unrelated subsystems,
+  never once true.** A preprocessor test —
+  `#if defined(_ANSI_C_SOURCE) && !defined(_NO_PROTO)` — guards the
+  choice between a correctly typed, POSIX-style signal-handler
+  declaration and an older, untyped K&R fallback, in the X input-event
+  dispatcher, the frame/dialog command layer, and the spreadsheet
+  inset's formula evaluator. No build configuration this tree has ever
+  used, on any platform, defines that particular pair of macros, so in
+  all three places the "fallback" branch is the only one that has ever
+  actually compiled — an untyped handler passed to `signal()` where a
+  `void(*)(int)` belongs. On the original hardware an untyped and a
+  correctly typed handler pointer used identical calling conventions, so
+  the wrong branch cost nothing; on Apple Silicon the two differ, making
+  each of the three a live ABI mismatch. Nobody found this by reasoning
+  about the macro — it surfaced three separate times, weeks apart, in
+  three unrelated files, purely because the compiler-strictness effort
+  forced each one to recompile under real function-pointer type checking
+  and complained every time. Corrected in each case by making the
+  never-taken `#if` branch's signature the one both branches share, since
+  the `#else` branch was, in practice, the only branch that had ever
+  existed.
+- **A stale, duplicate set of declarations, silently overriding the
+  correct ones, in four unrelated files.** The outline-tree view's core
+  file, the abstract-parse-tree editor and its view, and a text object's
+  screen-cache reader each contain two separate forward-declaration
+  blocks for the same private helper functions — one correctly typed,
+  and a second, untyped, K&R-style block positioned later in the same
+  file. A compiler reads whichever declaration comes last, so in every
+  one of the four files, the block that looked like careful, deliberate
+  type annotation was the one silently discarded, apparently left over
+  from an earlier, incomplete conversion attempt that nobody finished or
+  removed. None of the roughly sixty functions involved had their actual
+  definitions checked against either block; every one had to be
+  re-verified, individually, against how its own body actually used its
+  return value, because the "correct-looking" block couldn't be trusted
+  on sight — in the abstract-parse-tree editor's file, eight of its own
+  supposedly-correct entries turned out to be wrong once checked against
+  the real code. Found and corrected once per file, on four separate
+  occasions across the same modernization pass, only because each file's
+  compile-clean requirement finally forced its *real* declarations to be
+  the ones read.
+- **A base-class save routine, inherited by every subclass that never
+  overrode it, writing a 64-bit field through a 32-bit format.** The
+  figure-drawing inset's base object class saves its own on-page
+  position with a format string sized for a 32-bit integer, on a field
+  that has been a 64-bit `long` ever since the structure was declared;
+  the matching read routine, a few lines below in the same file, already
+  used the correct width. Almost none of the roughly fifteen concrete
+  figure types — rectangles, ellipses, polylines, text boxes, and the
+  rest — override this particular method, so all of them inherited the
+  same undersized write, silently correct only because no figure's
+  coordinates have ever exceeded 32-bit range. It surfaced only once the
+  compiler-strictness effort's mandatory format-string check reached this
+  file and was checked, statement by statement, against each field's real
+  declared type rather than trusted by inspection. Corrected once, in the
+  single shared method, rather than separately in every subclass that
+  calls it.
+- **A bug already marked "fixed" — in only one of its two directions.**
+  An earlier pass through this same modernization effort found and
+  corrected the figure inset's on-page origin being read back from disk
+  with a 32-bit format specifier against a 64-bit field. That fix was
+  real, and it was recorded as closing the bug. It touched only the
+  *read* side. The *write* side — the same field, the same class, two
+  separate call sites for a normal save and for copying a partial
+  selection — still used the narrower format months later, discovered
+  only when a later session, working from the compiler's own
+  diagnostics rather than from memory of what had already been checked,
+  re-verified both directions of the pair instead of trusting that
+  "already fixed" meant fixed everywhere the field appears. It stayed
+  invisible in the meantime because the two sides kept agreeing anyway —
+  a `%d` on a `long` argument still prints the right digits as long as
+  the value fits in 32 bits, which a document's origin always has.
+  Corrected at both remaining call sites.
+- **An uninitialized variable, half-overwritten on every read.** The
+  chart inset stores each item's numeric value and screen position as
+  decimal text; the routine that parses them back declares a 64-bit
+  local for the result and reads into it with a 32-bit-wide `scanf`
+  conversion. The read fills the variable's low half and leaves the high
+  half exactly as it was before the call — whatever the stack happened
+  to hold from whatever function ran there last. Every chart item's
+  value and position, for the class's entire life, has been reconstructed
+  from a mix of genuinely saved data and uninitialized stack memory, the
+  visible half almost always happening to look right because a small
+  saved number leaves the high half's garbage at zero more often than
+  not. This directory carried no history of previously found defects
+  going into this pass — which was the point of auditing it with the
+  same rigor as directories already known to be troubled: it wasn't
+  clean either. Corrected by widening both conversions to match the
+  field's real width.
+- **A field silently dropped from a same-machine data handoff.** When
+  the drawing/raster inset hands a bitmap to another process on the same
+  machine instead of writing it to disk, it serializes the handoff
+  through a short text record. One of that record's write statements
+  supplies eight values but a format string with only seven conversions,
+  so the eighth — the bitmap's height — is simply never written. The
+  receiving process's parser, reading a fixed sequence of fields with no
+  way to notice one went missing, would misattribute whatever came next
+  in the stream to the missing field, corrupting not just the height but
+  everything the reader expected to find after it. Nothing about a
+  format string with too few conversions for its argument list raised a
+  diagnostic under the original toolchain. Corrected by adding the
+  missing conversion — one instance of exactly the failure mode (a
+  truncated or dropped field silently corrupting an on-disk or
+  cross-process record) that motivated treating every format-string
+  width mismatch in this codebase as a correctness bug rather than a
+  cosmetic one.
+- **A format string that was never a format string.** A MIME
+  richtext-to-ATK converter names an unrecognized character set by
+  calling `sprintf` with a compile-time string constant as the format
+  argument and the actual charset code as data — except that constant
+  has no `%` conversion anywhere in it. For the entire life of this
+  converter, the charset code has simply been discarded: every
+  unrecognized character set has been labeled with the same fixed
+  generic name, regardless of which one it actually was. No compiler of
+  the era checked a `printf`-family call's format string against its
+  argument list, so a literal with zero conversions, called with one
+  argument too many, compiled without complaint. Corrected by replacing
+  the pointless `sprintf` with a plain string copy, matching what the
+  code has actually done all along.
+- **Attacker-controlled mail headers, used as a format string.** Two
+  routines in the metamail viewer — one saving a MIME attachment under a
+  name derived from its `Content-Type` parameters, one decoding an RFC
+  2047 encoded word from a message header — each pass text taken
+  directly from the *message itself* as the format argument to
+  `printf`/`fprintf`, rather than as an ordinary data argument. Any
+  percent-conversion sequence a message's author places in a filename or
+  an encoded-word payload is interpreted as a format directive against
+  whatever the stack happens to hold at that call, not displayed
+  literally — a live format-string vulnerability sitting in
+  header-parsing code that has processed arbitrary, untrusted mail for
+  over thirty years. It surfaced not from a security review but from the
+  same mechanical format-string sweep that found every other bug of this
+  shape in this project — the compiler's own diagnostic for a
+  non-literal format argument flags this pattern regardless of whether
+  anyone was looking for a vulnerability. Corrected by passing each
+  string as an ordinary `"%s"` argument at both sites.
+- **A misspelled forward declaration, dead on arrival, unused for over
+  thirty years.** A text-content source file forward-declares a static
+  helper under the name `erestingstyle` — one letter short of
+  `interestingstyle`, the function it was plainly meant to announce
+  ahead of its own definition. Because the two names never matched, the
+  declaration referred to a function that was never defined and never
+  called anywhere; it simply sat in the file, syntactically valid and
+  semantically inert, for the software's entire life. No compiler, then
+  or since, warns about an unused static prototype, so nothing ever
+  pointed at it; it was found only by direct inspection while fixing
+  this file's real compile errors. Corrected by fixing the spelling to
+  match the function it always meant to declare — harmless either way,
+  since nothing had ever called it, but the same species of typo as the
+  copy/paste type mistakes found elsewhere in this project, this time
+  one that never had the chance to misbehave.
+- **A destination buffer and a format string, transposed.** One
+  diagnostic message in an outline-search extension's file-open error
+  path calls `sprintf` with its arguments out of order — treating a
+  string *literal* as the destination being written into, and the real
+  destination variable as if it were data being formatted. On the
+  original toolchain this was merely wrong, not dangerous: string
+  literals lived in ordinary, writable memory, so the call quietly
+  overwrote part of the program's own literal text and the mistake cost
+  nothing worse than a garbled message. Modern toolchains place string
+  literals in read-only memory specifically to catch this class of
+  mistake, which is what turns the same thirty-year-old line into a
+  crash the moment this error path actually runs. Corrected by putting
+  the arguments back in the order the function has always required.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or
@@ -914,10 +1079,13 @@ The resulting plan runs in four stages:
   shapes its own parser had missed.
 - **M4 — enable full compiler strictness** tree-wide, once every subsystem
   has been converted, which closes the remaining scanf-format-code bug
-  family as a side effect. Not yet started.
+  family as a side effect. In progress.
 
-As of this writing, M1, M2, and M3 are all complete across the entire
-active codebase; M4 has not yet started.
+As of this writing, M1, M2, and M3 are complete across the entire active
+codebase; M4 is underway, directory by directory, and has already turned
+up several of the decades-old defects described above — the same pattern
+as M1 and M3 before it, where a stricter build catches mistakes no prior
+compiler could see.
 
 ## Where things stand today
 
