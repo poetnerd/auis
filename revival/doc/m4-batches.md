@@ -635,8 +635,46 @@ logged in `roadmap.md` (see I4's entry above).
 
 ## Wave 6 — atkams/ams (5 directories, 185 errors, 3 sessions)
 
-- [ ] **AMS1**: `ams/libs/ms` (74) — alone, own dedicated session,
-      same fdplumb-history briefing M2/M3 both required.
+- [x] **AMS1 COMPLETE 2026-08-06**: `ams/libs/ms` (74 census; 123
+      real, the same pre-`-Werror=format` undercount seen elsewhere).
+      Fixed with the directory's fdplumb/M2/M3 history in hand: 52
+      `implicit-int` (all true-signature fixes, no casts — 20 in the
+      hand-maintained `prsdate.gra` bison source), 21
+      `incompatible-function-pointer-types` (10 `qsort` comparators
+      retyped to the real `int(const void*, const void*)` contract; 11
+      `signal()` sites all against one function, see below — zero
+      casts, zero escalations), ~50 `-Wformat`/`-Wformat-security`/
+      `-Wformat-extra-args` sites (mostly `%d`→`%ld`/`%lu`/`%lld`
+      width fixes, several on the recurring `AMS_ERRNO`/`AMS_ERRCAUSE`/
+      `AMS_ERRVIA` macro family). 3 genuine pre-existing bugs found and
+      fixed (all independently re-verified by the orchestrator against
+      real source, and now also narrated in `revival.md`'s "Old bugs
+      never found till now"): `epoch.c`'s local `extern int
+      DescribeTimeInterval()` disagreed with the real function's
+      `char *` return (LP64 pattern #1, live in the single-old-message
+      epoch/deletion path); `subs.c:264`'s `WriteSubs()` recovery
+      branch had a duplicated `fprintf` argument misaligning every
+      later conversion (pointer printed as `%d`, `int` dereferenced as
+      `%s`, the real date field silently dropped — fixed to match the
+      correct sibling line and `ReadSubs()`'s own parser); `init.c`'s
+      `DieYouHeathenSwine`, installed via `signal()` at 11 call sites,
+      was implicit-`int` when `signal()` requires `void(*)(int)` — a
+      genuine ~30-year interface bug, retyped to `void` (confirmed no
+      call site anywhere ever used a return value). Flagged, not
+      fixed (out of this directory's scope, a note for AMS2):
+      `MS_FastUpdateState`/`MS_UpdateState` are now `int` here,
+      matching the real implementation and every live caller, but
+      `atkams/messages/lib`'s `.ch` files still claim `returns long` —
+      not yet a live bug, AMS2 should narrow the `.ch` files to `int`
+      rather than widen this directory. Downstream relink confirmed
+      clean by both the delegate and the orchestrator:
+      `atkams/messages/lib` (`amsn.do`) and `ams/msclients/cui`
+      (`cuin`, already strict-flagged since Wave 5 A1) both rebuild
+      against the new `libmssrv.a` with zero errors. wdc's smoke test
+      (cuin SIGINT checkpoint/exit, `messages` folder read) found no
+      regressions; the `subs.c` fix was accepted on code read-through
+      alone, given its narrow/hard-to-safely-reproduce trigger
+      condition.
 - [ ] **AMS2**: `atkams/messages/lib` (65) — alone. Tree-wide gate
       required (the `messages` GUI app's actual backend, same rule
       M2/M3 both applied).

@@ -912,6 +912,61 @@ sample:
   mistake, which is what turns the same thirty-year-old line into a
   crash the moment this error path actually runs. Corrected by putting
   the arguments back in the order the function has always required.
+- **A local re-declaration that quietly narrowed a return value for
+  thirty years.** The message store's epoch-processing code — the
+  routine that flags old messages as candidates for deletion — kept its
+  own private declaration of a formatting helper used nowhere else in
+  the same file, and declared it as returning a plain integer. The
+  helper's real, and only, definition returns a heap-allocated string.
+  On the 32-bit machines this was written for, a pointer and an integer
+  were the same width, so the mismatched declaration cost nothing: the
+  value passed through unchanged no matter which type the compiler
+  believed it was. On a 64-bit machine the two widths differ, and the
+  local declaration would have silently discarded the upper half of
+  every pointer the real function returned, handing the epoch-warning
+  message a corrupted address to print through — a near-certain crash
+  or garbled text, on any folder with just one message old enough to be
+  flagged for deletion. Found only because a new check on format-string
+  arguments flagged the resulting message call as passing the wrong
+  type, and tracing why led straight to the disagreement. Fixed by
+  matching the local declaration to the one place the function is
+  actually defined.
+- **A recovery path that wrote its own repair back to disk with every
+  field shifted by one.** The subscription file writer's error-recovery
+  branch — reached when a saved subscription entry's name has gone
+  missing and the code falls back to treating it as the top-level
+  `mail` folder — called `fprintf` with one argument too many: a
+  redundant copy of a literal already present in the format string
+  itself. Every argument after that first, extra one landed one slot
+  late: a string address printed as a number, a status code interpreted
+  as a string and dereferenced as if it were a pointer, and the entry's
+  actual saved date silently dropped from the line entirely. The very
+  next few lines in the same file, serializing an entry that didn't
+  need this particular repair, get the argument count right — the bug
+  is a divergence between two nearly-identical lines, not an isolated
+  mistake. It went unnoticed because reaching it requires an
+  already-rare condition — a corrupted subscription entry whose
+  reconstructed path happens to equal the account's own top-level mail
+  folder — to begin with, and the resulting garbled or crashing write,
+  when it did happen, would have looked like corruption in the
+  `.subscriptions` file rather than pointing back at the code that had
+  just written it. Fixed by dropping the extra argument and widening
+  the trailing date field to match its actual size.
+- **A signal handler whose own interface disagreed with the system call
+  installing it, for the software's entire life.** The message server's
+  central shutdown/checkpoint routine — installed against `SIGHUP`,
+  `SIGINT`, `SIGQUIT`, `SIGTERM`, and half a dozen others — was declared
+  as returning an integer, when the C library's `signal()` function has
+  only ever accepted handlers that return nothing. K&R C never checked
+  a function pointer's signature against what it was being assigned to,
+  so the mismatch compiled, linked, and ran without complaint for as
+  long as the toolchain stayed permissive; nothing in the function's
+  body ever used a return value, so the practical behavior was
+  identical either way. It surfaced only because a stricter compiler
+  configuration began checking function-pointer assignments for real,
+  and flagged all eleven places this same handler is installed. Fixed
+  by giving the function its true, and functionally uncontroversial,
+  `void` return type.
 
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
