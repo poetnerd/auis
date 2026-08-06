@@ -90,28 +90,28 @@ void DisplayBoxBlitOverlap(struct rasterview *self, struct rasterimage *pix)
 	return; }
 
     ENTER(DisplayBoxBlitOverlap);
-    DEBUG(("Offset: (%d,%d)\n", self->Xoff, self->Yoff));
+    DEBUG(("Offset: (%ld,%ld)\n", self->Xoff, self->Yoff));
 
     /* Note that the Display Box uses a double sized Border so that we can draw a frame around the box as well as leaving room to show the selected region if the selected region includes the edges of the expanded image. */
     DB = self->DisplayBox;
     InsetRect(&DB, -TWOBORDER, -TWOBORDER);
     /* Translate Display Box coordinates to PixelImage coordiantes. */
     OffsetRect(&DB, self->Xoff, self->Yoff);
-    DEBUG(("DB: (%d,%d,%d,%d)\n",
+    DEBUG(("DB: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&DB), rectangle_Top(&DB),
 	    rectangle_Width(&DB), rectangle_Height(&DB)));
 
     rectangle_SetRectSize(&SR, 0, 0,
 			   rasterimage_GetWidth(self->Expansion),
 			   rasterimage_GetHeight(self->Expansion));
-    DEBUG(("SR: (%d,%d,%d,%d)\n",
+    DEBUG(("SR: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&SR), rectangle_Top(&SR),
 	    rectangle_Width(&SR), rectangle_Height(&SR)));
 
     rectangle_IntersectRect(&overlap, &DB, &SR);
     if (IsNotEmptyRect(&overlap)) {
 	/* The Display Box overlaps the pixelimg. Blit onto the image the portion of the Display Box which overlaps. */
-	DEBUG(("Black: (%d,%d,%d,%d)\n",
+	DEBUG(("Black: (%ld,%ld,%ld,%ld)\n",
 	       rectangle_Left(&overlap), rectangle_Top(&overlap),
 	       rectangle_Width(&overlap), rectangle_Height(&overlap)));
 	rasterimage_PaintSubraster(self->Expansion, &overlap, BLACKBYTE);
@@ -119,7 +119,7 @@ void DisplayBoxBlitOverlap(struct rasterview *self, struct rasterimage *pix)
 	InsetRect(&DB, 1, 1);
 	rectangle_IntersectRect(&overlap, &DB, &SR);
 	if (IsNotEmptyRect(&overlap)) {
-	    DEBUG(("White: (%d,%d,%d,%d)\n",
+	    DEBUG(("White: (%ld,%ld,%ld,%ld)\n",
 		   rectangle_Left(&overlap), rectangle_Top(&overlap),
 		   rectangle_Width(&overlap), rectangle_Height(&overlap)));
 	    rasterimage_PaintSubraster(self->Expansion, &overlap, WHITEBYTE); } }
@@ -137,7 +137,7 @@ void DisplayBoxDrawPanHighlight(struct rasterview *self)
 
     if (self->DisplayBoxHidden) return;
 
-    DEBUG(("DBDrawPanHighlight: (%d,%d,%d,%d)\n       DBscroll: (%d,%d)\n",
+    DEBUG(("DBDrawPanHighlight: (%ld,%ld,%ld,%ld)\n       DBscroll: (%ld,%ld)\n",
 	    rectangle_Left(&self->DisplayBox),
 	    rectangle_Top(&self->DisplayBox),
 	    rectangle_Width(&self->DisplayBox),
@@ -157,7 +157,7 @@ void DisplayBoxDrawPanHighlight(struct rasterview *self)
 		rectangle_Top(&DS) - rectangle_Top(&self->DisplayBoxSelection) +
 		rectangle_Top(&self->DisplayBox) - self->DBYscroll);
 
-    DEBUG(("DBHighlight: (%d,%d,%d,%d)\n",
+    DEBUG(("DBHighlight: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&DS), rectangle_Top(&DS),
 	    rectangle_Width(&DS), rectangle_Height(&DS)));
 
@@ -172,7 +172,7 @@ void DisplayBoxWritePixImageFull(struct rasterview *self, struct graphic *G, str
     if (self->MovingDisplayBox) return;
 
     DB = self->DisplayBox;
-    DEBUG(("DBWriteFull: (%d,%d,%d,%d) Offset: (%d,%d)\n",
+    DEBUG(("DBWriteFull: (%ld,%ld,%ld,%ld) Offset: (%ld,%ld)\n",
 	    rectangle_Left(&DB), rectangle_Top(&DB),
 	    rectangle_Width(&DB), rectangle_Height(&DB),
 	    self->DBXscroll, self->DBYscroll));
@@ -205,7 +205,7 @@ void DisplayBoxWritePixImage(struct rasterview *self, struct graphic *G)
 
     DB = self->DisplayBox;
 
-    DEBUG(("DBWritePixImage: (%d,%d,%d,%d)\n            DBS: (%d,%d,%d,%d)\n",
+    DEBUG(("DBWritePixImage: (%ld,%ld,%ld,%ld)\n            DBS: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&DB) - self->DBXscroll,
 	    rectangle_Top(&DB) - self->DBYscroll,
 	    rectangle_Width(&DB), rectangle_Height(&DB),
@@ -224,7 +224,7 @@ void DisplayBoxWritePixImage(struct rasterview *self, struct graphic *G)
 			   rectangle_Height(&self->DisplayBoxSelection));
     /* Draw the Display Box Frame. */
     InsetRect(&DB, -BORDER, -BORDER);
-    DEBUG(("        DBFrame: (%d,%d,%d,%d)\n",
+    DEBUG(("        DBFrame: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&DB), rectangle_Top(&DB),
 	    rectangle_Width(&DB), rectangle_Height(&DB)));
     DrawHighlightScreenCoordinates(self, G, DB, graphic_BLACK, graphic_WHITE);
@@ -244,7 +244,7 @@ void DisplayBoxHide(struct rasterview *self)
 
     rasterview_GetVisualBounds(self, &VB);
 
-    DEBUG(("Current Display Box: (%d,%d,%d,%d)\n",
+    DEBUG(("Current Display Box: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&self->DisplayBox),
 	    rectangle_Top(&self->DisplayBox),
 	    rectangle_Width(&self->DisplayBox),
@@ -268,7 +268,7 @@ void DisplayBoxHide(struct rasterview *self)
 	x = ((x < -self->Xscroll) ? -self->Xoff : x);
 	y = rectangle_Top(&R);
 	y = ((y < -self->Yscroll) ? -self->Yoff : y);
-	DEBUG(("WhiteOut Display Box: (%d,%d,%d,%d)\n   Offset: (%d,%d)\n",
+	DEBUG(("WhiteOut Display Box: (%ld,%ld,%ld,%ld)\n   Offset: (%ld,%ld)\n",
 	       rectangle_Left(&R), rectangle_Top(&R),
 	       rectangle_Width(&R), rectangle_Height(&R),
 	      self->Xoff, self->Yoff));
@@ -296,7 +296,7 @@ void DisplayBoxHide(struct rasterview *self)
 	ReflectChangesInExpansion(self, &SR);
 	self->DisplayBox = DB;
 	rasterview_SetTransferMode(self, graphic_COPY);
-	DEBUG(("Write Display Box: (%d,%d,%d,%d)\n",
+	DEBUG(("Write Display Box: (%ld,%ld,%ld,%ld)\n",
 	       rectangle_Left(&R),
 	       rectangle_Top(&R),
 	       rectangle_Width(&R),
@@ -319,7 +319,7 @@ void DisplayBoxDrawHighlight(struct rasterview *self, struct graphic *G)
 
     if (self->DisplayBoxHidden) return;
 
-    DEBUG(("DBDrawHighlight: (%d,%d,%d,%d)\n       DBscroll: (%d,%d)\n",
+    DEBUG(("DBDrawHighlight: (%ld,%ld,%ld,%ld)\n       DBscroll: (%ld,%ld)\n",
 	    rectangle_Left(&self->DisplayBox),
 	    rectangle_Top(&self->DisplayBox),
 	    rectangle_Width(&self->DisplayBox),
@@ -339,7 +339,7 @@ void DisplayBoxDrawHighlight(struct rasterview *self, struct graphic *G)
 		rectangle_Top(&DS) - rectangle_Top(&self->DisplayBoxSelection) +
 		rectangle_Top(&self->DisplayBox) - self->DBYscroll);
 
-    DEBUG(("DBHighlight: (%d,%d,%d,%d)\n",
+    DEBUG(("DBHighlight: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&DS), rectangle_Top(&DS),
 	    rectangle_Width(&DS), rectangle_Height(&DS)));
 
@@ -397,7 +397,7 @@ void DisplayBoxHideHighlight(struct rasterview *self, struct graphic *G)
     rectangle_IntersectRect(&DS, &DBS, &DS);
     if (IsEmptyRect(&DS)) return;
 
-    DEBUG(("DBHiding: (%d,%d,%d,%d)\n", DS.left, DS.top, DS.width, DS.height));
+    DEBUG(("DBHiding: (%ld,%ld,%ld,%ld)\n", DS.left, DS.top, DS.width, DS.height));
 
     /* Translate to Display Box coordinates. */
     SetLeftRect(&DS,
@@ -438,7 +438,7 @@ void DrawHighlightBehindDisplayBox(struct rasterview *self, struct graphic *G, b
     /* The Display Box to avoid includes a double border. */
     DBF = self->DisplayBox;
     InsetRect(&DBF, -TWOBORDER, -TWOBORDER);
-    DEBUG(("Screen DBF: (%d,%d,%d,%d)\n",
+    DEBUG(("Screen DBF: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&DBF),
 	    rectangle_Top(&DBF),
 	    rectangle_Width(&DBF),
@@ -453,7 +453,7 @@ void DrawHighlightBehindDisplayBox(struct rasterview *self, struct graphic *G, b
 			   self->Yoff - BORDER,
 			   rectangle_Width(&DSF)*Scale + TWOBORDER,
 			   rectangle_Height(&DSF)*Scale + TWOBORDER);
-    DEBUG(("Screen DSF: (%d,%d,%d,%d)\n",
+    DEBUG(("Screen DSF: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&DSF),
 	    rectangle_Top(&DSF),
 	    rectangle_Width(&DSF),

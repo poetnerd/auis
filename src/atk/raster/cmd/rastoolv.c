@@ -157,34 +157,34 @@ boolean rastoolview__InitializeClass(struct classheader *ClassID)
     Menus = menulist_New();
     Keymap = keymap_New();
 
-    proc = proctable_DefineProc("rastoolv-toolset-destroy", Command_Quit, &rastoolview_classinfo, NULL, "Deletes toolset window.");
+    proc = proctable_DefineProc("rastoolv-toolset-destroy", (procedure) Command_Quit, &rastoolview_classinfo, NULL, "Deletes toolset window.");
     keymap_BindToKey(Keymap, "\030\004", proc, 0);	/* ^X^D */
     keymap_BindToKey(Keymap, "\030\003", proc, 0);	/* ^X^C */
     menulist_AddToML(Menus, "Quit~99", proc, NULL, 0);
 
-    proc = proctable_DefineProc("rastoolv-pastedown", PasteDownProc, &rastoolview_classinfo, NULL, "Paste down paste region onto raster.");
+    proc = proctable_DefineProc("rastoolv-pastedown", (procedure) PasteDownProc, &rastoolview_classinfo, NULL, "Paste down paste region onto raster.");
     menulist_AddToML(Menus, "Paste Down Region~11", proc, NULL, ML_unpaste);
     keymap_BindToKey(Keymap, "\031", proc, 0);	/* ^Y */
 
-    proc = proctable_DefineProc("rastoolv-unpaste", Toolmod_Paste, &rastoolview_classinfo, NULL, "Remove paste region from raster.");
+    proc = proctable_DefineProc("rastoolv-unpaste", (procedure) Toolmod_Paste, &rastoolview_classinfo, NULL, "Remove paste region from raster.");
     menulist_AddToML(Menus, "Remove Paste Region~12", proc, NULL, ML_unpaste);
 
-    proc = proctable_DefineProc("rastoolv-remove-inset", RemoveInsetProc, &rastoolview_classinfo, NULL, "Remove the overlaid inset.");
+    proc = proctable_DefineProc("rastoolv-remove-inset", (procedure) RemoveInsetProc, &rastoolview_classinfo, NULL, "Remove the overlaid inset.");
     menulist_AddToML(Menus, "Remove Inset~22", proc, NULL, ML_inset);
 
-    proc = proctable_DefineProc("rastoolv-resize-inset", ResizeInsetProc, &rastoolview_classinfo, NULL, "Resize the overlaid inset.");
+    proc = proctable_DefineProc("rastoolv-resize-inset", (procedure) ResizeInsetProc, &rastoolview_classinfo, NULL, "Resize the overlaid inset.");
     menulist_AddToML(Menus, "Resize Inset~23", proc, NULL, ML_inset);
 
-    proc = proctable_DefineProc("rastoolv-imprint-inset", Toolmod_Text, &rastoolview_classinfo, NULL, "Imprint the overlaid inset.");
+    proc = proctable_DefineProc("rastoolv-imprint-inset", (procedure) Toolmod_Text, &rastoolview_classinfo, NULL, "Imprint the overlaid inset.");
     menulist_AddToML(Menus, "Paste Down Inset~21", proc, NULL, ML_inset);
 
-    proc = proctable_DefineProc("rastoolv-set-spray-size", Toolmod_SprayPaint, &rastoolview_classinfo, NULL, "Set radius of spraypaint tool.");
+    proc = proctable_DefineProc("rastoolv-set-spray-size", (procedure) Toolmod_SprayPaint, &rastoolview_classinfo, NULL, "Set radius of spraypaint tool.");
     menulist_AddToML(Menus, "Set Spray Radius~31", proc, NULL, 0);
 
-    proc = proctable_DefineProc("rastoolv-set-curve-spring", Toolmod_CurvePaint, &rastoolview_classinfo, NULL, "Set spring stiffness in curvepaint tool.");
+    proc = proctable_DefineProc("rastoolv-set-curve-spring", (procedure) Toolmod_CurvePaint, &rastoolview_classinfo, NULL, "Set spring stiffness in curvepaint tool.");
     menulist_AddToML(Menus, "Set Curvypaint Spring~32", proc, NULL, 0);
 
-    proc = proctable_DefineProc("rastoolv-floodfill-abort", Toolmod_FloodFill, &rastoolview_classinfo, NULL, "Abort flood fill operation.");
+    proc = proctable_DefineProc("rastoolv-floodfill-abort", (procedure) Toolmod_FloodFill, &rastoolview_classinfo, NULL, "Abort flood fill operation.");
     menulist_AddToML(Menus, "Abort Flood Fill~33", proc, NULL, 0);
     keymap_BindToKey(Keymap, "\003", proc, 0);	/* ^C */
 
@@ -1659,7 +1659,7 @@ static void Tool_FloodFill(struct rastoolview *self, enum view_MouseAction actio
     self->fillbit = bit;
 
     message_DisplayString(self->primaryview, 10, "Filling....");
-    im_EnqueueEvent(FloodSplot, self, (event_MSECtoTU(10)));
+    im_EnqueueEvent((procedure) FloodSplot, self, (event_MSECtoTU(10)));
 }  
 
 static void FloodSplot(struct rastoolview *self)
@@ -1788,7 +1788,7 @@ static void FloodSplot(struct rastoolview *self)
 	}
     }
 
-    im_EnqueueEvent(FloodSplot, self, (event_MSECtoTU(10)));
+    im_EnqueueEvent((procedure) FloodSplot, self, (event_MSECtoTU(10)));
     /*rasterimage_NotifyObservers(pix, raster_BITSCHANGED);*/
 }
 
@@ -1799,7 +1799,7 @@ static void Tool_SprayPaint(struct rastoolview *self, enum view_MouseAction acti
 	    self->rockx = x;
 	    self->rocky = y;
 	    self->rock = 1;
-	    im_EnqueueEvent(SpraySplot, self, (event_MSECtoTU(20)));
+	    im_EnqueueEvent((procedure) SpraySplot, self, (event_MSECtoTU(20)));
 
 	case view_LeftMovement:
 	    self->rockx = x;
@@ -1828,7 +1828,7 @@ static void SpraySplot(struct rastoolview *self)
     }
 
     if (self->rock)
-	im_EnqueueEvent(SpraySplot, self, (event_MSECtoTU(20)));
+	im_EnqueueEvent((procedure) SpraySplot, self, (event_MSECtoTU(20)));
     else {
 	struct rasterimage *pix = raster_GetPix((struct raster *)self->primaryobj);
 	rasterimage_NotifyObservers(pix, raster_BITSCHANGED);
@@ -1846,7 +1846,7 @@ static void Tool_CurvePaint(struct rastoolview *self, enum view_MouseAction acti
 	    self->lastvx = 0.0;
 	    self->lastvy = 0.0;
 	    self->rock = 1;
-	    im_EnqueueEvent(CurveSplot, self, (event_MSECtoTU(20)));
+	    im_EnqueueEvent((procedure) CurveSplot, self, (event_MSECtoTU(20)));
 
 	case view_LeftMovement:
 	    self->rockx = x;
@@ -1875,7 +1875,7 @@ static void CurveSplot(struct rastoolview *self)
     self->lasty = y;
 
     if (self->rock)
-	im_EnqueueEvent(CurveSplot, self, (event_MSECtoTU(40)));
+	im_EnqueueEvent((procedure) CurveSplot, self, (event_MSECtoTU(40)));
     else {
 	struct rasterimage *pix = raster_GetPix((struct raster *)self->primaryobj);
 	rasterimage_NotifyObservers(pix, raster_BITSCHANGED);

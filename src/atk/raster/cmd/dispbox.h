@@ -34,8 +34,8 @@ extern char debug;
 
 #define Debug(s) {printf s ; fflush(stdout);}
 #define DEBUG(s) {if (debug) {printf s ; fflush(stdout);}}
-#define ENTER(r) DEBUG(("Enter %s(0x%lx)\n", "r", self))
-#define LEAVE(r) DEBUG(("Leave %s(0x%lx)\n", "r", self))
+#define ENTER(r) DEBUG(("Enter %s(0x%lx)\n", "r", (unsigned long) self))
+#define LEAVE(r) DEBUG(("Leave %s(0x%lx)\n", "r", (unsigned long) self))
 
 #define DisplayAndReturn(self, String) {message_DisplayString(self, 0, String); return;}
 

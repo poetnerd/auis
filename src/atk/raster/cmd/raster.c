@@ -226,7 +226,7 @@ long raster__Write(struct raster *self, FILE *file, long writeID, int level)
 
 		rectangle_GetRectSize(&self->subraster, &x, &y, &width, &height);
 		fprintf(file, "\\begindata{%s,%ld}\n", name, id);
-		fprintf(file, "%ld %ld %ld %ld ", RASTERVERSION, 
+		fprintf(file, "%d %d %ld %ld ", RASTERVERSION,
 				self->options, self->xScale, self->yScale);
 		if (rasterimage_GetWriteID(pix) == writeID) {
 			/* write a "refer" line */
@@ -241,7 +241,7 @@ long raster__Write(struct raster *self, FILE *file, long writeID, int level)
 				path = ".";	/* must write something non-white */
 			fprintf(file, "%ld %ld %ld %ld\n",
 				 x, y, width, height);	/* subraster */
-			fprintf(file, "file %d %s %s \n", id, 
+			fprintf(file, "file %ld %s %s \n", id,
 				rasterimage_GetFileName(pix), path);
 
 			rasterimage_SetWriteID(pix, writeID);
@@ -255,7 +255,7 @@ long raster__Write(struct raster *self, FILE *file, long writeID, int level)
 			register long yend = y + height;
 
 			fprintf(file, "%ld %ld %ld %ld\n",
-				 0, 0, width, height);	/* subraster */
+				 0L, 0L, width, height);	/* subraster */
 			fprintf(file, "bits %ld %ld %ld\n", id, width, height);
 
 			for ( ; y < yend; y++) {
@@ -311,9 +311,9 @@ long raster__WriteSubRaster(struct raster *self, FILE *file, long objectid, stru
 	rectangle_GetRectSize(&R, &x, &y, &width, &height);
 
 	fprintf(file, "\\begindata{%s,%ld}\n", name, objectid);
-	fprintf(file, "%ld %ld %ld %ld %ld %ld %ld %ld\n", RASTERVERSION, 
+	fprintf(file, "%d %d %ld %ld %ld %ld %ld %ld\n", RASTERVERSION,
 			self->options, self->xScale, self->yScale,
-			 0, 0, width, height);	/* subraster is the whole */
+			 0L, 0L, width, height);	/* subraster is the whole */
 	fprintf(file, "bits %ld %ld %ld\n", objectid, width, height);
 
 	nbytestofile = (width+7)>>3;
@@ -341,11 +341,11 @@ void raster__WriteShare(struct raster *self, FILE *file, struct rectangle *sub)
 	rectangle_GetRectSize(&R, &x, &y, &width, &height);
 
 	fprintf(file, "\\begindata{%s, %d}\n", name, 0);
-	fprintf(file, "%ld %ld %ld %ld %ld %ld %ld\n", RASTERVERSION, 
+	fprintf(file, "%d %d %ld %ld %ld %ld %ld %ld\n", RASTERVERSION,
 			self->options, self->xScale, self->yScale,
-			 0, 0, width, height);	/* subraster is the whole */
+			 0L, 0L, width, height);	/* subraster is the whole */
 
-	fprintf(file, "share %d 0x%lx \n", getpid(), pix);
+	fprintf(file, "share %d 0x%lx \n", getpid(), (unsigned long) pix);
 
 	fprintf(file, "\\enddata{%s, %d}\n", name, 0);
 }
@@ -437,8 +437,8 @@ static long ReadV1Raster(struct raster *self, FILE *file, long id)
 
 	char s[MAXFILELINE + 2];
 
-	fscanf(file, " %u %ld %ld %ld %ld %ld %ld %hd",  
-		&options, &compression, &expansion, &xoffset, 
+	fscanf(file, " %lu %ld %ld %ld %ld %ld %ld %ld",
+		&options, &compression, &expansion, &xoffset,
 		&yoffset, &width, &height, &depth);
 
 	if (pix == NULL) {
@@ -513,7 +513,7 @@ long raster__Read(struct raster *self, FILE *file, long id)
 	long version, width, height;
 	register long row, W;
 	register unsigned char *byteaddr;
-	register nbytesfromfile;
+	register long nbytesfromfile;
 	long options, xscale, yscale, xoffset, yoffset, subwidth, subheight;
 	unsigned char keyword[6];
 	long objectid;	/* id read for the incoming pixel image */
@@ -555,8 +555,8 @@ long raster__Read(struct raster *self, FILE *file, long id)
 	/* it is a be2 version 2 raster image */
 
 	/* read the rest of the first line of header */
-	fscanf(file, " %u %ld %ld %ld %ld %ld %ld",  
-		&options, &xscale, &yscale, &xoffset, 
+	fscanf(file, " %ld %ld %ld %ld %ld %ld %ld",
+		&options, &xscale, &yscale, &xoffset,
 		&yoffset, &subwidth, &subheight);
 
 	/* scan to end of line in case this is actually something beyond V2 */
@@ -582,7 +582,7 @@ long raster__Read(struct raster *self, FILE *file, long id)
 	case 's':	{            /* "share" type */
 		long pid;
 		struct rasterimage *addr;
-		fscanf(file, " %ld %lx ", &pid, &addr);
+		fscanf(file, " %ld %lx ", &pid, (unsigned long *) &addr);
 		if (pid == getpid()  && strcmp(class_GetTypeName(addr), 
 						"rasterimage")==0) {
 			raster_SetPix(self, pix=addr);

@@ -374,8 +374,8 @@ void rasterview__SetScale(struct rasterview *self, long newscale)
 
 void ZoomInCommand(struct rasterview *self, long rock)
 {
-    DEBUG(("Scroll: (%d,%d)\n", self->Xscroll, self->Yscroll));
-    DEBUG(("Zoom In Scale: %d VS: (%d,%d,%d,%d)\n", self->Scale * 2,
+    DEBUG(("Scroll: (%ld,%ld)\n", self->Xscroll, self->Yscroll));
+    DEBUG(("Zoom In Scale: %ld VS: (%ld,%ld,%ld,%ld)\n", self->Scale * 2,
 	    rectangle_Left(&self->ViewSelection),
 	    rectangle_Top(&self->ViewSelection),
 	    rectangle_Width(&self->ViewSelection),
@@ -470,7 +470,7 @@ void FinishMovingDisplayBox(struct rasterview *self, long x, long y)
 	SetTopRect(&self->DisplayBox,
 		   top - rectangle_Height(&self->DisplayBox) - 3*BORDER); }
 
-    DEBUG(("Moving Display Box to: (%d,%d,%d,%d)\n",
+    DEBUG(("Moving Display Box to: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&self->DisplayBox),
 	    rectangle_Top(&self->DisplayBox),
 	    rectangle_Width(&self->DisplayBox),
@@ -502,7 +502,7 @@ void HideDisplayBoxCommand(struct rasterview *self, long rock)
 
 void ZoomOutCommand(struct rasterview *self, long rock)
 {
-    DEBUG(("Zoom Out Scale: %d\n", self->Scale / 2));
+    DEBUG(("Zoom Out Scale: %ld\n", self->Scale / 2));
     rasterview_SetScale(self, self->Scale / 2);
 }
 
@@ -633,7 +633,7 @@ void ModifyCommand(struct rasterview *self, long rock)
 	AskOrCancel(self, "Gray level (1..15)[8]: ", inbuf);
 	/* If there is a value returned then if the value cannot be parsed then error. */
 	if (*inbuf) {
-	    if (sscanf(inbuf, "%d", &level) != 1)	
+	    if (sscanf(inbuf, "%ld", &level) != 1)	
 		DisplayAndReturn(self, "Value must be digits with no decimal point."); }
 	else level = 8;
 	rasterimage_GraySubraster(pix, &R, level); }
@@ -692,7 +692,7 @@ void ReadRaster(struct rasterview *self, struct raster *ras, char *filename)
     /* need to use FindFile XXX */
     long readresult = dataobject_OBJECTCREATIONFAILED;
     FILE *f;
-    register c;
+    register int c;
 
     f = fopen(filename, "r");
     if (f == NULL) {
@@ -736,7 +736,7 @@ void ReadRaster(struct rasterview *self, struct raster *ras, char *filename)
     }
     else {
 	char err[MAXPATHLEN + 50];
-	sprintf(err, "Error %d while reading file %s", readresult, filename);
+	sprintf(err, "Error %ld while reading file %s", readresult, filename);
 	message_DisplayString((struct view *)self, 50, err); }
 }
 
@@ -1016,7 +1016,7 @@ static void CopyCommand(struct rasterview *self)
 
     if (self->ShowCoords) {
 	static char cb[40];
-	sprintf(cb, "Copied area %d by %d at (%d,%d)", rectangle_Width(&self->DesiredSelection), rectangle_Height(&self->DesiredSelection), rectangle_Left(&self->DesiredSelection), rectangle_Top(&self->DesiredSelection));
+	sprintf(cb, "Copied area %ld by %ld at (%ld,%ld)", rectangle_Width(&self->DesiredSelection), rectangle_Height(&self->DesiredSelection), rectangle_Left(&self->DesiredSelection), rectangle_Top(&self->DesiredSelection));
 	message_DisplayString(self, 10, cb);
     }
 }
@@ -1027,7 +1027,7 @@ static void ReplaceCommand(struct rasterview *self)
     FILE *pasteFile;
     static char hdr[] = "\\begindata{raster,";
     char *hx = hdr;
-    register c;
+    register int c;
 
     pasteFile = im_FromCutBuffer(rasterview_GetIM(self));
 
@@ -1059,10 +1059,10 @@ boolean MatExtendPossible(struct rasterview *self)
 
     rasterview_GetVisualBounds(self, &VB);
     InsetRect(&VB, BORDER, BORDER);
-    DEBUG(("Ext-P: Scroll: (%d,%d) Raster: (%d,%d)\n",
+    DEBUG(("Ext-P: Scroll: (%ld,%ld) Raster: (%ld,%ld)\n",
 	    self->Xscroll, self->Yscroll,
 	    raster_GetWidth(ras), raster_GetHeight(ras)));
-    DEBUG(("       VS: (%d,%d,%d,%d) VB: (%d,%d,%d,%d)\n",
+    DEBUG(("       VS: (%ld,%ld,%ld,%ld) VB: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&self->ViewSelection),
 	    rectangle_Top(&self->ViewSelection),
 	    rectangle_Width(&self->ViewSelection),
@@ -1156,7 +1156,7 @@ static void ExtendToMatCommand(struct rasterview *self)
     width = (w + ((vr > r) ? (vr - r) : 0) + ((l > 0) ? l : 0))/self->Scale;
     height = (h + ((vb > b) ? (vb - b) : 0) + ((t > 0) ? t : 0))/self->Scale;
 
-    DEBUG(("Visual: %d x %d\nCurrent Sides: (%d,%d,%d,%d)\nNew Size: %d x %d\n",
+    DEBUG(("Visual: %ld x %ld\nCurrent Sides: (%ld,%ld,%ld,%ld)\nNew Size: %ld x %ld\n",
 	    vr, vb,
 	    l/self->Scale, t/self->Scale, r/self->Scale, b/self->Scale,
 	    width, height));
@@ -1254,27 +1254,26 @@ static void ScaleCommand(struct rasterview *self)
 
     /* ask for scaling factor as a number of pixels or relative
 	to current size */
-    sprintf(request, "Change scale via relative size or absolute pixel [relative]: ",
-	     inbuf);
+    sprintf(request, "Change scale via relative size or absolute pixel [relative]: ");
     AskOrCancel(self, request, inbuf);
     sscanf(inbuf, "%[ar]", &c[0]);
     if (strcmp(c,"a")==0) {
 	/* Ask for absolute values */
-	sprintf(request, "New pixel width [%d]: ", w);
+	sprintf(request, "New pixel width [%ld]: ", w);
 	AskOrCancel(self, request, inbuf);
 	/* If there is a value returned then if the value cannot be parsed then error else calculate new height and default the new height correspondingly. Else default the new height and width to 1. */
 	if (*inbuf) {
-	    if (sscanf(inbuf, "%d", &NewW) != 1) {		
+	    if (sscanf(inbuf, "%ld", &NewW) != 1) {
 		DisplayAndReturn(self, "Value must be digits with no decimal point."); }
 	    else NewH = (h * NewW)/w; }
 	else {
 	    NewW = w;
 	    NewH = h; }
-	sprintf(request, "New pixel height [%d]: ", NewH);
+	sprintf(request, "New pixel height [%ld]: ", NewH);
 
 	AskOrCancel(self, request, inbuf);
 	/* if there is a value returned and it cannot be parsed then error. */
-	if (*inbuf && sscanf(inbuf, "%d", &NewH) != 1)		
+	if (*inbuf && sscanf(inbuf, "%ld", &NewH) != 1)
 	    DisplayAndReturn(self, "Value must be digits with no decimal point.");
 	if (! *inbuf) NewH = (h * NewW)/w;
     }
@@ -1301,11 +1300,11 @@ static void ScaleCommand(struct rasterview *self)
 	NewH = h * ScaleH;
     }
 
-    sprintf(request, "New pixel (width, height): (%d, %d)", NewW, NewH);
+    sprintf(request, "New pixel (width, height): (%ld, %ld)", NewW, NewH);
     message_DisplayString(self, 0, request);
 
     DEBUG(("Original is%s NULL\n", ((self->Original == NULL) ? "" : " not")));
-    DEBUG(("New Absolute: (%d,%d)\n", NewW, NewH));
+    DEBUG(("New Absolute: (%ld,%ld)\n", NewW, NewH));
 
     if (self->Original == NULL) {
 	self->Original = rasterimage_Clone(pix);
@@ -1332,13 +1331,13 @@ static void ScaleCommand(struct rasterview *self)
 				  rectangle_Width(&self->DesiredSelection)*wscale,
 				  rectangle_Height(&self->DesiredSelection) * hscale);
 	    rectangle_IntersectRect(&sub, &sub, &original); }
-	DEBUG(("Original: (%d,%d,%d,%d)\n",
+	DEBUG(("Original: (%ld,%ld,%ld,%ld)\n",
 	       rectangle_Left(&original), rectangle_Top(&original),
 	       rectangle_Width(&original), rectangle_Height(&original)));
-	DEBUG(("Selection: (%d,%d,%d,%d)\n",
+	DEBUG(("Selection: (%ld,%ld,%ld,%ld)\n",
 	       rectangle_Left(&sub), rectangle_Top(&sub),
 	       rectangle_Width(&sub), rectangle_Height(&sub)));
-	DEBUG(("%s: 0x%x\n", class_GetTypeName(self->Original), self->Original));
+	DEBUG(("%s: 0x%lx\n", class_GetTypeName(self->Original), (unsigned long) self->Original));
 
 	rasterimage_GetScaledSubraster(self->Original, &sub, NewW, NewH, pix);
     }
@@ -1361,7 +1360,7 @@ static void ScaleReplaceCommand(struct rasterview *self)
     FILE *pasteFile;
     static char hdr[] = "\\begindata{raster,";
     char *hx = hdr;
-    register c;
+    register int c;
 
     if (ras == NULL || (pix = raster_GetPix(ras)) == NULL) return;
 
@@ -1535,209 +1534,209 @@ boolean rasterview__InitializeClass(struct classheader *ClassID)
     Menus = menulist_New();
     Keymap = keymap_New();
 
-    proc = proctable_DefineProc("rasterv-toolset-create", MakeToolsetProc, &rasterview_classinfo, NULL, "Creates a window containing editing tools.");
+    proc = proctable_DefineProc("rasterv-toolset-create", (procedure) MakeToolsetProc, &rasterview_classinfo, NULL, "Creates a window containing editing tools.");
     menulist_AddToML(Menus, "Raster~30,Toolset~80", proc, NULL, menuToolset); 
 
-    proc = proctable_DefineProc("rasterv-toolset-destroy", KillToolsetProc, &rasterview_classinfo, NULL, "Deletes toolset window.");
+    proc = proctable_DefineProc("rasterv-toolset-destroy", (procedure) KillToolsetProc, &rasterview_classinfo, NULL, "Deletes toolset window.");
     menulist_AddToML(Menus, "Raster~30,Remove Toolset~81", proc, NULL, menuToolsetKill);
 
-    proc = proctable_DefineProc("rasterv-toggle-coord-display", ToggleCoordProc, &rasterview_classinfo, NULL, "Toggles display of mouse coordinates.");
+    proc = proctable_DefineProc("rasterv-toggle-coord-display", (procedure) ToggleCoordProc, &rasterview_classinfo, NULL, "Toggles display of mouse coordinates.");
     menulist_AddToML(Menus, "Raster~30,Show/Hide Coords~57", proc, NULL, 0);
 
-    proc = proctable_DefineProc("rasterv-overlay-inset", OverlayInsetProc, &rasterview_classinfo, NULL, "Overlay an inset on the raster view.");
+    proc = proctable_DefineProc("rasterv-overlay-inset", (procedure) OverlayInsetProc, &rasterview_classinfo, NULL, "Overlay an inset on the raster view.");
     menulist_AddToML(Menus, "Raster~30,Overlay Inset~72", proc, NULL, menuInsetCreate);
 
-    proc = proctable_DefineProc("rasterv-remove-inset", RemoveInsetProc, &rasterview_classinfo, NULL, "Remove the overlaid inset.");
+    proc = proctable_DefineProc("rasterv-remove-inset", (procedure) RemoveInsetProc, &rasterview_classinfo, NULL, "Remove the overlaid inset.");
     menulist_AddToML(Menus, "Raster~30,Remove Inset~76", proc, NULL, menuInsetThere);
 
-    proc = proctable_DefineProc("rasterv-resize-inset", ResizeInsetProc, &rasterview_classinfo, NULL, "Resize the overlaid inset.");
+    proc = proctable_DefineProc("rasterv-resize-inset", (procedure) ResizeInsetProc, &rasterview_classinfo, NULL, "Resize the overlaid inset.");
     menulist_AddToML(Menus, "Raster~30,Resize Inset~77", proc, NULL, menuInsetThere);
 
-    proc = proctable_DefineProc("rasterv-imprint-inset", ImprintInsetProc, &rasterview_classinfo, NULL, "Imprint the overlaid inset.");
+    proc = proctable_DefineProc("rasterv-imprint-inset", (procedure) ImprintInsetProc, &rasterview_classinfo, NULL, "Imprint the overlaid inset.");
     menulist_AddToML(Menus, "Raster~30,Paste Down Inset~75", proc, (void *)99, menuInsetThere);
 
-    proc = proctable_DefineProc("rasterv-copy-subraster", CopyCommand,
+    proc = proctable_DefineProc("rasterv-copy-subraster", (procedure) CopyCommand,
 				 &rasterview_classinfo, NULL,
 				 "Copy selected subraster to kill-buffer.");
     keymap_BindToKey(Keymap, "\033w", proc, 0);	/* ESC - w */
     menulist_AddToML(Menus, "Copy~3", proc, 0, menuCopy);
 
-    proc = proctable_DefineProc("rasterv-replace-subraster", ReplaceCommand,
+    proc = proctable_DefineProc("rasterv-replace-subraster", (procedure) ReplaceCommand,
 				 &rasterview_classinfo, NULL,
 				 "Replace selected subraster from kill-buffer.");
     keymap_BindToKey(Keymap, "\033y", proc, 0);	/* ESC - y */
     menulist_AddToML(Menus, "Replace~13", proc, 0, menuOps);
 
-    proc = proctable_DefineProc("rasterv-replace-subraster", ReplaceCommand,
+    proc = proctable_DefineProc("rasterv-replace-subraster", (procedure) ReplaceCommand,
 				 &rasterview_classinfo, NULL,
 				 "Replace selected subraster from kill-buffer.");
     keymap_BindToKey(Keymap, "\031", proc, 0);	/* ^Y */
     menulist_AddToML(Menus, "Replace~13", proc, 0, menuOps);
 
-    proc = proctable_DefineProc("rasterv-scale-replace", ScaleReplaceCommand,
+    proc = proctable_DefineProc("rasterv-scale-replace", (procedure) ScaleReplaceCommand,
 				 &rasterview_classinfo, NULL,
 				 "Scale image in paste buffer to fit in selected Region");
     keymap_BindToKey(Keymap, "\033\031", proc, 0);	/* ESC ^Y */
     menulist_AddToML(Menus, "Replace Scaled~15", proc, 0, menuOps);
 
-    proc = proctable_DefineProc("rasterv-negative", ModifyCommand,
+    proc = proctable_DefineProc("rasterv-negative", (procedure) ModifyCommand,
 				 &rasterview_classinfo, NULL,
 				 "Interchange black and white within selection");
     keymap_BindToKey(Keymap, "\033n", proc, (long)-1);	/* ESC - n */
     menulist_AddToML(Menus, "Raster Ops~20,Negative~21", proc, (void *)-1, menuNegative);
 
-    proc = proctable_DefineProc("rasterv-white", ModifyCommand,
+    proc = proctable_DefineProc("rasterv-white", (procedure) ModifyCommand,
 				 &rasterview_classinfo, NULL,
 				 "Set white within selection");
     keymap_BindToKey(Keymap, "\033W", proc, 0);	/* ESC - W */
     menulist_AddToML(Menus, "Raster Ops~20,White~22", proc, 0, menuOps);
 
-    proc = proctable_DefineProc("rasterv-black", ModifyCommand,
+    proc = proctable_DefineProc("rasterv-black", (procedure) ModifyCommand,
 				 &rasterview_classinfo, NULL,
 				 "Set black within selection");
     keymap_BindToKey(Keymap, "\033B", proc, 1);	/* ESC - B */
     menulist_AddToML(Menus, "Raster Ops~20,Black~23", proc, (void *)1, menuOps);
 
-    proc = proctable_DefineProc("rasterv-gray", ModifyCommand,
+    proc = proctable_DefineProc("rasterv-gray", (procedure) ModifyCommand,
 				 &rasterview_classinfo, NULL,
 				 "Set gray within selection");
     keymap_BindToKey(Keymap, "\033G", proc, 2);	/* ESC - G */
     menulist_AddToML(Menus, "Raster Ops~20,Gray~24", proc, (void *)2, menuOps);
 
-    proc = proctable_DefineProc("rasterv-mirror-left-right", ModifyCommand,
+    proc = proctable_DefineProc("rasterv-mirror-left-right", (procedure) ModifyCommand,
 				 &rasterview_classinfo, NULL,
 				 "Interchange left and right within selection");
     keymap_BindToKey(Keymap, "\033L", proc, 3);	/* ESC - L */
     menulist_AddToML(Menus, "Raster Ops~20,Mirror LR~25", proc, (void *)3, menuOps);
 
-    proc = proctable_DefineProc("rasterv-mirror-up-down", ModifyCommand,
+    proc = proctable_DefineProc("rasterv-mirror-up-down", (procedure) ModifyCommand,
 				 &rasterview_classinfo, NULL,
 				 "Interchange top and bottom within selection");
     keymap_BindToKey(Keymap, "\033U", proc, 4);	/* ESC - U */
     menulist_AddToML(Menus, "Raster Ops~20,Mirror UD~26", proc, (void *)4, menuOps);
 
-    proc = proctable_DefineProc("rasterv-rotate", RotateCommand,
+    proc = proctable_DefineProc("rasterv-rotate", (procedure) RotateCommand,
 				 &rasterview_classinfo, NULL,
 				 "Rotate entire raster image one-quarter turn clockwise");
     keymap_BindToKey(Keymap, "\033R", proc, 0);	/* ESC - R */
     menulist_AddToML(Menus, "Raster Ops~20,Rotate~27", proc, 0, menuRotate);
 
-    proc = proctable_DefineProc("rasterv-scale", ScaleCommand,
+    proc = proctable_DefineProc("rasterv-scale", (procedure) ScaleCommand,
 				 &rasterview_classinfo, NULL,
 				 "Scale the image");
     keymap_BindToKey(Keymap, "\033S", proc, 0);	/* ESC - S */	
     menulist_AddToML(Menus, "Raster Ops~20,Scale~32", proc, 0, menuScale);
 
-    proc = proctable_DefineProc("rasterv-shrink-image", ShrinkCommand,
+    proc = proctable_DefineProc("rasterv-shrink-image", (procedure) ShrinkCommand,
 				 &rasterview_classinfo, NULL,
 				 "Shrink the image of the raster to a button");
     keymap_BindToKey(Keymap, "\033s", proc, 0);	/* ESC - s */
     menulist_AddToML(Menus, "Raster Ops~20,Shrink to Button~67", proc, 0, menuShrink);
 
-    proc = proctable_DefineProc("rasterv-center-image", CenterCommand,
+    proc = proctable_DefineProc("rasterv-center-image", (procedure) CenterCommand,
 				 &rasterview_classinfo, NULL,
 				 "Center the Selected Region");
     keymap_BindToKey(Keymap, "\033c", proc, 0);	/* ESC - c */
     menulist_AddToML(Menus, "Raster Ops~20,Center Region~72", proc, 0, menuCenter);
 
-    proc = proctable_DefineProc("rasterv-upperleft-image", UpperLeftCommand,
+    proc = proctable_DefineProc("rasterv-upperleft-image", (procedure) UpperLeftCommand,
 				 &rasterview_classinfo, NULL,
 				 "Upper Left the Selected Region");
     keymap_BindToKey(Keymap, "\033c", proc, 0);	/*  */
     menulist_AddToML(Menus, "Raster Ops~20,Upper Left Region~73", proc, 0, menuUpperLeft);
 
-    proc = proctable_DefineProc("rasterv-zoom-in", ZoomInCommand,
+    proc = proctable_DefineProc("rasterv-zoom-in", (procedure) ZoomInCommand,
 				 &rasterview_classinfo, NULL,
 				 "Zoom In using upper left of selected region as starting point.");
     keymap_BindToKey(Keymap, "\033Z", proc, 0);	/* ESC - Z */
     menulist_AddToML(Menus, "Raster~20,Zoom In~12", proc, 0, menuZoomIn);
 
-    proc = proctable_DefineProc("rasterv-zoom-out", ZoomOutCommand,
+    proc = proctable_DefineProc("rasterv-zoom-out", (procedure) ZoomOutCommand,
 				 &rasterview_classinfo, NULL,
 				 "Zoom Out");
     keymap_BindToKey(Keymap, "\033z", proc, 0);	/* ESC - z */
     menulist_AddToML(Menus, "Raster~20,Zoom Out~13", proc, 0, menuZoomOut);
 
-    proc = proctable_DefineProc("rasterv-zoom-out-to-normal-size", NormalSizeCommand,
+    proc = proctable_DefineProc("rasterv-zoom-out-to-normal-size", (procedure) NormalSizeCommand,
 				 &rasterview_classinfo, NULL,
 				 "Normal Size");
     keymap_BindToKey(Keymap, "\033N", proc, 0);	/* ESC - N */
     menulist_AddToML(Menus, "Raster~20,Normal Size~15", proc, 0, menuZoomOut);
 
-    proc = proctable_DefineProc("rasterv-select-entire", SelectAllCommand,
+    proc = proctable_DefineProc("rasterv-select-entire", (procedure) SelectAllCommand,
 				 &rasterview_classinfo, NULL,
 				 "Select entire raster");
     keymap_BindToKey(Keymap, "\033N", proc, 0);	/* */
     menulist_AddToML(Menus, "Raster~20,Select All~22", proc, 0, menuSelectAll);
 
-    proc = proctable_DefineProc("rasterv-region-select", RegionSelectCommand,
+    proc = proctable_DefineProc("rasterv-region-select", (procedure) RegionSelectCommand,
 				 &rasterview_classinfo, NULL,
 				 "Region Select Mode");
     keymap_BindToKey(Keymap, "\033\030R", proc, 0);	/* ESC - ^X R */
     menulist_AddToML(Menus, "Raster~20,Region Select~22", proc, 0, menuSelect);
 
-    proc = proctable_DefineProc("rasterv-touchup", TouchUpCommand,
+    proc = proctable_DefineProc("rasterv-touchup", (procedure) TouchUpCommand,
 				 &rasterview_classinfo, NULL,
 				 "Touch Up Mode");
     keymap_BindToKey(Keymap, "\033\030T", proc, 0);	/* ESC - ^X T */
     menulist_AddToML(Menus, "Raster~20,Touch Up~23", proc, 0, menuTouchUp);
 
-    proc = proctable_DefineProc("rasterv-pan", PanCommand,
+    proc = proctable_DefineProc("rasterv-pan", (procedure) PanCommand,
 				 &rasterview_classinfo, NULL,
 				 "Pan Mode");
     keymap_BindToKey(Keymap, "\033\030P", proc, 0);	/* ESC - ^X P */
     menulist_AddToML(Menus, "Raster~20,Pan~24", proc, 0, menuPan);
 
-    proc = proctable_DefineProc("rasterv-move-display-box", MoveDisplayBoxCommand,
+    proc = proctable_DefineProc("rasterv-move-display-box", (procedure) MoveDisplayBoxCommand,
 				 &rasterview_classinfo, NULL,
 				 "Move the location of the Display Box. ");
     keymap_BindToKey(Keymap, "\033M", proc, 1);	/* ESC - M */
     menulist_AddToML(Menus, "Raster~20,Move Display Box~32", proc, 0, menuMoveDB);
 
-    proc = proctable_DefineProc("rasterv-hide-display-box", HideDisplayBoxCommand,
+    proc = proctable_DefineProc("rasterv-hide-display-box", (procedure) HideDisplayBoxCommand,
 				 &rasterview_classinfo, NULL,
 				 "Hide the Display Box. ");
     keymap_BindToKey(Keymap, "\033H", proc, 1);	/* ESC - H */
     menulist_AddToML(Menus, "Raster~20,Hide Display Box~34", proc, 0, menuHideDB);
 
-    proc = proctable_DefineProc("rasterv-set-print-scaling", SetPrintSizeCommand,
+    proc = proctable_DefineProc("rasterv-set-print-scaling", (procedure) SetPrintSizeCommand,
 				 &rasterview_classinfo, NULL,
 				 "Set the scaling factors used when printing");
     keymap_BindToKey(Keymap, "\033P", proc, 0);	/* ESC - P */
     menulist_AddToML(Menus, "Raster~30,Set Print Size~53", proc, 0, menuOps);
 
-    proc = proctable_DefineProc("rasterv-extend-to-mat", ExtendToMatCommand,
+    proc = proctable_DefineProc("rasterv-extend-to-mat", (procedure) ExtendToMatCommand,
 				 &rasterview_classinfo, NULL,
 				 "Add pixels to image to reach the bordering matte");
     keymap_BindToKey(Keymap, "\033X", proc, 0);	/* ESC - X */
     menulist_AddToML(Menus, "Raster~30,Extend to Mat~55", proc, 0, menuExtend);
 
-    proc = proctable_DefineProc("rasterv-crop", CropCommand,
+    proc = proctable_DefineProc("rasterv-crop", (procedure) CropCommand,
 				 &rasterview_classinfo, NULL,
 				 "Crop image to the selection");
     keymap_BindToKey(Keymap, "\033C", proc, 0);	/* ESC - C */
     menulist_AddToML(Menus, "Raster~30,Crop~63", proc, 0, menuCrop);
 
-    proc = proctable_DefineProc("rasterv-uncrop", UncropCommand,
+    proc = proctable_DefineProc("rasterv-uncrop", (procedure) UncropCommand,
 				 &rasterview_classinfo, NULL,
 				 "Revert image to entire raster");
     keymap_BindToKey(Keymap, "\033c", proc, 0);	/* ESC - c */
     menulist_AddToML(Menus, "Raster~30,Uncrop~65", proc, 0, menuUncrop);
 
-    proc = proctable_DefineProc("rasterv-toggle-debug", ToggleDebug,
+    proc = proctable_DefineProc("rasterv-toggle-debug", (procedure) ToggleDebug,
 				 &rasterview_classinfo, NULL,
 				 "Toggle the rasterview debug flag");
     keymap_BindToKey(Keymap, "\033D", proc, 0);	/* ESC - D */
     /* No Menu Item for Debuging. */
 
-    proc = proctable_DefineProc("rasterv-read-file", ReadFileCommand,
+    proc = proctable_DefineProc("rasterv-read-file", (procedure) ReadFileCommand,
 				 &rasterview_classinfo, NULL,
 				 "Read a raster file");
     keymap_BindToKey(Keymap, "\033\022r", proc, 0);	/* ESC - ^R - r */
     menulist_AddToML(Menus, "File,Read Raster~12", proc, 0, menuRead);
 
     proc = proctable_DefineProc("rasterv-read-xwdfile",
-				 RasterIOCommand,
+				 (procedure) RasterIOCommand,
 				 &rasterview_classinfo, NULL,
 				 "Read file in X Window Dump format");
     keymap_BindToKey(Keymap, "\033\022x", proc, 0);
@@ -1745,38 +1744,38 @@ boolean rasterview__InitializeClass(struct classheader *ClassID)
     menulist_AddToML(Menus, "File,Read X Window Dump~13", proc, (void *)Inxwd, menuRead);
 
     proc = proctable_DefineProc("rasterv-read-xbmfile",
-				 RasterIOCommand,
+				 (procedure) RasterIOCommand,
 				 &rasterview_classinfo, NULL,
 				 "Read file in X Bitmap format");
     keymap_BindToKey(Keymap, "\033\022b", proc, 0);
     /* ESC - ^R - b*/
     menulist_AddToML(Menus, "File,Read X Bitmap~14", proc, (void *)Inxbm, menuRead);
 
-    proc = proctable_DefineProc("rasterv-read-file", ReadFileCommand,
+    proc = proctable_DefineProc("rasterv-read-file", (procedure) ReadFileCommand,
 				 &rasterview_classinfo, NULL,
 				 "Read a raster file");
     keymap_BindToKey(Keymap, "\033\022r", proc, 0);	/* ESC - ^R - r */
     menulist_AddToML(Menus, "Raster I/O~42,Read Raster~12", proc, 0, menuRead);
 
-    proc = proctable_DefineProc("rasterv-read-macpaint", RasterIOCommand,
+    proc = proctable_DefineProc("rasterv-read-macpaint", (procedure) RasterIOCommand,
 				 &rasterview_classinfo, NULL,
 				 "Read a file allegedly in MacPaint format");
     keymap_BindToKey(Keymap, "\033\022Im", proc, (long)InMacPaint);	/* ESC - ^R - I - m */
     menulist_AddToML(Menus, "Raster I/O~42,Read MacPaint~22", proc, (void *)InMacPaint, menuRead);
 
-    proc = proctable_DefineProc("rasterv-write-macpaint", RasterIOCommand,
+    proc = proctable_DefineProc("rasterv-write-macpaint", (procedure) RasterIOCommand,
 				 &rasterview_classinfo, NULL,
 				 "Write file in MacPaint format");
     keymap_BindToKey(Keymap, "\033\022IM", proc, (long)OutMacPaint);	/* ESC - ^R - I - M */
     menulist_AddToML(Menus, "Raster I/O~42,Write MacPaint~24", proc, (void *)OutMacPaint, menuWrite);
 
-    proc = proctable_DefineProc("rasterv-write-postscript", RasterIOCommand,
+    proc = proctable_DefineProc("rasterv-write-postscript", (procedure) RasterIOCommand,
 				 &rasterview_classinfo, NULL,
 				 "Write file in postscript format");
     keymap_BindToKey(Keymap, "\033\022IP", proc, (long)OutPostscript);	/* ESC - ^R - I - P */
     menulist_AddToML(Menus, "Raster I/O~42,Write Postscript~32", proc, (void *)OutPostscript, menuWrite);
 
-    proc = proctable_DefineProc("rasterv-read-rasterfile", ReadFileCommand,
+    proc = proctable_DefineProc("rasterv-read-rasterfile", (procedure) ReadFileCommand,
 				 &rasterview_classinfo, NULL,
 				 "Read a file allegedly in the old ITC RasterFile format");
     keymap_BindToKey(Keymap, "\033\022r", proc, 0);	/* ESC - ^R - r *//* same as Read Raster above */
@@ -1785,7 +1784,7 @@ boolean rasterview__InitializeClass(struct classheader *ClassID)
     /* paul's attempt to add XWD I/O : */
 
     proc = proctable_DefineProc("rasterv-read-xwdfile",
-				 RasterIOCommand,
+				 (procedure) RasterIOCommand,
 				 &rasterview_classinfo, NULL,
 				 "Read file in X Window Dump format");
     keymap_BindToKey(Keymap, "\033\022x", proc, 0);
@@ -1794,7 +1793,7 @@ boolean rasterview__InitializeClass(struct classheader *ClassID)
 
 
     proc = proctable_DefineProc("rasterv-write-xwdfile",
-				 RasterIOCommand,
+				 (procedure) RasterIOCommand,
 				 &rasterview_classinfo, NULL,
 				 "Write file in X Window Dump format");
     keymap_BindToKey(Keymap, "\033\022X", proc, 0);
@@ -1806,7 +1805,7 @@ boolean rasterview__InitializeClass(struct classheader *ClassID)
 /* paul's attempt to add X Bitmap I/O : */
 
     proc = proctable_DefineProc("rasterv-read-xbmfile",
-				 RasterIOCommand,
+				 (procedure) RasterIOCommand,
 				 &rasterview_classinfo, NULL,
 				 "Read file in X Bitmap format");
     keymap_BindToKey(Keymap, "\033\022b", proc, 0);
@@ -1815,7 +1814,7 @@ boolean rasterview__InitializeClass(struct classheader *ClassID)
 
 
     proc = proctable_DefineProc("rasterv-write-xbmfile",
-				 RasterIOCommand,
+				 (procedure) RasterIOCommand,
 				 &rasterview_classinfo, NULL,
 				 "Write file in X Bitmap format");
     keymap_BindToKey(Keymap, "\033\022B", proc, 0);
@@ -1826,7 +1825,7 @@ boolean rasterview__InitializeClass(struct classheader *ClassID)
 
 #ifdef X11_ENV
     proc = proctable_DefineProc("rasterv-make-xwd",
-				 RasterIOCommand,
+				 (procedure) RasterIOCommand,
 				 &rasterview_classinfo, NULL,
 				 "Dump X window and read.");
     keymap_BindToKey(Keymap, "\033\022Iw", proc, 0);
@@ -1835,7 +1834,7 @@ boolean rasterview__InitializeClass(struct classheader *ClassID)
 
 
     proc = proctable_DefineProc("rasterv-make-asnap",
-				 RasterIOCommand,
+				 (procedure) RasterIOCommand,
 				 &rasterview_classinfo, NULL,
 				 "Sweep area and read.");
     keymap_BindToKey(Keymap, "\033\022Ia", proc, 0);
@@ -1844,90 +1843,90 @@ boolean rasterview__InitializeClass(struct classheader *ClassID)
 #endif
   /* add old names to proctable */
 
-    proc = proctable_DefineProc("raster-copy-subraster", CopyCommand,
+    proc = proctable_DefineProc("raster-copy-subraster", (procedure) CopyCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-replace-subraster", ReplaceCommand,
+    proc = proctable_DefineProc("raster-replace-subraster", (procedure) ReplaceCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-replace-subraster", ReplaceCommand,
+    proc = proctable_DefineProc("raster-replace-subraster", (procedure) ReplaceCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-scale-replace", ScaleReplaceCommand,
+    proc = proctable_DefineProc("raster-scale-replace", (procedure) ScaleReplaceCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-negative", ModifyCommand,
+    proc = proctable_DefineProc("raster-negative", (procedure) ModifyCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-white", ModifyCommand,
+    proc = proctable_DefineProc("raster-white", (procedure) ModifyCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-black", ModifyCommand,
+    proc = proctable_DefineProc("raster-black", (procedure) ModifyCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-gray", ModifyCommand,
+    proc = proctable_DefineProc("raster-gray", (procedure) ModifyCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-mirror-left-right", ModifyCommand,
+    proc = proctable_DefineProc("raster-mirror-left-right", (procedure) ModifyCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-mirror-up-down", ModifyCommand,
+    proc = proctable_DefineProc("raster-mirror-up-down", (procedure) ModifyCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-rotate", RotateCommand,
+    proc = proctable_DefineProc("raster-rotate", (procedure) RotateCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-scale", ScaleCommand,
+    proc = proctable_DefineProc("raster-scale", (procedure) ScaleCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-shrink-image", ShrinkCommand,
+    proc = proctable_DefineProc("raster-shrink-image", (procedure) ShrinkCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-center-image", CenterCommand,
+    proc = proctable_DefineProc("raster-center-image", (procedure) CenterCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-upperleft-image", UpperLeftCommand,
+    proc = proctable_DefineProc("raster-upperleft-image", (procedure) UpperLeftCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-zoom-in", ZoomInCommand,
+    proc = proctable_DefineProc("raster-zoom-in", (procedure) ZoomInCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-zoom-out", ZoomOutCommand,
+    proc = proctable_DefineProc("raster-zoom-out", (procedure) ZoomOutCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-zoom-out-to-normal-size", NormalSizeCommand,
+    proc = proctable_DefineProc("raster-zoom-out-to-normal-size", (procedure) NormalSizeCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-select-entire", SelectAllCommand,
+    proc = proctable_DefineProc("raster-select-entire", (procedure) SelectAllCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-region-select", RegionSelectCommand,
+    proc = proctable_DefineProc("raster-region-select", (procedure) RegionSelectCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-touchup", TouchUpCommand,
+    proc = proctable_DefineProc("raster-touchup", (procedure) TouchUpCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-pan", PanCommand,
+    proc = proctable_DefineProc("raster-pan", (procedure) PanCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-move-display-box", MoveDisplayBoxCommand,
+    proc = proctable_DefineProc("raster-move-display-box", (procedure) MoveDisplayBoxCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-hide-display-box", HideDisplayBoxCommand,
+    proc = proctable_DefineProc("raster-hide-display-box", (procedure) HideDisplayBoxCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-set-print-scaling", SetPrintSizeCommand,
+    proc = proctable_DefineProc("raster-set-print-scaling", (procedure) SetPrintSizeCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-extend-to-mat", ExtendToMatCommand,
+    proc = proctable_DefineProc("raster-extend-to-mat", (procedure) ExtendToMatCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-crop", CropCommand,
+    proc = proctable_DefineProc("raster-crop", (procedure) CropCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-uncrop", UncropCommand,
+    proc = proctable_DefineProc("raster-uncrop", (procedure) UncropCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-toggle-debug", ToggleDebug,
+    proc = proctable_DefineProc("raster-toggle-debug", (procedure) ToggleDebug,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-read-file", ReadFileCommand,
+    proc = proctable_DefineProc("raster-read-file", (procedure) ReadFileCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-read-xwdfile", RasterIOCommand,
+    proc = proctable_DefineProc("raster-read-xwdfile", (procedure) RasterIOCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-read-file", ReadFileCommand,
+    proc = proctable_DefineProc("raster-read-file", (procedure) ReadFileCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-read-macpaint", RasterIOCommand,
+    proc = proctable_DefineProc("raster-read-macpaint", (procedure) RasterIOCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-write-macpaint", RasterIOCommand,
+    proc = proctable_DefineProc("raster-write-macpaint", (procedure) RasterIOCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-write-postscript", RasterIOCommand,
+    proc = proctable_DefineProc("raster-write-postscript", (procedure) RasterIOCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-read-rasterfile", ReadFileCommand,
+    proc = proctable_DefineProc("raster-read-rasterfile", (procedure) ReadFileCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-read-xwdfile", RasterIOCommand,
+    proc = proctable_DefineProc("raster-read-xwdfile", (procedure) RasterIOCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-write-xwdfile", RasterIOCommand,
+    proc = proctable_DefineProc("raster-write-xwdfile", (procedure) RasterIOCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-read-xbmfile", RasterIOCommand,
+    proc = proctable_DefineProc("raster-read-xbmfile", (procedure) RasterIOCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-write-xbmfile", RasterIOCommand,
+    proc = proctable_DefineProc("raster-write-xbmfile", (procedure) RasterIOCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
 #ifdef X11_ENV
-    proc = proctable_DefineProc("raster-make-xwd", RasterIOCommand,
+    proc = proctable_DefineProc("raster-make-xwd", (procedure) RasterIOCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
-    proc = proctable_DefineProc("raster-make-asnap", RasterIOCommand,
+    proc = proctable_DefineProc("raster-make-asnap", (procedure) RasterIOCommand,
 		&rasterview_classinfo, NULL, "Obsolete");
 #endif
 
