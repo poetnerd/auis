@@ -124,69 +124,69 @@ boolean figview__InitializeClass(struct classheader *ClassID)
     EmbeddedMenus = menulist_New();
     EmbeddedKeymap = keymap_New();
 
-    proc = proctable_DefineProc("figview-toggle-debug", ToggleDebugProc, &figview_classinfo, NULL, "Turn debugging on or off.");
+    proc = proctable_DefineProc("figview-toggle-debug", (procedure) ToggleDebugProc, &figview_classinfo, NULL, "Turn debugging on or off.");
 
-    proc = proctable_DefineProc("figview-toggle-readonly", ToggleReadOnlyProc, &figview_classinfo, NULL, "Turn read-only flag on or off.");
+    proc = proctable_DefineProc("figview-toggle-readonly", (procedure) ToggleReadOnlyProc, &figview_classinfo, NULL, "Turn read-only flag on or off.");
 
-    proc = proctable_DefineProc("figview-toolset-create", ToolsetCreateProc, &figview_classinfo, NULL, "Creates toolset window.");
+    proc = proctable_DefineProc("figview-toolset-create", (procedure) ToolsetCreateProc, &figview_classinfo, NULL, "Creates toolset window.");
     menulist_AddToML(EmbeddedMenus, "Figure~5,Toolset~30", proc, NULL, ML_nontoolset);
 
-    proc = proctable_DefineProc("figview-toolset-destroy", ToolsetKillProc, &figview_classinfo, NULL, "Deletes toolset window.");
+    proc = proctable_DefineProc("figview-toolset-destroy", (procedure) ToolsetKillProc, &figview_classinfo, NULL, "Deletes toolset window.");
     menulist_AddToML(EmbeddedMenus, "Figure~5,Remove Toolset~31", proc, NULL, ML_toolset);
 
-    proc = proctable_DefineProc("figview-set-expert-mode", SetExpertModeProc, &figview_classinfo, NULL, "Turns on expert mode for self and toolset.");
+    proc = proctable_DefineProc("figview-set-expert-mode", (procedure) SetExpertModeProc, &figview_classinfo, NULL, "Turns on expert mode for self and toolset.");
     menulist_AddToML(EmbeddedMenus, "Figure~5,Expert Mode~40", proc, (void *)1, ML_nonexpertmode);
 
-    proc = proctable_DefineProc("figview-zoom", ChangeZoomProc, &figview_classinfo, NULL, "Change scale of view.");
+    proc = proctable_DefineProc("figview-zoom", (procedure) ChangeZoomProc, &figview_classinfo, NULL, "Change scale of view.");
     menulist_AddToML(EmbeddedMenus, "Figure~5,Zoom In~10", proc, (void *)1, 0);
     keymap_BindToKey(EmbeddedKeymap, "\033Z", proc, 1); /* esc-Z */
     menulist_AddToML(EmbeddedMenus, "Figure~5,Zoom Out~11", proc, (void *)-1, 0);
     keymap_BindToKey(EmbeddedKeymap, "\033z", proc, (long)-1); /* esc-z */
     menulist_AddToML(EmbeddedMenus, "Figure~5,Normal Size~12", proc, 0, 0);
 
-    proc = proctable_DefineProc("figview-pan-to-origin", PanToOriginProc, &figview_classinfo, NULL, "Pan to (0,0).");
+    proc = proctable_DefineProc("figview-pan-to-origin", (procedure) PanToOriginProc, &figview_classinfo, NULL, "Pan to (0,0).");
     menulist_AddToML(EmbeddedMenus, "Figure~5,Pan to Origin~19", proc, 0, 0);
 
-    proc = proctable_DefineProc("figview-zap-selection", CutSelProc, &figview_classinfo, NULL, "Remove selected objects and put them in cut buffer.");
+    proc = proctable_DefineProc("figview-zap-selection", (procedure) CutSelProc, &figview_classinfo, NULL, "Remove selected objects and put them in cut buffer.");
     menulist_AddToML(EmbeddedMenus, "Cut~1", proc, 0, ML_selected);
     keymap_BindToKey(EmbeddedKeymap, "\027", proc, 0); /* ^W */
-    proc = proctable_DefineProc("figview-copy-selection", CopySelProc, &figview_classinfo, NULL, "Put selected objects in cut buffer.");
+    proc = proctable_DefineProc("figview-copy-selection", (procedure) CopySelProc, &figview_classinfo, NULL, "Put selected objects in cut buffer.");
     menulist_AddToML(EmbeddedMenus, "Copy~2", proc, 0, ML_selected);
     keymap_BindToKey(EmbeddedKeymap, "\033w", proc, 0); /* esc-w */
-    proc = proctable_DefineProc("figview-copy-selected-inset", CopySelInsetProc, &figview_classinfo, NULL, "Put dataobject of selected inset in cut buffer.");
+    proc = proctable_DefineProc("figview-copy-selected-inset", (procedure) CopySelInsetProc, &figview_classinfo, NULL, "Put dataobject of selected inset in cut buffer.");
     menulist_AddToML(EmbeddedMenus, "Copy Inset Contents~3", proc, 0, ML_oneinsetselected);
 
-    proc = proctable_DefineProc("figview-yank-selection", PasteSelProc, &figview_classinfo, NULL, "Paste an object from the cut buffer.");
+    proc = proctable_DefineProc("figview-yank-selection", (procedure) PasteSelProc, &figview_classinfo, NULL, "Paste an object from the cut buffer.");
     menulist_AddToML(EmbeddedMenus, "Paste~4", proc, 0, 0);
     keymap_BindToKey(EmbeddedKeymap, "\031", proc, 0); /* ^Y */
-    proc = proctable_DefineProc("figview-rotate-yank-selection", RotatePasteProc, &figview_classinfo, NULL, "Paste an object from the cut buffer and rotate the buffer.");
+    proc = proctable_DefineProc("figview-rotate-yank-selection", (procedure) RotatePasteProc, &figview_classinfo, NULL, "Paste an object from the cut buffer and rotate the buffer.");
     keymap_BindToKey(EmbeddedKeymap, "\033y", proc, 0); /* esc-y */
 
-    proc = proctable_DefineProc("figview-write-PostScript", WritePSProc, &figview_classinfo, NULL, "Write out the fig in PostScript format.");
+    proc = proctable_DefineProc("figview-write-PostScript", (procedure) WritePSProc, &figview_classinfo, NULL, "Write out the fig in PostScript format.");
     menulist_AddToML(EmbeddedMenus, "File,Write As PostScript~19", proc, 0, 0);
     keymap_BindToKey(EmbeddedKeymap, "\030\020", proc, 0); /* ^X^P */
 
-    proc = proctable_DefineProc("figview-read-zip-file", ReadZipProc, &figview_classinfo, NULL, "Read a zip datastream into the figure.");
+    proc = proctable_DefineProc("figview-read-zip-file", (procedure) ReadZipProc, &figview_classinfo, NULL, "Read a zip datastream into the figure.");
     /*menulist_AddToML(EmbeddedMenus, "File,Read Zip File~18", proc, 0, 0);*/
 
-    proc = proctable_DefineProc("figview-set-print-scale", SetPrintScaleProc, &figview_classinfo, NULL, "Set print scale.");
+    proc = proctable_DefineProc("figview-set-print-scale", (procedure) SetPrintScaleProc, &figview_classinfo, NULL, "Set print scale.");
     menulist_AddToML(EmbeddedMenus, "File,Set Print Scale~21", proc, 0, 0);
     keymap_BindToKey(EmbeddedKeymap, "\033P", proc, 0); /* esc-P */
 
-    proc = proctable_DefineProc("figview-show-print-area", ShowPrintAreaProc, &figview_classinfo, NULL, "Show page boundaries.");
+    proc = proctable_DefineProc("figview-show-print-area", (procedure) ShowPrintAreaProc, &figview_classinfo, NULL, "Show page boundaries.");
     menulist_AddToML(EmbeddedMenus, "File,Show Print Area~26", proc, (void *)1, ML_noshowprintarea);
     menulist_AddToML(EmbeddedMenus, "File,Hide Print Area~26", proc, 0, ML_showprintarea);
 
-    proc = proctable_DefineProc("figview-focus-down", FocusDownProc, &figview_classinfo, NULL, "move focus down to subgroup.");
+    proc = proctable_DefineProc("figview-focus-down", (procedure) FocusDownProc, &figview_classinfo, NULL, "move focus down to subgroup.");
     keymap_BindToKey(EmbeddedKeymap, "\033B", proc, 0); /* esc-B */
-    proc = proctable_DefineProc("figview-focus-up", FocusUpProc, &figview_classinfo, NULL, "move focus up to parent group.");
+    proc = proctable_DefineProc("figview-focus-up", (procedure) FocusUpProc, &figview_classinfo, NULL, "move focus up to parent group.");
     keymap_BindToKey(EmbeddedKeymap, "\033A", proc, 0); /* esc-A */
-    proc = proctable_DefineProc("figview-focus-left", FocusLeftProc, &figview_classinfo, NULL, "move focus left to sibling group.");
+    proc = proctable_DefineProc("figview-focus-left", (procedure) FocusLeftProc, &figview_classinfo, NULL, "move focus left to sibling group.");
     keymap_BindToKey(EmbeddedKeymap, "\033D", proc, 0); /* esc-D */
-    proc = proctable_DefineProc("figview-focus-right", FocusRightProc, &figview_classinfo, NULL, "move focus left to sibling group.");
+    proc = proctable_DefineProc("figview-focus-right", (procedure) FocusRightProc, &figview_classinfo, NULL, "move focus left to sibling group.");
     keymap_BindToKey(EmbeddedKeymap, "\033C", proc, 0); /* esc-C */
 
-    proc = proctable_DefineProc("figview-abort-object", AbortObjectProc, &figview_classinfo, NULL, "abort object being created.");
+    proc = proctable_DefineProc("figview-abort-object", (procedure) AbortObjectProc, &figview_classinfo, NULL, "abort object being created.");
     keymap_BindToKey(EmbeddedKeymap, "\007", proc, 0); /* ^G */
 
     DefaultExpertMode = environ_GetProfileSwitch("FigureExpertMode", FALSE);
@@ -875,17 +875,17 @@ static void RedrawView(struct figview *self, boolean recterased)
 	    /*figview_FillRect(self, &B, figview_WhitePattern(self)); */
 	}
 
-	DEBUG(("Drawing: %d...", self->redrawnum));
-	DEBUG(("[clip %d] ", clipnum));
+	DEBUG(("Drawing: %ld...", self->redrawnum));
+	DEBUG(("[clip %ld] ", clipnum));
 	for (jx=0; jx<self->redrawnum; jx++) {
 	    ix = self->redrawlist[jx].oref;
 	    if (clipnum != self->redrawlist[jx].clip) {
 		clipnum = self->redrawlist[jx].clip;
 		self->currentclipreg = self->clipreglist[clipnum];
 		figview_SetClippingRegion(self, self->currentclipreg);
-		DEBUG(("[clip %d] ", clipnum));
+		DEBUG(("[clip %ld] ", clipnum));
 	    }
-	    DEBUG(("%d ", ix));
+	    DEBUG(("%ld ", ix));
 	    o = self->objs[ix].o;
 	    if (figobj_IsGroup(o)) {
 	    }
@@ -1078,7 +1078,7 @@ boolean needfull;
 
 	    /* handle old one */
 	    if (self->objs[ix].o) {
-		DEBUG(("Cache: old %d\n", ix));
+		DEBUG(("Cache: old %ld\n", ix));
 		if (self->objs[ix].selected)
 		    self->numselected--;
 		if (self->objs[ix].drawnselected == 0) {
@@ -1096,7 +1096,7 @@ boolean needfull;
 	    /* handle new one */
 	    if (fig->objs[ix].o) {
 		struct figobj *o = fig->objs[ix].o;
-		DEBUG(("Cache: new %d\n", ix));
+		DEBUG(("Cache: new %ld\n", ix));
 		self->objs[ix].o = o;
 		self->objs[ix].selected = FALSE;
 		self->objs[ix].drawnselected = FALSE;
@@ -1133,7 +1133,7 @@ boolean needfull;
 		self->objs[ix].timestamp = figobj_GetModified(o);
 	    }
 	    else {
-		DEBUG(("Cache: new NULL %d\n", ix));
+		DEBUG(("Cache: new NULL %ld\n", ix));
 		self->objs[ix].o = NULL;
 	    }
 	} /* end case self->objs[ix].o != fig->objs[ix].o */
@@ -1159,7 +1159,7 @@ boolean needfull;
 	    }
 	    if (needup) {
 		struct figobj *o = self->objs[ix].o;
-		DEBUG(("Cache: changed %d\n", ix));
+		DEBUG(("Cache: changed %ld\n", ix));
 
 		if (self->objs[ix].selected
 		    || (self->ShowFocusAttachments
@@ -1823,7 +1823,7 @@ long figview__GetOneSelected(struct figview *self)
     return figure_NULLREF; /* should never happen, but what the hell */
 }
 
-static void EnumSelSplot(struct figview *self, struct figure *fig, long grp, void (*func)(), void *rock)
+static void EnumSelSplot(struct figview *self, struct figure *fig, long grp, procedure func, void *rock)
 {
     long ix;
     struct figogrp *gr = (struct figogrp *)fig->objs[grp].o;
@@ -2553,16 +2553,16 @@ static boolean PrintSplot(struct figobj *o, long ref, struct figure *fig, struct
 	}
 
 	if (strcmp(lump->processor, "troff") == 0) {
-	    fprintf(lump->file, "%s  gsave\n", lump->prefix);	
-	    fprintf(lump->file, "%s  %d %d translate\n", lump->prefix, insetb.left, insetb.top);
-	    fprintf(lump->file, "%s  1 -1 scale %d %d translate\n", lump->prefix, 0, -insetb.height);
+	    fprintf(lump->file, "%s  gsave\n", lump->prefix);
+	    fprintf(lump->file, "%s  %ld %ld translate\n", lump->prefix, insetb.left, insetb.top);
+	    fprintf(lump->file, "%s  1 -1 scale %d %ld translate\n", lump->prefix, 0, -insetb.height);
 	    view_Print(vtmp, lump->file, "PostScript", "troff", FALSE);
 	    fprintf(lump->file, "%s  grestore\n", lump->prefix);
 	}
 	else {
-	    fprintf(lump->file, "%s  gsave\n", lump->prefix);	
-	    fprintf(lump->file, "%s  %d %d translate\n", lump->prefix, insetb.left, insetb.top);
-	    fprintf(lump->file, "%s  1 -1 scale %d %d translate\n", lump->prefix, 0, -insetb.height);
+	    fprintf(lump->file, "%s  gsave\n", lump->prefix);
+	    fprintf(lump->file, "%s  %ld %ld translate\n", lump->prefix, insetb.left, insetb.top);
+	    fprintf(lump->file, "%s  1 -1 scale %d %ld translate\n", lump->prefix, 0, -insetb.height);
 	    view_Print(vtmp, lump->file, lump->processor, lump->format, FALSE);
 	    fprintf(lump->file, "%s  grestore\n", lump->prefix);
 	}
@@ -2635,8 +2635,8 @@ void figview__Print(struct figview *self, FILE *file, char *processor, char *for
 
     /* generate PostScript  */
     fprintf(file, "%s  %% ATK fig inset beginning\n", prefix);
-    fprintf(file, "%s  /width %d def  /height %d def\n", prefix, wpts, hpts);
-    fprintf(file, "%s  1 -1 scale  0 %d translate\n", prefix, -hpts);
+    fprintf(file, "%s  /width %ld def  /height %ld def\n", prefix, wpts, hpts);
+    fprintf(file, "%s  1 -1 scale  0 %ld translate\n", prefix, -hpts);
     fprintf(file, "%s  newpath 0 0 moveto 0 height lineto width height lineto\n", prefix);
     fprintf(file, "%s  width 0 lineto clip newpath   %% clip to assigned area\n", prefix);	
     fprintf(file, "%s  %f %f scale\n", prefix, figure_GetPrintScaleX(fig), figure_GetPrintScaleY(fig));	

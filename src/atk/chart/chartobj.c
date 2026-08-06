@@ -366,7 +366,7 @@ void chartobj__FullUpdate(struct chartobj *self, enum view_UpdateType type, long
       { DEBUG(Prepare for Scales);
       DottedGraphic = fontdesc_CvtCharToGraphic( GraphicFont,
 			    chartobj_GetDrawable( self ), DottedIcon );
-      sprintf( value_string, "%d", chart_ItemValueGreatest( Chart) );
+      sprintf( value_string, "%ld", chart_ItemValueGreatest( Chart) );
       fontdesc_StringSize( ScaleFont, chartobj_GetDrawable( self ),
 			   value_string, &W, &H );
       if ( ScalePositions & chartv_Left )
@@ -548,14 +548,14 @@ struct view * chartobj__HitChart(struct chartobj *self, enum view_MouseAction ac
 	chartobj_UseNormalCursor( self );
         break;
       }
-    sprintf( value_string, "%s:  Value = %d", name, value );
+    sprintf( value_string, "%s:  Value = %ld", name, value );
     chartobj_Announce( self, value_string );
     }
   OUT(chartobj_HitChart);
   return  (struct view *) self;
   }
 
-static Generate_Shadows(struct chartobj *self)
+static int Generate_Shadows(struct chartobj *self)
   {
   register struct chart_item_shadow   *shadow = NULL, *prior = NULL;
   register struct chart_item	   *chart_item = chart_ItemAnchor( Chart );
@@ -581,7 +581,7 @@ static Generate_Shadows(struct chartobj *self)
   OUT(Generate_Shadows);
   }
 
-static Set_Shadows(struct chartobj *self)
+static int Set_Shadows(struct chartobj *self)
   {
   register long			      i, x, y, width, high_adjust = 0, low_adjust = 0,
 				      count = chart_ItemCount( Chart ),
@@ -625,7 +625,7 @@ static Set_Shadows(struct chartobj *self)
   OUT(Set_Shadows);
   }
 
-static Free_Shadows(struct chartobj *self)
+static int Free_Shadows(struct chartobj *self)
   {
   register struct chart_item_shadow  *shadow = Shadows, *next;
 
@@ -685,7 +685,7 @@ void chartobj__Print(struct chartobj *self, FILE *file, char *processor, char *f
   OUT(chartobj_Print);
   }
 
-static Draw_Labels(struct chartobj *self)
+static int Draw_Labels(struct chartobj *self)
   {
   IN(Draw_Labels);
   chartobj_SetFont( self, LabelFont );
@@ -704,7 +704,7 @@ static Draw_Labels(struct chartobj *self)
   OUT(Draw_Labels);
   }
 
-static Draw_Horizontal_Labels(struct chartobj *self, int left, int top, int width, int height)
+static int Draw_Horizontal_Labels(struct chartobj *self, int left, int top, int width, int height)
   {
   register struct chart_item	 *chart_item = chart_ItemAnchor( Chart );
   register short		  x, x_increment, y, excess, fudge, i = 0;
@@ -734,14 +734,14 @@ static Draw_Horizontal_Labels(struct chartobj *self, int left, int top, int widt
   OUT(Draw_Horizontal_Labels);
   }
 
-static Draw_Vertical_Labels(struct chartobj *self, int left, int top, int width, int height)
+static int Draw_Vertical_Labels(struct chartobj *self, int left, int top, int width, int height)
   {
   IN(Draw_Left_Labels);
 /*===*/
   OUT(Draw_Left_Labels);
   }
 
-static Draw_Scales(struct chartobj *self)
+static int Draw_Scales(struct chartobj *self)
   {
   IN(Draw_Scales);
   chartobj_SetFont( self, ScaleFont );
@@ -752,7 +752,7 @@ static Draw_Scales(struct chartobj *self)
   OUT(Draw_Scales);
   }
 
-static Draw_Left_Scale(struct chartobj *self)
+static int Draw_Left_Scale(struct chartobj *self)
   {
   register long			  value, Y, adjust;
   register float		  y, y_increment;
@@ -779,12 +779,12 @@ static Draw_Left_Scale(struct chartobj *self)
   chartobj_SetLineDash( self, NULL, 0, graphic_LineSolid);
   if ( (ScaleTick > 0) && (adjust = (value = chart_ItemValueLeast(Chart)) % ScaleTick ) )
     value -= ScaleTick + adjust;
-  sprintf( value_string, "%d", value );
+  sprintf( value_string, "%ld", value );
   chartobj_MoveTo( self, LeftScaleBarX-5, LeftScaleBottom );
   chartobj_DrawString( self, value_string, RightBottom );
   if ( (ScaleTick > 0) && (adjust = (value = chart_ItemValueGreatest(Chart)) % ScaleTick ) )
     value += ScaleTick - adjust;
-  sprintf( value_string, "%d", value );
+  sprintf( value_string, "%ld", value );
   chartobj_MoveTo( self, LeftScaleBarX-5, LeftScaleTop );
   chartobj_DrawString( self, value_string, RightTop );
   if ( y_increment = PixelsPerUnit * ScaleTick )
@@ -804,7 +804,7 @@ static Draw_Left_Scale(struct chartobj *self)
       chartobj_MoveTo( self, LeftScaleBarX, Y + half_y_increment );
       chartobj_DrawLineTo( self, LeftScaleRight - 5, Y + half_y_increment );
       value -= ScaleTick;
-      sprintf( value_string, "%d", value );
+      sprintf( value_string, "%ld", value );
       chartobj_MoveTo( self, LeftScaleBarX-5, Y );
       chartobj_DrawString( self, value_string, RightMiddle );
       Y = y = y + y_increment;
@@ -818,7 +818,7 @@ static Draw_Left_Scale(struct chartobj *self)
   OUT(Draw_Left_Scale); /*=== NEEDS WORK ===*/
   }
 
-static Draw_Right_Scale(struct chartobj *self)
+static int Draw_Right_Scale(struct chartobj *self)
   {
   IN(Draw_Right_Scale);
   Prepare_Vertical_Scale( self );
@@ -826,7 +826,7 @@ static Draw_Right_Scale(struct chartobj *self)
   OUT(Draw_Right_Scale);
   }
 
-static Prepare_Vertical_Scale(struct chartobj *self)
+static int Prepare_Vertical_Scale(struct chartobj *self)
   {
   long  ValueSpanScale = 1;
   long  ScaledValueSpan;
@@ -857,7 +857,7 @@ static Prepare_Vertical_Scale(struct chartobj *self)
   OUT(Prepare_Vertical_Scale);
   }
 
-static Draw_Top_Scale(struct chartobj *self)
+static int Draw_Top_Scale(struct chartobj *self)
   {
   IN(Draw_Top_Scale);
   Prepare_Horizontal_Scale( self );
@@ -865,7 +865,7 @@ static Draw_Top_Scale(struct chartobj *self)
   OUT(Draw_Top_Scale);
   }
 
-static Draw_Bottom_Scale(struct chartobj *self)
+static int Draw_Bottom_Scale(struct chartobj *self)
   {
   IN(Draw_Bottom_Scale);
   Prepare_Horizontal_Scale( self );
@@ -873,14 +873,14 @@ static Draw_Bottom_Scale(struct chartobj *self)
   OUT(Draw_Bottom_Scale);
   }
 
-static Prepare_Horizontal_Scale(struct chartobj *self)
+static int Prepare_Horizontal_Scale(struct chartobj *self)
   {
   IN(Prepare_Horizontal_Scale);
 /*===*/
   OUT(Prepare_Horizontal_Scale);
   }
 
-static Print_Scales(struct chartobj *self)
+static int Print_Scales(struct chartobj *self)
   {
   IN(Print_Scales);
   chartobj_SetPrintLineWidth( self, 1 );
@@ -894,7 +894,7 @@ static Print_Scales(struct chartobj *self)
   OUT(Print_Scales);
   }
 
-static Print_Left_Scale(struct chartobj *self)
+static int Print_Left_Scale(struct chartobj *self)
   {
   register long			  value, y, adjust,
 				  y_increment, half_y_increment;
@@ -911,11 +911,11 @@ static Print_Left_Scale(struct chartobj *self)
 				LeftScaleRight, LeftScaleBottom, ChartWidth, DottedGraphic );*/
   if ( adjust = (value = chart_ItemValueLeast( Chart)) % ScaleTick )
     value -= ScaleTick + adjust;
-  sprintf( value_string, "%d", value );
+  sprintf( value_string, "%ld", value );
   chartobj_PrintString( self, LeftScaleBarX-5, LeftScaleBottom, value_string, RightBottom );
   if ( adjust = (value = chart_ItemValueGreatest( Chart)) % ScaleTick )
     value += ScaleTick - adjust;
-  sprintf( value_string, "%d", value );
+  sprintf( value_string, "%ld", value );
   chartobj_PrintString( self, LeftScaleBarX-5, LeftScaleTop, value_string, RightTop );
   if ( y_increment = PixelsPerUnit * ScaleTick )
     {
@@ -931,7 +931,7 @@ static Print_Left_Scale(struct chartobj *self)
       chartobj_PrintLine( self, LeftScaleBarX, y + half_y_increment,
 				LeftScaleRight - 5, y + half_y_increment );
       value = value -= ScaleTick;
-      sprintf( value_string, "%d", value );
+      sprintf( value_string, "%ld", value );
       chartobj_PrintString( self, LeftScaleBarX-5, y, value_string, RightMiddle );
       y += y_increment;
       }
@@ -944,7 +944,7 @@ static Print_Left_Scale(struct chartobj *self)
   OUT(Print_Left_Scale);
   }
 
-static Print_Labels(struct chartobj *self)
+static int Print_Labels(struct chartobj *self)
   {
   IN(Print_Labels);
   chartobj_SetPrintFont( self, LabelFontName );
@@ -959,7 +959,7 @@ static Print_Labels(struct chartobj *self)
   OUT(Print_Labels);
   }
 
-static Print_Horizontal_Labels(struct chartobj *self, int left, int width, int middle)
+static int Print_Horizontal_Labels(struct chartobj *self, int left, int width, int middle)
   {
   register struct chart_item	 *chart_item = chart_ItemAnchor( Chart );
   register short		  x, x_increment, y;

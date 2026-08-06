@@ -174,28 +174,28 @@ long figattr__Write(struct figattr *self, FILE *fp, long writeid, int level)
 	    fprintf(fp, "%s:", attribute_names[ix]);
 	    switch (ix) {
 		case figattr_Shade:
-		    fprintf(fp, "%d", self->shade);
+		    fprintf(fp, "%ld", self->shade);
 		    break;
 		case figattr_LineWidth:
-		    fprintf(fp, "%d", self->linewidth);
+		    fprintf(fp, "%ld", self->linewidth);
 		    break;
 		case figattr_RRectCorner:
-		    fprintf(fp, "%d", self->rrectcorner);
+		    fprintf(fp, "%ld", self->rrectcorner);
 		    break;
 		case figattr_Color:
 		    fprintf(fp, "%s", self->color);
 		    break;
 		case figattr_FontSize:
-		    fprintf(fp, "%d", self->fontsize);
+		    fprintf(fp, "%ld", self->fontsize);
 		    break;
 		case figattr_FontStyle:
-		    fprintf(fp, "%d", self->fontstyle);
+		    fprintf(fp, "%ld", self->fontstyle);
 		    break;
 		case figattr_FontFamily:
 		    fprintf(fp, "%s", self->fontfamily);
 		    break;
 		case figattr_TextPos:
-		    fprintf(fp, "%d", self->textpos);
+		    fprintf(fp, "%ld", self->textpos);
 		    break;
 		    /* ##new */
 		default:

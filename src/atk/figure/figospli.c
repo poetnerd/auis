@@ -491,7 +491,7 @@ void figospli__PrintObject(struct figospli *self, struct figview *v, FILE *file,
     
     fprintf(file, "%s  2 setlinejoin\n", prefix);
     
-    fprintf(file, "%s  %d %d moveto\n", prefix, figview_ToPrintPixX(v, xbase), figview_ToPrintPixY(v, ybase));
+    fprintf(file, "%s  %ld %ld moveto\n", prefix, figview_ToPrintPixX(v, xbase), figview_ToPrintPixY(v, ybase));
 
     for (ix=0; ix<nump-1; ix++) {
 	cb = &(self->cubit[ix]);
@@ -501,7 +501,7 @@ void figospli__PrintObject(struct figospli *self, struct figview *v, FILE *file,
 	Qy = Py + (cb->yc + cb->yb)/3;
 	Rx = (cb->xa + cb->xb + cb->xc + cb->xd);
 	Ry = (cb->ya + cb->yb + cb->yc + cb->yd);
-	fprintf(file, "%s  %d %d %d %d %d %d curveto\n", prefix, figview_ToPrintPixX(v, Px), figview_ToPrintPixY(v, Py), figview_ToPrintPixX(v, Qx), figview_ToPrintPixY(v, Qy), figview_ToPrintPixX(v, Rx), figview_ToPrintPixY(v, Ry));
+	fprintf(file, "%s  %ld %ld %ld %ld %ld %ld curveto\n", prefix, figview_ToPrintPixX(v, Px), figview_ToPrintPixY(v, Py), figview_ToPrintPixX(v, Qx), figview_ToPrintPixY(v, Qy), figview_ToPrintPixX(v, Rx), figview_ToPrintPixY(v, Ry));
     }
 
     col = figattr_GetColor(figospli_GetVAttributes(self), figospli_GetIVAttributes(self));
@@ -523,7 +523,7 @@ void figospli__PrintObject(struct figospli *self, struct figview *v, FILE *file,
     lw = figattr_GetLineWidth(figospli_GetVAttributes(self), figospli_GetIVAttributes(self));
     lw = figview_ToPrintPixW(v, lw*figview_FigUPerPix);
     if (lw <= 0) lw = 0;
-    fprintf(file, "%s  %d setlinewidth\n", prefix, lw);
+    fprintf(file, "%s  %ld setlinewidth\n", prefix, lw);
     fprintf(file, "%s  %f %f %f setrgbcolor\n", prefix, rcol, gcol, bcol);
     /*fprintf(file, "%s  0 setgray\n", prefix);*/
     fprintf(file, "%s  stroke\n", prefix);

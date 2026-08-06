@@ -28,7 +28,7 @@
 
 
 LOCALINCLUDES	= -I$(BASEDIR)/include/zip
-COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Werror=implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS		=	chart.do \

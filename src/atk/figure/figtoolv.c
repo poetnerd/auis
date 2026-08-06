@@ -304,21 +304,21 @@ boolean figtoolview__InitializeClass(struct classheader *ClassID)
     Menus = menulist_New();
     Keymap = keymap_New();
 
-    proc = proctable_DefineProc("figtoolv-toolset-destroy", Command_Quit, &figtoolview_classinfo, NULL, "Deletes toolset window.");
+    proc = proctable_DefineProc("figtoolv-toolset-destroy", (procedure) Command_Quit, &figtoolview_classinfo, NULL, "Deletes toolset window.");
     keymap_BindToKey(Keymap, "\030\004", proc, 0);	/* ^X^D */
     keymap_BindToKey(Keymap, "\030\003", proc, 0);	/* ^X^C */
     menulist_AddToML(Menus, "Quit~99", proc, NULL, 0);
     
-    proc = proctable_DefineProc("figtoolv-apply-to-selection", ApplyToSelProc, &figtoolview_classinfo, NULL, "Apply attributes to selected objects.");
+    proc = proctable_DefineProc("figtoolv-apply-to-selection", (procedure) ApplyToSelProc, &figtoolview_classinfo, NULL, "Apply attributes to selected objects.");
     menulist_AddToML(Menus, "Apply to Selection~33", proc, NULL, 0);
 
-    proc = proctable_DefineProc("figtoolv-toggle-smooth", ToggleSmoothProc, &figtoolview_classinfo, NULL, "Turn selected polylines into splines and back.");
+    proc = proctable_DefineProc("figtoolv-toggle-smooth", (procedure) ToggleSmoothProc, &figtoolview_classinfo, NULL, "Turn selected polylines into splines and back.");
     menulist_AddToML(Menus, "Smooth / Unsmooth~31", proc, NULL, 0);
 
-    proc = proctable_DefineProc("figtoolv-toggle-closed", ToggleClosedProc, &figtoolview_classinfo, NULL, "Open or close selected polylines and splines.");
+    proc = proctable_DefineProc("figtoolv-toggle-closed", (procedure) ToggleClosedProc, &figtoolview_classinfo, NULL, "Open or close selected polylines and splines.");
     menulist_AddToML(Menus, "Close / Open~32", proc, NULL, 0);
 
-    proc = proctable_DefineProc("figtoolv-abort-object", AbortObjectProc, &figtoolview_classinfo, NULL, "Abort the object being built in the figview.");
+    proc = proctable_DefineProc("figtoolv-abort-object", (procedure) AbortObjectProc, &figtoolview_classinfo, NULL, "Abort the object being built in the figview.");
     menulist_AddToML(Menus, "Cancel Object~11", proc, NULL, ML_objectcreating);
 
     return TRUE;
@@ -1486,7 +1486,7 @@ static void ApplyToSelProc(struct figtoolview *self, long rock)
 	return;
     }
 
-    figview_EnumerateSelection(self->primaryview, ATSPSplot, self->menuatt);
+    figview_EnumerateSelection(self->primaryview, (procedure) ATSPSplot, self->menuatt);
     figure_NotifyObservers(fig, figure_DATACHANGED);
 }
 
@@ -1699,7 +1699,7 @@ static void Command_GroupSel(struct figtoolview *self, char *rock)
     foc = figview_GetFocusRef(figv);
 
     self->tmpnum = 0;
-    figview_EnumerateSelection(figv, CacheSelectProc, self);
+    figview_EnumerateSelection(figv, (procedure) CacheSelectProc, self);
 
     if (self->tmpnum==0) {
 	message_DisplayString(figv, 10, "No objects selected.");
@@ -1784,7 +1784,7 @@ static void Command_MoveToExtreme(struct figtoolview *self, long infront)
     foc = figview_GetFocusRef(figv);
 
     self->tmpnum = 0;
-    figview_EnumerateSelection(figv, CacheSelectProc, self);
+    figview_EnumerateSelection(figv, (procedure) CacheSelectProc, self);
 
     if (self->tmpnum==0) {
 	message_DisplayString(figv, 10, "No objects selected.");
@@ -1826,7 +1826,7 @@ static void ToggleSmoothProc(struct figtoolview *self, long rock)
     }
 
     self->tmpnum = 0;
-    figview_EnumerateSelection(figv, CacheSelectProc, self);
+    figview_EnumerateSelection(figv, (procedure) CacheSelectProc, self);
 
     for (ix=0; ix<self->tmpnum; ix++) {
 	ref = self->tmplist[ix];
@@ -1895,7 +1895,7 @@ static void ToggleClosedProc(struct figtoolview *self, long rock)
     }
 
     self->tmpnum = 0;
-    figview_EnumerateSelection(figv, CacheSelectProc, self);
+    figview_EnumerateSelection(figv, (procedure) CacheSelectProc, self);
 
     for (ix=0; ix<self->tmpnum; ix++) {
 	ref = self->tmplist[ix];
@@ -2085,7 +2085,7 @@ static void Command_ClearAnchors(struct figtoolview *self, char *rock)
 	return;
     }
 
-    figview_EnumerateSelection(self->primaryview, ClearAnchorSplot, 0);
+    figview_EnumerateSelection(self->primaryview, (procedure) ClearAnchorSplot, 0);
     figure_SetModified(fig);
     figure_NotifyObservers(fig, figure_DATACHANGED);
 
@@ -2105,7 +2105,7 @@ static void Command_DefaultAnchors(struct figtoolview *self, char *rock)
 	return;
     }
 
-    figview_EnumerateSelection(self->primaryview, DefaultAnchorSplot, 0);
+    figview_EnumerateSelection(self->primaryview, (procedure) DefaultAnchorSplot, 0);
     figure_SetModified(fig);
     figure_NotifyObservers(fig, figure_DATACHANGED);
 
@@ -2125,7 +2125,7 @@ static void Command_ProportAnchors(struct figtoolview *self, char *rock)
 	return;
     }
 
-    figview_EnumerateSelection(self->primaryview, ProportAnchorSplot, 0);
+    figview_EnumerateSelection(self->primaryview, (procedure) ProportAnchorSplot, 0);
     figure_SetModified(fig);
     figure_NotifyObservers(fig, figure_DATACHANGED);
 
@@ -2371,7 +2371,7 @@ static void Toolsub_Drag(struct figtoolview *self, enum view_MouseAction action,
 		self->rectlist = (struct rectangle *)realloc(self->rectlist, self->rect_size * sizeof(struct rectangle));
 	    }
 	    tmp = self->rectlist;
-	    figview_EnumerateSelection(self->primaryview, MakeBoxListProc, &tmp);
+	    figview_EnumerateSelection(self->primaryview, (procedure) MakeBoxListProc, &tmp);
 	    self->rock = ix;
 	    self->rockx = x;
 	    self->rocky = y;
@@ -2405,7 +2405,7 @@ static void Toolsub_Drag(struct figtoolview *self, enum view_MouseAction action,
 		figview_DrawRectSize(self->primaryview, self->lastx+tmp->left, self->lasty+tmp->top, tmp->width, tmp->height);
 	    }
 	    point_SetPt(&pt, x - self->rockx, y - self->rocky);
-	    figview_EnumerateSelection(self->primaryview, MoveObjsProc, &pt);
+	    figview_EnumerateSelection(self->primaryview, (procedure) MoveObjsProc, &pt);
 	    fig = (struct figure *)figtoolview_GetDataObject(self);
 	    figure_SetModified(fig);
 	    figure_NotifyObservers(fig, figure_DATACHANGED);
@@ -2579,7 +2579,7 @@ static struct view * Tool_Select(struct figtoolview *self, enum view_MouseAction
 	    val.x = x;
 	    val.y = y;
 	    val.delta = figview_ToFigW(self->primaryview, figtoolview_SelectClickDistance);
-	    figview_EnumerateSelection(self->primaryview, FindHitObjProc, &val);	 
+	    figview_EnumerateSelection(self->primaryview, (procedure) FindHitObjProc, &val);	 
 	    fig = (struct figure *)figtoolview_GetDataObject(self);
 	    if (!fig)
 		self->submode = 3;
@@ -2637,7 +2637,7 @@ static struct view * Tool_AddPoints(struct figtoolview *self, enum view_MouseAct
 	    val.x = x;
 	    val.y = y;
 	    val.delta = figview_ToFigW(self->primaryview, figtoolview_SelectClickDistance);
-	    figview_EnumerateSelection(self->primaryview, FindHitObjProc, &val);	    
+	    figview_EnumerateSelection(self->primaryview, (procedure) FindHitObjProc, &val);	    
 	    if (val.result==figobj_Miss || val.result==figobj_HitInside) {
 		figview_ClearSelection(self->primaryview);
 		figview_WantUpdate(self->primaryview, self->primaryview);
@@ -2683,7 +2683,7 @@ static struct view * Tool_DelPoints(struct figtoolview *self, enum view_MouseAct
 	    val.x = x;
 	    val.y = y;
 	    val.delta = figview_ToFigW(self->primaryview, figtoolview_SelectClickDistance);
-	    figview_EnumerateSelection(self->primaryview, FindHitObjProc, &val);	    
+	    figview_EnumerateSelection(self->primaryview, (procedure) FindHitObjProc, &val);	    
 	    if (val.result==figobj_Miss || val.result==figobj_HitInside) {
 		figview_ClearSelection(self->primaryview);
 		figview_WantUpdate(self->primaryview, self->primaryview);
@@ -2729,7 +2729,7 @@ static struct view * Tool_AddAnchor(struct figtoolview *self, enum view_MouseAct
 	    val.x = x;
 	    val.y = y;
 	    val.delta = figview_ToFigW(self->primaryview, figtoolview_SelectClickDistance);
-	    figview_EnumerateSelection(self->primaryview, FindHitObjAnchProc, &val);	    
+	    figview_EnumerateSelection(self->primaryview, (procedure) FindHitObjAnchProc, &val);	    
 	    if (val.result==figobj_Miss || val.result==figobj_HitInside) {
 		struct figure *fig;
 		long focref;
@@ -2800,7 +2800,7 @@ static struct view * Tool_DelAnchor(struct figtoolview *self, enum view_MouseAct
 	    val.x = x;
 	    val.y = y;
 	    val.delta = figview_ToFigW(self->primaryview, figtoolview_SelectClickDistance);
-	    figview_EnumerateSelection(self->primaryview, FindHitObjAnchProc, &val);	    
+	    figview_EnumerateSelection(self->primaryview, (procedure) FindHitObjAnchProc, &val);	    
 	    if (val.result==figobj_Miss || val.result==figobj_HitInside) {
 		struct figure *fig;
 		long focref;

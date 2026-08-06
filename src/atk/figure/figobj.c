@@ -514,7 +514,7 @@ static char buf[LINELENGTH+1];
 
 void figobj__WriteBody(struct figobj *self, FILE *fp)
 {
-    fprintf(fp, "$ %d %d\n", figobj_PosX(self), figobj_PosY(self));
+    fprintf(fp, "$ %ld %ld\n", figobj_PosX(self), figobj_PosY(self));
 }
 
 long figobj__ReadBody(struct figobj *self, FILE *fp, boolean recompute)
@@ -550,7 +550,7 @@ long figobj__Write(struct figobj *self, FILE *fp, long writeid, int level)
 	if (self->numpts && self->vas) {
 	    for (ix=0; ix<self->numpts; ix++) 
 		if (self->vas[ix].on) {
-		    fprintf(fp, "$# %d %d %d %d %d\n", ix, self->vas[ix].rposx, self->vas[ix].rposy, self->vas[ix].offx, self->vas[ix].offy);
+		    fprintf(fp, "$# %d %ld %ld %ld %ld\n", ix, self->vas[ix].rposx, self->vas[ix].rposy, self->vas[ix].offx, self->vas[ix].offy);
 		}
 	}
 	fprintf(fp, "$endatt\n");

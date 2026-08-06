@@ -64,21 +64,21 @@ boolean figotext__InitializeClass(struct classheader *ClassID)
 
     EmbeddedKeymap = keymap_New();
 
-    proc = proctable_DefineProc("figotext-insert-char", InsertProc, &figotext_classinfo, NULL, "Insert a character into this object.");
+    proc = proctable_DefineProc("figotext-insert-char", (procedure) InsertProc, &figotext_classinfo, NULL, "Insert a character into this object.");
     keymap_BindToKey(EmbeddedKeymap, "\015", proc, '\n'); /* ctrl-M */
     str[1] = '\0';
     for (ix = 32; ix < 127; ix++)  {
 	str[0] = ix;
 	keymap_BindToKey(EmbeddedKeymap, str, proc, ix);
     }
-    proc = proctable_DefineProc("figotext-delete-char", DeleteProc, &figotext_classinfo, NULL, "Delete a character from this object.");
+    proc = proctable_DefineProc("figotext-delete-char", (procedure) DeleteProc, &figotext_classinfo, NULL, "Delete a character from this object.");
     keymap_BindToKey(EmbeddedKeymap, "\010", proc, 0); /* ctrl-H */
     keymap_BindToKey(EmbeddedKeymap, "\177", proc, 0); /* DEL */
 
-    proc = proctable_DefineProc("figotext-kill-line", KillLineProc, &figotext_classinfo, NULL, "Delete chars starting at dot.");
+    proc = proctable_DefineProc("figotext-kill-line", (procedure) KillLineProc, &figotext_classinfo, NULL, "Delete chars starting at dot.");
     keymap_BindToKey(EmbeddedKeymap, "\013", proc, 0); /* ctrl-K */
 
-    proc = proctable_DefineProc("figotext-move-dot", MoveDotProc, &figotext_classinfo, NULL, "Move the dot in this object.");
+    proc = proctable_DefineProc("figotext-move-dot", (procedure) MoveDotProc, &figotext_classinfo, NULL, "Move the dot in this object.");
     keymap_BindToKey(EmbeddedKeymap, "\002", proc, 0);  /* ctrl-B */
     keymap_BindToKey(EmbeddedKeymap, "\033D", proc, 0); /* esc-D */
     keymap_BindToKey(EmbeddedKeymap, "\006", proc, 1);  /* ctrl-F */
@@ -86,10 +86,10 @@ boolean figotext__InitializeClass(struct classheader *ClassID)
     keymap_BindToKey(EmbeddedKeymap, "\001", proc, 2);  /* ctrl-A */
     keymap_BindToKey(EmbeddedKeymap, "\005", proc, 3);  /* ctrl-E */
 
-    proc = proctable_DefineProc("figotext-twiddle-chars", TwiddleCharsProc, &figotext_classinfo, NULL, "Move the dot in this object.");
+    proc = proctable_DefineProc("figotext-twiddle-chars", (procedure) TwiddleCharsProc, &figotext_classinfo, NULL, "Move the dot in this object.");
     keymap_BindToKey(EmbeddedKeymap, "\024", proc, 0);  /* ctrl-T */
 
-    proc = proctable_DefineProc("figotext-complete-entry", CompleteProc, &figotext_classinfo, NULL, "Finish entering text into this object.");
+    proc = proctable_DefineProc("figotext-complete-entry", (procedure) CompleteProc, &figotext_classinfo, NULL, "Finish entering text into this object.");
     keymap_BindToKey(EmbeddedKeymap, "\033\015", proc, 0);  /* esc-ctrl-M */
 
     return TRUE;
@@ -740,7 +740,7 @@ void figotext__WriteBody(struct figotext *self, FILE *fp)
     super_WriteBody(self, fp);
 #define LINESIZE (70)
 
-    fprintf(fp, "$ %d %d\n", self->excessx, self->excessy);
+    fprintf(fp, "$ %ld %ld\n", self->excessx, self->excessy);
 
     count=0;
     for (ix=0; 1; ix++) {
@@ -903,17 +903,17 @@ void figotext__PrintObject(struct figotext *self, struct figview *v, FILE *file,
 	    break;
     }
     fprintf(file, "%s  gsave\n", prefix);
-    fprintf(file, "%s  /%s%c%s%s findfont %d scalefont setfont\n", prefix, psfam, (adddash ? '-' : ' '), mod1, mod2, size);
+    fprintf(file, "%s  /%s%c%s%s findfont %ld scalefont setfont\n", prefix, psfam, (adddash ? '-' : ' '), mod1, mod2, size);
     fprintf(file, "%s  %f %f %f setrgbcolor\n", prefix, rcol, gcol, bcol);
     /*fprintf(file, "%s  0 setgray\n", prefix);*/
-    fprintf(file, "%s  %d %d translate 1 -1 scale\n", prefix, x, y);
+    fprintf(file, "%s  %ld %ld translate 1 -1 scale\n", prefix, x, y);
 
     fprintf(file, "%s  (", prefix);
     count = 0;
     for (ix=0; TRUE; ix++) {
 	ch = self->text[ix];
 	if (ch=='\0' || ch=='\n') {
-	    fprintf(file, ") %s %d moveto show\n", posmod, -count * (size+figotext_Leading));
+	    fprintf(file, ") %s %ld moveto show\n", posmod, -count * (size+figotext_Leading));
 	    if (ch=='\n') {
 		fprintf(file, "%s  (", prefix);
 		count++;

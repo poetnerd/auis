@@ -191,8 +191,8 @@ void figoell__PrintObject(struct figoell *self, struct figview *v, FILE *file, c
     else if (h==0)
 	h = 1;
 
-    fprintf(file, "%s  %d %d translate  %d %d scale  0 0 0.5 0 360 arc\n", prefix, x, y, w, h);
-    fprintf(file, "%s  1.0 %d div  1.0 %d div  scale\n", prefix, w, h);
+    fprintf(file, "%s  %ld %ld translate  %ld %ld scale  0 0 0.5 0 360 arc\n", prefix, x, y, w, h);
+    fprintf(file, "%s  1.0 %ld div  1.0 %ld div  scale\n", prefix, w, h);
 
     col = figattr_GetColor(figoell_GetVAttributes(self), figoell_GetIVAttributes(self));
     print_LookUpColor(col, &rcol, &gcol, &bcol);
@@ -208,7 +208,7 @@ void figoell__PrintObject(struct figoell *self, struct figview *v, FILE *file, c
     lw = figattr_GetLineWidth(figoell_GetVAttributes(self), figoell_GetIVAttributes(self));
     lw = figview_ToPrintPixW(v, lw*figview_FigUPerPix);
     if (lw <= 0) lw = 0;
-    fprintf(file, "%s  %d setlinewidth\n", prefix, lw);
+    fprintf(file, "%s  %ld setlinewidth\n", prefix, lw);
     fprintf(file, "%s  %f %f %f setrgbcolor\n", prefix, rcol, gcol, bcol);
     /*fprintf(file, "%s  0 setgray\n", prefix);*/
     fprintf(file, "%s  stroke\n", prefix);

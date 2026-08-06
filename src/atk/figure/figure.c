@@ -711,7 +711,7 @@ long figure__Write(struct figure *self, FILE *fp, long writeid, int level)
 	figure_SetWriteID(self, writeid);
 
 	fprintf(fp, "\\begindata{%s,%ld}\n", class_GetTypeName(self), figure_GetID(self));
-	fprintf(fp, "$origin %d %d\n", self->originx, self->originy);
+	fprintf(fp, "$origin %ld %ld\n", self->originx, self->originy);
 	fprintf(fp, "$printscale %f %f\n", self->printscalex, self->printscaley);
 	fprintf(fp, "#none\n"); /* this is to make future expansion easier. */
 	if (self->root == figure_NULLREF)
@@ -739,7 +739,7 @@ void figure__WritePartial(struct figure *self, FILE *fp, long writeid, int level
     }
 
     fprintf(fp, "\\begindata{%s,%ld}\n", class_GetTypeName(self), figure_GetID(self));
-    fprintf(fp, "$origin %d %d\n", bbox.left-64, bbox.top-64);
+    fprintf(fp, "$origin %ld %ld\n", bbox.left-64, bbox.top-64);
     if (origin) {
 	origin->x = bbox.left-64;
 	origin->y = bbox.top-64;

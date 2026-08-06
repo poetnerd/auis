@@ -217,7 +217,7 @@ void chartpie__PrintChart(struct chartpie *self)
   OUT(chartpie_PrintChart);
   }
 
-static Show_Pie_Chart(struct chartpie *self, long medium)
+static int Show_Pie_Chart(struct chartpie *self, long medium)
   {
   register long			      i;
   short				      height;
@@ -286,7 +286,7 @@ static Show_Pie_Chart(struct chartpie *self, long medium)
   OUT(Show_Pie_Chart);
   }
 
-static Compute_Pie_Points(struct chartpie *self)
+static int Compute_Pie_Points(struct chartpie *self)
   {
   register long			      i, count = 0;
   register struct chart_item	     *item;

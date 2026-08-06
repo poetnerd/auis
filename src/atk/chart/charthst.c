@@ -194,7 +194,7 @@ struct view * charthst__HitChart(struct charthst *self, enum view_MouseAction ac
 	y_offset = 0;
         break;
       }
-    sprintf( value_string, "%s:  Value = %d", name, value );
+    sprintf( value_string, "%s:  Value = %ld", name, value );
     charthst_Announce( self, value_string );
     }
   OUT(charthst_HitChart);

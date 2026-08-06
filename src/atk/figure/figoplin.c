@@ -1012,7 +1012,7 @@ void figoplin__WriteBody(struct figoplin *self, FILE *fp)
 
     fprintf(fp, "$$ %d %d %d %d\n", self->closed, self->numpts, self->fliph, self->flipv);
     for (ix=0; ix<self->numpts; ix++)
-	fprintf(fp, "$ %d %d\n", self->pts[ix].x, self->pts[ix].y);
+	fprintf(fp, "$ %ld %ld\n", self->pts[ix].x, self->pts[ix].y);
 }
 
 long figoplin__ReadBody(struct figoplin *self, FILE *fp, boolean recompute)
@@ -1076,11 +1076,11 @@ void figoplin__PrintObject(struct figoplin *self, struct figview *v, FILE *file,
     ybase = pts[0].y;
     
     fprintf(file, "%s  2 setlinejoin\n", prefix);
-    fprintf(file, "%s  %d %d moveto\n", prefix, figview_ToPrintPixX(v, xbase), figview_ToPrintPixY(v, ybase));
+    fprintf(file, "%s  %ld %ld moveto\n", prefix, figview_ToPrintPixX(v, xbase), figview_ToPrintPixY(v, ybase));
     for (ix=1; ix<nump; ix++) {
 	x = pts[ix].x + xbase;
 	y = pts[ix].y + ybase;
-	fprintf(file, "%s  %d %d lineto\n", prefix, figview_ToPrintPixX(v, x), figview_ToPrintPixY(v, y));
+	fprintf(file, "%s  %ld %ld lineto\n", prefix, figview_ToPrintPixX(v, x), figview_ToPrintPixY(v, y));
     }
 
     col = figattr_GetColor(figoplin_GetVAttributes(self), figoplin_GetIVAttributes(self));
@@ -1102,7 +1102,7 @@ void figoplin__PrintObject(struct figoplin *self, struct figview *v, FILE *file,
     lw = figattr_GetLineWidth(figoplin_GetVAttributes(self), figoplin_GetIVAttributes(self));
     lw = figview_ToPrintPixW(v, lw*figview_FigUPerPix);
     if (lw <= 0) lw = 0;
-    fprintf(file, "%s  %d setlinewidth\n", prefix, lw);
+    fprintf(file, "%s  %ld setlinewidth\n", prefix, lw);
     fprintf(file, "%s  %f %f %f setrgbcolor\n", prefix, rcol, gcol, bcol);
     /*fprintf(file, "%s  0 setgray\n", prefix);*/
     fprintf(file, "%s  stroke\n", prefix);

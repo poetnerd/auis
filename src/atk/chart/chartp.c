@@ -610,7 +610,7 @@ struct view * Palette_Hit(struct chartv *self, struct suite *suite, struct suite
 	chartv_Save_Command( self );
 	break;
       default:
-	sprintf( msg, "ChartV: ERROR -- Unknown control-code (%d)",
+	sprintf( msg, "ChartV: ERROR -- Unknown control-code (%ld)",
 		    suite_ItemAttribute( suite, item, suite_itemdatum ) );
 	chartv_Announce( self, msg );
       } 
@@ -656,12 +656,12 @@ int Activate_Viewer(struct chartv *self)
   Activate( self, save_code );
   }
 
-static Passivate(struct chartv *self, long code)
+static int Passivate(struct chartv *self, long code)
   {
   suite_PassivateItem( ControlSuite, suite_ItemOfDatum( ControlSuite, code ) );
   }
 
-static Activate(struct chartv *self, long code)
+static int Activate(struct chartv *self, long code)
   {
   suite_ActivateItem( ControlSuite, suite_ItemOfDatum( ControlSuite, code ) );
   }

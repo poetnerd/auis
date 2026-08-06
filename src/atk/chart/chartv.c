@@ -202,7 +202,7 @@ boolean chartv__InitializeClass(struct classheader *classID)
   class_menulist = menulist_New();
   class_keymap = keymap_New();
   bind_BindList( view_menu, class_keymap, class_menulist, &chartv_classinfo );
-  proctable_DefineProc( "chartv-DEBUG", DEBUG_Command, &chartv_classinfo, 
+  proctable_DefineProc( "chartv-DEBUG", (procedure) DEBUG_Command, &chartv_classinfo,
 			NULL, "Toggle debug flag.");
   OUT(chartv_InitializeClass );
   return TRUE;
@@ -332,7 +332,7 @@ void chartv__LoseInputFocus(struct chartv *self)
 long chartv__SetChartAttribute(struct chartv *self, long attribute, long value)
   {  return  SetChartAttribute( self, attribute, value );  }
 
-static SetChartAttribute(struct chartv *self, long attribute, long value)
+static int SetChartAttribute(struct chartv *self, long attribute, long value)
   {
   register long		      status = ok;
 
@@ -383,7 +383,7 @@ static SetChartAttribute(struct chartv *self, long attribute, long value)
       TitleViewObjectHandler = (struct view (*)()) value;break;
 
     default:
-      fprintf( stderr, "ChartV: Unrecognized ChartAttribute (%d) -- Ignored\n", attribute );
+      fprintf( stderr, "ChartV: Unrecognized ChartAttribute (%ld) -- Ignored\n", attribute );
     }
 
   OUT(SetChartAttribute);
@@ -393,7 +393,7 @@ static SetChartAttribute(struct chartv *self, long attribute, long value)
 long chartv__ChangeChartAttribute(struct chartv *self, long attribute, long value)
   {  return  ChangeChartAttribute( self, attribute, value );  }
 
-static ChangeChartAttribute(struct chartv *self, long attribute, long value)
+static int ChangeChartAttribute(struct chartv *self, long attribute, long value)
   {
   register long		      status = ok;
 
@@ -462,7 +462,7 @@ void chartv__FullUpdate(struct chartv *self, enum view_UpdateType type, long lef
   OUT(chartv_FullUpdate);
   }
 
-static Initialize(struct chartv *self)
+static int Initialize(struct chartv *self)
   {
   register char		     *moniker = NULL;
 
@@ -685,7 +685,7 @@ void chartv_Save_Command(struct chartv *self)
     if ( stat( original_name, &st ) == 0 )
       { DEBUG(Existent File);
       while ( ! stat( backup_name, &st ) )
-        sprintf( backup_name, "%s.BACKUP.%d", file_name, serial++ );
+        sprintf( backup_name, "%s.BACKUP.%ld", file_name, serial++ );
       DEBUGst(Backup-name,backup_name);
       if ( rename( original_name, backup_name ) )
         { DEBUG(ReName Failure);
@@ -765,7 +765,7 @@ static void Quit_Command(struct chartv *self)
   OUT(Quit_Command);
   }
 
-static Description_Modified(struct chartv *self)
+static int Description_Modified(struct chartv *self)
   {
   register boolean		  status = false;
 
@@ -780,7 +780,7 @@ static Description_Modified(struct chartv *self)
   return  status;
   }
 
-static Preserve_Description(struct chartv *self)
+static int Preserve_Description(struct chartv *self)
   {
   register FILE			 *file;
   struct stat			  st;

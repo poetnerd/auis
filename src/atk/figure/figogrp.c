@@ -510,7 +510,7 @@ unsigned long figogrp__UpdateVAttributes(struct figogrp *self, struct figattr *a
 
 void figogrp__WriteBody(struct figogrp *self, FILE *fp)
 {
-    fprintf(fp, "$ %d %d %d %d %d\n", self->doconstraints, self->handlebox.left, self->handlebox.top, self->handlebox.width, self->handlebox.height);
+    fprintf(fp, "$ %d %ld %ld %ld %ld\n", self->doconstraints, self->handlebox.left, self->handlebox.top, self->handlebox.width, self->handlebox.height);
 }
 
 long figogrp__ReadBody(struct figogrp *self, FILE *fp, boolean recompute)
