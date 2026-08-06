@@ -448,7 +448,7 @@ long MustBeDir;
     return(MS_DisambiguateFile(source, target, MustBeDir));
 }
 
-long amss__MS_FastUpdateState(self) 
+int amss__MS_FastUpdateState(self)
 struct amss *self;
 {
     return(MS_FastUpdateState());
@@ -583,7 +583,7 @@ char *filename;
     return(MS_UnlinkFile(filename));
 }
 
-long amss__MS_UpdateState(self)
+int amss__MS_UpdateState(self)
 struct amss *self;
 {
     return(MS_UpdateState());

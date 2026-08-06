@@ -702,7 +702,7 @@ void captions__MakeCachedUpdates(struct captions *ci)
 	    ams_ReportSuccess(ams_GetAMS(), ErrorText);
 	    ams_CacheDelayedUpdate(ci->FullName, UpdateDate);
 	} else {
-	    sprintf(ErrorText, "Could not set profile for %s (%s, %d, %d, %d)", ci->ShortName, ci->FullName, ams_AMS_ERRNO(ams_GetAMS()), AMS_ERRCAUSE, AMS_ERRVIA);
+	    sprintf(ErrorText, "Could not set profile for %s (%s, %d, %ld, %ld)", ci->ShortName, ci->FullName, ams_AMS_ERRNO(ams_GetAMS()), AMS_ERRCAUSE, AMS_ERRVIA);
 	    /* UGH!  Above line only works because we've defined mserrcode locally to be the right thing... */
 	    ams_ReportError(ams_GetAMS(), ErrorText, ERR_WARNING, TRUE, mserrcode);
 	}

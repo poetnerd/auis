@@ -77,7 +77,7 @@ typedef short Boolean;
 #include <sendmsg.eh>
 
 static int Submit(struct sendmessage *sendmessage, Boolean Unformat, int Version, int TrustDelivery, Boolean UseMultipartFormat);
-static UnlinkCKPFile();
+static int UnlinkCKPFile();
 
 #include <unscribe.h>
 static int UnlinkCKPFile();
@@ -880,7 +880,7 @@ int SetSendingDot(struct textview *v, struct text *d)
     }
 }
 
-static Submit(struct sendmessage *sendmessage, Boolean Unformat, int Version, int TrustDelivery, Boolean UseMultipartFormat)
+static int Submit(struct sendmessage *sendmessage, Boolean Unformat, int Version, int TrustDelivery, Boolean UseMultipartFormat)
 {
     static int flags = 0;
     char FileName[MAXPATHLEN+1];
@@ -941,7 +941,7 @@ int sendmessage__WriteFile(struct sendmessage *sendmessage, char *ViceFileName)
     return(code);
 }
 
-static UnlinkCKPFile(struct sendmessage *sendmessage)
+static int UnlinkCKPFile(struct sendmessage *sendmessage)
 {
     if (sendmessage->CKPFileName) {
 	if (unlink(sendmessage->CKPFileName)) { /* Try local unlink first */
@@ -964,7 +964,7 @@ void sendmessage__Reset(struct sendmessage *sendmessage)
     SetSendingDot(sendmessage->HeadTextview, sendmessage->HeadText);
     SetNotModified(sendmessage);
     MakeHeaderFieldsBold(sendmessage);
-    im_SetDeleteWindowCallback(sendmessage_GetIM(sendmessage), delete_sendmsg_win, sendmessage);
+    im_SetDeleteWindowCallback(sendmessage_GetIM(sendmessage), (procedure)delete_sendmsg_win, sendmessage);
 }
 
 
@@ -1599,7 +1599,7 @@ struct folders * sendmessage__NewFoldersInNewWindow(struct sendmessage *self)
     sendmessage_SetFoldersView(self, f);
     folders_SetSendmessage(f, self);
     ams_InstallInNewWindow(folders_GetApplicationLayer(f), "messages-folders", "Message Folders", environ_GetProfileInt("folders.width", 600), environ_GetProfileInt("folders.height", 120), f);
-    im_SetDeleteWindowCallback(sendmessage_GetIM(self), delete_sendmsg_win, self);
+    im_SetDeleteWindowCallback(sendmessage_GetIM(self), (procedure)delete_sendmsg_win, self);
     return(f);
 }
 
@@ -1608,7 +1608,7 @@ void sendmessage_DuplicateWindow(struct sendmessage *self)
     struct sendmessage *s = sendmessage_New();
 
     s->myframe = ams_InstallInNewWindow(s, "messages-send", "Message composition", environ_GetProfileInt("sendmessage.width", (long)-1), environ_GetProfileInt("sendmessage.height", (long)-1), s);
-    im_SetDeleteWindowCallback(sendmessage_GetIM(self), delete_sendmsg_win, self);
+    im_SetDeleteWindowCallback(sendmessage_GetIM(self), (procedure)delete_sendmsg_win, self);
     sendmessage_Reset(s);
 }
 

@@ -76,19 +76,19 @@ static char *myfontname = NULL;
 static int myfontsize, UsingFootNote, PrintMinorHeaders;
 static char *fgetsdecoding(), *UnquoteString();
 static boolean ReadMessage();
-static RotateThirteen();
-static FindParam();
-static InsertProperObject();
-static ParseEncoding();
-static getcdecoding();
-static ungetcdecoding();
-static getc64();
-static ungetc64();
-static getcqp();
-static ungetcqp();
-static hexchar();
-static char64();
-static PlainAsciiText();
+static int RotateThirteen();
+static int FindParam();
+static int InsertProperObject();
+static int ParseEncoding();
+static int getcdecoding();
+static int ungetcdecoding();
+static int getc64();
+static int ungetc64();
+static int getcqp();
+static int ungetcqp();
+static int hexchar();
+static int char64();
+static int PlainAsciiText();
 static int ForceMetamail();
 static int InsertDecodedText();
 static void InsertAttachmentLine();
@@ -224,7 +224,7 @@ boolean text822__ReadIntoText(struct classheader *ch, struct text *d_generic, FI
 }
 
 /* Auxilliary routines for text/richtext */
-static ignoretoken(char *t)
+static int ignoretoken(char *t)
 {
     if (*t == '/') ++t;
     if (!strcmp(t, "us-ascii")) return(1);
@@ -1124,7 +1124,7 @@ long text822__Write(struct text822 *self, FILE *fp, long writeID, int level)
     return self->header.dataobject.id;
 }
 
-static RotateThirteen(struct text *d, int start)
+static int RotateThirteen(struct text *d, int start)
 {
     register char *cp,*ecp;
     long len, lengotten;
@@ -1196,7 +1196,7 @@ static char * paramend(char *s)
     return(NULL);
 }        
 
-static FindParam(char *ct, char *paramname, char *ValueBuf)
+static int FindParam(char *ct, char *paramname, char *ValueBuf)
 {
     char *s, *t, *t2, *eq, BigBuf[1000];
 
@@ -1231,7 +1231,7 @@ static FindParam(char *ct, char *paramname, char *ValueBuf)
     return(1);
 }
 
-static InsertProperObject(struct text822 *d, FILE *fp, int *ShowPos, char *ctype, char *encoding, char *descrip)
+static int InsertProperObject(struct text822 *d, FILE *fp, int *ShowPos, char *ctype, char *encoding, char *descrip)
 {
     int pos;
 
@@ -1277,7 +1277,7 @@ static InsertProperObject(struct text822 *d, FILE *fp, int *ShowPos, char *ctype
     return(-1);
 }
 
-static ParseEncoding(char *enc)
+static int ParseEncoding(char *enc)
 {
     /* These codes are defined in mailobj.ch */
     /* strip leading white space */
@@ -1290,7 +1290,7 @@ static ParseEncoding(char *enc)
     return ENC_NONE;
 }
 
-static getcdecoding(FILE *fp, int code)
+static int getcdecoding(FILE *fp, int code)
 {
     switch(code) {
 	case ENC_B64:
@@ -1302,7 +1302,7 @@ static getcdecoding(FILE *fp, int code)
     }
 }
 
-static ungetcdecoding(int c, FILE *fp, int code)
+static int ungetcdecoding(int c, FILE *fp, int code)
 {
     switch(code) {
 	case ENC_B64:
@@ -1318,7 +1318,7 @@ static int charspending=0, nextpending=0;
 static int pendingchars[80];
 static FILE *lastfp = NULL;
 
-static getc64(FILE *fp)
+static int getc64(FILE *fp)
 {
     int c1, c2, c3, c4;
 
@@ -1362,7 +1362,7 @@ static getc64(FILE *fp)
     return(c1);
 }
 
-static ungetc64(int c, FILE *fp)
+static int ungetc64(int c, FILE *fp)
 {
     int i;
     for (i=nextpending+charspending; i>nextpending; --i) {
@@ -1372,7 +1372,7 @@ static ungetc64(int c, FILE *fp)
     ++charspending;
 }
 
-static getcqp(FILE *fp)
+static int getcqp(FILE *fp)
 {
     int c1, c2;
 
@@ -1409,7 +1409,7 @@ static getcqp(FILE *fp)
     }
 }
 
-static ungetcqp(int c, FILE *fp)
+static int ungetcqp(int c, FILE *fp)
 {
     pendingchars[charspending++] = c;
 }
@@ -1437,7 +1437,7 @@ static char * fgetsdecoding(char *buf, int size, FILE *fp, int code)
 static char basis_hex[] = "0123456789ABCDEF";
 static char basis_64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-static hexchar(int c)
+static int hexchar(int c)
 {
     char *s;
     if (islower(c)) c = toupper(c);
@@ -1446,7 +1446,7 @@ static hexchar(int c)
     return(-1);
 }
 
-static char64(int c)
+static int char64(int c)
 {
     char *s = (char *) strchr(basis_64, c);
     if (s) return(s-basis_64);
@@ -1476,7 +1476,7 @@ static char * UnquoteString(char *s)
     return(ans);
 }
 
-static PlainAsciiText(char *s, char *currentcharset)
+static int PlainAsciiText(char *s, char *currentcharset)
 {
     char *t, *semi;
     char Buf[1000];

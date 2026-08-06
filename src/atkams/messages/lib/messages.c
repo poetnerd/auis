@@ -78,9 +78,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 extern		void AlterSubByName();
 extern		void AppendMarked();
 extern		void AppendMarkedToFile();
-extern		AppendMessageToFile();
+extern		int AppendMessageToFile();
 extern		void AppendMarkedToRawFile();
-extern		AppendMessageToRawFile();
+extern		int AppendMessageToRawFile();
 extern		void BSM_AppendDelPlease();
 extern		void BSM_AppendOnto();
 extern		void BSM_AppendPlease();
@@ -131,7 +131,7 @@ extern		void BSearchRPlease();
 extern		void BackUp();
 extern		void CSearchFPlease();
 extern		void CSearchRPlease();
-extern          CheckMenuMasks();
+extern          int CheckMenuMasks();
 extern		void ClassifyMarked();
 extern		void ClearMarks();
 extern          boolean ClearSM();
@@ -139,7 +139,7 @@ extern		void CopyMarked();
 extern		void CountMarks();
 extern		void DeleteMarked();
 extern		void DeleteWindow();
-extern		DirectlyClassify();
+extern		int DirectlyClassify();
 extern          void messages_DuplicateWindow();
 extern		void ExcerptMarked();
 extern		void ExpandFileIntoMenus();
@@ -152,11 +152,11 @@ extern		void FindAllCaptions();
 extern		void FindRelatedMessages();
 extern		void GSearchFPlease();
 extern		void GSearchRPlease();
-extern		GenNodeName();
+extern		int GenNodeName();
 extern          struct t822view *GetBodies();
 extern          struct captions *GetCaptions();
 extern          struct captions *GetCaptionsNoCreate();
-extern		GetFolderName();
+extern		int GetFolderName();
 extern		char *GetLastResendName();
 extern		void MarkRange();
 extern		void MarkVisibleMessageUnseen();
@@ -170,30 +170,30 @@ extern          void MessagesFoldersCommand();
 extern          void MessagesSendmessageCommand();
 extern		void MessagesTextviewCommand();
 extern		void NextMarked();
-extern		NoOp();
-extern		OrgHit();
-extern          PrepareAppendFileName();
+extern		int NoOp();
+extern		int OrgHit();
+extern          int PrepareAppendFileName();
 extern		void PrevMarked();
 extern		void PrintMarked();
 extern		void PrintVisibleMessage();
 extern		void PuntCurrent();
 extern		void PurgeAllDeletions();
 static		void QuitMessages();
-extern		ReadByName();
-extern		ReadNamedFolder();
+extern		int ReadByName();
+extern		int ReadNamedFolder();
 extern		void ReplyAllMarked();
 extern		void ReplySendersMarked();
 extern		void ResendMarked();
 extern		void RestoreOldMarks();
 extern		void sm_SetMessagesOptions();
-extern		SetSubStatus();
+extern		int SetSubStatus();
 extern		void ShrinkFileIntoMenus();
 extern		void SubscribeByName();
 extern		void TextviewCompound();
 extern		void ThisIsFlorida();
 extern		void UnSubscribeByName();
 extern		void UndeleteMarked();
-extern		countdots();
+extern		int countdots();
 extern		int messages__AppendOneMessageToFile();
 extern		boolean messages__InitializeClass();
 extern          boolean messages__InitializeObject();
@@ -361,7 +361,7 @@ static struct bind_Description messages_standardbindings [] = {
     {NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL},
 };
 
-NoOp() {
+int NoOp() {
     message_DisplayString(NULL, 10, "This command does nothing.");
 }
 
@@ -1553,7 +1553,7 @@ static char *lastWindowChoices[] = {
 	}
     }
 
-    DirectlyClassify(self, classnum)
+    int DirectlyClassify(self, classnum)
       struct messages *self;
     int classnum;
     {
@@ -1606,7 +1606,7 @@ static char *lastWindowChoices[] = {
 	return(TRUE);
     }
 
-    CheckMenuMasks(self)
+    int CheckMenuMasks(self)
       struct messages *self;
     {
 	long mymask;

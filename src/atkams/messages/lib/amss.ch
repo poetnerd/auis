@@ -100,7 +100,7 @@ class amss: ams {
       MS_CheckAuthentication(long *auth) returns long;
       MS_DebugMode(int mslevel, int snaplevel, int malloclevel) returns long;
       MS_DisambiguateFile(char *source, char *target, long MustBeDir) returns long;
-      MS_FastUpdateState() returns long;
+      MS_FastUpdateState() returns int;
       MS_GetDirInfo(char *dirname, long *protcode, long *msgcount) returns long;
       MS_GetNewMessageCount(char *dirname, long *numnew, long *numtotal, char *lastolddate, long InsistOnFetch) returns long;
       MS_GetNthSnapshot(char *dirname, long which, char *snapshotbuf) returns long;
@@ -114,7 +114,7 @@ class amss: ams {
       MS_SetCleanupZombies(long doclean);
       MS_SetSubscriptionEntry(char *fullname, char *nickname, long status) returns long;
       MS_UnlinkFile(char *filename) returns long;
-      MS_UpdateState() returns long;
+      MS_UpdateState() returns int;
       MS_MatchFolderName(char *pattern, char *filename) returns long;
       MS_DomainHandlesFormatting(char *domname, long *retval) returns long;
       AMS_ERRNO() returns int;

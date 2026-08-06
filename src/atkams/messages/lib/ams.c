@@ -72,7 +72,7 @@ static int UpdateServerState();
 
 static int IWantSnap = 0;
 static int RestartTimer();
-static TimerReport();
+static int TimerReport();
 
 /* same-file forward reference -- defined later in this file */
 extern int AddToClassList(char *TempName, char *FullName, Boolean CheckDups);
@@ -454,7 +454,7 @@ long ams__MS_DisambiguateFile(struct ams *self, char *source, char *target, long
     return(0);
 }
 
-long ams__MS_FastUpdateState(struct ams *self)
+int ams__MS_FastUpdateState(struct ams *self)
 {
     ReportMissing("MS_FastUpdateState");
     return(0);
@@ -543,7 +543,7 @@ long ams__MS_UnlinkFile(struct ams *self, char *filename)
     return(0);
 }
 
-long ams__MS_UpdateState(struct ams *self)
+int ams__MS_UpdateState(struct ams *self)
 {
     ReportMissing("MS_UpdateState");
     return(0);
@@ -1331,7 +1331,7 @@ void ams__TimerInit(struct classheader *c)
     RestartTimer();
 }
 
-static DisplayAMS_ERRNO(char *prefix)
+static int DisplayAMS_ERRNO(char *prefix)
 {
     long myerrno;
     char ErrorText[1000];
@@ -1360,7 +1360,7 @@ static DisplayAMS_ERRNO(char *prefix)
     message_DisplayString(NULL, 10, ErrorText);
 }
 
-static UpdateServerState() {
+static int UpdateServerState() {
     static int updatect = 0; /* a hack to make sure we close everything eventually */
 
     message_DisplayString(NULL, 10, "Checkpointing message server state...");
@@ -1381,7 +1381,7 @@ static UpdateServerState() {
 
 static struct im_InteractionEvent *MyInteractionEvent = NULL;
 
-static HandleTimer()
+static int HandleTimer()
 {
     struct flist *ctmp;
     struct smlist *smtmp;
@@ -1441,7 +1441,7 @@ static HandleTimer()
     im_ForceUpdate();
 }
 
-static RestartTimer() {
+static int RestartTimer() {
     int freq = (CheckpointFrequency > 0) ? CheckpointFrequency : 60;
 
     NextCKP = im_EnqueueEvent(HandleTimer, 0, event_SECtoTU(freq));
@@ -1461,7 +1461,7 @@ void ams__PlanFolderPrefetch(struct classheader *c, struct folders *f)
     TimerReport(5);
 }
 
-static TimerReport(int code)
+static int TimerReport(int code)
 {
     static int ReportTimers = -1;
 
@@ -1684,6 +1684,6 @@ static enum message_CompletionCode FolderComplete(char *part, long dummy, char *
 
 int ams__GetFolderName(struct classheader *c, char *prompt, char *buf, int buflen, char *defaultname, boolean MustMatch)
 {
-    if (message_AskForStringCompleted(NULL, 25, prompt, defaultname, buf, buflen, NULL, FolderComplete, FolderHelp, 0 /* rock */, MustMatch ? message_MustMatch : 0)< 0) return(-1);
+    if (message_AskForStringCompleted(NULL, 25, prompt, defaultname, buf, buflen, NULL, (procedure)FolderComplete, (procedure)FolderHelp, 0 /* rock */, MustMatch ? message_MustMatch : 0)< 0) return(-1);
     return(0);
 }

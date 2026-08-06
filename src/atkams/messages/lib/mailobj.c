@@ -251,7 +251,7 @@ void mailobj__RunMetamail(struct mailobj *self)
 	fclose(fp);
 	sprintf(Cmd, "metamail -m messages -z -x -d -q %s 2>&1", TmpFileName); 
 	fp = (FILE *) popen(Cmd, "r");
-	im_AddFileHandler(fp, MetaOutput, self, 0);
+	im_AddFileHandler(fp, (procedure)MetaOutput, self, 0);
 	self->fp = fp;
     }
 }

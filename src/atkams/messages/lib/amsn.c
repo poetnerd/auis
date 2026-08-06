@@ -381,7 +381,7 @@ long amsn__MS_DisambiguateFile(struct amsn *self, char *source, char *target, lo
     return(MS_DisambiguateFile(source, target, MustBeDir));
 }
 
-long amsn__MS_FastUpdateState(struct amsn *self)
+int amsn__MS_FastUpdateState(struct amsn *self)
 {
     return(MS_FastUpdateState());
 }
@@ -456,7 +456,7 @@ long amsn__MS_UnlinkFile(struct amsn *self, char *filename)
     return(MS_UnlinkFile(filename));
 }
 
-long amsn__MS_UpdateState(struct amsn *self)
+int amsn__MS_UpdateState(struct amsn *self)
 {
     return(MS_UpdateState());
 }

@@ -70,8 +70,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <msgsvers.h>
 #include <frame.ih>
 static struct view * GetIM();
-static int RememberMessage();
-static int ReportErrorHistory();
+static void RememberMessage();
+static void ReportErrorHistory();
 static int SendBug();
 
 extern FILE *topen();
@@ -81,8 +81,8 @@ static int PrepareAutoBugFile();
 static int DescribeLink();
 static int SnarfFile();
 static int ReportOptionState();
-static RememberMessage();
-static ReportErrorHistory();
+static void RememberMessage();
+static void ReportErrorHistory();
 
 extern char *FindUserDir(), *StripWhiteEnds(), *CUI_ClientVersion;
 extern char CUI_MailDomain[], *CUI_WhoIAm;
@@ -114,7 +114,7 @@ extern int CUI_GenLocalTmpFileName(), CUI_SubmitMessage();
 extern int MS_CheckAuthentication();
 extern int dbg_tclose();
 
-static Messages_Global_Error_Count = 0;
+static int Messages_Global_Error_Count = 0;
 
 /* This stuff is here mostly to satisfy various linkers */
 
@@ -216,7 +216,7 @@ int HandleTimeout(char *name, int retries, int restarts)
     return(CUI_RPC_BUGOUT);  /* No message needed here -- will propogate error */
 }
 
-DidRestart() {
+void DidRestart() {
     ReportSuccess("Reconnected to Message Server!");
 }
 
@@ -551,7 +551,7 @@ static int SnarfFile(FILE *fp, char *fname)
 	return 1;
     }
     if ((stbuf.st_mode & S_IFMT) != S_IFREG) {
-	fprintf(fp, "File %s is not a regular file, but has mode %#o.\n", stbuf.st_mode);
+	fprintf(fp, "File %s is not a regular file, but has mode %#o.\n", Buf, stbuf.st_mode);
 	return 1;
     }
     errno = 0;
@@ -572,7 +572,7 @@ static int SnarfFile(FILE *fp, char *fname)
 #endif /* AFS_ENV */
     fprintf(fp, "Protection Mode (octal): %#o\nOn Vice: %s\nOwner: User # %d", stbuf.st_mode, OnVice ? "YES" : "NO", stbuf.st_uid);
     if (CellBuf[0] != '\0') fprintf(fp, ", AFS Cell %s", CellBuf);
-    fprintf(fp, "\nFile Size: %d\nLast Modified: %s", stbuf.st_size, ctime(&(stbuf.st_mtime)));
+    fprintf(fp, "\nFile Size: %lld\nLast Modified: %s", (long long)stbuf.st_size, ctime(&(stbuf.st_mtime)));
     fprintf(fp, "The file contents are enclosed by separating lines:%s", SepLine);
     while (fgets(LineBuf, sizeof(LineBuf), rfp)) {
 	fputs(LineBuf, fp);
@@ -931,7 +931,7 @@ static long ErrHistTimes[ERRHISTSIZE];
 static int DidInitErrHist = 0;
 static int ErrHistStart = 0;
 
-static RememberMessage(char *text, char *moretext)
+static void RememberMessage(char *text, char *moretext)
 {
     char *SavedCopy;
 
@@ -959,7 +959,7 @@ static RememberMessage(char *text, char *moretext)
     if (++ErrHistStart >= ERRHISTSIZE) ErrHistStart = 0;
 }
 
-static ReportErrorHistory(FILE *fp)
+static void ReportErrorHistory(FILE *fp)
 {
     int i, numinhist = 0, which;
     if (!DidInitErrHist) {
