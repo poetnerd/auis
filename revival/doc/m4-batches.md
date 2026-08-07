@@ -815,10 +815,41 @@ runtime pass — done by wdc alongside the AMS3 check-in.
       identical count and result from a from-scratch rerun). wdc ran
       smoke testing (general figure draw/save/reload plus the halo
       round-trip) with no observed regressions.
-- [ ] **C2**: `contrib/zip/utility` (67) — alone. Shares lifecycle-
-      method/lt/sched classes with `zip/lib`'s history (M3 C1/C2's
-      `FinalizeObject`/`InitializeObject` findings) — do after C1,
-      not before, so any shared pattern is already known.
+- [x] **C2 COMPLETE 2026-08-06**: `contrib/zip/utility` — census said 67,
+      real count 80 (+19%, same undercount direction as every prior
+      batch). 5 files touched (`Imakefile`, `lt.c`, `ltv.c`, `sched.c`,
+      `schedv.c`; `ltapp.c`/`schedapp.c` needed nothing): 64
+      implicit-int (uniform typed-sibling-forward-declaration pattern,
+      same shape as C1), 13 format (12 mechanical `%d`→`%ld`, 1
+      genuine bug), 2 implicit-function-declaration (`strcpy` missing
+      `#include <string.h>`), 1 incompatible-function-pointer-types
+      (`suite_Apply`'s `Detect` callback, cast to `suite.ch`'s own
+      declared genuinely-polymorphic slot type, confirmed against
+      other tree-wide `suite_Apply` call sites — same idiom as C1's
+      `keyboard_processor`). One genuine ~1988 bug found:
+      `sched.c:75`'s "Unable to Open" diagnostic printed the wrong
+      field (`self->stream`, a `struct zip_stream *`, instead of
+      `self->stream_name`, the actual filename) — fixed; wdc's own
+      smoke test confirmed the fix (message now shows the real
+      filename). M3-lifecycle-pattern family explicitly checked per
+      this batch's flag: nothing new — this is the same directory M3's
+      own C2 batch already fixed for that exact family
+      (`InitializeClass`/`FinalizeObject` shapes, named
+      `InitializeObject` params), verified still intact, no `.ch` file
+      touched this session. Separately, wdc's smoke test surfaced that
+      `sched`/`schedapp`/`lt`/`ltapp` have no help document and were
+      never wired into the help-installation machinery any sibling
+      contrib app uses — logged in `revival.md` as undocumented
+      functionality, not a regression. This directory produces only
+      `.do` dynamic-load objects (no static library); no downstream
+      relink needed, confirmed by both the delegate and the
+      orchestrator independently (tree-wide grep, zero references to
+      its `.do` outputs elsewhere). Not one of the two elevated-risk
+      batches, so only the subtree-local gate was required — run clean
+      twice by the delegate and once more independently by the
+      orchestrator from a fresh `make clean`. wdc's smoke testing
+      (schedapp launched successfully once run from a directory
+      containing `itcCR.scd`) found no regressions.
 - [ ] **C3** (former C3+C4): `contrib/mit/annot` (15),
       `contrib/srctext/ptext` (15), `contrib/eatmail` (11),
       `contrib/calc` (8), `contrib/time` (8), `contrib/mit/util` (5),

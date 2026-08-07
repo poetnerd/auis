@@ -1022,6 +1022,27 @@ sample:
   fires either. The write bug itself was real and is now fixed to
   match its sibling write correctly, but the attribute it saves
   remains, as far as this session could tell, permanently off.
+- **An error message that named the wrong thing.** The scheduler
+  utility's document-open failure path printed a diagnostic meant to
+  show the filename that couldn't be opened, but the format string was
+  handed the wrong field — a pointer to the (still-unopened) stream
+  object instead of the char buffer holding the actual filename. Every
+  "Unable to Open" message this class has ever printed showed whatever
+  that pointer's value happened to be read as a string, not the
+  filename a user would need to fix the problem. Low severity — it's a
+  diagnostic string, not a data-loss path — but it's been wrong since
+  the file was written in 1988. Fixed to print the filename field.
+- **A whole application with no help document, not a removed one.** The
+  scheduler and layer-tool utilities (`sched`/`schedapp`,
+  `lt`/`ltapp`) ship as standalone apps but were never given a help
+  file or wired into the help-installation machinery — every sibling
+  contrib app (`zip` itself, `calc`, `champ`, `alink`, `bdffont`)
+  follows the same two-or-three-line Imakefile pattern to register its
+  `.help` document, and this directory's Imakefile simply never had
+  those lines added. No `.help` source exists anywhere in the tree for
+  either app. This isn't a build-time misconfiguration or something
+  that regressed — it's undocumented functionality, apparently since
+  it was first written.
 
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
