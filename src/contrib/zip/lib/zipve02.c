@@ -170,7 +170,7 @@ static int Figure_Palette_LBDT(struct zipedit *self, zip_type_pane icon_pane, in
 static int Create_Name_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette);
 static int Create_Font_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette);
 static int Create_Font_Icon();
-static int Create_Shade_Palette();
+static int Create_Shade_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette);
 static int Create_Figure_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette);
 static int Create_Figure_Icon();
 static int Create_Attribute_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette);
@@ -660,7 +660,7 @@ int zipedit_Hide_Font_Palette(struct zipedit *self, zip_type_pane pane)
   return  zip_ok;
   }
 
-static int Create_Shade_Palette(struct zipedit *self, int containing_pane, zip_type_pane pane, zip_type_pane *palette)
+static int Create_Shade_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette)
   {
   register int				  status = zip_ok;
   zip_type_stream			  stream;
