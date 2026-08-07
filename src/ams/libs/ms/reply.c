@@ -44,8 +44,8 @@ extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
 extern int GenTempName(char *Buf);
 extern int InventID(struct MS_Message *msg);
 extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
-extern int PrintFwdHeaders();
-extern int PrintQuotingFormatting();  /* overhead/util/lib/unscribe.c */
+extern int PrintFwdHeaders(FILE *fp, char *headers, char *BE2Format, int hdrlen);
+extern int PrintQuotingFormatting(FILE *fp, char *text, char *format, int len);  /* overhead/util/lib/unscribe.c */
 extern int QuickGetBodyFileName(char *DirName, char *id, char *FileName);
 extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
 extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
@@ -449,7 +449,7 @@ int EmitHeader(struct MS_Message *Msg, int which, FILE *fp, char *head)
     }
 }
 
-int PrintFwdHeaders(int fp, char *headers, char *BE2Format, int hdrlen)
+int PrintFwdHeaders(FILE *fp, char *headers, char *BE2Format, int hdrlen)
 {
     char *hdr, *s, *t, *h, *wh;
     int numhdrs, len, match;
