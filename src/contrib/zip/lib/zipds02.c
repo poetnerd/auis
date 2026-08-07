@@ -141,9 +141,9 @@ long zip__Write_Figure(struct zip *self, zip_type_figure figure)
   register int			     i, status = zip_ok;
   register FILE			     *file =
 	figure->zip_figure_image->zip_image_stream->zip_stream_file;
-  static char			     horizontal[2] = "?",
-				     vertical[2]   = "?",
-				     halo[2]       = "?";
+  char				     horizontal[2] = "",
+				     vertical[2]   = "",
+				     halo[2]       = "";
   register int			     pseudo_x=0, pseudo_y=0;
   register char			    *p;
   register short		    c;
