@@ -26,14 +26,11 @@
 * $
 */
 
-
 #if !defined(hpux) || (HP_OS < 80)
 MATHLIB = -lm
 #endif
 
-
 CLASSFLAGS = $(CLASSINCLUDES) -pe
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 DOBJS = heximage.do \
 	oldrf.do \

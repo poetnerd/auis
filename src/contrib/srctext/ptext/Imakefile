@@ -3,13 +3,10 @@
  *        For full copyright information see:'andrew/config/COPYRITE'     *
 \* ********************************************************************** */
 
-
 DOBJS = ptext.do ptextv.do
 IHFILES = ptext.ih ptextv.ih
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
-
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 NormalObjectRule()
 NormalATKRule()

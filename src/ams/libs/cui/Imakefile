@@ -4,8 +4,6 @@
 \* ********************************************************************** */
 LOCALINCLUDES	=	-I${BASEDIR}/include/ams
 
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 PRODUCT	=	libcui.a
 
 OBJS		= 	cuilib.o andmchs.o

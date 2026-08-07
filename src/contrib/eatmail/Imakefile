@@ -35,8 +35,6 @@ LIBS = ${BASEDIR}/lib/libmail.a \
 	${BASEDIR}/lib/liberrors.a \
 	${UTILLIB}
 
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 NormalObjectRule()
 
 ProgramTarget(eatmail, ${OBJS}, ${LIBS}, $(LEXLIB) ${BSDLIB} )
@@ -44,4 +42,3 @@ ProgramTarget(eatmail, ${OBJS}, ${LIBS}, $(LEXLIB) ${BSDLIB} )
 DependTarget()
 
 InstallProgram(eatmail, ${DESTDIR}/bin)
-

@@ -28,9 +28,6 @@
 
 LOCALINCLUDES = -I$(BASEDIR)/include/ams
 
-/* M4 strictness sweep (revival/doc/roadmap.md, M4) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 OBJS = conf.o gl.o gle.o mc.o mcb.o mcbe.o nns.o st.o stb.o stbe.o
 
 LIBS = $(BASEDIR)/lib/libmssrv.a \
@@ -50,4 +47,3 @@ ProgramTarget(nns, $(OBJS), $(LIBS), ${MMDFLIBS} ${BSDLIB} ${SSLLIB} ${RESOLVER_
 InstallProgram(nns, $(DESTDIR)/etc)
 
 DependTarget()
-

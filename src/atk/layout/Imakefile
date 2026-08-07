@@ -26,9 +26,7 @@
 * $
 */
 
-
 CLASSFLAGS = $(CLASSINCLUDES) -pe
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 DOBJS = layoutv.do layout.do fillerv.do filler.do boxview.do box.do
 IHFILES = layoutv.ih layout.ih fillerv.ih filler.ih boxview.ih box.ih

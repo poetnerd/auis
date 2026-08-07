@@ -26,11 +26,7 @@
 * $
 */
 
-
 CLASSFLAGS = $(CLASSINCLUDES) -pe
-
-/* M4 strictness sweep (revival/doc/roadmap.md, M4) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 DOBJS = pscripta.do \
 	tscript.do \
@@ -49,7 +45,6 @@ IHFILES = pscripta.ih \
 	tscripta.ih \
 	typetext.ih \
 	fcomp.ih
-
 
 NormalObjectRule()
 NormalATKRule()

@@ -26,11 +26,7 @@
 * $
 */
 
-
 CLASSFLAGS = $(CLASSINCLUDES) -pe
-
-/* M4 strictness sweep (revival/doc/roadmap.md, M4) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 DOBJS = eza.do
 IHFILES = eza.ih
@@ -64,4 +60,3 @@ InstallHelpAlias(ezstyle, ez-styles styles style plainer plainest)
 InstallHelpAlias(eztroff, ez-troff formatnote duplex)
 InstallHelpAlias(ezps, ez-ps ez-postscript)
 InstallHelpAlias(ezproc, ezprocs ez-procs ez-proc)
-

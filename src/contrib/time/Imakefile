@@ -26,8 +26,6 @@
 * $
 */
 
-
-
 #if !defined(hpux) || (HP_OS < 80)
 MATHLIB = -lm
 #endif
@@ -52,8 +50,6 @@ LIBS		=	$(DESTDIR)/lib/libutil.a
 INCDIR = $(DESTDIR)/include/atk
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
-
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 NormalHelpRule()
 NormalObjectRule()

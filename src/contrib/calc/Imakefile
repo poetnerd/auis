@@ -8,8 +8,6 @@ IHFILES		=	calc.ih calcv.ih
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 NormalObjectRule()
 NormalATKRule()
 DependTarget()
@@ -20,4 +18,3 @@ NormalHelpRule()
 InstallDocs(calc.help calproc.help, ${DESTDIR}/help)
 InstallHelpAlias(calc, calculator)
 InstallHelpAlias(calproc, calcproc calcprocs)
-

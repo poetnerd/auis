@@ -8,8 +8,6 @@ IHFILES = ltext.ih ltextv.ih
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 NormalObjectRule()
 NormalATKRule()
 

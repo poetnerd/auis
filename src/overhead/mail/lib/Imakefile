@@ -26,9 +26,6 @@
 * $
 */
 
-/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 OBJS = amsauth.o amsconf.o \
 	arpadate.o authret.o capture.o canon.o \
 	ckamsdel.o dropoff.o fwdvalid.o genid.o \

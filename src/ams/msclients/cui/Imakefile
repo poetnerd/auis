@@ -26,9 +26,6 @@
 * $
 */
 
-/* M4 strictness sweep (revival/doc/roadmap.md, M4) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 LOCALINCLUDES	=	-I${BASEDIR}/include/ams
 
 #ifdef SNAP_ENV

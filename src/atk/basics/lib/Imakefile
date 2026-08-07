@@ -32,11 +32,6 @@
  * siblings instead.
  */
 
-/* M4 strict rollout: revival/doc/m4-batches.md, Wave 2 B2 -- no .c files
- * of its own, recompiles ../x's (and ../common's) sources, so this
- * directory's errors close automatically once those are fixed; verified
- * independently anyway */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 #ifdef HAVE_XFT
 LOCALINCLUDES = -I../common -I../x -I../wm -I$(XFTINCDIR)
 #else

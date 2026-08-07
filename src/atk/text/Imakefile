@@ -29,10 +29,7 @@
 BSDLIB = -lbsd
 #endif
 
-/* M4 tree-wide strictness (revival/doc/roadmap.md, M4) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 CLASSFLAGS = $(CLASSINCLUDES) -pe
-
 
 DOBJS = be1be2.do \
 	be1be2a.do \
@@ -107,7 +104,6 @@ OBJS = be1be2.o \
 	texttagv.o \
 	textrefv.o \
 	pcompch.o
-
 
 NormalObjectRule()
 NormalATKRule()

@@ -26,9 +26,7 @@
 * $
 */
 
-
 LOCALINCLUDES	= -I$(BASEDIR)/include/zip
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS		=	chart.do \
@@ -61,5 +59,3 @@ InstallHelpAlias(chtproc, chartproc chartprocs)
 
 MkdirTarget($(DESTDIR)/doc/atk/chart)
 InstallDocs(ChartPG.doc sample.cht, $(DESTDIR)/doc/atk/chart)
-
-

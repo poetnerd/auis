@@ -23,7 +23,6 @@
 * $
 */
 
-
 /*
 	parser object 
 
@@ -35,12 +34,8 @@
 		as used by testparse
 */
 
-
 /* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
 CLASSFLAGS = $(CLASSINCLUDES) -pe
-
-/* M4 strict rollout: revival/doc/m4-batches.md, Wave 2 B2 */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 OBJS = parse.o
 DOBJS = parse.do lexan.do
@@ -51,7 +46,6 @@ NormalObjectRule()
 NormalATKRule()
 
 InstallClassFiles($(DOBJS),$(IHFILES))
-
 
 /* TESTLIBS = ${BASEDIR}/lib/atk/libframe.a \
 *//*	${BASEDIR}/lib/atk/libtext.a \
@@ -83,4 +77,3 @@ InstallFiles(${HFILES}, ${INSTINCFLAGS}, ${DESTDIR}/include/atk)
 DependTargetFiles(foo.tab.c)
 
 CleanTarget (*.act *.tab.* index)
-

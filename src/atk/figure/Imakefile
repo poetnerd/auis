@@ -1,5 +1,4 @@
 
-
 /*
 	$Disclaimer: 
 *Permission to use, copy, modify, and distribute this software and its 
@@ -22,7 +21,6 @@
 *OF THIS SOFTWARE.
 * $
 */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 #ifdef _IBMR2
@@ -31,7 +29,6 @@ BSDLIB = -lbsd
 
 /* uncomment this line to keep figobj and all its subclasses as separate objects, rather than linking them all into figure.do */
 /*#define SEPARATEFIGOBJECTS*/
-
 
 FIGOBJS =  figobj.o figogrp.o figorect.o figoell.o figorrec.o figoplin.o figospli.o figotext.o figoins.o
 FIGDOBJS =  figobj.do figogrp.do figorect.do figoell.do figorrec.do figoplin.do figospli.do figotext.do figoins.do

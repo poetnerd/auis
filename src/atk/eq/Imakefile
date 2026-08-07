@@ -30,8 +30,6 @@
 CDEBUGFLAGS =
 #endif
 
-/* M2 ANSI sweep: catch implicit function declarations (revival/doc/roadmap.md, M2) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS = eq.do eqv.do

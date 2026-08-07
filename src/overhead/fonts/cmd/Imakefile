@@ -3,9 +3,6 @@
  *        For full copyright information see:'andrew/config/COPYRITE'     *
 \* ********************************************************************** */
 
-/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 DependTarget()
 NormalObjectRule()
 
@@ -20,4 +17,3 @@ InstallProgram(fdbwm, $(DESTDIR)/bin)
 ProgramTarget(wmfdb, wmfdb.o, $(WMBASEDIR)/lib/libfont.a $(UTILLIB), ${BSDLIB})
 InstallProgram(wmfdb, $(DESTDIR)/bin)
 #endif /* WM_ENV */
-

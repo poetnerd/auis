@@ -34,7 +34,6 @@
 	char *sketch_ch_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/mit/annot/RCS/Imakefile,v 1.10 1994/03/29 04:45:24 rr2b Exp $";
 #endif /* !defined(lint) && !defined(LOCORE) && defined(RCS_HDRS) */
 
-
 #if !defined(hpux) || (HP_OS < 80)
 MATHLIB = -lm
 #endif
@@ -46,10 +45,7 @@ DOBJS = note.do icon.do ps.do noteview.do iconview.do psview.do stroffet.do stro
 IHFILES = note.ih icon.ih ps.ih noteview.ih iconview.ih psview.ih stroffet.ih stroffetv.ih
 #endif /* DPS_ENV */
 
-
 CLASSFLAGS = $(CLASSINCLUDES) -pe
-
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 NormalObjectRule()
 NormalATKRule()

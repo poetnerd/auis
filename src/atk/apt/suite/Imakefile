@@ -29,9 +29,6 @@
 /* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
-/* M4 strict rollout: revival/doc/m4-batches.md, Wave 2 B2 */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 DOBJS		=	suite.do \
 			suiteev.do \
 			suitecv.do \
@@ -68,5 +65,3 @@ InstallDocs(steproc.help, ${DESTDIR}/help)
 InstallHelpAlias(steproc, suiteproc suiteprocs suite)
 InstallDocs(SuitePG.doc ,${DESTDIR}/doc/atk/apt/suite)
 InstallDocs(suite.pr, ${DESTDIR}/lib/prs)
-
-

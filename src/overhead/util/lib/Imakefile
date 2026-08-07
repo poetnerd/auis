@@ -26,7 +26,6 @@
 * $
 */
 
-
 #define IHaveSubdirs 
 
 SUBDIRS = samples
@@ -84,9 +83,6 @@ XCOMM systypes.o
 #endif /* SCOunix */
 
 AFS_OBJS =  lcstring.o ucstring.o
-
-/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 DependTarget()
 

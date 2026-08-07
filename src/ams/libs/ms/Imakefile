@@ -26,9 +26,6 @@
 * $
 */
 
-/* M4 global strictness (revival/doc/roadmap.md, M4) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 LOCALINCLUDES	=	-I${BASEDIR}/include/ams
 
 PRODUCT	=	libmssrv.a

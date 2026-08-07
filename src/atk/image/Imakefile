@@ -4,7 +4,6 @@
 \* ********************************************************************** */
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 DOBJS = imagev.do faces.do pbm.do sunraster.do rle.do xwd.do \
 	fbm.do pcx.do img.do mac.do cmuwm.do mcidas.do colorv.do cmapv.do \ 

@@ -45,7 +45,6 @@ CONFIGURE: */
 * $
 */
 
-
 CONF_COMPRESSION=\
 	-DPACKBITS_SUPPORT \
 	-DLZW_SUPPORT \
@@ -73,9 +72,6 @@ CONF_LIBRARY=\
 	-DCMYK_SUPPORT
 
 DEFINES = -Dunix  ${CONF_LIBRARY}
-
-/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 INCS=	tiff.h tiffio.h
 OBJS=	tif_fax3.o \

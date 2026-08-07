@@ -26,11 +26,9 @@
 * $
 */
 
-
 DOBJS = spread.do table.do
 IHFILES = spread.ih table.ih
 
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 NormalObjectRule()

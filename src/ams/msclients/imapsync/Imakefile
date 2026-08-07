@@ -47,9 +47,6 @@
 
 LOCALINCLUDES	=	-I${BASEDIR}/include/ams
 
-/* M4 strictness sweep (revival/doc/roadmap.md, M4) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 OBJS = imap_sync.o
 
 LIBS = ${BASEDIR}/lib/libmail.a $(BASEDIR)/lib/libcparser.a ${BASEDIR}/lib/liberrors.a \

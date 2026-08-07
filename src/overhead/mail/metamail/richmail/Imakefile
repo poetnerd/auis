@@ -1,8 +1,5 @@
 LOCALINCLUDES =-I..
 
-/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 RICHOBJS = richlex.o richset.o usascii.o iso2022.o
 
 NormalObjectRule()

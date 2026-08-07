@@ -29,23 +29,17 @@
 /* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
-/* M4 strict rollout: revival/doc/m4-batches.md, Wave 2 B2 */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 DOBJS = strinput.do \
                dialog.do \
                dialogv.do 
-
 
 IHFILES = strinput.ih \
                  dialog.ih \
                  dialogv.ih 
 
-
 OBJS = strinput.o \
             dialog.o \
             dialogv.o 
-
 
 DependTarget()
 NormalObjectRule()

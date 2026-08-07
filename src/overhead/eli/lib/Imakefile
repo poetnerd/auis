@@ -26,11 +26,7 @@
 * $
 */
 
-
 LOCALINCLUDES = -I../hdrs -I../lclhdrs
-
-/* M4 strict rollout: full strict flag set (revival/doc/m4-rollout-runbook.md) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 
 OBJS = fnnode.o node.o \
 	bucket.o buktnode.o cons.o \
@@ -48,7 +44,6 @@ NormalObjectRule()
 
 /* YaccWithReplacement(eliy,eliyy) */
 Parser(eliy,-d)
-
 
 elil.o: eliy.h
 

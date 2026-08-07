@@ -10,8 +10,6 @@ IHFILES		=	lt.ih ltv.ih ltapp.ih \
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 NormalObjectRule()
 NormalATKRule()
 DependTarget()

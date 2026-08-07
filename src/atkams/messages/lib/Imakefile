@@ -26,13 +26,9 @@
 * $
 */
 
-
 LOCALINCLUDES	= -I$(BASEDIR)/include/ams
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
-
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 
 #ifdef SNAP_ENV
     S_DOBJS	=	amss.do
@@ -66,7 +62,6 @@ IHFILES =		captions.ih \
 LIBS = 		$(BASEDIR)/lib/libmsshr.a \
 			$(BASEDIR)/lib/libmail.a $(BASEDIR)/lib/libcparser.a $(BASEDIR)/lib/liberrors.a \
 			$(UTILLIB) 
-
 
 SLIBS	=		$(BASEDIR)/lib/libcui.a $(BASEDIR)/lib/libcuis.a \
 			$(BASEDIR)/lib/libsnap.a $(BASEDIR)/lib/librxp.a $(LIBS)
@@ -102,4 +97,3 @@ DependTarget()
 InstallClassFiles($(DOBJS),$(IHFILES))
 MkdirTarget($(DESTDIR)/lib/prs)
 InstallDocs(messages.pr, $(DESTDIR)/lib/prs)
-

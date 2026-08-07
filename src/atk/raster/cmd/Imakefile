@@ -26,8 +26,6 @@
 * $
 */
 
-/* M4 rollout: strict flag set (revival/doc/m4-rollout-runbook.md) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 #if defined(sys_ps_aix12) || defined(sys_ps_aix11)

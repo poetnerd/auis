@@ -26,10 +26,6 @@
 * $
 */
 
-
-/* M4 strict rollout: revival/doc/m4-batches.md, Wave 2 B2 */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 /* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
@@ -94,7 +90,6 @@ clean:: ; $(RM) arb
 InstallProgram(arb, $(DESTDIR)/bin)
 InstallFile(adew.h, ${INSTINCFLAGS}, ${DESTDIR}/include/atk)
 InstallLink(runapp, ${DESTDIR}/bin/runadew)
-
 
 NormalHelpRule()
 InstallDocs($(DOCS), $(DESTDIR)/doc/adew)

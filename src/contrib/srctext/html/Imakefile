@@ -1,6 +1,5 @@
 #define IHaveSubdirs
 
-
 SUBDIRS=doc lib #standalone
 
 OBJS = version.o
@@ -13,8 +12,6 @@ IHFILES	=	htmlview.ih \
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 NormalObjectRule()
 NormalATKRule()
 
@@ -26,5 +23,3 @@ InstallDocs(ChangeLog,standalone/auis-html)
 #endif
 
 DependTarget()
-
-

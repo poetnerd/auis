@@ -26,9 +26,6 @@
 * $
 */
 
-/* M4 strictness sweep (revival/doc/roadmap.md, M4) */
-COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
-
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS = help.do helpa.do helpdb.do hlptextv.do
@@ -53,5 +50,3 @@ InstallClassFiles($(DOBJS),$(IHFILES))
 InstallLink(runapp, ${DESTDIR}/bin/help)
 
 DependTarget()
-
-
