@@ -368,9 +368,9 @@ acceptance). What remains here is the real HTML rendering:
 - Let's get all the function prototypes live with ANSI — plan of record
   at Medium-term → ANSI C conversion (M1–M4). **M1-M4's
   directory-by-directory rollout is complete (2026-08-07)**; what's
-  left is two tree-wide closing steps (Phase 3, Phase 5) plus a sized-
-  but-not-yet-scoped follow-on (`-Wstrict-prototypes`, 6,715 hits) —
-  full status in that section, not repeated here.
+  left is two tree-wide closing steps plus a sized-but-not-yet-scoped
+  follow-on (`-Wstrict-prototypes`, 6,715 hits) — full status in that
+  section, not repeated here.
 
 ---
 
@@ -2199,12 +2199,17 @@ call site and definition tree-wide *before* any mass file editing starts
   batch surfaced at least one genuine decades-old bug beyond the
   compiler noise — full catalog in `revival.md`'s "Old bugs never
   found till now." Classpp's own prerequisite build failure (found
-  Phase 0) was fixed and committed as Batch 0. **What's left, not yet
-  started:** Phase 3 (flip `STRICT_COMPILERFLAGS` to the tree-wide
-  default in `system.mcr`, remove the now-redundant per-directory
-  Imakefile overrides) and Phase 5 (final `make Clean; make World`
-  plus a broad runtime pass — the completion gate). Neither is a
-  directory-by-directory effort; both are single tree-wide steps.
+  during pre-rollout audit) was fixed and committed as Batch 0.
+  **What's left, not yet started — two single tree-wide steps, not
+  further per-directory work:** flip `STRICT_COMPILERFLAGS` to the
+  global default in `system.mcr` and delete the now-redundant
+  per-directory Imakefile overrides; then a final `make Clean; make
+  World` plus a broad runtime pass as the closing verification.
+  (`m4-rollout-runbook.md` names these Phase 3 and Phase 5 in its own
+  execution-mechanics numbering, along with Phases 0/1/2/4 for the
+  already-done audit/probe/rollout steps and one parked, non-blocking
+  item — that numbering is procedure for whoever runs the steps, not
+  status this document needs to track by number.)
   - **`strict-prototypes` correction, 2026-08-07**: this decision was
     originally written 2026-08-01 as "pending confirmation," claiming
     the ~6,000 tree-wide `-Wstrict-prototypes` matches were "almost
