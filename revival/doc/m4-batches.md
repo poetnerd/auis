@@ -781,10 +781,40 @@ runtime pass — done by wdc alongside the AMS3 check-in.
 
 ## Wave 7 — contrib (11 directories, 348 errors, 3 sessions)
 
-- [ ] **C1**: `contrib/zip/lib` (214) — alone. Largest single
-      directory in the entire M4 census by a wide margin; tree-wide
-      gate required (tree's known highest-defect-density directory,
-      same rule M2/M3 both applied).
+- [x] **C1 COMPLETE 2026-08-06**: `contrib/zip/lib` — census gap
+      241 real errors vs. 214 census (+13%, same direction/magnitude
+      as every prior batch's undercount). 32 files touched: 209
+      implicit-int (a very uniform untyped-duplicate-forward-decl
+      pattern, all typed `int` from an existing typed sibling
+      declaration in the same file), 26 format-width fixes, 5
+      incompatible-function-pointer-types (collapsing to 2 real
+      fixes: `ziposym.c`'s `Filter` got a true-signature `const` fix
+      matching macOS's real `scandir(3)` prototype; `zipedit.ch`'s
+      `Set_Keyboard_Processor` macro got one cast to the field's own
+      declared type, the correct fix for a genuinely polymorphic
+      callback slot with 3 differently-typed concrete assignees), 1
+      format-extra-args. Zero bare/void casts; the one other cast in
+      this batch is the tree's established `(procedure)` idiom at a
+      `proctable_DefineProc` call site, same pattern AMS1/AMS2 used.
+      One genuine ~30-year bug found: `zipds02.c:243`'s figure-mode
+      attribute writer built three characters but only wrote two,
+      silently dropping the "halo" flag on every save (reader side
+      confirmed it expects three); fixed. wdc's own testing after the
+      fix found halo mode is effectively vestigial — no menu/palette
+      path in the editor ever sets the flag, so the write bug, now
+      fixed, protects an attribute nothing can currently turn on;
+      logged in `revival.md` with that caveat. No `.ch`-drift found
+      this batch. This directory produces only `.do` dynamic-load
+      objects (no static library); no downstream relink needed,
+      confirmed by both the delegate and the orchestrator
+      independently (no other Imakefile references its `.do`
+      outputs). Flagged elevated-risk (tree's known
+      highest-defect-density directory) — both subtree and the
+      mandatory tree-wide `make dependInstall` gate run clean twice
+      independently (delegate: 21,048-line log, 0 errors; orchestrator:
+      identical count and result from a from-scratch rerun). wdc ran
+      smoke testing (general figure draw/save/reload plus the halo
+      round-trip) with no observed regressions.
 - [ ] **C2**: `contrib/zip/utility` (67) — alone. Shares lifecycle-
       method/lt/sched classes with `zip/lib`'s history (M3 C1/C2's
       `FinalizeObject`/`InitializeObject` findings) — do after C1,

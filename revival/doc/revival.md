@@ -1005,6 +1005,23 @@ sample:
   operational failures further down the same call. Fixed by adding the
   missing conversion so the message names the printer, matching its
   sibling branch immediately above.
+- **A figure attribute that was saved wrong, for a feature nobody could
+  ever turn on.** The drawing editor's on-disk format for a figure's
+  "mode" attributes packs three single-character flags onto one line;
+  the code that writes that line built all three characters but only
+  ever wrote two of them, silently dropping the third — "halo" — on
+  every save. The reader, unaware anything was missing, faithfully
+  parsed whatever the writer gave it, so the flag never survived a
+  save/reload cycle even in the rare case something had set it. On
+  investigation prompted by testing this fix, halo mode turns out to
+  be effectively vestigial: nothing in the editor's menus or attribute
+  palette ever offers a way to turn it on, so the flag is unreachable
+  through the UI in practice. There is exactly one place downstream
+  that still checks it — a text-legibility effect in caption
+  rendering — but with no live path to set the bit, that check never
+  fires either. The write bug itself was real and is now fixed to
+  match its sibling write correctly, but the attribute it saves
+  remains, as far as this session could tell, permanently off.
 
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
