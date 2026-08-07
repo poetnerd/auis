@@ -1080,6 +1080,41 @@ sample:
   misdiagnosed in 2026-07-25 as an unrelated ez text-dragging bug — it
   was this same figure-drag freeze, observed while testing zip and
   mislabeled.
+- **The same forward-declaration blind spot, sized and then triaged
+  tree-wide.** The zip drag bug above raised an obvious question: how
+  many other stale, argument-less forward declarations were sitting
+  above correctly-typed real definitions elsewhere in the tree, equally
+  invisible to every M1–M4 diagnostic? A tree-wide `-Wstrict-prototypes`
+  census (diagnostic only, nothing changed) found roughly 6,700 such
+  hits in real project files. A mechanical pass then retyped each
+  declaration to match its real definition and rebuilt every directory
+  with `-Wincompatible-pointer-types` added, letting the compiler itself
+  separate harmless old-style declarations from genuine bugs — the same
+  method M1 and M3 used, applied one more level down. Across 508 files
+  it surfaced a small, specific list of real defects, since fixed: the
+  AMS API's `MS_GetPartialFile`/`MS_GetPartialBody` out-parameter was
+  declared `int *` at its one real definition while every caller in the
+  tree — consistently, independently, including a sibling RPC-transport
+  implementation — expected `long *`, meaning the byte count of unread
+  message body was written 4 bytes at a time into what callers treated
+  as an 8-byte slot; `PrintFwdHeaders` declared its file-handle
+  parameter `int` while both its callers and its own body treated it as
+  `FILE *`; a companion field, `MS_ProcessNewMessages`'s `FirstError`
+  out-parameter, was held in a `long` local at its only call site
+  against a real `int *` definition; nine call sites elsewhere had
+  simply drifted from their real signatures — an extra or missing
+  argument, silently accepted by the old argument-less declarations —
+  including one, `Create_Shade_Palette` in the zip palette code, that
+  had drifted in its *type* rather than its count, the lone outlier
+  among nine otherwise-identical sibling palette functions; and one
+  more, an EPS-preview helper in the image inset code, turned out not
+  to be a bug at all — its only call site was permanently disabled by
+  an `if (FALSE)` guard, so the function and its dead call were removed
+  outright instead of "fixed." None of this class of bug needed its own
+  rollout milestone: unlike M1–M4, most of the tree-wide hits were
+  harmless old-style declarations rather than latent bugs, and the
+  compiler-driven pass found every real one directly, with no
+  batch-by-batch manual triage required.
 
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
@@ -1283,13 +1318,16 @@ The resulting plan runs in four stages:
   shapes its own parser had missed.
 - **M4 — enable full compiler strictness** tree-wide, once every subsystem
   has been converted, which closes the remaining scanf-format-code bug
-  family as a side effect. In progress.
+  family as a side effect. Completed August 2026, directory by directory,
+  seven waves plus an initial pilot batch.
 
-As of this writing, M1, M2, and M3 are complete across the entire active
-codebase; M4 is underway, directory by directory, and has already turned
-up several of the decades-old defects described above — the same pattern
-as M1 and M3 before it, where a stricter build catches mistakes no prior
-compiler could see.
+As of this writing, M1 through M4 are complete across the entire active
+codebase, each having turned up several of the decades-old defects
+described above — a stricter build catching mistakes no prior compiler
+could see. A follow-on tree-wide census closed the one remaining blind
+spot the four milestones couldn't see on their own — stale argument-less
+forward declarations shadowing correctly-typed real definitions — and is
+described in its own entry above.
 
 ## Where things stand today
 
