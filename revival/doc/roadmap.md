@@ -425,8 +425,10 @@ acceptance). What remains here is the real HTML rendering:
   that also caught a second real bug the newly-visible prototypes
   exposed — `RBDT`/`RBDM`/`RBUT` were being called with an extra,
   silently-ignored 5th argument their real 4-parameter definitions
-  don't accept. wdc confirmed the drag fix live. See project memory
-  `project_zip_x_drag_lock`.
+  don't accept. wdc confirmed the drag fix live. See memory
+  `project_text_drag_horizontal_lock` (retitled/corrected, not a new
+  entry — this is the same bug that memory originally mischaracterized
+  as an ez text-drag issue).
 
 ### filetype.c DeleteEntry:
 
