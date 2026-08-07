@@ -79,13 +79,13 @@ END-SPECIFICATION  ************************************************************/
 #include <sys/stat.h>
 #include <ctype.h>
 #include <stdlib.h>
-static long Check_Image();
-static int Generate_Temp_File();
-static int Write_Object_Info();
-static int Write_View_Info();
+static long Check_Image(struct zip *self, zip_type_image image, long modified);
+static int Generate_Temp_File(struct zip *self, FILE *file, char **generated_file_name);
+static int Write_Object_Info(struct zip *self, FILE *file);
+static int Write_View_Info(struct zip *self, FILE *file);
 
 /* M2: zip.do cross-file, no header declares this (defined zipds02.c) */
-extern long zip_Enparse_Stream();
+extern long zip_Enparse_Stream(struct zip *self, struct zip_stream *stream);
 
 static boolean debug;
 
@@ -136,13 +136,13 @@ boolean zip__InitializeClass(struct classheader *classID)
   }
 
 
-static int Generate_Temp_File();
-static int Write_View_Info();
-static int Write_Object_Info();
+static int Generate_Temp_File(struct zip *self, FILE *file, char **generated_file_name);
+static int Write_View_Info(struct zip *self, FILE *file);
+static int Write_Object_Info(struct zip *self, FILE *file);
 
-static long Init_Message_Writer();
-static long Init_Message_Clearer();
-static long Init_Message_Acknowledger();
+static long Init_Message_Writer(struct zip *self, char *msg);
+static long Init_Message_Clearer(struct zip *self);
+static long Init_Message_Acknowledger(struct zip *self, char *msg);
 
 boolean zip__InitializeObject(struct classheader *classID, struct zip *self)
   {

@@ -70,21 +70,21 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <msgsvers.h>
 #include <frame.ih>
 static struct view * GetIM();
-static void RememberMessage();
-static void ReportErrorHistory();
-static int SendBug();
+static void RememberMessage(char *text, char *moretext);
+static void ReportErrorHistory(FILE *fp);
+static int SendBug(char *text, char *moretext, int code);
 
 extern FILE *topen();
-extern char *LocalDir();
+extern char *LocalDir(char *str);
 
-static int PrepareAutoBugFile();
-static int DescribeLink();
-static int SnarfFile();
-static int ReportOptionState();
-static void RememberMessage();
-static void ReportErrorHistory();
+static int PrepareAutoBugFile(char *text, char *moretext, int code, char *FileName);
+static int DescribeLink(FILE *fp, char *name);
+static int SnarfFile(FILE *fp, char *fname);
+static int ReportOptionState(FILE *fp);
+static void RememberMessage(char *text, char *moretext);
+static void ReportErrorHistory(FILE *fp);
 
-extern char *FindUserDir(), *StripWhiteEnds(), *CUI_ClientVersion;
+extern char *FindUserDir(char *user, char *cellname), *StripWhiteEnds(char *string), *CUI_ClientVersion;
 extern char CUI_MailDomain[], *CUI_WhoIAm;
 
 extern int CUI_SnapIsRunning, CUI_LastCallFinished;
@@ -102,17 +102,17 @@ extern int unix_sys_nerr,
 	rpc_nerr;
 
 /* same-file forward references -- all defined later in this file */
-extern int SubtleDialogs(), ChooseFromList(),
-	TildeResolve(), ReportError(), RealReportError(), ReportFailure(),
-	ReportSuccessNoLogging(), ReportSuccess(), RealReportSuccess(),
-	GenericCompoundAction(), GetBooleanFromUser(), GetStringFromUser(),
-	GetSeparators(), SnarfCommandOutputToFP();
+extern int SubtleDialogs(int Really), ChooseFromList(char **QVec, int def),
+	TildeResolve(char *old, char *new), ReportError(char *text, int level, int Decode), RealReportError(char *text, int level, int Decode), ReportFailure(char *text, char *moretext, int fmask),
+	ReportSuccessNoLogging(char *text), ReportSuccess(char *text), RealReportSuccess(char *text),
+	GenericCompoundAction(struct view *v, char *prefix, char *orgcmds), GetBooleanFromUser(char *prompt, int defaultans), GetStringFromUser(char *prompt, char *buf, int len, int IsPassword),
+	GetSeparators(char *cmds, char **argsep, char **cmdsep), SnarfCommandOutputToFP(char *cmd, FILE *fp);
 extern int WriteOutUserEnvironment(FILE *fp, Boolean IsAboutMessages);
 
 /* ams/libs/cui, ams/libs/ms, overhead/util/lib -- no header anywhere */
-extern int CUI_GenLocalTmpFileName(), CUI_SubmitMessage();
-extern int MS_CheckAuthentication();
-extern int dbg_tclose();
+extern int CUI_GenLocalTmpFileName(char *nmbuf), CUI_SubmitMessage(char *InFile, int DeliveryOpts);
+extern int MS_CheckAuthentication(int *Authenticated);
+extern int dbg_tclose(FILE *fp, int seconds, int *timedout);
 
 static int Messages_Global_Error_Count = 0;
 

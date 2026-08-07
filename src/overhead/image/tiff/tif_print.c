@@ -40,8 +40,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <string.h>
 #include "tiffioP.h"
-static int JPEGPrintCTable();
-static int JPEGPrintQTable();
+static int JPEGPrintCTable(FILE *fd, u_char *tab);
+static int JPEGPrintQTable(FILE *fd, u_char tab[64]);
 
 #ifdef JPEG_SUPPORT
 static int JPEGPrintQTable(FILE *fd, u_char tab[64])

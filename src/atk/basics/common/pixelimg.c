@@ -45,11 +45,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <class.h>
 #include <andrewos.h>
 #include <pixelimg.eh>
-static boolean ClipChange();
-static long GetColumn();
-static long GetRow();
-static long SetColumn();
-static long SetRow();
+static boolean ClipChange(struct pixelimage *self, struct rectangle *sub);
+static long GetColumn(struct pixelimage *self, long x, long y, long length, unsigned char *dest);
+static long GetRow(struct pixelimage *self, long x, long y, long length, unsigned char *dest);
+static long SetColumn(struct pixelimage *self, long x, long y, long length, unsigned char *src);
+static long SetRow(struct pixelimage *self, long x, long y, long length, unsigned char *src);
 
 #define BUFBYTES	600	/* enough for 4792 bits */
 

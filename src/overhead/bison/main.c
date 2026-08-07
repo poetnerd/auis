@@ -35,10 +35,10 @@ int failure;
 /* The name this program was run with, for messages. */
 char *program_name;
 
-extern void getargs(), openfiles(), reader(), reduce_grammar();
+extern void getargs(int argc, char *argv[]), openfiles(), reader(), reduce_grammar();
 extern void set_derives(), set_nullable(), generate_states();
 extern void lalr(), initialize_conflicts(), verbose(), terse();
-extern void output(), done();
+extern void output(), done(int k);
 
 
 /* VMS complained about using `int'.  */

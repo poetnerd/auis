@@ -43,10 +43,10 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 
 #include "srctext.ih"
 #include "cpptext.eh"
-static void SetupStyles();
-static void fn_name();
+static void SetupStyles(struct cpptext *self);
+static void fn_name(struct cpptext *self, long posn, long backtoofar);
 static boolean isOperatorOverload(struct cpptext *self, char ch);
-static long skipJunk();
+static long skipJunk(struct cpptext *self, long pos, long len);
 
 static Dict *words[TABLESIZE];
 

@@ -75,14 +75,14 @@ END-SPECIFICATION  ************************************************************/
 #include "zipv.ih"
 #include "zipedit.ih"
 #include "zipedit.h"
-static int Clear_Pane_Mark_Areas();
-static int Compute_Pane_Coordinate_Deltas();
-static int Draw_Pane_Coordinate_Marks();
-static int Draw_Pane_Coordinate_Ticks();
+static int Clear_Pane_Mark_Areas(struct zipedit *self, zip_type_pane pane);
+static int Compute_Pane_Coordinate_Deltas(struct zipedit *self, zip_type_pane pane);
+static int Draw_Pane_Coordinate_Marks(struct zipedit *self, zip_type_pane pane);
+static int Draw_Pane_Coordinate_Ticks(struct zipedit *self, zip_type_pane pane);
 
-static int Draw_Pane_Coordinate_Marks();
-static int Draw_Pane_Coordinate_Ticks();
-static int Compute_Pane_Coordinate_Deltas();
+static int Draw_Pane_Coordinate_Marks(struct zipedit *self, zip_type_pane pane);
+static int Draw_Pane_Coordinate_Ticks(struct zipedit *self, zip_type_pane pane);
+static int Compute_Pane_Coordinate_Deltas(struct zipedit *self, zip_type_pane pane);
 
 long zipedit__Draw_Pane_Coordinates(struct zipedit *self, zip_type_pane pane)
   {

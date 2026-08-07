@@ -36,7 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <string.h>
 extern int getprofileint();  /* overhead/util/lib/profile.c */
 extern int getprofileswitch();  /* overhead/util/lib/profile.c */
-extern int setprofilestring();  /* overhead/util/lib/setprof.c */
+extern int setprofilestring(char *prog, char *pref, char *val);  /* overhead/util/lib/setprof.c */
 
 #ifndef _IBMR2
 #endif /* _IBMR2 */

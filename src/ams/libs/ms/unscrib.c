@@ -38,23 +38,23 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <hdrparse.h>
 #include <unscribe.h>
 #include <stdlib.h>
-extern int ConsiderLoggingRead();
-extern int DeleteHeader();
-extern int FreeMessage();
+extern int ConsiderLoggingRead(char *FileName);
+extern int DeleteHeader(struct MS_Message *Msg, int num);
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
 extern int FreeMessageContents(struct MS_Message *Msg, Boolean FreeSnapshot);
-extern int GenTempName();
-extern int GetFormatFromMessage();
-extern int ParseMessageFromRawBody();
-extern int QuickGetBodyFileName();
-extern int ReadOrFindMSDir();
-extern int ReadRawFile();
+extern int GenTempName(char *Buf);
+extern int GetFormatFromMessage(struct MS_Message *Msg, char *ThisFormat, int bufsize, int *IsBE2);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int QuickGetBodyFileName(char *DirName, char *id, char *FileName);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
 extern int WriteUnscribedBodyFile(struct MS_Message *Msg, char *FileName);
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
-extern int fwriteallchars();  /* overhead/util/lib/fwrtallc.c */
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
+extern int fwriteallchars(char *Thing, int NItems, FILE *stream);  /* overhead/util/lib/fwrtallc.c */
 
-extern char *StripWhiteEnds();
+extern char *StripWhiteEnds(char *string);
 
 int MS_WriteUnscribedBodyFile(char *DirName, char *id, char *FileName)
 {

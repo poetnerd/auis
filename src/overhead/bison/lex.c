@@ -35,7 +35,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "symtab.h"
 #include "lex.h"
 #include "new.h"
-static char * grow_token_buffer();
+static char * grow_token_buffer(char *p);
 
 
 extern int lineno;
@@ -44,10 +44,10 @@ extern int translations;
 int parse_percent_token();
 
 /* functions from main.c */
-extern void fatals();
-extern void fatal();
+extern void fatals(char *fmt, int x1, int x2, int x3, int x4, int x5, int x6, int x7, int x8);
+extern void fatal(char *s);
 extern void warns();
-extern void warn();
+extern void warn(char *s);
 
 /* Buffer for storing the current token.  */
 char *token_buffer;

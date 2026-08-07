@@ -38,17 +38,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <mail.h>
 #include <stdlib.h>
-static int ReadSubsFile();
-extern int GenMSPathElts();
+static int ReadSubsFile(int idx);
+extern int GenMSPathElts(int *genPos, char *cellName, char **pathName, char **outCell, int *SPEix);
 extern int InitializeSearchPaths();
-extern int MS_AddToDsabgCache();
-extern int NonfatalBizarreError();
+extern int MS_AddToDsabgCache(char *folder, int index);
+extern int NonfatalBizarreError(char *text);
 extern int ResolveTildes(char *old, char **new, char *domain);
-extern int ValidateSearchPath();
-extern int abspath();
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int ValidateSearchPath(int i);
+extern int abspath(char *name, char *result);
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
 
-extern char *permanentmalloc();
+extern char *permanentmalloc(int ct);
 
 char *SearchPath;
 struct SearchPathElement SearchPathElements[MAXPATHELTS];
@@ -63,8 +63,8 @@ struct DsabgCacheEntry {
     struct DsabgCacheEntry *next;
 };
 static struct DsabgCacheEntry *DsabgCache[DSABGCACHESIZE];
-static int ReadSubsFile();
-char *MS_LookupInDsabgCache();
+static int ReadSubsFile(int idx);
+char *MS_LookupInDsabgCache(char *folder);
 
 /* This routine should be cleaned up to set error codes properly, and then
 	the routines that call it should pass on its error codes */

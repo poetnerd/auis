@@ -57,8 +57,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <sendmsg.ih>
 #undef dontDefineRoutinesFor_sendmessage
 #include <ams.ih>
-static void DownFocus();
-static void UpFocus();
+static void DownFocus(struct t822view *self);
+static void UpFocus(struct t822view *self);
 
 #define Text(self) ((struct text *) t822view_GetDataObject(self))
 

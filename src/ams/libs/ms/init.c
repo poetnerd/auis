@@ -52,27 +52,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 extern int CheckAMSConfiguration();  /* overhead/mail/lib/mailconf.c */
 extern int CkAMSCellConfig();  /* overhead/mail/lib/mailconf.c */
 extern int DeSymLink();  /* overhead/util/lib/desym.c */
-extern int FatalError();
-extern int GetNameFromGecos();
+extern int FatalError(char *text);
+extern int GetNameFromGecos(char *GecosField, char *LoginID, char *Domain, char **PersonalNameP);
 extern int InitializeDeathSignals();
 extern int InitializeDirCacheState();
 extern int InitializeSearchPaths();
-extern int MS_DisambiguateFile();
-extern int MS_SetDeathKnell();
+extern int MS_DisambiguateFile(char *source, char *target, short AccessCode);
+extern int MS_SetDeathKnell(int dk);
 extern int Machine_HandleClientSignal();  /* ams/ms/ms.c */
-extern int NonfatalBizarreError();
+extern int NonfatalBizarreError(char *text);
 extern int RefreshSubs();
-extern int VitalCheckpoints();
-extern int abspath();
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int fdplumb_SpillGutsToFile();  /* overhead/util/lib/fdplumb.c */
-extern int safeexit();
+extern int VitalCheckpoints(Boolean DoEverything, int *errct);
+extern int abspath(char *name, char *result);
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int fdplumb_SpillGutsToFile(FILE *fp, int ExtraNewLines);  /* overhead/util/lib/fdplumb.c */
+extern int safeexit(int code);
 extern int test_dropoff();  /* overhead/mail/lib/dropoff.c */
 
 extern char **environ;
-extern char *getprofile(), *StripWhiteEnds();
-extern char *AndrewDir();
-extern char *LocalDir();
+extern char *getprofile(), *StripWhiteEnds(char *string);
+extern char *AndrewDir(char *str);
+extern char *LocalDir(char *str);
 
 char *StandardHeaderNames[] =  {
     "reply-to", /* HP_REPLY_TO */

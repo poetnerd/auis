@@ -58,7 +58,7 @@ static int RowRepeat;				/* number of repititons */
 static int RowCount;				/* current row */
 static int ColCount;				/* current column */
 
-static int IMG_ReadHeader();			/* Read file header */
+static int IMG_ReadHeader(FILE *f, IMG_Header *h);			/* Read file header */
 static void IMG_WriteByte(unsigned char c, int cols, unsigned int bpl);	/* Write output byte */
 
 /*

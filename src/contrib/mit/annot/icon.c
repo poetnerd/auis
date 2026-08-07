@@ -38,7 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include "dataobj.ih"
 #include "dict.ih"
 #include "icon.eh"
-static int check_for_title();
+static int check_for_title(struct icon *self, FILE *file);
 
 boolean icon__InitializeClass(struct classheader *classID)
 {

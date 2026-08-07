@@ -42,7 +42,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <proctbl.ih>
 
 #include <stylesht.eh>
-static long FindStyle();
+static long FindStyle(struct stylesheet *self, struct style *styleptr);
 
 
 #define iswhite(c) ((c) == ' ' || (c) == '\t' || (c) == '\n')

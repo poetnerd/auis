@@ -38,7 +38,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <envrment.eh>
 #include <tree23.ih>
 #include <viewref.ih>
-static long AlterEnvironmentSize();
+
+struct removestruct;
+static long AlterEnvironmentSize(struct environment *self, struct removestruct *data);
 
 /* Crank out structs in 4k blocks. */
 #define DESIREDBLOCKSIZE 4096

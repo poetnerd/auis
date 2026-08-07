@@ -39,7 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include <graphic.ih>
 #include <view.ih>
-static void Intersect();
+static void Intersect(int oldnum, int newnum);
 
 struct rlist_rectangle {
     int bottom, top, left,right;

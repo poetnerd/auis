@@ -95,18 +95,18 @@ extern int errno;
 #endif /* AFS30_ENV */
 #include <sys/param.h>
 #include <util.h>
-static long int CheckRights();
+static long int CheckRights(char *user, char *usercell, char *dir, long int testrights, int anyflag);
 static long int Do_Negative_Rights();
 static long Do_Positive_Rights();
 static void DumpAL();
 static void Free_access_list();
 static void Free_id_and_name();
-static char * GetACL();
+static char * GetACL(char *pathname);
 static char * GroupMembers();
 static int Group_P();
-static char * IDToName();
+static char * IDToName(long id, char *cell);
 static int Member_of_Group_P();
-static long NameToID();
+static long NameToID(char *name, char *cell);
 static long Neg_Rights_Of();
 static long Pos_Rights_Of();
 

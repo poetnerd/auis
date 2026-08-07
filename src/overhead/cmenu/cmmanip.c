@@ -36,10 +36,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <cmintern.h>
 #include <scache.h>
 #include <stdlib.h>
-static char * CopyString();
-static void FreeSelections();
-static int GetPane();
-static void RecomputeMaxSelectionWidth();
+static char * CopyString(char *string);
+static void FreeSelections(struct cmenu *menu, struct pane *pane);
+static int GetPane(struct cmenu *menu, char *paneTitle, int panePriority, struct pane **thisPaneRet, struct pane **lastPaneRet);
+static void RecomputeMaxSelectionWidth(struct pane *pane);
 
 /* Need to handle movement of worm item in this code... */
 

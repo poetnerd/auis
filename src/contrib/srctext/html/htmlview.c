@@ -44,8 +44,8 @@
 
 #include <html.ih>
 #include <htmlview.eh>
-static boolean ConfirmReadOnly();
-static int parse_num();
+static boolean ConfirmReadOnly(struct htmlview *self, struct html *html);
+static int parse_num(struct html *html, int start, int end, int *numret);
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 256
@@ -54,18 +54,18 @@ static int parse_num();
 static struct keymap *Keymap;
 static struct menulist *Menus;
 
-void htmlview_SetTitle();
-void htmlview_SetIndex();
-void htmlview_SetLink();
-void htmlview_EditAttributes();
-void htmlview_unlistify();
+void htmlview_SetTitle(struct htmlview *self, long key);
+void htmlview_SetIndex(struct htmlview *self, long key);
+void htmlview_SetLink(struct htmlview *self, long key);
+void htmlview_EditAttributes(struct htmlview *self, long key);
+void htmlview_unlistify(struct htmlview *self, long key);
 void htmlview_itemize();
-void htmlview_AddRandom();
-void htmlview_AddImage();
-void htmlview_AddHrule();
-void htmlview_makeList();
-void htmlview_SetImage();
-void htmlview_modifyList();
+void htmlview_AddRandom(struct htmlview *self, long key);
+void htmlview_AddImage(struct htmlview *self, long key);
+void htmlview_AddHrule(struct htmlview *self, long key);
+void htmlview_makeList(struct htmlview *self, char *listStyleName);
+void htmlview_SetImage(struct htmlview *self, long key);
+void htmlview_modifyList(struct htmlview *self, long key);
 
 static char* bulletChars = "*+";
 

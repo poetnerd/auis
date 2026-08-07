@@ -52,14 +52,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif /* AFS_ENV */
 #include <sys/stat.h>
 #include <stdlib.h>
-extern int AuthenticReSentHeader();
+extern int AuthenticReSentHeader(struct MS_Message *msg);
 extern int FindPrettiestFromString();
-extern int FindPrettiestName();
-extern int GetNameFromGecos();
-extern int ParseAndShrinkDate();
-extern int ReallyIsFromMe();
-extern int SeemsToBeFromMe();
-extern int ShrinkName();
+extern int FindPrettiestName(struct MS_Message *msg, char *FromBuf, int lim);
+extern int GetNameFromGecos(char *GecosField, char *LoginID, char *Domain, char **PersonalNameP);
+extern int ParseAndShrinkDate(char *bigdate, char *littledate);
+extern int ReallyIsFromMe(struct MS_Message *Msg, int InMyCell);
+extern int SeemsToBeFromMe(struct MS_Message *Msg);
+extern int ShrinkName(char *longname, char *shortname, int limit);
 
 #define BIGSUBJECT 30
 #define BIGFROM 24  /* c.f. prettyn.c */

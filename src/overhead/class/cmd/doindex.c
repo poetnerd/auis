@@ -49,11 +49,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <class.h>  /* this contains all the structs, etc. for the class system */
 #include <doload.h>
 #include <classind.h>
-static void AddEntry();
-static void DeleteEntry();
-static void Error();
-static void ParseArgs();
-static void ProcessEntry();
+
+struct EntryStruct;
+static void AddEntry(char *name);
+static void DeleteEntry(struct EntryStruct *entry);
+static void Error(char *message, char *param);
+static void ParseArgs(int argc, char *argv[]);
+static void ProcessEntry(struct EntryStruct *entry);
 static void Usage();
 
 

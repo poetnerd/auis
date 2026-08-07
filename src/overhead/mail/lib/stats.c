@@ -54,8 +54,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 extern FILE *fopen();
 #include "errprntf.h"
 static int OpenSocket();
-static void warning();
-static void Format();
+static void warning(char *format, char *a0, char *a1, char *a2, char *a3, char *a4);
+static void Format(char *to, char *from, int len);
 
 /* No header anywhere in the tree declares these (errprntf.h only
    defines the ERR_* macros, never the function itself -- the only
@@ -63,10 +63,10 @@ static void Format();
    renames close()/fclose()/socket() via #define but only declares 6 of
    its 16 dbg_* wrapper names -- these three aren't among them. */
 extern int errprintf();		/* ams/libs/hdrs/ams.h:170 precedent */
-extern int dbg_fclose();		/* overhead/util/lib/fdplumb.c */
-extern int dbg_socket();		/* overhead/util/lib/fdplumb.c */
-extern int dbg_close();		/* overhead/util/lib/fdplumb.c */
-extern int osi_GetTimes();		/* overhead/util/lib/times.c */
+extern int dbg_fclose(FILE *fp);		/* overhead/util/lib/fdplumb.c */
+extern int dbg_socket(int af, int typ, int prot);		/* overhead/util/lib/fdplumb.c */
+extern int dbg_close(int fd);		/* overhead/util/lib/fdplumb.c */
+extern int osi_GetTimes(struct osi_Times *blk);		/* overhead/util/lib/times.c */
 
 #if !POSIX_ENV
 extern int errno;

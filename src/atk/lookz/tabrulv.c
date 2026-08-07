@@ -48,11 +48,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/look
 
 #include <tabrulv.eh>
 #include <string.h>
-static boolean BogusCallFromParent();
-static boolean CheckWindow();
+static boolean BogusCallFromParent(struct tabrulerview *self, char *where, char *msg);
+static boolean CheckWindow(struct tabrulerview *self, char *where);
 static void DoTicks(struct tabrulerview *self, short zeroloc, short left, short right, struct TickTbl *tbl);
-static void MoveIcon();
-static void RecomputeAndRedraw();
+static void MoveIcon(struct tabrulerview *self, long newx);
+static void RecomputeAndRedraw(struct tabrulerview *self);
 
 #define	IconString	"/"
 #define	ClearString	"AllClear"
@@ -65,7 +65,7 @@ static void RedrawIcons(struct tabrulerview *self);
 static void RedrawCommands(struct tabrulerview *self);
 static void RedrawText(struct tabrulerview *self, float number, boolean flag);
 static void RedrawRuler(struct tabrulerview *self);
-int FindClosestTab();	/* defined below, used earlier in this file */
+int FindClosestTab(struct tabrulerview *self, long pos);	/* defined below, used earlier in this file */
 
 #define ICONHEIGHT 14	/*C*//* height of area where icons move */
 #define PARKWIDTH  19	/*C*//* width of icon parking area */

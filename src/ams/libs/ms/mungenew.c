@@ -36,15 +36,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <mailconf.h>
 #include <stdlib.h>
-static int ReallyTruly_ProcessNewMessages();
+static int ReallyTruly_ProcessNewMessages(char *SourceDir, int *NumGood, int *NumBad, int *NumLocks, char *ParseSpecFile, int *resultcode, int *FirstError, int *NumInProgress, char *EliErrBuf, int EliErrBufLim);
 extern int CloseDirsThatNeedIt();
-extern int ConvertIncomingMail();
-extern int FlushClosableDir();
-extern int FreeFTList();
-extern int NonfatalBizarreError();
-extern int ProcessNewMail();
-extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
-extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
+extern int ConvertIncomingMail(char *MailSpoolFile, char *MailDir, int *FilesReadIn);
+extern int FlushClosableDir(int *UnlinkFailures);
+extern int FreeFTList(struct FileTime *FTL, int nf);
+extern int NonfatalBizarreError(char *text);
+extern int ProcessNewMail(char *ThisFileName, char *ParseSpec, int Code, int *UnlinkFailures, char *EliErrBuf, int EliErrBufLim);
+extern char *ap_Shorten(char *pathname);  /* overhead/util/lib/abbrpath.c */
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
 #ifdef AFS_ENV
 #include <netinet/in.h>
 #include <afs/param.h>
@@ -53,7 +53,7 @@ extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
 #include <afs/prs_fs.h>
 #endif /* AFS_ENV */
 
-static int ReallyTruly_ProcessNewMessages();
+static int ReallyTruly_ProcessNewMessages(char *SourceDir, int *NumGood, int *NumBad, int *NumLocks, char *ParseSpecFile, int *resultcode, int *FirstError, int *NumInProgress, char *EliErrBuf, int EliErrBufLim);
 
 #define MAILBOXFILECHUNK 1000
 

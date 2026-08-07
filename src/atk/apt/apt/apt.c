@@ -127,11 +127,11 @@ END-SPECIFICATION  ************************************************************/
 #include <apt.h>
 #include <apt.eh>
 #include <apts.ih>
-static int Assign_String();
-static int Assign_Strings();
+static int Assign_String(struct apt *self, char *prefix, char *desire, char *candidate, char *source, char **target);
+static int Assign_Strings(struct apt *self, char *prefix, char *desire, char *candidate, char *source, char ***target, long *count);
 static void Free_Vector();
-static int Parse_Field();
-static void Write_Strings();
+static int Parse_Field(struct apt *self, char *line, struct apt_field *field);
+static void Write_Strings(struct apt *self, FILE *file, char *name, char *prefix, long count, char *anchor[]);
 
 int apt_debug = 0;
 #define debug apt_debug

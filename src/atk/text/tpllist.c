@@ -40,11 +40,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <stylesht.ih>
 #define AUXMODULE 1
 #include <text.eh>
-static struct templatelist * FindTemplate();
-static void SetGlobalStyleInText();
-static struct templatelist * text_AddTemplate();
-static struct templatelist * text_FindTemplateByName();
-static void text_OverrideStyles();
+static struct templatelist * FindTemplate(struct stylesheet *ssptr);
+static void SetGlobalStyleInText(struct text *self);
+static struct templatelist * text_AddTemplate(struct stylesheet *ssptr);
+static struct templatelist * text_FindTemplateByName(char *templateName);
+static void text_OverrideStyles(struct stylesheet *ssptr, struct stylesheet *templateptr);
 
 #define StateInit		0
 #define StateSawSlash		1

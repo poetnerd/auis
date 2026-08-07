@@ -37,7 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 
 /* overhead/util/lib/fdplumb.c's dbg_* wrapper family; overhead/util/hdrs/
    fdplumb.h #defines fclose to this but doesn't declare it. */
-extern int dbg_fclose();
+extern int dbg_fclose(FILE *fp);
 
 /* The various mailbox directories */
 static char RootDir[MAXPATHLEN + 1] = "/usr/net";
@@ -81,7 +81,7 @@ static int numValidGroups;
 static struct group *delayedGroups;
 static int numDelayedGroups;
 
-static struct group *parseGroupList();
+static struct group *parseGroupList(char *str, int *nump);
 
 /*
  * Initialize this module by parsing the config file named in "fname"

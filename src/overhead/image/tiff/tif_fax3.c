@@ -45,11 +45,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "t4.h"
 #define	G3STATES
 #include "g3states.h"
-static void bset();
-static int decode_black_run();
-static int decode_uncomp_code();
-static int decode_white_run();
-static int nextbit();
+static void bset(unsigned char *cp, int n, int v);
+static int decode_black_run(TIFF *tif);
+static int decode_uncomp_code(TIFF *tif);
+static int decode_white_run(TIFF *tif);
+static int nextbit(TIFF *tif);
 
 typedef struct {
 	Fax3BaseState b;

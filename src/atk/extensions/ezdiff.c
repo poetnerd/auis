@@ -52,18 +52,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <im.ih>
 #include <cursor.ih>
 #include <ezdiff.eh>
-static struct ezdiff * FindBufferDiff();
-static struct ezdiff * FindViewDiff();
-static int LocateInView();
-static int ezdiff_Change();
-static int ezdiff_Current();
-static int ezdiff_Last();
-static int ezdiff_Next();
-static int ezdiff_PointOut();
-static int ezdiff_Start();
-static int ezdiff_setupmarkers();
-static char * getpair();
-static struct mark * setmark();
+static struct ezdiff * FindBufferDiff(struct buffer *b, int *which);
+static struct ezdiff * FindViewDiff(struct textview *v, int *which);
+static int LocateInView(struct view *v1, struct view *v2, struct view *v3, long dat);
+static int ezdiff_Change(struct textview *v, long delta);
+static int ezdiff_Current(struct textview *v, long delta);
+static int ezdiff_Last(struct textview *v, long delta);
+static int ezdiff_Next(struct textview *v, long delta);
+static int ezdiff_PointOut(struct ezdiff *self, struct textview *v, long delta);
+static int ezdiff_Start(struct view *v, long dat);
+static int ezdiff_setupmarkers(struct ezdiff *self, char *s);
+static char * getpair(char *cp, int *ip);
+static struct mark * setmark(int *ip, struct text *d, int *pi, int *ppos);
 
 #define ObjectOf(V) (((struct view *)(V))->dataobject)
 #define USECURRENTMARK -32000l

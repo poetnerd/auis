@@ -48,14 +48,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <filetype.ih>
 
 #include <path.eh>
-static char * strappend();
-static void FoldName();
-static void FreeFilesAndDirs();
-static void FreeList();
-static void * HandleCellTwiddle();
-static void HandleRelativeFileName();
-static long SetNewHome();
-static void SetPath();
+static char * strappend(char *dest, char *src);
+static void FoldName(char *path);
+static void FreeFilesAndDirs(struct path *self);
+static void FreeList(char **list);
+static void * HandleCellTwiddle(char *fromString, char *toString);
+static void HandleRelativeFileName(char *fromString, char *toString, char *basefile);
+static long SetNewHome(char *shortPathName, char *name, char *cell, char *dir, long dirlen);
+static void SetPath(struct path *self, char *filepath);
 
 struct homestruct {
     char fullPath[MAXPATHLEN];

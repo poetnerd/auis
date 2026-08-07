@@ -76,8 +76,8 @@ static char *MRMCopyright = "Copyright 1990 Mark Majhor";
 #include <fbm.eh>
 static int fbmin_close_file();
 static int fbmin_image_test();
-static int fbmin_open_image();
-static void tellAboutImage();
+static int fbmin_open_image(FILE *s);
+static void tellAboutImage(char *name);
 
 /****
  **

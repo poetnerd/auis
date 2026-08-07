@@ -37,8 +37,8 @@ char *figospli_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 #include <message.ih>
 #include <print.ih>
 static int FindLineHit();
-static void SetNumCubits();
-static void spline();
+static void SetNumCubits(struct figospli *self, long inum);
+static void spline(struct point *pts, int n, struct figospli_cubit *cubit, boolean closed);
 
 #define figospli_Segments (8)
 

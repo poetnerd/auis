@@ -57,21 +57,23 @@ char *figv_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fig
 #include <environ.ih>
 
 #include <rect.h>
-static void CutSelSplot();
-static void DoBlit();
-static void DoRedraws();
-static void EnumSelSplot();
-static void FixPixelPanning();
-static void IncreaseRedrawProc();
+
+struct printlump;
+static void CutSelSplot(struct figview *self, struct figure *fig, long gref, FILE *fp);
+static void DoBlit(struct figview *self, long diffx, long diffy);
+static void DoRedraws(struct figview *self, struct rectangle *ux, struct rectangle *uy, struct rectangle *dr, long diffx, long diffy);
+static void EnumSelSplot(struct figview *self, struct figure *fig, long grp, procedure func, void *rock);
+static void FixPixelPanning(struct figview *self);
+static void IncreaseRedrawProc(struct figview *self, long num);
 static void IncreaseTmpProc();
-static void OldUpdateCache();
-static boolean PrintSplot();
-static void RectToPix();
+static void OldUpdateCache(struct figview *self);
+static boolean PrintSplot(struct figobj *o, long ref, struct figure *fig, struct printlump *lump);
+static void RectToPix(struct figview *self, struct rectangle *dest, struct rectangle *src, long delta);
 static void RedrawView();
-static boolean TEI_Splot();
-static void ToggleDebugProc();
+static boolean TEI_Splot(struct figobj *o, long ref, struct figure *self, long *vv);
+static void ToggleDebugProc(struct figview *self, long rock);
 static void UpdateCache();
-static void UpdateWindowSize();
+static void UpdateWindowSize(struct figview *self);
 
 #define figview_InitNumHighlights (2)
 #define SCROLL_EXTRA_SPACE (256)
@@ -90,11 +92,11 @@ struct printlump {
     long width, height;
 };
 
-static void ToolsetCreateProc(), ToolsetKillProc(), ChangeZoomProc();
-static void FocusUpProc(), FocusDownProc(), FocusLeftProc(), FocusRightProc(), SetExpertModeProc(), AbortObjectProc(), CutSelProc(), CopySelInsetProc(), CopySelProc(), PasteSelProc(), RotatePasteProc(), ToggleReadOnlyProc(), PanToOriginProc(), WritePSProc(), ReadZipProc(), SetPrintScaleProc(), ShowPrintAreaProc();
+static void ToolsetCreateProc(struct figview *self, char *rock), ToolsetKillProc(struct figview *self, char *rock), ChangeZoomProc(struct figview *self, long rock);
+static void FocusUpProc(struct figview *self, long rock), FocusDownProc(struct figview *self, long rock), FocusLeftProc(struct figview *self, long rock), FocusRightProc(struct figview *self, long rock), SetExpertModeProc(), AbortObjectProc(), CutSelProc(struct figview *self, long rock), CopySelInsetProc(struct figview *self, long rock), CopySelProc(struct figview *self, long rock), PasteSelProc(struct figview *self, long rock), RotatePasteProc(struct figview *self, long rock), ToggleReadOnlyProc(struct figview *self, long val), PanToOriginProc(struct figview *self, long rock), WritePSProc(struct figview *self, long rock), ReadZipProc(struct figview *self, long rock), SetPrintScaleProc(struct figview *self, long rock), ShowPrintAreaProc(struct figview *self, long rock);
 static void FlattenRefList();
-static void IncreaseClipRegProc();
-static void RedrawGroup(), RepostMenus();
+static void IncreaseClipRegProc(struct figview *self, long num);
+static void RedrawGroup(struct figview *self, struct figure *fig, long gref, struct rectangle *B), RepostMenus();
 
 static void ToggleDebugProc(struct figview *self, long rock)
 {
@@ -389,8 +391,8 @@ struct view * figview__GetApplicationLayer(struct figview *self)
     return (struct view *) view;
 }
 
-static void y_getinfo(), y_setframe(), x_getinfo(), x_setframe();
-static long y_whatisat(), x_whatisat();
+static void y_getinfo(struct figview *self, struct range *total, struct range *seen, struct range *dot), y_setframe(struct figview *self, int position, long coordinate, long outof), x_getinfo(struct figview *self, struct range *total, struct range *seen, struct range *dot), x_setframe(struct figview *self, int position, long coordinate, long outof);
+static long y_whatisat(struct figview *self, long coordinate, long outof), x_whatisat(struct figview *self, long coordinate, long outof);
 static struct scrollfns	vertical_scroll_interface =
 {y_getinfo, y_setframe, NULL, y_whatisat};
 static struct scrollfns	horizontal_scroll_interface =

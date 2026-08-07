@@ -40,38 +40,38 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <util.h>
 #include <stdlib.h>
 static int GetSubsFileName();
-extern int BadLine();
-extern int BuildNickName();  /* ams/libs/shr/utils.c */
-extern int CheckForInconsistentSubscriptions();
-extern int CheckForOldFashionedSubscriptions();
+extern int BadLine(char *s, char *what);
+extern int BuildNickName(char *FullName, char *NickName);  /* ams/libs/shr/utils.c */
+extern int CheckForInconsistentSubscriptions(char *SubsFileName);
+extern int CheckForOldFashionedSubscriptions(int *foundthem);
 extern int CheckGlobalSubscriptions();
 extern int CheckPathChanges();
 extern int CheckSubsDuplication();
-extern int ComputeSubsPriority();
+extern int ComputeSubsPriority(char *sname, int pathelt);
 extern int DeSymLink();  /* overhead/util/lib/desym.c */
-extern int HandleChange();
-extern int HandlePathChange();
-extern int HandleSpecialProfileLine();
+extern int HandleChange(struct SubscriptionProfile *sub, char *oldpath, char *newpath, int oldlen);
+extern int HandlePathChange(struct SubscriptionProfile *sub);
+extern int HandleSpecialProfileLine(char *line);
 extern int InitializeSubsPriorities();
-extern int InsertInSubsList();
+extern int InsertInSubsList(struct SubscriptionProfile *subs, int *index);
 extern int LockProfile();
-extern int MS_DisambiguateFile();
-extern int MS_RebuildOneSubscriptionMap();
-extern int NonfatalBizarreError();
-extern int PreorderSubscriptionStrcmp();
+extern int MS_DisambiguateFile(char *source, char *target, short AccessCode);
+extern int MS_RebuildOneSubscriptionMap(char *PathElt);
+extern int NonfatalBizarreError(char *text);
+extern int PreorderSubscriptionStrcmp(char *s, char *t);
 extern int ReadSubs();
 extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
 extern int ResolveTildes(char *old, char **new, char *domain);
-extern int ScoreMatch();
+extern int ScoreMatch(char *pattern, char *string, int *matchct);
 extern int SetFullProfileEntry(Boolean DoSubs, char *FullName, char *NickName, int status, Boolean DoProf, char *time64, int filedate, Boolean NeedToCheckPath);
 extern int UnlockProfile();
-extern int WhichPath();
-extern int abspath();
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int lc2strncmp();  /* ams/libs/shr/utils.c */
+extern int WhichPath(char *s);
+extern int abspath(char *name, char *result);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int lc2strncmp(char *s1, char *s2, int len);  /* ams/libs/shr/utils.c */
 
-extern char *StripWhiteEnds(), *getprofile(), *convlongto64(), *fixDate();
+extern char *StripWhiteEnds(char *string), *getprofile(), *convlongto64(int num, int pad), *fixDate(char *dPtr);
 extern char home[], MyMailDomain[];
 extern int NeedToTimeOut;
 

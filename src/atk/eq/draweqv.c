@@ -51,14 +51,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/eq/R
 #include <stdlib.h>
 #define AUXMODULE 1
 #include <eqv.eh>
-static void InitFont();
+static void InitFont(struct eqview *self, enum eqstyle eqstyle);
 static void ZeroSpacing();
-static int eqview_Box();
-static void eqview_FormatExtendable();
-static struct formula * eqview_FormatGroup();
-static void eqview_FormatSimple();
-static void eqview_MinMax();
-static void eqview_Zero();
+static int eqview_Box(struct eq *eqptr, long pos, long start, long stop, long x, long y);
+static void eqview_FormatExtendable(struct eqview *self, struct formula *leftf, struct formula *f, struct formula *rightf, enum eqstyle eqstyle);
+static struct formula * eqview_FormatGroup(struct eqview *self, struct eq *eqptr, struct formula *f, enum eqstyle eqstyle);
+static void eqview_FormatSimple(struct eqview *self, struct formula *f, enum eqstyle eqstyle);
+static void eqview_MinMax(struct formula *f);
+static void eqview_Zero(struct formula *f);
 
 static struct graphic *pat;
 

@@ -48,7 +48,7 @@
 /* Defined in whichever program links this file -- richtext.c or
    richtoatk.c, each supplying its own implementation; no header in the
    directory declares this shared callback interface. */
-extern int controloutput(), controlputc();
+extern int controloutput(char *s, int immediate), controlputc(int c);
 
 /*
  * Global data for this module.

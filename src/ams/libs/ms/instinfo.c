@@ -37,12 +37,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <hdrparse.h>
 #include <stdio.h>
 #include <stdlib.h>
-extern int AddParentalMessageFromFile();
-extern int AppendFileToFolder();
-extern int GenTempName();
+extern int AddParentalMessageFromFile(char *FileName, char *PDirName, char *bbname, char *bbpath);
+extern int AppendFileToFolder(char *FileName, char *FolderName, int DoDelete);
+extern int GenTempName(char *Buf);
 extern char *arpadate();  /* overhead/mail/lib/arpadate.c */
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
 
 extern char Me[], *MyPrettyAddress, home[];
 

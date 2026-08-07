@@ -65,15 +65,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 
 #include <pattern.h>
 #include <rect.h>
-static void DrawCircle();
-static void DrawEllipse();
-static void DrawLine();
-static void DrawRectangle();
-static void FillCircle();
-static void FillEllipse();
-static void FillRectangle();
-static struct raster * GetPasted();
-static void RepostMenus();
+static void DrawCircle(struct rasterview *rself, long x0, long y0, long rad, unsigned char *pattern, unsigned char *brush);
+static void DrawEllipse(struct rasterview *rself, long x0, long y0, long xrad, long yrad, unsigned char *pattern, unsigned char *brush);
+static void DrawLine(struct rasterview *rself, long x0, long y0, long x1, long y1, unsigned char *pattern, unsigned char *brush);
+static void DrawRectangle(struct rasterview *rself, long x0, long y0, long wid, long hgt, unsigned char *pattern, unsigned char *brush);
+static void FillCircle(struct rastoolview *self, long x0, long y0, long rad, unsigned char *pattern);
+static void FillEllipse(struct rastoolview *self, long x0, long y0, long xrad, long yrad, unsigned char *pattern);
+static void FillRectangle(struct rastoolview *self, long x0, long y0, long wid, long hgt, unsigned char *pattern);
+static struct raster * GetPasted(struct rastoolview *self);
+static void RepostMenus(struct rastoolview *self);
 
 #define ZRPATTERN_INVERT ((unsigned char *)NULL)
 #define ZRBRUSH_PIXEL ((unsigned char *)NULL)
@@ -82,16 +82,16 @@ static void RepostMenus();
 #endif
 
 static void SetToolProc(struct stringtbl *st, struct rastoolview *self, short accnum);
-static void SetToolNum();
+static void SetToolNum(struct rastoolview *self, int toolnum);
 static void SetBrushProc(struct stringtbl *st, struct rastoolview *self, short accnum);
 static void SetPatternProc(struct stringtbl *st, struct rastoolview *self, short accnum);
 static void CallCommandProc(struct stringtbl *st, struct rastoolview *self, short accnum);
 static void CallPasteModeProc(struct stringtbl *st, struct rastoolview *self, short accnum);
-static void PasteDownProc();
-static void Tool_Paint(), Tool_Paste(), Tool_Text(), Tool_Line(), Tool_Circle(), Tool_Ellipse(), Tool_SolidEllipse(), Tool_FloodFill(), Tool_SprayPaint(), Tool_Rectangle(), Tool_SolidCircle(), Tool_SolidRect(), Tool_CurvePaint();
-static void Toolmod_Paste(), Toolmod_Text(), Toolmod_FloodFill(), Toolmod_SprayPaint(), Toolmod_CurvePaint();
-static void Command_ZoomIn(), Command_ZoomOut(), Command_ZoomNorm(), Command_Copy(), Command_Refresh(), Command_Quit();
-static void SpraySplot(), FloodSplot(), CurveSplot(), PasteResplot();
+static void PasteDownProc(struct rastoolview *self, char *rock);
+static void Tool_Paint(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks), Tool_Paste(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks), Tool_Text(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks), Tool_Line(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks), Tool_Circle(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks), Tool_Ellipse(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks), Tool_SolidEllipse(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks), Tool_FloodFill(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks), Tool_SprayPaint(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks), Tool_Rectangle(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks), Tool_SolidCircle(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks), Tool_SolidRect(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks), Tool_CurvePaint(struct rastoolview *self, enum view_MouseAction action, long x, long y, long numclicks);
+static void Toolmod_Paste(struct rastoolview *self, char *rock), Toolmod_Text(struct rastoolview *self, char *rock), Toolmod_FloodFill(struct rastoolview *self, char *rock), Toolmod_SprayPaint(struct rastoolview *self, char *rock), Toolmod_CurvePaint(struct rastoolview *self, char *rock);
+static void Command_ZoomIn(struct rastoolview *self, char *rock), Command_ZoomOut(struct rastoolview *self, char *rock), Command_ZoomNorm(struct rastoolview *self, char *rock), Command_Copy(struct rastoolview *self, char *rock), Command_Refresh(struct rastoolview *self, char *rock), Command_Quit(struct rastoolview *self, char *rock);
+static void SpraySplot(struct rastoolview *self), FloodSplot(struct rastoolview *self), CurveSplot(struct rastoolview *self), PasteResplot(struct rastoolview *self, char *rock);
 static void RemoveInsetProc(), ResizeInsetProc();
 
 struct layout_t {

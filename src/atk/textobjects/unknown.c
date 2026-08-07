@@ -27,9 +27,9 @@
 #include <text.ih>
 #include <unknown.eh>
 #include <ctype.h>
-static long RealRead();
-static int tgetc();
-static void tungetc();
+static long RealRead(struct unknown *uself, struct text *self, FILE *file, long id, int lev);
+static int tgetc(struct text *self, FILE *file);
+static void tungetc(struct text *self, int ch, FILE *file);
 
 static char keywordbuf[32];
 

@@ -56,29 +56,29 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 #include <table.eh>
 static void funs_Max();
 static void funs_Min();
-static void errorfunc();
+static void errorfunc(struct table *T, extended_double *result, int rr, int cc, int argc, extended_double *argv);
 static double false();
-static double fand();
-static void fcount();
-static void fdate();
-static double fday();
-static void fiserr();
-static void fisinf();
-static double fmodulo();
-static double fmonth();
-static double fnot();
+static double fand(double x, double y);
+static void fcount(struct table *T, extended_double *result, int rr, int cc, int argc, extended_double *argv);
+static void fdate(struct table *T, extended_double *result, int rr, int cc, int argc, extended_double *argv);
+static double fday(double fdate);
+static void fiserr(struct table *T, extended_double *result, int rr, int cc, int argc, extended_double *argv);
+static void fisinf(struct table *T, extended_double *result, int rr, int cc, int argc, extended_double *argv);
+static double fmodulo(double x, double y);
+static double fmonth(double fdate);
+static double fnot(double x);
 static double fpi();
 static double frand();
-static double fround();
-static void fsum();
-static double fyear();
-static void getcol();
-static void getrow();
-static double iffer();
-static double orf();
+static double fround(double x, double yy);
+static void fsum(struct table *T, extended_double *result, int rr, int cc, int argc, extended_double *argv);
+static double fyear(double fdate);
+static void getcol(struct table *T, extended_double *result, int r, int c, int argc, extended_double *argv);
+static void getrow(struct table *T, extended_double *result, int r, int c, int argc, extended_double *argv);
+static double iffer(double x, double y, double z);
+static double orf(double x, double y);
 static double today();
 static double true();
-static void vlookup();
+static void vlookup(struct table *T, extended_double *result, int rr, int cc, int argc, extended_double *argv);
 
 #define e_TRUE 1.0
 #define e_FALSE 0.0
@@ -87,13 +87,13 @@ extern int daysinmonth[];
 extern char *fcvt();
 
 /* defined in table.c */
-extern int MakeBogus();
-extern int MakeStandard();
-extern int rangeLimit();
-extern int rcref();
+extern int MakeBogus(extended_double *x, char *message);
+extern int MakeStandard(extended_double *x, double value);
+extern int rangeLimit(struct table *T, Chunk chunk);
+extern int rcref(struct table *T, extended_double *result, int r, int c, int iftaped);
 
 /* defined in eval.c */
-extern void eval();
+extern void eval(struct table *T, extended_double *result, int r, int c, char *input);
 extern int syntaxError();
 extern void enterfun();
 

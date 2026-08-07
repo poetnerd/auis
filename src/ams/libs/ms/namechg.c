@@ -36,26 +36,26 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <stdio.h>
-extern int FixSubsDate();
-extern int GenTempName();
-extern int MS_AddToDsabgCache();
-extern int MS_GetNewMessageCount();
+extern int FixSubsDate(struct SubscriptionProfile *sub, char *time64);
+extern int GenTempName(char *Buf);
+extern int MS_AddToDsabgCache(char *folder, int index);
+extern int MS_GetNewMessageCount(char *FullDirName, int *numnew, int *numtotal, char *LastOldDate, int InsistOnFetch);
 extern int MakeSubsListInPathOrder();
-extern int NonfatalBizarreError();
-extern int PreorderSubscriptionStrcmp();
-extern int ValidateSearchPath();
-extern int ViceFlushPlusParent();
-extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
-extern int vdown();  /* overhead/util/lib/vclose.c */
+extern int NonfatalBizarreError(char *text);
+extern int PreorderSubscriptionStrcmp(char *s, char *t);
+extern int ValidateSearchPath(int i);
+extern int ViceFlushPlusParent(char *fname);
+extern char *ap_Shorten(char *pathname);  /* overhead/util/lib/abbrpath.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
+extern int vdown(int err);  /* overhead/util/lib/vclose.c */
 
-extern char home[], *fixDate();
+extern char home[], *fixDate(char *dPtr);
 extern int NumSubsInUse;
 extern struct SubscriptionProfile **SubsInPathOrder, *SubsInUserOrder;
 
 /* cn0h 9/19/91 -- import from muclient.c: */
-extern void mu_quickcheck();
+extern void mu_quickcheck(struct SubscriptionProfile **subs, int num);
 
 /* mustopen and mustfopen
 

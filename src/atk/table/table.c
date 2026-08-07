@@ -46,26 +46,28 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 #include <fontdesc.ih>
 
 #include <table.eh>
-static int CreateCell();
-static int movetr();
-static char * myrealloc();
+
+struct movetrstate;
+static int CreateCell(struct table *T, struct cell *newcell, struct cell *oldcell);
+static int movetr(int *r, int *c, int absr, int absc, struct movetrstate *ms);
+static char * myrealloc(char *s, int n);
 
 /* not static: also called from tabio.c/eval.c/funs.c */
-int DestroyCell();
-int MakeBogus();
-int MakeStandard();
+int DestroyCell(struct table *T, struct cell *oldcell);
+int MakeBogus(extended_double *x, char *message);
+int MakeStandard(extended_double *x, double value);
 
 extern double atof();
 
-struct table * ReadASCII ();
+struct table * ReadASCII(struct table *T, FILE *f);
 
 /* defined in tabio.c */
-extern void WriteASCII();
+extern void WriteASCII(struct table *T, FILE *f, Chunk chunk, int level);
 extern void WriteCell();
-extern void ReadCell();
+extern void ReadCell(struct table *T, FILE *f, char *buff, char **cpp, char *cl, struct cell *cell);
 
 /* defined in eval.c */
-extern void eval();
+extern void eval(struct table *T, extended_double *result, int r, int c, char *input);
 
 /* globals for entire package */
 

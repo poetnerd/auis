@@ -71,10 +71,10 @@ END-SPECIFICATION  ************************************************************/
 #include <tree.ih>
 #include <filetype.ih>
 #include <org.eh>
-static int Free_Elements();
-static int Read_Body();
-static int Strip();
-static int Write_Body();
+static int Free_Elements(struct org *self, struct tree *tree, tree_type_node node, int datum);
+static int Read_Body(struct org *self, FILE *file);
+static int Strip(char *string);
+static int Write_Body(struct org *self, FILE *file);
 
 #define Tree (self->tree_data_object)
 

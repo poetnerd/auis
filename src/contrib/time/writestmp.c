@@ -46,8 +46,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 /* External declarations */
 
 /* Forward Declarations */
-static void WriteLine();
-static char *GlomStrings(), *ReadLine(), *EncodeFont();
+static void WriteLine(FILE *f, char *l);
+static char *GlomStrings(char *s, char *t), *ReadLine(FILE *f), *EncodeFont(struct writestamp *self);
 
 /* Global variables */
 

@@ -26,10 +26,10 @@ static char *iconview_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.
 #include <buffer.ih>
 #include <im.ih>
 #include <iconview.eh>
-static int AdoptNewChild();
-static void DrawClosed();
-static void DrawOpen();
-static int SlayChild();
+static int AdoptNewChild(struct iconview *self, struct icon *dobj);
+static void DrawClosed(struct iconview *self, enum view_UpdateType type, long ax, long ay, long aw, long ah);
+static void DrawOpen(struct iconview *self, enum view_UpdateType type, long ax, long ay, long aw, long ah);
+static int SlayChild(struct iconview *self);
 int string_width(char *string, struct fontdesc *font, struct graphic *graphic);
 
 static struct iconview *First;

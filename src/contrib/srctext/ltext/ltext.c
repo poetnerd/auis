@@ -49,15 +49,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <proctbl.ih>
 
 #include <ltext.eh>
-static void DoFreeTree();
-static boolean Quoted();
-static void SetupStyles();
-static void addindent();
-static int current_column();
-static long findsexpr();
-static boolean inmark();
-static long nextline();
-static long skipsexpr();
+static void DoFreeTree(struct nestedmark *self);
+static boolean Quoted(struct ltext *self, long pos);
+static void SetupStyles(struct ltext *self);
+static void addindent(char *name, int args);
+static int current_column(struct ltext *self, long pos);
+static long findsexpr(struct ltext *self, long pos, long limit);
+static boolean inmark(struct mark *mark, long pos);
+static long nextline(struct ltext *self, long pos);
+static long skipsexpr(struct ltext *self, long pos, long limit);
 
 #define LOW(ch) (isupper(ch)?tolower(ch):(ch))
 

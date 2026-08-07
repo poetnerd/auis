@@ -61,12 +61,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 #include <filler.ih>
 
 #include <fillerv.eh>
-static void InitializeGraphics();
+
+struct graphicstuff;
+static void InitializeGraphics(struct fillerview *self, struct graphicstuff *gc);
 static int TopOfTheMark();
-static void UpdateScreen();
-static void addInset();
+static void UpdateScreen(struct fillerview *self, enum view_UpdateType how, struct rectangle *updateRect);
+static void addInset(char *newposs);
 static void initializeInsets();
-static void showhit();
+static void showhit(struct fillerview *self, struct graphicstuff *gc);
 
 static boolean debug=FALSE;
 /* graphic information */

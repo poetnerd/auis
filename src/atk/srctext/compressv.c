@@ -47,7 +47,7 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 
 #include "compress.ih"
 #include "compressv.eh"
-static int DoUpdate();
+static int DoUpdate(struct compressv *self, boolean full);
 
 static struct fontdesc *boxfont;
 static char *boxfgcolor=NULL, *boxbgcolor=NULL;
@@ -55,8 +55,8 @@ static int boxwidth=0;
 static struct keymap *c_Map;
 static struct menulist *c_Menus;
 
-void compressLines(), decompressLines();
-void compressRegion(), decompressAll();
+void compressLines(struct textview *self, char *rString), decompressLines(struct textview *self, char *rString);
+void compressRegion(struct textview *self, long rock), decompressAll(struct textview *self, long rock);
 
 static struct bind_Description compressBindings[]={
     {"compressv-compress-lines",NULL,0, NULL,0,0, compressLines, "Compresses lines in the specified range (or selected region) into a box; will prompt if none specified."},

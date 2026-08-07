@@ -77,9 +77,9 @@ END-SPECIFICATION  ************************************************************/
 #include <stdlib.h>
 
 void symtab_scan_reset();
-static int ZIP_Default_Exception_Handler();
-int strhash();			/* M2: same-file forward reference */
-extern int apt_MM_Compare();	/* M2: zip.do cross-file, defined zip.c */
+static int ZIP_Default_Exception_Handler(struct zip *self);
+int strhash(char *string, unsigned int size);			/* M2: same-file forward reference */
+extern int apt_MM_Compare(unsigned char *s1, unsigned char *s2);	/* M2: zip.do cross-file, defined zip.c */
 
 #define	 Data			      self
 

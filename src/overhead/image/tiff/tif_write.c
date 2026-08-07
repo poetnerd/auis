@@ -40,11 +40,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "tiffioP.h"
 #include <stdio.h>
 #include <assert.h>
-static int TIFFAppendToStrip();
-static int TIFFBufferSetup();
-static int TIFFGrowStrips();
-static int TIFFSetupStrips();
-static int TIFFWriteCheck();
+static int TIFFAppendToStrip(TIFF *tif, u_int strip, u_char *data, u_int cc);
+static int TIFFBufferSetup(TIFF *tif, char module[]);
+static int TIFFGrowStrips(TIFF *tif, int delta, char module[]);
+static int TIFFSetupStrips(TIFF *tif);
+static int TIFFWriteCheck(TIFF *tif, int tiles, char module[]);
 
 #define	STRIPINCR	20		/* expansion factor on strip array */
 

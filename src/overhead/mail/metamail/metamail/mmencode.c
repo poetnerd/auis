@@ -23,7 +23,7 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 #define QP 2 /* quoted-printable */
 
 /* No header declares these; defined in the sibling file codes.c */
-extern int to64(), from64(), toqp(), fromqp();
+extern int to64(FILE *infile, FILE *outfile, int PortableNewlines), from64(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct, int PortableNewlines), toqp(FILE *infile, FILE *outfile), fromqp(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct);
 
 int main(int argc, char **argv)
 {

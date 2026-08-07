@@ -231,7 +231,7 @@ struct xgraphic_UpdateBlock * xgraphic_FindUpdateBlock(Display *WhichDisplay, Dr
 
 /* forward declaration */
 
-void xgraphic_LocalSetClippingRect();
+void xgraphic_LocalSetClippingRect(struct xgraphic *self, struct xgraphic_UpdateBlock *updateBlk);
 
 static void InstallUpdateRegion(struct xgraphic *self)
 {
@@ -454,7 +454,7 @@ transfer mode.
 		  xMode);
 
     if(self->header.graphic.transferMode == graphic_XOR) {
-	struct xgraphic *xgraphicGrayShade();
+	struct xgraphic *xgraphicGrayShade(struct xgraphic *self, long index);
 	struct xgraphic *tile=xgraphicGrayShade(self, 16);
 	XSetStipple(xgraphic_XDisplay(self),  xgraphic_XGC(self), tile->localWindow);
     } else if(self->lastStipple) XSetStipple(xgraphic_XDisplay(self), xgraphic_XGC(self), self->lastStipple->localWindow);
@@ -2704,7 +2704,7 @@ struct xgraphic * xgraphicGrayShade(struct xgraphic *self, long index)
 struct graphic * xgraphic__GrayPattern(struct xgraphic *self, short IntensityNum, short IntensityDenom)
 {
 
-  short index, xgraphic_ApproximateColor();
+  short index, xgraphic_ApproximateColor(struct xgraphic *self, char *colorName, long *red, long *green, long *blue);
 
     if (IntensityDenom !=16) 
 	IntensityNum = (IntensityNum * 16) / IntensityDenom;

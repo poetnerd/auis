@@ -65,27 +65,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <menulist.ih>
 #include <cursor.ih>
 #include <captions.eh>
-static void SetFrame();
-static long WhatIsAt();
+static void SetFrame(struct captions *ci, long p, long n, long d);
+static long WhatIsAt(struct captions *ci, long n, long d);
 
-extern void captions_SimulateLeftClick();
-extern void captions_SimulateRightClick();
-extern void captions_CaptionsCompound();
-extern void captions_CaptionsTextviewCommand();
-extern void captions_CaptionsFoldersCommand();
-extern void captions_CaptionsBodiesCommand();
-extern void captions_DownFocus(), captions_UpFocus();
-extern void CapBeginText(), CapScrollBack();
-extern void PreviousCaptionLine();
-extern void CapGlitchDown();
+extern void captions_SimulateLeftClick(struct captions *self, long rock);
+extern void captions_SimulateRightClick(struct captions *self, long rock);
+extern void captions_CaptionsCompound(struct captions *self, char *cmds);
+extern void captions_CaptionsTextviewCommand(struct captions *self, char *cmds);
+extern void captions_CaptionsFoldersCommand(struct captions *self, char *cmds);
+extern void captions_CaptionsBodiesCommand(struct captions *self, char *cmds);
+extern void captions_DownFocus(struct captions *self), captions_UpFocus(struct captions *self);
+extern void CapBeginText(struct captions *self), CapScrollBack(struct captions *self);
+extern void PreviousCaptionLine(struct captions *self);
+extern void CapGlitchDown(struct captions *self);
 extern void OneTimeInitKeyMenus();
 
 /* same-file forward references -- all defined later in this file */
-extern int NextTextviewScreen(), RemoveHighlighting(), bcopyfromback();
+extern int NextTextviewScreen(struct textview *tv), RemoveHighlighting(struct captions *h), bcopyfromback(char *from, char *to, int length);
 
 /* same-directory (capaux.o, linked into the same captions.do) cross-file
    references -- no header, defined in capaux.c */
-extern int ClassifyMarkedByName(), captions_InsertCaptions();
+extern int ClassifyMarkedByName(struct captions *self, char *NameGiven), captions_InsertCaptions(struct captions *ci, char *shortname, char *dname, char *StartTime, Boolean ShowAll);
 
 extern int (*captextv_PreviousLineCmd)(),
     (*captextv_ReverseSearchCmd)(),

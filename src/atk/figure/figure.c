@@ -47,9 +47,9 @@ char *figure_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/f
 static struct figobj * EOT_AllArea(struct figure *self, long grp, boolean (*callfun)(), void *rock);
 static struct figobj * EOT_IncludeArea(struct figure *self, long grp, struct rectangle *area, boolean (*callfun)(), void *rock);
 static struct figobj * EOT_OverlapArea(struct figure *self, long grp, struct rectangle *area, boolean (*callfun)(), void *rock);
-static long FRBPSplot();
-static long ReadObject();
-static void WriteObject();
+static long FRBPSplot(struct figure *self, long gref, enum figobj_HitVal howhit, long x, long y, long delta, long *ptref);
+static long ReadObject(struct figure *self, struct figobj *o, long oref, FILE *fp, long oid);
+static void WriteObject(struct figure *self, long oref, FILE *fp, long writeid, int level);
 
 static void FlattenRefList();
 

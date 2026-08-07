@@ -69,10 +69,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/hypl
 /* External Declarations */
 
 /* Forward Declarations */
-static void LinkProc(),  WarpLink(), TargetProc(), AutolinkProc(), InsertProc();
-static boolean FindBuffer();
-static char *FileName();
-static struct view *FindViewofBuffer();
+static void LinkProc(struct linkview *self, char *param),  WarpLink(struct linkview *self, struct observable *triggerer, long rock), TargetProc(struct view *v, long param), AutolinkProc(struct linkview *self, long param), InsertProc(struct textview *tv, long l);
+static boolean FindBuffer(struct frame *f, struct buffer *b);
+static char *FileName(char *path);
+static struct view *FindViewofBuffer(struct buffer *b);
 
 /* Global Variables */
 static struct menulist *linkview_menulist = NULL;

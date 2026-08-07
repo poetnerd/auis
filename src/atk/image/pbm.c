@@ -40,9 +40,9 @@
 #include <pbm.h>
 #include <pbm.eh>
 static void initializeTable();
-static int isPBM();
-static int pbmReadChar();
-static int pbmReadInt();
+static int isPBM(FILE *f, char *name, unsigned int *width, unsigned int *height, unsigned int *maxval);
+static int pbmReadChar(FILE *f);
+static int pbmReadInt(FILE *f);
 
 /* SUPPRESS 558 */
 

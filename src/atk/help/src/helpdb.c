@@ -72,32 +72,34 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <helpdb.eh>
 
 #include <index.h>
-static void EnumAllSplot();
-static int safeatoi();
+
+struct helpdb_EnumAllSplot;
+static void EnumAllSplot(struct Index *aindex, struct indexComponent *ac, struct helpdb_EnumAllSplot *rock);
+static int safeatoi(char *astring);
 /* index.h declares several index_* siblings but not these; no header
    declares them anywhere in the tree */
-extern int index_Close();
+extern int index_Close(struct Index *ai);
 extern int index_Enumerate();
-extern int index_GetData();
-extern int recordset_Free();
+extern int index_GetData(struct Index *ai, struct recordID *arid, char *abuffer, long alen);
+extern int recordset_Free(struct recordSet *aset);
 
-boolean helpdb__InitializeClass();
-char *helpdb__MapAlias ();
-int helpdb__CheckIndex();
-int helpdb__SetIndex();
-int helpdb__SetupHelp();
-static int Match();
-static int mysystem ();
-static struct helpFile *AddFilesFromDir();
-static struct helpFile *SetupHelpAux();
-static void ComputeMetric();
-static void NotifyError();
-static void ParseBaseName();
-static char *LowerCase();
-struct helpDir *helpdb__GetHelpDirs();
-void helpdb__AddSearchDir();
-void helpdb__PrintSearchDirs();
-void helpdb__ReadAliasesFile();
+boolean helpdb__InitializeClass(struct classheader *classID);
+char *helpdb__MapAlias(struct classheader *classID, char *alias);
+int helpdb__CheckIndex(struct classheader *classID, struct view *v);
+int helpdb__SetIndex(struct classheader *classID, char *aindex);
+int helpdb__SetupHelp(struct classheader *classID, struct cache *c, char *aname, int strip);
+static int Match(char *akey, char *afile, int amatchName);
+static int mysystem(char *acmd);
+static struct helpFile *AddFilesFromDir(char *dname, char *aname, struct helpFile *tmplist);
+static struct helpFile *SetupHelpAux(char *aname, int strip);
+static void ComputeMetric(struct helpFile *ah);
+static void NotifyError(char *aname);
+static void ParseBaseName(char *aname, char *abase);
+static char *LowerCase(char *astring);
+struct helpDir *helpdb__GetHelpDirs(struct classheader *classID);
+void helpdb__AddSearchDir(struct classheader *classID, char *dirName);
+void helpdb__PrintSearchDirs(struct classheader *classID);
+void helpdb__ReadAliasesFile(struct classheader *classID, char *aname);
 
 
 /*---------------------------------------------------------------------------*/

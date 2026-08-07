@@ -144,41 +144,41 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 #include <cmap.ih>
 #include <cmapv.ih>
 #include <imagev.eh>
-static void Brighten();
-static void ChangeZoomCmd();
-static void Dither();
-static void Export_Cmd();
-static void GammaCorrect();
-static void Gray();
-static void Halftone();
-static void Import_Cmd();
-static void InfoCmd();
-static void InternalZoomCmd();
-static void Normalize();
-static void PanToOriginCmd();
-static void PostCursor();
-static void ReadCmd();
-static void RectToPix();
-static void Reduce();
-static void SaveAs();
-static void ScaleToFit();
-static void SetSaveFormat();
-static void SetSaveQuality();
-static void ShowFixed();
-static void ShowTrue();
-static int WriteToFile();
-static void Write_Postscript();
-static char * imageTypeName();
-static int image_Export();
-static struct image * image_Import();
-static void x_getinfo();
-static void x_setframe();
-static long x_whatisat();
-static void y_getinfo();
-static void y_setframe();
-static long y_whatisat();
-static void InternalZoomCmd();
-static void RectToPix();
+static void Brighten(struct imagev *self);
+static void ChangeZoomCmd(struct imagev *self, long rock);
+static void Dither(struct imagev *self);
+static void Export_Cmd(struct imagev *self, enum image_fileType type);
+static void GammaCorrect(struct imagev *self);
+static void Gray(struct imagev *self);
+static void Halftone(struct imagev *self);
+static void Import_Cmd(struct imagev *self, enum image_fileType type);
+static void InfoCmd(struct imagev *self);
+static void InternalZoomCmd(struct imagev *self, long rock);
+static void Normalize(struct imagev *self);
+static void PanToOriginCmd(struct imagev *self, long rock);
+static void PostCursor(struct imagev *self, int type);
+static void ReadCmd(struct imagev *self);
+static void RectToPix(struct imagev *self, struct rectangle *dest, struct rectangle *src);
+static void Reduce(struct imagev *self);
+static void SaveAs(struct imagev *self, long rock);
+static void ScaleToFit(struct imagev *self);
+static void SetSaveFormat(struct imagev *self, long rock);
+static void SetSaveQuality(struct imagev *self, long rock);
+static void ShowFixed(struct imagev *self);
+static void ShowTrue(struct imagev *self);
+static int WriteToFile(struct imagev *self, char *filename);
+static void Write_Postscript(struct imagev *self);
+static char * imageTypeName(enum image_fileType type);
+static int image_Export(struct image *image, char *filename, enum image_fileType type);
+static struct image * image_Import(char *filename, enum image_fileType type);
+static void x_getinfo(struct imagev *self, struct range *total, struct range *seen, struct range *dot);
+static void x_setframe(struct imagev *self, int position, long coordinate, long outof);
+static long x_whatisat(struct imagev *self, long coordinate, long outof);
+static void y_getinfo(struct imagev *self, struct range *total, struct range *seen, struct range *dot);
+static void y_setframe(struct imagev *self, int position, long coordinate, long outof);
+static long y_whatisat(struct imagev *self, long coordinate, long outof);
+static void InternalZoomCmd(struct imagev *self, long rock);
+static void RectToPix(struct imagev *self, struct rectangle *dest, struct rectangle *src);
 
 extern void writePS(struct imagev *self, FILE *fp, int *wpts, int *hpts, int toplevel);
 
@@ -215,13 +215,13 @@ static struct cursor *waitCursor;
     imagev_FillRect(self, RectPtr, imagev_BlackPattern(self))
 
 /* Forward declarations for menu & keystroke callbacks */
-static void Import_Cmd(), Export_Cmd(),
-  Dither(), Halftone(), Reduce(), Gray(),
-  Normalize(), Brighten(), GammaCorrect(),
-  ScaleToFit(), SaveAs(), InfoCmd(), ShowTrue(),
-  ShowFixed(), Write_Postscript(), ReadCmd(),
-  ChangeZoomCmd(), PanToOriginCmd(), RectToPix(),
-  SetSaveQuality(), SetSaveFormat();
+static void Import_Cmd(struct imagev *self, enum image_fileType type), Export_Cmd(struct imagev *self, enum image_fileType type),
+  Dither(struct imagev *self), Halftone(struct imagev *self), Reduce(struct imagev *self), Gray(struct imagev *self),
+  Normalize(struct imagev *self), Brighten(struct imagev *self), GammaCorrect(struct imagev *self),
+  ScaleToFit(struct imagev *self), SaveAs(struct imagev *self, long rock), InfoCmd(struct imagev *self), ShowTrue(struct imagev *self),
+  ShowFixed(struct imagev *self), Write_Postscript(struct imagev *self), ReadCmd(struct imagev *self),
+  ChangeZoomCmd(struct imagev *self, long rock), PanToOriginCmd(struct imagev *self, long rock), RectToPix(struct imagev *self, struct rectangle *dest, struct rectangle *src),
+  SetSaveQuality(struct imagev *self, long rock), SetSaveFormat(struct imagev *self, long rock);
 
 /* Definitions for menu and keystroke bindings */
 static struct bind_Description imagevBindings[] = {
@@ -1479,8 +1479,8 @@ struct view * imagev__GetApplicationLayer(struct imagev *self)
 
 /* Scroll interface */
 
-static void y_getinfo(), y_setframe(), x_getinfo(), x_setframe();
-static long y_whatisat(), x_whatisat();
+static void y_getinfo(struct imagev *self, struct range *total, struct range *seen, struct range *dot), y_setframe(struct imagev *self, int position, long coordinate, long outof), x_getinfo(struct imagev *self, struct range *total, struct range *seen, struct range *dot), x_setframe(struct imagev *self, int position, long coordinate, long outof);
+static long y_whatisat(struct imagev *self, long coordinate, long outof), x_whatisat(struct imagev *self, long coordinate, long outof);
 
 static struct scrollfns vertical_scroll_interface = {
     y_getinfo,

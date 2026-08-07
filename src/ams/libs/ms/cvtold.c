@@ -46,18 +46,18 @@ static int CheckMailrcHold();
 static int SetHoldFromFile(char *fname, int *holdP);
 static int lock(char *file, char *lockedFile, int *lockedFDp);
 static int rmlock(char name[], int lockFD);
-extern int FreeAddressList();  /* overhead/mail/lib/parseadd.c */
-extern int NonfatalBizarreError();
-extern int ParseAddressList();  /* overhead/mail/lib/parseadd.c */
-extern char *ams_genid();  /* overhead/mail/lib/genid.c */
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_creat();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_vclose();  /* overhead/util/lib/fdplumb2.c */
-extern int parsedateheader();
-extern int writeall();  /* overhead/util/lib/writeall.c */
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);  /* overhead/mail/lib/parseadd.c */
+extern int NonfatalBizarreError(char *text);
+extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);  /* overhead/mail/lib/parseadd.c */
+extern char *ams_genid(int IsFileName);  /* overhead/mail/lib/genid.c */
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_creat(char *path, int mode);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vclose(int fd);  /* overhead/util/lib/fdplumb2.c */
+extern int parsedateheader(char *str, struct tm *tmp, int settm, int select, int err, long *gmt);
+extern int writeall(int fd, char *Buf, int NBytes);  /* overhead/util/lib/writeall.c */
 
-static int IsNewFrom();
+static int IsNewFrom(char *line);
 
 extern int errno;
 extern char home[];

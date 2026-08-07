@@ -32,7 +32,7 @@
 #include <image.ih>
 #include <mcidas.h>
 #include <mcidas.eh>
-static unsigned long vhtonl();
+static unsigned long vhtonl(unsigned long lend);
 
 /*
  * convert from little endian to big endian four byte object

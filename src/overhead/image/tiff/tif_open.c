@@ -37,8 +37,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  */
 #include "tiffioP.h"
 #include "prototypes.h"
-static int TIFFInitOrder();
-static int getMode();
+static int TIFFInitOrder(TIFF *tif, int magic, int bigendian);
+static int getMode(char *mode, char *module);
 
 #if USE_PROTOTYPES
 extern	int TIFFDefaultDirectory(TIFF*);

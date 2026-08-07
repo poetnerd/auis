@@ -40,15 +40,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mailconf.h>
 #include <stdlib.h>
 extern int EnsureMailDirExists();
-extern int MS_CheckAuthentication();
-extern int NonfatalBizarreError();
+extern int MS_CheckAuthentication(int *Authenticated);
+extern int NonfatalBizarreError(char *text);
 extern int ResolveTildes(char *old, char **new, char *domain);
-extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
-extern int lc2strncmp();  /* ams/libs/shr/utils.c */
-extern int vdown();  /* overhead/util/lib/vclose.c */
-static int CheckLabel();
+extern char *ap_Shorten(char *pathname);  /* overhead/util/lib/abbrpath.c */
+extern int lc2strncmp(char *s1, char *s2, int len);  /* ams/libs/shr/utils.c */
+extern int vdown(int err);  /* overhead/util/lib/vclose.c */
+static int CheckLabel(int i);
 
-extern char *getprofile(), *StripWhiteEnds();
+extern char *getprofile(), *StripWhiteEnds(char *string);
 extern char home[], MyMailDomain[];
 
 extern Boolean DidInit;

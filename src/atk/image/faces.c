@@ -62,7 +62,7 @@ static char *Copyright= "Copyright 1989, 1993 Jim Frost";
 #include <image.ih>
 #include <faces.eh>
 static void initHexTable();
-static int nextInt();
+static int nextInt(FILE *f, unsigned int len);
 
 /* SUPPRESS 560 */
 

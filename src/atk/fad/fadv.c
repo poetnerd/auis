@@ -50,33 +50,33 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fad/
 #include <complete.ih>
 #include <event.ih>
 #include <fadv.eh>
-static int AddMenus();
-static int BeginTroff();
-static int CurrentFrame();
-static int DoAnimation();
-static int EndTroff();
-static int KeyIn();
-static int MySetCursor();
+static int AddMenus(struct fadview *self, struct menulist *ml, struct proctable_Entry *menuProc);
+static int BeginTroff(FILE *file, int yneed, struct fadview *self);
+static int CurrentFrame(struct fadview *self);
+static int DoAnimation(struct fadview *self);
+static int EndTroff(int yneed);
+static int KeyIn(struct fadview *self, long cr);
+static int MySetCursor(struct fadview *self, struct fontdesc *f, int i);
 static int MySetStandardCursor(struct fadview *self, short i);
-static int PrintVec();
-static int ReadIcons();
-static void UpdateCursor();
-static int clearfad();
+static int PrintVec(struct fad *cp, struct vector *v);
+static int ReadIcons(FILE *f, struct fadview *self);
+static void UpdateCursor(struct fadview *self);
+static int clearfad(struct fadview *self);
 static int doan(struct aniinfo *anobj);
-static int drawlist();
-static int fontinit();
-static int getlist();
-static void idraw();
-static int labelfontsize();
-static int labelfonttype();
-static struct fontdesc * my_DefineFont();
-static int nameframe();
-static int picset();
-static int recalc();
-static int seticon();
-static int vecdraw();
-static int xx_DrawTo();
-static int xx_MoveTo();
+static int drawlist(struct fadview *self, struct fad *cpic);
+static int fontinit(struct fad *cp);
+static int getlist(struct fadview *self, struct fadpoint *ppt);
+static void idraw(struct fadview *self, struct anivect *A);
+static int labelfontsize(struct fadview *self);
+static int labelfonttype(struct fadview *self);
+static struct fontdesc * my_DefineFont(char *fname);
+static int nameframe(struct fadview *self);
+static int picset(struct fadview *self, int flag);
+static int recalc(struct fadview *self);
+static int seticon(struct fadview *self);
+static int vecdraw(struct fadview *self, struct vector *v);
+static int xx_DrawTo(long x, long y);
+static int xx_MoveTo(long x, long y);
 
 #define GetDelay(A) (event_MSECtoTU(20))
 #define SetMode(A,B) (A->mode = (B))
@@ -114,7 +114,7 @@ static int xx_MoveTo();
    else {fadview_MoveTo(P,(long)A->x1,(long)A->y1);\
    fadview_DrawLineTo(P,(long)A->x2,(long)A->y2);} 
 
-static void idraw();
+static void idraw(struct fadview *self, struct anivect *A);
 struct aniinfo {
     struct fadview *self;
     struct anivect *anbuf,*eap;
@@ -305,7 +305,7 @@ void fadview__aniframe(struct fadview *self, int framecount, int startat, int go
     self->DoAnimation = TRUE;
     fadview_WantUpdate(self,self);
 }
-static int dodoan();
+static int dodoan(struct fadview *self);
 int queup(struct fadview *self)
 {
 	struct fad *cp = findpic(self);

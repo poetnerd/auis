@@ -82,7 +82,7 @@ static struct keystate  *class_keystate;
 */
 
 
-static void RemoveIcon(), RecomputeIconX();
+static void RemoveIcon(struct lprrulerview *self, enum iconcode icon), RecomputeIconX(struct lprrulerview *self, enum iconcode icon);
 
 #define GAP 10		/*C*//* width of gap between rulers */
 #define ICONHEIGHT 14	/*C*//* height of area where icons move */

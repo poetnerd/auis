@@ -40,9 +40,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <string.h>
 #include <hash.eh>
 #include <glist.ih>
-static int DefaultHash();
-static int FindEgg();
-static int PrintAll();
+
+struct egg;
+static int DefaultHash(char *key);
+static int FindEgg(struct egg *egg, char *key);
+static int PrintAll(struct egg *egg, int nothing);
 
 struct egg {
     char *key,*value;

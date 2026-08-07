@@ -58,7 +58,7 @@ Includes old routines from
 
 /* No header anywhere in the tree declares this. */
 extern int CheckAMSConfiguration();	/* mailconf.c */
-extern int osi_GetTimes();		/* overhead/util/lib/times.c */
+extern int osi_GetTimes(struct osi_Times *blk);		/* overhead/util/lib/times.c */
 
 static char Basis[65] =
 	"0123456789:=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";

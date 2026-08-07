@@ -32,7 +32,7 @@ char *fontsel_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 
 #include <fontdesc.ih>
 
-static char *CopyString();
+static char *CopyString(char *str);
 
 boolean fontsel__InitializeClass(struct classheader *ClassID)
 {

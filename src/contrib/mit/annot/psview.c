@@ -68,17 +68,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <txttroff.ih>
 #include <message.ih>
 #include <search.ih>
-static void Close();
-static void autobounds();
-static void closeall();
-static void display();
-static void edit();
-static void inchsize();
-static void insert();
-static void openall();
-static void pixelsize();
-static void ps_open();
-static void update_dpstextview();
+static void Close(struct psview *v, long l);
+static void autobounds(struct psview *self, long rock);
+static void closeall(struct view *v, long l);
+static void display(struct psview *self, long rock);
+static void edit(struct psview *self, long rock);
+static void inchsize(struct psview *self);
+static void insert(struct textview *tv, long l);
+static void openall(struct view *v, long l);
+static void pixelsize(struct psview *self);
+static void ps_open(struct psview *v, long l);
+static void update_dpstextview(struct psview *self);
 
 #ifdef DPS_ENV
 #include <dpstextv.ih>

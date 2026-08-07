@@ -195,16 +195,16 @@ static long     regsize;	/* Code size. */
 #ifndef STATIC
 #define	STATIC	static
 #endif /* STATIC */
-STATIC char    *reg();
-STATIC char    *regbranch();
-STATIC char    *regpiece();
-STATIC char    *regatom();
+STATIC char    *reg(int paren, int *flagp);
+STATIC char    *regbranch(int *flagp);
+STATIC char    *regpiece(int *flagp);
+STATIC char    *regatom(int *flagp);
 STATIC char    *regnode(char op);
-STATIC char    *regnext();
+STATIC char    *regnext(char *p);
 STATIC void     regc(char b);
 STATIC void     reginsert(char op, char *opnd);
-STATIC void     regtail();
-STATIC void     regoptail();
+STATIC void     regtail(char *p, char *val);
+STATIC void     regoptail(char *p, char *val);
 
 #ifdef STRCSPN
 STATIC int      strcspn();
@@ -706,9 +706,9 @@ static char   **regendp;	/* Ditto for endp. */
 /*
  * Forwards.
  */
-STATIC int      regtry();
-STATIC int      regmatch();
-STATIC int      regrepeat();
+STATIC int      regtry(regexp *prog, char *string);
+STATIC int      regmatch(char *prog);
+STATIC int      regrepeat(char *p);
 
 #ifdef DEBUG
 int             reg_narrate = 0;

@@ -145,21 +145,21 @@ END-SPECIFICATION  ************************************************************/
 #include "zipv.ih"
 #include <string.h>
 #include <stdlib.h>
-static int Assign_Pane_Figure_Attributes();
-static int Assign_Pane_Image_Attributes();
-static int Assign_Pane_Stream_Attributes();
-static int Compute_Pane_Figure_Stretch_Factors();
-static int Compute_Pane_Image_Stretch_Factors();
-static int Compute_Pane_Stream_Stretch_Factors();
-static int Coordinate_Block_Pane();
-static int Coordinate_Nested_Pane();
-static int Mark_Pane_Image_Unexposed();
-static int Mark_Pane_Objects_Unexposed();
+static int Assign_Pane_Figure_Attributes(struct zipview *self, zip_type_pane pane, zip_type_figure figure);
+static int Assign_Pane_Image_Attributes(struct zipview *self, zip_type_pane pane, zip_type_image image);
+static int Assign_Pane_Stream_Attributes(struct zipview *self, zip_type_pane pane, zip_type_stream stream);
+static int Compute_Pane_Figure_Stretch_Factors(struct zipview *self, zip_type_pane pane, zip_type_figure figure);
+static int Compute_Pane_Image_Stretch_Factors(struct zipview *self, zip_type_pane pane, zip_type_image image);
+static int Compute_Pane_Stream_Stretch_Factors(struct zipview *self, zip_type_pane pane, zip_type_stream stream);
+static int Coordinate_Block_Pane(struct zipview *self, zip_type_pane pane);
+static int Coordinate_Nested_Pane(struct zipview *self, zip_type_pane pane);
+static int Mark_Pane_Image_Unexposed(struct zipview *self, zip_type_pane pane, zip_type_image image);
+static int Mark_Pane_Objects_Unexposed(struct zipview *self, zip_type_pane pane);
 
-int zipview_Compute_Pane_Stretch_Factors();	/* M2: same-file forward reference */
+int zipview_Compute_Pane_Stretch_Factors(struct zipview *self, zip_type_pane pane);	/* M2: same-file forward reference */
 /* M2: zipv.do cross-file, no header declares these */
-extern int zipview_Restore_Overlay();		/* defined zipvp03.c */
-extern int apt_MM_Compare();			/* defined zipv.c */
+extern int zipview_Restore_Overlay(struct zipview *self, zip_type_pane pane);		/* defined zipvp03.c */
+extern int apt_MM_Compare(unsigned char *s1, unsigned char *s2);			/* defined zipv.c */
 
 #define	 Data			      (self->data_object)
 #define  View			      (self)
@@ -176,19 +176,19 @@ extern int apt_MM_Compare();			/* defined zipv.c */
 
 #define  Block			      (View->block)
 
-static int Allocate_Pane_Object();
-static int Deallocate_Pane_Object();
-static int Deallocate_Pane_Object();
-static int Assign_Pane_Stream_Attributes( );
-static int Assign_Pane_Image_Attributes();
-static int Assign_Pane_Figure_Attributes();
-static int Mark_Pane_Objects_Unexposed();
-static int Mark_Pane_Image_Unexposed();
-static int Coordinate_Block_Pane();
-static int Coordinate_Nested_Pane();
-static int Compute_Pane_Stream_Stretch_Factors();
-static int Compute_Pane_Image_Stretch_Factors();
-static int Compute_Pane_Figure_Stretch_Factors();
+static int Allocate_Pane_Object(struct zipview *self, zip_type_pane *pane, char *name, int attributes);
+static int Deallocate_Pane_Object(struct zipview *self, zip_type_pane pane);
+static int Deallocate_Pane_Object(struct zipview *self, zip_type_pane pane);
+static int Assign_Pane_Stream_Attributes(struct zipview *self, zip_type_pane pane, zip_type_stream stream);
+static int Assign_Pane_Image_Attributes(struct zipview *self, zip_type_pane pane, zip_type_image image);
+static int Assign_Pane_Figure_Attributes(struct zipview *self, zip_type_pane pane, zip_type_figure figure);
+static int Mark_Pane_Objects_Unexposed(struct zipview *self, zip_type_pane pane);
+static int Mark_Pane_Image_Unexposed(struct zipview *self, zip_type_pane pane, zip_type_image image);
+static int Coordinate_Block_Pane(struct zipview *self, zip_type_pane pane);
+static int Coordinate_Nested_Pane(struct zipview *self, zip_type_pane pane);
+static int Compute_Pane_Stream_Stretch_Factors(struct zipview *self, zip_type_pane pane, zip_type_stream stream);
+static int Compute_Pane_Image_Stretch_Factors(struct zipview *self, zip_type_pane pane, zip_type_image image);
+static int Compute_Pane_Figure_Stretch_Factors(struct zipview *self, zip_type_pane pane, zip_type_figure figure);
 
 long zipview__Create_Pane(struct zipview *self, zip_type_pane *pane, char *name, struct rectangle *block, long attributes)
   {

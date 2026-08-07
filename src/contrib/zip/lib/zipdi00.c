@@ -132,10 +132,12 @@ END-SPECIFICATION  ************************************************************/
 #include "zip.ih"
 #include <string.h>
 #include <stdlib.h>
-static int Allocate_Image();
-static int Free_Image();
+
+struct user_data;
+static int Allocate_Image(struct zip *self, struct zip_stream *stream, struct zip_image **image, char *name);
+static int Free_Image(struct zip *self, zip_type_image image);
 static int Propagate_Image_Stream_Ptr();
-static int ZIP_Balance_Image_Extrema();
+static int ZIP_Balance_Image_Extrema(struct zip *self, zip_type_image image);
 
 /* M2: zip.do cross-file, no header declares these (defined zipd000.c) */
 extern int symtab_delete();
@@ -148,10 +150,10 @@ extern int symtab_add();
 
 
 
-static int Destroy_Inferior_Image();
-static int Free_Image();
+static int Destroy_Inferior_Image(struct zip *self, zip_type_image image);
+static int Free_Image(struct zip *self, zip_type_image image);
 static int Propagate_Image_Stream_Ptr();
-static int Adjust_Inferior_Image_Point_Suite();
+static int Adjust_Inferior_Image_Point_Suite(struct zip *self, zip_type_image image, int x_delta, int y_delta);
 
 static int Allocate_Image(struct zip *self, struct zip_stream *stream, struct zip_image **image, char *name)
   {

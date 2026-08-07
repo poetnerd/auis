@@ -47,8 +47,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 
 #include <isearch.eh>
 #include <string.h>
-static boolean dosearch();
-static void search();
+static boolean dosearch(struct textview *tv, struct text *txt, struct mark *pos, char *string, boolean forwardp, boolean contForward, boolean contBackward, char *errmsg);
+static void search(struct textview *tv, long key);
 
 static boolean useSelectionRegion;
 

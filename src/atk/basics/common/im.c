@@ -74,40 +74,40 @@ Figure out some way to handle levels of user.  Macros should probably not be an 
 
 #include <sys/wait.h>	/* for pruning zombies */ 
 #include <netinet/in.h>	/* for byte ordering in logs */
-static void set_logical_wd();
-static struct action * ConsumeMacroEvent();
+static void set_logical_wd(char *dir, char *newdir);
+static struct action * ConsumeMacroEvent(struct action *a);
 static void DeathInTheFamily(int sig);
-static struct im * DoCreate();
-static void DumpActions();
+static struct im * DoCreate(struct classheader *classID, char *host, struct im *other, int flag, long width, long height);
+static void DumpActions(struct action *a);
 static void EditRecording();
-static void FreeInteractionEvents();
-static void GenericConfig();
-static struct vfile * GetCorrespondingVFile();
-static char * GetKeyBinding();
+static void FreeInteractionEvents(struct im *self);
+static void GenericConfig(struct im *self, long rock, long customrock, struct im *parent, long *x, long *y, unsigned long *w, unsigned long *h);
+static struct vfile * GetCorrespondingVFile(FILE *f);
+static char * GetKeyBinding(struct im *self, struct keymap *km, struct basicobject *obj, struct proctable_Entry *pe, long rock, boolean rstring);
 static struct vfile * GetUnUsedVfile();
-static int HandleArgumentProcessing();
-static struct im * HandleProc();
+static int HandleArgumentProcessing(struct im *self, long key);
+static struct im * HandleProc(struct im *self, struct proctable_Entry *procTableEntry, struct basicobject *object, long rock, struct action *keys);
 static void InitGlobalStructure();
-static void InteractionEventWork();
+static void InteractionEventWork(struct im_InteractionEvent *interactionEvent);
 static void InternalSignal(int asigno);
-static void PlayKeyboardMacro();
-static void RecordCharacter();
-static void RecordProc();
-static void RedrawWindow();
-static int SetArgProvided();
-static void StartKeyboardMacro();
-static void StartProfiling();
-static void StopKeyboardMacro();
-static void StopProfiling();
-static boolean VerifyBinding();
-static int WakeUpIM();
-static char * charToPrintable();
-static void echoKey();
-static char * get_logical_wd();
-static boolean isString();
-static void resetKeyEcho();
-static void startKeyEchoing();
-static boolean stillexists();
+static void PlayKeyboardMacro(struct im *self, long key);
+static void RecordCharacter(long key);
+static void RecordProc(struct im *im, struct proctable_Entry *procTableEntry, long rock, struct basicobject *object, struct action *keys);
+static void RedrawWindow(struct im *self, long key);
+static int SetArgProvided(struct im *self, boolean value);
+static void StartKeyboardMacro(struct im *self, long key);
+static void StartProfiling(struct im *self, long c);
+static void StopKeyboardMacro(struct im *self, long key);
+static void StopProfiling(struct im *self, long c);
+static boolean VerifyBinding(struct im *self, char *keys, int keyslen, struct basicobject *obj, struct proctable_Entry *pe, long rock, boolean rstring);
+static int WakeUpIM(char *dummy);
+static char * charToPrintable(long c);
+static void echoKey(struct im *self, long key, int pending);
+static char * get_logical_wd(char *dir);
+static boolean isString(char *arg);
+static void resetKeyEcho(struct im *self);
+static void startKeyEchoing(struct im *self, long time);
+static boolean stillexists(struct im *self);
 
 #define HITPIXELS 1
 
@@ -152,11 +152,11 @@ static struct menulist *imMenus;
 static long destroycount;
 static boolean allowCtrlUCmds;
 
-static void userKey(), userMouse(), userMenu();
-static char *getMenuEntryName();
-static boolean getMenuEntry();
-static int SetArgProvided();
-static void FreeInteractionEvents();
+static void userKey(struct im *self, long key), userMouse(struct im *self, enum view_MouseAction act, long x, long y, long newButtonState), userMenu(struct im *self, struct proctable_Entry *procTableEntry, struct basicobject *object, long rock);
+static char *getMenuEntryName(struct menulist *ml, struct proctable_Entry *procTableEntry, struct basicobject *object, long rock);
+static boolean getMenuEntry(struct menulist *ml, char *cname, char *name, struct proctable_Entry **pPE, struct basicobject **pObj, long *pRock);
+static int SetArgProvided(struct im *self, boolean value);
+static void FreeInteractionEvents(struct im *self);
 /* Everyone uniformly references this data through a pointer, 
 		declared below and statically allocated in im */
 
@@ -1460,7 +1460,7 @@ void im__FinalizeObject(struct classheader *classID, struct im *self)
     register struct im *im = imList;
     register struct im *prevIM = NULL;
     struct handler *next_handler;
-    void FreeInteractionEvents();
+    void FreeInteractionEvents(struct im *self);
 
     
     if(ownerIM==self && selectionOwner) {

@@ -37,9 +37,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <textv.ih>
 #include <cursor.ih>
 #include <cltextv.eh>
-static short FindObserver();
-static short FindObserverCallBack();
-static short FreeSlot();
+static short FindObserver(struct cltextview *self, struct basicobject *observer);
+static short FindObserverCallBack(struct cltextview *self, struct basicobject *observer, procedure callBack);
+static short FreeSlot(struct cltextview *self);
 #define INITIALNUMOBSERVERS 4
 
 static short FindObserverCallBack(struct cltextview *self, struct basicobject *observer, procedure callBack)

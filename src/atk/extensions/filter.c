@@ -50,14 +50,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <message.ih>
 static void commandFinished();
 static void filter(struct textview *tv, char *command, short method);
-static void filterRegion();
-static void filterRegionFmt();
-static void filterRegionThruCmdFmt();
-static void filterRegionThruCommand();
-static void sinkRegion();
-static void sinkRegionFmt();
-static void sinkRegionThruCmdFmt();
-static void sinkRegionThruCommand();
+static void filterRegion(struct textview *tv);
+static void filterRegionFmt(struct textview *tv);
+static void filterRegionThruCmdFmt(struct textview *tv, char *command);
+static void filterRegionThruCommand(struct textview *tv, char *command);
+static void sinkRegion(struct textview *tv);
+static void sinkRegionFmt(struct textview *tv);
+static void sinkRegionThruCmdFmt(struct textview *tv, char *command);
+static void sinkRegionThruCommand(struct textview *tv, char *command);
 
 #define IN 1
 #define OUT 2
@@ -115,7 +115,7 @@ union wait *status;
 static void filter(struct textview *tv, char *command, short method)
 {
     static int count=0,pid;
-    char *argvbuf[100],**argv,**strtoargv();
+    char *argvbuf[100],**argv,**strtoargv(char *str, char **argv, int len);
     char buf[100];
     struct filterdata *fd=(struct filterdata *)malloc(sizeof(struct filterdata));
 

@@ -54,20 +54,20 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 #include "dogtags.h"
 #include "compress.ih"
 #include "srctext.eh"
-static boolean DiscardToEnddata();
-static long InsertAFile();
-static long InsertSrcInsetFile();
-static boolean MakeSureNotOverstrikingView();
-static void PutPrefStringIntoHashTable();
-static void SetupStyles();
-static void addSortedTabStop();
+static boolean DiscardToEnddata(FILE *file);
+static long InsertAFile(struct srctext *self, FILE *file, long position, char *objectName, long objectID, boolean MUSTinset);
+static long InsertSrcInsetFile(struct srctext *self, FILE *file, char *filename, long position);
+static boolean MakeSureNotOverstrikingView(struct srctext *d, long pos, long len);
+static void PutPrefStringIntoHashTable(Dict *hashTable[], char *st, int kind);
+static void SetupStyles(struct srctext *self);
+static void addSortedTabStop(struct srctext *self, int tabstop);
 static int base64value(char ch);
-static boolean decode64();
-static void encode64();
-static long nextInset();
-static void setTabStops();
-static boolean simplewrite();
-static boolean writesrc();
+static boolean decode64(char *str);
+static void encode64(char *str);
+static long nextInset(struct srctext *self, long pos, long len);
+static void setTabStops(struct srctext *self, char *st);
+static boolean simplewrite(FILE *file, char *p, long len);
+static boolean writesrc(struct srctext *self, FILE *file, long writeID);
 
 #define TEXT_VIEWREFCHAR '\377'
 

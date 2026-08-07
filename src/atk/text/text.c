@@ -56,22 +56,22 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <txtstvec.h>
 #include <viewref.ih>
 #include <text.eh>
-static void CopySurroundingStyles();
-static void AddObj();
-static void DelObj();
-static boolean DiscardToEnddata();
-static boolean HasBinaryChars();
-static int ParseInteger();
-static void PlayStyle();
-static int PlayTabs();
-static void PutsRange();
-static int StringMatch();
-static boolean TestForNoTemplate();
-static void TryConversion();
-static int WrapStyle();
-static char * WriteOutBuf();
-static char * WriteOutBufOther();
-static long text_ListObjects();
+static void CopySurroundingStyles(struct text *self, long pos, struct environment *curenv);
+static void AddObj(struct text *self, struct dataobject *obj);
+static void DelObj(struct text *self, struct dataobject *obj);
+static boolean DiscardToEnddata(FILE *file);
+static boolean HasBinaryChars(struct text *self);
+static int ParseInteger(FILE *file, long *id);
+static void PlayStyle(struct text_statevector *sv, struct style *styleptr);
+static int PlayTabs(struct text_statevector *sv, struct text_statevector *oldsv, struct style *styleptr);
+static void PutsRange(char *p, FILE *fp, char *ep);
+static int StringMatch(struct text *self, long pos, char *c);
+static boolean TestForNoTemplate(struct style *style);
+static void TryConversion(struct text *self);
+static int WrapStyle(struct text *self, struct environment *curenv, long pos);
+static char * WriteOutBuf(FILE *file, char *outbuf, char *outp, char *lastblank);
+static char * WriteOutBufOther(FILE *file, char *outbuf, char *outp);
+static long text_ListObjects(struct text *self, struct dataobject **list, long size);
 
 #define MAXENVSTACK 100
 #define TEXT_VIEWREFCHAR '\377'
@@ -112,9 +112,9 @@ static struct environmentelement *envBegin = NULL;
 static struct environmentelement *envptr = NULL;
 
 static long HighBitStart = -1;
-static void ClearStyles();
-int PushLevel();
-int ComingNext();
+static void ClearStyles(struct text *self);
+int PushLevel(char *s, int pos, int len, int IsReal);
+int ComingNext(struct text *self, int pos);
 
 static int DataStreamVersion = 0;
 

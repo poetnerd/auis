@@ -42,7 +42,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
 /* osi_GetTimes (overhead/util/lib/times.c) has no declaring header
    anywhere in the tree. */
-extern int osi_GetTimes();
+extern int osi_GetTimes(struct osi_Times *blk);
 
 static struct event *timerQueue = NULL;
 static long currSec;			/* seconds since last StartTimer call */

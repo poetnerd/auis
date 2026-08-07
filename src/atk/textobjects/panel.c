@@ -51,15 +51,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <message.ih>
 
 #include <panel.eh>
-static void AddLabels();
-static void ClearHighlight();
-static void DestroyKeyList();
-static void DestroyPanelList();
-static void KeyDispatch();
+static void AddLabels(struct panel *self);
+static void ClearHighlight(struct panel *self);
+static void DestroyKeyList(struct key_Entry *ke);
+static void DestroyPanelList(struct panel_Entry *pe);
+static void KeyDispatch(struct panel *self, long rock);
 static void ProcNext(long rock, struct panel *self, char c);
 static void ProcPrev(long rock, struct panel *self, char c);
-static void SelectAtPos();
-static void SetupHighlight();
+static void SelectAtPos(struct panel *self, long pos);
+static void SetupHighlight(struct panel *self, struct panel_Entry *entry);
 
 static struct keymap *classKeymap;
 static struct style *defaultHighlightStyle;

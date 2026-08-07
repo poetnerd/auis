@@ -42,7 +42,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <stylesht.ih>
 
 #include "header.eh"
-static long header_FencedWrite();
+static long header_FencedWrite(struct text *textobj, FILE *file, long writeID, int level);
 
 static char *header_prompts[] = {
     "  Left\t\t:  ",

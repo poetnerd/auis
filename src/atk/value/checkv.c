@@ -46,8 +46,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <graphic.ih>
 #include <rm.ih>
 #include <view.ih>
-static void CarveFonts();
-static int Drawcheck();
+static void CarveFonts(struct checkv *self);
+static int Drawcheck(struct checkv *self);
 static struct atomlist *  AL_bodyfont;
 static struct atomlist *  AL_bodyfont_size;
 static struct atomlist *  AL_label;

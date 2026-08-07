@@ -109,11 +109,11 @@ int Activate_Viewer(struct chartv *self);
 void Hide_Palette(struct chartv *self);
 void Expose_Palette(struct chartv *self);
 
-static int ChangeChartAttribute();
-static int Description_Modified();
-static int Initialize();
-static int Preserve_Description();
-static int SetChartAttribute();
+static int ChangeChartAttribute(struct chartv *self, long attribute, long value);
+static int Description_Modified(struct chartv *self);
+static int Initialize(struct chartv *self);
+static int Preserve_Description(struct chartv *self);
+static int SetChartAttribute(struct chartv *self, long attribute, long value);
 
 
 static   struct menulist	 *class_menulist;
@@ -145,8 +145,8 @@ struct chartv * chartv__Create(struct classheader *ClassID, struct chartv_specif
   return  self;
   }
   
-void chartv_Save_Command(), chartv_Add_Command(),  chartv_ReChart_Command(), chartv_Delete_Command(),  chartv_Print_Command();
-static void   Quit_Command(),Sort_Command(), Palette_Command(), DEBUG_Command();
+void chartv_Save_Command(struct chartv *self), chartv_Add_Command(struct chartv *self),  chartv_ReChart_Command(struct chartv *self, char *moniker), chartv_Delete_Command(struct chartv *self),  chartv_Print_Command(struct chartv *self);
+static void   Quit_Command(struct chartv *self),Sort_Command(struct chartv *self, long datum), Palette_Command(struct chartv *self), DEBUG_Command(struct chartv *self);
 
 static struct bind_Description	    view_menu[] =
   {

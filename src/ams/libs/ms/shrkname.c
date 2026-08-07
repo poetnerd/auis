@@ -35,9 +35,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <ms.h>
 #include <ctype.h>
-extern int ReduceWhiteSpace();  /* ams/libs/shr/utils.c */
+extern int ReduceWhiteSpace(char *string);  /* ams/libs/shr/utils.c */
 
-extern char *StripWhiteEnds();
+extern char *StripWhiteEnds(char *string);
 
 #define MAXPARTS 10
 

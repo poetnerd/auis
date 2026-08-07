@@ -43,9 +43,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #define AUXMODULE 1
 #include <textv.eh>
-static long PageOverlap();
+static long PageOverlap(long viewHeight);
 
-extern int charType();		/* defined in txtvcmds.c */
+extern int charType(char c);		/* defined in txtvcmds.c */
 
 void textview_EndOfWordCmd(struct textview *self)
 {/**/

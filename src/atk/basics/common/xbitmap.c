@@ -97,7 +97,7 @@ static char *MitCopyright=
 #include <ctype.h>
 #include <xbitmap.eh>
 static void initHexTable();
-static int nextInt();
+static int nextInt(FILE *f);
 
 /* SUPPRESS 560 */
 

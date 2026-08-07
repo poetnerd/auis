@@ -144,14 +144,14 @@ END-SPECIFICATION  ************************************************************/
 #include "zipedit.ih"
 
 /* M2: same-file forward references */
-int zipview_Preserve_Overlay();
-int zipview_Draw_Pane_Border();
-int zipview_Restore_Overlay();
+int zipview_Preserve_Overlay(struct zipview *self, zip_type_pane pane);
+int zipview_Draw_Pane_Border(struct zipview *self, zip_type_pane pane);
+int zipview_Restore_Overlay(struct zipview *self, zip_type_pane pane);
 /* M2: zipv.do cross-file, no header declares these */
-extern int zipview_Compute_Pane_Stretch_Factors();	/* defined zipvp00.c */
-extern int zipview_Mark_Pane_Exposed();		/* defined zipv000.c */
-extern int zipview_Recoordinate_Panes();		/* defined zipvp00.c */
-extern int zipview_Mark_Pane_Hidden();			/* defined zipv000.c */
+extern int zipview_Compute_Pane_Stretch_Factors(struct zipview *self, zip_type_pane pane);	/* defined zipvp00.c */
+extern int zipview_Mark_Pane_Exposed(struct zipview *self, zip_type_pane pane);		/* defined zipv000.c */
+extern int zipview_Recoordinate_Panes(struct zipview *self);		/* defined zipvp00.c */
+extern int zipview_Mark_Pane_Hidden(struct zipview *self, zip_type_pane pane);			/* defined zipv000.c */
 
 #define	 Data			      (self->data_object)
 #define	 View			      (self)
@@ -165,9 +165,9 @@ extern int zipview_Mark_Pane_Hidden();			/* defined zipv000.c */
 #define  PaneRight		      (zipview_Pane_Right( self, pane ))
 
 
-static int Show_Pane();
-static int Pane_Suite_Member();
-static int Draw_Auxiliary_Streams();
+static int Show_Pane(struct zipview *self, zip_type_pane pane, long action);
+static int Pane_Suite_Member(struct zipview *self, zip_type_pane major_pane, zip_type_pane candidate_pane);
+static int Draw_Auxiliary_Streams(struct zipview *self, zip_type_pane pane);
 
 long zipview__Display_Pane(struct zipview *self, zip_type_pane pane)
   {

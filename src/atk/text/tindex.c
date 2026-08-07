@@ -48,18 +48,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <buffer.ih>
 #include <cursor.ih>
 #include <tindex.eh>
-static struct view * FindView();
-static struct view * getcurrentview();
-static struct textview * getrealview();
-static int indexstyle();
-static boolean isindexenv();
-static void previewindex();
-static void printindex();
+static struct view * FindView(struct view *v1, struct view *v2, struct view *v3, long dat);
+static struct view * getcurrentview(struct view *self);
+static struct textview * getrealview(struct view *v);
+static int indexstyle(char *name);
+static boolean isindexenv(struct content *self, struct text *text, long pos, struct environment *env);
+static void previewindex(struct view *self);
+static void printindex(struct view *self);
 static int skipchapnumber();
-static boolean skipnewlines();
-static void tindex_FudgeFonts();
-static void tindex_IndexTermCmd();
-static boolean writeindex();
+static boolean skipnewlines(struct text *d, long *pos, long *len);
+static void tindex_FudgeFonts(struct text *txt, char *name, int ftype);
+static void tindex_IndexTermCmd(struct view *v);
+static boolean writeindex(FILE *f, struct text *text, long pos, struct environment *env);
 
 #define tindex_HIDDEN -16
 #define tindex_VISIBLE -17

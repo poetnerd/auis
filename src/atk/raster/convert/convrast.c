@@ -95,7 +95,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <proctbl.ih>
 #include <dataobj.ih>
 #undef class_StaticEntriesOnly
-extern char *AndrewDir();
+extern char *AndrewDir(char *str);
 
 
 char inname[1025], outname[1025];
@@ -246,7 +246,7 @@ struct symentry {
 	enum rasterType v;	/* value the function assigns */
 };
 
-static struct symentry *FindSym();
+static struct symentry *FindSym(char *s);
 
 
 static void storename(char *arg, struct symentry *sym)

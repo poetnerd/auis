@@ -54,31 +54,31 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <nstdmark.ih>
 #include <tree23.ih>
 #include <ptext.eh>
-static void DoFreeTree();
-static boolean InString();
-static boolean Quoted();
-static void SetupStyles();
-static long backComment();
-static long backCopyWord();
-static long backSkipJunk();
+static void DoFreeTree(struct nestedmark *self);
+static boolean InString(struct ptext *self, long pos);
+static boolean Quoted(struct ptext *self, long pos);
+static void SetupStyles(struct ptext *self);
+static long backComment(struct ptext *self, long end, int comtype);
+static long backCopyWord(struct ptext *pt, long from, long to, char buffer[]);
+static long backSkipJunk(struct ptext *self, long pos);
 static long backwardSkipString(struct ptext *self, long pos, char delim);
-static long backwardcheckword();
-static void casify();
-static long checkword();
-static long comment();
-static long copyWord();
-static int domatch();
+static long backwardcheckword(struct ptext *self, long from, long to);
+static void casify(char *s, int style);
+static long checkword(struct ptext *self, long i, long end);
+static long comment(struct ptext *self, long start, int comtype);
+static long copyWord(struct ptext *ct, long pos, long end, char buffer[]);
+static int domatch(struct ptext *self, int pos, char *str, int len);
 static int is_whitespace(char ch);
 static boolean isident(char c);
-static struct keywd * lookupKeyword();
-static int matchBegin();
-static long skipJunk();
-static long skipstring();
-static long skipwhitespace();
+static struct keywd * lookupKeyword(struct keywd *dict, char *word);
+static int matchBegin(struct ptext *self, long pos);
+static long skipJunk(struct ptext *self, long pos);
+static long skipstring(struct ptext *self, long start);
+static long skipwhitespace(struct ptext *ct, long pos, long end);
 
-static int indentation();
-static int currentIndent();
-static int currentColumn();
+static int indentation(struct ptext *self, long pos);
+static int currentIndent(struct ptext *self, long pos);
+static int currentColumn(struct ptext *self, long pos);
 
 static boolean isident(char c)
 {
@@ -255,7 +255,7 @@ static struct keywd words[]={
     { NULL, 0 }
 };
 
-static void stylizekeyword();
+static void stylizekeyword(struct ptext *self, long posn, long len);
 
 static int is_whitespace(char ch)
 {

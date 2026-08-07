@@ -53,11 +53,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 static int char64(char c);
 static int hexchar(char c);
 #include <ctype.h>
-static void MetaOutput();
-static void WriteCtypeNicely();
-static void WriteEncoded();
-static void fputsquoting();
-static void output64chunk();
+static void MetaOutput(FILE *fp, struct mailobj *self);
+static void WriteCtypeNicely(FILE *fp, char *ct);
+static void WriteEncoded(struct mailobj *self, FILE *fp);
+static void fputsquoting(char *s, FILE *fp);
+static void output64chunk(unsigned int c1, unsigned int c2, unsigned int c3, int pads, FILE *outfile);
 #undef popen /* BOGUS -- should be handled by fdphack */
 #undef pclose /* ditto */
 
@@ -233,7 +233,7 @@ void mailobj__ReadAlienMail(struct mailobj *self, char *ContentType, char *Conte
     self->EncodingNeeded = ((needsencoding == 0) || ((Used/needsencoding) >= 10)) ? ENC_QP : ENC_B64;
 }
 
-static void WriteEncoded();
+static void WriteEncoded(struct mailobj *self, FILE *fp);
 
 void mailobj__RunMetamail(struct mailobj *self)
 {

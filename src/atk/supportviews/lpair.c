@@ -44,7 +44,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <view.ih>
 #include <cursor.ih>
 #include <rect.h>
-static void DoFullUpdate();
+static void DoFullUpdate(struct lpair *self, enum view_UpdateType type, struct rectangle *redrawRectangle);
 
 
 /* In theory, BARWIDTH could be nuked, but it should be optimized out anyway and it may be useful "someday." */
@@ -61,9 +61,9 @@ static void DoFullUpdate();
 #define GRAVITY 1
 
 /* Forward Declarations */
-static void lpair_ComputeSizesFromTotal ();
-static void lpair_ComputeSizes ();
-static void lpair_ResetDimensions ();
+static void lpair_ComputeSizesFromTotal(struct lpair *l, int totalsize);
+static void lpair_ComputeSizes(struct lpair *l);
+static void lpair_ResetDimensions(struct lpair *self);
 
 
 /* For use in ComputeSizes below. */

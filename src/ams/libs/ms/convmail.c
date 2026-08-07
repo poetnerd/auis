@@ -34,12 +34,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 extern int EnsureMailDirExists();
-extern int MS_ReconstructDirectory();
-extern int MS_SetSubscriptionEntry();
-extern int NonfatalBizarreError();
+extern int MS_ReconstructDirectory(char *DirName, int *NumGood, int *NumBad, int TrustTimeStamp);
+extern int MS_SetSubscriptionEntry(char *FullName, char *NickName, int status);
+extern int NonfatalBizarreError(char *text);
 extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
-extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
-extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
+extern char *ap_Shorten(char *pathname);  /* overhead/util/lib/abbrpath.c */
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
 
 extern char home[];
 

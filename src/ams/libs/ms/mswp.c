@@ -45,64 +45,64 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mailconf.h>
 #include <pwd.h>
 #include <stdlib.h>
-static int AddrRewrite();
+static int AddrRewrite(PARSED_ADDRESS *Addr, int *ErrCode, char *Domain, int recdepth, char *SideBuf, int SideBufLen, PARSED_ADDRESS *upAddr);
 static int CheckFolderAddress(char **recip, int *rcode, int *IsCertain, char *FullName, char *orgname, Boolean WouldCreate, char **pCellN);
-static int CheckPersonalAlias();
-static int FindInMSSearchPath();
-static int GetPostableStatus();
-static int IsRecipientAnMSDirectory();
-static int LookupInPasswdFile();
-static int LookupInWP();
-static int LookupLocalName();
-static int MergeMSWPCodes();
-static int PathEltOnLocalDfltMSPath();
+static int CheckPersonalAlias(char *name, char *Buf, int bufsize, int *code);
+static int FindInMSSearchPath(char *name, char *FullName, char *CurrDomain, int *IsCertain);
+static int GetPostableStatus(char *pathname, char *bbname, int *status, int *IsCertain, char **recip, char **pcellN);
+static int IsRecipientAnMSDirectory(char **recip, int *rcode, int *IsCertain, char *CurrDomain, char **pCellN);
+static int LookupInPasswdFile(PARSED_ADDRESS *Addr, int laType, char *IDpart, char *PostID, int *WpCode, int MaxNameMatches, int AllowHeuristics, char *Domain, int UnderAMSDelivery, int NameSep, int *Answered);
+static int LookupInWP(PARSED_ADDRESS *Addr, int laType, char *IDpart, char *PostID, int *WpCode, int MaxNameMatches, int AllowHeuristics, char *Domain, int UnderAMSDelivery, int NameSep, int *Answered);
+static int LookupLocalName(PARSED_ADDRESS *Addr, int laType, char *IDpart, char *PostID, int *WpCode, int MaxNameMatches, int AllowHeuristics, char *Domain, int UnderAMSDelivery, int NameSep, int *IsVacuous);
+static int MergeMSWPCodes(int mscode, int wpcode);
+static int PathEltOnLocalDfltMSPath(char *FileName);
 static int RefreshAliasFile();
-static int SameCompleteAddress();
-static void SetAMSDelNameSep();
-static void StripExtraComments();
-static void StripExtraCommentsFromList();
-static int UseMSCodeOnly();
-static int UseWPOnly();
+static int SameCompleteAddress(PARSED_ADDRESS *addr1, PARSED_ADDRESS *addr2);
+static void SetAMSDelNameSep(char *Domain, int *AMSDel, int *AMSNameSep);
+static void StripExtraComments(PARSED_ADDRESS *addr, char *ExtraThingToNuke);
+static void StripExtraCommentsFromList(PARSED_ADDRESS *AddrList, char *ExtraThingToNuke);
+static int UseMSCodeOnly(int *mscode, int *wpcode, int Vacuous);
+static int UseWPOnly(int *mscode, int *wpcode, int Vacuous);
 static int getWpErrno();
-extern int AddHost();  /* overhead/mail/lib/parseadd.c */
-extern int FreeAddressList();  /* overhead/mail/lib/parseadd.c */
-extern int FreeHost();  /* overhead/mail/lib/parseadd.c */
-extern int GenTempName();
-extern int GetNameFromGecos();
+extern int AddHost(PARSED_ADDRESS *Addr, ADDRESS_HOST *Host);  /* overhead/mail/lib/parseadd.c */
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);  /* overhead/mail/lib/parseadd.c */
+extern int FreeHost(ADDRESS_HOST *Host);  /* overhead/mail/lib/parseadd.c */
+extern int GenTempName(char *Buf);
+extern int GetNameFromGecos(char *GecosField, char *LoginID, char *Domain, char **PersonalNameP);
 extern int LookupInLocalDatabase(PARSED_ADDRESS *Addr, int laType, char *IDpart, char *PostID, char *Domain, int UnderAMSDelivery, int NameSep, int MaxNameMatches, int *Answered, int *MswpCodeP);
-extern int LowerStringInPlace();  /* ams/libs/shr/utils.c */
-extern int MS_CheckAuthentication();
-extern int MS_DisambiguateFile();
-extern int NonfatalBizarreError();
-extern int OKRoot();
-extern int ParseAddressList();  /* overhead/mail/lib/parseadd.c */
-extern int ReduceWhiteSpace();  /* ams/libs/shr/utils.c */
-extern int RemHost();  /* overhead/mail/lib/parseadd.c */
+extern int LowerStringInPlace(char *string, int len);  /* ams/libs/shr/utils.c */
+extern int MS_CheckAuthentication(int *Authenticated);
+extern int MS_DisambiguateFile(char *source, char *target, short AccessCode);
+extern int NonfatalBizarreError(char *text);
+extern int OKRoot(char *Name);
+extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);  /* overhead/mail/lib/parseadd.c */
+extern int ReduceWhiteSpace(char *string);  /* ams/libs/shr/utils.c */
+extern int RemHost(ADDRESS_HOST *Host);  /* overhead/mail/lib/parseadd.c */
 extern int UnparseAddressList();  /* overhead/mail/lib/parseadd.c */
 extern int UnparseOneAddress();  /* overhead/mail/lib/parseadd.c */
-extern int ValidateSearchPath();
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_vclose();  /* overhead/util/lib/fdplumb2.c */
-extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
-extern void la_FreeMD();  /* overhead/mail/lib/locnamex.c */
-extern int lc2strncmp();  /* ams/libs/shr/utils.c */
+extern int ValidateSearchPath(int i);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vclose(int fd);  /* overhead/util/lib/fdplumb2.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
+extern void la_FreeMD(struct MailDom *MD);  /* overhead/mail/lib/locnamex.c */
+extern int lc2strncmp(char *s1, char *s2, int len);  /* ams/libs/shr/utils.c */
 
 #ifdef WHITEPAGES_ENV
 #include <wp.h>
 #include <bt.h>
 #endif /* WHITEPAGES_ENV */
 
-extern char *StripWhiteEnds();
-static int ReplaceNthListElement();
-static int UnparseNthElement();
-static int CheckGlobalAlias();
-static int ExternalForcingCode();
+extern char *StripWhiteEnds(char *string);
+static int ReplaceNthListElement(PARSED_ADDRESS *BigList, PARSED_ADDRESS *ShortList, int *which);
+static int UnparseNthElement(PARSED_ADDRESS *AddrList, int which, char *Buf, int size, int StripComments);
+static int CheckGlobalAlias(char *name, int *code, char *Domain);
+static int ExternalForcingCode(char *ExtAddress, int codein);
 
 extern int NeedToTimeOut;
 extern char home[], Me[], MyMailDomain[];
-extern ADDRESS_HOST *MakeHost();
-extern PARSED_ADDRESS *SingleAddress();
+extern ADDRESS_HOST *MakeHost(char *name);
+extern PARSED_ADDRESS *SingleAddress(PARSED_ADDRESS *AddrList, int *pCount);
 
 #define EXTBBPROTFILE "../extenable/ext.enable"
 #define EXTBBENABLEFILE ".TurnOnExternalPosting"
@@ -1558,7 +1558,7 @@ static void SetAMSDelNameSep(char *Domain, int *AMSDel, int *AMSNameSep)
 	*AMSNameSep = CheckAMSNameSep(Domain);
 }
 
-static int local_RewriteAddress();	/* forward declaration */
+static int local_RewriteAddress(char *old, char *new, int newsize, int *ErrCode, char *Domain, int recDepth, PARSED_ADDRESS *upAddr);	/* forward declaration */
 
 static int AddrRewrite(PARSED_ADDRESS *Addr, int *ErrCode, char *Domain, int recdepth, char *SideBuf, int SideBufLen, PARSED_ADDRESS *upAddr)
 {/* Recursive worker for MS_RewriteAddress.  Modify the Addr structure, but don't parse or unparse. */

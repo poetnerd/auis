@@ -36,16 +36,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <stdlib.h>
 extern int CloseDirsThatNeedIt();
-extern int CloseMSDir();
-extern int DestructivelyWriteDirectoryHead();
-extern int GetSnapshotByNumber();
-extern int MarkQuietlyInProgress();
-extern int QuickGetBodyFileName();
-extern int ReadOrFindMSDir();
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int DestructivelyWriteDirectoryHead(struct MS_Directory *Dir);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
+extern int MarkQuietlyInProgress(char *dirname);
+extern int QuickGetBodyFileName(char *DirName, char *id, char *FileName);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
 extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
-extern int RetryBodyFileName();
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
-extern int writeall();  /* overhead/util/lib/writeall.c */
+extern int RetryBodyFileName(char *FileName);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int writeall(int fd, char *Buf, int NBytes);  /* overhead/util/lib/writeall.c */
 
 /* msjournal.c, this directory -- writeback capture (a no-op unless
    dirname is a mirrored folder; see the grammar note there).

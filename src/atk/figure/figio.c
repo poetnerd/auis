@@ -47,9 +47,9 @@ char *figio_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fi
 #include "fontdesc.ih"
 
 #include "point.h"
-static char * EatLinesUntil();
-static char * GetString();
-static void SquishZipTextInput();
+static char * EatLinesUntil(FILE *fl, char *list, boolean inlist);
+static char * GetString(FILE *fl);
+static void SquishZipTextInput(char *pt);
 
 static struct figattr *dummyattr;
 
@@ -62,7 +62,7 @@ static long bufsize = 0;
 static struct point *pts = NULL;
 static long pts_size = 0;
 
-static void EnsurePts();
+static void EnsurePts(int num);
 
 #define FromZipX(val)  (long)(((double)(1300+(val)) * ratio))
 #define FromZipY(val)  (long)(((double)(1300-(val)) * ratio))

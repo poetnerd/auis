@@ -64,27 +64,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <image.ih>
 #include <jpeg.eh>
 #include <jinclude.h>
-static void JPEG_Error();
-static void JPEG_Message();
-static void c_ui_method_selection();
-static void d_ui_method_selection();
-static void get_input_row();
-static void input_init();
-static void input_term();
-static void jselrxv();
-static void output_init();
-static void output_term();
-static void put_color_map();
-static void put_pixel_rows();
-static void xv_jpeg_monitor();
+static void JPEG_Error(const char *msgtext);
+static void JPEG_Message(const char *msgtext);
+static void c_ui_method_selection(compress_info_ptr cinfo);
+static void d_ui_method_selection(decompress_info_ptr cinfo);
+static void get_input_row(compress_info_ptr cinfo, JSAMPARRAY pixel_row);
+static void input_init(compress_info_ptr cinfo);
+static void input_term(compress_info_ptr cinfo);
+static void jselrxv(compress_info_ptr cinfo);
+static void output_init(decompress_info_ptr cinfo);
+static void output_term(decompress_info_ptr cinfo);
+static void put_color_map(decompress_info_ptr cinfo, int num_colors, JSAMPARRAY colormap);
+static void put_pixel_rows(decompress_info_ptr cinfo, int num_rows, JSAMPIMAGE pixel_data);
+static void xv_jpeg_monitor(decompress_info_ptr cinfo, long loopcnt, long looplimit);
 
 static int pWIDE, pHIGH;
 static byte r[256],g[256],b[256];
 static byte *pic = NULL;
 
-static void jselwxv();
-static int writeJFIF();
-int LoadJFIF();
+static void jselwxv(decompress_info_ptr cinfo);
+static int writeJFIF(FILE *fp);
+int LoadJFIF(struct jpeg *jpeg, char *fname, FILE *f);
 
 static int colorType, numColors, quality;
 static byte *image8, *image24;

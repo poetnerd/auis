@@ -47,17 +47,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #define AUXMODULE
 #include <table.eh>
-static int ReadAboveColor();
-static int ReadLeftColor();
-static int ReadSlice();
-static void ReadString();
-static void SkipRest();
-static void WriteAboveColor();
-static void WriteThickness();
-static void refill();
+static int ReadAboveColor(struct table *T, FILE *f, char buff[], char **cpp, char *cl, int r);
+static int ReadLeftColor(struct table *T, FILE *f, char buff[], char **cpp, char *cl, int r, int c);
+static int ReadSlice(FILE *f, char buff[], char **cpp, char *cl, struct slice **sp);
+static void ReadString(FILE *f, char buff[], char **cpp, char *cl, char **result);
+static void SkipRest(FILE *f, char buff[], char **cpp, char *cl);
+static void WriteAboveColor(struct table *T, FILE *f, int r, int first, int last);
+static void WriteThickness(FILE *f, char *tag, struct slice *slice, int first, int last, int def);
+static void refill(FILE *f, char buff[], char **cpp, char *cl);
 
 /* defined in table.c */
-extern int DestroyCell();
+extern int DestroyCell(struct table *T, struct cell *oldcell);
 
 static boolean debug=FALSE;
 

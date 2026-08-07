@@ -85,7 +85,7 @@ END-SPECIFICATION  ************************************************************/
 #include "txttroff.ih"
 #include <string.h>
 #include <stdlib.h>
-static char * zipprint_Line_Attributes_String();
+static char * zipprint_Line_Attributes_String(struct zipprint *self);
 
 #define  Data			(self->data_object)
 #define  View			(self->view_object)

@@ -38,8 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include "index.h"
 #include <stdlib.h>
-static int index_GenerateKey();
-static int index_RecordInUse();
+static int index_GenerateKey(struct indexBucket *ab, struct recordID *arid);
+static int index_RecordInUse(struct indexBucket *ab, struct recordID *arid);
 
 /* given an index and a record id, copy out key into abuffer, a buffer of max size alen */
 int index_GetKey(struct Index *ai, struct recordID *arid, char *abuffer, long alen)

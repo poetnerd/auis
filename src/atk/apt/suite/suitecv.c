@@ -90,7 +90,7 @@ END-SPECIFICATION  ************************************************************/
 #define	Suite			    ((EV)->parent)
 #define	ClientAnchor		    ((Suite)->anchor)
 
-void suitecv_InsertNLCmd();
+void suitecv_InsertNLCmd(struct suitecv *self, long key);
 static struct keymap *KeyMap;
 struct bind_Description Bindings[] = {
     {"suitecv-insert-newline","\015",0,NULL,0,0,(void(*)())suitecv_InsertNLCmd,

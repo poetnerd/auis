@@ -37,10 +37,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <stdlib.h>
 extern int DeSymLink();  /* overhead/util/lib/desym.c */
-extern int abspath();
-extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
+extern int abspath(char *name, char *result);
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
 
-static int RealSubsTreeWalk();
+static int RealSubsTreeWalk(FILE *outfile, char *dirname, int rootlen);
 
 /* This routine walks down a directory subtree corresponding to a message
 	directory, and prints appropriate subscription information on the

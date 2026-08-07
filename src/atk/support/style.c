@@ -40,11 +40,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include <namespc.ih>
 #include <fontdesc.ih>
-static long CVDots();
+static long CVDots(long amt, enum style_Unit unit);
 static long ReadDevice();
-static int style_copyattributes();
-static int style_freeattributes();
-static int style_writeAdditionalAttribute();
+static int style_copyattributes(long procdata, struct namespace *curnamespace, int indexvalue);
+static int style_freeattributes(long procdata, struct namespace *curnamespace, int indexvalue);
+static int style_writeAdditionalAttribute(FILE *fileptr, struct namespace *curnamespace, int indexvalue);
 
 #define iswhite(c) ((c) == ' ' || (c) == '\t' || (c) == '\n')
 

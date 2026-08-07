@@ -36,10 +36,10 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 #include <toolcnt.h>
 
 #include "compress.eh"
-static void DoAll();
-static boolean decompress();
-static boolean decompressIfInRange();
-static boolean doupdate();
+static void DoAll(struct text *txt, boolean (*callBack)());
+static boolean decompress(struct compress *self, struct text *txt);
+static boolean decompressIfInRange(struct compress *self, struct text *txt);
+static boolean doupdate(struct compress *self, struct text *txt, long pos, struct environment *env);
 
 #define TEXT_VIEWREFCHAR '\377'
 

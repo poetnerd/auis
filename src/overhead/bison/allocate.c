@@ -22,7 +22,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 extern char *calloc ();
 extern char *realloc ();
-extern void done ();
+extern void done(int k);
 
 extern char *program_name;
 

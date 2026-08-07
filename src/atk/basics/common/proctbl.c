@@ -42,13 +42,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <ctype.h>
 #include <proctbl.eh>
 
-static struct proctable_Entry *LookupHash();
+static struct proctable_Entry *LookupHash(char *name, int hash);
 /* FoldedEQ (overhead/util/lib/foldedeq.c) has no declaring header
    anywhere in the tree -- only the FOLDEDEQ macro in util.h, which
    calls it internally without prototyping it. */
-extern int FoldedEQ();
-static int ModuleClear();
-static int HashName();
+extern int FoldedEQ(unsigned char *s1, unsigned char *s2);
+static int ModuleClear(struct proctable_Entry *pe, char *module);
+static int HashName(char *name);
 
 #define HASHMAX	128		/* must be power of two */
 #define HASHMASK	(HASHMAX-1)

@@ -44,7 +44,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    scope -- on LP64 that would implicitly declare it returning int
    and truncate the real char* pointer (the same bug class fixed
    tree-wide under "LP64 Missing Prototypes"). */
-extern char *AndrewDir();
+extern char *AndrewDir(char *str);
 
 FILE *finput = NULL;
 FILE *foutput = NULL;
@@ -74,8 +74,8 @@ extern int noparserflag;
 extern char	*mktemp();	/* So the compiler won't complain */
 extern char	*getenv();
 extern void	perror();
-FILE	*tryopen();	/* This might be a good idea */
-void done();
+FILE	*tryopen(char *name, char *mode);	/* This might be a good idea */
+void done(int k);
 
 extern char *program_name;
 extern int verboseflag;

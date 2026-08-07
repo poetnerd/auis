@@ -158,7 +158,7 @@ int printdummys(int ed, FILE *fout)
 	}
     }
 }
-int fontcount();	/* defined below, used earlier in this file */
+int fontcount(FILE *f);	/* defined below, used earlier in this file */
 int fontcvt();		/* defined below, used earlier in this file */
 
 int main(int argc, char *argv[])

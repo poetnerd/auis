@@ -48,7 +48,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <pixelimg.ih>	
 #include <dataobj.ih>
 #include <xbm.eh>
-static int NextInt();
+static int NextInt(FILE *fstream);
 static void initHexTable();
 
 #if !defined(vax)

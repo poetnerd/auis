@@ -38,7 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <util.h>
 #include <environ.ih>
 #include <timeoday.eh>
-static void UpdateTime();
+static void UpdateTime(struct timeoday *self);
 
 /* Defined constants and macros */
 #define MAX_LINE_LENGTH 70  /* can't be less than 6 */
@@ -53,8 +53,8 @@ static void UpdateTime();
 /* External declarations */
 
 /* Forward Declarations */
-static void WriteLine();
-static char *GlomStrings(), *ReadLine(), *EncodeFont();
+static void WriteLine(FILE *f, char *l);
+static char *GlomStrings(char *s, char *t), *ReadLine(FILE *f), *EncodeFont(struct timeoday *self);
 
 /* Global variables */
 static char *months[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", NULL};

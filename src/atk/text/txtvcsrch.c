@@ -41,7 +41,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <message.ih>
 #include <search.ih>
 
-extern boolean ConfirmReadOnly();	/* defined in txtvcmod.c */
+struct textview;
+
+extern boolean ConfirmReadOnly(struct textview *self);	/* defined in txtvcmod.c */
 #include <environ.ih>
 #include <mark.ih>
 

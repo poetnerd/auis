@@ -36,8 +36,8 @@ extern char *getmyname();
 /* Same-file forward references (defined later in this file). ULstrcmp here
    is this file's own private copy, unrelated to overhead/util/lib's
    same-named function -- splitmail does not link libutil.a. */
-extern int ShareThisHeader(), HandleOnePart(), IllegalContentType();
-extern int ULstrcmp();
+extern int ShareThisHeader(char *s, char *SubjectBuf), HandleOnePart(int DoDeliver, char *deliverycmd, char *prefix, int numparts, int whichpart, char *SharedHeaders, char *SubjectBuf, char *id, char *MessageID, char *bigbuf), IllegalContentType(char *ctype);
+extern int ULstrcmp(char *s1, char *s2);
 
 #ifdef AMIGA
 #define Prototype   extern

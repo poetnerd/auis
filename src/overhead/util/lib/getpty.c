@@ -46,7 +46,7 @@ It returns TRUE if it succeeds.
 
 #include <fcntl.h>
 #include <sys/param.h>
-static char * GetPtyNumberString();
+static char * GetPtyNumberString(int num);
 
 #if defined(sys_telmat)
 #include <stdio.h>

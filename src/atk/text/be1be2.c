@@ -47,7 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <text.ih>
 
 #include <be1be2.eh>
-static long CVDots();
+static long CVDots(long amt, enum style_Unit unit);
 
 /* Primitive environment attributes */
 

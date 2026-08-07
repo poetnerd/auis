@@ -67,11 +67,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #undef AUXMODULE
 
 /* same-file forward reference -- defined later in this file */
-extern int QAddToDoc();
+extern int QAddToDoc(struct text *d, int *pos, char *text, int tlen, struct style *ss, int stylelen);
 
 /* same-directory (folders.o, linked into the same folders.do) cross-file
    references -- no header, defined in folders.c */
-extern int ClearFolders(), DoClick(), ExposeCap(), SetupList();
+extern int ClearFolders(struct folders *ci), DoClick(struct folders *folders, boolean IsLeftClick, boolean IgnorePosition), ExposeCap(struct folders *self), SetupList(struct folders *ci, int code, char *thingstoread[]);
 
 void folders_Warp(struct im *im)
 {

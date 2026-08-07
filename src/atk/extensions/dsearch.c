@@ -44,8 +44,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 
 #include <dsearch.eh>
 #include <string.h>
-static void dynsearch_SearchForward();
-static void dynsearch_SearchReverse();
+static void dynsearch_SearchForward(struct textview *view);
+static void dynsearch_SearchReverse(struct textview *view);
 
 #define MAXSTRING	256
 /* Describe how the current seach string has failed. */
@@ -58,7 +58,7 @@ static int lcSearch = 0;
 static int failures = 0;
 static int lastDirection = FORWARD;
 
-static int GetPattern();
+static int GetPattern(struct textview *view, struct text *text, int direction);
 
 static void dynsearch_SearchForward(struct textview *view)
 {

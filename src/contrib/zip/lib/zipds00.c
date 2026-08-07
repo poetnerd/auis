@@ -79,24 +79,24 @@ END-SPECIFICATION  ************************************************************/
 #include <errno.h>
 #include <sys/stat.h>
 #include <stdlib.h>
-static int Extract_Stream_File_Name();
-static int Extract_Stream_File_Path();
-static int Extract_Stream_Name();
-static int Reset_Paths();
-static int Reset_Stream_File_Open_States();
-static int Set_Paths();
-static int Stream_File_Exists();
+static int Extract_Stream_File_Name(struct zip *self, char *name, char **file_name);
+static int Extract_Stream_File_Path(struct zip *self, char *name, char **path_name);
+static int Extract_Stream_Name(struct zip *self, char *name, char **stream_name);
+static int Reset_Paths(struct zip *self);
+static int Reset_Stream_File_Open_States(struct zip *self, zip_type_stream stream);
+static int Set_Paths(struct zip *self, zip_type_paths paths);
+static int Stream_File_Exists(struct zip *self, char *stream_name);
 
 extern int			      errno;
 
 /* M2: same-file forward references */
-int zip_Open_Stream_File();
-int zip_Close_Stream_File();
-int zip_Set_Stream_File_Name();
+int zip_Open_Stream_File(struct zip *self, zip_type_stream stream, long open_mode);
+int zip_Close_Stream_File(struct zip *self, zip_type_stream stream);
+int zip_Set_Stream_File_Name(struct zip *self, zip_type_stream stream, char *name);
 /* M2: zip.do cross-file, no header declares these */
-extern long zip_Deparse_Stream();	/* defined zipds01.c */
-extern long zip_Enparse_Stream();	/* defined zipds02.c */
-extern int apt_MM_Compare();		/* defined zip.c */
+extern long zip_Deparse_Stream(struct zip *self, zip_type_stream stream_object);	/* defined zipds01.c */
+extern long zip_Enparse_Stream(struct zip *self, struct zip_stream *stream);	/* defined zipds02.c */
+extern int apt_MM_Compare(unsigned char *s1, unsigned char *s2);		/* defined zip.c */
 extern int symtab_create();		/* defined zipd000.c */
 extern int symtab_destroy();		/* defined zipd000.c */
 
@@ -107,25 +107,25 @@ extern int symtab_destroy();		/* defined zipd000.c */
 
 
 static int
-Extract_Stream_Name();
+Extract_Stream_Name(struct zip *self, char *name, char **stream_name);
 static int
-Extract_Stream_File_Name();
+Extract_Stream_File_Name(struct zip *self, char *name, char **file_name);
 static int
-Extract_Stream_File_Path();
+Extract_Stream_File_Path(struct zip *self, char *name, char **path_name);
 static int
-Open_Via_Alternate_Paths();
+Open_Via_Alternate_Paths(struct zip *self, zip_type_stream stream, char * mode);
 static int
-Open_Alternate();
+Open_Alternate(struct zip *self, zip_type_stream stream, char * open_mode_flags, char *path);
 static int
-Reset_Stream_File_Open_States();
+Reset_Stream_File_Open_States(struct zip *self, zip_type_stream stream);
 static int
 Identify_Paths();
 static int
-Allocate_Stream_Object();
+Allocate_Stream_Object(struct zip *self, zip_type_stream *stream, char *name);
 static int
-Deallocate_Stream_Object();
+Deallocate_Stream_Object(struct zip *self, zip_type_stream stream);
 static int
-Deallocate_Stream_Resources();
+Deallocate_Stream_Resources(struct zip *self, zip_type_stream stream);
 
 long zip__Open_Stream(struct zip *self, struct zip_stream **stream, char *name, long mode)
   {

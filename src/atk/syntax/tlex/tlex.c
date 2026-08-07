@@ -78,11 +78,11 @@
 
 #include <lexan.ih>
 #include <tlex.eh>
-static int ErrorWithParm();
-static int ScanComment();
-static int ScanID();
-static int ScanNumber();
-static int ScanString();
+static int ErrorWithParm(struct tlex *self, struct tlex_ErrorRecparm *parm);
+static int ScanComment(struct tlex *self, struct tlex_CommentRecparm *parm);
+static int ScanID(struct tlex *self, struct tlex_IDRecparm *parm);
+static int ScanNumber(struct tlex *self, struct tlex_NumberRecparm *parm);
+static int ScanString(struct tlex *self, struct tlex_StringRecparm *parm);
 
 
 #ifdef DODEBUG

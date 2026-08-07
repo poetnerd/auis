@@ -117,11 +117,11 @@ END-SPECIFICATION  ************************************************************/
 #include "zip.ih"
 #include "zipv.ih"
 #include "zipstat.eh"
-static char * Format_Figure_Status_Message();
-static char * Format_Image_Status_Message();
-static char * Format_Message();
-static char * Format_Pane_Status_Message();
-static char * Format_Stream_Status_Message();
+static char * Format_Figure_Status_Message(struct zipstatus *self, zip_type_figure figure);
+static char * Format_Image_Status_Message(struct zipstatus *self, zip_type_image image);
+static char * Format_Message(struct zipstatus *self, int facility, int status);
+static char * Format_Pane_Status_Message(struct zipstatus *self, zip_type_pane pane);
+static char * Format_Stream_Status_Message(struct zipstatus *self, zip_type_stream stream);
 
 /*LIBS: libapt.a
 */

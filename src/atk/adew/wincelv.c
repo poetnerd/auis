@@ -39,7 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <im.ih>
 #include <rect.h>
 #include <wincelv.eh>
-static int DoUpdate();
+static int DoUpdate(struct wincelview *self);
 
 #define DataObject(A) (A->header.view.dataobject)
 #define Cel(A) ((struct cel *) DataObject(A))

@@ -41,7 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <envrment.ih>
 #include <fontdesc.ih>
 #include <menttext.eh>
-static int checkstyles();
+static int checkstyles(struct mentertext *self);
 #define INITIALSIZE 64
 
 #define Root(self) (((struct text *)self)->rootEnvironment)

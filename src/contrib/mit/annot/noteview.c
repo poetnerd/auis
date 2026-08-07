@@ -45,10 +45,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include "keymap.ih"
 #include "text.ih"
 #include "proctbl.ih"
-static void Close();
-static void closeall();
-static void insert();
-static void openall();
+static void Close(struct noteview *v, long l);
+static void closeall(struct view *v, long l);
+static void insert(struct textview *tv, long l);
+static void openall(struct view *v, long l);
 
 #define ICONFONT "icon"
 #define ICONSTYLE fontdesc_Plain

@@ -42,11 +42,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <hdrparse.h>
 #include <stdlib.h>
 #include <util.h>
-static int Bogus_MakeBodyFileName();
-static char * ClosingParen();
-static int OutputLine();
-static int ValidateDirname();
-static int dostat();
+
+struct CUIDirNode;
+static int Bogus_MakeBodyFileName(char *dir, char *id, char *buf);
+static char * ClosingParen(char *s);
+static int OutputLine(char *fname, long *offset, char *buffer);
+static int ValidateDirname(char *dirname, char **result);
+static int dostat(FILE *afile, long *asize);
 #ifdef AFS_ENV
 #include <netinet/in.h>
 #include <afs/param.h>
@@ -71,35 +73,35 @@ char CUI_MailDomain[125] = "";
 long CUI_UseAmsDelivery=0, CUI_UseNameSep=0, CUI_DeliveryType = -1;
 
 /* Any new message server functions should be added to this list. */
-extern long MS_ReInitialize(), MS_GetVersion(), MS_Die(), MS_GetConfigurationParameters(), MS_CreateNewMessageDirectory(), MS_FindMailbox(), MS_DisambiguateFile(), MS_ProcessNewMessages(), MS_HeadersSince(), MS_GetPartialBody(), MS_PrintMessage(), MS_NameReplyFile(), MS_AlterSnapshot(), MS_PurgeDeletedMessages(), MS_PurgeDeletedMessages(), MS_GetSnapshot(),
-   MS_GetHeaderContents(), MS_SubmitMessage(), MS_UnlinkFile(), MS_ReconstructDirectory(), MS_ValidateAndReplaceChunk(), MS_GetPartialFile(), MS_WriteAllMatchesToFile(), MS_InstallWelcomeMessage(), MS_CloneMessage(), MS_GetAssociatedTime(), MS_SetAssociatedTime(), MS_StorePartialFile(), MS_RenameDir(), MS_GetDirInfo(), MS_RemoveDirectory(),
-   MS_CheckMissingFolder(), MS_GetSubscriptionEntry(), MS_PrefetchMessage(), MS_HandlePreference(), MS_SetSubscriptionEntry(), MS_MergeDirectories(), MS_StorePartialFile(), MS_GetDirAttributes(), MS_AddAttribute(),MS_GetVConfig();
+extern long MS_ReInitialize(), MS_GetVersion(char *Buf, int lim), MS_Die(), MS_GetConfigurationParameters(char *MailDomain, int len, long *UseAmsDelivery, long *UseNameSep, long *DelType), MS_CreateNewMessageDirectory(char *DirName, int Overwrite, char *obsolete), MS_FindMailbox(int pathelt, char *Buf), MS_DisambiguateFile(char *source, char *target, short AccessCode), MS_ProcessNewMessages(char *SourceDir, int *NumGood, int *NumBad, int *NumLocks, char *ParseSpecFile, int *resultcode, int *FirstError, int *NumInProgress, char *EliErrBuf, int EliErrBufLim), MS_HeadersSince(char *FullDirName, char *datefield, char *ReturnBuf, int MaxReturn, long startbyte, long *numbytes, long *bytesleft), MS_GetPartialBody(char *DirName, char *id, char *Buf, int BufLim, int offset, int *remaining, int *ct), MS_PrintMessage(char *DirName, char *id, int flags, char *printer), MS_NameReplyFile(char *DirName, char *id, int code, char *FileName), MS_AlterSnapshot(char *dirname, char *id, char *NewSnapshot, int Code), MS_PurgeDeletedMessages(char *dirname), MS_PurgeDeletedMessages(char *dirname), MS_GetSnapshot(char *dirname, char *id, char *SnapshotBuf),
+   MS_GetHeaderContents(char *dirname, char *id, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim), MS_SubmitMessage(char *FileName, int DeliveryOptions, char *ErrorMessage, int ErrMsgLimit, char *ClientProgram), MS_UnlinkFile(char *FileName), MS_ReconstructDirectory(char *DirName, int *NumGood, int *NumBad, int TrustTimeStamp), MS_ValidateAndReplaceChunk(char *FileName, char *inaddr, char *outaddr, int outaddrsize, int which, int *outcode), MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, int *remaining, int *ct), MS_WriteAllMatchesToFile(char *ambigname, char *FileName), MS_InstallWelcomeMessage(char *ParentName, char *InitDir, char *InitFile, char *ShortName), MS_CloneMessage(char *SourceDirName, char *id, char *DestDirName, int Code), MS_GetAssociatedTime(char *FullName, char *Answer, int lim), MS_SetAssociatedTime(char *FullName, char *newvalue), MS_StorePartialFile(char *FileName, int startpos, int len, int mode, int Truncate, char *WhatToStore), MS_RenameDir(char *OldName, char *NewName, char *NewFullName), MS_GetDirInfo(char *DirName, int *ProtCode, int *MsgCount), MS_RemoveDirectory(char *DirName, int MaxRemovals),
+   MS_CheckMissingFolder(char *OldName, char *NewName), MS_GetSubscriptionEntry(char *FullName, char *NickName, int *status), MS_PrefetchMessage(char *DirName, char *id, int GetNext), MS_HandlePreference(char *prog, char *pref, char *InVal, char *OutVal, int OutLim, int opcode, int *resulti, int defaulti), MS_SetSubscriptionEntry(char *FullName, char *NickName, int status), MS_MergeDirectories(char *SourceDirName, char *DestDirName), MS_StorePartialFile(char *FileName, int startpos, int len, int mode, int Truncate, char *WhatToStore), MS_GetDirAttributes(char *Dirname, int *AttrCt, char *Attrs, int SepChar, int ShowEmpty), MS_AddAttribute(char *Dirname, char *Newname, int *AttNum),MS_GetVConfig(char *key, char *vers, char *result);
 
 /* These three message-server functions are declared separately from the
    list above: their real definitions (ams/libs/ms/gentname.c,
    ams/libs/ms/unscrib.c) and the currently-linked ams/libs/nosnap/nosnap.c
    are all plain int, not long -- kept apart from the existing long-typed
    list above rather than widening them to match it. */
-extern int MS_GenTempFileName(), MS_WriteUnscribedBodyFile(), MS_CUI_Init();
+extern int MS_GenTempFileName(char *Buf), MS_WriteUnscribedBodyFile(char *DirName, char *id, char *FileName), MS_CUI_Init(char *host, char *user, char *passwd, int len, int type, int bufsize);
 
 /* overhead/util/lib/fdplumb.c's dbg_* wrapper family; overhead/util/hdrs/
    fdplumb.h #defines fclose/close/dup2/pipe/pclose/vfclose to these but
    only declares part of the family (dbg_open, dbg_fopen, dbg_popen,
    dbg_qopen, dbg_topen, dbg_opendir), not these six. */
-extern int dbg_fclose(), dbg_close(), dbg_dup2(), dbg_pipe(), dbg_pclose(), dbg_vfclose();
+extern int dbg_fclose(FILE *fp), dbg_close(int fd), dbg_dup2(int oldfd, int newfd), dbg_pipe(int fdarr[2]), dbg_pclose(FILE *fp), dbg_vfclose(FILE *fp);
 
 /* ams/libs/shr/utils.c, ams/libs/shr/findroot.c: no header in the tree
    declares any of these. */
-extern int BuildNickName(), LowerStringInPlace(), ReduceWhiteSpace(), bone(), lc2strncmp(), FindTreeRoot();
+extern int BuildNickName(char *FullName, char *NickName), LowerStringInPlace(char *string, int len), ReduceWhiteSpace(char *string), bone(char *buf, int len), lc2strncmp(char *s1, char *s2, int len), FindTreeRoot(char *DirName, char *RootName, short ReallyWantParent);
 
 /* Consumer-supplied UI callback interface: implemented by whichever
    front end links libcui.a (ams/msclients/cui/cuifns.c and cui.c for the
    interactive cui client, atkams/messages/lib/stubs.c for the GUI
    messages app, etc.) -- no header in the tree declares this interface. */
-extern int ReportError(), ReportSuccess(), ChooseFromList(), GetStringFromUser(), GetBooleanFromUser(), DirectoryChangeHook(), SubscriptionChangeHook(), ConsiderLoggingRead();
+extern int ReportError(), ReportSuccess(char *text), ChooseFromList(char **QVec, int def), GetStringFromUser(char *prompt, char *buf, int len, int IsPassword), GetBooleanFromUser(), DirectoryChangeHook(), SubscriptionChangeHook(), ConsiderLoggingRead();
 
 /* Defined in the sibling file andmchs.c, same directory, no header. */
-extern int Machine_Init(), CUI_InitializeKeepalives(), CUI_GenLocalTmpFileName();
+extern int Machine_Init(char **ThisHost, char **ThisUser, char **ThisPassword, int *len, int *type, int IsRecon), CUI_InitializeKeepalives(), CUI_GenLocalTmpFileName(char *nmbuf);
 
 #if !POSIX_ENV
 extern char *malloc (), *realloc ();
@@ -108,20 +110,20 @@ extern char *index (), *rindex();
 #define strrchr(s,c) rindex(s,c)
 #endif
 
-extern char *NextAddress(), *cvEng();
+extern char *NextAddress(char *add), *cvEng(int foo, int Capitalized, int MaxToSpellOut);
 extern char *SnapVersionString;
-extern char *ap_Shorten();
-static int OutputLine();
-static int ValidateDirname();
+extern char *ap_Shorten(char *pathname);
+static int OutputLine(char *fname, long *offset, char *buffer);
+static int ValidateDirname(char *dirname, char **result);
 
 /* Any CUI functions that return a long should be in this list */
-long HandleAddress(), CUI_CacheDirName(), CUI_SetDirNode(), CUI_GetDirNode(), CUI_AlterSnapshot(), CUI_GetHeaders(), CUI_DisambiguateDir(), CUI_SetSubscriptionEntry(), CUI_MergeDirectories();
+long HandleAddress(char *oldaddr, char *newaddr, int newsize, int errcode, int maxdealiases, int *numfound, int *externalct, int *formatct, int *stripct, int *trustct), CUI_CacheDirName(char *shortname, char *longname), CUI_SetDirNode(char *shortname, char *longname, struct CUIDirNode **Node), CUI_GetDirNode(char *shortname, struct CUIDirNode **Node), CUI_AlterSnapshot(int cuid, char *NewSnapshot, int Code, char **dir), CUI_GetHeaders(), CUI_DisambiguateDir(char *shortname, char **longname), CUI_SetSubscriptionEntry(char *Name, char *NickName, int status), CUI_MergeDirectories(char *FromDir, char *ToDir);
 
 /* Defined later in this same file, used above their definitions. */
-extern int CheckEmsgConsistency(), FindQuotedString(), FreeCustomizationHeaders(), GetHeaderContents(), PutStringToViceFile();
+extern int CheckEmsgConsistency(), FindQuotedString(char *source, char **first, char **remainder), FreeCustomizationHeaders(), GetHeaderContents(int cuid, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim, int barfmissing), PutStringToViceFile(char *ViceFile, char *text);
 extern int GetViceFileToNewString(char *FileName, char **newtext, Boolean DoUnlink);
 extern int pfclose(FILE *fp, Boolean DoPclose);
-extern int BumpNeedsPurging(), CUI_AppendFileToVice(), CUI_BuildNickName(), CUI_CheckNewMessages(), CUI_CopyViceFileTails(), CUI_GenTmpFileName(), CUI_GetBodyToLocalFile(), CUI_GetCuid(), CUI_HandleMissingFolder(), CUI_MarkDirectoryForPurging(), CUI_PrintBodyFromCUIDWithFlags(), CUI_PrintUpdatesWithFlags(), CUI_ReallyGetBodyToLocalFile(), CUI_ReportAmbig(), CUI_ResendMessage(), CUI_RewriteHeaderLineInternal();
+extern int BumpNeedsPurging(char *dirname, int change), CUI_AppendFileToVice(char *LocalFile, char *ViceFile, long offset), CUI_BuildNickName(char *FullName, char *NickName), CUI_CheckNewMessages(char *arg), CUI_CopyViceFileTails(char *FromFile, long FromSkip, char *ToFile, long ToSkip), CUI_GenTmpFileName(char *nmbuf), CUI_GetBodyToLocalFile(int cuid, char *FileName, int *ShouldDelete), CUI_GetCuid(char *amsid, char *dirname, int *IsDup), CUI_HandleMissingFolder(char *OldName), CUI_MarkDirectoryForPurging(char *dirname), CUI_PrintBodyFromCUIDWithFlags(int cuid, int flags, char *printer), CUI_PrintUpdatesWithFlags(char *dname, char *nickname, int flags, char *printer), CUI_ReallyGetBodyToLocalFile(int cuid, char *FileName, int *ShouldDelete, int MayFudge), CUI_ReportAmbig(char *name, char *atype), CUI_ResendMessage(int cuid, char *Tolist), CUI_RewriteHeaderLineInternal(char *text, char **newtext, int maxdealiases, int *numfound, int *externalct, int *formatct, int *stripct, int *trustct);
 extern int CUI_FixAttribute(int cuid, char *attname, Boolean Set);
 extern int CUI_FixAttributeByNumber(int cuid, int attnum, Boolean Set);
 extern int CUI_PurgeMarkedDirectories(Boolean Ask, Boolean OfferQuit);
@@ -196,8 +198,8 @@ void CUI_SetMachineType(char *s)
 
 Boolean CUI_IsMagic = TRUE;
 
-extern long gtime ();
-extern char *StripWhiteEnds ();
+extern long gtime(struct tm *ct);
+extern char *StripWhiteEnds(char *string);
 extern int  Interactive;
 
 int	CUIDebugging = 0;

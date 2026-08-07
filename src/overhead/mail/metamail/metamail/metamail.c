@@ -27,6 +27,8 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 #include <config.h>
 #include <patchlevel.h>
 
+struct MailcapEntry;
+
 #ifdef BORLAND
 #define F_OK 0
 extern unsigned _stklen = 16384;
@@ -106,36 +108,36 @@ extern char **environ, *gets();
 #define CMDSIZE 1200 /* Maximum size of command to execute */
 
 #define LINE_BUF_SIZE       2000
-extern char *AndrewDir();
+extern char *AndrewDir(char *str);
 extern char *getenv();
 extern char *index();
 extern char *rindex();
 /* No header declares these; defined in sibling files in this directory */
-extern int from64(), fromqp(), fromuue(), PendingBoundary();
-extern int ExceptionalNewline(), DoesNeedPortableNewlines();
-extern int lc2strcmp(), lc2strncmp();
+extern int from64(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct, int PortableNewlines), fromqp(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct), fromuue(FILE *infp, FILE *outfp, char **boundaries, int *ctptr), PendingBoundary(char *s, char **Boundaries, int *BoundaryCt);
+extern int ExceptionalNewline(char *contenttype, int needsportable), DoesNeedPortableNewlines(char *ctype);
+extern int lc2strcmp(char *s1, char *s2), lc2strncmp(char *s1, char *s2, int len);
 /* Same-file forward references (defined later in this file) */
-extern int ExitWithError(), ProcessArguments();
+extern int ExitWithError(char *txt), ProcessArguments(int argc, char **argv);
 extern void RestoreTtyState();
-extern int HandleMessage(), Read822Prefix();
+extern int HandleMessage(char *SquirrelFile, int nestingdepth), Read822Prefix(int PrintHeads, int nestingdepth);
 extern void PauseForUser();
-extern int ProcessMailcapFiles(), SaveSquirrelFile();
+extern int ProcessMailcapFiles(), SaveSquirrelFile(char *SquirrelFile);
 extern void PrepareMessage();
-extern int MkTmpFileName(), TryBuiltIns(), TranslateInputToOutput();
-extern int StripTrailingSpace(), RunInNewWindow();
+extern int MkTmpFileName(char *name), TryBuiltIns(char *SquirrelFile), TranslateInputToOutput(FILE *InputFP, FILE *OutputFP, int Ecode, char *ctype);
+extern int StripTrailingSpace(char *s), RunInNewWindow(char **argv, int argc, char **SourceFileNamePtr);
 extern void usage();
-extern int CreateNewWindowPrefix(), ProcessMailcapFile();
+extern int CreateNewWindowPrefix(char *Prefix), ProcessMailcapFile(char *file, char *SquirrelFile);
 extern void SetUpEnvironment();
-extern int TryMailcapEntry(), GetMailcapEntry(), CtypeMatch();
-extern int PassesTest(), ExecuteMailcapEntry(), BuildCommand();
-extern int NeedToAskBeforeExecuting(), OKToRun();
+extern int TryMailcapEntry(struct MailcapEntry mc, char *SquirrelFile), GetMailcapEntry(), CtypeMatch(char *ctype, char *pat);
+extern int PassesTest(struct MailcapEntry *mc), ExecuteMailcapEntry(struct MailcapEntry mc, char *TmpFileName, char *ThisContentType), BuildCommand();
+extern int NeedToAskBeforeExecuting(char *type), OKToRun(char *ctype, char *progname, char *label);
 extern void SaveTtyState();
-extern int strcatquoting(), WriteTmpFile(), ExecuteCommand();
-extern int maybephead(), phead(), EliminateNastyChars();
-extern int strcpynoquotes(), StartRawStdin();
+extern int strcatquoting(char *s1, char *s2), WriteTmpFile(char *fname, char *ctype), ExecuteCommand(char *cmd, int really);
+extern int maybephead(char *hdr), phead(char *s), EliminateNastyChars(char *s);
+extern int strcpynoquotes(char *t, char *f), StartRawStdin();
 char fileToDelete[MAX_FILE_NAME_SIZE];
 
-char *FindParam();
+char *FindParam(char *s);
 extern FILE *popen();
 static char *nomem = "Out of memory!";
 static char *mmversion = MM_VERSTRING;
@@ -214,9 +216,9 @@ struct NoAskItem {
 TryMailcapEntry(struct MailcapEntry mc, char *SquirrelFile);
 #endif
 
-void PrintHeader();
-void ConsumeRestOfPart();
-void ParseContentParameters();
+void PrintHeader(char *s, int ShowLeadingWhitespace);
+void ConsumeRestOfPart(FILE *outfp);
+void ParseContentParameters(char *ct);
 
 void cleanup(int signum);
 

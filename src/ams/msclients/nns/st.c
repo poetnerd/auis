@@ -35,7 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 */
 
 #include <big.h>
-static int STHash();
+static int STHash(char *string);
 
 static int STHash(char *string)
 {

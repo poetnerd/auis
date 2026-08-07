@@ -69,16 +69,16 @@ static struct frame *allFrames = NULL; /* Maintains a list of all frames for enu
 static struct keymap *frameKeymap = NULL, *frameDefaultKeymap=NULL;
 static struct menulist *frameMenus = NULL, *frameDefaultMenus=NULL;
 
-static void TidyUp();
-static void ComputeSize();
-static void DoUpdate();
-static void SaveBits();
-static void PrepareMenus();
-static void PurifyString();
-static boolean RestoreBits();
-static void CannotRestoreBits();
-static void retractCursors();
-static boolean InRectangle();
+static void TidyUp(struct frame *self);
+static void ComputeSize(struct frame *self);
+static void DoUpdate(struct frame *self);
+static void SaveBits(struct frame *self);
+static void PrepareMenus(struct frame *self);
+static void PurifyString(char *s);
+static boolean RestoreBits(struct frame *self);
+static void CannotRestoreBits(struct frame *self);
+static void retractCursors(struct frame *self);
+static boolean InRectangle(struct rectangle *r, long x, long y);
 
 #define DEFAULTHEIGHT 20
 
@@ -429,7 +429,7 @@ void frame__FinalizeObject(struct classheader *classID, struct frame *self)
     }
 }
 
-static void SetTitle();
+static void SetTitle(struct frame *self);
 
 void frame__FullUpdate(struct frame *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
@@ -469,23 +469,23 @@ static int handleNewData(struct frame *self)
 }
 
 #include <lpair.ih>
-static int ButtonInteract();
-static int CalculateLineHeight();
-static void Cancel();
-static void ConfirmDefaultAnswer();
-static void ConsiderReturning();
-static boolean FindBuffer();
-static char * GetProfileString();
+static int ButtonInteract(struct frame *self, char **AnswerList, long DefaultWildestAnswer, long *WildestAnswer, int flags);
+static int CalculateLineHeight(struct frame *self);
+static void Cancel(struct frame *self);
+static void ConfirmDefaultAnswer(struct frame *self);
+static void ConsiderReturning(struct frame *self, int Choice);
+static boolean FindBuffer(struct frame *f, struct buffer *b);
+static char * GetProfileString(char *pref, char *defalt);
 static void GotKey(struct frame *self, char c);
-static struct view * PrepareForStringInput();
-static void ReturnInterface();
-static void SingleLine();
-static void delete_window_request();
-static void drawButton();
-static int drawshadow();
-static void frame_setShade();
-static int handleNewData();
-static int isDialogChild();
+static struct view * PrepareForStringInput(struct frame *self, char *prompt, int bufferSize, boolean CompButtons);
+static void ReturnInterface(struct frame *rock, int ind, long brock);
+static void SingleLine(struct frame *self, long key);
+static void delete_window_request(struct im *im, struct frame *self);
+static void drawButton(struct frame *self, struct rectangle *rect, char *text, boolean pushed, boolean borderonly, boolean blit);
+static int drawshadow(struct frame *self, struct rectangle *r);
+static void frame_setShade(struct frame *self, int val);
+static int handleNewData(struct frame *self);
+static int isDialogChild(struct frame *self, struct view *v);
 void frame__WantNewSize(struct frame *self, struct view *req)
 {
     long dw=(-1), dh=(-1);

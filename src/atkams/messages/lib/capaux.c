@@ -66,15 +66,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #define AUXMODULE 1
 #include <captions.eh>
 
-static int AbsentProcedure();
+static int AbsentProcedure(struct view *self);
 extern struct keymap *captions_privkeymap;
 extern struct menulist *captions_privmenulist;
 
 /* same-directory (captions.o, linked into the same captions.do) cross-file
    references -- no header, defined in captions.c */
-extern int AddCaptionToCacheEntry(), GetSouthernmostPoint(), MakeCaptionLine(),
-	MarkVisibleMessageSeen(), MergeTwoCacheEntries(), RemoveHighlighting(),
-	ResetCaptionNotBody(), SetSouthernmostPoint();
+extern int AddCaptionToCacheEntry(struct CaptionCache **ccache, int *ct, int *size, int cuid, int offset, struct environment *env, struct environment *iconenv, Boolean MayModify, char *snapshot, Boolean IsDup), GetSouthernmostPoint(struct captions *ci), MakeCaptionLine(char **Buf, int cuid, char *RawSnapshot, int Fixed, int *HighStart, int *HighLen, Boolean IsMail, Boolean IsDup, Boolean IsRead),
+	MarkVisibleMessageSeen(struct captions *ci), MergeTwoCacheEntries(struct captions *ci, struct CaptionCache *ccache, int cct, int csize, int prefixend), RemoveHighlighting(struct captions *h),
+	ResetCaptionNotBody(struct captions *ci), SetSouthernmostPoint(struct captions *ci, int pos);
 
 
 int (*captextv_PreviousLineCmd)() = AbsentProcedure,

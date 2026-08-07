@@ -43,18 +43,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif /* WHITEPAGES_ENV */
 #include <parseadd.h>
 #include <stdlib.h>
-extern int FindPrettiestFromString();
-extern int FreeAddressList();  /* overhead/mail/lib/parseadd.c */
-extern int GetNameFromGecos();
-extern int ParseAddressList();  /* overhead/mail/lib/parseadd.c */
-extern int ShrinkName();
+extern int FindPrettiestFromString(char *MyFromBuf, char *FromBuf, int lim);
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);  /* overhead/mail/lib/parseadd.c */
+extern int GetNameFromGecos(char *GecosField, char *LoginID, char *Domain, char **PersonalNameP);
+extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);  /* overhead/mail/lib/parseadd.c */
+extern int ShrinkName(char *longname, char *shortname, int limit);
 
 #define BIGFROM 24  /* c.f. bldcapt.c */
 #define MINHOST 3
 
 extern char MyMailDomain[];
 
-extern PARSED_ADDRESS *SingleAddress();
+extern PARSED_ADDRESS *SingleAddress(PARSED_ADDRESS *AddrList, int *pCount);
 
 #define strncpy2maxes(s1, s2, l1, l2) strncpy((s1), (s2), ((l1) > (l2)) ? (l2) : (l1))
 

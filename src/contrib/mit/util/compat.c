@@ -73,18 +73,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <txtstvec.h>
 
 #include <compat.eh>
-static void AddDefaultTpl();
-static boolean ConfirmReadOnly();
-static void denumerate();
-static void do_insert();
-static void enumerate();
-static void gcparafill();
-static void insert();
-static void insertBullets();
-static void insert_no_nl();
-static int is_itemp();
-static int parse_num();
-static void removeBullets();
+static void AddDefaultTpl(struct textview *self, long l);
+static boolean ConfirmReadOnly(struct textview *self, struct text *txt);
+static void denumerate(struct textview *self, long key);
+static void do_insert(struct textview *self, char *typename, boolean nl_flag);
+static void enumerate(struct textview *self, long key);
+static void gcparafill(struct textview *self, long key);
+static void insert(struct textview *self, char *typename);
+static void insertBullets(struct textview *self, long key);
+static void insert_no_nl(struct textview *self, char *typename);
+static int is_itemp(struct text *txt, int start, int end);
+static int parse_num(struct text *txt, int start, int end, int *numret);
+static void removeBullets(struct textview *self, long key);
 
 #define DIALOG 100
 #define MESSAGE 0

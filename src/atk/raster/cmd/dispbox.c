@@ -72,7 +72,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 
 /* ReflectChangesInExpansion is defined in rasterv.c, a sibling file
    in this directory, with no shared header declaring it. */
-extern void ReflectChangesInExpansion();
+extern void ReflectChangesInExpansion(struct rasterview *self, struct rectangle *R);
 
 boolean RastersInitiallyShrunk = FALSE;
 char debug;

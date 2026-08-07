@@ -32,8 +32,8 @@
 
 #include <global.h>
 #include <gentlex.h>
-static void WriteActions();
-static void WriteRectbl();
+static void WriteActions(FILE *f);
+static void WriteRectbl(FILE *f);
 
 static int defaultaction;  /* action for character \377 */
 static int HiChar;  /* last character for which there is an action other

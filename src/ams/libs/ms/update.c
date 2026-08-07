@@ -39,13 +39,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mailconf.h>
 extern int CloseNeedyDirs(Boolean InsistOnCloses);
 extern int MS_UpdateState();
-extern int NonfatalBizarreError();
+extern int NonfatalBizarreError(char *text);
 extern int PrintPendingRequests(Boolean MustPrint);
 extern int UpdateState(Boolean DoEverything);
 extern int WriteSubs();
 extern void dropoff_Reset();  /* overhead/mail/lib/dropoff.c */
 extern int getla_ShutDown();  /* overhead/util/lib/getla.c */
-extern int safeexit();
+extern int safeexit(int code);
 #if defined(hpux) && HP_OS < 70
 #include <sys/time.h>
 #include <signal.h>

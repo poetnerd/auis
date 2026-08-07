@@ -35,7 +35,7 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 #include <environ.ih>
 #include <attribs.h>
 #include "rawtext.eh"
-static boolean MakeSureNotOverstrikingView();
+static boolean MakeSureNotOverstrikingView(struct rawtext *d, long pos, long len);
 
 boolean rawtext__InitializeObject(struct classheader *classID, struct rawtext *self)
 {

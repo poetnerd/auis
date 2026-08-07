@@ -44,35 +44,35 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <view.ih>
 #include <text.ih>
 #include <deskey.eh>
-static void ListAProc();
-static int removeOverridden();
-static int transferLine();
+static void ListAProc(struct proctable_Entry *pe, FILE *f);
+static int removeOverridden(int sort);
+static int transferLine(FILE *f1, FILE *f2, boolean really);
 
 static long NProcs;
 
 /* Begining of Forward Declarations */
-static boolean bufferFill();
-static boolean bufferFind();
-static boolean bufferSetup();
-static char * charToPrintable();
-static char * getProcDoc();
-static int parseFile();
-static long describeAllProcEntries();
-static struct view * bufferFindView();
-static void datastreamClose();
-static void datastreamOpen();
-static void describeAKey();
-static void describeAllKeys();
-void describeBinding();
-void describeKeymap();
-static void describeKeys();
-static void describeProcEntry();
-static long ListProctable();
-void makePrefix();
-static void parseBindFile();
-static void parseProcFile();
-static void sortByKey();
-static void sortByProc();
+static boolean bufferFill(struct im *im, struct text *text);
+static boolean bufferFind(struct frame *f, struct buffer *b);
+static boolean bufferSetup(FILE **f, struct im *im, struct text **text);
+static char * charToPrintable(long c);
+static char * getProcDoc(struct proctable_Entry *pte);
+static int parseFile(FILE *f, FILE *d);
+static long describeAllProcEntries(struct im *im);
+static struct view * bufferFindView(struct buffer *b);
+static void datastreamClose(FILE *f);
+static void datastreamOpen(FILE *f);
+static void describeAKey(struct im *im);
+static void describeAllKeys(struct im *im, int sort);
+void describeBinding(char *bind, int len, int runKey, struct proctable_Entry *pte, FILE *f, long mapno);
+void describeKeymap(struct keymap *map, char *bind, int len, FILE *f, long mapno);
+static void describeKeys(struct im *im, FILE *f);
+static void describeProcEntry(struct proctable_Entry *pe, FILE *f);
+static long ListProctable(struct im *im);
+void makePrefix(char *buf, char *keys, int len);
+static void parseBindFile(FILE *f, FILE *d);
+static void parseProcFile(FILE *f, FILE *d);
+static void sortByKey(struct im *im);
+static void sortByProc(struct im *im);
 /* End of Forward Declarations */
 
 #define KEYSORT 1

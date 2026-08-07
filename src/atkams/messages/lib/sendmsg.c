@@ -77,30 +77,30 @@ typedef short Boolean;
 #include <sendmsg.eh>
 
 static int Submit(struct sendmessage *sendmessage, Boolean Unformat, int Version, int TrustDelivery, Boolean UseMultipartFormat);
-static int UnlinkCKPFile();
+static int UnlinkCKPFile(struct sendmessage *sendmessage);
 
 #include <unscribe.h>
-static int UnlinkCKPFile();
+static int UnlinkCKPFile(struct sendmessage *sendmessage);
 
 /* constants for the Deliver() subroutine */
 #define FORCE_ASK_ABOUT_FORMATTING 0
 #define FORCE_SEND_FORMATTED 1
 #define FORCE_SEND_UNFORMATTED 2
 
-extern int WriteOneFile();
-extern void delete_sendmsg_win();
+extern int WriteOneFile(struct sendmessage *sendmessage, char *ViceFileName, Boolean OnVice, Boolean MayOverwrite, int Version, Boolean TrustDelivery, Boolean UseMultipartFormat, int *EightBitText);
+extern void delete_sendmsg_win(struct im *im, struct sendmessage *self);
 
 /* same-file forward references -- all defined later in this file */
-extern int SetNotModified(), MakeHeaderFieldsBold(), MakeOneHeaderFieldBold(),
-	ValidateHeader(), RemoveUselessHeaderLines(), ProduceUnscribedVersion(),
-	AlreadyPS(), SaveForPS(), CheckAndCountRecipients(), Deliver(),
-	DirectlyInsertFile();
+extern int SetNotModified(struct sendmessage *sendmessage), MakeHeaderFieldsBold(struct sendmessage *self), MakeOneHeaderFieldBold(struct sendmessage *self, int pos),
+	ValidateHeader(struct sendmessage *sm, char *lookfor, int *externalct, int *totct, int *formatct, int *stripct, int *trustct), RemoveUselessHeaderLines(struct sendmessage *sm), ProduceUnscribedVersion(char *FileName, FILE *OutputFP),
+	AlreadyPS(char *subj), SaveForPS(struct sendmessage *self), CheckAndCountRecipients(struct sendmessage *sm, int *tot, int *ext, int *totformat, int *totstrip, int *tottrust), Deliver(struct sendmessage *sendmessage, int formathandlingcode),
+	DirectlyInsertFile(struct textview *tv, struct text *t, char *fname, int pos);
 
 /* same-directory (sendaux.o, linked into the same sendmsg.do) cross-file
    references -- no header, defined in sendaux.c */
-extern int DestroyProcStuff(), DestroyStyles(), InitProcStuff(),
-	InitStylesAndFonts(), OneTimeProcInit(), PrepareBodyForSignature(),
-	SetMyFrameTitle(), EnvViewCt();
+extern int DestroyProcStuff(struct sendmessage *self), DestroyStyles(struct sendmessage *self), InitProcStuff(struct sendmessage *sendmessage),
+	InitStylesAndFonts(struct sendmessage *sendmessage), OneTimeProcInit(struct classheader *c), PrepareBodyForSignature(struct sendmessage *self),
+	SetMyFrameTitle(struct sendmessage *sm, char *tit), EnvViewCt(struct environment *env);
 
 void sendmessage_SetButtonFont(struct sendmessage *self, struct fontdesc *font)
 {

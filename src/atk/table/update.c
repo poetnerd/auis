@@ -47,32 +47,32 @@ extern char * fcvt();
 
 #define AUXMODULE
 #include <spread.eh>
-static void FixCursors();
-static int Flush();
-static void NotifyKids();
-static int SmashSelection();
-static int updateBorder();
-static int updateCell();
-static int updateCells();
-static int updateEdges();
+static void FixCursors(struct spread *V);
+static int Flush(struct spread *V);
+static void NotifyKids(struct spread *V, enum view_UpdateType how, struct rectangle *updateClipRect);
+static int SmashSelection(struct spread *V);
+static int updateBorder(struct spread *V, struct rectangle *updateClipRect);
+static int updateCell(struct spread *V, struct cell *cell, int zapped, enum view_UpdateType how, struct rectangle *bodyClipRect, struct rectangle *cellBounds);
+static int updateCells(struct spread *V, int zapped, enum view_UpdateType how, struct rectangle *updateClipRect);
+static int updateEdges(struct spread *V, struct rectangle *updateClipRect);
 static int updateString(struct spread *V, char justification, char *string, struct rectangle *cellBounds);
 static int updateValue(struct spread *V, extended_double *value, char format, int precision, struct rectangle *cellBounds);
 
 /* not static: also called from spread.c */
-int spread_PartialUpdate();
+int spread_PartialUpdate(struct spread *V, enum view_UpdateType how, struct rectangle *updateClipRect);
 
-extern struct view *spread_FindSubview();
+extern struct view *spread_FindSubview(struct spread *V, struct cell *cell);
 
 /* spread__WantLimitedHighlighting is a class-internal (double-underscore)
  * method; spread.eh only declares it outside AUXMODULE, so this file
  * (an AUXMODULE consumer) needs its own declaration to reach the real
  * definition in spread.c, which the spread_WantLimitedHighlighting()
  * macro (spread.eh) calls directly. */
-extern boolean spread__WantLimitedHighlighting();
+extern boolean spread__WantLimitedHighlighting(struct classheader *c);
 
 /* defined in spread.c */
-extern void InitializeGraphic();
-extern int ComputeRowSizes();
+extern void InitializeGraphic(struct spread *V);
+extern int ComputeRowSizes(struct spread *V);
 
 static boolean debug=0;
 

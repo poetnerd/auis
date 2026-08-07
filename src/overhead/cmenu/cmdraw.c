@@ -36,15 +36,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <X11/Xlib.h>
 #include <cmintern.h>
 #include <cmdraw.h>
-static int DrawWormHole();
+static int DrawWormHole(struct cmenu *menu, struct drawingState *state);
 
 #define WHheight 11
 #define WHwidth 11
 
-extern struct pane *PaneNumToPtr();
-extern int PanePtrToNum();
-extern struct selection *SelectionNumToPtr();
-extern int SelectionPtrToNum();
+extern struct pane *PaneNumToPtr(struct cmenu *menu, int paneNum);
+extern int PanePtrToNum(struct cmenu *menu, struct pane *panePtr);
+extern struct selection *SelectionNumToPtr(struct cmenu *menu, struct pane *panePtr, int selectionNum);
+extern int SelectionPtrToNum(struct cmenu *menu, struct pane *panePtr, struct selection *selectionPtr);
 
 struct pane * SetPaneNum(struct cmenu *menu, struct drawingState *state, int paneNum)
 {
@@ -289,7 +289,7 @@ void ShowASelection(struct cmenudata *globalData, struct pane *pane, struct sele
     }
 }
 
-static int DrawWormHole();
+static int DrawWormHole(struct cmenu *menu, struct drawingState *state);
 void ShowAPane(struct cmenu *menu, struct drawingState *state, struct pane *pane, long x, long y, int position)
 {
     struct cmenudata *globalData = menu->gMenuData;

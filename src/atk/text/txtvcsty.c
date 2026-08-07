@@ -52,27 +52,29 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #define AUXMODULE 1
 #include <textv.eh>
-static struct environment * AddNewEnvironment();
-static void PushFlipBegEnv();
-static void PushFlipEndEnv();
-static void SetBeginningDown();
-static void SetEndingDown();
-static boolean StyleCompletionWork();
-static void StyleHelp();
-static boolean StyleHelpWork();
+
+struct helpData;
+static struct environment * AddNewEnvironment(struct textview *self, struct stylesheet *ss, struct environment *env, struct InsertStack *insert);
+static void PushFlipBegEnv(struct environment *te, boolean value);
+static void PushFlipEndEnv(struct environment *te, boolean value);
+static void SetBeginningDown(struct textview *self, struct environment *te, long pos);
+static void SetEndingDown(struct textview *self, struct environment *te, long pos);
+static boolean StyleCompletionWork(struct style *style, struct result *data);
+static void StyleHelp(char *partial, struct stylesheet *styleSheet, int (*helpTextFunction)(), long helpTextRock);
+static boolean StyleHelpWork(struct style *style, struct helpData *helpData);
 
 #define DELETE_NOSTYLES 0
 #define DELETE_LEFT 1
 #define DELETE_RIGHT 2
 #define Text(v)	(struct text *) ((v)->header.view.dataobject)
 
-void textview_InsertEnvironment();
-static void DoDisplayInsertEnvironment();
+void textview_InsertEnvironment(struct textview *self, char *sName);
+static void DoDisplayInsertEnvironment(struct textview *self);
 
 extern long lcNewLine;
 extern long lcInsertEnvironment;
-extern boolean ConfirmReadOnly();	/* defined in txtvcmod.c */
-extern boolean textview_objecttest();	/* defined in txtvcmod.c */
+extern boolean ConfirmReadOnly(struct textview *self);	/* defined in txtvcmod.c */
+extern boolean textview_objecttest(struct textview *self, char *name, char *desiredname);	/* defined in txtvcmod.c */
 
 static boolean useOldInsertionRules;
 static long deletionDirection;

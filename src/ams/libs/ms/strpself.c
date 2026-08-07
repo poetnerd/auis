@@ -37,11 +37,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mail.h>
 #include <stdlib.h>
 static int SameName(char *n1, char *n2, int nlen, int namesep);
-static void StripList();
-extern int FreeAddress();  /* overhead/mail/lib/parseadd.c */
-extern int FreeAddressList();  /* overhead/mail/lib/parseadd.c */
-extern int ParseAddressList();  /* overhead/mail/lib/parseadd.c */
-extern int ULstrcmp();  /* overhead/util/lib/ulstrcmp.c */
+static void StripList(PARSED_ADDRESS *AddrList);
+extern int FreeAddress(PARSED_ADDRESS *AddrIn);  /* overhead/mail/lib/parseadd.c */
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);  /* overhead/mail/lib/parseadd.c */
+extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);  /* overhead/mail/lib/parseadd.c */
+extern int ULstrcmp(char *s1, char *s2);  /* overhead/util/lib/ulstrcmp.c */
 extern int UnparseAddressList();  /* overhead/mail/lib/parseadd.c */
 
 extern char Me[], MeInFull[], MyMailDomain[], *MyShortAddress;

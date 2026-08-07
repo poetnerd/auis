@@ -38,7 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <rm.eh>
 #include <namespc.ih> 
 #include <stdio.h>
-static struct  resourceTree * FindNodeCreate();
+static struct  resourceTree * FindNodeCreate(struct atomlist *path, struct resourceTree *tree);
 
 #ifndef _IBMR2
 #endif /* _IBMR2 */

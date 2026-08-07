@@ -37,7 +37,7 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ba
 #include <fontdesc.eh>
 
 #include <ctype.h>
-static struct fontdesc * fontdesc_CreateUsingDescriptor();
+static struct fontdesc * fontdesc_CreateUsingDescriptor(struct fontnamedesc *FontName, long FontStyle, long FontSize);
 
 
 char * fontdesc__GetFontFamily(struct fontdesc *self)

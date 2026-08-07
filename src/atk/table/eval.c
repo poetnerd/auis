@@ -46,16 +46,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #include <class.h>
 #include <table.ih>
-static double aexpr();
-static double atom();
-static int cellref();
-static void expr();
-static double factor();
+
+struct movetrstate;
+static double aexpr(struct table *T, char **inptr, int r, int c);
+static double atom(struct table *T, char **inptr, int rr, int cc);
+static int cellref(struct table *T, char **inptr, int rr, int cc, double *r, double *c);
+static void expr(struct table *T, extended_double *result, char **inptr, int r, int c);
+static double factor(struct table *T, char **inptr, int r, int c);
 static double funcall();
-static double relexpr();
-static double standardize();
-static double term();
-static int trydate();
+static double relexpr(struct table *T, char **inptr, int r, int c);
+static double standardize(extended_double *x);
+static double term(struct table *T, char **inptr, int r, int c);
+static int trydate(char *input);
 
 #if !POSIX_ENV
 extern char * malloc();
@@ -63,9 +65,9 @@ extern char * malloc();
 extern double pow();
 
 /* defined in table.c */
-extern int MakeBogus();
-extern int MakeStandard();
-extern int rcref();
+extern int MakeBogus(extended_double *x, char *message);
+extern int MakeStandard(extended_double *x, double value);
+extern int rcref(struct table *T, extended_double *result, int r, int c, int iftaped);
 
 /* defined in funs.c */
 extern int enterfuns();
@@ -114,8 +116,8 @@ short   charclass[128] =
 
 #define getop(x,class) (charclass[*(x)]&(class)?*(x)++:0)
 
-static void expr();
-static double relexpr(), aexpr(), term(), factor(), atom(), funcall();
+static void expr(struct table *T, extended_double *result, char **inptr, int r, int c);
+static double relexpr(struct table *T, char **inptr, int r, int c), aexpr(struct table *T, char **inptr, int r, int c), term(struct table *T, char **inptr, int r, int c), factor(struct table *T, char **inptr, int r, int c), atom(struct table *T, char **inptr, int rr, int cc), funcall();
 
 struct jbstruct {
     jmp_buf env;

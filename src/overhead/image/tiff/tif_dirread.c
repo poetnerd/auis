@@ -51,24 +51,24 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include "prototypes.h"
-static int CheckDirCount();
-static char * CheckMalloc();
-static int EstimateStripByteCounts();
-static int MissingRequired();
-static int TIFFFetchByteArray();
-static int TIFFFetchData();
-static int TIFFFetchExtraSamples();
-static int TIFFFetchJPEGCTables();
-static int TIFFFetchJPEGQTables();
-static int TIFFFetchLongArray();
-static int TIFFFetchNormalTag();
-static int TIFFFetchPerSampleShorts();
-static int TIFFFetchRationalArray();
-static int TIFFFetchRefBlackWhite();
-static int TIFFFetchShortArray();
-static int TIFFFetchString();
-static int TIFFFetchStripThing();
-static int cvtRational();
+static int CheckDirCount(TIFF *tif, TIFFDirEntry *dir, u_long count);
+static char * CheckMalloc(TIFF *tif, int n, char *what);
+static int EstimateStripByteCounts(TIFF *tif, TIFFDirEntry *dir, u_int dircount);
+static int MissingRequired(TIFF *tif, char *tagname);
+static int TIFFFetchByteArray(TIFF *tif, TIFFDirEntry *dir, u_short v[]);
+static int TIFFFetchData(TIFF *tif, TIFFDirEntry *dir, char *cp);
+static int TIFFFetchExtraSamples(TIFF *tif, TIFFDirEntry *dp);
+static int TIFFFetchJPEGCTables(TIFF *tif, TIFFDirEntry *dir, u_char ***ptab);
+static int TIFFFetchJPEGQTables(TIFF *tif, TIFFDirEntry *dir);
+static int TIFFFetchLongArray(TIFF *tif, TIFFDirEntry *dir, u_long v[]);
+static int TIFFFetchNormalTag(TIFF *tif, TIFFDirEntry *dp);
+static int TIFFFetchPerSampleShorts(TIFF *tif, TIFFDirEntry *dir, long *pl);
+static int TIFFFetchRationalArray(TIFF *tif, TIFFDirEntry *dir, float v[]);
+static int TIFFFetchRefBlackWhite(TIFF *tif, TIFFDirEntry *dir);
+static int TIFFFetchShortArray(TIFF *tif, TIFFDirEntry *dir, u_short v[]);
+static int TIFFFetchString(TIFF *tif, TIFFDirEntry *dir, char *cp);
+static int TIFFFetchStripThing(TIFF *tif, TIFFDirEntry *dir, long nstrips, u_long **lpp);
+static int cvtRational(TIFF *tif, TIFFDirEntry *dir, u_long num, u_long denom, float *rv);
 #if USE_PROTOTYPES
 static	int EstimateStripByteCounts(TIFF *, TIFFDirEntry *, u_int);
 static	int MissingRequired(TIFF *, char *);

@@ -34,11 +34,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <andrewos.h> /* sys/file.h */
 #include <mailconf.h>
-extern int CacheDirectoryForClosing();
-extern int FindTreeRoot();  /* ams/libs/shr/findroot.c */
-extern int GetAssocMailbox();
-extern int ReadOrFindMSDir();
-extern int TransformPathRootToMailbox();
+extern int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode);
+extern int FindTreeRoot(char *DirName, char *RootName, short ReallyWantParent);  /* ams/libs/shr/findroot.c */
+extern int GetAssocMailbox(char *buf);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int TransformPathRootToMailbox(char *Buf);
 
 extern char home[], MyMailDomain[];
 

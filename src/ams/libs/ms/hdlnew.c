@@ -50,46 +50,46 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>                  /* sys/file.h */
 #include <system.h>
 #include <stdlib.h>
-static int ReprotectBody();
-extern int AddHeader();
-extern int AddParentalMessage();
-extern int AppendMessageToMSDir();
-extern int BuildAttributesField();
-extern int BuildCaption();
-extern int BuildDateField();
-extern int BuildNickName();  /* ams/libs/shr/utils.c */
-extern int BuildReplyField();
-extern int BuildWideReply();
-extern int CacheDirectoryForClosing();
-extern int CheckAuthUid();
-extern int CheckFolderIsCreatable();
-extern int CloseMSDir();
-extern int CreateNewMSDirectory();
-extern int DelHeaderByName();
-extern int FLAMES_TranslateArgs();
-extern int FindTreeRoot();  /* ams/libs/shr/findroot.c */
-extern int Flames_Initialize();
-extern int Flames_ReadDefault();
-extern int Flames_SlurpFlamesFile();
-extern int Flames_SlurpFlamesFileIfNecessary();
-extern int IsMessageAlreadyThere();
-extern int LowerStringInPlace();  /* ams/libs/shr/utils.c */
-extern int MS_DisambiguateFile();
-extern int NeedToReadFile();
-extern int NonfatalBizarreError();
-extern int ReadOrFindMSDir();
-extern int RejectMessage();
-extern int RememberRecentRead();
+static int ReprotectBody(char *name);
+extern int AddHeader(struct MS_Message *Msg, char *Head);
+extern int AddParentalMessage(struct MS_Message *Msg, char *PDirName, char *bbname, char *bbpath);
+extern int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int BuildAttributesField(struct MS_Message *msg);
+extern int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail);
+extern int BuildDateField(struct MS_Message *Msg, int datetype);
+extern int BuildNickName(char *FullName, char *NickName);  /* ams/libs/shr/utils.c */
+extern int BuildReplyField(struct MS_Message *Msg);
+extern int BuildWideReply(struct MS_Message *Msg, Boolean IncludeFrom);
+extern int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode);
+extern int CheckAuthUid(struct MS_Message *NewMessage);
+extern int CheckFolderIsCreatable(char *inname, char *NameBuf, int *creatable);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int CreateNewMSDirectory(char *Dirname, struct MS_Directory **NewDir, int Overwrite);
+extern int DelHeaderByName(struct MS_Message *Msg, char *Head);
+extern int FLAMES_TranslateArgs(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf, int minargc, int maxargc, char **argv, eliDataTypes_t typev[], int *evalv, char *fname);
+extern int FindTreeRoot(char *DirName, char *RootName, short ReallyWantParent);  /* ams/libs/shr/findroot.c */
+extern int Flames_Initialize(EliState_t *st);
+extern int Flames_ReadDefault(EliState_t *st, char *MailboxFile, char **firstfuncname);
+extern int Flames_SlurpFlamesFile(EliState_t *st, char *fName, char **firstfuncname);
+extern int Flames_SlurpFlamesFileIfNecessary(EliState_t *st, char *fName, char **firstfuncname);
+extern int IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int LowerStringInPlace(char *string, int len);  /* ams/libs/shr/utils.c */
+extern int MS_DisambiguateFile(char *source, char *target, short AccessCode);
+extern int NeedToReadFile(char *fname, char **funcname);
+extern int NonfatalBizarreError(char *text);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int RejectMessage(struct MS_Message *Msg, char *Text, char *RejectionsTo, char *RejectCC);
+extern int RememberRecentRead(char *fname, char *funcname, int permanent);
 extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
-extern int ResendMessageFromMailbox();
-extern int TellEliAboutAMSError();
-extern int UnformatMessage();
-extern int WritePureFile();
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_vclose();  /* overhead/util/lib/fdplumb2.c */
-extern int dropoff();  /* overhead/mail/lib/dropoff.c */
+extern int ResendMessageFromMailbox(struct MS_Message *Msg, char *Addressee, Boolean AddResendHeads);
+extern int TellEliAboutAMSError(EliState_t *st, EliSexp_t *resbuf, char *errortext, int unixErr);
+extern int UnformatMessage(struct MS_Message *Msg);
+extern int WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vclose(int fd);  /* overhead/util/lib/fdplumb2.c */
+extern int dropoff(char *tolist[], char *mesgfile, char *returnpath, char *home, long flags);  /* overhead/mail/lib/dropoff.c */
 
-extern char *AndrewDir();
+extern char *AndrewDir(char *str);
 
 #ifdef sys_vax_11
 #define void int                       /* What a grubby hack -- vaxes should

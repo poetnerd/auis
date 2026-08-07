@@ -80,22 +80,22 @@ END-SPECIFICATION  ************************************************************/
 #include <apt.ih>
 #include <apts.ih>
 #include <chart.eh>
-static char * Extract_Field_Value();
-static int Parse_Item_Field();
-static int Parse_Name_Field();
-static int Parse_Type_Field();
-static int Reader();
-static int SetChartAttribute();
-static int SetItemAttribute();
-static int SetItemValue();
-static int Sort_By_Ascending_Label();
-static int Sort_By_Ascending_Position();
-static int Sort_By_Ascending_Value();
-static int Sort_By_Descending_Label();
-static int Sort_By_Descending_Position();
-static int Sort_By_Descending_Value();
-static char * ValueString();
-static int Writer();
+static char * Extract_Field_Value(struct chart *self, char **fields, char *name);
+static int Parse_Item_Field(struct chart *self, char *string);
+static int Parse_Name_Field(struct chart *self, char *string);
+static int Parse_Type_Field(struct chart *self, char *string);
+static int Reader(struct chart *self);
+static int SetChartAttribute(struct chart *self, long attribute, long value);
+static int SetItemAttribute(struct chart *self, struct chart_item *item, long attribute, long value);
+static int SetItemValue(struct chart *self, struct chart_item *item, long value);
+static int Sort_By_Ascending_Label(const void *ap, const void *bp);
+static int Sort_By_Ascending_Position(const void *ap, const void *bp);
+static int Sort_By_Ascending_Value(const void *ap, const void *bp);
+static int Sort_By_Descending_Label(const void *ap, const void *bp);
+static int Sort_By_Descending_Position(const void *ap, const void *bp);
+static int Sort_By_Descending_Value(const void *ap, const void *bp);
+static char * ValueString(struct chart *self, struct chart_item *item);
+static int Writer(struct chart *self);
 
 #define  ChartTitle		     (self->chart_title)
 #define  ChartTitleDataObjectName    (self->chart_title_data_object_name)

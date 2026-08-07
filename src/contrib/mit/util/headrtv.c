@@ -55,14 +55,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <ctype.h>
 
 #include <pcompch.ih>
-static void DrawBorder();
-static struct textview * GetTextView();
+static void DrawBorder(struct headrtv *self, struct rectangle *vb);
+static struct textview * GetTextView(struct view *self);
 static void InstallHeaderVariables();
-static void PrintLine();
-static int findincommalist();
-static char * headrtv_GetInput();
-static void headrtv_MoveOn();
-static void newline();
+static void PrintLine(FILE *fp, char *string);
+static int findincommalist(char *list, char *sn);
+static char * headrtv_GetInput(struct text *textobj);
+static void headrtv_MoveOn(struct headrtv *self, long rock);
+static void newline(struct headrtv *tv, long rock);
 
 #define Data(self)  ((struct header *)headrtv_GetDataObject(self))
 #define View(self) ((struct view *)self)

@@ -54,21 +54,21 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <util.h>
 #include <mailconf.h>
 #include <mail.h>	/* for ITC libmail */
-static int CheckDirInAFS();
+static int CheckDirInAFS(char *dir, char *proc);
 static void Log();
-static int WriteHeaders();
+static int WriteHeaders(FILE *f, char *fname, char *returnpath, char *four, char *auth, char *pgmname);
 static char * host();
-static int CreateAndInitFile();
+static int CreateAndInitFile(char *mailbox, char *returnpath, char *four, char *auth, char *pgmname);
 
 /* No header anywhere in the tree declares these. fdplumb.h renames
    close()/fclose() via #define but only declares 6 of its 16 dbg_*
    wrapper names -- dbg_close/dbg_fclose are not among them. */
 extern int CheckAMSConfiguration();	/* mailconf.c */
-extern int dbg_close();		/* overhead/util/lib/fdplumb.c */
-extern int dbg_fclose();		/* overhead/util/lib/fdplumb.c */
-extern int IsOnVice();			/* overhead/util/lib/vclose.c */
-extern int GetRetPath();		/* authret.c */
-extern int GetAuthInfo();		/* authret.c */
+extern int dbg_close(int fd);		/* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose(FILE *fp);		/* overhead/util/lib/fdplumb.c */
+extern int IsOnVice(int fd);			/* overhead/util/lib/vclose.c */
+extern int GetRetPath(char *FName, char **pBuff);		/* authret.c */
+extern int GetAuthInfo(char *FName, char **pBuff);		/* authret.c */
 
 #ifdef AFS_ENV
 /* AFS-specific error codes */

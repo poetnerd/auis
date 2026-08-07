@@ -45,16 +45,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <hash.ih>
 
 #include <print.eh>
-static int ColorHash();
-static boolean ParseHexColor();
-static int insert();
-static long mystrtol16();
-static void normalize();
-static char * shove();
+static int ColorHash(char *key);
+static boolean ParseHexColor(char *colbuffer, double *rval, double *gval, double *bval);
+static int insert(char *src, char *c);
+static long mystrtol16(char *p, char **pp);
+static void normalize(char *s);
+static char * shove(char *dest, char *search, char *src);
 
-extern char *XBaseDir();
+extern char *XBaseDir(char *str);
 
-static void SetPrinterType();
+static void SetPrinterType(char *printertype);
 
 /* The following defaults are used by the print software */
 #define print_INDEXTROFF 42424 /*   produce troff index */

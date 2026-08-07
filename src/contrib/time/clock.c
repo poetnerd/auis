@@ -39,8 +39,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <environ.ih>
 #include <fontdesc.ih>
 #include <clock.eh>
-static long SanelyReturnReadError();
-static void UpdateTime();
+static long SanelyReturnReadError(struct clock *self, FILE *fp, long id, long code);
+static void UpdateTime(struct clock *self);
 
 /* Defined constants and macros */
 #define MAX_LINE_LENGTH 70  /* can't be less than 6 */
@@ -58,8 +58,8 @@ static void UpdateTime();
 /* External declarations */
 
 /* Forward Declarations */
-static void WriteLine();
-static char *GlomStrings(), *ReadLine();
+static void WriteLine(FILE *f, char *l);
+static char *GlomStrings(char *s, char *t), *ReadLine(FILE *f);
 
 /* Global variables */
 

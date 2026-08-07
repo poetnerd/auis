@@ -42,13 +42,13 @@ char *figoplin_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 #include <figoplin.eh>
 static int FindLineHit();
 static void MoveHandle();
-static void PartialSketch();
-static void RegularizePolygon();
+static void PartialSketch(struct figoplin *self, struct figview *v, long ptref);
+static void RegularizePolygon(struct figoplin *self, long endx, long endy);
 
 #define TWOPI (6.28318530718)
 #define ClearOldPoints(self)  ((((self)->orpts) ? (free((self)->orpts), 1) : 0), ((self)->orpts) = NULL)
 
-static void SetNumPts();
+static void SetNumPts(struct figoplin *self, long num);
 
 static struct point *ptemp;
 static int ptemp_size;

@@ -75,35 +75,38 @@
 #include <view.ih>
 #include <viewref.ih>
 
+struct entityMapping;
+enum entityCode;
+
 /* So that we can feedback. Ick. */
 #include <message.ih>
 #include <htmlview.ih>
 #include <html.eh>
-static void PutsRange();
-static void addVars();
-static struct entityElement* entityPeek();
-static int fixStyles();
-static char* getHTML();
-static void maybeDisplay();
-static int newpar();
-static void storeVar();
-static struct entityElement* withinEntityClass();
-static void writeHeader();
+static void PutsRange(struct html *self, char *p, FILE *fp, char *ep);
+static void addVars(struct style *style, char *vars);
+static struct entityElement* entityPeek(struct html *self);
+static int fixStyles(long rock, struct text *self, long pos, struct environment *curenv);
+static char* getHTML(struct style *style);
+static void maybeDisplay(struct html *self, long *pos, char *buf, long *inlen);
+static int newpar(struct html *self, struct entityMapping *eMapping, long pos);
+static void storeVar(struct style *style, char *key, char *value);
+static struct entityElement* withinEntityClass(struct html *self, enum entityCode code);
+static void writeHeader(struct html *self, FILE *file);
 
 #define NEED_STRING_PROTO
 
 extern char versionString[];
 
-static void ChangeTitle();
-static void ChangeIndexable();
-static struct entityMapping* getEntityMapping();
-static struct entityElement* pushEntity();
-static void popEntity();
-static struct entityElement* withinEntity();
-static void closeEntity();
-static char* outputNewlines();
-static void hrule();
-static char* findLocalFile();
+static void ChangeTitle(struct html *self, struct entityElement *ep, char *buf, long len);
+static void ChangeIndexable(struct html *self, struct entityElement *ep, char *buf, long len);
+static struct entityMapping* getEntityMapping(char *string);
+static struct entityElement* pushEntity(struct html *self, long *pos, struct entityMapping *em, char *name, char *vars, int force);
+static void popEntity(struct html *self);
+static struct entityElement* withinEntity(struct html *self, enum entityCode code);
+static void closeEntity(struct html *self, struct entityElement *ep, long *pos, int force);
+static char* outputNewlines(int newlines, int parImplied, int brImplied, char *outp);
+static void hrule(struct html *self, long *pos);
+static char* findLocalFile(char *path, char *relativeRoot);
 int html_StyleToCodes(struct style *style);
 
 

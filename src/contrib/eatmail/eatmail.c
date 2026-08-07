@@ -47,11 +47,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <pwd.h>
 #include <stdlib.h>
 static int CheckMailrcHold();
-static int SetHoldFromFile();
-static int lock();
-static int rmlock();
+static int SetHoldFromFile(char *fname, int *holdP);
+static int lock(char *file, char *lockedFile, int *lockedFDp);
+static int rmlock(char name[], int lockFD);
 
-static int IsNewFrom();
+static int IsNewFrom(char *line);
 
 extern int CheckAMSConfiguration();  /* overhead/mail/lib/mailconf.c */
 int ConvertIncomingMail(char *MailSpoolFile, char *MailDir, int *FilesReadIn);

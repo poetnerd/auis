@@ -66,15 +66,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 
 #include <layout.ih>
 #include <layoutv.eh>
-static void DestroySubviews();
-static void DrawRubberBox();
+static void DestroySubviews(struct layoutview *self);
+static void DrawRubberBox(struct layoutview *self);
 static struct component * FindContainingComponent();
-static char * GetClassName();
-static void InitComponent();
-static void InitializeGraphic();
-static void PrintComponents();
-static void SetAuthoringMask();
-static void SetRubberBox();
+static char * GetClassName(struct layoutview *self, struct dataobject *object);
+static void InitComponent(struct layoutview *self);
+static void InitializeGraphic(struct layoutview *self);
+static void PrintComponents(struct layoutview *self, FILE *f, char *processor, char *finalFormat, struct component *c, int saveno);
+static void SetAuthoringMask(struct layoutview *self);
+static void SetRubberBox(struct layoutview *self, long x, long y);
 static void Update();
 
 static char layout_debug=0;

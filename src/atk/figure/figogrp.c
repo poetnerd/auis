@@ -37,9 +37,9 @@ char *figogrp_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 #include <proctbl.ih>
 #include <bind.ih>
 #include <figogrp.eh>
-static void MoveHandleCon();
-static void MoveHandleNocon();
-static boolean ReconfigureChild();
+static void MoveHandleCon(struct figogrp *self, long x, long y, long ptref);
+static void MoveHandleNocon(struct figogrp *self, long x, long y, long ptref);
+static boolean ReconfigureChild(struct figobj *o, long ref, struct figure *v, struct figogrp *self);
 
 boolean figogrp__InitializeObject(struct classheader *ClassID, struct figogrp *self)
 {

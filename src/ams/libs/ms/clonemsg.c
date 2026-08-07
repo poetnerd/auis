@@ -35,22 +35,22 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <andrewos.h>                  /* sys/time.h */
 #include <stdlib.h>
-extern int AppendMessageToMSDir();
-extern int CacheDirectoryForClosing();
-extern int CloseMSDir();
-extern int CopyMessageBody();
-extern int FreeMessage();
-extern int GetSnapshotByID();
-extern int GetSnapshotByNumber();
-extern int IsMessageAlreadyThere();
-extern int ParseMessageFromRawBody();
-extern int ReadOrFindMSDir();
-extern int ReadRawFile();
-extern int RewriteSnapshotInDirectory();
+extern int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int CopyMessageBody(struct MS_Directory *SourceDir, struct MS_Directory *DestDir, char *id, long timetoset);
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int GetSnapshotByID(struct MS_Directory *Dir, char *id, int *msgnum, char *snapshot);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
+extern int IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
+extern int RewriteSnapshotInDirectory(struct MS_Directory *Dir, int num, char *snapshot);
 extern int SetChainField(struct MS_Message *Msg, struct MS_Directory *Dir, Boolean PlanningHeadWrite);
-extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
+extern unsigned long conv64tolong(char *xnum);  /* overhead/mail/lib/genid.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
 
 extern FILE    *fopen();
 

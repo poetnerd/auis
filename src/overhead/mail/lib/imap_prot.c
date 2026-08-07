@@ -44,30 +44,33 @@
 
 #include <tlscon.h>
 #include <imap_prot.h>
-static int imap_canned_readbytes();
-static int imap_canned_readline();
-static void imap_cb_capability();
-static void imap_cb_examine();
-static void imap_cb_list();
-static void imap_cb_search();
-static void imap_check_unsolicited();
-static int imap_expand_seqset();
-static int imap_growuidarr();
-static void imap_linebuf_free();
-static int imap_linebuf_read();
-static int imap_next_token();
-static void imap_nexttag();
-static char * imap_parse_addrlist();
-static int imap_parse_envelope();
+
+struct imap_linebuf;
+struct imap_token;
+static int imap_canned_readbytes(struct imapconn *conn, char *buf, int n);
+static int imap_canned_readline(struct imapconn *conn, char **linep);
+static void imap_cb_capability(struct imapconn *conn, const char *line, void *rockp);
+static void imap_cb_examine(struct imapconn *conn, const char *line, void *rockp);
+static void imap_cb_list(struct imapconn *conn, const char *line, void *rockp);
+static void imap_cb_search(struct imapconn *conn, const char *line, void *rockp);
+static void imap_check_unsolicited(struct imapconn *conn, const char *line);
+static int imap_expand_seqset(const char *s, unsigned long **arr, long *count, long *cap);
+static int imap_growuidarr(unsigned long **arr, long *cap, long need);
+static void imap_linebuf_free(struct imap_linebuf *lb);
+static int imap_linebuf_read(struct imapconn *conn, struct imap_linebuf *lb);
+static int imap_next_token(struct imapconn *conn, struct imap_linebuf *lb, struct imap_token *tok);
+static void imap_nexttag(struct imapconn *conn, char *tagbuf, size_t tagbufsize);
+static char * imap_parse_addrlist(struct imapconn *conn, struct imap_linebuf *lb);
+static int imap_parse_envelope(struct imapconn *conn, struct imap_linebuf *lb, struct imap_envelope *env);
 static void imap_quote();
-static void imap_setcap();
+static void imap_setcap(struct imapconn *conn, const char *rawcaplist);
 static void imap_seterr(struct imapconn *conn, const char *fmt, ...);
-static char * imap_strdup();
-static char * imap_tok_to_str();
-static void imap_token_free();
-static void imap_trace();
-static int imap_uidarr_append();
-static int imap_ulong_cmp();
+static char * imap_strdup(const char *s);
+static char * imap_tok_to_str(struct imap_token *tok);
+static void imap_token_free(struct imap_token *t);
+static void imap_trace(const char *dir, const char *text);
+static int imap_uidarr_append(unsigned long **arr, long *count, long *cap, unsigned long v);
+static int imap_ulong_cmp(const void *a, const void *b);
 
 #define IMAP_TAG_SIZE 16
 #define IMAP_CAPBUF_SIZE 4096

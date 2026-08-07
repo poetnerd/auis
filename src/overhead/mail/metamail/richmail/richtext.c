@@ -23,26 +23,26 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 #include <string.h>
 #include <unistd.h>
 #include <termcap.h>
-static void FPUTS();
+static void FPUTS(unsigned char *s, FILE *fp);
 static void FinalizeTerminal();
 static void FlushOut();
 static void InitGlobals();
 static void InitSignals();
 static void MakeWorkingMargins();
 static void Pause();
-static int calc_column();
-static void cleanup();
-static int folding_point();
-static void fputsmovingright();
-static int immediate_controlputc();
+static int calc_column(struct charsetmember *buf, int pos);
+static void cleanup(int signum);
+static int folding_point(struct charsetmember *buf, int pos);
+static void fputsmovingright(struct charsetmember *s, FILE *fp);
+static int immediate_controlputc(int c);
 static void nomemabort();
-static void outputc();
-static void outputstr();
-static void realoutputc();
+static void outputc(RCHAR c);
+static void outputstr(char *s);
+static void realoutputc(struct charsetmember c, int alreadyformatted);
 static void ResetTerminalCodes();
 
 /* Defined later in this same file, used above their definitions. */
-extern int richtext_main(), controloutput();
+extern int richtext_main(int argc, char **argv), controloutput(char *s, int immediate);
 
 extern char *getenv();
 #ifdef AMIGA
@@ -53,7 +53,7 @@ extern char *strchr();
 unsigned _stklen=16384;	/* Increase stack size under MS-DOS */
 #endif
 
-int iso2022_fputc ();
+int iso2022_fputc(int ch, FILE *file);
 
 /*
  * ########################################################################
@@ -68,7 +68,7 @@ static int linepos = 0, inspace = 0, leftmargin = 0, rightmargin, biggertext=0;
 static int workingleft = 0, workingright, inexcerpt = 0, insignature = 0;
 static int standout=0, underline=0, bold=0;
 static int termcolumns=80, termrows=23;
-int controlputc();
+int controlputc(int c);
 
 /* A common problem, in justifying text, is figuring out how to format a 
    line when part of it wants to be left-justified, part right-justified, 

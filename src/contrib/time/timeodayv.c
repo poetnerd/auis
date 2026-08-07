@@ -42,8 +42,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <fontdesc.ih>
 #include <proctbl.ih>
 #include <util.h>
-static void MenuSetFormat();
-static void Redraw();
+static void MenuSetFormat(struct timeodayview *self, char *format);
+static void Redraw(struct timeodayview *self);
 
 /* Defined constants and macros */
 #define FUDGEFACTOR 1.1

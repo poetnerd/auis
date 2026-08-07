@@ -35,7 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h> /* sys/file.h */
 #include <mailconf.h>
 #include <stdlib.h>
-extern int GetCellFromFileName();  /* overhead/util/lib/thiscell.c */
+extern int GetCellFromFileName(char *FileName, char *Buf, int size);  /* overhead/util/lib/thiscell.c */
 extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
 extern int ResolveTildes(char *old, char **new, char *domain);
 
@@ -43,7 +43,7 @@ extern char home[], *getprofile(), MyMailDomain[];
 
 char *GetPersonalMailbox() {
     static char Mailbox[1+MAXPATHLEN] = "";
-    char *newstr, *CheckAMSMBName();
+    char *newstr, *CheckAMSMBName(char *someDomain);
 
     if (Mailbox[0] == '\0') {
 	if ((newstr = getprofile("mailboxdir")) != NULL) {
@@ -66,7 +66,7 @@ char *GetPersonalMailbox() {
 
 int GetAssocMailbox(char *buf)
 {/* Overwrite the given name with the Mailbox directory that should be associated with it according to cellular conventions. */
-    char FileCell[200], *s, *mn, *CheckAMSMBName();
+    char FileCell[200], *s, *mn, *CheckAMSMBName(char *someDomain);
 
     s = strrchr(buf, '/');
     if (!s) AMS_RETURN_ERRCODE(EMSNOPARENT, EIN_INDEX, EVIA_CHECKMAILBOXES);

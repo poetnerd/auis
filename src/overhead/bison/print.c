@@ -41,12 +41,12 @@ extern int final_state;
 
 extern void conflict_log();
 extern void verbose_conflict_log();
-extern void print_reductions();
+extern void print_reductions(int state);
 
-void print_token();
-void print_state();
-void print_core();
-void print_actions();
+void print_token(int extnum, int token);
+void print_state(int state);
+void print_core(int state);
+void print_actions(int state);
 void print_grammar();
 
 void

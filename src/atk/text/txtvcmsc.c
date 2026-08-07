@@ -47,8 +47,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <textv.eh>
 
 extern void textview_InsertFile();	/* defined in txtvcmod.c */
-extern boolean ConfirmReadOnly();	/* defined in txtvcmod.c */
-extern boolean textview_objecttest();	/* defined in txtvcmod.c */
+extern boolean ConfirmReadOnly(struct textview *self);	/* defined in txtvcmod.c */
+extern boolean textview_objecttest(struct textview *self, char *name, char *desiredname);	/* defined in txtvcmod.c */
 
 #ifdef CONVERSIONERROR
 void textview_PrintFile(struct textview *self)

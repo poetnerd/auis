@@ -42,8 +42,8 @@ of the author */
 #include <page.eh>
 #include <dataobj.ih>
 #include <cel.ih>
-static struct page_switchee * FindSwitchee();
-static boolean SetSwitchee();
+static struct page_switchee * FindSwitchee(struct page *self, struct dataobject *d, long which);
+static boolean SetSwitchee(struct page *self, struct page_switchee *sw);
 
 #define page_BYDATAOBJECT -10
 

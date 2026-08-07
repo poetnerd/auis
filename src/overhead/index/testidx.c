@@ -38,7 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 
 #include "index.h"
-static int listerproc();
+static int listerproc(struct Index *ai, struct indexComponent *ac, char *arock);
 
 static int listerproc(struct Index *ai, struct indexComponent *ac, char *arock)
 {

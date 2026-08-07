@@ -38,8 +38,8 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 
 #include "srctext.ih"
 #include "asmtext.eh"
-static void addBangComment();
-static void setReindentFilterName();
+static void addBangComment(struct asmtext *self, char *ch);
+static void setReindentFilterName(struct asmtext *self, char *name);
 
 static Dict *words[TABLESIZE];
 

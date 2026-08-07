@@ -87,7 +87,7 @@ static char *TGNCopyright = "Copyright (C) 1991 Tim Northrup";
 
 #define PCX_MAGIC 0x0a			/* first byte in a PCX image file */
 
-static void PCX_LoadImage();		/* Routine to load a PCX file */
+static void PCX_LoadImage(FILE *f, int bytes_per_row, struct pcx *pcx, int rows);		/* Routine to load a PCX file */
 
 
 /*

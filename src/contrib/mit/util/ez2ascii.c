@@ -52,7 +52,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <sys/file.h>
 
 #include <unscribe.h>
-static int ez2a_doit();
+static int ez2a_doit(FILE *infile, FILE *outfile);
 
 static int ez2a_doit(FILE *infile, FILE *outfile)
 {

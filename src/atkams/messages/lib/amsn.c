@@ -47,49 +47,49 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 extern char ProgramName[];	/* Icky-poo! */
 
 /* same-.do (stubs.o) cross-file references -- no header, defined in stubs.c */
-extern int ChooseFromList(), GenericCompoundAction(), GetBooleanFromUser(),
-	GetStringFromUser(), ReportError(), ReportSuccess(), SubtleDialogs(),
-	TildeResolve(), WriteOutUserEnvironment(), SetProgramVersion();
+extern int ChooseFromList(char **QVec, int def), GenericCompoundAction(struct view *v, char *prefix, char *orgcmds), GetBooleanFromUser(char *prompt, int defaultans),
+	GetStringFromUser(char *prompt, char *buf, int len, int IsPassword), ReportError(char *text, int level, int Decode), ReportSuccess(char *text), SubtleDialogs(int Really),
+	TildeResolve(char *old, char *new), WriteOutUserEnvironment(FILE *fp, Boolean IsAboutMessages), SetProgramVersion();
 
 /* overhead/mail/lib -- no header anywhere */
 extern int CheckAMSConfiguration();
 
 /* ams/libs/cui -- no header anywhere declares the CUI_* function family
    (only the CUI_* global variables above are declared locally elsewhere) */
-extern int CUI_BuildNickName(), CUI_CheckMailboxes(), CUI_CloneMessage(),
-	CUI_CreateNewMessageDirectory(), CUI_DeleteMessage(),
-	CUI_DirectoriesToPurge(), CUI_DoesDirNeedPurging(),
-	CUI_EndConversation(), CUI_GenLocalTmpFileName(), CUI_GenTmpFileName(),
-	CUI_GetAMSID(), CUI_GetCuid(), CUI_GetFileFromVice(),
-	CUI_GetHeaderContents(), CUI_GetSnapshotFromCUID(),
-	CUI_HandleMissingFolder(), CUI_MarkAsRead(), CUI_MarkAsUnseen(),
-	CUI_NameReplyFile(), CUI_PrefetchMessage(),
-	CUI_PrintBodyFromCUIDWithFlags(), CUI_PrintUpdates(),
-	CUI_ProcessMessageAttributes(), CUI_PurgeDeletions(),
-	CUI_PurgeMarkedDirectories(), CUI_ReallyGetBodyToLocalFile(),
-	CUI_RemoveDirectory(), CUI_RenameDir(), CUI_ReportAmbig(),
-	CUI_ResendMessage(), CUI_RewriteHeaderLine(),
-	CUI_RewriteHeaderLineInternal(), CUI_SetClientVersion(),
-	CUI_SetPrinter(), CUI_StoreFileToVice(), CUI_SubmitMessage(),
-	CUI_UndeleteMessage();
+extern int CUI_BuildNickName(char *FullName, char *NickName), CUI_CheckMailboxes(char *ForWhat), CUI_CloneMessage(int cuid, char *OrigDirName, int Code),
+	CUI_CreateNewMessageDirectory(), CUI_DeleteMessage(int cuid),
+	CUI_DirectoriesToPurge(), CUI_DoesDirNeedPurging(char *Dname),
+	CUI_EndConversation(), CUI_GenLocalTmpFileName(char *nmbuf), CUI_GenTmpFileName(char *nmbuf),
+	CUI_GetAMSID(int cuid, char **id, char **dir), CUI_GetCuid(char *amsid, char *dirname, int *IsDup), CUI_GetFileFromVice(char *LocalFile, char *ViceFile),
+	CUI_GetHeaderContents(int cuid, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim), CUI_GetSnapshotFromCUID(int cuid, char *SnapshotBuf),
+	CUI_HandleMissingFolder(char *OldName), CUI_MarkAsRead(int cuid), CUI_MarkAsUnseen(int cuid),
+	CUI_NameReplyFile(int cuid, int code, char *FileName), CUI_PrefetchMessage(int cuid, int ReallyNext),
+	CUI_PrintBodyFromCUIDWithFlags(int cuid, int flags, char *printer), CUI_PrintUpdates(char *dname, char *nickname),
+	CUI_ProcessMessageAttributes(int cuid, char *Snapshot), CUI_PurgeDeletions(char *arg),
+	CUI_PurgeMarkedDirectories(Boolean Ask, Boolean OfferQuit), CUI_ReallyGetBodyToLocalFile(int cuid, char *FileName, int *ShouldDelete, int MayFudge),
+	CUI_RemoveDirectory(char *DirName), CUI_RenameDir(char *old, char *new), CUI_ReportAmbig(char *name, char *atype),
+	CUI_ResendMessage(int cuid, char *Tolist), CUI_RewriteHeaderLine(char *text, char **newtext),
+	CUI_RewriteHeaderLineInternal(char *text, char **newtext, int maxdealiases, int *numfound, int *externalct, int *formatct, int *stripct, int *trustct), CUI_SetClientVersion(char *Vers),
+	CUI_SetPrinter(char *printername), CUI_StoreFileToVice(char *LocalFile, char *ViceFile), CUI_SubmitMessage(char *InFile, int DeliveryOpts),
+	CUI_UndeleteMessage(int cuid);
 /* these three are long-returning at their real definitions -- sourced from
    ams/libs/cui/cuilib.c, not guessed (this class's own .ch methods already
    declare their own amsn__CUI_* wrappers `long`, matching) */
-extern long CUI_DisambiguateDir(), CUI_GetHeaders(), CUI_Initialize();
+extern long CUI_DisambiguateDir(char *shortname, char **longname), CUI_GetHeaders(), CUI_Initialize(int (*TimerFunction)(), char *rock);
 
 /* ams/libs/ms -- no header anywhere declares the MS_* function family
    (ams/libs/hdrs/ms.h mentions FreeMessage only in a comment) */
-extern int MS_AppendFileToFolder(), MS_CheckAuthentication(), MS_DebugMode(),
-	MS_DisambiguateFile(), MS_DomainHandlesFormatting(),
-	MS_FastUpdateState(), MS_GetNewMessageCount(), MS_GetNthSnapshot(),
-	MS_GetSearchPathEntry(), MS_GetSubscriptionEntry(),
-	MS_NameChangedMapFile(), MS_NameSubscriptionMapFile(), MS_ParseDate(),
-	MS_PrefetchMessage(), MS_SetAssociatedTime(), MS_SetCleanupZombies(),
-	MS_SetSubscriptionEntry(), MS_UpdateState();
+extern int MS_AppendFileToFolder(char *FileName, char *FolderName), MS_CheckAuthentication(int *Authenticated), MS_DebugMode(int level, int snap, int malloc),
+	MS_DisambiguateFile(char *source, char *target, short AccessCode), MS_DomainHandlesFormatting(char *domname, int *codeP),
+	MS_FastUpdateState(), MS_GetNewMessageCount(char *FullDirName, int *numnew, int *numtotal, char *LastOldDate, int InsistOnFetch), MS_GetNthSnapshot(char *DirName, int n, char *SnapshotBuf),
+	MS_GetSearchPathEntry(int which, char *buf, int lim), MS_GetSubscriptionEntry(char *FullName, char *NickName, int *status),
+	MS_NameChangedMapFile(char *MapFile, int MailOnly, int ListAll, int *NumChanged, int *NumUnavailable, int *NumMissingFolders, int *NumSlowpokes, int *NumFastFellas), MS_NameSubscriptionMapFile(char *Root, char *MapFile), MS_ParseDate(char *indate, int *year, int *month, int *day, int *hour, int *min, int *sec, int *wday, long *gtm),
+	MS_PrefetchMessage(char *DirName, char *id, int GetNext), MS_SetAssociatedTime(char *FullName, char *newvalue), MS_SetCleanupZombies(),
+	MS_SetSubscriptionEntry(char *FullName, char *NickName, int status), MS_UpdateState();
 /* these three are long-returning at their real definitions */
-extern long MS_GetDirInfo(), MS_MatchFolderName(), MS_UnlinkFile();
+extern long MS_GetDirInfo(char *DirName, int *ProtCode, int *MsgCount), MS_MatchFolderName(char *pat, char *filename), MS_UnlinkFile(char *FileName);
 
-extern char *CUI_MachineName, CUI_MailDomain[], *CUI_Rock, CUI_VersionString[], *CUI_WhoIAm, *ap_Shorten(), *DescribeProt(), *ams_genid();
+extern char *CUI_MachineName, CUI_MailDomain[], *CUI_Rock, CUI_VersionString[], *CUI_WhoIAm, *ap_Shorten(char *pathname), *DescribeProt(int ProtCode), *ams_genid(int IsFileName);
 
 extern long CUI_DeliveryType, CUI_LastCallFinished, CUI_OnSameHost, CUI_SnapIsRunning, CUI_UseAmsDelivery, CUI_UseNameSep, mserrcode;
 

@@ -40,7 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-extern int Stack_MapHashPlusAsAppropriate();
+extern int Stack_MapHashPlusAsAppropriate(char *s);
 
 #define STACKSIZE 1000
 #define MAXSTACKS 2

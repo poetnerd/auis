@@ -33,7 +33,7 @@
 
 #include <global.h>
 #include <gentlex.h>
-static void usage();
+static void usage(char **args);
 
 
 char *Prefix = NULL;

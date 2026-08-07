@@ -50,12 +50,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <sbuttonv.ih>
 
 #include <ctype.h>
-static void CarveFonts();
-static void DrawButton();
-static void DrawLabel();
-static void DrawValue();
-static void getsizes();
-static void sliderV_HandleStyleString();
+static void CarveFonts(struct sliderV *self);
+static void DrawButton(struct sliderV *self, long x, long y, long width, long height, int pct, boolean drawborder);
+static void DrawLabel(struct sliderV *self);
+static void DrawValue(struct sliderV *self);
+static void getsizes(struct sliderV *self);
+static void sliderV_HandleStyleString(struct sliderV *self, char *s);
 
 static struct atomlist *  AL_bodyfont;
 static struct atomlist *  AL_bodyfont_size;

@@ -40,7 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "tiffio.h"
 #include "tiffcompat.h"
 #include "prototypes.h"
-static int checkcmap();
+static int checkcmap(int n, u_short *r, u_short *g, u_short *b);
 static int gtStripContig();
 static int gtStripSeparate();
 static int gtTileContig();
@@ -52,7 +52,7 @@ static void put2bitcmaptile();
 static void put4bitbwtile();
 static void put4bitcmaptile();
 static void put8bitcmaptile();
-static void putRGBContigYCbCrClump();
+static void putRGBContigYCbCrClump(u_long *cp, u_char *pp, int cw, int ch, u_long w, int n, int fromskew, int toskew);
 static void putRGBcontig16bittile();
 static void putRGBcontig8bittile();
 static void putRGBseparate16bittile();
@@ -80,7 +80,7 @@ static	float *refBlackWhite;
 static	u_long **BWmap;
 static	u_long **PALmap;
 
-static	int gt();
+static	int gt(TIFF *tif, int w, int h, u_long *raster);
 int makebwmap(RGBvalue *Map);
 int makecmap(u_short *rmap, u_short *gmap, u_short *bmap);
 
@@ -149,10 +149,10 @@ static int checkcmap(int n, u_short *r, u_short *g, u_short *b)
 	return (8);
 }
 
-static	int gtTileContig();
-static	int gtTileSeparate();
-static	int gtStripContig();
-static	int gtStripSeparate();
+static	int gtTileContig(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long w);
+static	int gtTileSeparate(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long w);
+static	int gtStripContig(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long w);
+static	int gtStripSeparate(TIFF *tif, u_long *raster, RGBvalue *Map, u_long h, u_long w);
 static	void initYCbCrConversion();
 
 static int gt(TIFF *tif, int w, int h, u_long *raster)

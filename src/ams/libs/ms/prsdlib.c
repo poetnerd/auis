@@ -71,7 +71,7 @@ typedef enum {
 	FOLDUP, FOLDDOWN} 
 FOLDMODE;
 
-char *fold(),*foldup(),*folddown();
+char *fold(char *out, char *in, FOLDMODE whichway),*foldup(char *out, char *in),*folddown(char *out, char *in);
 
 /* end of fold.h */
 
@@ -156,7 +156,7 @@ char * folddown(char *out, char *in)
  */
 
 char _argbreak;
-char *skipto();
+char *skipto(unsigned char *string, unsigned char *charset);
 
 char * nxtarg(char **q, char *brk)
 {

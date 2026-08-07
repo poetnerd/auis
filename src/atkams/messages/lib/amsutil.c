@@ -44,16 +44,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <ams.h> /* Could have been cui.h, but not yet necessary here */
 #include <util.h>
 
-extern char *StripWhiteEnds(), *convlongto64(), *cvEng();
-extern char **BreakDownResourcesIntoArray();
-extern FILE *dbg_fopen();
-extern int dbg_close(), dbg_fclose(), dbg_vclose(), dbg_vfclose();
-extern int fdplumb_SpillGutsToFile();
+extern char *StripWhiteEnds(char *string), *convlongto64(int num, int pad), *cvEng(int foo, int Capitalized, int MaxToSpellOut);
+extern char **BreakDownResourcesIntoArray(char *reslist);
+extern FILE *dbg_fopen(char *path, char *type);
+extern int dbg_close(int fd), dbg_fclose(FILE *fp), dbg_vclose(int fd), dbg_vfclose(FILE *fp);
+extern int fdplumb_SpillGutsToFile(FILE *fp, int ExtraNewLines);
 /* ams/libs/shr -- no header declares these anywhere in the tree */
-extern int LowerStringInPlace(), ReduceWhiteSpace(), lc2strncmp();
-extern int BreakDownContentTypeField();
+extern int LowerStringInPlace(char *string, int len), ReduceWhiteSpace(char *string), lc2strncmp(char *s1, char *s2, int len);
+extern int BreakDownContentTypeField(char *HeadBuf, char *fmt, int fmtsz, char *vers, int verssz, char *resources, int resourcessz);
 extern int GetBinaryOptions();	/* same-file forward reference, defined below */
-extern long conv64tolong();
+extern long conv64tolong(char *xnum);
 
 static struct OptionState MyOpts;
 static char **KeyHeaders = NULL;

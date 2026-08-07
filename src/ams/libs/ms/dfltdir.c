@@ -32,9 +32,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <ms.h>
-extern int MS_ReconstructDirectory();
-extern int NonfatalBizarreError();
-extern int ReadOrFindMSDir();
+extern int MS_ReconstructDirectory(char *DirName, int *NumGood, int *NumBad, int TrustTimeStamp);
+extern int NonfatalBizarreError(char *text);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
 
 int FindDefaultDir(char *Root, char *Name)
 {

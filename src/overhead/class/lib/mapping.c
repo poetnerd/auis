@@ -59,9 +59,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <andrewos.h>
 #include <mapping.h>
-static char * ConstructLoadString();
-static struct MapEntryStruct * CreateMapEntry();
-static int HashName();
+static char * ConstructLoadString(struct MapEntryStruct *entry);
+static struct MapEntryStruct * CreateMapEntry(char *name, char *key, class_VersionNumberType version, int pathindex, char *data);
+static int HashName(char *name);
 
 
 /* 

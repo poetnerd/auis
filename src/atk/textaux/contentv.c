@@ -63,19 +63,21 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <tindex.ih>
 
 #include "contentv.eh"
-static int LocateInView();
-static int check();
-static void contentv_MakeContents();
-static void contentv_PreviewCmd();
-static void contentv_PrintCmd();
-static void contentv_doprint();
-static void denumerate();
-static void destroy();
-static void enumerate();
-static boolean findframe();
-static struct frame * getframe();
-static void locate();
-static void reinit();
+
+struct contentv_cntr;
+static int LocateInView(struct view *v1, struct view *v2, struct view *v3, long dat);
+static int check(struct frame *fr, struct contentv_cntr *rock);
+static void contentv_MakeContents(struct textview *self);
+static void contentv_PreviewCmd(struct contentv *self);
+static void contentv_PrintCmd(struct contentv *self);
+static void contentv_doprint(struct contentv *self, char *type);
+static void denumerate(struct contentv *self, long value);
+static void destroy(struct contentv *self, long value);
+static void enumerate(struct contentv *self, long value);
+static boolean findframe(struct frame *fr, struct buffer *buf);
+static struct frame * getframe(struct view *vw);
+static void locate(struct contentv *self, long value);
+static void reinit(struct contentv *self, long value);
 static struct menulist *contentvMenus;
 static struct keymap *contentvKeyMap;
 static int ScrollTop = FALSE;

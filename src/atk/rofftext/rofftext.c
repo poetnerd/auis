@@ -59,33 +59,33 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ro
 #include <roffcmds.h>
 #include <roffstyl.h>
 #include <roffutil.h>
-static int CreateDefaultCommands();
-static int DoCommand();
-static long ReadFormatted();
-static int Setmode();
-static int dohmove();
-static int g();
-static int getname();
-static char * getregister();
-static int getsize();
-static int getsym();
-static int getwidth();
-static boolean istroff();
-static int munch();
-static int munchmove();
-static int setbase();
-static int setfont();
-static int special();
-static int tclose();
+static int CreateDefaultCommands(struct rofftext *self);
+static int DoCommand(struct rofftext *self, Trickle t, char *name, boolean br);
+static long ReadFormatted(struct rofftext *self, FILE *file, long id);
+static int Setmode(struct rofftext *self, int oldmode, int newmode);
+static int dohmove(struct rofftext *self, Trickle t);
+static int g(struct rofftext *self, Trickle t);
+static int getname(struct rofftext *self, Trickle t, char *name);
+static char * getregister(struct rofftext *self, Trickle t);
+static int getsize(struct rofftext *self, Trickle t);
+static int getsym(struct rofftext *self, Trickle t, char *str);
+static int getwidth(struct rofftext *self, Trickle t);
+static boolean istroff(FILE *fp);
+static int munch(struct rofftext *self, Trickle t);
+static int munchmove(struct rofftext *self, Trickle t);
+static int setbase(struct rofftext *self, int inc);
+static int setfont(struct rofftext *self, Trickle t);
+static int special(struct rofftext *self, Trickle t);
+static int tclose(struct rofftext *self, Trickle t);
 
 /* forward references: get (this file, defined below), and cross-file
    functions with no declaring header (roffstyl.c, num.c, roffchrs.c,
    roffcmds.c) */
-extern int get();
-extern int EndStyle(), BeginStyle();
+extern int get(struct rofftext *self, Trickle t);
+extern int EndStyle(struct rofftext *self, int ID), BeginStyle(struct rofftext *self, char *st);
 extern int EvalString();
-extern int InitChars();
-extern int InsertTbl();
+extern int InitChars(struct rofftext *self);
+extern int InsertTbl(struct rofftext *self, Trickle t);
 
 static int SCALE[8] =
 {    1, /* u, basic unit */

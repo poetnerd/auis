@@ -47,10 +47,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 /* #include <assert.h> */
 #include "prototypes.h"
 static int LZWCheckPredictor();
-static void horizontalAccumulate16();
-static void horizontalAccumulate8();
-static void horizontalDifference16();
-static void horizontalDifference8();
+static void horizontalAccumulate16(char *cp, int cc, int stride);
+static void horizontalAccumulate8(char *cp, int cc, int stride);
+static void horizontalDifference16(char *cp, int cc, int stride);
+static void horizontalDifference8(char *cp, int cc, int stride);
 
 /*
  * NB: The 5.0 spec describes a different algorithm than Aldus

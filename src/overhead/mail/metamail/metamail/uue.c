@@ -7,7 +7,7 @@
  */
 
 /* No header declares this; defined in the sibling file codes.c */
-extern int PendingBoundary();
+extern int PendingBoundary(char *s, char **Boundaries, int *BoundaryCt);
 
 int uueget(char *ptr, FILE *outfp, int n)
 {

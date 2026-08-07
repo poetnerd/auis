@@ -60,7 +60,9 @@ preprocessor. */
 #include <stdio.h>
 #undef label
 #include <util.h>
-extern int FoldedEQ();	/* overhead/util/lib/foldedeq.c; no header declares it anywhere in the tree */
+
+struct strTbl;
+extern int FoldedEQ(unsigned char *s1, unsigned char *s2);	/* overhead/util/lib/foldedeq.c; no header declares it anywhere in the tree */
 #include <ctype.h>
 #include <class.h>
 #include <message.ih>
@@ -99,12 +101,12 @@ extern int FoldedEQ();	/* overhead/util/lib/foldedeq.c; no header declares it an
 #include <buffer.ih>
 #include <frame.ih>
 #include <im.ih>
-static long CVFractionalPoints();
-static int ChopTree();
-static char * InitialWord();
+static long CVFractionalPoints(long amt, enum style_Unit unit);
+static int ChopTree(struct lpair *branch, struct classinfo *lpairInfo);
+static char * InitialWord(char *s);
 static long MapStringToVal();
 static char * MapValToString();
-static void UnpackStyle();
+static void UnpackStyle(struct lookzview *self);
 
 #if 0
 #define DEBUG(s) (printf s, fflush(stdout))
@@ -116,11 +118,11 @@ static void UnpackStyle();
 #define LEAVE(r)
 #endif
 
-extern int ULstrcmp();	/* case insensitive compare from libutil */
+extern int ULstrcmp(char *s1, char *s2);	/* case insensitive compare from libutil */
 
 #define NOMENUSTRING "<No Menu>"
 
-static void UpdateDocument(), AddStyle(), DeleteStyle();
+static void UpdateDocument(struct lookzview *self), AddStyle(struct lookzview *self), DeleteStyle(struct lookzview *self);
 
 static struct bind_Description MenuOptions[] = {
         /* Update Document must be the first entry.  See InitializeClass. */

@@ -73,18 +73,18 @@ END-SPECIFICATION  ************************************************************/
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-static int Decline_Property_Hits();
+static int Decline_Property_Hits(struct ziposymbol *self, zip_type_pane pane);
 static int Draw();
-static int Draw_Set_Name();
+static int Draw_Set_Name(struct ziposymbol *self, zip_type_pane pane, struct symbol_set *set, struct fontdesc *font);
 static int Draw_Symbol();
-static int Filter();
-static int Highlight_Set_Name();
-static int Highlight_Symbol();
-static int Identify_Symbol_Sets();
-static int Invert_Symbol();
-static int Open_File();
-static int Open_Symbol_Set_File();
-static int Show_Set_Symbols();
+static int Filter(const DIRENT_TYPE *entry);
+static int Highlight_Set_Name(struct ziposymbol *self, zip_type_pane pane, struct symbol_set *set);
+static int Highlight_Symbol(struct ziposymbol *self, struct symbol_set *set, struct symbol *symbol);
+static int Identify_Symbol_Sets(struct ziposymbol *self);
+static int Invert_Symbol(struct ziposymbol *self, struct symbol *symbol);
+static int Open_File(struct ziposymbol *self, struct symbol_set *set);
+static int Open_Symbol_Set_File(struct ziposymbol *self, struct symbol_set *set);
+static int Show_Set_Symbols(struct ziposymbol *self, zip_type_pane pane, struct symbol_set *set);
 
 static char				 *symbol_library_path = NULL;
 
@@ -121,24 +121,24 @@ static long				  symbol_sets_count;
 #define  OutstandingWidth		 (self->outstanding_width)
 #define  OutstandingHeight		 (self->outstanding_height)
 
-static struct symbol				 *Symbol_Set_Vector();
-static struct symbol_set			 *Symbol_Set();
-static char					 *Symbol_Algorithm(), *Pixel(), *Number(), *String(), *Skip_Colon();
+static struct symbol				 *Symbol_Set_Vector(struct ziposymbol *self, char *set_name);
+static struct symbol_set			 *Symbol_Set(struct ziposymbol *self, char *set_name);
+static char					 *Symbol_Algorithm(struct ziposymbol *self, zip_type_figure figure), *Pixel(struct ziposymbol *self, char *string, long *x, long *y, double M, double D, double XO, double YO, long x_factor, long y_factor), *Number(struct ziposymbol *self, char *string, long *n), *String(struct ziposymbol *self, char *string, char **s), *Skip_Colon(char *string);
 static enum view_MouseAction			  Accept_Property_Hit( struct ziposymbol *self, zip_type_pane pane, char c, enum view_MouseAction action, long x, long y, long clicks );
-static long					  Show_Symbol_Dialog();
+static long					  Show_Symbol_Dialog(struct ziposymbol *self, zip_type_pane pane);
 
 static int Draw();
 static int Draw_Symbol();
-static int Identify_Pathed_Symbol_Sets();
-static int Open_Symbol_Set_File();
-static int Open_File();
+static int Identify_Pathed_Symbol_Sets(struct ziposymbol *self, char *path);
+static int Open_Symbol_Set_File(struct ziposymbol *self, struct symbol_set *set);
+static int Open_File(struct ziposymbol *self, struct symbol_set *set);
 static int Identify_Paths();
-static int Draw_Set_Name();
-static long Show_Symbol_Dialog();
-static int Show_Set_Symbols();
-static int Highlight_Symbol();
-static int Invert_Symbol();
-static int Decline_Property_Hits();
+static int Draw_Set_Name(struct ziposymbol *self, zip_type_pane pane, struct symbol_set *set, struct fontdesc *font);
+static long Show_Symbol_Dialog(struct ziposymbol *self, zip_type_pane pane);
+static int Show_Set_Symbols(struct ziposymbol *self, zip_type_pane pane, struct symbol_set *set);
+static int Highlight_Symbol(struct ziposymbol *self, struct symbol_set *set, struct symbol *symbol);
+static int Invert_Symbol(struct ziposymbol *self, struct symbol *symbol);
+static int Decline_Property_Hits(struct ziposymbol *self, zip_type_pane pane);
 
 
 boolean ziposymbol__InitializeObject(struct classheader *classID, struct ziposymbol *self)

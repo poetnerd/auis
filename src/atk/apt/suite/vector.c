@@ -68,7 +68,7 @@ END-SPECIFICATION  ************************************************************/
 #include <stdio.h>
 #include <class.h>
 #include <vector.eh>
-static void ReallocData();
+static void ReallocData(struct vector *self);
 
 #define Data			(self->data)    
 #define InitialDataSize		(self->initial_vector_count)

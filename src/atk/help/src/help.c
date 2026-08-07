@@ -97,28 +97,28 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <helpsys.h>
 #include <help.h>
 #include <helpdb.ih>
-static char * AndyCopy();
-static char * CopyString();
+static char * AndyCopy(char *aproto, char *aresult);
+static char * CopyString(char *as);
 static boolean EnsurePanelListSize();
-static void Expander();
-static void ExpanderAux();
-static void FilterPanel();
-static char * FindEntryInDirs();
-static char * MapParens();
-static void Quit();
-static int ScanLine();
-static void SearchOverviews();
-static void SearchPrograms();
-static void SendComments();
-static void ShowChanges();
+static void Expander(struct Index *aindex, struct indexComponent *ac, struct help *self);
+static void ExpanderAux(char *dname);
+static void FilterPanel(struct help *self, long rock);
+static char * FindEntryInDirs(char *dirs[], char *entry, char *extension);
+static char * MapParens(char *s);
+static void Quit(struct help *self);
+static int ScanLine(FILE *afile, char *ae1, char *ae2);
+static void SearchOverviews(struct help *self);
+static void SearchPrograms(struct help *self);
+static void SendComments(struct help *self);
+static void ShowChanges(struct help *self);
 static int ShowFile();
-static void ShowTutorial();
-static void TextviewProc();
-static int mysystem();
-static void nono();
-static int panelCompare();
-static int safesystem();
-static char * sindex();
+static void ShowTutorial(struct help *self);
+static void TextviewProc(struct help *self, long rock);
+static int mysystem(char *acmd);
+static void nono(struct help *self);
+static int panelCompare(const void *v1, const void *v2);
+static int safesystem(char *acmd);
+static char * sindex(char *big, char *small);
 
 /*---------------------------------------------------------------------------*/
 /*				GLOBALS					     */
@@ -152,22 +152,22 @@ void (*help_frameSetPrinter)() = (void (*)())NULL;
 void (*help_poptPostWindow)() = (void (*)())NULL;
 #endif
 
-extern void help_aux_AddSearchDir();
-extern void help_aux_AddBookmark();
-extern void help_aux_ExitProc();
-extern void help_aux_Print();
-extern void help_aux_NewHelp();
+extern void help_aux_AddSearchDir(struct help *self);
+extern void help_aux_AddBookmark(struct help *self);
+extern void help_aux_ExitProc(struct help *self);
+extern void help_aux_Print(struct help *self);
+extern void help_aux_NewHelp(struct help *self, long type);
 
 extern void init_hlptextview();
 
-void SetupMenus();
-static void TogglePanels();
-static void ToggleOverviews();
-static void TogglePrograms();
-static void ToggleHistory();
-static void SortAndMakePanel();
-static char *AddToPanelList();
-static void RestorePanel();
+void SetupMenus(struct cache *c);
+static void TogglePanels(struct help *self, long rock);
+static void ToggleOverviews(struct help *self, long rock);
+static void TogglePrograms(struct help *self, long rock);
+static void ToggleHistory(struct help *self, long rock);
+static void SortAndMakePanel(struct panel *p);
+static char *AddToPanelList(char *s);
+static void RestorePanel(struct help *self);
 
 static int packedString[] = {037, 036, 0, 0};
 static int compressedString[] = {037, 0235, 0220};

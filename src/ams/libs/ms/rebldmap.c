@@ -37,12 +37,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 extern int DeSymLink();  /* overhead/util/lib/desym.c */
 extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
-extern int MS_RebuildOneSubscriptionMap();
+extern int MS_RebuildOneSubscriptionMap(char *PathElt);
 extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
-extern int SubsTreeWalk();
-extern int abspath();
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
+extern int SubsTreeWalk(FILE *outfile, char *dirname);
+extern int abspath(char *name, char *result);
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
 
 int MS_RebuildSubscriptionMaps() {
     int i = 0, code;

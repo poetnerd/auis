@@ -42,8 +42,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/hypl
 #include <graphic.ih>
 #include <observe.ih>
 #include <pshbttn.eh>
-static int htoin();
-static long pushbutton_SanelyReturnReadError();
+static int htoin(char *s, int n);
+static long pushbutton_SanelyReturnReadError(struct pushbutton *self, FILE *fp, long id, long code);
 
 /* Defined constants and macros */
 #define DS_VERSION 2 /* datastream version */
@@ -54,8 +54,8 @@ static long pushbutton_SanelyReturnReadError();
 /* External declarations */
 
 /* Forward Declarations */
-static void WriteLine();
-static char *GlomStrings(), *ReadLine(), *EncodeFont();
+static void WriteLine(FILE *f, char *l);
+static char *GlomStrings(char *s, char *t), *ReadLine(FILE *f), *EncodeFont(struct pushbutton *self);
 
 /* Global variables */
 static struct atom *pushbutton_trigger;

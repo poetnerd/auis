@@ -47,9 +47,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <observe.ih>
 #include <arbiter.ih>
 #include <cel.eh>
-static int SetInvisible();
-static int SetVisible();
-static int searchatt();
+static int SetInvisible(struct cel *self);
+static int SetVisible(struct cel *self);
+static int searchatt(struct cel *self, char *attname, long *len);
 
 #define VALUE 10
 static long viewID = 0;

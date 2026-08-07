@@ -37,7 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include "dict.ih"
 #include "ps.eh"
 #include "text.ih"
-static int check_for_title();
+static int check_for_title(struct ps *self, FILE *file);
 #define WIDTH 438
 #define HEIGHT 244
 

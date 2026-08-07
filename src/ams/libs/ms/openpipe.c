@@ -35,12 +35,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <mailconf.h>
-extern int NonfatalBizarreError();
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_dup2();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_pclose();  /* overhead/util/lib/fdplumb3.c */
+extern int NonfatalBizarreError(char *text);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_dup2(int oldfd, int newfd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_pclose(FILE *fp);  /* overhead/util/lib/fdplumb3.c */
 
-extern char *AndrewDir();
+extern char *AndrewDir(char *str);
 
 extern char *getenv();
 extern FILE *popen();

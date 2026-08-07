@@ -77,8 +77,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 
 /* same-directory (sendaux.o/sendmsg.o, linked into the same sendmsg.do)
    cross-file references -- no header */
-extern int EnvViewCt();		/* sendaux.c */
-extern int ProduceUnscribedVersion();	/* sendmsg.c */
+extern int EnvViewCt(struct environment *env);		/* sendaux.c */
+extern int ProduceUnscribedVersion(char *FileName, FILE *OutputFP);	/* sendmsg.c */
 
 int WriteOneFile(struct sendmessage *sendmessage, char *ViceFileName, Boolean OnVice, Boolean MayOverwrite, int Version, Boolean TrustDelivery, Boolean UseMultipartFormat, int *EightBitText)
 {

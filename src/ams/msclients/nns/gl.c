@@ -41,19 +41,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 
 /* overhead/util/lib/fdplumb.c's dbg_* wrapper family; overhead/util/hdrs/
    fdplumb.h #defines close/closedir to these but doesn't declare them. */
-extern int dbg_close(), dbg_closedir();
+extern int dbg_close(int fd), dbg_closedir(DIR *d);
 
 /* ams/libs/ms/msparse.c: no header in the tree declares it. */
-extern int MS_ParseDate();
+extern int MS_ParseDate(char *indate, int *year, int *month, int *day, int *hour, int *min, int *sec, int *wday, long *gtm);
 
-static int      GLAddEntries();
-static int      GLAddEntry();
-static int      GLGrowIfNecessary();
-static int      FindNewsgroupsAndMaybeTime();
-static void     GLDeleteRecentEntries();
-static void     GLMoveFailed();
-static void     GLSort();
-static void     GLSortAndComputeRefs();
+static int      GLAddEntries(GList_t *gl, char *dir, DIRENT_TYPE *dirent);
+static int      GLAddEntry(GList_t *gl, char *filename, char *folder, long time);
+static int      GLGrowIfNecessary(GList_t *gl);
+static int      FindNewsgroupsAndMaybeTime(int fd, char *groups, long *time, int *control);
+static void     GLDeleteRecentEntries(GList_t *gl, int num);
+static void     GLMoveFailed(char *dir, char *file);
+static void     GLSort(GListEntry_t *base, int num);
+static void     GLSortAndComputeRefs(GList_t *gl);
 
 void GLInit(GList_t *gl)
 {

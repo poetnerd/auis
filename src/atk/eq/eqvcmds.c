@@ -57,6 +57,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/eq/R
 #include <stdlib.h>
 #include <string.h>
 
+struct eqview_classinfo;
+
 #define MAXFILENAME 400
 
 FILE *popen();

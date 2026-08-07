@@ -59,10 +59,10 @@ static char * parsetbl();
 
 /* cross-file functions with no declaring header (roffutil.c, num.c,
    roffstyl.c) */
-extern int FreeBuf();
+extern int FreeBuf(BUF b);
 extern int EvalString();
-extern int Set_BOL();
-extern int BeginStyle(), EndStyle();
+extern int Set_BOL(struct rofftext *self);
+extern int BeginStyle(struct rofftext *self, char *st), EndStyle(struct rofftext *self, int ID);
 
 /* define or re-define string
   * must parse its own arguments

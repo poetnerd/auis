@@ -34,26 +34,26 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <stdlib.h>
-extern int AppendFileToFolder();
-extern int AppendFileToFolderWithId();
-extern int AppendFileToMSDir();
-extern int AppendFileToMSDirInternal();
-extern int AppendFileToMSDirWithId();
-extern int AppendMessageToMSDir();
-extern int BuildAttributesField();
-extern int BuildCaption();
-extern int BuildDateField();
-extern int BuildReplyField();
-extern int CheckAuthUid();
+extern int AppendFileToFolder(char *FileName, char *FolderName, int DoDelete);
+extern int AppendFileToFolderWithId(char *FileName, char *FolderName, int DoDelete, char *Id, char *Date64);
+extern int AppendFileToMSDir(char *FileName, struct MS_Directory *Dir, int DoDelete);
+extern int AppendFileToMSDirInternal(char *FileName, struct MS_Directory *Dir, int DoDelete, int TreatAsAlien);
+extern int AppendFileToMSDirWithId(char *FileName, struct MS_Directory *Dir, int DoDelete, char *Id, char *Date64);
+extern int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int BuildAttributesField(struct MS_Message *msg);
+extern int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail);
+extern int BuildDateField(struct MS_Message *Msg, int datetype);
+extern int BuildReplyField(struct MS_Message *Msg);
+extern int CheckAuthUid(struct MS_Message *NewMessage);
 extern int CloseDirsThatNeedIt();
-extern int CloseMSDir();
-extern int FreeMessage();
-extern int InventID();
-extern int IsMessageAlreadyThere();
-extern int ParseMessageFromRawBody();
-extern int ReadOrFindMSDir();
-extern int ReadRawFile();
-extern int WritePureFile();
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int InventID(struct MS_Message *msg);
+extern int IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
+extern int WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode);
 
 /* msjournal.c, this directory -- writeback capture (a no-op unless
    Dir is a mirrored folder; see the grammar note there). Not used by

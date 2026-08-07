@@ -40,13 +40,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <view.ih>
 #include <clockv.eh>
 #include <util.h>
-static void MenuSetLabels();
-static void MenuSetSeconds();
-static void MenuSetShape();
-static void MenuSetTicks();
-static void PlotLabels();
-static void PlotPoints();
-static void Redraw();
+static void MenuSetLabels(struct clockview *self, char *format);
+static void MenuSetSeconds(struct clockview *self, char *format);
+static void MenuSetShape(struct clockview *self, char *format);
+static void MenuSetTicks(struct clockview *self, char *format);
+static void PlotLabels(struct clockview *self, double theta, int radius, char *label, enum border_shapes shape);
+static void PlotPoints(struct clockview *self, double theta, int radius, int thickness, enum border_shapes shape);
+static void Redraw(struct clockview *self);
 
 /* Defined constants and macros */
 #define MENUTITLE "Clock %s,%s"

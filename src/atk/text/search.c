@@ -37,12 +37,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <class.h>
 #include <smpltext.ih>
 #include <search.eh>
-static unsigned char * SkipOp();
+static unsigned char * SkipOp(unsigned char *s);
 
 /* array to fold upper case to lower case 
 Now modified to handle the iso 8859 char set  # 1 */
 
-static long TryMatch();
+static long TryMatch(struct simpletext *d, long pos, unsigned char **s, int loop);
 
 static unsigned char FoldTRT[256] = {
 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,

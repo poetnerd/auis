@@ -39,7 +39,7 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 
 #include "srctext.ih"
 #include "mtext.eh"
-static void SetupStyles();
+static void SetupStyles(struct mtext *self);
 
 static Dict *words[TABLESIZE];
 

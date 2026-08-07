@@ -38,8 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <class.h>
 #include <namespc.eh>
 #include <atom.ih>
-static int Create();
-static int Index();
+static int Create(struct namespace *self, struct atom *key);
+static int Index(struct namespace *self, struct atom *key);
 #define namespace_InitialSize 4
 #define Empty
 #ifndef True

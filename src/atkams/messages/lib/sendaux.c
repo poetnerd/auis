@@ -61,6 +61,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 
 #include <class.h>
 #include <proctbl.ih>
+
+struct sbutton;
 /* #include <keymap.ih> */
 #include <keystate.ih>
 #include <menulist.ih>
@@ -90,20 +92,20 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <folders.ih>
 #define AUXMODULE 1
 #include <sendmsg.eh>
-static int AbsentProcedure();
-static boolean AddIfView();
-static int AddSpecialHeaders();
+static int AbsentProcedure(struct view *self);
+static boolean AddIfView(struct environment *env, int *ct);
+static int AddSpecialHeaders(struct sendmessage *sm);
 static void DeleteWindow();
 
 static struct keymap *smkm, *smhkm;
 static struct menulist *sm_menulist, *sm_hmenulist;
 
 /* same-file forward references -- all defined later in this file */
-extern int DoPreview(), EnvViewCt(), QuoteProperly();
+extern int DoPreview(struct sendmessage *sm, int code), EnvViewCt(struct environment *env), QuoteProperly(char *str);
 
 /* same-directory (sendmsg.o, linked into the same sendmsg.do) cross-file
    references -- no header, defined in sendmsg.c */
-extern int DirectlyInsertFile(), HandleButton(), ProduceUnscribedVersion();
+extern int DirectlyInsertFile(struct textview *tv, struct text *t, char *fname, int pos), HandleButton(struct sbutton *self, struct sendmessage *sendmessage, long in, long whichbut), ProduceUnscribedVersion(char *FileName, FILE *OutputFP);
 
 /* values for sendmessage menu mask */
 #define SMMASK_FEWSTYLES 1
@@ -127,8 +129,8 @@ static int      (*textv_EndOfLineCmd) () = AbsentProcedure,
                 (*textv_PlainestCmd) () = AbsentProcedure,
                 (*textv_NextLineCmd) () = AbsentProcedure;
 
-extern void     sendmesage_SetButtonFont(), ForceSending(), ForceStripping(), sendmessage__CheckRecipients(), UserWantsAHeader(), FileIntoFolder(), sendmessage__QuoteBody(), RestoreFromPS(), sendmessage__AppendBugInfoToBody(), BSSM_FakeBug(), BSSM_DownFocus(), BSSM_UpFocus(), BSSM_HeadersFocus(), BSSM_BodyFocus(), BSSM_Preview(), ComposeBugReport(), sendmessage__Reset(), sendmessage_DoDelivery(), sendmessage_InsertFile(), BeginLine(), NextLine(), PreviousLine(), BSSM_SendmessageFoldersCompound(), BSSM_SendmessageMessagesCompound(), BSSM_SendmessageCompound(), SetNotModified(), SBSSM_DoHeadersCommand(), SBSSM_DoBodiesCommand(), SBSSM_TextviewCompound(), sendmessage_DuplicateWindow();
-int WriteOneFile();
+extern void     sendmesage_SetButtonFont(), ForceSending(struct sendmessage *sendmessage), ForceStripping(struct sendmessage *sendmessage), sendmessage__CheckRecipients(struct sendmessage *sm), UserWantsAHeader(struct sendmessage *self, char *head), FileIntoFolder(struct sendmessage *sm, char *name), sendmessage__QuoteBody(struct sendmessage *self), RestoreFromPS(struct sendmessage *self), sendmessage__AppendBugInfoToBody(struct sendmessage *sm, int IsMessagesBug), BSSM_FakeBug(struct sendmessage *sm, char *txt), BSSM_DownFocus(struct sendmessage *sm), BSSM_UpFocus(struct sendmessage *sm), BSSM_HeadersFocus(struct sendmessage *sm), BSSM_BodyFocus(struct sendmessage *sm), BSSM_Preview(struct sendmessage *sm), ComposeBugReport(struct sendmessage *sm), sendmessage__Reset(struct sendmessage *sendmessage), sendmessage_DoDelivery(struct sendmessage *sendmessage), sendmessage_InsertFile(struct sendmessage *sendmessage, char *fname), BeginLine(struct sendmessage *sm), NextLine(struct sendmessage *sm, int IsNewline), PreviousLine(struct sendmessage *sm), BSSM_SendmessageFoldersCompound(struct sendmessage *sm, char *cmds), BSSM_SendmessageMessagesCompound(struct sendmessage *sm, char *cmds), BSSM_SendmessageCompound(struct sendmessage *sm, char *cmds), SetNotModified(struct sendmessage *sendmessage), SBSSM_DoHeadersCommand(struct sendmessage *sm, char *cmds), SBSSM_DoBodiesCommand(struct sendmessage *sm, char *cmds), SBSSM_TextviewCompound(struct textview *tv, char *cmds), sendmessage_DuplicateWindow(struct sendmessage *self);
+int WriteOneFile(struct sendmessage *sendmessage, char *ViceFileName, Boolean OnVice, Boolean MayOverwrite, int Version, Boolean TrustDelivery, Boolean UseMultipartFormat, int *EightBitText);
 
 static int AddSpecialHeaders(struct sendmessage *sm)
 {

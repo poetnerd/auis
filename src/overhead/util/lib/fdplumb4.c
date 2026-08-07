@@ -37,9 +37,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <fdplumbi.h>
 
-extern int RegisterOpenFile(), RegisterCloseFile();	/* fdplumb.c, no header declares them */
-extern int qclose(), tclose();				/* topen.c, no header declares them */
-extern FILE *qopen();
+extern int RegisterOpenFile(int fd, char *path, int Code), RegisterCloseFile(int fd);	/* fdplumb.c, no header declares them */
+extern int qclose(FILE *ptr), tclose(FILE *ptr, int seconds, int *timedout);				/* topen.c, no header declares them */
+extern FILE *qopen(char *name, char *argv[], char *mode);
 
 FILE * dbg_qopen(char *path, char *argv[], char *mode)
 {
@@ -53,7 +53,7 @@ FILE * dbg_qopen(char *path, char *argv[], char *mode)
 FILE * dbg_topen(char *path, char *argv[], char *mode, int *pgrp)
 {
     FILE *fp;
-    extern FILE *topen();
+    extern FILE *topen(char *name, char *argv[], char *mode, int *pgrp);
 
     fp = topen(path, argv, mode, pgrp);
     if (fp) RegisterOpenFile(fileno(fp), path, FDLEAK_OPENCODE_TOPEN);

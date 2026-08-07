@@ -47,12 +47,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <rm.ih>
 #include <view.ih>
 #include <ctype.h>
-static void CarveFonts();
-static int DrawKnurl();
-static void DrawLabel();
-static int DrawThumbwheel();
-static void DrawValue();
-static void getsizes();
+static void CarveFonts(struct thumbV *self);
+static int DrawKnurl(struct thumbV *self);
+static void DrawLabel(struct thumbV *self);
+static int DrawThumbwheel(struct thumbV *self, int DoAll);
+static void DrawValue(struct thumbV *self);
+static void getsizes(struct thumbV *self);
 static struct atomlist *  AL_bodyfont;
 static struct atomlist *  AL_bodyfont_size;
 static struct atomlist *  AL_label;

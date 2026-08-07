@@ -62,24 +62,24 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <options.ih>
 
 
-extern         void BSM_CheckNewPlease();
-extern         void BSM_ReadMailPlease();
-extern         void BSM_ShowAllPlease();
-extern         void BSM_ShowHelp();
-extern         void BSM_ShowNewPlease();
-extern         void BSM_ShowPersonalPlease();
-extern         void BSM_ShowSubscribedPlease();
-extern         boolean ClearSM();
-extern         void messages_DuplicateWindow();
-extern         void FSearchFPlease();
-extern         void FSearchRPlease();
-extern         struct t822view *GetBodies();
-extern         struct captions *GetCaptions();
-extern         struct captions *GetCaptionsNoCreate();
-extern         struct folders *GetFolders();
-extern         void MessagesFocusFolders();
-extern         void MessagesFoldersCommand();
-extern         void MessagesSendmessageCommand();
+extern         void BSM_CheckNewPlease(struct messages *self);
+extern         void BSM_ReadMailPlease(struct messages *self);
+extern         void BSM_ShowAllPlease(struct messages *self);
+extern         void BSM_ShowHelp(struct messages *self);
+extern         void BSM_ShowNewPlease(struct messages *self);
+extern         void BSM_ShowPersonalPlease(struct messages *self);
+extern         void BSM_ShowSubscribedPlease(struct messages *self);
+extern         boolean ClearSM(struct captions *self);
+extern         void messages_DuplicateWindow(struct messages *self);
+extern         void FSearchFPlease(struct messages *self);
+extern         void FSearchRPlease(struct messages *self);
+extern         struct t822view *GetBodies(struct messages *self);
+extern         struct captions *GetCaptions(struct messages *self);
+extern         struct captions *GetCaptionsNoCreate(struct messages *self);
+extern         struct folders *GetFolders(struct messages *self);
+extern         void MessagesFocusFolders(struct messages *self);
+extern         void MessagesFoldersCommand(struct messages *self, char *cmds);
+extern         void MessagesSendmessageCommand(struct messages *self, char *cmds);
 
 /* same-directory (messages.o, linked into the same messages.do) cross-file
    reference -- no header, defined in messages.c (which itself already

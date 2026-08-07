@@ -35,26 +35,26 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <stdio.h>
 #include <mailconf.h>
-extern int BuildNickName();  /* ams/libs/shr/utils.c */
+extern int BuildNickName(char *FullName, char *NickName);  /* ams/libs/shr/utils.c */
 extern int DeSymLink();  /* overhead/util/lib/desym.c */
-extern int DeleteFromDirCache();
-extern int DropHint();
-extern int FindTreeRoot();  /* ams/libs/shr/findroot.c */
-extern int HandleOneChange();
-extern int HandleTreeNameChange();
-extern int MS_GetAssociatedTime();
-extern int MS_GetSubscriptionEntry();
-extern int MS_SetAssociatedTime();
-extern int MergeSubMaps();
-extern int NonfatalBizarreError();
-extern int ReadOrFindMSDir();
-extern int RemoveFromCrucialClassesPreference();
+extern int DeleteFromDirCache(struct MS_Directory *Dir);
+extern int DropHint(char *Dirname);
+extern int FindTreeRoot(char *DirName, char *RootName, short ReallyWantParent);  /* ams/libs/shr/findroot.c */
+extern int HandleOneChange(char *NewFullName, char *NewNick, char *OldFullName, char *OldNick);
+extern int HandleTreeNameChange(char *OldName, char *NewName);
+extern int MS_GetAssociatedTime(char *FullName, char *Answer, int lim);
+extern int MS_GetSubscriptionEntry(char *FullName, char *NickName, int *status);
+extern int MS_SetAssociatedTime(char *FullName, char *newvalue);
+extern int MergeSubMaps(char *r1, char *r2, char *target);
+extern int NonfatalBizarreError(char *text);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int RemoveFromCrucialClassesPreference(char *DirName, char *NewName);
 extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
-extern int SetSubsEntry();
-extern int StripWhiteEnds();  /* ams/libs/shr/utils.c */
-extern int abspath();
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
+extern int SetSubsEntry(char *FullName, char *NickName, int status);
+extern int StripWhiteEnds(char *string);  /* ams/libs/shr/utils.c */
+extern int abspath(char *name, char *result);
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
 
 long MS_RenameDir(char *OldName, char *NewName, char *NewFullName)
 {

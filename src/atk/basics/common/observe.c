@@ -38,7 +38,7 @@ char *observe_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 #include <atom.ih>
 #include <atomlist.ih>
 #include <owatch.ih>
-static int FindObserver();
+static int FindObserver(struct observable *self, struct observable *observer);
 
 #define INITIALNUMOBSERVERS 4
 

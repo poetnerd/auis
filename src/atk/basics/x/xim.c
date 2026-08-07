@@ -104,7 +104,7 @@ extern int errprintf();
 /* cmenu.h's "_STDC_"/"__STDC__" typo is fixed (M3 O4, revival.md) --
    these two are declared through the header now. */
 
-static void HandleDropin();
+static void HandleDropin(struct xim *self, XClientMessageEvent *ev);
 
 /* Note this constant also occurs in the cmenus package and in menubar.c */
 #define MAXPANEPRIORITY 100
@@ -138,7 +138,7 @@ static boolean optimizeprotocol = FALSE;
 
 static boolean paranoidlocupdating = FALSE;
 
-static void LocateWindow();
+static void LocateWindow(struct xim *self);
 static void ForceLocUpdate(struct xim *self)
 {
     if(paranoidlocupdating) {
@@ -146,7 +146,7 @@ static void ForceLocUpdate(struct xim *self)
     } else self->updateloc=TRUE;
 }
 
-static int updateGlobalCursors();
+static int updateGlobalCursors(struct xim *self);
 
 /* the four states below indicate variety of elements on the PropList.
   For each there is a window of interest and some atom value
@@ -195,10 +195,10 @@ static struct proplistelt *FreeProps = NULL;
 static struct expandstring CachedCutBuffer;
 static boolean CBCacheValid = FALSE;
 
-static void HandleSelectionNotify();
-static void HandleProperty();
-static void RespondToSelectionRequest();
-static void Unscribe();
+static void HandleSelectionNotify(XSelectionEvent *event);
+static void HandleProperty(XPropertyEvent *event);
+static void RespondToSelectionRequest(XSelectionRequestEvent *req);
+static void Unscribe(struct expandstring *cb);
 static void retrieveFromCutBuffer0();
 
 
@@ -260,66 +260,66 @@ static FILE *mf= NULL;	/* file to dump mouse info for debugging */
 #define INITIALCUTBUFFERSIZE 200
 
 #include "atoms.h"
-static void ButtonTimerFire();
-static long * CalculateIncrementList();
-static void CancelButtonTimeout();
-static void CancelProp();
-static int CheckMenuChoice();
-static struct proplistelt * DequeueProp();
-static void DoButton();
-static boolean DoCreateTransientWindow();
-static void DoGeometry();
-static void DoTransientGeometry();
-static void DumpPolyRect();
-static void ForceLocUpdate();
-static void FreeCardOrder();
-static void FreeMenuChoices();
-static void FreeSelectionData();
-static int GetCardPriority();
-static void GetValuesFromEvent();
-static void HandleExposure();
-static void HandleWindowEvent();
-static void InitDefaultColormap();
-static void InstallMenus();
-static struct menubar * MakeStartupMenu();
-static void Observe();
-static struct proplistelt * PostPropList();
-static void ProcessMultiple();
-static boolean ProcessRequest();
-static void PutUpPopups();
-static void QMenuChoice();
-static void ReConfigurePopups();
-static void RemovePNMask();
-static boolean RequestSelection();
-static void RequeueProp();
-static void SendButtonUp();
-static void SetForegroundBackground();
-static void SetPNMask();
-static void SetWMProperties();
-static struct cardorder * SetupCardOrder();
-static void StartButtonTimeout();
-static void TakeDownPopups();
-static int WakeUpIM();
-static int XErrorsToConsole();
-static void discardCachedML();
-static struct mlcacheNode * findCachedML();
-static void freeCacheRegions();
-static void freeMLCache();
-static void freeViewsMLCache();
-static void free_drop_files();
-static struct cacheregion * lastCacheRegion();
-static void linkCacheRegion();
-static char * mygetdefaults();
-static int mystrcmp();
-static struct mlcacheNode * newCacheNode();
-static boolean retrieveProperty();
-static void sendToCutBuffer();
+static void ButtonTimerFire(struct mouseStatus *mfacts, long now);
+static long * CalculateIncrementList(char *str, long finalIncr, long *listCount);
+static void CancelButtonTimeout(struct mouseStatus *mfacts);
+static void CancelProp(struct proplistelt *elt);
+static int CheckMenuChoice(char **list, int count, char *choice);
+static struct proplistelt * DequeueProp(Window window, Atom atom);
+static void DoButton(struct mouseStatus *mfacts);
+static boolean DoCreateTransientWindow(struct xim *self, struct xim *other, int override);
+static void DoGeometry(struct xim *self, int *left, int *top, XSizeHints **sizehintsp, XSizeHints **zoomhintsp);
+static void DoTransientGeometry(struct xim *self, boolean override, struct xim *other, long *left, long *top, long *width, long *height, XSizeHints **sizehintsp, XSizeHints **zoomhintsp);
+static void DumpPolyRect(XPoint *tempRect);
+static void ForceLocUpdate(struct xim *self);
+static void FreeCardOrder(struct cardorder *co);
+static void FreeMenuChoices(char **list, int count);
+static void FreeSelectionData(struct seldata *seldata);
+static int GetCardPriority(struct cardorder *co, char *card, int def);
+static void GetValuesFromEvent(struct xim *im, XEvent *event, XPoint *tempRect, long *retWidth, long *retHeight);
+static void HandleExposure(Display *display, struct xim *im, XEvent *event);
+static void HandleWindowEvent(Display *display);
+static void InitDefaultColormap(struct xim *self);
+static void InstallMenus(struct xim *self, struct menulist *menulist);
+static struct menubar * MakeStartupMenu(struct mbinit *mbi, char *progname);
+static void Observe(struct xim *self, struct view *obj);
+static struct proplistelt * PostPropList(Window window, Atom prop, enum PropState state, Time time);
+static void ProcessMultiple(XSelectionRequestEvent *req);
+static boolean ProcessRequest(XSelectionRequestEvent *req);
+static void PutUpPopups(struct xim *im);
+static void QMenuChoice(struct menubar *mb, char *idata, char *mdata);
+static void ReConfigurePopups(struct xim *im);
+static void RemovePNMask(Display *display, Window window);
+static boolean RequestSelection(struct xim *self, struct expandstring *cutBuff, boolean *xfree);
+static void RequeueProp(struct proplistelt *elt);
+static void SendButtonUp(struct mouseStatus *mfacts, long x, long y);
+static void SetForegroundBackground(struct xim *self, char **foregroundColor, char **backgroundColor, struct xcolor **foreground, struct xcolor **background);
+static void SetPNMask(Display *display, Window window);
+static void SetWMProperties(struct xim *self, boolean nameChanged, boolean iconic);
+static struct cardorder * SetupCardOrder(char *prefname);
+static void StartButtonTimeout(struct xim *xim, unsigned int button, long x, long y);
+static void TakeDownPopups(struct xim *im);
+static int WakeUpIM(char *dummy);
+static int XErrorsToConsole(Display *DisplayPtr, XErrorEvent *ErrorBlock);
+static void discardCachedML(struct mlcacheNode *cache, struct mlcacheNode **rootP);
+static struct mlcacheNode * findCachedML(struct xim *self, struct menulist *ml, struct mlcacheNode *cache, boolean *newVersionP);
+static void freeCacheRegions(struct cacheregion *region);
+static void freeMLCache(struct xim *self, struct mlcacheNode *cache);
+static void freeViewsMLCache(struct xim *self, struct mlcacheNode **cachep, struct basicobject *view, struct mlcacheNode **parent);
+static void free_drop_files(struct xim *xim);
+static struct cacheregion * lastCacheRegion(struct cacheregion *list);
+static void linkCacheRegion(struct cacheregion *region, struct cacheregion **listP);
+static char * mygetdefaults(Display *dpy, char *pname);
+static int mystrcmp(char **x, char **y);
+static struct mlcacheNode * newCacheNode(struct mlcacheNode *prev);
+static boolean retrieveProperty(Display *dpy, Window wndw, Atom prop, int del, struct expandstring *cb, boolean *pXfree, Atom *pActualtype);
+static void sendToCutBuffer(struct xim *self, int initialmode, struct expandstring *cb);
 static void send_drop();
-static struct cacheregion * unlinkCacheRegion();
-static int updateGlobalCursors();
-static void updateMenus();
-static void xim_ActivateMenubar();
-static void xim_EstablishConsole();
+static struct cacheregion * unlinkCacheRegion(struct cacheregion *region);
+static int updateGlobalCursors(struct xim *self);
+static void updateMenus(struct xim *self, struct menulist *ml);
+static void xim_ActivateMenubar(struct xim *xim, long rock);
+static void xim_EstablishConsole(char *xhost);
 
 /* this has to track any changes to atoms.c */
 #define ATOMREF(self, atom) (self->AtomCache[atom])
@@ -863,7 +863,7 @@ static void xim_EstablishConsole(char *xhost)
     }
 }
 
-static void HandleExposeFromMenubar();
+static void HandleExposeFromMenubar(XEvent *ee, struct xim *im);
 
 static struct keybinding {
     KeySym key;

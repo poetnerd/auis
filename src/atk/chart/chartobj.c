@@ -82,23 +82,23 @@ END-SPECIFICATION  ************************************************************/
 #include "chartv.ih"
 #include "chartobj.eh"
 #include <ctype.h>
-static int Draw_Bottom_Scale();
-static int Draw_Horizontal_Labels();
-static int Draw_Labels();
-static int Draw_Left_Scale();
-static int Draw_Right_Scale();
-static int Draw_Scales();
-static int Draw_Top_Scale();
-static int Draw_Vertical_Labels();
-static int Free_Shadows();
-static int Generate_Shadows();
-static int Prepare_Horizontal_Scale();
-static int Prepare_Vertical_Scale();
-static int Print_Horizontal_Labels();
-static int Print_Labels();
-static int Print_Left_Scale();
-static int Print_Scales();
-static int Set_Shadows();
+static int Draw_Bottom_Scale(struct chartobj *self);
+static int Draw_Horizontal_Labels(struct chartobj *self, int left, int top, int width, int height);
+static int Draw_Labels(struct chartobj *self);
+static int Draw_Left_Scale(struct chartobj *self);
+static int Draw_Right_Scale(struct chartobj *self);
+static int Draw_Scales(struct chartobj *self);
+static int Draw_Top_Scale(struct chartobj *self);
+static int Draw_Vertical_Labels(struct chartobj *self, int left, int top, int width, int height);
+static int Free_Shadows(struct chartobj *self);
+static int Generate_Shadows(struct chartobj *self);
+static int Prepare_Horizontal_Scale(struct chartobj *self);
+static int Prepare_Vertical_Scale(struct chartobj *self);
+static int Print_Horizontal_Labels(struct chartobj *self, int left, int width, int middle);
+static int Print_Labels(struct chartobj *self);
+static int Print_Left_Scale(struct chartobj *self);
+static int Print_Scales(struct chartobj *self);
+static int Set_Shadows(struct chartobj *self);
 
 int chartobj_debug = 0;
 

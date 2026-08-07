@@ -49,22 +49,22 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <dataobj.ih>
 #define AUXMODULE 1
 #include <textv.eh>
-static void AllocateLineItem();
+static void AllocateLineItem(struct textview *self, struct text *text, long pos, struct formattinginfo *info);
 static void CharToOctal(unsigned char *s, char c);
-static void ComputeStyleItem();
-static void DrawBar();
-static void DrawChangeBar();
-static void DrawStringNoTabs();
-static void GenerateLineItems();
-static long GetNextTabPosition();
-static void LocateCursor();
-static void LocateHit();
-static long MovePast();
-static long ParagraphIndent();
-static long StringWidth();
-static void drawcontinued();
+static void ComputeStyleItem(struct textview *self, long startPos, long endPos, long *pixelAddr, long *charAddr, struct formattinginfo *info);
+static void DrawBar(struct textview *self, struct lineitem *tt, long bx, long by, long width);
+static void DrawChangeBar(struct textview *self, struct formattinginfo *info, long by);
+static void DrawStringNoTabs(struct textview *self, unsigned char *s, int ctrl);
+static void GenerateLineItems(struct textview *self, struct text *text, struct mark *currentLine, struct formattinginfo *info);
+static long GetNextTabPosition(struct textview *v, int width, struct text_statevector *sv, struct formattinginfo *info);
+static void LocateCursor(struct textview *self, long startX, long spaceShim, long startPos, short *widths, long linePos, long searchPos, struct formattinginfo *info);
+static void LocateHit(struct textview *self, long startX, long spaceShim, long startPos, short *widths, long linePos, long searchX, struct formattinginfo *info);
+static long MovePast(struct textview *self, long width, short *widths, struct formattinginfo *info, unsigned char *string);
+static long ParagraphIndent(struct textview *self, struct text *text, long pos, struct formattinginfo *info);
+static long StringWidth(short *widths, unsigned char *s);
+static void drawcontinued(struct textview *self, struct formattinginfo *info, long by);
 
-extern boolean textview_PrevCharIsNewline();	/* defined in textv.c */
+extern boolean textview_PrevCharIsNewline(struct text *self, long pos);	/* defined in textv.c */
 
 #define textview_MOVEVIEW 99999999
 static struct graphic *pat;

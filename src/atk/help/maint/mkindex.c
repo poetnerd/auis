@@ -45,8 +45,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <index.h>
-static int BuildIndex();
-static char * LowerCase();
+static int BuildIndex(struct Index *aindex, char *srcDirName, char *targetDirName);
+static char * LowerCase(char *astring);
 
 static char *prog;		/* our name */
 static int verbose = 0;

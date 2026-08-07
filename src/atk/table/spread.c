@@ -51,30 +51,32 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 #include <table.ih>
 
 #include <spread.eh>
-static void DestroySubviews();
-static void xGetInfo();
-static void xSetFrame();
-static long xWhatIsAt();
-static void yGetInfo();
-static void ySetFrame();
-static long yWhatIsAt();
+
+struct spread_classinfo;
+static void DestroySubviews(struct spread *V, struct table *T);
+static void xGetInfo(struct spread *V, struct range *total, struct range *seen, struct range *dot);
+static void xSetFrame(struct spread *V, long pos, long coord, long denom);
+static long xWhatIsAt(struct spread *V, long coord, long denom);
+static void yGetInfo(struct spread *V, struct range *total, struct range *seen, struct range *dot);
+static void ySetFrame(struct spread *V, long pos, long coord, long denom);
+static long yWhatIsAt(struct spread *V, long coord, long denom);
 
 /* defined in keyboard.c */
-extern void k_DefineKeys();
+extern void k_DefineKeys(struct keymap *mainmap, struct spread_classinfo *classinfo);
 
 /* defined in menu.c */
-extern int DefineMenus();
+extern int DefineMenus(struct menulist *mainmenus, struct keymap *mainmap, struct spread_classinfo *classinfo);
 
 /* defined in hit.c */
-extern int ResetCurrentCell();
+extern int ResetCurrentCell(struct spread *V);
 
 /* defined in print.c */
-extern int WriteTroff();
+extern int WriteTroff(struct spread *V, FILE *f, char *processor, char *format, int toplevel);
 
 /* defined in update.c */
-extern int spread_update_FullUpdate();
-extern int spread_PartialUpdate();
-extern int spread_WantHighlight();
+extern int spread_update_FullUpdate(struct spread *V, enum view_UpdateType how, struct rectangle *updateClipRect);
+extern int spread_PartialUpdate(struct spread *V, enum view_UpdateType how, struct rectangle *updateClipRect);
+extern int spread_WantHighlight(struct spread *V);
 
 /* initialize entire class */
 static char debug=0;
@@ -361,7 +363,7 @@ void spread__Update(struct spread *V)
 
 /* process mouse hit */
 
-extern struct view * MouseHit();
+extern struct view * MouseHit(struct spread *V, enum view_MouseAction action, long x, long y, long numberOfClicks);
 
 struct view * spread__Hit(struct spread *V, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {

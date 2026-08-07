@@ -36,19 +36,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h> /* sys/file.h */
 #include <stdio.h>
 #include <stdlib.h>
-extern int AddParentalMessageFromFile();
-extern int AppendFileToFolder();
-extern int FindTreeRoot();  /* ams/libs/shr/findroot.c */
-extern int FreeMessage();
-extern int GenTempName();
-extern int GetFormatFromMessage();
-extern int ParseMessageFromRawBody();
-extern int ReadRawFile();
-extern int ReduceSlashes();
-extern int WritePureFile();
-extern char *ams_genid();  /* overhead/mail/lib/genid.c */
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
+extern int AddParentalMessageFromFile(char *FileName, char *PDirName, char *bbname, char *bbpath);
+extern int AppendFileToFolder(char *FileName, char *FolderName, int DoDelete);
+extern int FindTreeRoot(char *DirName, char *RootName, short ReallyWantParent);  /* ams/libs/shr/findroot.c */
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int GenTempName(char *Buf);
+extern int GetFormatFromMessage(struct MS_Message *Msg, char *ThisFormat, int bufsize, int *IsBE2);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
+extern int ReduceSlashes(char *filename);
+extern int WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode);
+extern char *ams_genid(int IsFileName);  /* overhead/mail/lib/genid.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
 
 extern char home[];
 

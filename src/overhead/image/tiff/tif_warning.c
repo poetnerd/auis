@@ -38,7 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include "tiffioP.h"
 #include "prototypes.h"
-static void defaultHandler();
+static void defaultHandler(char *module, char *fmt, va_list ap);
 
 static void
 defaultHandler(char *module, char *fmt, va_list ap)

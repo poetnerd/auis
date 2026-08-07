@@ -51,10 +51,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 
 #include <X11/Xlib.h>
 #include <X11/XWDFile.h>
-static void _swaplong();
-static void _swapshort();
-static void pixmap_to_bitmap();
-static void reverse_bit_order();
+static void _swaplong(char *bp, unsigned n);
+static void _swapshort(char *bp, unsigned n);
+static void pixmap_to_bitmap(unsigned char *location, unsigned char *output, long nbytes);
+static void reverse_bit_order(unsigned char *location, unsigned char *output, long nbytes);
 static void reverse_video();
 #define XWD_FILE_VERSION 7
 
@@ -64,9 +64,9 @@ static void reverse_video();
 #define Threshold     16384	/* in the dithering process */
 #define MinGrey           0
 
-static unsigned int tone_scale_adjust();
-static void         LeftToRight();
-static void         RightToLeft();
+static unsigned int tone_scale_adjust(unsigned int val);
+static void         LeftToRight(int *curr, int *next, int width);
+static void         RightToLeft(int *curr, int *next, int width);
 
 /* RGB intensity tables.  red is (val * 0.30), green is (val * 0.59), blue
  * is (val * .11), where val is intensity >> 8.  these are used by the

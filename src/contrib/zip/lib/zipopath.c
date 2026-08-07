@@ -139,9 +139,9 @@ END-SPECIFICATION  ************************************************************/
 #include <zipopath.eh>
 #include <stdlib.h>
 static int Draw( struct zipopath *self, zip_type_figure figure, zip_type_pane pane, short action );
-static boolean intersect();
-static long same();
-static long signum();
+static boolean intersect(zip_type_point_pair p1, zip_type_point_pair p2, zip_type_point_pair p3, zip_type_point_pair p4);
+static long same(zip_type_point_pair p1, zip_type_point_pair p2, zip_type_point_pair p3, zip_type_point_pair p4);
+static long signum(long a);
 
 static int Draw( struct zipopath *self, zip_type_figure figure, zip_type_pane pane, short action );
 

@@ -36,7 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <writestmp.ih>
 #include <proctbl.ih>
 #include <util.h>
-static void MenuSetFormat();
+static void MenuSetFormat(struct writestampview *self, char *format);
 
 /* Defined constants and macros */
 

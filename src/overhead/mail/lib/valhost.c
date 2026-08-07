@@ -47,10 +47,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <sys/stat.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-static int GetDomainTranslation();
+static int GetDomainTranslation(char *domain, char *name, int namelen);
 static int GetRec();
-static char * anychar();
-static struct hostent * gettblbyname();
+static char * anychar(char *cp, char *match);
+static struct hostent * gettblbyname(char *name);
 static struct hostent * nexthtent();
 #ifdef RESOLVER_ENV
 #define BIND_8_COMPAT
@@ -62,8 +62,8 @@ extern int h_errno;
 extern int errno;
 
 /* No header anywhere in the tree declares these. */
-extern int cptres_search();	/* rsearch.c */
-extern int LCappend();		/* overhead/util/lib/lcappend.c */
+extern int cptres_search(char *name, int class, int type, char *answer, int anslen);	/* rsearch.c */
+extern int LCappend(char *s1, char *s2);		/* overhead/util/lib/lcappend.c */
 extern int CheckAMSConfiguration();	/* mailconf.c */
 
 #ifdef RESOLVER_ENV

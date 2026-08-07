@@ -65,19 +65,19 @@ END-SPECIFICATION  ************************************************************/
 #include <zip.ih>
 #include <zipv.ih>
 #include <andrewos.h>
-static int Handle_Slot_Hit();
-static int Initialize();
-static int Move_Slot();
-static int Normalize_Current_Slot_Figure();
-static int Normalize_Previous_Slot_Figure();
-static int Remember_Slot_Hit();
+static int Handle_Slot_Hit(struct schedv *self, zip_type_figure slot_figure);
+static int Initialize(struct schedv *self);
+static int Move_Slot(struct schedv *self, zip_type_figure slot_figure);
+static int Normalize_Current_Slot_Figure(struct schedv *self);
+static int Normalize_Previous_Slot_Figure(struct schedv *self);
+static int Remember_Slot_Hit(struct schedv *self, zip_type_figure slot_figure);
 
 static boolean debug=FALSE;
 static struct menulist		     *class_menulist;
 static struct keymap		     *class_keymap;
 
 
-static long				      Exceptions();
+static long				      Exceptions(struct schedv *self, long facility, long status);
 static /*===*/struct schedv *SELF;
 
 #define  InputFocus		    (self->input_focus)
@@ -112,16 +112,16 @@ static /*===*/struct schedv *SELF;
 #define  ControlButtonTop	    (ButtonTop)
 #define  Menu			    (self->menu)
 
-static int			    Extend_Button(), Split_Button(), Clear_Button(),
-				    Save_Button(), Print_Button(), Quit_Button();
-static void			    Quit_Command(), Debug_Command();
+static int			    Extend_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks), Split_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks), Clear_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks),
+				    Save_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks), Print_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks), Quit_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks);
+static void			    Quit_Command(struct schedv *self), Debug_Command(struct schedv *self);
 
-static int Initialize();
-static int Handle_Slot_Hit();
-static int Remember_Slot_Hit();
-static int Move_Slot();
-static int Normalize_Previous_Slot_Figure();
-static int Normalize_Current_Slot_Figure();
+static int Initialize(struct schedv *self);
+static int Handle_Slot_Hit(struct schedv *self, zip_type_figure slot_figure);
+static int Remember_Slot_Hit(struct schedv *self, zip_type_figure slot_figure);
+static int Move_Slot(struct schedv *self, zip_type_figure slot_figure);
+static int Normalize_Previous_Slot_Figure(struct schedv *self);
+static int Normalize_Current_Slot_Figure(struct schedv *self);
 
 static struct bind_Description	      menu[] =
 {

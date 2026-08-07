@@ -46,7 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #include <rofftext.ih>
 #include <stdlib.h>
 #include <rofftxta.eh>
-static void show_usage();
+static void show_usage(struct rofftextapp *self);
 
 boolean rofftextapp__InitializeObject(struct classheader *classID, struct rofftextapp *self)
 {

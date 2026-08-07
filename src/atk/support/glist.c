@@ -41,8 +41,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include <class.h>
 #include <glist.eh>
-static int MoveNew();
-static int copyElement();
+
+struct glist_SortStruct;
+static int MoveNew(char *listelt, struct glist_SortStruct *ss);
+static int copyElement(char *value, struct glist *dest);
 
 #define newelt() (struct glistelt *) malloc(sizeof(struct glistelt))
 

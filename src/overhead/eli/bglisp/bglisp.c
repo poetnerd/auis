@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 {
     static EliState_t stStruct, *st;
     int i, j, MallocP = FALSE;
-    void BGLISP_Prim_BTERR();
+    void BGLISP_Prim_BTERR(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf);
 
     Free = Report = Terse = FALSE;
 

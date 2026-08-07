@@ -56,34 +56,34 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mail.h>
 #include <dropoff.h>
 #include <stdlib.h>
-extern int AddHeader();
-extern int AppendMessageToMSDir();
-extern int BuildAttributesField();
-extern int BuildCaption();
-extern int BuildDateField();
-extern int BuildReplyField();
-extern int CloseMSDir();
-extern int DeleteHeader();
-extern int EmitBE2PrefixAndLSeekPastIt();
-extern int GenTempName();
-extern int GetFormatFromMessage();
-extern int InventID();
-extern int IsMessageAlreadyThere();
-extern int PrintQuotingFormatting();  /* overhead/util/lib/unscribe.c */
-extern int ReadOrFindMSDir();
-extern int WritePureFile();
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dropoff();  /* overhead/mail/lib/dropoff.c */
-extern int dropoff_auth();  /* overhead/mail/lib/dropoff.c */
+extern int AddHeader(struct MS_Message *Msg, char *Head);
+extern int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int BuildAttributesField(struct MS_Message *msg);
+extern int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail);
+extern int BuildDateField(struct MS_Message *Msg, int datetype);
+extern int BuildReplyField(struct MS_Message *Msg);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int DeleteHeader(struct MS_Message *Msg, int num);
+extern int EmitBE2PrefixAndLSeekPastIt(int fd, FILE *fp, int *SkippedBytes);
+extern int GenTempName(char *Buf);
+extern int GetFormatFromMessage(struct MS_Message *Msg, char *ThisFormat, int bufsize, int *IsBE2);
+extern int InventID(struct MS_Message *msg);
+extern int IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int PrintQuotingFormatting(FILE *fp, char *text, char *format, int len);  /* overhead/util/lib/unscribe.c */
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode);
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dropoff(char *tolist[], char *mesgfile, char *returnpath, char *home, long flags);  /* overhead/mail/lib/dropoff.c */
+extern int dropoff_auth(char *tolist[], char *mesgfile, char *returnpath, char *home, long flags, char *auth);  /* overhead/mail/lib/dropoff.c */
 extern char *newmid();
 
-static int ConvertDropoffCode();
+static int ConvertDropoffCode(int code);
 
 extern char    *DayArray[], *MonArray[];        /* Just the names of days and
                                                  * months */
-extern char    *pop();
-extern char    *StripWhiteEnds(), *GenAuthField();
-extern FILE    *qopen();
+extern char    *pop(int which);
+extern char    *StripWhiteEnds(char *string), *GenAuthField(struct MS_Message *Msg);
+extern FILE    *qopen(char *name, char *argv[], char *mode);
 extern char     Me[], *MyPrettyAddress, home[], MyMailDomain[];
 
 #define StackAbort(err) AMS_RETURN_ERRCODE(EMSBADDIRSPEC, err, EVIA_CHOOSEDIRECTORIES)

@@ -79,17 +79,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <image.ih>
 #include <gif.h>
 #include <gif.eh>
-static int gifin_add_string();
+static int gifin_add_string(int p, int e);
 static int gifin_close_file();
-static int gifin_fatal();
-static int gifin_get_pixel();
-static int gifin_load_cmap();
-static int gifin_open_file();
+static int gifin_fatal(char *msg);
+static int gifin_get_pixel(int *pel);
+static int gifin_load_cmap(BYTE cmap[3][256], int ncolors);
+static int gifin_open_file(FILE *s);
 static int gifin_open_image();
-static int gifin_push_string();
+static int gifin_push_string(int code);
 static int gifin_read_data_block();
 static int gifin_skip_extension();
-static void tellAboutImage();
+static void tellAboutImage(char *name);
 
 /****
  **
@@ -175,7 +175,7 @@ static int  gifin_l_ncolors;           /* number of colors, local colormap */
 static BYTE gifin_l_cmap[3][256];      /* local colormap */
 static BYTE gifin_interlace_flag;      /* interlace image format flag */
 
-extern int WriteGIF();
+extern int WriteGIF(FILE *fp, byte *pic, int w, int h, byte *rmap, byte *gmap, byte *bmap, int numcols, int colorstyle);
 
 
 /*

@@ -53,7 +53,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <environ.ih>
 
 #include <matte.eh>
-static void UpdateCursors();
+static void UpdateCursors(struct matte *self);
 
 #define RESIZING TRUE
 #define DRAWING FALSE

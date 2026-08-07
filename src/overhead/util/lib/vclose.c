@@ -59,7 +59,7 @@ extern int errno;
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 static int CkVice();
-static int DoIoctl();
+static int DoIoctl(int fd);
 #ifdef AFS_ENV
 #include <netinet/in.h>
 #include <afs/param.h>

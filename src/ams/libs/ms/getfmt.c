@@ -37,10 +37,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <hdrparse.h>
 #include <string.h>
-extern int BreakDownContentTypeField();  /* ams/libs/shr/brkdown.c */
-extern int lc2strncmp();  /* ams/libs/shr/utils.c */
+extern int BreakDownContentTypeField(char *HeadBuf, char *fmt, int fmtsz, char *vers, int verssz, char *resources, int resourcessz);  /* ams/libs/shr/brkdown.c */
+extern int lc2strncmp(char *s1, char *s2, int len);  /* ams/libs/shr/utils.c */
 
-extern char *StripWhiteEnds();
+extern char *StripWhiteEnds(char *string);
 
 int GetFormatFromMessage(struct MS_Message *Msg, char *ThisFormat, int bufsize, int *IsBE2)
 {

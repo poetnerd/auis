@@ -43,7 +43,7 @@ static char attribute_names[figattr_NumAttributes][20] = {
     "textpos"
 };
 
-static char *CopyString();
+static char *CopyString(char *str);
 
 boolean figattr__InitializeObject(struct classheader *ClassID, struct figattr *self)
 {

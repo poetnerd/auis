@@ -85,10 +85,10 @@ struct XtndRsetup
 #include <stdio.h>
 #include <image.ih>
 #include <rle.h>
-static char * match();
+static char * match(char *n, char *v);
 
 void dithermap();
-static void bfill();
+static void bfill(char *s, int n, int c);
 void make_square();
 int rle_get_setup(struct sv_globals *globals);
 int rle_getrow(struct sv_globals *globals, rle_pixel *scanline[]);

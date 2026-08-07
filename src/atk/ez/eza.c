@@ -63,12 +63,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/ez/R
 #include <complete.ih>
 
 #include <eza.eh>
-static void GotoLine();
-static void StartupError();
-static int VisitFilePrompting();
-static void addFile();
-static void bufferDirectory();
-static void makeErrorBuf();
+static void GotoLine(struct text *text, struct textview *view, int line);
+static void StartupError(struct text *errorDoc, char *string);
+static int VisitFilePrompting(struct frame *self, char *prompt, boolean newWindow, boolean rawMode);
+static void addFile(struct ezapp *self, char *name, boolean newWin, boolean ro, int initline);
+static void bufferDirectory(struct buffer *buffer, char *dir);
+static void makeErrorBuf(struct ezapp *self);
 
 static struct cursor *waitCursor;
 

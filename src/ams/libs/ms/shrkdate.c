@@ -33,7 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <ms.h>
 #include <andrewos.h> /* sys/time.h */
-extern int parsedateheader();
+extern int parsedateheader(char *str, struct tm *tmp, int settm, int select, int err, long *gmt);
 
 
 char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",

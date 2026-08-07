@@ -47,7 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <errno.h>
 static int LoadServerFile();
 static struct AMSConfig * getThis();
-static int readBool();
+static int readBool(char *inval, char *filename);
 
 extern int errno;
 

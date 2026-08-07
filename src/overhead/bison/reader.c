@@ -38,7 +38,7 @@ The entry point is reader().  */
 #include "lex.h"
 #include "gram.h"
 #include "machine.h"
-static void skip_to_char();
+static void skip_to_char(int target);
 
 #define	LTYPESTR	"\n#ifndef YYLTYPE\ntypedef\n  struct yyltype\n\
     {\n      int timestamp;\n      int first_line;\n      int first_column;\
@@ -64,24 +64,24 @@ extern void output_headers();
 extern void output_trailers();
 extern void free_symtab();
 extern void open_extra_files();
-extern void fatal();
+extern void fatal(char *s);
 extern void fatals();
-extern void warn();
+extern void warn(char *s);
 extern void warns();
-extern void unlex();
-extern void done();
+extern void unlex(int token);
+extern void done(int k);
 
 extern int skip_white_space();
 extern int parse_percent_token();
 extern int lex();
 
-void reader_output_yylsp();
+void reader_output_yylsp(FILE *f);
 void read_declarations();
 void copy_definition();
-void parse_token_decl();
+void parse_token_decl(int what_is, int what_is_not);
 void parse_start_decl();
 void parse_type_decl();
-void parse_assoc_decl();
+void parse_assoc_decl(int assoc);
 void parse_union_decl();
 void parse_expect_decl();
 void parse_thong_decl();
@@ -89,9 +89,9 @@ void copy_action();
 void readgram();
 void record_rule_line();
 void packsymbols();
-void output_token_defines();
+void output_token_defines(FILE *file);
 void packgram();
-int read_signed_integer();
+int read_signed_integer(FILE *stream);
 static int get_type();
 
 typedef

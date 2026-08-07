@@ -43,8 +43,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/param.h>
 #include <netinet/in.h>
 #include <netdb.h>
-static void ams_log_add();
-static void ams_log_add_num();
+static void ams_log_add(char *s);
+static void ams_log_add_num(long anum);
 static void ams_log_init();
 
 #ifdef CMU_ENV

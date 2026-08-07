@@ -44,7 +44,7 @@ static char rcsHeader[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/at
 
 #include "mtext.ih"
 #include "mtextv.eh"
-static void FindDefinitionOrImplementation();
+static void FindDefinitionOrImplementation(struct mtextview *self, boolean implementation);
 
 /* AutoCut was not made externally visible by txtvcmod, so WE have to check the preference TOO */
 static int autocut_mode = -1;	/* uninitialized */
@@ -54,7 +54,7 @@ static struct keymap *m_Map;
 static struct menulist *m_Menus;
 
 static void asterisk(struct mtextview *self, char key); /* must be char for "&" to work. */
-static void definition(), implementation();
+static void definition(struct mtextview *self, long key), implementation(struct mtextview *self, long key);
 
 static struct bind_Description mtextBindings[]={
     {"mtextview-asterisk","*",'*', NULL,0, 0, (void (*)())asterisk,"If preceded by an open-paren, start a comment."},

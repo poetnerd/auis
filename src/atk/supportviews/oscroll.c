@@ -48,34 +48,34 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <point.h>
 #include <rect.h>
 #include <oscroll.eh>
-static void RepeatEvent();
+static void RepeatEvent(struct oscroll *self);
 static void RepeatScroll();
 static long bar_height();
 static void calc_desired();
 static int calc_dot();
 static int calc_elevator();
-static void calc_location();
+static void calc_location(struct oscroll *self);
 static void draw_bar();
 static void draw_dot();
 static void draw_elevator();
-static void draw_end_line();
-static void draw_endzones();
-static void draw_thumb_and_bar();
+static void draw_end_line(struct oscroll *self, long x1, long y1, long x2, long y2);
+static void draw_endzones(struct oscroll *self, int side, int height, int state);
+static void draw_thumb_and_bar(struct oscroll *self, int side, boolean force);
 static void endzone();
-static void erase_dot();
+static void erase_dot(struct oscroll *self, int side, long top, long bot);
 static long from_bar_to_range();
 static long from_range_to_bar();
-static void full_update();
+static void full_update(struct oscroll *self, enum view_UpdateType type, long left, long top, long width, long height);
 static void get_interface();
 static void getinfo();
-static void init_arrows();
-static void motif_draw_whole_bar();
-static void motif_full_update();
+static void init_arrows(struct oscroll *self);
+static void motif_draw_whole_bar(struct oscroll *self, int side);
+static void motif_full_update(struct oscroll *self, enum view_UpdateType type, long left, long top, long width, long height);
 static void move_elevator();
-static void normal_draw_whole_bar();
-static void normal_full_update();
-static void rectangle();
-static void rotate();
+static void normal_draw_whole_bar(struct oscroll *self, int side);
+static void normal_full_update(struct oscroll *self, enum view_UpdateType type, long left, long top, long width, long height);
+static void rectangle(struct oscroll *self, int x1, int y1, int x2, int y2, struct graphic *tile);
+static void rotate(struct oscroll *self, int side, long x, long y, long *scroll_x, long *scroll_y);
 static void set_frame();
 static int what_is_at();
 

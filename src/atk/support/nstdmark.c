@@ -37,8 +37,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <class.h>
 #include <nstdmark.eh>
 #include <tree23.ih>
-static void DoFreeTree();
-static void FilterProc();
+
+struct filterstruct;
+static void DoFreeTree(struct nestedmark *self);
+static void FilterProc(struct nestedmark *self, struct filterstruct *data, struct tree23int *t, struct tree23int *which);
 
 static boolean GlobalIsolation = FALSE;
 

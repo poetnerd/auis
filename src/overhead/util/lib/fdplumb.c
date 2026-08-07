@@ -64,7 +64,7 @@ char * DescribeOpenCode(int code)
     }
 }
 
-int fdplumb_SpillGutsToFile();		/* defined below, in this file */
+int fdplumb_SpillGutsToFile(FILE *fp, int ExtraNewLines);		/* defined below, in this file */
 
 int fdplumb_SpillGuts() {
     return fdplumb_SpillGutsToFile(stderr, 0);

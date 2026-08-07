@@ -57,33 +57,33 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <rastoolv.ih>
 #include <heximage.ih>
 #include <dispbox.h>
-static int RedrawRaster();
+static int RedrawRaster(struct rasterview *self, enum view_UpdateType type, long left, long top, long width, long height);
 
-extern void PostMenus();
-extern void RotateCommand();
-extern void CenterCommand();
-extern void ZoomInCommand();
-extern void ZoomOutCommand();
-extern void ToolCommand();
-extern void PanCommand();
-extern void RegionSelectCommand();
-extern void TouchUpCommand();
-extern void ReflectChangesInExpansion();
-extern void FinishMovingDisplayBox();
-extern void MoveDisplayBoxCommand();
+extern void PostMenus(struct rasterview *self);
+extern void RotateCommand(struct rasterview *self, long rock);
+extern void CenterCommand(struct rasterview *self, long rock);
+extern void ZoomInCommand(struct rasterview *self, long rock);
+extern void ZoomOutCommand(struct rasterview *self, long rock);
+extern void ToolCommand(struct rasterview *self, long rock);
+extern void PanCommand(struct rasterview *self, long rock);
+extern void RegionSelectCommand(struct rasterview *self, long rock);
+extern void TouchUpCommand(struct rasterview *self, long rock);
+extern void ReflectChangesInExpansion(struct rasterview *self, struct rectangle *R);
+extern void FinishMovingDisplayBox(struct rasterview *self, long x, long y);
+extern void MoveDisplayBoxCommand(struct rasterview *self, long rock);
 
-void CenterViewSelection();
-void ViewHideHighlight();
-void CorrectHighlight();
+void CenterViewSelection(struct rasterview *self);
+void ViewHideHighlight(struct rasterview *self);
+void CorrectHighlight(struct rasterview *self);
 void DrawPanHighlight(struct rasterview *self, short g);
-void StartPanning();
-void ContinuePanning();
-void ClipScroll();
-void UpdateZoomedSelection();
-void FinishPanning();
-void SetPixel();
-void DrawLineTo();
-void ZoomToVisualBounds();
+void StartPanning(struct rasterview *self, long x, long y);
+void ContinuePanning(struct rasterview *self, long x, long y);
+void ClipScroll(struct rasterview *self);
+void UpdateZoomedSelection(struct rasterview *self, long x, long y);
+void FinishPanning(struct rasterview *self, long x, long y);
+void SetPixel(struct rasterview *self, long x, long y, boolean bit);
+void DrawLineTo(struct rasterview *self, long x1, long y1, boolean bit);
+void ZoomToVisualBounds(struct rasterview *self, long x, long y);
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *	
  *	Methods
@@ -1061,8 +1061,8 @@ void rasterview__Print(struct rasterview *self, FILE *file, char *processor, cha
  *	
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static void	y_getinfo(), y_setframe(), x_getinfo(), x_setframe();
-static long	y_whatisat(), x_whatisat();
+static void	y_getinfo(struct rasterview *self, struct range *total, struct range *seen, struct range *dot), y_setframe(struct rasterview *self, int position, long coordinate, long outof), x_getinfo(struct rasterview *self, struct range *total, struct range *seen, struct range *dot), x_setframe(struct rasterview *self, int position, long coordinate, long outof);
+static long	y_whatisat(struct rasterview *self, long coordinate, long outof), x_whatisat(struct rasterview *self, long coordinate, long outof);
 static struct scrollfns	vertical_scroll_interface =
 		{y_getinfo, y_setframe, NULL, y_whatisat};
 static struct scrollfns	horizontal_scroll_interface =

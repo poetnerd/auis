@@ -77,11 +77,11 @@ static char sizelayout[SIZES_NUM_INIT][16] = {
 };
 
 static void InsertSize(struct fontselview *self, short val);
-static void ShowExtraProc();
+static void ShowExtraProc(struct fontselview *self, long rock);
 static void SetSizeProc(struct stringtbl *st, struct fontselview *self, short accnum);
 static void SetFamilyProc(struct stringtbl *st, struct fontselview *self, short accnum);
 static void SetStyleProc(struct stringtbl *st, struct fontselview *self, short accnum);
-static char *CopyString();
+static char *CopyString(char *str);
 
 boolean fontselview__InitializeClass(struct classheader *ClassID)
 {

@@ -38,7 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * Compression Scheme Configuration Support.
  */
 #include "tiffioP.h"
-static int TIFFNoEncode();
+static int TIFFNoEncode(TIFF *tif, char *method);
 
 #if USE_PROTOTYPES
 extern	int TIFFInitDumpMode(TIFF*);

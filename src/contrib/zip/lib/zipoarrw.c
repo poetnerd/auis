@@ -64,13 +64,13 @@ END-SPECIFICATION  ************************************************************/
 #include <zipoarrw.eh>
 #include <stdlib.h>
 static int Draw();
-static int Draw_Basic_Body();
+static int Draw_Basic_Body(struct zipoarrow *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *current_x, zip_type_pixel *current_y, zip_type_pixel *prior_x, zip_type_pixel *prior_y);
 static int Draw_Basic_Style( struct zipoarrow *self, zip_type_figure figure, zip_type_pane pane, char fill );
 static int Feather_Points( zip_type_pixel current_x, zip_type_pixel current_y, zip_type_pixel prior_x, zip_type_pixel prior_y, zip_type_pixel *x1, zip_type_pixel *y1, zip_type_pixel *x2, zip_type_pixel *y2 );
 
 static int Draw();
 static int Draw_Basic_Style( struct zipoarrow *self, zip_type_figure figure, zip_type_pane pane, char fill );
-static int Draw_Basic_Body();
+static int Draw_Basic_Body(struct zipoarrow *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *current_x, zip_type_pixel *current_y, zip_type_pixel *prior_x, zip_type_pixel *prior_y);
 static int Feather_Points( zip_type_pixel current_x, zip_type_pixel current_y, zip_type_pixel prior_x, zip_type_pixel prior_y, zip_type_pixel *x1, zip_type_pixel *y1, zip_type_pixel *x2, zip_type_pixel *y2 );
 
 

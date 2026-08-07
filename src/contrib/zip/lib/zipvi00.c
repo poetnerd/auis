@@ -132,11 +132,11 @@ END-SPECIFICATION  ************************************************************/
 #define	 View			      (self)
 #define  Objects(i)		    ((*self->objects)[i])
 
-static int Draw_Inferior_Image();
-static int Draw_Figure();
-static int Clear_Inferior_Image();
-static int Hide_Inferior_Image();
-static int Expose_Inferior_Image();
+static int Draw_Inferior_Image(struct zipview *self, zip_type_image image, zip_type_pane pane);
+static int Draw_Figure(struct zipview *self, zip_type_figure figure, zip_type_pane pane);
+static int Clear_Inferior_Image(struct zipview *self, zip_type_image image, zip_type_pane pane);
+static int Hide_Inferior_Image(struct zipview *self, zip_type_image image, zip_type_pane pane);
+static int Expose_Inferior_Image(struct zipview *self, zip_type_image image, zip_type_pane pane);
 
 long zipview__Display_Image(struct zipview *self, zip_type_image image, zip_type_pane pane)
   {

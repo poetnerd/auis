@@ -44,7 +44,7 @@ static char rcsHeader[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/at
 
 #include "m3text.ih"
 #include "m3textv.eh"
-static void FindInterfaceOrModule();
+static void FindInterfaceOrModule(struct m3textview *self, boolean module);
 
 /* AutoCut was not made externally visible by txtvcmod, so WE have to check the preference TOO */
 static int autocut_mode = -1;	/* uninitialized */
@@ -54,7 +54,7 @@ static struct keymap *m3_Map;
 static struct menulist *m3_Menus;
 
 static void asterisk(struct m3textview *self, char key); /* must be char for "&" to work. */
-static void interface(), module();
+static void interface(struct m3textview *self, long key), module(struct m3textview *self, long key);
 static void m3pragma(struct m3textview *self, char key); /* must be char for "&" to work. */
 
 static struct bind_Description m3textBindings[]={

@@ -61,18 +61,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <environ.ih>
 #include <amsutil.ih>
 #include <init.ih>
-static int DisplayAMS_ERRNO();
-static void FolderHelp();
-static void HandleInitProblem();
+static int DisplayAMS_ERRNO(char *prefix);
+static void FolderHelp(char *partial, long rock, int (*helpfunc)(), long helprock);
+static void HandleInitProblem(long rock, char *err);
 static int HandleTimer();
-static struct init * ReadInitFile();
-static void ReportMissing();
-static int TimerReport();
+static struct init * ReadInitFile(char *fakeprogname, char *realprogname);
+static void ReportMissing(char *s);
+static int TimerReport(int code);
 static int UpdateServerState();
 
 static int IWantSnap = 0;
 static int RestartTimer();
-static int TimerReport();
+static int TimerReport(int code);
 
 /* same-file forward reference -- defined later in this file */
 extern int AddToClassList(char *TempName, char *FullName, Boolean CheckDups);

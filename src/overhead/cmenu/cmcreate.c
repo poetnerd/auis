@@ -38,8 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <wormimg.h>
 #include <shadows.h>
 #include <stdlib.h>
-static int GetDisplayInfo();
-static int GetGCs();
+static int GetDisplayInfo(Display *dpy, struct cmenu *menu, char *def_env);
+static int GetGCs(struct cmenudata *dp, Window window, char *def_env, int newshadows, int colorDisplay);
 
 char *getprofile();
 int getprofileswitch();

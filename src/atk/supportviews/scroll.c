@@ -47,25 +47,25 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <point.h>
 #include <rect.h>
 #include <scroll.eh>
-static void CancelScrollEvent();
-static void CheckBars();
-static boolean CheckEndZones();
-static void DoRepeatScroll();
-static void HandleEndZone();
-static void HandleRepeatMode();
+static void CancelScrollEvent(struct scroll *self);
+static void CheckBars(struct scroll *self, enum view_MouseAction action, long x, long y);
+static boolean CheckEndZones(struct scroll *self, enum view_MouseAction action, long x, long y);
+static void DoRepeatScroll(struct scroll *self);
+static void HandleEndZone(struct scroll *self, enum view_MouseAction action, long x, long y);
+static void HandleRepeatMode(struct scroll *self, enum view_MouseAction action, long x, long y);
 static void HandleThumbing();
-static void InitPrefs();
-static void MaybeStartThumbing();
-static void RepeatEndZone();
+static void InitPrefs(struct scroll *self);
+static void MaybeStartThumbing(struct scroll *self, enum view_MouseAction action, long x, long y);
+static void RepeatEndZone(struct scroll *self, long cTime);
 static void RepeatScroll();
 static long bar_height();
-static boolean barrects();
+static boolean barrects(struct scroll *self, int side, struct rectangle *boxrect, struct rectangle *topbuttonrect, struct rectangle *botbuttonrect);
 static void calc_desired();
 static boolean calc_dot();
 static boolean calc_elevator();
-static void compute_inner();
-static void draw_arrow();
-static void draw_bar();
+static void compute_inner(struct scroll *self, boolean draw);
+static void draw_arrow(struct scroll *self, int side, struct rectangle *r, int dir, boolean lit);
+static void draw_bar(struct scroll *self, int side);
 static void draw_dot();
 static void draw_elevator();
 static void draw_everything();
@@ -1458,7 +1458,7 @@ static void RepeatScroll(struct scroll *self, long cTime)
 #define PTINRECT(r, x, y) ((x)>=(r)->left && (x)<(r)->left+(r)->width && (y)>=(r)->top && (y)<(r)->top+(r)->height)
 #define ENDZONEREPTIME(self) (self->endzonereptime)
 
-static void ScheduleRepeatEndZone();
+static void ScheduleRepeatEndZone(struct scroll *self);
 
 static void RepeatEndZone(struct scroll *self, long cTime)
 {

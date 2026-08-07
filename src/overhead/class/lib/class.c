@@ -53,10 +53,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <class.h>  /* this contains all the structs, etc. for the class system */
 #include <doload.h>
 #include <errno.h>
-static int FindEntry();
-static int FindEntryByName();
-static int FindEntryByType();
-static int pathopen();
+static int FindEntry(char *name, unsigned long version, int load, struct classheader *header);
+static int FindEntryByName(char *name);
+static int FindEntryByType(struct classinfo *info);
+static int pathopen(char *aname, char *tname, char *ext, unsigned long version);
 
 /* external symbols that have no include files */
 
@@ -75,7 +75,7 @@ extern char etext;
 #endif /* _IBMR2 */
 
 extern int errno;
-static int pathopen();
+static int pathopen(char *aname, char *tname, char *ext, unsigned long version);
 
 /*
  * additional defined constants

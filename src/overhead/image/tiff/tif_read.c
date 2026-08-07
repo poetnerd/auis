@@ -37,11 +37,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * Scanline-oriented Read Support
  */
 #include "tiffioP.h"
-static int TIFFCheckRead();
-static int TIFFFillStrip();
-static int TIFFFillTile();
-static int TIFFStartStrip();
-static int TIFFStartTile();
+static int TIFFCheckRead(TIFF *tif, int tiles);
+static int TIFFFillStrip(TIFF *tif, u_int strip);
+static int TIFFFillTile(TIFF *tif, u_int tile);
+static int TIFFStartStrip(TIFF *tif, u_int strip);
+static int TIFFStartTile(TIFF *tif, u_int tile);
 
 #if USE_PROTOTYPES
 static	int TIFFSeek(TIFF *, u_int, u_int);

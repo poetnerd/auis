@@ -49,9 +49,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <proctbl.ih>
 
 #include <runadewa.eh>
-static void StartupError();
-static void addFile();
-static char * getarg();
+static void StartupError(char *string);
+static void addFile(struct runadewapp *self, char *name, boolean newWin, boolean ro);
+static char * getarg(char **argv, int *argc);
 
 
 static char **Gargv;

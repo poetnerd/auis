@@ -36,7 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <andrewos.h>
 #include <stdlib.h>
-static char * Useful_Next822LPart();
+static char * Useful_Next822LPart(char *s, char *e, char *thing, int size);
 
 extern char *Next822LPart();
 

@@ -58,11 +58,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fram
 #include <sys/stat.h>
 #include <messitem.ih>
 #include <framemsg.eh>
-static void BuildPrompt();
-static void EraseDisplayedMessage();
-static char * KludgePrompt();
-static void Process();
-static void QueueErasure();
+static void BuildPrompt(struct framemessage *self, char *prompt, char *defaultString);
+static void EraseDisplayedMessage(struct framemessage *self);
+static char * KludgePrompt(char *prompt, long defaultChoice, char *choices[], char *abbrevKeys);
+static void Process(struct framemessage *self, char *buffer, int bufferSize);
+static void QueueErasure(struct framemessage *self, long length);
 
 static boolean isMessFileLoaded = 0;
 
@@ -210,7 +210,7 @@ static void BuildPrompt(struct framemessage *self, char *prompt, char *defaultSt
     frameview_SetDotLength(self->messageView, 0);
 }
 
-void CancelNoExit();
+void CancelNoExit(struct framemessage *self);
 
 static void Process(struct framemessage *self, char *buffer, int bufferSize)
 {

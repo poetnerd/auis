@@ -138,15 +138,15 @@ END-SPECIFICATION  ************************************************************/
 #include "zipobj.ih"
 #include "zipprint.eh"
 #include <stdlib.h>
-static int Compute_Printing_Slug_Stretch_Factors();
-static int Print_Figure();
-static int Print_Image();
-static int Set_Printing_Characteristics();
+static int Compute_Printing_Slug_Stretch_Factors(struct zipprint *self, zip_type_pane pane);
+static int Print_Figure(struct zipprint *self, zip_type_figure figure, zip_type_pane pane);
+static int Print_Image(struct zipprint *self, zip_type_image image, zip_type_pane pane);
+static int Set_Printing_Characteristics(struct zipprint *self, zip_type_pane pane, zip_type_figure figure);
 
 int apt_MM_Compare( unsigned char *s1, unsigned char *s2 );			/* M2: same-file forward reference */
 /* M2: zipprint.do cross-file, no header declares these (defined zipvr00.c) */
-extern int zipprint_Write_Print_Datastream_Header();
-extern int zipprint_Write_Print_Datastream_Trailer();
+extern int zipprint_Write_Print_Datastream_Header(struct zipprint *self);
+extern int zipprint_Write_Print_Datastream_Trailer(struct zipprint *self);
 
 static boolean debug=FALSE;
 #define	 Data			     (self->data_object)
@@ -160,11 +160,11 @@ static boolean debug=FALSE;
 #define  InchWidth		(Printing->zip_printing_inch_width)
 #define  InchHeight		(Printing->zip_printing_inch_height)
 
-static int Print_Figure();
-static int Print_Image();
-static int Print_Inferior_Image();
-static int Compute_Printing_Slug_Stretch_Factors();
-static int Set_Printing_Characteristics();
+static int Print_Figure(struct zipprint *self, zip_type_figure figure, zip_type_pane pane);
+static int Print_Image(struct zipprint *self, zip_type_image image, zip_type_pane pane);
+static int Print_Inferior_Image(struct zipprint *self, zip_type_image image, zip_type_pane pane);
+static int Compute_Printing_Slug_Stretch_Factors(struct zipprint *self, zip_type_pane pane);
+static int Set_Printing_Characteristics(struct zipprint *self, zip_type_pane pane, zip_type_figure figure);
 
 boolean zipprint__InitializeObject(struct classheader *classID, struct zipprint *self)
   {

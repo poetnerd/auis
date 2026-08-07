@@ -42,32 +42,32 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <environ.ih>
 #include <stylesht.ih>
 #include <content.eh>
-static long StoI();
-static struct content_chapentry * addindexentry();
-static int appendlist();
-static char * chapnote();
-static int checknewline();
-static int clear();
-static int copymark();
-static int denumber();
-static int doshuffle();
-static int interestingstyle();
-static struct content_chapentry * findcp();
-static struct content_chapentry * findindexcp();
-static int findinlist();
-static struct content_chapentry * findremcp();
-static int freeentry();
-static int freeentrys();
-static int indexstyle();
-static struct content_chapentry * insertentry();
-static int mod();
-static struct content_chapentry * newentry();
-static boolean ns();
-static int number();
+static long StoI(struct content *self, long *ppos, int *lev, struct text *src);
+static struct content_chapentry * addindexentry(struct content *self, long pos, long len, struct content_chapentry **base);
+static int appendlist(char **lst, int cnt, char *ostr, int TEST);
+static char * chapnote(int *ip);
+static int checknewline(struct content *self, struct content_chapentry *cp);
+static int clear(struct content *self);
+static int copymark(struct text *desttext, struct mark *destmark, struct text *srctext, struct mark *srcmark, boolean cap);
+static int denumber(struct content *self, struct content_chapentry *cp);
+static int doshuffle(struct content *self);
+static int interestingstyle(struct content *self, char *name);
+static struct content_chapentry * findcp(struct content *self, long pos, long len);
+static struct content_chapentry * findindexcp(struct content *self, long pos, long len);
+static int findinlist(char **lst, int cnt, char *str);
+static struct content_chapentry * findremcp(struct content *self, long pos);
+static int freeentry(struct content *self, struct content_chapentry *cp, struct content_chapentry *lastcp);
+static int freeentrys(struct content *self);
+static int indexstyle(char *name);
+static struct content_chapentry * insertentry(struct content *self, long pos, long len, struct content_chapentry **base);
+static int mod(struct content *self, struct content_chapentry **base, boolean nonum);
+static struct content_chapentry * newentry(struct content *self, struct content_chapentry *next, boolean addmark);
+static boolean ns(struct content *self, struct text *text, long pos, struct environment *env);
+static int number(struct content *self, char *string, struct content_chapentry *cp);
 static boolean skipchapnumber();
-static boolean skipnewlines();
-static void update();
-static boolean updatemark();
+static boolean skipnewlines(struct text *d, long *pos, long *len);
+static void update(struct content *self);
+static boolean updatemark(struct text *d, struct mark *m, boolean nonum);
 
 #define INDENTSPACE 6
 #ifndef TEXT_VIEWREFCHAR
@@ -87,10 +87,10 @@ static char *indexnames[] = {
 };
 #define indexnamecount 2
 
-static int doindent();
-static int unindent();
-static void NoteStyle();
-static int ensure();
+static int doindent(struct content *self);
+static int unindent(struct content *self);
+static void NoteStyle(struct content *self, long pos, long len, struct style *style);
+static int ensure(struct content *self, struct content_chapentry **base, long pos, long len);
 
 static int findinlist(char **lst, int cnt, char *str)
 {

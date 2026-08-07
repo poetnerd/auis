@@ -121,11 +121,11 @@ END-SPECIFICATION  ************************************************************/
 #include <tree.ih>
 #include <treev.ih>
 #include <suite.ih>
-static int Activate();
-static int Alter_Control_Button();
-static int FullUpdate_Tree();
-static int Passivate();
-static int Prepare_Description();
+static int Activate(struct orgv *self);
+static int Alter_Control_Button(struct orgv *self, long datum, char *new);
+static int FullUpdate_Tree(struct orgv *self);
+static int Passivate(struct orgv *self);
+static int Prepare_Description(struct orgv *self, struct tree_node *node);
 
 static  struct menulist		 *class_menulist;
 static  struct keymap		 *class_keymap;
@@ -204,7 +204,7 @@ static char			  ExplodePhrase[]   = "Explode",
 #define  DescriptionLastModified  (self->description_last_modified)
 #define  InitialNodeCount	  (self->initial_node_count)
 
-static long Tree_Hit();
+static long Tree_Hit(struct orgv *self, struct treev *tree_view, struct tree_node *node, long type, enum view_MouseAction action, long x, long y, long clicks);
 
 
 static treev_Specification specification[] = {
@@ -284,7 +284,7 @@ static suite_Specification node_connector_button[] = {
   suite_ItemDatum(node_connector_code),  0
 };
 
-static long Control_Button_Hit();
+static long Control_Button_Hit(struct orgv *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks);
 
 static suite_Specification control_buttons[] = {
   suite_Item( add_button ),
@@ -303,17 +303,17 @@ static suite_Specification control_buttons[] = {
   NULL
 };
 
-static void 	    Add_Command(),
-	    Delete_Command(),
-            Rename_Command(),
-	    Description_Command(), 
-            Plode_Command(),
-	    Arrangement_Command(), 
-            Fold_Command(),
-	    Node_Border_Command(), 
-            Node_Connector_Command(),
-	    Palette_Command(), 
-            DEBUG_Command();
+static void 	    Add_Command(struct orgv *self),
+	    Delete_Command(struct orgv *self),
+            Rename_Command(struct orgv *self),
+	    Description_Command(struct orgv *self), 
+            Plode_Command(struct orgv *self),
+	    Arrangement_Command(struct orgv *self), 
+            Fold_Command(struct orgv *self),
+	    Node_Border_Command(struct orgv *self), 
+            Node_Connector_Command(struct orgv *self),
+	    Palette_Command(struct orgv *self), 
+            DEBUG_Command(struct orgv *self);
 
 static struct bind_Description view_menu[] = {
   { "orgv-Add", "",	    0,	"Add Node~20",	 0, menu_default,

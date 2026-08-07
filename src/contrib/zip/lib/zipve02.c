@@ -160,27 +160,27 @@ END-SPECIFICATION  ************************************************************/
 #include <zipedit.ih>
 #include <zipedit.h>
 #include <stdlib.h>
-static int Change_Figure_Font_And_Mode();
-static int Change_Shade();
-static int Set_Sample();
+static int Change_Figure_Font_And_Mode(struct zipedit *self, zip_type_pane pane, zip_type_figure figure, long font, long mode);
+static int Change_Shade(struct zipedit *self, zip_type_pane pane, zip_type_figure figure, long shade);
+static int Set_Sample(struct zipedit *self, zip_type_pane pane, boolean draw_pane);
 
-static int Parse_Stream_Image_Ending();
-static int Change_Shade();
-static int Figure_Palette_LBDT();
-static int Create_Name_Palette();
-static int Create_Font_Palette();
+static int Parse_Stream_Image_Ending(struct zip *self);
+static int Change_Shade(struct zipedit *self, zip_type_pane pane, zip_type_figure figure, long shade);
+static int Figure_Palette_LBDT(struct zipedit *self, zip_type_pane icon_pane, int x, int y, int clicks);
+static int Create_Name_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette);
+static int Create_Font_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette);
 static int Create_Font_Icon();
 static int Create_Shade_Palette();
-static int Create_Figure_Palette();
+static int Create_Figure_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette);
 static int Create_Figure_Icon();
-static int Create_Attribute_Palette();
-static int Create_TL_Palette();
-static int Create_TR_Palette();
-static int Create_BL_Palette();
-static int Create_BR_Palette();
+static int Create_Attribute_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette);
+static int Create_TL_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette);
+static int Create_TR_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette);
+static int Create_BL_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette);
+static int Create_BR_Palette(struct zipedit *self, zip_type_pane containing_pane, zip_type_pane pane, zip_type_pane *palette);
 static int Create_Palette_Surround();
-static int Set_Sample();
-static int Change_Figure_Font_And_Mode();
+static int Set_Sample(struct zipedit *self, zip_type_pane pane, boolean draw_pane);
+static int Change_Figure_Font_And_Mode(struct zipedit *self, zip_type_pane pane, zip_type_figure figure, long font, long mode);
 
 long zipedit__Set_Palettes(struct zipedit *self, zip_type_pane pane, int palette_mode)
   {

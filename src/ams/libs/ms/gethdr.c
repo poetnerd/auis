@@ -35,13 +35,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <hdrparse.h>
 #include <stdlib.h>
-extern int BuildReplyField();
-extern int BuildWideReply();
-extern int FreeMessage();
-extern int ParseMessageFromRawBody();
-extern int QuickGetBodyFileName();
-extern int ReadOrFindMSDir();
-extern int ReadRawFile();
+extern int BuildReplyField(struct MS_Message *Msg);
+extern int BuildWideReply(struct MS_Message *Msg, Boolean IncludeFrom);
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int QuickGetBodyFileName(char *DirName, char *id, char *FileName);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
 
 int MS_GetHeaderContents(char *dirname, char *id, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim)
 {

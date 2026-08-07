@@ -55,6 +55,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/eq/R
 #include <stdlib.h>
 #include <string.h>
 
+struct eqview_classinfo;
+
 /* eqview_Format is defined in draweqv.c; no header declares it,
  * matching the same forward-reference style draweqv.c itself uses
  * for its own internal call before the definition. */
@@ -306,7 +308,7 @@ enum view_DSattributes eqview__DesiredSize(struct eqview *self, long width, long
 
 boolean eqview__InitializeClass(struct classheader *classID)
 {
-    extern struct keymap *eqview_InitKeyMap();
+    extern struct keymap *eqview_InitKeyMap(struct eqview_classinfo *classInfo, struct menulist **eqviewMenus, struct menulist **eqviewCutMenus);
 
     eqviewKeymap = eqview_InitKeyMap(&eqview_classinfo, &eqviewMenus, &eqviewCutMenus);
 

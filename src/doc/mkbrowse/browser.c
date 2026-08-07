@@ -65,21 +65,21 @@ int entrycount=0;
  * pick up parameters and constants
  */
 #include <browserpp.h>
-static void AddDirectory();
-static int CheckSuperClass();
-static void CleanupFiles();
+static void AddDirectory(char *dirname);
+static int CheckSuperClass(struct EntryStruct **list, int count, char *superclass);
+static void CleanupFiles(FILE *HeaderFile);
 static void GlobalInit();
-static void ParseArgs();
-static void ParseFile();
-static void ParseHeader();
-static void SetupFiles();
-static void ShowSubClasses();
-static int compareclasses();
-static void errorexitparam();
+static void ParseArgs(int argc, char *argv[]);
+static void ParseFile(FILE *ThisFile, int toplevel);
+static void ParseHeader(int toplevel, char *ClassName, char *ParentClassName, char *ClassNameKey, char *ParentClassNameKey);
+static void SetupFiles(FILE **HeaderFile);
+static void ShowSubClasses(struct EntryStruct *t, int depth);
+static int compareclasses(const void *vx, const void *vy);
+static void errorexitparam(int ec, char *base, char *param);
 static int getnexttoken();
 static int gettoken();
-static void handleclasskeywords();
-static int retrievetoken();
+static void handleclasskeywords(int intoken, enum ParseState *CurrentState);
+static int retrievetoken(int intoken);
 static void usage();
 
 /* This is a complete bastardization of the class preprocessor to simply take a list of .ch files and generate an org datastream giving the inheritance structure, it may be that this functionality should be merged into the real class program.

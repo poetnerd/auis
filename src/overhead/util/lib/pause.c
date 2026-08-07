@@ -48,7 +48,7 @@ extern int errno;
 #include <stdio.h>
 #include <sys/stat.h>
 #include <signal.h>
-static int DoCall();
+static int DoCall(int Action, int *OldP);
 /* #include <sys.h> DMT commented out */
 extern int errno;
 

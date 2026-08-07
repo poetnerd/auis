@@ -81,34 +81,39 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fram
 #include <signal.h> /* needed for hp - sometimes included in sys/param.h */
 #include <sys/stat.h>
 #include <sys/errno.h>
-static boolean BufferCompletionWork();
-static void BufferHelp();
-static boolean BufferHelpWork();
-static boolean FindFirstBuffer();
-static boolean HideWindow();
-static void ListBuffersWork();
-static struct buffer * LocalGetBufferOnFile();
-static void ReplaceBuffer();
-static boolean ReplaceBufferWork();
-static void bufferDirectory();
-static boolean bufferDirtyP();
-static void bufferFilename();
-static boolean countChangedBuffer();
-static int countFrames();
-static boolean countSpecificBuffers();
-static int frame_ReadFile();
-static void frame_RecursiveVisitWork();
-static void frame_SaveExcursion();
-static int frame_SwitchFile();
+
+struct helpData;
+struct bufferPair;
+struct findbuf;
+struct saveTheWorldRock;
+static boolean BufferCompletionWork(struct buffer *buffer, struct result *data);
+static void BufferHelp(char *partial, long listInfo, int (*helpTextFunction)(), long helpTextRock);
+static boolean BufferHelpWork(struct buffer *buffer, struct helpData *helpData);
+static boolean FindFirstBuffer(struct buffer *tryBuffer, struct buffer *cannotMatchBuffer);
+static boolean HideWindow(struct frame *frame);
+static void ListBuffersWork(struct text *helpDoc, long dummyData, char *bufferInfo, char *dummyInfo);
+static struct buffer * LocalGetBufferOnFile(struct frame *self, char *filename, int flags);
+static void ReplaceBuffer(struct buffer *oldBuffer, struct buffer *newBuffer);
+static boolean ReplaceBufferWork(struct frame *frame, struct bufferPair *bufferPair);
+static void bufferDirectory(struct buffer *buffer, char *dir);
+static boolean bufferDirtyP(struct buffer *buffer);
+static void bufferFilename(struct buffer *buffer, char *filename);
+static boolean countChangedBuffer(struct buffer *buf, int *counter);
+static int countFrames(struct frame *self, long *rock);
+static boolean countSpecificBuffers(struct frame *f, struct findbuf *fb);
+static int frame_ReadFile(struct frame *self, long key);
+static void frame_RecursiveVisitWork(struct frame *self);
+static void frame_SaveExcursion(struct frame *self, void (*function)());
+static int frame_SwitchFile(struct frame *self, long key);
 static boolean frame_clear2exit();
-static boolean isString();
+static boolean isString(char *arg);
 static void myKeyboardProcessor();
-static boolean preventBufferLossage();
-static int preventOutofSyncLossage();
-static boolean preventOverwriteLossage();
-static boolean preventReversionLossage();
-static boolean saveAllWork();
-static int saveBuffer();
+static boolean preventBufferLossage(struct frame *outputFrame, struct buffer *preciousBuffer);
+static int preventOutofSyncLossage(struct frame *outputFrame, struct buffer *buffer);
+static boolean preventOverwriteLossage(struct frame *outputFrame, struct buffer *buffer);
+static boolean preventReversionLossage(struct frame *outputFrame, struct buffer *buffer);
+static boolean saveAllWork(struct buffer *buffer, struct saveTheWorldRock *returnBuf);
+static int saveBuffer(struct frame *outputFrame, struct buffer *buffer, char *filename);
 
 extern int errno;
 static struct keymap *framecmdsKeymap, *framecmdsDefaultKeymap;
@@ -188,11 +193,11 @@ static char *SyncChoices[] = {
 #define SYNC_READ  0
 #define SYNC_LOSE  1
 
-static int LocalReadFile();
-int frame_VisitFilePrompting();	/* defined below, used earlier in this file */
-int frame_VisitNamedFile();		/* defined below, used earlier in this file */
-int frame_WriteFile();			/* defined below, used earlier in this file */
-extern int osi_GetTimes();		/* overhead/util/lib/times.c; no header declares it anywhere in the tree */
+static int LocalReadFile(struct frame *self, char *fname, boolean preserveBuffer);
+int frame_VisitFilePrompting(struct frame *self, char *prompt, boolean newWindow, boolean rawMode);	/* defined below, used earlier in this file */
+int frame_VisitNamedFile(struct frame *self, char *filename, boolean newWindow, boolean rawMode);		/* defined below, used earlier in this file */
+int frame_WriteFile(struct frame *self);			/* defined below, used earlier in this file */
+extern int osi_GetTimes(struct osi_Times *blk);		/* overhead/util/lib/times.c; no header declares it anywhere in the tree */
 
 static int preventOutofSyncLossage(struct frame *outputFrame, struct buffer *buffer)
 {
@@ -670,7 +675,7 @@ static int countFrames(struct frame *self, long *rock)
     return 0;
 }
 
-void frame_Exit();
+void frame_Exit(struct frame *self);
 
 static char lastWindowWarning[] =
 "This is the last window.";

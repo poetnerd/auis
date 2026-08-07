@@ -35,9 +35,9 @@
 #include <filetype.ih> /* for CanonicalizeFilename */
 #include <buffer.ih>
 #include <text.ih>
-static char * dogtagSubstitution();
-static char * makeupper();
-static long nextDogtagPos();
+static char * dogtagSubstitution(struct text *self, long dtpos, long dtlen);
+static char * makeupper(char *str);
+static long nextDogtagPos(struct text *self, long pos, long length);
 
 #ifndef NORCSID
 static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/srctext/RCS/dogtags.c,v 1.4 1994/02/28 21:24:33 rr2b Exp $";

@@ -37,7 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 /* BOGUS: Include relevant AMS header(s) here */
 
 #include <big.h>
-static int MCHash();
+static int MCHash(char *string);
 
 static int MCHash(char *string)
 {

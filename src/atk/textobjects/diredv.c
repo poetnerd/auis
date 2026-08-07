@@ -55,21 +55,21 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #include <dired.ih>
 #include <diredv.eh>
-static int DeleteProc();
-static char * GetFullName();
-static int RenameProc();
-static void SetMenuMask();
-static int VisitFile();
-static int ZoomProc();
-static void ptproc_Delete();
-static void ptproc_DownLine();
-static void ptproc_ModeChange();
-static void ptproc_Refresh();
-static void ptproc_RegexpSelect();
-static void ptproc_Rename();
-static void ptproc_ToggleSelect();
-static void ptproc_UpLine();
-static void ptproc_Zoom();
+static int DeleteProc(char *filename, struct diredview *self);
+static char * GetFullName(struct diredview *self, char *filename);
+static int RenameProc(char *filename, struct diredview *self);
+static void SetMenuMask(struct diredview *self);
+static int VisitFile(struct diredview *self, char *fname);
+static int ZoomProc(char *filename, char **foundp);
+static void ptproc_Delete(struct diredview *self, long rock);
+static void ptproc_DownLine(struct diredview *self, long rock);
+static void ptproc_ModeChange(struct diredview *self, long change);
+static void ptproc_Refresh(struct diredview *self, long rock);
+static void ptproc_RegexpSelect(struct diredview *self, long rock);
+static void ptproc_Rename(struct diredview *self, long rock);
+static void ptproc_ToggleSelect(struct diredview *self, long rock);
+static void ptproc_UpLine(struct diredview *self, long rock);
+static void ptproc_Zoom(struct diredview *self, long rock);
 
 extern int errno;
 

@@ -51,8 +51,8 @@
 #include <openssl/x509v3.h>
 
 #include <tlscon.h>
-static int tlscon_refill();
-static void tlscon_sslerr();
+static int tlscon_refill(struct tlscon *c);
+static void tlscon_sslerr(char *errbuf, int errlen, char *prefix);
 
 #define TLSCON_RCVTIMEO 60	/* seconds */
 #define TLSCON_RBUFSIZE 4096

@@ -44,17 +44,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <class.h>
 #include <environ.eh>
 #include <string.h>
-static boolean varcmp();
+static boolean varcmp(char *variable, char *envEntry);
 
 extern char ProgramName[];	/* blechhh */
 
-extern char *GetConfiguration();
-extern char *AndrewDir();
-extern char *LocalDir();
-extern struct configurelist *ReadConfigureFile();
-extern char *GetConfig();
-extern int getprofileswitch(), getprofileint(), profileentryexists();
-extern int FreeConfigureList();
+extern char *GetConfiguration(char *key);
+extern char *AndrewDir(char *str);
+extern char *LocalDir(char *str);
+extern struct configurelist *ReadConfigureFile(char *fileName);
+extern char *GetConfig(struct configurelist *header, char *key, int usedefault);
+extern int getprofileswitch(), getprofileint(), profileentryexists(char *var, int usedefault);
+extern int FreeConfigureList(struct configurelist *cList);
 
 /* used to avoid problems with null pointers expected to be
   treated as null strings */

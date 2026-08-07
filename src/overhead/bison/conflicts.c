@@ -40,13 +40,13 @@ extern short *LAruleno;
 extern short *lookaheads;
 extern int verboseflag;
 
-void set_conflicts();
-void resolve_sr_conflict();
-void flush_shift();
-void log_resolution();
+void set_conflicts(int state);
+void resolve_sr_conflict(int state, int lookaheadnum);
+void flush_shift(int state, int token);
+void log_resolution(int state, int LAno, int token, char *resolution);
 void total_conflicts();
-void count_sr_conflicts();
-void count_rr_conflicts();
+void count_sr_conflicts(int state);
+void count_rr_conflicts(int state);
 
 char any_conflicts;
 char *conflicts;

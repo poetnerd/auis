@@ -89,6 +89,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <keymap.ih>
 #include <keystate.ih>
 #include <cursor.ih>
+
+enum RasterIOType;
 /* #include <bind.ih> */
 #include <proctbl.ih>
 #include <message.ih>
@@ -110,37 +112,37 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <xbm.ih>
 
 #include <dispbox.h>
-static void CopyCommand();
-static void CropCommand();
-static void ExtendToMatCommand();
-static void RasterIOCommand();
-static void ReadFileCommand();
-static void ReplaceCommand();
-static void ScaleCommand();
-static void ScaleReplaceCommand();
-static void SetPrintSizeCommand();
-static void ShrinkCommand();
-static void UncropCommand();
+static void CopyCommand(struct rasterview *self);
+static void CropCommand(struct rasterview *self, long rock);
+static void ExtendToMatCommand(struct rasterview *self);
+static void RasterIOCommand(struct rasterview *self, enum RasterIOType rock);
+static void ReadFileCommand(struct rasterview *self, long rock);
+static void ReplaceCommand(struct rasterview *self);
+static void ScaleCommand(struct rasterview *self);
+static void ScaleReplaceCommand(struct rasterview *self);
+static void SetPrintSizeCommand(struct rasterview *self);
+static void ShrinkCommand(struct rasterview *self, long rock);
+static void UncropCommand(struct rasterview *self, long rock);
 
 /* os_system (overhead/util/lib/system.c) has no declaring header
    anywhere in the tree. */
-extern int os_system();
+extern int os_system(char *cmd);
 
 static void ToggleDebug();
 
-extern boolean FindFrameHelp();
-extern void CurrentDirectory();
-extern void UpdateZoomedSelection();
-extern void ViewHideHighlight();
-extern void CorrectHighlight();
-extern void ZoomToVisualBounds();
-extern void DrawPanHighlight();
-extern void CenterViewSelection();
-extern void MakeToolsetProc(), KillToolsetProc();
-extern void ToggleCoordProc();
-extern void OverlayInsetProc(), RemoveInsetProc(), ResizeInsetProc(), ImprintInsetProc();
+extern boolean FindFrameHelp(struct frame *frame, struct im *im);
+extern void CurrentDirectory(struct rasterview *self, char *f);
+extern void UpdateZoomedSelection(struct rasterview *self, long x, long y);
+extern void ViewHideHighlight(struct rasterview *self);
+extern void CorrectHighlight(struct rasterview *self);
+extern void ZoomToVisualBounds(struct rasterview *self, long x, long y);
+extern void DrawPanHighlight(struct rasterview *self, short g);
+extern void CenterViewSelection(struct rasterview *self);
+extern void MakeToolsetProc(struct rasterview *self, char *rock), KillToolsetProc(struct rasterview *self, char *rock);
+extern void ToggleCoordProc(struct rasterview *self, char *rock);
+extern void OverlayInsetProc(struct rasterview *self, char *rock), RemoveInsetProc(struct rasterview *self, char *rock), ResizeInsetProc(struct rasterview *self, char *rock), ImprintInsetProc(struct rasterview *self, long rock);
 
-void PostMenus();
+void PostMenus(struct rasterview *self);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *	User Interface 

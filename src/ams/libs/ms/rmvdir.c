@@ -35,18 +35,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <ms.h>
 #include <stdlib.h>
-extern int BuildNickName();  /* ams/libs/shr/utils.c */
-extern int DropHint();
-extern int EnsureNotInSubscriptionMap();
-extern int NonfatalBizarreError();
-extern int ReadOrFindMSDir();
-extern int RemoveFromCrucialClassesPreference();
-extern int RemoveSubsEntry();
-extern int SetSubsEntry();
-extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
-extern int setprofilestring();  /* overhead/util/lib/setprof.c */
+extern int BuildNickName(char *FullName, char *NickName);  /* ams/libs/shr/utils.c */
+extern int DropHint(char *Dirname);
+extern int EnsureNotInSubscriptionMap(char *DirName);
+extern int NonfatalBizarreError(char *text);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int RemoveFromCrucialClassesPreference(char *DirName, char *NewName);
+extern int RemoveSubsEntry(char *FullName);
+extern int SetSubsEntry(char *FullName, char *NickName, int status);
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
+extern int setprofilestring(char *prog, char *pref, char *val);  /* overhead/util/lib/setprof.c */
 
-extern char *getprofile(), *StripWhiteEnds();
+extern char *getprofile(), *StripWhiteEnds(char *string);
 
 long MS_RemoveDirectory(char *DirName, int MaxRemovals)
 {

@@ -45,9 +45,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <svcconf.h>
 #include <pwd.h>
 #include <util.h>
+
+struct ktc_token;
+struct ktc_principal;
 static int GenAuths();
-static int IsKTC();
-static int UnpackKTC();
+static int IsKTC(char *where);
+static int UnpackKTC(char *tokens, struct ktc_token *atok, struct ktc_principal *aserv, struct ktc_principal *acli, int debug, int *pPrimFlag);
 
 #ifdef AFS_ENV
 #include <afs/param.h>

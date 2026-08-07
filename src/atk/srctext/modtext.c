@@ -40,17 +40,17 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 
 #include "srctext.ih"
 #include "modtext.eh"
-static long GetStyleCount();
-static void SetupStyles();
-static long SkipPragma();
-static long backLevel();
-static int backwardFirstnonwhitespace();
-static long backwardSkipComment();
-static long backwardSkipJunk();
-static long backwardSkipPragma();
-static long checkPreproc();
-static long matchend();
-static long maybeBackwardSkipCppLines();
+static long GetStyleCount(struct modtext *self, long pos);
+static void SetupStyles(struct modtext *self);
+static long SkipPragma(struct modtext *self, long pos, long end);
+static long backLevel(struct modtext *self, long pos, Dict *word, long count);
+static int backwardFirstnonwhitespace(struct modtext *self, long pos);
+static long backwardSkipComment(struct modtext *self, long pos);
+static long backwardSkipJunk(struct modtext *self, long i);
+static long backwardSkipPragma(struct modtext *self, long pos);
+static long checkPreproc(struct modtext *self, long start);
+static long matchend(struct modtext *self, long pos);
+static long maybeBackwardSkipCppLines(struct modtext *self, long pos);
 
 boolean modtext__IsTokenChar(struct modtext *self, char ch)
 {

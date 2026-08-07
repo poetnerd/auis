@@ -52,16 +52,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include "sbutton.ih"
 #include "sbttnav.eh"
-static void AddGroupMenu();
-static char * Intern();
-static struct sbutton_prefs * LookupGroupPrefs();
-static boolean dodeletion();
-static boolean domenus();
+
+struct deleterock;
+struct menusrock;
+static void AddGroupMenu(struct sbttnav *self, struct sbutton_prefs *prefs, int prio);
+static char * Intern(char *str);
+static struct sbutton_prefs * LookupGroupPrefs(struct sbttnav *self, char *name);
+static boolean dodeletion(struct sbutton *b, int i, struct sbutton_info *si, struct deleterock *rock);
+static boolean domenus(struct sbutton *b, int i, struct sbutton_info *si, struct menusrock *mr);
 
 #define PROMPTFONT "andysans12b"
 
 /* Forward Declarations */
-static void ShadowColorProc(), LabelColorProc(), TriggerProc(), BDeleteProc(), GDeleteProc(), RenameProc(), GroupProc(), NewGroupProc(), LabelProc(), FontProc(), StyleProc(), ColorProc(), AddButtonProc(), SetRowsProc(), SetColsProc();
+static void ShadowColorProc(struct sbttnav *self, long param), LabelColorProc(struct sbttnav *self, long param), TriggerProc(struct sbttnav *self, long param), BDeleteProc(struct sbttnav *self, long param), GDeleteProc(struct sbttnav *self, long rock), RenameProc(struct sbttnav *self, long rock), GroupProc(struct sbttnav *self, long rock), NewGroupProc(struct sbttnav *self, long rock), LabelProc(struct sbttnav *self, long param), FontProc(struct sbttnav *self, long param), StyleProc(struct sbttnav *self, long param), ColorProc(struct sbttnav *self, long param), AddButtonProc(struct sbttnav *self, long rock), SetRowsProc(struct sbttnav *self, long rock), SetColsProc(struct sbttnav *self, long rock);
 
 /* Global Variables */
 static struct menulist *menulist = NULL;

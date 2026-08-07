@@ -53,22 +53,24 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <path.ih>
 #include <environ.ih>
 #include <init.eh>
-static void AddFileType();
-static void BindFunction();
-static void Call();
-static struct basicobject * CheckML();
-static struct keys * GetKeyFromKeystate();
-static struct keymap * GetKeymap();
-static struct menulist * GetMenulist();
-static void Load();
-static char * MapFile();
 
-static char *GetToken();
+enum init_bindingtype;
+static void AddFileType(char **args, boolean forceLoad);
+static void BindFunction(struct init *init, char **args, boolean forceLoad, enum init_bindingtype type, char *commandName);
+static void Call(char **args);
+static struct basicobject * CheckML(struct menulist *menulist, char *class, boolean inherit);
+static struct keys * GetKeyFromKeystate(struct init *self, struct keystate *keystate);
+static struct keymap * GetKeymap(struct init *init, char *className, boolean inheritFlag);
+static struct menulist * GetMenulist(struct init *init, char *className, boolean inheritFlag);
+static void Load(char **args);
+static char * MapFile(char *filename, long *fileLength);
+
+static char *GetToken(char **pp);
 static void ErrorMsg();
 
-static int TranslateKeySequence();
-static int parseBackslashed();
-static int ReadFile();
+static int TranslateKeySequence(char *from, char *to);
+static int parseBackslashed(char **fromChars);
+static int ReadFile(struct init *init, char *filename, boolean executeImmediately);
 
 /* Format of a .bxinit file:
  * Blank lines and lines beginning with a # are ignored.

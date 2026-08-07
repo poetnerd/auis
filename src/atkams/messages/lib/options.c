@@ -61,7 +61,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <folders.ih>
 
 /* same-file forward references -- both defined later in this file */
-extern int saveprofilestring(), CountCommas();
+extern int saveprofilestring(char *prog, char *pref, char *val, int warn), CountCommas(char *s);
 
 #define PREF_ERR 0
 #define PREF_TEMP 1

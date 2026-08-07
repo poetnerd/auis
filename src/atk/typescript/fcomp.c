@@ -65,10 +65,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/type
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-static int GatherStats();
-static int MakeReport();
-static char * SaveLastCommand();
-static int mystrcmp();
+
+struct helpstat;
+struct repCookie;
+static int GatherStats(struct helpstat *rock, enum message_HelpItem itemtype, char *item, long dummy);
+static int MakeReport(struct repCookie *cookie, enum message_HelpItem itemtype, char *item, long dummy);
+static char * SaveLastCommand(struct typescript *td);
+static int mystrcmp(const void *v1, const void *v2);
 
 static struct cursor *waitCursor;
 static long searchCmd;

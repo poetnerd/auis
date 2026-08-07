@@ -44,18 +44,20 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <list.ih>
 
 #include <dired.eh>
-static int AnythingProc();
-static int CompareFilenameProc();
-static void DestroyList();
-static struct list * DirIntoList();
+
+struct emargs;
+static int AnythingProc(struct fileinfo *fi, long rock);
+static int CompareFilenameProc(struct fileinfo *f1, struct fileinfo *f2);
+static void DestroyList(struct list *list);
+static struct list * DirIntoList(char *dname, boolean longMode, boolean dotFiles);
 static char * DoEnumerate(struct dired *self, procedure proc, void *rock, boolean all);
-static int EnumProc();
-static int FindNameProc();
-static int FindPosProc();
-static int FreeProc();
-static int InsTextProc();
-static void ListIntoText();
-static void WrapStyle();
+static int EnumProc(struct fileinfo *fi, struct emargs *args);
+static int FindNameProc(struct fileinfo *fi, char *name);
+static int FindPosProc(struct fileinfo *fi, long pos);
+static int FreeProc(struct fileinfo *fi, long rock);
+static int InsTextProc(struct fileinfo *fi, struct dired *dired);
+static void ListIntoText(struct dired *self, struct list *list);
+static void WrapStyle(struct dired *self, struct fileinfo *fi, struct style *style);
 
 #define RootEnv(dired) \
     ((struct environment *) (dired)->header.text.rootEnvironment)
@@ -166,7 +168,7 @@ static int InsTextProc(struct fileinfo *fi, struct dired *dired)
     return TRUE;
 }
 
-static void SetupStyles();
+static void SetupStyles(struct dired *self);
 
 static void ListIntoText(struct dired *self, struct list *list)
 {

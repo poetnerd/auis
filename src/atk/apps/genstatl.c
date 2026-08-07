@@ -28,16 +28,16 @@
 #include <sys/param.h>
 
 #include <util.h>
-static boolean AddClass();
-static struct hashf * AddFile();
-static void DumpList();
+static boolean AddClass(char *name);
+static struct hashf * AddFile(char *path, boolean exists);
+static void DumpList(FILE *ifp, char *extn, FILE *ordering);
 static void DumpStatl();
-static void ProcessList();
+static void ProcessList(FILE *fp);
 static void usage();
 
-FILE *pathopen();
-extern char *AndrewDir();
-extern char *XBaseDir();
+FILE *pathopen(char *path, char *file, char *mode);
+extern char *AndrewDir(char *str);
+extern char *XBaseDir(char *str);
 char *AndrewDirStr=NULL;
 char *XBaseDirStr=NULL;
 char *AFSBaseDirStr=NULL;

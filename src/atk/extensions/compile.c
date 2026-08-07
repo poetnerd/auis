@@ -65,33 +65,38 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <stylesht.ih>
 
 #include <compile.eh>
-static struct frame * FindByView();
-static int FinishProcess();
-static boolean FrameFinder();
-static void InsertMessage();
-static struct buffer * MakeCommandBuffer();
-static struct errorList * MakeErrorList();
-static int ParseCCError();
-static int ParseCD();
-static int ParseEgrepError();
-static int ParseEntry();
-static int ParseHCError();
-static int ParseSGIError();
-static struct view * PopToMark();
-static struct view * PutInAnotherWindow();
-static boolean SaveAllBuffers();
-static boolean SaveModifiedBuffer();
-static boolean SetDotToEnd();
-static struct process * StartProcess();
-static int ViewEqual();
-static void compile_Build();
-static void compile_BuildHandler();
-static void compile_KillBuild();
-static int compile_NextError();
-static int compile_PreviousError();
-static void compile_SetCommand();
-static int getlinepos();
-static long nextlinepos();
+
+struct process;
+struct finderInfo;
+struct lengthPair;
+struct processbuffer;
+static struct frame * FindByView(struct view *view);
+static int FinishProcess(struct process *process);
+static boolean FrameFinder(struct frame *frame, struct finderInfo *info);
+static void InsertMessage(struct buffer *buffer, long pos, char *string, long len);
+static struct buffer * MakeCommandBuffer(char *command, char *buffername, int (*handler)());
+static struct errorList * MakeErrorList(struct buffer *errorBuffer);
+static int ParseCCError(struct text *doc, long *startPos, char *fileName, int maxSize);
+static int ParseCD(struct text *doc, long *startPos, char *directory, int maxSize);
+static int ParseEgrepError(struct text *doc, long *startPos, char *fileName, int maxSize);
+static int ParseEntry(char *buffer, struct text *doc, long *startPos, int maxSize);
+static int ParseHCError(struct text *doc, long *startPos, char *fileName, int maxSize);
+static int ParseSGIError(struct text *doc, long *startPos, char *fileName, int maxSize);
+static struct view * PopToMark(struct mark *mark, int useWindowFlag, struct textview *textview);
+static struct view * PutInAnotherWindow(struct view *view, struct buffer *buffer, int forceWindow);
+static boolean SaveAllBuffers(struct view *view);
+static boolean SaveModifiedBuffer(struct buffer *buffer, struct view *messageView);
+static boolean SetDotToEnd(struct view *applicationView, struct view *targetView, struct view *inputFocus, struct lengthPair *lengths);
+static struct process * StartProcess(char *command, FILE **inputFile, FILE **outputFile);
+static int ViewEqual(struct frame *frame, struct view *view);
+static void compile_Build(struct view *view, long key);
+static void compile_BuildHandler(FILE *inputFile, struct processbuffer *processBuffer);
+static void compile_KillBuild(struct view *view, long key);
+static int compile_NextError(struct view *view, int key);
+static int compile_PreviousError(struct view *view, int key);
+static void compile_SetCommand(char *command);
+static int getlinepos(struct text *doc, int line);
+static long nextlinepos(struct text *doc, long pos);
 static void resetErrors();
 
 #ifdef hpux
@@ -106,7 +111,7 @@ struct lengthPair {
     long first, second;
 };
 
-static struct view *PopToMark();
+static struct view *PopToMark(struct mark *mark, int useWindowFlag, struct textview *textview);
 static void resetErrors();
 
 static boolean SetDotToEnd(struct view *applicationView, struct view *targetView, struct view *inputFocus, struct lengthPair *lengths)
@@ -390,7 +395,7 @@ static boolean SaveAllBuffers(struct view *view)
     return (buffer_Enumerate(SaveModifiedBuffer, view) == NULL);
 }
 
-static struct view *PutInAnotherWindow();
+static struct view *PutInAnotherWindow(struct view *view, struct buffer *buffer, int forceWindow);
 
 static void compile_Build(struct view *view, long key)
 {
@@ -902,7 +907,7 @@ static struct frame * FindByView(struct view *view)
 static struct view * PutInAnotherWindow(struct view *view, struct buffer *buffer, int forceWindow)
 {
 
-    boolean FrameFinder();
+    boolean FrameFinder(struct frame *frame, struct finderInfo *info);
     struct frame *frame;
     struct finderInfo myInfo;
 

@@ -43,9 +43,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <dataobj.ih>
 #include <observe.ih>
 #include <view.ih>
-static short FindObserver();
-static short FindObserverCallBack();
-static short FreeSlot();
+static short FindObserver(struct value *self, struct basicobject *observer);
+static short FindObserverCallBack(struct value *self, struct basicobject *observer, procedure callBack);
+static short FreeSlot(struct value *self);
 #define INITIALNUMOBSERVERS 4
 
 static struct atom *rock1atom, *rock2atom, *stringatom, *stringarrayatom, *valueatom;

@@ -37,7 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 #include <big.h>
 #include <stdlib.h>
 
-static int STBGrowIfNecessary();
+static int STBGrowIfNecessary(STableBucket_t *stb);
 
 void STBInit(STableBucket_t *stb)
 {

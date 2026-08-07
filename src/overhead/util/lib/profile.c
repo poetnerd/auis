@@ -38,7 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <errno.h>
 #include <andrewos.h>
-extern char *AndrewDir();		/* sys/types.h */
+extern char *AndrewDir(char *str);		/* sys/types.h */
 extern char *getenv();
 #include <sys/stat.h>
 #include <sys/param.h>	/* For MAXPATHLEN */
@@ -47,9 +47,9 @@ extern char *getenv();
 #include <util.h>
 #include <stdlib.h>
 static void initprofiles();
-static struct configurelist * openprofile();
+static struct configurelist * openprofile(char *filename, char *defaultname, int savefname);
 
-extern int FoldedEQ();		/* foldedeq.c, no header declares it */
+extern int FoldedEQ(unsigned char *s1, unsigned char *s2);		/* foldedeq.c, no header declares it */
 
 #define DEFAULTPROFILES "~/preferences:~/.preferences:~/.Xdefaults"
 #define GLOBALPROFILE AndrewDir("/lib/global.prf")

@@ -45,7 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * to by anything but the stack itself.  Same goes for bucketnodes
  */
 #include <eliy.h>
-static int locallexer();
+static int locallexer(struct parser *lexerrock, void *pyylval);
 
 /* eliyylex is the flex-generated scanner entry point, defined in the
    sibling generated file elil.c; no header in the tree declares it. */

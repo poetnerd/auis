@@ -62,11 +62,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <ctype.h>
 #include <sys/param.h>
 #include <tags.eh>
-static struct frame * FindByView();
-static int ViewEqual();
+static struct frame * FindByView(struct view *view);
+static int ViewEqual(struct frame *frame, struct view *view);
 static void checkFileName();
-static struct buffer * tags_OpenBuffer();
-static struct buffer * tags_OpenTagsBuffer();
+static struct buffer * tags_OpenBuffer(char *filename);
+static struct buffer * tags_OpenTagsBuffer(char *name);
 
 struct SearchPattern {
     short size, used;

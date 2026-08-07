@@ -42,14 +42,14 @@ Author: Tom Neuendorffer
 #include <andrewos.h> /* sys/file.h */
 
 extern char *getenv();
-extern char *AndrewDir();
+extern char *AndrewDir(char *str);
 
 struct PathEntry {
     struct PathEntry *next;
     char name[1];
 };
 static struct PathEntry *globalPath = 0;
-static char *pathopen();
+static char *pathopen(char *aname);
 int Initialize();
 
 int main(int argc, char *argv[])

@@ -51,13 +51,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <pwd.h>
 
 #include <mailconf.h>
-static struct configurelist * openCellConfig();
+static struct configurelist * openCellConfig(char *cellN);
 
-extern char *AndrewDir();
-extern char *LocalDir();
+extern char *AndrewDir(char *str);
+extern char *LocalDir(char *str);
 
 /* No header anywhere in the tree declares these. */
-extern int LCappend();			/* overhead/util/lib/lcappend.c */
+extern int LCappend(char *s1, char *s2);			/* overhead/util/lib/lcappend.c */
 extern int CheckServiceConfiguration();	/* overhead/util/lib/svcconf.c */
 
 extern int errno;

@@ -46,11 +46,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdlib.h>
 
 /* Some useful functions and buffers */
-extern char *StripWhiteEnds();
+extern char *StripWhiteEnds(char *string);
 extern int NeedToTimeOut;
 extern char home[], Me[], MyMailDomain[];
-extern ADDRESS_HOST *MakeHost();
-extern PARSED_ADDRESS *SingleAddress();
+extern ADDRESS_HOST *MakeHost(char *name);
+extern PARSED_ADDRESS *SingleAddress(PARSED_ADDRESS *AddrList, int *pCount);
 
 /* This routine, LookupInLocalDatabase, is a site-dependent routine for performing non-standard name validation. */
 /* A trivial change to this would validate all local names as OK.  The body would have 3 lines:

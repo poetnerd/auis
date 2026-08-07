@@ -42,7 +42,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <texttag.ih>
 #include <fontdesc.ih>
 #include <textrefv.eh>
-static boolean findtag();
+static boolean findtag(struct textrefv *self, struct text *text, long pos, struct environment *env);
 
 #define DataObject(A) (A->header.view.dataobject)
 #define Data(A) ((struct textref *)(DataObject(A)))

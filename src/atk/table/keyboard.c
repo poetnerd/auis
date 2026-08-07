@@ -48,15 +48,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #define AUXMODULE
 #include <spread.eh>
-static int k_CheckSelection();
-static int k_ReadFormula();
+
+struct spread_classinfo;
+static int k_CheckSelection(struct spread *V);
+static int k_ReadFormula(struct spread *V, char *startstring);
 static void k_backspace(struct spread *V, char ch);
 static void k_bottom(struct spread *V, char ch);
 static void k_debug(struct spread *V, char ch);
 static void k_downarrow(struct spread *V, char ch);
 static void k_endline(struct spread *V, char ch);
 static void k_enterchar(struct spread *V, char ch);
-static void k_exit();
+static void k_exit(struct spread *V, char ch);
 static void k_home(struct spread *V, char ch);
 static void k_killbuff(struct spread *V, char ch);
 static void k_leftarrow(struct spread *V, char ch);
@@ -67,10 +69,10 @@ static void k_top(struct spread *V, char ch);
 static void k_uparrow(struct spread *V, char ch);
 
 /* defined in hit.c */
-extern int CopyChunk();
-extern int SetCurrentCell();
-extern int TellFormula();
-extern int GetFormula();
+extern int CopyChunk(Chunk to, Chunk from);
+extern int SetCurrentCell(struct spread *V, Chunk chunk);
+extern int TellFormula(struct spread *V);
+extern int GetFormula(struct spread *V, Chunk chunk, char **keybuff);
 
 /* Cancel old input and set new message buffer state */
 

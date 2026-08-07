@@ -101,14 +101,14 @@ END-SPECIFICATION  ************************************************************/
 #include <apt.ih>
 #include <aptv.eh>
 #include <ctype.h>
-static void Draw_Enclosures();
-static void Draw_String();
-static void Help();
-static void Help_FullUpdate();
-static struct aptv * Parent_AptView();
-static void Print_Area();
-static void Size_Enclosures();
-static void Unhelp();
+static void Draw_Enclosures(struct aptv *self);
+static void Draw_String(struct aptv *self, char *string, struct fontdesc *font, struct rectangle *bounds, long x, long y, long mode);
+static void Help(struct aptv *self);
+static void Help_FullUpdate(struct aptv *self);
+static struct aptv * Parent_AptView(struct aptv *self);
+static void Print_Area(struct aptv *self, long enclosure, long area);
+static void Size_Enclosures(struct aptv *self);
+static void Unhelp(struct aptv *self);
 
 #define  Balanced		    (view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBOTTOM)
 

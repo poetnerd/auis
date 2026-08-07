@@ -38,8 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * ThunderScan 4-bit Compression Algorithm Support
  */
 #include "tiffioP.h"
-static int ThunderDecode();
-static int ThunderDecodeRow();
+static int ThunderDecode(TIFF *tif, u_char *op, int maxpixels);
+static int ThunderDecodeRow(TIFF *tif, u_char *buf, int occ, u_int s);
 
 /*
  * ThunderScan uses an encoding scheme designed for

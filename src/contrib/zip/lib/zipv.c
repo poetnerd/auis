@@ -298,21 +298,21 @@ static struct keymap		     *class_keymap;
 
 
 static int Build_Menu();
-static int Initialize_Printing();
-static int Pending_Hit();
+static int Initialize_Printing(struct zipview *self);
+static int Pending_Hit(struct zipview *self);
 static int Pending_Redisplay();
 static int Pending_Redraw();
-static int Pending_Zoom();
-static int Pending_Scale();
-static int Pending_Pan();
-static int Pending_ReceiveInputFocus();
-static int Pending_LoseInputFocus();
-static int Pending_Edit();
-static int Pending_Browse();
-static int Highlight_View();
-static int Normalize_View();
-static int Prepare_Default_Stream();
-static int Prepare_Default_Pane();
+static int Pending_Zoom(struct zipview *self);
+static int Pending_Scale(struct zipview *self);
+static int Pending_Pan(struct zipview *self);
+static int Pending_ReceiveInputFocus(struct zipview *self);
+static int Pending_LoseInputFocus(struct zipview *self);
+static int Pending_Edit(struct zipview *self);
+static int Pending_Browse(struct zipview *self);
+static int Highlight_View(struct zipview *self);
+static int Normalize_View(struct zipview *self);
+static int Prepare_Default_Stream(struct zipview *self);
+static int Prepare_Default_Pane(struct zipview *self);
 
 
 boolean zipview__InitializeClass(struct classheader *classID)
@@ -1503,46 +1503,46 @@ long zipview__Announce(struct zipview *self, char *message)
 /* The Scroll-Bar facilities */
 
 #include "scroll.ih"
-static void Browse_Command();
+static void Browse_Command(struct zipview *self);
 static int Build_Menu();
-static void Center_Pane_Command();
-static void DEBUG_Command();
-static void Edit_Command();
-static int Highlight_View();
-static int Initialize_Printing();
-static void Landscape_Command();
-static void Normalize_Pane_Command();
-static int Normalize_View();
-static void Page_First_Command();
-static void Page_Last_Command();
-static void Page_Next_Command();
-static void Page_Prior_Command();
-static void Pan_Pane();
-static int Pending_Browse();
-static int Pending_Edit();
-static int Pending_Hit();
-static int Pending_LoseInputFocus();
-static int Pending_Pan();
-static int Pending_ReceiveInputFocus();
+static void Center_Pane_Command(struct zipview *self);
+static void DEBUG_Command(struct zipview *self);
+static void Edit_Command(struct zipview *self);
+static int Highlight_View(struct zipview *self);
+static int Initialize_Printing(struct zipview *self);
+static void Landscape_Command(struct zipview *self);
+static void Normalize_Pane_Command(struct zipview *self);
+static int Normalize_View(struct zipview *self);
+static void Page_First_Command(struct zipview *self);
+static void Page_Last_Command(struct zipview *self);
+static void Page_Next_Command(struct zipview *self);
+static void Page_Prior_Command(struct zipview *self);
+static void Pan_Pane(struct zipview *self, int edge);
+static int Pending_Browse(struct zipview *self);
+static int Pending_Edit(struct zipview *self);
+static int Pending_Hit(struct zipview *self);
+static int Pending_LoseInputFocus(struct zipview *self);
+static int Pending_Pan(struct zipview *self);
+static int Pending_ReceiveInputFocus(struct zipview *self);
 static int Pending_Redisplay();
 static int Pending_Redraw();
-static int Pending_Scale();
-static int Pending_Zoom();
-static void Portrait_Command();
-static int Prepare_Default_Pane();
-static int Prepare_Default_Stream();
-static void Print_To_File_Command();
-static void Refresh_Pane_Command();
-static void Scale_Double_Command();
-static void Scale_Half_Command();
-static void Scale_Normal_Command();
+static int Pending_Scale(struct zipview *self);
+static int Pending_Zoom(struct zipview *self);
+static void Portrait_Command(struct zipview *self);
+static int Prepare_Default_Pane(struct zipview *self);
+static int Prepare_Default_Stream(struct zipview *self);
+static void Print_To_File_Command(struct zipview *self);
+static void Refresh_Pane_Command(struct zipview *self);
+static void Scale_Double_Command(struct zipview *self);
+static void Scale_Half_Command(struct zipview *self);
+static void Scale_Normal_Command(struct zipview *self);
 static void Scale_Pane( struct zipview *self, float scale );
-static void Zoom_Pane();
+static void Zoom_Pane(struct zipview *self, int factor);
 
-static void			      zipview_y_getinfo(), zipview_y_setframe(),
-				      zipview_x_getinfo(), zipview_x_setframe(),
-				      zipview_y_endzone(),  zipview_x_endzone();
-static long			      zipview_y_whatisat(), zipview_x_whatisat();
+static void			      zipview_y_getinfo(struct zipview *self, struct range *total, struct range *seen, struct range *dot), zipview_y_setframe(struct zipview *self, int position, long coordinate, long outof),
+				      zipview_x_getinfo(struct zipview *self, struct range *total, struct range *seen, struct range *dot), zipview_x_setframe(struct zipview *self, int position, long coordinate, long outof),
+				      zipview_y_endzone(struct zipview *self, int zone, int action),  zipview_x_endzone(struct zipview *self, int zone, int action);
+static long			      zipview_y_whatisat(struct zipview *self, long coordinate, long outof), zipview_x_whatisat(struct zipview *self, long coordinate, long outof);
 static struct scrollfns		      vertical_scroll_interface =
 		{ zipview_y_getinfo, zipview_y_setframe,
 		  zipview_y_endzone, zipview_y_whatisat };

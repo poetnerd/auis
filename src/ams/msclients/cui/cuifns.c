@@ -54,8 +54,8 @@ extern char *LogFileName;
 
 char *GetLine();
 
-extern char *StripWhiteEnds();
-extern char *cvEng();	/* ams/libs/shr/utils.c -- was undeclared here,
+extern char *StripWhiteEnds(char *string);
+extern char *cvEng(int foo, int Capitalized, int MaxToSpellOut);	/* ams/libs/shr/utils.c -- was undeclared here,
 			   truncating its char* return through the K&R
 			   implicit-int default on LP64 (arm64) */
 extern char **unix_sys_errlist,

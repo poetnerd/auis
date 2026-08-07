@@ -33,7 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/apt/
 #include <message.ih>
 #include <suitex1a.eh>
 
-struct view *Flavor_Choice();
+struct view *Flavor_Choice(struct suitex1app *self, struct suite *suite, struct suite_item *item, int type, int action, int x, int y, int clicks);
 
 static suite_Specification vanilla[] = {
     suite_ItemCaption( "Vanilla" ),

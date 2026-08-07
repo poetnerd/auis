@@ -39,11 +39,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <sys/stat.h>
 #include "index.h"
 #include <stdlib.h>
-static int Purge();
-static int readInteger();
-static struct recordID * readRecordID();
-static int writeInteger();
-static int writeRecordID();
+static int Purge(char *apath);
+static int readInteger(FILE *afile, long *ai);
+static struct recordID * readRecordID(FILE *afile);
+static int writeInteger(FILE *afile, long ai);
+static int writeRecordID(FILE *afile, struct recordID *arid);
 
 /*
  * Internal routine: given a FILE * and an integer, write the integer in a machine-independent

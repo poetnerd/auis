@@ -43,9 +43,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <valuev.ih>
 
 #include <clklistv.eh>
-static int SetArray();
-static int getcount();
-static void handleclicks();
+static int SetArray(struct clicklistV *self, char **str, long size);
+static int getcount(char **str, long size);
+static void handleclicks(struct clicklistV *self, struct cltextview *cv, long *position, long *numberOfClicks, enum view_MouseAction *action, long *startLeft, long *startRight, long *leftPos, long *rightPos, long which, long type);
 
 static void handleclicks(struct clicklistV *self, struct cltextview *cv, long *position, long *numberOfClicks, enum view_MouseAction *action, long *startLeft, long *startRight, long *leftPos, long *rightPos, long which, long type)
 {   /* deal with clicks */

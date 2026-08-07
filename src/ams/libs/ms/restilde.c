@@ -37,7 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #define MAXUSERNAME 100		/* Biggest length of a user name */
 
-extern char home[], *StripWhiteEnds(), *FindUserDir();
+extern char home[], *StripWhiteEnds(char *string), *FindUserDir(char *user, char *cellname);
 extern char MyMailDomain[];
 
 /* If you make any changes to this routine, check out TildeResolve in

@@ -77,8 +77,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <view.ih>	/* Our parent */
 
 #include <popts.eh>
-static struct buttonList * printopts_MakeButton();
-static struct lplist * printopts_MakeLpair();
+static struct buttonList * printopts_MakeButton(struct buttonList *blist, char *text, void (*function)(), struct view *object);
+static struct lplist * printopts_MakeLpair(struct lplist *lpl);
 
 static boolean  debug = FALSE;
 #define DEBUG(s) {if (debug) {printf s ; fflush(stdout);}}
@@ -132,16 +132,16 @@ static struct Option options[] = {
     { NULL, NULL, NULL, PROFILETYPENONE, 0, 0, NULL, 0 }
 };
 
-int doValueChange();
-void CreateWindow();
-void DestroyWindow();
-struct view *Control();
-void ApplyValues();
-void ResetValues();
-void MenuDone();
-void MenuCancel();
-void PrinterSet();
-void printopts_Nop();
+int doValueChange(struct printopts *self, struct value *observed, long rock, long rock2);
+void CreateWindow(struct view *vp, long rock);
+void DestroyWindow(struct printopts *self);
+struct view *Control(struct printopts *self, struct suite *suite, int item, long object, enum view_MouseAction action, long x, long y, long clicks);
+void ApplyValues(struct printopts *self, long rock);
+void ResetValues(struct printopts *self);
+void MenuDone(struct printopts *self, long rock);
+void MenuCancel(struct printopts *self, long rock);
+void PrinterSet(struct printopts *self, long rock);
+void printopts_Nop(struct printopts *self, long rock);
 
 static struct bind_Description MenuOptions[] = {
     {"printopts-post-window", NULL, 0, "Set Print Options", 0, 0, CreateWindow, "Set options for printing of document", NULL},

@@ -56,16 +56,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fram
 
 #include <framev.eh>
 #include <string.h>
-static int CalculateLineHeight();
-static void CleanMessageState();
-static void CompletionMessage();
-static void EraseMessage();
-static void HelpWork();
-static long InsertSorted();
-static void Kill();
-static void Minimize();
-static void Punt();
-static void TransientMessage();
+
+struct helpRock;
+static int CalculateLineHeight(struct frameview *self);
+static void CleanMessageState(struct frameview *self);
+static void CompletionMessage(struct frameview *self, enum message_CompletionCode code);
+static void EraseMessage(struct frameview *self);
+static void HelpWork(struct helpRock *helpRock, enum message_HelpItem helpType, char *itemString, char *itemInfo);
+static long InsertSorted(struct text *doc, long pos, char *string);
+static void Kill(struct frameview *self, long key);
+static void Minimize(struct frameview *self, long key);
+static void Punt(struct frameview *self, long key);
+static void TransientMessage(struct frameview *self, char *message);
 
 static struct keymap *frameviewKeymap;
 static struct menulist *frameviewMenulist;

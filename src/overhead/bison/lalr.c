@@ -74,7 +74,7 @@ short *goto_map;
 short *from_state;
 short *to_state;
 
-short **transpose();
+short **transpose(short **R_arg, int n);
 void set_state_table();
 void set_accessing_symbol();
 void set_shift_table();
@@ -84,14 +84,14 @@ void initialize_LA();
 void set_goto_map();
 void initialize_F();
 void build_relations();
-void add_lookback_edge();
+void add_lookback_edge(int stateno, int ruleno, int gotono);
 void compute_FOLLOWS();
 void compute_lookaheads();
-void digraph();
-void traverse();
+void digraph(short **relation);
+void traverse(int i);
 
-extern void toomany();
-extern void berror();
+extern void toomany(char *s);
+extern void berror(char *s);
 
 static int infinity;
 static int maxrhs;

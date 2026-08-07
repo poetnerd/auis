@@ -39,7 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <graphic.ih>
 #include <view.ih>
 #include <palette.eh>
-static struct palette_item * palette_AddItem();
+static struct palette_item * palette_AddItem(struct palette *self, union palette_iteminfo info, int pos, void (*fn)(), long rock, enum palette_autoselect autoselect);
 
 static struct palette_item *FreeList;
 

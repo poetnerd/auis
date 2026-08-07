@@ -58,8 +58,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #define GRAVITY 1
 
 /* Forward Declarations */
-static void lpair_ComputeSizes ();
-static void lpair_ResetDimensions();
+static void lpair_ComputeSizes(struct lpair *l);
+static void lpair_ResetDimensions(struct lpair *self);
 
 /* the following two routines are needed for FullUpdate 
 	They are copied from lpair.c, with deletion of the line-between code,

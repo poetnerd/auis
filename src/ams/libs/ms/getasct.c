@@ -9,7 +9,7 @@ $Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/getasct.c,v 2
 $Source: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/getasct.c,v $
 */
 #include <ms.h>
-extern int GetAssocTime();
+extern int GetAssocTime(char *FullName, char *Answer, int lim);
 
 int MS_GetAssociatedTime(char *FullName, char *Answer, int lim)
 {

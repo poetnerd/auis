@@ -44,9 +44,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <atomlist.ih>
 #include <text.ih>
 #include <ctype.h>
-static char * lset_GetLine();
-static struct dataobject * getregisteredobject();
-static int registerobject();
+static char * lset_GetLine(char *buf, char *c);
+static struct dataobject * getregisteredobject(struct lset *self);
+static int registerobject(struct lset *self);
 /* #define DEBUG 1 */
 
 #define VALUE 10

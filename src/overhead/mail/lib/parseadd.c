@@ -42,50 +42,50 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h>
 #include <parseadd.h>
 #include "parsey.h"
-static int DoFold();
-static int FreeComments();
-static int FreeGroupMembers();
-static int FreeHosts();
-static char * NextSpace();
-static int PrintWith0Hosts();
-static int PrintWith1Host();
-static int PrintWithManyHosts();
-static int QuoteAndPrint();
-static int Shift();
-static int locallexer();
+static int DoFold(char *Break);
+static int FreeComments(PARSED_ADDRESS *Addr);
+static int FreeGroupMembers(PARSED_ADDRESS *Addr);
+static int FreeHosts(PARSED_ADDRESS *Addr);
+static char * NextSpace(char *c);
+static int PrintWith0Hosts(PARSED_ADDRESS *Addr, int Mode);
+static int PrintWith1Host(PARSED_ADDRESS *Addr, int Mode);
+static int PrintWithManyHosts(PARSED_ADDRESS *Addr, int Mode, int Nhosts);
+static int QuoteAndPrint(char *String);
+static int Shift(char *Start, int Dist);
+static int locallexer(struct parser *lexerrock, YYSTYPE *lval);
 
 typedef unsigned char bool;
 #define FALSE	0
 #define TRUE	1
 
-static int StartUnparse();
+static int StartUnparse(PARSED_ADDRESS *AddrList, int Mode);
 static int UnparseAddress(PARSED_ADDRESS *Addr, int Mode, bool Last, bool NewLine);
 static int UnparseSimpleAddress(PARSED_ADDRESS *Addr, int Mode, bool Last, bool NewLine);
 static int UnparseGroupAddress(PARSED_ADDRESS *Addr, int Mode, bool Last);
-static int PrintWith0Hosts();
-static int PrintWith1Host();
-static int PrintWithManyHosts();
+static int PrintWith0Hosts(PARSED_ADDRESS *Addr, int Mode);
+static int PrintWith1Host(PARSED_ADDRESS *Addr, int Mode);
+static int PrintWithManyHosts(PARSED_ADDRESS *Addr, int Mode, int Nhosts);
 static void Fold(bool NewLine);
-static int PrintRoutePhrase();
-static int PrintLocalPart();
+static int PrintRoutePhrase(char *Phrase, int Mode);
+static int PrintLocalPart(char *Part, int Mode);
 
 #define NIL	0
 
-extern char *StrCopy();
+extern char *StrCopy(char *old);
 
 /* Same-file forward references (defined later in this file; not static --
    several are also called from sibling files in this directory). */
 extern int UnparseAddressList();
-extern int PrintSimpleAddress();
-extern int RemHost();
-extern int FreeAddressList();
-extern int RemAddress();
+extern int PrintSimpleAddress(PARSED_ADDRESS *Addr, int Mode);
+extern int RemHost(ADDRESS_HOST *Host);
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);
+extern int RemAddress(PARSED_ADDRESS *Addr);
 
 /* Cross-file, no header anywhere in the tree declares these. */
-extern int StrFree();		/* parseutl.c */
-extern int NoStorage();		/* parseutl.c */
-extern ADDRESS_HOST *AppendHosts();	/* parseutl.c */
-extern void la_FreeMD();	/* locnamex.c */
+extern int StrFree(char *s);		/* parseutl.c */
+extern int NoStorage(char *proc);		/* parseutl.c */
+extern ADDRESS_HOST *AppendHosts(ADDRESS_HOST *h1, ADDRESS_HOST *h2);	/* parseutl.c */
+extern void la_FreeMD(struct MailDom *MD);	/* locnamex.c */
 
 /* Generated lexer (parsel.flex -> parsel.c) and its support routines --
    no header declares any of these; parsey_New()'s locallexer() already
@@ -145,7 +145,7 @@ int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut)
 
 int UnparseOneAddress(PARSED_ADDRESS *Addr, int Mode, char *Buffer, int Length, char *Prefix, int LineLength)
 {
-    extern PARSED_ADDRESS *MakeAddress(), *MakeAddrList();
+    extern PARSED_ADDRESS *MakeAddress(ADDRESS_KIND kind, char *local), *MakeAddrList(PARSED_ADDRESS *a);
     register PARSED_ADDRESS *Copy, *List;
     int code, dummy;
 

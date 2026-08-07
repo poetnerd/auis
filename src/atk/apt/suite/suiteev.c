@@ -80,30 +80,30 @@ END-SPECIFICATION  ************************************************************/
 #include <suite.ih>
 #include <suitecv.ih>
 #include <suiteev.eh>
-static void AllocNameSpace();
-static void AttemptSymmetry();
-static void CheckForNewFirstVisible();
-static void Copy();
-static long CopySelected();
-static void DetermineVisibleListItems();
-static boolean DoesItFit();
-static void DrawGutterLines();
-static void DrawRectSize();
-static void EraseItems();
-static int ItemFullUpdate();
-static void ItemPlaceCaption();
-static struct suite_item * NPixelsAfter();
-static struct suite_item * NPixelsPrior();
-static struct suite_item * NthAfter();
-static struct suite_item * NthPrior();
-static void PlaceItems();
-static long ResetItemBreaks();
-static void SetBackgroundShade();
-static void SetBreakPoint();
-static char * WalkBackwardBlackSpace();
-static char * WalkBackwardToPunctuation();
-static long Within();
-static long WithinRect();
+static void AllocNameSpace(char **target, char *source);
+static void AttemptSymmetry(struct suiteev *self, long numItems, long *rows, long *columns);
+static void CheckForNewFirstVisible(struct suiteev *self);
+static void Copy(struct suiteev *self);
+static long CopySelected(struct suiteev *self, struct suite *suite, struct suite_item *item, long datum);
+static void DetermineVisibleListItems(struct suiteev *self, long height);
+static boolean DoesItFit(struct suiteev *self, struct suite_item *item, char *head, char *tail, long width);
+static void DrawGutterLines(struct suiteev *self);
+static void DrawRectSize(struct suiteev *self, long x, long y, long width, long height);
+static void EraseItems(struct suiteev *self);
+static int ItemFullUpdate(struct suiteev *self, struct suite_item *item, enum view_UpdateType type, long left, long top, long width, long height);
+static void ItemPlaceCaption(struct suiteev *self, struct suite_item *item, long captionwidth, long captionheight, unsigned *place);
+static struct suite_item * NPixelsAfter(struct suiteev *self, struct suite_item *start, long pix, long *numToSkip);
+static struct suite_item * NPixelsPrior(struct suiteev *self, struct suite_item *start, long pix, long *numToSkip);
+static struct suite_item * NthAfter(struct suiteev *self, struct suite_item *start, long numToSkip);
+static struct suite_item * NthPrior(struct suiteev *self, struct suite_item *start, long numToSkip);
+static void PlaceItems(struct suiteev *self, struct rectangle *rect, long rows, long cols, long numleftOvers, long itemWidth, long itemHeight);
+static long ResetItemBreaks(struct suite *self, struct suite *suite, struct suite_item *item, long datum);
+static void SetBackgroundShade(struct suiteev *self);
+static void SetBreakPoint(struct suiteev *self, struct suite_item *item, char *end);
+static char * WalkBackwardBlackSpace(struct suiteev *self, struct suite_item *item, char *head, char *tail, long width);
+static char * WalkBackwardToPunctuation(char *head, char *tail);
+static long Within(long x, long y, long left, long top, long width, long height);
+static long WithinRect(long x, long y, struct rectangle *r);
 
 #define Suite			    (self->parent)
 #define	CurrentItem		    (Suite->current_item)
@@ -222,20 +222,20 @@ static long WithinRect();
 
 static int suiteev_debug = 0;
 
-static void xsetframe(), ysetframe(), getinfo(), endzone();
-static long ywhatis(), xwhatis();
+static void xsetframe(struct suiteev *self, long posn, long coord, long outof), ysetframe(struct suiteev *self, long posn, long coord, long outof), getinfo(struct suiteev *self, struct range *total, struct range *seen, struct range *dot), endzone(struct suiteev *self, int zone, enum view_MouseAction action);
+static long ywhatis(struct suiteev *self, long num, long denom), xwhatis(struct suiteev *self, long num, long denom);
 
-static void DrawRect();
+static void DrawRect(struct suiteev *self, struct suite_item *item, struct rectangle *Rect, boolean lit);
 #define LIT TRUE
 
 static struct scrollfns horizInterface = { getinfo, xsetframe, endzone, xwhatis };
 static struct scrollfns vertInterface =  { getinfo, ysetframe, endzone, ywhatis };
 
-static void ReadWriteHandler(); 
-static void MaxSubStringSize();
-static long MaxListSubStringWidth();
+static void ReadWriteHandler(long anchor, struct suite *suite, struct suite_item *item); 
+static void MaxSubStringSize(struct suiteev *self, struct suite_item *item, char *str, struct fontdesc *font, long int *w, long int *h);
+static long MaxListSubStringWidth(struct suiteev *self, struct suite_item *item, char *str, struct fontdesc *font);
 static struct menulist *menulist = NULL;
-static int ItemFullUpdate();
+static int ItemFullUpdate(struct suiteev *self, struct suite_item *item, enum view_UpdateType type, long left, long top, long width, long height);
 
 static void AllocNameSpace(char **target, char *source)
 {

@@ -56,36 +56,38 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <envrment.ih>
 #include <pcompch.ih>
 #include <im.ih>
+
+struct helpRock;
 static void SelfInsertCmd();
-static void after();
-static unsigned char ahotoi();
-static void compchar_ASCIIToATK();
-static void compchar_ATKToASCII();
-static void compchar_compose();
-static void compchar_compose2();
-static void compchar_hat();
-static void compchar_hatafter();
-static void compchar_insert();
-static void compchar_leftaccent();
-static void compchar_leftaccentafter();
-static void compchar_modifier();
-static void compchar_nop();
-static void compchar_rightaccent();
-static void compchar_rightaccentafter();
-static void compchar_tilde();
-static void compchar_tildeafter();
-static void compchar_umlaut();
-static void compchar_umlautafter();
+static void after(struct textview *tv, char *list, unsigned char *codes, char *ch);
+static unsigned char ahotoi(char *ptr, int base2);
+static void compchar_ASCIIToATK(struct textview *tv, long rock);
+static void compchar_ATKToASCII(struct textview *tv, long rock);
+static void compchar_compose(struct textview *tv, char *ptr);
+static void compchar_compose2(struct textview *tv, char *ch);
+static void compchar_hat(struct textview *tv, char *ptr);
+static void compchar_hatafter(struct textview *tv, char *rock);
+static void compchar_insert(struct textview *tv, char *ptr);
+static void compchar_leftaccent(struct textview *tv, char *ptr);
+static void compchar_leftaccentafter(struct textview *tv, char *rock);
+static void compchar_modifier(struct textview *tv, char *ptr, char *list, unsigned char *codes);
+static void compchar_nop(struct textview *tv, char *possibilities);
+static void compchar_rightaccent(struct textview *tv, char *ptr);
+static void compchar_rightaccentafter(struct textview *tv, char *rock);
+static void compchar_tilde(struct textview *tv, char *ptr);
+static void compchar_tildeafter(struct textview *tv, char *rock);
+static void compchar_umlaut(struct textview *tv, char *ptr);
+static void compchar_umlautafter(struct textview *tv, char *rock);
 struct YARock;
 struct SARock;
 static struct composites * composework(char key, struct composites *c, char *exts);
 static long doasciireplacement(struct text *text, long pos, unsigned char ch, char *ascii, struct SARock *r);
-static long doatkreplacement();
+static long doatkreplacement(struct text *text, long pos, char *ascii, struct SARock *r);
 static long handlekey(struct YARock *rock, char key);
-static void helpProc();
+static void helpProc(char *partial, struct helpRock *myrock, procedure HelpWork, long rock);
 static unsigned char keywork(char key, struct composites *c, struct YARock *rock);
 static long match(char key, struct composites *c, long rock);
-static unsigned char parsecode();
+static unsigned char parsecode(char *ptr);
 
 static struct style *boldulined=NULL,*fixed=NULL;
 

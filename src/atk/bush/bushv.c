@@ -90,24 +90,24 @@ END-SPECIFICATION  ******************************************************/
 #include <apts.ih>
 #include <bush.ih>
 #include <bushv.eh>
-static void DoAutoRescan();
-static void DoEdit();
-static int DoExecute();
-static int DoPrint();
-static char * FileSuffix();
-static char * FileType();
-static char* FormatEntriesItem();
+static void DoAutoRescan(struct bushv *self);
+static void DoEdit(struct bushv *self, char *path, char *name);
+static int DoExecute(struct bushv *self, tree_type_node tn, struct Dir_Entry *Entry);
+static int DoPrint(struct bushv *self, char *path, char *name);
+static char * FileSuffix(char *file_name);
+static char * FileType(char *file_name);
+static char* FormatEntriesItem(struct bushv *self, tree_type_node tn, int i, struct Dir_Entry *dirEntry);
 static char* Format_Tags(u_short tag);
-static void GetPreferences();
-static void GetPreferredEditors();
-static void GetPreferredFonts();
+static void GetPreferences(struct bushv *self);
+static void GetPreferredEditors(struct bushv *self);
+static void GetPreferredFonts(struct bushv *self);
 static long Passivator();
-static void PostCursor();
-static void ResetEntriesCaptions();
+static void PostCursor(struct bushv *self, int type);
+static void ResetEntriesCaptions(struct bushv *self);
 static long ResetSelectedState();
-static void SortDir();
-static void StartDirMove();
-static long ToggleCaptionDetail();
+static void SortDir(struct bushv *self, tree_type_node tn);
+static void StartDirMove(struct bushv *self, tree_type_node tn);
+static long ToggleCaptionDetail(struct bushv *self, struct suite *suite, struct suite_item *item, unsigned datum);
 
 #define	by_name					    0
 #define	by_size					    1
@@ -160,50 +160,50 @@ static void			    Pop(),
 				    PerformDetail(),
 				    PerformDestroy(),
 				    PerformCreate(),
-				    PerformRename(),
-				    PerformRescan(),
-				    PerformEdit(),
-                                    PushToEntries(),
-                                    PushToEntry(),
-				    SetEditor(),
-				    SwitchDirectory(),
-				    Push(),
-				    PassivateControls(),
-				    IssueError(),
-				    ToggleDebug(),
-                                    HandleChangeDir(),
-                                    Checkpoint(),
-                                    UpdateDetailCaption(),
-                                    EntriesPageUp(),
-                                    EntriesPageDown();
+				    PerformRename(struct bushv *self),
+				    PerformRescan(struct bushv *self),
+				    PerformEdit(struct bushv *self),
+                                    PushToEntries(struct bushv *self),
+                                    PushToEntry(struct bushv *self),
+				    SetEditor(struct bushv *self),
+				    SwitchDirectory(struct bushv *self),
+				    Push(struct bushv *self),
+				    PassivateControls(struct bushv *self),
+				    IssueError(struct bushv *self, char *what, char *where, boolean overlay),
+				    ToggleDebug(struct bushv *self),
+                                    HandleChangeDir(struct bushv *self, char *dirName),
+                                    Checkpoint(long dummyData),
+                                    UpdateDetailCaption(struct bushv *self),
+                                    EntriesPageUp(struct bushv *self),
+                                    EntriesPageDown(struct bushv *self);
 
-static int			    PopToNodes(),
-                                    PopToEntries();
+static int			    PopToNodes(struct bushv *self),
+                                    PopToEntries(struct bushv *self);
 
-static long			    ControlHitHandler(), 
-				    TreeHitHandler(), 
-				    EntriesHitHandler();
+static long			    ControlHitHandler(struct bushv *self, struct suite *suite, struct suite_item *item, long object, enum view_MouseAction action, long x, long y, long numClicks), 
+				    TreeHitHandler(struct bushv *self, struct treev *tree_view, tree_type_node node, long object, enum view_MouseAction action, long x, long y, long numClicks), 
+				    EntriesHitHandler(struct bushv *self, struct suite *suite, struct suite_item *item, long object, enum view_MouseAction action, long x, long y, long numClicks);
 
-static int			    bushv_WriteFile(),
-                                    bushv_SaveFile(),
-                                    bushv_SetPrinter();
+static int			    bushv_WriteFile(struct bushv *self),
+                                    bushv_SaveFile(struct bushv *self),
+                                    bushv_SetPrinter(struct bushv *self);
 
-long				    SortByName(),
-				    SortBySize(),
-				    SortBySuffix(),
-				    SortByType(),
-				    SortByDate();
+long				    SortByName(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2),
+				    SortBySize(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2),
+				    SortBySuffix(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2),
+				    SortByType(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2),
+				    SortByDate(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2);
 
-static int PerformSystemAction();
-static int FinishDirMove();
-static int DoDestroy();
-static int HandleModifiedObject();
-static int SortRequested();
-static long ResetChildDirPaths();
-static int bushv_WriteToFile();
-static int bushv_SaveFile();
-static int bushv_WriteFile();
-static int bushv_SetPrinter();
+static int PerformSystemAction(struct bushv *self, char *name, char *argv[], char *msg);
+static int FinishDirMove(struct bushv *self, tree_type_node tn);
+static int DoDestroy(struct bushv *self, tree_type_node tn, struct Dir_Entry *Entry, boolean overlay);
+static int HandleModifiedObject(struct bushv *self);
+static int SortRequested(struct bushv *self, tree_type_node tn);
+static long ResetChildDirPaths(struct bushv *self, struct tree *tree, tree_type_node tn, long datum);
+static int bushv_WriteToFile(struct bushv *self, char *filename);
+static int bushv_SaveFile(struct bushv *self);
+static int bushv_WriteFile(struct bushv *self);
+static int bushv_SetPrinter(struct bushv *self);
 
 
 #define Bush			    (self->bush)

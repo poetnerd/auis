@@ -38,8 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <andrewos.h> /* strings.h */
 #include <stdio.h>
 #include <atom.eh>
-static struct atom * CreateAtom();
-static int Hash();
+static struct atom * CreateAtom(char *name, int index);
+static int Hash(unsigned char *word);
 
 
 #define Log2HashTableSize   9

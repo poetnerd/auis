@@ -48,7 +48,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 
 #include <box.eh>
 static boolean fgetstring();
-static void objectto();
+static void objectto(FILE *f, char *message);
 static long readASCII();
 
 static boolean debug=FALSE;

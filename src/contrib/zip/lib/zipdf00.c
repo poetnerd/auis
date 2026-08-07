@@ -126,6 +126,8 @@ END-SPECIFICATION  ************************************************************/
 #include <string.h>
 #include <stdlib.h>
 
+struct user_data;
+
 /* M2: zip.do cross-file, no header declares these (defined zipd000.c) */
 extern int symtab_delete();
 extern int symtab_find();

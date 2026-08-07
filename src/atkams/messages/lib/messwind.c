@@ -60,11 +60,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <bind.ih>
 #include <im.ih>
 #include <view.ih>
+
+struct messwindn;
 static void DeleteWindow();
-static void DuplicateWindow();
+static void DuplicateWindow(struct messwind *self);
 
 /* same-file forward reference -- defined later in this file */
-extern int CheckVerticalHorizontal();
+extern int CheckVerticalHorizontal(struct messwind *mess);
 
 static void DuplicateWindow(struct messwind *self)
 {

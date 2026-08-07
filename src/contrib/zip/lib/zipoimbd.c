@@ -139,7 +139,7 @@ END-SPECIFICATION  ************************************************************/
 #include <zipoimbd.eh>
 #include <stdlib.h>
 static int Draw();
-static int Load_Object();
+static int Load_Object(struct zipoimbed *self, zip_type_figure figure, char *name, boolean announce);
 
 struct imbed
   {
@@ -148,7 +148,7 @@ struct imbed
 
   };
 
-static int Load_Object();
+static int Load_Object(struct zipoimbed *self, zip_type_figure figure, char *name, boolean announce);
 static int Draw();
 
 boolean zipoimbed__InitializeObject(struct classheader *classID, struct zipoimbed *self)

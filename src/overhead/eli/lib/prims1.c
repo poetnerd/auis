@@ -36,12 +36,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdlib.h>
 static void AlarmHandler(int);
 static void BrokenPipeHandler(int);
-static int eliCountElts();
-static int eliInitLibraries();
-static void eliLoadFromLibrary();
+static int eliCountElts(char *s);
+static int eliInitLibraries(EliState_t *st);
+static void eliLoadFromLibrary(EliState_t *st, EliSexp_t *resbuf, EliSexp_t *loadfileSexp);
 
-extern char *AndrewDir();
-extern int dbg_fclose();	/* overhead/util/lib/fdplumb.c; fdplumb.h
+extern char *AndrewDir(char *str);
+extern int dbg_fclose(FILE *fp);	/* overhead/util/lib/fdplumb.c; fdplumb.h
 				   #defines fclose to this but only
 				   declares part of its dbg_* family */
 
@@ -1346,7 +1346,7 @@ void Prim_RE_STRCONTAINS(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
     EliSexp_t      *args[3], *err, *patNode, *refNode;
     int             numargs, rxpResult;
     char           *pat, *ref;
-    regexp         *rptr, *reg_comp();
+    regexp         *rptr, *reg_comp(char *exp);
 
     EliDebug(20, "Entering primitive RE-STRCONTAINS", st, FALSE);
     numargs = EliGetListCars(arglist, args, 2);
@@ -1547,7 +1547,7 @@ void Prim_RE_STRDECOMPOSE(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
     char           *pat, *ref, tempChar, *hold;
     EliStr_t       *strNodes[3];
     EliCons_t      *consCells[3];
-    regexp         *rptr, *reg_comp();
+    regexp         *rptr, *reg_comp(char *exp);
 
     EliDebug(20, "Entering primitive RE-STRDECOMPOSE", st, FALSE);
     numargs = EliGetListCars(arglist, args, 2);

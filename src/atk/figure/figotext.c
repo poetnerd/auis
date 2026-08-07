@@ -44,15 +44,15 @@ char *figotext_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 #include <print.ih>
 #include <figotext.eh>
 static void MoveHandle();
-static boolean StringMatch();
+static boolean StringMatch(char *str1, char *str2);
 
 static struct keymap *EmbeddedKeymap;
 static struct region *tmpreg;
 
 #define figotext_Leading (1)
 
-static void InsertProc(), DeleteProc(), KillDotProc(), KillLineProc(), MoveDot(), MoveDotProc(), TwiddleCharsProc(), CompleteProc();
-static void IncreaseNumChars();
+static void InsertProc(struct figotext *self, int rock), DeleteProc(struct figotext *self, int rock), KillDotProc(struct figotext *self), KillLineProc(struct figotext *self, int rock), MoveDot(struct figotext *self, int pos), MoveDotProc(struct figotext *self, int towhere), TwiddleCharsProc(struct figotext *self, int rock), CompleteProc(struct figotext *self, int rock);
+static void IncreaseNumChars(struct figotext *self, int val);
 
 boolean figotext__InitializeClass(struct classheader *ClassID)
 {

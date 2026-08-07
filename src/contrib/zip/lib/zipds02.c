@@ -132,9 +132,9 @@ END-SPECIFICATION  ************************************************************/
 #define	 Data			      (self)
 #define	 Objects(i)		    ((*self->objects)[i])
 
-static int Write_Inferior_Image();
-static int Write_Image_Beginning();
-static int Write_Image_Ending();
+static int Write_Inferior_Image(struct zip *self, zip_type_image image);
+static int Write_Image_Beginning(struct zip *self, zip_type_image image);
+static int Write_Image_Ending(struct zip *self, zip_type_image image);
 
 long zip__Write_Figure(struct zip *self, zip_type_figure figure)
   {

@@ -60,7 +60,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 static boolean boxview_debug=0;
 /* replace child view with another object */
 
-void InitChild();			/* forward reference */
+void InitChild(struct boxview *self);			/* forward reference */
 
 void ReplaceChild(struct boxview *self, struct view *child, char *dataname)
 {

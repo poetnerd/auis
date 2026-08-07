@@ -27,8 +27,8 @@
 #include <ctype.h>
 #include <environ.ih>
 #include <messitem.eh>
-static char * MapMessFile();
-static int ReadMessFile();
+static char * MapMessFile(char *filename, long *fileLength);
+static int ReadMessFile(char *filename, boolean executeImmediately);
 static struct messitem * messitem_Create(char *s1, char *s2, char wh);
 
 #define DEFAULTMESS '0'

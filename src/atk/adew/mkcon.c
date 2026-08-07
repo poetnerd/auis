@@ -45,7 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <sys/stat.h>
 #include <util.h>
 
-extern char *AndrewDir();
+extern char *AndrewDir(char *str);
 char *cls,*viewname,*oldcls,*oldvw;
 static char defstring[] = {"\
 usage: createcon <-C ClassName(:oldclassname)> <-F FunctionName> <-T Title> <-O ShellScriptName> <-M> <-I> <-V Viewname(:oldviewname)> <-W> <-Help> <Filename>\n\

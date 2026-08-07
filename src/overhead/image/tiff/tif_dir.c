@@ -45,15 +45,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  */
 #include "tiffioP.h"
 #include "prototypes.h"
-static int OkToChangeTag();
-static int TIFFGetField1();
-static int TIFFSetField1();
-static int setFloatArray();
-static int setJPEGCTable();
-static int setJPEGQTable();
-static int setLongArray();
-static int setShortArray();
-static int setString();
+static int OkToChangeTag(TIFF *tif, int tag);
+static int TIFFGetField1(TIFFDirectory *td, int tag, va_list ap);
+static int TIFFSetField1(TIFF *tif, int tag, va_list ap);
+static int setFloatArray(float **wpp, float *wp, long n);
+static int setJPEGCTable(u_char ***cpp, u_char **cp, int nc);
+static int setJPEGQTable(u_char ***wpp, u_char **wp, int nc);
+static int setLongArray(u_long **wpp, u_long *wp, long n);
+static int setShortArray(u_short **wpp, u_short *wp, long n);
+static int setString(char **cpp, char *cp);
 
 static int
 setString(char **cpp, char *cp)

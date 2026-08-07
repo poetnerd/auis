@@ -112,56 +112,58 @@ END-SPECIFICATION  ************************************************************/
 #include  <treev.eh>
 #include  <ctype.h>
 #include <atom.ih>
-static int Arrange_Exploded_Tree();
-static int Arrange_Horizontal_Exploded_SubTree();
-static int Arrange_Horizontal_Exploded_Tree();
-static int Arrange_Horizontal_Tree();
-static int Arrange_Tree();
-static int Arrange_Vertical_Exploded_SubTree();
-static int Arrange_Vertical_Exploded_Tree();
-static int Arrange_Vertical_Tree();
-static int Check_Dimensions();
-static int Clear_Shadow();
-static int Destroy_Children_Shadows();
-static int Destroy_Shadows();
-static int Draw_Background();
-static int Draw_Node_Border();
-static int Draw_Node_Caption();
-static int Draw_Node_Connector();
-static int Draw_Node_Title();
-static int Draw_Tree();
-static int Dump_Trees();
-static int Erase_Node_Children();
-static int Expose_Node_Children();
-static int Fill_Area();
-static int Fill_Background();
-static int Fill_Shadow();
-static int First_Time();
-static int Footprint_Node_Shadow();
-static int Generate_Children_Shadows();
-static int Generate_Shadows();
-static int Hide_Node_Children();
-static int Highlight_Node_Shadow();
-static int Initialize_Graphics();
-static int Mark_Child_Exposure();
-static int Name_Sizing();
-static int Normalize_Node_Shadow();
-static int Normalize_Other_Nodes();
-static int Print_Node_Border();
-static int Print_Node_Connector();
-static int Print_Tree();
-static int Printer();
-static int Redisplay_Node_Children();
-static int SetTreeAttribute();
-static int Set_Dimensions();
-static void Redisplay();
-static struct tree_node *Which_Node_Hit();
-static long Compute_Horizontal_Exploded_SubTree_Heights();
-static long Compute_Vertical_Exploded_SubTree_Widths();
-static struct node_shadow *Node_Shadow();
-static struct node_shadow *Create_Shadow();
-static void treev_FlipColors();
-static void treev_RestoreColors();
+
+struct node_shadow;
+static int Arrange_Exploded_Tree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height);
+static int Arrange_Horizontal_Exploded_SubTree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height);
+static int Arrange_Horizontal_Exploded_Tree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height);
+static int Arrange_Horizontal_Tree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height);
+static int Arrange_Tree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height);
+static int Arrange_Vertical_Exploded_SubTree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height);
+static int Arrange_Vertical_Exploded_Tree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height);
+static int Arrange_Vertical_Tree(struct treev *self, struct tree_node *shadow_node, long left, long top, long width, long height);
+static int Check_Dimensions(struct treev *self, tree_type_node node);
+static int Clear_Shadow(struct treev *self, struct node_shadow *shadow);
+static int Destroy_Children_Shadows(struct treev *self, struct tree_node *node);
+static int Destroy_Shadows(struct treev *self, struct tree_node *node);
+static int Draw_Background(struct treev *self);
+static int Draw_Node_Border(struct treev *self, struct node_shadow *shadow);
+static int Draw_Node_Caption(struct treev *self, struct node_shadow *shadow, boolean halo);
+static int Draw_Node_Connector(struct treev *self, struct node_shadow *shadow, struct node_shadow *parent_shadow);
+static int Draw_Node_Title(struct treev *self, struct node_shadow *shadow);
+static int Draw_Tree(struct treev *self, struct tree_node *shadow_node);
+static int Dump_Trees(struct treev *self);
+static int Erase_Node_Children(struct treev *self, struct tree_node *shadow_node);
+static int Expose_Node_Children(struct treev *self, struct tree_node *shadow_node);
+static int Fill_Area(struct treev *self, long mode, struct graphic *tile, long shape, long left, long top, long width, long height);
+static int Fill_Background(struct treev *self);
+static int Fill_Shadow(struct treev *self, struct node_shadow *shadow, long mode, struct graphic *tile);
+static int First_Time(struct treev *self);
+static int Footprint_Node_Shadow(struct treev *self, struct node_shadow *shadow);
+static int Generate_Children_Shadows(struct treev *self, struct tree_node *node);
+static int Generate_Shadows(struct treev *self, struct tree_node *node);
+static int Hide_Node_Children(struct treev *self, struct tree_node *shadow_node);
+static int Highlight_Node_Shadow(struct treev *self, struct node_shadow *shadow);
+static int Initialize_Graphics(struct treev *self);
+static int Mark_Child_Exposure(struct treev *self, struct tree_node *shadow_node, boolean state, boolean recursive);
+static int Name_Sizing(struct treev *self, struct tree *tree, tree_type_node node, int datum);
+static int Normalize_Node_Shadow(struct treev *self, struct node_shadow *shadow);
+static int Normalize_Other_Nodes(struct treev *self, struct node_shadow *node_shadow);
+static int Print_Node_Border(struct treev *self, struct node_shadow *shadow);
+static int Print_Node_Connector(struct treev *self, struct node_shadow *shadow, struct node_shadow *parent_shadow);
+static int Print_Tree(struct treev *self, struct tree_node *shadow_node);
+static int Printer(struct treev *self);
+static int Redisplay_Node_Children(struct treev *self, struct tree_node *shadow_node);
+static int SetTreeAttribute(struct treev *self, long attribute, long value);
+static int Set_Dimensions(struct treev *self);
+static void Redisplay(struct treev *self);
+static struct tree_node *Which_Node_Hit(struct treev *self, long x, long y);
+static long Compute_Horizontal_Exploded_SubTree_Heights(struct treev *self, struct tree_node *shadow_node);
+static long Compute_Vertical_Exploded_SubTree_Widths(struct treev *self, struct tree_node *shadow_node);
+static struct node_shadow *Node_Shadow(struct treev *self, struct tree_node *node);
+static struct node_shadow *Create_Shadow(struct treev *self);
+static void treev_FlipColors(struct treev *self);
+static void treev_RestoreColors(struct treev *self);
 
 int treev_debug = 0;
 
@@ -218,7 +220,7 @@ struct treev_instance
 #define  GraphicsInitialized	      (self->instance->graphics_initialized)
 
 struct node_shadow		     *Next_Shadow();
-tree_type_node			      Node_Shadow_Node();
+tree_type_node			      Node_Shadow_Node(struct treev *self, struct tree_node *node);
 
 #define  ShadowTree		      ((self)->instance->shadow_tree_object)
 #define  ShadowRootNode		      (tree_RootNode(ShadowTree))
@@ -1763,10 +1765,10 @@ struct view * treev__GetApplicationLayer(struct treev *self)
   }
 
 
-static void			      y_getinfo(), y_setframe(),
-				      x_getinfo(), x_setframe(),
-				      y_endzone(),  x_endzone();
-static long			      y_whatisat(), x_whatisat();
+static void			      y_getinfo(struct treev *self, struct range *total, struct range *seen, struct range *dot), y_setframe(struct treev *self, int place, long pos, long outof),
+				      x_getinfo(struct treev *self, struct range *total, struct range *seen, struct range *dot), x_setframe(struct treev *self, long place, long pos, long outof),
+				      y_endzone(struct treev *self, int zone, int action),  x_endzone(struct treev *self, long zone, long action);
+static long			      y_whatisat(struct treev *self, long pos, long outof), x_whatisat(struct treev *self, long pos, long outof);
 static struct scrollfns		      vertical_scroll_interface =
 		{ y_getinfo, y_setframe, y_endzone, y_whatisat };
 static struct scrollfns		      horizontal_scroll_interface =

@@ -37,30 +37,30 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <ctype.h>
 #include <stdlib.h>
-extern int BadSubMapLine();
-extern int BadUpdFileLine();
+extern int BadSubMapLine(char *s);
+extern int BadUpdFileLine(char *s);
 extern int CheckUpdateLine(char *line, int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood, Boolean LineIsFromUpdateFile);
-extern int CloseMSDir();
-extern int CompareSubsAndUpdateLines();
-extern int CriticalBizarreError();
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int CompareSubsAndUpdateLines(char *sline, char *uline);
+extern int CriticalBizarreError(char *text);
 extern int DeSymLink();  /* overhead/util/lib/desym.c */
-extern int DropHint();
-extern int GetSnapshotByNumber();
+extern int DropHint(char *Dirname);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
 extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
-extern int MS_LockMUF();
-extern int NonfatalBizarreError();
-extern int ReadOrFindMSDir();
-extern int RebuildOneMasterUpdateFile();
-extern char *UnixError();  /* overhead/util/lib/uerror.c */
-extern int abspath();
-extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
-extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
+extern int MS_LockMUF(char *LockDirName, int *lockfd);
+extern int NonfatalBizarreError(char *text);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int RebuildOneMasterUpdateFile(char *PathElt, int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood);
+extern char *UnixError(int errorNumber);  /* overhead/util/lib/uerror.c */
+extern int abspath(char *name, char *result);
+extern char *ap_Shorten(char *pathname);  /* overhead/util/lib/abbrpath.c */
+extern unsigned long conv64tolong(char *xnum);  /* overhead/mail/lib/genid.c */
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
 
 #define BIGLINE 1500
 
-extern char *StripWhiteEnds(), *fixDate();
+extern char *StripWhiteEnds(char *string), *fixDate(char *dPtr);
 
 int MS_RebuildMasterUpdateFiles(int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood)
 {

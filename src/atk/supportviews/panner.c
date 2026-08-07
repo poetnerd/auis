@@ -62,16 +62,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <sbuttonv.ih>
 #include <rect.h>
 #include <panner.eh>
-static void HandleDownHit();
-static void HandleDragging();
+static void HandleDownHit(struct panner *self, enum view_MouseAction action, long x, long y, long num_clicks);
+static void HandleDragging(struct panner *self, enum view_MouseAction action, long x, long y, long num_clicks);
 static void HandleThumbing();
 static void calc_desired();
 static void draw_everything();
 static void get_interface();
 static void getinfo();
-static void move_panner();
-static void recompute_panrect();
-static void update_everything();
+static void move_panner(struct panner *self);
+static void recompute_panrect(struct panner *self);
+static void update_everything(struct panner *self, boolean wipeold);
 
 #define sself ((struct scroll *)self)
 

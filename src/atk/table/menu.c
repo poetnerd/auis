@@ -38,6 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #include <class.h>
 #include <string.h>
+
+struct spread_classinfo;
 FILE * popen ();
 
 #include <im.ih>
@@ -48,24 +50,24 @@ FILE * popen ();
 
 #define AUXMODULE
 #include <spread.eh>
-static char * newext();
-static int objecttest();
+static char * newext(char *filename, char *extension);
+static int objecttest(struct spread *V, char *name, char *desiredname);
 
-extern struct view *spread_FindSubview();
+extern struct view *spread_FindSubview(struct spread *V, struct cell *cell);
 
 /* defined in keyboard.c */
-extern int k_AskUser();
-extern int k_WantToDiscard();
-extern void k_TellUser();
-extern int AddRows();
-extern int AddCols();
+extern int k_AskUser(struct spread *V, char prompt[], char def[], char buff[], int n);
+extern int k_WantToDiscard(struct spread *V);
+extern void k_TellUser(struct spread *V, char *s);
+extern int AddRows(struct spread *V, int after, int count);
+extern int AddCols(struct spread *V, int after, int count);
 
 /* defined in hit.c */
-extern int SetCurrentCell();
-extern int CopyChunk();
+extern int SetCurrentCell(struct spread *V, Chunk chunk);
+extern int CopyChunk(Chunk to, Chunk from);
 
 /* defined in print.c */
-extern int WriteTroff();
+extern int WriteTroff(struct spread *V, FILE *f, char *processor, char *format, int toplevel);
 
 void m_rename(struct spread *V, char ch)
 {

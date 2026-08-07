@@ -74,15 +74,15 @@ END-SPECIFICATION  ************************************************************/
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
-static int Equivalent_Token();
-static int Parse_Presentation_Parameter();
+static int Equivalent_Token(struct zip *self, char *token, char *table[]);
+static int Parse_Presentation_Parameter(struct zip *self);
 static int Parse_Stream_Commentary( struct zip *self, char c );
 
 /* M2: zip.do cross-file, no header declares these (defined zipds00.c) */
-extern int zip_Close_Stream_File();
-extern int zip_Set_Stream_File_Name();
-extern int zip_Open_Stream_File();
-extern int apt_MM_Compare();		/* defined zip.c */
+extern int zip_Close_Stream_File(struct zip *self, zip_type_stream stream);
+extern int zip_Set_Stream_File_Name(struct zip *self, zip_type_stream stream, char *name);
+extern int zip_Open_Stream_File(struct zip *self, zip_type_stream stream, long open_mode);
+extern int apt_MM_Compare(unsigned char *s1, unsigned char *s2);		/* defined zip.c */
 
 #define	 Data			      (self)
 #define	 Objects(i)		      ((*self->objects)[i])
@@ -92,23 +92,23 @@ static  zip_type_image		      image;
 static  zip_type_figure		      figure;
 static  char			      msg[512];
 
-static  char			     *Unique_Name(),
+static  char			     *Unique_Name(char *name, int seed),
 				      NextChar();
 static  char			      PriorChar( char c );
 static  int			      position;
 static double				Parse_Stream_Real();
 
-static int Substitute_Referenced_Stream();
-static int Parse_Figure_Unit_Attributes();
-static int Parse_Stream_Figure();
-static int Parse_Stream_Image_Beginning();
-static int Parse_Stream_Image_Ending();
-static int Parse_Image_Attributes();
-static int Extract_Attribute();
+static int Substitute_Referenced_Stream(struct zip *self);
+static int Parse_Figure_Unit_Attributes(struct zip *self, zip_type_figure figure);
+static int Parse_Stream_Figure(struct zip *self);
+static int Parse_Stream_Image_Beginning(struct zip *self);
+static int Parse_Stream_Image_Ending(struct zip *self);
+static int Parse_Image_Attributes(struct zip *self);
+static int Extract_Attribute(struct zip *self, char **attribute_ptr);
 static int Parse_Stream_Integer();
 static int Parse_Stream_Commentary( struct zip *self, char c );
-static int Equivalent_Token();
-static int Parse_Presentation_Parameter();
+static int Equivalent_Token(struct zip *self, char *token, char *table[]);
+static int Parse_Presentation_Parameter(struct zip *self);
 
 long zip__Read_Figure(struct zip *self, zip_type_figure figure)
   {

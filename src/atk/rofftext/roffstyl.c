@@ -45,7 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #include <rofftext.ih>
 
 /* forward references: both defined later in this file */
-extern int BeginStyle(), CloseStyle();
+extern int BeginStyle(struct rofftext *self, char *st), CloseStyle(struct rofftext *self);
 
 /*
  *  fixed by cch@mtgzx.att.com 1/10/90

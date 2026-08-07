@@ -37,27 +37,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <mailconf.h>
 #include <stdlib.h>
-extern int BuildAttributesField();
-extern int BuildCaption();
-extern int CheckAuthUid();
+extern int BuildAttributesField(struct MS_Message *msg);
+extern int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail);
+extern int CheckAuthUid(struct MS_Message *NewMessage);
 extern int CloseDirsThatNeedIt();
-extern int CloseMSDir();
-extern int DestructivelyWriteDirectoryHead();
-extern int EnsureNotInSubscriptionMap();
-extern int FreeMessage();
-extern int GetSnapshotByID();
-extern int GetSnapshotByNumber();
-extern int MS_AlterSnapshot();
-extern int ParseMessageFromRawBody();
-extern int ReadOrFindMSDir();
-extern int ReadRawFile();
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int DestructivelyWriteDirectoryHead(struct MS_Directory *Dir);
+extern int EnsureNotInSubscriptionMap(char *DirName);
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int GetSnapshotByID(struct MS_Directory *Dir, char *id, int *msgnum, char *snapshot);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
+extern int MS_AlterSnapshot(char *dirname, char *id, char *NewSnapshot, int Code);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
 extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
-extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_vclose();  /* overhead/util/lib/fdplumb2.c */
-extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
-extern int writeall();  /* overhead/util/lib/writeall.c */
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vclose(int fd);  /* overhead/util/lib/fdplumb2.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
+extern int writeall(int fd, char *Buf, int NBytes);  /* overhead/util/lib/writeall.c */
 
 extern char home[];
 

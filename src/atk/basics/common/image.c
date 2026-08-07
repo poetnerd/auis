@@ -65,6 +65,8 @@
 #include <util.h>
 #include <netinet/in.h>	/* Get the definition for ntohl. */
 
+struct color_area;
+
 /* for maxpathlen */
 #include <sys/param.h>
 	
@@ -73,28 +75,28 @@
 #include <jpeg.ih>
 #include <gif.ih>
 #include <image.eh>
-static long WriteImageToTempFile();
-static unsigned int * buildZoomIndex();
-static unsigned long colorsToDepth();
-static unsigned long conv64tolong();
-static char * convlongto64();
+static long WriteImageToTempFile(struct image *self, FILE *file);
+static unsigned int * buildZoomIndex(unsigned int width, unsigned int zoom, unsigned int *rwidth);
+static unsigned long colorsToDepth(unsigned long ncolors);
+static unsigned long conv64tolong(char *xnum);
+static char * convlongto64(int num, int pad);
 static char * genid();
-static int insertColorArea();
-static int make_gamma();
-static void newRGBMapData();
-static void setupNormalizationArray();
-static int sortBGR();
-static int sortBRG();
-static int sortGBR();
-static int sortGRB();
-static int sortRBG();
-static int sortRGB();
+static int insertColorArea(unsigned long *pixel_counts, struct color_area **rlargest, struct color_area **rsmallest, struct color_area *area);
+static int make_gamma(double gamma, int gammamap[256]);
+static void newRGBMapData(RGBMap *rgb, unsigned int size);
+static void setupNormalizationArray(unsigned int min, unsigned int max, byte *array);
+static int sortBGR(unsigned short *p1, unsigned short *p2);
+static int sortBRG(unsigned short *p1, unsigned short *p2);
+static int sortGBR(unsigned short *p1, unsigned short *p2);
+static int sortGRB(unsigned short *p1, unsigned short *p2);
+static int sortRBG(unsigned short *p1, unsigned short *p2);
+static int sortRGB(unsigned short *p1, unsigned short *p2);
 
 extern int errno;
 /* osi_GetTimes (overhead/util/lib/times.c) and to64/from64/fromqp
    (overhead/util/lib/encode.c) have no declaring header anywhere in
    the tree. */
-extern int osi_GetTimes();
+extern int osi_GetTimes(struct osi_Times *blk);
 extern int to64(), from64(), fromqp();
 #define MAXFILELINE 255
 #define DEFAULT_SAVE_QUALITY (75)
@@ -1970,9 +1972,9 @@ int image__colorsToDepth(struct classheader *classID, int n)
 #define Threshold     16384	/* in the dithering process */
 #define MinGrey           0
 
-static unsigned int tone_scale_adjust();
-static void LeftToRight();
-static void RightToLeft();
+static unsigned int tone_scale_adjust(unsigned int val);
+static void LeftToRight(int *curr, int *next, int width);
+static void RightToLeft(int *curr, int *next, int width);
 
 /*
  * simple floyd-steinberg dither with serpentine raster processing

@@ -64,7 +64,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 #include <andrewos.h>
 #include <tiffio.h>
 #include <tif.eh>
-static int checkcmap();
+static int checkcmap(int n, u_short *r, u_short *g, u_short *b);
 static int gtStripContig();
 static int gtStripSeparate();
 static int gtTileContig();
@@ -76,7 +76,7 @@ static void put2bitcmaptile();
 static void put4bitbwtile();
 static void put4bitcmaptile();
 static void put8bitcmaptile();
-static void putRGBContigYCbCrClump();
+static void putRGBContigYCbCrClump(byte *cp, u_char *pp, int cw, int ch, u_long w, int n, int fromskew, int toskew);
 static void putRGBcontig16bittile();
 static void putRGBcontig8bittile();
 static void putRGBseparate16bittile();
@@ -92,11 +92,11 @@ static void putgreytile();
 #endif
 #endif
 
-static int loadPalette();
-static int loadColor();
-static int loadImage();
-static void _TIFFerr();
-static void _TIFFwarn();
+static int loadPalette(TIFF *tif, long w, long h, int photo, int bps);
+static int loadColor(TIFF *tif, long w, long h, int photo, int bps, int nc);
+static int loadImage(TIFF *tif, u_long rwidth, u_long rheight, byte *raster, int stop);
+static void _TIFFerr(char *module, char *fmt, va_list ap);
+static void _TIFFwarn(char *module, char *fmt, va_list ap);
 int LoadTIFF(struct tif *self, char *fname, FILE *f, int nc);
 static int makebwmap();
 static int makecmap();
@@ -296,7 +296,7 @@ static	u_long *refBlackWhite;
 static	byte **BWmap;
 static	byte **PALmap;
 
-static	int gt();
+static	int gt(TIFF *tif, int w, int h, u_char *raster);
 
 static int loadImage(TIFF *tif, u_long rwidth, u_long rheight, byte *raster, int stop)
 {
@@ -505,7 +505,7 @@ u_long setorientation(TIFF *tif, u_long h)
 #if USE_PROTOTYPES
 typedef void (*tileContigRoutine)
     (byte*, u_char*, RGBvalue*, u_long, u_long, int, int);
-static tileContigRoutine pickTileContigCase(RGBvalue*);
+static tileContigRoutine pickTileContigCase();
 #else
 typedef void (*tileContigRoutine)();
 static tileContigRoutine pickTileContigCase();
@@ -568,7 +568,7 @@ static int gtTileContig(TIFF *tif, byte *raster, RGBvalue *Map, u_long h, u_long
 #if USE_PROTOTYPES
 typedef void (*tileSeparateRoutine)
     (byte*, u_char*, u_char*, u_char*, RGBvalue*, u_long, u_long, int, int);
-static tileSeparateRoutine pickTileSeparateCase(RGBvalue*);
+static tileSeparateRoutine pickTileSeparateCase();
 #else
 typedef void (*tileSeparateRoutine)();
 static tileSeparateRoutine pickTileSeparateCase();

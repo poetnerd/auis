@@ -48,16 +48,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <sbutton.ih>
 #include <sbuttonv.ih>
 #include <buttonv.eh>
-static int DrawAllButtons();
-static void DrawButton();
-static int calcRec();
-static boolean clearrl();
-static int drl();
-static boolean enclosed();
-static int findcurrent();
-static int findkey();
-static int vsetrec();
-static int wsetrec();
+static int DrawAllButtons(struct buttonV *self);
+static void DrawButton(struct buttonV *self, struct buttonV_rl *rl, long left, long top, long width, long height, boolean borderonly, boolean blit);
+static int calcRec(struct buttonV *self);
+static boolean clearrl(struct buttonV_rl *rl, struct buttonV *self);
+static int drl(struct buttonV_rl *rl, struct buttonV *self);
+static boolean enclosed(struct buttonV_rl *rl, long x, long y);
+static int findcurrent(struct buttonV_rl *rl, struct buttonV *self);
+static int findkey(struct buttonV_rl *rl, long i);
+static int vsetrec(struct buttonV_rl *rl, struct buttonV *self);
+static int wsetrec(struct buttonV_rl *rl, struct buttonV *self);
 
 static struct atomlist *  AL_bodyfont;
 static struct atomlist *  AL_bodyfont_size;

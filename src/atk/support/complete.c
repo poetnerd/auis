@@ -47,7 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include <sys/param.h>
 #include <sys/stat.h>
-static void FileHelp();
+static void FileHelp(char *partialPath, long dummyData, int (*helpTextFunction)(), long helpTextRock);
 
 static boolean useCurrentWorkingDirectory = FALSE;
 static struct cursor *waitCursor;

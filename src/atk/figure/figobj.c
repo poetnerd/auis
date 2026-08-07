@@ -42,7 +42,7 @@ char *figobj_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/f
 #include <figobj.eh>
 
 #include <point.h>
-static void UnionRectanglePt();
+static void UnionRectanglePt(struct rectangle *rec, long x, long y);
 
 boolean figobj__InitializeClass(struct classheader *ClassID)
 {

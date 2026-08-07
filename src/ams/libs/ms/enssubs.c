@@ -35,17 +35,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <stdio.h>
 #include <sys/stat.h>
-extern int BadSubMapLine();
-extern int BuildNickName();  /* ams/libs/shr/utils.c */
+extern int BadSubMapLine(char *s);
+extern int BuildNickName(char *FullName, char *NickName);  /* ams/libs/shr/utils.c */
 extern int CheckSubMapCorrect(char *DirName, char *MapFileName, char *NickName, Boolean DoesExist);
 extern int DeSymLink();  /* overhead/util/lib/desym.c */
 extern int EnsureSubMapCorrect(char *DirName, Boolean DoesExist);
-extern int FindTreeRoot();  /* ams/libs/shr/findroot.c */
-extern int PreorderSubscriptionStrcmp();
+extern int FindTreeRoot(char *DirName, char *RootName, short ReallyWantParent);  /* ams/libs/shr/findroot.c */
+extern int PreorderSubscriptionStrcmp(char *s, char *t);
 extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
-extern int abspath();
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
+extern int abspath(char *name, char *result);
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
 
 int EnsureInSubscriptionMap(char *DirName)
 {

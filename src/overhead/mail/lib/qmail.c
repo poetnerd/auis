@@ -151,25 +151,25 @@ These two routines are just like tryvicequeues_ext except that they implement tw
 #include "mail.h"
 #include "mailconf.h"
 #include "qmail.h"
-static int create();
-static void quote();
-static int tryclose();
-static int tryvicequeues_intern();
+static int create(char *name, FILE **f, char *filekind, int mode);
+static void quote(char *s, FILE *f);
+static int tryclose(FILE *f, char *name);
+static int tryvicequeues_intern(char *tolist[], int file, char *returnpath, char *auth, int enq, char *forstr, int holduntil, char *dirname, char *pfx, char *Cell);
 
 extern int errno;
-extern char *UnixError(), *arpadate();
+extern char *UnixError(int errorNumber), *arpadate();
 
 /* No header anywhere in the tree declares these. fdplumb.h renames
    closedir()/fclose() via #define but only declares 6 of its 16 dbg_*
    wrapper names -- dbg_closedir/dbg_fclose are not among them. */
 extern int CheckAMSConfiguration();	/* mailconf.c */
-extern int GetAuthInfo();		/* authret.c */
-extern int LCappend();			/* overhead/util/lib/lcappend.c */
-extern void dbg_closedir();		/* overhead/util/lib/fdplumb6.c */
-extern int dbg_fclose();		/* overhead/util/lib/fdplumb.c */
+extern int GetAuthInfo(char *FName, char **pBuff);		/* authret.c */
+extern int LCappend(char *s1, char *s2);			/* overhead/util/lib/lcappend.c */
+extern void dbg_closedir(DIR *d);		/* overhead/util/lib/fdplumb6.c */
+extern int dbg_fclose(FILE *fp);		/* overhead/util/lib/fdplumb.c */
 static int writesf();
-static int writeqf();
-static int writegf();
+static int writeqf(char *name, int file, char *host);
+static int writegf(char *name);
 
 typedef unsigned char bool;
 

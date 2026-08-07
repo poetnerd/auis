@@ -54,10 +54,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <environ.ih>
 
 #include <spell.eh>
-static int BuildQuestionLine();
+static int BuildQuestionLine(char *buffer, char *choices);
 static int KillSpeller();
-static struct process * StartProcess();
-static void spell_CheckSpellingCmd();
+static struct process * StartProcess(char *command, FILE **inputFile, FILE **outputFile);
+static void spell_CheckSpellingCmd(struct textview *self, long rock);
 
 #define Text(self) ((struct text *) self->header.view.dataobject)
 

@@ -60,10 +60,10 @@ static char *rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/syn
 #include <sym.eh>
 
 #include <andrewos.h>
-static long hash();
-static void insert();
-static void removeScopeFromScopes();
-static void resizeArray();
+static long hash(unsigned char *name);
+static void insert(struct sym *self);
+static void removeScopeFromScopes(sym_ScopeType scope);
+static void resizeArray(long **a, long from, long to);
 static void resizeTable();
 
 /*****************************************************************************\

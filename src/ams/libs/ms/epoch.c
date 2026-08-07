@@ -39,25 +39,25 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdlib.h>
 static int AddWork(char *Dir, int Recurse, int Depth);
 static int DeleteThrough(char *dirname, char *date64, int anyKids);
-static int dirCmp();
-static int tempErr();
+static int dirCmp(const void *p1, const void *p2);
+static int tempErr(int val);
 extern int CloseDirsThatNeedIt();
-extern int CloseMSDir();
-extern char *DescribeTimeInterval();
-extern int GetSnapshotByNumber();
-extern int MS_PurgeDeletedMessages();
-extern int NonfatalBizarreError();
-extern int ReadOrFindMSDir();
-extern int RewriteSnapshotInDirectory();
-extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
-extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern char *DescribeTimeInterval(long interval);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
+extern int MS_PurgeDeletedMessages(char *dirname);
+extern int NonfatalBizarreError(char *text);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int RewriteSnapshotInDirectory(struct MS_Directory *Dir, int num, char *snapshot);
+extern unsigned long conv64tolong(char *xnum);  /* overhead/mail/lib/genid.c */
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
 #ifdef AFS_ENV
 #include <netinet/in.h>
 #include <afs/param.h>
 #include <afs/venus.h>
 #endif /* AFS_ENV */
 
-static int RealEpoch();
+static int RealEpoch(char *dirname, char *date64, int depth, int Persist, int Recurse);
 static int DeleteThrough(char *dirname, char *date64, int anyKids);
 
 static int dirCmp(const void *p1, const void *p2)

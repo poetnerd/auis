@@ -44,14 +44,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <observe.ih>
 #include <proctbl.ih>
 #include <view.ih>
-static void step();
+static void step(struct circlepiview *self, double x, double y, double side, double *inside, double *outside, int depth, int depth_limit);
 
 /* Defined constants and macros */
 
 /* External Declarations */
 
 /* Forward Declarations */
-static void LimitProc();
+static void LimitProc(struct circlepiview *self, long param);
 
 /* Global Variables */
 static struct menulist *menulist = NULL;

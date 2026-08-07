@@ -58,22 +58,24 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <tabs.ih>
 #include <txtvinfo.h>
 #include <textv.eh>
-static long BackSpace();
-static long CalculateBltToTop();
-static int CalculateLineHeight();
-static struct environment * CheckHidden();
-static void CopyLineInfo();
-static void CreateMatte();
-static void DoCopySelection();
+
+struct textview_classinfo;
+static long BackSpace(struct textview *self, long pos, long units, enum textview_MovementUnits type, long *distMoved, long *linesAdded);
+static long CalculateBltToTop(struct textview *self, long pos, long *distMoved, long *linesAdded);
+static int CalculateLineHeight(struct textview *self);
+static struct environment * CheckHidden(struct text *self, long pos);
+static void CopyLineInfo(struct textview *self, struct linedesc *newline, struct linedesc *line, int movement);
+static void CreateMatte(struct textview *self, struct viewref *vr);
+static void DoCopySelection(struct textview *self, FILE *cutFile, long pos, long len);
 static void DoUpdate();
 static void EnsureSize();
-static void FreeTextData();
-static void HandleSelection();
-static long ReverseNewline();
-static void UpdateCursor();
-static void XorCursor();
-static long position();
-static int stringmatch();
+static void FreeTextData(struct textview *self);
+static void HandleSelection(struct textview *self, long len);
+static long ReverseNewline(struct text *self, long pos);
+static void UpdateCursor(struct textview *self, boolean oldCursor);
+static void XorCursor(struct textview *self);
+static long position(long pos, struct linedesc *theline, long coord);
+static int stringmatch(struct text *d, long pos, char *c);
 
 static struct graphic *pat;
 
@@ -103,13 +105,13 @@ static boolean initialExposeStyles;
 static boolean alwaysDisplayStyleMenus;
 static boolean highlightToBorders;
 
-extern void textview__LookCmd(); /* Needed for menulist functions. */
+extern void textview__LookCmd(struct textview *self, int look); /* Needed for menulist functions. */
 extern void InitializeMod();	/* defined in txtvcsty.c */
-extern int charType();		/* defined in txtvcmds.c */
+extern int charType(char c);		/* defined in txtvcmds.c */
 
 /* Scroll stuff. */
-static void getinfo(), setframe(), endzone();
-static long whatisat();
+static void getinfo(struct textview *self, struct range *total, struct range *seen, struct range *dot), setframe(struct textview *self, long position, long numerator, long denominator), endzone(struct textview *self, int end, enum view_MouseAction action);
+static long whatisat(struct textview *self, long numerator, long denominator);
 static struct scrollfns scrollInterface = {getinfo, setframe, endzone, whatisat};
 
 #define Text(self) ((struct text *) ((self)->header.view.dataobject))
@@ -2390,9 +2392,9 @@ char * textview__GetInterface(struct textview *self, char *interfaceName)
 
 boolean textview__InitializeClass(struct classheader *classID)
 {
-    extern struct keymap *textview_InitEmacsKeyMap();
-    extern struct keymap *textview_InitViInputModeKeyMap();
-    extern struct keymap *textview_InitViCommandModeKeyMap();
+    extern struct keymap *textview_InitEmacsKeyMap(struct textview_classinfo *classInfo, struct menulist **normalMenus);
+    extern struct keymap *textview_InitViInputModeKeyMap(struct textview_classinfo *classInfo, struct menulist **Menus);
+    extern struct keymap *textview_InitViCommandModeKeyMap(struct textview_classinfo *classInfo, struct menulist **Menus);
     extern int drawtxtv_tabscharspaces;
     drawtxtv_tabscharspaces = environ_GetProfileInt("TabsCharSpaces", 8);
     /* these init functions should be called in this specific order */

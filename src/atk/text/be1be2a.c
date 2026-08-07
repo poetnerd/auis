@@ -41,7 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <be1be2.ih>
 #include <text.ih>
 #include <be1be2a.eh>
-static void Convert();
+static void Convert(char *fileName);
 
 extern int errno;
 

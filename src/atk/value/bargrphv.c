@@ -40,7 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <sliderv.ih>
 #include <sbutton.ih>
 #include <bargrphv.eh>
-static int DrawKnurl();
+static int DrawKnurl(struct bargraphV *self, boolean fullupdate, struct rectangle *rr);
 
 #define FUDGE 2
 #define FUDGE2 4

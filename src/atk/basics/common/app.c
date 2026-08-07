@@ -40,7 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <graphic.ih>
 #include <profile.ih>
 #include <app.eh>
-static void errorProc();
+static void errorProc(pointer rock, char *str);
 
 static void errorProc(pointer rock, char *str)
 {

@@ -35,14 +35,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <X11/Xlib.h>
 #include <cmintern.h>
 #include <cmdraw.h>
-static void EventLoop();
-static void HandleMovement();
-static int HandlePress();
+
+struct activationState;
+static void EventLoop(struct cmenu *menu, Display *display, struct activationState *state);
+static void HandleMovement(struct cmenu *menu, XMotionEvent *motionEvent, struct activationState *state);
+static int HandlePress(struct cmenu *menu, XButtonEvent *buttonEvent, struct activationState *state);
 
 /* defined in cmdraw.c/cmmanip.c; neither cmdraw.h nor cmintern.h declares these */
-extern void FlipButton();
-extern int DrawMenus();
-extern int SelectionPtrToNum();
+extern void FlipButton(struct cmenu *menu, struct drawingState *state, int paneNum, int selectionNum, struct selection *selectionPtr, int onOrOff);
+extern int DrawMenus(struct cmenu *menu, struct drawingState *state);
+extern int SelectionPtrToNum(struct cmenu *menu, struct pane *panePtr, struct selection *selectionPtr);
 
 #if !defined(PRE_X11R4_ENV) && defined(__STDC__)
 static Bool SuitableEvent(Display *, XEvent *, char *);

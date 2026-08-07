@@ -53,8 +53,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <heximage.ih>
 #include <dispbox.h>
 
-extern void PostMenus(), CorrectHighlight();
-void OverlayInsetProc(), RemoveInsetProc(), ResizeInsetProc(), ImprintInsetProc();
+extern void PostMenus(struct rasterview *self), CorrectHighlight(struct rasterview *self);
+void OverlayInsetProc(struct rasterview *self, char *rock), RemoveInsetProc(), ResizeInsetProc(), ImprintInsetProc(struct rasterview *self, long rock);
 
 /* clean happy one-pixel draw. Displays correctly in rasterview self, even if zoomed, but does *not* notify other observers. If (x, y) is out of bounds, nothing happens. bit may be TRUE, FALSE, or DRAW_REVERSE_PIXEL. Note that this does more than the internal function SetPixel(). */
 void rasterview__SetPixel(struct rasterview *self, struct raster *ras, long x, long y, int bit)

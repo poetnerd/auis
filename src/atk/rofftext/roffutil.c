@@ -46,7 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/roff
 #include <stdlib.h>
 
 /* BeginStyle/EndStyle (roffstyl.c) have no declaring header anywhere */
-extern int BeginStyle(), EndStyle();
+extern int BeginStyle(struct rofftext *self, char *st), EndStyle(struct rofftext *self, int ID);
 
 /* magic buffers */
 BUF NewBuf()

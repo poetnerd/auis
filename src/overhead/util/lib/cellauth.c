@@ -46,9 +46,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <pwd.h>
 #include <util.h>
 #include <svcconf.h>
-static int AddALocal();
+static int AddALocal(char *LocalName);
 static int AnyNumber();
-static void ClearSome();
+static void ClearSome(int lowBd, int upBd);
 static int GetCellBasics();
 static int GrowBasics();
 #ifdef AFS_ENV

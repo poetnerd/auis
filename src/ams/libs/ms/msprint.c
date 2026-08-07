@@ -39,33 +39,33 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <errprntf.h>
 #include <hdrparse.h>
 #include <stdlib.h>
-static int RotBuf13();
-extern int CheckPrinterValidity();
-extern int FreePrintVec();
-extern int NonfatalBizarreError();
+static int RotBuf13(char *buf, int ct);
+extern int CheckPrinterValidity(char *printer);
+extern int FreePrintVec(char *PrintVector[], int VecIndex);
+extern int NonfatalBizarreError(char *text);
 extern int PrintPendingRequests(Boolean MustPrint);
-extern int PrintQuotingFormatting();  /* overhead/util/lib/unscribe.c */
-extern int PrinterInPrintcapLine();
-extern int QuickGetBodyFileName();
-extern int RetryBodyFileName();
+extern int PrintQuotingFormatting(FILE *fp, char *text, char *format, int len);  /* overhead/util/lib/unscribe.c */
+extern int PrinterInPrintcapLine(char *printer, char *line);
+extern int QuickGetBodyFileName(char *DirName, char *id, char *FileName);
+extern int RetryBodyFileName(char *FileName);
 extern char *arpadate();  /* overhead/mail/lib/arpadate.c */
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
-extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dbg_vfclose();  /* overhead/util/lib/fdplumb2.c */
-extern int lc2strncmp();  /* ams/libs/shr/utils.c */
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
+extern int lc2strncmp(char *s1, char *s2, int len);  /* ams/libs/shr/utils.c */
 
-extern char *AndrewDir();
-extern char *UnixError();
-extern char *ap_Shorten();
+extern char *AndrewDir(char *str);
+extern char *UnixError(int errorNumber);
+extern char *ap_Shorten(char *pathname);
 
 #define DefaultDocumentFormat "2"
 #define PRINTPREFIX ".MS.ToPrint"
 
 extern char home[], MeInFull[];
 
-extern char *StripWhiteEnds(), *getenv();
-extern double getla();
+extern char *StripWhiteEnds(char *string), *getenv();
+extern double getla(int indx);
 extern int DelayPrinting, AlwaysPrintImmediately;
 
 int MS_PrintMessage(char *DirName, char *id, int flags, char *printer)

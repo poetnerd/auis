@@ -44,8 +44,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 extern int CheckAMSConfiguration();  /* overhead/mail/lib/mailconf.c */
-extern int FixSubsDate();
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
+extern int FixSubsDate(struct SubscriptionProfile *sub, char *time64);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
 
 #ifndef NORCSID
 #define NORCSID

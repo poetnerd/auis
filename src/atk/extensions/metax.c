@@ -53,16 +53,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <framemsg.ih>
 #include <style.ih>
 #include <fontdesc.ih>
-static char * GetProcName();
-static void LoadClass();
-static int donothing();
-static boolean getarg();
-static boolean getfunction();
-static void helpProc();
-static long match();
-static void metax();
-static void metax2();
-static boolean myCompletionWork();
+
+struct helpRock;
+static char * GetProcName(struct proctable_Entry *pe);
+static void LoadClass(char *partial);
+static int donothing(struct view *vw);
+static boolean getarg(struct view *v, char *arg, int size, char *prompt, char *initial, long *result);
+static boolean getfunction(struct view *v, char *buf, int size, char *prompt, char *initial);
+static void helpProc(char *partial, struct helpRock *myrock, procedure HelpWork, long rock);
+static long match(struct proctable_Entry *pe, struct helpRock *h);
+static void metax(struct view *tv, long argument);
+static void metax2(struct view *tv, long argument);
+static boolean myCompletionWork(struct proctable_Entry *pe, struct result *data);
 
 static struct style *fixed=NULL,*boldulined=NULL,*heading=NULL,*columns=NULL;
 

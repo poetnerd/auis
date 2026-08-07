@@ -60,7 +60,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #endif
 
 #include <profile.eh>
-static int allocProfBuf();
+static int allocProfBuf(int size);
 
 #define SCALE_1_TO_1 0x10000L
 

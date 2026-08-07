@@ -73,9 +73,9 @@ static char *MRMCopyright = "Copyright 1990 Mark Majhor";
 #include <mac.h>
 #include <mac.eh>
 static int macin_close_file();
-static int macin_fatal();
-static int macin_open_image();
-static void tellAboutImage();
+static int macin_fatal(char *msg);
+static int macin_open_image(FILE *s);
+static void tellAboutImage(char *name);
 
 /****
  **

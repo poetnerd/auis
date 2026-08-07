@@ -43,17 +43,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 
 /* overhead/util/lib/fdplumb.c's dbg_* wrapper family; overhead/util/hdrs/
    fdplumb.h #defines close/closedir to these but doesn't declare them. */
-extern int dbg_close(), dbg_closedir();
+extern int dbg_close(int fd), dbg_closedir(DIR *d);
 
 /* ams/libs/ms: no header in the tree declares any of these. */
-extern int MS_Initialize(), MS_UpdateState(), CloseMSDir(), OpenMSDirectory(),
-	ReadOldMSDirectoryHead(), ReadRawFile(), ParseMessageFromRawBody(),
-	InventID(), BuildDateField(), BuildReplyField(), BuildAttributesField(),
-	BuildCaption(), FreeMessage(), AddHeader(), IsMessageAlreadyThere(),
-	WritePureFile(), AppendMessageToMSDir();
+extern int MS_Initialize(int *MaxBufSize, Boolean UsingSnap), MS_UpdateState(), CloseMSDir(struct MS_Directory *Dir, int CloseMode), OpenMSDirectory(struct MS_Directory *Dir, int Code),
+	ReadOldMSDirectoryHead(struct MS_Directory *Dir), ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking), ParseMessageFromRawBody(struct MS_Message *NewMessage),
+	InventID(struct MS_Message *msg), BuildDateField(), BuildReplyField(struct MS_Message *Msg), BuildAttributesField(struct MS_Message *msg),
+	BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail), FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot), AddHeader(struct MS_Message *Msg, char *Head), IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir),
+	WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode), AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
 
 /* Defined later in this same file, used above their definitions. */
-extern int GetNewReadyBox(), AddNetnewsWideReplyHeader();
+extern int GetNewReadyBox(), AddNetnewsWideReplyHeader(struct MS_Message *Msg);
 
 #define ALT_GOURMAND_DIR ("/afs/andrew.cmu.edu/usr0/netbb/.MESSAGES/netnews/alt/gourmand")
 #define ALT_GOURMAND_STR ("RECIPE:")

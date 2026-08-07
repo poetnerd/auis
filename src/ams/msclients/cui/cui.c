@@ -128,22 +128,22 @@ int	CUI_CheckNewMessages (),
 	GetHeaders (),
 	ForwardMailCmd(),
 	SetOption(),
-	MergeDirs(),
-	GetDirInfo(),
-	RmMessageDir(),
-	UnlinkViceFile(),
-	ReplaceMessage(),
+	MergeDirs(char *arg),
+	GetDirInfo(char *arg),
+	RmMessageDir(char *arg),
+	UnlinkViceFile(char *arg),
+	ReplaceMessage(char *arg),
 	ConvertOldStuff(),
-	RenameDir(),
+	RenameDir(char *arg),
 	CUI_FreeCaches(),
-	SubListCmd(),
-	ShowOptSettings(),
-	ResendCmd(),
-	Reindex(),
-	Redraft(),
-	TakeHints(),
-	Scavenge(),
-	ListCmd();
+	SubListCmd(char *arg),
+	ShowOptSettings(char *arg),
+	ResendCmd(char *arg),
+	Reindex(char *arg),
+	Redraft(char *arg),
+	TakeHints(char *arg),
+	Scavenge(char *arg),
+	ListCmd(char *arg);
 
 int GetHeadersFn(char *arg, char fn);	/* not in the block above -- had no
 					   forward declaration at all; needed
@@ -154,9 +154,9 @@ extern int  SNAP_debugmask,
 	    CUI_OnSameHost;
 
 extern struct tm   *localtime ();
-extern	FILE * qopen ();
+extern	FILE * qopen(char *name, char *argv[], char *mode);
 
-extern char *convlongto64 (), *StripWhiteEnds (), *getenv (), *copy(), *GetLine();
+extern char *convlongto64(int num, int pad), *StripWhiteEnds(char *string), *getenv (), *copy(char *s), *GetLine();
 extern char *ms_errlist[],
 	   *ms_errcauselist[],
 	   *ms_errvialist[],

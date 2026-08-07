@@ -55,9 +55,12 @@ STILL NEED TO DO/SUPPORT:
 #include <getfiles.h>
 #include <time.h>
 #include <lib_protos.h>
+
 #else
 extern char *getenv();
 #endif
+
+struct mailpart;
 
 #ifdef SYSV
 /* Different people say different things about whether unistd.h lives in sys/ */
@@ -65,30 +68,30 @@ extern char *getenv();
 #endif
 
 extern char *index(), *getmyname();
-extern char *AndrewDir();
+extern char *AndrewDir(char *str);
 /* No header declares these; defined in sibling files in this directory */
-extern int to64(), toqp(), from64(), fromqp();
-extern int DoesNeedPortableNewlines(), ExceptionalNewline();
-extern int lc2strcmp(), lc2strncmp();
+extern int to64(FILE *infile, FILE *outfile, int PortableNewlines), toqp(FILE *infile, FILE *outfile), from64(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct, int PortableNewlines), fromqp(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct);
+extern int DoesNeedPortableNewlines(char *ctype), ExceptionalNewline(char *contenttype, int needsportable);
+extern int lc2strcmp(char *s1, char *s2), lc2strncmp(char *s1, char *s2, int len);
 /* Same-file forward references (defined later in this file) */
-extern int tfputs(), cleanexit();
+extern int tfputs(char *s), cleanexit(int code);
 extern void nomemabort();
 extern void ProcessInitFiles(), InitSignals();
-extern int FputsQuotingLT();
-extern int TryClosingStyle(), TryOpeningStyle(), TempCloseStyles();
-extern int ReopenStyles(), ToggleStyle(), TranslateInputToEncodedOutput();
-extern int EditCurrentMessage(), EndStyle(), StartStyle();
-extern int WriteOutMessage(), WriteDeadLetter();
+extern int FputsQuotingLT(char *s, FILE *fp, struct mailpart *part, int EightBitMode, int RightToLeftMode);
+extern int TryClosingStyle(char *name, FILE *fp, struct mailpart *part), TryOpeningStyle(char *name, FILE *fp, struct mailpart *part, char *envstartstr), TempCloseStyles(FILE *fp);
+extern int ReopenStyles(FILE *fp, struct mailpart *part), ToggleStyle(char *name, FILE *fp, struct mailpart *part, char *turnonstr, char *turnoffstr), TranslateInputToEncodedOutput(FILE *InputFP, FILE *OutputFP, int Ecode, char *ctype);
+extern int EditCurrentMessage(int UseVisual), EndStyle(FILE *fp, char *s), StartStyle(FILE *fp, char *s, char *envstartstr);
+extern int WriteOutMessage(FILE *fp, char *ToList, char *Subject, char *CCList, struct mailpart *FirstPart), WriteDeadLetter();
 extern void RestoreCurrentStyles();
 extern void SwitchToEuropean();
-extern int EmitHeader(), EmitHeaderWithAliases();
-extern int WriteContentTypeAndEncoding(), WriteCtypeNicely();
+extern int EmitHeader(FILE *fp, char *hdr, char *body), EmitHeaderWithAliases(FILE *fp, char *hdr, char *names);
+extern int WriteContentTypeAndEncoding(FILE *fp, struct mailpart *part), WriteCtypeNicely(FILE *fp, char *ct);
 extern void finalize();
-extern int WhichEncodingForFile(), SetTextFlags();
-extern int ContainsEightBitChar(), ProcessOneMailRC();
-extern int HandleAliasCommand(), HandleSetCommand(), HeaderFputs();
+extern int WhichEncodingForFile(char *fname, char *ctype), SetTextFlags(struct mailpart *mp);
+extern int ContainsEightBitChar(char *fname), ProcessOneMailRC(char *fname, int IsAndrew);
+extern int HandleAliasCommand(char *aliasline), HandleSetCommand(char *cmd, int DoSet), HeaderFputs(char *s, FILE *fp, char *hdr);
 extern int PutQP(unsigned char c, FILE *fp);
-extern int EmitAddresses(), DeAlias(), fputsquoting();
+extern int EmitAddresses(FILE *fp, char *names, char *hdr), DeAlias(char *name, FILE *fp, char *hdr), fputsquoting(char *s, FILE *fp);
 extern int ProcessMailcapFiles(), BuildCommand();
 struct mailpart *CreateNewPart();
 

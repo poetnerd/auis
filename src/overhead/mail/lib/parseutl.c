@@ -144,7 +144,7 @@ ADDRESS_HOST * AppendHosts(ADDRESS_HOST *h1, ADDRESS_HOST *h2)
 ADDRESS_HOST * MakeHostList(ADDRESS_HOST *h)
 {
     ADDRESS_HOST *Head;
-    extern ADDRESS_HOST *MakeHost();
+    extern ADDRESS_HOST *MakeHost(char *name);
 
     Head = MakeHost(NIL);
     if (Head == NIL) return NIL;

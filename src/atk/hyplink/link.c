@@ -41,8 +41,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/hypl
 #include <fontdesc.ih>
 #include <path.ih>
 #include <link.eh>
-static long ReadOldFormat();
-static long link_SanelyReturnReadError();
+static long ReadOldFormat(struct link *self, FILE *fp, long id);
+static long link_SanelyReturnReadError(struct link *self, FILE *fp, long id, long code);
 
 extern char *getenv();
 
@@ -51,8 +51,8 @@ extern char *getenv();
 #define DS_VERSION 3 /* datastream version */
 
 /* Forward Declarations */
-static void WriteLine();
-static char *GlomStrings(), *ReadLine();
+static void WriteLine(FILE *f, char *l);
+static char *GlomStrings(char *s, char *t), *ReadLine(FILE *f);
 #ifdef PL8
 static char *EncodeFont();
 #endif

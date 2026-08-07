@@ -50,30 +50,30 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #define AUXMODULE 1
 #include <textv.eh>
-static void AdjustCase();
-static void AdjustIndentation();
-static void YankCmd();
-static int stringmatch();
-static int textview_DoRotatePaste();
-static int viYankDeleteLine();
-static void yankKillLine();
+static void AdjustCase(struct textview *self, boolean upper, boolean firstOnly);
+static void AdjustIndentation(struct textview *self, int amount);
+static void YankCmd(struct textview *self, boolean onlycut);
+static int stringmatch(struct text *d, long pos, char *c);
+static int textview_DoRotatePaste(struct textview *self, int count);
+static int viYankDeleteLine(struct textview *self, int action);
+static void yankKillLine(struct textview *self, int action);
 
-extern void textview_ForwardWordCmd();
-extern void textview_EndOfWordCmd();
-extern void textview_BackwardWordCmd();
-extern void textview_ForwardWSWordCmd();
-extern void textview_BackwardWSWordCmd();
-extern void textview_EndOfWSWordCmd();
-extern void textview_NextLineCmd();
-extern void textview_EndOfLineCmd();
-extern void textview_BeginningOfLineCmd();
-extern void textview_StartOfParaCmd();
-extern void textview_EndOfParaCmd();
-extern void textview_BeginningOfFirstWordCmd();
-extern void textview_PreviousLineCmd();
-extern int charType();		/* defined in txtvcmds.c */
+extern void textview_ForwardWordCmd(struct textview *self);
+extern void textview_EndOfWordCmd(struct textview *self);
+extern void textview_BackwardWordCmd(struct textview *self);
+extern void textview_ForwardWSWordCmd(struct textview *self);
+extern void textview_BackwardWSWordCmd(struct textview *self);
+extern void textview_EndOfWSWordCmd(struct textview *self);
+extern void textview_NextLineCmd(struct textview *self);
+extern void textview_EndOfLineCmd(struct textview *self);
+extern void textview_BeginningOfLineCmd(struct textview *self);
+extern void textview_StartOfParaCmd(struct textview *self);
+extern void textview_EndOfParaCmd(struct textview *self);
+extern void textview_BeginningOfFirstWordCmd(struct textview *self);
+extern void textview_PreviousLineCmd(struct textview *self);
+extern int charType(char c);		/* defined in txtvcmds.c */
 
-static void yankDeleteWord ();
+static void yankDeleteWord(struct textview *self, int action, void (*moveFunction)());
 
 int textview_GetNextNonSpacePos(struct textview *self, int pos)
 {

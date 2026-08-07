@@ -52,46 +52,46 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <ams.h>
 #include <mimepart.h>
 #include <fdphack.h>
-static int FindParam();
-static char * GetHeader();
-static int InsertProperObject();
-static int ParseEncoding();
-static int PlainAsciiText();
-static int RotateThirteen();
+static int FindParam(char *ct, char *paramname, char *ValueBuf);
+static char * GetHeader(char *LineBuf, int lim, FILE *fp);
+static int InsertProperObject(struct text822 *d, FILE *fp, int *ShowPos, char *ctype, char *encoding, char *descrip);
+static int ParseEncoding(char *enc);
+static int PlainAsciiText(char *s, char *currentcharset);
+static int RotateThirteen(struct text *d, int start);
 static int char64();
-static int getc64();
-static int getcdecoding();
-static int getcqp();
+static int getc64(FILE *fp);
+static int getcdecoding(FILE *fp, int code);
+static int getcqp(FILE *fp);
 static int hexchar();
-static int ignoretoken();
-static char * paramend();
-static char * translate();
-static int ungetc64();
-static int ungetcdecoding();
-static int ungetcqp();
+static int ignoretoken(char *t);
+static char * paramend(char *s);
+static char * translate(char *t);
+static int ungetc64(int c, FILE *fp);
+static int ungetcdecoding(int c, FILE *fp, int code);
+static int ungetcqp(int c, FILE *fp);
 
 static char *EmptyMsgString = "<empty message>";
 static struct style *FixedStyle, *BoldStyle, *FormatStyle, *TinyStyle, *GlobalStyle;
 static char *myfontname = NULL;
 static int myfontsize, UsingFootNote, PrintMinorHeaders;
-static char *fgetsdecoding(), *UnquoteString();
-static boolean ReadMessage();
-static int RotateThirteen();
-static int FindParam();
-static int InsertProperObject();
-static int ParseEncoding();
-static int getcdecoding();
-static int ungetcdecoding();
-static int getc64();
-static int ungetc64();
-static int getcqp();
-static int ungetcqp();
+static char *fgetsdecoding(char *buf, int size, FILE *fp, int code), *UnquoteString(char *s);
+static boolean ReadMessage(struct text822 *d, FILE *fp, int Mode, char *ContentTypeOverride, int *len, boolean IsReallyTextObject, int *BodyStart, int *IgnorePosition, struct text *AuxHeadText, int InsideRecursion, int AlternativeNumber, int JunkAtEnd, int DisplayAllHeaders);
+static int RotateThirteen(struct text *d, int start);
+static int FindParam(char *ct, char *paramname, char *ValueBuf);
+static int InsertProperObject(struct text822 *d, FILE *fp, int *ShowPos, char *ctype, char *encoding, char *descrip);
+static int ParseEncoding(char *enc);
+static int getcdecoding(FILE *fp, int code);
+static int ungetcdecoding(int c, FILE *fp, int code);
+static int getc64(FILE *fp);
+static int ungetc64(int c, FILE *fp);
+static int getcqp(FILE *fp);
+static int ungetcqp(int c, FILE *fp);
 static int hexchar();
 static int char64();
-static int PlainAsciiText();
-static int ForceMetamail();
-static int InsertDecodedText();
-static void InsertAttachmentLine();
+static int PlainAsciiText(char *s, char *currentcharset);
+static int ForceMetamail(char *ctype);
+static int InsertDecodedText(struct text822 *d, int *ShowPos, unsigned char *bytes, long len, char *charset);
+static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename, char *ctype, long nbytes);
 
 boolean text822__InitializeObject(struct classheader *c, struct text822 *self)
 {

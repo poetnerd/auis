@@ -58,14 +58,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <xim.ih>
 #include <xfontd.eh>
 #include <environ.ih>
-static int AddStyleModifiers();
-static int BestFudgeFactor();
-static struct bestfont * ClosestFonts();
-static struct xgraphic * EnsureGraphic();
+static int AddStyleModifiers(char *string, int styles);
+static int BestFudgeFactor(long vdpi);
+static struct bestfont * ClosestFonts(char **possibleNames, int numNames, char *desiredFamily, int desiredSize, int desiredStyle, int *numBest, boolean andyName);
+static struct xgraphic * EnsureGraphic(struct xgraphic *graphic);
 static void FillDlist();
-static struct FontSummary * GetFontSummary();
-static char * GetNthDash();
-static boolean XExplodeFontName();
+static struct FontSummary * GetFontSummary(struct xfontdesc *self);
+static char * GetNthDash(char *p, int cnt);
+static boolean XExplodeFontName(char *fontName, char *familyName, long bufSize, long *fontStyle, long *fontSize);
 
 /* Filled in in InitializeClass from a user preference.
  * If TRUE, font substitutions result in a warning being printed on stderr.

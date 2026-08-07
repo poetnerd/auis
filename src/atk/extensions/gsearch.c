@@ -49,22 +49,25 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 
 #include <gsearch.eh>
 #include <string.h>
-static void dosearch();
-static void dynstr_addchar();
-static void dynstr_append();
-static void dynstr_copy();
-static void dynstr_destroy();
-static int dynstr_empty();
-static void dynstr_ensuresize();
-static int dynstr_init();
-static void dynstr_put();
-static void dynstr_shortento();
-static void fsearch();
-static void rsearch();
-static void statestack_destroy();
-static int statestack_init();
-static void statestack_pop();
-static void statestack_push();
+
+struct dynstr;
+struct statestack;
+static void dosearch(struct textview *tv, int forwardp);
+static void dynstr_addchar(struct dynstr *d, int c);
+static void dynstr_append(struct dynstr *d, char *str);
+static void dynstr_copy(struct dynstr *dest, struct dynstr *src);
+static void dynstr_destroy(struct dynstr *d);
+static int dynstr_empty(struct dynstr *d);
+static void dynstr_ensuresize(struct dynstr *d, int size);
+static int dynstr_init(struct dynstr *d);
+static void dynstr_put(struct dynstr *d, char *str);
+static void dynstr_shortento(struct dynstr *d, int size);
+static void fsearch(struct textview *tv, long key);
+static void rsearch(struct textview *tv, long key);
+static void statestack_destroy(struct statestack *s);
+static int statestack_init(struct statestack *s);
+static void statestack_pop(struct statestack *s);
+static void statestack_push(struct statestack *s, int pl, int wp, int fp, long pos, long len, long sf, int fwdp);
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 

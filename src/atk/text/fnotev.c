@@ -49,7 +49,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <txttroff.ih>
 #include <fnotev.eh>
 static int DoUpdate();
-static struct impair * findwindow();
+static struct impair * findwindow(struct fnotev *self, struct text *pc);
 
 #define FONTNAME "andy"
 #define FONTSIZE 16

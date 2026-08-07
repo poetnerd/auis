@@ -35,18 +35,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <mailconf.h>
 #include <sys/stat.h>
-static void AddWelcomeMail();
-extern int AppendFileToFolder();
-extern int BuildNickName();  /* ams/libs/shr/utils.c */
+static void AddWelcomeMail(char *mdir);
+extern int AppendFileToFolder(char *FileName, char *FolderName, int DoDelete);
+extern int BuildNickName(char *FullName, char *NickName);  /* ams/libs/shr/utils.c */
 extern int EnsurePrivacy(char *DirName, Boolean SemiPrivate);
-extern int FindDefaultDir();
-extern int GetSubsEntry();
-extern int MS_CreateNewMessageDirectory();
+extern int FindDefaultDir(char *Root, char *Name);
+extern int GetSubsEntry(char *FullName, char *NickName, int *status);
+extern int MS_CreateNewMessageDirectory(char *DirName, int Overwrite, char *obsolete);
 extern int MS_FastUpdateState();
-extern int MS_SetSubscriptionEntry();
-extern int NonfatalBizarreError();
-extern int ReadOrFindMSDir();
-extern int vdown();  /* overhead/util/lib/vclose.c */
+extern int MS_SetSubscriptionEntry(char *FullName, char *NickName, int status);
+extern int NonfatalBizarreError(char *text);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int vdown(int err);  /* overhead/util/lib/vclose.c */
 #ifdef AFS_ENV
 #include <netinet/in.h>
 #include <afs/param.h>

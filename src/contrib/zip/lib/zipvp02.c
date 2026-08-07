@@ -72,7 +72,7 @@ END-SPECIFICATION  ************************************************************/
 #include "view.ih"
 #include "zip.ih"
 #include "zipv.ih"
-static int Set_Crosshairs();
+static int Set_Crosshairs(struct zipview *self, zip_type_pane pane, int x, int y);
 
 #define	 Data			      (self->data_object)
 #define	 View			      (self)
@@ -82,8 +82,8 @@ static int Set_Crosshairs();
 
 #define  panning_factor			  16
 
-static int Set_Crosshairs();
-static int Blit_Pane();
+static int Set_Crosshairs(struct zipview *self, zip_type_pane pane, int x, int y);
+static int Blit_Pane(struct zipview *self, zip_type_pane pane, int x_offset, int y_offset);
 
 long zipview__Pan_Pane(struct zipview *self, zip_type_pane pane, zip_type_pixel x_offset, zip_type_pixel y_offset)
   {

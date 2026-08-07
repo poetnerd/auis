@@ -59,29 +59,32 @@ char *figotoolv_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/at
 
 #include <point.h>
 #include <rect.h>
-static void ATSPSplot();
-static boolean CSA_Splot();
-static boolean CacheContentsProc();
-static void CacheSelectProc();
-static void ClearAnchorSplot();
-static void DefaultAnchorSplot();
-static void FindHitObjAnchProc();
-static void FindHitObjProc();
+
+struct menuatt;
+struct FHOP_lump;
+static void ATSPSplot(struct figobj *o, long ref, struct figview *vv, struct menuatt *attr);
+static boolean CSA_Splot(struct figobj *o, long ref, struct figure *fig, struct figview *figv);
+static boolean CacheContentsProc(struct figobj *o, long ref, struct figure *fig, struct figtoolview *figt);
+static void CacheSelectProc(struct figobj *o, long ref, struct figview *vv, struct figtoolview *figt);
+static void ClearAnchorSplot(struct figobj *o, long ref, struct figview *self, long rock);
+static void DefaultAnchorSplot(struct figobj *o, long ref, struct figview *self, long rock);
+static void FindHitObjAnchProc(struct figobj *o, long ref, struct figview *vv, struct FHOP_lump *val);
+static void FindHitObjProc(struct figobj *o, long ref, struct figview *vv, struct FHOP_lump *val);
 static void IncreaseTmpProc();
-static void InsertColor();
+static void InsertColor(struct figtoolview *self, char *val);
 static void InsertLineWidth(struct figtoolview *self, short val);
 static void InsertRRectCorner(struct figtoolview *self, short val);
 static void InsertSnapGrid(struct figtoolview *self, short val);
-static void MakeBoxListProc();
-static void MoveObjsProc();
-static void ProportAnchorSplot();
-static boolean SelAddProc();
-static boolean SelTogProc();
-static void Toolsub_AddAnch();
-static void Toolsub_DelAnch();
-static void Toolsub_Drag();
-static void Toolsub_Reshape();
-static void Toolsub_Select();
+static void MakeBoxListProc(struct figobj *o, long ref, struct figview *vv, struct rectangle **rec);
+static void MoveObjsProc(struct figobj *o, long ref, struct figview *vv, struct point *pt);
+static void ProportAnchorSplot(struct figobj *o, long ref, struct figview *self, long rock);
+static boolean SelAddProc(struct figobj *o, long ref, struct figure *fig, struct figview *vv);
+static boolean SelTogProc(struct figobj *o, long ref, struct figure *fig, struct figview *vv);
+static void Toolsub_AddAnch(struct figtoolview *self, enum view_MouseAction action, long x, long y, boolean onhandle, long oref, long ptref);
+static void Toolsub_DelAnch(struct figtoolview *self, enum view_MouseAction action, long x, long y, boolean onhandle, long oref, long ptref);
+static void Toolsub_Drag(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks);
+static void Toolsub_Reshape(struct figtoolview *self, enum view_MouseAction action, long x, long y, long oref, long ptref);
+static void Toolsub_Select(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks);
 
 #define figtoolview_SelectClickDistance (6)
 
@@ -96,16 +99,16 @@ static void SetLineWidthProc(struct stringtbl *st, struct figtoolview *self, sho
 static void SetRRectCornerProc(struct stringtbl *st, struct figtoolview *self, short accnum);
 static void CallCmdProc(struct stringtbl *st, struct figtoolview *self, short accnum);
 static void SetSnapGridProc(struct stringtbl *st, struct figtoolview *self, short accnum);
-static void SetExpertModeProc(), ApplyToSelProc(), RepostMenus();
-static void Toolsub_Add(), Toolsub_Del();
-static struct view *Tool_CreateProc(), *Tool_Select(), *Tool_AddPoints(), *Tool_DelPoints(), *Tool_AddAnchor(), *Tool_DelAnchor();
-static void AbortObjectProc(), ToggleClosedProc(), ToggleSmoothProc();
-static void Toolmod_Select();
-static void AdjustToSelection(), AdjustToMenus();
-static void Command_Quit(), Command_SelectAll(), Command_CutNPaste(), Command_Zoom(), Command_Refresh(), Command_GroupSel(), Command_UngroupSel(), Command_MoveToExtreme(), Command_PanToOrigin(), Command_LockCreate();
-static void Command_SetDoConstraint(), Command_ClearAnchors(), Command_DefaultAnchors(), Command_ProportAnchors();
-static char *CopyString(), *WhiteKillString();
-static void LowerString();
+static void SetExpertModeProc(), ApplyToSelProc(struct figtoolview *self, long rock), RepostMenus();
+static void Toolsub_Add(struct figtoolview *self, enum view_MouseAction action, long x, long y, boolean onhandle, long oref, long ptref), Toolsub_Del(struct figtoolview *self, enum view_MouseAction action, long x, long y, boolean onhandle, long oref, long ptref);
+static struct view *Tool_CreateProc(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks), *Tool_Select(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks), *Tool_AddPoints(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks), *Tool_DelPoints(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks), *Tool_AddAnchor(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks), *Tool_DelAnchor(struct figtoolview *self, enum view_MouseAction action, long x, long y, long numclicks);
+static void AbortObjectProc(), ToggleClosedProc(struct figtoolview *self, long rock), ToggleSmoothProc(struct figtoolview *self, long rock);
+static void Toolmod_Select(struct figtoolview *self, long rock);
+static void AdjustToSelection(struct figtoolview *self), AdjustToMenus(struct figtoolview *self, long mask);
+static void Command_Quit(struct figtoolview *self, char *rock), Command_SelectAll(struct figtoolview *self, char *rock), Command_CutNPaste(struct figtoolview *self, long rock), Command_Zoom(struct figtoolview *self, long rock), Command_Refresh(struct figtoolview *self, char *rock), Command_GroupSel(struct figtoolview *self, char *rock), Command_UngroupSel(struct figtoolview *self, char *rock), Command_MoveToExtreme(struct figtoolview *self, long infront), Command_PanToOrigin(struct figtoolview *self, long rock), Command_LockCreate(struct figtoolview *self, char *rock);
+static void Command_SetDoConstraint(struct figtoolview *self, boolean rock), Command_ClearAnchors(struct figtoolview *self, char *rock), Command_DefaultAnchors(struct figtoolview *self, char *rock), Command_ProportAnchors(struct figtoolview *self, char *rock);
+static char *CopyString(char *str), *WhiteKillString(char *buf);
+static void LowerString(char *str);
 
 #ifndef ABS
 #define ABS(x) (((x)<0)?(-(x)):(x))

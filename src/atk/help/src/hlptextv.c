@@ -41,7 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <text.ih>
 #include <hlptextv.eh>
 #include <string.h>
-static char * TrimWhiteSpace();
+static char * TrimWhiteSpace(char *buf, int pos);
 
 boolean hlptextview__InitializeClass(struct classheader *classID)
 {

@@ -48,8 +48,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <environ.ih>
 #include <path.ih>
 #include <filetype.eh>
-static void FreeAttributes();
-static struct mapEntry * GetEntry();
+static void FreeAttributes(struct attributes *attributes);
+static struct mapEntry * GetEntry(char *extension, char *dataName);
 
 #define DEFAULTTYPE "text"
 

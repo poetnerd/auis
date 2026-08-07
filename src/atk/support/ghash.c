@@ -38,11 +38,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <glist.ih>
 #include <util.h>
 #include <ghash.eh>
-static int DefaultHash();
-static boolean EnumProc();
-static int FindEgg();
-static int PrintAll();
-static int safestrcmp();
+
+struct egg;
+struct enumerate;
+static int DefaultHash(char *key);
+static boolean EnumProc(struct egg *e, struct enumerate *rock);
+static int FindEgg(struct egg *egg, char *key);
+static int PrintAll(struct egg *egg, int nothing);
+static int safestrcmp(char *a, char *b);
 
 struct egg {
     char *key,*value;

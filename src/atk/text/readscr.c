@@ -55,13 +55,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #include <readscr.eh>
 static int finishenv();
-static int goshdarn();
-static int linefix();
-static int longscribe();
-static int scribefix();
-static int shortscribe();
-static int startenv();
-static int textfix();
+static int goshdarn(char *errmsg);
+static int linefix(struct text *d);
+static int longscribe(struct text *d, char *shortcommand);
+static int scribefix(struct text *d);
+static int shortscribe(struct text *d, char *shortcommand);
+static int startenv(int delim, struct style *tempstyle);
+static int textfix(struct text *d, int len);
 
 #define STACKSIZE 1000
 #define STRINGSIZE 50

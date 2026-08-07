@@ -33,7 +33,7 @@
 #include <ctype.h>
 #include <global.h>
 #include <gentlex.h>
-static void ProcessReserved();
+static void ProcessReserved(struct line *hdr);
 
 struct line *ResWords = NULL;
 

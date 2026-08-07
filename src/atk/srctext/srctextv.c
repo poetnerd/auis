@@ -55,37 +55,39 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 #include "srctext.ih"
 #include "srctextv.eh"
 #include "toolcnt.h"
-static struct frame * FindByView();
-static boolean FrameFinder();
-static struct view * PutInAnotherWindow();
-static int ViewEqual();
-static void checkLineLengths();
-static void compress();
-static void compressAll();
+
+struct finderInfo;
+static struct frame * FindByView(struct srctextview *view);
+static boolean FrameFinder(struct frame *frame, struct finderInfo *info);
+static struct view * PutInAnotherWindow(struct srctextview *view, struct buffer *buffer, int forceWindow);
+static int ViewEqual(struct frame *frame, struct view *view);
+static void checkLineLengths(struct srctextview *self, long rock);
+static void compress(struct srctextview *self, long key);
+static void compressAll(struct srctextview *self, long key);
 static void endComment(struct srctextview *self, char key);
-static boolean fileExists();
-static void forceupperoff();
-static void forceupperon();
-static void gotoColumn();
-static void insertComment();
-static void insertLineComment();
-static void newline();
-static void nextLongLine();
+static boolean fileExists(struct srctextview *self, char *filename);
+static void forceupperoff(struct srctextview *self, long rock);
+static void forceupperon(struct srctextview *self, long rock);
+static void gotoColumn(struct srctextview *self, long rock);
+static void insertComment(struct srctextview *self, long key);
+static void insertLineComment(struct srctextview *self, long key);
+static void newline(struct srctextview *self, long key);
+static void nextLongLine(struct srctextview *self, long key);
 static void paren(struct srctextview *self, char key);
-static void redo();
-static void reformat();
-static void reindent();
-static void reindretrn();
-static void renameIdent();
-static void retrn();
+static void redo(struct srctextview *self);
+static void reformat(struct srctextview *self, long key);
+static void reindent(struct srctextview *self, long key);
+static void reindretrn(struct srctextview *self, long key);
+static void renameIdent(struct srctextview *self, long key);
+static void retrn(struct srctextview *self, long key);
 static void selfinsert(struct srctextview *self, char key);
 static void selfinsertreindent(struct srctextview *self, char key);
 static void startComment(struct srctextview *self, char key);
 static void startLineComment(struct srctextview *self, char key);
 static void styleLabel(struct srctextview *self, char key);
 static void styleString(struct srctextview *self, char key);
-static long tcpos();
-static void whatColumn();
+static long tcpos(struct content *txt, char *strng);
+static void whatColumn(struct srctextview *self);
 
 /* AutoCut was not made externally visible by txtvcmod, so WE have to check the preference TOO */
 static int autocut_mode = -1;	/* uninitialized */
@@ -95,7 +97,7 @@ static struct keymap *src_Map;
 static struct menulist *src_Menus;
 static struct cursor *waitCursor;
 
-static void toggleOverstrike(), overstrikeOn(), overstrikeOff();
+static void toggleOverstrike(), overstrikeOn(struct srctextview *self, long key), overstrikeOff(struct srctextview *self, long key);
 
 static struct bind_Description srctextBindings[]={
     {"srctextview-self-insert"," ",' ', NULL,0,0, (void (*)())selfinsert, "Insert a character and check for a preceding keyword."},

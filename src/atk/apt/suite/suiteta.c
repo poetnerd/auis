@@ -49,16 +49,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/apt/
 #include <apts.ih>
 #include <suiteta.eh>
 
-struct view *Name_Choice(), 
-            *RW_Hit_Handler(),
-	    *First_Test(), 
-            *Last_Test(), 
-            *Number_Test(), 
-	    *Next_Test(),
-            *Prior_Test(), 
-            *Quit_Test(),
-	    *Text_Object_Handler(), 
-            *TextView_Object_Handler();
+struct view *Name_Choice(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks), 
+            *RW_Hit_Handler(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks),
+	    *First_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks), 
+            *Last_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks), 
+            *Number_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks), 
+	    *Next_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks),
+            *Prior_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks), 
+            *Quit_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks),
+	    *Text_Object_Handler(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type), 
+            *TextView_Object_Handler(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type);
 
 #define NUM_NAMES 27
 static char *names[NUM_NAMES] = {
@@ -353,7 +353,7 @@ static suite_Specification icons_1[] = {
   NULL
 };
 
-struct view *Alphabet_Sort();
+struct view *Alphabet_Sort(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks);
 
 static suite_Specification alphabet_0[] = {
   suite_TitleCaption( "Alphabet --- ZERO" ),

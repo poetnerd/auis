@@ -36,6 +36,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <class.h>
 #include <stdlib.h>
 
+struct helpdb_completesplot;
+struct help_helpsplot;
+
 #define label gezornenplatz
 /* sys/types.h in AIX PS2 defines "struct label", causing a type name clash.
    Avoid this by temporarily redefining "label" to be something else in the preprocessor. */
@@ -78,13 +81,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <hlptextv.ih>
 #define AUXMODULE 1
 #include <help.eh>
-static void destroyWindow();
-static struct frame * getframe();
-static void CompletionSplot();
-static void HelpEnumProc();
-static void HelpHelpProc();
-static int lenstrcmp();
-static int safesystem();
+static void destroyWindow(struct help *self);
+static struct frame * getframe(struct view *vw);
+static void CompletionSplot(char *name, char *original, struct helpdb_completesplot *rock);
+static void HelpEnumProc(char *name, char *original, struct help_helpsplot *rock);
+static void HelpHelpProc(char *partialKeyword, struct help *rock, int (*HelpWork)(), char *hrock);
+static int lenstrcmp(unsigned char *s1, unsigned char *s2);
+static int safesystem(char *acmd);
 
 /* statics representing information cache */
 extern char *help_tutorialDirs[MAX_TUTORIAL_DIRS];
@@ -113,19 +116,19 @@ extern void (*help_frameSetPrinter)();
 extern void (*help_poptPostWindow)();
 #endif
 
-extern void ToggleProgramListSize();
-extern void HistoryHelp();
-extern void OverviewHelp();
-extern struct view *SetupLpairs();
-extern void SetupMenus();
+extern void ToggleProgramListSize(struct help *self, long rock);
+extern void HistoryHelp(struct help *self, struct history_entry *ent, struct panel *apanel);
+extern void OverviewHelp(struct help *self, char *name, struct panel *apanel);
+extern struct view *SetupLpairs(struct help *self);
+extern void SetupMenus(struct cache *c);
 extern void FreePanelListData();
 extern int help_GetHelpOn();
-extern char *LowerCase();
-extern long SetupPanel();
+extern char *LowerCase(char *astring);
+extern long SetupPanel(boolean readpairs, char *fname, struct panel *panel, char **def);
 extern void NewHelp();
-extern void AddHistoryItem();
+extern void AddHistoryItem(struct help *self, int marcp, int flash);
 
-static void ShowHelp();
+static void ShowHelp(struct help *self, char *topic, boolean new_win);
 
 #ifdef DEBUGGING
 /*

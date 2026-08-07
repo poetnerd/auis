@@ -46,17 +46,20 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #undef class_StaticEntriesOnly
 #include <messitem.ih>
 #include <menulist.eh>
+
+struct mpitem;
+struct mlitem;
 static void ExplodeMenuString();
-static char * MapMenuFile();
-static int ReadMenuFile();
-static void SetPrio();
-static void copyItems();
-static void mlitem_Add();
-static struct mlitem * mlitem_Exists();
-static struct mlitem * mlitem_New();
-static short mpitem_DoResolv();
-static struct mpitem * mpitem_Exists();
-static struct mpitem * mpitem_New();
+static char * MapMenuFile(char *filename, long *fileLength);
+static int ReadMenuFile(char *filename, boolean executeImmediately);
+static void SetPrio(int p, char *sp);
+static void copyItems(struct menulist *menulist);
+static void mlitem_Add(struct mpitem *mp, struct mlitem *ml);
+static struct mlitem * mlitem_Exists(struct mpitem *mp, char *str);
+static struct mlitem * mlitem_New(char *s1, char *s2);
+static short mpitem_DoResolv(char *str);
+static struct mpitem * mpitem_Exists(char *str);
+static struct mpitem * mpitem_New(char *str);
 
 #define MLITEM_UNDEF   0
 #define MLITEM_DELETE  1

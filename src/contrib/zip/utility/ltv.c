@@ -71,57 +71,57 @@ END-SPECIFICATION  ************************************************************/
 #include <zipv.ih>
 #include <zipobj.ih>
 #include <rasterv.ih>
-static int Activate();
-static int Build_Chain();
+static int Activate(struct ltv *self, long datum);
+static int Build_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks);
 static int Build_Menu();
-static int Cancel_Enclosure();
-static int Clear_Chain_Names();
-static int Clear_Enclosure();
-static void Darken_Background_Command();
-static void Debug_Command();
-static int Detect();
-static int Draw_Enclosure();
-static int End_Chain();
-static void Expose_Background_Command();
-static void Fit_Command();
-static void Hide_Background_Command();
-static int Initialize();
-static int Invert_Enclosure();
-static int Lighten_Background();
-static void Lighten_Background_Command();
-static int Modify_Chain();
-static int Name_Chain();
-static int Neighbor();
-static void Normalize_Command();
-static void Pan_Foreground_Command();
-static void Pan_Together_Command();
-static int Passivate();
-static void Print_Command();
-static void Quit_Command();
-static long Rename_Exception();
-static void Save_Command();
-static void Scale_Double_Command();
-static void Scale_Half_Command();
-static void Scale_Larger_10_Command();
-static void Scale_Larger_Command();
-static void Scale_Normal_Command();
+static int Cancel_Enclosure(struct ltv *self);
+static int Clear_Chain_Names(struct ltv *self);
+static int Clear_Enclosure(struct ltv *self);
+static void Darken_Background_Command(struct ltv *self);
+static void Debug_Command(struct ltv *self);
+static int Detect(struct ltv *self, struct suite *suite, struct suite_item *item, long datum);
+static int Draw_Enclosure(struct ltv *self);
+static int End_Chain(struct ltv *self);
+static void Expose_Background_Command(struct ltv *self);
+static void Fit_Command(struct ltv *self);
+static void Hide_Background_Command(struct ltv *self);
+static int Initialize(struct ltv *self);
+static int Invert_Enclosure(struct ltv *self);
+static int Lighten_Background(struct ltv *self);
+static void Lighten_Background_Command(struct ltv *self);
+static int Modify_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks);
+static int Name_Chain(struct ltv *self);
+static int Neighbor(struct ltv *self, zip_type_pixel x, zip_type_pixel y, zip_type_figure *figure, zip_type_point *X, zip_type_point *Y, long *point);
+static void Normalize_Command(struct ltv *self);
+static void Pan_Foreground_Command(struct ltv *self);
+static void Pan_Together_Command(struct ltv *self);
+static int Passivate(struct ltv *self, long datum);
+static void Print_Command(struct ltv *self);
+static void Quit_Command(struct ltv *self);
+static long Rename_Exception(struct ltv *self, long facility, long status);
+static void Save_Command(struct ltv *self);
+static void Scale_Double_Command(struct ltv *self);
+static void Scale_Half_Command(struct ltv *self);
+static void Scale_Larger_10_Command(struct ltv *self);
+static void Scale_Larger_Command(struct ltv *self);
+static void Scale_Normal_Command(struct ltv *self);
 static void Scale_Pane(struct ltv *self, float scale);
-static void Scale_Smaller_10_Command();
-static void Scale_Smaller_Command();
-static int Show_Background();
-static int Show_Chain_Names();
-static int Split_Chain_Name();
-static int Track_Enclosure();
-static int Which_Figure_Point();
-static void Zoom_In_Command();
-static void Zoom_Out_Command();
+static void Scale_Smaller_10_Command(struct ltv *self);
+static void Scale_Smaller_Command(struct ltv *self);
+static int Show_Background(struct ltv *self);
+static int Show_Chain_Names(struct ltv *self);
+static int Split_Chain_Name(struct ltv *self, zip_type_figure figure, char **right_name, char **left_name);
+static int Track_Enclosure(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks);
+static int Which_Figure_Point(struct ltv *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y);
+static void Zoom_In_Command(struct ltv *self);
+static void Zoom_Out_Command(struct ltv *self);
 
 static boolean debug=FALSE;
 static struct menulist		     *class_menulist;
 static struct keymap		     *class_keymap;
 
 
-static long				      Exceptions();
+static long				      Exceptions(struct ltv *self, long facility, long status);
 static /*===*/struct ltv *SELF;
 
 #define  tolerance		    5
@@ -190,30 +190,30 @@ static /*===*/struct ltv *SELF;
 #define  ChangeItemCaption(o,i,c) \
       suite_ChangeItemAttribute( o, i, suite_itemcaption, (long) (c) )
 
-static int				    Begin_Chain_Button(), End_Chain_Button(),
-				    Rename_Chain_Button(), Delete_Chain_Button(),
-				    Left_Chain_Button(), Right_Chain_Button();
+static int				    Begin_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks), End_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks),
+				    Rename_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks), Delete_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks),
+				    Left_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks), Right_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks);
 
-static int Detect();
-static int Initialize();
-static int Build_Chain();
-static int Modify_Chain();
-static int End_Chain();
-static int Track_Enclosure();
-static int Cancel_Enclosure();
-static int Clear_Enclosure();
-static int Draw_Enclosure();
-static int Invert_Enclosure();
-static int Neighbor();
-static int Show_Chain_Names();
-static int Clear_Chain_Names();
-static int Name_Chain();
-static int Split_Chain_Name();
-static int Passivate();
-static int Lighten_Background();
-static int Show_Background();
+static int Detect(struct ltv *self, struct suite *suite, struct suite_item *item, long datum);
+static int Initialize(struct ltv *self);
+static int Build_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks);
+static int Modify_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks);
+static int End_Chain(struct ltv *self);
+static int Track_Enclosure(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks);
+static int Cancel_Enclosure(struct ltv *self);
+static int Clear_Enclosure(struct ltv *self);
+static int Draw_Enclosure(struct ltv *self);
+static int Invert_Enclosure(struct ltv *self);
+static int Neighbor(struct ltv *self, zip_type_pixel x, zip_type_pixel y, zip_type_figure *figure, zip_type_point *X, zip_type_point *Y, long *point);
+static int Show_Chain_Names(struct ltv *self);
+static int Clear_Chain_Names(struct ltv *self);
+static int Name_Chain(struct ltv *self);
+static int Split_Chain_Name(struct ltv *self, zip_type_figure figure, char **right_name, char **left_name);
+static int Passivate(struct ltv *self, long datum);
+static int Lighten_Background(struct ltv *self);
+static int Show_Background(struct ltv *self);
 static int Build_Menu();
-static int Activate();
+static int Activate(struct ltv *self, long datum);
 
 #define  right_code	    1
 #define  left_code	    2

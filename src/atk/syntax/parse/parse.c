@@ -58,6 +58,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/synt
 #include <lexan.ih>
 #include <parse.eh>
 
+struct YYSTYPE;
+
 static struct parse *CurrentParse = NULL;
 static boolean DebugFlag = FALSE;
 #define ERRORTOK 1

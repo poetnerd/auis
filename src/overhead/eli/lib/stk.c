@@ -34,7 +34,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include  <stk.h>
 #include <stdlib.h>
 #include <string.h>
-static int eliEvalStk_Grow();
+static int eliEvalStk_Grow(eliEvalStack_t *s);
 
 /* Initialize a stack.  S must point to an existing structure */
 

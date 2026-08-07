@@ -85,9 +85,9 @@ int chartv_ReChart(struct chartv *self, char *moniker);
 void chartv_Print_Command(struct chartv *self);
 void chartv_Save_Command(struct chartv *self);
 
-static long Initialize_Palette();
-static int Activate();
-static int Passivate();
+static long Initialize_Palette(struct chartv *self);
+static int Activate(struct chartv *self, long code);
+static int Passivate(struct chartv *self, long code);
 
 #define  add_code		    1
 #define  delete_code		    2
@@ -231,7 +231,7 @@ static suite_Specification		save_button[] =
   NULL
   };
 
-long				Palette_Titles_Handler();
+long				Palette_Titles_Handler(struct chartv *self, struct suite *suite, struct suite_item *item, long action);
 
 static suite_Specification		top_title_button[] =
   {
@@ -269,7 +269,7 @@ static suite_Specification		right_title_button[] =
   NULL
   };
 
-struct view				*Palette_Hit();
+struct view				*Palette_Hit(struct chartv *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks);
 
 static suite_Specification		sort_label_buttons[] =
   {

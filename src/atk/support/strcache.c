@@ -42,6 +42,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <util.h>
 #include <ctype.h>
 
+struct egg;
+struct enumerate;
+
 static struct strcache *gcache=NULL;
 
 static int lchash(char *key)
@@ -90,9 +93,9 @@ char * strcache__SaveStr(struct classheader *classID, char *str)
 }
 
 #include <glist.ih>
-static boolean EnumProc();
-static int lccomp();
-static int lchash();
+static boolean EnumProc(struct egg *e, struct enumerate *rock);
+static int lccomp(char *a, char *b);
+static int lchash(char *key);
 struct enumerate {
     boolean found;
     procedure proc;

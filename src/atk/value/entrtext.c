@@ -40,7 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <style.ih>
 #include <envrment.ih>
 #include <fontdesc.ih>
-static int checkstyles();
+static int checkstyles(struct entertext *self);
 #define INITIALSIZE 64
 boolean entertext__InitializeObject(struct classheader *classID, struct entertext *self)
 {

@@ -34,11 +34,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <andrewos.h>
 #include <ms.h>
-extern int CacheDirectoryForClosing();
-extern int CloseMSDir();
-extern int GetSnapshotByID();
-extern int ReadOrFindMSDir();
-extern int RewriteSnapshotInDirectory();
+extern int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int GetSnapshotByID(struct MS_Directory *Dir, char *id, int *msgnum, char *snapshot);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int RewriteSnapshotInDirectory(struct MS_Directory *Dir, int num, char *snapshot);
 
 /* msjournal.c, this directory -- writeback capture (a no-op unless
    dirname is a mirrored folder; see the grammar note there).

@@ -19,7 +19,7 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 
 extern char *index();
 /* Same-file forward reference (defined later in this file) */
-extern int output64chunk();
+extern int output64chunk(int c1, int c2, int c3, int pads, FILE *outfile);
 static char basis_64[] =
    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 

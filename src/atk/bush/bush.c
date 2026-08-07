@@ -74,10 +74,10 @@ struct map_item {
 #include <vector.ih>
 #include <environ.ih>
 #include <bush.eh>  /* includes tree.ih */
-static int ExtractNodeName();
-static int ExtractNodePath();
+static int ExtractNodeName(char *source, char **name);
+static int ExtractNodePath(struct bush *self, char *source, char **path);
 static int NodeFilter(const DIRENT_TYPE *dir);
-static char * getname();
+static char * getname(struct bush *self, int uid, char *cell);
 
 #define	GivenDirName		    (self->given_dir_name)
 #define	RootPath		    (self->root_pathname)
@@ -134,7 +134,7 @@ extern int errno;
 
 char				baseName[] = "/afs"; /*Pathname to give to pioctl()*/
 #define	MAX_PIOCTL_BUFF_SIZE	1000
-static char			*gethomecell(), *getcell();
+static char			*gethomecell(struct bush *self, char *filename), *getcell(struct bush *self, char *filename);
 
 static int NodeFilter(const DIRENT_TYPE *dir)
 {

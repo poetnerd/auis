@@ -136,13 +136,13 @@ END-SPECIFICATION  ************************************************************/
 #include "zipedit.ih"
 #include "zipedit.h"
 #include <stdlib.h>
-static boolean Ratify_Highlighting();
-static boolean Ratify_Normalizing();
+static boolean Ratify_Highlighting(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y);
+static boolean Ratify_Normalizing(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y);
 
-static int Delete_Inferior_Image( );
-int Highlight_Inferior_Image_Points();	/* M2: same-file forward reference */
-static int Undelete_Inferior_Image();
-static int Normalize_Inferior_Image_Points();
+static int Delete_Inferior_Image(struct zipedit *self, zip_type_image image, zip_type_pane pane);
+int Highlight_Inferior_Image_Points(struct zipedit *self, zip_type_image image, zip_type_pane pane);	/* M2: same-file forward reference */
+static int Undelete_Inferior_Image(struct zipedit *self, zip_type_image image, zip_type_pane pane);
+static int Normalize_Inferior_Image_Points(struct zipedit *self, zip_type_image image, zip_type_pane pane);
 
 long zipedit__Set_Pane_Highlight_Icon(struct zipedit *self, zip_type_pane pane, char icon)
   {

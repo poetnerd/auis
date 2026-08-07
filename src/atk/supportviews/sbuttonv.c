@@ -47,18 +47,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include "sbutton.ih"
 #include "sbuttonv.eh"
-static void DrawLabel();
-static void DrawText();
-static void EnsureInfo();
-static void InitFGBG();
-static void MyNewComputeColor();
-static void MyNewSetShade();
-static void MyOldComputeColor();
-static void MyOldSetShade();
-static void MySetShade();
-static void OutputLabel();
-static int RectEnclosesXY();
-static boolean definetriggers();
+static void DrawLabel(struct view *self, char *text, boolean lit, struct sbutton_prefs *prefs, double *fg, double *bg, long x, long y, long flags);
+static void DrawText(struct view *self, struct fontdesc *font, long x, long y, char *text, int len, long flags);
+static void EnsureInfo(struct sbuttonv *self);
+static void InitFGBG(struct view *self, struct sbutton_prefs *prefs, double *fg, double *bg);
+static void MyNewComputeColor(struct view *self, struct sbutton_prefs *prefs, double *foreground, double *background, int color, double *result);
+static void MyNewSetShade(struct view *self, struct sbutton_prefs *prefs, double *foreground, double *background, int color);
+static void MyOldComputeColor(struct view *self, struct sbutton_prefs *prefs, double *foreground, double *background, int color, double *result);
+static void MyOldSetShade(struct view *self, struct sbutton_prefs *prefs, double *foreground, double *background, int color);
+static void MySetShade(struct view *self, struct sbutton_prefs *prefs, double *foreground, double *background, int color);
+static void OutputLabel(FILE *f, char *l);
+static int RectEnclosesXY(struct rectangle *r, long x, long y);
+static boolean definetriggers(struct sbutton *b, int i, struct sbutton_info *si, struct sbuttonv *self);
 
 /* Defined constants and macros */
 #if 0

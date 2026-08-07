@@ -39,8 +39,8 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 
 #include "srctext.ih"
 #include "m3text.eh"
-static void SetupStyles();
-static long modpragma();
+static void SetupStyles(struct m3text *self);
+static long modpragma(struct m3text *self, long start);
 
 static Dict *words[TABLESIZE];
 

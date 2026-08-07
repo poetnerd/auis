@@ -44,7 +44,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 #include <graphic.ih>
 #include <layout.eh>
 static boolean fgetstring();
-static void objectto();
+static void objectto(FILE *f, char *message);
 static long readASCII();
 
 #define classname(do) ((do) == NULL ? "<NO OBJECT>" : class_GetTypeName(do))

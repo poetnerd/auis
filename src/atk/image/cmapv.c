@@ -40,10 +40,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 #include <colorv.ih>
 #include <cmap.ih>
 #include <cmapv.eh>
-static long SliderChanged();
 
-struct view *Color_Choice();
-struct view *Control_Choice();
+struct sliderCBData;
+static long SliderChanged(struct sliderCBData *rock, long inten);
+
+struct view *Color_Choice(struct colormapv *self, struct suite *suite, struct suite_item *item, enum view_UpdateType type, enum view_MouseAction action, long x, long y, long clicks);
+struct view *Control_Choice(struct colormapv *self, struct suite *suite, struct suite_item *item, enum view_UpdateType type, enum view_MouseAction action, long x, long y, long clicks);
 
 static suite_Specification cmap_entries[] = {
     suite_HitHandler( Color_Choice ),

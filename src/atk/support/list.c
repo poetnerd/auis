@@ -45,8 +45,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include <class.h>
 #include "list.eh"
-static int CopyEntry();
-static boolean MoveNew();
+
+struct arg;
+static int CopyEntry(char *value, struct list *dst);
+static boolean MoveNew(char *data, struct arg *ap);
 static int rcompare(const void *, const void *);
 
 #define new() \

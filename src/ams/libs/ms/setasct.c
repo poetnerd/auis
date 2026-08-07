@@ -34,9 +34,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <andyenv.h>
 #include <sys/stat.h>
-extern int SetProfileEntry();
+extern int SetProfileEntry(char *FullName, char *newvalue, long newdate);
 
-extern struct MS_Directory *FindInDirCache();
+extern struct MS_Directory *FindInDirCache(char *FullName);
 
 int MS_SetAssociatedTime(char *FullName, char *newvalue)
 {

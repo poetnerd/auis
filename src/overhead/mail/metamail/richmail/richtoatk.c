@@ -18,7 +18,7 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 #include <string.h>
 
 /* Defined later in this same file, used above its definition. */
-extern int ignoretoken();
+extern int ignoretoken(char *t);
 
 char * translate(char *t)
 {

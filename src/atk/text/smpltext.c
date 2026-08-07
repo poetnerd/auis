@@ -45,8 +45,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #include <smpltext.eh>
 static boolean EnsureSize();
-static void MoveGap();
-static boolean simplewrite();
+static void MoveGap(struct simpletext *self, long pos);
+static boolean simplewrite(FILE *file, char *p, long len);
 
 extern int errno;
 

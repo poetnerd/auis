@@ -39,11 +39,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <viewref.ih>
 #include <stylesht.ih>
 #include <fnote.eh>
-static int DoAll();
-static boolean copy();
-static boolean doupdate();
-static boolean fnote_close();
-static boolean fnote_open();
+static int DoAll(struct text *text, boolean (*callBack)(), int order);
+static boolean copy(struct fnote *self, struct text *text);
+static boolean doupdate(struct fnote *self, struct text *text, long pos, struct environment *env);
+static boolean fnote_close(struct fnote *self, struct text *text);
+static boolean fnote_open(struct fnote *self, struct text *text);
 
 struct fnote **stack , **endstack;
 struct text *tmptext;

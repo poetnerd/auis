@@ -71,26 +71,26 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <proctbl.ih>
 #include <celv.eh>
 #include <arbiter.ih>
-static int GetParameters();
-static void InitNow();
-static struct view * PopOverlay();
-static int PostParameters();
-static int SetInvisible();
-static int SetVisible();
-static boolean StringToResourceList();
-static void UpdateCursors();
-static int UpdateDrawing();
-static int appendresourceList();
-static char * atomlisttostring();
-static void celview_Paste();
-static void celview_PromptForFile();
-static int drawshadow();
-static int editresourceList();
-static int initchild();
-static int lookuptype();
-static int objecttest();
-static int scaleoverlay();
-static char * trunc();
+static int GetParameters(struct celview *self);
+static void InitNow(struct celview *self);
+static struct view * PopOverlay(struct celview *self, struct view *v);
+static int PostParameters(struct celview *self);
+static int SetInvisible(struct celview *self);
+static int SetVisible(struct celview *self);
+static boolean StringToResourceList(struct resourceList *rl, char *str);
+static void UpdateCursors(struct celview *self);
+static int UpdateDrawing(struct celview *self);
+static int appendresourceList(struct celview *self, struct resourceList *resources);
+static char * atomlisttostring(struct atomlist *al);
+static void celview_Paste(struct celview *self);
+static void celview_PromptForFile(struct celview *self);
+static int drawshadow(struct celview *self, struct rectangle *r);
+static int editresourceList(struct celview *self, struct resourceList *resources, int askres, int maxcount);
+static int initchild(struct celview *self);
+static int lookuptype(char *ty);
+static int objecttest(struct celview *self, char *name, char *desiredname);
+static int scaleoverlay(struct celview *self, struct overlay *ov, struct rectangle *or);
+static char * trunc(char *c);
 /* #define DEBUG */
 
 #define DataObject(A) (A->header.view.dataobject)

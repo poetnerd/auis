@@ -66,8 +66,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <captions.ih>
 #include <folders.eh>
 #include <msgsvers.h>
-static void DoButton();
-static void InitKeyMenusStyles();
+static void DoButton(struct sbutton *b, enum view_MouseAction action, int ind, struct folders *self);
+static void InitKeyMenusStyles(struct folders *folders);
 static void OneTimeInitKeyMenus();
 
 int foldersDebugging=0;
@@ -83,26 +83,26 @@ static struct menulist *folders_standardmenulist;
 
 static char *ForgetItString = "Forget it -- do nothing.";
 
-extern void folders_Warp(), folders_Expose(), folders_Hide(), folders_Vanish(), folders_ForceUpdate();
+extern void folders_Warp(struct im *im), folders_Expose(struct im *im), folders_Hide(struct im *im), folders_Vanish(struct im *im), folders_ForceUpdate();
 
-extern void folders_SimulateLeftClick();
-extern void folders_UpFocus(), folders_DownFocus();
-extern void folders_TextviewCompound();
-extern void folders_FoldersCompound();
-extern void FoldersTextviewCommand();
-extern void FoldersSendmessageCommand();
-extern void FoldersCaptionsCommand();
-extern int ConsiderResettingDescription();
+extern void folders_SimulateLeftClick(struct folders *self);
+extern void folders_UpFocus(struct folders *self), folders_DownFocus(struct folders *self);
+extern void folders_TextviewCompound(struct textview *tv, char *cmds);
+extern void folders_FoldersCompound(struct folders *self, char *cmds);
+extern void FoldersTextviewCommand(struct folders *self, char *cmds);
+extern void FoldersSendmessageCommand(struct folders *self, char *cmds);
+extern void FoldersCaptionsCommand(struct folders *self, char *cmds);
+extern int ConsiderResettingDescription(struct folders *ci, int code, Boolean FirstTime);
 
 /* same-file forward references -- all defined later in this file */
-extern int AddSetupItem(), AlterSubStatus(), BEDC_AddComment(),
-	ClearFolders(), DoClick(), ExposeCap(), HighlightFolderName(),
-	HighlightSpecificFolderName(), InsertFolderNameInText(),
-	UnhighlightFolderName(), UpdateBEDirCachePositions();
+extern int AddSetupItem(struct folders *ci, char *longname, char *shortname, int substatus, int showingnewstuff, int HasNew, boolean *HasCleared), AlterSubStatus(struct folders *ci, char *dir, int status, char *shortname), BEDC_AddComment(struct folders *ci, struct BEDirCache *bdc, char *comm, int *addedlen),
+	ClearFolders(struct folders *ci), DoClick(struct folders *folders, boolean IsLeftClick, boolean IgnorePosition), ExposeCap(struct folders *self), HighlightFolderName(struct folders *ci, char *name, char *CommText),
+	HighlightSpecificFolderName(struct folders *ci, char *name, char *CommText, int i), InsertFolderNameInText(struct folders *f, struct BEDirCache *bdcent, char *comm),
+	UnhighlightFolderName(struct folders *ci), UpdateBEDirCachePositions(struct folders *ci, struct BEDirCache *entry, int addedlen);
 
 /* same-directory (foldaux.o, linked into the same folders.do) cross-file
    references -- no header, defined in foldaux.c */
-extern int CreateFoldersCursor(), FinalizeProcStyleStuff();
+extern int CreateFoldersCursor(struct folders *self), FinalizeProcStyleStuff(struct folders *self);
 
 void folders__HandleAsyncPrefetch(struct folders *ci)
 {

@@ -97,12 +97,12 @@ static double margins[7][2] = { { 1.000, 1.000},   /* US NORMAL */
 /* RANGE forces a to be in the range b..c (inclusive) */
 #define RANGE(a,b,c) { if (a < b) a = b;  if (a > c) a = c; }
 
-static void setScale();
+static void setScale(struct imagev *self, int xscale, int yscale);
 static void centerImage();
-void writePS();
-static void psColorImage(), psColorMap(), epsPreview();
-static void psRleCmapImage();
-static int  rle_encode(), writeBWStip();
+void writePS(struct imagev *self, FILE *fp, int *wpts, int *hpts, int toplevel);
+static void psColorImage(FILE *fp), psColorMap(FILE *fp, int color, int nc, byte *rmap, byte *gmap, byte *bmap), epsPreview();
+static void psRleCmapImage(FILE *fp, int color);
+static int  rle_encode(byte *scanline, byte *rleline, int wide), writeBWStip(FILE *fp, byte *pic, char *prompt, int w, int h);
 
 /* local variables */
 static double sz_inx, sz_iny;     /* image size, in inches */

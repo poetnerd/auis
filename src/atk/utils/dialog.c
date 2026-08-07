@@ -45,7 +45,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/util
 #include <graphic.ih>
 
 #include <dialog.eh>
-static long SanelyReturnReadError();
+static long SanelyReturnReadError(struct dialog *self, FILE *fp, long id, long code);
 
 boolean dialog__InitializeClass(struct classheader *classID)
 {

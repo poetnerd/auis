@@ -59,13 +59,13 @@ void resetmstats()
 #include <sys/time.h>
 #include <sys/resource.h>
 static void initClass();
-static char * leaf();
-static void stripSuffix();
+static char * leaf(char *path);
+static void stripSuffix(char *buf, char *suffix);
 static void usage();
 extern void doStaticLoads();
 
 extern int errno;
-extern char *AndrewDir();
+extern char *AndrewDir(char *str);
 
 #ifndef RUNAPP
 #define RUNAPP "runapp"

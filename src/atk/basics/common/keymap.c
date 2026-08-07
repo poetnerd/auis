@@ -40,9 +40,9 @@ December, 1986 */
 #include <class.h>
 #include <keymap.eh>
 #include <proctbl.ih>
-static void DoInitialize();
-static int ExpandTable();
-static boolean bindKey();
+static void DoInitialize(struct keymap *self, boolean sparsep);
+static int ExpandTable(struct keymap *self);
+static boolean bindKey(struct keymap *self, unsigned char *keys, struct basicobject *obj, long rock, enum keymap_Types type);
 
 #define KEYMASK	(keymap_MAXKEYS-1)
 

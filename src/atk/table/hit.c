@@ -47,31 +47,31 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #define AUXMODULE
 #include <spread.eh>
-static int EnterCellName();
+static int EnterCellName(struct spread *V, Chunk chunk);
 static int IsNotSeparator(char ch);
-static int movecolcancel();
-static int movecoldown();
-static int movecolmove();
-static int movecolup();
-static int moverowcancel();
-static int moverowdown();
-static int moverowmove();
-static int moverowup();
+static int movecolcancel(struct spread *V);
+static int movecoldown(struct spread *V, int x, int y, Chunk chunk);
+static int movecolmove(struct spread *V, int x, int y);
+static int movecolup(struct spread *V, int x, int y);
+static int moverowcancel(struct spread *V);
+static int moverowdown(struct spread *V, int x, int y, Chunk chunk);
+static int moverowmove(struct spread *V, int x, int y);
+static int moverowup(struct spread *V, int x, int y);
 
 /* not static: also called from menu.c/keyboard.c */
-int CopyChunk();
-int SetCurrentCell();
-int CompareChunk();
-int extendCurrentCell();
+int CopyChunk(Chunk to, Chunk from);
+int SetCurrentCell(struct spread *V, Chunk chunk);
+int CompareChunk(Chunk to, Chunk from);
+int extendCurrentCell(struct spread *V, Chunk chunk);
 
-extern struct view *spread_FindSubview();
+extern struct view *spread_FindSubview(struct spread *V, struct cell *cell);
 
 /* defined in update.c */
-extern int spread_InvertRectangle();
-extern int spread_ClearSelectionBox();
+extern int spread_InvertRectangle(struct spread *V, int left, int top, int width, int height);
+extern int spread_ClearSelectionBox(struct spread *V);
 
 /* defined in keyboard.c */
-extern void k_SetMessageState();
+extern void k_SetMessageState(struct spread *V, int newstate);
 
 static boolean debug=FALSE;
 

@@ -51,12 +51,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/hypl
 #include <view.ih>
 #include <txttroff.ih>
 #include <pshbttnv.eh>
-static void HighlightButton();
-static void OutputLabel();
-static int RectEnclosesXY();
-static void UnhighlightButton();
-static void pushbuttonview_CacheSettings();
-static void pushbuttonview_setShade();
+static void HighlightButton(struct pushbuttonview *self);
+static void OutputLabel(FILE *f, char *l);
+static int RectEnclosesXY(struct rectangle *r, long x, long y);
+static void UnhighlightButton(struct pushbuttonview *self);
+static void pushbuttonview_CacheSettings(struct pushbuttonview *self, struct pushbutton *b, int updateflag);
+static void pushbuttonview_setShade(struct pushbuttonview *self, double pct);
 
 /* Defined constants and macros */
 #define CURSORON 1		/* yes, use crosshairs cursor over button */
@@ -90,7 +90,7 @@ static void pushbuttonview_setShade();
 /* External Declarations */
 
 /* Forward Declarations */
-static void LabelProc(), FontProc(), StyleProc(), ColorProc();
+static void LabelProc(struct pushbuttonview *self, long param), FontProc(struct pushbuttonview *self, long param), StyleProc(struct pushbuttonview *self, long param), ColorProc(struct pushbuttonview *self, long param);
 
 /* Global Variables */
 static struct atom *pushedtrigger;

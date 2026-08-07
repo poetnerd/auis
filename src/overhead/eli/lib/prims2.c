@@ -904,7 +904,7 @@ void Prim_RE_STRDECOMPOSEPLUS(EliState_t *st, EliCons_t *arglist, EliSexp_t *res
     char           *pat, *ref, tempChar, *hold;
     EliStr_t       *strNodes[3], *aStr;
     EliCons_t      *consCells[3], *subListHead, *subListPtr, *aCell;
-    regexp         *rptr, *reg_comp();
+    regexp         *rptr, *reg_comp(char *exp);
 
     EliDebug(20, "Entering primitive RE-STRDECOMPOSE+", st, FALSE);
     numargs = EliGetListCars(arglist, args, 2);

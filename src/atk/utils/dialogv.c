@@ -53,9 +53,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/util
 
 #include <dialog.ih>
 #include <dialogv.eh>
-static void ConfigureFunc();
-static void HitFunc();
-static void Interface();
+static void ConfigureFunc(struct im *self, long rock, long customrock, struct im *parent, long *x, long *y, unsigned long *w, unsigned long *h);
+static void HitFunc(struct sbutton *self, struct dialogv *rock, int button, long brock);
+static void Interface(struct sbutton *b, struct dialogv_HitRock *rock, int ind, long brock);
 
 #define PADDING 5
 

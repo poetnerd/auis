@@ -48,11 +48,11 @@
 #include <string.h>
 static int richtextgetback();
 static int richtextmatchup();
-static void richtextoutstr();
-static void richtextpushback();
+static void richtextoutstr(char *str, void *outparam);
+static void richtextpushback(int c);
 static int richtextsingle();
-static void richtextunget();
-static void richtextunget2();
+static void richtextunget(int c);
+static void richtextunget2(int c1, int c2);
 
 int CorrectionEnabled = 1;	/* Zero if correction has been disabled */
 int RichtextLessThanFlag = 0;	/* Non-zero to turn on multi-byte '<' hack */

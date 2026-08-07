@@ -48,13 +48,13 @@ version of the datastream interpretation.
 #include <util.h>
 #include <stdlib.h>
 #include <unscribe.h>
-static int HandleClose();
-static int HandleKeyword();
-static void StartFrag();
+static int HandleClose(struct ScribeState *State, FILE *fPtr);
+static int HandleKeyword(struct ScribeState *State, FILE *fPtr);
+static void StartFrag(struct ScribeState *State);
 static int WriteFrag(struct ScribeState *State, FILE *fPtr, char Chr);
-static struct styletable * findstyle();
-static long hash();
-static int usVersion();
+static struct styletable * findstyle(char *str);
+static long hash(char *str);
+static int usVersion(char *val);
 
 /* #define SPECIALFACES 1 */
 

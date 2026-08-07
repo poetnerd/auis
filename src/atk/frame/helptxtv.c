@@ -42,7 +42,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fram
 #include <cursor.ih>
 #include <helptxtv.eh>
 #include <string.h>
-static char * helptextview_getstartstring();
+static char * helptextview_getstartstring(struct helptextview *self, char *buf);
 
 void helptextview__WantInputFocus(struct helptextview *self, struct view *vw)
 {

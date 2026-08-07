@@ -9,7 +9,7 @@
 #endif
 
 /* Same-file forward references (defined later in this file) */
-extern int lc2strcmp(), lc2strncmp();
+extern int lc2strcmp(char *s1, char *s2), lc2strncmp(char *s1, char *s2, int len);
 char **Exceptions;
 int *NeedsPortableNewlines;
 int ExceptionsAlloced = 0, ExceptionsUsed = 0;

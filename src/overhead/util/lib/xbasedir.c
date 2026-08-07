@@ -39,7 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <string.h>
 
 extern char *getenv();
-extern char *GetConfiguration();
+extern char *GetConfiguration(char *key);
 
 /* Return a string with the current value for XBASEDIR imbedded in it. */
 char * XBaseDir(char *str)

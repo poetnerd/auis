@@ -38,79 +38,84 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <hdrparse.h>
 #include <stdlib.h>
-static int CaptionIsHealthy();
-static int ContainsOnlyBase64Chars();
-static void ElimDups();
-static int GetOldIDSomehow();
-static int HashList_Add();
-static int HashList_AnyMatches();
-static void HashList_Free();
-static int HashList_GrowIfNecessary();
-static void HashList_Init();
-static int HashList_Size();
-static int MergeList_Add();
-static int MergeList_ContainsChain();
-static void MergeList_Free();
-static void MergeList_Init();
-static int MergeList_NeedToMerge();
-static int MsgListEntry_CompareAMSIDs();
-static int MsgListEntry_CompareMIDs();
-static int MsgListEntry_CompareTimes();
-static int MsgList_Add();
-static void MsgList_Free();
-static struct hashlist * MsgList_GetHashList();
-static struct MS_Message * MsgList_GetMsg();
-static char    * MsgList_GetSnapshot();
-static int MsgList_GrowIfNecessary();
-static void MsgList_Init();
-static void MsgList_Remove();
-static int MsgList_Size();
-static void MsgList_SortByAMSID();
-static void MsgList_SortByMID();
-static void MsgList_SortByTime();
-static int MyConstructHashList();
-static int OKAMSFileName();
-static void SalvageOldSnapshot();
-static int SameMsg();
-static int SetFileTimeStamp();
-static int SnapshotListEntry_CompareAMSIDs();
-static int SnapshotList_Add();
-static void SnapshotList_Free();
-static char    * SnapshotList_GetSnapshot();
-static int SnapshotList_GrowIfNecessary();
-static void SnapshotList_Init();
-static int SnapshotList_Size();
-static void SnapshotList_SortByAMSID();
-extern int BuildAttributesField();
-extern int BuildCaption();
-extern int BuildDateField();
-extern int BuildReplyField();
-extern int CheckAuthUid();
-extern int CloseDirsThatNeedIt();
-extern int CloseMSDir();
-extern int FieldsDiffer();
-extern int FreeMessage();
-extern int GetRightMid();
-extern int GetSnapshotByNumber();
-extern int InventID();
-extern int IsDirAlien();
-extern unsigned long KRHash();
-extern int ParseMessageFromRawBody();
-extern int ReadOldMSDirectoryHead();
-extern int ReadOrFindMSDir_Complain();
-extern int ReadRawFile();
-extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
-extern char *ams_genid();  /* overhead/mail/lib/genid.c */
-extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
-extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
-extern int dbg_vclose();  /* overhead/util/lib/fdplumb2.c */
-extern int itops();
-extern int writeall();  /* overhead/util/lib/writeall.c */
 
-static int MergeList_GrowIfNecessary();
-static int SetChains();
-static int SetChain();
+struct msglist;
+struct hashlist;
+struct mergelist;
+struct snapshotlist;
+static int CaptionIsHealthy(char *caption);
+static int ContainsOnlyBase64Chars(char *str);
+static void ElimDups(char *dirname, struct msglist *mlist, int alienDir);
+static int GetOldIDSomehow(struct MS_Message *Msg, char *FileName, char *DirName);
+static int HashList_Add(struct hashlist *hlist, unsigned long val);
+static int HashList_AnyMatches(struct hashlist *h1, struct hashlist *h2);
+static void HashList_Free(struct hashlist *h);
+static int HashList_GrowIfNecessary(struct hashlist *hlist);
+static void HashList_Init(struct hashlist *hlist);
+static int HashList_Size(struct hashlist *h);
+static int MergeList_Add(struct mergelist *m, int chain, int num);
+static int MergeList_ContainsChain(struct mergelist *m, int chain);
+static void MergeList_Free(struct mergelist *m);
+static void MergeList_Init(struct mergelist *m);
+static int MergeList_NeedToMerge(struct mergelist *m, int chain, int num);
+static int MsgListEntry_CompareAMSIDs(const void *p1, const void *p2);
+static int MsgListEntry_CompareMIDs(const void *p1, const void *p2);
+static int MsgListEntry_CompareTimes(const void *p1, const void *p2);
+static int MsgList_Add(struct msglist *mlist, struct MS_Message *msg);
+static void MsgList_Free(struct msglist *mlist, int FreeSnapshots);
+static struct hashlist * MsgList_GetHashList(struct msglist *mlist, int num);
+static struct MS_Message * MsgList_GetMsg(struct msglist *mlist, int num);
+static char    * MsgList_GetSnapshot(struct msglist *mlist, int num);
+static int MsgList_GrowIfNecessary(struct msglist *mlist);
+static void MsgList_Init(struct msglist *mlist);
+static void MsgList_Remove(struct msglist *mlist, int num, int FreeSnapshot);
+static int MsgList_Size(struct msglist *mlist);
+static void MsgList_SortByAMSID(struct msglist *mlist);
+static void MsgList_SortByMID(struct msglist *mlist);
+static void MsgList_SortByTime(struct msglist *mlist);
+static int MyConstructHashList(struct MS_Message *msg, struct hashlist *h);
+static int OKAMSFileName(char *name);
+static void SalvageOldSnapshot(char *oldsnap, char *newsnap);
+static int SameMsg(struct MS_Message *m1, struct MS_Message *m2);
+static int SetFileTimeStamp(char *filename, long time);
+static int SnapshotListEntry_CompareAMSIDs(const void *p1, const void *p2);
+static int SnapshotList_Add(struct snapshotlist *slist, char *snapshot);
+static void SnapshotList_Free(struct snapshotlist *slist, int Free);
+static char    * SnapshotList_GetSnapshot(struct snapshotlist *slist, int num);
+static int SnapshotList_GrowIfNecessary(struct snapshotlist *slist);
+static void SnapshotList_Init(struct snapshotlist *slist);
+static int SnapshotList_Size(struct snapshotlist *slist);
+static void SnapshotList_SortByAMSID(struct snapshotlist *slist);
+extern int BuildAttributesField(struct MS_Message *msg);
+extern int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail);
+extern int BuildDateField(struct MS_Message *Msg, int datetype);
+extern int BuildReplyField(struct MS_Message *Msg);
+extern int CheckAuthUid(struct MS_Message *NewMessage);
+extern int CloseDirsThatNeedIt();
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int FieldsDiffer(struct MS_Message *M1, struct MS_Message *M2, int field);
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int GetRightMid(struct MS_Message *Msg, char **mid);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
+extern int InventID(struct MS_Message *msg);
+extern int IsDirAlien(char *Dir, int *alien);
+extern unsigned long KRHash(char *s);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int ReadOldMSDirectoryHead(struct MS_Directory *Dir);
+extern int ReadOrFindMSDir_Complain(char *Name, struct MS_Directory **pDir, int Code, int DoComplain);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
+extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
+extern char *ams_genid(int IsFileName);  /* overhead/mail/lib/genid.c */
+extern unsigned long conv64tolong(char *xnum);  /* overhead/mail/lib/genid.c */
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
+extern int dbg_vclose(int fd);  /* overhead/util/lib/fdplumb2.c */
+extern int itops(long num, char *buf, int len);
+extern int writeall(int fd, char *Buf, int NBytes);  /* overhead/util/lib/writeall.c */
+
+static int MergeList_GrowIfNecessary(struct mergelist *mlist);
+static int SetChains(struct msglist *mlist);
+static int SetChain(struct msglist *mlist, int mnum, int maxchainval);
 
 #define MS_RECONDIREXT (".r")
 #define PADSIZE 10                     /* BOGUS -- duplicates stuff in rawdb.c */

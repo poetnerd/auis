@@ -43,45 +43,48 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <netinet/in.h>                /* for htonl, etc. */
 #include <ctype.h>
 #include <stdlib.h>
-static int CloseEntireDirCache();
-static int HashDir();
-extern int AdjustIDs();
-extern int CacheDirectoryForClosing();
-extern int CloseMSDir();
-extern int CloseNeedyDirs(Boolean InsistOnCloses);
-extern int CriticalBizarreError();
-extern int DestructivelyWriteDirectoryHead();
-extern int FieldsDiffer();
-extern int FreeMessage();
-extern int GetRightMid();
-extern int GetSnapshotByNumber();
-extern char *NiceTime();  /* overhead/util/lib/nicetime.c */
-extern int NonfatalBizarreError();
-extern int OpenMSDirectory();
-extern int ParseMessageFromRawBody();
-extern int QuickGetBodyFileName();
-extern int ReadOldMSDirectoryHead();
-extern int ReadOldMSDirectoryHead_Complain();
-extern int ReadOrFindMSDir_Complain();
-extern int ReadRawFile();
-extern int RewriteSnapshotInDirectory();
-extern int SetChainField(struct MS_Message *Msg, struct MS_Directory *Dir, Boolean PlanningHeadWrite);
-extern char *ap_Shorten();  /* overhead/util/lib/abbrpath.c */
-extern unsigned long conv64tolong();  /* overhead/mail/lib/genid.c */
-extern int vdown();  /* overhead/util/lib/vclose.c */
-extern int writeall();  /* overhead/util/lib/writeall.c */
 
-extern char    *permanentmalloc();
-extern char *convlongto64();
-static int AlreadyMergingChain();
-static int NeedToMerge();
-static int ConstructHashList();
-static int AddHash();
-static int AddMerge();
-static int AnythingMatches();
-static int EnsureNotInCache();
-static int NoteRecentDirUse();
-extern unsigned long KRHash();
+struct MergeList;
+struct HashList;
+static int CloseEntireDirCache();
+static int HashDir(char *name);
+extern int AdjustIDs(struct MS_Directory *Dir, int HowMany);
+extern int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int CloseNeedyDirs(Boolean InsistOnCloses);
+extern int CriticalBizarreError(char *text);
+extern int DestructivelyWriteDirectoryHead(struct MS_Directory *Dir);
+extern int FieldsDiffer(struct MS_Message *M1, struct MS_Message *M2, int field);
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int GetRightMid(struct MS_Message *Msg, char **mid);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
+extern char *NiceTime(long int Time);  /* overhead/util/lib/nicetime.c */
+extern int NonfatalBizarreError(char *text);
+extern int OpenMSDirectory(struct MS_Directory *Dir, int Code);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int QuickGetBodyFileName(char *DirName, char *id, char *FileName);
+extern int ReadOldMSDirectoryHead(struct MS_Directory *Dir);
+extern int ReadOldMSDirectoryHead_Complain(struct MS_Directory *Dir, int DoComplain);
+extern int ReadOrFindMSDir_Complain(char *Name, struct MS_Directory **pDir, int Code, int DoComplain);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
+extern int RewriteSnapshotInDirectory(struct MS_Directory *Dir, int num, char *snapshot);
+extern int SetChainField(struct MS_Message *Msg, struct MS_Directory *Dir, Boolean PlanningHeadWrite);
+extern char *ap_Shorten(char *pathname);  /* overhead/util/lib/abbrpath.c */
+extern unsigned long conv64tolong(char *xnum);  /* overhead/mail/lib/genid.c */
+extern int vdown(int err);  /* overhead/util/lib/vclose.c */
+extern int writeall(int fd, char *Buf, int NBytes);  /* overhead/util/lib/writeall.c */
+
+extern char    *permanentmalloc(int ct);
+extern char *convlongto64(int num, int pad);
+static int AlreadyMergingChain(int chain, struct MergeList *m);
+static int NeedToMerge(int chain, int snapshotNum, struct MergeList *m);
+static int ConstructHashList(struct MS_Message *Msg, struct HashList *h);
+static int AddHash(unsigned long hash, struct HashList *h);
+static int AddMerge(int chain, int snapshotNum, struct MergeList *m);
+static int AnythingMatches(unsigned long midHash, unsigned long repHash, struct HashList *h);
+static int EnsureNotInCache(struct MS_Directory *Dir);
+static int NoteRecentDirUse(struct MS_Directory *Dir);
+extern unsigned long KRHash(char *s);
 
 struct dcnode {
     struct MS_Directory *Dir;

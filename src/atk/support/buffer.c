@@ -73,7 +73,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <bufferlist.ih>
 
 #include <buffer.eh>
-static int ResolveLink();
+static int ResolveLink(char *linkname, char *buffer);
 
 #ifndef MAXPATHLEN 
 #include <sys/param.h>

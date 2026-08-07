@@ -63,8 +63,8 @@ static char *Copyright= "Copyright 1989, 1993 Jim Frost";
 #include <image.ih>
 #include <sunraster.h>
 #include <sunraster.eh>
-static void babble();
-static void sunread();
+static void babble(char *name, struct rheader *header);
+static void sunread(FILE *f, byte *buf, unsigned int len, unsigned int enc);
 
 /* SUPPRESS 558 */
 /* SUPPRESS 560 */

@@ -35,9 +35,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <hdrparse.h>
 #include <stdlib.h>
-extern int AlterMessage();
-extern int OnlyParseMessageFromRawBody();
-extern int lc2strncmp();  /* ams/libs/shr/utils.c */
+extern int AlterMessage(struct MS_Message *Msg, int code, int delhead, char *Head);
+extern int OnlyParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int lc2strncmp(char *s1, char *s2, int len);  /* ams/libs/shr/utils.c */
 
 #ifndef _IBMR2
 #endif /* _IBMR2 */

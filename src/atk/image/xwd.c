@@ -68,7 +68,7 @@ static char *Copyright= "Copyright 1989, 1993 Jim Frost";
 #include <xwd.h>
 #include <X11/X.h>
 #include <xwd.eh>
-static int isXWD();
+static int isXWD(char *name, FILE *f, XWDHeader *header);
 extern void flipBits(unsigned char *p, unsigned int len);
 
 /* SUPPRESS 558 */

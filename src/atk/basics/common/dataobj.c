@@ -39,7 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <attribs.h>
 #include <view.ih>
 #include <string.h>
-static boolean FreeProps();
+static boolean FreeProps(long rock, struct namespace *self, int x);
 /* #include "dict.ih" */
 
 boolean dataobject__InitializeObject(struct classheader *classID, struct dataobject *self)

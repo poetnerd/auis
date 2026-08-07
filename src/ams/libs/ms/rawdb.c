@@ -60,52 +60,54 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mail.h>
 #include <mailconf.h>
 #include <stdlib.h>
-static int ComparePathsByElts();
-static int CompareStrings();
-static int CompareTakenUpdates();
-static int CompareTimes();
-static int FreeCheckList();
-static int FreeCheckLists();
-extern int AddToDirCache();
-extern int AppendFileToMSDirInternal();
-extern int BuildNickName();  /* ams/libs/shr/utils.c */
-extern int CacheDirectoryForClosing();
-extern int CloseMSDir();
-extern int CriticalBizarreError();
-extern int DestructivelyWriteDirectoryHead();
-extern int DropHint();
-extern int EnsureInSubscriptionMap();
-extern int FindTreeRoot();  /* ams/libs/shr/findroot.c */
-extern int GetCellularUserName();
-extern int GetNameFromGecos();
-extern int GetSnapshotByNumber();
-extern int HandleMarksInProgress();
-extern int IsDirAlien();
-extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
-extern int MarkInProgress();
-extern int NonfatalBizarreError();
-extern int OpenMSDirectory();
-extern int ReadOldMSDirectoryHead_Complain();
-extern int ReadOrFindMSDir();
-extern int UnmarkInProgress();
-extern int WhichPath();
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
-extern void dbg_closedir();  /* overhead/util/lib/fdplumb6.c */
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int itops();
 
-extern char    *permanentmalloc();
-extern char     MyMailDomain[];
-static int CheckHintDroppingPermission();
-static int CheckPathForMUFHints();
-static int ClearUpdates();
-static int CheckForMUFHints();
-static int SetProgressMark(char *dirname, Boolean TurnOnMark, Boolean Quietly);
-static int CheckMarksInProgress();
-static int AddToCheckList();
+struct CheckList;
+static int ComparePathsByElts(char *p1, char *p2);
+static int CompareStrings(const void *p1, const void *p2);
+static int CompareTakenUpdates(const void *p1, const void *p2);
+static int CompareTimes(const void *p1, const void *p2);
+static int FreeCheckList(struct CheckList *CheckList);
 static int FreeCheckLists();
-static int FreeCheckList();
-static int CheckCheckLists();
+extern int AddToDirCache(struct MS_Directory *Dir, Boolean ReplaceIfExists);
+extern int AppendFileToMSDirInternal(char *FileName, struct MS_Directory *Dir, int DoDelete, int TreatAsAlien);
+extern int BuildNickName(char *FullName, char *NickName);  /* ams/libs/shr/utils.c */
+extern int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int CriticalBizarreError(char *text);
+extern int DestructivelyWriteDirectoryHead(struct MS_Directory *Dir);
+extern int DropHint(char *Dirname);
+extern int EnsureInSubscriptionMap(char *DirName);
+extern int FindTreeRoot(char *DirName, char *RootName, short ReallyWantParent);  /* ams/libs/shr/findroot.c */
+extern int GetCellularUserName(int uid, char *cell, char *NameBuf, int lim);
+extern int GetNameFromGecos(char *GecosField, char *LoginID, char *Domain, char **PersonalNameP);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
+extern int HandleMarksInProgress(struct MS_Directory *Dir, int Quiet);
+extern int IsDirAlien(char *Dir, int *alien);
+extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
+extern int MarkInProgress(char *dirname);
+extern int NonfatalBizarreError(char *text);
+extern int OpenMSDirectory(struct MS_Directory *Dir, int Code);
+extern int ReadOldMSDirectoryHead_Complain(struct MS_Directory *Dir, int DoComplain);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int UnmarkInProgress(char *dirname);
+extern int WhichPath(char *s);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int itops(long num, char *buf, int len);
+
+extern char    *permanentmalloc(int ct);
+extern char     MyMailDomain[];
+static int CheckHintDroppingPermission(char *Dirname);
+static int CheckPathForMUFHints(char *PathElt, int DoAll);
+static int ClearUpdates(char *PathElt);
+static int CheckForMUFHints(char *MUFDir, int DoAll, char *PathElt);
+static int SetProgressMark(char *dirname, Boolean TurnOnMark, Boolean Quietly);
+static int CheckMarksInProgress(struct MS_Directory *Dir, int *pQuietly);
+static int AddToCheckList(char *name, struct CheckList *CheckList);
+static int FreeCheckLists();
+static int FreeCheckList(struct CheckList *CheckList);
+static int CheckCheckLists(struct MS_Directory *Dir, int Quiet, int alien);
 
 static char    *EFBIGFormat = "Maximum number of files per directory may have been exceeded closing %s";
 
@@ -117,9 +119,9 @@ static char SnapshotBuf[MAXSNAPSHOTBUFLEN*AMS_SNAPSHOTSIZE];
 static struct MS_Directory *SnapshotBufDir;
 
 /* Forward Declarations */
-static void     FreeUpdates();
-static void     AnnounceBadDirFormat();
-static void     BuildAttrNameBuf();
+static void     FreeUpdates(int UnlinkHints);
+static void     AnnounceBadDirFormat(char *line);
+static void     BuildAttrNameBuf(struct MS_Directory *Dir, char *AttrBuf);
 
 /* Version number for database format.  This number gets stored
         in each message directory when it is written.  If the

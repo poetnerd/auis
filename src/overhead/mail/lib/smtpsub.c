@@ -54,16 +54,16 @@
 #include <tlscon.h>
 #include <netrc.h>
 #include <parseadd.h>
-static void smtp_abort();
-static void smtp_addrspec();
-static void smtp_b64encode();
-static char * smtp_expandpath();
-static int smtp_getreply();
-static int smtp_getreply_cap();
-static int smtp_readline1();
-static int smtp_send_body();
-static void smtp_trace();
-static void smtp_writeline();
+static void smtp_abort(struct tlscon *conn, int doReset);
+static void smtp_addrspec(char *in, char *out, int outlen);
+static void smtp_b64encode(unsigned char *in, int inlen, char *out);
+static char * smtp_expandpath(char *path, char *buf, int buflen);
+static int smtp_getreply(struct tlscon *conn, char *textbuf, int textlen);
+static int smtp_getreply_cap(struct tlscon *conn, char *capbuf, int capbuflen, char *textbuf, int textlen);
+static int smtp_readline1(struct tlscon *conn, int *pcode, char *psep, char *text, int textlen);
+static int smtp_send_body(struct tlscon *conn, int f, char *errbuf, int errbuflen);
+static void smtp_trace(char *dir, char *text);
+static void smtp_writeline(struct tlscon *conn, char *line);
 
 #define SMTP_DEFAULT_PORT 465
 #define SMTP_LINE_MAX	1024
@@ -73,9 +73,9 @@ static void smtp_writeline();
 extern int errno;
 
 /* Cross-file, no header anywhere in the tree declares these. */
-extern int ParseAddressList();		/* parseadd.c */
-extern int UnparseOneAddress();	/* parseadd.c */
-extern int FreeAddressList();		/* parseadd.c */
+extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);		/* parseadd.c */
+extern int UnparseOneAddress(PARSED_ADDRESS *Addr, int Mode, char *Buffer, int Length, char *Prefix, int LineLength);	/* parseadd.c */
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);		/* parseadd.c */
 
 /* ---- tiny protocol trace, off unless AMS_SMTP_TRACE is set ---- */
 

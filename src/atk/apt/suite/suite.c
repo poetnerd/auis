@@ -84,15 +84,15 @@ END-SPECIFICATION  ************************************************************/
 #include <suite.eh>
 #include <suitecv.ih>
 #include <suiteev.ih>
-static long BreakSorter();
-static void ChangeItemAttribute();
-static void ChangeItemCaption();
-static void ChangeSuiteAttribute();
-static void CheckForNewFirstVisible();
-static void DrawRectSize();
-static void SetArrangementAttribute();
-static void SetBorderStyleAttribute();
-static long WithinRect();
+static long BreakSorter(long *item1, long *item2);
+static void ChangeItemAttribute(struct suite *self, struct suite_item *item, long attribute, long value);
+static void ChangeItemCaption(struct suite *self, struct suite_item *item, char *caption);
+static void ChangeSuiteAttribute(struct suite *self, long attribute, long value);
+static void CheckForNewFirstVisible(struct suite *self);
+static void DrawRectSize(struct suiteev *self, long x, long y, long width, long height);
+static void SetArrangementAttribute(struct suite *self, unsigned long value);
+static void SetBorderStyleAttribute(struct suite *self, unsigned int *border_style, long value);
+static long WithinRect(long x, long y, struct rectangle *r);
 
 #define	CurrentItem		    (self->current_item)
 #define Apt			    (self->apt)
@@ -229,34 +229,34 @@ static long WithinRect();
 #define	MaxItemPosGiven		    (self->max_item_pos_given)
 #define	IsLinked		    (suite_IsAncestor(self,suite_GetIM(self)))
 #define graphicIsMono			(self->mono)
-static struct suite_item	    *GenerateItem();
-static void			     SetItems();
-static void			     SetSuiteAttribute();
-static void			     SetItemAttribute();
-static void			     SetSortRoutine();
-static long			     Within();
-static char			    *strip();
-static void			     AllocNameSpace();
-static void			     DrawTitle();
+static struct suite_item	    *GenerateItem(struct suite *self, suite_Specification *spec, char *name, long datum);
+static void			     SetItems(struct suite *self, char *elts);
+static void			     SetSuiteAttribute(struct suite *self, long attribute, long value);
+static void			     SetItemAttribute(struct suite *self, struct suite_item *item, long attribute, long value);
+static void			     SetSortRoutine(struct suite *self);
+static long			     Within(long x, long y, long left, long top, long width, long height);
+static char			    *strip(char *str);
+static void			     AllocNameSpace(char **target, char *source);
+static void			     DrawTitle(struct suite *self, struct rectangle *rect);
 static void			     DrawOutline(struct suite *self, struct rectangle *rect, short width, unsigned style);
-static long			     TitleSectionWidth();
-static long			     TitleSectionHeight();
-static void			     AssignSetAndTitleSpace();
-static void			     PlaceTitle();
-static void			     SetCaptionList();
-static void			     ParseFontFullName();
-static long			     AlphasortAscend();
-static long			     NumericAscend();
-static long			     AlphasortDescend();
-static long			     NumericDescend();
+static long			     TitleSectionWidth(struct suite *self);
+static long			     TitleSectionHeight(struct suite *self, int newlineHeight);
+static void			     AssignSetAndTitleSpace(struct suite *self, struct rectangle *title, struct rectangle *container);
+static void			     PlaceTitle(struct suite *self, struct rectangle *title_sect, struct rectangle *title);
+static void			     SetCaptionList(struct suite *self, char **captions);
+static void			     ParseFontFullName(struct suite *self, char *fullname, char *familyName, long buffSize, long *size, long *type);
+static long			     AlphasortAscend(struct suite_item **item1, struct suite_item **item2);
+static long			     NumericAscend(struct suite_item **item1, struct suite_item **item2);
+static long			     AlphasortDescend(struct suite_item **item1, struct suite_item **item2);
+static long			     NumericDescend(struct suite_item **item1, struct suite_item **item2);
 static struct suite_item	    *AllocItem();
-static void			     FinalizeItem();
-static void			     HandleException();
-static void			     DefaultExceptionHandler();
-static void			     ValidateItem();
-static long			     SortStub();
-static void			     DrawRect();
-static void			     SetMWidths();
+static void			     FinalizeItem(struct suite_item *item);
+static void			     HandleException(struct suite *self, struct suite_item *item, long code);
+static void			     DefaultExceptionHandler(struct suite *self);
+static void			     ValidateItem(struct suite *self, struct suite_item *item);
+static long			     SortStub(struct suite_item **item1, struct suite_item **item2);
+static void			     DrawRect(struct suite *self, struct rectangle *Rect, int border_size);
+static void			     SetMWidths(struct suite *self);
 
 static long Within(long x, long y, long left, long top, long width, long height)
 {

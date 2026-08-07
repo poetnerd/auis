@@ -49,10 +49,10 @@ static int DebugFlag = 0;
 
 
 
-static void debugstate(/* struct parser_tables  *desc, int  state , int  pendtok , int  errorstate */);
-static void debugshift(/* struct parser_tables  *desc, int  tact */);
-static void debugreduce(/* struct parser_tables  *desc, int  rule , int  revealedstate , int  newstate */);
-static void debugflush(/* struct parser_tables  *desc, int  state */);
+static void debugstate(struct parser_tables *desc, int state, int pendtok, int errorstate);
+static void debugshift(struct parser_tables *desc, int tact);
+static void debugreduce(struct parser_tables *desc, int rule, int revealedstate, int newstate);
+static void debugflush(struct parser_tables *desc, int state);
 static void debugnewline();
 
 int parser_SetDebug(int value)

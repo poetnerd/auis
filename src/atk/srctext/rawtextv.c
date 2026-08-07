@@ -45,7 +45,7 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 static struct keymap *raw_Map;
 static struct menulist *raw_Menus;
 
-void toggleOverstrike(); /*RSK92overstrike*/
+void toggleOverstrike(struct rawtextview *self, long key); /*RSK92overstrike*/
 
 static struct bind_Description rawtextBindings[]={
     {"rawtextview-toggle-overstrike-mode", "\033\034",0, NULL,0,0, toggleOverstrike, "Turn overstrike mode on or off."}, /*RSK92overstrike*/

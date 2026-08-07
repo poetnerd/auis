@@ -43,38 +43,38 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mail.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-static int AddNamesToVector();
-static char    * newreceived();
-extern int AddHeader();
-extern int AppendMessageToMSDir();
-extern int BuildAttributesField();
-extern int BuildCaption();
-extern int BuildDateField();
-extern int CacheDirectoryForClosing();
-extern int CloseMSDir();
-extern int DeleteHeader();
-extern int FreeAddressList();  /* overhead/mail/lib/parseadd.c */
-extern int FreeMessage();
-extern int FreeSubmitVector();
-extern int GenTempName();
-extern int InventID();
-extern int IsMessageAlreadyThere();
-extern int NonfatalBizarreError();
-extern int ParseAddressList();  /* overhead/mail/lib/parseadd.c */
-extern int ParseMessageFromRawBody();
-extern int ReadOrFindMSDir();
-extern int ReadRawFile();
-extern int UnformatMessage();
+static int AddNamesToVector(char ***pVec, int *index, int *maxindex, char *namelist, int len);
+static char    * newreceived(char *ClientVersion);
+extern int AddHeader(struct MS_Message *Msg, char *Head);
+extern int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int BuildAttributesField(struct MS_Message *msg);
+extern int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail);
+extern int BuildDateField(struct MS_Message *Msg, int datetype);
+extern int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int DeleteHeader(struct MS_Message *Msg, int num);
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);  /* overhead/mail/lib/parseadd.c */
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int FreeSubmitVector(char **SubmitVector, int which);
+extern int GenTempName(char *Buf);
+extern int InventID(struct MS_Message *msg);
+extern int IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int NonfatalBizarreError(char *text);
+extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);  /* overhead/mail/lib/parseadd.c */
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
+extern int UnformatMessage(struct MS_Message *Msg);
 extern int UnparseOneAddress();  /* overhead/mail/lib/parseadd.c */
-extern int WritePureFile();
-extern int dbg_fclose();  /* overhead/util/lib/fdplumb.c */
-extern int dropoff();  /* overhead/mail/lib/dropoff.c */
+extern int WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode);
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dropoff(char *tolist[], char *mesgfile, char *returnpath, char *home, long flags);  /* overhead/mail/lib/dropoff.c */
 
 extern FILE    *fopen();
 extern char     MAILLOGSTATFILE[], MyMailDomain[];
 
 
-extern char     Me[], *MyPrettyAddress, *BCCto, home[], *NextAddress();
+extern char     Me[], *MyPrettyAddress, *BCCto, home[], *NextAddress(char *add);
 extern int      BCCFlag, IsLoggingMailStats, myvuid, errno, MS_DeliveryType;
 
 static char     ThisHost[150] = "";

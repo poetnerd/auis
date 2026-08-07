@@ -47,7 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <errno.h>
 #include <svcconf.h>
 #include <mail.h>
-static int IsPlusOK();
+static int IsPlusOK(struct CellAuth *ca);
 
 extern int errno;
 

@@ -52,12 +52,12 @@ of the author */
 #include <im.ih>
 #include <dataobj.ih>
 #include <string.h>
-static boolean CheckRightSwitchee();
+static boolean CheckRightSwitchee(struct pagev *self, boolean *NeedFullRedraw, struct page_switchee *cp);
 
 
-static void AddSwitchee(), NextSwitchee(),
-  SwitchObject(), AddSwitcheeFromFile(),
-  PasteSwitchee(),SetCurrentView();
+static void AddSwitchee(struct pagev *self), NextSwitchee(struct pagev *self),
+  SwitchObject(struct pagev *self, struct page_switchee *swin), AddSwitcheeFromFile(struct pagev *self),
+  PasteSwitchee(struct pagev *self),SetCurrentView(struct pagev *self, char *name);
 
 static struct keymap *pagev_keymap = NULL;
 static struct menulist *pagev_menulist = NULL;

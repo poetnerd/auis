@@ -42,14 +42,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <rm.ih>
 #include <view.ih>
 #include <valuev.eh>
-static int DA();
-static int DBV();
-static int DDA();
-static int DDH();
-static int DH();
-static int DNV();
-static void DrawFromScratch();
-static void LookupParameters();
+static int DA(struct valueview *self);
+static int DBV(struct valueview *self);
+static int DDA(struct valueview *self);
+static int DDH(struct valueview *self);
+static int DH(struct valueview *self);
+static int DNV(struct valueview *self);
+static void DrawFromScratch(struct valueview *self);
+static void LookupParameters(struct valueview *self);
 #define False 0
 #define True  1
 static struct atomlist *  AL_background;

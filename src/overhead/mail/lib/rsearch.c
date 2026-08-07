@@ -41,8 +41,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <andrewos.h> /* strings.h */
 #include <stdio.h>
-static char * myhostalias();
-static int oneTry();
+static char * myhostalias(char *name);
+static int oneTry(char *dom, char *sfx, int class, int type, char *answer, int anslen);
 #ifdef RESOLVER_ENV
 #include <sys/param.h>
 #include <netinet/in.h>

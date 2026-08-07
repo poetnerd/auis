@@ -152,14 +152,14 @@ extern char *UnixError();
 #endif /* AMS_DELIVERY_ENV */
 
 #include <dropoff.h>
-static int getuserinfo();
-static int rewind_fd();
-static int tryoutgoing();
-static int trytoqueue();
+static int getuserinfo(int *uid, char **returnpath, char **inhome, char **outhome, char **myname);
+static int rewind_fd(int f);
+static int tryoutgoing(int uid, char *home, char *tolist[], int f, char *returnpath, long flags, char *whoname, char *auth, char *homecell);
+static int trytoqueue(int f, char *tolist[], char *returnpath, char *inhome, long flags, char *auth, char *homecell);
 
 /* SMTP dropoff (overhead/mail/lib/smtpsub.c); used below in the sendmail
    else-clause of dropoff_auth() when the "smtphost" preference is set. */
-extern int smtp_dropoff();
+extern int smtp_dropoff(int f, char **tolist, char *returnpath);
 
 extern int errno;
 
@@ -167,7 +167,7 @@ extern int errno;
    close() to dbg_close() via #define but only declares 6 of the 16
    dbg_* wrapper names it defines -- dbg_close is not one of them. */
 extern int CheckAMSConfiguration();	/* mailconf.c */
-extern int dbg_close();		/* overhead/util/lib/fdplumb.c */
+extern int dbg_close(int fd);		/* overhead/util/lib/fdplumb.c */
 
 typedef unsigned char bool;
 

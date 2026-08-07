@@ -41,16 +41,16 @@ extern char * fcvt();
 
 #define AUXMODULE
 #include <spread.eh>
-static int CellWidth();
-static int NeedNewTabs();
-static void PrintChild();
-static void PrintEdges();
-static void PrintRow();
-static void SetTabs();
-static char TabType();
+static int CellWidth(struct table *T, int r, int c, int *nextc);
+static int NeedNewTabs(struct table *T, int r);
+static void PrintChild(struct table *T, FILE *f, int r, int c, struct view *child, char *processor, char *format, int linemacro);
+static void PrintEdges(struct table *T, FILE *f, int r);
+static void PrintRow(struct spread *V, FILE *f, int r, char *processor, char *format, int linemacro);
+static void SetTabs(struct table *T, FILE *f, int r);
+static char TabType(struct table *T, int r, int c);
 static void printVal(struct table *T, FILE *f, extended_double *value, char format, int prec);
 
-extern struct view *spread_FindSubview();
+extern struct view *spread_FindSubview(struct spread *V, struct cell *cell);
 
 /* get type of tab stop (Left, Right, Center, None) */
 

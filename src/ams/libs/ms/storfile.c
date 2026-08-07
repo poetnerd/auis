@@ -35,8 +35,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 /* andrewos.h before ms.h, matching convention elsewhere in this directory. */
 #include <andrewos.h> /* sys/file.h */
 #include <ms.h>
-extern int dbg_vclose();  /* overhead/util/lib/fdplumb2.c */
-extern int writeall();  /* overhead/util/lib/writeall.c */
+extern int dbg_vclose(int fd);  /* overhead/util/lib/fdplumb2.c */
+extern int writeall(int fd, char *Buf, int NBytes);  /* overhead/util/lib/writeall.c */
 
 int MS_StorePartialFile(char *FileName, int startpos, int len, int mode, int Truncate, char *WhatToStore)
 {

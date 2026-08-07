@@ -46,27 +46,30 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <rect.h>
 
 #include "sbutton.eh"
-static char * Intern();
-static boolean SetupInitialState();
-static boolean bgproc();
-static boolean bsproc();
-static boolean doneproc();
-static long dostuff();
-static boolean fgproc();
-static boolean fontproc();
-static void init();
-static boolean labelproc();
-static boolean lbgproc();
-static boolean lfgproc();
-static boolean litpproc();
-static boolean nameproc();
-static boolean newprefsproc();
-static boolean prefsproc();
-static long sbutton_SanelyReturnReadError();
-static boolean styleproc();
-static boolean topproc();
-static boolean triggerproc();
-static boolean tsproc();
+
+struct read_status;
+struct dataprocs;
+static char * Intern(char *str);
+static boolean SetupInitialState(struct sbutton *self);
+static boolean bgproc(struct sbutton *self, struct read_status *rock, char *buf);
+static boolean bsproc(struct sbutton *self, struct read_status *rock, char *buf);
+static boolean doneproc(struct sbutton *self, struct read_status *rock, char *buf);
+static long dostuff(struct sbutton *self, FILE *fp, long rock, struct dataprocs *procs);
+static boolean fgproc(struct sbutton *self, struct read_status *rock, char *buf);
+static boolean fontproc(struct sbutton *self, struct read_status *rock, char *buf);
+static void init(struct sbutton *self, int i, int j);
+static boolean labelproc(struct sbutton *self, struct read_status *rock, char *buf);
+static boolean lbgproc(struct sbutton *self, struct read_status *rock, char *buf);
+static boolean lfgproc(struct sbutton *self, struct read_status *rock, char *buf);
+static boolean litpproc(struct sbutton *self, struct read_status *rock, char *buf);
+static boolean nameproc(struct sbutton *self, struct read_status *rock, char *buf);
+static boolean newprefsproc(struct sbutton *self, struct read_status *rock, char *buf);
+static boolean prefsproc(struct sbutton *self, struct read_status *rock, char *buf);
+static long sbutton_SanelyReturnReadError(struct sbutton *self, FILE *fp, long id, long code);
+static boolean styleproc(struct sbutton *self, struct read_status *rock, char *buf);
+static boolean topproc(struct sbutton *self, struct read_status *rock, char *buf);
+static boolean triggerproc(struct sbutton *self, struct read_status *rock, char *buf);
+static boolean tsproc(struct sbutton *self, struct read_status *rock, char *buf);
 
 /* Defined constants and macros */
 
@@ -75,8 +78,8 @@ static boolean tsproc();
 /* External declarations */
 
 /* Forward Declarations */
-static void WriteLine();
-static char *GlomStrings(), *ReadLine(), *EncodeFont();
+static void WriteLine(FILE *f, char *l);
+static char *GlomStrings(char *s, char *t), *ReadLine(FILE *f), *EncodeFont(struct fontdesc *font);
 
 /* Global variables */
 static struct atom *buttonpushed=NULL;

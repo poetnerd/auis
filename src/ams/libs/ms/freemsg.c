@@ -35,10 +35,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <hdrparse.h>
 #include <stdlib.h>
-extern int CriticalBizarreError();
+extern int CriticalBizarreError(char *text);
 extern int FreeMessageContents(struct MS_Message *Msg, Boolean FreeSnapshot);
-extern int FreeParsedStuff();
-extern int dbg_close();  /* overhead/util/lib/fdplumb.c */
+extern int FreeParsedStuff(struct MS_Message *Msg);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
 
 /* 2 routines for backward compatibility */
 

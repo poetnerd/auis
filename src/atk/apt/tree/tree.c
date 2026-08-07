@@ -70,7 +70,7 @@ END-SPECIFICATION  ************************************************************/
 #include <apt.h>
 #include <tree.eh>
 #include <ctype.h>
-static char * Ancestry();
+static char * Ancestry(struct tree *self, tree_type_node node, char *separator, char *string);
 
 static char tree_debug = 0;
 #define  RootNode		((self)->root_node)

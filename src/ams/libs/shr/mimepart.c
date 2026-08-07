@@ -40,21 +40,21 @@
 #include <ctype.h>
 
 #include <mimepart.h>
-static void append_child();
-static int b64val();
-static void emit();
-static void emit_entity();
-static int hdrnamecmp();
-static int hexval();
-static void mimeparam_free();
-static char * mp_strdup();
-static char * paramend();
-static int parse_encoding();
-static unsigned char * read_all();
-static struct mimepart * split_multipart();
-static int tag_is();
-static char * trimdup();
-static char * unquote();
+static void append_child(struct mimepart **head, struct mimepart **tail, struct mimepart *c);
+static int b64val(int c);
+static void emit(char **bufp, long *lenp, long *capp, int c);
+static void emit_entity(char **bufp, long *lenp, long *capp, const char *name, long namelen);
+static int hdrnamecmp(const unsigned char *s, long slen, const char *name);
+static int hexval(int c);
+static void mimeparam_free(struct mimeparam *p);
+static char * mp_strdup(const char *s);
+static char * paramend(char *s);
+static int parse_encoding(const char *cte);
+static unsigned char * read_all(FILE *fp, long *lenp);
+static struct mimepart * split_multipart(const unsigned char *data, long len, const char *boundary);
+static int tag_is(const char *html, long start, long len, const char *name);
+static char * trimdup(const unsigned char *data, long len, int lower);
+static char * unquote(const char *s);
 
 /* ---- small local helpers (no libc extensions assumed) ---- */
 

@@ -66,8 +66,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <envrment.ih>
 
 #include <vutils.eh>
-static void forkhelpproc();
-static void helpDeath();
+static void forkhelpproc(struct view *self, long key);
+static void helpDeath(int pid, struct view *self, union wait *status);
 
 #define DIALOG 100
 #define MESSAGE 0

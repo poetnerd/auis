@@ -81,22 +81,22 @@ extern int fpacheck();
 
 /* overhead/util/lib/fdplumb.c's dbg_* wrapper family; see cuilib.c's own
    copy of this comment for why fdplumb.h doesn't reach these. */
-extern int dbg_close(), dbg_dup2();
+extern int dbg_close(int fd), dbg_dup2(int oldfd, int newfd);
 
 /* ams/libs/ms/update.c: no header declares it (int, not the long used by
    cuilib.c's unrelated MS_* list -- see that file's own comment). */
 extern int MS_FastUpdateState();
 
 /* Defined in the sibling file cuilib.c, same directory, no header. */
-extern void CUI_SetMachineName(), CUI_SetMachineType();
-extern int CUI_GenTmpFileName();
+extern void CUI_SetMachineName(char *s), CUI_SetMachineType(char *s);
+extern int CUI_GenTmpFileName(char *nmbuf);
 
 /* Consumer-supplied UI callback interface -- see cuilib.c's own copy of
    this comment. */
-extern int ReportError(), ReportSuccess(), GetStringFromUser(), ReduceWhiteSpace(), SetTerminalParams();
+extern int ReportError(), ReportSuccess(char *text), GetStringFromUser(char *prompt, char *buf, int len, int IsPassword), ReduceWhiteSpace(char *string), SetTerminalParams(int h, int w);
 
 /* Defined later in this same file, used above their definitions. */
-extern int InitializeClientSignals(), GetNewPassword();
+extern int InitializeClientSignals(), GetNewPassword(char **ptr, int IsRecon, char *ThisUser, char *ThisHost);
 
 int     SNAP_debuglevel=0,
         SNAP_socket=0,

@@ -34,7 +34,7 @@
 
 #include <global.h>
 #include <gentlex.h>
-static char * GetToken();
+static char * GetToken(FILE *f);
 
 
 /* TransEscape(buf, plen)

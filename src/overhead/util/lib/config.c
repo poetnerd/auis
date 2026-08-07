@@ -47,7 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 char ProgramName[100];
 extern int errno;
 extern char *getenv();
-extern int FoldedEQ(), FoldedEQn();	/* foldedeq.c, no header declares them */
+extern int FoldedEQ(unsigned char *s1, unsigned char *s2), FoldedEQn(unsigned char *s1, unsigned char *s2, int n);	/* foldedeq.c, no header declares them */
 
 #define MAXCONFIGSIZE 2000
 

@@ -129,29 +129,29 @@ static boolean enumerate;
 
 #include <txttroff.eh>
 static void ChangeFont();
-static void ChangeJustification();
+static void ChangeJustification(enum style_Justification old, enum style_Justification new, boolean putbreak);
 static void ChangeState();
-static struct text * CompileNotes();
-static void ComputeTroffFont();
-static int FlushBars();
-static void FlushLineSpacing();
+static struct text * CompileNotes(struct text *srctext, struct environment *env, long startpos, int topLevel);
+static void ComputeTroffFont(char *name, long FaceCodemodifier, long FontSize);
+static int FlushBars(FILE *f);
+static void FlushLineSpacing(int cs, int hitchars, boolean needbreak);
 static void InitializeFonts();
 static void InitializeStyle();
-static void OutputInitialTroff();
+static void OutputInitialTroff(FILE *f, boolean toplevel, struct environment *cenv);
 static void PutNewlineIfNeeded();
-static int appendlist();
-static int deletechapnumbers();
-static int deletenewlines();
+static int appendlist(char **lst, int cnt, char *ostr, int TEST);
+static int deletechapnumbers(char *buf);
+static int deletenewlines(char *buf);
 static void endspecialformating();
-static int findinlist();
-static int handlemac();
-static int handlespecialformating();
-static int insert();
-static int lookup();
+static int findinlist(char **lst, int cnt, char *str);
+static int handlemac(FILE *f, char *s);
+static int handlespecialformating(struct text *d, struct environment *env, long pos, long len);
+static int insert(char *src, char *c);
+static int lookup(char *s);
 static int outputendnote();
 static int quote(char *buf, char c, int len);
 static int setdefaultstate();
-static char * speclookup();
+static char * speclookup(long c, long f);
 
 static FILE *troffFile;
 static int addNewLine;      /* True if \n should be added to keep lines from getting */

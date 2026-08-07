@@ -43,15 +43,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <mark.ih>
 
 #include <pcompch.eh>
-static int TranslateKeySequence();
-static unsigned char ahotoi();
+static int TranslateKeySequence(char *from, char *to);
+static unsigned char ahotoi(char *ptr, int base2);
 static void cleanmagic();
-static void fix_fgets();
-static int lenorder();
-static unsigned short parsecode();
-static boolean scancomposites();
+static void fix_fgets(char *buf);
+static int lenorder(const void *p1, const void *p2);
+static unsigned short parsecode(char *ptr);
+static boolean scancomposites(char *ptr, long line);
 static void scanerr(char *msg, char key, struct composites *new, long line);
-static char * scanstring();
+static char * scanstring(char **str);
 #define MAXMACROLEN 15
 
 static struct composites *composites[MAXCHAR+1];
@@ -62,7 +62,7 @@ static unsigned char order[256];
 static char hex[]="0123456789abcdef";
 static char octal[]="01234567";
 
-static int parseBackslashed();
+static int parseBackslashed(char **fromChars);
 
 static void cleanmagic()
 {
