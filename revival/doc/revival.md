@@ -1055,6 +1055,31 @@ sample:
   display size and a `translate` command written back into the host
   document, so a bad upper half could show up as a wildly oversized or
   misplaced PostScript inset. Fixed `%d`→`%ld` on all four conversions.
+- **A forward declaration that outlived its own honesty.** Dragging a
+  figure in the drawing editor worked vertically but froze horizontally
+  after the first motion event. The function that computes each drag
+  step's constrained coordinates was, at its real definition, already
+  correctly typed to write a `long` through each of its two output
+  pointers — but two duplicate copies of its forward declaration,
+  sitting above every call site in the same file, still used the old
+  argument-less style (`static int Set_Constraints();`), which is legal
+  ANSI C and gives the compiler no parameter information at all. The one
+  call site that mattered — the continuous drag-motion handler — held
+  its output variables in ordinary 4-byte `int`s, so every motion event
+  wrote 8 bytes through a pointer to a 4-byte stack slot, silently
+  corrupting whatever sat next to it. Retyping the file's forward
+  declarations to match their real definitions closed the hole and,
+  because the compiler could finally check every call in the file
+  against a real prototype, immediately surfaced a second bug of the
+  same shape: three neighboring functions were being called with an
+  extra argument their real definitions don't accept, silently dropped
+  every time. Neither was reachable by any warning this project has
+  enabled — `-Werror=int-conversion` and its siblings only fire when a
+  real prototype is in scope to compare against, and an argument-less
+  old-style declaration is, by definition, not one. Originally
+  misdiagnosed in 2026-07-25 as an unrelated ez text-dragging bug — it
+  was this same figure-drag freeze, observed while testing zip and
+  mislabeled.
 
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because

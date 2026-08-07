@@ -402,20 +402,31 @@ acceptance). What remains here is the real HTML rendering:
   (breakpoint the font-open path, identify which font name/size
   triggered it) before it goes in `porting-assessment.md`.
 
-### ez: horizontal text-block drag locks at position 0 after first drag (observed 2026-07-25, not yet investigated)
+### zip figure drag locks the X axis after the first drag — RESOLVED 2026-08-07
 
-- Selecting and dragging a block of text: vertical dragging works
-  correctly, but after the first horizontal drag the displayed
-  horizontal position reads 0 and stays locked there — further
-  horizontal drags have no visible effect (vertical dragging continues
-  to work). Found during M2 rollout point 4h's (`contrib/zip/lib`)
-  runtime check, unrelated to that session's own declaration-only
-  fix — no M2 session has touched any mouse-drag or cursor-position
-  code. Not yet root-caused; "locks at exactly 0" is suggestively
-  similar in shape to this project's other LP64 sign/width-corruption
-  bugs (a coordinate corrupted *to* zero rather than merely wrong),
-  but that's a hypothesis, not a finding — needs its own dedicated
-  investigation session. See memory `project_text_drag_horizontal_lock`.
+- Originally logged as "ez: horizontal text-block drag locks at
+  position 0 after first drag" — that title was a mischaracterization.
+  ez itself has no generic draggable text block; what was actually
+  being exercised during M2 rollout point 4h's (`contrib/zip/lib`)
+  runtime check was a zip inset's own figure/text object drag, and the
+  symptom was misattributed to ez. Root cause: `contrib/zip/lib/
+  zipve03.c`'s per-motion drag handler, `Edit_Modification_LBDM`,
+  declared its `X`/`Y` locals as `int` and passed their addresses to
+  `Set_Constraints`, whose real (already-ANSI) definition writes
+  `zip_type_point` (`long`) values through those same pointers — an
+  8-byte store into a 4-byte stack slot on every mouse-drag motion
+  event. Invisible to every M1-M4 compiler pass because the file's own
+  forward declaration for `Set_Constraints` (two duplicate copies) was
+  still old-style `static int Set_Constraints();` — legal ANSI C with
+  no parameter list, so nothing in `STRICT_COMPILERFLAGS` had a real
+  prototype to check the call against. Fixed by retyping the file's
+  static-helper forward declarations to match their real definitions
+  and correcting `Edit_Modification_LBDM`'s locals/parameters to match;
+  that also caught a second real bug the newly-visible prototypes
+  exposed — `RBDT`/`RBDM`/`RBUT` were being called with an extra,
+  silently-ignored 5th argument their real 4-parameter definitions
+  don't accept. wdc confirmed the drag fix live. See project memory
+  `project_zip_x_drag_lock`.
 
 ### filetype.c DeleteEntry:
 
