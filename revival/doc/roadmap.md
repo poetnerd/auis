@@ -366,18 +366,11 @@ acceptance). What remains here is the real HTML rendering:
 ### Objective: Reliable operation
 
 - Let's get all the function prototypes live with ANSI — plan of record
-  now at Medium-term → ANSI C conversion (M1–M4)
-- M1-M4 close a real but narrower gap than "every prototype is honest":
-  a function's *definition* can be fully ANSI-typed while a stale
-  *forward declaration* of the same function, sitting above every call
-  site in the same file, is still old-style and argument-less — legal
-  ANSI C, invisible to every M1-M4 diagnostic (`-Werror=int-conversion`
-  and friends only fire when a real prototype is in scope to compare
-  against). Found via the zip figure-drag X-axis-lock bug (see "Little
-  Annoyances" below); sized tree-wide 2026-08-07 via a diagnostic-only
-  `-Wstrict-prototypes` sweep — see `strict-prototypes-census.md`:
-  6,715 own-file hits across 79 of 91 active directories. No fixing
-  done yet; not yet scoped as a milestone.
+  at Medium-term → ANSI C conversion (M1–M4). **M1-M4's
+  directory-by-directory rollout is complete (2026-08-07)**; what's
+  left is two tree-wide closing steps (Phase 3, Phase 5) plus a sized-
+  but-not-yet-scoped follow-on (`-Wstrict-prototypes`, 6,715 hits) —
+  full status in that section, not repeated here.
 
 ---
 
@@ -1086,6 +1079,26 @@ fires. The real cause is the write-side `%d`/`%ld` truncation above.
 
 ## Major milestones
 
+- **2026-08-07**: **M4 complete** — the ANSI-conversion plan's
+  directory-by-directory rollout (M1-M4) is done: every one of the 91
+  active directories now builds under full compiler strictness
+  (`-Werror` on implicit-int, int/pointer-type mismatches, implicit
+  declarations, and format strings). Dozens of decades-old bugs found
+  and fixed along the way, cataloged in `revival.md`. Two tree-wide
+  closing steps remain (flip the strict flags to the global default;
+  a final full-tree rebuild + runtime pass) — see Medium-term → ANSI C
+  conversion for the complete history and what's left.
+
+- **2026-08-01**: **M3 complete** — every K&R function *definition*
+  tree-wide converted to real ANSI argument types (not just class
+  methods, the rest of M1's scope): 15 sessions, all 91 active
+  directories.
+
+- **2026-07-25**: **M2 complete** — the tree-wide missing-declaration
+  sweep (`-Wimplicit-function-declaration`) closes the
+  undeclared-pointer-truncation bug family for good, beyond just class
+  dispatch.
+
 - **2026-07-17**: **First SMTP mail sent by AMS** — AMS/IMAP-project
   milestone 1 complete: scripted cui composes and submits through the
   real `dropoff()` path over TLS to Fastmail, authenticated,
@@ -1100,7 +1113,7 @@ fires. The real cause is the write-side `%d`/`%ld` truncation above.
   the way: suite unsigned rocks, htmlview DisplayString transposition,
   clockv NewString, lexan ParseNumber int*/long*, noteview/stroffetv
   ICONSTYLE string literal). The compiler now type-checks every
-  method call site tree-wide. Next: M2 prototype sweep.
+  method call site tree-wide.
 
 - **2026-07-05**: `messages` application running with local mail store —
   "mail (Private BB; 0 new of 0)" confirmed in the folder panel. All three
@@ -2168,31 +2181,54 @@ call site and definition tree-wide *before* any mass file editing starts
   — 15 sessions, all 91 active directories converted; retired to
   `claude-history/m3/` (prompts, reports, `m3-batches.md`, the runbook
   itself) now that the milestone is closed.
-- **M4 — Global strictness.** Tree-wide `-Werror` on
-  `implicit-int,int-conversion,incompatible-function-pointer-types,implicit-function-declaration`;
-  `-Wformat` then catches any remaining scanf `%d`/`%ld` (Variant 4)
-  automatically. **`strict-prototypes` dropped from the set (Phase 0
-  finding, 2026-08-01, pending confirmation)** — unlike the other three,
-  it doesn't isolate real bugs here: ~6,024 tree-wide matches, almost
-  all the deliberate C89 "unspecified arguments" idiom M2/M3 used
-  correctly and on purpose, not leftover K&R. Keep `-std=gnu89` until
-  conversion completes; consider c99 after. Writable-strings stays
-  deferred. **Phase 0 (audit) and Phase 1 (global flip + census) both
-  complete 2026-08-01.** Real census: 1,778 errors across 83 of 91
-  directories (`implicit-int` 1,079, `incompatible-function-pointer-types`
-  515, `implicit-function-declaration` 183, `int-conversion` 0 clean) —
-  far past the "small residual" the plan hoped for, so this milestone
-  does need a real directory batch map after all: `m4-batches.md`, 24
-  batches across the same 7 dependency-order waves M3 used, built from
-  the real per-directory counts. Also found and fixed a real prerequisite
-  blocker along the way: classpp itself (`overhead/class/pp/class.c` and
-  `overhead/class/lib/class.c`) failed to compile under the new flags,
-  cascading into every `-pe`/`-pi` consumer — fixed (missing `stdlib.h`,
-  two missing forward declarations, two missing return types), verified,
-  not yet committed. Task breakdown, verified starting state, the
-  `strict-prototypes` finding, and the classpp fix in full:
-  `m4-rollout-runbook.md`. Phase 3 (fixing the real fallout) not yet
-  started.
+- **M4 — Global strictness. Directory-by-directory rollout COMPLETE
+  2026-08-07** (Batch 0 + 18 sessions across all 7 waves — every
+  directory `m4-batches.md` scoped is checked off; that file and
+  `m4-rollout-runbook.md` carry the full per-batch history, one
+  paragraph per batch, findings and fossil commit IDs included). Per
+  directory: `COMPILERFLAGS = $(STRICT_COMPILERFLAGS)` in the
+  Imakefile — `-Werror` on
+  `implicit-int,int-conversion,incompatible-function-pointer-types,implicit-function-declaration,format`
+  (`format` was ruled must-fix partway through, 2026-08-02, after a
+  real datastream write silently truncated a `long` id via `%d` — see
+  `revival.md`; ~715 sites this added were never in the original
+  census). Real total came in well past the original per-directory
+  census in almost every batch (the census predated the `format`
+  ruling) but the mechanical throughput held: every batch cleared with
+  the same delegate-then-independently-verify workflow, and every
+  batch surfaced at least one genuine decades-old bug beyond the
+  compiler noise — full catalog in `revival.md`'s "Old bugs never
+  found till now." Classpp's own prerequisite build failure (found
+  Phase 0) was fixed and committed as Batch 0. **What's left, not yet
+  started:** Phase 3 (flip `STRICT_COMPILERFLAGS` to the tree-wide
+  default in `system.mcr`, remove the now-redundant per-directory
+  Imakefile overrides) and Phase 5 (final `make Clean; make World`
+  plus a broad runtime pass — the completion gate). Neither is a
+  directory-by-directory effort; both are single tree-wide steps.
+  - **`strict-prototypes` correction, 2026-08-07**: this decision was
+    originally written 2026-08-01 as "pending confirmation," claiming
+    the ~6,000 tree-wide `-Wstrict-prototypes` matches were "almost
+    all" the deliberate C89 unspecified-arguments idiom, not leftover
+    K&R, and so safe to exclude from M4's `-Werror` set. That
+    confidence turned out to be wrong: a live bug (zip figure drag
+    locking its X axis, `revival.md` — "A forward declaration that
+    outlived its own honesty") was found in exactly this category — a
+    static helper's forward declaration left old-style even though its
+    own real definition was already fully ANSI-typed, invisible to
+    every M4 flag because none of them have a prototype to check a
+    call against when the declaration carries none. Decision to
+    exclude `strict-prototypes` from `-Werror` stands (still far too
+    noisy — most hits are the tree's own generic-dispatch idiom in
+    classpp-generated headers, not bugs), but "almost all deliberate"
+    is no longer a safe assumption. Sized tree-wide as a diagnostic-only
+    pass (no `-Werror`, nothing committed to any Imakefile), 2026-08-07:
+    **6,715 hits anchored in real project `.c` files** (own
+    declarations, not generated headers) across 79 of 91 directories —
+    full per-directory table in `strict-prototypes-census.md`. This is
+    a sizing pass, not a bug count: each hit still needs the same
+    per-site reading the zip bug took to confirm a real mismatch versus
+    a harmless old-style declaration everyone already calls
+    consistently. Not yet scoped as a fixing milestone.
 
 Scale: ~13,700 K&R definitions across ~1,301 of 1,544 `.c` files; ~5,100
 are class methods converted by `.ch` lookup, not inference. M2/M3 runs
