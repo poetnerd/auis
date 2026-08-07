@@ -93,8 +93,8 @@ END-SPECIFICATION  ************************************************************/
 #include "apt.h"
 #include "apt.ih"
 #include "calc.eh"
-static int Reader();
-static int Writer();
+static int Reader(struct calc *self);
+static int Writer(struct calc *self);
 
 #define  Value			      self->value
 

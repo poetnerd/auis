@@ -67,9 +67,9 @@ END-SPECIFICATION  ************************************************************/
 #include <calc.ih>
 #include <calcv.eh>
 #include <ctype.h>
-static int Fill_Area();
-static int Printer();
-static long Which_Area();
+static int Fill_Area(struct calcv *self, long area, long op);
+static int Printer(struct calcv *self);
+static long Which_Area(struct calcv *self, long x, long y);
 
 #define  circle			      1
 #define  box			      2
@@ -203,7 +203,7 @@ static struct calcv_setup setups[] =
 #define  DisplayArea		      17
 
 static struct keymap		     *class_keymap;
-static void			      Stroke();
+static void			      Stroke(struct calcv *self, long area);
 
 boolean calcv__InitializeClass(struct classheader *classID)
   {
