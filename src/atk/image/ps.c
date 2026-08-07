@@ -100,7 +100,7 @@ static double margins[7][2] = { { 1.000, 1.000},   /* US NORMAL */
 static void setScale(struct imagev *self, int xscale, int yscale);
 static void centerImage();
 void writePS(struct imagev *self, FILE *fp, int *wpts, int *hpts, int toplevel);
-static void psColorImage(FILE *fp), psColorMap(FILE *fp, int color, int nc, byte *rmap, byte *gmap, byte *bmap), epsPreview();
+static void psColorImage(FILE *fp), psColorMap(FILE *fp, int color, int nc, byte *rmap, byte *gmap, byte *bmap);
 static void psRleCmapImage(FILE *fp, int color);
 static int  rle_encode(byte *scanline, byte *rleline, int wide), writeBWStip(FILE *fp, byte *pic, char *prompt, int w, int h);
 
@@ -237,9 +237,6 @@ void writePS(struct imagev *self, FILE *fp, int *wpts, int *hpts, int toplevel)
 	   *(gmap + i) = image_GreenPixel(new, i) >> 8;
 	   *(bmap + i) = image_BluePixel(new, i) >> 8;
        }
-
-   if(FALSE)
-       epsPreview(fp, inpix, colorType, w, h);
 
    if(toplevel == 0){
        fprintf(fp,"%%%%EndProlog\n\n");
@@ -636,28 +633,6 @@ static void psRleCmapImage(FILE *fp, int color)
 }
 
 
-
-/**********************************************/
-static void epsPreview(struct imagev *self, FILE *fp, byte *pic)
-{
-    struct image *image = (struct image *) imagev_GetDataObject(self);
-    byte *prev;
-    int w = image_Width(image), h = image_Height(image);
-
-  /* put in an EPSI preview */
-  
-    if (colorType != IBITMAP) { /* have to generate a preview */
-     image_Dither(image);
-    }
-    prev = image_Data(image);
-  
-    fprintf(fp,"%%%%BeginPreview: %d %d %d %d\n", w, h, 1, 
-	    (w/(72*4) + 1) * h);
-
-    writeBWStip(fp, prev, "% ", w, h);
-
-    fprintf(fp,"%%%%EndPreview\n");
-}
 
 static unsigned char hex[16] = {
 	'0', '1', '2', '3', '4', '5', '6', '7',
