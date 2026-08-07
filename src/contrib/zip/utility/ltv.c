@@ -194,26 +194,26 @@ static int				    Begin_Chain_Button(), End_Chain_Button(),
 				    Rename_Chain_Button(), Delete_Chain_Button(),
 				    Left_Chain_Button(), Right_Chain_Button();
 
-static Detect();
-static Initialize();
-static Build_Chain();
-static Modify_Chain();
-static End_Chain();
-static Track_Enclosure();
-static Cancel_Enclosure();
-static Clear_Enclosure();
-static Draw_Enclosure();
-static Invert_Enclosure();
-static Neighbor();
-static Show_Chain_Names();
-static Clear_Chain_Names();
-static Name_Chain();
-static Split_Chain_Name();
-static Passivate();
-static Lighten_Background();
-static Show_Background();
-static Build_Menu();
-static Activate();
+static int Detect();
+static int Initialize();
+static int Build_Chain();
+static int Modify_Chain();
+static int End_Chain();
+static int Track_Enclosure();
+static int Cancel_Enclosure();
+static int Clear_Enclosure();
+static int Draw_Enclosure();
+static int Invert_Enclosure();
+static int Neighbor();
+static int Show_Chain_Names();
+static int Clear_Chain_Names();
+static int Name_Chain();
+static int Split_Chain_Name();
+static int Passivate();
+static int Lighten_Background();
+static int Show_Background();
+static int Build_Menu();
+static int Activate();
 
 #define  right_code	    1
 #define  left_code	    2
@@ -418,7 +418,7 @@ void ltv__FullUpdate(struct ltv *self, enum view_UpdateType type, long left, lon
   OUT(ltv_FullUpdate);
   }
 
-static Detect(struct ltv *self, struct suite *suite, struct suite_item *item, long datum)
+static int Detect(struct ltv *self, struct suite *suite, struct suite_item *item, long datum)
   {
   IN(Detect);
   switch ( suite_ItemAttribute( Buttons/*===*/, item, suite_itemdatum ) )
@@ -433,7 +433,7 @@ static Detect(struct ltv *self, struct suite *suite, struct suite_item *item, lo
   OUT(Detect);
   }
 
-static Initialize(struct ltv *self)
+static int Initialize(struct ltv *self)
   {
   register long		      status = 0;
   register zip_type_image     root_image;
@@ -491,11 +491,11 @@ static Initialize(struct ltv *self)
     root_image = zip_Image( Zip, "ZIP_ROOT_IMAGE" );
     if ( status = zip_Create_Inferior_Image( Zip, &Image, "Chains", StreamLocal, root_image ) )
       { DEBUG(ERROR -- Create 'Chains' Image);
-/*===*/printf("ERROR -- Failed to create 'Chains' Image (Status %d)\n",status );
+/*===*/printf("ERROR -- Failed to create 'Chains' Image (Status %ld)\n",status );
       }
     }
   Buttons = suite_Create( buttons, self );
-  suite_Apply( Buttons, Detect, self, 0 );
+  suite_Apply( Buttons, (long (*)())Detect, self, 0 );
   suite_LinkTree( Buttons, self );
   zipview_Use_Normal_Pane_Cursors( ZipView );
   OUT(Initialize);
@@ -602,7 +602,7 @@ struct view * ltv__Hit(struct ltv *self, enum view_MouseAction action, long x, l
   return  hit;
   }
 
-static Build_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks)
+static int Build_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   register long		      X, Y, status = 0;
   register boolean	      neighbor = false;
@@ -714,7 +714,7 @@ static int Which_Figure_Point(struct ltv *self, zip_type_figure figure, zip_type
   }
 
 
-static Modify_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks)
+static int Modify_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   register long		      X, Y, status = 0;
   static long		      down_x, down_y,
@@ -773,7 +773,7 @@ static Modify_Chain(struct ltv *self, enum view_MouseAction action, long x, long
   OUT(Modify_Chain);
   }
 
-static Track_Enclosure(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks)
+static int Track_Enclosure(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   IN(Track_Enclosure);
   Clear_Enclosure( self );
@@ -820,7 +820,7 @@ static Track_Enclosure(struct ltv *self, enum view_MouseAction action, long x, l
   OUT(Track_Enclosure);
   }
 
-static Cancel_Enclosure(struct ltv *self)
+static int Cancel_Enclosure(struct ltv *self)
   {
   IN(Cancel_Enclosure);
   Clear_Enclosure( self );
@@ -829,21 +829,21 @@ static Cancel_Enclosure(struct ltv *self)
   OUT(Cancel_Enclosure);
   }
 
-static Clear_Enclosure(struct ltv *self)
+static int Clear_Enclosure(struct ltv *self)
   {
   IN(Clear_Enclosure);
   Invert_Enclosure( self );
   OUT(Clear_Enclosure);
   }
 
-static Draw_Enclosure(struct ltv *self)
+static int Draw_Enclosure(struct ltv *self)
   {
   IN(Draw_Enclosure);
   Invert_Enclosure( self );
   OUT(Draw_Enclosure);
   }
 
-static Invert_Enclosure(struct ltv *self)
+static int Invert_Enclosure(struct ltv *self)
   {
   IN(Invert_Enclosure);
   if ( EnclosureExposed )
@@ -862,7 +862,7 @@ static Invert_Enclosure(struct ltv *self)
     either a Start or and End Point of that neighbor.
 
 \*******************************************************************/
-static Neighbor(struct ltv *self, zip_type_pixel x, zip_type_pixel y, zip_type_figure *figure, zip_type_point *X, zip_type_point *Y, long *point)
+static int Neighbor(struct ltv *self, zip_type_pixel x, zip_type_pixel y, zip_type_figure *figure, zip_type_point *X, zip_type_point *Y, long *point)
   {
   register long		      status = false;
 
@@ -1041,7 +1041,7 @@ static void Fit_Command(struct ltv *self)
   OUT(Fit_Command);
   }
 
-static Show_Chain_Names(struct ltv *self)
+static int Show_Chain_Names(struct ltv *self)
   {
   char			     *left_name, *right_name;
 
@@ -1059,7 +1059,7 @@ im_ForceUpdate();
   OUT(Show_Chain_Names);
   }
 
-static Clear_Chain_Names(struct ltv *self)
+static int Clear_Chain_Names(struct ltv *self)
   {
   IN(Clear_Chain_Names);
   if ( LeftNameItem )
@@ -1070,7 +1070,7 @@ static Clear_Chain_Names(struct ltv *self)
   OUT(Clear_Chain_Names);
   }
 
-static Begin_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
+static int Begin_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Begin_Chain_Button);
   if ( type == suite_ItemObject  &&  action == view_LeftUp )
@@ -1088,7 +1088,7 @@ static Begin_Chain_Button(struct ltv *self, struct suite *suite, struct suite_it
   OUT(Begin_Chain_Button);   
   }
 
-static End_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
+static int End_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(End_Chain_Button);
   if ( Building  &&  type == suite_ItemObject  &&  action == view_LeftUp )
@@ -1099,7 +1099,7 @@ static End_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item
   OUT(End_Chain_Button);  
   }
 
-static End_Chain(struct ltv *self)
+static int End_Chain(struct ltv *self)
   {
   IN(End_Chain);
   Passivate( self, end_code );
@@ -1112,7 +1112,7 @@ static End_Chain(struct ltv *self)
   OUT(End_Chain);
   }
 
-static Delete_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
+static int Delete_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Delete_Chain_Button);
   Building = false;
@@ -1152,7 +1152,7 @@ static long Rename_Exception(struct ltv *self, long facility, long status)
       *ptr = 0;
     while ( duplicate )
       {
-      sprintf( chain_name, "%s[%d]", msg, number );
+      sprintf( chain_name, "%s[%ld]", msg, number );
       DEBUGst(New Chain-name,chain_name);
       if ( zip_Set_Figure_Name( Zip, Figure, chain_name ) == zip_ok )
 	duplicate = false;
@@ -1161,14 +1161,14 @@ static long Rename_Exception(struct ltv *self, long facility, long status)
     sprintf( msg, "Duplicate Chain Name.  Re-named to '%s'", chain_name );
     }
     else
-    sprintf( msg, "Rename-Exception  Facility = %d  Status = %d", facility, status );
+    sprintf( msg, "Rename-Exception  Facility = %ld  Status = %ld", facility, status );
   zipview_Announce( ZipView, msg );
   zip_Set_general_Exception_Handler( Zip, Exceptions );
   OUT(Exceptions);
   return  0;
   }
 
-static Rename_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
+static int Rename_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Rename_Chain_Button);
   if ( type == suite_ItemObject  &&  action == view_LeftUp )
@@ -1179,7 +1179,7 @@ static Rename_Chain_Button(struct ltv *self, struct suite *suite, struct suite_i
   OUT(Rename_Chain_Button); 
   }
 
-static Left_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
+static int Left_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Left_Chain_Button);
   if ( type == suite_ItemObject  &&  action == view_LeftUp )
@@ -1191,7 +1191,7 @@ static Left_Chain_Button(struct ltv *self, struct suite *suite, struct suite_ite
   OUT(Left_Chain_Button); 
   }
 
-static Right_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
+static int Right_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Right_Chain_Button);
   if ( type == suite_ItemObject  &&  action == view_LeftUp )
@@ -1203,7 +1203,7 @@ static Right_Chain_Button(struct ltv *self, struct suite *suite, struct suite_it
   OUT(Right_Chain_Button); 
   }
 
-static Name_Chain(struct ltv *self)
+static int Name_Chain(struct ltv *self)
   {
   char			     *reply, *left_name, *right_name;
 
@@ -1231,7 +1231,7 @@ static Name_Chain(struct ltv *self)
   OUT(Name_Chain);
   }
 
-static Split_Chain_Name(struct ltv *self, zip_type_figure figure, char **right_name, char **left_name)
+static int Split_Chain_Name(struct ltv *self, zip_type_figure figure, char **right_name, char **left_name)
   {
   static char		      left[257], right[257],
 			      full[257], *comma;
@@ -1248,12 +1248,12 @@ static Split_Chain_Name(struct ltv *self, zip_type_figure figure, char **right_n
     }
   }
 
-static Passivate(struct ltv *self, long datum)
+static int Passivate(struct ltv *self, long datum)
   {
   suite_PassivateItem( Buttons, suite_ItemOfDatum( Buttons, datum ) );
   }
 
-static Activate(struct ltv *self, long datum)
+static int Activate(struct ltv *self, long datum)
   {
   suite_ActivateItem( Buttons, suite_ItemOfDatum( Buttons, datum ) );
   }
@@ -1275,7 +1275,7 @@ static void Lighten_Background_Command(struct ltv *self)
   OUT(Lighten_Background_Command);
   }
 
-static Lighten_Background(struct ltv *self)
+static int Lighten_Background(struct ltv *self)
   {
   if ( WMWM )
     ltv_SetTransferMode( self, graphic_WHITE );
@@ -1324,7 +1324,7 @@ static void Expose_Background_Command(struct ltv *self)
   OUT(Expose_Background_Command);
   }
 
-static Show_Background(struct ltv *self)
+static int Show_Background(struct ltv *self)
   {
   register long		      height = (Height - ButtonHeight) - BackgroundTopY;
 
@@ -1353,7 +1353,7 @@ static void Save_Command(struct ltv *self)
   if ( (status = zip_Write_Stream( Zip, StreamLocal )) == zip_ok )
     sprintf( msg, "Wrote File '%s'", StreamLocal->zip_stream_name );
     else
-    sprintf( msg, "Error Writing File '%s'  (%d)", StreamLocal->zip_stream_name, status );
+    sprintf( msg, "Error Writing File '%s'  (%ld)", StreamLocal->zip_stream_name, status );
   Modified = false;
   zipview_Announce( ZipView, msg );
   OUT(Save_Command);
@@ -1380,7 +1380,7 @@ static void Print_Command(struct ltv *self)
     sprintf( msg, "Printed File '%s'", StreamLocal->zip_stream_name );
     }
     else
-    sprintf( msg, "Error Printing File '%s'  (%d)", StreamLocal->zip_stream_name, status );
+    sprintf( msg, "Error Printing File '%s'  (%ld)", StreamLocal->zip_stream_name, status );
   zipview_Announce( ZipView, msg );
   zipview_Use_Normal_Pane_Cursors( ZipView );
   OUT(Print_Command);
@@ -1480,7 +1480,7 @@ NULL
 };
 
 
-static
+static int
 Build_Menu()
   {
   IN(Build_Menu);
@@ -1495,7 +1495,7 @@ static long Exceptions(struct ltv *self, long facility, long status)
   IN(Exceptions);
 /*===*/
 self = SELF;
-sprintf( msg, "Exception  Status = %d  Facility = %d", status, facility );
+sprintf( msg, "Exception  Status = %ld  Facility = %ld", status, facility );
 zipview_Announce( ZipView, msg );
   OUT(Exceptions);
   return  0;

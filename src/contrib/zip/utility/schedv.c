@@ -116,12 +116,12 @@ static int			    Extend_Button(), Split_Button(), Clear_Button(),
 				    Save_Button(), Print_Button(), Quit_Button();
 static void			    Quit_Command(), Debug_Command();
 
-static Initialize();
-static Handle_Slot_Hit();
-static Remember_Slot_Hit();
-static Move_Slot();
-static Normalize_Previous_Slot_Figure();
-static Normalize_Current_Slot_Figure();
+static int Initialize();
+static int Handle_Slot_Hit();
+static int Remember_Slot_Hit();
+static int Move_Slot();
+static int Normalize_Previous_Slot_Figure();
+static int Normalize_Current_Slot_Figure();
 
 static struct bind_Description	      menu[] =
 {
@@ -266,7 +266,7 @@ void schedv__FullUpdate(struct schedv *self, enum view_UpdateType type, long lef
   OUT(schedv_FullUpdate);
   }
 
-static Initialize(struct schedv *self)
+static int Initialize(struct schedv *self)
   {
   register long			      status = 0;
   char				     *reply;
@@ -347,7 +347,7 @@ struct view * schedv__Hit(struct schedv *self, enum view_MouseAction action, lon
   return  hit;
   }
 
-static Handle_Slot_Hit(struct schedv *self, zip_type_figure slot_figure)
+static int Handle_Slot_Hit(struct schedv *self, zip_type_figure slot_figure)
   {
   char				      reply[512], string[512];
   register long			      shade;
@@ -391,7 +391,7 @@ static Handle_Slot_Hit(struct schedv *self, zip_type_figure slot_figure)
   OUT(Handle_Slot_Hit);
   }
 
-static Remember_Slot_Hit(struct schedv *self, zip_type_figure slot_figure)
+static int Remember_Slot_Hit(struct schedv *self, zip_type_figure slot_figure)
   {
   char				      string[512];
   register zip_type_figure	      text_figure;
@@ -412,7 +412,7 @@ static Remember_Slot_Hit(struct schedv *self, zip_type_figure slot_figure)
   OUT(Remember_Slot_Hit);
   }
  
-static Move_Slot(struct schedv *self, zip_type_figure slot_figure)
+static int Move_Slot(struct schedv *self, zip_type_figure slot_figure)
   {
   char				      string[512];
   register zip_type_figure	      text_figure;
@@ -455,7 +455,7 @@ static Move_Slot(struct schedv *self, zip_type_figure slot_figure)
   OUT(Move_Slot);
   }
 
-static Normalize_Previous_Slot_Figure(struct schedv *self)
+static int Normalize_Previous_Slot_Figure(struct schedv *self)
   {
   IN(Normalize_Previous_Slot_Figure);
   zipview_Clear_Figure( ZipView, PreviousSlotFigure, ChartPane );
@@ -467,7 +467,7 @@ static Normalize_Previous_Slot_Figure(struct schedv *self)
   OUT(Normalize_Previous_Slot_Figure);
   }
 
-static Normalize_Current_Slot_Figure(struct schedv *self)
+static int Normalize_Current_Slot_Figure(struct schedv *self)
   {
   register long			      shade = 0;
 
@@ -486,7 +486,7 @@ static Normalize_Current_Slot_Figure(struct schedv *self)
   OUT(Normalize_Current_Slot_Figure);
   }
 
-static Extend_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
+static int Extend_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Extend_Button);
   switch ( action )
@@ -502,7 +502,7 @@ static Extend_Button(struct schedv *self, struct suite *suite, struct suite_item
   OUT(Extend_Button);
   }
 
-static Split_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
+static int Split_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Split_Button);
   switch ( action )
@@ -518,7 +518,7 @@ static Split_Button(struct schedv *self, struct suite *suite, struct suite_item 
   OUT(Split_Button);
   }
 
-static Clear_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
+static int Clear_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   register zip_type_image	      image = zip_Image_Root( Zip, ScheduleStream );
   register zip_type_figure	      figure,
@@ -554,7 +554,7 @@ static Clear_Button(struct schedv *self, struct suite *suite, struct suite_item 
   OUT(Clear_Button);
   }
 
-static Save_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
+static int Save_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   char				      msg[512];
   register long			      status;
@@ -566,7 +566,7 @@ static Save_Button(struct schedv *self, struct suite *suite, struct suite_item *
     if ( (status = zip_Write_Stream( Zip, ScheduleStream )) == zip_ok )
       sprintf( msg, "Wrote File '%s'", ScheduleStream->zip_stream_name );
       else
-      sprintf( msg, "Error Writing File '%s'  (%d)", ScheduleStream->zip_stream_name, status );
+      sprintf( msg, "Error Writing File '%s'  (%ld)", ScheduleStream->zip_stream_name, status );
     Modified = false;
     zipview_Announce( ZipView, msg );
     zipview_Use_Normal_Pane_Cursors( ZipView );
@@ -575,7 +575,7 @@ static Save_Button(struct schedv *self, struct suite *suite, struct suite_item *
   OUT(Save_Button);
   }
 
-static Print_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
+static int Print_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   char				      msg[512];
   register long			      status;
@@ -598,7 +598,7 @@ static Print_Button(struct schedv *self, struct suite *suite, struct suite_item 
       sprintf( msg, "Printed File '%s'", ScheduleStream->zip_stream_name );
       }
       else
-      sprintf( msg, "Error Printing File '%s'  (%d)", ScheduleStream->zip_stream_name, status );
+      sprintf( msg, "Error Printing File '%s'  (%ld)", ScheduleStream->zip_stream_name, status );
     zipview_Announce( ZipView, msg );
     zipview_Use_Normal_Pane_Cursors( ZipView );
     }
@@ -606,7 +606,7 @@ static Print_Button(struct schedv *self, struct suite *suite, struct suite_item 
   OUT(Print_Button);
   }
 
-static Quit_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
+static int Quit_Button(struct schedv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   static char			     *choices[] =
 		{"Cancel", "Save", "Save & Quit", "Quit Anyway", 0};
@@ -657,7 +657,7 @@ static long Exceptions(struct schedv *self, long facility, long status)
   IN(Exceptions);
 /*===*/
 self = SELF;
-sprintf( msg, "Exception  Status = %d  Facility = %d", status, facility );
+sprintf( msg, "Exception  Status = %ld  Facility = %ld", status, facility );
 zipview_Announce( ZipView, msg );
   OUT(Exceptions);
   return  0;

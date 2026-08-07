@@ -51,6 +51,7 @@ END-SPECIFICATION  ************************************************************/
 #include "sched.eh"
 #include "zip.ih"
 #include <errno.h>
+#include <string.h>
 static boolean debug=FALSE;
 void sched__Set_Debug(struct sched *self, boolean mode)
   {
@@ -72,7 +73,7 @@ struct sched * sched__Create(struct classheader *ClassID, char *stream_name)
       if ( status = zip_Open_Stream(self->zip, &self->stream,
 				self->stream_name, NULL ) )
         { DEBUG(Open Failure);
-        printf( "Schedule: Unable to Open %s\n", self->stream );
+        printf( "Schedule: Unable to Open %s\n", self->stream_name );
         }
         else  status = zip_Read_Stream( self->zip, self->stream );
       }

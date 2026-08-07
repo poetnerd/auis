@@ -54,6 +54,7 @@ END-SPECIFICATION  ************************************************************/
 #include "zip.ih"
 #include "raster.ih"
 #include <errno.h>
+#include <string.h>
 
 static boolean debug=FALSE;
 #define  BackgroundWidth	    (self->background_width)
