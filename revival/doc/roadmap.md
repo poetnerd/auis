@@ -429,6 +429,23 @@ acceptance). What remains here is the real HTML rendering:
   default mapping when the extension is NOT `"*"`). Compiler flags
   it via -Wincompatible-pointer-types.
 
+### runapp: segfaults on `-d` with no app-class argument
+
+- Investigated 2026-08-06: `runapp -d` with nothing after it crashes
+  (`EXC_BAD_ACCESS` at `main+188`, reading `**argv`). Root cause:
+  `runapp.c`'s `while(**argv=='-')` flag-parsing loop
+  (`src/atk/apps/runapp.c:153`) never checks whether `*argv` is
+  `NULL` after advancing past the last flag, so it walks off the end
+  of `argv[]` into the `NULL` terminator and dereferences it instead
+  of falling through to `usage()`. Confirmed byte-identical to the
+  original 1988 import (`fossil diff` against the initial checkin
+  shows only K&R→ANSI signature changes in this file, no logic
+  changes) — **pre-existing, not a `-pi`/ANSI-conversion regression**.
+  Real invocations (`runapp -d eza`, etc. — `-d` followed by an app
+  class) are unaffected; confirmed working. Worth fixing anyway so
+  malformed invocations get a clean `usage()` message instead of a
+  crash: add a `NULL` guard, e.g. `while(*argv!=NULL && **argv=='-')`.
+
 ---
 
 ## Applications to Repair
