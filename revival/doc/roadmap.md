@@ -367,6 +367,17 @@ acceptance). What remains here is the real HTML rendering:
 
 - Let's get all the function prototypes live with ANSI — plan of record
   now at Medium-term → ANSI C conversion (M1–M4)
+- M1-M4 close a real but narrower gap than "every prototype is honest":
+  a function's *definition* can be fully ANSI-typed while a stale
+  *forward declaration* of the same function, sitting above every call
+  site in the same file, is still old-style and argument-less — legal
+  ANSI C, invisible to every M1-M4 diagnostic (`-Werror=int-conversion`
+  and friends only fire when a real prototype is in scope to compare
+  against). Found via the zip figure-drag X-axis-lock bug (see "Little
+  Annoyances" below); sized tree-wide 2026-08-07 via a diagnostic-only
+  `-Wstrict-prototypes` sweep — see `strict-prototypes-census.md`:
+  6,715 own-file hits across 79 of 91 active directories. No fixing
+  done yet; not yet scoped as a milestone.
 
 ---
 
