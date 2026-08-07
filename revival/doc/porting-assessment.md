@@ -58,6 +58,40 @@ limitations" are moot rather than a to-fix list. Leniency flags remain in
 force per subtree until that subtree is converted and its flags ratcheted
 to errors.
 
+### Why `gnu89`, not `gnu99`/`c99` — verified 2026-08-07
+
+Asked directly after the M4 flip landed: is `-std=gnu89` load-bearing,
+or just inertia? Tested empirically (same three leniency flags held
+constant, only `-std=` varied):
+
+- **Implicit int is not the blocker it looks like.** K&R declarations
+  with no type specifier — pervasive across ~13,700 K&R definitions,
+  and how classpp's typeless `.eh` prototypes and `(void(*)())`
+  vtable-dispatch casts work — compile identically under `gnu89` and
+  `gnu99` as long as `-Wno-implicit-int` is set. A minimal K&R
+  function plus an untyped-dispatch cast produced the same
+  warning-only, exit-0 result under both standards. classpp's own
+  dispatch idiom is not what forces `gnu89`.
+- **The real, unfixable-by-flags blocker is reserved-keyword
+  collisions.** `atk/eq/draweqv.c:904` declares a parameter literally
+  named `restrict` — a keyword C99 reserves. Compiled with the exact
+  same three leniency flags: `gnu89` compiles clean; `gnu99` produces
+  6 hard parse errors (`restrict requires a pointer or reference`,
+  cascading `expected expression`), none suppressible by any warning
+  flag — it's a grammar-level rejection, not a diagnostic.
+
+**Conclusion:** `gnu89` isn't chosen because some classpp mechanism
+requires it — it's chosen because it's the standard that actually
+matches ~35 years of K&R-era identifier choices. Moving to
+`gnu99`/`c99` would first need a tree-wide audit for reserved-word
+collisions (`restrict` is the one confirmed hit; `inline` also
+appears ~15 times tree-wide but all in comments in a first pass, not
+live identifiers) before the tree would even parse — exactly the kind
+of wholesale-modernization work this section's strategic decision
+already opted out of. If a `c99` migration is ever pursued (§14 already
+flags it as a possible follow-on), this keyword audit is its actual
+first gate, not a formality.
+
 ## Issues to address
 
 ### 1. `gcc -fwritable-strings` — RESOLVED 2026-07-23 by re-enabling the flag
