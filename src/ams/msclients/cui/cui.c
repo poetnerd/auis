@@ -238,7 +238,7 @@ extern int MS_DisambiguateFile(char *source, char *target, short AccessCode);
 extern int MS_Epoch(char *dirname, char *date64);
 extern int MS_FastUpdateState(void);
 extern int MS_GetAssociatedTime(char *FullName, char *Answer, int lim);
-extern int MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, int *remaining, int *ct);
+extern int MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, long *remaining, int *ct);
 extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
 extern int MS_GetSubscriptionEntry(char *FullName, char *NickName, int *status);
 extern int MS_GetVersion(char *Buf, int lim);

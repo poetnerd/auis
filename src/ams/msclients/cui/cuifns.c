@@ -94,7 +94,7 @@ extern long MS_EditMessage(char *dirname, char *id, char *NewBodyFile, int Repar
 extern int MS_FastUpdateState(void);
 extern int MS_GetDirAttributes(char *Dirname, int *AttrCt, char *Attrs, int SepChar, int ShowEmpty);
 extern long MS_GetDirInfo(char *DirName, int *ProtCode, int *MsgCount);
-extern int MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, int *remaining, int *ct);
+extern int MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, long *remaining, int *ct);
 extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
 extern long MS_MergeDirectories(char *SourceDirName, char *DestDirName);
 extern int MS_NameChangedMapFile(char *MapFile, int MailOnly, int ListAll, int *NumChanged, int *NumUnavailable, int *NumMissingFolders, int *NumSlowpokes, int *NumFastFellas);

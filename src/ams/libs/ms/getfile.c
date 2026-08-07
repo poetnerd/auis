@@ -37,7 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 extern int RetryBodyFileName(char *FileName);
 extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
 
-int MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, int *remaining, int *ct)
+int MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, long *remaining, int *ct)
 {
     int fd;
     struct stat statbuf;
