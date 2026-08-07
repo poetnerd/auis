@@ -82,8 +82,8 @@ static struct lplist * printopts_MakeLpair();
 
 static boolean  debug = FALSE;
 #define DEBUG(s) {if (debug) {printf s ; fflush(stdout);}}
-#define ENTER(r) DEBUG(("Enter %s(0x%lx)\n", "r", self))
-#define LEAVE(r) DEBUG(("Leave %s(0x%lx)\n", "r", self))
+#define ENTER(r) DEBUG(("Enter %s(0x%lx)\n", "r", (unsigned long)self))
+#define LEAVE(r) DEBUG(("Leave %s(0x%lx)\n", "r", (unsigned long)self))
 
 /* Keep the following in sync with the values
  defined in txttroff.c  (we should consolidate
@@ -481,7 +481,7 @@ void printopts__FullUpdate(struct printopts *self, enum view_UpdateType type, lo
     struct rectangle r;
     self->OnScreen = (type != view_Remove);
     printopts_GetLogicalBounds(self, &r);
-    DEBUG(("FullUpdate type %d  redraw (%d,%d,%d,%d) within (%d,%d,%d,%d)\n", 
+    DEBUG(("FullUpdate type %d  redraw (%ld,%ld,%ld,%ld) within (%ld,%ld,%ld,%ld)\n",
 	    type, left, top, width, height, r.left, r.top, r.width, r.height));
 
     /* Now that we are updating, the views exist, so we can set up those views */
@@ -523,7 +523,7 @@ void printopts__FullUpdate(struct printopts *self, enum view_UpdateType type, lo
 	r.top+=INSET_Y, r.left+=INSET_X, r.height-=(2*INSET_Y), r.width-=(2*INSET_X);
     }
 
-    DEBUG(("	Drawable at 0x%lx\n", printopts_GetDrawable(self)));
+    DEBUG(("	Drawable at 0x%lx\n", (unsigned long)printopts_GetDrawable(self)));
 
     if (type != view_PartialRedraw 
 	 && type != view_LastPartialRedraw) {
@@ -561,7 +561,7 @@ long *desiredWidth;
 long *desiredHeight;
 {
     *desiredWidth = 550,  *desiredHeight = 322;
-    DEBUG(("Desired Size %d x %d\n", *desiredWidth, *desiredHeight));
+    DEBUG(("Desired Size %ld x %ld\n", *desiredWidth, *desiredHeight));
     return view_Fixed;
 }
 
@@ -654,7 +654,7 @@ void MenuDone(struct printopts *self, long rock)
 
 /* Avoid destroying window while within pushbuttonv_PullTrigger(). */
     im_ForceUpdate();
-    im_EnqueueEvent(DestroyWindow, self, 0);
+    im_EnqueueEvent((procedure) DestroyWindow, self, 0);
 }
 
 void MenuCancel(struct printopts *self, long rock)
@@ -668,7 +668,7 @@ void MenuCancel(struct printopts *self, long rock)
 
 /* Avoid destroying window while within pushbuttonv_PullTrigger(). */
     im_ForceUpdate();
-    im_EnqueueEvent(DestroyWindow, self, 0);
+    im_EnqueueEvent((procedure) DestroyWindow, self, 0);
 }
 
 

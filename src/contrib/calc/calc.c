@@ -133,7 +133,7 @@ void calc__SetValue(struct calc *self, double value)
   OUT(calc__SetValue);
   }
 
-static Reader(struct calc *self)
+static int Reader(struct calc *self)
   {
   register struct apt_field	     *field;
 
@@ -151,7 +151,7 @@ long calc__Read(struct calc *self, FILE *file, long id)
   register long			      status; 
 
   IN(calc__Read);
-  if ( (status = calc_ReadObject( self, file, id, Reader )) ==
+  if ( (status = calc_ReadObject( self, file, id, (void (*)(struct calc *)) Reader )) ==
 	dataobject_NOREADERROR )
     {
     calc_NotifyObservers( self, calc_value_changed );
@@ -160,7 +160,7 @@ long calc__Read(struct calc *self, FILE *file, long id)
   return status;
   }
 
-static Writer(struct calc *self)
+static int Writer(struct calc *self)
   {
   struct apt_field		      field;
   char				      value[25];
@@ -179,7 +179,7 @@ static Writer(struct calc *self)
 long calc__Write(struct calc *self, FILE *file, long id, int level)
   {
   IN(calc_Write);
-  calc_WriteObject( self, file, id, level, Writer );
+  calc_WriteObject( self, file, id, level, (void (*)(struct calc *)) Writer );
   OUT(calc_Write);
   return  id;
   }

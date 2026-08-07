@@ -78,7 +78,7 @@ boolean writestampview__InitializeClass(struct classheader *c)
   writestampview_menulist = menulist_New();
   
   sprintf(procname, "%s-set-format", "writestamp");
-  proc = proctable_DefineProc(procname, MenuSetFormat, &writestampview_classinfo, NULL, "Set the writestamp's inset's format.");
+  proc = proctable_DefineProc(procname, (procedure) MenuSetFormat, &writestampview_classinfo, NULL, "Set the writestamp's inset's format.");
   
   sprintf(menutitlefmt, "%s,%%s", "Write Stamp");
   

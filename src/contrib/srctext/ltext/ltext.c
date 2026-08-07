@@ -156,7 +156,7 @@ void ltext__RedoStyles(struct ltext *self)
 
     /* Remove the old styles, but leave the root environemt in place. */
     if (root->children) {
-        tree23int_Apply(root->children, DoFreeTree);
+        tree23int_Apply(root->children, (procedure) DoFreeTree);
         tree23int_Destroy(root->children);
         root->children = NULL;
     }
@@ -775,7 +775,7 @@ boolean ltext__InitializeClass(struct classheader *classID)
         addindent(t, t2 ? atoi(t2) : 1);
     }
       
-    proctable_DefineProc("ltext-add-indent", addindent, NULL, "ltext", "Sets the number of args to indent normally.");
+    proctable_DefineProc("ltext-add-indent", (procedure) addindent, NULL, "ltext", "Sets the number of args to indent normally.");
 
     return TRUE;
 }

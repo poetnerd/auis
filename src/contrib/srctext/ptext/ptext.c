@@ -599,7 +599,7 @@ static void stylizekeyword(struct ptext *self, long posn, long len)
 
 #define match(self,pos,str,len) ((pos==0 || !isident(ptext_GetChar(self,pos-1))) && !isident(ptext_GetChar(self,pos+len)) && domatch(self,pos,str,len))
 
-static domatch(struct ptext *self, int pos, char *str, int len)
+static int domatch(struct ptext *self, int pos, char *str, int len)
 {
     while(len>0 && ptext_GetChar(self,pos++)==*str++)
 	len--;
@@ -621,7 +621,7 @@ void ptext__RedoStyles(struct ptext *self)
 
     /* Remove the old styles, but leave the root environment in place. */
     if (root->children) {
-	tree23int_Apply(root->children, DoFreeTree);
+	tree23int_Apply(root->children, (procedure) DoFreeTree);
 	tree23int_Destroy(root->children);
 	root->children = NULL;
     }

@@ -8,6 +8,8 @@ IHFILES		=	calc.ih calcv.ih
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 NormalObjectRule()
 NormalATKRule()
 DependTarget()

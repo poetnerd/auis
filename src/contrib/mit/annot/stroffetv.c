@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 static char *stroffetview_rcsid = "$Header";
 
 #include "class.h"
+#include <string.h>
 #include <fontdesc.ih>
 #include "view.ih"
 #include "textv.ih"
@@ -120,9 +121,9 @@ boolean stroffetview__InitializeClass(struct classheader *classID)
     stroffetviewMenus = menulist_New();
     stroffetviewKeyMap =  keymap_New();
     bind_BindList(stroffetviewBindings, stroffetviewKeyMap , stroffetviewMenus, &stroffetview_classinfo);
-    proctable_DefineProc("stroffetview-insertstroffet",insert,textviewtype,NULL,"Insert Stroffet Object");
-    proctable_DefineProc("stroffetview-openallstroffets",openall,viewtype,NULL,"open Stroffet Views");
-    proctable_DefineProc("stroffetview-closeallstroffets",closeall,viewtype,NULL,"close Stroffet Views");
+    proctable_DefineProc("stroffetview-insertstroffet",(procedure)insert,textviewtype,NULL,"Insert Stroffet Object");
+    proctable_DefineProc("stroffetview-openallstroffets",(procedure)openall,viewtype,NULL,"open Stroffet Views");
+    proctable_DefineProc("stroffetview-closeallstroffets",(procedure)closeall,viewtype,NULL,"close Stroffet Views");
     return TRUE;
 }
 

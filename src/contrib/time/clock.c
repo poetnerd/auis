@@ -78,7 +78,7 @@ static void UpdateTime(struct clock *self)
   struct tm *the_time;
   
   self->now = time(0);
-  self->ev = im_EnqueueEvent(UpdateTime, self, event_SECtoTU(self->epoch - (self->now % self->epoch)));
+  self->ev = im_EnqueueEvent((procedure) UpdateTime, self, event_SECtoTU(self->epoch - (self->now % self->epoch)));
   the_time = localtime(&(self->now));
   self->clockface.seconds = the_time->tm_sec;
   self->clockface.minutes = the_time->tm_min + (the_time->tm_sec/12)/5.0;

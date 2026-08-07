@@ -53,6 +53,8 @@ INCDIR = $(DESTDIR)/include/atk
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 NormalHelpRule()
 NormalObjectRule()
 NormalATKRule()

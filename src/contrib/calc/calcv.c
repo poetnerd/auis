@@ -225,7 +225,7 @@ boolean calcv__InitializeObject(struct classheader *classID, struct calcv *self)
   calcv_SetDimensions( self, 150, 175 );
   bzero( &self->states, sizeof(struct calcv_states) );
   Keystate = keystate_Create( self, class_keymap );
-  key_proc = proctable_DefineProc( "stroke", Stroke,
+  key_proc = proctable_DefineProc( "stroke", (procedure) Stroke,
 		&calcv_classinfo, NULL, "Type Digit or Operator" );
   AreaCount = 0;
   for ( i = 0; setups[i].string; i++ )
@@ -408,7 +408,7 @@ struct view * calcv__Hit(struct calcv *self, enum view_MouseAction action, long 
   return  hit;
   }
 
-static Printer(struct calcv *self)
+static int Printer(struct calcv *self)
   {
   register long		      i, x, y;
 
@@ -446,7 +446,7 @@ static Printer(struct calcv *self)
 void calcv__Print(struct calcv *self, FILE *file, char *processor, char *format, boolean level)
   {
   IN(calcv_Print);
-  calcv_PrintObject( self, file, processor, format, level, Printer );
+  calcv_PrintObject( self, file, processor, format, level, (void (*)(struct calcv *)) Printer );
   OUT(calcv_Print);
   }
 
@@ -566,7 +566,7 @@ static void Display(struct calcv *self, long area)
   {
   }
 
-static Fill_Area(struct calcv *self, long area, long op)
+static int Fill_Area(struct calcv *self, long area, long op)
   {
   calcv_SetTransferMode( self, op );
   switch( AreaShape(area) )

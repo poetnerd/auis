@@ -68,7 +68,7 @@ boolean circlepiview__InitializeClass(struct classheader *c)
 
     if ((menulist = menulist_New()) == NULL) return(FALSE);
 
-    if ((proc = proctable_DefineProc("circpi-set-depth-limit", LimitProc, &circlepiview_classinfo, NULL, "Takes the integer rock and uses it to set the depth limit on recursion.")) == NULL) return(FALSE);
+    if ((proc = proctable_DefineProc("circpi-set-depth-limit", (procedure) LimitProc, &circlepiview_classinfo, NULL, "Takes the integer rock and uses it to set the depth limit on recursion.")) == NULL) return(FALSE);
     for (i = 1; i <= 10; ++i) {
 	sprintf(menubuf, "Depth Limit~10,%d~%d", i, i);
 	menulist_AddToML(menulist, menubuf, proc, (void *)(long)i, 0);

@@ -104,6 +104,7 @@ static void closeEntity();
 static char* outputNewlines();
 static void hrule();
 static char* findLocalFile();
+int html_StyleToCodes(struct style *style);
 
 
 /* The following entities are supported as basic types: */
@@ -458,7 +459,7 @@ void html__Inform(struct html *self, char *msg)
 	errtext =(struct text *)buffer_GetData(self->errorBuffer);
 	text_InsertCharacters(errtext, text_GetLength(errtext), buf, strlen(buf));
     } else {
-	fprintf(stderr, buf);
+	fprintf(stderr, "%s", buf);
     }
 }
 

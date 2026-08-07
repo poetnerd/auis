@@ -33,6 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 
 
 #include "class.h"
+#include <string.h>
 #include <fontdesc.ih>
 #include "view.ih"
 #include "textv.ih"
@@ -118,9 +119,9 @@ boolean noteview__InitializeClass(struct classheader *classID)
     noteviewMenus = menulist_New();
     noteviewKeyMap =  keymap_New();
     bind_BindList(noteviewBindings, noteviewKeyMap , noteviewMenus, &noteview_classinfo);
-    proctable_DefineProc("noteview-insertnote",insert,textviewtype,NULL,"Insert Note Object");
-    proctable_DefineProc("noteview-openallnotes",openall,viewtype,NULL,"open Note Views");
-    proctable_DefineProc("noteview-closeallnotes",closeall,viewtype,NULL,"close Note Views");
+    proctable_DefineProc("noteview-insertnote",(procedure)insert,textviewtype,NULL,"Insert Note Object");
+    proctable_DefineProc("noteview-openallnotes",(procedure)openall,viewtype,NULL,"open Note Views");
+    proctable_DefineProc("noteview-closeallnotes",(procedure)closeall,viewtype,NULL,"close Note Views");
     return TRUE;
 }
 

@@ -30,6 +30,7 @@ static int AdoptNewChild();
 static void DrawClosed();
 static void DrawOpen();
 static int SlayChild();
+int string_width(char *string, struct fontdesc *font, struct graphic *graphic);
 
 static struct iconview *First;
 
@@ -172,7 +173,7 @@ static void DrawClosed(struct iconview *self, enum view_UpdateType type, long ax
 } 
 
 
-static SlayChild(struct iconview *self)
+static int SlayChild(struct iconview *self)
 {  
     int twoviews;
     if (self->child != (struct view *)0) {
@@ -188,7 +189,7 @@ static SlayChild(struct iconview *self)
 }
 
 
-static AdoptNewChild(struct iconview *self, struct icon *dobj)
+static int AdoptNewChild(struct iconview *self, struct icon *dobj)
 {  
     long x,y;
     char * viewclass;

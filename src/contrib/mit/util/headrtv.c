@@ -341,7 +341,7 @@ static void PrintLine(FILE *fp, char *string)
 		    for(index=hvarcount-1;index>=0;index--) {
 			ptr = string + pos;
 			if(*hvars[index]==c && !strncmp(ptr,hvars[index], strlen(hvars[index]))) {
-			    fprintf(fp,"\\*(H%d\n",index);
+			    fprintf(fp,"\\*(H%ld\n",index);
 			    pos+=strlen(hvars[index])-1;
 			    break;
 			}
@@ -653,7 +653,7 @@ boolean headrtv__InitializeClass(struct classheader *classID)
     if(!textvClassInfo) return FALSE;
     newKeymap = keymap_New();
     if(!newKeymap) return FALSE;
-    tempProc = proctable_DefineProc("headrtv-newline", headrtv_MoveOn ,&headrtv_classinfo,NULL, "Goes to next section of the header/footer.");
+    tempProc = proctable_DefineProc("headrtv-newline", (procedure) headrtv_MoveOn ,&headrtv_classinfo,NULL, "Goes to next section of the header/footer.");
     keymap_BindToKey(newKeymap,"\n",tempProc,0);
     keymap_BindToKey(newKeymap,"\r",tempProc,0);
     InstallHeaderVariables();

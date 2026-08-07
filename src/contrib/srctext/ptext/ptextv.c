@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 /* ptextview, a ``Pascal'' mode for ATK */
 
 #include <ctype.h>
+#include <string.h>
 
 #include <class.h>
 
@@ -71,21 +72,21 @@ static void ptextv_rename(struct ptextview *self, long key);
     ((struct ptext *) (Self)->header.view.dataobject)
 
 static struct bind_Description ptextBindings[]={
-    {"ptextview-paren",")",')', NULL,0, 0, paren,
+    {"ptextview-paren",")",')', NULL,0, 0, (void (*)())paren,
      "Insert a paren, with balancing."},
-    {"ptextview-bar","|",'|',NULL,0,0,space,""},
-    {"ptextview-period",".",'.',NULL,0,0,space,""},
-    {"ptextview-comma", ",", ',', NULL,0,0,space,""},
-    {"ptextview-cr","\r", '\n', NULL, 0, 0, space, ""},
+    {"ptextview-bar","|",'|',NULL,0,0,(void (*)())space,""},
+    {"ptextview-period",".",'.',NULL,0,0,(void (*)())space,""},
+    {"ptextview-comma", ",", ',', NULL,0,0,(void (*)())space,""},
+    {"ptextview-cr","\r", '\n', NULL, 0, 0, (void (*)())space, ""},
     {"ptextview-paren","]",']'},
-    {"ptextview-brace","}",'}', NULL,0, 0, brace,
+    {"ptextview-brace","}",'}', NULL,0, 0, (void (*)())brace,
      "Insert a brace indented properly with balancing."},
-    {"ptextview-asterisk","*",'*', NULL,0, 0, asterisk,""},
-    {"ptextview-startbrace","{",'{',NULL,0,0,asterisk,""},
-    {"ptextview-space"," ",' ', NULL,0, 0, space,""},
-    {"ptextview-left-paren","(",'(', NULL,0, 0, space,""},
-    {"ptextview-left-brace","[",'[', NULL,0, 0, space,""},
-    {"ptextview-semicolon",";",';', NULL,0, 0, space,""},
+    {"ptextview-asterisk","*",'*', NULL,0, 0, (void (*)())asterisk,""},
+    {"ptextview-startbrace","{",'{',NULL,0,0,(void (*)())asterisk,""},
+    {"ptextview-space"," ",' ', NULL,0, 0, (void (*)())space,""},
+    {"ptextview-left-paren","(",'(', NULL,0, 0, (void (*)())space,""},
+    {"ptextview-left-brace","[",'[', NULL,0, 0, (void (*)())space,""},
+    {"ptextview-semicolon",";",';', NULL,0, 0, (void (*)())space,""},
     {"ptextview-redo-styles","\033r",0,
      "Pascal Text,Redo Styles~10", 0,0, redo,
      "Wrap styles around comments and keywords in Pascal code."},

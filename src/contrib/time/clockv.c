@@ -222,7 +222,7 @@ boolean clockview__InitializeClass(struct classheader *c)
 
   clockview_menulist = menulist_New();
 
-  proc = proctable_DefineProc("clock-set-num-labels", MenuSetShape, &clockview_classinfo, NULL, "Set the clock inset's shape parameters.");
+  proc = proctable_DefineProc("clock-set-num-labels", (procedure) MenuSetShape, &clockview_classinfo, NULL, "Set the clock inset's shape parameters.");
   sprintf(menuname, MENUTITLE, "Shape~10", "Circle~1");
   menulist_AddToML(clockview_menulist, NewString(menuname), proc, "A", 0);
   sprintf(menuname, MENUTITLE, "Shape~10", "Square~2");
@@ -234,7 +234,7 @@ boolean clockview__InitializeClass(struct classheader *c)
   sprintf(menuname, MENUTITLE, "Shape~10", "Thick border~13");
   menulist_AddToML(clockview_menulist, NewString(menuname), proc, "3", 0);
 
-  proc = proctable_DefineProc("clock-set-labels", MenuSetLabels, &clockview_classinfo, NULL, "Set the clock inset's label parameters.");
+  proc = proctable_DefineProc("clock-set-labels", (procedure) MenuSetLabels, &clockview_classinfo, NULL, "Set the clock inset's label parameters.");
   sprintf(menuname, MENUTITLE, "Labels~11", "None~1");
   menulist_AddToML(clockview_menulist, NewString(menuname), proc, "A", 0);
   sprintf(menuname, MENUTITLE, "Labels~11", "1  (12)~2");
@@ -251,7 +251,7 @@ boolean clockview__InitializeClass(struct classheader *c)
   sprintf(menuname, MENUTITLE, "Labels~11", "English (Twelve)~13");
   menulist_AddToML(clockview_menulist, NewString(menuname), proc, "3", 0);
 
-  proc = proctable_DefineProc("clock-set-ticks", MenuSetTicks, &clockview_classinfo, NULL, "Set the clock inset's tick count parameters.");
+  proc = proctable_DefineProc("clock-set-ticks", (procedure) MenuSetTicks, &clockview_classinfo, NULL, "Set the clock inset's tick count parameters.");
   sprintf(menuname, MENUTITLE, "Ticks~12", "None~1");
   menulist_AddToML(clockview_menulist, NewString(menuname), proc, "A", 0);
   sprintf(menuname, MENUTITLE, "Ticks~12", "1 / 4~2");
@@ -261,7 +261,7 @@ boolean clockview__InitializeClass(struct classheader *c)
   sprintf(menuname, MENUTITLE, "Ticks~12", "12 / 60~4");
   menulist_AddToML(clockview_menulist, NewString(menuname), proc, "D", 0);
 
-  proc = proctable_DefineProc("clock-set-seconds", MenuSetSeconds, &clockview_classinfo, NULL, "Set the clock inset's seconds hand parameters.");
+  proc = proctable_DefineProc("clock-set-seconds", (procedure) MenuSetSeconds, &clockview_classinfo, NULL, "Set the clock inset's seconds hand parameters.");
   sprintf(menuname, MENUTITLE, "Seconds~13", "No Second Hand~1");
   menulist_AddToML(clockview_menulist, NewString(menuname), proc, "A", 0);
   sprintf(menuname, MENUTITLE, "Seconds~13", "Radial Hand~2");

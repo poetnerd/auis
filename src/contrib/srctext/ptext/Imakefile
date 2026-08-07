@@ -9,6 +9,8 @@ IHFILES = ptext.ih ptextv.ih
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 NormalObjectRule()
 NormalATKRule()
 

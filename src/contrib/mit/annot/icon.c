@@ -34,6 +34,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 
  
 
+#include <string.h>
 #include "dataobj.ih"
 #include "dict.ih"
 #include "icon.eh"
@@ -134,7 +135,7 @@ long icon__Write(struct icon *self, FILE *file, long writeID, int level)
     return icon_GetID(self);
 }
 
-static check_for_title(struct icon *self, FILE *file)
+static int check_for_title(struct icon *self, FILE *file)
 {
     char * match = "title{";
     char title[1024];

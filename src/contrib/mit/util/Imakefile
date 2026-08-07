@@ -34,6 +34,8 @@ IHFILES = compat.ih vutils.ih popts.ih headrtv.ih header.ih
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 NormalObjectRule()
 NormalATKRule()
 NormalHelpRule()

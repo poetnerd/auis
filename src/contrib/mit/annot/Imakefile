@@ -49,6 +49,8 @@ IHFILES = note.ih icon.ih ps.ih noteview.ih iconview.ih psview.ih stroffet.ih st
 
 CLASSFLAGS = $(CLASSINCLUDES) -pe
 
+COMPILERFLAGS = $(STRICT_COMPILERFLAGS)
+
 NormalObjectRule()
 NormalATKRule()
 

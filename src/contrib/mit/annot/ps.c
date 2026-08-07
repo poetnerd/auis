@@ -50,7 +50,7 @@ static int check_for_title();
 /*		private functions				*/
 /****************************************************************/
 
-static check_for_title(struct ps *self, FILE *file)
+static int check_for_title(struct ps *self, FILE *file)
 {
     char * match = "title{";
     char title[1024];

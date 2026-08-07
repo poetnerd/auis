@@ -63,7 +63,7 @@ static void indent_paren();
 
 static struct bind_Description ltextBindings[]={
 /*    {"lisp-indent-paren",")",')',NULL,0,0,indent_paren,"Insert a paren, indented properly with balancing."}, */
-    {"lisp-balance-paren",")",')',NULL,0,0,paren,"Insert a paren, with balancing."},
+    {"lisp-balance-paren",")",')',NULL,0,0,(void (*)())paren,"Insert a paren, with balancing."},
     {"lisp-balance-paren","}",'}'},
     {"lisp-balance-paren","]",']'},
     {"lisp-redo-styles","\033r",0,"Lisp,Redo Lisp styles~10",0,0,redo,"Wrap styles around comments and function names in lisp code."},

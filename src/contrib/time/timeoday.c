@@ -237,7 +237,7 @@ static void UpdateTime(struct timeoday *self)
 void timeoday__UpdateTime(struct timeoday *self)
 {
   self->now = time(0);
-  self->ev = im_EnqueueEvent(UpdateTime, self, event_SECtoTU(self->epoch - (self->now % self->epoch)));
+  self->ev = im_EnqueueEvent((procedure) UpdateTime, self, event_SECtoTU(self->epoch - (self->now % self->epoch)));
   timeoday_FormatTime(self);
 
   return;
@@ -618,7 +618,7 @@ static char * EncodeFont(struct timeoday *self)
   if (myfonttype & fontdesc_Italic) strcpy(type,"i");
   if (myfonttype & fontdesc_Fixed) strcpy(type,"f");
   if (buf = (char *)malloc(strlen(myfontname)+25)) {
-    sprintf(buf,"%s%d%s", myfontname, myfontsize, type);
+    sprintf(buf,"%s%ld%s", myfontname, myfontsize, type);
     return (buf);
   } else {
     return(NULL);

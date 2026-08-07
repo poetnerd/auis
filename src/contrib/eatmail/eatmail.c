@@ -45,12 +45,21 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <ctype.h>
 #include <parseadd.h>
 #include <pwd.h>
+#include <stdlib.h>
 static int CheckMailrcHold();
 static int SetHoldFromFile();
 static int lock();
 static int rmlock();
 
 static int IsNewFrom();
+
+extern int CheckAMSConfiguration();  /* overhead/mail/lib/mailconf.c */
+int ConvertIncomingMail(char *MailSpoolFile, char *MailDir, int *FilesReadIn);
+extern int vclose(int fd);  /* overhead/util/lib/vclose.c */
+extern int writeall(int fd, char *Buf, int NBytes);  /* overhead/util/lib/writeall.c */
+extern char *ams_genid(int IsFileName);  /* overhead/mail/lib/genid.c */
+extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);  /* overhead/mail/lib/parseadd.c */
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);  /* overhead/mail/lib/parseadd.c */
 /* for completeness */
 
 #if !POSIX_ENV

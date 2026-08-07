@@ -307,7 +307,7 @@ static void autobounds(struct psview *self, long rock)
 	bbox_buf[i] = c;
     }
     bbox_buf[i] = '\0';
-    if (sscanf(bbox_buf, "%%%%BoundingBox: %d %d %d %d", &llx, &lly, &urx, &ury) != 4) {
+    if (sscanf(bbox_buf, "%%%%BoundingBox: %ld %ld %ld %ld", &llx, &lly, &urx, &ury) != 4) {
 	message_DisplayString(self, 50, "%%BoundingBox was incomplete");
 	return;
     }
@@ -432,8 +432,8 @@ void psview__Print(struct psview *self, FILE *file, char *processor, char *forma
 	/*  Put macro to interface to postscript */
 	texttroff_BeginPS(file, width, height);
 	if ((width != 0) && (height != 0)) {
-	    fprintf(file,"\\!  newpath 0 0 moveto %d 0 lineto ", width);
-	    fprintf(file,"%d %d lineto 0 %d lineto closepath clip\n\n",
+	    fprintf(file,"\\!  newpath 0 0 moveto %ld 0 lineto ", width);
+	    fprintf(file,"%ld %ld lineto 0 %ld lineto closepath clip\n\n",
 		    width,height,height);
 	}
 
@@ -450,7 +450,7 @@ void psview__Print(struct psview *self, FILE *file, char *processor, char *forma
     while ((c = text_GetChar(textobject, pos)) != EOF &&
 	    pos < textlength){
 	if (pos++ == 0) fprintf(file, "%s", prefix);
-	if (c == '\n') fprintf(file,"%c%s",c, prefix);
+	if (c == '\n') fprintf(file,"%c%s",(int)c, prefix);
 	else fputc(c, file);
     }
 

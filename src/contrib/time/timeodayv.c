@@ -86,7 +86,7 @@ boolean timeodayview__InitializeClass(struct classheader *c)
   timeodayview_menulist = menulist_New();
   
   sprintf(procname, "%s-set-format", "timeoday");
-  proc = proctable_DefineProc(procname, MenuSetFormat, &timeodayview_classinfo, NULL, "Set the timeoday inset's format.");
+  proc = proctable_DefineProc(procname, (procedure) MenuSetFormat, &timeodayview_classinfo, NULL, "Set the timeoday inset's format.");
   
   sprintf(menutitlefmt, "%s,%%s", "Time O'Day");
   
