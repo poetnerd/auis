@@ -815,6 +815,19 @@ runtime pass — done by wdc alongside the AMS3 check-in.
       identical count and result from a from-scratch rerun). wdc ran
       smoke testing (general figure draw/save/reload plus the halo
       round-trip) with no observed regressions.
+      **Follow-up correction, 2026-08-06**: the halo fix above exposed a
+      second, previously dormant bug in the same function — wdc's testing
+      of Wave 7 C3 (an unrelated batch) surfaced live document corruption
+      that traced back here. `horizontal`/`vertical`/`halo` were
+      `static char foo[2] = "?"`: sentinel-seeded scratch buffers only
+      ever overwritten when their flag was on, never reset when off.
+      `halo` had never been printed before this batch's fix, so its stale
+      `"?"` was invisible; once printed, every figure with halo off (i.e.
+      effectively all of them) got a literal `?` appended to its Mode
+      line, desyncing the reader for the rest of the document. Fixed by
+      dropping `static` and changing the initializer to `""` on all
+      three — full root cause and the C89-initializer reasoning logged in
+      `revival.md`. Subtree gate re-run clean after the fix.
 - [x] **C2 COMPLETE 2026-08-06**: `contrib/zip/utility` — census said 67,
       real count 80 (+19%, same undercount direction as every prior
       batch). 5 files touched (`Imakefile`, `lt.c`, `ltv.c`, `sched.c`,
@@ -850,11 +863,50 @@ runtime pass — done by wdc alongside the AMS3 check-in.
       orchestrator from a fresh `make clean`. wdc's smoke testing
       (schedapp launched successfully once run from a directory
       containing `itcCR.scd`) found no regressions.
-- [ ] **C3** (former C3+C4): `contrib/mit/annot` (15),
-      `contrib/srctext/ptext` (15), `contrib/eatmail` (11),
-      `contrib/calc` (8), `contrib/time` (8), `contrib/mit/util` (5),
-      `contrib/srctext/ltext` (3), `contrib/srctext/html` (1),
-      `contrib/demos/circlepi` (1) — 67, 9 directories.
+- [x] **C3 COMPLETE 2026-08-07** (former C3+C4) — **closes Wave 7**:
+      `contrib/mit/annot`, `contrib/srctext/ptext`, `contrib/eatmail`,
+      `contrib/calc`, `contrib/time`, `contrib/mit/util`,
+      `contrib/srctext/ltext`, `contrib/srctext/html`,
+      `contrib/demos/circlepi` — 9 directories, census said 67, real
+      count 99 (+48%, same undercount direction as every prior batch;
+      `contrib/srctext/ptext` was the only directory of the 9 to land
+      exactly on its census). Breakdown: format, function-pointer,
+      implicit-int, and implicit-function-declaration sites across all 9;
+      34 files touched (9 Imakefiles + 25 `.c`). All function-pointer
+      casts matched one of two pre-existing tree-wide idioms —
+      `(procedure)` for `proctable_DefineProc`/`im_EnqueueEvent`/
+      `tree23int_Apply` call sites (confirmed against `class.h`'s
+      `typedef int (*procedure)()`), and `(void (*)())` for
+      `bind_Description.proc` (confirmed against `bind.ch`'s own
+      `void (*proc)();` field, the same idiom already used unmodified
+      since 1988 in `atk/frame/framecmd.c`) — zero new bare/escalated
+      casts. `contrib/calc`'s `Reader`/`Writer` implicit-int fix matched
+      an exact existing precedent at `atk/chart/chart.c` (same `apt.ch`
+      `void (*reader)()`/`void (*writer)()` interface, cast the same way
+      there already). One genuine LP64 memory-corruption bug:
+      `contrib/mit/annot/psview.c:310`'s `sscanf(bbox_buf,
+      "%%%%BoundingBox: %d %d %d %d", &llx, &lly, &urx, &ury)` into four
+      `long` variables (confirmed `long` at `psview.c:289`) — writes only
+      the low 32 bits of each via `sscanf`, leaving garbage upper halves
+      that feed both the PostScript inset's on-screen size and a
+      `translate` command written into the document; fixed `%d`→`%ld`.
+      Also one real format-string-injection fix
+      (`contrib/srctext/html/html.c:461`'s `fprintf(stderr, buf)` →
+      `"%s"`) and 6 genuinely-undeclared-function prototypes added in
+      `contrib/eatmail/eatmail.c`, all verified against their real
+      definitions elsewhere in the tree. `contrib/calc`'s known
+      ghost-text rendering bug was left untouched, out of scope. All 9
+      directories produce `.do` dynamic-load objects only (plus two
+      standalone `ProgramTarget` binaries, `ez2ascii`/`eatmail`) — no
+      static libraries, no downstream relink needed anywhere, confirmed
+      by both the delegate and the orchestrator independently. Not one
+      of the two elevated-risk batches, so only the subtree-local gate
+      was required for each — run clean by the delegate (two cycles per
+      directory) and re-verified clean by the orchestrator from a fresh
+      `make clean` for all 9. **Separately, wdc's own manual testing of
+      this batch surfaced live document corruption that traced back not
+      to C3 but to C1** (`contrib/zip/lib`'s halo-write fix) — see the
+      follow-up correction logged under C1 above and in `revival.md`.
 
 Wave 7 has no separate checkpoint — it flows directly into the Phase 3
 global flip and the Phase 5 completion gate (`make Clean; make World`

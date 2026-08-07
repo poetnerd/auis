@@ -1043,6 +1043,18 @@ sample:
   either app. This isn't a build-time misconfiguration or something
   that regressed — it's undocumented functionality, apparently since
   it was first written.
+- **A bounding box read into the wrong-sized variables.** The annotation
+  editor's PostScript-inset importer parses a `%%BoundingBox:` comment out
+  of an arbitrary externally-supplied `.ps` file with
+  `sscanf(bbox_buf, "%d %d %d %d", &llx, &lly, &urx, &ury)`, but all four
+  targets are declared `long`. On LP64, `sscanf`'s `%d` writes only the
+  low 32 bits of each variable, leaving the upper half as whatever
+  garbage was already on the stack — the same memory-corruption pattern
+  (not just truncation) as the scanf-into-`long` bug class found
+  elsewhere in the tree. The parsed values set both the inset's on-screen
+  display size and a `translate` command written back into the host
+  document, so a bad upper half could show up as a wildly oversized or
+  misplaced PostScript inset. Fixed `%d`→`%ld` on all four conversions.
 
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
@@ -1050,6 +1062,42 @@ nothing had checked a declared interface against its actual usage, or
 because an earlier C library was more permissive. Restoring old software to
 working order on current tools amounts, in part, to finally running a test
 suite that nobody knew existed.
+
+**One exception, caught the same day it was made.** The fix for the halo
+bug above — adding the missing third field to the figure Mode-attribute
+write — exposed a second, previously dormant bug in the very same
+function. `horizontal`, `vertical`, and `halo` were declared
+`static char foo[2] = "?"`: scratch buffers seeded with a literal `?` and
+only ever overwritten when their corresponding flag was on, never reset
+when it was off. Because `halo` had never actually appeared in the output
+before (the pre-fix code only printed the first two fields), its stale
+sentinel value was invisible; the moment the halo fix started printing it,
+every figure with the halo flag off — effectively all of them, since halo
+turned out to be unreachable through the UI — got a literal `?` appended
+to its Mode line. That single stray character desynchronized the reader
+for the rest of the enclosing stream, corrupting every inset written after
+it in the same document. Caught within hours by manual round-trip testing
+of the fix (open a multi-figure document, edit it, save, reopen), not by
+any compiler warning — `-Wformat`/`-Wimplicit-int` have nothing to say
+about a string that compiles cleanly but holds the wrong content. Fixed by
+changing the declaration to ordinary, non-`static` locals defaulting to
+empty:
+```c
+char horizontal[2] = "", vertical[2] = "", halo[2] = "";
+```
+Dropping `static` was safe, and arguably a second correction to the same
+original mistake: true K&R C never allowed an automatic (stack) variable
+to carry an initializer at all — only external and `static` variables
+could be initialized at compile time — so the 1988 author most likely
+reached for `static` only to make the `= "?"` syntax legal, not because
+persistence across calls was ever wanted. C89 lifted that restriction: an
+ordinary local array can be given an inline initializer directly, with
+exactly the fresh-every-call, no-leftover-state behavior the code seems to
+have intended all along. The M4 compiler-strictness pass is what put this
+function's flags on a line together in the first place; the bug itself
+belongs to the same "written once in 1988, never fully exercised" family
+as everything above it, just discovered by a same-day fix instead of a
+compiler flag decades later.
 
 ## Word size issues
 
