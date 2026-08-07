@@ -53,7 +53,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <stdlib.h>
 extern int AuthenticReSentHeader(struct MS_Message *msg);
-extern int FindPrettiestFromString();
+extern int FindPrettiestFromString(char *MyFromBuf, char *FromBuf, int lim);
 extern int FindPrettiestName(struct MS_Message *msg, char *FromBuf, int lim);
 extern int GetNameFromGecos(char *GecosField, char *LoginID, char *Domain, char **PersonalNameP);
 extern int ParseAndShrinkDate(char *bigdate, char *littledate);
@@ -165,7 +165,7 @@ int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Bo
 		strncpy(FromBuf, s, lim);
 		FromBuf[lim] = '\0';
 		if (lim > BIGFROM - 3) lim = BIGFROM - 3;
-		FindPrettiestFromString(FromBuf, NewFromBuf);
+		FindPrettiestFromString(FromBuf, NewFromBuf, lim);
 		strcpy(FromBuf, NewFromBuf);
 	    } else {
 		strcpy(FromBuf, "<No 'To:' header>");

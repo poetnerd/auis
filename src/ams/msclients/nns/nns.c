@@ -48,7 +48,7 @@ extern int dbg_close(int fd), dbg_closedir(DIR *d);
 /* ams/libs/ms: no header in the tree declares any of these. */
 extern int MS_Initialize(int *MaxBufSize, Boolean UsingSnap), MS_UpdateState(), CloseMSDir(struct MS_Directory *Dir, int CloseMode), OpenMSDirectory(struct MS_Directory *Dir, int Code),
 	ReadOldMSDirectoryHead(struct MS_Directory *Dir), ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking), ParseMessageFromRawBody(struct MS_Message *NewMessage),
-	InventID(struct MS_Message *msg), BuildDateField(), BuildReplyField(struct MS_Message *Msg), BuildAttributesField(struct MS_Message *msg),
+	InventID(struct MS_Message *msg), BuildDateField(struct MS_Message *Msg, int datetype), BuildReplyField(struct MS_Message *Msg), BuildAttributesField(struct MS_Message *msg),
 	BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail), FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot), AddHeader(struct MS_Message *Msg, char *Head), IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir),
 	WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode), AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
 
@@ -343,7 +343,7 @@ int ProcessEntry(GListEntry_t *gle, char *fullFilename, struct MS_Directory *Dir
 	    || AddNetnewsWideReplyHeader(Msg)
 	    || (Msg->AuthUid = 0, Msg->AuthName = Msg->AuthCell = NULL, FALSE)
 	    || InventID(Msg)
-	    || BuildDateField(Msg)
+	    || BuildDateField(Msg, DATETYPE_FROMHEADER)
 	    || BuildReplyField(Msg)
 	    || BuildAttributesField(Msg)
 	    || BuildCaption(Msg, &CaptionTemplate, FALSE)) {

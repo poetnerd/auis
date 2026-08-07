@@ -136,7 +136,7 @@ END-SPECIFICATION  ************************************************************/
 struct user_data;
 static int Allocate_Image(struct zip *self, struct zip_stream *stream, struct zip_image **image, char *name);
 static int Free_Image(struct zip *self, zip_type_image image);
-static int Propagate_Image_Stream_Ptr();
+static int Propagate_Image_Stream_Ptr(struct zip *self, zip_type_image image);
 static int ZIP_Balance_Image_Extrema(struct zip *self, zip_type_image image);
 
 /* M2: zip.do cross-file, no header declares these (defined zipd000.c) */
@@ -152,7 +152,6 @@ extern int symtab_add();
 
 static int Destroy_Inferior_Image(struct zip *self, zip_type_image image);
 static int Free_Image(struct zip *self, zip_type_image image);
-static int Propagate_Image_Stream_Ptr();
 static int Adjust_Inferior_Image_Point_Suite(struct zip *self, zip_type_image image, int x_delta, int y_delta);
 
 static int Allocate_Image(struct zip *self, struct zip_stream *stream, struct zip_image **image, char *name)
@@ -332,7 +331,7 @@ long zip__Hook_Peer_Image(struct zip *self, zip_type_image image, zip_type_image
       peer_image->zip_image_peer = image;
       image->zip_image_superior = peer_image->zip_image_superior;
       image->zip_image_stream = peer_image->zip_image_stream;
-      Propagate_Image_Stream_Ptr( image );
+      Propagate_Image_Stream_Ptr( self, image );
 
 /*=== should stream's greatest/least cells be modified ??? ===*/
 

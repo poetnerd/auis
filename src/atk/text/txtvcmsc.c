@@ -46,7 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #define AUXMODULE 1
 #include <textv.eh>
 
-extern void textview_InsertFile();	/* defined in txtvcmod.c */
+extern void textview_InsertFile(struct textview *self);	/* defined in txtvcmod.c */
 extern boolean ConfirmReadOnly(struct textview *self);	/* defined in txtvcmod.c */
 extern boolean textview_objecttest(struct textview *self, char *name, char *desiredname);	/* defined in txtvcmod.c */
 
@@ -132,7 +132,7 @@ void textview_ViCommandCmd(struct textview *self, long key)
     switch (tc )
     {
 	case 'r':
-	    textview_InsertFile(self, key);
+	    textview_InsertFile(self);
 	    break;
 	case 'q':
 	    message_DisplayString(self, 0, "Please use Quit menu item.");

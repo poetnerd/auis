@@ -63,7 +63,7 @@ struct table * ReadASCII(struct table *T, FILE *f);
 
 /* defined in tabio.c */
 extern void WriteASCII(struct table *T, FILE *f, Chunk chunk, int level);
-extern void WriteCell();
+extern void WriteCell(struct table *T, FILE *f, struct cell *cell, char **buff, int level);
 extern void ReadCell(struct table *T, FILE *f, char *buff, char **cpp, char *cl, struct cell *cell);
 
 /* defined in eval.c */
@@ -560,7 +560,7 @@ void table__FormatCell(struct table *T, struct cell *cell, char **buff)
     if (table_debug)
 	printf("table_FormatCell(%s, , )\n", table_Name(T));
 
-    WriteCell (T, NULL, cell, buff);
+    WriteCell (T, NULL, cell, buff, 0);
 }
 
 /* parse external cell contents */

@@ -65,7 +65,7 @@ extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
 extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
 extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
 extern int UnformatMessage(struct MS_Message *Msg);
-extern int UnparseOneAddress();  /* overhead/mail/lib/parseadd.c */
+extern int UnparseOneAddress(PARSED_ADDRESS *Addr, int Mode, char *Buffer, int Length, char *Prefix, int LineLength);  /* overhead/mail/lib/parseadd.c */
 extern int WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode);
 extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
 extern int dropoff(char *tolist[], char *mesgfile, char *returnpath, char *home, long flags);  /* overhead/mail/lib/dropoff.c */
@@ -147,7 +147,7 @@ static int AddNamesToVector(char ***pVec, int *index, int *maxindex, char *namel
             free(TempAddr->RoutePhrase);
             (TempAddr->RoutePhrase) = NULL;
         }
-        if (UnparseOneAddress(TempAddr, UP_SPACES_TO_DOTS, TempBuf, sizeof(TempBuf), "", "    ", 69) != PA_OK) {
+        if (UnparseOneAddress(TempAddr, UP_SPACES_TO_DOTS, TempBuf, sizeof(TempBuf), "    ", 69) != PA_OK) {
             FreeAddressList(AddrList);
             AMS_RETURN_ERRCODE(errno, EIN_UNPARSEADDR, EVIA_SUBMITMESSAGE);
         }

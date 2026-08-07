@@ -79,7 +79,7 @@ extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);  /* overhea
 extern int ReduceWhiteSpace(char *string);  /* ams/libs/shr/utils.c */
 extern int RemHost(ADDRESS_HOST *Host);  /* overhead/mail/lib/parseadd.c */
 extern int UnparseAddressList();  /* overhead/mail/lib/parseadd.c */
-extern int UnparseOneAddress();  /* overhead/mail/lib/parseadd.c */
+extern int UnparseOneAddress(PARSED_ADDRESS *Addr, int Mode, char *Buffer, int Length, char *Prefix, int LineLength);  /* overhead/mail/lib/parseadd.c */
 extern int ValidateSearchPath(int i);
 extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
 extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
@@ -2308,7 +2308,7 @@ static int UnparseNthElement(PARSED_ADDRESS *AddrList, int which, char *Buf, int
     }
     if (StripComments) StripExtraComments(tempaddr, NULL);
     errno = 0;
-    if (UnparseOneAddress(tempaddr, UP_SPACES_TO_DOTS, Buf, size, "", "    ", 69) != PA_OK) {
+    if (UnparseOneAddress(tempaddr, UP_SPACES_TO_DOTS, Buf, size, "    ", 69) != PA_OK) {
 	AMS_RETURN_ERRCODE(errno, EIN_UNPARSEADDR, EVIA_VALCHUNK);
     }
     return(0);
