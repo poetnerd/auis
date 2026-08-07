@@ -65,8 +65,8 @@ static int Set_Points();
 /*LIBS: -lm
 */
 static char two = 2; /* To quieten Compiler */
-static Draw();
-static Set_Points();
+static int Draw();
+static int Set_Points();
 static int Compute_Handle_Positions( struct zipoarc *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3, zip_type_pixel *XS, zip_type_pixel *YS, zip_type_pixel *XE, zip_type_pixel *YE );
 
 char zipoarc__Object_Icon(struct zipoarc *self)
@@ -184,7 +184,7 @@ long zipoarc__Clear_Object(struct zipoarc *self, zip_type_figure figure, zip_typ
   return  status;
   }
 
-static Draw(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane)
+static int Draw(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register long				  x_radius, y_radius;
@@ -368,7 +368,7 @@ long zipoarc__Hide_Object_Points(struct zipoarc *self, zip_type_figure figure, z
   return  status;
   }
 
-static
+static int
 Set_Points( figure, x_center, y_center, x_radius, y_radius,
 		xs_delta, ys_delta, xe_delta, ye_delta )
   register zip_type_figure		  figure;

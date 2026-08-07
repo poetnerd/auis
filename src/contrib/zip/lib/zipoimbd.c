@@ -148,8 +148,8 @@ struct imbed
 
   };
 
-static Load_Object();
-static Draw();
+static int Load_Object();
+static int Draw();
 
 boolean zipoimbed__InitializeObject(struct classheader *classID, struct zipoimbed *self)
   {
@@ -346,7 +346,7 @@ long zipoimbed__Read_Object_Stream(struct zipoimbed *self, zip_type_figure figur
   return  status;
   }
 
-static Load_Object(struct zipoimbed *self, zip_type_figure figure, char *name, boolean announce)
+static int Load_Object(struct zipoimbed *self, zip_type_figure figure, char *name, boolean announce)
   {
   register long				  status = zip_ok;
   register struct imbed			 *imbed;
@@ -456,7 +456,7 @@ long zipoimbed__Clear_Object(struct zipoimbed *self, zip_type_figure figure, zip
   return  status;
   }
 
-static Draw(struct zipoimbed *self, zip_type_figure figure, zip_type_pane pane, long action)
+static int Draw(struct zipoimbed *self, zip_type_figure figure, zip_type_pane pane, long action)
   {
   register long				  status = zip_ok;
   register struct imbed			 *imbed;
@@ -525,7 +525,7 @@ long zipoimbed__Print_Object(struct zipoimbed *self, zip_type_figure figure, zip
 						   figure->zip_figure_datum.zip_figure_anchor;
 
   IN(zipoimbed__Print_Object);
-  fprintf( zipprint_Printing_File( Print ), "%s %s\n%s %d %d %s\n",
+  fprintf( zipprint_Printing_File( Print ), "%s %s\n%s %ld %ld %s\n",
 	   zipprint_Printing_Prefix( Print ),
 	   "gsave   % Save Zip Environment Surrounding Imbedded Object",
 	   zipprint_Printing_Prefix( Print ),

@@ -107,8 +107,8 @@ static int Parse_Image_Attributes();
 static int Extract_Attribute();
 static int Parse_Stream_Integer();
 static int Parse_Stream_Commentary( struct zip *self, char c );
-static Equivalent_Token();
-static Parse_Presentation_Parameter();
+static int Equivalent_Token();
+static int Parse_Presentation_Parameter();
 
 long zip__Read_Figure(struct zip *self, zip_type_figure figure)
   {
@@ -791,7 +791,7 @@ Parse_Stream_Real()
   return  number;
   }
 
-static Parse_Stream_Commentary(struct zip *self, char c)
+static int Parse_Stream_Commentary(struct zip *self, char c)
   {
   register int			      status = false;
 
@@ -806,7 +806,7 @@ static Parse_Stream_Commentary(struct zip *self, char c)
   return status;
   }
 
-static Equivalent_Token(struct zip *self, char *token, char *table[])
+static int Equivalent_Token(struct zip *self, char *token, char *table[])
   {
   register int			      result = 0;
 
@@ -826,7 +826,7 @@ static Equivalent_Token(struct zip *self, char *token, char *table[])
   return  result;
   }
 
-static Parse_Presentation_Parameter(struct zip *self)
+static int Parse_Presentation_Parameter(struct zip *self)
   {
   register long			      status = zip_ok;
   char				     *token, *ptr;

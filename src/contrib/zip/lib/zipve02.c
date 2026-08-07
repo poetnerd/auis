@@ -165,7 +165,7 @@ static int Change_Shade();
 static int Set_Sample();
 
 static int Parse_Stream_Image_Ending();
-static Change_Shade();
+static int Change_Shade();
 static int Figure_Palette_LBDT();
 static int Create_Name_Palette();
 static int Create_Font_Palette();
@@ -179,8 +179,8 @@ static int Create_TR_Palette();
 static int Create_BL_Palette();
 static int Create_BR_Palette();
 static int Create_Palette_Surround();
-static Set_Sample();
-static Change_Figure_Font_And_Mode();
+static int Set_Sample();
+static int Change_Figure_Font_And_Mode();
 
 long zipedit__Set_Palettes(struct zipedit *self, zip_type_pane pane, int palette_mode)
   {
@@ -463,7 +463,7 @@ int zipedit_Handle_Shade_Palette_Hit(struct zipedit *self, zip_type_pane pane, e
   return status;
   }
 
-static Change_Shade(struct zipedit *self, zip_type_pane pane, zip_type_figure figure, long shade)
+static int Change_Shade(struct zipedit *self, zip_type_pane pane, zip_type_figure figure, long shade)
   {
   register long				  changed = false;
 
@@ -1072,7 +1072,7 @@ int zipedit_Handle_Font_Height_Selection(struct zipedit *self, zip_type_pane pan
 	FontHeight += 2;
 	else
 	FontHeight = 2;
-        sprintf( msg, "%2d", FontHeight );
+        sprintf( msg, "%2ld", FontHeight );
       zip_Set_Figure_Text( Data, figure, msg);
       }
     else
@@ -1082,7 +1082,7 @@ int zipedit_Handle_Font_Height_Selection(struct zipedit *self, zip_type_pane pan
 	FontHeight -= 2;
 	else
 	FontHeight = 144;
-        sprintf( msg, "%2d", FontHeight );
+        sprintf( msg, "%2ld", FontHeight );
       zip_Set_Figure_Text( Data, figure, msg);
       }
     zipview_Draw_Figure( View, figure, pane );
@@ -1199,7 +1199,7 @@ int zipedit_Handle_Font_Sample_Selection(struct zipedit *self, zip_type_pane pan
   return status;
   }
 
-static Set_Sample(struct zipedit *self, zip_type_pane pane, boolean draw_pane)
+static int Set_Sample(struct zipedit *self, zip_type_pane pane, boolean draw_pane)
   {
   register zip_type_figure	      figure;
   char				      msg[257];
@@ -1207,7 +1207,7 @@ static Set_Sample(struct zipedit *self, zip_type_pane pane, boolean draw_pane)
 
   IN(Set_Sample);
   figure = zip_Figure( Data, "font_catalog_sample" );
-  sprintf( msg, "%s%d%s%s",
+  sprintf( msg, "%s%ld%s%s",
 	 (FontFamily) ? "andysans" : "andy",
 	 FontHeight,
 	 (FontBold) ? "b" : "",
@@ -1231,7 +1231,7 @@ static Set_Sample(struct zipedit *self, zip_type_pane pane, boolean draw_pane)
   OUT(Set_Sample);
   }
 
-static Change_Figure_Font_And_Mode(struct zipedit *self, zip_type_pane pane, zip_type_figure figure, long font, long mode)
+static int Change_Figure_Font_And_Mode(struct zipedit *self, zip_type_pane pane, zip_type_figure figure, long font, long mode)
   {
   register boolean			  changed = false;
 

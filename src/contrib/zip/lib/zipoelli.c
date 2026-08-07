@@ -129,8 +129,8 @@ static int Draw();
 /*LIBS: -lm
 */
 
-static Draw();
-static Compute_Handle_Positions();
+static int Draw();
+static int Compute_Handle_Positions();
 
 char zipoelli__Object_Icon(struct zipoelli *self)
   {
@@ -266,7 +266,7 @@ long zipoelli__Clear_Object(struct zipoelli *self, zip_type_figure figure, zip_t
   return  status;
   }
 
-static Draw(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane, long action)
+static int Draw(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane, long action)
   {
   register long				  status = zip_ok;
   register int				  x_start_end, minor_radius, major_radius;
@@ -526,7 +526,7 @@ long zipoelli__Adjust_Object_Point_Suite(struct zipoelli *self, zip_type_figure 
   return  status;
   }
 
-static Compute_Handle_Positions(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3)
+static int Compute_Handle_Positions(struct zipoelli *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3)
   {
   *X1 = zipview_X_Point_To_Pixel( View, pane, figure, figure_x_point - figure_x_points(0) );
   *X2 = window_x_point;

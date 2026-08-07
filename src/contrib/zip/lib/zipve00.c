@@ -730,7 +730,7 @@ long zipedit__Expose_Point(struct zipedit *self, zip_type_pane pane, zip_type_fi
 					    zipview_GetFont( View );
 
   IN(zipedit__Expose_Point);
-  sprintf( points, "(%d,%D)", x, y );  /*=== optimize ===*/
+  sprintf( points, "(%ld,%ld)", x, y );  /*=== optimize ===*/
   zipview_SetTransferMode( View, graphic_BLACK );
   zipview_MoveTo( View, ((OriginX) + (x * (Flip) * (Multiplier) / (Divisor))) - 3,
 			((OriginY) - (y * (Flop) * (Multiplier) / (Divisor))) - 3 );

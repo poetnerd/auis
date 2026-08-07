@@ -268,7 +268,7 @@ return (abs( zipview_X_Point_To_Pixel( View, pane, figure,
 }
 #endif
 
-static Draw(struct zipopolygon *self, zip_type_figure figure, zip_type_pane pane, short action)
+static int Draw(struct zipopolygon *self, zip_type_figure figure, zip_type_pane pane, short action)
   {
   register long				  status = zip_ok, i,
 					  sides, radius;

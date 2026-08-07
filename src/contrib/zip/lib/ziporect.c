@@ -248,7 +248,7 @@ long ziporect__Clear_Object(struct ziporect *self, zip_type_figure figure, zip_t
   return  status;
   }
 
-static Draw(struct ziporect *self, zip_type_figure figure, zip_type_pane pane, short action)
+static int Draw(struct ziporect *self, zip_type_figure figure, zip_type_pane pane, short action)
   {
   register long				  status = zip_ok,
 					  left = window_x_point, top = window_y_point,

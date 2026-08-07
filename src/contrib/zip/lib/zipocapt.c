@@ -65,7 +65,7 @@ END-SPECIFICATION  ************************************************************/
 static int Compute_Handle_Positions( struct zipocapt *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3 );
 static int Draw();
 
-static Draw();
+static int Draw();
 static int Compute_Handle_Positions( struct zipocapt *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3 );
 static enum view_MouseAction Accept_Caption_Character( struct zipocapt *self, zip_type_pane pane, char c, enum view_MouseAction action, long x, long y, long clicks );
 
@@ -223,7 +223,7 @@ long zipocapt__Clear_Object(struct zipocapt *self, zip_type_figure figure, zip_t
   return  status;
   }
 
-static Draw(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane)
+static int Draw(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register struct fontdesc		 *font, *current_font =

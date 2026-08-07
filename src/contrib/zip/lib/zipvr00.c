@@ -241,9 +241,9 @@ int zipprint_Write_Print_Datastream_Header(struct zipprint *self)
 	       PrintPrefix );
       }
       else
-      fprintf( PrintFile, "%s %d %d translate  %% Portrait Mode\n",
+      fprintf( PrintFile, "%s %d %ld translate  %% Portrait Mode\n",
 	       PrintPrefix, 0, -(H-17) );
-    fprintf( PrintFile, "%s /width %d def /height %d def  %% Set Clip Rectangle\n",
+    fprintf( PrintFile, "%s /width %ld def /height %ld def  %% Set Clip Rectangle\n",
 	     PrintPrefix, IW72, IH72 );
     fprintf( PrintFile, "%s newpath 0 0 moveto\n", PrintPrefix );
     fprintf( PrintFile, "%s 0 height lineto width height lineto\n", PrintPrefix );
@@ -433,7 +433,7 @@ long zipprint__Draw_Multi_Line(struct zipprint *self, int npoints, int x_origin,
       fprintf( PrintFile, "\n" );
       i += count;
       }
-    if (remainder) fprintf( PrintFile,"%s %d zip_Poly_Line\n", PrintPrefix, remainder );
+    if (remainder) fprintf( PrintFile,"%s %ld zip_Poly_Line\n", PrintPrefix, remainder );
     }
   OUT(zipprint__Draw_Multi_Line);
   }
@@ -641,7 +641,7 @@ long zipprint__Draw_Ellipse(struct zipprint *self, int x_center, int y_center, i
   OUT(zipprint__Draw_Ellipse);
   }
 
-zipprint__Draw_Arc( self, x_center, y_center,
+long zipprint__Draw_Arc( self, x_center, y_center,
 		    x_radius, y_radius, x_start, y_start, x_end, y_end )
   register struct zipprint	         *self;
   register long				  x_center, y_center,
@@ -685,7 +685,7 @@ zipprint__Draw_Arc( self, x_center, y_center,
     }
   }
 
-zipprint__Arc_To( self, x_center, y_center, x_radius,
+long zipprint__Arc_To( self, x_center, y_center, x_radius,
 		  y_radius, x_start, y_start, x_end, y_end )
   register struct zipprint	         *self;
   register int				  x_center, y_center;

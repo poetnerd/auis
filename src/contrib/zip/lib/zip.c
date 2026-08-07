@@ -136,9 +136,9 @@ boolean zip__InitializeClass(struct classheader *classID)
   }
 
 
-static Generate_Temp_File();
-static Write_View_Info();
-static Write_Object_Info();
+static int Generate_Temp_File();
+static int Write_View_Info();
+static int Write_Object_Info();
 
 static long Init_Message_Writer();
 static long Init_Message_Clearer();
@@ -315,23 +315,23 @@ long zip__Write(struct zip *self, FILE *file, long id, int level)
   return (long) self;
   }
 
-static Write_View_Info(struct zip *self, FILE *file)
+static int Write_View_Info(struct zip *self, FILE *file)
   {
   if ( DesiredWidth )
-    fprintf( file, "%%ViewWidth %d\n", DesiredWidth );
+    fprintf( file, "%%ViewWidth %ld\n", DesiredWidth );
   if ( DesiredHeight )
-    fprintf( file, "%%ViewHeight %d\n", DesiredHeight );
+    fprintf( file, "%%ViewHeight %ld\n", DesiredHeight );
   }
 
-static Write_Object_Info(struct zip *self, FILE *file)
+static int Write_Object_Info(struct zip *self, FILE *file)
   {
   if ( ObjectWidth )
-    fprintf( file, "%%ObjectWidth %d\n", ObjectWidth );
+    fprintf( file, "%%ObjectWidth %ld\n", ObjectWidth );
   if ( ObjectHeight )
-    fprintf( file, "%%ObjectHeight %d\n", ObjectHeight );
+    fprintf( file, "%%ObjectHeight %ld\n", ObjectHeight );
   }
 
-static Generate_Temp_File(struct zip *self, FILE *file, char **generated_file_name)
+static int Generate_Temp_File(struct zip *self, FILE *file, char **generated_file_name)
   {
   register long			      status = dataobject_NOREADERROR;
   static char			     *temp_name_template = "/tmp/ZIPxxxxxx",

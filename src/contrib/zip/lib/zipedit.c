@@ -292,17 +292,17 @@ static struct keymap		     *class_keymap;
 #define  Reset_pending_palettes	      Action ^= pending_palettes
 
 static void Accept_Character( struct zipedit *self, char c );
-static Build_Menu();
-static Lighten_Background();
+static int Build_Menu();
+static int Lighten_Background();
 static void Accept_Character( struct zipedit *self, char c );
-static Pending_Delete();
-static Pending_Palettes();
-static Pending_Coordinates();
-static Pending_Grid();
-static Pending_Double_Grid();
-static Pending_Redisplay();
-static Pending_Redraw();
-static Pending_Halve_Grid();
+static int Pending_Delete();
+static int Pending_Palettes();
+static int Pending_Coordinates();
+static int Pending_Grid();
+static int Pending_Double_Grid();
+static int Pending_Redisplay();
+static int Pending_Redraw();
+static int Pending_Halve_Grid();
 
 boolean zipedit__InitializeClass(struct classheader *classID)
   {
@@ -312,7 +312,7 @@ boolean zipedit__InitializeClass(struct classheader *classID)
 /*===debug=1;===*/
   /*IN(zipedit__InitializeClass );*/
   class_keymap = keymap_New();
-  proc = proctable_DefineProc( "self-insert", Accept_Character,
+  proc = proctable_DefineProc( "self-insert", (procedure)Accept_Character,
 				&zipedit_classinfo, NULL, "Enter Character" );
   string[1] = 0;
   for ( *string = ' '; *string < 127; (*string)++ )
@@ -646,7 +646,7 @@ Hide_Palettes_Command( self )	    register struct zipedit     *self;
   {  Manipulate_Pane( self, pending_palettes );  }
 ===*/
 
-static Insert_File_By_Name(struct zipedit *self, char *name)
+static int Insert_File_By_Name(struct zipedit *self, char *name)
   {
   register int			      status = zip_ok;
   char				      msg[512];
@@ -801,7 +801,7 @@ static void Background_Command(struct zipedit *self)
 	}
 	else
 	{
-	sprintf( msg, "ZipEdit ERROR: Failed to Set Background '%s', Status = %d", reply, status );
+	sprintf( msg, "ZipEdit ERROR: Failed to Set Background '%s', Status = %ld", reply, status );
 	zipview_Announce( View, msg );
 	}
       }
@@ -858,7 +858,7 @@ int zipedit_Display_Background_Pane(struct zipedit *self, zip_type_pane pane)
   return status;
   }
 
-static Lighten_Background(struct zipedit *self)
+static int Lighten_Background(struct zipedit *self)
   {
   register zip_type_pane	      pane = Pane;
   register long			      left = zipview_Pane_Left( View, pane )+1,
@@ -1160,7 +1160,7 @@ static struct bind_Description	      bound_menu[] =
 NULL
 };
 
-static
+static int
 Build_Menu()
   {
   IN(Build_Menu);
@@ -1181,7 +1181,7 @@ static void Accept_Character(struct zipedit *self, char c)
   OUT(Accept_Character);
   }
 
-static Pending_Delete(struct zipedit *self, zip_type_pane pane)
+static int Pending_Delete(struct zipedit *self, zip_type_pane pane)
   {
   register zip_type_figure	     figure;
 
@@ -1219,7 +1219,7 @@ int zipedit_Hide_Selection_Menu(struct zipedit *self)
   zipview_PostMenus( View, Menu );
   }
 
-static Pending_Palettes(struct zipedit *self, zip_type_pane pane)
+static int Pending_Palettes(struct zipedit *self, zip_type_pane pane)
   {
   register long			    mask = menulist_GetMask( Menu );
 
@@ -1240,7 +1240,7 @@ static Pending_Palettes(struct zipedit *self, zip_type_pane pane)
   OUT(Pending_Palettes);
   }
 
-static Pending_Coordinates(struct zipedit *self, zip_type_pane pane)
+static int Pending_Coordinates(struct zipedit *self, zip_type_pane pane)
   {
   register long			    mask = menulist_GetMask( Menu );
 
@@ -1261,7 +1261,7 @@ static Pending_Coordinates(struct zipedit *self, zip_type_pane pane)
   OUT(Pending_Coordinates);
   }
 
-static Pending_Grid(struct zipedit *self, zip_type_pane pane)
+static int Pending_Grid(struct zipedit *self, zip_type_pane pane)
   {
   register long			    mask = menulist_GetMask( Menu );
 
@@ -1282,7 +1282,7 @@ static Pending_Grid(struct zipedit *self, zip_type_pane pane)
   OUT(Pending_Grid);
   }
 
-static Pending_Double_Grid(struct zipedit *self, zip_type_pane pane)
+static int Pending_Double_Grid(struct zipedit *self, zip_type_pane pane)
   {
   IN(Pending_Double_Grid);
   zipedit_Double_Pane_Grid( self, pane );
@@ -1290,7 +1290,7 @@ static Pending_Double_Grid(struct zipedit *self, zip_type_pane pane)
   OUT(Pending_Double_Grid);
   }
 
-static Pending_Redisplay(struct zipedit *self, zip_type_pane pane)
+static int Pending_Redisplay(struct zipedit *self, zip_type_pane pane)
   {
   IN(Pending_Redisplay);
   Reset_pending_redisplay;
@@ -1298,7 +1298,7 @@ static Pending_Redisplay(struct zipedit *self, zip_type_pane pane)
   OUT(Pending_Redisplay);
   }
 
-static Pending_Redraw(struct zipedit *self, zip_type_pane pane)
+static int Pending_Redraw(struct zipedit *self, zip_type_pane pane)
   {
   IN(Pending_Redraw);
   Reset_pending_redraw;
@@ -1306,7 +1306,7 @@ static Pending_Redraw(struct zipedit *self, zip_type_pane pane)
   OUT(Pending_Redraw);
   }
 
-static Pending_Halve_Grid(struct zipedit *self, zip_type_pane pane)
+static int Pending_Halve_Grid(struct zipedit *self, zip_type_pane pane)
   {
   IN(Pending_Halve_Grid);
   zipedit_Halve_Pane_Grid( self, pane );

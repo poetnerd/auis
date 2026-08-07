@@ -160,11 +160,11 @@ static boolean debug=FALSE;
 #define  InchWidth		(Printing->zip_printing_inch_width)
 #define  InchHeight		(Printing->zip_printing_inch_height)
 
-static Print_Figure();
-static Print_Image();
+static int Print_Figure();
+static int Print_Image();
 static int Print_Inferior_Image();
-static Compute_Printing_Slug_Stretch_Factors();
-static Set_Printing_Characteristics();
+static int Compute_Printing_Slug_Stretch_Factors();
+static int Set_Printing_Characteristics();
 
 boolean zipprint__InitializeObject(struct classheader *classID, struct zipprint *self)
   {
@@ -328,7 +328,7 @@ long zipprint__Print_Figure(struct zipprint *self, zip_type_figure figure, zip_t
   return  status;
   }
 
-static Print_Figure(struct zipprint *self, zip_type_figure figure, zip_type_pane pane)
+static int Print_Figure(struct zipprint *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long			        status = zip_ok;
 
@@ -360,7 +360,7 @@ long zipprint__Print_Image(struct zipprint *self, zip_type_image image, zip_type
   return  status;
   }
 
-static Print_Image(struct zipprint *self, zip_type_image image, zip_type_pane pane)
+static int Print_Image(struct zipprint *self, zip_type_image image, zip_type_pane pane)
   {
   register long			        status = zip_ok;
   register zip_type_figure		figure_ptr;
@@ -445,7 +445,7 @@ long zipprint__Print_Pane(struct zipprint *self, zip_type_pane pane)
   return  status;
   }
 
-static Compute_Printing_Slug_Stretch_Factors(struct zipprint *self, zip_type_pane pane)
+static int Compute_Printing_Slug_Stretch_Factors(struct zipprint *self, zip_type_pane pane)
   {
   register long				  greatest_x=1, least_x=1, greatest_y=1, least_y=1;
 
@@ -485,7 +485,7 @@ static Compute_Printing_Slug_Stretch_Factors(struct zipprint *self, zip_type_pan
   OUT(Compute_Printing_Slug_Stretch_Factors);
   }
 
-static Set_Printing_Characteristics(struct zipprint *self, zip_type_pane pane, zip_type_figure figure)
+static int Set_Printing_Characteristics(struct zipprint *self, zip_type_pane pane, zip_type_figure figure)
   {
   IN(Set_Printing_Characteristics);
   if ( pane->zip_pane_zoom_level >= 0 )

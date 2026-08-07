@@ -112,8 +112,8 @@ END-SPECIFICATION  ************************************************************/
 static int Compute_Handle_Positions();
 static int Draw();
 
-static Draw();
-static Compute_Handle_Positions();
+static int Draw();
+static int Compute_Handle_Positions();
 
 char zipoline__Object_Icon(struct zipoline *self)
   {
@@ -210,7 +210,7 @@ long zipoline__Clear_Object(struct zipoline *self, zip_type_figure figure, zip_t
   return  status;
   }
 
-static Draw(struct zipoline *self, zip_type_figure figure, zip_type_pane pane)
+static int Draw(struct zipoline *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register unsigned char		  width;
@@ -342,7 +342,7 @@ long zipoline__Hide_Object_Points(struct zipoline *self, zip_type_figure figure,
   return  status;
   }
 
-static Compute_Handle_Positions(struct zipoline *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3)
+static int Compute_Handle_Positions(struct zipoline *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3)
   {
   *X1 = zipview_X_Point_To_Pixel( View, pane, figure, figure_x_point );
   *X2 = *X1 + (window_x_points(0) - window_x_point)/2;

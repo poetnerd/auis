@@ -106,17 +106,17 @@ extern int symtab_destroy();		/* defined zipd000.c */
 #define	 Data			      self
 
 
-static
+static int
 Extract_Stream_Name();
-static
+static int
 Extract_Stream_File_Name();
-static
+static int
 Extract_Stream_File_Path();
 static int
 Open_Via_Alternate_Paths();
 static int
 Open_Alternate();
-static
+static int
 Reset_Stream_File_Open_States();
 static int
 Identify_Paths();
@@ -609,7 +609,7 @@ long zip__Set_Stream_Extrema(struct zip *self, zip_type_stream stream, zip_type_
   return zip_ok;
   }
 
-static Extract_Stream_Name(struct zip *self, char *name, char **stream_name)
+static int Extract_Stream_Name(struct zip *self, char *name, char **stream_name)
   {
   register char			     *start_ptr, *end_ptr;
 
@@ -632,7 +632,7 @@ static Extract_Stream_Name(struct zip *self, char *name, char **stream_name)
   OUT(Extract_Stream_Name);
   }
 
-static Extract_Stream_File_Name(struct zip *self, char *name, char **file_name)
+static int Extract_Stream_File_Name(struct zip *self, char *name, char **file_name)
   {
   register char			     *start_ptr, *end_ptr;
 
@@ -654,7 +654,7 @@ static Extract_Stream_File_Name(struct zip *self, char *name, char **file_name)
   OUT(Extract_Stream_File_Name);
   }
 
-static Extract_Stream_File_Path(struct zip *self, char *name, char **path_name)
+static int Extract_Stream_File_Path(struct zip *self, char *name, char **path_name)
   {
   register char			     *start_ptr, *end_ptr;
 
@@ -781,7 +781,7 @@ int zip_Close_Stream_File(struct zip *self, zip_type_stream stream)
   return zip_ok;
   }
 
-static Reset_Stream_File_Open_States(struct zip *self, zip_type_stream stream)
+static int Reset_Stream_File_Open_States(struct zip *self, zip_type_stream stream)
   {
 /*===*/
   }

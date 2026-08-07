@@ -68,9 +68,9 @@ static int Draw_Basic_Body();
 static int Draw_Basic_Style( struct zipoarrow *self, zip_type_figure figure, zip_type_pane pane, char fill );
 static int Feather_Points( zip_type_pixel current_x, zip_type_pixel current_y, zip_type_pixel prior_x, zip_type_pixel prior_y, zip_type_pixel *x1, zip_type_pixel *y1, zip_type_pixel *x2, zip_type_pixel *y2 );
 
-static Draw();
+static int Draw();
 static int Draw_Basic_Style( struct zipoarrow *self, zip_type_figure figure, zip_type_pane pane, char fill );
-static Draw_Basic_Body();
+static int Draw_Basic_Body();
 static int Feather_Points( zip_type_pixel current_x, zip_type_pixel current_y, zip_type_pixel prior_x, zip_type_pixel prior_y, zip_type_pixel *x1, zip_type_pixel *y1, zip_type_pixel *x2, zip_type_pixel *y2 );
 
 
@@ -219,7 +219,7 @@ long zipoarrow__Clear_Object(struct zipoarrow *self, zip_type_figure figure, zip
   return  status;
   }
 
-static Draw(struct zipoarrow *self, zip_type_figure figure, zip_type_pane pane)
+static int Draw(struct zipoarrow *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register unsigned char		  width;
@@ -240,7 +240,7 @@ static Draw(struct zipoarrow *self, zip_type_figure figure, zip_type_pane pane)
   return  status;
   }
 
-static Draw_Basic_Style(struct zipoarrow *self, zip_type_figure figure, zip_type_pane pane, char fill)
+static int Draw_Basic_Style(struct zipoarrow *self, zip_type_figure figure, zip_type_pane pane, char fill)
   {
   long					  current_x, current_y, prior_x, prior_y;
   struct point				  points[3];
@@ -274,7 +274,7 @@ static Draw_Basic_Style(struct zipoarrow *self, zip_type_figure figure, zip_type
   OUT(Draw_Basic_Style);
   }
 
-static Draw_Basic_Body(struct zipoarrow *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *current_x, zip_type_pixel *current_y, zip_type_pixel *prior_x, zip_type_pixel *prior_y)
+static int Draw_Basic_Body(struct zipoarrow *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *current_x, zip_type_pixel *current_y, zip_type_pixel *prior_x, zip_type_pixel *prior_y)
   {
   register long				  i;
 

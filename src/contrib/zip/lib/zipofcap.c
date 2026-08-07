@@ -112,7 +112,7 @@ static int Compute_Handle_Positions( struct zipofcapt *self, zip_type_figure fig
 static int Draw();
 
 static enum view_MouseAction Accept_Caption_Character( struct zipofcapt *self, zip_type_pane pane, char c, enum view_MouseAction action, long x, long y, long clicks );
-static Draw();
+static int Draw();
 static int Compute_Handle_Positions( struct zipofcapt *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3 );
 
 char zipofcapt__Object_Icon(struct zipofcapt *self)
@@ -277,7 +277,7 @@ long zipofcapt__Clear_Object(struct zipofcapt *self, zip_type_figure figure, zip
   return  status;
   }
 
-static Draw(struct zipofcapt *self, zip_type_figure figure, zip_type_pane pane)
+static int Draw(struct zipofcapt *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register struct fontdesc		 *font, *current_font =
@@ -433,7 +433,7 @@ char font_style_name[5];
       strcat( font_style_name, "b" );
     if ( font_style & fontdesc_Italic )
       strcat( font_style_name, "i" );
-    sprintf( buffer, "%s%s%d", font_family, font_style_name, font_size );
+    sprintf( buffer, "%s%s%ld", font_family, font_style_name, font_size );
 }
     DEBUGst(Font-name,buffer);
     zip_Set_Figure_Font( Data, figure, buffer );

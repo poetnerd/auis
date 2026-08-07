@@ -179,16 +179,16 @@ extern int apt_MM_Compare();			/* defined zipv.c */
 static int Allocate_Pane_Object();
 static int Deallocate_Pane_Object();
 static int Deallocate_Pane_Object();
-static Assign_Pane_Stream_Attributes( );
-static Assign_Pane_Image_Attributes();
-static Assign_Pane_Figure_Attributes();
-static Mark_Pane_Objects_Unexposed();
-static Mark_Pane_Image_Unexposed();
-static Coordinate_Block_Pane();
-static Coordinate_Nested_Pane();
-static Compute_Pane_Stream_Stretch_Factors();
-static Compute_Pane_Image_Stretch_Factors();
-static Compute_Pane_Figure_Stretch_Factors();
+static int Assign_Pane_Stream_Attributes( );
+static int Assign_Pane_Image_Attributes();
+static int Assign_Pane_Figure_Attributes();
+static int Mark_Pane_Objects_Unexposed();
+static int Mark_Pane_Image_Unexposed();
+static int Coordinate_Block_Pane();
+static int Coordinate_Nested_Pane();
+static int Compute_Pane_Stream_Stretch_Factors();
+static int Compute_Pane_Image_Stretch_Factors();
+static int Compute_Pane_Figure_Stretch_Factors();
 
 long zipview__Create_Pane(struct zipview *self, zip_type_pane *pane, char *name, struct rectangle *block, long attributes)
   {
@@ -231,7 +231,7 @@ static int Allocate_Pane_Object(struct zipview *self, zip_type_pane *pane, char 
   {
   register int				  status = zip_ok;
   register zip_type_pane_chain		  pane_link, prior_link;
-  static				  pane_serial = 1;
+  static int			  pane_serial = 1;
   char					  pane_name[257];
 
   IN(Allocate_Pane_Object);
@@ -1160,7 +1160,7 @@ long zipview__Y_Point_Delta(struct zipview *self, zip_type_pane pane, long y_del
   return points;
   }
 
-static Assign_Pane_Stream_Attributes(struct zipview *self, zip_type_pane pane, zip_type_stream stream)
+static int Assign_Pane_Stream_Attributes(struct zipview *self, zip_type_pane pane, zip_type_stream stream)
   {
 /*===  Mark_Pane_Objects_Unexposed( self, pane );===*/
   pane->zip_pane_attributes.zip_pane_attribute_stream_source = false;
@@ -1185,7 +1185,7 @@ static Assign_Pane_Stream_Attributes(struct zipview *self, zip_type_pane pane, z
   return  zip_ok;
   }
 
-static Assign_Pane_Image_Attributes(struct zipview *self, zip_type_pane pane, zip_type_image image)
+static int Assign_Pane_Image_Attributes(struct zipview *self, zip_type_pane pane, zip_type_image image)
   {
   Mark_Pane_Objects_Unexposed( self, pane );
   pane->zip_pane_attributes.zip_pane_attribute_image_source  = false;
@@ -1209,7 +1209,7 @@ static Assign_Pane_Image_Attributes(struct zipview *self, zip_type_pane pane, zi
   return  zip_ok;
   }
 
-static Assign_Pane_Figure_Attributes(struct zipview *self, zip_type_pane pane, zip_type_figure figure)
+static int Assign_Pane_Figure_Attributes(struct zipview *self, zip_type_pane pane, zip_type_figure figure)
   {
   Mark_Pane_Objects_Unexposed( self, pane );
   pane->zip_pane_attributes.zip_pane_attribute_figure_source = false;
@@ -1233,7 +1233,7 @@ static Assign_Pane_Figure_Attributes(struct zipview *self, zip_type_pane pane, z
   return  zip_ok;
   }
 
-static Mark_Pane_Objects_Unexposed(struct zipview *self, zip_type_pane pane)
+static int Mark_Pane_Objects_Unexposed(struct zipview *self, zip_type_pane pane)
   {
   register zip_type_image		  image;
 
@@ -1265,7 +1265,7 @@ static Mark_Pane_Objects_Unexposed(struct zipview *self, zip_type_pane pane)
   OUT(Mark_Pane_Objects_Unexposed);
   }
 
-static Mark_Pane_Image_Unexposed(struct zipview *self, zip_type_pane pane, zip_type_image image)
+static int Mark_Pane_Image_Unexposed(struct zipview *self, zip_type_pane pane, zip_type_image image)
   {
   register zip_type_figure		  figure = image->zip_image_figure_anchor;
 
@@ -1300,7 +1300,7 @@ int zipview_Recoordinate_Panes(struct zipview *self)
   return  zip_ok;
   }
 
-static Coordinate_Block_Pane(struct zipview *self, zip_type_pane pane)
+static int Coordinate_Block_Pane(struct zipview *self, zip_type_pane pane)
   {
   IN(Coordinate_Block_Pane);
   pane->zip_pane_x_origin = pane->zip_pane_x_origin_offset =
@@ -1323,7 +1323,7 @@ static Coordinate_Block_Pane(struct zipview *self, zip_type_pane pane)
   OUT(Coordinate_Block_Pane);
   }
 
-static Coordinate_Nested_Pane(struct zipview *self, zip_type_pane pane)
+static int Coordinate_Nested_Pane(struct zipview *self, zip_type_pane pane)
   {
   IN(Coordinate_Nested_Pane);
   pane->zip_pane_x_origin = pane->zip_pane_x_origin_offset =
@@ -1368,7 +1368,7 @@ int zipview_Compute_Pane_Stretch_Factors(struct zipview *self, zip_type_pane pan
   OUT(zipview_Compute_Pane_Stretch_Factors);
   }
 
-static Compute_Pane_Stream_Stretch_Factors(struct zipview *self, zip_type_pane pane, zip_type_stream stream)
+static int Compute_Pane_Stream_Stretch_Factors(struct zipview *self, zip_type_pane pane, zip_type_stream stream)
   {
   register long				  width, height;
 
@@ -1414,7 +1414,7 @@ static Compute_Pane_Stream_Stretch_Factors(struct zipview *self, zip_type_pane p
   OUT(Compute_Pane_Stream_Stretch_Factors);
   }
 
-static Compute_Pane_Image_Stretch_Factors(struct zipview *self, zip_type_pane pane, zip_type_image image)
+static int Compute_Pane_Image_Stretch_Factors(struct zipview *self, zip_type_pane pane, zip_type_image image)
   {
   register long				  width, height;
 
@@ -1468,7 +1468,7 @@ static Compute_Pane_Image_Stretch_Factors(struct zipview *self, zip_type_pane pa
   OUT(Compute_Pane_Image_Stretch_Factors);
   }
 
-static Compute_Pane_Figure_Stretch_Factors(struct zipview *self, zip_type_pane pane, zip_type_figure figure)
+static int Compute_Pane_Figure_Stretch_Factors(struct zipview *self, zip_type_pane pane, zip_type_figure figure)
   { 
   IN(Compute_Pane_Figure_Stretch_Factors);
 /*===

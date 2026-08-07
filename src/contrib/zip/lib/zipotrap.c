@@ -138,7 +138,7 @@ END-SPECIFICATION  ************************************************************/
 static int Compute_Handle_Positions( struct zipotrap *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *X4, zip_type_pixel *X5, zip_type_pixel *X6, zip_type_pixel *X7, zip_type_pixel *X8, zip_type_pixel *X9, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3 );
 static int Draw();
 
-static Draw();
+static int Draw();
 static int Compute_Handle_Positions( struct zipotrap *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *X4, zip_type_pixel *X5, zip_type_pixel *X6, zip_type_pixel *X7, zip_type_pixel *X8, zip_type_pixel *X9, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3 );
 
 char zipotrap__Object_Icon(struct zipotrap *self)
@@ -241,7 +241,7 @@ long zipotrap__Clear_Object(struct zipotrap *self, zip_type_figure figure, zip_t
   return  status;
   }
 
-static Draw(struct zipotrap *self, zip_type_figure figure, zip_type_pane pane)
+static int Draw(struct zipotrap *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok, shade;
   register long				  i, L1, L2, X1, Y1, X2, Y2,

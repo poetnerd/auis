@@ -297,22 +297,22 @@ static struct keymap		     *class_keymap;
 #define  Reset_pending_scale          Action ^= pending_scale
 
 
-static Build_Menu();
-static Initialize_Printing();
-static Pending_Hit();
-static Pending_Redisplay();
-static Pending_Redraw();
-static Pending_Zoom();
-static Pending_Scale();
-static Pending_Pan();
-static Pending_ReceiveInputFocus();
-static Pending_LoseInputFocus();
-static Pending_Edit();
-static Pending_Browse();
-static Highlight_View();
-static Normalize_View();
-static Prepare_Default_Stream();
-static Prepare_Default_Pane();
+static int Build_Menu();
+static int Initialize_Printing();
+static int Pending_Hit();
+static int Pending_Redisplay();
+static int Pending_Redraw();
+static int Pending_Zoom();
+static int Pending_Scale();
+static int Pending_Pan();
+static int Pending_ReceiveInputFocus();
+static int Pending_LoseInputFocus();
+static int Pending_Edit();
+static int Pending_Browse();
+static int Highlight_View();
+static int Normalize_View();
+static int Prepare_Default_Stream();
+static int Prepare_Default_Pane();
 
 
 boolean zipview__InitializeClass(struct classheader *classID)
@@ -831,7 +831,7 @@ long zipview__Print_Pane(struct zipview *self, zip_type_pane pane)
   return  status;
   }
 
-static Initialize_Printing(struct zipview *self)
+static int Initialize_Printing(struct zipview *self)
   {
   register int			      i, status = zip_ok;
 
@@ -1210,7 +1210,7 @@ static struct bind_Description 	      bound_menu[] =
 NULL
 };
 
-static
+static int
 Build_Menu()
   {
   IN(Build_Menu);
@@ -1218,7 +1218,7 @@ Build_Menu()
   OUT(Build_Menu);
   }
 
-static Pending_Hit(struct zipview *self)
+static int Pending_Hit(struct zipview *self)
   {
   IN(Pending_Hit);
   Reset_pending_hit;
@@ -1240,7 +1240,7 @@ static Pending_Hit(struct zipview *self)
   OUT(Pending_Hit);
   }
 
-static Pending_Redisplay(struct zipview *self)
+static int Pending_Redisplay(struct zipview *self)
   {
   IN(Pending_Redisplay);
   DEBUGxt(Action, Action);
@@ -1252,7 +1252,7 @@ static Pending_Redisplay(struct zipview *self)
   OUT(Pending_Redisplay);
   }
 
-static Pending_Redraw(struct zipview *self)
+static int Pending_Redraw(struct zipview *self)
   {
   IN(Pending_Redraw);
   DEBUGxt(Action, Action);
@@ -1264,7 +1264,7 @@ static Pending_Redraw(struct zipview *self)
   OUT(Pending_Redraw);
   }
 
-static Pending_Zoom(struct zipview *self)
+static int Pending_Zoom(struct zipview *self)
   {
   register zip_type_point	    x, y;
 
@@ -1279,7 +1279,7 @@ static Pending_Zoom(struct zipview *self)
   OUT(Pending_Zoom);
   }
 
-static Pending_Scale(struct zipview *self)
+static int Pending_Scale(struct zipview *self)
   {
   register zip_type_point	    x, y;
 
@@ -1294,7 +1294,7 @@ static Pending_Scale(struct zipview *self)
   OUT(Pending_Scale);
   }
 
-static Pending_Pan(struct zipview *self)
+static int Pending_Pan(struct zipview *self)
   {
   IN(Pending_Pan);
   Reset_pending_pan;
@@ -1304,7 +1304,7 @@ static Pending_Pan(struct zipview *self)
   OUT(Pending_Pan);
   }
 
-static Pending_ReceiveInputFocus(struct zipview *self)
+static int Pending_ReceiveInputFocus(struct zipview *self)
   {
   IN(Pending_ReceiveInputFocus);
   Reset_pending_receiveinputfocus;
@@ -1313,7 +1313,7 @@ static Pending_ReceiveInputFocus(struct zipview *self)
   OUT(Pending_ReceiveInputFocus);
   }
 
-static Pending_LoseInputFocus(struct zipview *self)
+static int Pending_LoseInputFocus(struct zipview *self)
   {
   IN(Pending_LoseInputFocus);
   Reset_pending_loseinputfocus;
@@ -1321,7 +1321,7 @@ static Pending_LoseInputFocus(struct zipview *self)
   OUT(Pending_LoseInputFocus);
   }
 
-static Pending_Edit(struct zipview *self)
+static int Pending_Edit(struct zipview *self)
   {
   register long			    i;
 
@@ -1355,7 +1355,7 @@ static Pending_Edit(struct zipview *self)
   OUT(Pending_Edit);
   }
 
-static Pending_Browse(struct zipview *self)
+static int Pending_Browse(struct zipview *self)
   {
   IN(Pending_Browse);
 Set_pending_browse;
@@ -1368,7 +1368,7 @@ Set_pending_browse;
   OUT(Pending_Browse);
   }
 
-static Highlight_View(struct zipview *self)
+static int Highlight_View(struct zipview *self)
   {
   IN(Highlight_View);
   zipview_SetTransferMode( self, graphic_BLACK );
@@ -1378,7 +1378,7 @@ static Highlight_View(struct zipview *self)
   OUT(Highlight_View);
   }
 
-static Normalize_View(struct zipview *self)
+static int Normalize_View(struct zipview *self)
   {
   IN(Normalize_View);
   zipview_SetTransferMode( self, graphic_WHITE );
@@ -1388,7 +1388,7 @@ static Normalize_View(struct zipview *self)
   OUT(Normalize_View);
   }
 
-static Prepare_Default_Pane(struct zipview *self)
+static int Prepare_Default_Pane(struct zipview *self)
   {
   register long			      status = zip_ok;
   char				      pane_name[257];

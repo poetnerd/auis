@@ -470,7 +470,7 @@ static int ZIP_Default_Exception_Handler(struct zip *self)
 {
     IN(ZIP_Default_Exception_Handler);
     /*===*/
-    printf("ZIP Default Exception Handler -- Facility '%s'  Status '%d'\n",
+    printf("ZIP Default Exception Handler -- Facility '%s'  Status '%ld'\n",
 	    Facility, Status );
     /*===*/
     OUT(ZIP_Default_Exception_Handler);

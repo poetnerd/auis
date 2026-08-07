@@ -82,7 +82,7 @@ static int Set_Crosshairs();
 
 #define  panning_factor			  16
 
-static Set_Crosshairs();
+static int Set_Crosshairs();
 static int Blit_Pane();
 
 long zipview__Pan_Pane(struct zipview *self, zip_type_pane pane, zip_type_pixel x_offset, zip_type_pixel y_offset)
@@ -274,7 +274,7 @@ long zipview__Terminate_Panning(struct zipview *self, zip_type_pane pane, long x
   return zip_ok;
   }
 
-static Set_Crosshairs(struct zipview *self, zip_type_pane pane, int x, int y)
+static int Set_Crosshairs(struct zipview *self, zip_type_pane pane, int x, int y)
   {
   IN(Set_Crosshairs);
   zipview_SetTransferMode( self, graphic_INVERT );

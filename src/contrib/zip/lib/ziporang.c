@@ -129,7 +129,7 @@ END-SPECIFICATION  ************************************************************/
 static int Draw();
 
 
-static Draw();
+static int Draw();
 
 char ziporang__Object_Icon(struct ziporang *self)
   {
@@ -230,7 +230,7 @@ long ziporang__Clear_Object(struct ziporang *self, zip_type_figure figure, zip_t
   return  status;
   }
 
-static Draw(struct ziporang *self, zip_type_figure figure, zip_type_pane pane, long action)
+static int Draw(struct ziporang *self, zip_type_figure figure, zip_type_pane pane, long action)
   {
   register long				  status = zip_ok;
   register long				  radius, left, top, width, height;

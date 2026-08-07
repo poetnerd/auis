@@ -149,11 +149,11 @@ extern int symtab_add();
 
 
 static int Destroy_Inferior_Image();
-static Free_Image();
-static Propagate_Image_Stream_Ptr();
+static int Free_Image();
+static int Propagate_Image_Stream_Ptr();
 static int Adjust_Inferior_Image_Point_Suite();
 
-static Allocate_Image(struct zip *self, struct zip_stream *stream, struct zip_image **image, char *name)
+static int Allocate_Image(struct zip *self, struct zip_stream *stream, struct zip_image **image, char *name)
   {
   register int			      status = zip_ok;
 
@@ -299,7 +299,7 @@ static int Destroy_Inferior_Image(struct zip *self, zip_type_image image)
   return  status;
   }
 
-static Free_Image(struct zip *self, zip_type_image image)
+static int Free_Image(struct zip *self, zip_type_image image)
   {
   IN(Free_Image);
   if ( image->zip_image_name )
@@ -379,7 +379,7 @@ long zip__Hook_Inferior_Image(struct zip *self, zip_type_image image, zip_type_i
   return status;
   }
 
-static Propagate_Image_Stream_Ptr(struct zip *self, zip_type_image image)
+static int Propagate_Image_Stream_Ptr(struct zip *self, zip_type_image image)
   {
   register zip_type_image	      image_ptr;
   register zip_type_image	      superior_image, peer_image;

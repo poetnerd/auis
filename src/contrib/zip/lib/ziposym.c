@@ -127,18 +127,18 @@ static char					 *Symbol_Algorithm(), *Pixel(), *Number(), *String(), *Skip_Colo
 static enum view_MouseAction			  Accept_Property_Hit( struct ziposymbol *self, zip_type_pane pane, char c, enum view_MouseAction action, long x, long y, long clicks );
 static long					  Show_Symbol_Dialog();
 
-static Draw();
-static Draw_Symbol();
+static int Draw();
+static int Draw_Symbol();
 static int Identify_Pathed_Symbol_Sets();
-static Open_Symbol_Set_File();
-static Open_File();
+static int Open_Symbol_Set_File();
+static int Open_File();
 static int Identify_Paths();
-static Draw_Set_Name();
+static int Draw_Set_Name();
 static long Show_Symbol_Dialog();
-static Show_Set_Symbols();
-static Highlight_Symbol();
-static Invert_Symbol();
-static Decline_Property_Hits();
+static int Show_Set_Symbols();
+static int Highlight_Symbol();
+static int Invert_Symbol();
+static int Decline_Property_Hits();
 
 
 boolean ziposymbol__InitializeObject(struct classheader *classID, struct ziposymbol *self)
@@ -309,7 +309,7 @@ long ziposymbol__Clear_Object(struct ziposymbol *self, zip_type_figure figure, z
   return  status;
   }
 
-static Draw(struct ziposymbol *self, zip_type_figure figure, zip_type_pane pane)
+static int Draw(struct ziposymbol *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register short			  left = window_x_point, top = window_y_point,
@@ -421,7 +421,7 @@ long ziposymbol__Print_Object(struct ziposymbol *self, zip_type_figure figure, z
   return  status;
   }
 
-static
+static int
 Draw_Symbol( self, figure, pane, algorithm, left, top, width, height,
 	     x_factor, y_factor, print )
   register struct ziposymbol		 *self;
@@ -794,7 +794,7 @@ Draw_Symbol( self, figure, pane, algorithm, left, top, width, height,
   return  status;
   }
   /****************************************************************/
-static Filter(DIRENT_TYPE *entry)
+static int Filter(const DIRENT_TYPE *entry)
   {
   register char			 *end = entry->d_name + strlen(entry->d_name);
 
@@ -805,7 +805,7 @@ static Filter(DIRENT_TYPE *entry)
 	      (*(end-3) == 'C'  &&  *(end-2) == 'K'  &&  *(end-1) == 'P') ) ) );
   }
 
-static Identify_Symbol_Sets(struct ziposymbol *self)
+static int Identify_Symbol_Sets(struct ziposymbol *self)
   {
   register long				  status = zip_ok, i;
 
@@ -937,7 +937,7 @@ static struct symbol * Symbol_Set_Vector(struct ziposymbol *self, char *set_name
   return  symbol_vector;
   }
 
-static Open_Symbol_Set_File(struct ziposymbol *self, struct symbol_set *set)
+static int Open_Symbol_Set_File(struct ziposymbol *self, struct symbol_set *set)
   {
   register long				  status = zip_ok,
 					  length, count = 0;
@@ -998,7 +998,7 @@ static Open_Symbol_Set_File(struct ziposymbol *self, struct symbol_set *set)
   return  status;
   }
 
-static Open_File(struct ziposymbol *self, struct symbol_set *set)
+static int Open_File(struct ziposymbol *self, struct symbol_set *set)
   {
   register long				  i, status = zip_failure;
   char					  buffer[512];
@@ -1165,7 +1165,7 @@ static char * Symbol_Algorithm(struct ziposymbol *self, zip_type_figure figure)
   return  algorithm;
   }
 
-static Highlight_Set_Name(struct ziposymbol *self, zip_type_pane pane, struct symbol_set *set)
+static int Highlight_Set_Name(struct ziposymbol *self, zip_type_pane pane, struct symbol_set *set)
   {
   register struct symbol_set		 *candidate = SymbolSets;
   register struct fontdesc		 *normal_font, *highlight_font;
@@ -1191,7 +1191,7 @@ static Highlight_Set_Name(struct ziposymbol *self, zip_type_pane pane, struct sy
   OUT(Highlight_Set_Name);
   }
 
-static Draw_Set_Name(struct ziposymbol *self, zip_type_pane pane, struct symbol_set *set, struct fontdesc *font)
+static int Draw_Set_Name(struct ziposymbol *self, zip_type_pane pane, struct symbol_set *set, struct fontdesc *font)
   {
   IN(Draw_Set_Name);
   zipview_Set_Clip_Area( View, pane, SVL, SVT + 40, SVW/3, SVH - 50 );
@@ -1265,7 +1265,7 @@ static long Show_Symbol_Dialog(struct ziposymbol *self, zip_type_pane pane)
   return  status;
   }
 
-static Show_Set_Symbols(struct ziposymbol *self, zip_type_pane pane, struct symbol_set *set)
+static int Show_Set_Symbols(struct ziposymbol *self, zip_type_pane pane, struct symbol_set *set)
   {
   register struct symbol		 *symbols;
   register short			  row = 0, col = 0, x, y,
@@ -1304,7 +1304,7 @@ static Show_Set_Symbols(struct ziposymbol *self, zip_type_pane pane, struct symb
   OUT(Show_Set_Symbols);
   }
 
-static Highlight_Symbol(struct ziposymbol *self, struct symbol_set *set, struct symbol *symbol)
+static int Highlight_Symbol(struct ziposymbol *self, struct symbol_set *set, struct symbol *symbol)
   {
   register struct symbol		 *candidate = set->set_symbols;
 
@@ -1328,7 +1328,7 @@ static Highlight_Symbol(struct ziposymbol *self, struct symbol_set *set, struct 
   OUT(Highlight_Symbol);
   }
 
-static Invert_Symbol(struct ziposymbol *self, struct symbol *symbol)
+static int Invert_Symbol(struct ziposymbol *self, struct symbol *symbol)
   {
   IN(Invert_Symbol);
   zipview_SetTransferMode( View, graphic_INVERT );
@@ -1420,7 +1420,7 @@ static enum view_MouseAction Accept_Property_Hit(struct ziposymbol *self, zip_ty
   return  action;
   }
 
-static Decline_Property_Hits(struct ziposymbol *self, zip_type_pane pane)
+static int Decline_Property_Hits(struct ziposymbol *self, zip_type_pane pane)
   {
   IN(Decline_Property_Hits);
   zipview_SetTransferMode( View, graphic_WHITE );

@@ -129,7 +129,7 @@ methods:
 macromethods:
 
   Set_Keyboard_Processor( anchor, processor ) \
-    {self->keyboard_processor = processor;self->keyboard_anchor = (long)anchor;}
+    {self->keyboard_processor = (enum view_MouseAction (*)())processor;self->keyboard_anchor = (long)anchor;}
 
   Set_Pending_Processor( anchor, processor ) \
     {self->pending_processor = processor;self->pending_anchor = (long)anchor;}

@@ -247,7 +247,7 @@ long zipopath__Clear_Object(struct zipopath *self, zip_type_figure figure, zip_t
   return  status;
   }
 
-static Draw(struct zipopath *self, zip_type_figure figure, zip_type_pane pane, short action)
+static int Draw(struct zipopath *self, zip_type_figure figure, zip_type_pane pane, short action)
   {
   register long				  status = zip_ok, i, count, id;
   register unsigned char		  shade, allocated = false,
