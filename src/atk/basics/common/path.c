@@ -71,7 +71,10 @@ static struct homestruct *homes = NULL;
 
 static char * strappend(char *dest, char *src)
 {
-	strcpy(dest, src);
+	/* dest and src both point into the same in-place path buffer
+	   inside FoldName -- strcpy's overlap check aborts under macOS
+	   fortify whenever they alias; memmove tolerates it. */
+	memmove(dest, src, strlen(src)+1);
 	return dest+strlen(dest);
 }
 
