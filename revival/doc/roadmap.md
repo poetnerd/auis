@@ -498,6 +498,31 @@ dependInstall`) run 2026-07-10: zero real `error:` lines tree-wide
 `bush.do`, `org.do`, `htmlview.do`, `strtbl.do`, `label.do`, and
 `gentlex` all reinstalled with fresh timestamps.
 
+- **`atk/basics/common/path.c`'s `strappend`/`FoldName` — found
+  2026-08-07, a 10th file/16th site the original tree-wide grep audit
+  missed.** `FoldName` compacts a path in place using two pointers
+  into the same buffer (`dest` trailing, `src` leading) while removing
+  `.`/`..` segments; the actual overlapping copy happens through a
+  wrapper function, `strappend`, not a literal `strcpy(x, x+n)` at the
+  call site — invisible to a textual grep, only findable by tracing
+  what each of `strappend`'s callers actually pass it. For a path with
+  no dot-segments at all (nearly every real file path), nothing gets
+  removed, so `dest` and `src` converge to the exact same address by
+  the final segment — a complete self-copy, the same "total overlap"
+  shape as the `bush.c` site below, not merely a partial one. This is
+  on the path-canonicalization code every file open goes through
+  (`filetype__CanonicalizeFilename` → `path__UnfoldFileName` →
+  `FoldName`), so unlike the other sites here (most needed a specific
+  rare input to trigger), this one is a live, frequently-reachable
+  crash — found via `ez` choking on a relative filename during
+  unrelated M4 testing. Fixed the same way, `strcpy`→`memmove` inside
+  `strappend`, which transitively fixes all 5 of its call sites in the
+  file at once. `libbasics.a`/`runapp` relinked, runtime-confirmed by
+  wdc. One open question, not yet resolved: the exact same self-copy
+  condition should apply to any structurally similar relative
+  filename, but an earlier same-session `ez` open of a different,
+  same-length filename did not visibly crash — not chased further to
+  avoid disturbing the now-confirmed-working build.
 - **bush.c:269** (`bush__InitTree`) — root cause confirmed: not the
   originally-guessed `strcpy(p, p+n)` shape. `GivenDirName` is
   `self->given_dir_name`; `bush__Create` calls
