@@ -602,7 +602,7 @@ int i, j;
 	ThisMap = NameEntryRoots[i];
 	j = 0;
 	while (ThisMap != NULL) {
-	    fprintf(file, "    entry [%02d][%02d] \"%s\" [%02d] \"%s\" 0x%08x\n", i, j, ThisMap->Name, ThisMap->PathIndex, ThisMap->Data, ThisMap->Version);
+	    fprintf(file, "    entry [%02d][%02d] \"%s\" [%02d] \"%s\" 0x%08lx\n", i, j, ThisMap->Name, ThisMap->PathIndex, ThisMap->Data, ThisMap->Version);
 	    j++;
 	    ThisMap = ThisMap->NameLink;
 	}
@@ -616,7 +616,7 @@ int i, j;
 	ThisMap = KeyEntryRoots[i];
 	j = 0;
 	while (ThisMap != NULL) {
-	    fprintf(file, "    entry [%02d][%02d] \"%s\" [%02d] \"%s\" 0x%08x\n", i, j, ThisMap->Key, ThisMap->PathIndex, ThisMap->Data, ThisMap->Version);
+	    fprintf(file, "    entry [%02d][%02d] \"%s\" [%02d] \"%s\" 0x%08lx\n", i, j, ThisMap->Key, ThisMap->PathIndex, ThisMap->Data, ThisMap->Version);
 	    j++;
 	    ThisMap = ThisMap->KeyLink;
 	}
