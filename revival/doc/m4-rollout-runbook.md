@@ -1,6 +1,6 @@
 # M4 rollout runbook: tree-wide compiler strictness
 
-Procedure for M4 (`roadmap.md` → Medium-term → ANSI C conversion →
+Procedure for M4 (`roadmap-old.md` → Medium-term → ANSI C conversion →
 M4 — Global strictness). Read `rollout-procedure.md` first (shared
 M1–M4 session rhythm) — it still applies once real fixing batches
 exist, just not from session 1 the way M2/M3 needed it. Written
@@ -16,7 +16,7 @@ suppresses all four target warnings:
 COMPILERFLAGS = -std=gnu89 -Wno-implicit-int -Wno-implicit-function-declaration -Wno-incompatible-function-pointer-types -Wno-return-type
 ```
 
-The "ratchet each completed subtree" language in `roadmap.md`'s M3
+The "ratchet each completed subtree" language in `roadmap-old.md`'s M3
 bullet never actually executed — `grep -rl "strict-prototypes"
 --include=Imakefile src/` returns zero matches, tree-wide. M2 left 28
 directories with a narrower per-directory override
@@ -194,7 +194,7 @@ flag:
 
 ### `-Wstrict-prototypes` — scope finding, 2026-08-01, changes the flag set below
 
-`roadmap.md`'s M4 bullet named `strict-prototypes` as one of the four
+`roadmap-old.md`'s M4 bullet named `strict-prototypes` as one of the four
 "type-safety set" flags to flip alongside `implicit-int`,
 `int-conversion`, and `incompatible-function-pointer-types`. Checked
 directly before including it: `-Wstrict-prototypes` doesn't only flag

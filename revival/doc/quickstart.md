@@ -253,7 +253,7 @@ Good `ez` test files, in order of increasing complexity:
 
 | File | What it tests |
 |---|---|
-| `revival/testing.ez` | text, note, calc, eq, table insets; used for the Media-menu regression-test checklist in `roadmap.md` ("ez application (menus)") |
+| `revival/testing.ez` | text, note, calc, eq, table insets; used for the Media-menu regression-test checklist in `roadmap-old.md` ("ez application (menus)") |
 | `ams/demo/d10` | `fad` (animation) inset; exercises the `con10` console icon font — see Font path setup |
 | `doc/README.ez` | Basic text, page break insets (bp/bpv) |
 | `src/contrib/mit/rtf2/test.ez` | Rich paragraph styles, no insets |

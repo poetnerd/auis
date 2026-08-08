@@ -2,7 +2,7 @@
 
 Milestone-agnostic rhythm for any "flag a directory, fix fallout,
 gate, commit" rollout point in the ANSI C conversion plan
-(`roadmap.md` → Medium-term → ANSI C conversion, M1–M4). Extracted
+(`roadmap-old.md` → Medium-term → ANSI C conversion, M1–M4). Extracted
 2026-07-24 from `claude-history/m1-rollout-runbook.md` once M2 needed
 the same rhythm under a different flag/taxonomy — read alongside
 `sonnet-playbook.md` (the standing delegation briefing) and whichever
@@ -259,7 +259,7 @@ for a regression. Two more caveats (found M1 point 8, 2026-07-09):
 After user confirmation, two commits, terse one-line messages
 matching the fossil timeline style:
 1. src: the flag + any fallout fixes
-2. docs: tick the rollout point in `roadmap.md`; add findings to the
+2. docs: tick the rollout point in `roadmap-old.md`; add findings to the
    milestone runbook or `porting-assessment.md` §14 only if a
    genuinely NEW pattern appeared
 

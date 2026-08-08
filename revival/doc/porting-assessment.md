@@ -771,7 +771,7 @@ mechanism and generator to the dynamically-proven `parsel.flex` fix.
 
 How to complete the conversion abandoned in June (checkin `5e57549713`,
 779 files, reverted in `99fe31066c`). Analysis lives here; the ordered
-work plan (milestones M1–M4) lives in `roadmap.md` → Medium-term →
+work plan (milestones M1–M4) lives in `roadmap-old.md` → Medium-term →
 ANSI C conversion.
 
 #### Why the June mass conversion failed
@@ -947,7 +947,7 @@ Strategy: pilot on zero-consumer leaves to learn the fix patterns
 cheaply, then invert to the most-consumed core — that is where LP64
 Variants 3/5 actually lived, and typing those `.ih`s protects all
 consumers tree-wide at once, including directories not yet converted.
-The ordered rollout checklist lives in `roadmap.md` → M1 rollout
+The ordered rollout checklist lives in `roadmap-old.md` → M1 rollout
 points.
 
 #### Pilot A findings (atk/eq, 2026-07-08)
@@ -1377,7 +1377,7 @@ session beyond a clean rebuild.
 
 #### How this was found
 
-Started from `roadmap.md`'s amsdemo thread: caption dates displaying wrong
+Started from `roadmap-old.md`'s amsdemo thread: caption dates displaying wrong
 ("7-Jul-126") and demo message ordering (Part 1…23) scrambled. Two real,
 smaller bugs were found and fixed first — a `tm_year % 100` Y2K display bug
 in `bldcapt.c`/`shrkdate.c`, and a missing tiebreak in `recon.c`'s
@@ -1459,7 +1459,7 @@ and returned **255** even when nothing was configured anywhere in the
 chain. That `255` flowed straight into `zipview_SetLineWidth(self, 255)`
 in `zipv000.c`'s `Ensure_Line_Attributes`, producing a 255-pixel-wide
 stroke that filled the entire figure with solid foreground color — the
-zip inset "solid black rectangle" bug (see `roadmap.md` → Insets to
+zip inset "solid black rectangle" bug (see `roadmap-old.md` → Insets to
 Repair → zip, and `claude-history/zip-black-render-investigation.md` for the full
 bisection trail).
 
@@ -1561,7 +1561,7 @@ Xft text draw was silently using the **old, unswapped foreground color**
 (typically black). "Erasing" text by redrawing it in white was actually
 redrawing it in black — reinforcing the old text rather than erasing it.
 
-Found via `contrib/calc`'s display area (see roadmap.md → Insets to
+Found via `contrib/calc`'s display area (see roadmap-old.md → Insets to
 Repair → calc, and `claude-history/calc-text-rendering-investigation.md`), which
 exercises frequent `Clear`-then-`Draw` cycles as its digit display
 updates — a pattern uncommon enough elsewhere in the active tree that
@@ -1636,11 +1636,11 @@ full `123+4=` keystroke sequence in `contrib/calc`, confirmed correct
 color alternation at every step. Full `make Clean && make dependInstall`
 world rebuild done 2026-07-12, zero new errors introduced (one
 pre-existing, unrelated `contrib/zip/utility/ltapp.c` error remains, see
-roadmap.md → Insets to Repair → zip).
+roadmap-old.md → Insets to Repair → zip).
 
 ### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
 
-**Resolved 2026-07-04 for the local-store case — see `roadmap.md` Near-term →
+**Resolved 2026-07-04 for the local-store case — see `roadmap-old.md` Near-term →
 Messages application prerequisites, Stream 2/3.** The build already has a
 clean seam: `AMS_ENV` on with `AMS_DELIVERY_ENV`/`SNAP_ENV`/`WHITEPAGES_ENV`
 left off builds `messages` against a local, non-networked mbox-backed
@@ -2252,7 +2252,7 @@ half. Harmless on the ILP32 platforms this shipped on (`long`/`int` both
 #### Why this one *does* corrupt data, unlike an ordinary printf typo
 
 Found while root-causing calc/zip insets vanishing when embedded in a
-mixed document and getting lost on save (`roadmap.md`'s "Insets to
+mixed document and getting lost on save (`roadmap-old.md`'s "Insets to
 Repair" → zip/calc entry). The shared `apt__WriteObject` helper
 (`atk/apt/apt/apt.c:524`, used by `calc`) wrote a **truncated** id into
 `calc`'s own `\begindata`/`\enddata` tags, while the unrelated code that
@@ -2447,7 +2447,7 @@ World`.
 `console/fonts`, not just `console/lib`/`console/cmd`) behind
 `#ifdef MK_CONSOLE`, which is undefined in this revival (`console` is
 an intentionally inert subsystem — see the directory census in
-`roadmap.md`). `console/fonts/Imakefile` already correctly declares
+`roadmap-old.md`). `console/fonts/Imakefile` already correctly declares
 `DeclareFont(con10)`/`DeclareFont(con12)` — nothing wrong with that
 recipe — but since the whole directory is never visited, `con10.fdb`/
 `con12.fdb` (custom `.fdb`-format icon fonts, a different format from
@@ -2496,7 +2496,7 @@ itself does — the smaller, more targeted fix.
 Clock was manually bisected across 9 checkpoints from `6338ade7de`
 (2026-07-07, before the M1 rollout) through HEAD, each a full
 from-scratch rebuild, and found blank at every single one — logged as
-a confirmed pre-existing, not-yet-root-caused bug (see `roadmap.md` →
+a confirmed pre-existing, not-yet-root-caused bug (see `roadmap-old.md` →
 Insets to Repair → clock). Reopened the same day: inserting a fresh
 clock via ez's `<ESC><TAB>clock` ("insert inset by name") rendered
 correctly in the same session and build where a *parsed* clock (from

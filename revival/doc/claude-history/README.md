@@ -26,8 +26,10 @@ top level, as before.
 
 ## Active Prompts (in `revival/doc/`, not here)
 
-Current queue and suggested order live in `roadmap.md` → "Delegated
-work queue". As of 2026-07-24:
+Current queue and suggested order lived in `roadmap-old.md` (retired
+2026-08-07) → "Delegated work queue"; that queue is fully worked
+through as of M4's completion and this section is now historical. As
+of 2026-07-24:
 
 1. `bcc-direct-insertion-prompt.md` — blind-copy direct-insertion
    root cause

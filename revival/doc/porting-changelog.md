@@ -172,13 +172,13 @@ The codebase was written for ILP32 (32-bit int, long, pointer). Six distinct bug
 
 ### 2026-07-04 — LP64 #3 call-site audit: content enumerate, figure zoom, raster negative
 
-Following the `frameDot` fix above, swept for sibling "bare `-1` literal through untyped class-dispatch macro" call sites (grep pattern and full writeup in `roadmap.md`; methodology also in `revival/doc/runtime-debugging-guide.md`). Narrowed ~925 raw hits to 22 candidates; confirmed 6 real bugs (receiver actually sign-checks the corrupted value) and fixed all with `(long)-1` casts:
+Following the `frameDot` fix above, swept for sibling "bare `-1` literal through untyped class-dispatch macro" call sites (grep pattern and full writeup in `roadmap-old.md`; methodology also in `revival/doc/runtime-debugging-guide.md`). Narrowed ~925 raw hits to 22 candidates; confirmed 6 real bugs (receiver actually sign-checks the corrupted value) and fixed all with `(long)-1` casts:
 
 - `content.c`/`contentv.c` (`content__Enumerate`/`content__Denumerate`): `opos`/`pos < 0` is the "enumerate everything" sentinel; corrupted value read as huge positive, silently skipping that path. 3 call sites (`content.c:649`, `contentv.c:134,186`).
 - `figv.c` (`ChangeZoomProc`): `rock<0`/`rock>0` decides zoom out vs. zoom in; "Zoom Out" (menu item + `Esc-z` keybinding) passed `-1` through `menulist_AddToML`/`keymap_BindToKey`. Corrupted, Zoom Out would zoom in instead. 2 call sites (`figv.c:129-130`).
 - `rasterv.c` (`ModifyCommand`): `rock == -1` selects "invert selection" ("Negative" menu item + `Esc-n` keybinding). Corrupted, Negative would silently do nothing (falls through all the `==` branches). 2 call sites (`rasterv.c:1634-1635`).
 
-Several other candidates from the same grep sweep were confirmed harmless despite passing through the same untyped mechanism (e.g. `view_FullUpdate(...,-1,-1)` width/height args in `figv.c`/`rastvaux*.c` are ignored entirely by the receiving `FullUpdate` overrides, which recompute geometry from the view instead) — not fixed, no observable bug. A few lower-priority candidates (`rectangle_InsetRect` unprototyped-arg risk in `figv.c`'s clip-region code, `environ_GetProfileInt`/`cwp_Search` in the deprioritized messages/AMS subsystem, `tlex_RecentPosition` in the not-yet-working `ness` extension) were left untriaged — see `roadmap.md`'s "Variant 3 follow-up audit" section.
+Several other candidates from the same grep sweep were confirmed harmless despite passing through the same untyped mechanism (e.g. `view_FullUpdate(...,-1,-1)` width/height args in `figv.c`/`rastvaux*.c` are ignored entirely by the receiving `FullUpdate` overrides, which recompute geometry from the view instead) — not fixed, no observable bug. A few lower-priority candidates (`rectangle_InsetRect` unprototyped-arg risk in `figv.c`'s clip-region code, `environ_GetProfileInt`/`cwp_Search` in the deprioritized messages/AMS subsystem, `tlex_RecentPosition` in the not-yet-working `ness` extension) were left untriaged — see `roadmap-old.md`'s "Variant 3 follow-up audit" section.
 
 **Also found, not fixed:** a live Xlib `_XLockDisplay` self-deadlock (single-thread re-entrancy triggered by `MappingNotify`/`XRefreshKeyboardMapping`), discovered incidentally while testing the figure-inset fix above. This supersedes the old "checkpoint timer UAF" theory for the `^V` scroll-hang heisenbug — see `roadmap.md`'s Heisenbugs section.
 
@@ -194,7 +194,7 @@ Several other candidates from the same grep sweep were confirmed harmless despit
 
 ### 2026-07-04 — Patches directory audit; malloc.ci arena-size fix
 
-Audited `patches/official/` and `patches/contrib/` in full (every file every patch touches diffed against current source) after finding `patch.633` already fixed the `95Summer.ez` figure bug above — full findings in `roadmap.md`'s "Historical patches audit" section. Two outcomes:
+Audited `patches/official/` and `patches/contrib/` in full (every file every patch touches diffed against current source) after finding `patch.633` already fixed the `95Summer.ez` figure bug above — full findings in `roadmap-old.md`'s "Historical patches audit" section. Two outcomes:
 
 - Applied `contrib/malloc.ci.auis6.3.diff`: `overhead/malloc/malloc.ci` `addarena` computed `x = (A.arenaend - A.arenastart)>>3` where both are `struct freehdr *` — pointer subtraction is in units of `sizeof(struct freehdr)`, not bytes, undercounting the arena-growth heuristic ~20-24x. Fixed with `(char *)` casts. No runtime effect on this build: `ANDREW_MALLOC_ENV` is `#undef`'d in `config/site.h`, no `malloc.o`/`libmalloc.a` exists anywhere in `build/` — we run on system malloc, this file is dead code here. Fixed for source correctness anyway (originally submitted by the current user in 1995). Confirmed `malloc.c`/`pmalloc.c` (which `#include` this file) don't currently compile for an unrelated pre-existing reason (`AbortFullMessage` static/non-static conflict) — out of scope, not touched.
 - Everything else already fixed upstream in our 6.3.1 baseline (`figospli.c` spline guard, `unknown.c`'s 3 hunks, `hash.c` use-after-free, `tabs.c` bounds check — all from `patch.631`) or genuinely inapplicable (AMS/`eatmail` patches, `symlink.patch` targeting a `LIBDL_ENV` code path Darwin never defines, and the SGI/NetBSD/Solaris/HP-UX platform ports).
@@ -406,7 +406,7 @@ the date field (`BuildDateField` → `MS_ReconstructDirectory`). This is
 bison-generated (`ams/libs/ms/prsdate.c` from `prsdate.gra`, also untracked
 in fossil) — a different generator, different subsystem, different failure
 shape (data/size-dependent, not a fixed polarity flag) from the flex bug
-above. Not investigated further this session; flagged in `roadmap.md`'s
+above. Not investigated further this session; flagged in `roadmap-old.md`'s
 gendemo section as the next thing to chase.
 
 ### 2026-07-12 — calc inset "missing leading characters": rootless XQuartz Xft recomposite lag
