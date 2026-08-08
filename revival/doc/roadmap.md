@@ -41,8 +41,9 @@ solid versus still rough. Active work is listed under Projects.
 | Core embedded insets — `eq`, `table`, `fad`, `fnote`, `bp`, `srctext`, `figure`, `value`/slider/button, `pushbutton`/`link`, `lset`, `org`, `apt`/`cel`/`arbiter` | Fully working | `figure` has one open cosmetic bug: italic-text sizing is non-monotonic (10pt renders bigger than 12pt) |
 | `calc`, `zip` (contrib) | Fully working | |
 | `clock` | Fully working | |
-| `raster` (as an embedded inset) | Fully working | The standalone `convertraster` CLI tool has its own separate open bugs — see Projects → Inset work |
+| `raster` (as an embedded inset) | Fully working | |
 | `contentv` (Table of Contents) | Fully working | An earlier report of it ignoring enumerated headings was a false alarm — root cause was input focus being inside an embedded inset rather than the document itself when the ToC view was opened |
+| `convertraster` (standalone CLI) | Fully working | Fully tested 2026-08-08; three bugs found and fixed (see `porting-changelog.md`) |
 | `image` (JPEG/GIF/TIFF import) | Broken | JPEG/GIF import renders as solid black, TIFF as solid white; native raster import is fine |
 | `htmlview` | Rough | No longer crashes, but real-world HTML mostly fails to render — see Projects → HTML mail — htmlview modernization |
 | `eq`'s integral symbol | Minor bug | Glyph missing; suspect the font pipeline, not `eq` itself |
@@ -99,8 +100,9 @@ being front-loaded here.
 ### Inset work
 
 - **Description:** Track and fix insets known broken or buggy.
-- **Next step:** `image` import, `convertraster` CLI bugs, `figure`
-  italic-text sizing, `eq`'s integral symbol (see table above).
+- **Next step:** `image` import, `figure` italic-text sizing, `eq`'s
+  integral symbol (see table above); `convertraster` CLI bugs fixed
+  2026-08-08.
 
 ---
 
@@ -114,10 +116,6 @@ Smaller items that don't fit the tables above.
 - `messages`: intermittent, non-fatal `X_OpenFont BadValue` X errors during normal folder browsing — not root-caused
 - `filetype.c DeleteEntry`: a bogus-free risk and an apparently-inverted condition, flagged by the compiler, never observed to actually fire
 - `runapp -d` with no app-class argument segfaults instead of printing usage — pre-existing since the 1988 source, not a regression
-
-**Insets not covered above**
-- `raster`: `convertraster RF` read-back hangs; a `long`/`short` size mismatch in `oldrf.c` is a strong lead, not yet confirmed or fixed
-- `raster`: `convertraster`'s crop option produces blank output, and its CLI syntax is undocumented
 
 **Heisenbugs** (intermittent, low reproducibility)
 - Xlib display-lock self-deadlock: reproduced once, root cause identified (`_XLockDisplay` re-entered from inside `XRefreshKeyboardMapping`, triggered by a keyboard-mapping-change event) but not yet fixed. Current best explanation for the older, harder-to-pin-down "`^V` scroll hang."

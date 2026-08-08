@@ -35,10 +35,16 @@
 *                                                   *
 \* *********************************************** */
  
+#include <stdint.h>
+
+/* On-disk fields are 4 bytes each (14-byte header total); this must stay
+   fixed-width regardless of the size of "long" on the host, since the
+   read/write code in oldrf.c fread/fwrites a hardcoded 14 bytes and
+   htonl/htons-converts each field as 32/16 bit. */
 struct RasterHeader {
-        long Magic;             /* should be RasterMagic */
-        long width;             /* Width in pixels */
-        long height;            /* Height in pixels */
+        int32_t Magic;           /* should be RasterMagic */
+        int32_t width;           /* Width in pixels */
+        int32_t height;          /* Height in pixels */
         short depth;            /* number of bits per pixel */
 };                      
      /* This heading structure is followed by the bits of the image,

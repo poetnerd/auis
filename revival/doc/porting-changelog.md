@@ -534,3 +534,84 @@ message reads correctly post-fix.
 As of this entry: not yet committed (pending final smoke-test
 confirmation); the corrected state is described above, not the
 intermediate broken one.
+
+### 2026-08-08 — convertraster: full functional test pass, three bugs found and fixed
+
+Standalone app, not previously exercised. Tested every switch and format
+documented in `convras.help` (raster/RF/MacPaint/PostScript/Xwd/Xbitmap
+conversion, `-n`/`-u`/`-l`/`-r`, `-c` crop, `-p` PS scale, stdin/stdout,
+default-type inference) against `dragon.raster`, verifying output by
+decoding the raster format directly (script, not eyeballing) and
+comparing pixel data byte-for-byte across round trips. Three real bugs
+found, all in code nobody had run on this port before now; two are new
+LP64 variants distinct from the six already catalogued above.
+
+- **RF read: garbage width/height, runaway allocation (worst — total
+  failure, not just a bad image).** `struct RasterHeader` in
+  `atk/raster/lib/rastfile.h` declared `Magic`/`width`/`height` as
+  `long`, but the on-disk format is a fixed 14-byte header (three 4-byte
+  fields + a 2-byte depth) and `oldrf.c` reads/writes it with a hardcoded
+  `14`. On LP64, `long` is 8 bytes, so the struct is 32 bytes and every
+  field lands at the wrong offset; `fread(&hdr, 14, ...)` only fills part
+  of the `Magic`/`width` fields and never touches `height` at all, which
+  is left as uninitialized stack garbage. Reading any RF file back
+  (`intype=RF`/`ras`) fed that garbage straight into
+  `pixelimage_Resize()`, which tried to allocate a raster of essentially
+  random size — observed consuming multiple GB of RSS before being
+  killed. This is the same bug *class* as LP64 variant #1/#4 (32-bit
+  on-disk format vs. 64-bit `long`), not a variant already in the table.
+  Fixed by giving `RasterHeader` explicit `int32_t` fields (`<stdint.h>`),
+  matching the byte layout the `htonl`/`SWAL` conversions already assume.
+- **RF read: first 4 and last ~3 bytes of every row corrupted.**
+  `oldRF__ReadRow`'s color-inversion step hand-rolled a "process 4 bytes
+  at a time" loop using `unsigned long *`, with alignment arithmetic
+  (`& ~3`, `-4`) hardcoded for a 4-byte word. On LP64 each `*lx = ~*lx`
+  touches 8 bytes, so the loop's per-row byte accounting is wrong in two
+  ways at once: it never reaches the row's first 4 bytes (left
+  un-inverted, wrong polarity) and its last 8-byte chunk overruns the
+  row by 2–3 bytes into whatever memory follows (the next row, or past
+  the buffer entirely on the image's last row). Confirmed empirically by
+  decoding a round-tripped image and diffing it byte-for-byte against the
+  original: every row differed at exactly byte columns 0–3 and 38–40 (of
+  41), matching the predicted miss/overrun exactly. A second, independent
+  defect rode along in the same function: a "preserve the pre-existing
+  bits beyond the real image width" step read `savebyte` *before*
+  `fread()`, meaning on a freshly-allocated (never-before-written)
+  buffer it preserved malloc leftovers instead of anything meaningful —
+  redundant besides, since the writer side already zero-pads that tail
+  via `pixelimage_GetRow`'s own white-fill. Fixed by replacing the whole
+  aligned-word dance with a plain byte-at-a-time complement loop over
+  exactly the bytes read, and deleting the `savebyte` fix-up entirely.
+  Verified with a scripted byte-for-byte diff: raster → RF → raster is
+  now bit-identical to the source, and PostScript/MacPaint/Xwd/Xbitmap
+  round trips (which don't go through this function) were already clean
+  and remain so.
+- **Crop past the image edge silently reads out of bounds.**
+  `-c'(x,y,w,h)'` was never checked against the source image's actual
+  width/height before `ProcessPix()` looped `pixelimage_GetRow()` over
+  it; `pixelimage.c`'s own `GetRow`/`GetColumn` do no bounds checking of
+  their own (by design — see the "NOT initialized" contract on
+  `pixelimage_Create`). `-c'(0,0,9999,9999)` against the 321×294 test
+  image produced an 18MB output raster instead of an error, reading far
+  past the end of the allocated bitmap. Fixed with an explicit bounds
+  check in `ProcessPix()` (`convrast.c`) that fails cleanly — matching
+  the tool's existing error-handling style — for a negative origin/size
+  or a crop rectangle extending past the image's right or bottom edge.
+
+Every other documented switch/format combination worked correctly,
+including three items the help file itself lists under "Bugs" that were
+re-confirmed rather than newly discovered: `outtype`/`intype` really are
+not inferred from file extension (an omitted `outtype` against a
+`outfile=x.mp` fails rather than guessing), Sun raster really is
+unsupported (`intype=sunraster` → "unknown type"; a same-named class
+exists elsewhere in the tree but this program never references it), and
+the "pixelimage not found" report couldn't be reproduced with `ANDREWDIR`
+and the `.do` search path set up correctly — most likely an
+environment/install-path issue on whatever system originally reported
+it, not something reachable from here.
+
+Fixed and rebuilt (`oldrf.do` relinked in place, `convertraster` static
+binary relinked); full regression pass after all three fixes — identity
+round-trip, RF/MacPaint/Xwd/Xbitmap round trips, 4×90° rotation
+identity, PostScript scale factor, and a valid crop — all still pass.
+Not yet committed to fossil.

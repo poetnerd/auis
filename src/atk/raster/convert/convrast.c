@@ -114,6 +114,8 @@ char opSwitches[20];	/* -runl */
 struct rectangle crop;	/* -c(l,t,w,h) */
 float PSscale;		/* -p */
 
+static void fail(char *msg);
+
 
 static void ProcessPix(struct pixelimage *pix)
 {
@@ -125,6 +127,11 @@ static void ProcessPix(struct pixelimage *pix)
 		/* do the cropping by replacing the bits area of the pix  XXX */
 		long buf[1000];
 		register long row;
+
+		if (crop.left < 0 || crop.top < 0 || crop.width < 0 || crop.height < 0
+				|| crop.left + crop.width > pixelimage_GetWidth(pix)
+				|| crop.top + crop.height > pixelimage_GetHeight(pix))
+			fail("Crop rectangle -c(left,top,width,height) exceeds the bounds of the input image");
 
 		tix = pixelimage_New();
 		pixelimage_Resize(tix, crop.width, crop.height);
