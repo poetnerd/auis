@@ -887,12 +887,12 @@ local buffers before mutation.
 
 ### 2026-07-24 — M2 point 0: `-Wincompatible-pointer-types` census, three fixes, and the Group A rollout (with a live correction)
 
-**Note on the remaining gap:** the 07-09–07-23 entries above (the M1
-rollout tail, AMS-over-IMAP through milestone 4, folder-visibility,
-mime-display, fdplumb, `-fwritable-strings`) were backfilled from
-`roadmap-old.md`, `porting-assessment.md`, and `claude-history/*-REPORT.md`.
-Still not backfilled: the gap after this entry — 07-25 (M2 completion),
-07-30–08-02 (M3), and 08-03–08-07 (M4 plus the strict-prototypes
+**Note on the remaining gap:** the 07-09–07-25 entries (the M1 rollout
+tail, AMS-over-IMAP through milestone 4, folder-visibility,
+mime-display, fdplumb, `-fwritable-strings`, M2 completion, M3's first
+step) were backfilled from `roadmap-old.md`, `porting-assessment.md`,
+and `claude-history/*-REPORT.md`. Still not backfilled: 07-30–08-02
+(the rest of M3) and 08-03–08-07 (M4 plus the strict-prototypes
 census/retype/triage). Same sourcing plan applies.
 
 **Census** (`revival/doc/claude-history/m2-census-REPORT.md`): classified
@@ -961,6 +961,107 @@ message reads correctly post-fix.
 As of this entry: not yet committed (pending final smoke-test
 confirmation); the corrected state is described above, not the
 intermediate broken one.
+
+### 2026-07-25 — M2 buckets 4b-4h: implicit-declaration rollout continues, malloc/realloc/free blind spot found
+
+Continuing the `-Wincompatible-pointer-types`/implicit-declaration
+sweep begun 07-24: `overhead/mail/metamail/metamail` (338 instances, 7
+files — far past the stale estimate of 70), `atk/text` (156, 50
+census-visible + 106 more from a directory-wide blind-spot sweep, see
+below), `atk/rofftext` (104), `atk/table` (186), `overhead/mail/lib`
+(124, the widest-fan-out directory examined yet — `libmail.a`, ~25
+consumer directories), `atkams/messages/lib` (336, the `messages` app's
+actual backend, required a tree-wide gate), `contrib/zip/lib` (256, the
+tree's highest-defect-density directory, also tree-wide-gated). Each
+directory got its own delegated session, subtree-local gate first, then
+(for the two directories with cross-tree reach) a full tree-wide
+`make Clean && make dependInstall` — same 4 pre-existing baseline
+errors every M2 gate has documented, zero new ones anywhere.
+
+**Methodology finding, `atk/text`:** `malloc`/`realloc`/`free` are
+clang builtins, so an undeclared call to one of them produces no
+warning at all — invisible to the `-Wincompatible-pointer-types` census
+that drives the rest of M2. A directory-wide grep sweep for the three
+names, added as a mandatory step for every remaining M2 directory,
+found 106 more call sites in `atk/text` alone; every bucket-4 directory
+after this one reports two counts (census-visible vs. real total)
+because of it. `atk/table`'s sweep also caught a second-order gap: a
+naive substring grep on `realloc` false-positived on `table.c`'s own
+`myrealloc()` wrapper — the sweep pattern was tightened to be
+word-boundary-anchored.
+
+**Real bugs found during runtime verification, not part of the
+declaration fixes themselves:**
+- `metamail`'s non-functionality (previously known only as "launches,
+  displays nothing") was root-caused: a plain `text/plain` body run
+  directly through metamail crashes with a Bus error before any
+  display happens. Under `lldb`, the actual first-hit signal is
+  `SIGTTOU` (terminal job-control), stopped inside
+  `ExecuteMailcapEntry`'s `ioctl()` call (`metamail.c`) — 1980s/90s BSD
+  job-control code that doesn't survive contact with modern macOS
+  process-group/terminal semantics. Root cause identified, not fixed —
+  metamail was already a known non-functional side quest; this gives
+  whoever picks it up a starting point instead of the mailcap-execution
+  code in general.
+- `contrib/zip/lib`'s directory logged two new, confirmed-pre-existing
+  findings for dedicated follow-up: zip/calc insets fail to load when
+  embedded in a mixed-content document (later root-caused and fixed
+  2026-07-26, an LP64 `%d`/`%ld` id-truncation bug — see
+  `porting-assessment.md` #20), and `ez` horizontal text-block drag
+  locks at position 0 after the first drag.
+
+`atkams/messages/lib` and `contrib/zip/lib` each also surfaced a
+concrete LP64 mixed-width finding (functions that are `long`-returning
+at their real definition while sibling functions in the same family
+default to `int`) — logged for the tree-wide variant-#6 audit, not
+independently fixed this session.
+
+### 2026-07-25 — M2 point 5: `ams/libs/ms` (1569 instances) closes M2 tree-wide
+
+`ams/libs/ms` — 114 `.c` files, ~38% of the original tree-wide census,
+by far the largest single directory in the sweep — was done as its own
+dedicated session. 1567 census-visible instances (against a stale
+estimate of 892) plus 2 more from the malloc-blind-spot sweep, real
+total 1569 across 102 files. Both the subtree-local and full tree-wide
+gates were required and clean; the tree-wide gate doubles as **M2's own
+completion gate**.
+
+Confirmed the rollout's own "a handful of functions dominate" working
+assumption: the top 10 functions account for 45.6% of all 1569
+instances. The single largest contributor was the `fdplumb.h`
+partial-wrapper-family gap (300 instances on its own). Two more
+concrete LP64 mixed-width findings (`conv64tolong`, `KRHash`, both
+`unsigned long`).
+
+**M2 complete tree-wide:** 3888 implicit-declaration/incompatible-
+pointer-type instances fixed across 29 directories, in total across
+07-24 and 07-25. M2's working prompts, per-directory reports, and
+rollout runbook (29 files) were retired into
+`claude-history/m2/`, with cross-references repointed.
+
+### 2026-07-25 — M3 begins: `ansify` DRIFT false-positive on classpp's own `InitializeObject`/`FinalizeObject` convention
+
+M3's first concrete step — a tree-wide `ansify --dry-run` census before
+any conversion batch ran — found 56 DRIFT findings (`.ch` argument
+count disagreeing with the real implementation's) across 1,486 files.
+42 of the 56 name exactly `InitializeClass`, `InitializeObject`, or
+`FinalizeObject`, and turned out to share one tool-side false positive,
+not 42 separate bugs: classpp special-cases these three classprocs.
+`InitializeObject`/`FinalizeObject` always get a hardcoded 2-argument
+prototype (`classID` and `self`) regardless of what the `.ch` declares
+(`class.c:1122`); `InitializeClass` is dispatched through a fully
+untyped cast with no compiler-enforced argument count at all. `ansify`'s
+DRIFT check assumed the universal one-implicit-parameter convention
+that holds for every other class method, so it misfires in either
+direction depending on how the `.ch` happens to be written (an extra
+expected argument if the `.ch` restates the implicit param by name; one
+too few if it uses empty parens). Verified end-to-end (`.ch`, `.c`, and
+the `class.c` codegen source all cross-checked) against two instances
+(`foldertreev`, `atkams/messages/lib/fldtreev.c`; `suite`,
+`atk/apt/suite/suite.c`); the remaining ~39 share the identical
+message shape and are almost certainly the same mechanism. See
+`porting-assessment.md` #17. Same day, M3's directory batch plan
+(`overhead/util/lib`, 58 files) started separately as O1.
 
 ### 2026-08-08 — convertraster: full functional test pass, three bugs found and fixed
 
