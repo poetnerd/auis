@@ -459,6 +459,17 @@ next step, not yet done:
   and nine ordinary argument-count/type drifts — all fixed, none of it
   needing its own rollout milestone the way M1–M4 did.
 
+- **A crop rectangle was never checked against the image it was
+  cropping.** A raster-format converter's crop option never validated its
+  rectangle against the source image's actual dimensions before reading
+  it — the underlying bitmap routines don't bounds-check either, by
+  design, on the assumption that callers already have. A crop rectangle
+  larger than the source image read straight past the end of the
+  allocated buffer and kept going, producing an 18-megabyte file of heap
+  garbage instead of an error, for an operation that should have been
+  rejected outright. Fixed with an explicit bounds check ahead of the
+  crop.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or
@@ -557,7 +568,7 @@ each responsible for real, visible bugs during the revival:
    than named sentinels, tripped by negative numbers used for scroll
    positions, indentation, and margins.
 
-Two related but mechanically distinct defects showed up alongside these
+Three related but mechanically distinct defects showed up alongside these
 five, corrupting data across a similar boundary disagreement without being,
 strictly, width problems:
 
@@ -583,6 +594,25 @@ strictly, width problems:
   pointer-carrying implementation needed something wide enough to hold a
   full address, silently truncating a `self` pointer on every
   control-panel widget built from that class.
+- **A file-header struct declared its fields `long`, matching the on-disk
+  format only by 32-bit coincidence.** A raster-format command-line
+  converter, untouched by every earlier width-bug sweep because nothing
+  about it resembled the dispatch-related patterns above, declared its
+  file-header struct's three fields `long` — matching the format's actual
+  on-disk layout, a fixed 14-byte header, only on the 32-bit machines this
+  was written for. On a 64-bit build the struct is more than twice that
+  size, so every field after the first lands at the wrong offset; reading
+  such a file back fed uninitialized stack memory into an image-resize
+  call that ran away, consuming multiple gigabytes of memory before being
+  killed. The same file's color-inversion routine carried an independent
+  case of the identical assumption: a hand-optimized loop inverting four
+  bytes at a time walked a raw pointer cast to `long *`, with address
+  arithmetic sized for a 4-byte word; on this LP64 build each step
+  silently inverted eight bytes instead, missing a row's first few bytes
+  and overrunning its last few into whatever memory followed. Both had
+  sat unexercised since the format was written — nobody had tested this
+  converter's own output against itself on this platform until it finally
+  was, byte-for-byte, against the original image.
 
 A mechanically unrelated defect, described above in "Modernizing," produced
 a very similar-looking symptom: a code generator's own choice of table
