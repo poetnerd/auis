@@ -887,13 +887,15 @@ local buffers before mutation.
 
 ### 2026-07-24 — M2 point 0: `-Wincompatible-pointer-types` census, three fixes, and the Group A rollout (with a live correction)
 
-**Note on the remaining gap:** the 07-09–08-02 entries (the M1 rollout
-tail, AMS-over-IMAP through milestone 4, folder-visibility,
-mime-display, fdplumb, `-fwritable-strings`, M2 completion, all of M3,
-and M4 through Wave 2) were backfilled from `roadmap-old.md`,
-`porting-assessment.md`, and `claude-history/*-REPORT.md`. Still not
-backfilled: 08-03–08-07 (the rest of M4 plus the strict-prototypes
-census/retype/triage). Same sourcing plan applies.
+**Backfill complete as of 2026-08-09.** The 07-09–08-07 entries above
+(the M1 rollout tail, AMS-over-IMAP through milestone 4,
+folder-visibility, mime-display, fdplumb, `-fwritable-strings`, M2
+completion, all of M3, and all of M4 including the strict-prototypes
+side quest and the final global-strictness flip) were backfilled from
+`fossil sql` commit timestamps, `roadmap-old.md`, `porting-assessment.md`,
+this project's own memory notes, and `claude-history/*-REPORT.md`. This
+log now has continuous coverage from the 2026-06-24 bootstrap through
+M4's completion.
 
 **Census** (`revival/doc/claude-history/m2-census-REPORT.md`): classified
 all 483 `-Wincompatible-pointer-types` warnings from a fresh full build.
@@ -1265,6 +1267,206 @@ string bugs. None individually escalated to a human ruling; full
 per-directory detail in the M4 batch/wave working files
 (`revival/doc/m4-batches.md`, `m4-rollout-runbook.md` — not yet
 retired to `claude-history/` as of this entry).
+
+### 2026-08-03 — M4 Wave 3: `atk/text` closes Wave 3
+
+`atk/text` alone under `STRICT_COMPILERFLAGS` (the tree-wide flip to
+`-Werror` on implicit-int, incompatible pointer/function-pointer types,
+and format strings, batched directory by directory — M4's whole
+purpose, after M1-M3 already retyped the dispatch layer and the K&R
+definitions underneath it). Real error count (102) ran 79% over the
+pre-flag census (57), almost entirely because the census predated the
+`-Werror=format` ruling: 45 of the 102 were format errors, concentrated
+in `txttroff.c`'s ~2000-line troff-stream writer. Two standalone bugs:
+`content.c`'s `erestingstyle()` forward declaration was a ~30-year-old
+typo that never matched the real function `interestingstyle`, silently
+unused; `be1be2a.c` (the standalone BE1→BE2 CLI converter) had two
+broken diagnostics, one printing a filename via `%d`, one missing its
+`progName` argument entirely.
+
+### 2026-08-06 — M4 Wave 4: `raster/cmd`, `table`, `figure`+`chart`, 12 leaf directories — closes Wave 4, largest datastream-bug haul so far
+
+I1 (`atk/raster/cmd`) found the wave's highest-impact bug:
+`raster__WriteShare` silently dropped the `height` field from its
+shared-memory datastream write (7 `%ld` conversions for 8 arguments),
+corrupting the next line's parse for every reader — the exact class
+the `-Werror=format` ruling exists to catch, since AUIS uses `printf`
+as a real serialization path, not just display. I2 (`atk/table`) was
+mostly debug-trace-only, plus one signal-handler dead-branch bug in
+`eval.c` (same root cause as earlier waves' `im.c`/`framecmd.c`
+findings — a `SIGFPE` handler compiled under a guard macro that's
+never actually defined). I3 (`atk/figure` + `atk/chart`, flagged as a
+risk batch for its history) earned that flag: 11 genuine on-disk
+datastream bugs, the largest single-batch haul of the milestone.
+Highest-impact: `figobj__WriteBody` — the **base class** inherited by
+nearly every figure object type (rect, text, polyline, ...) — truncated
+the `x`/`y` position fields on every save. Also: `figure__Write`'s
+`$origin` field was still `%d %d` on the *write* side though the
+*read* side had already been fixed in an earlier milestone (see
+`porting-assessment.md`'s figure-inset history) — a reminder to
+re-check both directions of a read/write pair even on findings already
+marked fixed. `atk/chart`'s `Parse_Item_Field` read a chart item's
+value into an **uninitialized `long`** via `sscanf %d` — real memory
+corruption on read, not just truncation. I4 (12 small/leaf directories,
+closes Wave 4) found 4 more: `atk/raster/lib/rasterio.c`'s shared
+raster-datastream reader read the `long options` field with `%u`;
+`atk/hyplink/link.c` wrote `pos`/`len` with `%d`; `atk/raster/convert/
+convrast.c`'s own crop-option CLI parser read four `long` locals with
+`%d`. **Wave 4 checkpoint**: wdc ran a full `make Clean; make World`
+plus a broad smoke pass — no regressions from this wave's own fixes,
+but found and logged two new pre-existing bugs: `contentv` (Table of
+Contents) shows nothing for documents using enumerated/auto-numbered
+heading styles, and `convertraster`'s crop option (this wave's own fix
+target) now parses correctly but produces a blank cropped image.
+
+### 2026-08-06 — M4 Wave 5: 8 app/tool directories closes Wave 5
+
+`ams/msclients/imapsync`, `ams/msclients/cui`, `atk/typescript`,
+`atk/help/src`, `doc/mkbrowse`, `atk/help/maint`, `atk/ez`,
+`ams/msclients/nns`. A shift from Wave 4's datastream-corruption
+pattern to UI/diagnostic-text bugs, since this batch is mostly
+CLI/UI-facing code, not file-format code: `cui.c`'s epoch
+delete-confirmation prompt dropped the seconds field from its message;
+`mkindex.c` had two diagnostics' `code`/`lineNo` fields swapped
+relative to their own labels; `helpa.c`'s duplicate-index error path
+dropped the actual offending switch name from its error text; `cui.c`'s
+`SubscriptionChangeHook` was declared as a bare 0-argument stub despite
+every real call site passing 4 arguments (tolerated only by K&R's
+no-arity-check convention). Also the third, fourth, and fifth
+recurrence of the "no header declares this" pattern first found in
+Batch 0: several files (`imap_sync.c`, `tscript.c`, `eza.c`,
+`mkbrowse/browser.c`) called functions with zero declaration anywhere
+in scope, invisible until this wave's stricter flags.
+
+### 2026-08-06 — M4 Wave 6: `ams/libs/ms`, `messages/lib`, `ams/libs/{cui,nosnap,shr}` closes Wave 6
+
+AMS1 (`ams/libs/ms` alone, the tree's worst prior history of silent
+width-mismatch bugs) found: `epoch.c`'s local `extern int
+DescribeTimeInterval()` disagreed with the real function's `char *`
+return (LP64 pointer-truncation pattern #1, live in the
+single-old-message deletion path); `subs.c`'s empty-subscription-name
+recovery branch had a duplicated `fprintf` argument, misaligning every
+later conversion in the message (a pointer printed via `%d`, an `int`
+dereferenced as `%s`); and `init.c`'s `DieYouHeathenSwine` signal
+handler was typed to return `int` against POSIX `signal()`'s real
+`void(*)(int)` contract. AMS2 (`atkams/messages/lib`, `messages`' own
+GUI backend, tree-wide gate required) found `stubs.c`'s `SnarfFile`
+diagnostic dropped its filename argument entirely from a 2-conversion
+format string. AMS3 (`ams/libs/{cui,nosnap,shr}`, closes Wave 6) found
+`cuilib.c`'s `CUI_SetPrinter` catch-all failure path had zero `%`
+conversions despite `printername` being passed as an argument — the
+printer name was silently missing from the user-visible error. Wave 6
+checkpoint (`make Clean; make World` plus a smoke pass) ran clean.
+
+### 2026-08-06–08-07 — M4 Wave 7 closes M4's directory rollout: `contrib/zip/lib`, `contrib/zip/utility`, 9 small contrib directories
+
+C1 (`contrib/zip/lib` alone, the tree's known highest-defect-density
+directory, tree-wide gate required) found `zipds02.c`'s figure-mode
+attribute writer built three one-character flag strings
+(horizontal/vertical/halo) but only ever printed two — the missing
+`halo` conversion confirmed live against the reader side, which
+explicitly parses a third character. Fixing it exposed a **second,
+previously dormant bug** the same day, found by wdc's own testing:
+the three flag buffers were `static char foo[2]="?"` sentinel scratch,
+only ever overwritten when their flag was on and never reset when off
+— since `halo` had never actually been printed before the first fix,
+its stale `"?"` was invisible; the moment it started printing, every
+figure with halo off got a literal `?` appended to its Mode line,
+corrupting the datastream for every inset after it (confirmed live via
+`revival/testing.ez`). Fixed by dropping `static` and initializing to
+`""` — 1988 K&R never allowed automatic-variable initializers, so
+`static` was likely there only to make the `="?"` initializer legal in
+the first place, not for intentional persistence; C89 allows a plain
+local initializer directly, giving the fresh-every-call behavior the
+code seems to have always wanted.
+
+C2 (`contrib/zip/utility`: `lt`/`ltapp`/`ltv`, `sched`/`schedapp`/
+`schedv`) found `sched.c`'s "Unable to Open" diagnostic printed the
+`struct zip_stream *` pointer itself instead of the actual filename
+field — every failed-open message for the `sched` class has shown a
+garbage/unrelated value since the file was written. This batch also
+resolved the `ltapp.c` `Set_Debug` blocker first logged back on
+07-11 (an untyped-`.ch`-vs-`boolean` mismatch that had blocked a full
+top-to-bottom gate ever since). C3 (9 small contrib directories, closes
+Wave 7 and all 18 sessions/7 waves of M4's directory-by-directory
+rollout) found one more LP64 memory-corruption bug:
+`contrib/mit/annot/psview.c`'s PostScript bounding-box parser read four
+`long` fields with `sscanf %d`, corrupting both the on-screen inset
+size and a `translate` command written back into the document.
+
+### 2026-08-07 — Strict-prototypes side quest: tree-wide census, pilot, mechanical retype, and triage
+
+Found while diagnosing a zip figure-drag X-axis-lock bug (a stale
+untyped `Set_Constraints` forward declaration, fixed the same day, not
+itself part of the M4 wave sequence): a static helper's
+forward declaration can remain old-style/argument-less
+(`static int Foo();`) even after its real definition is fully
+ANSI-typed, if an earlier conversion pass retyped the definition but
+never reconciled a separate forward declaration above it in the same
+file — legal ANSI C, invisible to every M1-M4 diagnostic, since
+`-Werror=int-conversion`/`incompatible-function-pointer-types` only
+fire when a real prototype is in scope to compare a call against, and
+an argument-less declaration isn't one.
+
+A diagnostic-only tree-wide `-Wstrict-prototypes` sizing pass (not
+`-Werror`, nothing committed to any Imakefile) found 6,715 hits
+anchored in real project `.c` files across all 91 directories, tracking
+M4's own worst-defect-density directories closely (`ams/libs/ms` 913,
+`atkams/messages/lib` 529, `contrib/zip/lib` 368, `atk/text` 359). A
+pilot on `contrib/calc` established that a hit means only "no real
+prototype in scope," not "definitely broken" — of 10 census hits there,
+6 were real local declarations (retyped, zero actual bugs found once
+rebuilt against `-Wincompatible-pointer-types`) and 4 were classpp-
+generated-header noise or deliberate generic dispatch, not fixable or
+not bugs.
+
+A tree-wide mechanical pass (77 remaining directories, ~4,600 stale
+forward declarations retyped across 508 files, nothing else changed,
+fixing zero bugs by design — just making every real signature mismatch
+visible to the compiler) found a handful of confirmed real bugs, then
+fixed them as a separate triage step: `ams/msclients/cui/cui.c`'s
+`MS_GetPartialFile`/`MS_GetPartialBody` passed `&bytesunfetched`
+(`long`) for an `int *remaining` out-param at 6 call sites (an LP64
+truncation bug, plus a 7th sibling bug found only once the rebuild
+after the first fix exposed it — `MS_ProcessNewMessages`'s
+`FirstError`); `ams/libs/ms/reply.c`'s `PrintFwdHeaders` was defined
+with `int fp` where every real caller passes a `FILE *`; 9 more
+confirmed argument-count/type mismatches (missing or extra arguments,
+mostly copy-paste drift) across `bldcapt.c`, `mswp.c`/`submsg.c`,
+`zipdi00.c`, `txtvcmsc.c`, `table.c`, `rastvauy.c`, `nns.c`, `fdbbdf.c`;
+`atk/image/ps.c`'s `epsPreview` turned out to be genuinely dead code
+(its only call site was permanently `if (FALSE)`-gated with arguments
+that didn't even match the real signature) — deleted rather than
+fixed; `contrib/zip/lib/zipve02.c`'s `Create_Shade_Palette` had its
+`containing_pane` parameter typed `int` where all 8 sibling
+palette-creation functions declare it `zip_type_pane`. All fixed and
+verified: every touched directory rebuilt clean individually, then a
+full tree-wide `make dependInstall`; wdc functionally verified the two
+highest-value fixes live (browsing the real IMAP INBOX, which exercises
+`MS_GetPartialFile`/`PrintFwdHeaders`/`BuildDateField`; the zip shade
+palette rendering correctly on save/reload).
+
+### 2026-08-07 — M4 complete: `STRICT_COMPILERFLAGS` becomes the tree-wide default
+
+With the directory-by-directory rollout and the strict-prototypes side
+quest both done, `system.mcr`'s default `COMPILERFLAGS` was flipped to
+`STRICT_COMPILERFLAGS` and the 83 now-redundant per-directory Imakefile
+overrides removed. One last bug surfaced by the flip itself, in a
+directory that had never been individually strict-flagged before:
+`overhead/class/lib/mapping.c`'s `DumpMappingInfo` had a `%08x`/
+`unsigned long` format mismatch, caught by its first-ever strict
+compile. **M4 complete** — every one of the 91 active directories now
+builds under full compiler strictness (implicit-int, incompatible
+pointer/function-pointer types, and format strings all `-Werror`;
+`strict-prototypes` deliberately excluded from the global flip — see
+the 2026-08-01 M4-begins entry above for why). This closes the ANSI C conversion
+plan begun with M1 on 2026-07-08: four milestones, dispatch-layer
+typing through full compiler strictness, dozens of decades-old bugs
+found and fixed along the way. Full per-wave/per-batch detail:
+`revival/doc/m4-batches.md`, `m4-rollout-runbook.md` (not yet retired
+to `claude-history/` as of this entry); strict-prototypes detail:
+`revival/doc/strict-prototypes-census.md`,
+`claude-history/strict-prototypes-retype-REPORT.md`.
 
 ### 2026-08-08 — convertraster: full functional test pass, three bugs found and fixed
 
