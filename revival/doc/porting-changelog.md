@@ -887,12 +887,12 @@ local buffers before mutation.
 
 ### 2026-07-24 — M2 point 0: `-Wincompatible-pointer-types` census, three fixes, and the Group A rollout (with a live correction)
 
-**Note on the remaining gap:** the 07-09–07-25 entries (the M1 rollout
+**Note on the remaining gap:** the 07-09–08-02 entries (the M1 rollout
 tail, AMS-over-IMAP through milestone 4, folder-visibility,
-mime-display, fdplumb, `-fwritable-strings`, M2 completion, M3's first
-step) were backfilled from `roadmap-old.md`, `porting-assessment.md`,
-and `claude-history/*-REPORT.md`. Still not backfilled: 07-30–08-02
-(the rest of M3) and 08-03–08-07 (M4 plus the strict-prototypes
+mime-display, fdplumb, `-fwritable-strings`, M2 completion, all of M3,
+and M4 through Wave 2) were backfilled from `roadmap-old.md`,
+`porting-assessment.md`, and `claude-history/*-REPORT.md`. Still not
+backfilled: 08-03–08-07 (the rest of M4 plus the strict-prototypes
 census/retype/triage). Same sourcing plan applies.
 
 **Census** (`revival/doc/claude-history/m2-census-REPORT.md`): classified
@@ -1063,6 +1063,209 @@ message shape and are almost certainly the same mechanism. See
 `porting-assessment.md` #17. Same day, M3's directory batch plan
 (`overhead/util/lib`, 58 files) started separately as O1.
 
+### 2026-07-30 — M3 Waves 1-2: `ansify` K&R→ANSI conversion resumes; classpp `FinalizeObject` `-pe` self-inconsistency
+
+M3 converts every K&R function *definition* tree-wide to real ANSI
+argument types (M1 only retyped class-dispatch call sites; M3 retypes
+the definitions themselves, using the `ansify` driver built for the
+abandoned June attempt, see `porting-assessment.md` §14). Batch B1
+(`atk/basics/common`, 41 classes/45 files) opened the `-pe`/`.eh`
+rollout (typed *exports*, the counterpart to M1's typed imports) at
+scale for the first time; found a stray `*cmap` dereference bug in
+`im.c` along the way. Batch B2 (`atk/value`+`support`+`supportviews`+
+`adew`+`basics/x`, 81 classes/93 files) surfaced a real classpp
+codegen bug: `FinalizeObject`'s exported `-pe` prototype follows the
+*ordinary* classproc emission path (whatever the `.ch` declares), but
+the internally generated call site inside `__Finalize` is unconditionally
+hardcoded to pass 2 arguments (`classID`, `self`) regardless — so an
+empty-parens `FinalizeObject()` `.ch` declaration became self-inconsistent
+with its own generated `.eh` the moment `-pe` turned on. Fixed in
+classpp itself, verified as zero retroactive effect on the 7 directories
+already using `-pe` (byte-identical `.eh` regeneration). The same batch
+also found 6 separate ~35-year-old copy/paste typos — a wrong sibling
+class name substituted for the true enclosing class in a restated
+`InitializeObject`/`FinalizeObject` parameter type — invisible until
+`-pe` actually type-checked them.
+
+Also this window: `ansify` had a silent parser gap on "brace-glued"
+K&R parameter declarations (a function's opening `{` on the same line
+as its last parameter's type, with no whitespace separating them) —
+first found and fixed as a silent-skip bug, then found to have a second
+half, a corruption-on-reject defect discovered while fixing the first;
+both fixed, plus a retrospective re-check across the 7 `-pe` directories
+already converted (20 files needed re-conversion once the gap was
+closed). Batch B3 (13 leaf directories, 61 files, closes Wave 2) hit
+the gap's third variant — brace-glued to a *local variable* declaration
+inside a function body, not a parameter — plus its own crop of drift
+bugs: an `InitializeClass`/`FinalizeObject` restated-parameter classpp
+bug, a missing parameter in `tree.ch`, a `SetHitHandler` `.ch`/`.c`
+mismatch, a struct-tag scope trap, and 4 more rock-idiom instances.
+Full per-batch detail: `claude-history/m3/m3-b1-basics-common-REPORT.md`,
+`m3-b2-value-support-REPORT.md`, `m3-b3-leaf-dirs-REPORT.md`.
+
+### 2026-07-30–07-31 — M3 Wave 3: `atk/text` (30 files/21 classes)
+
+Closes Wave 3. Found a `textv.ch` `ViewMove` parameter typed to the
+wrong type, a `textv.c` `HandleSelection` call passing a stray extra
+argument, and 3 stranded forward declarations left over from earlier
+rollouts. Full detail: `claude-history/m3/m3-t1-atk-text-REPORT.md`.
+
+### 2026-07-31 — M3 Wave 4: 10 inset-adjacent directories, then eq/figure/chart/table/rofftext/raster-cmd
+
+I1 (`atk/image`, `srctext`, `raster/lib`, `layout`, `hyplink`, `org`,
+`bush`, `raster/scan`, `fad`, `raster/convert`, 70 files) hit four
+`ansify` tool bugs along the way — a case-insensitive filename
+collision in the signature database (`sliderv`/`sliderV`, refused
+rather than silently overwritten), `fix-missing-static-decl` inserting
+a duplicate empty-parens declaration for an already-fully-prototyped
+function, a bracket-placement bug in array-parameter formatting
+(classpp's `-D` output emits `T [ ]` with a space `ansify` didn't
+expect), and a two-line return-type declaration being duplicated when
+`ansify`'s `TYPEONLY` handling met a trailing comment. Real bugs: a
+`cmapv.ch` self-type mismatch, a stray argument in `pbm.c`, and two
+covariant `SetDataObject` override mismatches (`asmtextv.ch`,
+`srctextv.ch`). Runtime-confirmed clean, including a fixed `bush`
+leaf-node rendering regression caught during verification.
+
+I2 (`eq`, `figure`, `chart`, `table`, `rofftext`, `raster/cmd`) closed
+out the wave. Separately, `atk/chart` needed an M2-era `COMPILERFLAGS`
+guard added (it had never gotten one) — closing it surfaced 10
+cross-file implicit-declaration gaps and one dual-use-attribute cast.
+Full detail: `claude-history/m3/m3-i1-insets-batch1-REPORT.md`, `m3-i2-insets-batch2-REPORT.md`.
+
+### 2026-07-31 — M3 Wave 5: 9 app/leaf directories (A1)
+
+`ansify` gained a fifth tool fix here: a signature-database collision
+between two same-named classes, one live and one in a dead subtree,
+where the dead one was silently winning — refused rather than silently
+overwritten, same defensive pattern as the I1 filename collision. Real
+bug: a live LP64 pointer-truncation crash in `cvEng()`
+(`ams/libs/shr/utils.c`, returns `char *`) — called from `cuifns.c`'s
+`GetDirInfo`/`dirinfo` command with no declaration anywhere in
+`ams/msclients/cui` (this directory had never gotten the M2-era
+`COMPILERFLAGS` guard either), so it silently implicit-declared as
+`int cvEng()`, truncating the real pointer on arm64. Only call site
+tree-wide reaching `cvEng`; every other implicitly-declared function in
+the directory turned out to genuinely return `int`/`void`/`boolean`
+(checked systematically, all ~140). Fixed with an explicit
+`extern char *cvEng();`, matching the declaration style
+`ams/libs/cui/cuilib.c` already used for the same function.
+Runtime-confirmed clean after the fix. Full detail:
+`claude-history/m3/m3-a1-apps-REPORT.md`.
+
+### 2026-08-01 — M3 Wave 6: `ams/libs/ms` (113 files) and `messages/lib`; `FreeMessageContents` — a real ~30-year-old arg-count bug
+
+AMS1 converted `ams/libs/ms` (Wave 6's largest directory) and closed a
+COMPILERFLAGS gap in `ams/msclients/cui` left over from Wave 5. Giving
+`FreeMessageContents` its real 2-argument prototype
+(`struct MS_Message *Msg, Boolean FreeSnapshot`) surfaced a genuine bug
+invisible under K&R's unspecified-argument-count declarations:
+`unscrib.c`'s `UnformatMessage` called it with only one argument — the
+only call site tree-wide missing the second. Examining the function
+body: `FreeSnapshot` controls only whether `Msg->Snapshot` is freed;
+`UnformatMessage` reformats a message in place and reuses the `Msg`
+struct afterward, so freeing the snapshot here looks semantically
+wrong, but the pre-existing call's real second-argument value was
+whatever garbage happened to be in that register — genuinely undefined
+behavior, not a reliable default. Fixed conservatively as
+`FreeMessageContents(Msg, FALSE)` (don't free the snapshot — a stale
+snapshot is a smaller failure mode than a use-after-free) and flagged
+for a human ruling rather than presented as unambiguous; wdc confirmed
+the choice the same day.
+
+AMS2 converted `messages/lib` plus 3 more AMS libraries, closing Wave
+6. Full detail: `claude-history/m3/m3-ams1-REPORT.md`,
+`m3-ams2-REPORT.md`.
+
+### 2026-08-01 — M3 Wave 7 closes M3 tree-wide: `contrib/zip/lib` and 11 more contrib directories
+
+C1 converted `contrib/zip/lib`; C2 converted the remaining 11 contrib
+directories, closing both Wave 7 and M3 itself. C2 resolved the
+`contrib/zip/utility/ltapp.c` `Set_Debug` blocker logged back on
+07-11 (an untyped-`.ch`-vs-`boolean`-argument mismatch in
+`contrib/zip/lib`, which had blocked a full top-to-bottom gate ever
+since) and found a new bug: `EnvStart`/`EnvEnd` argument handling.
+
+**M3 complete (2026-08-01):** every K&R function definition tree-wide
+now carries real ANSI argument types — 15 sessions, all 91 active
+directories. M3's prompts, per-directory reports, rollout runbook, and
+batch map (38 files) were retired into `claude-history/m3/`, with
+cross-references repointed.
+
+### 2026-08-01–08-02 — M4 begins: Phase 0 pre-flip audit, `strict-prototypes` dropped from the global flip, Batch 0
+
+M4 is the final ANSI-conversion milestone: flip the compiler's
+strictness flags (`implicit-int`, `implicit-function-declaration`,
+`int-conversion`, `incompatible-function-pointer-types`, `format`) to
+`-Werror` by default, directory by directory, after M1-M3 already
+retyped the dispatch layer and the definitions underneath it. Phase 0
+audited the known risks M3 had flagged for follow-up — all closed
+except one new finding that changed the plan: `-Wstrict-prototypes`
+doesn't only flag leftover K&R-style function *definitions* (a small,
+already-known residual list); it also flags every plain empty-parens
+`extern int foo();` **declaration** — a C89-legal "unspecified
+arguments" idiom this codebase uses extensively and deliberately (M2
+and M3 both picked it on purpose in places, e.g. AMS1's own
+`moreprintf`/`errprintf2` fix). A declaration-shaped grep found ~6,024
+such declarations tree-wide, ~1,055 inside installed headers alone;
+compiling a real file (`atk/value/entrtext.c`) with
+`-Werror=strict-prototypes` failed immediately from `class.h`'s own
+`extern int class_EnterInfo();` — a foundational header included
+nearly everywhere. There's no compiler-flag granularity separating
+"leftover K&R definition" from "deliberate unspecified-args
+declaration"; clang raises the identical diagnostic for both. Dropped
+`strict-prototypes` from the global flip (the other four flags all
+checked clean the same way, on three files across three risk tiers).
+
+Batch map: a real Phase 1 census (not a pre-built guess, unlike M2/M3)
+found 1,778 errors across 83 of 91 directories once the full flag set
+was actually applied — the "might land close to clean" hope from the
+original plan was disproved; 24 batches across 7 waves were mapped
+from it. Execution mechanism: per-batch `COMPILERFLAGS` overrides
+(mirroring M2's approach) via a new `STRICT_COMPILERFLAGS` macro in
+`system.mcr`, global flip deferred to a final cleanup step — keeps the
+tree buildable and pausable throughout. Batch 0 (2026-08-02) verified
+the mechanism itself: reapplied a classpp fix (`stdlib.h`,
+`PushFile`/`PopFile` externs, `pathopen`'s return type), fixed
+`-Werror=format` findings including an LP64 id-truncation bug, and
+added `STRICT_COMPILERFLAGS` to `system.mcr`.
+
+### 2026-08-02 — M4 Wave 1: `overhead/mail` (richmail, eli, metamail), bison/index/util/misc
+
+O1 (`overhead/mail/metamail/richmail`) fixed an implicit-int cleanup
+plus a live `sprintf` format-string bug. O2 (`eli/lib`+`bglisp`,
+`mail/lib`+`cmd`+`testing`, `metamail`) fixed two more format-string
+injection bugs and a `UnixError` `%d`-format bug. O3 (bison, index,
+util, misc leaf directories, closes Wave 1) found `overhead/bison/
+files.c`'s `AndrewDir()` — a pointer-returning function invoked via
+the `XPFILE`/`XPFILE1` macros with no declaration anywhere in
+scope — the same LP64 pointer-truncation class fixed repeatedly
+elsewhere in the tree, a separate call site from the one already fixed
+earlier in the project. Fixed with `extern char *AndrewDir();`. Also:
+`overhead/index`'s on-disk hash-bucket (`H%d`) and version (`V%d.%d`)
+filenames were built/parsed with `%d`/`sscanf %d` against `long`
+fields, fixed to `%ld`; `tif_print.c` had 11 `%u`-vs-`u_long`
+mismatches in its debug-only `TIFFPrintDirectory` path;
+`overhead/addalias/addalias.c`'s `qsLineCompare` was rewritten to a
+real `(const void *, const void *)` qsort comparator instead of a bare
+cast. `overhead/bison` confirmed first-party-maintained (the Andrew
+Consortium's own fork, not vendored upstream) — fixed like any other
+directory, its bootstrap-generated `lex.c`/`gram.c` needed no changes.
+
+### 2026-08-02 — M4 Wave 2: `atk/apt/tree`, then 9 more directories, then 9 more — closes Wave 2
+
+B1 (`atk/apt/tree`) removed a dead duplicate K&R declaration block and
+fixed 42 implicit-int instances, 7 LP64 `%ld` format fixes, and 3
+vtable dispatch casts. B2 (`adew`, `apps`, `apt/suite`,
+`basics/{common,x,lib}`, `syntax/{tlex,parse,sym}`, `utils`) fixed 5
+real LP64/signal-handler bugs. B3 (`value`, `apt/apt`, `textaux`,
+`supportviews`, `support`, `lookz`, `textobjects`, `extensions`,
+`frame`, closes Wave 2) fixed 11 real LP64/signal-handler/writable-
+string bugs. None individually escalated to a human ruling; full
+per-directory detail in the M4 batch/wave working files
+(`revival/doc/m4-batches.md`, `m4-rollout-runbook.md` — not yet
+retired to `claude-history/` as of this entry).
+
 ### 2026-08-08 — convertraster: full functional test pass, three bugs found and fixed
 
 Standalone app, not previously exercised. Tested every switch and format
@@ -1142,4 +1345,87 @@ Fixed and rebuilt (`oldrf.do` relinked in place, `convertraster` static
 binary relinked); full regression pass after all three fixes — identity
 round-trip, RF/MacPaint/Xwd/Xbitmap round trips, 4×90° rotation
 identity, PostScript scale factor, and a valid crop — all still pass.
-Not yet committed to fossil.
+Committed (`fb799285e2`).
+
+### 2026-08-08 — image inset: JPEG/TIFF import, four more bugs, root cause found and fixed live
+
+Follow-on same-day session, picking up the `image` inset's long-open
+"JPEG/GIF import renders solid black, TIFF renders solid white"
+bug (`roadmap-old.md`, found 2026-07-26, never root-caused). Same
+diagnostic method as the `convertraster` entry above: an independent
+standalone test harness (`class_Init` + `class_NewObject("jpeg"/"tif")`
++ `image_Load`, bypassing X11 entirely) to isolate decode correctness
+from display correctness, using real test files (`revival/tests/
+netmap.jpg`, `netmap.tiff`) rather than the tiny synthetic ones the
+2026-07-26 investigation had on hand.
+
+**JPEG decode: already correct.** The harness showed `jpeg.c`'s decoder
+producing a correct `ITRUE` image — right dimensions, real varying
+pixel data — on the first try. Whatever caused the original "solid
+black" report, it wasn't the JPEG decoder itself.
+
+**TIFF import: totally broken, four bugs, all the same LP64 struct/
+stride family as `porting-assessment.md` §21 (`convertraster`'s
+`RasterHeader`), just in the vendored `libtiff` this time:**
+- `TIFFHeader` (`tiff.h`) declared its `tiff_diroff` field `unsigned
+  long`; on-disk it's a 4-byte TIFF LONG. Doubled the struct to 16
+  bytes against an 8-byte real header, misreading the initial
+  directory offset from the wrong file bytes. `TIFFOpen` failed
+  outright — "Can not read TIFF directory count" — for every TIFF
+  tried, including a minimal uncompressed one.
+- `TIFFDirEntry` had the identical problem (`tdir_count`/`tdir_offset`
+  both `unsigned long` against a 12-byte real entry), corrupting every
+  directory-entry read once the header was fixed.
+- `TIFFSwabArrayOfLong` (`tif_swab.c`) correctly swaps 4 bytes per
+  element but advances its pointer by `sizeof(unsigned long)` (8 on
+  LP64) between elements — every call with n>1 swaps the right bytes
+  once, then corrupts whatever memory follows. One call site
+  (`&dp->tdir_count, 2`) was swapping half of every directory entry's
+  count/offset pair and stomping the *next* entry's tag/type with
+  garbage — the source of a wall of "unknown field"/"wrong data type"
+  warnings once the two struct fixes above let the file open at all.
+- `TIFFFetchLongArray` read disk-packed 4-byte LONGs directly into the
+  caller's native `u_long v[]` (8 bytes/slot on LP64) — used for
+  `StripOffsets`/`StripByteCounts`, so every strip's file offset came
+  out as two real values jammed into one 64-bit slot. This is what
+  actually blocked pixel data: `TIFFReadEncodedStrip` failed
+  ("Read error at scanline -1") even after the file opened cleanly.
+  Fixed the same way the pre-existing short→long expansion case in
+  `TIFFFetchStripThing` already did it: stage into a real `uint32_t`
+  buffer, then widen each element into the destination.
+
+All four fixed, `libtiff.a`/`tif.do` rebuilt; confirmed via the harness
+that TIFF now decodes identically to JPEG — real varying pixel data,
+survives `image_Duplicate`/`image_Compress` intact.
+
+**The actual "solid color" bug: `xgraphic.c`, nothing to do with LP64
+at all.** With both decoders proven correct, a live test (embedding
+each file as a real `image`/`imagev` inset datastream, `xwd`-capturing
+the actual `ez` window — `ImageMagick` has no xwd decoder, converted
+by hand from the raw XWD format instead) still showed a solid color
+fill, confirming the bug was purely in on-screen rendering. Root cause
+in `imageToXImage` (`atk/basics/x/xgraphic.c`)'s TrueColor/DirectColor
+color-allocation loop: it calls `xcolormap_AllocColor(...)` and stores
+the live result in `xc`, but fills the `redvalue[]`/`greenvalue[]`/
+`bluevalue[]` lookup tables (used to translate every decoded pixel to
+its on-screen value) by reading `xcolor.pixel` — a *different*, merely
+flag-initialized local variable whose `.pixel` field is never written
+anywhere in this function. Every one of the 256 entries in all three
+tables ends up holding the same uninitialized stack garbage, so every
+real pixel — regardless of its actual decoded color — looks up to the
+same output value: a solid fill, whichever color that garbage decoded
+to (matching the historically-inconsistent reports of black, white,
+and, live in this session, blue). Fixed by reading `xcolor_Pixel(xc)`
+instead, the same accessor already used correctly a few lines away
+in the PseudoColor branch of the same function. Not LP64-related —
+a plain pre-existing variable mix-up, apparently never exercised
+until this was the first time anyone tried displaying a real photo
+through this port.
+
+`xgraphic.o` rebuilt, `libbasics.a` and static `runapp` relinked
+(wdc installed the new binary; a live `ez` window from before the
+relink still showed the old broken behavior, confirming `.do`/binary
+files cache for a process's lifetime as documented elsewhere in this
+project). Confirmed live, both formats, fresh `ez` process: JPEG and
+TIFF versions of `netmap` both render the actual photographed page
+content, correctly.
