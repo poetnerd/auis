@@ -1,12 +1,48 @@
 # AUIS Revival: Running ez on macOS/Darwin
 
-This guide covers building and running `ez` and other AUIS applications
-from the `andrew-6.4` revival checkout on macOS with XQuartz. It
-reflects the state of the revival as of mid-2026; consult
-`porting-changelog.md` for the history behind each decision.
+This guide covers getting the source, building, and running `ez` and
+other AUIS applications on macOS with XQuartz. See `roadmap.md` for
+current status and `porting-changelog.md` for the history behind each
+decision.
 
 For getting `messages`/`cui` working against a real IMAP/SMTP mail
 account, see `mail-quickstart.md`.
+
+## Getting the source
+
+Two mirrors exist; either works. Both use a branch/checkout named
+`andrew-6.4` — most of this guide's commands assume you're inside a
+directory with that name, and the tree itself contains hardcoded
+references to a specific absolute path (fixed in Site configuration,
+below).
+
+**GitHub** (mirror, easiest for a one-off checkout):
+```bash
+git clone -b andrew-6.4 https://github.com/poetnerd/auis.git andrew-6.4
+cd andrew-6.4
+```
+The `-b andrew-6.4` flag checks out that branch directly during the
+clone — without it, `git clone` gives you the repo's default branch,
+which is not this one.
+
+**Fossil** (canonical repo, needed if you intend to contribute changes
+back):
+```bash
+mkdir andrew-6.4
+cd andrew-6.4
+fossil clone https://poetnerd.com/wdc/auis auis.fossil
+fossil open auis.fossil
+fossil update andrew-6.4
+```
+`fossil clone` downloads the whole repository (history included) into
+the `auis.fossil` file; `fossil open` checks out its tip into the
+current directory; `fossil update andrew-6.4` makes sure you land on
+the `andrew-6.4` branch specifically, since a fresh open doesn't
+always land there by default.
+
+Either way, you should now be in an `andrew-6.4/` directory containing
+`src/`, `revival/`, `patches/`, and `bison/`. Everything below assumes
+you're starting from there.
 
 ## Prerequisites
 
@@ -28,61 +64,87 @@ brew install bison flex imake makedepend
 - `imake`: required to regenerate Makefiles on a fresh checkout
 - `makedepend`: required for the `make depend` phase
 
+## Site configuration — required before your first build
+
+`src/config/site.h` hardcodes `DEFAULT_ANDREWDIR_ENV`, a path compiled
+into every AUIS binary as the fallback location for its own resource
+tree (fonts, `etc/AndrewSetup`, help files — everything under `build/`)
+whenever the `ANDREWDIR` environment variable isn't set at runtime. As
+checked in, it points at the original developer's own checkout path.
+**If your checkout isn't at that exact path, edit it before building:**
+
+```
+#define DEFAULT_ANDREWDIR_ENV /path/to/your/andrew-6.4/build
+```
+
+This only needs doing once, before the first `make World` — the value
+gets compiled in, so changing it later means rebuilding. (If you'd
+rather not touch a tracked file, setting the `ANDREWDIR` environment
+variable to the same path at runtime overrides this default without a
+rebuild — but you'd need to set it in every shell session that runs an
+AUIS binary, so editing `site.h` once is usually less friction.)
+
 ## Building
 
-### Incremental build (normal case)
+### First build (fresh checkout)
 
-From `andrew-6.4/src/`:
-```
-make dependInstall 2>&1 | tee ../dependInstall.log
-```
-A clean build produces 278 `.do` files and 602 headers with zero errors.
-`-k` is not needed; the tree is clean. Do not run concurrent builds.
-
-### Fresh checkout bootstrap
-
-On a brand-new fossil clone with no existing `build/` directory, the
-generated Makefiles and `build/include/` tree do not yet exist. Follow
-the bootstrap sequence from `src/README.ascii`:
+From the `andrew-6.4/` checkout root, run all three steps below in
+order — the first is easy to miss because its symptom (`make World`
+failing with "cannot find include file ... .ih") shows up two steps
+later, in a part of the build that looks unrelated:
 
 ```bash
-cd andrew-6.4/src
+cd src
 
-# Step 1: generate the top-level Makefile via imake
+# Step 1: class.h must exist in build/include/ before machdep can build
+# against it. On a brand-new checkout nothing has been installed yet,
+# so this has to run first, by hand, exactly once.
+../revival/tools/prime-class-header
+
+# Step 2: generate the top-level Makefile via imake
 imake -I. -I./config -Timake.tmpl -s Makefile -DTOPDIR=.
 
-# Step 2: World = make Makefiles (all subdirs) + make dependInstall
+# Step 3: World = regenerate all subdirectory Makefiles + full build + install
 make World 2>&1 | tee ../dependInstall.log
 ```
 
 `make World` regenerates all subdirectory Makefiles via imake, creates
-the `build/` directory tree, builds all libraries and binaries, generates
-`.ih`/`.eh` headers from `.ch` class specs, and installs everything.
-On a working tree, `make dependInstall` is equivalent and faster (skips
-the Makefile regeneration step).
+the `build/` directory tree, builds all libraries and binaries,
+generates `.ih`/`.eh` headers from `.ch` class specs, and installs
+everything. Expect it to take a few minutes. A clean build produces
+278 `.do` files and 602 headers with zero errors.
 
-**On a genuinely empty `build/`** (not just a fresh clone — also any
-time `build/` has been deliberately wiped, e.g. to bisect an old
-revision), run `../revival/tools/prime-class-header` first, *before*
-`make World`. `overhead/class/Imakefile` builds `machdep` before `lib`,
-but `lib` is what installs `class.h` into `build/include/` —
-`machdep/darwin/classproc.c` needs it already there. This is invisible
-once `build/` has existed for a while (which is every normal case), so
-it only bites the first `make World` against a truly empty tree. See
-`porting-assessment.md` → "Primary build environment" for the full
-writeup. Full recipe for testing a specific historical revision
-(fossil's mtimes make incremental rebuilds untrustworthy across
-checkouts): `porting-assessment.md` → "Fossil checkout timestamps make
-incremental rebuilds untrustworthy...".
+Why step 1 is needed: `overhead/class/Imakefile` builds `machdep`
+before `lib`, but `lib` is what installs `class.h` into
+`build/include/` — `machdep/darwin/classproc.c` needs it already
+there, and on a truly empty `build/` nothing has installed it yet.
+This only bites the very first build; every build after this one
+already has `class.h` in place. See `porting-assessment.md` → "Primary
+build environment" for the full writeup. (The same three steps apply
+any time `build/` is deliberately wiped from scratch, e.g. to bisect
+an old revision — not just on a fresh checkout. Full recipe for
+testing a specific historical revision, since fossil's mtimes make
+incremental rebuilds untrustworthy across checkouts:
+`porting-assessment.md` → "Fossil checkout timestamps make incremental
+rebuilds untrustworthy...".)
 
 Check for LP64 warnings before running new code paths:
 ```
-grep "warning: cast to '.*\*' from smaller integer type" dependInstall.log
+grep "warning: cast to '.*\*' from smaller integer type" ../dependInstall.log
 ```
 Any hit is a real bug (pointer-returning function called without a
 prototype, return value truncated to 32 bits). Fix with a local
 `extern TYPE FunctionName();` declaration. See `porting-changelog.md`
 and `porting-assessment.md` §LP64 for the full pattern.
+
+### Incremental rebuilds (after the first build)
+
+Once `build/` exists and the first `make World` has succeeded, day-to-day
+rebuilds are simpler. From `andrew-6.4/src/`:
+```
+make dependInstall 2>&1 | tee ../dependInstall.log
+```
+`-k` is not needed; the tree is clean. Do not run concurrent builds.
 
 ## AndrewSetup settings
 
@@ -144,7 +206,7 @@ XQuartz's font path once per XQuartz session (it is lost when XQuartz
 quits):
 
 ```
-xset fp+ /Users/wdc/src/AUIS/andrew-6.4/build/X11fonts
+xset fp+ /path/to/your/andrew-6.4/build/X11fonts
 xset fp rehash
 ```
 
@@ -187,7 +249,7 @@ silently breaks `con10`/`con12`..." for the full story.
 Change to the `build/` directory and run:
 
 ```
-cd /Users/wdc/src/AUIS/andrew-6.4/build
+cd /path/to/your/andrew-6.4/build
 bin/ez -d                          # open a blank document
 bin/ez -d doc/README.ez            # open an existing .ez file
 bin/ez -d ~/src/AUIS/NEWSLETTERS/EZ/95Summer.ez   # richer test document
@@ -204,7 +266,7 @@ to the same binary.
 ## Running help
 
 ```
-cd /Users/wdc/src/AUIS/andrew-6.4/build
+cd /path/to/your/andrew-6.4/build
 bin/helpa -d
 ```
 
@@ -213,26 +275,19 @@ Note the argument order: application name before flags (`helpa -d`, not
 `runapp` has identified the target application; flags before the app name
 are not seen by the application.
 
-## Known issues (as of 2026-07)
+## Known issues
 
-**Figure insets** load but render incorrectly (messy screen). The figure
-`.do` object loads successfully via the dynamic class loader; the rendering
-bug is inside `atk/figure/`. Under investigation.
-
-**`zip` insets** are not supported — `ez` will display an error for
-documents containing them (e.g., some `contrib/mit/neos/doc/` files).
-
-**`ness.gra` bison extension** — the Ness scripting language grammar uses
-a multi-character string token extension specific to the Andrew bison fork.
-The grammar does not build with system bison. Ness functionality is
-unavailable until this is resolved.
+Status of individual applications and insets, open bugs, and active
+work all live in `roadmap.md` — see its "Applications and insets" and
+"Open issues" sections, which stay current. This file used to
+duplicate that list; it drifted stale, so it doesn't anymore.
 
 ## Debugging crashes
 
 Use `lldb` from native Terminal.app:
 
 ```
-cd /Users/wdc/src/AUIS/andrew-6.4/build
+cd /path/to/your/andrew-6.4/build
 lldb bin/ez -- -d path/to/file.ez
 (lldb) run
 ... wait for crash ...
@@ -249,7 +304,9 @@ for all known LP64 bug patterns.
 
 ## Test documents
 
-Good `ez` test files, in order of increasing complexity:
+Good `ez` test files, in order of increasing complexity. The last
+three rows are historical CMU AUIS newsletters/papers, not part of
+this checkout — useful if you have a copy, skippable if you don't:
 
 | File | What it tests |
 |---|---|
@@ -260,6 +317,6 @@ Good `ez` test files, in order of increasing complexity:
 | `src/FAQ.ez` | Long document, footnote insets |
 | `src/contrib/mit/neos/doc/history.ez` | Raster image insets |
 | `src/contrib/mit/neos/doc/NEOS_stud.ez` | 6 rasters + zip inset |
-| `~/src/AUIS/NEWSLETTERS/EZ/95Summer.ez` | Figure insets (messy, under investigation) |
+| `~/src/AUIS/NEWSLETTERS/EZ/95Summer.ez` | Figure insets |
 | `~/src/AUIS/NEWSLETTERS/EZ/92Sep.ez` | Raster + footnote insets |
 | `~/src/AUIS/PAPERS/atk/Boren.CACM` | Non-.ez format; full justification, multiple font sizes |
