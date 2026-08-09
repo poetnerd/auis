@@ -44,7 +44,7 @@ solid versus still rough. Active work is listed under Projects.
 | `raster` (as an embedded inset) | Fully working | |
 | `contentv` (Table of Contents) | Fully working | An earlier report of it ignoring enumerated headings was a false alarm — root cause was input focus being inside an embedded inset rather than the document itself when the ToC view was opened |
 | `convertraster` (standalone CLI) | Fully working | Fully tested 2026-08-08; three bugs found and fixed (see `porting-changelog.md`) |
-| `image` (JPEG/GIF/TIFF import) | Broken | JPEG/GIF import renders as solid black, TIFF as solid white; native raster import is fine |
+| `image` (JPEG/TIFF import) | Fully working | Fixed 2026-08-08: TIFF import was totally broken (four LP64 struct/stride bugs in vendored `libtiff`); JPEG/TIFF solid-color render was an unrelated `xgraphic.c` variable mixup — see `porting-changelog.md`. GIF import shares the same render path so is likely also fixed, but wasn't retested |
 | `htmlview` | Rough | No longer crashes, but real-world HTML mostly fails to render — see Projects → HTML mail — htmlview modernization |
 | `eq`'s integral symbol | Minor bug | Glyph missing; suspect the font pipeline, not `eq` itself |
 
@@ -100,9 +100,9 @@ being front-loaded here.
 ### Inset work
 
 - **Description:** Track and fix insets known broken or buggy.
-- **Next step:** `image` import, `figure` italic-text sizing, `eq`'s
-  integral symbol (see table above); `convertraster` CLI bugs fixed
-  2026-08-08.
+- **Next step:** `figure` italic-text sizing, `eq`'s integral symbol
+  (see table above); `convertraster` CLI bugs and `image` JPEG/TIFF
+  import fixed 2026-08-08.
 
 ---
 

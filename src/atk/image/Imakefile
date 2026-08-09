@@ -35,10 +35,14 @@ DynamicObject(sunraster, $(BASICSLIB),)
 DynamicObject(rle, $(BASICSLIB),$(MATHLIB))
 DynamicObject(xwd, $(BASICSLIB),)
 
-ClassProgramTarget(ppm2atkimage, ppm2atkimage.o,  $(LIBS),) 
-ClassProgramTarget(xwd2atkimage, xwd2atkimage.o,  $(LIBS),) 
-InstallProgram(ppm2atkimage, ${BASEDIR}/bin) 
-InstallProgram(xwd2atkimage, ${BASEDIR}/bin) 
+ClassProgramTarget(ppm2atkimage, ppm2atkimage.o,  $(LIBS),)
+ClassProgramTarget(xwd2atkimage, xwd2atkimage.o,  $(LIBS),)
+InstallProgram(ppm2atkimage, ${BASEDIR}/bin)
+InstallProgram(xwd2atkimage, ${BASEDIR}/bin)
+
+/* Decode-only regression driver for revival/tests/image-inset-tests;
+   not a shipped user tool, so no InstallProgram. */
+ClassProgramTarget(imgtest, imgtest.o, $(LIBS),)
 
 DynamicObject(colorv,$(UTILLIB),) 
 InstallClassFiles($(DOBJS), $(IHFILES)) 
