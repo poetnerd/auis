@@ -409,6 +409,152 @@ shape (data/size-dependent, not a fixed polarity flag) from the flex bug
 above. Not investigated further this session; flagged in `roadmap-old.md`'s
 gendemo section as the next thing to chase.
 
+### 2026-07-09 — M1 rollout begins: classpp `-pi`/`-pe` split, typed-dispatch pilots
+
+`class.c` split `-p` into `-pi` (typed casts on the import/consumer side)
+and `-pe` (typed exports) — verified byte-identical default output before
+turning either on. This established the M1 rollout protocol used for the
+rest of the tree: set `CLASSFLAGS = -pi` for one directory, force header
+regeneration, `make Clean; make dependInstall`, fix consumer fallout,
+runtime spot-check, commit. Ordered by external-consumer count (fewest
+first), not directory nesting — pilots on zero-consumer leaves, core
+directories last.
+
+- **Pilot A — `atk/eq`.** Caught a macro-parameter-capture bug in classpp
+  itself (positional macro args collided with type tokens under `-pi`),
+  fixed structurally in the preprocessor. Also caught a ~35-year-old
+  typo: `eq.ch`'s `DoScript` declared a stray `*` on a parameter the
+  implementation and every caller treat as by-value.
+- **Pilot B — `atk/figure`.** `MoveHandle` was typeless in the `.ch`,
+  typed to match the implementation. Established the rock-idiom fix used
+  throughout the rest of M1: interface params that carry an opaque
+  pointer through a `long` ("rock" parameters) get retyped to `void *`.
+  Found a six-file `Build(action, v)` vs. the runtime's `(v, action)`
+  argument-order transposition, wrong since 1994, fixed at the
+  interface. Logged a new pre-existing figure menu-focus bug (not
+  fixed).
+- **`atk/raster/lib`.** Zero fallout — all seven codec `.ch`s were
+  already accurate. First before/after regression protocol: a
+  `convertraster` battery run byte-identical to a saved pre-rollout
+  baseline.
+- **`atk/frame` through `atk/basics/common` (rollout points 5-9).** The
+  rock-idiom retype recurred across `supportviews`, `text`, `support`,
+  and `basics/common` — 16 rocks retyped `long`→`void *` across 10
+  `.ch` files, ~100 call-site edits in ~50 consumer files. Two
+  standalone bugs surfaced along the way: `LinkTree` was missing a
+  parent-pointer declaration (`entrstrv`/`entrintv` silently passed
+  garbage); `chartv`'s `CaptureString` took the address of the wrong
+  variable (`*X` where `&X` was meant). `atk/support`'s `list.ch
+  Enumerate` rock turned out to be genuinely dual-use — two callers
+  (`dired.c`, `buttonv.c`) pass real `long` integers, ~40 others pass
+  pointers — resolved by retyping to `void *` with an explicit cast at
+  the two integer call sites, the first rock that wasn't cleanly one
+  type or the other. `htmlview.c`'s `message_DisplayString` call had
+  its arguments transposed (messages had never displayed); `clockv.c`
+  was missing a prototype for a pointer-returning function, the classic
+  LP64 truncation pattern.
+
+Full batch-by-batch detail: `porting-assessment.md` §14.
+
+### 2026-07-10 — M1 rollout point 10 (11 batches, whole tree) and point 11: default flip, M1 complete
+
+Point 10 carried the same typed-dispatch rollout through the remaining
+`atk` subtrees, `atkams`/`messages`, and `contrib`, delegated batch by
+batch (one session + one gate + one runtime check per batch). Recurring
+bug shape: a `.ch`'s `InitializeObject`/`FinalizeObject` typed against a
+*neighboring* class's self param instead of its own — hit repeatedly
+across `rofftext`, `srctext`, `utils`, and `help/src`. Standalone bugs of
+note:
+
+- `lexan.c`'s `ParseNumber` passed a `long *` where `TransEscape` takes
+  `int *` — a live LP64 bug, fixed with an `int` temporary.
+- `noteview`/`stroffetv` defined `ICONSTYLE`/`TITLESTYLE` as the string
+  literal `"fontdesc_Plain"` instead of the symbol — a ~35-year
+  copy/paste bug truncating a pointer into every note/troff inset's
+  font-style `int`. Fixed to the bare symbol plus the missing
+  `<fontdesc.ih>` include.
+- `ams`/`amsn`/`amss.ch` used `proc`, a file-private typedef unknown
+  outside its own file; classpp silently cast it to `int` under
+  `gnu89`, truncating function pointers on LP64. Renamed `proc` →
+  `procedure`, including in `orgv.ch` (which inherits it — classpp
+  reads the *installed* parent `.ch`, so the fix needed a `make
+  install` in `atk/org` too).
+- `htmlview` surfaced a new pre-existing crash during this point's
+  runtime check — see the overlapping-`strcpy` entry below.
+
+**Point 11 (M1 complete):** classpp's typed-dispatch import casts
+(`-pi` behavior) became the default; all 50 per-directory `CLASSFLAGS =
+-pi` overrides deleted. Every live class in the default build now goes
+through typed function-pointer casts — LP64 variant #2 (stack-spill) is
+closed tree-wide.
+
+Full batch-by-batch detail: `porting-assessment.md` §14.
+
+### 2026-07-11 — Overlapping-`strcpy` crashes: nine call sites, plus a Y2K caption bug
+
+`htmlview`'s crash from the point-10 runtime check and `bush`'s
+already-logged `InitTree` crash turned out to share one root cause:
+`strcpy` called with overlapping source and destination ranges (self-
+referential buffer touch-ups), undefined behavior 1994-era libc
+tolerated but Apple's fortified `strcpy` on arm64 does not. Found and
+fixed nine sites total — `bush`, `org`, `htmlview`, `strtbl`, `label`,
+`readtlx`, `calcv`, `commands` — each replaced with `memmove`. (`org`'s
+crash had been mis-attributed in an earlier log entry; corrected here.)
+
+Separately: `bldcapt.c`/`shrkdate.c` printed `tm_year` (years since
+1900) straight through `%02d` instead of applying `%02d` to `tm_year %
+100` in the message caption date — harmless before 2000, wrong (e.g.
+"7-Jul-126") once `tm_year` exceeds 99. Fixed both call sites. While re-verifying with
+`gendemo`, also staggered its synthetic posts' `Date:` headers and made
+`recon.c`'s `MsgListEntry_CompareTimes` break `AMS_DATE` ties using
+`AMS_ID`, for deterministic ordering once caption dates could collide at
+second granularity.
+
+### 2026-07-11 — `mkparser`/`cparser.c`: fixed-width bison table assumption
+
+Root-caused via `amsdemo`'s caption dates rendering out of order.
+`mkparser` (an awk post-processor that adapts bison's generated tables
+to Andrew's shared parser engine, used by all five AUIS grammars)
+assumed every bison table was a 16-bit `short`. Modern bison narrows
+some tables to a single byte per grammar when the value range allows
+it; `mkparser`'s generated struct initializer didn't account for the
+narrower width, corrupting lookups into the narrowed tables. Fixed
+generically in the shared engine rather than per grammar. All five
+grammars using `mkparser` (`prsdate`, `eliy`, `eqparse`, `num`,
+`parsey`) needed regenerating, since their Makefiles depend on each
+grammar's own `.gra` source, not on the `mkparser` tool — `make` had no
+reason to know they were stale. See `porting-assessment.md` §15.
+
+### 2026-07-11–07-12 — zip inset enabled, typed for M1 dispatch, solid-black render fixed
+
+`MK_ZIP` enabled in `config/site.h`, bringing `contrib/zip` into the
+build for the first time. `contrib/zip/lib`'s ~21 `.ch` files were still
+100% untyped 1990s K&R style — the directory had been inert, so the M1
+rollout had never reached it. Typing them against the real
+implementations took ~479 compile errors to zero, plus six real bugs:
+missing K&R parameter declarations in three files, a pointer laundered
+through a `long` rock in `zipedit.c`, a transposed-argument bug in
+`zipve00.c`'s `DrawString` call, and 13 files' `Build_Object` stub
+`peer` params retyped from `long`/`int` to `zip_type_figure`.
+
+Separately, a general core-ATK bug surfaced while gating this work:
+`xgraphic.c`'s Xft (anti-aliased text) drawing path never applied the
+pane's GC clip to its `XftDraw`, so zoomed-in text in any Xft-rendered,
+clip-relying view could bleed outside its own bounds. Fixed with a new
+`xgraphic_GetClipBoundingRect` helper mirroring the existing clip
+computation; required relinking `libbasics.a`/`runapp` (statically
+linked).
+
+zip then rendered as a solid black rectangle at default optimization
+(correct at `-O0`). Root cause, found the next day: a classpp
+typed-dispatch signedness mismatch — `zip.ch` declared
+`Superior_Image_Line_Width` as returning `char` where the implementation
+returns `unsigned char`. One-line `.ch` fix plus classpp regeneration; a
+tree-wide scan of all 566 `.ch` files found no other instance of the
+same mismatch. Same session also fixed a `symtab_add` LP64 NULL check
+and a `Line_Dash` uninitialized-output bug. See `porting-assessment.md`
+§16.
+
 ### 2026-07-12 — calc inset "missing leading characters": rootless XQuartz Xft recomposite lag
 
 Follow-on to the same session's ghost-text fix (see `claude-history/calc-text-rendering-investigation.md`, open bug #1, and its `Outcome` section). After the
@@ -741,15 +887,13 @@ local buffers before mutation.
 
 ### 2026-07-24 — M2 point 0: `-Wincompatible-pointer-types` census, three fixes, and the Group A rollout (with a live correction)
 
-**Note on the remaining gap:** the 07-15–07-23 entries above (AMS-over-IMAP
-through milestone 4, folder-visibility, mime-display, fdplumb,
-`-fwritable-strings`) were backfilled from `roadmap-old.md` and
-`claude-history/*-REPORT.md`. Still not backfilled: 07-09–07-11 (the tail
-end of the M1 rollout) and the gap after this entry — 07-25 (M2
-completion), 07-30–08-02 (M3), and 08-03–08-07 (M4 plus the
-strict-prototypes census/retype/triage). Same sourcing plan applies:
-`roadmap-old.md`, `porting-assessment.md`, and `claude-history/` batch
-reports.
+**Note on the remaining gap:** the 07-09–07-23 entries above (the M1
+rollout tail, AMS-over-IMAP through milestone 4, folder-visibility,
+mime-display, fdplumb, `-fwritable-strings`) were backfilled from
+`roadmap-old.md`, `porting-assessment.md`, and `claude-history/*-REPORT.md`.
+Still not backfilled: the gap after this entry — 07-25 (M2 completion),
+07-30–08-02 (M3), and 08-03–08-07 (M4 plus the strict-prototypes
+census/retype/triage). Same sourcing plan applies.
 
 **Census** (`revival/doc/claude-history/m2-census-REPORT.md`): classified
 all 483 `-Wincompatible-pointer-types` warnings from a fresh full build.
