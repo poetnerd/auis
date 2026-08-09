@@ -458,15 +458,298 @@ readback and two prior-session `XGDEBUG`-gated logging blocks in the same
 function) was removed after confirmation; only the `XCopyArea` kick and
 its explanatory comment remain.
 
+### 2026-07-17 — Milestone 1: SMTP send, real mail sent end-to-end
+
+Kickoff of the AMS-over-IMAP/SMTP project (plan of record:
+`ams-IMAP-project.md`; architecture decision: the local `.MS_MsgDir`
+store stays the cache, a sync agent mirrors IMAP, AMDS delivery stays
+excluded). `tlscon`/`netrc`/`smtpsub` modules added to `overhead/mail/lib`;
+`dropoff()` now routes through `smtp_dropoff()` when the `smtphost`
+preference is set, falling back to the legacy sendmail pipe otherwise.
+Implementation delegated to a Sonnet session against
+`claude-history/smtp-send-prompt.md` (three stages, two review gates).
+End-to-end acceptance (`revival/tools/smtp-send-test`): a scripted `cui`
+composes and submits over TLS to Fastmail, real send confirmed, captured
+as a durable regression suite (`revival/tests/smtp-protocol-tests`).
+
+The acceptance push exercised code paths nothing had reached before and
+found three latent bugs, all pre-existing:
+
+- **`cui` NULL address-validation crashes** — 7 call sites segfaulted at
+  the `CC:` prompt on certain inputs; guarded.
+- **`fdplumb.h`'s `open`→`dbg_open` rename macro, applied before the
+  system's `fcntl.h` was parsed, corrupted `open`'s variadic signature**
+  (see `revival.md`, "Old bugs never found till now" — the debug-tracing
+  macro entry). Fixed by parsing `fcntl.h` before performing the rename,
+  in the shared header, so the ordering hazard can't recur regardless of
+  which file includes it first. Also normalized include order across
+  `ams/libs/ms`.
+- **Client-side destination-host DNS validation** rejected real-world
+  mail hosts; now defaults off whenever `smtphost` is configured, with a
+  `validatedesthosts` preference to force it back on.
+
+### 2026-07-17 — Milestone 2: IMAP spike; decision to hand-roll the client
+
+A spike driver (`overhead/mail/lib/imapspike.c`) ran a full
+CAPABILITY/LOGIN/LIST/EXAMINE/SEARCH/FETCH sequence, read-only, against
+live Fastmail, including a real 9.6KB body literal. Decision made and
+recorded (`ams-IMAP-project.md` §8): **hand-roll** the IMAP client rather
+than adopt an existing library. Key transport finding: `tlscon`'s fixed
+4KB line buffer, plus no resync primitive, wedges the connection on large
+single-line responses — hit via `UID SEARCH ALL` against a 3,939-message
+mailbox. Fixing that (a growable buffer, plus a reconnect design) became
+milestone 3's first task; sync will target Fastmail's `ESEARCH`/
+`CONDSTORE` extensions instead of naive `SEARCH ALL`. `tlscon_ReadBytes`
+added (additive; both SMTP regression suites re-passed).
+
+### 2026-07-18 — Milestone 3a: tlscon hardened, imap_prot lands
+
+`tlscon_ReadLineAlloc` replaces the fixed-buffer line reader with a
+growable one (drain-before-refill) — the spike's `UID SEARCH ALL` wedge
+case now survives. `imap_prot.[ch]` landed alongside it: the tree's first
+born-ANSI module (a full-prototype header from the start, `scanf` banned
+in favor of `strtoul`/`strcasecmp`), ESEARCH-aware, with streaming body
+fetch and a reconnect-with-UIDVALIDITY-check contract.
+`revival/tests/imap-protocol-tests` passes 9/9 live against Fastmail;
+both SMTP suites still green.
+
+### 2026-07-18 — Milestone 3b: imapsync, a one-way IMAP mirror
+
+`ams/msclients/imapsync/` mirrors a live IMAP mailbox one-way into a
+local `mspath` root (`~/.IMAP/fastmail/.MESSAGES/...`) through the
+store's own code, via one additive MS entry point
+(`MS_AppendFileToFolderWithId`, caller-supplied id/date). Mirrored
+message ids are deterministic, `f(UIDVALIDITY,UID)`, encoded in
+base32hex rather than mixed-case base64 — plain base64 encoding collided
+as filenames on APFS's case-insensitive filesystem (two live pairs hit
+during testing, e.g. `...GvA`/`...Gva`; see `revival.md`'s "message
+store's id scheme assumed case-sensitive filenames" entry). The native
+store's own `ams_genid()` ids are mixed-case base64 too, so they carry
+the same, much rarer, collision risk on this platform — not fixed, left
+as a documented hazard, revisit if a native-store collision is ever
+observed. Flags map through `MS_AlterSnapshot`; CONDSTORE/HIGHESTMODSEQ
+drives incremental refresh skip; `-full-check` handles expunge marking;
+empty body fetches (a live Fastmail expunge-during-FETCH race) get
+skip-and-retry. `revival/tests/imap-sync-tests`, 6 live cases including a
+scripted `cui` browse; a real-mailbox browse in `messages` confirmed by
+hand.
+
+The close-out regression run surfaced two more pre-existing bugs, both
+fixed same day:
+
+- **`WritePureFile` (`ams/libs/ms/rawdb.c`) unlinked its target on *open*
+  failure.** Under `O_CREAT|O_EXCL`, an `EEXIST` collision therefore
+  deleted an *existing* message's body file instead of the (nonexistent)
+  partial write the cleanup was written for — a 35-year data-loss bug
+  (see `revival.md`, "An error-cleanup path deleted the wrong file on a
+  name collision"). Also freed the in-memory `Msg` on the other
+  duplicate-append exit paths that had been leaking it.
+- **RFC 3501's `UID n:*` range always includes the highest existing
+  UID**, so an idempotent re-run could re-present the top
+  already-mirrored message as a new candidate. `imapsync` now filters
+  candidates at or below its watermark and pre-checks the deterministic
+  `+<id>` body file before appending, robust even when the store's
+  Message-ID-based duplicate check can't catch a re-append.
+
+### 2026-07-19 — First real-send bugs: from-address, formatted-send default, RCPT TO
+
+Sending real mail from `messages` for the first time surfaced three
+bugs, all pre-existing and all fixed same day:
+
+- **From-address showed as `wdc@Mac-mini.lan`.** `MS_SubmitMessage`
+  (`ams/libs/ms/submsg.c`) deletes any user-supplied From and stamps
+  `Me@MyMailDomain`; `MyMailDomain` resolves to the AndrewSetup key
+  `ThisDomain` (`overhead/util/lib/svcconf.c`), falling back to the
+  hostname when no AndrewSetup exists at all — hence the `.lan` address
+  and Fastmail's `551 5.7.1 Not authorised` on external relay. Fixed
+  with no code change: the AndrewSetup search path ends at
+  `${ANDREWDIR}/etc/AndrewSetup`, so a `build/etc/AndrewSetup` containing
+  `ThisDomain: fastmail.com` corrects every AMS client at once. Verified
+  live: `cui` send now arrives as `William Cattey <wdc@fastmail.com>`.
+- **Formatted send was the default even for plain text.** Root cause:
+  `MS_GetConfigurationParameters`'s out-parameters are declared `long`
+  in the class layer but `int` in the real implementation — the LP64
+  variant #6 `.ch`/wrapper width-drift pattern (`porting-assessment.md`
+  §19) — leaving garbage in the caller's `long` globals and forcing
+  every send down the raw-ATK path regardless of content. Plain bodies
+  now auto-strip; formatted bodies offer a choice via the
+  `mailsendingformat` preference.
+- **`RCPT TO` was built from a display-form address.** `dropoff()`
+  callers pass full RFC 822 addresses; the kept-blind-copy fallback
+  (`submsg.c`) appends `MyPrettyAddress` (`William Cattey
+  <wdc@fastmail.com>`) verbatim to the envelope vector when direct
+  insertion of the blind copy fails, and `smtpsub.c` then wrapped that
+  in a second bracket pair — `RCPT TO:<William Cattey
+  <wdc@fastmail.com>>`. Fastmail accepts at RCPT time but fails the
+  whole transaction after DATA with `501 5.1.3 Bad recipient address
+  syntax`, so every recipient reads as bad — caught by the user reading
+  an `AMS_SMTP_TRACE=1` transcript. Fixed with `smtp_addrspec()` in
+  `smtpsub.c`, reducing each `tolist` entry to a bare addr-spec
+  (`ParseAddressList`, strip comments and display phrase, unparse
+  unfolded) at the protocol boundary, healing all callers. Verified with
+  `smtptest.test` and a display-form recipient: 501 before, queued
+  after. Left open: why the blind copy's *direct* insertion fails in
+  this setup at all — with the envelope fixed, keep-blind now mails a
+  copy instead of failing the whole send, but the direct-file path
+  should work and doesn't yet.
+
+### 2026-07-19 — fdplumb Gate 1: preferences load failures, not fdplumb
+
+Investigated the `<critical:fdplumb>` "File descriptor replaced!" message
+and an accompanying transient preferences blackout, both observed during
+IMAP testing. Closed by a Fable session's static analysis
+(`claude-history/fdplumb-REPORT.md`): preferences load through raw libc
+`fopen`, not the `dbg_fopen` wrapper `fdplumb.h` redirects to, so
+fdplumb itself is exonerated for the blackout. Fixed anyway, on general
+robustness grounds: `profile.c` now retries transient load failures and
+logs `errno` instead of failing silently, and two `dbg_dup2`/`setprof.c`
+crash paths are fixed. Remaining: runtime monitoring of the new errno
+log to catch a real recurrence, low priority, not yet done.
+
+### 2026-07-19 — messages crashes on exit: LP64 pointer truncation in FindInDirCache
+
+`EXC_BAD_ACCESS` in `MS_SetAssociatedTime` (`amsn.do`), reached from
+`captions__MakeCachedUpdates` ← `ams__CommitState` during the quit
+keystroke. Root-caused same day: `FindInDirCache` (`msdir.c:680`,
+returns `struct MS_Directory *`) is declared in no header;
+`setasct.c:48` calls it undeclared, so its pointer return truncates to
+32 bits and the later cast re-extends it — the standard LP64 variant #1
+pointer-truncation signature (`porting-assessment.md` §12), long-latent
+(1991), not a regression. The cache-miss sentinel
+`(struct MS_Directory *) -1` happens to survive truncation intact, so
+nothing crashes until the directory is actually in the cache — i.e.,
+until a folder has actually been visited — which is why the trigger was
+specifically "click into the mirrored INBOX's captions." Fixed with a
+one-line `extern struct MS_Directory *FindInDirCache();` in `setasct.c`,
+its sole external caller.
+
+### 2026-07-21 — MIME body display in messages
+
+New `mimepart` module (`ams/libs/hdrs/mimepart.h` +
+`ams/libs/shr/mimepart.c`), wired into `text822.c`:
+multipart/alternative prefers `text/plain`, html-only mail gets an
+interim tag-strip shim, multipart/mixed lists non-text parts as
+`[attachment: ...]` lines, and UTF-8 `text/plain` finally renders
+instead of falling through to a dead metamail button. Three gates, all
+closed (`claude-history/mime-display-REPORT.md`); a 9-case synthetic
+fixture suite (`revival/tests/mime-display-tests`) covers the parser.
+By-hand acceptance against a real mailbox (Gate 3) found and fixed two
+more pre-existing, unrelated bugs blocking this from working at all:
+
+- **`GetHeader`'s header/body-boundary check was CRLF-blind** — it
+  scanned only for a bare `\n` line, so a genuine CRLF-terminated body
+  (real IMAP mail; local mail had always arrived already normalized to
+  bare LF) was swallowed whole into the "minor headers" display. This
+  is what produced the wall-of-headers/tiny-font/undecoded-`=20`/
+  stray-bold symptoms seen first. Fixed to recognize CRLF as well as LF
+  at both the boundary check and the quoted-printable soft-line-break
+  decoder one call downstream.
+- **`text822.do`'s Imakefile link line silently omitted
+  `libmsshr.a`.** `-undefined dynamic_lookup` lets a missing library
+  pass at build time; the first real call to a `mimepart_*` symbol
+  crashed at runtime instead. Fixed and verified with `nm -m`.
+
+One follow-on left open: a `multipart/mixed` attachment renders as a
+bare `?` instead of the expected `[attachment: ...]` line — not yet
+root-caused.
+
+### 2026-07-22 — Subscribe/Unsubscribe crash: stale directory-cache pointer
+
+`atkams/messages/lib/folders.c`: clicking a folder's "What do you want
+to do with 'X'?" menu, then choosing Subscribe or Unsubscribe, walked
+freed memory and crashed. The function held the folder's name strings as
+raw pointers straight out of the directory cache across the (non-modal)
+dialog wait; if anything freed that cache entry in the meantime — the
+IMAP mirror's refresh traffic makes this the normal case rather than a
+rare one — the pointers went stale in place (see `revival.md`, "A
+folder-action dialog held pointers into a cache that could be freed
+while it waited"). A sibling path in the same function, reached by "see
+the messages," already duplicated its strings first; the fix extends the
+same heap-copy discipline to subscribe/unsubscribe and "alter
+subscription status." Subscribing alone did not yet fix default folder
+visibility (mirrored INBOX still hidden on restart) — tracked separately,
+resolved the next day, below.
+
+### 2026-07-23 — Folder visibility resolved: a site-config flag, not subscriptions
+
+Root cause was `AMS_OnlyMail`, a site-config global defaulting to `1`
+without `RUN_AMDS_ENV`, which restricted the default "Expose New" view to
+`$HOME/.MESSAGES` regardless of subscription status — not the
+subscription-defaults theory the investigation started from. That
+earlier theory (imapsync auto-subscribing mirrored folders at creation
+time) was tested live and falsified before this was found; see
+`claude-history/folder-visibility-REPORT.md`'s "Correction" section.
+Fixed via `AMS_OnlyMail: No` in `build/etc/AndrewSetup`; a new tool,
+`revival/tools/write-andrewsetup`, regenerates that file after `make
+Clean` so the setting survives a clean rebuild. Mirrored folders now
+need that setting plus Ask/Show-All subscription (plain Subscribe is not
+enough) to appear by default; documented in `quickstart.md` and
+`mail-quickstart.md`.
+
+### 2026-07-23 — Milestone 4: IMAP writeback, three gates
+
+Local edits to a mirrored mailbox now replay back to the real IMAP
+server, closing out AMS-over-IMAP as feature-complete (capture,
+suppression, flags/purge/append replay, crash-safe resume), confined in
+testing to a dedicated `Revival/WritebackTest` mailbox.
+
+- **Gate 1** (`fb4876a`): per-folder change-journal capture at the four
+  MS mutation points, plus suppression so a local write triggered by the
+  sync agent's own mirroring doesn't re-journal itself.
+- **Gate 2** (`83dc58c`, report `6879cdf`): `imap_prot` write entry
+  points, flags/purge replay, replay-then-mirror server-wins ordering.
+  **One real incident happened here and was fully resolved same day**: a
+  Gate 1 test suite that was safe when written became unsafe once Gate
+  2's replay went live, and it permanently deleted one real, roughly
+  2009-vintage message from the live account. Not recoverable; the user
+  chose not to pursue further recovery. The suite was retargeted to the
+  dedicated `Revival/WritebackTest` sandbox and its suppression-semantics
+  assertions fixed.
+- **Gate 3** (`df2a94c`, report `164f736`): append-record replay, the
+  final gate, plus CRLF-normalizing APPEND bodies for server
+  compatibility.
+
+Also found and recorded this milestone, mechanically distinct from the
+LP64 family: a K&R-style empty-parens `extern` declaration of a new
+variadic function (`MSJournal_Record`) crashes on arm64 — the ABI
+passes variadic arguments on the stack and fixed arguments in registers,
+so an under-declared call site emits the wrong calling convention
+regardless of word width (`porting-assessment.md` §18). Fixed with a
+full `...`-prototyped extern at the call site.
+
+Remaining: a `messages`-GUI hand test (two-line instruction in the Gate
+3 report) is the user's to run, not automated.
+
+### 2026-07-23 — `-fwritable-strings`: the real fix for writable-string-literal crashes
+
+Closes out the `strlit-sweep` task queued after the atomlist Set-Options
+crash (a literal string mutated in place, faulting on Apple's read-only
+`.rodata`). The suspected root cause — scattered in-place literal
+mutation needing a file-by-file sweep — wasn't it:
+`config/darwin/system.mcr` had simply never set `-fwritable-strings`,
+and Apple clang, unlike real gcc since 4.0, still implements that flag.
+One-line fix, full rebuild, verified live
+(`porting-assessment.md` issue #1). A `-Wwrite-strings` scan afterward
+quantified the scope for the record: 26,628 literal→`char*` sites
+tree-wide, almost all inert boilerplate or never-mutated static tables;
+a full source cleanup was considered and rejected as disproportionate
+given the flag fix. The three call sites already confirmed
+reachable-by-literal (`help`'s default topic, `~/.cuirc`, `fdbbdf`'s
+hexout pad) got belt-and-suspenders fixes anyway, copying to writable
+local buffers before mutation.
+
+
 ### 2026-07-24 — M2 point 0: `-Wincompatible-pointer-types` census, three fixes, and the Group A rollout (with a live correction)
 
-**Note on the gap:** nothing was logged here between 07-12 and this entry;
-substantial work landed in that window (M1 rollout completion follow-ons,
-the AMS-over-IMAP writeback project through milestone 4, folder-visibility,
-mime-display, fdplumb, the `-fwritable-strings` fix) without a
-corresponding changelog entry. Not backfilled here — see each topic's
-`claude-history/*-REPORT.md` for what actually happened; a dedicated pass
-to backfill this file from those reports is still owed.
+**Note on the remaining gap:** the 07-15–07-23 entries above (AMS-over-IMAP
+through milestone 4, folder-visibility, mime-display, fdplumb,
+`-fwritable-strings`) were backfilled from `roadmap-old.md` and
+`claude-history/*-REPORT.md`. Still not backfilled: 07-09–07-11 (the tail
+end of the M1 rollout) and the gap after this entry — 07-25 (M2
+completion), 07-30–08-02 (M3), and 08-03–08-07 (M4 plus the
+strict-prototypes census/retype/triage). Same sourcing plan applies:
+`roadmap-old.md`, `porting-assessment.md`, and `claude-history/` batch
+reports.
 
 **Census** (`revival/doc/claude-history/m2-census-REPORT.md`): classified
 all 483 `-Wincompatible-pointer-types` warnings from a fresh full build.
