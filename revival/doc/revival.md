@@ -1,66 +1,74 @@
 # AUIS Revival: What Was Done and Why
 
-*Last distilled: 2026-08-01.* A narrative account of reviving Carnegie
-Mellon's Andrew User Interface System (AUIS) on a modern Mac, for readers
-who already know ATK and readers encountering it for the first time. For
-the complete technical record this document summarizes, see
-`porting-changelog.md` (chronological fix log), `porting-assessment.md`
-(bug-class analysis), and `roadmap.md` (current status and open items).
+Last updated: 2026-08-08
+
+This document is a narrative account of reviving Carnegie Mellon's Andrew
+User Interface System (AUIS) on a modern Mac, for readers who already know
+ATK and readers encountering it for the first time.
+
+For the complete technical record this document summarizes, see:
+
+| Doc | Description |
+|---|---|
+| `roadmap.md` | Current status, active projects, and open issues |
+| `porting-changelog.md` | Chronological log of every fix |
+| `porting-assessment.md` | Bug-class analysis and the full ANSI C conversion plan |
+| `version-comparison.md` | Why 6.3.1 (the last C release) was chosen over the later, unfinished C++ rewrite |
+| `quickstart.md` | Build and run instructions |
 
 ## What AUIS is
 
-AUIS is the software behind `ez` — a word processor capable of embedding
-spreadsheets, equations, drawings, and animations directly inside a
-document — `messages`, a mail and bulletin-board client with the same rich
-embedding, and a dozen smaller applications, all built on a shared toolkit
-called ATK (the Andrew Toolkit). The version being revived, 6.3.1
-(August 1994), is the last release CMU shipped as plain C before the
-project moved to C++. (See `version-comparison.md` for the reasoning
-behind reviving 6.3.1 rather than the later, never-finished C++ line.) The
-target platform is macOS on Apple Silicon, using XQuartz to provide the X11
-display server this software was originally written against.
+AUIS is the latest name for the user-interface toolkit work that came out
+of the IBM-funded Information Technology Center at Carnegie Mellon
+University in the 1980s and 1990s. It was originally the "Andrew Base
+Editor," then a second version, "Base Editor II" (BE2 for short), then the
+"Andrew Toolkit" (ATK for short). As the project began to be shown outside
+CMU and adopted by others, the more ambitious name "Andrew User Interface
+System" (AUIS) was adopted.
 
-For readers who haven't encountered it before, ATK is worth a moment's
-context, because its central idea was genuinely ahead of its time. That
-idea is the *inset*: a self-contained, interactive object — a spreadsheet
-cell, an equation, a drawing, an animation, a footnote, a scripted
-widget — that can be embedded inside a document and can, in turn, embed
-further insets inside itself, recursively and without a fixed limit. A
-single `ez` document can contain a spreadsheet nested inside a drawing
-nested inside a footnote. Each inset knows how to read and write its own
-portion of the file format, draw itself, and handle its own input,
-independent of what it happens to be embedded in. General, recursive object
-embedding across applications became a mainstream industry goal only later
-in the 1990s — Microsoft's OLE and Apple's OpenDoc both pursued versions of
-it, with OpenDoc discontinued in 1997 without wide adoption — and ATK had a
-working, recursively general implementation of the idea years earlier,
-built in portable C on top of a small, purpose-built object system (called,
-simply, "Class") that is contemporary with Objective-C. The application
-framework itself — windows, menus, dialogs, scrolling, printing — is shared
-by every ATK-based program, so `ez`, `messages`, and `help` are less a set
-of separate applications than different entry points onto the same
-document-and-inset substrate. That shared substrate, and the "any object
-can live inside any other object" model it enables, is ATK's most
-distinctive and still-interesting contribution.
+The applications from AUIS of primary interest now are `ez` and
+`messages`. `ez` is a word processor capable of embedding spreadsheets,
+equations, drawings, and animations directly inside a document.
+`messages` is a mail and bulletin-board client with the same rich
+embedding. In addition to `ez` and `messages`, AUIS is the basis for a
+dozen smaller applications, including `bush`, a filesystem browser.
 
-Nobody had compiled this code in roughly thirty years. Restoring it meant
-addressing two different kinds of decay at once: the environment changed
-around the code (new compilers, a new processor architecture, deprecated
+The version being revived, 6.3.1 (August 1994), is the last release CMU
+shipped as plain C before the project moved to C++. (See
+`version-comparison.md` for the reasoning behind reviving 6.3.1 rather
+than the later, never-finished C++ line.) The target platform is macOS on
+Apple Silicon, using XQuartz to provide the X11 display server this
+software was originally written against.
+
+ATK's central idea is the *inset*: a self-contained, interactive object — a
+spreadsheet cell, an equation, a drawing, an animation, a footnote, a
+scripted widget — embedded inside a document, able to embed further insets
+inside itself, recursively and without a fixed limit. A single `ez`
+document can contain a spreadsheet nested inside a drawing nested inside a
+footnote. Each inset reads and writes its own portion of the file format,
+draws itself, and handles its own input, independent of what it's embedded
+in. The model predates the industry's later attempts at the same idea —
+Microsoft's OLE and Apple's OpenDoc, both later in the 1990s, OpenDoc
+discontinued in 1997 — built in portable C on a small object system called
+"Class," contemporary with Objective-C. The application framework —
+windows, menus, dialogs, scrolling, printing — is shared across every
+ATK program, so `ez`, `messages`, and `help` are entry points onto the same
+document-and-inset substrate rather than separate applications.
+
+This code hadn't been compiled in roughly thirty years. Restoring it
+required addressing two things: the environment around the code had
+changed (new compilers, a new processor architecture, deprecated
 operating-system interfaces), and the code itself contained real defects
-that had simply never been exercised in three decades of use. The rest of
-this document covers both, along with the strategy adopted to manage them.
+that had never been exercised in three decades of use. The rest of this
+document covers both, along with the strategy used to manage them.
 
 ## Modernizing
 
-Not everything changed during the revival was about recovering old,
-dormant behavior. Some changes were required simply to make 1994 code
-function in a 2026 environment that behaves differently in specific,
-load-bearing ways — without them, the software does not run at all.
-Separately, a smaller amount of work was undertaken by choice, to bring
-one part of the software's appearance up to a standard users now expect,
-even though the original approach was still technically functional. Both
-count as modernization, but they carry different justifications and were
-undertaken for different reasons.
+Some of what changed was required just to make 1994 code run in a 2026
+environment. A smaller
+amount was optional: bringing part of the software's appearance up to a
+standard users now expect, even though the original approach still worked.
+Both count as modernization, for different reasons.
 
 ### Required to run at all
 
@@ -74,8 +82,7 @@ undertaken for different reasons.
   applications (a file browser, an outliner, and an HTML viewer) under
   ordinary use. Each site needed only a one-line fix — a function
   explicitly defined for overlapping ranges — but locating all fifteen
-  required a deliberate, tree-wide search, and none of them were
-  optional: without the fix, those applications do not start.
+  required a deliberate, tree-wide search.
 - **`dlopen()`/`dlsym()`**, the standard POSIX dynamic-library interface,
   replaced AUIS's own hand-built, per-platform dynamic code loader — the
   component responsible for loading an inset's code on demand. The
@@ -89,8 +96,7 @@ undertaken for different reasons.
   rewriting the source wholesale, the build disables a small, specific set
   of modern strictness checks corresponding to conventions this code
   relied on, reserving actual rewriting for places that genuinely require
-  it. Without this, the code does not compile at all under a current
-  compiler. (Discussed further below.)
+  it. (Discussed further below.)
 
 ### Bison and flex
 
@@ -163,10 +169,10 @@ of whatever distribution mechanism carried the source in the 1990s.
 
 ## Finding ATK lessons in modern implementations
 
-Not every observation from this project has been about repairing decay.
-Occasionally, working through thirty-year-old code turns up a design
-decision that still holds up — quietly validated by a standard that didn't
-exist yet when ATK was written.
+Not every observation from this project is about a defect. A few times,
+working through thirty-year-old code turned up a design decision that
+still holds up, validated later by a standard that didn't exist yet when
+ATK was written.
 
 - **Raster insets and PNG converged on the same bitmap encoding.** Adding
   image support to `ez2md` (the tool that converts `.ez` documents to
@@ -183,39 +189,36 @@ exist yet when ATK was written.
   formats picked opposite conventions for that one detail. No resampling,
   no color-model translation, no coordinate reconciliation — two systems,
   designed for unrelated reasons the better part of a decade apart, landed
-  on the same underlying representation for a scanline bitmap, because it's
-  simply the obvious correct one.
+  on the same underlying representation for a scanline bitmap.
 
-- **The Andrew Message System's 1988 client-server interface reads like a
-  preview of the modern IMAP extension stack.** AMS and IMAP were
-  contemporaries — Crispin's first IMAP drafts and Borenstein's message
-  server were designed in the same few years, for the same problem, at
-  different institutions — and the convergences run deep. Both settled on
-  durable per-message identifiers that survive reconnection (AMS's 18-
-  character unique ids; IMAP's UIDVALIDITY plus UID). Both retrieve
+- **AMS's 1988 client-server interface anticipates several modern IMAP
+  extensions.** AMS and IMAP were contemporaries — Crispin's first IMAP
+  drafts and Borenstein's message server were designed in the same few
+  years, for the same problem, at different institutions. Both settled on
+  durable per-message identifiers that survive reconnection (AMS's
+  18-character unique ids; IMAP's UIDVALIDITY plus UID). Both retrieve
   message bodies by offset with a bytes-remaining count — AMS's
   `MS_GetPartialBody` has essentially the signature of IMAP's partial
   `FETCH BODY[]<offset.size>`. Both use a two-phase delete: mark, then
   purge (`AMS_ATT_DELETED` and `MS_PurgeDeletedMessages`; `\Deleted` and
   `EXPUNGE`). Both maintain a per-user subscription list over a shared
   folder space. Both send fixed-size summary records in place of messages
-  (AMS snapshots; IMAP's ENVELOPE/FLAGS/INTERNALDATE items). And the AMS
+  (AMS snapshots; IMAP's ENVELOPE/FLAGS/INTERNALDATE items). The AMS
   spec's engineering doctrine — every call idempotent, a server that "can
   die at any moment, with the client automatically reconnecting and
-  continuing its work without any loss of context" — is precisely the
-  discipline that makes a modern IMAP client's reconnect logic workable.
-  Where the parallels reach past core IMAP is the striking part: AMS
-  computed reply-chain threading server-side in 1988 (the snapshot's
-  chain field), which IMAP added as the THREAD extension years later; its
-  "master update file" answering *what changed since I last looked* cheaply
-  is CONDSTORE's job description; its 168 user-defined per-folder
-  attributes are IMAP keywords. In one respect AMS remains ahead: the
-  server computed each message's one-line caption once, for every client
-  — a summary IMAP clients still each rebuild for themselves from
-  ENVELOPE, four decades on. The revival's IMAP work leaned on this
-  kinship directly: mapping the store's operations onto IMAP was mostly
-  transcription, because the two designs had already agreed on what a
-  mail store is.
+  continuing its work without any loss of context" — is the same
+  discipline a modern IMAP client's reconnect logic depends on. The
+  parallels reach past core IMAP, too: AMS computed reply-chain threading
+  server-side in 1988 (the snapshot's chain field), which IMAP added as
+  the THREAD extension years later; its "master update file" answering
+  *what changed since I last looked* cheaply is CONDSTORE's job
+  description; its 168 user-defined per-folder attributes are IMAP
+  keywords. In one respect AMS is still ahead: the server computes each
+  message's one-line caption once, for every client — a summary IMAP
+  clients still each rebuild for themselves from ENVELOPE, four decades
+  on. The revival's IMAP work relied on this directly: mapping the
+  store's operations onto IMAP was mostly transcription, because the two
+  designs had already agreed on what a mail store is.
 
 ## Old bugs never found till now
 
@@ -227,21 +230,23 @@ Apple's C library, which refuses certain unsafe patterns outright rather
 than silently permitting them, and, later in the project, a build
 configuration that type-checks function calls the original toolchain never
 checked. Neither change introduced a defect; both exposed defects that had
-been present, and untriggered, since the code was written. A representative
-sample:
+been present, and untriggered, since the code was written. A sample of the
+most illustrative follows. The fuller catalog — several dozen more of the
+same species — is not yet consolidated in one place: some are in
+`porting-assessment.md`'s bug-class writeups, some only in
+`porting-changelog.md`'s dated log or in `roadmap-old.md`'s retired detail,
+and a few live only in fossil's commit history. Bringing them all into
+`porting-assessment.md` as the single technical reference is a natural
+next step, not yet done:
 
-- **A core interface had its arguments in the wrong order for roughly 35
-  years.** The class-definition file for the figure-drawing inset declared
+- **A core interface's arguments were declared in the wrong order for
+  roughly 35 years.** The class-definition file for the figure-drawing inset declared
   one method as `Build(action, view, ...)`; every implementation, and every
   call site, used `(view, action, ...)`. This had no runtime effect for the
   entire life of the code, because nothing had ever cross-checked the
   declaration against actual usage — until the ANSI C conversion effort,
   described below, began doing exactly that.
-- **A class of status message had never once displayed.** A single call
-  site in the HTML-editing view passed its arguments in the wrong
-  order — message text and priority transposed — so that category of
-  informational message had never appeared, since the code was first
-  written.
+
 - **A parser that never checked whether an embedded inset loaded.** `ez`'s
   plain-text container read each inset via a success-or-failure code it
   never checked. When a figure's reader failed partway through — on a
@@ -252,7 +257,7 @@ sample:
   back to a generic reader that resynchronizes by counting nested begin/end
   markers instead of assuming every read succeeds.
 
-- **A leak-tracking macro that could poison the C library's own
+- **A debug-tracing macro that could corrupt the C library's own
   declarations.** A debugging header renames `open` to `dbg_open` with a
   preprocessor macro, so that file-descriptor leaks can be traced through a
   wrapper. In source files that happened to include this header before the
@@ -272,18 +277,18 @@ sample:
   `fcntl.h` itself before performing the rename, making the poisoning
   impossible in any include order.
 
-- **A bet on the direction of filesystem history, quietly lost.** The
+- **The message store's id scheme assumed case-sensitive filenames.** The
   message store names each message's body file after its unique id — an
   18-character string over a base-64 alphabet in which uppercase and
   lowercase letters are distinct values. That scheme silently assumes
-  filenames are case-sensitive. In 1988 this looked less like an
-  assumption than an observation about progress: the case-insensitive
-  filesystems were the *older* systems — TOPS-10, VMS, CP/M, DOS — and
-  UNIX, the future, distinguished case. History went the other way.
-  The filesystems that won the desktop — HFS+, then APFS, and NTFS as
-  Windows uses it — are case-insensitive (case-*preserving*, which makes
-  the trap quieter still: names display exactly as written, they just
-  refuse to be distinct). On a Mac, two AMS ids differing only in letter
+  filenames are case-sensitive. In 1988 this looked like a safe
+  assumption: the case-insensitive filesystems were the *older*
+  systems — TOPS-10, VMS, CP/M, DOS — and UNIX, the newer one,
+  distinguished case. The filesystems that ended up dominant on the
+  desktop — HFS+, then APFS, and NTFS as Windows uses it — are
+  case-insensitive (case-*preserving*, which makes the trap quieter
+  still: names display exactly as written, they just refuse to be
+  distinct). On a Mac, two AMS ids differing only in letter
   case are different strings and the same file. For thirty-five years
   nothing noticed, because native ids derive from host and timestamp and
   differ in many character positions at once. The revival's IMAP mirror
@@ -295,19 +300,8 @@ sample:
   store's native ids remain a documented, if astronomically unlikely,
   hazard on this platform.
 
-- **A 35-year memory leak on the duplicate-message path.** The message
-  store's append routine reads an entire message into memory, then — if
-  it discovers the message is already present — returns success without
-  freeing it. Every other exit from that function frees the buffer; the
-  duplicate path leaked the whole parsed message. Nobody ever saw it
-  because duplicate appends were rare, one-at-a-time events in
-  short-lived processes. The IMAP mirror made the path hot: a sync
-  recovering from lost state re-appends thousands of already-present
-  messages in one process, which would have transiently leaked
-  approximately the whole mailbox. Found by code review during the
-  mirror work, fixed with one `FreeMessage` call.
-
-- **A cast that used to be true.** The font toolkit's bounding-box
+- **An explicit cast was correct on 32-bit hosts and wrong on 64-bit
+  ones.** The font toolkit's bounding-box
   routine measured a string's width by calling its own sibling method
   through an explicit `(long *) &w` cast, where `w` was a plain `int`
   local. On the 32-bit hosts this was written for, `int` and `long`
@@ -326,7 +320,8 @@ sample:
   reading the function by hand, then checking the original 1990s
   source to confirm the cast predated this project, found it.
 
-- **A blocking dialog that outlived its answer.** Clicking a folder in the
+- **A folder-action dialog held pointers into a cache that could be freed
+  while it waited.** Clicking a folder in the
   mail overview brings up a "What do you want to do with 'X'?" menu —
   implemented not as a native modal but as ordinary event dispatch, so
   background timers and callbacks kept running while the mouse waited over
@@ -347,7 +342,8 @@ sample:
   someone tried to subscribe to INBOX. Fixed by giving the affected paths
   the same heap-copy discipline the "see the messages" path already had.
 
-- **The cleanup that destroyed what it collided with.** When the store
+- **An error-cleanup path deleted the wrong file on a name collision.**
+  When the store
   writes a message's body file, it opens with `O_CREAT|O_EXCL` — and if
   the open *fails*, the error path does `unlink(File)` before returning.
   That unlink is meant to remove a partially-written file, which is the
@@ -365,73 +361,10 @@ sample:
   the duplicate check, an RFC 3501 `n:*` range quirk re-presented an
   already-mirrored message as new, and the mirror watched a message
   file vanish from a directory nothing was supposed to delete from.
-  One deleted line fixed it — the rare bug you repair by removing code.
+  Fixed by deleting the one erroneous line.
 
-- **A header parser that assumed local mail's line endings, forever.**
-  The mail reader's rule for finding where headers end and the body
-  begins — read lines until a blank one — tested only for a bare LF
-  (`'\n'`). RFC 822's wire format specifies CRLF, and Andrew's own local
-  mail delivery had evidently always normalized incoming mail to
-  bare-LF line endings before this parser ever saw a message, because
-  the check had gone unexercised against genuine CRLF for the code's
-  whole life. Fetching raw messages directly from a live IMAP server,
-  CRLF intact, was new. Against such a message the blank-line check
-  never fires: the parser reads straight through the header/body
-  boundary and keeps going, consuming the entire body as if it were
-  more headers — each line displayed as an unrecognized header in tiny
-  type, undecoded, with a colon-triggered bolding rule occasionally
-  highlighting ordinary prose. The visible symptom (a screenful of raw
-  header lines, then unreadable body text with a literal `=20` where a
-  quoted-printable space belonged) took real mail, not local mail, to
-  produce — and was found the same way most of this list was: a user
-  looked at real output and described exactly what was wrong. Fixed by
-  recognizing CRLF as well as LF at both header/body boundary checks,
-  plus the same LF-only blindness in the quoted-printable soft-line-
-  break decoder one call downstream of it.
-
-- **A dynamic-loading convention that only ever worked by coincidence.**
-  Most of the mail reader's dynamically-loaded `.do` modules link with
-  no library list of their own at all — every external symbol resolves
-  at load time against whatever else the process happens to have
-  already loaded (`-undefined dynamic_lookup`, which lets a missing
-  library pass silently at build time and fail only at the first actual
-  call). One module in particular had never once, in its whole life,
-  called a symbol that wasn't already provided by something else loaded
-  earlier in the process — so the gap in its own link line was
-  invisible for as long as that held. The first new library call it
-  ever made jumped straight to address zero. Fixed by giving that one
-  module an explicit link line, and confirmed with `nm -m` that the
-  symbols it actually calls now resolve inside its own binary rather
-  than by chance.
-
-- **A four-function type mismatch that outlived the language it was
-  written for.** The mail server's directory-info, new-message-count,
-  subscription-entry, and changed-subscriptions calls were declared in
-  the class layer as returning their results through pointers to a
-  64-bit-wide integer, while every one of their actual C
-  implementations wrote through pointers to a plain 32-bit integer — a
-  disagreement present in the very first commit that ever brought this
-  source into version control, and certainly older than that. On the
-  machines this code was written for, the two integer sizes were the
-  same, so no data was ever lost no matter which one a caller believed;
-  the mismatch was invisible by coincidence, not by correctness. On a
-  modern 64-bit machine the two sizes differ, and coincidence stops
-  covering for the bug — except this one stayed hidden even here,
-  because the calling code had *also*, independently, been written
-  expecting the narrower size, restoring the coincidence one layer up.
-  It took a routine sweep fixing exactly the kind of caller/declaration
-  disagreement this bug produces — widening a caller to agree with the
-  class layer's declared type — to remove that second coincidence and
-  let the original one through: a folder's subscription-status line
-  began reporting a nonsensical negative count instead of a real one,
-  the first time in the software's history it had ever actually done
-  what its own interface claimed it did. Corrected by tracing every
-  affected function to its real C body and matching the class layer to
-  *that*, not the other way around — the class declaration, not the
-  implementation, was the thirty-year-old mistake.
-
-- **A misspelled function call that silently linked to the wrong library
-  for thirty-five years.** Three mail-filtering primitives — regular-
+- **Misspelled function names linked silently to the wrong library for
+  thirty-five years.** Three mail-filtering primitives — regular-
   expression search and decomposition operations available to the mail
   system's rule-based filtering language — called functions named
   `regcomp` and `regexec` to compile and run a pattern. No function by
@@ -455,418 +388,26 @@ sample:
   Corrected to call the codebase's own, correctly named and typed,
   `reg_comp`/`reg_exec`.
 
-- **A misspelled preprocessor guard that quietly deleted a header's typed
-  half for over thirty years.** A menu library's header offered two
-  versions of its own function declarations, selected by `#ifdef`: a
-  fully typed set for a standards-conforming compiler, and an older,
-  untyped fallback set for one that predates function prototypes. The
-  guard tested `_STDC_` — one underscore short of `__STDC__`, the name
-  every C compiler that defines this macro at all has actually defined
-  since the 1989 standard. No compiler, then or since, has ever defined
-  the misspelled name, so the typed half of the header was dead on
-  arrival: every build silently took the untyped fallback, and one
-  function the fallback branch omitted entirely went undeclared
-  wherever a caller didn't supply its own local declaration. It surfaced
-  only when the ANSI C conversion effort's own `-pe` typed-prototype
-  mechanism, applied to a neighboring directory, made the header's
-  guard load-bearing for the first time — every caller that had been
-  quietly relying on the fallback branch's absence of type-checking now
-  needed the guard to actually pick the typed branch. Flipping the
-  fallback branch on for real then exposed a second, independent latent
-  mistake in that same never-before-compiled typed branch: one
-  declaration's return type had been omitted (silently defaulting to
-  `int`) while the real function was `void`, a mismatch nothing had ever
-  checked because the branch had never been live long enough to check
-  it against anything. Corrected both: the guard now reads `__STDC__`,
-  and the return type now matches the definition.
+- **The same declaration mismatch, independently, in five unrelated parts
+  of the codebase.** An interface file declaring
+  a wrong-but-plausible type for a constructor or destructor's own
+  object parameter — invisible because K&R never checked it — turned up
+  on its own in form widgets and a diagram-editing framework (six
+  instances), the mail reader's own message-display view classes (three
+  more), and the drawing library's arrow and polyline figure classes
+  (two more). Every real implementation was already correct in all
+  eleven cases; only the paperwork was wrong, apparently copy-pasted
+  from a neighboring class's declaration each time. A related mistake
+  in the same family ran the other direction — a drawing-library base
+  class silently dropped an argument all fifteen of its real subclasses
+  supplied — and a dead-end variant turned up too: two destructor
+  methods misspelled by one transposed letter pair ("Finialize" for
+  "Finalize"), never wired to anything and never missed, caught before
+  they could do damage rather than after. None of it needed a runtime
+  symptom to find; it surfaced by the same method every time, once the
+  ANSI C conversion's typed interfaces finally gave the compiler
+  something to check these old declarations against.
 
-- **A stray dereference that only became visible once a call's argument
-  types were finally checked.** A function managing a window's color
-  table took a pointer to a color-table structure and, in one of its
-  three call sites, passed not the pointer itself but the structure
-  it pointed to — dereferencing it — to two operations that both
-  expect the pointer. Nothing caught this for the entirety of the
-  program's life: the era's compiler performed no argument-type
-  checking across these particular calls at all, so a whole structure
-  handed to a function expecting a pointer to one was simply
-  accepted and misinterpreted. The mistake surfaced only once these
-  calls were finally typed as part of the ANSI C conversion effort,
-  and only then because something forced the file to actually
-  recompile — for over two weeks after the typed calling convention
-  went into effect tree-wide, this file's own object code had never
-  been rebuilt, so the now-real type mismatch had nowhere to raise an
-  error until this session's work finally did. Confirmed against a
-  neighboring, correct call in the very same function, which passed
-  the pointer directly with no dereference — the same argument, spelled
-  two different ways four lines apart, only one of them right.
-  Corrected by removing the stray dereference at both incorrect call
-  sites; the third call in the function, structurally different (a
-  pointer to a pointer, correctly dereferenced once), was already
-  right and left untouched.
-
-- **Six copy/paste typos in class interface files, each substituting
-  a plausible-looking wrong type name for the right one.** A class's
-  interface file declares, for its own constructor and destructor
-  methods, which structure type the object being built or torn down
-  actually is. In six places across two unrelated subsystems (form
-  widgets and a diagram-editing framework), that declared type was
-  wrong — not garbled, but a real, existing, *different* type: a
-  sibling class one character away in the alphabet, the class's own
-  parent, the short internal filename a class is stored under rather
-  than the class's real name, and in one case a type that does not
-  exist anywhere in the codebase at all. Every implementation was
-  already correct — these were declaration-only mistakes, and the
-  declared type for a constructor happens to be pure documentation to
-  the compiler that built this software originally, checked against
-  nothing, so a wrong entry there had no way to ever be caught. One of
-  the six was not a constructor or destructor but an ordinary method
-  used throughout its own file — its wrong declared type meant every
-  one of that method's own field accesses was, technically, accessing
-  the wrong structure's memory layout by name, silently correct only
-  because the two structures happened to be laid out compatibly by
-  coincidence. Found by systematically checking every such declaration
-  in two directories against the real class each belonged to, once the
-  ANSI C conversion effort's own type-checking made the first of the
-  six impossible to ignore. Corrected all six to name the class they
-  actually belong to.
-
-- **A code-generation tool that silently contradicted its own
-  generated code, for one particular kind of destructor — invisible
-  until its own typed-declaration option was actually switched on for
-  the first time.** This software's class-generation tool
-  automatically writes, for every class, both the declaration of that
-  class's cleanup method and the internal code that calls it. For one
-  specific method name, the tool's two halves disagreed: the code it
-  generated to *call* the method always passed two pieces of
-  information, but the declaration it generated for that method —
-  whenever a class's own interface didn't spell out the second one
-  explicitly — only promised one. Nothing ever caught this, because
-  the tool's optional feature for emitting these fully spelled-out
-  declarations was essentially never turned on for real, anywhere,
-  until the current compiler-modernization effort began switching it
-  on one part of the software at a time, decades after the tool itself
-  was written. The first time it was turned on for a class using the
-  plain, undecorated form of this declaration, the tool's own generated
-  file contradicted itself and failed to compile. A related
-  complication made the obvious fix wrong: a handful of classes
-  legitimately override this same method with a different kind of
-  return value than the rest, and a fix assuming one universal shape
-  for it would have broken exactly those classes, which had been
-  working correctly the whole time. Corrected by making the tool
-  recognize only the specific shape that was actually broken, leaving
-  every other class's generated code exactly as it already was —
-  verified by regenerating every affected class's generated file and
-  confirming it came out byte-for-byte identical to before, except for
-  the one shape being fixed.
-
-- **A destructor that never woke up, twice.** Two unrelated classes in
-  two unrelated subsystems — one a diagram-editing element, the other
-  part of the text-content machinery — each carry a second cleanup
-  method alongside their real one, its name misspelled by one
-  transposed pair of letters: "Finialize" for "Finalize." Both
-  misspelled versions have empty bodies and were never called, in
-  either subsystem, in the decades since they were written — the
-  class machinery dispatches destructors by exact name, so a
-  misspelled one is simply invisible to it, never wired to anything,
-  never missed. Unlike every entry above, this one has no "corrected
-  by": there is nothing to fix, because nothing was ever broken —
-  the real, correctly-spelled destructor in each class already does
-  the actual cleanup work and always has. It's recorded here anyway
-  because it's the same shape of mistake as the six copy/paste typos
-  above — a plausible-looking wrong spelling that the era's tools had
-  no way to ever flag — just caught this time before it could do any
-  damage, by the same systematic method-by-method reading that the
-  ANSI C conversion effort required everywhere else.
-
-- **An interface that never mentioned the one argument its own
-  implementation always needed.** A tree-widget class declares two
-  measurement methods — one for a subtree's width, one for its
-  height — and describes both, in the file that's supposed to be their
-  authoritative interface, as taking no arguments beyond the object
-  itself. Every real implementation of both methods, from the day they
-  were written, took a second argument: which node in the tree to
-  measure. Nothing before this project ever compared the declared
-  interface against the working code, so a function that could not
-  possibly have worked with the interface as written ran, correctly,
-  for decades — because nothing ever called it through that interface
-  in the first place. Neither method has a single caller anywhere in
-  the source tree; whatever originally needed a subtree's dimensions
-  either used another path or was never finished. Corrected by adding
-  the always-present, never-declared second argument to the interface,
-  matching the implementation that was right all along.
-
-- **A view-scrolling method whose interface named the wrong structure
-  for its own parameter, from the day it was written.** A text view's
-  interface file declares a method that repositions one on-screen line
-  during scrolling, taking a pointer to the line being moved. The
-  declared type was the structure used elsewhere in the same interface
-  for a position within a document — but the method's own
-  implementation, and every one of its seven call sites, always passed
-  a pointer to an unrelated structure: the type used for an on-screen
-  line's own layout bookkeeping (its height, character count, screen
-  position). The two types share no relationship; a correct call
-  compiled and ran fine under K&R only because pre-standard C never
-  checked a call's arguments against the interface it declared. Every
-  real caller agreed with the implementation and always had — only the
-  interface was wrong, invisible until the ANSI C conversion effort's
-  typed-prototype mechanism finally checked it. Corrected by changing
-  the interface's declared type to match the implementation and every
-  caller.
-
-- **A helper function called with an argument it never had, for the
-  entirety of its life.** A text view's internal helper for finalizing
-  a selection takes exactly two arguments: the view itself and the
-  selected length. Every one of the five places in the same file that
-  called it, for as long as the file has existed, passed a third — a
-  true/false flag left over from some earlier shape of the function
-  that its actual body has never referenced. Pre-standard C's calling
-  convention accepted extra arguments silently, so the mismatch cost
-  nothing: the stray value landed nowhere the function ever looked, and
-  the two real parameters arrived exactly where expected. It became a
-  compile error, not a runtime mystery, only once the ANSI C conversion
-  effort gave the function a fixed, checked argument count — the same
-  conversion that exposes an interface's wrong argument *type* elsewhere
-  in this list, here exposing a caller passing the wrong argument
-  *count* instead. Corrected by dropping the stray argument at all five
-  call sites, matching the function's own long-unchanging, correct
-  behavior.
-
-- **Three more copy/paste type typos, found later in a fourth
-  subsystem.** The same mistake as the six above, this time in the
-  mail reader's own view classes: the ones that display a message
-  body, a mail object, and a decoded 822-format body each declare, in
-  their own interface file, a constructor and destructor whose object
-  parameter is typed as a different class entirely. Two of the three
-  copied the exact same wrong type from an unrelated sibling class
-  declared earlier in the same file; the third named two different
-  wrong types for its two methods, neither one its own. Every real
-  implementation, as always, used the correct type and always had. The
-  constructor half of all three stayed pure documentation even after
-  this project's type-checking arrived, for the same reason as
-  before — the class-generation tool supplies the real type itself
-  regardless of what a constructor's interface claims. The destructor
-  half was more exposed: for one of the three it stayed a silent
-  disagreement, because the file containing the real destructor never
-  happens to look at the file containing the wrong declaration in the
-  same compile; for the other two, declaration and destructor share a
-  file, the two disagreed inside a single compile, and the build
-  failed until this was fixed. Corrected by retyping all three
-  declarations to the class they actually belong to.
-
-- **A folder-tree class whose interface file redundantly named an
-  argument its own code generator was already going to supply —
-  wrong in two different ways for two of its three startup/teardown
-  methods.** The class-generation tool automatically prefixes every
-  startup and teardown method's generated declaration with a hidden
-  first argument — the class itself — whether or not the interface
-  file spells it out by name; every other class in the same directory
-  leaves it out, as the tool expects. This one class's interface
-  explicitly restated that argument anyway, for two of its three
-  lifecycle methods, doubling it in the generated declaration each
-  time: once for the plain, once-per-class initializer (declared with
-  one named argument where the convention — and the working code —
-  wanted none), and once for the per-object destructor (declared with
-  its own restated first argument *plus* the required second one, for
-  three total against the real function's two). A third restatement,
-  on the one lifecycle method the tool always re-types from scratch
-  regardless of what the interface says, looked like the identical
-  mistake but never actually mattered. Neither of the two real
-  mistakes was ever caught by the original compiler, which built a
-  call from whatever the interface said and never checked it against
-  the function actually being called. The destructor half surfaced
-  first and most visibly: once this project's typed-header generation
-  finally emitted this particular class's declarations, the generated
-  file contradicted itself internally — its own generated call to the
-  destructor, four lines above, still used the correct two-argument
-  form. Corrected by removing the redundant restated argument from
-  both declarations, restoring the interface every other class in the
-  directory already followed — the same species of code-generator
-  self-contradiction as the destructor described earlier in this list,
-  just caught here for a second time, and this time affecting the
-  class's constructor too.
-
-- **A drawing library's abstract base class silently dropped an
-  argument every one of its real subclasses used.** Five related
-  methods — highlighting, normalizing, exposing, hiding, and printing
-  a figure's selection points — are declared by the drawing library's
-  interface file with two arguments: the figure and the pane it's
-  drawn in. The base class's own versions, meant only as placeholders
-  for figure types that don't override them, took just the figure,
-  silently dropping the pane. Every one of the roughly fifteen real
-  figure types in the library — arcs, rectangles, polygons, arrows,
-  and the rest — override all five and correctly take both arguments;
-  only the never-overridden base placeholders were short. Pre-standard
-  C's calling convention let this go unnoticed for the same reason as
-  the helper function above: a call always supplied both arguments,
-  and the placeholder's body, which does nothing but return a fixed
-  failure code, never looked for the one it lacked. Corrected by
-  giving all five placeholder definitions the same two arguments as
-  the interface and every real override already agreed on.
-
-- **A status-message variant whose interface never matched the code
-  it was calling, and nothing ever called either one.** The same
-  drawing library's status-line class declares two message-issuing
-  methods — one for a raw string, several more for typed variants
-  (a figure, an image, a stream, a pane). The raw-string pair's
-  interface entry took a single string argument, copied from a
-  differently-named sibling method just above it in the same file.
-  Its real implementation instead took two numeric codes and built the
-  string internally, the same shape every one of the typed variants
-  below it uses — not the string-based one it was declared to match.
-  Neither name, under either signature, was ever called anywhere in
-  the source tree: a rare case in this project where a `.ch`-vs-`.c`
-  disagreement isn't a live bug at all, just two halves of a method
-  that was apparently redesigned once, in code, and never updated in
-  its own interface file. Corrected by retyping the interface to match
-  the real, working implementation, the only side with any evidence of
-  intent behind it.
-
-- **Two more copy/paste type typos, in a fifth subsystem.** The same
-  mistake as the six, then three, documented earlier in this list —
-  this time in the drawing library's arrow and polyline figure
-  classes, each declaring its own one-time setup method with its
-  parent class's type instead of its own, both apparently copied from
-  the same line in a shared ancestor file. Both real implementations
-  used the correct type, and each reads a field that only its own
-  class has — which is what confirmed the interface files were wrong
-  rather than the code: neither placeholder type could have compiled
-  against that field at all. Corrected by retyping both declarations
-  to the class they actually belong to.
-
-- **An HTML-rendering method's interface declared a formatting record as
-  a plain string, and it went unnoticed for decades because both are
-  ordinary pointers of the same size.** The method that opens and closes
-  a nested markup region (blockquotes, lists) took its second argument
-  as a bare string in its interface file, but the real implementation
-  and every one of its four call sites always passed a style/formatting
-  record instead — direct field access, calls that only make sense for
-  that record type. Nothing ever caught the mismatch because the
-  interface only checks argument *counts*, not types, and both a string
-  pointer and a record pointer are the same width — so the wrong-typed
-  interface compiled, linked, and ran correctly by accident for as long
-  as the code has existed. Corrected by retyping the interface to match
-  the record every real caller and the implementation itself already
-  agreed on.
-
-- **The same dead branch, copy-pasted into three unrelated subsystems,
-  never once true.** A preprocessor test —
-  `#if defined(_ANSI_C_SOURCE) && !defined(_NO_PROTO)` — guards the
-  choice between a correctly typed, POSIX-style signal-handler
-  declaration and an older, untyped K&R fallback, in the X input-event
-  dispatcher, the frame/dialog command layer, and the spreadsheet
-  inset's formula evaluator. No build configuration this tree has ever
-  used, on any platform, defines that particular pair of macros, so in
-  all three places the "fallback" branch is the only one that has ever
-  actually compiled — an untyped handler passed to `signal()` where a
-  `void(*)(int)` belongs. On the original hardware an untyped and a
-  correctly typed handler pointer used identical calling conventions, so
-  the wrong branch cost nothing; on Apple Silicon the two differ, making
-  each of the three a live ABI mismatch. Nobody found this by reasoning
-  about the macro — it surfaced three separate times, weeks apart, in
-  three unrelated files, purely because the compiler-strictness effort
-  forced each one to recompile under real function-pointer type checking
-  and complained every time. Corrected in each case by making the
-  never-taken `#if` branch's signature the one both branches share, since
-  the `#else` branch was, in practice, the only branch that had ever
-  existed.
-- **A stale, duplicate set of declarations, silently overriding the
-  correct ones, in four unrelated files.** The outline-tree view's core
-  file, the abstract-parse-tree editor and its view, and a text object's
-  screen-cache reader each contain two separate forward-declaration
-  blocks for the same private helper functions — one correctly typed,
-  and a second, untyped, K&R-style block positioned later in the same
-  file. A compiler reads whichever declaration comes last, so in every
-  one of the four files, the block that looked like careful, deliberate
-  type annotation was the one silently discarded, apparently left over
-  from an earlier, incomplete conversion attempt that nobody finished or
-  removed. None of the roughly sixty functions involved had their actual
-  definitions checked against either block; every one had to be
-  re-verified, individually, against how its own body actually used its
-  return value, because the "correct-looking" block couldn't be trusted
-  on sight — in the abstract-parse-tree editor's file, eight of its own
-  supposedly-correct entries turned out to be wrong once checked against
-  the real code. Found and corrected once per file, on four separate
-  occasions across the same modernization pass, only because each file's
-  compile-clean requirement finally forced its *real* declarations to be
-  the ones read.
-- **A base-class save routine, inherited by every subclass that never
-  overrode it, writing a 64-bit field through a 32-bit format.** The
-  figure-drawing inset's base object class saves its own on-page
-  position with a format string sized for a 32-bit integer, on a field
-  that has been a 64-bit `long` ever since the structure was declared;
-  the matching read routine, a few lines below in the same file, already
-  used the correct width. Almost none of the roughly fifteen concrete
-  figure types — rectangles, ellipses, polylines, text boxes, and the
-  rest — override this particular method, so all of them inherited the
-  same undersized write, silently correct only because no figure's
-  coordinates have ever exceeded 32-bit range. It surfaced only once the
-  compiler-strictness effort's mandatory format-string check reached this
-  file and was checked, statement by statement, against each field's real
-  declared type rather than trusted by inspection. Corrected once, in the
-  single shared method, rather than separately in every subclass that
-  calls it.
-- **A bug already marked "fixed" — in only one of its two directions.**
-  An earlier pass through this same modernization effort found and
-  corrected the figure inset's on-page origin being read back from disk
-  with a 32-bit format specifier against a 64-bit field. That fix was
-  real, and it was recorded as closing the bug. It touched only the
-  *read* side. The *write* side — the same field, the same class, two
-  separate call sites for a normal save and for copying a partial
-  selection — still used the narrower format months later, discovered
-  only when a later session, working from the compiler's own
-  diagnostics rather than from memory of what had already been checked,
-  re-verified both directions of the pair instead of trusting that
-  "already fixed" meant fixed everywhere the field appears. It stayed
-  invisible in the meantime because the two sides kept agreeing anyway —
-  a `%d` on a `long` argument still prints the right digits as long as
-  the value fits in 32 bits, which a document's origin always has.
-  Corrected at both remaining call sites.
-- **An uninitialized variable, half-overwritten on every read.** The
-  chart inset stores each item's numeric value and screen position as
-  decimal text; the routine that parses them back declares a 64-bit
-  local for the result and reads into it with a 32-bit-wide `scanf`
-  conversion. The read fills the variable's low half and leaves the high
-  half exactly as it was before the call — whatever the stack happened
-  to hold from whatever function ran there last. Every chart item's
-  value and position, for the class's entire life, has been reconstructed
-  from a mix of genuinely saved data and uninitialized stack memory, the
-  visible half almost always happening to look right because a small
-  saved number leaves the high half's garbage at zero more often than
-  not. This directory carried no history of previously found defects
-  going into this pass — which was the point of auditing it with the
-  same rigor as directories already known to be troubled: it wasn't
-  clean either. Corrected by widening both conversions to match the
-  field's real width.
-- **A field silently dropped from a same-machine data handoff.** When
-  the drawing/raster inset hands a bitmap to another process on the same
-  machine instead of writing it to disk, it serializes the handoff
-  through a short text record. One of that record's write statements
-  supplies eight values but a format string with only seven conversions,
-  so the eighth — the bitmap's height — is simply never written. The
-  receiving process's parser, reading a fixed sequence of fields with no
-  way to notice one went missing, would misattribute whatever came next
-  in the stream to the missing field, corrupting not just the height but
-  everything the reader expected to find after it. Nothing about a
-  format string with too few conversions for its argument list raised a
-  diagnostic under the original toolchain. Corrected by adding the
-  missing conversion — one instance of exactly the failure mode (a
-  truncated or dropped field silently corrupting an on-disk or
-  cross-process record) that motivated treating every format-string
-  width mismatch in this codebase as a correctness bug rather than a
-  cosmetic one.
-- **A format string that was never a format string.** A MIME
-  richtext-to-ATK converter names an unrecognized character set by
-  calling `sprintf` with a compile-time string constant as the format
-  argument and the actual charset code as data — except that constant
-  has no `%` conversion anywhere in it. For the entire life of this
-  converter, the charset code has simply been discarded: every
-  unrecognized character set has been labeled with the same fixed
-  generic name, regardless of which one it actually was. No compiler of
-  the era checked a `printf`-family call's format string against its
-  argument list, so a literal with zero conversions, called with one
-  argument too many, compiled without complaint. Corrected by replacing
-  the pointless `sprintf` with a plain string copy, matching what the
-  code has actually done all along.
 - **Attacker-controlled mail headers, used as a format string.** Two
   routines in the metamail viewer — one saving a MIME attachment under a
   name derived from its `Content-Type` parameters, one decoding an RFC
@@ -884,178 +425,9 @@ sample:
   non-literal format argument flags this pattern regardless of whether
   anyone was looking for a vulnerability. Corrected by passing each
   string as an ordinary `"%s"` argument at both sites.
-- **A misspelled forward declaration, dead on arrival, unused for over
-  thirty years.** A text-content source file forward-declares a static
-  helper under the name `erestingstyle` — one letter short of
-  `interestingstyle`, the function it was plainly meant to announce
-  ahead of its own definition. Because the two names never matched, the
-  declaration referred to a function that was never defined and never
-  called anywhere; it simply sat in the file, syntactically valid and
-  semantically inert, for the software's entire life. No compiler, then
-  or since, warns about an unused static prototype, so nothing ever
-  pointed at it; it was found only by direct inspection while fixing
-  this file's real compile errors. Corrected by fixing the spelling to
-  match the function it always meant to declare — harmless either way,
-  since nothing had ever called it, but the same species of typo as the
-  copy/paste type mistakes found elsewhere in this project, this time
-  one that never had the chance to misbehave.
-- **A destination buffer and a format string, transposed.** One
-  diagnostic message in an outline-search extension's file-open error
-  path calls `sprintf` with its arguments out of order — treating a
-  string *literal* as the destination being written into, and the real
-  destination variable as if it were data being formatted. On the
-  original toolchain this was merely wrong, not dangerous: string
-  literals lived in ordinary, writable memory, so the call quietly
-  overwrote part of the program's own literal text and the mistake cost
-  nothing worse than a garbled message. Modern toolchains place string
-  literals in read-only memory specifically to catch this class of
-  mistake, which is what turns the same thirty-year-old line into a
-  crash the moment this error path actually runs. Corrected by putting
-  the arguments back in the order the function has always required.
-- **A local re-declaration that quietly narrowed a return value for
-  thirty years.** The message store's epoch-processing code — the
-  routine that flags old messages as candidates for deletion — kept its
-  own private declaration of a formatting helper used nowhere else in
-  the same file, and declared it as returning a plain integer. The
-  helper's real, and only, definition returns a heap-allocated string.
-  On the 32-bit machines this was written for, a pointer and an integer
-  were the same width, so the mismatched declaration cost nothing: the
-  value passed through unchanged no matter which type the compiler
-  believed it was. On a 64-bit machine the two widths differ, and the
-  local declaration would have silently discarded the upper half of
-  every pointer the real function returned, handing the epoch-warning
-  message a corrupted address to print through — a near-certain crash
-  or garbled text, on any folder with just one message old enough to be
-  flagged for deletion. Found only because a new check on format-string
-  arguments flagged the resulting message call as passing the wrong
-  type, and tracing why led straight to the disagreement. Fixed by
-  matching the local declaration to the one place the function is
-  actually defined.
-- **A recovery path that wrote its own repair back to disk with every
-  field shifted by one.** The subscription file writer's error-recovery
-  branch — reached when a saved subscription entry's name has gone
-  missing and the code falls back to treating it as the top-level
-  `mail` folder — called `fprintf` with one argument too many: a
-  redundant copy of a literal already present in the format string
-  itself. Every argument after that first, extra one landed one slot
-  late: a string address printed as a number, a status code interpreted
-  as a string and dereferenced as if it were a pointer, and the entry's
-  actual saved date silently dropped from the line entirely. The very
-  next few lines in the same file, serializing an entry that didn't
-  need this particular repair, get the argument count right — the bug
-  is a divergence between two nearly-identical lines, not an isolated
-  mistake. It went unnoticed because reaching it requires an
-  already-rare condition — a corrupted subscription entry whose
-  reconstructed path happens to equal the account's own top-level mail
-  folder — to begin with, and the resulting garbled or crashing write,
-  when it did happen, would have looked like corruption in the
-  `.subscriptions` file rather than pointing back at the code that had
-  just written it. Fixed by dropping the extra argument and widening
-  the trailing date field to match its actual size.
-- **A signal handler whose own interface disagreed with the system call
-  installing it, for the software's entire life.** The message server's
-  central shutdown/checkpoint routine — installed against `SIGHUP`,
-  `SIGINT`, `SIGQUIT`, `SIGTERM`, and half a dozen others — was declared
-  as returning an integer, when the C library's `signal()` function has
-  only ever accepted handlers that return nothing. K&R C never checked
-  a function pointer's signature against what it was being assigned to,
-  so the mismatch compiled, linked, and ran without complaint for as
-  long as the toolchain stayed permissive; nothing in the function's
-  body ever used a return value, so the practical behavior was
-  identical either way. It surfaced only because a stricter compiler
-  configuration began checking function-pointer assignments for real,
-  and flagged all eleven places this same handler is installed. Fixed
-  by giving the function its true, and functionally uncontroversial,
-  `void` return type.
-- **A diagnostic message that quietly dropped its own subject.** The
-  mail reader's automatic bug-report generator, when it snarfs a
-  handful of the user's configuration files into the report for
-  inspection, has a fallback line for the case where one of those
-  paths exists but isn't a plain file — a directory, a broken symbolic
-  link, a device node. That fallback's error message named the file
-  and its file-permission mode with two conversions in its format
-  string, but only ever supplied the mode; the filename argument had
-  simply been left off. Every other error message in the same routine,
-  a few lines above and below, gets this right — the omission is a
-  one-line slip in an otherwise-consistent block, not a systemic
-  mistake. Left as written, the permission-mode value would have been
-  read by the missing filename's conversion as if it were a string
-  pointer, and the real mode value would have then been read from
-  whatever happened to sit next on the stack — a near-certain crash or
-  garbled report. It went unnoticed because triggering it requires one
-  of a handful of specific dotfiles to exist as something other than a
-  regular file, a condition rare enough that the vast majority of bug
-  reports over the software's lifetime simply never took this branch.
-  Fixed by supplying the already-resolved filename that every sibling
-  message in the same function already uses.
-- **An error message that named everything except the thing that went
-  wrong.** The mail client's printer-setup routine has two error paths:
-  one for "no such printer," which correctly names the printer in its
-  message, and a second, broader one for every other kind of failure —
-  a spooler that isn't responding, a permissions problem, anything
-  else. That second message's format string carried no conversions at
-  all, even though the printer name was passed to it as an argument;
-  the string simply read "Error: could not set printer," full stop. A
-  user hitting this branch — which requires a printer-setup failure
-  that isn't the common "no such printer" case — would see only that
-  fixed sentence, with no way to tell which printer had failed to set
-  if more than one had been tried. It went unnoticed because the
-  common failure mode (a mistyped or nonexistent printer name) takes
-  the *other*, correctly-worded branch; this one only fires for rarer
-  operational failures further down the same call. Fixed by adding the
-  missing conversion so the message names the printer, matching its
-  sibling branch immediately above.
-- **A figure attribute that was saved wrong, for a feature nobody could
-  ever turn on.** The drawing editor's on-disk format for a figure's
-  "mode" attributes packs three single-character flags onto one line;
-  the code that writes that line built all three characters but only
-  ever wrote two of them, silently dropping the third — "halo" — on
-  every save. The reader, unaware anything was missing, faithfully
-  parsed whatever the writer gave it, so the flag never survived a
-  save/reload cycle even in the rare case something had set it. On
-  investigation prompted by testing this fix, halo mode turns out to
-  be effectively vestigial: nothing in the editor's menus or attribute
-  palette ever offers a way to turn it on, so the flag is unreachable
-  through the UI in practice. There is exactly one place downstream
-  that still checks it — a text-legibility effect in caption
-  rendering — but with no live path to set the bit, that check never
-  fires either. The write bug itself was real and is now fixed to
-  match its sibling write correctly, but the attribute it saves
-  remains, as far as this session could tell, permanently off.
-- **An error message that named the wrong thing.** The scheduler
-  utility's document-open failure path printed a diagnostic meant to
-  show the filename that couldn't be opened, but the format string was
-  handed the wrong field — a pointer to the (still-unopened) stream
-  object instead of the char buffer holding the actual filename. Every
-  "Unable to Open" message this class has ever printed showed whatever
-  that pointer's value happened to be read as a string, not the
-  filename a user would need to fix the problem. Low severity — it's a
-  diagnostic string, not a data-loss path — but it's been wrong since
-  the file was written in 1988. Fixed to print the filename field.
-- **A whole application with no help document, not a removed one.** The
-  scheduler and layer-tool utilities (`sched`/`schedapp`,
-  `lt`/`ltapp`) ship as standalone apps but were never given a help
-  file or wired into the help-installation machinery — every sibling
-  contrib app (`zip` itself, `calc`, `champ`, `alink`, `bdffont`)
-  follows the same two-or-three-line Imakefile pattern to register its
-  `.help` document, and this directory's Imakefile simply never had
-  those lines added. No `.help` source exists anywhere in the tree for
-  either app. This isn't a build-time misconfiguration or something
-  that regressed — it's undocumented functionality, apparently since
-  it was first written.
-- **A bounding box read into the wrong-sized variables.** The annotation
-  editor's PostScript-inset importer parses a `%%BoundingBox:` comment out
-  of an arbitrary externally-supplied `.ps` file with
-  `sscanf(bbox_buf, "%d %d %d %d", &llx, &lly, &urx, &ury)`, but all four
-  targets are declared `long`. On LP64, `sscanf`'s `%d` writes only the
-  low 32 bits of each variable, leaving the upper half as whatever
-  garbage was already on the stack — the same memory-corruption pattern
-  (not just truncation) as the scanf-into-`long` bug class found
-  elsewhere in the tree. The parsed values set both the inset's on-screen
-  display size and a `translate` command written back into the host
-  document, so a bad upper half could show up as a wildly oversized or
-  misplaced PostScript inset. Fixed `%d`→`%ld` on all four conversions.
-- **A forward declaration that outlived its own honesty.** Dragging a
+
+- **A stale, argument-less forward declaration shadowed a correctly typed
+  real definition.** Dragging a
   figure in the drawing editor worked vertically but froze horizontally
   after the first motion event. The function that computes each drag
   step's constrained coordinates was, at its real definition, already
@@ -1068,96 +440,59 @@ sample:
   its output variables in ordinary 4-byte `int`s, so every motion event
   wrote 8 bytes through a pointer to a 4-byte stack slot, silently
   corrupting whatever sat next to it. Retyping the file's forward
-  declarations to match their real definitions closed the hole and,
-  because the compiler could finally check every call in the file
-  against a real prototype, immediately surfaced a second bug of the
-  same shape: three neighboring functions were being called with an
-  extra argument their real definitions don't accept, silently dropped
-  every time. Neither was reachable by any warning this project has
-  enabled — `-Werror=int-conversion` and its siblings only fire when a
-  real prototype is in scope to compare against, and an argument-less
-  old-style declaration is, by definition, not one. Originally
-  misdiagnosed in 2026-07-25 as an unrelated ez text-dragging bug — it
-  was this same figure-drag freeze, observed while testing zip and
-  mislabeled.
-- **The same forward-declaration blind spot, sized and then triaged
-  tree-wide.** The zip drag bug above raised an obvious question: how
-  many other stale, argument-less forward declarations were sitting
-  above correctly-typed real definitions elsewhere in the tree, equally
-  invisible to every M1–M4 diagnostic? A tree-wide `-Wstrict-prototypes`
-  census (diagnostic only, nothing changed) found roughly 6,700 such
-  hits in real project files. A mechanical pass then retyped each
-  declaration to match its real definition and rebuilt every directory
-  with `-Wincompatible-pointer-types` added, letting the compiler itself
-  separate harmless old-style declarations from genuine bugs — the same
-  method M1 and M3 used, applied one more level down. Across 508 files
-  it surfaced a small, specific list of real defects, since fixed: the
-  AMS API's `MS_GetPartialFile`/`MS_GetPartialBody` out-parameter was
-  declared `int *` at its one real definition while every caller in the
-  tree — consistently, independently, including a sibling RPC-transport
-  implementation — expected `long *`, meaning the byte count of unread
-  message body was written 4 bytes at a time into what callers treated
-  as an 8-byte slot; `PrintFwdHeaders` declared its file-handle
-  parameter `int` while both its callers and its own body treated it as
-  `FILE *`; a companion field, `MS_ProcessNewMessages`'s `FirstError`
-  out-parameter, was held in a `long` local at its only call site
-  against a real `int *` definition; nine call sites elsewhere had
-  simply drifted from their real signatures — an extra or missing
-  argument, silently accepted by the old argument-less declarations —
-  including one, `Create_Shade_Palette` in the zip palette code, that
-  had drifted in its *type* rather than its count, the lone outlier
-  among nine otherwise-identical sibling palette functions; and one
-  more, an EPS-preview helper in the image inset code, turned out not
-  to be a bug at all — its only call site was permanently disabled by
-  an `if (FALSE)` guard, so the function and its dead call were removed
-  outright instead of "fixed." None of this class of bug needed its own
-  rollout milestone: unlike M1–M4, most of the tree-wide hits were
-  harmless old-style declarations rather than latent bugs, and the
-  compiler-driven pass found every real one directly, with no
-  batch-by-batch manual triage required.
+  declarations to match their real definitions closed the hole and
+  immediately surfaced a second bug of the same shape in the same file.
+  Neither was reachable by any warning this project had enabled up to
+  that point — `-Werror=int-conversion` and its siblings only fire when
+  a real prototype is in scope to compare against, and an argument-less
+  old-style declaration is, by definition, not one. That gap raised an
+  obvious question — how many other stale, argument-less forward
+  declarations were sitting above correctly-typed real definitions
+  elsewhere in the tree? — and a tree-wide census answered it: roughly
+  6,700 such declarations, across nearly every active directory. A
+  mechanical pass retyped each one to match its real definition and let
+  the compiler itself separate harmless old style from genuine bugs,
+  turning up a short, specific list of further defects — an AMS API
+  call whose byte-count out-parameter had been declared half the width
+  every caller expected, a file handle typed as a plain integer where
+  every caller and the function's own body treated it as `FILE *`,
+  and nine ordinary argument-count/type drifts — all fixed, none of it
+  needing its own rollout milestone the way M1–M4 did.
 
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or
-because an earlier C library was more permissive. Restoring old software to
-working order on current tools amounts, in part, to finally running a test
-suite that nobody knew existed.
+because an earlier C library was more permissive. There was no test suite
+to find them: what did was a stricter compiler, real use, and weeks of
+manual, heuristic-driven work — grepping for a suspect pattern, rebuilding
+with `make -k` to surface every hit at once, then reading each one by
+hand. This development and repeated toil was done by Claude Code,
+primarily with the Sonnet model managing delegated sessions following an
+evolving `sonnet-playbook.md`, with the Fable model occasionally used for
+reviews and for difficult problems.
 
-**One exception, caught the same day it was made.** The fix for the halo
-bug above — adding the missing third field to the figure Mode-attribute
-write — exposed a second, previously dormant bug in the very same
-function. `horizontal`, `vertical`, and `halo` were declared
-`static char foo[2] = "?"`: scratch buffers seeded with a literal `?` and
-only ever overwritten when their corresponding flag was on, never reset
-when it was off. Because `halo` had never actually appeared in the output
-before (the pre-fix code only printed the first two fields), its stale
-sentinel value was invisible; the moment the halo fix started printing it,
-every figure with the halo flag off — effectively all of them, since halo
-turned out to be unreachable through the UI — got a literal `?` appended
-to its Mode line. That single stray character desynchronized the reader
-for the rest of the enclosing stream, corrupting every inset written after
-it in the same document. Caught within hours by manual round-trip testing
-of the fix (open a multi-figure document, edit it, save, reopen), not by
-any compiler warning — `-Wformat`/`-Wimplicit-int` have nothing to say
-about a string that compiles cleanly but holds the wrong content. Fixed by
-changing the declaration to ordinary, non-`static` locals defaulting to
-empty:
-```c
-char horizontal[2] = "", vertical[2] = "", halo[2] = "";
-```
-Dropping `static` was safe, and arguably a second correction to the same
-original mistake: true K&R C never allowed an automatic (stack) variable
-to carry an initializer at all — only external and `static` variables
-could be initialized at compile time — so the 1988 author most likely
-reached for `static` only to make the `= "?"` syntax legal, not because
-persistence across calls was ever wanted. C89 lifted that restriction: an
-ordinary local array can be given an inline initializer directly, with
-exactly the fresh-every-call, no-leftover-state behavior the code seems to
-have intended all along. The M4 compiler-strictness pass is what put this
-function's flags on a line together in the first place; the bug itself
-belongs to the same "written once in 1988, never fully exercised" family
-as everything above it, just discovered by a same-day fix instead of a
-compiler flag decades later.
+**One exception, caught the same day it was made.** A drawing editor's
+on-disk format for a figure's "mode" attributes packs three single-
+character flags onto one line; the code that writes that line built all
+three characters but only ever wrote two, silently dropping the third —
+"halo" — on every save, a plain thirty-year-old bug fixed like the rest
+above. Fixing it exposed a second, previously dormant bug in the very
+same function: the three flag buffers were declared
+`static char foo[2] = "?"`, scratch space seeded with a literal `?` and
+only ever overwritten when their flag was on, never reset when it was
+off. Because `halo` had never actually appeared in the output before,
+its stale `?` sentinel was invisible; the moment the fix started
+printing it, every figure with the halo flag off — effectively all of
+them — got a literal `?` appended to its Mode line, desynchronizing the
+reader for the rest of the document. Caught within hours by manual
+round-trip testing (open, edit, save, reopen), not by any compiler
+warning — nothing about a string that compiles cleanly but holds the
+wrong content trips a diagnostic. Fixed by dropping `static` and letting
+the buffers default to empty, which is arguably a second correction to
+the same original mistake: true K&R C never allowed a stack variable to
+carry an initializer at all, so the 1988 author most likely reached for
+`static` only to make the `= "?"` syntax legal, not because persistence
+across calls was ever wanted.
 
 ## Word size issues
 
@@ -1323,8 +658,7 @@ The resulting plan runs in four stages:
 
 As of this writing, M1 through M4 are complete across the entire active
 codebase, each having turned up several of the decades-old defects
-described above — a stricter build catching mistakes no prior compiler
-could see. A follow-on tree-wide census closed the one remaining blind
+described above. A follow-on tree-wide census closed the one remaining blind
 spot the four milestones couldn't see on their own — stale argument-less
 forward declarations shadowing correctly-typed real definitions — and is
 described in its own entry above.
@@ -1332,14 +666,18 @@ described in its own entry above.
 ## Where things stand today
 
 `ez` (the word processor), `help`, and `messages` (mail, running against a
-local mailbox rather than the original 1990s shared-filesystem delivery
-system) all run and render correctly, including most embedded inset types:
-text, equations, tables, drawings, animations, footnotes, spreadsheets, and
-more. The class-definition typing project (M1, above) is complete across
-the entire active tree.
+local mailbox and, now, a live IMAP mirror, rather than the original 1990s
+shared-filesystem delivery system) all run and render correctly, including
+most embedded inset types: text, equations, tables, drawings, animations,
+footnotes, spreadsheets, and more. `bush`, `org`, `chart`, and `layout` all
+run cleanly too. The ANSI C conversion described above (M1 through M4) is
+complete across the entire active tree — every method call and function
+definition in it is now compiler-checked. A live, itemized table of what's
+fully working versus still rough is in `roadmap.md`, rather than repeated
+here.
 
-One deliberate scope decision from early in the project is worth noting:
-the Console (terminal-emulator) subsystem is not part of this build.
+One deliberate scope decision from early in the project: the Console
+(terminal-emulator) subsystem is not part of this build.
 Console's interprocess-communication layer would need a rewrite of its own,
 and the project set that aside rather than take it on alongside everything
 else. A small side effect: two icon fonts used by an unrelated animation
