@@ -2315,6 +2315,120 @@ vs. a `long`/`dataobject_UniqueID()`/`*_GetID()` call (needs `%ld`) — do
 not blind-replace, several sites mix a genuine `int` (a version number, a
 count) with the `long` id in the same format string.
 
+### 21. On-disk binary formats hard-coded around a 4-byte `long` — struct layout and hand-rolled word loops (MEDIUM effort, closed 2026-08-08)
+
+#### Root cause
+
+Distinct from every LP64 variant above (§11, §12, §19, §20), which are
+all about a *value* crossing some boundary — a call, a `printf`/`scanf`
+format, a class-dispatch parameter — where the two sides disagree about
+width. This one is about *reading and writing a fixed binary layout*:
+1990s code that hard-coded `long` for a file format's on-disk fields,
+back when that was indistinguishable from hard-coding "4 bytes." Once
+`sizeof(long)` stops being 4, the code is no longer describing the file
+format it was written against — it silently describes a different,
+wider one, with no crossing boundary for a compiler to typecheck at all
+(the struct's own C definition and its `fread`/`fwrite` calls are
+self-consistent; they just don't agree with the byte stream on disk
+that predates them).
+
+Found in the standalone `convertraster` CLI tool
+(`atk/raster/convert/convrast.c`, `atk/raster/lib/oldrf.c`), which had
+never been run on this port before a 2026-08-08 test pass — so, like
+several bugs elsewhere in this document, dormant rather than newly
+introduced. Two independent instances in the same file pair:
+
+- **`struct RasterHeader`** (`atk/raster/lib/rastfile.h`) declared
+  `Magic`/`width`/`height` as `long`, three fields the format's actual
+  on-disk header packs into 4 bytes apiece (14 bytes total, plus a
+  2-byte depth field) — `oldrf.c` reads and writes it with a hardcoded
+  `fread(&hdr, 14, 1, file)`. On LP64 the struct is 32 bytes, so `Magic`
+  gets the first 8 file bytes (only 4 of which are really `Magic`), and
+  `height` is never touched by the 14-byte read at all — left as
+  whatever was on the stack. That garbage height then drove
+  `pixelimage_Resize()`, attempting to allocate a raster of essentially
+  random size.
+- **`oldRF__ReadRow`'s color-inversion step** hand-optimized a "flip
+  every bit in this row" operation into a "complement 4 bytes at a
+  time" loop, walking a pointer cast to `unsigned long *` with address
+  arithmetic (`(row+W-4) & ~3`, decrementing by pointer-width each
+  iteration) sized for a 4-byte word. On LP64 each `*lx = ~*lx` silently
+  complements 8 bytes per step: the loop's last iteration reads/writes
+  2–4 bytes past the row it's supposed to stay inside (into the next
+  row's buffer, or off the end of the allocation on the image's last
+  row), and — because the loop's lower bound was computed for 4-byte
+  strides — it stops 4 bytes short at the *other* end, leaving the
+  row's first bytes never inverted at all.
+
+#### Symptom signature
+
+The struct-layout instance: a read that appears to succeed (no error
+return) but is immediately followed by a very large or negative-looking
+allocation request — check `pixelimage_Resize`/`malloc` arguments before
+assuming a leak or a runaway loop elsewhere. The word-loop instance is
+more specific and worth recognizing on sight: decode the format
+independently and diff against a known-good copy byte-for-byte (a
+rendered-image comparison is not sensitive enough to catch this reliably
+— see `revival.md`); real instances corrupt a small, *fixed* number of
+bytes at each end of every row (here: byte columns 0–3 and 38–40 of a
+41-byte row), never the middle — a signature specific enough to point
+straight at word-width pointer arithmetic once seen.
+
+#### Fix
+
+`RasterHeader`'s three fields retyped to `int32_t` (`<stdint.h>`),
+matching the byte layout the format's own `htonl`/`SWAL` byte-swap
+conversions already assumed. The hand-rolled word loop replaced outright
+with a plain byte-at-a-time complement over exactly the bytes read — at
+this row length (tens of bytes) there is no performance case for the
+word-at-a-time version, and removing it also deleted a second,
+independent defect riding along in the same function: a "preserve bits
+beyond the real row width" step that read its preservation source
+*before* the row was first populated, so on a freshly allocated (never
+previously written) buffer it preserved `malloc` leftovers instead of
+anything meaningful.
+
+#### Scope
+
+Not swept tree-wide — found in one previously-unexercised standalone
+tool, not via a systemic grep. Worth checking for deliberately in any
+other binary-format reader/writer that predates this porting effort and
+hasn't yet been exercised on this port, particularly ones with their own
+fixed-size file headers (candidates: the `image` inset's format
+importers — `gif.c`, `tif.c`, `pcx.c`, `sunraster.c` under
+`atk/image/` and `atk/basics/common/` — currently under separate
+investigation for an unrelated-looking "renders solid black/white"
+import bug that has not yet been root-caused; worth checking for this
+exact pattern first, given how well it matches "a copy loop that
+silently never runs across the real buffer, leaving only the surrounding
+memory's contents visible").
+
+#### Relationship to the LP64 bug family (§12)
+
+Adjacent but distinct, in the same sense as §18: §12 and its relatives
+are about a *value* losing width or sign as it crosses a call boundary
+the compiler could have checked but didn't. This bug class has no call
+boundary at all — it's a C struct's byte layout silently drifting away
+from an external, unversioned binary format the struct was written to
+describe by convention only. No amount of stricter call-site typechecking
+would have caught it; only comparing the struct's field sizes against
+the format's actual documented byte layout, or noticing a hardcoded
+`fread`/`fwrite` length that doesn't match `sizeof()`, would.
+
+#### Verification
+
+Scripted, not visual: an independent Python decoder for the `.raster`
+text format (already available as `revival/tools/ez2md`'s embedded-raster
+support) used to decode both the original test image and every
+round-tripped output, then compared byte-for-byte. Confirmed the
+struct-layout fix stopped the runaway allocation; confirmed the word-loop
+fix made a full raster → RF → raster round trip bit-identical to the
+source (previously: every row differed at the predicted fixed offsets).
+Full regression pass after both fixes — identity round-trip,
+RF/MacPaint/Xwd/Xbitmap round trips, 4×90° rotation identity, PostScript
+scale factor, valid crop — all still pass. Detail: `porting-changelog.md`
+2026-08-08 entry.
+
 ## Primary build environment: macOS/Darwin
 
 The initial development platform is macOS (POSIX Darwin), not Linux.

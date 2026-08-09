@@ -74,6 +74,26 @@ When a value reads as a huge positive number, or lldb shows
    `vsnprintf`/`vfprintf`/similar, one frame below a plausible call
    site. Fix is a full prototype with `...` at every call site, not
    just the definition (found 2026-07-22 in `MSJournal_Record`).
+7. A binary file format's on-disk header struct declared with `long`
+   fields, read/written with a hardcoded byte count (not `sizeof()`) →
+   on LP64 the struct is 2x the size the format's real bytes need,
+   every field after the first lands at the wrong offset, and any
+   field the hardcoded count doesn't reach (e.g. a trailing `height`)
+   is left as raw stack/heap garbage. Symptom: a read that returns
+   success but is immediately followed by a huge or negative-looking
+   allocation request — check the size argument before chasing a leak
+   elsewhere. A close cousin: a hand-rolled "N bytes at a time" loop
+   using a pointer cast to `long *`/`unsigned long *` with address
+   arithmetic sized for 4 bytes (`& ~3`, `-4`, decrementing by pointer
+   width) — on LP64 each step silently touches 8 bytes, corrupting a
+   small *fixed* number of bytes at each end of a buffer while leaving
+   the middle correct. Neither has a call boundary for the compiler to
+   typecheck — no warning either way. Found 2026-08-08 in
+   `convertraster`'s RF-format reader (`oldrf.c`/`rastfile.h`); see
+   porting-assessment.md §21. Worth checking first in any other
+   binary-format reader that predates this port and hasn't been
+   exercised yet — a good candidate list is the `image` inset's format
+   importers (`gif.c`, `tif.c`, `pcx.c`, `sunraster.c`).
 
 ## Verification tools
 
