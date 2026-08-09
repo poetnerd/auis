@@ -163,9 +163,17 @@ int TIFFReadDirectory(TIFF *tif)
 		}
 		/*
 		 * Read offset to next directory for sequential scans.
+		 * On-disk field is a 4-byte TIFF LONG regardless of the
+		 * host's sizeof(long); tif_nextdiroff is only the wider
+		 * in-memory type.
 		 */
-		if (!ReadOK(tif->tif_fd, &tif->tif_nextdiroff, sizeof (long)))
-			tif->tif_nextdiroff = 0;
+		{
+			uint32_t nextoff;
+			if (!ReadOK(tif->tif_fd, &nextoff, sizeof (nextoff)))
+				tif->tif_nextdiroff = 0;
+			else
+				tif->tif_nextdiroff = nextoff;
+		}
 #ifdef MMAP_SUPPORT
 	} else {
 		off_t off = tif->tif_diroff;
@@ -780,8 +788,29 @@ static int TIFFFetchLongArray(TIFF *tif, TIFFDirEntry *dir, u_long v[])
 	if (dir->tdir_count == 1) {
 		v[0] = dir->tdir_offset;
 		return (1);
-	} else
-		return (TIFFFetchData(tif, dir, (char *)v));
+	} else {
+		/* On-disk TIFF LONGs are 4 bytes; TIFFFetchData packs them
+		   tightly at that width. v[] is the caller's native u_long
+		   array (8 bytes/element on LP64) -- reading straight into it
+		   packs two disk LONGs into every host slot, corrupting
+		   everything past v[0] (this broke StripOffsets/
+		   StripByteCounts, silently mis-seeking every strip read).
+		   Stage into a real uint32_t buffer and widen, same pattern
+		   already used for the short->long expansion just above. */
+		int n = dir->tdir_count;
+		int status;
+		uint32_t *tmp = (uint32_t *) CheckMalloc(tif,
+		    n * sizeof (uint32_t), "to fetch long array");
+		if (tmp == NULL)
+			return (0);
+		if (status = TIFFFetchData(tif, dir, (char *)tmp)) {
+			int i;
+			for (i = 0; i < n; i++)
+				v[i] = tmp[i];
+		}
+		free((char *)tmp);
+		return (status);
+	}
 }
 
 /*

@@ -1759,11 +1759,11 @@ XImageInfo * imageToXImage(struct xgraphic *self, struct image *image, unsigned 
 		  */
 
 		  while ((redbottom < 256) && (redbottom < redtop))
-		      redvalue[redbottom++]= xcolor.pixel & visual->red_mask;
+		      redvalue[redbottom++]= xcolor_Pixel(xc) & visual->red_mask;
 		  while ((greenbottom < 256) && (greenbottom < greentop))
-		      greenvalue[greenbottom++]= xcolor.pixel & visual->green_mask;
+		      greenvalue[greenbottom++]= xcolor_Pixel(xc) & visual->green_mask;
 		  while ((bluebottom < 256) && (bluebottom < bluetop))
-		      bluevalue[bluebottom++]= xcolor.pixel & visual->blue_mask;
+		      bluevalue[bluebottom++]= xcolor_Pixel(xc) & visual->blue_mask;
 	      }
 	      }
 	      break;

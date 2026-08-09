@@ -79,15 +79,19 @@ int TIFFSwabArrayOfShort(unsigned short *wp, int n)
 #ifndef TIFFSwabArrayOfLong
 int TIFFSwabArrayOfLong(unsigned long *lp, int n)
 {
-	register unsigned char *cp;
+	register unsigned char *cp = (unsigned char *)lp;
 	register int t;
 
+	/* Each TIFF "LONG" is 4 bytes on disk regardless of sizeof(long) on
+	   this host; advance by 4 raw bytes per element (not by lp++, i.e.
+	   sizeof(*lp)) or every element past the first lands on the wrong
+	   bytes -- on LP64 that silently swapped the wrong half of every
+	   pair passed to this function and corrupted whatever followed. */
 	/* XXX unroll loop some */
 	while (n-- > 0) {
-		cp = (unsigned char *)lp;
 		t = cp[3]; cp[3] = cp[0]; cp[0] = t;
 		t = cp[2]; cp[2] = cp[1]; cp[1] = t;
-		lp++;
+		cp += 4;
 	}
 }
 #endif
