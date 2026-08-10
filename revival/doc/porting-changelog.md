@@ -1703,3 +1703,52 @@ new `moreprintf()` call sites), no new warning class; `metamail.c`
 gains none. `cuin`/`cui` relinked (no `libmsshr.a` rebuild needed —
 `mimepart.c` itself wasn't touched), `metamail` rebuilt, both
 installed.
+
+### 2026-08-10 — `messages`: double-spaced headers, a third CRLF-blindness site
+
+**Symptom:** wdc reported message headers displaying "double spaced"
+in `messages` (unlike `cui`, which was unaffected). Suspected the same
+CRLF line-ending issue already fixed twice elsewhere in this project
+(the `text822.c` `GetHeader()` blank-line fix and the `metamail.c`
+`Read822Prefix()` fix, both logged above).
+
+**Root cause:** a third, distinct spot in the same function. `GetHeader()`
+reads each header's physical line(s) via `fgets()` — already fixed to
+recognize a `"\r\n"` blank line as end-of-headers — but never stripped
+the `\r` itself from the line content it returns. On CRLF-terminated
+mail (any real IMAP-fetched message), every `LineBuf` handed back to
+`ReadMessage()`'s header loop still ends `"...\r\n"`, and that literal
+`\r` byte then gets inserted as-is into the ATK `text` object right
+along with the rest of the line (`text822_AlwaysInsertCharacters`,
+`fnote_AlwaysInsertCharacters` — every insertion call site in the
+header loop uses `linelen = strlen(LineBuf)` directly). A `\r` isn't a
+line separator ATK's text widget understands; it renders as its own
+character, producing the double-spaced look. Not visible in `cui`
+because `cui`'s own header-printing loop (`PrintMimeHeaders`,
+2026-08-09 entry above) reads lines via a plain `fgets()` loop of its
+own and only cares about locating the blank-line terminator — it never
+specifically strips the `\r` either, but a raw `\r` in a terminal just
+returns the cursor to the start of the line rather than rendering a
+visible glyph, so the symptom never showed up there the same way.
+
+**Fix:** `GetHeader()` now strips a trailing `\r` off *every* physical
+line right after each `fgets()` call, not just once at the end — a
+folded header (very common in real mail: `Received:`,
+`DKIM-Signature:`, `Authentication-Results:`, `X-Microsoft-Antispam-*`
+all routinely wrap across several physical lines) is assembled into one
+logical `LineBuf` across multiple `fgets()` calls, so a fix that only
+handled a trailing `\r` at the very end would still have left one
+embedded mid-buffer per wrapped line. Compile-verified against the
+`fossil cat` original: *zero* warning-set delta, not even additional
+counts of an existing class. `text822.do` rebuilt and installed.
+wdc confirmed live: header block is single-spaced now.
+
+Three independent sites in this codebase have now made the same wrong
+assumption about line endings (`text822.c` `GetHeader`'s blank-line
+check, `metamail.c` `Read822Prefix`'s blank-line check, and this one —
+the same function's failure to strip `\r` from line *content* once
+found). See `revival.md`'s "Old bugs never found till now" for the
+narrative writeup of the first two; this third one is the same root
+cause (CRLF wire format meeting LF-only-authored 1990s parsing code)
+recurring a level deeper in code this project had already touched
+once.

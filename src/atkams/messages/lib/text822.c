@@ -197,12 +197,28 @@ static char * GetHeader(char *LineBuf, int lim, FILE *fp)
     while (TRUE) {
 	s = fgets(lb, lim, fp);
 	if (!s) return(s);
+	len = strlen(lb);
+	if (len >= 2 && lb[len-2] == '\r' && lb[len-1] == '\n') {
+	    /* CRLF wire format (real IMAP-fetched mail): drop the \r so
+	       every physical line this function assembles ends in a bare
+	       \n, matching what the rest of ReadMessage -- and the ATK
+	       Text object it inserts into -- assumes. Left in place, the
+	       \r becomes a literal, visible character wherever this line
+	       gets inserted, which is what produced the "double spaced"
+	       header display (same bug class as the CRLF fix already
+	       made to InsertDecodedText for body text). A folded header
+	       can span several fgets() calls concatenated into one
+	       LineBuf, so this has to run on every physical line, not
+	       just once at the end. */
+	    lb[len-2] = '\n';
+	    lb[len-1] = '\0';
+	    --len;
+	}
 	if (lb[0] == '\n' || (lb[0] == '\r' && lb[1] == '\n')) return(s); /* end of headers (CRLF or LF), no peeking ahead! */
 	c = getc(fp);
 	if (c == EOF) return(s);
 	ungetc(c, fp);
 	if (c == ' ' || c == '\t') {
-	    len = strlen(lb);
 	    lb += len;
 	    lim -= len;
 	    if (lim <= 1) return(NULL);	/* leave room for \n */

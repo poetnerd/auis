@@ -321,7 +321,14 @@ next step, not yet done:
   mirrored inbox. Both are the same one-line fix — stop letting a bare
   `'\r'` reset the "did we just see a newline" state — applied
   independently in each file, since neither parser shares code with the
-  other.
+  other. A third site in the same `text822.c` function turned up a day
+  later: finding the blank line correctly doesn't mean the lines
+  *before* it are clean — `GetHeader` still handed back each header's
+  raw `"...\r\n"` verbatim, and every one of those trailing `\r` bytes
+  got inserted as a literal, visible character in the ATK `text`
+  object, one per header line — "double spaced" was the visible result.
+  Same root cause, one level deeper in code this project had already
+  touched once.
 
 - **An explicit cast was correct on 32-bit hosts and wrong on 64-bit
   ones.** The font toolkit's bounding-box
