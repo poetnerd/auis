@@ -1,6 +1,6 @@
 # AUIS Revival Roadmap
 
-Last updated: 2026-08-07
+Last updated: 2026-08-10
 
 This document is intended primarily for AUIS revival participants,
 with a summary of what's running, what's active, what's next, and the
@@ -45,7 +45,7 @@ solid versus still rough. Active work is listed under Projects.
 | `contentv` (Table of Contents) | Fully working | An earlier report of it ignoring enumerated headings was a false alarm — root cause was input focus being inside an embedded inset rather than the document itself when the ToC view was opened |
 | `convertraster` (standalone CLI) | Fully working | Fully tested 2026-08-08; three bugs found and fixed (see `porting-changelog.md`) |
 | `image` (JPEG/TIFF import) | Fully working | Fixed 2026-08-08: TIFF import was totally broken (four LP64 struct/stride bugs in vendored `libtiff`); JPEG/TIFF solid-color render was an unrelated `xgraphic.c` variable mixup — see `porting-changelog.md`. GIF import shares the same render path so is likely also fixed, but wasn't retested |
-| `htmlview` | Rough | No longer crashes, but real-world HTML mostly fails to render — see Projects → HTML mail — htmlview modernization |
+| `htmlview` | Rough | No longer crashes, but real-world HTML mostly fails to render — see Projects → HTML mail rendering |
 | `eq`'s integral symbol | Minor bug | Glyph missing; suspect the font pipeline, not `eq` itself |
 
 ---
@@ -65,32 +65,61 @@ being front-loaded here.
   (a separate `imapsync` step) — thread it into the normal workflow.
   After that, XOAUTH2 auth.
 
-### HTML mail — MIME parsing
+### HTML mail rendering
 
-- **Description:** `messages` used to just offer a button to run
-  `metamail` on any non-text part; it now has a real MIME parser, and
-  most mail is readable without that fallback. `cui` (2026-08-09) now
-  shares the same `mimepart.c` parser: `type` decodes
-  quoted-printable/base64 and picks a `text/plain`/`text/html` part to
-  display instead of dumping wire-encoded bytes, with non-primary
-  `multipart/mixed` siblings listed as `[attachment: ...]` lines. A
-  latent `metamail` bug that this surfaced — it couldn't find the
-  header/body boundary on CRLF-terminated mail — is fixed too; see
-  `porting-changelog.md`'s 2026-08-09 entry.
-- **Next step:** Close fidelity gaps — e.g. links currently render as
-  plain text instead of clickable link insets (both `messages` and,
-  now, `cui`).
-
-### HTML mail — `htmlview` modernization
-
-- **Description:** Real inline HTML rendering depends on bringing the
-  ~1994 `htmlview` parser up to handle modern markup. Right now it
-  gives up and renders nothing at all on some tags rather than
-  degrading gracefully; with those tags stripped by hand, what's left
-  renders, but not well.
-- **Next step:** Investigate the parser itself — what it chokes on and
-  why — before deciding whether this is a few gating bugs or a deeper
-  rewrite.
+- **Description:** MIME body decoding itself is solid — `messages` and
+  `cui` (2026-08-09) both share the real `mimepart.c` parser, decoding
+  quoted-printable/base64 and picking the right part out of
+  `multipart/*` instead of dumping wire-encoded bytes or shelling out
+  to a (largely nonfunctional) `metamail` for everything non-text; see
+  `porting-changelog.md`'s 2026-08-09/2026-08-10 entries. HTML
+  *rendering* is the open problem, and was two independent, both-flawed
+  paths until this was scoped out as one project (2026-08-10):
+  `text822.c`'s own MIME body display strips HTML to plain text via a
+  deliberately dumb tag-stripper (`mimepart_HtmlToText`) — no links, no
+  images, no real formatting; `htmlview` has a real ATK-styled parser
+  but wasn't built for wire-format HTML — no `<!DOCTYPE>`/comment
+  handling, and an unrecognized, unclosed tag corrupts its
+  entity-nesting stack for the rest of the document (`html.c`'s
+  "unknown entity" path pushes it as an open environment that nothing
+  ever pops), which is why real-world pages render nothing at all
+  rather than degrading gracefully. Neither is worth hardening further
+  as its own one-off — the plan is one shared, ATK-independent HTML
+  parser (mirroring how `mimepart.c` already sits outside ATK so both
+  `cui` and `messages` can use it), with separate thin renderer
+  backends per consumer.
+- **Next step, staged:**
+  1. New parser library — tokenizer → a simplified tree, own
+     fixture-driven test suite (same shape as `mimepart.c`/
+     `imap_prot.c`). Fixes the structural gaps found in `htmlview`'s
+     parser: DOCTYPE/comments recognized and skipped instead of
+     corrupting the entity stack, void/self-closing elements handled,
+     unknown tags ignored gracefully, `<script>`/`<style>` contents
+     dropped.
+  2. Plain-text renderer over that tree — a drop-in, low-risk
+     replacement for today's `mimepart_HtmlToText` shim in
+     `text822.c`, and what `cui` always uses (terminal-only, no ATK
+     styling to render anyway).
+  3. ATK-styled renderer — reuses `html.c`'s existing tag→stylesheet
+     mapping (that part isn't what's broken), adds real clickable
+     links: a text style applied to the URL run at insertion time, plus
+     a `Hit()` view-method override (same shape `htmlview__Hit` already
+     half-implements — it detects the anchor under a click today, but
+     only echoes the URL to the message line rather than launching
+     anything) that shells out to `open` on click. Wired into
+     `text822.c` as the new html path, retiring the old shim.
+  4. *Optional, later:* retarget `htmlview`'s own standalone viewer
+     onto the same parser+ATK-renderer, so there's one HTML engine in
+     the tree rather than two. `htmlview`'s composition/authoring side
+     (hand-building a document, not parsing untrusted wire HTML) is a
+     separate concern and doesn't need to change.
+- **Scope note:** further one-off investment in the current
+  `text822.c` HTML shim — e.g. making links clickable in the *stripped
+  plain-text* path as a stopgap — is being held off in favor of
+  building this properly; stage 2 above supersedes it directly, likely
+  for less total effort than hardening the shim piecemeal. Only active
+  bugs in the shim are worth fixing in the meantime, not fidelity
+  features.
 
 ### Coverage inventory
 
