@@ -89,9 +89,10 @@ AUIS binary, so editing `site.h` once is usually less friction.)
 ### First build (fresh checkout)
 
 From the `andrew-6.4/` checkout root, run all three steps below in
-order — the first is easy to miss because its symptom (`make World`
-failing with "cannot find include file ... .ih") shows up two steps
-later, in a part of the build that looks unrelated:
+order — the first is easy to miss because its symptom is a *fatal*
+compile error (`classproc.c:12:10: fatal error: 'class.h' file not
+found`) that shows up two steps later, in a part of the build that
+looks unrelated:
 
 ```bash
 cd src
@@ -113,6 +114,23 @@ the `build/` directory tree, builds all libraries and binaries,
 generates `.ih`/`.eh` headers from `.ch` class specs, and installs
 everything. Expect it to take a few minutes. A clean build produces
 278 `.do` files and 602 headers with zero errors.
+
+**Expect thousands of `makedepend` "cannot find include file" warnings
+along the way — that's normal, not a sign anything is missing.**
+`make World` runs as two full tree-wide passes, `depend` then
+`install` (`config/imake.tmpl`'s `world::` target) — every directory's
+dependency scan happens before *any* directory's generated `.ih`/`.eh`
+headers are actually installed into `build/include/`. So `makedepend`
+routinely can't find a sibling directory's generated header yet and
+prints `warning: ... cannot find include file "foo.ih"`; a known-good
+build log here has over 5,000 of these. They're warnings, not errors —
+`make` continues past them, and the header shows up once its own
+directory reaches the `install` pass later in the same run. This is a
+different problem from Step 1's `class.h` issue above (that one is a
+hard compile failure, not a `makedepend` warning). If a wall of these
+warnings scrolls by, that's expected; what tells you whether the build
+actually worked is whether the run ends with the zero-errors success
+line above, not whether these warnings appeared.
 
 Why step 1 is needed: `overhead/class/Imakefile` builds `machdep`
 before `lib`, but `lib` is what installs `class.h` into
