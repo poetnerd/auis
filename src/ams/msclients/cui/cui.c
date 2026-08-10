@@ -41,6 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 #include <stdlib.h>
 #include <cui.h>
 #include <hdrparse.h>
+#include <mimepart.h>
 #include <errprntf.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -1358,6 +1359,239 @@ int DescribeFlags(int cuid)
 }
 		
 
+/* MIME_NOT_HANDLED: distinct from both success (0) and a reported error
+   (-1) -- means "this message isn't something the mimepart path claims",
+   so GetBodyFromCUID's caller should fall through to whatever it would
+   have done before this existed (metamail, or the raw unscribed-body
+   dump). Not one of moreprintf's own return codes (0 or MORE_NO_MORE). */
+#define MIME_NOT_HANDLED (-2)
+
+/* CUI_MIME_CHUNK: moreprintf's own buffer (EnormousLine, morprntf.c) is a
+   fixed MAXBODY+10 bytes -- handing it a whole decoded message body in
+   one call would overflow that buffer via its internal sprintf(), the
+   same way DisplayMessage() below avoids it by only ever handing
+   moreprintf one MAXBODY-ish chunk at a time. */
+#define CUI_MIME_CHUNK (MAXBODY - 16)
+
+/* Prints one already-decoded chunk-at-a-time (see CUI_MIME_CHUNK above);
+   splits are plain byte-offset cuts, not line- or character-boundary
+   aware -- the same tradeoff DisplayMessage() already makes for a
+   message body fetched in fixed-size network chunks. */
+static int PrintMimeChunked(const char *buf, long len)
+{
+    long off = 0, n;
+    char chunk[MAXBODY];
+
+    if (!buf || len <= 0) return(0);
+    while (off < len) {
+        n = len - off;
+        if (n > CUI_MIME_CHUNK) n = CUI_MIME_CHUNK;
+        memcpy(chunk, buf + off, n);
+        chunk[n] = '\0';
+        if (moreprintf("%s", chunk) == MORE_NO_MORE) return(MORE_NO_MORE);
+        off += n;
+    }
+    return(0);
+}
+
+/* A header block's blank-line terminator is "\n" on a native-format
+   local message, but a raw IMAP-mirrored message keeps its wire "\r\n"
+   line endings verbatim -- recognize both (see the identical fix
+   already made in atkams/messages/lib/text822.c's GetHeader(), same bug
+   class: an LF-only check silently never terminates on CRLF mail, so
+   the "headers" that follow get treated as unrecognized body text). */
+static int IsBlankHeaderLine(char *line)
+{
+    return(line[0] == '\0' || line[0] == '\n' || (line[0] == '\r' && line[1] == '\n'));
+}
+
+/* Prints the raw header block of an already-open, rewound message file,
+   applying the same 'keep'/'omit' filtering (CheckHead/HeadersOn) that
+   DisplayMessage() applies to the same header block on the non-MIME
+   path -- kept as a near-duplicate of that loop, rather than factored
+   out from underneath it, since DisplayMessage() reads its input via
+   chunked MS_GetPartialFile() calls (network-friendly, no local file
+   required) while this one reads a local FILE* one line at a time
+   (simpler, and correct here since CUI_GetBodyToLocalFile() has already
+   fetched the whole message locally before this is ever called). */
+static int PrintMimeHeaders(FILE *fp)
+{
+    char line[MAXBODY];
+    int keptlast = 0;
+
+    while (fgets(line, sizeof(line), fp)) {
+        if (IsBlankHeaderLine(line)) break;
+        if (!HeadersOn) {
+            if (moreprintf("%s", line) == MORE_NO_MORE) return(MORE_NO_MORE);
+            continue;
+        }
+        if (line[0] == ' ' || line[0] == '\t') {
+            if (keptlast) if (moreprintf("%s", line) == MORE_NO_MORE) return(MORE_NO_MORE);
+        } else {
+            if (CheckHead(line)) {
+                keptlast = 1;
+                if (moreprintf("%s", line) == MORE_NO_MORE) return(MORE_NO_MORE);
+            } else keptlast = 0;
+        }
+    }
+    return(0);
+}
+
+/* Given one part (top-level message part, or one child of a multipart
+   container), returns the part cui actually knows how to render as
+   text, or NULL if this part isn't one of those. A multipart/alternative
+   resolves via mimepart_SelectAlternative(), but only counts if the
+   picked sibling is itself text/plain or text/html -- an alternative
+   between, say, an image and an audio clip has no text winner at all,
+   and must not be handed to RenderMimeLeaf() as if it were one. Any
+   other multipart type (mixed, related, digest, report, ...) is out of
+   scope for this pass -- its children are only ever considered one
+   level up, in DisplayMimeBody()'s own top-level scan. */
+static const struct mimepart *SelectDisplayablePart(const struct mimepart *p)
+{
+    if (!p) return(NULL);
+    if (mimepart_IsMultipart(p)) {
+        if (!strcmp(p->type, "multipart/alternative")) {
+            const struct mimepart *alt = mimepart_SelectAlternative(p);
+            if (alt && !mimepart_IsMultipart(alt)
+            && (!strcmp(alt->type, "text/plain") || !strcmp(alt->type, "text")
+                || !strcmp(alt->type, "text/html"))) {
+                return(alt);
+            }
+        }
+        return(NULL);
+    }
+    if (!strcmp(p->type, "text/plain") || !strcmp(p->type, "text") || !strcmp(p->type, "text/html")) {
+        return(p);
+    }
+    return(NULL);
+}
+
+/* One "[attachment: ...]" line for a multipart/mixed sibling that isn't
+   the part chosen for inline display -- same policy as messages'
+   text822.c (see revival/doc/claude-history/mime-display-REPORT.md
+   Gate 3): no clickable object, just a label, since saving/viewing
+   attachments from cui is out of scope here. bodylen is cast to (int)
+   for moreprintf -- see moreprintf's own doc comment above: its 1988
+   pseudo-varargs implementation reads every argument as `int`, so a
+   `long` passed positionally is exactly the mismatched-width hazard
+   documented as [[variadic-caller-abi-hazard]]; every other moreprintf
+   call site in this file already only ever passes int/char* for the
+   same reason. */
+static int PrintAttachmentLine(const struct mimepart *p)
+{
+    const char *fn = mimepart_GetDispParam(p, "filename");
+    if (!fn) fn = mimepart_GetParam(p, "name");
+    return(moreprintf("[attachment: %s (%s, %d bytes)]\n",
+                       fn ? fn : "unnamed", p->type, (int) p->bodylen));
+}
+
+/* Renders the chosen displayable part's decoded body: text/html goes
+   through mimepart's tag-strip/entity-decode shim first (same shim
+   text822.c uses -- see mimepart_HtmlToText()'s own doc comment for
+   what it does and doesn't handle); text/plain (or bare "text") prints
+   verbatim. Unlike text822.c inserting into an ATK Text widget (Latin-1
+   glyphs only, hence its UTF-8->Latin-1 conversion step), cui writes to
+   a real terminal -- on this platform a UTF-8-capable one -- so UTF-8
+   bytes are passed through unchanged rather than folded to Latin-1/'?'. */
+static int RenderMimeLeaf(const struct mimepart *p)
+{
+    int rc;
+
+    if (!strcmp(p->type, "text/html")) {
+        char *text = mimepart_HtmlToText((const char *) p->body, p->bodylen);
+        if (!text) return(0);
+        rc = PrintMimeChunked(text, (long) strlen(text));
+        free(text);
+        return(rc);
+    }
+    return(PrintMimeChunked((const char *) p->body, p->bodylen));
+}
+
+/* The MIME-aware alternative to the two paths GetBodyFromCUID() already
+   had (metamail, or a raw unscribed-body dump): decodes quoted-
+   printable/base64 and picks a real part to show instead of dumping
+   wire-encoded bytes or a boundary-line soup verbatim. Declines (returns
+   MIME_NOT_HANDLED) for anything it doesn't have a text part for --
+   a bare image/attachment message, or a multipart/alternative with no
+   text sibling -- so the caller's existing fallback still covers those
+   exactly as before. See revival/doc/claude-history/mime-display-
+   REPORT.md for the parallel work this mirrors in messages/text822.c;
+   mimepart.c itself lives in ams/libs/shr specifically so it links into
+   both without pulling in ATK (see mimepart.h's own placement note). */
+static int DisplayMimeBody(int cuid)
+{
+    char TmpFileName[1+MAXPATHLEN];
+    int ShouldDelete, rc;
+    FILE *fp;
+    struct mimepart *top;
+    const struct mimepart *winner = NULL;
+
+    if (CUI_GetBodyToLocalFile(cuid, TmpFileName, &ShouldDelete)) {
+        return(-1); /* error already reported */
+    }
+
+    fp = fopen(TmpFileName, "r");
+    if (!fp) {
+        if (ShouldDelete) MS_UnlinkFile(TmpFileName);
+        return(-1);
+    }
+    top = mimepart_ParseMessageFile(fp);
+    fclose(fp);
+
+    if (!top) {
+        if (ShouldDelete) MS_UnlinkFile(TmpFileName);
+        return(MIME_NOT_HANDLED);
+    }
+
+    winner = SelectDisplayablePart(top);
+    if (!winner && mimepart_IsMultipart(top)) {
+        const struct mimepart *c;
+        for (c = top->children; c && !winner; c = c->next) {
+            winner = SelectDisplayablePart(c);
+        }
+    }
+
+    if (!winner) {
+        mimepart_Free(top);
+        if (ShouldDelete) MS_UnlinkFile(TmpFileName);
+        return(MIME_NOT_HANDLED);
+    }
+
+    fp = fopen(TmpFileName, "r");
+    if (ShouldDelete) MS_UnlinkFile(TmpFileName); /* fp keeps it readable */
+    if (!fp) {
+        mimepart_Free(top);
+        return(-1);
+    }
+    rc = PrintMimeHeaders(fp);
+    fclose(fp);
+    if (rc == MORE_NO_MORE) {
+        mimepart_Free(top);
+        return(MORE_NO_MORE);
+    }
+
+    if (moreprintf("\n") == MORE_NO_MORE) {
+        mimepart_Free(top);
+        return(MORE_NO_MORE);
+    }
+    rc = RenderMimeLeaf(winner);
+
+    if (rc != MORE_NO_MORE && mimepart_IsMultipart(top)
+    && strcmp(top->type, "multipart/alternative")) {
+        const struct mimepart *c;
+        for (c = top->children; c; c = c->next) {
+            const struct mimepart *shown = SelectDisplayablePart(c);
+            if (c == winner || shown == winner) continue;
+            if (moreprintf("\n") == MORE_NO_MORE) { rc = MORE_NO_MORE; break; }
+            if (PrintAttachmentLine(c) == MORE_NO_MORE) { rc = MORE_NO_MORE; break; }
+        }
+    }
+
+    mimepart_Free(top);
+    return(rc);
+}
+
 int GetBodyFromCUID(int cuid)
 {
     char    SnapshotBuf[AMS_SNAPSHOTSIZE], FileName[1+MAXPATHLEN], *dir, *id, ErrorText[256];
@@ -1368,7 +1602,7 @@ int GetBodyFromCUID(int cuid)
 #ifdef POSIX_ENV
 #include <termios.h>
       struct termios ttystatein, ttystateout;
-#else      
+#else
 #include <sgtty.h>
         struct sgttyb ttystatein, ttystateout;
 #endif
@@ -1379,6 +1613,10 @@ int GetBodyFromCUID(int cuid)
         if (CUI_GetHeaderContents(cuid,(char *) NULL, HP_CONTENTTYPE, ctype, sizeof(ctype) - 1) != 0) {
             /* error already reported */
             return(-1);
+        }
+        if (ctype[0] && ULstrncmp(ctype, "x-be2", 5)) {
+            int mimerc = DisplayMimeBody(cuid);
+            if (mimerc != MIME_NOT_HANDLED) return(mimerc);
         }
         if (!getenv("NOMETAMAIL") && ctype[0] && ULstrncmp(ctype, "x-be2", 5) && nontext(ctype)) {
             if (CUI_GetBodyToLocalFile(cuid, TmpFileName, &ShouldDelete)) {

@@ -1523,7 +1523,17 @@ yankagain:
         if (c == '\n') {
             if (SawNewline) break;
             SawNewline = 1;
-        } else SawNewline = 0;
+        } else if (c != '\r') {
+            /* A CRLF-terminated message (the RFC822/2822 wire format,
+               e.g. real mail mirrored in verbatim from IMAP) spells its
+               blank header/body separator "\r\n\r\n", not "\n\n" -- a
+               bare '\r' must not reset SawNewline, or that separator is
+               never recognized and this loop reads straight to EOF
+               (see ExitWithError("Could not find end of mail headers")
+               below). Same bug class already fixed in atkams/messages/
+               lib/text822.c's GetHeader(). */
+            SawNewline = 0;
+        }
         *t++ = c;
     }
     *t = 0;
