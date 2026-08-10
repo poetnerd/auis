@@ -132,7 +132,8 @@ Smaller items that don't fit the tables above.
   with flags (`-Wno-implicit-int` etc.) instead of rewriting the tree.
   *Why:* one automated mass-conversion attempt was tried first and
   reverted — it introduced bugs faster than it fixed real ones.
-  `porting-assessment.md` → "Strategic decision."
+  `porting-assessment.md` → "Getting K&R-era source to build under a
+  modern compiler."
 - **The later ANSI C conversion (see Major milestones) went
   directory-by-directory with the compiler as auditor, not via a
   rewrite tool.** *Why:* `.ch` class-interface files already carried

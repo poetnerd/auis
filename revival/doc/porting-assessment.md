@@ -19,44 +19,89 @@ local customization. imake still exists in most distributions
 (package `xutils-dev` on Debian/Ubuntu). A CMake or plain Makefile
 migration might be worthwhile eventually but isn't necessary to get started.
 
-## Strategic decision: compiler leniency over wholesale modernization
+## Getting K&R-era source to build under a modern compiler
 
-Early in the revival, we tried mass-converting the K&R C source to ANSI C
-(explicit prototypes, typed parameters) using an automated tool
-(`revival/tools/modernize`). This was unreliable at scale — edge cases
-in K&R parsing (multi-name declarations, function pointers, split-line
-definitions) caused the tool to silently introduce bugs across hundreds
-of files. A single mass-modernization pass took the error count from
-roughly zero to over 2000.
+The goal throughout was minimal code change: get a ~1990s K&R codebase
+building and running correctly under today's compilers without
+rewriting it. That goal held, but reaching it wasn't trivial — it took
+two phases and, in the end, real (if narrowly scoped) changes
+throughout the tree.
 
-The working strategy instead: **leave the K&R source untouched and use
-compiler flags to relax modern clang/gcc's strict defaults** back to
-behavior compatible with 1990s C compilers:
+**First attempt, reverted:** mass-converting the K&R source to ANSI C
+(explicit prototypes, typed parameters) in one pass with an automated
+tool (`revival/tools/modernize`). Unreliable at scale — edge cases in
+K&R parsing (multi-name declarations, function pointers, split-line
+definitions) caused the tool to silently introduce bugs across
+hundreds of files, taking the error count from roughly zero to over
+2000. Reverted in full.
+
+**Phase 1 (2026-06-29) — get it building at all, leniently.** Left the
+K&R source untouched and relaxed the compiler's modern strict defaults
+back to behavior compatible with 1990s C:
 
 ```
 COMPILERFLAGS = -Wno-implicit-int -Wno-implicit-function-declaration \
                 -Wno-incompatible-function-pointer-types
 ```
 
-This took the build from ~1062 errors (after the modernizer revert) down
-to ~344 — and critically, those 344 are *real* portability problems
+This took the build from ~1062 errors (after the modernizer revert)
+down to ~344 — critically, those 344 were *real* portability problems
 (`sys_errlist` removed from libc, `Display`/`FILE` struct internals
-hidden by modern headers) rather than self-inflicted tool damage.
+hidden by modern headers), not self-inflicted tool damage. Policy while
+this lasted: no mass modernization; hand-edit only when the build
+forced it (a structural incompatibility, e.g. `<a.out.h>` doesn't exist
+on Darwin) or the file was already being touched for an unrelated
+reason.
 
-**Current policy:** Do not run the modernizer across the tree. Only
-hand-edit or modernize a file when:
-- Build forces it (a structural incompatibility, e.g. `<a.out.h>`
-  doesn't exist on Darwin) — fix narrowly, not wholesale
-- We are touching that file for an unrelated reason anyway
+**Phase 2 (2026-07-08 through 2026-08-07) — replace leniency with real
+correctness, tool-assisted, one subtree at a time.** The `.ch`
+class-interface files already carried every method's true argument
+types — they're the input to the class preprocessor, which had simply
+been discarding that information. Emitting it instead turned the
+compiler into an auditor: any place a real implementation disagreed
+with its own declared interface became a located compile error rather
+than a bug waiting to happen at runtime. `revival/tools/ansify`, a
+per-file conversion tool built for this specifically (looking up real
+signatures from that data rather than inferring them, unlike the tool
+that failed in the first attempt), carried out the actual rewrite,
+subtree by subtree, over milestones M1–M4. Full plan and rollout
+mechanics: §14.
 
-**Follow-on effort (now underway):** A deliberate, careful pass to bring
-the codebase to full ANSI/POSIX C — the working runtime baseline this
-paragraph was waiting for now exists. Assessed 2026-07-08; full plan in
-§14. Note the tool verdict changed: `modernize`'s regex K&R converter is
-*not* the vehicle for that pass (§14 explains why), so its "known
-limitations" are moot rather than a to-fix list. Leniency flags remain in
-force per subtree until that subtree is converted and its flags ratcheted
-to errors.
+The same mechanism also closed out most of the tree's LP64 (64-bit
+`long`) correctness problems. 1990s AUIS assumed `int` and `long` are
+the same width — true on the platforms it originally shipped on, false
+on arm64. The first instances of that assumption breaking were found
+and fixed by hand starting 2026-07-02, before this conversion effort
+existed (§11, §12); once real type checking landed with M1, the same
+bug shape anywhere else in the tree became a located compile error
+instead of silent runtime corruption, and more instances turned up
+structurally during the M2/M3 rollout (§16, §19, §21, §22).
+
+**Current state, as of 2026-08-07:** the entire active codebase
+compiles clean under strict settings. The Phase 1 leniency flags above
+are gone — `config/darwin/system.mcr`'s `COMPILERFLAGS` now reads
+`-Werror=implicit-int -Werror=int-conversion
+-Werror=incompatible-function-pointer-types
+-Werror=implicit-function-declaration -Werror=format`, the exact
+opposite of where Phase 1 left it. Two narrow accommodations remain,
+both deliberate and unrelated to the leniency era: `-std=gnu89` (see
+next section for why) and `-Wno-return-type` (K&R functions routinely
+omit an explicit `return` in a non-`void` function; not worth
+chasing). `modernize`'s regex K&R converter was never the vehicle for
+Phase 2 (§14 explains why) — its "known limitations" were moot from
+the start, not a to-fix list. Milestone-by-milestone record:
+`roadmap.md` → "Major milestones" (current status) and
+`roadmap-old.md` → Medium-term → ANSI C conversion (frozen planning
+detail). The Phase 1 hand-edit policy above still applies to any
+currently-inert subtree (e.g. `ness`, blocked on an unrelated bison
+issue) if one is ever activated, since those sat outside the
+tree-wide conversion's scope.
+
+**Not planned for the foreseeable future:** migrating from `gnu89` to
+`c99`/`c11`. That would be a materially more intrusive pass — a
+tree-wide audit and rename of every identifier that collides with a
+C99-reserved word (`restrict` is the one confirmed hit so far; see
+below for the first gate that work would need to clear).
 
 ### Why `gnu89`, not `gnu99`/`c99` — verified 2026-08-07
 
@@ -82,15 +127,12 @@ constant, only `-std=` varied):
 
 **Conclusion:** `gnu89` isn't chosen because some classpp mechanism
 requires it — it's chosen because it's the standard that actually
-matches ~35 years of K&R-era identifier choices. Moving to
-`gnu99`/`c99` would first need a tree-wide audit for reserved-word
-collisions (`restrict` is the one confirmed hit; `inline` also
-appears ~15 times tree-wide but all in comments in a first pass, not
-live identifiers) before the tree would even parse — exactly the kind
-of wholesale-modernization work this section's strategic decision
-already opted out of. If a `c99` migration is ever pursued (§14 already
-flags it as a possible follow-on), this keyword audit is its actual
-first gate, not a formality.
+matches ~35 years of K&R-era identifier choices. The reserved-word
+audit above (`restrict` confirmed; `inline` appears ~15 times
+tree-wide but all in comments so far, not live identifiers) is a first
+pass, not a complete one — it's the actual first gate a `c99`
+migration would need to clear, not a formality, should one ever be
+pursued.
 
 ## Issues to address
 
