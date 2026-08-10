@@ -69,9 +69,17 @@ being front-loaded here.
 
 - **Description:** `messages` used to just offer a button to run
   `metamail` on any non-text part; it now has a real MIME parser, and
-  most mail is readable without that fallback.
+  most mail is readable without that fallback. `cui` (2026-08-09) now
+  shares the same `mimepart.c` parser: `type` decodes
+  quoted-printable/base64 and picks a `text/plain`/`text/html` part to
+  display instead of dumping wire-encoded bytes, with non-primary
+  `multipart/mixed` siblings listed as `[attachment: ...]` lines. A
+  latent `metamail` bug that this surfaced — it couldn't find the
+  header/body boundary on CRLF-terminated mail — is fixed too; see
+  `porting-changelog.md`'s 2026-08-09 entry.
 - **Next step:** Close fidelity gaps — e.g. links currently render as
-  plain text instead of clickable link insets.
+  plain text instead of clickable link insets (both `messages` and,
+  now, `cui`).
 
 ### HTML mail — `htmlview` modernization
 

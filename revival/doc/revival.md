@@ -300,6 +300,29 @@ next step, not yet done:
   store's native ids remain a documented, if astronomically unlikely,
   hazard on this platform.
 
+- **Two independent header parsers, written decades apart, made the same
+  assumption about where a message's headers end.** RFC822 says a blank
+  line separates headers from body; both AMS's own mail reader
+  (`text822.c`'s `GetHeader`) and the vendored `metamail` program
+  (`Read822Prefix`) implemented that check by testing for a bare `'\n'`.
+  That is correct for every message the code had ever seen — the Andrew
+  mail system generated and stored its own messages internally with LF
+  line endings — until this project's IMAP mirror started handing it real
+  wire-format mail from Fastmail/Gmail/Outlook, whose blank line is
+  `"\r\n\r\n"`. Neither check ever fires on that input, with two different
+  failure shapes: `text822.c`'s header loop never terminates, so it reads
+  straight through the "blank line" and treats the entire message body as
+  a run of unrecognized headers (displayed in a tiny font, un-decoded,
+  every colon making the text before it bold — see `porting-changelog.md`'s
+  2026-07-21 entry for the full symptom list this produced); `metamail`'s
+  version reads to EOF looking for a separator that never arrives and
+  exits with "Could not find end of mail headers", which is what actually
+  blocked `cui`'s `type` command on the very first message in a real
+  mirrored inbox. Both are the same one-line fix — stop letting a bare
+  `'\r'` reset the "did we just see a newline" state — applied
+  independently in each file, since neither parser shares code with the
+  other.
+
 - **An explicit cast was correct on 32-bit hosts and wrong on 64-bit
   ones.** The font toolkit's bounding-box
   routine measured a string's width by calling its own sibling method

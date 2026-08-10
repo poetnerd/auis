@@ -1631,3 +1631,75 @@ files cache for a process's lifetime as documented elsewhere in this
 project). Confirmed live, both formats, fresh `ez` process: JPEG and
 TIFF versions of `netmap` both render the actual photographed page
 content, correctly.
+
+### 2026-08-09 — `cui` gains MIME body display; a matching `metamail` bug found and fixed
+
+**Symptom:** `cuin`, reading a real IMAP-mirrored INBOX, could not
+`type` the very first message in it — `metamail: Could not find end of
+mail headers`, no body shown, for any message whose top-level
+Content-Type wasn't exactly `text/plain; charset=us-ascii` (i.e. most
+real mail: multipart, HTML-only, or any other charset). `cui` had never
+been given MIME awareness in the earlier `messages`/`text822.c` MIME
+work (see `claude-history/mime-display-REPORT.md`) — only relinked
+against the new `libmsshr.a` so it wouldn't go stale, never wired to
+call `mimepart_*` itself.
+
+**Fix:** `GetBodyFromCUID()` (`src/ams/msclients/cui/cui.c`) now tries
+a new `DisplayMimeBody()` path before falling back to `metamail`/the
+raw unscribed-body dump: fetches the message via the existing
+`CUI_GetBodyToLocalFile()`, parses it with the shared `mimepart.c`
+(same module `text822.c` uses), and picks a displayable part —
+`multipart/alternative` resolves via `mimepart_SelectAlternative()`,
+other multipart types (mixed, signed, ...) scan top-level children in
+wire order for the first `text/plain`/`text/html` one. `text/html`
+goes through `mimepart_HtmlToText()`; unlike `messages`' ATK Text
+widget (Latin-1 glyphs only), `cui` writes to a real, UTF-8-capable
+terminal, so UTF-8 bytes pass through unconverted rather than folding
+to Latin-1/`?`. Every other top-level part in a `multipart/mixed` (or
+similar) gets one `[attachment: <filename> (<type>, <n> bytes)]` line
+instead of being rendered or silently dropped. Declines (falls through
+to the untouched old behavior) for anything with no text part at all —
+`x-be2`/`application/andrew-inset` native-format mail, or a bare
+image/attachment message — so those paths are exactly as they were
+before this change.
+
+Verified live against wdc's real mirrored INBOX (3949 messages):
+message 1 (`multipart/alternative`, the one that started this) now
+renders its `text/plain` body correctly; a `multipart/mixed` message
+with a trailing footer part shows `[attachment: unnamed (text/plain,
+135 bytes)]`; a `multipart/signed` (PGP-signed mailing-list mail, common
+in this mailbox) correctly shows the signed `text/plain` body plus
+`[attachment: signature.asc (application/pgp-signature, 499 bytes)]`;
+a bare `text/html` message strips to readable text. `revival/tests/
+mime-display-tests` (9/9, unaffected — `mimepart.c` itself wasn't
+touched) re-run clean.
+
+**The `metamail` bug this surfaced along the way:** with the mimepart
+path now covering essentially all real mail, `metamail` is only ever
+reached for genuinely non-text content with no text part at all — but
+it would have hit the exact same CRLF-blindness bug already fixed in
+`text822.c`'s `GetHeader()` months earlier (see the 2026-07-21 entry
+above), independently, since `metamail.c`'s `Read822Prefix()` has its
+own from-scratch header/body boundary scan that also only recognized a
+bare `'\n'`. On any CRLF-terminated message with no text alternative,
+it would read straight to EOF and exit with "Could not find end of
+mail headers" instead of falling back gracefully. Fixed the same way:
+a bare `'\r'` no longer resets the "just saw a newline" state, so
+`"\r\n\r\n"` is recognized exactly like `"\n\n"`. See the narrative
+writeup in `revival.md`'s "Old bugs never found till now" for the
+fuller story of both parsers making the same assumption independently.
+Confirmed directly (not just via `cui`): `metamail -m cui` against a
+synthetic CRLF-terminated `text/plain` message now finds the boundary
+and prints the body instead of exiting -1.
+
+Files touched: `src/ams/msclients/cui/cui.c` (new `DisplayMimeBody()`
+and five small static helpers, ahead of `GetBodyFromCUID()`; one new
+`#include <mimepart.h>`), `src/overhead/mail/metamail/metamail/
+metamail.c` (one-line fix in `Read822Prefix()`, `+8` comment). Both
+compile-verified against their `fossil cat` originals (deduplicated
+warning-message diff, not raw counts): `cui.c` gains only more
+instances of the pre-existing `-Wdeprecated-non-prototype` class (the
+new `moreprintf()` call sites), no new warning class; `metamail.c`
+gains none. `cuin`/`cui` relinked (no `libmsshr.a` rebuild needed —
+`mimepart.c` itself wasn't touched), `metamail` rebuilt, both
+installed.

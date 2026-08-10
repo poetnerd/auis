@@ -204,6 +204,36 @@ what's selected or displayed) and **"Mark as Unseen menu"**
 If a menu item looks permanently disabled regardless of what you click
 on or select, suspect a Set Options toggle before suspecting a bug.
 
+**Mail headers have proliferated a lot since 1988.** A real message
+routed through a modern provider commonly carries 40-80 header lines —
+`Received:` hops, `DKIM-Signature`/`ARC-*`/`Authentication-Results`,
+`X-Microsoft-*`/`X-Google-*` diagnostics, spam-score headers, and more
+— where AMS's original design assumed a handful. Both `messages` and
+`cui` show every one of these by default, unfiltered; neither app was
+changed to filter them by default (a deliberate choice — see the
+"AMS-over-IMAP" project entry in `roadmap.md`). In `messages` this is
+mostly a non-issue in practice: the header block is inserted in a tiny
+font ahead of the body, and the view scrolls to land on the actual
+message content, not the top of the header pile. `cui`, reading in a
+plain terminal, has no equivalent — `type` prints every header line
+top to bottom, and you page through all of them (`-- More --`) before
+reaching the body. To quiet that down in `cui`:
+
+```
+set headers
+keep subject from to date
+```
+
+`set headers` turns on header *filtering* (off by default, somewhat
+confusingly — "off" means "show everything unfiltered," not "hide
+headers"); `keep` then whitelists just the header names you listed
+("omit" does the opposite: hide *only* the header names you list,
+otherwise print everything else). Both are `LEVEL_EXPERT` commands, so
+`cui` will ask you to confirm running one at the default novice level
+the first time. To make this permanent, put both lines in `~/.cuirc`
+— `cui` sources that file automatically on startup (silently skipped
+if absent), the same mechanism the `source` command uses interactively.
+
 ## Step 7: send
 
 Compose and send from `messages` or `cui` as normal. With `smtphost`
