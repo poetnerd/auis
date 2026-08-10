@@ -771,7 +771,7 @@ trail, reproduction steps, and what was tried/disproven along the way:
   an independent instance of the identical mistake in its own
   `zip__Write` (`contrib/zip/lib/zip.c:307,324`) — not shared code
   with `apt.c`, the same K&R idiom copy-pasted into a second file.
-  Full writeup: `porting-assessment.md` §20, memory
+  Full writeup: `porting-assessment.md` §21, memory
   `project_lp64_printf_id_truncation` (supersedes memory
   `project_embedded_inset_load_failure`, which has the full
   investigation trail).
@@ -792,7 +792,7 @@ trail, reproduction steps, and what was tried/disproven along the way:
 - The tree-wide sweep also fixed ~30 other files carrying the same
   copy-pasted mistake (most never previously reported broken, since
   nobody had tested embedding those inset types the way this
-  investigation tested calc/zip) — see `porting-assessment.md` §20 for
+  investigation tested calc/zip) — see `porting-assessment.md` §21 for
   the full inventory. Notably `eq`'s instance (`eqvcmds.c`) is in its
   Cut/Copy-to-cutbuffer path, not its ordinary save (which was already
   correct) — wdc confirmed eq Cut/Copy still works correctly after the

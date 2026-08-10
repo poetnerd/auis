@@ -1009,7 +1009,7 @@ declaration fixes themselves:**
   findings for dedicated follow-up: zip/calc insets fail to load when
   embedded in a mixed-content document (later root-caused and fixed
   2026-07-26, an LP64 `%d`/`%ld` id-truncation bug — see
-  `porting-assessment.md` #20), and `ez` horizontal text-block drag
+  `porting-assessment.md` #21), and `ez` horizontal text-block drag
   locks at position 0 after the first drag.
 
 `atkams/messages/lib` and `contrib/zip/lib` each also surfaced a
@@ -1062,7 +1062,7 @@ the `class.c` codegen source all cross-checked) against two instances
 (`foldertreev`, `atkams/messages/lib/fldtreev.c`; `suite`,
 `atk/apt/suite/suite.c`); the remaining ~39 share the identical
 message shape and are almost certainly the same mechanism. See
-`porting-assessment.md` #17. Same day, M3's directory batch plan
+`porting-assessment.md` #20. Same day, M3's directory batch plan
 (`overhead/util/lib`, 58 files) started separately as O1.
 
 ### 2026-07-30 — M3 Waves 1-2: `ansify` K&R→ANSI conversion resumes; classpp `FinalizeObject` `-pe` self-inconsistency
@@ -1567,7 +1567,7 @@ pixel data — on the first try. Whatever caused the original "solid
 black" report, it wasn't the JPEG decoder itself.
 
 **TIFF import: totally broken, four bugs, all the same LP64 struct/
-stride family as `porting-assessment.md` §21 (`convertraster`'s
+stride family as `porting-assessment.md` §22 (`convertraster`'s
 `RasterHeader`), just in the vendored `libtiff` this time:**
 - `TIFFHeader` (`tiff.h`) declared its `tiff_diroff` field `unsigned
   long`; on-disk it's a 4-byte TIFF LONG. Doubled the struct to 16

@@ -90,7 +90,7 @@ When a value reads as a huge positive number, or lldb shows
    the middle correct. Neither has a call boundary for the compiler to
    typecheck — no warning either way. Found 2026-08-08 in
    `convertraster`'s RF-format reader (`oldrf.c`/`rastfile.h`); see
-   porting-assessment.md §21. Worth checking first in any other
+   porting-assessment.md §22. Worth checking first in any other
    binary-format reader that predates this port and hasn't been
    exercised yet — a good candidate list is the `image` inset's format
    importers (`gif.c`, `tif.c`, `pcx.c`, `sunraster.c`).

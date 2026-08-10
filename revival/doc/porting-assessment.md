@@ -94,6 +94,37 @@ first gate, not a formality.
 
 ## Issues to address
 
+Index — search for `### N.` to jump to a section (anchor links aren't
+reliable across Fossil's and GitHub's renderers, so this is a plain
+lookup table, not a set of links):
+
+| § | Issue | Status |
+|---|---|---|
+| 1 | `gcc -fwritable-strings` | RESOLVED 2026-07-23 |
+| 2 | glibc `FILE` struct internals | LOW effort |
+| 3 | Dynamic object loader | MEDIUM effort, a simplification |
+| 4 | Andrew custom malloc | LOW effort |
+| 5 | Platform configuration cleanup | LOW effort |
+| 6 | X11 paths and libraries | LOW effort |
+| 7a | Deferred: legacy sgtty terminal clients (`tm`, `vui`) | LOW priority, defer |
+| 7b | Deferred: `contrib/bdffont` | LOW priority, defer |
+| 7 | Console/stats module | LOW priority, defer |
+| 8 | Misc POSIX drift | LOW-MEDIUM effort |
+| 9 | Font system | in progress as of 2026-07 |
+| 10 | Messages with IMAP backend | resolved for local-store case 2026-07-04; IMAP itself unstarted |
+| 11 | `%d`/`%ld` mismatch in scanf family | MEDIUM effort, systemic |
+| 12 | LP64 untyped dispatch: `long` param / `int` arg mismatch | MEDIUM effort, systemic |
+| 13 | Modern flex generator/init-flag polarity mismatch | closed 2026-07-07 |
+| 14 | ANSI C conversion plan | assessed 2026-07-08 |
+| 15 | mkparser/cparser.c fixed-width table assumption | closed 2026-07-11 |
+| 16 | classpp typed-dispatch signedness mismatch | closed 2026-07-11 |
+| 17 | Xft "erase by redraw" stale foreground color | partially closed 2026-07-12 |
+| 18 | Variadic function called through a K&R extern | found 2026-07-22 |
+| 19 | `.ch`/wrapper vs. real K&R out-param width drift | ongoing, 5 confirmed instances |
+| 20 | `ansify` DRIFT false-positive on `InitializeClass`/`InitializeObject`/`FinalizeObject` | found 2026-07-25 |
+| 21 | `%d`/`%ld` mismatch in the write direction (printf/fprintf) | MEDIUM effort, systemic, found 2026-07-26 |
+| 22 | On-disk binary formats hard-coded around a 4-byte `long` | closed 2026-08-08 |
+
 ### 1. `gcc -fwritable-strings` — RESOLVED 2026-07-23 by re-enabling the flag
 
 **Correction to the original assessment below: this was not, in fact,
@@ -443,6 +474,38 @@ exact invocation.
 - `atk/text/` — text measurement and drawing
 - `atk/support/` — style and font selection
 - `build/X11fonts/fonts.alias` — Andy→Adobe XLFD name mappings
+
+### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
+
+**Resolved 2026-07-04 for the local-store case — see `roadmap-old.md` Near-term →
+Messages application prerequisites, Stream 2/3.** The build already has a
+clean seam: `AMS_ENV` on with `AMS_DELIVERY_ENV`/`SNAP_ENV`/`WHITEPAGES_ENV`
+left off builds `messages` against a local, non-networked mbox-backed
+message store (`ams/libs/ms`), with none of the AFS/AMDS delivery machinery
+involved. An IMAP adapter remains a viable fallback (notes below still
+apply to that scenario) but is no longer the near-term plan.
+
+The `messages` application is the UI for mail and bulletin boards. It
+sits on top of AMS, which implements its own storage, delivery, and
+locking model based on shared filesystems (AFS). The question is whether
+`messages` can be separated from AMS and connected to an IMAP server.
+
+Key source areas to investigate once the full source is available:
+- `atkams/` — the bridge between ATK and AMS; how thick is this interface?
+- `ams/` — where does the storage abstraction live, and is there one?
+- `atk/ez/` and the messages application — does the UI talk to AMS
+  directly, or through a clean API boundary?
+- What assumptions does `messages` make about the message store?
+  (e.g., local files, specific directory structures, AFS locking
+  primitives, white pages integration)
+- How much of AMS is delivery/transport (replaceable by SMTP) vs.
+  storage/retrieval (replaceable by IMAP) vs. tightly coupled to both?
+
+The value proposition is significant: a mail client that renders rich
+compound documents inline with embedded ATK objects. But the feasibility
+depends entirely on whether there's a seam between the UI and the store.
+Previous experience suggests AMS internals are deeply complex — approach
+with caution and investigate the interface boundaries before committing.
 
 ### 11. `%d` / `%ld` mismatch in scanf family (MEDIUM effort, systemic)
 
@@ -1638,38 +1701,6 @@ world rebuild done 2026-07-12, zero new errors introduced (one
 pre-existing, unrelated `contrib/zip/utility/ltapp.c` error remains, see
 roadmap-old.md → Insets to Repair → zip).
 
-### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
-
-**Resolved 2026-07-04 for the local-store case — see `roadmap-old.md` Near-term →
-Messages application prerequisites, Stream 2/3.** The build already has a
-clean seam: `AMS_ENV` on with `AMS_DELIVERY_ENV`/`SNAP_ENV`/`WHITEPAGES_ENV`
-left off builds `messages` against a local, non-networked mbox-backed
-message store (`ams/libs/ms`), with none of the AFS/AMDS delivery machinery
-involved. An IMAP adapter remains a viable fallback (notes below still
-apply to that scenario) but is no longer the near-term plan.
-
-The `messages` application is the UI for mail and bulletin boards. It
-sits on top of AMS, which implements its own storage, delivery, and
-locking model based on shared filesystems (AFS). The question is whether
-`messages` can be separated from AMS and connected to an IMAP server.
-
-Key source areas to investigate once the full source is available:
-- `atkams/` — the bridge between ATK and AMS; how thick is this interface?
-- `ams/` — where does the storage abstraction live, and is there one?
-- `atk/ez/` and the messages application — does the UI talk to AMS
-  directly, or through a clean API boundary?
-- What assumptions does `messages` make about the message store?
-  (e.g., local files, specific directory structures, AFS locking
-  primitives, white pages integration)
-- How much of AMS is delivery/transport (replaceable by SMTP) vs.
-  storage/retrieval (replaceable by IMAP) vs. tightly coupled to both?
-
-The value proposition is significant: a mail client that renders rich
-compound documents inline with embedded ATK objects. But the feasibility
-depends entirely on whether there's a seam between the UI and the store.
-Previous experience suggests AMS internals are deeply complex — approach
-with caution and investigate the interface boundaries before committing.
-
 ### 18. Variadic function called through a K&R (empty-parens) extern declaration — arm64 calling-convention mismatch (MEDIUM effort, found 2026-07-22)
 
 #### Root cause
@@ -1911,7 +1942,7 @@ Instances 3–4: full rebuild clean, zero new warnings; live smoke test by
 wdc — Inbox's subscription-status message read correctly after the
 correction, confirmed garbled before it (see above).
 
-### 17. `ansify` DRIFT false-positive: classpp's own `InitializeClass`/`InitializeObject`/`FinalizeObject` special-casing (found 2026-07-25, M3 tree-wide census)
+### 20. `ansify` DRIFT false-positive: classpp's own `InitializeClass`/`InitializeObject`/`FinalizeObject` special-casing (found 2026-07-25, M3 tree-wide census)
 
 A tree-wide `ansify --dry-run --dir src` census (M3's "first concrete
 step," run before any batch execution) found 56 DRIFT findings across
@@ -2138,7 +2169,7 @@ Not a DRIFT false positive — a genuine classpp codegen bug, confirmed
 directly in `overhead/class/pp/class.c`. `InitializeObject` gets a
 fully hardcoded 2-arg (`classID`, `self`) **exported prototype**
 (`class.c:1121-1122`) regardless of what the `.ch` declares — this is
-the mechanism §17 above documents. `FinalizeObject` does **not** get
+the mechanism §20 above documents. `FinalizeObject` does **not** get
 the same treatment: its prototype is explicitly *not* skipped from the
 ordinary classproc-emission loop (`class.c:1139-1142`, comment:
 `"FinalizeObject is NOT skipped: it may have a non-void return type,
@@ -2226,7 +2257,7 @@ classproc parameter is unusual style to begin with), but worth the
 same "note it if you see it" awareness as the other two classpp
 findings above whenever a future batch's `-pe` rollout hits it.
 
-### 20. `%d` / `%ld` mismatch in the write direction — printf/fprintf family (MEDIUM effort, systemic; found 2026-07-26)
+### 21. `%d` / `%ld` mismatch in the write direction — printf/fprintf family (MEDIUM effort, systemic; found 2026-07-26)
 
 Section 11 above (`scanf` family) noted in passing that "unlike `printf`
 mismatches (wrong output, no memory write), `scanf` mismatches corrupt
@@ -2315,11 +2346,11 @@ vs. a `long`/`dataobject_UniqueID()`/`*_GetID()` call (needs `%ld`) — do
 not blind-replace, several sites mix a genuine `int` (a version number, a
 count) with the `long` id in the same format string.
 
-### 21. On-disk binary formats hard-coded around a 4-byte `long` — struct layout and hand-rolled word loops (MEDIUM effort, closed 2026-08-08)
+### 22. On-disk binary formats hard-coded around a 4-byte `long` — struct layout and hand-rolled word loops (MEDIUM effort, closed 2026-08-08)
 
 #### Root cause
 
-Distinct from every LP64 variant above (§11, §12, §19, §20), which are
+Distinct from every LP64 variant above (§11, §12, §19, §21), which are
 all about a *value* crossing some boundary — a call, a `printf`/`scanf`
 format, a class-dispatch parameter — where the two sides disagree about
 width. This one is about *reading and writing a fixed binary layout*:

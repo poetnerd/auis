@@ -132,11 +132,11 @@ ran was never `ansify`-converted.
 3. `ansify --dir <subtree>` — real run, not `--dry-run` (dry-run can't
    surface compile-gate fallout, only DRIFT/instance counts).
 4. Triage DRIFT and parser-bailout findings per `porting-assessment.md`
-   §14/§17 — §17 in particular documents that `InitializeClass`/
+   §14/§20 — §20 in particular documents that `InitializeClass`/
    `InitializeObject`/`FinalizeObject` DRIFT reports are usually a
    tool-side false positive (classpp special-cases these three names;
    `ansify`'s DRIFT check doesn't know that), not a real interface bug
-   — check the shape against §17 before escalating.
+   — check the shape against §20 before escalating.
 5. Subtree-local gate (`make clean && make depend && make -k
    install`, twice for determinism). Tree-wide gate only if the
    subtree turns out to be one of the two directories M2/M3 already
