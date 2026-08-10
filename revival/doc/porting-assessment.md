@@ -168,14 +168,11 @@ class the Gate-1 sweep targeted by tracing real mutator functions —
 `StripWhiteEnds`, `LowerCase`, `MapParens`, etc.) is a few dozen call
 sites at most, tree-wide.
 
-With the flag in place none of this — inert or genuinely
-mutate-in-place — is live risk anymore; the counts above are kept for
-context (why the flag is load-bearing, and roughly how much code
-leans on it) rather than as a remaining to-fix list. The Gate-1 sweep
-findings in `claude-history/strlit-REPORT.md` are superseded as action
-items by this fix; that report's per-site detail remains useful if the
-flag is ever dropped (e.g. a future toolchain migration away from
-Apple clang).
+With the flag in place none of this is live risk anymore; the counts
+above are kept only as context for why the flag is load-bearing. The
+Gate-1 sweep findings in `claude-history/strlit-REPORT.md` are
+superseded as action items by this fix, but its per-site detail would
+matter again if a future toolchain migration ever dropped the flag.
 
 **Considered and rejected: a full cleanup pass to make the tree
 `-fwritable-strings`-independent.** The 26,628 warnings break into
@@ -216,13 +213,6 @@ default `gcc`, mirroring how `config/i386_Linux/system.mcr` already
 hardcoded a specific compiler for its own reasons. This is the same
 risk category as this build's existing reliance on `-std=gnu89` and
 other legacy-compatibility flags — not a new kind of fragility.
-
-*Editorial note (2026-07-23): this section has grown long in the
-telling. When the Linux port actually starts, it's worth condensing
-issue #1 down to current-state-and-decision (flag set where, why,
-what to check on the new platform) with the reasoning/history moved to
-`claude-history/` — a human skimming "issues to address" shouldn't have
-to read the full investigation to see the current picture.*
 
 <details>
 <summary>Original assessment (superseded, kept for history)</summary>
