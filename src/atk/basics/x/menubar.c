@@ -35,6 +35,34 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <andrewos.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <environ.ih>
+
+/* xim_EstablishConsole() (in xim.c) fclose()s the real stderr and dup2()s
+   fd 2 elsewhere, so plain fprintf(stderr,...) here goes nowhere once a
+   window exists. Route temporary debug tracing around that entirely. Gated
+   by the MenuDebugTrace profile switch (off by default, see menubar.help)
+   so it's available for a future reproduction without needing a rebuild. */
+static void mdbg(const char *fmt, ...)
+{
+    static int checked = 0;
+    static boolean enabled = FALSE;
+    va_list ap;
+    FILE *f;
+
+    if (!checked) {
+	enabled = environ_GetProfileSwitch("MenuDebugTrace", FALSE);
+	checked = 1;
+    }
+    if (!enabled) return;
+
+    f = fopen("/tmp/menudbg_direct.log", "a");
+    if (!f) return;
+    va_start(ap, fmt);
+    vfprintf(f, fmt, ap);
+    va_end(ap);
+    fclose(f);
+}
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -733,7 +761,7 @@ static void DrawMenuItems(struct menubar *mb, struct tmenu *t)
 	}
 
 	y+=ITEMHEIGHT(mb, t) + VSPACE(mb, t);
-	
+
 	t->lookup[count++]=it;
 	it=it->next;
     }
@@ -836,8 +864,10 @@ static void BringUpMenu(struct menubar *mb, int menu)
 {
     int x,y;
     int w,h;
+    struct timeval mdbg_t0, mdbg_t1, mdbg_t2, mdbg_t3, mdbg_t4, mdbg_t5;
 
-    
+    gettimeofday(&mdbg_t0, NULL);
+
     if(menu<0 || menu>=mb->nmenus) return;
     
     if(mb->lastmenu==mb->menus[menu]) return;
@@ -854,18 +884,46 @@ static void BringUpMenu(struct menubar *mb, int menu)
     mb->lastmenu->next=NULL;
     
     SetTitleSelection(mb, mb->lastmenu, True);
-    
+    gettimeofday(&mdbg_t1, NULL);
+
     ComputeMenuPositioning(mb, mb->lastmenu, &x, &y, &w, &h);
-    
+    gettimeofday(&mdbg_t2, NULL);
+
     mb->lastmenu->ww=w;
     mb->lastmenu->wh=h;
 
     XMoveResizeWindow(mb->mbi->dpy, mb->lastmenu->window, x, y, mb->lastmenu->ww, mb->lastmenu->wh);
-    
+    gettimeofday(&mdbg_t3, NULL);
+
     mb->lastmenu->x=x - mb->mbi->x;
     mb->lastmenu->y=y;
-    
+
     DrawMenuItems(mb,mb->lastmenu);
+
+    /* Push the draw requests to the server right now, as their own
+       write, instead of leaving them sitting in Xlib's client-side
+       output buffer until DoMenuLoop's XGrabPointer (the next Xlib
+       call that needs a reply) implicitly flushes them bundled
+       together with the grab request. That bundling is why the visible
+       text was gated on the grab's round-trip finishing. */
+    XFlush(mb->mbi->dpy);
+    gettimeofday(&mdbg_t4, NULL);
+
+    /* Diagnostic only: XSync forces a round-trip so we can see how long
+       the SERVER actually takes to ack, separate from how long our
+       client took to ask -- this measurement itself is NOT what the
+       user waits on now that DrawMenuItems' output is flushed above. */
+    XSync(mb->mbi->dpy, False);
+    gettimeofday(&mdbg_t5, NULL);
+
+    mdbg("MENUDBG BringUpMenu: card=%d nitems=%d SetTitleSel=%ldms ComputePos=%ldms MoveResize=%ldms DrawItems(issue)=%ldms XSync(serverpaint)=%ldms TOTAL=%ldms\n",
+	    menu, mb->lastmenu->nitems,
+	    (long)((mdbg_t1.tv_sec-mdbg_t0.tv_sec)*1000+(mdbg_t1.tv_usec-mdbg_t0.tv_usec)/1000),
+	    (long)((mdbg_t2.tv_sec-mdbg_t1.tv_sec)*1000+(mdbg_t2.tv_usec-mdbg_t1.tv_usec)/1000),
+	    (long)((mdbg_t3.tv_sec-mdbg_t2.tv_sec)*1000+(mdbg_t3.tv_usec-mdbg_t2.tv_usec)/1000),
+	    (long)((mdbg_t4.tv_sec-mdbg_t3.tv_sec)*1000+(mdbg_t4.tv_usec-mdbg_t3.tv_usec)/1000),
+	    (long)((mdbg_t5.tv_sec-mdbg_t4.tv_sec)*1000+(mdbg_t5.tv_usec-mdbg_t4.tv_usec)/1000),
+	    (long)((mdbg_t5.tv_sec-mdbg_t0.tv_sec)*1000+(mdbg_t5.tv_usec-mdbg_t0.tv_usec)/1000));
 }
 
 /* eventp: choose the events which will be processed by the menubar event loop */
@@ -1634,6 +1692,7 @@ static void Configure(Display *dpy, struct prefs_s *p, XColor *fore, XColor *bac
     activatetime=getdefaultint(dpy,"MenubarCardDelay", 0);
     p->activatetime.tv_usec=activatetime*1000;
     p->activatetime.tv_sec=activatetime/1000;
+    mdbg("MENUDBG MakeGCs: resolved MenubarCardDelay=%lu ms\n", activatetime);
 
     fontName = getdefault(dpy,"MenubarTitleFont");
     if(fontName==NULL) fontName="andy12b";

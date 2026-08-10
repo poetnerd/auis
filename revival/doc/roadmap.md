@@ -120,6 +120,7 @@ Smaller items that don't fit the tables above.
 **Heisenbugs** (intermittent, low reproducibility)
 - Xlib display-lock self-deadlock: reproduced once, root cause identified (`_XLockDisplay` re-entered from inside `XRefreshKeyboardMapping`, triggered by a keyboard-mapping-change event) but not yet fixed. Current best explanation for the older, harder-to-pin-down "`^V` scroll hang."
 - A rare report of text drawing into the menu area — not reproduced since first observed
+- Menu-bar posting sometimes takes ~500ms-2s to draw: confirmed via live process sampling to be a genuine X-server round-trip stall inside XQuartz itself, not AUIS code — six candidate causes tested and eliminated, including reproducing `eza`'s exact window/font/save-under behavior in a standalone C program against the same live server, which never showed the delay. See `porting-assessment.md` → "Intermittent ~500ms menu-bar posting delay" for the full inventory. Diagnostic tracing left in the tree, off by default (`MenuDebugTrace` profile switch; `MENUDBGTRACE` env var for the popup-menu path). Needs a real X.org server (not available in this environment) to take further; revisit then.
 
 ---
 

@@ -41,6 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <andrewos.h> /* sys/time.h sys/types.h sys/file.h */
 #include <signal.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <ctype.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -84,6 +85,34 @@ typedef int (*XErrorHandler) ();
 #include <menulist.ih>
 #include <updlist.ih>
 #include <environ.ih>
+
+/* xim_EstablishConsole() below fclose()s the real stderr and dup2()s fd 2
+   to a UDP socket, then leaks the replacement FILE* -- so plain
+   fprintf(stderr,...) after window creation goes nowhere. Route temporary
+   debug tracing around that entirely. Gated by the MenuDebugTrace profile
+   switch (off by default) -- see menubar.help -- so it's available for a
+   future reproduction without needing a rebuild. */
+static void mdbg(const char *fmt, ...)
+{
+    static int checked = 0;
+    static boolean enabled = FALSE;
+    va_list ap;
+    FILE *f;
+
+    if (!checked) {
+	enabled = environ_GetProfileSwitch("MenuDebugTrace", FALSE);
+	checked = 1;
+    }
+    if (!enabled) return;
+
+    f = fopen("/tmp/menudbg_direct.log", "a");
+    if (!f) return;
+    va_start(ap, fmt);
+    vfprintf(f, fmt, ap);
+    va_end(ap);
+    fclose(f);
+}
+
 #include <cursor.ih>
 #include <xcursor.ih>
 #include <xcolor.ih>
@@ -1514,6 +1543,9 @@ boolean xim__CreateWindow(struct xim *self, char *host)
     if(self->menubaron) {
 	self->mbi=mb_Init(xDisplay, &foreground->color, &background->color, HandleExposeFromMenubar, self, FreeSelectionData);
 
+	mdbg("MENUDBG CreateWindow: mb_Init returned %p (%s)\n",
+		(void *)self->mbi, self->mbi==NULL ? "FAILED, falling back to cmenu-only" : "ok");
+
 	if(self->mbi==NULL) {
 	    self->menubaron=FALSE;
 	    self->cmenuson=TRUE;
@@ -2135,6 +2167,11 @@ static void updateMenus(struct xim *self, struct menulist *ml)
 
     cache = findCachedML(self, ml, self->mlcache, &newVersion);
 
+    mdbg("MENUDBG updateMenus: ml=%p mask=%ld ml->menuVersion=%ld cache=%p cache->version=%d cache->region=%p newVersion=%d -> %s\n",
+	    (void *)ml, (long)ml->selectMask, (long)ml->menuVersion, (void *)cache,
+	    cache->version, (void *)cache->region, newVersion,
+	    (cache->region == NULL || newVersion) ? "REBUILD" : "cache-hit");
+
     if (cache->region == NULL || newVersion) {
 	if (newVersion) {
 	    menulist_IncrementMLVersion();
@@ -2220,6 +2257,9 @@ void xim__PostMenus(struct xim *self, struct menulist *menulist)
 {
 	struct im *imself = (struct im *)self;
 
+	mdbg("MENUDBG PostMenus ENTRY: self=%p menulist=%p xim2window=%p\n",
+		(void *)self, (void *)menulist, (void *)xim2window(self));
+
 	if (xim2window(self) == NULL)
 		return;
 
@@ -2228,12 +2268,17 @@ void xim__PostMenus(struct xim *self, struct menulist *menulist)
 	    menulist_ClearChain(imself->menus);
 	    menulist_ChainBeforeML(imself->menus, menulist, menulist);
 	}
-	
+
+	mdbg("MENUDBG PostMenus: menulist=%p imself->menus=%p init=%p init->version=%d initversion=%d\n",
+		(void *)menulist, (void *)imself->menus, (void *)imself->init,
+		imself->init ? imself->init->version : -1, imself->initversion);
+
 	if (imself->init != NULL) {
 	    /* if the init has changed throw away all the cached info
 		it may be bogus now */
 	    if(imself->init->version!=imself->initversion) {
 		int i;
+		mdbg("MENUDBG PostMenus: FLUSHING entire mlcache (init version mismatch)\n");
 		if(self->mlcache) {
 		    freeMLCache(self, self->mlcache);
 		}
@@ -2315,8 +2360,10 @@ boolean xim__InitializeObject(struct classheader *classID, struct xim *self)
     
     self->menubaron = environ_GetProfileSwitch("Menubar", TRUE);
     self->cmenuson = environ_GetProfileSwitch("PopUpMenus", TRUE);
-    
+
     if((!self->menubaron) && (!self->cmenuson)) self->cmenuson = TRUE;
+
+    mdbg("MENUDBG InitializeObject: menubaron=%d cmenuson=%d\n", self->menubaron, self->cmenuson);
 
     if(self->menubaron) self->MenubarRedrawType = mb_FullRedraw;
 

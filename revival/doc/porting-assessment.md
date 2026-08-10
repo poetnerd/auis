@@ -2716,6 +2716,127 @@ one freshly created by name) also now renders correctly in a fresh
 state versus something specific to how a clock gets instantiated from
 parsed data versus by-name insertion.
 
+### Intermittent ~500ms menu-bar posting delay — confirmed XQuartz-side, not AUIS (found and inventoried 2026-08-09, unresolved)
+
+**Symptom:** posting a menu-bar card (clicking a title like `ez` to open
+its pulldown) sometimes draws immediately and sometimes takes roughly
+half a second to a couple of seconds — reproducibly, but not on every
+post, and not tied to a fixed pattern of which card or how many prior
+posts happened in the session. Visually: the pulldown window appears
+instantly (blank), then its text fills in after the delay.
+
+**Methodology.** Temporary `mdbg()` tracing (writes to
+`/tmp/menudbg_direct.log`, bypassing `stderr` — see the next paragraph)
+was added to `xim__PostMenus`/`updateMenus` (`atk/basics/x/xim.c`),
+`BringUpMenu`/`DrawMenuItems`/`MakeGCs` (`atk/basics/x/menubar.c`), and
+`cmenu_Activate` (`overhead/cmenu/cmactiv.c`), bracketing every step
+with `gettimeofday()`. This instrumentation is left in the tree
+(committed) for anyone picking this back up, but is off by default:
+`xim.c`/`menubar.c` gate it behind the `MenuDebugTrace` profile switch
+(`environ_GetProfileSwitch`, the same idiom as `UseBackingStore` etc.),
+while `cmactiv.c` — a lower-level library with no dependency on
+`atk/basics`'s `environ` class, since its own standalone `testmenu`
+build target doesn't link it — gates it behind a plain `MENUDBGTRACE`
+environment variable instead. See `menubar.help`'s Preferences section
+for exactly how to turn each on.
+
+**Dead end found along the way, fixed while debugging this:**
+`xim_EstablishConsole` (`xim.c:757`, called unconditionally from
+`SetupDisplay` at the top of `xim__CreateWindow`) attempts a UDP
+"console log" connection — CMU Andrew's original 1988 campus
+error-console protocol, `environ_GetProfileSwitch("ErrorsToConsole",
+TRUE)` on by default. Since UDP `connect()` succeeds locally even with
+no listener, this reliably fires, and does `fclose(stderr); dup2(fd,
+2);` followed by an `fdopen(2, "w")` whose result is never saved
+anywhere — silently breaking every later `fprintf(stderr, ...)` in the
+process (ours and the application's own) for the rest of its life. Not
+fixed (out of scope for this investigation), but worth flagging as a
+real, independent diagnosability bug: any error message logged after
+the first window opens goes nowhere. Our tracing was rerouted around it
+with a `fopen`-per-call helper instead of relying on `stderr`.
+
+**Ruled out, in order tried:**
+1. **`MenubarCardDelay` preference** (the intentional hover-delay knob,
+   `menubar.c:1670`) — confirmed resolving to `0` every time via direct
+   trace; not a stray config value.
+2. **The whole-menu-cache-flush path** in `xim__PostMenus`
+   (`imself->init->version != imself->initversion`) — traced and ruled
+   out; `PostMenus`/`updateMenus` only run once per session in the
+   reproduction, not per-click, so nothing there can explain a per-post
+   delay.
+3. **XQuartz pasteboard/clipboard sync** — disabled via XQuartz
+   Preferences → Pasteboard; delay persisted unchanged.
+4. **Rootless-XQuartz Xft recomposite lag** — the same mechanism fixed
+   for the calc inset above (2026-07-12): applied the identical
+   self-`XCopyArea` nudge (through the core-X path) to
+   `DrawMenuItems`. No effect. (Menu text is drawn via plain core-X
+   `XDrawString` already, not Xft, so this was always a long shot — the
+   calc fix was specifically for the Xft/Render path.)
+5. **Window focus** — reproduced even after clicking into the document
+   body first to force focus before posting a card.
+6. **Decoupling the draw from `DoMenuLoop`'s `XGrabPointer`** — added an
+   explicit `XFlush` immediately after `DrawMenuItems`, before returning
+   to the caller that issues the (reply-requiring, and therefore
+   flush-triggering) `XGrabPointer`. No visible improvement — the
+   server appears to gate compositing on its own schedule, not on
+   request bundling with the grab.
+7. **Standalone reproduction attempts** — a from-scratch, zero-AUIS-code
+   C program (`XOpenDisplay`/`XCreateSimpleWindow`/`XDrawString`/
+   `XSync` in a loop) run against the *same live XQuartz server*, in
+   several increasingly faithful variants, never reproduced the stall:
+   plain draw-and-sync (40 iterations, all 0-10ms); with real
+   `XWarpPointer`-driven pointer motion across the window between draws
+   (all 0-10ms); with an override-redirect + `CWSaveUnder` popup window
+   mapped/unmapped each iteration, matching `BringUpMenu`'s exact
+   window-management sequence (all 0-8ms); and with the menu system's
+   actual font loaded — `andy12b`/`andy12bi` (menubar.c's item/keys font
+   defaults) turn out to be aliases in `build/X11fonts/fonts.alias` for
+   a **scalable, wildcard-pixel-size XLFD pattern**
+   (`-adobe-times-bold-r-normal--*-140-*-*-p-*-iso8859-1`), which
+   requires the X server's legacy scalable-core-font renderer to
+   synthesize the glyphs rather than blit a native bitmap strike — a
+   real, credible lead, but drawing that exact font with varying text
+   across 40 iterations produced only one 81ms blip (first-use metrics
+   computation) and nothing resembling the ~500ms pattern.
+
+**What is confirmed, not just suspected:** live sampling of the actual
+`eza` process (macOS `sample <pid> <duration>`) during a real
+reproduction caught it red-handed — the call stack during the stall is
+```
+BringUpMenu → XSync → _XReply → xcb_wait_for_reply64 →
+  wait_for_reply → _xcb_conn_wait → poll
+```
+i.e. genuinely blocked in the kernel `poll()` syscall waiting for the
+X server's reply packet — not spinning, not stuck in AUIS/Xlib
+client-side logic. Every client-side step measured by the `mdbg` tracing
+(`SetTitleSelection`, `ComputeMenuPositioning`, `XMoveResizeWindow`,
+issuing the `XDrawString` calls) was 0ms on every single measurement,
+with 100% of the delay isolated to this one round-trip wait.
+
+**Conclusion:** this is server-side latency in XQuartz's response to
+`eza`'s specific connection, not a defect in AUIS's menu code — six
+independent theories for *why* were tested and eliminated, and the
+delay was reproducible only through the real application, never
+through a minimal client hitting the same live server the same way.
+The leading (unproven) hypothesis is that it scales with how many X
+resources a client has accumulated (`eza`, with its full compound-doc
+view hierarchy, holds far more windows/GCs/colormaps than any
+standalone test program ever created) and trips some path in XQuartz's
+own server-side bookkeeping that a trivial client never reaches — but
+this was not tested, since doing so would mean auditing/trimming
+`eza`'s own resource footprint, a much larger undertaking than
+confirming the theory would justify on its own.
+
+**Not revisited further for now.** The next diagnostic step that would
+actually move this forward — running the same minimal reproduction
+C program against a real X.org server instead of XQuartz, to determine
+whether this is an XQuartz-specific compatibility-layer bug (in which
+case a demo on Linux/X.org would sidestep it entirely) or something
+deeper — needs a second X server, which wasn't available in this
+environment (XQuartz is the only X server on the Mac used for this
+revival; no Linux VM/container tooling was set up at the time). Revisit
+when one is available.
+
 ## Archive fetch: missing files (404)
 
 The following files were not available when the archive was mirrored from

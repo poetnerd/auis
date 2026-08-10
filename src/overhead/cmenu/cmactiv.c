@@ -32,9 +32,42 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include <andrewos.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
 #include <X11/Xlib.h>
 #include <cmintern.h>
 #include <cmdraw.h>
+
+/* xim_EstablishConsole() (in xim.c) fclose()s the real stderr and dup2()s
+   fd 2 elsewhere, so plain fprintf(stderr,...) here goes nowhere once a
+   window exists. Route temporary debug tracing around that entirely.
+   Gated by the MENUDBGTRACE environment variable (unset by default) --
+   this library deliberately has no dependency on atk/basics's `environ`
+   profile-switch class (its own standalone `testmenu` build target
+   doesn't link it), so a plain getenv() is used here instead of the
+   MenuDebugTrace profile switch xim.c/menubar.c use -- see
+   menubar.help and porting-assessment.md for the full story. */
+static void mdbg(const char *fmt, ...)
+{
+    static int checked = 0;
+    static int enabled = 0;
+    va_list ap;
+    FILE *f;
+
+    if (!checked) {
+	enabled = (getenv("MENUDBGTRACE") != NULL);
+	checked = 1;
+    }
+    if (!enabled) return;
+
+    f = fopen("/tmp/menudbg_direct.log", "a");
+    if (!f) return;
+    va_start(ap, fmt);
+    vfprintf(f, fmt, ap);
+    va_end(ap);
+    fclose(f);
+}
 
 struct activationState;
 static void EventLoop(struct cmenu *menu, Display *display, struct activationState *state);
@@ -263,6 +296,10 @@ int cmenu_Activate(struct cmenu *menu, XButtonEvent *menuEvent, long *data, int 
     Display *display = menu->gMenuData->dpy;
     XEvent event;			/* X input event. */
     struct activationState state;       /* Packaged state for passing to subroutines. */
+    struct timeval mdbg_t0, mdbg_t1, mdbg_t2;
+
+    gettimeofday(&mdbg_t0, NULL);
+    mdbg("MENUDBG cmenu_Activate ENTRY: menu=%p panes=%p\n", (void *)menu, (void *)menu->panes);
 
     /*
      * If there are no panes in the menu then return failure
@@ -303,10 +340,16 @@ int cmenu_Activate(struct cmenu *menu, XButtonEvent *menuEvent, long *data, int 
     SetSelectionNum(menu, &state.drawingState, -1);
 
     CreateMenuStack(menu, &state.drawingState, menuEvent->x_root, menuEvent->y_root, state.parentWindow);
-   
+
     XSync(display, 0);
+    gettimeofday(&mdbg_t1, NULL);
+    mdbg("MENUDBG cmenu_Activate: CreateMenuStack+XSync=%ldms\n",
+	    (long)((mdbg_t1.tv_sec-mdbg_t0.tv_sec)*1000+(mdbg_t1.tv_usec-mdbg_t0.tv_usec)/1000));
 
     EventLoop(menu, display, &state);
+    gettimeofday(&mdbg_t2, NULL);
+    mdbg("MENUDBG cmenu_Activate: EventLoop=%ldms (this includes time you spend browsing the menu, not a bug indicator by itself)\n",
+	    (long)((mdbg_t2.tv_sec-mdbg_t1.tv_sec)*1000+(mdbg_t2.tv_usec-mdbg_t1.tv_usec)/1000));
 
     if (GetSelectionNum(&state.drawingState) != -1 &&
          GetPaneNum(&state.drawingState) != -1 &&
