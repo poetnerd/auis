@@ -2743,116 +2743,6 @@ build target doesn't link it — gates it behind a plain `MENUDBGTRACE`
 environment variable instead. See `menubar.help`'s Preferences section
 for exactly how to turn each on.
 
-***Recent Debug Output***
-```
-Mac-mini:andrew-6.4 wdc$ cat /tmp/menudbg_direct.log 
-MENUDBG InitializeObject: menubaron=1 cmenuson=1
-MENUDBG MakeGCs: resolved MenubarCardDelay=0 ms
-MENUDBG CreateWindow: mb_Init returned 0x1036ded10 (ok)
-MENUDBG PostMenus ENTRY: self=0x1036d85e0 menulist=0x1036d82a0 xim2window=0xc00007
-MENUDBG PostMenus: menulist=0x1036d82a0 imself->menus=0x1036d8b80 init=0x1036d8c10 init->version=0 initversion=0
-MENUDBG updateMenus: ml=0x1036d8b80 mask=0 ml->menuVersion=0 cache=0xb3acf0240 cache->version=0 cache->region=0x0 newVersion=1 -> REBUILD
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=18ms TOTAL=18ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=510ms TOTAL=510ms
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=509ms TOTAL=509ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=509ms TOTAL=509ms
-MENUDBG InitializeObject: menubaron=1 cmenuson=1
-MENUDBG MakeGCs: resolved MenubarCardDelay=0 ms
-MENUDBG CreateWindow: mb_Init returned 0x104f684b0 (ok)
-MENUDBG PostMenus ENTRY: self=0x104f5fdb0 menulist=0x104f5fa80 xim2window=0xc00007
-MENUDBG PostMenus: menulist=0x104f5fa80 imself->menus=0x104f60350 init=0xa2b007000 init->version=0 initversion=0
-MENUDBG updateMenus: ml=0x104f60350 mask=0 ml->menuVersion=0 cache=0xa2b03aac0 cache->version=0 cache->region=0x0 newVersion=1 -> REBUILD
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=13ms TOTAL=13ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=16ms TOTAL=16ms
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=516ms TOTAL=516ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=511ms TOTAL=511ms
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=511ms TOTAL=511ms
-MENUDBG PostMenus ENTRY: self=0x104f5fdb0 menulist=0x104f5fbe0 xim2window=0xc00007
-MENUDBG PostMenus: menulist=0x104f5fbe0 imself->menus=0x104f60350 init=0xa2b007000 init->version=0 initversion=0
-MENUDBG updateMenus: ml=0x104f60350 mask=0 ml->menuVersion=0 cache=0xa2b034180 cache->version=0 cache->region=0x0 newVersion=1 -> REBUILD
-MENUDBG InitializeObject: menubaron=1 cmenuson=1
-MENUDBG PostMenus ENTRY: self=0x104f794d0 menulist=0xa2ad54680 xim2window=0xc0004f
-MENUDBG PostMenus: menulist=0xa2ad54680 imself->menus=0xa2ad54700 init=0xa2b034200 init->version=0 initversion=0
-MENUDBG updateMenus: ml=0xa2ad54700 mask=0 ml->menuVersion=0 cache=0xa2b034240 cache->version=0 cache->region=0x0 newVersion=1 -> REBUILD
-MENUDBG PostMenus ENTRY: self=0x104f5fdb0 menulist=0x104f5fa80 xim2window=0xc00007
-MENUDBG PostMenus: menulist=0x104f5fa80 imself->menus=0x104f60350 init=0xa2b007000 init->version=0 initversion=0
-MENUDBG PostMenus ENTRY: self=0x104f5fdb0 menulist=0x0 xim2window=0xc00007
-MENUDBG PostMenus: menulist=0x0 imself->menus=0x104f60350 init=0xa2b007000 init->version=0 initversion=0
-MENUDBG updateMenus: ml=0x104f60350 mask=0 ml->menuVersion=0 cache=0xa2b034280 cache->version=0 cache->region=0x0 newVersion=1 -> REBUILD
-MENUDBG PostMenus ENTRY: self=0x104f5fdb0 menulist=0x104f5fa80 xim2window=0xc00007
-MENUDBG PostMenus: menulist=0x104f5fa80 imself->menus=0x104f60350 init=0xa2b007000 init->version=0 initversion=0
-MENUDBG updateMenus: ml=0x104f60350 mask=0 ml->menuVersion=0 cache=0xa2b03aac0 cache->version=0 cache->region=0x104f60580 newVersion=0 -> cache-hit
-MENUDBG InitializeObject: menubaron=1 cmenuson=1
-MENUDBG MakeGCs: resolved MenubarCardDelay=0 ms
-MENUDBG CreateWindow: mb_Init returned 0x102f60a30 (ok)
-MENUDBG PostMenus ENTRY: self=0x102f583f0 menulist=0x102f580c0 xim2window=0xc00007
-MENUDBG PostMenus: menulist=0x102f580c0 imself->menus=0x102f58990 init=0xadac1aec0 init->version=0 initversion=0
-MENUDBG updateMenus: ml=0x102f58990 mask=0 ml->menuVersion=0 cache=0xadb005840 cache->version=0 cache->region=0x0 newVersion=1 -> REBUILD
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=41ms TOTAL=41ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=14ms TOTAL=14ms
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=11ms TOTAL=11ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=509ms TOTAL=509ms
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=15ms TOTAL=15ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=15ms TOTAL=15ms
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=511ms TOTAL=511ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=510ms TOTAL=510ms
-Mac-mini:andrew-6.4 wdc$ install -m 755 /Users/wdc/src/AUIS/andrew-6.4/src/atk/apps/runapp /Users/wdc/src/AUIS/andrew-6.4/build/bin/runapp
-Mac-mini:andrew-6.4 wdc$ build/bin/runapp -d eza 2>&1 | tee /tmp/menudbg.log
-Starting eza (Version 7.0, ATK 6.3.1); please wait...
-Mac-mini:andrew-6.4 wdc$ cat /tmp/menudbg_direct.log 
-MENUDBG InitializeObject: menubaron=1 cmenuson=1
-MENUDBG MakeGCs: resolved MenubarCardDelay=0 ms
-MENUDBG CreateWindow: mb_Init returned 0xb04c94000 (ok)
-MENUDBG PostMenus ENTRY: self=0x100e0ae30 menulist=0x100e0aac0 xim2window=0xc00007
-MENUDBG PostMenus: menulist=0x100e0aac0 imself->menus=0x100e0b610 init=0x100e0b690 init->version=0 initversion=0
-MENUDBG updateMenus: ml=0x100e0b610 mask=0 ml->menuVersion=0 cache=0xb04c13a00 cache->version=0 cache->region=0x0 newVersion=1 -> REBUILD
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=39ms TOTAL=39ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=514ms TOTAL=514ms
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=10ms TOTAL=10ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=10ms TOTAL=10ms
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=516ms TOTAL=516ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=16ms TOTAL=16ms
-Mac-mini:andrew-6.4 wdc$ build/bin/runapp -d eza 2>&1 | tee /tmp/menudbg.log
-Starting eza (Version 7.0, ATK 6.3.1); please wait...
-Mac-mini:andrew-6.4 wdc$ cat /tmp/menudbg_direct.log 
-MENUDBG InitializeObject: menubaron=1 cmenuson=1
-MENUDBG MakeGCs: resolved MenubarCardDelay=0 ms
-MENUDBG CreateWindow: mb_Init returned 0xb04c94000 (ok)
-MENUDBG PostMenus ENTRY: self=0x100e0ae30 menulist=0x100e0aac0 xim2window=0xc00007
-MENUDBG PostMenus: menulist=0x100e0aac0 imself->menus=0x100e0b610 init=0x100e0b690 init->version=0 initversion=0
-MENUDBG updateMenus: ml=0x100e0b610 mask=0 ml->menuVersion=0 cache=0xb04c13a00 cache->version=0 cache->region=0x0 newVersion=1 -> REBUILD
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=39ms TOTAL=39ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=514ms TOTAL=514ms
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=10ms TOTAL=10ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=10ms TOTAL=10ms
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=516ms TOTAL=516ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=16ms TOTAL=16ms
-MENUDBG InitializeObject: menubaron=1 cmenuson=1
-MENUDBG MakeGCs: resolved MenubarCardDelay=0 ms
-MENUDBG CreateWindow: mb_Init returned 0x105746600 (ok)
-MENUDBG PostMenus ENTRY: self=0x1057418b0 menulist=0x105741540 xim2window=0xc00007
-MENUDBG PostMenus: menulist=0x105741540 imself->menus=0x105742090 init=0x105742110 init->version=0 initversion=0
-MENUDBG updateMenus: ml=0x105742090 mask=0 ml->menuVersion=0 cache=0x94b0074c0 cache->version=0 cache->region=0x0 newVersion=1 -> REBUILD
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=18ms TOTAL=18ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=14ms TOTAL=14ms
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=515ms TOTAL=515ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=513ms TOTAL=513ms
-MENUDBG BringUpMenu: card=3 nitems=5 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=11ms TOTAL=11ms
-MENUDBG BringUpMenu: card=0 nitems=9 SetTitleSel=0ms ComputePos=0ms MoveResize=0ms DrawItems(issue)=0ms XSync(serverpaint)=514ms TOTAL=514ms
-MENUDBG PostMenus ENTRY: self=0x1057418b0 menulist=0x1057416a0 xim2window=0xc00007
-MENUDBG PostMenus: menulist=0x1057416a0 imself->menus=0x105742090 init=0x105742110 init->version=0 initversion=0
-MENUDBG updateMenus: ml=0x105742090 mask=0 ml->menuVersion=0 cache=0x94b007540 cache->version=0 cache->region=0x0 newVersion=1 -> REBUILD
-MENUDBG InitializeObject: menubaron=1 cmenuson=1
-MENUDBG PostMenus ENTRY: self=0x10575b070 menulist=0x94ac68500 xim2window=0xc00051
-MENUDBG PostMenus: menulist=0x94ac68500 imself->menus=0x94ac68600 init=0x94ac6e800 init->version=0 initversion=0
-MENUDBG updateMenus: ml=0x94ac68600 mask=0 ml->menuVersion=0 cache=0x94b0075c0 cache->version=0 cache->region=0x0 newVersion=1 -> REBUILD
-MENUDBG PostMenus ENTRY: self=0x1057418b0 menulist=0x105741540 xim2window=0xc00007
-MENUDBG PostMenus: menulist=0x105741540 imself->menus=0x105742090 init=0x105742110 init->version=0 initversion=0
-MENUDBG PostMenus ENTRY: self=0x1057418b0 menulist=0x0 xim2window=0xc00007
-MENUDBG PostMenus: menulist=0x0 imself->menus=0x105742090 init=0x105742110 init->version=0 initversion=0
-MENUDBG updateMenus: ml=0x105742090 mask=0 ml->menuVersion=0 cache=0x94b007580 cache->version=0 cache->region=0x0 newVersion=1 -> REBUILD
-```
-
 **Dead end found along the way, fixed while debugging this:**
 `xim_EstablishConsole` (`xim.c:757`, called unconditionally from
 `SetupDisplay` at the top of `xim__CreateWindow`) attempts a UDP
@@ -3068,6 +2958,116 @@ correspond 1:1 to a single logged ~510ms stall — the natural next
 confirmation step is correlating `mdbg` log wall-clock timestamps
 against this sample file's timestamps directly, rather than inferring
 from sample counts alone.
+
+**Confirmed by direct correlation (2026-08-11).** The `mdbg` tracing
+was extended to prefix every line with a `[HH:MM:SS.mmm]` wall-clock
+timestamp (all three tracing sites: `xim.c`, `menubar.c`,
+`cmactiv.c`), specifically to answer the caveat above — whether the
+SkyLight wait actually accounts for the logged stall time, not just
+correlates with it in aggregate. A `sample 76082 45
+-file /tmp/xquartz_sample3.txt` capture was started first (its exact
+start time recorded from the report header:
+`2026-08-11 16:54:27.088`), confirmed running, then menu cards were
+posted live. The `mdbg` log for that run showed exactly 3 stalls:
+
+```
+[16:54:38.685] ... XSync(serverpaint)=510ms TOTAL=510ms
+[16:54:40.036] ... XSync(serverpaint)=512ms TOTAL=512ms
+[16:54:41.569] ... XSync(serverpaint)=511ms TOTAL=511ms
+```
+
+1533ms of independently measured, ground-truth stall time. The sample
+of X11.bin's `dix_main` thread, for the same window, showed:
+
+- 37970 total 1ms samples; 36023 idle in `WaitForSomething`; 1947
+  samples (~1.95s) of real dispatch work.
+- Of that real work, **`ProcClearToBackground → RootlessStartDrawing →
+  xp_lock_window → ... → _SLSTransactionWaitSource`: 1241 samples,
+  1240 of them actually inside the wait** — the same chain found in
+  the first capture, now driven by the exact `XClearWindow` calls this
+  run's `BringUpMenu`/`DrawMenuItems` issued.
+- Smaller amounts of the identical wait under `ProcMapWindow` (23 of
+  26 samples) and `ProcConfigureWindow` (15 of 22 samples).
+
+Total time inside `_SLSTransactionWaitSource` across all three request
+types: ~1278ms, against 1533ms measured independently — roughly 80-85%
+direct overlap, with the remainder plausibly attributable to
+setup/mapping overhead during the same window. This is a materially
+tighter, ground-truth-anchored match than the first capture's
+aggregate-count inference, and is treated as confirmation rather than
+correlation: **the delay is genuine, server-side time blocked waiting
+for macOS's own window compositor (SkyLight/Core Animation) to
+synchronize a transaction before XQuartz is permitted to lock the
+popup window's backing store and paint into it.** A second,
+non-blocking `xp_lock_window` variant (469 samples, different call
+offset, no `_SLSTransactionWaitSource` beneath it) was also present in
+the same capture — a plausible explanation for why *most* draws
+outside a stall are instant: ordinary redraws that don't require a
+fresh Core Animation commit take a fast lock path instead.
+
+**Frontmost-app theory tested and ruled out.** The leading candidate
+for *why* the wait is sometimes ~510ms and sometimes ~0ms was that
+WindowServer paces Core Animation commits differently for a
+non-frontmost app's windows, and XQuartz (launched from a terminal) is
+typically not key/frontmost. Tested directly: clicked the XQuartz Dock
+icon to force it frontmost immediately before posting menus, repeated
+several times. Stalls persisted unchanged (510-515ms). Methodological
+note: this test is weaker than it looks, since clicking any menu-bar
+control at all necessarily makes XQuartz frontmost as part of the
+click (background apps can't receive that click without being
+activated first) — so every prior test was already conducted with
+XQuartz frontmost at the moment of posting, and this test didn't
+introduce a genuinely new condition. It's still useful as a negative
+data point (the explicit, deliberate extra activation step changed
+nothing), but the frontmost/background distinction should be
+considered untested cleanly rather than disproven with high
+confidence.
+
+**Two questions closed without new testing, from existing evidence:**
+- *Is this caused by AUIS's `XGrabPointer` call (needed for
+  cross-window pointer tracking while dragging through the
+  menu/submenu stack)?* No — already answered by ruled-out item 6
+  above: decoupling the draw from the grab (explicit `XFlush` before
+  `DoMenuLoop` issues `XGrabPointer`) made no difference, and the
+  newly found wait lives entirely inside the server's own handling of
+  `XClearWindow` (`ProcClearToBackground`, on `dix_main`), upstream of
+  any client synchronization choice. A client that never called
+  `XSync`/`XGrabPointer` at all would still not have its drawn text
+  appear on screen until the server finished this same locked,
+  SkyLight-gated paint. `XGrabPointer` remains structurally necessary
+  for menu interaction regardless.
+- *Could multiple pre-warmed/`save_under` popup windows finesse this?*
+  No — `save_under` governs restoring pixels that were *behind* a
+  popup on unmap, not the lock/sync cost of drawing *into* the popup,
+  so it doesn't touch this code path at all. A "keep windows warm"
+  strategy is also unsupported by the data: the very first post into a
+  freshly created window was fast (23ms), while every post after it —
+  including re-posting the same card roughly a second later — was
+  slow, which is the opposite of what a warm-cache theory predicts. A
+  persistent-window (map/unmap instead of clear/redraw) variant of the
+  idea is also not obviously better: the `ProcMapWindow` samples above
+  went through the identical wait 23 of 26 times, suggesting mapping
+  alone can trigger it too, not just clearing/drawing.
+
+**Where this leaves things.** The *where* is proven: this is real
+time blocked inside macOS's own window-compositor synchronization,
+triggered by XQuartz's rootless-drawing lock path, external to both
+AUIS and XQuartz's own code. The *why* — what makes that
+synchronization sometimes instant and sometimes ~510ms — remains
+unresolved; App Nap and frontmost/background status are both ruled
+out as the mechanism, leaving some other internal SkyLight/WindowServer
+cadence (a periodic commit/heartbeat interval, unrelated to which app
+or window is involved) as the remaining plausible explanation, not
+confirmed. No fix is available from the AUIS side: the delay
+originates entirely in a macOS system component neither AUIS nor
+XQuartz controls, and the client-side mitigations considered (grab
+decoupling, save-under, window pre-warming) either don't touch the
+responsible code path or aren't supported by the data. Treated as an
+accepted platform characteristic of running X11 through XQuartz's
+rootless architecture on modern macOS, not a defect to keep chasing —
+revisit only if a second X server (for an X.org comparison) or public
+documentation of SkyLight's transaction-commit scheduling becomes
+available.
 
 **Not pursued further this session.** The original next step proposed
 here — running the same minimal reproduction C program against a real
