@@ -2720,10 +2720,13 @@ parsed data versus by-name insertion.
 
 **Symptom:** posting a menu-bar card (clicking a title like `ez` to open
 its pulldown) sometimes draws immediately and sometimes takes roughly
-half a second to a couple of seconds — reproducibly, but not on every
-post, and not tied to a fixed pattern of which card or how many prior
-posts happened in the session. Visually: the pulldown window appears
-instantly (blank), then its text fills in after the delay.
+half a second — reproducibly, but not on every post, and not tied to a
+fixed pattern of which card or how many prior posts happened in the
+session. Visually: the pulldown window appears instantly (blank), then
+its text fills in after the delay. Reports of multi-second delays are
+consecutive single-card stalls perceived together (e.g. two cards
+posted back-to-back, each individually costing ~510ms), not one longer
+stall — see the quantization note below.
 
 **Methodology.** Temporary `mdbg()` tracing (writes to
 `/tmp/menudbg_direct.log`, bypassing `stderr` — see the next paragraph)
@@ -2928,24 +2931,154 @@ with 100% of the delay isolated to this one round-trip wait.
 independent theories for *why* were tested and eliminated, and the
 delay was reproducible only through the real application, never
 through a minimal client hitting the same live server the same way.
-The leading (unproven) hypothesis is that it scales with how many X
-resources a client has accumulated (`eza`, with its full compound-doc
-view hierarchy, holds far more windows/GCs/colormaps than any
-standalone test program ever created) and trips some path in XQuartz's
-own server-side bookkeeping that a trivial client never reaches — but
-this was not tested, since doing so would mean auditing/trimming
-`eza`'s own resource footprint, a much larger undertaking than
-confirming the theory would justify on its own.
+This part is solid: the live-sampling evidence above is a clean
+localization regardless of which theory for *why* turns out to be
+right.
 
-**Not revisited further for now.** The next diagnostic step that would
-actually move this forward — running the same minimal reproduction
-C program against a real X.org server instead of XQuartz, to determine
-whether this is an XQuartz-specific compatibility-layer bug (in which
-case a demo on Linux/X.org would sidestep it entirely) or something
-deeper — needs a second X server, which wasn't available in this
+**Quantization — a fact the first pass of this write-up didn't
+confront (flagged by an external second-opinion review of this
+section, worth recording as a real correction, not just a footnote).**
+Every stall logged across every session was 509-516ms; every non-stall
+was 0-41ms. Nothing in between was ever observed, and nothing exceeded
+516ms for a single post. That's the signature of a fixed timer,
+timeout, or wakeup cadence — not of work whose cost scales
+continuously with client state. It directly undercuts the resource-
+footprint hypothesis this section originally led with: growing
+resource count predicts a cost that trends upward over a session (and
+varies continuously), and the logs instead show runs of consistently
+fast posts and runs of consistently ~510ms posts, i.e. the server
+toggling between two discrete states, not drifting. The
+resource-footprint theory is downgraded from "leading hypothesis" to
+"not well supported by the data" on this basis, though not disproven
+outright (it was never directly tested — see below).
+
+**Better-fitting alternative, not yet tested:** the standalone
+reproduction attempts (above) all drove 40 tight, back-to-back
+iterations; real reproductions came from human-paced clicks with
+seconds of idle X traffic in between. If XQuartz (or whatever thread
+pairs its X server side with AppKit) is subject to idle-throttling —
+App Nap, timer coalescing, or an internal wakeup path on a ~500ms
+cadence after a period of inactivity — a tight loop would never
+reproduce the stall no matter how faithfully it mimicked window
+attributes, exactly what was observed. This fits the quantization and
+the runs-of-slow/runs-of-fast pattern better than the resource theory
+does, and reframes the whole "can't reproduce standalone" finding: the
+missing variable may have been idle time between requests, not
+anything about window/resource setup.
+
+**Suggested follow-up tests, none requiring a second X server**
+(roughly ordered by information gained per unit of effort):
+1. **Sample the other side.** This investigation sampled `eza` but
+   never XQuartz itself. `sample`/`spindump` the XQuartz server process
+   during a live stall: threads idle in an event wait points at a
+   timeout/wakeup bug; threads busy walking server-side structures
+   points at the resource-bookkeeping theory. Single most decisive test
+   available.
+2. **App Nap A/B.** `defaults write org.xquartz.X11
+   NSAppSleepDisabled -bool YES`, restart XQuartz, retest; also check
+   the App Nap column in Activity Monitor during a stall. Minutes of
+   work — if stalls vanish, this is very likely it.
+3. **Idle-time correlation.** Add wall-clock timestamps to the `mdbg`
+   lines and check whether stalls correlate with time since the last X
+   traffic; then add random multi-second sleeps between iterations of
+   the standalone repro. If that makes it start stalling, the "only
+   reproducible through the real application" finding above no longer
+   holds, and the minimal repro becomes the test vehicle for everything
+   downstream.
+4. **Protocol-level timing.** Run `eza` through `xtrace`/`x11trace` (a
+   client-side proxy, works fine against XQuartz alone) to see
+   timestamped request/reply flow — whether the server read the
+   requests promptly and sat on the reply, or didn't read the socket at
+   all for ~500ms, and what (if anything) precedes stall onset.
+5. **Rule out `quartz-wm` holding a server grab.** The stall could be
+   the server busy servicing another client for those 500ms —
+   `quartz-wm` reacts to window maps and could plausibly
+   `XGrabServer()` around one, which would serialize `eza` exactly like
+   this even though the menu windows are override-redirect. Try
+   `killall quartz-wm` and reproduce.
+6. **Bisect the real app downward** instead of building the minimal
+   client upward: toggle `save_under` (`menubar.c:1842-1853`) and
+   `UseBackingStore` off one at a time in `eza` itself, rather than in
+   a standalone analogue — attribute effects can depend on what's
+   underneath the popup (eza's deep window stack vs. a test program's
+   bare root window), so matching attributes in a minimal client
+   doesn't necessarily cover this.
+7. **Grep XQuartz's source.** `xorg-server`'s `hw/xquartz` is open
+   source; a ~500ms literal in the `darwinEvents`/fd-handling or
+   dix↔AppKit handoff paths would turn the hypothesis into a citation
+   instead of an inference.
+
+**Follow-up test results (2026-08-11).**
+
+*Test 2 (App Nap A/B) — negative.* `defaults write org.xquartz.X11
+NSAppSleepDisabled -bool YES`, XQuartz restarted, retested: stalls
+persisted unchanged (511-516ms). This rules out *that specific*
+mechanism, though not the broader idle-throttling category — App Nap
+is one opt-out among several possible (timer coalescing and other
+wakeup-cadence mechanisms aren't controlled by this default).
+
+*Test 1 (sample the other side) — positive, and more specific than
+expected.* First attempt was invalidated by a timing bug: `sample` is
+synchronous for its full duration, and starting it inline in the same
+turn as asking for reproduction clicks meant the window had already
+started elapsing before the request was even read — that capture
+showed the X server's protocol thread (`dix_main → Dispatch →
+WaitForSomething`) 100% idle throughout, i.e. no clicks landed inside
+it. Rerun with `sample` launched in the background first, confirming
+the window was live, *then* asking for reproduction clicks
+(`sample 76082 25 -file /tmp/xquartz_sample2.txt`, XQuartz's `X11.bin`,
+PID 76082) caught real activity: of 20985 total samples, 20709 were
+idle in `WaitForSomething`, but 267 were genuine dispatch work. Of
+those 267, 238 sat in one specific chain:
+
+```
+ProcClearToBackground → miClearToBackground → RootlessPaintWindow →
+  RootlessStartDrawing → xprStartDrawing → xp_lock_window →
+  SLSLockWindowRectBits → SLSGetWindowBackingStoreInformation →
+  CGSWindowUpdateBackingStoreData → SLSCopyWindowClipShape →
+  SLSConnectionSynchronizeSLSCATransaction → _SLSTransactionWaitSource →
+  mach_msg (blocked)
+```
+
+`ProcClearToBackground` is the server-side handler for an
+`XClearWindow` request — exactly the call `DrawMenuItems`
+(`menubar.c`) makes immediately before drawing menu text. Servicing it
+on the rootless-XQuartz path requires locking the window's backing
+store through SkyLight (macOS's private window-server/Core Animation
+API), and that lock requires the X server to synchronize a Core
+Animation transaction with the actual WindowServer process — a
+genuine cross-process wait (`mach_msg`), entirely outside XQuartz's or
+AUIS's own code. Smaller branches showed the same pattern from other
+request types: `ProcConfigureWindow → RootlessResizeWindow` (25
+samples) and one each of `ProcMapWindow`/`ProcPolySegment` also
+transited `SLSLockWindowRectBits`/the SkyLight sync path.
+
+This closes the loop from our own code down to a concrete OS
+mechanism, and narrows "macOS-side idle-throttling" from a category
+guess to a named call path: if the WindowServer paces/batches Core
+Animation transaction commits for a non-frontmost app's windows (XQuartz,
+launched from a terminal, would typically not be key/frontmost), a
+menu post that lands between commits would block in exactly this
+`_SLSTransactionWaitSource` wait for however long until the next
+commit — a plausible, external explanation for a fixed ~510ms quantum
+that neither AUIS nor XQuartz controls directly. Caveat: `sample`'s
+~1ms interval makes 238 samples ≈ 238ms of wall time in this wait
+during the 25s window, which is suggestive but not yet proven to
+correspond 1:1 to a single logged ~510ms stall — the natural next
+confirmation step is correlating `mdbg` log wall-clock timestamps
+against this sample file's timestamps directly, rather than inferring
+from sample counts alone.
+
+**Not pursued further this session.** The original next step proposed
+here — running the same minimal reproduction C program against a real
+X.org server instead of XQuartz, to determine whether this is
+XQuartz-specific (in which case a demo on Linux/X.org would sidestep
+it entirely) — still needs a second X server, not available in this
 environment (XQuartz is the only X server on the Mac used for this
-revival; no Linux VM/container tooling was set up at the time). Revisit
-when one is available.
+revival; no Linux VM/container tooling was set up at the time). The
+seven tests above don't have that dependency and are better first
+moves regardless; revisit the X.org comparison after them, or when a
+second server becomes available.
 
 ## Archive fetch: missing files (404)
 

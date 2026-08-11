@@ -391,9 +391,14 @@ XQuartz-side rendering delay (not an AUIS defect -- see
 \italic{porting-assessment.md} in the revival tree for the full writeup).
 When on, writes timing detail to \italic{/tmp/menudbg_direct.log}. Off by
 default; not useful for normal use. To enable, add a line reading
-\example{MenuDebugTrace: TRUE} to a personal preferences file (see the
-\helptopic{initfiles} help topic for \italic{~/preferences} and the
-\italic{PROFILES} environment variable that can point elsewhere instead).
+\example{MenuDebugTrace: TRUE} to your preferences file -- \italic{not}
+your \italic{.ezinit} (that's a different file, for menu/key-binding
+\italic{commands}, with its own syntax that this line isn't valid in;
+see the \helptopic{initfiles} topic for that one instead). Your
+preferences file is named \italic{preferences}, \italic{.preferences},
+or \italic{.Xdefaults} in your home directory -- see the
+\helptopic{preferences} help topic for the full search order, or the
+\italic{PROFILES} environment variable that can point elsewhere instead.
 The separate popup-menu ("deck of cards", middle-button) tracing in
 \italic{overhead/cmenu/cmactiv.c} is controlled independently, by setting
 the \italic{MENUDBGTRACE} environment variable to any value before
