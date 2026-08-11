@@ -63,6 +63,15 @@ static void mdbg(const char *fmt, ...)
 
     f = fopen("/tmp/menudbg_direct.log", "a");
     if (!f) return;
+    {
+	struct timeval tv;
+	struct tm *tm;
+	char tbuf[16];
+	gettimeofday(&tv, NULL);
+	tm = localtime(&tv.tv_sec);
+	strftime(tbuf, sizeof(tbuf), "%H:%M:%S", tm);
+	fprintf(f, "[%s.%03ld] ", tbuf, (long)(tv.tv_usec / 1000));
+    }
     va_start(ap, fmt);
     vfprintf(f, fmt, ap);
     va_end(ap);
