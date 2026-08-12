@@ -300,6 +300,28 @@ next step, not yet done:
   store's native ids remain a documented, if astronomically unlikely,
   hazard on this platform.
 
+- **Adew's build silently destroyed its own sample document, and stayed
+  that way for weeks.** `src/atk/adew/Imakefile` builds a launcher
+  script from `genarb` and writes it to a file named `arb` in the same
+  directory as `Arb`, the tracked `.ez` arbiter document the launcher is
+  meant to open — a real ATK datastream, not source code, so a build
+  silently overwriting it produces no compiler warning and no diff
+  anyone would think to check. On this checkout's case-insensitive
+  APFS volume, `arb` and `Arb` are the same directory entry: an early
+  build run replaced the datastream with the generated script, and that
+  change rode into a commit alongside unrelated work, unnoticed. The
+  loss surfaced independently and from outside the project entirely —
+  Adew's original author emailed asking whether an old copy of `Arb`
+  still existed anywhere, having hit the same collision in his own
+  history and concluded it might be unrecoverable. It wasn't: the
+  revival's `trunk` branch had never rebuilt `adew/` and still carried
+  the file untouched from the original import, byte-identical to what
+  he was describing. Restored from that copy on both branches; the
+  Imakefile now builds the launcher under a name (`arb-launcher`) that
+  can't collide with tracked source and renames it to `arb` only at
+  install time, in `$(DESTDIR)/bin`, where nothing tracked shares the
+  name.
+
 - **Two independent header parsers, written decades apart, made the same
   assumption about where a message's headers end.** RFC822 says a blank
   line separates headers from body; both AMS's own mail reader

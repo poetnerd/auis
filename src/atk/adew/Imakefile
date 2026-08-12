@@ -80,14 +80,24 @@ InstallMultiple(makefile.arb Arb vallist viewlist, $(INSTINCFLAGS), $(DESTDIR)/l
 InstallProgram(conpros.awk, $(DESTDIR)/lib/arbiters)
 InstallProgram(instpros.awk, $(DESTDIR)/lib/arbiters)
 ProgramTarget(genarb, genarb.o, ,)
-all::	arb
-arb:	$(DESTDIR)/include/system.h ./genarb
+/*
+ * The generated launcher used to be built as a file named "arb" in
+ * this directory, alongside the tracked ATK arbiter document "Arb".
+ * On case-insensitive filesystems (default macOS APFS) those are the
+ * same directory entry, so building this target silently clobbered
+ * the tracked Arb datastream with the generated script. Build it
+ * under a name that can't collide, and rename only at install time,
+ * where it lands in $(DESTDIR)/bin/arb with no tracked file nearby.
+ */
+all::	arb-launcher
+arb-launcher:	$(DESTDIR)/include/system.h ./genarb
 	-rm -f arb.1
 	./genarb DEFAULT_ANDREWDIR_ENV  >> arb.1
-	-mv -f arb.1 arb
-clean:: ; $(RM) arb
+	-mv -f arb.1 arb-launcher
+clean:: ; $(RM) arb-launcher
 
-InstallProgram(arb, $(DESTDIR)/bin)
+install.time:: arb-launcher
+	@(set -x; $(INSTALL) $(INSTPROGFLAGS) arb-launcher $(DESTDIR)/bin/arb)
 InstallFile(adew.h, ${INSTINCFLAGS}, ${DESTDIR}/include/atk)
 InstallLink(runapp, ${DESTDIR}/bin/runadew)
 

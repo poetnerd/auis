@@ -148,7 +148,7 @@ Smaller items that don't fit the tables above.
 
 **Little annoyances**
 - Arrow keys and a "Meta" key aren't bound yet
-- `make Clean` transiently deletes `src/atk/adew/Arb` (case-insensitive-filesystem collision with a sibling `arb`); self-heals on the next `dependInstall`
+- ~~`make Clean` transiently deletes `src/atk/adew/Arb`~~ **RESOLVED 2026-08-12**: this undersold it — a build had actually clobbered the tracked `.ez` arbiter document with the generated `arb` launcher (same directory entry on case-insensitive filesystems) back in June, and the corruption had been committed, not transient. Restored from the original import on both branches; `Imakefile` now builds the launcher under a collision-proof name and renames it only at install time. See `revival.md` → "Old bugs never found till now."
 - `messages`: intermittent, non-fatal `X_OpenFont BadValue` X errors during normal folder browsing — not root-caused
 - `filetype.c DeleteEntry`: a bogus-free risk and an apparently-inverted condition, flagged by the compiler, never observed to actually fire
 - `runapp -d` with no app-class argument segfaults instead of printing usage — pre-existing since the 1988 source, not a regression

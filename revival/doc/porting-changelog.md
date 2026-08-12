@@ -1750,3 +1750,35 @@ narrative writeup of the first two; this third one is the same root
 cause (CRLF wire format meeting LF-only-authored 1990s parsing code)
 recurring a level deeper in code this project had already touched
 once.
+
+### 2026-08-12 — `src/atk/adew/Arb` restored: a build had overwritten the tracked arbiter document with its own generated launcher
+
+**Root cause:** `src/atk/adew/Imakefile` builds a launcher script via
+`genarb` and writes it to a file named `arb` in the same directory as
+`Arb`, the tracked `.ez` arbiter document (an ATK datastream, not
+source — `Overview.doc` documents it as the file Adew's Arbcon
+mechanism depends on). On a case-insensitive filesystem, `arb` and
+`Arb` are the same directory entry. An early build run on the
+`andrew-6.4` checkout (commit `dc4206084d`, whose message describes an
+unrelated class-preprocessor change) overwrote the datastream with the
+generated script; the change rode into that commit unnoticed, since a
+build byproduct silently replacing a binary-ish data file produces no
+compiler warning and no obvious diff. `trunk` was unaffected — it had
+never rebuilt `adew/`, so its copy from the original import was
+untouched.
+
+The loss was independently reported from outside the project: Adew's
+original author emailed asking whether an archived copy of `Arb`
+still existed, having hit the identical collision in his own history
+and feared it unrecoverable.
+
+**Fix:** restored `src/atk/adew/Arb` on both `trunk` and `andrew-6.4`
+from the original-import artifact (content verified byte-for-byte
+against a working copy before overwriting the tracked file).
+`Imakefile` now builds the generated launcher under a name
+(`arb-launcher`) that cannot collide with tracked source, and installs
+it as `arb` only at install time, into `$(DESTDIR)/bin` — nothing
+tracked shares that name there. See `revival.md`'s "Old bugs never
+found till now" for the narrative writeup, and `roadmap.md`'s "Open
+issues" for the prior (inaccurate — it called this transient and
+self-healing) entry.
