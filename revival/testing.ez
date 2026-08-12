@@ -1,4 +1,4 @@
-\begindata{text,4351127392}
+\begindata{text,4316708480}
 \textdsversion{12}
 \template{default}
 \define{footnote
@@ -24,14 +24,14 @@ attr:[FontSize PreviousFontSize Point -2]}
 
 Text to play with a 
 footnote\footnote{\
-\begindata{fnote,4351137984}
+\begindata{fnote,4316717952}
 \textdsversion{12}
-\enddata{fnote,4351137984}
-\view{fnotev,4351137984,0,0,0}HEllo footnote.} in the middle.
+\enddata{fnote,4316717952}
+\view{fnotev,4316717952,0,0,0}HEllo footnote.} in the middle.
 
 Here's a clock:
 
-\begindata{clock,4351141936}
+\begindata{clock,4316718464}
 Datastream version: 1
 hand lengths, 60, 80, -20
 hand widths, 4, 2, 1
@@ -42,32 +42,32 @@ labels, 4, 0, Andy
 3
 6
 9
-\enddata{clock,4351141936}
-\view{clockview,4351141936,1,0,0}
+\enddata{clock,4316718464}
+\view{clockview,4316718464,1,0,0}
 Here's an annotation:
 
-\begindata{note,4351145424}
+\begindata{note,4316721872}
 200 100 1 
 \title{wdc}
-\begindata{text,4351152592}
+\begindata{text,4316723936}
 \textdsversion{12}
 Hello\
-\enddata{text,4351152592}
-\enddata{note,4351145424}
-\view{noteview,4351145424,2,0,0}
+\enddata{text,4316723936}
+\enddata{note,4316721872}
+\view{noteview,4316721872,2,0,0}
 Here is a calc:
 
-\begindata{calc, 4351153296}
+\begindata{calc, 4316725312}
 TopTitleFontName AndySans22b
 BottomLegendFontName Andy20i
 Value 95.000000
-\enddata{calc, 4351153296}
-\view{calcv,4351153296,3,0,0}
+\enddata{calc, 4316725312}
+\view{calcv,4316725312,3,0,0}
 Here is a raster:
 
-\begindata{raster,4351155360}
+\begindata{raster,4316726704}
 2 0 65536 65536 0 0 1152 900
-bits 4351155360 1152 900
+bits 4316726704 1152 900
 zlJc0zzzzzs |
 zk0fJ80zzzzzs |
 zk3fJzzzzzt |
@@ -1155,13 +1155,13 @@ v3001Sfbe941g	0438m01gbe7873	Hd0k0c10018304	1871e7cf1c18e3
 xRf7a0tfbIf980	m0cg60820e1e70	e79c061820gPfe	7fefK3f7dNfdH
  fe3dfbRbfGfbZI |
 ZZZZZZZJ |
-\enddata{raster, 4351155360}
-\view{rasterview,4351155360,4,0,0}
+\enddata{raster, 4316726704}
+\view{rasterview,4316726704,4,0,0}
 
 Here is a zip:
 
-\begindata{zip,4351156704}
-%ViewWidth 430
+\begindata{zip,4316728048}
+%ViewWidth 426
 %ViewHeight 512
 *D;-1000,1400
 N8.5X11
@@ -1179,15 +1179,15 @@ MCM
 G40
 >819,819
 
-\enddata{zip,4351156704}
-\view{zipview,4351156704,5,0,0}
+\enddata{zip,4316728048}
+\view{zipview,4316728048,5,0,0}
 
 And more.
 
 Here is another zip:
 
-\begindata{zip,4351177952}
-%ViewWidth 512
+\begindata{zip,4316748752}
+%ViewWidth 426
 %ViewHeight 512
 *D;-1000,1400
 N8.5X11
@@ -1201,22 +1201,22 @@ MCM
 T|
 MCM
 
-\enddata{zip,4351177952}
-\view{zipview,4351177952,6,0,0}
+\enddata{zip,4316748752}
+\view{zipview,4316748752,6,0,0}
 
 Here are equation bits:
 
 
-\begindata{eq,4351183760}
-{ lpile d_eqstyle { d s { cpile { d t } over { d y } } } { zilch } { zilch } { zilch } { zilch } } \enddata{eq,4351183760}
-\view{eqview,4351183760,7,0,0}
+\begindata{eq,4316754528}
+{ lpile d_eqstyle { int d s { cpile { d t } over { d y } } } { zilch } { zilch } { zilch } { zilch } } \enddata{eq,4316754528}
+\view{eqview,4316754528,7,0,0}
 <head> </head>
 
 <body>
 
 </body>
 
-\begindata{table,4351184048}
+\begindata{table,35479916768}
 ^aaa	 	 	 	 
 32	8	=[2,1]+[2,2]	 	 
  	 	 	 	 
@@ -1228,12 +1228,12 @@ Here are equation bits:
  	 	 	 	 
  	 	 	 	 
  	 	 	 	 
-\enddata{table,4351184048}
-\view{spread,4351184048,8,0,0}
+\enddata{table,35479916768}
+\view{spread,35479916768,8,0,0}
 
-\begindata{eq,4351186624}
-{ lpile d_eqstyle { y above { - } = 1 m m - y { cpile { 1 } over { m m * s e c } } } { v sub { x } ( { y above { - } } ) = 4 . 9 9 5 { cpile { 1 } over { m m * s e c } } * ( { 2 * y above { - } m m - y above { - } sup { 2 } } ) } } \enddata{eq,4351186624}
-\view{eqview,4351186624,9,0,0}
+\begindata{eq,4316757328}
+{ lpile d_eqstyle { y above { - } = 1 m m - y { cpile { 1 } over { m m * s e c } } } { v sub { x } ( { y above { - } } ) = 4 . 9 9 5 { cpile { 1 } over { m m * s e c } } * ( { 2 * y above { - } m m - y above { - } sup { 2 } } ) } } \enddata{eq,4316757328}
+\view{eqview,4316757328,9,0,0}
 
 Let's add some text that has a couple lines so it becomes a paragraph. Is 
 this thing on? Testing testing, 1, 2, 3? Yes this is on.
@@ -1243,7 +1243,7 @@ Yet another \bold{\bigger{paragraph}}. Insertion and deletion seems ok. Is
 this thing on? Testing testing, 1, 2, 3?
 
 
-\begindata{eq,4351186816}
-{ lpile d_eqstyle { { cpile { 1 } over { m m * s e c } } } } \enddata{eq,4351186816}
-\view{eqview,4351186816,10,0,0\
-}\enddata{text,4351127392}
+\begindata{eq,4316757600}
+{ lpile d_eqstyle { { cpile { 1 } over { m m * s e c } } } } \enddata{eq,4316757600}
+\view{eqview,4316757600,10,0,0\
+}\enddata{text,4316708480}
