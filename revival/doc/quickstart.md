@@ -10,39 +10,34 @@ account, see `mail-quickstart.md`.
 
 ## Getting the source
 
-Two mirrors exist; either works. Both use a branch/checkout named
-`andrew-6.4` — most of this guide's commands assume you're inside a
-directory with that name, and the tree itself contains hardcoded
-references to a specific absolute path (fixed in Site configuration,
-below).
+Two mirrors exist; either works. Both track `trunk`, so a plain clone
+lands you on the active revival tree with no branch flag needed. The
+checkout can live anywhere and be named anything — nothing below
+assumes a specific directory name — but the tree does contain one
+hardcoded absolute path that has to match wherever you put it (fixed
+in Site configuration, below).
 
 **GitHub** (mirror, easiest for a one-off checkout):
 ```bash
-git clone -b andrew-6.4 https://github.com/poetnerd/auis.git andrew-6.4
-cd andrew-6.4
+git clone https://github.com/poetnerd/auis.git
+cd auis
 ```
-The `-b andrew-6.4` flag checks out that branch directly during the
-clone — without it, `git clone` gives you the repo's default branch,
-which is not this one.
 
 **Fossil** (canonical repo, needed if you intend to contribute changes
 back):
 ```bash
-mkdir andrew-6.4
-cd andrew-6.4
+mkdir auis && cd auis
 fossil clone https://poetnerd.com/wdc/auis auis.fossil
 fossil open auis.fossil
-fossil update andrew-6.4
 ```
 `fossil clone` downloads the whole repository (history included) into
-the `auis.fossil` file; `fossil open` checks out its tip into the
-current directory; `fossil update andrew-6.4` makes sure you land on
-the `andrew-6.4` branch specifically, since a fresh open doesn't
-always land there by default.
+the `auis.fossil` file; `fossil open` checks out `trunk`'s tip into
+the current directory.
 
-Either way, you should now be in an `andrew-6.4/` directory containing
+Either way, you should now be in a checkout directory containing
 `src/`, `revival/`, `patches/`, and `bison/`. Everything below assumes
-you're starting from there.
+you're starting from there — examples show `/path/to/your/checkout/`,
+substitute your actual path.
 
 ## Prerequisites
 
@@ -74,7 +69,7 @@ checked in, it points at the original developer's own checkout path.
 **If your checkout isn't at that exact path, edit it before building:**
 
 ```
-#define DEFAULT_ANDREWDIR_ENV /path/to/your/andrew-6.4/build
+#define DEFAULT_ANDREWDIR_ENV /path/to/your/checkout/build
 ```
 
 This only needs doing once, before the first `make World` — the value
@@ -88,7 +83,7 @@ AUIS binary, so editing `site.h` once is usually less friction.)
 
 ### First build (fresh checkout)
 
-From the `andrew-6.4/` checkout root, run all three steps below in
+From the checkout root, run all three steps below in
 order — the first is easy to miss because its symptom is a *fatal*
 compile error (`classproc.c:12:10: fatal error: 'class.h' file not
 found`) that shows up two steps later, in a part of the build that
@@ -155,10 +150,22 @@ prototype, return value truncated to 32 bits). Fix with a local
 `extern TYPE FunctionName();` declaration. See `porting-changelog.md`
 and `porting-assessment.md` §LP64 for the full pattern.
 
+**If you're going to run `messages` or `cui`, also run this now** —
+`build/` doesn't come with it, and skipping it doesn't fail loudly:
+```bash
+../revival/tools/write-andrewsetup
+```
+Without it, mail silently defaults to `AMS_OnlyMail: Yes`, which
+collapses the startup folder view down to just `mail` regardless of
+subscription status — no error, it just looks like nothing is
+subscribed. See "AndrewSetup settings" below for what this creates and
+why (`ThisDomain` matters too, for outgoing mail). Safe to (re-)run
+after any clean rebuild.
+
 ### Incremental rebuilds (after the first build)
 
 Once `build/` exists and the first `make World` has succeeded, day-to-day
-rebuilds are simpler. From `andrew-6.4/src/`:
+rebuilds are simpler. From your checkout's `src/`:
 ```
 make dependInstall 2>&1 | tee ../dependInstall.log
 ```
@@ -224,7 +231,7 @@ XQuartz's font path once per XQuartz session (it is lost when XQuartz
 quits):
 
 ```
-xset fp+ /path/to/your/andrew-6.4/build/X11fonts
+xset fp+ /path/to/your/checkout/build/X11fonts
 xset fp rehash
 ```
 
@@ -267,7 +274,7 @@ silently breaks `con10`/`con12`..." for the full story.
 Change to the `build/` directory and run:
 
 ```
-cd /path/to/your/andrew-6.4/build
+cd /path/to/your/checkout/build
 bin/ez -d                          # open a blank document
 bin/ez -d doc/README.ez            # open an existing .ez file
 bin/ez -d ~/src/AUIS/NEWSLETTERS/EZ/95Summer.ez   # richer test document
@@ -284,7 +291,7 @@ to the same binary.
 ## Running help
 
 ```
-cd /path/to/your/andrew-6.4/build
+cd /path/to/your/checkout/build
 bin/helpa -d
 ```
 
@@ -305,7 +312,7 @@ duplicate that list; it drifted stale, so it doesn't anymore.
 Use `lldb` from native Terminal.app:
 
 ```
-cd /path/to/your/andrew-6.4/build
+cd /path/to/your/checkout/build
 lldb bin/ez -- -d path/to/file.ez
 (lldb) run
 ... wait for crash ...

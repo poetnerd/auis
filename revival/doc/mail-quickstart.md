@@ -1,6 +1,6 @@
 # AUIS Revival: IMAP/SMTP Mail Quickstart
 
-This guide takes a built `andrew-6.4` tree from zero to working mail:
+This guide takes a built tree from zero to working mail:
 `messages` (or `cui`) reading your real IMAP mailbox and sending through
 your provider's SMTP submission server. It reflects the state of the
 revival as of 2026-07-18 (milestone 3b of the AMS/IMAP project; see
