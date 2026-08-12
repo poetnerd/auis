@@ -152,6 +152,7 @@ Smaller items that don't fit the tables above.
 - `messages`: intermittent, non-fatal `X_OpenFont BadValue` X errors during normal folder browsing — not root-caused
 - `filetype.c DeleteEntry`: a bogus-free risk and an apparently-inverted condition, flagged by the compiler, never observed to actually fire
 - `runapp -d` with no app-class argument segfaults instead of printing usage — pre-existing since the 1988 source, not a regression
+- **RESOLVED 2026-08-12 (docs):** a fresh checkout has two separate hardcoded-path spots, not one — `site.h`'s `DEFAULT_ANDREWDIR_ENV` was documented, but `config/Makefile`'s `BASEDIR` (baked in from `site.h` by imake at Step 2, and not reliably self-regenerated afterward — see the fossil-mtime caveat elsewhere in this file) wasn't, and silently stays stale if `site.h` gets fixed after Step 2 has already run once. Reported independently by an outside builder hitting exactly this. `quickstart.md`'s "Site configuration" section now covers both.
 
 **Heisenbugs** (intermittent, low reproducibility)
 - Xlib display-lock self-deadlock: reproduced once, root cause identified (`_XLockDisplay` re-entered from inside `XRefreshKeyboardMapping`, triggered by a keyboard-mapping-change event) but not yet fixed. Current best explanation for the older, harder-to-pin-down "`^V` scroll hang."
