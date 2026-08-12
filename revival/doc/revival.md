@@ -234,7 +234,7 @@ been present, and untriggered, since the code was written. A sample of the
 most illustrative follows. The fuller catalog — several dozen more of the
 same species — is not yet consolidated in one place: some are in
 `porting-assessment.md`'s bug-class writeups, some only in
-`porting-changelog.md`'s dated log or in `roadmap-old.md`'s retired detail,
+`porting-changelog.md`'s dated log or in `claude-history/roadmap-old.md`'s retired detail,
 and a few live only in fossil's commit history. Bringing them all into
 `porting-assessment.md` as the single technical reference is a natural
 next step, not yet done:

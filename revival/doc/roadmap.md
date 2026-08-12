@@ -13,7 +13,7 @@ You can make a deep dive into the details in the documents below:
 | `revival.md` | What's been accomplished, told as a narrative, for readers who already know AUIS or are meeting it for the first time |
 | `porting-assessment.md` | Bug-class root-cause analysis and the full ANSI C conversion plan |
 | `porting-changelog.md` | Dated log of every fix |
-| `roadmap-old.md` | This document's full pre-2026-08-07 history — retired, not maintained, kept for provenance |
+| `claude-history/README.md` | Index of retired working docs — task prompts, investigation write-ups, rollout runbooks, and this document's full pre-2026-08-07 history (`roadmap-old.md`) |
 | `quickstart.md` | Build and run instructions |
 | `mail-quickstart.md` | IMAP/SMTP mail setup |
 
@@ -263,6 +263,7 @@ Smaller items that don't fit the tables above.
 
 Testing procedure material that used to live in this file (the
 subsystem dependency lattice, the per-inset test-document table, the
-regression checklists) is preserved in `roadmap-old.md` for now; it
-may get a dedicated home of its own in a later documentation pass
-rather than staying only in the retired file.
+regression checklists) is preserved in `claude-history/README.md` →
+"Retired top-level docs" → `roadmap-old.md`. It may get a dedicated
+home of its own in a later documentation pass rather than staying only
+in the retired file.

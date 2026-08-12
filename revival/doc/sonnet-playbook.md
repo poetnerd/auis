@@ -39,7 +39,16 @@ porting classes: 1991 code that assumed int == long == pointer.
   in new code. Code comments must stand alone: no references to
   milestones, gates, prompts, revival/doc, or "the spec".
 - Builds: never run two builds concurrently. Subtree rebuild is
-  `cd src/<dir> && make install`. A full build
+  `cd src/<dir> && make install` — but that only updates the running
+  binary for **dynamically-loaded** code (`.do` files). For a change
+  inside `atk/basics`, `atk/support`, `atk/supportviews`,
+  `atk/utilviews`, `atk/text`, `atk/frame`, `atk/ez`, or `atk/tscript`,
+  `runapp` statically links that subtree's `.a` (see `ATKLIBS` in
+  `src/atk/apps/Imakefile`) — `make install` rebuilds the archive but
+  does NOT relink `build/bin/runapp`. See the relink recipe below.
+  (Unsure whether a directory is static or dynamic? `nm -g
+  build/bin/runapp | grep YourChangedFunction` — a defined `T` means
+  static, no match/`U` means it's loaded from a `.do`.) A full build
   (`make dependInstall >& dependInstall.log`, ~4 min, from the tree
   root) is rare — ask at a gate before doing one.
 - Never `cp` over an installed binary (macOS codesign cache kills the
@@ -52,6 +61,28 @@ porting classes: 1991 code that assumed int == long == pointer.
   `ams/libs/ms` or `overhead/mail/lib`: `make install` there, then
   `make install` in `atkams/messages/lib` (relinks amsn.do) and
   `ams/msclients/cui` (relinks cuin).
+- **Relinking `runapp` after a statically-linked-subtree change**
+  (previous bullet): don't run a full `dependInstall` just to test
+  one file. Faster incremental sequence, e.g. for
+  `atk/basics/x/xgraphic.c`:
+  1. `cd src/atk/basics/x && make xgraphic.o`
+  2. Rebuild that subtree's `.a`. Same directory as the `.o` for most
+     of the list above (`make libfoo.a`) — except `atk/basics`, whose
+     `.o`s are split across `x/`/`wm/` but assembled in the sibling
+     `lib/`: `cd ../lib && rm libbasics.a && make libbasics.a`. Never
+     `ar clq libbasics.a x/xgraphic.o` directly on the existing
+     archive — it clobbers every other object already in it; always
+     go through the owning directory's `make libfoo.a`, which does
+     `rm $@` then rebuilds from every object.
+  3. `cp` the rebuilt `.a` to `build/lib/atk/` and `ranlib` it there
+     (a plain `.a` isn't the codesign-cache case above, `cp` is fine).
+  4. `cd src/atk/apps && make runapp`, then
+     `install -m 755 runapp ../../../build/bin/runapp` (from the tree
+     root: `build/bin/runapp`) — not `chmod`+`cp`, same reason as
+     above.
+  If the sandbox denies that install step, hand the exact command to
+  the user to run rather than retrying or asking whether a rebuild
+  recipe exists somewhere — this is it.
 
 ## LP64 bug classes to keep in mind
 

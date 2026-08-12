@@ -91,8 +91,8 @@ chasing). `modernize`'s regex K&R converter was never the vehicle for
 Phase 2 (§14 explains why) — its "known limitations" were moot from
 the start, not a to-fix list. Milestone-by-milestone record:
 `roadmap.md` → "Major milestones" (current status) and
-`roadmap-old.md` → Medium-term → ANSI C conversion (frozen planning
-detail). The Phase 1 hand-edit policy above still applies to any
+`claude-history/README.md` (per-session detail: prompts, findings,
+fossil commit IDs). The Phase 1 hand-edit policy above still applies to any
 currently-inert subtree (e.g. `ness`, blocked on an unrelated bison
 issue) if one is ever activated, since those sat outside the
 tree-wide conversion's scope.
@@ -194,7 +194,7 @@ lookup table, not a set of links):
 | 11 | `%d`/`%ld` mismatch in scanf family | RESOLVED 2026-07-02 (full tree audit, 11 bugs fixed) |
 | 12 | LP64 untyped dispatch: `long` param / `int` arg mismatch | RESOLVED — subsumed into M1 (§14) |
 | 13 | Modern flex generator/init-flag polarity mismatch | closed 2026-07-07 |
-| 14 | ANSI C conversion plan | COMPLETE 2026-08-07 |
+| 14 | ANSI C Migration | COMPLETE 2026-08-07 |
 | 15 | mkparser/cparser.c fixed-width table assumption | closed 2026-07-11 |
 | 16 | classpp typed-dispatch signedness mismatch | closed 2026-07-11 |
 | 17 | Xft "erase by redraw" stale foreground color | RESOLVED 2026-07-12 |
@@ -940,18 +940,77 @@ with `/dev/null` on stdin) — a separate, pre-existing issue, not caused by
 or diagnostic of this fix. Confidence rests on the byte-for-byte identical
 mechanism and generator to the dynamically-proven `parsel.flex` fix.
 
-### 14. ANSI C conversion plan
+### 14. ANSI C Migration
 
-**Status:** COMPLETE 2026-08-07 — all four milestones (M1–M4) done,
-entire active codebase compiles clean under strict settings. See
-"Getting K&R-era source to build under a modern compiler" above for the
-completed-state summary; everything below is the frozen record of how
-the plan was built and executed, kept for reference.
+**Status:** COMPLETE 2026-08-07 — entire active codebase compiles clean
+under strict settings. See "Getting K&R-era source to build under a
+modern compiler" above for the completed-state summary.
 
-How to complete the conversion abandoned in June (checkin `5e57549713`,
-779 files, reverted in `99fe31066c`). Analysis lives here; the ordered
-work plan (milestones M1–M4) lives in `roadmap-old.md` → Medium-term →
-ANSI C conversion.
+This was a major effort. The decision to take it on was based on the
+belief that it would be a quicker route to finding and fixing more of
+the subtle word-size and type-conversion bugs that had already cost
+significant effort to track down by hand. Originally it was hoped that
+a `modernize` tool would be simple to write and could supply the
+necessary changes automatically. That failed (checkin `5e57549713`, 779
+files, reverted in `99fe31066c`), for reasons detailed below in "Why
+the June mass conversion failed." So a meticulous, multi-phase review
+of all active code was carried out instead, to discover stylistic
+peculiarities and the source-to-source translations they required —
+some of which defied simple automation.
+
+This multi-phase update was done as four milestones. The ordered work
+plan and full rollout checklists live in `claude-history/README.md`,
+kept for provenance; nothing below requires opening it.
+
+**M1 — The compiler becomes the auditor** (complete 2026-07-10). Switch
+classpp, the class preprocessor, to emit ANSI-compliant headers — real
+typed prototypes and typed dispatch casts, generated from the same
+`.ch` signatures classpp had always parsed but thrown away — and fix
+the resulting fallout, directory by directory.
+
+This is where the real bug-hunting methodology got invented, and where
+the risk was highest: a flagged directory's fallout routinely reached
+call sites in *other*, unflagged directories (a `.ih` is installed
+tree-wide; a `.eh` isn't), so a naive "fix whatever fails to compile"
+approach kept rediscovering the same problem one gate cycle at a time
+instead of once. The fix — a static, tree-wide census of every call
+site before touching code, rather than trusting the compiler's own
+gate log, which only ever shows a directory's *first* failure — is
+what let the later milestones scale at all. M1 is also where most of
+the recurring bug shapes got named for the first time (the "rock"
+idiom, whole-parameter transposition, typeless `.ch` declarations,
+DRIFT); having a name and a known fix for each is what made M2 and M3
+fast rather than a re-investigation every time. The "Pilot A/B" and
+"Point N"/"batch N" labels in the subsections below are checkpoints on
+M1's own ordered rollout checklist.
+
+**M2 — Function prototype sweep** (complete 2026-07-25), for missing
+prototypes specifically: any call to a function with no declaration in
+scope, which silently truncates a pointer return value to 32 bits on
+LP64 (variant #1 of the LP64 bug family, §12). `-Werror=implicit-function-declaration`
+turned on subtree by subtree; each fallout site got a missing
+`#include` or `extern` declaration. Closed that variant permanently —
+real total came in well past the original census, 3,888 instances
+across 29 directories, once a malloc-family blind spot in the first
+count was found.
+
+**M3 — Function definitions converted** (complete 2026-08-01). The
+`ansify` tool rewrote K&R function definitions to real ANSI ones, one
+subtree per commit — looking up each class method's true signature from
+the `.ch`-derived signature database built for this purpose, never
+inferring types the way the failed June attempt had. `-pe` (typed
+`.eh` prototypes) went on per directory in the same step as its
+conversion. A per-file compile gate with automatic restore-on-failure
+was the guardrail the original mass-conversion attempt never had.
+
+**M4 — Global enforcement** (complete 2026-08-07). The full strict-C
+`-Werror` set — implicit-int, int-conversion,
+incompatible-function-pointer-types, implicit-function-declaration, and
+(added mid-milestone, after a real bug — a datastream write silently
+truncating a `long` id via `%d`, §21) format — turned on directory by
+directory, then flipped to the tree-wide compiler default. Every batch
+surfaced at least one genuine decades-old bug beyond ordinary compiler
+noise; full catalog in `revival.md`.
 
 #### Why the June mass conversion failed
 
@@ -1126,8 +1185,8 @@ Strategy: pilot on zero-consumer leaves to learn the fix patterns
 cheaply, then invert to the most-consumed core — that is where LP64
 Variants 3/5 actually lived, and typing those `.ih`s protects all
 consumers tree-wide at once, including directories not yet converted.
-The ordered rollout checklist lives in `roadmap-old.md` → M1 rollout
-points.
+The ordered rollout checklist lives in `claude-history/README.md` →
+"Retired top-level docs" → `roadmap-old.md` → M1 rollout points.
 
 #### Pilot A findings (atk/eq, 2026-07-08)
 
@@ -1558,7 +1617,7 @@ session beyond a clean rebuild.
 
 #### How this was found
 
-Started from `roadmap-old.md`'s amsdemo thread: caption dates displaying wrong
+Started from `claude-history/roadmap-old.md`'s amsdemo thread: caption dates displaying wrong
 ("7-Jul-126") and demo message ordering (Part 1…23) scrambled. Two real,
 smaller bugs were found and fixed first — a `tm_year % 100` Y2K display bug
 in `bldcapt.c`/`shrkdate.c`, and a missing tiebreak in `recon.c`'s
@@ -1642,8 +1701,8 @@ and returned **255** even when nothing was configured anywhere in the
 chain. That `255` flowed straight into `zipview_SetLineWidth(self, 255)`
 in `zipv000.c`'s `Ensure_Line_Attributes`, producing a 255-pixel-wide
 stroke that filled the entire figure with solid foreground color — the
-zip inset "solid black rectangle" bug (see `roadmap-old.md` → Insets to
-Repair → zip, and `claude-history/zip-black-render-investigation.md` for the full
+zip inset "solid black rectangle" bug (see `claude-history/roadmap-old.md`
+→ Insets to Repair → zip, and `claude-history/zip-black-render-investigation.md` for the full
 bisection trail).
 
 `-O0` "fixed" the symptom by accident: at that optimization level the
@@ -1750,8 +1809,8 @@ Xft text draw was silently using the **old, unswapped foreground color**
 (typically black). "Erasing" text by redrawing it in white was actually
 redrawing it in black — reinforcing the old text rather than erasing it.
 
-Found via `contrib/calc`'s display area (see roadmap-old.md → Insets to
-Repair → calc, and `claude-history/calc-text-rendering-investigation.md`), which
+Found via `contrib/calc`'s display area (see `claude-history/roadmap-old.md`
+→ Insets to Repair → calc, and `claude-history/calc-text-rendering-investigation.md`), which
 exercises frequent `Clear`-then-`Draw` cycles as its digit display
 updates — a pattern uncommon enough elsewhere in the active tree that
 this had gone unnoticed.
@@ -1835,7 +1894,7 @@ full `123+4=` keystroke sequence in `contrib/calc`, confirmed correct
 color alternation at every step. Full `make Clean && make dependInstall`
 world rebuild done 2026-07-12, zero new errors introduced (one
 pre-existing, unrelated `contrib/zip/utility/ltapp.c` error remains, see
-roadmap-old.md → Insets to Repair → zip). The ghost-residue and
+`claude-history/roadmap-old.md` → Insets to Repair → zip). The ghost-residue and
 incremental-redraw follow-on fixes were each confirmed live by the user
 in `ez` the same day, as described above.
 
@@ -2441,7 +2500,7 @@ half. Harmless on the ILP32 platforms this shipped on (`long`/`int` both
 #### Why this one *does* corrupt data, unlike an ordinary printf typo
 
 Found while root-causing calc/zip insets vanishing when embedded in a
-mixed document and getting lost on save (`roadmap-old.md`'s "Insets to
+mixed document and getting lost on save (`claude-history/roadmap-old.md`'s "Insets to
 Repair" → zip/calc entry). The shared `apt__WriteObject` helper
 (`atk/apt/apt/apt.c:524`, used by `calc`) wrote a **truncated** id into
 `calc`'s own `\begindata`/`\enddata` tags, while the unrelated code that
@@ -2777,7 +2836,7 @@ World`.
 `console/fonts`, not just `console/lib`/`console/cmd`) behind
 `#ifdef MK_CONSOLE`, which is undefined in this revival (`console` is
 an intentionally inert subsystem — see the directory census in
-`roadmap-old.md`). `console/fonts/Imakefile` already correctly declares
+`claude-history/roadmap-old.md`). `console/fonts/Imakefile` already correctly declares
 `DeclareFont(con10)`/`DeclareFont(con12)` — nothing wrong with that
 recipe — but since the whole directory is never visited, `con10.fdb`/
 `con12.fdb` (custom `.fdb`-format icon fonts, a different format from
@@ -2826,8 +2885,8 @@ itself does — the smaller, more targeted fix.
 Clock was manually bisected across 9 checkpoints from `6338ade7de`
 (2026-07-07, before the M1 rollout) through HEAD, each a full
 from-scratch rebuild, and found blank at every single one — logged as
-a confirmed pre-existing, not-yet-root-caused bug (see `roadmap-old.md` →
-Insets to Repair → clock). Reopened the same day: inserting a fresh
+a confirmed pre-existing, not-yet-root-caused bug (see
+`claude-history/roadmap-old.md` → Insets to Repair → clock). Reopened the same day: inserting a fresh
 clock via ez's `<ESC><TAB>clock` ("insert inset by name") rendered
 correctly in the same session and build where a *parsed* clock (from
 serialized datastream text in the test file) had been failing.

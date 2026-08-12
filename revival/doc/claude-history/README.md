@@ -2,10 +2,26 @@
 
 This directory holds Claude-written working documents whose work is
 **complete or retired**: task prompts (specs written for delegated
-sessions), investigation write-ups, and rollout runbooks. They are
-kept because they document how each piece was actually specified,
-investigated, and gated — often the best surviving design document
-for the module or fix they produced.
+sessions), investigation write-ups, rollout runbooks, and (since
+2026-08-12) superseded top-level docs. They are kept because they
+document how each piece was actually specified, investigated, and
+gated — often the best surviving design document for the module or fix
+they produced.
+
+## Retired top-level docs
+
+- `roadmap-old.md` (retired 2026-08-07, moved here 2026-08-12) — the
+  full pre-2026-08-07 `roadmap.md`, before that document was rewritten
+  down to a current-status summary. Kept as the single most detailed
+  record of the project's day-to-day work: the per-app/per-inset
+  regression checklists, the subsystem dependency lattice, the
+  historical patch audit, and (before M1–M4 were folded into `m2/`/
+  `m3/` here and `porting-assessment.md` §14) the original M1–M4
+  rollout-point checklists and per-point findings. Anyone doing a deep
+  dive into a specific piece of history — not just "what happened" but
+  "what was the exact checklist item, and what did the session that
+  did it find" — should start here rather than at the live docs, which
+  intentionally don't carry this level of detail anymore.
 
 **Placement policy (decided 2026-07-19):** active prompts live
 directly in `revival/doc/` so a fresh instance finds its task where
@@ -27,9 +43,10 @@ top level, as before.
 ## Active Prompts (in `revival/doc/`, not here)
 
 Current queue and suggested order lived in `roadmap-old.md` (retired
-2026-08-07) → "Delegated work queue"; that queue is fully worked
-through as of M4's completion and this section is now historical. As
-of 2026-07-24:
+2026-08-07, now also in this directory — see "Retired top-level docs"
+above) → "Delegated work queue"; that queue is fully worked through as
+of M4's completion and this section is now historical. As of
+2026-07-24:
 
 1. `bcc-direct-insertion-prompt.md` — blind-copy direct-insertion
    root cause
@@ -474,3 +491,73 @@ parser gap found in `b1-basics-common`, plus a retrospective re-run
 across all 7 already-`-pe`'d directories. `ansify-brace-body-corruption-fix`
 (2026-07-30) — a same-day regression in the brace-glued fix, found live
 in `b3-leaf-dirs`.
+
+## M4 — Global strictness rollout (flat here, retired 2026-08-12)
+
+M4 (Medium-term → ANSI C conversion, `porting-assessment.md` §14)
+closed in its entirety 2026-08-07: every active directory now builds
+under the full strict-C `-Werror` set (`implicit-int`, `int-conversion`,
+`incompatible-function-pointer-types`, `implicit-function-declaration`,
+`format`), then that set replaced the old suppressed default tree-wide
+in `system.mcr`. Retired later than M2/M3 — the working files
+(`m4-rollout-runbook.md`, `m4-batches.md`) sat in `revival/doc/` for
+over a week after the milestone closed before being moved here
+alongside the session reports that had already landed in this
+directory. Unlike M2/M3, most sessions were small enough to stay flat
+rather than get their own subdirectory: read `m4-rollout-runbook.md`
+first for the flag mechanics and the phase-by-phase execution plan
+(pre-flip audit, the `STRICT_COMPILERFLAGS` per-directory override
+mechanism, the global flip), and `m4-batches.md` for the wave-by-wave
+directory assignments and, for Waves 1–2, the fix detail itself (those
+two waves were done directly, not delegated — see below).
+
+**Final tally**: 1,743 census errors fixed across 82 of the tree's 91
+source directories (9 already clean), plus ~715 `-Wformat` sites added
+mid-milestone as a must-fix category (2026-08-02, after a real
+data-loss bug: a datastream writer's `%d` on a `long` object/view id
+silently truncated the id — see `porting-assessment.md` §21). Unlike
+M2 (zero real bugs) but like M3, the stricter checking surfaced
+genuine decades-old bugs constantly, not rarely — narrative write-ups
+in `revival.md`'s "Old bugs never found till now," full technical
+detail in `m4-rollout-runbook.md`/`m4-batches.md`'s per-batch entries.
+
+**Batch 0** (2026-08-02, fossil `f6bad47b273b`) — prerequisite, run
+once before any wave: reapplied a classpp fix from M3 that had been
+lost in an intervening revert, and added the `STRICT_COMPILERFLAGS`
+macro to `system.mcr` (inert everywhere until each directory opts in).
+
+**Waves 1–2** (`overhead`, then `atk/basics`+`support`) were done
+directly by the orchestrator rather than delegated — no separate
+prompt/report files exist for `O1`–`O3`/`B1`–`B3`; their fix detail is
+inline in `m4-batches.md`'s own Wave 1/Wave 2 sections, including
+fossil commit IDs per session.
+
+**Waves 3–7** were delegated, one prompt/report pair per session (this
+directory holds the reports; prompts were not separately retired):
+
+- **Wave 3 — `atk/text`**: `t1-REPORT.md`.
+- **Wave 4 — insets**: `i1-REPORT.md` (`atk/raster/cmd`),
+  `i2-REPORT.md` (`atk/table`), `i3-REPORT.md` (`atk/figure` +
+  `atk/chart`), `i4-REPORT.md` (12 small/leaf inset directories).
+- **Wave 5 — apps**: `a1-REPORT.md` (8 app/tool directories).
+- **Wave 6 — `atkams`/`ams`**: `ams1-REPORT.md` (`ams/libs/ms`),
+  `ams2-REPORT.md` (`atkams/messages/lib`), `ams3-REPORT.md`
+  (`ams/libs/{cui,nosnap,shr}`).
+- **Wave 7 — `contrib`**: `c1-REPORT.md` (`contrib/zip/lib`),
+  `c2-REPORT.md` (`contrib/zip/utility`), `c3-REPORT.md` (former C3+C4
+  merged). `c1` found and fixed a same-day regression (a static
+  sentinel variable) the same session that introduced it.
+
+**Follow-on correction, after M4's own close (2026-08-07)**: the
+milestone's original decision to exclude `-Wstrict-prototypes` from
+the global `-Werror` set (on the assumption its ~6,000 tree-wide
+matches were almost all the deliberate C89 unspecified-arguments idiom)
+turned out to be wrong — a live bug (zip inset figure/text drag
+locking its X axis after the first drag) was found in exactly this
+category: a static helper's forward declaration had been left
+old-style even though its own definition was already fully ANSI-typed,
+invisible to every M4 flag since none of them check a call against a
+declaration that carries no prototype at all. A full 77-directory
+retype pass fixed it the same day; see
+`strict-prototypes-retype-REPORT.md` and
+`revival/doc/strict-prototypes-census.md`.

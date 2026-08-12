@@ -172,13 +172,13 @@ The codebase was written for ILP32 (32-bit int, long, pointer). Six distinct bug
 
 ### 2026-07-04 — LP64 #3 call-site audit: content enumerate, figure zoom, raster negative
 
-Following the `frameDot` fix above, swept for sibling "bare `-1` literal through untyped class-dispatch macro" call sites (grep pattern and full writeup in `roadmap-old.md`; methodology also in `revival/doc/runtime-debugging-guide.md`). Narrowed ~925 raw hits to 22 candidates; confirmed 6 real bugs (receiver actually sign-checks the corrupted value) and fixed all with `(long)-1` casts:
+Following the `frameDot` fix above, swept for sibling "bare `-1` literal through untyped class-dispatch macro" call sites (grep pattern and full writeup in `claude-history/roadmap-old.md`; methodology also in `revival/doc/runtime-debugging-guide.md`). Narrowed ~925 raw hits to 22 candidates; confirmed 6 real bugs (receiver actually sign-checks the corrupted value) and fixed all with `(long)-1` casts:
 
 - `content.c`/`contentv.c` (`content__Enumerate`/`content__Denumerate`): `opos`/`pos < 0` is the "enumerate everything" sentinel; corrupted value read as huge positive, silently skipping that path. 3 call sites (`content.c:649`, `contentv.c:134,186`).
 - `figv.c` (`ChangeZoomProc`): `rock<0`/`rock>0` decides zoom out vs. zoom in; "Zoom Out" (menu item + `Esc-z` keybinding) passed `-1` through `menulist_AddToML`/`keymap_BindToKey`. Corrupted, Zoom Out would zoom in instead. 2 call sites (`figv.c:129-130`).
 - `rasterv.c` (`ModifyCommand`): `rock == -1` selects "invert selection" ("Negative" menu item + `Esc-n` keybinding). Corrupted, Negative would silently do nothing (falls through all the `==` branches). 2 call sites (`rasterv.c:1634-1635`).
 
-Several other candidates from the same grep sweep were confirmed harmless despite passing through the same untyped mechanism (e.g. `view_FullUpdate(...,-1,-1)` width/height args in `figv.c`/`rastvaux*.c` are ignored entirely by the receiving `FullUpdate` overrides, which recompute geometry from the view instead) — not fixed, no observable bug. A few lower-priority candidates (`rectangle_InsetRect` unprototyped-arg risk in `figv.c`'s clip-region code, `environ_GetProfileInt`/`cwp_Search` in the deprioritized messages/AMS subsystem, `tlex_RecentPosition` in the not-yet-working `ness` extension) were left untriaged — see `roadmap-old.md`'s "Variant 3 follow-up audit" section.
+Several other candidates from the same grep sweep were confirmed harmless despite passing through the same untyped mechanism (e.g. `view_FullUpdate(...,-1,-1)` width/height args in `figv.c`/`rastvaux*.c` are ignored entirely by the receiving `FullUpdate` overrides, which recompute geometry from the view instead) — not fixed, no observable bug. A few lower-priority candidates (`rectangle_InsetRect` unprototyped-arg risk in `figv.c`'s clip-region code, `environ_GetProfileInt`/`cwp_Search` in the deprioritized messages/AMS subsystem, `tlex_RecentPosition` in the not-yet-working `ness` extension) were left untriaged — see `claude-history/roadmap-old.md`'s "Variant 3 follow-up audit" section.
 
 **Also found, not fixed:** a live Xlib `_XLockDisplay` self-deadlock (single-thread re-entrancy triggered by `MappingNotify`/`XRefreshKeyboardMapping`), discovered incidentally while testing the figure-inset fix above. This supersedes the old "checkpoint timer UAF" theory for the `^V` scroll-hang heisenbug — see `roadmap.md`'s Heisenbugs section.
 
@@ -194,7 +194,7 @@ Several other candidates from the same grep sweep were confirmed harmless despit
 
 ### 2026-07-04 — Patches directory audit; malloc.ci arena-size fix
 
-Audited `patches/official/` and `patches/contrib/` in full (every file every patch touches diffed against current source) after finding `patch.633` already fixed the `95Summer.ez` figure bug above — full findings in `roadmap-old.md`'s "Historical patches audit" section. Two outcomes:
+Audited `patches/official/` and `patches/contrib/` in full (every file every patch touches diffed against current source) after finding `patch.633` already fixed the `95Summer.ez` figure bug above — full findings in `claude-history/roadmap-old.md`'s "Historical patches audit" section. Two outcomes:
 
 - Applied `contrib/malloc.ci.auis6.3.diff`: `overhead/malloc/malloc.ci` `addarena` computed `x = (A.arenaend - A.arenastart)>>3` where both are `struct freehdr *` — pointer subtraction is in units of `sizeof(struct freehdr)`, not bytes, undercounting the arena-growth heuristic ~20-24x. Fixed with `(char *)` casts. No runtime effect on this build: `ANDREW_MALLOC_ENV` is `#undef`'d in `config/site.h`, no `malloc.o`/`libmalloc.a` exists anywhere in `build/` — we run on system malloc, this file is dead code here. Fixed for source correctness anyway (originally submitted by the current user in 1995). Confirmed `malloc.c`/`pmalloc.c` (which `#include` this file) don't currently compile for an unrelated pre-existing reason (`AbortFullMessage` static/non-static conflict) — out of scope, not touched.
 - Everything else already fixed upstream in our 6.3.1 baseline (`figospli.c` spline guard, `unknown.c`'s 3 hunks, `hash.c` use-after-free, `tabs.c` bounds check — all from `patch.631`) or genuinely inapplicable (AMS/`eatmail` patches, `symlink.patch` targeting a `LIBDL_ENV` code path Darwin never defines, and the SGI/NetBSD/Solaris/HP-UX platform ports).
@@ -406,7 +406,7 @@ the date field (`BuildDateField` → `MS_ReconstructDirectory`). This is
 bison-generated (`ams/libs/ms/prsdate.c` from `prsdate.gra`, also untracked
 in fossil) — a different generator, different subsystem, different failure
 shape (data/size-dependent, not a fixed polarity flag) from the flex bug
-above. Not investigated further this session; flagged in `roadmap-old.md`'s
+above. Not investigated further this session; flagged in `claude-history/roadmap-old.md`'s
 gendemo section as the next thing to chase.
 
 ### 2026-07-09 — M1 rollout begins: classpp `-pi`/`-pe` split, typed-dispatch pilots
@@ -892,7 +892,7 @@ local buffers before mutation.
 folder-visibility, mime-display, fdplumb, `-fwritable-strings`, M2
 completion, all of M3, and all of M4 including the strict-prototypes
 side quest and the final global-strictness flip) were backfilled from
-`fossil sql` commit timestamps, `roadmap-old.md`, `porting-assessment.md`,
+`fossil sql` commit timestamps, `claude-history/roadmap-old.md`, `porting-assessment.md`,
 this project's own memory notes, and `claude-history/*-REPORT.md`. This
 log now has continuous coverage from the 2026-06-24 bootstrap through
 M4's completion.
@@ -1265,8 +1265,7 @@ real LP64/signal-handler bugs. B3 (`value`, `apt/apt`, `textaux`,
 `frame`, closes Wave 2) fixed 11 real LP64/signal-handler/writable-
 string bugs. None individually escalated to a human ruling; full
 per-directory detail in the M4 batch/wave working files
-(`revival/doc/m4-batches.md`, `m4-rollout-runbook.md` — not yet
-retired to `claude-history/` as of this entry).
+(`claude-history/m4-batches.md`, `claude-history/m4-rollout-runbook.md`).
 
 ### 2026-08-03 — M4 Wave 3: `atk/text` closes Wave 3
 
@@ -1463,9 +1462,8 @@ the 2026-08-01 M4-begins entry above for why). This closes the ANSI C conversion
 plan begun with M1 on 2026-07-08: four milestones, dispatch-layer
 typing through full compiler strictness, dozens of decades-old bugs
 found and fixed along the way. Full per-wave/per-batch detail:
-`revival/doc/m4-batches.md`, `m4-rollout-runbook.md` (not yet retired
-to `claude-history/` as of this entry); strict-prototypes detail:
-`revival/doc/strict-prototypes-census.md`,
+`claude-history/m4-batches.md`, `claude-history/m4-rollout-runbook.md`;
+strict-prototypes detail: `revival/doc/strict-prototypes-census.md`,
 `claude-history/strict-prototypes-retype-REPORT.md`.
 
 ### 2026-08-08 — convertraster: full functional test pass, three bugs found and fixed
@@ -1553,7 +1551,7 @@ Committed (`fb799285e2`).
 
 Follow-on same-day session, picking up the `image` inset's long-open
 "JPEG/GIF import renders solid black, TIFF renders solid white"
-bug (`roadmap-old.md`, found 2026-07-26, never root-caused). Same
+bug (`claude-history/roadmap-old.md`, found 2026-07-26, never root-caused). Same
 diagnostic method as the `convertraster` entry above: an independent
 standalone test harness (`class_Init` + `class_NewObject("jpeg"/"tif")`
 + `image_Load`, bypassing X11 entirely) to isolate decode correctness
