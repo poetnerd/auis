@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define	OFILENAME   "andrdir.h"
 
@@ -43,12 +44,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  **  Also, define QUOTED_DEFAULT_ANDREWDIR_ANDREWSETUP.
  **
  **/
-int
-main(argc, argv)
-
-int argc;
-char *argv[];
-
+int main(int argc, char *argv[])
 {
     /*
      * Check command line.

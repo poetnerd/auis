@@ -33,6 +33,8 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <global.h>
 #include <gentlex.h>
@@ -47,9 +49,7 @@ static struct line *Thongs = NULL;	/* list of all thongs */
 /* compute the number of leading positions in which
 	the two strings s and q are the same
 */
-	static int
-Similarity(s, q)
-	char *s, *q;
+static int Similarity(char *s, char *q)
 {
 	int n;
 	for (n=0; *s && *s++ == *q++; n++) {}
@@ -70,11 +70,7 @@ Similarity(s, q)
 	Returns a pointer to a struct line representing the action;
 	it may be the original Hdr or it may be a Thong.
 */
-	struct line *
-ThongAdd(thong, action, fromset)
-	char *thong;
-	struct line *action;
-	boolean fromset;
+struct line * ThongAdd(char *thong, struct line *action, boolean fromset)
 {
 	struct line *tx, *prevx;
 	struct line *tl;
@@ -156,9 +152,7 @@ ThongAdd(thong, action, fromset)
 /* ThongReplaceNulls(hdr)
 	replace null actions in Thongs list with hdr
 */
-	void
-ThongReplaceNulls(hdr)
-	struct line *hdr;
+void ThongReplaceNulls(struct line *hdr)
 {
 	struct line *tx;
 	for (tx = Thongs; tx; tx = tx->next)
@@ -182,9 +176,7 @@ with the form:
     assign u.g.index values
 */
 
-	void
-ThongOut(f)
-	FILE *f;
+void ThongOut(FILE *f)
 {
 	int len, tlen;
 	int index;
@@ -248,9 +240,7 @@ ThongOut(f)
 /* ThongAction -  compute action array entry for the given character
 	value is   tlex_THONG | (index in thong table of entry)
 */
-	int
-ThongAction(thong)
-	struct line *thong;
+int ThongAction(struct line *thong)
 {
 	return tlex_ACTTHONG | thong->u.g.index;
 }

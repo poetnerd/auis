@@ -35,14 +35,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <ms.h>
 #include <ctype.h>
+extern int ReduceWhiteSpace(char *string);  /* ams/libs/shr/utils.c */
 
-extern char *StripWhiteEnds();
+extern char *StripWhiteEnds(char *string);
 
 #define MAXPARTS 10
 
-ShrinkName(longname, shortname, limit)
-char *longname, *shortname;
-int limit;
+int ShrinkName(char *longname, char *shortname, int limit)
 {
     int i, len, numparts = 0, ComponentLengths[MAXPARTS], commalen = 0, looking;
     char *space, *comma, *Components[MAXPARTS], *lastpart, *tmp;

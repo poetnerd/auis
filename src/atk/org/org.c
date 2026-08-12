@@ -71,6 +71,10 @@ END-SPECIFICATION  ************************************************************/
 #include <tree.ih>
 #include <filetype.ih>
 #include <org.eh>
+static int Free_Elements(struct org *self, struct tree *tree, tree_type_node node, int datum);
+static int Read_Body(struct org *self, FILE *file);
+static int Strip(char *string);
+static int Write_Body(struct org *self, FILE *file);
 
 #define Tree (self->tree_data_object)
 
@@ -83,21 +87,12 @@ int Org_Debug = 0;
 
 #define debug Org_Debug
 
-static Read_Body();
-static Write_Body();
-static Strip();
-
-char *
-org__ViewName( self )
-  register struct org *self;
+char * org__ViewName(struct org *self)
 {
     return ( "orgv" );
 }
 
-boolean 
-org__InitializeObject( classID, self )
-  register struct classheader *classID;
-  register struct org *self;
+boolean org__InitializeObject(struct classheader *classID, struct org *self)
 {
   register boolean status = true;
 
@@ -111,35 +106,24 @@ org__InitializeObject( classID, self )
   return(status);
 }
 
-static
-Free_Elements( self, tree, node, datum )
-  register struct org *self;
-  register struct tree *tree;
-  register tree_type_node node;
+static int Free_Elements(struct org *self, struct tree *tree, tree_type_node node, int datum)
 {
   if ( tree_NodeDatum( tree, node ) )
-    free( tree_NodeDatum( tree, node ) );
+    free( (void *) tree_NodeDatum( tree, node ) );
   return(NULL);
 }
 
-void
-org__FinalizeObject( classID, self )
-  register struct classheader *classID;
-  register struct org *self;
+void org__FinalizeObject(struct classheader *classID, struct org *self)
 {
   IN(org_FinalizeObject );
   if ( Tree ) {
-      tree_Apply( Tree, tree_RootNode( Tree ), Free_Elements, self, NULL );
+      tree_Apply( Tree, tree_RootNode( Tree ), (long (*)(struct org *, struct tree *, tree_type_node, int))Free_Elements, self, NULL );
       tree_Destroy( Tree );
   }
   OUT(org_FinalizeObject );
 }
 
-long
-org__Read( self, file, id )
-  register struct org *self;
-  register FILE *file;
-  register long id;
+long org__Read(struct org *self, FILE *file, long id)
 {
   register long status;
 
@@ -149,10 +133,7 @@ org__Read( self, file, id )
   return(status);
 }
 
-static
-Read_Body( self, file )
-  register struct org		     *self;
-  register FILE			     *file;
+static int Read_Body(struct org *self, FILE *file)
   {
   register boolean		      done = false;
   register long			      c, count, braces = 0, brackets = 0, status = ok,
@@ -244,7 +225,7 @@ Read_Body( self, file )
 	    }
 	    else fprintf(stderr, "org: couldn't open temp file for writing.\n");
 	}
-	tree_SetNodeDatum( Tree, node, (long) text );
+	tree_SetNodeDatum( Tree, node, text );
 	DEBUGst(Description, description);
 	break;
       case ']':
@@ -269,23 +250,18 @@ Read_Body( self, file )
     }
   if ( braces ) {
     status = failure;
-/*===*/printf("ORG: ERROR  %d Unbalanced Braces\n", braces);
+/*===*/printf("ORG: ERROR  %ld Unbalanced Braces\n", braces);
   }
   if ( brackets ) {
       status = failure;
-/*===*/printf("ORG: ERROR  %d Unbalanced Brackets\n", brackets);
+/*===*/printf("ORG: ERROR  %ld Unbalanced Brackets\n", brackets);
   }
 /*===*/
   OUT(Read_Body);
   return(status);
   }
 
-long
-org__Write( self, file, writeID, level )
-  register struct org		     *self;
-  register FILE			     *file;
-  register long			      writeID;
-  register long			      level;
+long org__Write(struct org *self, FILE *file, long writeID, int level)
 {
   register long			      status, id;
 
@@ -297,19 +273,16 @@ org__Write( self, file, writeID, level )
   DEBUGdt(Local-ID,id);
   if ( self->header.dataobject.writeID != writeID ) {
     self->header.dataobject.writeID = writeID;
-    fprintf( file, "\\begindata{%s,%d}\n", class_GetTypeName( self ), id );
+    fprintf( file, "\\begindata{%s,%ld}\n", class_GetTypeName( self ), id );
     status = Write_Body( self, file );
-    fprintf( file, "\n\\enddata{%s,%d}\n", class_GetTypeName( self ), id );
+    fprintf( file, "\n\\enddata{%s,%ld}\n", class_GetTypeName( self ), id );
   }
   DEBUGdt(Status,status);
   OUT(org_Write);
   return  self->header.dataobject.id;
 }
 
-static
-Write_Body( self, file )
-  register struct org *self;
-  register FILE *file;
+static int Write_Body(struct org *self, FILE *file)
 {
   register long status = ok;
   register tree_type_node node = tree_RootNode( Tree );
@@ -320,13 +293,13 @@ Write_Body( self, file )
   IN(Write_Body);
   while ( node ) {
     if ( (level = tree_NodeLevel( Tree, node )) > current_level )
-	fprintf( file, "%*s{\n", 2 * level, "" );
-    else 
+	fprintf( file, "%*s{\n", (int)(2 * level), "" );
+    else
 	if ( level < current_level )
 	    for ( ; current_level > level; current_level-- )
-		fprintf( file, "%*s}\n", 2 * current_level, "" );
+		fprintf( file, "%*s}\n", (int)(2 * current_level), "" );
     current_level = level;
-    fprintf( file, "%*s%s\n", 2 * level, "", tree_NodeName( Tree, node ) );
+    fprintf( file, "%*s%s\n", (int)(2 * level), "", tree_NodeName( Tree, node ) );
     if ( (text = (struct text *) tree_NodeDatum(Tree, node)) && 
 	 (size = text_GetLength(text)) > 0 ) {
 	long realSize = 0;
@@ -350,21 +323,18 @@ Write_Body( self, file )
 		unlink(fName);
 	    }	
 	}
-	fprintf( file, "%*s[%d\n%s]\n", 2 * level, "", realSize, description);
+	fprintf( file, "%*s[%ld\n%s]\n", (int)(2 * level), "", realSize, description);
 	free(description);
     }
     node = tree_NextNode( Tree, node );
   }
   for ( ; current_level > 1; current_level-- )
-    fprintf( file, "%*s}\n", 2 * current_level, "" );
+    fprintf( file, "%*s}\n", (int)(2 * current_level), "" );
   OUT(Write_Body);
   return(status);
 }
 
-char *
-org__NodeName( self, node )
-  register struct org *self;
-  register struct tree_node *node;
+char * org__NodeName(struct org *self, struct tree_node *node)
 {
   register char *name = NULL;
 
@@ -375,10 +345,7 @@ org__NodeName( self, node )
   return  name;
 }
 
-void
-org__SetDebug( self, state )
-  register struct org *self;
-  register char state;
+void org__SetDebug(struct org *self, boolean state)
 {
   IN(org_SetDebug);
   debug = state;
@@ -386,14 +353,14 @@ org__SetDebug( self, state )
   OUT(org_SetDebug);
 }
 
-static
-Strip( string )
-  register char *string;
+static int Strip(char *string)
 {
   register char *ptr = string;
 
   while ( *ptr == ' '  ||  *ptr == '\t' )  ptr++;
-  strcpy( string, ptr );
+  /* ptr aliases string+n; strcpy's overlap check aborts under macOS
+     fortify whenever leading whitespace was actually skipped. */
+  memmove( string, ptr, strlen(ptr)+1 );
   while ( *ptr )  ptr++;
   ptr--;
   while ( *ptr == ' '  ||  *ptr == '\t' ) *ptr-- = 0;

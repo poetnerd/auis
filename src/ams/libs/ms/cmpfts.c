@@ -35,16 +35,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
  
 
 #include <ms.h>
+#include <stdlib.h>
 
-CompareFileTimeStructs(ft1, ft2)
-struct FileTime *ft1, *ft2;
+int CompareFileTimeStructs(struct FileTime *ft1, struct FileTime *ft2)
 {
     return((ft1->Time > ft2->Time) ? 1 : -1);
 }
 
-FreeFTList(FTL, nf)
-struct FileTime *FTL;
-int nf;
+int FreeFTList(struct FileTime *FTL, int nf)
 {
     int i;
 

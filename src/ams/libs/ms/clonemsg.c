@@ -34,12 +34,38 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <ms.h>
 #include <andrewos.h>                  /* sys/time.h */
+#include <stdlib.h>
+extern int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int CopyMessageBody(struct MS_Directory *SourceDir, struct MS_Directory *DestDir, char *id, long timetoset);
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int GetSnapshotByID(struct MS_Directory *Dir, char *id, int *msgnum, char *snapshot);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
+extern int IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
+extern int RewriteSnapshotInDirectory(struct MS_Directory *Dir, int num, char *snapshot);
+extern int SetChainField(struct MS_Message *Msg, struct MS_Directory *Dir, Boolean PlanningHeadWrite);
+extern unsigned long conv64tolong(char *xnum);  /* overhead/mail/lib/genid.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
 
 extern FILE    *fopen();
 
-MS_CloneMessage(SourceDirName, id, DestDirName, Code)
-char           *SourceDirName, *id, *DestDirName;
-int             Code;
+/* msjournal.c, this directory -- writeback capture (a no-op unless
+   the given directory is a mirrored folder; see the grammar note
+   there). MSJournal_Record is genuinely variadic, so it needs a real
+   "..." prototype at every call site, unlike the implicit-int K&R
+   calls elsewhere in this file: on Apple's arm64 ABI a variadic
+   callee reads its variable arguments off the stack, while a caller
+   with no prototype in scope passes them the normal-call way, in
+   registers -- the same caller/callee ABI mismatch already documented
+   for dbg_open() in overhead/util/hdrs/fdplumb.h. */
+extern void MSJournal_Record(const char *dir, const char *fmt, ...);
+
+int MS_CloneMessage(char *SourceDirName, char *id, char *DestDirName, int Code)
 {
     struct MS_Directory *SourceDir, *DestDir;
     struct MS_Message *Msg;
@@ -197,8 +223,14 @@ int             Code;
         FreeMessage(Msg, TRUE);
         return (errsave);
     }
+    /* Dest side of the clone: decompose into a plain append record --
+       clone between two mirrored folders is not special-cased, this
+       plus (below) a purge record at the source is the whole of it. */
+    MSJournal_Record(DestDir->UNIXDir, "J1 append %s", id);
 
     if (Code == MS_CLONE_COPYDEL || Code == MS_CLONE_APPENDDEL) {
+        int closerc;
+
         AMS_SET_ATTRIBUTE(Msg->Snapshot, AMS_ATT_DELETED);
         if (RewriteSnapshotInDirectory(SourceDir, msgnum, Msg->Snapshot)) {
             errsave = mserrcode;
@@ -207,7 +239,13 @@ int             Code;
             return (errsave);
         }
         FreeMessage(Msg, TRUE);
-        return (CacheDirectoryForClosing(SourceDir, SourceDirMode));
+        closerc = CacheDirectoryForClosing(SourceDir, SourceDirMode);
+        /* Delete-original out of a mirrored source is recorded as a
+           purge now, not deferred to a later real
+           MS_PurgeDeletedMessages call (see msjournal.c's grammar
+           comment). */
+        if (!closerc) MSJournal_Record(SourceDir->UNIXDir, "J1 purge %s", id);
+        return (closerc);
     }
     else {
         FreeMessage(Msg, TRUE);
@@ -215,10 +253,7 @@ int             Code;
     }
 }
 
-CopyMessageBody(SourceDir, DestDir, id, timetoset)
-struct MS_Directory *SourceDir, *DestDir;
-char           *id;
-long            timetoset;
+int CopyMessageBody(struct MS_Directory *SourceDir, struct MS_Directory *DestDir, char *id, long timetoset)
 {
     char            FromName[1 + MAXPATHLEN], ToName[1 + MAXPATHLEN];
     int             saveerr, c;

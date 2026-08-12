@@ -38,8 +38,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <andrewos.h> /* sys/file.h */
 #include <mailconf.h>
+#include <stdlib.h>
+extern int EnsureMailDirExists();
+extern int MS_CheckAuthentication(int *Authenticated);
+extern int NonfatalBizarreError(char *text);
+extern int ResolveTildes(char *old, char **new, char *domain);
+extern char *ap_Shorten(char *pathname);  /* overhead/util/lib/abbrpath.c */
+extern int lc2strncmp(char *s1, char *s2, int len);  /* ams/libs/shr/utils.c */
+extern int vdown(int err);  /* overhead/util/lib/vclose.c */
+static int CheckLabel(int i);
 
-extern char *getprofile(), *StripWhiteEnds();
+extern char *getprofile(), *StripWhiteEnds(char *string);
 extern char home[], MyMailDomain[];
 
 extern Boolean DidInit;
@@ -59,7 +68,7 @@ static char OFFICIALMARKER[] = "$official";
 #define MARKERINIT '$'
 /* MARKERINIT is the first char in the xxxMARKER values */
 
-InitializeSearchPaths() {
+int InitializeSearchPaths() {
     char   *s, *t, ErrorText[256], MailRoot[1+MAXPATHLEN];
     int whichpath, NeedMailDir;
 
@@ -228,7 +237,7 @@ InitializeSearchPaths() {
 	    }
 	}
 	if (mserrcode) {
-	    sprintf(ErrorText, "The mspath element %s is unknown (%d)", s, AMS_ERRNO);
+	    sprintf(ErrorText, "The mspath element %s is unknown (%ld)", s, AMS_ERRNO);
 	    NonfatalBizarreError(ErrorText);
 	    AMS_RETURN_ERRCODE(ENOENT, EIN_MSPATHCHECK, EVIA_INITSEARCHPATHS);
 	}
@@ -248,8 +257,7 @@ InitializeSearchPaths() {
     return(0);
 }
 
-static int CheckLabel(i)
-int i;
+static int CheckLabel(int i)
 {
     if (!SearchPathElements[i].label) {
 	char FBuf[1+MAXPATHLEN];
@@ -274,8 +282,7 @@ int i;
     return 0;
 }
 
-OKRoot(Name)
-char *Name;
+int OKRoot(char *Name)
 {/* Check (mspath) root Name.  Return TRUE if all was OK, or FALSE, after having printed a message, if there was a problem. */
     char ErrorText[100+MAXPATHLEN];
     struct stat statbuf;
@@ -302,8 +309,7 @@ char *Name;
     }
 }
 
-ValidateSearchPath(i)
-int i;
+int ValidateSearchPath(int i)
 {
     if (i<0 || i>= MS_NumDirsInSearchPath) {
 	AMS_RETURN_ERRCODE(EINVAL, EIN_PARAMCHECK, EVIA_DISAMB);

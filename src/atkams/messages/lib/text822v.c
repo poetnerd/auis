@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #endif
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <cui.h>
 #include <fdphack.h>
@@ -56,35 +57,30 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <sendmsg.ih>
 #undef dontDefineRoutinesFor_sendmessage
 #include <ams.ih>
+static void DownFocus(struct t822view *self);
+static void UpFocus(struct t822view *self);
 
 #define Text(self) ((struct text *) t822view_GetDataObject(self))
 
 static struct keymap *t822view_standardkeymap;
 static struct menulist *t822view_standardmenulist;
 
-void BodiesCompound(self, cmds)
-struct t822view *self;
-char *cmds;
+void BodiesCompound(struct t822view *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), self, "t822view", cmds);
 }
 
-void BodiesTextviewCommand(self, cmds)
-struct t822view *self;
-char *cmds;
+void BodiesTextviewCommand(struct t822view *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), self, "textview", cmds);
 }
 
-void BodiesCaptionsCommand(self, cmds)
-struct t822view *self;
-char *cmds;
+void BodiesCaptionsCommand(struct t822view *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), t822view_GetCaptions(self), "captions", cmds);
 }
 
-static void DownFocus(self)
-struct t822view *self;
+static void DownFocus(struct t822view *self)
 {
     struct folders *f = captions_GetFolders(t822view_GetCaptions(self));
 
@@ -95,8 +91,7 @@ struct t822view *self;
     }
 }
 
-static void UpFocus(self)
-struct t822view *self;
+static void UpFocus(struct t822view *self)
 {
     ams_Focus(t822view_GetCaptions(self));
 }
@@ -115,8 +110,7 @@ static struct bind_Description t822view_standardbindings [] = {
 
 static struct style *InstructionsStyle = NULL;
 
-boolean t822view__InitializeClass(c)
-struct classheader *c;
+boolean t822view__InitializeClass(struct classheader *c)
 {
     t822view_standardkeymap = keymap_New();
     t822view_standardmenulist = menulist_New();
@@ -128,9 +122,7 @@ struct classheader *c;
     return(TRUE);
 }
 
-boolean t822view__InitializeObject(c, self)
-struct classheader *c;
-struct t822view *self;
+boolean t822view__InitializeObject(struct classheader *c, struct t822view *self)
 {
     t822view_SetWhatIAm(self, WHATIAM_BODIES);
     ams_AddCheckpointBodies(self);
@@ -141,16 +133,12 @@ struct t822view *self;
     return(TRUE);
 }
 
-void t822view__SetCaptions(self, cap)
-struct t822view *self;
-struct captions *cap;
+void t822view__SetCaptions(struct t822view *self, struct captions *cap)
 {
     self->mycaps = cap;
 }
 
-void t822view__ShowHelp(self, text)
-struct t822view *self;
-char *text;
+void t822view__ShowHelp(struct t822view *self, char *text)
 {
     int len;
     static char *InitialHelpString = "To see the captions for messages in a folder, click with the left mouse button on the folder name.\n\nTo see a message, click on its caption in the middle region of the window.\n\nTo perform actions on a folder, or get information about it, click on the help icon next to its name.";
@@ -202,10 +190,7 @@ char *text;
 
 /* we override ObservedChanged so we can be sure the keystate is posted
 	when there is a change in the read-onliness */
-void t822view__ObservedChanged(self, changed, value)
-    struct t822view *self;
-    struct observable *changed;
-    long value;
+void t822view__ObservedChanged(struct t822view *self, struct observable *changed, long value)
 {
     struct text *text = Text(self);
     boolean RO;
@@ -222,18 +207,14 @@ void t822view__ObservedChanged(self, changed, value)
 
 
 
-void t822view__PostMenus(self, ml)
-struct t822view *self;
-struct menulist *ml;
+void t822view__PostMenus(struct t822view *self, struct menulist *ml)
 {
     menulist_ClearChain(self->myml);
     if (ml) menulist_ChainAfterML(self->myml, ml, ml);
     super_PostMenus(self, self->myml);
 }
 
-void t822view__PostKeyState(self, ks)
-struct t822view *self;
-struct keystate *ks;
+void t822view__PostKeyState(struct t822view *self, struct keystate *ks)
 {
     self->myks->next = NULL;
     if (amsutil_GetOptBit(EXP_KEYSTROKES) 
@@ -245,32 +226,27 @@ struct keystate *ks;
     }
 }
 
-struct view *t822view__GetApplicationLayer(self)
-struct t822view *self;
+struct view * t822view__GetApplicationLayer(struct t822view *self)
 {
      return (struct view *) scroll_Create(self, scroll_LEFT);
 }
 
-void t822view__DeleteApplicationLayer(self, scrollbar)
-struct t822view *self;
-struct scroll *scrollbar;
+void t822view__DeleteApplicationLayer(struct t822view *self, struct view *scrollbar_generic)
 {
+    struct scroll *scrollbar = (struct scroll *) scrollbar_generic;
+
     ams_RemoveCheckpointBodies(self);
     scroll_Destroy(scrollbar);
 }
 
-void t822view__SetDataObject(self, dat)
-struct t822view *self;
-struct dataobject *dat;
+void t822view__SetDataObject(struct t822view *self, struct dataobject *dat)
 {
     super_SetDataObject(self, dat);
     t822view_ShowHelp(self, NULL);
     self->PriorReadOnliness = text_GetReadOnly(Text(self));
 }
 
-struct captions *
-t822view__NewCaptionsInNewWindow(self)
-struct t822view *self;
+struct captions * t822view__NewCaptionsInNewWindow(struct t822view *self)
 {
     struct captions *cap = captions_New();
 
@@ -280,9 +256,7 @@ struct t822view *self;
     return(cap);
 }
 
-void t822view__FinalizeObject(c, self)
-struct classheader *c;
-struct t822view *self;
+void t822view__FinalizeObject(struct classheader *c, struct t822view *self)
 {
     ams_RemoveCheckpointBodies(self);
     if (self->mycaps) {
@@ -292,8 +266,7 @@ struct t822view *self;
     if (self->myml) menulist_Destroy(self->myml);
 }
 
-struct captions *t822view__GetCaptions(self)
-struct t822view *self;
+struct captions * t822view__GetCaptions(struct t822view *self)
 {
     if (!self->mycaps) {
 	t822view_NewCaptionsInNewWindow(self);

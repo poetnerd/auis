@@ -42,6 +42,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <fontdesc.ih>
 #include <proctbl.ih>
 #include <util.h>
+static void MenuSetFormat(struct timeodayview *self, char *format);
+static void Redraw(struct timeodayview *self);
 
 /* Defined constants and macros */
 #define FUDGEFACTOR 1.1
@@ -60,9 +62,7 @@ static char *formats[] = {
   NULL, NULL};
 
 
-static void MenuSetFormat(self, format)
-     struct timeodayview *self;
-     char *format;
+static void MenuSetFormat(struct timeodayview *self, char *format)
 {
   struct timeoday *b = (struct timeoday *) timeodayview_GetDataObject(self);
 
@@ -71,9 +71,7 @@ static void MenuSetFormat(self, format)
 }
 
 
-boolean
-timeodayview__InitializeClass(c)
-struct classheader *c;
+boolean timeodayview__InitializeClass(struct classheader *c)
 {
 /* 
   Initialize all the class data.
@@ -88,7 +86,7 @@ struct classheader *c;
   timeodayview_menulist = menulist_New();
   
   sprintf(procname, "%s-set-format", "timeoday");
-  proc = proctable_DefineProc(procname, MenuSetFormat, &timeodayview_classinfo, NULL, "Set the timeoday inset's format.");
+  proc = proctable_DefineProc(procname, (procedure) MenuSetFormat, &timeodayview_classinfo, NULL, "Set the timeoday inset's format.");
   
   sprintf(menutitlefmt, "%s,%%s", "Time O'Day");
   
@@ -102,10 +100,7 @@ struct classheader *c;
 }
 
 
-boolean
-timeodayview__InitializeObject(c, self)
-struct classheader *c;
-struct timeodayview *self;
+boolean timeodayview__InitializeObject(struct classheader *c, struct timeodayview *self)
 {
 /*
   Set up the data for each instance of the object.
@@ -119,10 +114,7 @@ struct timeodayview *self;
 }
 
 
-void
-timeodayview__FinalizeObject(c, self)
-struct classheader *c;
-struct timeodayview *self;
+void timeodayview__FinalizeObject(struct classheader *c, struct timeodayview *self)
 {
   if (self->cursor) cursor_Destroy(self->cursor);
   self->cursor = NULL;
@@ -133,9 +125,7 @@ struct timeodayview *self;
 
 
 
-static void
-Redraw(self)
-struct timeodayview *self;
+static void Redraw(struct timeodayview *self)
 {
 /*
   Redisplay this object.
@@ -169,11 +159,7 @@ struct timeodayview *self;
 }
 
 
-void
-timeodayview__FullUpdate(self, type, left, top, width, height)
-struct timeodayview *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void timeodayview__FullUpdate(struct timeodayview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
 /*
   Do an update.
@@ -185,20 +171,13 @@ long left, top, width, height;
 }
 
 
-void
-timeodayview__Update(self)
-struct timeodayview *self;  
+void timeodayview__Update(struct timeodayview *self)
 {
   Redraw(self);
 }
 
 
-struct view *
-timeodayview__Hit(self, action, x, y, numclicks)
-struct timeodayview *self;
-long x, y;
-enum view_MouseAction action;
-long numclicks;  
+struct view * timeodayview__Hit(struct timeodayview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
 /*
   Handle the button event.  Currently, semantics are:
@@ -208,12 +187,7 @@ long numclicks;
 }
 
 
-void
-timeodayview__Print(self, file, processor, finalFormat, topLevel)
-     struct timeodayview *self;
-     FILE *file;
-     char *processor, *finalFormat;
-     boolean topLevel;
+void timeodayview__Print(struct timeodayview *self, FILE *file, char *processor, char *finalFormat, boolean topLevel)
 {
     char *time_str;
     struct timeoday *time_do =  (struct timeoday *) timeodayview_GetDataObject(self);
@@ -229,14 +203,7 @@ timeodayview__Print(self, file, processor, finalFormat, topLevel)
 }
 
 
-enum view_DSattributes 
-timeodayview__DesiredSize(self, width, height, pass, desired_width, desired_height)
-struct timeodayview *self;
-long width;
-long height;
-enum view_DSpass pass;
-long *desired_width;
-long *desired_height;
+enum view_DSattributes timeodayview__DesiredSize(struct timeodayview *self, long width, long height, enum view_DSpass pass, long *desired_width, long *desired_height)
 {
 /* 
   Tell parent that this object  wants to be as big as the box around its
@@ -264,11 +231,7 @@ long *desired_height;
 }
 
 
-void
-timeodayview__GetOrigin(self, width, height, originX, originY)
-struct timeodayview *self;
-long width, height;
-long *originX, *originY;
+void timeodayview__GetOrigin(struct timeodayview *self, long width, long height, long *originX, long *originY)
 {
 /*
   We want this object to sit in-line with text, not below the baseline.
@@ -295,10 +258,7 @@ long *originX, *originY;
 }
 
 
-void
-timeodayview__PostMenus(self, ml)
-struct timeodayview *self;
-struct menulist *ml;
+void timeodayview__PostMenus(struct timeodayview *self, struct menulist *ml)
 {
 /*
   Enable the menus for this object.

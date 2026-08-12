@@ -33,6 +33,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 
 #include <big.h>
 #include <ctype.h>
+#include <stdlib.h>
+
+/* overhead/util/lib/fdplumb.c's dbg_* wrapper family; overhead/util/hdrs/
+   fdplumb.h #defines fclose to this but doesn't declare it. */
+extern int dbg_fclose(FILE *fp);
 
 /* The various mailbox directories */
 static char RootDir[MAXPATHLEN + 1] = "/usr/net";
@@ -76,7 +81,7 @@ static int numValidGroups;
 static struct group *delayedGroups;
 static int numDelayedGroups;
 
-static struct group *parseGroupList();
+static struct group *parseGroupList(char *str, int *nump);
 
 /*
  * Initialize this module by parsing the config file named in "fname"
@@ -116,8 +121,7 @@ static struct group *parseGroupList();
  * # root to put a given folder in.  The special root "drop" means to
  * # not file that newsgroup.
  */
-void ConfInit(fname)
-char *fname;
+void ConfInit(char *fname)
 {
     FILE *config;
     char buf[1024];
@@ -419,9 +423,7 @@ int ConfIsPeakTime()
  * iff the group should be delayed, otherwise it is set to zero.
  * The static buffer is overwritten on the next call.
  */
-char *ConfDirForGroup(newsgroup, delayp)
-char *newsgroup;
-int *delayp;
+char * ConfDirForGroup(char *newsgroup, int *delayp)
 {
     int Ix;
     static char *p, path[MAXPATHLEN + 1];
@@ -489,9 +491,7 @@ int *delayp;
  * 'struct group'.  Returns a pointer to the new group list and sets the
  * integer pointed to by 'nump' to the number of groups in the list.
  */
-static struct group *parseGroupList(str, nump)
-char *str;
-int *nump;
+static struct group * parseGroupList(char *str, int *nump)
 {
     int num, Ix;
     char *p, *q;

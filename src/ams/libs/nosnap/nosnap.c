@@ -32,10 +32,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <mserrno.h>
 #include <errprntf.h>
 #define TRUE 1
 #define FALSE 0
+
+extern int ReportSuccess(char *text);
+extern int ReportError(char *text, int level, int Decode);
+extern int MS_Initialize(int *MaxBufSize, short UsingSnap);
+extern int MS_UpdateState(void);
 
 char *ReconHost = "<this host>";
 int MSDebugging = 0;
@@ -45,9 +52,7 @@ int CUI_SnapIsRunning = 0, CUI_LastCallFinished = 0;
 char *SnapVersionString = "NOT LINKED";
 
 /* the following overrides the messageserver routine in the no-snap version. */
-BizarreError(text, level)
-char *text;
-int level;
+int BizarreError(char *text, int level)
 {
     if (level >= ERR_WARNING) {
 	ReportSuccess(text);
@@ -56,11 +61,10 @@ int level;
     }
 }
 
+int
 ReconnectMS(s) char *s; {}  /* Dummy function here to satisfy the linker */
 
-int MS_CUI_Init(host, user, passwd, len, type, bufsize)
-char *host, *user, *passwd;
-int len, type, bufsize;
+int MS_CUI_Init(char *host, char *user, char *passwd, int len, int type, int bufsize)
 {
     char *ThisError = "Messageserver initialization failed.  Program can not run.";
     char *errorMsg = NULL;
@@ -120,8 +124,10 @@ int len, type, bufsize;
     return(0);
 }
 
+int
 AMS_getandpackALLtokens() {} /* Not needed for standalone version */
 
+int
 CUI_EndConversation() {
     MS_UpdateState();
 }

@@ -35,6 +35,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 static char *stroffetview_rcsid = "$Header";
 
 #include "class.h"
+#include <string.h>
+#include <fontdesc.ih>
 #include "view.ih"
 #include "textv.ih"
 #include "stroffet.ih"
@@ -45,13 +47,17 @@ static char *stroffetview_rcsid = "$Header";
 #include "keymap.ih"
 #include "text.ih"
 #include "proctbl.ih"
+static void Close(struct stroffetview *v, long l);
+static void closeall(struct view *v, long l);
+static void insert(struct textview *tv, long l);
+static void openall(struct view *v, long l);
 
 #define ICONFONT "icon"
-#define ICONSTYLE "fontdesc_Plain"
+#define ICONSTYLE fontdesc_Plain
 #define ICONPTS 12
 #define ICONCHAR '4'
 #define TITLEFONT "andysans"
-#define TITLESTYLE "fontdesc_Plain"
+#define TITLESTYLE fontdesc_Plain
 #define TITLEPTS 12
 
 struct menulist *stroffetviewMenus;
@@ -62,39 +68,24 @@ static struct keymap *stroffetviewKeyMap;
 /*		private functions				*/
 /****************************************************************/
 
-static void
-Close(v,l)
-struct stroffetview *v;
-long l;
+static void Close(struct stroffetview *v, long l)
 {
     stroffetview_Close(v);
 }
-static void
-open(v,l)
-struct stroffetview *v;
-long l;
+static void open(struct stroffetview *v, long l)
 {
     stroffetview_Open(v);
 }
-static void
-closeall(v,l)
-struct view *v;
-long l;
+static void closeall(struct view *v, long l)
 {
     iconview_CloseRelated(v);
 }
-static void
-openall(v,l)
-struct view *v;
-long l;
+static void openall(struct view *v, long l)
 {
     iconview_OpenRelated(v);
 }
 
-static void
-insert(tv,l)
-struct textview *tv;
-long l;
+static void insert(struct textview *tv, long l)
 {
     struct text *t;
     long pos;
@@ -110,9 +101,7 @@ static struct bind_Description stroffetviewBindings[]={
     {"stroffetview-openall",NULL,0,"stroffets,open all~11", 0,0,openall,"open all the stroffets"},
     NULL
 };
-void stroffetview__PostMenus(self, menulist)
-struct stroffetview *self;
-struct menulist *menulist;
+void stroffetview__PostMenus(struct stroffetview *self, struct menulist *menulist)
 {
     menulist_ClearChain(self->menus);
     menulist_ChainBeforeML(self->menus, menulist, menulist);
@@ -124,9 +113,7 @@ struct menulist *menulist;
 /*		class procedures				*/
 /****************************************************************/
 
-boolean
-stroffetview__InitializeClass(classID)
-    struct classheader * classID;
+boolean stroffetview__InitializeClass(struct classheader *classID)
 {
     struct classinfo *textviewtype = class_Load("textview");
     struct classinfo *viewtype = class_Load("view");
@@ -134,17 +121,14 @@ stroffetview__InitializeClass(classID)
     stroffetviewMenus = menulist_New();
     stroffetviewKeyMap =  keymap_New();
     bind_BindList(stroffetviewBindings, stroffetviewKeyMap , stroffetviewMenus, &stroffetview_classinfo);
-    proctable_DefineProc("stroffetview-insertstroffet",insert,textviewtype,NULL,"Insert Stroffet Object");
-    proctable_DefineProc("stroffetview-openallstroffets",openall,viewtype,NULL,"open Stroffet Views");
-    proctable_DefineProc("stroffetview-closeallstroffets",closeall,viewtype,NULL,"close Stroffet Views");
+    proctable_DefineProc("stroffetview-insertstroffet",(procedure)insert,textviewtype,NULL,"Insert Stroffet Object");
+    proctable_DefineProc("stroffetview-openallstroffets",(procedure)openall,viewtype,NULL,"open Stroffet Views");
+    proctable_DefineProc("stroffetview-closeallstroffets",(procedure)closeall,viewtype,NULL,"close Stroffet Views");
     return TRUE;
 }
 
 
-boolean
-stroffetview__InitializeObject(classID,self)
-struct classheader * classID;
-struct stroffetview * self;
+boolean stroffetview__InitializeObject(struct classheader *classID, struct stroffetview *self)
 {
 
     self->menus = menulist_DuplicateML(stroffetviewMenus, self);
@@ -160,13 +144,7 @@ struct stroffetview * self;
 /*		instance methods				*/
 /****************************************************************/
 
-void
-stroffetview__Print(self, file, processor, finalformat, toplevel)
-    struct stroffetview * self;
-    FILE * file;
-    char * processor;
-    char * finalformat;
-    boolean toplevel;
+void stroffetview__Print(struct stroffetview *self, FILE *file, char *processor, char *finalformat, boolean toplevel)
 {
   struct textview * textvobj;
   struct text * textobj;

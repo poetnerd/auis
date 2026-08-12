@@ -46,8 +46,8 @@ macromethods:
     GetArraySize() (self->bufpcount)
     GetSrcString() (self->src)
 classprocedures:
-    InitializeObject(struct entertext *self)returns boolean;
-    FinalizeObject(struct entertext *self)returns boolean;
+    InitializeObject(struct mentertext *self)returns boolean;
+    FinalizeObject(struct mentertext *self)returns boolean;
 data:
     char *buf,*bufp[128],*src;
     long bufpcount;

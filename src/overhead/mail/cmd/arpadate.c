@@ -38,21 +38,23 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
 
 extern char *arpadate();
 
-int main(argc, argv)
-char *argv[];
+int main(int argc, char *argv[])
 {
     int AnyArgs, ac;
-    unsigned long int Then;
+    time_t Then;
     static char Usage[] = "[-n] [ctime1 ctime2 ...]";
 
     AnyArgs = 0;
     for (ac = 1; ac < argc; ++ac) {
 	if (argv[ac][0] == '-') {
 	    if (strcmp(argv[ac], "-n") == 0) {
-		printf("%lu\n", time(0));
+		printf("%ld\n", (long) time(0));
 		AnyArgs = 1;
 	    } else {
 		fprintf(stderr, "Unknown option ``%s''\nusage: %s %s\n", argv[ac], argv[0], Usage);
@@ -60,7 +62,7 @@ char *argv[];
 	    }
 	} else if (isdigit(argv[ac][0])) {
 	    Then = atol(argv[ac]);
-	    printf("ctime(%lu)=%s", Then, ctime(&Then));
+	    printf("ctime(%ld)=%s", (long) Then, ctime(&Then));
 	    AnyArgs = 1;
 	} else {
 	    fprintf(stderr, "Unknown argument ``%s''\nusage: %s %s\n", argv[ac], argv[0], Usage);

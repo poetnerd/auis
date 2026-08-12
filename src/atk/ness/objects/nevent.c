@@ -807,7 +807,7 @@ PostMenuEvent(ness, onode, enode)
 	if(enode->rock) {
 	    strcpy(enode->rock, name);
 	/* add the key sequence to the keymap */
-		   menulist_AddToML(onode->menulist, enode->spec, onode->menupe, (long)enode->rock, 0);
+		   menulist_AddToML(onode->menulist, enode->spec, onode->menupe, enode->rock, 0);
 		   enode->enabled = TRUE;
 	}
 }
@@ -850,7 +850,7 @@ PostKeysEvent(ness, onode, enode)
 	if(enode->rock) {
 	    strcpy(enode->rock, name);
 	    /* add the key sequence to the keymap */
-	    keymap_BindToKey(onode->keymap, enode->spec, onode->keype, enode->rock);
+	    keymap_BindToKey(onode->keymap, enode->spec, onode->keype, (long)enode->rock);
 	    enode->enabled = TRUE;
 	}
 }

@@ -35,15 +35,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
  
 
 #include <ms.h>
+#include <string.h>
+extern int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int DestructivelyWriteDirectoryHead(struct MS_Directory *Dir);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int RewriteSnapshotInDirectory(struct MS_Directory *Dir, int num, char *snapshot);
 
-extern char *permanentmalloc();
+extern char *permanentmalloc(int ct);
 static char *UnusedAttrName = UNUSEDATTRNAME;
 
-MS_GetDirAttributes(Dirname, AttrCt, Attrs, SepChar, ShowEmpty)
-char *Dirname; /* IN */
-int *AttrCt; /* OUT */
-char *Attrs; /* OUT */
-int SepChar, ShowEmpty; /* IN */
+int MS_GetDirAttributes(char *Dirname, int *AttrCt, char *Attrs, int SepChar, int ShowEmpty)
 {
     struct MS_Directory *Dir;
     int i;
@@ -69,9 +72,7 @@ int SepChar, ShowEmpty; /* IN */
     return(0);
 }
 
-MS_AddAttribute(Dirname, Newname, AttNum)
-char *Dirname, *Newname; /* both IN */
-int *AttNum; /* OUT */
+int MS_AddAttribute(char *Dirname, char *Newname, int *AttNum)
 {
     int i, errsave;
     Boolean Reusing = FALSE;
@@ -129,8 +130,7 @@ int *AttNum; /* OUT */
     return(0);
 }
 
-MS_DeleteAttr(DirName, AttrName)
-char *DirName, *AttrName; /* BOTH IN */
+int MS_DeleteAttr(char *DirName, char *AttrName)
 {
     int i, errsave;
     char snapshot[AMS_SNAPSHOTSIZE];

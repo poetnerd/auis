@@ -33,17 +33,49 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <andrewos.h>
 #include <ms.h>
+#include <stdlib.h>
+extern int AppendFileToFolder(char *FileName, char *FolderName, int DoDelete);
+extern int AppendFileToFolderWithId(char *FileName, char *FolderName, int DoDelete, char *Id, char *Date64);
+extern int AppendFileToMSDir(char *FileName, struct MS_Directory *Dir, int DoDelete);
+extern int AppendFileToMSDirInternal(char *FileName, struct MS_Directory *Dir, int DoDelete, int TreatAsAlien);
+extern int AppendFileToMSDirWithId(char *FileName, struct MS_Directory *Dir, int DoDelete, char *Id, char *Date64);
+extern int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int BuildAttributesField(struct MS_Message *msg);
+extern int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail);
+extern int BuildDateField(struct MS_Message *Msg, int datetype);
+extern int BuildReplyField(struct MS_Message *Msg);
+extern int CheckAuthUid(struct MS_Message *NewMessage);
+extern int CloseDirsThatNeedIt();
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int InventID(struct MS_Message *msg);
+extern int IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
+extern int WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode);
 
-MS_AppendFileToFolder(FileName, FolderName)
-char           *FileName, *FolderName;          /* BOTH IN */
+/* msjournal.c, this directory -- writeback capture (a no-op unless
+   Dir is a mirrored folder; see the grammar note there). Not used by
+   MS_AppendFileToFolderWithId below: that entry point exists solely
+   for imapsync's own mirror writes, which are always made with
+   MSJournal_Suppress(1) in effect. MSJournal_Record is genuinely
+   variadic, so it needs a real "..." prototype at every call site,
+   unlike the implicit-int K&R calls elsewhere in this file: on
+   Apple's arm64 ABI a variadic callee reads its variable arguments
+   off the stack, while a caller with no prototype in scope passes
+   them the normal-call way, in registers -- the same caller/callee
+   ABI mismatch already documented for dbg_open() in
+   overhead/util/hdrs/fdplumb.h. */
+extern void MSJournal_Record(const char *dir, const char *fmt, ...);
+
+int MS_AppendFileToFolder(char *FileName, char *FolderName)
 {
     debug(1, ("MS_AppendFileToFolder %s %s\n", FileName, FolderName));
     return (AppendFileToFolder(FileName, FolderName, TRUE));
 }
 
-AppendFileToFolder(FileName, FolderName, DoDelete)
-char           *FileName, *FolderName;
-int             DoDelete;
+int AppendFileToFolder(char *FileName, char *FolderName, int DoDelete)
 {
     int             errsave = 0;
     struct MS_Directory *Dir = NULL;
@@ -60,27 +92,17 @@ int             DoDelete;
 }
 
 
-AppendFileToMSDir(FileName, Dir, DoDelete)
-char           *FileName;
-struct MS_Directory *Dir;
-int             DoDelete;
+int AppendFileToMSDir(char *FileName, struct MS_Directory *Dir, int DoDelete)
 {
     return (AppendFileToMSDirInternal(FileName, Dir, DoDelete, FALSE));
 }
 
-AppendFileToMSDirPreservingFileName(FileName, Dir, DoDelete)
-char           *FileName;
-struct MS_Directory *Dir;
-int             DoDelete;
+int AppendFileToMSDirPreservingFileName(char *FileName, struct MS_Directory *Dir, int DoDelete)
 {
     return (AppendFileToMSDirInternal(FileName, Dir, DoDelete, TRUE));
 }
 
-AppendFileToMSDirInternal(FileName, Dir, DoDelete, TreatAsAlien)
-char           *FileName;
-struct MS_Directory *Dir;
-int             DoDelete;
-int             TreatAsAlien;
+int AppendFileToMSDirInternal(char *FileName, struct MS_Directory *Dir, int DoDelete, int TreatAsAlien)
 {
     struct MS_Message *Msg;
     struct MS_CaptionTemplate CapTemplate;
@@ -123,6 +145,10 @@ int             TreatAsAlien;
         DoDelete = FALSE;              /* Cannot allow it! */
     }
     if (IsMessageAlreadyThere(Msg, Dir)) {
+        FreeMessage(Msg, TRUE);        /* every other exit path frees Msg;
+                                        * this one leaked it (and via
+                                        * ReadRawFile, the whole message
+                                        * body) for 35 years */
         if (DoDelete)
             unlink(FileName);
         return (0);
@@ -134,6 +160,111 @@ int             TreatAsAlien;
             FreeMessage(Msg, TRUE);
             return (saveerr);
         }
+    }
+    if (AppendMessageToMSDir(Msg, Dir)) {
+        FreeMessage(Msg, TRUE);
+        unlink(NewFileName);           /* The old copy of the file is still in
+                                        * place */
+        return (mserrcode);
+    }
+    MSJournal_Record(Dir->UNIXDir, "J1 append %s", AMS_ID(Msg->Snapshot));
+    FreeMessage(Msg, TRUE);
+    if (DoDelete)
+        unlink(FileName);              /* Errors here are funny; better an
+                                        * orphan file than a bogus error
+                                        * message, though */
+    return (0);
+}
+
+/*
+    MS_AppendFileToFolderWithId -- added for imapsync (ams/msclients/imapsync).
+
+    Identical to MS_AppendFileToFolder/AppendFileToFolder/AppendFileToMSDir/
+    AppendFileToMSDirInternal above, except the caller supplies the
+    message's AMS id and AMS_DATE instead of letting InventID()/
+    BuildDateField() invent them.  This lets a sync agent give a message a
+    deterministic identity (e.g. derived from an IMAP UIDVALIDITY+UID pair)
+    so that re-running the sync is idempotent.  Id must be an AMS_IDSIZE-1
+    (18) character string; Date64 must be an AMS_DATESIZE-1 (6) character
+    base-64 date string (see convlongto64() in overhead/mail/lib/genid.c).
+
+    Everything else -- parsing, caption building, chain hashing, index
+    update, the strictly-increasing-AMS_DATE-per-folder enforcement in
+    AppendMessageToMSDir() -- is exactly the existing store code; this
+    routine does not duplicate or bypass any of it.
+*/
+
+int MS_AppendFileToFolderWithId(char *FileName, char *FolderName, char *Id, char *Date64)
+{
+    debug(1, ("MS_AppendFileToFolderWithId %s %s %s %s\n", FileName, FolderName, Id, Date64));
+    return (AppendFileToFolderWithId(FileName, FolderName, TRUE, Id, Date64));
+}
+
+int AppendFileToFolderWithId(char *FileName, char *FolderName, int DoDelete, char *Id, char *Date64)
+{
+    int             errsave = 0;
+    struct MS_Directory *Dir = NULL;
+
+    CloseDirsThatNeedIt();
+    if (ReadOrFindMSDir(FolderName, &Dir, MD_APPEND)) {
+        errsave = mserrcode;
+        if(Dir) CloseMSDir(Dir, MD_APPEND);
+        return (errsave);
+    }
+    errsave = AppendFileToMSDirWithId(FileName, Dir, DoDelete, Id, Date64);
+    mserrcode = CloseMSDir(Dir, MD_APPEND);
+    return (errsave ? errsave : mserrcode);
+}
+
+int AppendFileToMSDirWithId(char *FileName, struct MS_Directory *Dir, int DoDelete, char *Id, char *Date64)
+{
+    struct MS_Message *Msg;
+    struct MS_CaptionTemplate CapTemplate;
+    int             saveerr;
+    char            NewFileName[1 + MAXPATHLEN];
+
+    Msg = (struct MS_Message *) malloc(sizeof(struct MS_Message));
+    if (Msg == NULL) {
+        AMS_RETURN_ERRCODE(ENOMEM, EIN_MALLOC, EVIA_APPENDMESSAGETOMSDIR);
+    }
+    bzero(Msg, sizeof(struct MS_Message));
+    Msg->OpenFD = -1;
+    bzero(&CapTemplate, sizeof(struct MS_CaptionTemplate));
+    CapTemplate.basictype = BASICTEMPLATE_NORMAL;
+    CapTemplate.datetype = DATETYPE_FROMHEADER;
+    if (ReadRawFile(FileName, Msg, DoDelete)
+        || ParseMessageFromRawBody(Msg)
+        || CheckAuthUid(Msg)
+        || BuildDateField(Msg, DATETYPE_FROMHEADER)
+        || BuildReplyField(Msg)
+        || BuildAttributesField(Msg)
+        || InventID(Msg)
+        || BuildCaption(Msg, &CapTemplate, TRUE)) {
+        saveerr = mserrcode;
+        FreeMessage(Msg, TRUE);
+        return (saveerr);
+    }
+    /* Override the invented id/date with the caller's -- this is the
+       one behavioral difference from AppendFileToMSDirInternal. Both
+       fields are fixed-width within the snapshot buffer; NUL-terminate
+       explicitly rather than relying on residue from InventID/
+       BuildDateField's own writes. */
+    strncpy(AMS_ID(Msg->Snapshot), Id, AMS_IDSIZE - 1);
+    AMS_ID(Msg->Snapshot)[AMS_IDSIZE - 1] = '\0';
+    strncpy(AMS_DATE(Msg->Snapshot), Date64, AMS_DATESIZE - 1);
+    AMS_DATE(Msg->Snapshot)[AMS_DATESIZE - 1] = '\0';
+
+    if (IsMessageAlreadyThere(Msg, Dir)) {
+        FreeMessage(Msg, TRUE);
+        if (DoDelete)
+            unlink(FileName);
+        return (0);
+    }
+    sprintf(NewFileName, "%s/+%s", Dir->UNIXDir, AMS_ID(Msg->Snapshot));
+    if (WritePureFile(Msg, NewFileName, FALSE, 0664)) {
+        saveerr = mserrcode;
+        FreeMessage(Msg, TRUE);
+        return (saveerr);
     }
     if (AppendMessageToMSDir(Msg, Dir)) {
         FreeMessage(Msg, TRUE);

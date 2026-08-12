@@ -48,12 +48,12 @@ class figoplin : figobj {
       Draw(struct figview *v); 
       Sketch(struct figview *v); 
       Select(struct figview *v); 
-      Build(enum view_MouseAction action, struct figview *v, long x, long y, long clicks) returns enum figobj_Status; 
+      Build(struct figview *v, enum view_MouseAction action, long x, long y, long clicks) returns enum figobj_Status; 
       HitMe(long x, long y, long delta, long *ptref) returns enum figobj_HitVal;
       Reshape(enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref) returns boolean;
       AddParts(enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref) returns boolean;
       DeleteParts(enum view_MouseAction action, struct figview *v, long x, long y, boolean handle, long ptref) returns boolean;
-      MoveHandle(x, y, ptref);
+      MoveHandle(long x, long y, long ptref);
       Reposition(long xd, long yd);
       InheritVAttributes(struct figattr *attr, unsigned long mask);
       UpdateVAttributes(struct figattr *attr, unsigned long mask) returns unsigned long;

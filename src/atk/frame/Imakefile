@@ -26,6 +26,8 @@
 * $
 */
 
+/* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS = frame.do \
 	framecmd.do \
@@ -44,7 +46,6 @@ OBJS =  frame.o \
 	framemsg.o \
 	framev.o \
 	helptxtv.o 
-
 
 NormalObjectRule()
 NormalATKRule()

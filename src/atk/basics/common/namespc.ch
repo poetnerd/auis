@@ -49,7 +49,7 @@ class namespace[namespc] {
       InitializeObject(struct namespace *self) returns boolean;
       FinalizeObject(struct namespace *self);
 methods:
-  Enumerate( procedure proc, long data ) returns int;
+  Enumerate( procedure proc, void *data ) returns int;
 
   Clear();
 

@@ -111,10 +111,7 @@ END-SPECIFICATION  ************************************************************/
 #define  ItemMiddle(shadow)	(chartcsn_ItemMiddle(self,(shadow)))
 #define  NextItem(shadow)	(chartcsn_NextItem(self,(shadow)))
 
-boolean 
-chartcsn__InitializeObject( classID, self)
-  register struct classheader	 *classID;
-  register struct chartcsn	 *self;
+boolean chartcsn__InitializeObject(struct classheader *classID, struct chartcsn *self)
   {
   IN(chartcsn_InitializeObject);
   chartcsn_SetShrinkIcon( self, 'e', "icon12", "CartesianChart", "andysans10b" );
@@ -129,21 +126,14 @@ chartcsn__FinalizeObject( classID, self )
   register struct chartcsn	 *self;
   {}
 
-void
-chartcsn__SetDebug( self, state )
-  register struct chartcsn	 *self;
-  register char			  state;
+void chartcsn__SetDebug(struct chartcsn *self, boolean state)
   {
   IN(chartcsn_SetDebug);
   super_SetDebug( self, debug = state );
   OUT(chartcsn_SetDebug);
   }
 
-struct view *
-chartcsn__HitChart( self, action, x, y, clicks )
-  register struct chartcsn	     *self;
-  register enum view_MouseAction      action;
-  register long			      x, y, clicks;
+struct view * chartcsn__HitChart(struct chartcsn *self, enum view_MouseAction action, long x, long y, long clicks)
   {
 
   IN(chartcsn_HitChart);
@@ -152,18 +142,14 @@ chartcsn__HitChart( self, action, x, y, clicks )
   return  (struct view *) self;
   }
 
-void
-chartcsn__DrawChart( self )
-  register struct chartcsn	     *self;
+void chartcsn__DrawChart(struct chartcsn *self)
   {
   IN(chartcsn_DrawChart);
 /*===*/
   OUT(chartcsn_DrawChart);
   }
 
-void
-chartcsn__PrintChart( self )
-  register struct chartcsn	     *self;
+void chartcsn__PrintChart(struct chartcsn *self)
   {
   IN(chartcsn_PrintChart);
 /*===*/

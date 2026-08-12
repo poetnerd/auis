@@ -34,31 +34,28 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+extern int AlterMessage(struct MS_Message *Msg, int code, int delhead, char *Head);
+extern int OnlyParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int lc2strncmp(char *s1, char *s2, int len);  /* ams/libs/shr/utils.c */
 
 #ifndef _IBMR2
-extern char *malloc();
 #endif /* _IBMR2 */
 
 #define ALTER_ADD 0
 #define ALTER_DEL 1
 
-AddHeader(Msg, Head)
-struct MS_Message *Msg;
-char *Head;
+int AddHeader(struct MS_Message *Msg, char *Head)
 {
     return(AlterMessage(Msg, ALTER_ADD, 0, Head));
 }
 
-DeleteHeader(Msg, num)
-struct MS_Message *Msg;
-int num;
+int DeleteHeader(struct MS_Message *Msg, int num)
 {
     return(AlterMessage(Msg, ALTER_DEL, num, NULL));
 }
 
-DelHeaderByName(Msg, Head)
-struct MS_Message *Msg;
-char *Head;
+int DelHeaderByName(struct MS_Message *Msg, char *Head)
 {
     int i, len;
 
@@ -74,10 +71,7 @@ char *Head;
     return(DeleteHeader(Msg, i));
 }
 
-AlterMessage(Msg, code, delhead, Head)
-struct MS_Message *Msg;
-int code, delhead;
-char *Head;
+int AlterMessage(struct MS_Message *Msg, int code, int delhead, char *Head)
 {
     char *newRawBits;
 

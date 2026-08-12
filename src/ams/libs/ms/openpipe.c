@@ -35,12 +35,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <mailconf.h>
+extern int NonfatalBizarreError(char *text);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_dup2(int oldfd, int newfd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_pclose(FILE *fp);  /* overhead/util/lib/fdplumb3.c */
+
+extern char *AndrewDir(char *str);
 
 extern char *getenv();
 extern FILE *popen();
 
-MS_OpenDebuggingPipescript(DoIt) 
-int DoIt;  /* Turns it on or off */
+int MS_OpenDebuggingPipescript(int DoIt)
 {
     static FILE *ftmp = NULL;
 
@@ -48,7 +53,7 @@ int DoIt;  /* Turns it on or off */
 	char *TypescriptVector[2];
 	char TypescriptCommand[100];
 
-	sprintf(TypescriptCommand, AndrewDir("/bin/typescript"));
+	sprintf(TypescriptCommand, "%s", AndrewDir("/bin/typescript"));
 	TypescriptVector[0] = TypescriptCommand;
 	TypescriptVector[1] = NULL;
 	if (! osi_vfork()) {
@@ -64,7 +69,7 @@ int DoIt;  /* Turns it on or off */
     }
     if (DoIt) {
 	char PipescriptCommand[100];
-	sprintf(PipescriptCommand, AndrewDir("/bin/pipescript -t 'MessageServer Debugging'"));
+	sprintf(PipescriptCommand, "%s", AndrewDir("/bin/pipescript -t 'MessageServer Debugging'"));
 	if (ftmp) pclose(ftmp);
 	ftmp = popen(PipescriptCommand, "w");
 	if (ftmp == NULL) {

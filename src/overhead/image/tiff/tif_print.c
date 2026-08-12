@@ -40,12 +40,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <string.h>
 #include "tiffioP.h"
+static int JPEGPrintCTable(FILE *fd, u_char *tab);
+static int JPEGPrintQTable(FILE *fd, u_char tab[64]);
 
 #ifdef JPEG_SUPPORT
-static
-JPEGPrintQTable(fd, tab)
-	FILE *fd;
-	u_char tab[64];
+static int JPEGPrintQTable(FILE *fd, u_char tab[64])
 {
 	int i, j;
 	char *sep;
@@ -61,10 +60,7 @@ JPEGPrintQTable(fd, tab)
 	}
 }
 
-static
-JPEGPrintCTable(fd, tab)
-	FILE *fd;
-	u_char *tab;
+static int JPEGPrintCTable(FILE *fd, u_char *tab)
 {
 	int i, n, count;
 	char *sep;
@@ -121,18 +117,14 @@ static const char *orientNames[] = {
  * Print the contents of the current directory
  * to the specified stdio file stream.
  */
-void
-TIFFPrintDirectory(tif, fd, flags)
-	TIFF *tif;
-	FILE *fd;
-	long flags;
+void TIFFPrintDirectory(TIFF *tif, FILE *fd, long flags)
 {
 	register TIFFDirectory *td;
 	char *sep;
 	int i, j;
 	long n;
 
-	fprintf(fd, "TIFF Directory at offset 0x%x\n", tif->tif_diroff);
+	fprintf(fd, "TIFF Directory at offset 0x%lx\n", tif->tif_diroff);
 	td = &tif->tif_dir;
 	if (TIFFFieldSet(tif,FIELD_SUBFILETYPE)) {
 		fprintf(fd, "  Subfile Type:");
@@ -449,12 +441,12 @@ TIFFPrintDirectory(tif, fd, flags)
 		if (td->td_rowsperstrip == 0xffffffffL)
 			fprintf(fd, "(infinite)\n");
 		else
-			fprintf(fd, "%u\n", td->td_rowsperstrip);
+			fprintf(fd, "%lu\n", td->td_rowsperstrip);
 	}
 	if (TIFFFieldSet(tif,FIELD_MINSAMPLEVALUE))
-		fprintf(fd, "  Min Sample Value: %u\n", td->td_minsamplevalue);
+		fprintf(fd, "  Min Sample Value: %lu\n", td->td_minsamplevalue);
 	if (TIFFFieldSet(tif,FIELD_MAXSAMPLEVALUE))
-		fprintf(fd, "  Max Sample Value: %u\n", td->td_maxsamplevalue);
+		fprintf(fd, "  Max Sample Value: %lu\n", td->td_maxsamplevalue);
 	if (TIFFFieldSet(tif,FIELD_PLANARCONFIG)) {
 		fprintf(fd, "  Planar Configuration: ");
 		switch (td->td_planarconfig) {
@@ -481,7 +473,7 @@ TIFFPrintDirectory(tif, fd, flags)
 			fprintf(fd, "%sEOL padding", sep), sep = "+";
 		if (td->td_group3options & GROUP3OPT_UNCOMPRESSED)
 			fprintf(fd, "%suncompressed data", sep);
-		fprintf(fd, " (%u = 0x%x)\n",
+		fprintf(fd, " (%lu = 0x%lx)\n",
 		    td->td_group3options, td->td_group3options);
 	}
 	if (TIFFFieldSet(tif,FIELD_CLEANFAXDATA)) {
@@ -503,7 +495,7 @@ TIFFPrintDirectory(tif, fd, flags)
 		}
 	}
 	if (TIFFFieldSet(tif,FIELD_BADFAXLINES))
-		fprintf(fd, "  Bad Fax Lines: %u\n", td->td_badfaxlines);
+		fprintf(fd, "  Bad Fax Lines: %lu\n", td->td_badfaxlines);
 	if (TIFFFieldSet(tif,FIELD_BADFAXRUN))
 		fprintf(fd, "  Consecutive Bad Fax Lines: %u\n",
 		    td->td_badfaxrun);
@@ -511,7 +503,7 @@ TIFFPrintDirectory(tif, fd, flags)
 		fprintf(fd, "  Group 4 Options:");
 		if (td->td_group4options & GROUP4OPT_UNCOMPRESSED)
 			fprintf(fd, "uncompressed data");
-		fprintf(fd, " (%u = 0x%x)\n",
+		fprintf(fd, " (%lu = 0x%lx)\n",
 		    td->td_group4options, td->td_group4options);
 	}
 	if (TIFFFieldSet(tif,FIELD_PAGENUMBER))
@@ -567,11 +559,11 @@ TIFFPrintDirectory(tif, fd, flags)
 #endif
 	if ((flags & TIFFPRINT_STRIPS) &&
 	    TIFFFieldSet(tif,FIELD_STRIPOFFSETS)) {
-		fprintf(fd, "  %u %s:\n",
+		fprintf(fd, "  %lu %s:\n",
 		    td->td_nstrips,
 		    isTiled(tif) ? "Tiles" : "Strips");
 		for (i = 0; i < td->td_nstrips; i++)
-			fprintf(fd, "    %3d: [%8u, %8u]\n",
+			fprintf(fd, "    %3d: [%8lu, %8lu]\n",
 			    i, td->td_stripoffset[i], td->td_stripbytecount[i]);
 	}
 }

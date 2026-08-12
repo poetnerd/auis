@@ -62,7 +62,7 @@ int level;
 	month_SetWriteID(self, id);
 	clock = time(0);
 	thisdate = localtime(&clock);
-	fprintf(fp, "\\begindata{%s,%d}\n%d\n%d\n\\enddata{%s,%d}\n",
+	fprintf(fp, "\\begindata{%s,%ld}\n%d\n%d\n\\enddata{%s,%ld}\n",
 		class_GetTypeName(self), month_UniqueID(self),
 		self->mon - thisdate->tm_mon, self->year - thisdate->tm_year,
 		class_GetTypeName(self), month_UniqueID(self));

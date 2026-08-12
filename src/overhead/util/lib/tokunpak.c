@@ -46,6 +46,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <pwd.h>
 #include <util.h>
 
+struct ktc_token;
+struct ktc_principal;
+static int GenAuths();
+static int IsKTC(char *where);
+static int UnpackKTC(char *tokens, struct ktc_token *atok, struct ktc_principal *aserv, struct ktc_principal *acli, int debug, int *pPrimFlag);
+
 #ifdef AFS_ENV
 #include <afs/param.h>
 #include <rx/xdr.h>
@@ -66,8 +72,7 @@ extern char *malloc(), *realloc();
 #endif /* _IBMR2 */
 
 #ifdef AFS_ENV
-static int IsKTC(where)
-char *where;
+static int IsKTC(char *where)
 {/* Return TRUE if this is a packed KTC ticket or FALSE otherwise. */
     long int Dum0, Dum9, Dum10;
 
@@ -79,11 +84,7 @@ char *where;
     return (Dum0 == 0 && Dum9 == -1 && Dum10 == -1);
 }
 
-static int UnpackKTC(tokens, atok, aserv, acli, debug, pPrimFlag)
-char *tokens;
-struct ktc_token *atok;
-struct ktc_principal *aserv, *acli;
-int debug, *pPrimFlag;
+static int UnpackKTC(char *tokens, struct ktc_token *atok, struct ktc_principal *aserv, struct ktc_principal *acli, int debug, int *pPrimFlag)
 {
     register char *p;
     long int Dum;
@@ -164,7 +165,7 @@ int debug, *pPrimFlag;
 }
 #endif /* AFS_ENV */
 
-int unpacktokens(tokens, ctoken, stoken, debug, set)
+int unpacktokens(int tokens, int ctoken, int stoken, int debug, int set)
 {    return 0; }
 
 #if defined(AMS_DELIVERY_ENV) || defined(AFS_ENV)

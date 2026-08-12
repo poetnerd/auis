@@ -51,6 +51,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 #endif /* AFS_ENV */
 #include <sys/stat.h>
+#include <stdlib.h>
+extern int AuthenticReSentHeader(struct MS_Message *msg);
+extern int FindPrettiestFromString(char *MyFromBuf, char *FromBuf, int lim);
+extern int FindPrettiestName(struct MS_Message *msg, char *FromBuf, int lim);
+extern int GetNameFromGecos(char *GecosField, char *LoginID, char *Domain, char **PersonalNameP);
+extern int ParseAndShrinkDate(char *bigdate, char *littledate);
+extern int ReallyIsFromMe(struct MS_Message *Msg, int InMyCell);
+extern int SeemsToBeFromMe(struct MS_Message *Msg);
+extern int ShrinkName(char *longname, char *shortname, int limit);
 
 #define BIGSUBJECT 30
 #define BIGFROM 24  /* c.f. prettyn.c */
@@ -59,10 +68,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 extern int postmanvuid, myvuid, homeUsesAMSDelivery;
 extern char *months[], MyMailDomain[], *MyPrettyAddress;
 
-BuildCaption(Msg, Template, IsMyMail)
-struct MS_Message *Msg;
-struct MS_CaptionTemplate *Template;
-Boolean IsMyMail;
+int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail)
 {
     struct passwd *p;
     struct MS_CaptionTemplate DefaultTemplate;
@@ -101,16 +107,16 @@ Boolean IsMyMail;
 		break;
 	    }
 	    free(DateHead); /* And drop through */
-	case DATETYPE_FROMFILE: 
+	case DATETYPE_FROMFILE:
 	    now = Msg->RawFileDate;
 	    tmbuf = localtime (&now);
-	    sprintf(Buf, "%2d-%s-%02d\t", tmbuf->tm_mday, months[tmbuf->tm_mon], tmbuf->tm_year);
+	    sprintf(Buf, "%2d-%s-%02d\t", tmbuf->tm_mday, months[tmbuf->tm_mon], tmbuf->tm_year % 100);
 	    break;
 	case DATETYPE_CURRENT:
 	default:
 	    now = time(0);
 	    tmbuf = localtime (&now);
-	    sprintf(Buf, "%2d-%s-%02d\t", tmbuf->tm_mday, months[tmbuf->tm_mon], tmbuf->tm_year);
+	    sprintf(Buf, "%2d-%s-%02d\t", tmbuf->tm_mday, months[tmbuf->tm_mon], tmbuf->tm_year % 100);
 	    break;
     }
     subjlim = (Template->basictype == BASICTEMPLATE_NOFROM) ? BIGCAPTPASTDATE : BIGSUBJECT;
@@ -159,7 +165,7 @@ Boolean IsMyMail;
 		strncpy(FromBuf, s, lim);
 		FromBuf[lim] = '\0';
 		if (lim > BIGFROM - 3) lim = BIGFROM - 3;
-		FindPrettiestFromString(FromBuf, NewFromBuf);
+		FindPrettiestFromString(FromBuf, NewFromBuf, lim);
 		strcpy(FromBuf, NewFromBuf);
 	    } else {
 		strcpy(FromBuf, "<No 'To:' header>");
@@ -254,8 +260,7 @@ Boolean IsMyMail;
     return(0);
 }
 
-SeemsToBeFromMe(Msg)
-struct MS_Message *Msg;
+int SeemsToBeFromMe(struct MS_Message *Msg)
 {
     if (Msg->ParsedStuff->HeadBody[HP_FROM]
 	 && !strncmp(Msg->ParsedStuff->HeadBody[HP_FROM], MyPrettyAddress, Msg->ParsedStuff->HeadBodyLen[HP_FROM])) {
@@ -272,8 +277,7 @@ struct MS_Message *Msg;
     return(0);
 }
 	
-ReallyIsFromMe(Msg, InMyCell)
-struct MS_Message *Msg;
+int ReallyIsFromMe(struct MS_Message *Msg, int InMyCell)
 {
     if ((!(Msg->AuthUid <= 0	/* the BCC case */
 	    || (Msg->AuthCell == NULL)

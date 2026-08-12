@@ -26,6 +26,7 @@
 * $
 */
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS = eza.do
 IHFILES = eza.ih
@@ -59,4 +60,3 @@ InstallHelpAlias(ezstyle, ez-styles styles style plainer plainest)
 InstallHelpAlias(eztroff, ez-troff formatnote duplex)
 InstallHelpAlias(ezps, ez-ps ez-postscript)
 InstallHelpAlias(ezproc, ezprocs ez-procs ez-proc)
-

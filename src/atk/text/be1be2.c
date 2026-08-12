@@ -36,6 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
  */
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <class.h>
 #include <ctype.h>
 
@@ -46,6 +47,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <text.ih>
 
 #include <be1be2.eh>
+static long CVDots(long amt, enum style_Unit unit);
 
 /* Primitive environment attributes */
 
@@ -110,9 +112,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
  * Package classprocedures
  */
 
-boolean be1be2__CheckBE1(classID, text)
-struct classheader *classID;
-struct text *text;
+boolean be1be2__CheckBE1(struct classheader *classID, struct text *text)
 {
     long gotlen, len = text_GetLength(text);
     register int pos = 0;
@@ -162,9 +162,7 @@ struct text *text;
  *    CVDots, copied from style.c
  */
 
-static long CVDots(amt, unit)
-register long amt;
-enum style_Unit unit;
+static long CVDots(long amt, enum style_Unit unit)
 {
     switch (unit) {
         case style_RawDots:
@@ -184,9 +182,7 @@ enum style_Unit unit;
     return 0;
 }
 
-boolean ConvertStyle(self, attr, opcode, optype, opparm)
-struct style *self;
-long attr, opcode, optype, opparm;
+boolean ConvertStyle(struct style *self, long attr, long opcode, long optype, long opparm)
 {
     boolean retVal = TRUE;
 
@@ -370,7 +366,7 @@ long attr, opcode, optype, opparm;
                 style_AddTabChange(self, style_AllClear, 0, style_RawDots);
 
                 StrPtr = (char *) opparm;
-                (long) sscanf(StrPtr, "%d", &TabCount);
+                (long) sscanf(StrPtr, "%ld", &TabCount);
                 for (i = 0; i < TabCount; i++) {
                     /* Skip leading white space */
                     while (*StrPtr == ' ') StrPtr++;
@@ -379,7 +375,7 @@ long attr, opcode, optype, opparm;
                     while (*StrPtr> '0' && *StrPtr < '9') StrPtr++;
                     if (!StrPtr) break;
                     /* Get the next tab stop */
-                    sscanf(StrPtr,"%d",&TabLoc);
+                    sscanf(StrPtr,"%ld",&TabLoc);
                     style_AddTabChange(self, style_LeftAligned, TabLoc, style_Points);
                 }
             }
@@ -466,9 +462,7 @@ struct envElem {
     long pos;
 };
 
-boolean be1be2__Convert(classID, text)
-struct classheader *classID;
-struct text *text;
+boolean be1be2__Convert(struct classheader *classID, struct text *text)
 {
     static struct envElem envStack[MAXENVSTACK], *envSP;
     static char *BE1map[MAXBE1STYLES];  /* Maps index to style name */

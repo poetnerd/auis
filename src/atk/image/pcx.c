@@ -87,7 +87,7 @@ static char *TGNCopyright = "Copyright (C) 1991 Tim Northrup";
 
 #define PCX_MAGIC 0x0a			/* first byte in a PCX image file */
 
-static void PCX_LoadImage();		/* Routine to load a PCX file */
+static void PCX_LoadImage(FILE *f, int bytes_per_row, struct pcx *pcx, int rows);		/* Routine to load a PCX file */
 
 
 /*
@@ -98,10 +98,7 @@ static void PCX_LoadImage();		/* Routine to load a PCX file */
 **	Returns 1 if file is a PCX file, 0 otherwise
 */
 
-int 
-pcx__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+int pcx__Ident(struct classheader *classID, char *fullname)
 {
     FILE *f;
     int ret;
@@ -142,11 +139,7 @@ pcx__Ident( classID, fullname )
 **	Returns pointer to allocated struct if successful, NULL otherwise
 */
 
-int
-pcx__Load( pcx, fullname, fp )
-    struct pcx *pcx;
-    char *fullname;
-    FILE *fp;
+int pcx__Load(struct pcx *pcx, char *fullname, FILE *fp)
 {
     FILE *f;
     unsigned char pcxhd[128];
@@ -207,11 +200,7 @@ pcx__Load( pcx, fullname, fp )
 **	Returns no value (void function)
 */
 
-static void PCX_LoadImage (f,bytes_per_row,pcx,rows)
-    FILE *f;
-    int bytes_per_row;
-    struct pcx *pcx;
-    int rows;
+static void PCX_LoadImage(FILE *f, int bytes_per_row, struct pcx *pcx, int rows)
 {
 /* Goes like this: Read a byte.  If the two high bits are set,
  ** then the low 6 bits contain a repeat count, and the byte to
@@ -253,11 +242,7 @@ static void PCX_LoadImage (f,bytes_per_row,pcx,rows)
     return;
 }
 
-long
-pcx__Read( self, file, id )
-    struct pcx *self;
-    FILE *file;
-    long id;
+long pcx__Read(struct pcx *self, FILE *file, long id)
 {
     if(pcx_Load(self, NULL, file) == 0)
 	return(dataobject_NOREADERROR);
@@ -265,21 +250,12 @@ pcx__Read( self, file, id )
 	return(dataobject_BADFORMAT);
 }
 
-long
-pcx__Write( self, file, writeID, level )
-    struct pcx *self;
-    FILE *file;
-    long writeID;
-    int level;
+long pcx__Write(struct pcx *self, FILE *file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
-long
-pcx__WriteNative( self, file, filename )
-    struct pcx *self;
-    FILE *file;
-    char *filename;
+long pcx__WriteNative(struct pcx *self, FILE *file, char *filename)
 {
 return(0);
 }

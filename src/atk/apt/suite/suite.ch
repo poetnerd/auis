@@ -123,7 +123,7 @@ class suite : aptv {
 	InitializeClass() returns boolean;
 	InitializeObject() returns boolean;
 	FinalizeObject() returns void;
-	Create(suite_Specification,unsigned anchor) returns struct suite *;
+	Create(suite_Specification *specification,void *anchor) returns struct suite *;
 
     overrides:
 
@@ -149,15 +149,15 @@ class suite : aptv {
 	ItemHighlighted( struct suite_item *item ) returns boolean;
 	NormalizeItem( struct suite_item *item ) returns long;
 	ItemNormalized( struct suite_item *item ) returns boolean;
-	Apply((long(*)())proc,unsigned anchor,unsigned datum);
+	Apply(long (*proc)(),void *anchor,void *datum);
 	Sort(unsigned mode,long (*handler)());
 	SelectedItems(long *number) returns struct suite_item **;
 	SuiteAttribute(long attribute) returns long;
-	SetSuiteAttribute(long attribute) returns long;
-	ChangeSuiteAttribute(long attribute) returns long;
+	SetSuiteAttribute(long attribute,long value) returns long;
+	ChangeSuiteAttribute(long attribute,long value) returns long;
 	ItemAttribute(struct suite_item *item,long attribute) returns long;
-	SetItemAttribute(struct suite_item *item,long attribute) returns long;
-	ChangeItemAttribute(struct suite_item *item,long attribute) returns long;
+	SetItemAttribute(struct suite_item *item,long attribute,long value) returns long;
+	ChangeItemAttribute(struct suite_item *item,long attribute,long value) returns long;
 	ItemOfDatum(long datum) returns struct suite_item *;
 	ItemsOfDatum(long datum) returns struct suite_item **;
 	ItemOfName(char *name) returns struct suite_item *;
@@ -388,6 +388,10 @@ struct  suite_specification {
 };
 
 /*** Attribute Macros ***/
+/* These (code, value) pair macros are for suite_Specification initializer
+ * tables ONLY.  Do not pass them as a dispatch-call argument: under typed
+ * dispatch (M1 -pi) the methods take attribute and value as separate real
+ * arguments (getters take the attribute code alone, no dummy value). */
 
 #define suite_TitleCaption(x)		    suite_titlecaption,			(long) (x)
 #define suite_TitleCaptionAlignment(x)	    suite_titlecaptionalignment,	(long) (x)

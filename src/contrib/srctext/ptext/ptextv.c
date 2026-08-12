@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 /* ptextview, a ``Pascal'' mode for ATK */
 
 #include <ctype.h>
+#include <string.h>
 
 #include <class.h>
 
@@ -51,33 +52,41 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <envrment.ih>
 #include <ptextv.eh>
 #include <textv.ih>
+static boolean isident(char c);
+static void match_parens(struct ptextview *self, char key);
 
 static long BounceTime = 0;
 static struct keymap *M_Map;
 static struct menulist *M_Menus;
 
-static void parse(), paren(),brace(),newline(),redo(),
-     tab(),asterisk(),space(), ptextv_rename();
+static void paren(struct ptextview *self, char key);
+static void brace(struct ptextview *self, char key);
+static void newline(struct ptextview *self, long key);
+static void redo(struct ptextview *self);
+static void tab(struct ptextview *self, long key);
+static void asterisk(struct ptextview *self, char key);
+static void space(struct ptextview *self, char key);
+static void ptextv_rename(struct ptextview *self, long key);
 
 #define Ptext(Self) \
     ((struct ptext *) (Self)->header.view.dataobject)
 
 static struct bind_Description ptextBindings[]={
-    {"ptextview-paren",")",')', NULL,0, 0, paren,
+    {"ptextview-paren",")",')', NULL,0, 0, (void (*)())paren,
      "Insert a paren, with balancing."},
-    {"ptextview-bar","|",'|',NULL,0,0,space,""},
-    {"ptextview-period",".",'.',NULL,0,0,space,""},
-    {"ptextview-comma", ",", ',', NULL,0,0,space,""},
-    {"ptextview-cr","\r", '\n', NULL, 0, 0, space, ""},
+    {"ptextview-bar","|",'|',NULL,0,0,(void (*)())space,""},
+    {"ptextview-period",".",'.',NULL,0,0,(void (*)())space,""},
+    {"ptextview-comma", ",", ',', NULL,0,0,(void (*)())space,""},
+    {"ptextview-cr","\r", '\n', NULL, 0, 0, (void (*)())space, ""},
     {"ptextview-paren","]",']'},
-    {"ptextview-brace","}",'}', NULL,0, 0, brace,
+    {"ptextview-brace","}",'}', NULL,0, 0, (void (*)())brace,
      "Insert a brace indented properly with balancing."},
-    {"ptextview-asterisk","*",'*', NULL,0, 0, asterisk,""},
-    {"ptextview-startbrace","{",'{',NULL,0,0,asterisk,""},
-    {"ptextview-space"," ",' ', NULL,0, 0, space,""},
-    {"ptextview-left-paren","(",'(', NULL,0, 0, space,""},
-    {"ptextview-left-brace","[",'[', NULL,0, 0, space,""},
-    {"ptextview-semicolon",";",';', NULL,0, 0, space,""},
+    {"ptextview-asterisk","*",'*', NULL,0, 0, (void (*)())asterisk,""},
+    {"ptextview-startbrace","{",'{',NULL,0,0,(void (*)())asterisk,""},
+    {"ptextview-space"," ",' ', NULL,0, 0, (void (*)())space,""},
+    {"ptextview-left-paren","(",'(', NULL,0, 0, (void (*)())space,""},
+    {"ptextview-left-brace","[",'[', NULL,0, 0, (void (*)())space,""},
+    {"ptextview-semicolon",";",';', NULL,0, 0, (void (*)())space,""},
     {"ptextview-redo-styles","\033r",0,
      "Pascal Text,Redo Styles~10", 0,0, redo,
      "Wrap styles around comments and keywords in Pascal code."},
@@ -93,14 +102,12 @@ static struct bind_Description ptextBindings[]={
     NULL
 };
 
-static boolean isident(c)
-char c;
+static boolean isident(char c)
 {
     return (isalnum(c) || c == '_');
 }
 
-boolean ptextview__InitializeClass(classID)
-struct classheader *classID;
+boolean ptextview__InitializeClass(struct classheader *classID)
 {
     M_Menus = menulist_New();
     M_Map = keymap_New();
@@ -111,9 +118,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean ptextview__InitializeObject(classID, self)
-struct classheader *classID;
-struct ptextview *self;
+boolean ptextview__InitializeObject(struct classheader *classID, struct ptextview *self)
 {
     self->c_state = keystate_Create(self, M_Map);
     self->c_menus = menulist_DuplicateML(M_Menus, self);
@@ -121,9 +126,7 @@ struct ptextview *self;
     return TRUE;
 }
 
-long ptextview__SetBounceTime(classID, time)
-struct classheader *classID;
-long time;
+long ptextview__SetBounceTime(struct classheader *classID, long time)
 {
     long retval = BounceTime;
 
@@ -132,25 +135,20 @@ long time;
     return retval;
 }
 
-void ptextview__PostKeyState(self, keystate)
-struct ptextview *self;
-struct keystate *keystate;
+void ptextview__PostKeyState(struct ptextview *self, struct keystate *keystate)
 {
     keystate_AddBefore(self->c_state, keystate);
     super_PostKeyState(self, self->c_state);
 }
 
-void ptextview__PostMenus(self, menulist)
-struct ptextview *self;
-struct menulist *menulist;
+void ptextview__PostMenus(struct ptextview *self, struct menulist *menulist)
 {
     menulist_ChainAfterML(self->c_menus, menulist, 0);
     super_PostMenus(self, self->c_menus);
 
 }
 
-static void redo(self)
-struct ptextview *self;
+static void redo(struct ptextview *self)
 {
     struct ptext *pt = Ptext(self);
 
@@ -159,9 +157,7 @@ struct ptextview *self;
     ptext_NotifyObservers(pt, 0);
 }
 
-static void match_parens(self, key)
-struct ptextview *self;
-char key;
+static void match_parens(struct ptextview *self, char key)
 {
     struct ptext *pt = Ptext(self);
     long start = ptextview_GetDotPosition(self),
@@ -214,9 +210,7 @@ char key;
 	}
 }
 
-static void paren(self, key)
-struct ptextview *self;
-char key; /* must be char for "&" to work. */
+static void paren(struct ptextview *self, char key)
 {
     struct ptext *pt = Ptext(self);
     int count = im_Argument(ptextview_GetIM(self)), i, oldpos,pos;
@@ -244,9 +238,7 @@ char key; /* must be char for "&" to work. */
     ptext_NotifyObservers(pt, 0);
 }
 
-static void brace(self, key)
-struct ptextview *self;
-char key; /* must be char for "&" to work. */
+static void brace(struct ptextview *self, char key)
 {
     struct ptext *pt = Ptext(self);
     int count = im_Argument(ptextview_GetIM(self)), i, pos, oldpos;
@@ -272,9 +264,7 @@ char key; /* must be char for "&" to work. */
     ptext_NotifyObservers(pt, 0);
 }
 
-static void asterisk(self, key)
-struct ptextview *self;
-char key; /* must be char for "&" to work. */
+static void asterisk(struct ptextview *self, char key)
 {
     struct ptext *pt = Ptext(self);
     int count = im_Argument(ptextview_GetIM(self)), i,oldpos, pos = ptextview_GetDotPosition(self);
@@ -298,9 +288,7 @@ char key; /* must be char for "&" to work. */
     ptext_NotifyObservers(pt, 0);
 }
 
-static void tab(self, key)
-struct ptextview *self;
-long key;
+static void tab(struct ptextview *self, long key)
 {
     struct ptext *pt = Ptext(self);
     int pos = ptextview_GetDotPosition(self), len = ptextview_GetDotLength(self), c = 0;
@@ -330,9 +318,7 @@ long key;
 
     ptext_NotifyObservers(pt,0);
 }
-static void space(self,key)
-struct ptextview *self;
-char key;
+static void space(struct ptextview *self, char key)
 {
     int oldpos,pos,count=im_Argument(ptextview_GetIM(self));
     struct ptext *pt = Ptext(self);
@@ -344,9 +330,7 @@ char key;
     ptext_NotifyObservers(pt,0);
 }
     
-static void newline(self, key)
-struct ptextview *self;
-long key;
+static void newline(struct ptextview *self, long key)
 {
     int newlines = im_Argument(ptextview_GetIM(self));
     struct ptext *pt = Ptext(self);
@@ -375,9 +359,7 @@ long key;
     ptext_NotifyObservers(pt,0);
 }
 
-static void ptextv_rename(self, key)
-struct ptextview *self;
-long key;
+static void ptextv_rename(struct ptextview *self, long key)
 {
     struct ptext *pt = Ptext(self);
     int pos, len, newlen;

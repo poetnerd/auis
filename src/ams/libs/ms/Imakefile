@@ -42,7 +42,7 @@ OBJS		=	abspath.o addhdr.o altsnap.o apndfile.o autherr.o \
 			getnsub.o getnth.o getpathe.o getsnap.o \
 			getsubs.o getvers.o getvconf.o hdlnew.o hdlpref.o \
 			headers.o init.o instinfo.o inventid.o itops.o logging.o \
-			merge.o msdir.o msparse.o msprint.o mswp.o \
+			merge.o msdir.o msjournal.o msparse.o msprint.o mswp.o \
 			mungenew.o mvinvice.o namechg.o namemap.o \
 			newmail.o nonfatal.o openpipe.o papanote.o prsdlib.o \
 			parseraw.o pfmsg.o prettyn.o purge.o rawdb.o \

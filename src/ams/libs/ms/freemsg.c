@@ -34,12 +34,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+extern int CriticalBizarreError(char *text);
+extern int FreeMessageContents(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int FreeParsedStuff(struct MS_Message *Msg);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
 
 /* 2 routines for backward compatibility */
 
-FreeMessage(Msg, FreeSnapshot)
-struct MS_Message *Msg;
-Boolean FreeSnapshot;
+int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot)
 {
     debug(1, ("FreeMessage\n"));
     if (Msg) {
@@ -58,9 +61,7 @@ Boolean FreeSnapshot;
     return(0);
 }
 
-FreeMessageContents(Msg, FreeSnapshot)
-struct MS_Message *Msg;
-Boolean FreeSnapshot;
+int FreeMessageContents(struct MS_Message *Msg, Boolean FreeSnapshot)
 {
     if (!Msg) return(0);
     if (FreeSnapshot && Msg->Snapshot) {free (Msg->Snapshot); Msg->Snapshot = NULL;}
@@ -71,8 +72,7 @@ Boolean FreeSnapshot;
     return(0);
 }
 
-FreeParsedStuff(Msg)
-struct MS_Message *Msg;
+int FreeParsedStuff(struct MS_Message *Msg)
 {
     int i;
     if (Msg->ParsedStuff) {

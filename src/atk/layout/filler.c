@@ -41,9 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 
 /* return corresponding view name */
 
-char *				    /* returns "fillerview" */
-filler__ViewName(self)
-struct filler *self;
+char * filler__ViewName(struct filler *self)
 {
     return "fillerview";
 }

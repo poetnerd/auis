@@ -1,5 +1,4 @@
 
-
 /*
 	$Disclaimer: 
 *Permission to use, copy, modify, and distribute this software and its 
@@ -22,6 +21,8 @@
 *OF THIS SOFTWARE.
 * $
 */
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 #ifdef _IBMR2
 BSDLIB = -lbsd
 #endif

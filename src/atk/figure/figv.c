@@ -27,6 +27,8 @@ char *figv_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fig
 #endif 
 
 #include <math.h>
+#include <string.h>
+#include <stdlib.h>
 #include <figv.eh>
 
 #include <figure.ih>
@@ -56,6 +58,23 @@ char *figv_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fig
 
 #include <rect.h>
 
+struct printlump;
+static void CutSelSplot(struct figview *self, struct figure *fig, long gref, FILE *fp);
+static void DoBlit(struct figview *self, long diffx, long diffy);
+static void DoRedraws(struct figview *self, struct rectangle *ux, struct rectangle *uy, struct rectangle *dr, long diffx, long diffy);
+static void EnumSelSplot(struct figview *self, struct figure *fig, long grp, procedure func, void *rock);
+static void FixPixelPanning(struct figview *self);
+static void IncreaseRedrawProc(struct figview *self, long num);
+static void IncreaseTmpProc();
+static void OldUpdateCache(struct figview *self);
+static boolean PrintSplot(struct figobj *o, long ref, struct figure *fig, struct printlump *lump);
+static void RectToPix(struct figview *self, struct rectangle *dest, struct rectangle *src, long delta);
+static void RedrawView();
+static boolean TEI_Splot(struct figobj *o, long ref, struct figure *self, long *vv);
+static void ToggleDebugProc(struct figview *self, long rock);
+static void UpdateCache();
+static void UpdateWindowSize(struct figview *self);
+
 #define figview_InitNumHighlights (2)
 #define SCROLL_EXTRA_SPACE (256)
 #define recttopix_Exact (-9999)
@@ -73,15 +92,13 @@ struct printlump {
     long width, height;
 };
 
-static void ToolsetCreateProc(), ToolsetKillProc(), ChangeZoomProc();
-static void FocusUpProc(), FocusDownProc(), FocusLeftProc(), FocusRightProc(), SetExpertModeProc(), AbortObjectProc(), CutSelProc(), CopySelInsetProc(), CopySelProc(), PasteSelProc(), RotatePasteProc(), ToggleReadOnlyProc(), PanToOriginProc(), WritePSProc(), ReadZipProc(), SetPrintScaleProc(), ShowPrintAreaProc();
+static void ToolsetCreateProc(struct figview *self, char *rock), ToolsetKillProc(struct figview *self, char *rock), ChangeZoomProc(struct figview *self, long rock);
+static void FocusUpProc(struct figview *self, long rock), FocusDownProc(struct figview *self, long rock), FocusLeftProc(struct figview *self, long rock), FocusRightProc(struct figview *self, long rock), SetExpertModeProc(), AbortObjectProc(), CutSelProc(struct figview *self, long rock), CopySelInsetProc(struct figview *self, long rock), CopySelProc(struct figview *self, long rock), PasteSelProc(struct figview *self, long rock), RotatePasteProc(struct figview *self, long rock), ToggleReadOnlyProc(struct figview *self, long val), PanToOriginProc(struct figview *self, long rock), WritePSProc(struct figview *self, long rock), ReadZipProc(struct figview *self, long rock), SetPrintScaleProc(struct figview *self, long rock), ShowPrintAreaProc(struct figview *self, long rock);
 static void FlattenRefList();
-static void IncreaseClipRegProc();
-static void RedrawGroup(), RepostMenus();
+static void IncreaseClipRegProc(struct figview *self, long num);
+static void RedrawGroup(struct figview *self, struct figure *fig, long gref, struct rectangle *B), RepostMenus();
 
-static void ToggleDebugProc(self, rock)
-struct figview *self;
-long rock;
+static void ToggleDebugProc(struct figview *self, long rock)
 {
     debug = ! debug;
     printf("debug is now %d\n", debug);  fflush (stdout);
@@ -102,77 +119,76 @@ static char *FigureBackgroundColor = NULL;
 #define	ML_noshowprintarea  (128)
 #define	ML_showprintarea    (256)
 
-boolean figview__InitializeClass(ClassID)
-struct classheader *ClassID;
+boolean figview__InitializeClass(struct classheader *ClassID)
 {
     struct proctable_Entry *proc = NULL;
 
     EmbeddedMenus = menulist_New();
     EmbeddedKeymap = keymap_New();
 
-    proc = proctable_DefineProc("figview-toggle-debug", ToggleDebugProc, &figview_classinfo, NULL, "Turn debugging on or off.");
+    proc = proctable_DefineProc("figview-toggle-debug", (procedure) ToggleDebugProc, &figview_classinfo, NULL, "Turn debugging on or off.");
 
-    proc = proctable_DefineProc("figview-toggle-readonly", ToggleReadOnlyProc, &figview_classinfo, NULL, "Turn read-only flag on or off.");
+    proc = proctable_DefineProc("figview-toggle-readonly", (procedure) ToggleReadOnlyProc, &figview_classinfo, NULL, "Turn read-only flag on or off.");
 
-    proc = proctable_DefineProc("figview-toolset-create", ToolsetCreateProc, &figview_classinfo, NULL, "Creates toolset window.");
+    proc = proctable_DefineProc("figview-toolset-create", (procedure) ToolsetCreateProc, &figview_classinfo, NULL, "Creates toolset window.");
     menulist_AddToML(EmbeddedMenus, "Figure~5,Toolset~30", proc, NULL, ML_nontoolset);
 
-    proc = proctable_DefineProc("figview-toolset-destroy", ToolsetKillProc, &figview_classinfo, NULL, "Deletes toolset window.");
+    proc = proctable_DefineProc("figview-toolset-destroy", (procedure) ToolsetKillProc, &figview_classinfo, NULL, "Deletes toolset window.");
     menulist_AddToML(EmbeddedMenus, "Figure~5,Remove Toolset~31", proc, NULL, ML_toolset);
 
-    proc = proctable_DefineProc("figview-set-expert-mode", SetExpertModeProc, &figview_classinfo, NULL, "Turns on expert mode for self and toolset.");
-    menulist_AddToML(EmbeddedMenus, "Figure~5,Expert Mode~40", proc, 1, ML_nonexpertmode);
+    proc = proctable_DefineProc("figview-set-expert-mode", (procedure) SetExpertModeProc, &figview_classinfo, NULL, "Turns on expert mode for self and toolset.");
+    menulist_AddToML(EmbeddedMenus, "Figure~5,Expert Mode~40", proc, (void *)1, ML_nonexpertmode);
 
-    proc = proctable_DefineProc("figview-zoom", ChangeZoomProc, &figview_classinfo, NULL, "Change scale of view.");
-    menulist_AddToML(EmbeddedMenus, "Figure~5,Zoom In~10", proc, 1, 0);
+    proc = proctable_DefineProc("figview-zoom", (procedure) ChangeZoomProc, &figview_classinfo, NULL, "Change scale of view.");
+    menulist_AddToML(EmbeddedMenus, "Figure~5,Zoom In~10", proc, (void *)1, 0);
     keymap_BindToKey(EmbeddedKeymap, "\033Z", proc, 1); /* esc-Z */
-    menulist_AddToML(EmbeddedMenus, "Figure~5,Zoom Out~11", proc, -1, 0);
-    keymap_BindToKey(EmbeddedKeymap, "\033z", proc, -1); /* esc-z */
+    menulist_AddToML(EmbeddedMenus, "Figure~5,Zoom Out~11", proc, (void *)-1, 0);
+    keymap_BindToKey(EmbeddedKeymap, "\033z", proc, (long)-1); /* esc-z */
     menulist_AddToML(EmbeddedMenus, "Figure~5,Normal Size~12", proc, 0, 0);
 
-    proc = proctable_DefineProc("figview-pan-to-origin", PanToOriginProc, &figview_classinfo, NULL, "Pan to (0,0).");
+    proc = proctable_DefineProc("figview-pan-to-origin", (procedure) PanToOriginProc, &figview_classinfo, NULL, "Pan to (0,0).");
     menulist_AddToML(EmbeddedMenus, "Figure~5,Pan to Origin~19", proc, 0, 0);
 
-    proc = proctable_DefineProc("figview-zap-selection", CutSelProc, &figview_classinfo, NULL, "Remove selected objects and put them in cut buffer.");
+    proc = proctable_DefineProc("figview-zap-selection", (procedure) CutSelProc, &figview_classinfo, NULL, "Remove selected objects and put them in cut buffer.");
     menulist_AddToML(EmbeddedMenus, "Cut~1", proc, 0, ML_selected);
     keymap_BindToKey(EmbeddedKeymap, "\027", proc, 0); /* ^W */
-    proc = proctable_DefineProc("figview-copy-selection", CopySelProc, &figview_classinfo, NULL, "Put selected objects in cut buffer.");
+    proc = proctable_DefineProc("figview-copy-selection", (procedure) CopySelProc, &figview_classinfo, NULL, "Put selected objects in cut buffer.");
     menulist_AddToML(EmbeddedMenus, "Copy~2", proc, 0, ML_selected);
     keymap_BindToKey(EmbeddedKeymap, "\033w", proc, 0); /* esc-w */
-    proc = proctable_DefineProc("figview-copy-selected-inset", CopySelInsetProc, &figview_classinfo, NULL, "Put dataobject of selected inset in cut buffer.");
+    proc = proctable_DefineProc("figview-copy-selected-inset", (procedure) CopySelInsetProc, &figview_classinfo, NULL, "Put dataobject of selected inset in cut buffer.");
     menulist_AddToML(EmbeddedMenus, "Copy Inset Contents~3", proc, 0, ML_oneinsetselected);
 
-    proc = proctable_DefineProc("figview-yank-selection", PasteSelProc, &figview_classinfo, NULL, "Paste an object from the cut buffer.");
+    proc = proctable_DefineProc("figview-yank-selection", (procedure) PasteSelProc, &figview_classinfo, NULL, "Paste an object from the cut buffer.");
     menulist_AddToML(EmbeddedMenus, "Paste~4", proc, 0, 0);
     keymap_BindToKey(EmbeddedKeymap, "\031", proc, 0); /* ^Y */
-    proc = proctable_DefineProc("figview-rotate-yank-selection", RotatePasteProc, &figview_classinfo, NULL, "Paste an object from the cut buffer and rotate the buffer.");
+    proc = proctable_DefineProc("figview-rotate-yank-selection", (procedure) RotatePasteProc, &figview_classinfo, NULL, "Paste an object from the cut buffer and rotate the buffer.");
     keymap_BindToKey(EmbeddedKeymap, "\033y", proc, 0); /* esc-y */
 
-    proc = proctable_DefineProc("figview-write-PostScript", WritePSProc, &figview_classinfo, NULL, "Write out the fig in PostScript format.");
+    proc = proctable_DefineProc("figview-write-PostScript", (procedure) WritePSProc, &figview_classinfo, NULL, "Write out the fig in PostScript format.");
     menulist_AddToML(EmbeddedMenus, "File,Write As PostScript~19", proc, 0, 0);
     keymap_BindToKey(EmbeddedKeymap, "\030\020", proc, 0); /* ^X^P */
 
-    proc = proctable_DefineProc("figview-read-zip-file", ReadZipProc, &figview_classinfo, NULL, "Read a zip datastream into the figure.");
+    proc = proctable_DefineProc("figview-read-zip-file", (procedure) ReadZipProc, &figview_classinfo, NULL, "Read a zip datastream into the figure.");
     /*menulist_AddToML(EmbeddedMenus, "File,Read Zip File~18", proc, 0, 0);*/
 
-    proc = proctable_DefineProc("figview-set-print-scale", SetPrintScaleProc, &figview_classinfo, NULL, "Set print scale.");
+    proc = proctable_DefineProc("figview-set-print-scale", (procedure) SetPrintScaleProc, &figview_classinfo, NULL, "Set print scale.");
     menulist_AddToML(EmbeddedMenus, "File,Set Print Scale~21", proc, 0, 0);
     keymap_BindToKey(EmbeddedKeymap, "\033P", proc, 0); /* esc-P */
 
-    proc = proctable_DefineProc("figview-show-print-area", ShowPrintAreaProc, &figview_classinfo, NULL, "Show page boundaries.");
-    menulist_AddToML(EmbeddedMenus, "File,Show Print Area~26", proc, 1, ML_noshowprintarea);
+    proc = proctable_DefineProc("figview-show-print-area", (procedure) ShowPrintAreaProc, &figview_classinfo, NULL, "Show page boundaries.");
+    menulist_AddToML(EmbeddedMenus, "File,Show Print Area~26", proc, (void *)1, ML_noshowprintarea);
     menulist_AddToML(EmbeddedMenus, "File,Hide Print Area~26", proc, 0, ML_showprintarea);
 
-    proc = proctable_DefineProc("figview-focus-down", FocusDownProc, &figview_classinfo, NULL, "move focus down to subgroup.");
+    proc = proctable_DefineProc("figview-focus-down", (procedure) FocusDownProc, &figview_classinfo, NULL, "move focus down to subgroup.");
     keymap_BindToKey(EmbeddedKeymap, "\033B", proc, 0); /* esc-B */
-    proc = proctable_DefineProc("figview-focus-up", FocusUpProc, &figview_classinfo, NULL, "move focus up to parent group.");
+    proc = proctable_DefineProc("figview-focus-up", (procedure) FocusUpProc, &figview_classinfo, NULL, "move focus up to parent group.");
     keymap_BindToKey(EmbeddedKeymap, "\033A", proc, 0); /* esc-A */
-    proc = proctable_DefineProc("figview-focus-left", FocusLeftProc, &figview_classinfo, NULL, "move focus left to sibling group.");
+    proc = proctable_DefineProc("figview-focus-left", (procedure) FocusLeftProc, &figview_classinfo, NULL, "move focus left to sibling group.");
     keymap_BindToKey(EmbeddedKeymap, "\033D", proc, 0); /* esc-D */
-    proc = proctable_DefineProc("figview-focus-right", FocusRightProc, &figview_classinfo, NULL, "move focus left to sibling group.");
+    proc = proctable_DefineProc("figview-focus-right", (procedure) FocusRightProc, &figview_classinfo, NULL, "move focus left to sibling group.");
     keymap_BindToKey(EmbeddedKeymap, "\033C", proc, 0); /* esc-C */
 
-    proc = proctable_DefineProc("figview-abort-object", AbortObjectProc, &figview_classinfo, NULL, "abort object being created.");
+    proc = proctable_DefineProc("figview-abort-object", (procedure) AbortObjectProc, &figview_classinfo, NULL, "abort object being created.");
     keymap_BindToKey(EmbeddedKeymap, "\007", proc, 0); /* ^G */
 
     DefaultExpertMode = environ_GetProfileSwitch("FigureExpertMode", FALSE);
@@ -183,9 +199,7 @@ struct classheader *ClassID;
     return TRUE;
 }
 
-boolean figview__InitializeObject(ClassID, self)
-struct classheader *ClassID;
-struct figview *self;
+boolean figview__InitializeObject(struct classheader *ClassID, struct figview *self)
 {
     int hx;
 
@@ -262,9 +276,7 @@ struct figview *self;
     return TRUE;
 }
 
-void figview__FinalizeObject(ClassID, self)
-struct classheader *ClassID;
-struct figview *self;
+void figview__FinalizeObject(struct classheader *ClassID, struct figview *self)
 {
     int ix;
 
@@ -305,21 +317,19 @@ struct figview *self;
     keystate_Destroy(self->Keystate);
 }
 
-void figview__SetDataObject(self, fig)
-struct figview *self;
-struct figure *fig;
+void figview__SetDataObject(struct figview *self, struct dataobject *fig)
 {
+    struct figure *figfig = (struct figure *) fig;
+
     super_SetDataObject(self, fig);
-    self->focusgroup = figure_RootObjRef(fig);
-    self->originx = figure_GetOriginX(fig);
-    self->originy = figure_GetOriginY(fig);
+    self->focusgroup = figure_RootObjRef(figfig);
+    self->originx = figure_GetOriginX(figfig);
+    self->originy = figure_GetOriginY(figfig);
     self->panx = self->originx;
     self->pany = self->originy;
 }
 
-void figview__SetExpertMode(self, val)
-struct figview *self;
-boolean val;
+void figview__SetExpertMode(struct figview *self, boolean val)
 {
     val = (val) ? TRUE : FALSE;
 
@@ -336,16 +346,12 @@ boolean val;
     RepostMenus(self);
 }
 
-static void SetExpertModeProc(self, val)
-struct figview *self;
-long val;
+static void SetExpertModeProc(struct figview *self, long val)
 {
     figview_SetExpertMode(self, val);
 }
 
-static void ToggleReadOnlyProc(self, val)
-struct figview *self;
-long val;
+static void ToggleReadOnlyProc(struct figview *self, long val)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     if (!fig) return;
@@ -358,10 +364,7 @@ long val;
 	message_DisplayString(self, 10, "Document is now writable.");
 }
 
-void figview__ObservedChanged(self, obs, status)
-struct figview *self;
-struct observable *obs;
-long status;
+void figview__ObservedChanged(struct figview *self, struct observable *obs, long status)
 {
     if (obs == (struct observable *)self->toolset) {
 	if (status==observable_OBJECTDESTROYED) {
@@ -378,8 +381,7 @@ long status;
     }
 }
 
-struct view *figview__GetApplicationLayer(self)
-struct figview *self;
+struct view * figview__GetApplicationLayer(struct figview *self)
 {
     struct scroll *view;
 
@@ -389,16 +391,14 @@ struct figview *self;
     return (struct view *) view;
 }
 
-static void y_getinfo(), y_setframe(), x_getinfo(), x_setframe();
-static long y_whatisat(), x_whatisat();
+static void y_getinfo(struct figview *self, struct range *total, struct range *seen, struct range *dot), y_setframe(struct figview *self, int position, long coordinate, long outof), x_getinfo(struct figview *self, struct range *total, struct range *seen, struct range *dot), x_setframe(struct figview *self, int position, long coordinate, long outof);
+static long y_whatisat(struct figview *self, long coordinate, long outof), x_whatisat(struct figview *self, long coordinate, long outof);
 static struct scrollfns	vertical_scroll_interface =
 {y_getinfo, y_setframe, NULL, y_whatisat};
 static struct scrollfns	horizontal_scroll_interface =
 {x_getinfo, x_setframe, NULL, x_whatisat};
 
-struct scrollfns *figview__GetInterface(self, interface_name)
-struct figview *self;
-char *interface_name;
+struct scrollfns * figview__GetInterface(struct figview *self, char *interface_name)
 {
     struct scrollfns *interface;
     
@@ -411,9 +411,7 @@ char *interface_name;
     return interface;
 }
 
-static void x_getinfo(self, total, seen, dot)
-struct figview *self;
-struct range *total, *seen, *dot;
+static void x_getinfo(struct figview *self, struct range *total, struct range *seen, struct range *dot)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     struct rectangle *figrect = figure_GetOverallBounds(fig);
@@ -462,9 +460,7 @@ struct range *total, *seen, *dot;
     }
 }
 
-static long x_whatisat(self, coordinate, outof)
-struct figview *self;
-long coordinate, outof;
+static long x_whatisat(struct figview *self, long coordinate, long outof)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     struct rectangle *figrect = figure_GetOverallBounds(fig);
@@ -472,10 +468,7 @@ long coordinate, outof;
     return figview_ToFigX(self, coordinate) - (figrect->left - SCROLL_EXTRA_SPACE);
 }
 
-static void x_setframe(self, position, coordinate, outof) 
-struct figview *self;
-int position;
-long coordinate, outof;
+static void x_setframe(struct figview *self, int position, long coordinate, long outof)
 {
     long diffpos;
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
@@ -490,9 +483,7 @@ long coordinate, outof;
     }
 }
 
-static void y_getinfo(self, total, seen, dot)
-struct figview *self;
-struct range *total, *seen, *dot;
+static void y_getinfo(struct figview *self, struct range *total, struct range *seen, struct range *dot)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     struct rectangle *figrect = figure_GetOverallBounds(fig);
@@ -541,9 +532,7 @@ struct range *total, *seen, *dot;
     }
 }
 
-static long y_whatisat(self, coordinate, outof)
-struct figview *self;
-long coordinate, outof;
+static long y_whatisat(struct figview *self, long coordinate, long outof)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     struct rectangle *figrect = figure_GetOverallBounds(fig);
@@ -551,10 +540,7 @@ long coordinate, outof;
     return figview_ToFigY(self, coordinate) - (figrect->top - SCROLL_EXTRA_SPACE);
 }
 
-static void y_setframe(self, position, coordinate, outof) 
-struct figview *self;
-int position;
-long coordinate, outof;
+static void y_setframe(struct figview *self, int position, long coordinate, long outof)
 {
     long diffpos;
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
@@ -570,8 +556,7 @@ long coordinate, outof;
 }
 
 /* assumes self is input focus */
-static void RepostMenus(self)
-struct figview *self;
+static void RepostMenus(struct figview *self)
 {
     long menumask = 0;
     long val;
@@ -606,9 +591,7 @@ struct figview *self;
     }
 }
 
-void figview__PostMenus(self, ml)
-struct figview *self;
-struct menulist *ml;
+void figview__PostMenus(struct figview *self, struct menulist *ml)
 {
     /* Enable the menus for this object. */
     menulist_UnchainML(self->Menus, self);
@@ -618,9 +601,7 @@ struct menulist *ml;
     super_PostMenus(self, self->Menus);
 }
 
-void figview__PostKeyState(self, ks)
-struct figview *self;
-struct keystate *ks;
+void figview__PostKeyState(struct figview *self, struct keystate *ks)
 {
     /* Enable the keys for this object. */
     struct keystate *newch;
@@ -636,16 +617,13 @@ struct keystate *ks;
     }
 }
 
-void figview__SetBuildKeystate(self, ks)
-struct figview *self;
-struct keystate *ks;
+void figview__SetBuildKeystate(struct figview *self, struct keystate *ks)
 {
     self->BuildKeystate = ks;
     figview_PostKeyState(self, NULL);
 }
 
-void figview__ReceiveInputFocus(self)
-struct figview *self;
+void figview__ReceiveInputFocus(struct figview *self)
 {
     self->HasInputFocus = TRUE;
     figview_PostKeyState(self, NULL);
@@ -653,28 +631,19 @@ struct figview *self;
     /*figview_WantUpdate(self, self);  if there's any visual change */
 }
 
-void figview__LoseInputFocus(self)
-struct figview *self;
+void figview__LoseInputFocus(struct figview *self)
 {
     self->HasInputFocus = FALSE;
     /*figview_WantUpdate(self, self);    if there's any visual change */
 }
 
 /* kind of dull right now, but we may want to change it later */
-enum view_DSattributes figview__DesiredSize(self, width, height, pass, dwidth, dheight)
-struct figview *self;
-long width;
-long height;
-enum view_DSpass pass;
-long *dwidth;
-long *dheight;
+enum view_DSattributes figview__DesiredSize(struct figview *self, long width, long height, enum view_DSpass pass, long *dwidth, long *dheight)
 {
     return super_DesiredSize(self, width, height, pass, dwidth, dheight);
 }
 
-static void IncreaseTmpProc(self, num)
-struct figview *self;
-long num;
+static void IncreaseTmpProc(struct figview *self, long num)
 {
     if (self->tmplist == NULL) {
 	self->tmp_size = num+8;
@@ -690,9 +659,7 @@ long num;
     }
 }
 
-static void IncreaseRedrawProc(self, num)
-struct figview *self;
-long num;
+static void IncreaseRedrawProc(struct figview *self, long num)
 {
     if (self->redrawlist == NULL) {
 	self->redraw_size = num+8;
@@ -708,9 +675,7 @@ long num;
     }
 }
 
-static void IncreaseClipRegProc(self, num)
-struct figview *self;
-long num;
+static void IncreaseClipRegProc(struct figview *self, long num)
 {
     int ix;
 
@@ -734,9 +699,7 @@ long num;
     }
 }
 
-void figview__SetNumHighlights(self, num)
-struct figview *self;
-int num;
+void figview__SetNumHighlights(struct figview *self, int num)
 {
     int oldnum = self->numhighlights;
     int hx;
@@ -761,9 +724,7 @@ int num;
     }
 }
 
-static void FlattenRefList(self, ix)
-struct figview *self;
-long ix;
+static void FlattenRefList(struct figview *self, long ix)
 {
     for (; ix<self->objs_size; ix++) {
 	self->objs[ix].o = NULL;
@@ -782,10 +743,7 @@ long ix;
 }
 
 /* convert a rectangle in fig coords to pix coords, expanding it by delta pixels. If delta = recttopix_Exact, do not expand it at all. */
-static void RectToPix(self, dest, src, delta)
-struct figview *self;
-struct rectangle *dest, *src;
-long delta;
+static void RectToPix(struct figview *self, struct rectangle *dest, struct rectangle *src, long delta)
 {
     if (rectangle_IsEmptyRect(src)) {
 	rectangle_EmptyRect(dest);
@@ -808,9 +766,7 @@ long delta;
 
 /* Let B = UpdateRect clipped to visual bounds. Clip drawing to B, erase B, and redraw all elements (in order) that intersect B. 
 If recterased is TRUE, we can assume that the drawing area has been erased already. */
-static void RedrawView(self, recterased)
-struct figview *self;
-boolean recterased;
+static void RedrawView(struct figview *self, boolean recterased)
 {
     struct rectangle B, foc;
     struct rectangle inrec;
@@ -921,17 +877,17 @@ boolean recterased;
 	    /*figview_FillRect(self, &B, figview_WhitePattern(self)); */
 	}
 
-	DEBUG(("Drawing: %d...", self->redrawnum));
-	DEBUG(("[clip %d] ", clipnum));
+	DEBUG(("Drawing: %ld...", self->redrawnum));
+	DEBUG(("[clip %ld] ", clipnum));
 	for (jx=0; jx<self->redrawnum; jx++) {
 	    ix = self->redrawlist[jx].oref;
 	    if (clipnum != self->redrawlist[jx].clip) {
 		clipnum = self->redrawlist[jx].clip;
 		self->currentclipreg = self->clipreglist[clipnum];
 		figview_SetClippingRegion(self, self->currentclipreg);
-		DEBUG(("[clip %d] ", clipnum));
+		DEBUG(("[clip %ld] ", clipnum));
 	    }
-	    DEBUG(("%d ", ix));
+	    DEBUG(("%ld ", ix));
 	    o = self->objs[ix].o;
 	    if (figobj_IsGroup(o)) {
 	    }
@@ -1061,11 +1017,7 @@ boolean recterased;
     self->DoingFullUpdate = FALSE;
 }
 
-static void RedrawGroup(self, fig, gref, B)
-struct figview *self;
-struct figure *fig;
-long gref;
-struct rectangle *B;
+static void RedrawGroup(struct figview *self, struct figure *fig, long gref, struct rectangle *B)
 {
     int ix;
     struct rectangle tmp;
@@ -1128,7 +1080,7 @@ boolean needfull;
 
 	    /* handle old one */
 	    if (self->objs[ix].o) {
-		DEBUG(("Cache: old %d\n", ix));
+		DEBUG(("Cache: old %ld\n", ix));
 		if (self->objs[ix].selected)
 		    self->numselected--;
 		if (self->objs[ix].drawnselected == 0) {
@@ -1146,7 +1098,7 @@ boolean needfull;
 	    /* handle new one */
 	    if (fig->objs[ix].o) {
 		struct figobj *o = fig->objs[ix].o;
-		DEBUG(("Cache: new %d\n", ix));
+		DEBUG(("Cache: new %ld\n", ix));
 		self->objs[ix].o = o;
 		self->objs[ix].selected = FALSE;
 		self->objs[ix].drawnselected = FALSE;
@@ -1183,7 +1135,7 @@ boolean needfull;
 		self->objs[ix].timestamp = figobj_GetModified(o);
 	    }
 	    else {
-		DEBUG(("Cache: new NULL %d\n", ix));
+		DEBUG(("Cache: new NULL %ld\n", ix));
 		self->objs[ix].o = NULL;
 	    }
 	} /* end case self->objs[ix].o != fig->objs[ix].o */
@@ -1209,7 +1161,7 @@ boolean needfull;
 	    }
 	    if (needup) {
 		struct figobj *o = self->objs[ix].o;
-		DEBUG(("Cache: changed %d\n", ix));
+		DEBUG(("Cache: changed %ld\n", ix));
 
 		if (self->objs[ix].selected
 		    || (self->ShowFocusAttachments
@@ -1313,8 +1265,7 @@ boolean needfull;
     rectangle_UnionRect(&self->UpdateRect, &self->UpdateRect, &self->MustEraseRect);
 }
 
-static void OldUpdateCache(self)
-struct figview *self;
+static void OldUpdateCache(struct figview *self)
 {
     boolean needfull = self->NeedFullUpdate;
     if (needfull)
@@ -1323,14 +1274,12 @@ struct figview *self;
     UpdateCache(self, needfull);
 }
 
-void figview__FlushDataChanges(self)
-struct figview *self;
+void figview__FlushDataChanges(struct figview *self)
 {
     OldUpdateCache(self);
 }
 
-static void UpdateWindowSize(self)
-struct figview *self;
+static void UpdateWindowSize(struct figview *self)
 {
     struct figobj *foc;
     struct rectangle logrec;
@@ -1360,17 +1309,13 @@ struct figview *self;
 
 }
 
-static void FixPixelPanning(self)
-struct figview *self;
+static void FixPixelPanning(struct figview *self)
 {
     self->ppanx=figview_ToPixW(self, (self)->panx);
     self->ppany=figview_ToPixH(self, (self)->pany);
 }
 
-void figview__FullUpdate(self, type, left, top, width, height)
-struct figview *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void figview__FullUpdate(struct figview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     self->UpdateCached = FALSE;
   
@@ -1426,12 +1371,7 @@ long left, top, width, height;
 #define ABS(x) ((x<0)?-(x):x)
 #endif
 
-static void DoRedraws(self, ux, uy, dr, diffx, diffy)
-struct figview *self;
-struct rectangle *ux;
-struct rectangle *uy;
-struct rectangle *dr;
-long diffx, diffy;
+static void DoRedraws(struct figview *self, struct rectangle *ux, struct rectangle *uy, struct rectangle *dr, long diffx, long diffy)
 {
     struct rectangle vb;
     struct region *vr=region_CreateEmptyRegion();
@@ -1494,9 +1434,7 @@ long diffx, diffy;
 }
 
     
-static void DoBlit(self, diffx, diffy)
-struct figview *self;
-long diffx, diffy;
+static void DoBlit(struct figview *self, long diffx, long diffy)
 {
     struct rectangle s, ux, uy, vr;
     struct point d;
@@ -1554,8 +1492,7 @@ long diffx, diffy;
     DoRedraws(self, &ux, &uy, &s, diffx, diffy);
 }
 
-void figview__Update(self)
-struct figview *self;
+void figview__Update(struct figview *self)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long lppanx=self->ppanx;
@@ -1591,9 +1528,7 @@ struct figview *self;
 }
 
 /* if the requestor is an inset, we have to find the objref corresponding to it. This is a linear search. self->lastupdated is a cheap hack to speed this up. */
-void figview__WantUpdate(self, requestor)
-struct figview *self;
-struct view *requestor;
+void figview__WantUpdate(struct figview *self, struct view *requestor)
 {
     if ((struct view *)self != requestor) {
 	int ix;
@@ -1623,9 +1558,7 @@ struct view *requestor;
     }
 }
 
-void figview__BlockUpdates(self, val)
-struct figview *self;
-boolean val;
+void figview__BlockUpdates(struct figview *self, boolean val)
 {
     if (val) {
 	/* turn blocking on */
@@ -1644,11 +1577,7 @@ boolean val;
     }
 }
 
-static boolean TEI_Splot(o, ref, self, vv)
-struct figobj *o;
-long ref;
-struct figure *self;
-long *vv;
+static boolean TEI_Splot(struct figobj *o, long ref, struct figure *self, long *vv)
 {
     if (figobj_IsInset(o) 
 	 && (int)(figobj_HitMe(o, vv[1], vv[2], 0, NULL)) >= (int)(figobj_HitInside))
@@ -1657,10 +1586,7 @@ long *vv;
     return FALSE;
 }
 
-struct view *figview__Hit(self, action, x, y, num_clicks)
-struct figview *self;
-enum view_MouseAction action;
-long x, y, num_clicks;
+struct view * figview__Hit(struct figview *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
     if (! self->OnScreen) return NULL;
 
@@ -1798,17 +1724,14 @@ long x, y, num_clicks;
     return (struct view *)self;		/* where to send subsequent hits */
 }
 
-boolean figview__IsSelected(self, ref)
-struct figview *self;
-long ref;
+boolean figview__IsSelected(struct figview *self, long ref)
 {
     if (ref<0 || ref>=self->objs_size) 
 	return FALSE;
     return (self->objs[ref].o && self->objs[ref].selected);
 }
 
-void figview__ClearSelection(self)
-struct figview *self;
+void figview__ClearSelection(struct figview *self)
 {
     int ix;
 
@@ -1819,9 +1742,7 @@ struct figview *self;
     RepostMenus(self);
 }
 
-void figview__Select(self, o)
-struct figview *self;
-struct figobj *o;
+void figview__Select(struct figview *self, struct figobj *o)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref = figure_FindRefByObject(fig, o);
@@ -1830,9 +1751,7 @@ struct figobj *o;
 	figview_SelectByRef(self, ref);
 }
 
-void figview__SelectByRef(self, ref)
-struct figview *self;
-long ref;
+void figview__SelectByRef(struct figview *self, long ref)
 {
     if (ref<0 || ref>=self->objs_size) 
 	return;
@@ -1844,9 +1763,7 @@ long ref;
     }
 }
 
-void figview__ToggleSelect(self, o)
-struct figview *self;
-struct figobj *o;
+void figview__ToggleSelect(struct figview *self, struct figobj *o)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref = figure_FindRefByObject(fig, o);
@@ -1855,9 +1772,7 @@ struct figobj *o;
 	figview_ToggleSelectByRef(self, ref);
 }
 
-void figview__ToggleSelectByRef(self, ref)
-struct figview *self;
-long ref;
+void figview__ToggleSelectByRef(struct figview *self, long ref)
 {
     if (ref<0 || ref>=self->objs_size) 
 	return;
@@ -1873,9 +1788,7 @@ long ref;
     RepostMenus(self);
 }
 
-void figview__Unselect(self, o)
-struct figview *self;
-struct figobj *o;
+void figview__Unselect(struct figview *self, struct figobj *o)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref = figure_FindRefByObject(fig, o);
@@ -1884,9 +1797,7 @@ struct figobj *o;
 	figview_UnselectByRef(self, ref);
 }
 
-void figview__UnselectByRef(self, ref)
-struct figview *self;
-long ref;
+void figview__UnselectByRef(struct figview *self, long ref)
 {
     if (ref<0 || ref>=self->objs_size) 
 	return;
@@ -1899,8 +1810,7 @@ long ref;
 }
 
 /* if there is exactly one object selected, return its ref. Otherwise, return figure_NULLREF */
-long figview__GetOneSelected(self)
-struct figview *self;
+long figview__GetOneSelected(struct figview *self)
 {
     /* could be more efficient */
     int ix;
@@ -1915,12 +1825,7 @@ struct figview *self;
     return figure_NULLREF; /* should never happen, but what the hell */
 }
 
-static void EnumSelSplot(self, fig, grp, func, rock)
-struct figview *self;
-struct figure *fig;
-long grp;
-void (*func)();
-long rock;
+static void EnumSelSplot(struct figview *self, struct figure *fig, long grp, procedure func, void *rock)
 {
     long ix;
     struct figogrp *gr = (struct figogrp *)fig->objs[grp].o;
@@ -1943,10 +1848,7 @@ long rock;
 func should be of the form
 void func(struct figobj *o, long ref, struct figview *self, rock)
 */
-void figview__EnumerateSelection(self, func, rock)
-struct figview *self;
-void (*func)();
-long rock;
+void figview__EnumerateSelection(struct figview *self, procedure func, void *rock)
 {
     long grp;
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
@@ -1962,9 +1864,7 @@ long rock;
 }
 
 /* if ref==figure_NULLREF, set to root group */
-void figview__SetFocusByRef(self, ref)
-struct figview *self;
-long ref;
+void figview__SetFocusByRef(struct figview *self, long ref)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     if (!fig) return;
@@ -1995,9 +1895,7 @@ long ref;
     }
 }
 
-static void AbortObjectProc(self, rock)
-struct figview *self;
-long rock;
+static void AbortObjectProc(struct figview *self, long rock)
 {
     if (self->toolset)
 	figtoolview_AbortObjectBuilding(self->toolset);
@@ -2005,9 +1903,7 @@ long rock;
 	message_DisplayString(self, 10, "No object is being created.");
 }
 
-static void FocusUpProc(self, rock)
-struct figview *self;
-long rock;
+static void FocusUpProc(struct figview *self, long rock)
 {
     long old, ref;
 
@@ -2035,9 +1931,7 @@ long rock;
     figview_WantUpdate(self, self);
 }
 
-static void FocusDownProc(self, rock)
-struct figview *self;
-long rock;
+static void FocusDownProc(struct figview *self, long rock)
 {
     long old, ref;
     struct figogrp *foc;
@@ -2064,9 +1958,7 @@ long rock;
     figview_WantUpdate(self, self);
 }
 
-static void FocusLeftProc(self, rock)
-struct figview *self;
-long rock;
+static void FocusLeftProc(struct figview *self, long rock)
 {
     long old, ref, fref;
     long count;
@@ -2108,9 +2000,7 @@ long rock;
     figview_WantUpdate(self, self);
 }
 
-static void FocusRightProc(self, rock)
-struct figview *self;
-long rock;
+static void FocusRightProc(struct figview *self, long rock)
 {
     long old, ref;
     long count;
@@ -2149,10 +2039,7 @@ long rock;
     figview_WantUpdate(self, self);
 }
 
-void figview__CutNPaste(self, operation, rock)
-struct figview *self;
-short operation;
-long rock; /* currently unused */
+void figview__CutNPaste(struct figview *self, short operation, long rock)
 {
     switch (operation) {
 	case figview_OpCopy:
@@ -2175,11 +2062,7 @@ long rock; /* currently unused */
     }
 }
 
-static void CutSelSplot(self, fig, gref, fp)
-struct figview *self;
-struct figure *fig;
-long gref;
-FILE *fp;
+static void CutSelSplot(struct figview *self, struct figure *fig, long gref, FILE *fp)
 {
     long ix;
     struct figogrp *gr = (struct figogrp *)fig->objs[gref].o;
@@ -2198,9 +2081,7 @@ FILE *fp;
     }
 }
 
-static void CutSelProc(self, rock)
-struct figview *self;
-long rock;
+static void CutSelProc(struct figview *self, long rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref;
@@ -2245,9 +2126,7 @@ long rock;
     RepostMenus(self);
 }
 
-static void CopySelProc(self, rock)
-struct figview *self;
-long rock;
+static void CopySelProc(struct figview *self, long rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref;
@@ -2278,9 +2157,7 @@ long rock;
     im_CloseToCutBuffer(figview_GetIM(self), fp); 
 }
 
-static void CopySelInsetProc(self, rock)
-struct figview *self;
-long rock;
+static void CopySelInsetProc(struct figview *self, long rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref;
@@ -2306,9 +2183,7 @@ long rock;
     im_CloseToCutBuffer(figview_GetIM(self), fp); 
 }
 
-static void RotatePasteProc(self, rock)
-struct figview *self;
-long rock;
+static void RotatePasteProc(struct figview *self, long rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     long ref;
@@ -2340,9 +2215,7 @@ long rock;
     im_RotateCutBuffers(figview_GetIM(self), 1);
 }
 
-static void PasteSelProc(self, rock)
-struct figview *self;
-long rock;
+static void PasteSelProc(struct figview *self, long rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     FILE *fp;
@@ -2422,9 +2295,7 @@ long rock;
     figure_NotifyObservers(fig, figure_DATACHANGED);
 }
 
-static void ShowPrintAreaProc(self, rock)
-struct figview *self;
-long rock; /* 0 for off, 1 for on, 2 for recalc */
+static void ShowPrintAreaProc(struct figview *self, long rock)
 {
     long wpts, hpts;
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
@@ -2453,9 +2324,7 @@ long rock; /* 0 for off, 1 for on, 2 for recalc */
     }
 }
 
-static void SetPrintScaleProc(self, rock)
-struct figview *self;
-long rock;
+static void SetPrintScaleProc(struct figview *self, long rock)
 {
     char buffer[64];
     char obuffer[256];
@@ -2524,9 +2393,7 @@ long rock;
     message_DisplayString(self, 10, obuffer);
 }
 
-static void ReadZipProc(self, rock)
-struct figview *self;
-long rock;
+static void ReadZipProc(struct figview *self, long rock)
 {
     int res;
     long count1, count2, ix;
@@ -2633,9 +2500,7 @@ long rock;
     figure_NotifyObservers(fig, figure_DATACHANGED);
 }
 
-static void WritePSProc(self, rock)
-struct figview *self;
-long rock;
+static void WritePSProc(struct figview *self, long rock)
 {
     int res;
     char buffer[296];
@@ -2669,11 +2534,7 @@ long rock;
     message_DisplayString(self, 10, buffer);
 }
 
-static boolean PrintSplot(o, ref, fig, lump)
-struct figobj *o;
-long ref;
-struct figure *fig;
-struct printlump *lump;
+static boolean PrintSplot(struct figobj *o, long ref, struct figure *fig, struct printlump *lump)
 {
     struct view *vtmp;
     struct rectangle insetb, *bbox;
@@ -2694,16 +2555,16 @@ struct printlump *lump;
 	}
 
 	if (strcmp(lump->processor, "troff") == 0) {
-	    fprintf(lump->file, "%s  gsave\n", lump->prefix);	
-	    fprintf(lump->file, "%s  %d %d translate\n", lump->prefix, insetb.left, insetb.top);
-	    fprintf(lump->file, "%s  1 -1 scale %d %d translate\n", lump->prefix, 0, -insetb.height);
+	    fprintf(lump->file, "%s  gsave\n", lump->prefix);
+	    fprintf(lump->file, "%s  %ld %ld translate\n", lump->prefix, insetb.left, insetb.top);
+	    fprintf(lump->file, "%s  1 -1 scale %d %ld translate\n", lump->prefix, 0, -insetb.height);
 	    view_Print(vtmp, lump->file, "PostScript", "troff", FALSE);
 	    fprintf(lump->file, "%s  grestore\n", lump->prefix);
 	}
 	else {
-	    fprintf(lump->file, "%s  gsave\n", lump->prefix);	
-	    fprintf(lump->file, "%s  %d %d translate\n", lump->prefix, insetb.left, insetb.top);
-	    fprintf(lump->file, "%s  1 -1 scale %d %d translate\n", lump->prefix, 0, -insetb.height);
+	    fprintf(lump->file, "%s  gsave\n", lump->prefix);
+	    fprintf(lump->file, "%s  %ld %ld translate\n", lump->prefix, insetb.left, insetb.top);
+	    fprintf(lump->file, "%s  1 -1 scale %d %ld translate\n", lump->prefix, 0, -insetb.height);
 	    view_Print(vtmp, lump->file, lump->processor, lump->format, FALSE);
 	    fprintf(lump->file, "%s  grestore\n", lump->prefix);
 	}
@@ -2716,12 +2577,7 @@ struct printlump *lump;
     return FALSE;
 }
 
-void figview__Print(self, file, processor, format, toplevel)
-struct figview *self;
-FILE *file;
-char *processor;
-char *format;
-boolean toplevel;
+void figview__Print(struct figview *self, FILE *file, char *processor, char *format, boolean toplevel)
 {
     struct figure *fig = (struct figure *)self->header.view.dataobject;
     long wpts, hpts;  /* image dimensions in points */
@@ -2781,8 +2637,8 @@ boolean toplevel;
 
     /* generate PostScript  */
     fprintf(file, "%s  %% ATK fig inset beginning\n", prefix);
-    fprintf(file, "%s  /width %d def  /height %d def\n", prefix, wpts, hpts);
-    fprintf(file, "%s  1 -1 scale  0 %d translate\n", prefix, -hpts);
+    fprintf(file, "%s  /width %ld def  /height %ld def\n", prefix, wpts, hpts);
+    fprintf(file, "%s  1 -1 scale  0 %ld translate\n", prefix, -hpts);
     fprintf(file, "%s  newpath 0 0 moveto 0 height lineto width height lineto\n", prefix);
     fprintf(file, "%s  width 0 lineto clip newpath   %% clip to assigned area\n", prefix);	
     fprintf(file, "%s  %f %f scale\n", prefix, figure_GetPrintScaleX(fig), figure_GetPrintScaleY(fig));	
@@ -2803,9 +2659,7 @@ boolean toplevel;
     }
 }
 
-static void ToolsetCreateProc(self, rock)
-struct figview *self;
-char *rock;
+static void ToolsetCreateProc(struct figview *self, char *rock)
 {
     struct figure *fig = (struct figure *)figview_GetDataObject(self);
     struct im *im;
@@ -2868,15 +2722,12 @@ char *rock;
     RepostMenus(self);
 }
 
-void figview__DestroyToolset(self)
-struct figview *self;
+void figview__DestroyToolset(struct figview *self)
 {
     ToolsetKillProc(self, 0);
 }
 
-static void ToolsetKillProc(self, rock)
-struct figview *self;
-char *rock;
+static void ToolsetKillProc(struct figview *self, char *rock)
 {
     struct im *toolim = NULL;
     struct frame *toolfr = NULL;
@@ -2921,9 +2772,7 @@ char *rock;
     RepostMenus(self); 
 }
 
-static void ChangeZoomProc(self, rock)
-struct figview *self;
-long rock;
+static void ChangeZoomProc(struct figview *self, long rock)
 {
     long newscale;
     long midx, midy, offx, offy;
@@ -2963,16 +2812,12 @@ long rock;
 }
 
 /* 1 to zoom in, -1 to zoom out, 0 to zoom norm */
-void figview__ChangeZoom(self, val)
-struct figview *self;
-long val;
+void figview__ChangeZoom(struct figview *self, long val)
 {
     ChangeZoomProc(self, val);
 }
 
-static void PanToOriginProc(self, rock)
-struct figview *self;
-long rock;
+static void PanToOriginProc(struct figview *self, long rock)
 {
     if (self->panx==self->originx && self->pany==self->originy)
 	return;
@@ -2983,9 +2828,7 @@ long rock;
     figview_WantUpdate(self, self);
 }
 
-void figview__LinkTree( self, parent )
-struct figview *self;
-struct view *parent;
+void figview__LinkTree(struct figview *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if (parent && figview_GetIM(self)) {

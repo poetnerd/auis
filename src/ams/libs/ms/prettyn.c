@@ -42,20 +42,23 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <wp.h>
 #endif /* WHITEPAGES_ENV */
 #include <parseadd.h>
+#include <stdlib.h>
+extern int FindPrettiestFromString(char *MyFromBuf, char *FromBuf, int lim);
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);  /* overhead/mail/lib/parseadd.c */
+extern int GetNameFromGecos(char *GecosField, char *LoginID, char *Domain, char **PersonalNameP);
+extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);  /* overhead/mail/lib/parseadd.c */
+extern int ShrinkName(char *longname, char *shortname, int limit);
 
 #define BIGFROM 24  /* c.f. bldcapt.c */
 #define MINHOST 3
 
 extern char MyMailDomain[];
 
-extern PARSED_ADDRESS *SingleAddress();
+extern PARSED_ADDRESS *SingleAddress(PARSED_ADDRESS *AddrList, int *pCount);
 
 #define strncpy2maxes(s1, s2, l1, l2) strncpy((s1), (s2), ((l1) > (l2)) ? (l2) : (l1))
 
-FindPrettiestName(msg, FromBuf, lim)
-struct MS_Message *msg;
-char *FromBuf;
-int lim;
+int FindPrettiestName(struct MS_Message *msg, char *FromBuf, int lim)
 {
     char MyFromBuf[1500];
     struct passwd *p;
@@ -111,9 +114,7 @@ int lim;
     return(FindPrettiestFromString(MyFromBuf, FromBuf, lim));
 }
 
-FindPrettiestFromString(MyFromBuf, FromBuf, lim)
-char *MyFromBuf, *FromBuf;
-int lim;
+int FindPrettiestFromString(char *MyFromBuf, char *FromBuf, int lim)
 {
     char *RealFrom, *s, *oparen, *cparen;
     int dummy = 0, len;

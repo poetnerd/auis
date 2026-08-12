@@ -9,9 +9,11 @@ $Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/inventid.c,v 
 $Source: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/inventid.c,v $
 */
 #include <ms.h>
+#include <string.h>
 
-InventID(msg)
-struct MS_Message *msg;
+extern char *ams_genid(int IsFileName);
+
+int InventID(struct MS_Message *msg)
 {
     debug(1, ("Invent ID\n"));
 

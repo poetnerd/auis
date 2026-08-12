@@ -149,7 +149,7 @@ methods:
 				 * or part of a meta sequence? */
     DoKey(long key) returns struct im *; /* Simulates typing of key on window. */
     DoKeySequence(unsigned char *keys);  /* simulates typing string */
-    HandleMenu(struct proctable_Entry *procTableEntry, struct basicobject *object, long rock) returns struct im *;
+    HandleMenu(struct proctable_Entry *procTableEntry, struct basicobject *object, void *rock) returns struct im *;
     HandleMouse(enum view_MouseAction action, long x, long y, long newButtonState) returns struct im *;
     DoMacro();
     DoMenu(unsigned char *itemname);
@@ -177,7 +177,7 @@ methods:
     CloseToCutBuffer(FILE *writeFile);
     RotateCutBuffers(long count);
     AppendToCutBuffer(FILE *writeFile);
-    SetInteractionEvent(procedure function, long functionData, long time) returns struct im_InteractionEvent *;
+    SetInteractionEvent(procedure function, void *functionData, long time) returns struct im_InteractionEvent *;
     CancelInteractionEvent(struct im_InteractionEvent *event);
     DispatchPendingInteractionEvents(); /* This is an internal only method. */
     /* maybe this should be done by HandleRedraw */
@@ -211,7 +211,7 @@ methods:
      */
     GetDeleteWindowCallback() returns procedure;
     GetDeleteWindowCallbackRock() returns long;
-    SetDeleteWindowCallback(procedure cb, long rock);
+    SetDeleteWindowCallback(procedure cb, void *rock);
     CallDeleteWindowCallback();
     /* Drag/Drop support.  These calls return the host/files that
      * have been dropped on a view (when a hit mouse action is a
@@ -272,7 +272,7 @@ classprocedures:
     RemoveCanOutHandler(FILE *file);
     Interact(boolean mayBlock) returns boolean;
     SetCleanUpZombies(boolean value);
-    AddZombieHandler(int pid, procedure function, long functionData);
+    AddZombieHandler(int pid, procedure function, void *functionData);
     RemoveZombieHandler(int pid);
     SignalHandler(long signalNumber, procedure proc, char *procdata);
     ChangeDirectory(char *dirName) returns long;
@@ -280,7 +280,7 @@ classprocedures:
     KeyboardExit();
     KeyboardLevel() returns long;
     KeyboardProcessor();
-    EnqueueEvent(procedure proc, char *procdata, long timeIncrement) returns struct event *;
+    EnqueueEvent(procedure proc, void *procdata, long timeIncrement) returns struct event *;
     IsPlaying() returns boolean;
     CheckForInterrupt() returns boolean;  /* scans ahead for control-G */
     ForceUpdate();

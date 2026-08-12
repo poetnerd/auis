@@ -42,10 +42,10 @@
 #define cmenu_BackgroundPixmap          2
 #define cmenu_NoSaveUnder               3
 
-#ifdef _STDC_
+#ifdef __STDC__
 extern struct cmenu *cmenu_Create(Display *display, Window parent,
                          char *defaultEnvironment, void (*freeFunction)());
-extern cmenu_Destroy(struct cmenu *menu);
+extern void cmenu_Destroy(struct cmenu *menu);
 extern int cmenu_AddPane(struct cmenu *menu, char *paneTitle,
                          int panePriority, int flags);
 extern int cmenu_DeletePane(struct cmenu *menu, char *paneTitle, int priority);
@@ -57,10 +57,10 @@ extern int cmenu_DeleteSelection(struct cmenu *menu, char *paneTitle,
                int flags);
 extern int cmenu_Activate(struct cmenu *menu, XButtonEvent *menuEvent,
                long *data, int backgroundType, long backgroundValue);
-#else /* _STDC_ */
+#else /* __STDC__ */
 extern struct cmenu *cmenu_Create();
 extern int cmenu_AddPane();
 extern int cmenu_AddSelection();
 extern int cmenu_DeletePane();
 extern int cmenu_DeleteSelection();
-#endif /* _STDC_ */
+#endif /* __STDC__ */

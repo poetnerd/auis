@@ -58,8 +58,8 @@ static int RowRepeat;				/* number of repititons */
 static int RowCount;				/* current row */
 static int ColCount;				/* current column */
 
-static int IMG_ReadHeader();			/* Read file header */
-static void IMG_WriteByte();			/* Write output byte */
+static int IMG_ReadHeader(FILE *f, IMG_Header *h);			/* Read file header */
+static void IMG_WriteByte(unsigned char c, int cols, unsigned int bpl);	/* Write output byte */
 
 /*
 **  imgIdent
@@ -69,10 +69,7 @@ static void IMG_WriteByte();			/* Write output byte */
 **	Returns 1 if file is a GEM Image, 0 otherwise
 */
 
-int 
-img__Ident( classID, fullname)
-    struct classheader classID;
-    char *fullname;
+int img__Ident(struct classheader *classID, char *fullname)
 {
 	FILE *f;				/* Input file */
 	IMG_Header header;			/* GEM Image header info */
@@ -100,11 +97,7 @@ img__Ident( classID, fullname)
 **	Returns pointer to allocated struct if successful, NULL otherwise
 */
 
-int
-img__Load ( img, fullname, fp )
-    struct img *img;
-    char *fullname;
-    FILE *fp;
+int img__Load(struct img *img, char *fullname, FILE *fp)
 {
 	register int i;				/* Random index */
 	FILE *f;				/* Input file */
@@ -218,10 +211,7 @@ img__Load ( img, fullname, fp )
 **		5 if pattern length is too big ( > 255)
 */
 
-static int IMG_ReadHeader (f,h)
-
-    FILE      *f;
-    IMG_Header *h;
+static int IMG_ReadHeader(FILE *f, IMG_Header *h)
 {
 	register int tlen;			/* total to read in */
 	register int rlen;			/* read lengths */
@@ -310,11 +300,7 @@ static int IMG_ReadHeader (f,h)
 **	Returns no value (void function)
 */
 
-static void IMG_WriteByte (c,cols,bpl)
-
-    unsigned char c;
-    register int cols;
-    unsigned int bpl;
+static void IMG_WriteByte(unsigned char c, int cols, unsigned int bpl)
 {
 	register int i;
 	register unsigned char *ptr;
@@ -338,11 +324,7 @@ static void IMG_WriteByte (c,cols,bpl)
 	return;
 }
 
-long
-img__Read( self, file, id )
-    struct img *self;
-    FILE *file;
-    long id;
+long img__Read(struct img *self, FILE *file, long id)
 {
     if(img_Load(self, NULL, file) == 0)
 	return(dataobject_NOREADERROR);
@@ -350,21 +332,12 @@ img__Read( self, file, id )
 	return(dataobject_BADFORMAT);
 }
 
-long
-img__Write( self, file, writeID, level )
-    struct img *self;
-    FILE *file;
-    long writeID;
-    int level;
+long img__Write(struct img *self, FILE *file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
-long
-img__WriteNative( self, file, filename )
-    struct img *self;
-    FILE *file;
-    char *filename;
+long img__WriteNative(struct img *self, FILE *file, char *filename)
 {
 return(0);
 }

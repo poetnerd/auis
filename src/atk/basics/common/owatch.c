@@ -39,10 +39,8 @@ static struct owatch *owo=NULL;
 #define owatch_BLOCKSIZE 8160
 #define owatch_WATCHESPERBLOCK (owatch_BLOCKSIZE/sizeof(struct owatch_data))
 
-void owatch__ObservedChanged(self, changed, value)
-struct owatch *self;
-struct observable *changed;
-long value;  {
+void owatch__ObservedChanged(struct owatch *self, struct observable *changed, long value)
+{
     struct owatch_data *o=useddata;
     if(value!=observable_OBJECTDESTROYED) return;
     while(o) {
@@ -54,9 +52,7 @@ long value;  {
     }
 }
 
-struct owatch_data *owatch__Create(classID, obj)
-struct classheader *classID;
-struct observable *obj;
+struct owatch_data * owatch__Create(struct classheader *classID, struct observable *obj)
 {
     int i;
     struct owatch_data *o=useddata;
@@ -105,9 +101,7 @@ struct observable *obj;
     return o;
 }
 
-void owatch__Delete(classID, owd)
-struct classheader *classID;
-struct owatch_data *owd;
+void owatch__Delete(struct classheader *classID, struct owatch_data *owd)
 {
     if(owd==NULL) return;
     if(owd->refs<1) {
@@ -126,9 +120,7 @@ struct owatch_data *owd;
     freedata=owd;
 }
 
-boolean owatch__CheckAndDelete(classID, owd)
-struct classheader *classID;
-struct owatch_data *owd;
+boolean owatch__CheckAndDelete(struct classheader *classID, struct owatch_data *owd)
 {
     boolean result;
     if(owd==NULL) return FALSE;

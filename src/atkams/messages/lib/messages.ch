@@ -36,9 +36,9 @@
 
 class messages: textview[textv] {
     classprocedures:
-      InitializeObject(struct messwind *self) returns boolean;
+      InitializeObject(struct messages *self) returns boolean;
       InitializeClass() returns boolean;
-      FinalizeObject(struct messwind *self);
+      FinalizeObject(struct messages *self);
     overrides:
       PostKeyState(struct keystate *keystate);
       PostMenus(struct menulist *ml);

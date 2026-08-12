@@ -30,6 +30,7 @@ char *figattr_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 #include <figattr.eh>
 
 #include <class.h>
+#include <stdlib.h>
 
 static char attribute_names[figattr_NumAttributes][20] = {
     "shade",
@@ -42,11 +43,9 @@ static char attribute_names[figattr_NumAttributes][20] = {
     "textpos"
 };
 
-static char *CopyString();
+static char *CopyString(char *str);
 
-boolean figattr__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-struct figattr *self;
+boolean figattr__InitializeObject(struct classheader *ClassID, struct figattr *self)
 {
     self->active = 0;
 
@@ -62,9 +61,7 @@ struct figattr *self;
     return TRUE;
 }
 
-void figattr__FinalizeObject(ClassID, self)
-struct classhdr *ClassID;
-struct figattr *self;
+void figattr__FinalizeObject(struct classheader *ClassID, struct figattr *self)
 {
     if (self->color)
 	free(self->color);
@@ -72,8 +69,7 @@ struct figattr *self;
 	free(self->fontfamily);
 }
 
-struct figattr *figattr__CopySelf(self)
-struct figattr *self;
+struct figattr * figattr__CopySelf(struct figattr *self)
 {
     struct figattr *res = figattr_New();
 
@@ -93,10 +89,7 @@ struct figattr *self;
     return res;
 }
 
-void figattr__CopyData(self, src, mask)
-struct figattr *self;
-struct figattr *src;
-unsigned long mask;
+void figattr__CopyData(struct figattr *self, struct figattr *src, unsigned long mask)
 {
     if (mask & (1<<figattr_Shade)) {
 	if (!figattr_IsActive(src, figattr_Shade))
@@ -156,8 +149,7 @@ unsigned long mask;
     /* ##new */
 }
 
-static char *CopyString(str)
-char *str;
+static char * CopyString(char *str)
 {
     char *tmp;
 
@@ -171,11 +163,7 @@ char *str;
 }
 
 /* does not use /begindata /enddata convention */
-long figattr__Write(self, fp, writeid, level)
-struct figattr *self;
-FILE *fp;
-long writeid;
-int level;
+long figattr__Write(struct figattr *self, FILE *fp, long writeid, int level)
 {
     int ix;
 
@@ -186,28 +174,28 @@ int level;
 	    fprintf(fp, "%s:", attribute_names[ix]);
 	    switch (ix) {
 		case figattr_Shade:
-		    fprintf(fp, "%d", self->shade);
+		    fprintf(fp, "%ld", self->shade);
 		    break;
 		case figattr_LineWidth:
-		    fprintf(fp, "%d", self->linewidth);
+		    fprintf(fp, "%ld", self->linewidth);
 		    break;
 		case figattr_RRectCorner:
-		    fprintf(fp, "%d", self->rrectcorner);
+		    fprintf(fp, "%ld", self->rrectcorner);
 		    break;
 		case figattr_Color:
 		    fprintf(fp, "%s", self->color);
 		    break;
 		case figattr_FontSize:
-		    fprintf(fp, "%d", self->fontsize);
+		    fprintf(fp, "%ld", self->fontsize);
 		    break;
 		case figattr_FontStyle:
-		    fprintf(fp, "%d", self->fontstyle);
+		    fprintf(fp, "%ld", self->fontstyle);
 		    break;
 		case figattr_FontFamily:
 		    fprintf(fp, "%s", self->fontfamily);
 		    break;
 		case figattr_TextPos:
-		    fprintf(fp, "%d", self->textpos);
+		    fprintf(fp, "%ld", self->textpos);
 		    break;
 		    /* ##new */
 		default:
@@ -222,10 +210,7 @@ int level;
 }
 
 /* does not use /begindata /enddata convention */
-long figattr__Read(self, fp, id)
-struct figattr *self;
-FILE *fp;
-long id;
+long figattr__Read(struct figattr *self, FILE *fp, long id)
 {
 #define LINELENGTH (250)
     static char buf[LINELENGTH+1];
@@ -253,7 +238,7 @@ long id;
 
 	for (ix=0; ix<figattr_NumAttributes; ix++)
 	    if (!strcmp(buf, attribute_names[ix])) break;
-	if (ix==figattr_NumAttributes) return dataobject_BADFORMAT;
+	/* if (ix==figattr_NumAttributes) return dataobject_BADFORMAT; */ /* This is a very unforgiving tactic. In particular, it makes earlier versions of figure totally unable to read later versions, if attributes have been added. Why be so anal? */
 
 	switch (ix) {
 	    case figattr_Shade:
@@ -287,6 +272,8 @@ long id;
 		figattr_SetTextPos(self, ival);
 		break;
 		/* ##new */
+	    case figattr_NumAttributes: /* unknown attribute -- ignore */
+		break;
 	    default:
 		break;
 	}

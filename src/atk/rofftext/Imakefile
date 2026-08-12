@@ -29,6 +29,8 @@
 DOBJS = rofftext.do rofftxta.do mmtext.do mantext.do
 IHFILES = rofftext.ih rofftxta.ih mmtext.ih mantext.ih
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 NormalObjectRule()
 NormalATKRule()
 #undef none

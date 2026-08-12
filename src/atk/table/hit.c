@@ -36,6 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 
 #include <class.h>
+#include <stdlib.h>
 
 #include <graphic.ih>
 #include <view.ih>
@@ -46,28 +47,37 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #define AUXMODULE
 #include <spread.eh>
+static int EnterCellName(struct spread *V, Chunk chunk);
+static int IsNotSeparator(char ch);
+static int movecolcancel(struct spread *V);
+static int movecoldown(struct spread *V, int x, int y, Chunk chunk);
+static int movecolmove(struct spread *V, int x, int y);
+static int movecolup(struct spread *V, int x, int y);
+static int moverowcancel(struct spread *V);
+static int moverowdown(struct spread *V, int x, int y, Chunk chunk);
+static int moverowmove(struct spread *V, int x, int y);
+static int moverowup(struct spread *V, int x, int y);
 
-extern struct view *spread_FindSubview();
+/* not static: also called from menu.c/keyboard.c */
+int CopyChunk(Chunk to, Chunk from);
+int SetCurrentCell(struct spread *V, Chunk chunk);
+int CompareChunk(Chunk to, Chunk from);
+int extendCurrentCell(struct spread *V, Chunk chunk);
+
+extern struct view *spread_FindSubview(struct spread *V, struct cell *cell);
+
+/* defined in update.c */
+extern int spread_InvertRectangle(struct spread *V, int left, int top, int width, int height);
+extern int spread_ClearSelectionBox(struct spread *V);
+
+/* defined in keyboard.c */
+extern void k_SetMessageState(struct spread *V, int newstate);
 
 static boolean debug=FALSE;
 
-#ifndef abs
-static  abs (x) int x;
-{
-    if (x < 0)
-	return - x;
-    else
-	return x;
-}
-#endif
-
 /* Handle mouse hit */
 
-struct view * MouseHit (V, action, x, y, numberOfClicks)
-register struct spread * V;
-enum view_MouseAction action;
-long x, y;
-long numberOfClicks;		/* how should i use this?? */
+struct view * MouseHit(struct spread *V, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     struct chunk chunk;
     struct cell * hitcell;
@@ -119,10 +129,10 @@ long numberOfClicks;		/* how should i use this?? */
     if (CompareChunk(&extendedchunk, &(V->anchor)) == 0 && extendedchunk.LeftCol >= 0 && extendedchunk.TopRow >= 0 && extendedchunk.LeftCol <= extendedchunk.RightCol && extendedchunk.TopRow <= extendedchunk.BotRow && hitcell->celltype == table_ImbeddedObject) {
 	if ((child = spread_FindSubview(V, hitcell))) {
 	    if (debug)
-		printf("Passing hit at %d %d to child at %x\n", view_EnclosedXToLocalX(child, x), view_EnclosedYToLocalY(child, y), child);
+		printf("Passing hit at %ld %ld to child at %lx\n", view_EnclosedXToLocalX(child, x), view_EnclosedYToLocalY(child, y), (unsigned long) child);
 	    result = view_Hit(child, action, view_EnclosedXToLocalX(child, x), view_EnclosedYToLocalY(child, y), numberOfClicks);
 	    if (debug)
-		printf("Child hit returned %x\n", result);
+		printf("Child hit returned %lx\n", (unsigned long) result);
 	    return result;
 	}
     }
@@ -145,10 +155,10 @@ long numberOfClicks;		/* how should i use this?? */
 	if (chunk.TopRow >= 0 && chunk.LeftCol >= 0 && chunk.TopRow <= chunk.BotRow && chunk.LeftCol <= chunk.RightCol && hitcell->celltype == table_ImbeddedObject) {
 	    if ((child = spread_FindSubview(V, hitcell))) {
 		if (debug)
-		    printf("Passing hit at %d %d to child at %x\n", view_EnclosedXToLocalX(child, x), view_EnclosedYToLocalY(child, y), child);
+		    printf("Passing hit at %ld %ld to child at %lx\n", view_EnclosedXToLocalX(child, x), view_EnclosedYToLocalY(child, y), (unsigned long) child);
 		result = view_Hit(child, action, view_EnclosedXToLocalX(child, x), view_EnclosedYToLocalY(child, y), numberOfClicks);
 		if (debug)
-		    printf("Child hit returned %x\n", result);
+		    printf("Child hit returned %lx\n", (unsigned long) result);
 		return result;
 	    }
 	}
@@ -243,9 +253,7 @@ long numberOfClicks;		/* how should i use this?? */
     return &getView(V);
 }
 
-CopyChunk(to, from)
-Chunk to;
-Chunk from;
+int CopyChunk(Chunk to, Chunk from)
 {
     to->LeftCol = from->LeftCol;
     to->RightCol = from->RightCol;
@@ -253,9 +261,7 @@ Chunk from;
     to->BotRow = from->BotRow;
 }
 
-CompareChunk(to, from)
-Chunk to;
-Chunk from;
+int CompareChunk(Chunk to, Chunk from)
 {
     return (to->LeftCol != from->LeftCol ||
 		to->RightCol != from->RightCol ||
@@ -263,10 +269,7 @@ Chunk from;
 		to->BotRow != from->BotRow);
 }
 
-static  movecoldown (V, x, y, chunk)
-register struct spread * V;
-int     x, y;
-Chunk chunk;
+static int movecoldown(struct spread *V, int x, int y, Chunk chunk)
 {
     int index;
 
@@ -287,9 +290,7 @@ Chunk chunk;
     }
 }
 
-static  movecolmove (V, x, y)
-register struct spread * V;
-int     x,  y;
+static int movecolmove(struct spread *V, int x, int y)
 {
     if (debug)
 	printf("movecolmove\n");
@@ -300,9 +301,7 @@ int     x,  y;
     spread_InvertRectangle (V, V->currentoffset, V->icy, V->icx - V->currentoffset, 2);
 }
 
-static  movecolup (V, x, y)
-register struct spread * V;
-int     x,  y;
+static int movecolup(struct spread *V, int x, int y)
 {
     movecolcancel (V);
     table_ChangeThickness (MyTable(V), 1, V->currentslice,
@@ -310,8 +309,7 @@ int     x,  y;
     view_WantNewSize(getView(V).parent, &getView(V));
 }
 
-static  movecolcancel (V)
-register struct spread * V;
+static int movecolcancel(struct spread *V)
 {
     if (debug)
 	printf("movecolcancel\n");
@@ -320,10 +318,7 @@ register struct spread * V;
     spread_InvertRectangle (V, V->currentoffset, V->icy, V->icx - V->currentoffset, 2);
 }
 
-static  moverowdown (V, x, y, chunk)
-register struct spread * V;
-int     x,  y;
-Chunk chunk;
+static int moverowdown(struct spread *V, int x, int y, Chunk chunk)
 {
     int index;
 
@@ -346,9 +341,7 @@ Chunk chunk;
 }
 
 
-static  moverowmove (V, x, y)
-register struct spread * V;
-int     x, y;
+static int moverowmove(struct spread *V, int x, int y)
 {
     if (debug)
 	printf("moverowmove\n");
@@ -359,9 +352,7 @@ int     x, y;
     spread_InvertRectangle (V, V->icx, V->currentoffset, 2, V->icy - V->currentoffset);
 }
 
-static  moverowup (V, x, y)
-register struct spread * V;
-int     x,  y;
+static int moverowup(struct spread *V, int x, int y)
 {
     if (debug)
 	printf("moverowup\n");
@@ -370,8 +361,7 @@ int     x,  y;
     view_WantNewSize(getView(V).parent, &getView(V));
 }
 
-static  moverowcancel (V)
-register struct spread * V;
+static int moverowcancel(struct spread *V)
 {
     if (debug)
 	printf("moverowcancel\n");
@@ -382,10 +372,7 @@ register struct spread * V;
 
 /* Get the formula of a cell */
 
-GetFormula (V, chunk, keybuff)
-register struct spread * V;
-register Chunk chunk;
-char **keybuff;
+int GetFormula(struct spread *V, Chunk chunk, char **keybuff)
 {
     if (debug)
 	printf("GetFormula entered\n");
@@ -403,8 +390,7 @@ char **keybuff;
 
 /* true if character is not a separator */
 
-static IsNotSeparator (ch)
-register char ch;
+static int IsNotSeparator(char ch)
 {
     return (ch != '=' && ch != '+' && ch != '-' && ch != '*' && ch != '^' && ch != '/' && ch != ':' && ch != ',' && ch != '(' && ch != '[');
 }
@@ -413,9 +399,7 @@ register char ch;
 
 Note that this routine is useful only if bufferstatus = BUFFERHASINPUT
  */
-static  EnterCellName (V, chunk)
-register struct spread * V;
-Chunk chunk;
+static int EnterCellName(struct spread *V, Chunk chunk)
 {
     char buf[10], rbuf[5], cbuf[5];
     int i;
@@ -438,7 +422,7 @@ Chunk chunk;
     sprintf (buf, "[r%s,c%s]", rbuf, cbuf);
     i = message_GetCurrentString (&getView(V), keybuff, sizeof keybuff);
     if (debug)
-	printf("GetCurrentString returned %d and '%s' length %d", i, keybuff, strlen(keybuff));
+	printf("GetCurrentString returned %d and '%s' length %lu", i, keybuff, strlen(keybuff));
     i += strlen(keybuff);
     if (i > 0 && IsNotSeparator(keybuff[i - 1]))
 	message_InsertCharacters (&getView(V), i++, "+", 1);
@@ -452,8 +436,7 @@ Chunk chunk;
 }
 
 
-TellFormula (V)
-register struct spread * V;
+int TellFormula(struct spread *V)
 {
     char *keybuff;
 
@@ -469,8 +452,7 @@ register struct spread * V;
 }
 
 /* reset current working cell */
-ResetCurrentCell (V)
-register struct spread * V;
+int ResetCurrentCell(struct spread *V)
 {
     struct chunk topleft;
 
@@ -483,9 +465,7 @@ register struct spread * V;
 
 /* set current working cell */
 
-SetCurrentCell (V, chunk)
-register struct spread * V;
-register Chunk chunk;
+int SetCurrentCell(struct spread *V, Chunk chunk)
 {
     long k;
 
@@ -530,9 +510,7 @@ register Chunk chunk;
 	printf("SetCurrentCell exited\n");
 }
 
-extendCurrentCell(V, chunk)
-register struct spread * V;
-register Chunk chunk;
+int extendCurrentCell(struct spread *V, Chunk chunk)
 {
     int x0, x1, y0, y1, x2, y2, x3, y3;
 

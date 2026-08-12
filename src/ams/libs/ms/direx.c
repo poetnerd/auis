@@ -35,6 +35,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <mailconf.h>
 #include <sys/stat.h>
+static void AddWelcomeMail(char *mdir);
+extern int AppendFileToFolder(char *FileName, char *FolderName, int DoDelete);
+extern int BuildNickName(char *FullName, char *NickName);  /* ams/libs/shr/utils.c */
+extern int EnsurePrivacy(char *DirName, Boolean SemiPrivate);
+extern int FindDefaultDir(char *Root, char *Name);
+extern int GetSubsEntry(char *FullName, char *NickName, int *status);
+extern int MS_CreateNewMessageDirectory(char *DirName, int Overwrite, char *obsolete);
+extern int MS_FastUpdateState();
+extern int MS_SetSubscriptionEntry(char *FullName, char *NickName, int status);
+extern int NonfatalBizarreError(char *text);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int vdown(int err);  /* overhead/util/lib/vclose.c */
 #ifdef AFS_ENV
 #include <netinet/in.h>
 #include <afs/param.h>
@@ -45,8 +57,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 extern char home[], Me[], *GetPersonalMailbox();
 
-static void AddWelcomeMail(mdir)
-char *mdir;
+static void AddWelcomeMail(char *mdir)
 {
     char ErrorText[256];
 
@@ -55,7 +66,7 @@ char *mdir;
 	if (errno == ENOENT) {
 	    strcpy(ErrorText, "The 'Welcome to Andrew' mail file is missing, so you'll get no 'welcome' mail.");
 	} else {
-	    sprintf(ErrorText, "Could not give you the 'Welcome to Andrew' mail (%d, %d, %d)", AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
+	    sprintf(ErrorText, "Could not give you the 'Welcome to Andrew' mail (%ld, %ld, %ld)", AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
 	}
 	NonfatalBizarreError(ErrorText);
     }
@@ -156,9 +167,7 @@ int EnsureMailDirExists() {
     return(0);
 }
 
-EnsurePrivacy(DirName, SemiPrivate)
-char *DirName;
-Boolean SemiPrivate;
+int EnsurePrivacy(char *DirName, Boolean SemiPrivate)
 {
 #ifdef AFS_ENV
     struct ViceIoctl blob;

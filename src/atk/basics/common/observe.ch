@@ -101,6 +101,6 @@ data:
 	struct triggerhousing *triggers;
 };
 
-#define observable_OBJECTDESTROYED -1
+#define observable_OBJECTDESTROYED (-1L)
 #define observable_OBJECTCHANGED 0
 

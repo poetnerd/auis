@@ -59,7 +59,12 @@ MkdirTarget($(DIRS))
 
 install.time::
 	-${DESTDIR}/bin/cui rebuild ${DESTDIR}/.MESSAGES \; exit
+#if 0
+/* gendemo disabled: its cui-driven `recon` step hangs unkillable (UE
+ * state) after catching a pre-existing prsdate.c segfault -- see
+ * roadmap.md "gendemo" Next up #1. Re-enable once that crash is fixed. */
 	-${CSHELL} -f gendemo  -force -DESTDIR ${DESTDIR} ${DESTDIR}/.MESSAGES/demo
+#endif
 
 InstallDocs(gendemo.help, ${DESTDIR}/help)
 

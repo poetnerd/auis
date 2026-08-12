@@ -31,11 +31,15 @@
 static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fad/RCS/fad.c,v 2.9 1992/12/15 21:35:02 rr2b R6tape $";
 #endif
 
+#include <andrewos.h> /* strings.h */
 #include <class.h>
 #include <dataobj.ih>
 #include <fad.eh>
 #include <fontdesc.ih>
 #include <attribs.h>
+static struct fontdesc * my_DefineFont(char *fname);
+static struct vector * newvector(struct fadpoint *p1, struct fadpoint *p2);
+static int pointmatch(struct fad *self, struct fadpoint *pt, long x, long y);
 #define STARTHEIGHT 256
 /* *********
 struct fad *fad__NewData()
@@ -46,8 +50,7 @@ struct fad *fad__NewData()
 	return(np);
 	}
 ***************** */
-static struct fontdesc *my_DefineFont(fname)
-char *fname;
+static struct fontdesc * my_DefineFont(char *fname)
 {
 	char familyname[256];
 	long fontStyle;
@@ -55,8 +58,7 @@ char *fname;
 	fontdesc_ExplodeFontName(fname,familyname, sizeof(familyname), &fontStyle, &fontSize);
 	return fontdesc_Create(familyname,  fontStyle, fontSize);
 	}
-static struct vector *newvector(p1,p2)
-struct fadpoint *p1,*p2;
+static struct vector * newvector(struct fadpoint *p1, struct fadpoint *p2)
 {
 	register struct vector *nv;
 	nv = (struct vector *)malloc( sizeof(struct vector));
@@ -67,9 +69,7 @@ struct fadpoint *p1,*p2;
 	nv->mode = LINEMODE;
 	return(nv);
 	}
-void fad__SetAttributes(self, attributes)
-struct fad *self;
-struct attributes *attributes;
+void fad__SetAttributes(struct fad *self, struct attributes *attributes)
 {
 
     super_SetAttributes(self, attributes);
@@ -80,15 +80,11 @@ struct attributes *attributes;
 	attributes = attributes->next;
     }
 }
-void fad__SetReadOnly(self, readOnly)
-struct fad *self;
-boolean readOnly;
+void fad__SetReadOnly(struct fad *self, boolean readOnly)
 {
     self->readonly = readOnly;
 }
-struct fadpoint *fad__newpoint(self,x,y)
-struct fad *self;
-long x,y;
+struct fadpoint * fad__newpoint(struct fad *self, long x, long y)
 {
 	struct fadpoint *np,**iip;
 	np = (struct fadpoint *)malloc(sizeof(struct fadpoint));
@@ -104,8 +100,7 @@ long x,y;
 	return(np);
 	}
 
-struct fad_frame *fad__newframe(self)
-struct fad *self;
+struct fad_frame * fad__newframe(struct fad *self)
 {
 	register struct fad_frame *fp;
 	fp = (struct fad_frame *)malloc(sizeof(struct fad_frame));
@@ -116,9 +111,7 @@ struct fad *self;
 	return(fp);
 	}
 
-boolean fad__InitializeObject(classID, self)
-    struct classheader *classID;
-struct fad *self;
+boolean fad__InitializeObject(struct classheader *classID, struct fad *self)
 {
     int i;
 	self->f = fad_newframe(self);
@@ -147,16 +140,11 @@ struct fad *self;
 	return TRUE;
 	}
 
-void fad__SetName(self,name)
-struct fad *self;
+void fad__SetName(struct fad *self, char *name)
 {
 	strcpy(self->fadname,name);
 }
-struct fadpoint *fad__setpoint(self,x,y,type,f)
-struct fad *self;
-long x,y;
-int type;
-struct fad_frame *f;
+struct fadpoint * fad__setpoint(struct fad *self, long x, long y, int type, struct fad_frame *f)
 {
 	register struct fadpoint *pt;
 	if((pt = f->p) == NULL){
@@ -173,20 +161,14 @@ struct fad_frame *f;
 	pt->p = fad_newpoint(self,x,y);
 	return(pt->p);
 	}
-static pointmatch(self,pt,x,y)
-struct fad *self;
-struct fadpoint *pt;
-long x,y;
+static int pointmatch(struct fad *self, struct fadpoint *pt, long x, long y)
 {
 	if(ISICONORLABEL(x))
 		return(x == pt->x && y == pt->y);
 	return((x < pt->x + PFUG) && (x > pt->x - PFUG )&& 
 	  (y < pt->y + PFUG) &&( y > pt->y - PFUG)) ;
 	}
-struct vector *fad__setvector(self,pp1,pp2,f)
-struct fad *self;
-struct fadpoint *pp1,*pp2;
-struct fad_frame *f;
+struct vector * fad__setvector(struct fad *self, struct fadpoint *pp1, struct fadpoint *pp2, struct fad_frame *f)
 {
 	register struct vector *vec,*pv;
 	vec = newvector(pp1,pp2);
@@ -198,9 +180,7 @@ struct fad_frame *f;
 		}
 	return(vec);
 	}
-void fad__delvector(self,f)
-struct fad *self;
-struct fad_frame *f;
+void fad__delvector(struct fad *self, struct fad_frame *f)
 {
 	register struct vector *vec,*pv;
 	vec = NULL;
@@ -216,9 +196,7 @@ struct fad_frame *f;
 		}
 	return;
 	}
-short fad__iconnum(self,s)
-struct fad *self;
-char *s;
+short fad__iconnum(struct fad *self, char *s)
 {
 	int i;
 	char *c;
@@ -242,9 +220,7 @@ char *s;
 	return(-i);
 	}
 		
-void fad__freeframe(self,ff)
-struct fad *self;
-struct fad_frame *ff;
+void fad__freeframe(struct fad *self, struct fad_frame *ff)
 {
 	register struct fadpoint *pt,*nextpt;
 	struct vector *vv,*nextvv;
@@ -258,11 +234,7 @@ struct fad_frame *ff;
 		free((char *)vv);
 		}
 	}
-long fad__Write(self,f,writeid,level)
-struct fad *self;
-FILE *f;
-long writeid; 
-int level;
+long fad__Write(struct fad *self, FILE *f, long writeid, int level)
 {
 	int i;
 	struct vector *vv;
@@ -280,26 +252,25 @@ int level;
 		fprintf(f,"$F\n");
 		for(vv = ff->v; vv != NULL; vv = vv->v){
 		        if(vv->mode == BOXMODE)
-				fprintf(f,"$B %d,%d %d,%d\n",vv->p1->x,vv->p1->y,vv->p2->x,vv->p2->y);
+				fprintf(f,"$B %ld,%ld %ld,%ld\n",vv->p1->x,vv->p1->y,vv->p2->x,vv->p2->y);
 		        else if(vv->mode == ANIMATEMODE)
-				fprintf(f,"$A %d,%d %d,%d\n",vv->p1->x,vv->p1->y,vv->p2->x,vv->p2->y);
+				fprintf(f,"$A %ld,%ld %ld,%ld\n",vv->p1->x,vv->p1->y,vv->p2->x,vv->p2->y);
 			else if(vv->label == NULL)
-				fprintf(f,"$V %d,%d %d,%d\n",vv->p1->x,vv->p1->y,vv->p2->x,vv->p2->y);
+				fprintf(f,"$V %ld,%ld %ld,%ld\n",vv->p1->x,vv->p1->y,vv->p2->x,vv->p2->y);
 			else
-				fprintf(f,"$S %d,%d\n%s\n",vv->p1->x,vv->p1->y,vv->label);
+				fprintf(f,"$S %ld,%ld\n%s\n",vv->p1->x,vv->p1->y,vv->label);
 			}
 		}
 	fprintf(f,"$$\n");
 	fprintf(f,"\\enddata{fad,%ld}\n",self->header.dataobject.id);
 	return fad_GetID(self);
 	}
-long fad__Read(self,f,id)
-struct fad *self;
-FILE *f;
-long id;
+long fad__Read(struct fad *self, FILE *f, long id)
 {
 	char *c,s[256],*cc,*cp,str[256];
-	int p1x,p1y,p2x,p2y,newf = 0,szz;
+	long p1x,p1y,p2x,p2y;
+	int newf = 0;
+	int szz;
 	struct vector *vv;
 	struct fad_frame *ff = NULL;
 	struct fadpoint *fp,*lp;
@@ -345,7 +316,7 @@ long id;
 			else newf = 1;
 			break;
 		case 'P':
-			sscanf(s,"$P %d,%d,%d,%d\n",&p1x,&p1y,&p2x,&p2y);
+			sscanf(s,"$P %ld,%ld,%ld,%ld\n",&p1x,&p1y,&p2x,&p2y);
 			self->ox = 0; self->oy = 0; /* should be read as 0 */
 			self->desw = p2x; self->desh = p2y;
 			ff = self->f;
@@ -353,31 +324,31 @@ long id;
 			newf = 0;
 			break;
 		case 'V':
-			sscanf(s,"$V %d,%d %d,%d\n",&p1x,&p1y,&p2x,&p2y);
+			sscanf(s,"$V %ld,%ld %ld,%ld\n",&p1x,&p1y,&p2x,&p2y);
 			fp = fad_setpoint(self,p1x,p1y,NEW,ff);
 			lp = fad_setpoint(self,p2x,p2y,NEW,ff);
 			vv = fad_setvector(self,fp,lp,ff);
 			if(ISICON(p2x)) self->currenticon = p2y;
 			break;
 		case 'A':
-			sscanf(s,"$A %d,%d %d,%d\n",&p1x,&p1y,&p2x,&p2y);
+			sscanf(s,"$A %ld,%ld %ld,%ld\n",&p1x,&p1y,&p2x,&p2y);
 			fp = fad_setpoint(self,p1x,p1y,NEW,ff);
 			lp = fad_setpoint(self,p2x,p2y,NEW,ff);
 			vv = fad_setvector(self,fp,lp,ff);
 			vv->mode = ANIMATEMODE;
 			break;
 		case 'B':
-			sscanf(s,"$B %d,%d %d,%d\n",&p1x,&p1y,&p2x,&p2y);
+			sscanf(s,"$B %ld,%ld %ld,%ld\n",&p1x,&p1y,&p2x,&p2y);
 			fp = fad_setpoint(self,p1x,p1y,NEW,ff);
 			lp = fad_setpoint(self,p2x,p2y,NEW,ff);
 			vv = fad_setvector(self,fp,lp,ff);
 			vv->mode = BOXMODE;
 			break;
 		case 'S':
-			sscanf(s,"$S %d,%d\n",&p1x,&p1y);
+			sscanf(s,"$S %ld,%ld\n",&p1x,&p1y);
 			fgets(str,256,f);
 			fp = fad_setpoint(self,p1x,p1y,NEW,ff);
-			lp = fad_setpoint(self,LABELFLAG,LABELFLAG,NEW,ff);	
+			lp = fad_setpoint(self,(long)LABELFLAG,(long)LABELFLAG,NEW,ff);
 			vv = fad_setvector(self,fp,lp,ff);
 			szz = strlen(str);
 			str[szz - 1] = '\0';
@@ -391,9 +362,7 @@ long id;
 	fad_NotifyObservers(self,fad_NEWFAD);
 	return dataobject_NOREADERROR;
 }
-void fad__FinalizeObject(classID, self)
-    struct classheader *classID;
-struct fad *self;
+void fad__FinalizeObject(struct classheader *classID, struct fad *self)
 {/* bug : label strings not currently freed */
 	struct fad_frame *lf,*sf;
 	for(lf = self->bf ;  lf != NULL ; lf = sf){
@@ -402,8 +371,7 @@ struct fad *self;
         }
 }
 
-fad__flipicons(cp)
-struct fad *cp;
+int fad__flipicons(struct fad *cp)
 {
 	register struct fadpoint *iip;
 	if(cp->iconpointend == cp->iconpoints) return(0);
@@ -420,9 +388,7 @@ struct fad *cp;
 #endif /* DEBUG  */
 	return(iip->y);
 	}
-int
-fad__unflipicons(cp)
-struct fad *cp;
+int fad__unflipicons(struct fad *cp)
 {
 	register struct fadpoint *iip;
 	if(cp->iconpointend == cp->iconpoints) return(0);

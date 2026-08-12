@@ -33,10 +33,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <andrewos.h>
 #include <ms.h>
+extern int ConsiderLoggingRead(char *FileName);
+extern int MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, long *remaining, int *ct);
+extern int QuickGetBodyFileName(char *DirName, char *id, char *FileName);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
 
-MS_GetPartialBody(DirName, id, Buf, BufLim, offset, remaining, ct)
-char *DirName, *id, *Buf;
-int BufLim, offset, *remaining, *ct;
+int MS_GetPartialBody(char *DirName, char *id, char *Buf, int BufLim, int offset, long *remaining, int *ct)
 {
     struct MS_Directory *Dir;
     char FileName[MAXPATHLEN+1];

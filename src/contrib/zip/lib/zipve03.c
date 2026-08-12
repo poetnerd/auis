@@ -80,39 +80,36 @@ END-SPECIFICATION  ************************************************************/
 #include "zipedit.ih"
 #include "zipedit.h"
 #include <math.h>
+#include <stdlib.h>
+static int Check_Enclosure(struct zipedit *self, zip_type_pane pane, zip_type_image image, long count);
+static int Clear_Enclosure(struct zipedit *self, zip_type_pane pane);
+static int Clear_Enclosure_Shadow(struct zipedit *self, zip_type_pane pane);
+static int Clear_Font(struct zipedit *self, zip_type_pane pane);
+static int Draw_Enclosure(struct zipedit *self, zip_type_pane pane, long x, long y);
+static int Draw_Enclosure_Shadow(struct zipedit *self, zip_type_pane pane, long x, long y);
+static int Duplicate_Selection(struct zipedit *self, zip_type_pane pane, zip_type_point x_delta, zip_type_point y_delta);
+static int Enclosure_Bounds(struct zipedit *self, zip_type_pane pane, zip_type_pixel *L, zip_type_pixel *T, zip_type_pixel *W, zip_type_pixel *H);
+static int Move_Selection(struct zipedit *self, zip_type_pane pane);
+static int Set_Constraints(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y, zip_type_point *X, zip_type_point *Y);
+static int Show_Enclosure_Shadow(struct zipedit *self, zip_type_pane pane);
+static int Show_Font(struct zipedit *self, zip_type_pane pane, char *font_name);
+static int Show_Names(struct zipedit *self, zip_type_pane pane);
+static int Show_Point(struct zipedit *self, zip_type_pane pane, zip_type_figure figure, int point);
+static int Within_Enclosure(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y);
 
 #define  InitialX		    (self->prior_x)
 #define  InitialY		    (self->prior_y)
 
-static int RBDT();
-static int RBDM();
-static int RBUT();
-static int Handle_Edit_Selection();
-static int Handle_Edit_Selection_Modification();
-static int Edit_Modification_LBDT();
-static int Edit_Modification_LBDM();
-static int Edit_Modification_LBUT();
-static Move_Selection();
-static Duplicate_Selection();
-static Within_Enclosure();
-static Draw_Enclosure_Shadow();
-static Clear_Enclosure_Shadow();
-static Show_Enclosure_Shadow();
-static Check_Enclosure();
-static Draw_Enclosure();
-static Clear_Enclosure();
-static Enclosure_Bounds();
-static Show_Names();
-static Show_Point();
-static Show_Font();
-static Clear_Font();
-static Set_Constraints();
+static int RBDT(struct zipedit *self, zip_type_pane pane, int x, int y);
+static int RBDM(struct zipedit *self, zip_type_pane pane, int x, int y);
+static int RBUT(struct zipedit *self, zip_type_pane pane, int x, int y);
+static int Handle_Edit_Selection(struct zipedit *self, zip_type_pane pane, enum view_MouseAction action, long x, long y, long clicks);
+static int Handle_Edit_Selection_Modification(struct zipedit *self, zip_type_pane pane, enum view_MouseAction action, long x, long y, long clicks);
+static int Edit_Modification_LBDT(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y);
+static int Edit_Modification_LBDM(struct zipedit *self, zip_type_pane pane, long x, long y);
+static int Edit_Modification_LBUT(struct zipedit *self, zip_type_pane pane, long x, long y);
 
-int
-zipedit__Accept_Hit( self, hit_pane, action, x, y, clicks )
-  register struct zipedit	     *self;
-  register zip_type_pane	      hit_pane;
-  register long			      action, x, y, clicks;
+long zipedit__Accept_Hit(struct zipedit *self, zip_type_pane hit_pane, long action, long x, long y, long clicks)
   {
   register int			      status = zip_ok;
   register zip_type_pane	      pane;
@@ -136,9 +133,9 @@ zipedit__Accept_Hit( self, hit_pane, action, x, y, clicks )
 	  }
         switch ( action )
           {
-          case view_RightDown:     status = RBDT( self, hit_pane, x, y, clicks ); break;
-          case view_RightMovement: status = RBDM( self, hit_pane, x, y, clicks ); break;
-          case view_RightUp:       status = RBUT( self, hit_pane, x, y, clicks ); break;
+          case view_RightDown:     status = RBDT( self, hit_pane, x, y ); break;
+          case view_RightMovement: status = RBDM( self, hit_pane, x, y ); break;
+          case view_RightUp:       status = RBUT( self, hit_pane, x, y ); break;
           default:  status = Handle_Edit_Selection( self, hit_pane, action, x, y, clicks );
 	  }
       }
@@ -188,11 +185,7 @@ zipedit__Accept_Hit( self, hit_pane, action, x, y, clicks )
 static zip_type_point	      initial_x_point, initial_y_point,
 			      final_x_point, final_y_point;
 
-static int
-RBDT( self, pane, x, y )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register int			      x, y;
+static int RBDT(struct zipedit *self, zip_type_pane pane, int x, int y)
   {
   register int			      status = zip_ok;
 
@@ -216,11 +209,7 @@ RBDT( self, pane, x, y )
   return status;
   }
 
-static int
-RBDM( self, pane, x, y )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register int			      x, y;
+static int RBDM(struct zipedit *self, zip_type_pane pane, int x, int y)
   {
   register int			      status = zip_ok;
 
@@ -230,11 +219,7 @@ RBDM( self, pane, x, y )
   return status;
   }
 
-static int
-RBUT( self, pane, x, y )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register int			      x, y;
+static int RBUT(struct zipedit *self, zip_type_pane pane, int x, int y)
   {
   register int			      status = zip_ok;
   register zip_type_image	      image =
@@ -297,12 +282,7 @@ RBUT( self, pane, x, y )
   return status;
   }
 
-static int
-Handle_Edit_Selection( self, pane, action, x, y, clicks )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
-  register enum view_MouseAction	  action;
-  register long				  x, y, clicks;
+static int Handle_Edit_Selection(struct zipedit *self, zip_type_pane pane, enum view_MouseAction action, long x, long y, long clicks)
   {
   register long				  status = zip_ok;
   long					  X, Y;
@@ -352,12 +332,7 @@ Handle_Edit_Selection( self, pane, action, x, y, clicks )
   return status;
   }
 
-static int
-Handle_Edit_Selection_Modification( self, pane, action, x, y, clicks )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register enum view_MouseAction      action;
-  register long			      x, y, clicks;
+static int Handle_Edit_Selection_Modification(struct zipedit *self, zip_type_pane pane, enum view_MouseAction action, long x, long y, long clicks)
   {
   register int			      status = zip_ok;
 
@@ -380,11 +355,7 @@ Handle_Edit_Selection_Modification( self, pane, action, x, y, clicks )
   return status;
   }
 
-static int
-Edit_Modification_LBDT( self, pane, x, y )
-  register struct zipedit	      *self;
-  register zip_type_pane	      pane;
-  register zip_type_pixel	      x, y;
+static int Edit_Modification_LBDT(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register long			      status = zip_ok;
   register zip_type_figure	      figure = NULL;
@@ -515,14 +486,10 @@ Edit_Modification_LBDT( self, pane, x, y )
   return status;
   }
 
-static int
-Edit_Modification_LBDM( self, pane, x, y )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register int			      x, y;
+static int Edit_Modification_LBDM(struct zipedit *self, zip_type_pane pane, long x, long y)
   {
   register int			      status = zip_ok;
-  int				      X, Y;
+  zip_type_point		      X, Y;
 
   IN(Edit_Modification_LBDM);
   Moving = true;
@@ -590,11 +557,7 @@ Edit_Modification_LBDM( self, pane, x, y )
   return status;
   }
 
-static int
-Edit_Modification_LBUT( self, pane, x, y )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register long			      x, y;
+static int Edit_Modification_LBUT(struct zipedit *self, zip_type_pane pane, long x, long y)
   {
   IN(Edit_Modification_LBUT);
   Moving = false;
@@ -638,11 +601,7 @@ Edit_Modification_LBUT( self, pane, x, y )
   return  zip_ok;
   }
 
-zip_type_figure
-zipedit_Next_Selected_Figure( self, pane, figure )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register zip_type_figure	      figure;
+zip_type_figure zipedit_Next_Selected_Figure(struct zipedit *self, zip_type_pane pane, zip_type_figure figure)
   {
   register zip_type_figure	      next = NULL;
   register long			      i = 0;
@@ -671,10 +630,7 @@ zipedit_Next_Selected_Figure( self, pane, figure )
   return  next;
   }
 
-static
-Move_Selection( self, pane )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
+static int Move_Selection(struct zipedit *self, zip_type_pane pane)
   {
   register zip_type_point	      X_delta, Y_delta;
   zip_type_point		      X1, Y1, X2, Y2;
@@ -720,11 +676,7 @@ Move_Selection( self, pane )
   OUT(Move_Selection);
   }
 
-static
-Duplicate_Selection( self, pane, x_delta, y_delta )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register zip_type_point	      x_delta, y_delta;
+static int Duplicate_Selection(struct zipedit *self, zip_type_pane pane, zip_type_point x_delta, zip_type_point y_delta)
   {
   register zip_type_figure	      original_figure = NULL;
   zip_type_figure		      new_figure, peer_figure = NULL;
@@ -787,9 +739,7 @@ Duplicate_Selection( self, pane, x_delta, y_delta )
   OUT(Duplicate_Selection);
   }
 
-zipedit_Cancel_Enclosure( self, pane )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
+int zipedit_Cancel_Enclosure(struct zipedit *self, zip_type_pane pane)
   {
   register long			      i = 0;
 
@@ -816,11 +766,7 @@ zipedit_Cancel_Enclosure( self, pane )
   OUT(zipedit_Cancel_Enclosure);
   }
 
-static
-Within_Enclosure( self, pane, x, y )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register zip_type_pixel	      x, y;
+static int Within_Enclosure(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register boolean		      within = false;
   long				      L, T, W, H;
@@ -834,11 +780,7 @@ Within_Enclosure( self, pane, x, y )
   return  within;
   }
 
-static
-Draw_Enclosure_Shadow( self, pane, x, y )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register long			      x, y;
+static int Draw_Enclosure_Shadow(struct zipedit *self, zip_type_pane pane, long x, long y)
   {
   IN(Draw_Enclosure_Shadow);
   if ( EnclosureShadowStartX < 0 )
@@ -856,10 +798,7 @@ Draw_Enclosure_Shadow( self, pane, x, y )
   OUT(Draw_Enclosure_Shadow);
   }
 
-static
-Clear_Enclosure_Shadow( self, pane )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
+static int Clear_Enclosure_Shadow(struct zipedit *self, zip_type_pane pane)
   {
   IN(Clear_Enclosure_Shadow);
   if ( EnclosureShadowLastX > 0 )
@@ -867,10 +806,7 @@ Clear_Enclosure_Shadow( self, pane )
   OUT(Clear_Enclosure_Shadow);
   }
 
-static
-Show_Enclosure_Shadow( self, pane )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
+static int Show_Enclosure_Shadow(struct zipedit *self, zip_type_pane pane)
   {
   long				      L, T, W, H;
 
@@ -893,10 +829,7 @@ zipview_FlushGraphics( View );
   OUT(Show_Enclosure_Shadow);
   }
 
-zipedit_Enclose_Figure( self, figure, pane )
-  register struct zipedit	     *self;
-  register zip_type_figure	      figure;
-  register zip_type_pane	      pane;
+int zipedit_Enclose_Figure(struct zipedit *self, zip_type_figure figure, zip_type_pane pane)
   {
   IN(zipedit_Enclose_Figure);
   if ( figure )
@@ -915,12 +848,7 @@ zipedit_Enclose_Figure( self, figure, pane )
   OUT(zipedit_Enclose_Figure);
   }
 
-static
-Check_Enclosure( self, pane, image, count )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register zip_type_image	      image;
-  register long			      count;
+static int Check_Enclosure(struct zipedit *self, zip_type_pane pane, zip_type_image image, long count)
   {
   register zip_type_figure	      figure;
   long				      L, T, W, H;
@@ -970,11 +898,7 @@ Check_Enclosure( self, pane, image, count )
   return  count;
   }
 
-static
-Draw_Enclosure( self, pane, x, y )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register long			      x, y;
+static int Draw_Enclosure(struct zipedit *self, zip_type_pane pane, long x, long y)
   {
   IN(Draw_Enclosure);
   if ( x > (zipview_Pane_Left(   View, pane ) + 2)  &&
@@ -990,10 +914,7 @@ Draw_Enclosure( self, pane, x, y )
   OUT(Draw_Enclosure);
   }
 
-static
-Clear_Enclosure( self, pane )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
+static int Clear_Enclosure(struct zipedit *self, zip_type_pane pane)
   {
   IN(Clear_Enclosure);
   EnclosureExposed = false;
@@ -1004,9 +925,7 @@ Clear_Enclosure( self, pane )
   OUT(Clear_Enclosure);
   }
 
-Show_Enclosure( self, pane )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
+int Show_Enclosure(struct zipedit *self, zip_type_pane pane)
   {
   long				     L, T, W, H;
 
@@ -1026,11 +945,7 @@ zipview_FlushGraphics( View );
   OUT(Show_Enclosure);
   }
 
-static
-Enclosure_Bounds( self, pane, L, T, W, H )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register zip_type_pixel	     *L, *T, *W, *H;
+static int Enclosure_Bounds(struct zipedit *self, zip_type_pane pane, zip_type_pixel *L, zip_type_pixel *T, zip_type_pixel *W, zip_type_pixel *H)
   {
   register zip_type_pixel	      left = EnclosureLeft,  top = EnclosureTop,
 				      width = EnclosureWidth, height = EnclosureHeight;
@@ -1046,10 +961,7 @@ Enclosure_Bounds( self, pane, L, T, W, H )
   OUT(Enclosure_Bounds);
   }
 
-static
-Show_Names( self, pane )
-  register struct zipedit	      *self;
-  register zip_type_pane	       pane;
+static int Show_Names(struct zipedit *self, zip_type_pane pane)
   {
   register zip_type_figure	       name_figure;
 
@@ -1072,12 +984,7 @@ Show_Names( self, pane )
     }
   }
 
-static
-Show_Point( self, pane, figure, point )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register zip_type_figure	      figure;
-  register int			      point;
+static int Show_Point(struct zipedit *self, zip_type_pane pane, zip_type_figure figure, int point)
   {
   register zip_type_figure	      name_figure;
   char				      msg[257];
@@ -1089,24 +996,20 @@ Show_Point( self, pane, figure, point )
     zipobject_Object_Point( Objects(figure->zip_figure_type), figure, point, &X, &Y );
     name_figure = zip_Figure( Data, ZIP_current_x_point_text_name );
     zipview_Clear_Figure( View, name_figure, AttributesPane );
-    sprintf( msg, "%d", X );
+    sprintf( msg, "%ld", X );
     zip_Set_Figure_Text( Data, name_figure, msg);
     zipview_Draw_Figure( View, name_figure, AttributesPane );
 
     name_figure = zip_Figure( Data, ZIP_current_y_point_text_name );
     zipview_Clear_Figure( View, name_figure, AttributesPane );
-    sprintf( msg, "%d", Y );
+    sprintf( msg, "%ld", Y );
     zip_Set_Figure_Text( Data, name_figure, msg);
     zipview_Draw_Figure( View, name_figure, AttributesPane );
     }
   OUT(Show_Point);
   }
 
-static
-Show_Font( self, pane, font_name )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register char			     *font_name;
+static int Show_Font(struct zipedit *self, zip_type_pane pane, char *font_name)
   {
   register zip_type_figure	      name_figure;
 
@@ -1121,10 +1024,7 @@ Show_Font( self, pane, font_name )
   OUT(Show_Font);
   }
 
-static
-Clear_Font( self, pane )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
+static int Clear_Font(struct zipedit *self, zip_type_pane pane)
   {
   register zip_type_figure	      name_figure;
 
@@ -1138,12 +1038,7 @@ Clear_Font( self, pane )
   OUT(Clear_Font);
   }
 
-static
-Set_Constraints( self, pane, x, y, X, Y )
-  register struct zipedit	     *self;
-  register zip_type_pane	      pane;
-  register zip_type_pixel	      x,  y;
-  register zip_type_point	     *X, *Y;
+static int Set_Constraints(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y, zip_type_point *X, zip_type_point *Y)
   {
   register double		      point_offset, point_delta;
 

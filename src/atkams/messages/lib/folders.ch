@@ -76,7 +76,7 @@ classprocedures:
     InitializeClass() returns boolean;
 methods:
     HandleAsyncPrefetch();
-    AlterSubscriptionStatus(char *dir, char *shortname, int status) returns int;
+    AlterSubscriptionStatus(char *dir, int status, char *shortname) returns int;
     AlterFolderNames(char *name, char *nick, boolean doinsert);
     ActionHit(int substatus, char *fullname, char *nickname);
     HighlightFolder(char *name, char *comment);

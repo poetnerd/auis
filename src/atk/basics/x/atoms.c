@@ -58,9 +58,7 @@ static char *atomnames[]={
 
 static Atom xim_ATOMS;
 
-static Atom *SetAtoms(dpy, buf)
-Display *dpy;
-char *buf;
+static Atom * SetAtoms(Display *dpy, char *buf)
 {
     Atom *result;
     char *p;
@@ -71,20 +69,18 @@ char *buf;
 	return NULL;
     }
     p=buf;
-    sprintf(p, "%d ", NUMATOMS);
+    sprintf(p, "%lu ", (unsigned long)NUMATOMS);
     p+=strlen(p);
     for(i=0;i<NUMATOMS;i++) {
 	result[i]=XInternAtom(dpy, atomnames[i], FALSE);
-	sprintf(p, "%s %d ", atomnames[i], result[i]);
+	sprintf(p, "%s %lu ", atomnames[i], (unsigned long)result[i]);
 	p+=strlen(p);
     }
     XChangeProperty(dpy, RootWindow(dpy, DefaultScreen(dpy)), xim_ATOMS, XA_STRING, 8, PropModeReplace, (unsigned char*)buf, strlen(buf));
     return result;
 }
 
-Atom *xim_SetupAtoms(dpy, force)
-Display *dpy;
-boolean force;
+Atom * xim_SetupAtoms(Display *dpy, boolean force)
 {
     int i;
     Atom RetAtom;

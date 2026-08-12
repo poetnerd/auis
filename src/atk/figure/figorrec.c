@@ -34,18 +34,14 @@ char *figorrec_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 #include <figattr.ih>
 #include <print.ih>
 
-boolean figorrec__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-struct figorrec *self;
+boolean figorrec__InitializeObject(struct classheader *ClassID, struct figorrec *self)
 {
     figorrec_AttributesUsed(self) = (1<<figattr_Shade) | (1<<figattr_LineWidth) | (1<<figattr_Color) | (1<<figattr_RRectCorner);
 
     return TRUE;
 }
 
-struct figorrec *figorrec__Create(classID, left, top, width, height)
-struct classheader *classID;
-long left, top, width, height;
+struct figorrec * figorrec__Create(struct classheader *classID, long left, long top, long width, long height)
 {
     struct figorrec *res = figorrec_New();
     if (!res) return NULL;
@@ -59,17 +55,12 @@ long left, top, width, height;
     return res;
 }
 
-char *figorrec__ToolName(dummy, v, rock)
-struct figorrec *dummy;
-struct figtoolview *v;
-long rock;
+char * figorrec__ToolName(struct figorrec *dummy, struct figtoolview *v, long rock)
 {
     return "Round Rect";
 }
 
-void figorrec__Draw(self, v) 
-struct figorrec *self;
-struct figview *v;
+void figorrec__Draw(struct figorrec *self, struct figview *v)
 {
     long x, y, w, h;
     long shad, lw, corn;
@@ -116,9 +107,7 @@ struct figview *v;
 	figview_SetLineWidth(v, 1);
 }
 
-void figorrec__Sketch(self, v) 
-struct figorrec *self;
-struct figview *v;
+void figorrec__Sketch(struct figorrec *self, struct figview *v)
 {
     long x, y, w, h, corn;
 
@@ -150,11 +139,7 @@ struct figview *v;
 
 #define FadeColor(col, shad)  (1.0 - (1.0-(shad)) * (1.0-(col)))
 
-void figorrec__PrintObject(self, v, file, prefix)
-struct figorrec *self;
-struct figview *v;
-FILE *file;
-char *prefix;
+void figorrec__PrintObject(struct figorrec *self, struct figview *v, FILE *file, char *prefix)
 {
     long x, y, w, h;
     long shad, lw, corn;
@@ -189,44 +174,44 @@ char *prefix;
     corn = figview_ToPrintPixW(v, corn*figview_FigUPerPix);
 
     if (corn==0) {
-	fprintf(file, "%s  %d %d moveto  %d %d lineto  %d %d lineto  %d %d lineto closepath\n", prefix, x, y,  x, y+h,  x+w, y+h,  x+w, y);
+	fprintf(file, "%s  %ld %ld moveto  %ld %ld lineto  %ld %ld lineto  %ld %ld lineto closepath\n", prefix, x, y,  x, y+h,  x+w, y+h,  x+w, y);
     }
     else if ((2*corn >= h) || (2*corn >= w)) {
-	/* Bizarre -- corners are bigger than rectangle, so 
+	/* Bizarre -- corners are bigger than rectangle, so
 	 make an appropriate looking oval */
 	if ((2*corn >= h) && (2*corn >= w)) {
-	    fprintf(file, "%s  %d %d translate  %d %d scale  0 0 0.5 0 360 arc\n", prefix, x+w/2, y+h/2, w, h);
-	    fprintf(file, "%s  1.0 %d div  1.0 %d div  scale\n", prefix, w, h);
+	    fprintf(file, "%s  %ld %ld translate  %ld %ld scale  0 0 0.5 0 360 arc\n", prefix, x+w/2, y+h/2, w, h);
+	    fprintf(file, "%s  1.0 %ld div  1.0 %ld div  scale\n", prefix, w, h);
 	}
 	else if (2*corn >= h) {
 	    /* Draw left semi-oval */
-	    fprintf(file, "%s  %d %d translate  %d %d scale  0 0 0.5 90 270 arc\n", prefix, x+corn, y+h/2, 2*corn, h);
-	    fprintf(file, "%s  1.0 %d div  1.0 %d div  scale\n", prefix, 2*corn, h);
+	    fprintf(file, "%s  %ld %ld translate  %ld %ld scale  0 0 0.5 90 270 arc\n", prefix, x+corn, y+h/2, 2*corn, h);
+	    fprintf(file, "%s  1.0 %ld div  1.0 %ld div  scale\n", prefix, 2*corn, h);
 	    /* Draw right semi-oval */
-	    fprintf(file, "%s  %d %d translate  %d %d scale  0 0 0.5 270 450 arc\n", prefix, w-2*corn, 0, 2*corn, h);
-	    fprintf(file, "%s  1.0 %d div  1.0 %d div  scale\n", prefix, 2*corn, h);
+	    fprintf(file, "%s  %ld %d translate  %ld %ld scale  0 0 0.5 270 450 arc\n", prefix, w-2*corn, 0, 2*corn, h);
+	    fprintf(file, "%s  1.0 %ld div  1.0 %ld div  scale\n", prefix, 2*corn, h);
 	    fprintf(file, "%s  closepath\n", prefix);
 	}
 	else { /* assuming (2*corn >= w) */
 	    /* Draw top semi-oval */
-	    fprintf(file, "%s  %d %d translate  %d %d scale  0 0 0.5 -180 0 arc\n", prefix, x+w/2, y+corn, w, 2*corn);
-	    fprintf(file, "%s  1.0 %d div  1.0 %d div  scale\n", prefix, w, 2*corn);
+	    fprintf(file, "%s  %ld %ld translate  %ld %ld scale  0 0 0.5 -180 0 arc\n", prefix, x+w/2, y+corn, w, 2*corn);
+	    fprintf(file, "%s  1.0 %ld div  1.0 %ld div  scale\n", prefix, w, 2*corn);
 	    /* Draw bottom semi-oval */
-	    fprintf(file, "%s  %d %d translate  %d %d scale  0 0 0.5 0 180 arc\n", prefix, 0, h-2*corn, w, 2*corn);
-	    fprintf(file, "%s  1.0 %d div  1.0 %d div  scale\n", prefix, w, 2*corn);
+	    fprintf(file, "%s  %d %ld translate  %ld %ld scale  0 0 0.5 0 180 arc\n", prefix, 0, h-2*corn, w, 2*corn);
+	    fprintf(file, "%s  1.0 %ld div  1.0 %ld div  scale\n", prefix, w, 2*corn);
 	    fprintf(file, "%s  closepath\n", prefix);
 	}
-	
+
     }
     else {
-	fprintf(file, "%s  %d %d translate  %d %d scale  0 0 0.5 180 270 arc\n", prefix, x+corn, y+corn, 2*corn, 2*corn);
-	fprintf(file, "%s  1.0 %d div  1.0 %d div  scale\n", prefix, 2*corn, 2*corn);
-	fprintf(file, "%s  %d %d translate  %d %d scale  0 0 0.5 270 360 arc\n", prefix, w-2*corn, 0, 2*corn, 2*corn);
-	fprintf(file, "%s  1.0 %d div  1.0 %d div  scale\n", prefix, 2*corn, 2*corn);
-	fprintf(file, "%s  %d %d translate  %d %d scale  0 0 0.5 360 450 arc\n", prefix, 0, h-2*corn, 2*corn, 2*corn);
-	fprintf(file, "%s  1.0 %d div  1.0 %d div  scale\n", prefix, 2*corn, 2*corn);
-	fprintf(file, "%s  %d %d translate  %d %d scale  0 0 0.5 450 540 arc\n", prefix, -(w-2*corn), 0, 2*corn, 2*corn);
-	fprintf(file, "%s  1.0 %d div  1.0 %d div  scale\n", prefix, 2*corn, 2*corn);
+	fprintf(file, "%s  %ld %ld translate  %ld %ld scale  0 0 0.5 180 270 arc\n", prefix, x+corn, y+corn, 2*corn, 2*corn);
+	fprintf(file, "%s  1.0 %ld div  1.0 %ld div  scale\n", prefix, 2*corn, 2*corn);
+	fprintf(file, "%s  %ld %d translate  %ld %ld scale  0 0 0.5 270 360 arc\n", prefix, w-2*corn, 0, 2*corn, 2*corn);
+	fprintf(file, "%s  1.0 %ld div  1.0 %ld div  scale\n", prefix, 2*corn, 2*corn);
+	fprintf(file, "%s  %d %ld translate  %ld %ld scale  0 0 0.5 360 450 arc\n", prefix, 0, h-2*corn, 2*corn, 2*corn);
+	fprintf(file, "%s  1.0 %ld div  1.0 %ld div  scale\n", prefix, 2*corn, 2*corn);
+	fprintf(file, "%s  %ld %d translate  %ld %ld scale  0 0 0.5 450 540 arc\n", prefix, -(w-2*corn), 0, 2*corn, 2*corn);
+	fprintf(file, "%s  1.0 %ld div  1.0 %ld div  scale\n", prefix, 2*corn, 2*corn);
 	fprintf(file, "%s  closepath\n", prefix);
     }
 
@@ -244,7 +229,7 @@ char *prefix;
     lw = figattr_GetLineWidth(figorrec_GetVAttributes(self), figorrec_GetIVAttributes(self));
     lw = figview_ToPrintPixW(v, lw*figview_FigUPerPix);
     if (lw <= 0) lw = 0;
-    fprintf(file, "%s  %d setlinewidth\n", prefix, lw);
+    fprintf(file, "%s  %ld setlinewidth\n", prefix, lw);
     fprintf(file, "%s  %f %f %f setrgbcolor\n", prefix, rcol, gcol, bcol);
     /*fprintf(file, "%s  0 setgray\n", prefix);*/
     fprintf(file, "%s  stroke\n", prefix);

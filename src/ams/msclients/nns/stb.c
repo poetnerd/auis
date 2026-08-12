@@ -35,19 +35,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 */
 
 #include <big.h>
+#include <stdlib.h>
 
-static int STBGrowIfNecessary();
+static int STBGrowIfNecessary(STableBucket_t *stb);
 
-void            STBInit(stb)
-STableBucket_t *stb;
+void STBInit(STableBucket_t *stb)
 {
     stb->num = stb->size = 0;
     stb->entries = NULL;
 }
 
-char           *STBFind(stb, string)
-STableBucket_t *stb;
-char           *string;
+char * STBFind(STableBucket_t *stb, char *string)
 {
     int             i;
     char           *result = NULL;
@@ -59,9 +57,7 @@ char           *string;
     return (result);
 }
 
-char           *STBMake(stb, string)
-STableBucket_t *stb;
-char           *string;
+char * STBMake(STableBucket_t *stb, char *string)
 {
     char           *tmp = NULL;
 
@@ -74,8 +70,7 @@ char           *string;
     return (tmp);
 }
 
-void            STBPurge(stb)
-STableBucket_t *stb;
+void STBPurge(STableBucket_t *stb)
 {
     int             i;
 
@@ -86,8 +81,7 @@ STableBucket_t *stb;
     stb->entries = NULL;
 }
 
-static int      STBGrowIfNecessary(stb)
-STableBucket_t *stb;
+static int STBGrowIfNecessary(STableBucket_t *stb)
 {
     STableBucketEntry_t *tmp;
 

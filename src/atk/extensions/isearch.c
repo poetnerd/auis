@@ -46,6 +46,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <environ.ih>
 
 #include <isearch.eh>
+#include <string.h>
+static boolean dosearch(struct textview *tv, struct text *txt, struct mark *pos, char *string, boolean forwardp, boolean contForward, boolean contBackward, char *errmsg);
+static void search(struct textview *tv, long key);
 
 static boolean useSelectionRegion;
 
@@ -53,9 +56,7 @@ static boolean useSelectionRegion;
 
 static char LastString[MAXSTRING] = {0};
 
-void strappend(dst, src, ch, len)
-char *dst, *src;
-int ch, len;
+void strappend(char *dst, char *src, int ch, int len)
 {
     /* copy as much of the source as we can. */
     while (--len > 0 && (*dst = *src++) != '\0')
@@ -69,14 +70,7 @@ int ch, len;
     *dst = '\0';
 }
 
-static boolean dosearch(tv, txt, pos, string, forwardp, contForward, contBackward, errmsg)
-struct textview *tv;
-struct text *txt;
-struct mark *pos;
-char *string, *errmsg;
-boolean forwardp;
-boolean contForward;
-boolean contBackward;
+static boolean dosearch(struct textview *tv, struct text *txt, struct mark *pos, char *string, boolean forwardp, boolean contForward, boolean contBackward, char *errmsg)
 {
     int c, fudge;
     boolean results;
@@ -187,9 +181,7 @@ boolean contBackward;
     return FALSE;
 }
 
-static void search(tv, key)
-struct textview *tv;
-long key;
+static void search(struct textview *tv, long key)
 {
     struct text *txt = (struct text *)(tv->header.view.dataobject);
     long pos = textview_GetDotPosition(tv);
@@ -220,7 +212,7 @@ long key;
 }
 
 
-boolean incsearch__InitializeClass()
+boolean incsearch__InitializeClass(struct classheader *classID)
 {
     static struct bind_Description fns[] = {
         {"incsearch-forward", NULL, 0, NULL, 0, 0, search, "Search forward incrementally.", "incsearch"},

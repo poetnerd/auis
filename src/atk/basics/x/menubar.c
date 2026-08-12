@@ -34,6 +34,44 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
 #include <andrewos.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <environ.ih>
+
+/* xim_EstablishConsole() (in xim.c) fclose()s the real stderr and dup2()s
+   fd 2 elsewhere, so plain fprintf(stderr,...) here goes nowhere once a
+   window exists. Route temporary debug tracing around that entirely. Gated
+   by the MenuDebugTrace profile switch (off by default, see menubar.help)
+   so it's available for a future reproduction without needing a rebuild. */
+static void mdbg(const char *fmt, ...)
+{
+    static int checked = 0;
+    static boolean enabled = FALSE;
+    va_list ap;
+    FILE *f;
+
+    if (!checked) {
+	enabled = environ_GetProfileSwitch("MenuDebugTrace", FALSE);
+	checked = 1;
+    }
+    if (!enabled) return;
+
+    f = fopen("/tmp/menudbg_direct.log", "a");
+    if (!f) return;
+    {
+	struct timeval tv;
+	struct tm *tm;
+	char tbuf[16];
+	gettimeofday(&tv, NULL);
+	tm = localtime(&tv.tv_sec);
+	strftime(tbuf, sizeof(tbuf), "%H:%M:%S", tm);
+	fprintf(f, "[%s.%03ld] ", tbuf, (long)(tv.tv_usec / 1000));
+    }
+    va_start(ap, fmt);
+    vfprintf(f, fmt, ap);
+    va_end(ap);
+    fclose(f);
+}
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -43,6 +81,47 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include "menubar.h"
 #include <scache.h>
 #include <shadows.h>
+static struct titem * AddItem(struct menubar *mb, struct tmenu *t, char *item, int prio, int submenu, char *data);
+static void BringUpMenu(struct menubar *mb, int menu);
+static void BringUpSubMenu(struct menubar *mb, struct tmenu *lm, int inum);
+static void BuildGraphicContext(struct prefs_s *p, char *foregroundColor, char *backgroundColor, char *grayColor, char *graypixmapName, char *topcolorName, char *toppixmapName, char *botcolorName, char *botpixmapName, XColor *realForeground, XColor *realBackground, XColor *realGray, Pixmap *grayPixmap, XColor *topShadow, XColor *bottomShadow, Pixmap *topshadowPixmap, Pixmap *bottomshadowPixmap);
+static void ClearMenu(struct menubar *mb, struct tmenu *m);
+static int ComputeItemPosition(struct menubar *mb, struct tmenu *lm, int inum);
+static void ComputeMenuPositioning(struct menubar *mb, struct tmenu *m, int *x, int *y, int *w, int *h);
+static void Configure(Display *dpy, struct prefs_s *p, XColor *fore, XColor *back);
+static int CountGroups(struct tmenu *lm);
+static struct tmenu * CreateMenu(struct menubar *mb, char *title, int prio);
+static void DestroyMenu(struct menubar *mb, struct tmenu *m);
+static void DestroyPrefsForDisplay(Display *dpy);
+static void DoMenuLoop(struct menubar *mb, Bool track);
+static void DrawMenuItems(struct menubar *mb, struct tmenu *t);
+static struct titem * FindItem(struct tmenu *t, char *name);
+static struct tmenu * FindMenu(struct menubar *mb, char *title);
+static void FreeGCs(struct mbinit *mbi, struct gcs *gcs);
+static int GetItemAt(struct menubar *mb, struct tmenu *lm, int y);
+static int HandleInMenu(struct menubar *mb, int x, int y, int didwait);
+static int LocateMenu(struct menubar *mb, int ex, int ey);
+static void MakeGCs(struct mbinit *mbi);
+static void MakeWindows(struct mbinit *mbi);
+static int MoveDown(struct menubar *mb, struct tmenu *lm);
+static int MoveUp(struct menubar *mb, struct tmenu *lm);
+static unsigned long ReallyGetColor(Display *dpy, char *color, XColor *desired);
+static void SelectItem(struct menubar *mb, struct tmenu *lm, int item, int rot);
+static void SelectRegion(struct menubar *mb, Window win, struct gcs *gcs, int x, int y, int w, int h);
+static void SetBottomShadow(struct prefs_s *p, char *bName, XColor *bcolor, XColor *background);
+static void SetGCs(struct mbinit *mbi, Window w, struct gcs *gcs, XGCValues *gcv, unsigned long gcmask);
+static void SetGray(struct prefs_s *p, XColor *foreground, XColor *background, char *grayName, XColor *graycolor, Pixmap *graypixmap);
+static void SetItemSelection(struct menubar *mb, struct tmenu *lm, int item, int onoff);
+static void SetPixmap(struct prefs_s *p, char *name, Pixmap *pixmap);
+static void SetTitleSelection(struct menubar *mb, struct tmenu *menu, int onoff);
+static void SetTopShadow(struct prefs_s *p, XColor *foreground, XColor *background, char *topcolorName, XColor *topcolor, Pixmap *toppixmap);
+static void UnSelectRegion(struct menubar *mb, Window win, struct gcs *gcs, int x, int y, int w, int h);
+static void UpdateGeometry(struct menubar *mb);
+static int WaitTillReady(struct menubar *mb, XEvent *event);
+static char * defaultgetdefault(Display *dpy, char *pname);
+static int getdefaultbool(Display *dpy, char *pname, int def);
+static int getdefaultint(Display *dpy, char *pname, int def);
+static int mcomp(const void *a, const void *b);
 
 #define MOREMENUPRIORITY 127
 #define MAXPANEPRIORITY 100
@@ -100,9 +179,7 @@ static long grayImage[] = {
 };
 
 /* defaultgetdefault: inform the user of a problem if the client program (ie xim) doesn't provide a getdefault function. */
-static char *defaultgetdefault(dpy, pname)
-Display *dpy;
-char *pname;
+static char * defaultgetdefault(Display *dpy, char *pname)
 {
 	fprintf(stderr,"Warning: no getdefault function defined for menubar!\n");
 	return NULL;
@@ -111,10 +188,7 @@ char *pname;
 static GetDefaultsFunction getdefault = (GetDefaultsFunction)defaultgetdefault;
 
 /* getdefaultint: get a user specified integer under name pname, or return def if none is specified. */
-static int getdefaultint(dpy, pname, def)
-Display *dpy;
-char *pname;
-int def;
+static int getdefaultint(Display *dpy, char *pname, int def)
 {
     char *v;
     v=getdefault(dpy,pname);
@@ -123,10 +197,7 @@ int def;
 }
 
  /* getdefaultbool: get a user specified boolean under name pname, or return def if none is specified. */
-static int getdefaultbool(dpy, pname, def)
-Display  *dpy;
-char  *pname;
-int  def;
+static int getdefaultbool(Display *dpy, char *pname, int def)
 {
     char *v;
     v=getdefault(dpy,pname);
@@ -153,8 +224,7 @@ int  def;
 
 
 /* mb_SetGetDefault: sets the function to be used to get preferences, the function will be called like: func(dpy, prefname) (where dpy is a Display *) */
-GetDefaultsFunction mb_SetGetDefault(func)
-GetDefaultsFunction func;
+GetDefaultsFunction mb_SetGetDefault(GetDefaultsFunction func)
 {
     GetDefaultsFunction x=getdefault;
     getdefault=func;
@@ -165,8 +235,7 @@ static struct prefs_s *prefs=NULL;
 
 
 /* CountGroups: count the number of item "groups" (ie sets of items with priority x[0-9] where x is the same for each member of the same group) */
-static int CountGroups(lm)
-struct tmenu *lm;
+static int CountGroups(struct tmenu *lm)
 {
     unsigned int mask=0, thismask;
     struct titem *it=lm->items;
@@ -184,9 +253,7 @@ struct tmenu *lm;
 }
 
 /* ClearMenu: free all the items in a menu, if a FreeItem function has been set their data will be freed if it is non-NULL.*/
-static void ClearMenu(mb,m)
-struct menubar *mb;
-struct tmenu *m;
+static void ClearMenu(struct menubar *mb, struct tmenu *m)
 {
     struct titem *i=m->items;
     while(i) {
@@ -204,9 +271,7 @@ struct tmenu *m;
 }
 
 /* DestroyMenu: destroy the menu m and the data for all the items it contains */
-static void DestroyMenu(mb,m)
-struct menubar *mb;
-struct tmenu *m;
+static void DestroyMenu(struct menubar *mb, struct tmenu *m)
 {
     ClearMenu(mb,m);
     if(m->lookup) free(m->lookup);
@@ -216,9 +281,7 @@ struct tmenu *m;
 }
 
 /* FindMenu: return a pointer to the menu card named by title or NULL if no such card exists. */
-static struct tmenu *FindMenu(mb,title)
-struct menubar *mb;
-char *title;
+static struct tmenu * FindMenu(struct menubar *mb, char *title)
 {
     struct tmenu **t=mb->menus;
     int i;
@@ -229,9 +292,7 @@ char *title;
 }
 
 /* FindItem: return a pointer to the menu item named by name or NULL if no such item exists. */
-static struct titem *FindItem(t,name)
-struct tmenu *t;
-char *name;
+static struct titem * FindItem(struct tmenu *t, char *name)
 {
     struct titem *w=t->items;
     while(w && strcmp(w->name,name)) w=w->next;
@@ -239,8 +300,7 @@ char *name;
 }
 
 /* UpdateGeometry: used when the menubar contents need to be refit to the new size and/or location of the menubar's window. */
-static void UpdateGeometry(mb)
-struct menubar *mb;
+static void UpdateGeometry(struct menubar *mb)
 {
     Window root;
     unsigned int bw,depth;
@@ -249,10 +309,7 @@ struct menubar *mb;
 }
 
 /* CreateMenu: internal function to create a menu card, with a given name and priority. */
-static struct tmenu *CreateMenu(mb,title,prio)
-struct menubar *mb;
-char *title;
-int prio;
+static struct tmenu * CreateMenu(struct menubar *mb, char *title, int prio)
 {
     struct tmenu *t=(struct tmenu *)malloc(sizeof(struct tmenu));
     if(!t) return NULL;
@@ -283,13 +340,7 @@ int prio;
 }
 
 /* AddItem: an internal routine which adds an item to a menu card given a pointer to the menu card, doesn't do much sanity checking of the input as that should be done elsewhere. */
-static struct titem *AddItem(mb,t,item,prio,submenu,data)
-struct menubar *mb;
-struct tmenu *t;
-char *item;
-int prio;
-int submenu;
-char *data;
+static struct titem * AddItem(struct menubar *mb, struct tmenu *t, char *item, int prio, int submenu, char *data)
 {
     struct titem *i;
     struct titem *w=t->items;
@@ -348,11 +399,7 @@ char *data;
     return i;
 }
 
-void mb_SetKeys(mb, title, item, keys)
-struct menubar *mb;
-char *title;
-char *item;
-char *keys;
+void mb_SetKeys(struct menubar *mb, char *title, char *item, char *keys)
 {
     struct tmenu *t=FindMenu(mb, title);
     struct titem *i=t?FindItem(t, item):NULL;
@@ -371,12 +418,7 @@ char *keys;
     
 
 /* mb_AddSelection: add a new menu choice.  title is the name of the menu card it should appear on, tprio is the priority of this menu card or -1 if it shouldn't be modified.  item is the name of the menu itemm iprio is the priority of the item or -1 if it's priority shouldn't be modified, submenu indicates whether or not this item is another menu which will cascade off the top-level menu card when activated, data is to be supplied to the menubar's function when this item is choosen or a pointer to the menu card if this is a submenu. */
-void mb_AddSelection(mb,title,tprio,item,iprio,submenu,data)
-struct menubar *mb;
-char *title, *item;
-int tprio,iprio;
-int submenu;
-char *data;
+void mb_AddSelection(struct menubar *mb, char *title, int tprio, char *item, int iprio, int submenu, char *data)
 {
      struct tmenu *t=FindMenu(mb,title);
 
@@ -400,10 +442,7 @@ char *data;
 }
 
 /* mb_SetItemStatus: indicate whether or not a menu item is active. */
-void mb_SetItemStatus(mb,title,item,status)
-struct menubar *mb;
-char *title,*item;
-int status;
+void mb_SetItemStatus(struct menubar *mb, char *title, char *item, int status)
 {
     struct tmenu *m;
     struct titem *t;
@@ -421,9 +460,7 @@ int status;
 
 
 /* mb_DeleteSelection: remove item from the card named title, returning the data associated with the item. */
-void mb_DeleteSelection(mb,title,item)
-struct menubar *mb;
-char *title,*item;
+void mb_DeleteSelection(struct menubar *mb, char *title, char *item)
 {
     struct tmenu *t=FindMenu(mb,title);
     register struct titem *n,*n2;
@@ -454,20 +491,17 @@ char *title,*item;
 }
 
 /* mcomp: decide which menu comes first. if a<b return -X else return 0 or +Y */
-static int mcomp(a,b)
-struct tmenu **a,**b;
+static int mcomp(const void *a, const void *b)
 {
-    return (*a)->prio - (*b)->prio;
+    struct tmenu * const *ta = (struct tmenu * const *)a;
+    struct tmenu * const *tb = (struct tmenu * const *)b;
+    return (*ta)->prio - (*tb)->prio;
 }
 
 #define SetSeg(seg, x, y, xb, yb) do { (seg).x1=(x);(seg).y1=(y);(seg).x2=(xb);(seg).y2=(yb); } while(False);
 
 /* SelectRegion: draw a highlighting box with the given position and size, with the shadow depth given by the user's preferences. */
-static void SelectRegion(mb,win,gcs,x,y,w,h)
-struct menubar *mb;
-Window win;
-struct gcs *gcs;
-int x,y,w,h;
+static void SelectRegion(struct menubar *mb, Window win, struct gcs *gcs, int x, int y, int w, int h)
 {
     static int oldsize=0;
     static XSegment *segs=NULL;
@@ -515,11 +549,7 @@ int x,y,w,h;
 }
 
 /* UnSelectRegion: erase the highlighting box of the given size and location. */
-static void UnSelectRegion(mb, win, gcs, x, y, w, h)
-struct menubar *mb;
-Window win;
-struct gcs *gcs;
-int x, y, w, h;
+static void UnSelectRegion(struct menubar *mb, Window win, struct gcs *gcs, int x, int y, int w, int h)
 {
     static int oldsize=0;
     static XSegment *segs=NULL;
@@ -547,10 +577,7 @@ int x, y, w, h;
 }
 
 /* SetTitleSelection: highlight or de-highlight the title of menu card menu. */
-static void SetTitleSelection(mb, menu, onoff)
-struct menubar *mb;
-struct tmenu *menu;
-int onoff;
+static void SetTitleSelection(struct menubar *mb, struct tmenu *menu, int onoff)
 {
     if(menu) {
 	if(onoff)
@@ -564,8 +591,7 @@ int onoff;
 }
 
 /* mb_RefitMenubar: recompute which menus fit on the menubar and construct the more menu appropriately. */
-void mb_RefitMenubar(mb)
-struct menubar *mb;
+void mb_RefitMenubar(struct menubar *mb)
 {
     int i, x= 2*SHADOWWIDTH(mb);
     int fullflag=False;
@@ -604,9 +630,7 @@ struct menubar *mb;
 }
 
 /* mb_RedrawMenubar: redraw the menubar, clear indicates to what extent it should be redrawn if it is mb_FullRedraw the entire area is erased and redrawn, if it is mb_Update only the title area is erased, if it is mb_Exposed it is assumed the contents of the menubar haven't changed but just need to be redrawn */
-void mb_RedrawMenubar(mb, clear)
-register struct menubar *mb;
-int clear;
+void mb_RedrawMenubar(struct menubar *mb, int clear)
 {
     int i, y= mb->mbi->prefs->menubarheight - 2*SHADOWWIDTH(mb) - TITLEDESCENT(mb);
     XGCValues gcv;
@@ -668,9 +692,7 @@ int clear;
 }
 
 /* DrawMenuItems: draw the menu items on the menu card t in the cards window. */
-static void DrawMenuItems(mb,t)
-struct menubar *mb;
-struct tmenu *t;
+static void DrawMenuItems(struct menubar *mb, struct tmenu *t)
 {
     int lastprio=(-1);
     int lastgcmode=99;
@@ -748,16 +770,13 @@ struct tmenu *t;
 	}
 
 	y+=ITEMHEIGHT(mb, t) + VSPACE(mb, t);
-	
+
 	t->lookup[count++]=it;
 	it=it->next;
     }
 }
 
-static int ComputeItemPosition(mb, lm, inum)
-struct menubar *mb;
-struct tmenu *lm;
-int inum;
+static int ComputeItemPosition(struct menubar *mb, struct tmenu *lm, int inum)
 {
     int i,c;
     
@@ -772,10 +791,7 @@ int inum;
 #define POS_DOWN(mb, m1, m2, ya, ipos) ((ya) + 2*SHADOWWIDTH(mb) + ipos)
 
 /* ComputeMenuPositioning: choose where to position the menu m relative to the menubar, the primary considerations are: displaying as much of the menu as possible, and not covering the menubar. */
-static void ComputeMenuPositioning(mb,m,x,y,w,h)
-struct menubar *mb;
-struct tmenu *m;
-int *x,*y,*w,*h;
+static void ComputeMenuPositioning(struct menubar *mb, struct tmenu *m, int *x, int *y, int *w, int *h)
 {
     int displayHeight=DisplayHeight(mb->mbi->dpy, DefaultScreen(mb->mbi->dpy));
     int displayWidth=DisplayWidth(mb->mbi->dpy, DefaultScreen(mb->mbi->dpy));
@@ -835,9 +851,7 @@ int *x,*y,*w,*h;
 }
 
 /* LocateMenu: return the index of the menu pointed at by ex (and ey) */
-static int LocateMenu(mb, ex, ey)
-struct menubar *mb;
-int ex, ey;
+static int LocateMenu(struct menubar *mb, int ex, int ey)
 {
     int i;
     struct tmenu *t;
@@ -855,14 +869,14 @@ int ex, ey;
 }
 
 /* BringUpMenu: bring up the top level menu at index menu in the set of menus on the menubar. */
-static void BringUpMenu(mb,menu)
-struct menubar *mb;
-int menu;
+static void BringUpMenu(struct menubar *mb, int menu)
 {
     int x,y;
     int w,h;
+    struct timeval mdbg_t0, mdbg_t1, mdbg_t2, mdbg_t3, mdbg_t4, mdbg_t5;
 
-    
+    gettimeofday(&mdbg_t0, NULL);
+
     if(menu<0 || menu>=mb->nmenus) return;
     
     if(mb->lastmenu==mb->menus[menu]) return;
@@ -879,18 +893,46 @@ int menu;
     mb->lastmenu->next=NULL;
     
     SetTitleSelection(mb, mb->lastmenu, True);
-    
+    gettimeofday(&mdbg_t1, NULL);
+
     ComputeMenuPositioning(mb, mb->lastmenu, &x, &y, &w, &h);
-    
+    gettimeofday(&mdbg_t2, NULL);
+
     mb->lastmenu->ww=w;
     mb->lastmenu->wh=h;
 
     XMoveResizeWindow(mb->mbi->dpy, mb->lastmenu->window, x, y, mb->lastmenu->ww, mb->lastmenu->wh);
-    
+    gettimeofday(&mdbg_t3, NULL);
+
     mb->lastmenu->x=x - mb->mbi->x;
     mb->lastmenu->y=y;
-    
+
     DrawMenuItems(mb,mb->lastmenu);
+
+    /* Push the draw requests to the server right now, as their own
+       write, instead of leaving them sitting in Xlib's client-side
+       output buffer until DoMenuLoop's XGrabPointer (the next Xlib
+       call that needs a reply) implicitly flushes them bundled
+       together with the grab request. That bundling is why the visible
+       text was gated on the grab's round-trip finishing. */
+    XFlush(mb->mbi->dpy);
+    gettimeofday(&mdbg_t4, NULL);
+
+    /* Diagnostic only: XSync forces a round-trip so we can see how long
+       the SERVER actually takes to ack, separate from how long our
+       client took to ask -- this measurement itself is NOT what the
+       user waits on now that DrawMenuItems' output is flushed above. */
+    XSync(mb->mbi->dpy, False);
+    gettimeofday(&mdbg_t5, NULL);
+
+    mdbg("MENUDBG BringUpMenu: card=%d nitems=%d SetTitleSel=%ldms ComputePos=%ldms MoveResize=%ldms DrawItems(issue)=%ldms XSync(serverpaint)=%ldms TOTAL=%ldms\n",
+	    menu, mb->lastmenu->nitems,
+	    (long)((mdbg_t1.tv_sec-mdbg_t0.tv_sec)*1000+(mdbg_t1.tv_usec-mdbg_t0.tv_usec)/1000),
+	    (long)((mdbg_t2.tv_sec-mdbg_t1.tv_sec)*1000+(mdbg_t2.tv_usec-mdbg_t1.tv_usec)/1000),
+	    (long)((mdbg_t3.tv_sec-mdbg_t2.tv_sec)*1000+(mdbg_t3.tv_usec-mdbg_t2.tv_usec)/1000),
+	    (long)((mdbg_t4.tv_sec-mdbg_t3.tv_sec)*1000+(mdbg_t4.tv_usec-mdbg_t3.tv_usec)/1000),
+	    (long)((mdbg_t5.tv_sec-mdbg_t4.tv_sec)*1000+(mdbg_t5.tv_usec-mdbg_t4.tv_usec)/1000),
+	    (long)((mdbg_t5.tv_sec-mdbg_t0.tv_sec)*1000+(mdbg_t5.tv_usec-mdbg_t0.tv_usec)/1000));
 }
 
 /* eventp: choose the events which will be processed by the menubar event loop */
@@ -933,10 +975,7 @@ char *args;
 }
 
 /* BringUpSubMenu: display the submenu associated with item inum on menu card lm */
-static void BringUpSubMenu(mb, lm, inum)
-struct menubar *mb;
-struct tmenu *lm;
-int inum;
+static void BringUpSubMenu(struct menubar *mb, struct tmenu *lm, int inum)
 {
     struct titem *item=lm->lookup[inum];
     struct tmenu *submenu=(struct tmenu *)item->data;
@@ -975,11 +1014,7 @@ int inum;
 }
 
 /* SetItemSelection: highlight or de-highlight an item. */
-static void SetItemSelection(mb, lm, item, onoff)
-struct menubar *mb;
-struct tmenu *lm;
-int item;
-int onoff;
+static void SetItemSelection(struct menubar *mb, struct tmenu *lm, int item, int onoff)
 {
     if(onoff) { 
 	SelectRegion(mb, lm->window, &lm->gcs, SHADOWWIDTH(mb), ((int)lm->lookup[item]->y) , 2*SHADOWWIDTH(mb) + lm->iwidth + lm->kwidth + (lm->kwidth?ITEMHSPACE(mb):0), ITEMHEIGHT(mb, lm) + VSPACE(mb, lm));
@@ -995,9 +1030,7 @@ int onoff;
      0: timed out, go ahead with MotionNotify processing
      1: found another MotionNotify in the queue put it in the event passed in
      2:	data ready on the X display's file descriptor */
-static int WaitTillReady(mb, event)
-struct menubar *mb;
-XEvent *event;
+static int WaitTillReady(struct menubar *mb, XEvent *event)
 {
     long nfds;
 #ifdef FD_SET
@@ -1019,11 +1052,7 @@ XEvent *event;
 }
 
 /* SelectItem: highlight the itemth item on the menu card lm, also brings up any submenu and highlight's it's default item (usually the first) rot is used to decide which direction to go if the specified item is not active, -1 is up 1 is down. */
-static void SelectItem(mb, lm, item, rot)
-struct menubar *mb;
-struct tmenu *lm;
-int item;
-int rot;
+static void SelectItem(struct menubar *mb, struct tmenu *lm, int item, int rot)
 {
     int i=item;
     if(!lm->lookup) return;
@@ -1048,9 +1077,7 @@ int rot;
 
 /* MoveDown: Select the next item down from the item currently selected on
   menucard lm in menubar mb, if the new item is a submenu activate it and select it's default item. Return 1 if the search for the next item should start over from the first item else return 0 */
-static int MoveDown(mb, lm)
-struct menubar *mb;
-struct tmenu *lm;
+static int MoveDown(struct menubar *mb, struct tmenu *lm)
 {
     int c;
     c=lm->lastitem;
@@ -1066,9 +1093,7 @@ struct tmenu *lm;
 
 /* MoveUp: Select the next item up from the item currently selected on
   menucard lm in menubar mb, if the new item is a submenu activate it and select it's default item. Return 1 if the search for the next item should start over from the first item else return 0 */
-static int MoveUp(mb, lm)
-struct menubar *mb;
-struct tmenu *lm;
+static int MoveUp(struct menubar *mb, struct tmenu *lm)
 {
     int c;
     c=lm->lastitem;
@@ -1082,10 +1107,7 @@ struct tmenu *lm;
     return 0;
 }
 
-static int GetItemAt(mb, lm, y)
-struct menubar *mb;
-struct tmenu *lm;
-int y;
+static int GetItemAt(struct menubar *mb, struct tmenu *lm, int y)
 {
     int item=(y - SHADOWWIDTH(mb))/(ITEMHEIGHT(mb, lm) + VSPACE(mb, lm));
     
@@ -1101,10 +1123,7 @@ int y;
 }
 
 /* HandleInMenu: handle any changes needed due to move movement */
-static int HandleInMenu(mb, x, y, didwait)
-struct menubar *mb;
-int x,y;
-int didwait;
+static int HandleInMenu(struct menubar *mb, int x, int y, int didwait)
 {
     struct tmenu *lm=mb->lasteventin;
     int item=GetItemAt(mb, lm, y);
@@ -1144,11 +1163,7 @@ int didwait;
 /* */
 #define GRABPOINTER 1 /* */
 
-static Bool HandleButtonOrMotion(mb, window, event, lx, ly, x, y)
-struct menubar *mb;
-Window window;
-XEvent *event;
-int lx, ly, x, y;
+static Bool HandleButtonOrMotion(struct menubar *mb, Window window, XEvent *event, int lx, int ly, int x, int y)
 {
     Bool needevent=True;
     
@@ -1182,9 +1197,7 @@ int lx, ly, x, y;
     return needevent;
 }
 
-static void DoMenuLoop(mb, track)
-struct menubar *mb;
-Bool track;
+static void DoMenuLoop(struct menubar *mb, Bool track)
 {
     struct tmenu *itm;
     Bool exitmenus=False;
@@ -1380,10 +1393,7 @@ Bool track;
 }
 
 /* mb_HandleConfigure: handle being moved or resized, since the menubar needs to know where it is on the root window */
-void mb_HandleConfigure(mbi, mb, width, height)
-struct mbinit *mbi;
-struct menubar *mb;
-long width, height;
+void mb_HandleConfigure(struct mbinit *mbi, struct menubar *mb, long width, long height)
 {
     Window dumb;
     mbi->h=height;
@@ -1396,17 +1406,14 @@ long width, height;
 
 
 /* mb_Activate: start processing menubar events */
-void mb_Activate(mb, x, y)
-struct menubar *mb;
-long x,y;
+void mb_Activate(struct menubar *mb, long x, long y)
 {
     BringUpMenu(mb, LocateMenu(mb, x, y));
     DoMenuLoop(mb, True);
 }
 
 /* mb_KeyboardActivate: activate menubar, bringing up the first menucard with it's first item selected, and start processing events. */
-void mb_KeyboardActivate(mb)
-struct menubar *mb;
+void mb_KeyboardActivate(struct menubar *mb)
 {
     if(mb->lastvm>=0) BringUpMenu(mb, 0);
     else BringUpMenu(mb, mb->nmenus-1); /* bring up the more menu */
@@ -1415,12 +1422,7 @@ struct menubar *mb;
 }
 
 /* SetGCs: Actually create the gc's for a gcs.. */
-static void SetGCs(mbi,w,gcs,gcv,gcmask)
-struct mbinit *mbi;
-Window w;
-struct gcs *gcs;
-XGCValues *gcv;
-unsigned long gcmask;
+static void SetGCs(struct mbinit *mbi, Window w, struct gcs *gcs, XGCValues *gcv, unsigned long gcmask)
 {
     unsigned long t;
     gcv->function=GXcopy;
@@ -1456,9 +1458,7 @@ unsigned long gcmask;
 }
 
 /* FreeGCs: free the gc's in a gcs */
-static void FreeGCs(mbi,gcs)
-struct mbinit *mbi;
-struct gcs *gcs;
+static void FreeGCs(struct mbinit *mbi, struct gcs *gcs)
 {
     if(gcs->draw) {
 	XFreeGC(mbi->dpy, gcs->draw);
@@ -1476,9 +1476,7 @@ struct gcs *gcs;
 
 /* ReallyGetFont: try to get the font called fontname if it isn't
   available try to get the "Fixed" font. */
-static XFontStruct *ReallyGetFont(dpy,fontname)
-Display *dpy;
-char *fontname;
+static XFontStruct * ReallyGetFont(Display *dpy, char *fontname)
 {
     XFontStruct *f=XLoadQueryFont(dpy,fontname);
     if(f==NULL) {
@@ -1491,10 +1489,7 @@ char *fontname;
 }
 
 /* ReallyGetColor: get the color named color, if color is NULL or cannot be parsed by parse color use the color pointed to as a default and return the pixel value of the resulting color.  If color is non-null and can be parsed it's rgb values are filled into the color pointed to by desired and it's pixel value is returned. */
-static unsigned long ReallyGetColor(dpy,color,desired)
-Display *dpy;
-char *color;
-XColor *desired;
+static unsigned long ReallyGetColor(Display *dpy, char *color, XColor *desired)
 {
     XColor maybedesired;
     long status;
@@ -1523,10 +1518,7 @@ XColor *desired;
 #define MAXCOLOR 65535
 
 /* SetBottomShadow: try to get a good color for the bottom shadow..., it will be placed in the color pointed to by bcolor. */
-static void SetBottomShadow(p, bName, bcolor, background)
-struct prefs_s *p;
-char *bName;
-XColor *bcolor,*background;
+static void SetBottomShadow(struct prefs_s *p, char *bName, XColor *bcolor, XColor *background)
 {
     if(ISWHITE(p, *background)) {
 	 *bcolor=p->blackColor;
@@ -1546,11 +1538,7 @@ XColor *bcolor,*background;
 
 
 /* SetGray: try to get a good gray color.  If grayName is non-null it will be used if possible.  Otherwise a color hopefully between the background and foreground in brightness and a hue similar to the foreground will be used.  On a black and white display a grayish pixmap is used with the default foreground and background colors */
-static void SetGray(p, foreground,  background, grayName, graycolor, graypixmap)
-struct prefs_s *p;
-char *grayName;
-XColor *foreground, *background, *graycolor;
-Pixmap *graypixmap;
+static void SetGray(struct prefs_s *p, XColor *foreground, XColor *background, char *grayName, XColor *graycolor, Pixmap *graypixmap)
 {
     if(p->ColorDisplay) {
 	int r,g,b;
@@ -1574,11 +1562,7 @@ Pixmap *graypixmap;
     }
 }
 
-static void SetTopShadow(p, foreground,  background, topcolorName, topcolor, toppixmap)
-struct prefs_s *p;
-char *topcolorName;
-XColor *foreground, *background, *topcolor;
-Pixmap *toppixmap;
+static void SetTopShadow(struct prefs_s *p, XColor *foreground, XColor *background, char *topcolorName, XColor *topcolor, Pixmap *toppixmap)
 {
     if(p->ColorDisplay) {
 	if(!p->newshadows) {
@@ -1608,10 +1592,7 @@ Pixmap *toppixmap;
 }
 
 /* SetPixmap: get a pixmap from file name, or if name is None set the pixmap to None. */
-static void SetPixmap(p, name, pixmap)
-struct prefs_s *p;
-char *name;
-Pixmap *pixmap;
+static void SetPixmap(struct prefs_s *p, char *name, Pixmap *pixmap)
 {
     unsigned int width_ret, height_ret;
     int x_hot_ret, y_hot_ret;
@@ -1625,18 +1606,7 @@ Pixmap *pixmap;
 }
 
 /* BuildGraphicContext: try to make reasonable choices for everything given what a user has specified or not specified. */
-static void BuildGraphicContext(p, foregroundColor, backgroundColor, grayColor, graypixmapName, topcolorName, toppixmapName, botcolorName, botpixmapName, realForeground, realBackground, realGray, grayPixmap, topShadow, bottomShadow, topshadowPixmap, bottomshadowPixmap)
-struct prefs_s *p;
-char *foregroundColor, *backgroundColor;
-char *grayColor;
-char *graypixmapName, *toppixmapName, *botpixmapName;
-char *topcolorName, *botcolorName;
-XColor *realForeground, *realBackground;
-XColor *realGray;
-Pixmap *grayPixmap;
-XColor *topShadow;
-XColor *bottomShadow;
-Pixmap *topshadowPixmap, *bottomshadowPixmap;
+static void BuildGraphicContext(struct prefs_s *p, char *foregroundColor, char *backgroundColor, char *grayColor, char *graypixmapName, char *topcolorName, char *toppixmapName, char *botcolorName, char *botpixmapName, XColor *realForeground, XColor *realBackground, XColor *realGray, Pixmap *grayPixmap, XColor *topShadow, XColor *bottomShadow, Pixmap *topshadowPixmap, Pixmap *bottomshadowPixmap)
 {
     (void) ReallyGetColor(p->dpy, foregroundColor, realForeground);
 
@@ -1669,10 +1639,7 @@ Pixmap *topshadowPixmap, *bottomshadowPixmap;
 }
 
 /* Configure: Get the user's preferences for this display and do other configuration which is display specific. */
-static void Configure(dpy, p, fore, back)
-Display *dpy;
-struct prefs_s *p;
-XColor *fore,*back;
+static void Configure(Display *dpy, struct prefs_s *p, XColor *fore, XColor *back)
 {
     char *fontName;
     char *graypixmapName, *toppixmapName, *botpixmapName;
@@ -1734,6 +1701,7 @@ XColor *fore,*back;
     activatetime=getdefaultint(dpy,"MenubarCardDelay", 0);
     p->activatetime.tv_usec=activatetime*1000;
     p->activatetime.tv_sec=activatetime/1000;
+    mdbg("MENUDBG MakeGCs: resolved MenubarCardDelay=%lu ms\n", activatetime);
 
     fontName = getdefault(dpy,"MenubarTitleFont");
     if(fontName==NULL) fontName="andy12b";
@@ -1807,9 +1775,7 @@ XColor *fore,*back;
 }
 
 /* mb_GetPrefsForDisplay: get a struct prefs_s for a display, if the display has been seen before the same struct prefs_s will be returned again, and a reference count will be incremented. */
-struct prefs_s *mb_GetPrefsForDisplay(dpy, fore, back)
-Display *dpy;
-XColor *fore, *back;
+struct prefs_s * mb_GetPrefsForDisplay(Display *dpy, XColor *fore, XColor *back)
 {
     struct prefs_s *p=prefs;
     
@@ -1833,8 +1799,7 @@ XColor *fore, *back;
 
 
 /* MakeGCs: make all the gcs's from the preferences for this mbinit. */
-static void MakeGCs(mbi)
-struct mbinit *mbi;
+static void MakeGCs(struct mbinit *mbi)
 {
     XGCValues gcv;
     unsigned long gcmask=(GCFunction | GCLineWidth | GCForeground | GCBackground);
@@ -1897,8 +1862,7 @@ struct mbinit *mbi;
 
 
 /* MakeWindows: create the menu card windows which will be used for the menubars associated with this mbinit */
-static void MakeWindows(mbi)
-struct mbinit *mbi;
+static void MakeWindows(struct mbinit *mbi)
 {
 
     XSetWindowAttributes xswa;
@@ -1924,8 +1888,7 @@ struct mbinit *mbi;
 }
 
 /* DestroyPrefsForDisplay: get rid of the preferences for a display if they are no longer needed. */
-static void DestroyPrefsForDisplay(dpy)
-Display *dpy;
+static void DestroyPrefsForDisplay(Display *dpy)
 {
     struct prefs_s *p=prefs,*last=NULL;
     while(p!=NULL)
@@ -1946,12 +1909,7 @@ Display *dpy;
 }
 
 /* mb_init:  create a struct mbinit for use by all menubars for a given window, it handles getting preferences, setting the default foreground and background colors and what to do when expose events arrive while the menubar is active. */
-struct mbinit *mb_Init(dpy,fore,back, expose, exposedata, freeitem)
-Display *dpy;
-XColor *fore,*back;
-int (*expose)();
-void (*freeitem)();
-long *exposedata;
+struct mbinit * mb_Init(Display *dpy, XColor *fore, XColor *back, int (*expose)(), long *exposedata, void (*freeitem)())
 {
     struct mbinit *result=(struct mbinit *)malloc(sizeof(struct mbinit));
     if(result==NULL) return NULL;
@@ -1967,9 +1925,7 @@ long *exposedata;
 }
 
 /* mb_InitWindows: make the menu card windows, and initialize the gcs's */
-void mb_InitWindows(mbi,client)
-struct mbinit *mbi;
-Window client;
+void mb_InitWindows(struct mbinit *mbi, Window client)
 {  
     mbi->client=client;
 
@@ -1979,8 +1935,7 @@ Window client;
 }
 
 /* mb_Finalize: finish off everything associated with the given mbinit. */
-void mb_Finalize(mbi)
-struct mbinit *mbi;
+void mb_Finalize(struct mbinit *mbi)
 {
     DestroyPrefsForDisplay(mbi->dpy);
     FreeGCs(mbi,&mbi->titlegcs);
@@ -1992,8 +1947,7 @@ struct mbinit *mbi;
 }
 
 /* mb_Destroy: finish off a menubar (as opposed to a mbinit) */
-void mb_Destroy(mb)
-struct menubar *mb;
+void mb_Destroy(struct menubar *mb)
 {
     int i;
     for(i=0;i<mb->nmenus;i++) DestroyMenu(mb,mb->menus[i]);
@@ -2002,11 +1956,7 @@ struct menubar *mb;
 }
 
 /* mb_Create: Construct a new menubar with a given maintitle, moretitle and item function.  The function func will be called as func(mb, itemdata, mbdata) when a menu item is choosen. */
-struct menubar *mb_Create(mbi, maintitle, moretitle, data, func)
-struct mbinit *mbi;
-char *maintitle, *moretitle;
-char *data;
-void (*func)();
+struct menubar * mb_Create(struct mbinit *mbi, char *maintitle, char *moretitle, char *data, void (*func)())
 {
     struct menubar *mb=(struct menubar *)malloc(sizeof(struct menubar));
     

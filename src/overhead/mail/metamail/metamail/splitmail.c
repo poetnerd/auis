@@ -21,6 +21,7 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
  ******************************************************* */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <config.h>
@@ -32,6 +33,11 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 
 #define MINCHUNKSIZE 20000 /* Better be enough to hold the headers, or we die! */
 extern char *getmyname();
+/* Same-file forward references (defined later in this file). ULstrcmp here
+   is this file's own private copy, unrelated to overhead/util/lib's
+   same-named function -- splitmail does not link libutil.a. */
+extern int ShareThisHeader(char *s, char *SubjectBuf), HandleOnePart(int DoDeliver, char *deliverycmd, char *prefix, int numparts, int whichpart, char *SharedHeaders, char *SubjectBuf, char *id, char *MessageID, char *bigbuf), IllegalContentType(char *ctype);
+extern int ULstrcmp(char *s1, char *s2);
 
 #ifdef AMIGA
 #define Prototype   extern
@@ -48,7 +54,7 @@ extern char *getenv();
 #define VERBOSEDELIVERYCMD "/usr/lib/sendmail -t -v -oi"
 #endif
 
-usageexit() {
+void usageexit() {
     fprintf(stderr, "Usage:  splitmail [-d] [-v] [-s splitsize] [-i id-suffix] [-p prefix] [file-name]\n");
     exit(-1);
 }
@@ -56,9 +62,7 @@ usageexit() {
 char *MonthNames[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 char *DayNames[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
-char *
-endofheader(s)
-char *s;
+char * endofheader(char *s)
 {
     char *orgs = s, c;
     while (1) {
@@ -70,8 +74,7 @@ char *s;
     }
 }
 
-main(argc, argv)
-char **argv;
+int main(int argc, char **argv)
 {
     int i, DoDeliver=0, SplitSize=DEFAULT_SPLIT_SIZE, dum, InNewline=1, bytesread, whichpart=1, Verbose=0, numparts = -1, c;
     char *fname = NULL, *bigbuf, *s, *SharedHeaders, *headend, *from, id[100], *deliverycmd, *prefix, SubjectBuf[250];
@@ -241,9 +244,7 @@ char **argv;
     return(0);
 }
 
-HandleOnePart(DoDeliver, deliverycmd, prefix, numparts, whichpart, SharedHeaders, SubjectBuf, id, MessageID, bigbuf)
-int DoDeliver, numparts, whichpart;
-char *deliverycmd, *prefix, *SharedHeaders, *SubjectBuf, *id, *MessageID, *bigbuf;
+int HandleOnePart(int DoDeliver, char *deliverycmd, char *prefix, int numparts, int whichpart, char *SharedHeaders, char *SubjectBuf, char *id, char *MessageID, char *bigbuf)
 {
     FILE *fpout;
     char OutputFile[1000];
@@ -326,9 +327,7 @@ static char *SharedHeads[] = {
     NULL
 };
 
-ShareThisHeader(s, SubjectBuf)
-char *s;
-char *SubjectBuf;
+int ShareThisHeader(char *s, char *SubjectBuf)
 {
     int i;
     char *colon = index(s, ':');
@@ -354,8 +353,7 @@ char *SubjectBuf;
 
 static char *tspecials = "()<>@,;:\\\"/[]?.=";
 
-IllegalContentType(ctype)
-char *ctype;
+int IllegalContentType(char *ctype)
 {
     char *ct, *semicolon, *st, *s, *param, *eq, *matcheq;
     ct = malloc(1+strlen(ctype));
@@ -426,8 +424,7 @@ char *ctype;
     return(0);
 }
 
-int ULstrcmp(s1, s2)
-register char *s1, *s2;
+int ULstrcmp(char *s1, char *s2)
 {
     char c1,c2;
 

@@ -49,7 +49,7 @@ install.time::
 #else /* SY_AIX221 */
 
 #ifdef ISO80_FONTS_ENV
-InstallFileToFile(non-andrew.fonts.alias,${INSTINCFLAGS},${DESTDIR}/X11fonts/fonts.alias)
+InstallFileToFile(non-andrew.fonts.alias,${INSTLIBFLAGS},${DESTDIR}/X11fonts/fonts.alias)
 #else  /* ISO80_FONTS_ENV */
 install.time::
 	./mkfntdir.csh ${DESTDIR}/X11fonts $(FONTEXT)

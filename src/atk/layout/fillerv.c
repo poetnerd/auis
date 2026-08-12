@@ -42,10 +42,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 #define viewnamestring(v) ((v) == NULL ? "<NO VIEW>" : atom_Name(atomlist_First(view_GetName(v))))
 
 #ifndef _IBMR2
-extern char *malloc();
-extern char *realloc();
 #endif /* _IBMR2 */
 
+#include <andrewos.h> /* strings.h */
 #include <class.h>
 #include <assert.h>
 
@@ -62,6 +61,14 @@ extern char *realloc();
 #include <filler.ih>
 
 #include <fillerv.eh>
+
+struct graphicstuff;
+static void InitializeGraphics(struct fillerview *self, struct graphicstuff *gc);
+static int TopOfTheMark();
+static void UpdateScreen(struct fillerview *self, enum view_UpdateType how, struct rectangle *updateRect);
+static void addInset(char *newposs);
+static void initializeInsets();
+static void showhit(struct fillerview *self, struct graphicstuff *gc);
 
 static boolean debug=FALSE;
 /* graphic information */
@@ -85,9 +92,7 @@ static struct proctable_Entry *replaceProc = (struct proctable_Entry *) NULL;
 
 /* add an inset to the list of candidates */
 
-static void
-addInset(newposs)
-char *newposs;
+static void addInset(char *newposs)
 {
     int n;
     char *b;
@@ -147,15 +152,13 @@ initializeInsets()
 
 /* initialize entire class */
 
-boolean				    /* returns TRUE for success */
-fillerview__InitializeClass(classID)
-struct classheader *classID;	    /* ignored */
+boolean fillerview__InitializeClass(struct classheader *classID)
 {
     DEBUGPRINTF(("fillerview__InitializeClass(%x)\n", classID));
 
     mainmenus = menulist_New();
 
-    replaceProc = proctable_DefineProc("fillerview-set-data-object-by-name", fillerview__SetDataObjectByName, &fillerview_classinfo, NULL, "Insert named inset");
+    replaceProc = proctable_DefineProc("fillerview-set-data-object-by-name", (procedure)fillerview__SetDataObjectByName, &fillerview_classinfo, NULL, "Insert named inset");
     initializeInsets();
 
     return TRUE;
@@ -163,10 +166,7 @@ struct classheader *classID;	    /* ignored */
 
 /* initialize filler view */
 
-boolean				    /* retrurns TRUE for success */
-fillerview__InitializeObject(classID, self)
-struct classheader *classID;	    /* ignored */
-struct fillerview *self;
+boolean fillerview__InitializeObject(struct classheader *classID, struct fillerview *self)
 {
     DEBUGPRINTF(("fillerview__InitializeObject(%x)\n", classID));
 
@@ -179,15 +179,12 @@ struct fillerview *self;
 
 /* initialize graphic-dependent data */
 
-static void
-InitializeGraphics(self, gc)
-struct fillerview *self;
-struct graphicstuff *gc;
+static void InitializeGraphics(struct fillerview *self, struct graphicstuff *gc)
 {
     static char *wfontname = NULL;
     struct FontSummary *fs;
     int i;
-    int w;
+    long w;
 
     DEBUGPRINTF(("fillerview_InitializeGraphics\n"));
 
@@ -212,21 +209,14 @@ struct graphicstuff *gc;
 
 /* compute top of line hit */
 
-static int			/* returns y position of top of button */
-TopOfTheMark(self, gc, i)
-struct fillerview *self;
-struct graphicstuff *gc;
-int i;				/* index of this button */
+static int /* returns y position of top of button */ TopOfTheMark(struct fillerview *self, struct graphicstuff *gc, int i)
 {
     return TOPMARGIN * 2 - 2 + (i + 1) * gc->lineheight;
 }
 
 /* highlight hit box */
 
-static void
-showhit(self, gc)
-struct fillerview *self;
-struct graphicstuff *gc;
+static void showhit(struct fillerview *self, struct graphicstuff *gc)
 {
     short savetransfermode;
 
@@ -240,12 +230,7 @@ struct graphicstuff *gc;
 
 /* process mouse hit */
 
-struct view *				/* returns view to get subsequent hits */
-fillerview__Hit(self, action, x, y, numberOfClicks)
-struct fillerview *self;
-enum view_MouseAction action;		/* button and what it did */
-long x,	y;				/* coordinates of mouse */
-long numberOfClicks;			/* number of clicks at this location */
+struct view * fillerview__Hit(struct fillerview *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     int i;
     struct graphicstuff realgc, *gc = &realgc;
@@ -292,11 +277,7 @@ long numberOfClicks;			/* number of clicks at this location */
 
 /* update all components */
 
-static void
-UpdateScreen(self, how, updateRect)
-struct fillerview *self;
-enum view_UpdateType how;		    /* kind of update */
-struct rectangle *updateRect;		    /* rectangle affected */
+static void UpdateScreen(struct fillerview *self, enum view_UpdateType how, struct rectangle *updateRect)
 {
     int i;
     struct graphicstuff realgc, *gc = &realgc;
@@ -317,11 +298,7 @@ struct rectangle *updateRect;		    /* rectangle affected */
 
 /* full update when window changes */
 
-void
-fillerview__FullUpdate(self, how, left, top, width, height)
-struct fillerview *self;
-enum view_UpdateType how;		    /* kind of update */
-long left, top, width, height;		    /* rectangle affected (in some cases; */
+void fillerview__FullUpdate(struct fillerview *self, enum view_UpdateType how, long left, long top, long width, long height)
 {
     struct rectangle vb;
 
@@ -351,9 +328,7 @@ long left, top, width, height;		    /* rectangle affected (in some cases; */
 
 /* partial update */
 
-void
-fillerview__Update(self)
-struct fillerview *self;
+void fillerview__Update(struct fillerview *self)
 {
     struct rectangle visualRect;
 
@@ -369,9 +344,7 @@ struct fillerview *self;
 
 /* input focus obtained; highlight something */
 
-void
-fillerview__ReceiveInputFocus(self)
-struct fillerview *self;
+void fillerview__ReceiveInputFocus(struct fillerview *self)
 {
     DEBUGPRINTF(("fillerview_ReceiveInputFocus\n"));
 
@@ -387,9 +360,7 @@ struct fillerview *self;
 
 /* input focus lost; remove highlighting */
 
-void
-fillerview__LoseInputFocus(self)
-struct fillerview *self;
+void fillerview__LoseInputFocus(struct fillerview *self)
 {
     DEBUGPRINTF(("fillerview_LoseInputFocus\n"));
 
@@ -404,10 +375,7 @@ struct fillerview *self;
 
 /* tear down a fillerview */
 
-void
-fillerview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct fillerview *self;
+void fillerview__FinalizeObject(struct classheader *classID, struct fillerview *self)
 {
     if (debug)
 	printf("fillerview_FinalizeObject\n");
@@ -417,10 +385,7 @@ struct fillerview *self;
 
 /* set contained data object */
 
-void
-fillerview__SetDataObjectByName(self, dataname)
-struct fillerview *self;
-char *dataname;				/*class  dataname of replacement dataobject */
+void fillerview__SetDataObjectByName(struct fillerview *self, char *dataname)
 {
     DEBUGPRINTF(("fillerview_SetDataObjectByName(,%s)\n", dataname));
 

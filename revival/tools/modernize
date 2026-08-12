@@ -1,0 +1,317 @@
+#!/usr/bin/env python3
+"""Modernize AUIS C source files.
+
+Applies mechanical transformations to bring 1990s C code closer to
+modern C standards. Designed to be run repeatedly and idempotently.
+
+Usage:
+    modernize.py [--dry-run] file.c [file2.c ...]
+    modernize.py [--dry-run] --dir src/atk/text
+"""
+
+import re
+import sys
+import argparse
+import os
+
+
+def modernize_file(path, dry_run=False):
+    with open(path, 'r', encoding='utf-8', errors='replace') as f:
+        original = f.read()
+
+    text = original
+    text = fix_extern_errno(text)
+    text = fix_malloc_declarations(text)
+    text = fix_missing_includes(text)
+    text = fix_knr_functions(text)
+
+    if text == original:
+        return False
+
+    if dry_run:
+        print(f"Would modify: {path}")
+    else:
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(text)
+        print(f"Modified: {path}")
+    return True
+
+
+def fix_extern_errno(text):
+    """Replace 'extern int errno;' with #include <errno.h>."""
+    pat = r'^[ \t]*extern\s+int\s+errno\s*;[^\n]*\n'
+    if re.search(pat, text, re.MULTILINE):
+        text = re.sub(pat, '', text, flags=re.MULTILINE)
+        if '#include <errno.h>' not in text:
+            text = add_include(text, '<errno.h>')
+    return text
+
+
+def fix_malloc_declarations(text):
+    """Replace manual malloc/realloc/calloc declarations with #include <stdlib.h>."""
+    patterns = [
+        r'#ifndef\s+_IBMR2\s*\n\s*char\s+\*malloc\(\)[^;]*;\s*/\*[^*]*\*/\s*\n\s*#endif\s*/\*\s*_IBMR2\s*\*/\s*\n',
+        r'extern\s+char\s+\*malloc\(\)\s*,\s*\*realloc\(\)\s*;[^\n]*\n',
+        r'extern\s+char\s+\*realloc\(\)\s*;\s*\n',
+        r'extern\s+char\s+\*malloc\(\)\s*;\s*\n',
+    ]
+    for pat in patterns:
+        if re.search(pat, text):
+            text = re.sub(pat, '', text)
+            if '#include <stdlib.h>' not in text:
+                text = add_include(text, '<stdlib.h>')
+    return text
+
+
+STDLIB_FUNCS = {'exit', 'atoi', 'atol', 'atof', 'abort', 'abs',
+                'malloc', 'realloc', 'calloc', 'free',
+                'getenv', 'qsort', 'bsearch', 'strtol', 'strtod'}
+STRING_FUNCS = {'strlen', 'strcpy', 'strncpy', 'strcat', 'strncat',
+                'strcmp', 'strncmp', 'strchr', 'strrchr', 'strstr',
+                'memcpy', 'memset', 'memcmp', 'memmove', 'strerror'}
+STDIO_FUNCS = {'printf', 'fprintf', 'sprintf', 'snprintf',
+               'sscanf', 'fscanf', 'scanf',
+               'fopen', 'fclose', 'fread', 'fwrite',
+               'fgets', 'fputs', 'puts', 'putchar', 'getchar',
+               'perror', 'fflush', 'fseek', 'ftell', 'rewind'}
+
+
+def fix_missing_includes(text):
+    """Add standard library includes when functions are called but header is missing."""
+    has_andrewos = '#include' in text and ('andrewos.h' in text or 'andrewos>' in text)
+
+    func_call_pat = re.compile(r'\b(\w+)\s*\(')
+    called = set(func_call_pat.findall(text))
+
+    if not has_andrewos:
+        if called & STRING_FUNCS:
+            if '#include <string.h>' not in text:
+                text = add_include(text, '<string.h>')
+
+    if called & STDLIB_FUNCS:
+        if '#include <stdlib.h>' not in text:
+            text = add_include(text, '<stdlib.h>')
+
+    if called & STDIO_FUNCS:
+        if '#include <stdio.h>' not in text:
+            text = add_include(text, '<stdio.h>')
+
+    return text
+
+
+def add_include(text, header):
+    """Insert an #include after the last existing #include block."""
+    last_include = -1
+    for m in re.finditer(r'^#include\s+[<"][^>"]+[>"]\s*$', text, re.MULTILINE):
+        last_include = m.end()
+    if last_include >= 0:
+        return text[:last_include] + f'\n#include {header}' + text[last_include:]
+    return f'#include {header}\n' + text
+
+
+KNR_PATTERN = re.compile(
+    r'''
+    ^[ \t]*                     # start of line, optional leading whitespace
+    (                           # group 1: return type + name + params
+        (?:static\s+|extern\s+|(?:unsigned\s+)?)* # optional qualifiers
+        (?:struct\s+\w+\s*\*?|  # struct return type
+           \w+)                 # or simple return type
+        (?:[ \t]*\*+[ \t]*|[ \t]+) # pointer stars OR mandatory whitespace
+        (\w+)                   # group 2: function name
+        [ \t]*\(                # open paren (same line as function name)
+        ([^)]+)                 # group 3: parameter names (no types)
+        \)                      # close paren
+    )
+    \s*(?:/\*[^*]*\*/)?\s*\n    # optional comment, end of line
+    (                           # group 4: type declarations
+        (?:\s*                  # each declaration line:
+            (?:register\s+|unsigned\s+|const\s+|long\s+|short\s+)*
+            (?:struct\s+\w+|union\s+\w+|enum\s+\w+|\w+)  # type name
+            \s+\**\s*           # spacing and pointer stars
+            [^;{]+;             # declarator(s) and semicolon
+            [^\n]*\n            # rest of line (may have comments)
+        )+                      # one or more declaration lines
+    )
+    \s*(?=\{)                   # optional blank lines before opening brace
+    ''',
+    re.MULTILINE | re.VERBOSE
+)
+
+
+IMPLICIT_INT_PATTERN = re.compile(
+    r'''
+    ^                           # start of line
+    (                           # group 1: name + params
+        (\w+)                   # group 2: function name (no return type)
+        [ \t]*\(                # open paren
+        ([^)]+)                 # group 3: parameter names
+        \)                      # close paren
+    )
+    \s*(?:/\*[^*]*\*/)?\s*\n    # optional comment, end of line
+    (                           # group 4: type declarations
+        (?:\s*
+            (?:register\s+|unsigned\s+|const\s+|long\s+|short\s+)*
+            (?:struct\s+\w+|union\s+\w+|enum\s+\w+|\w+)
+            \s+\**\s*
+            [^;{]+;
+            [^\n]*\n
+        )+
+    )
+    \s*(?=\{)                   # followed by opening brace
+    ''',
+    re.MULTILINE | re.VERBOSE
+)
+
+TYPE_KEYWORDS = {
+    'void', 'int', 'char', 'short', 'long', 'float', 'double',
+    'unsigned', 'signed', 'struct', 'union', 'enum', 'boolean',
+    'static', 'extern', 'register', 'const', 'volatile',
+    'FILE', 'pointer', 'procedure',
+}
+
+
+def fix_knr_functions(text):
+    """Convert K&R function definitions to ANSI style."""
+    text = KNR_PATTERN.sub(knr_replacer, text)
+    text = IMPLICIT_INT_PATTERN.sub(implicit_int_replacer, text)
+    return text
+
+
+def implicit_int_replacer(match):
+    func_name = match.group(2)
+    param_names_str = match.group(3)
+    type_decls = match.group(4)
+
+    if func_name in TYPE_KEYWORDS:
+        return match.group(0)
+
+    # Check the line before the match — if it ends with a type keyword
+    # or 'static', this is a split-line definition, not implicit int
+    start = match.start()
+    prev_line_end = start - 1 if start > 0 else 0
+    prev_line_start = match.string.rfind('\n', 0, prev_line_end)
+    if prev_line_start < 0:
+        prev_line_start = 0
+    prev_line = match.string[prev_line_start:prev_line_end + 1].strip()
+    if prev_line:
+        prev_words = prev_line.split()
+        if prev_words and prev_words[-1].rstrip('*') in TYPE_KEYWORDS:
+            return match.group(0)
+        if prev_words and prev_words[-1].startswith('*'):
+            return match.group(0)
+
+    param_names = [p.strip() for p in param_names_str.split(',')]
+    type_map = parse_type_declarations(type_decls)
+
+    ansi_params = []
+    for name in param_names:
+        if name in type_map:
+            ansi_params.append(type_map[name])
+        else:
+            ansi_params.append(f'int {name}')
+
+    return f"int {func_name}({', '.join(ansi_params)})\n"
+
+
+def knr_replacer(match):
+    full_header = match.group(1)
+    func_name = match.group(2)
+    param_names_str = match.group(3)
+    type_decls = match.group(4)
+
+    param_names = [p.strip() for p in param_names_str.split(',')]
+
+    type_map = parse_type_declarations(type_decls)
+
+    ansi_params = []
+    for name in param_names:
+        if name in type_map:
+            ansi_params.append(type_map[name])
+        else:
+            ansi_params.append(f'int {name}')
+
+    ret_and_name = full_header[:full_header.index(func_name) + len(func_name)]
+    return f"{ret_and_name}({', '.join(ansi_params)})\n"
+
+
+def parse_type_declarations(decls_text):
+    """Parse K&R parameter type declarations into a name->typed-param map."""
+    type_map = {}
+    for raw_line in decls_text.strip().split('\n'):
+        raw_line = re.sub(r'/\*.*?\*/', '', raw_line).strip()
+        for line in raw_line.split(';'):
+            line = line.strip()
+            if not line:
+                continue
+
+            # Handle function pointer declarations: type (*name)()
+            fp = re.match(
+                r'((?:register\s+|unsigned\s+|const\s+|long\s+|short\s+)*'
+                r'(?:struct\s+\w+|union\s+\w+|enum\s+\w+|\w+))'
+                r'\s+\(\*(\w+)\)\s*\(([^)]*)\)', line)
+            if fp:
+                base_type = fp.group(1).strip()
+                name = fp.group(2)
+                params = fp.group(3)
+                type_map[name] = f"{base_type} (*{name})({params})"
+                continue
+
+            m = re.match(
+                r'((?:register\s+|unsigned\s+|const\s+|long\s+|short\s+)*'
+                r'(?:struct\s+\w+|union\s+\w+|enum\s+\w+|\w+))'
+                r'\s+(.*)', line)
+            if not m:
+                continue
+
+            base_type = m.group(1).strip()
+            rest = m.group(2).strip()
+
+            for decl in rest.split(','):
+                decl = decl.strip()
+                array_suffix = ''
+                if '[]' in decl:
+                    array_suffix = decl[decl.index('['):]
+                    decl = decl[:decl.index('[')].strip()
+                stars = ''
+                while decl.startswith('*'):
+                    stars += '*'
+                    decl = decl[1:].strip()
+                name = decl
+                if not name or not re.match(r'\w+$', name):
+                    continue
+                if stars:
+                    type_map[name] = f"{base_type} {stars}{name}{array_suffix}"
+                else:
+                    type_map[name] = f"{base_type} {name}{array_suffix}"
+
+    return type_map
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Modernize AUIS C source files')
+    parser.add_argument('files', nargs='*', help='Files to modernize')
+    parser.add_argument('--dir', help='Process all .c and .h files in directory tree')
+    parser.add_argument('--dry-run', action='store_true', help='Show what would change')
+    args = parser.parse_args()
+
+    files = list(args.files)
+    if args.dir:
+        for root, dirs, filenames in os.walk(args.dir):
+            for fn in filenames:
+                if fn.endswith(('.c', '.h')):
+                    files.append(os.path.join(root, fn))
+
+    if not files:
+        parser.print_help()
+        sys.exit(1)
+
+    modified = 0
+    for path in files:
+        if modernize_file(path, dry_run=args.dry_run):
+            modified += 1
+
+    print(f"\n{modified} file(s) {'would be ' if args.dry_run else ''}modified out of {len(files)} scanned.")
+
+
+if __name__ == '__main__':
+    main()

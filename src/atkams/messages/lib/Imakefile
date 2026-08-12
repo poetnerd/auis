@@ -26,8 +26,9 @@
 * $
 */
 
-
 LOCALINCLUDES	= -I$(BASEDIR)/include/ams
+
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 #ifdef SNAP_ENV
     S_DOBJS	=	amss.do
@@ -62,7 +63,6 @@ LIBS = 		$(BASEDIR)/lib/libmsshr.a \
 			$(BASEDIR)/lib/libmail.a $(BASEDIR)/lib/libcparser.a $(BASEDIR)/lib/liberrors.a \
 			$(UTILLIB) 
 
-
 SLIBS	=		$(BASEDIR)/lib/libcui.a $(BASEDIR)/lib/libcuis.a \
 			$(BASEDIR)/lib/libsnap.a $(BASEDIR)/lib/librxp.a $(LIBS)
 
@@ -78,7 +78,7 @@ DynamicMultiObject(captions.do, captions.o capaux.o,,$(LEXLIB))
 DynamicMultiObject(folders.do, folders.o foldaux.o,,$(LEXLIB))
 DynamicMultiObject(sendmsg.do, sendmsg.o sendaux.o writeone.o,,$(LEXLIB))
 DynamicMultiObject(messages.do, messages.o messaux.o,,$(LEXLIB))
-DynamicObject(text822,,$(LEXLIB))
+DynamicObject(text822,$(LIBS),$(LEXLIB))
 DynamicObject(text822v,,$(LEXLIB))
 DynamicObject(amsutil, $(LIBS), $(LEXLIB) $(BSDLIB))
 DynamicObject(ams, $(UTILLIB),$(LEXLIB))
@@ -86,7 +86,7 @@ DynamicObject(options,,$(LEXLIB))
 DynamicObject(messwind,,$(LEXLIB))
 DynamicObject(mailobj,,$(LEXLIB))
 DynamicObject(mailobjv,,$(LEXLIB))
-DynamicMultiObject(amsn.do, amsn.o stubs.o, $(NLIBS), $(MMDFLIBS) $(LEXLIB) $(BSDLIB))
+DynamicMultiObject(amsn.do, amsn.o stubs.o, $(NLIBS), $(MMDFLIBS) $(LEXLIB) $(BSDLIB) $(SSLLIB) $(RESOLVER_LIB))
 
 #ifdef SNAP_ENV
 DynamicMultiObject(amss.do, amss.o stubs.o, $(SLIBS), $(MMDFLIBS) $(LEXLIB))
@@ -97,4 +97,3 @@ DependTarget()
 InstallClassFiles($(DOBJS),$(IHFILES))
 MkdirTarget($(DESTDIR)/lib/prs)
 InstallDocs(messages.pr, $(DESTDIR)/lib/prs)
-

@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <andrewos.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <andyenv.h>
 #include <ctype.h>
 #include <pwd.h>
@@ -43,6 +44,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <mail.h>
 #include <parseadd.h>
 #include <svcconf.h>
+static void CanonicalizeList(char *newList);
+static int FunkyParseAddressList();
+static char * ListUnparse();
+static int ResolveTilde();
+static void ValidateAddresses(PARSED_ADDRESS *AddrList, char *PrevailingDomain);
+static void ValidateRecipient(PARSED_ADDRESS *Addr, char *PrevailingDomain);
 #ifdef WHITEPAGES_ENV
 #include <wp.h>
 #endif /* WHITEPAGES_ENV */
@@ -53,7 +60,14 @@ static struct wp_cd *wpCD = NULL;
 static char *wp_domain = NULL;
 #endif /* WHITEPAGES_ENV */
 
-extern PARSED_ADDRESS *SingleAddress();
+extern PARSED_ADDRESS *SingleAddress(PARSED_ADDRESS *AddrList, int *pCount);
+
+/* Cross-file, no header anywhere in the tree declares these. */
+extern int AddHost(PARSED_ADDRESS *Addr, ADDRESS_HOST *Host);			/* parseadd.c */
+extern void la_FreeMD(struct MailDom *MD);		/* locnamex.c */
+extern int UnparseAddressList();	/* parseadd.c */
+extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);		/* parseadd.c */
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);		/* parseadd.c */
 
 char fwdvalid_msgbuf[2000] = "";
 
@@ -136,9 +150,7 @@ int laType; char **PrimePtr; char *Dom;
 }
 
 
-static void ValidateRecipient(Addr, PrevailingDomain)
-PARSED_ADDRESS *Addr;
-char *PrevailingDomain;
+static void ValidateRecipient(PARSED_ADDRESS *Addr, char *PrevailingDomain)
 {
     ADDRESS_HOST *HostPtr;
     char *CanonID;
@@ -152,7 +164,7 @@ char *PrevailingDomain;
     char *CAF, *p;
     PARSED_ADDRESS *CAF_ListHead, *CAF_Addr;
 #endif /* WHITEPAGES_ENV */
-    extern ADDRESS_HOST *MakeHost();
+    extern ADDRESS_HOST *MakeHost(char *name);
     int laErr, laType;
     char *laPrime, *laSecond;
 
@@ -494,9 +506,7 @@ char *PrevailingDomain;
     free(laPrime);
 }
 
-static void ValidateAddresses(AddrList, PrevailingDomain)
-PARSED_ADDRESS *AddrList;
-char *PrevailingDomain;
+static void ValidateAddresses(PARSED_ADDRESS *AddrList, char *PrevailingDomain)
 {
     FOR_ALL_ADDRESSES(ThisAddr, AddrList, {
 		       switch (ThisAddr->Kind) {
@@ -513,8 +523,7 @@ char *PrevailingDomain;
 }
 
 
-static void CanonicalizeList(newList)
-char *newList;
+static void CanonicalizeList(char *newList)
 {/* Canonicalize white space in the address list. */
     char *Src, *Dst, C;
     if (newList != NULL) {
@@ -618,8 +627,7 @@ char *Strg; PARSED_ADDRESS **OutAddr;
     return PACode;
 }
 
-void fwdvalid_SetTildeUser(s)
-char *s;
+void fwdvalid_SetTildeUser(char *s)
 {
   tildeuser = s;
   return;
@@ -681,9 +689,7 @@ char *NewAddr, **FixedAddr;
 }
 
 #ifdef TESTINGONLYTESTING
-main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     int err;
     char *out;

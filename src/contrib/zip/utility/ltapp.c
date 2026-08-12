@@ -51,10 +51,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 
 static boolean debug=FALSE;
 
-boolean 
-ltapp__InitializeObject( classID, self )
-  register struct classheader		 *classID;
-  register struct ltapp			 *self;
+boolean ltapp__InitializeObject(struct classheader *classID, struct ltapp *self)
   {
   IN(ltapp_InitializeObject);
   *(self->trace_stream_name) = 0;
@@ -65,11 +62,7 @@ ltapp__InitializeObject( classID, self )
   return TRUE;
   }
 
-boolean
-ltapp__ParseArgs( self, argc, argv )
-  register struct ltapp			 *self;
-  register int				  argc;
-  register char				**argv;
+boolean ltapp__ParseArgs(struct ltapp *self, int argc, char **argv)
   {
   IN(ltapp_ParseArgs);
   while ( *++argv )
@@ -95,9 +88,7 @@ ltapp__ParseArgs( self, argc, argv )
   return TRUE;
   }
 
-boolean 
-ltapp__Start( self )
-  register struct ltapp			 *self;
+boolean ltapp__Start(struct ltapp *self)
   {
   IN(ltapp_Start);
   if( !super_Start(self) )
@@ -132,9 +123,7 @@ ltapp__Start( self )
   return TRUE;
   }
 
-int
-ltapp__Run(self)
-  register struct ltapp			  *self;
+int ltapp__Run(struct ltapp *self)
   {
   IN(ltapp_Run);
   ltapp_Fork( self );

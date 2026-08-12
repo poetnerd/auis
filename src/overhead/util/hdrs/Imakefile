@@ -26,7 +26,6 @@
 * $
 */
 
-
 #ifdef DEFAULT_LOCALDIR_ENV
 GENHDR_CMD = ./genhdr ,$(XBASEDIR) DEFAULT_ANDREWDIR_ENV  DEFAULT_LOCALDIR_ENV >> andrdir.h1
 #else

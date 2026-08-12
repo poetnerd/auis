@@ -34,10 +34,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h> /* sys/file.h */
 #include <ms.h>
 #include <sys/stat.h>
+extern int RetryBodyFileName(char *FileName);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
 
-MS_GetPartialFile(FileName, Buf, BufLim, offset, remaining, ct)
-char *FileName, *Buf;
-int BufLim, offset, *remaining, *ct;
+int MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, long *remaining, int *ct)
 {
     int fd;
     struct stat statbuf;

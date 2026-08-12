@@ -61,59 +61,46 @@ END-SPECIFICATION  ************************************************************/
 #include "fontdesc.ih"
 #include "zipobj.ih"
 #include "zipocapt.eh"
+#include <string.h>
+static int Compute_Handle_Positions( struct zipocapt *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3 );
+static int Draw();
 
-static Draw();
-static Compute_Handle_Positions();
-static enum view_MouseAction Accept_Caption_Character();
+static int Draw();
+static int Compute_Handle_Positions( struct zipocapt *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3 );
+static enum view_MouseAction Accept_Caption_Character( struct zipocapt *self, zip_type_pane pane, char c, enum view_MouseAction action, long x, long y, long clicks );
 
-char
-zipocapt__Object_Icon( self )
-  register struct zipocapt		 *self;
+char zipocapt__Object_Icon(struct zipocapt *self)
   {
   IN(zipocapt_Object_Icon);
   OUT(zipocapt_Object_Icon);
   return  'A';
   }
 
-char
-zipocapt__Object_Icon_Cursor( self )
-  register struct zipocapt		 *self;
+char zipocapt__Object_Icon_Cursor(struct zipocapt *self)
   {
   IN(zipocapt_Object_Icon_Cursor);
   OUT(zipocapt_Object_Icon_Cursor);
   return  'D';
   }
 
-char
-zipocapt__Object_Datastream_Code( self )
-  register struct zipocapt		 *self;
+char zipocapt__Object_Datastream_Code(struct zipocapt *self)
   {
   IN(zipocapt_Object_Datastream_Code);
   OUT(zipocapt_Object_Datastream_Code);
   return  'A';
   }
 
-long
-zipocapt__Show_Object_Properties( self, pane, figure )
-  register struct zipocapt		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
+long zipocapt__Show_Object_Properties(struct zipocapt *self, zip_type_pane pane, zip_type_figure figure)
   {
   zipview_Announce( View, "Draw Caption by Selecting Start-point, then Typing." );
   return  zip_ok;
   }
 
-long
-zipocapt__Build_Object( self, pane, action, x, y, clicks, X, Y )
-  register struct zipocapt		 *self;
-  register zip_type_pane		  pane;
-  register enum view_MouseAction	  action;
-  register long				  x, y, clicks;
-  register zip_type_point		  X, Y;
+long zipocapt__Build_Object(struct zipocapt *self, zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y)
   {
   zip_type_figure			  figure;
   register long				  status = zip_ok;
-  int					  position = 0; /*===*/
+  zip_type_figure					  position = NULL; /*===*/
   char					  text[4];
 
   IN(zipocapt_Build_Object);
@@ -145,13 +132,7 @@ zipocapt__Build_Object( self, pane, action, x, y, clicks, X, Y )
   return  status;
   }
 
-static enum view_MouseAction
-Accept_Caption_Character( self, pane, c, action, x, y, clicks )
-  register struct zipocapt		 *self;
-  register zip_type_pane		  pane;
-  register char				  c;
-  register enum view_MouseAction	  action;
-  register long				  x, y, clicks;
+static enum view_MouseAction Accept_Caption_Character(struct zipocapt *self, zip_type_pane pane, char c, enum view_MouseAction action, long x, long y, long clicks)
   {
   register zip_type_figure		  figure = pane->zip_pane_current_figure;
   char					  text[4097];/*===*/
@@ -220,11 +201,7 @@ Accept_Caption_Character( self, pane, c, action, x, y, clicks )
   return  action;
   }
 
-long
-zipocapt__Draw_Object( self, figure, pane )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipocapt__Draw_Object(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -235,11 +212,7 @@ zipocapt__Draw_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipocapt__Clear_Object( self, figure, pane )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipocapt__Clear_Object(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -250,11 +223,7 @@ zipocapt__Clear_Object( self, figure, pane )
   return  status;
   }
 
-static
-Draw( self, figure, pane )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+static int Draw(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register struct fontdesc		 *font, *current_font =
@@ -353,11 +322,7 @@ Draw( self, figure, pane )
   return  status;
   }
 
-long
-zipocapt__Print_Object( self, figure, pane )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipocapt__Print_Object(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane)
   {
   char					 *text = NULL;
   register struct fontdesc		 *font = NULL;
@@ -418,12 +383,7 @@ zipocapt__Print_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipocapt__Proximate_Object_Points( self, figure, pane, x, y )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long zipocapt__Proximate_Object_Points(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register int				  point = 0;
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
@@ -463,12 +423,7 @@ zipocapt__Proximate_Object_Points( self, figure, pane, x, y )
   return  point;
   }
 
-boolean
-zipocapt__Enclosed_Object( self, figure, pane, x, y, w, h )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y, w, h;
+boolean zipocapt__Enclosed_Object(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y, zip_type_pixel w, zip_type_pixel h)
   {
   register boolean			  enclosed = false;
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
@@ -481,12 +436,7 @@ zipocapt__Enclosed_Object( self, figure, pane, x, y, w, h )
   return  enclosed;
   }
 
-long
-zipocapt__Object_Enclosure( self, figure, pane, x, y, w, h )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		 *x, *y, *w, *h;
+long zipocapt__Object_Enclosure(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *x, zip_type_pixel *y, zip_type_pixel *w, zip_type_pixel *h)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
 
@@ -497,11 +447,7 @@ zipocapt__Object_Enclosure( self, figure, pane, x, y, w, h )
   return  zip_ok;
   }
 
-long
-zipocapt__Highlight_Object_Points( self, figure, pane )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipocapt__Highlight_Object_Points(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
   register long				  status = zip_ok;
@@ -513,11 +459,7 @@ zipocapt__Highlight_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipocapt__Normalize_Object_Points( self, figure, pane )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipocapt__Normalize_Object_Points(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3;
   register long				  status = zip_ok;
@@ -529,11 +471,7 @@ zipocapt__Normalize_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipocapt__Expose_Object_Points( self, figure, pane )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipocapt__Expose_Object_Points(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -543,11 +481,7 @@ zipocapt__Expose_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipocapt__Hide_Object_Points( self, figure, pane )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipocapt__Hide_Object_Points(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -557,12 +491,7 @@ zipocapt__Hide_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipocapt__Set_Object_Point( self, figure, point, x, y )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register long				  point;
-  register zip_type_point		  x, y;
+long zipocapt__Set_Object_Point(struct zipocapt *self, zip_type_figure figure, long point, zip_type_point x, zip_type_point y)
   {
   register long				  status = zip_ok;
 
@@ -608,11 +537,7 @@ zipocapt__Set_Object_Point( self, figure, point, x, y )
   return  status;
   }
 
-long
-zipocapt__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_point		  x_delta, y_delta;
+long zipocapt__Adjust_Object_Point_Suite(struct zipocapt *self, zip_type_figure figure, zip_type_point x_delta, zip_type_point y_delta)
   {
   register long				  status = zip_ok;
 
@@ -626,13 +551,7 @@ zipocapt__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
   return  status;
   }
 
-static
-Compute_Handle_Positions( self, figure, pane, X1, X2, X3, Y1, Y2, Y3 )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		 *X1, *X2, *X3,
-					 *Y1, *Y2, *Y3;
+static int Compute_Handle_Positions(struct zipocapt *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3)
   {
   long					  width = 0, height = 0,
 					  font_height, w, h;
@@ -702,11 +621,7 @@ Compute_Handle_Positions( self, figure, pane, X1, X2, X3, Y1, Y2, Y3 )
 
 
 
-long
-zipocapt__Set_Object_Font( self, figure, font )
-  register struct zipocapt		 *self;
-  register zip_type_figure		  figure;
-  register short			  font;
+long zipocapt__Set_Object_Font(struct zipocapt *self, zip_type_figure figure, short font)
   {
   IN(zipocapt_Set_Object_Font);
   figure->zip_figure_font = font;

@@ -51,6 +51,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/hypl
 #include <view.ih>
 #include <txttroff.ih>
 #include <pshbttnv.eh>
+static void HighlightButton(struct pushbuttonview *self);
+static void OutputLabel(FILE *f, char *l);
+static int RectEnclosesXY(struct rectangle *r, long x, long y);
+static void UnhighlightButton(struct pushbuttonview *self);
+static void pushbuttonview_CacheSettings(struct pushbuttonview *self, struct pushbutton *b, int updateflag);
+static void pushbuttonview_setShade(struct pushbuttonview *self, double pct);
 
 /* Defined constants and macros */
 #define CURSORON 1		/* yes, use crosshairs cursor over button */
@@ -84,17 +90,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/hypl
 /* External Declarations */
 
 /* Forward Declarations */
-static void LabelProc(), FontProc(), StyleProc(), ColorProc();
+static void LabelProc(struct pushbuttonview *self, long param), FontProc(struct pushbuttonview *self, long param), StyleProc(struct pushbuttonview *self, long param), ColorProc(struct pushbuttonview *self, long param);
 
 /* Global Variables */
 static struct atom *pushedtrigger;
 static struct menulist *menulist = NULL;
 
 
-static void
-pushbuttonview_setShade(self, pct)
-     struct pushbuttonview *self;
-     double pct;			/* 0.0 -> 1.0 */
+static void pushbuttonview_setShade(struct pushbuttonview *self, double pct)
 {
     pushbuttonview_SetFGColor(self, 
 			      self->foreground_color[0]*pct 
@@ -107,9 +110,7 @@ pushbuttonview_setShade(self, pct)
 } /* pushbuttonview_setShade */
 
 
-boolean
-pushbuttonview__InitializeClass(c)
-     struct classheader *c;
+boolean pushbuttonview__InitializeClass(struct classheader *c)
 {
     /* 
       Initialize all the class data.
@@ -122,16 +123,16 @@ pushbuttonview__InitializeClass(c)
 
     if ((menulist = menulist_New()) == NULL) return(FALSE);
 
-    if ((proc = proctable_DefineProc("pushbuttonview-set-label-text", LabelProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the text string of the pushbutton.")) == NULL) return(FALSE);
+    if ((proc = proctable_DefineProc("pushbuttonview-set-label-text", (procedure)LabelProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the text string of the pushbutton.")) == NULL) return(FALSE);
     menulist_AddToML(menulist, "Pushbutton~1,Set Label~11", proc, NULL, 0);
-    
-    if ((proc = proctable_DefineProc("pushbuttonview-set-font", FontProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the font of the pushbutton.")) == NULL) return(FALSE);
+
+    if ((proc = proctable_DefineProc("pushbuttonview-set-font", (procedure)FontProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the font of the pushbutton.")) == NULL) return(FALSE);
     menulist_AddToML(menulist, "Pushbutton~1,Set Font~12", proc, NULL, 0);
-    
-    if ((proc = proctable_DefineProc("pushbuttonview-set-style", StyleProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the appearance of the pushbutton.")) == NULL) return(FALSE);
+
+    if ((proc = proctable_DefineProc("pushbuttonview-set-style", (procedure)StyleProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the appearance of the pushbutton.")) == NULL) return(FALSE);
     menulist_AddToML(menulist, "Pushbutton~1,Set Style~13", proc, NULL, 0);
-    
-    if ((proc = proctable_DefineProc("pushbuttonview-set-color", ColorProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the foreground and background color of the pushbutton.")) == NULL) return(FALSE);
+
+    if ((proc = proctable_DefineProc("pushbuttonview-set-color", (procedure)ColorProc, &pushbuttonview_classinfo, NULL, "Prompts for user to set the foreground and background color of the pushbutton.")) == NULL) return(FALSE);
 #ifndef PL8			/* users of PL8 can't set color */
     menulist_AddToML(menulist, "Pushbutton~1,Set Color~14", proc, NULL, 0);
 #endif /* PL8 */
@@ -140,10 +141,7 @@ pushbuttonview__InitializeClass(c)
 }
 
 
-boolean
-pushbuttonview__InitializeObject(c, self)
-struct classheader *c;
-struct pushbuttonview *self;
+boolean pushbuttonview__InitializeObject(struct classheader *c, struct pushbuttonview *self)
 {
 /*
   Set up the data for each instance of the object.
@@ -170,10 +168,7 @@ struct pushbuttonview *self;
 }
 
 
-void
-pushbuttonview__PostMenus(self, ml)
-     struct pushbuttonview *self;
-     struct menulist *ml;
+void pushbuttonview__PostMenus(struct pushbuttonview *self, struct menulist *ml)
 {
     /*
       Enable the menus for this object.
@@ -185,11 +180,7 @@ pushbuttonview__PostMenus(self, ml)
 }
 
 
-static void
-pushbuttonview_CacheSettings(self, b, updateflag)
-     struct pushbuttonview *self;
-     struct pushbutton *b;
-     int updateflag;		/* call WantUpdate if necessary */
+static void pushbuttonview_CacheSettings(struct pushbuttonview *self, struct pushbutton *b, int updateflag)
 {
     char *fgcolor, *bgcolor;
     unsigned char fg_rgb[3], bg_rgb[3];
@@ -274,10 +265,7 @@ pushbuttonview_CacheSettings(self, b, updateflag)
 }     
 
 
-void
-pushbuttonview__LinkTree(self, parent)
-     struct pushbuttonview *self;
-     struct view *parent;
+void pushbuttonview__LinkTree(struct pushbuttonview *self, struct view *parent)
 {
     super_LinkTree(self, parent);
 
@@ -286,10 +274,7 @@ pushbuttonview__LinkTree(self, parent)
 } /* pushbuttonview__LinkTree */
 
 
-void
-pushbuttonview__FinalizeObject(c, self)
-struct classheader *c;
-struct pushbuttonview *self;
+void pushbuttonview__FinalizeObject(struct classheader *c, struct pushbuttonview *self)
 {
 #if CURSORON
   if (self->cursor) cursor_Destroy(self->cursor);
@@ -300,11 +285,7 @@ struct pushbuttonview *self;
 }
 
 
-void
-pushbuttonview__FullUpdate(self, type, left, top, width, height)
-struct pushbuttonview *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void pushbuttonview__FullUpdate(struct pushbuttonview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
 /*
   Redisplay this object.  Specifically, set my font, and put my text label
@@ -523,9 +504,7 @@ long left, top, width, height;
 }
 
 
-void
-pushbuttonview__Update(self)
-struct pushbuttonview *self;  
+void pushbuttonview__Update(struct pushbuttonview *self)
 {
 /*
   Do an update.  Just set up the call to FullUpdate method.
@@ -541,10 +520,7 @@ struct pushbuttonview *self;
 }
 
 
-static int
-RectEnclosesXY(r, x, y)
-struct rectangle *r;
-long x, y;
+static int RectEnclosesXY(struct rectangle *r, long x, long y)
 {
   return(   ( ((r->top)  <= y) && ((r->top + r->height) >= y) )
 	 && ( ((r->left) <= x) && ((r->left + r->width) >= x) )
@@ -552,9 +528,7 @@ long x, y;
 }
 
 
-static void
-HighlightButton(self)
-struct pushbuttonview *self;
+static void HighlightButton(struct pushbuttonview *self)
 {
   struct pushbutton *b = (struct pushbutton *) pushbuttonview_GetDataObject(self);
   struct rectangle Rect, Rect2;
@@ -668,9 +642,7 @@ struct pushbuttonview *self;
 }
 
 
-static void
-UnhighlightButton(self)
-struct pushbuttonview *self;
+static void UnhighlightButton(struct pushbuttonview *self)
 {
   struct pushbutton *b = (struct pushbutton *) pushbuttonview_GetDataObject(self);
   struct rectangle Rect, Rect2;
@@ -783,12 +755,7 @@ struct pushbuttonview *self;
 }
 
 
-struct view *
-pushbuttonview__Hit(self, action, x, y, numclicks)
-struct pushbuttonview *self;
-long x, y;
-enum view_MouseAction action;
-long numclicks;  
+struct view * pushbuttonview__Hit(struct pushbuttonview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
 /*
   Handle the button event.  Currently, semantics are:
@@ -844,25 +811,14 @@ long numclicks;
 }
 
 
-void
-pushbuttonview__ObservedChanged(self, b, v)
-     struct pushbuttonview *self;
-     struct pushbutton *b;
-     long v;
+void pushbuttonview__ObservedChanged(struct pushbuttonview *self, struct observable *b, long v)
 {
     super_ObservedChanged(self, b, v);
     pushbuttonview_CacheSettings(self, b, 1);
 }
 
 
-enum view_DSattributes 
-pushbuttonview__DesiredSize(self, width, height, pass, desired_width, desired_height)
-struct pushbuttonview *self;
-long width;
-long height;
-enum view_DSpass pass;
-long *desired_width;
-long *desired_height;
+enum view_DSattributes pushbuttonview__DesiredSize(struct pushbuttonview *self, long width, long height, enum view_DSpass pass, long *desired_width, long *desired_height)
 {
 /* 
   Tell parent that this object  wants to be as big as the box around its
@@ -916,11 +872,7 @@ long *desired_height;
 }
 
 
-void
-pushbuttonview__GetOrigin(self, width, height, originX, originY)
-struct pushbuttonview *self;
-long width, height;
-long *originX, *originY;
+void pushbuttonview__GetOrigin(struct pushbuttonview *self, long width, long height, long *originX, long *originY)
 {
 /*
   We want this object to sit in-line with text, not below the baseline.
@@ -967,10 +919,7 @@ long *originX, *originY;
 }
 
 
-static void
-LabelProc(self, param)
-     struct pushbuttonview *self;
-     long param;
+static void LabelProc(struct pushbuttonview *self, long param)
 {
     /*
       This is the routine which asks the user for a new text label.
@@ -990,10 +939,7 @@ LabelProc(self, param)
 }
 
 
-static void
-FontProc(self, param)
-struct pushbuttonview *self;
-long param;
+static void FontProc(struct pushbuttonview *self, long param)
 {
 /*
   This is the routine which asks the user for a new font.
@@ -1021,10 +967,7 @@ long param;
 }
 
 
-static void
-StyleProc(self, param)
-     struct pushbuttonview *self;
-     long param;
+static void StyleProc(struct pushbuttonview *self, long param)
 {
     /*
       This is the routine which asks the user for a new pushbutton appearance.
@@ -1042,7 +985,7 @@ StyleProc(self, param)
         "OSF/Motif",
 	NULL
     };
-    int choice;
+    long choice;
 
     if (message_MultipleChoiceQuestion(self,99,"Pick a new style:", pushbutton_GetStyle(b), &choice, style_menu, NULL)>= 0) {
 #ifdef NOROUNDRECT
@@ -1058,10 +1001,7 @@ StyleProc(self, param)
 }
 
 
-static void
-ColorProc(self, param)
-     struct pushbuttonview *self;
-     long param;
+static void ColorProc(struct pushbuttonview *self, long param)
 {
     /*
       This is the routine which asks the user for a new pushbutton colors.
@@ -1110,9 +1050,7 @@ ColorProc(self, param)
 }
 
 
-void pushbuttonview__WantUpdate(self, requestor)
-     struct pushbuttonview *self;
-     struct view *requestor;
+void pushbuttonview__WantUpdate(struct pushbuttonview *self, struct view *requestor)
 {
     if ((struct view *) self == requestor) {
 	if (self->awaitingUpdate) {
@@ -1123,9 +1061,7 @@ void pushbuttonview__WantUpdate(self, requestor)
     super_WantUpdate(self, requestor);
 } /* pushbuttonview__WantUpdate */
 
-static void OutputLabel(f, l)
-FILE *f;
-char *l;
+static void OutputLabel(FILE *f, char *l)
 {
     if(l==NULL) l=NO_MSG;
     while(*l) {
@@ -1136,12 +1072,7 @@ char *l;
     }
 }
 
-void pushbuttonview__Print(self, file, processor, format, topLevel)
-register struct pushbuttonview  *self;
-register FILE  *file;
-char   *processor;
-char   *format;
-boolean   topLevel;
+void pushbuttonview__Print(struct pushbuttonview *self, FILE *file, char *processor, char *format, boolean topLevel)
 {
     int count;
     register struct pushbutton *dobj = (struct pushbutton *)self->header.view.dataobject;
@@ -1206,7 +1137,7 @@ boolean   topLevel;
 	    adddash = TRUE;
 	}
 
-	fprintf(file, "%s  /%s%c%s%s findfont %d scalefont setfont\n", prefix, psfam, (adddash ? '-' : ' '), mod1, mod2, fsiz);
+	fprintf(file, "%s  /%s%c%s%s findfont %ld scalefont setfont\n", prefix, psfam, (adddash ? '-' : ' '), mod1, mod2, fsiz);
 
 	fprintf(file, "%s  0 0 moveto (", prefix);	
 	OutputLabel(file, pushbutton_GetText(dobj));

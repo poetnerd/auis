@@ -32,16 +32,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <pwd.h>
 #include <andyenv.h>
 #include <util.h>
 #ifdef WHITEPAGES_ENV
 #include <wp.h>
 #endif /* #ifdef WHITEPAGES_ENV */
-
-#if !POSIX_ENV
-extern char *malloc();
-#endif
 
 /* The purpose of this routine is simply to minimize the number of times
 	we call the getpwnam routine, because that routine seems to be
@@ -61,9 +58,7 @@ static struct udircache {
     struct udircache *next;
 } *Udc = NULL;
 
-char *
-FindUserDir(user, cellname)
-char *user, *cellname;
+char * FindUserDir(char *user, char *cellname)
 {
     struct udircache *u;
     struct passwd *pw;

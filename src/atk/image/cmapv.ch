@@ -27,8 +27,8 @@ class colormapv [cmapv] : view {
 classprocedures:
 
   InitializeClass() returns boolean;
-  InitializeObject( struct colormap *self ) returns boolean;
-  FinalizeObject( struct colormap *self ) returns void;
+  InitializeObject( struct colormapv *self ) returns boolean;
+  FinalizeObject( struct colormapv *self ) returns void;
 
 overrides:
 

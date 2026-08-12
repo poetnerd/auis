@@ -39,16 +39,24 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h> /* sys/types.h sys/file.h */
 #include <stdio.h>
 #ifndef NeXT
-#ifndef sys_sun4_51
+#ifndef sys_darwin#ifndef sys_sun4_51
 #include <a.out.h>
 #endif /* sys_sun4_51 */
-#endif
+#endif /* sys_darwin */#endif
 #include <setjmp.h>
 #include <sys/signal.h>
 #include <sys/errno.h>
 #include <class.h>  /* this contains all the structs, etc. for the class system */
 #include <doload.h>
 #include <classind.h>
+
+struct EntryStruct;
+static void AddEntry(char *name);
+static void DeleteEntry(struct EntryStruct *entry);
+static void Error(char *message, char *param);
+static void ParseArgs(int argc, char *argv[]);
+static void ProcessEntry(struct EntryStruct *entry);
+static void Usage();
 
 
 /*
@@ -94,11 +102,7 @@ int lockfd;
  ** handle errors by printing the passed message to 
  ** stderr and exitting with a status of 1.
  **/
-static void
-Error(message, param)
-char * message;
-char * param;
-
+static void Error(char *message, char *param)
 {
     (void) fprintf(stderr, "%s: %s%s...program terminated!\n", ProgramName, message, param);
     (void) fflush(stderr);
@@ -127,10 +131,7 @@ Usage()
 /**
  ** Add a file to process the list of entries.
  **/
-static void
-AddEntry(name)
-char * name;
-
+static void AddEntry(char *name)
 {
 struct EntryStruct * ThisEntry;
 struct EntryStruct * NewEntry;
@@ -162,10 +163,7 @@ struct EntryStruct * NewEntry;
 /**
  ** Delete an entry.
  **/
-static void
-DeleteEntry(entry)
-struct EntryStruct * entry;
-
+static void DeleteEntry(struct EntryStruct *entry)
 {
     free(entry->Name);
     free(entry);
@@ -178,11 +176,7 @@ struct EntryStruct * entry;
  ** Try to be smart about this and allow the use to place a space between the 
  ** switch and it's argument.
  **/
-static void
-ParseArgs(argc, argv)
-int argc;
-char *argv[];
-
+static void ParseArgs(int argc, char *argv[])
 {
 int i;
 
@@ -296,12 +290,7 @@ RETRY:
 		goto RETRY; /* reopen, as old file has probably been renamed by other process */
 	    }
 	    else {
-		extern int sys_nerr,errno;
-		extern char *sys_errlist[]; 
-		if(errno > sys_nerr)
-		    fprintf(stdout, "%s: Warning : file lock call failed, ignoring unknown error #%d.\n", ProgramName,errno);
-		else 
-		    fprintf(stdout, "%s: Warning : file lock call failed, ignoring '%s' error.\n", ProgramName,sys_errlist[errno]);
+		fprintf(stdout, "%s: Warning : file lock call failed: %s\n", ProgramName, strerror(errno));
 	    }
 	}
 #endif /* !sys_ps_aix12 && !sys_ps_aix11 */
@@ -361,10 +350,7 @@ RETRY:
  ** the creation of the new index file.  This lock must
  ** be set by the caller.
  **/
-static void
-ProcessEntry(entry)
-struct EntryStruct * entry;
-
+static void ProcessEntry(struct EntryStruct *entry)
 {
 int objfd;
 struct classinfo *info;	/* from the dynamic loaded code */
@@ -442,11 +428,7 @@ long keylen;
  ** main()
  **/
 
-int
-main(argc, argv)
-int argc;
-char *argv[];
-
+int main(int argc, char *argv[])
 {
 struct EntryStruct * TempEntry;
 

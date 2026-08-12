@@ -219,9 +219,7 @@ BY ANY OTHER PARTY.
 #define isidchar(ch) (isalnum(ch) || (ch) == '_')
 #define isidfirstchar(ch) (isalpha(ch) || (ch) == '_')
 
-main(argc, argv)
-    int argc;
-    char *argv[];
+int main(int argc, char *argv[])
 {	FILE *in, *out;
 #define bufsize 5000			/* arbitrary size */
 	char *buf;
@@ -273,10 +271,7 @@ main(argc, argv)
 }
 
 /* Skip over space and comments, in either direction. */
-char *
-skipspace(p, dir)
-    register char *p;
-    register int dir;			/* 1 for forward, -1 for backward */
+char * skipspace(char *p, int dir)
 {	for ( ; ; )
 	   {	while ( isspace(*p) ) p += dir;
 		if ( !(*p == '/' && p[dir] == '*') ) break;
@@ -293,10 +288,7 @@ skipspace(p, dir)
 /*
  * Write blanks over part of a string.
  */
-int
-writeblanks(start, end)
-    char *start;
-    char *end;
+int writeblanks(char *start, char *end)
 {	char *p;
 	for ( p = start; p < end; p++ ) *p = ' ';
 	return 0;
@@ -311,9 +303,7 @@ writeblanks(start, end)
  *	-1 - may be the beginning of a function definition,
  *		append another line and look again.
  */
-int
-test1(buf)
-    char *buf;
+int test1(char *buf)
 {	register char *p = buf;
 	char *bend;
 	char *endfn;
@@ -358,10 +348,7 @@ test1(buf)
 	return contin;
 }
 
-int
-convert1(buf, out)
-    char *buf;
-    FILE *out;
+int convert1(char *buf, FILE *out)
 {	char *endfn = strchr(buf, '(') + 1;
 	register char *p;
 	char **breaks;

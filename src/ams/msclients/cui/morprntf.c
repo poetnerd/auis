@@ -47,23 +47,26 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 extern int CUI_SnapIsRunning;
 extern char *GetLine();
 
+/* Undeclared-external-call closure (COMPILERFLAGS -Werror=implicit-function-declaration):
+   defined later in this same file, ahead of its first use here. */
+extern int SpitOutChars(char *t, int len);
+
 int LinesOnTerminal = 24, LinesSincePause = 3,
     CharsOnLine = 1, TerminalLineWidth = 80;
 
-NoMore() {
+void NoMore() {
     LinesSincePause = 3;
     CharsOnLine = 1;
 }
 
-SetTerminalParams(h, w)
-int h, w;
+int SetTerminalParams(int h, int w)
 {
     LinesOnTerminal = h;
     TerminalLineWidth = w;
 }
 
 /* VARARGS */
-moreprintf(format, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+int moreprintf(format, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 char *format;
 int  a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
      a13, a14, a15, a16, a17, a18, a19, a20;
@@ -85,9 +88,7 @@ int  a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
     return(0);
 }
 
-SpitOutChars(t, len)
-char *t;
-int len;
+int SpitOutChars(char *t, int len)
 {
     char *myline;
     int newlen;

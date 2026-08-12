@@ -72,11 +72,17 @@
  */
 
 #include <ctype.h>
+#include <string.h>
 
 #include <text.ih>
 
 #include <lexan.ih>
 #include <tlex.eh>
+static int ErrorWithParm(struct tlex *self, struct tlex_ErrorRecparm *parm);
+static int ScanComment(struct tlex *self, struct tlex_CommentRecparm *parm);
+static int ScanID(struct tlex *self, struct tlex_IDRecparm *parm);
+static int ScanNumber(struct tlex *self, struct tlex_NumberRecparm *parm);
+static int ScanString(struct tlex *self, struct tlex_StringRecparm *parm);
 
 
 #ifdef DODEBUG
@@ -90,16 +96,13 @@
 	via a tokenclass with recognizer ScanError
 	via an illegal character 
 */
-	static int
-ErrorWithParm(self, parm)
-	register struct tlex *self;
-	struct tlex_ErrorRecparm *parm;
+static int ErrorWithParm(struct tlex *self, struct tlex_ErrorRecparm *parm)
 {
 	register long savex = self->RecentIndex;
 	int val;
 
 	if (parm->handler == NULL) {
-		fprintf(stderr, "tlex: error at or before position %d - %s\n",
+		fprintf(stderr, "tlex: error at or before position %ld - %s\n",
 			self->currpos, parm->msg);
 		return tlex_IGNORE;
 	}
@@ -117,10 +120,7 @@ ErrorWithParm(self, parm)
 }
 
 
-	static void
-tlex__Error(self, msg)
-	register struct tlex *self;
-	char *msg;
+void tlex__Error(struct tlex *self, char *msg)
 {
 	struct tlex_ErrorRecparm *eparm = self->lextab->ErrorHandler;
 	eparm->msg = msg;
@@ -133,9 +133,7 @@ tlex__Error(self, msg)
 	for BackUp, it checks that pos >= startpos
 	for end-of-file, returns EOF
 */
-	int
-tlex__FetchChar(self)
-	register struct tlex *self;
+int tlex__FetchChar(struct tlex *self)
 {
 	long lenwant, lengot;
 	if (self->currpos < self->startpos)
@@ -158,10 +156,7 @@ tlex__FetchChar(self)
 /* stores the character c in the token buffer;
 	usually called only when token buffer size is too small
 */
-	int
-tlex__PutTokChar(self, c)
-	struct tlex *self;
-	char c;
+int tlex__PutTokChar(struct tlex *self, char c)
 {
 	register int where = self->tokbufx - self->tokenbuffer;
 	int size = self->tokbuflastx - self->tokenbuffer + 2;
@@ -183,14 +178,7 @@ tlex__PutTokChar(self, c)
 /* the rock is available to any function passed this tlex
     The text, pos, and len specify a portion of a text to be processed
 */
-	struct tlex *
-tlex__Create(ClassID, description, rock, text, pos, len)
-	struct classhdr *ClassID;
-	struct tlex_tables *description;
-	void *rock;
-	struct text *text;
-	long pos;
-	long len;
+struct tlex * tlex__Create(struct classheader *ClassID, struct tlex_tables *description, void *rock, struct text *text, long pos, long len)
 {
 	struct tlex *result = tlex_New();
 	struct tlex_Recparm *global;
@@ -205,11 +193,7 @@ tlex__Create(ClassID, description, rock, text, pos, len)
 	return result;
 }
 
-	void
-tlex__SetText(self, text, pos, len)
-	register struct tlex *self;
-	struct text *text;
-	long pos, len;
+void tlex__SetText(struct tlex *self, struct text *text, long pos, long len)
 {
 	long i;
 	self->text = text;
@@ -223,17 +207,12 @@ tlex__SetText(self, text, pos, len)
 		self->RecentPos[i] = self->RecentLen[i] = 0;
 }
 
-	static boolean
-tlex__InitializeClass(ClassID)
-	struct classhdr *ClassID;
+boolean tlex__InitializeClass(struct classheader *ClassID)
 {
 	return TRUE;
 }
 
-	boolean
-tlex__InitializeObject(ClassID, self)
-	struct classhdr *ClassID;
-	register struct tlex  *self;
+boolean tlex__InitializeObject(struct classheader *ClassID, struct tlex *self)
 {
 	self->lextab = NULL;
 	self->text = NULL;
@@ -246,10 +225,7 @@ tlex__InitializeObject(ClassID, self)
 	return self->tokenbuffer != 0;
 }
 
-	void
-tlex__FinalizeObject(ClassID, self)
-	struct classhdr *ClassID;
-	register struct tlex  *self;
+void tlex__FinalizeObject(struct classheader *ClassID, struct tlex *self)
 {
 	free(self->tokenbuffer);
 }
@@ -261,11 +237,7 @@ tlex__FinalizeObject(ClassID, self)
 	predecessor, and so on.
 	Indices must be in range [- RECENTSIZE+1 . . . 0]
 */
-	long
-tlex__RecentPosition(self, index, ploc)
-	struct tlex *self;
-	long index;
-	long *ploc;
+long tlex__RecentPosition(struct tlex *self, long index, long *ploc)
 {
 	long x;
 	x = self->RecentIndex - 1 + index;
@@ -282,10 +254,7 @@ tlex__RecentPosition(self, index, ploc)
 	if token is preceded by anything other than whitespace,
 		its indent is 999
 */
-	long
-tlex__RecentIndent(self, index)
-	struct tlex *self;
-	long index;
+long tlex__RecentIndent(struct tlex *self, long index)
 {
 	long x;
 	long indent = 0;
@@ -315,10 +284,7 @@ tlex__RecentIndent(self, index)
 	backup so the next token reported is the index'th, where
 	index is as for RecentPosition.
 */
-	void
-tlex__Repeat(self, index)
-	struct tlex *self;
-	long index;
+void tlex__Repeat(struct tlex *self, long index)
 {
 	long x;
 	x = self->RecentIndex - 1 + index;
@@ -345,10 +311,7 @@ tlex__Repeat(self, index)
 		otherwise TRUE
 
 */
-	static int
-ScanNumber(self, parm)
-	register struct tlex *self;
-	struct tlex_NumberRecparm *parm;
+static int ScanNumber(struct tlex *self, struct tlex_NumberRecparm *parm)
 {
 	long len;
 	int success;
@@ -407,10 +370,7 @@ ScanNumber(self, parm)
 	returns tlex_ACCEPT (found a token)
 		or value from handler
 */
-	static int
-ScanID(self, parm)
-	register struct tlex *self;
-	struct tlex_IDRecparm *parm;
+static int ScanID(struct tlex *self, struct tlex_IDRecparm *parm)
 {
 	if (parm->SaveText) {
 		if (parm->continueset.vector)
@@ -450,10 +410,7 @@ ScanID(self, parm)
 
 	at completion, currpos is the char after closing 'delim'
 */
-	static int
-ScanString(self, parm)
-	register struct tlex *self;
-	struct tlex_StringRecparm *parm;
+static int ScanString(struct tlex *self, struct tlex_StringRecparm *parm)
 {
 	register int c;
 	register int delim = *parm->endseq;
@@ -506,10 +463,7 @@ ScanString(self, parm)
 
 	at completion, currpos is the char after endseq
 */
-	static int
-ScanComment(self, parm)
-	register struct tlex *self;
-	struct tlex_CommentRecparm *parm;
+static int ScanComment(struct tlex *self, struct tlex_CommentRecparm *parm)
 {
 	char *delim = parm->endseq;
 	register char *cx;
@@ -582,10 +536,7 @@ ScanComment(self, parm)
 	Leaves currchar to the character after the token
 	returns 0 for end-of-file
 */
-	int
-tlex__NextToken(self, pyylval)
-	register struct tlex *self;
-	void **pyylval;
+int tlex__NextToken(struct tlex *self, void **pyylval)
 {
 	register struct tlex_tables *tab = self->lextab;
 	register int action;

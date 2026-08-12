@@ -227,7 +227,9 @@ stringlist_res *list_acl_1(aclname, rqstp)
     /* Eliminate silly ".@" in <user>.@<realm> */
     dotptr = (char*)index(aclbfr, '.');
     if (dotptr && dotptr[1] == '@')
-      strcpy(dotptr, dotptr+1);
+      /* dotptr+1 aliases dotptr; strcpy's overlap check aborts under
+	 macOS fortify -- memmove tolerates it. */
+      memmove(dotptr, dotptr+1, strlen(dotptr+1)+1);
     *next = (stringnode *)xmalloc(sizeof(stringnode));
     (*next)->s = xsave_string(aclbfr);
     next = &(*next)->next;

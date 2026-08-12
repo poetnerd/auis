@@ -26,6 +26,9 @@
 * $
 */
 
+/* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 DOBJS = getrecv.do \
 	bargrphv.do \
 	buttonv.do \

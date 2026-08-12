@@ -46,7 +46,15 @@ version of the datastream interpretation.
 #include <andrewos.h> /* strings.h */
 #include <ctype.h>
 #include <util.h>
+#include <stdlib.h>
 #include <unscribe.h>
+static int HandleClose(struct ScribeState *State, FILE *fPtr);
+static int HandleKeyword(struct ScribeState *State, FILE *fPtr);
+static void StartFrag(struct ScribeState *State);
+static int WriteFrag(struct ScribeState *State, FILE *fPtr, char Chr);
+static struct styletable * findstyle(char *str);
+static long hash(char *str);
+static int usVersion(char *val);
 
 /* #define SPECIALFACES 1 */
 
@@ -161,8 +169,7 @@ struct styletable {
     { 0,		0, { 0, 0, 0, 0, 0, 0,} }
 };
 
-static int usVersion(val)
-char *val;
+static int usVersion(char *val)
 { /* Return the VersionXXX value corresponding to the probe, or -1 if there's no match. */
     int numVal;
     char *Src;
@@ -187,9 +194,7 @@ char *val;
     }
 }
 
-static long
-hash(str)
-char *str;
+static long hash(char *str)
 {
     unsigned long h = 0;
     unsigned long g;
@@ -204,9 +209,7 @@ char *str;
     return h;
 }
 
-static struct styletable *
-findstyle(str)
-char *str;
+static struct styletable * findstyle(char *str)
 {
     struct styletable *stp;
     long strhash;
@@ -218,9 +221,7 @@ char *str;
     return 0;
 }
 
-int UnScribeInit(fieldvalue, refstate)
-char *fieldvalue;
-struct ScribeState **refstate;
+int UnScribeInit(char *fieldvalue, struct ScribeState **refstate)
 {
     /* Pass it the value of the X-Andrew-ScribeFormat: header to see if the package can handle this format.  Returns a code value >= 0 for OK, < 0 for error.  Remember this code value to pass to UnScribe.  In addition, pass the address of an integer variable to hold the UnScribe state between calls.  This variable will be initialized with the UnScribeInit call.
  */
@@ -292,9 +293,7 @@ struct ScribeState **refstate;
     return Vers;
 }
 
-static void
-StartFrag(State)
-struct ScribeState *State;
+static void StartFrag(struct ScribeState *State)
 {
 #ifdef SPECIALFACES
     int oldfaces;
@@ -328,11 +327,7 @@ struct ScribeState *State;
 #endif /* SPECIALFACES */
 }
 
-static int
-WriteFrag(State, fPtr, Chr)
-struct ScribeState *State;
-FILE *fPtr;
-char Chr;
+static int WriteFrag(struct ScribeState *State, FILE *fPtr, char Chr)
 {
     int	NumWritten = 1;	/* at least a NewLine */
     char *tail;
@@ -439,10 +434,7 @@ char Chr;
     return NumWritten;
 }
 
-static int
-HandleKeyword(State, fPtr)
-struct ScribeState *State;
-FILE *fPtr;
+static int HandleKeyword(struct ScribeState *State, FILE *fPtr)
 {
     struct styletable *style;
     short index = -1;
@@ -528,10 +520,7 @@ FILE *fPtr;
     return WriteCount;
 }
 
-static int
-HandleClose(State, fPtr)
-struct ScribeState *State;
-FILE *fPtr;
+static int HandleClose(struct ScribeState *State, FILE *fPtr)
 {
     struct StateVector *temp;
     int WriteCount = 0;
@@ -575,11 +564,7 @@ FILE *fPtr;
     return WriteCount;
 }
 
-int UnScribe(code, refstate, text, textlen, fileptr)
-int code, textlen;
-struct ScribeState **refstate;
-char *text;
-FILE *fileptr;
+int UnScribe(int code, struct ScribeState **refstate, char *text, int textlen, FILE *fileptr)
 {
     /* Pass it the initial UnScribeInit return value and the address of the integer state variable.  Also pass the address of the text to be unscribed, and the number of bytes at that address.  The unscribed text will be written onto stdio file *fileptr.  Return values are something like fwrite: >= 0 for OK, < 0 for errors, with a code either in the return value or in errno.  Basically, if -1 is returned, errno is valid; otherwise, the code is specific to this procedure.
     */
@@ -903,10 +888,7 @@ FILE *fileptr;
     return WriteCount;
 }
 
-int UnScribeFlush(code, refstate, fileptr)
-int code;
-struct ScribeState **refstate;
-FILE *fileptr;
+int UnScribeFlush(int code, struct ScribeState **refstate, FILE *fileptr)
 {/* Unbuffer data from an UnScribe sequence.  Return just like fflush(). */
     int Res = 0;
 
@@ -933,9 +915,7 @@ FILE *fileptr;
     return Res;
 }
 
-int UnScribeAbort(code, refstate)
-int code;
-struct ScribeState **refstate;
+int UnScribeAbort(int code, struct ScribeState **refstate)
 {/* Close off the UnScribeInit state without needing a valid file to send to. */
 
     if (refstate != NULL) {
@@ -957,10 +937,7 @@ struct ScribeState **refstate;
     return 0;
 }
 
-int PrintMaybeFoldQuotingFormatting(fp, text, format, len, DoFold)
-FILE *fp;
-char *text, *format;
-int len, DoFold;
+int PrintMaybeFoldQuotingFormatting(FILE *fp, char *text, char *format, int len, int DoFold)
 { /* return the number of characters written, or negative error value */
     int whichformat;
     register char *s;
@@ -1066,18 +1043,13 @@ int len, DoFold;
     return numWritten;
 }
 
-int PrintQuotingFormatting(fp, text, format, len)
-FILE *fp;
-char *text, *format;
-int len;
+int PrintQuotingFormatting(FILE *fp, char *text, char *format, int len)
 { /* return the number of characters written, or negative error value */
     return PrintMaybeFoldQuotingFormatting(fp, text, format, len, 0);
 }
 
 #ifdef TESTINGONLYTESTING
-main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
   int version, err, outcode;
   char buf[500];

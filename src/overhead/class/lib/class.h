@@ -43,7 +43,7 @@
  ** some constants, typedef's, etc.
  **/
 
-#define class_VERSIONNOTKNOWN -1
+#define class_VERSIONNOTKNOWN (-1L)
 
 #ifdef NULL
 #undef NULL
@@ -84,26 +84,8 @@ typedef unsigned long class_VersionNumberType;
  ** external objects
  **/
 
-#ifdef _IBMR2	    /* Should be POSIX_ENV, but that requires <system.h> */
-#include <stdlib.h>	    /* ... for malloc(), etc. */
-#include <unistd.h>	    /* ... for other prototypes.  Maybe we shouldn't do this? */
-#else
-/* 
- * Please remove this once AIX221 has a real C compiler.  %%%%
- * Thank, pgc.
- *
- * Redefine void only for cc on AIX/RT.   -mrt
- */
-#if defined(AIX) && !defined(i386) && !defined(__HIGHC__)
-#define	void char
-#endif /* AIX */
-
-extern void free();
-extern char *realloc();
-extern char *malloc();
-#endif /* _IBMR2 */
-
-extern int errno;
+#include <stdlib.h>
+#include <errno.h>
 
 
 extern struct basicobject_methods class_RoutineStruct;
@@ -133,6 +115,9 @@ struct classheader  {
     char *namekey;
     struct basicobject_methods *classprocedures;
 };
+
+/* Backward-compatible abbreviation used in older ATK source files */
+#define classhdr classheader
 
 struct classinfo {
     struct basicobject_methods *methods;
@@ -183,6 +168,7 @@ struct basicobject {
  */
 extern class_ErrorType class_Init(/* void */);
 extern class_ErrorType class_SetClassPath(/* char * path */);
+extern void class_PrependClassPath(/* char * path */);
 extern char * class_GetClassPath(/* void */);
 extern class_ErrorType class_SetDebugLevel(/* class_DebugLevelType level */);
 extern class_DebugLevelType class_GetDebugLevel(/* void */);
@@ -198,9 +184,10 @@ extern struct basicobject *class_NewObject(/* char * name */);
 extern boolean class_IsType(/* struct basicobject * testobject, struct basicobject * typeobject */);
 extern boolean class_IsTypeByName(/* char * testname, char * typename */);
 
+extern int class_EnterInfo();
+extern char *class_Lookup();
 
-
-/* 
+/*
  * routines that help with profiling
  */
 extern void *class_GetEText();

@@ -37,13 +37,26 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <hdrparse.h>
 #include <unscribe.h>
+#include <stdlib.h>
+extern int ConsiderLoggingRead(char *FileName);
+extern int DeleteHeader(struct MS_Message *Msg, int num);
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int FreeMessageContents(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int GenTempName(char *Buf);
+extern int GetFormatFromMessage(struct MS_Message *Msg, char *ThisFormat, int bufsize, int *IsBE2);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int QuickGetBodyFileName(char *DirName, char *id, char *FileName);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
+extern int WriteUnscribedBodyFile(struct MS_Message *Msg, char *FileName);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
+extern int fwriteallchars(char *Thing, int NItems, FILE *stream);  /* overhead/util/lib/fwrtallc.c */
 
-extern char *StripWhiteEnds();
+extern char *StripWhiteEnds(char *string);
 
-MS_WriteUnscribedBodyFile(DirName, id, FileName)
-char *DirName, /* IN */
-     *id, /* IN */
-     *FileName; /* OUT */
+int MS_WriteUnscribedBodyFile(char *DirName, char *id, char *FileName)
 {
     struct MS_Directory *Dir;
     struct MS_Message *Msg;
@@ -70,9 +83,7 @@ char *DirName, /* IN */
     return(code);
 }
 
-WriteUnscribedBodyFile(Msg, FileName)
-struct MS_Message *Msg;
-char *FileName;
+int WriteUnscribedBodyFile(struct MS_Message *Msg, char *FileName)
 {
     struct ScribeState ScribeState;
     int bytesleft, bytestoread, code = 0, IsBE2;
@@ -144,13 +155,12 @@ char *FileName;
     return(0);
 }
 
-UnformatMessage(Msg)
-struct MS_Message *Msg;
+int UnformatMessage(struct MS_Message *Msg)
 {
     char FileName[1+MAXPATHLEN];
 
     if (WriteUnscribedBodyFile(Msg, FileName)) return(mserrcode);
-    FreeMessageContents(Msg);
+    FreeMessageContents(Msg, FALSE);
     if (Msg->OpenFD) close(Msg->OpenFD);
     if (ReadRawFile(FileName, Msg, FALSE)) {
 	unlink(FileName);

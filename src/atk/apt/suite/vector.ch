@@ -82,11 +82,11 @@ class vector {
 	Count() (self->current_used_count)
 	SetIncrement(inc) (self->reallocation_factor = inc)
     methods:
-	AddItem( long item ) returns long;
-	RemoveItem( long item ) returns long;
-	ItemExists( long item ) returns boolean;
+	AddItem( void *item ) returns long;
+	RemoveItem( void *item ) returns long;
+	ItemExists( void *item ) returns boolean;
 	Sort() returns long;
-	Subscript( long item ) returns long;
+	Subscript( void *item ) returns long;
 	Apply( long (*proc)() ) returns void;
     data:
 	long		*data,

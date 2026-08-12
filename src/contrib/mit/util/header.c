@@ -42,6 +42,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <stylesht.ih>
 
 #include "header.eh"
+static long header_FencedWrite(struct text *textobj, FILE *file, long writeID, int level);
 
 static char *header_prompts[] = {
     "  Left\t\t:  ",
@@ -51,8 +52,7 @@ static char *header_prompts[] = {
 
 static struct style *header_promptStyle;
 
-boolean header__InitializeClass(classID)
-struct classheader classID;
+boolean header__InitializeClass(struct classheader *classID)
 {
     if (!(header_promptStyle = style_New()))
 	return FALSE;
@@ -63,23 +63,17 @@ struct classheader classID;
 
 
 
-void header__ObservedChanged(self,t,value)
-struct header *self;
-struct text *t;
-long value;
+void header__ObservedChanged(struct header *self, struct observable *t, long value)
 {
     if(value==0) header_SetModified(self);
 }
 
-char *header__ViewName(self)
-struct header *self;
+char * header__ViewName(struct header *self)
 {
     return "headrtv";
 }
 
-void header_SetPrompt(textobj, string)
-struct text *textobj;
-char *string;
+void header_SetPrompt(struct text *textobj, char *string)
 {
     int x, l;
     struct environment *newenv;
@@ -101,10 +95,7 @@ char *string;
   In future versions  the first line in the data must always be type:[header|footer] or this routine will leave the object empty.
   Also the texts must always occur in order from left to right.
   */
-long header__Read(self, file, id)
-struct header *self;
-FILE *file;
-long id;
+long header__Read(struct header *self, FILE *file, long id)
 {
 
     /* this is take mostly from the template in dataobj.c */
@@ -219,11 +210,7 @@ long id;
     return dataobject_NOREADERROR;
 }
 
-static long header_FencedWrite(textobj, file, writeID, level)
-struct text *textobj;
-FILE *file;
-long writeID;
-int level;
+static long header_FencedWrite(struct text *textobj, FILE *file, long writeID, int level)
 {
     int len, pos;
 
@@ -240,7 +227,7 @@ int level;
 	pos = text_GetFence(textobj);
 	len = len - pos;
 	text_WriteSubString(textobj, pos, len, file, 1);
-	fprintf(file, "\\enddata{%s,%d}\n",
+	fprintf(file, "\\enddata{%s,%ld}\n",
 		(textobj->WriteAsText)?"text": class_GetTypeName(textobj),
 		textobj->header.dataobject.id);
 	fflush(file);
@@ -250,11 +237,7 @@ int level;
 
 
 #define printbool(x) ((x)?"1":"0")
-long header__Write(self, file, writeID, level)
-struct header *self;
-FILE *file;
-long writeID;
-int level;
+long header__Write(struct header *self, FILE *file, long writeID, int level)
 {
     if (header_GetWriteID(self) != writeID)  {
 	header_SetWriteID(self,writeID);
@@ -280,9 +263,7 @@ int level;
 
 #define HEADERTXTHELPSTRING "Click on 'Left', 'Center', or 'Right' Above"
 
-boolean header__InitializeObject(classID,self)
-struct classheader *classID;
-struct header *self;
+boolean header__InitializeObject(struct classheader *classID, struct header *self)
 {
     int i;
     for(i=header_ltext;i<header_TEXTS;i++) {
@@ -300,10 +281,7 @@ struct header *self;
     return TRUE;
 }
 
-void header__SetHeader(h, which, str)
-struct header *h;
-int which;
-char *str;
+void header__SetHeader(struct header *h, int which, char *str)
 {
     long pos;
     if(which<0 || which>=header_TEXTS) return;
@@ -312,10 +290,7 @@ char *str;
     text_ReplaceCharacters(h->texts[which], pos, text_GetLength(h->texts[which])-pos, str, strlen(str));
 }
 
-struct header *header__Create(classID, type, left, center, right)
-struct classheader *classID;
-int type;
-char *left, *center, *right;
+struct header * header__Create(struct classheader *classID, int type, char *left, char *center, char *right)
 {
     if(type==header_FOOTER || type==header_HEADER) {
 	struct header *h=header_New();
@@ -330,9 +305,7 @@ char *left, *center, *right;
     return NULL;
 }
 
-void header__FinalizeObject(classID,self)
-struct classheader *classID;
-struct header *self;
+void header__FinalizeObject(struct classheader *classID, struct header *self)
 {
     long i;
     for(i=header_ltext;i<header_TEXTS;i++)

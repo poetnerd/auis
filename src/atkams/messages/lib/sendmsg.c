@@ -36,6 +36,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 
 #include <andrewos.h> /* sys/file.h */
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <util.h>
 #include <pwd.h>
@@ -75,26 +76,38 @@ typedef short Boolean;
 #undef dontDefineRoutinesFor_captions
 #include <sendmsg.eh>
 
+static int Submit(struct sendmessage *sendmessage, Boolean Unformat, int Version, int TrustDelivery, Boolean UseMultipartFormat);
+static int UnlinkCKPFile(struct sendmessage *sendmessage);
+
 #include <unscribe.h>
+static int UnlinkCKPFile(struct sendmessage *sendmessage);
 
 /* constants for the Deliver() subroutine */
 #define FORCE_ASK_ABOUT_FORMATTING 0
 #define FORCE_SEND_FORMATTED 1
 #define FORCE_SEND_UNFORMATTED 2
 
-extern int WriteOneFile();
-extern void delete_sendmsg_win();
+extern int WriteOneFile(struct sendmessage *sendmessage, char *ViceFileName, Boolean OnVice, Boolean MayOverwrite, int Version, Boolean TrustDelivery, Boolean UseMultipartFormat, int *EightBitText);
+extern void delete_sendmsg_win(struct im *im, struct sendmessage *self);
 
-void sendmessage_SetButtonFont(self, font)
-struct sendmessage *self;
-struct fontdesc *font;
+/* same-file forward references -- all defined later in this file */
+extern int SetNotModified(struct sendmessage *sendmessage), MakeHeaderFieldsBold(struct sendmessage *self), MakeOneHeaderFieldBold(struct sendmessage *self, int pos),
+	ValidateHeader(struct sendmessage *sm, char *lookfor, int *externalct, int *totct, int *formatct, int *stripct, int *trustct), RemoveUselessHeaderLines(struct sendmessage *sm), ProduceUnscribedVersion(char *FileName, FILE *OutputFP),
+	AlreadyPS(char *subj), SaveForPS(struct sendmessage *self), CheckAndCountRecipients(struct sendmessage *sm, int *tot, int *ext, int *totformat, int *totstrip, int *tottrust), Deliver(struct sendmessage *sendmessage, int formathandlingcode),
+	DirectlyInsertFile(struct textview *tv, struct text *t, char *fname, int pos);
+
+/* same-directory (sendaux.o, linked into the same sendmsg.do) cross-file
+   references -- no header, defined in sendaux.c */
+extern int DestroyProcStuff(struct sendmessage *self), DestroyStyles(struct sendmessage *self), InitProcStuff(struct sendmessage *sendmessage),
+	InitStylesAndFonts(struct sendmessage *sendmessage), OneTimeProcInit(struct classheader *c), PrepareBodyForSignature(struct sendmessage *self),
+	SetMyFrameTitle(struct sendmessage *sm, char *tit), EnvViewCt(struct environment *env);
+
+void sendmessage_SetButtonFont(struct sendmessage *self, struct fontdesc *font)
 {
     sbutton_GetFont(sbuttonv_ButtonData(self->buttons) ->prefs)=font;
 }
 
-void sendmessage__LinkTree(self, parent)
-struct sendmessage *self;
-struct view *parent;
+void sendmessage__LinkTree(struct sendmessage *self, struct view *parent)
 {
     super_LinkTree(self,parent);
     if (self->SendLpair != NULL)  {
@@ -102,8 +115,7 @@ struct view *parent;
     }
 }
 
-void sendmessage__UnlinkTree(self)
-struct sendmessage *self;
+void sendmessage__UnlinkTree(struct sendmessage *self)
 {
     super_UnlinkTree(self);
     if (self->SendLpair) {
@@ -111,9 +123,7 @@ struct sendmessage *self;
     }
 }
 
-sendmessage__AddHeaderLine(self, headerline)
-struct sendmessage *self;
-char *headerline;
+int sendmessage__AddHeaderLine(struct sendmessage *self, char *headerline)
 {
     struct textview *v = self->HeadTextview;
     int len;
@@ -128,20 +138,17 @@ char *headerline;
     MakeOneHeaderFieldBold(self, 0);
 }
 
-void BSSM_HeadersFocus(sm)
-struct sendmessage *sm;
+void BSSM_HeadersFocus(struct sendmessage *sm)
 {
     textview_WantInputFocus(sm->HeadTextview, sm->HeadTextview);
 }
 
-void BSSM_BodyFocus(sm)
-struct sendmessage *sm;
+void BSSM_BodyFocus(struct sendmessage *sm)
 {
     textview_WantInputFocus(sm->BodyTextview, sm->BodyTextview);
 }
 
-void BSSM_DownFocus(sm)
-struct sendmessage *sm;
+void BSSM_DownFocus(struct sendmessage *sm)
 {
     struct im *myim = sendmessage_GetIM(sm);
 
@@ -154,8 +161,7 @@ struct sendmessage *sm;
     }
 }
 
-void BSSM_UpFocus(sm)
-struct sendmessage *sm;
+void BSSM_UpFocus(struct sendmessage *sm)
 {
     struct im *myim = sendmessage_GetIM(sm);
 
@@ -195,11 +201,7 @@ struct sbutton_list blist[]={
     {NULL, (long)0, NULL, FALSE}
 };
 
-HandleButton(self, sendmessage, in, whichbut)
-struct sbutton *self;
-struct sendmessage *sendmessage;
-long in;
-long whichbut;
+int HandleButton(struct sbutton *self, struct sendmessage *sendmessage, long in, long whichbut)
 {
     char *Yes, *No;
 
@@ -242,8 +244,7 @@ long whichbut;
 }
 
 
-void ReadTemplate(sm)
-struct sendmessage *sm;
+void ReadTemplate(struct sendmessage *sm)
 {
     if (sm->NeedsTemplate) {
 	if (text_ReadTemplate(sm->BodyText, "messages", FALSE)) {
@@ -258,16 +259,12 @@ struct sendmessage *sm;
     }
 }
 
-sendmessage__SetFoldersView(self, fold)
-struct sendmessage *self;
-struct folders *fold;
+int sendmessage__SetFoldersView(struct sendmessage *self, struct messages *fold)
 {
     self->folders = fold;
 }
 
-boolean sendmessage__InitializeObject(c, sendmessage)
-struct classheader *c;
-struct sendmessage *sendmessage;
+boolean sendmessage__InitializeObject(struct classheader *c, struct sendmessage *sendmessage)
 {
     int lpaircount=0;
     struct sbutton *bs;
@@ -350,9 +347,7 @@ struct sendmessage *sendmessage;
     return(TRUE);
 }
 
-void sendmessage__FinalizeObject(c, self)
-struct classheader *c;
-struct sendmessage *self;
+void sendmessage__FinalizeObject(struct classheader *c, struct sendmessage *self)
 {   /* This is a bit bogus, because there isn't really a sendmessage dataobject/view split */
     struct lpair **lps=self->randomlpairs;
 
@@ -408,8 +403,7 @@ struct sendmessage *self;
     textview_Destroy(self->BodyTextview);
 }
 
-void sendmessage__SetCurrentState(sm, state)
-struct sendmessage *sm;
+void sendmessage__SetCurrentState(struct sendmessage *sm, int state)
 {
     char *tit;
 
@@ -447,13 +441,7 @@ struct sendmessage *sm;
     if (sm->myframe) SetMyFrameTitle(sm, tit);
 }
 
-void sendmessage__FullUpdate(sm, type, left, top, width, height)
-struct sendmessage *sm;
-enum view_UpdateType type;
-long left;
-long top;
-long width;
-long height;
+void sendmessage__FullUpdate(struct sendmessage *sm, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct rectangle myrect;
 
@@ -462,8 +450,7 @@ long height;
     lpair_FullUpdate(sm->SendLpair, type, left, top, width, height);
 }
 
-void sendmessage__Update(sendmessage)
-struct sendmessage *sendmessage;  
+void sendmessage__Update(struct sendmessage *sendmessage)
 {
     lpair_Update(sendmessage->SendLpair);
     if ((sendmessage->CurrentState != SM_STATE_INPROGRESS && sendmessage->CurrentState != SM_STATE_SENDING && sendmessage->CurrentState != SM_STATE_VALIDATING) && sendmessage_HasChanged(sendmessage)) {
@@ -471,24 +458,17 @@ struct sendmessage *sendmessage;
     }
 }
 
-struct view *
-sendmessage__Hit(sendmessage, action, x, y, NumberOfClicks)
-struct sendmessage *sendmessage;
-enum view_MouseAction action;
-long x, y, NumberOfClicks;
+struct view * sendmessage__Hit(struct sendmessage *sendmessage, enum view_MouseAction action, long x, long y, long NumberOfClicks)
 {
     return(lpair_Hit(sendmessage->SendLpair, action, x, y, NumberOfClicks));
 }
 
-void BSSM_FakeBug(sm, txt)
-struct sendmessage *sm;
-char *txt;
+void BSSM_FakeBug(struct sendmessage *sm, char *txt)
 {
     ams_ReportError(ams_GetAMS(), txt ? txt : "One of my bits is missing!  Call an ambulance!", ERR_CRITICAL, FALSE, 0);
 }
 
-ComposeBugReport(sm)
-struct sendmessage *sm;
+int ComposeBugReport(struct sendmessage *sm)
 {
     char FileName[1+MAXPATHLEN];
     FILE *fp;
@@ -512,9 +492,7 @@ struct sendmessage *sm;
     sendmessage_AppendBugInfoToBody(sm, TRUE);
 }
 
-sendmessage__AppendBugInfoToBody(sm, IsMessagesBug)
-struct sendmessage *sm;
-Boolean IsMessagesBug;
+int sendmessage__AppendBugInfoToBody(struct sendmessage *sm, int IsMessagesBug)
 {
     char FileName[1+MAXPATHLEN];
     FILE *fp;
@@ -535,11 +513,7 @@ Boolean IsMessagesBug;
     return(0);
 }    
 
-DirectlyInsertFile(tv, t, fname, pos)
-struct textview *tv;
-struct text *t;
-char *fname;
-int pos;
+int DirectlyInsertFile(struct textview *tv, struct text *t, char *fname, int pos)
 {
     FILE *fp;
 
@@ -556,20 +530,17 @@ int pos;
 }
 
 
-ForceSending(sendmessage)
-struct sendmessage *sendmessage;
+int ForceSending(struct sendmessage *sendmessage)
 {
     return(Deliver(sendmessage, FORCE_SEND_FORMATTED));
 }
 
-ForceStripping(sendmessage)
-struct sendmessage *sendmessage;
+int ForceStripping(struct sendmessage *sendmessage)
 {
     return(Deliver(sendmessage, FORCE_SEND_UNFORMATTED));
 }
 
-sendmessage_DoDelivery(sendmessage)
-struct sendmessage *sendmessage;
+int sendmessage_DoDelivery(struct sendmessage *sendmessage)
 {
     return(Deliver(sendmessage, FORCE_ASK_ABOUT_FORMATTING));
 }
@@ -581,9 +552,7 @@ struct sendmessage *sendmessage;
 #define	MAILFORMAT_MULTIPARTNOASK 3 /* New mail standard for ALL recips, without even asking about their receiving capability */
 #define	MAILFORMAT_ASK 4	/* ask which data format to use */
 
-Deliver(sendmessage, formathandlingcode)
-struct sendmessage *sendmessage;
-int formathandlingcode;
+int Deliver(struct sendmessage *sendmessage, int formathandlingcode)
 {
     int code, total, external, ans, StreamVersion = 12, TrustDelivery = 0, nkids, format, strip, trust, ThisMailFormat;
     Boolean Unformat = FALSE, SendingWithAMSDel;
@@ -783,8 +752,7 @@ int formathandlingcode;
     return(0);
 }
 
-sendmessage__Clear(sendmessage)
-struct sendmessage *sendmessage;
+int sendmessage__Clear(struct sendmessage *sendmessage)
 {
     text_ClearCompletely(sendmessage->BodyText);
     text_ClearCompletely(sendmessage->HeadText);
@@ -807,10 +775,7 @@ struct sendmessage *sendmessage;
 
 #define MAXHEADERLINE 1000
 
-sendmessage__ReadFromFile(sendmessage, SourceFile, DeleteIt)
-struct sendmessage *sendmessage;
-char *SourceFile;
-Boolean DeleteIt;
+int sendmessage__ReadFromFile(struct sendmessage *sendmessage, char *SourceFile, short DeleteIt)
 {
     FILE *fp;
     int len, start, ig;
@@ -868,9 +833,7 @@ Boolean DeleteIt;
 /* The following function returns 1 if all headers are filled in, zero
     otherwise.  It also sets the dot at the first empty header.  */
 
-SetSendingDot(v, d)
-struct textview *v;
-struct text *d;
+int SetSendingDot(struct textview *v, struct text *d)
 {
     register int pos, len, c, lastnewline = 0;
     Boolean FoundIt = FALSE, JustSawAColon = FALSE;
@@ -917,10 +880,7 @@ struct text *d;
     }
 }
 
-static Submit(sendmessage, Unformat, Version, TrustDelivery, UseMultipartFormat)
-struct sendmessage *sendmessage;
-Boolean Unformat, UseMultipartFormat;
-int Version, TrustDelivery;
+static int Submit(struct sendmessage *sendmessage, Boolean Unformat, int Version, int TrustDelivery, Boolean UseMultipartFormat)
 {
     static int flags = 0;
     char FileName[MAXPATHLEN+1];
@@ -965,17 +925,14 @@ int Version, TrustDelivery;
     return(0);
 }
 
-SetNotModified(sendmessage)
-struct sendmessage *sendmessage;
+int SetNotModified(struct sendmessage *sendmessage)
 {
     sendmessage->HeadModified = sendmessage->HeadCheckpoint = text_GetModified(sendmessage->HeadText);
     sendmessage->BodyModified = sendmessage->BodyCheckpoint = text_GetModified(sendmessage->BodyText);
     UnlinkCKPFile(sendmessage);
 }
 
-sendmessage__WriteFile(sendmessage, ViceFileName)
-struct sendmessage *sendmessage;
-char *ViceFileName;
+int sendmessage__WriteFile(struct sendmessage *sendmessage, char *ViceFileName)
 {
     int code;
 
@@ -984,8 +941,7 @@ char *ViceFileName;
     return(code);
 }
 
-static UnlinkCKPFile(sendmessage)
-struct sendmessage *sendmessage;
+static int UnlinkCKPFile(struct sendmessage *sendmessage)
 {
     if (sendmessage->CKPFileName) {
 	if (unlink(sendmessage->CKPFileName)) { /* Try local unlink first */
@@ -994,8 +950,7 @@ struct sendmessage *sendmessage;
     }
 }
 
-void sendmessage__Reset(sendmessage)
-struct sendmessage *sendmessage;
+void sendmessage__Reset(struct sendmessage *sendmessage)
 {
     static char *InitialText = "To: \nSubject: \nCC: ";
 
@@ -1009,12 +964,11 @@ struct sendmessage *sendmessage;
     SetSendingDot(sendmessage->HeadTextview, sendmessage->HeadText);
     SetNotModified(sendmessage);
     MakeHeaderFieldsBold(sendmessage);
-    im_SetDeleteWindowCallback(sendmessage_GetIM(sendmessage), delete_sendmsg_win, sendmessage);
+    im_SetDeleteWindowCallback(sendmessage_GetIM(sendmessage), (procedure)delete_sendmsg_win, sendmessage);
 }
 
 
-MakeHeaderFieldsBold(self)
-struct sendmessage *self;
+int MakeHeaderFieldsBold(struct sendmessage *self)
 {
     int i, len;
     struct text *t = self->HeadText;
@@ -1032,9 +986,7 @@ struct sendmessage *self;
     }
 }
 
-MakeOneHeaderFieldBold(self, pos)
-struct sendmessage *self;
-int pos;
+int MakeOneHeaderFieldBold(struct sendmessage *self, int pos)
 {
     int i, len;
     struct text *t = self->HeadText;
@@ -1050,9 +1002,7 @@ int pos;
     }
 }
 
-sendmessage__AddToToHeader(sm, line)
-struct sendmessage *sm;
-char *line;
+int sendmessage__AddToToHeader(struct sendmessage *sm, char *line)
 {
     static char ToStates[] = "\nTo:";
     int pos, len, state = 1;
@@ -1075,8 +1025,7 @@ char *line;
     textview_WantUpdate(v,v);
 }
 
-sendmessage__ResetSendingDot(sm)
-struct sendmessage *sm;
+int sendmessage__ResetSendingDot(struct sendmessage *sm)
 {
     if (SetSendingDot(sm->HeadTextview, sm->HeadText)) {
 	textview_WantInputFocus(sm->BodyTextview, sm->BodyTextview);
@@ -1085,10 +1034,7 @@ struct sendmessage *sm;
     }
 }
 
-sendmessage__ResetFromParameters(sendmessage, ToName, Subject, CC, IncludeFile, Delete)
-struct sendmessage *sendmessage;
-char *ToName, *Subject, *CC, *IncludeFile;
-int Delete;
+int sendmessage__ResetFromParameters(struct sendmessage *sendmessage, char *ToName, char *Subject, char *CC, char *IncludeFile, int Delete)
 {
     FILE *fp;
     struct text *d;
@@ -1133,17 +1079,14 @@ int Delete;
 }
 
 
-int sendmessage__CheckRecipients(sm)
-struct sendmessage *sm;
+int sendmessage__CheckRecipients(struct sendmessage *sm)
 {
     int tot, ext, format, strip, trust;
 
     return(CheckAndCountRecipients(sm, &tot, &ext, &format, &strip, &trust));
 }
 
-CheckAndCountRecipients(sm, tot, ext, totformat, totstrip, tottrust)
-struct sendmessage *sm;
-int *tot, *ext, *totformat, *totstrip, *tottrust;
+int CheckAndCountRecipients(struct sendmessage *sm, int *tot, int *ext, int *totformat, int *totstrip, int *tottrust)
 {
     int code, code2, extct, extct2, totct, totct2, formatct, stripct, trustct, formatct2, stripct2, trustct2;
     char ErrorText[256];
@@ -1201,10 +1144,7 @@ int *tot, *ext, *totformat, *totstrip, *tottrust;
     return(0);
 }
 
-ValidateHeader(sm, lookfor, externalct, totct, formatct, stripct, trustct)
-struct sendmessage *sm;
-char *lookfor;
-int *externalct, *totct, *formatct, *stripct, *trustct;
+int ValidateHeader(struct sendmessage *sm, char *lookfor, int *externalct, int *totct, int *formatct, int *stripct, int *trustct)
 {
     char *tp, *old, *new, *s, *realname;
     int tpos, pos, newpos, len, i, errct, c;
@@ -1278,8 +1218,7 @@ int *externalct, *totct, *formatct, *stripct, *trustct;
     return(errct);
 }
 
-sendmessage__Checkpoint(sm)
-struct sendmessage *sm;
+int sendmessage__Checkpoint(struct sendmessage *sm)
 {
     static char *VCKPFileName = NULL, *TCKPFileName = NULL, *s, *ckpfile;
     char Msg[100+MAXPATHLEN], TmpFileName[1+MAXPATHLEN];
@@ -1336,8 +1275,7 @@ struct sendmessage *sm;
     return(0);
 }
 
-RemoveUselessHeaderLines(sm)
-struct sendmessage *sm;
+int RemoveUselessHeaderLines(struct sendmessage *sm)
 {
     struct text *d;
     char *tp;
@@ -1376,9 +1314,7 @@ struct sendmessage *sm;
     }
 }
 
-FileIntoFolder(sm, name)
-struct sendmessage *sm;
-char *name;
+int FileIntoFolder(struct sendmessage *sm, char *name)
 {
     char ShortName[1+MAXPATHLEN], *FullName, FileName[1+MAXPATHLEN], TmpFileName[1+MAXPATHLEN];
     long mserrcode;
@@ -1416,8 +1352,7 @@ char *name;
 }
 
 
-void sendmessage__CheckButtons(sendmessage)
-struct sendmessage *sendmessage;
+void sendmessage__CheckButtons(struct sendmessage *sendmessage)
 {
     struct sbutton *bs=sbuttonv_ButtonData(sendmessage->buttons);
     sbutton_SetLabel(bs, SM_CLEAR, amsutil_GetOptBit(EXP_CLEARAFTER) ? "Will Clear" : "Won't Clear");
@@ -1428,9 +1363,7 @@ struct sendmessage *sendmessage;
 
 
 /* Convert the named file into an unscribed file */
-ProduceUnscribedVersion(FileName, OutputFP)
-char *FileName;
-FILE *OutputFP;
+int ProduceUnscribedVersion(char *FileName, FILE *OutputFP)
 {
     char TmpFileName[1+MAXPATHLEN], LineBuf[5000];
     FILE *fin, *fout;
@@ -1505,16 +1438,12 @@ FILE *OutputFP;
     return(0);
 }
 
-void BSSM_SendmessageCompound(sm, cmds)
-struct sendmessage *sm;
-char *cmds;
+void BSSM_SendmessageCompound(struct sendmessage *sm, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), sm, "sendmessage", cmds);
 }
 
-void BSSM_SendmessageFoldersCompound(sm, cmds)
-struct sendmessage *sm;
-char *cmds;
+void BSSM_SendmessageFoldersCompound(struct sendmessage *sm, char *cmds)
 {
     if (sm->folders) {
 	ams_GenericCompoundAction(ams_GetAMS(), sm->folders, "folders", cmds);
@@ -1523,9 +1452,7 @@ char *cmds;
     }
 }
 
-void BSSM_SendmessageMessagesCompound(sm, cmds)
-struct sendmessage *sm;
-char *cmds;
+void BSSM_SendmessageMessagesCompound(struct sendmessage *sm, char *cmds)
 {
     if (sm->folders) {
 	ams_GenericCompoundAction(ams_GetAMS(), sm->folders, "messages", cmds);
@@ -1534,29 +1461,22 @@ char *cmds;
     }
 }
 
-void SBSSM_TextviewCompound(tv, cmds)
-struct textview *tv;
-char *cmds;
+void SBSSM_TextviewCompound(struct textview *tv, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), tv, "textview", cmds);
 }
 
-void SBSSM_DoBodiesCommand(sm, cmds)
-struct sendmessage *sm;
-char *cmds;
+void SBSSM_DoBodiesCommand(struct sendmessage *sm, char *cmds)
 {
     SBSSM_TextviewCompound(sm->BodyTextview, cmds);
 }
 
-void SBSSM_DoHeadersCommand(sm, cmds)
-struct sendmessage *sm;
-char *cmds;
+void SBSSM_DoHeadersCommand(struct sendmessage *sm, char *cmds)
 {
     SBSSM_TextviewCompound(sm->HeadTextview, cmds);
 }
 
-RestoreFromPS(self)
-struct sendmessage *self;
+int RestoreFromPS(struct sendmessage *self)
 {
     char *ExpandedPS, *PStext;
 
@@ -1605,8 +1525,7 @@ struct sendmessage *self;
     textview_WantUpdate(self->HeadTextview, self->HeadTextview);
 }
 
-AlreadyPS(subj)
-char *subj;
+int AlreadyPS(char *subj)
 {
     Boolean UpToS = FALSE, SawP = FALSE;
     char *s;
@@ -1624,15 +1543,12 @@ char *subj;
     return(0);
 }
 
-boolean
-sendmessage__InitializeClass(c) 
-struct classheader *c;
+boolean sendmessage__InitializeClass(struct classheader *c)
 {
     return(OneTimeProcInit(&sendmessage_classinfo));
 }
 
-sendmessage__HasChanged(self)
-struct sendmessage *self;
+int sendmessage__HasChanged(struct sendmessage *self)
 {
     if (self->HeadModified != text_GetModified(self->HeadText)) {
 	return 1;
@@ -1643,8 +1559,7 @@ struct sendmessage *self;
     return 0;
 }
 
-sendmessage__NeedsCheckpointing(self)
-struct sendmessage *self;
+int sendmessage__NeedsCheckpointing(struct sendmessage *self)
 {
     if (self->HeadCheckpoint != text_GetModified(self->HeadText)) {
 	return 1;
@@ -1655,9 +1570,7 @@ struct sendmessage *self;
     return 0;
 }
 
-void sendmessage__WantUpdate(sendmessage, v)
-struct sendmessage *sendmessage;
-struct view *v;
+void sendmessage__WantUpdate(struct sendmessage *sendmessage, struct view *v)
 {
     super_WantUpdate(sendmessage, v);
     if (sendmessage->CurrentState != SM_STATE_INPROGRESS) {
@@ -1665,14 +1578,12 @@ struct view *v;
     }
 }
 
-sendmessage__AskEraseUnsentMail(self)
-struct sendmessage *self;
+int sendmessage__AskEraseUnsentMail(struct sendmessage *self)
 {
     return(ams_GetBooleanFromUser(ams_GetAMS(), "Do you want to erase the mail you have not yet sent", FALSE));
 }
 
-SaveForPS(self)
-struct sendmessage *self;
+int SaveForPS(struct sendmessage *self)
 {
     int len = text_GetLength(self->HeadText);
     if (self->PSMsg) free(self->PSMsg);
@@ -1681,26 +1592,23 @@ struct sendmessage *self;
     self->PSMsg[len] = NULL;
 }
 
-struct folders *
-sendmessage__NewFoldersInNewWindow(self)
-struct sendmessage *self;
+struct folders * sendmessage__NewFoldersInNewWindow(struct sendmessage *self)
 {
     struct folders *f = folders_New();
 
     sendmessage_SetFoldersView(self, f);
     folders_SetSendmessage(f, self);
     ams_InstallInNewWindow(folders_GetApplicationLayer(f), "messages-folders", "Message Folders", environ_GetProfileInt("folders.width", 600), environ_GetProfileInt("folders.height", 120), f);
-    im_SetDeleteWindowCallback(sendmessage_GetIM(self), delete_sendmsg_win, self);
+    im_SetDeleteWindowCallback(sendmessage_GetIM(self), (procedure)delete_sendmsg_win, self);
     return(f);
 }
 
-void sendmessage_DuplicateWindow(self)
-struct sendmessage *self;
+void sendmessage_DuplicateWindow(struct sendmessage *self)
 {
     struct sendmessage *s = sendmessage_New();
 
-    s->myframe = ams_InstallInNewWindow(s, "messages-send", "Message composition", environ_GetProfileInt("sendmessage.width", -1), environ_GetProfileInt("sendmessage.height", -1), s);
-    im_SetDeleteWindowCallback(sendmessage_GetIM(self), delete_sendmsg_win, self);
+    s->myframe = ams_InstallInNewWindow(s, "messages-send", "Message composition", environ_GetProfileInt("sendmessage.width", (long)-1), environ_GetProfileInt("sendmessage.height", (long)-1), s);
+    im_SetDeleteWindowCallback(sendmessage_GetIM(self), (procedure)delete_sendmsg_win, self);
     sendmessage_Reset(s);
 }
 

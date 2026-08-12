@@ -48,6 +48,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <pixelimg.ih>	
 #include <dataobj.ih>
 #include <xbm.eh>
+static int NextInt(FILE *fstream);
+static void initHexTable();
 
 #if !defined(vax)
 /*
@@ -96,8 +98,7 @@ static short hexTable[256];		/* conversion value */
 static boolean initialized = FALSE;	/* easier to fill in at run time */
   
 /* from X11R5 XRdBitF.c */
-static NextInt (fstream)
-    FILE *fstream;
+static int NextInt(FILE *fstream)
 {
     int	ch;
     int	value = 0;
@@ -157,11 +158,7 @@ static void initHexTable()
 }
 
 
-long xbm__ReadImage(ClassID, file, pix)
-
-struct classhdr *ClassID;
-FILE *file;		
-struct pixelimage *pix;	
+long xbm__ReadImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix)
 {
 unsigned char *location;
 long width, height, byte, value,bytewidth, i;
@@ -172,7 +169,7 @@ char name[64], bits[64], *t;
 /* get width (in pixels) and height fields from top of bitmap file */
     for (i=0; i<2; i++) 
     {
-	if (fscanf(file," #define %s %d ", name, &value) == 2)
+	if (fscanf(file," #define %s %ld ", name, &value) == 2)
 	{
 
 	    if ((t = rindex(name, '_')) == 0)
@@ -226,12 +223,7 @@ char name[64], bits[64], *t;
    return dataobject_NOREADERROR;
 }
 
-void xbm__WriteImage(ClassID, file, pix, sub)
-
-struct classhdr *ClassID;
-register FILE *file;		
-register struct pixelimage *pix;
-register struct rectangle *sub;
+void xbm__WriteImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix, struct rectangle *sub)
 {
 
     char c, *title = "raster";
@@ -250,8 +242,8 @@ register struct rectangle *sub;
 
     /* Write out X Bitmap header, with the arbitrary title 'raster'.
       Note that no hot spot is defined. */
-    fprintf(file, "#define %s_width %d\n", title, width);
-    fprintf(file, "#define %s_height %d\n", title, height);
+    fprintf(file, "#define %s_width %ld\n", title, width);
+    fprintf(file, "#define %s_height %ld\n", title, height);
     fprintf(file, "static char %s_bits[] = {",title);
 
 

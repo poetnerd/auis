@@ -75,15 +75,16 @@ END-SPECIFICATION  ************************************************************/
 #include "zipv.ih"
 #include "zipedit.ih"
 #include "zipedit.h"
+static int Clear_Pane_Mark_Areas(struct zipedit *self, zip_type_pane pane);
+static int Compute_Pane_Coordinate_Deltas(struct zipedit *self, zip_type_pane pane);
+static int Draw_Pane_Coordinate_Marks(struct zipedit *self, zip_type_pane pane);
+static int Draw_Pane_Coordinate_Ticks(struct zipedit *self, zip_type_pane pane);
 
-static Draw_Pane_Coordinate_Marks();
-static Draw_Pane_Coordinate_Ticks();
-static Compute_Pane_Coordinate_Deltas();
+static int Draw_Pane_Coordinate_Marks(struct zipedit *self, zip_type_pane pane);
+static int Draw_Pane_Coordinate_Ticks(struct zipedit *self, zip_type_pane pane);
+static int Compute_Pane_Coordinate_Deltas(struct zipedit *self, zip_type_pane pane);
 
-int
-zipedit__Draw_Pane_Coordinates( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+long zipedit__Draw_Pane_Coordinates(struct zipedit *self, zip_type_pane pane)
   {
   IN(zipedit__Draw_Pane_Coordinates);
   pane->zip_pane_state.zip_pane_state_coordinates_exposed = true;
@@ -119,9 +120,7 @@ zipedit__Draw_Pane_Coordinates( self, pane )
   return zip_success;
   }
 
-zipedit__Draw_Pane_Grid( self, pane )
-  register struct zipedit	 *self;
-  register zip_type_pane	  pane;
+long zipedit__Draw_Pane_Grid(struct zipedit *self, zip_type_pane pane)
   {
   register long			  i, j, k, point_spacing,
 				  X_int = 0, Y_int = 0;
@@ -207,10 +206,7 @@ zipedit__Draw_Pane_Grid( self, pane )
   return zip_success;
   }
 
-static
-Clear_Pane_Mark_Areas( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+static int Clear_Pane_Mark_Areas(struct zipedit *self, zip_type_pane pane)
   {
   zipview_SetTransferMode( View, graphic_WHITE );
   zipview_FillRectSize( View, PaneLeft + 1, PaneTop + 1,
@@ -226,10 +222,7 @@ Clear_Pane_Mark_Areas( self, pane )
   return zip_success;
   }
 
-static
-Draw_Pane_Coordinate_Marks( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+static int Draw_Pane_Coordinate_Marks(struct zipedit *self, zip_type_pane pane)
   {
   register struct fontdesc		 *current_font = zipview_GetFont( View );
 
@@ -246,10 +239,7 @@ Draw_Pane_Coordinate_Marks( self, pane )
   return zip_success;
   }
 
-static
-Draw_Pane_Coordinate_Ticks( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+static int Draw_Pane_Coordinate_Ticks(struct zipedit *self, zip_type_pane pane)
   {
   register float			  SM, SD;
   register int				  i, center, middle, edge;
@@ -335,10 +325,7 @@ Draw_Pane_Coordinate_Ticks( self, pane )
   return zip_success;
   }
 
-static
-Compute_Pane_Coordinate_Deltas( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+static int Compute_Pane_Coordinate_Deltas(struct zipedit *self, zip_type_pane pane)
   {
   register float			  SM, SD, delta = 1.0, limit = 10.0;
   register int				  done = false, low;
@@ -379,10 +366,7 @@ Compute_Pane_Coordinate_Deltas( self, pane )
   return zip_success;
   }
 
-zipedit__Lighten_Pane( self, pane, density )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
-  register char				  density;
+long zipedit__Lighten_Pane(struct zipedit *self, zip_type_pane pane, char density)
   {
   zipview_Set_Pane_Clip_Area( View, pane );
   zipview_SetTransferMode( View, graphic_WHITE );

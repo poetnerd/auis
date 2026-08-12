@@ -33,10 +33,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <util.h>
 #include <ms.h>
+#include <stdlib.h>
 
 #define MAXUSERNAME 100		/* Biggest length of a user name */
 
-extern char home[], *StripWhiteEnds(), *FindUserDir();
+extern char home[], *StripWhiteEnds(char *string), *FindUserDir(char *user, char *cellname);
 extern char MyMailDomain[];
 
 /* If you make any changes to this routine, check out TildeResolve in
@@ -45,9 +46,7 @@ MessagesBE.c as well. */
 /* This routine takes a path name and resolves leading ~ references, e.g.
 	~/foo and ~nsb/bar, returning a freshly malloced version */
 
-ResolveTildes(old, new, domain)
-char   *old,
-      **new, *domain;
+int ResolveTildes(char *old, char **new, char *domain)
 {
     char   *t, user[2*MAXUSERNAME], *udir;
     struct CellAuth *ca;

@@ -36,15 +36,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mailconf.h>
 #include <hdrparse.h>
 #include <stdio.h>
-
-#ifndef _IBMR2
-extern char *malloc();
-#endif /* _IBMR2 */
+#include <stdlib.h>
+extern int AddParentalMessageFromFile(char *FileName, char *PDirName, char *bbname, char *bbpath);
+extern int AppendFileToFolder(char *FileName, char *FolderName, int DoDelete);
+extern int GenTempName(char *Buf);
+extern char *arpadate();  /* overhead/mail/lib/arpadate.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
 
 extern char Me[], *MyPrettyAddress, home[];
 
-MS_InstallWelcomeMessage(ParentName, InitDir, InitFile, ShortName)
-char *ParentName, *InitDir, *InitFile, *ShortName;
+int MS_InstallWelcomeMessage(char *ParentName, char *InitDir, char *InitFile, char *ShortName)
 {
     char DirName[MAXPATHLEN+1], SourceFileName[1+MAXPATHLEN], LineBuf[1000];
     FILE *rfp, *wfp;

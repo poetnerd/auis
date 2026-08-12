@@ -71,9 +71,7 @@ static struct bind_Description foldertreev_standardbindings [] = {
     {NULL,NULL,0,NULL,0,0,NULL,NULL,NULL}
 };
 
-boolean
-foldertreev__InitializeClass( classID )
-  struct classheader *classID;
+boolean foldertreev__InitializeClass(struct classheader *classID)
 {
     foldertreev_standardmenulist = menulist_New();
     foldertreev_standardkeymap = keymap_New();
@@ -81,10 +79,7 @@ foldertreev__InitializeClass( classID )
     return(TRUE);
 }
 
-void
-foldertreev__FinalizeObject( classID, self )
-  struct classheader	*classID;
-  struct foldertreev	*self;
+void foldertreev__FinalizeObject(struct classheader *classID, struct foldertreev *self)
 {
   if(self->menulist) {
       menulist_Destroy(self->menulist);
@@ -106,10 +101,7 @@ foldertreev__InitializeObject( classID, self )
   return((self->menulist && self->keystate) ? TRUE : FALSE);
 }
 
-void
-foldertreev__PostMenus( self, menulist )
-  struct foldertreev	*self;
-  struct menulist	*menulist;
+void foldertreev__PostMenus(struct foldertreev *self, struct menulist *menulist)
 {
   if(menulist) {
       menulist_SetMask(menulist,menulist_GetMask(menulist) & ~menu_description_exposed & ~menu_palette_exposed & ~menu_description_hidden & ~menu_palette_hidden & ~menu_default & ~menu_folded & ~menu_unfolded);
@@ -118,36 +110,25 @@ foldertreev__PostMenus( self, menulist )
   view_PostMenus((struct view*)self->header.view.parent,self->menulist);
 }
 
-static void
-QuitFolderTree( self )
-  struct foldertreev	*self;
+static void QuitFolderTree(struct foldertreev *self)
 {
     /* messages__ObservedChanged will do all the work... */
     foldertreev_NotifyObservers(self, 1);
 }
 
-static void
-QuitMessagesProc( self )
-  struct foldertreev	*self;
+static void QuitMessagesProc(struct foldertreev *self)
 {
   ams_CommitState(TRUE, FALSE, TRUE, TRUE);
 }
 
-void
-foldertreev__PostKeyState( self, keystate )
-  struct foldertreev	*self;
-  struct keystate	*keystate;
+void foldertreev__PostKeyState(struct foldertreev *self, struct keystate *keystate)
 {
   if(keystate)
       keystate_AddBefore(self->keystate,keystate);
   view_PostKeyState((struct view*)self->header.view.parent,self->keystate);
 }
 
-void
-foldertreev__FullUpdate( self, type, left, top, width, height )
-  struct foldertreev	*self;
-  enum view_UpdateType type;
-  long left, top, width, height;
+void foldertreev__FullUpdate(struct foldertreev *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
   struct view *v1, *v2;
   struct lpair *lp = NULL;

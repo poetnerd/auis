@@ -78,8 +78,27 @@ END-SPECIFICATION  ************************************************************/
 #include "zip.ih"
 #include <errno.h>
 #include <sys/stat.h>
+#include <stdlib.h>
+static int Extract_Stream_File_Name(struct zip *self, char *name, char **file_name);
+static int Extract_Stream_File_Path(struct zip *self, char *name, char **path_name);
+static int Extract_Stream_Name(struct zip *self, char *name, char **stream_name);
+static int Reset_Paths(struct zip *self);
+static int Reset_Stream_File_Open_States(struct zip *self, zip_type_stream stream);
+static int Set_Paths(struct zip *self, zip_type_paths paths);
+static int Stream_File_Exists(struct zip *self, char *stream_name);
 
 extern int			      errno;
+
+/* M2: same-file forward references */
+int zip_Open_Stream_File(struct zip *self, zip_type_stream stream, long open_mode);
+int zip_Close_Stream_File(struct zip *self, zip_type_stream stream);
+int zip_Set_Stream_File_Name(struct zip *self, zip_type_stream stream, char *name);
+/* M2: zip.do cross-file, no header declares these */
+extern long zip_Deparse_Stream(struct zip *self, zip_type_stream stream_object);	/* defined zipds01.c */
+extern long zip_Enparse_Stream(struct zip *self, struct zip_stream *stream);	/* defined zipds02.c */
+extern int apt_MM_Compare(unsigned char *s1, unsigned char *s2);		/* defined zip.c */
+extern int symtab_create();		/* defined zipd000.c */
+extern int symtab_destroy();		/* defined zipd000.c */
 
 #define  zip_default_path	      "/usr/andrew/lib/zip"
 #define  zip_default_path_alternate   "/usr/local/lib/zip"
@@ -87,33 +106,28 @@ extern int			      errno;
 #define	 Data			      self
 
 
-static
-Extract_Stream_Name();
-static
-Extract_Stream_File_Name();
-static
-Extract_Stream_File_Path();
 static int
-Open_Via_Alternate_Paths();
+Extract_Stream_Name(struct zip *self, char *name, char **stream_name);
 static int
-Open_Alternate();
-static
-Reset_Stream_File_Open_States();
+Extract_Stream_File_Name(struct zip *self, char *name, char **file_name);
+static int
+Extract_Stream_File_Path(struct zip *self, char *name, char **path_name);
+static int
+Open_Via_Alternate_Paths(struct zip *self, zip_type_stream stream, char * mode);
+static int
+Open_Alternate(struct zip *self, zip_type_stream stream, char * open_mode_flags, char *path);
+static int
+Reset_Stream_File_Open_States(struct zip *self, zip_type_stream stream);
 static int
 Identify_Paths();
 static int
-Allocate_Stream_Object();
+Allocate_Stream_Object(struct zip *self, zip_type_stream *stream, char *name);
 static int
-Deallocate_Stream_Object();
+Deallocate_Stream_Object(struct zip *self, zip_type_stream stream);
 static int
-Deallocate_Stream_Resources();
+Deallocate_Stream_Resources(struct zip *self, zip_type_stream stream);
 
-long
-zip__Open_Stream( self, stream, name, mode )
-  register struct zip		     *self;
-  register zip_type_stream	     *stream;
-  register char			     *name;
-  register long			      mode;
+long zip__Open_Stream(struct zip *self, struct zip_stream **stream, char *name, long mode)
   {
   register int			      status = zip_ok;
 
@@ -134,15 +148,11 @@ zip__Open_Stream( self, stream, name, mode )
   return status;
   }
 
-long
-zip__Close_Stream( self, stream )
-  /* ziP_Close_Stream is only invoked by the MACRO zip_Close_Stream
-	-- to ensure the stream anchor cell in client space
-	is nullified
-  */
-
-  register struct zip		     *self;
-  register struct zip_stream	     *stream;
+/* ziP_Close_Stream is only invoked by the MACRO zip_Close_Stream
+   -- to ensure the stream anchor cell in client space
+   is nullified
+*/
+long zip__Close_Stream(struct zip *self, struct zip_stream *stream)
   {
   register int			      status = zip_ok;
 /*===
@@ -179,10 +189,7 @@ zip__Close_Stream( self, stream )
   return status;
   }
 
-long
-zip__Read_Stream( self, stream )
-  register struct zip		     *self;
-  register struct zip_stream	     *stream;
+long zip__Read_Stream(struct zip *self, struct zip_stream *stream)
   {
   register int			      status = zip_ok;
 
@@ -201,10 +208,7 @@ zip__Read_Stream( self, stream )
   return status;
   }
 
-long
-zip__Write_Stream( self, stream )
-  register struct zip		     *self;
-  register struct zip_stream	     *stream;
+long zip__Write_Stream(struct zip *self, struct zip_stream *stream)
   {
   register int			      status = zip_ok;
 
@@ -221,12 +225,7 @@ zip__Write_Stream( self, stream )
   return status;
   }
 
-long
-zip__Create_Stream( self, stream, name, mode )
-  register struct zip		     *self;
-  register zip_type_stream	     *stream;
-  register char			     *name;
-  register long			      mode;
+long zip__Create_Stream(struct zip *self, struct zip_stream **stream, char *name, long mode)
   {
   register int			      status = zip_ok;
   zip_type_image		      image;
@@ -248,10 +247,7 @@ zip__Create_Stream( self, stream, name, mode )
   return status;
   }
 
-long
-zip__Destroy_Stream( self, stream )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
+long zip__Destroy_Stream(struct zip *self, zip_type_stream stream)
   {
   register int			      status = zip_ok;
 
@@ -264,11 +260,7 @@ zip__Destroy_Stream( self, stream )
   return status;
   }
 
-long
-zip__Set_Stream_Name( self, stream, name )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
-  register char			     *name;
+long zip__Set_Stream_Name(struct zip *self, zip_type_stream stream, char *name)
   {
   register int			      status = zip_ok;
 
@@ -297,11 +289,7 @@ zip__Set_Stream_Name( self, stream, name )
   return status;
   }
 
-long
-zip__Set_Stream_Pattern( self, stream, pattern )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
-  register char			      pattern;
+long zip__Set_Stream_Pattern(struct zip *self, zip_type_stream stream, char pattern)
   {
   register int			      status = zip_ok;
 
@@ -321,11 +309,7 @@ zip__Set_Stream_Pattern( self, stream, pattern )
   return status;
   }
 
-long
-zip__Set_Stream_Line_Width( self, stream, width )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
-  register long			      width;
+long zip__Set_Stream_Line_Width(struct zip *self, zip_type_stream stream, long width)
   {
   register int			      status = zip_ok;
 
@@ -345,13 +329,7 @@ zip__Set_Stream_Line_Width( self, stream, width )
   return status;
   }
 
-long
-zip__Set_Stream_Line_Dash( self, stream, pattern, offset, type )
-  register struct zip			*self;
-  register zip_type_stream		stream;
-  register char				*pattern;
-  register int				offset;
-  register short			type;
+long zip__Set_Stream_Line_Dash(struct zip *self, zip_type_stream stream, char *pattern, int offset, short type)
   {
   register int			      status = zip_ok;
 
@@ -374,11 +352,7 @@ zip__Set_Stream_Line_Dash( self, stream, pattern, offset, type )
       return status;
   }
 
-long
-zip__Set_Stream_Line_Cap( self, stream, cap )
-  register struct zip			*self;
-  register zip_type_stream		stream;
-  register short			cap;
+long zip__Set_Stream_Line_Cap(struct zip *self, zip_type_stream stream, short cap)
   {
   register int			      status = zip_ok;
 
@@ -392,11 +366,7 @@ zip__Set_Stream_Line_Cap( self, stream, cap )
       return status;
   }
 
-long
-zip__Set_Stream_Line_Join( self, stream, join )
-  register struct zip			*self;
-  register zip_type_stream		stream;
-  register short			join;
+long zip__Set_Stream_Line_Join(struct zip *self, zip_type_stream stream, short join)
   {
   register int			      status = zip_ok;
 
@@ -410,11 +380,7 @@ zip__Set_Stream_Line_Join( self, stream, join )
       return status;
   }
 
-long
-zip__Set_Stream_Line_Color( self, stream, red, green, blue )
-  register struct zip			*self;
-  register zip_type_stream		stream;
-  register double			red, green, blue;
+long zip__Set_Stream_Line_Color(struct zip *self, zip_type_stream stream, double red, double green, double blue)
   {
   register int			      status = zip_ok;
 
@@ -441,11 +407,7 @@ zip__Set_Stream_Line_Color( self, stream, red, green, blue )
       return status;
   }
 
-long
-zip__Set_Stream_FillFG_Color( self, stream, red, green, blue )
-  register struct zip			*self;
-  register zip_type_stream		stream;
-  register double			red, green, blue;
+long zip__Set_Stream_FillFG_Color(struct zip *self, zip_type_stream stream, double red, double green, double blue)
   {
   register int			      status = zip_ok;
 
@@ -472,11 +434,7 @@ zip__Set_Stream_FillFG_Color( self, stream, red, green, blue )
       return status;
   }
 
-long
-zip__Set_Stream_FillBG_Color( self, stream, red, green, blue )
-  register struct zip			*self;
-  register zip_type_stream		stream;
-  register double			red, green, blue;
+long zip__Set_Stream_FillBG_Color(struct zip *self, zip_type_stream stream, double red, double green, double blue)
   {
   register int			      status = zip_ok;
 
@@ -503,11 +461,7 @@ zip__Set_Stream_FillBG_Color( self, stream, red, green, blue )
       return status;
   }
 
-long
-zip__Set_Stream_Text( self, stream, text )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
-  register char			     *text;
+long zip__Set_Stream_Text(struct zip *self, zip_type_stream stream, char *text)
   {
   register int			      status = zip_ok;
 
@@ -527,11 +481,7 @@ zip__Set_Stream_Text( self, stream, text )
   return status;
   }
 
-long
-zip__Set_Stream_Font( self, stream, font_name )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
-  register char			     *font_name;
+long zip__Set_Stream_Font(struct zip *self, zip_type_stream stream, char *font_name)
   {
   register int			      status = zip_ok;
   short				      font;
@@ -552,11 +502,7 @@ zip__Set_Stream_Font( self, stream, font_name )
   return status;
   }
 
-long
-zip__Set_Stream_Source( self, stream, source )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
-  register char			     *source;
+long zip__Set_Stream_Source(struct zip *self, struct zip_stream *stream, char *source)
   {
   register int			      status = zip_ok;
   char				      temp_name[257];
@@ -599,10 +545,7 @@ zip__Set_Stream_Source( self, stream, source )
   }
 
 
- zip_type_stream
-zip__Stream( self, stream_name )
-  register struct zip		     *self;
-  register char			     *stream_name;
+struct zip_stream * zip__Stream(struct zip *self, char *stream_name)
   {
   register zip_type_stream	      stream = NULL;
   register zip_type_stream_chain      stream_link = StreamAnchor;
@@ -628,11 +571,7 @@ zip__Stream( self, stream_name )
   return stream;
   }
 
-long
-zip__Set_Stream_Extrema( self, stream, image )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
-  register zip_type_image	      image;
+long zip__Set_Stream_Extrema(struct zip *self, zip_type_stream stream, zip_type_image image)
   {
   IN(zip__Set_Stream_Extrema);
 /*===7/18/86  zip_Balance_Image_Extrema( image );===*/
@@ -670,11 +609,7 @@ zip__Set_Stream_Extrema( self, stream, image )
   return zip_ok;
   }
 
-static
-Extract_Stream_Name( self, name, stream_name )
-  register struct zip		     *self;
-  register char			     *name;
-  register char			    **stream_name;
+static int Extract_Stream_Name(struct zip *self, char *name, char **stream_name)
   {
   register char			     *start_ptr, *end_ptr;
 
@@ -697,11 +632,7 @@ Extract_Stream_Name( self, name, stream_name )
   OUT(Extract_Stream_Name);
   }
 
-static
-Extract_Stream_File_Name( self, name, file_name )
-  register struct zip		     *self;
-  register char			     *name;
-  register char			    **file_name;
+static int Extract_Stream_File_Name(struct zip *self, char *name, char **file_name)
   {
   register char			     *start_ptr, *end_ptr;
 
@@ -723,11 +654,7 @@ Extract_Stream_File_Name( self, name, file_name )
   OUT(Extract_Stream_File_Name);
   }
 
-static
-Extract_Stream_File_Path( self, name, path_name )
-  register struct zip		     *self;
-  register char			     *name;
-  register char			    **path_name;
+static int Extract_Stream_File_Path(struct zip *self, char *name, char **path_name)
   {
   register char			     *start_ptr, *end_ptr;
 
@@ -745,11 +672,7 @@ Extract_Stream_File_Path( self, name, path_name )
   OUT(Extract_Stream_File_Path);
   }
 
-int
-zip_Open_Stream_File( self, stream, open_mode )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
-  register long			      open_mode;
+int zip_Open_Stream_File(struct zip *self, zip_type_stream stream, long open_mode)
   {
   register int			      status = zip_ok;
   register char			     *open_mode_flags = 0;
@@ -795,11 +718,7 @@ zip_Open_Stream_File( self, stream, open_mode )
   return status;
   }
 
-static int
-Open_Via_Alternate_Paths( self, stream, mode )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
-  register char *			      mode;
+static int Open_Via_Alternate_Paths(struct zip *self, zip_type_stream stream, char *			mode)
   {
   register int			      status = zip_ok;
   register int			      i;
@@ -824,12 +743,7 @@ Open_Via_Alternate_Paths( self, stream, mode )
   return status;
   }
 
-static int
-Open_Alternate( self, stream, open_mode_flags, path )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
-  register char *			      open_mode_flags;
-  register char			     *path;
+static int Open_Alternate(struct zip *self, zip_type_stream stream, char *			open_mode_flags, char *path)
   {
   register int			      status = -1;
 
@@ -857,10 +771,7 @@ Open_Alternate( self, stream, open_mode_flags, path )
   return status;
   }
 
-int
-zip_Close_Stream_File( self, stream )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
+int zip_Close_Stream_File(struct zip *self, zip_type_stream stream)
   {
   IN(zip_Close_Stream_File);
   if ( stream->zip_stream_file )
@@ -870,18 +781,12 @@ zip_Close_Stream_File( self, stream )
   return zip_ok;
   }
 
-static
-Reset_Stream_File_Open_States( self, stream )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
+static int Reset_Stream_File_Open_States(struct zip *self, zip_type_stream stream)
   {
 /*===*/
   }
 /*===
-static int
-Stream_File_Exists( self, stream_name )
-  register struct zip		     *self;
-  register char			     *stream_name;
+static int Stream_File_Exists(struct zip *self, char *stream_name)
   {
   struct stat			      st;
   char				      full_name[257];
@@ -896,10 +801,7 @@ Stream_File_Exists( self, stream_name )
   return status;
   }
 ===*/
-static int
-Identify_Paths( self, paths_ptr )
-  register struct zip		     *self;
-  register zip_type_paths	     *paths_ptr;
+static int Identify_Paths(struct zip *self, zip_type_paths *paths_ptr)
   {
   register int			      new_path = 1;
   char				     *zippath_profile, *zippath_string;
@@ -951,10 +853,7 @@ Identify_Paths( self, paths_ptr )
   return status;
   }
 /*===
-static int
-Set_Paths( self, paths )
-  register struct zip		     *self;
-  register zip_type_paths	      paths;
+static int Set_Paths(struct zip *self, zip_type_paths paths)
   {
   IN(Set_Paths);
   Paths = paths;
@@ -962,9 +861,7 @@ Set_Paths( self, paths )
   return zip_ok;
   }
 
-static int
-Reset_Paths( self )
-  register struct zip		     *self;
+static int Reset_Paths(struct zip *self)
   {
   IN(Reset_Paths);
   Paths = NULL;
@@ -973,11 +870,7 @@ Reset_Paths( self )
   }
 ===*/
 
-static int
-Allocate_Stream_Object( self, stream, name )
-  register struct zip		     *self;
-  register zip_type_stream	     *stream;
-  register char			     *name;
+static int Allocate_Stream_Object(struct zip *self, zip_type_stream *stream, char *name)
   {
   register int			      status = zip_ok;
   register zip_type_stream_chain      stream_link;
@@ -1005,11 +898,7 @@ Allocate_Stream_Object( self, stream, name )
   return status;
   }
 
-int
-zip_Set_Stream_File_Name( self, stream, name )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
-  register char			     *name;
+int zip_Set_Stream_File_Name(struct zip *self, zip_type_stream stream, char *name)
   {
   register long			      status = zip_ok;
 
@@ -1056,10 +945,7 @@ typedef struct {
 } symtab_type;
 /*===*/
 
-static int
-Deallocate_Stream_Object( self, stream )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
+static int Deallocate_Stream_Object(struct zip *self, zip_type_stream stream)
   {
   register int			      status = zip_ok;
   register zip_type_stream_chain      stream_link, prior_link;
@@ -1105,10 +991,7 @@ Deallocate_Stream_Object( self, stream )
   return status;
   }
 
-static int
-Deallocate_Stream_Resources( self, stream )
-  register struct zip		     *self;
-  register zip_type_stream	      stream;
+static int Deallocate_Stream_Resources(struct zip *self, zip_type_stream stream)
   {
   register int			      status = zip_ok;
 

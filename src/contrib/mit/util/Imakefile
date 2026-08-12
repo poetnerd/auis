@@ -26,10 +26,11 @@
 * $
 */
 
-
-DOBJS = compat.do vutils.do popts.do headrtv.do header.do 
+DOBJS = compat.do vutils.do popts.do headrtv.do header.do
 
 IHFILES = compat.ih vutils.ih popts.ih headrtv.ih header.ih 
+
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 NormalObjectRule()
 NormalATKRule()

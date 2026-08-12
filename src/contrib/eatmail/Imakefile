@@ -42,4 +42,3 @@ ProgramTarget(eatmail, ${OBJS}, ${LIBS}, $(LEXLIB) ${BSDLIB} )
 DependTarget()
 
 InstallProgram(eatmail, ${DESTDIR}/bin)
-

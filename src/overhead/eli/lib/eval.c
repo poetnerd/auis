@@ -35,9 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 /* evaluation routines */
 
-void            eliEval(st, expr, resbuf)
-EliState_t     *st;
-EliSexp_t      *expr, *resbuf;
+void eliEval(EliState_t *st, EliSexp_t *expr, EliSexp_t *resbuf)
 {
     EliSym_t       *tmp;
     EliSexp_t      *nodetmp;
@@ -104,9 +102,7 @@ EliSexp_t      *expr, *resbuf;
 }
 
 
-void            eliEvalList(st, lcar, lcdr, resbuf)
-EliState_t     *st;
-EliSexp_t      *lcar, *lcdr, *resbuf;
+void eliEvalList(EliState_t *st, EliSexp_t *lcar, EliSexp_t *lcdr, EliSexp_t *resbuf)
 {
     EliFn_t        *fnval;
     EliSexp_t      *tmpnode, *tmpnode2;
@@ -289,10 +285,7 @@ EliSexp_t      *lcar, *lcdr, *resbuf;
 
 /* This function ASSUMES that the car of the lambda list is indeed lambda */
 
-void            eliEvalLambda(st, lambdalist, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *lambdalist, *arglist;
-EliSexp_t      *resbuf;
+void eliEvalLambda(EliState_t *st, EliCons_t *lambdalist, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     int             numvars;           /* Holds number of items pushed onto
                                         * the stack */
@@ -331,10 +324,7 @@ EliSexp_t      *resbuf;
 
 /* This function ASSUMES that the car of the lambdaq list is indeed lambdaq */
 
-void            eliEvalLambdaq(st, lambdaqlist, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *lambdaqlist, *arglist;
-EliSexp_t      *resbuf;
+void eliEvalLambdaq(EliState_t *st, EliCons_t *lambdaqlist, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     int             numvars;           /* Holds number of items pushed onto
                                         * the stack */
@@ -367,10 +357,7 @@ EliSexp_t      *resbuf;
     eliEvalStk_PopN(st, EliEvalStack(st), numvars);
 }
 
-void            eliEvalLambdav(st, lambdavlist, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *lambdavlist, *arglist;
-EliSexp_t      *resbuf;
+void eliEvalLambdav(EliState_t *st, EliCons_t *lambdavlist, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     EliSexp_t      *listElts[3], *err, *paramSexp, *evaledArgsSexp;
     EliCons_t      *paramList, *evaledArgs;
@@ -415,10 +402,7 @@ EliSexp_t      *resbuf;
     eliEvalStk_PopN(st, EliEvalStack(st), 1);
 }
 
-void            eliEvalLambdavq(st, lambdavqlist, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *lambdavqlist, *arglist;
-EliSexp_t      *resbuf;
+void eliEvalLambdavq(EliState_t *st, EliCons_t *lambdavqlist, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     EliSexp_t      *listElts[3], *err, *paramSexp, *argsSexp;
     EliCons_t      *paramList;

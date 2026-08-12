@@ -36,18 +36,34 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ctype.h>
 #include <ms.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+extern int BuildReplyField(struct MS_Message *Msg);
+extern int BuildWideReply(struct MS_Message *Msg, Boolean IncludeFrom);
+extern int EmitHeader(struct MS_Message *Msg, int which, FILE *fp, char *head);
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int GenTempName(char *Buf);
+extern int InventID(struct MS_Message *msg);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int PrintFwdHeaders(FILE *fp, char *headers, char *BE2Format, int hdrlen);
+extern int PrintQuotingFormatting(FILE *fp, char *text, char *format, int len);  /* overhead/util/lib/unscribe.c */
+extern int QuickGetBodyFileName(char *DirName, char *id, char *FileName);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
+extern int StripMyselfFromAddressList(char *Old, char **New);
+extern int UnformatMessage(struct MS_Message *Msg);
+extern char *ams_genid(int IsFileName);  /* overhead/mail/lib/genid.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
+extern int fwriteallchars(char *Thing, int NItems, FILE *stream);  /* overhead/util/lib/fwrtallc.c */
 
 #define ToLower(c) (isupper(c) ? tolower(c) : (c))
 
 extern FILE *fopen();
-extern char *RewriteSubject(), *getprofile(), *StripWhiteEnds();
+extern char *RewriteSubject(char *oldsub), *getprofile(), *StripWhiteEnds(char *string);
 extern char MeInFull[];
 static char *ForwardString = "---------- Forwarded message begins here ----------\n\n";
 
-MS_NameReplyFile(DirName, id, code, FileName)
-char *DirName, *id, *FileName; 
-	/* The first two char * arguments are passed in, the last returned */
-int code; /* passed in */
+int MS_NameReplyFile(char *DirName, char *id, int code, char *FileName)
 {
     struct MS_Directory *Dir;
     struct MS_Message *Msg;
@@ -421,11 +437,7 @@ int code; /* passed in */
     return(0);
 }
 
-EmitHeader(Msg, which, fp, head)
-struct MS_Message *Msg;
-int which;
-FILE *fp;
-char *head;
+int EmitHeader(struct MS_Message *Msg, int which, FILE *fp, char *head)
 {
     int len;
 
@@ -437,11 +449,7 @@ char *head;
     }
 }
 
-PrintFwdHeaders(fp, headers, BE2Format, hdrlen)
-int fp;
-char *headers;
-char *BE2Format;
-int hdrlen;
+int PrintFwdHeaders(FILE *fp, char *headers, char *BE2Format, int hdrlen)
 {
     char *hdr, *s, *t, *h, *wh;
     int numhdrs, len, match;

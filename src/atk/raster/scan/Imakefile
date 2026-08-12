@@ -26,8 +26,6 @@
 * $
 */
 
-
-
 OBJS = ezscan.o scan3117.o
 
 NormalObjectRule()

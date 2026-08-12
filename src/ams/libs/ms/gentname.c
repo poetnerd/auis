@@ -33,18 +33,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <stdio.h>
 #include <mail.h>
+extern int GenTempName(char *Buf);
 
 extern char *getprofile();
 
-MS_GenTempFileName(Buf)
-char *Buf; /* Out */
+int MS_GenTempFileName(char *Buf)
 {
     GenTempName(Buf);
     return(0);
 }
 
-GenTempName(Buf)
-char   *Buf;
+int GenTempName(char *Buf)
 {
     static char *TempFileLocation = NULL;
     if (!TempFileLocation) {

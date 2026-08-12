@@ -73,8 +73,8 @@ classprocedures:
 
   InitializeClass() returns boolean;
 
-  InitializeObject( struct callBackObservable * self ) returns boolean;
-  FinalizeObject( struct callBackObservable * self );
+  InitializeObject( struct value * self ) returns boolean;
+  FinalizeObject( struct value * self );
 data:
   short maxObservers;			/* number of entries in observers table */
   struct observer *observers;	/* table of observers */
@@ -85,7 +85,7 @@ data:
 };
 
 
-#define value_OBJECTDESTROYED -1
+#define value_OBJECTDESTROYED (-1L)
 
 
 /* 

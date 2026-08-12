@@ -48,6 +48,7 @@ If LA[l, i] and LA[l, j] are both 1 for i != j, it is a conflict.
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "andrewos.h"
 #include "machine.h"
 #include "types.h"
@@ -73,7 +74,7 @@ short *goto_map;
 short *from_state;
 short *to_state;
 
-short **transpose();
+short **transpose(short **R_arg, int n);
 void set_state_table();
 void set_accessing_symbol();
 void set_shift_table();
@@ -83,14 +84,14 @@ void initialize_LA();
 void set_goto_map();
 void initialize_F();
 void build_relations();
-void add_lookback_edge();
+void add_lookback_edge(int stateno, int ruleno, int gotono);
 void compute_FOLLOWS();
 void compute_lookaheads();
-void digraph();
-void traverse();
+void digraph(short **relation);
+void traverse(int i);
 
-extern void toomany();
-extern void berror();
+extern void toomany(char *s);
+extern void berror(char *s);
 
 static int infinity;
 static int maxrhs;
@@ -334,10 +335,7 @@ set_goto_map()
 
 /*  Map_goto maps a state/symbol pair into its numeric representation.	*/
 
-int
-map_goto(state, symbol)
-int state;
-int symbol;
+int map_goto(int state, int symbol)
 {
   register int high;
   register int low;
@@ -536,11 +534,7 @@ build_relations()
 }
 
 
-void
-add_lookback_edge(stateno, ruleno, gotono)
-int stateno;
-int ruleno;
-int gotono;
+void add_lookback_edge(int stateno, int ruleno, int gotono)
 {
   register int i;
   register int k;
@@ -569,10 +563,7 @@ int gotono;
 
 
 
-short **
-transpose(R_arg, n)
-short **R_arg;
-int n;
+short ** transpose(short **R_arg, int n)
 {
   register short **new_R;
   register short **temp_R;
@@ -685,9 +676,7 @@ compute_lookaheads()
 }
 
 
-void
-digraph(relation)
-short **relation;
+void digraph(short **relation)
 {
   register int i;
 
@@ -712,9 +701,7 @@ short **relation;
 }
 
 
-void
-traverse(i)
-register int i;
+void traverse(int i)
 {
   register unsigned *fp1;
   register unsigned *fp2;

@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #endif
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <class.h>
 #include <ctype.h>
 #include <txtvcmds.h>
@@ -39,6 +40,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <im.ih>
 #include <message.ih>
 #include <search.ih>
+
+struct textview;
+
+extern boolean ConfirmReadOnly(struct textview *self);	/* defined in txtvcmod.c */
 #include <environ.ih>
 #include <mark.ih>
 
@@ -52,9 +57,7 @@ char *lastPattern = NULL;
 static char searchString[SRCHSTRLEN] = "";
 boolean forwardSearch = TRUE; /* TRUE if last search was forward. */
 
-boolean Quoted(doc, pos)
-struct text *doc;
-long pos;
+boolean Quoted(struct text *doc, long pos)
 {
     /* returns true iff the character at pos is quoted (ie. "\"). Takes into account the slash being quoted. (ie "\\"). */
 
@@ -69,8 +72,7 @@ long pos;
     return retval;
 }
 
-int textview_SearchCmd(self)
-register struct textview *self;
+int textview_SearchCmd(struct textview *self)
 {
     char defSrchString[SRCHSTRLEN], *tp, messageBuf[120], *prompt;
     int pos = 0, gf, ct;
@@ -123,8 +125,7 @@ register struct textview *self;
     return(0);
 }
 
-int textview_RSearchCmd(self)
-register struct textview *self;
+int textview_RSearchCmd(struct textview *self)
 {
     int ct, gf, orgpos, pos = 0;
     register int j;
@@ -178,8 +179,7 @@ register struct textview *self;
     return 0;
 }
 
-void textview_SearchAgain(self)
-struct textview *self;
+void textview_SearchAgain(struct textview *self)
 {
     struct text *d = Text(self);
     long	savePos, pos;
@@ -216,15 +216,13 @@ struct textview *self;
         message_DisplayString(self, 0, "Must have searched at least once to search again.");
 }
 
-void textview_SearchAgainOppositeCmd(self)
-    register struct textview *self;
+void textview_SearchAgainOppositeCmd(struct textview *self)
 {
     forwardSearch	^= TRUE;
     textview_SearchAgain(self);
 }
 
-void textview_QueryReplaceCmd(self)
-struct textview *self;
+void textview_QueryReplaceCmd(struct textview *self)
 {
     boolean defaultExists = FALSE;
     boolean keepAsking = TRUE;
@@ -425,10 +423,7 @@ struct paren_node {
     struct paren_node *next;
 };
 
-long	skipToNextBalanceSymbol(doc, pos, direction)
-struct text *doc;
-long	    pos;
-int	    direction;
+long skipToNextBalanceSymbol(struct text *doc, long pos, int direction)
 {
     /*
      * skip to next paren, bracket, or brace, ignoring
@@ -490,9 +485,7 @@ int	    direction;
     return EOF;
 }
 
-long balance(doc, pos)
-struct text *doc;
-long pos;
+long balance(struct text *doc, long pos)
 {
     /*
      * Returns the pos of the balancing symbol to the one
@@ -548,8 +541,7 @@ long pos;
     return EOF;
 }
 
-void textview_BalanceCmd(self)
-struct textview *self;
+void textview_BalanceCmd(struct textview *self)
 {
     register	struct text	*doc;
     long	pos, docLength;

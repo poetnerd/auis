@@ -106,10 +106,7 @@ END-SPECIFICATION  ************************************************************/
 #include "zipoplin.eh"
 #include "environ.ih"
 
-boolean
-zipoplin__InitializeObject( classID, self )
-  register struct classheader	         *classID;
-  register struct zipoplin	         *self;
+boolean zipoplin__InitializeObject(struct classheader *classID, struct zipoplin *self)
   {
   IN(zipoplin_InitializeObject);
   self->tolerance = environ_GetProfileInt( "ZipCreateTolerance", 10 );
@@ -118,9 +115,7 @@ zipoplin__InitializeObject( classID, self )
   return  true;
   }
 
-char
-zipoplin__Object_Icon( self )
-  register struct zipoplin		 *self;
+char zipoplin__Object_Icon(struct zipoplin *self)
   {
   IN(zipoplin__Object_Icon);
   OUT(zipoplin__Object_Icon);
@@ -128,43 +123,30 @@ zipoplin__Object_Icon( self )
   }
 
 
-char
-zipoplin__Object_Icon_Cursor( self )
-  register struct zipoplin		 *self;
+char zipoplin__Object_Icon_Cursor(struct zipoplin *self)
   {
   IN(zipoplin__Object_Icon_Cursor);
   OUT(zipoplin__Object_Icon_Cursor);
   return  'J';
   }
 
-char
-zipoplin__Object_Datastream_Code( self )
-  register struct zipoplin		 *self;
+char zipoplin__Object_Datastream_Code(struct zipoplin *self)
   {
   IN(zipoplin__Object_Datastream_Code);
   OUT(zipoplin__Object_Datastream_Code);
   return  'D';
   }
 
-long
-zipoplin__Show_Object_Properties( self, pane, figure )
-  register struct zipoplin		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
+long zipoplin__Show_Object_Properties(struct zipoplin *self, zip_type_pane pane, zip_type_figure figure)
   {
   zipview_Announce( View, "Draw PolyLine in Segments." );
   return  zip_ok;
   }
 
-long
-zipoplin__Build_Object( self, pane, action, x, y, clicks, X, Y )
-  register struct zipoplin		 *self;
-  register zip_type_pane		  pane;
-  register long				  action, x, y, clicks;
-  register zip_type_point		  X, Y;
+long zipoplin__Build_Object(struct zipoplin *self, zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y)
   {
   register long				  status = zip_ok;
-  long					  position = 0;
+  zip_type_figure					  position = NULL;
   static long				  initial_x, initial_y,
 					  initial_X, initial_Y,
 					  prior_X, prior_Y,

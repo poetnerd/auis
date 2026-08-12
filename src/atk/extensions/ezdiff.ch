@@ -35,7 +35,7 @@ class ezdiff : observable[observe] {
     classprocedures:
       InitializeClass()returns boolean;
       InitializeObject(struct ezdiff *self) returns boolean;    
-      FinalizeObject();
+      FinalizeObject(struct ezdiff *self);
       Create(struct buffer *buf1, struct buffer *buf2, boolean ignoreblanks) returns struct ezdiff *;
     data:
       struct mark **m1;

@@ -36,7 +36,7 @@ class figoins : figorect {
       WriteBody(FILE *fp);
       ReadBody(FILE *file, boolean recompute) returns long;
       ToolName(struct figtoolview *v, long rock) returns char *;
-      Build(enum view_MouseAction action, struct figview *v, long x, long y, long clicks) returns enum figobj_Status; 
+      Build(struct figview *v, enum view_MouseAction action, long x, long y, long clicks) returns enum figobj_Status; 
       Draw(struct figview *v); 
       RecomputeBounds();
 

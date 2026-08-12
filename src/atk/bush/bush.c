@@ -74,6 +74,10 @@ struct map_item {
 #include <vector.ih>
 #include <environ.ih>
 #include <bush.eh>  /* includes tree.ih */
+static int ExtractNodeName(char *source, char **name);
+static int ExtractNodePath(struct bush *self, char *source, char **path);
+static int NodeFilter(const DIRENT_TYPE *dir);
+static char * getname(struct bush *self, int uid, char *cell);
 
 #define	GivenDirName		    (self->given_dir_name)
 #define	RootPath		    (self->root_pathname)
@@ -126,26 +130,20 @@ struct map_item {
 
 tree_Specification DirTree[] = {tree_Order(tree_PreOrder),NULL};
 
-extern int			    errno, sys_nerr;
-extern char			   *sys_errlist[];
+extern int errno;
 
 char				baseName[] = "/afs"; /*Pathname to give to pioctl()*/
 #define	MAX_PIOCTL_BUFF_SIZE	1000
-static char			*gethomecell(), *getcell();
+static char			*gethomecell(struct bush *self, char *filename), *getcell(struct bush *self, char *filename);
 
-static int
-NodeFilter( dir )
-  register DIRENT_TYPE    *dir;
+static int NodeFilter(const DIRENT_TYPE *dir)
 {
   return(!(*dir->d_name == '.' && 
 	  (*(dir->d_name+1) == '.' || 
 	 *(dir->d_name+1) == '\0')));
 }
 
-struct bush *
-bush__Create( ClassID, init_dir )
-  struct classheader	*ClassID;
-  char			*init_dir;
+struct bush * bush__Create(struct classheader *ClassID, char *init_dir)
 {
   register struct bush  *self = NULL;
 
@@ -174,10 +172,7 @@ bush__InitializeObject( ClassID, self )
   return(TRUE);
 }
 
-static int
-ExtractNodePath( self, source, path )
-  register struct bush    *self;
-  register char		  *source, **path;
+static int ExtractNodePath(struct bush *self, char *source, char **path)
 {
   register long     status = 0, i = 0, len;
   char		    full_path[MAXPATHLEN + 1], 
@@ -222,10 +217,7 @@ ExtractNodePath( self, source, path )
   return(status);
 }
 
-static int
-ExtractNodeName( source, name )
-  register char *source;
-  register char **name;
+static int ExtractNodeName(char *source, char **name)
 {
   register long status = 0, len;
   register char *ptr = NULL;
@@ -244,10 +236,7 @@ ExtractNodeName( source, name )
   return(status);
 }
 
-void
-bush__InitTree( self, root_path )
-  register struct bush	*self;
-  register char		*root_path;
+void bush__InitTree(struct bush *self, char *root_path)
 {
   tree_type_node	 root = NULL;
   struct Dir_		*rootDir = (struct Dir_ *)calloc(1,sizeof(struct Dir_));
@@ -267,12 +256,15 @@ bush__InitTree( self, root_path )
       im_GetDirectory(GivenDirName);
       AllocNameSpace(GivenDirName,&RootPath);
   }
-  else strcpy(GivenDirName,root_path);
+  /* root_path may alias GivenDirName itself (bush__Create passes
+     GivenDirName straight through) -- strcpy's overlap check aborts
+     under macOS fortify on the full self-copy; memmove tolerates it. */
+  else memmove(GivenDirName,root_path,strlen(root_path)+1);
   strcpy(tmp,RootPath);
   ExtractNodeName(tmp,&nodeName);
   AllocNameSpace(nodeName,&rootDir->name);
   if(stat(RootPath,&stats) < 0) {
-      printf("bush: error '%s' encountered while scanning '%s'.\n", sys_errlist[errno]);
+      printf("bush: error '%s' encountered while scanning '%s'.\n", strerror(errno), RootPath);
       return;
   }
   else {
@@ -286,10 +278,7 @@ bush__InitTree( self, root_path )
   OUT(bush_InitTree);
 }
 
-void
-bush__DestroySubDirs( self, tn )
-  register struct bush	    *self;
-  register tree_type_node    tn;
+void bush__DestroySubDirs(struct bush *self, tree_type_node tn)
 {
   IN(bush_DestroySubDirs);
   bush_FreeSubDirs(self,tn);
@@ -297,10 +286,7 @@ bush__DestroySubDirs( self, tn )
   IN(bush_DestroySubDirs);
 }
 
-static char *
-gethomecell( self, filename )
-  register struct bush  *self;
-  register char		*filename;
+static char * gethomecell(struct bush *self, char *filename)
 {
 #ifdef AFS_ENV
   struct ViceIoctl	 blob;
@@ -328,10 +314,7 @@ gethomecell( self, filename )
 #endif /* AFS_ENV */
 }
 
-static char *
-getcell( self, filename )
-  register struct bush  *self;
-  register char		*filename;
+static char * getcell(struct bush *self, char *filename)
 {
 #ifdef AFS_ENV
   struct ViceIoctl	 blob;
@@ -350,11 +333,7 @@ getcell( self, filename )
 #endif /* AFS_ENV */
 }
 
-static char *
-getname( self, uid, cell )
-  register struct bush  *self;
-  register int   	 uid;
-  register char		*cell;
+static char * getname(struct bush *self, int uid, char *cell)
 {
   register int		     i = 0;
   register struct map_item  *item = NULL;
@@ -374,7 +353,7 @@ getname( self, uid, cell )
       item->uid = uid;
       AllocNameSpace(pw->pw_name,&item->uname);
       AllocNameSpace(cell,&item->ucell);
-      vector_AddItem(UidUnameMap,(long)item);
+      vector_AddItem(UidUnameMap,item);
       uname = item->uname;
     }
     else {
@@ -385,7 +364,7 @@ getname( self, uid, cell )
       sprintf(uid_str,"%u@%s",uid,cell);
       AllocNameSpace(uid_str,&item->uname);
       AllocNameSpace(cell,&item->ucell);
-      vector_AddItem(UidUnameMap,(long)item);
+      vector_AddItem(UidUnameMap,item);
       uname = item->uname;
     }
   }
@@ -403,7 +382,7 @@ getname( self, uid, cell )
       item->uid = uid;
       AllocNameSpace(pw->pw_name,&item->uname);
       AllocNameSpace("",&item->ucell);
-      vector_AddItem(UidUnameMap,(long)item);
+      vector_AddItem(UidUnameMap,item);
       uname = item->uname;
     }
     else {
@@ -414,7 +393,7 @@ getname( self, uid, cell )
       sprintf(uid_str,"%u",uid);
       AllocNameSpace(uid_str,&item->uname);
       AllocNameSpace("",&item->ucell);
-      vector_AddItem(UidUnameMap,(long)item);
+      vector_AddItem(UidUnameMap,item);
       uname = item->uname;
     }
   }
@@ -422,10 +401,7 @@ getname( self, uid, cell )
   return(uname);
 }
 
-int
-bush__ScanDir( self, tn )
-  register struct bush	    *self;
-  register tree_type_node    tn;
+int bush__ScanDir(struct bush *self, tree_type_node tn)
 {
   register long		     i = 0, status = ok, count = 0;
   register char		    *ptr = NULL;
@@ -511,10 +487,7 @@ bush__ScanDir( self, tn )
   return(status);
 }
 
-void
-bush__BuildSubDirs( self, tn )
-  register struct bush	    *self;
-  register tree_type_node    tn;
+void bush__BuildSubDirs(struct bush *self, tree_type_node tn)
 {
   register long		     i = 0, count = 0;
   tree_type_node	     newTreeNode = NULL;
@@ -543,10 +516,7 @@ bush__BuildSubDirs( self, tn )
   OUT(bush_BuildSubDirs);
 }
 
-void
-bush__DestroyDirEntries( self, tn )
-  register struct bush    *self;
-  register tree_type_node  tn;
+void bush__DestroyDirEntries(struct bush *self, tree_type_node tn)
 {
   register long		   i = 0, count = 0;
 
@@ -582,10 +552,7 @@ bush__DestroyDirEntries( self, tn )
   OUT(bush_DestroyDirEntries);
 }
 
-void
-bush__DestroyDirEntry( self, tn )
-  register struct bush    *self;
-  register tree_type_node  tn;
+void bush__DestroyDirEntry(struct bush *self, tree_type_node tn)
 {
   IN(bush_DestroyDirEntry);
   if(tn && bush_Dir(self,tn) && DirEntries(tn)) {
@@ -604,10 +571,7 @@ bush__DestroyDirEntry( self, tn )
   OUT(bush_DestroyDirEntry);
 }
 
-void
-bush__FreeSubDirs( self, tn )
-  register struct bush    *self;
-  register tree_type_node  tn;
+void bush__FreeSubDirs(struct bush *self, tree_type_node tn)
 {
   register tree_type_node  tmp = NULL;
   register int		   level = 0;
@@ -618,10 +582,7 @@ bush__FreeSubDirs( self, tn )
       bush_DestroyDirEntry(self,tmp);
 }
 
-boolean
-bush__ScanRequired( self, tn )
-  register struct bush    *self;
-  register tree_type_node  tn;
+boolean bush__ScanRequired(struct bush *self, tree_type_node tn)
 {
   boolean	     status = FALSE;
   struct stat	     stats;
@@ -636,11 +597,7 @@ bush__ScanRequired( self, tn )
   return(status);
 }
 
-int
-bush__DestroyEntry( self, tn, Entry )
-  register struct bush	    *self;
-  register tree_type_node    tn;
-  register struct Dir_Entry *Entry;
+int bush__DestroyEntry(struct bush *self, tree_type_node tn, struct Dir_Entry *Entry)
 {
   char			     item[MAXPATHLEN*2];
   register long		     status = 0;
@@ -659,12 +616,7 @@ bush__DestroyEntry( self, tn, Entry )
   return(status);
 }
 
-int
-bush__MoveEntry( self, tn, Entry, newName )
-  register struct bush	    *self;
-  register tree_type_node    tn;
-  register struct Dir_Entry *Entry;
-  register char		    *newName;
+int bush__MoveEntry(struct bush *self, tree_type_node tn, struct Dir_Entry *Entry, char *newName)
 {
   char			     oldPath[MAXPATHLEN*2], newPath[MAXPATHLEN];
   register long		     status;
@@ -676,11 +628,7 @@ bush__MoveEntry( self, tn, Entry, newName )
   return(status);
 }
 
-int
-bush__RenameDir( self, tn, newPath, newName )
-  register struct bush	    *self;
-  register tree_type_node    tn;
-  register char		    *newPath, *newName;
+int bush__RenameDir(struct bush *self, tree_type_node tn, char *newPath, char *newName)
 {
   register long		     status = ok, i = 0;
   register char		    *newFullName = NULL;
@@ -702,11 +650,7 @@ bush__RenameDir( self, tn, newPath, newName )
   return(status);
 }
 
-long
-bush__Read( self, file, id )
-  register struct bush	    *self;
-  register FILE		    *file;
-  register long		     id;
+long bush__Read(struct bush *self, FILE *file, long id)
 {
   char			     RootPathIfInset[MAXPATHLEN];
   long			     status = dataobject_NOREADERROR;
@@ -723,31 +667,26 @@ bush__Read( self, file, id )
   return(status);
 }
 
-long
-bush__Write( self, file, id, level )
-  register struct bush  *self;
-  register FILE		*file;
-  register long		 id;
-  register long		 level;
+long bush__Write(struct bush *self, FILE *file, long id, int level)
 {
   IN(bush_Write);
   if(self->header.dataobject.writeID != id) {
     self->header.dataobject.writeID = id;
     if(level) {
-      fprintf(file,"\\begindata{%s,%d}\n",
+      fprintf(file,"\\begindata{%s,%ld}\n",
 	       class_GetTypeName(self),
 	       dataobject_UniqueID(&self->header.dataobject));
       fprintf(file,"%s",DirPath(bush_TreeRoot(self)));
-      fprintf(file,"\n\\enddata{%s,%d}\n",
+      fprintf(file,"\n\\enddata{%s,%ld}\n",
 	       class_GetTypeName(self),
 	       dataobject_UniqueID(&self->header.dataobject));
     }
     else {
-      fprintf(file,"\\begindata{%s,%d}\n",
+      fprintf(file,"\\begindata{%s,%ld}\n",
 	       class_GetTypeName(self),
 	       dataobject_UniqueID(&self->header.dataobject));
       fprintf(file,"\n%s\n",DirPath(bush_TreeRoot(self)));
-      fprintf(file,"\n\\enddata{%s,%d}\n",
+      fprintf(file,"\n\\enddata{%s,%ld}\n",
 	       class_GetTypeName(self),
 	       dataobject_UniqueID(&self->header.dataobject));
     }
@@ -756,18 +695,12 @@ bush__Write( self, file, id, level )
   return((long)self);
 }
 
-char *
-bush__ViewName( self )
-  register struct bush    *self;
+char * bush__ViewName(struct bush *self)
 {
   return("bushv");
 }
 
-int
-bush__PerformSystemAction( self, name, argv )
-  register struct bush	    *self;
-  register char		    *name;
-  register char		    *argv[];
+int bush__PerformSystemAction(struct bush *self, char *name, char **argv)
 {
   int			     pid = 0, status = 0;
 

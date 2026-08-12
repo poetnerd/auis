@@ -57,22 +57,33 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <rastoolv.ih>
 #include <heximage.ih>
 #include <dispbox.h>
+static int RedrawRaster(struct rasterview *self, enum view_UpdateType type, long left, long top, long width, long height);
 
-extern void PostMenus();
-extern void RotateCommand();
+extern void PostMenus(struct rasterview *self);
+extern void RotateCommand(struct rasterview *self, long rock);
+extern void CenterCommand(struct rasterview *self, long rock);
+extern void ZoomInCommand(struct rasterview *self, long rock);
+extern void ZoomOutCommand(struct rasterview *self, long rock);
+extern void ToolCommand(struct rasterview *self, long rock);
+extern void PanCommand(struct rasterview *self, long rock);
+extern void RegionSelectCommand(struct rasterview *self, long rock);
+extern void TouchUpCommand(struct rasterview *self, long rock);
+extern void ReflectChangesInExpansion(struct rasterview *self, struct rectangle *R);
+extern void FinishMovingDisplayBox(struct rasterview *self, long x, long y);
+extern void MoveDisplayBoxCommand(struct rasterview *self, long rock);
 
-void CenterViewSelection();
-void ViewHideHighlight();
-void CorrectHighlight();
-void DrawPanHighlight();
-void StartPanning();
-void ContinuePanning();
-void ClipScroll();
-void UpdateZoomedSelection();
-void FinishPanning();
-void SetPixel();
-void DrawLineTo();
-void ZoomToVisualBounds();
+void CenterViewSelection(struct rasterview *self);
+void ViewHideHighlight(struct rasterview *self);
+void CorrectHighlight(struct rasterview *self);
+void DrawPanHighlight(struct rasterview *self, short g);
+void StartPanning(struct rasterview *self, long x, long y);
+void ContinuePanning(struct rasterview *self, long x, long y);
+void ClipScroll(struct rasterview *self);
+void UpdateZoomedSelection(struct rasterview *self, long x, long y);
+void FinishPanning(struct rasterview *self, long x, long y);
+void SetPixel(struct rasterview *self, long x, long y, boolean bit);
+void DrawLineTo(struct rasterview *self, long x1, long y1, boolean bit);
+void ZoomToVisualBounds(struct rasterview *self, long x, long y);
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *	
  *	Methods
@@ -87,9 +98,7 @@ void ZoomToVisualBounds();
    Note:  for FitToSize, I have no clue what the "Original" stuff is all
        about - I just copied the code from ScaleCommand.
 */
-void rasterview__FitToSize(self, logicalrect )
-register struct rasterview  *self;
-struct rectangle logicalrect; 
+void rasterview__FitToSize(struct rasterview *self, struct rectangle logicalrect)
 {  
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rasterimage *pix;
@@ -106,7 +115,7 @@ struct rectangle logicalrect;
 
  
     DEBUG(("Original is%s NULL\n", ((self->Original == NULL) ? "" : " not")));
-    DEBUG(("New Absolute: (%d,%d)\n", NewW, NewH));
+    DEBUG(("New Absolute: (%ld,%ld)\n", NewW, NewH));
 
     if (self->Original == NULL) {
 	self->Original = rasterimage_Clone(pix);
@@ -133,13 +142,13 @@ struct rectangle logicalrect;
 				  rectangle_Width(&self->DesiredSelection)*wscale,
 				  rectangle_Height(&self->DesiredSelection) * hscale);
 	    rectangle_IntersectRect(&sub, &sub, &original); }
-	DEBUG(("Original: (%d,%d,%d,%d)\n",
+	DEBUG(("Original: (%ld,%ld,%ld,%ld)\n",
 	       rectangle_Left(&original), rectangle_Top(&original),
 	       rectangle_Width(&original), rectangle_Height(&original)));
-	DEBUG(("Selection: (%d,%d,%d,%d)\n",
+	DEBUG(("Selection: (%ld,%ld,%ld,%ld)\n",
 	       rectangle_Left(&sub), rectangle_Top(&sub),
 	       rectangle_Width(&sub), rectangle_Height(&sub)));
-	DEBUG(("%s: 0x%x\n", class_GetTypeName(self->Original), self->Original));
+	DEBUG(("%s: 0x%lx\n", class_GetTypeName(self->Original), (unsigned long) self->Original));
 
 	rasterimage_GetScaledSubraster(self->Original, &sub, NewW, NewH, pix);
     }
@@ -156,15 +165,12 @@ struct rectangle logicalrect;
 }  
   
 
-void rasterview__AutoCenter(self)
-register struct rasterview  *self;
+void rasterview__AutoCenter(struct rasterview *self)
 {   
     CenterCommand(self, 0);
 }
 
-void rasterview__ZoomRaster(self, zoomIn )
-register struct rasterview  *self;
-boolean zoomIn; 
+void rasterview__ZoomRaster(struct rasterview *self, boolean zoomIn)
 { 
     if (zoomIn)
 	ZoomInCommand(self, 0);
@@ -172,48 +178,41 @@ boolean zoomIn;
 	ZoomOutCommand(self, 0);
 }
 
-void rasterview__SetToolMode(self)
-register struct rasterview  *self;
+void rasterview__SetToolMode(struct rasterview *self)
 {   
     ToolCommand(self, 0);
 }
 	
-void rasterview__SetPan(self)
-register struct rasterview  *self;
+void rasterview__SetPan(struct rasterview *self)
 {   
     PanCommand(self, 0);
 }
 	
-void rasterview__SetRegionSelect(self)
-register struct rasterview  *self;
+void rasterview__SetRegionSelect(struct rasterview *self)
 {   
     RegionSelectCommand(self, 0);
 }
 	
-void rasterview__SetTouchUp(self)
-register struct rasterview  *self;
+void rasterview__SetTouchUp(struct rasterview *self)
 {   
     TouchUpCommand(self, 0);
 }
 	
-void rasterview__RotateRaster(self)
-register struct rasterview  *self;
+void rasterview__RotateRaster(struct rasterview *self)
 {   
     RotateCommand(self, 0);
 }
 
-void rasterview__SetDataObject(self, ras)
-register struct rasterview  *self;
-register struct raster *ras;
+void rasterview__SetDataObject(struct rasterview *self, struct dataobject *ras)
 {
     register struct raster *oldras = (struct raster *)rasterview_GetDataObject(self);
-    DEBUG(("rasterview__SetDataObject(0x%lx, 0x%lx) was 0x%lx\n", self, ras, oldras));
+    DEBUG(("rasterview__SetDataObject(0x%lx, 0x%lx) was 0x%lx\n", (unsigned long) self, (unsigned long) ras, (unsigned long) oldras));
     if (oldras == ras) return;	/* this is needed to avoid
 				 Destroy'ing oldras in RemoveObserver */
     super_SetDataObject(self, ras);
     if (ras != NULL) {
-	self->ViewSelection = self->DesiredSelection = ras->subraster;
-	DEBUG(("VS: (%d,%d,%d,%d)\n",
+	self->ViewSelection = self->DesiredSelection = ((struct raster *) ras)->subraster;
+	DEBUG(("VS: (%ld,%ld,%ld,%ld)\n",
 	       rectangle_Left(&self->ViewSelection),
 	       rectangle_Top(&self->ViewSelection),
 	       rectangle_Width(&self->ViewSelection),
@@ -224,15 +223,12 @@ register struct raster *ras;
     LEAVE(rasterview__SetDataObject);
 }
 
-void rasterview__ObservedChanged(self, obs, status)
-register struct rasterview  *self;
-struct observable *obs;
-long status;
+void rasterview__ObservedChanged(struct rasterview *self, struct observable *obs, long status)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rasterimage *pix;
 
-    DEBUG(("Enter rasterview__ObservedChanged(0x%lx, 0x%lx, %d)   ras: 0x%lx\n", self, obs, status, ras));
+    DEBUG(("Enter rasterview__ObservedChanged(0x%lx, 0x%lx, %ld)   ras: 0x%lx\n", (unsigned long) self, (unsigned long) obs, status, (unsigned long) ras));
 
     if (obs == (struct observable *)self->toolset) {
 	if (status==observable_OBJECTDESTROYED) {
@@ -303,7 +299,7 @@ long status;
 			rectangle_UnionRect(&self->PixChanged, &self->PixChanged, C); 
 		    }
 		}
-		DEBUG(("PixChanged: (%d,%d,%d,%d)\n", 
+		DEBUG(("PixChanged: (%ld,%ld,%ld,%ld)\n", 
 		       self->PixChanged.left, self->PixChanged.top, 
 		       self->PixChanged.width, self->PixChanged.height));
 		if(rectangle_IsEmptyRect(&self->PixChanged))
@@ -345,8 +341,7 @@ long status;
     LEAVE(rasterview__ObservedChanged);
 }
 
-void rasterview__ReceiveInputFocus(self)
-register struct rasterview  *self;
+void rasterview__ReceiveInputFocus(struct rasterview *self)
 {
     ENTER(rasterview__ReceiveInputFocus);
     self->Keystate->next = NULL;
@@ -360,8 +355,7 @@ register struct rasterview  *self;
     LEAVE(rasterview__ReceiveInputFocus);
 }
 
-void rasterview__LoseInputFocus(self)
-register struct rasterview  *self;
+void rasterview__LoseInputFocus(struct rasterview *self)
 {
     ENTER(rasterview__LoseInputFocus);
     self->HasInputFocus = FALSE;
@@ -375,9 +369,7 @@ register struct rasterview  *self;
     LEAVE(rasterview__LoseInputFocus);
 }
 
-void rasterview__WantUpdate(self, requestor)
-struct rasterview  *self;
-struct view *requestor;
+void rasterview__WantUpdate(struct rasterview *self, struct view *requestor)
 {
     ENTER(rasterview__WantUpdate);
 
@@ -396,10 +388,7 @@ struct view *requestor;
     LEAVE(rasterview__WantUpdate);
 }
 
-static RedrawRaster(self, type, left, top, width, height)
-struct rasterview *self;
-enum view_UpdateType type;
-long left, top, width, height;
+static int RedrawRaster(struct rasterview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rasterimage *pix;
@@ -408,7 +397,7 @@ long left, top, width, height;
     struct rectangle LB;	/* logical rectangle, inset by BORDER */
     struct rectangle VB;	/* visible rectangle inside border */
 
-    DEBUG(("RedrawRaster(%d (%d,%d,%d,%d))\n", type, left, top, width, height));
+    DEBUG(("RedrawRaster(%d (%ld,%ld,%ld,%ld))\n", type, left, top, width, height));
 
     self->UpdateWanted = FALSE;
     if (ras == NULL) return;
@@ -434,7 +423,7 @@ long left, top, width, height;
     /* compute LB, the entire allocated rectangle of pixels, but inside by BORDER pixels on all edges. */
     rasterview_GetLogicalBounds(self, &LB);
     InsetRect(&LB, BORDER, BORDER);
-    DEBUG(("LB: (%d,%d,%d,%d) Scroll: (%d,%d)\n",
+    DEBUG(("LB: (%ld,%ld,%ld,%ld) Scroll: (%ld,%ld)\n",
 	    rectangle_Left(&LB), rectangle_Top(&LB), rectangle_Width(&LB),
 	    rectangle_Height(&LB), self->Xscroll, self->Yscroll));
 
@@ -460,7 +449,7 @@ long left, top, width, height;
     rasterview_GetVisualBounds(self, &VB);
     rectangle_IntersectRect(&VB, &VB, &LB);
 
-    DEBUG(("VB: (%d,%d,%d,%d) Offset: (%d,%d)\n",
+    DEBUG(("VB: (%ld,%ld,%ld,%ld) Offset: (%ld,%ld)\n",
 	    rectangle_Left(&VB), rectangle_Top(&VB), rectangle_Width(&VB),
 	    rectangle_Height(&VB), self->Xoff, self->Yoff));
 
@@ -471,7 +460,7 @@ long left, top, width, height;
 	/* set T to pixels changed in view coords */
 	struct rectangle T;
 	T = self->PixChanged;
-	DEBUG(("Changed: (%d,%d,%d,%d)\n",
+	DEBUG(("Changed: (%ld,%ld,%ld,%ld)\n",
 	       rectangle_Left(&T), rectangle_Top(&T),
 	       rectangle_Width(&T), rectangle_Height(&T)));
 	OffsetRect(&T, -self->Xoff, -self->Yoff);
@@ -482,7 +471,7 @@ long left, top, width, height;
 	/* restrict the SRC to viewable portion */
 	rectangle_IntersectRect(&SRC, &SRC, &VB);
     }
-    DEBUG(("preSRC: (%d,%d,%d,%d)\n",
+    DEBUG(("preSRC: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&SRC), rectangle_Top(&SRC),
 	    rectangle_Width(&SRC), rectangle_Height(&SRC)));
     /* map SRC into the raster coords */
@@ -498,7 +487,7 @@ long left, top, width, height;
 	rectangle_IntersectRect(&SRC, &SRC, &NS); 
     }
 
-    DEBUG(("SRC: (%d,%d,%d,%d)\n",
+    DEBUG(("SRC: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&SRC), rectangle_Top(&SRC),
 	    rectangle_Width(&SRC), rectangle_Height(&SRC)));
 
@@ -513,7 +502,7 @@ long left, top, width, height;
 
     rectangle_GetRectSize(&DEST, &left, &top, &width, &height);
 
-    DEBUG(("DEST: (%d,%d,%d,%d)\n", left, top, width, height));
+    DEBUG(("DEST: (%ld,%ld,%ld,%ld)\n", left, top, width, height));
 
     /* XXX need to deal with ras->options */
 
@@ -567,10 +556,7 @@ long left, top, width, height;
     LEAVE(RedrawRaster);
 }
 
-void rasterview__FullUpdate(self, type, left, top, width, height)
-register struct rasterview  *self;
-register enum view_UpdateType  type;
-register long  left, top, width, height;
+void rasterview__FullUpdate(struct rasterview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     register struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rectangle VB;
@@ -663,8 +649,7 @@ register long  left, top, width, height;
     LEAVE(rasterview__FullUpdate);
 }
 
-void rasterview__Update(self)
-register struct rasterview *self;
+void rasterview__Update(struct rasterview *self)
 {
     ENTER(rasterview__Update);
     if (! self->OnScreen) return;
@@ -714,7 +699,7 @@ long *desiredHeight;
     if (self->Shrunken && *desiredHeight > 20) 
 	*desiredHeight = 20;
 
-    DEBUG(("Leave DesiredSize: %d x %d\n", *desiredWidth, *desiredHeight));
+    DEBUG(("Leave DesiredSize: %ld x %ld\n", *desiredWidth, *desiredHeight));
 
     return view_Fixed;
 }
@@ -729,15 +714,12 @@ static char *MouseEvent[] = {
     "Right Movement" };
 enum { DragCorner, DragTop, DragBottom, DragLeft, DragRight };
 
-struct view * rasterview__Hit(self, action, x, y, num_clicks)
-struct rasterview  *self;
-enum view_MouseAction  action;
-long  x, y, num_clicks;
+struct view * rasterview__Hit(struct rasterview *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct point truepoint;
 
-    DEBUG(("rasterview_Hit %s at (%d, %d)\n", MouseEvent[(long)action], x, y));
+    DEBUG(("rasterview_Hit %s at (%ld, %ld)\n", MouseEvent[(long)action], x, y));
     if (ras == NULL || action == view_NoMouseEvent)
 	return (struct view *)self;
     if (! self->OnScreen)
@@ -829,7 +811,7 @@ long  x, y, num_clicks;
 		void (*tproc)();
 		if (self->ShowCoords) {
 		    static char cb[20];
-		    sprintf(cb, "(%d,%d)", x, y);
+		    sprintf(cb, "(%ld,%ld)", x, y);
 		    message_DisplayString(self, 0, cb);
 		}
 		tproc = rastoolview_GetToolProc(self->toolset);
@@ -852,7 +834,7 @@ long  x, y, num_clicks;
 	if (TouchUp(self)) {
 	    if (self->ShowCoords) {
 		static char cb[20];
-		sprintf(cb, "(%d,%d)", x, y);
+		sprintf(cb, "(%ld,%ld)", x, y);
 		message_DisplayString(self, 0, cb);
 	    }
 
@@ -946,7 +928,7 @@ long  x, y, num_clicks;
 
 	    if (self->ShowCoords) {
 		static char cb[32];
-		sprintf(cb, "(%d by %d) at (%d,%d)", w, h, l, t);
+		sprintf(cb, "(%ld by %ld) at (%ld,%ld)", w, h, l, t);
 		message_DisplayString(self, 10, cb);
 	    }
 
@@ -990,12 +972,7 @@ static char *PSheader[] = {
 	"%s     image\n",
 	NULL };
 
-void rasterview__Print(self, file, processor, format, toplevel)
-register struct rasterview	*self;
-register FILE   	*file;
-register char	*processor;
-register char	*format;
-register boolean	toplevel;
+void rasterview__Print(struct rasterview *self, FILE *file, char *processor, char *format, boolean toplevel)
 {
     register struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     register struct rasterimage *pix;
@@ -1084,16 +1061,14 @@ register boolean	toplevel;
  *	
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static void	y_getinfo(), y_setframe(), x_getinfo(), x_setframe();
-static long	y_whatisat(), x_whatisat();
+static void	y_getinfo(struct rasterview *self, struct range *total, struct range *seen, struct range *dot), y_setframe(struct rasterview *self, int position, long coordinate, long outof), x_getinfo(struct rasterview *self, struct range *total, struct range *seen, struct range *dot), x_setframe(struct rasterview *self, int position, long coordinate, long outof);
+static long	y_whatisat(struct rasterview *self, long coordinate, long outof), x_whatisat(struct rasterview *self, long coordinate, long outof);
 static struct scrollfns	vertical_scroll_interface =
 		{y_getinfo, y_setframe, NULL, y_whatisat};
 static struct scrollfns	horizontal_scroll_interface =
 		{x_getinfo, x_setframe, NULL, x_whatisat};
 
-static void x_getinfo(self, total, seen, dot)
-register struct rasterview  *self;
-register struct range  *total, *seen, *dot;
+static void x_getinfo(struct rasterview *self, struct range *total, struct range *seen, struct range *dot)
 {
     register struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     if (ras == NULL) {
@@ -1121,14 +1096,12 @@ register struct range  *total, *seen, *dot;
     if (seen->beg < total->beg) seen->beg = total->beg;
     if (seen->end > total->end) seen->end = total->end;
     if (dot->end > total->end) dot->end = total->end;
-    DEBUG(("X info => total (%d, %d) seen (%d, %d) dot (%d, %d) Scr: %d\n", 
+    DEBUG(("X info => total (%ld, %ld) seen (%ld, %ld) dot (%ld, %ld) Scr: %ld\n", 
 	    total->beg, total->end, seen->beg, seen->end, dot->beg, dot->end,
 	    self->Xscroll));
 }
 
-static long x_whatisat(self, coordinate, outof)
-register struct rasterview  *self;
-register long  coordinate, outof;
+static long x_whatisat(struct rasterview *self, long coordinate, long outof)
 {
     register long  value;
     register struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
@@ -1139,20 +1112,17 @@ register long  coordinate, outof;
 	  ((self->Xscroll < 0) ? self->Xscroll : 0);
     else
 	value = coordinate + rectangle_Left(&self->ViewSelection) + self->Xscroll;
-    DEBUG(("X what (%d, %d) => %d\n", coordinate, outof, value));
+    DEBUG(("X what (%ld, %ld) => %ld\n", coordinate, outof, value));
     return value;
 }
 
-static void  x_setframe(self, position, coordinate, outof) 
-register struct rasterview *self;
-int  position;
-long  coordinate, outof;
+static void x_setframe(struct rasterview *self, int position, long coordinate, long outof)
 {
     register struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     long oldscroll = self->Xscroll;
     if (ras == NULL) return;
 
-    DEBUG(("Enter x_setframe(%d,%d,%d)\n", position, coordinate, outof));
+    DEBUG(("Enter x_setframe(%d,%ld,%ld)\n", position, coordinate, outof));
 
     if (coordinate != 0 && position == rectangle_Left(&self->ViewSelection))
 	position = self->Xscroll + rectangle_Left(&self->ViewSelection);
@@ -1171,14 +1141,12 @@ long  coordinate, outof;
 	self->needsFullUpdate = TRUE;
 	rasterview_WantUpdate(self, self); }
 
-    DEBUG(("X set (%d, %d, %d) => %d Old: %d\n", 
+    DEBUG(("X set (%d, %ld, %ld) => %ld Old: %ld\n", 
 	    position, coordinate, outof, self->Xscroll, oldscroll));
-    DEBUG(("Scroll: (%d,%d)\n", self->Xscroll, self->Yscroll));
+    DEBUG(("Scroll: (%ld,%ld)\n", self->Xscroll, self->Yscroll));
 }
 
-static void y_getinfo(self, total, seen, dot)
-register struct rasterview  *self;
-register struct range  *total, *seen, *dot;
+static void y_getinfo(struct rasterview *self, struct range *total, struct range *seen, struct range *dot)
 {
     register struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     if (ras == NULL) {
@@ -1206,14 +1174,12 @@ register struct range  *total, *seen, *dot;
     if (seen->beg < total->beg) seen->beg = total->beg;
     if (seen->end > total->end) seen->end = total->end;
     if (dot->end > total->end) dot->end = total->end;
-    DEBUG(("Y info => total (%d, %d) seen (%d, %d) dot (%d, %d) Scr: %d\n", 
+    DEBUG(("Y info => total (%ld, %ld) seen (%ld, %ld) dot (%ld, %ld) Scr: %ld\n", 
 	    total->beg, total->end, seen->beg, seen->end, dot->beg, dot->end,
 	    self->Yscroll));
 }
 
-static long y_whatisat(self, coordinate, outof)
-register struct rasterview *self;
-register long  coordinate, outof;
+static long y_whatisat(struct rasterview *self, long coordinate, long outof)
 {
     register long  value;
     register struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
@@ -1224,20 +1190,17 @@ register long  coordinate, outof;
 	  ((self->Yscroll < 0) ? self->Yscroll : 0);
     else
 	value = coordinate + rectangle_Top(&self->ViewSelection) + self->Yscroll;
-    DEBUG(("Y what (%d, %d) => %d\n", coordinate, outof, value));
+    DEBUG(("Y what (%ld, %ld) => %ld\n", coordinate, outof, value));
     return value;
 }
 
-static void  y_setframe(self, position, coordinate, outof)
-register struct rasterview *self;
-int  position;
-long  coordinate, outof;
+static void y_setframe(struct rasterview *self, int position, long coordinate, long outof)
 {
     register struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     long oldscroll = self->Yscroll;
     if (ras == NULL) return;
 
-    DEBUG(("Enter y_setframe(%d,%d,%d)\n", position, coordinate, outof));
+    DEBUG(("Enter y_setframe(%d,%ld,%ld)\n", position, coordinate, outof));
 
     if (coordinate != 0 && position == rectangle_Top(&self->ViewSelection))
 	position = self->Yscroll + rectangle_Top(&self->ViewSelection);
@@ -1256,14 +1219,12 @@ long  coordinate, outof;
 	self->needsFullUpdate = TRUE;
 	rasterview_WantUpdate(self, self); }
 
-    DEBUG(("Y set (%d, %d, %d) => %d Old: %d\n",
+    DEBUG(("Y set (%d, %ld, %ld) => %ld Old: %ld\n",
 	    position, coordinate, outof, self->Yscroll, oldscroll));
-    DEBUG(("Scroll: (%d,%d)\n", self->Xscroll, self->Yscroll));
+    DEBUG(("Scroll: (%ld,%ld)\n", self->Xscroll, self->Yscroll));
 }
 
-struct scrollfns * rasterview__GetInterface(self, interface_name)
-register struct rasterview *self;
-register char  *interface_name;
+struct scrollfns * rasterview__GetInterface(struct rasterview *self, char *interface_name)
 {
     register struct scrollfns *interface;
     DEBUG(("GetInterface(%s)\n", interface_name));
@@ -1282,16 +1243,12 @@ register char  *interface_name;
  *	
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-boolean FindFrameHelp(frame, im)
-struct frame *frame;
-struct im *im;
+boolean FindFrameHelp(struct frame *frame, struct im *im)
 {
     return (frame_GetIM(frame) == im);
 }
 
-void CurrentDirectory(self, f) 
-struct rasterview *self; 
-char *f; 
+void CurrentDirectory(struct rasterview *self, char *f)
 { 
     struct frame *frame = frame_Enumerate(FindFrameHelp, rasterview_GetIM(self)); 
     struct buffer *buffer = frame_GetBuffer(frame); 
@@ -1315,12 +1272,11 @@ char *f;
     DEBUG(("Return value: '%s'\n", f)); 
 } 
 
-void CenterViewSelection(self)
-struct rasterview *self;
+void CenterViewSelection(struct rasterview *self)
 {
     struct rectangle VB;
     rasterview_GetVisualBounds(self, &VB);
-    DEBUG(("Centering VB: (%d,%d,%d,%d)\n",
+    DEBUG(("Centering VB: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&VB), rectangle_Top(&VB),
 	    rectangle_Width(&VB), rectangle_Height(&VB)));
     self->Xscroll =
@@ -1349,8 +1305,7 @@ struct rasterview *self;
 	surrounding whitespace.
 */
 
-void ViewHideHighlight(self)
-struct rasterview *self;
+void ViewHideHighlight(struct rasterview *self)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rasterimage *pix;
@@ -1399,8 +1354,8 @@ struct rasterview *self;
 	/* we have to do white first, because writepiximage is bogus (because defined transfer modes are bogus). Draw one white line overlapping the black border */
 	DrawHighlight(self, G, CS, graphic_WHITE, -1);
 
-	DEBUG(("CurSel: (%d,%d,%d,%d)\n", l, t, w, h));
-	DEBUG(("VSel: (%d,%d,%d,%d)\n", vsl, vst, vsw, vsh));
+	DEBUG(("CurSel: (%ld,%ld,%ld,%ld)\n", l, t, w, h));
+	DEBUG(("VSel: (%ld,%ld,%ld,%ld)\n", vsl, vst, vsw, vsh));
 
 	rasterview_SetTransferMode(self, graphic_COPY);
 
@@ -1452,8 +1407,7 @@ struct rasterview *self;
 
 	Knows about input focus and uses a grey highlight if we haven't got it
 */
-void CorrectHighlight(self) 
-struct rasterview *self;
+void CorrectHighlight(struct rasterview *self)
 {
     struct graphic *G = rasterview_GetDrawable(self);
     struct rectangle *CS = &self->CurSelection;
@@ -1518,9 +1472,7 @@ else {										\
 			   rectangle_Width((R)) * (self)->Scale,		\
 			   rectangle_Height((R)) * (self)->Scale); } }
 
-void DrawPanHighlight(self, g)
-struct rasterview *self;
-short g;
+void DrawPanHighlight(struct rasterview *self, short g)
 {
     struct graphic *G = rasterview_GetDrawable(self);
 
@@ -1555,9 +1507,7 @@ short g;
 
 /* Draw a Target across the entire Visual Bounds less a BORDER all around. Target is three pixels wide: a black line surrounded by two white lines.
 */
-void DrawTarget(self, x, y)
-struct rasterview *self;
-long x, y;
+void DrawTarget(struct rasterview *self, long x, long y)
 {
     struct graphic *G = rasterview_GetDrawable(self);
     struct rectangle VB;
@@ -1587,7 +1537,7 @@ long x, y;
 	l++; t++;
 	r = l + w;
 	b = t + h;
-	DEBUG(("White Target: (%d,%d,%d,%d)\n", l, t, w, h));
+	DEBUG(("White Target: (%ld,%ld,%ld,%ld)\n", l, t, w, h));
 	rasterview_SetTransferMode(self, graphic_WHITE);
 	rasterview_MoveTo(self, x+1, t);
 	rasterview_DrawLineTo(self, x+1, y-1);
@@ -1612,9 +1562,7 @@ long x, y;
     rasterview_DrawLineTo(self, w, self->StartPanY);
 }
 
-void HideTarget(self, x, y)
-struct rasterview *self;
-long x, y;
+void HideTarget(struct rasterview *self, long x, long y)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rasterimage *pix;
@@ -1657,7 +1605,7 @@ long x, y;
     rectangle_GetRectSize(&VS, &vsl, &vst, &vsw, &vsh);
     vsr = vsl + vsw;
     vsb = vst + vsh;
-    DEBUG(("Hide Area: (%d,%d,%d,%d) Scl:(%d,%d) \n",
+    DEBUG(("Hide Area: (%ld,%ld,%ld,%ld) Scl:(%ld,%ld) \n",
 	    vsl, vst, vsw, vsh, self->Xscroll, self->Yscroll));
 
     rasterview_SetTransferMode(self, graphic_COPY);
@@ -1666,7 +1614,7 @@ long x, y;
 	/* Repair Vertical strip */
 	long l = (x-1 < vsl) ? vsl : x-1;
 	l = (l+3 > vsr) ? vsr-3 : l;
-	DEBUG(("Ver:(%d,%d,%d,%d) Off:(%d,%d)\n",
+	DEBUG(("Ver:(%ld,%ld,%d,%ld) Off:(%ld,%ld)\n",
 	       l, vst, 3, vsh, self->Xoff, self->Yoff));
 	ClipAndWritePixImage(clipw, cliph, G, l, vst, pix,
 			     l+self->Xoff, vst+self->Yoff, 3, vsh);
@@ -1675,7 +1623,7 @@ long x, y;
 	/* Repair Horizontal strip */
 	long t = (y-1 < vst) ? vst : y-1;
 	t = (t+3 > vsb) ? vsb-3 : t;
-	DEBUG(("Hor:(%d,%d,%d,%d) Off:(%d,%d)\n",
+	DEBUG(("Hor:(%ld,%ld,%ld,%d) Off:(%ld,%ld)\n",
 	       vsl, t, vsw, 3, self->Xoff, self->Yoff));
 	ClipAndWritePixImage(clipw, cliph, G, vsl, t, pix,
 			     vsl+self->Xoff, t+self->Yoff, vsw, 3);
@@ -1694,11 +1642,9 @@ long x, y;
 	DisplayBoxWritePixImage(self, G);
 }
 
-void StartPanning(self, x, y)
-struct rasterview *self;
-long x, y;
+void StartPanning(struct rasterview *self, long x, long y)
 {
-    DEBUG(("Start Panning at: (%d,%d)\n", x, y));
+    DEBUG(("Start Panning at: (%ld,%ld)\n", x, y));
     self->StartPanX = x;
     self->StartPanY = y;
     self->PanX = x;
@@ -1710,16 +1656,14 @@ long x, y;
     DrawTarget(self, x, y);
 }
 
-void ContinuePanning(self, x, y)
-struct rasterview *self;
-long x, y;
+void ContinuePanning(struct rasterview *self, long x, long y)
 {
-    DEBUG(("Continue Panning at: (%d,%d)\n", x, y));
+    DEBUG(("Continue Panning at: (%ld,%ld)\n", x, y));
     if (x == self->PanX && y == self->PanY) return;
 
     if (self->ShowCoords) {
 	static char cb[20];
-	sprintf(cb, "(%d,%d)", x-self->StartPanX, y-self->StartPanY);
+	sprintf(cb, "(%ld,%ld)", x-self->StartPanX, y-self->StartPanY);
 	message_DisplayString(self, 0, cb);
     }
 
@@ -1736,8 +1680,7 @@ long x, y;
 				       graphic_BLACK, -1); }
 }
 
-void ClipScroll(self)
-struct rasterview *self;
+void ClipScroll(struct rasterview *self)
 {
     long minLeft, maxRight;
     long minTop, maxBottom;
@@ -1763,7 +1706,7 @@ struct rasterview *self;
     if (maxRight < 0) maxRight = 0;
     if (maxBottom < 0) maxBottom = 0;
 
-    DEBUG(("ClipScroll:\n   Visual: (%d,%d,%d,%d)\n   VS: (%d,%d,%d,%d)\n   Min: (%d,%d) Max: (%d,%d)\n",
+    DEBUG(("ClipScroll:\n   Visual: (%ld,%ld,%ld,%ld)\n   VS: (%ld,%ld,%ld,%ld)\n   Min: (%ld,%ld) Max: (%ld,%ld)\n",
 	    rectangle_Left(&VB), rectangle_Top(&VB),
 	    rectangle_Width(&VB), rectangle_Height(&VB),
 	    rectangle_Left(&self->ViewSelection), rectangle_Top(&self->ViewSelection),
@@ -1775,19 +1718,17 @@ struct rasterview *self;
     if (self->Yscroll < minTop) self->Yscroll = minTop;
     if (self->Yscroll > maxBottom) self->Yscroll = maxBottom;
     
-    DEBUG(("   Scroll: (%d,%d)\n", self->Xscroll, self->Yscroll));
+    DEBUG(("   Scroll: (%ld,%ld)\n", self->Xscroll, self->Yscroll));
 
 }
 
 
 void UpdateZoomedSelection(/* self, x, y */);
 
-void FinishPanning(self, x, y)
-struct rasterview *self;
-long x, y;
+void FinishPanning(struct rasterview *self, long x, long y)
 {
-    DEBUG(("Finish Panning at: (%d,%d)\n", x, y));
-    DEBUG(("Started at: (%d,%d)\n", self->StartPanX, self->StartPanY));
+    DEBUG(("Finish Panning at: (%ld,%ld)\n", x, y));
+    DEBUG(("Started at: (%ld,%ld)\n", self->StartPanX, self->StartPanY));
     if (x == self->StartPanX && y == self->StartPanY)
 	HideTarget(self, x, y);
     else {
@@ -1803,7 +1744,7 @@ long x, y;
 	    dy -= y;
 	    dx -= (dx % self->Scale);
 	    dy -= (dy % self->Scale);
-	    DEBUG(("Delta: (%d,%d)\n", dx, dy));
+	    DEBUG(("Delta: (%ld,%ld)\n", dx, dy));
 	    self->Xscroll += dx;
 	    self->Yscroll += dy;
 	    ClipScroll(self);
@@ -1821,16 +1762,13 @@ long x, y;
 }
 
 /* quick-n-dirty one-pixel draw. Displays correctly in rasterview self, even if zoomed, but does *not* notify other observers. x and y must be legal values. Note that bit is a boolean value. Also note that this is slightly different from the exported method rasterview_SetPixel(). */
-void SetPixel(self, x, y, bit)
-struct rasterview *self;
-long x, y;
-boolean bit;
+void SetPixel(struct rasterview *self, long x, long y, boolean bit)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rasterimage *pix;
 
     if ((ras == NULL) || ((pix = raster_GetPix(ras)) == NULL)) return;
-    DEBUG(("Set Pixel in 0x%x to %s at (%d,%d)\n", pix, ((bit) ? "Black" : "White"), x, y));
+    DEBUG(("Set Pixel in 0x%lx to %s at (%ld,%ld)\n", (unsigned long) pix, ((bit) ? "Black" : "White"), x, y));
     if (NotFullSize(self))
 	SetPixelBehindDisplayBox(self, self->Expansion, x, y, bit);
     else {
@@ -1847,11 +1785,7 @@ boolean bit;
 
 /* draw a line from self->Touch{X,Y} to x1, y1. Uses SetPixel. */
 /* the following algorithm is taken from "Fundamentals of Interactive Graphics" by J. D. Foley and A. Van Dam, page 435.*/
-void DrawLineTo(self, x1, y1, bit)
-struct rasterview  *self;
-long x1, y1;
-boolean bit;
-/* draw the line in the unzoomed version and reflect the changes up. */
+void DrawLineTo(struct rasterview *self, long x1, long y1, boolean bit)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
 
@@ -1960,9 +1894,7 @@ boolean bit;
     } }
 
 /* The (x, y) argument here is the upper left bit of the current View Selection to be displayed on the screen. If the x value is negative then display (0, y) at a negative xscroll. If the y value is negative then display (x, 0) at a negative yscroll. */
-void ZoomToVisualBounds(self, x, y)
-struct rasterview *self;
-long x, y;
+void ZoomToVisualBounds(struct rasterview *self, long x, long y)
 {
     struct raster *ras = (struct raster *)rasterview_GetDataObject(self);
     struct rasterimage *pix = raster_GetPix(ras);
@@ -1974,7 +1906,7 @@ long x, y;
 
     OldDisplayBoxSelection = self->DisplayBoxSelection;
 
-    DEBUG(("Enter ZoomToVisualBounds: (%d, %d)\n", x, y));
+    DEBUG(("Enter ZoomToVisualBounds: (%ld, %ld)\n", x, y));
 
     /* Update the scroll values given the new (x, y). */
     self->Xscroll = x*self->Scale;
@@ -2030,17 +1962,17 @@ long x, y;
 	    SetTopRect(&self->DisplayBox,
 		       rectangle_Bottom(&VB) - rectangle_Height(&self->DisplayBox) - 5*self->Scale); }
 
-    DEBUG(("ZoomVB: (%d,%d,%d,%d)\n",
+    DEBUG(("ZoomVB: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&VB),
 	    rectangle_Top(&VB),
 	    rectangle_Width(&VB),
 	    rectangle_Height(&VB)));
-    DEBUG(("ZoomDB: (%d,%d,%d,%d)\n",
+    DEBUG(("ZoomDB: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&self->DisplayBox),
 	    rectangle_Top(&self->DisplayBox),
 	    rectangle_Width(&self->DisplayBox),
 	    rectangle_Height(&self->DisplayBox)));
-    DEBUG(("ZoomDBS: (%d,%d,%d,%d)\n",
+    DEBUG(("ZoomDBS: (%ld,%ld,%ld,%ld)\n",
 	    rectangle_Left(&self->DisplayBoxSelection),
 	    rectangle_Top(&self->DisplayBoxSelection),
 	    rectangle_Width(&self->DisplayBoxSelection),
@@ -2055,7 +1987,7 @@ long x, y;
 	rasterimage_GetScaledSubraster(pix, &self->DisplayBoxSelection,
 				       ZoomW, ZoomH, self->Expansion);
 
-	DEBUG(("ZoomSize: %d x %d\n", ZoomW, ZoomH));
+	DEBUG(("ZoomSize: %ld x %ld\n", ZoomW, ZoomH));
 
 	DisplayBoxBlitOverlap(self, pix); 
     }
@@ -2064,9 +1996,7 @@ long x, y;
 
 }
 
-void UpdateZoomedSelection(self, x, y)
-struct rasterview *self;
-long x, y;
+void UpdateZoomedSelection(struct rasterview *self, long x, long y)
 {
     /* XXX Can be made MUCH more efficient. */
     ZoomToVisualBounds(self, x, y);

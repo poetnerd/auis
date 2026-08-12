@@ -54,7 +54,7 @@ methods:
 classprocedures:
   InitializeClass() returns boolean;
   InitializeObject() returns boolean;
-  FinalizeObject(); 
+  FinalizeObject(struct buttonV *self);
 macromethods:
   SetButtonType(TYPE) (self->buttontype = TYPE)
   GetButtonType() (self->buttontype)

@@ -78,6 +78,17 @@ END-SPECIFICATION  ************************************************************/
 #include  <chartv.ih>
 #include  <suite.ih>
 
+/* defined in chartv.c, this directory */
+void chartv_Add_Command(struct chartv *self);
+void chartv_Delete_Command(struct chartv *self);
+int chartv_ReChart(struct chartv *self, char *moniker);
+void chartv_Print_Command(struct chartv *self);
+void chartv_Save_Command(struct chartv *self);
+
+static long Initialize_Palette(struct chartv *self);
+static int Activate(struct chartv *self, long code);
+static int Passivate(struct chartv *self, long code);
+
 #define  add_code		    1
 #define  delete_code		    2
 #define  sort_ascend_value_code	    3
@@ -220,7 +231,7 @@ static suite_Specification		save_button[] =
   NULL
   };
 
-long				Palette_Titles_Handler();
+long				Palette_Titles_Handler(struct chartv *self, struct suite *suite, struct suite_item *item, long action);
 
 static suite_Specification		top_title_button[] =
   {
@@ -258,7 +269,7 @@ static suite_Specification		right_title_button[] =
   NULL
   };
 
-struct view				*Palette_Hit();
+struct view				*Palette_Hit(struct chartv *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks);
 
 static suite_Specification		sort_label_buttons[] =
   {
@@ -434,9 +445,7 @@ static suite_Specification		  sort_suite[] =
 #define SetItemView(suite,item,v) \
   suite_ItemViewObject(suite,item) = ((struct view*)v)
 
-static long
-Initialize_Palette( self ) /*=== CONVERT TO REAL FORM ===*/
-  register struct chartv	 *self;
+static long Initialize_Palette(struct chartv *self)
   {
   register long			  status = ok;
 
@@ -463,13 +472,13 @@ Initialize_Palette( self ) /*=== CONVERT TO REAL FORM ===*/
       DEBUGst(RightAreaTitle,chart_AreaTitle( Chart, apt_RightArea ));
       DEBUGst(BottomAreaTitle,chart_AreaTitle( Chart, apt_BottomArea ));
       suite_SetItemAttribute( TitleSuite, suite_ItemOfDatum( TitleSuite, left_title_code ),
-	suite_ItemCaption( chart_AreaTitle( Chart, apt_LeftArea ) ) );
+	suite_itemcaption, (long) ( chart_AreaTitle( Chart, apt_LeftArea ) ) );
       suite_SetItemAttribute( TitleSuite, suite_ItemOfDatum( TitleSuite, top_title_code ),
-	suite_ItemCaption( chart_AreaTitle( Chart, apt_TopArea ) ) );
+	suite_itemcaption, (long) ( chart_AreaTitle( Chart, apt_TopArea ) ) );
       suite_SetItemAttribute( TitleSuite, suite_ItemOfDatum( TitleSuite, right_title_code ),
-	suite_ItemCaption( chart_AreaTitle( Chart, apt_RightArea ) ) );
+	suite_itemcaption, (long) ( chart_AreaTitle( Chart, apt_RightArea ) ) );
       suite_SetItemAttribute( TitleSuite, suite_ItemOfDatum( TitleSuite, bottom_title_code ),
-	suite_ItemCaption( chart_AreaTitle( Chart, apt_BottomArea ) ) );
+	suite_itemcaption, (long) ( chart_AreaTitle( Chart, apt_BottomArea ) ) );
       SetItemView( Palette, suite_ItemOfDatum(Palette,palette_item1_code), ControlSuite );
       SetItemView( Palette, suite_ItemOfDatum(Palette,palette_item2_code), TitleSuite );
       SetItemView( Palette, suite_ItemOfDatum(Palette,palette_item3_code), SortForm );
@@ -487,8 +496,7 @@ Initialize_Palette( self ) /*=== CONVERT TO REAL FORM ===*/
   return  status;
   }
 
-Destroy_Palette( self )
-  register struct chartv	  *self;
+int Destroy_Palette(struct chartv *self)
   {
   if ( ControlSuite )	        suite_Destroy( ControlSuite );
   if ( TitleSuite )		suite_Destroy( TitleSuite );
@@ -500,9 +508,7 @@ Destroy_Palette( self )
   if ( SortForm )		suite_Destroy( SortForm );
   }
 
-void
-Expose_Palette( self )
-  register struct chartv	  *self;
+void Expose_Palette(struct chartv *self)
   {
   IN(Expose_Palette);
   if ( ! PaletteExposed  &&  Initialize_Palette( self ) == ok )
@@ -521,9 +527,7 @@ Expose_Palette( self )
   OUT(Expose_Palette);
   }
 
-void
-Hide_Palette( self )
-  register struct chartv	  *self;
+void Hide_Palette(struct chartv *self)
   {
   IN(Hide_Palette);
   if ( PaletteExposed  &&  PaletteIm )
@@ -538,14 +542,7 @@ Hide_Palette( self )
   OUT(Hide_Palette);
   }
 
-struct view *
-Palette_Hit( self, suite, item, type, action, x, y, clicks )
-  register struct chartv	  *self;
-  register struct suite		  *suite;
-  register struct suite_item	  *item;
-  register long			   type;
-  register enum view_MouseAction   action;
-  register long			   x, y, clicks;
+struct view * Palette_Hit(struct chartv *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
   {
   char				   msg[512];
 
@@ -553,7 +550,7 @@ Palette_Hit( self, suite, item, type, action, x, y, clicks )
   DEBUGdt(Action,action);
   if ( type == suite_ItemObject  &&  action == view_LeftUp )
     {
-    switch ( suite_ItemAttribute( suite, item, suite_ItemDatum(0) ) )
+    switch ( suite_ItemAttribute( suite, item, suite_itemdatum ) )
       {
       case  add_code:			DEBUG(Add);
 	chartv_Add_Command( self );
@@ -568,7 +565,7 @@ Palette_Hit( self, suite, item, type, action, x, y, clicks )
 /*      case  map_code:*/
       case  stack_code:
       case  cartesian_code:		DEBUG(Types);
-	chartv_ReChart( self, suite_ItemAttribute( suite, item, suite_ItemCaption(0) ) );
+	chartv_ReChart( self, (char *) suite_ItemAttribute( suite, item, suite_itemcaption ) );
 	break;
       case  print_code:			DEBUG(Print);
 	chartv_Print_Command( self );
@@ -613,8 +610,8 @@ Palette_Hit( self, suite, item, type, action, x, y, clicks )
 	chartv_Save_Command( self );
 	break;
       default:
-	sprintf( msg, "ChartV: ERROR -- Unknown control-code (%d)",
-		    suite_ItemAttribute( suite, item, suite_ItemDatum(0) ) );
+	sprintf( msg, "ChartV: ERROR -- Unknown control-code (%ld)",
+		    suite_ItemAttribute( suite, item, suite_itemdatum ) );
 	chartv_Announce( self, msg );
       } 
     if ( !InputFocus )  chartv_WantInputFocus( self, self );
@@ -623,24 +620,19 @@ Palette_Hit( self, suite, item, type, action, x, y, clicks )
   return ((struct view*)NULL);
   }
 
-long
-Palette_Titles_Handler( self, suite, item, action )
-  register struct chartv	  *self;
-  register struct suite		  *suite;
-  register struct suite_item	  *item;
-  register long			   action;
+long Palette_Titles_Handler(struct chartv *self, struct suite *suite, struct suite_item *item, long action)
   {
   register char			  *title;
   register long			   area = NULL;
 
   IN(Palette_Titles_Handler);
   DEBUGxt(suite==TitleSuite,suite==TitleSuite);
-  title = (char *)suite_ItemAttribute( suite, item, suite_ItemCaption(0) );
+  title = (char *)suite_ItemAttribute( suite, item, suite_itemcaption );
   DEBUGst(Title,title);
-  DEBUGdt(Code,suite_ItemAttribute( suite, item, suite_ItemDatum(0) ) );
+  DEBUGdt(Code,suite_ItemAttribute( suite, item, suite_itemdatum ) );
   if ( /*===action == */ 1 /*===s/b/suite_EndEntry,Also suite_BeginEntry is 0===*/ )
     {
-    switch ( suite_ItemAttribute( suite, item, suite_ItemDatum(0) ) )
+    switch ( suite_ItemAttribute( suite, item, suite_itemdatum ) )
       {
       case  top_title_code:      area = apt_TopArea;    break;
       case  bottom_title_code:   area = apt_BottomArea; break;
@@ -657,24 +649,19 @@ Palette_Titles_Handler( self, suite, item, action )
   return 0;
   }
 
-Activate_Viewer( self )
-  register struct chartv	 *self;
+int Activate_Viewer(struct chartv *self)
   {
   Activate( self, delete_code );
   Activate( self, print_code );
   Activate( self, save_code );
   }
 
-static Passivate( self, code )
-  register struct chartv	 *self;
-  register long			  code;
+static int Passivate(struct chartv *self, long code)
   {
   suite_PassivateItem( ControlSuite, suite_ItemOfDatum( ControlSuite, code ) );
   }
 
-static Activate( self, code )
-  register struct chartv	 *self;
-  register long			  code;
+static int Activate(struct chartv *self, long code)
   {
   suite_ActivateItem( ControlSuite, suite_ItemOfDatum( ControlSuite, code ) );
   }

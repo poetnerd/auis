@@ -38,12 +38,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h> /* sys/types.h sys/file.h */
 #include <stdio.h>
 #ifndef NeXT
-#ifndef sys_sun4_51
+#ifndef sys_darwin#ifndef sys_sun4_51
 #include <a.out.h>
 #endif /* sys_sun4_51 */
-#endif
+#endif /* sys_darwin */#endif
 #include <setjmp.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <sys/param.h>
 #include <stdio.h>
 
@@ -53,6 +53,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <class.h>  /* this contains all the structs, etc. for the class system */
 #include <doload.h>
 #include <errno.h>
+static int FindEntry(char *name, unsigned long version, int load, struct classheader *header);
+static int FindEntryByName(char *name);
+static int FindEntryByType(struct classinfo *info);
+static int pathopen(char *aname, char *tname, char *ext, unsigned long version);
 
 /* external symbols that have no include files */
 
@@ -61,7 +65,9 @@ extern char *getenv();	    /* %%%% */
 #if !SY_AIX12 && !hpux
 extern int getpid();
 #endif /* !SY_AIX12  && !hpux */
-#ifdef _IBMR2
+#ifdef sys_darwin
+static char etext;
+#elif defined(_IBMR2)
 extern char _etext;
 #define etext _etext
 #else
@@ -69,7 +75,7 @@ extern char etext;
 #endif /* _IBMR2 */
 
 extern int errno;
-static pathopen();
+static int pathopen(char *aname, char *tname, char *ext, unsigned long version);
 
 /*
  * additional defined constants
@@ -139,8 +145,7 @@ static struct pathentry *globalPath = NULL;
  **/
 
 
-static int FindEntryByType(info)
-struct classinfo *info;
+static int FindEntryByType(struct classinfo *info)
 {
     int i;
 
@@ -150,8 +155,7 @@ struct classinfo *info;
     return -1;
 }
 
-static int FindEntryByName(name)
-char *name;
+static int FindEntryByName(char *name)
 {
     int i;
 
@@ -162,11 +166,7 @@ char *name;
     return -1;
 }
 
-static int FindEntry(name, version, load, header)
-char *name;
-unsigned long version;
-int load;
-struct classheader *header;
+static int FindEntry(char *name, unsigned long version, int load, struct classheader *header)
 {
     int i;
     int returncode;
@@ -257,9 +257,7 @@ struct classheader *header;
 }
 
 
-char *class_Lookup(header,cpindex) 
-struct classheader *header;
-int cpindex;
+char * class_Lookup(struct classheader *header, int cpindex)
 {
     int index;
 
@@ -268,7 +266,7 @@ int cpindex;
 	return (char *) &(ClassList[index].info->procs->routines[0]);
     }
     else {
-	fprintf(stderr, "Could not find the class methods for %s version 0x%x (%d)!\n", header->name, header->versionnumber, header->versionnumber);
+	fprintf(stderr, "Could not find the class methods for %s version 0x%lx (%lu)!\n", header->name, header->versionnumber, header->versionnumber);
 
 	return NULL;
     }
@@ -306,8 +304,7 @@ char *namekey;
     return i;
 }
 
-struct basicobject *class_NewObject(name)
-char *name;
+struct basicobject * class_NewObject(char *name)
 {
     int index;
     
@@ -318,8 +315,7 @@ char *name;
     return NULL;
 }
 
-struct classinfo *class_Load(name)
-    char *name;
+struct classinfo * class_Load(char *name)
 {
     int infoIndex;
 
@@ -330,15 +326,13 @@ struct classinfo *class_Load(name)
         return NULL;
 }
 
-boolean class_IsLoaded(name)
-char *name;
+boolean class_IsLoaded(char *name)
 {
     unknownID.name = name;
     return (FindEntry(name, class_VERSIONNOTKNOWN, NOLOAD, &unknownID) != -1);
 }
 
-boolean class_IsType(testobject, typeobject)
-    struct basicobject *testobject, *typeobject;
+boolean class_IsType(struct basicobject *testobject, struct basicobject *typeobject)
 {
     struct classinfo *testtype = testobject->methods->info;
 
@@ -358,9 +352,7 @@ boolean class_IsType(testobject, typeobject)
     return FALSE;
 }
 
-boolean class_IsTypeByName(testname, typename)
-    char *testname;
-    char *typename;
+boolean class_IsTypeByName(char *testname, char *typename)
 {
     struct classinfo *testinfo;
     long index;
@@ -399,11 +391,7 @@ FILE *file;  {
 }
 
 /* support for the dynamic loading code */
-static pathopen (aname, tname, ext, version)
-char *aname;
-char *tname;
-char *ext;
-unsigned long version;
+static int pathopen(char *aname, char *tname, char *ext, unsigned long version)
 {
 char * ThisPath;
 int fn;
@@ -428,8 +416,7 @@ int fn;
 }
 
 /* adds the given colon-separated pathlist onto the FRONT of globalPath */
-void class_PrependClassPath(path)
-char *path;
+void class_PrependClassPath(char *path)
 {
     char *p;
 
@@ -472,8 +459,7 @@ char *path;
 
 
 /* set up the mapping tables */
-void class_ProcessClassPath(path)
-char *path;
+void class_ProcessClassPath(char *path)
 {
     char *p;
     struct pathentry * ThisPath;
@@ -551,7 +537,7 @@ char *path;
 	    char sname[100];
 
 	    if (errno != ENOENT) {
-		fprintf(stderr, "CLASS RUNTIME: No index file found in '%s': error %d; some objects in this directory may be ignored.\n", ThisPath->name);
+		fprintf(stderr, "CLASS RUNTIME: No index file found in '%s': error %d; some objects in this directory may be ignored.\n", ThisPath->name, errno);
 	    }
 	    if ((dirp = opendir(ThisPath->name)) == NULL) {
 		fprintf(stderr, "CLASS runtime warning:  CLASSPATH directory %s is not readable (error %d); ignoring it.\n", ThisPath->name, errno);
@@ -623,8 +609,7 @@ static SignalHandlerReturnType class_ErrorHandler();
  ** already running free all the allocated space,
  ** close files, etc. before reinitializing system.
  **/
-class_ErrorType class_Init(defaultPath)
-char *defaultPath;
+class_ErrorType class_Init(char *defaultPath)
 {
     char *envString;
 
@@ -660,9 +645,7 @@ char *defaultPath;
 /**
  ** Set and Get the debugging level and set the 
  **/
-class_ErrorType class_SetDebugLevel(level)
-class_DebugLevelType level;
-
+class_ErrorType class_SetDebugLevel(class_DebugLevelType level)
 {
     DebugLevel = level;	    /* %%%% */
 
@@ -681,8 +664,7 @@ class_DebugLevelType class_GetDebugLevel()
  ** Set and Get the search path for loading 
  ** objects.
  **/
-class_ErrorType class_SetClassPath(path)
-char *path;
+class_ErrorType class_SetClassPath(char *path)
 {
     struct pathentry *pe=globalPath;
 
@@ -720,10 +702,7 @@ class_GetClassPath()
 /**
  **  Print the headings for a class runtime dump.
  **/
-void class_DumpClassEntry(file, index)
-FILE *file;
-int index;
-
+void class_DumpClassEntry(FILE *file, int index)
 {
 struct classinfo *ThisEntry;
 
@@ -735,20 +714,20 @@ struct classinfo *ThisEntry;
     if (ThisEntry != NULL) {
 	fprintf(file, "    class name:          %s\n", ThisEntry->name);
 	fprintf(file, "    class name key:      %s\n", ThisEntry->namekey);
-	fprintf(file, "    class info at:       0x%x\n", (unsigned long) ThisEntry);
+	fprintf(file, "    class info at:       0x%lx\n", (unsigned long) ThisEntry);
 	if (ThisEntry->superclassname != NULL) {
 	    fprintf(file, "    superclass name:     %s\n", ThisEntry->superclassname);
 	    fprintf(file, "    superclass name key: %s\n", ThisEntry->superclassnamekey);
-	    fprintf(file, "    superclass info at:  0x%x\n", (unsigned long) ThisEntry->superclass);
+	    fprintf(file, "    superclass info at:  0x%lx\n", (unsigned long) ThisEntry->superclass);
 	} else {
 	    fprintf(file, "    This class has no superclass\n");
 	}
 	fprintf(file, "\n");
-	fprintf(file, "    version:             0x%x (%d)\n", ThisEntry->versionnumber, ThisEntry->versionnumber);
-	fprintf(file, "    methods table at:    0x%x\n", (unsigned long) ThisEntry->methods);
-	fprintf(file, "    procedures table at: 0x%x\n", (unsigned long) ThisEntry->procs);
-	fprintf(file, "    text base:           0x%x\n", (unsigned long) ThisEntry->textbase);
-	fprintf(file, "    text length:         0x%x (%d)\n", ThisEntry->textlength, ThisEntry->textlength);
+	fprintf(file, "    version:             0x%lx (%lu)\n", ThisEntry->versionnumber, ThisEntry->versionnumber);
+	fprintf(file, "    methods table at:    0x%lx\n", (unsigned long) ThisEntry->methods);
+	fprintf(file, "    procedures table at: 0x%lx\n", (unsigned long) ThisEntry->procs);
+	fprintf(file, "    text base:           0x%lx\n", (unsigned long) ThisEntry->textbase);
+	fprintf(file, "    text length:         0x%lx (%lu)\n", ThisEntry->textlength, ThisEntry->textlength);
     } else {
 	fprintf(file, "    ** This class is statically loaded and has not yet  **\n");
 	fprintf(file, "    ** been used therefore it has not been initialized. **\n");
@@ -764,9 +743,7 @@ struct classinfo *ThisEntry;
 /**
  **  Dump the information about all the registered classes to file.
  **/
-void class_DumpAllClassInfo(file)
-FILE *file;
-
+void class_DumpAllClassInfo(FILE *file)
 {
 int i;	/* used to cycle through the list of classes */
 
@@ -803,9 +780,7 @@ int i;	/* used to cycle through the list of classes */
  ** search path, the entries, then some stats about the 
  ** hash table that holds the entries.
  **/
-void class_DumpMappingTableInfo(file)
-FILE *file;
-
+void class_DumpMappingTableInfo(FILE *file)
 {
     /* print a heading */
     fprintf(file, "\n");
@@ -828,9 +803,7 @@ FILE *file;
 /**
  **  Dump the information about this process
  **/
-void class_DumpAllInfo(file)
-FILE *file;
-
+void class_DumpAllInfo(FILE *file)
 {
     /* print a heading */
     fprintf(file, "\n\n");
@@ -913,9 +886,7 @@ void *class_GetEText()
  ** loaded objects.  This value of NULL is set up in
  ** the class_EnterInfo() routine.
  **/
-void *class_GetTextBase(thisclass)
-struct classinfo *thisclass;
-
+void * class_GetTextBase(struct classinfo *thisclass)
 {
     return (thisclass->textbase);
 }
@@ -928,9 +899,7 @@ struct classinfo *thisclass;
  ** loaded objects.  This value of 0 is set up in
  ** the class_EnterInfo() routine.
  **/
-unsigned long class_GetTextLength(thisclass)
-struct classinfo *thisclass;
-
+unsigned long class_GetTextLength(struct classinfo *thisclass)
 {
     return (thisclass->textlength);
 }

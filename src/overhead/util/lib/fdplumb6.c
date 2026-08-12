@@ -34,23 +34,23 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h>    /* types */
 #include <fdplumbi.h>
 
-DIR *dbg_opendir(name)
-char *name;
+extern int RegisterOpenFile(int fd, char *path, int Code), RegisterCloseFile(int fd);	/* fdplumb.c, no header declares them */
+
+DIR * dbg_opendir(char *name)
 {
     DIR *d;
 
     d = opendir(name);
     if (d) {
-	RegisterOpenFile(d->dd_fd, name, FDLEAK_OPENCODE_OPENDIR);
+	RegisterOpenFile(dirfd(d), name, FDLEAK_OPENCODE_OPENDIR);
     }
     return(d);
 }
 
 
-void dbg_closedir(d)
-DIR *d;
+void dbg_closedir(DIR *d)
 {
-    RegisterCloseFile(d->dd_fd);
+    RegisterCloseFile(dirfd(d));
     closedir(d);
 }
 

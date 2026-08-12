@@ -85,13 +85,7 @@ static unsigned char unhex[8][16] = {
 	The output stream has spaces every sixteen bytes, 
 	and a newline at the end of the bytes for the row.
 */
-	void
-heximage__WriteRow(ClassID, file, byteaddr, nbits, invert)
-	struct classhdr *ClassID;
-	FILE *file;
-	unsigned char *byteaddr;
-	long nbits;
-	boolean invert;
+void heximage__WriteRow(struct classheader *ClassID, FILE *file, unsigned char *byteaddr, long nbits, boolean invert)
 {
 	unsigned char *tbl = ((invert) ? invhex : hex);
 	int widthbytes = (nbits+7) >> 3;
@@ -114,12 +108,7 @@ heximage__WriteRow(ClassID, file, byteaddr, nbits, invert)
 	Copies one row of bits from 'file' to 'pix'
 	returns 0 for success.  -1 for failure
 */
-	long
-heximage__ReadRow(ClassID, file, row, length)
-	struct classhdr *ClassID;
-	register FILE *file;		/* where to get bytes from */
-	unsigned char *row;	/* where to put them to */
-	long length;		/* how many bits in row must be filled */
+long heximage__ReadRow(struct classheader *ClassID, FILE *file, unsigned char *row, long length)
 {
 	long W = (length+7)>>3;/* number of bytes */
 	unsigned char savebyte = *(row+W-1);	/* save last byte */
@@ -128,8 +117,8 @@ heximage__ReadRow(ClassID, file, row, length)
 	register unsigned char *tbl = (unsigned char *)unhex;
 
 	while (n--) {
-		register c = getc(file);
-		register c2 = getc(file);
+		register int c = getc(file);
+		register int c2 = getc(file);
 		if (c == EOF ||  c2 == EOF) return -1;
 		*where++ = (*(tbl+c)<<4) | *(tbl+c2);
 	}
@@ -151,12 +140,7 @@ heximage__ReadRow(ClassID, file, row, length)
 		and will be stored in the pix.
 		return error code 
 */
-	long
-heximage__ReadImage(ClassID, file, pix, width, height)
-	struct classhdr *ClassID;
-	register FILE *file;		/* where to get bits from */
-	register struct pixelimage *pix;/* where to put them */
-	long width, height;
+long heximage__ReadImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix, long width, long height)
 {
 	register unsigned char *where;		/* where to store next row */
 	register long row, W;		/* count rows;  byte length of row */
@@ -176,12 +160,7 @@ heximage__ReadImage(ClassID, file, pix, width, height)
 /* heximage__WriteImage(file, pix, sub) 
 	Write the raster image from 'pix' to 'file'
 */
-	void
-heximage__WriteImage(ClassID, file, pix, sub)
-	struct classhdr *ClassID;
-	register FILE *file;		/* where to put bits  */
-	register struct pixelimage *pix;	/* where to get them from */
-	struct rectangle *sub;
+void heximage__WriteImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix, struct rectangle *sub)
 {
 	register long row;
 	long top, left, width, height;
@@ -229,13 +208,7 @@ static char *PStrailer[] = {
 	    Unfortunately, this information is not kept with the raster data so we must
 	    make assumptions.  72 pixels/inch is close to the size on many large screens.
 */
-	void
-heximage__WritePostscript(ClassID, file, pix, sub, xfrac, yfrac)
-	struct classhdr *ClassID;
-	register FILE *file;		/* where to put bits  */
-	register struct pixelimage *pix;/* where to get them from */
-	register struct rectangle *sub;
-	double xfrac, yfrac;
+void heximage__WritePostscript(struct classheader *ClassID, FILE *file, struct pixelimage *pix, struct rectangle *sub, double xfrac, double yfrac)
 {
 	long row;
 	long left, top, width, height;
@@ -247,19 +220,19 @@ heximage__WritePostscript(ClassID, file, pix, sub, xfrac, yfrac)
 	/* write the header */
 
 	hx = PSheader;
-/* 1*/	fprintf(file, *hx++);
+/* 1*/	fprintf(file, "%s", *hx++);
 /* 2*/	fprintf(file, *hx++,
-		0, 
-		0, 
+		0,
+		0,
 		(int) ceil((double) width * xfrac),
 		(int) ceil((double) height * yfrac));
-/* 3*/	fprintf(file, *hx++);
-/* 4*/	fprintf(file, *hx++);
+/* 3*/	fprintf(file, "%s", *hx++);
+/* 4*/	fprintf(file, "%s", *hx++);
 /* 5*/	fprintf(file, *hx++, width * xfrac / 72.0, height * yfrac / 72.0);
 /* 6*/	fprintf(file, *hx++, width, height);
 /* 7*/	fprintf(file, *hx++, xfrac, yfrac);
 /* 8+*/	for (; *hx; hx++)
-		fprintf(file, *hx);
+		fprintf(file, "%s", *hx);
 
 	/* write the data */
 
@@ -273,6 +246,6 @@ heximage__WritePostscript(ClassID, file, pix, sub, xfrac, yfrac)
 
 	hx = PStrailer;
 	for (; *hx; hx++)
-		fprintf(file, *hx);
+		fprintf(file, "%s", *hx);
 }
 

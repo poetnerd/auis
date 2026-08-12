@@ -47,9 +47,32 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mail.h>
 #include <errprntf.h>
 #include <signal.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+extern int CheckAMSConfiguration();  /* overhead/mail/lib/mailconf.c */
+extern int CkAMSCellConfig();  /* overhead/mail/lib/mailconf.c */
+extern int DeSymLink();  /* overhead/util/lib/desym.c */
+extern int FatalError(char *text);
+extern int GetNameFromGecos(char *GecosField, char *LoginID, char *Domain, char **PersonalNameP);
+extern int InitializeDeathSignals();
+extern int InitializeDirCacheState();
+extern int InitializeSearchPaths();
+extern int MS_DisambiguateFile(char *source, char *target, short AccessCode);
+extern int MS_SetDeathKnell(int dk);
+extern int Machine_HandleClientSignal();  /* ams/ms/ms.c */
+extern int NonfatalBizarreError(char *text);
+extern int RefreshSubs();
+extern int VitalCheckpoints(Boolean DoEverything, int *errct);
+extern int abspath(char *name, char *result);
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int fdplumb_SpillGutsToFile(FILE *fp, int ExtraNewLines);  /* overhead/util/lib/fdplumb.c */
+extern int safeexit(int code);
+extern int test_dropoff();  /* overhead/mail/lib/dropoff.c */
 
 extern char **environ;
-extern char *getprofile(), *StripWhiteEnds();
+extern char *getprofile(), *StripWhiteEnds(char *string);
+extern char *AndrewDir(char *str);
+extern char *LocalDir(char *str);
 
 char *StandardHeaderNames[] =  {
     "reply-to", /* HP_REPLY_TO */
@@ -125,9 +148,7 @@ static char *CurArena=NULL;
 static int LeftInCurArena=0, WastedByPermanentMalloc=0;
 #define EVENBREAK sizeof(char **)
 
-char *
-permanentmalloc(ct)
-int ct;
+char * permanentmalloc(int ct)
 {
     int AmtToGrab;
     char *retstr;
@@ -151,7 +172,7 @@ int ct;
     return(retstr);
 }
 
-ReportPermanentMallocWaste() {
+int ReportPermanentMallocWaste() {
     return(WastedByPermanentMalloc);
 }
 
@@ -164,7 +185,7 @@ ReportPermanentMallocWaste() {
     hacks in the first line that attempt to avoid doing it twice in
     such circumstances. */
 
-MS_ReInitialize() {
+int MS_ReInitialize() {
     char FileNameBuf[1+MAXPATHLEN], *s;
     int mycode;
 
@@ -236,9 +257,7 @@ MS_ReInitialize() {
 }
 
 
-MS_Initialize(MaxBufSize, UsingSnap) 
-int *MaxBufSize;
-Boolean UsingSnap;
+int MS_Initialize(int *MaxBufSize, Boolean UsingSnap)
 {
 #ifdef AFS_ENV
     struct passwd *p;
@@ -486,8 +505,7 @@ Boolean UsingSnap;
     return(MS_ReInitialize());
 }
 
-DieYouHeathenSwine(signum) 
-int signum;
+void DieYouHeathenSwine(int signum)
 {
     FILE *fp;
     char *Text, ErrorText[25+MAXPATHLEN], Fname[1+MAXPATHLEN];
@@ -586,7 +604,7 @@ int signum;
     kill(getpid(), signum);
 }
 
-InitializeDeathSignals() {
+int InitializeDeathSignals() {
     /* Originally, I handled sighups.  As of 7/22/87, mas/jr changed it.  Now, I change it back.  -- nsb, 9/30/88.  CFE removed it 10/7/88 so that CUI will work even when /etc/rc processing sends CUI a signal. */
 #ifdef POSIX_ENV
     struct sigaction oldV;
@@ -624,9 +642,15 @@ InitializeDeathSignals() {
 #endif /* SIGXCPU */
 }
 
-MS_GetConfigurationParameters(MailDomain, len, UseAmsDelivery, UseNameSep, DelType)
-int *UseAmsDelivery, *UseNameSep, len, *DelType;
-char *MailDomain;
+/* The out-parameters are long, not int: every caller passes long* --
+   cuilib's CUI_UseAmsDelivery/CUI_UseNameSep/CUI_DeliveryType globals
+   and the SNAP server's SNAP_integer locals are all long.  With int*
+   here, a 64-bit caller gets only the low 32 bits stored; the high
+   half keeps its old contents (CUI_DeliveryType's -1 initializer),
+   so DT_NONAMS read back as a huge non-DT value and "no AMS
+   delivery" (-1) read back positive -- and clients concluded they
+   could send raw ATK datastreams to the whole Internet. */
+int MS_GetConfigurationParameters(char *MailDomain, int len, long *UseAmsDelivery, long *UseNameSep, long *DelType)
 {
     strncpy(MailDomain, MyMailDomain, len);
     *UseAmsDelivery = homeUsesAMSDelivery;
@@ -635,9 +659,7 @@ char *MailDomain;
     return(0);
 }
 
-MS_AndrewDir(Dir, len)
-char *Dir;
-int len;
+int MS_AndrewDir(char *Dir, int len)
 {
     char *adir;
 

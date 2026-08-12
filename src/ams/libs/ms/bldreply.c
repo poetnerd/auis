@@ -34,9 +34,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <hdrparse.h>
+#include <stdlib.h>
 
-BuildReplyField(Msg)
-struct MS_Message *Msg;
+int BuildReplyField(struct MS_Message *Msg)
 {
     struct ParsedMsg *PStuff;
 

@@ -68,6 +68,7 @@ END-SPECIFICATION  ************************************************************/
 #include <stdio.h>
 #include <class.h>
 #include <vector.eh>
+static void ReallocData(struct vector *self);
 
 #define Data			(self->data)    
 #define InitialDataSize		(self->initial_vector_count)
@@ -80,10 +81,7 @@ END-SPECIFICATION  ************************************************************/
 #define Debug			(self->debug)
 #define DataSpaceAvailable	(DataSize > DataUsed)
 
-boolean
-vector__InitializeObject( ClassID, self )
-  register struct classheader	*ClassID;
-  register struct vector	*self;
+boolean vector__InitializeObject(struct classheader *ClassID, struct vector *self)
 {
   Data = NULL;
   Debug = DataSize = DataUsed = InitialDataSize = ReallocFactor = 0;
@@ -112,10 +110,7 @@ vector__Create( ClassID, init_data_size, reallocfactor )
   return(self);
 }
 
-void
-vector__FinalizeObject( ClassID, self )
-  register struct classheader	*ClassID;
-  register struct vector	*self;
+void vector__FinalizeObject(struct classheader *ClassID, struct vector *self)
 {
   register long			 i = 0;
 
@@ -130,9 +125,7 @@ vector__FinalizeObject( ClassID, self )
 }
 
 
-static void
-ReallocData( self )
-  register struct vector   *self;
+static void ReallocData(struct vector *self)
 {
   register long		    i = 0;
 
@@ -146,10 +139,7 @@ ReallocData( self )
     Data[i++] = 0;
 }
 
-long
-vector__AddItem( self, item )
-  register struct vector	*self;
-  long				 item;
+long vector__AddItem(struct vector *self, void *item)
 {
   register long	 i = 0, insertOffset = 0, end = 0;
 
@@ -165,26 +155,20 @@ vector__AddItem( self, item )
     }
   }
   else insertOffset = DataUsed;
-  Data[insertOffset] = item;
+  Data[insertOffset] = (long)item;
   DataUsed++;
   return(insertOffset);
 }
 
-boolean
-vector__ItemExists( self, item )
-  register struct vector	*self;
-  register long			 item;
+boolean vector__ItemExists(struct vector *self, void *item)
 {
-  if(vector_Subscript(self,item) != -1) 
+  if(vector_Subscript(self,(void *)item) != -1)
     return(TRUE);
   else 
     return(FALSE);
 }
 
-long
-vector__RemoveItem( self, item )
-  register struct vector    *self;
-  register long		     item;
+long vector__RemoveItem(struct vector *self, void *item)
 {
   register long		     i = 0, removeOffset = 0;
 
@@ -204,23 +188,18 @@ vector__RemoveItem( self, item )
   return(-1);
 }
 
-long
-vector__Sort( self )
-  register struct vector   *self;
+long vector__Sort(struct vector *self)
 {
   register long		    status = 0;
 
   if(!Sorter) 
     status = vector_status_no_sort_routine;
   else 
-    qsort(Data,DataUsed,sizeof(long),Sorter);
+    qsort(Data,DataUsed,sizeof(long),(int(*)(const void *,const void *))Sorter);
   return(status);
 }
 
-long
-vector__Subscript( self, item )
-  register struct vector	*self;
-  register long			 item;
+long vector__Subscript(struct vector *self, void *item)
 {
   register long			 i = 0;
 
@@ -233,10 +212,7 @@ vector__Subscript( self, item )
   return(-1);
 }
 
-void
-vector__Apply( self, proc )
-  register struct vector  *self;
-  long			 (*proc)();
+void vector__Apply(struct vector *self, long (*proc) ())
 {
   register int		   i = 0, status = 0;
 

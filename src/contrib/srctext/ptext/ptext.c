@@ -54,9 +54,33 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <nstdmark.ih>
 #include <tree23.ih>
 #include <ptext.eh>
+static void DoFreeTree(struct nestedmark *self);
+static boolean InString(struct ptext *self, long pos);
+static boolean Quoted(struct ptext *self, long pos);
+static void SetupStyles(struct ptext *self);
+static long backComment(struct ptext *self, long end, int comtype);
+static long backCopyWord(struct ptext *pt, long from, long to, char buffer[]);
+static long backSkipJunk(struct ptext *self, long pos);
+static long backwardSkipString(struct ptext *self, long pos, char delim);
+static long backwardcheckword(struct ptext *self, long from, long to);
+static void casify(char *s, int style);
+static long checkword(struct ptext *self, long i, long end);
+static long comment(struct ptext *self, long start, int comtype);
+static long copyWord(struct ptext *ct, long pos, long end, char buffer[]);
+static int domatch(struct ptext *self, int pos, char *str, int len);
+static int is_whitespace(char ch);
+static boolean isident(char c);
+static struct keywd * lookupKeyword(struct keywd *dict, char *word);
+static int matchBegin(struct ptext *self, long pos);
+static long skipJunk(struct ptext *self, long pos);
+static long skipstring(struct ptext *self, long start);
+static long skipwhitespace(struct ptext *ct, long pos, long end);
 
-static boolean isident(c)
-char c;
+static int indentation(struct ptext *self, long pos);
+static int currentIndent(struct ptext *self, long pos);
+static int currentColumn(struct ptext *self, long pos);
+
+static boolean isident(char c)
 {
     return (isalnum(c) || c == '_');
 }
@@ -231,26 +255,21 @@ static struct keywd words[]={
     { NULL, 0 }
 };
 
-static void stylizekeyword();
+static void stylizekeyword(struct ptext *self, long posn, long len);
 
-static int is_whitespace(ch)
-char ch;
+static int is_whitespace(char ch)
 {
     return ((ch==' ')||(ch=='\t'));
 }
 
-static long skipwhitespace(ct,pos,end)
-struct ptext *ct;
-long pos,end;
+static long skipwhitespace(struct ptext *ct, long pos, long end)
 {
     while ((pos<end)&&is_whitespace(ptext_GetChar(ct,pos)))
         pos++;
     return pos;
 }
 
-static void casify(s, style)
-char *s;
-int style;
+static void casify(char *s, int style)
 {
     if (style == idstyle_PLAIN || *s == '\0')
         return;
@@ -269,10 +288,7 @@ int style;
  * of the identifier; copies from the beginning of the identifier
  * to the end into the buffer, returning pos of 1 past last char in id */
 
-static long copyWord(ct,pos,end,buffer)
-struct ptext *ct;
-long pos,end;
-char buffer[];
+static long copyWord(struct ptext *ct, long pos, long end, char buffer[])
 {
     char ch;
     int count=0;
@@ -289,10 +305,7 @@ char buffer[];
  * Copies the whole identifier into
  * the buffer and returns the position of the first char in the id. */
 
-static long backCopyWord(pt, from, to, buffer)
-struct ptext *pt;
-long from,to;
-char buffer[];
+static long backCopyWord(struct ptext *pt, long from, long to, char buffer[])
 {
     int count=0,i=0,j;
     buffer[0]=0;
@@ -308,9 +321,7 @@ char buffer[];
 
 /* Returns NULL if not a keyword */
 
-static struct keywd *lookupKeyword(dict, word)
-struct keywd *dict;
-char *word;
+static struct keywd * lookupKeyword(struct keywd *dict, char *word)
 {
     struct keywd *k;
 
@@ -326,9 +337,7 @@ char *word;
     return NULL;
 }
 
-struct environment *ptext__GetEnvironment(self,pos)
-struct ptext *self;
-long pos;
+struct environment * ptext__GetEnvironment(struct ptext *self, long pos)
 {
     struct environment *me;
     if (me=self->header.text.rootEnvironment)
@@ -336,9 +345,7 @@ long pos;
     return me;
 }
 
-struct style *ptext__GetStyle(self,pos)
-struct ptext *self;
-long pos;
+struct style * ptext__GetStyle(struct ptext *self, long pos)
 {
     struct environment *me;
     if (me=ptext_GetEnvironment(self,pos))
@@ -346,11 +353,7 @@ long pos;
     return NULL;
 }
 
-void ptext__InsertNewStyle(self,pos,len,style,begflag,endflag)
-struct ptext *self;
-long pos,len;
-struct style *style;
-boolean begflag,endflag;
+void ptext__InsertNewStyle(struct ptext *self, long pos, long len, struct style *style, boolean begflag, boolean endflag)
 {
     struct environment *newenv;
     if (style!= NULL) {
@@ -361,18 +364,13 @@ boolean begflag,endflag;
 }
 
 /* assumes that pos points to 1 BEFORE ending delimiter */
-static long backwardSkipString(self,pos,delim)
-struct ptext *self;
-long pos;
-char delim;
+static long backwardSkipString(struct ptext *self, long pos, char delim)
 {
     while ((pos>=0)&& ptext_GetChar(self,pos--)!=delim)
         ;
     return pos;
 }
-static boolean InString(self,pos)
-struct ptext *self;
-long pos;
+static boolean InString(struct ptext *self, long pos)
 {
     char c,lastquote=0;
     boolean quotes=FALSE;
@@ -390,9 +388,7 @@ long pos;
     return quotes;
 }
 
-static long backwardcheckword(self,from,to)
-struct ptext *self;
-long from,to;
+static long backwardcheckword(struct ptext *self, long from, long to)
 {
     struct environment *me;
     char buf1[256], buf2[256];
@@ -416,16 +412,12 @@ long from,to;
     return j;
 }
 
-void ptext__BackwardCheckWord(self,from,to)
-struct ptext *self;
-long from,to;
+void ptext__BackwardCheckWord(struct ptext *self, long from, long to)
 {
     (void) backwardcheckword(self,from,to);
 }
 
-static long checkword(self,i,end)
-struct ptext *self;
-long i,end;
+static long checkword(struct ptext *self, long i, long end)
 {
     int j;
     struct keywd *word;
@@ -444,9 +436,7 @@ long i,end;
     return j;
 }
 
-void ptext__SetAttributes(self,atts)
-struct ptext	*self;
-struct attributes   *atts;
+void ptext__SetAttributes(struct ptext *self, struct attributes *atts)
 {
     super_SetAttributes(self,atts);
 
@@ -480,17 +470,14 @@ struct attributes   *atts;
     }
 }
 
-static void SetupStyles(self)
-struct ptext *self;
+static void SetupStyles(struct ptext *self)
 {
     self->comment_style = stylesheet_Find(self->header.text.styleSheet, "comment");
     self->keyword_style = stylesheet_Find(self->header.text.styleSheet, "keyword");
     ptext_SetGlobalStyle(self, stylesheet_Find(self->header.text.styleSheet, "global"));
 }
 
-boolean ptext__InitializeObject(classID, self)
-struct classheader *classID;
-struct ptext *self;
+boolean ptext__InitializeObject(struct classheader *classID, struct ptext *self)
 {
     struct attributes templateAttribute;
 
@@ -504,18 +491,14 @@ struct ptext *self;
     return TRUE;
 }
 
-void ptext__Clear(self)
-struct ptext *self;
+void ptext__Clear(struct ptext *self)
 {
     super_Clear(self);      /* This destroyes all styles in the stylesht. */
 
     SetupStyles(self);
 }
 
-long ptext__Read(self, file, id)
-struct ptext *self;
-FILE *file;
-long id;
+long ptext__Read(struct ptext *self, FILE *file, long id)
 {
     long tmpRetValue;
 
@@ -534,9 +517,7 @@ long id;
   ****************************************************************/
 
 #ifdef NOTUSED
-static long skipstring(self,start)
-struct ptext *self;
-long start;
+static long skipstring(struct ptext *self, long start)
 {
     long len=ptext_GetLength(self);
     char quote=ptext_GetChar(self,start);
@@ -549,10 +530,7 @@ long start;
  * The start character should be the '*' in a PARENCOMMENT or the
  * first character in the comment for a BRACECOMMENT. */
 
-static long comment(self, start, comtype)
-struct ptext *self;
-long start;
-int comtype;
+static long comment(struct ptext *self, long start, int comtype)
 {
     int end, len = ptext_GetLength(self);
     char prev, c = 0;
@@ -576,10 +554,7 @@ int comtype;
  * comment.  The start character should be the '*' in a PARENCOMMENT
  * or the last character in the comment for a BRACECOMMENT. */
 
-static long backComment(self, end, comtype)
-struct ptext *self;
-long end;
-int comtype;
+static long backComment(struct ptext *self, long end, int comtype)
 {
     int start;
     char past, c = 0;
@@ -599,9 +574,7 @@ int comtype;
     return start;
 }
 
-static void stylizekeyword(self, posn, len)
-struct ptext *self;
-long posn, len;
+static void stylizekeyword(struct ptext *self, long posn, long len)
 {
     if (self->keyword_style == NULL)
         return;
@@ -626,11 +599,7 @@ long posn, len;
 
 #define match(self,pos,str,len) ((pos==0 || !isident(ptext_GetChar(self,pos-1))) && !isident(ptext_GetChar(self,pos+len)) && domatch(self,pos,str,len))
 
-static domatch(self,pos,str,len)
-struct ptext *self;
-int pos;
-char *str;
-int len;
+static int domatch(struct ptext *self, int pos, char *str, int len)
 {
     while(len>0 && ptext_GetChar(self,pos++)==*str++)
 	len--;
@@ -638,14 +607,12 @@ int len;
     return len==0;
 }
 
-static void DoFreeTree(self)
-struct nestedmark *self;
+static void DoFreeTree(struct nestedmark *self)
 {
     nestedmark_FreeTree(self);
 }
 
-void ptext__RedoStyles(self)
-struct ptext *self;
+void ptext__RedoStyles(struct ptext *self)
 {
     struct nestedmark *root = (struct nestedmark *)self->header.text.rootEnvironment;
     long posn, eposn, len = ptext_GetLength(self);
@@ -654,7 +621,7 @@ struct ptext *self;
 
     /* Remove the old styles, but leave the root environment in place. */
     if (root->children) {
-	tree23int_Apply(root->children, DoFreeTree);
+	tree23int_Apply(root->children, (procedure) DoFreeTree);
 	tree23int_Destroy(root->children);
 	root->children = NULL;
     }
@@ -717,9 +684,7 @@ struct paren_node {
 };
 
 
-static boolean Quoted(self, pos)
-struct ptext *self;
-long pos;
+static boolean Quoted(struct ptext *self, long pos)
 {
     /* returns true iff the character at pos is quoted (ie. "\"). Takes into account the slash being quoted. (ie "\\"). */
 
@@ -734,9 +699,7 @@ long pos;
     return FALSE;
 }
 
-long ptext__ReverseBalance(self, pos)
-struct ptext *self;
-long pos;
+long ptext__ReverseBalance(struct ptext *self, long pos)
 {
     boolean found = FALSE, incomment = FALSE, instring = FALSE, doublestring = FALSE, atleastone = FALSE;
     int thischar, prechar;
@@ -815,9 +778,7 @@ long pos;
   * 15 July 1987 - Miles Bader
   *****************************************************************/
 
-long ptext__Indent(self,mark)
-struct ptext *self;
-struct mark *mark;
+long ptext__Indent(struct ptext *self, struct mark *mark)
 {
     long end,pos=mark_GetPos(mark);
     int c;
@@ -840,9 +801,7 @@ struct mark *mark;
     return pos;
 }
 
-void ptext__ReindentLine(self, pos)
-struct ptext *self;
-long pos;
+void ptext__ReindentLine(struct ptext *self, long pos)
 {
     long end;
     int c;
@@ -858,9 +817,7 @@ long pos;
 	ptext_DeleteCharacters(self,pos,end-pos);
 }
 
-void ptext__StyleLine(self,pos)
-struct ptext *self;
-long pos;
+void ptext__StyleLine(struct ptext *self, long pos)
 {
     long i,start;
     int string=NONE;
@@ -899,9 +856,7 @@ long pos;
  * a (possibly nested) comment, part of a single- or double- quoted string,
  * or greater than the length of the file. */
 
-static long skipJunk(self,pos)
-struct ptext *self;
-long pos;
+static long skipJunk(struct ptext *self, long pos)
 {
     int stringtype = 0;
     long len = ptext_GetLength(self);
@@ -943,9 +898,7 @@ long pos;
  * a (possibly nested) comment, part of a single- or double-quoted string,
  * or less than zero. */
 
-static long backSkipJunk(self, pos)
-struct ptext *self;
-long pos;
+static long backSkipJunk(struct ptext *self, long pos)
 {
     int stringtype;
 
@@ -986,9 +939,7 @@ long pos;
  * returns the indentation of the line containing a matching 'begin'
  * type of identifier (begin, repeat, record, of, ...) */
 
-static int matchBegin(self, pos)
-struct ptext *self;
-long pos;
+static int matchBegin(struct ptext *self, long pos)
 {
     int count = 1;
     struct keywd *word;
@@ -1015,9 +966,7 @@ long pos;
 
 /* indentation: pos must be the first character on a line. */
 
-static int indentation(self, pos)
-struct ptext *self;
-long pos;
+static int indentation(struct ptext *self, long pos)
 {
     char buff[256];
     struct keywd *word;
@@ -1101,9 +1050,7 @@ long pos;
     return (pos < 2) ? 0 : currentIndent(self, pos - 2);
 }
 
-static int currentIndent(self,pos)
-struct ptext *self;
-long pos;
+static int currentIndent(struct ptext *self, long pos)
 {
     int c, ind=0;
 
@@ -1123,9 +1070,7 @@ long pos;
 }
 
 
-static int currentColumn(self,pos)
-struct ptext *self;
-long pos;
+static int currentColumn(struct ptext *self, long pos)
 {
     int ind=0,oldPos=pos;
 
@@ -1170,10 +1115,7 @@ ptext_InsertCharacters(self,pos,spaces,col-oldcol);\
 pos+=(col-oldcol);\
 }
 
-long ptext__TabAndOptimizeWS(self,pos,inc)
-struct ptext    *self;
-long	pos;
-int	inc;
+long ptext__TabAndOptimizeWS(struct ptext *self, long pos, int inc)
 {
     int     home=0, oldPos, col=0, oldCol=0, target;
 

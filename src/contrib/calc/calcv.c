@@ -67,13 +67,22 @@ END-SPECIFICATION  ************************************************************/
 #include <calc.ih>
 #include <calcv.eh>
 #include <ctype.h>
+static int Fill_Area(struct calcv *self, long area, long op);
+static int Printer(struct calcv *self);
+static long Which_Area(struct calcv *self, long x, long y);
 
 #define  circle			      1
 #define  box			      2
 #define  roundbox		      3
 
-#define  Balanced		     (view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBASELINE)
-#define  RightMiddle		     (view_ATRIGHT | view_BETWEENTOPANDBASELINE)
+/* BETWEENTOPANDBOTTOM (not BETWEENTOPANDBASELINE) centers using both
+ * max_bounds ascent and descent, matching fnotev's DoUpdate fix: under
+ * Xft's scalable font metrics the max ascent can be much larger than
+ * a glyph's own ink, so a baseline placed at half-ascent-below-y (the
+ * BASELINE variant) no longer lands near the visual middle of the
+ * button. */
+#define  Balanced		     (view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBOTTOM)
+#define  RightMiddle		     (view_ATRIGHT | view_BETWEENTOPANDBOTTOM)
 
 #define  Data			    ((struct calc *)self->header.aptv.data_object)
 #define  Operand1	    	     (self->operand_1)
@@ -120,8 +129,18 @@ END-SPECIFICATION  ************************************************************/
 #define	 AreaSpecH(i)    	      Area(i).spec->height
 #define	 AreaHighlighted(i)    	      Area(i).states.highlighted
 
-void				      Digit(), Operator(), Clear(),
-				      Display();
+static void  Digit(struct calcv *self, long area);
+static void  Operator(struct calcv *self, long area);
+static void  Clear(struct calcv *self, long area);
+static void  Display(struct calcv *self, long area);
+static void  Shrink(char *string);
+static void  Replace_String(struct calcv *self, char *old, char *new, long area);
+static void  Highlight_Area(struct calcv *self, long area);
+static void  Normalize_Other_Areas(struct calcv *self, long area);
+static void  Normalize_Area(struct calcv *self, long area);
+static void  Draw_Calc(struct calcv *self);
+static void  Draw_Outline(struct calcv *self);
+
 static char			      digit_font[] = "andysans10b",
 				      oper_font[]  = "andysans16b",
 				      expr_font[]  = "andysans12b";
@@ -184,11 +203,9 @@ static struct calcv_setup setups[] =
 #define  DisplayArea		      17
 
 static struct keymap		     *class_keymap;
-static void			      Stroke();
+static void			      Stroke(struct calcv *self, long area);
 
-boolean 
-calcv__InitializeClass( classID )
-  register struct classheader	     *classID;
+boolean calcv__InitializeClass(struct classheader *classID)
   {
   IN(calcv_InitializeClass);
   class_keymap = keymap_New();
@@ -196,10 +213,7 @@ calcv__InitializeClass( classID )
   return TRUE;
   }
 
-boolean 
-calcv__InitializeObject( classID, self)
-  register struct classheader *classID;
-  register struct calcv	      *self;
+boolean calcv__InitializeObject(struct classheader *classID, struct calcv *self)
   {
   register long		       i;
   register struct proctable_Entry *key_proc;
@@ -211,7 +225,7 @@ calcv__InitializeObject( classID, self)
   calcv_SetDimensions( self, 150, 175 );
   bzero( &self->states, sizeof(struct calcv_states) );
   Keystate = keystate_Create( self, class_keymap );
-  key_proc = proctable_DefineProc( "stroke", Stroke,
+  key_proc = proctable_DefineProc( "stroke", (procedure) Stroke,
 		&calcv_classinfo, NULL, "Type Digit or Operator" );
   AreaCount = 0;
   for ( i = 0; setups[i].string; i++ )
@@ -240,20 +254,14 @@ calcv__InitializeObject( classID, self)
   return  TRUE;
   }
 
-void 
-calcv__FinalizeObject( classID, self )
-  register struct classheader *classID;
-  register struct calcv	      *self;
+void calcv__FinalizeObject(struct classheader *classID, struct calcv *self)
   {
   IN(calcv_FinalizeObject);
   if ( Keystate )	keystate_Destroy( Keystate );
   OUT(calcv_FinalizeObject);
   }
 
-void
-calcv__SetDataObject( self, data )
-  register struct calcv	      *self;
-  register struct calc	      *data;
+void calcv__SetDataObject(struct calcv *self, struct dataobject *data)
   {
   IN(calcv_SetDataObject);
   super_SetDataObject( self, data );
@@ -266,9 +274,7 @@ calcv__SetDataObject( self, data )
   OUT(calcv_SetDataObject);
   }
 
-void 
-calcv__ReceiveInputFocus( self )
-  register struct calcv	      *self;
+void calcv__ReceiveInputFocus(struct calcv *self)
   {
   IN(calcv_ReceiveInputFocus);
   InputFocus = true;
@@ -279,9 +285,7 @@ calcv__ReceiveInputFocus( self )
   OUT(calcv_ReceiveInputFocus);
   }
 
-void
-calcv__LoseInputFocus( self )
-  register struct calcv	      *self;
+void calcv__LoseInputFocus(struct calcv *self)
   {
   IN(calcv_LoseInputFocus);
   InputFocus = false;
@@ -290,11 +294,7 @@ calcv__LoseInputFocus( self )
   OUT(calcv_LoseInputFocus);
   }
 
-void 
-calcv__FullUpdate( self, type, left, top, width, height )
-  register struct calcv	     *self;
-  register enum view_UpdateType	type;
-  register long		      left, top, width, height;
+void calcv__FullUpdate(struct calcv *self, enum view_UpdateType type, long left, long top, long width, long height)
   {
   register long		      i, L, T, W, H;
 
@@ -326,9 +326,7 @@ calcv__FullUpdate( self, type, left, top, width, height )
   OUT(calcv_FullUpdate);
   }
 
-void 
-calcv__Update( self )
-  register struct calcv	   *self;
+void calcv__Update(struct calcv *self)
   {
   IN(calcv_Update);
   if ( PendingDisplay )
@@ -345,11 +343,7 @@ calcv__Update( self )
   OUT(calcv_Update);
   }
 
-static
-Replace_String( self, old, new, area )
-  register struct calcv	     *self;
-  register char		     *old,*new;
-  register long		      area;
+static void Replace_String(struct calcv *self, char *old, char *new, long area)
   {
 
   calcv_ClearBoundedString( self, old, AreaFont(area), AreaBound(area),
@@ -359,11 +353,7 @@ Replace_String( self, old, new, area )
   strcpy( old, new );
   }
 
-void
-calcv__ObservedChanged( self, changed, value )
-  register struct calcv	     *self;
-  register struct observable *changed;
-  register long		     value;
+void calcv__ObservedChanged(struct calcv *self, struct observable *changed, long value)
   {
   IN(calcv_ObservedChanged);
   switch ( value )
@@ -380,10 +370,7 @@ calcv__ObservedChanged( self, changed, value )
   OUT(calcv_ObservedChanged);
   }
 
-static long
-Which_Area( self, x, y )
-  register struct calcv	     *self;
-  register long		      x, y;
+static long Which_Area(struct calcv *self, long x, long y)
   {
   register long		      i;
 
@@ -393,11 +380,7 @@ Which_Area( self, x, y )
   return  i;
   }
 
-struct view *
-calcv__Hit( self, action, x, y, clicks )
-  register struct calcv	     *self;
-  register enum view_MouseAction action;
-  register long		      x, y, clicks;
+struct view * calcv__Hit(struct calcv *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   register struct view	     *hit;
   register long		      which;
@@ -425,9 +408,7 @@ calcv__Hit( self, action, x, y, clicks )
   return  hit;
   }
 
-static
-Printer( self )
-  register struct calcv	     *self;
+static int Printer(struct calcv *self)
   {
   register long		      i, x, y;
 
@@ -462,23 +443,14 @@ Printer( self )
     }
   }
 
-void
-calcv__Print( self, file, processor, format, level )
-  register struct calcv	     *self;
-  register FILE		     *file;
-  register char		     *processor;
-  register char		     *format;
-  register boolean	      level;
+void calcv__Print(struct calcv *self, FILE *file, char *processor, char *format, boolean level)
   {
   IN(calcv_Print);
-  calcv_PrintObject( self, file, processor, format, level, Printer );
+  calcv_PrintObject( self, file, processor, format, level, (void (*)(struct calcv *)) Printer );
   OUT(calcv_Print);
   }
 
-static void
-Stroke( self, area )
-  register struct calcv	     *self;
-  register long		      area;
+static void Stroke(struct calcv *self, long area)
   {
   IN(Stroke);
   DEBUGdt(Area,area);
@@ -490,16 +462,15 @@ Stroke( self, area )
   OUT(Stroke);
   }
 
-static void
-Digit( self, area )
-  register struct calcv	     *self;
-  register long		      area;
+static void Digit(struct calcv *self, long area)
   {
   IN(Digit);
   Highlight_Area( self, area );
   if ( Expression[0] == '0'  &&  Expression[1] != '.'  &&
        *AreaString(area) != '.')
-    strcpy( Expression, Expression + 1 );
+    /* Expression+1 aliases Expression; strcpy's overlap check aborts
+       under macOS fortify -- memmove tolerates it. */
+    memmove( Expression, Expression + 1, strlen(Expression + 1) + 1 );
   if ( PendingOp )
     {
     if ( PendingOp == '=' )
@@ -511,7 +482,7 @@ Digit( self, area )
       else  strcat( Operand2, AreaString(area) );
     }
     else  strcat( Operand1, AreaString(area) );
-  sscanf( Operand1, "%F", &calc_Value( Data ) );
+  sscanf( Operand1, "%lf", &calc_Value( Data ) );
   if ( !(*AreaString(area) == '.'  &&  PointPresent) )
     {
     if ( *AreaString(area) == '.' )   PointPresent = true;
@@ -522,10 +493,7 @@ Digit( self, area )
   OUT(Digit);
   }
 
-static void
-Operator( self, area )
-  register struct calcv	     *self;
-  register long		      area;
+static void Operator(struct calcv *self, long area)
   {
   double		      operand_1, operand_2, value;
 
@@ -533,7 +501,7 @@ Operator( self, area )
   Highlight_Area( self, area );
   if ( *Operand1 )
     {
-    sscanf( Operand1, "%F", &value );
+    sscanf( Operand1, "%lf", &value );
     DEBUGst(Operand1,Operand1);
     PointPresent = false;
     if ( PendingOp )
@@ -542,8 +510,8 @@ Operator( self, area )
       if ( *Operand2 )
         {
 	DEBUGst(Operand2,Operand2);
-        sscanf( Operand1, "%F", &operand_1 );
-        sscanf( Operand2, "%F", &operand_2 );
+        sscanf( Operand1, "%lf", &operand_1 );
+        sscanf( Operand2, "%lf", &operand_2 );
         switch ( PendingOp )
           {
           case  '+':  value = operand_1 + operand_2;        break;
@@ -574,9 +542,7 @@ Operator( self, area )
   OUT(Operator);
   }
 
-static
-Shrink( string )
-  register char		     *string;
+static void Shrink(char *string)
   {
   register char		     *ptr;
 
@@ -586,10 +552,7 @@ Shrink( string )
   if ( *ptr == '.' )  *ptr = 0;
   }
  
-static void
-Clear( self, area )
-  register struct calcv	     *self;
-  register long		      area;
+static void Clear(struct calcv *self, long area)
   {
   Highlight_Area( self, area );
   calc_SetValue( Data, 0.0 );
@@ -599,40 +562,30 @@ Clear( self, area )
   calc_NotifyObservers( Data, calc_value_changed );
   }
 
-static void
-Display( self, area )
-  register struct calcv	     *self;
-  register long		      area;
+static void Display(struct calcv *self, long area)
   {
   }
 
-static
-Fill_Area( self, area, op )
-  register struct calcv	     *self;
-  register long		      area;
-  register long		      op;
+static int Fill_Area(struct calcv *self, long area, long op)
   {
   calcv_SetTransferMode( self, op );
   switch( AreaShape(area) )
     {
     case  circle:
-      calcv_FillOval( self, AreaBound(area), graphic_BLACK );
+      calcv_FillOval( self, AreaBound(area), (struct graphic *)graphic_BLACK );
       break;
     case  box:
       calcv_FillRectSize( self, AreaLeft(area) + 2, AreaTop(area) + 2,
-			    AreaWidth(area) - 3, AreaHeight(area) - 3, graphic_BLACK );
+			    AreaWidth(area) - 3, AreaHeight(area) - 3, (struct graphic *)graphic_BLACK );
       break;
     case  roundbox:
       calcv_FillRRectSize( self, AreaLeft(area), AreaTop(area),
-			AreaWidth(area), AreaHeight(area), 6,6, graphic_BLACK );
+			AreaWidth(area), AreaHeight(area), 6,6, (struct graphic *)graphic_BLACK );
       break;
     }
   }
 
-static
-Highlight_Area( self, area )
-  register struct calcv	     *self;
-  register long		      area;
+static void Highlight_Area(struct calcv *self, long area)
   {
   if ( ! AreaHighlighted(area) )
     {
@@ -642,10 +595,7 @@ Highlight_Area( self, area )
     }
   }
 
-static
-Normalize_Other_Areas( self, area )
-  register struct calcv	     *self;
-  register long		      area;
+static void Normalize_Other_Areas(struct calcv *self, long area)
   {
   register long		      i;
   for ( i = 0; i < AreaCount; i++ )
@@ -653,10 +603,7 @@ Normalize_Other_Areas( self, area )
       Normalize_Area( self, i );
   }
 
-static
-Normalize_Area( self, area )
-  register struct calcv	     *self;
-  register long			      area;
+static void Normalize_Area(struct calcv *self, long area)
   {
   if (  AreaHighlighted(area) )
     {
@@ -665,9 +612,7 @@ Normalize_Area( self, area )
     }
   }
 
-static
-Draw_Calc( self )
-  register struct calcv	     *self;
+static void Draw_Calc(struct calcv *self)
   {
   register long		      i, x, y;
 
@@ -697,9 +642,7 @@ Draw_Calc( self )
   OUT(Draw_Calc);
   }
 
-static
-Draw_Outline( self )
-  register struct calcv	     *self;
+static void Draw_Outline(struct calcv *self)
   {
   IN(Draw_Outline);
   calcv_ClearClippingRect( self );

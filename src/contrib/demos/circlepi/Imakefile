@@ -2,6 +2,7 @@
  *         Copyright IBM Corporation 1988,1991 - All Rights Reserved      *
  *        For full copyright information see:'andrew/config/COPYRITE'     *
 \* ********************************************************************** */
+
 DOBJS		=	circpiv.do \
 			circpi.do
 
@@ -9,6 +10,8 @@ IHFILES		=	circpiv.ih \
 			circpi.ih
 
 INCDIR = $(DESTDIR)/include/atk
+
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 NormalObjectRule()
 NormalATKRule()

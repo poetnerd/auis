@@ -2096,8 +2096,6 @@ char *s;
 }
 
 
-extern char *sys_errlist[];
-extern int sys_nerr;
 
 ClearAllLogs(self, rock)
 struct consoleClass *self;
@@ -2147,7 +2145,7 @@ char *rock;
 
 	if ((fp = fopen(LogFileName, "w")) == NULL) {
 	    sprintf(Question, "Root can't write %s [%s]; try again: ", LogFileName,
-		    errno>0 && errno<=sys_nerr ? sys_errlist[errno] : "unknown error" );
+		    strerror(errno) );
 	    /*    continue;*/
 	    exit(-1);
 	}

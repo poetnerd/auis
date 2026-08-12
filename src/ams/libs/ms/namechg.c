@@ -32,16 +32,30 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <mailconf.h>
+/* andrewos.h before ms.h, matching convention elsewhere in this directory. */
+#include <andrewos.h>
 #include <ms.h>
 #include <stdio.h>
-#include <andrewos.h>
+extern int FixSubsDate(struct SubscriptionProfile *sub, char *time64);
+extern int GenTempName(char *Buf);
+extern int MS_AddToDsabgCache(char *folder, int index);
+extern int MS_GetNewMessageCount(char *FullDirName, int *numnew, int *numtotal, char *LastOldDate, int InsistOnFetch);
+extern int MakeSubsListInPathOrder();
+extern int NonfatalBizarreError(char *text);
+extern int PreorderSubscriptionStrcmp(char *s, char *t);
+extern int ValidateSearchPath(int i);
+extern int ViceFlushPlusParent(char *fname);
+extern char *ap_Shorten(char *pathname);  /* overhead/util/lib/abbrpath.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
+extern int vdown(int err);  /* overhead/util/lib/vclose.c */
 
-extern char home[], *fixDate();
+extern char home[], *fixDate(char *dPtr);
 extern int NumSubsInUse;
 extern struct SubscriptionProfile **SubsInPathOrder, *SubsInUserOrder;
 
 /* cn0h 9/19/91 -- import from muclient.c: */
-extern void mu_quickcheck();
+extern void mu_quickcheck(struct SubscriptionProfile **subs, int num);
 
 /* mustopen and mustfopen
 
@@ -52,9 +66,7 @@ of open should greatly reduce the frequency of the bugs that result.
 
 */
 
-mustopen(path, flags, mode)
-char *path;
-int flags, mode;
+int mustopen(char *path, int flags, int mode)
 {
     int numtries = 5, code;
 
@@ -65,9 +77,7 @@ int flags, mode;
 }
 
 
-FILE *
-mustfopen(fname, ftype)
-char *fname, *ftype;
+FILE * mustfopen(char *fname, char *ftype)
 {
     int numtries = 5;
     FILE *fp;
@@ -78,15 +88,7 @@ char *fname, *ftype;
     }
 }
 
-MS_NameChangedMapFile(MapFile, MailOnly, ListAll, NumChanged, NumUnavailable, NumMissingFolders, NumSlowpokes, NumFastFellas)
-char *MapFile; /* passed out */
-int MailOnly; /* passed in */
-int ListAll;  /* Passed in */
-int *NumChanged; /* Passed out */
-int *NumUnavailable; /* Passed out */
-int *NumMissingFolders; /* ditto */
-int *NumSlowpokes; /* ditto */
-int *NumFastFellas; /* ditto */
+int MS_NameChangedMapFile(char *MapFile, int MailOnly, int ListAll, int *NumChanged, int *NumUnavailable, int *NumMissingFolders, int *NumSlowpokes, int *NumFastFellas)
 {
     int i, subdiff, mailpathelt = 0, patheltinuse = -1, unavail = 0, code = 0;
     FILE *fp = NULL, *outfp;

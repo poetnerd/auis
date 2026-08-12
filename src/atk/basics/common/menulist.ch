@@ -57,16 +57,16 @@ class menulist { /* Maybe should be subclass of observe. */
     methods:
         DuplicateML(struct view *view) returns struct menulist *;
         SetView(struct view *view);
-        AddToML(char *menuString, struct proctable_Entry *menuProc, long functionData, long mask);
+        AddToML(char *menuString, struct proctable_Entry *menuProc, void *functionData, long mask);
         DeleteFromML(char *menustring);
         ClearML();
         NextME(char **outString, long *outData, struct proctable_Entry **outProc) returns boolean;
         NextBeforeMC() returns struct menulist *;
         NextAfterMC() returns struct menulist *;
-        ChainBeforeML(struct menulist *chainee, long key);
-        ChainAfterML(struct menulist *chainee, long key);
-        UnchainML(long key);
-        GetChainedML(long key) returns struct menulist *;
+        ChainBeforeML(struct menulist *chainee, void *key);
+        ChainAfterML(struct menulist *chainee, void *key);
+        UnchainML(void *key);
+        GetChainedML(void *key) returns struct menulist *;
         ClearChain();
 	SetMask(long mask) returns boolean;  /* TRUE if changed */
 

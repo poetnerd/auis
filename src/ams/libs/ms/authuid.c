@@ -36,6 +36,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <util.h>
 #include <mailconf.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+extern int AddHeader(struct MS_Message *Msg, char *Head);
+extern int GetCellularUserName(int uid, char *cell, char *NameBuf, int lim);
+extern int ReduceWhiteSpace(char *string);  /* ams/libs/shr/utils.c */
 #ifdef AFS_ENV
 #include <afs/param.h>
 #ifdef CMUCS
@@ -47,7 +51,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 #endif /* AFS_ENV */
 
-extern char *StripWhiteEnds(), *GenAuthField();
+extern char *StripWhiteEnds(char *string), *GenAuthField(struct MS_Message *Msg);
 extern int postmanvuid, myvuid, homeUsesAMSDelivery;
 extern char MyMailDomain[];
 
@@ -66,8 +70,7 @@ extern char MyMailDomain[];
 */
 
 
-CheckAuthUid(NewMessage)
-struct MS_Message *NewMessage;
+int CheckAuthUid(struct MS_Message *NewMessage)
 {
     char *cellname, *s;
     char CopyOfAuthHeader[1000];

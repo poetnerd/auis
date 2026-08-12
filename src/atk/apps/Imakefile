@@ -42,6 +42,12 @@ WMLIB = ${WMBASEDIR}/lib/libwm.a
 CMENULIB = ${BASEDIR}/lib/libcmenu.a
 SHADOWLIB = ${BASEDIR}/lib/libshadows.a
 
+#ifdef HAVE_XFT
+XFTLINKLIB = $(XFTLIB)
+#else
+XFTLINKLIB =
+#endif
+
 OTHERLIBS = ${WMLIB}  \
 	${BASEDIR}/lib/liberrors.a  \
 	${UTILLIB}  \
@@ -51,7 +57,7 @@ OTHERLIBS = ${WMLIB}  \
 
 NormalObjectRule()
 
-ClassProgramTarget(runapp, runapp.o statload.o, $(ATKLIBS) $(OTHERLIBS), $(BSDLIB) $(MATHLIB))
+ClassProgramTarget(runapp, runapp.o statload.o, $(ATKLIBS) $(OTHERLIBS), $(BSDLIB) $(MATHLIB) $(XFTLINKLIB))
 
 InstallClassProgram(runapp, ${DESTDIR}/bin)
 

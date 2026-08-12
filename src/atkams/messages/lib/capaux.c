@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
  
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <cui.h>
 #include <fdphack.h>
@@ -65,9 +66,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #define AUXMODULE 1
 #include <captions.eh>
 
-static int AbsentProcedure();
+static int AbsentProcedure(struct view *self);
 extern struct keymap *captions_privkeymap;
 extern struct menulist *captions_privmenulist;
+
+/* same-directory (captions.o, linked into the same captions.do) cross-file
+   references -- no header, defined in captions.c */
+extern int AddCaptionToCacheEntry(struct CaptionCache **ccache, int *ct, int *size, int cuid, int offset, struct environment *env, struct environment *iconenv, Boolean MayModify, char *snapshot, Boolean IsDup), GetSouthernmostPoint(struct captions *ci), MakeCaptionLine(char **Buf, int cuid, char *RawSnapshot, int Fixed, int *HighStart, int *HighLen, Boolean IsMail, Boolean IsDup, Boolean IsRead),
+	MarkVisibleMessageSeen(struct captions *ci), MergeTwoCacheEntries(struct captions *ci, struct CaptionCache *ccache, int cct, int csize, int prefixend), RemoveHighlighting(struct captions *h),
+	ResetCaptionNotBody(struct captions *ci), SetSouthernmostPoint(struct captions *ci, int pos);
 
 
 int (*captextv_PreviousLineCmd)() = AbsentProcedure,
@@ -80,55 +87,43 @@ int (*captextv_PreviousLineCmd)() = AbsentProcedure,
     (*captextv_GlitchDownCmd)() = AbsentProcedure;
 
 
-static int AbsentProcedure(self) 
-struct view *self;
+static int AbsentProcedure(struct view *self)
 {
     message_DisplayString(NULL, 75, "Absent procedure - did not find a normal BE2 command in the proctable!");
     return(0);
 }
 
-void captions_CaptionsCompound(self, cmds)
-struct captions *self;
-char *cmds;
+void captions_CaptionsCompound(struct captions *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), self, "captions", cmds);
 }
 
-void captions_CaptionsTextviewCommand(self, cmds)
-struct captions *self;
-char *cmds;
+void captions_CaptionsTextviewCommand(struct captions *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), self, "textview", cmds);
 }
 
-void captions_CaptionsFoldersCommand(self, cmds)
-struct captions *self;
-char *cmds;
+void captions_CaptionsFoldersCommand(struct captions *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), captions_GetFolders(self), "folders", cmds);
 }
 
-void captions_CaptionsBodiesCommand(self, cmds)
-struct captions *self;
-char *cmds;
+void captions_CaptionsBodiesCommand(struct captions *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), captions_GetBodView(self), "t822view", cmds);
 }
 
-void captions_DownFocus(self)
-struct captions *self;
+void captions_DownFocus(struct captions *self)
 {
     ams_Focus(captions_GetBodView(self));
 }
 
-void captions_UpFocus(self)
-struct captions *self;
+void captions_UpFocus(struct captions *self)
 {
     ams_Focus(captions_GetFolders(self));
 }
 
-void captions__ClearMarks(self)
-struct captions *self;
+void captions__ClearMarks(struct captions *self)
 {
     int j, whicholdmark = 0;
     struct CaptionCache *hc;
@@ -155,9 +150,7 @@ struct captions *self;
     ams_WaitCursor(FALSE);
 }
 
-ClassifyMarkedByName(self, NameGiven)
-struct captions *self;
-char *NameGiven;
+int ClassifyMarkedByName(struct captions *self, char *NameGiven)
 {
     int code;
 
@@ -170,22 +163,17 @@ char *NameGiven;
     captions_ActOnMarkedMessages(self, code, NameGiven);
 }
 
-void captions_SimulateLeftClick( self, rock )
-    struct captions *self;
-    long rock;
+void captions_SimulateLeftClick(struct captions *self, long rock)
 {
     captions_SimulateClick(self, TRUE);
 }
 
-void captions_SimulateRightClick( self, rock )
-    struct captions *self;
-    long rock;
+void captions_SimulateRightClick(struct captions *self, long rock)
 {
     captions_SimulateClick(self, FALSE);
 }
 
-void captions__PrintVisibleMessage(self) 
-struct captions *self;
+void captions__PrintVisibleMessage(struct captions *self)
 {
     int flags = 0;
 
@@ -209,9 +197,7 @@ struct captions *self;
 }
 
 
-void captions__PuntCurrent(self, GoToNext)
-struct captions *self;
-Boolean GoToNext;
+void captions__PuntCurrent(struct captions *self, boolean GoToNext)
 {
     int loops = 1;
     struct im *im = captions_GetIM(self);
@@ -239,8 +225,7 @@ Boolean GoToNext;
     }
 }
 
-void captions__ThisIsFlorida(self)
-struct captions *self;
+void captions__ThisIsFlorida(struct captions *self)
 {
     int pos, len, whichcaption;
     struct environment *env;
@@ -259,16 +244,14 @@ struct captions *self;
     im_ForceUpdate();
 }
 
-void CapBeginText(self)
-struct captions *self;
+void CapBeginText(struct captions *self)
 {
     captions_GuaranteeFetchedRange(self, 0, self->FolderSize);
     im_ForceUpdate();
     captextv_BeginningOfTextCmd((struct textview *) self);
 }
 
-void CapScrollBack(self)
-struct captions *self;
+void CapScrollBack(struct captions *self)
 {
     int min, pos, mylen, whichcaption;
     struct range total, seen, dot;
@@ -285,8 +268,7 @@ struct captions *self;
     captextv_ScrollScreenBackCmd((struct textview *) self);
 }
 
-void captions__CapReverseSearch(self)
-struct captions *self;
+void captions__CapReverseSearch(struct captions *self)
 {
     captions_GuaranteeFetchedRange(self, 0, self->FolderSize);
     im_ForceUpdate();
@@ -294,8 +276,7 @@ struct captions *self;
     captions_WantInputFocus(self, self);
 }
 
-void PreviousCaptionLine(self)
-struct captions *self;
+void PreviousCaptionLine(struct captions *self)
 {
     int backupto = self->FolderSize - self->FetchedFromEnd -2;
     struct im *im = captions_GetIM(self);
@@ -309,8 +290,7 @@ struct captions *self;
     captextv_PreviousLineCmd((struct textview *) self);
 }
 
-void CapGlitchDown(self)
-struct captions *self;
+void CapGlitchDown(struct captions *self)
 {
     int backupto = self->FolderSize - self->FetchedFromEnd -2;
     struct im *im = captions_GetIM(self);
@@ -323,8 +303,7 @@ struct captions *self;
     captextv_GlitchDownCmd((struct textview *) self);
 }
 
-captions_PurgeDeletions(ci)
-struct captions *ci;
+int captions_PurgeDeletions(struct captions *ci)
 {
     message_DisplayString(NULL, 10, "Purging deletions; please wait...");
     im_ForceUpdate();
@@ -335,9 +314,7 @@ struct captions *ci;
     ams_WaitCursor(FALSE);
 }
 
-void captions__ClearAndUpdate(ci, ConsiderPurging, SaveState) 
-struct captions *ci;
-int ConsiderPurging, SaveState;
+void captions__ClearAndUpdate(struct captions *ci, int ConsiderPurging, int SaveState)
 {
     struct text *d;
 
@@ -375,13 +352,10 @@ int ConsiderPurging, SaveState;
     im_ForceUpdate();
 }
 
-int
-captions_InsertCaptions(ci, shortname, dname, StartTime, ShowAll)
-struct captions *ci;
-char *shortname, *dname, *StartTime;
-Boolean ShowAll;
+int captions_InsertCaptions(struct captions *ci, char *shortname, char *dname, char *StartTime, Boolean ShowAll)
 {
-    int totalbytes, numbytes, cuid, status, addlen, highstart, highlen, envstart, inspos, insertct = 0, IsDup, myfirstcuid = 0;
+    long totalbytes, numbytes, status;
+    int cuid, addlen, highstart, highlen, envstart, inspos, insertct = 0, IsDup, myfirstcuid = 0;
     char date64[AMS_DATESIZE+1], olddate64[AMS_DATESIZE+1], newdate[AMS_DATESIZE+1], firstdate[AMS_DATESIZE+1], captionbuf[100*AMS_SNAPSHOTSIZE], ErrorText[256], *DirName, *ThisCaption, *s;
     Boolean UseHighDensity, MayModify, IsRead;
     struct environment *et, *et2;
@@ -564,10 +538,7 @@ Boolean ShowAll;
     return(0);
 }
 
-int captions__InsertUpdatesInDocument(ci, shortname, dname, ShowFirst)
-struct captions *ci;
-char *shortname, *dname;
-Boolean ShowFirst;
+int captions__InsertUpdatesInDocument(struct captions *ci, char *shortname, char *dname, boolean ShowFirst)
 {
     int code, substatus;
     long errcode;
@@ -648,8 +619,7 @@ Boolean ShowFirst;
     return(code);
 }
 
-void captions__ResetVisibleCaption(h)
-struct captions *h;
+void captions__ResetVisibleCaption(struct captions *h)
 {
     struct t822view *bv = captions_GetBodView(h);
 
@@ -666,8 +636,7 @@ struct captions *h;
 
 /* The following routine tries to make a text object "prettier" by transforming _\010x into and underlined x, and by extracting literal ATK data streams (e.g. from rejected mail) */
 
-void text_CleanUpGlitches(self)
-struct text *self;
+void text_CleanUpGlitches(struct text *self)
 {
     struct style *uss = 0, *bolds = 0;
     struct SearchPattern *Pattern = NULL;
@@ -828,10 +797,7 @@ struct text *self;
 #endif
 }
 
-int captions__GetBodyFromCUID(ci, cuid, Mode, ContentTypeOverride)
-struct captions *ci;
-int cuid, Mode;
-char *ContentTypeOverride;
+int captions__GetBodyFromCUID(struct captions *ci, int cuid, int Mode, char *ContentTypeOverride)
 {
     struct text *d;
     struct t822view *bv;
@@ -891,10 +857,7 @@ char *ContentTypeOverride;
     return (0);
 }
 
-int captions__DisplayNewBody(captions, thisCUID, linestart, linelen, env)
-struct captions *captions;
-int thisCUID, linestart, linelen;
-struct environment *env;
+int captions__DisplayNewBody(struct captions *captions, int thisCUID, int linestart, int linelen, struct environment *env)
 {
     char *id, *dir;
     int WasDeleted, IsDeleted, checkvis;
@@ -961,9 +924,7 @@ struct environment *env;
     return(0);
 }
 
-void captions__SetLabel(self, label)
-struct captions *self;
-char *label;
+void captions__SetLabel(struct captions *self, char *label)
 {
     if (self->myframe) {
 	frame_SetTitle(self->myframe, label);
@@ -990,8 +951,7 @@ static struct bind_Description privbindings [] = {
     {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 
-void OneTimeInitKeyMenus(ci)
-struct classinfo *ci;
+void OneTimeInitKeyMenus(struct classinfo *ci)
 {
     struct proctable_Entry *tempProc;
 

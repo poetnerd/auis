@@ -33,11 +33,11 @@
 
 class rofftextapp[rofftxta] : application[app] {
     overrides:
-	ParseArgs(argc,argv) returns boolean;
+	ParseArgs(int argc, char **argv) returns boolean;
         Start() returns boolean;
         Run() returns int;
     classprocedures:
-        InitializeObject(self) returns boolean;
+        InitializeObject(struct rofftextapp *self) returns boolean;
     data:
         char *macrofile;
         boolean RoffType;

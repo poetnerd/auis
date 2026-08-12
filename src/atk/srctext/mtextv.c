@@ -44,6 +44,7 @@ static char rcsHeader[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/at
 
 #include "mtext.ih"
 #include "mtextv.eh"
+static void FindDefinitionOrImplementation(struct mtextview *self, boolean implementation);
 
 /* AutoCut was not made externally visible by txtvcmod, so WE have to check the preference TOO */
 static int autocut_mode = -1;	/* uninitialized */
@@ -52,19 +53,17 @@ static int autocut_mode = -1;	/* uninitialized */
 static struct keymap *m_Map;
 static struct menulist *m_Menus;
 
-void asterisk(),
-     definition(),
-     implementation();
+static void asterisk(struct mtextview *self, char key); /* must be char for "&" to work. */
+static void definition(struct mtextview *self, long key), implementation(struct mtextview *self, long key);
 
 static struct bind_Description mtextBindings[]={
-    {"mtextview-asterisk","*",'*', NULL,0, 0, asterisk,"If preceded by an open-paren, start a comment."},
+    {"mtextview-asterisk","*",'*', NULL,0, 0, (void (*)())asterisk,"If preceded by an open-paren, start a comment."},
     {"mtextview-display-definition",NULL,0, "Source Text,Display Definition~30", 0,0, definition, "Find the definition module where selected identifier is declared."},
     {"mtextview-display-implementation",NULL,0, "Source Text,Display Implementation~31", 0,0, implementation, "Find the implementation module where selected procedure's code lies."},
     NULL
 };
 
-boolean mtextview__InitializeClass(classID)
-struct classheader *classID;
+boolean mtextview__InitializeClass(struct classheader *classID)
 {
     m_Menus = menulist_New();
     m_Map = keymap_New();
@@ -72,9 +71,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean mtextview__InitializeObject(classID, self)
-struct classheader *classID;
-struct mtextview *self;
+boolean mtextview__InitializeObject(struct classheader *classID, struct mtextview *self)
 {
     self->m_state = keystate_Create(self, m_Map);
     self->m_menus = menulist_DuplicateML(m_Menus, self);
@@ -82,33 +79,26 @@ struct mtextview *self;
     return TRUE;
 }
 
-void mtextview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct mtextview *self;
+void mtextview__FinalizeObject(struct classheader *classID, struct mtextview *self)
 {
     keystate_Destroy(self->m_state);
     menulist_Destroy(self->m_menus);
 }
 
-void mtextview__PostMenus(self, menulist)
-struct mtextview *self;
-struct menulist *menulist;
+void mtextview__PostMenus(struct mtextview *self, struct menulist *menulist)
 {
     menulist_ChainBeforeML(self->m_menus, menulist, self);
     super_PostMenus(self, self->m_menus);
 }
 
-struct keystate *mtextview__PrependKeyState(self)
-struct mtextview *self;
+struct keystate * mtextview__PrependKeyState(struct mtextview *self)
 {
     self->m_state->next= NULL;
     return keystate_AddBefore(self->m_state, super_PrependKeyState(self));
 }
 
 /* FindDefinitionOrImplementation() isolates the identifier pointed to by the caret and tries to find its corresponding definition module (if implementation is FALSE) or implementation module (if implementation is TRUE) */
-static void FindDefinitionOrImplementation(self, implementation)    /*RSK90mod*/
-    struct mtextview *self;
-    boolean implementation;
+static void FindDefinitionOrImplementation(struct mtextview *self, boolean implementation)
     {
     struct mtext *ct = (struct mtext *)self->header.view.dataobject;
     long pos,oldpos;
@@ -172,24 +162,18 @@ static void FindDefinitionOrImplementation(self, implementation)    /*RSK90mod*/
     mtext_NotifyObservers(ct, 0);
     }
 
-static void definition(self, key)    /*RSKadd*/
-    struct mtextview *self;
-    long key;
+static void definition(struct mtextview *self, long key)
     {
     FindDefinitionOrImplementation(self,FALSE);
     }
 
-static void implementation(self, key)    /*RSKadd*/
-    struct mtextview *self;
-    long key;
+static void implementation(struct mtextview *self, long key)
     {
     FindDefinitionOrImplementation(self,TRUE);
     }
 
 /* any modifications to asterisk should be duplicated in m3textv.c */
-static void asterisk(self, key)
-struct mtextview *self;
-char key; /* must be char for "&" to work. */
+static void asterisk(struct mtextview *self, char key)
 {
     struct mtext *ct=(struct mtext *)self->header.view.dataobject;
     int count=im_Argument(mtextview_GetIM(self));

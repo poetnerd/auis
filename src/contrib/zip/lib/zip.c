@@ -78,6 +78,14 @@ END-SPECIFICATION  ************************************************************/
 #include <zip.eh>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <stdlib.h>
+static long Check_Image(struct zip *self, zip_type_image image, long modified);
+static int Generate_Temp_File(struct zip *self, FILE *file, char **generated_file_name);
+static int Write_Object_Info(struct zip *self, FILE *file);
+static int Write_View_Info(struct zip *self, FILE *file);
+
+/* M2: zip.do cross-file, no header declares this (defined zipds02.c) */
+extern long zip_Enparse_Stream(struct zip *self, struct zip_stream *stream);
 
 static boolean debug;
 
@@ -119,9 +127,7 @@ NULL
 	};
 
 
-boolean
-zip__InitializeClass( classID )
-  register struct classheader	     *classID;
+boolean zip__InitializeClass(struct classheader *classID)
   {
   IN(zip_InitializeClass);
   debug = 0;
@@ -130,18 +136,15 @@ zip__InitializeClass( classID )
   }
 
 
-static Generate_Temp_File();
-static Write_View_Info();
-static Write_Object_Info();
+static int Generate_Temp_File(struct zip *self, FILE *file, char **generated_file_name);
+static int Write_View_Info(struct zip *self, FILE *file);
+static int Write_Object_Info(struct zip *self, FILE *file);
 
-static long Init_Message_Writer();
-static long Init_Message_Clearer();
-static long Init_Message_Acknowledger();
+static long Init_Message_Writer(struct zip *self, char *msg);
+static long Init_Message_Clearer(struct zip *self);
+static long Init_Message_Acknowledger(struct zip *self, char *msg);
 
-boolean
-zip__InitializeObject( classID, self )
-  register struct classheader	     *classID;
-  register struct zip		     *self;
+boolean zip__InitializeObject(struct classheader *classID, struct zip *self)
   {
   register long			      status = zip_ok;
   register char			     *font_name = NULL;
@@ -187,20 +190,14 @@ zip__InitializeObject( classID, self )
   return (status == zip_ok);
   }
 
-void 
-zip__FinalizeObject( classID, self )
-  register struct classheader	      *classID;
-  register struct zip		      *self;
+void zip__FinalizeObject(struct classheader *classID, struct zip *self)
   {
   IN(zip_FinalizeObject);
 /*===*/
   OUT(zip_FinalizeObject);
   }
 
-void 
-zip__Set_Debug( self, state )
-  register struct zip		     *self;
-  register char			      state;
+void zip__Set_Debug(struct zip *self, boolean state)
   {
   register long			      i;
 
@@ -213,11 +210,7 @@ zip__Set_Debug( self, state )
   OUT(zip_Set_Debug);
   }
 
-static long
-Check_Image( self, image, modified )
-  register struct zip		     *self;
-  register zip_type_image	      image;
-  register long			      modified;
+static long Check_Image(struct zip *self, zip_type_image image, long modified)
   {
   register zip_type_figure	      figure;
 
@@ -240,9 +233,7 @@ Check_Image( self, image, modified )
   return  modified;
   }
 
-long
-zip__GetModified( self )
-  register struct zip		     *self;
+long zip__GetModified(struct zip *self)
   {
   register long			      modified = super_GetModified( self );
 
@@ -253,11 +244,7 @@ zip__GetModified( self )
   return  modified;
   }
 
-long
-zip__Read( self, file, id )
-  register struct zip		     *self;
-  register FILE			     *file;
-  register long			      id;
+long zip__Read(struct zip *self, FILE *file, long id)
   {
   register long			      status;
   char				     *generated_file_name;
@@ -279,12 +266,7 @@ zip__Read( self, file, id )
   return status;
   }
 
-long
-zip__Write( self, file, id, level )
-  register struct zip		     *self;
-  register FILE			     *file;
-  register long			      id;
-  register long			      level;
+long zip__Write(struct zip *self, FILE *file, long id, int level)
   {
   register long			      status;
 
@@ -300,7 +282,7 @@ zip__Write( self, file, id, level )
     self->header.dataobject.writeID = id;
     if ( level )
       { DEBUG(Not Parent -- Write To Datastream);
-      fprintf( file, "\\begindata{%s,%d}\n",
+      fprintf( file, "\\begindata{%s,%ld}\n",
 		class_GetTypeName( self ),
 		dataobject_UniqueID( &self->header.dataobject ) );
       Write_View_Info( self, file );
@@ -317,7 +299,7 @@ zip__Write( self, file, id, level )
         status = zip_Enparse_Stream( self, Stream );
 	}
       DEBUGdt(Status,status);
-      fprintf( file, "\n\\enddata{%s,%d}\n",
+      fprintf( file, "\n\\enddata{%s,%ld}\n",
 		class_GetTypeName( self ),
 		dataobject_UniqueID( &self->header.dataobject ) );
       }
@@ -333,33 +315,23 @@ zip__Write( self, file, id, level )
   return (long) self;
   }
 
-static
-Write_View_Info( self, file )
-  register struct zip		     *self;
-  register FILE			     *file;
+static int Write_View_Info(struct zip *self, FILE *file)
   {
   if ( DesiredWidth )
-    fprintf( file, "%%ViewWidth %d\n", DesiredWidth );
+    fprintf( file, "%%ViewWidth %ld\n", DesiredWidth );
   if ( DesiredHeight )
-    fprintf( file, "%%ViewHeight %d\n", DesiredHeight );
+    fprintf( file, "%%ViewHeight %ld\n", DesiredHeight );
   }
 
-static
-Write_Object_Info( self, file )
-  register struct zip		     *self;
-  register FILE			     *file;
+static int Write_Object_Info(struct zip *self, FILE *file)
   {
   if ( ObjectWidth )
-    fprintf( file, "%%ObjectWidth %d\n", ObjectWidth );
+    fprintf( file, "%%ObjectWidth %ld\n", ObjectWidth );
   if ( ObjectHeight )
-    fprintf( file, "%%ObjectHeight %d\n", ObjectHeight );
+    fprintf( file, "%%ObjectHeight %ld\n", ObjectHeight );
   }
 
-static
-Generate_Temp_File( self, file, generated_file_name )
-  register struct zip		     *self;
-  register FILE			     *file;
-  register char			    **generated_file_name;
+static int Generate_Temp_File(struct zip *self, FILE *file, char **generated_file_name)
   {
   register long			      status = dataobject_NOREADERROR;
   static char			     *temp_name_template = "/tmp/ZIPxxxxxx",
@@ -404,9 +376,7 @@ Generate_Temp_File( self, file, generated_file_name )
   return  status;
   }
 
-void zip__Show_Statistics( self, options )
-  register struct zip		      *self;
-  register int			       options;
+void zip__Show_Statistics(struct zip *self, int options)
   {
   register zip_type_stream_chain	  stream_chain;
   register zip_type_stream		  stream;
@@ -468,27 +438,19 @@ void zip__Show_Statistics( self, options )
     }
   }
 
-static long
-Init_Message_Writer( self, msg )
-  register struct zip		     *self;
-  register char			     *msg;
+static long Init_Message_Writer(struct zip *self, char *msg)
   {
 /*===  apt_Announce( msg );===*/
   return zip_success;
   }
 
-static long
-Init_Message_Clearer( self )
-  register struct zip		     *self;
+static long Init_Message_Clearer(struct zip *self)
   {
 /*===  apt_Unannounce();===*/
   return zip_success;
   }
 
-static long
-Init_Message_Acknowledger( self, msg )
-  register struct zip		     *self;
-  register char			     *msg;
+static long Init_Message_Acknowledger(struct zip *self, char *msg)
   {
 /*===
   while ( apt_Acknowledge( msg ) == -1 )
@@ -498,12 +460,10 @@ Init_Message_Acknowledger( self, msg )
   }
 /*=== === ===*/
 
-int 
-apt_MM_Compare( s1, s2 )
-  /* Assumes "s1" must be shifted to lower-case
-             "s2" must be shifted to lower-case
-  */
-  register unsigned char		 *s1, *s2;
+/* Assumes "s1" must be shifted to lower-case
+           "s2" must be shifted to lower-case
+*/
+int apt_MM_Compare(unsigned char *s1, unsigned char *s2)
   {
   register unsigned char		  c1, c2;
   register int				  result = 0;

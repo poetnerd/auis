@@ -141,11 +141,7 @@ END-SPECIFICATION  ************************************************************/
 #define  Objects(i)		    ((*self->objects)[i])
 
 
-long
-zipview__Display_Figure( self, figure, pane )
-  register struct zipview		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipview__Display_Figure(struct zipview *self, zip_type_figure figure, zip_type_pane pane)
   {
   register int				  status = zip_success;
 
@@ -165,11 +161,7 @@ zipview__Display_Figure( self, figure, pane )
   return status;
   }
 
-long
-zipview__Draw_Figure( self, figure, pane )
-  register struct zipview		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipview__Draw_Figure(struct zipview *self, zip_type_figure figure, zip_type_pane pane)
   {
   register int				  status = zip_ok;
 
@@ -192,11 +184,7 @@ zipview__Draw_Figure( self, figure, pane )
   return status;
   }
 
-long
-zipview__Clear_Figure( self, figure, pane )
-  register struct zipview		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipview__Clear_Figure(struct zipview *self, zip_type_figure figure, zip_type_pane pane)
   {
   register int				  status = zip_ok;
 
@@ -219,11 +207,7 @@ zipview__Clear_Figure( self, figure, pane )
   return status;
   }
 
-long
-zipview__Hide_Figure( self, figure, pane )
-  register struct zipview		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipview__Hide_Figure(struct zipview *self, zip_type_figure figure, zip_type_pane pane)
   {
   register int				  status = zip_ok;
 
@@ -247,11 +231,7 @@ zipview__Hide_Figure( self, figure, pane )
   return status;
   }
 
-long
-zipview__Expose_Figure( self, figure, pane )
-  register struct zipview		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipview__Expose_Figure(struct zipview *self, zip_type_figure figure, zip_type_pane pane)
   {
   register int				  status = zip_ok;
   
@@ -275,11 +255,7 @@ zipview__Expose_Figure( self, figure, pane )
   return status;
   }
 
-static zip_type_figure
-Which_Figure( self, x, y, pane )
-  register struct zipview		 *self;
-  register zip_type_pixel		  x, y;
-  register zip_type_pane		  pane;
+static zip_type_figure Which_Figure(struct zipview *self, zip_type_pixel x, zip_type_pixel y, zip_type_pane pane)
   {
   register zip_type_figure		  figure_ptr, figure = NULL;
   register zip_type_image		  image;
@@ -322,10 +298,7 @@ Which_Figure( self, x, y, pane )
   return  figure;
   }
 
-zip_type_figure
-zipview__Which_Figure( self, x, y )
-  register struct zipview		 *self;
-  register zip_type_pixel		  x, y;
+struct zip_figure * zipview__Which_Figure(struct zipview *self, zip_type_pixel x, zip_type_pixel y)
   {
   register zip_type_figure		  figure = NULL;
   register zip_type_pane		  pane;
@@ -340,11 +313,7 @@ zipview__Which_Figure( self, x, y )
   return  figure;
   }
 
-zip_type_figure
-zipview__Which_Pane_Figure( self, x, y, pane )
-  register struct zipview		 *self;
-  register zip_type_pixel		  x, y;
-  register zip_type_pane		  pane;
+struct zip_figure * zipview__Which_Pane_Figure(struct zipview *self, zip_type_pixel x, zip_type_pixel y, zip_type_pane pane)
   {
   register zip_type_figure		  figure = NULL;
 
@@ -355,10 +324,7 @@ zipview__Which_Pane_Figure( self, x, y, pane )
   return  figure;
   }
 
-zip_type_figure
-zipview__Within_Which_Figure( self, x, y )
-  register struct zipview	     *self;
-  register long			      x, y;
+struct zip_figure * zipview__Within_Which_Figure(struct zipview *self, long x, long y)
   {
   register zip_type_stream	      stream;
   register zip_type_image	      image;
@@ -400,11 +366,7 @@ zipview__Within_Which_Figure( self, x, y )
   return  figure_ptr;
   }
 
-boolean
-zipview__Figure_Visible( self, figure, pane )
-  register struct zipview		    *self;
-  register zip_type_figure		    figure;
-  register zip_type_pane		    pane;
+boolean zipview__Figure_Visible(struct zipview *self, zip_type_figure figure, zip_type_pane pane)
   {
   register boolean			    status = FALSE;
 

@@ -35,8 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 int DeathKnell;
 
-MS_SetDeathKnell(dk)
-int dk;
+int MS_SetDeathKnell(int dk)
 {
     if(dk>AMS_MaximumDeathKnell)
      dk=AMS_MaximumDeathKnell;

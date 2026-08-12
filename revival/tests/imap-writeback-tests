@@ -1,0 +1,876 @@
+#!/usr/bin/env python3
+"""imap-writeback-tests -- milestone 4's Gate 1 capture/suppression suite
+(msjournal.c and its four hook sites in src/ams/libs/ms/: altsnap.c,
+purge.c, clonemsg.c, apndfile.c). See
+revival/doc/imap-writeback-prompt.md and revival/doc/claude-history/
+imap-writeback-REPORT.md.
+
+Gate 1 scope: local capture into ".MS_Journal" and the
+MSJournal_Suppress(1) imapsync sets at startup. As of Gate 2,
+imapsync's own replay_folder() also *acts on* a pending ".MS_Journal"
+on every ordinary run -- so unlike Gate 1, this suite's "suppression"
+re-run step is a real write path, not just EXAMINE/UID FETCH/UID
+SEARCH. See the 2026-07-23 incident section of imap-writeback-REPORT.md:
+an earlier version of this suite mirrored a real, pre-existing folder
+(INBOX/1-Admin/keys) rather than a sandbox, and this suite's own case 1
++ suppression re-run permanently deleted one real message from it via a
+genuine UID STORE/UID EXPUNGE once Gate 2's replay code existed. This
+suite now confines every write -- the cui-driven local mutations, the
+journal they produce, and every imapsync run that might replay that
+journal -- to the dedicated sandbox mailbox Revival/WritebackTest,
+which it seeds with its own throwaway messages up front and expunges
+clean again on exit (pass or fail). Nothing here hand-writes
+.MS_Journal or .MS_MsgDir bytes -- the mutations under test (delete/
+undelete/purge, and case 5's compose+save-as-draft) are driven through
+the real, unmodified `cui` binary against the sandbox's mirrored copy.
+
+Case 5 (added for Gate 3, append replay): run_cui_append() composes a
+fresh message via cui's "mail" command and saves it as a draft
+directly into the sandbox folder (SEND_SAVEDRAFT ->
+MS_AppendFileToFolder) -- a genuinely native-id local message, real
+end-to-end proof that a "J1 append" record captured this way replays
+correctly in the very next imapsync run (journal-then-mirror, in one
+invocation) and converges on a deterministic id exactly once. See
+run_cui_append()'s own docstring for why this is used instead of a
+literal cui "copy" (both directions of a two-folder copy hit
+MS_CloneMessage's own id-collision guard).
+
+Live against the real Fastmail account via the committed netrc_Lookup
+and ~/.netrc, exactly as the other imap-*-tests suites. Mirrors
+Revival/WritebackTest (created if absent) into a fresh `mktemp -d`
+scratch root; never touches the real ~/.IMAP or ~/preferences, and
+never touches INBOX or any other real folder -- see
+assert_folder_is_sandbox() below, the one enforcement point every
+write-capable call in this file funnels through.
+
+If ~/.netrc has no usable "machine imap.fastmail.com" stanza, this
+suite skips cleanly rather than failing.
+"""
+
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import time
+
+REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+IMAPSYNCDIR = os.path.join(REPO_ROOT, "src", "ams", "msclients", "imapsync")
+IMAPSYNC = os.path.join(IMAPSYNCDIR, "imapsync")
+MAILLIB = os.path.join(REPO_ROOT, "src", "overhead", "mail", "lib")
+IMAPTEST = os.path.join(MAILLIB, "imaptest.test")
+CUI = os.path.join(REPO_ROOT, "build", "bin", "cui")
+
+HOST = "imap.fastmail.com"
+PORT = "993"
+MACHINE = "imap.fastmail.com"
+NETRC = os.path.expanduser("~/.netrc")
+
+# The dedicated write-safe sandbox mailbox (the same one imap-sync-tests'
+# W-cases and imap-protocol-tests' write cases use) -- never a real
+# folder. This suite mirrors it, seeds it with >=2 throwaway messages of
+# its own (see append_seed_message() below) so case 1's cuid-2 target exists,
+# drives real cui mutations against the mirror, and lets imapsync really
+# replay the resulting journal against the server -- all confined to
+# this one mailbox, cleaned up (expunged) again on exit. See
+# assert_folder_is_sandbox(): this literal string is checked against,
+# never the other way around, so a future edit that repoints FOLDER
+# elsewhere cannot silently disable the guard.
+FOLDER = "Revival/WritebackTest"
+
+# Hardcoded literal (deliberately not "FOLDER" itself -- see
+# assert_folder_is_sandbox() below) that every destructive call in this
+# file must match before it's allowed to run.
+SANDBOX_FOLDER = "Revival/WritebackTest"
+
+AMS_ATT_DELETED = 2
+AMS_ATT_UNSEEN = 6
+ATTRSIZE = 21
+
+PASS = []
+FAIL = []
+SKIP = []
+
+
+def note(msg):
+    print(msg, flush=True)
+
+
+def result(name, ok, detail=""):
+    if ok:
+        PASS.append(name)
+        note(f"PASS: {name}")
+    else:
+        FAIL.append(name)
+        note(f"FAIL: {name}" + (f" -- {detail}" if detail else ""))
+
+
+def skip(name, reason):
+    SKIP.append(name)
+    note(f"SKIP: {name} -- {reason}")
+
+
+def assert_folder_is_sandbox(folder):
+    """The one enforcement point every destructive/mutating call in this
+    file funnels through (run_imapsync, run_cui_mutations, imaptest_wb) --
+    refuses, at the Python level, to touch anything but SANDBOX_FOLDER.
+    Compares against the hardcoded literal, not against the module-level
+    FOLDER variable, precisely so that a future edit which repoints
+    FOLDER at a real folder trips this assertion instead of silently
+    disabling it (that is exactly how the 2026-07-23 incident happened --
+    see imap-writeback-REPORT.md -- a real folder name sat in FOLDER with
+    only a code comment, no assertion, as protection). Independent of
+    imaptest.c's own guard_mailbox(), which enforces the identical rule
+    at the C level for the create/storeflags/expunge/append subcommands
+    -- a safety rule this important should not have exactly one
+    enforcement point."""
+    if folder != SANDBOX_FOLDER:
+        sys.exit(f"imap-writeback-tests: REFUSING to run against folder {folder!r} "
+                 f"-- only {SANDBOX_FOLDER!r} is allowed (see the 2026-07-23 incident "
+                 "section of imap-writeback-REPORT.md)")
+
+
+def build(dirpath, target, binpath, timeout=180):
+    if not os.path.isfile(os.path.join(dirpath, "Makefile")):
+        r = subprocess.run(["imake", "-Timake.tmpl", "-I.", "-I../../../config",
+                             "-s", "Makefile", "-DTOPDIR=../../../."],
+                            cwd=dirpath, capture_output=True, text=True)
+        if r.returncode != 0:
+            note(r.stdout); note(r.stderr)
+            sys.exit(f"imap-writeback-tests: could not bootstrap Makefile in {dirpath}")
+    r = subprocess.run(["make", "Makefile"], cwd=dirpath, capture_output=True, text=True)
+    if r.returncode != 0:
+        note(r.stdout); note(r.stderr)
+        sys.exit(f"imap-writeback-tests: 'make Makefile' failed in {dirpath}")
+    r = subprocess.run(["make", target], cwd=dirpath, capture_output=True, text=True, timeout=timeout)
+    if r.returncode != 0 or not os.path.isfile(binpath):
+        note(r.stdout); note(r.stderr)
+        sys.exit(f"imap-writeback-tests: 'make {target}' failed in {dirpath}")
+
+
+def build_imaptest():
+    build(MAILLIB, "imaptest.test", IMAPTEST)
+
+
+def build_imapsync():
+    build(IMAPSYNCDIR, "imapsync", IMAPSYNC)
+
+
+def have_live_credentials():
+    if not os.path.isfile(NETRC):
+        return False
+    try:
+        r = subprocess.run([IMAPTEST, "login", HOST, PORT, NETRC, MACHINE],
+                            capture_output=True, text=True, timeout=30)
+    except subprocess.TimeoutExpired:
+        return False
+    return r.returncode == 0
+
+
+def run_imapsync(root, timeout=120):
+    assert_folder_is_sandbox(FOLDER)
+    r = subprocess.run([IMAPSYNC, "-root", root, "-folders", FOLDER, "-v"],
+                        capture_output=True, text=True, timeout=timeout)
+    return r
+
+
+def imaptest_wb(subcmd, folder, *rest, timeout=60):
+    """Runs a destructive (create/storeflags/expunge/append) imaptest.test
+    subcommand against `folder`, guarded by assert_folder_is_sandbox()
+    here -- an explicit parameter (rather than reading FOLDER/
+    SANDBOX_FOLDER directly) so this check is a real assertion on
+    whatever the caller passed, not a tautology -- in addition to
+    imaptest.c's own guard_mailbox() at the C level. Mirrors
+    imap-sync-tests' identically-named helper. Returns (CompletedProcess,
+    kv dict) parsed the same way imap-sync-tests'/imap-protocol-tests'
+    own imaptest()/parse_kv() helpers do."""
+    assert_folder_is_sandbox(folder)
+    r = subprocess.run([IMAPTEST, subcmd, HOST, PORT, NETRC, MACHINE, folder]
+                        + [str(a) for a in rest],
+                        capture_output=True, text=True, timeout=timeout)
+    return r, _parse_kv(r.stdout)
+
+
+def imaptest_readonly(subcmd, folder, *rest, timeout=60):
+    """Like imaptest_wb but for read-only subcommands (examine) that take
+    a folder argument -- no guard needed since these never write, kept as
+    a separate name so it's obvious at each call site whether the guard
+    is in play (same convention as imap-sync-tests)."""
+    r = subprocess.run([IMAPTEST, subcmd, HOST, PORT, NETRC, MACHINE, folder]
+                        + [str(a) for a in rest],
+                        capture_output=True, text=True, timeout=timeout)
+    return r, _parse_kv(r.stdout)
+
+
+def _parse_kv(stdout):
+    """"KEY: value" line parser matching imap-sync-tests'/
+    imap-protocol-tests' own inline parsing: a leading "N (" on the value
+    (e.g. "0 (IMAP_OK)") is collapsed to just the numeric code."""
+    kv = {}
+    for line in stdout.splitlines():
+        if ": " in line:
+            k, v = line.split(": ", 1)
+            m = re.match(r'^(-?\d+)\s*\(', v.strip())
+            kv[k.strip()] = m.group(1) if m else v.strip()
+    return kv
+
+
+def append_seed_message(tmpdir, tag):
+    """APPENDs one small, pre-marked-\\Seen throwaway message into
+    SANDBOX_FOLDER via imap_Append (imaptest.test's append subcommand),
+    using the same mechanism/convention imap-sync-tests' W-cases use
+    (append_test_message()). Pre-marking \\Seen preserves case 1's
+    existing "type 1 is a no-op" assumption (originally true because
+    INBOX/1-Admin/keys was a long-read real folder; the sandbox starts
+    empty, so this suite has to manufacture that same precondition
+    itself). Returns (uidvalidity, uid), or (None, None) on failure."""
+    bodyfile = os.path.join(tmpdir, f"seed-{tag}.eml")
+    with open(bodyfile, "wb") as f:
+        f.write(
+            f"Date: {time.strftime('%a, %d %b %Y %H:%M:%S %z')}\r\n"
+            f"From: wdc@fastmail.com\r\n"
+            f"To: wdc@fastmail.com\r\n"
+            f"Subject: GATE2-WRITEBACK-SEED-{tag}\r\n"
+            f"\r\n"
+            f"imap-writeback-tests seed message ({tag}) -- throwaway, this "
+            f"suite expunges it (and everything else in this sandbox "
+            f"folder) again before exiting.\r\n"
+        .encode())
+    r, kv = imaptest_wb("append", FOLDER, bodyfile, r"\Seen")
+    if r.returncode != 0 or kv.get("APPEND-RC") != "0":
+        return None, None
+    uv = kv.get("APPEND-UIDVALIDITY")
+    uid = kv.get("APPEND-UID")
+    if uv is None or uid is None:
+        return None, None
+    return int(uv), int(uid)
+
+
+def folder_dir(root):
+    return os.path.join(root, ".MESSAGES", FOLDER)
+
+
+def msgdir_path(root):
+    return os.path.join(folder_dir(root), ".MS_MsgDir")
+
+
+def statepath(root):
+    return os.path.join(folder_dir(root), ".MS_IMAPSync")
+
+
+def journalpath(root):
+    return os.path.join(folder_dir(root), ".MS_Journal")
+
+
+def replayingpath(root):
+    return os.path.join(folder_dir(root), ".MS_Journal.replaying")
+
+
+def find_marker_files(root, needle):
+    """Local "+<id>" body files in FOLDER whose content contains needle
+    -- used by case 5 to find a message by its unique subject rather
+    than by a specific id (the whole point is that the id changes, from
+    a native one to a deterministic one, across the replay)."""
+    d = folder_dir(root)
+    found = []
+    for name in os.listdir(d):
+        if not name.startswith("+"):
+            continue
+        path = os.path.join(d, name)
+        try:
+            with open(path, "rb") as f:
+                if needle.encode() in f.read():
+                    found.append(path)
+        except OSError:
+            continue
+    return found
+
+
+# ---- direct .MS_MsgDir snapshot decoding (read-only; independent of
+# cui, so the journal-content assertions below aren't just re-trusting
+# the same code path they're testing) -- layout matches ams/libs/hdrs/
+# ams.h (date(7)+caption(89)+chain(4)+midhash(4)+replyhash(4)+
+# attributes(21)+id(19) = 148 bytes/record; header is 1024+148 bytes) ----
+
+_DATESIZE, _CAPTIONSIZE, _CHAINSIZE, _MIDHASHSIZE, _REPLYHASHSIZE, _ATTRSIZE, _IDSIZE = 7, 89, 4, 4, 4, 21, 19
+_CAPTOFF = _DATESIZE
+_CHAINOFF = _CAPTOFF + _CAPTIONSIZE
+_MIDOFF = _CHAINOFF + _CHAINSIZE
+_REPLYOFF = _MIDOFF + _MIDHASHSIZE
+_ATTROFF = _REPLYOFF + _REPLYHASHSIZE
+_IDOFF = _ATTROFF + _ATTRSIZE
+_SNAPSIZE = _IDOFF + _IDSIZE
+_DIRHEADSIZE = 1024 + _SNAPSIZE
+
+
+def read_snapshots_in_order(root):
+    """Returns [(id, attrbytes), ...] in the same order cui numbers
+    them ("headers <folder>" assigns cuids 1..N in exactly this
+    on-disk record order for a fresh, unfiltered listing)."""
+    path = msgdir_path(root)
+    out = []
+    with open(path, "rb") as f:
+        data = f.read()
+    n = (len(data) - _DIRHEADSIZE) // _SNAPSIZE
+    for i in range(n):
+        rec = data[_DIRHEADSIZE + i * _SNAPSIZE: _DIRHEADSIZE + (i + 1) * _SNAPSIZE]
+        ident = rec[_IDOFF:_IDOFF + 18].decode(errors="replace")
+        attrs = rec[_ATTROFF:_ATTROFF + _ATTRSIZE]
+        out.append((ident, attrs))
+    return out
+
+
+def hexmask(bytelist):
+    return "".join("%02x" % b for b in bytelist)
+
+
+def or_mask_for_bit(bit):
+    """OrMask/AndMask a real ASS_OR_ATTRIBUTES call setting `bit` would
+    produce (see altsnap.c's writeback-capture switch): or-mask has
+    just that bit set, and-mask is all-1s."""
+    ormask = [0] * ATTRSIZE
+    ormask[bit // 8] |= (1 << (bit % 8))
+    andmask = [0xff] * ATTRSIZE
+    return hexmask(ormask), hexmask(andmask)
+
+
+def and_mask_clearing_bit(bit):
+    """OrMask/AndMask a real ASS_AND_ATTRIBUTES call clearing `bit`
+    would produce: or-mask is all-0s, and-mask has every bit set
+    except the cleared one (CUI_UndeleteMessage/CUI_MarkAsRead build
+    their and-buffer with bone() + AMS_UNSET_ATTRIBUTE, i.e. all-1s
+    with one bit cleared)."""
+    ormask = [0] * ATTRSIZE
+    andmask = [0xff] * ATTRSIZE
+    andmask[bit // 8] &= ~(1 << (bit % 8)) & 0xff
+    return hexmask(ormask), hexmask(andmask)
+
+
+# ---- cui pty session (pattern from imap-sync-tests' CuiSession) ----
+
+class CuiSession:
+    def __init__(self, profiles_path, timeout=20.0):
+        import pty
+        self.timeout = timeout
+        master, slave = pty.openpty()
+        self.master = master
+        env = dict(os.environ)
+        env["PROFILES"] = profiles_path
+        self.proc = subprocess.Popen([CUI], stdin=slave, stdout=slave, stderr=slave,
+                                      close_fds=True, env=env)
+        os.close(slave)
+        self.buf = b""
+
+    def _fill(self, idle=0.3):
+        import select
+        r, _, _ = select.select([self.master], [], [], idle)
+        if self.master in r:
+            try:
+                chunk = os.read(self.master, 4096)
+            except OSError:
+                return False
+            if not chunk:
+                return False
+            self.buf += chunk
+        return True
+
+    def send(self, text):
+        os.write(self.master, text.encode())
+
+    def collect(self, t=2):
+        deadline = time.time() + t
+        while time.time() < deadline:
+            self._fill(idle=0.3)
+        out = self.buf
+        self.buf = b""
+        return out
+
+    def close(self):
+        if self.proc.poll() is None:
+            try:
+                self.proc.terminate()
+                self.proc.wait(timeout=3)
+            except Exception:
+                self.proc.kill()
+
+
+def run_cui_mutations(root):
+    """Points cui's mspath at the scratch mirror (scratch PROFILES,
+    never ~/preferences), lists FOLDER, then against message #2 (the
+    on-disk order is stable right after a fresh mirror): delete (OR
+    path, sets AMS_ATT_DELETED), undelete (AND path, clears it),
+    delete again (OR path, sets it back for the purge below), then
+    purges the folder. Also attempts "type 1" first, to exercise the
+    read-marking call site -- message #1 was seeded with \\Seen already
+    set (see append_seed_message()), so CUI_MarkAsRead's own guard
+    correctly no-ops (proving the hook adds no spurious record when
+    nothing actually changes, rather than a synthetic "it always fires"
+    case). Returns the full transcript text."""
+    assert_folder_is_sandbox(FOLDER)
+    profiles = os.path.join(root, "PROFILES")
+    with open(profiles, "w", newline="\n") as f:
+        f.write(f"mspath: {os.path.join(root, '.MESSAGES')}\n")
+
+    transcript = []
+    sess = CuiSession(profiles)
+    try:
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send(f"headers {FOLDER}\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("type 1\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("delete 2\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("undelete 2\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("delete 2\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send(f"purge {FOLDER}\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("quit\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+    finally:
+        sess.close()
+    return "\n".join(t for t in transcript if isinstance(t, str))
+
+
+def run_cui_append(root, subject):
+    """Case 5 (Gate 3): lands a genuinely native-id (non-deterministic)
+    local message directly into FOLDER via cui's "mail" -> compose ->
+    "draft" (SEND_SAVEDRAFT) path, which calls
+    MS_AppendFileToFolder(TmpName, FolderName) -- no IMAP, no SMTP (a
+    draft is never submitted) -- exactly the
+    MS_AppendFileToFolder/apndfile.c mutation point the writeback
+    design names for the "append" journal record ("e.g. a user
+    copies/moves a message in from a local folder"). Reuses the same
+    scratch PROFILES run_cui_mutations() already wrote (same mspath,
+    never ~/preferences).
+
+    Chosen over cui's own "copy" command after checking both routes
+    hit MS_CloneMessage's own guard: copying a message that is already
+    inside FOLDER back into FOLDER hits the same-source/dest-folder
+    check (EMSALREADYTHERE, clonemsg.c); copying it out to a second
+    folder and back in preserves the exact same id (a bcopy of the
+    snapshot bytes, not a fresh invention), so the return trip hits the
+    identical guard for the opposite reason (that id already exists at
+    the destination). Composing fresh is the only real, cui-driven way
+    to get a genuinely new native id into FOLDER. RealWhoIs's own
+    address validation of "wdc@fastmail.com" resolves silently in this
+    environment (confirmed live -- no "Proceed with mail composition
+    anyway" prompt appears for this address), so this sequence sends
+    no answer for it; if that ever stops being true, this will hang on
+    the Subject: prompt until its own timeout, not silently misfire.
+    Returns the full transcript text."""
+    assert_folder_is_sandbox(FOLDER)
+    profiles = os.path.join(root, "PROFILES")
+
+    transcript = []
+    sess = CuiSession(profiles)
+    try:
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("mail\n")
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send("wdc@fastmail.com\n")
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send(f"{subject}\n")
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send("\n")  # CC: blank
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send(f"imap-writeback-tests case 5 append-round-trip probe body ({subject}).\n")
+        sess.send("\x04")  # a real Ctrl-D -- EOF_STRING is "press control-d", not a typed sentinel
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("draft\n")
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send(f"{FOLDER}\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("quit\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+    finally:
+        sess.close()
+    return "\n".join(t for t in transcript if isinstance(t, str))
+
+
+def run_cui_acceptance(root):
+    """The milestone's own end-to-end acceptance test (distinct from
+    the numbered test cases above): mark-read, delete+purge, and
+    copy-in (compose+save-as-draft) -- Milestone 4's three local
+    mutation kinds -- all in ONE scripted cui session against a fresh
+    two-message mirror (message 1: mark-read target; message 2:
+    delete+purge target), so a single subsequent imapsync run
+    (replay+mirror in one invocation) has all three journal record
+    kinds to replay together. Returns the transcript text."""
+    assert_folder_is_sandbox(FOLDER)
+    profiles = os.path.join(root, "PROFILES")
+    with open(profiles, "w", newline="\n") as f:
+        f.write(f"mspath: {os.path.join(root, '.MESSAGES')}\n")
+
+    transcript = []
+    sess = CuiSession(profiles)
+    try:
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send(f"headers {FOLDER}\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("type 1\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("delete 2\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send(f"purge {FOLDER}\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("mail\n")
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send("wdc@fastmail.com\n")
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send("GATE3-ACCEPTANCE-COPYIN\n")
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send("\n")  # CC: blank
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send("imap-writeback-tests acceptance-test copy-in probe body.\n")
+        sess.send("\x04")  # a real Ctrl-D
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("draft\n")
+        transcript.append(sess.collect(1.5).decode(errors="replace"))
+        sess.send(f"{FOLDER}\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+        sess.send("quit\n")
+        transcript.append(sess.collect(2).decode(errors="replace"))
+    finally:
+        sess.close()
+    return "\n".join(t for t in transcript if isinstance(t, str))
+
+
+def main():
+    if len(sys.argv) > 1:
+        sys.exit("usage: imap-writeback-tests")
+
+    build_imaptest()
+    build_imapsync()
+
+    live = have_live_credentials()
+    if not live:
+        note(f'--- no usable netrc stanza for "{MACHINE}" in "{NETRC}" (or file absent); '
+             "skipping all cases (this suite has no offline case) ---")
+        skip("1 capture + suppression", "no live credentials")
+        skip("5 append round-trip", "no live credentials")
+        skip("acceptance", "no live credentials")
+        note("")
+        note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped")
+        sys.exit(0)
+
+    # Hard safety check, independent of assert_folder_is_sandbox()'s own
+    # calls scattered through the helpers above: this suite must never
+    # run against anything but the dedicated sandbox mailbox, regardless
+    # of what a future edit does to FOLDER above. See the 2026-07-23
+    # incident section of imap-writeback-REPORT.md -- a prior version of
+    # this suite pointed FOLDER at a real folder with only a code comment
+    # as protection, and Gate 2's replay code permanently deleted a real
+    # message from it.
+    assert FOLDER == "Revival/WritebackTest", (
+        'imap-writeback-tests: FOLDER must be the dedicated write-safe sandbox '
+        'mailbox "Revival/WritebackTest" -- refusing to run real cui mutations '
+        '+ imapsync replay against anything else'
+    )
+
+    note(f"--- live case against {HOST}:{PORT}, folder {FOLDER} "
+         "(real writes: cui-driven local mutations, the journal they produce, "
+         "and imapsync's real replay of that journal, plus this suite's own "
+         "APPEND seeding and EXPUNGE cleanup -- all confined to this dedicated "
+         "sandbox mailbox) ---")
+
+    scratch = tempfile.mkdtemp(prefix="imap-writeback-tests-")
+    note(f"scratch root: {scratch}")
+
+    try:
+        # ---- provision + seed the sandbox: create it if absent, then
+        # APPEND two throwaway messages (pre-marked \Seen) so the fresh
+        # mirror below has the >=2 messages case 1 needs (cuid 1 for the
+        # mark-read no-op, cuid 2 as the delete/undelete/purge target) --
+        # unlike the old INBOX/1-Admin/keys folder, this sandbox starts
+        # (and ends) empty, so this suite has to manufacture its own
+        # fixture messages rather than relying on real accumulated mail ----
+        cr, ckv = imaptest_wb("create", FOLDER)
+        if cr.returncode not in (0, 1) or ckv.get("CREATE-RC") not in ("0", "1"):
+            sys.exit(f"imap-writeback-tests: could not create/confirm {FOLDER!r}: kv={ckv}")
+
+        seed_dir = os.path.join(scratch, "seed")
+        os.makedirs(seed_dir, exist_ok=True)
+        wtag = str(int(time.time()))
+        seeded = []
+        for i in range(2):
+            uv, uid = append_seed_message(seed_dir, f"{wtag}-{i}")
+            if uv is None:
+                sys.exit(f"imap-writeback-tests: failed to seed message {i + 1}/2 into {FOLDER}")
+            seeded.append((uv, uid))
+        note(f"seeded {len(seeded)} throwaway message(s) into {FOLDER} for this run: {seeded}")
+
+        # ---- fresh mirror ----
+        r0 = run_imapsync(scratch)
+        note(r0.stdout)
+        if r0.stderr:
+            note(r0.stderr)
+        if r0.returncode != 0:
+            sys.exit(f"imap-writeback-tests: initial mirror of {FOLDER} failed (exit {r0.returncode})")
+
+        before = read_snapshots_in_order(scratch)
+        if len(before) < 2:
+            sys.exit(f"imap-writeback-tests: {FOLDER} has fewer than 2 messages "
+                     "right after this run's own seeding step; test needs at least 2")
+        target_id = before[1][0]  # cuid 2, matching cui's on-disk-order numbering
+        note(f"target message: cuid 2, id {target_id}")
+
+        if os.path.exists(journalpath(scratch)):
+            sys.exit("imap-writeback-tests: .MS_Journal already exists right after a fresh "
+                     "mirror -- imapsync's own writes are journaling (suppression not working)")
+
+        # ---- case 1: capture correctness ----
+        transcript = run_cui_mutations(scratch)
+        note(transcript[-2000:])
+
+        jpath = journalpath(scratch)
+        if not os.path.isfile(jpath):
+            result("1 capture: .MS_Journal contains exactly the expected records", False,
+                   ".MS_Journal was never created")
+        else:
+            with open(jpath) as f:
+                lines = [l.rstrip("\n") for l in f if l.strip()]
+
+            or_or, or_and = or_mask_for_bit(AMS_ATT_DELETED)
+            and_or, and_and = and_mask_clearing_bit(AMS_ATT_DELETED)
+            expected = [
+                f"J1 flags {target_id} {or_or} {or_and}",    # delete 2 (OR, sets DELETED)
+                f"J1 flags {target_id} {and_or} {and_and}",  # undelete 2 (AND, clears DELETED)
+                f"J1 flags {target_id} {or_or} {or_and}",    # delete 2 again (OR, sets DELETED)
+                f"J1 purge {target_id}",                     # purge
+            ]
+            result("1 capture: .MS_Journal contains exactly the expected records "
+                   "(mark-read no-op, delete, undelete, delete, purge)",
+                   lines == expected,
+                   f"got {len(lines)} line(s):\n  " + "\n  ".join(lines) +
+                   f"\nexpected {len(expected)} line(s):\n  " + "\n  ".join(expected))
+
+        # ---- case 1 (replay + suppression half). Two DISTINCT properties,
+        # deliberately tested separately (RESOLVED 2026-07-23, superseding
+        # the prior NOTE here -- see imap-writeback-REPORT.md's Gate 2
+        # section for why the old single byte-equality check broke):
+        #
+        # (a) REPLAY: as of Gate 2, an ordinary imapsync run right after
+        #     capture must *consume* the pending .MS_Journal for real --
+        #     STORE/EXPUNGE the case-1 journal against the server (safely,
+        #     confined to this sandbox), then remove the journal file and
+        #     zero the cursor. This is the opposite of Gate 1's old
+        #     expectation (journal untouched forever) and is checked as
+        #     such: the journal must be GONE afterward, not unchanged.
+        #
+        # (b) SUPPRESSION: with the journal now empty, does imapsync's own
+        #     internal mirror-refresh machinery spuriously create a NEW
+        #     journal entry for its own writes? Perturbing the recorded
+        #     highestmodseq forces a real flags-refresh pass (real
+        #     MS_AlterSnapshot calls from real FETCH data for every
+        #     already-mirrored message) -- a strong proof, since real
+        #     writes are genuinely attempted and still must not journal.
+        #     Checked against the now-empty baseline from (a), which is
+        #     what actually isolates "did suppression hold" from "did
+        #     replay do its job" -- the two were conflated into one
+        #     pre/post-equality check before this fix. ----
+        pre_journal = open(jpath).read() if os.path.isfile(jpath) else None
+
+        r1 = run_imapsync(scratch)
+        note(r1.stdout)
+        note(r1.stderr)  # -v's vlog() output goes to stderr
+        post_plain = open(jpath).read() if os.path.isfile(jpath) else None
+        result("1 replay: an ordinary imapsync run right after capture replays the pending "
+               "journal for real (journal consumed -- file removed, cursor zeroed)",
+               post_plain is None,
+               f"expected the journal fully consumed by real replay (pre-run content was "
+               f"{pre_journal!r}); found {post_plain!r} instead")
+
+        sp = statepath(scratch)
+        with open(sp) as f:
+            state_lines = f.readlines()
+        with open(sp, "w", newline="\n") as f:
+            for line in state_lines:
+                if line.startswith("highestmodseq"):
+                    f.write("highestmodseq 1\n")
+                else:
+                    f.write(line)
+
+        r2 = run_imapsync(scratch)
+        note(r2.stdout)
+        note(r2.stderr)  # -v's vlog() output goes to stderr
+        forced_refresh_ran = "refreshing flags for uids" in r2.stderr
+        post_forced = open(jpath).read() if os.path.isfile(jpath) else None
+        result("1 suppression: a forced flags-refresh run (real MS_AlterSnapshot calls from "
+               "real FETCH data, HIGHESTMODSEQ artificially invalidated) does not spuriously "
+               "re-journal imapsync's own mirror writes (journal stays empty)",
+               forced_refresh_ran and post_forced is None,
+               f"forced_refresh_ran={forced_refresh_ran} journal reappeared as {post_forced!r} "
+               "(expected None)")
+
+        # ---- case 5: append round-trip (Gate 3) ----
+        # Local mirror currently holds exactly the surviving seed
+        # message (seed #2/cuid 2 was purged by case 1's own mutations
+        # above) -- capture that count now as a known baseline, rather
+        # than assuming it, for the "and only once" check below.
+        before5 = read_snapshots_in_order(scratch)
+        before5_count = len(before5)
+
+        wtag5 = str(int(time.time()))
+        subject5 = f"GATE3-CASE5-APPEND-{wtag5}"
+        transcript5 = run_cui_append(scratch, subject5)
+        note(transcript5[-2000:])
+
+        native_hits = find_marker_files(scratch, subject5)
+        if len(native_hits) != 1:
+            result("5 append round-trip", False,
+                   "expected exactly one local native-id file right after the draft save, "
+                   f"found {len(native_hits)}")
+        else:
+            native_id = os.path.basename(native_hits[0])[1:]
+            jlines5 = []
+            if os.path.isfile(jpath):
+                with open(jpath) as f:
+                    jlines5 = [l.rstrip("\n") for l in f if l.strip()]
+            capture_ok = jlines5 == [f"J1 append {native_id}"]
+
+            # ---- replay + mirror in one imapsync run ----
+            r5 = run_imapsync(scratch)
+            note(r5.stdout)
+            note(r5.stderr)
+
+            journal_gone5 = (not os.path.isfile(jpath) and not os.path.isfile(replayingpath(scratch)))
+            cursor_zero5 = True
+            if os.path.isfile(statepath(scratch)):
+                with open(statepath(scratch)) as f:
+                    cursor_zero5 = "journal_offset 0" in f.read()
+
+            after5 = read_snapshots_in_order(scratch)
+            native_gone = not any(ident == native_id for ident, _ in after5)
+            deterministic_hits = find_marker_files(scratch, subject5)
+            exactly_once_locally = len(deterministic_hits) == 1 and native_gone
+
+            _, ekv5 = imaptest_readonly("examine", FOLDER)
+            server_exists = int(ekv5["EXISTS"]) if ekv5.get("EXISTS", "").isdigit() else None
+            expected_count = before5_count + 1
+            count_consistent = (server_exists == expected_count and len(after5) == expected_count)
+
+            result("5 append round-trip: copy a local message into the mirrored folder via cui "
+                   "(compose + save-as-draft -- MS_AppendFileToFolder, the same mutation point "
+                   "the writeback design names for the \"append\" journal record), replay+mirror "
+                   "in one imapsync run, verify it exists server-side and locally under a "
+                   "deterministic id, and only once",
+                   capture_ok and r5.returncode == 0 and journal_gone5 and cursor_zero5
+                   and exactly_once_locally and count_consistent,
+                   f"capture_ok={capture_ok} jlines5={jlines5} journal_gone5={journal_gone5} "
+                   f"cursor_zero5={cursor_zero5} native_gone={native_gone} "
+                   f"deterministic_hits={len(deterministic_hits)} server_exists={server_exists} "
+                   f"expected_count={expected_count} local_count={len(after5)}")
+
+        note("")
+        note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped")
+        note(f"scratch root left at {scratch} for inspection")
+    finally:
+        # Cleanup: expunge whatever this run added to the sandbox --
+        # pass or fail -- mirroring imap-sync-tests' W-case "writeback
+        # cleanup" step, so repeat runs always start from a known-empty
+        # mailbox instead of accumulating junk (or, worse, leftover
+        # \Deleted-but-not-expunged messages skewing the next run's
+        # cuid-2 target selection).
+        assert_folder_is_sandbox(FOLDER)
+        try:
+            _, ekv_clean = imaptest_readonly("examine", FOLDER)
+            exists = ekv_clean.get("EXISTS", "")
+            if exists.isdigit() and int(exists) > 0:
+                r_clean, ckv_clean = imaptest_wb("expunge", FOLDER, "1:*")
+                note(f"cleanup: expunge 1:* in {FOLDER!r} -> exit={r_clean.returncode} kv={ckv_clean}")
+            else:
+                note(f"cleanup: {FOLDER!r} already empty (EXISTS={exists!r}), nothing to expunge")
+        except Exception as e:
+            note(f"cleanup: WARNING -- could not confirm/expunge {FOLDER!r} clean: {e}")
+
+    # ---- acceptance test (Gate 3, end of Milestone 4): mark-read +
+    # purge + copy-in in ONE scripted cui session, then ONE fresh
+    # imapsync run (replay+mirror in the same invocation) shows the
+    # local mirror converged with server truth. Self-contained (own
+    # scratch root, own seeding, own cleanup) rather than continuing
+    # the case 1/5 scratch above, so its outcome doesn't depend on
+    # exactly what cuid position those cases happened to leave behind.
+    acc_scratch = tempfile.mkdtemp(prefix="imap-writeback-tests-acceptance-")
+    note(f"acceptance scratch root: {acc_scratch}")
+    try:
+        acc_seed_dir = os.path.join(acc_scratch, "seed")
+        os.makedirs(acc_seed_dir, exist_ok=True)
+        acc_tag = str(int(time.time()))
+        acc_seeded = []
+        for i in range(2):
+            uv, uid = append_seed_message(acc_seed_dir, f"acc-{acc_tag}-{i}")
+            if uv is None:
+                sys.exit(f"imap-writeback-tests: failed to seed acceptance message {i + 1}/2 into {FOLDER}")
+            acc_seeded.append((uv, uid))
+        note(f"acceptance: seeded {len(acc_seeded)} throwaway message(s) into {FOLDER}: {acc_seeded}")
+
+        r_acc0 = run_imapsync(acc_scratch)
+        note(r_acc0.stdout)
+        if r_acc0.stderr:
+            note(r_acc0.stderr)
+        if r_acc0.returncode != 0:
+            sys.exit(f"imap-writeback-tests: acceptance initial mirror of {FOLDER} failed "
+                     f"(exit {r_acc0.returncode})")
+
+        before_acc = read_snapshots_in_order(acc_scratch)
+        if len(before_acc) < 2:
+            sys.exit("imap-writeback-tests: acceptance mirror has fewer than 2 messages "
+                     "right after this run's own seeding step")
+
+        acc_transcript = run_cui_acceptance(acc_scratch)
+        note(acc_transcript[-2500:])
+
+        r_acc = run_imapsync(acc_scratch)
+        note(r_acc.stdout)
+        if r_acc.stderr:
+            note(r_acc.stderr)
+
+        acc_jpath = journalpath(acc_scratch)
+        journal_gone_acc = (not os.path.isfile(acc_jpath)
+                             and not os.path.isfile(replayingpath(acc_scratch)))
+        cursor_zero_acc = True
+        if os.path.isfile(statepath(acc_scratch)):
+            with open(statepath(acc_scratch)) as f:
+                cursor_zero_acc = "journal_offset 0" in f.read()
+
+        after_acc = read_snapshots_in_order(acc_scratch)
+        _, ekv_acc = imaptest_readonly("examine", FOLDER)
+        server_exists_acc = int(ekv_acc["EXISTS"]) if ekv_acc.get("EXISTS", "").isdigit() else None
+        # mark-read: no count change. delete+purge cuid 2: -1. copy-in: +1. Net: unchanged.
+        expected_count_acc = len(before_acc)
+        convergence_ok = (server_exists_acc == expected_count_acc == len(after_acc))
+
+        result("acceptance: mark-read + purge + copy-in in one scripted cui session against "
+               "Revival/WritebackTest, then one fresh imapsync run (replay+mirror in the same "
+               "invocation), shows the local mirror converged with server truth",
+               r_acc.returncode == 0 and journal_gone_acc and cursor_zero_acc and convergence_ok,
+               f"journal_gone_acc={journal_gone_acc} cursor_zero_acc={cursor_zero_acc} "
+               f"server_exists_acc={server_exists_acc} local_count_acc={len(after_acc)} "
+               f"expected_count_acc={expected_count_acc}")
+
+        note("")
+        note(f"{len(PASS)} passed, {len(FAIL)} failed, {len(SKIP)} skipped")
+        note(f"acceptance scratch root left at {acc_scratch} for inspection")
+    finally:
+        assert_folder_is_sandbox(FOLDER)
+        try:
+            _, ekv_clean2 = imaptest_readonly("examine", FOLDER)
+            exists2 = ekv_clean2.get("EXISTS", "")
+            if exists2.isdigit() and int(exists2) > 0:
+                r_clean2, ckv_clean2 = imaptest_wb("expunge", FOLDER, "1:*")
+                note(f"acceptance cleanup: expunge 1:* in {FOLDER!r} -> "
+                     f"exit={r_clean2.returncode} kv={ckv_clean2}")
+            else:
+                note(f"acceptance cleanup: {FOLDER!r} already empty (EXISTS={exists2!r}), "
+                     "nothing to expunge")
+        except Exception as e:
+            note(f"acceptance cleanup: WARNING -- could not confirm/expunge {FOLDER!r} clean: {e}")
+
+    sys.exit(0 if not FAIL else 1)
+
+
+if __name__ == "__main__":
+    main()

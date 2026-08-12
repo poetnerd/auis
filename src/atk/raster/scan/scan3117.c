@@ -426,17 +426,7 @@ ScanInit(LEVEL, CONTRAST, DITHER, RESOLUTION,
 }
 
 
-int 
-Scan(buffer)
-/*
- *	This routine will operate the 3117 to capture the image and place the
- *	image in the passed buffer.
- *
- *	This routine may be called many times without having to call ScanInit()
- *	and ScanClose() each time.
- */
-    unsigned char    buffer[];
-
+int Scan(unsigned char buffer[])
 {
 int buffer_index;
 int i;
@@ -530,16 +520,7 @@ HomeScanner()
 }
 
 
-static int
-SendCommand(COMMAND, WAITRET)
-/*
- *	Send a command to the scanner adapter.  Wait until the adapter
- *	is ready before sending the command and optionally, wait for 
- *	the command to complete before returning.
- */
-    int COMMAND;	/* command to send to 3117 adapter */
-    int WAITRET;	/* WAIT to wait for status, NOWAIT to just return */
-
+static int SendCommand(int COMMAND, int WAITRET)
 {
     if (DebugMode != 0) {
 	fprintf(stderr, "into SendCommand COMMAND = 0x%x, WAITRET = 0x%x\n", COMMAND, WAITRET);

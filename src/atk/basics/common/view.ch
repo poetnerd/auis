@@ -107,7 +107,7 @@ methods:
 		      struct atomlist * name,
 		      struct atomlist * class );		      
     PostResource( struct atomlist * path, struct atom * type,
-		 long datum );
+		 void *datum );
     InsertViewRegion(struct view *parent, struct region *region);
     InsertView(struct view * parent, struct rectangle * enclosingRect);
     InsertViewSize(struct view * EnclosingView, long xOriginInParent, long yOriginInParent, long width, long height);

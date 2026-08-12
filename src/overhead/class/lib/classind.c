@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 
 #include <classind.h>
+static void SafeFree(void *buffer);
 
 
 /*
@@ -51,10 +52,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  ** we try to free a NULL pointer.  This 
  ** makes alot of code easier.
  **/
-static void
-SafeFree(buffer)
-void * buffer;
-
+static void SafeFree(void *buffer)
 {
     if (buffer != NULL) {
 	free(buffer);
@@ -81,10 +79,7 @@ void * buffer;
  ** any error read to the next '\n' (if 
  ** possible) and return NULL.
  **/
-struct IndexEntry *
-ReadEntry(fd)
-FILE *fd;
-
+struct IndexEntry * ReadEntry(FILE *fd)
 {
 struct IndexEntry * ThisEntry;
 char buffer[MAXPATHLEN];
@@ -140,11 +135,7 @@ error:
 }
 
 
-boolean
-WriteEntry(fd, entry)
-FILE *fd;
-struct IndexEntry * entry;
-
+boolean WriteEntry(FILE *fd, struct IndexEntry *entry)
 {
     if (fprintf(fd, "%s\t%s\t%lx\t%s\n", entry->Name, entry->Key, entry->Version, entry->Data) < 0) {
 	return FALSE;
@@ -179,9 +170,7 @@ struct IndexEntry * ThisEntry;
 /**
  ** Return a new, initialized entry or NULL if no space is available.
  **/
-struct IndexEntry *
-CreateEntry(name, key, version, data)
-
+struct IndexEntry * CreateEntry(int name, int key, int version, int data)
 {
 struct IndexEntry * ThisEntry;
 
@@ -215,10 +204,7 @@ error:
  ** Destroy the entry and all the auxillary data
  ** allocated for that entry.
  **/
-void
-DestroyEntry(entry)
-struct IndexEntry * entry;
-
+void DestroyEntry(struct IndexEntry *entry)
 {
     if (entry != NULL) {
 	SafeFree(entry->Name);
@@ -232,10 +218,7 @@ struct IndexEntry * entry;
     
 
 
-char * 
-GetEntryName(entry)
-struct IndexEntry * entry;
-
+char * GetEntryName(struct IndexEntry *entry)
 {
     if (entry == NULL) {
 	return NULL;
@@ -246,10 +229,7 @@ struct IndexEntry * entry;
 
 
 
-char * 
-GetEntryKey(entry)
-struct IndexEntry * entry;
-
+char * GetEntryKey(struct IndexEntry *entry)
 {
     if (entry == NULL) {
 	return NULL;
@@ -260,10 +240,7 @@ struct IndexEntry * entry;
 
 
 
-unsigned long
-GetEntryVersion(entry)
-struct IndexEntry * entry;
-
+unsigned long GetEntryVersion(struct IndexEntry *entry)
 {
     if (entry == NULL) {
 	return NULL;
@@ -274,10 +251,7 @@ struct IndexEntry * entry;
 
 
 
-char * 
-GetEntryData(entry)
-struct IndexEntry * entry;
-
+char * GetEntryData(struct IndexEntry *entry)
 {
     if (entry == NULL) {
 	return NULL;
@@ -287,11 +261,7 @@ struct IndexEntry * entry;
 }
 
 
-boolean
-SetEntryName(entry, name)
-struct IndexEntry * entry;
-char * name;
-
+boolean SetEntryName(struct IndexEntry *entry, char *name)
 {
 char * FreeString;
 
@@ -317,11 +287,7 @@ char * FreeString;
 
 
 
-boolean
-SetEntryKey(entry, key)
-struct IndexEntry * entry;
-char * key;
-
+boolean SetEntryKey(struct IndexEntry *entry, char *key)
 {
 char * FreeString;
 
@@ -347,11 +313,7 @@ char * FreeString;
 
 
 
-boolean
-SetEntryVersion(entry, version)
-struct IndexEntry * entry;
-unsigned long version;
-
+boolean SetEntryVersion(struct IndexEntry *entry, unsigned long version)
 {
     if (entry == NULL) {
 	return FALSE;
@@ -363,11 +325,7 @@ unsigned long version;
 
 
 
-boolean
-SetEntryData(entry, data)
-struct IndexEntry * entry;
-char * data;
-
+boolean SetEntryData(struct IndexEntry *entry, char *data)
 {
 char * FreeString;
 
@@ -411,11 +369,7 @@ char * FreeString;
 /** 
  ** Update index file.
  **/
-int
-UdateIndex(entry)
-IndexEntry * entry;
-
-
+int UdateIndex(IndexEntry *entry)
 {
 int infd;
 int outfd;

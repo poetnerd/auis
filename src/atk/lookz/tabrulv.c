@@ -47,12 +47,25 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/look
 #include <lprruler.ih>
 
 #include <tabrulv.eh>
+#include <string.h>
+static boolean BogusCallFromParent(struct tabrulerview *self, char *where, char *msg);
+static boolean CheckWindow(struct tabrulerview *self, char *where);
+static void DoTicks(struct tabrulerview *self, short zeroloc, short left, short right, struct TickTbl *tbl);
+static void MoveIcon(struct tabrulerview *self, long newx);
+static void RecomputeAndRedraw(struct tabrulerview *self);
 
 #define	IconString	"/"
 #define	ClearString	"AllClear"
 #define	CancelString	"Cancel"
 
-static void RemoveIcon(), RepaintIcon(), RedrawPark(), RedrawIcons(), RedrawCommands(), RedrawText(), RedrawRuler();
+static void RemoveIcon(struct tabrulerview *self, long pos);
+static void RepaintIcon(struct tabrulerview *self, long position, short color);
+static void RedrawPark(struct tabrulerview *self);
+static void RedrawIcons(struct tabrulerview *self);
+static void RedrawCommands(struct tabrulerview *self);
+static void RedrawText(struct tabrulerview *self, float number, boolean flag);
+static void RedrawRuler(struct tabrulerview *self);
+int FindClosestTab(struct tabrulerview *self, long pos);	/* defined below, used earlier in this file */
 
 #define ICONHEIGHT 14	/*C*//* height of area where icons move */
 #define PARKWIDTH  19	/*C*//* width of icon parking area */
@@ -76,19 +89,13 @@ static struct TickTbl PointTbl = {36, 6, 36, {6, 3, 3, 5, 3, 3}, "%+3.0f p", "Pt
 static struct TickTbl CMTbl = {30, 6, 1, {6, 3, 3, 3, 3}, "%+5.2f c", "Cm."};
 
 
-static boolean
-BogusCallFromParent(self, where, msg)
-register struct tabrulerview *self;
-char *where, *msg;
+static boolean BogusCallFromParent(struct tabrulerview *self, char *where, char *msg)
 {
     fprintf(stderr, "<tabrulerview>Bogus call to %s, %s\n", where, msg);
     return FALSE;
 }
 
-static boolean
-CheckWindow(self, where)
-register struct tabrulerview *self;
-char *where;
+static boolean CheckWindow(struct tabrulerview *self, char *where)
 {
     register struct graphic *g
       = (struct graphic *)tabrulerview_GetDrawable(self);
@@ -98,19 +105,14 @@ char *where;
 
 
 
-boolean
-tabrulerview__InitializeClass(ClassID)
-struct classhdr *ClassID;
+boolean tabrulerview__InitializeClass(struct classheader *ClassID)
 {
     TextFont = fontdesc_Create("andysans", fontdesc_Bold, 12);
     IconFont = fontdesc_Create("icon", fontdesc_Plain, 12);
     return TRUE;
 }
 
-boolean
-tabrulerview__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-register struct tabrulerview  *self;
+boolean tabrulerview__InitializeObject(struct classheader *ClassID, struct tabrulerview *self)
 {
     self->OnScreen = FALSE;
     self->tabrulerchanged = self->iconschanged = self->textchanged = TRUE;
@@ -124,18 +126,11 @@ register struct tabrulerview  *self;
     return TRUE;
 }
 
-void
-tabrulerview__FinalizeObject(ClassID, self)
-struct classhdr *ClassID;
-register struct tabrulerview  *self;
+void tabrulerview__FinalizeObject(struct classheader *ClassID, struct tabrulerview *self)
 {
 }
 
-void
-tabrulerview__ObservedChanged(self, dobj, status)
-register struct tabrulerview  *self;
-struct tabruler *dobj;
-long status;
+void tabrulerview__ObservedChanged(struct tabrulerview *self, struct observable *dobj, long status)
 {
     if (status == lprruler_DATACHANGED) 
 	self->iconschanged = self->textchanged = TRUE;
@@ -145,10 +140,7 @@ long status;
     tabrulerview_WantUpdate(self, self);
 }
 
-static void
-MoveIcon(self, newx)
-struct tabrulerview *self;
-register long newx;
+static void MoveIcon(struct tabrulerview *self, long newx)
 {
     RemoveIcon(self, self->Movex);
     self->Movex = newx;
@@ -156,21 +148,14 @@ register long newx;
 }
       
 
-static void
-RepaintIcon(self, position, color)
-register struct tabrulerview  *self;
-register long position;
-short color;
+static void RepaintIcon(struct tabrulerview *self, long position, short color)
 {
     tabrulerview_SetTransferMode(self, color);
     tabrulerview_MoveTo(self, position*self->mul/self->div, self->icony);
     tabrulerview_DrawText(self, IconString, 1, graphic_NOMOVEMENT);
 }
 
-static void
-RemoveIcon(self, pos) 
-register struct tabrulerview *self;
-register long pos;
+static void RemoveIcon(struct tabrulerview *self, long pos)
 {
     register long dx;
     register int i;
@@ -191,12 +176,7 @@ register long pos;
 	each minor cycle within a major cycle.
 	The lengths of the cycles are given by -major- and -minor-
 	assume major % minor == 0 */
-static void
-DoTicks(self, zeroloc, left, right, tbl)
-register struct tabrulerview *self;
-short zeroloc, right;
-register short left;
-register struct TickTbl *tbl;
+static void DoTicks(struct tabrulerview *self, short zeroloc, short left, short right, struct TickTbl *tbl)
 {
     short cycmax = tbl->majorpix / tbl->minorpix;	/* number of minor cycles in a major */
     register short tickloc;					/* where to place next tick */
@@ -235,9 +215,7 @@ the divisions always come out to exact values
     }
 }
 
-static void
-RecomputeAndRedraw(self)
-register struct tabrulerview *self;
+static void RecomputeAndRedraw(struct tabrulerview *self)
 {
     struct rectangle r;
 
@@ -267,9 +245,7 @@ register struct tabrulerview *self;
     self->tabrulerchanged = FALSE;
 }
 
-static void
-RedrawRuler(self)
-struct tabrulerview *self;
+static void RedrawRuler(struct tabrulerview *self)
 {
     struct rectangle r;
     r.left   = self->leftline;
@@ -293,11 +269,7 @@ struct tabrulerview *self;
 
 }
 
-static void
-RedrawText(self, number, flag)
-register struct tabrulerview *self;
-float number;
-boolean flag;
+static void RedrawText(struct tabrulerview *self, float number, boolean flag)
 {
     struct rectangle r;
     char buf[10];
@@ -327,9 +299,7 @@ boolean flag;
     self->textchanged = FALSE;
 }    
 
-static void
-RedrawCommands(self)
-register struct tabrulerview *self;
+static void RedrawCommands(struct tabrulerview *self)
 {
     long x, y, buttony;
     struct rectangle r;
@@ -370,9 +340,7 @@ register struct tabrulerview *self;
     tabrulerview_DrawText(self, "\'", 1, graphic_NOMOVEMENT);
 }
 
-static void
-RedrawPark(self)
-register struct tabrulerview *self;
+static void RedrawPark(struct tabrulerview *self)
 {
     struct rectangle r;
 
@@ -391,9 +359,7 @@ register struct tabrulerview *self;
     }
 }
 
-static void
-RedrawIcons(self)
-register struct tabrulerview  *self;
+static void RedrawIcons(struct tabrulerview *self)
 {
     register int i;
     struct rectangle r;
@@ -419,11 +385,7 @@ register struct tabrulerview  *self;
     self->iconschanged = FALSE;
 }
 
-void 
-tabrulerview__FullUpdate( self, type, left, top, width, height )
-register struct tabrulerview  *self;
-register enum view_UpdateType  type;
-register long  left, top, width, height;
+void tabrulerview__FullUpdate(struct tabrulerview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     if (type == view_Remove) {
 	self->OnScreen = FALSE;
@@ -447,9 +409,7 @@ register long  left, top, width, height;
 }
 
 
-void 
-tabrulerview__Update( self )
-register struct tabrulerview *self;
+void tabrulerview__Update(struct tabrulerview *self)
 {
     if (! self->OnScreen || ! CheckWindow(self, "Update")) return;
     if (self->tabrulerchanged) RedrawRuler(self);
@@ -457,11 +417,7 @@ register struct tabrulerview *self;
     if (self->iconschanged) RedrawIcons(self); 
 }
 
-struct view *
-tabrulerview__Hit(self, action, x, y, num_clicks)
-register struct tabrulerview  *self;
-register enum view_MouseAction  action;
-register long  x, y, num_clicks;
+struct view * tabrulerview__Hit(struct tabrulerview *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
     if (action == view_NoMouseEvent)
 	return (struct view *) self;
@@ -647,28 +603,19 @@ long *desiredHeight;
     return view_Fixed;
 }
 
-void
-tabrulerview__SetValues(self, tabs)
-register struct tabrulerview *self;
-struct tabs *tabs;
+void tabrulerview__SetValues(struct tabrulerview *self, struct tabs *tabs)
 {
     self->tabs = tabs;
     self->iconschanged = self->textchanged = TRUE;
     tabrulerview_WantUpdate(self, self);
 }
 
-void
-tabrulerview__GetValues(self, tabs)
-register struct tabrulerview *self;
-struct tabs **tabs;
+void tabrulerview__GetValues(struct tabrulerview *self, struct tabs **tabs)
 {
     *tabs = self->tabs;
 }
 
-int
-FindClosestTab(self, pos)
-register struct tabrulerview *self;
-register long pos;
+int FindClosestTab(struct tabrulerview *self, long pos)
 {
     int i;
     long dx;

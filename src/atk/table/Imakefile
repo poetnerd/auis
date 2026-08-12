@@ -29,6 +29,8 @@
 DOBJS = spread.do table.do
 IHFILES = spread.ih table.ih
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 NormalObjectRule()
 NormalATKRule()
 DynamicMultiObject(spread.do, spread.o print.o menu.o update.o hit.o keyboard.o, ${BASEDIR}/lib/atk/libbasics.a $(UTILLIB), $(MATHLIB))

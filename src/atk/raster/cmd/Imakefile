@@ -26,6 +26,7 @@
 * $
 */
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 #if defined(sys_ps_aix12) || defined(sys_ps_aix11)
 CDEBUGFLAGS =

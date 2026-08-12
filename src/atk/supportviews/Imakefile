@@ -26,6 +26,9 @@
 * $
 */
 
+/* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 DOBJS = bpair.do \
 	label.do \
 	labelv.do \
@@ -120,5 +123,3 @@ InstallDocs(scroll.doc,${DESTDIR}/doc/atk/supportviews)
 InstallDocs(strtbl.doc,${DESTDIR}/doc/atk/supportviews)
 InstallDocs(strtblv.doc,${DESTDIR}/doc/atk/supportviews)
 InstallDocs(dialog.pr oscroll.pr scroll.pr sbutton.pr matte.pr, $(DESTDIR)/lib/prs)
-
-

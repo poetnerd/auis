@@ -3,11 +3,9 @@
 %{
 #include <eli.h>
 #include <eliy.h>
+#include <stdlib.h>
 
-#if !defined(_IBMR2) && !defined(bsdi)
-extern char *realloc();
-#endif
-static DoString();
+static void DoString();
 #undef YY_INPUT
 #define YY_INPUT(buf,result,max_size) \
       (result = my_yy_input(buf, max_size, yyin))
@@ -108,7 +106,7 @@ static char elil[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhea
 #undef unput
 #endif
 
-static unput(c)		/* Replaces the lex macro */
+static void unput(c)		/* Replaces the lex macro */
     YY_CHAR  c;
 {
     switch (EliProcessInfo.u_source)
@@ -155,7 +153,7 @@ int c, grow;
     EliProcessInfo.yparsebuf[len + 1] = '\0';
 }
 
-static DoString()
+static void DoString()
 {
     int sawbslash = 0, c;
 
@@ -185,7 +183,13 @@ static DoString()
 
 int reset_lexer()
 {
-  yy_init = 1;
+  /* Modern flex inverted the meaning of the internal init flag from what
+     this file was written against (nonzero used to mean "please
+     reinitialize"; it now means "already initialized, skip setup").
+     Poking that flag directly left the scan buffer uncreated on the
+     first-ever call, crashing on a NULL yy_c_buf_p. Use the real API. */
+  yyrestart(yyin);
+  return 0;
 }
 
 /*

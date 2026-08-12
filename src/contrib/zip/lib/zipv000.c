@@ -82,11 +82,7 @@ END-SPECIFICATION  ************************************************************/
 #define  Objects(i)		((*self->objects)[i])
 #define  PaneExceptionHandler	(self->pane_exception_handler)
 
-struct graphic *
-zipview__Define_Graphic( self, font, pattern )
-  register struct zipview		 *self;
-  register struct fontdesc		 *font;
-  register unsigned char		  pattern;
+struct graphic * zipview__Define_Graphic(struct zipview *self, struct fontdesc *font, unsigned char pattern)
   {
   register struct graphic		 *graphic = NULL;
 /*===*/
@@ -127,10 +123,7 @@ static struct table
   return  graphic;
   }
 
-struct fontdesc *
-zipview__Contextual_Figure_Font( self, figure )
-  register struct zipview		 *self;
-  register zip_type_figure		  figure;
+struct fontdesc * zipview__Contextual_Figure_Font(struct zipview *self, zip_type_figure figure)
   {
   register struct fontdesc		 *font;
 
@@ -156,10 +149,7 @@ zipview__Contextual_Figure_Font( self, figure )
   return  font;
   }
 
-struct fontdesc *
-zipview__Select_Contextual_Figure_Font( self, figure )
-  register struct zipview		 *self;
-  register zip_type_figure		  figure;
+struct fontdesc * zipview__Select_Contextual_Figure_Font(struct zipview *self, zip_type_figure figure)
   {
   register struct fontdesc		 *font;
 
@@ -171,10 +161,7 @@ zipview__Select_Contextual_Figure_Font( self, figure )
   return  font;
   }
 
-void
-zipview__Ensure_Fill_Attributes( self, figure )
-  register struct zipview		*self;
-  register zip_type_figure		figure;
+void zipview__Ensure_Fill_Attributes(struct zipview *self, zip_type_figure figure)
   {
   double				red, green, blue;
   char					*def_bg, *def_fg;
@@ -192,9 +179,7 @@ zipview__Ensure_Fill_Attributes( self, figure )
   }
   }
 
-void
-zipview__Normalize_Fill_Attributes( self )
-  register struct zipview		*self;
+void zipview__Normalize_Fill_Attributes(struct zipview *self)
   {
   char					*def_bg, *def_fg;
 
@@ -207,10 +192,7 @@ zipview__Normalize_Fill_Attributes( self )
     }
   }
 
-long
-zipview__Ensure_Line_Attributes( self, figure )
-  register struct zipview		*self;
-  register zip_type_figure		figure;
+long zipview__Ensure_Line_Attributes(struct zipview *self, zip_type_figure figure)
   {
   register unsigned char		lwidth;
   double				red, green, blue;
@@ -252,9 +234,7 @@ zipview__Ensure_Line_Attributes( self, figure )
     return status;
   }
 
-void
-zipview__Normalize_Line_Attributes( self )
-  register struct zipview		*self;
+void zipview__Normalize_Line_Attributes(struct zipview *self)
   {
   char					*def_bg, *def_fg;
 
@@ -271,12 +251,7 @@ zipview__Normalize_Line_Attributes( self )
   OUT( zipview__Normalize_Line_Attributes )
   }
 
-boolean
-zipview__Condition( self, pane, figure, action )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
-  register int				  action;
+boolean zipview__Condition(struct zipview *self, zip_type_pane pane, zip_type_figure figure, int action)
   {
   register boolean			  condition = true;
 
@@ -331,10 +306,7 @@ zipview__Condition( self, pane, figure, action )
   return condition;
   }
 
-zipview__Set_Clip_Area( self, pane, l, t, w, h )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
-  register long				  l, t, w, h;
+void zipview__Set_Clip_Area(struct zipview *self, zip_type_pane pane, long l, long t, long w, long h)
   {
   struct rectangle			  rectangle;
 
@@ -347,9 +319,7 @@ zipview__Set_Clip_Area( self, pane, l, t, w, h )
   OUT(zipview__Set_Clip_Area);
   }
 
-zipview__Set_Pane_Clip_Area( self, pane )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
+void zipview__Set_Pane_Clip_Area(struct zipview *self, zip_type_pane pane)
   {
   struct rectangle			  rect, clip;
 
@@ -369,18 +339,14 @@ zipview__Set_Pane_Clip_Area( self, pane )
   OUT(zipview__Set_Pane_Clip_Area);
   }
 
-zipview__Reset_Pane_Clip_Area( self, pane )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
+void zipview__Reset_Pane_Clip_Area(struct zipview *self, zip_type_pane pane)
   {
   IN(zipview__Reset_Pane_Clip_Area);
   zipview_ClearClippingRect( self );
   OUT(zipview__Reset_Pane_Clip_Area);
   }
 
-zipview_Mark_Pane_Exposed( self, pane )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
+int zipview_Mark_Pane_Exposed(struct zipview *self, zip_type_pane pane)
   {
   IN(zipview_Mark_Pane_Exposed);
   pane->zip_pane_state.zip_pane_state_exposed = true;
@@ -389,9 +355,7 @@ zipview_Mark_Pane_Exposed( self, pane )
   OUT(zipview_Mark_Pane_Exposed);
   }
 
-zipview_Mark_Pane_Hidden( self, pane )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
+int zipview_Mark_Pane_Hidden(struct zipview *self, zip_type_pane pane)
   {
   IN(zipview_Mark_Pane_Hidden);
   pane->zip_pane_state.zip_pane_state_exposed = false;
@@ -400,12 +364,7 @@ zipview_Mark_Pane_Hidden( self, pane )
   OUT(zipview_Mark_Pane_Hidden);
   }
 
-boolean
-zipview__Proximate_Figure_Point( self, pane, figure, X, Y, x, y )
-  register struct zipview		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  X, Y, x, y;
+boolean zipview__Proximate_Figure_Point(struct zipview *self, zip_type_pane pane, zip_type_figure figure, zip_type_pixel X, zip_type_pixel Y, zip_type_pixel x, zip_type_pixel y)
   {
   register long				  status = false;
 
@@ -419,12 +378,7 @@ zipview__Proximate_Figure_Point( self, pane, figure, X, Y, x, y )
   return status;
   }
 
-long
-zipview__Proximate_Enclosure( self, pane, left, top, right, bottom, x, y )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  left, top, right, bottom;
-  register zip_type_pixel		  x, y;
+boolean zipview__Proximate_Enclosure(struct zipview *self, zip_type_pane pane, zip_type_pixel left, zip_type_pixel top, zip_type_pixel right, zip_type_pixel bottom, zip_type_pixel x, zip_type_pixel y)
   {
   register long				  status = false;
 
@@ -436,10 +390,7 @@ zipview__Proximate_Enclosure( self, pane, left, top, right, bottom, x, y )
   return status;
   }
 
-long
-zipview__Try_Pane_Exception_Handler( self, pane )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
+long zipview__Try_Pane_Exception_Handler(struct zipview *self, zip_type_pane pane)
   {
   IN(zipview__Try_Pane_Exception_Handler);
   if ( PaneExceptionHandler )

@@ -77,10 +77,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 static char havecurwd = FALSE;
 static char curwd [1024];    /* remember the current working directory */
 
-int abspath (name,result)
-
-char * name;
-char * result;
+int abspath(char *name, char *result)
 {
     register char * src;    /* source pointer for copy operations */
     register char * dst;    /* destination pointer for copy operations */

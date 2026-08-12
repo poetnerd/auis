@@ -54,23 +54,19 @@ END-SPECIFICATION  ************************************************************/
 #include "zip.ih"
 #include "raster.ih"
 #include <errno.h>
+#include <string.h>
 
 static boolean debug=FALSE;
 #define  BackgroundWidth	    (self->background_width)
 #define  BackgroundHeight	    (self->background_height)
 
-void
-lt__Set_Debug( self, mode )
-  register struct lt		     *self;
+void lt__Set_Debug(struct lt *self, boolean mode)
   {
   debug = mode;
   zip_Set_Debug( self->zip, debug );
   }
 
-boolean
-lt__InitializeObject( classID, self )
-  register struct classheader	     *classID;
-  register struct lt		     *self;
+boolean lt__InitializeObject(struct classheader *classID, struct lt *self)
   {
   IN(lt_InitializeObject);
   self->zip = zip_New();
@@ -82,10 +78,7 @@ lt__InitializeObject( classID, self )
   return TRUE;
   }
 
-long
-lt__Read_Visuals( self, foreground, background )
-  register struct lt		     *self;
-  register char			     *foreground, *background;
+long lt__Read_Visuals(struct lt *self, void *foreground, void *background)
   {
   register long			      status = 0;
   register FILE			     *file;

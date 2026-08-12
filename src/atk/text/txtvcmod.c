@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #endif
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <class.h>
 #include <ctype.h>
 #include <txtvcmds.h>
@@ -49,19 +50,32 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #define AUXMODULE 1
 #include <textv.eh>
+static void AdjustCase(struct textview *self, boolean upper, boolean firstOnly);
+static void AdjustIndentation(struct textview *self, int amount);
+static void YankCmd(struct textview *self, boolean onlycut);
+static int stringmatch(struct text *d, long pos, char *c);
+static int textview_DoRotatePaste(struct textview *self, int count);
+static int viYankDeleteLine(struct textview *self, int action);
+static void yankKillLine(struct textview *self, int action);
 
-extern void textview_ForwardWordCmd();
-extern void textview_EndOfWordCmd();
-extern void textview_BackwardWordCmd();
-extern void textview_ForwardWSWordCmd();
-extern void textview_BackwardWSWordCmd();
-extern void textview_EndOfWSWordCmd();
+extern void textview_ForwardWordCmd(struct textview *self);
+extern void textview_EndOfWordCmd(struct textview *self);
+extern void textview_BackwardWordCmd(struct textview *self);
+extern void textview_ForwardWSWordCmd(struct textview *self);
+extern void textview_BackwardWSWordCmd(struct textview *self);
+extern void textview_EndOfWSWordCmd(struct textview *self);
+extern void textview_NextLineCmd(struct textview *self);
+extern void textview_EndOfLineCmd(struct textview *self);
+extern void textview_BeginningOfLineCmd(struct textview *self);
+extern void textview_StartOfParaCmd(struct textview *self);
+extern void textview_EndOfParaCmd(struct textview *self);
+extern void textview_BeginningOfFirstWordCmd(struct textview *self);
+extern void textview_PreviousLineCmd(struct textview *self);
+extern int charType(char c);		/* defined in txtvcmds.c */
 
-static void yankDeleteWord ();
+static void yankDeleteWord(struct textview *self, int action, void (*moveFunction)());
 
-int textview_GetNextNonSpacePos(self, pos)
-struct textview *self;
-int pos;
+int textview_GetNextNonSpacePos(struct textview *self, int pos)
 {
     struct text *d = Text(self);
     long len = text_GetLength(d);
@@ -76,11 +90,7 @@ int pos;
     return pos;
 }
     
-void textview_AddSpaces(self, pos, startPos, len)
-struct textview *self;
-long pos;
-long startPos;
-long len;
+void textview_AddSpaces(struct textview *self, long pos, long startPos, long len)
 {
     struct text *d = Text(self);
 
@@ -93,9 +103,7 @@ long len;
     }
 }
 	
-boolean ConfirmViewDeletion(self, pos, len)
-struct textview *self;
-long pos, len;
+boolean ConfirmViewDeletion(struct textview *self, long pos, long len)
 {
     struct text *d;
     boolean hasViews;
@@ -131,8 +139,7 @@ long pos, len;
 
 /* Added friendly read-only behavior 04/27/89 --cm26 */
 
-boolean ConfirmReadOnly(self)
-struct textview *self;
+boolean ConfirmReadOnly(struct textview *self)
 {
     if (text_GetReadOnly(Text(self))) {
         message_DisplayString(self, 0,
@@ -142,9 +149,7 @@ struct textview *self;
         return FALSE;
 }
 
-void textview_SelfInsertCmd(self, a)
-register struct textview *self;
-char a;
+void textview_SelfInsertCmd(struct textview *self, char a)
 {
     register int ct, i, pos;
     register struct text *d;
@@ -168,8 +173,7 @@ char a;
     }
 }
 
-void textview_DeleteWordCmd (self)
-register struct textview *self;
+void textview_DeleteWordCmd(struct textview *self)
 {
     register int count, pos, len;
 
@@ -198,8 +202,7 @@ register struct textview *self;
     }
 }
 
-void textview_ForeKillWordCmd (self)
-register struct textview *self;
+void textview_ForeKillWordCmd(struct textview *self)
 {
     register int count, pos, len;
     register struct text *d;
@@ -241,8 +244,7 @@ register struct textview *self;
     }
 }
 
-void textview_OpenLineCmd(self)
-register struct textview *self;
+void textview_OpenLineCmd(struct textview *self)
 {
     register int i, pos, ct;
     char tc;
@@ -270,8 +272,7 @@ register struct textview *self;
     }
 }
 
-void textview_JoinCmd(self)
-    register struct textview *self;
+void textview_JoinCmd(struct textview *self)
 {
     struct text	*text;
     register int	i, ct;
@@ -305,9 +306,7 @@ void textview_JoinCmd(self)
   back out in place of the old. Otherwise we might get two nested
   text obejcts instead of one long text object. */
 
-static void yankKillLine (self, action)
-    register struct textview *self;
-    int		action;
+static void yankKillLine(struct textview *self, int action)
 {
     register int count, pos, endpos, lastpos, numNLs, applen = 0;
     register struct text *d;
@@ -346,15 +345,12 @@ static void yankKillLine (self, action)
     text_NotifyObservers(d, observable_OBJECTCHANGED);
 }
 
-void textview_YankLineCmd(self)
-    register struct textview *self;
+void textview_YankLineCmd(struct textview *self)
 {
     yankKillLine(self, YANK);
 }
 
-boolean textview_objecttest(self,name,desiredname)
-register struct textview *self;
-char *name,*desiredname;
+boolean textview_objecttest(struct textview *self, char *name, char *desiredname)
 {
     if(class_Load(name) == NULL){
         char foo[640];
@@ -376,9 +372,7 @@ char *name,*desiredname;
   as (char *) in rock. If ArgProvided (^U) then also ask for view name.
 */
 
-void textview_InsertInsetCmd (self, rock)
-register struct textview *self;
-long rock;
+void textview_InsertInsetCmd(struct textview *self, long rock)
 {
     char iname[100];
     char viewname[200];
@@ -424,8 +418,7 @@ long rock;
     im_ForceUpdate();
 }
 
-void textview_InsertFile(self)
-struct textview *self;
+void textview_InsertFile(struct textview *self)
 {
     char filename[MAXPATHLEN];
     FILE *inputFile;
@@ -470,9 +463,7 @@ struct textview *self;
     text_NotifyObservers(Text(self), observable_OBJECTCHANGED);
 }
 
-static void YankCmd(self, onlycut)
-register struct textview *self;
-boolean onlycut;
+static void YankCmd(struct textview *self, boolean onlycut)
 {
     long ct;
     long initialPos;
@@ -506,15 +497,12 @@ boolean onlycut;
     text_NotifyObservers(d, observable_OBJECTCHANGED);
 }
 
-void textview_YankCmd(self)
-struct textview *self;
+void textview_YankCmd(struct textview *self)
 {
     YankCmd(self, FALSE);
 }
 
-static textview_DoRotatePaste(self, count)
-register struct textview *self;
-int count;
+static int textview_DoRotatePaste(struct textview *self, int count)
 {
     register struct text *d = Text(self);
 
@@ -532,8 +520,7 @@ int count;
 
 
 
-void textview_PutAfterCmd(self)
-    register struct textview *self;
+void textview_PutAfterCmd(struct textview *self)
 {
     FILE *pasteFile;
     int cutChar;
@@ -560,8 +547,7 @@ void textview_PutAfterCmd(self)
     textview_YankCmd(self);
 }
 
-void textview_PutBeforeCmd(self)
-    register struct textview *self;
+void textview_PutBeforeCmd(struct textview *self)
 {
     FILE *pasteFile;
     int cutChar;
@@ -578,20 +564,17 @@ void textview_PutBeforeCmd(self)
     textview_YankCmd(self);
 }
 
-void textview_BackwardsRotatePasteCmd(self)
-struct textview *self;
+void textview_BackwardsRotatePasteCmd(struct textview *self)
 {
     textview_DoRotatePaste(self, - im_Argument(textview_GetIM(self)));
 }
 
-void textview_RotatePasteCmd(self)
-struct textview *self;
+void textview_RotatePasteCmd(struct textview *self)
 {
     textview_DoRotatePaste(self, im_Argument(textview_GetIM(self)));
 }
 
-void textview_InsertNLCmd(self)
-register struct textview *self;
+void textview_InsertNLCmd(struct textview *self)
 {
     textview_SelfInsertCmd(self,'\012');
     if (im_GetLastCmd(textview_GetIM(self)) != lcInsertEnvironment) {
@@ -599,10 +582,7 @@ register struct textview *self;
     }
 }
 
-static int stringmatch(d,pos,c)
-register struct text *d;
-register long pos;
-register char *c;
+static int stringmatch(struct text *d, long pos, char *c)
 {
     /* Tests if the text begins with the given string */
     while(*c != '\0') {
@@ -621,10 +601,7 @@ register char *c;
   if you want one datastream.
 */
 
-void textview__DoCopyRegion(self, pos, len, appendFlag, copyAsText)
-struct textview *self;
-long pos, len;
-boolean appendFlag;
+void textview__DoCopyRegion(struct textview *self, long pos, long len, boolean appendFlag, boolean copyAsText)
 {
     struct text *d;
     register long nextChange;
@@ -653,8 +630,7 @@ boolean appendFlag;
 	im_CloseToCutBuffer(textview_GetIM(self), cutFile);
 }
 
-void textview_ZapRegionCmd(self)
-register struct textview *self;
+void textview_ZapRegionCmd(struct textview *self)
 {
     long pos, len;
     struct text *d = Text(self);
@@ -676,8 +652,7 @@ register struct textview *self;
 /* a larger area is re-cut.  This isn't visible and wouldn't be so bad were */
 /* it not for the extreme inefficiency of cutbuffer transfers. */
 
-void textview_KillLineCmd(self)
-register struct textview *self;
+void textview_KillLineCmd(struct textview *self)
 {
     register int count, pos, endpos, lastpos;
     register struct text *d;
@@ -725,8 +700,7 @@ register struct textview *self;
   window will result in the latter cut being appended to
   the other window's cut. */
 
-void textview_MITKillLineCmd(self)
-register struct textview *self;
+void textview_MITKillLineCmd(struct textview *self)
 {
     register int count, pos, endpos, lastpos;
     register struct text *d;
@@ -773,14 +747,12 @@ register struct textview *self;
  * the cut to append to the current buffer instead of placing it in a new
  * buffer. */
 
-void textview_AppendNextCut(self)
-struct textview *self;
+void textview_AppendNextCut(struct textview *self)
 {
     im_SetLastCmd(textview_GetIM(self), lcKill);	/* mark us as a text killing command */
 }
 
-void textview_CopyRegionCmd (self)
-register struct textview *self;
+void textview_CopyRegionCmd(struct textview *self)
 {
     struct text *d = Text(self);
 
@@ -789,9 +761,7 @@ register struct textview *self;
 		  textview_GetDotLength(self), FALSE, d->CopyAsText);
 }
 
-void textview_GetToCol (self, col)
-register struct textview *self;
-register int col;
+void textview_GetToCol(struct textview *self, int col)
 {
     register struct text *d;
     register int pos;
@@ -818,14 +788,12 @@ register int col;
     }
 }
 
-void textview_InsertSoftNewLineCmd(self)
-register struct textview *self;
+void textview_InsertSoftNewLineCmd(struct textview *self)
 {
     textview_SelfInsertCmd(self,'\r');
 }
 
-void textview_MyLfCmd(self)
-register struct textview *self;
+void textview_MyLfCmd(struct textview *self)
 {
     register struct text *d = Text(self);
     register int pos, startPos, endPos;
@@ -842,8 +810,7 @@ register struct textview *self;
     textview_SetDotPosition(self, textview_GetDotPosition(self) + endPos - startPos);
 }
 
-void textview_MySoftLfCmd(self)
-struct textview *self;
+void textview_MySoftLfCmd(struct textview *self)
 {
     register struct text *d;
     register int pos, len, endPos, startPos;
@@ -869,8 +836,7 @@ struct textview *self;
     textview_SetDotPosition(self, textview_GetDotPosition(self) + endPos - startPos);
 }
 
-void textview_DeleteCmd (self)
-register struct textview *self;
+void textview_DeleteCmd(struct textview *self)
 {
     register int pos, len;
 
@@ -888,8 +854,7 @@ register struct textview *self;
     }
 }
 
-void textview_ViDeleteCmd (self)
-register struct textview *self;
+void textview_ViDeleteCmd(struct textview *self)
 {
     register struct text *d;
     register int pos, len, j;
@@ -930,8 +895,7 @@ register struct textview *self;
     }
 }
 
-void textview_KillWhiteSpaceCmd(self)
-register struct textview *self;
+void textview_KillWhiteSpaceCmd(struct textview *self)
 {
     register struct text *d;
     register int p, tc, ep;
@@ -958,9 +922,7 @@ register struct textview *self;
     im_SetLastCmd(textview_GetIM(self), lcInsertEnvironment);
 }
 
-int textview_GetSpace(self, pos)
-struct textview *self;
-register int pos;
+int textview_GetSpace(struct textview *self, int pos)
 {
     register int rval;
     register int tc;
@@ -982,8 +944,7 @@ register int pos;
     return rval;
 }
 
-static void AdjustIndentation(self, amount)
-struct textview *self;
+static void AdjustIndentation(struct textview *self, int amount)
 {
     int indentation;
 
@@ -999,20 +960,17 @@ struct textview *self;
     textview_EndOfParaCmd(self);
 }
 
-void textview_UnindentCmd(self)
-struct textview *self;
+void textview_UnindentCmd(struct textview *self)
 {
     AdjustIndentation(self, -4);
 }
 
-void textview_IndentCmd(self)
-struct textview *self;
+void textview_IndentCmd(struct textview *self)
 {
     AdjustIndentation(self, 4);
 }
 
-void textview_ExchCmd(self)
-register struct textview *self;
+void textview_ExchCmd(struct textview *self)
 {
     register long p;
     register long len;
@@ -1027,8 +985,7 @@ register struct textview *self;
     textview_WantUpdate(self, self);
 }
 
-void textview_RuboutCmd (self)
-register struct textview *self;
+void textview_RuboutCmd(struct textview *self)
 {
     register long endpos, len;
     struct text *d = Text(self);
@@ -1064,8 +1021,7 @@ register struct textview *self;
 
 /* Switches the two characters before the dot. */
 
-void textview_TwiddleCmd (self)
-register struct textview *self;
+void textview_TwiddleCmd(struct textview *self)
 {
     long pos;
     register struct text *text;
@@ -1125,8 +1081,7 @@ register struct textview *self;
     text_NotifyObservers(text, observable_OBJECTCHANGED);
 }
 
-void textview_RuboutWordCmd (self)
-register struct textview *self;
+void textview_RuboutWordCmd(struct textview *self)
 {
     register int count, endpos, len;
 
@@ -1152,8 +1107,7 @@ register struct textview *self;
 
 /* The safest way to prepend 'back killed' text is to yank it and kill the larger region. */
 
-void textview_BackKillWordCmd (self)
-register struct textview *self;
+void textview_BackKillWordCmd(struct textview *self)
 {
     register int count, endpos, pos, startpos;
     register struct text *d;
@@ -1190,10 +1144,7 @@ register struct textview *self;
     }
 }
 
-static void yankDeleteWord (self, action, moveFunction)
-    register struct textview *self;
-    int		action;
-    void	(*moveFunction) ();
+static void yankDeleteWord(struct textview *self, int action, void (*moveFunction)())
 { 
     register int i, ct, pos, npos, cutpos;
     boolean	backward = FALSE;
@@ -1235,75 +1186,62 @@ static void yankDeleteWord (self, action, moveFunction)
     text_NotifyObservers(Text(self), observable_OBJECTCHANGED);
 }
 
-void textview_YankWordCmd(self)
-    register struct textview *self;
+void textview_YankWordCmd(struct textview *self)
 {
     yankDeleteWord(self, YANK, textview_ForwardWordCmd);
 }
 
-void textview_DeleteEndOfWordCmd(self)
-    register struct textview *self;
+void textview_DeleteEndOfWordCmd(struct textview *self)
 {
     yankDeleteWord(self, DELETE, textview_EndOfWordCmd);
 }
 
-void textview_YankEndOfWordCmd(self)
-    register struct textview *self;
+void textview_YankEndOfWordCmd(struct textview *self)
 {
     yankDeleteWord(self, YANK, textview_EndOfWordCmd);
 }
 
-void textview_DeleteBackwardWordCmd(self)
-    register struct textview *self;
+void textview_DeleteBackwardWordCmd(struct textview *self)
 {
     yankDeleteWord(self, DELETE, textview_BackwardWordCmd);
 }
 
-void textview_YankBackwardWordCmd(self)
-    register struct textview *self;
+void textview_YankBackwardWordCmd(struct textview *self)
 {
     yankDeleteWord(self, YANK, textview_BackwardWordCmd);
 }
 
-void textview_DeleteWSWordCmd(self)
-    register struct textview *self;
+void textview_DeleteWSWordCmd(struct textview *self)
 {
     yankDeleteWord(self, DELETE, textview_ForwardWSWordCmd);
 }
 
-void textview_YankWSWordCmd(self)
-    register struct textview *self;
+void textview_YankWSWordCmd(struct textview *self)
 {
     yankDeleteWord(self, YANK, textview_ForwardWSWordCmd);
 }
 
-void textview_DeleteBackwardWSWordCmd(self)
-    register struct textview *self;
+void textview_DeleteBackwardWSWordCmd(struct textview *self)
 {
     yankDeleteWord(self, DELETE, textview_BackwardWSWordCmd);
 }
 
-void textview_YankBackwardWSWordCmd(self)
-    register struct textview *self;
+void textview_YankBackwardWSWordCmd(struct textview *self)
 {
     yankDeleteWord(self, YANK, textview_BackwardWSWordCmd);
 }
 
-void textview_DeleteEndOfWSWordCmd(self)
-    register struct textview *self;
+void textview_DeleteEndOfWSWordCmd(struct textview *self)
 {
     yankDeleteWord(self, DELETE, textview_EndOfWSWordCmd);
 }
 
-void textview_YankEndOfWSWordCmd(self)
-    register struct textview *self;
+void textview_YankEndOfWSWordCmd(struct textview *self)
 {
     yankDeleteWord(self, YANK, textview_EndOfWSWordCmd);
 }
 
-static viYankDeleteLine(self, action)
-    struct textview *self;
-    int		action;
+static int viYankDeleteLine(struct textview *self, int action)
 {
     register int  count, pos, endpos, lastpos, numNLs, applen = 0;
     register struct text *d;
@@ -1357,20 +1295,17 @@ static viYankDeleteLine(self, action)
     im_SetLastCmd(self->header.view.imPtr, lcKill);	/* mark us as a text killing command */
 }
 
-void textview_ViDeleteLineCmd(self)
-    struct textview *self;
+void textview_ViDeleteLineCmd(struct textview *self)
 {
     viYankDeleteLine(self, DELETE);
 }
 
-void textview_ViYankLineCmd(self)
-    struct textview *self;
+void textview_ViYankLineCmd(struct textview *self)
 {
     viYankDeleteLine(self, YANK);
 }
 
-void textview_OpenLineBeforeCmd(self)
-    struct textview *self;
+void textview_OpenLineBeforeCmd(struct textview *self)
 {
     long	oldPos;
     char	nlChar	=	'\n';
@@ -1393,8 +1328,7 @@ void textview_OpenLineBeforeCmd(self)
     textview_ToggleVIMode(self);
 }
 
-void textview_OpenLineAfterCmd(self)
-    struct textview *self;
+void textview_OpenLineAfterCmd(struct textview *self)
 {
     im_ClearArg(self->header.view.imPtr); 
     textview_EndOfLineCmd(self);
@@ -1402,30 +1336,26 @@ void textview_OpenLineAfterCmd(self)
     textview_ToggleVIMode(self);
 }
 
-void textview_InsertAtBeginningCmd(self)
-    struct textview *self;
+void textview_InsertAtBeginningCmd(struct textview *self)
 {
     textview_BeginningOfLineCmd(self);
     textview_ToggleVIMode(self);
 }
 
-void textview_InsertAtEndCmd(self)
-    struct textview *self;
+void textview_InsertAtEndCmd(struct textview *self)
 {
     textview_EndOfLineCmd(self);
     textview_ToggleVIMode(self);
 }
 
-void textview_ChangeRestOfLineCmd(self)
-    struct textview *self;
+void textview_ChangeRestOfLineCmd(struct textview *self)
 {
     im_ClearArg(self->header.view.imPtr); 
     textview_KillLineCmd(self);
     textview_ToggleVIMode(self);
 }
 
-void textview_ChangeLineCmd(self)
-    struct textview *self;
+void textview_ChangeLineCmd(struct textview *self)
 {
     int		dsize;
     struct text	*text;
@@ -1440,22 +1370,19 @@ void textview_ChangeLineCmd(self)
 	textview_OpenLineBeforeCmd(self);
 }
 
-void textview_ChangeWordCmd(self)
-    struct textview *self;
+void textview_ChangeWordCmd(struct textview *self)
 {
     textview_DeleteEndOfWordCmd(self);
     textview_ToggleVIMode(self);
 }
 
-void textview_ChangeSelectionCmd(self)
-    struct textview *self;
+void textview_ChangeSelectionCmd(struct textview *self)
 {
     textview_ZapRegionCmd(self);
     textview_ToggleVIMode(self);
 }
 
-void textview_ReplaceCharCmd(self)
-    struct textview *self;
+void textview_ReplaceCharCmd(struct textview *self)
 {
     char 	tc;
     long	pos;
@@ -1468,17 +1395,14 @@ void textview_ReplaceCharCmd(self)
     text_NotifyObservers(Text(self), observable_OBJECTCHANGED);
 }
 
-void textview_SubstituteCharCmd(self)
-    struct textview *self;
+void textview_SubstituteCharCmd(struct textview *self)
 {
 
     textview_ViDeleteCmd(self);
     textview_ToggleVIMode(self);
 }
 
-void textview_DigitCmd(self, c)
-struct textview *self;
-register char c;
+void textview_DigitCmd(struct textview *self, char c)
 {
     struct im *im = textview_GetIM(self);
 
@@ -1497,9 +1421,7 @@ register char c;
     textview_SelfInsertCmd(self, c);
 }
 
-static void AdjustCase(self, upper, firstOnly)
-struct textview *self;
-boolean upper, firstOnly;
+static void AdjustCase(struct textview *self, boolean upper, boolean firstOnly)
 {
     long pos, len, count, i;
     boolean capitalize;
@@ -1546,30 +1468,22 @@ boolean upper, firstOnly;
     text_NotifyObservers(Text(self), observable_OBJECTCHANGED);
 }
 
-void textview_UppercaseWord(self, key)
-struct textview *self;
-long key;
+void textview_UppercaseWord(struct textview *self, long key)
 {
     AdjustCase(self, TRUE, FALSE);
 }
 
-void textview_LowercaseWord(self, key)
-struct textview *self;
-long key;
+void textview_LowercaseWord(struct textview *self, long key)
 {
     AdjustCase(self, FALSE, FALSE);
 }
 
-void textview_CapitalizeWord(self, key)
-struct textview *self;
-long key;
+void textview_CapitalizeWord(struct textview *self, long key)
 {
     AdjustCase(self, TRUE, TRUE);
 }
 
-void textview_ToggleCase(self, key)
-struct textview *self;
-long key;
+void textview_ToggleCase(struct textview *self, long key)
 {
     long pos = textview_CollapseDot(self);
     long len = text_GetLength(Text(self));
@@ -1594,8 +1508,7 @@ long key;
     textview_SetDotPosition(self, pos + 1);
 }
 
-void textview_QuoteCmd(self)
-register struct textview *self;
+void textview_QuoteCmd(struct textview *self)
 {
     register long i;
     long count;

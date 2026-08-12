@@ -31,15 +31,34 @@
 static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs/ms/RCS/purge.c,v 2.26 1993/08/25 20:36:06 susan Exp $";
 #endif
 
-#include <ms.h>
+/* andrewos.h before ms.h, matching convention elsewhere in this directory. */
 #include <andrewos.h> /* sys/file.h */
+#include <ms.h>
+#include <stdlib.h>
+extern int CloseDirsThatNeedIt();
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int DestructivelyWriteDirectoryHead(struct MS_Directory *Dir);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
+extern int MarkQuietlyInProgress(char *dirname);
+extern int QuickGetBodyFileName(char *DirName, char *id, char *FileName);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
+extern int RetryBodyFileName(char *FileName);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int writeall(int fd, char *Buf, int NBytes);  /* overhead/util/lib/writeall.c */
 
-#ifndef _IBMR2
-extern char *malloc();
-#endif /* _IBMR2 */
+/* msjournal.c, this directory -- writeback capture (a no-op unless
+   dirname is a mirrored folder; see the grammar note there).
+   MSJournal_Record is genuinely variadic, so it needs a real "..."
+   prototype at every call site, unlike the implicit-int K&R calls
+   elsewhere in this file: on Apple's arm64 ABI a variadic callee reads
+   its variable arguments off the stack, while a caller with no
+   prototype in scope passes them the normal-call way, in registers --
+   the same caller/callee ABI mismatch already documented for
+   dbg_open() in overhead/util/hdrs/fdplumb.h. */
+extern void MSJournal_Record(const char *dir, const char *fmt, ...);
 
-MS_PurgeDeletedMessages(dirname)
-char *dirname;
+int MS_PurgeDeletedMessages(char *dirname)
 {
     char SnapshotDum[AMS_SNAPSHOTSIZE], FileNameBuf[1+MAXPATHLEN],
 	TmpFileName[1+MAXPATHLEN], HeadDum[AMS_DIRHEADSIZE];
@@ -67,6 +86,7 @@ char *dirname;
 	    (void) unlink(FileNameBuf);
 	}
 	debug(4, ("Unlinked: %s\n", FileNameBuf));
+	MSJournal_Record(Dir->UNIXDir, "J1 purge %s", AMS_ID(SnapshotDum));
     }
     CloseMSDir(Dir, MD_READ); /* ignore errors -- read only */
 

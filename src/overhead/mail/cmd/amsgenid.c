@@ -32,12 +32,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <mailconf.h>
 #include <mail.h>
 
-main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     int i;
     int isFile = 0;

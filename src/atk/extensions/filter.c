@@ -48,6 +48,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/exte
 #include <textv.ih>
 #include <text.ih>
 #include <message.ih>
+static void commandFinished();
+static void filter(struct textview *tv, char *command, short method);
+static void filterRegion(struct textview *tv);
+static void filterRegionFmt(struct textview *tv);
+static void filterRegionThruCmdFmt(struct textview *tv, char *command);
+static void filterRegionThruCommand(struct textview *tv, char *command);
+static void sinkRegion(struct textview *tv);
+static void sinkRegionFmt(struct textview *tv);
+static void sinkRegionThruCmdFmt(struct textview *tv, char *command);
+static void sinkRegionThruCommand(struct textview *tv, char *command);
 
 #define IN 1
 #define OUT 2
@@ -102,13 +112,10 @@ union wait *status;
     free((char *)fd);
 }
 
-static void filter(tv,command,method)
-struct textview *tv;
-char *command;
-short method;
+static void filter(struct textview *tv, char *command, short method)
 {
     static int count=0,pid;
-    char *argvbuf[100],**argv,**strtoargv();
+    char *argvbuf[100],**argv,**strtoargv(char *str, char **argv, int len);
     char buf[100];
     struct filterdata *fd=(struct filterdata *)malloc(sizeof(struct filterdata));
 
@@ -138,7 +145,7 @@ short method;
 	fd->infp=fopen("/dev/null","r");
     if(fd->infp==NULL){
 	char mbuf[200];
-	sprintf("Can't open %s.",buf);
+	sprintf(mbuf, "Can't open %s.",buf);
 	message_DisplayString(tv,1,mbuf);
 	return;
     }
@@ -151,7 +158,7 @@ short method;
 	fd->outfp=fopen("/dev/null","w");
     if(fd->outfp==NULL){
 	char mbuf[200];
-	sprintf("Can't open %s.",buf);
+	sprintf(mbuf, "Can't open %s.",buf);
 	message_DisplayString(tv,1,mbuf);
 	fclose(fd->infp);
 	return;
@@ -197,13 +204,12 @@ short method;
 	    message_DisplayString(tv,1,"Fork failed.");
 	    return;
 	default:
-	    im_AddZombieHandler(pid, (procedure) commandFinished,(long)fd);
+	    im_AddZombieHandler(pid, (procedure) commandFinished,fd);
 	    message_DisplayString(tv,0,"Filtering...");
     }
 }
 
-static void filterRegion(tv)
-struct textview *tv;
+static void filterRegion(struct textview *tv)
 {
     char cbuf[500];
     if(message_AskForString(tv,0,"Command: ",NULL,cbuf,sizeof(cbuf))!=0)
@@ -211,8 +217,7 @@ struct textview *tv;
     filter(tv,cbuf,IN+OUT);
 }
 
-static void filterRegionFmt(tv)
-struct textview *tv;
+static void filterRegionFmt(struct textview *tv)
 {
     char cbuf[500];
     if (message_AskForString(tv,0,"Command: ",NULL,cbuf,sizeof(cbuf))!=0)
@@ -220,35 +225,28 @@ struct textview *tv;
     filter(tv,cbuf,IN+OUT+FORMAT);
 }
 
-static void filterRegionThruCommand(tv,command)
-struct textview *tv;
-char *command;
+static void filterRegionThruCommand(struct textview *tv, char *command)
 {
     char cbuf[500];
     strcpy(cbuf,command); /* since filter trashes its input string */
     filter(tv,cbuf,IN+OUT);
 }
 
-static void filterRegionThruCmdFmt(tv,command)
-struct textview *tv;
-char *command;
+static void filterRegionThruCmdFmt(struct textview *tv, char *command)
 {
     char cbuf[500];
     strcpy(cbuf,command); /* since filter trashes its input string */
     filter(tv,cbuf,IN+OUT+FORMAT);
 }
 
-static void sinkRegionThruCommand(tv,command)
-struct textview *tv;
-char *command;
+static void sinkRegionThruCommand(struct textview *tv, char *command)
 {
     char cbuf[500];
     strcpy(cbuf,command); /* since filter trashes its input string */
     filter(tv,cbuf,IN);
 }
 
-static void sinkRegion(tv)
-struct textview *tv;
+static void sinkRegion(struct textview *tv)
 {
     char cbuf[500];
     if(message_AskForString(tv,0,"Command: ",NULL,cbuf,sizeof(cbuf))!=0)
@@ -256,17 +254,14 @@ struct textview *tv;
     filter(tv,cbuf,IN);
 }
 
-static void sinkRegionThruCmdFmt(tv,command)
-struct textview *tv;
-char *command;
+static void sinkRegionThruCmdFmt(struct textview *tv, char *command)
 {
     char cbuf[500];
     strcpy(cbuf,command); /* since filter trashes its input string */
     filter(tv,cbuf,IN+FORMAT);
 }
 
-static void sinkRegionFmt(tv)
-struct textview *tv;
+static void sinkRegionFmt(struct textview *tv)
 {
     char cbuf[500];
     if(message_AskForString(tv,0,"Command: ",NULL,cbuf,sizeof(cbuf))!=0)
@@ -274,8 +269,7 @@ struct textview *tv;
     filter(tv,cbuf,IN+FORMAT);
 }
 
-boolean filter__InitializeClass(classID)
-struct classheader *classID;
+boolean filter__InitializeClass(struct classheader *classID)
 {
     struct classinfo *tvi=class_Load("textview");
 

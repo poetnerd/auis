@@ -127,44 +127,36 @@ END-SPECIFICATION  ************************************************************/
 #include <view.ih>
 #include <zipobj.ih>
 #include <zipopoly.eh>
+#include <stdlib.h>
+static int Draw( struct zipopolygon *self, zip_type_figure figure, zip_type_pane pane, short action );
 
 static long				  sides;
 
 
-static Draw();
+static int Draw( struct zipopolygon *self, zip_type_figure figure, zip_type_pane pane, short action );
 
-char
-zipopolygon__Object_Icon( self )
-  register struct zipopolygon		 *self;
+char zipopolygon__Object_Icon(struct zipopolygon *self)
   {
   IN(zipopolygon__Object_Icon);
   OUT(zipopolygon__Object_Icon);
   return  'N';
   }
 
-char
-zipopolygon__Object_Icon_Cursor( self )
-  register struct zipopolygon		 *self;
+char zipopolygon__Object_Icon_Cursor(struct zipopolygon *self)
   {
   IN(zipopolygon__Object_Icon_Cursor);
   OUT(zipopolygon__Object_Icon_Cursor);
   return  'G';
   }
 
-char
-zipopolygon__Object_Datastream_Code( self )
-  register struct zipopolygon		 *self;
+char zipopolygon__Object_Datastream_Code(struct zipopolygon *self)
   {
   IN(zipopolygon__Object_Datastream_Code);
   OUT(zipopolygon__Object_Datastream_Code);
   return  'E';
   }
 
-long
-zipopolygon__Show_Object_Properties( self, pane, figure )
-  register struct zipopolygon		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
+long zipopolygon__Show_Object_Properties(struct zipopolygon *self, zip_type_pane pane, zip_type_figure figure)
   {
   char					 *response;
 
@@ -182,12 +174,7 @@ zipopolygon__Show_Object_Properties( self, pane, figure )
   return  zip_ok;
   }
 
-long
-zipopolygon__Build_Object( self, pane, action, x, y, clicks, X, Y )
-  register struct zipopolygon		 *self;
-  register zip_type_pane		  pane;
-  register long				  action, x, y, clicks;
-  register zip_type_point		  X, Y;
+long zipopolygon__Build_Object(struct zipopolygon *self, zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y)
   {
   register long				  status = zip_ok,
 					  radial_point = 0;
@@ -251,11 +238,7 @@ zipopolygon__Build_Object( self, pane, action, x, y, clicks, X, Y )
   return  status;
   }
 
-long
-zipopolygon__Draw_Object( self, figure, pane )
-  register struct zipopolygon		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipopolygon__Draw_Object(struct zipopolygon *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -266,11 +249,7 @@ zipopolygon__Draw_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipopolygon__Clear_Object( self, figure, pane )
-  register struct zipopolygon		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipopolygon__Clear_Object(struct zipopolygon *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -282,22 +261,14 @@ zipopolygon__Clear_Object( self, figure, pane )
   }
 
 #if (defined(MACH) && defined(i386))
-int calltosavecompile (pane, figure, self)
-zip_type_pane pane;
-zip_type_figure figure;
-struct zipopolygon *self;
+int calltosavecompile(zip_type_pane pane, zip_type_figure figure, struct zipopolygon *self)
 {
 return (abs( zipview_X_Point_To_Pixel( View, pane, figure,
 		figure_x_point + figure_x_points(0) ) - window_x_point ));
 }
 #endif
 
-static
-Draw( self, figure, pane, action )
-  register struct zipopolygon		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register short			  action;
+static int Draw(struct zipopolygon *self, zip_type_figure figure, zip_type_pane pane, short action)
   {
   register long				  status = zip_ok, i,
 					  sides, radius;
@@ -383,11 +354,7 @@ Draw( self, figure, pane, action )
   return  status;
   }
 
-long
-zipopolygon__Print_Object( self, figure, pane )
-  register struct zipopolygon		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipopolygon__Print_Object(struct zipopolygon *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  pc, status = zip_ok,
 					  sides, radius, even = true;

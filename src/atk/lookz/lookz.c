@@ -44,13 +44,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/look
 #include <dataobj.ih>	/* for dataobject_NOREADERROR */
 #include <text.ih>
 #include <lookz.eh>
+#include <string.h>
 
 #define MAXFILELINE 255
 
-	boolean
-lookz__InitializeObject(ClassID, self)
-	struct classheader *ClassID;
-	register struct lookz  *self;
+boolean lookz__InitializeObject(struct classheader *ClassID, struct lookz *self)
 {
 	self->visible = TRUE;
 	self->canClose = TRUE;
@@ -58,10 +56,7 @@ lookz__InitializeObject(ClassID, self)
 	return TRUE;
 }
 
-	void
-lookz__FinalizeObject(ClassID, self)
-	struct classheader *ClassID;
-	register struct lookz  *self;
+void lookz__FinalizeObject(struct classheader *ClassID, struct lookz *self)
 {
 	if(self->text != NULL) {
 	    text_RemoveObserver(self->text, self);
@@ -69,11 +64,7 @@ lookz__FinalizeObject(ClassID, self)
 	}
 }
 
-	long
-lookz__Read( self, file, id )
-	register struct lookz  *self;
-	register FILE  *file;
-	register long  id;			/* !0 if data stream, 0 if direct from file*/
+long lookz__Read(struct lookz *self, FILE *file, long id)
 {
 	/* reads a lookz from -file-.  See file format in lookz.ch */
 	/* This routine reads the \enddata, if any. Its syntax is not checked */
@@ -99,19 +90,14 @@ lookz__Read( self, file, id )
 	return dataobject_NOREADERROR;
 }
 	  
-	long
-lookz__Write( self, file, writeID, level )
-	register struct lookz  *self;
-	FILE  *file;
- 	long  writeID;
-	int  level;
+long lookz__Write(struct lookz *self, FILE *file, long writeID, int level)
 {
 	unsigned char head[50];
 	long id = lookz_UniqueID(self);
 	if (self->header.dataobject.writeID != writeID) {
 		/* new instance of write, do it */
 		self->header.dataobject.writeID = writeID;
-		sprintf(head, "data{%s, %d}\n", class_GetTypeName(self), id);
+		sprintf(head, "data{%s, %ld}\n", class_GetTypeName(self), id);
 		fprintf(file, "\\begin%s", head);
 
 		fprintf(file, "%s\n", (lookz_GetVisibility(self) ? "visible" : "hidden"));
@@ -121,10 +107,7 @@ lookz__Write( self, file, writeID, level )
 	return id;
 }
 
-	void
-lookz__SetVisibility(self, visibility)
-	register struct lookz  *self;
-	boolean visibility;
+void lookz__SetVisibility(struct lookz *self, boolean visibility)
 {
 	/* this routine ensures that self->visible will be either TRUE or FALSE */
 	if (self->visible != (visibility ? TRUE : FALSE)) {
@@ -133,9 +116,7 @@ lookz__SetVisibility(self, visibility)
 	}
 }
 
-void lookz__SetCanClose(self, canClose)
-struct lookz *self;
-boolean canClose;
+void lookz__SetCanClose(struct lookz *self, boolean canClose)
 {
     if (self->canClose != canClose) {
 	self->canClose = canClose;
@@ -144,9 +125,7 @@ boolean canClose;
     }
 }
 
-void lookz__SetTextObject(self, text)
-struct lookz *self;
-struct text *text;
+void lookz__SetTextObject(struct lookz *self, struct text *text)
 {
     if (self->text != text) {
 	if (self->text != NULL) {
@@ -160,10 +139,7 @@ struct text *text;
     }
 }
 
-void lookz__ObservedChanged(self, dobj, value)
-struct lookz *self;
-struct dataobject *dobj;
-long value;
+void lookz__ObservedChanged(struct lookz *self, struct observable *dobj, long value)
 {
     if (value == observable_OBJECTDESTROYED &&
 	 (struct dataobject *) self->text == dobj) {

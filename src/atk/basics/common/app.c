@@ -40,18 +40,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <graphic.ih>
 #include <profile.ih>
 #include <app.eh>
+static void errorProc(pointer rock, char *str);
 
-static void errorProc(rock, str)
-pointer rock;
-char *str;
+static void errorProc(pointer rock, char *str)
 {
     fprintf(stderr, "%s", str);
     fflush(stderr);
 }
 
-boolean application__InitializeObject(classID,self)
-struct classheader *classID;
-struct application *self;
+boolean application__InitializeObject(struct classheader *classID, struct application *self)
 {
     self->fork=TRUE; /* do it by default */
     self->name=NULL;
@@ -68,13 +65,10 @@ struct application *self;
     return TRUE;
 }
 
-void application__FinalizeObject(classID,self)
-struct classheader *classID;
-struct application *self;
+void application__FinalizeObject(struct classheader *classID, struct application *self)
 {
 }
-void application__PrintVersionNumber(self)
-struct application *self;
+void application__PrintVersionNumber(struct application *self)
 {
     if (!environ_GetProfileSwitch("PrintVersionNumber", TRUE))
 	return;
@@ -86,7 +80,7 @@ struct application *self;
 	    break;
 	default:
 	    fprintf(stderr,
-		    "Starting %s (Version %d.%d, ATK %s); please wait...\n",
+		    "Starting %s (Version %ld.%ld, ATK %s); please wait...\n",
 		    application_GetName(self),
 		    application_GetMajorVersion(self),
 		    application_GetMinorVersion(self),
@@ -98,10 +92,7 @@ struct application *self;
  * These 4 routines are the heart of the application interface
  */
 
-boolean application__ParseArgs(self,argc,argv)
-struct application *self;
-int argc;
-char **argv;
+boolean application__ParseArgs(struct application *self, int argc, char **argv)
 {
     char *host;
 
@@ -201,9 +192,7 @@ char **argv;
 }
 
 
-void 
-application__ReadInitFile(self)
-struct application *self;
+void application__ReadInitFile(struct application *self)
 {
     char buffer[256], *andrewDir, *sitename,*name=self->name;
     struct init *init;
@@ -223,19 +212,19 @@ struct application *self;
 
     if((sitename = environ_GetConfiguration("SiteConfigName")) != NULL){
 	sprintf(buffer, "%s/lib/%s.atkinit", andrewDir,sitename);
-	sitegloinit = init_Load(init, buffer, (procedure) self->errorProc, (long) self->errorRock,self->forceload) >= 0;
+	sitegloinit = init_Load(init, buffer, (procedure) self->errorProc, self->errorRock,self->forceload) >= 0;
 	if(name != NULL){
 	    sprintf(buffer, "%s/lib/%s.%sinit", andrewDir,sitename, name);
 	    siteinit = init_Load(init, buffer, (procedure) self->errorProc,
-				 (long) self->errorRock, self->forceload) >= 0;
+				 self->errorRock, self->forceload) >= 0;
 	}
     }
 
     /* try for .NAMEinit and quit if succeed */
     if (home != NULL  &&  name != NULL)  {
 	sprintf(buffer, "%s/.%sinit", home, name);
-	if ((init_Load(init, buffer, (procedure) self->errorProc, 
-		       (long) self->errorRock, self->forceload)) >= 0) 
+	if ((init_Load(init, buffer, (procedure) self->errorProc,
+		       self->errorRock, self->forceload)) >= 0)
 	    return;
     }
 
@@ -249,7 +238,7 @@ struct application *self;
 	    nextStr = index(thisStr, ':');
 	    if (nextStr != NULL) *nextStr++ = '\0';
 	    sprintf(buffer, "%s/global.%sinit", thisStr, name);
-	    if (init_Load(init, buffer, (procedure) self->errorProc, (long) self->errorRock, self->forceload) >= 0) {
+	    if (init_Load(init, buffer, (procedure) self->errorProc, self->errorRock, self->forceload) >= 0) {
 		HadGlobalNameInit = TRUE;
 		if(localLib = (char*) malloc(strlen(thisStr) + 1))
 		    strcpy(localLib, thisStr);
@@ -264,19 +253,19 @@ struct application *self;
     /* try for andrew/lib/global.NAMEinit and continue even if succeed */
     if (! HadGlobalNameInit && (name != NULL)) {
 	sprintf(buffer, "%s/lib/global.%sinit", andrewDir, name);
-	HadGlobalNameInit = (init_Load(init, buffer,	(procedure) self->errorProc,(long) self->errorRock, self->forceload)) >= 0;
+	HadGlobalNameInit = (init_Load(init, buffer,	(procedure) self->errorProc,self->errorRock, self->forceload)) >= 0;
     }
 
     /* try for ~/.atkinit or ~/.be2init  either alone or extending
 	global.NAMEinit quit if succeed */
     if (home != NULL) {
 	sprintf(buffer, "%s/.atkinit", home);
-	if ((init_Load(init, buffer, (procedure) self->errorProc, 
-		       (long) self->errorRock, self->forceload)) >= 0) 
+	if ((init_Load(init, buffer, (procedure) self->errorProc,
+		       self->errorRock, self->forceload)) >= 0)
 	    return;
 	sprintf(buffer, "%s/.be2init", home);
-	if ((init_Load(init, buffer, (procedure) self->errorProc, 
-		       (long) self->errorRock, self->forceload)) >= 0 ) 
+	if ((init_Load(init, buffer, (procedure) self->errorProc,
+		       self->errorRock, self->forceload)) >= 0 )
 	    return;
     }
 
@@ -284,12 +273,12 @@ struct application *self;
     if (! HadGlobalNameInit) {
 	if (localLib) {
 	    sprintf(buffer, "%s/global.atkinit", localLib);
-	    if ((init_Load(init, buffer, (procedure) self->errorProc, (long) self->errorRock,self->forceload)) >= 0)
+	    if ((init_Load(init, buffer, (procedure) self->errorProc, self->errorRock,self->forceload)) >= 0)
 		return;
 	}
 	else {
 	    sprintf(buffer, "%s/lib/global.atkinit", andrewDir);
-	    if ((init_Load(init, buffer, (procedure) self->errorProc, (long) self->errorRock,self->forceload)) >= 0)
+	    if ((init_Load(init, buffer, (procedure) self->errorProc, self->errorRock,self->forceload)) >= 0)
 		return;
 	}
     }
@@ -302,8 +291,7 @@ struct application *self;
 }
 
 
-boolean application__Start(self)
-struct application *self;
+boolean application__Start(struct application *self)
 {
     char *t;
 
@@ -354,8 +342,7 @@ struct application *self;
     return TRUE;
 }
 
-void application__Stop(self)
-struct application *self;
+void application__Stop(struct application *self)
 {
     if (class_IsLoaded("profile"))
         profile_Stop(); /* stop current profiling, if any */
@@ -364,8 +351,7 @@ struct application *self;
 /* this assumes interaction; maybe should be in a subclass, like
  * interactiveapp or something
  */
-int application__Run(self)
-struct application *self;
+int application__Run(struct application *self)
 {
     if(!application_Fork(self))
 	return -1;
@@ -375,8 +361,7 @@ struct application *self;
     return 0;
 }
 
-boolean application__Fork(self)
-struct application *self;
+boolean application__Fork(struct application *self)
 {
     if(self->fork){
 	self->fork=FALSE; /* just in case */
@@ -399,10 +384,7 @@ struct application *self;
  * Some utility routines
  */
 
-void application__DeleteArgs(classID,argv,num)
-struct classheader *classID;
-char **argv;
-int num;
+void application__DeleteArgs(struct classheader *classID, char **argv, int num)
 {
     int i;
 
@@ -417,8 +399,7 @@ int num;
     *argv=NULL;
 }
 
-char *application__GetATKVersion(c)
-struct classheader *c;
+char * application__GetATKVersion(struct classheader *c)
 {
     FILE *fp;
     char *andrewDir, fname[1200], *s;

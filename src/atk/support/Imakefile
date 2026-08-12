@@ -26,6 +26,8 @@
 * $
 */
 
+/* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS = buffer.do \
 	bufferlist.do \
@@ -103,7 +105,6 @@ InstallLibrary(libsupport.a, ${DESTDIR}/lib/atk)
 
 DependTarget()
 
-
 MkdirTarget(${DESTDIR}/doc/atk/support)
 
 NormalHelpRule()
@@ -119,4 +120,3 @@ DOCS = buffer.doc complete.doc dict.doc envrment.doc list.doc \
 	stylesht.doc tree23.doc viewref.doc glist.doc
 
 InstallDocs($(DOCS), $(DESTDIR)/doc/atk/support)
-

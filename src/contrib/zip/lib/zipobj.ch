@@ -60,48 +60,48 @@ class zipobject[zipobj] : view {
 
 methods:
 
-  Set_Debug( state );
-  Set_Data_Object( data_object );
-  Set_View_Object( view_object );
-  Set_Edit_Object( edit_object );
-  Set_Print_Object( print_object );
+  Set_Debug( char state );
+  Set_Data_Object( struct zip *data_object );
+  Set_View_Object( struct zipview *view_object );
+  Set_Edit_Object( struct zipedit *edit_object );
+  Set_Print_Object( struct zipprint *print_object );
 
-  Object_DesiredSize( width, height, pass, dWidth, dHeight )
+  Object_DesiredSize( long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight )
 							returns enum view_DSattributes;
-  Object_FullUpdate( type, left, top, width, height );
+  Object_FullUpdate( enum view_UpdateType type, long left, long top, long width, long height );
   Object_Update();
-  Object_Hit( object, action, x, y, clicks )		returns struct view *;
+  Object_Hit( zip_type_figure object, enum view_MouseAction action, long x, long y, long clicks )		returns struct view *;
 
   Object_Icon()						returns char;
   Object_Icon_Font_Name()				returns char *;
   Object_Icon_Cursor()					returns char;
   Object_Icon_Cursor_Font_Name()			returns char *;
   Object_Datastream_Code()				returns char;
-  Object_Modified( object )				returns long;
+  Object_Modified( zip_type_figure object )				returns long;
 
-  Build_Object( pane, action, x, y, clicks, X, Y )	returns long;
-  Destroy_Object( object );
-  Show_Object_Properties( pane, figure )		returns long;
-  Read_Object( object )					returns long;
-  Read_Object_Stream( object, file, id )		returns long;
-  Write_Object( object )				returns long;
-  Draw_Object( object, pane )				returns long;
-  Clear_Object( object, pane )				returns long;
-  Print_Object( object, pane )				returns long;
-  Proximate_Object_Points( object, pane, x, y )		returns long;
-  Within_Object( object, pane, x, y )			returns long;
-  Enclosed_Object( object, pane, x, y, w, h )		returns boolean;
-  Object_Enclosure( object, pane, *x, *y, *w, *h )	returns long;
-  Highlight_Object_Points( object, pane )		returns long;
-  Normalize_Object_Points( object, pane )		returns long;
-  Expose_Object_Points( object, pane )			returns long;
-  Hide_Object_Points( object, pane )			returns long;
-  Set_Object_Point( object, point, x, y )		returns long;
-  Object_Point( object, point, *x, *y )			returns long;
-  Adjust_Object_Point_Suite( object, x_delta, y_delta )	returns long;
-  Set_Object_Shade( object, shade )			returns long;
-  Set_Object_Font( object, font )			returns long;
-  Contains( figure, pane, x, y )			returns boolean;
+  Build_Object( zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y )	returns long;
+  Destroy_Object( zip_type_figure object );
+  Show_Object_Properties( zip_type_pane pane, zip_type_figure figure )		returns long;
+  Read_Object( zip_type_figure object )					returns long;
+  Read_Object_Stream( zip_type_figure object, FILE *file, long id )		returns long;
+  Write_Object( zip_type_figure object )				returns long;
+  Draw_Object( zip_type_figure object, zip_type_pane pane )				returns long;
+  Clear_Object( zip_type_figure object, zip_type_pane pane )				returns long;
+  Print_Object( zip_type_figure object, zip_type_pane pane )				returns long;
+  Proximate_Object_Points( zip_type_figure object, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y )		returns long;
+  Within_Object( zip_type_figure object, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y )			returns long;
+  Enclosed_Object( zip_type_figure object, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y, zip_type_pixel w, zip_type_pixel h )		returns boolean;
+  Object_Enclosure( zip_type_figure object, zip_type_pane pane, zip_type_pixel *x, zip_type_pixel *y, zip_type_pixel *w, zip_type_pixel *h )	returns long;
+  Highlight_Object_Points( zip_type_figure object, zip_type_pane pane )		returns long;
+  Normalize_Object_Points( zip_type_figure object, zip_type_pane pane )		returns long;
+  Expose_Object_Points( zip_type_figure object, zip_type_pane pane )			returns long;
+  Hide_Object_Points( zip_type_figure object, zip_type_pane pane )			returns long;
+  Set_Object_Point( zip_type_figure object, long point, zip_type_point x, zip_type_point y )		returns long;
+  Object_Point( zip_type_figure object, long point, zip_type_point *x, zip_type_point *y )			returns long;
+  Adjust_Object_Point_Suite( zip_type_figure object, zip_type_point x_delta, zip_type_point y_delta )	returns long;
+  Set_Object_Shade( zip_type_figure object, long shade )			returns long;
+  Set_Object_Font( zip_type_figure object, short font )			returns long;
+  Contains( zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y )			returns boolean;
 
 classprocedures:
 

@@ -28,7 +28,7 @@
 
 h_FILES		=	ams.h hdrparse.h amsvers.h \
 			cui.h cuivers.h ms.h msvers.h \
-			errlvls.h mserrno.h snapams.h
+			errlvls.h mserrno.h snapams.h mimepart.h
 
 h_DIR		=	include/ams
 

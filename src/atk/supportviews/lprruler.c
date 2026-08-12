@@ -41,15 +41,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 */
 
 #include <class.h>
+#include <string.h>
 #include <lprruler.eh>
 
 #define MAXFILELINE 255
 
-	long
-lprruler__Read( self, file, id )
-	register struct lprruler  *self;
-	register FILE  *file;
-	register long  id;			/* !0 if data stream, 0 if direct from file*/
+long lprruler__Read(struct lprruler *self, FILE *file, long id)
 {
 	/* reads a lprruler from -file-.  See file format in lprruler.ch */
 	/* This routine reads the \enddata, if any. Its syntax is not checked */
@@ -84,19 +81,14 @@ lprruler__Read( self, file, id )
 	return dataobject_NOREADERROR;
 }
 	  
-	long
-lprruler__Write( self, file, writeID, level )
-	register struct lprruler  *self;
-	FILE  *file;
- 	long  writeID;
-	int  level;
+long lprruler__Write(struct lprruler *self, FILE *file, long writeID, int level)
 {
 	char head[50];
 	long id = lprruler_UniqueID(self);
 	if (self->header.dataobject.writeID != writeID) {
 		/* new instance of write, do it */
 		self->header.dataobject.writeID = writeID;
-		sprintf(head, "data{%s, %d}\n", class_GetTypeName(self), id);
+		sprintf(head, "data{%s, %ld}\n", class_GetTypeName(self), id);
 		fprintf(file, "\\begin%s", head);
 
 		/* no contents */
@@ -106,17 +98,11 @@ lprruler__Write( self, file, writeID, level )
 	return id;
 }
 
-	boolean
-lprruler__InitializeObject(ClassID, self)
-	struct classheader *ClassID;
-	struct lprruler *self;
+boolean lprruler__InitializeObject(struct classheader *ClassID, struct lprruler *self)
 {
 	return TRUE;
 }
 
-	void
-lprruler__FinalizeObject(ClassID, self)
-	struct classheader *ClassID;
-	struct lprruler *self;
+void lprruler__FinalizeObject(struct classheader *ClassID, struct lprruler *self)
 {
 }

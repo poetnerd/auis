@@ -33,6 +33,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <andrewos.h>
 #include <ms.h>
+#include <stdlib.h>
+extern int ReduceWhiteSpace(char *string);  /* ams/libs/shr/utils.c */
+extern int lc2strncmp(char *s1, char *s2, int len);  /* ams/libs/shr/utils.c */
+
+extern char *StripWhiteEnds(char *string);
 
 struct {
     char *left, *right;
@@ -43,9 +48,7 @@ struct {
     "fwd: re:", "Fwd:",
     0, 0};
 
-char *
-RewriteSubject(oldsub)
-char *oldsub;
+char * RewriteSubject(char *oldsub)
 {
     char *newsub, *tempsub;
     Boolean DidSomething = TRUE;

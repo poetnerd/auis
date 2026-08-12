@@ -26,6 +26,8 @@
 * $
 */
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 DOBJS = help.do helpa.do helpdb.do hlptextv.do
 IHFILES = help.ih helpa.ih helpdb.ih hlptextv.ih
 
@@ -48,5 +50,3 @@ InstallClassFiles($(DOBJS),$(IHFILES))
 InstallLink(runapp, ${DESTDIR}/bin/help)
 
 DependTarget()
-
-

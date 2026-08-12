@@ -37,6 +37,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <mailconf.h>
+#include <stdlib.h>
+extern int freepag();
 #ifdef AFS_ENV
 #include <netinet/in.h>
 #include <afs/param.h>
@@ -48,14 +50,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 extern int MS_SnapIsRunning;
 
-safeexit(code)
-int code;
+int safeexit(int code)
 {
     freepag();
     exit(code);
 }
 
-freepag() {
+int freepag() {
 #ifdef AFS_ENV
     struct ViceIoctl blob;
 

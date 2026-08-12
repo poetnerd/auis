@@ -22,6 +22,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    nullable[i - ntokens] is nonzero if symbol i can do so.  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "andrewos.h"
 #include "types.h"
 #include "gram.h"

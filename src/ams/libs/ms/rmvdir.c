@@ -34,12 +34,21 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <sys/stat.h>
 #include <ms.h>
+#include <stdlib.h>
+extern int BuildNickName(char *FullName, char *NickName);  /* ams/libs/shr/utils.c */
+extern int DropHint(char *Dirname);
+extern int EnsureNotInSubscriptionMap(char *DirName);
+extern int NonfatalBizarreError(char *text);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int RemoveFromCrucialClassesPreference(char *DirName, char *NewName);
+extern int RemoveSubsEntry(char *FullName);
+extern int SetSubsEntry(char *FullName, char *NickName, int status);
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
+extern int setprofilestring(char *prog, char *pref, char *val);  /* overhead/util/lib/setprof.c */
 
-extern char *getprofile(), *StripWhiteEnds();
+extern char *getprofile(), *StripWhiteEnds(char *string);
 
-long    MS_RemoveDirectory (DirName, MaxRemovals)
-char   *DirName;
-int MaxRemovals;
+long MS_RemoveDirectory(char *DirName, int MaxRemovals)
 {
     struct MS_Directory *Dir;
     DIR *dirp;
@@ -102,8 +111,7 @@ int MaxRemovals;
     return(EnsureNotInSubscriptionMap(DirName));
 }
 
-RemoveFromCrucialClassesPreference(DirName, NewName)
-char *DirName, *NewName;
+int RemoveFromCrucialClassesPreference(char *DirName, char *NewName)
 {
     char *s, *t, *t2, NickName[1+MAXPATHLEN], NewPref[2500];
     Boolean FoundIt = FALSE, IsMagic;
@@ -141,7 +149,7 @@ char *DirName, *NewName;
 	    if (IsMagic) strcat(NewPref, "*");
 	    strcat(NewPref, s);
 	    if (t2) {
-		strcat(NewPref, ':');
+		strcat(NewPref, ":");
 		strcat(NewPref, t2);
 	    }
 	}

@@ -32,30 +32,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <stdio.h>
+extern int safefprintf(FILE *fp, char *control, char *s1, char *s2, char *s3, char *s4, char *s5, char *s6, char *s7, char *s8, char *s9, char *s10, char *s11, char *s12, char *s13, char *s14, char *s15, char *s16, char *s17, char *s18, char *s19, char *s20);  /* overhead/errors/errprntf.c */
 
 /*VARARGS*/
-dbgprintf(format, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20)
-char   *format,
-       *s1,
-       *s2,
-       *s3,
-       *s4,
-       *s5,
-       *s6,
-       *s7,
-       *s8,
-       *s9,
-       *s10,
-       *s11,
-       *s12,
-       *s13,
-       *s14,
-       *s15,
-       *s16,
-       *s17,
-       *s18,
-       *s19,
-       *s20;
+int dbgprintf(char *format, char *s1, char *s2, char *s3, char *s4, char *s5, char *s6, char *s7, char *s8, char *s9, char *s10, char *s11, char *s12, char *s13, char *s14, char *s15, char *s16, char *s17, char *s18, char *s19, char *s20)
 {
     safefprintf(stdout, format, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19, s20);
 }

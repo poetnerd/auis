@@ -38,14 +38,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include <sys/stat.h>
 #include "index.h"
+#include <stdlib.h>
+static int Purge(char *apath);
+static int readInteger(FILE *afile, long *ai);
+static struct recordID * readRecordID(FILE *afile);
+static int writeInteger(FILE *afile, long ai);
+static int writeRecordID(FILE *afile, struct recordID *arid);
 
 /*
  * Internal routine: given a FILE * and an integer, write the integer in a machine-independent
  * form to the file.  Make sure this works for vaxes as well as normal machines.
  */
-static writeInteger(afile, ai)
-register long ai;
-register FILE *afile;
+static int writeInteger(FILE *afile, long ai)
 {
     register long tc;
 
@@ -63,9 +67,7 @@ register FILE *afile;
   * Internal routine: given a FILE * and a record id pointer, write the external representation
   * of the record ID to the file.
   */
-static writeRecordID(afile, arid)
-register struct recordID *arid;
-register FILE *afile;
+static int writeRecordID(FILE *afile, struct recordID *arid)
 {
     register long code;
     register long tc;
@@ -95,9 +97,7 @@ register FILE *afile;
   * Internal routine: given a FILE * and a pointer to an integer, read the external representation
   * of the integer from the file and return it in the place provided.
   */
-static readInteger(afile, ai)
-register long *ai;
-register FILE *afile;
+static int readInteger(FILE *afile, long *ai)
 {
     register long code;
     register long tc;
@@ -120,8 +120,7 @@ register FILE *afile;
   * return a pointer to a static recordID structure containing the newly-read
   * recordID.
   */
-static struct recordID *readRecordID(afile)
-register FILE *afile;
+static struct recordID * readRecordID(FILE *afile)
 {
     register long code;
     register long tc;
@@ -155,8 +154,7 @@ register FILE *afile;
   * Internal routine: read a set of hash bucket ids from a file (FILE *), and return a hashList *
   * pointer to the newly-created list.
   */
-struct hashList *readHashList(afile)
-register FILE *afile;
+struct hashList * readHashList(FILE *afile)
 {
     register long temp;
     register struct hashList *tlist, *clist;
@@ -190,9 +188,7 @@ register FILE *afile;
   * Internal routine: given a FILE * and a hashList * pointer to a list of hash buckets, write
   * the hash list representation to the file.
   */
-writeHashList(afile, alist)
-register FILE *afile;
-register struct hashList *alist;
+int writeHashList(FILE *afile, struct hashList *alist)
 {
     register long i;
     register long temp, tc;
@@ -214,9 +210,7 @@ register struct hashList *alist;
   * Internal routine: Given a FILE * and a hash bucket, write the external representation of
   * the entire hash bucket to the file.
   */
-index_WriteIndex(afile, ab)
-register FILE *afile;
-register struct indexBucket *ab;
+int index_WriteIndex(FILE *afile, struct indexBucket *ab)
 {
     register struct indexComponent *c;
     writeInteger(afile, ab->nextID);
@@ -244,8 +238,7 @@ register struct indexBucket *ab;
 							     * primary and secondary records) from the file, and return a ponter to the struct
   * hashBucket * just created.
   */
-struct indexBucket *index_ReadIndex(afile)
-register FILE *afile;
+struct indexBucket * index_ReadIndex(FILE *afile)
 {
     register long tc;
     char charBuffer[MAXSTRLENGTH];
@@ -324,9 +317,7 @@ register FILE *afile;
 /*
   * Internal routine: Given a pointer to a hash bucket, free it.
   */
-index_FreeIndex(ai, abucket)
-struct Index *ai;
-register struct indexBucket *abucket;
+int index_FreeIndex(struct Index *ai, struct indexBucket *abucket)
 {
     register struct indexComponent *idx, *nidx;
     register struct indexBucket *tbucket, **lbucket;
@@ -366,9 +357,7 @@ register struct indexBucket *abucket;
 	    * the index package you are done with this structure by using index_CPut,
 	    * not by freeing it.
 	    */
-struct indexBucket *index_CGetHash(ai, ahash)
-struct Index *ai;
-register long ahash;
+struct indexBucket * index_CGetHash(struct Index *ai, long ahash)
 {
     register FILE *file;
     register struct indexBucket *tb;
@@ -396,9 +385,7 @@ register long ahash;
 	    * the index package you are done with this structure by using index_CPut,
 	    * not by freeing it.
 	    */
-struct indexBucket *index_CGet(ai, akey)
-struct Index *ai;
-register char *akey;
+struct indexBucket * index_CGet(struct Index *ai, char *akey)
 {
     return index_CGetHash(ai, index_Hash(akey, ai->hashTableSize));
 }
@@ -407,18 +394,14 @@ register char *akey;
   * Given an open index file, and a hash bucket obtained from CGet or CGetHash, relinquish
   * the required storage.
   */
-index_CPut(ai, ab)
-register struct Index *ai;
-register struct indexBucket *ab;
+int index_CPut(struct Index *ai, struct indexBucket *ab)
 {
 }
 
 /*
   * Internal routine to write out a bucket.
   */
-index_CWrite(ai, ab)
-register struct Index *ai;
-register struct indexBucket *ab;
+int index_CWrite(struct Index *ai, struct indexBucket *ab)
 {
     register FILE *tf;
 
@@ -433,8 +416,7 @@ register struct indexBucket *ab;
   * Internal routine: Clear out the contents of an index file.  This routine does not
   * delete the directory itself, but does delete all of its contents.
   */
-static Purge(apath)
-register char *apath;
+static int Purge(char *apath)
 {
     register DIR *td;
     register DIRENT_TYPE *tde;
@@ -464,9 +446,7 @@ register char *apath;
   * Create a new index file, with the appropriate hash table size.  If the index file
   * already exists, it is cleared out, with any data in the index being lost.
   */
-index_Create(apath, aHashSize)
-register char *apath;
-register long aHashSize;
+int index_Create(char *apath, long aHashSize)
 {
     char tbuffer[1024], sb[20];
     register long i;
@@ -474,14 +454,14 @@ register long aHashSize;
     Purge(apath);		/* clear out old junk */
     mkdir(apath, 0755);
     strcpy(tbuffer, apath);
-    sprintf(sb, "/V%d.%d", aHashSize, INDEXVERSION);
+    sprintf(sb, "/V%ld.%d", aHashSize, INDEXVERSION);
     strcat(tbuffer, sb);
     tfile = fopen(tbuffer, "w+");
     if (tfile == (FILE*) 0) return INDEXNOENT;
     fclose(tfile);
     for(i=0;i<aHashSize;i++) {
 	strcpy(tbuffer, apath);
-	sprintf(sb, "/H%d", i);
+	sprintf(sb, "/H%ld", i);
 	strcat(tbuffer, sb);
 	tfile = fopen(tbuffer, "w+");
 	if (tfile == (FILE *) 0) return 1;

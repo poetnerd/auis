@@ -50,7 +50,7 @@ macromethods:
 classprocedures:
   InitializeClass() returns boolean;
   InitializeObject() returns boolean;
-  FinalizeObject(); 
+  FinalizeObject(struct sliderV *self);
 data:
   char * label;
   char * fontname;

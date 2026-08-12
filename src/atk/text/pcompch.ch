@@ -39,8 +39,8 @@ struct composites {
 class pcompch {
 classprocedures:
     InitializeClass() returns boolean;
-    ATKToASCII(struct text *text,long pos, long len, procedure func, long rock);
-    ASCIIToATK(struct text *text,long pos, long len, procedure func, long rock);
+    ATKToASCII(struct text *text,long pos, long len, procedure func, void *rock);
+    ASCIIToATK(struct text *text,long pos, long len, procedure func, void *rock);
     ReadCompositesFile(char *file) returns boolean;
     ClearComposites();
     DeleteComposite(char key,char *exts);

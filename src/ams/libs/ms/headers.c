@@ -34,8 +34,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h> /* sys/file.h */
 #include <ms.h>
 #include <sys/stat.h> 
+extern int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
+extern int MS_GetAssociatedFileTime(char *FullName, long *fdate);
+extern int MS_GetAssociatedTime(char *FullName, char *Answer, int lim);
+extern int MS_SetAssociatedTime(char *FullName, char *newvalue);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int vdown(int err);  /* overhead/util/lib/vclose.c */
 
-extern char *fixDate();
+extern char *fixDate(char *dPtr);
 
 /* The following implements the very simplest form of header retrieval.  It was written
 	initially to postpone the writing of a full message-arithmetic parsing 
@@ -43,9 +51,7 @@ extern char *fixDate();
 	will provide a very quick way to do simple things with minimal parsing.
 */
 
-MS_HeadersSince(FullDirName, datefield, ReturnBuf, MaxReturn, startbyte, numbytes, bytesleft)
-char *FullDirName, *datefield, *ReturnBuf;
-int MaxReturn, startbyte, *numbytes, *bytesleft;
+int MS_HeadersSince(char *FullDirName, char *datefield, char *ReturnBuf, int MaxReturn, long startbyte, long *numbytes, long *bytesleft)
 {
     struct MS_Directory *Dir = NULL;
     struct stat statbuf;
@@ -186,7 +192,7 @@ int MaxReturn, startbyte, *numbytes, *bytesleft;
 	    fixDate(AMS_DATE(s));
 	}
     }
-    debug(4, ("Returning, %d bytes remain unsent\n", *bytesleft));
+    debug(4, ("Returning, %ld bytes remain unsent\n", *bytesleft));
     CacheDirectoryForClosing(Dir, MD_READ); /* read only, ignore errors */
     return(0);
 }

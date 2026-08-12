@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #endif
 
 #include <andrewos.h> /* sys/file.h and string(s).h */
+#include <stdlib.h>
 #include <class.h>
 #include <ctype.h>
 
@@ -42,6 +43,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <mark.ih>
 
 #include <pcompch.eh>
+static int TranslateKeySequence(char *from, char *to);
+static unsigned char ahotoi(char *ptr, int base2);
+static void cleanmagic();
+static void fix_fgets(char *buf);
+static int lenorder(const void *p1, const void *p2);
+static unsigned short parsecode(char *ptr);
+static boolean scancomposites(char *ptr, long line);
+static void scanerr(char *msg, char key, struct composites *new, long line);
+static char * scanstring(char **str);
 #define MAXMACROLEN 15
 
 static struct composites *composites[MAXCHAR+1];
@@ -52,7 +62,7 @@ static unsigned char order[256];
 static char hex[]="0123456789abcdef";
 static char octal[]="01234567";
 
-static int parseBackslashed();
+static int parseBackslashed(char **fromChars);
 
 static void cleanmagic()
 {
@@ -65,9 +75,7 @@ static void cleanmagic()
 
 /* The following two function were taken from basics/common/init.c on June 12, 1990 */
 /* Translate a key sequence that has ^A, \ddd, and \c conventions. */
-static int TranslateKeySequence(from, to)
-char *from;
-char *to;
+static int TranslateKeySequence(char *from, char *to)
 {
     while (*from != '\0') {
 	if (*from == '\\') {
@@ -92,8 +100,7 @@ char *to;
     return 0;
 }
 
-static int parseBackslashed(fromChars)
-char **fromChars;
+static int parseBackslashed(char **fromChars)
 {
 
     int returnChar;
@@ -138,9 +145,7 @@ char **fromChars;
 }
 
 /* ahotoi: used by pcompch_insert to parse a hexadecimal or octal number depending on if base is 3 or 4. */
-static unsigned char ahotoi(ptr,base2)
-char *ptr;
-int base2;
+static unsigned char ahotoi(char *ptr, int base2)
 {
     unsigned char result;
     char c,*i,*base=(base2==3)?octal:hex;
@@ -157,8 +162,7 @@ int base2;
 }
 
 /* parsecode: parse a code in decimal,hex, octal or simply set the high bit of an ASCII character. */
-static unsigned short parsecode(ptr)
-char *ptr;
+static unsigned short parsecode(char *ptr)
 {
     switch(*ptr) {
 	case '|':
@@ -174,11 +178,7 @@ char *ptr;
     }
 }
 
-static void scanerr(msg,key,new,line)
-char *msg;
-char key;
-struct composites *new;
-long line;
+static void scanerr(char *msg, char key, struct composites *new, long line)
 {
     fprintf(stderr,msg,line);
     printf(msg,line);
@@ -187,8 +187,7 @@ long line;
 }
 
 /* scanstring: returns a pointer to the first un-escaped terminator in a string */
-static char *scanstring(str)
-char **str;
+static char * scanstring(char **str)
 {
     boolean flag=FALSE;
     char *end=(*str);
@@ -209,9 +208,7 @@ char **str;
 
 /* scancomposites: reads in (from the line pointed to by PTR) the extensions which may be used with the character KEY and puts the entries into the composites table giving the extensions and corresponding character code.
  */
-static boolean scancomposites(ptr,line)
-char *ptr;
-long line;
+static boolean scancomposites(char *ptr, long line)
 {
     char *end,*ptr2,*style=NULL;
     unsigned short code;
@@ -316,19 +313,13 @@ long line;
 
     
 /* fix_fgets: just changes the first newline in BUF to a null.  This is just to make things easy after using fgets. */  
-static void fix_fgets(buf)
-char *buf;
+static void fix_fgets(char *buf)
 {
     char *p=index(buf,'\n');
     if(p) *p='\0';
 }
 
-void pcompch__ATKToASCII(classID,text,pos,len,func,rock)
-struct classheader *classID;
-struct text *text;
-long pos,len;
-procedure func;
-long rock;
+void pcompch__ATKToASCII(struct classheader *classID, struct text *text, long pos, long len, procedure func, void *rock)
 {
     struct mark *area;
     if(len==0) {
@@ -351,12 +342,7 @@ long rock;
     mark_Destroy(area);
 }
 
-void pcompch__ASCIIToATK(classID,text,pos,len,func,rock)
-struct classheader *classID;
-struct text *text;
-long pos,len;
-procedure func;
-long rock;
+void pcompch__ASCIIToATK(struct classheader *classID, struct text *text, long pos, long len, procedure func, void *rock)
 {
     int i,j;
     long end;
@@ -387,18 +373,17 @@ long rock;
     mark_Destroy(area);
 }
 
-static int lenorder(e1,e2)
-unsigned char *e1,*e2;
+static int lenorder(const void *p1, const void *p2)
 {
+    const unsigned char *e1 = (const unsigned char *) p1;
+    const unsigned char *e2 = (const unsigned char *) p2;
     if(!asciimagic[*e2] || !asciimagic[*e1]) return 0;
     return strlen(asciimagic[*e2])-strlen(asciimagic[*e1]);
 }
 	
 
 /* pcompch_ReadCompositesFile: reads COMPFILE and places the composites defined in it into the composites table. */
-boolean pcompch__ReadCompositesFile(classID,compfile)
-struct classheader *classID;
-char *compfile;
+boolean pcompch__ReadCompositesFile(struct classheader *classID, char *compfile)
 {
     char buf[1024],*ptr=buf;
     boolean end=FALSE,err=FALSE;
@@ -421,8 +406,7 @@ char *compfile;
 
 /* pcompch_ClearComposites: clears out all defined compositions,
   not tested yet but should be correct. */
-void pcompch__ClearComposites(classID)
-struct classheader *classID;
+void pcompch__ClearComposites(struct classheader *classID)
 {
     int i;
     for(i=1;i<=MAXCHAR;i++) {
@@ -438,10 +422,7 @@ struct classheader *classID;
 
 /* pcompch_DeleteComposite: finds and deletes one composite
   from the composites table.  */
-void pcompch__DeleteComposite(classID,key,exts)
-struct classheader *classID;
-unsigned char key;
-unsigned char *exts;
+void pcompch__DeleteComposite(struct classheader *classID, char key, char *exts)
 {
     struct composites *next=composites[key],*last=NULL;
     while(next) {
@@ -462,11 +443,7 @@ unsigned char *exts;
   The call to func is made as below:
     func(key,composite,rock);
   where	composite is of type struct composites. */
-long pcompch__EnumerateComposites(classID,key,func,rock)
-struct classheader *classID;
-char key;
-procedure func;
-long rock;
+long pcompch__EnumerateComposites(struct classheader *classID, char key, procedure func, long rock)
 {
     long result;
     struct composites *next=composites[key];
@@ -478,22 +455,12 @@ long rock;
     return 0;
 }
 
-char *pcompch__CharacterToTroff(classID,ch,env,tv)
-struct classheader *classID;
-unsigned char ch;
-struct environment *env;
-struct textview *tv;
+char * pcompch__CharacterToTroff(struct classheader *classID, unsigned char ch, struct environment *env, struct textview *tv)
 {
     return troffmagic[ch];
 }
 
-unsigned char *pcompch__StringToTroff(classID,str,buf,bufsize,env,tv)
-struct classheader *classID;
-unsigned char *str;
-struct environment *env;
-struct textview *tv;
-char *buf;
-long bufsize;
+unsigned char * pcompch__StringToTroff(struct classheader *classID, unsigned char *str, char *buf, long bufsize, struct environment *env, struct textview *tv)
 {
     char buf2[16],*bp=buf;
     bzero(buf,bufsize);
@@ -527,8 +494,7 @@ long bufsize;
 }
 	    
 
-boolean pcompch__InitializeClass(ClassID)
-struct classheader *ClassID;
+boolean pcompch__InitializeClass(struct classheader *ClassID)
 {
     char *compfile=environ_GetProfile("compositesfile");
     boolean override= environ_GetProfileSwitch("overridecomposites",FALSE);

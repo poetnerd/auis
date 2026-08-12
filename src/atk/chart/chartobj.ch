@@ -85,7 +85,7 @@ class chartobj : aptv
 overrides:
 
   FullUpdate( enum view_UpdateType type, long left, long top, long width, long height );
-  SetDataObject( struct char *);
+  SetDataObject( struct chart *);
   Hit( enum view_MouseAction action, long x, long y, long n )	returns struct view *;
   ObservedChanged( struct view *changed, long value );
   UnlinkNotification( struct chartobj *self );
@@ -93,15 +93,16 @@ overrides:
 
 methods:
 
-  WhichItem( x, y )				returns struct chart_item_shadow *;
-  SetChartOptions( options );
+  WhichItem( long x, long y )			returns struct chart_item_shadow *;
+  SetChartOptions( long options );
   SetDebug( boolean state );
 
   /***  The following Methods are to be Overriden by sub-classes  ***/
   DrawChart();
   PrintChart();
-  HitChart( action, x, y, clicks )		returns struct view *;
-  ObserveChart( change );
+  HitChart( enum view_MouseAction action, long x, long y, long clicks )
+						returns struct view *;
+  ObserveChart( long change );
   Moniker()					returns char *;
 
 macromethods:

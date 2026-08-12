@@ -95,6 +95,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #include <proctbl.ih>
 #include <dataobj.ih>
 #undef class_StaticEntriesOnly
+extern char *AndrewDir(char *str);
 
 
 char inname[1025], outname[1025];
@@ -113,10 +114,10 @@ char opSwitches[20];	/* -runl */
 struct rectangle crop;	/* -c(l,t,w,h) */
 float PSscale;		/* -p */
 
+static void fail(char *msg);
 
-	static void
-ProcessPix(pix)
-	struct pixelimage *pix;
+
+static void ProcessPix(struct pixelimage *pix)
 {
 	struct pixelimage *tix;
 	char *sx;
@@ -126,6 +127,11 @@ ProcessPix(pix)
 		/* do the cropping by replacing the bits area of the pix  XXX */
 		long buf[1000];
 		register long row;
+
+		if (crop.left < 0 || crop.top < 0 || crop.width < 0 || crop.height < 0
+				|| crop.left + crop.width > pixelimage_GetWidth(pix)
+				|| crop.top + crop.height > pixelimage_GetHeight(pix))
+			fail("Crop rectangle -c(left,top,width,height) exceeds the bounds of the input image");
 
 		tix = pixelimage_New();
 		pixelimage_Resize(tix, crop.width, crop.height);
@@ -172,10 +178,7 @@ ProcessPix(pix)
 	}
 }
 
-	static long
-ReadInputFile(InputFile, pix)
-	FILE * InputFile;
-	struct pixelimage *pix;
+static long ReadInputFile(FILE *InputFile, struct pixelimage *pix)
 {
 	switch (inType) {
 	case typePostscript: 
@@ -194,10 +197,7 @@ ReadInputFile(InputFile, pix)
 	}
 }
 
-	static void
-WriteOutputFile(OutputFile, pix)
-	FILE * OutputFile;
-	struct pixelimage *pix;
+static void WriteOutputFile(FILE *OutputFile, struct pixelimage *pix)
 {
 	struct rectangle r;
 	rectangle_SetRectSize(&r, 0, 0, pixelimage_GetWidth(pix), pixelimage_GetHeight(pix));
@@ -229,9 +229,7 @@ WriteOutputFile(OutputFile, pix)
 
 
 
-	static void
-fail(msg)
-	char *msg;
+static void fail(char *msg)
 {
 	fprintf(stderr, "%s\n", msg);
 	exit(1);
@@ -255,22 +253,16 @@ struct symentry {
 	enum rasterType v;	/* value the function assigns */
 };
 
-static struct symentry *FindSym();
+static struct symentry *FindSym(char *s);
 
 
-	static void
-storename(arg, sym)
-	char *arg;
-	struct symentry *sym;
+static void storename(char *arg, struct symentry *sym)
 {
 	strcpy(sym->target, arg+1);
 	if (strlen(sym->target) > 1023)
 		fail ("file name too long");
 }
-	static void
-storetype(arg, sym)
-	char *arg;
-	struct symentry *sym;
+static void storetype(char *arg, struct symentry *sym)
 {
 	struct symentry *typesym;
 	char buf[20];
@@ -307,9 +299,7 @@ SymTable[] = {
 	"", NULL, NULL, typeUnknown
 };
 
-	static struct symentry *
-FindSym(s)
-	char *s;
+static struct symentry * FindSym(char *s)
 {
 	char buf[12];
 	char *bx = buf;
@@ -325,10 +315,7 @@ FindSym(s)
 }
 
 
-	static void
-ParseSwitches(argc, argv)
-	int argc;
-	char **argv;
+static void ParseSwitches(int argc, char **argv)
 {
 	struct symentry *sym;
 	char buf[20];
@@ -341,7 +328,7 @@ ParseSwitches(argc, argv)
 		switch (*arg) {
 		case 'c': {
 			long left, top, width, height;
-			if (sscanf(arg+1, "(%d,%d,%d,%d)", 
+			if (sscanf(arg+1, "(%ld,%ld,%ld,%ld)",
 					&left, &top, &width, &height) != 4)
 				fail("crop with  -c(left,top,width,height)");
 			rectangle_SetRectSize(&crop, left, top, width, height);
@@ -381,7 +368,7 @@ ParseSwitches(argc, argv)
 OpenInputFile()
 {
 	FILE *infile;
-	register c;
+	register int c;
 
 	if ( ! *inname)  
 		infile = stdin;
@@ -437,9 +424,7 @@ OpenOutputFile()
 }
 
 
-main(argc, argv)
-	int argc;
-	char **argv;
+int main(int argc, char **argv)
 {
 	FILE *infile, *outfile;
 	long ret;
@@ -477,7 +462,7 @@ main(argc, argv)
 		(*inname) ? inname : "stdin" , 
 		(*outname) ? outname : "stdout" );
 	if ( ! rectangle_IsEmptyRect(&crop))
-		fprintf(stderr, "	Crop input to (%d, %d, %d,%d)\n",
+		fprintf(stderr, "	Crop input to (%ld, %ld, %ld,%ld)\n",
 				crop.left, crop.top, crop.width, crop.height);
 	if (*opSwitches) 
 		fprintf(stderr, "	Process with \"%s\"\n", opSwitches);
@@ -486,7 +471,7 @@ main(argc, argv)
 
 	ret = ReadInputFile(infile, pix);
 	if (ret != dataobject_NOREADERROR) {
-		fprintf (stderr, "Read of %s failed with code %d\n", inname, ret);
+		fprintf (stderr, "Read of %s failed with code %ld\n", inname, ret);
 		exit(3);
 	}
 	fclose(infile);

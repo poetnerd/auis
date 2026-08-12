@@ -38,6 +38,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  * ThunderScan 4-bit Compression Algorithm Support
  */
 #include "tiffioP.h"
+static int ThunderDecode(TIFF *tif, u_char *op, int maxpixels);
+static int ThunderDecodeRow(TIFF *tif, u_char *buf, int occ, u_int s);
 
 /*
  * ThunderScan uses an encoding scheme designed for
@@ -70,11 +72,7 @@ static const int threebitdeltas[8] = { 0, 1, 2, 3, 0, -3, -2, -1 };
 	    op[0] = lastpixel << 4; \
 }
 
-static int
-ThunderDecode(tif, op, maxpixels)
-	TIFF *tif;
-	register u_char *op;
-	int maxpixels;
+static int ThunderDecode(TIFF *tif, u_char *op, int maxpixels)
 {
 	register u_char *bp;
 	register int n, cc, lastpixel, npixels, delta;
@@ -133,12 +131,7 @@ ThunderDecode(tif, op, maxpixels)
 	return (1);
 }
 
-static int
-ThunderDecodeRow(tif, buf, occ, s)
-	TIFF *tif;
-	u_char *buf;
-	int occ;
-	u_int s;
+static int ThunderDecodeRow(TIFF *tif, u_char *buf, int occ, u_int s)
 {
 	u_char *row = buf;
 	
@@ -151,8 +144,7 @@ ThunderDecodeRow(tif, buf, occ, s)
 	return (1);
 }
 
-TIFFInitThunderScan(tif)
-	TIFF *tif;
+int TIFFInitThunderScan(TIFF *tif)
 {
 	tif->tif_decoderow = ThunderDecodeRow;
 	tif->tif_decodestrip = ThunderDecodeRow;

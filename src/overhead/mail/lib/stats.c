@@ -43,14 +43,30 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <andrewos.h> /* sys/types.h sys/time.h */
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <util.h>
 
 #include <fdplumb.h>
 extern FILE *fopen();
 #include "errprntf.h"
+static int OpenSocket();
+static void warning(char *format, char *a0, char *a1, char *a2, char *a3, char *a4);
+static void Format(char *to, char *from, int len);
+
+/* No header anywhere in the tree declares these (errprntf.h only
+   defines the ERR_* macros, never the function itself -- the only
+   tree-wide precedent for this declaration is ams.h:170). fdplumb.h
+   renames close()/fclose()/socket() via #define but only declares 6 of
+   its 16 dbg_* wrapper names -- these three aren't among them. */
+extern int errprintf();		/* ams/libs/hdrs/ams.h:170 precedent */
+extern int dbg_fclose(FILE *fp);		/* overhead/util/lib/fdplumb.c */
+extern int dbg_socket(int af, int typ, int prot);		/* overhead/util/lib/fdplumb.c */
+extern int dbg_close(int fd);		/* overhead/util/lib/fdplumb.c */
+extern int osi_GetTimes(struct osi_Times *blk);		/* overhead/util/lib/times.c */
 
 #if !POSIX_ENV
 extern int errno;
@@ -86,8 +102,7 @@ static int StatFile = -1;
 static struct sockaddr_in LogAddress;
 
 /*VARARGS1*/
-static void warning(format, a0, a1, a2, a3, a4)
-    char *format, *a0, *a1, *a2, *a3, *a4;
+static void warning(char *format, char *a0, char *a1, char *a2, char *a3, char *a4)
 {
     errprintf(ProgName, ERR_WARNING, NIL, NIL,
 	      format, a0, a1, a2, a3, a4);
@@ -102,7 +117,7 @@ static bool GetMyName()
 
     if (GetHostDomainName(buf, sizeof buf) < 0) {
 	if (ShowErrors)
-	    warning("Can't find my name: %d", errno);
+	    warning("Can't find my name: %d", (char *)(long)errno, NIL, NIL, NIL, NIL);
 	return FALSE;
     }
 
@@ -112,9 +127,7 @@ static bool GetMyName()
     return TRUE;
 }
 
-static Format(to, from, len)
-    register char *to, *from;
-    register int len;	/* Doesn't include '\0' */
+static void Format(char *to, char *from, int len)
 {
     register int flen;
 
@@ -162,14 +175,14 @@ static bool ChooseLogHost()
     f = fopen(HostsFile, "r");
     if (f == NULL) {
 	if (ShowErrors)
-	    warning("Can't open hosts file (%d): \"%s\"", errno, HostsFile);
+	    warning("Can't open hosts file (%d): \"%s\"", (char *)(long)errno, HostsFile, NIL, NIL, NIL);
 	return FALSE;
     }
 
     /* Read 1st line: # hosts to follow */
     if (fgets(buffer, sizeof(buffer), f) == NULL) {
 	if (ShowErrors)
-	    warning("Can't get 1st line of file: \"%s\"", HostsFile);
+	    warning("Can't get 1st line of file: \"%s\"", HostsFile, NIL, NIL, NIL, NIL);
 	return FALSE;
     }
     nhosts = atoi(buffer);
@@ -188,7 +201,7 @@ static bool ChooseLogHost()
     for (; host>=0; host--)
 	if (fgets(LogHost, sizeof(LogHost), f) == NULL) {
 	    if (ShowErrors)
-		warning("Not enough lines (%d) in \"%s\"", host, HostsFile);
+		warning("Not enough lines (%d) in \"%s\"", (char *)(long)host, HostsFile, NIL, NIL, NIL);
 	    return FALSE;
 	}
 
@@ -228,7 +241,7 @@ static int OpenSocket()
     serv = getservbyname(LoggingService, "udp");
     if (serv == NIL) {
 	if (ShowErrors)
-	    warning("Can't find logging service: \"%s\"", LoggingService);
+	    warning("Can't find logging service: \"%s\"", LoggingService, NIL, NIL, NIL, NIL);
 	return NULL;
     }
 #endif /* NOTDEF */
@@ -236,7 +249,7 @@ static int OpenSocket()
     /* Create socket */
     s = socket(AF_INET, SOCK_DGRAM, 0);
     if (s < 0) {
-	warning("Socket failed: %d", errno);
+	warning("Socket failed: %d", (char *)(long)errno, NIL, NIL, NIL, NIL);
 	return -1;
     }
 
@@ -265,13 +278,11 @@ static int OpenSocket()
 	!=0	    Error
 */
 
-int InitStats(prog, errflag)
-    char *prog;
-    int errflag;
+int InitStats(char *prog, int errflag)
 {
     if (StatFile != -1) {
 	if (errflag)
-	    warning("Can't initialize statistics logging twice");
+	    warning("Can't initialize statistics logging twice", NIL, NIL, NIL, NIL, NIL);
 	return -1;
     }
     ShowErrors = errflag;
@@ -306,7 +317,7 @@ int InitStats(prog, errflag)
 int TermStats()
 {
     if (StatFile < 0) {
-	if (ShowErrors) warning("Stats support not initialized");
+	if (ShowErrors) warning("Stats support not initialized", NIL, NIL, NIL, NIL, NIL);
 	return -1;
     }
     close(StatFile);
@@ -350,10 +361,7 @@ int TermStats()
 
 */
 
-int Logstat(module, call, format, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
-    char *module;
-    int call;
-    char *format;
+int Logstat(char *module, int call, char *format, int a0, int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9)
 {
     int save_errno;
     char ModuleName[LOGSTRLEN+1];
@@ -367,20 +375,20 @@ int Logstat(module, call, format, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
 
     /* Get the time & format it */
     osi_GetTimes(&tp);
-    now = localtime(tp.Secs);
+    now = localtime((time_t *) &tp.Secs);
 
     /* Format system info */
     Format(ModuleName, module, LOGSTRLEN);
 #if POSIX_ENV || defined(SGI_4D_ENV)
     sprintf(buffer,
-	    "%04d-%02d-%02d %02d:%02d:%02d.%02d %s %10d %6d %6d %s %5d %11d %s; ",
+	    "%04d-%02d-%02d %02d:%02d:%02d.%02lu %s %10d %6d %6d %s %5d %11d %s; ",
 	    now->tm_year+1900, now->tm_mon+1, now->tm_mday,
 	    now->tm_hour, now->tm_min, now->tm_sec, tp.USecs/10000,
 	    ProgName, TransactionNumber, getpid(), getpgrp(),
 	    ModuleName, call, Sequence++, MyName);
 #else
     sprintf(buffer,
-	    "%04d-%02d-%02d %02d:%02d:%02d.%02d %s %10d %6d %6d %s %5d %11d %s; ",
+	    "%04d-%02d-%02d %02d:%02d:%02d.%02lu %s %10d %6d %6d %s %5d %11d %s; ",
 	    now->tm_year+1900, now->tm_mon+1, now->tm_mday,
 	    now->tm_hour, now->tm_min, now->tm_sec, tp.USecs/10000,
 	    ProgName, TransactionNumber, getpid(), getpgrp(0),
@@ -393,7 +401,7 @@ int Logstat(module, call, format, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
     sprintf(c, format, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9);
     if (sendto(StatFile, buffer, strlen(buffer)+1, 0,
 	       &LogAddress, sizeof LogAddress) < 0) {
-	warning("Sendto failed: %d", errno);
+	warning("Sendto failed: %d", (char *)(long)errno, NIL, NIL, NIL, NIL);
 	errno = save_errno;
 	return 1;
     }
@@ -411,8 +419,7 @@ int Logstat(module, call, format, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
 	nothing
 */
 
-SetTransaction(number)
-    int number;
+int SetTransaction(int number)
 {
     TransactionNumber = number;
 }

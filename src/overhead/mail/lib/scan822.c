@@ -35,21 +35,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <andrewos.h> /* strings.h */
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
-
-#ifndef _IBMR2
-extern char *malloc(), *realloc();
-#endif /* _IBMR2 */
 
 #include <util.h>
 #include "mail.h"
+static int AddTok(char ch);
 
 #define TRUE 1
 #define FALSE 0
 
-int BracketField(Hdr, FieldName, pBegin, pEnd, pLineBegin)
-char *Hdr, *FieldName;
-char **pBegin, **pEnd, **pLineBegin;
+int BracketField(char *Hdr, char *FieldName, char **pBegin, char **pEnd, char **pLineBegin)
 {/* Takes an RFC822 header in Hdr and the name of a field in FieldName.  If the given field name is in the given header, this procedure sets pBegin and pEnd to point to the text of the header (setting pBegin after the FieldName (with colon) and whitespace, and setting pEnd to point to the trailing newline of that field).  If pLineBegin is non-null, it is set to point to the beginning of the line containing the field.
 Returns 1 if the header is found, 0 otherwise.
   */
@@ -94,16 +90,14 @@ Returns 1 if the header is found, 0 otherwise.
 
 static char *tokPtr; static int tokCount, tokMax;
 
-static int AddTok(ch)
-char ch;
+static int AddTok(char ch)
 {/* Check for overflow to NextWord's RsltBuf. */
     if (tokCount >= tokMax) return 0;
     *tokPtr++ = ch; ++tokCount;
     return 1;
 }
 
-int IsOK822Atom(ch)
-char ch;
+int IsOK822Atom(char ch)
 {/* Return a Boolean saying whether this character is OK as an RFC822 ``atom'' constituent. */
     if (!isascii(ch)) return FALSE;		/* Must be seven-bit ASCII */
     if (ch != ' ' && iscntrl(ch)) return FALSE;		/* Must not be a CTL or a space */
@@ -260,8 +254,7 @@ char *Line, *LineEnd, *RsltBuf; int sizeRsltBuf;
     }
 }
 
-char *Quote822LPart(Cleartext)
-char *Cleartext;
+char * Quote822LPart(char *Cleartext)
 {/* Return a copy of Cleartext, malloced, that is a quoted representation of Cleartext as an RFC822 Local-part.  Return NULL on malloc failure. */
     int NewLen;
     char *Src, *Dst, *Copy;
@@ -292,8 +285,7 @@ char *Cleartext;
     }
 }
 
-char *Quote822Phrase(Cleartext)
-char *Cleartext;
+char * Quote822Phrase(char *Cleartext)
 {/* Return a copy of Cleartext, malloced, that is a quoted representation of Cleartext as an RFC822 phrase.  Return NULL on malloc failure. */
     int NewLen;
     char *Src, *Dst, *Copy;

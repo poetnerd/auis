@@ -97,6 +97,6 @@ classprocedures:
 			returns struct proctable_Entry *;
 	DefineProcsWithTypes(struct proctable_DescriptionWithType *procs);
 	Lookup(char *name) returns struct proctable_Entry *;
-	Enumerate(procedure proc, char *procdata);
+	Enumerate(procedure proc, void *procdata);
 	ForceLoaded(struct proctable_Entry *pe);
 };

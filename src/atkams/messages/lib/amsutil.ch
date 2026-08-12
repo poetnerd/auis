@@ -132,7 +132,7 @@ package amsutil {
       lc2strncmp(char *s1, char *s2, int len) returns int;
       /* The above were what was needed for ezprinting (used by text822) */
       StripWhiteEnds(char *s) returns char *;
-      cvEng(num, min, max) returns char *;
+      cvEng(int num, int min, int max) returns char *;
       convlongto64(long t, long pad) returns char *;
       conv64tolong(char *s64) returns long;
       ReduceWhiteSpace(char *s);

@@ -60,7 +60,7 @@ classprocedures:
     InitializeClass() returns boolean;
 methods:
     Clear() returns int ;
-    ReadFromFile(char *SourceFile, Boolean DeleteIt) returns int ;
+    ReadFromFile(char *SourceFile, short DeleteIt) returns int ;
     Reset();
     AddHeaderLine(char *line) returns int ;
     AddToToHeader(char *line) returns int ;

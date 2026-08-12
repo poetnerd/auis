@@ -58,7 +58,7 @@ long id;
     if(fgets(buf,sizeof(buf),file)==NULL)
 	return dataobject_PREMATUREEOF;
     /* the %hd tells scanf that blackOnWhite is a short, not an int */
-    if(sscanf(buf,"%d %d %hd\n",&hw->x,&hw->y,&hw->blackOnWhite)<3)
+    if(sscanf(buf,"%ld %ld %hd\n",&hw->x,&hw->y,&hw->blackOnWhite)<3)
 	return dataobject_BADFORMAT;
 
     if(fgets(buf,sizeof(buf),file)==NULL) /* read in the \enddata{...} */
@@ -75,10 +75,10 @@ int level;
 {
     if(writeId!=helloworld_GetWriteID(hw)){ /* only write a given version once */
 	helloworld_SetWriteID(hw,writeId);
-	fprintf(file,"\\begindata{%s,%d}\n",
+	fprintf(file,"\\begindata{%s,%ld}\n",
 		class_GetTypeName(hw), helloworld_UniqueID(hw));
 	fprintf(file,"%d %d %d\n",hw->x,hw->y,hw->blackOnWhite);
-	fprintf(file,"\\enddata{%s,%d}\n",
+	fprintf(file,"\\enddata{%s,%ld}\n",
 		class_GetTypeName(hw), helloworld_UniqueID(hw));
     }
 

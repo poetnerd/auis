@@ -43,6 +43,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 #include <view.ih>
 #include <graphic.ih>
 #include <layout.eh>
+static boolean fgetstring();
+static void objectto(FILE *f, char *message);
+static long readASCII();
 
 #define classname(do) ((do) == NULL ? "<NO OBJECT>" : class_GetTypeName(do))
 #define safename(c) ((c) == NULL ? "<NULL DATA>" : classname(cData(c)))
@@ -51,8 +54,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 
 /* initialize entire class */
 
-boolean layout__InitializeClass(classID)
-struct classheader *classID;	    /* unused */
+boolean layout__InitializeClass(struct classheader *classID)
 {
     if (debug)
 	printf("layout_InitializeClass()\n");
@@ -62,19 +64,14 @@ struct classheader *classID;	    /* unused */
 
 /* get corresponding view name */
 
-char *					/* returns "layoutview */
-layout__ViewName(self)
-struct layout *self;
+char * layout__ViewName(struct layout *self)
 {
     return "layoutview";
 }
 
 /* Initialize new data layout */
 
-boolean					/* returns TRUE for success */
-layout__InitializeObject(classID, self)
-struct classheader *classID;		/* unused */
-struct layout *self;
+boolean layout__InitializeObject(struct classheader *classID, struct layout *self)
 {
 
     if (debug)
@@ -87,9 +84,7 @@ struct layout *self;
 
 /* tear down a layout */
 
-void layout__FinalizeObject(classID, self)
-struct classheader *classID;	/* unused */
-struct layout *self;
+void layout__FinalizeObject(struct classheader *classID, struct layout *self)
 {
     if (debug)
 	printf("layout_FinalizeObject\n");
@@ -97,8 +92,7 @@ struct layout *self;
 
 /* toggle debugging flag */
 
-void layout__ToggleDebug(self)
-struct layout *self;
+void layout__ToggleDebug(struct layout *self)
 {
     if (debug) {
 	printf("layout debugging off\n");
@@ -111,12 +105,7 @@ struct layout *self;
 
 /* write layout to file */
 
-long					/* returns id of object written */
-layout__Write(self, f, writeID, level)
-struct layout *self;
-FILE * f;				/* file to be written */
-long writeID;				/* unique ID of object in output file */
-int level;				/* nesting level */
+long layout__Write(struct layout *self, FILE *f, long writeID, int level)
 {
     struct component *c;
 
@@ -150,9 +139,7 @@ int level;				/* nesting level */
 
 /* object to and print out bad input */
 
-static void objectto(f, message)
-FILE *f;			    /* input file containing offending material */
-char *message;			    /* error message */
+static void objectto(FILE *f, char *message)
 {
     int ch;
 
@@ -168,10 +155,7 @@ char *message;			    /* error message */
 
 /* scan input for a specific string */
 
-static boolean			    /* returns TRUE for success */
-fgetstring(f, string)
-FILE *f;			    /* input file */
-char *string;			    /* desired input string */
+static boolean /* returns TRUE for success */ fgetstring(FILE *f, char *string)
 {
     int ch;
 
@@ -209,11 +193,7 @@ A null component is represented by omitting the fifth field and data entirely.
 */
 
 
-static long			    /* returns read error status */
-readASCII(self, f, id)
-struct layout *self;
-FILE *f;			    /* input file */
-long id;			    /* unique identifier in data stream */
+static long /* returns read error status */ readASCII(struct layout *self, FILE *f, long id)
 {
     int ch;
     struct component *c;
@@ -232,7 +212,7 @@ long id;			    /* unique identifier in data stream */
 
 	    case '<': /* another component coming */
 		c = layout_CreateComponent(self);
-		if (fscanf(f, "%d,%d,%d,%d", &left, &top, &width, &height) != 4) {
+		if (fscanf(f, "%ld,%ld,%ld,%ld", &left, &top, &width, &height) != 4) {
 		    objectto(f, "layout:  expected four numbers separated by commas");
 		    layout_RemoveComponent(self, c);
 		    return dataobject_BADFORMAT;
@@ -262,7 +242,7 @@ long id;			    /* unique identifier in data stream */
 		    };
 		}
 		if (debug)
-		    printf("Got <%ld,%ld,%ld,%ld,%c%c> havechild=%d\n", cLeft(c), cTop(c), cWidth(c), cHeight(c), (cVaries(c) ? 'V' : 'F'), havechild);
+		    printf("Got <%ld,%ld,%ld,%ld,%c> havechild=%d\n", cLeft(c), cTop(c), cWidth(c), cHeight(c), (cVaries(c) ? 'V' : 'F'), havechild);
 		if (fgetstring(f, "\n") != 0) {
 		    objectto(f, "layout:  trash after coordinates");
 		    layout_RemoveComponent(self, c);
@@ -336,16 +316,12 @@ long id;			    /* unique identifier in data stream */
 
 /* read layout from file */
 
-long				    /* returns read error status */
-layout__Read(self, f, id)
-struct layout *self;
-FILE * f;			    /* input file */
-long id;			    /* unique identifier in data stream */
+long layout__Read(struct layout *self, FILE *f, long id)
 {
     long rc;
 
     if (debug)
-	printf("layout_Read(%d)\n", id);
+	printf("layout_Read(%ld)\n", id);
 
     layout_SetID(self, layout_UniqueID(self));
     layout_SetModified(self);
@@ -353,16 +329,14 @@ long id;			    /* unique identifier in data stream */
     rc = readASCII(self, f, id);
     layout_NotifyObservers(self, observable_OBJECTCHANGED);
     if (debug)
-	printf("layout_Read rc = %d\n", rc);
+	printf("layout_Read rc = %ld\n", rc);
 
     return rc;
 }
 
 /* remove a component */
 
-void layout__RemoveComponent(self, c)
-struct layout *self;
-struct component *c;		    /* component to be removed */
+void layout__RemoveComponent(struct layout *self, struct component *c)
 {
     struct component *prev;
 
@@ -396,10 +370,7 @@ struct component *c;		    /* component to be removed */
 
 /* fill in component */
 
-void layout__FillInComponent(self, name, c)
-struct layout *self;
-char *name;				/* name of dataobject subclass */
-struct component *c;			/* component to be filled in */
+void layout__FillInComponent(struct layout *self, char *name, struct component *c)
 {
     struct dataobject *newobject;
 
@@ -419,8 +390,7 @@ struct component *c;			/* component to be filled in */
 
 /* create component */
 
-struct component *layout__CreateComponent(self)
-struct layout *self;
+struct component * layout__CreateComponent(struct layout *self)
 {
     struct component *c;
 
@@ -446,13 +416,10 @@ struct layout *self;
 
 /* change component size */
 
-void layout__SetComponentSize(self, c, x, y, w, h)
-struct layout *self;
-struct component *c;			/* component to change */
-long x,	y, w, h;			/* new position and size */
+void layout__SetComponentSize(struct layout *self, struct component *c, long x, long y, long w, long h)
 {
     if (debug)
-	printf("layout_SetComponentSize(%s, %d, %d, %d, %d)\n", classname(cData(c)), x, y, w, y);
+	printf("layout_SetComponentSize(%s, %ld, %ld, %ld, %ld)\n", classname(cData(c)), x, y, w, h);
 
     if (cLeft(c) != x || cTop(c) != y || cWidth(c) != w || cHeight(c) != h) {
 	c->left = x;
@@ -466,8 +433,7 @@ long x,	y, w, h;			/* new position and size */
 
 /* check to see if modified */
 
-long layout__GetModified(self)
-struct layout *self;
+long layout__GetModified(struct layout *self)
 {
     struct component *c;
     long rc, cc;
@@ -485,7 +451,7 @@ struct layout *self;
     }
 
     if (debug)
-	printf("layout_GetModified = %d\n", rc);
+	printf("layout_GetModified = %ld\n", rc);
 
     return rc;
 }
@@ -500,9 +466,7 @@ struct layout *self;
 
 /* promote component to front of stack*/
 
-void layout__Promote(self, c)
-struct layout *self;
-struct component *c;			/* component to be promoted to front */
+void layout__Promote(struct layout *self, struct component *c)
 {
     struct component *prev;
     boolean changed;
@@ -533,9 +497,7 @@ struct component *c;			/* component to be promoted to front */
 
 /* demote component to back of the bus */
 
-void layout__Demote(self, c)
-struct layout *self;
-struct component *c;			/* component to be demoted to back */
+void layout__Demote(struct layout *self, struct component *c)
 {
     struct component *prev;
 
@@ -574,9 +536,7 @@ struct component *c;			/* component to be demoted to back */
 
 /* make object variable */
 
-void layout__MakeVariable(self, c)
-struct layout *self;
-struct component *c;			/* component which may vary */
+void layout__MakeVariable(struct layout *self, struct component *c)
 {
     if (debug)
 	printf("layout_MakeVariable(%s)\n", safename(c));
@@ -586,9 +546,7 @@ struct component *c;			/* component which may vary */
 
 /* make object fixed */
 
-void layout__MakeFixed(self, c)
-struct layout *self;
-struct component *c;			/* component which may vary */
+void layout__MakeFixed(struct layout *self, struct component *c)
 {
     if (debug)
 	printf("layout_MakeFixed(%s)\n", safename(c));

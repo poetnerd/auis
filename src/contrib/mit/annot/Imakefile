@@ -45,6 +45,7 @@ DOBJS = note.do icon.do ps.do noteview.do iconview.do psview.do stroffet.do stro
 IHFILES = note.ih icon.ih ps.ih noteview.ih iconview.ih psview.ih stroffet.ih stroffetv.ih
 #endif /* DPS_ENV */
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 NormalObjectRule()
 NormalATKRule()

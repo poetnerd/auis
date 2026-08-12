@@ -56,29 +56,21 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/synt
 #include <ctype.h>
 #include <lexan.eh>
 
-	boolean
-lexan__InitializeClass(ClassID)
-	struct classheader *ClassID;
+boolean lexan__InitializeClass(struct classheader *ClassID)
 {
 	return TRUE;
 }
 
 /* lexan__InitializeObject(ClassID, self)
 */
-	boolean
-lexan__InitializeObject(ClassID, self)
-	struct classheader *ClassID;
-	struct lexan *self;
+boolean lexan__InitializeObject(struct classheader *ClassID, struct lexan *self)
 {
 	return TRUE;
 }
 
 /* lexan__FinalizeObject(ClassID, self)
 */
-	void
-lexan__FinalizeObject(ClassID, self)
-	struct classheader *ClassID;
-	struct lexan *self;
+void lexan__FinalizeObject(struct classheader *ClassID, struct lexan *self)
 {
 }
 
@@ -104,11 +96,7 @@ lexan__FinalizeObject(ClassID, self)
 		      \o	      :  other characters, unchanged
 	if no character follows the \, return \ and length of zero
 */
-	int
-lexan__TransEscape(ClassID, buf, plen)
-	struct classheader *ClassID;
-	char *buf;
-	int *plen;
+int lexan__TransEscape(struct classheader *ClassID, char *buf, int *plen)
 {
 	static char esctab[]
 =   "r\rn\nf\ft\tb\bv\v\"\"\'\'\\\\?\177e\033E\033R\rN\nF\fT\tB\bV\v";
@@ -206,25 +194,21 @@ static char newstate [9][21] = {
 		p is empty or + or -
 		E may be 'e' or 'E'  and means the exponent
 */
-	int
-lexan__ParseNumber(ClassID, buf, plen, intval, dblval)
-	struct classheader *ClassID;
-	char *buf;
-	long *plen, *intval;
-	double *dblval;
+int lexan__ParseNumber(struct classheader *ClassID, char *buf, long *plen, long *intval, double *dblval)
 {
 	long val, len;
 	char oldstate, currstate;
 	register int x;
 	register char *bx;
 	int success;
+	int tlen;	/* lexan_TransEscape's plen is int *, not long * */
 
 	if (*buf == '\'') {
 		/* process quoted character */
 		val = buf[1];
 		if (val == '\\') {
-			val = lexan_TransEscape(buf+2, &len);
-			len += 3;  /* two apostrophes and the backslash */
+			val = lexan_TransEscape(buf+2, &tlen);
+			len = tlen + 3;  /* two apostrophes and the backslash */
 		}
 		else len = 3;
 		if (plen) *plen = len;
@@ -291,10 +275,7 @@ lexan__ParseNumber(ClassID, buf, plen, intval, dblval)
 }
 
 
-	int
-lexan__NextToken(self, pyylval)
-	register struct tlex *self;
-	void **pyylval;
+int lexan__NextToken(struct lexan *self, void **pyylval)
 {
 	/* use grammar ../bison/foo.y and token stream: ?/ab?/?/ */
 	static short dummy[] = {3, 6, 4, 5, 3, 6, 3, 6, 0};

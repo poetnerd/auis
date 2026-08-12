@@ -135,16 +135,16 @@ END-SPECIFICATION  ************************************************************/
 #include "zipobj.ih"
 #include "zipedit.ih"
 #include "zipedit.h"
+#include <stdlib.h>
+static boolean Ratify_Highlighting(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y);
+static boolean Ratify_Normalizing(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y);
 
-static int Delete_Inferior_Image( );
-static int Undelete_Inferior_Image();
-static int Normalize_Inferior_Image_Points();
+static int Delete_Inferior_Image(struct zipedit *self, zip_type_image image, zip_type_pane pane);
+int Highlight_Inferior_Image_Points(struct zipedit *self, zip_type_image image, zip_type_pane pane);	/* M2: same-file forward reference */
+static int Undelete_Inferior_Image(struct zipedit *self, zip_type_image image, zip_type_pane pane);
+static int Normalize_Inferior_Image_Points(struct zipedit *self, zip_type_image image, zip_type_pane pane);
 
-long
-zipedit__Set_Pane_Highlight_Icon( self, pane, icon )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
-  register char				  icon;
+long zipedit__Set_Pane_Highlight_Icon(struct zipedit *self, zip_type_pane pane, char icon)
   {
   register long				  status = zip_ok;
 
@@ -158,26 +158,17 @@ zipedit__Set_Pane_Highlight_Icon( self, pane, icon )
   return status;
   }
 
-long
-zipedit__Highlight_Pane_Points( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+long zipedit__Highlight_Pane_Points(struct zipedit *self, zip_type_pane pane)
   {
 return zip_ok;
   }
 
-long
-zipedit__Normalize_Pane_Points( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+long zipedit__Normalize_Pane_Points(struct zipedit *self, zip_type_pane pane)
   {
 return zip_ok;
   }
 
-long
-zipedit__Hide_Pane_Points( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+long zipedit__Hide_Pane_Points(struct zipedit *self, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -197,10 +188,7 @@ zipedit__Hide_Pane_Points( self, pane )
   return status;
   }
 
-long
-zipedit__Expose_Pane_Points( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+long zipedit__Expose_Pane_Points(struct zipedit *self, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -220,10 +208,7 @@ zipedit__Expose_Pane_Points( self, pane )
   return status;
   }
 
-long
-zipedit__Expose_Pane_Grid( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+long zipedit__Expose_Pane_Grid(struct zipedit *self, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -242,10 +227,7 @@ zipedit__Expose_Pane_Grid( self, pane )
   return status;
   }
 
-long
-zipedit__Hide_Pane_Grid( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+long zipedit__Hide_Pane_Grid(struct zipedit *self, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -264,10 +246,7 @@ zipedit__Hide_Pane_Grid( self, pane )
   return status;
   }
 
-long
-zipedit__Halve_Pane_Grid( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+long zipedit__Halve_Pane_Grid(struct zipedit *self, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -286,10 +265,7 @@ zipedit__Halve_Pane_Grid( self, pane )
   return status;
   }
 
-long
-zipedit__Double_Pane_Grid( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+long zipedit__Double_Pane_Grid(struct zipedit *self, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -308,10 +284,7 @@ zipedit__Double_Pane_Grid( self, pane )
   return status;
   }
 
-long
-zipedit__Expose_Pane_Coordinates( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+long zipedit__Expose_Pane_Coordinates(struct zipedit *self, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -332,10 +305,7 @@ zipedit__Expose_Pane_Coordinates( self, pane )
   return status;
   }
 
-long
-zipedit__Hide_Pane_Coordinates( self, pane )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
+long zipedit__Hide_Pane_Coordinates(struct zipedit *self, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -355,11 +325,7 @@ zipedit__Hide_Pane_Coordinates( self, pane )
   return status;
   }
 
-long
-zipedit__Delete_Figure( self, figure, pane )
-  register struct zipedit		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipedit__Delete_Figure(struct zipedit *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status= zip_ok;
 
@@ -385,11 +351,7 @@ zipedit__Delete_Figure( self, figure, pane )
   return status;
   }
 
-long
-zipedit__Undelete_Figure( self, figure, pane )
-  register struct zipedit		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipedit__Undelete_Figure(struct zipedit *self, zip_type_figure figure, zip_type_pane pane)
   {
    register long				  status= zip_ok;
 
@@ -410,12 +372,7 @@ zipedit__Undelete_Figure( self, figure, pane )
   return status;
  }
 
-long
-zipedit__Which_Figure_Point( self, figure, pane, x, y )
-  register struct zipedit		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		 *pane;
-  register long				  x, y;
+long zipedit__Which_Figure_Point(struct zipedit *self, zip_type_figure figure, zip_type_pane pane, long x, long y)
   {
   register long				  point = 0;
   register long				  status = zip_ok;
@@ -433,11 +390,7 @@ zipedit__Which_Figure_Point( self, figure, pane, x, y )
   return point;
   }
 
-long
-zipedit__Highlight_Figure_Points( self, figure, pane )
-  register struct zipedit		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipedit__Highlight_Figure_Points(struct zipedit *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -454,11 +407,7 @@ zipedit__Highlight_Figure_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipedit__Normalize_Figure_Points( self, figure, pane )
-  register struct zipedit		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipedit__Normalize_Figure_Points(struct zipedit *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -475,11 +424,7 @@ zipedit__Normalize_Figure_Points( self, figure, pane )
   return zip_ok;
   }
 
-long
-zipedit__Hide_Figure_Points( self, figure, pane )
-  register struct zipedit		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipedit__Hide_Figure_Points(struct zipedit *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -495,11 +440,7 @@ zipedit__Hide_Figure_Points( self, figure, pane )
   return zip_ok;
   }
 
-long
-zipedit__Expose_Figure_Points( self, figure, pane )
-  register struct zipedit		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipedit__Expose_Figure_Points(struct zipedit *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -515,11 +456,7 @@ zipedit__Expose_Figure_Points( self, figure, pane )
   return zip_ok;
   }
 
-long
-zipedit__Delete_Image( self, image, pane )
-  register struct zipedit		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+long zipedit__Delete_Image(struct zipedit *self, zip_type_image image, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register zip_type_figure		  figure_ptr;
@@ -546,11 +483,7 @@ zipedit__Delete_Image( self, image, pane )
   return status;
   }
 
-static int
-Delete_Inferior_Image( self, image, pane )
-  register struct zipedit		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+static int Delete_Inferior_Image(struct zipedit *self, zip_type_image image, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register zip_type_figure		  figure_ptr;
@@ -572,11 +505,7 @@ Delete_Inferior_Image( self, image, pane )
   return status;
   }
 
-long
-zipedit__Undelete_Image( self, image, pane )
-  register struct zipedit		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+long zipedit__Undelete_Image(struct zipedit *self, zip_type_image image, zip_type_pane pane)
   {
   register long						  status = zip_ok;
   register zip_type_figure				  figure_ptr;
@@ -603,11 +532,7 @@ zipedit__Undelete_Image( self, image, pane )
   return status;
   }
 
-static int
-Undelete_Inferior_Image( self, image, pane )
-  register struct zipedit		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+static int Undelete_Inferior_Image(struct zipedit *self, zip_type_image image, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register zip_type_figure		  figure_ptr;
@@ -629,11 +554,7 @@ Undelete_Inferior_Image( self, image, pane )
   return status;
   }
 
-long
-zipedit__Highlight_Image_Points( self, image, pane )
-  register struct zipedit		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+long zipedit__Highlight_Image_Points(struct zipedit *self, zip_type_image image, zip_type_pane pane)
   {
   register zip_type_figure		  figure_ptr;
   register long				  status = zip_ok;
@@ -657,11 +578,7 @@ zipedit__Highlight_Image_Points( self, image, pane )
   }
 
 
-int
-Highlight_Inferior_Image_Points( self, image, pane )
-  register struct zipedit		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+int Highlight_Inferior_Image_Points(struct zipedit *self, zip_type_image image, zip_type_pane pane)
   {
   register zip_type_figure		  figure_ptr;
   register long				  status = zip_ok;
@@ -685,11 +602,7 @@ Highlight_Inferior_Image_Points( self, image, pane )
   return status;
   }
 
-long
-zipedit__Normalize_Image_Points( self, image, pane )
-  register struct zipedit		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+long zipedit__Normalize_Image_Points(struct zipedit *self, zip_type_image image, zip_type_pane pane)
   {
   register zip_type_figure		  figure_ptr;
   register long				  status = zip_ok;
@@ -712,11 +625,7 @@ zipedit__Normalize_Image_Points( self, image, pane )
   return zip_ok;
   }
 
-static int
-Normalize_Inferior_Image_Points( self, image, pane )
-  register struct zipedit		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+static int Normalize_Inferior_Image_Points(struct zipedit *self, zip_type_image image, zip_type_pane pane)
   {
   register zip_type_figure		  figure_ptr;
   register long				  status = zip_ok;
@@ -740,11 +649,7 @@ Normalize_Inferior_Image_Points( self, image, pane )
   return status;
   }
 
-long
-zipedit__Hide_Image_Points( self, image, pane )
-  register struct zipedit		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+long zipedit__Hide_Image_Points(struct zipedit *self, zip_type_image image, zip_type_pane pane)
   {
   register zip_type_figure		  figure_ptr;
   register long				  status = zip_ok;
@@ -765,11 +670,7 @@ zipedit__Hide_Image_Points( self, image, pane )
   return zip_ok;
   }
 
-long
-zipedit__Expose_Image_Points( self, image, pane )
-  register struct zipedit		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+long zipedit__Expose_Image_Points(struct zipedit *self, zip_type_image image, zip_type_pane pane)
   {
   register zip_type_figure		  figure_ptr;
   register long				  status = zip_ok;
@@ -791,73 +692,45 @@ zipedit__Expose_Image_Points( self, image, pane )
   }
 
 
-long
-zipedit__Delete_Stream( self, stream, pane )
-  register struct zipedit		 *self;
-  register zip_type_stream		  stream;
-  register zip_type_pane		  pane;
+long zipedit__Delete_Stream(struct zipedit *self, zip_type_stream stream, zip_type_pane pane)
   {
 return zip_ok;
   }
 
-long
-zipedit__Undelete_Stream( self, stream, pane )
-  register struct zipedit		 *self;
-  register zip_type_stream		  stream;
-  register zip_type_pane		  pane;
+long zipedit__Undelete_Stream(struct zipedit *self, zip_type_stream stream, zip_type_pane pane)
   {
 return zip_ok;
   }
 
-long
-zipedit__Highlight_Stream_Points( self, stream, pane )
-  register struct zipedit		 *self;
-  register zip_type_stream		  stream;
-  register zip_type_pane		  pane;
+long zipedit__Highlight_Stream_Points(struct zipedit *self, zip_type_stream stream, zip_type_pane pane)
   {
 return zip_ok;
   }
 
-long
-zipedit__Normalize_Stream_Points( self, stream, pane )
-  register struct zipedit		 *self;
-  register zip_type_stream		  stream;
-  register zip_type_pane		  pane;
+long zipedit__Normalize_Stream_Points(struct zipedit *self, zip_type_stream stream, zip_type_pane pane)
   {
 return zip_ok;
   }
 
-long
-zipedit__Hide_Stream_Points( self, stream, pane )
-  register struct zipedit		 *self;
-  register zip_type_stream		  stream;
-  register zip_type_pane		  pane;
+long zipedit__Hide_Stream_Points(struct zipedit *self, zip_type_stream stream, zip_type_pane pane)
   {
 return zip_ok;
   }
 
-long
-zipedit__Expose_Stream_Points( self, stream, pane )
-  register struct zipedit		 *self;
-  register zip_type_stream		  stream;
-  register zip_type_pane		  pane;
+long zipedit__Expose_Stream_Points(struct zipedit *self, zip_type_stream stream, zip_type_pane pane)
   {
 return zip_ok;
   }
 
-zipedit__Expose_Point( self, pane, figure, x, y )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
-  register zip_type_pixel		  x, y;
+long zipedit__Expose_Point(struct zipedit *self, zip_type_pane pane, zip_type_figure figure, zip_type_pixel x, zip_type_pixel y)
   {
   char					  points[100];
-  int					  xp, yp;
+  long					  xp, yp;
   register struct fontdesc		 *current_font =
 					    zipview_GetFont( View );
 
   IN(zipedit__Expose_Point);
-  sprintf( points, "(%d,%D)", x, y );  /*=== optimize ===*/
+  sprintf( points, "(%ld,%ld)", x, y );  /*=== optimize ===*/
   zipview_SetTransferMode( View, graphic_BLACK );
   zipview_MoveTo( View, ((OriginX) + (x * (Flip) * (Multiplier) / (Divisor))) - 3,
 			((OriginY) - (y * (Flop) * (Multiplier) / (Divisor))) - 3 );
@@ -891,7 +764,7 @@ zipedit__Expose_Point( self, pane, figure, x, y )
   zipview_MoveTo( View,
 		  5 + ((OriginX) + (x * (Flip) * (Multiplier) / (Divisor))),
 		  (OriginY) - (y * (Flop) * (Multiplier) / (Divisor)) );
-  zipview_DrawString( View, graphic_ATLEFT | graphic_BETWEENTOPANDBOTTOM, points );
+  zipview_DrawString( View, points, graphic_ATLEFT | graphic_BETWEENTOPANDBOTTOM );
   zipview_MoveTo( View,
 		  (OriginX) + (x * (Flip) * (Multiplier) / (Divisor)),
 		  (OriginY) - (y * (Flop) * (Multiplier) / (Divisor)) );
@@ -900,20 +773,12 @@ zipedit__Expose_Point( self, pane, figure, x, y )
   }
 
 
-zipedit__Hide_Point( self, pane, figure, x, y )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
-  register zip_type_pixel		  x, y;
+long zipedit__Hide_Point(struct zipedit *self, zip_type_pane pane, zip_type_figure figure, zip_type_pixel x, zip_type_pixel y)
   {
 /*=== needed ?  ===*/
   }
 
-int
-zipedit__Highlight_Handles( self, pane, X1, X2, X3, Y1, Y2, Y3 )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  X1, X2, X3, Y1, Y2, Y3;
+long zipedit__Highlight_Handles(struct zipedit *self, zip_type_pane pane, zip_type_pixel X1, zip_type_pixel X2, zip_type_pixel X3, zip_type_pixel Y1, zip_type_pixel Y2, zip_type_pixel Y3)
   {
   IN(zipedit__Highlight_Handles);
   zipedit_Highlight_Point(  self, pane, X1, Y1 );
@@ -937,11 +802,7 @@ struct highlights
 static struct highlights    *highlights;
 static long		     highlights_count;
 
-static boolean
-Ratify_Highlighting( self, pane, x, y )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+static boolean Ratify_Highlighting(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register long				  i;
   register boolean			  ratified = true;
@@ -970,11 +831,7 @@ Ratify_Highlighting( self, pane, x, y )
   return  ratified;
   }
 
-static boolean
-Ratify_Normalizing( self, pane, x, y )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+static boolean Ratify_Normalizing(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register long				  i;
   register boolean			  discard = true;
@@ -1010,11 +867,7 @@ Ratify_Normalizing( self, pane, x, y )
   return  ratified;
   }
 
-int
-zipedit__Highlight_Point( self, pane, x, y )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long zipedit__Highlight_Point(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   IN(zipedit_Highlight_Point);
   if ( Ratify_Highlighting( self, pane, x, y ) )
@@ -1041,11 +894,7 @@ zipedit__Highlight_Point( self, pane, x, y )
   return zip_ok;
   }
 
- int
-zipedit__Highlight_Handle( self, pane, x, y )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long zipedit__Highlight_Handle(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   IN(zipedit_Highlight_Handle);
   if ( Ratify_Highlighting( self, pane, x, y ) )
@@ -1059,11 +908,7 @@ zipedit__Highlight_Handle( self, pane, x, y )
   return zip_ok;
   }
 
-int
-zipedit__Normalize_Handles( self, pane, X1, X2, X3, Y1, Y2, Y3 )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  X1, X2, X3, Y1, Y2, Y3;
+long zipedit__Normalize_Handles(struct zipedit *self, zip_type_pane pane, zip_type_pixel X1, zip_type_pixel X2, zip_type_pixel X3, zip_type_pixel Y1, zip_type_pixel Y2, zip_type_pixel Y3)
   {
   IN(zipedit__Normalize_Handles);
   zipedit_Normalize_Point(  self, pane, X1, Y1 );
@@ -1080,11 +925,7 @@ zipedit__Normalize_Handles( self, pane, X1, X2, X3, Y1, Y2, Y3 )
   }
 
 
-int
-zipedit__Normalize_Point( self, pane, x, y )
-  register struct zipedit		 *self;
-  register zip_type_pixel		  x, y;
-  register zip_type_pane		  pane;
+long zipedit__Normalize_Point(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   IN(zipedit__Normalize_Point);
   if ( Ratify_Normalizing( self, pane, x, y ) )
@@ -1111,11 +952,7 @@ zipedit__Normalize_Point( self, pane, x, y )
   }
 
 
- int
-zipedit__Normalize_Handle( self, pane, x, y )
-  register struct zipedit		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long zipedit__Normalize_Handle(struct zipedit *self, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   IN(zipedit__Highlight_Handle);
   if ( Ratify_Normalizing( self, pane, x, y ) )

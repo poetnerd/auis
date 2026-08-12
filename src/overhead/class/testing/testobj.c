@@ -36,21 +36,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "class.h"
 #include "testobj.eh"
 
-boolean testobject__InitializeClass()
+boolean testobject__InitializeClass(struct classheader *classID)
 {
     printf("Testobj InitializeClass entered.\n");
     return TRUE;
 }
 
-boolean testobject__InitializeObject()
+boolean testobject__InitializeObject(struct classheader *classID, struct testobject *self)
 {
     printf("Testobj InitializeObject entered.\n");
     return TRUE;
 }
 
-void testobject__Diddle(X, n)
-struct testobject *X;
-int n;
+void testobject__Diddle(struct testobject *X, int n)
 {
     printf("Testobj Diddle entered, n=%d\n", n);
 }

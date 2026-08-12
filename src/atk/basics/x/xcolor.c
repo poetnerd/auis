@@ -39,17 +39,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <observe.ih>
 #include <xcolor.eh>
 
-boolean
-xcolor__InitializeClass( classID )
-    struct classheader *classID;
+boolean xcolor__InitializeClass(struct classheader *classID)
 {
     return (TRUE);
 }
 
-boolean
-xcolor__InitializeObject( classID, self )
-    struct classheader *classID;
-    struct xcolor *self;
+boolean xcolor__InitializeObject(struct classheader *classID, struct xcolor *self)
 {
     self->dpy = NULL;
     self->used = self->haspixel = FALSE;
@@ -58,18 +53,11 @@ xcolor__InitializeObject( classID, self )
 }
 
 
-void
-xcolor__FinalizeObject( classID, self )
-struct classheader *classID;
-struct xcolor *self;
+void xcolor__FinalizeObject(struct classheader *classID, struct xcolor *self)
 {
 }
 
-struct xcolor *
-xcolor__Create( classID, name, R, G, B )
-    struct classheader *classID;
-    char *name;
-    unsigned short R, G, B;
+struct xcolor * xcolor__Create(struct classheader *classID, char *name, unsigned short R, unsigned short G, unsigned short B)
 {
     struct xcolor *self = NULL;
     if(self = xcolor_New()) {
@@ -81,10 +69,7 @@ xcolor__Create( classID, name, R, G, B )
 }
 
 
-void xcolor__ObservedChanged(self, changed, value)
-struct xcolor *self;
-struct observable *changed;
-long value;
+void xcolor__ObservedChanged(struct xcolor *self, struct observable *changed, long value)
 {
     struct classinfo *xcmapinfo=NULL;
     struct classinfo *xgraphicinfo=NULL;

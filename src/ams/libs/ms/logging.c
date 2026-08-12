@@ -35,13 +35,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <stdio.h>
 #include <sys/stat.h>
+extern int RetryBodyFileName(char *FileName);
+extern char *arpadate();  /* overhead/mail/lib/arpadate.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
 
 extern int IsLoggingMailStats;
 extern char MAILLOGSTATFILE[];
 extern char home[], Me[];
 
-ConsiderLoggingRead(FileName)
-char *FileName;
+int ConsiderLoggingRead(char *FileName)
 {
     char LineBuf[1000], *s;
     int size = 0;
@@ -75,7 +77,7 @@ char *FileName;
     fclose(fp);
     s = strrchr(FileName, '/');
     if (s) *s = '\0';
-    fprintf(logfp, "X-StatTrace: %s READ %d bytes %s %s ; %s", Me, statbuf.st_size - size, strncmp(FileName, home, strlen(home)) ? "BBOARD" : "MAIL", FileName, arpadate());
+    fprintf(logfp, "X-StatTrace: %s READ %ld bytes %s %s ; %s", Me, (long)(statbuf.st_size - size), strncmp(FileName, home, strlen(home)) ? "BBOARD" : "MAIL", FileName, arpadate());
     if (s) *s = '/';
     fclose(logfp);
 }

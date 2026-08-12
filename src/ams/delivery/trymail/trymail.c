@@ -2946,7 +2946,7 @@ char *DefaultDomain;
 	AuthFrom = atoi(AuthString);
 	if (AuthFrom == 0) {
 	    KS = NULL;
-	    wperr = cwp_Search(wpCD, STok, -1, MatchIDNamePart, &outQuality, &KS);
+	    wperr = cwp_Search(wpCD, STok, (long)-1, MatchIDNamePart, &outQuality, &KS);
 	    if (wperr == wperr_NoError && KS != NULL) {
 		NPAmax = NPAix = -100000;
 		for (Ix = 0; Ix < KS->KeyCount; ++Ix) {

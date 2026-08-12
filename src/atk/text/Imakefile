@@ -29,6 +29,8 @@
 BSDLIB = -lbsd
 #endif
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 DOBJS = be1be2.do \
 	be1be2a.do \
 	readscr.do \
@@ -102,7 +104,6 @@ OBJS = be1be2.o \
 	texttagv.o \
 	textrefv.o \
 	pcompch.o
-
 
 NormalObjectRule()
 NormalATKRule()

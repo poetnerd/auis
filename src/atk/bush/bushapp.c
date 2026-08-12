@@ -87,10 +87,7 @@ END-SPECIFICATION  ************************************************************/
 #define	entries_object  2
 #define	entry_object    4
 
-boolean
-bushapp__InitializeObject( ClassID, self )
-  register struct classheader	*ClassID;
-  register struct bushapp	*self;
+boolean bushapp__InitializeObject(struct classheader *ClassID, struct bushapp *self)
 {
   Bush = NULL;
   Bushv = NULL;
@@ -104,10 +101,7 @@ bushapp__InitializeObject( ClassID, self )
   return(TRUE);
 }
 
-void
-bushapp__FinalizeObject( ClassID, self )
-  register struct classheader	*ClassID;
-  register struct bushapp	*self;
+void bushapp__FinalizeObject(struct classheader *ClassID, struct bushapp *self)
 {
   if(imPtr) {
     im_Destroy(imPtr);
@@ -127,11 +121,7 @@ bushapp__FinalizeObject( ClassID, self )
   }
 }
 
-boolean
-bushapp__ParseArgs( self, argc, argv )
-  register struct bushapp  *self;
-  register int		    argc;
-  register char		  **argv;
+boolean bushapp__ParseArgs(struct bushapp *self, int argc, char **argv)
 {
   char **args = argv;
 
@@ -146,9 +136,7 @@ bushapp__ParseArgs( self, argc, argv )
   return(TRUE);
 }
 
-boolean
-bushapp__Start( self )
-  register struct bushapp   *self;
+boolean bushapp__Start(struct bushapp *self)
 {
   register char		    *startDir = NULL;
 	

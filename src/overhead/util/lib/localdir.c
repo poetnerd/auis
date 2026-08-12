@@ -36,17 +36,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <stdio.h>
 #include <andrdir.h>
-
-#ifndef _IBMR2
-extern char *malloc();
-#endif /* _IBMR2 */
+#include <stdlib.h>
+#include <string.h>
 
 extern char *getenv();
+extern char *GetConfiguration(char *key);
 
 
 /* Return a string with the current value for LOCALDIR imbedded in it. */
-char *LocalDir(str)
-char *str;
+char * LocalDir(char *str)
 {
     char *p = NULL;
     int addLen;

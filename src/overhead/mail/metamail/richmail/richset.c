@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include "richlex.h"
 #include "richset.h"
+#include <stdlib.h>
 
 /*
  * Define a list of all character set processors in memory.
@@ -58,9 +59,7 @@ static	int	CharEncStack[MAX_CHAR_SETS];
  * a particular base processor.  The initialisation function of all
  * character set processors is called.
  */
-charsetinit (charset,name)
-struct	charsetproc *charset;
-char	*name;
+int charsetinit(struct charsetproc *charset, char *name)
 {
     int temp = 0;
     CharSets[0] = charset;
@@ -76,8 +75,7 @@ char	*name;
  * Initialise the stack, starting with a character set processor with
  * a particular name.
  */
-charsetnameinit	(name)
-char	*name;
+int charsetnameinit(char *name)
 {
     int temp = 0;
     int succeed = 0;
@@ -110,8 +108,7 @@ char	*name;
 /*
  * Push a new character set processor onto the stack.
  */
-charsetpush (charset)
-struct	charsetproc *charset;
+int charsetpush(struct charsetproc *charset)
 {
     if (NumCharSets >= MAX_CHAR_SETS) {
     	fprintf (stderr,"Too many nested character sets: aborting\n");
@@ -128,8 +125,7 @@ struct	charsetproc *charset;
  * if it matches the given processor.  Note: the base
  * processor is never popped off.
  */
-charsetpop (charset)
-struct	charsetproc *charset;
+int charsetpop(struct charsetproc *charset)
 {
     if (NumCharSets > 1 && CharSets[NumCharSets - 1] == charset) {
         --NumCharSets;
@@ -142,8 +138,7 @@ struct	charsetproc *charset;
  * See if the character set processor on the top of the stack
  * matches the given processor.
  */
-int	charsettop (charset)
-struct	charsetproc *charset;
+int charsettop(struct charsetproc *charset)
 {
     if (NumCharSets > 1) {
 	return (CharSets[NumCharSets - 1] == charset);
@@ -156,9 +151,7 @@ struct	charsetproc *charset;
  * Set the details for a character set member in the top-most
  * character set.
  */
-charmember (member,ch)
-struct	charsetmember *member;
-RCHAR	ch;
+int charmember(struct charsetmember *member, RCHAR ch)
 {
     member -> ch = ch;
     member -> charset = CharSets[NumCharSets - 1];
@@ -167,10 +160,7 @@ RCHAR	ch;
 /*
  * Set the details for a member of a specific character set.
  */
-charmemberspec (member,ch,charset)
-struct	charsetmember *member;
-RCHAR	ch;
-struct	charsetproc *charset;
+int charmemberspec(struct charsetmember *member, RCHAR ch, struct charsetproc *charset)
 {
     member -> ch = ch;
     member -> charset = charset;
@@ -179,9 +169,7 @@ struct	charsetproc *charset;
 /*
  * Set the details for a output control code character.
  */
-charmemberctrl (member,ch)
-struct	charsetmember *member;
-RCHAR	ch;
+int charmemberctrl(struct charsetmember *member, RCHAR ch)
 {
     member -> ch = ch;
     member -> charset = NULL;
@@ -192,9 +180,7 @@ RCHAR	ch;
  * "command" function of all character set processors.  Returns
  * zero if the command was not processed.
  */
-int	charsetcommand (token,negated)
-char	*token;
-int	negated;
+int charsetcommand(char *token, int negated)
 {
     int temp = 0;
     while (CharacterSets[temp]) {
@@ -208,8 +194,7 @@ int	negated;
 /*
  * Test for an extension singleton command.
  */
-int	charsetsingle (token)
-char	*token;
+int charsetsingle(char *token)
 {
     int temp = 0;
     while (CharacterSets[temp]) {

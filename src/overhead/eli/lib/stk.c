@@ -32,11 +32,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include  <stk.h>
+#include <stdlib.h>
+#include <string.h>
+static int eliEvalStk_Grow(eliEvalStack_t *s);
 
 /* Initialize a stack.  S must point to an existing structure */
 
-static int eliEvalStk_Grow(s)
-eliEvalStack_t *s;
+static int eliEvalStk_Grow(eliEvalStack_t *s)
 {
     EliSym_t **tmp = (s->stack) ? (EliSym_t **) realloc(s->stack, (s->size + GROW_STACK_SIZE) * sizeof (EliSym_t *)) : (EliSym_t **) malloc(GROW_STACK_SIZE * sizeof (EliSym_t *));
 
@@ -48,8 +50,7 @@ eliEvalStack_t *s;
     return (FALSE);
 }
 
-void            eliEvalStk_Init(s)
-eliEvalStack_t *s;
+void eliEvalStk_Init(eliEvalStack_t *s)
 {
     s->top = 0;
     s->size = 0;
@@ -58,10 +59,7 @@ eliEvalStack_t *s;
 
 /* Push the given stknode onto the stack */
 
-int eliEvalStk_Push(st, s, node)
-EliState_t *st;
-eliEvalStack_t *s;
-EliSym_t *node;
+int eliEvalStk_Push(EliState_t *st, eliEvalStack_t *s, EliSym_t *node)
 {
     if (s->top == s->size) {
         if (!eliEvalStk_Grow(s))
@@ -78,8 +76,7 @@ EliSym_t *node;
 /* return the datum of the top node on the stack */
 /* ASSUMES There is an element on the stack */
 
-EliSym_t      *eliEvalStk_Top(s)
-eliEvalStack_t *s;
+EliSym_t * eliEvalStk_Top(eliEvalStack_t *s)
 {
     return (s->stack[s->top - 1]);
 }
@@ -87,9 +84,7 @@ eliEvalStack_t *s;
 /* Pop top item from stack -- DOESN'T RETURN A VALUE */
 /* Nothing popped if stack is empty (maybe should return an error) */
 
-void            eliEvalStk_Pop(st, s)
-EliState_t     *st;
-eliEvalStack_t *s;
+void eliEvalStk_Pop(EliState_t *st, eliEvalStack_t *s)
 {
     eliSym_DecrRefcount(st, s->stack[s->top - 1]);
     --(s->top);
@@ -101,9 +96,7 @@ eliEvalStack_t *s;
  * Traverses the stack, looking for a symnode whose name is given by "name". 
  */
 
-EliSym_t       *eliEvalStk_FindSym(s, name)
-eliEvalStack_t *s;
-char           *name;
+EliSym_t * eliEvalStk_FindSym(eliEvalStack_t *s, char *name)
 {
     int i, notfound = TRUE;
     EliSym_t *result = NULL;

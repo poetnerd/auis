@@ -132,17 +132,13 @@ END-SPECIFICATION  ************************************************************/
 #define	 View			      (self)
 #define  Objects(i)		    ((*self->objects)[i])
 
-static int Draw_Inferior_Image();
-static int Draw_Figure();
-static int Clear_Inferior_Image();
-static int Hide_Inferior_Image();
-static int Expose_Inferior_Image();
+static int Draw_Inferior_Image(struct zipview *self, zip_type_image image, zip_type_pane pane);
+static int Draw_Figure(struct zipview *self, zip_type_figure figure, zip_type_pane pane);
+static int Clear_Inferior_Image(struct zipview *self, zip_type_image image, zip_type_pane pane);
+static int Hide_Inferior_Image(struct zipview *self, zip_type_image image, zip_type_pane pane);
+static int Expose_Inferior_Image(struct zipview *self, zip_type_image image, zip_type_pane pane);
 
-long
-zipview__Display_Image( self, image, pane )
-  register struct zipview		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+long zipview__Display_Image(struct zipview *self, zip_type_image image, zip_type_pane pane)
   {
   register int				  status = zip_success;
 
@@ -165,11 +161,7 @@ zipview__Display_Image( self, image, pane )
   return status;
   }
 
-long
-zipview__Draw_Image( self, image, pane )
-  register struct zipview		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+long zipview__Draw_Image(struct zipview *self, zip_type_image image, zip_type_pane pane)
   {
   register int				  status = zip_success;
   register zip_type_figure		  figure_ptr;
@@ -204,11 +196,7 @@ zipview__Draw_Image( self, image, pane )
   return status;
   }
 
-static int
-Draw_Inferior_Image( self, image, pane )
-  register struct zipview		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+static int Draw_Inferior_Image(struct zipview *self, zip_type_image image, zip_type_pane pane)
   {
   register int				  status = zip_success;
   register zip_type_figure		  figure_ptr;
@@ -232,11 +220,7 @@ Draw_Inferior_Image( self, image, pane )
   return status;
   }
 
-static int
-Draw_Figure( self, figure, pane )
-  register struct zipview		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+static int Draw_Figure(struct zipview *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -249,11 +233,7 @@ Draw_Figure( self, figure, pane )
   return  status;
   }
 
-long
-zipview__Clear_Image( self, image, pane )
-  register struct zipview		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+long zipview__Clear_Image(struct zipview *self, zip_type_image image, zip_type_pane pane)
   {
   register int				  status = zip_success;
   register zip_type_figure		  figure_ptr;
@@ -287,11 +267,7 @@ zipview__Clear_Image( self, image, pane )
   return status;
   }
 
-static int
-Clear_Inferior_Image( self, image, pane )
-  register struct zipview		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+static int Clear_Inferior_Image(struct zipview *self, zip_type_image image, zip_type_pane pane)
   {
   register int				  status = zip_success;
   register zip_type_figure		  figure_ptr;
@@ -315,11 +291,7 @@ Clear_Inferior_Image( self, image, pane )
   return status;
   }
 
-long
-zipview__Hide_Image( self, image, pane )
-  register struct zipview		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+long zipview__Hide_Image(struct zipview *self, zip_type_image image, zip_type_pane pane)
   {
   register int				  status = zip_success;
   register zip_type_figure		  figure_ptr;
@@ -345,11 +317,7 @@ zipview__Hide_Image( self, image, pane )
   return status;
   }
 
-static int
-Hide_Inferior_Image( self, image, pane )
-  register struct zipview		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+static int Hide_Inferior_Image(struct zipview *self, zip_type_image image, zip_type_pane pane)
   {
   register int				  status = zip_success;
   register zip_type_figure		  figure_ptr;
@@ -370,11 +338,7 @@ Hide_Inferior_Image( self, image, pane )
   return status;
   }
 
-long
-zipview__Expose_Image( self, image, pane )
-  register struct zipview		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+long zipview__Expose_Image(struct zipview *self, zip_type_image image, zip_type_pane pane)
   {
   register int				  status = zip_success;
   register zip_type_figure		  figure_ptr;
@@ -400,11 +364,7 @@ zipview__Expose_Image( self, image, pane )
   return status;
   }
 
-static int
-Expose_Inferior_Image( self, image, pane )
-  register struct zipview		 *self;
-  register zip_type_image		  image;
-  register zip_type_pane		  pane;
+static int Expose_Inferior_Image(struct zipview *self, zip_type_image image, zip_type_pane pane)
   {
   register int				  status = zip_success;
   register zip_type_figure		  figure_ptr;
@@ -425,10 +385,7 @@ Expose_Inferior_Image( self, image, pane )
   return status;
   }
 
-zip_type_image
-zipview__Which_Image( self, x, y )
-  register struct zipview		 *self;
-  register long				  x, y;
+struct zip_image * zipview__Which_Image(struct zipview *self, long x, long y)
   {
   register zip_type_image		  image = NULL;
   register zip_type_figure		  figure;
@@ -442,19 +399,12 @@ zipview__Which_Image( self, x, y )
   return image;
   }
 
-zip_type_image
-zipview__Within_Which_Image( self, x, y )
-  register struct zipview		 *self;
-  register long				  x, y;
+zip_type_image zipview__Within_Which_Image(struct zipview *self, long x, long y)
   {
 return zip_ok;
   }
 
-boolean
-zipview__Image_Visible( self, image, pane )
-  register struct zipview		    *self;
-  register zip_type_image		    image;
-  register zip_type_pane		    pane;
+boolean zipview__Image_Visible(struct zipview *self, zip_type_image image, zip_type_pane pane)
   {
   register boolean			    status = FALSE;
 

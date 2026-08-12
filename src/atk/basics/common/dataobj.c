@@ -38,11 +38,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <dataobj.eh>
 #include <attribs.h>
 #include <view.ih>
+#include <string.h>
+static boolean FreeProps(long rock, struct namespace *self, int x);
 /* #include "dict.ih" */
 
-boolean dataobject__InitializeObject(classID, self)
-    struct classheader *classID;
-    register struct dataobject *self;
+boolean dataobject__InitializeObject(struct classheader *classID, struct dataobject *self)
 {
     self->id = dataobject_UniqueID(self);
     self->writeID = dataobject_UNDEFINEDID;
@@ -51,10 +51,7 @@ boolean dataobject__InitializeObject(classID, self)
     return TRUE;
 }
 
-long dataobject__Read(self, file, id)
-    struct dataobject *self;
-    FILE *file;
-    long id;
+long dataobject__Read(struct dataobject *self, FILE *file, long id)
 {
 
 /*  The following may be used as a template for creating real read routines 
@@ -137,11 +134,7 @@ long dataobject__Read(self, file, id)
 }
 
 
-long dataobject__Write(self, file, writeID, level)
-    struct dataobject *self;
-    FILE *file;
-    long writeID;
-    int level;
+long dataobject__Write(struct dataobject *self, FILE *file, long writeID, int level)
 {
     if (dataobject_GetWriteID(self) != writeID)  {
         dataobject_SetWriteID(self,writeID);
@@ -168,20 +161,16 @@ long dataobject__Write(self, file, writeID, level)
 static long mod_time = 1;
 #define NextTime()  (mod_time++)
 
-long dataobject__GetModified(self)
-    struct dataobject *self;
+long dataobject__GetModified(struct dataobject *self)
 {
     return self->modified;
 }
 
-void dataobject__SetModified(self)
-    struct dataobject *self;
+void dataobject__SetModified(struct dataobject *self)
 {
     self->modified = NextTime();
 }
-void dataobject__RestoreModified(self, oldmodified)
-    struct dataobject *self;
-    long oldmodified;
+void dataobject__RestoreModified(struct dataobject *self, long oldmodified)
 {   /* allow the reseting of the modified flag to an old value. 
       This is NOT a supported function */
     self->modified = oldmodified;
@@ -189,8 +178,7 @@ void dataobject__RestoreModified(self, oldmodified)
 
 static char viewname[100];
 
-char *dataobject__ViewName(self)
-    struct dataobject *self;
+char * dataobject__ViewName(struct dataobject *self)
 {
     sprintf(viewname, "%sview", class_GetTypeName(self));
     if (class_Load(viewname) != NULL
@@ -206,25 +194,18 @@ char *dataobject__ViewName(self)
     return viewname;
 }
 
-void dataobject__SetAttributes(self, attributes)
-    struct dataobject *self;
-    struct attributes *attributes;
+void dataobject__SetAttributes(struct dataobject *self, struct attributes *attributes)
 {
 }
 
-static boolean FreeProps(rock, self, x)
-long rock;
-struct namespace *self;
-int x;
+static boolean FreeProps(long rock, struct namespace *self, int x)
 {
     char *val=(char *)namespace_ValueAt(self, x);
     free(val);
     return TRUE;    
 }
 
-void dataobject__FinalizeObject(classID, self)
-struct classheader *classID;
-struct dataobject *self;
+void dataobject__FinalizeObject(struct classheader *classID, struct dataobject *self)
 {
     if(self->properties) {
 	namespace_Enumerate(self->properties, FreeProps, 0);
@@ -233,11 +214,7 @@ struct dataobject *self;
     }
 }
 
-void dataobject__Put( self, property, type, value )
-     struct dataobject *self;
-     struct atom * property;
-     struct atom * type;
-     long value;
+void dataobject__Put(struct dataobject *self, struct atom *property, struct atom *type, long value)
 {
   struct property * newprop =
     (struct property *)malloc(sizeof(struct property));
@@ -255,11 +232,7 @@ void dataobject__Put( self, property, type, value )
 }
 
 
-short dataobject__Get( self, property, type, value )
-     struct dataobject *self;
-     struct atom * property;
-     struct atom **type;
-     long * value;
+short dataobject__Get(struct dataobject *self, struct atom *property, struct atom **type, long *value)
 {
   struct property * prop;
 
@@ -280,10 +253,7 @@ short dataobject__Get( self, property, type, value )
     return FALSE;
 }
 
-dataobject__ListCurrentViews(self,array,size)
-struct dataobject *self;
-struct view **array;
-int size;
+int dataobject__ListCurrentViews(struct dataobject *self, struct view **array, int size)
 { 
     /* fills in the array (of size 'size') with a list of views
           observing this dataobj.
@@ -304,13 +274,7 @@ int size;
     return count;
 }
 
-long dataobject__WriteOtherFormat(self, file, writeID, level, usagetype, boundary)
-struct dataobject *self;
-FILE *file;
-long writeID;
-int level;
-int usagetype;
-char *boundary;
+long dataobject__WriteOtherFormat(struct dataobject *self, FILE *file, long writeID, int level, int usagetype, char *boundary)
 {
     if (usagetype != dataobject_OTHERFORMAT_MAIL) return(dataobject_BADFORMAT);
 #ifdef THREEPART
@@ -326,12 +290,7 @@ char *boundary;
 #endif
 }
 
-boolean
-dataobject__ReadOtherFormat(self, file, fmt, encoding, description)
-struct dataobject *self;
-FILE *file;
-char *fmt, *encoding;
-char *description;
+boolean dataobject__ReadOtherFormat(struct dataobject *self, FILE *file, char *fmt, char *encoding, char *description)
 {
     return(FALSE); /* couldn't read it */
 }

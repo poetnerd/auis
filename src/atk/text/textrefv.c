@@ -42,6 +42,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <texttag.ih>
 #include <fontdesc.ih>
 #include <textrefv.eh>
+static boolean findtag(struct textrefv *self, struct text *text, long pos, struct environment *env);
 
 #define DataObject(A) (A->header.view.dataobject)
 #define Data(A) ((struct textref *)(DataObject(A)))
@@ -54,11 +55,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #define PROCESSOR environ_AndrewDir("/bin/ezpostprocess")
 #define TFILE environ_AndrewDir("/lib/tmac/tmac.arf")
 
-static boolean findtag(self,text,pos,env)
-struct textrefv *self;
-struct text *text;
-long pos;
-struct environment *env;
+static boolean findtag(struct textrefv *self, struct text *text, long pos, struct environment *env)
 {
     char *foo,*name,buf[256];
     struct viewref *vr;
@@ -75,12 +72,7 @@ struct environment *env;
     }
     return FALSE;
 }
-void textrefv__Print(self, f, process, final, toplevel)
-struct textrefv *self;
-FILE *f;
-char *process;
-char *final;
-int toplevel;
+void textrefv__Print(struct textrefv *self, FILE *f, char *process, char *final, boolean toplevel)
 {
     struct textref *ref;
     char buf[256];
@@ -94,10 +86,7 @@ int toplevel;
     }
 }
 
-struct view *textrefv__Hit(self,action,mousex,mousey,numberOfClicks) 
-struct textrefv *self;
-enum view_MouseAction action;
-long mousex, mousey, numberOfClicks;
+struct view * textrefv__Hit(struct textrefv *self, enum view_MouseAction action, long mousex, long mousey, long numberOfClicks)
 {
     struct textref *ref;
     char buf[256];
@@ -111,7 +100,7 @@ long mousex, mousey, numberOfClicks;
 	((txt = textrefv_GetParentText(self)) != NULL) &&
 	((tv = textrefv_GetParentTextview(self)) != NULL) &&
 	((self->cref = textref_GetRef(ref,255,buf)) != NULL) && 
-	(text_EnumerateEnvironments(txt,0,text_GetLength(txt),findtag,(long) self) != NULL) &&
+	(text_EnumerateEnvironments(txt,0,text_GetLength(txt),findtag,self) != NULL) &&
 	self->loc >= 0){
 /*
 	cpos = textview_GetDotPosition(tv);
@@ -136,9 +125,7 @@ long mousex, mousey, numberOfClicks;
 #define FONTSIZE 12
 #define OFNAME "andy"
 #define OFSIZE 8
-boolean textrefv__InitializeObject(classID,self)
-struct classheader *classID;
-struct textrefv *self;
+boolean textrefv__InitializeObject(struct classheader *classID, struct textrefv *self)
 {
     struct fnotev *fv = (struct fnotev *) self;
     textrefv_SetDisplayStr(self,"?");
@@ -146,8 +133,7 @@ struct textrefv *self;
     fv->ofd = fontdesc_Create(OFNAME,0,OFSIZE);
     return TRUE;
 }
-boolean textrefv__InitializeClass(classID)
-struct classheader *classID;
+boolean textrefv__InitializeClass(struct classheader *classID)
 {   
     return TRUE;
 }

@@ -15,9 +15,12 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 #include <stdio.h>
 #include <ctype.h>
 #include "richlex.h"
+#include <string.h>
 
-char *translate(t)
-char *t;
+/* Defined later in this same file, used above its definition. */
+extern int ignoretoken(char *t);
+
+char * translate(char *t)
 {
     if (!strcmp(t, "fixed")) return("typewriter");
     if (!strcmp(t, "excerpt")) return("quotation");
@@ -25,7 +28,7 @@ char *t;
     return(t);
 }
 
-main() {
+int main() {
     RCHAR c;
     int i, JustDidNewline = 0;
     char tok[MAX_TOKEN_SIZE + 1],*token;
@@ -75,8 +78,7 @@ main() {
     fputs("\n \n\\enddata{text, 42}\n", stdout);
 }
 
-ignoretoken(t)
-char *t;
+int ignoretoken(char *t)
 {
     if (*t == '/') ++t;
     if (!strcmp(t, "us-ascii")) return(1);
@@ -85,13 +87,10 @@ char *t;
     return(0);
 }
 
-controlputc(c)
-int c;
+int controlputc(int c)
 {
 }
 
-controloutput(s, immediate)
-char *s;
-int immediate;
+int controloutput(char *s, int immediate)
 {
 }

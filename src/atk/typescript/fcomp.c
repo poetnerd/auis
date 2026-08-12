@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/type
 
 #include <andrewos.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <class.h>
 #include <text.ih>
 #include <mark.ih>
@@ -65,6 +66,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/type
 #include <sys/param.h>
 #include <sys/stat.h>
 
+struct helpstat;
+struct repCookie;
+static int GatherStats(struct helpstat *rock, enum message_HelpItem itemtype, char *item, long dummy);
+static int MakeReport(struct repCookie *cookie, enum message_HelpItem itemtype, char *item, long dummy);
+static char * SaveLastCommand(struct typescript *td);
+static int mystrcmp(const void *v1, const void *v2);
+
 static struct cursor *waitCursor;
 static long searchCmd;
 static long tokenSearchCmd;
@@ -77,9 +85,7 @@ static int (*typescript_GrabLastCmd) ();
 
 #define DEFAULTCHARWIDTH 12
 
-CompleteFname(ts, key)
-register struct typescript *ts;
-long key;
+int CompleteFname(struct typescript *ts, long key)
 {
     register long pos;
     register long fname;
@@ -144,11 +150,7 @@ struct helpstat {
   strcmp(item, "./") && strcmp(item, "../") && \
   (item[0] != '.' || !rock->refusedot)
 
-static GatherStats(rock, itemtype, item, dummy)
-struct helpstat *rock;
-enum message_HelpItem itemtype;
-char *item;
-long dummy; /* along for the ride */
+static int GatherStats(struct helpstat *rock, enum message_HelpItem itemtype, char *item, long dummy)
 {
     if (acceptitem(rock, item, itemtype)) {
         long itemlen = strlen(item);
@@ -180,11 +182,7 @@ struct repCookie {
 
 #define COLSPACE    1
 
-static MakeReport(cookie, itemtype, item, dummy)
-struct repCookie *cookie;
-enum message_HelpItem itemtype;
-char *item;
-long dummy; /* along for the ride */
+static int MakeReport(struct repCookie *cookie, enum message_HelpItem itemtype, char *item, long dummy)
 {
     long widthinpix;
 
@@ -198,9 +196,7 @@ long dummy; /* along for the ride */
     }
 }
 
-static char *
-SaveLastCommand(td)
-struct typescript *td;
+static char * SaveLastCommand(struct typescript *td)
 {
     long len, spos;
     struct text *mydoc;
@@ -233,18 +229,19 @@ struct typescript *td;
     return cmdStr;
 }
 
-static int
-mystrcmp(s1,s2)
-register char **s1,**s2;
+/* qsort() below expects the standard int(const void*, const void*)
+   comparator; both arguments actually point at char* elements of
+   cookie.report (an array of strings), matching qsort's normal
+   "array of pointers" idiom. */
+static int mystrcmp(const void *v1, const void *v2)
 {
+  char * const *s1 = v1, * const *s2 = v2;
   if(s1 && *s1 && s2 && *s2)
       return(strcmp(*s1,*s2));
   else return(0);
 }
 
-PossibleCompletions(ts, key)
-register struct typescript *ts;
-long key;
+int PossibleCompletions(struct typescript *ts, long key)
 {
     register long pos;
     register struct text *theText = Text(ts);
@@ -378,9 +375,7 @@ static long lastmatch;
 static long beginToken;
 static long endToken;
 
-CompleteTokenWork(ts, forward)
-register struct typescript *ts;
-boolean forward;
+int CompleteTokenWork(struct typescript *ts, boolean forward)
 {
     register long pos;
     register struct text *theText = Text(ts);
@@ -508,24 +503,18 @@ boolean forward;
     im_SetLastCmd(typescript_GetIM(ts), tokenSearchCmd);
 }
 
-CompleteTokenForward(ts, key)
-register struct typescript *ts;
-long key;
+int CompleteTokenForward(struct typescript *ts, long key)
 {
     CompleteTokenWork(ts, TRUE);
 }
 
-CompleteTokenBackward(ts, key)
-register struct typescript *ts;
-long key;
+int CompleteTokenBackward(struct typescript *ts, long key)
 {
     CompleteTokenWork(ts, FALSE);
 }
 
 
-CompleteCmdWork(ts, forward)
-register struct typescript *ts;
-boolean forward;
+int CompleteCmdWork(struct typescript *ts, boolean forward)
 {
     register long pos;
     register struct text *theText;
@@ -619,22 +608,17 @@ boolean forward;
     im_SetLastCmd(typescript_GetIM(ts), searchCmd);
 }
 
-CompleteCmdForward(ts, key)
-register struct typescript *ts;
-long key;
+int CompleteCmdForward(struct typescript *ts, long key)
 {
     CompleteCmdWork(ts, TRUE);
 }
 
-CompleteCmdBackward(ts, key)
-register struct typescript *ts;
-long key;
+int CompleteCmdBackward(struct typescript *ts, long key)
 {
     CompleteCmdWork(ts, FALSE);
 }
 
-boolean fcomp__InitializeClass(classID)
-struct classheader *classID;
+boolean fcomp__InitializeClass(struct classheader *classID)
 {
     struct classinfo *imc;
 

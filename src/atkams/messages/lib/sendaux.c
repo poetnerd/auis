@@ -53,6 +53,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 
 #include <andrewos.h>                  /* sys/file.h */
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <util.h>
 #include <pwd.h>
@@ -60,6 +61,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 
 #include <class.h>
 #include <proctbl.ih>
+
+struct sbutton;
 /* #include <keymap.ih> */
 #include <keystate.ih>
 #include <menulist.ih>
@@ -89,9 +92,20 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <folders.ih>
 #define AUXMODULE 1
 #include <sendmsg.eh>
+static int AbsentProcedure(struct view *self);
+static boolean AddIfView(struct environment *env, int *ct);
+static int AddSpecialHeaders(struct sendmessage *sm);
+static void DeleteWindow();
 
 static struct keymap *smkm, *smhkm;
 static struct menulist *sm_menulist, *sm_hmenulist;
+
+/* same-file forward references -- all defined later in this file */
+extern int DoPreview(struct sendmessage *sm, int code), EnvViewCt(struct environment *env), QuoteProperly(char *str);
+
+/* same-directory (sendmsg.o, linked into the same sendmsg.do) cross-file
+   references -- no header, defined in sendmsg.c */
+extern int DirectlyInsertFile(struct textview *tv, struct text *t, char *fname, int pos), HandleButton(struct sbutton *self, struct sendmessage *sendmessage, long in, long whichbut), ProduceUnscribedVersion(char *FileName, FILE *OutputFP);
 
 /* values for sendmessage menu mask */
 #define SMMASK_FEWSTYLES 1
@@ -101,8 +115,7 @@ static struct menulist *sm_menulist, *sm_hmenulist;
 #define SMMASK_INSERTHEAD 16
 #define SMMASK_FILEINTO 32
 
-static int AbsentProcedure(self)
-struct view    *self;
+static int AbsentProcedure(struct view *self)
 {
     message_DisplayString(self, 75, "Absent procedure - did not find a normal BE2 command in the proctable!");
 }
@@ -116,11 +129,10 @@ static int      (*textv_EndOfLineCmd) () = AbsentProcedure,
                 (*textv_PlainestCmd) () = AbsentProcedure,
                 (*textv_NextLineCmd) () = AbsentProcedure;
 
-extern void     sendmesage_SetButtonFont(), ForceSending(), ForceStripping(), sendmessage__CheckRecipients(), UserWantsAHeader(), FileIntoFolder(), sendmessage__QuoteBody(), RestoreFromPS(), sendmessage__AppendBugInfoToBody(), BSSM_FakeBug(), BSSM_DownFocus(), BSSM_UpFocus(), BSSM_HeadersFocus(), BSSM_BodyFocus(), BSSM_Preview(), ComposeBugReport(), sendmessage__Reset(), sendmessage_DoDelivery(), sendmessage_InsertFile(), BeginLine(), NextLine(), PreviousLine(), BSSM_SendmessageFoldersCompound(), BSSM_SendmessageMessagesCompound(), BSSM_SendmessageCompound(), SetNotModified(), SBSSM_DoHeadersCommand(), SBSSM_DoBodiesCommand(), SBSSM_TextviewCompound(), sendmessage_DuplicateWindow();
-int WriteOneFile();
+extern void     sendmesage_SetButtonFont(), ForceSending(struct sendmessage *sendmessage), ForceStripping(struct sendmessage *sendmessage), sendmessage__CheckRecipients(struct sendmessage *sm), UserWantsAHeader(struct sendmessage *self, char *head), FileIntoFolder(struct sendmessage *sm, char *name), sendmessage__QuoteBody(struct sendmessage *self), RestoreFromPS(struct sendmessage *self), sendmessage__AppendBugInfoToBody(struct sendmessage *sm, int IsMessagesBug), BSSM_FakeBug(struct sendmessage *sm, char *txt), BSSM_DownFocus(struct sendmessage *sm), BSSM_UpFocus(struct sendmessage *sm), BSSM_HeadersFocus(struct sendmessage *sm), BSSM_BodyFocus(struct sendmessage *sm), BSSM_Preview(struct sendmessage *sm), ComposeBugReport(struct sendmessage *sm), sendmessage__Reset(struct sendmessage *sendmessage), sendmessage_DoDelivery(struct sendmessage *sendmessage), sendmessage_InsertFile(struct sendmessage *sendmessage, char *fname), BeginLine(struct sendmessage *sm), NextLine(struct sendmessage *sm, int IsNewline), PreviousLine(struct sendmessage *sm), BSSM_SendmessageFoldersCompound(struct sendmessage *sm, char *cmds), BSSM_SendmessageMessagesCompound(struct sendmessage *sm, char *cmds), BSSM_SendmessageCompound(struct sendmessage *sm, char *cmds), SetNotModified(struct sendmessage *sendmessage), SBSSM_DoHeadersCommand(struct sendmessage *sm, char *cmds), SBSSM_DoBodiesCommand(struct sendmessage *sm, char *cmds), SBSSM_TextviewCompound(struct textview *tv, char *cmds), sendmessage_DuplicateWindow(struct sendmessage *self);
+int WriteOneFile(struct sendmessage *sendmessage, char *ViceFileName, Boolean OnVice, Boolean MayOverwrite, int Version, Boolean TrustDelivery, Boolean UseMultipartFormat, int *EightBitText);
 
-static int AddSpecialHeaders(sm)
-struct sendmessage *sm;
+static int AddSpecialHeaders(struct sendmessage *sm)
 {
     struct textview *tv;
     int             ans, pos, oldpos, oldlen, useplus;
@@ -330,8 +342,7 @@ struct sendmessage *sm;
     return (0);
 }
 
-QuoteProperly(str)
-char           *str;
+int QuoteProperly(char *str)
 {
     if (strchr(str, '"') || strchr(str, '\\') || strchr(str, ',')) {
         char            MyBuf[2000];
@@ -351,8 +362,7 @@ char           *str;
     }
 }
 
-void            QuitMessages(self)
-struct sendmessage *self;
+void QuitMessages(struct sendmessage *self)
 {
     ams_CommitState(TRUE, FALSE, TRUE, TRUE);
 }
@@ -367,8 +377,7 @@ NULL};
 #define lastWindow_CANCEL 0
 #define lastWindow_QUIT   1
 
-static void     DeleteWindow(self)
-struct sendmessage *self;
+static void DeleteWindow(struct sendmessage *self)
 {
     if (sendmessage_HasChanged(self)) {
         if (!sendmessage_AskEraseUnsentMail(self)) {
@@ -405,45 +414,37 @@ struct sendmessage *self;
     }
 }
 
-void delete_sendmsg_win(im, self)
-struct im *im;
-struct sendmessage *self;
+void delete_sendmsg_win(struct im *im, struct sendmessage *self)
 {
     DeleteWindow(self);
 }
 
-void            BSSM_DummyQuit(self)
-struct sendmessage *self;
+void BSSM_DummyQuit(struct sendmessage *self)
 {
     message_DisplayString(NULL, 10, "Use ^X^C to quit.");
 }
 
-void            ToggleClearButt(self)
-struct sendmessage *self;
+void ToggleClearButt(struct sendmessage *self)
 {
     HandleButton(self->buttons, self, SM_CLEAR, EXP_CLEARAFTER);
 }
 
-void            ToggleSignButt(self)
-struct sendmessage *self;
+void ToggleSignButt(struct sendmessage *self)
 {
     HandleButton(self, self, SM_SIGN, EXP_SIGNMAIL);
 }
 
-void            ToggleHideButt(self)
-struct sendmessage *self;
+void ToggleHideButt(struct sendmessage *self)
 {
     HandleButton(self, self, SM_HIDE, EXP_HIDEAFTER);
 }
 
-void            ToggleBlindButt(self)
-struct sendmessage *self;
+void ToggleBlindButt(struct sendmessage *self)
 {
     HandleButton(self, self, SM_BLIND, EXP_KEEPBLIND);
 }
 
-void            SimulateResetButton(self)
-struct sendmessage *self;
+void SimulateResetButton(struct sendmessage *self)
 {
     HandleButton(self, self, SM_RESET, 0);
 }
@@ -455,8 +456,7 @@ struct sendmessage *self;
 static char    *PreviewCmdVector[] = {NULL, "-p", "-z", NULL, NULL};
 static char     PreviewProg[1 + MAXPATHLEN] = "";
 
-void            BSSM_Preview(sm)
-struct sendmessage *sm;
+void BSSM_Preview(struct sendmessage *sm)
 {
     DoPreview(sm, PREVIEW_ASK);
 }
@@ -469,9 +469,7 @@ static char    *PrevQVec[] = {
     NULL
 };
 
-DoPreview(sm, code)
-struct sendmessage *sm;
-int             code;
+int DoPreview(struct sendmessage *sm, int code)
 {
     char            FileName[1 + MAXPATHLEN];
     int             ans, rcode;
@@ -534,9 +532,7 @@ static struct bind_Description smheadbindings[] = {
 
 static char DraftFileNameBuf[MAXPATHLEN+1] = "~/Draft.mail";
 
-ReadDraft(File, sendmessage)
-char *File;
-struct sendmessage *sendmessage;
+int ReadDraft(char *File, struct sendmessage *sendmessage)
 {
     char FileBuf[1+MAXPATHLEN];
 
@@ -544,8 +540,7 @@ struct sendmessage *sendmessage;
     sendmessage_ReadFromFile(sendmessage, FileBuf, FALSE);
 }
 
-sendmessage_SaveDraft(sendmessage)
-struct sendmessage *sendmessage;
+int sendmessage_SaveDraft(struct sendmessage *sendmessage)
 {
     if (completion_GetFilename(sendmessage, "Draft file to save: ", DraftFileNameBuf, DraftFileNameBuf, sizeof(DraftFileNameBuf), FALSE, FALSE) == -1 ) {
 	return;
@@ -555,9 +550,7 @@ struct sendmessage *sendmessage;
     }
 }
 
-sendmessage_RestoreDraft(sendmessage, dfile)
-struct sendmessage *sendmessage;
-char *dfile;
+int sendmessage_RestoreDraft(struct sendmessage *sendmessage, char *dfile)
 {
     int NeedReset =0;
 
@@ -648,8 +641,7 @@ static struct bind_Description smbindings[] = {
 };
 
 
-OneTimeProcInit(c)
-struct classheader *c;
+int OneTimeProcInit(struct classheader *c)
 {
     struct proctable_Entry *tempProc;
 
@@ -688,8 +680,7 @@ struct classheader *c;
     return (TRUE);
 }
 
-InitProcStuff(sendmessage)
-struct sendmessage *sendmessage;
+int InitProcStuff(struct sendmessage *sendmessage)
 {
     sendmessage->keys = keystate_Create(sendmessage, smkm);
     sendmessage->headkeys = keystate_Create(sendmessage, smhkm);
@@ -697,16 +688,13 @@ struct sendmessage *sendmessage;
     sendmessage->myheadmenulist = menulist_DuplicateML(sm_hmenulist, sendmessage);
 }
 
-DestroyProcStuff(self)
-struct sendmessage *self;
+int DestroyProcStuff(struct sendmessage *self)
 {
     keystate_Destroy(self->keys);
     menulist_Destroy(self->mymenulist);
 }
 
-void            sendmessage__PostKeyState(self, ks)
-struct sendmessage *self;
-struct keystate *ks;
+void sendmessage__PostKeyState(struct sendmessage *self, struct keystate *ks)
 {
     self->keys->next = NULL;
     if(ks) keystate_AddBefore(self->keys, ks);
@@ -720,9 +708,7 @@ struct keystate *ks;
     }
 }
 
-void            sendmessage__PostMenus(self, menulist)
-struct sendmessage *self;
-struct menulist *menulist;
+void sendmessage__PostMenus(struct sendmessage *self, struct menulist *menulist)
 {
     long            newmask;
 
@@ -745,8 +731,7 @@ struct menulist *menulist;
     super_PostMenus(self, self->mymenulist);
 }
 
-InitStylesAndFonts(sendmessage)
-struct sendmessage *sendmessage;
+int InitStylesAndFonts(struct sendmessage *sendmessage)
 {
     int             fontsize = environ_GetProfileInt("messages.fontsize", 12);
     char           *fontname = amsutil_GetDefaultFontName();
@@ -778,16 +763,14 @@ struct sendmessage *sendmessage;
     sendmessage_SetButtonFont(sendmessage, tmpfontdesc); */
 }
 
-DestroyStyles(self)
-struct sendmessage *self;
+int DestroyStyles(struct sendmessage *self)
 {
     style_Destroy(self->DefaultStyle);
     style_Destroy(self->BoldStyle);
     style_Destroy(self->DefaultHeadStyle);
 }
 
-void            sendmessage__QuoteBody(self)
-struct sendmessage *self;
+void sendmessage__QuoteBody(struct sendmessage *self)
 {
     char            TempFile[1 + MAXPATHLEN], CaptBuf[AMS_CAPTIONSIZE + 1], *mycaps, BBName[1 + MAXPATHLEN];
     int             pos, len, orgpos, orglen, endpt, caplen;
@@ -882,9 +865,7 @@ struct sendmessage *self;
     ams_WaitCursor(FALSE);
 }
 
-void            UserWantsAHeader(self, head)
-struct sendmessage *self;
-char           *head;
+void UserWantsAHeader(struct sendmessage *self, char *head)
 {
     char            newheader[150], *s;
     struct textview *hv;
@@ -916,8 +897,7 @@ char           *head;
     }
 }
 
-void            BeginLine(sm)
-struct sendmessage *sm;
+void BeginLine(struct sendmessage *sm)
 {
     struct textview *v;
     int             dot, len;
@@ -950,9 +930,7 @@ struct sendmessage *sm;
     }
 }
 
-void            NextLine(sm, IsNewline)
-struct sendmessage *sm;
-int             IsNewline;
+void NextLine(struct sendmessage *sm, int IsNewline)
 {
     struct textview *v;
     int             dot;
@@ -980,8 +958,7 @@ int             IsNewline;
     }
 }
 
-void            PreviousLine(sm)
-struct sendmessage *sm;
+void PreviousLine(struct sendmessage *sm)
 {
     int             dot;
     struct textview *v;
@@ -1007,9 +984,7 @@ struct sendmessage *sm;
     }
 }
 
-void            sendmessage_InsertFile(sendmessage, fname)
-struct sendmessage *sendmessage;
-char           *fname;
+void sendmessage_InsertFile(struct sendmessage *sendmessage, char *fname)
 {
     struct textview *tv;
     struct text    *t;
@@ -1034,8 +1009,7 @@ char           *fname;
     }
 }
 
-PrepareBodyForSignature(self)
-struct sendmessage *self;
+int PrepareBodyForSignature(struct sendmessage *self)
 {
     struct text    *t = self->BodyText;
     struct textview *tv = self->BodyTextview;
@@ -1055,16 +1029,12 @@ struct sendmessage *self;
     textview_SetDotLength(tv, dotlen);
 }
 
-SetMyFrameTitle(sm, tit)
-struct sendmessage *sm;
-char           *tit;
+int SetMyFrameTitle(struct sendmessage *sm, char *tit)
 {
     frame_SetTitle(sm->myframe, tit);
 }
 
-static boolean  AddIfView(env, ct)
-struct environment *env;
-int            *ct;
+static boolean AddIfView(struct environment *env, int *ct)
 {
     if (env) {
         *ct += EnvViewCt(env);
@@ -1074,8 +1044,7 @@ int            *ct;
     return (FALSE);
 }
 
-EnvViewCt(env)
-struct environment *env;
+int EnvViewCt(struct environment *env)
 {
     int             total = 0;
     struct nestedmark *nm;

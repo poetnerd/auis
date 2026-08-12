@@ -39,18 +39,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h> /* sys/types.h strings.h sys/file.h */
 #include <andyenv.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <util.h>
 #include <mailconf.h>
 #include <mail.h>
 #include <ctype.h>
 #include <errno.h>
+static int LoadServerFile();
+static struct AMSConfig * getThis();
+static int readBool(char *inval, char *filename);
 
 extern int errno;
 
-#ifndef _IBMR2
-extern char *malloc();
-extern char *realloc();
-#endif /* _IBMR2 */
+/* No header anywhere in the tree declares this. */
+extern int CheckAMSConfiguration();	/* mailconf.c */
+
+/* This file's own malloc()/free() calls (malloc-family blind-spot sweep --
+   none were census-visible since a stale, now-removed
+   #ifndef _IBMR2 extern char *malloc(); extern char *realloc(); pair
+   already "declared" malloc, and free() is a clang builtin that never
+   triggers -Wimplicit-function-declaration at all) are covered by
+   <stdlib.h> above. */
 
 
 /* Private structure to retain information about each domain asked for. */
@@ -99,8 +108,7 @@ char *someDomain; int *pAlloc;
 }
 #endif /* AMS_DELIVERY_ENV */
 
-int CheckAMSDelivery(someDomain)
-char *someDomain;
+int CheckAMSDelivery(char *someDomain)
 {/* Test whether the given domain runs the AMS delivery system.  Return +1 if it does, -1 if it doesn't, and 0 if you can't tell. */
 #ifdef AMS_DELIVERY_ENV
     char *MailQDir;
@@ -165,8 +173,7 @@ char *someDomain;
 }
 
 #ifdef AMS_DELIVERY_ENV
-static int readBool(inval, filename)
-char *inval, *filename;
+static int readBool(char *inval, char *filename)
 {/* Read a Boolean from the string ``inval''. */
     char *val;
 
@@ -354,8 +361,7 @@ struct AMSConfig *acf; char *someDomain;
 }
 #endif /* AMS_DELIVERY_ENV */
 
-int CheckAMSNameSep(someDomain)
-char *someDomain;
+int CheckAMSNameSep(char *someDomain)
 {/* Test whether the given domain uses a name-separator characters.  Return -1 if no, 0 if you can't tell, and >0 if it does.  If the value is >0, it's the separator character itself. */
 #ifdef AMS_DELIVERY_ENV
     char *NameSepFile;
@@ -420,8 +426,7 @@ char *someDomain;
 #endif /* AMS_DELIVERY_ENV */
 }
 
-int CheckAMSValidationMask(someDomain)
-char *someDomain;
+int CheckAMSValidationMask(char *someDomain)
 {/* Return how the given domain validates its local user names, giving a mask with a bit on for each method that is used.  Return a negative number if it can't tell. */
 #ifdef AMS_DELIVERY_ENV
     int alloced;
@@ -455,8 +460,7 @@ char *someDomain;
 #endif /* AMS_DELIVERY_ENV */
 }
 
-char *CheckAMSMBName(someDomain)
-char *someDomain;
+char * CheckAMSMBName(char *someDomain)
 {/* Determine what the given domain uses as the name of the mailbox directory for users.  Return NULL if it can't tell, or the directory name (e.g. "Mailbox") if it can. */
 #ifdef AMS_DELIVERY_ENV
     int fc, alloced;
@@ -482,8 +486,7 @@ char *someDomain;
 #endif /* AMS_DELIVERY_ENV */
 }
 
-char *CheckAMSPMName(someDomain)
-char *someDomain;
+char * CheckAMSPMName(char *someDomain)
 {/* Determine what the given domain uses as the username of the distinguished delivery agent.  Return NULL if it can't tell, or the username (e.g. "postman") if it can. */
 #ifdef AMS_DELIVERY_ENV
     int fc, alloced;
@@ -509,8 +512,7 @@ char *someDomain;
 #endif /* AMS_DELIVERY_ENV */
 }
 
-char *CheckAMSWPIAddr(someDomain)
-char *someDomain;
+char * CheckAMSWPIAddr(char *someDomain)
 {/* Determine what the given domain uses as the submission address for WPI update requests.  Return NULL if it can't tell, or the address (e.g. "wpi+@foobar.baz") if it can. */
 #ifdef AMS_DELIVERY_ENV
     int fc, alloced;
@@ -536,8 +538,7 @@ char *someDomain;
 #endif /* AMS_DELIVERY_ENV */
 }
 
-int CheckAMSFmtOK(someDomain)
-char *someDomain;
+int CheckAMSFmtOK(char *someDomain)
 {/* Determine whether the given domain accepts ATK-formatted mail.  Return <0 if it doesn't, >0 if it does, and 0 if it can't tell.  (In general, though, a site's running AMS Delivery implies that it does.) */
 #ifdef AMS_DELIVERY_ENV
     int fc, alloced;
@@ -563,8 +564,7 @@ char *someDomain;
 #endif /* AMS_DELIVERY_ENV */
 }
 
-int CheckAMSUUCPSupp(someDomain)
-char *someDomain;
+int CheckAMSUUCPSupp(char *someDomain)
 {/* Determine whether the given domain thinks a!b is a remote address.  Return >0 if it does, <0 if it doesn't, and 0 if we can't tell. */
 #ifdef AMS_DELIVERY_ENV
     int fc, alloced;
@@ -590,8 +590,7 @@ char *someDomain;
 #endif /* AMS_DELIVERY_ENV */
 }
 
-int CheckAMSUseridPlusWorks(someDomain)
-char *someDomain;
+int CheckAMSUseridPlusWorks(char *someDomain)
 {/* Determine whether the given domain supports a+ and a+b types of local addresses.  Return >0 if it does, <0 if it doesn't, and 0 if we can't tell. */
 #ifdef AMS_DELIVERY_ENV
     int fc, alloced;
@@ -617,9 +616,7 @@ char *someDomain;
 #endif /* AMS_DELIVERY_ENV */
 }
 
-int CheckAMSDfMSPath(someDomain, valP)
-char *someDomain;
-struct cell_msPath **valP;
+int CheckAMSDfMSPath(char *someDomain, struct cell_msPath **valP)
 {/* Determine what the given domain uses as its default MS path.  Returns a value of 0 if nothing, <0 as an error code, or >0 with valP pointing at an array of (value) cell_msPath structures describing the site's default MS path. */
 #ifdef AMS_DELIVERY_ENV
     int fc, alloced;

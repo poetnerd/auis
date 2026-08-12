@@ -600,7 +600,7 @@ int len, type, cid;
     register char *ptr;
     char *FullDirName, *datefield;
     SNAP_integer MaxReturn, startbyte;
-    int numbytes, bytesleft;
+    long numbytes, bytesleft;
 
     /* Unpack args */
     ptr = getstr(CallPacketArgs(buffer), &FullDirName);

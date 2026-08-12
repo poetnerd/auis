@@ -41,8 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "tiffio.h"
 
 #ifndef TIFFSwabShort
-TIFFSwabShort(wp)
-	unsigned short *wp;
+int TIFFSwabShort(unsigned short *wp)
 {
 	register unsigned char *cp = (unsigned char *)wp;
 	int t;
@@ -52,8 +51,7 @@ TIFFSwabShort(wp)
 #endif
 
 #ifndef TIFFSwabLong
-TIFFSwabLong(lp)
-	unsigned long *lp;
+int TIFFSwabLong(unsigned long *lp)
 {
 	register unsigned char *cp = (unsigned char *)lp;
 	int t;
@@ -64,9 +62,7 @@ TIFFSwabLong(lp)
 #endif
 
 #ifndef TIFFSwabArrayOfShort
-TIFFSwabArrayOfShort(wp, n)
-	unsigned short *wp;
-	register int n;
+int TIFFSwabArrayOfShort(unsigned short *wp, int n)
 {
 	register unsigned char *cp;
 	register int t;
@@ -81,19 +77,21 @@ TIFFSwabArrayOfShort(wp, n)
 #endif
 
 #ifndef TIFFSwabArrayOfLong
-TIFFSwabArrayOfLong(lp, n)
-	register unsigned long *lp;
-	register int n;
+int TIFFSwabArrayOfLong(unsigned long *lp, int n)
 {
-	register unsigned char *cp;
+	register unsigned char *cp = (unsigned char *)lp;
 	register int t;
 
+	/* Each TIFF "LONG" is 4 bytes on disk regardless of sizeof(long) on
+	   this host; advance by 4 raw bytes per element (not by lp++, i.e.
+	   sizeof(*lp)) or every element past the first lands on the wrong
+	   bytes -- on LP64 that silently swapped the wrong half of every
+	   pair passed to this function and corrupted whatever followed. */
 	/* XXX unroll loop some */
 	while (n-- > 0) {
-		cp = (unsigned char *)lp;
 		t = cp[3]; cp[3] = cp[0]; cp[0] = t;
 		t = cp[2]; cp[2] = cp[1]; cp[1] = t;
-		lp++;
+		cp += 4;
 	}
 }
 #endif
@@ -184,9 +182,7 @@ unsigned char TIFFNoBitRevTable[256] = {
     0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff, 
 };
 
-TIFFReverseBits(cp, n)
-	register unsigned char *cp;
-	register int n;
+int TIFFReverseBits(unsigned char *cp, int n)
 {
 	for (; n > 8; n -= 8) {
 		cp[0] = TIFFBitRevTable[cp[0]];

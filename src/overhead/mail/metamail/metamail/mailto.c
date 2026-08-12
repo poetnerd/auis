@@ -38,6 +38,11 @@ STILL NEED TO DO/SUPPORT:
 
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <time.h>
+#include <termcap.h>
 #include <config.h>
 #include <pwd.h>
 #include <signal.h>
@@ -46,21 +51,48 @@ STILL NEED TO DO/SUPPORT:
 #include <sys/file.h>
 #ifdef AMIGA
 #define Prototype   extern
-  
+
 #include <getfiles.h>
 #include <time.h>
 #include <lib_protos.h>
+
 #else
 extern char *getenv();
 #endif
 
+struct mailpart;
+
 #ifdef SYSV
 /* Different people say different things about whether unistd.h lives in sys/ */
 /* #include <sys/unistd.h> */
-#include <unistd.h>
 #endif
 
-extern char *malloc(), *realloc(), *index(), *getmyname();
+extern char *index(), *getmyname();
+extern char *AndrewDir(char *str);
+/* No header declares these; defined in sibling files in this directory */
+extern int to64(FILE *infile, FILE *outfile, int PortableNewlines), toqp(FILE *infile, FILE *outfile), from64(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct, int PortableNewlines), fromqp(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct);
+extern int DoesNeedPortableNewlines(char *ctype), ExceptionalNewline(char *contenttype, int needsportable);
+extern int lc2strcmp(char *s1, char *s2), lc2strncmp(char *s1, char *s2, int len);
+/* Same-file forward references (defined later in this file) */
+extern int tfputs(char *s), cleanexit(int code);
+extern void nomemabort();
+extern void ProcessInitFiles(), InitSignals();
+extern int FputsQuotingLT(char *s, FILE *fp, struct mailpart *part, int EightBitMode, int RightToLeftMode);
+extern int TryClosingStyle(char *name, FILE *fp, struct mailpart *part), TryOpeningStyle(char *name, FILE *fp, struct mailpart *part, char *envstartstr), TempCloseStyles(FILE *fp);
+extern int ReopenStyles(FILE *fp, struct mailpart *part), ToggleStyle(char *name, FILE *fp, struct mailpart *part, char *turnonstr, char *turnoffstr), TranslateInputToEncodedOutput(FILE *InputFP, FILE *OutputFP, int Ecode, char *ctype);
+extern int EditCurrentMessage(int UseVisual), EndStyle(FILE *fp, char *s), StartStyle(FILE *fp, char *s, char *envstartstr);
+extern int WriteOutMessage(FILE *fp, char *ToList, char *Subject, char *CCList, struct mailpart *FirstPart), WriteDeadLetter();
+extern void RestoreCurrentStyles();
+extern void SwitchToEuropean();
+extern int EmitHeader(FILE *fp, char *hdr, char *body), EmitHeaderWithAliases(FILE *fp, char *hdr, char *names);
+extern int WriteContentTypeAndEncoding(FILE *fp, struct mailpart *part), WriteCtypeNicely(FILE *fp, char *ct);
+extern void finalize();
+extern int WhichEncodingForFile(char *fname, char *ctype), SetTextFlags(struct mailpart *mp);
+extern int ContainsEightBitChar(char *fname), ProcessOneMailRC(char *fname, int IsAndrew);
+extern int HandleAliasCommand(char *aliasline), HandleSetCommand(char *cmd, int DoSet), HeaderFputs(char *s, FILE *fp, char *hdr);
+extern int PutQP(unsigned char c, FILE *fp);
+extern int EmitAddresses(FILE *fp, char *names, char *hdr), DeAlias(char *name, FILE *fp, char *hdr), fputsquoting(char *s, FILE *fp);
+extern int ProcessMailcapFiles(), BuildCommand();
 struct mailpart *CreateNewPart();
 
 /* The main data structure for the multiple parts of the mail */
@@ -138,7 +170,7 @@ int  V_askcc=0, /* To ask about the Cc field */
 int JustificationState = JUST_LEFT;
 
 
-EightBitCharHelp() {
+void EightBitCharHelp() {
     if (!CharacterSet || !strcmp(CharacterSet, "us-ascii")) {
         printf("There are no extended characters available for your US-ASCII terminal.\n\n");
         printf("If you are actually using a terminal or terminal emulator with a richer\ncharacter set, you must use the '-a' option or the 'MM_CHARSET' environment\nvariable to inform this program of that fact.\n");
@@ -199,7 +231,7 @@ tmpname() {
     return(s);
 }
 
-TildeHelp() {
+void TildeHelp() {
     char *pager = getenv("PAGER");
     char TmpName[100], CmdBuf[150];
     FILE *fp;
@@ -298,7 +330,7 @@ char *gethome() {
 static char standoutbuf[50], standendbuf[50], StartUnderline[50], StopUnderline[50], BoldOn[50], BoldOff[50], KS[50], KE[50];
 static int termcolumns, termrows;
 
-InitTerminal() {
+void InitTerminal() {
 #ifdef AMIGA
     strcpy(standoutbuf, "\x9b\x37m");   /* Enter standout (highlighted) mode */
     strcpy(standendbuf, "\x9b\x30m");   /* Exit standout mode */
@@ -350,7 +382,7 @@ InitTerminal() {
 #endif
 }
 
-FinalizeTerminal() {
+void FinalizeTerminal() {
     tfputs(standendbuf);
     tfputs(BoldOff);
     tfputs(StopUnderline);
@@ -375,14 +407,12 @@ NewPart() {
     return(p);
 }
 
-nomemabort() {
+void nomemabort() {
     fprintf(stderr, "mailto: Out of memory\n");
     cleanexit(-1);
 }
 
-char *
-freshcopy(s)
-char *s;
+char * freshcopy(char *s)
 {
     char *t = malloc(1+strlen(s));
     if (!t) nomemabort();
@@ -390,9 +420,7 @@ char *s;
     return(t);
 }
 
-char *
-GetLineMalloced(prompt, def)
-char *prompt, *def;
+char * GetLineMalloced(char *prompt, char *def)
 {
     char Sbuf[1000], *ans;
     printf("%s: ", prompt);
@@ -408,9 +436,7 @@ char *prompt, *def;
     return(ans);
 }
 
-char *
-EditString(prompt, s)
-char *prompt, *s;
+char * EditString(char *prompt, char *s)
 {
     char *ans;
     char NewPrompt[500];
@@ -422,9 +448,7 @@ char *prompt, *s;
     return(ans);
 }
 
-char *
-AddCommasToAddressList(s)
-char *s;
+char * AddCommasToAddressList(char *s)
 {
     int spaces = 0;
     char *t, *ans, *ansptr;
@@ -455,10 +479,7 @@ char *s;
     return(ans);
 }
 
-char *
-AddToList(List, entry, definitelynew)
-char *List, *entry;
-int definitelynew;
+char * AddToList(char *List, char *entry, int definitelynew)
 {
     int len;
     char *end = entry+strlen(entry);
@@ -484,8 +505,7 @@ int definitelynew;
     return(List);
 }
 
-main(argc, argv)
-char **argv;
+int main(int argc, char **argv)
 {
     char *sdum, *LineBuf, CmdBuf[100];
     int i, EightBitMode = 0, RightToLeftMode = 0, AllDone=0, EightBitSeen=0, prevaddrdone=1;
@@ -1039,10 +1059,7 @@ char *newid() {
     return(idbuf);
 }
 
-WriteOutMessage(fp, ToList, Subject, CCList, FirstPart)
-FILE *fp;
-char *ToList, *Subject, *CCList;
-struct mailpart *FirstPart;
+int WriteOutMessage(FILE *fp, char *ToList, char *Subject, char *CCList, struct mailpart *FirstPart)
 {
     FILE *fpin;
     static int ctr = 0;
@@ -1118,9 +1135,7 @@ struct mailpart *FirstPart;
     }
 }
 
-WriteContentTypeAndEncoding(fp, part)
-FILE *fp;
-struct mailpart *part;
+int WriteContentTypeAndEncoding(FILE *fp, struct mailpart *part)
 {
     fprintf(fp, "Content-ID: %s\n", newid());
     if (part->istext) {
@@ -1157,10 +1172,7 @@ struct mailpart *part;
     }
 }
 
-TranslateInputToEncodedOutput(InputFP, OutputFP, Ecode, ctype)
-FILE *InputFP, *OutputFP;
-int Ecode;
-char *ctype;
+int TranslateInputToEncodedOutput(FILE *InputFP, FILE *OutputFP, int Ecode, char *ctype)
 {
     int c, EightBitSeen = 0;
 
@@ -1189,8 +1201,7 @@ static char *EnvStartStack[MAX_STACK_SIZE];
    kept open across an inserted object -- i.e. the richtext is split into 
    two parts of a multipart message */
 
-TempCloseStyles(fp)
-FILE *fp;
+int TempCloseStyles(FILE *fp)
 {
     int i = StackSize;
     while(--i>=0) {
@@ -1202,7 +1213,7 @@ FILE *fp;
     fflush(stdout);
 }
 
-RestoreCurrentStyles() {
+void RestoreCurrentStyles() {
     int i=0;
     while (i<StackSize) {
         if (EnvStartStack[i]) {
@@ -1212,9 +1223,7 @@ RestoreCurrentStyles() {
     }
 }
 
-ReopenStyles(fp, part)
-FILE *fp;
-struct mailpart *part;
+int ReopenStyles(FILE *fp, struct mailpart *part)
 {
     int i=0;
     RestoreCurrentStyles();
@@ -1224,13 +1233,12 @@ struct mailpart *part;
     }
 }
 
-richtextreset()
+void richtextreset()
 {
     StackSize = 0;
 }
 
-AlreadyInStyle(s)
-char *s;
+int AlreadyInStyle(char *s)
 {
     int i;
     for (i=0; i<StackSize; ++i) {
@@ -1239,10 +1247,7 @@ char *s;
     return(0);
 }
 
-StartStyle(fp, s, envstartstr)
-FILE *fp;
-char *s;
-char *envstartstr;
+int StartStyle(FILE *fp, char *s, char *envstartstr)
 {
     char *t;
     fprintf(fp, "<%s>", s);
@@ -1255,9 +1260,7 @@ char *envstartstr;
     if (!V_quiet) printf("Beginning: %s\n", t);
 }
 
-EndStyle(fp, s)
-FILE *fp;
-char *s;
+int EndStyle(FILE *fp, char *s)
 {
     int i = StackSize, j;
     while(--i>=0) {
@@ -1279,11 +1282,7 @@ char *s;
     if (!V_quiet) printf("Ending: %s\n", s);
 }
 
-ToggleStyle(name, fp, part, turnonstr, turnoffstr)
-char *name;
-FILE *fp;
-struct mailpart *part;
-char *turnonstr, *turnoffstr;
+int ToggleStyle(char *name, FILE *fp, struct mailpart *part, char *turnonstr, char *turnoffstr)
 {
     part->isrich = 1;
     if (AlreadyInStyle(name)) {
@@ -1298,11 +1297,7 @@ char *turnonstr, *turnoffstr;
     }
 }
 
-TryOpeningStyle(name, fp, part, envstartstr)
-char *name;
-FILE *fp;
-struct mailpart *part;
-char *envstartstr;
+int TryOpeningStyle(char *name, FILE *fp, struct mailpart *part, char *envstartstr)
 {
     if (AlreadyInStyle(name)) {
         printf("mailto: Already in %s style\n", name);
@@ -1312,10 +1307,7 @@ char *envstartstr;
     }
 }
 
-TryClosingStyle(name, fp, part)
-char *name;
-FILE *fp;
-struct mailpart *part;
+int TryClosingStyle(char *name, FILE *fp, struct mailpart *part)
 {
     if (AlreadyInStyle(name)) {
         part->isrich = 1;
@@ -1325,11 +1317,7 @@ struct mailpart *part;
     }
 }
 
-FputsQuotingLT(s, fp, part, EightBitMode, RightToLeftMode)
-char *s;
-FILE *fp;
-struct mailpart *part;
-int EightBitMode, RightToLeftMode;
+int FputsQuotingLT(char *s, FILE *fp, struct mailpart *part, int EightBitMode, int RightToLeftMode)
 {
     static int InNewLineSequence=1;
     int c=0;
@@ -1390,14 +1378,13 @@ int EightBitMode, RightToLeftMode;
     }
 }
 
-cleanexit(code)
-int code;
+int cleanexit(int code)
 {
     finalize();
     exit(code);
 }
 
-finalize() {
+void finalize() {
     while (FirstPart) {
         unlink(FirstPart->filename);
         FirstPart = FirstPart->next;
@@ -1405,9 +1392,7 @@ finalize() {
     FinalizeTerminal();
 }
 
-void
-cleanup(signum)
-int signum;
+void cleanup(int signum)
 {
     if (fpout) {
         TempCloseStyles(fpout);
@@ -1433,7 +1418,7 @@ int signum;
 #endif
 }
 
-InitSignals() {
+void InitSignals() {
     signal(SIGINT, cleanup);
 #ifndef AMIGA
     signal(SIGPIPE, cleanup);
@@ -1453,7 +1438,7 @@ InitSignals() {
 #endif
 }
 
-WriteDeadLetter()
+int WriteDeadLetter()
 {
     FILE *fp;
 #ifdef AMIGA
@@ -1497,9 +1482,7 @@ struct MailcapEntry {
 
 /* There are a fair number of core leaks in what follows.  That should matter little -- the mailcap files are only parsed once, and are usually pretty small anyway. */
 
-char *
-GetCommand(s, t)
-char *s, **t;
+char * GetCommand(char *s, char **t)
 {
     char *s2;
     int quoted = 0;
@@ -1529,9 +1512,7 @@ char *s, **t;
     return(NULL);
 }	
 
-char *Cleanse(s, dolc) /* no leading or trailing space, all lower case */
-char *s;
-int dolc;
+char * Cleanse(char *s, int dolc)
 {
     char *tmp, *news;
     
@@ -1547,8 +1528,7 @@ int dolc;
     return(news);
 }
 
-char *DeQuote(s)
-char *s;
+char * DeQuote(char *s)
 {
     char *retval;
     s = Cleanse(s, 0);
@@ -1566,9 +1546,7 @@ char *s;
     return(retval); /* also a bad parse */
 }    
 
-struct MailcapEntry *
-GetMailcapEntry(fp)
-FILE *fp;
+struct MailcapEntry * GetMailcapEntry(FILE *fp)
 {
     int rawentryalloc = MAX_LINELENGTH, len;
     char *rawentry, *s, *t, *LineBuf;
@@ -1659,7 +1637,7 @@ FILE *fp;
     return(mc);
 }
 
-ProcessMailcapFiles() 
+int ProcessMailcapFiles()
 {
     char *s, *path = getenv("MAILCAPS"), *origpath;
     static char *stdpath = STDPATH;
@@ -1954,8 +1932,7 @@ CreateNewPart() {
     return(mp);
 }
 
-SetTextFlags(mp)
-struct mailpart *mp;
+int SetTextFlags(struct mailpart *mp)
 {
     if (!lc2strncmp(mp->content_type, "text/", 5)) {
         mp->istext = 1;
@@ -1965,8 +1942,7 @@ struct mailpart *mp;
     }
 }
 
-WhichEncodingForFile(fname, ctype)
-char *fname, *ctype;
+int WhichEncodingForFile(char *fname, char *ctype)
 {
     int c, linesize=0, total=0, unsafechars=0, longlines=0;
     char *s;
@@ -2001,8 +1977,7 @@ char *fname, *ctype;
     return(ENC_NONE);
 }
 
-BuildCommand(Buf, controlstring, TmpFileName)
-char *Buf, *controlstring, *TmpFileName;
+int BuildCommand(char *Buf, char *controlstring, char *TmpFileName)
 {
     char *from, *to;
     int prefixed = 0;
@@ -2039,8 +2014,7 @@ char *Buf, *controlstring, *TmpFileName;
     }
 }
 
-CtypeMatch(ctype, pat)
-char *ctype, *pat;
+int CtypeMatch(char *ctype, char *pat)
 {
     int len;
     char *s;
@@ -2060,8 +2034,7 @@ char *ctype, *pat;
     return(0);
 }
 
-EditCurrentMessage(UseVisual)
-int UseVisual;
+int EditCurrentMessage(int UseVisual)
 {
     char *editor = NULL;
     char *CmdBuf, *CmdBuf2, LineBuf[100];
@@ -2149,7 +2122,7 @@ int UseVisual;
 }
 
 
-ProcessInitFiles() {
+void ProcessInitFiles() {
 #ifdef AMIGA
     ProcessOneMailRC(mailRC, 0);
 #else
@@ -2163,12 +2136,7 @@ ProcessInitFiles() {
 #endif
 }
 
-char *
-NextAliasLine(LineBuf, LineAlloced, LineCount, fp, IsAndrew)
-char *LineBuf;
-int *LineAlloced, *LineCount;
-FILE *fp;
-int IsAndrew;
+char * NextAliasLine(char *LineBuf, int *LineAlloced, int *LineCount, FILE *fp, int IsAndrew)
 {
     char *sbuf;
     sbuf = malloc(MAX_LINELENGTH);
@@ -2199,9 +2167,7 @@ int IsAndrew;
     }
 }
 
-ProcessOneMailRC(fname, IsAndrew)
-char *fname;
-int IsAndrew;
+int ProcessOneMailRC(char *fname, int IsAndrew)
 {
     FILE *fp;
     char *LineBuf = NULL, *sdum;
@@ -2233,9 +2199,7 @@ int IsAndrew;
     fclose(fp);
 }
 
-HandleSetCommand(cmd, DoSet)
-char *cmd;
-int DoSet;
+int HandleSetCommand(char *cmd, int DoSet)
 {
     char *s;
     int i;
@@ -2277,8 +2241,7 @@ struct alias {
     struct alias *next;
 } *FirstAlias = NULL;
 
-HandleAliasCommand(aliasline)
-char *aliasline;
+int HandleAliasCommand(char *aliasline)
 {
     struct alias *tmpalias;
     char *s, *s2;
@@ -2306,10 +2269,7 @@ char *aliasline;
     FirstAlias = tmpalias;
 }
 
-EmitHeader(fp, hdr, body)
-FILE *fp;
-char *hdr;
-char *body;
+int EmitHeader(FILE *fp, char *hdr, char *body)
 {
     fputs(hdr, fp);
     fputs(": ", fp);
@@ -2318,9 +2278,7 @@ char *body;
 /*    fprintf(fp, "%s: %s\n", hdr, body ? body : ""); */
 }
 
-char *
-firstbad(s)
-char *s;
+char * firstbad(char *s)
 {
     char *dum;
     for (dum=s; *dum; ++dum) {
@@ -2331,9 +2289,7 @@ char *s;
     return(NULL);
 }
 
-char *
-firstgood(s)
-char *s;
+char * firstgood(char *s)
 {
     char *dum;
     for (dum=s; *dum; ++dum) {
@@ -2344,10 +2300,7 @@ char *s;
     return(NULL);
 }
 
-HeaderFputs(s, fp, hdr)
-char *s;
-FILE *fp;
-char *hdr;
+int HeaderFputs(char *s, FILE *fp, char *hdr)
 {
     char *firstnonascii, *firstascii;
 
@@ -2385,19 +2338,14 @@ char *hdr;
 
 static char basis_hex[] = "0123456789ABCDEF";
 
-PutQP(c, fp)
-unsigned char c;
-FILE *fp;
+int PutQP(unsigned char c, FILE *fp)
 {
     putc('=', fp);
     putc(basis_hex[c>>4], fp);
     putc(basis_hex[c&0xF], fp);
 }
 
-EmitHeaderWithAliases(fp, hdr, names)
-FILE *fp;
-char *hdr;
-char *names;
+int EmitHeaderWithAliases(FILE *fp, char *hdr, char *names)
 {
     fputs(hdr, fp);
     fputs(": ", fp);
@@ -2405,10 +2353,7 @@ char *names;
     fputs("\n", fp);
 }
 
-EmitAddresses(fp, names, hdr)
-FILE *fp;
-char *names;
-char *hdr;
+int EmitAddresses(FILE *fp, char *names, char *hdr)
 {
     char *s;
     while (names) {
@@ -2423,10 +2368,7 @@ char *hdr;
     }
 }
 
-DeAlias(name, fp, hdr)
-char *name;
-FILE *fp;
-char *hdr;
+int DeAlias(char *name, FILE *fp, char *hdr)
 {
     struct alias *tmpalias;
     char *end, savechar;
@@ -2449,9 +2391,7 @@ char *hdr;
 }
 
 
-WriteCtypeNicely(fp, ct)
-FILE *fp;
-char *ct;
+int WriteCtypeNicely(FILE *fp, char *ct)
 {
     char *semi, *slash, *eq, *s;
 
@@ -2484,9 +2424,7 @@ char *ct;
     }
 }
 
-fputsquoting(s, fp)
-char *s;
-FILE *fp;
+int fputsquoting(char *s, FILE *fp)
 {
     char *end = s + strlen(s) - 1;
     while (isspace((unsigned char) *end) && end > s) --end;
@@ -2522,9 +2460,7 @@ FILE *fp;
  * We tell the shell to open stdin from the tty by redirecting the
  * command input to '*'.
  */
-int
-systemWithStdin(cmd)
-char *cmd;
+int systemWithStdin(char *cmd)
 {
     char *cmdBuf;
     char *cp, *to;
@@ -2553,29 +2489,25 @@ char *cmd;
 }
 #endif
 
-controlputc(c)
-char c;
+int controlputc(int c)
 {
     fputc(c, stdout);
 }
 
 /* Do the equivalent of an fputs for the terminal escape stuff */
 #ifdef AMIGA
-tfputs(s)
-char *s;
+int tfputs(char *s)
 {
     fputs(s, stdout);
     return (0);
 }
 #else
-tfputs(s)
-char *s;
+int tfputs(char *s)
 {
     tputs(s, 1, controlputc);
 }
 #endif
-ContainsEightBitChar(fname)
-char *fname;
+int ContainsEightBitChar(char *fname)
 {
     int c, eightBitSeen = 0;
     FILE *fp = fopen(fname, "r");
@@ -2594,7 +2526,7 @@ char *fname;
     return(eightBitSeen);
 }
 
-SwitchToEuropean() {
+void SwitchToEuropean() {
     printf("WARNING:  You have entered 8-bit characters in what is supposed to be\n");
     printf("plain ASCII text.  If you are using a non-ASCII character set, you should\n");
     printf("declare this to be the case with the MM_CHARSET environment variable.\n");

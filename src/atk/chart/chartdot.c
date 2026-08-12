@@ -66,6 +66,7 @@ HISTORY
 END-SPECIFICATION  ************************************************************/
 
 #include <math.h>
+#include <stdlib.h>
 #include "graphic.ih"
 #include "observe.ih"
 #include "view.ih"
@@ -108,10 +109,7 @@ int chartdot_debug = 0;
 static struct fontdesc		*dot_font;
 #define  DotFont		(dot_font)
 
-boolean 
-chartdot__InitializeObject( classID, self)
-  register struct classheader	 *classID;
-  register struct chartdot	 *self;
+boolean chartdot__InitializeObject(struct classheader *classID, struct chartdot *self)
   {
   IN(chartdot_InitializeObject);
   chartdot_SetShrinkIcon( self, 'e', "icon12", "DotChart", "andysans10b" );
@@ -126,28 +124,21 @@ chartdot__FinalizeObject( classID, self )
   register struct chartdot	 *self;
   {}
 
-void
-chartdot__SetDebug( self, state )
-  register struct chartdot	 *self;
-  register char			  state;
+void chartdot__SetDebug(struct chartdot *self, boolean state)
   {
   IN(chartdot_SetDebug);
   super_SetDebug( self, debug = state );
   OUT(chartdot_SetDebug);
   }
 
-char *
-chartdot__Moniker( self )
-  register struct chartdot   *self;
+char * chartdot__Moniker(struct chartdot *self)
   {
   IN(chartdot_Moniker);
   OUT(chartdot_Moniker);
   return  "Dot";
   }
 
-void
-chartdot__DrawChart( self )
-  register struct chartdot	     *self;
+void chartdot__DrawChart(struct chartdot *self)
   {
   register struct chart_item_shadow  *shadow = Items;
 
@@ -157,7 +148,7 @@ chartdot__DrawChart( self )
   chartdot_SetFont( self, DotFont );
   while ( shadow )
     {
-    DEBUGdt(Value,chart_ItemAttribute( Data, shadow->item, chart_ItemValue(0) ));
+    DEBUGdt(Value,chart_ItemAttribute( Data, shadow->item, chart_itemvalue ));
     chartdot_MoveTo( self, ItemX(shadow), ItemY(shadow) );
     chartdot_DrawString( self, "C", NULL );
     shadow = NextItem(shadow);
@@ -165,9 +156,7 @@ chartdot__DrawChart( self )
   OUT(chartdot_DrawChart);
   }
 
-void
-chartdot__PrintChart( self )
-  register struct chartdot	     *self;
+void chartdot__PrintChart(struct chartdot *self)
   {
   register long			      i, left, top, width,
 				      count = chart_ItemCount( Data );
@@ -186,8 +175,8 @@ chartdot__PrintChart( self )
   path_point = &path->points[0];
   for ( i = 0; i < chart_ItemCount( Data)  &&  chart_item; i++ )
     {
-    DEBUGdt(Value,chart_ItemAttribute( Data, chart_item, chart_ItemValue(0) ));
-    top = Bottom - (chart_ItemAttribute( Data, chart_item, chart_ItemValue(0) ) * PixelsPerUnit);
+    DEBUGdt(Value,chart_ItemAttribute( Data, chart_item, chart_itemvalue ));
+    top = Bottom - (chart_ItemAttribute( Data, chart_item, chart_itemvalue ) * PixelsPerUnit);
     path_point = &path->points[0];
     path_point->x = left;	    path_point->y = top;	    path_point++;
     path_point->x = left + 5;	    path_point->y = top;	    path_point++;

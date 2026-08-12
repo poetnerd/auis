@@ -36,13 +36,33 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <stdlib.h>
+extern int BadSubMapLine(char *s);
+extern int BadUpdFileLine(char *s);
+extern int CheckUpdateLine(char *line, int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood, Boolean LineIsFromUpdateFile);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int CompareSubsAndUpdateLines(char *sline, char *uline);
+extern int CriticalBizarreError(char *text);
+extern int DeSymLink();  /* overhead/util/lib/desym.c */
+extern int DropHint(char *Dirname);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
+extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
+extern int MS_LockMUF(char *LockDirName, int *lockfd);
+extern int NonfatalBizarreError(char *text);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int RebuildOneMasterUpdateFile(char *PathElt, int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood);
+extern char *UnixError(int errorNumber);  /* overhead/util/lib/uerror.c */
+extern int abspath(char *name, char *result);
+extern char *ap_Shorten(char *pathname);  /* overhead/util/lib/abbrpath.c */
+extern unsigned long conv64tolong(char *xnum);  /* overhead/mail/lib/genid.c */
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
 
 #define BIGLINE 1500
 
-extern char *StripWhiteEnds(), *fixDate();
+extern char *StripWhiteEnds(char *string), *fixDate(char *dPtr);
 
-MS_RebuildMasterUpdateFiles(NumFastGood, NumSlowGood, NumBad, NumAbsent, NumProbablyGood) 
-int *NumFastGood, *NumSlowGood, *NumBad, *NumAbsent, *NumProbablyGood;
+int MS_RebuildMasterUpdateFiles(int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood)
 {
     char PathElt[1+MAXPATHLEN];
     int i=0;
@@ -55,17 +75,13 @@ int *NumFastGood, *NumSlowGood, *NumBad, *NumAbsent, *NumProbablyGood;
     return(0);
 }
 
-MS_RebuildOneMasterUpdateFile(PathElt, NumFastGood, NumSlowGood, NumBad, NumAbsent, NumProbablyGood) 
-char *PathElt;
-int *NumFastGood, *NumSlowGood, *NumBad, *NumAbsent, *NumProbablyGood;
+int MS_RebuildOneMasterUpdateFile(char *PathElt, int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood)
 {
     *NumSlowGood = *NumFastGood = *NumBad = *NumAbsent = *NumProbablyGood = 0;
     return(RebuildOneMasterUpdateFile(PathElt, NumFastGood, NumSlowGood, NumBad, NumAbsent, NumProbablyGood));
 }
 
-RebuildOneMasterUpdateFile(PathElt, NumFastGood, NumSlowGood, NumBad, NumAbsent, NumProbablyGood) 
-char *PathElt;
-int *NumFastGood, *NumSlowGood, *NumBad, *NumAbsent, *NumProbablyGood;
+int RebuildOneMasterUpdateFile(char *PathElt, int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood)
 {
     int code, errsave, lockfd;
     char SubMapFile[MAXPATHLEN+1], *sdum,
@@ -187,8 +203,7 @@ int *NumFastGood, *NumSlowGood, *NumBad, *NumAbsent, *NumProbablyGood;
     < 0 if the subs line comes first, and 0 if they refer to the same thing.
 */
 
-CompareSubsAndUpdateLines(sline, uline)
-char *sline, *uline;
+int CompareSubsAndUpdateLines(char *sline, char *uline)
 {
     char *s;
     int code, len;
@@ -209,28 +224,26 @@ char *sline, *uline;
     return(code);
 }
 
-char *
-DescribeTimeInterval(interval)
-long interval;
+char * DescribeTimeInterval(long interval)
 {
     static char DescBuf[30];
 
     if (interval < 60) {
-	sprintf(DescBuf, "%d seconds", interval);
+	sprintf(DescBuf, "%ld seconds", interval);
     } else {
 	interval /= 60;
 	if (interval < 60) {
-	    sprintf(DescBuf, "%d minutes", interval);
+	    sprintf(DescBuf, "%ld minutes", interval);
 	} else {
 	    interval /= 60;
 	    if (interval < 72) {
-		sprintf(DescBuf, "%d hours", interval);
+		sprintf(DescBuf, "%ld hours", interval);
 	    } else {
 		interval /= 24;
 		if (interval < 29) {
-		    sprintf(DescBuf, "%d days", interval);
+		    sprintf(DescBuf, "%ld days", interval);
 		} else {
-		    sprintf(DescBuf, "%d weeks", interval/7);
+		    sprintf(DescBuf, "%ld weeks", interval/7);
 		}
 	    }
 	}
@@ -242,10 +255,7 @@ long interval;
     out a hint when necessary.
 */
 
-CheckUpdateLine(line, NumFastGood, NumSlowGood, NumBad, NumAbsent, NumProbablyGood, LineIsFromUpdateFile)
-char *line;
-int *NumFastGood, *NumSlowGood, *NumBad, *NumAbsent, *NumProbablyGood;
-Boolean LineIsFromUpdateFile;
+int CheckUpdateLine(char *line, int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood, Boolean LineIsFromUpdateFile)
 {
     char *date, *stamp, SnapshotDum[AMS_SNAPSHOTSIZE], ErrorText[200+MAXPATHLEN], *s;
     long timestamp, errsave;

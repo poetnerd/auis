@@ -132,7 +132,7 @@ methods:
     LookCmd(int look);
     SetDefaultStyle(struct style *styelptr);
     GetDefaultStyle() returns struct style *;
-    ViewMove(struct mark *currentLine,long movement);
+    ViewMove(struct linedesc *lineStructure,long movement);
     GetStyleInformation(struct text_statevector *sv, long pos, long *length) returns struct environment *;
     GetEnclosedStyleInformation(long pos, long *length) returns struct environment *;
     ReleaseStyleInformation(struct environment *env);

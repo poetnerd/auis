@@ -33,6 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #include <andrewos.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 
 #define GAP 1
@@ -62,15 +63,14 @@ Index\n\
 .in .2i	\n\
 .hy 0\
 ";
-int cmp(a,b)
-int *a,*b;
+int cmp(const void *ap, const void *bp)
 {
+    const int *a = (const int *) ap;
+    const int *b = (const int *) bp;
     return(*a - *b);
 }
 static char lbuf[512];
-output(buf,n,np)
-char *buf;
-int *n,*np;
+int output(char *buf, int *n, int *np)
 {
     int *tp;
     static char lastc = ' ';
@@ -124,9 +124,7 @@ int *n,*np;
     putchar('\n');
 }
 
-main(argc,argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
     char buf[BUFSIZE],rbuf[BUFSIZE],*begin, *end,*c;
     int num[NUMSIZE],*np;

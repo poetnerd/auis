@@ -29,7 +29,7 @@ class srctextview[srctextv]: textview[textv] {
     PrepareInsertion(boolean insertingNewLine);
     PostMenus(struct menulist *menulist);
     ReceiveInputFocus();
-    SetDataObject(struct srctext *dataobj);
+    SetDataObject(struct dataobject *dataobj);
 
   methods:
     Compress();

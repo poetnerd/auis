@@ -46,15 +46,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 /* External declarations */
 
 /* Forward Declarations */
-static void WriteLine();
-static char *GlomStrings(), *ReadLine(), *EncodeFont();
+static void WriteLine(FILE *f, char *l);
+static char *GlomStrings(char *s, char *t), *ReadLine(FILE *f), *EncodeFont(struct writestamp *self);
 
 /* Global variables */
 
 
-boolean
-writestamp__InitializeClass(c)
-struct classheader *c;
+boolean writestamp__InitializeClass(struct classheader *c)
 {
 /* 
   Initialize all the class data.
@@ -64,10 +62,7 @@ struct classheader *c;
 }
 
 
-boolean
-writestamp__InitializeObject(c, self)
-struct classheader *c;
-struct writestamp *self;
+boolean writestamp__InitializeObject(struct classheader *c, struct writestamp *self)
 {
 /*
   Inititialize the object instance data.
@@ -76,10 +71,7 @@ struct writestamp *self;
 }
 
 
-void
-writestamp__FinalizeObject(c, self)
-struct classheader *c;
-struct writestamp *self;
+void writestamp__FinalizeObject(struct classheader *c, struct writestamp *self)
 {
 /*
   Finalize the object instance data.
@@ -88,9 +80,7 @@ struct writestamp *self;
 }
 
 
-static void
-writestamp__UpdateTime(self)
-struct writestamp *self;
+void writestamp__UpdateTime(struct writestamp *self)
 {
   /* No Op, for writestamp. */
 
@@ -100,10 +90,7 @@ struct writestamp *self;
 }
 
 
-void
-writestamp__WriteDataPart(self, fp)
-struct writestamp *self;
-FILE *fp;
+void writestamp__WriteDataPart(struct writestamp *self, FILE *fp)
 {
 /*
   Write the object data out onto the datastream.
@@ -118,10 +105,7 @@ FILE *fp;
 }
 
 
-long
-writestamp__ReadDataPart(self, fp)
-struct writestamp *self;
-FILE *fp;
+long writestamp__ReadDataPart(struct writestamp *self, FILE *fp)
 {
 /*
   Read in the object from the file.
@@ -142,10 +126,7 @@ FILE *fp;
 }
 
 
-static void
-WriteLine(f, l)
-FILE *f;
-char *l;
+static void WriteLine(FILE *f, char *l)
 {
 /* 
   Output a single line onto the data stream, quoting
@@ -192,9 +173,7 @@ char *l;
 }
 
 
-static char *
-GlomStrings(s, t)
-char *s, *t;
+static char * GlomStrings(char *s, char *t)
 {
 /* 
   Safely (allocs more memory) concatenates the two strings, 
@@ -216,9 +195,7 @@ char *s, *t;
 }
 
 
-static char *
-ReadLine(f)
-FILE *f;
+static char * ReadLine(FILE *f)
 {
 /* 
   Reads from the datastream, attempting to return a single string.
@@ -278,9 +255,7 @@ FILE *f;
 }
 
 
-static char *
-EncodeFont(self)
-struct writestamp *self;
+static char * EncodeFont(struct writestamp *self)
 {
 /*
   Returns a string representing the name of the font for this object.
@@ -301,7 +276,7 @@ struct writestamp *self;
   if (myfonttype & fontdesc_Italic) strcpy(type,"i");
   if (myfonttype & fontdesc_Fixed) strcpy(type,"f");
   if (buf = (char *)malloc(strlen(myfontname)+25)) {
-    sprintf(buf,"%s%d%s", myfontname, myfontsize, type);
+    sprintf(buf,"%s%ld%s", myfontname, myfontsize, type);
     return (buf);
   } else {
     return(NULL);

@@ -62,6 +62,7 @@ HISTORY
 END-SPECIFICATION  ************************************************************/
 
 #include <math.h>
+#include <stdlib.h>
 #include "graphic.ih"
 #include "view.ih"
 #include "apt.h"
@@ -70,6 +71,8 @@ END-SPECIFICATION  ************************************************************/
 #include "chart.ih"
 #include "chartpie.eh"
 #include <ctype.h>
+static int Compute_Pie_Points(struct chartpie *self);
+static int Show_Pie_Chart(struct chartpie *self, long medium);
 
 int chartpie_debug = 0;
 
@@ -124,10 +127,7 @@ struct chartpie_drawing
 #define  Center			(chartpie_ChartCenter(self))
 
 
-boolean 
-chartpie__InitializeObject( classID, self)
-  register struct classheader	 *classID;
-  register struct chartpie	 *self;
+boolean chartpie__InitializeObject(struct classheader *classID, struct chartpie *self)
   {
   IN(chartpie_InitializeObject);
   chartpie_SetShrinkIcon( self, 'e', "icon12", "PieChart", "andysans10b" );
@@ -138,31 +138,21 @@ chartpie__InitializeObject( classID, self)
   return  TRUE;
   }
 
-void 
-chartpie__FinalizeObject( classID, self )
-  register struct classheader	 *classID;
-  register struct chartpie	 *self;
+void chartpie__FinalizeObject(struct classheader *classID, struct chartpie *self)
   {
   IN(chartpie_FinalizeObject);
   if ( Drawing )  free( Drawing );
   OUT(chartpie_FinalizeObject);
   }
 
-void
-chartpie__SetDebug( self, state )
-  register struct chartpie	 *self;
-  register char			  state;
+void chartpie__SetDebug(struct chartpie *self, boolean state)
   {
   IN(chartpie_SetDebug);
   super_SetDebug( self, debug = state );
   OUT(chartpie_SetDebug);
   }
 
-struct view *
-chartpie__HitChart( self, action, x, y, clicks )
-  register struct chartpie	     *self;
-  register enum view_MouseAction      action;
-  register long			      x, y, clicks;
+struct view * chartpie__HitChart(struct chartpie *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   static long			      prior_x, prior_y, candidate;
   register double		      radius = DrawingX - DrawingLeft,
@@ -213,28 +203,21 @@ chartpie__HitChart( self, action, x, y, clicks )
   return  hit;
   }
 
-void
-chartpie__DrawChart( self )
-  register struct chartpie	     *self;
+void chartpie__DrawChart(struct chartpie *self)
   {
   IN(chartpie_DrawChart);
   Show_Pie_Chart( self, Screen );
   OUT(chartpie_DrawChart);
   }
 
-void
-chartpie__PrintChart( self )
-  register struct chartpie	     *self;
+void chartpie__PrintChart(struct chartpie *self)
   {
   IN(chartpie_PrintChart);
   Show_Pie_Chart( self, Paper );
   OUT(chartpie_PrintChart);
   }
 
-static
-Show_Pie_Chart( self, medium )
-  register struct chartpie	     *self;
-  register long			      medium;
+static int Show_Pie_Chart(struct chartpie *self, long medium)
   {
   register long			      i;
   short				      height;
@@ -263,13 +246,13 @@ Show_Pie_Chart( self, medium )
       else
       {
       degrees = 360.0 *
-	(chart_ItemAttribute( Data, item, chart_ItemValue(0) ) / DrawingSum);
+	(chart_ItemAttribute( Data, item, chart_itemvalue ) / DrawingSum);
       chartpie_PrintSlice( self, DrawingX, DrawingY, DrawingX - DrawingLeft,
 			     current_degree, current_degree += degrees,
 			     i, chart_ItemCount(Data), 0 );
       }
-    if ( chart_ItemAttribute( Data, item, chart_ItemName(0) ) )
-      { DEBUGst(Name,chart_ItemAttribute( Data, item, chart_ItemName(0) ));
+    if ( chart_ItemAttribute( Data, item, chart_itemname ) )
+      { DEBUGst(Name,chart_ItemAttribute( Data, item, chart_itemname ));
       if ( chart_ItemFontName( Data ) )
 	{
 	font = chartpie_BuildFont( self,
@@ -283,7 +266,7 @@ Show_Pie_Chart( self, medium )
       if ( medium == Screen )
 	{
 	chartpie_MoveTo( self, DrawingItemLabelX(i), DrawingItemLabelY(i) );
-	chartpie_DrawString( self, chart_ItemAttribute( Data, item, chart_ItemName(0) ),
+	chartpie_DrawString( self, (char *)chart_ItemAttribute( Data, item, chart_itemname ),
 	    view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBOTTOM );
 	chartpie_MoveTo( self, DrawingItemLabelX(i), DrawingItemLabelY(i) + height );
 	chartpie_DrawString( self, percent_string,
@@ -293,7 +276,7 @@ Show_Pie_Chart( self, medium )
 	{
 	chartpie_SetPrintGrayLevel( self, 0.0 );
 	chartpie_PrintString( self, DrawingItemLabelX(i), DrawingItemLabelY(i),
-				chart_ItemAttribute( Data, item, chart_ItemName(0) ), 0 );
+				(char *)chart_ItemAttribute( Data, item, chart_itemname ), 0 );
 	chartpie_PrintString( self, DrawingItemLabelX(i), DrawingItemLabelY(i) + height,
 				percent_string, 0 );
 	}
@@ -303,9 +286,7 @@ Show_Pie_Chart( self, medium )
   OUT(Show_Pie_Chart);
   }
 
-static
-Compute_Pie_Points( self )
-  register struct chartpie	     *self;
+static int Compute_Pie_Points(struct chartpie *self)
   {
   register long			      i, count = 0;
   register struct chart_item	     *item;
@@ -317,7 +298,7 @@ Compute_Pie_Points( self )
   for ( i = 0; i < chart_ItemCount( Data )  &&  item; i++ )
     {
     count++;
-    sum += chart_ItemAttribute( Data, item, chart_ItemValue(0) );
+    sum += chart_ItemAttribute( Data, item, chart_itemvalue );
     item = chart_NextItem( Data, item );
     }
   if ( Drawing )    free( Drawing );
@@ -345,9 +326,9 @@ Compute_Pie_Points( self )
   for ( i = 0; i < chart_ItemCount(Data)  &&  item; i++ )
     {
     DrawingItem(i) = item;
-    DEBUGdt(Value,chart_ItemAttribute( Data, item, chart_ItemValue(0) ));
+    DEBUGdt(Value,chart_ItemAttribute( Data, item, chart_itemvalue ));
     DrawingItemPercent(i) =
-	(chart_ItemAttribute( Data, item, chart_ItemValue(0) ) / DrawingSum) * 100;
+	(chart_ItemAttribute( Data, item, chart_itemvalue ) / DrawingSum) * 100;
     degrees = 3.6 * DrawingItemPercent(i);
     radian = 6.28318 * ((current_degree + degrees)/360.0);
     DrawingItemX(i) = DrawingX + radius * sin( radian );

@@ -44,26 +44,72 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mail.h>
 #include <mailconf.h>
 #include <pwd.h>
+#include <stdlib.h>
+static int AddrRewrite(PARSED_ADDRESS *Addr, int *ErrCode, char *Domain, int recdepth, char *SideBuf, int SideBufLen, PARSED_ADDRESS *upAddr);
+static int CheckFolderAddress(char **recip, int *rcode, int *IsCertain, char *FullName, char *orgname, Boolean WouldCreate, char **pCellN);
+static int CheckPersonalAlias(char *name, char *Buf, int bufsize, int *code);
+static int FindInMSSearchPath(char *name, char *FullName, char *CurrDomain, int *IsCertain);
+static int GetPostableStatus(char *pathname, char *bbname, int *status, int *IsCertain, char **recip, char **pcellN);
+static int IsRecipientAnMSDirectory(char **recip, int *rcode, int *IsCertain, char *CurrDomain, char **pCellN);
+static int LookupInPasswdFile(PARSED_ADDRESS *Addr, int laType, char *IDpart, char *PostID, int *WpCode, int MaxNameMatches, int AllowHeuristics, char *Domain, int UnderAMSDelivery, int NameSep, int *Answered);
+static int LookupInWP(PARSED_ADDRESS *Addr, int laType, char *IDpart, char *PostID, int *WpCode, int MaxNameMatches, int AllowHeuristics, char *Domain, int UnderAMSDelivery, int NameSep, int *Answered);
+static int LookupLocalName(PARSED_ADDRESS *Addr, int laType, char *IDpart, char *PostID, int *WpCode, int MaxNameMatches, int AllowHeuristics, char *Domain, int UnderAMSDelivery, int NameSep, int *IsVacuous);
+static int MergeMSWPCodes(int mscode, int wpcode);
+static int PathEltOnLocalDfltMSPath(char *FileName);
+static int RefreshAliasFile();
+static int SameCompleteAddress(PARSED_ADDRESS *addr1, PARSED_ADDRESS *addr2);
+static void SetAMSDelNameSep(char *Domain, int *AMSDel, int *AMSNameSep);
+static void StripExtraComments(PARSED_ADDRESS *addr, char *ExtraThingToNuke);
+static void StripExtraCommentsFromList(PARSED_ADDRESS *AddrList, char *ExtraThingToNuke);
+static int UseMSCodeOnly(int *mscode, int *wpcode, int Vacuous);
+static int UseWPOnly(int *mscode, int *wpcode, int Vacuous);
+static int getWpErrno();
+extern int AddHost(PARSED_ADDRESS *Addr, ADDRESS_HOST *Host);  /* overhead/mail/lib/parseadd.c */
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);  /* overhead/mail/lib/parseadd.c */
+extern int FreeHost(ADDRESS_HOST *Host);  /* overhead/mail/lib/parseadd.c */
+extern int GenTempName(char *Buf);
+extern int GetNameFromGecos(char *GecosField, char *LoginID, char *Domain, char **PersonalNameP);
+extern int LookupInLocalDatabase(PARSED_ADDRESS *Addr, int laType, char *IDpart, char *PostID, char *Domain, int UnderAMSDelivery, int NameSep, int MaxNameMatches, int *Answered, int *MswpCodeP);
+extern int LowerStringInPlace(char *string, int len);  /* ams/libs/shr/utils.c */
+extern int MS_CheckAuthentication(int *Authenticated);
+extern int MS_DisambiguateFile(char *source, char *target, short AccessCode);
+extern int NonfatalBizarreError(char *text);
+extern int OKRoot(char *Name);
+extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);  /* overhead/mail/lib/parseadd.c */
+extern int ReduceWhiteSpace(char *string);  /* ams/libs/shr/utils.c */
+extern int RemHost(ADDRESS_HOST *Host);  /* overhead/mail/lib/parseadd.c */
+extern int UnparseAddressList();  /* overhead/mail/lib/parseadd.c */
+extern int UnparseOneAddress(PARSED_ADDRESS *Addr, int Mode, char *Buffer, int Length, char *Prefix, int LineLength);  /* overhead/mail/lib/parseadd.c */
+extern int ValidateSearchPath(int i);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vclose(int fd);  /* overhead/util/lib/fdplumb2.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
+extern void la_FreeMD(struct MailDom *MD);  /* overhead/mail/lib/locnamex.c */
+extern int lc2strncmp(char *s1, char *s2, int len);  /* ams/libs/shr/utils.c */
 
 #ifdef WHITEPAGES_ENV
 #include <wp.h>
 #include <bt.h>
 #endif /* WHITEPAGES_ENV */
 
-extern char *StripWhiteEnds();
+extern char *StripWhiteEnds(char *string);
+static int ReplaceNthListElement(PARSED_ADDRESS *BigList, PARSED_ADDRESS *ShortList, int *which);
+static int UnparseNthElement(PARSED_ADDRESS *AddrList, int which, char *Buf, int size, int StripComments);
+static int CheckGlobalAlias(char *name, int *code, char *Domain);
+static int ExternalForcingCode(char *ExtAddress, int codein);
 
 extern int NeedToTimeOut;
 extern char home[], Me[], MyMailDomain[];
-extern ADDRESS_HOST *MakeHost();
-extern PARSED_ADDRESS *SingleAddress();
+extern ADDRESS_HOST *MakeHost(char *name);
+extern PARSED_ADDRESS *SingleAddress(PARSED_ADDRESS *AddrList, int *pCount);
 
 #define EXTBBPROTFILE "../extenable/ext.enable"
 #define EXTBBENABLEFILE ".TurnOnExternalPosting"
 
 #define MagicMapFileName ".MS.DirectPost"
 
-static int PathEltOnLocalDfltMSPath(FileName)
-char *FileName;
+static int PathEltOnLocalDfltMSPath(char *FileName)
 {/* Return TRUE iff FileName is one of the site's default MS path elements. */
     if (strcmp(FileName, LOCALSEARCHPATHTEMPLATE) == 0
     ||  strcmp(FileName, EXTERNALSEARCHPATHTEMPLATE) == 0
@@ -74,9 +120,7 @@ char *FileName;
     }
 }
 
-int GenMSPathElts(genPos, cellName, pathName, outCell, SPEix)
-int *genPos, *SPEix;
-char *cellName, **pathName, **outCell;
+int GenMSPathElts(int *genPos, char *cellName, char **pathName, char **outCell, int *SPEix)
 {/* Generate MSPath elements from the current user's list plus, if cellName is non-null and not MyMailDomain, the default mspath for that cell.
     Initialize genPos to 0 to initialize the generation.
    Return the path name for the element's root, whether it is on the default mspath, and the cell that it's in (where a 0 pointer means the cell was indeterminate and a zero-length string is a root on the local disk), via outCell.
@@ -130,9 +174,7 @@ char *cellName, **pathName, **outCell;
     return(0);
 }
 
-static int FindInMSSearchPath(name, FullName, CurrDomain, IsCertain)
-char *name, *FullName, *CurrDomain;
-int *IsCertain;
+static int FindInMSSearchPath(char *name, char *FullName, char *CurrDomain, int *IsCertain)
 {
     int i, save_errno, save_mserr, Auth, RandomError, GenNum, AnyFound, Printed, CrossCell;
     char ErrText[100+MAXPATHLEN];
@@ -217,14 +259,7 @@ int *IsCertain;
     return(0);
 }
 
-static int
-CheckFolderAddress(recip, rcode, IsCertain, FullName, orgname, WouldCreate, pCellN)
-char **recip; /* Will swing the pointer if we rewrite */
-int *rcode;
-int *IsCertain;
-char *FullName, *orgname;
-char **pCellN;	/* Will set if the address came from a file with an identifiable cell. */
-Boolean WouldCreate;
+static int CheckFolderAddress(char **recip, int *rcode, int *IsCertain, char *FullName, char *orgname, Boolean WouldCreate, char **pCellN)
 {
     static char RealRecip[1000], FileCell[200];
     char *s, recipuser[200];
@@ -413,12 +448,7 @@ Boolean WouldCreate;
     }
 }
 
-static int
-IsRecipientAnMSDirectory(recip, rcode, IsCertain, CurrDomain, pCellN)
-char **recip; /* Will swing the pointer if we rewrite */
-int *rcode;
-int *IsCertain;
-char *CurrDomain, **pCellN;
+static int IsRecipientAnMSDirectory(char **recip, int *rcode, int *IsCertain, char *CurrDomain, char **pCellN)
 {
     char FullName[1+MAXPATHLEN], bbname[1+MAXPATHLEN], orgname[1+MAXPATHLEN+1], *s;
     Boolean WouldCreate = FALSE;
@@ -470,9 +500,7 @@ char *CurrDomain, **pCellN;
     return(CheckFolderAddress(recip, rcode, IsCertain, FullName, orgname, WouldCreate, pCellN));
 }
 
-static int GetPostableStatus(pathname, bbname, status, IsCertain, recip, pcellN)
-char *pathname, *bbname, **recip, **pcellN;
-int *status, *IsCertain;
+static int GetPostableStatus(char *pathname, char *bbname, int *status, int *IsCertain, char **recip, char **pcellN)
 {
     char FileName[1+MAXPATHLEN], *s, *suffix;
     int Creatable = FALSE, rcode;
@@ -517,8 +545,7 @@ static struct wp_cd *wpCD = NULL;
 static wp_FieldIndex idxN = -1, idxID, idxAf, idxCAF;
 
 
-static wp_ErrorCode OpenWhitePages(cellName)
-char *cellName;
+static wp_ErrorCode OpenWhitePages(char *cellName)
 {/* Open the white pages and get the indices we'll need. */
 	wp_ErrorCode wpErr;
 
@@ -568,8 +595,7 @@ void CloseWhitePages()
 }
 #endif /* WHITEPAGES_ENV */
 
-static int UseWPOnly(mscode, wpcode, Vacuous)
-int *mscode, *wpcode, Vacuous;
+static int UseWPOnly(int *mscode, int *wpcode, int Vacuous)
 {
 /* Some kinds of recipients lexically override */
     switch(*wpcode) {
@@ -644,8 +670,7 @@ int *mscode, *wpcode, Vacuous;
 }
 
 
-static int UseMSCodeOnly(mscode, wpcode, Vacuous)
-int *mscode, *wpcode, Vacuous;
+static int UseMSCodeOnly(int *mscode, int *wpcode, int Vacuous)
 {
     if (*wpcode == MSWP_CRAP) {
 	return(1);
@@ -662,7 +687,7 @@ int *mscode, *wpcode, Vacuous;
     return(0);
 }
 
-static int MergeMSWPCodes(mscode, wpcode)
+static int MergeMSWPCodes(int mscode, int wpcode)
 {/* Return an MSDir code as modified by a WP code. */
     if (mscode == MSWP_GOODMSDIR || mscode == MSWP_GOODEXTMSDIR) {
 	if (wpcode == MSWP_EXTFORCEFORMAT) return MSWP_EXTFORCEFORMATDIR;
@@ -818,7 +843,7 @@ static int RefreshAliasFile()
 		    firstpart = ++s;
 		    while (*s != '\0' && *s != '\n') ++s;
 		    if (*s != '\0') *s++ = '\0';
-		    sprintf(ErrorText, "Unparsable $force line '%0.700s': ignored", firstpart);
+		    sprintf(ErrorText, "Unparsable $force line '%.700s': ignored", firstpart);
 		    NonfatalBizarreError(ErrorText);
 		    continue;
 		}
@@ -840,7 +865,7 @@ static int RefreshAliasFile()
 		tempalias->nick = firstpart;
 		if (*s == '\0' || *s == '\n') {
 		    if (*s != '\0') *s++ = '\0';
-		    sprintf(ErrorText, "Unparsable alias line '%0.700s': ignored (length %d)", tempalias->nick, strlen(tempalias->nick));
+		    sprintf(ErrorText, "Unparsable alias line '%.700s': ignored (length %lu)", tempalias->nick, strlen(tempalias->nick));
 		    NonfatalBizarreError(ErrorText);
 		    free(tempalias);
 		    continue;
@@ -866,9 +891,7 @@ static int RefreshAliasFile()
     return(0);
 }
 
-static int CheckPersonalAlias(name, Buf, bufsize, code)
-char *name, *Buf;
-int bufsize, *code;
+static int CheckPersonalAlias(char *name, char *Buf, int bufsize, int *code)
 {
     struct alias *tempalias;
     char *s;
@@ -898,8 +921,7 @@ int bufsize, *code;
 
 
 #ifdef WHITEPAGES_ENV
-static int getWpErrno(code)
-wp_ErrorCode code;
+static int getWpErrno(wp_ErrorCode code)
 {/* analysis for WP codes.  Returns -1 if unknown weird error, or EMSWPCORRUPTION, or a real errno value. */
     int ncode;
 
@@ -935,8 +957,7 @@ wp_ErrorCode code;
     return(-1);
 }
 
-ReportWPErrno(wperr)
-int wperr;
+int ReportWPErrno(int wperr)
 {
     char ErrorText[256];
 
@@ -944,8 +965,7 @@ int wperr;
     CriticalBizarreError(ErrorText);
 }
 
-int ConvertWpErrToMSErr(wperr, Default, Report)
-int wperr, Default, Report;
+int ConvertWpErrToMSErr(int wperr, int Default, int Report)
 {
     int newCode;
 
@@ -956,12 +976,7 @@ int wperr, Default, Report;
 }
 #endif /* WHITEPAGES_ENV */
 
-static int LookupInWP(Addr, laType, IDpart, PostID, WpCode, MaxNameMatches, AllowHeuristics, Domain, UnderAMSDelivery, NameSep, Answered)
-PARSED_ADDRESS *Addr;
-int laType;
-char *IDpart, *PostID, *Domain;
-int *WpCode;
-int MaxNameMatches, AllowHeuristics, UnderAMSDelivery, NameSep, *Answered;
+static int LookupInWP(PARSED_ADDRESS *Addr, int laType, char *IDpart, char *PostID, int *WpCode, int MaxNameMatches, int AllowHeuristics, char *Domain, int UnderAMSDelivery, int NameSep, int *Answered)
 {/* Do the White Pages lookup here; result in the Addr structure and MSWP_code to WpCode. */
 #ifdef WHITEPAGES_ENV
     wp_SearchToken STok;
@@ -1335,12 +1350,7 @@ int MaxNameMatches, AllowHeuristics, UnderAMSDelivery, NameSep, *Answered;
     return 0;
 }
 
-static int LookupInPasswdFile(Addr, laType, IDpart, PostID, WpCode, MaxNameMatches, AllowHeuristics, Domain, UnderAMSDelivery, NameSep, Answered)
-PARSED_ADDRESS *Addr;
-int laType;
-char *IDpart, *PostID, *Domain;
-int *WpCode;
-int MaxNameMatches, AllowHeuristics, UnderAMSDelivery, NameSep, *Answered;
+static int LookupInPasswdFile(PARSED_ADDRESS *Addr, int laType, char *IDpart, char *PostID, int *WpCode, int MaxNameMatches, int AllowHeuristics, char *Domain, int UnderAMSDelivery, int NameSep, int *Answered)
 {
     struct passwd *p;
     char *NewName, *RealName;
@@ -1382,9 +1392,7 @@ int MaxNameMatches, AllowHeuristics, UnderAMSDelivery, NameSep, *Answered;
     return(0);
 }
 
-static void StripExtraComments(addr, ExtraThingToNuke)
-PARSED_ADDRESS *addr;
-char *ExtraThingToNuke;
+static void StripExtraComments(PARSED_ADDRESS *addr, char *ExtraThingToNuke)
 {/* Strip out duplicate comments and comments beginning with either AMS_VALIDATION_ERR_PREFIX or ExtraThingToNuke. */
     ADDRESS_COMMENT *Prev, *This, *Top;
 
@@ -1413,9 +1421,7 @@ char *ExtraThingToNuke;
 
 #ifdef NOTDEF
 /* we may want this again some day */
-static void StripExtraCommentsFromList(AddrList, ExtraThingToNuke)
-PARSED_ADDRESS *AddrList;
-char *ExtraThingToNuke;
+static void StripExtraCommentsFromList(PARSED_ADDRESS *AddrList, char *ExtraThingToNuke)
 {/* Traverse the AddrList tree stripping known-useless comments. */
 
 	FOR_ALL_ADDRESSES(ThisAddr, AddrList, {
@@ -1433,12 +1439,7 @@ char *ExtraThingToNuke;
 }
 #endif /* NOTDEF */
 
-static int LookupLocalName(Addr, laType, IDpart, PostID, WpCode, MaxNameMatches, AllowHeuristics, Domain, UnderAMSDelivery, NameSep, IsVacuous)
-PARSED_ADDRESS *Addr;
-int laType;
-char *IDpart, *PostID, *Domain;
-int *WpCode;
-int MaxNameMatches, AllowHeuristics, UnderAMSDelivery, NameSep, *IsVacuous;
+static int LookupLocalName(PARSED_ADDRESS *Addr, int laType, char *IDpart, char *PostID, int *WpCode, int MaxNameMatches, int AllowHeuristics, char *Domain, int UnderAMSDelivery, int NameSep, int *IsVacuous)
 {
     int Answered = 0, curr = 1, nextcurr = 0, LocalDBVal, PwdVal, WPVal;
 #ifdef USE_MMDF_ENV
@@ -1537,8 +1538,7 @@ int MaxNameMatches, AllowHeuristics, UnderAMSDelivery, NameSep, *IsVacuous;
     return(0);
 }
 
-static int SameCompleteAddress(addr1, addr2)
-PARSED_ADDRESS *addr1, *addr2;
+static int SameCompleteAddress(PARSED_ADDRESS *addr1, PARSED_ADDRESS *addr2)
 {/* Boolean: returns whether the non-comment parts of the given addresses are the same. */
     ADDRESS_HOST *h1, *h2;
     if (addr1 == NULL || addr2 == NULL) return (FALSE);
@@ -1552,20 +1552,15 @@ PARSED_ADDRESS *addr1, *addr2;
     }
 }
 
-static void SetAMSDelNameSep(Domain, AMSDel, AMSNameSep)
-char *Domain;
-int *AMSDel, *AMSNameSep;
+static void SetAMSDelNameSep(char *Domain, int *AMSDel, int *AMSNameSep)
 {/* Set these two flags based on Domain. */
 	*AMSDel = CheckAMSDelivery(Domain);
 	*AMSNameSep = CheckAMSNameSep(Domain);
 }
 
-static int local_RewriteAddress();	/* forward declaration */
+static int local_RewriteAddress(char *old, char *new, int newsize, int *ErrCode, char *Domain, int recDepth, PARSED_ADDRESS *upAddr);	/* forward declaration */
 
-static int AddrRewrite(Addr, ErrCode, Domain, recdepth, SideBuf, SideBufLen, upAddr)
-PARSED_ADDRESS *Addr, *upAddr;
-int *ErrCode, recdepth, SideBufLen;
-char *Domain, *SideBuf;
+static int AddrRewrite(PARSED_ADDRESS *Addr, int *ErrCode, char *Domain, int recdepth, char *SideBuf, int SideBufLen, PARSED_ADDRESS *upAddr)
 {/* Recursive worker for MS_RewriteAddress.  Modify the Addr structure, but don't parse or unparse. */
     int la_errcode, outType, SawTempFail = 0, IsCertain=1, WasGoodGlobalAlias;
     struct passwd *pass;
@@ -2070,10 +2065,7 @@ char *Domain, *SideBuf;
     }
 }
 
-static int local_RewriteAddress(old, new, newsize, ErrCode, Domain, recDepth, upAddr)
-char *old, *new, *Domain;
-int newsize, *ErrCode, recDepth;
-PARSED_ADDRESS *upAddr;
+static int local_RewriteAddress(char *old, char *new, int newsize, int *ErrCode, char *Domain, int recDepth, PARSED_ADDRESS *upAddr)
 {
     PARSED_ADDRESS *Addr, *ListHead;
     int dummy, Val;
@@ -2108,9 +2100,7 @@ PARSED_ADDRESS *upAddr;
 
 /* MS_RewriteAddress used to be a snapified routine.  The server still recognizes the snap op code for backward compatibility, but it is basically now an internal routine. */
 
-MS_RewriteAddress(old, new, newsize, ErrCode)
-char *old, *new;
-int newsize, *ErrCode;
+int MS_RewriteAddress(char *old, char *new, int newsize, int *ErrCode)
 {
     int code;
     debug(1, ("MS_RewriteAddress old %s newsize %d\n", old, newsize));
@@ -2123,11 +2113,7 @@ static int MSV_LastFileTime = -1;
 static char MSV_LastFileName[MAXPATHLEN+1];
 static PARSED_ADDRESS *InListHead = NULL;
 
-MS_ValidateAndReplaceChunk(FileName, inaddr, outaddr, outaddrsize, which, outcode)
-char *FileName, *inaddr; /* IN */
-char *outaddr; /* OUT */
-int outaddrsize, which; /* IN */
-int *outcode; /* OUT */
+int MS_ValidateAndReplaceChunk(char *FileName, char *inaddr, char *outaddr, int outaddrsize, int which, int *outcode)
 {
     PARSED_ADDRESS *InAddrHead;
     struct stat stbuf;
@@ -2259,9 +2245,7 @@ int *outcode; /* OUT */
     return(0);
 }
 
-static PARSED_ADDRESS *FindNthListElement(AddrList, which, howfar)
-PARSED_ADDRESS *AddrList;
-int which, *howfar;
+static PARSED_ADDRESS * FindNthListElement(PARSED_ADDRESS *AddrList, int which, int *howfar)
 {
     PARSED_ADDRESS *TempAddr;
 
@@ -2286,9 +2270,7 @@ int which, *howfar;
 }
 
 
-static int ReplaceNthListElement(BigList, ShortList, which)
-PARSED_ADDRESS *BigList, *ShortList;
-int *which;
+static int ReplaceNthListElement(PARSED_ADDRESS *BigList, PARSED_ADDRESS *ShortList, int *which)
 {
     PARSED_ADDRESS *nthaddr, *nthpred, *nthsucc;
     int howfar = 0, numitems = 0;
@@ -2315,10 +2297,7 @@ int *which;
     return(0);
 }
 
-static int UnparseNthElement(AddrList, which, Buf, size, StripComments)
-PARSED_ADDRESS *AddrList;
-int which, size, StripComments;
-char *Buf;
+static int UnparseNthElement(PARSED_ADDRESS *AddrList, int which, char *Buf, int size, int StripComments)
 {
     PARSED_ADDRESS *tempaddr;
     int howfar = 0;
@@ -2329,15 +2308,13 @@ char *Buf;
     }
     if (StripComments) StripExtraComments(tempaddr, NULL);
     errno = 0;
-    if (UnparseOneAddress(tempaddr, UP_SPACES_TO_DOTS, Buf, size, "", "    ", 69) != PA_OK) {
+    if (UnparseOneAddress(tempaddr, UP_SPACES_TO_DOTS, Buf, size, "    ", 69) != PA_OK) {
 	AMS_RETURN_ERRCODE(errno, EIN_UNPARSEADDR, EVIA_VALCHUNK);
     }
     return(0);
 }
 
-MS_WriteAllMatchesToFile(ambigname, FileName)
-char *ambigname; /* passed in */
-char *FileName; /* passed out */
+int MS_WriteAllMatchesToFile(char *ambigname, char *FileName)
 {
     PARSED_ADDRESS *Addr, *SingAddr;
     int la_errcode, outType, wpCode, numitems, AMSDel, AMSNameSep, IsVacuous;
@@ -2421,9 +2398,7 @@ char *FileName; /* passed out */
     return(0);
 }
 
-static int CheckGlobalAlias(name, code, Domain)
-char *name, *Domain;
-int *code;
+static int CheckGlobalAlias(char *name, int *code, char *Domain)
 {
 /* Define the macro YELLOWPAGES_ENV in site.h to use YP aliases lookup before the default /usr/lib/aliases. */
 /*  AMS_AliasesValidation must also be set to 1 (true) for global alias validation. */
@@ -2483,9 +2458,7 @@ int *code;
     return(0);
 }
 
-static int ExternalForcingCode(ExtAddress, codein)
-char *ExtAddress;
-int codein;
+static int ExternalForcingCode(char *ExtAddress, int codein)
 {
     struct ForceExtDescriptor *fetmp;
     char *domainindex;
@@ -2512,8 +2485,7 @@ int codein;
     return(codein);
 }
 
-MS_DomainHandlesFormatting(domname, codeP)
-char *domname; int *codeP;
+int MS_DomainHandlesFormatting(char *domname, int *codeP)
 {/* Tell the caller whether users in the given domain accept ATK-formatted messages as a matter of course.  Set *codeP <0 for NO, >0 for YES, and 0 for can't-tell. */
     *codeP = CheckAMSFmtOK(domname);
     return (0);

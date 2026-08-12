@@ -320,6 +320,15 @@ extern	int TIFFNoTileEncode(TIFF*, u_char*, int, u_int);
 extern	int TIFFNoRowDecode(TIFF*, u_char*, int, u_int);
 extern	int TIFFNoStripDecode(TIFF*, u_char*, int, u_int);
 extern	int TIFFNoTileDecode(TIFF*, u_char*, int, u_int);
+/*
+ * Internal, library-wide cross-file declarations (not part of the
+ * public API). Added M4 strict rollout: these were called across
+ * compilation units with no declaration in scope anywhere.
+ */
+extern	int TIFFInitCCITTFax3(TIFF *);
+extern	int TIFFInitCCITTFax4(TIFF *);
+extern	int TIFFFlushData1(TIFF *);
+extern	int TIFFSetCompressionScheme(TIFF *, int);
 #if defined(__cplusplus)
 }
 #endif
@@ -333,5 +342,9 @@ extern	int TIFFNoTileEncode();
 extern	int TIFFNoRowDecode();
 extern	int TIFFNoStripDecode();
 extern	int TIFFNoTileDecode();
+extern	int TIFFInitCCITTFax3();
+extern	int TIFFInitCCITTFax4();
+extern	int TIFFFlushData1();
+extern	int TIFFSetCompressionScheme();
 #endif
 #endif /* _TIFFIOP_ */

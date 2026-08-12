@@ -26,6 +26,7 @@
 * $
 */
 
+
 AUXFILES = vallist helparb piano.txt piano.lst calc.lset calc.tbl
 DOBJS = helpcon.do pcontrol.do calccon.do
 IHFILES = helpcon.ih pcontrol.ih calccon.ih

@@ -35,15 +35,15 @@ class html : text {
     WriteSubString(long pos, long len, FILE* file, int quoteChars);
 
   methods:
-    EnvStart(char* buf, char* envname, int* wantpar, int* br, int* newlines) returns char* ;
-    EnvEnd(char* buf, char* envname, int* par, int* br) returns char* ;
+    EnvStart(char* buf, struct style* style, int* wantpar, int* br, int* newlines) returns char* ;
+    EnvEnd(char* buf, struct style* style, int* par, int* br) returns char* ;
 
     ChangeTitle(char* name);
     ChangeIndexable(int flag);
 
     AddLink(long pos, long len, char* uri);
     AddEntity(long pos, long len, char* name, char* vars);
-      AddImage(long pos, char* path);
+      AddImage(long *pos, char* path);
     GetAnchorDest(long pos) returns char*;
     GetAttributeList(struct environment* env, char** list, int* count);
     ChangeAttribute(struct view* tv, struct environment* env, char* attr, char* value);

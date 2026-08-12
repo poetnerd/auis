@@ -32,11 +32,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #endif
 
 #include <class.h>
+#include <andrewos.h> /* sys/file.h */
 
-#if !defined(NeXT) && !defined(SOLARIS)
+#if !defined(NeXT) && !defined(SOLARIS) && !defined(sys_darwin)
 #include <a.out.h>
 #endif
-#include <andrewos.h> /* sys/file.h */
 #include <sys/param.h>
 
 /*
@@ -48,7 +48,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #endif /* #ifndef SYSV */
 #endif /* #ifdef AIX */
 
-#if (SY_B4x)
+#if (SY_B4x) && !defined(sys_darwin)
 #include <sys/gprof.h>
 #endif /* ! BSD */
 
@@ -60,20 +60,21 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #endif
 
 #include <profile.eh>
+static int allocProfBuf(int size);
 
 #define SCALE_1_TO_1 0x10000L
 
 static char *profBuf=NULL;
-#ifndef SYSV
+#if !defined(SYSV) && !defined(sys_darwin)
 static long profBufSize;
 static char monfilename[MAXPATHLEN];
 static struct phdr header;
 #endif /* SYSV */
 
 /* Allocate the profiling buffer */
-static int allocProfBuf(size)
+static int allocProfBuf(int size)
 {
-#ifndef SYSV
+#if !defined(SYSV) && !defined(sys_darwin)
     if(profBuf!=NULL && size!=profBufSize)
 	free(profBuf);
 
@@ -91,11 +92,9 @@ static int allocProfBuf(size)
 #endif /* SYSV */
 }
 
-int profile__StartClass(classId,classname,filename)
-struct classheader *classId;
-char *classname,*filename;
+int profile__StartClass(struct classheader *classId, char *classname, char *filename)
 {
-#ifndef SYSV
+#if !defined(SYSV) && !defined(sys_darwin)
     struct classinfo *info=class_Load(classname);
 
     if(info==NULL || class_GetTextBase(info)==NULL)
@@ -109,13 +108,9 @@ char *classname,*filename;
 #endif /* SYSV */
 }
 
-int profile__Start(classId,textbase,textlength,filename)
-struct classheader *classId;
-char *textbase;
-long textlength;
-char *filename;
+int profile__Start(struct classheader *classId, char *textbase, long textlength, char *filename)
 {
-#ifndef SYSV
+#if !defined(SYSV) && !defined(sys_darwin)
     if(textbase == NULL){
 	textbase = (char *)profile_STATICBASE;
 	textlength = ((char *)class_GetEText()) - textbase;
@@ -146,16 +141,14 @@ char *filename;
 #endif /* SYSV */
 }
 
-int profile__Active(classId)
-struct classheader *classId;
+int profile__Active(struct classheader *classId)
 {
     return (profBuf!=NULL);
 }
 
-int profile__Stop(classId)
-struct classheader *classId;
+int profile__Stop(struct classheader *classId)
 {
-#ifndef SYSV
+#if !defined(SYSV) && !defined(sys_darwin)
     if(profBuf!=NULL){
 	int fd;
 

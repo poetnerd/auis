@@ -45,18 +45,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/util
 #include <graphic.ih>
 
 #include <dialog.eh>
+static long SanelyReturnReadError(struct dialog *self, FILE *fp, long id, long code);
 
-boolean dialog__InitializeClass(classID, self)
-struct classheader *classID;
-struct dialog *self;
+boolean dialog__InitializeClass(struct classheader *classID)
 {
     return TRUE;
 }
 
 
-boolean dialog__InitializeObject(classID, self)
-struct classheader *classID;
-struct dialog *self;
+boolean dialog__InitializeObject(struct classheader *classID, struct dialog *self)
 {
     struct sbutton_prefs *prefs;
     
@@ -90,9 +87,7 @@ struct dialog *self;
     return TRUE;
 }
 
-void dialog__FinalizeObject(classID, self)
-struct classheader *classID;
-struct dialog *self;
+void dialog__FinalizeObject(struct classheader *classID, struct dialog *self)
 {
     if(self->prefs) {
 	sbutton_FreePrefs(self->prefs);
@@ -110,17 +105,12 @@ struct dialog *self;
 }
 
 
-char *dialog__ViewName(self)
-struct dialog *self;
+char * dialog__ViewName(struct dialog *self)
 {
     return "dialogv";
 }
 
-long dialog__Write(self, fp, id, level)
-struct dialog *self;
-FILE *fp;
-long id;
-int level;
+long dialog__Write(struct dialog *self, FILE *fp, long id, int level)
 {
     long uniqueid = dialog_UniqueID(self);
 
@@ -128,8 +118,8 @@ int level;
 	/* New Write Operation */
 	sbutton_SetWriteID(self, id);
 	
-	fprintf(fp, "\\begindata{%s,%d}\nDatastream version: %d\n",
-		class_GetTypeName(self), 
+	fprintf(fp, "\\begindata{%s,%ld}\nDatastream version: %d\n",
+		class_GetTypeName(self),
 		uniqueid, dialog_DS_VERSION);
 
 	if(!self->text) {
@@ -147,16 +137,12 @@ int level;
 	} else {
 	    sbutton_Write(self->buttons, fp, id, level+1);
 	}
-	fprintf(fp, "\\enddata{%s,%d}\n", class_GetTypeName(self), uniqueid);
+	fprintf(fp, "\\enddata{%s,%ld}\n", class_GetTypeName(self), uniqueid);
     }
     return(uniqueid);
 }
 
-static long SanelyReturnReadError(self, fp, id, code)
-struct dialog *self;
-FILE *fp;
-long id;
-long code;
+static long SanelyReturnReadError(struct dialog *self, FILE *fp, long id, long code)
 {
     /*
       Suck up the file until our enddata, then return the error code.
@@ -178,10 +164,7 @@ long code;
 
 static char *DatastreamHeader="Datastream version:";
 
-long dialog__Read(self, fp, id)
-struct dialog *self;
-FILE *fp;
-long id;
+long dialog__Read(struct dialog *self, FILE *fp, long id)
 {
     char buf[1024], *p;
     long err;
@@ -199,7 +182,7 @@ long id;
     p=fgets(buf, sizeof(buf)-1, fp);
     if(!p) return SanelyReturnReadError(self, fp, id, dataobject_PREMATUREEOF);
     
-    if(sscanf(buf, "\\begindata{text,%d}", &textid )!=1)  SanelyReturnReadError(self, fp, id, dataobject_BADFORMAT);
+    if(sscanf(buf, "\\begindata{text,%ld}", &textid )!=1)  SanelyReturnReadError(self, fp, id, dataobject_BADFORMAT);
     
     if(self->text) text_Clear(self->text);
     else self->text=text_New();
@@ -214,7 +197,7 @@ long id;
     p=fgets(buf, sizeof(buf)-1, fp);
     if(!p) return SanelyReturnReadError(self, fp, id, dataobject_PREMATUREEOF);
     
-    if(sscanf(buf, "\\begindata{sbutton,%d}", &textid )!=1)  return SanelyReturnReadError(self, fp, id, dataobject_BADFORMAT);
+    if(sscanf(buf, "\\begindata{sbutton,%ld}", &textid )!=1)  return SanelyReturnReadError(self, fp, id, dataobject_BADFORMAT);
 
     err=sbutton_Read(self->buttons, fp, textid);
     
@@ -223,24 +206,19 @@ long id;
     return SanelyReturnReadError(self, fp, id, dataobject_NOREADERROR); 
 }
 
-void dialog__SetText(self, text)
-struct dialog *self;
-struct text *text;
+void dialog__SetText(struct dialog *self, struct text *text)
 {
     if(self->text) text_Destroy(self->text);
     self->text=text;
 }
 
-void dialog__SetButtons(self, buttons)
-struct dialog *self;
-struct sbutton *buttons;
+void dialog__SetButtons(struct dialog *self, struct sbutton *buttons)
 {
     if(self->buttons) sbutton_Destroy(self->buttons);
     self->buttons=buttons;
 }
 
-char *dialog__GetForeground(self)
-struct dialog *self;
+char * dialog__GetForeground(struct dialog *self)
 {
     char *fg, *bg;
     graphic_GetDefaultColors(&fg, &bg);
@@ -248,8 +226,7 @@ struct dialog *self;
     else return fg?fg:"black";
 }
 
-char *dialog__GetBackground(self)
-struct dialog *self;
+char * dialog__GetBackground(struct dialog *self)
 {
     char *fg, *bg;
     graphic_GetDefaultColors(&fg, &bg);

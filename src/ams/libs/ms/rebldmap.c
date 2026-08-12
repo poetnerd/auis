@@ -34,8 +34,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <stdio.h>
+#include <sys/stat.h>
+extern int DeSymLink();  /* overhead/util/lib/desym.c */
+extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
+extern int MS_RebuildOneSubscriptionMap(char *PathElt);
+extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
+extern int SubsTreeWalk(FILE *outfile, char *dirname);
+extern int abspath(char *name, char *result);
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
 
-MS_RebuildSubscriptionMaps() {
+int MS_RebuildSubscriptionMaps() {
     int i = 0, code;
     char PathElt[1+MAXPATHLEN];
 
@@ -46,8 +55,7 @@ MS_RebuildSubscriptionMaps() {
     return(0);
 }
 
-MS_RebuildOneSubscriptionMap(PathElt)
-char *PathElt;
+int MS_RebuildOneSubscriptionMap(char *PathElt)
 {
     int code;
     char MapFile[MAXPATHLEN+1], RealMapFile[MAXPATHLEN+1], RealPath1[MAXPATHLEN+1], RealPath2[MAXPATHLEN+1], *sdum;

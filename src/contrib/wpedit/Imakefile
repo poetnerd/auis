@@ -30,6 +30,7 @@
 #ifdef AMS_DELIVERY_ENV
 #ifdef WHITEPAGES_ENV
 
+
 IHFILES		=	wpedita.ih
 DOBJS		=	wpedita.do
 

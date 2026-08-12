@@ -34,16 +34,12 @@ char *figoell_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/
 #include <figattr.ih>
 #include <print.ih>
 
-boolean figoell__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-struct figoell *self;
+boolean figoell__InitializeObject(struct classheader *ClassID, struct figoell *self)
 {
     return TRUE;
 }
 
-struct figoell *figoell__Create(classID, left, top, width, height)
-struct classheader *classID;
-long left, top, width, height;
+struct figoell * figoell__Create(struct classheader *classID, long left, long top, long width, long height)
 {
     struct figoell *res = figoell_New();
     if (!res) return NULL;
@@ -57,19 +53,12 @@ long left, top, width, height;
     return res;
 }
 
-char *figoell__ToolName(dummy, v, rock)
-struct figoell *dummy;
-struct figtoolview *v;
-long rock;
+char * figoell__ToolName(struct figoell *dummy, struct figtoolview *v, long rock)
 {
     return "Ellipse";
 }
 
-enum figobj_HitVal figoell__HitMe(self, x, y, delta, ptref) 
-struct figoell *self;
-long x, y;
-long delta;
-long *ptref;
+enum figobj_HitVal figoell__HitMe(struct figoell *self, long x, long y, long delta, long *ptref)
 {
     enum figobj_HitVal res = figoell_BasicHitMe(self, x, y, delta, ptref);
     long x0, y0, x1, y1;
@@ -106,9 +95,7 @@ long *ptref;
     return figobj_Miss;
 }
 
-void figoell__Draw(self, v) 
-struct figoell *self;
-struct figview *v;
+void figoell__Draw(struct figoell *self, struct figview *v)
 {
     long x, y, w, h;
     long shad, lw;
@@ -152,9 +139,7 @@ struct figview *v;
 	figview_SetLineWidth(v, 1);
 }
 
-void figoell__Sketch(self, v) 
-struct figoell *self;
-struct figview *v;
+void figoell__Sketch(struct figoell *self, struct figview *v)
 {
     long x, y, w, h;
 
@@ -183,11 +168,7 @@ struct figview *v;
 
 #define FadeColor(col, shad)  (1.0 - (1.0-(shad)) * (1.0-(col)))
 
-void figoell__PrintObject(self, v, file, prefix)
-struct figoell *self;
-struct figview *v;
-FILE *file;
-char *prefix;
+void figoell__PrintObject(struct figoell *self, struct figview *v, FILE *file, char *prefix)
 {
     long x, y, w, h;
     long shad, lw;
@@ -210,8 +191,8 @@ char *prefix;
     else if (h==0)
 	h = 1;
 
-    fprintf(file, "%s  %d %d translate  %d %d scale  0 0 0.5 0 360 arc\n", prefix, x, y, w, h);
-    fprintf(file, "%s  1.0 %d div  1.0 %d div  scale\n", prefix, w, h);
+    fprintf(file, "%s  %ld %ld translate  %ld %ld scale  0 0 0.5 0 360 arc\n", prefix, x, y, w, h);
+    fprintf(file, "%s  1.0 %ld div  1.0 %ld div  scale\n", prefix, w, h);
 
     col = figattr_GetColor(figoell_GetVAttributes(self), figoell_GetIVAttributes(self));
     print_LookUpColor(col, &rcol, &gcol, &bcol);
@@ -227,7 +208,7 @@ char *prefix;
     lw = figattr_GetLineWidth(figoell_GetVAttributes(self), figoell_GetIVAttributes(self));
     lw = figview_ToPrintPixW(v, lw*figview_FigUPerPix);
     if (lw <= 0) lw = 0;
-    fprintf(file, "%s  %d setlinewidth\n", prefix, lw);
+    fprintf(file, "%s  %ld setlinewidth\n", prefix, lw);
     fprintf(file, "%s  %f %f %f setrgbcolor\n", prefix, rcol, gcol, bcol);
     /*fprintf(file, "%s  0 setgray\n", prefix);*/
     fprintf(file, "%s  stroke\n", prefix);

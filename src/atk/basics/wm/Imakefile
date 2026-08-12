@@ -33,6 +33,7 @@ MATHLIB = -lm
 
 LOCALINCLUDES = -I../common
 
+
 WMLIB = ${WMBASEDIR}/lib/libwm.a
 
 COMOBJS = ../common/rect.o ../common/point.o ../common/physical.o

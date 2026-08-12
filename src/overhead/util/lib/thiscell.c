@@ -59,6 +59,7 @@ extern char *malloc();
 #endif /* _IBMR2 */
 
 extern int errno;
+extern int CheckServiceConfiguration();	/* svcconf.c, no header declares it */
 
 /*
   * GetCurrentWSCell
@@ -82,9 +83,7 @@ extern int errno;
   *	Nothing interesting.
   */
 
-int GetCurrentWSCell(Buf, size) 
-char *Buf;
-int   size;
+int GetCurrentWSCell(char *Buf, int size)
 {
     char *CellName;
     long code;			/* Result of pioctl() call */
@@ -150,10 +149,7 @@ int   size;
   *	Nothing interesting.
   */
 
-int GetCellFromFileName(FileName, Buf, size)
-char *FileName;
-char *Buf;
-int   size;
+int GetCellFromFileName(char *FileName, char *Buf, int size)
 {
     char *CellName;
     long code;			/* Result of pioctl() call */

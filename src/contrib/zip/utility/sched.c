@@ -51,18 +51,14 @@ END-SPECIFICATION  ************************************************************/
 #include "sched.eh"
 #include "zip.ih"
 #include <errno.h>
+#include <string.h>
 static boolean debug=FALSE;
-void
-sched__Set_Debug( self, mode )
-  register struct sched		     *self;
+void sched__Set_Debug(struct sched *self, boolean mode)
   {
   debug = mode;
   }
 
-struct sched *
-sched__Create( ClassID, stream_name )
-  register struct  classheader	     *ClassID;
-  register char			     *stream_name;
+struct sched * sched__Create(struct classheader *ClassID, char *stream_name)
   {
   register struct sched		     *self;
   register long			      status;
@@ -77,7 +73,7 @@ sched__Create( ClassID, stream_name )
       if ( status = zip_Open_Stream(self->zip, &self->stream,
 				self->stream_name, NULL ) )
         { DEBUG(Open Failure);
-        printf( "Schedule: Unable to Open %s\n", self->stream );
+        printf( "Schedule: Unable to Open %s\n", self->stream_name );
         }
         else  status = zip_Read_Stream( self->zip, self->stream );
       }
@@ -87,10 +83,7 @@ sched__Create( ClassID, stream_name )
   }
 
 
-boolean
-sched__InitializeObject( classID, self )
-  register struct classheader	     *classID;
-  register struct sched		     *self;
+boolean sched__InitializeObject(struct classheader *classID, struct sched *self)
   {
   register long			      status = false;
 

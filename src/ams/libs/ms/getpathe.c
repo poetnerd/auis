@@ -33,14 +33,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <ms.h>
 #include <mailconf.h>
+extern int InitializeSearchPaths();
 
 extern char home[];
 extern Boolean DidInit;
 
-MS_GetSearchPathEntry(which, buf, lim)
-int     which,
-        lim;
-char   *buf;
+int MS_GetSearchPathEntry(int which, char *buf, int lim)
 {
     int     i;
 

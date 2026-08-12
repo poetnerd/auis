@@ -22,6 +22,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    The entry point is generate_states.  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "andrewos.h"
 #include "machine.h"
 #include "new.h"
@@ -40,8 +41,8 @@ core *first_state;
 shifts *first_shift;
 reductions *first_reduction;
 
-int get_state();
-core *new_state();
+int get_state(int symbol);
+core *new_state(int symbol);
 
 void new_itemsets();
 void append_states();
@@ -50,10 +51,10 @@ void save_shifts();
 void save_reductions();
 void augment_automaton();
 void insert_start_shift();
-extern void initialize_closure();
-extern void closure();
+extern void initialize_closure(int n);
+extern void closure(short *core, int n);
 extern void finalize_closure();
-extern void toomany();
+extern void toomany(char *s);
 
 static core *this_state;
 static core *last_state;
@@ -282,9 +283,7 @@ append_states()
 Create a new state if no equivalent one exists already.
 Used by append_states  */
 
-int
-get_state(symbol)
-int symbol;
+int get_state(int symbol)
 {
   register int key;
   register short *isp1;
@@ -356,9 +355,7 @@ int symbol;
 
 /* subroutine of get_state.  create a new state for those items, if necessary.  */
 
-core *
-new_state(symbol)
-int symbol;
+core * new_state(int symbol)
 {
   register int n;
   register core *p;

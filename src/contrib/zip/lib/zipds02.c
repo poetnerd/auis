@@ -132,21 +132,18 @@ END-SPECIFICATION  ************************************************************/
 #define	 Data			      (self)
 #define	 Objects(i)		    ((*self->objects)[i])
 
-static int Write_Inferior_Image();
-static int Write_Image_Beginning();
-static int Write_Image_Ending();
+static int Write_Inferior_Image(struct zip *self, zip_type_image image);
+static int Write_Image_Beginning(struct zip *self, zip_type_image image);
+static int Write_Image_Ending(struct zip *self, zip_type_image image);
 
-long
-zip__Write_Figure( self, figure )
-  register struct zip		     *self;
-  register struct zip_figure	     *figure;
+long zip__Write_Figure(struct zip *self, zip_type_figure figure)
   {
   register int			     i, status = zip_ok;
   register FILE			     *file =
 	figure->zip_figure_image->zip_image_stream->zip_stream_file;
-  static char			     horizontal[2] = "?",
-				     vertical[2]   = "?",
-				     halo[2]       = "?";
+  char				     horizontal[2] = "",
+				     vertical[2]   = "",
+				     halo[2]       = "";
   register int			     pseudo_x=0, pseudo_y=0;
   register char			    *p;
   register short		    c;
@@ -156,7 +153,7 @@ zip__Write_Figure( self, figure )
     {
 /*===    pseudo_x = figure->zip_figure_image->zip_image_stream->zip_stream_pseudo_x_offset;
     pseudo_y = figure->zip_figure_image->zip_image_stream->zip_stream_pseudo_y_offset;===*/
-    fprintf( file, "*%c;%d,%d\n", ('A' - 1) + figure->zip_figure_type,
+    fprintf( file, "*%c;%ld,%ld\n", ('A' - 1) + figure->zip_figure_type,
 	   figure->zip_figure_point.zip_point_x - pseudo_x,
 	   figure->zip_figure_point.zip_point_y - pseudo_y );
     if ( figure->zip_figure_name )
@@ -243,7 +240,7 @@ zip__Write_Figure( self, figure )
       if ( figure->zip_figure_mode.zip_figure_mode_middle ) *vertical = 'M';
       if ( figure->zip_figure_mode.zip_figure_mode_bottom ) *vertical = 'B';
       if ( figure->zip_figure_mode.zip_figure_mode_halo )   *halo = 'H';
-      fprintf( file, "M%s%s\n", horizontal, vertical, halo );
+      fprintf( file, "M%s%s%s\n", horizontal, vertical, halo );
       }
     if ( figure->zip_figure_points )
       {
@@ -255,12 +252,12 @@ zip__Write_Figure( self, figure )
 		(figure->zip_figure_points->zip_points[0].zip_point_x),
 		(figure->zip_figure_points->zip_points[0].zip_point_y) );
 	else===*/
-	fprintf( file, ">%d,%d",
+	fprintf( file, ">%ld,%ld",
 		figure->zip_figure_points->zip_points[0].zip_point_x - pseudo_x,
 		figure->zip_figure_points->zip_points[0].zip_point_y - pseudo_y );
 /*=== End HACK of 5/8/87 ===*/
       for ( i = 1; i < figure->zip_figure_points->zip_points_count; i++ )
-        fprintf( file, ";%d,%d",
+        fprintf( file, ";%ld,%ld",
 		 figure->zip_figure_points->zip_points[i].zip_point_x - pseudo_x,
 		 figure->zip_figure_points->zip_points[i].zip_point_y - pseudo_y );
       fprintf( file, "\n" );
@@ -270,10 +267,7 @@ zip__Write_Figure( self, figure )
   return status;
   }
 
-long
-zip_Enparse_Stream( self, stream )
-  register struct zip		     *self;
-  register struct zip_stream	     *stream;
+long zip_Enparse_Stream(struct zip *self, struct zip_stream *stream)
   {
   register int			      status = zip_ok;
   register zip_type_image	      image = stream->zip_stream_image_anchor;
@@ -299,10 +293,7 @@ zip_Enparse_Stream( self, stream )
   return status;
   }
 
-static int
-Write_Inferior_Image( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+static int Write_Inferior_Image(struct zip *self, zip_type_image image)
   {
   register int			      status = zip_ok;
   register zip_type_figure	      figure = image->zip_image_figure_anchor;
@@ -325,10 +316,7 @@ Write_Inferior_Image( self, image )
   return status;
   }
 
-static int
-Write_Image_Beginning( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+static int Write_Image_Beginning(struct zip *self, zip_type_image image)
   {
   register FILE			     *file =
 	image->zip_image_stream->zip_stream_file;
@@ -423,10 +411,7 @@ Write_Image_Beginning( self, image )
   return status;
   }
 
-static int
-Write_Image_Ending( self, image )
-  register struct zip		     *self;
-  register zip_type_image	      image;
+static int Write_Image_Ending(struct zip *self, zip_type_image image)
   {
   register FILE			     *file =
 	image->zip_image_stream->zip_stream_file;

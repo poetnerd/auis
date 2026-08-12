@@ -65,6 +65,8 @@ extern int      cpw_error;
 #endif                                 /* WHITEPAGES_ENV */
 
 extern int     FoldTRT[256];
+extern int     FoldedEQ(), FoldedEQn();
+extern int     lc_strcmp();
 
 #define FOLDEDEQ(s1,s2) (FoldTRT[s1[0]]==FoldTRT[s2[0]] && FoldedEQ(s1,s2))
 #define FOLDEDEQN(s1,s2,n) (n <= 0 || (FoldTRT[s1[0]]==FoldTRT[s2[0]] && FoldedEQn(s1,s2,n)))
@@ -99,15 +101,15 @@ extern char    *GetConfig();           /* returns the value corresponding to a
                                         * key for a given configurelist */
 extern char    *GetConfiguration();    /* returns the value for a key in the
                                         * AndrewSetup file */
-extern          FreeConfigureList();   /* frees a configure list */
+extern int      FreeConfigureList();   /* frees a configure list */
 
 extern char    *getprofile(), *getprofilestring();
 extern int      getprofileint(), getprofileswitch();
 extern char    *GetProfileFileName();
 extern char    *GetFirstProfileFileName();
-extern          refreshprofile();
+extern int      refreshprofile();
 
-extern          setprofilestring();
+extern int      setprofilestring();
 
 extern char    *ap_Shorten();          /* ap_Shorten(path) tries to shorten
                                         * path using the current home dir */

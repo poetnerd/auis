@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #endif
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <class.h>
 #include <ctype.h>
 #include <txtvinfo.h>
@@ -45,6 +46,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #define AUXMODULE 1
 #include <textv.eh>
 
+struct textview_classinfo;
+static void CheckStylePreferences(struct keymap *newKeymap, struct menulist **normalMenus);
+static int TranslateKeySequence(char *from, char *to);
+static int adjustBindings(struct bind_Description *bindings);
+
 long lcKill;
 long lcYank;
 long lcMove;
@@ -52,139 +58,138 @@ long lcDisplayEnvironment;
 long lcInsertEnvironment;
 long lcNewLine;
 
-extern void textview_AppendNextCut();
-extern void textview_BackwardCmd();
-extern void textview_BackwardParaCmd();
-extern void textview_BackwardWSWordCmd();
-extern void textview_BackwardWordCmd();
-extern void textview_BackwardsRotatePasteCmd();
-extern void textview_BalanceCmd();
-extern void textview_BeginningOfFirstWordCmd();
-extern void textview_BeginningOfLineCmd();
-extern void textview_BeginningOfNextLineCmd();
-extern void textview_BeginningOfPreviousLineCmd();
-extern void textview_BeginningOfTextCmd();
-extern void textview_CapitalizeWord();
-extern void textview_ChangeLineCmd();
-extern void textview_ChangeRestOfLineCmd();
-extern void textview_ChangeSelectionCmd();
-extern void textview_ChangeTemplate();
-extern void textview_ChangeWordCmd();
-extern void textview_CheckSpelling();
-extern void textview_CloseFootnotes();
-extern void textview_CopyRegionCmd();
-extern void textview_CtrlAtCmd();
-extern void textview_CursorToBottom();
-extern void textview_CursorToCenter();
-extern void textview_CursorToTop();
-extern void textview_DeleteBackwardWSWordCmd();
-extern void textview_DeleteBackwardWordCmd();
-extern void textview_DeleteCmd();
-extern void textview_DeleteEndOfWSWordCmd();
-extern void textview_DeleteEndOfWordCmd();
-extern void textview_DeleteWSWordCmd();
-extern void textview_DeleteWordCmd();
-extern void textview_ForeKillWordCmd();
-extern void textview_DigitCmd();
-extern void textview_DisplayInsertEnvironment();
-extern void textview_DownCmd();
-extern void textview_DownInsertEnvironmentCmd();
-extern void textview_EndOfLineCmd();
-extern void textview_EndOfTextCmd();
-extern void textview_EndOfWSWordCmd();
-extern void textview_EndOfWordCmd();
-extern void textview_ExchCmd();
-extern void textview_ExposeStyleEditor();
-extern void textview_ForwardCmd();
-extern void textview_ForwardParaCmd();
-extern void textview_ForwardWSWordCmd();
-extern void textview_ForwardWordCmd();
-extern void textview_GlitchDownCmd();
-extern void textview_GlitchUpCmd();
-extern void textview_GoToLineCmd();
-extern void textview_GotoParagraphCmd();
-extern void textview_GrabReference();
-extern void textview_IndentCmd();
-extern void textview_InsertAtBeginningCmd();
-extern void textview_InsertAtEndCmd();
-extern void textview_InsertEnvironment();
-extern void textview_InsertFile();
-extern void textview_InsertFootnote();
-extern void textview_InsertInsetCmd();
-extern void textview_InsertNLCmd();
-extern void textview_InsertPageBreak();
-extern void textview_InsertSoftNewLineCmd();
-extern void textview_JoinCmd();
-extern void textview_KillLineCmd();
-extern void textview_KillWhiteSpaceCmd();
-extern void textview_LastPage();
-extern void textview_LeftInsertEnvironmentCmd();
-extern void textview_LineToTopCmd();
-extern void textview_LowercaseWord();
-extern void textview_MITKillLineCmd();
-extern void textview_MyLfCmd();
-extern void textview_MySoftLfCmd();
-extern void textview_NextLineCmd();
-extern void textview_NextPage();
-extern void textview_NextScreenCmd();
-extern void textview_OpenFootnotes();
-extern void textview_OpenLineAfterCmd();
-extern void textview_OpenLineBeforeCmd();
-extern void textview_OpenLineCmd();
-extern void textview_PlaceReference();
-extern void textview_PlainerCmd();
-extern void textview_PlainestCmd();
-extern void textview_PrevScreenCmd();
-extern void textview_PreviousLineCmd();
-extern void textview_PutAfterCmd();
-extern void textview_PutBeforeCmd();
-extern void textview_QueryReplaceCmd();
-extern void textview_QuoteCmd();
-extern void textview_RSearchCmd();
-extern void textview_ReplaceCharCmd();
-extern void textview_RightInsertEnvCmd();
-extern void textview_RotatePasteCmd();
-extern void textview_RuboutCmd();
-extern void textview_RuboutWordCmd();
-extern void textview_BackKillWordCmd();
-extern void textview_SearchAgain();
-extern void textview_SearchAgainOppositeCmd();
-extern void textview_SearchCmd();
-extern void textview_SelectRegionCmd();
-extern void textview_SelfInsertCmd();
-extern void textview_ShowStylesCmd();
-extern void textview_SubstituteCharCmd();
-extern void textview_ToggleCase();
-extern void textview_ToggleEditorCmd();
-extern void textview_ToggleExposeStyles();
-extern void textview_ToggleColorStyles();
-extern void textview_ToggleReadOnly();
-extern void textview_ToggleViModeCmd();
-extern void textview_TwiddleCmd();
-extern void textview_UnindentCmd();
-extern void textview_UpCmd();
-extern void textview_UpInsertEnvironmentCmd();
-extern void textview_UppercaseWord();
-extern void textview_ViCommandCmd();
-extern void textview_ViDeleteCmd();
-extern void textview_ViDeleteLineCmd();
-extern void textview_ViYankLineCmd();
-extern void textview_WhatParagraphCmd();
-extern void textview_WriteFootnotes();
-extern void textview_YankBackwardWSWordCmd();
-extern void textview_YankBackwardWordCmd();
-extern void textview_YankCmd();
-extern void textview_YankEndOfWSWordCmd();
-extern void textview_YankEndOfWordCmd();
-extern void textview_YankLineCmd();
-extern void textview_YankWSWordCmd();
-extern void textview_YankWordCmd();
-extern void textview_ZapRegionCmd();
+extern void textview_AppendNextCut(struct textview *self);
+extern void textview_BackwardCmd(struct textview *self);
+extern void textview_BackwardParaCmd(struct textview *self);
+extern void textview_BackwardWSWordCmd(struct textview *self);
+extern void textview_BackwardWordCmd(struct textview *self);
+extern void textview_BackwardsRotatePasteCmd(struct textview *self);
+extern void textview_BalanceCmd(struct textview *self);
+extern void textview_BeginningOfFirstWordCmd(struct textview *self);
+extern void textview_BeginningOfLineCmd(struct textview *self);
+extern void textview_BeginningOfNextLineCmd(struct textview *self);
+extern void textview_BeginningOfPreviousLineCmd(struct textview *self);
+extern void textview_BeginningOfTextCmd(struct textview *self);
+extern void textview_CapitalizeWord(struct textview *self, long key);
+extern void textview_ChangeLineCmd(struct textview *self);
+extern void textview_ChangeRestOfLineCmd(struct textview *self);
+extern void textview_ChangeSelectionCmd(struct textview *self);
+extern void textview_ChangeTemplate(struct textview *self);
+extern void textview_ChangeWordCmd(struct textview *self);
+extern void textview_CheckSpelling(struct textview *self);
+extern void textview_CloseFootnotes(struct textview *self);
+extern void textview_CopyRegionCmd(struct textview *self);
+extern void textview_CtrlAtCmd(struct textview *self);
+extern void textview_CursorToBottom(struct textview *self, long key);
+extern void textview_CursorToCenter(struct textview *self, long key);
+extern void textview_CursorToTop(struct textview *self, long key);
+extern void textview_DeleteBackwardWSWordCmd(struct textview *self);
+extern void textview_DeleteBackwardWordCmd(struct textview *self);
+extern void textview_DeleteCmd(struct textview *self);
+extern void textview_DeleteEndOfWSWordCmd(struct textview *self);
+extern void textview_DeleteEndOfWordCmd(struct textview *self);
+extern void textview_DeleteWSWordCmd(struct textview *self);
+extern void textview_DeleteWordCmd(struct textview *self);
+extern void textview_ForeKillWordCmd(struct textview *self);
+extern void textview_DigitCmd(struct textview *self, char c);
+extern void textview_DisplayInsertEnvironment(struct textview *self);
+extern void textview_DownCmd(struct textview *self);
+extern void textview_DownInsertEnvironmentCmd(struct textview *self);
+extern void textview_EndOfLineCmd(struct textview *self);
+extern void textview_EndOfTextCmd(struct textview *self);
+extern void textview_EndOfWSWordCmd(struct textview *self);
+extern void textview_EndOfWordCmd(struct textview *self);
+extern void textview_ExchCmd(struct textview *self);
+extern void textview_ExposeStyleEditor(struct textview *self);
+extern void textview_ForwardCmd(struct textview *self);
+extern void textview_ForwardParaCmd(struct textview *self);
+extern void textview_ForwardWSWordCmd(struct textview *self);
+extern void textview_ForwardWordCmd(struct textview *self);
+extern void textview_GlitchDownCmd(struct textview *self);
+extern void textview_GlitchUpCmd(struct textview *self);
+extern void textview_GoToLineCmd(struct textview *self);
+extern void textview_GotoParagraphCmd(struct textview *self);
+extern void textview_GrabReference(struct textview *self, long key);
+extern void textview_IndentCmd(struct textview *self);
+extern void textview_InsertAtBeginningCmd(struct textview *self);
+extern void textview_InsertAtEndCmd(struct textview *self);
+extern void textview_InsertEnvironment(struct textview *self, char *sName);
+extern void textview_InsertFile(struct textview *self);
+extern void textview_InsertFootnote(struct textview *self);
+extern void textview_InsertInsetCmd(struct textview *self, long rock);
+extern void textview_InsertNLCmd(struct textview *self);
+extern void textview_InsertPageBreak(struct textview *self);
+extern void textview_InsertSoftNewLineCmd(struct textview *self);
+extern void textview_JoinCmd(struct textview *self);
+extern void textview_KillLineCmd(struct textview *self);
+extern void textview_KillWhiteSpaceCmd(struct textview *self);
+extern void textview_LastPage(struct textview *self);
+extern void textview_LeftInsertEnvironmentCmd(struct textview *self);
+extern void textview_LineToTopCmd(struct textview *self);
+extern void textview_LowercaseWord(struct textview *self, long key);
+extern void textview_MITKillLineCmd(struct textview *self);
+extern void textview_MyLfCmd(struct textview *self);
+extern void textview_MySoftLfCmd(struct textview *self);
+extern void textview_NextLineCmd(struct textview *self);
+extern void textview_NextPage(struct textview *self);
+extern void textview_NextScreenCmd(struct textview *self);
+extern void textview_OpenFootnotes(struct textview *self);
+extern void textview_OpenLineAfterCmd(struct textview *self);
+extern void textview_OpenLineBeforeCmd(struct textview *self);
+extern void textview_OpenLineCmd(struct textview *self);
+extern void textview_PlaceReference(struct textview *self, long key);
+extern void textview_PlainerCmd(struct textview *self, char *type);
+extern void textview_PlainestCmd(struct textview *self);
+extern void textview_PrevScreenCmd(struct textview *self);
+extern void textview_PreviousLineCmd(struct textview *self);
+extern void textview_PutAfterCmd(struct textview *self);
+extern void textview_PutBeforeCmd(struct textview *self);
+extern void textview_QueryReplaceCmd(struct textview *self);
+extern void textview_QuoteCmd(struct textview *self);
+extern void textview_RSearchCmd(struct textview *self);
+extern void textview_ReplaceCharCmd(struct textview *self);
+extern void textview_RightInsertEnvCmd(struct textview *self);
+extern void textview_RotatePasteCmd(struct textview *self);
+extern void textview_RuboutCmd(struct textview *self);
+extern void textview_RuboutWordCmd(struct textview *self);
+extern void textview_BackKillWordCmd(struct textview *self);
+extern void textview_SearchAgain(struct textview *self);
+extern void textview_SearchAgainOppositeCmd(struct textview *self);
+extern void textview_SearchCmd(struct textview *self);
+extern void textview_SelectRegionCmd(struct textview *self);
+extern void textview_SelfInsertCmd(struct textview *self, char a);
+extern void textview_ShowStylesCmd(struct textview *self);
+extern void textview_SubstituteCharCmd(struct textview *self);
+extern void textview_ToggleCase(struct textview *self, long key);
+extern void textview_ToggleEditorCmd(struct textview *self);
+extern void textview_ToggleExposeStyles(struct textview *self);
+extern void textview_ToggleColorStyles(struct textview *self);
+extern void textview_ToggleReadOnly(struct textview *self);
+extern void textview_ToggleViModeCmd(struct textview *self);
+extern void textview_TwiddleCmd(struct textview *self);
+extern void textview_UnindentCmd(struct textview *self);
+extern void textview_UpCmd(struct textview *self);
+extern void textview_UpInsertEnvironmentCmd(struct textview *self);
+extern void textview_UppercaseWord(struct textview *self, long key);
+extern void textview_ViCommandCmd(struct textview *self, long key);
+extern void textview_ViDeleteCmd(struct textview *self);
+extern void textview_ViDeleteLineCmd(struct textview *self);
+extern void textview_ViYankLineCmd(struct textview *self);
+extern void textview_WhatParagraphCmd(struct textview *v);
+extern void textview_WriteFootnotes(struct textview *self);
+extern void textview_YankBackwardWSWordCmd(struct textview *self);
+extern void textview_YankBackwardWordCmd(struct textview *self);
+extern void textview_YankCmd(struct textview *self);
+extern void textview_YankEndOfWSWordCmd(struct textview *self);
+extern void textview_YankEndOfWordCmd(struct textview *self);
+extern void textview_YankLineCmd(struct textview *self);
+extern void textview_YankWSWordCmd(struct textview *self);
+extern void textview_YankWordCmd(struct textview *self);
+extern void textview_ZapRegionCmd(struct textview *self);
 
-static int parseBackslashed();
+static int parseBackslashed(char **fromChars);
 
-void textview_NOOPCmd (self)
-register struct textview *self;
+void textview_NOOPCmd(struct textview *self)
 {
     /* Do nothing.  Used to rebind keys for no operation */
 }
@@ -194,8 +199,7 @@ register struct textview *self;
  * and is used or forward/backward word operations
  */
 
-charType(c)
-	register char c;
+int charType(char c)
 {
 
 	if (isspace(c))
@@ -377,9 +381,7 @@ static struct bind_Description textviewEmacsBindings[]={
     {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL}
 };
 
-static void CheckStylePreferences(newKeymap, normalMenus)
-struct keymap *newKeymap;
-struct menulist **normalMenus;
+static void CheckStylePreferences(struct keymap *newKeymap, struct menulist **normalMenus)
 {
     struct proctable_Entry *pl;
 
@@ -392,7 +394,7 @@ struct menulist **normalMenus;
 	pl = proctable_Lookup("textview-plainer");
 	keymap_BindToKey(newKeymap, "\030\020", pl, (long) "old");
 	if (normalMenus != NULL && *normalMenus != NULL) {
-	    menulist_AddToML(*normalMenus, "Plainer~40", pl, (long) "old", textview_NotReadOnlyMenus);
+	    menulist_AddToML(*normalMenus, "Plainer~40", pl, "old", textview_NotReadOnlyMenus);
 	}
 	pl = proctable_Lookup("textview-plainest");
 	if (normalMenus != NULL && *normalMenus != NULL) {
@@ -409,9 +411,7 @@ struct menulist **normalMenus;
 
 /* These two procs ripped out of basics/common/init.c */
 /* Translate a key sequence that has ^A, \ddd, and \c conventions. */
-static int TranslateKeySequence(from, to)
-    char *from;
-    char *to;
+static int TranslateKeySequence(char *from, char *to)
 {
     while (*from != '\0') {
         if (*from == '\\') {
@@ -436,8 +436,7 @@ static int TranslateKeySequence(from, to)
     return 0;
 }
 
-static int parseBackslashed(fromChars)
-    char **fromChars;
+static int parseBackslashed(char **fromChars)
 {
 
     int returnChar;
@@ -481,8 +480,7 @@ static int parseBackslashed(fromChars)
     return returnChar;
 }
 
-static adjustBindings(bindings)
-struct bind_Description *bindings;
+static int adjustBindings(struct bind_Description *bindings)
 {
     struct bind_Description *bd;
     char *stylePrefixPref;
@@ -513,9 +511,7 @@ struct bind_Description *bindings;
     }
 }
 
-struct keymap *textview_InitEmacsKeyMap(classInfo, normalMenus)
-struct textview_classinfo *classInfo;
-struct menulist **normalMenus;
+struct keymap * textview_InitEmacsKeyMap(struct textview_classinfo *classInfo, struct menulist **normalMenus)
 {
     struct keymap *newKeymap = keymap_New();
     register long i;
@@ -850,9 +846,7 @@ static struct bind_Description textviewViCommandModeBindings[]={
     {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL, NULL}
 };
 
-struct keymap *textview_InitViCommandModeKeyMap(classInfo, Menus)
-struct textview_classinfo *classInfo;
-struct menulist **Menus;
+struct keymap * textview_InitViCommandModeKeyMap(struct textview_classinfo *classInfo, struct menulist **Menus)
 {
     struct keymap *newKeymap = keymap_New();
     register long i;
@@ -921,9 +915,7 @@ static struct bind_Description textviewViInputModeBindings[] = {
     NULL
  };
  
-struct keymap *textview_InitViInputModeKeyMap(classInfo, Menus)
-struct textview_classinfo *classInfo;
-struct menulist **Menus;
+struct keymap * textview_InitViInputModeKeyMap(struct textview_classinfo *classInfo, struct menulist **Menus)
 {
     struct keymap *newKeymap = keymap_New();
     register long i;

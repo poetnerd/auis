@@ -5,12 +5,12 @@
 
 class foldertreev[fldtreev]:orgv {
   classprocedures:
-    InitializeClass( struct classheader *classID ) returns boolean;
+    InitializeClass() returns boolean;
     InitializeObject( struct classheader *classID, struct foldertreev *self ) returns boolean;
-    FinalizeObject( struct classheader *classID, struct foldertreev *self );
+    FinalizeObject( struct foldertreev *self );
   overrides:
     FullUpdate( enum view_UpdateType type, long left, long top, long width, long height ) returns void;
-    PostMenus( struct menulist ) returns void;
+    PostMenus( struct menulist *menulist ) returns void;
     PostKeyState( struct keystate *keystate ) returns void;
   data:
     struct menulist	*menulist;

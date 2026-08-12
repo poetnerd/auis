@@ -26,6 +26,8 @@
 * $
 */
 
+/* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS = sym.do toksym.do
 IHFILES = sym.ih toksym.ih
@@ -43,4 +45,3 @@ InstallLibrary(libsym.a, ${DESTDIR}/lib/atk)
 InstallDocs($(DOCS), $(DESTDIR)/doc/syntax)
 
 DependTarget()
-

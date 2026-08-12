@@ -40,9 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #if defined(unix) || defined(__unix) || defined(MSDOS) || defined(VMS)
 #include <sys/stat.h>
 
-long
-TIFFGetFileSize(fd)
-	int fd;
+long TIFFGetFileSize(int fd)
 {
 	struct stat sb;
 
@@ -53,11 +51,7 @@ TIFFGetFileSize(fd)
 #if (defined(unix) || defined(__unix)) && defined(MMAP_SUPPORT)
 #include <sys/mman.h>
 
-int
-TIFFMapFileContents(fd, pbase, psize)
-	int fd;
-	char **pbase;
-	long *psize;
+int TIFFMapFileContents(int fd, char **pbase, long *psize)
 {
 	long size = TIFFGetFileSize(fd);
 	if (size != -1) {
@@ -70,10 +64,7 @@ TIFFMapFileContents(fd, pbase, psize)
 	return (0);
 }
 
-void
-TIFFUnmapFileContents(base, size)
-	char *base;
-	long size;
+void TIFFUnmapFileContents(char *base, long size)
 {
 	(void) munmap(base, size);
 }
@@ -108,11 +99,7 @@ static struct {
  * - There is no free "hole" in virtual memory that fits the
  *   size of the file
  */
-int
-TIFFMapFileContents(fd, pbase, psize)
-	int fd;
-	char **pbase;
-	long *psize;
+int TIFFMapFileContents(int fd, char **pbase, long *psize)
 {
 	char name[256];
 	struct FAB fab;
@@ -170,10 +157,7 @@ TIFFMapFileContents(fd, pbase, psize)
  * the process, but only if the base was the one returned from a
  * call to TIFFMapFileContents.
  */
-void
-TIFFUnmapFileContents(base, size)
-	char *base;
-	long size;
+void TIFFUnmapFileContents(char *base, long size)
 {
 	void *inadr[2];
 	int i, j;

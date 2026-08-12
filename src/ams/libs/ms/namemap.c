@@ -35,12 +35,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <stdio.h>
 #include <ms.h>
 #include <sys/stat.h>
+extern int BuildPrivateSubscriptionMap(FILE *public, FILE *private, char *Root);
+extern int DeSymLink();  /* overhead/util/lib/desym.c */
+extern int GenTempName(char *Buf);
+extern int SubsTreeWalk(FILE *outfile, char *dirname);
+extern int WriteSimpleSubsMap(char *fname);
+extern int abspath(char *name, char *result);
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
 
 extern FILE *fopen();
 
-MS_NameSubscriptionMapFile(Root, MapFile)
-char *Root;  /* Parameter passed in from CUI */
-char *MapFile; /* Buffer to be filled and sent back by this routine */
+int MS_NameSubscriptionMapFile(char *Root, char *MapFile)
 {
     char    PublicMap[MAXPATHLEN + 1], File1[MAXPATHLEN+1], File2[MAXPATHLEN+1];
     int     code;

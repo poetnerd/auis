@@ -1,0 +1,48 @@
+#!/bin/sh
+# Build and install con10/con12 (the console app's icon fonts) without
+# enabling MK_CONSOLE or building the rest of the console subsystem.
+#
+# atk/Imakefile gates the *entire* atk/console subtree -- including
+# console/fonts, not just console/lib and console/cmd -- behind
+# `#ifdef MK_CONSOLE`, which is intentionally undefined in this
+# revival (console is an inert subsystem). console/fonts/Imakefile
+# already correctly declares DeclareFont(con10)/DeclareFont(con12);
+# the fonts just never get built because the parent never descends
+# into the directory to do so.
+#
+# con10 in particular is used by things outside console too -- e.g.
+# the ams/demo/d10 `fad` (animation) inset diagram references it for
+# an icon -- so its absence isn't cosmetic to console alone. See
+# revival/doc/porting-assessment.md, "MK_CONSOLE being off silently
+# breaks con10/con12..." for the full investigation.
+#
+# This builds *only* atk/console/fonts, directly, bypassing the
+# MK_CONSOLE gate entirely -- it never touches console/lib, cmd,
+# stats, or consoles.
+
+set -e
+cd "$(dirname "$0")/../.."   # repo root (andrew-6.4/)
+REPO="$(pwd)"
+FONTDIR="$REPO/src/atk/console/fonts"
+
+cd "$FONTDIR"
+
+# console/fonts/Makefile is checked in as an empty stub -- the parent
+# atk/Imakefile never descends here (MK_CONSOLE gate), so imake never
+# regenerated it. Regenerate it directly against this one Imakefile;
+# MK_CONSOLE is irrelevant to this leaf directory's own contents, only
+# to whether the parent recurses into it, so no flag juggling needed.
+if ! grep -q "^World::" Makefile 2>/dev/null; then
+    echo "console/fonts/Makefile is a stub; regenerating via imake..."
+    imake -Timake.tmpl -I. -I../../.././config -s Makefile -DTOPDIR=../../../.
+fi
+
+make World
+
+FONTDESTX="$REPO/build/X11fonts"
+/opt/X11/bin/mkfontdir "$FONTDESTX"
+DISPLAY=:0
+export DISPLAY
+xset fp rehash
+
+echo "installed con10/con12 to $FONTDESTX and rehashed font path"

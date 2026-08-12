@@ -36,10 +36,7 @@ static char cmuwm_rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/at
 #include <cmuwm.h>
 #include <cmuwm.eh>
 
-int 
-cmuwm__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+int cmuwm__Ident(struct classheader *classID, char *fullname)
 {
     FILE *f;
     int r = 0;
@@ -55,11 +52,7 @@ cmuwm__Ident( classID, fullname )
     return r;
 }
 
-int
-cmuwm__Load( image, fullname, fp )
-    struct cmuwm *image;
-    char *fullname;
-    FILE *fp;
+int cmuwm__Load(struct cmuwm *image, char *fullname, FILE *fp)
 {
     FILE *f;
     struct raster *raster = raster_New();
@@ -102,7 +95,7 @@ cmuwm__Load( image, fullname, fp )
 	    free(buf);
 	}
 	else {
-	    fprintf(stderr, "cmuwm: Read error (%d)\n", status);
+	    fprintf(stderr, "cmuwm: Read error (%ld)\n", status);
 	    fclose(f);
 	    return(-1);
 	}
@@ -117,32 +110,19 @@ cmuwm__Load( image, fullname, fp )
     return(0);
 }
 
-long
-cmuwm__Read( self, file, id )
-    struct cmuwm *self;
-    FILE *file;
-    long id;
+long cmuwm__Read(struct cmuwm *self, FILE *file, long id)
 {
     if(cmuwm_Load(self, NULL, file) == 0)
 	return(dataobject_NOREADERROR);
     else return(dataobject_BADFORMAT);
 }
 
-long
-cmuwm__Write( self, file, writeID, level )
-    struct cmuwm *self;
-    FILE *file;
-    long writeID;
-    int level;
+long cmuwm__Write(struct cmuwm *self, FILE *file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
-long
-cmuwm__WriteNative( self, file, filename )
-    struct cmuwm *self;
-    FILE *file;
-    char *filename;
+long cmuwm__WriteNative(struct cmuwm *self, FILE *file, char *filename)
 {
     struct raster *ras;
     FILE *f;
@@ -176,7 +156,7 @@ cmuwm__WriteNative( self, file, filename )
 	}
 	if((status = raster_Write(ras, f, raster_UniqueID(ras), -1)) != raster_UniqueID(ras)) {
 	    if(file==NULL) fclose(f);
-	    fprintf(stderr, "raster: Write error (%d)\n", status);
+	    fprintf(stderr, "raster: Write error (%ld)\n", status);
 	    return(-1);
 	}
 	raster_Destroy(ras);

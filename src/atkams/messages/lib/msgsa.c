@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
  
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <stdio.h>
 #include <errprntf.h>
@@ -56,9 +57,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 
 #include <msgsvers.h>
 
-boolean messagesapp__InitializeObject(cid, m)
-struct classheader *cid;
-struct messagesapp *m;
+boolean messagesapp__InitializeObject(struct classheader *cid, struct messagesapp *m)
 {
     m->MailOnly = FALSE;
     m->SendOnly = FALSE;
@@ -75,8 +74,7 @@ struct messagesapp *m;
     return(TRUE);
 }
 
-boolean messagesapp__Start(m)
-struct messagesapp *m;
+boolean messagesapp__Start(struct messagesapp *m)
 {
     struct folders *fold = NULL;
     struct sendmessage *sm = NULL;
@@ -96,7 +94,7 @@ struct messagesapp *m;
     }
     if (m->SendOnly) {
 	sm = sendmessage_New();
-	sm->myframe = ams_InstallInNewWindow(sm, "sendmessage", VerString, environ_GetProfileInt("sendmessage.width", -1), environ_GetProfileInt("sendmessage.height", -1), sm);
+	sm->myframe = ams_InstallInNewWindow(sm, "sendmessage", VerString, environ_GetProfileInt("sendmessage.width", (long)-1), environ_GetProfileInt("sendmessage.height", (long)-1), sm);
 	if (!sm->myframe) Die = TRUE;
 	v = (struct view *) sm;
     } else {
@@ -108,7 +106,7 @@ struct messagesapp *m;
 	    struct messwind *mess = messwind_New();
 	    fold = mess->folders;
 	    v = (struct view *) mess;
-	    fold->myframe = ams_InstallInNewWindow(mess, "messages", VerString, environ_GetProfileInt("messages.width", -1), environ_GetProfileInt("messages.height", -1), fold);
+	    fold->myframe = ams_InstallInNewWindow(mess, "messages", VerString, environ_GetProfileInt("messages.width", (long)-1), environ_GetProfileInt("messages.height", (long)-1), fold);
 	}
 	if (!fold->myframe) Die = TRUE;
     }
@@ -166,10 +164,7 @@ struct messagesapp *m;
     return(TRUE);
 }
  
-boolean messagesapp__ParseArgs(m, argc, argv)  
-struct messagesapp *m;
-int argc;
-char **argv;
+boolean messagesapp__ParseArgs(struct messagesapp *m, int argc, char **argv)
 {
     int HeadersToAdd = 0;
     super_ParseArgs(m, argc, argv);

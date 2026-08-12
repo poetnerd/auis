@@ -90,6 +90,24 @@ END-SPECIFICATION  ******************************************************/
 #include <apts.ih>
 #include <bush.ih>
 #include <bushv.eh>
+static void DoAutoRescan(struct bushv *self);
+static void DoEdit(struct bushv *self, char *path, char *name);
+static int DoExecute(struct bushv *self, tree_type_node tn, struct Dir_Entry *Entry);
+static int DoPrint(struct bushv *self, char *path, char *name);
+static char * FileSuffix(char *file_name);
+static char * FileType(char *file_name);
+static char* FormatEntriesItem(struct bushv *self, tree_type_node tn, int i, struct Dir_Entry *dirEntry);
+static char* Format_Tags(u_short tag);
+static void GetPreferences(struct bushv *self);
+static void GetPreferredEditors(struct bushv *self);
+static void GetPreferredFonts(struct bushv *self);
+static long Passivator();
+static void PostCursor(struct bushv *self, int type);
+static void ResetEntriesCaptions(struct bushv *self);
+static long ResetSelectedState();
+static void SortDir(struct bushv *self, tree_type_node tn);
+static void StartDirMove(struct bushv *self, tree_type_node tn);
+static long ToggleCaptionDetail(struct bushv *self, struct suite *suite, struct suite_item *item, unsigned datum);
 
 #define	by_name					    0
 #define	by_size					    1
@@ -128,8 +146,7 @@ static char	*default_editor_choices[] = { "ez",
 static char			    msg[MAXPATHLEN * 2];
 static char			    cmd[MAXPATHLEN * 2];
 static char			   *argv[10];
-extern int			    errno, sys_nerr;
-extern char			   *sys_errlist[];
+extern int errno;
 
 static struct keymap		   *kmap;
 static struct menulist		   *menulist = NULL;
@@ -143,52 +160,50 @@ static void			    Pop(),
 				    PerformDetail(),
 				    PerformDestroy(),
 				    PerformCreate(),
-				    PerformRename(),
-				    PerformRescan(),
-				    PerformEdit(),
-                                    PushToEntries(),
-                                    PushToEntry(),
-				    SetEditor(),
-				    SwitchDirectory(),
-				    Push(),
-				    PassivateControls(),
-				    IssueError(),
-				    ToggleDebug(),
-                                    HandleChangeDir(),
-                                    Checkpoint(),
-                                    UpdateDetailCaption(),
-                                    EntriesPageUp(),
-                                    EntriesPageDown();
+				    PerformRename(struct bushv *self),
+				    PerformRescan(struct bushv *self),
+				    PerformEdit(struct bushv *self),
+                                    PushToEntries(struct bushv *self),
+                                    PushToEntry(struct bushv *self),
+				    SetEditor(struct bushv *self),
+				    SwitchDirectory(struct bushv *self),
+				    Push(struct bushv *self),
+				    PassivateControls(struct bushv *self),
+				    IssueError(struct bushv *self, char *what, char *where, boolean overlay),
+				    ToggleDebug(struct bushv *self),
+                                    HandleChangeDir(struct bushv *self, char *dirName),
+                                    Checkpoint(long dummyData),
+                                    UpdateDetailCaption(struct bushv *self),
+                                    EntriesPageUp(struct bushv *self),
+                                    EntriesPageDown(struct bushv *self);
 
-static int			    PopToNodes(),
-                                    PopToEntries();
+static int			    PopToNodes(struct bushv *self),
+                                    PopToEntries(struct bushv *self);
 
-static long			    ControlHitHandler(), 
-				    TreeHitHandler(), 
-				    EntriesHitHandler();
+static long			    ControlHitHandler(struct bushv *self, struct suite *suite, struct suite_item *item, long object, enum view_MouseAction action, long x, long y, long numClicks), 
+				    TreeHitHandler(struct bushv *self, struct treev *tree_view, tree_type_node node, long object, enum view_MouseAction action, long x, long y, long numClicks), 
+				    EntriesHitHandler(struct bushv *self, struct suite *suite, struct suite_item *item, long object, enum view_MouseAction action, long x, long y, long numClicks);
 
-static int			    bushv_WriteFile(),
-                                    bushv_SaveFile(),
-                                    bushv_SetPrinter();
+static int			    bushv_WriteFile(struct bushv *self),
+                                    bushv_SaveFile(struct bushv *self),
+                                    bushv_SetPrinter(struct bushv *self);
 
-int				    SortByName(),
-				    SortBySize(),
-				    SortBySuffix(),
-				    SortByType(),
-				    SortByDate();
+long				    SortByName(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2),
+				    SortBySize(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2),
+				    SortBySuffix(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2),
+				    SortByType(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2),
+				    SortByDate(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2);
 
-static DoPrint();
-static DoExecute();
-static int PerformSystemAction();
-static int FinishDirMove();
-static int DoDestroy();
-static int HandleModifiedObject();
-static int SortRequested();
-static int ResetChildDirPaths();
-static int bushv_WriteToFile();
-static int bushv_SaveFile();
-static int bushv_WriteFile();
-static int bushv_SetPrinter();
+static int PerformSystemAction(struct bushv *self, char *name, char *argv[], char *msg);
+static int FinishDirMove(struct bushv *self, tree_type_node tn);
+static int DoDestroy(struct bushv *self, tree_type_node tn, struct Dir_Entry *Entry, boolean overlay);
+static int HandleModifiedObject(struct bushv *self);
+static int SortRequested(struct bushv *self, tree_type_node tn);
+static long ResetChildDirPaths(struct bushv *self, struct tree *tree, tree_type_node tn, long datum);
+static int bushv_WriteToFile(struct bushv *self, char *filename);
+static int bushv_SaveFile(struct bushv *self);
+static int bushv_WriteFile(struct bushv *self);
+static int bushv_SetPrinter(struct bushv *self);
 
 
 #define Bush			    (self->bush)
@@ -417,10 +432,7 @@ treev_Specification tree_spec[] = {
     NULL
 };
 
-static void
-PostCursor( self, type )
-  register struct bushv   *self;
-  register int		   type;
+static void PostCursor(struct bushv *self, int type)
 {
   struct rectangle	   r;
 
@@ -446,7 +458,7 @@ ResetSelectedState( self, suite, item, datum )
 
   if(!suite || !item) return(status);
   dirEntry = (struct Dir_Entry*)
-    suite_ItemAttribute(suite,item,suite_ItemDatum(0));
+    suite_ItemAttribute(suite,item,suite_itemdatum);
   if(!suite_ItemExposed(suite,item) || 
      !suite_ItemHighlighted(suite,item) || 
      !suite_ItemActivated(suite,item)) 
@@ -455,14 +467,7 @@ ResetSelectedState( self, suite, item, datum )
   return(status);
 }
 
-static long
-EntriesHitHandler( self, suite, item, object, action, x, y, numClicks )
-  register struct bushv		*self;
-  register struct suite		*suite;
-  register struct suite_item	*item;
-  register long			 object;
-  register enum view_MouseAction action;
-  register long			 x, y, numClicks;
+static long EntriesHitHandler(struct bushv *self, struct suite *suite, struct suite_item *item, long object, enum view_MouseAction action, long x, long y, long numClicks)
 {
   register struct Dir_Entry	*dirEntry = NULL;
   register int			 numSelected = 0, count = 0, i = 0;
@@ -473,7 +478,7 @@ EntriesHitHandler( self, suite, item, object, action, x, y, numClicks )
 	((action == view_LeftUp) || (action == view_RightUp))) {
     if(action == view_LeftUp) {
 	dirEntry = (struct Dir_Entry*) 
-	suite_ItemAttribute(EntriesView,item,suite_ItemDatum(0));
+	suite_ItemAttribute(EntriesView,item,suite_itemdatum);
 	if(EntrySelected(dirEntry) && (NumPrevSelected == 1)) {
 	  PostCursor(self,Cursor_Wait);
 	  CurrEntry = dirEntry;
@@ -500,10 +505,7 @@ EntriesHitHandler( self, suite, item, object, action, x, y, numClicks )
   return(0);
 }
 
-static void
-StartDirMove( self, tn )
-  register struct bushv    *self;
-  register tree_type_node   tn;
+static void StartDirMove(struct bushv *self, tree_type_node tn)
 {
   IN(StartDirMove);
   if(tn) {
@@ -515,10 +517,7 @@ StartDirMove( self, tn )
   OUT(StartDirMove);
 }
 
-static int
-FinishDirMove( self, tn )
-  register struct bushv	    *self;
-  register tree_type_node    tn;
+static int FinishDirMove(struct bushv *self, tree_type_node tn)
 {
   register int		     status = 0;
   char			     finalLocation[MAXPATHLEN];
@@ -573,14 +572,7 @@ FinishDirMove( self, tn )
   return(status);
 }
 
-static long
-TreeHitHandler( self, tree_view, node, object, action, x, y, numClicks )
-  register struct bushv		    *self;
-  register struct treev		    *tree_view;
-  register tree_type_node	     node;
-  register long			     object;
-  register enum view_MouseAction     action;
-  register long			     x, y, numClicks;
+static long TreeHitHandler(struct bushv *self, struct treev *tree_view, tree_type_node node, long object, enum view_MouseAction action, long x, long y, long numClicks)
 {
   register tree_type_node	     old_CurrNode = NULL;
   register tree_type_node	     peer = NULL;
@@ -644,7 +636,7 @@ TreeHitHandler( self, tree_view, node, object, action, x, y, numClicks )
 			       tree_NodeChildrenCreated);
       NotifyTreeObservers(self);
       suite_ChangeSuiteAttribute(ControlView,
-				  suite_TitleCaption(DirPath(CurrNode)));
+				  suite_titlecaption, (long) (DirPath(CurrNode)));
     }
     else Push(self);
     bushv_RetractCursor(self,Cursor);
@@ -653,14 +645,7 @@ TreeHitHandler( self, tree_view, node, object, action, x, y, numClicks )
   return(0);
 }
 
-static long
-ControlHitHandler( self, suite, item, object, action, x, y, numClicks )
-  register struct bushv		    *self;
-  register struct suite		    *suite;
-  register struct suite_item	    *item;
-  register long			     object;
-  register enum view_MouseAction     action;
-  register long			     x, y, numClicks;
+static long ControlHitHandler(struct bushv *self, struct suite *suite, struct suite_item *item, long object, enum view_MouseAction action, long x, long y, long numClicks)
 {
 
   IN(ControlHitHandler);
@@ -669,7 +654,7 @@ ControlHitHandler( self, suite, item, object, action, x, y, numClicks )
     if(item && (object == suite_ItemObject)) {
       struct item_data	*itemData = NULL;
 
-      if(itemData = (struct item_data*) suite_ItemAttribute(suite, item, suite_ItemData(0)))
+      if(itemData = (struct item_data*) suite_ItemAttribute(suite, item, suite_itemdatum))
         switch(itemData->code) {
 	    case(edit_code):	PerformEdit(self);	break;
 	    case(exec_code):	PerformExec(self);	break;
@@ -711,9 +696,7 @@ ControlHitHandler( self, suite, item, object, action, x, y, numClicks )
   return(0);
 }
 
-static char *
-FileSuffix( file_name )
-  register char   *file_name;
+static char * FileSuffix(char *file_name)
 {
   register char   *suffix;
 
@@ -722,9 +705,7 @@ FileSuffix( file_name )
   return(suffix);
 }
 
-static char *
-FileType( file_name )
-  register char	    *file_name;
+static char * FileType(char *file_name)
 {
   static char	    *suffixes[] = {"BAK","CKP",0};
   register char	    *suffix, **suffix_ptr;
@@ -743,18 +724,14 @@ FileType( file_name )
   return(suffix);
 }
 
-int
-SortByName( self, suite, e1, e2 )
-  register struct bushv		*self;
-  register struct suite		*suite;
-  register struct suite_item    *e1,*e2;
+long SortByName(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
   register long			 status = 0;
 
   if(!e1 || !e2) return(0);
-  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_ItemDatum(0));
-  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_ItemDatum(0));
+  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_itemdatum);
+  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_itemdatum);
   if(a && b) { 
     status = strcmp(a->name,b->name);
     if(status < 0) return(-1);
@@ -763,18 +740,14 @@ SortByName( self, suite, e1, e2 )
   return(0);
 }
 
-int
-SortBySuffix( self, suite, e1, e2 )
-  register struct bushv		*self;
-  register struct suite		*suite;
-  register struct suite_item    *e1,*e2;
+long SortBySuffix(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
   register long			 rc;
 
   if(!e1|| !e2) return(0);
-  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_ItemDatum(0));
-  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_ItemDatum(0));
+  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_itemdatum);
+  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_itemdatum);
   if(a && b)
     if(!(rc = strcmp(FileSuffix(a->name),FileSuffix(b->name)))) {
       rc = strcmp(a->name,b->name);
@@ -788,17 +761,13 @@ SortBySuffix( self, suite, e1, e2 )
   return(0);
 }
 
-int
-SortBySize( self, suite, e1, e2 )
-  register struct bushv		*self;
-  register struct suite		*suite;
-  register struct suite_item    *e1,*e2;
+long SortBySize(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
 
   if(!e1 || !e2) return(0);
-  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_ItemDatum(0));
-  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_ItemDatum(0));
+  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_itemdatum);
+  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_itemdatum);
   if(a && b) {
     if(a->size < b->size) return(1);
     else if(a->size > b->size) return(-1);
@@ -806,17 +775,13 @@ SortBySize( self, suite, e1, e2 )
   return(0);
 }
 
-int
-SortByDate( self, suite, e1, e2 )
-  register struct bushv		*self;
-  register struct suite		*suite;
-  register struct suite_item    *e1,*e2;
+long SortByDate(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
 
   if(!e1 || !e2) return(0);
-  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_ItemDatum(0));
-  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_ItemDatum(0));
+  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_itemdatum);
+  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_itemdatum);
   if(a && b) {
     if(a->time_stamp < b->time_stamp) return(1);
     if(a->time_stamp > b->time_stamp) return(-1);
@@ -824,19 +789,15 @@ SortByDate( self, suite, e1, e2 )
   return(0);
 }
 
-int
-SortByType( self, suite, e1, e2 )
-  register struct bushv		*self;
-  register struct suite		*suite;
-  register struct suite_item    *e1,*e2;
+long SortByType(struct bushv *self, struct suite *suite, struct suite_item *e1, struct suite_item *e2)
 {
   register struct Dir_Entry	*a = NULL, *b = NULL;
   char				 n1[MAXPATHLEN+1], n2[MAXPATHLEN+1];
   register long			 rc;
 
   if(!e1 || !e2) return(0);
-  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_ItemDatum(0));
-  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_ItemDatum(0));
+  a = (struct Dir_Entry*)suite_ItemAttribute(suite,e1,suite_itemdatum);
+  b = (struct Dir_Entry*)suite_ItemAttribute(suite,e2,suite_itemdatum);
   if(a && b) {
     strcpy(n1,a->name);
     strcpy(n2,b->name);
@@ -865,9 +826,7 @@ static struct bind_Description bushvBindings[] = {
   NULL
 };
 
-boolean
-bushv__InitializeClass( ClassID )
-  struct classheader	    *ClassID;
+boolean bushv__InitializeClass(struct classheader *ClassID)
 {
   struct classinfo	    *classInfo = NULL;
   struct proctable_Entry *pe;
@@ -876,30 +835,28 @@ bushv__InitializeClass( ClassID )
   menulist = menulist_New();
   classInfo = class_Load("bushv");
   bind_BindList(bushvBindings, kmap, menulist, classInfo);
-  proctable_DefineProc("bushv-DEBUG", ToggleDebug, 
+  proctable_DefineProc("bushv-DEBUG", (procedure)ToggleDebug,
     &bushv_classinfo, NULL, "Toggle Bush debug flag.");
-  proctable_DefineProc("bushv-pop", PerformPop, 
+  proctable_DefineProc("bushv-pop", (procedure)PerformPop,
     &bushv_classinfo, NULL, "Pop up a level.");
-  proctable_DefineProc("bushv-switch", SwitchDirectory, 
+  proctable_DefineProc("bushv-switch", (procedure)SwitchDirectory,
     &bushv_classinfo, NULL, "Switch to a new directory.");
-  proctable_DefineProc("bushv-rescan", PerformRescan, 
+  proctable_DefineProc("bushv-rescan", (procedure)PerformRescan,
     &bushv_classinfo, NULL, "Rescan the current directory.");
-  proctable_DefineProc("bushv-destroy", PerformDestroy, 
+  proctable_DefineProc("bushv-destroy", (procedure)PerformDestroy,
     &bushv_classinfo, NULL, "Destroy the current directory/files.");
 
-  pe = proctable_DefineProc("bushv-entries-page-up", EntriesPageUp, &bushv_classinfo, NULL, "Page up file entries list");
+  pe = proctable_DefineProc("bushv-entries-page-up", (procedure)EntriesPageUp, &bushv_classinfo, NULL, "Page up file entries list");
   keymap_BindToKey(kmap, "\033v", pe, 0);
   keymap_BindToKey(kmap, "\033G", pe, 0);
 
-  pe = proctable_DefineProc("bushv-entries-page-down", EntriesPageDown, &bushv_classinfo, NULL, "Page down file entries list");
+  pe = proctable_DefineProc("bushv-entries-page-down", (procedure)EntriesPageDown, &bushv_classinfo, NULL, "Page down file entries list");
   keymap_BindToKey(kmap, "\026", pe, 0);
   keymap_BindToKey(kmap, "\033E", pe, 0);
   return(TRUE);
 }
 
-static void
-GetPreferredEditors( self )
-  register struct bushv	 *self;
+static void GetPreferredEditors(struct bushv *self)
 {
   register char		 *tmp = NULL, *colon = NULL;
   char			 *myCopy = NULL;
@@ -952,17 +909,15 @@ GetPreferredEditors( self )
     struct suite_item	*editorItem = NULL;
     char		 editorCaption[64];
 
-    if(editorItem = suite_ItemOfDatum(ControlView,&editor_data)) {
+    if(editorItem = suite_ItemOfDatum(ControlView,(long)&editor_data)) {
       sprintf(editorCaption,"Editor: %s",EditorProgram);
-      suite_SetItemAttribute(ControlView, editorItem, suite_ItemCaption(editorCaption));
+      suite_SetItemAttribute(ControlView, editorItem, suite_itemcaption, (long) (editorCaption));
     }
   }
   OUT(GetPreferredEditors);
 }
 
-static void
-GetPreferredFonts( self )
-  register struct bushv	*self;
+static void GetPreferredFonts(struct bushv *self)
 {
   char *control_font;
   char *tree_node_font;
@@ -974,22 +929,20 @@ GetPreferredFonts( self )
   tree_node_font = environ_GetProfile("treenodefont");
   listing_font = environ_GetProfile("listingfont");
   if(control_font && *control_font) {
-      suite_SetSuiteAttribute(ControlView, suite_TitleFontName(control_font));
-      suite_SetSuiteAttribute(ControlView, suite_ItemCaptionFontName(control_font));
+      suite_SetSuiteAttribute(ControlView, suite_titlefontname, (long) (control_font));
+      suite_SetSuiteAttribute(ControlView, suite_itemcaptionfontname, (long) (control_font));
   }
   if(listing_font && *listing_font) {
-      suite_SetSuiteAttribute(EntriesView, suite_TitleFontName(listing_font));
-      suite_SetSuiteAttribute(EntriesView, suite_ItemCaptionFontName(listing_font));
+      suite_SetSuiteAttribute(EntriesView, suite_titlefontname, (long) (listing_font));
+      suite_SetSuiteAttribute(EntriesView, suite_itemcaptionfontname, (long) (listing_font));
   }
   if(tree_node_font && *tree_node_font) {
-      treev_SetTreeAttribute(DirTreeView, treev_NodeFontName(tree_node_font));
+      treev_SetTreeAttribute(DirTreeView, treev_nodefontname, (long) (tree_node_font));
   }
   OUT(GetPreferredFont);
 }
 
-static void
-GetPreferences( self )
-  register struct bushv	*self;
+static void GetPreferences(struct bushv *self)
 {
   IN(GetPreferences);
   GetPreferredEditors(self);
@@ -998,10 +951,7 @@ GetPreferences( self )
   OUT(GetPreferences);
 }
 
-boolean
-bushv__InitializeObject( ClassID, self )
-  register struct classheader	*ClassID;
-  register struct bushv		*self;
+boolean bushv__InitializeObject(struct classheader *ClassID, struct bushv *self)
 {
 
   Kmap = kmap;
@@ -1037,10 +987,7 @@ bushv__InitializeObject( ClassID, self )
   return(TRUE);
 }   
 
-void
-bushv__FinalizeObject( ClassID, self )
-  register struct classheader	*ClassID;
-  register struct bushv		*self;
+void bushv__FinalizeObject(struct classheader *ClassID, struct bushv *self)
 {
   IN(bushv_FinalizeObject);
   if(LP) lpair_Destroy(LP);
@@ -1053,10 +1000,7 @@ bushv__FinalizeObject( ClassID, self )
   OUT(bushv_FinalizeObject);
 }
 
-struct bushv *
-bushv__Create( ClassID, object )
-  register struct classheader	*ClassID;
-  register char			 object;
+struct bushv * bushv__Create(struct classheader *ClassID, char object)
 {
   struct bushv	*self = NULL;
 
@@ -1065,10 +1009,7 @@ bushv__Create( ClassID, object )
   return(self);
 }
 
-void
-bushv__PostMenus( self, menulist )
-  struct bushv		*self;
-  struct menulist	*menulist;
+void bushv__PostMenus(struct bushv *self, struct menulist *menulist)
 {
   int			 mask = 0;
 
@@ -1086,21 +1027,13 @@ bushv__PostMenus( self, menulist )
   OUT(bushv_PostMenus);
 }
 
-struct view *
-bushv__Hit( self, action, x, y, numberOfClicks )
-  struct bushv		    *self;
-  enum view_MouseAction      action;
-  long			     x, y, numberOfClicks;
+struct view * bushv__Hit(struct bushv *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
   IN(bushv_Hit);
   return(lpair_Hit(LP,action,x,y,numberOfClicks));
 }
 
-void
-bushv__FullUpdate( self, Type, left, top, width, height )
-  struct bushv		    *self;
-  enum view_UpdateType       Type;
-  long			     left, top, width, height;
+void bushv__FullUpdate(struct bushv *self, enum view_UpdateType Type, long left, long top, long width, long height)
 {
   struct rectangle	     r;
   char		     RootPathIfInset[MAXPATHLEN];
@@ -1124,10 +1057,11 @@ bushv__FullUpdate( self, Type, left, top, width, height )
       sprintf(NewTitle,"%s%s%s",DirPath(CurrNode),
 	       CurrEntry ? "/" : "", CurrEntry ? CurrEntry->name : "");
       suite_ChangeSuiteAttribute(ControlView,
-				  suite_TitleCaption(NewTitle));
+				  suite_titlecaption, (long) (NewTitle));
     }
     else 
-	suite_ChangeSuiteAttribute(ControlView,"No Current Directory");
+	suite_ChangeSuiteAttribute(ControlView,
+				    suite_titlecaption, (long) ("No Current Directory"));
     PassivateControls(self);
     ClearMessageLine();
   }
@@ -1136,10 +1070,7 @@ bushv__FullUpdate( self, Type, left, top, width, height )
   OUT(bushv_FullUpdate);
 }
 
-static void
-DoEdit( self, path, name )
-  struct bushv	*self;
-  char		*path, *name; 
+static void DoEdit(struct bushv *self, char *path, char *name)
 {
   char		 full_path[MAXPATHLEN * 2];
 
@@ -1153,9 +1084,7 @@ DoEdit( self, path, name )
   OUT(DoEdit);
 }
 
-static void
-PerformEdit( self )
-  struct bushv	*self;
+static void PerformEdit(struct bushv *self)
 {
   register int	 i = 0;
 
@@ -1181,9 +1110,7 @@ PerformEdit( self )
   OUT(PerformEdit);
 }
 
-static void
-PerformPrint( self )
-  struct bushv	*self;
+static void PerformPrint(struct bushv *self)
 {
   register int	 i = 0;
   register FILE	*file = NULL;
@@ -1216,10 +1143,7 @@ PerformPrint( self )
   OUT(PerformPrint);
 }
 
-static
-DoPrint( self, path, name )
-  struct bushv *self;
-  char *path, *name; 
+static int DoPrint(struct bushv *self, char *path, char *name)
 {
   char full_path[MAXPATHLEN];
   int i = 0;
@@ -1234,9 +1158,7 @@ DoPrint( self, path, name )
   OUT(DoPrint);
 }
 
-static void
-PerformCreate( self )
-  struct bushv *self;
+static void PerformCreate(struct bushv *self)
 {
   register int f = 0;
   char *response = NULL;
@@ -1271,20 +1193,14 @@ PerformCreate( self )
   OUT(PerformCreate);
 }
 
-static void
-IssueError( self, what, where, overlay )
-  register struct bushv *self;
-  register char *what, *where;
-  boolean overlay;
+static void IssueError(struct bushv *self, char *what, char *where, boolean overlay)
 {
-  int result = 0;
+  long result = 0;
   static char *question[] = { "Continue", NULL };
 
   IN(IssueError);
-  if(errno > 0 && errno <= sys_nerr) 
-    sprintf(msg,"ERROR %s '%s': %s", what, where, sys_errlist[errno] );
-  else if(errno != 0)
-    sprintf(msg,"ERROR %s '%s': (Invalid System Error-code '%d')", what, where, errno );
+  if(errno != 0)
+    sprintf(msg,"ERROR %s '%s': %s", what, where, strerror(errno));
   else
     sprintf(msg,"ERROR %s '%s'", what, where);
   if(overlay) message_MultipleChoiceQuestion(self,100,msg,0,&result,question,NULL);
@@ -1293,12 +1209,7 @@ IssueError( self, what, where, overlay )
   OUT(IssueError);
 }
 
-static int
-DoDestroy( self, tn, Entry, overlay )
-  register struct bushv *self;
-  register tree_type_node tn;
-  register struct Dir_Entry *Entry;
-  boolean overlay;
+static int DoDestroy(struct bushv *self, tree_type_node tn, struct Dir_Entry *Entry, boolean overlay)
 {
   register int status = 0;
 
@@ -1311,14 +1222,12 @@ DoDestroy( self, tn, Entry, overlay )
   return(status);
 }
 
-static void
-PerformDestroy( self )
-  struct bushv *self;
+static void PerformDestroy(struct bushv *self)
 {
     static char *question[] = {"Confirm","Cancel",0};
     register int i = 0;
     long result = 0;
-    int count = 0;
+    long count = 0;
     register struct Dir_Entry *Dir_Entry = NULL, *current_entry = CurrEntry;
     register tree_type_node current_node = CurrNode, tn = NULL;
     register struct suite_item **selected = NULL;
@@ -1358,7 +1267,7 @@ PerformDestroy( self )
 			}
 			CurrNode = Parent(current_node);
 			treev_HighlightNode(DirTreeView, CurrNode);
-			suite_ChangeSuiteAttribute(ControlView, suite_TitleCaption(DirPath(CurrNode)));
+			suite_ChangeSuiteAttribute(ControlView, suite_titlecaption, (long) (DirPath(CurrNode)));
 			bushv_RetractCursor(self, Cursor);
 			PerformRescan(self);
 			sprintf(msg, "Destroyed Node '%s'", Dir_Entry->name);
@@ -1374,10 +1283,10 @@ PerformDestroy( self )
 	    if(count == 0) break;
 	    if(count > 1)
 		if(count == 2) sprintf(msg, "Destroy Both Items ?");
-		else sprintf(msg, "Destroy All %d Items ?", count);
+		else sprintf(msg, "Destroy All %ld Items ?", count);
 	    else {
 		Dir_Entry = (struct Dir_Entry*)
-		  suite_ItemAttribute(EntriesView, selected[0], suite_ItemDatum(0));
+		  suite_ItemAttribute(EntriesView, selected[0], suite_itemdatum);
 		sprintf(msg, "Destroy %s '%s' ?", EntryDirType(Dir_Entry)
 			? "Node" : "", Dir_Entry->name);
 	    }
@@ -1387,7 +1296,7 @@ PerformDestroy( self )
 		PostCursor(self, Cursor_Wait);
 		for( i = 0 ; i < count ; i++ ) {
 		    Dir_Entry = (struct Dir_Entry*) 
-		      suite_ItemAttribute(EntriesView, selected[i], suite_ItemDatum(0));
+		      suite_ItemAttribute(EntriesView, selected[i], suite_itemdatum);
 		    if(!DoDestroy(self, current_node, Dir_Entry, TRUE)) {
 			suite_PassivateItem(EntriesView, selected[i]);
 			EntrySelected(Dir_Entry) = FALSE;
@@ -1411,7 +1320,7 @@ PerformDestroy( self )
 			CurrEntry = NULL;
 			PerformPop(self);
 			suite_ChangeSuiteAttribute(ControlView,
-						   suite_TitleCaption(DirPath(CurrNode)));
+						   suite_titlecaption, (long) (DirPath(CurrNode)));
 			suite_PassivateItem(EntriesView, suite_CurrentItem(EntriesView));
 		    }
 		    bushv_RetractCursor(self, Cursor);
@@ -1423,9 +1332,7 @@ PerformDestroy( self )
     OUT(PerformDestroy);
 }
 
-static void
-PerformExec( self )
-  struct bushv *self;
+static void PerformExec(struct bushv *self)
 {
   register int i = 0;
 
@@ -1449,11 +1356,7 @@ PerformExec( self )
   OUT(PerformExec);
 }
 
-static
-DoExecute( self, tn, Entry )
-  struct bushv		*self;
-  tree_type_node	 tn; 
-  struct Dir_Entry	*Entry; 
+static int DoExecute(struct bushv *self, tree_type_node tn, struct Dir_Entry *Entry)
 {
   char			 full_path[MAXPATHLEN * 2];
 
@@ -1466,20 +1369,13 @@ DoExecute( self, tn, Entry )
   OUT(DoExecute);
 }
 
-static int
-PerformSystemAction( self, name, argv, msg )
-  struct bushv	*self;
-  char		*name;
-  char		*argv[];
-  char		*msg;
+static int PerformSystemAction(struct bushv *self, char *name, char *argv[], char *msg)
 {
   Announce(msg);
   return(bush_PerformSystemAction(Bush,name,argv));
 }
 
-static char*
-Format_Tags( tag )
-  u_short	    tag;
+static char* Format_Tags(u_short tag)
 {
   static char	    tags[11];
 
@@ -1510,12 +1406,7 @@ Format_Tags( tag )
   return(tags);
 }
 
-static char*
-FormatEntriesItem( self, tn, i, dirEntry )
-  register struct bushv	*self;
-  tree_type_node	 tn;
-  int			 i;
-  struct Dir_Entry	*dirEntry;
+static char* FormatEntriesItem(struct bushv *self, tree_type_node tn, int i, struct Dir_Entry *dirEntry)
 {
   static char		 entries_item[257], trailer[5];
   register char		*entries_ptr = NULL, *time_ptr = NULL;
@@ -1531,7 +1422,7 @@ FormatEntriesItem( self, tn, i, dirEntry )
     if(Detail) {
       time_ptr = (char*) ctime(&DirEntryTimeStamp(tn,i));
       time_ptr[24] = '\0';
-      sprintf(entries_item,"%s %2d %8s %8d %s %s%s%s",
+      sprintf(entries_item,"%s %2d %8s %8zu %s %s%s%s",
 	       Format_Tags(DirEntryPerms(tn,i)),
 	       DirEntryNLinks(tn,i),DirEntryOwner(tn,i),
 	       DirEntrySize(tn,i),time_ptr,DirEntryName(tn,i),
@@ -1549,7 +1440,7 @@ FormatEntriesItem( self, tn, i, dirEntry )
     if(Detail) {
       time_ptr = (char*) ctime(&dirEntry->time_stamp);
       time_ptr[24] = '\0';
-      sprintf(entries_item,"%s %2d %8s %8d %s %s%s%s",
+      sprintf(entries_item,"%s %2d %8s %8zu %s %s%s%s",
 	       Format_Tags(dirEntry->permissions),
 	       dirEntry->nlinks,dirEntry->owner,
 	       dirEntry->size,time_ptr,dirEntry->name,
@@ -1562,9 +1453,7 @@ FormatEntriesItem( self, tn, i, dirEntry )
   return(entries_ptr);
 }
 
-static void
-ResetEntriesCaptions( self )
-  struct bushv *self;
+static void ResetEntriesCaptions(struct bushv *self)
 {
   register int i = 0, count = 0;
   struct suite_item *item = NULL;
@@ -1575,17 +1464,16 @@ ResetEntriesCaptions( self )
       (count = DirEntriesCount(CurrNode)) >= 0)
     for(i = 0 ; i < count ; i++) 
 	if(DirEntryMode(CurrNode, i).destroyed == FALSE &&
-	    (item = suite_CreateItem(EntriesView, DirEntryName(CurrNode,i), DirEntry(CurrNode,i))))
+	    (item = suite_CreateItem(EntriesView, DirEntryName(CurrNode,i), (long)DirEntry(CurrNode,i))))
 	    suite_SetItemAttribute(EntriesView, item,
-				   suite_ItemCaption(FormatEntriesItem(self, CurrNode, i, NULL)));
+				   suite_itemcaption, (long) (FormatEntriesItem(self, CurrNode, i, NULL)));
   OUT(ResetEntriesCaptions);
 }
 
-static int
-HandleModifiedObject( self )
-  register struct bushv	    *self;
+static int HandleModifiedObject(struct bushv *self)
 {
-  int			     result = 0, return_value = 0;
+  long			     result = 0;
+  int			     return_value = 0;
   static char		    *answers[] = { "Save to file.",
                                            "Save As...",
 					   "Don't save",
@@ -1616,9 +1504,7 @@ HandleModifiedObject( self )
   return(return_value);
 }
 
-static void
-PerformExit( self )
-  struct bushv	*self;
+static void PerformExit(struct bushv *self)
 {
   IN(PerformExit);
   if(Object == entry_object)
@@ -1629,9 +1515,7 @@ PerformExit( self )
   OUT(PerformExit);
 }
 
-static void
-SwitchDirectory( self )
-  struct bushv	    *self;
+static void SwitchDirectory(struct bushv *self)
 {
   static char	    *question[] = {"Continue",NULL};
   int		     msg_status = 0;
@@ -1671,7 +1555,7 @@ SwitchDirectory( self )
   SetTreeNotificationData(self,CurrNode,tree_NodeCreated);
   NotifyTreeObservers(self);
   suite_ChangeSuiteAttribute(ControlView,
-	suite_TitleCaption(DirPath(CurrNode)));
+	suite_titlecaption, (long) (DirPath(CurrNode)));
   if(TopLevelInset) 
     im_SetTitle(bushv_GetIM(self),DirName(CurrNode));
   bushv_RetractCursor(self,Cursor);
@@ -1679,9 +1563,7 @@ SwitchDirectory( self )
   OUT(SwitchDirectory);
 }
 
-static void
-SetEditor( self )
-  struct bushv	*self;
+static void SetEditor(struct bushv *self)
 {
   long		 result = 0;
   char		*response = NULL;
@@ -1703,9 +1585,9 @@ SetEditor( self )
     struct suite_item	*editorItem = NULL;
     char		 editorCaption[64];
 
-    if(editorItem = suite_ItemOfDatum(ControlView,&editor_data)) {
+    if(editorItem = suite_ItemOfDatum(ControlView,(long)&editor_data)) {
       sprintf(editorCaption,"Editor: %s",EditorProgram);
-      suite_ChangeItemAttribute(ControlView, editorItem, suite_ItemCaption(editorCaption));
+      suite_ChangeItemAttribute(ControlView, editorItem, suite_itemcaption, (long) (editorCaption));
     }
   }
   sprintf(msg,"Editor set to: '%s'",EditorProgram);
@@ -1713,10 +1595,7 @@ SetEditor( self )
   OUT(SetEditor);
 }
 
-void
-bushv__PostKeyState( self, kstate )
-  struct bushv		*self;
-  struct keystate	*kstate;
+void bushv__PostKeyState(struct bushv *self, struct keystate *kstate)
 {
   IN(bushv_KeyState);
   keystate_AddBefore(Kstate,kstate);
@@ -1724,10 +1603,7 @@ bushv__PostKeyState( self, kstate )
   OUT(bushv_KeyState);
 }
 
-char *
-FormatEntriesInfo( self, tn )
-  struct bushv		*self;
-  tree_type_node	 tn;
+char * FormatEntriesInfo(struct bushv *self, tree_type_node tn)
 {
   static char		 entries_info[257];
   register long		 i = 0, total_bytes = 0, count = 0;
@@ -1736,19 +1612,20 @@ FormatEntriesInfo( self, tn )
   if(tn) {
     if(DirEntries(tn)) count = DirEntriesCount(tn);
       for( i = 0; i < count; i++ ) total_bytes += DirEntrySize(tn,i);
-        sprintf(entries_info,"%d %s    %d %s    %s %s",count,
+        sprintf(entries_info,"%ld %s    %ld %s    %s %s",count,
 		 "Entries",total_bytes,"Bytes","Sorted by", sorts[SortMode]);
   }
   OUT(FormatEntriesInfo);
   return(entries_info);
 }
 
-static int
+static long
 (*DetermineSortHandler( self, tn ))()
   struct bushv		*self;
   tree_type_node	 tn;
 {
-  int		       (*sorter)(), sMode = SortMode;
+  long		       (*sorter)();
+  int		       sMode = SortMode;
 
   IN(DetermineSortHandler);
   switch(sMode) {
@@ -1762,13 +1639,11 @@ static int
   return(sorter);
 }
 
-static void
-DoAutoRescan( self )
-  register struct bushv		 *self;
+static void DoAutoRescan(struct bushv *self)
 {
   register struct suite_item	**selected = NULL, *item = NULL;
   register char			**names = NULL;
-  int				  count = 0;
+  long				  count = 0;
   register int			  i;
 
   IN(DoAutoRescan);
@@ -1778,7 +1653,7 @@ DoAutoRescan( self )
 	      selected = suite_SelectedItems(EntriesView, &count);
 	      names = (char**)calloc(count, sizeof(char*));
 	      for(i = 0; i < count; i++)
-		  AllocNameSpace( suite_ItemAttribute(EntriesView, selected[i], suite_ItemCaption(0)), &names[i] );
+		  AllocNameSpace( (char *) suite_ItemAttribute(EntriesView, selected[i], suite_itemcaption), &names[i] );
 	  }
 	  PerformRescan(self);
 	  if(Object == entries_object)
@@ -1801,20 +1676,18 @@ DoAutoRescan( self )
   IN(DoAutoRescan);
 }
 
-static void
-PushToEntries( self )
-  struct bushv	      *self;
+static void PushToEntries(struct bushv *self)
 {
-  register int       (*sorter)();
+  register long       (*sorter)();
 
   IN(PushToEntries);
   if(EntriesView) {
     sorter = DetermineSortHandler(self,CurrNode);
-    suite_SetSuiteAttribute(EntriesView,suite_SortHandler(sorter));
+    suite_SetSuiteAttribute(EntriesView,suite_sorthandler, (long) (sorter));
     Object = entries_object;
     ResetEntriesCaptions(self);
     suite_SetSuiteAttribute(EntriesView,
-	    suite_TitleCaption(FormatEntriesInfo(self,CurrNode)));
+	    suite_titlecaption, (long) (FormatEntriesInfo(self,CurrNode)));
     lpair_SetNth(LP,1,(struct view*)EntriesView);
     DoAutoRescan(self);
     bushv_WantInputFocus(self,EntriesView);
@@ -1822,9 +1695,7 @@ PushToEntries( self )
   OUT(PushToEntries);
 }
 
-static void
-PushToEntry( self )
-  struct bushv *self;
+static void PushToEntry(struct bushv *self)
 {
   char file_name[MAXPATHLEN];
   char *objectName = NULL;
@@ -1871,13 +1742,13 @@ PushToEntry( self )
 	readWriteAttr.value.integer = FALSE; /* Read Write */
 	menulist_SetMask(Menulist, bushv_RWEntryMenus);
 	if(CkpInterval != 0)
-	  im_EnqueueEvent(Checkpoint, (long) self, event_SECtoTU(CkpInterval));
+	  im_EnqueueEvent((procedure)Checkpoint, self, event_SECtoTU(CkpInterval));
       }
       dataobject_SetAttributes(EntryObject, &readWriteAttr);
       lpair_SetNth(LP, 1,
 	EntryViewAppLayer = view_GetApplicationLayer(EntryView));
       bushv_WantInputFocus(self, EntryView);
-      suite_ChangeSuiteAttribute(ControlView, suite_TitleCaption(file_name));
+      suite_ChangeSuiteAttribute(ControlView, suite_titlecaption, (long) (file_name));
       EntryObjectModified = EntryObjectLastCKP = dataobject_GetModified(EntryObject);
     }
   }
@@ -1890,9 +1761,7 @@ PushToEntry( self )
   OUT(PushToEntry);
 }
 
-static int
-PopToNodes( self )
-  struct bushv	*self;
+static int PopToNodes(struct bushv *self)
 {
   int		 status = 0;
 
@@ -1901,7 +1770,7 @@ PopToNodes( self )
     Object = nodes_object;
     CurrEntry = NULL;
     suite_ChangeSuiteAttribute(ControlView,
-	suite_TitleCaption(DirPath(CurrNode)));
+	suite_titlecaption, (long) (DirPath(CurrNode)));
     lpair_SetNth(LP,1,(struct view*)DirTreeView);
     DoAutoRescan(self);
     NumPrevSelected = 0;
@@ -1911,9 +1780,7 @@ PopToNodes( self )
   return(status);
 }
 
-static int
-PopToEntries( self )
-  struct bushv	*self;
+static int PopToEntries(struct bushv *self)
 {
   int		 status = 0;
 
@@ -1930,7 +1797,7 @@ PopToEntries( self )
     Object = entries_object;
     lpair_SetNth(LP,1,(struct view*)EntriesView);
     suite_ChangeSuiteAttribute(ControlView,
-	suite_TitleCaption(DirPath(CurrNode)));
+	suite_titlecaption, (long) (DirPath(CurrNode)));
     DoAutoRescan(self);
     bushv_WantInputFocus(self,EntriesView);
   }
@@ -1953,7 +1820,7 @@ I set the item_data attribute, active, of the ControlView items to be the OR'ed 
   long int	     result = 0;
 
   if(suite && item) {
-    itemData = (struct item_data*) suite_ItemAttribute(suite, item, suite_ItemData(0));
+    itemData = (struct item_data*) suite_ItemAttribute(suite, item, suite_itemdatum);
     if(itemData && (itemData->activate & Object))
       suite_ActivateItem(suite,item);
     else suite_PassivateItem(suite,item);
@@ -1961,9 +1828,7 @@ I set the item_data attribute, active, of the ControlView items to be the OR'ed 
   return(result);
 }
 
-static void
-PassivateControls( self )
-  struct bushv    *self;
+static void PassivateControls(struct bushv *self)
 {
   IN(PassivateControls);
   suite_Apply(ControlView,Passivator,self,NULL);
@@ -1971,9 +1836,7 @@ PassivateControls( self )
   OUT(PassivateControls);
 }
 
-static void
-Push( self )
-  register struct bushv	    *self;
+static void Push(struct bushv *self)
 {
   register tree_type_node    tn = NULL;
   char			    *name = NULL;
@@ -2014,9 +1877,7 @@ Push( self )
   OUT(Push);
 }
 
-static void
-Pop( self )
-  struct bushv    *self;
+static void Pop(struct bushv *self)
 {
   int		   status = 0;
 
@@ -2034,9 +1895,7 @@ Pop( self )
   OUT(Pop);
 }
 
-static void
-PerformPop( self )
-  struct bushv	*self;
+static void PerformPop(struct bushv *self)
 {
   IN(PerformPop);
   PostCursor(self,Cursor_Wait);
@@ -2045,43 +1904,33 @@ PerformPop( self )
   OUT(PerformPop);
 }
 
-static long
-ToggleCaptionDetail( self, suite, item, datum )
-  struct bushv		*self;
-  struct suite		*suite;
-  struct suite_item	*item;
-  unsigned		 datum;
+static long ToggleCaptionDetail(struct bushv *self, struct suite *suite, struct suite_item *item, unsigned datum)
 {
   long int		 result = 0;
 
   IN(ToggleCaptionDetail);
   if(suite && item )
     suite_SetItemAttribute(suite,item,
-	suite_ItemCaption(FormatEntriesItem(self,NULL,0,(struct Dir_Entry*)
-		suite_ItemAttribute(suite,item,suite_ItemDatum(0)))));
+	suite_itemcaption, (long) (FormatEntriesItem(self,NULL,0,(struct Dir_Entry*)
+		suite_ItemAttribute(suite,item,suite_itemdatum))));
   OUT(ToggleCaptionDetail);
   return(result);
 }
 
-static void
-SortDir( self, tn )
-  struct bushv *self;
-  tree_type_node tn;
+static void SortDir(struct bushv *self, tree_type_node tn)
 {
-  register int (*sorter)();
+  register long (*sorter)();
 
     IN(SortDir);
     sorter = DetermineSortHandler(self, tn);
     if(Object == entries_object)
 	suite_Sort(EntriesView, 0, sorter);
-    suite_ChangeSuiteAttribute(EntriesView, suite_TitleCaption(FormatEntriesInfo(self, CurrNode)));
+    suite_ChangeSuiteAttribute(EntriesView, suite_titlecaption, (long) (FormatEntriesInfo(self, CurrNode)));
     OUT(SortDir);
 }
 
 
-static void
-PerformDetail( self )
-  struct bushv *self;
+static void PerformDetail(struct bushv *self)
 {
     IN(PerformDetail);
     PostCursor(self, Cursor_Wait);
@@ -2099,10 +1948,7 @@ PerformDetail( self )
     OUT(PerformDetail);
 }
 
-void
-bushv__SetDataObject( self, bush )
-  struct bushv *self;
-  struct bush *bush;
+void bushv__SetDataObject(struct bushv *self, struct dataobject *bush)
 {
     IN(bushv_SetDataObject);
     Bush = bush;
@@ -2113,12 +1959,10 @@ bushv__SetDataObject( self, bush )
     OUT(bushv_SetDataObject);
 }
 
-static int
-SortRequested( self, tn )
-  struct bushv *self;
-  tree_type_node tn;
+static int SortRequested(struct bushv *self, tree_type_node tn)
 {
-  int sort = -1, result = 0, current_mode = SortMode;
+  int sort = -1, current_mode = SortMode;
+  long result = 0;
 
     IN(SortRequested);
     if(message_MultipleChoiceQuestion(self, 100, "Sort By: ", current_mode, &result, sorts, NULL) != -1)
@@ -2134,11 +1978,10 @@ SortRequested( self, tn )
     return(sort);
 }
 
-static void
-PerformSort( self )
-  struct bushv *self;
+static void PerformSort(struct bushv *self)
 {
-  int (*sorter)(), sMode = 0;
+  long (*sorter)();
+  int sMode = 0;
   struct suite_item *sortItem = NULL;
   char sortCaption[16];
 
@@ -2150,23 +1993,21 @@ PerformSort( self )
 	strcat(sortCaption, sorts[SortMode]);
 	if(Object == nodes_object) {
 	    sorter = DetermineSortHandler(self, CurrNode);
-	    suite_SetSuiteAttribute(EntriesView, suite_SortHandler(sorter));
+	    suite_SetSuiteAttribute(EntriesView, suite_sorthandler, (long) (sorter));
 	}
 	else if(Object == entries_object) {
 	    PostCursor(self, Cursor_Wait);
 	    SortDir(self, CurrNode);
 	    bushv_RetractCursor(self, Cursor);
 	}
-	if(sortItem = suite_ItemOfDatum(ControlView, &sort_data))
-	    suite_ChangeItemAttribute(ControlView, sortItem, suite_ItemCaption(sortCaption));
+	if(sortItem = suite_ItemOfDatum(ControlView, (long)&sort_data))
+	    suite_ChangeItemAttribute(ControlView, sortItem, suite_itemcaption, (long) (sortCaption));
     }
     ClearMessageLine();
     OUT(PerformSort);
 }
 
-static void
-PerformRescan( self )
-  struct bushv *self;
+static void PerformRescan(struct bushv *self)
 {
   struct stat stats;
 
@@ -2190,11 +2031,11 @@ PerformRescan( self )
 
 	*firstVisibleName = (char)0;
 	if(first) {
-	    f = suite_ItemAttribute(EntriesView, first, suite_ItemPosition(0));
+	    f = suite_ItemAttribute(EntriesView, first, suite_itemposition);
 	    while(first && suite_ItemActivated(EntriesView, first) == FALSE)
 		first = suite_ItemAtPosition(EntriesView, ++f);
 	    if(first)
-		strcpy(firstVisibleName, (char *) suite_ItemAttribute(EntriesView, first, suite_ItemName(0)));
+		strcpy(firstVisibleName, (char *) suite_ItemAttribute(EntriesView, first, suite_itemname));
 	}
 	if(Child(CurrNode)) {
 	    SetTreeNotificationData(self, CurrNode, tree_NodeChildrenDestroyed);
@@ -2222,12 +2063,7 @@ PerformRescan( self )
     OUT(PerformRescan);
 }
 
-static int
-ResetChildDirPaths( self, tree, tn, datum )
-  struct bushv      *self;
-  struct tree	    *tree;
-  tree_type_node     tn;
-  long		     datum;
+static long ResetChildDirPaths(struct bushv *self, struct tree *tree, tree_type_node tn, long datum)
 {
   long int	     status = 0;
   char		     tmp_path[MAXPATHLEN];
@@ -2244,11 +2080,10 @@ ResetChildDirPaths( self, tree, tn, datum )
 }
 
 
-static void
-PerformRename( self )
-  struct bushv *self;
+static void PerformRename(struct bushv *self)
 {
-  int msg_status = 0, count = 0;
+  int msg_status = 0;
+  long count = 0;
   char *response = NULL;
   char tmp_path[MAXPATHLEN],*tmp = NULL;
   register struct suite_item **selected = NULL;
@@ -2273,7 +2108,7 @@ PerformRename( self )
 	strcat(msg,"'");
 	Announce(msg);
 	suite_ChangeSuiteAttribute(ControlView,
-				   suite_TitleCaption(DirPath(CurrNode)));
+				   suite_titlecaption, (long) (DirPath(CurrNode)));
 	tree_Apply(Tree,CurrNode,ResetChildDirPaths,
 		   self,strcpy(tmp_path,DirPath(CurrNode)));
       }
@@ -2284,7 +2119,7 @@ PerformRename( self )
 	for( i = 0 ; (i < count) && selected[i] ; i++ ) {
 	  suite_PassivateItem(EntriesView,selected[i]);
 	  dirEntry = (struct Dir_Entry *)
-	    suite_ItemAttribute(EntriesView,selected[i],suite_ItemDatum(0));
+	    suite_ItemAttribute(EntriesView,selected[i],suite_itemdatum);
 	  sprintf(msg,"Renaming '%s' to '",dirEntry->name);
 	  msg_status = bushv_Query(self,"New Name: ",
 				   dirEntry->name,&response);
@@ -2299,7 +2134,7 @@ PerformRename( self )
 	    suite_ActivateItem(EntriesView,selected[i]);
 	    suite_HighlightItem(EntriesView,selected[i]);
 	    suite_ChangeItemAttribute(EntriesView,selected[i],
-		suite_ItemCaption(FormatEntriesItem(self,NULL,0,dirEntry)));
+		suite_itemcaption, (long) (FormatEntriesItem(self,NULL,0,dirEntry)));
 	  }
 	  else {
 	    IssueError(self,"Renaming",dirEntry->name,TRUE);
@@ -2316,7 +2151,7 @@ PerformRename( self )
 	strcat(msg,response); strcat(msg,"'");
 	Announce(msg);
 	sprintf(msg,"%s/%s",DirPath(CurrNode),CurrEntry->name);
-	suite_ChangeSuiteAttribute(ControlView,suite_TitleCaption(msg));
+	suite_ChangeSuiteAttribute(ControlView,suite_titlecaption, (long) (msg));
       }
       else IssueError(self,"Renaming",CurrEntry->name,TRUE);
       break;
@@ -2324,9 +2159,7 @@ PerformRename( self )
   OUT(PerformRename);
 }
 
-static void
-ToggleDebug( self )
-  struct bushv    *self;
+static void ToggleDebug(struct bushv *self)
 {
   IN(ToggleDebug);
   Debug = !Debug;
@@ -2334,9 +2167,7 @@ ToggleDebug( self )
   OUT(ToggleDebug);
 }
 
-struct view *
-bushv__GetApplicationLayer( self )
-  struct bushv    *self;
+struct view * bushv__GetApplicationLayer(struct bushv *self)
 {
   IN(bushv_GetApplicationLayer);
   TopLevelInset = FALSE;
@@ -2344,19 +2175,14 @@ bushv__GetApplicationLayer( self )
   return((struct view *)self);
 }
 
-void
-bushv__ReceiveInputFocus( self )
-  struct bushv    *self;
+void bushv__ReceiveInputFocus(struct bushv *self)
 {
   IN(bushv_ReceiveInputFocus);
   super_ReceiveInputFocus(self);
   OUT(bushv_ReceiveInputFocus);
 }
 
-static void
-HandleChangeDir( self, dirName )
-  register struct bushv   *self;
-  register char		  *dirName;
+static void HandleChangeDir(struct bushv *self, char *dirName)
 {
   IN(HandleChangeDir);
   if(dirName && (*dirName != '\0'))
@@ -2364,10 +2190,7 @@ HandleChangeDir( self, dirName )
   OUT(HandleChangeDir);
 }
 
-static int 
-bushv_WriteToFile( self, filename )
-  struct bushv  *self;
-  char		*filename;
+static int bushv_WriteToFile(struct bushv *self, char *filename)
 {
   char		 realName[MAXPATHLEN],tempFilename[MAXPATHLEN];
   char		*originalFilename = NULL, *endString, *basename;
@@ -2452,9 +2275,7 @@ bushv_WriteToFile( self, filename )
 #define DIR_MSG \
    "Write aborted: specified output file is a directory."
     
-static int
-bushv_SaveFile( self )
-  struct bushv	*self;
+static int bushv_SaveFile(struct bushv *self)
 {
   int		 result = 0, return_value = 0;
   char		 message[sizeof("Wrote file ''.") + sizeof("Could not save file") + MAXPATHLEN];
@@ -2507,7 +2328,7 @@ bushv_SaveFile( self )
         Announce("File not found; could not create. Attempt to write to a directory.");
         break;
        default:
-        sprintf(message, "Could not save file: %s.",sys_errlist[errno]);
+        sprintf(message, "Could not save file: %s.",strerror(errno));
         Announce(message);
     }
     return_value = -1;
@@ -2517,9 +2338,7 @@ bushv_SaveFile( self )
   return(return_value);
 }
 
-static int
-bushv_WriteFile( self )
-  struct bushv	*self;
+static int bushv_WriteFile(struct bushv *self)
 {
   char		 filename[MAXPATHLEN];
   char		 message[sizeof("Wrote file ''.") + sizeof("Could not save file") + MAXPATHLEN];
@@ -2568,7 +2387,7 @@ bushv_WriteFile( self )
         Announce("File not found; could not create. Attempt to write to a directory.");
         break;
       default:
-        sprintf(message, "Could not save file: %s.",sys_errlist[errno]);
+        sprintf(message, "Could not save file: %s.",strerror(errno));
         Announce(message);
     }
     return_value = -1;
@@ -2578,9 +2397,7 @@ bushv_WriteFile( self )
   return(return_value);
 }
 
-static int
-bushv_SetPrinter(self)
-  struct bushv	*self;
+static int bushv_SetPrinter(struct bushv *self)
 {
   char		*currentPrinter, *defaultPrinter, answer[256];
   char		 prompt[sizeof("Current printer is . Set printer to []: ") + 128];
@@ -2618,9 +2435,7 @@ bushv_SetPrinter(self)
   return(return_value);
 }
 
-static void 
-Checkpoint( dummyData )
-  long dummyData;
+static void Checkpoint(long dummyData)
 {
   struct bushv	*self = (struct bushv*)dummyData;
   char		 CkpFileName[MAXPATHLEN];
@@ -2637,35 +2452,31 @@ Checkpoint( dummyData )
       bushv_RetractCursor(self,Cursor);
       EntryObjectLastCKP = dataobject_GetModified(EntryObject);
     }
-    im_EnqueueEvent(Checkpoint,(long)self,event_SECtoTU(CkpInterval));
+    im_EnqueueEvent((procedure)Checkpoint,self,event_SECtoTU(CkpInterval));
   }
 }
 
-static void
-UpdateDetailCaption( self )
-  struct bushv		    *self;
+static void UpdateDetailCaption(struct bushv *self)
 {
   struct suite_item	    *detailItem = NULL;
   char			     newCaption[16];
 
-  if(detailItem = suite_ItemOfDatum(ControlView, &detail_data)) {
+  if(detailItem = suite_ItemOfDatum(ControlView, (long)&detail_data)) {
     strcpy(newCaption, "Detail: ");
     if(Detail) strcat(newCaption, "on");
     else strcat(newCaption, "off");
-    suite_ChangeItemAttribute(ControlView, detailItem, suite_ItemCaption(newCaption));
+    suite_ChangeItemAttribute(ControlView, detailItem, suite_itemcaption, (long) (newCaption));
   }
 }
 
-static void
-EntriesPageUp( self )
-    struct bushv *self;
+static void EntriesPageUp(struct bushv *self)
 {
     if(Object == entries_object) {
 	struct suite_item *first, *last, *newFirst;
 
 	if((first = suite_FirstVisible(EntriesView)) != NULL && (last = suite_LastVisible(EntriesView)) != NULL && first != last) {
-	    int f = suite_ItemAttribute(EntriesView, first, suite_ItemPosition(0));
-	    int l = suite_ItemAttribute(EntriesView, last, suite_ItemPosition(0));
+	    int f = suite_ItemAttribute(EntriesView, first, suite_itemposition);
+	    int l = suite_ItemAttribute(EntriesView, last, suite_itemposition);
 	    int total = suite_ItemCount(EntriesView);
 	    int span = l - f, n;
 
@@ -2679,16 +2490,14 @@ EntriesPageUp( self )
     }
 }
 
-static void
-EntriesPageDown( self )
-    struct bushv *self;
+static void EntriesPageDown(struct bushv *self)
 {
     if(Object == entries_object) {
 	struct suite_item *first, *last, *newFirst;
 
 	if((first = suite_FirstVisible(EntriesView)) != NULL && (last = suite_LastVisible(EntriesView)) != NULL && first != last) {
-	    int f = suite_ItemAttribute(EntriesView, first, suite_ItemPosition(0));
-	    int l = suite_ItemAttribute(EntriesView, last, suite_ItemPosition(0));
+	    int f = suite_ItemAttribute(EntriesView, first, suite_itemposition);
+	    int l = suite_ItemAttribute(EntriesView, last, suite_itemposition);
 	    int total = suite_ItemCount(EntriesView);
 
 	    if(l != total) {
@@ -2708,10 +2517,7 @@ EntriesPageDown( self )
     }
 }
 
-void
-bushv__LinkTree(self, parent)
-    struct bushv *self;
-    struct view *parent;
+void bushv__LinkTree(struct bushv *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if(parent && bushv_GetIM(self)) 

@@ -38,12 +38,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <ms.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+extern int Stack_MapHashPlusAsAppropriate(char *s);
 
 #define STACKSIZE 1000
 #define MAXSTACKS 2
 		/* MAXSTACKS is the number of stacks -- 2 stacks, stack 0 and 1 */
 #ifndef _IBMR2
-extern char *malloc(), *realloc();
 #endif /* _IBMR2 */
 
 static char *Stack[MAXSTACKS][STACKSIZE + 1];
@@ -51,27 +53,25 @@ static int StackTop[MAXSTACKS];
 static int DoMapping = 1;
 static int FavorHashes = 0;
 
-Stack_MapHashes() {
+void Stack_MapHashes() {
     DoMapping = 1;
     FavorHashes = 0;
 }
-Stack_MapPluses() {
+void Stack_MapPluses() {
     DoMapping = 1;
     FavorHashes = 1;
 }
-Stack_MapNoChars() {
+void Stack_MapNoChars() {
     DoMapping = 0;
 }
 
-StackSize(which)
-int which;
+int StackSize(int which)
 {
     debug(1, ("StackSize %d\n", which));
     return(StackTop[which]);
 }
 
-clearstack(which) 
-int which;
+int clearstack(int which)
 {
     int i;
 
@@ -84,10 +84,7 @@ int which;
 
 
 
-push(string, maplc, which)
-char *string;
-Boolean maplc;
-int which;
+int push(char *string, Boolean maplc, int which)
 {
     char *s;
 
@@ -112,9 +109,7 @@ int which;
 static char *LatestPop[MAXSTACKS];
 static int NeedToInitStacks = 1;
 
-char *
-pop(which) 
-int which;
+char * pop(int which)
 {
 
     debug(1, ("pop %d\n", which));
@@ -141,8 +136,7 @@ int which;
     return (LatestPop[which]);
 }
 
-StackTopSize(which)
-int which;
+int StackTopSize(int which)
 {
     if (StackTop[which] <= 0) {
 	return(0);
@@ -151,8 +145,7 @@ int which;
 }
     
 
-PushNonEmptiness(which)
-int which;
+int PushNonEmptiness(int which)
 {
     int st;
 
@@ -165,8 +158,7 @@ int which;
     }
 }
 
-Stack_MapHashPlusAsAppropriate(s)
-char *s;
+int Stack_MapHashPlusAsAppropriate(char *s)
 {
     if (s && DoMapping) {
 	if (FavorHashes) {

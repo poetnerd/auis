@@ -57,6 +57,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <message.ih>
 #include <stdio.h>
 #include <signal.h>
+static int computeDPSscaling();
 
 
 /* #define DEBUG 1 */
@@ -70,8 +71,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 /*		private functions				*/
 /****************************************************************/
 
-static int computeDPSscaling(self)
-     struct dpstextview *self;
+static int computeDPSscaling(struct dpstextview *self)
 {
     long pw, ph, dw, dh, sw, sh;
     long x_offset, y_offset;
@@ -113,8 +113,7 @@ static int computeDPSscaling(self)
 
 #define BADPOINTER (-1)  /* pointer to use for uninitialized state since NULL may be a valid value for DisplayString */
 
-void DoInterpret(self)
-     struct dpstextview *self;
+void DoInterpret(struct dpstextview *self)
 {
 #ifdef DPS_ENV
     char *displayname = "";
@@ -199,18 +198,13 @@ void DoInterpret(self)
 /*		class procedures				*/
 /****************************************************************/
 
-boolean
-dpstextview__InitializeClass(classID)
-    struct classheader * classID;
+boolean dpstextview__InitializeClass(struct classheader *classID)
 {
     return TRUE;
 }
 
 
-boolean
-dpstextview__InitializeObject(classID,self)
-struct classheader * classID;
-struct dpstextview * self;
+boolean dpstextview__InitializeObject(struct classheader *classID, struct dpstextview *self)
 {
     dpstextview_SetScaling(self, 0L, 0L, 1.0, 1.0);
     self->drawn_at_least_once = 0;
@@ -221,9 +215,7 @@ struct dpstextview * self;
     return TRUE;
 }
 
-void dpstextview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct dpstextview *self;
+void dpstextview__FinalizeObject(struct classheader *classID, struct dpstextview *self)
 {
 }
 
@@ -232,19 +224,13 @@ struct dpstextview *self;
 /*		instance methods				*/
 /****************************************************************/
 
-struct view *dpstextview__Hit(self, action, x, y, clicks)
-struct dpstextview *self;
-enum view_MouseAction action;
-long x,y;
-long clicks;
+struct view * dpstextview__Hit(struct dpstextview *self, enum view_MouseAction action, long x, long y, long clicks)
 {
     dpstextview_WantInputFocus(self, self);
     return (struct view *)self;
 }
 
-void dpstextview__SetDesired(self, w, h)
-     struct dpstextview *self;
-     long w,h;
+void dpstextview__SetDesired(struct dpstextview *self, long w, long h)
 {  
     self->desired_height = h;
     self->desired_width = w;
@@ -254,8 +240,7 @@ void dpstextview__SetDesired(self, w, h)
     }
 } /* dpstextview__SetDesired */
 
-void dpstextview__Update(self)
-     struct dpstextview * self;
+void dpstextview__Update(struct dpstextview *self)
 {
     struct rectangle r;
 
@@ -265,11 +250,7 @@ void dpstextview__Update(self)
     dpstextview_FullUpdate(self, view_FullRedraw, r.left, r.top, r.width, r.height);
 } /* dpstextview_Update */
 
-void
-dpstextview__FullUpdate(self, type, x, y, w, h)
-     struct dpstextview *self;
-     enum view_UpdateType type;
-     long x,y,w,h;
+void dpstextview__FullUpdate(struct dpstextview *self, enum view_UpdateType type, long x, long y, long w, long h)
 {  
     if (type == view_FullRedraw
 	|| type == view_LastPartialRedraw) {

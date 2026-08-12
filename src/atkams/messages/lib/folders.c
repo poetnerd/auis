@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
  
 
 #include <andrewos.h> /* sys/file.h */
+#include <stdlib.h>
 #include <cui.h>
 #include <fdphack.h>
 #include <hdrparse.h>
@@ -65,6 +66,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <captions.ih>
 #include <folders.eh>
 #include <msgsvers.h>
+static void DoButton(struct sbutton *b, enum view_MouseAction action, int ind, struct folders *self);
+static void InitKeyMenusStyles(struct folders *folders);
+static void OneTimeInitKeyMenus();
 
 int foldersDebugging=0;
 #define mdebug(n, x) ((foldersDebugging & (n)) ? printf x : 0)
@@ -77,25 +81,30 @@ extern int GlobalTransactionCount;
 static struct keymap *folders_standardkeymap;
 static struct menulist *folders_standardmenulist;
 
-#ifndef _IBMR2
-extern char *malloc();
-#endif /* _IBMR2 */
-
 static char *ForgetItString = "Forget it -- do nothing.";
 
-extern void folders_Warp(), folders_Expose(), folders_Hide(), folders_Vanish(), folders_ForceUpdate();
+extern void folders_Warp(struct im *im), folders_Expose(struct im *im), folders_Hide(struct im *im), folders_Vanish(struct im *im), folders_ForceUpdate();
 
-extern void folders_SimulateLeftClick();
-extern void folders_UpFocus(), folders_DownFocus();
-extern void folders_TextviewCompound();
-extern void folders_FoldersCompound();
-extern void FoldersTextviewCommand();
-extern void FoldersSendmessageCommand();
-extern void FoldersCaptionsCommand();
-extern int ConsiderResettingDescription();
+extern void folders_SimulateLeftClick(struct folders *self);
+extern void folders_UpFocus(struct folders *self), folders_DownFocus(struct folders *self);
+extern void folders_TextviewCompound(struct textview *tv, char *cmds);
+extern void folders_FoldersCompound(struct folders *self, char *cmds);
+extern void FoldersTextviewCommand(struct folders *self, char *cmds);
+extern void FoldersSendmessageCommand(struct folders *self, char *cmds);
+extern void FoldersCaptionsCommand(struct folders *self, char *cmds);
+extern int ConsiderResettingDescription(struct folders *ci, int code, Boolean FirstTime);
 
-void folders__HandleAsyncPrefetch(ci)
-struct folders *ci;
+/* same-file forward references -- all defined later in this file */
+extern int AddSetupItem(struct folders *ci, char *longname, char *shortname, int substatus, int showingnewstuff, int HasNew, boolean *HasCleared), AlterSubStatus(struct folders *ci, char *dir, int status, char *shortname), BEDC_AddComment(struct folders *ci, struct BEDirCache *bdc, char *comm, int *addedlen),
+	ClearFolders(struct folders *ci), DoClick(struct folders *folders, boolean IsLeftClick, boolean IgnorePosition), ExposeCap(struct folders *self), HighlightFolderName(struct folders *ci, char *name, char *CommText),
+	HighlightSpecificFolderName(struct folders *ci, char *name, char *CommText, int i), InsertFolderNameInText(struct folders *f, struct BEDirCache *bdcent, char *comm),
+	UnhighlightFolderName(struct folders *ci), UpdateBEDirCachePositions(struct folders *ci, struct BEDirCache *entry, int addedlen);
+
+/* same-directory (foldaux.o, linked into the same folders.do) cross-file
+   references -- no header, defined in foldaux.c */
+extern int CreateFoldersCursor(struct folders *self), FinalizeProcStyleStuff(struct folders *self);
+
+void folders__HandleAsyncPrefetch(struct folders *ci)
 {
     int which, skipped;
 
@@ -117,9 +126,7 @@ struct folders *ci;
 }
 
 
-char *
-WhichIcon(substatus)
-int substatus;
+char * WhichIcon(int substatus)
 {
 	char *whichicon;
 
@@ -144,8 +151,7 @@ int substatus;
 	return(whichicon);
 }
 
-void folders__ShowHelp(self)
-struct folders *self;
+void folders__ShowHelp(struct folders *self)
 {
     char InitString[50];
     int pos, len;
@@ -186,11 +192,7 @@ struct folders *self;
     folders_WantUpdate(self, self);
 }
 
-struct view *
-folders__Hit(folders, action, x, y, nclicks)
-struct folders *folders;
-int x, y, nclicks;  
-enum view_MouseAction action;
+struct view * folders__Hit(struct folders *folders, enum view_MouseAction action, long x, long y, long nclicks)
 {
     if (action != view_LeftUp && action != view_RightUp) return((struct view *) folders);
     super_Hit(folders, view_LeftDown, x, y, 1);
@@ -198,16 +200,12 @@ enum view_MouseAction action;
     return((struct view *) folders);
 }
 
-void folders__SimulateClick(folders, IsLeftClick)
-struct folders *folders;
-boolean IsLeftClick;
+void folders__SimulateClick(struct folders *folders, boolean IsLeftClick)
 {
     DoClick(folders, IsLeftClick, FALSE);
 }
 
-DoClick(folders, IsLeftClick, IgnorePosition)
-struct folders *folders;
-boolean IsLeftClick, IgnorePosition;
+int DoClick(struct folders *folders, boolean IsLeftClick, boolean IgnorePosition)
 {
     int linestart, hitpos, i;
 
@@ -243,9 +241,7 @@ boolean IsLeftClick, IgnorePosition;
     ams_WaitCursor(FALSE);
 }
 
-RemoveFromBEDirCache(ci, longname, shortname)
-struct folders *ci;
-char *longname, *shortname;
+int RemoveFromBEDirCache(struct folders *ci, char *longname, char *shortname)
 {
     int i;
 
@@ -274,10 +270,7 @@ char *longname, *shortname;
     }
 }
 
-AddToBEDirCache(ci, longname, shortname, substatus)
-struct folders *ci;
-char *longname, *shortname;
-int substatus;
+int AddToBEDirCache(struct folders *ci, char *longname, char *shortname, int substatus)
 {
     int i = ci->MainDirCacheCount, j;
 
@@ -297,10 +290,7 @@ int substatus;
     return(i);
 }
 
-UpdateBEDirCachePositions(ci, entry, addedlen)
-struct folders *ci;
-struct BEDirCache *entry;
-int addedlen;
+int UpdateBEDirCachePositions(struct folders *ci, struct BEDirCache *entry, int addedlen)
 {
     Boolean FoundIt = FALSE;
     int i;
@@ -316,10 +306,7 @@ int addedlen;
     }
 }
 
-SetupList(ci, code, thingstoread)
-struct folders *ci;
-int code;
-char *thingstoread[];
+int SetupList(struct folders *ci, int code, char *thingstoread[])
 {
     char *whattofree;
     char PathElt[MAXPATHLEN+1], MapFile[MAXPATHLEN+1], RemoteMapFile[MAXPATHLEN+1], ErrorText[256], *s=NULL, *shortname, *longname, *nextline, *t;
@@ -488,11 +475,7 @@ char *thingstoread[];
     return(0);
 }
 
-AddSetupItem(ci, longname, shortname, substatus, showingnewstuff, HasNew, HasCleared)
-struct folders *ci;
-char *longname, *shortname;
-int substatus, showingnewstuff, HasNew;
-boolean *HasCleared;
+int AddSetupItem(struct folders *ci, char *longname, char *shortname, int substatus, int showingnewstuff, int HasNew, boolean *HasCleared)
 {
     struct BEDirCache *bdcent;
     char *comm;
@@ -530,8 +513,7 @@ boolean *HasCleared;
     InsertFolderNameInText(ci, bdcent, comm);
 }
 
-ClearFolders(ci)
-struct folders *ci;
+int ClearFolders(struct folders *ci)
 {
     int i;
     struct text *d;
@@ -554,17 +536,22 @@ struct folders *ci;
     folders_WantUpdate(ci, ci);
 }
 
-void folders__ActionHit(ci, substatus, FullName, nickname)
-struct folders *ci;
-int substatus;
-char *FullName, *nickname;
+void folders__ActionHit(struct folders *ci, int substatus, char *FullName, char *nickname)
 {
     char    ErrorText[256], *ActionVector[10], Question[100+MAXPATHLEN];
+    char    *FullNameCopy, *NicknameCopy;
     int result, quicknewstatus, vecsize;
     Boolean HasCurrent = FALSE, NowPlaying;
     struct captions *mainci;
     struct sendmessage *sm;
     long errcode;
+
+    /* FullName/nickname are borrowed from folders->MainDirCache[i].
+       ams_ChooseFromList() below blocks and pumps events, during which
+       background activity (e.g. ams__DirectoryChangeHook) can free that
+       cache entry out from under us. Take our own copies up front. */
+    FullName = FullNameCopy = strcpy(malloc(1+strlen(FullName)), FullName);
+    nickname = NicknameCopy = strcpy(malloc(1+strlen(nickname)), nickname);
 
     sprintf(Question, "What do you want to do with '%s'?", nickname);
     ActionVector[0] = Question;
@@ -619,10 +606,10 @@ char *FullName, *nickname;
 		} else {
 		    sprintf(ErrorText, "Cannot set subscription entry to %s", nickname);
 		    ams_ReportError(ams_GetAMS(), ErrorText, ERR_WARNING, TRUE, errcode);
-		    return;
+		    goto Done;
 		}
 		message_DisplayString(NULL, 75, ErrorText);
-		return;
+		goto Done;
 	    }
 	    ams_WaitCursor(FALSE);
 	    folders_AlterSubscriptionStatus(ci, FullName, quicknewstatus, nickname);
@@ -641,10 +628,10 @@ char *FullName, *nickname;
 		} else {
 		    sprintf(ErrorText, "Cannot set subscription entry to %s", nickname);
 		    ams_ReportError(ams_GetAMS(), ErrorText, ERR_WARNING, TRUE, errcode);
-		    return;
+		    goto Done;
 		}
 		message_DisplayString(NULL, 75, ErrorText);
-		return;
+		goto Done;
 	    }
 	    ams_WaitCursor(FALSE);
 	    folders_AlterSubscriptionStatus(ci, FullName, substatus, nickname);
@@ -652,7 +639,7 @@ char *FullName, *nickname;
 	case 5:
 	    /* Post on it */
 	    sm = folders_ExposeSend(ci);
-	    if (!sm) return;
+	    if (!sm) goto Done;
 	    sendmessage_ResetFromParameters(sm, nickname, NULL, NULL, NULL, 0);
 	    sendmessage_CheckRecipients(sm);
 	    break;
@@ -691,14 +678,14 @@ char *FullName, *nickname;
 	    ams_ReportError(ams_GetAMS(), "Unexpected return value from message handler.", ERR_WARNING, FALSE, 0);
 	    break;
     }
+Done:
+    free(FullNameCopy);
+    free(NicknameCopy);
     return;
 }
 
 
-folders__AlterSubscriptionStatus(self, dir, status, shortname)
-struct folders *self;
-char *dir, *shortname;
-int status;
+int folders__AlterSubscriptionStatus(struct folders *self, char *dir, int status, char *shortname)
 {
     char *StatusString, ErrorText[256];
 
@@ -726,10 +713,7 @@ int status;
     return(0);
 }
 
-AlterSubStatus(ci, dir, status, shortname)
-struct folders *ci;
-char *dir, *shortname;
-int status;
+int AlterSubStatus(struct folders *ci, char *dir, int status, char *shortname)
 {
     int i;
     struct BEDirCache *bdcent = NULL;
@@ -751,10 +735,7 @@ int status;
     return(0);
 }
 
-void folders__AlterFolderNames(ci, name, Nickname, DoInsert)
-struct folders *ci;
-char *name, *Nickname;
-Boolean DoInsert;
+void folders__AlterFolderNames(struct folders *ci, char *name, char *Nickname, boolean DoInsert)
 {
     char DumBuf[1+MAXPATHLEN];
     int substatus, whichcache;
@@ -776,9 +757,7 @@ Boolean DoInsert;
     folders_WantUpdate(ci, ci);
 }
 
-void folders__HighlightFolder(self, name, CommText)
-struct folders *self;
-char *name, *CommText;
+void folders__HighlightFolder(struct folders *self, char *name, char *CommText)
 {
     if (self->CurrentConfiguration != LIST_ALL_FOLDERS) {	
 	ams_PlanFolderPrefetch(self);
@@ -787,17 +766,14 @@ char *name, *CommText;
     HighlightFolderName(self, name, CommText);
 }
 
-UnhighlightFolderName(ci)
-struct folders *ci;
+int UnhighlightFolderName(struct folders *ci)
 {
     if (ci->HasSetUp && ci->HighlightEnv) {
 	text_SetEnvironmentStyle((struct text *) folders_GetDataObject(ci), ci->HighlightEnv, ci->Normalfolderstyle);
     }
 }
 
-HighlightFolderName(ci, name, CommText)
-struct folders *ci;
-char *name, *CommText;
+int HighlightFolderName(struct folders *ci, char *name, char *CommText)
 {
     int i;
     char NickName[1+MAXPATHLEN];
@@ -845,10 +821,7 @@ char *name, *CommText;
     HighlightSpecificFolderName(ci, name, CommText, i);
 }
 
-HighlightSpecificFolderName(ci, name, CommText, i)
-struct folders *ci;
-char *name, *CommText;
-int i;
+int HighlightSpecificFolderName(struct folders *ci, char *name, char *CommText, int i)
 {
     char Label[500];
     int insertct = 0, fpos;
@@ -871,10 +844,7 @@ int i;
     folders_WantUpdate(ci, ci);
 }
 
-void folders__FullUpdate(self, type, left, top, width, height)
-struct folders *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void folders__FullUpdate(struct folders *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct rectangle Rect;
     static int narrowlim = -1;
@@ -894,10 +864,7 @@ long left, top, width, height;
     }
 }
 
-InsertFolderNameInText(f, bdcent, comm)
-struct folders *f;
-struct BEDirCache *bdcent;
-char *comm;
+int InsertFolderNameInText(struct folders *f, struct BEDirCache *bdcent, char *comm)
 {
     struct environment *et;
     char IconBuf[10];
@@ -922,11 +889,7 @@ char *comm;
     bdcent->len = addlen + 6;
 }
 
-BEDC_AddComment(ci, bdc, comm, addedlen)
-struct folders *ci;
-struct BEDirCache *bdc;
-char *comm;
-int *addedlen;
+int BEDC_AddComment(struct folders *ci, struct BEDirCache *bdc, char *comm, int *addedlen)
 {
     int newlen;
 
@@ -941,9 +904,7 @@ int *addedlen;
     return(bdc->commentstart + bdc->commentlen);
 }
 
-void folders__FindNextFolder(f, which, skipped)
-struct folders *f;
-int *which, *skipped;
+void folders__FindNextFolder(struct folders *f, int *which, int *skipped)
 {
     int pos, curr;
 
@@ -972,9 +933,7 @@ int *which, *skipped;
     }
 }
 
-void folders__ReadMail(self, CheckMailbox)
-struct folders *self;
-Boolean CheckMailbox;
+void folders__ReadMail(struct folders *self, boolean CheckMailbox)
 {
     char ShortName[1+MAXPATHLEN], *FullName, *fm;
 
@@ -999,9 +958,7 @@ Boolean CheckMailbox;
     return;
 }
 
-void folders__NextFolder(self, ShowFirst)
-struct folders *self;
-Boolean ShowFirst;
+void folders__NextFolder(struct folders *self, boolean ShowFirst)
 {
     int which, skipped;
 
@@ -1018,17 +975,12 @@ Boolean ShowFirst;
     }
 }
 
-void folders__SetCaptions(self, c)
-struct folders *self;
-struct captions *c;
+void folders__SetCaptions(struct folders *self, struct captions *c)
 {
     self->mycaps = c;
 }
 
-void folders__SetSkip(self, fname, doskip)
-struct folders *self;
-char *fname;
-boolean doskip;
+void folders__SetSkip(struct folders *self, char *fname, boolean doskip)
 {
     int i;
 
@@ -1040,15 +992,14 @@ boolean doskip;
     }
 }
 
-struct sendmessage *folders__ExposeSend(self)
-struct folders *self;
+struct sendmessage * folders__ExposeSend(struct folders *self)
 {
 
     if (self->sm == NULL) {
 	self->sm = sendmessage_New();
 	sendmessage_SetFoldersView(self->sm, self);
 	
-	self->sm->myframe = ams_InstallInNewWindow(self->sm, "messages-send", "Message Composition", environ_GetProfileInt("sendmessage.width", -1), environ_GetProfileInt("sendmessage.height", -1), self->sm);
+	self->sm->myframe = ams_InstallInNewWindow(self->sm, "messages-send", "Message Composition", environ_GetProfileInt("sendmessage.width", (long)-1), environ_GetProfileInt("sendmessage.height", (long)-1), self->sm);
 	if (self->sm->myframe == NULL) {
 	    sendmessage_Destroy(self->sm);
 	    self->sm = NULL;
@@ -1065,8 +1016,7 @@ struct folders *self;
     return(self->sm);
 }
 
-void folders__GrowWindow(self) 
-struct folders *self;
+void folders__GrowWindow(struct folders *self)
 {
     struct rectangle Rect;
     struct im *im;
@@ -1084,9 +1034,7 @@ struct folders *self;
     }
 }
 
-void folders__FolderOnDisplay(self, nick, full)
-struct folders *self;
-char *nick, *full;
+void folders__FolderOnDisplay(struct folders *self, char *nick, char *full)
 {
     if (nick) {
 	if (folders_GetCaptions(self)->ShortName) {
@@ -1104,9 +1052,7 @@ char *nick, *full;
     }
 }
 
-void folders__SetVeryNarrow(self, vn)
-struct folders *self;
-boolean vn;
+void folders__SetVeryNarrow(struct folders *self, boolean vn)
 {
     self->VeryNarrow = vn;
     if (self->buttons) {
@@ -1139,11 +1085,7 @@ boolean vn;
     }
 }
 
-static void DoButton(b, action, ind, self)
-struct sbutton *b;
-enum view_MouseAction action;
-int ind;
-struct folders *self;
+static void DoButton(struct sbutton *b, enum view_MouseAction action, int ind, struct folders *self)
 {
     /* sorry about the hack, don't change the names of the buttons! */
 
@@ -1169,8 +1111,7 @@ static struct sbutton_list blist[]={
     {NULL, 0, NULL, FALSE}
 };
 
-struct view *folders__GetApplicationLayer(self)
-struct folders *self;
+struct view * folders__GetApplicationLayer(struct folders *self)
 {
     struct sbutton *bs;
     self->myscroll = (struct scroll *) super_GetApplicationLayer(self);
@@ -1204,9 +1145,7 @@ struct folders *self;
     return (struct view	*) self->puntlp;
 }
 
-void folders__DeleteApplicationLayer(self, ignored)
-struct folders *self;
-long ignored;
+void folders__DeleteApplicationLayer(struct folders *self, struct view *ignored)
 {
     
     if (self->puntlp) lpair_Destroy(self->puntlp);
@@ -1222,9 +1161,7 @@ long ignored;
     self->puntlp = NULL;
 }
 
-struct captions *
-folders__NewCaptionsInNewWindow(self)
-struct folders *self;
+struct captions * folders__NewCaptionsInNewWindow(struct folders *self)
 {
     struct captions *cap = captions_New();
 
@@ -1234,15 +1171,12 @@ struct folders *self;
     return(cap);
 }
 
-void folders__SetSendmessage(self, sm)
-struct folders *self;
-struct sendmessage *sm;
+void folders__SetSendmessage(struct folders *self, struct sendmessage *sm)
 {
     self->sm = sm;
 }
 
-struct captions *folders__GetCaptions(self)
-struct folders *self;
+struct captions * folders__GetCaptions(struct folders *self)
 {
     if (!self->mycaps) {
 	folders_NewCaptionsInNewWindow(self);
@@ -1250,8 +1184,7 @@ struct folders *self;
     return(self->mycaps);
 }
 
-ExposeCap(self)
-struct folders *self;
+int ExposeCap(struct folders *self)
 {
 #ifdef NOWAYJOSE
     struct im *myim;
@@ -1280,8 +1213,7 @@ static struct bind_Description folders_standardbindings [] = {
     {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 
-static void InitKeyMenusStyles(folders)
-struct folders *folders;
+static void InitKeyMenusStyles(struct folders *folders)
 {
     char *fontname;
     int fontsize;
@@ -1346,16 +1278,13 @@ static void OneTimeInitKeyMenus()
     bind_BindList(folders_standardbindings, folders_standardkeymap, folders_standardmenulist, &folders_classinfo);
 }
 
-boolean folders__InitializeClass(classID) 
-struct classheader *classID;
+boolean folders__InitializeClass(struct classheader *classID)
 {
     OneTimeInitKeyMenus();
     return(TRUE);
 }
 
-boolean folders__InitializeObject(c, folders)
-struct classheader *c;
-struct folders *folders;  
+boolean folders__InitializeObject(struct classheader *c, struct folders *folders)
 {
     struct text *mytext;
 
@@ -1393,9 +1322,7 @@ struct folders *folders;
     return(TRUE);
 }
 
-void folders__FinalizeObject(c, self)
-struct classheader *c;
-struct folders *self;
+void folders__FinalizeObject(struct classheader *c, struct folders *self)
 {
     ams_RemoveCheckpointFolder(self);
     if (self->MainDirCache) {

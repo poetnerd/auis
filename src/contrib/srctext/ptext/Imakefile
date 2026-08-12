@@ -6,6 +6,8 @@
 DOBJS = ptext.do ptextv.do
 IHFILES = ptext.ih ptextv.ih
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 NormalObjectRule()
 NormalATKRule()
 

@@ -55,15 +55,26 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fram
 #include <environ.ih>
 
 #include <framev.eh>
+#include <string.h>
+
+struct helpRock;
+static int CalculateLineHeight(struct frameview *self);
+static void CleanMessageState(struct frameview *self);
+static void CompletionMessage(struct frameview *self, enum message_CompletionCode code);
+static void EraseMessage(struct frameview *self);
+static void HelpWork(struct helpRock *helpRock, enum message_HelpItem helpType, char *itemString, char *itemInfo);
+static long InsertSorted(struct text *doc, long pos, char *string);
+static void Kill(struct frameview *self, long key);
+static void Minimize(struct frameview *self, long key);
+static void Punt(struct frameview *self, long key);
+static void TransientMessage(struct frameview *self, char *message);
 
 static struct keymap *frameviewKeymap;
 static struct menulist *frameviewMenulist;
 
 #define Text(self) ((struct text *) self->header.view.dataobject)
 
-boolean frameview__InitializeObject(classID, self)
-    struct classheader *classID;
-    struct frameview *self;
+boolean frameview__InitializeObject(struct classheader *classID, struct frameview *self)
 {
 
     struct style *defaultStyle;
@@ -89,9 +100,7 @@ boolean frameview__InitializeObject(classID, self)
     return TRUE;
 }
 
-void frameview__FinalizeObject(classID, self)
-    struct classheader *classID;
-    struct frameview *self;
+void frameview__FinalizeObject(struct classheader *classID, struct frameview *self)
 {
 
     keystate_Destroy(self->keystate);
@@ -102,9 +111,7 @@ void frameview__FinalizeObject(classID, self)
     }
 }
 
-struct frameview *frameview__Create(classID, messageLine)
-struct classheader *classID;
-struct framemessage *messageLine;
+struct frameview * frameview__Create(struct classheader *classID, struct framemessage *messageLine)
 {
 
     struct frameview *temp = frameview_New();
@@ -114,8 +121,7 @@ struct framemessage *messageLine;
 }
 
 #define DEFAULTHEIGHT 22
-static int CalculateLineHeight(self)
-struct frameview *self;
+static int CalculateLineHeight(struct frameview *self)
 {
 
     struct style *defaultStyle;
@@ -136,13 +142,7 @@ struct frameview *self;
 }
 
 
-enum view_DSattributes frameview__DesiredSize(self, width, height, pass, dWidth, dHeight)
-struct frameview *self;
-long width;
-long height;
-enum view_DSpass pass;
-long *dWidth;
-long *dHeight;
+enum view_DSattributes frameview__DesiredSize(struct frameview *self, long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight)
 {
     
     *dWidth = width;
@@ -156,8 +156,7 @@ long *dHeight;
     return view_HeightFlexible | view_WidthFlexible;
 }
 
-void frameview__Update(self)
-struct frameview *self;
+void frameview__Update(struct frameview *self)
 {
 
     struct text *t=(struct text *)frameview_GetDataObject(self);
@@ -185,9 +184,7 @@ struct frameview *self;
     }
 }
 
-void frameview__SetWantedLines(self, lines)
-struct frameview *self;
-int lines;
+void frameview__SetWantedLines(struct frameview *self, int lines)
 {
     if(self->dynamicsize && self->lines!=lines) {
 	if(lines<self->minlines) {
@@ -199,9 +196,7 @@ int lines;
     }
 }
 
-void frameview__WantNewSize(self, req)
-struct frameview *self;
-struct view *req;
+void frameview__WantNewSize(struct frameview *self, struct view *req)
 {
     if((struct view *)self!=req) return;
     if(self->wantsize!=0) return;
@@ -213,9 +208,7 @@ struct view *req;
     if(self->wantsize==1) self->wantsize=0;
 }
 
-void frameview__WantInputFocus(self, requestor)
-    struct frameview *self;
-    struct view *requestor;
+void frameview__WantInputFocus(struct frameview *self, struct view *requestor)
 {
 
     if (requestor != (struct view *) self || framemessage_Asking(self->messageLine))
@@ -224,8 +217,7 @@ void frameview__WantInputFocus(self, requestor)
 
 
 
-void frameview__LoseInputFocus(self)
-    struct frameview *self;
+void frameview__LoseInputFocus(struct frameview *self)
 {
     super_LoseInputFocus(self);
 
@@ -237,20 +229,16 @@ void frameview__LoseInputFocus(self)
     self->amLosingInputFocus = FALSE;
 }
 
-void frameview__PostMenus(self, menulist)
-    struct frameview *self;
-    struct menulist *menulist;
+void frameview__PostMenus(struct frameview *self, struct menulist *menulist)
 {
     if (menulist != self->menulist) {
         menulist_ClearChain(self->menulist);
-        menulist_ChainAfterML(self->menulist, menulist, (long) menulist);
+        menulist_ChainAfterML(self->menulist, menulist, menulist);
     }
     super_PostMenus(self, self->menulist);
 }
 
-void frameview__PostKeyState(self, keystate)
-    struct frameview *self;
-    struct keystate *keystate;
+void frameview__PostKeyState(struct frameview *self, struct keystate *keystate)
 {
 
     if (self->messageLine->keystate != NULL) {
@@ -264,9 +252,7 @@ void frameview__PostKeyState(self, keystate)
     }
 }
 
-void frameview__SetMessageLine(self, messageLine)
-    struct frameview *self;
-    struct framemessage *messageLine;
+void frameview__SetMessageLine(struct frameview *self, struct framemessage *messageLine)
 {
 
     if (self->messageLine != NULL) {
@@ -283,15 +269,13 @@ void frameview__SetMessageLine(self, messageLine)
     mark_SetStyle(self->transientMark, FALSE, FALSE);
 }
 
-struct framemessage *frameview__GetMessageLine(self)
-    struct frameview *self;
+struct framemessage * frameview__GetMessageLine(struct frameview *self)
 {
 
     return self->messageLine;
 }
 
-static void EraseMessage(self)
-    struct frameview *self;
+static void EraseMessage(struct frameview *self)
 {
 
     self->event = NULL;
@@ -300,8 +284,7 @@ static void EraseMessage(self)
     text_AlwaysDeleteCharacters(Text(self), mark_GetPos(self->transientMark), mark_GetLength(self->transientMark));
     frameview_WantUpdate(self, self);
 }
-static void CleanMessageState (self)
-    struct frameview *self;
+static void CleanMessageState(struct frameview *self)
 {
     if (self->event != NULL)
         event_Cancel(self->event);
@@ -310,19 +293,13 @@ static void CleanMessageState (self)
     keystate_SetOverride(self->keystate, NULL, 0);
 }
 
-static enum keymap_Types KeyEraseMessage(self, key, entry, rockP)
-    struct frameview *self;
-    long key;
-    struct basicobject *entry;
-    long *rockP;
+static enum keymap_Types KeyEraseMessage(struct frameview *self, long key, struct basicobject *entry, long *rockP)
 {
     CleanMessageState(self);
     return keymap_Lookup(self->keystate->curMap, key, entry, rockP);
 }
 
-static void TransientMessage(self, message)
-    struct frameview *self;
-    char *message;
+static void TransientMessage(struct frameview *self, char *message)
 {
 
     int pos, len;
@@ -330,15 +307,13 @@ static void TransientMessage(self, message)
     pos = text_GetLength(Text(self));
     mark_SetPos(self->transientMark, pos);
     text_AlwaysInsertCharacters(Text(self), pos, message, len = strlen(message));
-    keystate_SetOverride(self->keystate, KeyEraseMessage, (long) self);
+    keystate_SetOverride(self->keystate, (procedure) KeyEraseMessage, self);
      frameview_WantUpdate(self, self);
     mark_SetLength(self->transientMark, len);
     self->event = im_EnqueueEvent((procedure) EraseMessage, (char *) self, event_SECtoTU(4));
 }
 
-static void Punt(self, key)
-    struct frameview *self;
-    long key;
+static void Punt(struct frameview *self, long key)
 {
 
     if (!(self->messageLine->flags & message_Mandatory)) {
@@ -349,9 +324,7 @@ static void Punt(self, key)
         framemessage_DisplayString(self->messageLine, 0, "Question must be answered.");
 }
 
-static void CompletionMessage(self, code)
-    struct frameview *self;
-    enum message_CompletionCode code;
+static void CompletionMessage(struct frameview *self, enum message_CompletionCode code)
 {
     switch (code) {
         case message_Invalid:
@@ -369,9 +342,7 @@ static void CompletionMessage(self, code)
     }
 }
 
-void frameview__Return(self, key)
-    struct frameview *self;
-    long key;
+void frameview__Return(struct frameview *self, long key)
 {
     register struct framemessage *messageLine = self->messageLine;
     int startpos, endpos;
@@ -421,9 +392,7 @@ void frameview__Return(self, key)
         im_KeyboardExit();
 }
 
-void frameview__Complete(self, key)
-    struct frameview *self;
-    long key;
+void frameview__Complete(struct frameview *self, long key)
 {
     register struct framemessage *messageLine = self->messageLine;
     enum message_CompletionCode code;
@@ -464,10 +433,7 @@ void frameview__Complete(self, key)
 }
 
 /* This function sucks. -Z- */
-static long InsertSorted(doc, pos, string)
-    struct text *doc;
-    long pos;
-    char *string;
+static long InsertSorted(struct text *doc, long pos, char *string)
 {
     int c, c2;
     long initPos, len;
@@ -498,11 +464,7 @@ struct helpRock {
     long insertPos;
 };
 
-static void HelpWork(helpRock, helpType, itemString, itemInfo)
-struct helpRock *helpRock;
-enum message_HelpItem helpType;
-char *itemString;
-char *itemInfo;
+static void HelpWork(struct helpRock *helpRock, enum message_HelpItem helpType, char *itemString, char *itemInfo)
 {
     if (helpType == message_HelpGenericItem) {
         long len;
@@ -528,9 +490,7 @@ char *itemInfo;
     }
 }
 
-void frameview__Help(self, key)
-struct frameview *self;
-long key;
+void frameview__Help(struct frameview *self, long key)
 {
     register struct framemessage *messageLine = self->messageLine;
     struct buffer *LastBuffer;
@@ -629,9 +589,7 @@ long key;
     }
 }
 
-static void Kill(self, key)
-    struct frameview *self;
-    long key;
+static void Kill(struct frameview *self, long key)
 {
 
     int len = text_GetLength(Text(self));
@@ -642,9 +600,7 @@ static void Kill(self, key)
     frameview_WantUpdate(self, self);
 }
 
-static void Minimize(self, key)
-struct frameview *self;
-long key;
+static void Minimize(struct frameview *self, long key)
 {
     self->lines=self->minlines;
     frameview_WantNewSize(self, self);
@@ -679,8 +635,7 @@ static struct bind_Description frameviewBindings[]={
     NULL
 };
 
-boolean frameview__InitializeClass(classID)
-    struct classheader *classID;
+boolean frameview__InitializeClass(struct classheader *classID)
 {
     frameviewKeymap = keymap_New();
     frameviewMenulist = menulist_New();

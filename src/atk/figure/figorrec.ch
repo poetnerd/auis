@@ -29,7 +29,7 @@ class figorrec : figorect {
 
     classprocedures:
       Create(long left, long top, long width, long height) returns struct figorrec *;
-      InitializeObject(struct figoell *self) returns boolean;
+      InitializeObject(struct figorrec *self) returns boolean;
 
     overrides:
       PrintObject(struct figview *v, FILE *file, char *prefix);

@@ -69,10 +69,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/hypl
 /* External Declarations */
 
 /* Forward Declarations */
-static void LinkProc(),  WarpLink(), TargetProc(), AutolinkProc(), InsertProc();
-static boolean FindBuffer();
-static char *FileName();
-static struct view *FindViewofBuffer();
+static void LinkProc(struct linkview *self, char *param),  WarpLink(struct linkview *self, struct observable *triggerer, long rock), TargetProc(struct view *v, long param), AutolinkProc(struct linkview *self, long param), InsertProc(struct textview *tv, long l);
+static boolean FindBuffer(struct frame *f, struct buffer *b);
+static char *FileName(char *path);
+static struct view *FindViewofBuffer(struct buffer *b);
 
 /* Global Variables */
 static struct menulist *linkview_menulist = NULL;
@@ -93,9 +93,7 @@ static struct bind_Description textviewBindings[] = {
 };
 #endif
 
-boolean
-linkview__InitializeClass(c)
-struct classheader *c;
+boolean linkview__InitializeClass(struct classheader *c)
 {
 /* 
   Initialize all the class data, particularly, set up the proc table entries 
@@ -109,15 +107,15 @@ struct classheader *c;
   linkview_menulist = menulist_New();
 
 #ifndef ATTBL_ENV
-  proc = proctable_DefineProc("linkview-set-target", TargetProc, proctype, NULL, "Execute this proc from the frame of the the buffer for the target file of a link.  To be called after linkview-autolink.");
+  proc = proctable_DefineProc("linkview-set-target", (procedure)TargetProc, proctype, NULL, "Execute this proc from the frame of the the buffer for the target file of a link.  To be called after linkview-autolink.");
 
-  proc = proctable_DefineProc("linkview-insert-link", InsertProc, textviewtype, NULL, "Insert a link object in the current document.");
+  proc = proctable_DefineProc("linkview-insert-link", (procedure)InsertProc, textviewtype, NULL, "Insert a link object in the current document.");
 #endif
 
-  proc = proctable_DefineProc("linkview-autolink", AutolinkProc, &linkview_classinfo, NULL, "Starts the autolink process.  Waits for linkview-set-target to be invoked, which tells this link what file to link to.");
+  proc = proctable_DefineProc("linkview-autolink", (procedure)AutolinkProc, &linkview_classinfo, NULL, "Starts the autolink process.  Waits for linkview-set-target to be invoked, which tells this link what file to link to.");
   menulist_AddToML(linkview_menulist, "Link~1,Autolink~1", proc, NULL, 0);
 
-  proc = proctable_DefineProc("linkview-set-link", LinkProc, &linkview_classinfo, NULL, "Prompts for user to set target filename of the link button.");
+  proc = proctable_DefineProc("linkview-set-link", (procedure)LinkProc, &linkview_classinfo, NULL, "Prompts for user to set target filename of the link button.");
   menulist_AddToML(linkview_menulist, "Link~1,Set Link~11", proc, NULL, 0);
 
 #ifdef ATTBL_ENV
@@ -129,10 +127,7 @@ struct classheader *c;
 }
 
 
-boolean
-linkview__InitializeObject(c, self)
-struct classheader *c;
-struct linkview *self;
+boolean linkview__InitializeObject(struct classheader *c, struct linkview *self)
 {
 /*
   Set up the data for each instance of the object (i.e.: clone the menu
@@ -144,20 +139,14 @@ struct linkview *self;
 }
 
 
-void
-linkview__FinalizeObject(c, self)
-struct classheader *c;
-struct linkview *self;
+void linkview__FinalizeObject(struct classheader *c, struct linkview *self)
 {
   return;
 }
 
 
 
-void
-linkview__PostMenus(self, ml)
-struct linkview *self;
-struct menulist *ml;
+void linkview__PostMenus(struct linkview *self, struct menulist *ml)
 {
 /*
   Enable the menus for this object.
@@ -169,10 +158,7 @@ struct menulist *ml;
 }
 
 
-	static void
-LinkProc(self, param)
-	struct linkview *self;
-	char *param;
+static void LinkProc(struct linkview *self, char *param)
 {
 /*
   This is the routine which asks the user for the target of the link.
@@ -231,10 +217,7 @@ LinkProc(self, param)
 
 
 
-static boolean
-FindBuffer(f,b)
-struct frame *f;
-struct buffer *b;
+static boolean FindBuffer(struct frame *f, struct buffer *b)
 {
 /*
   Little, dippy routine passed to frame_Enumerate to find the
@@ -245,9 +228,7 @@ struct buffer *b;
 }
 
 
-static struct view *
-FindViewofBuffer(b)
-struct buffer *b;
+static struct view * FindViewofBuffer(struct buffer *b)
 {
 /*
   I don't know why *I* have to do this, it should be a buffer method.
@@ -281,11 +262,7 @@ struct buffer *b;
 }
 
 
-static void
-WarpLink(self, triggerer, rock)
-struct linkview *self;
-struct observable *triggerer;
-long rock;
+static void WarpLink(struct linkview *self, struct observable *triggerer, long rock)
 {
 /*
   Do the actual "warp".  The semantics I want are:
@@ -360,9 +337,7 @@ long rock;
 }
 
 
-static char *
-FileName(path)
-char *path;
+static char * FileName(char *path)
 {
 /*
   Returns the filename portion of path (i.e.: strips leading
@@ -384,10 +359,7 @@ char *path;
 }
 
 
-static void
-InsertProc(tv,l)
-struct textview *tv;
-long l;
+static void InsertProc(struct textview *tv, long l)
 {
     long pos;
     struct text *t = (struct text *) textview_GetDataObject(tv);
@@ -397,10 +369,7 @@ long l;
 }
 
 
-static void
-TargetProc(v, param)
-struct view *v;
-long param;
+static void TargetProc(struct view *v, long param)
 {
 /*
   First, checks to see if there is a link object waiting for an
@@ -454,10 +423,7 @@ long param;
 }
 
 
-static void
-AutolinkProc(self, param)
-struct linkview *self;
-long param;
+static void AutolinkProc(struct linkview *self, long param)
 {
 /*
   Start the autolink process.  Check to make sure we're not trouncing
@@ -469,7 +435,7 @@ long param;
     "Cancel autolink",
     NULL
   };
-  int answer;
+  long answer;
 
   if (autolink_source) {
     if (message_MultipleChoiceQuestion(self,99,"Already autolinking!", 2, &answer, conflict, NULL)>= 0) {
@@ -502,18 +468,17 @@ long param;
   return;
 }
 
-static void linkview__Link(self)
-struct linkview *self; {
+void linkview__Link(struct linkview *self)
+{
     LinkProc(self, 0);
 }
 
-static void linkview__AutoLink(self)
-struct linkview *self; {
+void linkview__AutoLink(struct linkview *self)
+{
     AutolinkProc(self, 0);
 }
 
-static void linkview__LinkFile(self, dest)
-struct linkview *self;
-char *dest; {
+void linkview__LinkFile(struct linkview *self, char *dest)
+{
     LinkProc(self, dest);
 }

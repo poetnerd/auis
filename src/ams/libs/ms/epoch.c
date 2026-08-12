@@ -36,20 +36,37 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <util.h>
 #include <svcconf.h>
+#include <stdlib.h>
+static int AddWork(char *Dir, int Recurse, int Depth);
+static int DeleteThrough(char *dirname, char *date64, int anyKids);
+static int dirCmp(const void *p1, const void *p2);
+static int tempErr(int val);
+extern int CloseDirsThatNeedIt();
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern char *DescribeTimeInterval(long interval);
+extern int GetSnapshotByNumber(struct MS_Directory *Dir, int msgnum, char *snapshot);
+extern int MS_PurgeDeletedMessages(char *dirname);
+extern int NonfatalBizarreError(char *text);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int RewriteSnapshotInDirectory(struct MS_Directory *Dir, int num, char *snapshot);
+extern unsigned long conv64tolong(char *xnum);  /* overhead/mail/lib/genid.c */
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
 #ifdef AFS_ENV
 #include <netinet/in.h>
 #include <afs/param.h>
 #include <afs/venus.h>
 #endif /* AFS_ENV */
 
-static int dirCmp(s1, s2)
-char **s1, **s2;
+static int RealEpoch(char *dirname, char *date64, int depth, int Persist, int Recurse);
+static int DeleteThrough(char *dirname, char *date64, int anyKids);
+
+static int dirCmp(const void *p1, const void *p2)
 {
+	char * const *s1 = p1, * const *s2 = p2;
 	return strcmp(*s1, *s2);
 }
 
-static int tempErr(val)
-int val;
+static int tempErr(int val)
 {/* Return TRUE iff the AMS_ERRNO value ``val'' seems like a retry-able failure. */
     if (tfail(val)) return TRUE;
     /* add this case for persistent AFS errors */
@@ -82,8 +99,7 @@ int val;
 struct DelayedDir {struct DelayedDir *Next; char *Name; int Recurse, Depth;};
 static struct DelayedDir *Work, *MoreWork;
 
-static int AddWork(Dir, Recurse, Depth)
-char *Dir; int Recurse, Depth;
+static int AddWork(char *Dir, int Recurse, int Depth)
 {/* Add an entry to the MoreWork list. */
     struct DelayedDir *This;
     char ErrTxt[100+MAXPATHLEN];
@@ -108,9 +124,7 @@ char *Dir; int Recurse, Depth;
     return 0;
 }
 
-MS_Epoch(dirname, date64)
-char *dirname;
-char *date64;
+int MS_Epoch(char *dirname, char *date64)
 {
     char ErrTxt[100+MAXPATHLEN];
     struct DelayedDir *DP;
@@ -159,10 +173,7 @@ char *date64;
     return(mserrcode = ErrExit);
 }
 
-static int RealEpoch(dirname, date64, depth, Persist, Recurse)
-char *dirname;
-char *date64;
-int depth, Persist, Recurse;
+static int RealEpoch(char *dirname, char *date64, int depth, int Persist, int Recurse)
 {/* Epoch dirname's descendants, then dirname itself, back to date64.  If Persist is true, don't let errors in subfolders prevent us from continuing the tree walking. */
     DIR *dirp;
     DIRENT_TYPE *dirent;
@@ -280,7 +291,7 @@ int depth, Persist, Recurse;
 	|| MS_PurgeDeletedMessages(dirname))
     {
 	if (depth > 0 || AMS_ERRNO != ENOENT) {
-	    sprintf(ErrorText, "Epoch on %s: [%d/%d] ", ap_Shorten(dirname), AMS_ERRCAUSE, AMS_ERRVIA);
+	    sprintf(ErrorText, "Epoch on %s: [%ld/%ld] ", ap_Shorten(dirname), AMS_ERRCAUSE, AMS_ERRVIA);
 	    if (vdown(AMS_ERRNO)) strcat(ErrorText, "(AFS down) ");
 	    strcat(ErrorText, UnixError(AMS_ERRNO));
 	    strcat(ErrorText, ";");
@@ -303,9 +314,7 @@ int depth, Persist, Recurse;
 }
 
 
-static DeleteThrough(dirname, date64, anyKids)
-char *dirname;
-char *date64; int anyKids;
+static int DeleteThrough(char *dirname, char *date64, int anyKids)
 {
     char ErrorText[100+MAXPATHLEN], SnapshotDum[AMS_SNAPSHOTSIZE];
     struct MS_Directory *Dir;

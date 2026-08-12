@@ -26,6 +26,8 @@
 * $
 */
 
+/* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS = tabrulv.do lookz.do lookzv.do
 IHFILES = tabrulv.ih lookz.ih lookzv.ih

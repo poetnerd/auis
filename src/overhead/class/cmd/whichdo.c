@@ -38,20 +38,21 @@ Author: Tom Neuendorffer
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <andrewos.h> /* sys/file.h */
 
 extern char *getenv();
+extern char *AndrewDir(char *str);
 
 struct PathEntry {
     struct PathEntry *next;
     char name[1];
 };
 static struct PathEntry *globalPath = 0;
-char *pathopen();
+static char *pathopen(char *aname);
+int Initialize();
 
-main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
     char *s;
     Initialize();
@@ -75,8 +76,7 @@ char *argv[];
 }
 
 
-static char *pathopen (aname)
-register char *aname;
+static char * pathopen(char *aname)
 {/* open it along the path CLASSPATH */
     register struct PathEntry *tpe;
     register int fn;
@@ -95,8 +95,7 @@ register char *aname;
     return NULL;
 }
 
-void myclass_Init(defaultPath)
-char *defaultPath;
+void myclass_Init(char *defaultPath)
 {
     char *envString;
     register char *st1, *st2;
@@ -132,7 +131,7 @@ char *defaultPath;
 
 }
 
-Initialize()
+int Initialize()
 {
     myclass_Init((char *)AndrewDir("/dlib/atk"));
 }

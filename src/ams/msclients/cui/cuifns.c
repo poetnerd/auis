@@ -41,6 +41,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/param.h>
+#include <stdlib.h>
 #define CUI_SOURCE_CUIFNS_C
 #include <cuimach.h>
 
@@ -53,7 +54,10 @@ extern char *LogFileName;
 
 char *GetLine();
 
-extern char *StripWhiteEnds();
+extern char *StripWhiteEnds(char *string);
+extern char *cvEng(int foo, int Capitalized, int MaxToSpellOut);	/* ams/libs/shr/utils.c -- was undeclared here,
+			   truncating its char* return through the K&R
+			   implicit-int default on LP64 (arm64) */
 extern char **unix_sys_errlist,
 	   *ms_errlist[],
 	   *ms_errcauselist[],
@@ -65,8 +69,68 @@ extern int  unix_sys_nerr,
 	    ms_nerrvia,
 	    rpc_nerr;
 
-ResetTerminalParams (arg)
-char *arg;
+/* Undeclared-external-call closure (COMPILERFLAGS -Werror=implicit-function-declaration):
+   these names are defined in ams/libs/ms, ams/libs/cui, other overhead/AMS
+   libraries, or elsewhere in this file/directory ahead of their first use
+   here, and none of those headers declare them. */
+extern long CUI_DisambiguateDir(char *shortname, char **longname);
+extern int CUI_FixAttribute(int cuid, char *attname, Boolean Set);
+extern int CUI_FlagUrgency(int cuid, int urgency);
+extern int CUI_GetAMSID(int cuid, char **id, char **dir);
+extern int CUI_GetSnapshotFromCUID(int cuid, char *SnapshotBuf);
+extern int CUI_RemoveDirectory(char *DirName);
+extern int CUI_RenameDir(char *old, char *new);
+extern int CUI_ReportAmbig(char *name, char *atype);
+extern int CUI_ResendMessage(int cuid, char *Tolist);
+extern int DisplayFile(char *arg);
+extern int ExposeSubscriptions(char *dir_template, int code);
+extern int FlagUrgency(char *arg, int urgency);
+extern int MS_CheckAuthentication(int *Authenticated);
+extern int MS_ConvertOldMail(int *good, int *bad);
+extern int MS_DeleteAttr(char *DirName, char *AttrName);
+extern int MS_DisambiguateFile(char *source, char *target, short AccessCode);
+extern int MS_DoIHaveMail(int *count);
+extern long MS_EditMessage(char *dirname, char *id, char *NewBodyFile, int Reparse);
+extern int MS_FastUpdateState(void);
+extern int MS_GetDirAttributes(char *Dirname, int *AttrCt, char *Attrs, int SepChar, int ShowEmpty);
+extern long MS_GetDirInfo(char *DirName, int *ProtCode, int *MsgCount);
+extern int MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, long *remaining, int *ct);
+extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
+extern long MS_MergeDirectories(char *SourceDirName, char *DestDirName);
+extern int MS_NameChangedMapFile(char *MapFile, int MailOnly, int ListAll, int *NumChanged, int *NumUnavailable, int *NumMissingFolders, int *NumSlowpokes, int *NumFastFellas);
+extern int MS_NameSubscriptionMapFile(char *Root, char *MapFile);
+extern int MS_RebuildMasterUpdateFiles(int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood);
+extern int MS_RebuildOneMasterUpdateFile(char *PathElt, int *NumFastGood, int *NumSlowGood, int *NumBad, int *NumAbsent, int *NumProbablyGood);
+extern int MS_RebuildOneSubscriptionMap(char *PathElt);
+extern int MS_RebuildSubscriptionMaps(void);
+extern int MS_SetAssociatedTime(char *FullName, char *newvalue);
+extern int MS_StorePartialFile(char *FileName, int startpos, int len, int mode, int Truncate, char *WhatToStore);
+extern long MS_UnlinkFile(char *FileName);
+extern int ParseFileName(char *arg, char *FileName, int code);
+extern int PrintTimeStampAndNewline(FILE *fp);
+extern int SetTerminalParams(int h, int w);
+extern int ULstrcmp(char *s1, char *s2);
+extern int ULstrncmp(char *s1, char *s2, int n);
+extern int dbg_fclose(FILE *fp);
+/* errprintf2/moreprintf are 1988-era "many fixed named params" pseudo-varargs
+   (like ams/libs/ms's dbgprintf): every real call site supplies only as many
+   of the trailing params as its format string references, relying on K&R's
+   tolerance for omitted trailing arguments (never read, since the format
+   string doesn't reference those slots). A typed or `...`-variadic
+   declaration breaks every under-supplied call site (177 across this
+   directory) and, for errprintf2 specifically, also conflicts with its own
+   later full-prototype definition in this same file (K&R's "unspecified
+   arguments" form is compatible with any call-site argument count AND with
+   a later full-prototype definition, which is exactly why this compiled
+   cleanly for decades before -Werror=implicit-function-declaration existed;
+   a typed or `...` form is not compatible with that later definition). Old-
+   style empty-parens declarations are therefore the deliberately-correct
+   choice here, not a shortcut. */
+extern int errprintf2();
+extern int moreprintf();
+extern int vdown(int err);
+
+int ResetTerminalParams(char *arg)
 {
     int i, j;
     char *s;
@@ -101,9 +165,7 @@ char *arg;
     return(0);
 }
 
-GetBooleanFromUser(prompt, DefaultAns)
-char   *prompt;
-Boolean DefaultAns;
+int GetBooleanFromUser(char *prompt, Boolean DefaultAns)
 {
     char   *ans;
 
@@ -125,9 +187,7 @@ Boolean DefaultAns;
     }
 }
 
-GetStringFromUser(prompt, buf, len, IsPassword)
-char   *prompt, *buf;
-int len, IsPassword;
+int GetStringFromUser(char *prompt, char *buf, int len, int IsPassword)
 {
     char   *ans;
     debug(1,("GetStringFromUser %s\n", prompt));
@@ -147,10 +207,7 @@ int len, IsPassword;
     }
 }
 
-ReportError(text, level, Decode)
-char   *text;
-int	level;
-Boolean Decode;
+int ReportError(char *text, int level, Boolean Decode)
 {
     char    ErrorText[500],
 	    NumDum[10];
@@ -257,9 +314,7 @@ Boolean Decode;
     return(0);
 }
 
-errprintf2(s1, i, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12)
-int i;
-char *s1, *s2, *s3, *s4, *s5, *s6, *s7, *s8, *s9, *s10, *s11, *s12;
+int errprintf2(char *s1, int i, char *s2, char *s3, char *s4, char *s5, char *s6, char *s7, char *s8, char *s9, char *s10, char *s11, char *s12)
 {
     errprintf(s1, i, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12);
     if (LogFileName) {
@@ -287,8 +342,7 @@ char *s1, *s2, *s3, *s4, *s5, *s6, *s7, *s8, *s9, *s10, *s11, *s12;
 }
     
 
-ReportSuccess(text)
-char   *text;
+int ReportSuccess(char *text)
 {
     debug(1,("ReportSuccess %s\n", text));
     moreprintf("%s\n", text);
@@ -306,8 +360,7 @@ char   *text;
 
 }
 
-PrintTimeStampAndNewline(fp)
-FILE *fp;
+int PrintTimeStampAndNewline(FILE *fp)
 {
     struct tm *TmBuf;
     long now;
@@ -328,10 +381,7 @@ FILE *fp;
 }    
 
 
-MoreSelect(Default, AnsBuf, AnsMax, MoreOptions, s, Prompt_string)
-int	Default, AnsMax;
-char   *AnsBuf, *MoreOptions[], *s, *Prompt_string;
-
+int MoreSelect(int Default, char *AnsBuf, int AnsMax, char *MoreOptions[], char *s, char *Prompt_string)
 {
     char   *t;
     int     Matches = 0,
@@ -411,7 +461,7 @@ char   *AnsBuf, *MoreOptions[], *s, *Prompt_string;
     }  /* End While */
 }
 
-HandleTimeout(name, retries, restarts)
+int HandleTimeout(name, retries, restarts)
 char   *name;
 int	retries,
 	restarts;
@@ -429,16 +479,13 @@ int	retries,
 				   propogate error */
 }
 
-DidRestart() {
+void DidRestart() {
     ReportSuccess("Reconnected to Message Server!");
 }
 
 #define INSERT_FILE_CHAR 2
 
-StorePartialFile(fname, offset_p, mode)
-char   *fname;
-long	*offset_p;
-int	mode;
+int StorePartialFile(char *fname, long *offset_p, int mode)
 {
     int     c,
 	    pos = 0;
@@ -504,9 +551,7 @@ int	mode;
     return(0);
 }
 
-ChooseFromList(QVec, def)
-char **QVec;
-int def;
+int ChooseFromList(char **QVec, int def)
 {
     char *ans;
     int i, myans = 0, numanswers;
@@ -535,11 +580,9 @@ int def;
     return(myans);
 }
 
-StyleStrip(buffer)
-char *buffer;
+int StyleStrip(char *buffer)
 {}
-int ParseMessageNumber(arg)
-char *arg;
+int ParseMessageNumber(char *arg)
 {
 int cuid;
     CheckPrompted("Please enter message number")
@@ -558,9 +601,7 @@ int cuid;
     return cuid;
 }
 
-int ParseFileName(arg,FileName,code)
-char *arg, *FileName;
-int code;
+int ParseFileName(char *arg, char *FileName, int code)
 {
     char *next;
     CheckPrompted("Please enter a file name")
@@ -580,8 +621,7 @@ int code;
     return(0);
 }
 
-int ParseDirName(arg,Dirname)
-char *arg, **Dirname;
+int ParseDirName(char *arg, char **Dirname)
 {
     char *next;
     CheckPrompted("Please enter a folder name")
@@ -603,21 +643,17 @@ char *arg, **Dirname;
 #define ALL 1
 #define SOME 0
 
-ListCmd(arg)
-char *arg;
+int ListCmd(char *arg)
 {
 	 return(ExposeSubscriptions(arg, ALL));
 }
 
-SubListCmd(arg)
-char *arg;
+int SubListCmd(char *arg)
 {
 	 return(ExposeSubscriptions(arg, SOME));
 }
 
-ExposeSubscriptions(dir_template, code)
-char *dir_template;
-int code;
+int ExposeSubscriptions(char *dir_template, int code)
 {
    char PathElt[MAXPATHLEN+1], MapFile[MAXPATHLEN+1], Buf[MAXBODY], ErrorText[256], *s, *subscr = NULL, *shortname, *longname, *nextline;
    int	i=0, substatus, bodylen;
@@ -700,8 +736,7 @@ int code;
    return(0);
 }
 
-MergeDirs(arg)
-char *arg;
+int MergeDirs(char *arg)
 {
     char *s, *FromDir, *ToDir, ErrorText[256];
 
@@ -724,8 +759,7 @@ char *arg;
 }
 
 
-GetDirInfo(arg)
-char *arg;
+int GetDirInfo(char *arg)
 {
     int ProtCode=0, MsgCount=0, AttrCt;
     char *DirName, IntroFile[1+MAXPATHLEN], ErrorText[256], *arg2, Attrs[1+(AMS_NUM_UATTRS*(1+AMS_ATTRNAMEMAX))];
@@ -797,8 +831,7 @@ char *arg;
     return(0);
 }
 
-RmMessageDir(arg)
-char *arg;
+int RmMessageDir(char *arg)
 {
     char *DirName;
 
@@ -806,8 +839,7 @@ char *arg;
     return(CUI_RemoveDirectory(DirName));
 }
 
-UnlinkViceFile(arg)
-char *arg;
+int UnlinkViceFile(char *arg)
 {
     char FileName[1+MAXPATHLEN], ErrorText[256];
 
@@ -822,8 +854,7 @@ char *arg;
     return(0);
 }
 
-ReplaceMessage(arg)
-char *arg;
+int ReplaceMessage(char *arg)
 {
     int     cuid, Reparse;
     char    ErrorText[256], *id, *dir, FileName[1+MAXPATHLEN], *fname;
@@ -862,8 +893,7 @@ char *arg;
 }
 
 
-MarkSeenLast(ans)
-char *ans;
+int MarkSeenLast(char *ans)
 {
     char *id, *dir, ErrorText[256], SnapshotBuf[AMS_SNAPSHOTSIZE];
     int cuid;
@@ -890,7 +920,7 @@ char *ans;
     }
 }
 
-ConvertOldStuff() {
+int ConvertOldStuff() {
     int good, bad;
 
     ReportSuccess("Warning:  Converting from ReadMail to Messages/CUI will LOSE all of your old classification information.");
@@ -918,8 +948,7 @@ ConvertOldStuff() {
     return(0);
 }
 
-RenameDir(arg)
-char *arg;
+int RenameDir(char *arg)
 {
     char *new, *old;
 
@@ -936,8 +965,7 @@ char *arg;
     return(CUI_RenameDir(old, new));
 }
 
-ResendCmd(arg)
-char *arg;
+int ResendCmd(char *arg)
 {
     char *name;
 
@@ -966,8 +994,7 @@ char *arg;
     return(CUI_ResendMessage(atoi(arg), name));
 }
 
-RebuildSubscriptionMaps(arg) 
-char *arg;
+int RebuildSubscriptionMaps(char *arg)
 {
     char FName[1+MAXPATHLEN];
 
@@ -992,8 +1019,7 @@ char *arg;
     return(0);
 }
 
-Reindex(arg) 
-char *arg;
+int Reindex(char *arg)
 {
     int slowgood, fastgood, bad, absent, probablygood;
     char FName[1+MAXPATHLEN];
@@ -1026,8 +1052,7 @@ char *arg;
     }
 }
 
-WhatsNew(arg)
-char *arg;
+int WhatsNew(char *arg)
 {
     int changed, unavail, missing, slowpokes, fastguys, newmail;
     char MapFile[1+MAXPATHLEN], Message[256];
@@ -1053,21 +1078,22 @@ char *arg;
     }
 }
 
-FlagSomething(arg)
-char *arg;
+int MaybeFlagSomething(char *arg, Boolean DoSet);	/* had no forward
+							   declaration at all;
+							   needed ahead of its
+							   first use below */
+
+int FlagSomething(char *arg)
 {
     return(MaybeFlagSomething(arg, TRUE));
 }
 
-UnflagSomething(arg)
-char *arg;
+int UnflagSomething(char *arg)
 {
     return(MaybeFlagSomething(arg, FALSE));
 }
 
-MaybeFlagSomething(arg, DoSet)
-char *arg;
-Boolean DoSet;
+int MaybeFlagSomething(char *arg, Boolean DoSet)
 {
     int cuid, code;
 
@@ -1093,8 +1119,7 @@ Boolean DoSet;
     }
 }
  
-ForgetFlag(arg)
-char *arg;
+int ForgetFlag(char *arg)
 {
     char *dirname, *s, ErrorText[1000];
 
@@ -1118,21 +1143,17 @@ char *arg;
     ReportSuccess(ErrorText);
     return(0);
 }
-FlagNotUrgent(arg)
-char *arg;
+int FlagNotUrgent(char *arg)
 {
     return(FlagUrgency(arg, FALSE));
 }
 
-FlagUrgent(arg)
-char *arg;
+int FlagUrgent(char *arg)
 {
     return(FlagUrgency(arg, TRUE));
 }
 
-FlagUrgency(arg, urgency) 
-char *arg;
-int urgency;
+int FlagUrgency(char *arg, int urgency)
 {
     int     cuid,
 	rc;
@@ -1163,9 +1184,7 @@ int urgency;
  */
 #include <termio.h>
 
-char *
-getpass(prompt)
-char *prompt;
+char * getpass(char *prompt)
 {
 	struct termio tty;
 	int flags;

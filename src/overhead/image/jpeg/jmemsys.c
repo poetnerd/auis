@@ -17,6 +17,7 @@
 
 #ifdef INCLUDES_ARE_ANSI
 #include <stdlib.h>		/* to declare malloc(), free() */
+#include <unistd.h>		/* to declare unlink() */
 #else
 extern void * malloc PP((size_t size));
 extern void free PP((void *ptr));

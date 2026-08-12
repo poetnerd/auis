@@ -38,8 +38,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
  
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <cui.h>
 #include <hdrparse.h>
+#include <mimepart.h>
 #include <errprntf.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -127,38 +129,40 @@ int	CUI_CheckNewMessages (),
 	GetHeaders (),
 	ForwardMailCmd(),
 	SetOption(),
-	MergeDirs(),
-	GetDirInfo(),
-	RmMessageDir(),
-	UnlinkViceFile(),
-	ReplaceMessage(),
+	MergeDirs(char *arg),
+	GetDirInfo(char *arg),
+	RmMessageDir(char *arg),
+	UnlinkViceFile(char *arg),
+	ReplaceMessage(char *arg),
 	ConvertOldStuff(),
-	RenameDir(),
+	RenameDir(char *arg),
 	CUI_FreeCaches(),
-	SubListCmd(),
-	ShowOptSettings(),
-	ResendCmd(),
-	Reindex(),
-	Redraft(),
-	TakeHints(),
-	Scavenge(),
-	ListCmd();
+	SubListCmd(char *arg),
+	ShowOptSettings(char *arg),
+	ResendCmd(char *arg),
+	Reindex(char *arg),
+	Redraft(char *arg),
+	TakeHints(char *arg),
+	Scavenge(char *arg),
+	ListCmd(char *arg);
+
+int GetHeadersFn(char *arg, char fn);	/* not in the block above -- had no
+					   forward declaration at all; needed
+					   ahead of its first use below */
 
 extern int  SNAP_debugmask,
 	    CUI_SnapIsRunning,
 	    CUI_OnSameHost;
 
 extern struct tm   *localtime ();
-extern	FILE * qopen ();
+extern	FILE * qopen(char *name, char *argv[], char *mode);
 
-extern char *convlongto64 (), *StripWhiteEnds (), *getenv (), *copy(), *GetLine();
-extern char *sys_errlist[],
-	   *ms_errlist[],
+extern char *convlongto64(int num, int pad), *StripWhiteEnds(char *string), *getenv (), *copy(char *s), *GetLine();
+extern char *ms_errlist[],
 	   *ms_errcauselist[],
 	   *ms_errvialist[],
 	   *rpc_errlist[];
-extern int  sys_nerr,
-	    ms_nerr,
+extern int  ms_nerr,
 	    ms_nerrcause,
 	    ms_nerrvia,
 	    rpc_nerr;
@@ -167,6 +171,131 @@ extern long gtime (), time (), atol();
 #endif
 
 extern char CUI_VersionString[];
+
+/* Undeclared-external-call closure (COMPILERFLAGS -Werror=implicit-function-declaration):
+   these names are defined in ams/libs/ms, ams/libs/cui, other overhead/AMS
+   libraries, or elsewhere in this file/directory ahead of their first use
+   here, and none of those headers declare them. */
+extern int AddHeads(char *arg);
+extern int AlterSubLine(char *text);
+extern int CUI_CheckMailboxes(char *ForWhat);
+extern int CUI_CheckVersion(void);
+extern int CUI_CloneMessage(int cuid, char *OrigDirName, int Code);
+extern int CUI_CopyViceFileTails(char *FromFile, long FromSkip, char *ToFile, long ToSkip);
+extern int CUI_CreateNewMessageDirectory(char *dir, char *bodydir);
+extern int CUI_DeleteMessage(int cuid);
+extern long CUI_DisambiguateDir(char *shortname, char **longname);
+extern int CUI_EndConversation(void);
+extern int CUI_GenLocalTmpFileName(char *nmbuf);
+extern int CUI_GenTmpFileName(char *nmbuf);
+extern int CUI_GetAMSID(int cuid, char **id, char **dir);
+extern int CUI_GetAttrName(char *dir, int which, char *buf);
+extern int CUI_GetBodyToLocalFile(int cuid, char *FileName, int *ShouldDelete);
+extern int CUI_GetCuid(char *amsid, char *dirname, int *IsDup);
+extern int CUI_GetFileFromVice(char *LocalFile, char *ViceFile);
+extern int CUI_GetHeaderContents(int cuid, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim);
+extern int CUI_GetHeaders(char *DirName, char *date64, char *headbuf, int limit, long startbyte, long *nbytes, long *status, int RegisterCuids);
+extern int CUI_GetPartialBody(char *Buf, int Max, int cuid, long offset, long *bytesunfetched, int *bodylen);
+extern int CUI_GetSnapshotFromCUID(int cuid, char *SnapshotBuf);
+extern int CUI_HandleMissingFolder(char *OldName);
+extern long CUI_Initialize(int (*TimerFunction)(), char *rock);
+extern int CUI_MarkAsRead(int cuid);
+extern int CUI_MarkRepliedTo(int cuid);
+extern int CUI_NameReplyFile(int cuid, int code, char *FileName);
+extern int CUI_PrintBodyFromCUIDWithFlags(int cuid, int flags, char *printer);
+extern int CUI_PrintUpdatesWithFlags(char *dname, char *nickname, int flags, char *printer);
+extern int CUI_ProcessMessageAttributes(int cuid, char *Snapshot);
+extern int CUI_PurgeMarkedDirectories(Boolean Ask, Boolean OfferQuit);
+extern int CUI_ReconstructDirectory(char *arg, int TrustTimeStamp);
+extern int CUI_ReportAmbig(char *name, char *atype);
+extern int CUI_RewriteHeaderLine(char *text, char **newtext);
+extern int CUI_SetClientSignalHandler(int (*h)());
+extern void CUI_SetClientVersion(char *Vers);
+extern int CUI_SetPrinter(char *printername);
+extern int CUI_StoreFileToVice(char *LocalFile, char *ViceFile);
+extern int CUI_SubmitMessage(char *InFile, int DeliveryOpts);
+extern int CUI_UndeleteMessage(int cuid);
+extern int CUI_ValidateFile(char *InFileName, char *OutFileName);
+extern int CalcSkip(long skipvalue, char **s, char *headbuf, long numbytes, Boolean *StayHere, long *totalbytes, long *status);
+extern int ChooseFromList(char **QVec, int def);
+extern int CloneMessage(char *arg, int Code);
+extern int DescribeFlags(int cuid);
+extern void DescribeHeads(void);
+extern int DisplayMessage(char *arg);
+extern int EditFile(char *arg, int edittype);
+extern int EditLocalFile(char *LocalName, Boolean *FinishedElsewhere);
+extern int FindBodyStartInForwardedViceFile(char *ViceFile);
+extern int GetBodyFromCUID(int cuid);
+extern int GetBooleanFromUser(char *prompt, Boolean DefaultAns);
+extern int GetHeadersSinceDate(char *DirName, char *date64, char *NothingMessage);
+extern int GetNextCommand(char **sptr, char *buf, int lim);
+extern int GetStringFromUser(char *prompt, char *buf, int len, int IsPassword);
+extern int GetSubject(int cuid, char *strbuf, int strbuflen);
+extern int LowerStringInPlace(char *string, int len);
+extern int MS_AppendFileToFolder(char *FileName, char *FolderName);
+extern int MS_DebugMode(int level, int snap, int malloc);
+extern int MS_Die(void);
+extern int MS_DisambiguateFile(char *source, char *target, short AccessCode);
+extern int MS_Epoch(char *dirname, char *date64);
+extern int MS_FastUpdateState(void);
+extern int MS_GetAssociatedTime(char *FullName, char *Answer, int lim);
+extern int MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, long *remaining, int *ct);
+extern int MS_GetSearchPathEntry(int which, char *buf, int lim);
+extern int MS_GetSubscriptionEntry(char *FullName, char *NickName, int *status);
+extern int MS_GetVersion(char *Buf, int lim);
+extern int MS_InstallWelcomeMessage(char *ParentName, char *InitDir, char *InitFile, char *ShortName);
+extern long MS_MatchFolderName(char *pat, char *filename);
+extern int MS_NameChangedMapFile(char *MapFile, int MailOnly, int ListAll, int *NumChanged, int *NumUnavailable, int *NumMissingFolders, int *NumSlowpokes, int *NumFastFellas);
+extern int MS_NameSubscriptionMapFile(char *Root, char *MapFile);
+extern int MS_OpenDebuggingPipescript(int DoIt);
+extern int MS_ParseDate(char *indate, int *year, int *month, int *day, int *hour, int *min, int *sec, int *wday, long *gtm);
+extern long MS_ScavengeDirectory(char *DirName, int Recurse, int *numgood, int *numbad, int quiet, int Purge);
+extern int MS_SetAssociatedTime(char *FullName, char *newvalue);
+extern int MS_SetSubscriptionEntry(char *FullName, char *NickName, int status);
+extern int MS_StorePartialFile(char *FileName, int startpos, int len, int mode, int Truncate, char *WhatToStore);
+extern int MS_TakeHints(int DoAll, int *ProtFailures);
+extern long MS_UnlinkFile(char *FileName);
+extern int MS_WriteUnscribedBodyFile(char *DirName, char *id, char *FileName);
+extern int MapcarFunctionToFileLines(int (*ProcessFunc)(), char *arg, int AliasCt);
+extern int MarkSeenLast(char *ans);
+extern int MoreSelect(int Default, char *AnsBuf, int AnsMax, char *MoreOptions[], char *s, char *Prompt_string);
+extern int ParseDirName(char *arg, char **Dirname);
+extern int ParseFileName(char *arg, char *FileName, int code);
+extern int ParseMessageNumber(char *arg);
+extern int PrintCaption(int cuid, char *Snapshot, int IsDup);
+extern int ProcessCommand(char *CurrentCommand, int AliasCount);
+extern int ProcessMultipleCommands(char *s, int AliasCt);
+extern int PutStringToViceFile(char *ViceFile, char *text);
+extern int RealWhoIs(char *text, char **newtext);
+extern int RedirectOutput(void);
+extern int ReportError(char *text, int level, Boolean Decode);
+extern int ReportSuccess(char *text);
+extern int ResetTerminalParams(char *arg);
+extern int SendSomeLines(char *TmpName, char *to, long *offset_p, int code, int cuid);
+extern int SendSomeMail(int cuid, char *to, int code);
+extern int SetDebugMode(char *arg);
+extern int SetEditorToUse(char *ed);
+extern int StepThroughMsgs(char *DirName, char *date64, char *ErrorText, char *newdate, Boolean *IsDone);
+extern int StoreMessage(int cuid, char *fname, long offset);
+extern int StorePartialFile(char *fname, long *offset_p, int mode);
+extern int ULstrcmp(char *s1, char *s2);
+extern int ULstrncmp(char *s1, char *s2, int n);
+extern int ViewMessage(int cuid);
+extern int amsconfig(int argc, char **argv, char *name);
+extern int dbg_close(int fd);
+extern int dbg_fclose(FILE *fp);
+/* moreprintf is a 1988-era "many fixed named params" pseudo-varargs function
+   (like ams/libs/ms's dbgprintf): real call sites supply only as many
+   trailing args as their format string references. An old-style
+   empty-parens ("unspecified arguments") declaration is the deliberately-
+   correct choice here -- it's compatible with any call-site argument count,
+   unlike a typed or `...`-variadic form (see cuifns.c for the fuller
+   explanation, including why this matters for errprintf2's same-file
+   definition too). */
+extern int moreprintf();
+extern int nontext(char *s);
+extern int writeall(int fd, char *Buf, int NBytes);
+
 static int ShowChainInfo = 0, PrintFixed = 0, PrintRot13 = 0;
 #define MAXCOMMANDS 100
 /* during startup be sure this many free command slots exist
@@ -213,11 +342,7 @@ struct InputParse {
 static struct InputParse *add_command_scan=Commands;
 static int num_cmds=0;
 
-void newcmd(xCommand,xFunction,xHelpText,xLevel)
-char   *xCommand;
-int     (*xFunction)();
-char   *xHelpText;
-int     xLevel;
+void newcmd(char *xCommand, int (*xFunction)(), char *xHelpText, int xLevel)
 {
     add_command_scan->Command=xCommand;
     add_command_scan->Function=xFunction;
@@ -413,8 +538,7 @@ int	BBDaemon = FALSE;
 char	Prompt[80] = "CUI> ";
 Boolean IgnoreMissingSourceFile = TRUE;
 
-HandleCUISignal(signum, ActNormal) 
-int signum, *ActNormal;
+int HandleCUISignal(int signum, int *ActNormal)
 {
 #ifndef DISABLELONGJUMPS
     if (signum == SIGINT) {
@@ -432,9 +556,7 @@ int signum, *ActNormal;
 }
 
     
-cui_prog_main(argc, argv)
-int	argc;
-char  **argv;
+int cui_prog_main(int argc, char **argv)
 {
     char   *s;
     int tmplevel;
@@ -488,8 +610,13 @@ char  **argv;
 	free(s);
     }
     else {
+	/* ReadCommandsFromFile mutates its arg in place via StripWhiteEnds;
+	   a string literal is read-only memory, so pass a writable copy. */
+	char rcname[16];
+	strcpy(rcname, "~/.cuirc");
+
 	Interactive = FALSE;
-	ReadCommandsFromFile("~/.cuirc", 0);
+	ReadCommandsFromFile(rcname, 0);
 	Interactive = TRUE;
     }
     if (ExpertiseLevel == (LEVEL_PARSECMDLINEARGS)) ExpertiseLevel = tmplevel;
@@ -513,9 +640,7 @@ char  **argv;
     }
 }
 
-ProcessMultipleCommands(s, AliasCt)
-char   *s;
-int	AliasCt;
+int ProcessMultipleCommands(char *s, int AliasCt)
 {
     char    CurrentCommand[CMDBUF];
     int     bytesleft, result;
@@ -555,9 +680,7 @@ int	AliasCt;
     return(0);
 }
 
-ProcessCommand(CurrentCommand, AliasCount)
-char   *CurrentCommand;
-int	AliasCount;
+int ProcessCommand(char *CurrentCommand, int AliasCount)
 {
     int     Matches,
 	    LastMatch = 0,
@@ -664,17 +787,12 @@ int	AliasCount;
     return(-1);
 }
 
-ReadCommandsFromFile(arg, AliasCt)
-char   *arg;
-int	AliasCt;
+int ReadCommandsFromFile(char *arg, int AliasCt)
 {
     MapcarFunctionToFileLines(ProcessCommand, arg, AliasCt);
 }
 
-MapcarFunctionToFileLines(ProcessFunc, arg, AliasCt)
-int	(*ProcessFunc)();
-char   *arg;
-int	AliasCt;
+int MapcarFunctionToFileLines(int (*ProcessFunc)(), char *arg, int AliasCt)
 {
     char   *filenam,
 	    Buf[MAXBODY + 1],
@@ -752,8 +870,7 @@ int	AliasCt;
     return(0);
 }
 
-GracefulExit(arg)
-char   *arg;
+int GracefulExit(char *arg)
 {
     debug(1,("GracefulExit\n"));
     CUI_PurgeMarkedDirectories(TRUE, FALSE);
@@ -761,8 +878,7 @@ char   *arg;
     exit(0);
 }
 
-SetOption(arg)
-char   *arg;
+int SetOption(char *arg)
 {
 char  AnsBuf[ANSBUFMAX], AnsBuf2[ANSBUFMAX], ErrorText[256];
 FILE *LogFP;
@@ -936,8 +1052,7 @@ int	Ans;
 
 static int MyMallocLevel=0, MSDebug=0, MSSnapDebug=0, MSMalloc=0;
 
-SetDebugMode(arg)
-char   *arg;
+int SetDebugMode(char *arg)
 {
     char   *s;
     int newpipescript = 0;
@@ -1021,8 +1136,7 @@ char   *arg;
     return(0);
 }
 
-HelpUser(arg)
-char   *arg;
+int HelpUser(char *arg)
 {
     int     i, NoCmd = TRUE;
 
@@ -1067,8 +1181,7 @@ char   *arg;
     return(0);
 }
 
-PrintBody(arg)
-char   *arg;
+int PrintBody(char *arg)
 {
     int     cuid, rc;
     char    ErrorText[256], *arg2;
@@ -1097,8 +1210,7 @@ struct head_list {
 	};
 struct head_list *HeadList=NULL;
 
-KeepHeader(arg)
-char *arg;
+int KeepHeader(char *arg)
 {
     debug(1,("KeepHeader of %s\n",arg));
     CheckPrompted("Please enter a list of headers")
@@ -1109,8 +1221,7 @@ char *arg;
     return(0);
 }
 
-OmitHeader(arg)
-char *arg;
+int OmitHeader(char *arg)
 {
     debug(1,("OmitHeader of %s\n",arg));
     CheckPrompted("Please enter a list of headers")
@@ -1121,7 +1232,7 @@ char *arg;
     return(0);
 }
 
-DescribeHeads() {
+void DescribeHeads() {
     struct head_list *thl;
 
     if (!Interactive) return;
@@ -1147,8 +1258,7 @@ DescribeHeads() {
     }
 }
 
-AddHeads(arg)
-char *arg;
+int AddHeads(char *arg)
 {
 char *s, *s2;
 struct head_list *t, *t2, *last;
@@ -1187,8 +1297,7 @@ struct head_list *t, *t2, *last;
     }
 }
 
-CheckHead(arg)
-char *arg;
+int CheckHead(char *arg)
 {
     struct head_list *t;
     for (t=HeadList; (t!=NULL); t=t->next) {
@@ -1198,8 +1307,7 @@ char *arg;
     return(HeadKeep && t);
 }
 
-GetBody(arg)
-char   *arg;
+int GetBody(char *arg)
 {
     int     cuid, rc;
     char *arg2;
@@ -1220,8 +1328,7 @@ char   *arg;
     return(rc);
 }
 
-DescribeFlags(cuid) 
-int cuid;
+int DescribeFlags(int cuid)
 {
     char Snapshot[AMS_SNAPSHOTSIZE], *id, *dir, AttrName[AMS_ATTRNAMEMAX], ErrorText[256];
     int i, started = 0;
@@ -1252,8 +1359,240 @@ int cuid;
 }
 		
 
-GetBodyFromCUID(cuid)
-int	cuid;
+/* MIME_NOT_HANDLED: distinct from both success (0) and a reported error
+   (-1) -- means "this message isn't something the mimepart path claims",
+   so GetBodyFromCUID's caller should fall through to whatever it would
+   have done before this existed (metamail, or the raw unscribed-body
+   dump). Not one of moreprintf's own return codes (0 or MORE_NO_MORE). */
+#define MIME_NOT_HANDLED (-2)
+
+/* CUI_MIME_CHUNK: moreprintf's own buffer (EnormousLine, morprntf.c) is a
+   fixed MAXBODY+10 bytes -- handing it a whole decoded message body in
+   one call would overflow that buffer via its internal sprintf(), the
+   same way DisplayMessage() below avoids it by only ever handing
+   moreprintf one MAXBODY-ish chunk at a time. */
+#define CUI_MIME_CHUNK (MAXBODY - 16)
+
+/* Prints one already-decoded chunk-at-a-time (see CUI_MIME_CHUNK above);
+   splits are plain byte-offset cuts, not line- or character-boundary
+   aware -- the same tradeoff DisplayMessage() already makes for a
+   message body fetched in fixed-size network chunks. */
+static int PrintMimeChunked(const char *buf, long len)
+{
+    long off = 0, n;
+    char chunk[MAXBODY];
+
+    if (!buf || len <= 0) return(0);
+    while (off < len) {
+        n = len - off;
+        if (n > CUI_MIME_CHUNK) n = CUI_MIME_CHUNK;
+        memcpy(chunk, buf + off, n);
+        chunk[n] = '\0';
+        if (moreprintf("%s", chunk) == MORE_NO_MORE) return(MORE_NO_MORE);
+        off += n;
+    }
+    return(0);
+}
+
+/* A header block's blank-line terminator is "\n" on a native-format
+   local message, but a raw IMAP-mirrored message keeps its wire "\r\n"
+   line endings verbatim -- recognize both (see the identical fix
+   already made in atkams/messages/lib/text822.c's GetHeader(), same bug
+   class: an LF-only check silently never terminates on CRLF mail, so
+   the "headers" that follow get treated as unrecognized body text). */
+static int IsBlankHeaderLine(char *line)
+{
+    return(line[0] == '\0' || line[0] == '\n' || (line[0] == '\r' && line[1] == '\n'));
+}
+
+/* Prints the raw header block of an already-open, rewound message file,
+   applying the same 'keep'/'omit' filtering (CheckHead/HeadersOn) that
+   DisplayMessage() applies to the same header block on the non-MIME
+   path -- kept as a near-duplicate of that loop, rather than factored
+   out from underneath it, since DisplayMessage() reads its input via
+   chunked MS_GetPartialFile() calls (network-friendly, no local file
+   required) while this one reads a local FILE* one line at a time
+   (simpler, and correct here since CUI_GetBodyToLocalFile() has already
+   fetched the whole message locally before this is ever called). */
+static int PrintMimeHeaders(FILE *fp)
+{
+    char line[MAXBODY];
+    int keptlast = 0;
+
+    while (fgets(line, sizeof(line), fp)) {
+        if (IsBlankHeaderLine(line)) break;
+        if (!HeadersOn) {
+            if (moreprintf("%s", line) == MORE_NO_MORE) return(MORE_NO_MORE);
+            continue;
+        }
+        if (line[0] == ' ' || line[0] == '\t') {
+            if (keptlast) if (moreprintf("%s", line) == MORE_NO_MORE) return(MORE_NO_MORE);
+        } else {
+            if (CheckHead(line)) {
+                keptlast = 1;
+                if (moreprintf("%s", line) == MORE_NO_MORE) return(MORE_NO_MORE);
+            } else keptlast = 0;
+        }
+    }
+    return(0);
+}
+
+/* Given one part (top-level message part, or one child of a multipart
+   container), returns the part cui actually knows how to render as
+   text, or NULL if this part isn't one of those. A multipart/alternative
+   resolves via mimepart_SelectAlternative(), but only counts if the
+   picked sibling is itself text/plain or text/html -- an alternative
+   between, say, an image and an audio clip has no text winner at all,
+   and must not be handed to RenderMimeLeaf() as if it were one. Any
+   other multipart type (mixed, related, digest, report, ...) is out of
+   scope for this pass -- its children are only ever considered one
+   level up, in DisplayMimeBody()'s own top-level scan. */
+static const struct mimepart *SelectDisplayablePart(const struct mimepart *p)
+{
+    if (!p) return(NULL);
+    if (mimepart_IsMultipart(p)) {
+        if (!strcmp(p->type, "multipart/alternative")) {
+            const struct mimepart *alt = mimepart_SelectAlternative(p);
+            if (alt && !mimepart_IsMultipart(alt)
+            && (!strcmp(alt->type, "text/plain") || !strcmp(alt->type, "text")
+                || !strcmp(alt->type, "text/html"))) {
+                return(alt);
+            }
+        }
+        return(NULL);
+    }
+    if (!strcmp(p->type, "text/plain") || !strcmp(p->type, "text") || !strcmp(p->type, "text/html")) {
+        return(p);
+    }
+    return(NULL);
+}
+
+/* One "[attachment: ...]" line for a multipart/mixed sibling that isn't
+   the part chosen for inline display -- same policy as messages'
+   text822.c (see revival/doc/claude-history/mime-display-REPORT.md
+   Gate 3): no clickable object, just a label, since saving/viewing
+   attachments from cui is out of scope here. bodylen is cast to (int)
+   for moreprintf -- see moreprintf's own doc comment above: its 1988
+   pseudo-varargs implementation reads every argument as `int`, so a
+   `long` passed positionally is exactly the mismatched-width hazard
+   documented as [[variadic-caller-abi-hazard]]; every other moreprintf
+   call site in this file already only ever passes int/char* for the
+   same reason. */
+static int PrintAttachmentLine(const struct mimepart *p)
+{
+    const char *fn = mimepart_GetDispParam(p, "filename");
+    if (!fn) fn = mimepart_GetParam(p, "name");
+    return(moreprintf("[attachment: %s (%s, %d bytes)]\n",
+                       fn ? fn : "unnamed", p->type, (int) p->bodylen));
+}
+
+/* Renders the chosen displayable part's decoded body: text/html goes
+   through mimepart's tag-strip/entity-decode shim first (same shim
+   text822.c uses -- see mimepart_HtmlToText()'s own doc comment for
+   what it does and doesn't handle); text/plain (or bare "text") prints
+   verbatim. Unlike text822.c inserting into an ATK Text widget (Latin-1
+   glyphs only, hence its UTF-8->Latin-1 conversion step), cui writes to
+   a real terminal -- on this platform a UTF-8-capable one -- so UTF-8
+   bytes are passed through unchanged rather than folded to Latin-1/'?'. */
+static int RenderMimeLeaf(const struct mimepart *p)
+{
+    int rc;
+
+    if (!strcmp(p->type, "text/html")) {
+        char *text = mimepart_HtmlToText((const char *) p->body, p->bodylen);
+        if (!text) return(0);
+        rc = PrintMimeChunked(text, (long) strlen(text));
+        free(text);
+        return(rc);
+    }
+    return(PrintMimeChunked((const char *) p->body, p->bodylen));
+}
+
+/* The MIME-aware alternative to the two paths GetBodyFromCUID() already
+   had (metamail, or a raw unscribed-body dump): decodes quoted-
+   printable/base64 and picks a real part to show instead of dumping
+   wire-encoded bytes or a boundary-line soup verbatim. Declines (returns
+   MIME_NOT_HANDLED) for anything it doesn't have a text part for --
+   a bare image/attachment message, or a multipart/alternative with no
+   text sibling -- so the caller's existing fallback still covers those
+   exactly as before. See revival/doc/claude-history/mime-display-
+   REPORT.md for the parallel work this mirrors in messages/text822.c;
+   mimepart.c itself lives in ams/libs/shr specifically so it links into
+   both without pulling in ATK (see mimepart.h's own placement note). */
+static int DisplayMimeBody(int cuid)
+{
+    char TmpFileName[1+MAXPATHLEN];
+    int ShouldDelete, rc;
+    FILE *fp;
+    struct mimepart *top;
+    const struct mimepart *winner = NULL;
+
+    if (CUI_GetBodyToLocalFile(cuid, TmpFileName, &ShouldDelete)) {
+        return(-1); /* error already reported */
+    }
+
+    fp = fopen(TmpFileName, "r");
+    if (!fp) {
+        if (ShouldDelete) MS_UnlinkFile(TmpFileName);
+        return(-1);
+    }
+    top = mimepart_ParseMessageFile(fp);
+    fclose(fp);
+
+    if (!top) {
+        if (ShouldDelete) MS_UnlinkFile(TmpFileName);
+        return(MIME_NOT_HANDLED);
+    }
+
+    winner = SelectDisplayablePart(top);
+    if (!winner && mimepart_IsMultipart(top)) {
+        const struct mimepart *c;
+        for (c = top->children; c && !winner; c = c->next) {
+            winner = SelectDisplayablePart(c);
+        }
+    }
+
+    if (!winner) {
+        mimepart_Free(top);
+        if (ShouldDelete) MS_UnlinkFile(TmpFileName);
+        return(MIME_NOT_HANDLED);
+    }
+
+    fp = fopen(TmpFileName, "r");
+    if (ShouldDelete) MS_UnlinkFile(TmpFileName); /* fp keeps it readable */
+    if (!fp) {
+        mimepart_Free(top);
+        return(-1);
+    }
+    rc = PrintMimeHeaders(fp);
+    fclose(fp);
+    if (rc == MORE_NO_MORE) {
+        mimepart_Free(top);
+        return(MORE_NO_MORE);
+    }
+
+    if (moreprintf("\n") == MORE_NO_MORE) {
+        mimepart_Free(top);
+        return(MORE_NO_MORE);
+    }
+    rc = RenderMimeLeaf(winner);
+
+    if (rc != MORE_NO_MORE && mimepart_IsMultipart(top)
+    && strcmp(top->type, "multipart/alternative")) {
+        const struct mimepart *c;
+        for (c = top->children; c; c = c->next) {
+            const struct mimepart *shown = SelectDisplayablePart(c);
+            if (c == winner || shown == winner) continue;
+            if (moreprintf("\n") == MORE_NO_MORE) { rc = MORE_NO_MORE; break; }
+            if (PrintAttachmentLine(c) == MORE_NO_MORE) { rc = MORE_NO_MORE; break; }
+        }
+    }
+
+    mimepart_Free(top);
+    return(rc);
+}
+
+int GetBodyFromCUID(int cuid)
 {
     char    SnapshotBuf[AMS_SNAPSHOTSIZE], FileName[1+MAXPATHLEN], *dir, *id, ErrorText[256];
 
@@ -1263,7 +1602,7 @@ int	cuid;
 #ifdef POSIX_ENV
 #include <termios.h>
       struct termios ttystatein, ttystateout;
-#else      
+#else
 #include <sgtty.h>
         struct sgttyb ttystatein, ttystateout;
 #endif
@@ -1274,6 +1613,10 @@ int	cuid;
         if (CUI_GetHeaderContents(cuid,(char *) NULL, HP_CONTENTTYPE, ctype, sizeof(ctype) - 1) != 0) {
             /* error already reported */
             return(-1);
+        }
+        if (ctype[0] && ULstrncmp(ctype, "x-be2", 5)) {
+            int mimerc = DisplayMimeBody(cuid);
+            if (mimerc != MIME_NOT_HANDLED) return(mimerc);
         }
         if (!getenv("NOMETAMAIL") && ctype[0] && ULstrncmp(ctype, "x-be2", 5) && nontext(ctype)) {
             if (CUI_GetBodyToLocalFile(cuid, TmpFileName, &ShouldDelete)) {
@@ -1324,16 +1667,14 @@ int	cuid;
     return(0);
 }
 
-ViewMessageCmd(arg)
-char *arg;
+int ViewMessageCmd(char *arg)
 {
 int cuid;
     if ((cuid = ParseMessageNumber(arg))<0) return(-1);
     return(ViewMessage(cuid));
 }
 
-ViewMessage(cuid)
-int cuid;
+int ViewMessage(int cuid)
 {
     Boolean FinishedElsewhere;
     int     bodylen, fd;
@@ -1380,8 +1721,7 @@ int cuid;
     return(0);
 }
 
-StoreMessageCmd(arg)
-char *arg;
+int StoreMessageCmd(char *arg)
 {
 char *FileName;
 int cuid;
@@ -1395,10 +1735,7 @@ int cuid;
     return(StoreMessage(cuid,FileName, 0L));
 }
 
-StoreMessage(cuid, fname, offset)
-int cuid;
-char *fname;
-long offset;
+int StoreMessage(int cuid, char *fname, long offset)
 {
     int     bodylen;
     long    offset_in, bytesunfetched;	/* *** Added for PC 8/20/86 *** */
@@ -1436,8 +1773,7 @@ long offset;
     return(0);
 }
 
-DisplayFile(arg)
-char   *arg;
+int DisplayFile(char *arg)
 {
     char Buf[MAXBODY],
 	    ErrorText[256],
@@ -1471,8 +1807,7 @@ char   *arg;
     return(0);
 }
 
-DisplayMessage(arg)
-char   *arg;
+int DisplayMessage(char *arg)
 {
     char   *cl, *nl,
 	    Buf[MAXBODY],
@@ -1526,16 +1861,14 @@ char   *arg;
     return(0);
 }
 
-BrowseMsgs(arg)
-char   *arg;
+int BrowseMsgs(char *arg)
 {
     debug(1,("BrowseMsgs %s\n", arg));
     CheckPrompted("Please enter message group name (and since date)")
     return(GetHeadersFn(arg,'s'));
 }
 
-GetHeaders(arg)
-char   *arg;
+int GetHeaders(char *arg)
 {
     debug(1,("GetHeaders %s\n", arg));
     CheckPrompted("Please enter message group name (and since date)")
@@ -1545,8 +1878,7 @@ char   *arg;
 #define DATELEN  7
 #define TIMELEN 10
 
-GetHeadersFn(arg, fn)
-char   *arg, fn;
+int GetHeadersFn(char *arg, char fn)
 {
     char   *date,
 	   date64[DATELEN],
@@ -1605,8 +1937,7 @@ char   *arg, fn;
 		       GetHeadersSinceDate(DirName, date, ErrorText));
 }
 
-GetHeadersSinceDate(DirName, date64, NothingMessage)
-char *DirName, *date64, *NothingMessage;
+int GetHeadersSinceDate(char *DirName, char *date64, char *NothingMessage)
 {
     char headbuf[HEADBUFSIZE], ErrorText[256], *s;
     int     cuid, IsDup;
@@ -1642,10 +1973,7 @@ char *DirName, *date64, *NothingMessage;
     return(0);
 }
 
-GetNextCommand(sptr, buf, lim)
-char  **sptr;
-char   *buf;
-int	lim;
+int GetNextCommand(char **sptr, char *buf, int lim)
 {
     int     i = 0;
     char   *s;
@@ -1696,7 +2024,7 @@ int	lim;
     return(i);
 }
 
-PrintVersionNumbers() {
+int PrintVersionNumbers() {
     char    msv[80];
 
     debug(1,("Print version numbers\n"));
@@ -1709,9 +2037,7 @@ PrintVersionNumbers() {
     return(0);
 }
 
-DemonLoop(arg, AliasCt)
-char   *arg;
-int	AliasCt;
+int DemonLoop(char *arg, int AliasCt)
 {
     int     Period,
 	    Passes;
@@ -1760,8 +2086,7 @@ int	AliasCt;
     }
 }
 
-MakeAlias(arg)
-char   *arg;
+int MakeAlias(char *arg)
 {
     char   *word,
 	   *s,
@@ -1854,7 +2179,7 @@ char   *arg;
     return(0);
 }
 
-ExecuteAlias(Arguments, AliasCt, Definition)
+int ExecuteAlias(Arguments, AliasCt, Definition)
 char   *Arguments,
        *Definition;
 int	AliasCt;
@@ -1880,9 +2205,7 @@ int	AliasCt;
     return(status);
 }
 
-UpdateMess(FullName, NickName, substatus)
-char   *FullName, *NickName;
-int	substatus;
+int UpdateMess(char *FullName, char *NickName, int substatus)
 {
     Boolean IsDone = FALSE;
     int     code;
@@ -1948,9 +2271,7 @@ int	substatus;
     return(code);
 }
 
-int StepThroughMsgs(DirName, date64, ErrorText, newdate, IsDone)
-char *DirName, *date64, *ErrorText, *newdate;
-Boolean *IsDone;
+int StepThroughMsgs(char *DirName, char *date64, char *ErrorText, char *newdate, Boolean *IsDone)
 {
     Boolean StayHere;
     char    AnsBuf[ANSBUFMAX],
@@ -2132,10 +2453,7 @@ Boolean *IsDone;
     return(0);
 }
 
-CalcSkip(skipvalue,s,headbuf,numbytes,StayHere,totalbytes,status)
-long *totalbytes, skipvalue, numbytes, *status;
-char **s, *headbuf;
-Boolean *StayHere;
+int CalcSkip(long skipvalue, char **s, char *headbuf, long numbytes, Boolean *StayHere, long *totalbytes, long *status)
 {
 /* * debug(1,("<CalcSkip> skipvalue=%ld, %ld bytes buffered\n", skipvalue, numbytes));
  *  debug(1,("<CalcSkip> %ld bytes remaining, current buffer ended at %ld\n",
@@ -2174,9 +2492,7 @@ Boolean *StayHere;
  *  debug(1,("<CalcSkip> and %ld bytes remaining\n", *status));   ******* */
 }
 
-UpdateMsgs(arg, AliasCt)
-char   *arg;
-int	AliasCt;
+int UpdateMsgs(char *arg, int AliasCt)
 {
     char   *dname;
     char mapFile[1+MAXPATHLEN], lmapFile[1+MAXPATHLEN];
@@ -2263,9 +2579,7 @@ int	AliasCt;
     return(0);
 }
 
-AlterSubscription(arg, AliasCt)
-char   *arg;
-int	AliasCt;
+int AlterSubscription(char *arg, int AliasCt)
 {
     long    spcode;
     int     i = 0;
@@ -2303,8 +2617,7 @@ int	AliasCt;
     return(0);
 }
 
-AlterSubscriptionLine(text)
-char   *text;
+int AlterSubscriptionLine(char *text)
 {
     int code;
     code = AlterSubLine(text);
@@ -2316,8 +2629,7 @@ char   *text;
     return(code);
 }
 
-AlterSubLine(text)
-char   *text;
+int AlterSubLine(char *text)
 {
     char   *Full,
 	    Nick[MAXPATHLEN + 1],
@@ -2431,21 +2743,20 @@ tryagain:
     return(0);
 }
 
-KillServer() {
+int KillServer() {
     if ((mserrcode = MS_Die()) != 0) {
 	ReportError("Could not kill message server", ERR_WARNING, TRUE);
     }
     return(0);
 }
 
-EchoArgs(arg)
-char   *arg;
+int EchoArgs(char *arg)
 {
     moreprintf("%s\n", arg);
     return(0);
 }
 
-ForkYourself() {
+int ForkYourself() {
     if (fork()) {
 	exit(0);
     }
@@ -2453,8 +2764,7 @@ ForkYourself() {
     return(0);
 }
 
-DeleteMessages(arg)
-char   *arg;
+int DeleteMessages(char *arg)
 {
     int     cuid,
 	rc;
@@ -2478,8 +2788,7 @@ char   *arg;
     return(0);
 }
 
-UndeleteMessages(arg)
-char   *arg;
+int UndeleteMessages(char *arg)
 {
     int     cuid,
 	rc;
@@ -2503,8 +2812,7 @@ char   *arg;
     return(0);
 }
 
-Epoch(arg)
-char   *arg;
+int Epoch(char *arg)
 {
     char *dname,
         *date,
@@ -2553,7 +2861,7 @@ char   *arg;
     debug(2,("Converted date %s to %s\n", date, date64));
 
     if (Interactive) {
-	sprintf(ErrorText, "Warning.  You are about to delete all messages in the folder \n\t%s\nand all its subfolders dated before\n\t%d/%d/%d %d:%02d.\n\nAre you sure you want to do this",
+	sprintf(ErrorText, "Warning.  You are about to delete all messages in the folder \n\t%s\nand all its subfolders dated before\n\t%d/%d/%d %d:%02d:%02d.\n\nAre you sure you want to do this",
 	    dname, month + 1, day, year,
 	    hour, min, sec);
 	if (!GetBooleanFromUser(ErrorText, FALSE)) {
@@ -2568,8 +2876,7 @@ char   *arg;
     return(0);
 }
 
-WhenIs(arg)
-char   *arg;
+int WhenIs(char *arg)
 {
     int year, month, day, hour, min, sec, wday;
     long gtm;
@@ -2583,16 +2890,14 @@ char   *arg;
 	ReportError(ErrorText, ERR_WARNING, TRUE);
 	return(-1);
     }
-    debug(1, ("Day of week is %d; unix time is %d\n", wday, gtm));
+    debug(1, ("Day of week is %d; unix time is %ld\n", wday, gtm));
     moreprintf("%d/%d/%d %d:%02d:%02d\n",
 	    month + 1, day, year,
 	    hour, min, sec);
     return(0);
 }
 
-WriteFile(arg, AliasCt)
-char   *arg;
-int	AliasCt;
+int WriteFile(char *arg, int AliasCt)
 {
     long offset = 0L;
     char FullName[1+MAXPATHLEN];
@@ -2613,16 +2918,14 @@ int	AliasCt;
     return(0);
 }
 
-MailCmd(arg)
-char   *arg;
+int MailCmd(char *arg)
 {
     debug(1,("MailCmd %s\n", arg));
     CheckQuestion("Press enter, or enter a name or network address")
     SendSomeMail(0, arg, AMS_REPLY_FRESH);
 }
 
-ReplyMailCmd(arg)
-char   *arg;
+int ReplyMailCmd(char *arg)
 {
     int     cuid;
 
@@ -2631,8 +2934,7 @@ char   *arg;
     return(SendSomeMail(cuid, NULL, AMS_REPLY_SENDER));
 }
 
-WideReplyMailCmd(arg)
-char   *arg;
+int WideReplyMailCmd(char *arg)
 {
     int     cuid;
 
@@ -2641,8 +2943,7 @@ char   *arg;
     return(SendSomeMail(cuid, NULL, AMS_REPLY_WIDE));
 }
 
-WiderReplyMailCmd(arg)
-char   *arg;
+int WiderReplyMailCmd(char *arg)
 {
     int     cuid;
 
@@ -2651,8 +2952,7 @@ char   *arg;
     return(SendSomeMail(cuid, NULL, AMS_REPLY_WIDER));
 }
 
-ForwardMailCmd(arg)
-char   *arg;
+int ForwardMailCmd(char *arg)
 {
     char *addr;
     int     cuid, code;
@@ -2670,8 +2970,7 @@ char   *arg;
     return(code);
 }
 
-Redraft(arg)
-char   *arg;
+int Redraft(char *arg)
 {
     int     cuid;
 
@@ -2680,7 +2979,7 @@ char   *arg;
     return(SendSomeMail(cuid, NULL, AMS_REPLY_REDRAFT));
 }
 
-SendSomeMail(cuid, to, code)
+int SendSomeMail(cuid, to, code)
 int	cuid,
 	code;
 char   *to;
@@ -2724,8 +3023,12 @@ char   *to;
 		    if (to == (char *) - 1) return(-1);
 		}
 		if (RealWhoIs(to, &realname) && !GetBooleanFromUser("Proceed with mail composition anyway", FALSE)) return(-1);
-		sprintf(HeadBuf, "To: %s\n", realname);
-		free(realname);
+		/* realname can come back NULL (validation unavailable, not
+		   just a bad address); fall back to the address as typed
+		   rather than writing the literal text "(null)" into the
+		   header. */
+		sprintf(HeadBuf, "To: %s\n", realname ? realname : to);
+		if (realname) free(realname);
 		CUI_GenTmpFileName(TmpName2);
 		if (PutStringToViceFile(TmpName2, HeadBuf)) return(-1);
 		moreprintf("Enter your prefix to the message and then %s\n", EOF_STRING);
@@ -2819,10 +3122,7 @@ char   *to;
     return(0);
 }
 
-SendSomeLines(TmpName, to, offset_p, code, cuid)
-char *TmpName, *to;
-long *offset_p;
-int code, cuid;
+int SendSomeLines(char *TmpName, char *to, long *offset_p, int code, int cuid)
 {
     char *s, HeadBuf[3000], *realname, BigBuf[1000];
     if (!to || !*to) {
@@ -2834,7 +3134,10 @@ int code, cuid;
     }
     if (RealWhoIs(to, &realname) && !GetBooleanFromUser("Proceed with mail composition anyway", FALSE))
 	return(-1);
-    sprintf(HeadBuf, "To: %s\n", realname);
+    /* realname can come back NULL (validation unavailable, not just a bad
+       address); fall back to the address as typed rather than writing the
+       literal text "(null)" into the header. */
+    sprintf(HeadBuf, "To: %s\n", realname ? realname : to);
     if (realname) free(realname);
     if (code==AMS_REPLY_FRESH) {
 	for (;;) {
@@ -2857,7 +3160,10 @@ int code, cuid;
         if (RealWhoIs(s, &realname) && !GetBooleanFromUser("Proceed with mail composition anyway", FALSE)) {
 	    return(-1);
 	}
-	strcat(BigBuf, realname);
+	/* realname can come back NULL (validation unavailable, not just a
+	   bad address) -- guard, don't strcat a NULL pointer. */
+	if (realname) strcat(BigBuf, realname);
+	if (realname) free(realname);
     } else {
 	GetSubject(cuid, BigBuf, 1000);
     }
@@ -2876,9 +3182,7 @@ int code, cuid;
     return(0);
     }
 
-GetSubject(cuid, strbuf, strbuflen)
-int cuid, strbuflen;
-char *strbuf;
+int GetSubject(int cuid, char *strbuf, int strbuflen)
 {
     int     bodylen;
     long    offset,
@@ -2917,8 +3221,7 @@ char *strbuf;
     strncpy(strbuf, scr, strbuflen);
 }
 
-CreateNewMessageDirectory(arg)
-char   *arg;
+int CreateNewMessageDirectory(char *arg)
 {
     int cuid, HasParent = TRUE;
     char   *s, *id, *dir,
@@ -3020,9 +3323,7 @@ char   *arg;
 #define PADTOCOLUMNB 29
 #define LOTSASPACE "                                                                "
 
-PrintCaption(cuid, Snapshot, IsDup)
-int	cuid, IsDup;
-char   *Snapshot;
+int PrintCaption(int cuid, char *Snapshot, int IsDup)
 {
     int     len, padlen;
     char   *s,
@@ -3090,8 +3391,7 @@ char   *Snapshot;
     return(moreprintf("%s\n", CaptionBuffer));
 }
 
-WhoIs(arg)
-char   *arg;
+int WhoIs(char *arg)
 {
     char    *realname;
     int badct;
@@ -3099,13 +3399,16 @@ char   *arg;
     CheckPrompted("Please enter one or more names to check")
     moreprintf("Verifying name list '%s'...\n", arg);
     badct = RealWhoIs(arg, &realname);
-    moreprintf("\n%s\n", realname);
+    /* realname can come back NULL (validation unavailable, not just a bad
+       address); fall back to the text as typed rather than printing the
+       literal text "(null)". */
+    moreprintf("\n%s\n", realname ? realname : arg);
     if (realname) free(realname);
     if (badct>1) moreprintf("Total of %d errors\n", badct);
     return(0);
 }
 
-RealWhoIs(text, newtext)
+int RealWhoIs(text, newtext)
 char   *text,
        **newtext;
 {
@@ -3115,15 +3418,12 @@ char   *text,
 }
 
 
-EditFileCmd(arg)
-char *arg;
+int EditFileCmd(char *arg)
 {
      return(EditFile(arg, EDIT_MODE ));
 }
 
-EditFile(arg, edittype)
-char   *arg;
-int edittype;
+int EditFile(char *arg, int edittype)
 {
     Boolean FinishedElsewhere;
     char    FileName[MAXPATHLEN + 1], LocalName[MAXPATHLEN + 1];
@@ -3144,33 +3444,27 @@ int edittype;
 }
 
 
-ClassifyMessage(arg)
-char *arg;
+int ClassifyMessage(char *arg)
 {
     return(CloneMessage(arg, MS_CLONE_COPYDEL));
 }
 
-AppendMessage(arg)
-char *arg;
+int AppendMessage(char *arg)
 {
     return(CloneMessage(arg, MS_CLONE_APPEND));
 }
 
-CopyMessage(arg)
-char *arg;
+int CopyMessage(char *arg)
 {
     return(CloneMessage(arg, MS_CLONE_COPY));
 }
 
-AppendDelMessage(arg)
-char *arg;
+int AppendDelMessage(char *arg)
 {
     return(CloneMessage(arg, MS_CLONE_APPENDDEL));
 }
 
-CloneMessage(arg, Code)
-char *arg;
-int Code;
+int CloneMessage(char *arg, int Code)
 {
     int cuid;
     char SnapshotBuf[AMS_SNAPSHOTSIZE];
@@ -3203,16 +3497,14 @@ int Code;
     return(CUI_CloneMessage(cuid, arg, Code));
  }
 
-DirectoryChangeHook(adddir, deldir, rock)
-char *adddir, *deldir, *rock;
+int DirectoryChangeHook(char *adddir, char *deldir, char *rock)
 {
     debug(1, ("Directory change hook adding %s deleting %s\n", adddir ? adddir : "<NULL>", deldir ? deldir : "<NULL>"));
 }
 
 extern int LinesOnTerminal, TerminalLineWidth;
 
-ShowOptSettings(arg)
-char *arg;
+int ShowOptSettings(char *arg)
 {
     int i, SaidSomething = 0, len;
 
@@ -3285,8 +3577,7 @@ char *arg;
     }
 }
 
-TakeHints(arg)
-char *arg;
+int TakeHints(char *arg)
 {
     int DoAll, ProtFailures;
 
@@ -3301,8 +3592,7 @@ char *arg;
     }
 }
 
-FindBodyStartInForwardedViceFile(ViceFile)
-char *ViceFile;
+int FindBodyStartInForwardedViceFile(char *ViceFile)
 {
     char    Buf[MAXBODY], *s;
     int     bodylen;
@@ -3334,9 +3624,7 @@ char *ViceFile;
     return(0);
 }
 
-MatchFolder(arg, aliasct)
-char *arg;
-int aliasct;
+int MatchFolder(char *arg, int aliasct)
 {
     char Fname[1+MAXPATHLEN];
 
@@ -3350,8 +3638,7 @@ int aliasct;
     }
 }
 
-ReconstructDirectory(arg)
-char *arg;
+int ReconstructDirectory(char *arg)
 {
     static char   *HowToVec[] = {
 	"How do you want to sort the reconstructed folder",
@@ -3372,8 +3659,7 @@ char *arg;
     return(CUI_ReconstructDirectory(arg, TrustTimeStamp));
 }
 
-Scavenge(arg)
-char *arg;
+int Scavenge(char *arg)
 {
     int Recurse = -1, numgood, numbad, Purge = -1;
     char *s, *t, *DirName;
@@ -3418,11 +3704,14 @@ char *arg;
     return(mserrcode);
 }
 
-SubscriptionChangeHook() {} /* satisfy the linker */
+/* True 4-arg signature matches every call site (ams/libs/cui/cuilib.c:3397,
+   SubscriptionChangeHook(Name, NickName, status, CUI_Rock)) -- cui itself
+   has no subscription-change UI, so the body stays a no-op, same shape as
+   DirectoryChangeHook() just above. */
+int SubscriptionChangeHook(char *Name, char *NickName, int status, char *rock) {} /* satisfy the linker */
 
 #ifdef METAMAIL_ENV
-nontext(s)
-char *s;
+int nontext(char *s)
 {
     char *t;
     if (!s) return(1);

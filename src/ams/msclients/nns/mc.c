@@ -37,9 +37,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 /* BOGUS: Include relevant AMS header(s) here */
 
 #include <big.h>
+static int MCHash(char *string);
 
-static int      MCHash(string)
-char           *string;
+static int MCHash(char *string)
 {
     int             result = 0;
     char           *p = string;
@@ -48,8 +48,7 @@ char           *string;
     return (result % NUMMCBUCKETS);
 }
 
-void            MCInit(mc)
-MCache_t       *mc;
+void MCInit(MCache_t *mc)
 {
     int             i;
 
@@ -58,8 +57,7 @@ MCache_t       *mc;
 	MCBInit(&(mc->buckets[i]));
 }
 
-void            MCPurge(mc)
-MCache_t       *mc;
+void MCPurge(MCache_t *mc)
 {
     int             i;
 
@@ -67,24 +65,17 @@ MCache_t       *mc;
 	MCBPurge(&(mc->buckets[i]));
 }
 
-int             MCMake(mc, string, Msg)
-MCache_t       *mc;
-char           *string;
-struct MS_Message *Msg;
+int MCMake(MCache_t *mc, char *string, struct MS_Message *Msg)
 {
     return (MCBMake(&(mc->buckets[(*(mc->HashFn)) (string)]), string, Msg));
 }
 
-void            MCDelete(mc, string)
-MCache_t       *mc;
-char           *string;
+void MCDelete(MCache_t *mc, char *string)
 {
     MCBDelete(&(mc->buckets[(*(mc->HashFn)) (string)]), string);
 }
 
-struct MS_Message *MCFind(mc, string)
-MCache_t       *mc;
-char           *string;
+struct MS_Message * MCFind(MCache_t *mc, char *string)
 {
     return (MCBFind(&(mc->buckets[(*(mc->HashFn)) (string)]), string));
 }

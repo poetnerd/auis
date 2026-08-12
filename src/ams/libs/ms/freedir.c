@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <ms.h>
+#include <stdlib.h>
 
 /* This routine frees a directory and the things it points to.  If the
 	directory is in the cache, it should be removed from the cache
@@ -42,8 +43,7 @@ any more -- they are in a permanent cache, and freeing them will cause a
 core dump.  However, this documents what they allocate, and might be useful
 in future versions. */
 
-FreeDirectory(Dir)
-struct MS_Directory *Dir;
+int FreeDirectory(struct MS_Directory *Dir)
 {
     debug(1, ("FreeDirectory\n"));
     if (Dir) {

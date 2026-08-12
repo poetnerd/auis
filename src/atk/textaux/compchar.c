@@ -57,6 +57,38 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <pcompch.ih>
 #include <im.ih>
 
+struct helpRock;
+static void SelfInsertCmd();
+static void after(struct textview *tv, char *list, unsigned char *codes, char *ch);
+static unsigned char ahotoi(char *ptr, int base2);
+static void compchar_ASCIIToATK(struct textview *tv, long rock);
+static void compchar_ATKToASCII(struct textview *tv, long rock);
+static void compchar_compose(struct textview *tv, char *ptr);
+static void compchar_compose2(struct textview *tv, char *ch);
+static void compchar_hat(struct textview *tv, char *ptr);
+static void compchar_hatafter(struct textview *tv, char *rock);
+static void compchar_insert(struct textview *tv, char *ptr);
+static void compchar_leftaccent(struct textview *tv, char *ptr);
+static void compchar_leftaccentafter(struct textview *tv, char *rock);
+static void compchar_modifier(struct textview *tv, char *ptr, char *list, unsigned char *codes);
+static void compchar_nop(struct textview *tv, char *possibilities);
+static void compchar_rightaccent(struct textview *tv, char *ptr);
+static void compchar_rightaccentafter(struct textview *tv, char *rock);
+static void compchar_tilde(struct textview *tv, char *ptr);
+static void compchar_tildeafter(struct textview *tv, char *rock);
+static void compchar_umlaut(struct textview *tv, char *ptr);
+static void compchar_umlautafter(struct textview *tv, char *rock);
+struct YARock;
+struct SARock;
+static struct composites * composework(char key, struct composites *c, char *exts);
+static long doasciireplacement(struct text *text, long pos, unsigned char ch, char *ascii, struct SARock *r);
+static long doatkreplacement(struct text *text, long pos, char *ascii, struct SARock *r);
+static long handlekey(struct YARock *rock, char key);
+static void helpProc(char *partial, struct helpRock *myrock, procedure HelpWork, long rock);
+static unsigned char keywork(char key, struct composites *c, struct YARock *rock);
+static long match(char key, struct composites *c, long rock);
+static unsigned char parsecode(char *ptr);
+
 static struct style *boldulined=NULL,*fixed=NULL;
 
 static struct proctable_Entry *nop=NULL,*insertchar=NULL;
@@ -82,9 +114,7 @@ static char hex[]="0123456789abcdef";
 static char octal[]="01234567";
 
 /* ahotoi: used by compchar_insert to parse a hexadecimal or octal number depending on if base is 3 or 4. */
-static unsigned char ahotoi(ptr,base2)
-char *ptr;
-int base2;
+static unsigned char ahotoi(char *ptr, int base2)
 {
     unsigned char result;
     char c,*i,*base=(base2==3)?octal:hex;
@@ -101,8 +131,7 @@ int base2;
 }
 
 /* parsecode: parse a code in decimal,hex, octal or simply set the high bit of an ASCII character. */
-static unsigned char parsecode(ptr)
-char *ptr;
+static unsigned char parsecode(char *ptr)
 {
     switch(*ptr) {
 	case '|':
@@ -177,9 +206,7 @@ char *style;
       'o': inserts the character whose code is given in octal.
       'd': inserts the character whose code is given in decimal.
   If the first character of the argument isn't one of the above it is taken to be the decimal code for the character to be inserted. */
-static void compchar_insert(tv,ptr)
-struct textview *tv;
-char *ptr;
+static void compchar_insert(struct textview *tv, char *ptr)
 {
     if((long)ptr<BADCHAR) {
 	message_DisplayString(tv,0,"compchar-insert must be called with an argument from an initfile.");
@@ -189,11 +216,7 @@ char *ptr;
 }
 
 /* compchar_modifier: if ptr isn't a valid character assumes it to be a pointer to an argument as provided by an .*init file.  In this case it inserts the character pointed to with the appropriate code as given by list and codes.  If ptr is a valid character then the character before the cursor is changed to the appropriate code as given by list and codes. */
-static void compchar_modifier(tv,ptr,list,codes)
-struct textview *tv;
-char *ptr;
-char *list;
-unsigned char *codes;
+static void compchar_modifier(struct textview *tv, char *ptr, char *list, unsigned char *codes)
 {
     struct text *t=(struct text *)textview_GetDataObject(tv);
     /* if given an arg in a  .*init insert it with an accent */
@@ -231,23 +254,19 @@ struct arock {
 
 /* doafter: the keystate override function for applying a umlaut, hat, tilde, etc to the next character typed;
   */
-static enum keymap_Types doafter(rock,key,ppe,prock)
-struct arock *rock;
-char key;
-struct proctable_Entry **ppe;
-long *prock;
+static enum keymap_Types doafter(struct arock *rock, char key, struct proctable_Entry **ppe, long *prock)
 {
     struct textview *tv=rock->tv;
     unsigned char *i=(unsigned char *)index(rock->list,key);
     if(!i) {
-	keystate_SetOverride(tv->keystate,rock->oldoverride, rock->oldrock);
+	keystate_SetOverride(tv->keystate,rock->oldoverride, (void *)rock->oldrock);
 	free(rock);
 	message_DisplayString(tv,0,"No such character.");
 	*prock=0;
 	*ppe=nop;
 	return keymap_Proc;
     }
-    keystate_SetOverride(tv->keystate,rock->oldoverride, rock->oldrock);
+    keystate_SetOverride(tv->keystate,rock->oldoverride, (void *)rock->oldrock);
     free(rock);
     *prock=rock->codes[i-(unsigned char *)rock->list];
     *ppe=insertchar;
@@ -255,11 +274,7 @@ long *prock;
 }
 
 /* after: the function which actually handles the work for all the compchar_*after functions, sets doafter as the override function on the textviews keystate, if the override function is already doafter it cancels the operation and if the .*init file so indicated will insert a character. */
-static void after(tv,list,codes,ch)
-struct textview *tv;
-char *list;
-unsigned char *codes;
-char *ch;
+static void after(struct textview *tv, char *list, unsigned char *codes, char *ch)
 {
     struct arock *rock;
     rock=(struct arock *)malloc(sizeof(struct arock));
@@ -275,7 +290,7 @@ char *ch;
 	keystate_SetOverride(tv->keystate,NULL,0);
 	return;
     }
-    keystate_SetOverride(tv->keystate,(procedure)doafter ,(long)rock);
+    keystate_SetOverride(tv->keystate,(procedure)doafter ,rock);
 }
 /*
   compchar_leftaccentafter:
@@ -286,37 +301,27 @@ char *ch;
       front-end functions to pass the appropriate list and codes
   arguments to after. */
 
-static void compchar_leftaccentafter(tv,rock)
-struct textview *tv;
-char *rock;
+static void compchar_leftaccentafter(struct textview *tv, char *rock)
 {
     after(tv,leftaccent,leftaccentcodes,rock);
 }
 
-static void compchar_rightaccentafter(tv,rock)
-struct textview *tv;
-char *rock;
+static void compchar_rightaccentafter(struct textview *tv, char *rock)
 {
     after(tv,rightaccent,rightaccentcodes,rock);
 }
 
-static void compchar_umlautafter(tv,rock)
-struct textview *tv;
-char *rock;
+static void compchar_umlautafter(struct textview *tv, char *rock)
 {
     after(tv,umlaut,umlautcodes,rock);
 }
 
-static void compchar_tildeafter(tv,rock)
-struct textview *tv;
-char *rock;
+static void compchar_tildeafter(struct textview *tv, char *rock)
 {
     after(tv,tilde,tildecodes,rock);
 }
 
-static void compchar_hatafter(tv,rock)
-struct textview *tv;
-char *rock;
+static void compchar_hatafter(struct textview *tv, char *rock)
 {
     after(tv,hat,hatcodes,rock);
 }
@@ -330,48 +335,35 @@ char *rock;
       front-end functions to pass the appropriate list and codes
   arguments to compchar_modifier. */
  
-static void compchar_leftaccent(tv,ptr)
-struct textview *tv;
-char *ptr;
+static void compchar_leftaccent(struct textview *tv, char *ptr)
 {
     compchar_modifier(tv,ptr,leftaccent,leftaccentcodes);
 }
 
-static void compchar_rightaccent(tv,ptr)
-struct textview *tv;
-char *ptr;
+static void compchar_rightaccent(struct textview *tv, char *ptr)
 {
     compchar_modifier(tv,ptr,rightaccent,rightaccentcodes);
 }
 
-static void compchar_umlaut(tv,ptr)
-struct textview *tv;
-char *ptr;
+static void compchar_umlaut(struct textview *tv, char *ptr)
 {
     compchar_modifier(tv,ptr,umlaut,umlautcodes);
 }
 
 
-static void compchar_tilde(tv,ptr)
-struct textview *tv;
-char *ptr;
+static void compchar_tilde(struct textview *tv, char *ptr)
 {
     compchar_modifier(tv,ptr,tilde,tildecodes);
 }
 
-static void compchar_hat(tv,ptr)
-struct textview *tv;
-char *ptr;
+static void compchar_hat(struct textview *tv, char *ptr)
 {
     compchar_modifier(tv,ptr,hat,hatcodes);
 }
 
 
 /* composework: called from pcompch_EnumerateComposites with ROCK being the textview in which the compose operation began and C being the composite to be checked.  If the current composite is equal to the user's entry the appropriate character is inserted in the text and a value of one is returned to terminate the search.  Otherwise it simply returns 0. */ 
-static struct composites *composework(key,c,exts)
-char key;
-struct composites *c;
-char *exts;
+static struct composites * composework(char key, struct composites *c, char *exts)
 {
    if(strcmp((char *) c->exts,exts)) return NULL;
    else return c;
@@ -385,10 +377,7 @@ struct helpRock {
 };
 
 /* match: called from compchar_EnumerateComposites with ROCK being a struct helpRock as defined above.  If the user's entry up until this point matches one of the composites of KEY then that composite will be displayed in the help buffer. */
-static long match(key,c,rock)
-char key;
-struct composites *c;
-long rock;
+static long match(char key, struct composites *c, long rock)
 {
     struct helpRock *h=(struct helpRock *)rock;
     unsigned char buf[256];
@@ -426,11 +415,7 @@ long rock;
 }
 
 /* helpProc: called by frameview__Help after having been set as the help procedure for a message_AskForStringCompleted.  Initializes data needed by match for it to see if a composite matches the user's entry so far and procedes to use pcompch_EnumerateComposites to display a list of available composites in the help buffer. */
-static void helpProc(partial,myrock,HelpWork,rock)
-char *partial;
-struct helpRock *myrock;
-procedure HelpWork;
-long rock;
+static void helpProc(char *partial, struct helpRock *myrock, procedure HelpWork, long rock)
 {
     int i;
     struct text *t=myrock->text;
@@ -458,9 +443,7 @@ long rock;
 }
 
 /* compchar_compose: if an argument is given for this function in a .*init file then it will be taken as a string designating the composite character to be inserted. Otherwise this function prompts the user to specify a character to insert in the text.  Typing a '?' will cause a list of available characters to be displayed. */
-static void compchar_compose(tv,ptr)
-struct textview *tv;
-char *ptr;
+static void compchar_compose(struct textview *tv, char *ptr)
 {
     char buf[1024];
     struct composites *c;
@@ -488,8 +471,8 @@ char *ptr;
 					      sizeof(buf),
 					      NULL, /* no special keymap */
 					      NULL,/* no completion */
-					      helpProc, /* will give help */
-					      (long)&myrock,
+					      (procedure) helpProc, /* will give help */
+					      &myrock,
 					      message_NoInitialString);
     if(result<0) {
 	message_DisplayString(tv,0,"Character composition cancelled.");
@@ -516,10 +499,7 @@ struct YARock{
 };
 
 /* keywork: used by handle key to determine what the possible matches for the current composition are. */
-static unsigned char keywork(key,c,rock)
-char key;
-struct composites *c;
-struct YARock *rock;
+static unsigned char keywork(char key, struct composites *c, struct YARock *rock)
 {
     char buf[6];
     if(strncmp((char *) c->exts,(char *) rock->exts,strlen((char *) rock->exts))) return 0;
@@ -536,9 +516,7 @@ struct YARock *rock;
 }
 
 /* handlekey: add a key to the composition in progress, if the composition is then completely specified return the appropriate code, otherwise list the current possibilities. */
-static long handlekey(rock,key)
-struct YARock *rock;
-char key;
+static long handlekey(struct YARock *rock, char key)
 {
     char buf[16];
     unsigned char c;
@@ -575,18 +553,14 @@ char key;
 }
 
 /* docomposing: intercepts lookups on the textview keystate to see if a valid composition is taking place, if not it removes the override on the textviews keystate and frees the rock.  Otherwise It checks to see if the composition has been completely specified yet.  If it has the appropriate character is inserted in the text. */
-static enum keymap_Types docomposing(rock,key,ppe,prock)
-struct YARock *rock;
-char key;
-struct proctable_Entry **ppe;
-long *prock;
+static enum keymap_Types docomposing(struct YARock *rock, char key, struct proctable_Entry **ppe, long *prock)
 {
     enum keymap_Types code;
     struct keystate  *ks=rock->tv->keystate;
     long handle=handlekey(rock,key);
     message_DisplayString(rock->tv,0,"");
     if(handle>0) {
-	keystate_SetOverride(ks,rock->oldoverride,rock->oldrock);
+	keystate_SetOverride(ks,rock->oldoverride,(void *)rock->oldrock);
 	SelfInsertCmd(rock->tv,handle,rock->c->style);
 	free(rock);
 	*ppe=nop;
@@ -602,15 +576,13 @@ long *prock;
 	code=(enum keymap_Types) (*rock->oldoverride)(rock->oldrock,key,ppe,prock);
     else if(!ks->curMap) return keymap_Empty;
     else code=keymap_Lookup(ks->curMap,key,ppe,prock);
-    keystate_SetOverride(ks,rock->oldoverride,rock->oldrock);
+    keystate_SetOverride(ks,rock->oldoverride,(void *)rock->oldrock);
     free(rock);
     return code;
 }
 
 /* compchar_nop: semi bogus proctable function so that the keys taken by docomposing don't have any other side-effects, except perhaps to display the list of possible completions for the composition */
-static void compchar_nop(tv, possibilities)
-struct textview *tv;
-char *possibilities;
+static void compchar_nop(struct textview *tv, char *possibilities)
 {
     if((long)possibilities>MAXCHAR) {
 	message_DisplayString(tv, 0, possibilities);
@@ -618,9 +590,7 @@ char *possibilities;
 }
 
 /* compchar_compose2: basically the same as compchar_compose except that '?' help is not available and no return is needed at the end of the composed character. However, continuous help is given in the form of information in the message line.  Automatically notices the end of a composition. */
-static void compchar_compose2(tv,ch)
-struct textview *tv;
-char *ch;
+static void compchar_compose2(struct textview *tv, char *ch)
 {
     struct YARock *rock;
     rock=(struct YARock *)malloc(sizeof(struct YARock));
@@ -637,7 +607,7 @@ char *ch;
 	message_DisplayString(tv,0,"");
 	return;
     }
-    keystate_SetOverride(tv->keystate,(procedure)docomposing ,(long)rock);
+    keystate_SetOverride(tv->keystate,(procedure)docomposing ,rock);
     message_DisplayString(tv,0,"Initial character: ");
 }
 
@@ -647,11 +617,7 @@ struct SARock {
     boolean ask;
 };
 
-static long doatkreplacement(text,pos,ascii,r)
-struct text *text;
-long pos;
-char *ascii;
-struct SARock *r;
+static long doatkreplacement(struct text *text, long pos, char *ascii, struct SARock *r)
 {
     int c,dpos;
     textview_SetDotPosition(r->tv, pos);
@@ -690,9 +656,7 @@ struct SARock *r;
     return pos;
 }
 
-static void compchar_ATKToASCII(tv,rock)
-struct textview *tv;
-long rock;
+static void compchar_ATKToASCII(struct textview *tv, long rock)
 {
     long pos,len;
     struct SARock r;
@@ -700,7 +664,7 @@ long rock;
     if(rock<BADCHAR) r.ask=TRUE;
     else r.ask=FALSE;
     pos=textview_GetDotPosition(tv);
-    pcompch_ATKToASCII(textview_GetDataObject(tv), pos, textview_GetDotLength(tv), doatkreplacement, &r);
+    pcompch_ATKToASCII(textview_GetDataObject(tv), pos, textview_GetDotLength(tv), (procedure) doatkreplacement, &r);
     len=text_GetLength((struct text *)textview_GetDataObject(tv));
     if(pos>=len) pos=len-1;
     textview_SetDotPosition(tv,pos);
@@ -710,12 +674,7 @@ long rock;
 }
 
 
-static long doasciireplacement(text,pos,ch,ascii,r)
-struct text *text;
-long pos;
-unsigned char ch;
-char *ascii;
-struct SARock *r;
+static long doasciireplacement(struct text *text, long pos, unsigned char ch, char *ascii, struct SARock *r)
 {
     int c;
     textview_SetDotPosition(r->tv, pos);
@@ -754,9 +713,7 @@ struct SARock *r;
     return pos;
 }
 
-static void compchar_ASCIIToATK(tv,rock)
-struct textview *tv;
-long rock;
+static void compchar_ASCIIToATK(struct textview *tv, long rock)
 {
     long pos,len;
     struct SARock r;
@@ -764,7 +721,7 @@ long rock;
     if(rock<BADCHAR) r.ask=TRUE;
     else r.ask=FALSE;
     pos=textview_GetDotPosition(tv);
-    pcompch_ASCIIToATK(textview_GetDataObject(tv), pos, textview_GetDotLength(tv), doasciireplacement, &r);
+    pcompch_ASCIIToATK(textview_GetDataObject(tv), pos, textview_GetDotLength(tv), (procedure) doasciireplacement, &r);
     len=text_GetLength((struct text *)textview_GetDataObject(tv));
     if(pos>=len) pos=len-1;
     textview_SetDotPosition(tv,pos);
@@ -773,8 +730,7 @@ long rock;
     
 }
 
-boolean compchar__InitializeClass(ClassID)
-struct classheader *ClassID;
+boolean compchar__InitializeClass(struct classheader *ClassID)
 {
     struct classinfo *textviewtype = class_Load("textview");
     
@@ -809,27 +765,27 @@ struct classheader *ClassID;
 	return FALSE;
     }
 
-    nop=proctable_DefineProc("compchar-nop",compchar_nop, textviewtype,NULL,"nop for use with compchar.");
+    nop=proctable_DefineProc("compchar-nop",(procedure) compchar_nop, textviewtype,NULL,"nop for use with compchar.");
 
 
-    proctable_DefineProc("compchar-ASCIIToATK",compchar_ASCIIToATK, textviewtype,NULL,"map local ASCII conventions to ATK ISO characters"); 
-    proctable_DefineProc("compchar-ATKToASCII",compchar_ATKToASCII, textviewtype,NULL,"map ATK ISO characters to local ASCII");
-    proctable_DefineProc("compchar-compose2", compchar_compose2, textviewtype,NULL,"improved compchar-compose.");
-    proctable_DefineProc("compchar-compose",compchar_compose, textviewtype,NULL,"start the composition of a character");
-    
-    proctable_DefineProc("compchar-acuteaccent-after", compchar_leftaccentafter,textviewtype,NULL,"put a left accent over the next character");
-    proctable_DefineProc("compchar-graveaccent-after", compchar_rightaccentafter,textviewtype,NULL,"put a right accent over the next character");
-    proctable_DefineProc("compchar-circumflex-after", compchar_hatafter,textviewtype,NULL,"put a hat over the next character");
-    proctable_DefineProc("compchar-tilde-after", compchar_tildeafter,textviewtype,NULL,"put a tilde over the next character");
-    proctable_DefineProc("compchar-umlaut-after", compchar_umlautafter,textviewtype,NULL,"put an umlaut over the next character");
-   
-    proctable_DefineProc("compchar-acuteaccent",compchar_leftaccent, textviewtype,NULL,"add a left accent to the character to the left of the cursor.");
-    proctable_DefineProc("compchar-graveaccent", compchar_rightaccent, textviewtype,NULL,"add a right accent to the character to the left of the cursor.");
-    proctable_DefineProc("compchar-circumflex",compchar_hat, textviewtype,NULL,"add a hat to the character to the left of the cursor.");
-    proctable_DefineProc("compchar-tilde",compchar_tilde, textviewtype,NULL,"add a tilde to the character to the left of the cursor.");
-    proctable_DefineProc("compchar-umlaut",compchar_umlaut, textviewtype,NULL,"add a umlaut to the character to the left of the cursor.");
-       
-    proctable_DefineProc("compchar-insert",compchar_insert, textviewtype,NULL,"inserts an arbitrary character specified in an initfile.");
+    proctable_DefineProc("compchar-ASCIIToATK",(procedure) compchar_ASCIIToATK, textviewtype,NULL,"map local ASCII conventions to ATK ISO characters");
+    proctable_DefineProc("compchar-ATKToASCII",(procedure) compchar_ATKToASCII, textviewtype,NULL,"map ATK ISO characters to local ASCII");
+    proctable_DefineProc("compchar-compose2", (procedure) compchar_compose2, textviewtype,NULL,"improved compchar-compose.");
+    proctable_DefineProc("compchar-compose",(procedure) compchar_compose, textviewtype,NULL,"start the composition of a character");
+
+    proctable_DefineProc("compchar-acuteaccent-after", (procedure) compchar_leftaccentafter,textviewtype,NULL,"put a left accent over the next character");
+    proctable_DefineProc("compchar-graveaccent-after", (procedure) compchar_rightaccentafter,textviewtype,NULL,"put a right accent over the next character");
+    proctable_DefineProc("compchar-circumflex-after", (procedure) compchar_hatafter,textviewtype,NULL,"put a hat over the next character");
+    proctable_DefineProc("compchar-tilde-after", (procedure) compchar_tildeafter,textviewtype,NULL,"put a tilde over the next character");
+    proctable_DefineProc("compchar-umlaut-after", (procedure) compchar_umlautafter,textviewtype,NULL,"put an umlaut over the next character");
+
+    proctable_DefineProc("compchar-acuteaccent",(procedure) compchar_leftaccent, textviewtype,NULL,"add a left accent to the character to the left of the cursor.");
+    proctable_DefineProc("compchar-graveaccent", (procedure) compchar_rightaccent, textviewtype,NULL,"add a right accent to the character to the left of the cursor.");
+    proctable_DefineProc("compchar-circumflex",(procedure) compchar_hat, textviewtype,NULL,"add a hat to the character to the left of the cursor.");
+    proctable_DefineProc("compchar-tilde",(procedure) compchar_tilde, textviewtype,NULL,"add a tilde to the character to the left of the cursor.");
+    proctable_DefineProc("compchar-umlaut",(procedure) compchar_umlaut, textviewtype,NULL,"add a umlaut to the character to the left of the cursor.");
+
+    proctable_DefineProc("compchar-insert",(procedure) compchar_insert, textviewtype,NULL,"inserts an arbitrary character specified in an initfile.");
 
     return TRUE;
 }

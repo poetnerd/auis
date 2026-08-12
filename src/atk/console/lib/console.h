@@ -174,8 +174,6 @@ extern int MYDEBUGGING;
 /* defined as an int, it's really of type pid; ugh. --MKM */
 extern int theGetstatsPid;
 
-extern int errno, sys_nerr;
-extern char *sys_errlist[];
 
 extern FILE *ErrorsIn,
     *VenusIn,

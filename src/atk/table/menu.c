@@ -37,6 +37,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 /* menu.c - menu operations for table */
 
 #include <class.h>
+#include <string.h>
+
+struct spread_classinfo;
 FILE * popen ();
 
 #include <im.ih>
@@ -47,12 +50,26 @@ FILE * popen ();
 
 #define AUXMODULE
 #include <spread.eh>
+static char * newext(char *filename, char *extension);
+static int objecttest(struct spread *V, char *name, char *desiredname);
 
-extern struct view *spread_FindSubview();
+extern struct view *spread_FindSubview(struct spread *V, struct cell *cell);
 
-void m_rename(V, ch)
-register struct spread * V;
-char ch;
+/* defined in keyboard.c */
+extern int k_AskUser(struct spread *V, char prompt[], char def[], char buff[], int n);
+extern int k_WantToDiscard(struct spread *V);
+extern void k_TellUser(struct spread *V, char *s);
+extern int AddRows(struct spread *V, int after, int count);
+extern int AddCols(struct spread *V, int after, int count);
+
+/* defined in hit.c */
+extern int SetCurrentCell(struct spread *V, Chunk chunk);
+extern int CopyChunk(Chunk to, Chunk from);
+
+/* defined in print.c */
+extern int WriteTroff(struct spread *V, FILE *f, char *processor, char *format, int toplevel);
+
+void m_rename(struct spread *V, char ch)
 {
     char buff[257];
 
@@ -70,8 +87,7 @@ char ch;
     }
 }
 
-void m_changedim(V)
-register struct spread *V;
+void m_changedim(struct spread *V)
 {
     char buff[257];
     int nrows, ncols;
@@ -97,9 +113,7 @@ register struct spread *V;
     }
 }
 
-void m_drawboxes(V, ch)
-register struct spread * V;
-char ch;
+void m_drawboxes(struct spread *V, char ch)
 {
     int r, c;
     struct chunk chunk;
@@ -129,9 +143,7 @@ char ch;
     table_SetModified(MyTable(V));
 }
 
-void m_eraseboxes(V, ch)
-register struct spread * V;
-char ch;
+void m_eraseboxes(struct spread *V, char ch)
 {
     int r, c;
     struct chunk chunk;
@@ -161,9 +173,7 @@ char ch;
     table_SetModified(MyTable(V));
 }
 
-void m_drawalledges(V, ch)
-register struct spread * V;
-char ch;
+void m_drawalledges(struct spread *V, char ch)
 {
     if (max(0, V->selection.TopRow) > V->selection.BotRow && max(0, V->selection.LeftCol) > V->selection.RightCol)
 	k_TellUser(V, "Please select a region to draw edges");
@@ -203,9 +213,7 @@ V->selection.LeftCol,V->selection.RightCol,V->selection.TopRow,V->selection.BotR
     }
 }
 
-void m_erasealledges(V, ch)
-register struct spread * V;
-char ch;
+void m_erasealledges(struct spread *V, char ch)
 {
     if (max(0, V->selection.TopRow) > V->selection.BotRow && max(0, V->selection.LeftCol) > V->selection.RightCol)
 	k_TellUser(V, "Please select a region to draw edges");
@@ -245,9 +253,7 @@ V->selection.LeftCol,V->selection.RightCol,V->selection.TopRow,V->selection.BotR
     }
 }
 
-static char *newext(filename, extension)	/* returns "mumble.x" */
-char *filename;			/* "mumble.y" or something */
-char *extension;		/* ".x" */
+static char * newext(char *filename, char *extension)
 {
     char *cp, *suffixp;
     static char newname[257];
@@ -271,9 +277,7 @@ char *extension;		/* ".x" */
     return newname;
 }
 
-void m_writeTroff(V, ch)
-register struct spread * V;
-char ch;
+void m_writeTroff(struct spread *V, char ch)
 {
     char buf[300];
     char fname[300];
@@ -289,9 +293,7 @@ char ch;
     }
 }
 
-void m_write(V, ch)
-register struct spread * V;
-char ch;
+void m_write(struct spread *V, char ch)
 {
     char buf[300];
     char fname[300];
@@ -312,9 +314,7 @@ char ch;
     }
 }
 
-void m_read(V, ch)
-register struct spread * V;
-char ch;
+void m_read(struct spread *V, char ch)
 {
     char buf[300];
     char fname[300];
@@ -330,9 +330,7 @@ char ch;
     }
 }
 
-void m_cut(V, ch)
-register struct spread * V;
-char ch;
+void m_cut(struct spread *V, char ch)
 {
     if (V->selection.TopRow > V->selection.BotRow || V->selection.LeftCol > V->selection.RightCol)
 	k_TellUser (V, "Please select region to cut");
@@ -417,9 +415,7 @@ char ch;
     view_WantNewSize(getView(V).parent, &getView(V));
 }
 
-void m_copy(V, ch)
-register struct spread * V;
-char ch;
+void m_copy(struct spread *V, char ch)
 {
     if (V->selection.TopRow > V->selection.BotRow || V->selection.LeftCol > V->selection.RightCol)
 	k_TellUser (V, "Please select region to copy");
@@ -431,9 +427,7 @@ char ch;
     }
 }
 
-void m_paste(V, ch)
-register struct spread * V;
-char ch;
+void m_paste(struct spread *V, char ch)
 {
     if ((V->selection.TopRow >= 0 || V->selection.BotRow < table_NumberOfRows(MyTable(V))-1) && (V->selection.LeftCol >= 0 || V->selection.RightCol < table_NumberOfColumns(MyTable(V))-1) && (V->selection.TopRow > V->selection.BotRow || V->selection.LeftCol > V->selection.RightCol))
 	k_TellUser (V, "Please select region to paste into");
@@ -481,9 +475,7 @@ char ch;
     view_WantNewSize(getView(V).parent, &getView(V));
 }
 
-void m_combine(V, ch)
-register struct spread * V;
-char ch;
+void m_combine(struct spread *V, char ch)
 {
     struct chunk chunk;
 
@@ -496,9 +488,7 @@ char ch;
     }
 }
 
-void m_separate(V, ch)
-register struct spread * V;
-char ch;
+void m_separate(struct spread *V, char ch)
 {
     struct chunk chunk;
 
@@ -511,9 +501,7 @@ char ch;
     }
 }
 
-void m_drawedges(V, ch)
-register struct spread * V;
-char ch;
+void m_drawedges(struct spread *V, char ch)
 {
     if (max(0, V->selection.TopRow) > V->selection.BotRow && max(0, V->selection.LeftCol) > V->selection.RightCol)
 	k_TellUser(V, "Please select a region to draw edges");
@@ -521,9 +509,7 @@ char ch;
 	table_SetBoundary (MyTable(V), &(V->selection), BLACK);
 }
 
-void m_eraseedges(V, ch)
-register struct spread * V;
-char ch;
+void m_eraseedges(struct spread *V, char ch)
 {
     if (max(0, V->selection.TopRow) > V->selection.BotRow && max(0, V->selection.LeftCol) > V->selection.RightCol)
 	k_TellUser(V, "Please select a region to erase edges");
@@ -533,18 +519,14 @@ char ch;
 
 /* process formatting menu hit */
 
-void m_format (V, ch)
-register struct spread * V;
-char    ch;
+void m_format(struct spread *V, char ch)
 {
     table_SetFormat (MyTable(V), ch, &(V->selection));
 }
 
 /* process precision request */
 
-void m_precision (V, ch)
-register struct spread * V;
-char    ch;
+void m_precision(struct spread *V, char ch)
 {
     char parambuff[100];
     int param;
@@ -556,9 +538,7 @@ char    ch;
 	table_SetPrecision (MyTable(V), (param >= 0 ? param : 0), &(V->selection));
 }
 
-static objecttest(V, name, desiredname)
-register struct spread *V;
-char *name,*desiredname;
+static int objecttest(struct spread *V, char *name, char *desiredname)
 {
     if(class_Load(name) == NULL){
         char foo[640];
@@ -577,9 +557,7 @@ char *name,*desiredname;
 
 /* process request for imbedded object */
 
-void m_imbed (V, ch)
-register struct spread * V;
-char    ch;
+void m_imbed(struct spread *V, char ch)
 {
     char parambuff[100];
     struct cell * hitcell;
@@ -606,9 +584,7 @@ char    ch;
 
 /* compute row heights automatically */
 
-void m_resetheights (V, ch)
-register struct spread * V;
-char    ch;
+void m_resetheights(struct spread *V, char ch)
 {
     int r;
     struct table *T = MyTable(V);
@@ -620,56 +596,51 @@ char    ch;
 
 /* lock or unlock cells */
 
-void m_lock (V, ch)
-register struct spread * V;
-char    ch;
+void m_lock(struct spread *V, char ch)
 {
     table_Lock (MyTable(V), ch, &(V->selection));
 }
 
 static struct bind_Description menutable[] = {
 
-    {"table-cut", "\027", 0, "Cut~10", 0, 0, m_cut, "Save and erase cells"},
-    {"table-copy", "\033w", 0, "Copy~11", 0, 0, m_copy, "Copy cells to cutbuffer"},
-    {"table-paste", "\031", 0, "Paste~12", 0, 0, m_paste, "Copy cutbuffer to cells"},
-    {"table-write", "/fw", 0, "Write table~80", 0, 0, m_write, "Write table file"},
-    {"table-read", "/fr", 0, "Read table~81", 0, 0, m_read, "Read table file"},
-    {"table-writeTroff", NULL, 0, "Write Troff~82", 0, 0, m_writeTroff, "Write .trf file"},
-    {"table-rename", NULL, 0, "Rename~84", 0, 0, m_rename, "Rename table"},
-    {"table-changedim", NULL, 0, "Change Rows & Cols~85", 0, 0, m_changedim, "Fix number of rows and cols in table"},
-    {"table-drawboxes", NULL, 0, "Draw All boxes~86", 0, 0, m_drawboxes, "Draw all boxes in table"},
-    {"table-eraseboxes", NULL, 0, "Erase All boxes~87", 0, 0, m_eraseboxes, "Erase all boxes in table"},
-    {"table-combine", "/rc", 0, "Cells~1,Combine~10", 0, 0, m_combine, "Combine several cells into one",NULL},
-    {"table-separate", "/rs", 0, "Cells~1,Separate~11", 0, 0, m_separate, "Separate combined cells"},
-    {"table-drawedges", "/rbd", 0, "Cells~1,Draw box~20", 0, 0, m_drawedges, "Draw box around cells"},
-    {"table-eraseedges", "/rbe", 0, "Cells~1,Erase box~21", 0, 0, m_eraseedges, "Erase box around cells"},
-    {"table-drawalledges", "/rad", 0, "Cells~1,Draw boxes~22", 0, 0, m_drawalledges, "Draw all boxes around cells"},
-    {"table-erasealledges", "/rae", 0, "Cells~1,Erase boxes~23", 0, 0, m_erasealledges, "Erase all boxes around cells"},
-    {"table-lock", "/rl", TRUE, "Cells~1,Lock~30", TRUE, 0, m_lock, "Protect cells against modification"},
-    {"table-unlock", "/ru", FALSE, "Cells~1,Unlock~31", FALSE, 0, m_lock, "Allow cells to be modified"},
-    {"table-imbed", "\033\t", 0, "Cells~1,Imbed~40", 0, 0, m_imbed, "Place BE2 object in cell"},
-    {"table-reset-height", 0, 0, "Cells~1,Reset Heights~41", 0, 0, m_resetheights, "Comput row heights automatically"},
+    {"table-cut", "\027", 0, "Cut~10", 0, 0, (void (*)())m_cut, "Save and erase cells"},
+    {"table-copy", "\033w", 0, "Copy~11", 0, 0, (void (*)())m_copy, "Copy cells to cutbuffer"},
+    {"table-paste", "\031", 0, "Paste~12", 0, 0, (void (*)())m_paste, "Copy cutbuffer to cells"},
+    {"table-write", "/fw", 0, "Write table~80", 0, 0, (void (*)())m_write, "Write table file"},
+    {"table-read", "/fr", 0, "Read table~81", 0, 0, (void (*)())m_read, "Read table file"},
+    {"table-writeTroff", NULL, 0, "Write Troff~82", 0, 0, (void (*)())m_writeTroff, "Write .trf file"},
+    {"table-rename", NULL, 0, "Rename~84", 0, 0, (void (*)())m_rename, "Rename table"},
+    {"table-changedim", NULL, 0, "Change Rows & Cols~85", 0, 0, (void (*)())m_changedim, "Fix number of rows and cols in table"},
+    {"table-drawboxes", NULL, 0, "Draw All boxes~86", 0, 0, (void (*)())m_drawboxes, "Draw all boxes in table"},
+    {"table-eraseboxes", NULL, 0, "Erase All boxes~87", 0, 0, (void (*)())m_eraseboxes, "Erase all boxes in table"},
+    {"table-combine", "/rc", 0, "Cells~1,Combine~10", 0, 0, (void (*)())m_combine, "Combine several cells into one",NULL},
+    {"table-separate", "/rs", 0, "Cells~1,Separate~11", 0, 0, (void (*)())m_separate, "Separate combined cells"},
+    {"table-drawedges", "/rbd", 0, "Cells~1,Draw box~20", 0, 0, (void (*)())m_drawedges, "Draw box around cells"},
+    {"table-eraseedges", "/rbe", 0, "Cells~1,Erase box~21", 0, 0, (void (*)())m_eraseedges, "Erase box around cells"},
+    {"table-drawalledges", "/rad", 0, "Cells~1,Draw boxes~22", 0, 0, (void (*)())m_drawalledges, "Draw all boxes around cells"},
+    {"table-erasealledges", "/rae", 0, "Cells~1,Erase boxes~23", 0, 0, (void (*)())m_erasealledges, "Erase all boxes around cells"},
+    {"table-lock", "/rl", TRUE, "Cells~1,Lock~30", TRUE, 0, (void (*)())m_lock, "Protect cells against modification"},
+    {"table-unlock", "/ru", FALSE, "Cells~1,Unlock~31", FALSE, 0, (void (*)())m_lock, "Allow cells to be modified"},
+    {"table-imbed", "\033\t", 0, "Cells~1,Imbed~40", 0, 0, (void (*)())m_imbed, "Place BE2 object in cell"},
+    {"table-reset-height", 0, 0, "Cells~1,Reset Heights~41", 0, 0, (void (*)())m_resetheights, "Comput row heights automatically"},
 
-    {"table-general-format", "/rfg", GENERALFORMAT, "Number Format~2,general~10", GENERALFORMAT, 0, m_format, "general number format"},
-    {"table-currency-format", "/rfc", CURRENCYFORMAT, "Number Format~2,Dollar~11", CURRENCYFORMAT, 0, m_format, "Dollar sign before number"},
-    {"table-percent-format", "/rfp", PERCENTFORMAT, "Number Format~2,Percent~12", PERCENTFORMAT, 0, m_format, "Multiply by 100 and display %"},
-    {"table-exponential-format", "/rfe", EXPFORMAT, "Number Format~2,Exp~13", EXPFORMAT, 0, m_format, "Exponential format (not implemented)"},
-    {"table-fixed-format", "/rff", FIXEDFORMAT, "Number Format~2,Fixed~14", FIXEDFORMAT, 0, m_format, "Always display decimal places"},
-    {"table-hbar-format", "/rfh", HORIZONTALBARFORMAT, "Number Format~2,H-Bar~15", HORIZONTALBARFORMAT, 0, m_format, "Display as horizontal bar"},
-    {"table-vbar-format", "/rfv", VERTICALBARFORMAT, "Number Format~2,V-Bar~16", VERTICALBARFORMAT, 0, m_format, "Display as vertical bar"},
-    {"table-precision", "/rp", 0, "Number Format~2,Precision~20", 0, 0, m_precision, "Set number of decimal places"},
+    {"table-general-format", "/rfg", GENERALFORMAT, "Number Format~2,general~10", GENERALFORMAT, 0, (void (*)())m_format, "general number format"},
+    {"table-currency-format", "/rfc", CURRENCYFORMAT, "Number Format~2,Dollar~11", CURRENCYFORMAT, 0, (void (*)())m_format, "Dollar sign before number"},
+    {"table-percent-format", "/rfp", PERCENTFORMAT, "Number Format~2,Percent~12", PERCENTFORMAT, 0, (void (*)())m_format, "Multiply by 100 and display %"},
+    {"table-exponential-format", "/rfe", EXPFORMAT, "Number Format~2,Exp~13", EXPFORMAT, 0, (void (*)())m_format, "Exponential format (not implemented)"},
+    {"table-fixed-format", "/rff", FIXEDFORMAT, "Number Format~2,Fixed~14", FIXEDFORMAT, 0, (void (*)())m_format, "Always display decimal places"},
+    {"table-hbar-format", "/rfh", HORIZONTALBARFORMAT, "Number Format~2,H-Bar~15", HORIZONTALBARFORMAT, 0, (void (*)())m_format, "Display as horizontal bar"},
+    {"table-vbar-format", "/rfv", VERTICALBARFORMAT, "Number Format~2,V-Bar~16", VERTICALBARFORMAT, 0, (void (*)())m_format, "Display as vertical bar"},
+    {"table-precision", "/rp", 0, "Number Format~2,Precision~20", 0, 0, (void (*)())m_precision, "Set number of decimal places"},
 
-    {"table-day-month-year", "/rfda", DDMMMYYYYFORMAT, "Date Format~3,19 Jun 1970~10", DDMMMYYYYFORMAT, 0, m_format, "Display day,  month, and year"},
-    {"table-month-year", "/rfdb", MMMYYYYFORMAT, "Date Format~3,Jun 1970~11", MMMYYYYFORMAT, 0, m_format, "Display month and year"},
-    {"table-day-month", "/rfdc", DDMMMFORMAT, "Date Format~3,19 Jun~12", DDMMMFORMAT, 0, m_format, "Display day and month"},
+    {"table-day-month-year", "/rfda", DDMMMYYYYFORMAT, "Date Format~3,19 Jun 1970~10", DDMMMYYYYFORMAT, 0, (void (*)())m_format, "Display day,  month, and year"},
+    {"table-month-year", "/rfdb", MMMYYYYFORMAT, "Date Format~3,Jun 1970~11", MMMYYYYFORMAT, 0, (void (*)())m_format, "Display month and year"},
+    {"table-day-month", "/rfdc", DDMMMFORMAT, "Date Format~3,19 Jun~12", DDMMMFORMAT, 0, (void (*)())m_format, "Display day and month"},
 
     {NULL, NULL, 0, NULL, 0, NULL, NULL}
 };
 
-DefineMenus (mainmenus, mainmap, classinfo)
-struct menulist *mainmenus;
-struct keymap * mainmap;
-struct spread_classinfo *classinfo;
+int DefineMenus(struct menulist *mainmenus, struct keymap *mainmap, struct spread_classinfo *classinfo)
 {
     bind_BindList(menutable, mainmap, mainmenus, classinfo);
 }

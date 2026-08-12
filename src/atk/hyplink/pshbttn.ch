@@ -89,7 +89,7 @@ class pushbutton[pshbttn]: dataobject[dataobj] {
     SetBGColor(char *name, int red, int green, int blue);
     GetFGColor(unsigned char *rgb_vect) returns char *;
     GetBGColor(unsigned char *rgb_vect) returns char *;
-    ParseRGB(char *rgb_string, unsigned char rgb_vect);
+    ParseRGB(char *rgb_string, unsigned char *rgb_vect);
   macromethods:
     GetText() (self->text)
     GetStyle() (self->style)

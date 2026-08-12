@@ -32,10 +32,61 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include <andrewos.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
 #include <X11/Xlib.h>
 #include <cmintern.h>
 #include <cmdraw.h>
 
+/* xim_EstablishConsole() (in xim.c) fclose()s the real stderr and dup2()s
+   fd 2 elsewhere, so plain fprintf(stderr,...) here goes nowhere once a
+   window exists. Route temporary debug tracing around that entirely.
+   Gated by the MENUDBGTRACE environment variable (unset by default) --
+   this library deliberately has no dependency on atk/basics's `environ`
+   profile-switch class (its own standalone `testmenu` build target
+   doesn't link it), so a plain getenv() is used here instead of the
+   MenuDebugTrace profile switch xim.c/menubar.c use -- see
+   menubar.help and porting-assessment.md for the full story. */
+static void mdbg(const char *fmt, ...)
+{
+    static int checked = 0;
+    static int enabled = 0;
+    va_list ap;
+    FILE *f;
+
+    if (!checked) {
+	enabled = (getenv("MENUDBGTRACE") != NULL);
+	checked = 1;
+    }
+    if (!enabled) return;
+
+    f = fopen("/tmp/menudbg_direct.log", "a");
+    if (!f) return;
+    {
+	struct timeval tv;
+	struct tm *tm;
+	char tbuf[16];
+	gettimeofday(&tv, NULL);
+	tm = localtime(&tv.tv_sec);
+	strftime(tbuf, sizeof(tbuf), "%H:%M:%S", tm);
+	fprintf(f, "[%s.%03ld] ", tbuf, (long)(tv.tv_usec / 1000));
+    }
+    va_start(ap, fmt);
+    vfprintf(f, fmt, ap);
+    va_end(ap);
+    fclose(f);
+}
+
+struct activationState;
+static void EventLoop(struct cmenu *menu, Display *display, struct activationState *state);
+static void HandleMovement(struct cmenu *menu, XMotionEvent *motionEvent, struct activationState *state);
+static int HandlePress(struct cmenu *menu, XButtonEvent *buttonEvent, struct activationState *state);
+
+/* defined in cmdraw.c/cmmanip.c; neither cmdraw.h nor cmintern.h declares these */
+extern void FlipButton(struct cmenu *menu, struct drawingState *state, int paneNum, int selectionNum, struct selection *selectionPtr, int onOrOff);
+extern int DrawMenus(struct cmenu *menu, struct drawingState *state);
+extern int SelectionPtrToNum(struct cmenu *menu, struct pane *panePtr, struct selection *selectionPtr);
 
 #if !defined(PRE_X11R4_ENV) && defined(__STDC__)
 static Bool SuitableEvent(Display *, XEvent *, char *);
@@ -61,10 +112,7 @@ struct activationState {
 /* This function defines all events which are meaningful to the cmenuActivate
  * procedure's event loop.
  */
-static Bool SuitableEvent(display, event, args)
-    Display *display;
-    XEvent *event;
-    char *args; /* Should be void * */
+static Bool SuitableEvent(Display *display, XEvent *event, char *args)
 {
 
     struct activationState *state = (struct activationState *) args;
@@ -87,10 +135,7 @@ static Bool SuitableEvent(display, event, args)
 /* This function defines all events which should be cleared from the queue
  * when we are done.
  */
-static Bool DiscardableEvents(display, event, args)
-    Display *display;
-    XEvent *event;
-    char *args; /* Should be void * */
+static Bool DiscardableEvents(Display *display, XEvent *event, char *args)
 {
 
     struct activationState *state = (struct activationState *) args;
@@ -111,10 +156,7 @@ static Bool DiscardableEvents(display, event, args)
 }
 #endif /* ATTEMPTSAVEUNDERS */
 
-static int HandlePress(menu, buttonEvent, state)
-    struct cmenu *menu;
-    XButtonEvent *buttonEvent;
-    struct activationState *state;
+static int HandlePress(struct cmenu *menu, XButtonEvent *buttonEvent, struct activationState *state)
 {
 
     if (buttonEvent->button == state->buttonName) {
@@ -131,10 +173,7 @@ static int HandlePress(menu, buttonEvent, state)
     return(0);
 }
 
-static void HandleMovement(menu, motionEvent, state)
-    struct cmenu *menu;
-    XMotionEvent *motionEvent;
-    struct activationState *state;
+static void HandleMovement(struct cmenu *menu, XMotionEvent *motionEvent, struct activationState *state)
 {
 
     struct drawingState *drawingState = &state->drawingState;
@@ -212,10 +251,7 @@ static void HandleMovement(menu, motionEvent, state)
     SetSelectionPtrAndNum(drawingState, selectionPtr, selectionNum);
 }
 
-static void EventLoop(menu, display, state)
-    struct cmenu *menu;
-    Display *display;
-    struct activationState *state;
+static void EventLoop(struct cmenu *menu, Display *display, struct activationState *state)
 {
 
     XEvent events[2];
@@ -261,13 +297,7 @@ static void EventLoop(menu, display, state)
     }
 }
 
-int
-cmenu_Activate(menu, menuEvent, data, backgroundType, background)
-    struct cmenu *menu;
-    XButtonEvent *menuEvent;
-    long *data;
-    int backgroundType;
-    long background;
+int cmenu_Activate(struct cmenu *menu, XButtonEvent *menuEvent, long *data, int backgroundType, long background)
 {
 
     int ret_val;			/* Return value. */
@@ -275,6 +305,10 @@ cmenu_Activate(menu, menuEvent, data, backgroundType, background)
     Display *display = menu->gMenuData->dpy;
     XEvent event;			/* X input event. */
     struct activationState state;       /* Packaged state for passing to subroutines. */
+    struct timeval mdbg_t0, mdbg_t1, mdbg_t2;
+
+    gettimeofday(&mdbg_t0, NULL);
+    mdbg("MENUDBG cmenu_Activate ENTRY: menu=%p panes=%p\n", (void *)menu, (void *)menu->panes);
 
     /*
      * If there are no panes in the menu then return failure
@@ -315,10 +349,16 @@ cmenu_Activate(menu, menuEvent, data, backgroundType, background)
     SetSelectionNum(menu, &state.drawingState, -1);
 
     CreateMenuStack(menu, &state.drawingState, menuEvent->x_root, menuEvent->y_root, state.parentWindow);
-   
+
     XSync(display, 0);
+    gettimeofday(&mdbg_t1, NULL);
+    mdbg("MENUDBG cmenu_Activate: CreateMenuStack+XSync=%ldms\n",
+	    (long)((mdbg_t1.tv_sec-mdbg_t0.tv_sec)*1000+(mdbg_t1.tv_usec-mdbg_t0.tv_usec)/1000));
 
     EventLoop(menu, display, &state);
+    gettimeofday(&mdbg_t2, NULL);
+    mdbg("MENUDBG cmenu_Activate: EventLoop=%ldms (this includes time you spend browsing the menu, not a bug indicator by itself)\n",
+	    (long)((mdbg_t2.tv_sec-mdbg_t1.tv_sec)*1000+(mdbg_t2.tv_usec-mdbg_t1.tv_usec)/1000));
 
     if (GetSelectionNum(&state.drawingState) != -1 &&
          GetPaneNum(&state.drawingState) != -1 &&

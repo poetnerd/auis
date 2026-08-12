@@ -35,11 +35,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <parseadd.h>
 #include <mail.h>
+#include <stdlib.h>
+static int SameName(char *n1, char *n2, int nlen, int namesep);
+static void StripList(PARSED_ADDRESS *AddrList);
+extern int FreeAddress(PARSED_ADDRESS *AddrIn);  /* overhead/mail/lib/parseadd.c */
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);  /* overhead/mail/lib/parseadd.c */
+extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);  /* overhead/mail/lib/parseadd.c */
+extern int ULstrcmp(char *s1, char *s2);  /* overhead/util/lib/ulstrcmp.c */
+extern int UnparseAddressList();  /* overhead/mail/lib/parseadd.c */
 
 extern char Me[], MeInFull[], MyMailDomain[], *MyShortAddress;
 
-static int SameName(n1, n2, nlen, namesep)
-char *n1, *n2; int nlen, namesep;
+static int SameName(char *n1, char *n2, int nlen, int namesep)
 {/* Works like ULstrncmp, but treats spaces and namesep as the same. */
     int c1, c2;
 
@@ -60,8 +67,7 @@ char *n1, *n2; int nlen, namesep;
     return 1;
 }
 
-static void StripList(AddrList)
-PARSED_ADDRESS *AddrList;
+static void StripList(PARSED_ADDRESS *AddrList)
 {/* Recursively strip Me@MyMailDomain from the list. */
     int outType, la_errcode, nameSep;
     char *IDpart, *PostID, *s;
@@ -109,8 +115,7 @@ PARSED_ADDRESS *AddrList;
 		       })
 }
 
-StripMyselfFromAddressList(Old, New)
-char *Old, **New;
+int StripMyselfFromAddressList(char *Old, char **New)
 {
     PARSED_ADDRESS *AddrList;
     int Newsize, Dummy;

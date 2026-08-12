@@ -66,9 +66,9 @@ END-SPECIFICATION
 class suiteev : view {
 
     classprocedures:
-	InitializeClass(struct classheader *ClassID) returns boolean;
+	InitializeClass() returns boolean;
 	InitializeObject(struct classheader *ClassID, struct suiteev *self) returns boolean;
-	FinalizeObject(struct classheader *ClassID, struct suiteev *self);
+	FinalizeObject(struct suiteev *self);
 
     overrides:
 	FullUpdate(enum view_UpdateType type,long left,long top,long width,long height);

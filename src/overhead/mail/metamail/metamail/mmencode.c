@@ -13,6 +13,7 @@ OF THIS MATERIAL FOR ANY PURPOSE.  IT IS PROVIDED "AS IS",
 WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include <config.h>
 #ifdef MSDOS
 #include <fcntl.h>
@@ -21,9 +22,10 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
 #define BASE64 1
 #define QP 2 /* quoted-printable */
 
-main(argc, argv)
-int argc;
-char **argv;
+/* No header declares these; defined in the sibling file codes.c */
+extern int to64(FILE *infile, FILE *outfile, int PortableNewlines), from64(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct, int PortableNewlines), toqp(FILE *infile, FILE *outfile), fromqp(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct);
+
+int main(int argc, char **argv)
 {
     int encode = 1, which = BASE64, i, portablenewlines = 0;
     FILE *fp = stdin;

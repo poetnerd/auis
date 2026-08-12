@@ -50,9 +50,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/look
 
 #include <lookz.ih>
 
-main( argc, argv )
-	register int	  argc;
-	register char  **argv;
+int printdata(struct lookz *st);
+
+int main(int argc, char **argv)
 {
 	register struct lookz *st, *st2;
 	FILE *f;
@@ -120,8 +120,7 @@ main( argc, argv )
 	printdata(st2);
 }
 
-printdata(st)
-	register struct lookz *st;
+int printdata(struct lookz *st)
 {
 	printf("Image is %s\n", (lookz_GetVisibility(st) ? "visible" : "hidden"));
 	fflush(stdout);

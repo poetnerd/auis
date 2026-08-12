@@ -42,12 +42,13 @@
 extern PARSED_ADDRESS *MakeAddress(), *AppendAddresses(), *MakeAddrList();
 extern ADDRESS_HOST *MakeHost(), *AppendHosts(), *MakeHostList();
 extern char *StrCopy(), *StrCat3();
+extern int StrFree();		/* parseutl.c; no header declares it anywhere */
 
 PARSED_ADDRESS *yyparsedaddress;
 int ParseErrorReason;
 extern ADDRESS_COMMENT *mail_parseyycomments;
 
-static parsey_ErrorGuts(p, sev, sevname, mesg)
+static void parsey_ErrorGuts(p, sev, sevname, mesg)
 	struct parsey *p;
 	int sev;
 	char *sevname;

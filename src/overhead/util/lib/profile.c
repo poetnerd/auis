@@ -36,12 +36,20 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <fdplumb.h>
 #include <stdio.h>
-#include <andrewos.h>		/* sys/types.h */
+#include <errno.h>
+#include <andrewos.h>
+extern char *AndrewDir(char *str);		/* sys/types.h */
+extern char *getenv();
 #include <sys/stat.h>
 #include <sys/param.h>	/* For MAXPATHLEN */
 #include <pwd.h>
 #include <ctype.h>
 #include <util.h>
+#include <stdlib.h>
+static void initprofiles();
+static struct configurelist * openprofile(char *filename, char *defaultname, int savefname);
+
+extern int FoldedEQ(unsigned char *s1, unsigned char *s2);		/* foldedeq.c, no header declares it */
 
 #define DEFAULTPROFILES "~/preferences:~/.preferences:~/.Xdefaults"
 #define GLOBALPROFILE AndrewDir("/lib/global.prf")
@@ -52,15 +60,12 @@ static struct configurelist *GloprofileHead = NULL;
 static  int inited = 0;  /* Used to be static local to openprofile -- nsb */
 static char *profileFileName = NULL;
 static char *firstProfileFileName = NULL;
+static int profileLoadTransientErrno = 0;
 
 /* open a list of profile files, with an environment variable that can override
  * the default list.  "savefname" flag added 12/13/91 by cn0h
  */
-static struct configurelist *
-openprofile(filename, defaultname, savefname)
-    char *filename;
-    char *defaultname;
-    int savefname;
+static struct configurelist * openprofile(char *filename, char *defaultname, int savefname)
 {
     char *pl=(char *) getenv(filename);
     char *home=(char *) gethome(NULL);
@@ -102,6 +107,7 @@ openprofile(filename, defaultname, savefname)
 	    strcpy(firstProfileFileName, tmpFileName);
 	}
 
+	errno = 0;
 	if ((cl = (struct configurelist *) ReadConfigureFile(tmpFileName)) != NULL)  {
 	    if (savefname) {
 		if (profileFileName != NULL)  {
@@ -112,6 +118,11 @@ openprofile(filename, defaultname, savefname)
 	    }
 	    return cl;
 	}
+	/* ENOENT (no such file) is a definitive answer; anything else
+	   (EMFILE, ENOMEM mid-parse, ...) may be transient and must not
+	   be cached for the life of the process. */
+	if (errno != 0 && errno != ENOENT)
+	    profileLoadTransientErrno = errno;
 
     } while(sep!=NULL);
 
@@ -119,29 +130,44 @@ openprofile(filename, defaultname, savefname)
 
 }
 
+/* Load both profile lists once.  A load that failed for a possibly
+   transient reason is NOT latched: inited stays 0 so the next
+   getprofile call retries, instead of silently returning NULL for
+   every preference for the life of the process. */
+static void
+initprofiles()
+{
+    if (inited)
+	return;
+    profileLoadTransientErrno = 0;
+    profileHead = openprofile("PROFILES", DEFAULTPROFILES, 1);
+    GloprofileHead = openprofile("GLOBALPROFILES", GLOBALPROFILE, 0);
+    if (profileHead == NULL && profileLoadTransientErrno != 0) {
+	if (GloprofileHead != NULL) {
+	    FreeConfigureList(GloprofileHead);
+	    GloprofileHead = NULL;
+	}
+	fprintf(stderr, "<warning:profile>Preferences load failed (errno %d); will retry on next access.\n", profileLoadTransientErrno);
+	return;
+    }
+    inited = 1;
+}
+
 char *GetProfileFileName()
 {
-    if (! inited)  {
-	profileHead = openprofile("PROFILES", DEFAULTPROFILES, 1);
-	GloprofileHead = openprofile("GLOBALPROFILES", GLOBALPROFILE, 0);
-	inited = 1;
-    }
+    initprofiles();
 
     return profileFileName;
 }
 
 char *GetFirstProfileFileName()
 {
-    if (! inited)  {
-	profileHead = openprofile("PROFILES", DEFAULTPROFILES, 1);
-	GloprofileHead = openprofile("GLOBALPROFILES", GLOBALPROFILE, 0);
-	inited = 1;
-    }
+    initprofiles();
 
     return firstProfileFileName;
 }
 
-refreshprofile() {  /* Force rereading */
+int refreshprofile() {  /* Force rereading */
     if (profileHead != NULL)  {
 	FreeConfigureList(profileHead);
 	profileHead = NULL;
@@ -156,11 +182,7 @@ refreshprofile() {  /* Force rereading */
 char *getprofile (var)
 char *var; {
     char *retval;
-    if (! inited)  {
-	profileHead = openprofile("PROFILES", DEFAULTPROFILES, 1);
-	GloprofileHead = openprofile("GLOBALPROFILES", GLOBALPROFILE, 0);
-	inited = 1;
-    }
+    initprofiles();
 #ifdef GLOBALPREFERENCE
 /* check for exact match in users profile */
     if((retval = (char *) GetConfig(profileHead, var, 0)) != NULL)
@@ -176,7 +198,7 @@ char *var; {
     return (char *) GetConfig(GloprofileHead, var, 1) ;
 }
 
-getprofileswitch (var, DefaultValue)
+int getprofileswitch (var, DefaultValue)
 char   *var; {
     char   *val;
     static struct keys {
@@ -202,11 +224,11 @@ char   *var; {
     return DefaultValue;
 }
 
-getprofileint (var, DefaultValue)
+int getprofileint (var, DefaultValue)
 char   *var; {
     register char  *val;
-    register    n = 0;
-    register    neg = 0;
+    register int   n = 0;
+    register int   neg = 0;
 
     if (var == 0 || (val = getprofile(var)) == 0)  {
 	return DefaultValue;
@@ -226,16 +248,10 @@ char   *var; {
     return neg ? -n : n;
 }
 
-profileentryexists(var, usedefault)
-    char *var;
-    int usedefault;
+int profileentryexists(char *var, int usedefault)
 {
 
-    if (! inited)  {
-	profileHead = openprofile("PROFILES", DEFAULTPROFILES, 1);
-	GloprofileHead = openprofile("GLOBALPROFILES", GLOBALPROFILE, 0);
-	inited = 1;
-    }
+    initprofiles();
 
     return (var != NULL && ( (GetConfig(profileHead, var, usedefault) != NULL) || 
 			     (GetConfig(GloprofileHead, var, usedefault) != NULL)));

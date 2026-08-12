@@ -77,6 +77,7 @@ END-SPECIFICATION  ************************************************************/
 
 #include <andrewos.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <graphic.ih>
@@ -102,21 +103,27 @@ END-SPECIFICATION  ************************************************************/
 #include <chart.ih>
 #include <chartv.eh>
 
+/* defined in chartp.c, this directory */
+int Destroy_Palette(struct chartv *self);
+int Activate_Viewer(struct chartv *self);
+void Hide_Palette(struct chartv *self);
+void Expose_Palette(struct chartv *self);
+
+static int ChangeChartAttribute(struct chartv *self, long attribute, long value);
+static int Description_Modified(struct chartv *self);
+static int Initialize(struct chartv *self);
+static int Preserve_Description(struct chartv *self);
+static int SetChartAttribute(struct chartv *self, long attribute, long value);
+
 
 static   struct menulist	 *class_menulist;
 static   struct keymap		 *class_keymap;
 
-extern int			  sys_nerr;
-extern char			 *sys_errlist[];
 
 int chartv_debug = 0;
 
 
-struct chartv *
-chartv__Create( ClassID, specification, anchor )
-  register struct  classheader	 *ClassID;
-  chartv_Specification		 *specification;
-  register struct view		 *anchor;
+struct chartv * chartv__Create(struct classheader *ClassID, struct chartv_specification *specification, char *anchor)
   {
   register struct chartv	 *self;
 
@@ -138,8 +145,8 @@ chartv__Create( ClassID, specification, anchor )
   return  self;
   }
   
-void chartv_Save_Command(), chartv_Add_Command(),  chartv_ReChart_Command(), chartv_Delete_Command(),  chartv_Print_Command();
-static void   Quit_Command(),Sort_Command(), Palette_Command(), DEBUG_Command();
+void chartv_Save_Command(struct chartv *self), chartv_Add_Command(struct chartv *self),  chartv_ReChart_Command(struct chartv *self, char *moniker), chartv_Delete_Command(struct chartv *self),  chartv_Print_Command(struct chartv *self);
+static void   Quit_Command(struct chartv *self),Sort_Command(struct chartv *self, long datum), Palette_Command(struct chartv *self), DEBUG_Command(struct chartv *self);
 
 static struct bind_Description	    view_menu[] =
   {
@@ -189,24 +196,19 @@ static struct bind_Description	    view_menu[] =
   NULL
   };
 
-boolean
-chartv__InitializeClass( classID )
-  register struct classheader *classID;
+boolean chartv__InitializeClass(struct classheader *classID)
   {
   IN(chartv_InitializeClass );
   class_menulist = menulist_New();
   class_keymap = keymap_New();
   bind_BindList( view_menu, class_keymap, class_menulist, &chartv_classinfo );
-  proctable_DefineProc( "chartv-DEBUG", DEBUG_Command, &chartv_classinfo, 
+  proctable_DefineProc( "chartv-DEBUG", (procedure) DEBUG_Command, &chartv_classinfo,
 			NULL, "Toggle debug flag.");
   OUT(chartv_InitializeClass );
   return TRUE;
   }
 
-boolean
-chartv__InitializeObject( classID, self)
-  register struct classheader *classID;
-  register struct chartv      *self;
+boolean chartv__InitializeObject(struct classheader *classID, struct chartv *self)
   {
   register long		       status = true;
 
@@ -241,10 +243,7 @@ chartv__InitializeObject( classID, self)
   return  status;
   }
 
-void 
-chartv__FinalizeObject( classID, self )
-  register struct classheader   *classID;
-  register struct chartv	*self;
+void chartv__FinalizeObject(struct classheader *classID, struct chartv *self)
   {
   IN(chartv_FinalizeObject);
   if ( self->instance )
@@ -258,9 +257,7 @@ chartv__FinalizeObject( classID, self )
   OUT(chartv_FinalizeObject);
   }
 
-struct view *
-chartv__GetApplicationLayer( self )
-  register struct chartv     *self;
+struct view * chartv__GetApplicationLayer(struct chartv *self)
   {
   IN(chartv_GetApplicationLayer);
   ApplicationLayer = true;
@@ -273,10 +270,7 @@ chartv__GetApplicationLayer( self )
   return  (struct view *) self;
   }
 
-void
-chartv__DeleteApplicationLayer( self, view )
-  register struct chartv     *self;
-  register struct view	     *view;
+void chartv__DeleteApplicationLayer(struct chartv *self, struct view *view)
   {
   IN(chartv_DeleteApplicationLayer);
   ApplicationLayer = false;
@@ -288,10 +282,7 @@ chartv__DeleteApplicationLayer( self, view )
   OUT(chartv_DeleteApplicationLayer);
   }
 
-void
-chartv__SetDataObject( self, data_object )
-  register struct chartv      *self;
-  register struct chart	      *data_object;
+void chartv__SetDataObject(struct chartv *self, struct dataobject *data_object)
   {
   IN(chartv_SetDataObject);
   Chart = data_object;
@@ -302,9 +293,7 @@ chartv__SetDataObject( self, data_object )
   OUT(chartv_SetDataObject);
   }
 
-void
-chartv__ReceiveInputFocus( self )
-  register struct chartv     *self;
+void chartv__ReceiveInputFocus(struct chartv *self)
   {
   IN(chartv_ReceiveInputFocus);
   
@@ -328,9 +317,7 @@ chartv__ReceiveInputFocus( self )
   OUT(chartv_ReceiveInputFocus);
   }
 
-void
-chartv__LoseInputFocus( self )
-  register struct chartv     *self;
+void chartv__LoseInputFocus(struct chartv *self)
   {
   IN(chartv_LoseInputFocus);
   InputFocus = false; 
@@ -342,14 +329,10 @@ chartv__LoseInputFocus( self )
   OUT(chartv_LoseInputFocus);
   }
 
-long
-chartv__SetChartAttribute( self, attribute, value )
+long chartv__SetChartAttribute(struct chartv *self, long attribute, long value)
   {  return  SetChartAttribute( self, attribute, value );  }
 
-static
-SetChartAttribute( self, attribute, value )
-  register struct chartv     *self;
-  register long		      attribute, value;
+static int SetChartAttribute(struct chartv *self, long attribute, long value)
   {
   register long		      status = ok;
 
@@ -367,7 +350,7 @@ SetChartAttribute( self, attribute, value )
     case  chartv_cursor:
       ChartCursorByte = value;			break;
     case  chartv_cursorfontname:
-      apts_CaptureString( value, &ChartCursorFontName ); break;
+      apts_CaptureString( (char *) value, &ChartCursorFontName ); break;
     case  chartv_datum:
       ClientDatum = value;			break;
     case  chartv_hithandler:
@@ -379,15 +362,15 @@ SetChartAttribute( self, attribute, value )
     case  chartv_itemhighlightstyle:
       ItemHighlightStyle = value;		break;
     case  chartv_labelfontname:
-      apts_CaptureString( value, *LabelFontName ); break;
+      apts_CaptureString( (char *) value, &LabelFontName ); break;
     case  chartv_scalefontname:
-      apts_CaptureString( value, *ScaleFontName ); break;
+      apts_CaptureString( (char *) value, &ScaleFontName ); break;
     case  chartv_titleborderstyle:
       TitleBorderStyle = value;			break;
     case  chartv_titlebordersize:
       TitleBorderSize = value;			break;
     case  chartv_titlecaptionfontname:
-      apts_CaptureString( value, *TitleFontName ); break;
+      apts_CaptureString( (char *) value, &TitleFontName ); break;
     case  chartv_titledataobjecthandler:
       TitleDataObjectHandler = (struct view (*)()) value;break;
     case  chartv_titlehighlightstyle:
@@ -400,21 +383,17 @@ SetChartAttribute( self, attribute, value )
       TitleViewObjectHandler = (struct view (*)()) value;break;
 
     default:
-      fprintf( stderr, "ChartV: Unrecognized ChartAttribute (%d) -- Ignored\n", attribute );
+      fprintf( stderr, "ChartV: Unrecognized ChartAttribute (%ld) -- Ignored\n", attribute );
     }
 
   OUT(SetChartAttribute);
   return  status;
   }
 
-long
-chartv__ChangeChartAttribute( self, attribute, value )
+long chartv__ChangeChartAttribute(struct chartv *self, long attribute, long value)
   {  return  ChangeChartAttribute( self, attribute, value );  }
 
-static
-ChangeChartAttribute( self, attribute, value )
-  register struct chartv     *self;
-  register long		      attribute, value;
+static int ChangeChartAttribute(struct chartv *self, long attribute, long value)
   {
   register long		      status = ok;
 
@@ -427,10 +406,7 @@ ChangeChartAttribute( self, attribute, value )
   return  status;
   }
 
-long
-chartv__ChartAttribute( self, attribute )
-  register struct chartv     *self;
-  register long		      attribute;
+long chartv__ChartAttribute(struct chartv *self, long attribute)
   {
   register long		      value = NULL;
 
@@ -438,9 +414,7 @@ chartv__ChartAttribute( self, attribute )
   return  value;
   }
 
-struct chart_item *
-chartv__CurrentItem( self )
-  register struct chartv     *self;
+struct chart_item * chartv__CurrentItem(struct chartv *self)
   {
   register struct chart_item *item = NULL;
 
@@ -449,10 +423,7 @@ chartv__CurrentItem( self )
   return  item;
   }
 
-void
-chartv__SetDebug( self, state )
-  register struct chartv      *self;
-  register char		       state;
+void chartv__SetDebug(struct chartv *self, boolean state)
   {
   IN(chartv_SetDebug);
   chartv_debug = state;
@@ -461,11 +432,7 @@ chartv__SetDebug( self, state )
   OUT(chartv_SetDebug);
   }
 
-void 
-chartv__FullUpdate( self, type, left, top, width, height )
-  register struct chartv	 *self;
-  register enum view_UpdateType	  type;
-  register long			  left, top, width, height;
+void chartv__FullUpdate(struct chartv *self, enum view_UpdateType type, long left, long top, long width, long height)
   {
   IN(chartv_FullUpdate);
   if ( (!IgnoreFullUpdate)  &&  Chart  &&
@@ -495,16 +462,14 @@ chartv__FullUpdate( self, type, left, top, width, height )
   OUT(chartv_FullUpdate);
   }
 
-static
-Initialize( self )
-  register struct chartv     *self;
+static int Initialize(struct chartv *self)
   {
   register char		     *moniker = NULL;
 
   IN(Initialize);
   if ( Chart )
     {
-    moniker = (char *) chart_ChartAttribute( Chart, chart_Type(0) );
+    moniker = (char *) chart_ChartAttribute( Chart, chart_type );
     DEBUGst(Moniker,moniker);
     DEBUGst(Chart-module-name,chart_ModuleName( Chart, moniker ));
     }
@@ -522,11 +487,7 @@ Initialize( self )
   OUT(Initialize);
   }
 
-struct view *
-chartv__Hit( self, action, x, y, clicks )
-  register struct chartv	  *self;
-  register enum view_MouseAction   action;
-  register long			   x, y, clicks;
+struct view * chartv__Hit(struct chartv *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   register struct view		  *hit;
 
@@ -547,13 +508,7 @@ chartv__Hit( self, action, x, y, clicks )
   return  hit;
   }
 
-void
-chartv__Print( self, file, processor, format, level )
-  register struct chartv     *self;
-  register FILE		     *file;
-  register char		     *processor;
-  register char		     *format;
-  register boolean	      level;
+void chartv__Print(struct chartv *self, FILE *file, char *processor, char *format, boolean level)
   {
   IN(chartv_Print);
   if ( ChartViewer )
@@ -561,9 +516,7 @@ chartv__Print( self, file, processor, format, level )
   OUT(chartv_Print);
   }
 
-void
-chartv_Add_Command( self )
-  register struct chartv     *self;
+void chartv_Add_Command(struct chartv *self)
   {
   char			     *reply;
   register struct chart_item *item;
@@ -581,7 +534,7 @@ chartv_Add_Command( self )
       chartv_Announce( self, "" );
       if ( reply == NULL  ||  *reply == 0 )
         break;
-      chart_SetItemAttribute( Chart, item, chart_ItemValue(atoi( reply )) );
+      chart_SetItemAttribute( Chart, item, chart_itemvalue, (long) (atoi( reply )) );
       chart_NotifyObservers( Chart, chart_ItemsSorted/*===*/ );
       }
       else
@@ -596,9 +549,7 @@ chartv_Add_Command( self )
   OUT(Add_Command);
   }
 
-void
-chartv_Delete_Command( self )
-  register struct chartv     *self;
+void chartv_Delete_Command(struct chartv *self)
   {
   IN(Delete_Command);
   if ( chartobj_CurrentItem( ChartViewer ) )
@@ -614,9 +565,7 @@ chartv_Delete_Command( self )
   }
 
 
-chartv_ReChart( self, moniker )
-  register struct chartv     *self;
-  register char		     *moniker;
+int chartv_ReChart(struct chartv *self, char *moniker)
   {
   struct rectangle	      bounds;
   register struct chartobj   *prior_viewer = ChartViewer;
@@ -625,7 +574,7 @@ chartv_ReChart( self, moniker )
   DEBUGst(Moniker,moniker);
   if ( moniker  &&  *moniker )
     {
-    chart_SetChartAttribute( Chart, chart_Type(moniker) );
+    chart_SetChartAttribute( Chart, chart_type, (long) (moniker) );
     bounds.left = bounds.top = 0;
     bounds.width = Width; bounds.height = Height;
     if ( prior_viewer )
@@ -663,10 +612,7 @@ chartv_ReChart( self, moniker )
     }
   OUT(ReChart);
   }
-void
-chartv_ReChart_Command( self, moniker )
-  register struct chartv     *self;
-  register char		     *moniker;
+void chartv_ReChart_Command(struct chartv *self, char *moniker)
   {
   IN(ReChart_Command);
   DEBUGst(moniker,moniker);
@@ -674,9 +620,7 @@ chartv_ReChart_Command( self, moniker )
   OUT(ReChart_Command);
   }
 
-void
-chartv_Print_Command( self )
-  register struct chartv	*self;
+void chartv_Print_Command(struct chartv *self)
   {
   register FILE			*file;
   char				 msg[512], *chart_file_name;
@@ -684,7 +628,7 @@ chartv_Print_Command( self )
 
   IN(Print_Command);
   chartv_UseWaitCursor( self );
-  chart_file_name = (char *) chart_ChartAttribute( Chart, chart_FileName(0) );
+  chart_file_name = (char *) chart_ChartAttribute( Chart, chart_filename );
   sprintf( msg, "Printing '%s' ...", chart_file_name );
   chartv_Announce( self, "Printing ..." );
   if ( file = fopen( tmpnam(file_name), "w" ) )
@@ -704,10 +648,7 @@ chartv_Print_Command( self )
   OUT(Print_Command);
   }
 
-static void
-Sort_Command( self, datum )
-  register struct chartv     *self;
-  register long		      datum;
+static void Sort_Command(struct chartv *self, long datum)
   {
   IN(Sort_Command);
   chart_Sort( Chart, datum, NULL );
@@ -715,9 +656,7 @@ Sort_Command( self, datum )
   OUT(Sort_Command);
   }
 
-void
-chartv_Save_Command( self )
-  register struct chartv     *self;
+void chartv_Save_Command(struct chartv *self)
   {
   char			      msg[512],
 			      original_name[512], backup_name[512];
@@ -727,15 +666,15 @@ chartv_Save_Command( self )
   struct stat		      st;
 
   IN(Save_Command);
-  if ( chart_ChartAttribute( Chart, chart_FileName(0)) == NULL )
+  if ( chart_ChartAttribute( Chart, chart_filename) == NULL )
     { DEBUG(Need FileName);
     chartv_QueryFileName( self, "Enter FileName: ", &file_name );
     chartv_Announce( self, "" );
-    chart_SetChartAttribute( Chart, chart_FileName( file_name ) );
+    chart_SetChartAttribute( Chart, chart_filename, (long) (file_name) );
     }
   if ( Description_Modified( self ) )
     Preserve_Description( self );
-  file_name = (char *) chart_ChartAttribute( Chart, chart_FileName(0) );
+  file_name = (char *) chart_ChartAttribute( Chart, chart_filename );
   if ( file_name )
     {
     chartv_UseWaitCursor( self );
@@ -746,7 +685,7 @@ chartv_Save_Command( self )
     if ( stat( original_name, &st ) == 0 )
       { DEBUG(Existent File);
       while ( ! stat( backup_name, &st ) )
-        sprintf( backup_name, "%s.BACKUP.%d", file_name, serial++ );
+        sprintf( backup_name, "%s.BACKUP.%ld", file_name, serial++ );
       DEBUGst(Backup-name,backup_name);
       if ( rename( original_name, backup_name ) )
         { DEBUG(ReName Failure);
@@ -768,9 +707,9 @@ chartv_Save_Command( self )
         }
         else
         { DEBUG(File Open Failed);
-        sprintf( msg, "Unable to Open '%s' (%s)", file_name, sys_errlist[errno] );
+        sprintf( msg, "Unable to Open '%s' (%s)", file_name, strerror(errno) );
         chartv_Announce( self, msg );
-        chart_SetChartAttribute( Chart, chart_FileName( NULL ) );
+        chart_SetChartAttribute( Chart, chart_filename, (long) (NULL) );
         }
       }
     chartv_UseNormalCursor( self );
@@ -780,9 +719,7 @@ chartv_Save_Command( self )
   OUT(Save_Command);
   }
 
-static void
-DEBUG_Command( self )
-  register struct chartv     *self;
+static void DEBUG_Command(struct chartv *self)
   {
   IN(DEBUG_Command);
   chartv_SetDebug( self, !chartv_debug );
@@ -790,9 +727,7 @@ DEBUG_Command( self )
   OUT(DEBUG_Command);
   }
 
-static void
-Palette_Command( self )
-  register struct chartv     *self;
+static void Palette_Command(struct chartv *self)
   {
   IN(Palette_Command);
   if ( PaletteExposed )
@@ -804,9 +739,7 @@ Palette_Command( self )
   OUT(Palette_Command);
   }
 
-static void
-Quit_Command( self )
-  register struct chartv     *self;
+static void Quit_Command(struct chartv *self)
   {
   static char		     *choices[] =
 		{"Cancel", "Save", "Save & Quit", "Quit Anyway", 0};
@@ -832,9 +765,7 @@ Quit_Command( self )
   OUT(Quit_Command);
   }
 
-static
-Description_Modified( self )
-  register struct chartv	 *self;
+static int Description_Modified(struct chartv *self)
   {
   register boolean		  status = false;
 
@@ -849,9 +780,7 @@ Description_Modified( self )
   return  status;
   }
 
-static
-Preserve_Description( self )
-  register struct chartv	 *self;
+static int Preserve_Description(struct chartv *self)
   {
   register FILE			 *file;
   struct stat			  st;
@@ -873,10 +802,7 @@ Preserve_Description( self )
   OUT(Preserve_Description);
   }
 
-void
-chartv__LinkTree( self, parent )
-    struct chartv *self;
-    struct view *parent;
+void chartv__LinkTree(struct chartv *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if(chartv_GetIM(self)) {

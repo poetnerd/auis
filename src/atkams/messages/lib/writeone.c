@@ -55,6 +55,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <andrewos.h>                  /* sys/file.h */
 #include <amsutil.ih>
 #include <sys/param.h>
+#include <sys/stat.h>
 #include <util.h>
 #include <pwd.h>
 #include <ctype.h>
@@ -74,12 +75,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #define AUXMODULE 1
 #include <sendmsg.eh>
 
+/* same-directory (sendaux.o/sendmsg.o, linked into the same sendmsg.do)
+   cross-file references -- no header */
+extern int EnvViewCt(struct environment *env);		/* sendaux.c */
+extern int ProduceUnscribedVersion(char *FileName, FILE *OutputFP);	/* sendmsg.c */
 
-WriteOneFile(sendmessage, ViceFileName, OnVice, MayOverwrite, Version, TrustDelivery, UseMultipartFormat, EightBitText)
-struct sendmessage *sendmessage;
-char *ViceFileName;
-Boolean OnVice, MayOverwrite, TrustDelivery, UseMultipartFormat;
-int Version, *EightBitText;
+int WriteOneFile(struct sendmessage *sendmessage, char *ViceFileName, Boolean OnVice, Boolean MayOverwrite, int Version, Boolean TrustDelivery, Boolean UseMultipartFormat, int *EightBitText)
 {
     FILE *fp;
     int i, lim, c = 0;
@@ -118,7 +119,7 @@ int Version, *EightBitText;
 #endif
     if (UseMultipartFormat) {
 	int kids = EnvViewCt(sendmessage->BodyText->rootEnvironment);
-	fprintf(fp, "X-Andrew-Message-Size: %d+%d\n", text_GetLength(sendmessage->BodyText) - kids, kids);
+	fprintf(fp, "X-Andrew-Message-Size: %ld+%d\n", text_GetLength(sendmessage->BodyText) - kids, kids);
 	fprintf(fp, "MIME-Version: 1.0\n");
 	if (kids) {
 	    sprintf(boundary, "Alternative.Boundary.%s", ams_ams_genid(ams_GetAMS(), 1));
@@ -165,7 +166,7 @@ int Version, *EightBitText;
 	int NeedsEncoding=0;
 	if (Version >= 10) {
 	    int kids = EnvViewCt(sendmessage->BodyText->rootEnvironment);
-	    fprintf(fp, "X-Andrew-Message-Size: %d+%d\n", text_GetLength(sendmessage->BodyText) - kids, kids);
+	    fprintf(fp, "X-Andrew-Message-Size: %ld+%d\n", text_GetLength(sendmessage->BodyText) - kids, kids);
 	    fprintf(fp, "Content-Type: X-BE2; %d\n", Version);
 	    fprintf(fp, "If-Type-Unsupported: %s\n", TrustDelivery ? "alter" : "send");
 	} else {

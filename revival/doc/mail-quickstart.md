@@ -1,0 +1,307 @@
+# AUIS Revival: IMAP/SMTP Mail Quickstart
+
+This guide takes a built `andrew-6.4` tree from zero to working mail:
+`messages` (or `cui`) reading your real IMAP mailbox and sending through
+your provider's SMTP submission server. It reflects the state of the
+revival as of 2026-07-18 (milestone 3b of the AMS/IMAP project; see
+`ams-IMAP-project.md` for the architecture and roadmap).
+
+**How it works, in one paragraph.** The historical AMS delivery system
+(AMDS) stays off. Instead, a sync program (`imapsync`) mirrors your IMAP
+folders one-way into a local AMS message store under `~/.IMAP/<account>/`,
+which `messages` and `cui` browse through the completely unmodified store
+machinery — the local store *is* the cache, as in Thunderbird's model.
+Outgoing mail bypasses delivery entirely: when the `smtphost` preference
+is set, the send path speaks SMTP (with STARTTLS and authentication)
+directly to your provider. The mirror is currently **one-way**: local
+flag changes are overwritten by the server's view on the next sync, and
+writeback is a later milestone.
+
+Fastmail is the reference provider throughout; any provider offering
+IMAP + SMTP submission with app passwords should work the same way.
+
+## Prerequisites
+
+- A built tree — see `quickstart.md` for build and X11/font setup.
+  The mail pieces are built by the normal `make World`/`dependInstall`;
+  `imapsync` installs to `build/bin/imapsync`.
+- An **app password** from your provider (Fastmail: Settings → Privacy &
+  Security → Integrations → New app password, scope "Mail (IMAP/SMTP)").
+  Regular account passwords will not work with third-party clients.
+
+## Step 1: credentials in ~/.netrc
+
+Create `~/.netrc` **with mode 600** — the mail code refuses to read it if
+it is group- or world-readable. One stanza per server, same app password
+in both:
+
+```
+machine smtp.fastmail.com login wdc@fastmail.com password <app-password>
+machine imap.fastmail.com login wdc@fastmail.com password <app-password>
+```
+
+```
+chmod 600 ~/.netrc
+```
+
+Note the stanzas are keyed by *server hostname*, so both are required
+even though the credentials are identical.
+
+## Step 2: preferences
+
+Add to `~/preferences`:
+
+```
+*.smtphost: smtp.fastmail.com
+```
+
+This one preference is the master switch for SMTP sending — with it set,
+every AMS client's send path goes to that server instead of the
+historical delivery system. It also disables the (obsolete, and on
+modern resolvers unreliable) client-side DNS validation of destination
+hosts; set `*.validatedesthosts: 1` if you ever want that back.
+
+Do **not** add the `mspath` line yet — the store refuses unknown path
+elements, so the mirror directory must exist first (step 4).
+
+## Step 3: identity — the From address
+
+AMS stamps every outgoing message's `From:` header itself (any From you
+type is deleted and replaced), as `<login>@<MyMailDomain>` — and the
+domain comes from the `ThisDomain` key of the **AndrewSetup**
+configuration file, falling back to your machine's hostname if no such
+file exists. An unset ThisDomain therefore produces
+`you@your-machine.lan`, which your provider will refuse to relay to
+external addresses (Fastmail: `551 5.7.1 Not authorised to send from
+this header address`).
+
+The AndrewSetup search path ends at `${ANDREWDIR}/etc/AndrewSetup`,
+which the revival's `site.h` points at the build tree — so no root
+access is needed. Create `build/etc/AndrewSetup` containing:
+
+```
+ThisDomain: fastmail.com
+AMS_OnlyMail: No
+```
+
+Your UNIX login name must match the local part of your mail address for
+this to compose correctly (`wdc` + `fastmail.com` → `wdc@fastmail.com`).
+The full name in the From display comes from your account's GECOS field.
+
+`AMS_OnlyMail` matters for mirrored folders specifically — see step 6.
+
+**`AndrewSetup` is hand-authored, not a build artifact** — no
+Imakefile installs or regenerates it, and it lives inside `build/`, so
+`make Clean` (or any other wipe of `build/`) deletes it silently along
+with everything else. Run `revival/tools/write-andrewsetup` any time
+after a clean to recreate it with these settings (it refuses to
+clobber a file that's already there; pass `-f` to overwrite). See
+"AndrewSetup settings" in `quickstart.md` for the full reference on
+what's in it and why.
+
+## Step 4: first mirror
+
+```
+build/bin/imapsync -v
+```
+
+Defaults: account root `~/.IMAP/fastmail`, folder `INBOX`, credentials
+via the `imap.fastmail.com` netrc stanza. The first run fetches every
+message (a few minutes for a few thousand messages); subsequent runs are
+incremental and near-instant, so re-run it whenever you want new mail.
+There is no daemon mode yet — cron or a by-hand run is the current
+answer.
+
+Options:
+- more folders: `-folders INBOX,Archive,Sent` on the command line, or
+  the `imapsyncfolders` preference (comma-separated IMAP names)
+- `-full-check`: additionally detect messages expunged on the server
+  and mark the local copies deleted (never purges them); costs a full
+  mailbox scan, so it is opt-in
+- `-root <dir>`: mirror somewhere else (used by the test suites)
+
+**There is no folder auto-discovery.** `imapsync` only ever mirrors
+folders you name explicitly — there is no "sync everything on the
+account" mode, and nothing watches the server for folders that didn't
+exist yet at your last `-folders`/`imapsyncfolders` edit. A folder
+created after the fact (via Thunderbird, a filter, webmail, anything
+other than this tool) will not appear in `messages` until you notice,
+add its name to the list, and re-run `imapsync`. If you have many
+folders and want to enumerate what actually exists on the server
+before building that list, `imaptest.test` (built alongside `imapsync`,
+in `src/overhead/mail/lib`) has a read-only `list` subcommand:
+
+```
+src/overhead/mail/lib/imaptest.test list imap.fastmail.com 993 ~/.netrc imap.fastmail.com
+```
+
+prints every real folder name via a plain IMAP `LIST "" "*"` — a
+one-time (or occasional, if you add folders later) way to build or
+refresh your `imapsyncfolders` value, not something `imapsync` does
+for you automatically.
+
+Through Milestone 3 the sync was strictly read-only on the IMAP side.
+**As of Milestone 4 (writeback, 2026-07-23), that's no longer true**:
+if a mirrored folder has a `.MS_Journal` (local mutations captured via
+`messages`/`cui` — mark read, delete, purge, copy/compose in), the very
+next `imapsync` run on that folder replays those changes to the server
+for real (`STORE`/`EXPUNGE`/`APPEND`). Server-observed changes always
+win over local ones. Only mirror folders you're prepared to have
+written back to; see `revival/doc/ams-IMAP-project.md` §7 Milestone 4
+and `revival/doc/claude-history/imap-writeback-REPORT.md` for the full
+design and a real incident this caused during development (a
+now-fixed, unrelated test-suite bug — not a defect in `imapsync`
+itself).
+
+## Step 5: point mspath at the mirror
+
+Now add to `~/preferences` (colon-joined with whatever your mspath
+already has; if you have no mspath line, this is the whole thing):
+
+```
+mspath: $default:~/.IMAP/fastmail/.MESSAGES
+```
+
+The `.MESSAGES`-suffixed root is required — that literal path component
+is how the store recognizes a message-directory tree (it is the same
+convention as your personal `~/.MESSAGES`). An optional label prefix,
+`$default:[fastmail]~/.IMAP/fastmail/.MESSAGES`, names the tree in
+folder listings.
+
+## Step 6: browse
+
+```
+cd build && bin/messages
+```
+
+The mirrored INBOX needs two things to appear in the default startup
+folder view ("Expose New"), rather than requiring **Message Folders →
+Expose All** every time:
+
+1. `AMS_OnlyMail: No` in `AndrewSetup` (step 3) — without it, Expose
+   New is hard-restricted to `$HOME/.MESSAGES` and excludes every other
+   mspath root outright, before subscription status is even checked.
+2. The folder subscribed at **Ask** or **Show All**, not plain
+   Subscribe — Expose New additionally filters on "has new mail since
+   last read," and only Ask/Show All bypass that check unconditionally.
+   A plain-subscribed folder only shows up in Expose New when it
+   genuinely has unread mail newer than the last time you looked at
+   it, same as any classic AMS folder.
+
+Select the folder (once visible via Expose All) → Message Folders →
+Alter Subscription → Show All to get the always-visible behavior.
+Captions, bodies, and seen/unseen state all come from the mirror;
+re-run `imapsync` to bring in new mail and updated flags.
+
+**Many menu items are grayed out until you enable them in Set
+Options** (Other menu → Set Options) — this is not folder- or
+message-specific, it's a global, off-by-default toggle per feature, a
+classic AUIS "experience level" progressive-disclosure design. Two
+you'll likely want early: **"File into... menus"** (`EXP_FILEINTOMENU`
+— without it, every "File Into" submenu item stays disabled no matter
+what's selected or displayed) and **"Mark as Unseen menu"**
+(`EXP_MARKASUNREAD` — same story for "This Message → Mark as Unread").
+If a menu item looks permanently disabled regardless of what you click
+on or select, suspect a Set Options toggle before suspecting a bug.
+
+**Mail headers have proliferated a lot since 1988.** A real message
+routed through a modern provider commonly carries 40-80 header lines —
+`Received:` hops, `DKIM-Signature`/`ARC-*`/`Authentication-Results`,
+`X-Microsoft-*`/`X-Google-*` diagnostics, spam-score headers, and more
+— where AMS's original design assumed a handful. Both `messages` and
+`cui` show every one of these by default, unfiltered; neither app was
+changed to filter them by default (a deliberate choice — see the
+"AMS-over-IMAP" project entry in `roadmap.md`). In `messages` this is
+mostly a non-issue in practice: the header block is inserted in a tiny
+font ahead of the body, and the view scrolls to land on the actual
+message content, not the top of the header pile. `cui`, reading in a
+plain terminal, has no equivalent — `type` prints every header line
+top to bottom, and you page through all of them (`-- More --`) before
+reaching the body. To quiet that down in `cui`:
+
+```
+set headers
+keep subject from to date
+```
+
+`set headers` turns on header *filtering* (off by default, somewhat
+confusingly — "off" means "show everything unfiltered," not "hide
+headers"); `keep` then whitelists just the header names you listed
+("omit" does the opposite: hide *only* the header names you list,
+otherwise print everything else). Both are `LEVEL_EXPERT` commands, so
+`cui` will ask you to confirm running one at the default novice level
+the first time. To make this permanent, put both lines in `~/.cuirc`
+— `cui` sources that file automatically on startup (silently skipped
+if absent), the same mechanism the `source` command uses interactively.
+
+## Step 7: send
+
+Compose and send from `messages` or `cui` as normal. With `smtphost`
+set, "Your message has been sent" means the provider's submission
+server accepted it.
+
+**Plain messages go out as plain text automatically.** A message with
+no formatting is silently stripped and sent as ordinary text that any
+mail client can read. (If your sends arrive as an empty body with a
+small attachment of ATK markup, you are running a binary from before
+2026-07-18 — that was a 64-bit porting bug in
+`MS_GetConfigurationParameters` that made clients believe an AMS
+delivery system would down-convert for them; rebuild.)
+
+**For messages with formatting** (fonts, insets), messages asks per
+send: remove the formatting, send Andrew format, or send MIME. Set
+
+```
+mailsendingformat: mime
+```
+
+in `~/preferences` to pre-answer the Andrew-vs-MIME half of that
+question — MIME sends multipart/alternative with a plain-text first
+part, so non-ATK readers still get something readable. Recognized
+values: `mime`, `atk`, `ask` (the default).
+
+If you want explicit per-message **Send Formatted / Send Unformatted**
+menu items, enable "Send Formatted/Unformatted menus" in Set Options.
+There is no hand-editable preference line for option checkboxes:
+messages persists them as an opaque hex bitmask
+(`messages.BinaryOptions` in `~/preferences`, written by the Set
+Options interface), so the GUI is the supported way to set them.
+
+A good first test is a message to yourself, then `imapsync -v` and
+watch it appear in the mirrored INBOX.
+
+## Current limitations
+
+| Limitation | Status |
+|---|---|
+| One-way sync: local flag changes revert to the server's view on next sync; don't file into or delete from mirror folders | Writeback is milestone 4 |
+| App passwords only | XOAUTH2 is milestone 5 |
+| Default folder-view visibility needs `AMS_OnlyMail: No` (AndrewSetup) plus Ask/Show-All subscription | M3c, resolved 2026-07-22 — see step 6 |
+| MIME display shells out to metamail, which does nothing on this platform | Pre-existing gap, separate from the IMAP project |
+| No sync daemon | Re-run `imapsync` by hand or from cron |
+| No folder auto-discovery — new server-side folders don't appear until named and synced | Use `imaptest.test list ...` to enumerate real folder names; see step 4 |
+
+## Troubleshooting
+
+- **`551 5.7.1 Not authorised to send from this header address`** —
+  your From domain is wrong; see step 3.
+- **`The mspath element ... does not exist`** — run `imapsync` before
+  adding the mspath element, and check the path ends in `.MESSAGES`.
+- **netrc silently not used / auth failures** — check `~/.netrc` is
+  mode 600 and has a stanza for the exact server hostname being
+  contacted (SMTP and IMAP stanzas are separate).
+- **Seeing exactly what is said to the server** — set `AMS_SMTP_TRACE=1`
+  in the environment before launching `messages` or `cui` and the whole
+  SMTP dialogue (EHLO, MAIL FROM, each RCPT reply, the final verdict) is
+  printed to stderr, with the AUTH credential line redacted and the
+  message body omitted. This is the fastest way to see which identity
+  the server is objecting to when it refuses a send.
+- **`Can't write message to /usr/lib/sendmail`** — the send path
+  believed `smtphost` was unset and fell back to the (nonexistent)
+  sendmail binary. If your preferences file plainly has the line, the
+  process's preference reads have gone bad; quit and restart the
+  application (a failed preference load is cached for the life of the
+  process) and retry.
+- **Sends work to your own address but not externally** — that is the
+  step-3 From-domain problem again; external relay is where providers
+  enforce the header From.

@@ -46,8 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 static struct mark *freeMarks = NULL;
 static struct mark *lastBlock = NULL;
 
-struct mark *mark__Allocate(classID)
-struct classheader *classID;
+struct mark * mark__Allocate(struct classheader *classID)
 {
 
     static int lastIndex = NUMPERBLOCK; /* Force a block malloc on first call. */
@@ -64,18 +63,15 @@ struct classheader *classID;
     return &lastBlock[lastIndex++];
 }
 
-void mark__Deallocate(classID, self)
-struct classheader *classID;
-    struct mark *self;
+void mark__Deallocate(struct classheader *classID, struct mark *self)
 {
 
     self->next = freeMarks;
     freeMarks = self;
 }
 
-boolean mark__InitializeObject(classID, self)
-struct classheader *classID;
-struct mark *self;  {
+boolean mark__InitializeObject(struct classheader *classID, struct mark *self)
+{
     self->next = NULL;
     self->pos = 0;
     self->length = 0;
@@ -87,18 +83,14 @@ struct mark *self;  {
     return TRUE;
 }
 
-void mark__SetStyle(self, beginning, ending)
-struct mark *self;
-boolean beginning;
-boolean ending;  {
+void mark__SetStyle(struct mark *self, boolean beginning, boolean ending)
+{
     self->includeBeginning = beginning;
     self->includeEnding = ending;
 }
 
-struct mark *mark__NewWithStyle(classID, beginning, ending)
-struct classheader *classID;
-boolean beginning;
-boolean ending;  {
+struct mark * mark__NewWithStyle(struct classheader *classID, boolean beginning, boolean ending)
+{
     struct mark *nmark;
 
     nmark = mark_New();
@@ -107,10 +99,7 @@ boolean ending;  {
     return nmark;
 }
 
-void mark__UpdateMarks(self, pos, size)
-    struct mark *self;
-    long pos;
-    long size;
+void mark__UpdateMarks(struct mark *self, long pos, long size)
 {
 
     struct mark *mark;

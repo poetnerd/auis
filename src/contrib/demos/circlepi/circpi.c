@@ -46,9 +46,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 /* Global variables */
 
 
-boolean
-circlepi__InitializeClass(c)
-struct classheader *c;
+boolean circlepi__InitializeClass(struct classheader *c)
 {
 /* 
   Initialize all the class data.
@@ -57,10 +55,7 @@ struct classheader *c;
 }
 
 
-boolean
-circlepi__InitializeObject(c, self)
-struct classheader *c;
-struct circlepi *self;
+boolean circlepi__InitializeObject(struct classheader *c, struct circlepi *self)
 {
 /*
   Inititialize the object instance data.
@@ -70,10 +65,7 @@ struct circlepi *self;
 }
 
 
-void
-circlepi__FinalizeObject(c, self)
-struct classheader *c;
-struct circlepi *self;
+void circlepi__FinalizeObject(struct classheader *c, struct circlepi *self)
 {
 /*
   Finalize the object instance data.
@@ -82,10 +74,7 @@ struct circlepi *self;
 }
 
 
-void
-circlepi__SetDepth(self, limit)
-     struct circlepi *self;
-     int limit;
+void circlepi__SetDepth(struct circlepi *self, int limit)
 {
     if (self->depth_limit != limit) {
 	self->depth_limit = limit;

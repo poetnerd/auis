@@ -79,6 +79,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <image.ih>
 #include <gif.h>
 #include <gif.eh>
+static int gifin_add_string(int p, int e);
+static int gifin_close_file();
+static int gifin_fatal(char *msg);
+static int gifin_get_pixel(int *pel);
+static int gifin_load_cmap(BYTE cmap[3][256], int ncolors);
+static int gifin_open_file(FILE *s);
+static int gifin_open_image();
+static int gifin_push_string(int code);
+static int gifin_read_data_block();
+static int gifin_skip_extension();
+static void tellAboutImage(char *name);
 
 /****
  **
@@ -164,16 +175,14 @@ static int  gifin_l_ncolors;           /* number of colors, local colormap */
 static BYTE gifin_l_cmap[3][256];      /* local colormap */
 static BYTE gifin_interlace_flag;      /* interlace image format flag */
 
-extern int WriteGIF();
+extern int WriteGIF(FILE *fp, byte *pic, int w, int h, byte *rmap, byte *gmap, byte *bmap, int numcols, int colorstyle);
 
 
 /*
  * open a GIF file, using s as the input stream
  */
 
-static int 
-gifin_open_file(s)
-    FILE *s;
+static int gifin_open_file(FILE *s)
 {
   /* make sure there isn't already a file open */
   if (file_open)
@@ -323,8 +332,7 @@ gifin_open_image()
  * try to read next pixel from the raster, return result in *pel
  */
 
-static int gifin_get_pixel(pel)
-     int *pel;
+static int gifin_get_pixel(int *pel)
 {
   int  code;
   int  first;
@@ -422,9 +430,7 @@ static int gifin_close_file()
  * load a colormap from the input stream
  */
 
-static int gifin_load_cmap(cmap, ncolors)
-     BYTE cmap[3][256];
-     int  ncolors;
+static int gifin_load_cmap(BYTE cmap[3][256], int ncolors)
 {
   int i;
 
@@ -488,8 +494,7 @@ static int gifin_read_data_block()
  * (returns the code of the first pixel in the string)
  */
 
-static int gifin_push_string(code)
-     int code;
+static int gifin_push_string(int code)
 {
   int rslt;
 
@@ -509,9 +514,7 @@ static int gifin_push_string(code)
  * add a new string to the string table
  */
 
-static gifin_add_string(p, e)
-     int p;
-     int e;
+static int gifin_add_string(int p, int e)
 {
   prefix[table_size] = p;
   extnsn[table_size] = e;
@@ -529,16 +532,13 @@ static gifin_add_string(p, e)
  * semi-graceful fatal error mechanism
  */
 
-static gifin_fatal(msg)
-     char *msg;
+static int gifin_fatal(char *msg)
 {
   printf("Error reading GIF file: %s\n", msg);
   exit(0);
 }
 
-static void 
-tellAboutImage( name )
-    char *name;
+static void tellAboutImage(char *name)
 {
   printf("%s is a %dx%d %sGIF image with %d colors\n", name,
 	 gifin_img_width, gifin_img_height,
@@ -546,11 +546,7 @@ tellAboutImage( name )
 	 (gifin_l_cmap_flag ? gifin_l_ncolors : gifin_g_ncolors));
 }
 
-int
-gif__Load( gif, fullname, fp )
-    struct gif *gif;
-    char *fullname;
-    FILE *fp;
+int gif__Load(struct gif *gif, char *fullname, FILE *fp)
 { 
   FILE *f;
   int x, y, pixel, pass, scanlen;
@@ -643,10 +639,7 @@ gif__Load( gif, fullname, fp )
   return(0);
 }
 
-int 
-gif__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+int gif__Ident(struct classheader *classID, char *fullname)
 { 
     FILE *f;
     unsigned int ret;
@@ -665,11 +658,7 @@ gif__Ident( classID, fullname )
   return(ret);
 }
 
-long
-gif__Read( self, file, id )
-    struct gif *self;
-    FILE *file;
-    long id;
+long gif__Read(struct gif *self, FILE *file, long id)
 {
 	if(gif_Load(self, NULL, file) == 0) {
 	    gif_Compress(self);
@@ -679,21 +668,12 @@ gif__Read( self, file, id )
 	return(dataobject_BADFORMAT);
 }
 
-long
-gif__Write( self, file, writeID, level )
-    struct gif *self;
-    FILE *file;
-    long writeID;
-    int level;
+long gif__Write(struct gif *self, FILE *file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
-long
-gif__WriteNative( self, file, filename )
-    struct gif *self;
-    FILE *file;
-    char *filename;
+long gif__WriteNative(struct gif *self, FILE *file, char *filename)
 {
     int colorstyle = 0; /* 0 == color; 1 == greyscale; 2 == b/w */
     byte r[256], g[256], b[256];

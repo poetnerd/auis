@@ -26,7 +26,6 @@
 * $
 */
 
-
 #if !defined(hpux) || (HP_OS < 80)
 MATHLIB = -lm
 #endif
@@ -49,6 +48,8 @@ IHFILES		=	timeoday.ih \
 LIBS		=	$(DESTDIR)/lib/libutil.a
 
 INCDIR = $(DESTDIR)/include/atk
+
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 NormalHelpRule()
 NormalObjectRule()

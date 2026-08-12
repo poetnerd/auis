@@ -28,6 +28,7 @@ char *figio_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fi
 
 #include <andrewos.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "figio.eh"
 
@@ -46,6 +47,9 @@ char *figio_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/fi
 #include "fontdesc.ih"
 
 #include "point.h"
+static char * EatLinesUntil(FILE *fl, char *list, boolean inlist);
+static char * GetString(FILE *fl);
+static void SquishZipTextInput(char *pt);
 
 static struct figattr *dummyattr;
 
@@ -58,15 +62,14 @@ static long bufsize = 0;
 static struct point *pts = NULL;
 static long pts_size = 0;
 
-static void EnsurePts();
+static void EnsurePts(int num);
 
 #define FromZipX(val)  (long)(((double)(1300+(val)) * ratio))
 #define FromZipY(val)  (long)(((double)(1300-(val)) * ratio))
 #define FromZipW(val)  (long)(((double)(val) * ratio))
 #define FromZipH(val)  (long)(((double)(-(val)) * ratio))
 
-boolean figio__InitializeClass(ClassID)
-struct classhdr *ClassID;
+boolean figio__InitializeClass(struct classheader *ClassID)
 {
     bufsize = BUFSIZESTEP;
     buf = malloc(bufsize);
@@ -80,8 +83,7 @@ struct classhdr *ClassID;
     return TRUE;
 }
 
-static void EnsurePts(num)
-int num;
+static void EnsurePts(int num)
 {
     if (num <= pts_size)
 	return;
@@ -99,7 +101,7 @@ int num;
 }
 
 /* yank data into buf until a newline, extending buf if necessary */
-static char *GetString(fl)
+static char * GetString(FILE *fl)
 {
     char *ctmp, *res;
 
@@ -122,10 +124,7 @@ static char *GetString(fl)
 /* eats lines into buf until (first char IN list) == inlist 
   always reads at least one line
   returns NULL if EOF */
-static char *EatLinesUntil(fl, list, inlist)
-FILE *fl;
-char *list;
-boolean inlist;
+static char * EatLinesUntil(FILE *fl, char *list, boolean inlist)
 {
     char *ctmp, *res;
 
@@ -140,8 +139,7 @@ boolean inlist;
 }
 
 /* remove leading T and turn \n into newline */
-static void SquishZipTextInput(pt)
-char *pt;
+static void SquishZipTextInput(char *pt)
 {
     char *rept;
 
@@ -160,12 +158,7 @@ char *pt;
 }
 
 /* file should be ready to read in first (*D...) line */
-long figio__ReadZipFile(ClassID, fl, fig, parent, ratio)
-struct classhdr *ClassID;
-FILE *fl;
-struct figure *fig;
-long parent;
-double ratio;
+long figio__ReadZipFile(struct classheader *ClassID, FILE *fl, struct figure *fig, long parent, double ratio)
 {
     char *ctmp, objtype;
     long starx, stary, altx, alty, greyval;

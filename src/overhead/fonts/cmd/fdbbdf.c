@@ -36,6 +36,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 static int Coffset = 0;
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* 
 *
@@ -124,17 +126,16 @@ static char comments[2048];
 static int maskflag = 0;
 static int padflag = 0;
 int padsize,ypad;
-static used[256];
+static int used[256];
 int HeaderPrinted = 0;
 int minChar;
 
-usage(s)
-char *s;
+int usage(char *s)
 {
 	fprintf(stderr,"usage: %s [-mask] [-Soffset] [filename]  \n",s);
 	exit(1);
 }
-initlst(){
+int initlst(){
 	register struct st *lstp;
 	register char **c;
 	*comments = '\0';
@@ -145,10 +146,7 @@ initlst(){
 	endlst = lstp;
 }
 
-printdummys(ed,fout)
-int ed;
-FILE *fout;
-/* Writes out blank definitions for undefined characters */
+int printdummys(int ed, FILE *fout)
 {
     register int i;
     for(i = 0; i < ed; i++)  {
@@ -160,8 +158,10 @@ FILE *fout;
 	}
     }
 }
-main(argc,argv)
-char *argv[];
+int fontcount(FILE *f);	/* defined below, used earlier in this file */
+int fontcvt(FILE *fin, FILE *fout, int count);		/* defined below, used earlier in this file */
+
+int main(int argc, char *argv[])
 {
     int i,count;FILE *f;
     initlst();
@@ -193,13 +193,11 @@ char *argv[];
 	    exit(-2);
 	}
     }
-    fontcvt(stdin,stdout);
+    fontcvt(stdin,stdout,count);
     exit(0);
 }
 
-char *lookup(s,i)
-register char *s;
-int *i;
+char * lookup(char *s, int *i)
 {
 	register struct st *lstp;
 	for(lstp = lst; lstp != endlst; lstp++){
@@ -224,9 +222,7 @@ int *i;
 	*i = -1;
 	return(NULL);
 }
-hexout(c,f)
-register char *c;
-register FILE *f;
+int hexout(char *c, FILE *f)
 {
 	register int w = 0;
 	while(*c != '\0'){
@@ -244,9 +240,7 @@ register FILE *f;
 }
 static int psize,maxnwx,maxnwy,maxntosx,maxntosy,maxwtoex,maxwtoey,maxwbx,maxwby,maxnewlx,maxnewly,nicons;
 
-PrintHeader(fout,count)
-FILE *fout;
-int count;
+int PrintHeader(FILE *fout, int count)
 {
 	if(padflag ){
 		int size = MAX( maxwtoex + maxnwx,maxntosy + maxnwy) ; 
@@ -270,9 +264,7 @@ int count;
 	HeaderPrinted = 1;
 }
 static int cvt,spx,spy,orx,ory,bx,by; 
-writechar(fout)
-FILE *fout;
-/* writes the character information */
+int writechar(FILE *fout)
 {
 if(padflag && bx > 0){
 	int size =  MAX(bx,by);
@@ -289,8 +281,7 @@ fprintf(fout,"BBX %d %d %d %d\n",bx,by,-orx ,ory - by );
 fprintf(fout,"BITMAP\n");
 }
 
-fontcount(f)
-FILE *f;
+int fontcount(FILE *f)
 {
     char buf[256];
     int result,count = 0;
@@ -314,15 +305,19 @@ FILE *f;
     }
     return count;
 }
-fontcvt(fin,fout,count)
-FILE *fin,*fout;
-int count;
-/* Font Conversion filter */
+int fontcvt(FILE *fin, FILE *fout, int count)
 {
 	char buf[256],*ss;
 	int result,foundchar = 0;
 	char cc[256];
 	register int i;
+	/* hexout() writes through its first arg (lowercasing in place); a
+	   string literal is read-only memory, so pad calls that don't
+	   have real character data pass this writable stand-in instead
+	   of "". */
+	char emptybuf[1];
+
+	emptybuf[0] = '\0';
 	fprintf(fout,"STARTFONT 2.1\nCOMMENT Created by fdbbdf\n");
 	
 	while((fgets(buf,256,fin)) != NULL){
@@ -380,7 +375,7 @@ int count;
 				break;
 			case 2:
 				if(padflag)
-					while(ypad--) hexout("",fout);
+					while(ypad--) hexout(emptybuf,fout);
 				fprintf(fout,"ENDCHAR\n");
 			case 0:
 				break;
@@ -418,7 +413,7 @@ int count;
 				break;
 			case 2:
 				if(padflag)
-					while(ypad--) hexout("",fout);
+					while(ypad--) hexout(emptybuf,fout);
 				fprintf(fout,"ENDCHAR\n");
 			case 0:
 				break;

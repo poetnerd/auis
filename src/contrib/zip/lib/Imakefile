@@ -26,6 +26,7 @@
 * $
 */
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS = zip.do \
 	zipedit.do \
@@ -125,5 +126,3 @@ DependTarget()
 MkdirTarget($(DESTDIR)/doc/atk/zip)
 
 InstallDocs(ZipPG.doc, $(DESTDIR)/doc/atk/zip)
-
-

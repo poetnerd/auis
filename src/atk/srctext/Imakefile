@@ -26,12 +26,13 @@
 * $
 */
 
-
 /*
  * NOTE:  toolcnt.h is a misc file used by IBM Rochester and is
  *        found here as a dummy file.  It does not need to be
  *        installed anywhere.
  */
+
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS = asmtext.do asmtextv.do \
         compress.do compressv.do \
@@ -70,7 +71,6 @@ InstallLink(idl.tpl, $(DESTDIR)/lib/tpls/idltext.tpl)
 OLDTEMPLATES = ctext.tpl cpptext.tpl asmtext.tpl mtext.tpl m3text.tpl idltext.tpl
 MkdirTarget($(DESTDIR)/lib/tpls/oldsrctpls)
 InstallMultiple($(OLDTEMPLATES), $(INSTINCFLAGS), $(DESTDIR)/lib/tpls/oldsrctpls)
-
 
 HELPFILES = asmtext.help cpptext.help ctext.help \
             hlptext.help m3text.help mtext.help \

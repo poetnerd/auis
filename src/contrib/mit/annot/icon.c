@@ -34,22 +34,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 
  
 
+#include <string.h>
 #include "dataobj.ih"
 #include "dict.ih"
 #include "icon.eh"
+static int check_for_title(struct icon *self, FILE *file);
 
-boolean
-icon__InitializeClass(classID)
-    struct classinfo * classID;
+boolean icon__InitializeClass(struct classheader *classID)
 {
     return TRUE;
 }
 
 
-boolean
-icon__InitializeObject(classID,self)
-    struct classinfo * classID;
-    struct icon * self;
+boolean icon__InitializeObject(struct classheader *classID, struct icon *self)
 {
     self->child = (struct dataobject *)0;
     self->width = 200;
@@ -62,11 +59,7 @@ icon__InitializeObject(classID,self)
 
 
 
-void
-icon__SetSize(self,x,y)
-    struct icon * self;
-    long x;
-    long y;
+void icon__SetSize(struct icon *self, long x, long y)
 {
     if ((self->width != x) || (self->height != y)) {
 	self->width = x;
@@ -76,21 +69,14 @@ icon__SetSize(self,x,y)
 }
 
 
-void
-icon__GetSize(self,x,y)
-    struct icon * self;
-    long * x;
-    long * y;
+void icon__GetSize(struct icon *self, long *x, long *y)
 {
     *x = self->width;
     *y = self->height;
 }
 
 
-void
-icon__SetChild(self, dobj)
-    struct icon * self;
-    struct dataobject * dobj;
+void icon__SetChild(struct icon *self, struct dataobject *dobj)
 {
     if (self->child != (struct dataobject *)0)
 	dataobject_Destroy(self->child);
@@ -98,37 +84,25 @@ icon__SetChild(self, dobj)
     icon_NotifyObservers(self, icon_ChildChanged);
 }
 
-struct dataobject *
-icon__GetChild(self)
-    struct icon * self;
+struct dataobject * icon__GetChild(struct icon *self)
 {
     return self->child;
 }
 
-void
-icon__SetTitle(self, title)
-struct icon * self;
-char * title;
+void icon__SetTitle(struct icon *self, char *title)
 {
     if ((self->title = (char *)malloc(strlen(title) + 1)) != 0)
 	strcpy(self->title, title);
     icon_NotifyObservers(self, icon_TitleChanged);
 }   
 
-char *
-icon__GetTitle(self)
-struct icon * self;
+char * icon__GetTitle(struct icon *self)
 {
     return self->title;
 }
 
 
-long
-icon__Write(self, file, writeID, level)
-struct icon *self;
-FILE *file;
-long writeID;
-int level;
+long icon__Write(struct icon *self, FILE *file, long writeID, int level)
 {   
     int  haschild = 0;
     char * title = self->title;
@@ -161,9 +135,7 @@ int level;
     return icon_GetID(self);
 }
 
-static check_for_title(self, file)
-struct icon * self;
-FILE * file;
+static int check_for_title(struct icon *self, FILE *file)
 {
     char * match = "title{";
     char title[1024];
@@ -206,11 +178,7 @@ FILE * file;
     return dataobject_NOREADERROR;
 }
 
-long
-icon__Read(self,file,id)
-    struct icon * self;
-    FILE * file;
-    long id;
+long icon__Read(struct icon *self, FILE *file, long id)
 {
     long x,y,haschild;
     long objectid;
@@ -225,7 +193,7 @@ icon__Read(self,file,id)
     self->child = (struct dataobject *)0;
     icon_SetID(self,icon_UniqueID(self));
 
-    fscanf(file,"%ld %ld %d", &x, &y, &haschild);
+    fscanf(file,"%ld %ld %ld", &x, &y, &haschild);
     self->width = x;
     self->height = y;
 

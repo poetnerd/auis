@@ -35,14 +35,22 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <stdlib.h>
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int DropHint(char *Dirname);
+extern int HandleMarksInProgress(struct MS_Directory *Dir, int Quiet);
+extern int MS_PurgeDeletedMessages(char *dirname);
+extern int NonfatalBizarreError(char *text);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int ScavengeDown(char *DirName, int *numgood, int *numbad, int quiet, int Purge);
+extern int ScavengeOneDirectory(char *DirName, int *numgood, int *numbad, int quiet, int Purge);
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
 
 #ifndef EVIA_SCAVENGE
 #define EVIA_SCAVENGE EVIA_UNKNOWN /* temp hack until first wash */
 #endif
 
-long MS_ScavengeDirectory(DirName, Recurse, numgood, numbad, quiet, Purge)
-char *DirName;
-int Recurse, *numgood, *numbad, quiet, Purge;
+long MS_ScavengeDirectory(char *DirName, int Recurse, int *numgood, int *numbad, int quiet, int Purge)
 {
     *numgood = *numbad = 0;
     if (!Recurse) {
@@ -53,9 +61,7 @@ int Recurse, *numgood, *numbad, quiet, Purge;
     }
 }
 
-ScavengeDown(DirName, numgood, numbad, quiet, Purge)
-char *DirName;
-int *numgood, *numbad, quiet, Purge;
+int ScavengeDown(char *DirName, int *numgood, int *numbad, int quiet, int Purge)
 {
     DIR *dirp;
     DIRENT_TYPE *dirent;
@@ -116,9 +122,7 @@ int *numgood, *numbad, quiet, Purge;
     return(0);
 }
 
-ScavengeOneDirectory(DirName, numgood, numbad, quiet, Purge)
-char *DirName;
-int *numgood, *numbad, quiet, Purge;
+int ScavengeOneDirectory(char *DirName, int *numgood, int *numbad, int quiet, int Purge)
 {
     struct MS_Directory *Dir;
     char ErrorText[100+MAXPATHLEN];
@@ -128,13 +132,13 @@ int *numgood, *numbad, quiet, Purge;
 	 || CloseMSDir(Dir, MD_APPEND)
 	 || DropHint(DirName)) {
 
-	sprintf(ErrorText, "Scavenge failed for %s (%d, %d, %d)\n", DirName, AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
+	sprintf(ErrorText, "Scavenge failed for %s (%ld, %ld, %ld)\n", DirName, AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
 	NonfatalBizarreError(ErrorText);
 	++*numbad;
     } else {
 	++*numgood;
 	if (Purge && MS_PurgeDeletedMessages(DirName)) {
-	    sprintf(ErrorText, "Could not purge deletions in %s (%d, %d, %d)\n", DirName, AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
+	    sprintf(ErrorText, "Could not purge deletions in %s (%ld, %ld, %ld)\n", DirName, AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
 	    NonfatalBizarreError(ErrorText);
 	}
     }

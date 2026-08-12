@@ -40,6 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 
 #include <andrewos.h> /* sys/file.h */
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -53,6 +54,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <envrment.ih>
 
 #include <readscr.eh>
+static int finishenv();
+static int goshdarn(char *errmsg);
+static int linefix(struct text *d);
+static int longscribe(struct text *d, char *shortcommand);
+static int scribefix(struct text *d);
+static int shortscribe(struct text *d, char *shortcommand);
+static int startenv(int delim, struct style *tempstyle);
+static int textfix(struct text *d, int len);
 
 #define STACKSIZE 1000
 #define STRINGSIZE 50
@@ -74,16 +83,7 @@ static struct StackItem {
     int Delimiter, Position, CheckMode;
 } *Stack[STACKSIZE + 1];
 
-static textfix();
-static linefix();
-static scribefix();
-static longscribe();
-static shortscribe();
-static startenv();
-static finishenv();
-
-static goshdarn(errmsg)
-char *errmsg;
+static int goshdarn(char *errmsg)
 {
     fprintf(stderr, "<warning:readscr>%s\n", errmsg);
 }
@@ -94,11 +94,7 @@ boolean readscr__InitializeObject(classID) /* stupid convention */
     return TRUE;
 }
 
-struct text *readscr__Begin(classID, d, pos, len, purge, version, GetTemplate)
-struct classheader *classID;
-struct text *d;
-int pos, len, purge, GetTemplate;
-char *version;
+struct text * readscr__Begin(struct classheader *classID, struct text *d, int pos, int len, int purge, char *version, int GetTemplate)
 {
     if (GetTemplate && text_ReadTemplate(d, "scribe", 0)) {
 	goshdarn("Couldn't read template.");
@@ -127,12 +123,7 @@ char *version;
     return(d);
 }
 
-readscr__PrintFile(classID, filename, tv, d, Version, TrashWhenDone)
-struct classheader *classID;
-char *filename, *Version;
-int TrashWhenDone;
-struct textview *tv;
-struct text *d;
+int readscr__PrintFile(struct classheader *classID, char *filename, struct textview *tv, struct text *d, char *Version, int TrashWhenDone)
 {
     int fd;
     struct stat statbuf;
@@ -160,9 +151,7 @@ struct text *d;
 
 
 /* ** textfix - reads chars in and handles them appropriately ** */
-static textfix(d, len)
-struct text *d;
-int len;
+static int textfix(struct text *d, int len)
 {
     register int i, tmp;
 
@@ -253,8 +242,7 @@ int len;
 }
 
 /* ** linefix - if single \n, output space, if multiple \n's, output n-1 \n's ** */
-static linefix(d)
-struct text *d;
+static int linefix(struct text *d)
 {
     if (OldFormat) {
 	if (LineFeeds == 1) {
@@ -290,8 +278,7 @@ struct text *d;
 }
 
 /* ** scribefix - deal with @commands ** */
-static scribefix(d)
-struct text *d;
+static int scribefix(struct text *d)
 {
     register int i, next, lowernext;
     char shortcommand[STRINGSIZE], realstring[STRINGSIZE];
@@ -345,9 +332,7 @@ struct text *d;
 }
 
 /* ** longscribe - deal with @begin and @end scribe environments ** */
-static longscribe(d, shortcommand)
-struct text *d;
-char *shortcommand;
+static int longscribe(struct text *d, char *shortcommand)
 {
     register int i;
     struct style *tempstyle;
@@ -454,9 +439,7 @@ char *shortcommand;
 
 
 /* ** shortscribe - deal with all other environments ** */
-static shortscribe(d, shortcommand)
-struct text *d;
-char *shortcommand;
+static int shortscribe(struct text *d, char *shortcommand)
 {
     struct style *tempstyle;
     int delim;
@@ -490,9 +473,7 @@ char *shortcommand;
 }
 
 /* ** startenv - add an environment to the stack ** */
-static startenv(delim, tempstyle)
-int delim;
-struct style *tempstyle;
+static int startenv(int delim, struct style *tempstyle)
 {
     int rpos;
 
@@ -515,7 +496,7 @@ struct style *tempstyle;
 }
 
 /* ** finishenv - remove an environment from the stack ** */
-static finishenv()
+static int finishenv()
 {
     int length;
 

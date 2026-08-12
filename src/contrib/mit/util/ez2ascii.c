@@ -48,12 +48,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
  */
 #include <andrewos.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/file.h>
 
 #include <unscribe.h>
+static int ez2a_doit(FILE *infile, FILE *outfile);
 
-static int ez2a_doit (infile, outfile)
-FILE *infile, *outfile;
+static int ez2a_doit(FILE *infile, FILE *outfile)
 {
     struct ScribeState *ussp;
     int version, err;
@@ -72,9 +73,7 @@ FILE *infile, *outfile;
     return 0;
 }
 
-main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
     FILE *inptr, *outptr;
     int status = -1;

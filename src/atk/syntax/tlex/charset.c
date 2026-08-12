@@ -42,6 +42,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <global.h>
 
@@ -64,9 +65,7 @@ static struct bitarray *CurrBitAr = NULL;
 	Returns ptr to static storage containing a 256 character bit
 		vector with ones set for the characters in the set.
 */
-	char *
-CharsetParse(s)
-	char *s;
+char * CharsetParse(char *s)
 {
 	static char set[256];
 	int c, d;
@@ -126,9 +125,7 @@ CharsetParse(s)
 /* creates the C scource representation of the Charset given by
 	the 256 character set (which is as returned from ParseCharSet)
 */
-	char *
-CharsetValue(set)
-	char *set;
+char * CharsetValue(char *set)
 {
 	int mask, i;
 	char *setref;
@@ -157,9 +154,7 @@ CharsetValue(set)
  }
 
 /* output all Charset arrays */
-	void
-CharsetOutputArrays(f)
-	FILE *f;
+void CharsetOutputArrays(FILE *f)
 {
 	int j;
 	for ( ; CurrBitAr != NULL; CurrBitAr = CurrBitAr->prev) {

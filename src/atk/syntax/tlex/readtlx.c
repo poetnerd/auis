@@ -28,6 +28,8 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 #include <global.h>
@@ -93,10 +95,7 @@ static struct symbol recognizer[] = {
 	return table->n for the successful table entry
 	if none found, return the table entry for NULL
 */
-	static int
-lookup(sx, ex, table)
-	char *sx, *ex;
-	struct symbol *table;
+static int lookup(char *sx, char *ex, struct symbol *table)
 {
 	for ( ; table->s; table++)
 		if (strncmp(sx, table->s, ex-sx) == 0)
@@ -114,10 +113,7 @@ lookup(sx, ex, table)
 		this works for C code, but not tlex stuff)
 	at eof, sets *InputBuffer = '\0'
 */
-	static void
-GetLine(f, deblank)
-	FILE *f;
-	boolean deblank;
+static void GetLine(FILE *f, boolean deblank)
 {
 	while (TRUE) {
 		/* increment LineNo if reached the end of the previous line */
@@ -156,9 +152,7 @@ GetLine(f, deblank)
 	Returns the list.
 	The InputBuffer is left containing the next input line.
 */
-	struct line *
-parseClines(f)
-	FILE *f;
+struct line * parseClines(FILE *f)
 {
 	int firstindent;	/* indent of first line */
 	char *cx;
@@ -209,10 +203,7 @@ Line types:
 	Elt	- any other line is parsed to: type, var, value
 	C	- parseClines
 */
-	boolean
-ParseLine(fin, hdr)
-	FILE *fin;
-	struct line *hdr;
+boolean ParseLine(FILE *fin, struct line *hdr)
 {
 	char *bx, *kx;
 	struct line *v;
@@ -257,7 +248,10 @@ ParseLine(fin, hdr)
 			val = ScanToken(kx, NULL);
 			if (*val == '"' || *val == '\'') {
 				/* remove quotes */
-				strcpy(val, val+1);
+				/* val+1 aliases val; strcpy's overlap check
+				   aborts under macOS fortify -- memmove
+				   tolerates it. */
+				memmove(val, val+1, strlen(val+1)+1);
 				*(val + strlen(val)-1) = '\0';
 			}
 			if (*val == '\0') ErrorA(ERROR, 
@@ -428,9 +422,7 @@ ParseLine(fin, hdr)
 		set recognizer to tlex_RESWD 
 		(process further in defaults.c)
 */
-	static void 
-ParseTokenClass(f)
-	FILE *f;
+static void ParseTokenClass(FILE *f)
 {
 	struct line *hdr;
 	char *bx;
@@ -529,9 +521,7 @@ ParseTokenClass(f)
 	hdr->u.h.action = 0;
 }
 
-	void
-ReadTlx(f)
-	FILE *f;
+void ReadTlx(FILE *f)
 {
 	LineNo = 0;
 	InputText = InputBuffer;

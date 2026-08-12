@@ -33,6 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <cparser.h>
 
@@ -48,15 +49,13 @@ static int DebugFlag = 0;
 
 
 
-static void debugstate(/* struct parser_tables  *desc, int  state , int  pendtok , int  errorstate */);
-static void debugshift(/* struct parser_tables  *desc, int  tact */);
-static void debugreduce(/* struct parser_tables  *desc, int  rule , int  revealedstate , int  newstate */);
-static void debugflush(/* struct parser_tables  *desc, int  state */);
+static void debugstate(struct parser_tables *desc, int state, int pendtok, int errorstate);
+static void debugshift(struct parser_tables *desc, int tact);
+static void debugreduce(struct parser_tables *desc, int rule, int revealedstate, int newstate);
+static void debugflush(struct parser_tables *desc, int state);
 static void debugnewline();
 
-	int
-parser_SetDebug(value)
-	int value;
+int parser_SetDebug(int value)
 {
 	int oldval = DebugFlag;
 	DebugFlag = value;
@@ -68,12 +67,7 @@ parser_GetCurrentparser() {
 	return CurrentParser;
 }
 
-	void
-parser_ErrorGuts(self, severity, severityname, msg)
-	struct parser *self;
-	int severity;
-	char *severityname;
-	char *msg;
+void parser_ErrorGuts(struct parser *self, int severity, char *severityname, char *msg)
 {
 	if(self->errorfunc) 
 		self->errorfunc(self, severity, severityname, msg);
@@ -84,9 +78,7 @@ parser_ErrorGuts(self, severity, severityname, msg)
 	}
 }
 
-	void 
-parser_Init(self)
-	struct parser *self;
+void parser_Init(struct parser *self)
 {
 	self->tables = NULL;
 	self->rock = NULL;
@@ -106,18 +98,12 @@ parser_New() {
 	return self;
 }
 
-	void 
-parser_Destroy(self)
-	struct parser *self;
+void parser_Destroy(struct parser *self)
 {
 	free(self);
 }
 
-	void 
-parser_Error(self, severity, msg)
-	struct parser *self;
-	int severity;
-	char *msg;
+void parser_Error(struct parser *self, int severity, char *msg)
 {
 	int tsev = severity & (~parser_FREEMSG);
 	char *name;
@@ -140,11 +126,7 @@ parser_Error(self, severity, msg)
 	 the handler is called for each reserved word:
 		handler(rock, char *word, int tokennumber) 
 */
-	void 
-parser_EnumerateReservedWords(self, handler, rock)
-	struct parser *self;
-	parser_enumresfptr handler;
-	void *rock;
+void parser_EnumerateReservedWords(struct parser *self, parser_enumresfptr handler, void *rock)
 {
 	int i, nnames;
 	char **names;
@@ -184,10 +166,7 @@ parser_EnumerateReservedWords(self, handler, rock)
 	Returns the token number corresponding to the string;
 	Typical strings:  "function", "setID", "tokNULL", "'a'", "\":=\""  
 */
-	int 
-parser_TokenNumberFromName(self, name)
-	struct parser *self;
-	char *name;
+int parser_TokenNumberFromName(struct parser *self, char *name)
 {
 	int i, nnames, nmlen = strlen(name);
 	char **names;
@@ -228,10 +207,7 @@ parser_TokenNumberFromName(self, name)
 		  \o		  :  other characters, unchanged
 	if no character follows the \, return \ and length of zero
 */
-	int 
-parser_TransEscape(buf, plen)
-	char  *buf;
-	int  *plen;
+int parser_TransEscape(char *buf, int *plen)
 {
 	static char esctab[]
 	  = "r\rn\nf\ft\tb\bv\v\"\"\'\'\\\\?\177e\033E\033R\rN\nF\fT\tB\bV\v";
@@ -329,12 +305,7 @@ static char newstate [9][21] = {
 /*9 error halt */
 /*10 accept */
 };
-	int 
-parser_ParseNumber(buf, plen, intval, dblval)
-	char  *buf;
-	long  *plen;
-	long  *intval;
-	double  *dblval;
+int parser_ParseNumber(char *buf, long *plen, long *intval, double *dblval)
 {
 	long val;
 	int len;
@@ -415,12 +386,7 @@ parser_ParseNumber(buf, plen, intval, dblval)
 }
 
 
-	static void 
-debugstate(desc, state, pendtok, errorstate)
-	struct parser_tables *desc;
-	int state;
-	int pendtok;
-	int errorstate;
+static void debugstate(struct parser_tables *desc, int state, int pendtok, int errorstate)
 {
 	if (pendtok == NOTOK)
 		printf("(%d,--)", state);
@@ -434,21 +400,13 @@ debugstate(desc, state, pendtok, errorstate)
 	fflush(stdout);
 }
 
-	static void 
-debugshift(desc, tact)
-	struct parser_tables  *desc;
-	int  tact;
+static void debugshift(struct parser_tables *desc, int tact)
 {
 	printf(":   shift to state %d\n", tact);
 	fflush(stdout);
 }
 
-	static void 
-debugreduce(desc, rule, revealedstate, newstate)
-	struct parser_tables *desc;
-	int rule;
-	int revealedstate;
-	int newstate;
+static void debugreduce(struct parser_tables *desc, int rule, int revealedstate, int newstate)
 {
 	int i;
 	printf(":   reduce   %d->%d\n", revealedstate, newstate);
@@ -467,10 +425,7 @@ debugreduce(desc, rule, revealedstate, newstate)
 	fflush(stdout);
 }
 
-	static void 
-debugflush(desc, state)
-	struct parser_tables  *desc;
-	int  state;
+static void debugflush(struct parser_tables *desc, int state)
 {
 	printf("\t\tpop state %d\n", state);
 	fflush(stdout);
@@ -482,11 +437,7 @@ debugnewline() {
 	fflush(stdout);
 }
 
-	int 
-parser_Parse(self, lexer, lexrock)
-	struct parser *self;
-	parser_lexerfptr lexer;
-	void *lexrock;
+int parser_Parse(struct parser *self, parser_lexerfptr lexer, void *lexrock)
 {
 	register struct parser_tables *desc = self->tables;
 	register int x, tact;	/* temps */
@@ -546,7 +497,7 @@ parser_Parse(self, lexer, lexrock)
 			tact = desc->defred[tstate];
 
 			if (DebugFlag)
-				debugstate(desc, tstate, pendtok, 
+				debugstate(desc, tstate, pendtok,
 						   self->errorstate);
 		}
 		else {
@@ -555,19 +506,19 @@ parser_Parse(self, lexer, lexrock)
 				pendtok = lexer(lexrock, pendval);
 
 			if (DebugFlag)
-				debugstate(desc, tstate, pendtok, 
+				debugstate(desc, tstate, pendtok,
 						   self->errorstate);
 
 			x += pendtok;	/* index ptr by pending token */
 			if (x < 0 || x > desc->table_max
-					|| desc->valid[x] != pendtok) 	
+					|| desc->valid[x] != pendtok)
 				/* not in table, use default reduction */
 				tact = desc->defred[tstate];
 			else {
 				tact = desc->table[x];
 				if (tact > 0) {
 					/* shift token and go to state tact */
-					if (self->errorstate > 0) 
+					if (self->errorstate > 0)
 						self->errorstate--;
 					tstate = tact;
 					bcopy(pendval, tval, desc->eltsz);
@@ -576,11 +527,13 @@ parser_Parse(self, lexer, lexrock)
 					pendtok = NOTOK; /* absorb the token */
 					continue;
 				}
-				/* tact is 0, -(rule#), or defflag for error*/
-				if (tact == 0)
-					/* get action from default table */
-					tact = desc->defred[tstate];
-				else if (tact != desc->defflag)
+				/* tact <= 0: 0 or tblflag (YYTABLE_NINF) means
+				   syntax error; anything else is -(rule#).
+				   (0 is NOT "use default reduction" -- bison's
+				   own yyparse() treats it as an error too.) */
+				if (tact == 0 || tact == desc->tblflag)
+					tact = 0;
+				else
 					tact = -tact;
 			}
 		}
@@ -621,19 +574,25 @@ parser_Parse(self, lexer, lexrock)
 				goto exit;   /* (nothing to pop) */
 			}
 
-			/* new tstate is from nextx/defnext 
-				based on top state after popping */
+			/* new tstate is from nextx/defnext
+				based on top state after popping.
+				Matches bison's own yyparse() goto logic
+				exactly (yystate = yypgoto[lhs] + *yyssp;
+				bounds+yycheck test; else yydefgoto[lhs]):
+				nextx[lhs] (yypgoto) is NOT itself gated on
+				defflag the way actx[state] (yypact) is --
+				it can legitimately equal defflag by
+				coincidence for many nonterminals (confirmed:
+				21 of 47 in ams/libs/ms/prsdate.gra, including
+				date/yearday/partial_date/months/years/days),
+				and skipping the table/valid lookup for those
+				sent the parser to the wrong goto state. */
 			lhs = desc->lhs[tact] - desc->num_tokens;
-			x = desc->nextx[lhs];	/* index from nextx */
-			if (x == desc->defflag)
-				tstate = desc->defnext[lhs];
-			else {
-				x += *ssp;	/* index by new top state */
-				if (x >= 0 && x <= desc->table_max
-						&& desc->valid[x] == *ssp)
-					tstate = desc->table[x];
-				else tstate = desc->defnext[lhs];
-			}
+			x = desc->nextx[lhs] + *ssp;	/* index by new top state */
+			if (x >= 0 && x <= desc->table_max
+					&& desc->valid[x] == *ssp)
+				tstate = desc->table[x];
+			else tstate = desc->defnext[lhs];
 					/* tval was set in call to action() */
 			if (DebugFlag)
 				debugreduce(desc, tact, *ssp, tstate);

@@ -39,7 +39,6 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/layo
 #define classname(do) ((do) == NULL ? "<NO OBJECT>" : class_GetTypeName(do))
 
 #ifndef _IBMR2
-extern char *malloc();
 #endif /* _IBMR2 */
 
 #include <class.h>
@@ -61,13 +60,9 @@ extern char *malloc();
 static boolean boxview_debug=0;
 /* replace child view with another object */
 
-void InitChild();			/* forward reference */
+void InitChild(struct boxview *self);			/* forward reference */
 
-void
-ReplaceChild(self, child, dataname)
-struct boxview *self;
-struct view *child;			/* child to be replaced */
-char *dataname;				/* name of replacement dataobject */
+void ReplaceChild(struct boxview *self, struct view *child, char *dataname)
 {
     char foo[81];
 
@@ -96,9 +91,7 @@ char *dataname;				/* name of replacement dataobject */
 
 /* initialize child view corresponding to box contents */
 
-void
-InitChild(self)
-struct boxview *self;
+void InitChild(struct boxview *self)
 {
     char *subviewname;			/* name for new view */
 
@@ -122,26 +115,21 @@ struct boxview *self;
 	printf("InitChild created %s\n", subviewname); 
 }
 
-boolean					/* always returns TRUE */
-boxview__InitializeClass(classID)
-struct classheader *classID;		/* unused */
+boolean boxview__InitializeClass(struct classheader *classID)
 {
 
     if (boxview_debug)
-	printf("boxview_InitializeClass(%x)\n", classID);
+	printf("boxview_InitializeClass(%lx)\n", (long)classID);
 
     return TRUE;
 }
 
 /* initialize box view */
 
-boolean					/* always returns TRUE */
-boxview__InitializeObject(classID, self)
-struct classheader *classID;		/* unused */
-struct boxview *self;
+boolean boxview__InitializeObject(struct classheader *classID, struct boxview *self)
 {
     if (boxview_debug)
-	printf("boxview_InitializeObject(%x)\n", classID);
+	printf("boxview_InitializeObject(%lx)\n", (long)classID);
 
     self->updateNeeded = FALSE;
     self->lastUpdate = 0;
@@ -152,26 +140,14 @@ struct boxview *self;
 
 /* get width of box */
 
-int					/* returns width of box */
-boxview__BoxWidth(self)
-struct boxview *self;
+int boxview__BoxWidth(struct boxview *self)
 {
     return 3;
 }
 
 /* negotiate size of view */
 
-enum view_DSattributes			/* returns indication of what it wants */
-boxview__DesiredSize(self, width, height, pass, dWidth, dHeight)
-struct boxview *self;
-long width;				/* width being offered by parent */
-long height;				/* height being offered */
-enum view_DSpass pass;			/* what parent is willing to give */
-long *dWidth;				/* set to desired width */
-long *dHeight;				/* set to desired height */
-
-/*  boxview asks for space for its child plus the box proper */
-
+enum view_DSattributes boxview__DesiredSize(struct boxview *self, long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight)
 {
     long desiredWidth;
     long desiredHeight;
@@ -179,7 +155,7 @@ long *dHeight;				/* set to desired height */
     int tw = boxview_BoxWidth(self);
 
     if (boxview_debug)
-	printf("boxview_DesiredSize(, %d, %d, %d, .. )\n", width, height, (int)pass);
+	printf("boxview_DesiredSize(, %ld, %ld, %d, .. )\n", width, height, (int)pass);
 
     InitChild(self);
     if (self->child == NULL) {
@@ -197,21 +173,14 @@ long *dHeight;				/* set to desired height */
 
 /* draw box proper */
 
-void
-boxview__DrawBox(self)
-struct boxview *self;
+void boxview__DrawBox(struct boxview *self)
 {
     boxview_DrawRectSize(self, boxview_GetLogicalLeft(self), boxview_GetLogicalTop(self), boxview_GetLogicalWidth(self) - 1, boxview_GetLogicalHeight(self) - 1);
 }
 
 /* update image */
 
-void
-Update(self, how, updateRect, contentsChanged)
-struct boxview *self;
-enum view_UpdateType how;		/* kind of update */
-struct rectangle *updateRect;		/* rectangle affected; or NULL for update */
-boolean contentsChanged;		/* contents changed since last update */
+void Update(struct boxview *self, enum view_UpdateType how, struct rectangle *updateRect, boolean contentsChanged)
 {
     struct region *updateRegion;	/* region for this update */
     struct region *remainingRegion;	/* region to be updated */
@@ -273,16 +242,12 @@ boolean contentsChanged;		/* contents changed since last update */
 
 /* full update when window changes */
 
-void
-boxview__FullUpdate(self, how, left, top, width, height)
-struct boxview *self;
-enum view_UpdateType how;		/* kind of update */
-long left, top, width, height;		/* updated rectangle (for certain kinds; */
+void boxview__FullUpdate(struct boxview *self, enum view_UpdateType how, long left, long top, long width, long height)
 {
     struct rectangle cliprect;		/* actual updated rectangle */
 
     if (boxview_debug)
-	printf("boxview_FullUpdate(%d, %d, %d, %d, %d)\n", (int)how, left, top, width, height);
+	printf("boxview_FullUpdate(%d, %ld, %ld, %ld, %ld)\n", (int)how, left, top, width, height);
 
     /* define rectangle actually being updated */
 
@@ -303,9 +268,7 @@ long left, top, width, height;		/* updated rectangle (for certain kinds; */
 
 /* partial update in response to WantUpdate request */
 
-void
-boxview__Update(self)
-struct boxview *self;
+void boxview__Update(struct boxview *self)
 {
     if (boxview_debug)
 	printf("boxview_Update needed=%d\n", self->updateNeeded);
@@ -317,12 +280,7 @@ struct boxview *self;
 
 /* process mouse hit */
 
-struct view *				/* returns view which should get follow-up events*/
-boxview__Hit(self, action, x, y, numberOfClicks)
-struct boxview *self;
-enum view_MouseAction action;		/* which button; what it did */
-long x, y;				/* where the mouse points */
-long numberOfClicks;			/* number of hits at same place */
+struct view * boxview__Hit(struct boxview *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     int tw = boxview_BoxWidth(self);
 
@@ -337,9 +295,7 @@ long numberOfClicks;			/* number of hits at same place */
 
 /* update request */
 
-void
-RequestUpdate(self)
-struct boxview *self;
+void RequestUpdate(struct boxview *self)
 {
     if (boxview_debug)
 	printf("RequestUpdate() already=%d\n", self->updateNeeded);
@@ -352,10 +308,7 @@ struct boxview *self;
 
 /* handle child's request for a new size */
 
-void
-boxview__WantNewSize(self, requestor)
-struct boxview *self;
-struct view	*requestor;		/* view requesting a new size */
+void boxview__WantNewSize(struct boxview *self, struct view *requestor)
 {
     if (boxview_debug)
 	printf("boxview_WantNewSize(%s)\n", viewname(requestor));
@@ -367,10 +320,7 @@ struct view	*requestor;		/* view requesting a new size */
 
 /* unlink a view for a component */
 
-void
-boxview__UnlinkNotification(self, unlinkedview)
-struct boxview *self;
-struct view	*unlinkedview;		/* view being unlinked */
+void boxview__UnlinkNotification(struct boxview *self, struct view *unlinkedview)
 {
     if (boxview_debug)
 	printf("boxview_UnlinkNotification %s\n", viewname(unlinkedview));
@@ -383,10 +333,7 @@ struct view	*unlinkedview;		/* view being unlinked */
 
 /* tear down a boxview */
 
-void
-boxview__FinalizeObject(classID, self)
-struct classheader *classID;		/* unused */
-struct boxview *self;
+void boxview__FinalizeObject(struct classheader *classID, struct boxview *self)
 {
     if (boxview_debug)
 	printf("boxview_FinalizeObject\n");
@@ -395,10 +342,7 @@ struct boxview *self;
 
 /* build tree of views */
 
-void
-boxview__LinkTree(self, parent)
-struct boxview *self;
-struct view *parent;			/* parent into which to link self */
+void boxview__LinkTree(struct boxview *self, struct view *parent)
 {
 
     if (boxview_debug)
@@ -412,11 +356,7 @@ struct view *parent;			/* parent into which to link self */
 
 /* notification that observed object changed */
 
-void
-boxview__ObservedChanged(self, changed, status)
-struct boxview *self;
-struct observable *changed;		/* that which changed */
-long status;				/* OBJECTDESTROYED is used to signal deletion */
+void boxview__ObservedChanged(struct boxview *self, struct observable *changed, long status)
 {
     if (boxview_debug)
 	printf("boxview_ObservedChanged(%ld)\n", status);
@@ -433,9 +373,7 @@ long status;				/* OBJECTDESTROYED is used to signal deletion */
 
 /* toggle boxview_debug */
 
-void
-boxview__ToggleDebug(self)
-struct boxview *self;
+void boxview__ToggleDebug(struct boxview *self)
 {
 
 /*
@@ -454,12 +392,10 @@ struct boxview *self;
 
 /* past object into selected component */
 
-void
-boxview__Paste(self)
-struct boxview *self;
+void boxview__Paste(struct boxview *self)
 {
     FILE *pasteFile;
-    int objectID;
+    long objectID;
     char *objectName;
 
     if (boxview_debug)
@@ -478,18 +414,12 @@ struct boxview *self;
 
 /* print as part of larger document */
 
-void
-boxview__Print(self, f, processor, finalFormat, toplevel)
-struct boxview *self;
-FILE *f;			/* output file */
-char *processor;		/* processor */
-char *finalFormat;		/* final format */
-boolean	toplevel;		/* am I the top level view? */
+void boxview__Print(struct boxview *self, FILE *f, char *processor, char *finalFormat, boolean toplevel)
 {
     int tw = boxview_BoxWidth(self);
 
     if (boxview_debug)
-	printf("boxview_Print(%x, %x, %s, %s, %d)\n", self, f, processor, finalFormat, toplevel);
+	printf("boxview_Print(%lx, %lx, %s, %s, %d)\n", (long)self, (long)f, processor, finalFormat, toplevel);
 
     /* set up  top-level stuff */
 
@@ -501,10 +431,10 @@ boolean	toplevel;		/* am I the top level view? */
     InitChild(self);
 
     fprintf(f, ".sp -\\n(VSu\n");	/* move up one line */
-    fprintf(f, "\\D'l %dp 0'", boxview_GetLogicalWidth(self));  /* draw box */
-    fprintf(f, "\\D'l 0 %dp'", boxview_GetLogicalHeight(self));
-    fprintf(f, "\\D'l %dp 0'", -boxview_GetLogicalWidth(self));
-    fprintf(f, "\\D'l 0 %dp'", -boxview_GetLogicalHeight(self));
+    fprintf(f, "\\D'l %ldp 0'", boxview_GetLogicalWidth(self));  /* draw box */
+    fprintf(f, "\\D'l 0 %ldp'", boxview_GetLogicalHeight(self));
+    fprintf(f, "\\D'l %ldp 0'", -boxview_GetLogicalWidth(self));
+    fprintf(f, "\\D'l 0 %ldp'", -boxview_GetLogicalHeight(self));
     fprintf(f, "\n");			/* I think this moves back down a line */
 
     fprintf(f, ".sp %dp\n", tw);	/* vertical down to enclosed object */

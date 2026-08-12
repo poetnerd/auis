@@ -26,7 +26,6 @@
 * $
 */
 
-
 OBJS = convrast.o
 
 LIBS = $(BASEDIR)/lib/atk/libbasics.a \
@@ -47,4 +46,3 @@ InstallHelpAlias(convras, convertraster convertrasters convert-raster convert-ra
 
 MkdirTarget(${DESTDIR}/doc/atk/raster  ${DESTDIR}/doc/atk/raster/convert)
 InstallDocs(convert.doc,${DESTDIR}/doc/atk/raster/convert)
-

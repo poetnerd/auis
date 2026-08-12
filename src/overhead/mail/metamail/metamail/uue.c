@@ -1,13 +1,15 @@
 #include <stdio.h>
+#include <string.h>
 
 /*
  * hack to metamail to decode uuencoded bodyparts
  * Written by Keith Moore, February 1992
  */
 
-uueget (ptr, outfp, n)
-char *ptr;
-FILE *outfp;
+/* No header declares this; defined in the sibling file codes.c */
+extern int PendingBoundary(char *s, char **Boundaries, int *BoundaryCt);
+
+int uueget(char *ptr, FILE *outfp, int n)
 {
     unsigned char c1, c2, c3;
     unsigned char p0, p1, p2, p3;
@@ -30,10 +32,7 @@ FILE *outfp;
 }
 
 
-getline (buf, size, fp)
-char *buf;
-int size;
-FILE *fp;
+int uue_getline(char *buf, int size, FILE *fp)
 {
     int c;
     char *ptr = buf;
@@ -62,15 +61,12 @@ FILE *fp;
 }
 
 
-fromuue (infp, outfp, boundaries, ctptr)
-FILE *infp, *outfp;
-char **boundaries;
-int *ctptr;
+int fromuue(FILE *infp, FILE *outfp, char **boundaries, int *ctptr)
 {
     char buf[63];
 
     while (1) {
-	if (getline (buf, sizeof buf, infp) < 0) {
+	if (uue_getline (buf, sizeof buf, infp) < 0) {
 	    fprintf (stderr, "Premature EOF!\n");
 	    return;
 	}
@@ -82,7 +78,7 @@ int *ctptr;
 	}
     }	
     while (1) {
-	if (getline (buf, sizeof buf, infp) < 0) {
+	if (uue_getline (buf, sizeof buf, infp) < 0) {
 	    fprintf (stderr, "Premature EOF!\n");
 	    return;
 	}

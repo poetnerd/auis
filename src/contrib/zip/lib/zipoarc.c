@@ -58,17 +58,18 @@ END-SPECIFICATION  ************************************************************/
 #include <math.h>
 #include "zipobj.ih"
 #include "zipoarc.eh"
+static int Compute_Handle_Positions( struct zipoarc *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3, zip_type_pixel *XS, zip_type_pixel *YS, zip_type_pixel *XE, zip_type_pixel *YE );
+static int Draw();
+static int Set_Points();
 
 /*LIBS: -lm
 */
 static char two = 2; /* To quieten Compiler */
-static Draw();
-static Set_Points();
-static Compute_Handle_Positions();
+static int Draw();
+static int Set_Points();
+static int Compute_Handle_Positions( struct zipoarc *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3, zip_type_pixel *XS, zip_type_pixel *YS, zip_type_pixel *XE, zip_type_pixel *YE );
 
-char
-zipoarc__Object_Icon( self )
-  register struct zipoarc		 *self;
+char zipoarc__Object_Icon(struct zipoarc *self)
   {
   IN(zipoarc__Object_Icon);
   OUT(zipoarc__Object_Icon);
@@ -76,44 +77,31 @@ zipoarc__Object_Icon( self )
   }
 
 
-char
-zipoarc__Object_Icon_Cursor( self )
-  register struct zipoarc		 *self;
+char zipoarc__Object_Icon_Cursor(struct zipoarc *self)
   {
   IN(zipoarc__Object_Icon_Cursor);
   OUT(zipoarc__Object_Icon_Cursor);
   return  'P';
   }
 
-char
-zipoarc__Object_Datastream_Code( self )
-  register struct zipoarc		 *self;
+char zipoarc__Object_Datastream_Code(struct zipoarc *self)
   {
   IN(zipoarc__Object_Datastream_Code);
   OUT(zipoarc__Object_Datastream_Code);
   return  'M';
   }
 
-long
-zipoarc__Show_Object_Properties( self, pane, figure )
-  register struct zipoarc		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
+long zipoarc__Show_Object_Properties(struct zipoarc *self, zip_type_pane pane, zip_type_figure figure)
   {
   zipview_Announce( View, "Draw Arc Clockwise: Noon to 3:00, 3:00 to 6:00, etc." );
   return  zip_ok;
   }
 
-long
-zipoarc__Build_Object( self, pane, action, x, y, clicks, X, Y )
-  register struct zipoarc		 *self;
-  register zip_type_pane		  pane;
-  register long				  action, x, y, clicks;
-  register zip_type_point		  X, Y;
+long zipoarc__Build_Object(struct zipoarc *self, zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y)
   {
   register long				  status = zip_ok;
   register zip_type_figure		  figure;
-  register long				  position = 0;/*===*/
+  register zip_type_figure				  position = NULL;/*===*/
   register zip_type_point		  X_origin = 0, Y_origin = 0,
 					  X_start, Y_start;
 
@@ -174,11 +162,7 @@ zipoarc__Build_Object( self, pane, action, x, y, clicks, X, Y )
   return  status;
   }
 
-long
-zipoarc__Draw_Object( self, figure, pane )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoarc__Draw_Object(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -189,11 +173,7 @@ zipoarc__Draw_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipoarc__Clear_Object( self, figure, pane )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoarc__Clear_Object(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -204,11 +184,7 @@ zipoarc__Clear_Object( self, figure, pane )
   return  status;
   }
 
-static
-Draw( self, figure, pane )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+static int Draw(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   register long				  x_radius, y_radius;
@@ -248,11 +224,7 @@ Draw( self, figure, pane )
   return  status;
   }
 
-long
-zipoarc__Print_Object( self, figure, pane )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoarc__Print_Object(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   long x, y, xlen, ylen, x0, y0, x1, y1;
@@ -272,12 +244,7 @@ zipoarc__Print_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipoarc__Proximate_Object_Points( self, figure, pane, x, y )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long zipoarc__Proximate_Object_Points(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register int				  point = 0;
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3, XS, YS, XE, YE;
@@ -321,12 +288,7 @@ zipoarc__Proximate_Object_Points( self, figure, pane, x, y )
   return  point;
   }
 
-boolean
-zipoarc__Enclosed_Object( self, figure, pane, x, y, w, h )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y, w, h;
+boolean zipoarc__Enclosed_Object(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y, zip_type_pixel w, zip_type_pixel h)
   {
   register boolean			  enclosed = false;
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3, XS, YS, XE, YE;
@@ -340,12 +302,7 @@ zipoarc__Enclosed_Object( self, figure, pane, x, y, w, h )
   return  enclosed;
   }
 
-long
-zipoarc__Object_Enclosure( self, figure, pane, x, y, w, h )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		 *x, *y, *w, *h;
+long zipoarc__Object_Enclosure(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *x, zip_type_pixel *y, zip_type_pixel *w, zip_type_pixel *h)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3, XS, YS, XE, YE;
 
@@ -357,11 +314,7 @@ zipoarc__Object_Enclosure( self, figure, pane, x, y, w, h )
   return  zip_ok;
   }
 
-long
-zipoarc__Highlight_Object_Points( self, figure, pane )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoarc__Highlight_Object_Points(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3, XS, YS, XE, YE;
   register long				  status = zip_ok;
@@ -378,11 +331,7 @@ zipoarc__Highlight_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipoarc__Normalize_Object_Points( self, figure, pane )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoarc__Normalize_Object_Points(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane)
   {
   zip_type_pixel			  X1, X2, X3, Y1, Y2, Y3, XS, YS, XE, YE;
   register long				  status = zip_ok;
@@ -399,11 +348,7 @@ zipoarc__Normalize_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipoarc__Expose_Object_Points( self, figure, pane )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoarc__Expose_Object_Points(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -413,11 +358,7 @@ zipoarc__Expose_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipoarc__Hide_Object_Points( self, figure, pane )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipoarc__Hide_Object_Points(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -427,7 +368,7 @@ zipoarc__Hide_Object_Points( self, figure, pane )
   return  status;
   }
 
-static
+static int
 Set_Points( figure, x_center, y_center, x_radius, y_radius,
 		xs_delta, ys_delta, xe_delta, ye_delta )
   register zip_type_figure		  figure;
@@ -444,12 +385,7 @@ Set_Points( figure, x_center, y_center, x_radius, y_radius,
   figure_y_points(two) = abs(y_radius);
   }
 
-long
-zipoarc__Set_Object_Point( self, figure, point, x, y )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register int				  point;
-  register zip_type_point		  x, y;
+long zipoarc__Set_Object_Point(struct zipoarc *self, zip_type_figure figure, long point, zip_type_point x, zip_type_point y)
   {
   register long				  status = zip_ok;
   register float			  x_radius, y_radius, span,
@@ -554,11 +490,7 @@ zipoarc__Set_Object_Point( self, figure, point, x, y )
   return  status;
   }
 
-long
-zipoarc__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_point		  x_delta, y_delta;
+long zipoarc__Adjust_Object_Point_Suite(struct zipoarc *self, zip_type_figure figure, zip_type_point x_delta, zip_type_point y_delta)
   {
   register long				  status = zip_ok;
 
@@ -576,13 +508,7 @@ zipoarc__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
   return  status;
   }
 
-static
-Compute_Handle_Positions( self, figure, pane, X1, X2, X3, Y1, Y2, Y3, XS, YS, XE, YE )
-  register struct zipoarc		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		 *X1, *X2, *X3, *Y1, *Y2, *Y3,
-					 *XS, *YS, *XE, *YE;
+static int Compute_Handle_Positions(struct zipoarc *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3, zip_type_pixel *XS, zip_type_pixel *YS, zip_type_pixel *XE, zip_type_pixel *YE)
   {
   *X1 = zipview_X_Point_To_Pixel( View, pane, figure, figure_x_point - figure_x_points(two) );
   *X2 = window_x_point;

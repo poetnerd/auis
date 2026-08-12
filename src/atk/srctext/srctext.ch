@@ -114,7 +114,7 @@ class srctext: text {
     FinalizeObject(struct srctext *self);
     BuildTable(char *classname,Dict *hashTable[],Dict wordlist[]);
     HashInsert(Dict *hashTable[], Dict *word);
-    Lookup(Dict hashTable, char *word) returns Dict *;
+    Lookup(Dict **hashTable, char *word) returns Dict *;
 
   macromethods:
     GetForceUpper() ((self)->forceUpper)

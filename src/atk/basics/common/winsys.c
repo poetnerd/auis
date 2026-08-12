@@ -45,64 +45,46 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
 struct windowsysteminfo *windowSystem;
 
-struct cursor *windowsystem__CreateCursor(self)
-    struct windowsystem *self;
+struct cursor * windowsystem__CreateCursor(struct windowsystem *self)
 {
     return NULL;
 }
 
-struct fontdesc *windowsystem__CreateFontdesc(self)
-    struct windowsystem *self;
+struct fontdesc * windowsystem__CreateFontdesc(struct windowsystem *self)
 {
     return NULL;
 }
 
-struct graphic *windowsystem__CreateGraphic(self)
-    struct windowsystem *self;
+struct graphic * windowsystem__CreateGraphic(struct windowsystem *self)
 {
     return NULL;
 }
 
-struct im *windowsystem__CreateIM(self)
-    struct windowsystem *self;
+struct im * windowsystem__CreateIM(struct windowsystem *self)
 {
     return NULL;
 }
 
-struct offscrwin * windowsystem__CreateOffScreenWindow(self,host,width,height)
-    struct windowsystem *self;
-    char * host;
-    long width, height;
+struct offscrwin * windowsystem__CreateOffScreenWindow(struct windowsystem *self, char *host, long width, long height)
 {
     return NULL;
 }
 
-void windowsystem__FlushAllWindows(self)
-    struct windowsystem *self;
+void windowsystem__FlushAllWindows(struct windowsystem *self)
 {
 }
 
-boolean windowsystem__HandleFiles(self, WaitTime, beCheap)
-    struct windowsystem *self;
-    long WaitTime;
-    boolean beCheap;
+boolean windowsystem__HandleFiles(struct windowsystem *self, long WaitTime, boolean beCheap)
 {
     return FALSE;
 }
 
-struct colormap *
-windowsystem__CreateColormap( self, im )
-struct windowsystem *self;
-struct im *im;
+struct colormap * windowsystem__CreateColormap(struct windowsystem *self, struct im *im)
 {
     return(NULL);
 }
 
-struct color *
-windowsystem__CreateColor( self, name, r, g, b )
-char *name;
-unsigned int r, g, b; 
-    struct windowsystem *self;
+struct color * windowsystem__CreateColor(struct windowsystem *self, char *name, unsigned int r, unsigned int g, unsigned int b)
 {
     return(NULL);
 }

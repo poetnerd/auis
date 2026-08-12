@@ -26,6 +26,7 @@
 * $
 */
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS		=	pshbttn.do \
 			pshbttnv.do \
@@ -62,7 +63,6 @@ DependTarget()
 DynamicMultiObject(pshbttn.do, pshbttn.o, ${LIBS}, ${BSDLIB}) /* all because of NewString */
 InstallClassFiles($(DOBJS), $(IHFILES))
 
-
 /*  Beware:  there is a build dependancy here.  We are assuming that $DESTDIR/doc/atk already exists.  If it doesn't, the build will fail.  This directory should be made by the top-level doc imkfile. */
 
 MkdirTarget($(DESTDIR)/doc $(DESTDIR)/doc/atk $(DESTDIR)/doc/atk/linkinset)
@@ -86,4 +86,3 @@ InstallDocs(link.intro, ${DESTDIR}/help)
 InstallDocs($(PBHELP).help, $(DESTDIR)/help)
 InstallDocs(link.pr pshbttn.pr, ${DESTDIR}/lib/prs)
 InstallHelpAlias($(PBHELP), $(PBHELPALIASES))
-

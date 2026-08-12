@@ -52,6 +52,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif /* WHITEPAGES_ENV */
 #include <mailconf.h>
 #include <mail.h>
+#include <stdlib.h>
+#include <sys/wait.h>
 
 #ifdef AFS_ENV
 #include <afs/param.h>
@@ -63,18 +65,38 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif /* AFS_ENV */
 
 extern int (*CUI_GenericClientSignalHandler)();
-extern char *sys_errlist[];
-extern int sys_nerr;
-char **unix_sys_errlist = sys_errlist;
+char **unix_sys_errlist = (char **) sys_errlist;
 int unix_sys_nerr = 0; /* initialized below */
 
 extern long CUI_LastCallFinished;
 extern int CUI_SnapIsRunning;
 extern char *getenv(), *getprofile();
 
-#ifndef _IBMR2
-extern char *malloc();
-#endif /* _IBMR2 */
+/* malloc's own declaration now comes from <stdlib.h> above, with the
+   correct void * return type -- the old #ifndef _IBMR2 extern char
+   *malloc(); here predates that include and would conflict with it. */
+
+/* overhead/util/lib/fpacheck.c: no header declares it. */
+extern int fpacheck();
+
+/* overhead/util/lib/fdplumb.c's dbg_* wrapper family; see cuilib.c's own
+   copy of this comment for why fdplumb.h doesn't reach these. */
+extern int dbg_close(int fd), dbg_dup2(int oldfd, int newfd);
+
+/* ams/libs/ms/update.c: no header declares it (int, not the long used by
+   cuilib.c's unrelated MS_* list -- see that file's own comment). */
+extern int MS_FastUpdateState();
+
+/* Defined in the sibling file cuilib.c, same directory, no header. */
+extern void CUI_SetMachineName(char *s), CUI_SetMachineType(char *s);
+extern int CUI_GenTmpFileName(char *nmbuf);
+
+/* Consumer-supplied UI callback interface -- see cuilib.c's own copy of
+   this comment. */
+extern int ReportError(), ReportSuccess(char *text), GetStringFromUser(char *prompt, char *buf, int len, int IsPassword), ReduceWhiteSpace(char *string), SetTerminalParams(int h, int w);
+
+/* Defined later in this same file, used above their definitions. */
+extern int InitializeClientSignals(), GetNewPassword(char **ptr, int IsRecon, char *ThisUser, char *ThisHost);
 
 int     SNAP_debuglevel=0,
         SNAP_socket=0,
@@ -85,8 +107,7 @@ static char ReconnNameBuf[256];
 static char UserNameBuf[200];
 char EditorBuf[200] = "";
 
-SetEditorToUse(ed)
-char *ed;
+int SetEditorToUse(char *ed)
 {
     strncpy(EditorBuf, ed, sizeof(EditorBuf));
 }
@@ -97,9 +118,7 @@ union alignme {
     long dummy;
 } AlignBuf;
 
-Machine_Init(ThisHost, ThisUser, ThisPassword, len, type, IsRecon)
-char **ThisHost, **ThisUser, **ThisPassword;
-int *len, *type, IsRecon;
+int Machine_Init(char **ThisHost, char **ThisUser, char **ThisPassword, int *len, int *type, int IsRecon)
 {
     char ErrorText[600], *s;
     struct passwd *pw;
@@ -257,17 +276,14 @@ int *len, *type, IsRecon;
 /* This routine generates a temporary file name to be written on the 
 	local machine.  */
 
-CUI_GenLocalTmpFileName(nmbuf)
-char   *nmbuf;
+int CUI_GenLocalTmpFileName(char *nmbuf)
 {
     /* On Andrew/UNIX, we can use a normal /tmp file */
 
     return(CUI_GenTmpFileName(nmbuf));
 }
 
-EditLocalFile(LocalName, FinishedElsewhere)
-char   *LocalName;
-Boolean    *FinishedElsewhere;
+int EditLocalFile(char *LocalName, Boolean *FinishedElsewhere)
 {
     int     pid,
             pid2 = 0,
@@ -316,6 +332,7 @@ static long laststart = 0,
             lastfinish = 0,
             inittime = 0;
 
+int
 InitializeLogging() {
     if (getprofileswitch("cuimslog", 0)) {
 	MSLogFP = fopen("/tmp/cuims.log", "w");
@@ -326,26 +343,27 @@ InitializeLogging() {
 }
 
 
+int
 LogStart() {
     if (!inittime) {
 	inittime = time(0);
     }
     if (MSLogFP) {
 	laststart = time(0) - inittime;
-	fprintf(MSLogFP, "%d\t%d\t", laststart - lastfinish, laststart);
+	fprintf(MSLogFP, "%ld\t%ld\t", laststart - lastfinish, laststart);
     }
 }
 
-LogEnd(name) 
-char *name;
+int LogEnd(char *name)
 {
     if (MSLogFP) {
 	lastfinish = time(0) - inittime;
-	fprintf(MSLogFP, "%d\t%d\t%s\n", lastfinish, lastfinish - laststart, name);
+	fprintf(MSLogFP, "%ld\t%ld\t%s\n", lastfinish, lastfinish - laststart, name);
 	fflush(MSLogFP);
     }
 }
 
+int
 RedirectOutput() {
     int cfd = 0;
 
@@ -374,9 +392,7 @@ RedirectOutput() {
 
 static char PasswordBuf[100];
 
-GetNewPassword(ptr, IsRecon, ThisUser, ThisHost)
-char **ptr, *ThisUser, *ThisHost;
-int IsRecon;
+int GetNewPassword(char **ptr, int IsRecon, char *ThisUser, char *ThisHost)
 {
     char ErrorText[256];
 
@@ -389,7 +405,8 @@ int IsRecon;
 
 #define ALARMPERIOD 180		/* 3 minutes */
 
-AlarmSignalHandler() {
+void
+AlarmSignalHandler(int signum) {
     if (CUI_LastCallFinished && (time(0) - CUI_LastCallFinished > ALARMPERIOD)) {
 	if (mserrcode = MS_FastUpdateState()) {
 	    ReportError("Could not update message server state", ERR_WARNING, TRUE);
@@ -398,6 +415,7 @@ AlarmSignalHandler() {
     alarm(ALARMPERIOD);
 }
 
+int
 CUI_InitializeKeepalives() {
     if (CUI_SnapIsRunning) {
 #ifdef POSIX_ENV
@@ -416,17 +434,14 @@ CUI_InitializeKeepalives() {
     }
 }
 
-Machine_HandleClientSignal(signum, ActNormal)
-int signum;
-int *ActNormal;
+int Machine_HandleClientSignal(int signum, int *ActNormal)
 {
     *ActNormal = 1;
     if (CUI_GenericClientSignalHandler) (*CUI_GenericClientSignalHandler)(signum, ActNormal);
 }
 
     
-SnapifiedClientSignalHandler(signum) 
-int signum;
+void SnapifiedClientSignalHandler(int signum)
 {
     int ActNormal = 1;
     char *Text;
@@ -485,6 +500,7 @@ int signum;
     kill(getpid(), signum);
 }
 
+int
 InitializeClientSignals() {
     if (CUI_SnapIsRunning) {
 #ifdef POSIX_ENV

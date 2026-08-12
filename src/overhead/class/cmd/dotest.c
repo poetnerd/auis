@@ -55,9 +55,7 @@ FlagRedraw()
 
 /* main program for testing loadability */
 
-main(argc, argp)
-int argc;
-char **argp;
+int main(int argc, char **argp)
 {
     int fd;
     int gotcha = 0;

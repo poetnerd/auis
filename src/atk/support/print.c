@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <andrewos.h>
 #include <class.h>
 #include <ctype.h>
+#include <util.h>
 
 #include <signal.h>
 #include <sys/stat.h>
@@ -44,8 +45,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <hash.ih>
 
 #include <print.eh>
+static int ColorHash(char *key);
+static boolean ParseHexColor(char *colbuffer, double *rval, double *gval, double *bval);
+static int insert(char *src, char *c);
+static long mystrtol16(char *p, char **pp);
+static void normalize(char *s);
+static char * shove(char *dest, char *search, char *src);
 
-static void SetPrinterType();
+extern char *XBaseDir(char *str);
+
+static void SetPrinterType(char *printertype);
 
 /* The following defaults are used by the print software */
 #define print_INDEXTROFF 42424 /*   produce troff index */
@@ -160,9 +169,7 @@ static char *print_spoolpath,*print_spooldir,*print_printertype;
 #endif
 
 static char hexchars[]="0123456789abcdef";
-static long mystrtol16(p, pp)
-char *p;
-char **pp;
+static long mystrtol16(char *p, char **pp)
 {
     long result=0;
     char *h;
@@ -175,8 +182,7 @@ char **pp;
     return result;
 }
 
-static insert(src,c)
-char *src,*c;
+static int insert(char *src, char *c)
 {   /* inserts string src into the begining of string c , assumes enough space */
     char *p,*enddest;
     enddest = c + strlen(c);
@@ -185,8 +191,7 @@ char *src,*c;
     for(p = src; *p != '\0';p++)
 	*c++ = *p;
 }
-static char *shove(dest,search,src)
-register char *dest,*search,*src;
+static char * shove(char *dest, char *search, char *src)
 {   /* shove the string src into dest after the string search */
     int searchlen;
     searchlen = strlen(search);
@@ -199,8 +204,7 @@ register char *dest,*search,*src;
     }
     return NULL;
 }
-static void normalize(s)
-char *s;
+static void normalize(char *s)
 {
     register char *c;
     for(c = s + strlen(s) - 1; c >= s; c--){
@@ -209,12 +213,7 @@ char *s;
 	}
     }
 }
-int print__ProcessView(classID, v, print, dofork,DocumentName,prarg)
-struct classheader *classID;
-struct view *v;
-int print;
-int dofork; 
-char *DocumentName,*prarg;
+int print__ProcessView(struct classheader *classID, struct view *v, int print, int dofork, char *DocumentName, char *prarg)
 {
     /*  Mostly Gosling Code from PrintDoc in BE 1's BasicIO.c */
     char    PrintCommandFormat[400];
@@ -361,7 +360,7 @@ fflush(stdout);
 		    if(dofork)
 			sprintf(q,"%s %s; rm \"%s\"",pp,prarg,tmpname);
 		    else
-			sprintf(q,"%s \"%s\"",pp,prarg,tmpname);
+			sprintf(q,"%s \"%s\"",pp,prarg);
 		}
 	    }
 	    strcpy(p, q);
@@ -420,8 +419,7 @@ fflush(stdout);
     return(0);
 }
 
-static void SetPrinterType (printertype) 
-char *printertype;
+static void SetPrinterType(char *printertype)
  {
     char   *RealSpoolDir = NULL;
     static char TempSpoolDir[1000];
@@ -512,9 +510,7 @@ fflush(stdout);
 #endif /* DEBUG */
 }
 
-char *print__GetPrintCmd(ClassID,print)
-struct classheader *ClassID;
-int print;
+char * print__GetPrintCmd(struct classheader *ClassID, int print)
 {
     char *q;
     switch(print){
@@ -535,8 +531,7 @@ int print;
     }
 }
 
-boolean print__InitializeClass(ClassID)
-struct classheader *ClassID;
+boolean print__InitializeClass(struct classheader *ClassID)
 {
     char *foo;
     if((foo =environ_GetConfiguration("printcommand")) == NULL)
@@ -587,16 +582,13 @@ struct classheader *ClassID;
 
 static int SavedKey;
 
-static int ColorHash(key)
-char *key;
+static int ColorHash(char *key)
 {
     return SavedKey;
 }
 
 /* helper function for print__LookUpColor(). rval, gval, bval must be nonNULL, and have undefined values if FALSE is returned. The contents of colbuffer get hacked up. */
-static boolean ParseHexColor(colbuffer, rval, gval, bval)
-char *colbuffer;
-double *rval, *gval, *bval;
+static boolean ParseHexColor(char *colbuffer, double *rval, double *gval, double *bval)
 {
     int ix, jx;
     long val;
@@ -646,10 +638,7 @@ double *rval, *gval, *bval;
 If the color is found, the procedure will return TRUE; the three values are returned in *rval, *gval, *bval. Each will be a real number from 0 (black) to 1 (full intensity). 
 If the color is not found, the procedure will return FALSE, and *rval, *gval, *bval will each be set to 0 (pure black.) 
 Any or all of rval, gval, bval may be NULL if you don't care about that component. */
-boolean print__LookUpColor(ClassID, colname, rval, gval, bval)
-struct classheader *ClassID;
-char *colname;
-double *rval, *gval, *bval;
+boolean print__LookUpColor(struct classheader *ClassID, char *colname, double *rval, double *gval, double *bval)
 {
 #define NUMBASICCOLORS (2)
     struct basic_colors_t {

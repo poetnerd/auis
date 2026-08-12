@@ -100,28 +100,28 @@ classprocedures:
 		/* returns the enclosing scope for the given scope 
 		 */
 
-	Define(unsigned char *name, struct sym *proto, sym_ScopeType scope) returns struct sym*;
+	Define(char *name, struct sym *proto, sym_ScopeType scope) returns struct sym*;
 		/* defines the symbol (name, scope).  If it already exists, NULL is
 		 * returned.
 		 */
 
-	Undefine(unsigned char *name, sym_ScopeType scope) returns boolean;
+	Undefine(char *name, sym_ScopeType scope) returns boolean;
 		/* undefines (name, scope).  Returns TRUE if successful,
 		 * false otherwise.
 		 */
 
-	Find(unsigned char *name, sym_ScopeType scope) returns struct sym*;
+	Find(char *name, sym_ScopeType scope) returns struct sym*;
 		/* attempts to find a match for (name, scope).  If one is found
 		 * it is returned.  If not, then NULL is returned.
 		 */
 
-	Locate(unsigned char *name, struct sym *proto, sym_ScopeType scope, boolean *new)
+	Locate(char *name, struct sym *proto, sym_ScopeType scope, boolean *new)
 	          returns struct sym*;
-		/* attempts to find a match for (name, scope).  If one is found, 
+		/* attempts to find a match for (name, scope).  If one is found,
 		 * it is returned.  If not, (name, scope) is defined.
 		 */
 
-	FindAll(unsigned char *name, sym_ScopeType scope, long (*proc)(), long rock) returns long;
+	FindAll(char *name, sym_ScopeType scope, long (*proc)(), long *rock) returns long;
 		/* finds all of name's matches that are defined in scope or any of scope's
 		 * descendent scopes.  For each match, proc is called with sym and rock.
 		 * proc should be declared as:

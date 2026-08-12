@@ -26,6 +26,9 @@
 * $
 */
 
+/* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 NormalHelpRule()
 InstallDocs(unknown.help drdproc.help,  $(DESTDIR)/help)
 InstallHelpAlias(drdproc, diredproc diredprocs)

@@ -41,24 +41,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <atom.ih>
 
 #ifndef _IBMR2
-extern char *malloc();
 #endif /* _IBMR2 */
 
 /*
  * Class Procedures
  */
 
-boolean atomlist__InitializeObject(classID, self)
-struct classheader *classID;
-struct atomlist *self;
+boolean atomlist__InitializeObject(struct classheader *classID, struct atomlist *self)
 {
   self->atoms = NULL;
   return TRUE;
 }
 
-void atomlist__FinalizeObject(classID, self)
-struct classheader *classID;
-register struct atomlist *self;
+void atomlist__FinalizeObject(struct classheader *classID, struct atomlist *self)
 {
     register struct atoms *next;
 
@@ -70,9 +65,7 @@ register struct atomlist *self;
 }
 
 
-struct atomlist *atomlist__Copy(classID, oldlist)
-struct classheader *classID;
-struct atomlist *oldlist;
+struct atomlist * atomlist__Copy(struct classheader *classID, struct atomlist *oldlist)
 {
     struct atomlist *newlist = atomlist_New();
     register struct atoms *atoms;
@@ -84,23 +77,30 @@ struct atomlist *oldlist;
 }
 
 
-struct atomlist *atomlist__StringToAtomlist(classID, string)
-struct classheader *classID;
-char *string;
+struct atomlist * atomlist__StringToAtomlist(struct classheader *classID, char *string)
 {
+    char *copy;
     char *atomstart;
     char *atomend;
     struct atom *atom;
     struct atomlist *newlist = atomlist_New();
 
+    /* Parse a private copy of the string.  The original code NUL'ed out
+     * each '.' in place (restoring it afterward), which requires the
+     * caller's string to be writable -- but callers routinely pass
+     * string literals, and modern toolchains place literals in
+     * read-only memory, making the in-place edit a bus error. */
     if (string != NULL)  {
-	for (atomstart = atomend = string; atomend != NULL; atomstart =  1 + atomend)  {
+	copy = malloc(1 + strlen(string));
+	if (copy == NULL) return newlist;
+	strcpy(copy, string);
+	for (atomstart = atomend = copy; atomend != NULL; atomstart =  1 + atomend)  {
 	    atomend = index(atomstart,'.');
 	    if (atomend != NULL) *atomend = '\0';
             atom = atom_Intern(atomstart);
-	    if (atomend != NULL) *atomend = '.';
             atomlist_Append(newlist, atom);
 	}
+	free(copy);
     }
     return newlist;
 }
@@ -109,8 +109,7 @@ char *string;
  * Methods
  */
 
-struct atom *atomlist__Last(self)
-struct atomlist *self;
+struct atom * atomlist__Last(struct atomlist *self)
 {
     register struct atoms *atoms;
 
@@ -121,9 +120,7 @@ struct atomlist *self;
 }
 
 
-short atomlist__Memberp(self, key)
-struct atomlist *self;
-struct atom *key;
+short atomlist__Memberp(struct atomlist *self, struct atom *key)
 {
     register struct atoms *atoms;
 
@@ -133,8 +130,7 @@ struct atom *key;
     return (atoms != NULL);
 }
 
-void atomlist__DropFirst(self)
-struct atomlist *self;
+void atomlist__DropFirst(struct atomlist *self)
 {
     struct atoms *oldfirst = self->atoms;
 
@@ -144,9 +140,7 @@ struct atomlist *self;
     }
 }
 
-void atomlist__Prepend(self, atom)
-struct atomlist *self;
-struct atom *atom;
+void atomlist__Prepend(struct atomlist *self, struct atom *atom)
 {
     register struct atoms *atoms;
 
@@ -157,9 +151,7 @@ struct atom *atom;
     self->atoms = atoms;
 }
 
-void atomlist__Append(self, atom)
-struct atomlist *self;
-struct atom *atom;
+void atomlist__Append(struct atomlist *self, struct atom *atom)
 {
     register struct atoms *new;
     register struct atoms **last;
@@ -175,9 +167,7 @@ struct atom *atom;
 }
 
 
-void atomlist__JoinToEnd(self, otherlist)
-struct atomlist *self;
-struct atomlist *otherlist;
+void atomlist__JoinToEnd(struct atomlist *self, struct atomlist *otherlist)
 {
     register struct atoms *otherAtoms;
     register struct atoms **last;
@@ -193,9 +183,7 @@ struct atomlist *otherlist;
     }
 }
 
-void atomlist__JoinToBeginning(self, otherlist)
-struct atomlist *self;
-struct atomlist *otherlist;
+void atomlist__JoinToBeginning(struct atomlist *self, struct atomlist *otherlist)
 {
     register struct atoms *otherAtoms;
     register struct atoms **last;
@@ -212,9 +200,7 @@ struct atomlist *otherlist;
     }
 }
 
-void atomlist__Cut(self, mark)
-register struct atomlist *self;
-struct atoms *mark;
+void atomlist__Cut(struct atomlist *self, struct atoms *mark)
 {
     register struct atoms *next;
 

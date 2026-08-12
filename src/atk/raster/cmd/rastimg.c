@@ -96,6 +96,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
  */
 
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <class.h>
 #include <rastimg.eh>
 
@@ -104,18 +106,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 	Copies 's' into newly malloced storage.
 	XXX we need a home for this function 
 */
-	static char *
-Stabilize(s)
-	char *s;
+static char * Stabilize(char *s)
 {
 	return (char *)strcpy(malloc(strlen(s)+1), s);
 }
 
 
-boolean
-rasterimage__InitializeObject(ClassID, self)
-	struct classhdr *ClassID;
-	register struct rasterimage  *self;
+boolean rasterimage__InitializeObject(struct classheader *ClassID, struct rasterimage *self)
 {
 	self->filename = self->resolutionPath = NULL;
 	self->refcnt = 0;
@@ -124,20 +121,14 @@ rasterimage__InitializeObject(ClassID, self)
 	return TRUE;
 }
 
-void 
-rasterimage__FinalizeObject(ClassID, self)
-	struct classhdr *ClassID;
-	register struct rasterimage  *self;
+void rasterimage__FinalizeObject(struct classheader *ClassID, struct rasterimage *self)
 {
 	if (self->filename) free(self->filename);
 	if (self->resolutionPath) free(self->resolutionPath);
 	self->filename = self->resolutionPath = NULL;
 }
 
-	struct rasterimage *
-rasterimage__Create(ClassID, width, height)
-	struct classhdr *ClassID;
-	long width, height;
+struct rasterimage * rasterimage__Create(struct classheader *ClassID, long width, long height)
 {
 	struct rasterimage *self = rasterimage_New();
 	rasterimage_Resize(self, width, height);
@@ -146,19 +137,13 @@ rasterimage__Create(ClassID, width, height)
 
 
 
-	void
-rasterimage__AddObserver(self, observer)
-	struct rasterimage *self;
-	struct object *observer;
+void rasterimage__AddObserver(struct rasterimage *self, struct rasterimage *observer)
 {
 	super_AddObserver(self, observer);
 	self->refcnt++;
 }
 
-	void
-rasterimage__RemoveObserver(self, observer)
-	struct rasterimage *self;
-	struct object *observer;
+void rasterimage__RemoveObserver(struct rasterimage *self, struct rasterimage *observer)
 {
 	super_RemoveObserver(self, observer);
 	self->refcnt--;
@@ -166,9 +151,7 @@ rasterimage__RemoveObserver(self, observer)
 		rasterimage_Destroy(self);
 }
 
-	struct rasterimage *
-rasterimage__Clone(self)
-	struct rasterimage *self;
+struct rasterimage * rasterimage__Clone(struct rasterimage *self)
 {
 	struct rasterimage *new = super_Clone(self);
 	new->filename = self->filename;
@@ -189,10 +172,7 @@ rasterimage__Clone(self)
 
 	XXX right now it just uses the filename
 */
-	FILE *
-rasterimage__FindFile(self, filename, path)
-	struct rasterimage *self;
-	char *filename, *path;
+FILE * rasterimage__FindFile(struct rasterimage *self, char *filename, char *path)
 {
 	self->filename = Stabilize(filename);
 	self->resolutionPath = Stabilize(path);
@@ -202,9 +182,7 @@ rasterimage__FindFile(self, filename, path)
 /* Defile(self)
 	Removes saved filename and path 
 */
-	void
-rasterimage__Defile(self)
-	struct rasterimage *self;
+void rasterimage__Defile(struct rasterimage *self)
 {
 	if (self->filename) free(self->filename);
 	if (self->resolutionPath) free(self->resolutionPath);

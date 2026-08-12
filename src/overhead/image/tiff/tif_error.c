@@ -38,9 +38,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <stdio.h>
 #include "tiffioP.h"
 #include "prototypes.h"
+static void defaultHandler(char *module, char *fmt, va_list ap);
 
 static void
-DECLARE3(defaultHandler, char*, module, char*, fmt, va_list, ap)
+defaultHandler(char *module, char *fmt, va_list ap)
 {
 	if (module != NULL)
 		fprintf(stderr, "%s: ", module);
@@ -51,7 +52,7 @@ DECLARE3(defaultHandler, char*, module, char*, fmt, va_list, ap)
 static TIFFErrorHandler _errorHandler = defaultHandler;
 
 TIFFErrorHandler
-DECLARE1(TIFFSetErrorHandler, TIFFErrorHandler, handler)
+TIFFSetErrorHandler(TIFFErrorHandler handler)
 {
 	TIFFErrorHandler prev = _errorHandler;
 	_errorHandler = handler;

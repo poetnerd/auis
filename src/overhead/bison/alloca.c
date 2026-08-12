@@ -50,7 +50,7 @@ lose
    provide an "address metric" ADDRESS_FUNCTION macro.  */
 
 #if defined (CRAY) && defined (CRAY_STACKSEG_END)
-long i00afunc ();
+static long i00afunc();
 #define ADDRESS_FUNCTION(arg) (char *) i00afunc (&(arg))
 #else
 #define ADDRESS_FUNCTION(arg) &(arg)
@@ -154,9 +154,7 @@ static header *last_alloca_header = NULL;	/* -> last alloca header.  */
    caller, but that method cannot be made to work for some
    implementations of C, for example under Gould's UTX/32.  */
 
-pointer
-alloca (size)
-     unsigned size;
+pointer alloca(unsigned size)
 {
   auto char probe;		/* Probes stack depth: */
   register char *depth = ADDRESS_FUNCTION (probe);

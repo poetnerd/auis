@@ -217,7 +217,7 @@ extern EliSexp_t *eliSGetSexp();/* ecommon.c, line 626 */
 extern EliSexp_t *eliSGetSexp_trace();	/* errstkop.c, line 195 */
 extern void     eliSPutCons_buf();	/* ecommon.c, line 1113 */
 extern void     eliSPutSexp_buf();	/* ecommon.c, line 1070 */
-extern          eliSetClientLibrary();	/* ecommon.c, line 386 */
+extern int      eliSetClientLibrary();	/* ecommon.c, line 386 */
 extern int      eliSexpStringLen();	/* ecommon.c, line 978 */
 extern void     eliSexp_DecrRefcount();	/* node.c, line 82 */
 extern EliSexp_t *eliSexp_GetNew();	/* node.c, line 31 */

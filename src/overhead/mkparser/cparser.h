@@ -81,8 +81,17 @@ struct parser_tables {
 	short num_states; 	/* number of states in parser */
 	short final_state; 	/* state number of the termination state */
 	short eltsz;		/* sizeof(YYSTYPE) */
-	short defflag;	 	/* value in actx and nextx indicating to use
-					defred and defgoto, respectively */
+	short defflag;	 	/* value in actx indicating to use defred
+					(bison: YYPACT_NINF, from yypact) */
+	short tblflag;		/* value in table indicating no valid action/goto
+					(bison: YYTABLE_NINF, from yytable) --
+					distinct from defflag: older bison used one
+					shared sentinel for both; modern bison uses
+					two different ones, and nextx (yypgoto) can
+					coincidentally equal defflag without meaning
+					"use defnext", so nextx must never be tested
+					against defflag either -- always index nextx
+					and check valid[]/tblflag on the result */
 	short table_max; 	/* index of highest entry in table and valid */
 
 	char **names;	/* names[i] is text of i'th token or non-terminal

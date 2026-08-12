@@ -47,10 +47,20 @@ char *inet_ntoa();
 #include <arpa/inet.h>
 #endif /* hpux */
 #include <ctype.h>
+#include <stdlib.h>
 #include <util.h>
 #include "parseadd.h"
 #include "mailconf.h"
 #include "mail.h"
+static int EvalRec(struct MailDom *md);
+static int TestMD();
+static struct MailDom * newMD();
+
+/* No header anywhere in the tree declares these. */
+extern int CheckAMSConfiguration();	/* mailconf.c */
+extern void la_FreeMD(struct MailDom *MD);		/* locnamex.c */
+extern int FreeHost(ADDRESS_HOST *Host);			/* parseadd.c */
+extern int Unquote(char *String);			/* parseadd.c */
 
 static struct MailDom mdRoot = {NULL, NULL, 1, NULL, NULL};
 static char ThisHostName[250] = "";
@@ -72,8 +82,7 @@ static struct MailDom *newMD()
     return md;
 }
 
-static int EvalRec(md)
-struct MailDom *md;
+static int EvalRec(struct MailDom *md)
 {/* Put md->Orig through a cycle of evaluation.  Return 0 if out of memory. */
 #define	DomLen 150
 #define	MaxMX	2   /* Bump this when can get more than one MX rec */
@@ -141,10 +150,7 @@ char *MDName; struct MailDom **pMD; char *currDom;
     *pMD = md; return 1;
 }
 
-int la_KindDomain(Addr, outType, outPrime, outSecond, Domain)
-PARSED_ADDRESS *Addr;
-int *outType;
-char **outPrime, **outSecond, *Domain;
+int la_KindDomain(PARSED_ADDRESS *Addr, int *outType, char **outPrime, char **outSecond, char *Domain)
 {
     /* Pass it an Addr; it fills in outType, outPrime, and, optionally, outSecond.  If outPrime is non-null, it is malloc()'ed storage; free it when you're done.  Domain will be used as the ``current'' default mail domain.
 	*/
@@ -270,10 +276,7 @@ char **outPrime, **outSecond, *Domain;
 	return laerr_NoError;
 }
 
-int la_Kind(Addr, outType, outPrime, outSecond)
-PARSED_ADDRESS *Addr;
-int *outType;
-char **outPrime, **outSecond;
+int la_Kind(PARSED_ADDRESS *Addr, int *outType, char **outPrime, char **outSecond)
 {
     /* Pass it an Addr; it fills in outType, outPrime, and, optionally, outSecond.  If outPrime is non-null, it is malloc()'ed storage; free it when you're done.
     */
@@ -287,8 +290,7 @@ char **outPrime, **outSecond;
     return la_KindDomain(Addr, outType, outPrime, outSecond, PrevailingDomain);
 }
 
-char *la_ErrorString(errcode)
-int errcode;
+char * la_ErrorString(int errcode)
 {	/* Return a static string describing the laerr_XXX code */
     static char *ErrDesc[] = {
 	"no error",		/* laerr_NoError */

@@ -38,7 +38,7 @@ class asmtextview[asmtextv]: srctextview[srctextv] {
     PostMenus(struct menulist *menulist);
     PrependKeyState() returns struct keystate *;
     Reindent();
-    SetDataObject(struct asmtext *dataobj);
+    SetDataObject(struct dataobject *dataobj);
     StartComment(char key);
     StartLineComment(char key);
 

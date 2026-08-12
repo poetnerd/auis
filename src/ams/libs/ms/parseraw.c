@@ -35,6 +35,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <hdrparse.h>
 #include <andrewos.h>
+#include <stdlib.h>
+extern int FreeParsedStuff(struct MS_Message *Msg);
+extern int LowerStringInPlace(char *string, int len);  /* ams/libs/shr/utils.c */
+extern int OnlyParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int lc2strncmp(char *s1, char *s2, int len);  /* ams/libs/shr/utils.c */
 
 extern char *StandardHeaderNames[];
 
@@ -46,8 +51,7 @@ extern char *StandardHeaderNames[];
 	must later free.  (The other stuff will be freed when you free the
 	RawMessage, which is malloced by the first of these routines.) */
 
-ParseMessageFromRawBody(NewMessage)
-struct MS_Message *NewMessage;
+int ParseMessageFromRawBody(struct MS_Message *NewMessage)
 {
     if (NewMessage->Snapshot) free(NewMessage->Snapshot);
     NewMessage->Snapshot = malloc(AMS_SNAPSHOTSIZE);
@@ -73,8 +77,7 @@ struct MS_Message *NewMessage;
 
 /* The following does the real work of the above routine, without all the aggressive malloc'ing and freeing; it is separated primarily for use by AlterMessage */
 
-OnlyParseMessageFromRawBody(NewMessage)
-struct MS_Message *NewMessage;
+int OnlyParseMessageFromRawBody(struct MS_Message *NewMessage)
 {
     char   *s,
            *t,

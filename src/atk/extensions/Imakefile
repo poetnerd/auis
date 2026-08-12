@@ -26,6 +26,8 @@
 * $
 */
 
+/* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS = compile.do \
 	dsearch.do \
@@ -48,7 +50,6 @@ IHFILES = compile.ih \
 	tags.ih \
 	deskey.ih \
 	metax.ih
-
 
 NormalObjectRule()
 NormalATKRule()
@@ -86,4 +87,3 @@ MkdirTarget(${DESTDIR}/doc/atk/extensions)
 
 InstallDocs(ezdiff.doc compile.doc deskey.doc dsearch.doc isearch.doc filter.doc spell.doc tags.doc,${DESTDIR}/doc/atk/extensions)
 InstallDocs(ezdiff.pr compile.pr tags.pr isearch.pr spell.pr, ${DESTDIR}/lib/prs)
-

@@ -40,47 +40,41 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 /* These have been macrofied */
 
 /*
-long point_X(Pt)
-struct point * Pt; {
+long point_X(struct point *Pt)
+{
     return Pt->x;
 }
 
-long point_Y(Pt)
-struct point * Pt; {
+long point_Y(struct point *Pt)
+{
     return Pt->y;
 }
 */
 
-void point_SetX(Pt,Value)
-struct point * Pt;
-long Value; {
+void point_SetX(struct point *Pt, long Value)
+{
     Pt->x=Value;
 }
 
-void point_SetY(Pt,Value)
-struct point * Pt;
-long Value; {
+void point_SetY(struct point *Pt, long Value)
+{
      Pt->y=Value;
 }
 
-void point_OffsetPoint(Pt,DeltaX, DeltaY)
-struct point * Pt;
-long DeltaY;
-long DeltaX; {
+void point_OffsetPoint(struct point *Pt, long DeltaX, long DeltaY)
+{
     Pt->y += DeltaY;
     Pt->x += DeltaX;
 }
 
-void point_AddPt(LHS,RHS)
-struct point * LHS;
-struct point * RHS;{
+void point_AddPt(struct point *LHS, struct point *RHS)
+{
     LHS->y += RHS->y;
     LHS->x += RHS->x;
 }
 
-void point_SubPt(LHS,RHS)
-struct point * LHS;
-struct point * RHS; {
+void point_SubPt(struct point *LHS, struct point *RHS)
+{
     LHS->y -= RHS->y;
     LHS->x -= RHS->x;
 }
@@ -90,25 +84,21 @@ struct point * RHS; {
 */
 /*
 
-void point_SetPt(Pt,NewX, NewY)
-struct point * Pt;
-long NewY;
-long NewX;{
+void point_SetPt(struct point *Pt, long NewX, long NewY)
+{
     Pt->y = NewY;
     Pt->x = NewX;
 }
 
 */
 
-boolean point_ArePtsEqual(LHS,RHS)
-struct point * LHS;
-struct point * RHS; {
+boolean point_ArePtsEqual(struct point *LHS, struct point *RHS)
+{
     return (LHS->x == RHS->x) && (LHS->y == RHS->y);
 }
 
-struct point * point_CreatePoint(InitX, InitY)
-long InitY;
-long InitX; {
+struct point * point_CreatePoint(long InitX, long InitY)
+{
     struct point * RetValue;
 
     RetValue = (struct point *) malloc(sizeof(struct point));

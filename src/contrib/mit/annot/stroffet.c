@@ -52,17 +52,12 @@ static char *stroffet_rcsid = "$Header";
 /****************************************************************/
 /*		class procedures				*/
 /****************************************************************/
-boolean
-stroffet__InitializeClass(classID)
-    struct classheader * classID;
+boolean stroffet__InitializeClass(struct classheader *classID)
 {
     return TRUE;
 }
 
-boolean
-stroffet__InitializeObject(classID,self)
-struct classheader * classID;
-struct stroffet * self;
+boolean stroffet__InitializeObject(struct classheader *classID, struct stroffet *self)
 {
     struct text * to;
 
@@ -78,10 +73,7 @@ struct stroffet * self;
 /*		instance methods				*/
 /****************************************************************/
 
-void
-stroffet__SetChild(self,child)
-    struct stroffet * self;
-    struct dataobject * child;
+void stroffet__SetChild(struct stroffet *self, struct dataobject *child)
 {
     super_SetChild(self,child);
     if (child != (struct dataobject *)0)

@@ -65,7 +65,7 @@ methods:
     InsertObject (struct dataobject *newobject,char *dataname,char *viewname,int usedefaultview);
     SetRefName(char *refname) returns char *;
     UnsetRefName();
-    SetVisibilityBit(mode);
+    SetVisibilityBit(int mode);
     SetObject(struct dataobject *newobject) returns boolean;
     SetLinkName(char *linkname);
     SetObjectName(char *dataname) ;

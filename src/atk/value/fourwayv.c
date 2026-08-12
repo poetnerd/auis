@@ -71,15 +71,12 @@ static struct atom *  A_string;
 
 
 
-boolean fourwayV__InitializeClass(classID)
-struct classheader *classID;
+boolean fourwayV__InitializeClass(struct classheader *classID)
 {
     InternAtoms;
     return TRUE;
 }
-boolean fourwayV__InitializeObject(classID,self)
-struct classheader *classID;
-struct fourwayV *self;
+boolean fourwayV__InitializeObject(struct classheader *classID, struct fourwayV *self)
 {
     fourwayV_SetFixedCount(self,4);
     fourwayV_SetFixedColumns(self,2);
@@ -87,8 +84,7 @@ struct fourwayV *self;
     return TRUE;
 }
 
-void fourwayV__LookupParameters(self)
-struct fourwayV * self;
+void fourwayV__LookupParameters(struct fourwayV *self)
 {
     char * fontname;
     long fontsize;

@@ -125,7 +125,7 @@ methods:
     AlterDeletedIcon(int position, boolean delete);
     CapReverseSearch();
     DeleteVisibleMessage(boolean delete) returns int;
-    DisplayNewBody(int thisCUID, linestart, linelen, struct environment *env) returns int;
+    DisplayNewBody(int thisCUID, int linestart, int linelen, struct environment *env) returns int;
     FindCUIDByDocLocation(int *position,  int *len, struct environment **envptr, int *whichcaption) returns int;
     GetBodyFromCUID(int cuid, int Mode, char *ContentTypeOverride) returns int;
     GuaranteeFetchedRange(int min, int max) returns int;

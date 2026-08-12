@@ -33,14 +33,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 #include <ms.h>
 #include <andrewos.h> /* sys/time.h */
+extern int parsedateheader(char *str, struct tm *tmp, int settm, int select, int err, long *gmt);
 
 
 char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
 	"Sep", "Oct", "Nov", "Dec", 0};
 
 
-ParseAndShrinkDate(bigdate, littledate) 
-char *bigdate, *littledate;
+int ParseAndShrinkDate(char *bigdate, char *littledate)
 {
     struct tm TmBuf;
 
@@ -50,7 +50,7 @@ char *bigdate, *littledate;
 	return(-1);
     } else {
 	sprintf(littledate, "%2d-%s-%02d", TmBuf.tm_mday,
-	    months[TmBuf.tm_mon], TmBuf.tm_year);
+	    months[TmBuf.tm_mon], TmBuf.tm_year % 100);
 	return(0);
     }
 }

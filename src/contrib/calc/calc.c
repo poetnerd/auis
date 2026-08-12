@@ -93,14 +93,13 @@ END-SPECIFICATION  ************************************************************/
 #include "apt.h"
 #include "apt.ih"
 #include "calc.eh"
+static int Reader(struct calc *self);
+static int Writer(struct calc *self);
 
 #define  Value			      self->value
 
 
-boolean
-calc__InitializeObject( classID, self )
-  register struct classheader	     *classID;
-  register struct calc		     *self;
+boolean calc__InitializeObject(struct classheader *classID, struct calc *self)
   {
   IN(calc_InitializeObject);
   DEBUGst(RCSID,rcsidcalc);
@@ -111,10 +110,7 @@ calc__InitializeObject( classID, self )
   return TRUE;
   }
 
-void
-calc__FinalizeObject( classID, self )
-  register struct classheader	     *classID;
-  register struct calc		     *self;
+void calc__FinalizeObject(struct classheader *classID, struct calc *self)
   {
   IN(calc_FinalizeObject);
   DEBUGst(RCSID,rcsidcalc);
@@ -122,19 +118,14 @@ calc__FinalizeObject( classID, self )
   OUT(calc_FinalizeObject);
   }
 
-char *
-calc__ViewName( self )
-  register struct calc    	      *self;
+char * calc__ViewName(struct calc *self)
   {
   IN(calc_ViewName);
   OUT(calc_ViewName);
   return "calcv";
   }
 
-void
-calc__SetValue( self, value )
-  register struct calc    	      *self;
-  register double		       value;
+void calc__SetValue(struct calc *self, double value)
   {
   IN(calc__SetValue);
   Value = value;
@@ -142,9 +133,7 @@ calc__SetValue( self, value )
   OUT(calc__SetValue);
   }
 
-static
-Reader( self )
-  register struct calc	    	     *self;
+static int Reader(struct calc *self)
   {
   register struct apt_field	     *field;
 
@@ -152,21 +141,17 @@ Reader( self )
   while ( field = calc_ReadObjectField( self ) )
     {
     if ( strcmp( "Value", field->name ) == 0 )
-       sscanf( field->content, "%F", &Value );
+       sscanf( field->content, "%lf", &Value );
     }
   OUT(Reader);
   }
 
-long
-calc__Read( self, file, id )
-  register struct calc	    	     *self;
-  register FILE			     *file;
-  register long			      id;
+long calc__Read(struct calc *self, FILE *file, long id)
   {
   register long			      status; 
 
   IN(calc__Read);
-  if ( (status = calc_ReadObject( self, file, id, Reader )) ==
+  if ( (status = calc_ReadObject( self, file, id, (void (*)(struct calc *)) Reader )) ==
 	dataobject_NOREADERROR )
     {
     calc_NotifyObservers( self, calc_value_changed );
@@ -175,29 +160,26 @@ calc__Read( self, file, id )
   return status;
   }
 
-static
-Writer( self )
-  register struct calc		     *self;
+static int Writer(struct calc *self)
   {
   struct apt_field		      field;
   char				      value[25];
 
   IN(Writer);
   field.name = "Value";
-  field.content = (char *)sprintf( value, "%f", Value );
+  /* sprintf() returns the char count written, not a pointer -- the old
+     (char *) cast turned that small int into a bogus near-NULL pointer,
+     which apt_WriteObjectField's fprintf("%s", ...) then dereferenced. */
+  sprintf( value, "%f", Value );
+  field.content = value;
   calc_WriteObjectField( self, &field );
   OUT(Writer);
   }
 
-long
-calc__Write( self, file, id, level )
-  register struct calc		     *self;
-  register FILE			     *file;
-  register long			      id;
-  register int			      level;
+long calc__Write(struct calc *self, FILE *file, long id, int level)
   {
   IN(calc_Write);
-  calc_WriteObject( self, file, id, level, Writer );
+  calc_WriteObject( self, file, id, level, (void (*)(struct calc *)) Writer );
   OUT(calc_Write);
   return  id;
   }

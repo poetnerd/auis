@@ -48,6 +48,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/valu
 #include <sbutton.ih>
 #include <sbuttonv.ih>
 #include <buttonv.eh>
+static int DrawAllButtons(struct buttonV *self);
+static void DrawButton(struct buttonV *self, struct buttonV_rl *rl, long left, long top, long width, long height, boolean borderonly, boolean blit);
+static int calcRec(struct buttonV *self);
+static boolean clearrl(struct buttonV_rl *rl, struct buttonV *self);
+static int drl(struct buttonV_rl *rl, struct buttonV *self);
+static boolean enclosed(struct buttonV_rl *rl, long x, long y);
+static int findcurrent(struct buttonV_rl *rl, struct buttonV *self);
+static int findkey(struct buttonV_rl *rl, long i);
+static int vsetrec(struct buttonV_rl *rl, struct buttonV *self);
+static int wsetrec(struct buttonV_rl *rl, struct buttonV *self);
 
 static struct atomlist *  AL_bodyfont;
 static struct atomlist *  AL_bodyfont_size;
@@ -95,17 +105,13 @@ struct buttonV_rl {
 #define buttonV_STRING_END ':'
 #define buttonV_STRING_ESCAPE '\\'
 
-static boolean clearrl(rl,self)
-struct buttonV_rl *rl;
-struct buttonV *self;
+static boolean clearrl(struct buttonV_rl *rl, struct buttonV *self)
 {
     if(rl->len > 0) free(rl->string);
     free(rl);
     return TRUE;
 }
-static vsetrec(rl,self)
-struct buttonV_rl *rl;
-struct buttonV *self;
+static int vsetrec(struct buttonV_rl *rl, struct buttonV *self)
 {
     if(!self->topdown) self->rtl += -self->rhw;
     rectangle_SetRectSize(&(rl->rect),self->header.valueview.x + self->offset ,self->rtl,
@@ -118,9 +124,7 @@ struct buttonV *self;
     }
     return TRUE;
 }
-void buttonV__HandleStyleString(self,s)
-struct buttonV *self;
-char *s;
+void buttonV__HandleStyleString(struct buttonV *self, char *s)
 {
     boolean go;
     go = TRUE;
@@ -151,9 +155,7 @@ char *s;
 	s++;
     }
 }
-static wsetrec(rl,self)
-struct buttonV_rl *rl;
-struct buttonV *self;
+static int wsetrec(struct buttonV_rl *rl, struct buttonV *self)
 {
     rectangle_SetRectSize(&(rl->rect),self->rtl,self->header.valueview.y + self->offset,
 		   self->rhw,self->bsize);
@@ -165,8 +167,7 @@ struct buttonV *self;
     }
     return TRUE;
 }
-static calcRec(self)
-struct buttonV * self;
+static int calcRec(struct buttonV *self)
 {
     if(self->columns == 0) return;
     self->offset = 0;
@@ -184,15 +185,13 @@ struct buttonV * self;
 	list_Enumerate(self->list,wsetrec,self);
     }
 }
-fourwaysort(rl1,rl2)
-struct buttonV_rl *rl1,*rl2;
+int fourwaysort(struct buttonV_rl *rl1, struct buttonV_rl *rl2)
 {
    if(rl1->key == 3 && rl2->key == 2) return -1;
     else if (rl2->key == 3 && rl1->key == 2) return 1;
     else return (rl1->key - rl2->key);
 }
-static void buttonV__CacheSettings(self)
-struct buttonV *self;
+void buttonV__CacheSettings(struct buttonV *self)
 {
     char tmp[256],*t,*chr;
     struct graphic *my_graphic;
@@ -262,23 +261,14 @@ struct buttonV *self;
     self->count = i + 1;
     self->max = max;
 }
-void buttonV__DrawButtonText(self,text,len,rect,rect2,pushd)
-struct buttonV * self;
-char *text;
-long len;
-struct rectangle *rect,*rect2;
-boolean pushd;
+void buttonV__DrawButtonText(struct buttonV *self, char *text, long len, struct rectangle *rect, struct rectangle *rect2, boolean pushd)
 {
 /* assumes '\0' terminated text */
     if(text != NULL && len > 0) 
 	sbuttonv_DrawButtonLabel(self, text, rect2, self->prefs,pushd);
 }
 
-static void DrawButton(self,rl,left,top,width,height,borderonly,blit)
-struct buttonV * self;
-struct buttonV_rl *rl;
-long left,top,width,height;
-boolean borderonly,blit;
+static void DrawButton(struct buttonV *self, struct buttonV_rl *rl, long left, long top, long width, long height, boolean borderonly, boolean blit)
 {
     struct rectangle Rect,*rect,in;
     char *text ;
@@ -306,9 +296,7 @@ boolean borderonly,blit;
 	sbuttonv_DrawButton(self,&(self->si),rect); 
     }
 }
-static boolean enclosed(rl,x,y)
-struct buttonV_rl *rl;
-long x,y;
+static boolean enclosed(struct buttonV_rl *rl, long x, long y)
 {
     if(x < rl->rect.left ||
 	y < rl->rect.top ||
@@ -318,27 +306,20 @@ long x,y;
     return TRUE;
 }
 
-static drl(rl,self)
-struct buttonV_rl *rl;
-struct buttonV *self;
+static int drl(struct buttonV_rl *rl, struct buttonV *self)
 {
     DrawButton(self,rl,0,0,0,0,FALSE,FALSE);
     return TRUE;
 }
-static findcurrent(rl,self)
-struct buttonV_rl *rl;
-struct buttonV *self;
+static int findcurrent(struct buttonV_rl *rl, struct buttonV *self)
 {
     return !enclosed(rl,self->x,self->y);
 }
-static findkey(rl,i)
-struct buttonV_rl *rl;
-long i;
+static int findkey(struct buttonV_rl *rl, long i)
 {
     return !(i == rl->key);
 }
-static DrawAllButtons(self)
-struct buttonV * self;
+static int DrawAllButtons(struct buttonV *self)
 {
     list_Enumerate(self->list,drl,self);
 }
@@ -347,8 +328,7 @@ struct buttonV * self;
 /*		class procedures 				*/
 /****************************************************************/
 
-boolean buttonV__InitializeClass(classID)
-struct classheader *classID;
+boolean buttonV__InitializeClass(struct classheader *classID)
 {
   InternAtoms;
   return TRUE;
@@ -357,9 +337,7 @@ struct classheader *classID;
 /****************************************************************/
 /*		instance methods				*/
 /****************************************************************/
-boolean buttonV__InitializeObject(classID, self )
-struct classheader *classID;
-struct buttonV * self;
+boolean buttonV__InitializeObject(struct classheader *classID, struct buttonV *self)
 {
     self->label = NULL;
     self->fontname = NULL;
@@ -385,15 +363,12 @@ struct buttonV * self;
     return TRUE;
 }
 
-void buttonV__FinalizeObject(classID, self )
-struct classheader *classID;
-struct buttonV * self;
+void buttonV__FinalizeObject(struct classheader *classID, struct buttonV *self)
 {
     sbutton_FreePrefs(self->prefs); 
 }
 
-void buttonV__LookupParameters(self)
-     struct buttonV * self;
+void buttonV__LookupParameters(struct buttonV *self)
 {
   char * fontname;
   long fontsize;
@@ -450,9 +425,7 @@ void buttonV__LookupParameters(self)
 }
 
 
-void buttonV__DrawFromScratch(self,x,y,width,height)
-struct buttonV * self;
-long x,y,width,height;
+void buttonV__DrawFromScratch(struct buttonV *self, long x, long y, long width, long height)
 {
     if (width > 0 && height > 0)
     {
@@ -463,20 +436,17 @@ long x,y,width,height;
 }
 
 
-void buttonV__DrawDehighlight(self)
-struct buttonV * self;
+void buttonV__DrawDehighlight(struct buttonV *self)
 {
 }
 
-void buttonV__DrawHighlight(self)
-struct buttonV * self;
+void buttonV__DrawHighlight(struct buttonV *self)
 {
 
 }
 
 
-void buttonV__DrawNewValue( self )
-     struct buttonV * self;
+void buttonV__DrawNewValue(struct buttonV *self)
 {
     long i= value_GetValue(buttonV_Value(self));
     struct buttonV_rl *rl = self->current;
@@ -486,7 +456,7 @@ void buttonV__DrawNewValue( self )
 		rl->pushed = FALSE;
 		DrawButton(self,rl,0,0,0,0,FALSE,TRUE);
 	    }
-	    rl = (struct buttonV_rl *) list_Enumerate(self->list,findkey,i);
+	    rl = (struct buttonV_rl *) list_Enumerate(self->list,findkey,(void *) i);
 	    if(rl){
 		rl->pushed = TRUE;
 		DrawButton(self,rl,0,0,0,0,FALSE,TRUE);
@@ -497,10 +467,7 @@ void buttonV__DrawNewValue( self )
     self->valueset = TRUE;
 }
 
-struct buttonV * buttonV__DoHit( self,type,x,y,hits )
-struct buttonV * self;
-enum view_MouseAction type;
-long x,y,hits;
+struct buttonV * buttonV__DoHit(struct buttonV *self, enum view_MouseAction type, long x, long y, long hits)
 {
     struct buttonV_rl *rl;
     long v;
@@ -567,10 +534,7 @@ long x,y,hits;
     return self;
 }
 
-struct view * buttonV__Hit(self, type, x, y, numberOfClicks)
-     struct buttonV * self;
-     enum view_MouseAction type;
-     long x, y, numberOfClicks;
+struct view * buttonV__Hit(struct buttonV *self, enum view_MouseAction type, long x, long y, long numberOfClicks)
      {/* should probably just restore this functionality to valueview,
 	with a way to optionly set it */
 	 register short sendEvent;

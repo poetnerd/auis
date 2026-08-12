@@ -58,7 +58,7 @@ class lexan {
 
 methods:
 
-	NextToken(/* struct lexan *self, */ void *pyylval) returns int;
+	NextToken(/* struct lexan *self, */ void **pyylval) returns int;
 		/* get the next token from the lexan, set *pyylval to the
 		value returned by a hook routine and return the token number */
 
@@ -76,8 +76,8 @@ macromethods:
 classprocedures:
 
 	InitializeClass() returns boolean;
-	InitializeObject(struct parse *self) returns boolean;
-	FinalizeObject(struct parse *self);
+	InitializeObject(struct lexan *self) returns boolean;
+	FinalizeObject(struct lexan *self);
 
 	ParseNumber(char *buf, long *plen, long *intval, double *dvlval)
 			returns int;

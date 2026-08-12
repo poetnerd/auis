@@ -196,7 +196,7 @@ boolean newpag;
 		    name);
 	    message_DisplayString(frame, 0, msgbuf);
 	    Buttons[index].pid = forkval;
-	    im_AddZombieHandler(forkval, ZombieHandler, index);
+	    im_AddZombieHandler(forkval, ZombieHandler, (void *)index);
 	}
 	else {
 	    sprintf(msgbuf, "Error starting %s (%s)",

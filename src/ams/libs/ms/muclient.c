@@ -43,6 +43,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+extern int CheckAMSConfiguration();  /* overhead/mail/lib/mailconf.c */
+extern int FixSubsDate(struct SubscriptionProfile *sub, char *time64);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
 
 #ifndef NORCSID
 #define NORCSID
@@ -74,9 +77,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 /* connect to host at port, waiting secs for connection
  */
-int cli_connect(host, port, secs)
-    char *host;
-    int port, secs;
+int cli_connect(char *host, int port, int secs)
 {
     int sock;
     struct sockaddr_in server;
@@ -123,9 +124,7 @@ int cli_connect(host, port, secs)
 
 /* do a quick check of the master update server
  */
-void mu_quickcheck(subs, num)
-    struct SubscriptionProfile **subs;
-    int num;
+void mu_quickcheck(struct SubscriptionProfile **subs, int num)
 {
     int subw, subr, j, i, servnum, subdiff;
     int size, count, mufd, waitwrite, len;

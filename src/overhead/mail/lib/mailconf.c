@@ -39,6 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <andrewos.h> /* sys/types.h sys/file.h */
 #include <andyenv.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <system.h>
 #include <sys/stat.h>
@@ -50,6 +51,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <pwd.h>
 
 #include <mailconf.h>
+static struct configurelist * openCellConfig(char *cellN);
+
+extern char *AndrewDir(char *str);
+extern char *LocalDir(char *str);
+
+/* No header anywhere in the tree declares these. */
+extern int LCappend(char *s1, char *s2);			/* overhead/util/lib/lcappend.c */
+extern int CheckServiceConfiguration();	/* overhead/util/lib/svcconf.c */
 
 extern int errno;
 
@@ -192,7 +201,7 @@ int AMS_WSRunsQueuemail = 0;
 char *AMS_MailBoxPrefix = "/usr/mail";	/* Prefix for ``/userid'', giving file where mail is delivered. */
 #else /* ((SY_U5x != 0) || defined(hpux))	 */
 /* yes, below it really is __386BSD__ || bsdi, they both want /var/mail in place of /usr/spool/mail. */
-#if defined(__386BSD__) || defined(bsdi) || defined(__NetBSD__) || defined(__FreeBSD__)
+#if defined(__386BSD__) || defined(bsdi) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(sys_darwin)
 char *AMS_MailBoxPrefix = "/var/mail"; /* Prefix for ``/userid'', giving file where mail is delivered. */
 #else
 char *AMS_MailBoxPrefix = "/usr/spool/mail"; /* Prefix for ``/userid'', giving file where mail is delivered. */
@@ -664,8 +673,7 @@ static struct ConfigStringArrays {
 /* Now, provide a mechanism to dynamically configure these guys. */
 
 /* First, a mechanism to get the cell-dependent stuff. */
-static struct configurelist *openCellConfig(cellN)
-char *cellN;
+static struct configurelist * openCellConfig(char *cellN)
 {
 	int mylen;
 	char *mybuf;

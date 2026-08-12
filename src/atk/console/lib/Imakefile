@@ -26,6 +26,7 @@
 * $
 */
 
+
 IHFILES = conclass.ih logv.ih
 
 OBJS = conclass.o \

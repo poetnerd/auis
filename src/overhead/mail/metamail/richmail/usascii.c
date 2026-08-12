@@ -37,12 +37,12 @@
 #include <ctype.h>
 #include "richlex.h"
 #include "richset.h"
+#include <string.h>
 
 /*
  * Initialise the US-ASCII character set processor.
  */
-usascii_init (name)
-char	*name;
+int usascii_init(char *name)
 {
     if (name)
 	richtextencoding (RICH_ENC_US_ASCII);
@@ -51,9 +51,7 @@ char	*name;
 /*
  * Process a command for the US-ASCII processor.
  */
-int	usascii_command (token,negated)
-char	*token;
-int	negated;
+int usascii_command(char *token, int negated)
 {
     if (!strcmp(token,"us-ascii")) {
     	if (negated) {
@@ -71,8 +69,7 @@ int	negated;
 /*
  * Check for singleton US-ASCII tokens.
  */
-int	usascii_single (token)
-char	*token;
+int usascii_single(char *token)
 {
     return (0);
 }
@@ -80,8 +77,7 @@ char	*token;
 /*
  * Determine the width of a US-ASCII character.
  */
-int	usascii_width (ch)
-RCHAR	ch;
+int usascii_width(RCHAR ch)
 {
     return (1);
 }
@@ -89,8 +85,7 @@ RCHAR	ch;
 /*
  * Determine if the current character can be used as a folding point.
  */
-int	usascii_fold (ch)
-RCHAR	ch;
+int usascii_fold(RCHAR ch)
 {
     return (ch < 0x7F && isspace (ch));
 }
@@ -98,9 +93,7 @@ RCHAR	ch;
 /*
  * Render the given US-ASCII character.
  */
-usascii_render (ch,param)
-RCHAR	ch;
-void	*param;
+int usascii_render(RCHAR ch, void *param)
 {
     (*RichtextPutc) ((int)ch,param);
 }
@@ -108,8 +101,7 @@ void	*param;
 /*
  * Enter or leave the US-ASCII encoding.
  */
-usascii_encoding (newenc)
-int	newenc;
+int usascii_encoding(int newenc)
 {
     /* Nothing to be done in this version */
 }

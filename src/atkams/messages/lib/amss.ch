@@ -59,10 +59,10 @@ class amss: ams {
       CUI_GenTmpFileName(char *name) returns long;
       CUI_GetFileFromVice(char *tmp_file, char *vfile) returns long;
       CUI_GetHeaderContents(int cuid, char *hdrname, int hdrnum, char *hdrbuf, int lim) returns long;
-      CUI_GetHeaders(char *dirname, char *date64, char *headbuf, int lim, int startbyte, int *nbytes, int *status, int RegisterCuids) returns long;
+      CUI_GetHeaders(char *dirname, char *date64, char *headbuf, int lim, long startbyte, long *nbytes, long *status, int RegisterCuids) returns long;
       CUI_GetSnapshotFromCUID(int cuid, char *Sbuf) returns long;
       CUI_HandleMissingFolder(char *dname) returns long;
-      CUI_Initialize(proc TimerFunction, char *rock) returns long;
+      CUI_Initialize(procedure TimerFunction, char *rock) returns long;
       CUI_LastCallFinished() returns long;
       CUI_MachineName() returns char *;
       CUI_MailDomain() returns char *;
@@ -82,7 +82,7 @@ class amss: ams {
       CUI_ReportAmbig(char *name, char *atype);
       CUI_ResendMessage(int cuid, char *tolist) returns long;
       CUI_RewriteHeaderLine(char *addr, char *newaddr) returns long;
-      CUI_RewriteHeaderLineInternal(char *addr, char *newaddr, int maxdealiases, int *numfound, int *externalcount, int format, int strip, int trust) returns long;
+      CUI_RewriteHeaderLineInternal(char *addr, char *newaddr, int maxdealiases, int *numfound, int *externalcount, int *format, int *strip, int *trust) returns long;
       CUI_Rock() returns char *;
       CUI_SetClientVersion(char *vers);
       CUI_SetPrinter(char *printername) returns long;
@@ -100,7 +100,7 @@ class amss: ams {
       MS_CheckAuthentication(long *auth) returns long;
       MS_DebugMode(int mslevel, int snaplevel, int malloclevel) returns long;
       MS_DisambiguateFile(char *source, char *target, long MustBeDir) returns long;
-      MS_FastUpdateState() returns long;
+      MS_FastUpdateState() returns int;
       MS_GetDirInfo(char *dirname, long *protcode, long *msgcount) returns long;
       MS_GetNewMessageCount(char *dirname, long *numnew, long *numtotal, char *lastolddate, long InsistOnFetch) returns long;
       MS_GetNthSnapshot(char *dirname, long which, char *snapshotbuf) returns long;
@@ -114,7 +114,7 @@ class amss: ams {
       MS_SetCleanupZombies(long doclean);
       MS_SetSubscriptionEntry(char *fullname, char *nickname, long status) returns long;
       MS_UnlinkFile(char *filename) returns long;
-      MS_UpdateState() returns long;
+      MS_UpdateState() returns int;
       MS_MatchFolderName(char *pattern, char *filename) returns long;
       MS_DomainHandlesFormatting(char *domname, long *retval) returns long;
       AMS_ERRNO() returns int;

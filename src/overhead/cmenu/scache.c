@@ -35,6 +35,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 /* This file (scache.c) and scache.h will implement a string cacheing mechanism so that even if menus are leaked they won't represent much of a drain... */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 #include "scache.h"
 
 static struct scache_node scache[256];
@@ -48,8 +51,7 @@ void scache_Init()
     bzero(scache,sizeof(scache));
 }
 
-char *scache_Hold(str)
-char *str;
+char * scache_Hold(char *str)
 {
     unsigned long len;
     unsigned long hash;
@@ -94,8 +96,7 @@ char *str;
     return e->str;
 }
 
-void scache_Free(str)
-char *str;
+void scache_Free(char *str)
 {
     scache_REFCOUNT(str)--;
 }

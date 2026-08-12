@@ -47,6 +47,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
+#ifdef HAVE_XFT
+#include <X11/Xft/Xft.h>
+#endif
 #include <cmenu.h>
 
 #include <xgraphic.ih>
@@ -55,6 +58,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 #include <xim.ih>
 #include <xfontd.eh>
 #include <environ.ih>
+static int AddStyleModifiers(char *string, int styles);
+static int BestFudgeFactor(long vdpi);
+static struct bestfont * ClosestFonts(char **possibleNames, int numNames, char *desiredFamily, int desiredSize, int desiredStyle, int *numBest, boolean andyName);
+static struct xgraphic * EnsureGraphic(struct xgraphic *graphic);
+static void FillDlist();
+static struct FontSummary * GetFontSummary(struct xfontdesc *self);
+static char * GetNthDash(char *p, int cnt);
+static boolean XExplodeFontName(char *fontName, char *familyName, long bufSize, long *fontStyle, long *fontSize);
 
 /* Filled in in InitializeClass from a user preference.
  * If TRUE, font substitutions result in a warning being printed on stderr.
@@ -77,6 +88,9 @@ struct fcache {
 	Display *dpy;		/* first display the font was opened on (for XFreeFont) */
 	unsigned long host;		/* the host file descriptor */
 	XFontStruct *font;		/* the value for wm_SelectFont() */
+#ifdef HAVE_XFT
+	XftFont *xft;			/* anti-aliased rendering (NULL for bitmap fonts) */
+#endif
 	struct fcache *next;
 };
 
@@ -123,8 +137,7 @@ static void FillDlist()
     }
 }
 
-static int BestFudgeFactor(vdpi)
-long vdpi;
+static int BestFudgeFactor(long vdpi)
 {
     int bestfudge=2;
     int bestdpidiff=99999;
@@ -148,8 +161,7 @@ long vdpi;
 /* This procedure creates the name of the andrew font file
 given a particular set of characteristics */
 
-static struct FontSummary *GetFontSummary(self)
-    struct xfontdesc *self;
+static struct FontSummary * GetFontSummary(struct xfontdesc *self)
 {
 
      register struct FontSummary *tsp;
@@ -190,9 +202,7 @@ static struct FontSummary *GetFontSummary(self)
 
 }
 
-static AddStyleModifiers(string, styles)
-    char *string;
-    int styles;
+static int AddStyleModifiers(char *string, int styles)
 {
 
     char *oldString = string;
@@ -226,9 +236,7 @@ struct bestfont {
 
 #define MAXBEST 3
 
-static char *GetNthDash(p, cnt)
-char *p;
-int cnt;
+static char * GetNthDash(char *p, int cnt)
 {
     while (*p != '\0') {
 	if (*p == '-') {
@@ -242,12 +250,7 @@ int cnt;
     return p;
 }
 
-static boolean XExplodeFontName(fontName, familyName, bufSize, fontStyle, fontSize)
-char *fontName;
-char *familyName;
-long bufSize;
-long *fontStyle;
-long *fontSize;
+static boolean XExplodeFontName(char *fontName, char *familyName, long bufSize, long *fontStyle, long *fontSize)
 {
     char *p;
     char *end;
@@ -334,19 +337,12 @@ long *fontSize;
  * This routine depends on fontdesc_ExplodeFont name to the names in the list
  * into their size and style.
  */
-static struct bestfont *ClosestFonts(possibleNames, numNames, desiredFamily, desiredSize, desiredStyle, numBest, andyName)
-    char **possibleNames;
-    int numNames;
-    char *desiredFamily;
-    int desiredSize;
-    int desiredStyle;
-    int *numBest;
-    boolean andyName;
+static struct bestfont * ClosestFonts(char **possibleNames, int numNames, char *desiredFamily, int desiredSize, int desiredStyle, int *numBest, boolean andyName)
 {
 
     int index;
-    int style;
-    int size;
+    long style;
+    long size;
     static struct bestfont bestFonts[MAXBEST + 1];
     int familyLength = strlen(desiredFamily);
     char familyName[MAXPATHLEN];
@@ -415,14 +411,7 @@ static struct bestfont *ClosestFonts(possibleNames, numNames, desiredFamily, des
 
 #define MAXNAMES 50
 
-static XFontStruct *GetClosestFont(graphic, matchStr, desiredName, desiredSize, desiredStyle, andyName, substitute)
-struct xgraphic *graphic;
-char *matchStr;
-char *desiredName;
-int desiredSize;
-int desiredStyle;
-boolean andyName;
-char *substitute;
+static XFontStruct * GetClosestFont(struct xgraphic *graphic, char *matchStr, char *desiredName, int desiredSize, int desiredStyle, boolean andyName, char *substitute)
 {
     char **fontNames = NULL;
     int numNames;
@@ -458,10 +447,7 @@ char *substitute;
  * "variable" font is requested. If this fails, the server is asked for any font
  * name and that is loaded. If that fails, the routine gives up.
  */
-	static XFontStruct *
-xfontdesc_LoadXFont(self, graphic)
-	struct xfontdesc * self;
-	struct xgraphic *graphic;
+static XFontStruct * xfontdesc_LoadXFont(struct xfontdesc *self, struct xgraphic *graphic)
 {
 
     XFontStruct *font = NULL;
@@ -544,13 +530,28 @@ xfontdesc_LoadXFont(self, graphic)
             fudge = 0;
         }
 
-        weight = (desiredStyle & fontdesc_Bold) ? "bold" : 
+        weight = (desiredStyle & fontdesc_Bold) ? "bold" :
           ((desiredStyle & fontdesc_Medium) ? "demibold" : "medium");
         slant = (desiredStyle & fontdesc_Italic) ? "i" : "r";
 	spacing = (desiredStyle & fontdesc_Fixed) ? "m" : "p";
 
-        sprintf(xstyleName, "-*-%s-%s-%s-*-*-*-%d-*-*-%s-*-*-*", xfamily, weight, slant, 10 * (desiredSize + fudge), spacing);
-        font = XLoadQueryFont(xgraphic_XDisplay(graphic), xstyleName);
+        /* Try scalable font at actual screen DPI first (pixel_size=0 selects
+           Type1/TrueType over bitmap PCFs, giving anti-aliased rendering). */
+        {
+            long hdpi = xgraphic_GetHorizontalResolution(graphic);
+            long vdpi_local = xgraphic_GetVerticalResolution(graphic);
+            if (hdpi > 0 && vdpi_local > 0) {
+                sprintf(xstyleName, "-*-%s-%s-%s-*-*-0-%d-%ld-%ld-%s-*-*-*",
+                    xfamily, weight, slant, 10 * (desiredSize + fudge),
+                    hdpi, vdpi_local, spacing);
+                font = XLoadQueryFont(xgraphic_XDisplay(graphic), xstyleName);
+            }
+        }
+
+        if (font == NULL) {
+            sprintf(xstyleName, "-*-%s-%s-%s-*-*-*-%d-*-*-%s-*-*-*", xfamily, weight, slant, 10 * (desiredSize + fudge), spacing);
+            font = XLoadQueryFont(xgraphic_XDisplay(graphic), xstyleName);
+        }
 
         /* try character cell */
         if (font == NULL && (desiredStyle & fontdesc_Fixed)) {
@@ -650,7 +651,36 @@ xfontdesc_LoadXFont(self, graphic)
 	fc->dpy = xgraphic_XDisplay(graphic);
 	fc->host = ConnectionNumber(fc->dpy);
 	fc->font = font;
-	*fcp = fc;	/* link the new one into the list */	
+#ifdef HAVE_XFT
+	/* Load matching XftFont for anti-aliased rendering (scalable fonts only) */
+	fc->xft = NULL;
+	if (font != NULL) {
+	    Atom fontAtom = XInternAtom(fc->dpy, "FONT", False);
+	    unsigned long atomVal;
+	    if (XGetFontProperty(font, fontAtom, &atomVal)) {
+		char *xlfd = XGetAtomName(fc->dpy, atomVal);
+		if (xlfd) {
+		    /* Only use Xft for Latin/Unicode charsets.
+		       Symbol, fontspecific, etc. use non-Unicode byte
+		       encodings that XftDrawString8 would misinterpret. */
+		    const char *cp = xlfd + strlen(xlfd);
+		    while (cp > xlfd && *cp != '-') cp--;  /* skip charset-encoding */
+		    if (cp > xlfd) {
+			const char *reg = cp - 1;
+			while (reg > xlfd && *reg != '-') reg--;
+			if (*reg == '-') {
+			    reg++;
+			    if (strncmp(reg, "iso8859", 7) == 0 ||
+				strncmp(reg, "iso10646", 8) == 0)
+				fc->xft = XftFontOpenXlfd(fc->dpy, graphic->screenUsed, xlfd);
+			}
+		    }
+		    XFree(xlfd);
+		}
+	    }
+	}
+#endif
+	*fcp = fc;	/* link the new one into the list */
     }
     self->header.fontdesc.DescValid = (MDFD != NULL);
 
@@ -684,9 +714,7 @@ GetAnyOldGraphic()
 	return  ((im == NULL) ? NULL : (struct xgraphic *)im->header.view.drawable);
 }
 
-static struct xgraphic *
-EnsureGraphic( graphic )
-struct xgraphic *graphic;
+static struct xgraphic * EnsureGraphic(struct xgraphic *graphic)
 {
     if (graphic == NULL || ! xgraphic_Valid(graphic)) {
 	graphic = GetAnyOldGraphic();
@@ -698,10 +726,7 @@ struct xgraphic *graphic;
 
 /* ************* methods ****************** */
 
-struct graphic *xfontdesc__CvtCharToGraphic(self, graphic2, SpecialChar)
-    struct xfontdesc * self;
-    struct graphic *graphic2;
-    char SpecialChar;
+struct graphic * xfontdesc__CvtCharToGraphic(struct xfontdesc *self, struct graphic *graphic2, char SpecialChar)
     {
     struct xgraphic *graphic=(struct xgraphic *)graphic2;
     struct xgraphic * RetValue;
@@ -738,11 +763,11 @@ struct graphic *xfontdesc__CvtCharToGraphic(self, graphic2, SpecialChar)
 	y = ci->ascent;
 	/* Note: we could have an empty character, in which case, we simulate it with a 1 by 1 character. Too bad X doesn't allow 0 sized pixmaps */
 	if (!width) {
-	    fprintf(stderr,"xfontdesc_CvtCharToGraphic: 0 width character %d in %X\n", SpecialChar, self);
+	    fprintf(stderr,"xfontdesc_CvtCharToGraphic: 0 width character %d in %lx\n", SpecialChar, (unsigned long)self);
 	    width++;
 	}
 	if (!height) {
-	    fprintf(stderr,"xfontdesc_CvtCharToGraphic: 0 height character %d in %X\n", SpecialChar, self);
+	    fprintf(stderr,"xfontdesc_CvtCharToGraphic: 0 height character %d in %lx\n", SpecialChar, (unsigned long)self);
 	    height++;
 	}
 	newPixmap = XCreatePixmap(xgraphic_XDisplay(graphic), xgraphic_XWindow(graphic), width, height, depth);
@@ -781,10 +806,7 @@ struct graphic *xfontdesc__CvtCharToGraphic(self, graphic2, SpecialChar)
     return (struct graphic *) RetValue;
 }
 
-	struct font *
-xfontdesc__GetRealFontDesc(self, graphic2)
-	struct xfontdesc * self;
-	struct graphic *graphic2;
+struct font * xfontdesc__GetRealFontDesc(struct xfontdesc *self, struct graphic *graphic2)
 {
 	    struct fcache *fc;
 	    struct xgraphic *graphic=(struct xgraphic *)graphic2;
@@ -799,13 +821,7 @@ xfontdesc__GetRealFontDesc(self, graphic2)
 	else return (struct font *)fc->font;
 }
 
-long xfontdesc__TextSize(self, graphic2, text, TextLength, XWidth, YWidth)
-    struct xfontdesc * self;
-    struct graphic *graphic2;
-    char * text;
-    long TextLength;
-    long * XWidth;
-    long * YWidth;
+long xfontdesc__TextSize(struct xfontdesc *self, struct graphic *graphic2, char *text, long TextLength, long *XWidth, long *YWidth)
 {
     XFontStruct *font;
     register long retWidth = 0;
@@ -824,9 +840,7 @@ long xfontdesc__TextSize(self, graphic2, text, TextLength, XWidth, YWidth)
 
 /* This procedure returns the font size table for all characters in a font 
 	XXX the value should depend on which display we are on */
-short *xfontdesc__WidthTable(self, graphic2)
-	struct xfontdesc * self;
-	struct graphic *graphic2;
+short* xfontdesc__WidthTable(struct xfontdesc *self, struct graphic *graphic2)
 {
 	register XFontStruct *font;
 	register short * fontWidthTable;
@@ -849,14 +863,14 @@ short *xfontdesc__WidthTable(self, graphic2)
 		   everything */
 		for(i=0; i < fontdesc_NumIcons; i++) 
 			fontWidthTable[i] = font->max_bounds.width;
-	else 
+	else
 		for(i=0; i < fontdesc_NumIcons; i++) {
 			if (i < font->min_char_or_byte2 ||
 					i > font->max_char_or_byte2)
 				 fontWidthTable[i] = 0;
 			else
-				fontWidthTable[i] = (font->per_char) 
-					? font->per_char[i-font->min_char_or_byte2].width 
+				fontWidthTable[i] = (font->per_char)
+					? font->per_char[i-font->min_char_or_byte2].width
 					: font->max_bounds.width;
 	}
 	return fontWidthTable;
@@ -864,9 +878,7 @@ short *xfontdesc__WidthTable(self, graphic2)
 
 /* This procedure returns the font size table for all characters in a font 
 	XXX the value should depend on which display we are on */
-short *xfontdesc__HeightTable(self, graphic2)
-	struct xfontdesc * self;
-	struct graphic *graphic2;
+short * xfontdesc__HeightTable(struct xfontdesc *self, struct graphic *graphic2)
 {
 
 	register XFontStruct *font;
@@ -907,12 +919,7 @@ short *xfontdesc__HeightTable(self, graphic2)
 	return fontHeightTable;
 }
 
-long xfontdesc__StringSize(self, graphic2, string,XWidth,YWidth)
-    struct xfontdesc * self;
-    struct graphic *graphic2;
-    register unsigned char * string;
-    register long * XWidth;
-    register long * YWidth;
+long xfontdesc__StringSize(struct xfontdesc *self, struct graphic *graphic2, char *string, long *XWidth, long *YWidth)
 {
 
     register XFontStruct  *font;
@@ -929,11 +936,7 @@ long xfontdesc__StringSize(self, graphic2, string,XWidth,YWidth)
     return retWidth;
 }
 
-void xfontdesc__CharSummary(self, graphic2, LookUpChar, RetValue)
-    struct xfontdesc * self;
-    struct graphic * graphic2;
-    char LookUpChar;
-    struct fontdesc_charInfo *RetValue;
+void xfontdesc__CharSummary(struct xfontdesc *self, struct graphic *graphic2, char LookUpChar, struct fontdesc_charInfo *RetValue)
 {
 
 	register XFontStruct *font;
@@ -982,43 +985,54 @@ void xfontdesc__CharSummary(self, graphic2, LookUpChar, RetValue)
 
 /* ************* predefines ************** */
 
-struct xfontdesc *xfontdesc__Allocate(classID)
-    struct classheader *classID;
+struct xfontdesc * xfontdesc__Allocate(struct classheader *classID)
 {
     return (struct xfontdesc *) malloc(sizeof(struct xfontdesc));
 }
 
-void xfontdesc__Deallocate(classID, self)
-    struct classheader *classID;
-    struct xfontdesc *self;
+void xfontdesc__Deallocate(struct classheader *classID, struct xfontdesc *self)
 {
 /* Fontdesc structures are never deallocated since they are reused. */
 }
 
-	boolean
-xfontdesc__InitializeObject(classID, self)
-	struct classheader *classID;
-	struct xfontdesc * self;
+boolean xfontdesc__InitializeObject(struct classheader *classID, struct xfontdesc *self)
 {
 	self->header.fontdesc.MachineDependentFontDescriptor = NULL;
 	return TRUE;
 }
 
-	void
-xfontdesc__FinalizeObject(classID, self)
-	struct classheader *classID;
-	struct xfontdesc * self;
+#ifdef HAVE_XFT
+XftFont * xfontdesc_GetXftFont(struct xfontdesc *self, struct graphic *graphic2)
+{
+    struct fcache *fc;
+    struct xgraphic *graphic = (struct xgraphic *)graphic2;
+    if ((graphic = EnsureGraphic(graphic)) == NULL)
+	return NULL;
+    for (fc = MDFD; fc != NULL && fc->host != ConnectionNumber(xgraphic_XDisplay(graphic)); fc = fc->next)
+	{}
+    if (fc == NULL) {
+	xfontdesc_LoadXFont(self, graphic);
+	for (fc = MDFD; fc != NULL && fc->host != ConnectionNumber(xgraphic_XDisplay(graphic)); fc = fc->next)
+	    {}
+    }
+    return (fc != NULL) ? fc->xft : NULL;
+}
+#endif /* HAVE_XFT */
+
+void xfontdesc__FinalizeObject(struct classheader *classID, struct xfontdesc *self)
 {
 	struct fcache *fc, *tfc;
 	for (fc = MDFD; fc != NULL; fc = tfc) {
 		tfc = fc->next;
 		XFreeFont(fc->dpy, fc->font);
+#ifdef HAVE_XFT
+		if (fc->xft)
+		    XftFontClose(fc->dpy, fc->xft);
+#endif
 	}
 }
 
-	boolean
-xfontdesc__InitializeClass(classID)
-	struct classheader *classID;
+boolean xfontdesc__InitializeClass(struct classheader *classID)
 {
 
 	announceSubstitutions = 

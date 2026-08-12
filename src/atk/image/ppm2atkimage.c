@@ -38,10 +38,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 #include <proctbl.ih>
 #include <dataobj.ih>
 #undef class_StaticEntriesOnly
+extern char *AndrewDir(char *str);
 
-main(argc, argv)
-    int argc;
-    char **argv;
+int main(int argc, char **argv)
 {
     long ret, saveQuality = -1;
     struct pbm *self;

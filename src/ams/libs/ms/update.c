@@ -37,6 +37,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andyenv.h>
 #include <ms.h>
 #include <mailconf.h>
+extern int CloseNeedyDirs(Boolean InsistOnCloses);
+extern int MS_UpdateState();
+extern int NonfatalBizarreError(char *text);
+extern int PrintPendingRequests(Boolean MustPrint);
+extern int UpdateState(Boolean DoEverything);
+extern int WriteSubs();
+extern void dropoff_Reset();  /* overhead/mail/lib/dropoff.c */
+extern int getla_ShutDown();  /* overhead/util/lib/getla.c */
+extern int safeexit(int code);
 #if defined(hpux) && HP_OS < 70
 #include <sys/time.h>
 #include <signal.h>
@@ -54,28 +63,25 @@ static int MS_ShouldCleanZombies = 1;
 
 /* This is a FAKE routine -- only used in non-snap version, and faked in cuisnap.c */
 
-MS_SetCleanupZombies(value)
-int value;
+int MS_SetCleanupZombies(int value)
 {
     MS_ShouldCleanZombies = value;
 }
 
-MS_Die() {
+int MS_Die() {
     MS_UpdateState();
     safeexit(0);
 }
 
-MS_FastUpdateState() {
+int MS_FastUpdateState() {
     return(UpdateState(FALSE));
 }
 
-MS_UpdateState() {
+int MS_UpdateState() {
     return(UpdateState(TRUE));
 }
 
-VitalCheckpoints(DoEverything, errct)
-Boolean DoEverything;
-int *errct;
+int VitalCheckpoints(Boolean DoEverything, int *errct)
 {
     long retcode = 0;
 
@@ -96,8 +102,7 @@ setup_sigAlrm()
 #endif /* hpux */
 
 
-UpdateState(DoEverything)
-Boolean DoEverything;
+int UpdateState(Boolean DoEverything)
 {
 #if POSIX_ENV
     int status=0;

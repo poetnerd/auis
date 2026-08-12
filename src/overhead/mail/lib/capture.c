@@ -41,9 +41,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <ctype.h>
 #include <util.h>
 #include <mailconf.h>
+#include <mail.h>
 
-void Capture(Hdr)
-char *Hdr;
+void Capture(char *Hdr)
 {/* Capture anything you like from the message header Hdr. */
     static struct flds {char *Name; char Abbr;} Fields[] = {
 	{"From:", 'f'},
@@ -65,7 +65,7 @@ char *Hdr;
     if (FD < 0) return;
     if (osi_ExclusiveLockNoBlock(FD) < 0) {close(FD); return;}
     if (lseek(FD, 0, 2) < 0) return;
-    sprintf(WrittenLine, "\n|%d|", time(0));
+    sprintf(WrittenLine, "\n|%ld|", (long)time(0));
     sigLen = strlen(WrittenLine);
     WrittenLine[sigLen+1] = '|';
     if (BracketField(Hdr, "organize:", &begOrg, &endOrg, NULL) == 0) begOrg = endOrg = NULL;

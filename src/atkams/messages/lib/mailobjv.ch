@@ -29,9 +29,9 @@
 
 class mailobjv : sbuttonv {
     classprocedures:
-      InitializeObject(struct messwind *self) returns boolean;
+      InitializeObject(struct mailobjv *self) returns boolean;
       InitializeClass() returns boolean;
-      FinalizeObject(struct messwind *self);
+      FinalizeObject(struct mailobjv *self);
     overrides:
       PostKeyState(struct keystate *keystate);
       PostMenus(struct menulist *ml);

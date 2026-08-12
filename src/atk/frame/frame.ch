@@ -73,7 +73,7 @@ macromethods:
     classprocedures:
         InitializeObject(struct frame *self) returns boolean;
         FinalizeObject(struct frame *self);
-	Enumerate(procedure function, long functionData) returns struct frame *;
+	Enumerate(procedure function, void *functionData) returns struct frame *;
 	FindFrameForBuffer(struct buffer *b) returns struct frame *;
 	GetFrameInWindowForBuffer(struct buffer *b) returns struct frame *;
 	Create(struct buffer *buffer) returns struct frame *;

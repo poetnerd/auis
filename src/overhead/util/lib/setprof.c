@@ -67,11 +67,12 @@ extern int errno;
 extern char ProgramName[];
 extern char *GetProfileFileName();
 extern char *GetFirstProfileFileName();
+extern char *AndrewDir(char *str);
+extern int FoldedEQ(unsigned char *s1, unsigned char *s2);		/* foldedeq.c, no header declares it */
 
 #define BIGPREF 2000
 
-setprofilestring(prog, pref, val) 
-char *prog, *pref, *val;
+int setprofilestring(char *prog, char *pref, char *val)
 {
     FILE *oldR;
     FILE *newR;
@@ -173,6 +174,10 @@ char *prog, *pref, *val;
 	    }
 	}
     }
+    /* fopen can also fail with errno != ENOENT (EMFILE, EACCES, ...);
+       without this check fileno(NULL) below dereferences NULL */
+    if (oldR == NULL)
+	return(-3);
 
     if (osi_ExclusiveLockNoBlock(fileno(oldR))){
 	fclose(oldR);
@@ -248,8 +253,7 @@ Needs to compile with:
   cc -DTESTINGONLYTESTING setprof.c /usr/andrew/lib/libutil.a -o setprof 
 */
 char ProgramName[100] = "foobar";
-main(argc, argv)
-char **argv;
+int main(int argc, char **argv)
 {
     int x;
     extern int errno;

@@ -26,7 +26,6 @@
 * $
 */
 
-
 LOCALINCLUDES = -I../hdrs -I../lclhdrs
 
 OBJS = fnnode.o node.o \
@@ -45,7 +44,6 @@ NormalObjectRule()
 
 /* YaccWithReplacement(eliy,eliyy) */
 Parser(eliy,-d)
-
 
 elil.o: eliy.h
 

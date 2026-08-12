@@ -59,6 +59,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <andrewos.h> /* sys/types.h sys/time.h strings.h */
 #undef label
 #include <class.h>
+#include <stdlib.h>
 
 #include <app.ih>
 #include <environ.ih>
@@ -82,6 +83,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/help
 #include <config.h>
 #include <helpsys.h>
 #include <helpa.eh>
+static int AddPath(char *astr);
+static void ncproc();
+static int send_pack(char c, char *s, int sock);
+static void show_usage(struct helpapp *self);
+static void unique_help(struct helpapp *self);
 
 #define	IPPORT_HELPNAME	"andrewhelp"
 /*---------------------------------------------------------------------------*/
@@ -112,6 +118,10 @@ static struct sockaddr_in myaddr;
 static int helpSocket = -1;
 
 static char *helpKey="";	/* the topic */
+static char defaultKeyBuf[32];	/* writable copy of the default topic name --
+				   helpKey gets lowercased/parenthesis-mapped
+				   in place downstream, and string literals
+				   are read-only memory */
 static int moreMode=FALSE;	/* use the termcap-based interface? */
 static int listMode=FALSE;	/* just list files? */
 static int print=FALSE;		/* in termcap-based mode, prompt for printing? */
@@ -128,9 +138,7 @@ struct help *helpobj;		/* global help object for ncproc use */
 /*
  * usage statement
  */
-static void 
-show_usage(self)
-struct helpapp *self;
+static void show_usage(struct helpapp *self)
 {
 #ifdef DEBUGGING
     fprintf(stderr,
@@ -205,9 +213,7 @@ ncproc ()
 /*
  * add a path to those to be searched
  */
-static 
-AddPath(astr)
-register char *astr;
+static int AddPath(char *astr)
 {
     char tname[MAXPATHLEN];
     register char *np;
@@ -235,11 +241,7 @@ register char *astr;
 /*
  * send_pack: send a command packet to an existing help instance
  */
-static int 
-send_pack(c, s, sock)
-char c;				/* the command char */
-char *s;			/* the string to send */
-int sock;			/* the socket to send to */
+static int send_pack(char c, char *s, int sock)
 {
     long len;
     /* buf needs to be an array of longs so that it will be
@@ -271,9 +273,7 @@ int sock;			/* the socket to send to */
 #endif /* MAXHOSTNAMELEN */
 #define MAXHOSTNAMELEN 64	/* some people just don't */
 
-static void 
-unique_help(self)
-struct helpapp *self;
+static void unique_help(struct helpapp *self)
 {
     register int i;
     char *wmHost = NULL, *dpyHost = NULL, displayHost[MAXHOSTNAMELEN], *colon;
@@ -369,7 +369,7 @@ struct helpapp *self;
 		     */
 		    tfile = fdopen(helpSocket, "r");
 		    if (tfile) {
-			im_AddFileHandler(tfile, ncproc, 0, 0);
+			im_AddFileHandler(tfile, (procedure) ncproc, 0, 0);
 		    }
 		}
 	    }
@@ -380,11 +380,7 @@ struct helpapp *self;
 /*
  * parse command line arguments
  */
-boolean 
-helpapp__ParseArgs(self, argc, argv)
-struct helpapp *self;
-int argc;
-char **argv;
+boolean helpapp__ParseArgs(struct helpapp *self, int argc, char **argv)
 {
     char *helpPath;
 
@@ -414,7 +410,7 @@ char **argv;
 	    switch((*argv)[1]){
 		case 'i':
 		    if (indexName != NULL) {
-			fprintf(stderr,"%s: only one index allowed\n",
+			fprintf(stderr,"%s: only one index allowed: %s\n",
 				helpapp_GetName(self),*argv);
 			exit(-1);
 		    }
@@ -461,9 +457,7 @@ char **argv;
     return TRUE;
 }
 
-boolean 
-helpapp__Start(self)
-struct helpapp *self;
+boolean helpapp__Start(struct helpapp *self)
 {
     char *tp;
     struct helpDir *thd, *nhd;
@@ -524,7 +518,9 @@ struct helpapp *self;
 
     DEBUG(("key: '%s' nodef: %d\n", helpKey, noDefault));
     if ((!helpKey || !(*helpKey)) && !noDefault) {
-	helpKey = (moreMode) ? NONWMDEFAULTFILE : WMDEFAULTFILE;
+	strncpy(defaultKeyBuf, (moreMode) ? NONWMDEFAULTFILE : WMDEFAULTFILE, sizeof(defaultKeyBuf) - 1);
+	defaultKeyBuf[sizeof(defaultKeyBuf) - 1] = '\0';
+	helpKey = defaultKeyBuf;
 	DEBUG(("ha: nodef: %s\n",helpKey));
     }
 
@@ -551,9 +547,7 @@ struct helpapp *self;
     return TRUE;
 }
 
-int 
-helpapp__Run(self)
-struct helpapp *self;
+int helpapp__Run(struct helpapp *self)
 {
     char tbuffer[200];
     int code;
@@ -568,17 +562,16 @@ struct helpapp *self;
 	/* couldn't get help on that item, and it wasn't because of a server,
 	   so show the default file, which we 'know' exists */
 	sprintf(tbuffer, error, WMDEFAULTFILE);
-	help_HelpappGetHelpOn(WMDEFAULTFILE, help_NEW, help_HIST_NOADD, tbuffer);
+	strncpy(defaultKeyBuf, WMDEFAULTFILE, sizeof(defaultKeyBuf) - 1);
+	defaultKeyBuf[sizeof(defaultKeyBuf) - 1] = '\0';
+	help_HelpappGetHelpOn(defaultKeyBuf, help_NEW, help_HIST_NOADD, tbuffer);
     }
     super_Run(self);
     DEBUG(("ha: OUT run\n"));
     return(0);
 }
 
-boolean 
-helpapp__InitializeObject(classID, self)
-struct classheader *classID;
-struct helpapp *self;
+boolean helpapp__InitializeObject(struct classheader *classID, struct helpapp *self)
 {
     helpapp_SetMajorVersion(self, MAJOR_VERSION);
     helpapp_SetMinorVersion(self, MINOR_VERSION);

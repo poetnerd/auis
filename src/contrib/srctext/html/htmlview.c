@@ -44,6 +44,8 @@
 
 #include <html.ih>
 #include <htmlview.eh>
+static boolean ConfirmReadOnly(struct htmlview *self, struct html *html);
+static int parse_num(struct html *html, int start, int end, int *numret);
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 256
@@ -52,18 +54,18 @@
 static struct keymap *Keymap;
 static struct menulist *Menus;
 
-void htmlview_SetTitle();
-void htmlview_SetIndex();
-void htmlview_SetLink();
-void htmlview_EditAttributes();
-void htmlview_unlistify();
+void htmlview_SetTitle(struct htmlview *self, long key);
+void htmlview_SetIndex(struct htmlview *self, long key);
+void htmlview_SetLink(struct htmlview *self, long key);
+void htmlview_EditAttributes(struct htmlview *self, long key);
+void htmlview_unlistify(struct htmlview *self, long key);
 void htmlview_itemize();
-void htmlview_AddRandom();
-void htmlview_AddImage();
-void htmlview_AddHrule();
-void htmlview_makeList();
-void htmlview_SetImage();
-void htmlview_modifyList();
+void htmlview_AddRandom(struct htmlview *self, long key);
+void htmlview_AddImage(struct htmlview *self, long key);
+void htmlview_AddHrule(struct htmlview *self, long key);
+void htmlview_makeList(struct htmlview *self, char *listStyleName);
+void htmlview_SetImage(struct htmlview *self, long key);
+void htmlview_modifyList(struct htmlview *self, long key);
 
 static char* bulletChars = "*+";
 
@@ -85,9 +87,7 @@ static struct bind_Description htmlBindings[]={
 };
 
 /* Added friendly read-only behavior from txtvcmds.c */
-static boolean ConfirmReadOnly(self, html)
-struct htmlview *self;
-struct html* html;
+static boolean ConfirmReadOnly(struct htmlview *self, struct html *html)
 {
     if (html_GetReadOnly(html)) {
         message_DisplayString(self, 0,
@@ -97,9 +97,7 @@ struct html* html;
         return FALSE;
 }
 
-boolean 
-htmlview__InitializeClass(classID)
-struct classheader *classID;
+boolean htmlview__InitializeClass(struct classheader *classID)
 {
     Menus  = menulist_New();
     Keymap = keymap_New();
@@ -109,10 +107,7 @@ struct classheader *classID;
 }
 
 
-boolean 
-htmlview__InitializeObject(classID, self)
-struct classheader *classID;
-struct htmlview *self;
+boolean htmlview__InitializeObject(struct classheader *classID, struct htmlview *self)
 {
     self->kstate = keystate_Create(self, Keymap);
     self->menus = menulist_DuplicateML(Menus, self);
@@ -120,29 +115,20 @@ struct htmlview *self;
     return TRUE;
 }
 
-void 
-htmlview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct htmlview *self;
+void htmlview__FinalizeObject(struct classheader *classID, struct htmlview *self)
 {
     keystate_Destroy(self->kstate);
     menulist_Destroy(self->menus);
 }
 
-void
-htmlview__PostKeyState(self, keystate)
-struct htmlview* self;
-struct keystate* keystate;
+void htmlview__PostKeyState(struct htmlview *self, struct keystate *keystate)
 {
     self->kstate->next = NULL;
     keystate_AddBefore(self->kstate, keystate);
     super_PostKeyState(self, self->kstate);
 }
 
-void
-htmlview__PostMenus(self, menulist)
-struct htmlview* self;
-struct menulist* menulist;
+void htmlview__PostMenus(struct htmlview *self, struct menulist *menulist)
 {
     menulist_ClearChain(self->menus);
 
@@ -153,10 +139,7 @@ struct menulist* menulist;
     super_PostMenus(self, self->menus);
 }
 
-void
-htmlview_SetTitle(self, key)
-struct htmlview* self;
-long key;
+void htmlview_SetTitle(struct htmlview *self, long key)
 {
     char reply[80];
     struct html* h = (struct html*) self->header.view.dataobject;
@@ -168,10 +151,7 @@ long key;
     message_DisplayString(self, 0, "Done.");
 }
 
-void
-htmlview_SetIndex(self, key)
-struct htmlview* self;
-long key;
+void htmlview_SetIndex(struct htmlview *self, long key)
 {
     char reply[80];
     struct html* h = (struct html*) self->header.view.dataobject;
@@ -184,10 +164,7 @@ long key;
     message_DisplayString(self, 0, "Done.");
 }
 
-void
-htmlview_SetLink(self, key)
-struct htmlview* self;
-long key;
+void htmlview_SetLink(struct htmlview *self, long key)
 {
     long pos, len;
     struct html* html = (struct html*) self->header.view.dataobject;
@@ -208,13 +185,7 @@ long key;
     html_AddLink(html, pos, len, uri);
 }
 
-struct view*
-htmlview__Hit(self, action, x, y, numberOfClicks)
-struct htmlview* self;
-enum view_MouseAction action;
-long x;
-long y;
-long numberOfClicks;
+struct view* htmlview__Hit(struct htmlview *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     struct html* html = (struct html*) self->header.view.dataobject;
     long pos, len;
@@ -243,10 +214,7 @@ char* editOptions[] = {
     0
 };
 
-void
-htmlview_EditAttributes(self, key)
-struct htmlview* self;
-long key;
+void htmlview_EditAttributes(struct htmlview *self, long key)
 {
     long pos, len;
     struct html* html = (struct html*) self->header.view.dataobject;
@@ -340,10 +308,7 @@ long key;
 }
 
 
-void
-htmlview_AddRandom(self, key)
-struct htmlview* self;
-long key;
+void htmlview_AddRandom(struct htmlview *self, long key)
 {
     struct html* html = (struct html *)self->header.view.dataobject;
     char ename[MAXPATHLEN];
@@ -364,10 +329,7 @@ long key;
     html_AddEntity(html, pos, len, ename, 0);
 }
 
-void
-htmlview_AddImage(self, key)
-struct htmlview* self;
-long key;
+void htmlview_AddImage(struct htmlview *self, long key)
 {
     struct html* html = (struct html *)self->header.view.dataobject;
     struct environment* env;
@@ -386,10 +348,7 @@ long key;
     html_AddEntity(html, pos, 1L, "img", vars);
 }
 
-void
-htmlview_SetImage(self, key)
-struct htmlview* self;
-long key;
+void htmlview_SetImage(struct htmlview *self, long key)
 {
     struct html* html = (struct html *)self->header.view.dataobject;
     long pos = htmlview_GetDotPosition(self);
@@ -397,7 +356,7 @@ long key;
 
     printf("in SetImage()\n");
     if (!self->styleInQuestion) {
-	message_DisplayString(self, "This callback should be used only when editing attributes", 0);
+	message_DisplayString(self, 0, "This callback should be used only when editing attributes");
 	return;
     }
     printf("Getting attribute\n");
@@ -407,13 +366,10 @@ long key;
 
     /* Find the image here and tell it to load using the new src. */
     /* XXX: Not yet Implemented */
-    message_DisplayString(self, "Sorry, image updates not yet implemented", 0);
+    message_DisplayString(self, 0, "Sorry, image updates not yet implemented");
 }
 
-void
-htmlview_AddHrule(self, key)
-struct htmlview* self;
-long key;
+void htmlview_AddHrule(struct htmlview *self, long key)
 {
     struct html* html = (struct html*) self->header.view.dataobject;
     long pos = htmlview_GetDotPosition(self);
@@ -433,9 +389,7 @@ long key;
  * returned as zero
  * signifying that this number is to be ignored.
  */
-static int parse_num (html, start, end, numret)
-struct html *html;
-int start, end, *numret;
+static int parse_num(struct html *html, int start, int end, int *numret)
 {
     int cur_num = 0, count = 0;
     long cur;
@@ -457,12 +411,7 @@ int start, end, *numret;
 }
 
 
-int
-checkEnumerate(html, pos, end, the_number)
-struct html* html;
-long pos;
-long end;
-int* the_number;
+int checkEnumerate(struct html *html, long pos, long end, int *the_number)
 {
     int num;
     if (parse_num(html, pos, end, &num) > 0) {
@@ -474,9 +423,7 @@ int* the_number;
 }
 
 
-char*
-stringEnumerate(the_number)
-int* the_number; /* datum1 */
+char* stringEnumerate(int *the_number)
 {
     static char numstring[16];
     sprintf(numstring, "%d.\t", *the_number);
@@ -488,12 +435,7 @@ int* the_number; /* datum1 */
  * beginning of the list (i.e., we're redoing the numbers),
  * then we should check the number is correct and fix it if not
  */
-int
-lineEnumerate(html, pos, end, the_number) 
-struct html* html;
-long* pos;
-long* end;
-int* the_number;	 
+int lineEnumerate(struct html *html, long *pos, long *end, int *the_number)
 {
     int count;
     int newnum;
@@ -518,12 +460,7 @@ int* the_number;
     }
 }
 
-int
-checkBullet(html, pos, end, datum)
-struct html* html;
-long pos;
-long end;
-int* datum;
+int checkBullet(struct html *html, long pos, long end, int *datum)
 {
     if (strchr(bulletChars, html_GetChar(html, pos))) {
 	return 1;
@@ -534,47 +471,28 @@ int* datum;
 
 
 
-char*
-stringBullet(datum)
-int* datum;
+char* stringBullet(int *datum)
 {
     return "*\t";
 }
 
-int
-lineBullet(html, pos, end, datum)
-struct html* html;
-long* pos;
-long* end;
-int* datum;
+int lineBullet(struct html *html, long *pos, long *end, int *datum)
 {
     return checkBullet(html, *pos, *end, datum);
 }
 
-int
-checkGlossary(html, pos, end, datum)
-struct html* html;
-long pos;
-long end;
-int* datum;
+int checkGlossary(struct html *html, long pos, long end, int *datum)
 {
     /* Need to check if the line has a glossary term at this point. */
     return 0;
 }
 
-char*
-stringGlossary(html, pos, end, datum)
-int* datum;
+char* stringGlossary(int html, int pos, int end, int *datum)
 {
     return "";
 }
 
-int
-lineGlossary(html, pos, end, datum)
-struct html* html;
-long* pos;
-long* end;
-int* datum;
+int lineGlossary(struct html *html, long *pos, long *end, int *datum)
 {
     return 0;
 }
@@ -594,10 +512,7 @@ struct listCompileTable {
     { 0 }
 };
 
-void 
-htmlview_makeList (self, listStyleName)
-struct htmlview *self;
-char* listStyleName;
+void htmlview_makeList(struct htmlview *self, char *listStyleName)
 {
     struct html* html = (struct html *)self->header.view.dataobject;
     struct text_statevector sv;
@@ -740,9 +655,7 @@ char* listStyleName;
 }
 
 
-void htmlview_unlistify (self, key)
-struct htmlview *self;
-long key;
+void htmlview_unlistify(struct htmlview *self, long key)
 {
     struct html *html = (struct html *)self->header.view.dataobject;
     struct text_statevector sv;
@@ -805,15 +718,12 @@ long key;
 }
 
 
-void
-htmlview_modifyList(self, key)
-struct htmlview* self;
-long key;
+void htmlview_modifyList(struct htmlview *self, long key)
 {
     struct html *html = (struct html *)self->header.view.dataobject;
     char* ptr;
     if (!self->styleInQuestion) {
-	message_DisplayString(self, "Need to use Edit Attributes to call this", 0);
+	message_DisplayString(self, 0, "Need to use Edit Attributes to call this");
 	return;
     }
     if (ptr = html_GetAttribute(html, self->styleInQuestion, "compact")) {

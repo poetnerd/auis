@@ -36,18 +36,26 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 
 #include <andrewos.h>
 #include <big.h>
+#include <stdlib.h>
+#include <sys/stat.h>
 
-static int      GLAddEntries();
-static int      GLAddEntry();
-static int      GLGrowIfNecessary();
-static int      FindNewsgroupsAndMaybeTime();
-static void     GLDeleteRecentEntries();
-static void     GLMoveFailed();
-static void     GLSort();
-static void     GLSortAndComputeRefs();
+/* overhead/util/lib/fdplumb.c's dbg_* wrapper family; overhead/util/hdrs/
+   fdplumb.h #defines close/closedir to these but doesn't declare them. */
+extern int dbg_close(int fd), dbg_closedir(DIR *d);
 
-void	    GLInit(gl)
-GList_t	*gl;
+/* ams/libs/ms/msparse.c: no header in the tree declares it. */
+extern int MS_ParseDate(char *indate, int *year, int *month, int *day, int *hour, int *min, int *sec, int *wday, long *gtm);
+
+static int      GLAddEntries(GList_t *gl, char *dir, DIRENT_TYPE *dirent);
+static int      GLAddEntry(GList_t *gl, char *filename, char *folder, long time);
+static int      GLGrowIfNecessary(GList_t *gl);
+static int      FindNewsgroupsAndMaybeTime(int fd, char *groups, long *time, int *control);
+static void     GLDeleteRecentEntries(GList_t *gl, int num);
+static void     GLMoveFailed(char *dir, char *file);
+static void     GLSort(GListEntry_t *base, int num);
+static void     GLSortAndComputeRefs(GList_t *gl);
+
+void GLInit(GList_t *gl)
 {
     gl->num = gl->size = 0;
     gl->entries = (GListEntry_t *) NULL;
@@ -57,9 +65,7 @@ GList_t	*gl;
 ** or a negative error code
 */
 
-int	     GLBuildList(gl, dir)
-GList_t	*gl;
-char	   *dir;
+int GLBuildList(GList_t *gl, char *dir)
 {
     DIR	    *dp, *opendir();
     DIRENT_TYPE  *dirent, *readdir();
@@ -79,10 +85,7 @@ char	   *dir;
     return (gl->num - startNum);
 }
 
-static int      GLAddEntries(gl, dir, dirent)
-GList_t	*gl;
-char	   *dir;
-DIRENT_TYPE  *dirent;
+static int GLAddEntries(GList_t *gl, char *dir, DIRENT_TYPE *dirent)
 {
     int	     fd, dirNameLen = strlen(dir), added = 0;
     int      control, delayentry, delaygroup;
@@ -162,10 +165,7 @@ DIRENT_TYPE  *dirent;
     return (TRUE);
 }
 
-static int      GLAddEntry(gl, filename, folder, time)
-GList_t	*gl;
-char	   *filename, *folder;
-long	    time;
+static int GLAddEntry(GList_t *gl, char *filename, char *folder, long time)
 {
     char	   *filenameBuf, *folderBuf;
 
@@ -189,8 +189,7 @@ long	    time;
     return (TRUE);
 }
 
-static int      GLGrowIfNecessary(gl)
-GList_t	*gl;
+static int GLGrowIfNecessary(GList_t *gl)
 {
     GListEntry_t   *tmp;
 
@@ -214,15 +213,12 @@ GList_t	*gl;
     return (TRUE);
 }
 
-static void     GLDeleteRecentEntries(gl, num)
-GList_t	*gl;
-int	     num;
+static void GLDeleteRecentEntries(GList_t *gl, int num)
 {
     gl->num -= num;
 }
 
-static void     GLSortAndComputeRefs(gl)
-GList_t	*gl;
+static void GLSortAndComputeRefs(GList_t *gl)
 {
     char	   *currentFile = NULL;
     int	     i, j, numRefs = 0;
@@ -258,15 +254,12 @@ GList_t	*gl;
     GLSort(gl->entries, gl->num);
 }
 
-static void     GLSort(base, num)
-GListEntry_t   *base;
-int	     num;
+static void GLSort(GListEntry_t *base, int num)
 {
     qsort(base, num, sizeof(GListEntry_t), GLECompare);
 }
 
-void	    GLPurge(gl)
-GList_t	*gl;
+void GLPurge(GList_t *gl)
 {
     if (gl->size)
 	free(gl->entries);
@@ -274,8 +267,7 @@ GList_t	*gl;
     gl->entries = NULL;
 }
 
-static void    GLMoveFailed(dir, file)
-char *dir, *file;
+static void GLMoveFailed(char *dir, char *file)
 {
     char moveFrom[MAXPATHLEN + 1], moveTo[MAXPATHLEN + 1];
 
@@ -305,11 +297,7 @@ char *dir, *file;
 ** with a non-zero value.
 */
 
-static int      FindNewsgroupsAndMaybeTime(fd, groups, time, control)
-int	     fd;
-char	   *groups;
-long	   *time;
-int        *control;
+static int FindNewsgroupsAndMaybeTime(int fd, char *groups, long *time, int *control)
 {
     int	     foundNewsgroups = FALSE, foundTime = FALSE, looking = TRUE, numToRead = FILECHUNKSIZE, foo;
     char	    buffer[FILECHUNKSIZE + 1], *startPtr, *endPtr, *bufPtr = buffer;
@@ -369,15 +357,12 @@ int        *control;
     return (foundNewsgroups);
 }
 
-int	     GLGetNum(gl)
-GList_t	*gl;
+int GLGetNum(GList_t *gl)
 {
     return (gl->num);
 }
 
-GListEntry_t   *GLGetEntry(gl, i)
-GList_t	*gl;
-int	     i;
+GListEntry_t * GLGetEntry(GList_t *gl, int i)
 {
     return (&(gl->entries[i]));
 }
@@ -387,9 +372,7 @@ int	     i;
 ** to the "Failed" directory.
 */
 
-void	    GLIgnore(gl, filename, dir)
-GList_t	*gl;
-char	   *filename, *dir;
+void GLIgnore(GList_t *gl, char *filename, char *dir)
 {
     int	     i;
 

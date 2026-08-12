@@ -39,6 +39,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  */
 #include "tiffioP.h"
 #include "prototypes.h"
+#include <stdlib.h>
 
 #ifndef TRUE
 #define	TRUE	1
@@ -274,7 +275,7 @@ const int tiffDataWidth[] = {
 };
 
 TIFFFieldInfo const *
-DECLARE2(TIFFFindFieldInfo, u_short, tag, TIFFDataType, dt)
+TIFFFindFieldInfo(u_short tag, TIFFDataType dt)
 {
 	static TIFFFieldInfo const *last = NULL;
 	register TIFFFieldInfo const *fip;
@@ -291,7 +292,7 @@ DECLARE2(TIFFFindFieldInfo, u_short, tag, TIFFDataType, dt)
 }
 
 TIFFFieldInfo const *
-DECLARE1(TIFFFieldWithTag, u_short, tag)
+TIFFFieldWithTag(u_short tag)
 {
 	TIFFFieldInfo const *fip = TIFFFindFieldInfo(tag, TIFF_ANY);
 	if (fip)

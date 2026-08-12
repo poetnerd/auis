@@ -49,8 +49,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 static struct keymap *mailobjv_standardkeymap;
 static struct menulist *mailobjv_standardmenulist;
 
-void ChangeContents(self)
-struct mailobjv *self;
+void ChangeContents(struct mailobjv *self)
 {
     char ctype[300], fname[1000], Label[200];
     FILE *fp;
@@ -83,8 +82,7 @@ static struct bind_Description mailobjv_standardbindings [] = {
     {NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL},
 };
 
-boolean mailobjv__InitializeClass(c) 
-struct classheader *c;
+boolean mailobjv__InitializeClass(struct classheader *c)
 {
     mailobjv_standardmenulist = menulist_New();
     mailobjv_standardkeymap = keymap_New();
@@ -92,46 +90,34 @@ struct classheader *c;
     return(TRUE);
 }
 
-void
-mailobjv__PostKeyState(self, ks)
-struct mailobjv *self;
-struct keystate *ks;
+void mailobjv__PostKeyState(struct mailobjv *self, struct keystate *ks)
 {
     if (!ks) return;
     keystate_AddBefore(self->mykeys, ks);
     super_PostKeyState(self, self->mykeys);
 }
 
-void mailobjv__PostMenus(self, ml)
-struct mailobjv *self;
-struct menulist *ml;
+void mailobjv__PostMenus(struct mailobjv *self, struct menulist *ml)
 {
     menulist_ClearChain(self->mymenulist);
     if (ml) menulist_ChainAfterML(self->mymenulist, ml, ml);
     super_PostMenus(self, self->mymenulist);
 }
 
-boolean mailobjv__InitializeObject(c, self)
-struct classheader *c;
-struct mailobjv *self;
+boolean mailobjv__InitializeObject(struct classheader *c, struct mailobjv *self)
 {
     self->mykeys = keystate_Create(self, mailobjv_standardkeymap);
     self->mymenulist = menulist_DuplicateML(mailobjv_standardmenulist, self);
     return(TRUE);
 }
 
-void mailobjv__FinalizeObject(c, self)
-struct classheader *c;
-struct mailobjv *self;
+void mailobjv__FinalizeObject(struct classheader *c, struct mailobjv *self)
 {
     menulist_Destroy(self->mymenulist);
     keystate_Destroy(self->mykeys);
 }
 
-boolean mailobjv__Touch(self, ind, action)
-struct mailobjv *self;
-int ind;
-enum view_MouseAction action;
+boolean mailobjv__Touch(struct mailobjv *self, int ind, enum view_MouseAction action)
 {
     struct mailobj *mo;
 

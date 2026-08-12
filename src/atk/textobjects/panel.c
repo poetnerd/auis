@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #endif
 
 #include <class.h>
+#include <string.h>
 
 #include <cursor.ih>
 #include <envrment.ih>
@@ -50,6 +51,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <message.ih>
 
 #include <panel.eh>
+static void AddLabels(struct panel *self);
+static void ClearHighlight(struct panel *self);
+static void DestroyKeyList(struct key_Entry *ke);
+static void DestroyPanelList(struct panel_Entry *pe);
+static void KeyDispatch(struct panel *self, long rock);
+static void ProcNext(long rock, struct panel *self, char c);
+static void ProcPrev(long rock, struct panel *self, char c);
+static void SelectAtPos(struct panel *self, long pos);
+static void SetupHighlight(struct panel *self, struct panel_Entry *entry);
 
 static struct keymap *classKeymap;
 static struct style *defaultHighlightStyle;
@@ -61,8 +71,7 @@ static char defaultIcon;
  * Statics
  */
 
-static void DestroyPanelList(pe)
-register struct panel_Entry *pe;
+static void DestroyPanelList(struct panel_Entry *pe)
 {
     while (pe != NULL) {
         register struct panel_Entry *ne;
@@ -72,8 +81,7 @@ register struct panel_Entry *pe;
     }
 }
 
-static void DestroyKeyList(ke)
-register struct key_Entry *ke;
+static void DestroyKeyList(struct key_Entry *ke)
 {
     while (ke != NULL) {
         register struct key_Entry *ne;
@@ -83,8 +91,7 @@ register struct key_Entry *ke;
     }
 }
 
-static void ClearHighlight(self)
-register struct panel *self;
+static void ClearHighlight(struct panel *self)
 {
     register long pos, len;
 
@@ -101,9 +108,7 @@ register struct panel *self;
     self->highlightEntry = NULL;
 }
 
-static void SetupHighlight(self, entry)
-register struct panel *self;
-struct panel_Entry *entry;
+static void SetupHighlight(struct panel *self, struct panel_Entry *entry)
 {
     self->highlightEnv =
       text_AddStyle(self->text,
@@ -113,9 +118,7 @@ struct panel_Entry *entry;
     self->highlightEntry = entry;
 }
 
-static void SelectAtPos(self, pos)
-struct panel *self;
-long pos;
+static void SelectAtPos(struct panel *self, long pos)
 {
     register struct panel_Entry *pe;
 
@@ -139,9 +142,7 @@ long pos;
 	(*self->handler)(self->globalTag, pe->tag, self);
 }
 
-static void KeyDispatch(self, rock)
-struct panel *self;
-long rock;
+static void KeyDispatch(struct panel *self, long rock)
 {
     struct key_Entry *k = self->keyList;
     char c = (char) rock;
@@ -158,18 +159,12 @@ long rock;
     (*k->proc)(k->rock, self, c);
 }
 
-static void ProcNext(rock, self, c)
-long rock;
-struct panel *self;
-char c;
+static void ProcNext(long rock, struct panel *self, char c)
 {
     panel_SelectNext(self);
 }
 
-static void ProcPrev(rock, self, c)
-long rock;
-struct panel *self;
-char c;
+static void ProcPrev(long rock, struct panel *self, char c)
 {
     panel_SelectPrevious(self);
 }
@@ -178,8 +173,7 @@ char c;
  * Class Procedures
  */
 
-boolean panel__InitializeClass(classID)
-struct classheader *classID;
+boolean panel__InitializeClass(struct classheader *classID)
 {
     defaultHighlightStyle = style_New();
     style_AddNewFontFace(defaultHighlightStyle, fontdesc_Bold);
@@ -187,8 +181,8 @@ struct classheader *classID;
     defaultOverallStyle = style_New();
     style_SetJustification(defaultOverallStyle, style_LeftJustified);
     style_SetFontSize(defaultOverallStyle, style_ConstantFontSize, 10);
-    style_SetNewLeftMargin(defaultOverallStyle, style_LeftMargin,             16384, style_Inches);
-    style_SetNewIndentation(defaultOverallStyle, style_LeftEdge,             -16384, style_Inches);
+    style_SetNewLeftMargin(defaultOverallStyle, style_LeftMargin,             (long)16384, style_Inches);
+    style_SetNewIndentation(defaultOverallStyle, style_LeftEdge,             (long)-16384, style_Inches);
 
     defaultIconFont = fontdesc_Create("icon", fontdesc_Plain, 12);
     defaultIcon = 'R';
@@ -200,7 +194,7 @@ struct classheader *classID;
         unsigned char s[2];
 
         pte = proctable_DefineProc("key-dispatch",
-          KeyDispatch, &panel_classinfo, NULL, NULL);
+          (procedure) KeyDispatch, &panel_classinfo, NULL, NULL);
 
         s[1] = '\0';
         for (s[0] = '\0'; s[0] < 128; s[0]++)
@@ -210,9 +204,7 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean panel__InitializeObject(classID, self)
-struct classheader *classID;
-register struct panel *self;
+boolean panel__InitializeObject(struct classheader *classID, struct panel *self)
 {
     struct style *newover=style_New();
     if(newover && defaultOverallStyle) style_Copy(defaultOverallStyle, newover);
@@ -233,23 +225,21 @@ register struct panel *self;
     panel_SetBorder(self, 5, 5);
     if(newover) panel_SetDefaultStyle(self, newover);
 
-    panel_AssignKey(self, 'P' - 64, ProcPrev, 0);
-    panel_AssignKey(self, 'P', ProcPrev, 0);
-    panel_AssignKey(self, 'p', ProcPrev, 0);
-    panel_AssignKey(self, 'B', ProcPrev, 0);
-    panel_AssignKey(self, 'b', ProcPrev, 0);
-    panel_AssignKey(self, 'N' - 64, ProcNext, 0);
-    panel_AssignKey(self, 'N', ProcNext, 0);
-    panel_AssignKey(self, 'n', ProcNext, 0);
-    panel_AssignKey(self, 'F', ProcNext, 0);
-    panel_AssignKey(self, 'f', ProcNext, 0);
+    panel_AssignKey(self, 'P' - 64, (void (*)()) ProcPrev, 0);
+    panel_AssignKey(self, 'P', (void (*)()) ProcPrev, 0);
+    panel_AssignKey(self, 'p', (void (*)()) ProcPrev, 0);
+    panel_AssignKey(self, 'B', (void (*)()) ProcPrev, 0);
+    panel_AssignKey(self, 'b', (void (*)()) ProcPrev, 0);
+    panel_AssignKey(self, 'N' - 64, (void (*)()) ProcNext, 0);
+    panel_AssignKey(self, 'N', (void (*)()) ProcNext, 0);
+    panel_AssignKey(self, 'n', (void (*)()) ProcNext, 0);
+    panel_AssignKey(self, 'F', (void (*)()) ProcNext, 0);
+    panel_AssignKey(self, 'f', (void (*)()) ProcNext, 0);
 
     return TRUE;
 }
 
-void panel__FinalizeObject(ClassID, self)
-register struct classheader *ClassID;
-register struct panel *self;
+void panel__FinalizeObject(struct classheader *ClassID, struct panel *self)
 {
     ClearHighlight(self);   /* clears env */
 
@@ -265,11 +255,7 @@ register struct panel *self;
  * Methods
  */
 
-struct panel_Entry *panel__Add(self, item, tag, showNow)
-register struct panel *self;
-char *item;
-char *tag;
-int showNow;			/* make new selection visible now? */
+struct panel_Entry * panel__Add(struct panel *self, char *item, char *tag, int showNow)
 {
     register struct panel_Entry *new;
     register long len;
@@ -301,9 +287,7 @@ int showNow;			/* make new selection visible now? */
     return new;
 }
 
-void panel__Remove(self, entry)
-register struct panel *self;
-register struct panel_Entry *entry;
+void panel__Remove(struct panel *self, struct panel_Entry *entry)
 {
     register long len;
     register struct panel_Entry *pe, **le;
@@ -337,8 +321,7 @@ register struct panel_Entry *entry;
     free(entry);
 }
 
-void panel__RemoveAll(self)
-struct panel *self;
+void panel__RemoveAll(struct panel *self)
 {
     ClearHighlight(self);
     DestroyPanelList(self->panelList);
@@ -347,8 +330,7 @@ struct panel *self;
     panel_WantUpdate(self, self);
 }
 
-void panel__SelectNext(self)
-struct panel *self;
+void panel__SelectNext(struct panel *self)
 {
     long pos;
 
@@ -361,8 +343,7 @@ struct panel *self;
     SelectAtPos(self, pos);     /* Handles end of doc okay. */
 }
 
-void panel__SelectPrevious(self)
-struct panel *self;
+void panel__SelectPrevious(struct panel *self)
 {
     long pos;
 
@@ -374,16 +355,13 @@ struct panel *self;
     SelectAtPos(self, pos);     /* Handles beg. of doc okay. */
 }
 
-void panel__ClearSelection(self)
-struct panel *self;
+void panel__ClearSelection(struct panel *self)
 {
     ClearHighlight(self);
     panel_WantUpdate(self, self);
 }
 
-void panel__MakeSelection(self, entry)
-register struct panel *self;
-register struct panel_Entry *entry;
+void panel__MakeSelection(struct panel *self, struct panel_Entry *entry)
 {
     ClearHighlight(self);
 
@@ -397,11 +375,7 @@ register struct panel_Entry *entry;
     panel_WantUpdate(self, self);
 }
 
-void panel__AssignKey(self, c, proc, rock)
-struct panel *self;
-char c;
-void (*proc)();
-long rock;
+void panel__AssignKey(struct panel *self, char c, void (*proc) (), long rock)
 {
     struct key_Entry *k;
 
@@ -428,10 +402,7 @@ long rock;
  * Overrides
  */
 
-void panel__FullUpdate(self, type, x, y, w, h)
-register struct panel *self;
-enum view_UpdateType type;
-long x, y, w, h;
+void panel__FullUpdate(struct panel *self, enum view_UpdateType type, long x, long y, long w, long h)
 {
     register struct graphic *graphic;
 
@@ -442,17 +413,13 @@ long x, y, w, h;
     super_FullUpdate(self, type, x, y, w, h);
 }
 
-void panel__PostMenus(self, ml)
-struct panel *self;
-struct menulist *ml;
+void panel__PostMenus(struct panel *self, struct menulist *ml)
 {
     /* Discard child menu postings */
     super_PostMenus(self,NULL);
 }
 
-void panel__PostKeyState(self, ks)
-struct panel *self;
-struct keystate *ks;
+void panel__PostKeyState(struct panel *self, struct keystate *ks)
 {
     /* Post our own keystate, discarding keystate from child */
 
@@ -460,10 +427,7 @@ struct keystate *ks;
     view_PostKeyState(self->header.view.parent, self->keystate);
 }
 
-struct view *panel__Hit(self, action, x, y, numberOfClicks)
-register struct panel *self;
-enum view_MouseAction action;
-long x, y, numberOfClicks;
+struct view * panel__Hit(struct panel *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     super_Hit(self, action, x, y, numberOfClicks);
     SelectAtPos(self, panel_GetDotPosition(self));
@@ -472,8 +436,7 @@ long x, y, numberOfClicks;
     return (struct view *)NULL;
 }
 
-void panel__FreeAllTags(self)
-struct panel *self;
+void panel__FreeAllTags(struct panel *self)
 {
     register struct panel_Entry *e;
     register char *tag;
@@ -484,9 +447,7 @@ struct panel *self;
                 free(tag);
 }
 
-static void
-AddLabels( self )
-  struct panel		*self;
+static void AddLabels(struct panel *self)
 {
   static char		 answer[100];
 
@@ -501,10 +462,7 @@ AddLabels( self )
   }
 }
 
-void
-panel__SetDataObject( self, dataObj )
-  struct panel	    *self;
-  struct dataobject *dataObj;
+void panel__SetDataObject(struct panel *self, struct dataobject *dataObj)
 {
   struct text	    *text = NULL;
 

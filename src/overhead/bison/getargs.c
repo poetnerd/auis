@@ -22,6 +22,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "getopt.h"
 #include "andrewos.h"
 #include "files.h"
@@ -40,7 +41,7 @@ extern int fixed_outfiles;/* for -y */
 extern char *program_name;
 extern char *version_string;
 
-extern void warns();	/* main.c */
+extern void warns(char *fmt, int x1, int x2, int x3, int x4, int x5, int x6, int x7, int x8);	/* main.c */
 
 struct option longopts[] =
 {
@@ -62,9 +63,7 @@ struct option longopts[] =
   {0, 0, 0, 0}
 };
 
-void
-usage (stream)
-     FILE *stream;
+void usage(FILE *stream)
 {
   fprintf (stream, "\
 Usage: %s [-dhklntvyV] [-b file-prefix] [-o outfile] [-p name-prefix]\n\
@@ -76,10 +75,7 @@ Usage: %s [-dhklntvyV] [-b file-prefix] [-o outfile] [-p name-prefix]\n\
 	   program_name);
 }
 
-void
-getargs(argc, argv)
-     int argc;
-     char *argv[];
+void getargs(int argc, char *argv[])
 {
   register int c;
 

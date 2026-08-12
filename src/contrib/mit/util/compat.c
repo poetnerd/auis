@@ -73,6 +73,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <txtstvec.h>
 
 #include <compat.eh>
+static void AddDefaultTpl(struct textview *self, long l);
+static boolean ConfirmReadOnly(struct textview *self, struct text *txt);
+static void denumerate(struct textview *self, long key);
+static void do_insert(struct textview *self, char *typename, boolean nl_flag);
+static void enumerate(struct textview *self, long key);
+static void gcparafill(struct textview *self, long key);
+static void insert(struct textview *self, char *typename);
+static void insertBullets(struct textview *self, long key);
+static void insert_no_nl(struct textview *self, char *typename);
+static int is_itemp(struct text *txt, int start, int end);
+static int parse_num(struct text *txt, int start, int end, int *numret);
+static void removeBullets(struct textview *self, long key);
 
 #define DIALOG 100
 #define MESSAGE 0
@@ -83,9 +95,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 
 /* Added friendly read-only behavior from txtvcmds.c */
 
-static boolean ConfirmReadOnly(self, txt)
-struct textview *self;
-struct text *txt;
+static boolean ConfirmReadOnly(struct textview *self, struct text *txt)
 {
     if (text_GetReadOnly(txt)) {
         message_DisplayString(self, 0,
@@ -102,9 +112,7 @@ struct text *txt;
 /* unless we are at the end of the buffer, in which case */
 /* we point at the end of the buffer even though it be whitespace */
 
-int back_to_start (txt, pos)
-struct text *txt;
-int pos;
+int back_to_start(struct text *txt, int pos)
 {
     int cur;
 
@@ -143,9 +151,7 @@ int pos;
 /*   they will be followed by at least two blanks. */
 /*  (Same if followed by quote or right parenthesis.) */
 
-static void gcparafill (self, key)
-struct textview *self;
-long key;
+static void gcparafill(struct textview *self, long key)
 {
     struct text *txt = (struct text *)self->header.view.dataobject;
     int pos, len, cur, npos, count, nextc, end;
@@ -290,9 +296,7 @@ long key;
  * might have done plainest before discovering de-itemize.
  */
 
-static int is_itemp (txt, start, end)
-struct text *txt;
-int start, end;
+static int is_itemp(struct text *txt, int start, int end)
 {
     long c;
 
@@ -312,9 +316,7 @@ int start, end;
  * paragraph
  */
 
-static void insertBullets (self, key)
-struct textview *self;
-long key;
+static void insertBullets(struct textview *self, long key)
 {
     struct text *txt = (struct text *)self->header.view.dataobject;
     struct style *style;
@@ -393,9 +395,7 @@ long key;
     }
 }
 
-static void removeBullets (self, key)
-struct textview *self;
-long key;
+static void removeBullets(struct textview *self, long key)
 {
     struct text *txt = (struct text *)self->header.view.dataobject;
     struct text_statevector sv;
@@ -466,9 +466,7 @@ long key;
  * signifying that this number is to be ignored.
  */
 
-static int parse_num (txt, start, end, numret)
-struct text *txt;
-int start, end, *numret;
+static int parse_num(struct text *txt, int start, int end, int *numret)
 {
     int cur_num = 0, count = 0;
     long cur;
@@ -497,9 +495,7 @@ int start, end, *numret;
  * The tricky part is deciding how to sequence the numbers.
  */
 
-static void enumerate (self, key)
-struct textview *self;
-long key;
+static void enumerate(struct textview *self, long key)
 {
     struct text *txt = (struct text *)self->header.view.dataobject;
     struct text_statevector sv;
@@ -619,9 +615,7 @@ long key;
     }
 }
 
-static void denumerate (self, key)
-struct textview *self;
-long key;
+static void denumerate(struct textview *self, long key)
 {
     struct text *txt = (struct text *)self->header.view.dataobject;
     struct text_statevector sv;
@@ -693,11 +687,7 @@ long key;
  * The flag is true if we should make sure there are newlines around the inset.
  */
 
-static void
-do_insert(self,typename, nl_flag)
-struct textview *self;
-char *typename;
-boolean nl_flag;
+static void do_insert(struct textview *self, char *typename, boolean nl_flag)
 {
     struct text *txt;
     char buf[80];
@@ -752,26 +742,17 @@ boolean nl_flag;
     text_NotifyObservers(txt, 0);
 }
 
-static void
-insert(self,typename)
-struct textview *self;
-char *typename;
+static void insert(struct textview *self, char *typename)
 {
     do_insert (self, typename, TRUE);
 }
 
-static void
-insert_no_nl(self,typename)
-struct textview *self;
-char *typename;
+static void insert_no_nl(struct textview *self, char *typename)
 {
     do_insert (self, typename, FALSE);
 }
 
-static void
-AddDefaultTpl(self, l)
-struct textview *self;
-long l;
+static void AddDefaultTpl(struct textview *self, long l)
 {
     struct text *txt;
 
@@ -791,8 +772,7 @@ long l;
 
 
 
-boolean gnucompat__InitializeClass(classID)
-struct classheader *classID;
+boolean gnucompat__InitializeClass(struct classheader *classID)
 {
     static struct bind_Description compat_fns[] = {
 	{"gnucompat-fill-para", NULL, 0, NULL, 0, 0, gcparafill, "Fill Paragraph.", "gnucompat"},

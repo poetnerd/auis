@@ -48,6 +48,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
  */
 #include <stdio.h>
 
+#include <andrewos.h> /* strings.h */
 #include <class.h>
 #include <rasterio.eh>
 #include <pixelimg.ih>
@@ -90,12 +91,7 @@ static unsigned char hex[16] = {
 		usually have about fifteen bytes.  Column entries can be longer
 		if long runs of similar bytes are encountered.
 */
-	void
-rasterio__WriteRow(ClassID, file, byteaddr, nbytes)
-	struct classhdr *ClassID;
-	FILE *file;
-	unsigned char *byteaddr;
-	long nbytes;
+void rasterio__WriteRow(struct classheader *ClassID, FILE *file, unsigned char *byteaddr, long nbytes)
 {
 	unsigned char curbyte;	/* byte enqueued for output */
 	unsigned char c;		/* incoming byte */
@@ -191,12 +187,7 @@ rasterio__WriteRow(ClassID, file, byteaddr, nbytes)
 #define case6(v) case4(v): case ((v)+4): case ((v)+5)
 #define case8(v) case4(v): case4((v)+4)
 
-	long
-rasterio__ReadRow(ClassID, file, row, length)
-	struct classhdr *ClassID;
-	register FILE *file;		/* where to get them from */
-	register unsigned char *row;	/* where to put bytes */
-	register long length;	/* how many bytes in row must be filled */
+long rasterio__ReadRow(struct classheader *ClassID, FILE *file, unsigned char *row, long length)
 {
 	/* Each input character is processed by the central loop.  There are 
 		some input codes which require two or three characters for completion; 
@@ -211,7 +202,7 @@ rasterio__ReadRow(ClassID, file, row, length)
 			RepeatAndDigit};	/* have seen repeat code and its first
 					following digit */
 	enum stateCode InputState;	/* current state */
-	register c;		/* the current input character */
+	register int c;		/* the current input character */
 	register long repeatcount = 0;	/* current repeat value */
 	register long hexval;	/* current hex value */
 	long pendinghex = 0;		/* the first of a pair of hex characters */
@@ -351,11 +342,7 @@ store:
 	Read a raster image from 'file' and put it in 'pix' 
 		return error code
 */
-	long
-rasterio__ReadImage(ClassID, file, pix)
-	struct classhdr *ClassID;
-	register FILE *file;			/* where to get bits from */
-	register struct pixelimage *pix;	/* where to put them */
+long rasterio__ReadImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix)
 {
 	register unsigned char *byteaddr;	/* where to store next row */
 	register long row, W, nbytesfromfile;	/* count rows;  byte length of row */
@@ -371,13 +358,13 @@ rasterio__ReadImage(ClassID, file, pix)
 				|| getc(file) != '}' || getc(file) != '\n') 
 		return dataobject_NOTBE2DATASTREAM;
 
-	fscanf(file, " %d ", &version);
+	fscanf(file, " %ld ", &version);
 	if (version < 2) 
 		return dataobject_BADFORMAT;
 
 	/* ignore all these features: */
-	fscanf(file, " %u %ld %ld %ld %ld %ld %ld",  
-		&options, &xscale, &yscale, &xoffset, 
+	fscanf(file, " %ld %ld %ld %ld %ld %ld %ld",
+		&options, &xscale, &yscale, &xoffset,
 		&yoffset, &subwidth, &subheight);
 
 	/* scan to end of line in case this is actually something beyond V2 */
@@ -388,7 +375,7 @@ rasterio__ReadImage(ClassID, file, pix)
 	if (strcmp(keyword, "bits") != 0)
 		return dataobject_BADFORMAT;
 
-	fscanf(file, " %d %d %d ", &objectid, &width, &height);
+	fscanf(file, " %ld %ld %ld ", &objectid, &width, &height);
 
 	if (width < 1 || height < 1 || width > 1000000 || height > 1000000) 
 		return dataobject_BADFORMAT;
@@ -411,7 +398,7 @@ rasterio__ReadImage(ClassID, file, pix)
 
 	while (! feof(file) && getc(file) != '\\') {};	/* scan for \enddata */
 	if (result == dataobject_NOREADERROR &&
-			fscanf(file, "enddata{raster,%d", &discardid) != 1
+			fscanf(file, "enddata{raster,%ld", &discardid) != 1
 				|| getc(file) != '}' || getc(file) != '\n') 
 		result = dataobject_MISSINGENDDATAMARKER;
 
@@ -424,12 +411,7 @@ rasterio__ReadImage(ClassID, file, pix)
 /* rasterio__WriteImage(file, pix, sub) 
 	Write a raster image from 'pix' to 'file'
 */
-	void
-rasterio__WriteImage(ClassID, file, pix, sub)
-	struct classhdr *ClassID;
-	register FILE *file;		/* where to put bits  */
-	register struct pixelimage *pix;/* where to get them from */
-	register struct rectangle *sub;
+void rasterio__WriteImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix, struct rectangle *sub)
 {
 	long left, top, width, height;
 	long buf[1000];
@@ -440,11 +422,11 @@ rasterio__WriteImage(ClassID, file, pix, sub)
 	rectangle_GetRectSize(sub, &left, &top, &width, &height);
 
 	fprintf(file, "\\begindata{raster,%d}\n", id);
-	fprintf(file, "%ld %ld %ld %ld ", RASTERVERSION, 
-			0, DEFAULTSCALE, DEFAULTSCALE);
+	fprintf(file, "%ld %ld %ld %ld ", (long)RASTERVERSION,
+			(long)0, (long)DEFAULTSCALE, (long)DEFAULTSCALE);
 	fprintf(file, "%ld %ld %ld %ld\n",
-		 0, 0, width, height);	/* subraster */
-	fprintf(file, "bits %ld %ld %ld\n", id, width, height);
+		 (long)0, (long)0, width, height);	/* subraster */
+	fprintf(file, "bits %ld %ld %ld\n", (long)id, width, height);
 
 	nbytestofile = (width+7)>>3;
 	bottom = top + height;

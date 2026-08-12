@@ -169,6 +169,11 @@ extern struct prefs_s *mb_GetPrefsForDisplay();
 extern void mb_SetItemStatus();
 extern void mb_HandleConfigure();
 extern void mb_KeyboardActivate();
+extern void mb_SetKeys();
+extern void mb_RefitMenubar();
+extern void mb_Finalize();
+extern void mb_Destroy();
+extern GetDefaultsFunction mb_SetGetDefault();
 #else
 extern struct mbinit *mb_Init();
 extern void mb_InitWindows();
@@ -182,5 +187,10 @@ extern struct prefs_s *mb_GetPrefsForDisplay();
 extern void mb_SetItemStatus();
 extern void mb_HandleConfigure();
 extern void mb_KeyboardActivate();
+extern void mb_SetKeys();
+extern void mb_RefitMenubar();
+extern void mb_Finalize();
+extern void mb_Destroy();
+extern GetDefaultsFunction mb_SetGetDefault();
 #endif
 

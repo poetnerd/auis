@@ -35,6 +35,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <sys/stat.h>
 #include <ms.h>
+#include <stdlib.h>
+extern int DeSymLink();  /* overhead/util/lib/desym.c */
+extern int abspath(char *name, char *result);
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
+
+static int RealSubsTreeWalk(FILE *outfile, char *dirname, int rootlen);
 
 /* This routine walks down a directory subtree corresponding to a message
 	directory, and prints appropriate subscription information on the
@@ -45,9 +51,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 
 
 
-SubsTreeWalk(outfile, dirname)
-FILE *outfile;
-char *dirname;
+int SubsTreeWalk(FILE *outfile, char *dirname)
 {/* Driver for the real recursive procedure, below. */
     int RC;
     char Name1[MAXPATHLEN+1], Name2[MAXPATHLEN+1];
@@ -62,10 +66,7 @@ char *dirname;
 }
 
 
-static int RealSubsTreeWalk(outfile, dirname, rootlen)
-FILE *outfile;
-char *dirname;
-int rootlen;
+static int RealSubsTreeWalk(FILE *outfile, char *dirname, int rootlen)
 {
     DIR *dirp;
     DIRENT_TYPE *dirent;

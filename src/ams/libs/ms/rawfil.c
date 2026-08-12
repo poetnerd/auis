@@ -32,8 +32,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <andyenv.h>
-#include <ms.h>
+/* andrewos.h before ms.h, matching convention elsewhere in this directory. */
 #include <andrewos.h> /* sys/file.h */
+#include <ms.h>
 #include <sys/stat.h>
 #include <pwd.h>
 #include <util.h>
@@ -41,15 +42,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <wp.h>
 #endif /* WHITEPAGES_ENV */
 #include <mailconf.h>
+#include <stdlib.h>
+extern int GetHeaderSize(int fd, int *size);
+extern int GetNameFromGecos(char *GecosField, char *LoginID, char *Domain, char **PersonalNameP);
+extern int IsOnVice(int fd);  /* overhead/util/lib/vclose.c */
+extern int NonfatalBizarreError(char *text);
+extern int RetryBodyFileName(char *FileName);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
 
 #define OLDLOCK 1200 /* 20 minutes */
 
 extern char MyMailDomain[];
 
-ReadRawFile(File, NewMessage, DoLocking)
-char *File;
-struct MS_Message *NewMessage;
-Boolean DoLocking;
+int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking)
 {
     struct stat statbuf;
 #ifdef AFS_ENV
@@ -120,7 +125,7 @@ Boolean DoLocking;
 	    if (ct >= 0) {
 		char ErrorText[200+MAXPATHLEN];
 
-		sprintf(ErrorText, "Stat of file %s said it had %d bytes, but I could only read %d bytes!", ap_Shorten(File), statbuf.st_size, ct);
+		sprintf(ErrorText, "Stat of file %s said it had %lld bytes, but I could only read %d bytes!", ap_Shorten(File), (long long)statbuf.st_size, ct);
 		NonfatalBizarreError(ErrorText);
 		errsave = EMSBADFILESIZE;
 	    }
@@ -187,8 +192,7 @@ Boolean DoLocking;
 
 #define READCHUNKSIZE (1024)
 
-GetHeaderSize(fd, size)
-int fd, *size;
+int GetHeaderSize(int fd, int *size)
 {
     int oldpos, result, looping = TRUE, NLAtEnd = FALSE;
     char buffer[1 + READCHUNKSIZE + 1];

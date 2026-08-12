@@ -21,8 +21,13 @@ WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
  ******************************************************* */
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <config.h>
 #include <patchlevel.h>
+
+struct MailcapEntry;
 
 #ifdef BORLAND
 #define F_OK 0
@@ -103,16 +108,36 @@ extern char **environ, *gets();
 #define CMDSIZE 1200 /* Maximum size of command to execute */
 
 #define LINE_BUF_SIZE       2000
-#ifndef MICROSOFT
-extern char *malloc();
-extern char *realloc();
-#endif
+extern char *AndrewDir(char *str);
 extern char *getenv();
 extern char *index();
 extern char *rindex();
+/* No header declares these; defined in sibling files in this directory */
+extern int from64(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct, int PortableNewlines), fromqp(FILE *infile, FILE *outfile, char **boundaries, int *boundaryct), fromuue(FILE *infp, FILE *outfp, char **boundaries, int *ctptr), PendingBoundary(char *s, char **Boundaries, int *BoundaryCt);
+extern int ExceptionalNewline(char *contenttype, int needsportable), DoesNeedPortableNewlines(char *ctype);
+extern int lc2strcmp(char *s1, char *s2), lc2strncmp(char *s1, char *s2, int len);
+/* Same-file forward references (defined later in this file) */
+extern int ExitWithError(char *txt), ProcessArguments(int argc, char **argv);
+extern void RestoreTtyState();
+extern int HandleMessage(char *SquirrelFile, int nestingdepth), Read822Prefix(int PrintHeads, int nestingdepth);
+extern void PauseForUser();
+extern int ProcessMailcapFiles(), SaveSquirrelFile(char *SquirrelFile);
+extern void PrepareMessage();
+extern int MkTmpFileName(char *name), TryBuiltIns(char *SquirrelFile), TranslateInputToOutput(FILE *InputFP, FILE *OutputFP, int Ecode, char *ctype);
+extern int StripTrailingSpace(char *s), RunInNewWindow(char **argv, int argc, char **SourceFileNamePtr);
+extern void usage();
+extern int CreateNewWindowPrefix(char *Prefix), ProcessMailcapFile(char *file, char *SquirrelFile);
+extern void SetUpEnvironment();
+extern int TryMailcapEntry(struct MailcapEntry mc, char *SquirrelFile), GetMailcapEntry(), CtypeMatch(char *ctype, char *pat);
+extern int PassesTest(struct MailcapEntry *mc), ExecuteMailcapEntry(struct MailcapEntry mc, char *TmpFileName, char *ThisContentType), BuildCommand();
+extern int NeedToAskBeforeExecuting(char *type), OKToRun(char *ctype, char *progname, char *label);
+extern void SaveTtyState();
+extern int strcatquoting(char *s1, char *s2), WriteTmpFile(char *fname, char *ctype), ExecuteCommand(char *cmd, int really);
+extern int maybephead(char *hdr), phead(char *s), EliminateNastyChars(char *s);
+extern int strcpynoquotes(char *t, char *f), StartRawStdin();
 char fileToDelete[MAX_FILE_NAME_SIZE];
 
-char *FindParam();
+char *FindParam(char *s);
 extern FILE *popen();
 static char *nomem = "Out of memory!";
 static char *mmversion = MM_VERSTRING;
@@ -191,14 +216,13 @@ struct NoAskItem {
 TryMailcapEntry(struct MailcapEntry mc, char *SquirrelFile);
 #endif
 
-void PrintHeader();
-void ConsumeRestOfPart();
-void ParseContentParameters();
+void PrintHeader(char *s, int ShowLeadingWhitespace);
+void ConsumeRestOfPart(FILE *outfp);
+void ParseContentParameters(char *ct);
 
-sigtype cleanup();
+void cleanup(int signum);
 
-char *Cleanse(s) /* no leading or trailing space, all lower case */
-char *s;
+char * Cleanse(char *s)
 {
     char *tmp, *news;
     
@@ -214,8 +238,7 @@ char *s;
     return(news);
 }
 
-char *UnquoteString(s)
-char *s;
+char * UnquoteString(char *s)
 {
     char *ans, *t;
 
@@ -238,9 +261,7 @@ char *s;
     return(ans);
 }
 
-sigtype
-cleanup(signum) 
-int signum;
+void cleanup(int signum)
 {
     RestoreTtyState();
 #if defined(MSDOS) || defined(AMIGA)
@@ -281,8 +302,7 @@ ResetGlobals() {
     JunkParameter = NULL;
 }
 
-void modpath(auxpath)
-char *auxpath;
+void modpath(char *auxpath)
 {
     if (auxpath && *auxpath) {
         static char *newpath = 0;
@@ -298,9 +318,7 @@ char *auxpath;
     }
 }
 
-main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     int retcode;
 
@@ -372,9 +390,7 @@ char **argv;
     exit(ProcessingErrors? -1 : retcode);
 }
 
-void
-QueueNextFile(fname)
-char *fname;
+void QueueNextFile(char *fname)
 {
     struct nextfile *tmp = (struct nextfile *) malloc(sizeof (struct nextfile));
     if (!tmp) ExitWithError(nomem);
@@ -389,10 +405,7 @@ char *fname;
     }
 }
 
-HandleMessage(SquirrelFile, nestingdepth)
-char *SquirrelFile;
-/* SquirrelFile, if non-NULL, is a place to save a recognized body instead of executing it. */
-int nestingdepth;
+int HandleMessage(char *SquirrelFile, int nestingdepth)
 {
     int FileWriteOnly = JustWriteFiles;
 
@@ -659,9 +672,7 @@ int nestingdepth;
     return(-1); /* Unrecognized, really */
 }
 
-ProcessArguments(argc, argv)
-int argc;
-char **argv;
+int ProcessArguments(int argc, char **argv)
 {
     int i, RunAsRootOK = 0;
     char *SourceFileName = NULL, *NoAskStr, *QuietStr;
@@ -929,14 +940,12 @@ char **argv;
     return(0);
 }
 
-usage() {
+void usage() {
     fprintf(stderr, "Usage:  metamail [-b] [-B] [-d] [-e] [-h] [-r] [-R] [-p]  [-P] [-x] [-y] [-z] [-c content-type] [-E content-transfer-encoding] [-f from-name] [-m mailername] [-s subject] [message-file-name]\n");
     ExitWithError(NULL);
 }
 
-RunInNewWindow(argv, argc, SourceFileNamePtr)
-char **argv, **SourceFileNamePtr;
-int argc;
+int RunInNewWindow(char **argv, int argc, char **SourceFileNamePtr)
 {
     char *FullCmd, TmpName[TMPFILE_NAME_SIZE];
     int i, createdfile=0;
@@ -1014,8 +1023,7 @@ struct MailcapEntry BuiltInsAlternative[] = {
     {"text/plain", CATTEMPLATE, NULL, 0, 1, 0, "plain text", LPRTEMPLATE},
     {NULL, NULL, NULL, 0, 0, 0}};
 
-ProcessMailcapFiles(SquirrelFile) 
-char *SquirrelFile;
+int ProcessMailcapFiles(char *SquirrelFile)
 {
     char *s, *pathcopy = NULL;
 #ifdef MICROSOFT
@@ -1070,8 +1078,7 @@ char *SquirrelFile;
 #endif /* MICROSOFT */
 }
 
-TryBuiltIns(SquirrelFile) 
-char *SquirrelFile;
+int TryBuiltIns(char *SquirrelFile)
 {
     int i;
     /* Last resort -- for sites that didn't bother putting a "text" line in their mailcap files... */
@@ -1082,8 +1089,7 @@ char *SquirrelFile;
     return(-1);
 }
 
-ProcessMailcapFile(file, SquirrelFile)
-char *file, *SquirrelFile;
+int ProcessMailcapFile(char *file, char *SquirrelFile)
 {
     struct MailcapEntry mc;
     FILE *fp = fopen(file, "r");
@@ -1109,8 +1115,7 @@ static char *ThingsToSkip[] = {
     NULL
 };
 
-char *ShortCommand(progname)
-char *progname;
+char * ShortCommand(char *progname)
 {
     int i;
     char *s, *oldprogname;
@@ -1142,9 +1147,7 @@ eatmore:
     }
 }    
 
-TryMailcapEntry(mc, SquirrelFile)
-struct MailcapEntry mc;
-char *SquirrelFile;
+int TryMailcapEntry(struct MailcapEntry mc, char *SquirrelFile)
 {
     StripTrailingSpace(mc.contenttype);
     if (DoDebug) fprintf(stderr, "Trying mailcap entry for '%s'.\n", mc.contenttype);
@@ -1165,8 +1168,7 @@ char *SquirrelFile;
     return(-1);
 }
 
-SaveSquirrelFile(SquirrelFile)
-char *SquirrelFile;
+int SaveSquirrelFile(char *SquirrelFile)
 {
     int j;
     FILE *outfp;
@@ -1178,9 +1180,9 @@ char *SquirrelFile;
     fprintf(outfp, "Content-type: %s", ContentType);
     for (j=0; j<CParamsUsed; ++j) {
         fprintf(outfp, " ; ");
-        fprintf(outfp, CParams[j]);
+        fprintf(outfp, "%s", CParams[j]);
         fprintf(outfp, " = ");
-        fprintf(outfp, CParamValues[j]);
+        fprintf(outfp, "%s", CParamValues[j]);
     }
     fprintf(outfp, "\n\n"); 
     TranslateInputToOutput(InputFP, outfp, EncodingCode, ContentType);
@@ -1190,9 +1192,7 @@ char *SquirrelFile;
     return(0);
 }
 
-ExecuteMailcapEntry(mc, TmpFileName, ThisContentType)
-char *TmpFileName, *ThisContentType;
-struct MailcapEntry mc;
+int ExecuteMailcapEntry(struct MailcapEntry mc, char *TmpFileName, char *ThisContentType)
 {
     int resultcode=0, DidExecute, UsedTmpFileName;
     struct part *PartsWritten=NULL;
@@ -1337,8 +1337,7 @@ struct MailcapEntry mc;
     return(0);
 }
 
-PassesTest(mc)
-struct MailcapEntry *mc;
+int PassesTest(struct MailcapEntry *mc)
 {
     int result;
     char *cmd, TmpFileName[TMPFILE_NAME_SIZE];
@@ -1358,9 +1357,7 @@ struct MailcapEntry *mc;
     return(!result);
 }
 
-char *
-GetCommand(s, t)
-char *s, **t;
+char * GetCommand(char *s, char **t)
 {
     char *s2;
     int quoted = 0;
@@ -1390,9 +1387,7 @@ char *s, **t;
     return(NULL);
 }	
 
-GetMailcapEntry(fp, mc)
-FILE *fp;
-struct MailcapEntry *mc;
+int GetMailcapEntry(FILE *fp, struct MailcapEntry *mc)
 {
     int rawentryalloc = 2000, len;
     char *rawentry, *s, *t, *LineBuf;
@@ -1480,16 +1475,13 @@ struct MailcapEntry *mc;
     return(1);
 }
 
-ExitWithError(txt)
-char *txt;
+int ExitWithError(char *txt)
 {
     if (txt) fprintf(stderr, "metamail: %s\n", txt);
     exit(-1);
 }
 
-char *
-FreshHeaderCopy(s)
-char *s;
+char * FreshHeaderCopy(char *s)
 {
     char *t, *newcopy;
     int len;
@@ -1507,8 +1499,7 @@ char *s;
     return(newcopy);
 }
 
-Read822Prefix(PrintHeads, nestingdepth)
-int PrintHeads, nestingdepth;
+int Read822Prefix(int PrintHeads, int nestingdepth)
 {
     int SawNewline = 1, bytes = 0, alloced = 1000, HasEncodedChars=0;
     int c, oldbytes;
@@ -1532,7 +1523,17 @@ yankagain:
         if (c == '\n') {
             if (SawNewline) break;
             SawNewline = 1;
-        } else SawNewline = 0;
+        } else if (c != '\r') {
+            /* A CRLF-terminated message (the RFC822/2822 wire format,
+               e.g. real mail mirrored in verbatim from IMAP) spells its
+               blank header/body separator "\r\n\r\n", not "\n\n" -- a
+               bare '\r' must not reset SawNewline, or that separator is
+               never recognized and this loop reads straight to EOF
+               (see ExitWithError("Could not find end of mail headers")
+               below). Same bug class already fixed in atkams/messages/
+               lib/text822.c's GetHeader(). */
+            SawNewline = 0;
+        }
         *t++ = c;
     }
     *t = 0;
@@ -1604,7 +1605,7 @@ yankagain:
     }
 }
 
-PrepareMessage() {
+void PrepareMessage() {
     int c;
 
     EncodingCode = ENCODING_NONE;
@@ -1638,7 +1639,7 @@ PrepareMessage() {
     SetUpEnvironment();  
 }
 
-SetUpEnvironment() { 
+void SetUpEnvironment() {
     int i, j, environsize;
     char **newenviron, *mailervar, *summaryvar, *ctypevar, *s;
     static char ttyenv[15], debugenv[15], *noaskenv, pagerenv[15], *quietenv, rootenv[25];
@@ -1731,9 +1732,7 @@ SetUpEnvironment() {
 
 
 #ifdef AMIGA
-int
-putenv(def)
-char *def;
+int putenv(char *def)
 {
     char *cp;
     char nameBuf[100];
@@ -1759,8 +1758,7 @@ char *def;
 }
 #endif
 
-OKToRun(ctype, progname, label)
-char *ctype, *progname, *label;
+int OKToRun(char *ctype, char *progname, char *label)
 {
     char AnsBuf[100], *s;
 
@@ -1783,8 +1781,7 @@ char *ctype, *progname, *label;
     }
 }
 
-EliminateNastyChars(s)
-char *s;
+int EliminateNastyChars(char *s)
 {
     if (s) for( ; *s ;++s) {
         if (isalnum((unsigned char) *s)) continue;
@@ -1797,8 +1794,7 @@ char *s;
     }
 }
 
-StripTrailingSpace(s)
-char *s;
+int StripTrailingSpace(char *s)
 {
     char *t = s+strlen(s) -1;
     while (isspace((unsigned char) *t) && (t >= s)) *t-- = 0;
@@ -1838,9 +1834,7 @@ void setKeyHeads()
 }
 
 /* find the first colon in a header line which appears before any spaces or control characters */
-char *
-findcolon(hdr)
-char *hdr;
+char * findcolon(char *hdr)
 {
     while (*hdr && !isspace(*hdr) && !iscntrl(*hdr))
 	if (*hdr == ':') return hdr;
@@ -1849,8 +1843,7 @@ char *hdr;
 }
 
 /* check the header given to see if it matches any in the KeyHeadList */
-maybephead(hdr)
-char *hdr;
+int maybephead(char *hdr)
 {
     char *s;
     int numkeys=0;
@@ -1883,8 +1876,7 @@ char *hdr;
 }
 
 /* This next routine prints out a mail header, and needs to deal with the new extended charset headers. */
-phead(s)
-char *s;
+int phead(char *s)
 {
     char *t = s;
 
@@ -1904,9 +1896,7 @@ char *s;
 static char PrevCharset[100] = "us-ascii";
 
 /* This is the part that actually handles the charset issues */
-void PrintHeader(s, ShowLeadingWhitespace)
-char *s;
-int ShowLeadingWhitespace;
+void PrintHeader(char *s, int ShowLeadingWhitespace)
 {
     char *charset, *encoding, *txt, *txtend, TmpFile[TMPFILE_NAME_SIZE];
     int ecode = ENCODING_NONE, CorrectedCharset = 0;
@@ -1981,7 +1971,7 @@ int ShowLeadingWhitespace;
         }
     }
     if (ecode == ENCODING_NONE) {
-        printf(txt+1);
+        printf("%s", txt+1);
     } else {
         /* What follows is REALLY bogus, but all my encoding stuff is pipe-oriented right now... */
         MkTmpFileName(TmpFile);
@@ -2016,10 +2006,7 @@ int ShowLeadingWhitespace;
     PrintHeader(txtend + 2, 0);
 }
 
-BuildCommand(Buf, controlstring, TmpFileName, UsedTmpFileName, PartsWritten)
-char *Buf, *controlstring, *TmpFileName;
-int *UsedTmpFileName;
-struct part **PartsWritten;
+int BuildCommand(char *Buf, char *controlstring, char *TmpFileName, int *UsedTmpFileName, struct part **PartsWritten)
 {
     char *from, *to, *s, *p, *tmp;
     int prefixed = 0, UsedBigFile=0, UsedLittleFiles=0, numparts=0;
@@ -2222,8 +2209,7 @@ struct part **PartsWritten;
     *to = 0;
 }
 
-strcpynoquotes(t,f)
-char *t, *f;
+int strcpynoquotes(char *t, char *f)
 {
     while (*f) {
         if (*f != '\"' && *f != '\'' && *f != '`') *t++ = *f; else *t++=' ';
@@ -2231,9 +2217,7 @@ char *t, *f;
     }
 }
 
-WriteTmpFile(fname, ctype)
-char *fname;
-char *ctype;
+int WriteTmpFile(char *fname, char *ctype)
 {
     FILE *fpout;
     int retval = 0;
@@ -2250,10 +2234,7 @@ char *ctype;
 }
 
 
-TranslateInputToOutput(InputFP, OutputFP, Ecode, ctype)
-FILE *InputFP, *OutputFP;
-int Ecode;
-char *ctype;
+int TranslateInputToOutput(FILE *InputFP, FILE *OutputFP, int Ecode, char *ctype)
 {
     int InMultipart = BoundaryCt > 0 ? 1 : 0;
 
@@ -2277,8 +2258,7 @@ char *ctype;
 #endif
 }
 
-CreateNewWindowPrefix(Prefix)
-char *Prefix;
+int CreateNewWindowPrefix(char *Prefix)
 {
     char *override = getenv("TERMINAL_CMD");
     if (override) {
@@ -2323,7 +2303,7 @@ static struct sgttyb MyTtyStateIn, MyTtyStateOut;
 #endif
 #endif
 
-SaveTtyState() {
+void SaveTtyState() {
     /* Bogus -- would like a good portable way to reset the terminal state here */
 #if !defined(AMIGA) && !defined(MSDOS)
 #ifdef SYSV
@@ -2337,7 +2317,7 @@ SaveTtyState() {
 #endif
 }
 
-RestoreTtyState() {
+void RestoreTtyState() {
 #if !defined(AMIGA) && !defined(MSDOS)
 #ifdef SYSV
     if (HasSavedTtyState) {
@@ -2353,8 +2333,7 @@ RestoreTtyState() {
 #endif
 }
 
-NeedToAskBeforeExecuting(type)
-char *type;
+int NeedToAskBeforeExecuting(char *type)
 {
     struct NoAskItem *nai;
     if (!MightAskBeforeExecuting || DoInBackground) return(0);
@@ -2364,8 +2343,7 @@ char *type;
     return(1);
 }
 
-NeedToBeQuiet(cmd)
-char *cmd;
+int NeedToBeQuiet(char *cmd)
 {
     struct NoAskItem *nai;
     for (nai = FirstQuietItem; nai; nai = nai->next) {
@@ -2374,8 +2352,7 @@ char *cmd;
     return(0);
 }
 
-CtypeMatch(ctype, pat)
-char *ctype, *pat;
+int CtypeMatch(char *ctype, char *pat)
 {
     int len;
     char pat2[200];
@@ -2400,9 +2377,7 @@ char *ctype, *pat;
     return(0);
 }
 
-ExecuteCommand(cmd, really)
-char *cmd;
-int really;
+int ExecuteCommand(char *cmd, int really)
 {
     int code;
     if (!Quiet || DoDebug) {
@@ -2425,8 +2400,7 @@ int really;
     return(0);
 }
 
-MkTmpFileName(name)
-char *name;
+int MkTmpFileName(char *name)
 {
 #ifdef AMIGA
     strcpy(name, "T:mmXXXXXX");
@@ -2450,11 +2424,7 @@ char *name;
  * MkRmScript() creates a shell script that accomplishes this. The script
  * is written to a temporary file. The name of the script is returned.
  */
-char *
-MkRmScript(command, fileToRemove, nameBuf)
-char *command;
-char *fileToRemove;
-char *nameBuf;
+char * MkRmScript(char *command, char *fileToRemove, char *nameBuf)
 {
     FILE *script;
 
@@ -2469,9 +2439,7 @@ char *nameBuf;
 }
 #endif
 
-void
-ConsumeRestOfPart(outfp)
-FILE *outfp;
+void ConsumeRestOfPart(FILE *outfp)
 {
     char *Buf;
     int c;
@@ -2496,8 +2464,7 @@ FILE *outfp;
     free(Buf);
 }
 
-char *paramend(s)
-char *s;
+char * paramend(char *s)
 {
     int inquotes=0;
     while (*s) {
@@ -2517,9 +2484,7 @@ char *s;
     return(NULL);
 }        
 
-void
-ParseContentParameters(ct)
-char *ct;
+void ParseContentParameters(char *ct)
 {
     char *s, *t, *eq;
 
@@ -2560,8 +2525,7 @@ char *ct;
     } while (t);
 }
 
-char *FindParam(s)
-char *s;
+char * FindParam(char *s)
 {
     int i;
     for (i=0; i<CParamsUsed; ++i) {
@@ -2573,17 +2537,14 @@ char *s;
 }
 
 #ifdef MSDOS
-system2(s)
-char *s;
+int system2(char *s)
 {
     printf("system2: \"%s\"\n", s);
     return(0);
 }
 #endif
 
-strcatquoting(s1, s2)
-char *s1;
-char *s2;
+int strcatquoting(char *s1, char *s2)
 {
     strcat(s1, s2);
 #ifdef NOTDEF
@@ -2596,7 +2557,7 @@ char *s2;
 #endif
 }
 
-PauseForUser() {
+void PauseForUser() {
 #if defined(MSDOS) || defined(AMIGA)
     char Buf[100];
     printf("Press RETURN to go on\n");
@@ -2616,7 +2577,7 @@ PauseForUser() {
 #endif
 }
 
-StartRawStdin() {
+int StartRawStdin() {
 #if !defined(AMIGA) && !defined(MSDOS)
 #ifdef SYSV
     struct termio   orterm, fterm;

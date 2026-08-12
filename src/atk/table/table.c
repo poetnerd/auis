@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #include <andrewos.h>
 #include <class.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <dataobj.ih>
 #include <view.ih>
@@ -46,14 +47,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/tabl
 
 #include <table.eh>
 
-#ifndef _IBMR2
-extern char * malloc ();
-extern char * realloc ();
-#endif /* _IBMR2 */
+struct movetrstate;
+static int CreateCell(struct table *T, struct cell *newcell, struct cell *oldcell);
+static int movetr(int *r, int *c, int absr, int absc, struct movetrstate *ms);
+static char * myrealloc(char *s, int n);
+
+/* not static: also called from tabio.c/eval.c/funs.c */
+int DestroyCell(struct table *T, struct cell *oldcell);
+int MakeBogus(extended_double *x, char *message);
+int MakeStandard(extended_double *x, double value);
 
 extern double atof();
 
-struct table * ReadASCII ();
+struct table * ReadASCII(struct table *T, FILE *f);
+
+/* defined in tabio.c */
+extern void WriteASCII(struct table *T, FILE *f, Chunk chunk, int level);
+extern void WriteCell(struct table *T, FILE *f, struct cell *cell, char **buff, int level);
+extern void ReadCell(struct table *T, FILE *f, char *buff, char **cpp, char *cl, struct cell *cell);
+
+/* defined in eval.c */
+extern void eval(struct table *T, extended_double *result, int r, int c, char *input);
 
 /* globals for entire package */
 
@@ -64,8 +78,7 @@ int table_DefaultPrecision;		/* precision when none provided */
 
 /* initialize entire class */
 
-boolean table__InitializeClass(classID)
-    struct classheader *classID;
+boolean table__InitializeClass(struct classheader *classID)
 {
     if (table_debug)
 	printf("table_InitializeClass()\n");
@@ -77,8 +90,7 @@ boolean table__InitializeClass(classID)
 
 /* return corresponding view name */
 
-char * table__ViewName (T)
-register struct table * T;
+char * table__ViewName(struct table *T)
 {
     return "spread";
 }
@@ -87,9 +99,7 @@ register struct table * T;
 
 /* Initialize new data table */
 
-boolean table__InitializeObject (classID, T)
-struct classheader *classID;
-register struct table * T;
+boolean table__InitializeObject(struct classheader *classID, struct table *T)
 {
     static int uniquifier = 0;
     char buff[20];
@@ -117,8 +127,7 @@ register struct table * T;
 }
 
 
-void IgnoreObserved(T)
-struct table *T;
+void IgnoreObserved(struct table *T)
 {
     long r,c;
     struct cell *cell;
@@ -133,9 +142,7 @@ struct table *T;
     
 /* tear down a table */
 
-void table__FinalizeObject (classID, T)
-struct classheader *classID;
-register struct table * T;
+void table__FinalizeObject(struct classheader *classID, struct table *T)
 {
     register struct table * S;
     
@@ -158,10 +165,7 @@ register struct table * T;
     table_ChangeSize (T, 0, 0);
 }
 
-void table__ObservedChanged(T, changed, value)
-struct table *T;
-struct observable *changed;
-long value;
+void table__ObservedChanged(struct table *T, struct observable *changed, long value)
 {
     T->cellChanged = ++(T->timeStamper);
     table_NotifyObservers(T, 0);
@@ -170,7 +174,7 @@ long value;
 
 /* toggle table_debugging flag */
 
-void table__ToggleDebug (T)
+void table__ToggleDebug(struct table *T)
 {
     if (table_debug) {
 	printf("Table debugging off\n");
@@ -183,9 +187,7 @@ void table__ToggleDebug (T)
 
 /* find a table by name */
 
-struct table *table__FindName (T, name)
-register struct table *T;
-char * name;
+struct table * table__FindName(struct table *T, char *name)
 {
     if (table_debug)  {
 	printf("table_FindName(%s, %s)\n", table_Name(T), name);
@@ -199,9 +201,7 @@ char * name;
 
 /* rename a table (may return pointer to pre-existing table) */
 
-struct table * table__SetName (T, name)
-register struct table * T;
-char * name;
+struct table * table__SetName(struct table *T, char *name)
 {
     register struct table * S;
 
@@ -228,9 +228,7 @@ char * name;
 
 /* reallocate including provisions for null pointers */
 
-static char * myrealloc (s, n)
-char * s;
-int n;
+static char * myrealloc(char *s, int n)
 {
     char *news;
 
@@ -254,9 +252,7 @@ int n;
 
 /* change dimensions of existing table */
 
-void table__ChangeSize (T, nrows, ncols)
-register struct table * T;
-int nrows, ncols;
+void table__ChangeSize(struct table *T, int nrows, int ncols)
 {
     int     r, c;
     struct cell *newcells, *p, *q;
@@ -359,9 +355,7 @@ int nrows, ncols;
 
 /* extract chunk of table (destroys original) */
 
-struct table * table__ExtractData (T, chunk)
-register struct table * T;
-Chunk chunk;
+struct table * table__ExtractData(struct table *T, Chunk chunk)
 {
     register struct table * S = table_New ();
     int r0, c0, nrows, ncols;
@@ -406,10 +400,7 @@ Chunk chunk;
 
 /* insert chunk of table */
 
-void table__InsertData (S, T, chunk)
-register struct table * S;
-register struct table * T;
-Chunk chunk;
+void table__InsertData(struct table *S, struct table *T, Chunk chunk)
 {
     int r0, c0;
     int r1, c1;
@@ -506,11 +497,7 @@ Chunk chunk;
 
 /* write table to file */
 
-long table__Write (T, f, writeID, level)
-register struct table * T;
-FILE * f;
-long writeID;
-int level;
+long table__Write(struct table *T, FILE *f, long writeID, int level)
 {
     struct chunk chunk;
 
@@ -532,13 +519,10 @@ int level;
 
 /* read table from file */
 
-long table__Read (T, f, id)
-register struct table * T;
-FILE * f;
-long id;
+long table__Read(struct table *T, FILE *f, long id)
 {
     if (table_debug)
-	printf("table_Read(%s,, %d)\n", table_Name(T), id);
+	printf("table_Read(%s,, %ld)\n", table_Name(T), id);
 
     table_SetID(T, table_UniqueID(T));
     table_SetModified(T);
@@ -551,10 +535,7 @@ long id;
 
 /* write subrectangle */
 
-void table__WriteASCII (T, f, chunk)
-register struct table * T;
-FILE *f;
-Chunk chunk;
+void table__WriteASCII(struct table *T, FILE *f, Chunk chunk)
 {
     if (table_debug)
 	printf("table_WriteASCII(%s)\n", table_Name(T));
@@ -564,35 +545,27 @@ Chunk chunk;
 
 /* read subrectangle */
 
-struct table * table__ReadASCII (T, f)
-register struct table * T;
-FILE *f;
+struct table * table__ReadASCII(struct table *T, FILE *f)
 {
     if (table_debug)
-	printf("table_ReadASCII(%s, , %d, %d)\n", table_Name(T));
+	printf("table_ReadASCII(%s)\n", table_Name(T));
 
     return ReadASCII(T, f);
 }
 
 /* format cell contents for external display */
 
-void table__FormatCell (T, cell, buff)
-register struct table * T;
-struct cell * cell;
-char **buff;
+void table__FormatCell(struct table *T, struct cell *cell, char **buff)
 {
     if (table_debug)
 	printf("table_FormatCell(%s, , )\n", table_Name(T));
 
-    WriteCell (T, NULL, cell, buff);
+    WriteCell (T, NULL, cell, buff, 0);
 }
 
 /* parse external cell contents */
 
-void table__ParseCell(T, cell, buff)
-register struct table * T;
-struct cell * cell;
-char *buff;
+void table__ParseCell(struct table *T, struct cell *cell, char *buff)
 {
     char *cp = buff;
 
@@ -606,9 +579,7 @@ char *buff;
 /* create and copy a cell */
 
 
-static  CreateCell (T, newcell, oldcell)
-register struct table *T;
-struct cell *newcell, *oldcell;
+static int CreateCell(struct table *T, struct cell *newcell, struct cell *oldcell)
 {
     if (oldcell) {
 	newcell->format = oldcell->format;
@@ -655,10 +626,7 @@ struct cell *newcell, *oldcell;
     }
 }
 
-void RemoveCellView(T,c,v)
-struct table *T;
-struct cell *c;
-struct view *v;
+void RemoveCellView(struct table *T, struct cell *c, struct view *v)
 {
     struct viewlist *vl=c->interior.ImbeddedObject.views;
     if(vl==NULL) return;
@@ -680,9 +648,7 @@ struct view *v;
     }
 }
 
-void table__RemoveViewFromTable(T,v)
-struct table *T;
-struct view *v;
+void table__RemoveViewFromTable(struct table *T, struct view *v)
 {
     long r,c;
     struct cell *cell;
@@ -700,9 +666,7 @@ struct view *v;
 
 /* delete a cell */
 
-DestroyCell(T, oldcell)
-register struct table *T;
-struct cell *oldcell;
+int DestroyCell(struct table *T, struct cell *oldcell)
 {
     struct viewlist *vl;
 
@@ -721,7 +685,7 @@ struct cell *oldcell;
 	    }
 	    while (vl = oldcell->interior.ImbeddedObject.views) {
 		if (table_debug)
-		    printf("**MISUSE** removing imbedded view ref by %x\n", vl);
+		    printf("**MISUSE** removing imbedded view ref by %lx\n", (unsigned long) vl);
 		    view_UnlinkTree(vl->child);
 		    view_Destroy(vl->child);
 		/* end of misuse */
@@ -740,10 +704,7 @@ struct cell *oldcell;
     oldcell->lastcalc = ++(T->timeStamper);
 }
 
-void table__ChangeThickness (T, dim, i, thickness)
-register struct table * T;
-Dimension dim;
-int     i, thickness;
+void table__ChangeThickness(struct table *T, Dimension dim, int i, int thickness)
 {
     struct slice * slice;
 
@@ -770,9 +731,7 @@ int     i, thickness;
 
 /* enlarge chunk so it doesn't include only part of a taped cell */
 
-void table__FindBoundary (T, chunk)
-register struct table * T;
-Chunk chunk;
+void table__FindBoundary(struct table *T, Chunk chunk)
 {
     int r, c;
     int ok;
@@ -808,10 +767,7 @@ Chunk chunk;
     }
 }
 
-void table__SetInterior (T, chunk, color)
-register struct table * T;
-Chunk chunk;
-Color color;
+void table__SetInterior(struct table *T, Chunk chunk, Color color)
 {
     int r, c;
 
@@ -850,10 +806,7 @@ Color color;
 }
 
 
-void table__SetBoundary (T, chunk, color)
-register struct table * T;
-Chunk chunk;
-Color color;
+void table__SetBoundary(struct table *T, Chunk chunk, Color color)
 {
     int r, c;
 
@@ -876,9 +829,7 @@ Color color;
     table_SetModified(T);
 }
 
-void rangeLimit (T, chunk)
-register struct table * T;
-Chunk chunk;
+void rangeLimit(struct table *T, Chunk chunk)
 {
     if (chunk->TopRow < 1) chunk->TopRow = 1;
     if (chunk->BotRow > table_NumberOfRows(T)) chunk->BotRow = table_NumberOfRows(T);
@@ -890,9 +841,7 @@ Chunk chunk;
 
 static char *circ = "CIRC!";
 
-void table__ReEval (T, r, c)
-register struct table * T;
-int     r, c;
+void table__ReEval(struct table *T, int r, int c)
 {
     struct cell * cell = table_GetCell(T, r, c);
 
@@ -907,10 +856,7 @@ int     r, c;
     return;
 }
 
-void rcref (T, result, r, c, iftaped)
-register struct table * T;
-register extended_double *result;
-int     r, c, iftaped;
+void rcref(struct table *T, extended_double *result, int r, int c, int iftaped)
 {
     struct cell * cell;
 
@@ -971,9 +917,7 @@ struct movetrstate {
     Chunk left, moved;
 };
 /* 
-static movetr (r, c, absr, absc, ms)
-int  *r, *c, absr, absc;
-struct movetrstate *ms;
+static movetr(int *r, int *c, int absr, int absc, struct movetrstate *ms)
 {
     int     refr = (ms->myrow) * (!absr) + *r, refc = (ms->mycol) * (!absc) + *c;
     if (inside ((ms->myrow), (ms->mycol), (ms->moved)))
@@ -1002,10 +946,7 @@ struct movetrstate *ms;
 }
  */
 
-void table__SetFormat (T, ch, chunk)
-register struct table * T;
-char ch;
-Chunk chunk;
+void table__SetFormat(struct table *T, char ch, Chunk chunk)
 {
     int     r, c;
     struct cell *cell;
@@ -1028,10 +969,7 @@ Chunk chunk;
     table_SetModified(T);
 }
 
-void table__SetPrecision (T, prec, chunk)
-register struct table * T;
-int prec;
-Chunk chunk;
+void table__SetPrecision(struct table *T, int prec, Chunk chunk)
 {
     int     r, c;
     struct cell *cell;
@@ -1054,10 +992,7 @@ Chunk chunk;
     table_SetModified(T);
 }
 
-void table__Imbed (T, name, chunk)
-register struct table * T;
-char *name;
-Chunk chunk;
+void table__Imbed(struct table *T, char *name, Chunk chunk)
 {
     struct dataobject *newobject;
     int r, c;
@@ -1089,10 +1024,7 @@ Chunk chunk;
     table_SetModified(T);
 }
 
-void table__Lock (T, ch, chunk)
-register struct table * T;
-char ch;
-Chunk chunk;
+void table__Lock(struct table *T, char ch, Chunk chunk)
 {
     int     r,  c;
 
@@ -1119,11 +1051,7 @@ int     daysinmonth[] = {
     31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
-void table__FormatDate (T, fdate, buf, format)
-register struct table * T;
-double  fdate;
-char   *buf;
-char    format;
+void table__FormatDate(struct table *T, double fdate, char *buf, char format)
 {
     int     date = (int) (fdate + 0.5);
     int     y, m, d;
@@ -1158,9 +1086,7 @@ char    format;
 
 /* construct an extended floating value */
 
-MakeStandard(x, value)
-extended_double *x;
-double value;
+int MakeStandard(extended_double *x, double value)
 {
     ExtendedType(x) = extended_STANDARD;
     StandardValue(x) = value;
@@ -1168,9 +1094,7 @@ double value;
 
 /* construct a extended floating "bogus" value */
 
-MakeBogus(x, message)
-extended_double *x;
-char *message;
+int MakeBogus(extended_double *x, char *message)
 {
     ExtendedType(x) = extended_BOGUS;
     ExtractBogus(x) = message;
@@ -1178,8 +1102,7 @@ char *message;
 
 /* check to see if modified */
 
-long table__GetModified(self)
-struct table *self;
+long table__GetModified(struct table *self)
 {
     int r, c;
     struct cell *cell;
@@ -1201,7 +1124,7 @@ struct table *self;
     }
 
     if (table_debug)
-	printf("table_GetModified = %d\n", rc);
+	printf("table_GetModified = %ld\n", rc);
 
     return rc;
 }

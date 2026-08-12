@@ -135,13 +135,13 @@ END-SPECIFICATION  ************************************************************/
 #include <fontdesc.ih>
 #include <zipobj.ih>
 #include <zipotrap.eh>
+static int Compute_Handle_Positions( struct zipotrap *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *X4, zip_type_pixel *X5, zip_type_pixel *X6, zip_type_pixel *X7, zip_type_pixel *X8, zip_type_pixel *X9, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3 );
+static int Draw();
 
-static Draw();
-static Compute_Handle_Positions();
+static int Draw();
+static int Compute_Handle_Positions( struct zipotrap *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *X4, zip_type_pixel *X5, zip_type_pixel *X6, zip_type_pixel *X7, zip_type_pixel *X8, zip_type_pixel *X9, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3 );
 
-char
-zipotrap__Object_Icon( self )
-  register struct zipotrap		 *self;
+char zipotrap__Object_Icon(struct zipotrap *self)
   {
   IN(zipotrap__Object_Icon);
   OUT(zipotrap__Object_Icon);
@@ -149,9 +149,7 @@ zipotrap__Object_Icon( self )
   return  NULL;
   }
 
-char
-zipotrap__Object_Icon_Cursor( self )
-  register struct zipotrap		 *self;
+char zipotrap__Object_Icon_Cursor(struct zipotrap *self)
   {
   IN(zipotrap__Object_Icon_Cursor);
   OUT(zipotrap__Object_Icon_Cursor);
@@ -159,24 +157,17 @@ zipotrap__Object_Icon_Cursor( self )
   return  NULL;
   }
 
-char
-zipotrap__Object_Datastream_Code( self )
-  register struct zipotrap		 *self;
+char zipotrap__Object_Datastream_Code(struct zipotrap *self)
   {
   IN(zipotrap__Object_Datastream_Code);
   OUT(zipotrap__Object_Datastream_Code);
   return  'F';
   }
 
-long
-zipotrap__Build_Object( self, pane, action, x, y, clicks, X, Y )
-  register struct zipotrap		 *self;
-  register zip_type_pane		  pane;
-  register long				  action, x, y, clicks;
-  register zip_type_point		  X, Y;
+long zipotrap__Build_Object(struct zipotrap *self, zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y)
   {
   register int				  status = zip_success;
-  register long				  position = 0; /*===*/
+  register zip_type_figure				  position = NULL; /*===*/
   static zip_type_point			  initial_Y;
   register zip_type_figure		  figure;
 
@@ -224,11 +215,7 @@ zipotrap__Build_Object( self, pane, action, x, y, clicks, X, Y )
   return  status;
   }
 
-long
-zipotrap__Draw_Object( self, figure, pane )
-  register struct zipotrap		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipotrap__Draw_Object(struct zipotrap *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -243,11 +230,7 @@ zipotrap__Draw_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipotrap__Clear_Object( self, figure, pane )
-  register struct zipotrap		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipotrap__Clear_Object(struct zipotrap *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -258,11 +241,7 @@ zipotrap__Clear_Object( self, figure, pane )
   return  status;
   }
 
-static
-Draw( self, figure, pane )
-  register struct zipotrap		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+static int Draw(struct zipotrap *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok, shade;
   register long				  i, L1, L2, X1, Y1, X2, Y2,
@@ -310,11 +289,7 @@ Draw( self, figure, pane )
   return  status;
   }
 
-long
-zipotrap__Print_Object( self, figure, pane )
-  register struct zipotrap		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipotrap__Print_Object(struct zipotrap *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
   char					  pattern = NULL;
@@ -350,12 +325,7 @@ zipotrap__Print_Object( self, figure, pane )
   return  status;
   }
 
-long
-zipotrap__Proximate_Object_Points( self, figure, pane, x, y )
-  register struct zipotrap		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x, y;
+long zipotrap__Proximate_Object_Points(struct zipotrap *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register int				  point = 0;
   zip_type_pixel			  X1, X2, X3, X4, X5, X6, X7, X8, X9, Y1, Y2, Y3;
@@ -393,11 +363,7 @@ zipotrap__Proximate_Object_Points( self, figure, pane, x, y )
   return  point;
   }
 
-long
-zipotrap__Highlight_Object_Points( self, figure, pane )
-  register struct zipotrap		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipotrap__Highlight_Object_Points(struct zipotrap *self, zip_type_figure figure, zip_type_pane pane)
   {
   zip_type_pixel			  X1, X2, X3, X4, X5, X6, X7, X8, X9, Y1, Y2, Y3;
   register long				  status = zip_ok;
@@ -418,11 +384,7 @@ zipotrap__Highlight_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipotrap__Normalize_Object_Points( self, figure, pane )
-  register struct zipotrap		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipotrap__Normalize_Object_Points(struct zipotrap *self, zip_type_figure figure, zip_type_pane pane)
   {
   zip_type_pixel			  X1, X2, X3, X4, X5, X6, X7, X8, X9, Y1, Y2, Y3;
   register long				  status = zip_ok;
@@ -443,11 +405,7 @@ zipotrap__Normalize_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipotrap__Expose_Object_Points( self, figure, pane )
-  register struct zipotrap		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipotrap__Expose_Object_Points(struct zipotrap *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -457,11 +415,7 @@ zipotrap__Expose_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipotrap__Hide_Object_Points( self, figure, pane )
-  register struct zipotrap		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
+long zipotrap__Hide_Object_Points(struct zipotrap *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long				  status = zip_ok;
 
@@ -471,12 +425,7 @@ zipotrap__Hide_Object_Points( self, figure, pane )
   return  status;
   }
 
-long
-zipotrap__Set_Object_Point( self, figure, point, x, y )
-  register struct zipotrap		 *self;
-  register zip_type_figure		  figure;
-  register int				  point;
-  register zip_type_point		  x, y;
+long zipotrap__Set_Object_Point(struct zipotrap *self, zip_type_figure figure, long point, zip_type_point x, zip_type_point y)
   {
   register long				  status = zip_ok;
   register long				  delta;
@@ -554,11 +503,7 @@ zipotrap__Set_Object_Point( self, figure, point, x, y )
   return  status;
   }
 
-long
-zipotrap__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
-  register struct zipotrap		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_point		  x_delta, y_delta;
+long zipotrap__Adjust_Object_Point_Suite(struct zipotrap *self, zip_type_figure figure, zip_type_point x_delta, zip_type_point y_delta)
   {
   register long				  status = zip_ok;
 
@@ -574,13 +519,7 @@ zipotrap__Adjust_Object_Point_Suite( self, figure, x_delta, y_delta )
   return  status;
   }
 
-static
-Compute_Handle_Positions( self, figure, pane, X1, X2, X3, X4, X5, X6, X7, X8, X9, Y1, Y2, Y3 )
-  register struct zipotrap		 *self;
-  register zip_type_figure		  figure;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		 *X1, *X2, *X3, *X4, *X5, *X6, *X7, *X8, *X9,
-					 *Y1, *Y2, *Y3;
+static int Compute_Handle_Positions(struct zipotrap *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel *X1, zip_type_pixel *X2, zip_type_pixel *X3, zip_type_pixel *X4, zip_type_pixel *X5, zip_type_pixel *X6, zip_type_pixel *X7, zip_type_pixel *X8, zip_type_pixel *X9, zip_type_pixel *Y1, zip_type_pixel *Y2, zip_type_pixel *Y3)
   {
   *X1 = window_x_points(0);
   *X3 = zipview_X_Point_To_Pixel( View, pane, figure, figure_x_points(0) + figure_x_point );

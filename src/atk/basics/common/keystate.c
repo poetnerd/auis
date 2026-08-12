@@ -43,25 +43,19 @@ December, 1986 */
 #include <keystate.eh>
 
 
-void keystate__SetObject(self, object)
-    struct keystate *self;
-    struct basicobject *object;
+void keystate__SetObject(struct keystate *self, struct basicobject *object)
 {
 
     self->object = object;
 }
 
-struct keystate *keystate__AddBefore(self, ks)
-    struct keystate *self;
-    struct keystate *ks;
+struct keystate * keystate__AddBefore(struct keystate *self, struct keystate *ks)
 {
     self->next = ks;
     return self;
 }
 
-struct keystate *keystate__AddAfter(self, ks)
-    struct keystate *self;
-    struct keystate *ks;
+struct keystate * keystate__AddAfter(struct keystate *self, struct keystate *ks)
 {
     register struct keystate *kp;
 
@@ -74,8 +68,7 @@ struct keystate *keystate__AddAfter(self, ks)
     return ks;
 }
 
-void InitState(self)
-    struct keystate *self;
+void InitState(struct keystate *self)
 {
     struct keystate *ks;
 
@@ -83,18 +76,12 @@ void InitState(self)
 	ks->curMap = ks->orgMap;
 }
 
-void keystate__Reset(self)
-    struct keystate *self;
+void keystate__Reset(struct keystate *self)
 {
     InitState(self);
 }
 
-enum keystate_ApplyKeyValues keystate__ApplyKey(self, key, ppe, rockP, pobject)
-    struct keystate *self;
-    char key;
-    struct proctable_Entry **ppe;
-    long *rockP;
-    struct basicobject **pobject;
+enum keystate_ApplyKeyValues keystate__ApplyKey(struct keystate *self, char key, struct proctable_Entry **ppe, long *rockP, struct basicobject **pobject)
 {
     struct keystate *ks;
     struct proctable_Entry *pe;
@@ -153,11 +140,7 @@ enum keystate_ApplyKeyValues keystate__ApplyKey(self, key, ppe, rockP, pobject)
 }
 
 /* Apply the procedure in a proctable entry to the object, or to an object of the correct type as found in the keystate chain. */
-enum keystate_DoProcValues keystate__DoProc(self, pe, rock, object)
-    struct keystate *self;
-    struct proctable_Entry *pe;
-    long rock;
-    struct basicobject *object;
+enum keystate_DoProcValues keystate__DoProc(struct keystate *self, struct proctable_Entry *pe, long rock, struct basicobject *object)
 {
     struct keystate *ks;
 
@@ -181,8 +164,7 @@ enum keystate_DoProcValues keystate__DoProc(self, pe, rock, object)
     return keystate_ProcCalled;
 }
 
-void keystate__FreeChain(self)
-    register struct keystate *self;
+void keystate__FreeChain(struct keystate *self)
 {
     register struct keystate *ks, *kp;
 
@@ -199,9 +181,7 @@ void keystate__FreeChain(self)
 
 static struct keystate *freeKS = NULL;
 
-boolean keystate__InitializeObject(classID, self)
-    struct classheader *classID;
-    struct keystate *self;
+boolean keystate__InitializeObject(struct classheader *classID, struct keystate *self)
 {
     self->next = NULL;
     self->orgMap = NULL;
@@ -211,10 +191,7 @@ boolean keystate__InitializeObject(classID, self)
     return TRUE;
 }
 
-struct keystate *keystate__Create(classID, object, keymap)
-    struct classheader *classID;
-    struct basicobject *object;
-    struct keymap *keymap;
+struct keystate * keystate__Create(struct classheader *classID, struct basicobject *object, struct keymap *keymap)
 {
     register struct keystate *keystate;
     
@@ -225,28 +202,21 @@ struct keystate *keystate__Create(classID, object, keymap)
     return keystate;
 }
 
-void keystate__SetOverride(self, function, functionData)
-    struct keystate *self;
-    enum keymap_Types (*function)();
-    long functionData;
+void keystate__SetOverride(struct keystate *self, procedure function, void *functionData)
 {
 
-    self->function = function;
-    self->functionData = functionData;
+    self->function = (enum keymap_Types (*)())function;
+    self->functionData = (long)functionData;
 }
 
-void keystate__GetOverride(self, function, functionData)
-    struct keystate *self;
-    enum keymap_Types (**function)();
-    long *functionData;
+void keystate__GetOverride(struct keystate *self, procedure *function, long *functionData)
 {
 
-    *function = self->function;
+    *function = (procedure)self->function;
     *functionData = self->functionData;
 }
 
-struct keystate *keystate__Allocate(classID)
-    struct classheader *classID;
+struct keystate * keystate__Allocate(struct classheader *classID)
 {
     struct keystate *ks;
 
@@ -259,9 +229,7 @@ struct keystate *keystate__Allocate(classID)
     return ks;
 }
 
-void keystate__Deallocate(classID, ks)
-    struct classheader *classID;
-    struct keystate *ks;
+void keystate__Deallocate(struct classheader *classID, struct keystate *ks)
 {
     ks->next = freeKS;
     freeKS = ks;

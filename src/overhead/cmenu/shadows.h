@@ -22,8 +22,8 @@
 */
 
 
-extern void shadows_SetPreferences();
-extern void shadows_ComputeColor();
+extern void shadows_SetPreferences(int (*getint)());
+extern void shadows_ComputeColor(unsigned short br, unsigned short bg, unsigned short bb, unsigned short *rr, unsigned short *rg, unsigned short *rb, int color);
 
 #define shadows_PRESSED 0
 #define shadows_TOPSHADOW 1

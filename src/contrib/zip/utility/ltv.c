@@ -71,13 +71,57 @@ END-SPECIFICATION  ************************************************************/
 #include <zipv.ih>
 #include <zipobj.ih>
 #include <rasterv.ih>
+static int Activate(struct ltv *self, long datum);
+static int Build_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks);
+static int Build_Menu();
+static int Cancel_Enclosure(struct ltv *self);
+static int Clear_Chain_Names(struct ltv *self);
+static int Clear_Enclosure(struct ltv *self);
+static void Darken_Background_Command(struct ltv *self);
+static void Debug_Command(struct ltv *self);
+static int Detect(struct ltv *self, struct suite *suite, struct suite_item *item, long datum);
+static int Draw_Enclosure(struct ltv *self);
+static int End_Chain(struct ltv *self);
+static void Expose_Background_Command(struct ltv *self);
+static void Fit_Command(struct ltv *self);
+static void Hide_Background_Command(struct ltv *self);
+static int Initialize(struct ltv *self);
+static int Invert_Enclosure(struct ltv *self);
+static int Lighten_Background(struct ltv *self);
+static void Lighten_Background_Command(struct ltv *self);
+static int Modify_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks);
+static int Name_Chain(struct ltv *self);
+static int Neighbor(struct ltv *self, zip_type_pixel x, zip_type_pixel y, zip_type_figure *figure, zip_type_point *X, zip_type_point *Y, long *point);
+static void Normalize_Command(struct ltv *self);
+static void Pan_Foreground_Command(struct ltv *self);
+static void Pan_Together_Command(struct ltv *self);
+static int Passivate(struct ltv *self, long datum);
+static void Print_Command(struct ltv *self);
+static void Quit_Command(struct ltv *self);
+static long Rename_Exception(struct ltv *self, long facility, long status);
+static void Save_Command(struct ltv *self);
+static void Scale_Double_Command(struct ltv *self);
+static void Scale_Half_Command(struct ltv *self);
+static void Scale_Larger_10_Command(struct ltv *self);
+static void Scale_Larger_Command(struct ltv *self);
+static void Scale_Normal_Command(struct ltv *self);
+static void Scale_Pane(struct ltv *self, float scale);
+static void Scale_Smaller_10_Command(struct ltv *self);
+static void Scale_Smaller_Command(struct ltv *self);
+static int Show_Background(struct ltv *self);
+static int Show_Chain_Names(struct ltv *self);
+static int Split_Chain_Name(struct ltv *self, zip_type_figure figure, char **right_name, char **left_name);
+static int Track_Enclosure(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks);
+static int Which_Figure_Point(struct ltv *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y);
+static void Zoom_In_Command(struct ltv *self);
+static void Zoom_Out_Command(struct ltv *self);
 
 static boolean debug=FALSE;
 static struct menulist		     *class_menulist;
 static struct keymap		     *class_keymap;
 
 
-static long				      Exceptions();
+static long				      Exceptions(struct ltv *self, long facility, long status);
 static /*===*/struct ltv *SELF;
 
 #define  tolerance		    5
@@ -144,32 +188,32 @@ static /*===*/struct ltv *SELF;
 #define  EnclosureHeight	    (self->enclosure.height)
 
 #define  ChangeItemCaption(o,i,c) \
-      suite_ChangeItemAttribute( o, i, suite_ItemCaption(c) )
+      suite_ChangeItemAttribute( o, i, suite_itemcaption, (long) (c) )
 
-static int				    Begin_Chain_Button(), End_Chain_Button(),
-				    Rename_Chain_Button(), Delete_Chain_Button(),
-				    Left_Chain_Button(), Right_Chain_Button();
+static int				    Begin_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks), End_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks),
+				    Rename_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks), Delete_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks),
+				    Left_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks), Right_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks);
 
-static Detect();
-static Initialize();
-static Build_Chain();
-static Modify_Chain();
-static End_Chain();
-static Track_Enclosure();
-static Cancel_Enclosure();
-static Clear_Enclosure();
-static Draw_Enclosure();
-static Invert_Enclosure();
-static Neighbor();
-static Show_Chain_Names();
-static Clear_Chain_Names();
-static Name_Chain();
-static Split_Chain_Name();
-static Passivate();
-static Lighten_Background();
-static Show_Background();
-static Build_Menu();
-static Activate();
+static int Detect(struct ltv *self, struct suite *suite, struct suite_item *item, long datum);
+static int Initialize(struct ltv *self);
+static int Build_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks);
+static int Modify_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks);
+static int End_Chain(struct ltv *self);
+static int Track_Enclosure(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks);
+static int Cancel_Enclosure(struct ltv *self);
+static int Clear_Enclosure(struct ltv *self);
+static int Draw_Enclosure(struct ltv *self);
+static int Invert_Enclosure(struct ltv *self);
+static int Neighbor(struct ltv *self, zip_type_pixel x, zip_type_pixel y, zip_type_figure *figure, zip_type_point *X, zip_type_point *Y, long *point);
+static int Show_Chain_Names(struct ltv *self);
+static int Clear_Chain_Names(struct ltv *self);
+static int Name_Chain(struct ltv *self);
+static int Split_Chain_Name(struct ltv *self, zip_type_figure figure, char **right_name, char **left_name);
+static int Passivate(struct ltv *self, long datum);
+static int Lighten_Background(struct ltv *self);
+static int Show_Background(struct ltv *self);
+static int Build_Menu();
+static int Activate(struct ltv *self, long datum);
 
 #define  right_code	    1
 #define  left_code	    2
@@ -248,17 +292,13 @@ static suite_Specification		    buttons[] =
   NULL
   };
 
-void
-ltv__Set_Debug( self, mode )
-  register struct ltv		     *self;
+void ltv__Set_Debug(struct ltv *self, boolean mode)
   {
   debug = mode;
   zipview_Set_Debug( ZipView, debug );
   }
 
-boolean
-ltv__InitializeClass( classID )
-  register struct classheader   *classID;
+boolean ltv__InitializeClass(struct classheader *classID)
   {
   IN(ltv_InitializeClass);
   class_menulist = menulist_New();
@@ -296,10 +336,7 @@ ltv__InitializeObject( classID, self )
   return  TRUE;
   }
 
-void
-ltv__FinalizeObject( classID, self )
-  register struct classheader	*classID;
-  register struct ltv		*self;
+void ltv__FinalizeObject(struct classheader *classID, struct ltv *self)
 {
   if(Menu) menulist_Destroy(Menu);
   if(ZipView) {
@@ -314,10 +351,7 @@ ltv__FinalizeObject( classID, self )
   }
 }
 
-void
-ltv__SetDataObject( self, data )
-  register struct ltv	      *self;
-  register struct lt	      *data;
+void ltv__SetDataObject(struct ltv *self, struct dataobject *data)
   {
   self->data = data;
   zipview_SetDataObject( ZipView, Zip );
@@ -325,9 +359,7 @@ ltv__SetDataObject( self, data )
   zip_Set_general_Exception_Handler( Zip, Exceptions );
   }
 
-void
-ltv__ReceiveInputFocus( self )
-  register struct ltv	     *self;
+void ltv__ReceiveInputFocus(struct ltv *self)
   {
   IN(ltv_ReceiveInputFocus);
   InputFocus = true;
@@ -336,9 +368,7 @@ ltv__ReceiveInputFocus( self )
   OUT(ltv_ReceiveInputFocus);
   }
 
-void
-ltv__LoseInputFocus( self )
-  register struct ltv	     *self;
+void ltv__LoseInputFocus(struct ltv *self)
   {
   IN(ltv_LoseInputFocus);
   InputFocus = false;
@@ -360,11 +390,7 @@ ltv__DesiredSize( self, given_width,   given_height,
   return  view_Fixed;
   }
 
-void
-ltv__FullUpdate( self, type, left, top, width, height )
-  register struct ltv	     *self;
-  register enum view_UpdateType    type;
-  register long		      left, top, width, height;
+void ltv__FullUpdate(struct ltv *self, enum view_UpdateType type, long left, long top, long width, long height)
   {
   IN(ltv_FullUpdate);
   if ( type == view_FullRedraw || type == view_LastPartialRedraw )
@@ -392,15 +418,10 @@ ltv__FullUpdate( self, type, left, top, width, height )
   OUT(ltv_FullUpdate);
   }
 
-static
-Detect( self, suite, item, datum )
-  register struct ltv	   *self;
-  register struct suite	   *suite;
-  register struct suite_item   *item;
-  register long		    datum;
+static int Detect(struct ltv *self, struct suite *suite, struct suite_item *item, long datum)
   {
   IN(Detect);
-  switch ( suite_ItemAttribute( Buttons/*===*/, item, suite_ItemDatum(0) ) )
+  switch ( suite_ItemAttribute( Buttons/*===*/, item, suite_itemdatum ) )
     {
     case  left_code:
       LeftNameItem = item;
@@ -412,9 +433,7 @@ Detect( self, suite, item, datum )
   OUT(Detect);
   }
 
-static
-Initialize( self )
-  register struct ltv	     *self;
+static int Initialize(struct ltv *self)
   {
   register long		      status = 0;
   register zip_type_image     root_image;
@@ -472,42 +491,32 @@ Initialize( self )
     root_image = zip_Image( Zip, "ZIP_ROOT_IMAGE" );
     if ( status = zip_Create_Inferior_Image( Zip, &Image, "Chains", StreamLocal, root_image ) )
       { DEBUG(ERROR -- Create 'Chains' Image);
-/*===*/printf("ERROR -- Failed to create 'Chains' Image (Status %d)\n",status );
+/*===*/printf("ERROR -- Failed to create 'Chains' Image (Status %ld)\n",status );
       }
     }
   Buttons = suite_Create( buttons, self );
-  suite_Apply( Buttons, Detect, self, 0 );
+  suite_Apply( Buttons, (long (*)())Detect, self, 0 );
   suite_LinkTree( Buttons, self );
   zipview_Use_Normal_Pane_Cursors( ZipView );
   OUT(Initialize);
   return  status;
   }
 
-void
-ltv__ObservedChanged( self, changed, value )
-  register struct ltv	     *self;
-  register struct observable *changed;
-  register long		      value;
+void ltv__ObservedChanged(struct ltv *self, struct observable *changed, long value)
   {
   IN(ltv_ObservedChanged);
   ltv_WantUpdate( self, self );
   OUT(ltv_ObservedChanged);
   }
 
-void
-ltv__Update( self )
-  register struct ltv	     *self;
+void ltv__Update(struct ltv *self)
   {
   IN(ltv_Update);
 
   OUT(ltv_Update);
   }
 
-struct view *
-ltv__Hit( self, action, x, y, clicks )
-  register struct ltv	     *self;
-  register enum view_MouseAction      action;
-  register long		      x, y, clicks;
+struct view * ltv__Hit(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   long			      x_delta, y_delta;
   register struct view	     *hit = (struct view *) self;
@@ -593,11 +602,7 @@ ltv__Hit( self, action, x, y, clicks )
   return  hit;
   }
 
-static
-Build_Chain( self, action, x, y, clicks )
-  register struct ltv	     *self;
-  register enum view_MouseAction      action;
-  register long		      x, y, clicks;
+static int Build_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   register long		      X, Y, status = 0;
   register boolean	      neighbor = false;
@@ -690,12 +695,7 @@ Build_Chain( self, action, x, y, clicks )
   }
 
  /*=========*/
-static int
-Which_Figure_Point( self, figure, pane, x, y )
-  register struct ltv	     *self;
-  register zip_type_figure    figure;
-  register zip_type_pane      pane;
-  register zip_type_pixel     x, y;
+static int Which_Figure_Point(struct ltv *self, zip_type_figure figure, zip_type_pane pane, zip_type_pixel x, zip_type_pixel y)
   {
   register long		      point;
   static struct zipobject    *PO;
@@ -714,11 +714,7 @@ Which_Figure_Point( self, figure, pane, x, y )
   }
 
 
-static
-Modify_Chain( self, action, x, y, clicks )
-  register struct ltv	     *self;
-  register enum view_MouseAction      action;
-  register long		      x, y, clicks;
+static int Modify_Chain(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   register long		      X, Y, status = 0;
   static long		      down_x, down_y,
@@ -777,11 +773,7 @@ Modify_Chain( self, action, x, y, clicks )
   OUT(Modify_Chain);
   }
 
-static
-Track_Enclosure( self, action, x, y, clicks )
-  register struct ltv	     *self;
-  register enum view_MouseAction      action;
-  register long		      x, y, clicks;
+static int Track_Enclosure(struct ltv *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   IN(Track_Enclosure);
   Clear_Enclosure( self );
@@ -828,9 +820,7 @@ Track_Enclosure( self, action, x, y, clicks )
   OUT(Track_Enclosure);
   }
 
-static
-Cancel_Enclosure( self )
-  register struct ltv	     *self;
+static int Cancel_Enclosure(struct ltv *self)
   {
   IN(Cancel_Enclosure);
   Clear_Enclosure( self );
@@ -839,27 +829,21 @@ Cancel_Enclosure( self )
   OUT(Cancel_Enclosure);
   }
 
-static
-Clear_Enclosure( self )
-  register struct ltv	     *self;
+static int Clear_Enclosure(struct ltv *self)
   {
   IN(Clear_Enclosure);
   Invert_Enclosure( self );
   OUT(Clear_Enclosure);
   }
 
-static
-Draw_Enclosure( self )
-  register struct ltv	     *self;
+static int Draw_Enclosure(struct ltv *self)
   {
   IN(Draw_Enclosure);
   Invert_Enclosure( self );
   OUT(Draw_Enclosure);
   }
 
-static
-Invert_Enclosure( self )
-  register struct ltv	     *self;
+static int Invert_Enclosure(struct ltv *self)
   {
   IN(Invert_Enclosure);
   if ( EnclosureExposed )
@@ -878,13 +862,7 @@ Invert_Enclosure( self )
     either a Start or and End Point of that neighbor.
 
 \*******************************************************************/
-static
-Neighbor( self, x, y, figure, X, Y, point )
-  register struct ltv	     *self;
-  register zip_type_pixel     x, y;
-  register zip_type_figure   *figure;
-  register zip_type_point    *X, *Y;
-  register long		     *point;
+static int Neighbor(struct ltv *self, zip_type_pixel x, zip_type_pixel y, zip_type_figure *figure, zip_type_point *X, zip_type_point *Y, long *point)
   {
   register long		      status = false;
 
@@ -917,9 +895,7 @@ Neighbor( self, x, y, figure, X, Y, point )
   return status;
   }
 
-static void
-Normalize_Command( self )
-  register struct ltv	     *self;
+static void Normalize_Command(struct ltv *self)
   {
   IN(Normalize_Command);
   Cancel_Enclosure( self );
@@ -930,9 +906,7 @@ Normalize_Command( self )
   OUT(Normalize_Command);
   }
 
-static void
-Zoom_In_Command( self )
-  register struct ltv	     *self;
+static void Zoom_In_Command(struct ltv *self)
   {
   IN(Zoom_In_Command);
   Cancel_Enclosure( self );
@@ -945,9 +919,7 @@ Zoom_In_Command( self )
   OUT(Zoom_In_Command);
   }
 
-static void
-Zoom_Out_Command( self )
-  register struct ltv	     *self;
+static void Zoom_Out_Command(struct ltv *self)
   {
   IN(Zoom_Out_Command);
   Cancel_Enclosure( self );
@@ -964,10 +936,7 @@ Zoom_Out_Command( self )
   OUT(Zoom_Out_Command);
   }
 
-static void
-Scale_Pane( self, scale )
-  register struct ltv	      *self;
-  register float	       scale;
+static void Scale_Pane(struct ltv *self, float scale)
   {
 /*  register float	       x, y; */
 
@@ -993,37 +962,25 @@ Scale_Pane( self, scale )
   OUT(Scale_Pane);
   }
 
-static void
-Scale_Normal_Command( self )
-  register struct ltv	      *self;
+static void Scale_Normal_Command(struct ltv *self)
   {
   zipview_Set_Pane_Scale( ZipView, ForegroundPane, 1.0 );
   Scale_Pane( self, 0.0 );
   }
 
-static void
-Scale_Smaller_Command( self )
-  register struct ltv	      *self;
+static void Scale_Smaller_Command(struct ltv *self)
   {  Scale_Pane( self, -0.01 );  }
 
-static void
-Scale_Smaller_10_Command( self )
-  register struct ltv	      *self;
+static void Scale_Smaller_10_Command(struct ltv *self)
   {  Scale_Pane( self, -0.1 );  }
 
-static void
-Scale_Larger_Command( self )
-  register struct ltv	      *self;
+static void Scale_Larger_Command(struct ltv *self)
   {  Scale_Pane( self, 0.01 );  }
 
-static void
-Scale_Larger_10_Command( self )
-  register struct ltv	      *self;
+static void Scale_Larger_10_Command(struct ltv *self)
   {  Scale_Pane( self, 0.1 );  }
 
-static void
-Scale_Half_Command( self )
-  register struct ltv	      *self;
+static void Scale_Half_Command(struct ltv *self)
   {
   IN(Scale_Half_Command);
   zipview_Set_Pane_Scale( ZipView, ForegroundPane,
@@ -1032,9 +989,7 @@ Scale_Half_Command( self )
   OUT(Scale_Half_Command);
   }
 
-static void
-Scale_Double_Command( self )
-  register struct ltv	      *self;
+static void Scale_Double_Command(struct ltv *self)
   {
   IN(Scale_Double_Command);
   zipview_Set_Pane_Scale( ZipView, ForegroundPane,
@@ -1043,9 +998,7 @@ Scale_Double_Command( self )
   OUT(Scale_Double_Command);
   }
 
-static void
-Pan_Foreground_Command( self )
-  register struct ltv	     *self;
+static void Pan_Foreground_Command(struct ltv *self)
   {
   IN(Pan_Foreground_Command);
   menulist_SetMask( Menu, (menulist_GetMask( Menu ) & ~pan_foreground) | pan_together );
@@ -1054,9 +1007,7 @@ Pan_Foreground_Command( self )
   OUT(Pan_Foreground_Command);
   }
 
-static void
-Pan_Together_Command( self )
-  register struct ltv	     *self;
+static void Pan_Together_Command(struct ltv *self)
   {
   IN(Pan_Together_Command);
   Cancel_Enclosure( self );
@@ -1066,9 +1017,7 @@ Pan_Together_Command( self )
   OUT(Pan_Together_Command);
   }
 
-static void
-Fit_Command( self )
-  register struct ltv	     *self;
+static void Fit_Command(struct ltv *self)
   {
   register float	      scale, EW, EH;
   register zip_type_point     x, y;
@@ -1092,9 +1041,7 @@ Fit_Command( self )
   OUT(Fit_Command);
   }
 
-static
-Show_Chain_Names( self )
-  register struct ltv	     *self;
+static int Show_Chain_Names(struct ltv *self)
   {
   char			     *left_name, *right_name;
 
@@ -1112,9 +1059,7 @@ im_ForceUpdate();
   OUT(Show_Chain_Names);
   }
 
-static
-Clear_Chain_Names( self )
-  register struct ltv	     *self;
+static int Clear_Chain_Names(struct ltv *self)
   {
   IN(Clear_Chain_Names);
   if ( LeftNameItem )
@@ -1125,12 +1070,7 @@ Clear_Chain_Names( self )
   OUT(Clear_Chain_Names);
   }
 
-static
-Begin_Chain_Button( self, suite, item, type, action, x, y, clicks )
-  register struct ltv	     *self;
-  register struct suite	     *suite;
-  register struct suite_item    *item;
-  register enum view_MouseAction action;
+static int Begin_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Begin_Chain_Button);
   if ( type == suite_ItemObject  &&  action == view_LeftUp )
@@ -1148,12 +1088,7 @@ Begin_Chain_Button( self, suite, item, type, action, x, y, clicks )
   OUT(Begin_Chain_Button);   
   }
 
-static
-End_Chain_Button( self, suite, item, type, action, x, y, clicks )
-  register struct ltv	     *self;
-  register struct suite		     *suite;
-  register struct suite_item	     *item;
-  register enum view_MouseAction      action;
+static int End_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(End_Chain_Button);
   if ( Building  &&  type == suite_ItemObject  &&  action == view_LeftUp )
@@ -1164,9 +1099,7 @@ End_Chain_Button( self, suite, item, type, action, x, y, clicks )
   OUT(End_Chain_Button);  
   }
 
-static
-End_Chain( self )
-  register struct ltv	     *self;
+static int End_Chain(struct ltv *self)
   {
   IN(End_Chain);
   Passivate( self, end_code );
@@ -1179,12 +1112,7 @@ End_Chain( self )
   OUT(End_Chain);
   }
 
-static
-Delete_Chain_Button( self, suite, item, type, action, x, y, clicks )
-  register struct ltv	     *self;
-  register struct suite		     *suite;
-  register struct suite_item	     *item;
-  register enum view_MouseAction      action;
+static int Delete_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Delete_Chain_Button);
   Building = false;
@@ -1205,10 +1133,7 @@ Delete_Chain_Button( self, suite, item, type, action, x, y, clicks )
   OUT(Delete_Chain_Button);
   }
 
-static long
-Rename_Exception( self, facility, status )
-  register struct ltv	     *self;
-  register long			      status, facility;
+static long Rename_Exception(struct ltv *self, long facility, long status)
   {
   char				      msg[512];
   char				      chain_name[512];
@@ -1227,7 +1152,7 @@ Rename_Exception( self, facility, status )
       *ptr = 0;
     while ( duplicate )
       {
-      sprintf( chain_name, "%s[%d]", msg, number );
+      sprintf( chain_name, "%s[%ld]", msg, number );
       DEBUGst(New Chain-name,chain_name);
       if ( zip_Set_Figure_Name( Zip, Figure, chain_name ) == zip_ok )
 	duplicate = false;
@@ -1236,19 +1161,14 @@ Rename_Exception( self, facility, status )
     sprintf( msg, "Duplicate Chain Name.  Re-named to '%s'", chain_name );
     }
     else
-    sprintf( msg, "Rename-Exception  Facility = %d  Status = %d", facility, status );
+    sprintf( msg, "Rename-Exception  Facility = %ld  Status = %ld", facility, status );
   zipview_Announce( ZipView, msg );
   zip_Set_general_Exception_Handler( Zip, Exceptions );
   OUT(Exceptions);
   return  0;
   }
 
-static
-Rename_Chain_Button( self, suite, item, type, action, x, y, clicks )
-  register struct ltv	     *self;
-  register struct suite		     *suite;
-  register struct suite_item	     *item;
-  register enum view_MouseAction      action;
+static int Rename_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Rename_Chain_Button);
   if ( type == suite_ItemObject  &&  action == view_LeftUp )
@@ -1259,12 +1179,7 @@ Rename_Chain_Button( self, suite, item, type, action, x, y, clicks )
   OUT(Rename_Chain_Button); 
   }
 
-static
-Left_Chain_Button( self, suite, item, type, action, x, y, clicks )
-  register struct ltv	     *self;
-  register struct suite		     *suite;
-  register struct suite_item	     *item;
-  register enum view_MouseAction      action;
+static int Left_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Left_Chain_Button);
   if ( type == suite_ItemObject  &&  action == view_LeftUp )
@@ -1276,12 +1191,7 @@ Left_Chain_Button( self, suite, item, type, action, x, y, clicks )
   OUT(Left_Chain_Button); 
   }
 
-static
-Right_Chain_Button( self, suite, item, type, action, x, y, clicks )
-  register struct ltv	     *self;
-  register struct suite		     *suite;
-  register struct suite_item	     *item;
-  register enum view_MouseAction      action;
+static int Right_Chain_Button(struct ltv *self, struct suite *suite, struct suite_item *item, int type, enum view_MouseAction action, int x, int y, int clicks)
   {
   IN(Right_Chain_Button);
   if ( type == suite_ItemObject  &&  action == view_LeftUp )
@@ -1293,9 +1203,7 @@ Right_Chain_Button( self, suite, item, type, action, x, y, clicks )
   OUT(Right_Chain_Button); 
   }
 
-static
-Name_Chain( self )
-  register struct ltv	     *self;
+static int Name_Chain(struct ltv *self)
   {
   char			     *reply, *left_name, *right_name;
 
@@ -1323,11 +1231,7 @@ Name_Chain( self )
   OUT(Name_Chain);
   }
 
-static
-Split_Chain_Name( self, figure, right_name, left_name )
-  register struct ltv	     *self;
-  register zip_type_figure    figure;
-  register char		    **left_name, **right_name;
+static int Split_Chain_Name(struct ltv *self, zip_type_figure figure, char **right_name, char **left_name)
   {
   static char		      left[257], right[257],
 			      full[257], *comma;
@@ -1344,24 +1248,17 @@ Split_Chain_Name( self, figure, right_name, left_name )
     }
   }
 
-static
-Passivate( self, datum )
-  register struct ltv	     *self;
-  register long		      datum;
+static int Passivate(struct ltv *self, long datum)
   {
   suite_PassivateItem( Buttons, suite_ItemOfDatum( Buttons, datum ) );
   }
 
-static Activate( self, datum )
-  register struct ltv	     *self;
-  register long		      datum;
+static int Activate(struct ltv *self, long datum)
   {
   suite_ActivateItem( Buttons, suite_ItemOfDatum( Buttons, datum ) );
   }
 
-static void
-Lighten_Background_Command( self )
-  register struct ltv	     *self;
+static void Lighten_Background_Command(struct ltv *self)
   {
   IN(Lighten_Background_Command);
   if ( BackgroundLight == 0 )
@@ -1378,9 +1275,7 @@ Lighten_Background_Command( self )
   OUT(Lighten_Background_Command);
   }
 
-static
-Lighten_Background( self )
-  register struct ltv	     *self;
+static int Lighten_Background(struct ltv *self)
   {
   if ( WMWM )
     ltv_SetTransferMode( self, graphic_WHITE );
@@ -1394,9 +1289,7 @@ Lighten_Background( self )
     Draw_Enclosure( self );
   }
 
-static void
-Darken_Background_Command( self )
-  register struct ltv	     *self;
+static void Darken_Background_Command(struct ltv *self)
   {
   IN(Darken_Background_Command);
   BackgroundLight = 0;
@@ -1406,9 +1299,7 @@ Darken_Background_Command( self )
   OUT(Darken_Background_Command);
   }
 
-static void
-Hide_Background_Command( self )
-  register struct ltv	     *self;
+static void Hide_Background_Command(struct ltv *self)
   {
   IN(Hide_Background_Command);
   BackgroundExposed = false;
@@ -1421,9 +1312,7 @@ Hide_Background_Command( self )
   OUT(Hide_Background_Command);
   }
 
-static void
-Expose_Background_Command( self )
-  register struct ltv	     *self;
+static void Expose_Background_Command(struct ltv *self)
   {
   IN(Expose_Background_Command);
   BackgroundExposed = true;
@@ -1435,9 +1324,7 @@ Expose_Background_Command( self )
   OUT(Expose_Background_Command);
   }
 
-static
-Show_Background( self )
-  register struct ltv	     *self;
+static int Show_Background(struct ltv *self)
   {
   register long		      height = (Height - ButtonHeight) - BackgroundTopY;
 
@@ -1457,9 +1344,7 @@ Show_Background( self )
   OUT(Show_Background);
   }
 
-static void
-Save_Command( self )
-  register struct ltv	     *self;
+static void Save_Command(struct ltv *self)
   {
   char			      msg[512];
   register long		      status;
@@ -1468,15 +1353,13 @@ Save_Command( self )
   if ( (status = zip_Write_Stream( Zip, StreamLocal )) == zip_ok )
     sprintf( msg, "Wrote File '%s'", StreamLocal->zip_stream_name );
     else
-    sprintf( msg, "Error Writing File '%s'  (%d)", StreamLocal->zip_stream_name, status );
+    sprintf( msg, "Error Writing File '%s'  (%ld)", StreamLocal->zip_stream_name, status );
   Modified = false;
   zipview_Announce( ZipView, msg );
   OUT(Save_Command);
   }
 
-static void
-Print_Command( self )
-  register struct ltv	     *self;
+static void Print_Command(struct ltv *self)
   {
   char			      msg[512];
   register long		      status;
@@ -1497,15 +1380,13 @@ Print_Command( self )
     sprintf( msg, "Printed File '%s'", StreamLocal->zip_stream_name );
     }
     else
-    sprintf( msg, "Error Printing File '%s'  (%d)", StreamLocal->zip_stream_name, status );
+    sprintf( msg, "Error Printing File '%s'  (%ld)", StreamLocal->zip_stream_name, status );
   zipview_Announce( ZipView, msg );
   zipview_Use_Normal_Pane_Cursors( ZipView );
   OUT(Print_Command);
   }
 
-static void
-Quit_Command( self )
-  register struct ltv	     *self;
+static void Quit_Command(struct ltv *self)
   {
   static char		     *choices[] =
 		{"Cancel", "Save", "Save & Quit", "Quit Anyway", 0};
@@ -1538,9 +1419,7 @@ Quit_Command( self )
   OUT(Quit_Command);
   }
 
-static void
-Debug_Command( self )
-  register struct ltv	     *self;
+static void Debug_Command(struct ltv *self)
   {
   IN(Debug_Command);
   debug = !debug;
@@ -1601,7 +1480,7 @@ NULL
 };
 
 
-static
+static int
 Build_Menu()
   {
   IN(Build_Menu);
@@ -1609,17 +1488,14 @@ Build_Menu()
   OUT(Build_Menu);
   }
 
-static long
-Exceptions( self, facility, status )
-  register struct ltv	     *self;
-  register long		      status, facility;
+static long Exceptions(struct ltv *self, long facility, long status)
   {
   char			      msg[512];
 
   IN(Exceptions);
 /*===*/
 self = SELF;
-sprintf( msg, "Exception  Status = %d  Facility = %d", status, facility );
+sprintf( msg, "Exception  Status = %ld  Facility = %ld", status, facility );
 zipview_Announce( ZipView, msg );
   OUT(Exceptions);
   return  0;

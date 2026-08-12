@@ -60,10 +60,7 @@ static char *rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/syn
 #include <text.ih>
 
 
-	boolean
-toksym__InitializeObject(ClassID, self)
-	struct classhdr *ClassID;
-	struct toksym *self;
+boolean toksym__InitializeObject(struct classheader *ClassID, struct toksym *self)
 {
 	self->loc = 0;	/* (because error terminator set uses -3 as flag) */
 	self->len = 0;
@@ -72,10 +69,7 @@ toksym__InitializeObject(ClassID, self)
 }
 
 
-	void
-toksym__FinalizeObject(ClassID, self)
-	struct classhdr *ClassID;
-	struct toksym *self;
+void toksym__FinalizeObject(struct classheader *ClassID, struct toksym *self)
 {
 }
 
@@ -83,12 +77,7 @@ toksym__FinalizeObject(ClassID, self)
 	copies the token from the text t to the buffer buf, up to maxlen bytes
 	returns buf 
 */
-	char *
-toksym__ToC(self, t, buf, maxlen)
-	struct toksym *self;
-	register struct text *t;
-	register char *buf; 
-	long maxlen;
+char * toksym__ToC(struct toksym *self, struct text *t, char *buf, long maxlen)
 {
 	register char *cx;
 	register long loc, len;

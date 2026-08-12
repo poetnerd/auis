@@ -21,6 +21,7 @@ along with Bison; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "andrewos.h"
 #include "machine.h"
 #include "new.h"
@@ -39,13 +40,13 @@ extern short *LAruleno;
 extern short *lookaheads;
 extern int verboseflag;
 
-void set_conflicts();
-void resolve_sr_conflict();
-void flush_shift();
-void log_resolution();
+void set_conflicts(int state);
+void resolve_sr_conflict(int state, int lookaheadnum);
+void flush_shift(int state, int token);
+void log_resolution(int state, int LAno, int token, char *resolution);
 void total_conflicts();
-void count_sr_conflicts();
-void count_rr_conflicts();
+void count_sr_conflicts(int state);
+void count_rr_conflicts(int state);
 
 char any_conflicts;
 char *conflicts;
@@ -80,9 +81,7 @@ initialize_conflicts()
 }
 
 
-void
-set_conflicts(state)
-int state;
+void set_conflicts(int state)
 {
   register int i;
   register int k;
@@ -167,10 +166,7 @@ It has already been checked that the rule has a precedence.
 A conflict is resolved by modifying the shift or reduce tables
 so that there is no longer a conflict.  */
 
-void
-resolve_sr_conflict(state, lookaheadnum)
-int state;
-int lookaheadnum;
+void resolve_sr_conflict(int state, int lookaheadnum)
 {
   register int i;
   register int mask;
@@ -270,10 +266,7 @@ int lookaheadnum;
 /* turn off the shift recorded for the specified token in the specified state.
 Used when we resolve a shift-reduce conflict in favor of the reduction.  */
 
-void
-flush_shift(state, token)
-int state;
-int token;
+void flush_shift(int state, int token)
 {
   register shifts *shiftp;
   register int k, i;
@@ -293,10 +286,7 @@ int token;
 }
 
 
-void
-log_resolution(state, LAno, token, resolution)
-int state, LAno, token;
-char *resolution;
+void log_resolution(int state, int LAno, int token, char *resolution)
 {
   fprintf(foutput,
 	  "Conflict in state %d between rule %d and token %s resolved as %s.\n",
@@ -412,9 +402,7 @@ total_conflicts()
 }
 
 
-void
-count_sr_conflicts(state)
-int state;
+void count_sr_conflicts(int state)
 {
   register int i;
   register int k;
@@ -480,9 +468,7 @@ int state;
 }
 
 
-void
-count_rr_conflicts(state)
-int state;
+void count_rr_conflicts(int state)
 {
   register int i;
   register int j;
@@ -527,9 +513,7 @@ int state;
 }
 
 
-void
-print_reductions(state)
-int state;
+void print_reductions(int state)
 {
   register int i;
   register int j;

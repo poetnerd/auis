@@ -64,6 +64,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 #include <image.ih>
 #define AUXMODULE 1
 #include <imagev.eh>
+static void setPaper();
 
 #define PIX2INCH 72.0   /* # of pixels per inch, at 100% scaling */
 
@@ -96,11 +97,12 @@ static double margins[7][2] = { { 1.000, 1.000},   /* US NORMAL */
 /* RANGE forces a to be in the range b..c (inclusive) */
 #define RANGE(a,b,c) { if (a < b) a = b;  if (a > c) a = c; }
 
-static void setScale();
-void centerImage(), writePS();
-static void psColorImage(), psColorMap(), epsPreview();
-static void psRleCmapImage();
-static int  rle_encode(), writeBWStip();
+static void setScale(struct imagev *self, int xscale, int yscale);
+static void centerImage();
+void writePS(struct imagev *self, FILE *fp, int *wpts, int *hpts, int toplevel);
+static void psColorImage(FILE *fp), psColorMap(FILE *fp, int color, int nc, byte *rmap, byte *gmap, byte *bmap);
+static void psRleCmapImage(FILE *fp, int color);
+static int  rle_encode(byte *scanline, byte *rleline, int wide), writeBWStip(FILE *fp, byte *pic, char *prompt, int w, int h);
 
 /* local variables */
 static double sz_inx, sz_iny;     /* image size, in inches */
@@ -117,9 +119,7 @@ static void setPaper()
 }
 
 /***************************************************/
-static void setScale( self, xscale, yscale )
-    struct imagev *self;
-    int xscale, yscale;
+static void setScale(struct imagev *self, int xscale, int yscale)
 {
     struct image *image = (struct image *) imagev_GetDataObject(self);
     double hsx, hsy;
@@ -159,11 +159,7 @@ static void centerImage()
 
 
 /***************************************************/
-void writePS( self, fp, wpts, hpts, toplevel )
-    struct imagev *self;
-    FILE *fp;
-    int *wpts, *hpts;
-    int toplevel;
+void writePS(struct imagev *self, FILE *fp, int *wpts, int *hpts, int toplevel)
 {
     struct image *image = (struct image *) imagev_GetDataObject(self);
     struct image *new = image_New();
@@ -241,9 +237,6 @@ void writePS( self, fp, wpts, hpts, toplevel )
 	   *(gmap + i) = image_GreenPixel(new, i) >> 8;
 	   *(bmap + i) = image_BluePixel(new, i) >> 8;
        }
-
-   if(FALSE)
-       epsPreview(fp, inpix, colorType, w, h);
 
    if(toplevel == 0){
        fprintf(fp,"%%%%EndProlog\n\n");
@@ -383,9 +376,7 @@ void writePS( self, fp, wpts, hpts, toplevel )
 
 
 /**********************************************/
-static int rle_encode(scanline, rleline, wide)
-     byte *scanline, *rleline;
-     int wide;
+static int rle_encode(byte *scanline, byte *rleline, int wide)
 {
   /* generates a rle-compressed version of the scan line.
    * rle is encoded as such:
@@ -489,8 +480,7 @@ static int rle_encode(scanline, rleline, wide)
 	  
 	    
 /**********************************************/
-static void psColorImage(fp)
-FILE *fp;
+static void psColorImage(FILE *fp)
 {
   /* spits out code that checks if the PostScript device in question knows about the 'colorimage' operator.  If it doesn't, it defines 'colorimage' in terms of image (ie, generates a greyscale image from RGB data) */
 
@@ -552,10 +542,7 @@ FILE *fp;
 
 
 /**********************************************/
-static void psColorMap(fp, color, nc, rmap, gmap, bmap)
-     FILE *fp;
-     int color, nc;
-     byte *rmap, *gmap, *bmap;
+static void psColorMap(FILE *fp, int color, int nc, byte *rmap, byte *gmap, byte *bmap)
 {
   /* spits out code for the colormap of the following image
      if !color, it spits out a mono-ized graymap */
@@ -579,8 +566,7 @@ static void psColorMap(fp, color, nc, rmap, gmap, bmap)
 
 
 /**********************************************/
-static void psRleCmapImage(fp, color)
-FILE *fp;
+static void psRleCmapImage(FILE *fp, int color)
 {
   /* spits out code that defines the 'rlecmapimage' operator */
 
@@ -648,31 +634,6 @@ FILE *fp;
 
 
 
-/**********************************************/
-static void epsPreview(self, fp, pic)
-    struct imagev *self;
-    FILE *fp;
-    byte *pic;
-{
-    struct image *image = (struct image *) imagev_GetDataObject(self);
-    byte *prev;
-    int w = image_Width(image), h = image_Height(image);
-
-  /* put in an EPSI preview */
-  
-    if (colorType != IBITMAP) { /* have to generate a preview */
-     image_Dither(image);
-    }
-    prev = image_Data(image);
-  
-    fprintf(fp,"%%%%BeginPreview: %d %d %d %d\n", w, h, 1, 
-	    (w/(72*4) + 1) * h);
-
-    writeBWStip(fp, prev, "% ", w, h);
-
-    fprintf(fp,"%%%%EndPreview\n");
-}
-
 static unsigned char hex[16] = {
 	'0', '1', '2', '3', '4', '5', '6', '7',
 	'8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
@@ -684,11 +645,7 @@ static unsigned char invhex[16] = {
 };
 
 /***********************************/
-static int writeBWStip(fp, pic, prompt, w, h)
-    FILE *fp;
-    byte *pic;
-    char *prompt;
-    int  w, h;
+static int writeBWStip(FILE *fp, byte *pic, char *prompt, int w, int h)
 {
   /* write the given 'pic' (B/W stippled, 1 byte per pixel, 0=blk,1=wht) out as hexadecimal, max of 72 hex chars per line. returns '0' if everythings fine, 'EOF' if writing failed */
   int err = 0, i, j, lwidth;

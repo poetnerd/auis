@@ -45,15 +45,14 @@ static char rcsid[] = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/sr
 static struct keymap *raw_Map;
 static struct menulist *raw_Menus;
 
-void toggleOverstrike(); /*RSK92overstrike*/
+void toggleOverstrike(struct rawtextview *self, long key); /*RSK92overstrike*/
 
 static struct bind_Description rawtextBindings[]={
     {"rawtextview-toggle-overstrike-mode", "\033\034",0, NULL,0,0, toggleOverstrike, "Turn overstrike mode on or off."}, /*RSK92overstrike*/
     NULL
 };
 
-boolean rawtextview__InitializeClass(classID)
-struct classheader *classID;
+boolean rawtextview__InitializeClass(struct classheader *classID)
 {
     raw_Menus = menulist_New();
     raw_Map = keymap_New();
@@ -61,25 +60,20 @@ struct classheader *classID;
     return TRUE;
 }
 
-boolean rawtextview__InitializeObject(classID, self)
-struct classheader *classID;
-struct rawtextview *self;
+boolean rawtextview__InitializeObject(struct classheader *classID, struct rawtextview *self)
 {
     self->raw_state = keystate_Create(self, raw_Map);
     self->raw_menus = menulist_DuplicateML(raw_Menus, self);
     return TRUE;
 }
 
-void rawtextview__FinalizeObject(classID, self)
-struct classheader *classID;
-struct rawtextview *self;
+void rawtextview__FinalizeObject(struct classheader *classID, struct rawtextview *self)
 {
     keystate_Destroy(self->raw_state);
     menulist_Destroy(self->raw_menus);
 }
 
-void rawtextview__ReceiveInputFocus(self)
-struct rawtextview *self;
+void rawtextview__ReceiveInputFocus(struct rawtextview *self)
 {
     self->header.textview.hasInputFocus = TRUE;
     self->header.textview.keystate->next= NULL;
@@ -95,18 +89,14 @@ struct rawtextview *self;
     rawtextview_WantUpdate(self, self);
 }
 
-void rawtextview__PostMenus(self, menulist)
-struct rawtextview *self;
-struct menulist *menulist;
+void rawtextview__PostMenus(struct rawtextview *self, struct menulist *menulist)
 {
     menulist_ChainAfterML(self->raw_menus, menulist, 0);
     super_PostMenus(self, self->raw_menus);
 }
 
 /*RSK92overstrike*/
-void toggleOverstrike(self,key)
-struct rawtextview *self;
-long key;
+void toggleOverstrike(struct rawtextview *self, long key)
 {
     struct rawtext *d = (struct rawtext *)self->header.view.dataobject;
     if (rawtext_IsInOverstrikeMode(d)) {

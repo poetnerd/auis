@@ -36,15 +36,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 
 #include <big.h>
 
-char           *STBEGetString(stbe)
-STableBucketEntry_t *stbe;
+char * STBEGetString(STableBucketEntry_t *stbe)
 {
     return (*stbe);
 }
 
-void            STBESetString(stbe, string)
-STableBucketEntry_t *stbe;
-char           *string;
+void STBESetString(STableBucketEntry_t *stbe, char *string)
 {
     *stbe = string;
 }

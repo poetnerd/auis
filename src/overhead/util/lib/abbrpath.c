@@ -48,6 +48,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <ctype.h>
 #include <andrewos.h>
 #include <util.h>
+static void initMyHome();
 
 static int homeLen = -1;
 static char myHome[150] = "";
@@ -69,8 +70,7 @@ static void initMyHome()
 
 static char shortenRes[MAXPATHLEN+1] = "";
 
-char *ap_Shorten(pathname)
-char *pathname;
+char * ap_Shorten(char *pathname)
 {/* Shorten it if we can. */
     initMyHome();
     if (homeLen > 0) {
@@ -86,8 +86,7 @@ char *pathname;
     return pathname;
 }
 
-char *ap_ShortenAlso(pathname, auxI, auxH)
-char *pathname, *auxI, *auxH;
+char * ap_ShortenAlso(char *pathname, char *auxI, char *auxH)
 {/* Shorten it if we can. */
     int auxHLen, auxAbbr;
 

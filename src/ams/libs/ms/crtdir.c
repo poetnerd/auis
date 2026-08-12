@@ -32,11 +32,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <ms.h>
+#include <string.h>
+extern int CreateNewMSDirectory(char *Dirname, struct MS_Directory **NewDir, int Overwrite);
 
-MS_CreateNewMessageDirectory(DirName, Overwrite, obsolete)
-char *DirName;
-int Overwrite;
-char *obsolete;
+int MS_CreateNewMessageDirectory(char *DirName, int Overwrite, char *obsolete)
 {
     struct MS_Directory *Dir;
 

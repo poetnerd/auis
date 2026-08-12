@@ -37,15 +37,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 	system.
 */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <andrewos.h>
 
 #ifndef NULL
 #define NULL (char *)0
 #endif
 
-main (argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   char retval[1000], *s;
 

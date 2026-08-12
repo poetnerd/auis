@@ -30,6 +30,8 @@
 CDEBUGFLAGS =
 #endif
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 DOBJS = eq.do eqv.do
 IHFILES = eq.ih eqv.ih
 

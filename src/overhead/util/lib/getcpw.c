@@ -45,6 +45,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include <wp.h>
 #endif /* WHITEPAGES_ENV */
 #include <svcconf.h>
+static char * AddStg();
+static struct passwd * getcpwkey();
 
 
 extern int errno;
@@ -60,8 +62,7 @@ static int idxID = -1, idxPW, idxNI, idxGI, idxN, idxHD, idxSh;
 
 static char StgBuf[BUFSIZ+1];
 static char *StgPtr;
-static char *AddStg(loc)
-char *loc;
+static char * AddStg(char *loc)
 {/* Store a value in StgBuf and return a pointer to it */
     char *OldStg;
     int LocLen;
@@ -180,8 +181,7 @@ int vuid; char *vcell;
     }
 }
 
-struct passwd *getcpwnam(vnam, vcell)
-char *vnam, *vcell;
+struct passwd * getcpwnam(char *vnam, char *vcell)
 {/* Return a struct passwd for vuid, a Vice pw_nam, in Vice cell vcell. */
     wp_ErrorCode Res;
     wp_PrimeKey KVal;
@@ -210,9 +210,7 @@ char *vnam, *vcell;
 #endif /* WHITEPAGES_ENV */
 
 #ifdef TESTINGONLYTESTING
-main (argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
     struct passwd *P;
 

@@ -38,6 +38,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <nstdmark.eh>
 #include <tree23.ih>
 
+struct filterstruct;
+static void DoFreeTree(struct nestedmark *self);
+static void FilterProc(struct nestedmark *self, struct filterstruct *data, struct tree23int *t, struct tree23int *which);
+
 static boolean GlobalIsolation = FALSE;
 
 /* These statics are used for generating the next change in the nested marks.
@@ -47,9 +51,8 @@ static struct nestedmark *lastSelf;
 static long lastPos;
 static long ncrlength;
 
-boolean nestedmark__InitializeObject(classID, self)
-struct classheader *classID;
-struct nestedmark *self;  {
+boolean nestedmark__InitializeObject(struct classheader *classID, struct nestedmark *self)
+{
     self->children = NULL;
     self->position = NULL;
     self->length = 999999999;
@@ -60,8 +63,7 @@ struct nestedmark *self;  {
     return TRUE;
 }
 
-struct nestedmark *nestedmark__NewButSimilar(self)
-struct nestedmark *self;
+struct nestedmark * nestedmark__NewButSimilar(struct nestedmark *self)
 {
     struct nestedmark *sib=nestedmark_NewFromObject(self);
     sib->includeBeginning=self->includeBeginning;
@@ -69,14 +71,13 @@ struct nestedmark *self;
     return sib;
 }
 
-static void DoFreeTree(self)
-struct nestedmark *self;
+static void DoFreeTree(struct nestedmark *self)
 {
     nestedmark_FreeTree(self);
 }
 
-void nestedmark__FreeTree(self)
-struct nestedmark *self;  {
+void nestedmark__FreeTree(struct nestedmark *self)
+{
     if (self->children)  {
 	tree23int_Apply(self->children, (procedure) DoFreeTree);
 	tree23int_Free(self->children);
@@ -90,19 +91,14 @@ struct filterstruct {
     struct nestedmark *fpparent;
 };
 
-static void FilterProc(self, data, t, which)
-struct nestedmark *self;
-struct filterstruct *data;
-struct tree23int *t;
-struct tree23int *which;  {
+static void FilterProc(struct nestedmark *self, struct filterstruct *data, struct tree23int *t, struct tree23int *which)
+{
     self->position = t;
     if (which == data->fptree)
 	self->parent = data->fpparent;
 }
 
-struct nestedmark *splitOffRight(self,rpos)
-struct nestedmark *self;
-int rpos;
+struct nestedmark * splitOffRight(struct nestedmark *self, int rpos)
 {
     struct tree23int *node;
     struct nestedmark *right=nestedmark_NewButSimilar(self);
@@ -144,9 +140,7 @@ int rpos;
     return right;
 }
 
-struct nestedmark *nestedmark__Split(self,rpos)
-struct nestedmark *self;
-long rpos;
+struct nestedmark * nestedmark__Split(struct nestedmark *self, long rpos)
 {
     struct nestedmark *right=splitOffRight(self,rpos), *parent=self->parent;
 
@@ -160,10 +154,7 @@ long rpos;
     return right;
 }
 
-struct nestedmark *nestedmark__Add(self, pos, length)
-struct nestedmark *self;
-long pos;
-long length;
+struct nestedmark * nestedmark__Add(struct nestedmark *self, long pos, long length)
 {
     register struct nestedmark *cp;
     register struct nestedmark *nm1;
@@ -226,8 +217,8 @@ long length;
     return newnm;
 }
 
-void nestedmark__Delete(self)
-struct nestedmark *self;  {
+void nestedmark__Delete(struct nestedmark *self)
+{
 register struct nestedmark *pp;
     int relleft;
     struct filterstruct procdata;
@@ -246,10 +237,7 @@ register struct nestedmark *pp;
     nestedmark_Destroy(self);
 }
 
-void nestedmark__Update(self, pos, length)
-struct nestedmark *self;
-long pos;
-long length;
+void nestedmark__Update(struct nestedmark *self, long pos, long length)
 {
     register struct nestedmark *up, *tp;
     long tpos, tsize;
@@ -322,9 +310,8 @@ long length;
     }
 }
 
-struct nestedmark *nestedmark__GetInnerMost(self, pos)
-struct nestedmark *self;
-long pos;  {
+struct nestedmark * nestedmark__GetInnerMost(struct nestedmark *self, long pos)
+{
     register struct nestedmark *tp;
     long  eleft;
 
@@ -353,9 +340,8 @@ long pos;  {
     return self;
 }
 
-struct nestedmark *nestedmark__GetEnclosing(self, pos)
-struct nestedmark *self;
-long pos;  {
+struct nestedmark * nestedmark__GetEnclosing(struct nestedmark *self, long pos)
+{
     register struct nestedmark *tp;
     long  eleft;
 
@@ -400,8 +386,8 @@ long pos;  {
     return self;
 }
 
-long nestedmark__Eval(self)
-struct nestedmark *self;  {
+long nestedmark__Eval(struct nestedmark *self)
+{
     register int i;
 
     i=0;
@@ -414,9 +400,8 @@ struct nestedmark *self;  {
     return i;
 }
 
-struct nestedmark *nestedmark__GetCommonParent(self, nmark)
-struct nestedmark *self;
-struct nestedmark *nmark;  {
+struct nestedmark * nestedmark__GetCommonParent(struct nestedmark *self, struct nestedmark *nmark)
+{
     register struct nestedmark *tp;
     register struct nestedmark *up;
 
@@ -433,15 +418,13 @@ struct nestedmark *nmark;  {
     return NULL;	/* no common parent */
 }
 
-void nestedmark__SetLength(self, length)
-struct nestedmark *self;
-long length;  {
+void nestedmark__SetLength(struct nestedmark *self, long length)
+{
     self->length = length;
 }
 
-long nestedmark__GetNextChange(self, pos)
-struct nestedmark *self;
-long pos;  {
+long nestedmark__GetNextChange(struct nestedmark *self, long pos)
+{
     if (self != lastSelf || pos != lastPos)
 	nestedmark_GetInnerMost(self, pos);
     return ncrlength;
@@ -452,9 +435,7 @@ nmark is above self.  If it is negative then self is above nmark.
 If it is 0 then they are the same node and if it is nestedmark_UNRELATED
 then they are not directly related. */
 
-long nestedmark__Distance(self, nmark)
-struct nestedmark *self;
-struct nestedmark *nmark;
+long nestedmark__Distance(struct nestedmark *self, struct nestedmark *nmark)
 {
     register int i;
     register struct nestedmark *tmark = self;
@@ -466,18 +447,13 @@ struct nestedmark *nmark;
     return nestedmark_UNRELATED;
 }
 
-void nestedmark__SetStyle(self, includebeginning, includeending)
-    struct nestedmark *self;
-    boolean includebeginning;
-    boolean includeending;
+void nestedmark__SetStyle(struct nestedmark *self, boolean includebeginning, boolean includeending)
 {
     self->includeBeginning = includebeginning;
     self->includeEnding = includeending;
 }
 
-struct nestedmark *nestedmark__GetChild(self, pos)
-    struct nestedmark *self;
-    long pos;
+struct nestedmark * nestedmark__GetChild(struct nestedmark *self, long pos)
 {
     struct nestedmark *child;
     
@@ -494,10 +470,7 @@ struct nestedmark *nestedmark__GetChild(self, pos)
     return NULL;
 }
 
-struct nestedmark *nestedmark__GetPreviousChild(self, nm, pos)
-    struct nestedmark *self;
-    struct nestedmark *nm;
-    long pos;
+struct nestedmark * nestedmark__GetPreviousChild(struct nestedmark *self, struct nestedmark *nm, long pos)
 {
     struct tree23int *tp;
 
@@ -530,10 +503,7 @@ struct nestedmark *nestedmark__GetPreviousChild(self, nm, pos)
     }
 }
 
-struct nestedmark *nestedmark__GetNextChild(self, nm, pos)
-    struct nestedmark *self;
-    struct nestedmark *nm;
-    long pos;
+struct nestedmark * nestedmark__GetNextChild(struct nestedmark *self, struct nestedmark *nm, long pos)
 {
     struct tree23int *tp;
     
@@ -557,18 +527,14 @@ struct nestedmark *nestedmark__GetNextChild(self, nm, pos)
     }
 }
 
-long nestedmark__NumberOfChildren(self)
-    struct nestedmark *self;
+long nestedmark__NumberOfChildren(struct nestedmark *self)
 {
     if (self->children != 0)
 	return tree23int_NumberOfLeaves(self->children);
     return 0;
 }
 
-	boolean
-nestedmark__SetGlobalIsolation(classID, dontextend)
-	boolean dontextend;
-	struct classheader *classID;
+boolean nestedmark__SetGlobalIsolation(struct classheader *classID, boolean dontextend)
 {
 	boolean Old = GlobalIsolation;
 	GlobalIsolation = dontextend;

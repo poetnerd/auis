@@ -296,7 +296,7 @@ struct tmview *self;
 struct menulist *ml;
 {
     if(self->shmenus!=NULL)
-	menulist_ChainAfterML(self->menus,self->shmenus,1);
+	menulist_ChainAfterML(self->menus,self->shmenus,(void *)1);
     if(ml!=self->menus)
 	menulist_ChainAfterML(self->menus,ml,0);
     super_PostMenus(self,self->menus);

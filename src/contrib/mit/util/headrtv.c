@@ -55,6 +55,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <ctype.h>
 
 #include <pcompch.ih>
+static void DrawBorder(struct headrtv *self, struct rectangle *vb);
+static struct textview * GetTextView(struct view *self);
+static void InstallHeaderVariables();
+static void PrintLine(FILE *fp, char *string);
+static int findincommalist(char *list, char *sn);
+static char * headrtv_GetInput(struct text *textobj);
+static void headrtv_MoveOn(struct headrtv *self, long rock);
+static void newline(struct headrtv *tv, long rock);
 
 #define Data(self)  ((struct header *)headrtv_GetDataObject(self))
 #define View(self) ((struct view *)self)
@@ -145,83 +153,71 @@ struct tm *GetCurrentTime() {
     return localtime(&t);
 }
 
-void TwentyFourHourTime(file)
-FILE *file;
+void TwentyFourHourTime(FILE *file)
 {
     struct tm *lt=GetCurrentTime();
     fprintf(file,"%d:%s%d",lt->tm_hour, (lt->tm_min>9)?"":"0",lt->tm_min);
 }
 
-void Blank(file)
-FILE *file;
+void Blank(FILE *file)
 {
     fprintf(file, "");
 }
 
-void Date(file)
-FILE *file;
+void Date(FILE *file)
 {
     struct tm *lt=GetCurrentTime();
     fprintf(file,"%s %d, %d", months[lt->tm_mon], lt->tm_mday,BASEYEAR+lt->tm_year);
 }
 
-void Date2(file)
-FILE *file;
+void Date2(FILE *file)
 {
     struct tm *lt=GetCurrentTime();
     fprintf(file," %d %s %d",lt->tm_mday, months[lt->tm_mon], BASEYEAR+lt->tm_year);
 }
 
-void FDate(file)
-FILE *file;
+void FDate(FILE *file)
 {
     struct tm *lt=GetCurrentTime();
     fprintf(file," %d %s %d",lt->tm_mday, fmonths[lt->tm_mon], BASEYEAR+lt->tm_year);
 }
 
-void Day(file)
-FILE *file;
+void Day(FILE *file)
 {
     struct tm *lt=GetCurrentTime();
     fputs(day[lt->tm_wday],file);
 }
 
-void FDay(file)
-FILE *file;
+void FDay(FILE *file)
 {
     struct tm *lt=GetCurrentTime();
     fputs(fday[lt->tm_wday],file);
 }
 
-void Month(file)
-FILE *file;
+void Month(FILE *file)
 {
     struct tm *lt=GetCurrentTime();
     fputs(months[lt->tm_mon],file);
 }
 
-void FMonth(file)
-FILE *file;
+void FMonth(FILE *file)
 {
     struct tm *lt=GetCurrentTime();
     fputs(fmonths[lt->tm_mon],file);
 }
 
-void Page(file)
-FILE *file;
+void Page(FILE *file)
 {
     fprintf(file,"\\\\n%%");
 }
 
-void ShortYear(file)
-FILE *file;
+void ShortYear(FILE *file)
 {
     struct tm *lt=GetCurrentTime();
     fprintf(file,"%d",lt->tm_year);
 }
 
-void TimeofDay(file)
-FILE *file;
+void TimeofDay(FILE *file)
 {
     struct tm *lt=GetCurrentTime();
     boolean am=TRUE;
@@ -234,8 +230,7 @@ FILE *file;
     fprintf(file,"%d:%s%d %s",lt->tm_hour, (lt->tm_min>9)?"":"0",lt->tm_min,am?"AM":"PM");
 }
 
-void Time(file)
-FILE *file;
+void Time(FILE *file)
 {
     long t=time(0);
     char *ct=ctime(&t),*i;
@@ -244,8 +239,7 @@ FILE *file;
     fputs(ct,file);
 }
 
-void Year(file)
-FILE *file;
+void Year(FILE *file)
 {
     struct tm *lt=GetCurrentTime();
     fprintf(file,"%d",BASEYEAR+lt->tm_year);
@@ -270,8 +264,7 @@ static procedure procs[]={
 #define NKEYWORDS (sizeof(keywords)/sizeof(char *))
 
 #if 0
-static int findincommalist(list,sn)
-char *list,*sn;
+static int findincommalist(char *list, char *sn)
 {
     int i,count=0;
     char buf[256],*p;
@@ -324,9 +317,7 @@ static void InstallHeaderVariables()
 }
     
 	
-static void PrintLine(fp,string)
-FILE *fp;
-char *string;
+static void PrintLine(FILE *fp, char *string)
 {
     long pos,len=strlen(string),c,index=0;
     char *ptr;
@@ -350,7 +341,7 @@ char *string;
 		    for(index=hvarcount-1;index>=0;index--) {
 			ptr = string + pos;
 			if(*hvars[index]==c && !strncmp(ptr,hvars[index], strlen(hvars[index]))) {
-			    fprintf(fp,"\\*(H%d\n",index);
+			    fprintf(fp,"\\*(H%ld\n",index);
 			    pos+=strlen(hvars[index])-1;
 			    break;
 			}
@@ -376,8 +367,7 @@ char *string;
     }
 }
 
-static char *headrtv_GetInput(textobj)
-struct text *textobj;
+static char * headrtv_GetInput(struct text *textobj)
 {
     int len,pos;
     char *string;
@@ -392,12 +382,7 @@ struct text *textobj;
     return string;
 }
 
-void headrtv__Print(self,file,processor,finalFormat, topLevel)
-struct headrtv *self;
-FILE *file;
-char *processor;
-char *finalFormat;
-boolean topLevel;
+void headrtv__Print(struct headrtv *self, FILE *file, char *processor, char *finalFormat, boolean topLevel)
 {
     char *string;
     int i;
@@ -416,11 +401,7 @@ boolean topLevel;
     }
 }
 
-enum view_DSattributes headrtv__DesiredSize(self, width, height, pass, desiredwidth, desiredheight)
-struct headrtv *self;
-long width, height;
-enum view_DSpass pass;
-long *desiredwidth, *desiredheight;
+enum view_DSattributes headrtv__DesiredSize(struct headrtv *self, long width, long height, enum view_DSpass pass, long *desiredwidth, long *desiredheight)
 {
     enum view_DSattributes result;
     result=lpair_DesiredSize(self->sections,width, height, pass, desiredwidth, desiredheight);
@@ -438,11 +419,9 @@ static char *hdrtv_close="Close";
 static char *hdrtv_open="Open";
 
 #define ALIGNMENT (graphic_ATLEFT|graphic_ATBASELINE)
-static void DrawBorder(self,vb)
-struct headrtv *self;
-struct rectangle *vb;
+static void DrawBorder(struct headrtv *self, struct rectangle *vb)
 {
-    int width,junk,left;
+    long width,junk,left;
     char *type;
    
     type=hdrtv_where[Data(self)->where];
@@ -471,8 +450,7 @@ struct rectangle *vb;
     headrtv_DrawLineTo(self, self->closebox - 5, self->top-1);
 }
 
-static struct textview *GetTextView(self)
-struct view *self;
+static struct textview * GetTextView(struct view *self)
 {
     while(self) {
 	if(class_IsTypeByName(class_GetTypeName(self),"textview")) return (struct textview *)self;
@@ -481,13 +459,7 @@ struct view *self;
     return (struct textview *)self;
 }
 
-static void headrtv_MoveOn(self, rock)
-struct headrtv *self;
-long rock;
-/* This is the routine bound to the Return key - it moves the focus from
-  self->name to self->number, or, if self->number already has the focus,
-      then it calls turnin_TurninGo
-      */
+static void headrtv_MoveOn(struct headrtv *self, long rock)
 {
     if (self->my_focus >= header_rtext) self->my_focus = header_ltext;
     else self->my_focus++;
@@ -495,12 +467,7 @@ long rock;
     headrtv_WantInputFocus(self, Textv(self, self->my_focus));
 }
 
-struct view *headrtv__Hit(self, action, x, y, numberOfClicks)
-struct headrtv *self;
-enum view_MouseAction action;
-long x;
-long y;
-long numberOfClicks;
+struct view * headrtv__Hit(struct headrtv *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     if(y>self->top) {
 	int i;
@@ -547,10 +514,7 @@ long numberOfClicks;
     return View(self);
 }
 
-void headrtv__FullUpdate(self, type, left, top, width, height)
-struct headrtv *self;
-enum view_UpdateType type;
-long left,top,width,height;
+void headrtv__FullUpdate(struct headrtv *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct rectangle mvb;
    
@@ -572,8 +536,7 @@ long left,top,width,height;
     }
 }
 
-void headrtv__Update(self)
-struct headrtv *self;
+void headrtv__Update(struct headrtv *self)
 {
     struct rectangle mvb;
     super_Update(self);
@@ -581,30 +544,24 @@ struct headrtv *self;
     DrawBorder(self,&mvb);
 }
 
-void headrtv__WantInputFocus(self,requestor)
-struct headrtv *self;
-struct view *requestor;
+void headrtv__WantInputFocus(struct headrtv *self, struct view *requestor)
 {
     if(View(self)!=requestor || !self->open) super_WantInputFocus(self,requestor);
 }
 
-void headrtv__LoseInputFocus(self)
-struct headrtv *self;
+void headrtv__LoseInputFocus(struct headrtv *self)
 {
     if(self->sections) lpair_LoseInputFocus(self->sections);
 }
 
-void headrtv__PostKeyState(self, keystate)
-struct headrtv *self;
-struct keystate *keystate;
+void headrtv__PostKeyState(struct headrtv *self, struct keystate *keystate)
 {
     struct keystate *k;
     k=keystate_AddBefore(self->keystate,keystate);
     super_PostKeyState(self,k);
 }
     
-void headrtv__ReceiveInputFocus(self)
-struct headrtv *self;
+void headrtv__ReceiveInputFocus(struct headrtv *self)
 {
     
     if(!self->open) {
@@ -620,25 +577,19 @@ struct headrtv *self;
 	}
 }
 
-boolean headrtv__CanView(self,name)
-struct headrtv *self;
-char *name;
+boolean headrtv__CanView(struct headrtv *self, char *name)
 {
     if(!strcmp(name,"header")) return TRUE;
     return FALSE;
 }
 
-void headrtv__LinkTree(self,parent)
-struct headrtv *self;
-struct view *parent;
+void headrtv__LinkTree(struct headrtv *self, struct view *parent)
 {
     super_LinkTree(self,parent);
     if(self->sections) lpair_LinkTree(self->sections,self);
 }
 
-void headrtv__SetDataObject(self,object)
-struct headrtv *self;
-struct header *object;
+void headrtv__SetDataObject(struct headrtv *self, struct dataobject *object)
 {
     int i, pos;
     super_SetDataObject(self,object);
@@ -650,9 +601,7 @@ struct header *object;
     }
 }
 
-boolean headrtv__InitializeObject(classID,self)
-struct classheader *classID;
-struct headrtv *self;
+boolean headrtv__InitializeObject(struct classheader *classID, struct headrtv *self)
 {
     struct FontSummary *fontSummary;
     struct lpair *bottom;
@@ -691,23 +640,20 @@ struct headrtv *self;
 }
 
 #if 0
-static void newline(tv,rock)
-struct headrtv *tv;
-long rock;
+static void newline(struct headrtv *tv, long rock)
 {
     message_DisplayString(tv,0,"Headers and footers can be only one line long.");
 }
 #endif
 
-boolean headrtv__InitializeClass(classID)
-struct classheader *classID;
+boolean headrtv__InitializeClass(struct classheader *classID)
 {
     struct proctable_Entry *tempProc;
     struct classinfo *textvClassInfo=class_Load("textview");
     if(!textvClassInfo) return FALSE;
     newKeymap = keymap_New();
     if(!newKeymap) return FALSE;
-    tempProc = proctable_DefineProc("headrtv-newline", headrtv_MoveOn ,&headrtv_classinfo,NULL, "Goes to next section of the header/footer.");
+    tempProc = proctable_DefineProc("headrtv-newline", (procedure) headrtv_MoveOn ,&headrtv_classinfo,NULL, "Goes to next section of the header/footer.");
     keymap_BindToKey(newKeymap,"\n",tempProc,0);
     keymap_BindToKey(newKeymap,"\r",tempProc,0);
     InstallHeaderVariables();

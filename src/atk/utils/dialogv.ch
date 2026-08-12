@@ -36,8 +36,8 @@ struct dialogv_HitRock {
 class dialogv : view {
 classprocedures:
     InitializeClass() returns boolean;
-    InitializeObject(struct sbutton *self) returns boolean;
-    FinalizeObject(struct sbutton *self);
+    InitializeObject(struct dialogv *self) returns boolean;
+    FinalizeObject(struct dialogv *self);
     Create(char **list, char *font, int style) returns struct dialogv *;
     
 overrides:
@@ -60,7 +60,7 @@ macromethods:
     
 methods:
    PostChoice(struct im *im, struct view *client, boolean *cflag, int deflt, boolean blocking, long pos) returns int;
-   PostInput(struct im *im, struct view *client, procedure choicefunc, long choicerock, boolean blocking, long pos) returns int;
+   PostInput(struct im *im, struct view *client, procedure choicefunc, void *choicerock, boolean blocking, long pos) returns int;
    SetLayout(int rows, int cols);
    InstallRider(struct view *rider);
    InstallSidekick(struct view *sidekick);

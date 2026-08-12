@@ -41,12 +41,40 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mailconf.h>
 #include <parseadd.h>
 #include <mail.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+static int AddNamesToVector(char ***pVec, int *index, int *maxindex, char *namelist, int len);
+static char    * newreceived(char *ClientVersion);
+extern int AddHeader(struct MS_Message *Msg, char *Head);
+extern int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int BuildAttributesField(struct MS_Message *msg);
+extern int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail);
+extern int BuildDateField(struct MS_Message *Msg, int datetype);
+extern int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int DeleteHeader(struct MS_Message *Msg, int num);
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);  /* overhead/mail/lib/parseadd.c */
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int FreeSubmitVector(char **SubmitVector, int which);
+extern int GenTempName(char *Buf);
+extern int InventID(struct MS_Message *msg);
+extern int IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int NonfatalBizarreError(char *text);
+extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);  /* overhead/mail/lib/parseadd.c */
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
+extern int UnformatMessage(struct MS_Message *Msg);
+extern int UnparseOneAddress(PARSED_ADDRESS *Addr, int Mode, char *Buffer, int Length, char *Prefix, int LineLength);  /* overhead/mail/lib/parseadd.c */
+extern int WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode);
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dropoff(char *tolist[], char *mesgfile, char *returnpath, char *home, long flags);  /* overhead/mail/lib/dropoff.c */
 
 extern FILE    *fopen();
 extern char     MAILLOGSTATFILE[], MyMailDomain[];
 
 
-extern char     Me[], *MyPrettyAddress, *BCCto, home[], *NextAddress();
+extern char     Me[], *MyPrettyAddress, *BCCto, home[], *NextAddress(char *add);
 extern int      BCCFlag, IsLoggingMailStats, myvuid, errno, MS_DeliveryType;
 
 static char     ThisHost[150] = "";
@@ -66,8 +94,7 @@ char           *newmid()
     return (MidText);
 }
 
-static char    *newreceived(ClientVersion)
-char           *ClientVersion;
+static char * newreceived(char *ClientVersion)
 {
     static char     RecText[500];
 
@@ -87,10 +114,7 @@ char           *ClientVersion;
 
 static char     LastGoodDeliveryFileName[1 + MAXPATHLEN] = "";
 
-static          AddNamesToVector(pVec, index, maxindex, namelist, len)
-char         ***pVec;
-int            *index, *maxindex, len;
-char           *namelist;
+static int AddNamesToVector(char ***pVec, int *index, int *maxindex, char *namelist, int len)
 {
     char          **Vec, *onerecip, TempBuf[4000], SaveChar;
     PARSED_ADDRESS *AddrList;
@@ -123,7 +147,7 @@ char           *namelist;
             free(TempAddr->RoutePhrase);
             (TempAddr->RoutePhrase) = NULL;
         }
-        if (UnparseOneAddress(TempAddr, UP_SPACES_TO_DOTS, TempBuf, sizeof(TempBuf), "", "    ", 69) != PA_OK) {
+        if (UnparseOneAddress(TempAddr, UP_SPACES_TO_DOTS, TempBuf, sizeof(TempBuf), "    ", 69) != PA_OK) {
             FreeAddressList(AddrList);
             AMS_RETURN_ERRCODE(errno, EIN_UNPARSEADDR, EVIA_SUBMITMESSAGE);
         }
@@ -160,12 +184,7 @@ char           *namelist;
     return (0);
 }
 
-MS_SubmitMessage(FileName, DeliveryOptions, ErrorMessage, ErrMsgLimit, ClientProgram)
-char           *FileName;              /* Passed in */
-int             DeliveryOptions;       /* Passed in */
-char           *ErrorMessage;          /* Passed out */
-int             ErrMsgLimit;           /* Passed in */
-char           *ClientProgram;         /* Passed in */
+int MS_SubmitMessage(char *FileName, int DeliveryOptions, char *ErrorMessage, int ErrMsgLimit, char *ClientProgram)
 {
     struct MS_Message *Msg;
     int             which = 0, maxwhich = 0, badparse = 0, linelen = 0, sawbadchar = 0, longlines = 0, code, errcode, bytesleft, bytestoread;
@@ -388,7 +407,7 @@ char           *ClientProgram;         /* Passed in */
             if (BCCto) {
                 char            ErrorText[500];
 
-                sprintf(ErrorText, "Sending your BCC through the mail after error in direct insertion. (%d, %d, %d)", AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
+                sprintf(ErrorText, "Sending your BCC through the mail after error in direct insertion. (%ld, %ld, %ld)", AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
                 NonfatalBizarreError(ErrorText);
             }
             if (!SubmitVector) {
@@ -532,9 +551,7 @@ char           *ClientProgram;         /* Passed in */
     AMS_RETURN_ERRCODE(errcode, EIN_DROPOFF, EVIA_SUBMITMESSAGE);
 }
 
-FreeSubmitVector(SubmitVector, which)
-char          **SubmitVector;
-int             which;
+int FreeSubmitVector(char **SubmitVector, int which)
 {
     if (!SubmitVector)
         return;

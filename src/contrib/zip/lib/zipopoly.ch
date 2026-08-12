@@ -58,11 +58,11 @@ overrides:
   Object_Icon_Cursor()					returns char;
   Object_Datastream_Code()				returns char;
 
-  Build_Object( pane, action, x, y, clicks, X, Y )	returns long;
-  Show_Object_Properties( pane, figure )		returns long;
-  Draw_Object( object, pane )				returns long;
-  Clear_Object( object, pane )				returns long;
-  Print_Object( object, pane )				returns long;
+  Build_Object( zip_type_pane pane, long action, long x, long y, long clicks, zip_type_point X, zip_type_point Y )	returns long;
+  Show_Object_Properties( zip_type_pane pane, zip_type_figure figure )		returns long;
+  Draw_Object( zip_type_figure object, zip_type_pane pane )				returns long;
+  Clear_Object( zip_type_figure object, zip_type_pane pane )				returns long;
+  Print_Object( zip_type_figure object, zip_type_pane pane )				returns long;
 
   };
 

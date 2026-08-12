@@ -144,7 +144,7 @@ methods:
 
   SendBeginData(FILE *file, long writeID, int level) returns long;
   SendImageData(FILE *file) returns long;
-  SendEndData(FILE *file, long writeID, int id) returns long;
+  SendEndData(FILE *file, long writeID, long id) returns long;
 
   GetBeginData(FILE *file, long id) returns long;
   GetImageData(FILE *file) returns long;

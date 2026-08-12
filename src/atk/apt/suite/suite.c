@@ -84,6 +84,15 @@ END-SPECIFICATION  ************************************************************/
 #include <suite.eh>
 #include <suitecv.ih>
 #include <suiteev.ih>
+static long BreakSorter(long *item1, long *item2);
+static void ChangeItemAttribute(struct suite *self, struct suite_item *item, long attribute, long value);
+static void ChangeItemCaption(struct suite *self, struct suite_item *item, char *caption);
+static void ChangeSuiteAttribute(struct suite *self, long attribute, long value);
+static void CheckForNewFirstVisible(struct suite *self);
+static void DrawRectSize(struct suiteev *self, long x, long y, long width, long height);
+static void SetArrangementAttribute(struct suite *self, unsigned long value);
+static void SetBorderStyleAttribute(struct suite *self, unsigned int *border_style, long value);
+static long WithinRect(long x, long y, struct rectangle *r);
 
 #define	CurrentItem		    (self->current_item)
 #define Apt			    (self->apt)
@@ -220,54 +229,48 @@ END-SPECIFICATION  ************************************************************/
 #define	MaxItemPosGiven		    (self->max_item_pos_given)
 #define	IsLinked		    (suite_IsAncestor(self,suite_GetIM(self)))
 #define graphicIsMono			(self->mono)
-static struct suite_item	    *GenerateItem();
-static void			     SetItems();
-static void			     SetSuiteAttribute();
-static void			     SetItemAttribute();
-static void			     SetSortRoutine();
-static long			     Within();
-static char			    *strip();
-static void			     AllocNameSpace();
-static void			     DrawTitle();
-static void			     DrawOutline();
-static long			     TitleSectionWidth();
-static long			     TitleSectionHeight();
-static void			     AssignSetAndTitleSpace();
-static void			     PlaceTitle();
-static void			     SetCaptionList();
-static void			     ParseFontFullName();
-static long			     AlphasortAscend();
-static long			     NumericAscend();
-static long			     AlphasortDescend();
-static long			     NumericDescend();
+static struct suite_item	    *GenerateItem(struct suite *self, suite_Specification *spec, char *name, long datum);
+static void			     SetItems(struct suite *self, char *elts);
+static void			     SetSuiteAttribute(struct suite *self, long attribute, long value);
+static void			     SetItemAttribute(struct suite *self, struct suite_item *item, long attribute, long value);
+static void			     SetSortRoutine(struct suite *self);
+static long			     Within(long x, long y, long left, long top, long width, long height);
+static char			    *strip(char *str);
+static void			     AllocNameSpace(char **target, char *source);
+static void			     DrawTitle(struct suite *self, struct rectangle *rect);
+static void			     DrawOutline(struct suite *self, struct rectangle *rect, short width, unsigned style);
+static long			     TitleSectionWidth(struct suite *self);
+static long			     TitleSectionHeight(struct suite *self, int newlineHeight);
+static void			     AssignSetAndTitleSpace(struct suite *self, struct rectangle *title, struct rectangle *container);
+static void			     PlaceTitle(struct suite *self, struct rectangle *title_sect, struct rectangle *title);
+static void			     SetCaptionList(struct suite *self, char **captions);
+static void			     ParseFontFullName(struct suite *self, char *fullname, char *familyName, long buffSize, long *size, long *type);
+static long			     AlphasortAscend(struct suite_item **item1, struct suite_item **item2);
+static long			     NumericAscend(struct suite_item **item1, struct suite_item **item2);
+static long			     AlphasortDescend(struct suite_item **item1, struct suite_item **item2);
+static long			     NumericDescend(struct suite_item **item1, struct suite_item **item2);
 static struct suite_item	    *AllocItem();
-static void			     FinalizeItem();
-static void			     HandleException();
-static void			     DefaultExceptionHandler();
-static void			     ValidateItem();
-static long			     SortStub();
-static void			     DrawRect();
-static void			     SetMWidths();
+static void			     FinalizeItem(struct suite_item *item);
+static void			     HandleException(struct suite *self, struct suite_item *item, long code);
+static void			     DefaultExceptionHandler(struct suite *self);
+static void			     ValidateItem(struct suite *self, struct suite_item *item);
+static long			     SortStub(struct suite_item **item1, struct suite_item **item2);
+static void			     DrawRect(struct suite *self, struct rectangle *Rect, int border_size);
+static void			     SetMWidths(struct suite *self);
 
-static long
-Within( x, y, left, top, width, height )
-  register long x, y, left, top, width, height;
+static long Within(long x, long y, long left, long top, long width, long height)
 {
   return((x >= left) && (x <= left + width) && (y >= top) && (y <= top + height));
 }
 
-static long
-WithinRect( x, y, r )
-  register long x, y;
-  register struct rectangle *r;
+static long WithinRect(long x, long y, struct rectangle *r)
 {
   return(Within(x,y,r->left,r->top,r->width,r->height));
 }
 
-static char *
-strip( str )
-  register char *str;
-{ register char *tmp = NULL, *head = NULL;
+static char * strip(char *str)
+{
+  register char *tmp = NULL, *head = NULL;
   if(!str) return(str);
   tmp = head = str;
   while(*str == 040) str++;
@@ -278,12 +281,10 @@ strip( str )
   return(head);
 }
 
-boolean
-suite__InitializeClass( ClassID )
-  register struct classheader *ClassID;
+boolean suite__InitializeClass(struct classheader *ClassID)
 {
-  proctable_DefineProc("suite-set-items", 
-			SetItems, &suite_classinfo,
+  proctable_DefineProc("suite-set-items",
+			(procedure)SetItems, &suite_classinfo,
 			"suite", "Set item list (colon separated list)");
   return(TRUE);
 }
@@ -294,7 +295,8 @@ boolean
 suite__InitializeObject( ClassID, self )
   register struct classheader *ClassID;
   register struct suite *self;
-{ char *tmp, *tmpFG, *tmpBG;
+{
+  char *tmp, *tmpFG, *tmpBG;
 
   IN(suite_InitializeObject);
 
@@ -484,9 +486,7 @@ suite__FinalizeObject( ClassID, self )
   OUT(suite_FinalizeObject);
 }
 
-void
-suite__ReceiveInputFocus( self )
-  register struct suite *self;
+void suite__ReceiveInputFocus(struct suite *self)
 {
   IN(suite_ReceiveInputFocus);
   HasFocus = TRUE;
@@ -494,9 +494,7 @@ suite__ReceiveInputFocus( self )
   OUT(suite_ReceiveInputFocus);
 }
 
-void
-suite__LoseInputFocus( self )
-  register struct suite *self;
+void suite__LoseInputFocus(struct suite *self)
 {
   IN(suite_LoseInputFocus);
   HasFocus = FALSE;
@@ -504,15 +502,12 @@ suite__LoseInputFocus( self )
   OUT(suite_LoseInputFocus);
 }
 
-struct suite *
-suite__Create( ClassID, suite, anchor )
-  struct classheader *ClassID;
-  suite_Specification *suite;
-  unsigned anchor;
-{ register struct suite *self = NULL;
+struct suite * suite__Create(struct classheader *ClassID, suite_Specification *suite, void *anchor)
+{
+  register struct suite *self = NULL;
   if(!(self = suite_New())) 
     HandleException(self,NULL,suite_InsufficientSpace);
-  ClientAnchor = anchor;    
+  ClientAnchor = (long)anchor;
   while(suite && suite->attribute) {
     SetSuiteAttribute(self,suite->attribute,suite->value);
     suite++;
@@ -534,10 +529,7 @@ suite__Create( ClassID, suite, anchor )
   return(self);
 }
 
-void
-suite__DestroyItem( self, item )
-  struct suite *self;
-  struct suite_item *item;
+void suite__DestroyItem(struct suite *self, struct suite_item *item)
 {
   IN(suite_DestroyItem);
   if(Items && item) {
@@ -552,21 +544,16 @@ suite__DestroyItem( self, item )
   OUT(suite_DestroyItem);
 }
 
-struct suite_item *
-suite__CreateItem( self, name, datum )
-  register struct suite *self;
-  register char *name;
-  register long datum;
-{ register struct suite_item *item = NULL;
+struct suite_item * suite__CreateItem(struct suite *self, char *name, long datum)
+{
+  register struct suite_item *item = NULL;
   IN(CreateItem);
   item = GenerateItem(self,NULL,name,datum);
   OUT(CreateItem);
   return(item);
 }
 
-static long
-BreakSorter( item1, item2 )
-  register long *item1, *item2;
+static long BreakSorter(long *item1, long *item2)
 {
   if(!item1 || !item2) return(0);
   if(*item1 < *item2) return(-1);
@@ -575,13 +562,9 @@ BreakSorter( item1, item2 )
 }
 
 
-static struct suite_item *
-GenerateItem( self, spec, name, datum )
-  register struct suite *self;
-  register suite_Specification *spec;
-  register char *name;
-  register long datum;
-{ register struct suite_item *item = NULL;
+static struct suite_item * GenerateItem(struct suite *self, suite_Specification *spec, char *name, long datum)
+{
+  register struct suite_item *item = NULL;
 
   IN(GenerateItem);
   if(!(item = AllocItem()))
@@ -614,10 +597,9 @@ GenerateItem( self, spec, name, datum )
   return(item);
 }
 
-static void
-SetMWidths( self )
-  struct suite *self;
-{ struct fontdesc_charInfo M_Info;
+static void SetMWidths(struct suite *self)
+{
+  struct fontdesc_charInfo M_Info;
   IN(SetMWidths);
   if(CaptionFont) {
     fontdesc_CharSummary(CaptionFont, suite_GetDrawable(self),'m',&M_Info);
@@ -630,9 +612,7 @@ SetMWidths( self )
   OUT(SetMWidths);
 }
 
-void
-suite__Update( self )
-  register struct suite *self;
+void suite__Update(struct suite *self)
 {
     IN(suite_Update);
     suiteev_Clear(SetView);
@@ -642,12 +622,9 @@ suite__Update( self )
     OUT(suite_Update);
 }
 
-void
-suite__FullUpdate( self, type, left, top, width, height )
-  register struct suite *self;
-  register enum view_UpdateType type;
-  register long left, top, width, height;
-{ struct rectangle *curse_rect = NULL, title;
+void suite__FullUpdate(struct suite *self, enum view_UpdateType type, long left, long top, long width, long height)
+{
+  struct rectangle *curse_rect = NULL, title;
   register boolean needs_scroll = FALSE;
 
   IN(suite_FullUpdate);
@@ -728,11 +705,9 @@ suite__FullUpdate( self, type, left, top, width, height )
 }
 
 
-static void
-DrawTitle( self, rect )
-  register struct suite *self;
-  register struct rectangle *rect;
-{ register long title_lines = NumberLines(TitleCaption);
+static void DrawTitle(struct suite *self, struct rectangle *rect)
+{
+  register long title_lines = NumberLines(TitleCaption);
   register long vert_point = 0, horiz_point = 0, i;
   struct rectangle title;
   char *tmp_title = NULL;
@@ -820,13 +795,9 @@ DrawTitle( self, rect )
   OUT(DrawTitle);
 }
 
-static void
-DrawOutline(self, rect, width, style)
-  register struct suite *self;
-  register struct rectangle *rect;
-  register short width;
-  register unsigned style;
-{ register long i = 0;
+static void DrawOutline(struct suite *self, struct rectangle *rect, short width, unsigned style)
+{
+  register long i = 0;
   register struct rectangle *inner = NULL;
   register long X1 = 0, Y1 = 0, X2 = 0, Y2 = 0;
 
@@ -860,12 +831,9 @@ DrawOutline(self, rect, width, style)
   OUT(DrawOutline);
 }
 
-struct view *
-suite__Hit( self, action, x, y, numberOfClicks )
-  register struct suite *self;
-  register enum view_MouseAction action;
-  register long x, y, numberOfClicks;
-{ struct view *retval = (struct view *) self;
+struct view * suite__Hit(struct suite *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
+{
+  struct view *retval = (struct view *) self;
 
   IN(suite_Hit);
   if(Scroll) {
@@ -887,11 +855,9 @@ suite__Hit( self, action, x, y, numberOfClicks )
   return(retval);
 }
 
-long
-suite__Reset( self, state )
-  register struct suite *self;
-  register long state;
-{ register long i = 0, status = 0;
+long suite__Reset(struct suite *self, long state)
+{
+  register long i = 0, status = 0;
   register struct suite_item *item = NULL;
   boolean onScreen = FALSE, doFullRedraw = FALSE;
   boolean doContainerRedraw = FALSE;
@@ -901,7 +867,7 @@ suite__Reset( self, state )
   }
   if(state & suite_Clear) {
     suite_ClearAllItems(self);
-    suite_SetSuiteAttribute(self,suite_TitleCaption(NULL));
+    suite_SetSuiteAttribute(self,suite_titlecaption, (long) (NULL));
     doFullRedraw = TRUE;
   }
   if(state & suite_ClearItems) {
@@ -909,7 +875,7 @@ suite__Reset( self, state )
     doContainerRedraw = TRUE;
   }
   if(state & suite_ClearTitle) {
-    suite_SetSuiteAttribute(self,suite_TitleCaption(NULL));
+    suite_SetSuiteAttribute(self,suite_titlecaption, (long) (NULL));
     doFullRedraw = TRUE;
   }
   if(state & suite_Activate) {
@@ -965,10 +931,9 @@ suite__Reset( self, state )
   return(status);
 }
 
-void
-suite__ClearAllItems( self )
-  struct suite *self;
-{ register int i = 0, count = 0;
+void suite__ClearAllItems(struct suite *self)
+{
+  register int i = 0, count = 0;
   register struct suite_item *item = NULL;
 
   IN(suite_ClearAllItems);
@@ -986,10 +951,9 @@ suite__ClearAllItems( self )
   OUT(suite_ClearAllItems);
 }
 
-static long
-TitleSectionWidth( self )
-  struct suite *self;
-{ register char *title = NULL, *newline = NULL, *tmp = NULL;
+static long TitleSectionWidth(struct suite *self)
+{
+  register char *title = NULL, *newline = NULL, *tmp = NULL;
   long numLines = 0, XWidth = 0, YWidth = 0, maxWidth = 0;
   register long i = 0;
 
@@ -1019,10 +983,7 @@ TitleSectionWidth( self )
   return(maxWidth);
 }
 
-static long
-TitleSectionHeight( self, newlineHeight )
-  struct suite *self;
-  int newlineHeight;
+static long TitleSectionHeight(struct suite *self, int newlineHeight)
 {
   IN(TitleSectionHeight);
   if(TitleCaption)
@@ -1035,11 +996,9 @@ TitleSectionHeight( self, newlineHeight )
   OUT(TitleSectionHeight);
 }
 
-static void
-AssignSetAndTitleSpace( self, title, container )
-  register struct suite *self;
-  register struct rectangle *title, *container;
-{ int newlineHeight;
+static void AssignSetAndTitleSpace(struct suite *self, struct rectangle *title, struct rectangle *container)
+{
+  int newlineHeight;
   register long TitleHeight, TitleWidth;
   
   newlineHeight = fontdesc_FontSummary(TitleFont, suite_GetDrawable(self))->newlineHeight;
@@ -1081,11 +1040,9 @@ AssignSetAndTitleSpace( self, title, container )
 	title->width,title->height);
 }
 
-static void
-PlaceTitle( self, title_sect, title )
-  struct suite *self;
-  struct rectangle *title_sect, *title;
-{ register long Width, Height;
+static void PlaceTitle(struct suite *self, struct rectangle *title_sect, struct rectangle *title)
+{
+  register long Width, Height;
   int newlineHeight;
   register unsigned alignment = TitleCaptionAlignment;
 
@@ -1111,11 +1068,9 @@ PlaceTitle( self, title_sect, title )
   }
 }
 
-static void
-SetCaptionList( self, captions )
-  register struct suite *self;
-  register char **captions;
-{ register char **ptr = captions;
+static void SetCaptionList(struct suite *self, char **captions)
+{
+  register char **ptr = captions;
 
     suite_ClearAllItems(self);
     if(ptr && *ptr && **ptr) {
@@ -1137,23 +1092,15 @@ SetCaptionList( self, captions )
     }
 }
 
-static void
-ParseFontFullName( self, fullname, familyName, buffSize, size, type )
-  register struct suite *self;
-  register char *fullname, *familyName;
-  register long buffSize;
-  register long *size, *type;
+static void ParseFontFullName(struct suite *self, char *fullname, char *familyName, long buffSize, long *size, long *type)
 {
   if(fullname && *fullname)
-      fontdesc_ExplodeFontName(fullname, familyName, buffSize, (long)type, (long)size);
+      fontdesc_ExplodeFontName(fullname, familyName, buffSize, type, size);
 }
 
-static void
-ChangeItemCaption( self, item, caption )
-  register struct suite *self;
-  register struct suite_item *item;
-  register char *caption;
-{ register struct text *txt = NULL;
+static void ChangeItemCaption(struct suite *self, struct suite_item *item, char *caption)
+{
+  register struct text *txt = NULL;
   register struct suitecv *CV = NULL;
 
     ValidateItem(self,item);
@@ -1166,11 +1113,9 @@ ChangeItemCaption( self, item, caption )
     suiteev_ItemUpdate(SetView,item);
 }
 
-void
-suite__PassivateItem( self, item )
-  register struct suite *self;
-  register struct suite_item *item;
-{ register long mode = 0;
+void suite__PassivateItem(struct suite *self, struct suite_item *item)
+{
+  register long mode = 0;
 
   if(item) {
       if(!Active(item))
@@ -1189,11 +1134,9 @@ suite__PassivateItem( self, item )
   }
 }
 
-void
-suite__ActivateItem( self, item )
-  struct suite *self;
-  struct suite_item *item;
-{ register long mode = 0;
+void suite__ActivateItem(struct suite *self, struct suite_item *item)
+{
+  register long mode = 0;
 
   if(item) {
       if(Active(item)) return;
@@ -1218,9 +1161,7 @@ AllocItem()
   return((struct suite_item*) calloc(1,sizeof(struct suite_item)));
 }
 
-static void
-FinalizeItem( item )
-  register struct suite_item *item;
+static void FinalizeItem(struct suite_item *item)
 {
   IN(FinalizeItem);
   if(Breaks(item)) vector_Destroy(Breaks(item));
@@ -1243,9 +1184,7 @@ gk5g 5/1/89
   OUT(FinalizeItem);
 }
 
-static void
-SetSortRoutine( self )
-  register struct suite *self;
+static void SetSortRoutine(struct suite *self)
 {
     if(suite_Ascend & SortOrder) {
 	if(suite_Alphabetic & SortOrder) 
@@ -1261,11 +1200,9 @@ SetSortRoutine( self )
     }
 }
 
-static long
-SortStub( item1, item2 )
-  register struct suite_item **item1;
-  register struct suite_item **item2;
-{ register struct suite *self = NULL;
+static long SortStub(struct suite_item **item1, struct suite_item **item2)
+{
+  register struct suite *self = NULL;
   register long status = 0;
 
   if(item1 && *item1 && item2 && *item2) {
@@ -1276,9 +1213,7 @@ SortStub( item1, item2 )
   return status;
 }
 
-static void
-CheckForNewFirstVisible( self )
-    struct suite *self;
+static void CheckForNewFirstVisible(struct suite *self)
 {
     if(NewFirstVisible) {
 	FirstVisible = NewFirstVisible;
@@ -1288,11 +1223,7 @@ CheckForNewFirstVisible( self )
 	FirstVisible = ITEM(0);
 }
 
-void
-suite__Sort( self, mode, handler )
-  register struct suite	*self;
-  register unsigned mode; 
-  register long (*handler)();
+void suite__Sort(struct suite *self, unsigned mode, long (*handler) ())
 {
   IN(suite_Sort);
   suiteev_Clear(SetView);
@@ -1314,11 +1245,7 @@ suite__Sort( self, mode, handler )
   OUT(suite_Sort);
 }
 
-void
-suite__Apply( self, proc, anchor, datum )
-  register struct suite *self;
-  register long (*proc)();
-  register unsigned anchor, datum;
+void suite__Apply(struct suite *self, long (*proc) (), void *anchor, void *datum)
 {
   register int i = 0;
   register struct suite_item *item = NULL;
@@ -1329,10 +1256,9 @@ suite__Apply( self, proc, anchor, datum )
       status = proc(anchor, self, item, datum);
 }
 
-static long
-AlphasortAscend( item1, item2 )
-  register struct suite_item **item1, **item2;
-{ register char *str1 = NULL, *str2 = NULL;
+static long AlphasortAscend(struct suite_item **item1, struct suite_item **item2)
+{
+  register char *str1 = NULL, *str2 = NULL;
   if(!item1 || !*item1 || !item2 || !*item2) return(0);
   if((*item1)->caption) str1 = (*item1)->caption;
   else str1 = (*item1)->name;
@@ -1341,9 +1267,7 @@ AlphasortAscend( item1, item2 )
   return(strcmp(str1, str2));
 }
 
-static long
-NumericAscend( item1, item2 )
-  register struct suite_item **item1, **item2;
+static long NumericAscend(struct suite_item **item1, struct suite_item **item2)
 {
   if(!item1 || !*item1 || !item2 || !*item2) return(0);
   if((*item1)->datum > (*item2)->datum) return(1);
@@ -1351,10 +1275,9 @@ NumericAscend( item1, item2 )
   else return(0);
 }
 
-static long
-AlphasortDescend( item1, item2 )
-  register struct suite_item **item1, **item2;
-{ register char *str1 = NULL, *str2 = NULL;
+static long AlphasortDescend(struct suite_item **item1, struct suite_item **item2)
+{
+  register char *str1 = NULL, *str2 = NULL;
   if(!item1 || !*item1 || !item2 || !*item2) return(0);
   if((*item1)->caption) str1 = (*item1)->caption;
   else str1 = (*item1)->name;
@@ -1363,9 +1286,7 @@ AlphasortDescend( item1, item2 )
   return(-1 * strcmp(str1, str2));
 }
 
-static long
-NumericDescend( item1, item2 )
-  register struct suite_item **item1, **item2;
+static long NumericDescend(struct suite_item **item1, struct suite_item **item2)
 {
   if(!item1 || !*item1 || !item2 || !*item2) return(0);
   if((*item1)->datum < (*item2)->datum) return(-1);
@@ -1374,9 +1295,7 @@ NumericDescend( item1, item2 )
 }
 
 
-static void
-AllocNameSpace( target, source )
-  register char **target, *source;
+static void AllocNameSpace(char **target, char *source)
 {
   if(target && *target) {
     free(*target);
@@ -1390,10 +1309,7 @@ AllocNameSpace( target, source )
   else *target = NULL;
 }
     
-struct suite_item **
-suite__SelectedItems( self, number )
-  register struct suite *self;
-  register long *number;
+struct suite_item ** suite__SelectedItems(struct suite *self, long *number)
 {
   register struct suite_item *item = NULL;
   register int i = 0;
@@ -1416,18 +1332,12 @@ suite__SelectedItems( self, number )
   return(ItemArray);
 }
 
-void
-suite__SetDebug( self, value )
-  register struct suite *self;
-  register boolean value;
+void suite__SetDebug(struct suite *self, boolean value)
 {
   self->debug = SetView->debug = value;
 }
 
-static void
-SetArrangementAttribute( self, value )
-  register struct suite *self;
-  register unsigned long value;
+static void SetArrangementAttribute(struct suite *self, unsigned long value)
 {
   if(value & suite_List) 
     Arrangement |= suite_List;
@@ -1457,11 +1367,7 @@ SetArrangementAttribute( self, value )
   if(value & suite_ColumnLine) Arrangement |= suite_ColumnLine;
 }
 
-static void
-SetBorderStyleAttribute( self, border_style, value )
-  register struct suite	*self;
-  register unsigned int	*border_style;
-  register long value;
+static void SetBorderStyleAttribute(struct suite *self, unsigned int *border_style, long value)
 {
   if(value & suite_Invisible) {
     *border_style &= ~suite_None;
@@ -1481,11 +1387,9 @@ SetBorderStyleAttribute( self, border_style, value )
   }
 }
 
-static void
-SetSuiteAttribute( self, attribute, value )
-  register struct suite *self;
-  register long attribute, value;    
-{ char Name[100], *tmp = NULL;
+static void SetSuiteAttribute(struct suite *self, long attribute, long value)
+{
+  char Name[100], *tmp = NULL;
   long int Size, Type;
 
   IN(SetSuiteAttribute);
@@ -1822,24 +1726,19 @@ SetSuiteAttribute( self, attribute, value )
 	      }
 	  }
 	  }
-      default: fprintf( stderr, "Suite: Unknown Suite Attribute (%d)\n",attribute);
+      default: fprintf( stderr, "Suite: Unknown Suite Attribute (%ld)\n",attribute);
   }
   OUT(SetSuiteAttribute);
 }
 
-long
-suite__SetSuiteAttribute( self, attribute, value )
-  register struct suite *self;
-  register long attribute, value;
-{ register long status = 0;
+long suite__SetSuiteAttribute(struct suite *self, long attribute, long value)
+{
+  register long status = 0;
   SetSuiteAttribute(self,attribute,value);
   return(status);
 }
 
-static void
-ChangeSuiteAttribute( self, attribute, value )
-  register struct suite *self;
-  register long attribute, value;    
+static void ChangeSuiteAttribute(struct suite *self, long attribute, long value)
 {
   struct rectangle *title_rect = rectangle_Duplicate(&TitleRect);
 
@@ -1925,24 +1824,20 @@ ChangeSuiteAttribute( self, attribute, value )
 	case suite_titlehithandler:
 	case suite_datum:
 	    break;
-	default: fprintf(stderr,"Suite: Unknown Suite Attribute (%d)\n",attribute);
+	default: fprintf(stderr,"Suite: Unknown Suite Attribute (%ld)\n",attribute);
   }
 }
 
-long
-suite__ChangeSuiteAttribute( self, attribute, value )
-  register struct suite *self;
-  register long attribute, value;
-{ register long status = 0;
+long suite__ChangeSuiteAttribute(struct suite *self, long attribute, long value)
+{
+  register long status = 0;
   ChangeSuiteAttribute(self,attribute,value);
   return(status);
 }
 
-long
-suite__SuiteAttribute( self, attribute )
-  register struct suite *self;
-  register long attribute;
-{ register long value = NULL;
+long suite__SuiteAttribute(struct suite *self, long attribute)
+{
+  register long value = NULL;
 
   switch(attribute) {
       case suite_titlecaption:	    value = (long)TitleCaption;		    break;
@@ -1995,16 +1890,13 @@ suite__SuiteAttribute( self, attribute )
       case suite_rows:		    value = (long)Rows;			    break;    
       case suite_columns:		    value = (long)Columns;		    break;    
       default:
-	  fprintf(stderr,"Suite: Unknown Suite Attribute (%d)\n",attribute);
+	  fprintf(stderr,"Suite: Unknown Suite Attribute (%ld)\n",attribute);
 	  break;
   }
   return(value);
 }
 
-void
-suite__ExposeItem( self, item )
-  register struct suite *self;
-  register struct suite_item *item;
+void suite__ExposeItem(struct suite *self, struct suite_item *item)
 {
   item->exposed = TRUE;
   if( IsLinked ) {
@@ -2014,10 +1906,7 @@ suite__ExposeItem( self, item )
   }
 }
 
-void
-suite__HideItem( self, item )
-  register struct suite *self;
-  register struct suite_item *item;
+void suite__HideItem(struct suite *self, struct suite_item *item)
 {
   item->exposed = FALSE;
   if( IsLinked ) {
@@ -2028,19 +1917,13 @@ suite__HideItem( self, item )
 }
 
 
-boolean
-suite__ItemHighlighted( self, item )
-  register struct suite *self;
-  register struct suite_item *item;
+boolean suite__ItemHighlighted(struct suite *self, struct suite_item *item)
 {
   if(!item) return(FALSE);
   return(Highlighted(item));
 }
 
-long
-suite__HighlightItem( self, item )
-  register struct suite *self;
-  register struct suite_item *item;
+long suite__HighlightItem(struct suite *self, struct suite_item *item)
 {
   register long status = 0, i = 0;
   boolean onScreen = FALSE;
@@ -2048,7 +1931,7 @@ suite__HighlightItem( self, item )
 
   if(!Items || !ITEM(0) || !item) return;
   if(IsLinked) {
-    i = vector_Subscript(Items,(long)FirstVisible);
+    i = vector_Subscript(Items,FirstVisible);
     if(SelectionMode & suite_Exclusive) 
       suite_Reset(self,suite_Normalize);
     while(this_one = ITEM(i++))
@@ -2069,26 +1952,21 @@ suite__HighlightItem( self, item )
   return(status);
 }
 
-boolean
-suite__ItemNormalized( self, item )
-  register struct suite *self;
-  register struct suite_item *item;
+boolean suite__ItemNormalized(struct suite *self, struct suite_item *item)
 {
   if(!item) return(FALSE);
   return(Normalized(item));
 }
 
-long
-suite__NormalizeItem( self, item )
-  register struct suite *self;
-  register struct suite_item *item;
-{ register long status = 0, i = 0;
+long suite__NormalizeItem(struct suite *self, struct suite_item *item)
+{
+  register long status = 0, i = 0;
   boolean onScreen = FALSE;
   register struct suite_item *this_one = NULL;
 
   if(!Items || !ITEM(0) || !item) return;
   if(IsLinked) {
-    i = vector_Subscript(Items,(long)FirstVisible);
+    i = vector_Subscript(Items,FirstVisible);
     if(SelectionMode & suite_Exclusive) 
       suite_Reset(self,suite_Normalize);
     while(this_one = ITEM(i++))
@@ -2108,21 +1986,15 @@ suite__NormalizeItem( self, item )
   return(status);
 }
 
-boolean
-suite__ItemActivated( self, item )
-  register struct suite *self;
-  register struct suite_item *item;
+boolean suite__ItemActivated(struct suite *self, struct suite_item *item)
 {
   if(!item) return(FALSE);
   return(Active(item));
 }
 
-static void
-SetItemAttribute( self, item, attribute, value )
-  register struct suite *self;
-  register struct suite_item *item;
-  register long attribute, value;    
-{ char Name[101], *tmp = NULL;
+static void SetItemAttribute(struct suite *self, struct suite_item *item, long attribute, long value)
+{
+  char Name[101], *tmp = NULL;
   long Size, Type;
   switch(attribute) {
 	case suite_itemname:
@@ -2286,27 +2158,21 @@ SetItemAttribute( self, item, attribute, value )
 		}
 		break;
 	default:
-		fprintf(stderr, "Suite: Unknown Item Attribute (%d)\n", attribute);
+		fprintf(stderr, "Suite: Unknown Item Attribute (%ld)\n", attribute);
 		break;
   }
 }
 
-long
-suite__SetItemAttribute( self, item, attribute, value )
-  register struct suite *self;
-  register struct suite_item *item;
-  register long attribute, value;
-{ register long status = 0;
+long suite__SetItemAttribute(struct suite *self, struct suite_item *item, long attribute, long value)
+{
+  register long status = 0;
   SetItemAttribute(self,item,attribute,value);
   return(status);
 }
 
-static void
-ChangeItemAttribute( self, item, attribute, value )
-  register struct suite *self;
-  register struct suite_item *item;
-  register long attribute, value;    
-{ char *tmp = NULL;
+static void ChangeItemAttribute(struct suite *self, struct suite_item *item, long attribute, long value)
+{
+  char *tmp = NULL;
   SetItemAttribute(self,item,attribute,value);
   switch(attribute) {
 	case suite_itemcaption:
@@ -2359,34 +2225,26 @@ ChangeItemAttribute( self, item, attribute, value )
 	    suiteev_ItemUpdate(SetView,item);
 	    break;
 	default:
-	    fprintf(stderr,"Suite: Unknown Item Attribute (%d)\n",attribute);
+	    fprintf(stderr,"Suite: Unknown Item Attribute (%ld)\n",attribute);
 	    break;
   }
 }
 
-long
-suite__ChangeItemAttribute( self, item, attribute, value )
-  register struct suite *self;
-  register struct suite_item *item;
-  register long attribute, value;
+long suite__ChangeItemAttribute(struct suite *self, struct suite_item *item, long attribute, long value)
 {  
   register long status = 0;
   ChangeItemAttribute(self,item,attribute,value);
   return(status);
 }
 
-long
-suite__ItemAttribute( self, item, attribute )
-  register struct suite *self;
-  register struct suite_item *item;
-  register long attribute;
+long suite__ItemAttribute(struct suite *self, struct suite_item *item, long attribute)
 {  
   register long value = 0;
 
   switch(attribute) {
 	case suite_itemposition:
 	        if(Items)
-		    value = vector_Subscript(Items,(long)item);
+		    value = vector_Subscript(Items,item);
 		if(value != -1)	value += 1;		break;
 	case suite_itemcaption:
 		value = (long) item_Caption;		break;
@@ -2427,16 +2285,13 @@ suite__ItemAttribute( self, item, attribute )
 	case suite_itemcursorbyte:
 		value = (long) item->cursorbyte;	break;
 	default:
-		fprintf(stderr,"Suite: Unknown Item Attribute (%d)\n",attribute);
+		fprintf(stderr,"Suite: Unknown Item Attribute (%ld)\n",attribute);
 		break;
   }
   return(value);
 }
 
-struct suite_item *
-suite__ItemOfDatum( self, datum )
-  register struct suite *self;
-  register long datum;
+struct suite_item * suite__ItemOfDatum(struct suite *self, long datum)
 {
   register struct suite_item *item = NULL;
   register int i = 0;
@@ -2447,10 +2302,7 @@ suite__ItemOfDatum( self, datum )
   return(NULL);
 }
 
-struct suite_item **
-suite__ItemsOfDatum( self, datum )
-  register struct suite *self;
-  register long datum;
+struct suite_item ** suite__ItemsOfDatum(struct suite *self, long datum)
 {
   register int i = 0;
   register struct suite_item *item = NULL;
@@ -2467,10 +2319,7 @@ suite__ItemsOfDatum( self, datum )
   return(ItemArray);
 }
 
-struct suite_item *
-suite__ItemOfName( self, name )
-  register struct suite *self;
-  register char *name;
+struct suite_item * suite__ItemOfName(struct suite *self, char *name)
 {
   register struct suite_item *item = NULL;
   register int i = 0;
@@ -2478,7 +2327,7 @@ suite__ItemOfName( self, name )
 
   if(Items && ITEM(0))
       while(item = ITEM(i++)) {
-	  item_name = (char*) suite_ItemAttribute(self, item, suite_ItemName(0));
+	  item_name = (char*) suite_ItemAttribute(self, item, suite_itemname);
 	  if((!name || !(*name)) && item_name == name)
 	      return(item);
 	  else if(!strcmp(name, item_name))
@@ -2487,10 +2336,7 @@ suite__ItemOfName( self, name )
   return(NULL);
 }
 
-struct suite_item **
-suite__ItemsOfName( self, name )
-  register struct suite *self;
-  register char *name;
+struct suite_item ** suite__ItemsOfName(struct suite *self, char *name)
 {
   register int i = 0, count = 0;
   register struct suite_item *item = NULL;
@@ -2498,7 +2344,7 @@ suite__ItemsOfName( self, name )
 
   if(Items && ITEM(0)) {
       while(item = ITEM(i++)) {
-	  item_name = (char*) suite_ItemAttribute(self, item, suite_ItemName(0));
+	  item_name = (char*) suite_ItemAttribute(self, item, suite_itemname);
 	  if((!name || !(*name)) && item_name == name)
 	      count++;
 	  else if(!strcmp(name, item_name)) 
@@ -2507,7 +2353,7 @@ suite__ItemsOfName( self, name )
     suiteev_AllocItemArray(SetView,count);
     i = count = 0;
     while(item = ITEM(i++)) {
-	item_name = (char*) suite_ItemAttribute(self, item, suite_ItemName(0));
+	item_name = (char*) suite_ItemAttribute(self, item, suite_itemname);
 	if((!name || !(*name)) && item_name == name)
 	    ItemArray[count++] = item;
 	else if(!strcmp(name, item_name))
@@ -2518,10 +2364,7 @@ suite__ItemsOfName( self, name )
   return(ItemArray);
 }
 
-struct suite_item *
-suite__ItemAtPosition( self, position )
-  register struct suite *self;
-  register long position;
+struct suite_item * suite__ItemAtPosition(struct suite *self, long position)
 {
   register struct suite_item *item = NULL;
   IN(suite_ItemAtPosition);
@@ -2531,28 +2374,22 @@ suite__ItemAtPosition( self, position )
   return(item);
 }
 
-static void
-DefaultExceptionHandler( self )
-  register struct suite *self;
+static void DefaultExceptionHandler(struct suite *self)
 {
   char msg[1000];
   long result;
   static char *continue_choice[2] = {"continue", 0};
 
-  sprintf(msg, "Suite: DefaultExceptionHandler:: exception code '%d' detected.",
+  sprintf(msg, "Suite: DefaultExceptionHandler:: exception code '%ld' detected.",
 	suite_ExceptionCode(self) );
   message_MultipleChoiceQuestion(self, 100, msg, 0, &result, continue_choice, NULL);
   if(ExceptionItem) {
-    sprintf(msg, "Suite: DefaultExceptionHandler:: exception item caption '%s'.", suite_ItemAttribute(self, ExceptionItem, suite_ItemCaption(0)));
+    sprintf(msg, "Suite: DefaultExceptionHandler:: exception item caption '%s'.", (char *)suite_ItemAttribute(self, ExceptionItem, suite_itemcaption));
     message_MultipleChoiceQuestion(self, 100, msg, 0, &result, continue_choice, NULL);
   }
 }
 
-static void
-HandleException( self, item, code )
-  register struct suite *self;
-  register struct suite_item *item;
-  register long code;
+static void HandleException(struct suite *self, struct suite_item *item, long code)
 {
   ExceptionStatus = code;
   ExceptionItem = item;
@@ -2561,19 +2398,14 @@ HandleException( self, item, code )
   else DefaultExceptionHandler(self);
 }
 
-static void
-ValidateItem( self, item )
-  register struct suite *self;
-  register struct suite_item *item;
+static void ValidateItem(struct suite *self, struct suite_item *item)
 {
   if(!item || !Items || 
-      (Items && (vector_Subscript(Items,(unsigned int)item)) == -1))
+      (Items && (vector_Subscript(Items,item)) == -1))
     HandleException(self,item,suite_NonExistentItem);
 }
 
-void
-suite__HighlightTitle( self )
-  struct suite *self;
+void suite__HighlightTitle(struct suite *self)
 {
   unsigned type = 0;
   struct rectangle *rect = rectangle_Duplicate(&TitleRect);
@@ -2598,9 +2430,7 @@ suite__HighlightTitle( self )
   TitleHighlighted = TRUE;
 }
 
-void
-suite__NormalizeTitle( self )
-  struct suite *self;
+void suite__NormalizeTitle(struct suite *self)
 {
   struct rectangle *rect = rectangle_Duplicate(&TitleRect);
 
@@ -2620,10 +2450,7 @@ suite__NormalizeTitle( self )
   TitleHighlighted = FALSE;
 }
 
-static void 
-DrawRectSize(self, x, y, width, height)
-  struct suiteev	*self;
-  long x, y, width, height;
+static void DrawRectSize(struct suiteev *self, long x, long y, long width, long height)
 {
   long left = x;
   long right = x+width-1;
@@ -2647,11 +2474,7 @@ static struct sbutton_info thebutton = {
     FALSE,  /* initially not lit, will be set appropriately */
 };
 
-static void 
-DrawRect(self, Rect, border_size)
-  struct suite *self;
-  struct rectangle *Rect;
-  int border_size;
+static void DrawRect(struct suite *self, struct rectangle *Rect, int border_size)
 {
   struct rectangle *childrect = rectangle_Duplicate(Rect);
   struct region *re1 = region_CreateEmptyRegion(), *re2 = region_CreateEmptyRegion();
@@ -2676,7 +2499,7 @@ DrawRect(self, Rect, border_size)
       region_Destroy(re2);
   }
   else {
-      register i = border_size;
+      register int i = border_size;
       while(i > 0) {
 	  DrawRectSize(self, rectangle_Left(Rect), rectangle_Top(Rect), rectangle_Width(Rect), rectangle_Height(Rect));
 	  DecrementRect(Rect, 1);
@@ -2685,10 +2508,7 @@ DrawRect(self, Rect, border_size)
   }
 }
 
-static void
-SetItems(self, elts)
-  register struct suite	*self;
-  register char *elts;
+static void SetItems(struct suite *self, char *elts)
 {
   register char *tmp = NULL, *ret = NULL, **captions = NULL;
   char *copy = NULL;
@@ -2722,11 +2542,7 @@ SetItems(self, elts)
   OUT(SetItems);
 }
 
-void
-suite__SetSuiteFGColor(self, name, red, green, blue)
-     struct suite *self;
-     char *name;
-     int red, green, blue;
+void suite__SetSuiteFGColor(struct suite *self, char *name, int red, int green, int blue)
 {
     if (SuiteForeground != NULL) 
 	free(SuiteForeground);
@@ -2745,11 +2561,7 @@ suite__SetSuiteFGColor(self, name, red, green, blue)
     SuiteBGShade[0] = SuiteBGShade[1] = SuiteBGShade[2] = -1.0;
 }
 
-void
-suite__SetSuiteBGColor(self, name, red, green, blue)
-     struct suite *self;
-     char *name;
-     int red, green, blue;
+void suite__SetSuiteBGColor(struct suite *self, char *name, int red, int green, int blue)
 {
     if (SuiteBackground != NULL) 
 	free(SuiteBackground);
@@ -2768,10 +2580,7 @@ suite__SetSuiteBGColor(self, name, red, green, blue)
     SuiteBGShade[0] = SuiteBGShade[1] = SuiteBGShade[2] = -1.0;
 }
 
-char *
-suite__GetSuiteFGColor(self, rgb_vect)
-     struct suite *self;
-     unsigned char rgb_vect[];
+char * suite__GetSuiteFGColor(struct suite *self, unsigned char rgb_vect[])
 {
     rgb_vect[0] = self->suiteColor->foreground_color[0];
     rgb_vect[1] = self->suiteColor->foreground_color[1];
@@ -2780,10 +2589,7 @@ suite__GetSuiteFGColor(self, rgb_vect)
     return(SuiteForeground);
 }
 
-char *
-suite__GetSuiteBGColor(self, rgb_vect)
-     struct suite *self;
-     unsigned char rgb_vect[];
+char * suite__GetSuiteBGColor(struct suite *self, unsigned char rgb_vect[])
 {
     rgb_vect[0] = self->suiteColor->background_color[0];
     rgb_vect[1] = self->suiteColor->background_color[1];
@@ -2792,11 +2598,7 @@ suite__GetSuiteBGColor(self, rgb_vect)
     return(SuiteBackground);
 }
 
-void
-suite__SetActiveItemFGColor(self, name, red, green, blue)
-     struct suite *self;
-     char *name;
-     int red, green, blue;
+void suite__SetActiveItemFGColor(struct suite *self, char *name, int red, int green, int blue)
 {
     if (ActiveItemForeground != NULL) 
 	free(ActiveItemForeground);
@@ -2814,11 +2616,7 @@ suite__SetActiveItemFGColor(self, name, red, green, blue)
     }
 }
 
-void
-suite__SetActiveItemCaptionColor(self, name, red, green, blue)
-     struct suite *self;
-     char *name;
-     int red, green, blue;
+void suite__SetActiveItemCaptionColor(struct suite *self, char *name, int red, int green, int blue)
 {
     if (ActiveItemCaptionColor != NULL) 
 	free(ActiveItemCaptionColor);
@@ -2836,11 +2634,7 @@ suite__SetActiveItemCaptionColor(self, name, red, green, blue)
     }
 }
 
-void
-suite__SetActiveItemBGColor(self, name, red, green, blue)
-     struct suite *self;
-     char *name;
-     int red, green, blue;
+void suite__SetActiveItemBGColor(struct suite *self, char *name, int red, int green, int blue)
 {
     if (ActiveItemBackground != NULL) 
 	free(ActiveItemBackground);
@@ -2858,12 +2652,7 @@ suite__SetActiveItemBGColor(self, name, red, green, blue)
     }
 }
 
-void
-suite__SetItemBGColor(self, item, name, red, green, blue)
-     struct suite *self;
-     struct suite_item *item;
-     char *name;
-     int red, green, blue;
+void suite__SetItemBGColor(struct suite *self, struct suite_item *item, char *name, int red, int green, int blue)
 {
     if (item->color->background_name != NULL) 
 	free(item->color->background_name);
@@ -2881,12 +2670,7 @@ suite__SetItemBGColor(self, item, name, red, green, blue)
     }
 }
 
-void
-suite__SetItemFGColor(self, item, name, red, green, blue)
-     struct suite *self;
-     struct suite_item *item;
-     char *name;
-     int red, green, blue;
+void suite__SetItemFGColor(struct suite *self, struct suite_item *item, char *name, int red, int green, int blue)
 {
     if (item->color->foreground_name != NULL) 
 	free(item->color->foreground_name);
@@ -2904,12 +2688,7 @@ suite__SetItemFGColor(self, item, name, red, green, blue)
     }
 }
 
-void
-suite__SetItemCaptionColor(self, item, name, red, green, blue)
-     struct suite *self;
-     struct suite_item *item;
-     char *name;
-     int red, green, blue;
+void suite__SetItemCaptionColor(struct suite *self, struct suite_item *item, char *name, int red, int green, int blue)
 {
     if (item->color->caption_name != NULL) 
 	free(item->color->caption_name);
@@ -2927,10 +2706,7 @@ suite__SetItemCaptionColor(self, item, name, red, green, blue)
     }
 }
 
-char *
-suite__GetActiveItemFGColor(self, rgb_vect)
-     struct suite *self;
-     unsigned char rgb_vect[];
+char * suite__GetActiveItemFGColor(struct suite *self, unsigned char rgb_vect[])
 {
     rgb_vect[0] = self->activeItemColor->foreground_color[0];
     rgb_vect[1] = self->activeItemColor->foreground_color[1];
@@ -2963,10 +2739,7 @@ suite__GetPassiveItemCaptionColor(self, rgb_vect)
     return(ActiveItemForeground);
 }
 
-char *
-suite__GetActiveItemBGColor(self, rgb_vect)
-     struct suite *self;
-     unsigned char rgb_vect[];
+char * suite__GetActiveItemBGColor(struct suite *self, unsigned char rgb_vect[])
 {
     rgb_vect[0] = self->activeItemColor->background_color[0];
     rgb_vect[1] = self->activeItemColor->background_color[1];
@@ -2975,11 +2748,7 @@ suite__GetActiveItemBGColor(self, rgb_vect)
     return(ActiveItemBackground);
 }
 
-void
-suite__SetPassiveItemFGColor(self, name, red, green, blue)
-     struct suite *self;
-     char *name;
-     int red, green, blue;
+void suite__SetPassiveItemFGColor(struct suite *self, char *name, int red, int green, int blue)
 {
     if (PassiveItemForeground != NULL) 
 	free(PassiveItemForeground);
@@ -2997,11 +2766,7 @@ suite__SetPassiveItemFGColor(self, name, red, green, blue)
     }
 }
 
-void
-suite__SetPassiveItemCaptionColor(self, name, red, green, blue)
-     struct suite *self;
-     char *name;
-     int red, green, blue;
+void suite__SetPassiveItemCaptionColor(struct suite *self, char *name, int red, int green, int blue)
 {
     if (PassiveItemCaptionColor != NULL) 
 	free(PassiveItemCaptionColor);
@@ -3019,11 +2784,7 @@ suite__SetPassiveItemCaptionColor(self, name, red, green, blue)
     }
 }
 
-void
-suite__SetPassiveItemBGColor(self, name, red, green, blue)
-     struct suite *self;
-     char *name;
-     int red, green, blue;
+void suite__SetPassiveItemBGColor(struct suite *self, char *name, int red, int green, int blue)
 {
     if (PassiveItemBackground != NULL) 
 	free(PassiveItemBackground);
@@ -3041,10 +2802,7 @@ suite__SetPassiveItemBGColor(self, name, red, green, blue)
     }
 }
 
-char *
-suite__GetPassiveItemFGColor(self, rgb_vect)
-     struct suite *self;
-     unsigned char rgb_vect[];
+char * suite__GetPassiveItemFGColor(struct suite *self, unsigned char rgb_vect[])
 {
     rgb_vect[0] = self->passiveItemColor->foreground_color[0];
     rgb_vect[1] = self->passiveItemColor->foreground_color[1];
@@ -3053,10 +2811,7 @@ suite__GetPassiveItemFGColor(self, rgb_vect)
     return(PassiveItemForeground);
 }
 
-char *
-suite__GetPassiveItemBGColor(self, rgb_vect)
-     struct suite *self;
-     unsigned char rgb_vect[];
+char * suite__GetPassiveItemBGColor(struct suite *self, unsigned char rgb_vect[])
 {
     rgb_vect[0] = self->passiveItemColor->background_color[0];
     rgb_vect[1] = self->passiveItemColor->background_color[1];
@@ -3065,10 +2820,7 @@ suite__GetPassiveItemBGColor(self, rgb_vect)
     return(PassiveItemBackground);
 }
 
-int
-htoin(s, n)
-     char *s;
-     int n;
+int htoin(char *s, int n)
 {
     int i, t;
     for(i = 0, t = 0; i < n; ++i) {
@@ -3082,11 +2834,7 @@ htoin(s, n)
     return(t);
 }
 
-void
-suite__ParseRGB(self, rgb_string, rgb_vect)
-     struct suite *self;
-     char *rgb_string;
-     unsigned char rgb_vect[];
+void suite__ParseRGB(struct suite *self, char *rgb_string, unsigned char rgb_vect[])
 {
     if ((rgb_string != NULL)
 	&& ((strncmp(rgb_string, "0x", 2) == 0)
@@ -3098,10 +2846,7 @@ suite__ParseRGB(self, rgb_string, rgb_vect)
     }
 }
 
-void
-suite__LinkTree(self, parent)
-    struct suite *self;
-    struct view *parent;
+void suite__LinkTree(struct suite *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if(suite_GetIM(self)) {

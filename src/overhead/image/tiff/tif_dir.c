@@ -45,9 +45,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  */
 #include "tiffioP.h"
 #include "prototypes.h"
+static int OkToChangeTag(TIFF *tif, int tag);
+static int TIFFGetField1(TIFFDirectory *td, int tag, va_list ap);
+static int TIFFSetField1(TIFF *tif, int tag, va_list ap);
+static int setFloatArray(float **wpp, float *wp, long n);
+static int setJPEGCTable(u_char ***cpp, u_char **cp, int nc);
+static int setJPEGQTable(u_char ***wpp, u_char **wp, int nc);
+static int setLongArray(u_long **wpp, u_long *wp, long n);
+static int setShortArray(u_short **wpp, u_short *wp, long n);
+static int setString(char **cpp, char *cp);
 
-static
-DECLARE2(setString, char**, cpp, char*, cp)
+static int
+setString(char **cpp, char *cp)
 {
 	if (*cpp)
 		free(*cpp), *cpp = 0;
@@ -58,8 +67,8 @@ DECLARE2(setString, char**, cpp, char*, cp)
 	}
 }
 
-static
-DECLARE3(setShortArray, u_short**, wpp, u_short*, wp, long, n)
+static int
+setShortArray(u_short **wpp, u_short *wp, long n)
 {
 	if (*wpp)
 		free((char *)*wpp), *wpp = 0;
@@ -68,8 +77,8 @@ DECLARE3(setShortArray, u_short**, wpp, u_short*, wp, long, n)
 		bcopy(wp, *wpp, n);
 }
 
-static
-DECLARE3(setLongArray, u_long**, wpp, u_long*, wp, long, n)
+static int
+setLongArray(u_long **wpp, u_long *wp, long n)
 {
 	if (*wpp)
 		free((char *)*wpp), *wpp = 0;
@@ -78,8 +87,8 @@ DECLARE3(setLongArray, u_long**, wpp, u_long*, wp, long, n)
 		bcopy(wp, *wpp, n);
 }
 
-static
-DECLARE3(setFloatArray, float**, wpp, float*, wp, long, n)
+static int
+setFloatArray(float **wpp, float *wp, long n)
 {
 	if (*wpp)
 		free((char *)*wpp), *wpp = 0;
@@ -96,8 +105,8 @@ DECLARE3(setFloatArray, float**, wpp, float*, wp, long, n)
  * that is expected by the compression code
  * and that is to be stored in the file.
  */
-static
-DECLARE3(setJPEGQTable, u_char***, wpp, u_char**, wp, int, nc)
+static int
+setJPEGQTable(u_char ***wpp, u_char **wp, int nc)
 {
 	static u_char zigzag[64] = {
 	    0,  1,  5,  6, 14, 15, 27, 28,
@@ -128,8 +137,8 @@ DECLARE3(setJPEGQTable, u_char***, wpp, u_char**, wp, int, nc)
 /*
  * Install a JPEG Coefficient table.
  */
-static
-DECLARE3(setJPEGCTable, u_char***, cpp, u_char**, cp, int, nc)
+static int
+setJPEGCTable(u_char ***cpp, u_char **cp, int nc)
 {
 	u_char *tab;
 	int i, j, nw;
@@ -161,11 +170,7 @@ DECLARE3(setJPEGCTable, u_char***, cpp, u_char**, cp, int, nc)
 }
 #endif
 
-static
-TIFFSetField1(tif, tag, ap)
-	TIFF *tif;
-	int tag;
-	va_list ap;
+static int TIFFSetField1(TIFF *tif, int tag, va_list ap)
 {
 	TIFFDirectory *td = &tif->tif_dir;
 	int i, status = 1;
@@ -476,10 +481,7 @@ badvalue:
  * has commenced, unless its value has no effect
  * on the format of the data that is written.
  */
-static
-OkToChangeTag(tif, tag)
-	TIFF *tif;
-	int tag;
+static int OkToChangeTag(TIFF *tif, int tag)
 {
 	if (tag != TIFFTAG_IMAGELENGTH &&
 	    (tif->tif_flags & TIFF_BEENWRITING)) {
@@ -504,6 +506,7 @@ OkToChangeTag(tif, tag)
  * updated.
  */
 /*VARARGS2*/
+int
 DECLARE2V(TIFFSetField, TIFF*, tif, int, tag)
 {
 	int status = 0;
@@ -530,10 +533,7 @@ DECLARE2V(TIFFSetField, TIFF*, tif, int, tag)
  * for building higher-level interfaces on
  * top of the library.
  */
-TIFFVSetField(tif, tag, ap)
-	TIFF *tif;
-	int tag;
-	va_list ap;
+int TIFFVSetField(TIFF *tif, int tag, va_list ap)
 {
 	int status = 0;
 
@@ -548,11 +548,7 @@ TIFFVSetField(tif, tag, ap)
 	return (status);
 }
 
-static
-TIFFGetField1(td, tag, ap)
-	TIFFDirectory *td;
-	int tag;
-	va_list ap;
+static int TIFFGetField1(TIFFDirectory *td, int tag, va_list ap)
 {
 
 	switch (tag) {
@@ -781,6 +777,7 @@ TIFFGetField1(td, tag, ap)
  * internal directory structure.
  */
 /*VARARGS2*/
+int
 DECLARE2V(TIFFGetField, TIFF*, tif, int, tag)
 {
 	TIFFFieldInfo const *fip = TIFFFindFieldInfo(tag, TIFF_ANY);
@@ -805,10 +802,7 @@ DECLARE2V(TIFFGetField, TIFF*, tif, int, tag)
  * for building higher-level interfaces on
  * top of the library.
  */
-TIFFVGetField(tif, tag, ap)
-	TIFF *tif;
-	int tag;
-	va_list ap;
+int TIFFVGetField(TIFF *tif, int tag, va_list ap)
 {
 	TIFFFieldInfo const *fip = TIFFFindFieldInfo(tag, TIFF_ANY);
 
@@ -847,8 +841,7 @@ DECLARE2V(_TIFFgetfield, TIFFDirectory*, td, int, tag)
 /*
  * Release storage associated with a directory.
  */
-TIFFFreeDirectory(tif)
-	TIFF *tif;
+int TIFFFreeDirectory(TIFF *tif)
 {
 	register TIFFDirectory *td = &tif->tif_dir;
 
@@ -893,8 +886,7 @@ TIFFFreeDirectory(tif)
 /*
  * Setup a default directory structure.
  */
-TIFFDefaultDirectory(tif)
-	TIFF *tif;
+int TIFFDefaultDirectory(TIFF *tif)
 {
 	register TIFFDirectory *td = &tif->tif_dir;
 
@@ -937,9 +929,7 @@ TIFFDefaultDirectory(tif)
  * Set the n-th directory as the current directory.
  * NB: Directories are numbered starting at 0.
  */
-TIFFSetDirectory(tif, dirn)
-	register TIFF *tif;
-	int dirn;
+int TIFFSetDirectory(TIFF *tif, int dirn)
 {
 	static char module[] = "TIFFSetDirectory";
 	u_short dircount;

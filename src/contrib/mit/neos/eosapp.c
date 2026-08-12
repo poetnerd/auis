@@ -148,14 +148,14 @@ void eos_Checkpoint(dummyData)
     result.buffer = NULL;
     result.bufferclock = eos_CkpLatency - 1; /* (number + 1) * EOS_CKPINTERVAL seconds is how often a given buffer can be checkpointed. */
 
-    buffer_Enumerate(eos_FindCkpBuffer, (long) &result);
+    buffer_Enumerate(eos_FindCkpBuffer, &result);
     if (result.buffer != NULL) {
 
         int closeCode;
 
         im_SetProcessCursor(eos_waitCursor);
         if (buffer_Visible(result.buffer))
-            buffer_EnumerateViews(result.buffer, eos_CkpMessage, (long) "Checkpointing...");
+            buffer_EnumerateViews(result.buffer, eos_CkpMessage, "Checkpointing...");
         im_ForceUpdate();
 
         if ((closeCode = buffer_WriteToFile(result.buffer, buffer_GetCkpFilename(result.buffer), 0)) >= 0) {
@@ -164,7 +164,7 @@ void eos_Checkpoint(dummyData)
         }
 
         if (buffer_Visible(result.buffer))
-            buffer_EnumerateViews(result.buffer, eos_CkpMessage, (long)(closeCode ? "Checkpoint Failed." : "Checkpointed."));
+            buffer_EnumerateViews(result.buffer, eos_CkpMessage, (closeCode ? "Checkpoint Failed." : "Checkpointed."));
         im_SetProcessCursor(NULL);
     }
     im_EnqueueEvent((procedure) eos_Checkpoint, 0, event_SECtoTU(eos_CkpInterval));

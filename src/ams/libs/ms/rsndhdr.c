@@ -40,15 +40,17 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <hdrparse.h>
 #include <parseadd.h>
 #include <mail.h>
+#include <stdlib.h>
+extern int FreeAddressList(PARSED_ADDRESS *Addrs);  /* overhead/mail/lib/parseadd.c */
+extern int ParseAddressList(char *AddrIn, PARSED_ADDRESS **AddrOut);  /* overhead/mail/lib/parseadd.c */
 #ifdef WHITEPAGES_ENV
 #include <wp.h>
 #endif /* #ifdef WHITEPAGES_ENV */
 
-extern PARSED_ADDRESS *SingleAddress();
+extern PARSED_ADDRESS *SingleAddress(PARSED_ADDRESS *AddrList, int *pCount);
 extern char MyMailDomain[];
 
-AuthenticReSentHeader(msg)
-struct MS_Message *msg;
+int AuthenticReSentHeader(struct MS_Message *msg)
 {
     char *s;
     int len, outType, numitems;

@@ -74,7 +74,7 @@ package message {
         AskForString(struct view *view, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize) returns int;
         AskForPasswd(struct view *view, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize) returns int;
         AskForStringCompleted(struct view *view, int priority, char *prompt, char *defaultString, char *buffer, int bufferSize,
-                              struct keymap *keystate, procedure completionProc, procedure helpProc, long functionData, int flags) returns int;
+                              struct keymap *keystate, procedure completionProc, procedure helpProc, void *functionData, int flags) returns int;
         MultipleChoiceQuestion(struct view *view, int priority, char *prompt, long defaultChoice, long *result, char **choices, char *abbrevKeys) returns int;
         CancelQuestion(struct view *view);
 	Advice(struct view *view, enum message_Preference pref);

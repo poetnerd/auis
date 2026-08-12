@@ -110,10 +110,7 @@ int chartlin_debug = 0;
 #define  PixelsPerUnit		(chartlin_PixelsPerUnit( self ))
 #define  PixelsPerInterval	(chartlin_PixelsPerInterval( self ))
 
-boolean 
-chartlin__InitializeObject( classID, self)
-  register struct classheader	 *classID;
-  register struct chartlin	 *self;
+boolean chartlin__InitializeObject(struct classheader *classID, struct chartlin *self)
   {
   IN(chartlin_InitializeObject);
   chartlin_SetShrinkIcon( self, 'e', "icon12", "LineChart", "andysans10b" );
@@ -128,28 +125,21 @@ chartlin__FinalizeObject( classID, self )
   register struct chartlin	 *self;
   {}
 
-void
-chartlin__SetDebug( self, state )
-  register struct chartlin	 *self;
-  register char			  state;
+void chartlin__SetDebug(struct chartlin *self, boolean state)
   {
   IN(chartlin_SetDebug);
   super_SetDebug( self, debug = state );
   OUT(chartlin_SetDebug);
   }
 
-char *
-chartlin__Moniker( self )
-  register struct chartlin   *self;
+char * chartlin__Moniker(struct chartlin *self)
   {
   IN(chartlin_Moniker);
   OUT(chartlin_Moniker);
   return  "Line";
   }
 
-void
-chartlin__DrawChart( self )
-  register struct chartlin	     *self;
+void chartlin__DrawChart(struct chartlin *self)
   {
   register struct chart_item_shadow  *shadow = Items;
   register short		      prior_x, prior_y;
@@ -158,7 +148,7 @@ chartlin__DrawChart( self )
   prior_x = 0;
   while ( shadow )
     {
-    DEBUGdt(Value,chart_ItemAttribute( Data, shadow->item, chart_ItemValue(0) ));
+    DEBUGdt(Value,chart_ItemAttribute( Data, shadow->item, chart_itemvalue ));
     if ( prior_x )
       {
       chartlin_MoveTo( self, prior_x, prior_y );
@@ -171,9 +161,7 @@ chartlin__DrawChart( self )
   OUT(chartlin_DrawChart);
   }
 
-void
-chartlin__PrintChart( self )
-  register struct chartlin	     *self;
+void chartlin__PrintChart(struct chartlin *self)
   {
   register long			      i, left, top, width,
 				      count = chart_ItemCount( Data),
@@ -192,8 +180,8 @@ chartlin__PrintChart( self )
   prior_point.x = 0;
   for ( i = 0; i < count  &&  chart_item; i++ )
     {
-    DEBUGdt(Value,chart_ItemAttribute( Data, chart_item, chart_ItemValue(0) ));
-    top = Bottom - (chart_ItemAttribute( Data, chart_item, chart_ItemValue(0) ) * PixelsPerUnit);
+    DEBUGdt(Value,chart_ItemAttribute( Data, chart_item, chart_itemvalue ));
+    top = Bottom - (chart_ItemAttribute( Data, chart_item, chart_itemvalue ) * PixelsPerUnit);
     if ( prior_point.x )
       chartlin_PrintLine( self, prior_point.x, prior_point.y, left, top );
     fudge = (excess) ? ((i % excess) ? 0 : 1) : 0;

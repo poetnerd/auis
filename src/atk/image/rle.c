@@ -85,10 +85,17 @@ struct XtndRsetup
 #include <stdio.h>
 #include <image.ih>
 #include <rle.h>
+static char * match(char *n, char *v);
 
 void dithermap();
-static void bfill();
+static void bfill(char *s, int n, int c);
 void make_square();
+int rle_get_setup(struct sv_globals *globals);
+int rle_getrow(struct sv_globals *globals, rle_pixel *scanline[]);
+int bw_m_line(unsigned char *dp, int number);
+int c_m_line(unsigned char *dp, int number, int line);
+int make_gamma(double gamma, int gammamap[256]);
+void make_magic(int size, int magic[16][16]);
 
 /* input file stuff */
 static int ptype;				/* picture type : */
@@ -136,10 +143,7 @@ struct sv_globals sv_globals = {
     /* Can't initialize the union */
 };
 
-int 
-rle__Ident( classID, fullname )
-    struct classheader *classID;
-    char *fullname;
+int rle__Ident(struct classheader *classID, char *fullname)
 {
   FILE *rlefile;
   int x_len,y_len;
@@ -218,11 +222,7 @@ rle__Ident( classID, fullname )
     }
 }
 
-int
-rle__Load( rle, fullname, fp )
-    struct rle *rle;
-    char *fullname;
-    FILE *fp;
+int rle__Load(struct rle *rle, char *fullname, FILE *fp)
 {
   int x_len, y_len;
   int i,j;
@@ -445,9 +445,7 @@ rle__Load( rle, fullname, fp )
 #define DMAP(v,x,y)	(modN[v]>magic[x][y] ? divN[v] + 1 : divN[v])
 
 /* run the black and white through its map */
-bw_m_line(dp,number)
-     int number;
-     register unsigned char *dp;
+int bw_m_line(unsigned char *dp, int number)
 {
   register unsigned char *r;
   register int i;
@@ -459,9 +457,7 @@ bw_m_line(dp,number)
 }
 
 /* convert a colour line with map to 8 bits per pixel */
-c_m_line(dp,number,line)
-     int number,line;
-     register unsigned char *dp;
+int c_m_line(unsigned char *dp, int number, int line)
 {
   register unsigned char *r, *g, *b;
   register int i, col, row;
@@ -525,8 +521,7 @@ struct inst {
  * Algorithm:
  * 	Read in the setup info and fill in sv_globals.
  */
-rle_get_setup( globals )
-struct sv_globals * globals;
+int rle_get_setup(struct sv_globals *globals)
 {
     struct XtndRsetup setup;
     short magic;			/* assume 16 bits */
@@ -694,9 +689,7 @@ struct sv_globals * globals;
  *	decoding the instructions into scanline data.
  */
 
-rle_getrow( globals, scanline )
-struct sv_globals * globals;
-rle_pixel *scanline[];
+int rle_getrow(struct sv_globals *globals, rle_pixel *scanline[])
 {
     register rle_pixel * scanc;
     register int nc;
@@ -857,9 +850,7 @@ rle_pixel *scanline[];
 
 /* Fill buffer at s with n copies of character c.  N must be <= 65535*/
 /* ARGSUSED */
-static void bfill( s, n, c )
-char *s;
-int n, c;
+static void bfill(char *s, int n, int c)
 {
 #ifdef vax
     asm("   movc5   $0,*4(ap),12(ap),8(ap),*4(ap)");
@@ -887,10 +878,7 @@ int n, c;
  * Algorithm:
  *	[None]
  */
-static char *
-match( n, v )
-register char *n;
-register char *v;
+static char * match(char *n, char *v)
 {
     for ( ; *n != '\0' && *n != '=' && *n == *v; n++, v++ )
 	;
@@ -917,10 +905,7 @@ register char *v;
  * Algorithm:
  *	[None]
  */
-char *
-rle_getcom( name, globals )
-char *name;
-struct sv_globals *globals;
+char * rle_getcom(char *name, struct sv_globals *globals)
 {
     char ** cp;
     char * v;
@@ -967,11 +952,7 @@ struct sv_globals *globals;
  *	that each has at least 256 elements in it (largest map that can
  *	be addressed by an rle_pixel).
  */
-rle_pixel **
-buildmap( globals, minmap, gamma )
-struct sv_globals *globals;
-int minmap;
-double gamma;
+rle_pixel ** buildmap(struct sv_globals *globals, int minmap, double gamma)
 {
     rle_pixel ** cmap, * gammap;
     register int i, j;
@@ -1258,7 +1239,7 @@ int magic16x16[16][16] =
  * Algorithm:
  * 	Chose sub cell of 16 by 16 magic square
      */
-make_magic( size, magic )
+void make_magic( size, magic )
 int size;
 int magic[16][16];
 {
@@ -1302,9 +1283,7 @@ int magic[16][16];
  * Outputs:
  *  Changes gamma array entries.
  */
-make_gamma( gamma, gammamap )
-double gamma;
-int gammamap[256];
+int make_gamma(double gamma, int gammamap[256])
 {
 	register int i;
 
@@ -1321,11 +1300,7 @@ int gammamap[256];
 		}
 }
 
-long
-rle__Read( self, file, id )
-    struct rle *self;
-    FILE *file;
-    long id;
+long rle__Read(struct rle *self, FILE *file, long id)
 {
     if(rle_Load(self, NULL, file) == 0)
 	return(dataobject_NOREADERROR);
@@ -1333,21 +1308,12 @@ rle__Read( self, file, id )
 	return(dataobject_BADFORMAT);
 }
 
-long
-rle__Write( self, file, writeID, level )
-    struct rle *self;
-    FILE *file;
-    long writeID;
-    int level;
+long rle__Write(struct rle *self, FILE *file, long writeID, int level)
 {
     return(super_Write(self, file, writeID, level));
 }
 
-long
-rle__WriteNative( self, file, filename )
-    struct rle *self;
-    FILE *file;
-    char *filename;
+long rle__WriteNative(struct rle *self, FILE *file, char *filename)
 {
 return(0);
 }

@@ -28,10 +28,13 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 #include <global.h>
 #include <gentlex.h>
+static char * GetToken(FILE *f);
 
 
 /* TransEscape(buf, plen)
@@ -55,10 +58,7 @@
 		      \o	      :  other characters, unchanged
 	(This code was once identical to a portion of parse/lexan.c)
 */
-	int
-TransEscape(buf, plen)
-	char *buf;
-	int *plen;
+int TransEscape(char *buf, int *plen)
 {
 	static char esctab[]
    = "r\rn\nf\ft\tb\bv\v\"\"\'\'\\\\?\177e\033E\033R\rN\nF\fT\tB\bV\v";
@@ -101,10 +101,7 @@ TransEscape(buf, plen)
 	If the token is followed by a disambiguating letter in parentheses
 		that letter will be stored in sub[0].  (Unless sub==NULL)
 */
-	char *
-ScanToken(cx, sub)
-	char *cx;
-	char *sub;
+char * ScanToken(char *cx, char *sub)
 {
 	static char buff[200];
 	char *bx;
@@ -166,10 +163,7 @@ ScanToken(cx, sub)
 	If the token is followed by a disambiguating letter in parentheses
 		that letter will be stored in sub[0].  (Unless sub==NULL)
 */
-	int 
-ScanTokenToNumber(cx, sub)
-	char *cx;
-	char *sub;
+int ScanTokenToNumber(char *cx, char *sub)
 {
 	char *tx = ScanToken(cx, sub);
 	int i;
@@ -186,9 +180,7 @@ ScanTokenToNumber(cx, sub)
 	return value is empty if found non-letter-non-digit first
 	skips preceding whitespace
 */
-	static char *
-GetToken(f)
-	FILE *f;
+static char * GetToken(FILE *f)
 {
 	static char buf[30];
 	char *bx, *bend;
@@ -255,9 +247,7 @@ CharAndThongTokens()
 	Find YYNTOKENS and set numtokens
 	Find yytname and save the token names in TokenNames
 */
-	void
-ReadTabc(f)
-	FILE *f;
+void ReadTabc(FILE *f)
 {
 	char c, *TNx, *tx;
 	int i, j, t;

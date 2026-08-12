@@ -33,10 +33,18 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "andrewos.h"
 #include "files.h"
 #include "new.h"
 #include "gram.h"
+
+/* M4 strict rollout: AndrewDir() is invoked via the XPFILE/XPFILE1
+   macros (see Imakefile DEFINES) with no declaration anywhere in
+   scope -- on LP64 that would implicitly declare it returning int
+   and truncate the real char* pointer (the same bug class fixed
+   tree-wide under "LP64 Missing Prototypes"). */
+extern char *AndrewDir(char *str);
 
 FILE *finput = NULL;
 FILE *foutput = NULL;
@@ -66,8 +74,8 @@ extern int noparserflag;
 extern char	*mktemp();	/* So the compiler won't complain */
 extern char	*getenv();
 extern void	perror();
-FILE	*tryopen();	/* This might be a good idea */
-void done();
+FILE	*tryopen(char *name, char *mode);	/* This might be a good idea */
+void done(int k);
 
 extern char *program_name;
 extern int verboseflag;
@@ -75,11 +83,7 @@ extern int definesflag;
 int fixed_outfiles = 0;
 
 
-char*
-stringappend(string1, end1, string2)
-char *string1;
-int end1;
-char *string2;
+char* stringappend(char *string1, int end1, char *string2)
 {
   register char *ostring;
   register char *cp, *cp1;
@@ -332,10 +336,7 @@ open_extra_files()
 
 	/* JF to make file opening easier.  This func tries to open file
 	   NAME with mode MODE, and prints an error message if it fails. */
-FILE *
-tryopen(name, mode)
-char *name;
-char *mode;
+FILE * tryopen(char *name, char *mode)
 {
   FILE	*ptr;
 
@@ -349,9 +350,7 @@ char *mode;
   return ptr;
 }
 
-void
-done(k)
-int k;
+void done(int k)
 {
   if (faction)
     fclose(faction);

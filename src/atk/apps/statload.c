@@ -128,7 +128,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/apps
 
 #undef class_StaticEntriesOnly
 
-doStaticLoads()
+void doStaticLoads()
 {
 #ifdef WM_ENV
     wmfontdesc_StaticEntry;

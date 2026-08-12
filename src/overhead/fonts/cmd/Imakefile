@@ -17,4 +17,3 @@ InstallProgram(fdbwm, $(DESTDIR)/bin)
 ProgramTarget(wmfdb, wmfdb.o, $(WMBASEDIR)/lib/libfont.a $(UTILLIB), ${BSDLIB})
 InstallProgram(wmfdb, $(DESTDIR)/bin)
 #endif /* WM_ENV */
-

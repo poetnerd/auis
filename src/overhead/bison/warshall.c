@@ -26,10 +26,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* given n by n matrix of bits R, modify its contents
    to be the transive closure of what was given.  */
 
-void
-TC(R, n)
-unsigned *R;
-int n;
+void TC(unsigned *R, int n)
 {
   register int rowsize;
   register unsigned mask;
@@ -86,10 +83,7 @@ int n;
 /* Reflexive Transitive Closure.  Same as TC
    and then set all the bits on the diagonal of R.  */
 
-void
-RTC(R, n)
-unsigned *R;
-int n;
+void RTC(unsigned *R, int n)
 {
   register int rowsize;
   register unsigned mask;

@@ -137,6 +137,16 @@ END-SPECIFICATION  ************************************************************/
 #include "zipv.ih"
 #include "zipobj.ih"
 #include "zipprint.eh"
+#include <stdlib.h>
+static int Compute_Printing_Slug_Stretch_Factors(struct zipprint *self, zip_type_pane pane);
+static int Print_Figure(struct zipprint *self, zip_type_figure figure, zip_type_pane pane);
+static int Print_Image(struct zipprint *self, zip_type_image image, zip_type_pane pane);
+static int Set_Printing_Characteristics(struct zipprint *self, zip_type_pane pane, zip_type_figure figure);
+
+int apt_MM_Compare( unsigned char *s1, unsigned char *s2 );			/* M2: same-file forward reference */
+/* M2: zipprint.do cross-file, no header declares these (defined zipvr00.c) */
+extern int zipprint_Write_Print_Datastream_Header(struct zipprint *self);
+extern int zipprint_Write_Print_Datastream_Trailer(struct zipprint *self);
 
 static boolean debug=FALSE;
 #define	 Data			     (self->data_object)
@@ -150,16 +160,13 @@ static boolean debug=FALSE;
 #define  InchWidth		(Printing->zip_printing_inch_width)
 #define  InchHeight		(Printing->zip_printing_inch_height)
 
-static Print_Figure();
-static Print_Image();
-static int Print_Inferior_Image();
-static Compute_Printing_Slug_Stretch_Factors();
-static Set_Printing_Characteristics();
+static int Print_Figure(struct zipprint *self, zip_type_figure figure, zip_type_pane pane);
+static int Print_Image(struct zipprint *self, zip_type_image image, zip_type_pane pane);
+static int Print_Inferior_Image(struct zipprint *self, zip_type_image image, zip_type_pane pane);
+static int Compute_Printing_Slug_Stretch_Factors(struct zipprint *self, zip_type_pane pane);
+static int Set_Printing_Characteristics(struct zipprint *self, zip_type_pane pane, zip_type_figure figure);
 
-boolean
-zipprint__InitializeObject( classID, self)
-  register struct classheader	      *classID;
-  register struct zipprint	      *self;
+boolean zipprint__InitializeObject(struct classheader *classID, struct zipprint *self)
   {
   IN(zipprint_InitializeObject );
 /*===*/
@@ -167,10 +174,7 @@ zipprint__InitializeObject( classID, self)
   return TRUE;
   }
 
-void 
-zipprint__FinalizeObject( classID, self )
-  register struct classheader	      *classID;
-  register struct zipprint	      *self;
+void zipprint__FinalizeObject(struct classheader *classID, struct zipprint *self)
   {
   IN(zipprint_FinalizeObject );
 /*===*/
@@ -178,20 +182,14 @@ zipprint__FinalizeObject( classID, self )
   OUT(zipprint_FinalizeObject );
   }
 
-void
-zipprint__Set_Data_Object( self, data_object )
-  register struct zipprint	      *self;
-  register struct zip		      *data_object;
+void zipprint__Set_Data_Object(struct zipprint *self, struct zip *data_object)
   {
   IN(zipprint_Set_Data_Object );
   Data = data_object;
   OUT(zipprint_Set_Data_Object );
   }
 
-void
-zipprint__Set_View_Object( self, view_object )
-  register struct zipprint	     *self;
-  register struct zipview	     *view_object;
+void zipprint__Set_View_Object(struct zipprint *self, struct zipview *view_object)
   {
   IN(zipprint_Set_View_Object);
   View = view_object;
@@ -213,20 +211,14 @@ zipprint__Set_View_Object( self, view_object )
   OUT(zipprint_Set_View_Object);
   }
 
-void
-zipprint__Set_Debug( self, state )
-  register struct zipprint	      *self;
-  register char			       state;
+void zipprint__Set_Debug(struct zipprint *self, boolean state)
   {
   IN(zipprint_Set_Debug);
   debug = state;
   OUT(zipprint_Set_Debug);
   }
 
-long
-zipprint__Set_Print_Language( self, language )
-  register struct zipprint		 *self;
-  register char				 *language;
+long zipprint__Set_Print_Language(struct zipprint *self, char *language)
   {
   register char				  language_code = 0;
 
@@ -242,10 +234,7 @@ zipprint__Set_Print_Language( self, language )
   return  zip_ok;
   }
 
-long
-zipprint__Set_Print_Processor( self, processor )
-  register struct zipprint		 *self;
-  register char				 *processor;
+long zipprint__Set_Print_Processor(struct zipprint *self, char *processor)
   {
   register char				  processor_code = 0;
 
@@ -261,10 +250,7 @@ zipprint__Set_Print_Processor( self, processor )
   return zip_ok;
   }
 
-long
-zipprint__Set_Print_Level( self, level )
-  register struct zipprint		 *self;
-  register long				  level;
+long zipprint__Set_Print_Level(struct zipprint *self, long level)
   {
   IN(zipprint_Set_Print_Level);
   DEBUGdt(Level,level);
@@ -273,10 +259,7 @@ zipprint__Set_Print_Level( self, level )
   return zip_ok;
   }
 
-long
-zipprint__Set_Print_File( self, file )
-  register struct zipprint		 *self;
-  register FILE				 *file;
+long zipprint__Set_Print_File(struct zipprint *self, FILE *file)
   {
   IN(zipprint_Set_Print_File);
   Printing->zip_printing_file = file;
@@ -284,10 +267,7 @@ zipprint__Set_Print_File( self, file )
   return zip_ok;
   }
 
-long
-zipprint__Set_Print_Resolution( self, resolution )
-  register struct zipprint		 *self;
-  register long				  resolution;
+long zipprint__Set_Print_Resolution(struct zipprint *self, long resolution)
   {
   IN(zipprint_Set_Print_Resolution);
   DEBUGdt(Resolution,resolution);
@@ -296,10 +276,7 @@ zipprint__Set_Print_Resolution( self, resolution )
   return zip_ok;
   }
 
-long
-zipprint__Set_Print_Dimensions( self, inch_width, inch_height )
-  register struct zipprint		 *self;
-  register float			  inch_width, inch_height;
+long zipprint__Set_Print_Dimensions(struct zipprint *self, float inch_width, float inch_height)
   {
   IN(zipprint_Set_Print_Dimensions);
   DEBUGgt(Inch-Width,inch_width);
@@ -310,10 +287,7 @@ zipprint__Set_Print_Dimensions( self, inch_width, inch_height )
   return zip_ok;
   }
 
-long
-zipprint__Set_Print_Coordinates( self, x_origin, y_origin, width, height )
-  register struct zipprint		 *self;
-  register zip_type_percent		  x_origin, y_origin, width, height;
+long zipprint__Set_Print_Coordinates(struct zipprint *self, zip_type_percent x_origin, zip_type_percent y_origin, zip_type_percent width, zip_type_percent height)
   {
   int					  status = zip_success;
 
@@ -330,10 +304,7 @@ zipprint__Set_Print_Coordinates( self, x_origin, y_origin, width, height )
   return status;
   }
 
-long
-zipprint__Set_Print_Orientation( self, orientation )
-  register struct zipprint		 *self;
-  register long				  orientation;
+long zipprint__Set_Print_Orientation(struct zipprint *self, long orientation)
   {
   IN(zipprint_Set_Print_Orientation);
   Printing->zip_printing_orientation = orientation;
@@ -341,11 +312,7 @@ zipprint__Set_Print_Orientation( self, orientation )
   return zip_ok;
   }
 
-long
-zipprint__Print_Figure( self, figure, pane )
-  register struct zipprint	       *self;
-  register zip_type_figure		figure;
-  register zip_type_pane		pane;
+long zipprint__Print_Figure(struct zipprint *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long			        status = zip_ok;
 
@@ -361,11 +328,7 @@ zipprint__Print_Figure( self, figure, pane )
   return  status;
   }
 
-static
-Print_Figure( self, figure, pane )
-  register struct zipprint	       *self;
-  register zip_type_figure		figure;
-  register zip_type_pane		pane;
+static int Print_Figure(struct zipprint *self, zip_type_figure figure, zip_type_pane pane)
   {
   register long			        status = zip_ok;
 
@@ -381,11 +344,7 @@ Print_Figure( self, figure, pane )
   }
 
 
-long
-zipprint__Print_Image( self, image, pane )
-  register struct zipprint	       *self;
-  register zip_type_image		image;
-  register zip_type_pane		pane;
+long zipprint__Print_Image(struct zipprint *self, zip_type_image image, zip_type_pane pane)
   {
   register long			        status = zip_ok;
 
@@ -401,11 +360,7 @@ zipprint__Print_Image( self, image, pane )
   return  status;
   }
 
-static
-Print_Image( self, image, pane )
-  register struct zipprint	       *self;
-  register zip_type_image		image;
-  register zip_type_pane		pane;
+static int Print_Image(struct zipprint *self, zip_type_image image, zip_type_pane pane)
   {
   register long			        status = zip_ok;
   register zip_type_figure		figure_ptr;
@@ -426,11 +381,7 @@ Print_Image( self, image, pane )
   return  status;
   }
 
-static int
-Print_Inferior_Image( self, image, pane )
-  register struct zipprint	       *self;
-  register zip_type_image	        image;
-  register zip_type_pane		pane;
+static int Print_Inferior_Image(struct zipprint *self, zip_type_image image, zip_type_pane pane)
   {
   register int			        status = zip_success;
   register zip_type_figure		figure_ptr;
@@ -453,11 +404,7 @@ Print_Inferior_Image( self, image, pane )
   return status;
   }
 
-long
-zipprint__Print_Stream( self, stream, pane )
-  register struct zipprint	       *self;
-  register zip_type_stream		stream;
-  register zip_type_pane		pane;
+long zipprint__Print_Stream(struct zipprint *self, zip_type_stream stream, zip_type_pane pane)
   {
   register long			        status = zip_ok;
 
@@ -473,10 +420,7 @@ zipprint__Print_Stream( self, stream, pane )
   return  status;
   }
 
-long
-zipprint__Print_Pane( self, pane )
-  register struct zipprint	       *self;
-  register zip_type_pane		pane;
+long zipprint__Print_Pane(struct zipprint *self, zip_type_pane pane)
   {
   register long			        status = zip_ok;
 
@@ -501,10 +445,7 @@ zipprint__Print_Pane( self, pane )
   return  status;
   }
 
-static
-Compute_Printing_Slug_Stretch_Factors( self, pane )
-  register struct zipprint	         *self;
-  register zip_type_pane		  pane;
+static int Compute_Printing_Slug_Stretch_Factors(struct zipprint *self, zip_type_pane pane)
   {
   register long				  greatest_x=1, least_x=1, greatest_y=1, least_y=1;
 
@@ -544,11 +485,7 @@ Compute_Printing_Slug_Stretch_Factors( self, pane )
   OUT(Compute_Printing_Slug_Stretch_Factors);
   }
 
-static
-Set_Printing_Characteristics( self, pane, figure )
-  register struct zipprint	         *self;
-  register zip_type_pane		  pane;
-  register zip_type_figure		  figure;
+static int Set_Printing_Characteristics(struct zipprint *self, zip_type_pane pane, zip_type_figure figure)
   {
   IN(Set_Printing_Characteristics);
   if ( pane->zip_pane_zoom_level >= 0 )
@@ -564,12 +501,10 @@ Set_Printing_Characteristics( self, pane, figure )
   }
 /*=== === ===*/
 
-int 
-apt_MM_Compare( s1, s2 )
-  /* Assumes "s1" must be shifted to lower-case
-             "s2" must be shifted to lower-case
-  */
-  register unsigned char		 *s1, *s2;
+/* Assumes "s1" must be shifted to lower-case
+           "s2" must be shifted to lower-case
+*/
+int apt_MM_Compare(unsigned char *s1, unsigned char *s2)
   {
   register unsigned char		  c1, c2;
   register int				  result = 0;

@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #endif
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <class.h>
 #include <text.ih>
 #include <textv.ih>
@@ -47,6 +48,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <envrment.ih>
 #include <txttroff.ih>
 #include <fnotev.eh>
+static int DoUpdate();
+static struct impair * findwindow(struct fnotev *self, struct text *pc);
 
 #define FONTNAME "andy"
 #define FONTSIZE 16
@@ -66,9 +69,8 @@ struct impair {
     struct impair *next;
 };
 static struct impair *list;
-static endnotes = FALSE;
-void initci(self)
-struct fnotev *self;
+static boolean endnotes = FALSE;
+void initci(struct fnotev *self)
 {
     if(fnotev_GetDrawable(self) != NULL){
 	fontdesc_CharSummary(self->fd,fnotev_GetDrawable(self),*(self->displaystr),&(self->ci[0]));
@@ -76,23 +78,13 @@ struct fnotev *self;
     }
 }
 
-void fnotev__GetOrigin(self, width, height, originX, originY)
-    struct fnotev *self;
-    long width;
-    long height;
-    long *originX;
-    long *originY;
+void fnotev__GetOrigin(struct fnotev *self, long width, long height, long *originX, long *originY)
 {
     *originX = 0;
     *originY = height - 3;
 }
 static int clevel = -100;
-void fnotev__Print(self, f, process, final, toplevel)
-    struct fnotev *self;
-    FILE *f;
-    char *process;
-    char *final;
-    int toplevel;
+void fnotev__Print(struct fnotev *self, FILE *f, char *process, char *final, boolean toplevel)
 {
 	struct text *d;
 	long i,doclen,ln,cs,c,addNewLine;
@@ -154,10 +146,7 @@ void fnotev__Print(self, f, process, final, toplevel)
 	fprintf(f,".FE\n");
 	clevel = -100;
     }
-struct view *fnotev__Hit(self,action,mousex,mousey,numberOfClicks) 
-struct fnotev *self;
-enum view_MouseAction action;
-long mousex, mousey, numberOfClicks;
+struct view * fnotev__Hit(struct fnotev *self, enum view_MouseAction action, long mousex, long mousey, long numberOfClicks)
 {
 
     if(action == view_LeftUp || action == view_RightUp){
@@ -193,9 +182,7 @@ long mousex, mousey, numberOfClicks;
     return (struct view *) self;
 }
 #if 0
-fnotev_FindLoc(self,parent)
-struct fnotev *self;
-struct text *parent;
+int fnotev_FindLoc(struct fnotev *self, struct text *parent)
 {
     struct text *d,*parent;
     strcut textv *pv;
@@ -205,25 +192,36 @@ struct text *parent;
     
 }
 #endif
-enum view_DSattributes fnotev__DesiredSize(self, width, height, pass, desiredwidth, desiredheight)
-struct fnotev *self;
-long width, height;
-enum view_DSpass pass;
-long *desiredwidth, *desiredheight;
+enum view_DSattributes fnotev__DesiredSize(struct fnotev *self, long width, long height, enum view_DSpass pass, long *desiredwidth, long *desiredheight)
 {
 /*    *desiredwidth = 17;
     *desiredheight = 14; */
     if(self->ci[0].width == 0) initci(self);
 
-    if(self->ci[0].width != 0)	*desiredwidth = self->ci[0].width + SHIM /*+ SHIM */;
+    if(self->ci[0].width != 0)	*desiredwidth = self->ci[0].width + SHIM;
     else *desiredwidth = 13;
-    if(self->ci[0].height != 0) *desiredheight = self->ci[0].height  + SHIM + 1/* + SHIM */;
-    else *desiredheight = 11;
+    /* Height: use the font's overall line height rather than the per-character
+     * bounds of '*'.  The asterisk has no descender and sits at x-height, so
+     * its per-char height understates how tall the box should be relative to
+     * the surrounding text.  newlineHeight (font.ascent + font.descent) gives
+     * a box that reads as proportional to the text line. */
+    if (fnotev_GetDrawable(self) != NULL) {
+	struct FontSummary *fs = fontdesc_FontSummary(self->fd, fnotev_GetDrawable(self));
+	if (fs && fs->newlineHeight > 0) {
+	    *desiredheight = fs->newlineHeight - SHIM;
+	} else if (self->ci[0].height != 0) {
+	    *desiredheight = self->ci[0].height + SHIM + 1;
+	} else {
+	    *desiredheight = 11;
+	}
+    } else if (self->ci[0].height != 0) {
+	*desiredheight = self->ci[0].height + SHIM + 1;
+    } else {
+	*desiredheight = 11;
+    }
     return(view_HeightFlexible | view_WidthFlexible);
 }
-static struct impair *findwindow(self,pc)
-struct fnotev *self;
-struct text *pc;
+static struct impair * findwindow(struct fnotev *self, struct text *pc)
 {
     struct im *m;
     struct impair *cim;
@@ -288,22 +286,18 @@ struct text *pc;
     textview_WantUpdate(cim->textview,cim->textview);
 #endif
 }
-void fnotev__pushchild(self)
-struct fnotev *self;
+void fnotev__pushchild(struct fnotev *self)
 {
     struct text *pc = Text(self);
     if(pc ){
 	findwindow(self,pc); 
     }
 }
-void fnotev__popchild(self)
-struct fnotev *self;
+void fnotev__popchild(struct fnotev *self)
 {
 }
 
-static DoUpdate(self,full)
-struct fnotev *self;
-boolean full;
+static int DoUpdate(struct fnotev *self, boolean full)
 {
     struct rectangle enclosingRect;
 /*     long xsize,ysize; 
@@ -348,25 +342,26 @@ boolean full;
 /* fprintf(stderr,"wid = %d, height = %d\n",enclosingRect.width,enclosingRect.height);fflush(stdout);*/
     if(Fnote(self)->open == -333)
 	fnote_Open(Fnote(self),self->parenttext);
-    if(fnote_IsOpen(Fnote(self))){
+    if(fnote_IsOpen(Fnote(self)))
 	fnotev_SetFont(self,self->ofd);
-	fnotev_MoveTo(self,/* self->ci[1].xOriginOffset + */SHIM,/*self->ci[1].yOriginOffset +*/SHIM);
-    }
-    else{
+    else
 	fnotev_SetFont(self,self->fd);
-	fnotev_MoveTo(self,/*self->ci[0].xOriginOffset + */1,/*self->ci[0].yOriginOffset + */1);
-    }
-    fnotev_DrawString(self,self->displaystr,(view_ATTOP | view_ATLEFT)); 
-    fnotev_DrawRect(self,&(enclosingRect)); 
-  /*	fnotev_MoveTo(self,enclosingRect.width / 2,enclosingRect.height / 2);
-    fnotev_DrawString(self,"*",(view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBOTTOM)); */
+    /* Center the marker glyph in the box.  BETWEENTOPANDBOTTOM and
+     * BETWEENLEFTANDRIGHT derive from max_bounds metrics (same source used
+     * by DrawChars internally), so centering is consistent regardless of
+     * whether XFT or core X11 rendering is active.  The old ATTOP|ATLEFT
+     * approach broke because it added max_bounds.ascent to Y=1 while the
+     * box was sized only to the asterisk's per-character ascent — on
+     * scalable fonts the typographic ascender is much larger, pushing the
+     * baseline past the box bottom. */
+    fnotev_MoveTo(self, enclosingRect.width / 2, enclosingRect.height / 2);
+    fnotev_DrawString(self, self->displaystr, (view_BETWEENLEFTANDRIGHT | view_BETWEENTOPANDBOTTOM));
+    fnotev_DrawRect(self,&(enclosingRect));
     
 
 #endif
 }
-void fnotev__LinkTree(self, parent)
-register struct fnotev *self;
-struct view *parent;
+void fnotev__LinkTree(struct fnotev *self, struct view *parent)
 {
     super_LinkTree(self,parent);
     while(!class_IsTypeByName(class_GetTypeName(parent),"textview")){
@@ -377,11 +372,7 @@ struct view *parent;
 }
 
 #if 0
-ismyenv(self,d,pos,env)
-struct fnotev *self;
-struct text *d;
-long pos;
-struct environment *env;
+int ismyenv(struct fnotev *self, struct text *d, long pos, struct environment *env)
 {
     if(env->type == environment_View && env->data.viewref->dataObject == DataObject(self)){
 	self->pos = pos;
@@ -389,10 +380,7 @@ struct environment *env;
     }
 }
 #endif
-void fnotev__ObservedChanged(self, changed, value)
-struct fnotev *self;
-struct observable *changed;
-long value;
+void fnotev__ObservedChanged(struct fnotev *self, struct observable *changed, long value)
 {
     if(value == observable_OBJECTDESTROYED){
 	if(self->imp && changed == (struct observable *)self->imp->fn){
@@ -428,22 +416,16 @@ long value;
     }
     fnotev_WantUpdate(self,self);
 }
-void fnotev__FullUpdate(self,type,left,top,width,height)
-struct fnotev *self;
-enum view_UpdateType type;
-long left,top,width,height;
+void fnotev__FullUpdate(struct fnotev *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     DoUpdate(self,TRUE);
 }
-void fnotev__Update(self)
-struct fnotev *self;
+void fnotev__Update(struct fnotev *self)
 {
     DoUpdate(self,FALSE);
 }
 
-boolean fnotev__InitializeObject(classID,self)
-struct classheader *classID;
-struct fnotev *self;
+boolean fnotev__InitializeObject(struct classheader *classID, struct fnotev *self)
 {
     self->imp = NULL;
     self->fd = fontdesc_Create(FONTNAME,0,FONTSIZE);
@@ -457,27 +439,21 @@ struct fnotev *self;
     self->ci[0].width = 0;
     return TRUE;
 }
-void fnotev__FinalizeObject(classID,self)
-struct classheader *classID;
-struct fnotev *self;
+void fnotev__FinalizeObject(struct classheader *classID, struct fnotev *self)
 {
     free(self->ci);
 }
-boolean fnotev__InitializeClass(classID)
-struct classheader *classID;
+boolean fnotev__InitializeClass(struct classheader *classID)
 {
     list = NULL;
     endnotes = FALSE;
     return TRUE;
 }
-void fnotev__SetEndnote(classID,doendnotes)
-struct classheader *classID;
-boolean doendnotes;
+void fnotev__SetEndnote(struct classheader *classID, boolean doendnotes)
 {
 endnotes = doendnotes;
 }
-void fnotev__ReceiveInputFocus(self)
-    struct fnotev *self;
+void fnotev__ReceiveInputFocus(struct fnotev *self)
 {
 	super_ReceiveInputFocus(self);
 	if(self->parentview){	

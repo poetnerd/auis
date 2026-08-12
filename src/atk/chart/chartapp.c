@@ -94,10 +94,7 @@ chartv_Specification	    view_specification[] =
   NULL
   };
 
-boolean 
-chartapp__InitializeObject( classID, self )
-  register struct classheader	 *classID;
-  register struct chartapp	 *self;
+boolean chartapp__InitializeObject(struct classheader *classID, struct chartapp *self)
   {
   IN(chartapp_InitializeObject);
   *Source = 0;
@@ -113,11 +110,7 @@ chartapp__FinalizeObject( classID, self )
   register struct chartapp	 *self;
   {}
 
-boolean
-chartapp__ParseArgs( self, argc, argv )
-  register struct chartapp	 *self;
-  register int			  argc;
-  register char			**argv;
+boolean chartapp__ParseArgs(struct chartapp *self, int argc, char **argv)
   {
   IN(chartapp_ParseArgs);
   super_ParseArgs( self, argc, argv );
@@ -141,9 +134,7 @@ chartapp__ParseArgs( self, argc, argv )
   return TRUE;
   }
 
-boolean
-chartapp__Start( self )
-  struct chartapp	         *self;
+boolean chartapp__Start(struct chartapp *self)
   {
   register FILE			 *file;
   long				  id, status = true;
@@ -167,7 +158,7 @@ chartapp__Start( self )
     im_SetView( Im, Frame );
     if ( *Source )
       {
-      chart_SetChartAttribute( Chart, chart_FileName(Source) );
+      chart_SetChartAttribute( Chart, chart_filename, (long) (Source) );
       frame_SetTitle( Frame, Source );
       if ( file = fopen( Source, "r" ) )
         {

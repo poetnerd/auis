@@ -27,10 +27,13 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 #include <global.h>
 #include <gentlex.h>
+static void usage(char **args);
 
 
 char *Prefix = NULL;
@@ -51,10 +54,7 @@ int MaxSeverity = 0;	/* maximum severity passed to Error() */
 int CurrSym = 0;	/* integer portion of next symbol from GenSym() */
 
 
-	void
-Error(severity, msg)
-	int severity;
-	char *msg;
+void Error(int severity, char *msg)
 {
 	if (severity > MaxSeverity)
 		MaxSeverity = severity;
@@ -62,11 +62,7 @@ Error(severity, msg)
 	fprintf(stderr, "line %d - %s\n", LineNo, msg);
 }
 
-	void
-ErrorA(severity, msg, Arg)
-	int severity;
-	char *msg;
-	char *Arg;
+void ErrorA(int severity, char *msg, char *Arg)
 {
 	int n = strlen(Arg);
 	while(n > 0 && isspace(Arg[n-1])) n--;
@@ -87,9 +83,7 @@ GenSym()
 /* freeze(sx, ex)
 	create a malloced version of the text	*sx...*(ex-1)
 */
-	char *
-freeze(sx, ex)
-	char *sx, *ex;
+char * freeze(char *sx, char *ex)
 {
 	char *v;
 	int len = (ex == NULL) ? strlen(sx) : ex-sx;
@@ -103,10 +97,7 @@ freeze(sx, ex)
 		quotes, and \
 	if plen is not NULL, set *plen to length of returned string
 */
-	char *
-Escapify(s, plen)
-	char *s;
-	int *plen;
+char * Escapify(char *s, int *plen)
 {
 	static char escaped[200];
 	char *ex;
@@ -139,9 +130,7 @@ Escapify(s, plen)
 };
 
 
-	static void
-usage(args)
-	char **args;
+static void usage(char **args)
 {
 	fprintf(stderr,
 		"usage: %s [-l] [-p prefix] [filename.tlx [filename.tab.c]]\n",
@@ -167,10 +156,7 @@ outnm:	the file name is Prefix ~ ".tlc" and the directory is that of tlxFile
 
 */		
 
-	void
-main(argc, args)
-	int argc;
-	char **args;
+void main(int argc, char **args)
 {
 	char **argsp = args;
 	FILE *ftabc, *ftlx, *fout;

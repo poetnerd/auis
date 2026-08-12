@@ -19,6 +19,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "andrewos.h"
 #include "new.h"
 #include "symtab.h"
@@ -31,9 +32,7 @@ bucket *lastsymbol;
 
 
 
-int
-hash(key)
-char *key;
+int hash(char *key)
 {
   register char *cp;
   register int k;
@@ -48,9 +47,7 @@ char *key;
 
 
 
-char *
-copys(s)
-char *s;
+char * copys(char *s)
 {
   register int i;
   register char *cp;
@@ -78,9 +75,7 @@ tabinit()
 }
 
 
-bucket *
-getsym(key)
-char *key;
+bucket * getsym(char *key)
 {
   register int hashval;
   register bucket *bp;

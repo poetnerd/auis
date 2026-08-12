@@ -82,10 +82,10 @@ methods:
 
   /**  Methods Dealing with Tree as a Whole  **/
 
-  SetTreeAttribute( long attribute_codevalue )			returns long;
+  SetTreeAttribute( long attribute_code, long attribute_value )	returns long;
   TreeAttribute( long attribute_code )				returns long;
   CurrentNode()							returns struct tree_node *;
-  SetHitHandler( (long *handler)(), char *anchor );
+  SetHitHandler( procedure handler, struct view *anchor );
   SetDebug( boolean state );
 
   /**  Methods Dealing with Individual Nodes  **/
@@ -110,7 +110,7 @@ macromethods:
 
 classprocedures:
 
-  Create( treev_Specification, struct view *anchor )		returns struct treev *;
+  Create( treev_Specification *specification, struct view *anchor )		returns struct treev *;
   InitializeObject( struct treev *self )			returns boolean;
   FinalizeObject( struct treev *self );
 
@@ -168,6 +168,10 @@ data:
 #define  treev_Vertical			    (1<<0)
 
 /***  Attribute Specifications  ***/
+/* These (code, value) pair macros are for specification initializer
+ * tables ONLY.  Do not pass them as a dispatch-call argument: under
+ * typed dispatch (M1 -pi) SetTreeAttribute takes attribute_code and
+ * attribute_value as separate real arguments. */
 #define  treev_NodeHighlightStyle(x)	    treev_nodehighlightstyle,	(long) x
 #define  treev_NodeFootPrintStyle(x)	    treev_nodefootprintstyle,	(long) x
 #define  treev_NodeBorderStyle(x)	    treev_nodeborderstyle,	(long) x

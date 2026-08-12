@@ -66,6 +66,7 @@ HISTORY
 END-SPECIFICATION  ************************************************************/
 
 #include <math.h>
+#include <stdlib.h>
 #include "graphic.ih"
 #include "view.ih"
 #include "apt.h"
@@ -108,10 +109,7 @@ int charthst_debug = 0;
 
 #define  abs(x)			(((x) < 0) ? -(x): (x))
 
-boolean 
-charthst__InitializeObject( classID, self)
-  register struct classheader	 *classID;
-  register struct charthst	 *self;
+boolean charthst__InitializeObject(struct classheader *classID, struct charthst *self)
   {
   IN(charthst_InitializeObject);
   charthst_SetShrinkIcon( self, 'e', "icon12", "HistogramChart", "andysans10b" );
@@ -126,30 +124,21 @@ charthst__FinalizeObject( classID, self )
   register struct charthst	 *self;
   {}
 
-char *
-charthst__Moniker( self )
-  register struct charthst   *self;
+char * charthst__Moniker(struct charthst *self)
   {
   IN(charthst_Moniker);
   OUT(charthst_Moniker);
   return  "Histogram";
   }
 
-void
-charthst__SetDebug( self, state )
-  register struct charthst     *self;
-  register char		       state;
+void charthst__SetDebug(struct charthst *self, boolean state)
   {
   IN(charthst_SetDebug);
   super_SetDebug( self, debug = state );
   OUT(charthst_SetDebug);
   }
 
-struct view *
-charthst__HitChart( self, action, x, y, clicks )
-  register struct charthst	     *self;
-  register enum view_MouseAction      action;
-  register long			      x, y, clicks;
+struct view * charthst__HitChart(struct charthst *self, enum view_MouseAction action, long x, long y, long clicks)
   {
   register struct view		     *hit;
   static struct chart_item_shadow    *shadow;
@@ -176,8 +165,8 @@ charthst__HitChart( self, action, x, y, clicks )
 	initial_y = prior_y = y = ItemY(shadow);
 	charthst_MoveTo( self, Left, y );
 	charthst_DrawLineTo( self, Right, y );
-	name = (char *) chart_ItemAttribute( Data, shadow->item, chart_ItemName(0) );
-	value = value_original = chart_ItemAttribute( Data, shadow->item, chart_ItemValue(0) );
+	name = (char *) chart_ItemAttribute( Data, shadow->item, chart_itemname );
+	value = value_original = chart_ItemAttribute( Data, shadow->item, chart_itemvalue );
 	DEBUGdt(Initial-value,value);
         break;
       case  view_LeftMovement:
@@ -196,7 +185,7 @@ charthst__HitChart( self, action, x, y, clicks )
 	  value_original += (delta / PixelsPerInterval) *
 				chart_ItemValueRangeInterval( Data );
 	  DEBUGdt(Final-value,value);
-	  chart_SetItemAttribute( Data, shadow->item, chart_ItemValue((value = value_original)) );
+	  chart_SetItemAttribute( Data, shadow->item, chart_itemvalue, (long) ((value = value_original)) );
 	  chart_SetModified( Data );
 	  chart_NotifyObservers( Data, chart_ItemValueChanged );
 	  }
@@ -205,16 +194,14 @@ charthst__HitChart( self, action, x, y, clicks )
 	y_offset = 0;
         break;
       }
-    sprintf( value_string, "%s:  Value = %d", name, value );
+    sprintf( value_string, "%s:  Value = %ld", name, value );
     charthst_Announce( self, value_string );
     }
   OUT(charthst_HitChart);
   return  hit;
   }
 
-void
-charthst__DrawChart( self )
-  register struct charthst	     *self;
+void charthst__DrawChart(struct charthst *self)
   {
   register long			      left, width, top, height, i = 0,
 				      count = chart_ItemCount( Data ),
@@ -230,12 +217,12 @@ charthst__DrawChart( self )
   DEBUGdt(excess,excess);
   while ( shadow )
     {
-    DEBUGdt(Value,chart_ItemAttribute( Data, shadow->item, chart_ItemValue(0) ));
+    DEBUGdt(Value,chart_ItemAttribute( Data, shadow->item, chart_itemvalue ));
     fudge = (excess) ? ((i % excess) ? 0 : 1) : 0;
     top = (ItemY(shadow) < BaseLine) ? ItemY(shadow) : BaseLine;
     height = abs(BaseLine - ItemY(shadow));
     charthst_FillRectSize( self, ItemLeft(shadow) = left, ItemTop(shadow) = top,
-	ItemWidth(shadow) = width+fudge, ItemHeight(shadow) = height, graphic_BLACK );
+	ItemWidth(shadow) = width+fudge, ItemHeight(shadow) = height, (struct graphic *)graphic_BLACK );
     ItemTop(shadow) -= 5;
     ItemHeight(shadow) += 10;
     left += width + 1 + fudge;
@@ -245,9 +232,7 @@ charthst__DrawChart( self )
   OUT(charthst_DrawChart);
   }
 
-void
-charthst__PrintChart( self )
-  register struct charthst	     *self;
+void charthst__PrintChart(struct charthst *self)
   {
   register long			      i, left, top, width, height,
 				      count = chart_ItemCount( Data ),

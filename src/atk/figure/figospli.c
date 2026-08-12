@@ -28,6 +28,7 @@ char *figospli_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 
 #include <figospli.eh>
 
+#include <stdlib.h>
 #include <figoplin.ih>
 #include <figattr.ih>
 #include <view.ih>
@@ -35,6 +36,9 @@ char *figospli_c_rcsid = "$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk
 #include <figtoolv.ih>
 #include <message.ih>
 #include <print.ih>
+static int FindLineHit();
+static void SetNumCubits(struct figospli *self, long inum);
+static void spline(struct point *pts, int n, struct figospli_cubit *cubit, boolean closed);
 
 #define figospli_Segments (8)
 
@@ -58,9 +62,7 @@ struct classhdr *ClassID;
     return TRUE;
 }
 
-boolean figospli__InitializeObject(ClassID, self)
-struct classhdr *ClassID;
-struct figospli *self;
+boolean figospli__InitializeObject(struct classheader *ClassID, struct figospli *self)
 {
     self->cubit = NULL;
     self->cubit_size = 0;
@@ -71,11 +73,7 @@ struct figospli *self;
 }
 
 /* efficient? well, no. */
-struct figospli *figospli__Create(classID, pointlist, numpoints, isclosed)
-struct classheader *classID;
-struct point *pointlist;
-long numpoints;
-boolean isclosed;
+struct figospli * figospli__Create(struct classheader *classID, struct point *pointlist, long numpoints, boolean isclosed)
 {
     struct figoplin *tmp = figoplin_Create(pointlist, numpoints, isclosed);
     struct figospli *res;
@@ -90,9 +88,7 @@ boolean isclosed;
     return res;
 }
 
-void figospli__FinalizeObject(ClassID, self)
-struct classhdr *ClassID;
-struct figospli *self;
+void figospli__FinalizeObject(struct classheader *ClassID, struct figospli *self)
 {
     if (self->cubit)
 	free(self->cubit);
@@ -100,10 +96,7 @@ struct figospli *self;
 	free(self->tmppts);
 }
 
-char *figospli__ToolName(dummy, v, rock)
-struct figospli *dummy;
-struct figtoolview *v;
-long rock;
+char * figospli__ToolName(struct figospli *dummy, struct figtoolview *v, long rock)
 {
     if (rock & 2)
 	return "Closed Spline";
@@ -111,11 +104,7 @@ long rock;
 	return "Spline";
 }
 
-static void spline(pts, n, cubit, closed)
-struct point *pts;
-int n;
-struct figospli_cubit *cubit;
-boolean closed; /* if TRUE, pts[n] doesn't exist; use pts[0] instead. */
+static void spline(struct point *pts, int n, struct figospli_cubit *cubit, boolean closed)
 {
     /* uses pts[0...n], ctemp[0...n], cubit[0...n-1] */
     int i;
@@ -248,9 +237,7 @@ boolean closed; /* if TRUE, pts[n] doesn't exist; use pts[0] instead. */
     }
 }
 
-static void SetNumCubits(self, inum)
-struct figospli *self;
-long inum;
+static void SetNumCubits(struct figospli *self, long inum)
 {
     int num;
 
@@ -305,8 +292,7 @@ long inum;
     }
 }
 
-void figospli__RecomputeBounds(self)
-struct figospli *self;
+void figospli__RecomputeBounds(struct figospli *self)
 {
     int ix, jx, realnum, num, lwid;
     long px, py;
@@ -376,9 +362,7 @@ struct figospli *self;
     figospli_ComputeSelectedBounds(self); /* ### inefficient -- this gets called twice, once in super_ and once here. */
 }
 
-void figospli__Draw(self, v) 
-struct figospli *self;
-struct figview *v;
+void figospli__Draw(struct figospli *self, struct figview *v)
 {
     long ix, shad, lw;
     char *col;
@@ -419,10 +403,7 @@ struct figview *v;
     figview_SetLineJoin(v, graphic_JoinMiter);
 }
 
-static int FindLineHit(self, x, y, delta)
-struct figospli *self;
-long x, y;
-long delta;
+static int FindLineHit(struct figospli *self, long x, long y, long delta)
 {
     int ix;
     long x0, y0, x1, y1;
@@ -454,11 +435,7 @@ long delta;
     return figobj_NULLREF;
 }
 
-enum figobj_HitVal figospli__HitMe(self, x, y, delta, ptref) 
-struct figospli *self;
-long x, y;
-long delta;
-long *ptref;
+enum figobj_HitVal figospli__HitMe(struct figospli *self, long x, long y, long delta, long *ptref)
 {
     int ix;
     enum figobj_HitVal res = figospli_BasicHitMe(self, x, y, delta, ptref);
@@ -489,11 +466,7 @@ R = (dx+cx+bx+ax, dy+cy+by+ay)
   and then
 P Q R curveto
 */
-void figospli__PrintObject(self, v, file, prefix)
-struct figospli *self;
-struct figview *v;
-FILE *file;
-char *prefix;
+void figospli__PrintObject(struct figospli *self, struct figview *v, FILE *file, char *prefix)
 {
     long ix, x, y, xbase, ybase, nump;
     struct point *pts;
@@ -518,7 +491,7 @@ char *prefix;
     
     fprintf(file, "%s  2 setlinejoin\n", prefix);
     
-    fprintf(file, "%s  %d %d moveto\n", prefix, figview_ToPrintPixX(v, xbase), figview_ToPrintPixY(v, ybase));
+    fprintf(file, "%s  %ld %ld moveto\n", prefix, figview_ToPrintPixX(v, xbase), figview_ToPrintPixY(v, ybase));
 
     for (ix=0; ix<nump-1; ix++) {
 	cb = &(self->cubit[ix]);
@@ -528,7 +501,7 @@ char *prefix;
 	Qy = Py + (cb->yc + cb->yb)/3;
 	Rx = (cb->xa + cb->xb + cb->xc + cb->xd);
 	Ry = (cb->ya + cb->yb + cb->yc + cb->yd);
-	fprintf(file, "%s  %d %d %d %d %d %d curveto\n", prefix, figview_ToPrintPixX(v, Px), figview_ToPrintPixY(v, Py), figview_ToPrintPixX(v, Qx), figview_ToPrintPixY(v, Qy), figview_ToPrintPixX(v, Rx), figview_ToPrintPixY(v, Ry));
+	fprintf(file, "%s  %ld %ld %ld %ld %ld %ld curveto\n", prefix, figview_ToPrintPixX(v, Px), figview_ToPrintPixY(v, Py), figview_ToPrintPixX(v, Qx), figview_ToPrintPixY(v, Qy), figview_ToPrintPixX(v, Rx), figview_ToPrintPixY(v, Ry));
     }
 
     col = figattr_GetColor(figospli_GetVAttributes(self), figospli_GetIVAttributes(self));
@@ -550,7 +523,7 @@ char *prefix;
     lw = figattr_GetLineWidth(figospli_GetVAttributes(self), figospli_GetIVAttributes(self));
     lw = figview_ToPrintPixW(v, lw*figview_FigUPerPix);
     if (lw <= 0) lw = 0;
-    fprintf(file, "%s  %d setlinewidth\n", prefix, lw);
+    fprintf(file, "%s  %ld setlinewidth\n", prefix, lw);
     fprintf(file, "%s  %f %f %f setrgbcolor\n", prefix, rcol, gcol, bcol);
     /*fprintf(file, "%s  0 setgray\n", prefix);*/
     fprintf(file, "%s  stroke\n", prefix);

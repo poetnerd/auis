@@ -42,9 +42,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #include "/usr/ucbinclude/sysexits.h"
 #endif /* sys_sun4_51 */
 #include <mail.h>
+#include <util.h>
 
 /* Test the UnixError, UnixSignal, and UnixSysExits routines. */
-main()
+int main()
 {
     int Val;
     extern int EX_Nerr;

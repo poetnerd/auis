@@ -22,13 +22,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 extern char *calloc ();
 extern char *realloc ();
-extern void done ();
+extern void done(int k);
 
 extern char *program_name;
 
-char *
-xmalloc (n)
-     register unsigned n;
+char * xmalloc(unsigned n)
 {
   register char *block;
 
@@ -45,10 +43,7 @@ xmalloc (n)
   return (block);
 }
 
-char *
-xrealloc (block, n)
-     register char *block;
-     register unsigned n;
+char * xrealloc(char *block, unsigned n)
 {
   /* Avoid uncertainty about what an arg of 0 will do.  */
   if (n == 0)

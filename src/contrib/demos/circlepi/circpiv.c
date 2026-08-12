@@ -44,21 +44,20 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <observe.ih>
 #include <proctbl.ih>
 #include <view.ih>
+static void step(struct circlepiview *self, double x, double y, double side, double *inside, double *outside, int depth, int depth_limit);
 
 /* Defined constants and macros */
 
 /* External Declarations */
 
 /* Forward Declarations */
-static void LimitProc();
+static void LimitProc(struct circlepiview *self, long param);
 
 /* Global Variables */
 static struct menulist *menulist = NULL;
 
 
-boolean
-circlepiview__InitializeClass(c)
-struct classheader *c;
+boolean circlepiview__InitializeClass(struct classheader *c)
 {
 /* 
   Initialize all the class data.
@@ -69,20 +68,17 @@ struct classheader *c;
 
     if ((menulist = menulist_New()) == NULL) return(FALSE);
 
-    if ((proc = proctable_DefineProc("circpi-set-depth-limit", LimitProc, &circlepiview_classinfo, NULL, "Takes the integer rock and uses it to set the depth limit on recursion.")) == NULL) return(FALSE);
+    if ((proc = proctable_DefineProc("circpi-set-depth-limit", (procedure) LimitProc, &circlepiview_classinfo, NULL, "Takes the integer rock and uses it to set the depth limit on recursion.")) == NULL) return(FALSE);
     for (i = 1; i <= 10; ++i) {
 	sprintf(menubuf, "Depth Limit~10,%d~%d", i, i);
-	menulist_AddToML(menulist, menubuf, proc, (long)i, 0);
+	menulist_AddToML(menulist, menubuf, proc, (void *)(long)i, 0);
     }
     
     return(TRUE);
 }
 
 
-boolean
-circlepiview__InitializeObject(c, self)
-struct classheader *c;
-struct circlepiview *self;
+boolean circlepiview__InitializeObject(struct classheader *c, struct circlepiview *self)
 {
 /*
   Set up the data for each instance of the object.
@@ -96,10 +92,7 @@ struct circlepiview *self;
 }
 
 
-void
-circlepiview__FinalizeObject(c, self)
-struct classheader *c;
-struct circlepiview *self;
+void circlepiview__FinalizeObject(struct classheader *c, struct circlepiview *self)
 {
   if (self->cursor) cursor_Destroy(self->cursor);
   self->cursor = NULL;
@@ -107,11 +100,7 @@ struct circlepiview *self;
 }
 
 
-void
-circlepiview__ObservedChanged(self, b, v)
-     struct circlepiview *self;
-     struct circlepi *b;
-     long v;
+void circlepiview__ObservedChanged(struct circlepiview *self, struct observable *b, long v)
 {
     super_ObservedChanged(self, b, v);
     if (v == observable_OBJECTCHANGED) {
@@ -121,10 +110,7 @@ circlepiview__ObservedChanged(self, b, v)
 }
 
 
-void
-circlepiview__PostMenus(self, ml)
-     struct circlepiview *self;
-     struct menulist *ml;
+void circlepiview__PostMenus(struct circlepiview *self, struct menulist *ml)
 {
     /*
       Enable the menus for this object.
@@ -136,10 +122,7 @@ circlepiview__PostMenus(self, ml)
 }
 
 
-void
-circlepiview__LinkTree(self, parent)
-     struct circlepiview *self;
-     struct view *parent;
+void circlepiview__LinkTree(struct circlepiview *self, struct view *parent)
 {
     super_LinkTree(self, parent);
 
@@ -153,11 +136,7 @@ circlepiview__LinkTree(self, parent)
 }
 
 
-void
-circlepiview__FullUpdate(self, type, left, top, width, height)
-struct circlepiview *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void circlepiview__FullUpdate(struct circlepiview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
 /*
   Do an update.
@@ -169,19 +148,14 @@ long left, top, width, height;
   }
 }
 
-int inside_circle(x,y)
-     double x,y;
+int inside_circle(double x, double y)
 {
   return((x*x + y*y) <= 1.0);
 }
 
 
 
-static void step(self, x, y, side, inside, outside, depth, depth_limit)
-     struct circlepiview *self;  
-     double x, y, side;
-     double *inside, *outside;
-     int depth, depth_limit;
+static void step(struct circlepiview *self, double x, double y, double side, double *inside, double *outside, int depth, int depth_limit)
 {
   struct rectangle vbounds, fill;
   struct graphic *tile;
@@ -233,9 +207,7 @@ static void step(self, x, y, side, inside, outside, depth, depth_limit)
 }
 
 
-void
-circlepiview__Update(self)
-struct circlepiview *self;  
+void circlepiview__Update(struct circlepiview *self)
 {
 /*
   Redisplay this object.
@@ -274,12 +246,7 @@ struct circlepiview *self;
 
 
 
-struct view *
-circlepiview__Hit(self, action, x, y, numclicks)
-struct circlepiview *self;
-long x, y;
-enum view_MouseAction action;
-long numclicks;  
+struct view * circlepiview__Hit(struct circlepiview *self, enum view_MouseAction action, long x, long y, long numclicks)
 {
 /*
   Handle the button event.  Currently, semantics are:
@@ -298,10 +265,7 @@ long numclicks;
 }
 
 
-static void
-LimitProc(self, param)
-     struct circlepiview *self;
-     long param;
+static void LimitProc(struct circlepiview *self, long param)
 {
     struct circlepi *c = (struct circlepi *)circlepiview_GetDataObject(self);
 

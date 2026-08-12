@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
  
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <cui.h>
 #include <fdphack.h>
@@ -74,130 +75,130 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #undef dontDefineRoutinesFor_tree
 #endif
 
-extern		void AlterSubByName();
-extern		void AppendMarked();
-extern		void AppendMarkedToFile();
-extern		AppendMessageToFile();
-extern		void AppendMarkedToRawFile();
-extern		AppendMessageToRawFile();
-extern		void BSM_AppendDelPlease();
-extern		void BSM_AppendOnto();
-extern		void BSM_AppendPlease();
-extern          void BSM_CheckNewPlease();
-extern		void BSM_ClassifyPlease();
-extern		void BSM_CopyPlease();
-extern		void BSM_CreatePlease();
-extern		void BSM_DeleteFolder();
-extern		void BSM_DeletePlease();
-extern		void BSM_DifferentContentType();
-extern		void BSM_ShowRaw();
-extern		void BSM_DummyQuit();
-extern		void BSM_FileInto();
-extern		void BSM_MarkCurrent();
-extern		void BSM_ModifiableBody();
-extern		void BSM_MorePlease();
-extern		void BSM_NextPlease();
-extern		void BSM_ReSendPlease();
-extern          void BSM_ReadMailPlease();
-extern		void BSM_RedisplayFixedWidth();
-extern		void BSM_RedisplayFormat();
-extern		void BSM_RedisplayNormal();
-extern		void BSM_RedisplayRot13();
-extern		void BSM_RefreshDisplayedFolder();
+extern		void AlterSubByName(struct messages *self);
+extern		void AppendMarked(struct messages *self, char *name);
+extern		void AppendMarkedToFile(struct messages *self);
+extern		int AppendMessageToFile(struct messages *self);
+extern		void AppendMarkedToRawFile(struct messages *self);
+extern		int AppendMessageToRawFile(struct messages *self);
+extern		void BSM_AppendDelPlease(struct messages *self);
+extern		void BSM_AppendOnto(struct messages *self);
+extern		void BSM_AppendPlease(struct messages *self);
+extern          void BSM_CheckNewPlease(struct messages *self);
+extern		void BSM_ClassifyPlease(struct messages *self);
+extern		void BSM_CopyPlease(struct messages *self);
+extern		void BSM_CreatePlease(struct messages *self);
+extern		void BSM_DeleteFolder(struct messages *self);
+extern		void BSM_DeletePlease(struct messages *self);
+extern		void BSM_DifferentContentType(struct messages *self, char *ctype);
+extern		void BSM_ShowRaw(struct messages *self, char *ctype);
+extern		void BSM_DummyQuit(struct messages *self);
+extern		void BSM_FileInto(struct messages *self);
+extern		void BSM_MarkCurrent(struct messages *self);
+extern		void BSM_ModifiableBody(struct messages *self);
+extern		void BSM_MorePlease(struct messages *self);
+extern		void BSM_NextPlease(struct messages *self);
+extern		void BSM_ReSendPlease(struct messages *self, char *towhom);
+extern          void BSM_ReadMailPlease(struct messages *self);
+extern		void BSM_RedisplayFixedWidth(struct messages *self);
+extern		void BSM_RedisplayFormat(struct messages *self);
+extern		void BSM_RedisplayNormal(struct messages *self);
+extern		void BSM_RedisplayRot13(struct messages *self);
+extern		void BSM_RefreshDisplayedFolder(struct messages *self, char *CheckAll);
 extern		void BSM_NextDigest();
 extern		void BSM_PrevDigest();
-extern		void BSM_RenamePlease();
-extern		void BSM_ReplyToAll();
-extern		void BSM_ReplyToBoth();
-extern		void BSM_ReplyToReaders();
-extern		void BSM_ReplyToSender();
-extern		void BSM_RestoreAsDraft();
-extern		void BSM_ScrollBackBody();
-extern		void BSM_ScrollForwardBody();
-extern		void BSM_SelectBody();
-extern		void BSM_SendForward();
-extern		void BSM_SendFresh();
-extern		void BSM_SetPrinter();
-extern          void BSM_ShowAllPlease();
-extern          void BSM_ShowHelp();
-extern          void BSM_ShowNewPlease();
-extern          void BSM_ShowPersonalPlease();
-extern          void BSM_ShowSubscribedPlease();
-extern		void BSM_ShowTreePlease();
-extern		void BSM_UndeletePlease();
-extern		void BSearchFPlease();
-extern		void BSearchRPlease();
-extern		void BackUp();
-extern		void CSearchFPlease();
-extern		void CSearchRPlease();
-extern          CheckMenuMasks();
-extern		void ClassifyMarked();
-extern		void ClearMarks();
-extern          boolean ClearSM();
-extern		void CopyMarked();
-extern		void CountMarks();
-extern		void DeleteMarked();
+extern		void BSM_RenamePlease(struct messages *self);
+extern		void BSM_ReplyToAll(struct messages *self);
+extern		void BSM_ReplyToBoth(struct messages *self);
+extern		void BSM_ReplyToReaders(struct messages *self);
+extern		void BSM_ReplyToSender(struct messages *self);
+extern		void BSM_RestoreAsDraft(struct messages *self);
+extern		void BSM_ScrollBackBody(struct messages *self);
+extern		void BSM_ScrollForwardBody(struct messages *self);
+extern		void BSM_SelectBody(struct messages *self);
+extern		void BSM_SendForward(struct messages *self);
+extern		void BSM_SendFresh(struct messages *self);
+extern		void BSM_SetPrinter(struct messages *self);
+extern          void BSM_ShowAllPlease(struct messages *self);
+extern          void BSM_ShowHelp(struct messages *self);
+extern          void BSM_ShowNewPlease(struct messages *self);
+extern          void BSM_ShowPersonalPlease(struct messages *self);
+extern          void BSM_ShowSubscribedPlease(struct messages *self);
+extern		void BSM_ShowTreePlease(struct messages *self);
+extern		void BSM_UndeletePlease(struct messages *self);
+extern		void BSearchFPlease(struct messages *self);
+extern		void BSearchRPlease(struct messages *self);
+extern		void BackUp(struct messages *self);
+extern		void CSearchFPlease(struct messages *self);
+extern		void CSearchRPlease(struct messages *self);
+extern          int CheckMenuMasks();
+extern		void ClassifyMarked(struct messages *self, char *name);
+extern		void ClearMarks(struct messages *self);
+extern          boolean ClearSM(struct captions *self);
+extern		void CopyMarked(struct messages *self, char *name);
+extern		void CountMarks(struct messages *self);
+extern		void DeleteMarked(struct messages *self);
 extern		void DeleteWindow();
-extern		DirectlyClassify();
-extern          void messages_DuplicateWindow();
-extern		void ExcerptMarked();
-extern		void ExpandFileIntoMenus();
-extern          void FSearchFPlease();
-extern          void FSearchRPlease();
-extern		void FileByName();
-extern		void FileIntoByName();
-extern		void FileOntoByName();
-extern		void FindAllCaptions();
-extern		void FindRelatedMessages();
-extern		void GSearchFPlease();
-extern		void GSearchRPlease();
-extern		GenNodeName();
-extern          struct t822view *GetBodies();
-extern          struct captions *GetCaptions();
-extern          struct captions *GetCaptionsNoCreate();
-extern		GetFolderName();
+extern		int DirectlyClassify();
+extern          void messages_DuplicateWindow(struct messages *self);
+extern		void ExcerptMarked(struct messages *self);
+extern		void ExpandFileIntoMenus(struct messages *self);
+extern          void FSearchFPlease(struct messages *self);
+extern          void FSearchRPlease(struct messages *self);
+extern		void FileByName(struct messages *self, char *name, boolean ReallyAppend);
+extern		void FileIntoByName(struct messages *self, char *name);
+extern		void FileOntoByName(struct messages *self, char *name);
+extern		void FindAllCaptions(struct messages *self);
+extern		void FindRelatedMessages(struct messages *self);
+extern		void GSearchFPlease(struct messages *self);
+extern		void GSearchRPlease(struct messages *self);
+extern		int GenNodeName(struct tree *tree, struct tree_node *node, char *buf);
+extern          struct t822view *GetBodies(struct messages *self);
+extern          struct captions *GetCaptions(struct messages *self);
+extern          struct captions *GetCaptionsNoCreate(struct messages *self);
+extern		int GetFolderName(struct captions *self, char *prompt, char *FName);
 extern		char *GetLastResendName();
-extern		void MarkRange();
-extern		void MarkVisibleMessageUnseen();
-extern		void MessagesBodiesCommand();
-extern		void MessagesCaptionsCommand();
-extern		void MessagesCompound();
-extern		void MessagesFocusBodies();
-extern		void MessagesFocusCaptions();
-extern          void MessagesFocusFolders();
-extern          void MessagesFoldersCommand();
-extern          void MessagesSendmessageCommand();
-extern		void MessagesTextviewCommand();
-extern		void NextMarked();
-extern		NoOp();
-extern		OrgHit();
-extern          PrepareAppendFileName();
-extern		void PrevMarked();
-extern		void PrintMarked();
-extern		void PrintVisibleMessage();
-extern		void PuntCurrent();
-extern		void PurgeAllDeletions();
+extern		void MarkRange(struct messages *self);
+extern		void MarkVisibleMessageUnseen(struct messages *self);
+extern		void MessagesBodiesCommand(struct messages *self, char *cmds);
+extern		void MessagesCaptionsCommand(struct messages *self, char *cmds);
+extern		void MessagesCompound(struct messages *self, char *cmds);
+extern		void MessagesFocusBodies(struct messages *self);
+extern		void MessagesFocusCaptions(struct messages *self);
+extern          void MessagesFocusFolders(struct messages *self);
+extern          void MessagesFoldersCommand(struct messages *self, char *cmds);
+extern          void MessagesSendmessageCommand(struct messages *self, char *cmds);
+extern		void MessagesTextviewCommand(struct messages *self, char *cmds);
+extern		void NextMarked(struct messages *self);
+extern		int NoOp();
+extern		int OrgHit(struct messages *self, struct foldertreev *folderTreeView, struct tree_node *node, enum view_MouseAction action, long x, long y, long clicks);
+extern          int PrepareAppendFileName(struct captions *self, char *Buf);
+extern		void PrevMarked(struct messages *self);
+extern		void PrintMarked(struct messages *self);
+extern		void PrintVisibleMessage(struct messages *self);
+extern		void PuntCurrent(struct messages *self, int GoToNext);
+extern		void PurgeAllDeletions(struct messages *self);
 static		void QuitMessages();
-extern		ReadByName();
-extern		ReadNamedFolder();
-extern		void ReplyAllMarked();
-extern		void ReplySendersMarked();
-extern		void ResendMarked();
-extern		void RestoreOldMarks();
-extern		void sm_SetMessagesOptions();
-extern		SetSubStatus();
-extern		void ShrinkFileIntoMenus();
-extern		void SubscribeByName();
-extern		void TextviewCompound();
-extern		void ThisIsFlorida();
-extern		void UnSubscribeByName();
-extern		void UndeleteMarked();
-extern		countdots();
-extern		int messages__AppendOneMessageToFile();
-extern		boolean messages__InitializeClass();
+extern		int ReadByName(struct messages *self);
+extern		int ReadNamedFolder(struct messages *self, char *ShortName);
+extern		void ReplyAllMarked(struct messages *self);
+extern		void ReplySendersMarked(struct messages *self);
+extern		void ResendMarked(struct messages *self, char *towhom);
+extern		void RestoreOldMarks(struct messages *self);
+extern		void sm_SetMessagesOptions(struct messages *self);
+extern		int SetSubStatus(char *nickname, int substatus);
+extern		void ShrinkFileIntoMenus(struct messages *self);
+extern		void SubscribeByName(struct messages *self);
+extern		void TextviewCompound(struct textview *tv, char *cmds);
+extern		void ThisIsFlorida(struct messages *self);
+extern		void UnSubscribeByName(struct messages *self);
+extern		void UndeleteMarked(struct messages *self);
+extern		int countdots(char *s);
+extern		int messages__AppendOneMessageToFile(struct messages *self, int cuid, char *Buf, int DoRaw);
+extern		boolean messages__InitializeClass(struct classheader *c);
 extern          boolean messages__InitializeObject();
-extern		void messages__ResetFileIntoMenus();
-extern		void messages__SetWhatIAm();
+extern		void messages__ResetFileIntoMenus(struct messages *self);
+extern		void messages__SetWhatIAm(struct messages *self, int w);
 
 static struct keymap *messages_standardkeymap, *messages_permkeymap;
 static struct menulist *messages_standardmenulist, *messages_permmenulist;
@@ -360,7 +361,7 @@ static struct bind_Description messages_standardbindings [] = {
     {NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL},
 };
 
-NoOp() {
+int NoOp() {
     message_DisplayString(NULL, 10, "This command does nothing.");
 }
 
@@ -369,8 +370,7 @@ int (*messtextv_ReverseSearchCmd)()		= NoOp,
 (*messtextv_ScrollScreenForwardCmd)()   = NoOp,
 (*messtextv_ForwardSearchCmd)()		= NoOp;
 
-boolean messages__InitializeClass(c) 
-struct classheader *c;
+boolean messages__InitializeClass(struct classheader *c)
 {
     struct proctable_Entry *tempProc;
 
@@ -400,8 +400,7 @@ struct classheader *c;
 
 #define BIGMENUCARD 25  /* Most menu items to construct on a single file into card */
 
-void messages__ResetFileIntoMenus(self)
-struct messages *self;
+void messages__ResetFileIntoMenus(struct messages *self)
 {
     static struct proctable_Entry *directlyclassifyproc = NULL;
     int i, max, smallmax, biggermax;
@@ -433,14 +432,12 @@ struct messages *self;
 	} else {
 	    sprintf(MenuString, "File Into (%d)~%d,%s", i/biggermax, 40+i/biggermax, ams_GetClassListEntry(i));
 	}
-	if(i<smallmax)  menulist_AddToML(self->fileintomenulist, MenuString, directlyclassifyproc,  i, MENUMASK_MSGSHOWING | MENUMASK_FILEINTOMENU);
-	else menulist_AddToML(self->expandedmenuslist, MenuString, directlyclassifyproc,  i, MENUMASK_MSGSHOWING | MENUMASK_FILEINTOMENU);
+	if(i<smallmax)  menulist_AddToML(self->fileintomenulist, MenuString, directlyclassifyproc,  (void *)(long)i, MENUMASK_MSGSHOWING | MENUMASK_FILEINTOMENU);
+	else menulist_AddToML(self->expandedmenuslist, MenuString, directlyclassifyproc,  (void *)(long)i, MENUMASK_MSGSHOWING | MENUMASK_FILEINTOMENU);
     }
 }
 
-void BSM_RefreshDisplayedFolder(self, CheckAll)
-struct messages *self;
-char *CheckAll;
+void BSM_RefreshDisplayedFolder(struct messages *self, char *CheckAll)
 {
     struct captions *c = GetCaptions(self);
     if (c->FullName) {
@@ -458,8 +455,7 @@ char *CheckAll;
     }
 }
 
-void PurgeAllDeletions(self)
-struct messages *self;
+void PurgeAllDeletions(struct messages *self)
 {
     ams_WaitCursor(TRUE);
     ams_CUI_PurgeMarkedDirectories(ams_GetAMS(), FALSE, FALSE);
@@ -467,103 +463,82 @@ struct messages *self;
     ams_WaitCursor(FALSE);
 }
 
-void MessagesFocusCaptions(self)
-struct messages *self;
+void MessagesFocusCaptions(struct messages *self)
 {
     struct captions *c = GetCaptions(self);
     captions_WantInputFocus(c, c);
 }
 
-void MessagesFocusBodies(self)
-struct messages *self;
+void MessagesFocusBodies(struct messages *self)
 {
     struct t822view *tv = GetBodies(self);
     t822view_WantInputFocus(tv, tv);
 }
 
-void TextviewCompound(tv, cmds)
-struct textview *tv;
-char *cmds;
+void TextviewCompound(struct textview *tv, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), tv, "textview", cmds);
 }
 
-void MessagesCompound(self, cmds)
-struct messages *self;
-char *cmds;
+void MessagesCompound(struct messages *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), self, "messages", cmds);
 }
 
-void MessagesTextviewCommand(self, cmds)
-struct messages *self;
-char *cmds;
+void MessagesTextviewCommand(struct messages *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), self, "textview", cmds);
 }
 
-void MessagesCaptionsCommand(self, cmds)
-struct messages *self;
-char *cmds;
+void MessagesCaptionsCommand(struct messages *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), GetCaptions(self), "captions", cmds);
 }
 
-void MessagesBodiesCommand(self, cmds)
-struct messages *self;
-char *cmds;
+void MessagesBodiesCommand(struct messages *self, char *cmds)
 {
     ams_GenericCompoundAction(ams_GetAMS(), GetBodies(self), "t822view", cmds);
 }
 
-void messages__SetWhatIAm(self, w)
-struct messages *self;
-int w;
+void messages__SetWhatIAm(struct messages *self, int w)
 {
     self->WhatIAm = w;
 }
 
-void BSM_DummyQuit(self)
-struct messages *self;
+void BSM_DummyQuit(struct messages *self)
 {
     message_DisplayString(NULL, 10, "Use ^X^C to quit.");
 }
 
-static void QuitMessages(self) 
-struct messages *self;
+static void QuitMessages(struct messages *self)
 {
     ams_CommitState(TRUE, FALSE, TRUE, TRUE);
 }
 
-void BSearchFPlease(self)
-struct messages *self;
+void BSearchFPlease(struct messages *self)
 {
     messtextv_ForwardSearchCmd((struct textview *) GetBodies(self));
     messages_WantInputFocus(self, self);
 }
 
-void BSearchRPlease(self)
-struct messages *self;
+void BSearchRPlease(struct messages *self)
 {
     messtextv_ReverseSearchCmd((struct textview *) GetBodies(self));
     messages_WantInputFocus(self, self);
 }
 
-void CSearchFPlease(self)
-struct messages *self;
+void CSearchFPlease(struct messages *self)
 {
     messtextv_ForwardSearchCmd((struct textview *) GetCaptions(self));
     messages_WantInputFocus(self, self);
 }
 
-void CSearchRPlease(self)
-struct messages *self;
+void CSearchRPlease(struct messages *self)
 {
     captions_CapReverseSearch(GetCaptions(self)); /* Handles virtual scroll bar */
 }
 
-void GSearchFPlease(self)
-struct messages *self;
+void GSearchFPlease(struct messages *self)
 {
     switch(self->WhatIAm) {
 	case WHATIAM_FOLDERS:
@@ -578,8 +553,7 @@ struct messages *self;
     }
 }
 
-void GSearchRPlease(self)
-struct messages *self;
+void GSearchRPlease(struct messages *self)
 {
     switch(self->WhatIAm) {
 	case WHATIAM_FOLDERS:
@@ -594,8 +568,7 @@ struct messages *self;
     }
 }
 
-void BSM_CreatePlease(self)
-struct messages *self;
+void BSM_CreatePlease(struct messages *self)
 {
     char *s, *s2, ShortName[1+MAXPATHLEN], NewFullName[1+MAXPATHLEN], *TempPtr, ErrorText[100 + MAXPATHLEN];
     if (message_AskForString(NULL, 50, "Create folder: ", "", ShortName, sizeof(ShortName)) < 0) return;
@@ -631,8 +604,7 @@ struct messages *self;
     ams_WaitCursor(FALSE);
 }
 
-void BSM_DeleteFolder(self)
-struct messages *self;
+void BSM_DeleteFolder(struct messages *self)
 {
     char ShortName[1+MAXPATHLEN], *FullName;
 
@@ -648,8 +620,7 @@ struct messages *self;
     ams_WaitCursor(FALSE);
 }
 
-void BSM_SetPrinter(self)
-struct messages *self;
+void BSM_SetPrinter(struct messages *self)
 {
     char Pnamebuf[100], Prompt[110];
     static char LastPrinterName[100] = "";
@@ -669,39 +640,32 @@ struct messages *self;
     }
 }
 
-void NextMarked(self)
-struct messages *self;
+void NextMarked(struct messages *self)
 {
     captions_ShowMore(GetCaptions(self), FALSE, FALSE, TRUE);
 }
 
-void PrevMarked(self)
-struct messages *self;
+void PrevMarked(struct messages *self)
 {
     captions_BackUpCheckingMarks(GetCaptions(self), TRUE);
 }
 
-void DeleteMarked(self)
-struct messages *self;
+void DeleteMarked(struct messages *self)
 {
     captions_ActOnMarkedMessages(GetCaptions(self), MARKACTION_DELETE, NULL);
 }
 
-void UndeleteMarked(self)
-struct messages *self;
+void UndeleteMarked(struct messages *self)
 {
     captions_ActOnMarkedMessages(GetCaptions(self), MARKACTION_UNDELETE, NULL);
 }
 
-void PrintMarked(self)
-struct messages *self;
+void PrintMarked(struct messages *self)
 {
     captions_ActOnMarkedMessages(GetCaptions(self), MARKACTION_PRINT, NULL);
 }
 
-void ClassifyMarked(self, name)
-struct messages *self;
-char *name;
+void ClassifyMarked(struct messages *self, char *name)
 {
     char FName[10+MAXPATHLEN];
     struct captions *c = GetCaptions(self);
@@ -714,9 +678,7 @@ char *name;
     captions_ActOnMarkedMessages(c, MARKACTION_CLASSIFYBYNAME, name);
 }
 
-void CopyMarked(self, name)
-struct messages *self;
-char *name;
+void CopyMarked(struct messages *self, char *name)
 {
     char FName[10+MAXPATHLEN];
     struct captions *c = GetCaptions(self);
@@ -729,9 +691,7 @@ char *name;
     captions_ActOnMarkedMessages(c, MARKACTION_COPYBYNAME, name);
 }
 
-void AppendMarked(self, name)
-struct messages *self;
-char *name;
+void AppendMarked(struct messages *self, char *name)
 {
     char FName[10+MAXPATHLEN];
     struct captions *c = GetCaptions(self);
@@ -744,9 +704,7 @@ char *name;
     captions_ActOnMarkedMessages(c, MARKACTION_APPENDBYNAME, name);
 }
 
-GetFolderName(self, prompt, FName)
-struct captions *self;
-char *prompt, *FName;
+int GetFolderName(struct captions *self, char *prompt, char *FName)
 {
     char ErrorText[500];
     char *lc = captions_GetLastClassification(self);
@@ -761,8 +719,7 @@ char *prompt, *FName;
     return(0);
 }
 
-void AppendMarkedToFile(self)
-struct messages *self;
+void AppendMarkedToFile(struct messages *self)
 {
     char Buf[1+MAXPATHLEN];
     struct captions *c = GetCaptions(self);
@@ -771,8 +728,7 @@ struct messages *self;
     captions_ActOnMarkedMessages(c, MARKACTION_APPENDTOFILE, Buf);
 }    
 
-void AppendMarkedToRawFile(self)
-struct messages *self;
+void AppendMarkedToRawFile(struct messages *self)
 {
     char Buf[1+MAXPATHLEN];
     struct captions *c = GetCaptions(self);
@@ -781,40 +737,32 @@ struct messages *self;
     captions_ActOnMarkedMessages(c, MARKACTION_APPENDTOFILERAW, Buf);
 }    
 
-void BackUp(self)
-struct messages *self;
+void BackUp(struct messages *self)
 {
     captions_BackUpCheckingMarks(GetCaptions(self), FALSE);
 }
 
-void BSM_DeletePlease(self)
-struct messages *self;
+void BSM_DeletePlease(struct messages *self)
 {
     captions_DeleteVisibleMessage(GetCaptions(self), TRUE);
 }
 
-void BSM_UndeletePlease(self)
-struct messages *self;
+void BSM_UndeletePlease(struct messages *self)
 {
     captions_DeleteVisibleMessage(GetCaptions(self), FALSE);
 }
 
-void BSM_ClassifyPlease(self)
-struct messages *self;
+void BSM_ClassifyPlease(struct messages *self)
 {
     captions_CloneMessage(GetCaptions(self), MS_CLONE_COPYDEL);
 }
 
-void BSM_CopyPlease(self)
-struct messages *self;
+void BSM_CopyPlease(struct messages *self)
 {
     captions_CloneMessage(GetCaptions(self), MS_CLONE_COPY);
 }
 
-void FileByName(self, name, ReallyAppend)
-struct messages *self;
-char *name;
-boolean ReallyAppend;
+void FileByName(struct messages *self, char *name, boolean ReallyAppend)
 {
     int OpCode;
     struct captions *c = GetCaptions(self);
@@ -841,94 +789,78 @@ boolean ReallyAppend;
     ams_WaitCursor(FALSE);
 }
 
-void FileIntoByName(self, name)
-struct messages *self;
-char *name;
+void FileIntoByName(struct messages *self, char *name)
 {
   if (!ISSTRING(name)) name = 0;
     FileByName(self, name, FALSE);
 }
 
-void FileOntoByName(self, name)
-struct messages *self;
-char *name;
+void FileOntoByName(struct messages *self, char *name)
 {
   if (!ISSTRING(name)) name = 0;
     FileByName(self, name, TRUE);
 }
 
-void BSM_FileInto(self)
-struct messages *self;
+void BSM_FileInto(struct messages *self)
 {
     struct captions *c = GetCaptions(self);
 
     captions_CloneMessage(c, (AMS_GET_ATTRIBUTE(c->VisibleSnapshot, AMS_ATT_MAYMODIFY)) ? MS_CLONE_COPYDEL : MS_CLONE_COPY);
 }
 
-void BSM_AppendOnto(self)
-struct messages *self;
+void BSM_AppendOnto(struct messages *self)
 {
     struct captions *c = GetCaptions(self);
 
     captions_CloneMessage(c, (AMS_GET_ATTRIBUTE(c->VisibleSnapshot, AMS_ATT_MAYMODIFY)) ? MS_CLONE_APPENDDEL : MS_CLONE_APPEND);
 }
 
-void BSM_AppendPlease(self)
-struct messages *self;
+void BSM_AppendPlease(struct messages *self)
 {
     captions_CloneMessage(GetCaptions(self), MS_CLONE_APPEND);
 }
 
-void BSM_AppendDelPlease(self)
-struct messages *self;
+void BSM_AppendDelPlease(struct messages *self)
 {
     captions_CloneMessage(GetCaptions(self), MS_CLONE_APPENDDEL);
 }
 
-void BSM_ReplyToSender(self)
-struct messages *self;
+void BSM_ReplyToSender(struct messages *self)
 {
     captions_SendMessage(GetCaptions(self), AMS_REPLY_SENDER);
 }
 
-void BSM_SendForward(self)
-struct messages *self;
+void BSM_SendForward(struct messages *self)
 {
     captions_SendMessage(GetCaptions(self), AMS_REPLY_FORWARD_FMT);
 }
 
-void BSM_MarkCurrent(self)
-struct messages *self;
+void BSM_MarkCurrent(struct messages *self)
 {
     captions_MarkCurrent(GetCaptions(self));
 }
 
-void PrintVisibleMessage(self)
-struct messages *self;
+void PrintVisibleMessage(struct messages *self)
 {
     captions_PrintVisibleMessage(GetCaptions(self));
 }
 
-void BSM_ReplyToReaders(self)
-struct messages *self;
+void BSM_ReplyToReaders(struct messages *self)
 {
     captions_SendMessage(GetCaptions(self), AMS_REPLY_WIDE);
 }
 
-void BSM_ReplyToBoth(self)
-struct messages *self;
+void BSM_ReplyToBoth(struct messages *self)
 {
     captions_SendMessage(GetCaptions(self), AMS_REPLY_WIDER);
 }
 
-void BSM_RestoreAsDraft(self)
-struct messages *self;
+void BSM_RestoreAsDraft(struct messages *self)
 {
     captions_SendMessage(GetCaptions(self), AMS_REPLY_REDRAFT);
 }
 
-void BSM_ReplyToAll(self)
-struct messages *self;
+void BSM_ReplyToAll(struct messages *self)
 {
     struct captions *c = GetCaptions(self);
     if (AMS_GET_ATTRIBUTE(c->VisibleSnapshot, AMS_ATT_MAYMODIFY)) {
@@ -938,14 +870,12 @@ struct messages *self;
     }
 }
 
-void ThisIsFlorida(self)
-struct messages *self;
+void ThisIsFlorida(struct messages *self)
 {
     captions_ThisIsFlorida(GetCaptions(self));
 }
 
-AppendMessageToFile(self)
-struct messages *self;
+int AppendMessageToFile(struct messages *self)
 {
     char Buf[1+MAXPATHLEN];
     struct captions *c = GetCaptions(self);
@@ -958,8 +888,7 @@ struct messages *self;
     messages_AppendOneMessageToFile(self, c->VisibleCUID, Buf, 0);
 }
 
-AppendMessageToRawFile(self)
-struct messages *self;
+int AppendMessageToRawFile(struct messages *self)
 {
     char Buf[1+MAXPATHLEN];
     struct captions *c = GetCaptions(self);
@@ -974,9 +903,7 @@ struct messages *self;
 
 static char LastAppendFileName[1+MAXPATHLEN] = "~/SavedMessages";
 
-PrepareAppendFileName(self, Buf)
-struct captions *self;
-char *Buf;
+int PrepareAppendFileName(struct captions *self, char *Buf)
 {
     if (LastAppendFileName[0]) {
 	strcpy(Buf, LastAppendFileName);
@@ -989,11 +916,7 @@ char *Buf;
     return(0);
 }
 
-int messages__AppendOneMessageToFile(self, cuid, Buf, DoRaw)
-struct messages *self;
-int cuid;
-char *Buf;
-int DoRaw;
+int messages__AppendOneMessageToFile(struct messages *self, int cuid, char *Buf, int DoRaw)
 {
     char ErrorText[256], TmpFile[1+MAXPATHLEN], Splat[5000];
     FILE *fp, *rfp;
@@ -1060,8 +983,7 @@ int DoRaw;
     return(0);
 }
 
-void MarkVisibleMessageUnseen(self)
-struct messages *self;
+void MarkVisibleMessageUnseen(struct messages *self)
 {
     struct captions *ci = GetCaptions(self);
 
@@ -1072,8 +994,7 @@ struct messages *self;
     captions_MarkVisibleMessageStateofSeeing(ci, FALSE);
 }
 
-void FindRelatedMessages(self)
-struct messages *self;
+void FindRelatedMessages(struct messages *self)
 {
     captions_FindRelatedMessages(GetCaptions(self));
 }
@@ -1082,9 +1003,7 @@ static char LastResendName[1+MAXPATHLEN] = "";
 
 char *GetLastResendName() {return(LastResendName);}
 
-void BSM_ReSendPlease(self, towhom)
-struct messages *self;
-char *towhom;
+void BSM_ReSendPlease(struct messages *self, char *towhom)
 {
     char ShortName[1+MAXPATHLEN], Prompt[100+MAXPATHLEN];
 
@@ -1112,22 +1031,19 @@ char *towhom;
     ams_WaitCursor(FALSE);
 }
 
-void BSM_RedisplayFormat(self)
-struct messages *self;
+void BSM_RedisplayFormat(struct messages *self)
 {
     struct captions *c = GetCaptions(self);
 
     captions_Redisplay(c, c->CurrentFormatting ^ MODE822_FORMAT, NULL);
 }
 
-void BSM_RedisplayNormal(self)
-struct messages *self;
+void BSM_RedisplayNormal(struct messages *self)
 {
     captions_Redisplay(GetCaptions(self), MODE822_NORMAL, NULL);
 }
 
-void BSM_RedisplayFixedWidth(self)
-struct messages *self;
+void BSM_RedisplayFixedWidth(struct messages *self)
 {
     struct captions *c = GetCaptions(self);
 
@@ -1135,24 +1051,19 @@ struct messages *self;
 }
 
 
-void BSM_RedisplayRot13(self)
-struct messages *self;
+void BSM_RedisplayRot13(struct messages *self)
 {
     struct captions *c = GetCaptions(self);
 
     captions_Redisplay(c, c->CurrentFormatting ^ MODE822_ROT13, NULL);
 }
 
-void BSM_ShowRaw(self, ctype)
-struct messages *self;
-char *ctype;
+void BSM_ShowRaw(struct messages *self, char *ctype)
 {
     BSM_DifferentContentType(self, "text/plain");
 }
 
-void BSM_DifferentContentType(self, ctype)
-struct messages *self;
-char *ctype;
+void BSM_DifferentContentType(struct messages *self, char *ctype)
 {
     char buf[1000];
     struct captions *c = GetCaptions(self);
@@ -1166,16 +1077,14 @@ char *ctype;
     captions_Redisplay(c, c->CurrentFormatting | MODE822_FORMAT, ctype);
 }
 
-void BSM_ModifiableBody(self) 
-struct messages *self;
+void BSM_ModifiableBody(struct messages *self)
 {
     struct text *text = (struct text *) t822view_GetDataObject(GetBodies(self));
     text_SetReadOnly(text, FALSE);
     text_NotifyObservers(text, 0);	/* Update menus and post key state */
 }
 
-void BSM_SelectBody(self) 
-struct messages *self;
+void BSM_SelectBody(struct messages *self)
 {
     struct t822view *tv = GetBodies(self);
     int bodstart = GetCaptions(self)->StartOfRealBody;
@@ -1184,38 +1093,31 @@ struct messages *self;
     t822view_SetDotLength(tv, text_GetLength((struct text *) t822view_GetDataObject(tv)) - bodstart);
 }
 
-void PuntCurrent(self, GoToNext)
-struct messages *self;
-int GoToNext;
+void PuntCurrent(struct messages *self, int GoToNext)
 {
     captions_PuntCurrent(GetCaptions(self), GoToNext);
 }
 
-void BSM_SendFresh(self)
-struct messages *self;
+void BSM_SendFresh(struct messages *self)
 {
     captions_SendMessage(GetCaptions(self), AMS_REPLY_FRESH);
 }
 
-void ReplySendersMarked(self)
-struct messages *self;
+void ReplySendersMarked(struct messages *self)
 {
     struct captions *c = GetCaptions(self);
     if (ClearSM(c)) return;
     captions_ActOnMarkedMessages(c, MARKACTION_REPLYSENDERS, NULL);
 }
 
-void ReplyAllMarked(self)
-struct messages *self;
+void ReplyAllMarked(struct messages *self)
 {
     struct captions *c = GetCaptions(self);
     if (ClearSM(c)) return;
     captions_ActOnMarkedMessages(c, MARKACTION_REPLYALL, NULL);
 }
 
-void ResendMarked(self, towhom)
-struct messages *self;
-char *towhom;
+void ResendMarked(struct messages *self, char *towhom)
 {
     char *s, Prompt[100+MAXPATHLEN], ShortResendAddress[1+MAXPATHLEN], *ResendAddress = NULL;
 
@@ -1247,20 +1149,17 @@ char *towhom;
     ams_WaitCursor(FALSE);
 }
 
-void ExcerptMarked(self)
-struct messages *self;
+void ExcerptMarked(struct messages *self)
 {
     captions_ActOnMarkedMessages(GetCaptions(self), MARKACTION_EXCERPT, NULL);
 }
 
-void ClearMarks(self)
-struct messages *self;
+void ClearMarks(struct messages *self)
 {
     captions_ClearMarks(GetCaptions(self));
 }
 
-void CountMarks(self)
-struct messages *self;
+void CountMarks(struct messages *self)
 {
     char ErrorText[100];
     int ct = GetCaptions(self)->MarkCount;
@@ -1273,8 +1172,7 @@ struct messages *self;
     message_DisplayString(NULL, 10, ErrorText);
 }
 
-void RestoreOldMarks(self)
-struct messages *self;
+void RestoreOldMarks(struct messages *self)
 {
     struct captions *c = GetCaptions(self);
 
@@ -1282,56 +1180,47 @@ struct messages *self;
     captions_ActOnMarkedMessages(c, MARKACTION_RESTORE, NULL);
 }
 
-void FindAllCaptions(self)
-struct messages *self;
+void FindAllCaptions(struct messages *self)
 {
     captions_SearchAll(GetCaptions(self));
 }
 
-void MarkRange(self)
-struct messages *self;
+void MarkRange(struct messages *self)
 {
     captions_MarkRangeOfMessages(GetCaptions(self));
 }
 
-void ExpandFileIntoMenus(self)
-struct messages *self;
+void ExpandFileIntoMenus(struct messages *self)
 {
     captions_AlterFileIntoMenus(GetCaptions(self), FALSE);
 }
 
-void ShrinkFileIntoMenus(self)
-struct messages *self;
+void ShrinkFileIntoMenus(struct messages *self)
 {
     captions_AlterFileIntoMenus(GetCaptions(self), TRUE);
 }
 
-void BSM_MorePlease(self)
-struct messages *self;
+void BSM_MorePlease(struct messages *self)
 {
     captions_ShowMore(GetCaptions(self), TRUE, TRUE, FALSE);
 }
 
-void BSM_NextPlease(self)
-struct messages *self;
+void BSM_NextPlease(struct messages *self)
 {
     captions_ShowMore(GetCaptions(self), FALSE, TRUE, FALSE);
 }
 
-void BSM_ScrollBackBody(self)
-struct messages *self;
+void BSM_ScrollBackBody(struct messages *self)
 {
     messtextv_ScrollScreenBackCmd(GetBodies(self));
 }
 
-void BSM_ScrollForwardBody(self)
-struct messages *self;
+void BSM_ScrollForwardBody(struct messages *self)
 {
     messtextv_ScrollScreenForwardCmd(GetBodies(self));
 }
 
-ReadByName(self) 
-struct messages *self;
+int ReadByName(struct messages *self)
 {
     char ShortName[256];
 
@@ -1339,9 +1228,7 @@ struct messages *self;
     return(ReadNamedFolder(self, ShortName));
 }
 
-ReadNamedFolder(self, ShortName)
-struct messages *self;
-char *ShortName;
+int ReadNamedFolder(struct messages *self, char *ShortName)
 {
     char *FullName;
     int code;
@@ -1362,8 +1249,7 @@ char *ShortName;
     return(code);
 }
 
-void BSM_RenamePlease(self)
-struct messages *self;
+void BSM_RenamePlease(struct messages *self)
 {
     char ShortName[1+MAXPATHLEN], *FullName, NewName[1+MAXPATHLEN];
 
@@ -1381,10 +1267,7 @@ struct messages *self;
 }
 
 #ifndef NOTREESPLEASE
-GenNodeName(tree, node, buf)
-struct tree *tree;
-struct tree_node *node;
-char *buf;
+int GenNodeName(struct tree *tree, struct tree_node *node, char *buf)
 {
     char *s;
 
@@ -1396,12 +1279,7 @@ char *buf;
     strcat(buf, s);
 }
 
-OrgHit(self, folderTreeView, node, action, x, y, clicks)
-struct messages *self;
-struct foldertreev *folderTreeView;
-struct tree_node *node;
-enum view_MouseAction action;
-long x, y, clicks;
+int OrgHit(struct messages *self, struct foldertreev *folderTreeView, struct tree_node *node, enum view_MouseAction action, long x, long y, long clicks)
 {
     char Buf[1+MAXPATHLEN];
     struct org *org = NULL;
@@ -1414,8 +1292,7 @@ long x, y, clicks;
     }
 }
 
-countdots(s)
-char *s;
+int countdots(char *s)
 {
     int dots = 0;
 
@@ -1426,11 +1303,7 @@ char *s;
 }
 #endif
 
-void
-messages__ObservedChanged( self, changed, change )
-register struct messages   *self;
-register struct observable *changed;
-register long		      change;
+void messages__ObservedChanged(struct messages *self, struct observable *changed, long change)
 {
     super_ObservedChanged(self,changed,change);
     switch(change) {
@@ -1451,8 +1324,7 @@ register long		      change;
     }
 }
 
-void BSM_ShowTreePlease(self)
-struct messages *self;
+void BSM_ShowTreePlease(struct messages *self)
 {
 #ifndef NOTREESPLEASE
     struct org *o;
@@ -1587,8 +1459,7 @@ struct messages *self;
 }
 
 
-void SubscribeByName(self)
-struct messages *self;
+void SubscribeByName(struct messages *self)
 {
     char buf[1+MAXPATHLEN];
 
@@ -1597,8 +1468,7 @@ struct messages *self;
     }
 }
 
-void UnSubscribeByName(self)
-struct messages *self;
+void UnSubscribeByName(struct messages *self)
 {
     char buf[1+MAXPATHLEN];
 
@@ -1607,8 +1477,7 @@ struct messages *self;
     }
 }
 
-void AlterSubByName(self)
-struct messages *self;
+void AlterSubByName(struct messages *self)
 {
     char buf[1+MAXPATHLEN];
 
@@ -1617,9 +1486,7 @@ struct messages *self;
     }
 }
 
-SetSubStatus(nickname, substatus)
-char *nickname;
-int substatus;
+int SetSubStatus(char *nickname, int substatus)
 {
     long errcode;
     char *FullName, ErrorText[150+MAXPATHLEN];
@@ -1686,7 +1553,7 @@ static char *lastWindowChoices[] = {
 	}
     }
 
-    DirectlyClassify(self, classnum)
+    int DirectlyClassify(self, classnum)
       struct messages *self;
     int classnum;
     {
@@ -1739,7 +1606,7 @@ static char *lastWindowChoices[] = {
 	return(TRUE);
     }
 
-    CheckMenuMasks(self)
+    int CheckMenuMasks(self)
       struct messages *self;
     {
 	long mymask;

@@ -58,7 +58,7 @@ methods:
     Changed(enum changed changed);
 
 classprocedures:
-    InitializeObject(struct eq *self) returns boolean;
+    InitializeObject(struct eqview *self) returns boolean;
     FinalizeObject(struct eqview *self);
     InitializeClass()returns boolean;
 

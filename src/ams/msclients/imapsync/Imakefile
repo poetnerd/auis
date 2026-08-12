@@ -1,0 +1,65 @@
+/* ********************************************************************** *\
+ *         Copyright IBM Corporation 1988,1991 - All Rights Reserved      *
+ *        For full copyright information see:'andrew/config/COPYRITE'     *
+\* ********************************************************************** */
+
+/*
+	$Disclaimer:
+*Permission to use, copy, modify, and distribute this software and its
+*documentation for any purpose is hereby granted without fee,
+*provided that the above copyright notice appear in all copies and that
+*both that copyright notice, this permission notice, and the following
+*disclaimer appear in supporting documentation, and that the names of
+*IBM, Carnegie Mellon University, and other copyright holders, not be
+*used in advertising or publicity pertaining to distribution of the software
+*without specific, written prior permission.
+*
+*IBM, CARNEGIE MELLON UNIVERSITY, AND THE OTHER COPYRIGHT HOLDERS
+*DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+*ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS.  IN NO EVENT
+*SHALL IBM, CARNEGIE MELLON UNIVERSITY, OR ANY OTHER COPYRIGHT HOLDER
+*BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+*DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+*WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+*ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+*OF THIS SOFTWARE.
+* $
+*/
+
+/* imapsync -- one-way IMAP-to-local-store mirror.
+   ANSI C (C89 prototypes), linked directly against libmssrv the way
+   ams/msclients/nns does, plus libmail.a for imap_prot.o/tlscon.o/
+   netrc.o/genid.o.
+
+   NOTE: imapsync deliberately does NOT link libcui.a/libcuin.a the way
+   cui does.  It calls no CUI_ function anywhere -- only MS_ calls, on
+   fully-qualified absolute paths (see the module comment in
+   imap_sync.c) -- so it is modeled on nns/Imakefile's simpler
+   direct-libmssrv link line instead. Tried linking libcui.a/libcuin.a
+   first (matching cui's NOSNAPLIBS literally); it fails: cuilib.o
+   needs interactive UI
+   callback hooks (ReportError, GetStringFromUser, SetTerminalParams,
+   Interactive, ChooseFromList, DirectoryChangeHook,
+   SubscriptionChangeHook) that only a full terminal client like cui.c/
+   cuifns.c/andmchs.o implements, and imapsync -- a one-shot batch tool
+   with no interactive UI -- has no use for CUI_'s caching/disambiguation
+   layer in the first place. */
+
+LOCALINCLUDES	=	-I${BASEDIR}/include/ams
+
+OBJS = imap_sync.o
+
+LIBS = ${BASEDIR}/lib/libmail.a $(BASEDIR)/lib/libcparser.a ${BASEDIR}/lib/liberrors.a \
+			${MALLOCLIB} ${UTILLIB}
+
+NOSNAPLIBS	= ${BASEDIR}/lib/libmssrv.a ${BASEDIR}/lib/libmsshr.a \
+			${BASEDIR}/lib/libeli.a ${BASEDIR}/lib/librxp.a \
+			${LIBS}	${PRSLIB}
+
+NormalObjectRule()
+
+ProgramTarget(imapsync, ${OBJS}, ${NOSNAPLIBS}, ${MMDFLIBS} $(LEXLIB) ${BSDLIB} ${SSLLIB} ${RESOLVER_LIB})
+
+InstallProgram(imapsync, $(DESTDIR)/bin)
+
+DependTarget()

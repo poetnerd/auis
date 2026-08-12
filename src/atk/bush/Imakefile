@@ -26,6 +26,7 @@
 * $
 */
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS		=	bush.do \
 			bushv.do \
@@ -46,5 +47,3 @@ NormalHelpRule()
 InstallDocs(bush.help bshproc.help, ${DESTDIR}/help)
 InstallDocs(bush.pr, ${DESTDIR}/lib/prs)
 InstallHelpAlias(bshproc, bushproc bushprocs)
-
-

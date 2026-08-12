@@ -35,12 +35,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
  
 
 #include <andrewos.h>
+#include <stdlib.h>
+static char * Useful_Next822LPart(char *s, char *e, char *thing, int size);
 
 extern char *Next822LPart();
 
-static char * Useful_Next822LPart(s, e, thing, size)
-char *s, *e, *thing;
-int size;
+static char * Useful_Next822LPart(char *s, char *e, char *thing, int size)
 {
     while (1) {
 	s = Next822LPart(s, e, thing, size);
@@ -48,9 +48,7 @@ int size;
     }
 }
 
-BreakDownContentTypeField(HeadBuf, fmt, fmtsz, vers, verssz, resources, resourcessz)
-char *HeadBuf, *fmt, *vers, *resources;
-int fmtsz, verssz, resourcessz;
+int BreakDownContentTypeField(char *HeadBuf, char *fmt, int fmtsz, char *vers, int verssz, char *resources, int resourcessz)
 {
     char *s, *end, *ptr;
     int len;
@@ -74,8 +72,7 @@ int fmtsz, verssz, resourcessz;
 
 /* This routine chops up a resource list into separate resources, allocating an array of pointers to the separate resources.  The separate resources themselves are not allocated, but are obtained via destructive operations on the original list. */
 
-char **BreakDownResourcesIntoArray(reslist)
-char *reslist;
+char ** BreakDownResourcesIntoArray(char *reslist)
 {
     int ct=0;
     char *s=reslist;

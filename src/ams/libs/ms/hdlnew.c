@@ -49,6 +49,47 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <sys/stat.h>
 #include <andrewos.h>                  /* sys/file.h */
 #include <system.h>
+#include <stdlib.h>
+static int ReprotectBody(char *name);
+extern int AddHeader(struct MS_Message *Msg, char *Head);
+extern int AddParentalMessage(struct MS_Message *Msg, char *PDirName, char *bbname, char *bbpath);
+extern int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int BuildAttributesField(struct MS_Message *msg);
+extern int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail);
+extern int BuildDateField(struct MS_Message *Msg, int datetype);
+extern int BuildNickName(char *FullName, char *NickName);  /* ams/libs/shr/utils.c */
+extern int BuildReplyField(struct MS_Message *Msg);
+extern int BuildWideReply(struct MS_Message *Msg, Boolean IncludeFrom);
+extern int CacheDirectoryForClosing(struct MS_Directory *Dir, int CloseCode);
+extern int CheckAuthUid(struct MS_Message *NewMessage);
+extern int CheckFolderIsCreatable(char *inname, char *NameBuf, int *creatable);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int CreateNewMSDirectory(char *Dirname, struct MS_Directory **NewDir, int Overwrite);
+extern int DelHeaderByName(struct MS_Message *Msg, char *Head);
+extern int FLAMES_TranslateArgs(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf, int minargc, int maxargc, char **argv, eliDataTypes_t typev[], int *evalv, char *fname);
+extern int FindTreeRoot(char *DirName, char *RootName, short ReallyWantParent);  /* ams/libs/shr/findroot.c */
+extern int Flames_Initialize(EliState_t *st);
+extern int Flames_ReadDefault(EliState_t *st, char *MailboxFile, char **firstfuncname);
+extern int Flames_SlurpFlamesFile(EliState_t *st, char *fName, char **firstfuncname);
+extern int Flames_SlurpFlamesFileIfNecessary(EliState_t *st, char *fName, char **firstfuncname);
+extern int IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int LowerStringInPlace(char *string, int len);  /* ams/libs/shr/utils.c */
+extern int MS_DisambiguateFile(char *source, char *target, short AccessCode);
+extern int NeedToReadFile(char *fname, char **funcname);
+extern int NonfatalBizarreError(char *text);
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int RejectMessage(struct MS_Message *Msg, char *Text, char *RejectionsTo, char *RejectCC);
+extern int RememberRecentRead(char *fname, char *funcname, int permanent);
+extern int RenameEvenInVice(char *ThisFileName, char *NewFileName);
+extern int ResendMessageFromMailbox(struct MS_Message *Msg, char *Addressee, Boolean AddResendHeads);
+extern int TellEliAboutAMSError(EliState_t *st, EliSexp_t *resbuf, char *errortext, int unixErr);
+extern int UnformatMessage(struct MS_Message *Msg);
+extern int WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode);
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vclose(int fd);  /* overhead/util/lib/fdplumb2.c */
+extern int dropoff(char *tolist[], char *mesgfile, char *returnpath, char *home, long flags);  /* overhead/mail/lib/dropoff.c */
+
+extern char *AndrewDir(char *str);
 
 #ifdef sys_vax_11
 #define void int                       /* What a grubby hack -- vaxes should
@@ -75,13 +116,12 @@ static char    *currentMessageFile = NULL;
 
 extern char     home[], MyMailDomain[], Me[];
 extern int      homeUsesAMSDelivery, homeUsesUseridPlus;
-extern char    *getenv(), *sys_errlist[];
+extern char    *getenv();
 
 /* No longer takes the second (location string)
  * argument
  */
-long            Flames_EliToAMSErr(st)
-EliState_t *st;
+long Flames_EliToAMSErr(EliState_t *st)
 {
     int             err;
 
@@ -143,12 +183,7 @@ EliState_t *st;
     AMS_RETURN_ERRCODE(err, EIN_ELI, EVIA_FLAMES_HANDLENEW);
 }
 
-Flames_HandleNewMessage(Msg, FileName, NumDirInsertions, IsMail, MailboxFile, EliErrBuf, EliErrBufLim)
-struct MS_Message *Msg;
-char           *FileName, *EliErrBuf;
-int            *NumDirInsertions, EliErrBufLim;
-Boolean         IsMail;
-char           *MailboxFile;
+int Flames_HandleNewMessage(struct MS_Message *Msg, char *FileName, int *NumDirInsertions, Boolean IsMail, char *MailboxFile, char *EliErrBuf, int EliErrBufLim)
 {
     static int      flameOn = FALSE;
     static EliState_t stStruct, *st;
@@ -279,10 +314,7 @@ char           *MailboxFile;
 }
 
 
-Flames_ReadDefault(st, MailboxFile, firstfuncname)
-EliState_t     *st;
-char *MailboxFile;
-char          **firstfuncname;
+int Flames_ReadDefault(EliState_t *st, char *MailboxFile, char **firstfuncname)
 {
     EliSexp_t      *sexp, *node;
     char            FBuf[1 + MAXPATHLEN], Mailbox[1 + MAXPATHLEN], *s, FlamesInitString[75 + MAXPATHLEN], FuncName[25 + MAXPATHLEN];
@@ -334,10 +366,7 @@ char          **firstfuncname;
 /* This routine takes a MS-Message struct and turns its headers into
  * an assoc list
  */
-void            FLAMES_Prim_GetHeaderList(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_GetHeaderList(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *HeadersAsList, *startspot;
@@ -382,10 +411,7 @@ EliSexp_t      *resbuf;
 }
 
 
-int             Flames_SlurpFlamesFileIfNecessary(st, fName, firstfuncname)
-EliState_t     *st;
-char           *fName;
-char          **firstfuncname;
+int Flames_SlurpFlamesFileIfNecessary(EliState_t *st, char *fName, char **firstfuncname)
 {
     if (NeedToReadFile(fName, firstfuncname)) {
         mserrcode = Flames_SlurpFlamesFile(st, fName, firstfuncname);
@@ -406,8 +432,7 @@ struct SlurpHistEnt {
     struct SlurpHistEnt *Next;
 }              *SlurpHistListHead = NULL;
 
-NeedToReadFile(fname, funcname)
-char           *fname, **funcname;
+int NeedToReadFile(char *fname, char **funcname)
 {
     struct SlurpHistEnt *tmp = SlurpHistListHead;
     struct stat     stbuf;
@@ -433,9 +458,7 @@ char           *fname, **funcname;
     return (1);
 }
 
-RememberRecentRead(fname, funcname, permanent)
-char           *fname, *funcname;
-int             permanent;
+int RememberRecentRead(char *fname, char *funcname, int permanent)
 {
 
     struct SlurpHistEnt *tmp = SlurpHistListHead, *prev = NULL;
@@ -512,10 +535,7 @@ int             permanent;
     return;
 }
 
-int             Flames_SlurpFlamesFile(st, fName, firstfuncname)
-EliState_t     *st;
-char           *fName;
-char          **firstfuncname;
+int Flames_SlurpFlamesFile(EliState_t *st, char *fName, char **firstfuncname)
 {
     char            expression[MAXPATHLEN + 10];
     EliSexp_t      *node1, *node2 = NULL;
@@ -569,10 +589,7 @@ char          **firstfuncname;
 }
 
 #ifdef NOTUSED
-FlamesToEliError(st, resbuf, e1, e2, e3)
-EliState_t     *st;
-EliSexp_t      *resbuf;
-int             e1, e2, e3;
+int FlamesToEliError(EliState_t *st, EliSexp_t *resbuf, int e1, int e2, int e3)
 {
     AMS_SET_ERRCODE(e1, e2, e3);
     TellEliAboutAMSError(st, resbuf);
@@ -580,11 +597,7 @@ int             e1, e2, e3;
 
 #endif                                 /* NOTUSED */
 
-TellEliAboutAMSError(st, resbuf, errortext, unixErr)
-EliState_t     *st;
-EliSexp_t      *resbuf;
-char           *errortext;
-int unixErr;
+int TellEliAboutAMSError(EliState_t *st, EliSexp_t *resbuf, char *errortext, int unixErr)
 {
     SquirreledError = 1;
     EliError(st, ELI_ERR_CLIENT, resbuf, errortext, unixErr);
@@ -592,26 +605,13 @@ int unixErr;
 
 /* This routine defines LISP primitives for FLAMES */
 
-MyPrimDef(st, name, fn)
-EliState_t     *st;
-char           *name;
-void            (*fn) ();
-
+int MyPrimDef(EliState_t *st, char *name, void (*fn)())
 {
     eliPrimDefCompiled(st, name, fn);
     return (EliErr_ErrP(st));
 }
 
-FLAMES_TranslateArgs(st, arglist, resbuf, minargc, maxargc, argv, typev, evalv, fname)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
-int             minargc, maxargc;
-char          **argv;
-eliDataTypes_t  typev[];
-int            *evalv;
-char           *fname;                 /* for debugging line */
-
+int FLAMES_TranslateArgs(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf, int minargc, int maxargc, char **argv, eliDataTypes_t typev[], int *evalv, char *fname)
 {
     EliSexp_t     **argnodes, *err;
     int             numargs, i;
@@ -699,11 +699,7 @@ char           *fname;                 /* for debugging line */
     return (numargs);
 }
 
-PrepareReturnString(st, string, len, resbuf)
-EliState_t     *st;
-char           *string;
-int             len;
-EliSexp_t      *resbuf;
+int PrepareReturnString(EliState_t *st, char *string, int len, EliSexp_t *resbuf)
 {
     EliStr_t       *strtmp;
     char            c = 0;
@@ -729,8 +725,7 @@ EliSexp_t      *resbuf;
  * in an AMS folder, and changes the protection bits on the file to
  * match those on the .MS_MsgDir file in the same folder
  */
-static int ReprotectBody(name)
-char *name;
+static int ReprotectBody(char *name)
 {
     char dirName[1 + MAXPATHLEN], *ptr;
     struct stat statbuf;
@@ -752,11 +747,7 @@ char *name;
     return (0);
 }
 
-void            RealAppendMsgToDir(st, arglist, resbuf, AllowRenaming)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
-Boolean         AllowRenaming;
+void RealAppendMsgToDir(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf, Boolean AllowRenaming)
 {
     char           *dir;
     static char errstr[200];
@@ -863,27 +854,18 @@ Boolean         AllowRenaming;
     }
 }
 
-void            FLAMES_Prim_FinalAppendMsgToDir(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_FinalAppendMsgToDir(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     RealAppendMsgToDir(st, arglist, resbuf, TRUE);
 }
 
-void            FLAMES_Prim_AppendMsgToDir(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_AppendMsgToDir(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     RealAppendMsgToDir(st, arglist, resbuf, FALSE);
 }
 
 /* Called in LISP as: (GetHeaderContents Msg[long] header[string]) */
-void            FLAMES_Prim_GetHeaderContents(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_GetHeaderContents(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *headname, *argv[2];
@@ -917,10 +899,7 @@ EliSexp_t      *resbuf;
         EliSexp_SetSym(st, resbuf, EliNilSym(st));
 }
 
-void            FLAMES_Prim_FindFolder(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_FindFolder(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     char           *inname, *argv[2], NameBuf[1 + MAXPATHLEN], RootName[1 + MAXPATHLEN], *s;
     int             WantsToWrite = FALSE, WillingToCreate = FALSE;
@@ -1007,9 +986,7 @@ EliSexp_t      *resbuf;
     return;
 }
 
-CheckFolderIsCreatable(inname, NameBuf, creatable)
-char           *inname, *NameBuf;
-int            *creatable;
+int CheckFolderIsCreatable(char *inname, char *NameBuf, int *creatable)
 {
     struct MS_Directory *Dir;
     char           *s, Scratch[1 + MAXPATHLEN], Root[1 + MAXPATHLEN];
@@ -1053,10 +1030,7 @@ int            *creatable;
 
 
 
-void            FLAMES_Prim_CurrentMessage(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_CurrentMessage(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     if (currentMessage) {
         EliSexp_SetInt(st, resbuf, (long) currentMessage);
@@ -1067,9 +1041,7 @@ EliSexp_t      *resbuf;
     return;
 }
 
-RestorePartialState(Msg, s1, s2)
-struct MS_Message *Msg;
-char           *s1, *s2;
+int RestorePartialState(struct MS_Message *Msg, char *s1, char *s2)
 {
     strcpy(AMS_DATE(s1), AMS_DATE(s2));
     strcpy(AMS_CAPTION(s1), AMS_CAPTION(s2));
@@ -1079,10 +1051,7 @@ char           *s1, *s2;
     return (0);
 }
 
-void            FLAMES_Prim_AddHeader(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_AddHeader(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *header, *argv[2], SBuf[AMS_SNAPSHOTSIZE + 1];
@@ -1100,10 +1069,7 @@ EliSexp_t      *resbuf;
     EliSexp_SetSym(st, resbuf, EliTSym(st));
 }
 
-void            FLAMES_Prim_DeleteHeader(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_DeleteHeader(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *header, *argv[2], SBuf[AMS_SNAPSHOTSIZE + 1];
@@ -1121,10 +1087,7 @@ EliSexp_t      *resbuf;
     EliSexp_SetSym(st, resbuf, EliTSym(st));
 }
 
-void            FLAMES_Prim_RejectMessage(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_RejectMessage(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     EliSexp_t      *sexpBufV[4], *errbuf;
     eliDataTypes_t  typeV[4], totype, cctype;
@@ -1172,10 +1135,7 @@ EliSexp_t      *resbuf;
     EliSexp_SetSym(st, resbuf, EliTSym(st));
 }
 
-void            FLAMES_Prim_ResendMessage(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_ResendMessage(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *to, *argv[2];
@@ -1192,10 +1152,7 @@ EliSexp_t      *resbuf;
     EliSexp_SetSym(st, resbuf, EliTSym(st));
 }
 
-void            FLAMES_Prim_TracelessResendMessage(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_TracelessResendMessage(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *to, *argv[2];
@@ -1212,10 +1169,7 @@ EliSexp_t      *resbuf;
     EliSexp_SetSym(st, resbuf, EliTSym(st));
 }
 
-void            FLAMES_Prim_SetCaption(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_SetCaption(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *capt, *argv[2];
@@ -1229,10 +1183,7 @@ EliSexp_t      *resbuf;
     EliSexp_SetSym(st, resbuf, EliTSym(st));
 }
 
-void            FLAMES_Prim_GetCaption(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_GetCaption(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *argv[1];
@@ -1244,10 +1195,7 @@ EliSexp_t      *resbuf;
     PrepareReturnString(st, AMS_CAPTION(Msg->Snapshot), strlen(AMS_CAPTION(Msg->Snapshot)), resbuf);
 }
 
-void            FLAMES_Prim_GetPartialBody(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_GetPartialBody(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *argv[3], *bodybuf = NULL;
@@ -1289,10 +1237,7 @@ EliSexp_t      *resbuf;
     PrepareReturnString(st, bodybuf, len, resbuf);
 }
 
-void            FLAMES_Prim_CreateFolder(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_CreateFolder(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     char           *argv[1];
     struct MS_Directory *Dir;
@@ -1308,10 +1253,7 @@ EliSexp_t      *resbuf;
 }
 
 #ifdef NOTUSED
-void            FLAMES_Prim_System(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_System(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     char           *argv[1];
 
@@ -1323,10 +1265,7 @@ EliSexp_t      *resbuf;
 
 #endif                                 /* NOTUSED */
 
-void            FLAMES_Prim_GetParameter(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_GetParameter(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     char           *argv[1], *parm;
 
@@ -1373,10 +1312,7 @@ EliSexp_t      *resbuf;
     }
 }
 
-void            FLAMES_Prim_Getenv(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_Getenv(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     char           *argv[1], *val;
 
@@ -1391,10 +1327,7 @@ EliSexp_t      *resbuf;
     }
 }
 
-void            FLAMES_Prim_FileLength(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_FileLength(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     char           *argv[1];
     struct stat     stbuf;
@@ -1412,10 +1345,7 @@ EliSexp_t      *resbuf;
 }
 
 
-void            FLAMES_Prim_ReadFile(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_ReadFile(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     char           *argv[3], *fname, *buf;
     int             start, len, fd;
@@ -1462,10 +1392,7 @@ EliSexp_t      *resbuf;
     close(fd);
 }
 
-void            FLAMES_Prim_WriteFile(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_WriteFile(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     char           *argv[3], *fname, *buf;
     int             start, len, fd;
@@ -1504,10 +1431,7 @@ EliSexp_t      *resbuf;
 
 }
 
-void            FLAMES_Prim_CreateFolderFromMessage(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_CreateFolderFromMessage(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     char           *argv[2], *dirname, ParentName[1 + MAXPATHLEN], Nick[1 + MAXPATHLEN], *sdum;
     struct MS_Directory *Dir;
@@ -1535,10 +1459,7 @@ EliSexp_t      *resbuf;
     EliSexp_SetSym(st, resbuf, EliTSym(st));
 }
 
-void            FLAMES_Prim_BodyLength(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_BodyLength(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *argv[1];
@@ -1550,10 +1471,7 @@ EliSexp_t      *resbuf;
     EliSexp_SetInt(st, resbuf, Msg->FullSize - Msg->HeadSize);
 }
 
-void            FLAMES_Prim_GetAuthSender(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_GetAuthSender(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *argv[1], *ans;
@@ -1589,10 +1507,7 @@ EliSexp_t      *resbuf;
     PrepareReturnString(st, ans, strlen(ans), resbuf);
 }
 
-void            FLAMES_Prim_ReplyAddr(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_ReplyAddr(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *argv[2];
@@ -1640,10 +1555,7 @@ EliSexp_t      *resbuf;
     }
 }
 
-void            FLAMES_Prim_UnformatMessage(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_UnformatMessage(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *argv[1], SBuf[AMS_SNAPSHOTSIZE + 1];
@@ -1660,10 +1572,7 @@ EliSexp_t      *resbuf;
     EliSexp_SetSym(st, resbuf, EliTSym(st));
 }
 
-void            FLAMES_Prim_GetAuthSenderCell(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_GetAuthSenderCell(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     struct MS_Message *Msg;
     char           *argv[1];
@@ -1683,10 +1592,7 @@ EliSexp_t      *resbuf;
         EliSexp_SetSym(st, resbuf, EliNilSym(st));
 }
 
-void FLAMES_Prim_DropoffMessage(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_DropoffMessage(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
   char           *argv[2];
   static eliDataTypes_t argtypes[] = {e_data_list, e_data_string};
@@ -1803,10 +1709,7 @@ EliSexp_t      *resbuf;
   return;
 }
 
-void FLAMES_Prim_DropoffFile(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_DropoffFile(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
   char           *argv[2];
   static eliDataTypes_t argtypes[] = {e_data_list, e_data_string};
@@ -1893,10 +1796,7 @@ EliSexp_t      *resbuf;
   return;
 }
 
-void            FLAMES_Prim_GenID(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_GenID(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     EliSexp_t      *sexpBufV[1], *errbuf;
     eliDataTypes_t  typeV[1];
@@ -1922,10 +1822,7 @@ EliSexp_t      *resbuf;
 #define CONS(x,y) if (((x) = EliAddToList(st, (x), (y))) == NULL) {Flames_EliToAMSErr(st);return;}
 
 #ifdef AFS30_ENV
-void FLAMES_Prim_GetGroupMembers(st, arglist, resbuf)
-EliState_t *st;
-EliCons_t *arglist;
-EliSexp_t *resbuf;
+void FLAMES_Prim_GetGroupMembers(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     EliSexp_t *sexpBufV[2], *errbuf, *new_node;
     EliCons_t *return_list = NULL;
@@ -1983,10 +1880,7 @@ EliSexp_t *resbuf;
     return;
 }
 
-void FLAMES_Prim_UserRightsToDir(st, arglist, resbuf)
-EliState_t *st;
-EliCons_t *arglist;
-EliSexp_t *resbuf;
+void FLAMES_Prim_UserRightsToDir(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     EliSexp_t *sexpBufV[3], *errbuf, *new_node;
     EliCons_t *return_list = NULL;
@@ -2029,10 +1923,7 @@ EliSexp_t *resbuf;
     return;
 }
 
-void FLAMES_Prim_UserAnyRightToDir(st, arglist, resbuf)
-EliState_t *st;
-EliCons_t *arglist;
-EliSexp_t *resbuf;
+void FLAMES_Prim_UserAnyRightToDir(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     EliSexp_t *sexpBufV[4], *errbuf, *new_node;
     EliCons_t *return_list = NULL;
@@ -2082,10 +1973,7 @@ EliSexp_t *resbuf;
 }
 #endif /* AFS30_ENV */
 
-void            FLAMES_Prim_ValidateAddr(st, arglist, resbuf)
-EliState_t     *st;
-EliCons_t      *arglist;
-EliSexp_t      *resbuf;
+void FLAMES_Prim_ValidateAddr(EliState_t *st, EliCons_t *arglist, EliSexp_t *resbuf)
 {
     EliSexp_t *new_node;
     EliCons_t *return_list = NULL;
@@ -2241,8 +2129,7 @@ static struct {
     }
 };
 
-Flames_Initialize(st)
-EliState_t     *st;
+int Flames_Initialize(EliState_t *st)
 {
     int             i;
 

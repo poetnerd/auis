@@ -62,21 +62,18 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 
 #include <label.ih>
 #include <labelv.eh>
+static boolean BogusCallFromParent();
+static boolean CheckWindow();
+static void RedrawTable();
 
 
-	static boolean
-BogusCallFromParent(self, where, msg)
-	register struct labelview *self;
-	char *where, *msg;
+static boolean BogusCallFromParent(struct labelview *self, char *where, char *msg)
 {
 	fprintf(stderr, "<labelview>Bogus call to %s, %s\n", where, msg);
 	return FALSE;
 }
 
-	static boolean
-CheckWindow(self, where)
-	register struct labelview *self;
-	char *where;
+static boolean CheckWindow(struct labelview *self, char *where)
 {
 	register struct graphic *g
 		= (struct graphic *)labelview_GetDrawable(self);
@@ -84,10 +81,7 @@ CheckWindow(self, where)
 	return TRUE;
 }
 
-	boolean
-labelview__InitializeObject(ClassID, self)
-	struct classheader *ClassID;
-	register struct labelview  *self;
+boolean labelview__InitializeObject(struct classheader *ClassID, struct labelview *self)
 {
 	self->GaveSize = FALSE;
 	self->embedded = TRUE;
@@ -97,18 +91,11 @@ labelview__InitializeObject(ClassID, self)
 	return TRUE;
 }
 
-	void
-labelview__FinalizeObject(ClassID, self)
-	struct classheader *ClassID;
-	register struct labelview  *self;
+void labelview__FinalizeObject(struct classheader *ClassID, struct labelview *self)
 {
 }
 
-	void
-labelview__ObservedChanged(self, dobj, status)
-	register struct labelview  *self;
-	struct observable *dobj;
-	long status;
+void labelview__ObservedChanged(struct labelview *self, struct observable *dobj, long status)
 {
 	if (status == label_DATACHANGED) {
 		self->GaveSize = FALSE;
@@ -119,17 +106,13 @@ labelview__ObservedChanged(self, dobj, status)
 	labelview_WantUpdate(self, self);
 }
 
-	struct labelview *
-labelview__GetApplicationLayer(self)
-	register struct labelview *self;
+struct labelview * labelview__GetApplicationLayer(struct labelview *self)
 {
 	self->embedded = FALSE;
 	return self;
 }
 
-	static void
-RedrawTable(self)
-	register struct labelview *self;
+static void RedrawTable(struct labelview *self)
 {
 	register struct label *st 
 			= (struct label *)self->header.view.dataobject;
@@ -190,11 +173,7 @@ RedrawTable(self)
 	}
 }
 
-	void 
-labelview__FullUpdate(self, type, left, top, width, height)
-	register struct labelview  *self;
-	register enum view_UpdateType  type;
-	register long  left, top, width, height;
+void labelview__FullUpdate(struct labelview *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
 	if (type == view_Remove) {
 		self->OnScreen = FALSE;
@@ -217,19 +196,13 @@ labelview__FullUpdate(self, type, left, top, width, height)
 }
 
 
-	void 
-labelview__Update(self)
-	register struct labelview *self;
+void labelview__Update(struct labelview *self)
 {
 	if (! self->OnScreen || ! CheckWindow(self, "Update")) return;
 	RedrawTable(self);
 }
 
-	struct view *
-labelview__Hit(self, action, x, y, num_clicks)
-	register struct labelview  *self;
-	register enum view_MouseAction  action;
-	register long  x, y, num_clicks;
+struct view * labelview__Hit(struct labelview *self, enum view_MouseAction action, long x, long y, long num_clicks)
 {
 	if (action == view_NoMouseEvent)
 		return (struct view *)self;
@@ -292,38 +265,23 @@ width, height, *desiredWidth, *desiredHeight); fflush(stderr);
 	return view_HeightLarger | view_WidthLarger;
 }
 
-	void
-labelview__Print( self, file, processor, format, level )
-	struct labelview 	 *self;
-	FILE   *file;
-	char  	 *processor;
-	char  	 *format;
-	boolean  	level;
+void labelview__Print(struct labelview *self, FILE *file, char *processor, char *format, boolean level)
 {
 	/* XXX sigh */
 }
 
-	void
-labelview__SetHitProc(self, proc, rock)
-	register struct labelview *self;
-	void (*proc)();
-	char *rock;
+void labelview__SetHitProc(struct labelview *self, void (*proc) (), char *rock)
 {
 	self->hitproc = proc;
 	self->hitrock = rock;
 }
 
-	char *
-labelview__GetHitRock(self)
-	register struct labelview *self;
+char * labelview__GetHitRock(struct labelview *self)
 {
 	return self->hitrock;
 }
 
-	void
-labelview__SetInversion(self, invert)
-	register struct labelview *self;
-	boolean invert;
+void labelview__SetInversion(struct labelview *self, boolean invert)
 {
 	if (self->inverted == invert)
 		return;
@@ -331,9 +289,7 @@ labelview__SetInversion(self, invert)
 	labelview_WantUpdate(self, self);
 }
 
-	boolean
-labelview__GetInversion(self)
-	register struct labelview *self;
+boolean labelview__GetInversion(struct labelview *self)
 {
 	return self->inverted;
 }

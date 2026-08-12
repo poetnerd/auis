@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+"""image-inset-tests -- decode-level regression suite for the `image`
+inset's importer classes (src/atk/image/{img,tif}.c, driven through
+imagev.c's Import_Cmd), covering the 2026-08-08 fix of four LP64
+struct/stride bugs in the vendored libtiff (src/overhead/image/tiff)
+that made TIFFOpen fail outright -- see porting-changelog.md and
+porting-assessment.md Sec.21.
+
+Usage:
+    revival/tests/image-inset-tests
+
+Driven through imgtest -- a standalone harness built from
+src/atk/image/imgtest.c that calls image_Load()/image_Duplicate()/
+image_Compress() exactly as Import_Cmd does, entirely off-screen (no
+X11), and reports the result as "KEY: value" lines. This is decode-
+only: it proves the importer produces correctly-shaped, non-uniform
+pixel data, but it does NOT exercise the separate X11 render path
+(src/atk/basics/x/xgraphic.c's imageToXImage(), where the actual
+"solid black/white" render bug lived) -- there is no on-screen/visual
+check in this suite. A regression in xgraphic.c's color allocation
+would not be caught here; only a regression in the importers
+themselves (or in libtiff) would.
+
+The JPEG fixture is the tree's own src/overhead/image/jpeg/testorig.jpg
+(vendored libjpeg test image, already redistributed with the tree).
+The TIFF fixture is a tiny uncompressed greyscale TIFF this suite
+generates itself, byte by byte, into a temp file on each run -- no
+binary TIFF asset is committed, matching this directory's existing
+"every fixture is synthesized fresh" convention (see mime-display-tests).
+"""
+
+import os
+import struct
+import subprocess
+import sys
+import tempfile
+
+REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+IMAGEDIR = os.path.join(REPO_ROOT, "src", "atk", "image")
+IMGTEST = os.path.join(IMAGEDIR, "imgtest")
+JPEG_FIXTURE = os.path.join(REPO_ROOT, "src", "overhead", "image", "jpeg", "testorig.jpg")
+
+PASS = []
+FAIL = []
+
+
+def note(msg):
+    print(msg, flush=True)
+
+
+def result(name, ok, detail=""):
+    if ok:
+        PASS.append(name)
+        note(f"PASS: {name}")
+    else:
+        FAIL.append(name)
+        note(f"FAIL: {name}" + (f" -- {detail}" if detail else ""))
+
+
+def build_driver():
+    """make Makefile (regenerating from the Imakefile only if missing),
+    then make imgtest. Never touches the image importer sources
+    themselves."""
+    if not os.path.isfile(os.path.join(IMAGEDIR, "Makefile")):
+        r = subprocess.run(["imake", "-Timake.tmpl", "-I.", "-I../../config",
+                             "-s", "Makefile", "-DTOPDIR=../../."],
+                            cwd=IMAGEDIR, capture_output=True, text=True)
+        if r.returncode != 0:
+            note(r.stdout); note(r.stderr)
+            sys.exit("image-inset-tests: could not bootstrap Makefile in " + IMAGEDIR)
+    r = subprocess.run(["make", "Makefile"], cwd=IMAGEDIR, capture_output=True, text=True)
+    if r.returncode != 0:
+        note(r.stdout); note(r.stderr)
+        sys.exit("image-inset-tests: 'make Makefile' failed in " + IMAGEDIR)
+    r = subprocess.run(["make", "imgtest"], cwd=IMAGEDIR, capture_output=True, text=True, timeout=180)
+    if r.returncode != 0 or not os.path.isfile(IMGTEST):
+        note(r.stdout); note(r.stderr)
+        sys.exit("image-inset-tests: 'make imgtest' failed in " + IMAGEDIR)
+
+
+def parse_kv(stdout):
+    d = {}
+    for line in stdout.splitlines():
+        if ": " in line:
+            k, v = line.split(": ", 1)
+            d[k.strip()] = v.strip()
+    return d
+
+
+def make_tiff_fixture(path, w, h):
+    """Write a minimal uncompressed 8-bit greyscale TIFF (little-endian,
+    one strip, no compression) with a non-uniform ramp pattern -- just
+    enough structure to exercise TIFFOpen's header/IFD parsing and a
+    real TIFFReadEncodedStrip, without needing libtiff or ImageMagick
+    to produce it."""
+    data = bytes([(x + y) % 256 for y in range(h) for x in range(w)])
+    header_size = 8
+    n_entries = 8
+    ifd_size = 2 + n_entries * 12 + 4
+    strip_off = header_size + ifd_size
+
+    def entry(tag, typ, count, value):
+        if typ == 3 and count == 1:  # SHORT, left-justified in the 4-byte value field
+            val = struct.pack('<HH', value, 0)
+        else:  # LONG
+            val = struct.pack('<I', value)
+        return struct.pack('<HHI', tag, typ, count) + val
+
+    ifd = struct.pack('<H', n_entries)
+    ifd += entry(256, 3, 1, w)          # ImageWidth
+    ifd += entry(257, 3, 1, h)          # ImageLength
+    ifd += entry(258, 3, 1, 8)          # BitsPerSample
+    ifd += entry(259, 3, 1, 1)          # Compression = none
+    ifd += entry(262, 3, 1, 1)          # PhotometricInterpretation = BlackIsZero
+    ifd += entry(273, 4, 1, strip_off)  # StripOffsets
+    ifd += entry(277, 3, 1, 1)          # SamplesPerPixel
+    ifd += entry(279, 4, 1, len(data))  # StripByteCounts
+    ifd += struct.pack('<I', 0)         # next IFD offset
+
+    header = b'II' + struct.pack('<H', 42) + struct.pack('<I', header_size)
+    with open(path, 'wb') as f:
+        f.write(header + ifd + data)
+
+
+def run_imgtest(classname, filename):
+    r = subprocess.run([IMGTEST, classname, filename], capture_output=True, text=True, timeout=30)
+    return r, parse_kv(r.stdout)
+
+
+def check_decode(name, classname, filename, want_w, want_h):
+    r, kv = run_imgtest(classname, filename)
+    ok = (r.returncode == 0
+          and kv.get("LOAD-RC") == "0"
+          and kv.get("WIDTH") == str(want_w)
+          and kv.get("HEIGHT") == str(want_h)
+          and kv.get("LOAD-UNIFORM") == "0"
+          and kv.get("DUP-UNIFORM") == "0"
+          and kv.get("COMPRESS-UNIFORM") == "0")
+    result(name, ok, f"rc={r.returncode} kv={kv} stderr={r.stderr.strip()}")
+
+
+def main():
+    build_driver()
+
+    if not os.path.isfile(JPEG_FIXTURE):
+        sys.exit("image-inset-tests: missing fixture " + JPEG_FIXTURE)
+
+    check_decode("1 JPEG import: load/duplicate/compress all non-uniform 125x125",
+                 "jpeg", JPEG_FIXTURE, 125, 125)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tiff_path = os.path.join(tmpdir, "mini.tiff")
+        make_tiff_fixture(tiff_path, 16, 16)
+        check_decode("2 TIFF import: load/duplicate/compress all non-uniform 16x16 "
+                     "(regression check for the 2026-08-08 LP64 libtiff struct/stride bugs)",
+                     "tif", tiff_path, 16, 16)
+
+    note("")
+    note(f"{len(PASS)} passed, {len(FAIL)} failed")
+    sys.exit(1 if FAIL else 0)
+
+
+if __name__ == "__main__":
+    main()

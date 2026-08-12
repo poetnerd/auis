@@ -48,13 +48,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif /* SNAP_ENV  */
 #include <snapams.h>
 #include <pwd.h>
+#include <stdlib.h>
 struct passwd *getpwuid();
 #define MAXBUFFERSIZE 20000
 char *mktemp(), *getenv();
-
-#ifndef _IBMR2
-char *malloc();
-#endif /* _IBMR2 */
 
 int     SNAP_debuglevel=0,
         SNAP_socket=0,
@@ -187,8 +184,7 @@ Boolean *FinishedElsewhere;
 InitializeLogging() {}
 LogStart() {}
 LogEnd(name) char *name; {}
-amsconfig(argc, argv, name)
-int argc; char **argv, *name;
+amsconfig(int argc, char **argv, char *name)
 {}
 RedirectOutput() {}
 /* ap_Shorten is available in Andrew's libutil.a but probably not on the PC. */

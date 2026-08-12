@@ -70,7 +70,8 @@ HISTORY
 END-SPECIFICATION  ************************************************************/
 
 #include <andrewos.h>
-#if defined(POSIX_ENV) && !defined(bsdi)
+#include <stdlib.h>
+#if defined(POSIX_ENV) && !defined(bsdi) && !defined(sys_darwin)
 #include <values.h>
 #endif
 #include <rect.h>
@@ -79,6 +80,22 @@ END-SPECIFICATION  ************************************************************/
 #include <apt.ih>
 #include <apts.ih>
 #include <chart.eh>
+static char * Extract_Field_Value(struct chart *self, char **fields, char *name);
+static int Parse_Item_Field(struct chart *self, char *string);
+static int Parse_Name_Field(struct chart *self, char *string);
+static int Parse_Type_Field(struct chart *self, char *string);
+static int Reader(struct chart *self);
+static int SetChartAttribute(struct chart *self, long attribute, long value);
+static int SetItemAttribute(struct chart *self, struct chart_item *item, long attribute, long value);
+static int SetItemValue(struct chart *self, struct chart_item *item, long value);
+static int Sort_By_Ascending_Label(const void *ap, const void *bp);
+static int Sort_By_Ascending_Position(const void *ap, const void *bp);
+static int Sort_By_Ascending_Value(const void *ap, const void *bp);
+static int Sort_By_Descending_Label(const void *ap, const void *bp);
+static int Sort_By_Descending_Position(const void *ap, const void *bp);
+static int Sort_By_Descending_Value(const void *ap, const void *bp);
+static char * ValueString(struct chart *self, struct chart_item *item);
+static int Writer(struct chart *self);
 
 #define  ChartTitle		     (self->chart_title)
 #define  ChartTitleDataObjectName    (self->chart_title_data_object_name)
@@ -111,11 +128,7 @@ END-SPECIFICATION  ************************************************************/
 
 int chart_debug = 0;
 
-struct chart *
-chart__Create( ClassID, specification, anchor )
-  register struct  classheader	     *ClassID;
-  chart_Specification		     *specification;
-  register struct dataobject	     *anchor;
+struct chart * chart__Create(struct classheader *ClassID, struct chart_specification *specification, char *anchor)
   {
   register struct chart	     *self;
 
@@ -132,10 +145,7 @@ chart__Create( ClassID, specification, anchor )
   return self;
   }
 
-boolean
-chart__InitializeObject( classID, self )
-  register struct classheader	     *classID;
-  register struct chart		     *self;
+boolean chart__InitializeObject(struct classheader *classID, struct chart *self)
   {
 
 #ifndef MAXINT
@@ -165,10 +175,7 @@ chart__InitializeObject( classID, self )
   return TRUE;
   }
 
-void
-chart__FinalizeObject( classID, self )
-  register struct classheader	     *classID;
-  register struct chart    	      *self;
+void chart__FinalizeObject(struct classheader *classID, struct chart *self)
   {
   register struct chart_item	      *item = ItemAnchor, *next;
 
@@ -186,23 +193,17 @@ chart__FinalizeObject( classID, self )
   OUT(chart_FinalizeObject);
   }
 
-char *
-chart__ViewName( self )
-  register struct chart    	      *self;
+char * chart__ViewName(struct chart *self)
   {
   IN(chart_ViewName);
   OUT(chart_ViewName);
   return "chartv";
   }
 
-long
-chart__SetChartAttribute( self, attribute, value )
+long chart__SetChartAttribute(struct chart *self, long attribute, long value)
   {  return  SetChartAttribute( self, attribute, value );  }
 
-static
-SetChartAttribute( self, attribute, value )
-  register struct chart		   *self;
-  register long			    attribute, value;
+static int SetChartAttribute(struct chart *self, long attribute, long value)
   {
   register long			    status = ok;
 
@@ -212,26 +213,23 @@ SetChartAttribute( self, attribute, value )
     case  chart_datum:
       ClientDatum = value;				break;
     case  chart_filename:
-      apts_CaptureString( value, &ChartFileName );	break;
+      apts_CaptureString( (char *) value, &ChartFileName );	break;
     case  chart_titlecaption:
-      apts_CaptureString( value, &ChartTitle );		break;
+      apts_CaptureString( (char *) value, &ChartTitle );		break;
     case  chart_titledataobjectname:
-      apts_CaptureString( value, &ChartTitleDataObjectName );break;
+      apts_CaptureString( (char *) value, &ChartTitleDataObjectName );break;
     case  chart_titleviewobjectname:
-      apts_CaptureString( value, &ChartTitleViewObjectName );break;
+      apts_CaptureString( (char *) value, &ChartTitleViewObjectName );break;
     case  chart_type:
-      apts_CaptureString( value, &ChartType );		break;
+      apts_CaptureString( (char *) value, &ChartType );		break;
     default:
-      fprintf( stderr, "Chart: Unrecognized ChartAttribute (%d) -- Ignored\n", attribute );
+      fprintf( stderr, "Chart: Unrecognized ChartAttribute (%ld) -- Ignored\n", attribute );
     }
   OUT(SetChartAttribute);
   return  status;
   }
 
-long
-chart__ChartAttribute( self, attribute )
-  register struct chart	     *self;
-  register long		      attribute;
+long chart__ChartAttribute(struct chart *self, long attribute)
   {
   register long		      value = NULL;
 
@@ -252,21 +250,16 @@ chart__ChartAttribute( self, attribute )
       value = (long) ChartType;				break;
     default:
       ExceptionCode = chart_UnknownChartAttribute;
-      fprintf( stderr, "Chart: Unrecognized ChartAttribute (%d) -- Ignored\n", attribute );
+      fprintf( stderr, "Chart: Unrecognized ChartAttribute (%ld) -- Ignored\n", attribute );
     }
   OUT(chart_ChartAttribute);
   return  value;
   }
 
-long
-chart__SetItemAttribute( self, item, attribute, value )
+long chart__SetItemAttribute(struct chart *self, struct chart_item *item, long attribute, long value)
   {  return  SetItemAttribute( self, item, attribute, value );  }
 
-static
-SetItemAttribute( self, item, attribute, value )
-  register struct chart      *self;
-  register struct chart_item *item;
-  register long		      attribute, value;
+static int SetItemAttribute(struct chart *self, struct chart_item *item, long attribute, long value)
   {
   register long		      status = ExceptionCode = ok;
 
@@ -279,7 +272,7 @@ SetItemAttribute( self, item, attribute, value )
       case  chart_itemdatum:
 	ItemDatum(item) = value;				    break;
       case  chart_itemname:
-	apts_CaptureString( value, &ItemName(item) );		    break;
+	apts_CaptureString( (char *) value, &ItemName(item) );		    break;
       case  chart_itemposition:
 /*===*/  break;
       case  chart_itemvalue:
@@ -287,18 +280,14 @@ SetItemAttribute( self, item, attribute, value )
 /*===*/
       default:
         status = ExceptionCode = chart_UnknownItemAttribute;
-	fprintf( stderr, "Chart: Unknown Item Attribute (%d) -- Ignored\n", attribute );
+	fprintf( stderr, "Chart: Unknown Item Attribute (%ld) -- Ignored\n", attribute );
       }
     else  status = ExceptionCode = chart_NonExistentItem;
   OUT(SetItemAttribute);
   return  status;
   }
 
-long
-chart__ItemAttribute( self, item, attribute )
-  register struct chart      *self;
-  register struct chart_item *item;
-  register long		      attribute;
+long chart__ItemAttribute(struct chart *self, struct chart_item *item, long attribute)
   {
   register long		      value = NULL;
 
@@ -317,16 +306,13 @@ chart__ItemAttribute( self, item, attribute )
 /*===*/
       default:
         ExceptionCode = chart_UnknownItemAttribute;
-	fprintf( stderr, "Chart: Unknown Item Attribute (%d) -- Ignored\n", attribute );
+	fprintf( stderr, "Chart: Unknown Item Attribute (%ld) -- Ignored\n", attribute );
       }
   OUT(chart_ItemAttribute);
   return  value;
   }
 
-void
-chart__SetDebug( self, state )
-  register struct chart	      *self;
-  register char		       state;
+void chart__SetDebug(struct chart *self, boolean state)
   {
   IN(chart_SetDebug);
   chart_debug = state;
@@ -334,11 +320,7 @@ chart__SetDebug( self, state )
   OUT(chart_SetDebug);
   }
 
-static char *
-Extract_Field_Value( self, fields, name )
-  register struct chart		     *self;
-  register char			    **fields;
-  register char			     *name;
+static char * Extract_Field_Value(struct chart *self, char **fields, char *name)
   {
   register char			     *field = NULL, *s, *t;
   register long			      length;
@@ -368,9 +350,7 @@ Extract_Field_Value( self, fields, name )
   return  field;
   }
 
-static
-Reader( self )
-  register struct chart	    	     *self;
+static int Reader(struct chart *self)
   {
   register struct apt_field	     *field;
 
@@ -391,17 +371,13 @@ Reader( self )
   OUT(Reader);
   }
 
-long
-chart__Read( self, file, id )
-  register struct chart	    	     *self;
-  register FILE			     *file;
-  register long			      id;
+long chart__Read(struct chart *self, FILE *file, long id)
   {
   register long			      status; 
 
   IN(chart_Read);
   ItemCount = 0;
-  if ( (status = chart_ReadObject( self, file, id, Reader )) ==
+  if ( (status = chart_ReadObject( self, file, id, (void (*)(struct chart *)) Reader )) ==
 	dataobject_NOREADERROR )
     {
     chart_NotifyObservers( self, 1234 );
@@ -410,21 +386,15 @@ chart__Read( self, file, id )
   return status;
   }
 
-static
-Parse_Name_Field( self, string )
-  register struct chart		     *self;
-  register char			     *string;
+static int Parse_Name_Field(struct chart *self, char *string)
   {
   IN(Parse_Name_Field);
   DEBUGst(Name,string);
-  chart_SetChartAttribute( self, chart_TitleCaption(string) );
+  chart_SetChartAttribute( self, chart_titlecaption, (long) (string) );
   OUT(Parse_Name_Field);
   }
 
-static
-Parse_Type_Field( self, string )
-  register struct chart		     *self;
-  register char			     *string;
+static int Parse_Type_Field(struct chart *self, char *string)
   {
   IN(Parse_Type_Field);
   DEBUGst(Type,string);
@@ -432,10 +402,7 @@ Parse_Type_Field( self, string )
   OUT(Parse_Type_Field);
   }
 
-static
-Parse_Item_Field( self, string )
-  register struct chart		     *self;
-  register char			     *string;
+static int Parse_Item_Field(struct chart *self, char *string)
   {
   register char			    **fields,
 				     *extract;
@@ -452,13 +419,13 @@ Parse_Item_Field( self, string )
       if ( extract )  free( extract );
       if ( extract = Extract_Field_Value( self, fields, "Value" ) )
 	{
-	sscanf( extract, "%d", &value );
+	sscanf( extract, "%ld", &value );
 	SetItemValue( self, item, value );
         free( extract );
 	}
       if ( extract = Extract_Field_Value( self, fields, "Position" ) )
 	{
-	sscanf( extract, "%d", &value );
+	sscanf( extract, "%ld", &value );
 	ItemPosition(item) = value;
 	free( extract );
 	}
@@ -467,22 +434,17 @@ Parse_Item_Field( self, string )
   OUT(Parse_Item_Field);
   }
 
-static char *
-ValueString( self, item )
-  register struct chart		     *self;
-  register struct chart_item	     *item;
+static char * ValueString(struct chart *self, struct chart_item *item)
   {
   static char			      value[257];
   register char			     *ptr = value;
 
   *value = 0;
-  sprintf( value, "%d", ItemValue(item) );
+  sprintf( value, "%ld", ItemValue(item) );
   return  ptr;
   }
 
-static
-Writer( self )
-  register struct chart		     *self;
+static int Writer(struct chart *self)
   {
   register long			      i;
   register struct chart_item	     *item = ItemAnchor;
@@ -508,7 +470,7 @@ Writer( self )
       {sprintf( content, "Value(%s);",	    ValueString(self,item) );
        strcat( contents, content );}
     if ( ItemPosition(item) )
-      {sprintf( content, "Position(%d);",   ItemPosition(item) );
+      {sprintf( content, "Position(%ld);",   ItemPosition(item) );
        strcat( contents, content );}
     chart_WriteObjectField( self, &field );
     item = NextItem(item);
@@ -516,22 +478,15 @@ Writer( self )
   OUT(Writer);
   }
 
-long
-chart__Write( self, file, writeID, level )
-  register struct chart		     *self;
-  register FILE			     *file;
-  register long			      writeID;
-  register long			      level;
+long chart__Write(struct chart *self, FILE *file, long writeID, int level)
   {
   IN(chart_Write);
-  chart_WriteObject( self, file, writeID, level, Writer );
+  chart_WriteObject( self, file, writeID, level, (void (*)(struct chart *)) Writer );
   OUT(chart_Write);
   return  self->header.dataobject.id;
   }
 
-struct chart_monikers *
-chart__Monikers( self )
-  register struct chart		     *self;
+struct chart_monikers * chart__Monikers(struct chart *self)
   {
 static struct chart_monikers	monikers[] = /*===MUST BE DYNAMIC*/
 {
@@ -551,10 +506,7 @@ static struct chart_monikers	monikers[] = /*===MUST BE DYNAMIC*/
 return  monikers;
   }
 
-char *
-chart__ModuleName( self, moniker )
-  register struct chart		     *self;
-  register char			     *moniker;
+char * chart__ModuleName(struct chart *self, char *moniker)
   {
   register char			     *module_name = NULL;
   register struct chart_monikers     *monikers;
@@ -583,11 +535,7 @@ chart__ModuleName( self, moniker )
   return  module_name;
   }
 
-struct chart_item *
-chart__CreateItem( self, name, datum )
-  register struct chart		     *self;
-  register char			     *name;
-  register long			      datum;
+struct chart_item * chart__CreateItem(struct chart *self, char *name, long datum)
   {
   register struct chart_item	     *item, *next = ItemAnchor;
 
@@ -609,10 +557,7 @@ chart__CreateItem( self, name, datum )
   return  item;
   }
 
-struct chart_item *
-chart__ItemOfName( self, name )
-  register struct chart		     *self;
-  register char			     *name;
+struct chart_item * chart__ItemOfName(struct chart *self, char *name)
   {
   register struct chart_item	     *item = NULL, *next = ItemAnchor;
 
@@ -629,10 +574,7 @@ chart__ItemOfName( self, name )
   return  item;
   }
 
-void
-chart__DestroyItem( self, item )
-  register struct chart		     *self;
-  register struct chart_item	     *item;
+void chart__DestroyItem(struct chart *self, struct chart_item *item)
   {
   register struct chart_item	     *prior;
 
@@ -661,11 +603,7 @@ chart__DestroyItem( self, item )
   OUT(chart_DestroyItem);
   }
 
-static
-SetItemValue( self, item, value )
-  register struct chart		     *self;
-  register struct chart_item	     *item;
-  register long			      value;
+static int SetItemValue(struct chart *self, struct chart_item *item, long value)
   {
   IN(SetItemValue);
   ItemValue(item) = value;
@@ -687,22 +625,14 @@ SetItemValue( self, item, value )
   OUT(SetItemValue);
   }
 
-void
-chart__Reset( self, mode )
-  register struct chart		     *self;
-  register long			      mode;
+void chart__Reset(struct chart *self, long mode)
   {
   IN(chart_Reset);
 /*===*/
   OUT(chart_Reset);
   }
 
-void
-chart__Apply( self, proc, anchor, datum )
-  register struct chart		     *self;
-  register void			   *(*proc)();
-  register long			      anchor;
-  register char			     *datum;
+void chart__Apply(struct chart *self, long (*proc)(), long anchor, long datum)
   {
   register chart_type_item	      item = ItemAnchor;
 
@@ -715,10 +645,10 @@ chart__Apply( self, proc, anchor, datum )
   OUT(chart_Apply);
   }
 
-static long
-Sort_By_Ascending_Value( a, b )
-  register struct chart_item	    **a, **b;
+static int Sort_By_Ascending_Value(const void *ap, const void *bp)
   {
+  struct chart_item * const *a = (struct chart_item * const *) ap;
+  struct chart_item * const *b = (struct chart_item * const *) bp;
   if ( a && b )
     {
     if ( ItemValue(*a) < ItemValue(*b) )  return -1;
@@ -727,10 +657,10 @@ Sort_By_Ascending_Value( a, b )
   return 0;
   }
 
-static long
-Sort_By_Descending_Value( a, b )
-  register struct chart_item	    **a, **b;
+static int Sort_By_Descending_Value(const void *ap, const void *bp)
   {
+  struct chart_item * const *a = (struct chart_item * const *) ap;
+  struct chart_item * const *b = (struct chart_item * const *) bp;
   if ( a && b )
     {
     if ( ItemValue(*a) < ItemValue(*b) )  return  1;
@@ -739,28 +669,28 @@ Sort_By_Descending_Value( a, b )
   return 0;
   }
 
-static long
-Sort_By_Ascending_Label( a, b )
-  register struct chart_item	    **a, **b;
+static int Sort_By_Ascending_Label(const void *ap, const void *bp)
   {
+  struct chart_item * const *a = (struct chart_item * const *) ap;
+  struct chart_item * const *b = (struct chart_item * const *) bp;
   if ( a && b )
     return  strcmp( ItemName(*a), ItemName(*b) );
   return 0;
   }
 
-static long
-Sort_By_Descending_Label( a, b )
-  register struct chart_item	    **a, **b;
+static int Sort_By_Descending_Label(const void *ap, const void *bp)
   {
+  struct chart_item * const *a = (struct chart_item * const *) ap;
+  struct chart_item * const *b = (struct chart_item * const *) bp;
   if ( a && b )
     return  strcmp( ItemName(*b), ItemName(*a) );
   return 0;
   }
 
-static long
-Sort_By_Ascending_Position( a, b )
-  register struct chart_item	    **a, **b;
+static int Sort_By_Ascending_Position(const void *ap, const void *bp)
   {
+  struct chart_item * const *a = (struct chart_item * const *) ap;
+  struct chart_item * const *b = (struct chart_item * const *) bp;
   if ( a && b )
     {
     if( ItemPosition(*a) < ItemPosition(*b) )  return -1;
@@ -769,10 +699,10 @@ Sort_By_Ascending_Position( a, b )
   return 0;
   }
 
-static long
-Sort_By_Descending_Position( a, b )
-  register struct chart_item	    **a, **b;
+static int Sort_By_Descending_Position(const void *ap, const void *bp)
   {
+  struct chart_item * const *a = (struct chart_item * const *) ap;
+  struct chart_item * const *b = (struct chart_item * const *) bp;
   if ( a && b )
     {
     if( ItemPosition(*a) < ItemPosition(*b) )  return  1;
@@ -781,13 +711,10 @@ Sort_By_Descending_Position( a, b )
   return 0;
   }
 
-void
-chart__Sort( self, mode, handler )
-  register struct chart		     *self;
-  register long			      mode;
-  register long			    (*handler)();
+void chart__Sort(struct chart *self, long mode, long (*handler) ())
   {
-  register long			    (*sorter)() = NULL, i = 0;
+  register int			    (*sorter)(const void *, const void *) = NULL;
+  register long			    i = 0;
   register chart_type_item	     *vector;
   register chart_type_item	      item = ItemAnchor;
 

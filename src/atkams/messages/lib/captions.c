@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
  
 
 #include <andrewos.h> /* sys/file.h */
+#include <stdlib.h>
 #include <cui.h>
 #include <fdphack.h>
 #include <sys/param.h>
@@ -64,18 +65,27 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <menulist.ih>
 #include <cursor.ih>
 #include <captions.eh>
+static void SetFrame(struct captions *ci, long p, long n, long d);
+static long WhatIsAt(struct captions *ci, long n, long d);
 
-extern void captions_SimulateLeftClick();
-extern void captions_SimulateRightClick();
-extern void captions_CaptionsCompound();
-extern void captions_CaptionsTextviewCommand();
-extern void captions_CaptionsFoldersCommand();
-extern void captions_CaptionsBodiesCommand();
-extern void captions_DownFocus(), captions_UpFocus();
-extern void CapBeginText(), CapScrollBack();
-extern void PreviousCaptionLine();
-extern void CapGlitchDown();
+extern void captions_SimulateLeftClick(struct captions *self, long rock);
+extern void captions_SimulateRightClick(struct captions *self, long rock);
+extern void captions_CaptionsCompound(struct captions *self, char *cmds);
+extern void captions_CaptionsTextviewCommand(struct captions *self, char *cmds);
+extern void captions_CaptionsFoldersCommand(struct captions *self, char *cmds);
+extern void captions_CaptionsBodiesCommand(struct captions *self, char *cmds);
+extern void captions_DownFocus(struct captions *self), captions_UpFocus(struct captions *self);
+extern void CapBeginText(struct captions *self), CapScrollBack(struct captions *self);
+extern void PreviousCaptionLine(struct captions *self);
+extern void CapGlitchDown(struct captions *self);
 extern void OneTimeInitKeyMenus();
+
+/* same-file forward references -- all defined later in this file */
+extern int NextTextviewScreen(struct textview *tv), RemoveHighlighting(struct captions *h), bcopyfromback(char *from, char *to, int length);
+
+/* same-directory (capaux.o, linked into the same captions.do) cross-file
+   references -- no header, defined in capaux.c */
+extern int ClassifyMarkedByName(struct captions *self, char *NameGiven), captions_InsertCaptions(struct captions *ci, char *shortname, char *dname, char *StartTime, Boolean ShowAll);
 
 extern int (*captextv_PreviousLineCmd)(),
     (*captextv_ReverseSearchCmd)(),
@@ -89,8 +99,7 @@ extern int (*captextv_PreviousLineCmd)(),
 struct keymap *captions_privkeymap;
 struct menulist *captions_privmenulist;
 
-void captions__ShowHelp(self)
-struct captions *self;
+void captions__ShowHelp(struct captions *self)
 {
     int doprefix = 0;
     char *motdfile;
@@ -141,19 +150,13 @@ struct captions *self;
     captions_WantUpdate(self, self);
 }    
 
-void captions__SetBodies(captions, bv)
-struct captions *captions;
-struct t822view *bv;
+void captions__SetBodies(struct captions *captions, struct t822view *bv)
 {
     captions->BodView = bv;
     if (bv) t822view_SetCaptions(bv, captions);
 }
 
-struct view *
-captions__Hit(captions, action, x, y, nclicks)
-struct captions *captions;
-int x, y, nclicks;  
-enum view_MouseAction action;
+struct view * captions__Hit(struct captions *captions, enum view_MouseAction action, long x, long y, long nclicks)
 {
     int thisdot, linelen, whichthis, whichdown;
     struct environment *env;
@@ -200,9 +203,7 @@ enum view_MouseAction action;
     return((struct view *) captions);
 }
 
-void captions__SimulateClick(captions, IsLeftClick)
-struct captions *captions;
-boolean IsLeftClick;
+void captions__SimulateClick(struct captions *captions, boolean IsLeftClick)
 {
     int linestart, linelen, thisCUID, whichcaption;
     struct environment *env;
@@ -212,7 +213,8 @@ boolean IsLeftClick;
 	/* This code is kind of silly; it says if there are no captions on display, but there is some kind of text in the captions area, we will search through the bodies area for the contents of the current line and will scroll the body to start with that same line.  This is currently used only by the Set Options code, but it could in theory be used to make Messages able to view all sorts of things besides mail and bulletin boards... */
 	struct textview *tv = (struct textview *)captions;
 	struct text *t = (struct text *) captions_GetDataObject(captions);
-	int dot, len, tmpdot, retlen;
+	int dot, len, tmpdot;
+	long retlen;
 	char *str, *tp, BodyBuf[1000];
 	struct SearchPattern *Pattern = NULL;
 	struct text *bod;
@@ -265,9 +267,7 @@ boolean IsLeftClick;
 
 
 
-void GetInfo(ci, total, seen, dot)
-struct captions *ci;
-struct range *total, *seen, *dot;
+void GetInfo(struct captions *ci, struct range *total, struct range *seen, struct range *dot)
 {
     int pos, mylen, whichcaption, gap, mystart;
     struct environment *envptr;
@@ -298,9 +298,7 @@ struct range *total, *seen, *dot;
     dot->end = dot->beg;
 }
 
-static void SetFrame(ci, p, n, d)
-struct captions *ci;
-long p, n, d;
+static void SetFrame(struct captions *ci, long p, long n, long d)
 {
     int min, max, w, myp, outp;
 
@@ -329,9 +327,7 @@ long p, n, d;
     ci->textscrollinterface->SetFrame(ci, outp, n, d);
 }
 
-static long WhatIsAt(ci, n, d)
-struct captions *ci;
-long n,d;
+static long WhatIsAt(struct captions *ci, long n, long d)
 {
     int pos, len, whichcaption;
     struct environment *envptr;
@@ -348,9 +344,7 @@ long n,d;
 
 static struct scrollfns scrollInterface = {GetInfo, SetFrame, NULL, WhatIsAt};
 
-char * captions__GetInterface(self, interfaceName) 
-struct captions *self;
-char *interfaceName;
+char * captions__GetInterface(struct captions *self, char *interfaceName)
 {
     if (strcmp(interfaceName, "scroll,vertical") == 0)
         return (char *) &scrollInterface;
@@ -358,8 +352,7 @@ char *interfaceName;
 }
 
 
-ResetCaptionNotBody(ci)
-struct captions *ci;
+int ResetCaptionNotBody(struct captions *ci)
 {
     RemoveHighlighting(ci);
     ci->VisibleCUID = -1;
@@ -367,8 +360,7 @@ struct captions *ci;
     captions_PostMenus(ci, NULL);
 }
 
-RemoveHighlighting(h) 
-struct captions *h;
+int RemoveHighlighting(struct captions *h)
 {
     if (h->HighlightEnv) {
 	text_SetEnvironmentStyle(h->CaptText, h->HighlightEnv, AMS_GET_ATTRIBUTE(h->VisibleSnapshot, AMS_ATT_DELETED) ? h->DeletedStyle : h->NormalCaptionStyle);
@@ -379,9 +371,7 @@ struct captions *h;
     return(0);
 }
 
-int captions__DeleteVisibleMessage(ci, Delete)
-struct captions *ci;
-Boolean Delete;
+int captions__DeleteVisibleMessage(struct captions *ci, boolean Delete)
 {
     int cuid;
 
@@ -413,10 +403,7 @@ Boolean Delete;
     return(0);
 }
 
-void captions__AlterDeletedIcon(ci, pos, Delete)
-struct captions *ci;
-int pos;
-Boolean Delete;
+void captions__AlterDeletedIcon(struct captions *ci, int pos, boolean Delete)
 {
     char c;
     char *newicon, ErrorText[256];
@@ -449,11 +436,7 @@ Boolean Delete;
     text_AlwaysDeleteCharacters(ci->CaptText, pos, 1);
 }
 
-captions__FindCUIDByDocLocation(ci, position, len, envptr, whichcaption)
-struct captions *ci;
-int *position, *len;
-struct environment **envptr;
-int *whichcaption;
+int captions__FindCUIDByDocLocation(struct captions *ci, int *position, int *len, struct environment **envptr, int *whichcaption)
 {
     int top, bottom, split;
 
@@ -493,10 +476,7 @@ int *whichcaption;
     return(ci->capcache[split].cuid);
 }
 
-void captions__ToggleMark(ci, hc,linestart)
-struct captions *ci;
-struct CaptionCache *hc;
-int linestart;
+void captions__ToggleMark(struct captions *ci, struct CaptionCache *hc, int linestart)
 {
     text_AlwaysInsertCharacters(ci->CaptText, linestart+1, hc->IsMarked ? " " : SICON_MARK, 1);
     text_AlwaysDeleteCharacters(ci->CaptText, linestart, 1);
@@ -506,13 +486,7 @@ int linestart;
 }
 
 
-AddCaptionToCacheEntry(ccache, ct, size, cuid, offset, env, iconenv, MayModify, snapshot, IsDup)
-struct CaptionCache **ccache;
-int *ct, *size;
-int cuid, offset;
-struct environment *env, *iconenv;
-char *snapshot;
-Boolean MayModify, IsDup;
+int AddCaptionToCacheEntry(struct CaptionCache **ccache, int *ct, int *size, int cuid, int offset, struct environment *env, struct environment *iconenv, Boolean MayModify, char *snapshot, Boolean IsDup)
 {
     long dumint;
     struct CaptionCache *cc = &((*ccache)[*ct]);
@@ -537,10 +511,7 @@ Boolean MayModify, IsDup;
     }
 }
 
-MergeTwoCacheEntries(ci, ccache, cct, csize, prefixend)
-struct captions *ci;
-struct CaptionCache *ccache;
-int cct, csize, prefixend;
+int MergeTwoCacheEntries(struct captions *ci, struct CaptionCache *ccache, int cct, int csize, int prefixend)
 {
     int totalct, i;
 
@@ -557,8 +528,7 @@ int cct, csize, prefixend;
     ci->captioncachecount = totalct;
 }
 
-int GetSouthernmostPoint(ci)
-struct captions *ci;
+int GetSouthernmostPoint(struct captions *ci)
 {
     if (ci->SouthPoint) {
 	return(environment_Eval(ci->SouthPoint));
@@ -567,9 +537,7 @@ struct captions *ci;
     }
 }
 
-SetSouthernmostPoint(ci, pos)
-struct captions *ci;
-int pos;
+int SetSouthernmostPoint(struct captions *ci, int pos)
 {
     int i;
 
@@ -590,8 +558,7 @@ int pos;
 }
 
 
-MarkVisibleMessageSeen(ci)
-struct captions *ci;
+int MarkVisibleMessageSeen(struct captions *ci)
 {
     if (AMS_GET_ATTRIBUTE(ci->VisibleSnapshot, AMS_ATT_MAYMODIFY) && AMS_GET_ATTRIBUTE(ci->VisibleSnapshot, AMS_ATT_UNSEEN) && ams_CUI_MarkAsRead(ams_GetAMS(), ci->VisibleCUID)) {
 	return(-1); /* error was reported */
@@ -601,9 +568,7 @@ struct captions *ci;
 }
 
 
-void captions__MarkVisibleMessageStateofSeeing(ci, HasSeen)
-struct captions *ci;
-Boolean HasSeen;
+void captions__MarkVisibleMessageStateofSeeing(struct captions *ci, boolean HasSeen)
 {
     int c, pos;
     struct text *d;
@@ -643,9 +608,7 @@ Boolean HasSeen;
 }
 
 
-int captions__ShowMore(ci, MayScroll, MayGoOn, InsistOnMark)
-struct captions *ci;
-Boolean MayScroll, MayGoOn, InsistOnMark;
+int captions__ShowMore(struct captions *ci, boolean MayScroll, boolean MayGoOn, boolean InsistOnMark)
 {
     int whichcaption, pos, len, thisCUID;
     struct environment *env;
@@ -708,8 +671,7 @@ Boolean MayScroll, MayGoOn, InsistOnMark;
 
 
 
-void captions__MakeCachedUpdates(ci) 
-struct captions *ci;
+void captions__MakeCachedUpdates(struct captions *ci)
 {
     char ErrorText[256], UpdateDate[AMS_DATESIZE];
     int south, j;
@@ -740,7 +702,7 @@ struct captions *ci;
 	    ams_ReportSuccess(ams_GetAMS(), ErrorText);
 	    ams_CacheDelayedUpdate(ci->FullName, UpdateDate);
 	} else {
-	    sprintf(ErrorText, "Could not set profile for %s (%s, %d, %d, %d)", ci->ShortName, ci->FullName, ams_AMS_ERRNO(ams_GetAMS()), AMS_ERRCAUSE, AMS_ERRVIA);
+	    sprintf(ErrorText, "Could not set profile for %s (%s, %d, %ld, %ld)", ci->ShortName, ci->FullName, ams_AMS_ERRNO(ams_GetAMS()), AMS_ERRCAUSE, AMS_ERRVIA);
 	    /* UGH!  Above line only works because we've defined mserrcode locally to be the right thing... */
 	    ams_ReportError(ams_GetAMS(), ErrorText, ERR_WARNING, TRUE, mserrcode);
 	}
@@ -752,9 +714,7 @@ struct captions *ci;
 }
 
 
-GetCUIDFromPosition(ci, pos)
-struct captions *ci;
-int pos;
+int GetCUIDFromPosition(struct captions *ci, int pos)
 {
     int j;
 
@@ -768,9 +728,7 @@ int pos;
     }
 }
 
-GetPositionFromCUID(ci, cuid)
-struct captions *ci;
-int cuid;
+int GetPositionFromCUID(struct captions *ci, int cuid)
 {
     int j;
 
@@ -781,9 +739,7 @@ int cuid;
 }
 
 
-captions__GuaranteeFetchedRange(ci, min, max)
-struct captions *ci;
-int min, max;
+int captions__GuaranteeFetchedRange(struct captions *ci, int min, int max)
 {
     int frontgap, backgap, oldsize, olddot, added, oldtop, south, southcuid, dotcuid, topcuid, pos;
     char TimeBuf[AMS_DATESIZE+1], SBuf[AMS_SNAPSHOTSIZE], ErrorText[500];
@@ -854,9 +810,7 @@ restart:
     return (0);
 }
 
-void captions__FileCurrent(ci, FullName, nickname)
-struct captions *ci;
-char *FullName, *nickname;
+void captions__FileCurrent(struct captions *ci, char *FullName, char *nickname)
 {
     int	    cuid, OpCode;
     Boolean DoAppend = FALSE;
@@ -889,17 +843,13 @@ char *FullName, *nickname;
     return;
 }
 
-void captions__FileMarked(ci, FullName, nickname)
-struct captions *ci;
-char *FullName, *nickname;
+void captions__FileMarked(struct captions *ci, char *FullName, char *nickname)
 {
     ClassifyMarkedByName(ci, FullName);
     return;
 }
 
-void captions__AlterPrimaryFolderName(ci, addname, delname)
-struct captions *ci;
-char *addname, *delname;
+void captions__AlterPrimaryFolderName(struct captions *ci, char *addname, char *delname)
 {
     char Nick[1+MAXPATHLEN], *s;
 
@@ -924,8 +874,7 @@ char *addname, *delname;
     }
 }
 
-CreateCaptionsCursor(self)
-struct captions *self;
+int CreateCaptionsCursor(struct captions *self)
 {
         struct fontdesc *fd;
 
@@ -934,10 +883,7 @@ struct captions *self;
 	cursor_SetGlyph(self->mycursor, fd, 'R');
 }
 
-void captions__FullUpdate(self, type, left, top, width, height)
-struct captions *self;
-enum view_UpdateType type;
-long left, top, width, height;
+void captions__FullUpdate(struct captions *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct rectangle Rect;
 
@@ -949,8 +895,7 @@ long left, top, width, height;
     captions_PostCursor(self, &Rect, self->mycursor);
 }
 
-void captions__ReportMarkedMessageCount(captions)
-struct captions *captions;
+void captions__ReportMarkedMessageCount(struct captions *captions)
 {
     char ErrorText[100];
     if (captions->MarkCount <=0) {
@@ -963,14 +908,12 @@ struct captions *captions;
     message_DisplayString(NULL, 10, ErrorText);
 }
 
-NextTextviewScreen(tv)
-struct textview *tv;
+int NextTextviewScreen(struct textview *tv)
 {
     captextv_ScrollScreenFwdCmd(tv);
 }
 
-RSearchTextview(tv)
-struct textview *tv;
+int RSearchTextview(struct textview *tv)
 {
     captextv_ReverseSearchCmd(tv);
 }
@@ -978,9 +921,7 @@ struct textview *tv;
 /* This is the same as bcopy, but copies from the back to be safe when you're 
     really just extending an array by pushing back elements */
 
-bcopyfromback(from, to, length)
-char *from, *to;
-int length;
+int bcopyfromback(char *from, char *to, int length)
 {
     register char *f, *t;
 
@@ -1001,10 +942,7 @@ static char *LOTSASPACE="                                                       
 	on each call */
 static char CaptionBuf[AMS_SNAPSHOTSIZE];
 
-MakeCaptionLine(Buf, cuid, RawSnapshot, Fixed, HighStart, HighLen, IsMail, IsDup, IsRead)
-char **Buf, *RawSnapshot;
-int cuid, Fixed, *HighStart, *HighLen;
-Boolean IsMail, IsDup, IsRead;
+int MakeCaptionLine(char **Buf, int cuid, char *RawSnapshot, int Fixed, int *HighStart, int *HighLen, Boolean IsMail, Boolean IsDup, Boolean IsRead)
 {
     char *s, *t, *RawCap;
     int len, len2, IconCode, IconCode2;
@@ -1063,8 +1001,7 @@ Boolean IsMail, IsDup, IsRead;
     return(0);
 }
 
-void captions__SearchAll(ci)
-struct captions *ci;
+void captions__SearchAll(struct captions *ci)
 {
     char ShortName[1+MAXPATHLEN], *tp, ErrorText[256];
     struct SearchPattern *Pattern = NULL;
@@ -1108,8 +1045,7 @@ struct captions *ci;
     captions_WantInputFocus(ci, ci);
 }
 
-void captions__FindRelatedMessages(self)
-struct captions *self;
+void captions__FindRelatedMessages(struct captions *self)
 {
     char ErrorText[256];
     long numfound, i, j, mainchain, orgpos;
@@ -1150,13 +1086,13 @@ struct captions *self;
     captions_WantInputFocus(self, self);
 }
 
-void captions__MarkRangeOfMessages(self)
-struct captions *self;
+void captions__MarkRangeOfMessages(struct captions *self)
 {
     char ErrorText[256], Sdate[1+AMS_DATESIZE], Edate[1+AMS_DATESIZE], DBuf[400];
     long numfound, j, orgpos;
     struct CaptionCache *cc;
-    long year, month, day, hour, min, sec, wday, gtm;
+    int year, month, day, hour, min, sec, wday;
+    long gtm;
 
     captions_GuaranteeFetchedRange(self, 0, self->FolderSize);
     if (self->MarkCount > 0) {
@@ -1215,8 +1151,7 @@ struct captions *self;
 
 static char LastClassification[1+MAXPATHLEN] = AMS_DEFAULTMAILDIR;
 
-char *captions__GetLastClassification(self)
-struct captions *self;
+char * captions__GetLastClassification(struct captions *self)
 {
     if ((self->ShortName) && !strcmp(LastClassification, self->ShortName)) {
 	return("");
@@ -1224,17 +1159,13 @@ struct captions *self;
     return(LastClassification);
 }
 
-SetLastClassification(self, lc)
-struct captions *self;
-char *lc;
+int SetLastClassification(struct captions *self, char *lc)
 {
     strncpy(LastClassification, lc, sizeof(LastClassification));
 }
 
 
-void captions__BackUpCheckingMarks(ci, InsistOnMark)
-struct captions *ci;
-Boolean InsistOnMark;
+void captions__BackUpCheckingMarks(struct captions *ci, boolean InsistOnMark)
 {
 	int pos, len, thisCUID, whichcaption;
 	struct environment *env;
@@ -1274,9 +1205,7 @@ restart:
 	return;
 }
 
-void captions__AlterFileIntoMenus(self, Shrink)
-struct captions *self;
-boolean Shrink;
+void captions__AlterFileIntoMenus(struct captions *self, boolean Shrink)
 {
     if (Shrink) {
 	if (self->MenusExpanded) {
@@ -1291,8 +1220,7 @@ boolean Shrink;
     }
 }
 
-void captions__MarkCurrent(ci)
-struct captions *ci;
+void captions__MarkCurrent(struct captions *ci)
 {
     int whichcaption, linestart, linelen;
     char ErrorText[256];
@@ -1316,10 +1244,7 @@ struct captions *ci;
     message_DisplayString(NULL, 10, ErrorText);
 }
 
-void captions__Redisplay(self, Mode, contenttype)
-struct captions *self;
-int Mode;
-char *contenttype;
+void captions__Redisplay(struct captions *self, int Mode, char *contenttype)
 {
     int dot, top, len;
     struct t822view *bod;
@@ -1338,9 +1263,7 @@ char *contenttype;
     ams_WaitCursor(FALSE);
 }
 
-void captions__CloneMessage(self, Code)
-struct captions *self;
-int Code;
+void captions__CloneMessage(struct captions *self, int Code)
 {
     int cuid, MayModify;
     char NewDirName[1+MAXPATHLEN], SaveDirName[1+MAXPATHLEN], ErrorText[256];
@@ -1388,9 +1311,7 @@ int Code;
     return;
 }
 
-void captions__SendMessage(ci, code)
-struct captions *ci;
-int code; 
+void captions__SendMessage(struct captions *ci, int code)
 {
     char FileName[MAXPATHLEN+1];
     struct sendmessage *sm;
@@ -1426,16 +1347,12 @@ int code;
     return;
 }
 
-void captions__SetFolders(self, f)
-struct captions *self;
-struct folders *f;
+void captions__SetFolders(struct captions *self, struct folders *f)
 {
     self->myfold = f;
 }
 
-struct t822view *
-captions__NewBodiesInNewWindow(self)
-struct captions *self;
+struct t822view * captions__NewBodiesInNewWindow(struct captions *self)
 {
     struct t822view *tv = t822view_New();
     struct text *t = text_New();
@@ -1448,9 +1365,7 @@ struct captions *self;
     return(tv);
 }
 
-struct folders *
-captions__NewFoldersInNewWindow(self)
-struct captions *self;
+struct folders * captions__NewFoldersInNewWindow(struct captions *self)
 {
     struct folders *f = folders_New();
 
@@ -1460,8 +1375,7 @@ struct captions *self;
     return(f);
 }
 
-struct folders *captions__GetFolders(self)
-struct captions *self;
+struct folders * captions__GetFolders(struct captions *self)
 {
     if (!self->myfold) {
 	captions_NewFoldersInNewWindow(self);
@@ -1469,8 +1383,7 @@ struct captions *self;
     return(self->myfold);
 }
 
-struct t822view *captions__GetBodView(self)
-struct captions *self;
+struct t822view * captions__GetBodView(struct captions *self)
 {
     if (!self->BodView) {
 	captions_NewBodiesInNewWindow(self);
@@ -1479,24 +1392,20 @@ struct captions *self;
 }
 
 
-InitKeysMenus(captions)
-struct captions *captions;
+int InitKeysMenus(struct captions *captions)
 {
     captions->privkeys = keystate_Create(captions, captions_privkeymap);
     captions->privmenus = menulist_DuplicateML(captions_privmenulist, captions);
 }
 
-boolean captions__InitializeClass(classID) 
-struct classheader *classID;
+boolean captions__InitializeClass(struct classheader *classID)
 {
     class_Load("textview"); /* make sure the textview is loaded first */
     OneTimeInitKeyMenus(&captions_classinfo);
     return(TRUE);
 }
 
-boolean captions__InitializeObject(c, captions)
-struct classheader *c;
-struct captions *captions;  
+boolean captions__InitializeObject(struct classheader *c, struct captions *captions)
 {
     char *fontname;
     int fontsize, mailfontbloat = (amsutil_GetOptBit(EXP_WHITESPACE)) ? 2 : 0;
@@ -1598,17 +1507,14 @@ struct captions *captions;
     return(TRUE);
 }
 
-FinalizeProcStuff(self)
-struct captions *self;
+int FinalizeProcStuff(struct captions *self)
 {
     keystate_Destroy(self->privkeys);
     menulist_Destroy(self->privmenus);
     cursor_Destroy(self->mycursor);
 }
 
-void captions__FinalizeObject(c, self)
-struct classheader *c;
-struct captions *self;
+void captions__FinalizeObject(struct classheader *c, struct captions *self)
 {
     ams_RemoveCheckpointCaption(self);
     text_Destroy(self->CaptText);
@@ -1652,18 +1558,14 @@ struct captions *self;
 }
 
 
-void captions__PostMenus(self, ml)
-struct captions *self;
-struct menulist *ml;
+void captions__PostMenus(struct captions *self, struct menulist *ml)
 {
     menulist_ClearChain(self->privmenus);
     if (ml) menulist_ChainAfterML(self->privmenus, ml, ml);
     super_PostMenus(self, self->privmenus);
 }
 
-void captions__PostKeyState(self, ks)
-struct captions *self;
-struct keystate *ks;
+void captions__PostKeyState(struct captions *self, struct keystate *ks)
 {
     self->privkeys->next = NULL;
     if (amsutil_GetOptBit(EXP_KEYSTROKES)) {
@@ -1674,11 +1576,7 @@ struct keystate *ks;
     }
 }
 
-void
-captions__ActOnMarkedMessages(ci, Code, GivenName)
-struct captions *ci;
-int Code;
-char *GivenName; /* Not always supplied */
+void captions__ActOnMarkedMessages(struct captions *ci, int Code, char *GivenName)
 {
     char ErrorText[256];
     struct CaptionCache *hc;

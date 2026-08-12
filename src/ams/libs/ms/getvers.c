@@ -32,12 +32,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif
 
 #include <ms.h>
+#include <string.h>
 
 extern char MS_VersionString[];
 
-MS_GetVersion(Buf, lim) 
-char *Buf;
-int lim;
+int MS_GetVersion(char *Buf, int lim)
 {
     debug(1, ("MS_GetVersion\n"));
     debug(4, ("Version number is %s\n", MS_VersionString));

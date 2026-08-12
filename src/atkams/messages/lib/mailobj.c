@@ -35,6 +35,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
  
 #include <class.h>
 #include <andrewos.h>
+#include <stdlib.h>
 #include <mailobj.eh>
 #include <envrment.ih>
 #include <amsutil.ih>
@@ -48,13 +49,19 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <view.ih>
 #include <sys/param.h>
 #include <fdphack.h>
+
+static int char64(char c);
+static int hexchar(char c);
 #include <ctype.h>
+static void MetaOutput(FILE *fp, struct mailobj *self);
+static void WriteCtypeNicely(FILE *fp, char *ct);
+static void WriteEncoded(struct mailobj *self, FILE *fp);
+static void fputsquoting(char *s, FILE *fp);
+static void output64chunk(unsigned int c1, unsigned int c2, unsigned int c3, int pads, FILE *outfile);
 #undef popen /* BOGUS -- should be handled by fdphack */
 #undef pclose /* ditto */
 
-static void MetaOutput(fp, self)
-FILE *fp;
-struct mailobj *self;
+static void MetaOutput(FILE *fp, struct mailobj *self)
 {
     char buf[1000];
     int loc = 0;
@@ -136,9 +143,7 @@ struct mailobj *self;
     if (self->t) text_NotifyObservers(self->t, 0);
 }
 
-boolean mailobj__InitializeObject(c, self)
-struct classheader *c;
-struct mailobj *self;
+boolean mailobj__InitializeObject(struct classheader *c, struct mailobj *self)
 {
     self->ContentType = NULL;
     self->RawData = (unsigned char *) NULL;
@@ -151,31 +156,20 @@ struct mailobj *self;
     return(TRUE);
 }
 
-void mailobj__FinalizeObject(c, self)
-struct classheader *c;
-struct mailobj *self;
+void mailobj__FinalizeObject(struct classheader *c, struct mailobj *self)
 {
     if (self->ContentType) free(self->ContentType);
     if (self->RawData) free(self->RawData);
     if (self->fp) im_RemoveFileHandler(self->fp);
 }
 
-void
-mailobj__SetTextInsertion(self, t, env)
-struct mailobj *self;
-struct text *t;
-struct environment *env;
+void mailobj__SetTextInsertion(struct mailobj *self, struct text *t, struct environment *env)
 {
     self->t = t;
     self->env = env;
 }
 
-void
-mailobj__ReadAlienMail(self, ContentType, ContentEncoding, fp, StopAtEndData)
-struct mailobj *self;
-char *ContentType, *ContentEncoding;
-FILE *fp;
-int StopAtEndData;
+void mailobj__ReadAlienMail(struct mailobj *self, char *ContentType, char *ContentEncoding, FILE *fp, boolean StopAtEndData)
 {
     int Alloced = 0, Used = 0, len, needsencoding=0;
 #define CHUNKSIZE 5000
@@ -239,11 +233,9 @@ int StopAtEndData;
     self->EncodingNeeded = ((needsencoding == 0) || ((Used/needsencoding) >= 10)) ? ENC_QP : ENC_B64;
 }
 
-static void WriteEncoded();
+static void WriteEncoded(struct mailobj *self, FILE *fp);
 
-void
-mailobj__RunMetamail(self)
-struct mailobj *self;
+void mailobj__RunMetamail(struct mailobj *self)
 {
     char TmpFileName[1+MAXPATHLEN], LineBuf[1000], Cmd[1+MAXPATHLEN],
     Msg[50+MAXPATHLEN];
@@ -259,7 +251,7 @@ struct mailobj *self;
 	fclose(fp);
 	sprintf(Cmd, "metamail -m messages -z -x -d -q %s 2>&1", TmpFileName); 
 	fp = (FILE *) popen(Cmd, "r");
-	im_AddFileHandler(fp, MetaOutput, self, 0);
+	im_AddFileHandler(fp, (procedure)MetaOutput, self, 0);
 	self->fp = fp;
     }
 }
@@ -267,8 +259,7 @@ struct mailobj *self;
 static char basis_hex[] = "0123456789ABCDEF";
 static char basis_64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-static int hexchar(c)
-char c;
+static int hexchar(char c)
 {
     char *s;
     if (islower(c)) c = toupper(c);
@@ -277,12 +268,7 @@ char c;
     return(-1);
 }
 
-void
-mailobj__TranslateFrom64(c, stuff, len, fp)
-struct classheader *c;
-char *stuff;
-int len;
-FILE *fp;
+void mailobj__TranslateFrom64(struct classheader *c, char *stuff, int len, FILE *fp)
 {
     int c1, c2, c3, c4;
     int bytesleft;
@@ -317,20 +303,14 @@ FILE *fp;
     }
 }
 
-static int char64(c)
-char c;
+static int char64(char c)
 {
     char *s = (char *) index(basis_64, c);
     if (s) return(s-basis_64);
     return(-1);
 }
 
-void
-mailobj__TranslateFromQP(c, stuff, len, fp)
-struct classheader *c;
-char *stuff;
-int len;
-FILE *fp;
+void mailobj__TranslateFromQP(struct classheader *c, char *stuff, int len, FILE *fp)
 {
     int c1, c2;
     int bytesleft;
@@ -353,11 +333,7 @@ FILE *fp;
     }
 }
 
-long mailobj__Write(self, file, writeID, level)
-struct mailobj *self;
-FILE *file;
-long writeID;
-int level;
+long mailobj__Write(struct mailobj *self, FILE *file, long writeID, int level)
 {
     if (mailobj_GetWriteID(self) != writeID)  {
 	mailobj_SetWriteID(self,writeID);
@@ -368,9 +344,7 @@ int level;
     return mailobj_GetID(self);
 }
 
-static void fputsquoting(s, fp)
-char *s;
-FILE *fp;
+static void fputsquoting(char *s, FILE *fp)
 {
     char *end = s + strlen(s) - 1;
     while (isspace(*end) && end > s) --end;
@@ -400,9 +374,7 @@ FILE *fp;
 }
         
 
-static void WriteCtypeNicely(fp, ct)
-FILE *fp;
-char *ct;
+static void WriteCtypeNicely(FILE *fp, char *ct)
 {
     char *semi, *slash, *eq, *s;
 
@@ -437,10 +409,7 @@ char *ct;
     fputs("\n", fp);
 }
 
-static void output64chunk(c1, c2, c3, pads, outfile)
-unsigned int c1, c2, c3;
-int pads;
-FILE *outfile;
+static void output64chunk(unsigned int c1, unsigned int c2, unsigned int c3, int pads, FILE *outfile)
 {
     putc(basis_64[c1>>2], outfile);
     putc(basis_64[((c1 & 0x3)<< 4) | ((c2 & 0xF0) >> 4)], outfile);
@@ -456,9 +425,7 @@ FILE *outfile;
     }
 }
 
-static void WriteEncoded(self, fp)
-struct mailobj *self;
-FILE *fp;
+static void WriteEncoded(struct mailobj *self, FILE *fp)
 {
     char *s;
     int CodeToUse, needtoencode;
@@ -524,13 +491,7 @@ FILE *fp;
     fputs("\n", fp);
 }
 
-long mailobj__WriteOtherFormat(self, file, writeID, level, usagetype, boundary)
-struct mailobj *self;
-FILE *file;
-long writeID;
-int level;
-int usagetype;
-char *boundary;
+long mailobj__WriteOtherFormat(struct mailobj *self, FILE *file, long writeID, int level, int usagetype, char *boundary)
 {
     FILE *tmpfp;
     char Fnam[1000];
@@ -543,10 +504,7 @@ char *boundary;
     return(self->header.dataobject.id);
 }
 
-long mailobj__Read(self, file, id)
-struct mailobj *self;
-FILE *file;
-long id;
+long mailobj__Read(struct mailobj *self, FILE *file, long id)
 {
     char LineBuf[200], Ctype[2000], Cenc[2000], Descrip[2000], c, *ctp;
 
@@ -588,18 +546,13 @@ long id;
     mailobj_ReadAlienMail(self, Ctype, Cenc, file, TRUE);
 } 		
 
-char *mailobj__ViewName(self)
-struct mailobj *self;
+char * mailobj__ViewName(struct mailobj *self)
 {
     return "mailobjv";
 }
 
 
-void mailobj__ToQP(classID, s, len, outfile)
-struct classheader *classID;
-unsigned char *s; /* Lying to avoid high-bit problems */
-int len;
-FILE *outfile;
+void mailobj__ToQP(struct classheader *classID, char *s, int len, FILE *outfile)
 {
     int ct=0, prevc=255;
     unsigned char *end=s+len;

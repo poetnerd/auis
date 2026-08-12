@@ -37,8 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
  */
 #include "tiffioP.h"
 
-TIFFFlush(tif)
-	TIFF *tif;
+int TIFFFlush(TIFF *tif)
 {
 
 	if (tif->tif_mode != O_RDONLY) {
@@ -54,8 +53,7 @@ TIFFFlush(tif)
 /*
  * Flush buffered data to the file.
  */
-TIFFFlushData(tif)
-	TIFF *tif;
+int TIFFFlushData(TIFF *tif)
 {
 	if ((tif->tif_flags & TIFF_BEENWRITING) == 0)
 		return (0);

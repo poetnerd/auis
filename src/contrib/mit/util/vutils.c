@@ -66,6 +66,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <envrment.ih>
 
 #include <vutils.eh>
+static void forkhelpproc(struct view *self, long key);
+static void helpDeath(int pid, struct view *self, union wait *status);
 
 #define DIALOG 100
 #define MESSAGE 0
@@ -78,10 +80,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 
 #define H_D_STRING "Help Could not start. It was "
 
-static void helpDeath (pid, self, status)
-int pid;
-struct view *self;
-union wait *status;
+static void helpDeath(int pid, struct view *self, union wait *status)
 {
     char buf[128],*em,*statustostr();
 
@@ -95,9 +94,7 @@ union wait *status;
     }
 }
 
-static void forkhelpproc (self, key)
-struct view *self;
-long key;
+static void forkhelpproc(struct view *self, long key)
 {
     char *helpname = environ_AndrewDir("/bin/help");
     int pid, fd;
@@ -114,14 +111,13 @@ long key;
 	    break;
 	default:
 	    message_DisplayString(self, MESSAGE, "A Help window should appear shortly.");
-	    im_AddZombieHandler(pid, helpDeath, (long)self);
+	    im_AddZombieHandler(pid, (procedure) helpDeath, self);
 	    break;
     }
     return;
 }
 
-boolean vutils__InitializeClass(classID)
-struct classheader *classID;
+boolean vutils__InitializeClass(struct classheader *classID)
 {
     static struct bind_Description compat_fns[] = {
 	{"vutils-fork-help", NULL, 0, NULL, 0, 0, forkhelpproc, "Call Andrew help in a new process.", "vutils"},

@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #endif
 
 #include <ctype.h>
+#include <stdlib.h>
 #include <andrewos.h>
 #include <class.h>
 #include <text822.eh>
@@ -49,17 +50,50 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <ams.ih>
 #include <message.ih>
 #include <ams.h>
+#include <mimepart.h>
 #include <fdphack.h>
+static int FindParam(char *ct, char *paramname, char *ValueBuf);
+static char * GetHeader(char *LineBuf, int lim, FILE *fp);
+static int InsertProperObject(struct text822 *d, FILE *fp, int *ShowPos, char *ctype, char *encoding, char *descrip);
+static int ParseEncoding(char *enc);
+static int PlainAsciiText(char *s, char *currentcharset);
+static int RotateThirteen(struct text *d, int start);
+static int char64();
+static int getc64(FILE *fp);
+static int getcdecoding(FILE *fp, int code);
+static int getcqp(FILE *fp);
+static int hexchar();
+static int ignoretoken(char *t);
+static char * paramend(char *s);
+static char * translate(char *t);
+static int ungetc64(int c, FILE *fp);
+static int ungetcdecoding(int c, FILE *fp, int code);
+static int ungetcqp(int c, FILE *fp);
 
 static char *EmptyMsgString = "<empty message>";
 static struct style *FixedStyle, *BoldStyle, *FormatStyle, *TinyStyle, *GlobalStyle;
 static char *myfontname = NULL;
 static int myfontsize, UsingFootNote, PrintMinorHeaders;
-static char *fgetsdecoding(), *UnquoteString();
+static char *fgetsdecoding(char *buf, int size, FILE *fp, int code), *UnquoteString(char *s);
+static boolean ReadMessage(struct text822 *d, FILE *fp, int Mode, char *ContentTypeOverride, int *len, boolean IsReallyTextObject, int *BodyStart, int *IgnorePosition, struct text *AuxHeadText, int InsideRecursion, int AlternativeNumber, int JunkAtEnd, int DisplayAllHeaders);
+static int RotateThirteen(struct text *d, int start);
+static int FindParam(char *ct, char *paramname, char *ValueBuf);
+static int InsertProperObject(struct text822 *d, FILE *fp, int *ShowPos, char *ctype, char *encoding, char *descrip);
+static int ParseEncoding(char *enc);
+static int getcdecoding(FILE *fp, int code);
+static int ungetcdecoding(int c, FILE *fp, int code);
+static int getc64(FILE *fp);
+static int ungetc64(int c, FILE *fp);
+static int getcqp(FILE *fp);
+static int ungetcqp(int c, FILE *fp);
+static int hexchar();
+static int char64();
+static int PlainAsciiText(char *s, char *currentcharset);
+static int ForceMetamail(char *ctype);
+static int InsertDecodedText(struct text822 *d, int *ShowPos, unsigned char *bytes, long len, char *charset);
+static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename, char *ctype, long nbytes);
 
-boolean text822__InitializeObject(c, self)
-struct classheader *c;
-struct text822 *self;
+boolean text822__InitializeObject(struct classheader *c, struct text822 *self)
 {
     if (text822_ReadTemplate(self, "messages", FALSE)) {
 	fprintf(stderr, "Could not read messages template!\n");
@@ -75,8 +109,7 @@ struct text822 *self;
     return(TRUE);
 }
 
-boolean text822__InitializeClass(c)
-struct classheader *c;
+boolean text822__InitializeClass(struct classheader *c)
 {
     UsingFootNote = environ_GetProfileSwitch("usefootnote", TRUE);
     PrintMinorHeaders = environ_GetProfileSwitch("printminorheaders", TRUE);
@@ -105,10 +138,7 @@ struct classheader *c;
     return(TRUE);
 }
 
-long text822__Read(self, fp, id)
-struct text822 *self;
-FILE *fp;
-long id;
+long text822__Read(struct text822 *self, FILE *fp, long id)
 {
     int len, bs, ig;
 
@@ -120,11 +150,7 @@ long id;
     return(dataobject_BADFORMAT);
 }
 
-long text822__ReadSubString(self, pos, fp, quoteCharacters)
-struct text822 *self;
-long pos;
-FILE *fp;
-boolean quoteCharacters;
+long text822__ReadSubString(struct text822 *self, long pos, FILE *fp, boolean quoteCharacters)
 {
 #ifdef OLDCODE
     int len, bs, ig;
@@ -136,8 +162,7 @@ boolean quoteCharacters;
 #endif
 }
 
-char *StripWhiteSpace( t )
-char *t;
+char * StripWhiteSpace(char *t)
 {
     boolean inquotes = FALSE;
     char *s = t;
@@ -162,10 +187,7 @@ char *t;
     return t;
 }
 
-static char *GetHeader(LineBuf, lim, fp)
-char *LineBuf;
-int lim;
-FILE *fp;
+static char * GetHeader(char *LineBuf, int lim, FILE *fp)
 {
     char *s, *lb;
     int c;
@@ -175,12 +197,28 @@ FILE *fp;
     while (TRUE) {
 	s = fgets(lb, lim, fp);
 	if (!s) return(s);
-	if (lb[0] == '\n') return(s); /* end of headers, no peeking ahead! */
+	len = strlen(lb);
+	if (len >= 2 && lb[len-2] == '\r' && lb[len-1] == '\n') {
+	    /* CRLF wire format (real IMAP-fetched mail): drop the \r so
+	       every physical line this function assembles ends in a bare
+	       \n, matching what the rest of ReadMessage -- and the ATK
+	       Text object it inserts into -- assumes. Left in place, the
+	       \r becomes a literal, visible character wherever this line
+	       gets inserted, which is what produced the "double spaced"
+	       header display (same bug class as the CRLF fix already
+	       made to InsertDecodedText for body text). A folded header
+	       can span several fgets() calls concatenated into one
+	       LineBuf, so this has to run on every physical line, not
+	       just once at the end. */
+	    lb[len-2] = '\n';
+	    lb[len-1] = '\0';
+	    --len;
+	}
+	if (lb[0] == '\n' || (lb[0] == '\r' && lb[1] == '\n')) return(s); /* end of headers (CRLF or LF), no peeking ahead! */
 	c = getc(fp);
 	if (c == EOF) return(s);
 	ungetc(c, fp);
 	if (c == ' ' || c == '\t') {
-	    len = strlen(lb);
 	    lb += len;
 	    lim -= len;
 	    if (lim <= 1) return(NULL);	/* leave room for \n */
@@ -190,17 +228,10 @@ FILE *fp;
     }
 }
 
-boolean text822__ReadIntoText(ch, d, fp, Mode, ContentTypeOverride, len, IsReallyTextObject, BodyStart, IgnorePosition, AuxHeadText)
-struct classheader *ch;
-struct text822 *d;
-FILE *fp;
-int Mode;
-char *ContentTypeOverride;
-int *len;
-boolean IsReallyTextObject;
-int *BodyStart, *IgnorePosition;
-struct text *AuxHeadText;
+boolean text822__ReadIntoText(struct classheader *ch, struct text *d_generic, FILE *fp, int Mode, char *ContentTypeOverride, int *len, boolean IsReallyTextObject, int *BodyStart, int *IgnorePosition, struct text *AuxHeadText)
 {
+    struct text822 *d = (struct text822 *) d_generic;
+
     if (text822_ReadTemplate(d, "messages", FALSE)) {
 	fprintf(stderr, "Could not read messages template!\n");
     }
@@ -209,8 +240,7 @@ struct text *AuxHeadText;
 }
 
 /* Auxilliary routines for text/richtext */
-static ignoretoken(t)
-char *t;
+static int ignoretoken(char *t)
 {
     if (*t == '/') ++t;
     if (!strcmp(t, "us-ascii")) return(1);
@@ -218,8 +248,7 @@ char *t;
     return(0);
 }
 
-static char *translate(t)
-char *t;
+static char * translate(char *t)
 {
     if (!strcmp(t, "fixed")) return("typewriter");
     if (!strcmp(t, "excerpt")) return("quotation");
@@ -227,16 +256,7 @@ char *t;
     return(t);
 }
 
-static boolean ReadMessage(d, fp, Mode, ContentTypeOverride, len, IsReallyTextObject, BodyStart, IgnorePosition, AuxHeadText, InsideRecursion, AlternativeNumber, JunkAtEnd, DisplayAllHeaders)
-struct text822 *d;
-FILE *fp;
-int Mode;
-char *ContentTypeOverride;
-int *len;
-boolean IsReallyTextObject;
-int *BodyStart, *IgnorePosition;
-struct text *AuxHeadText;
-int InsideRecursion, AlternativeNumber, JunkAtEnd, DisplayAllHeaders;
+static boolean ReadMessage(struct text822 *d, FILE *fp, int Mode, char *ContentTypeOverride, int *len, boolean IsReallyTextObject, int *BodyStart, int *IgnorePosition, struct text *AuxHeadText, int InsideRecursion, int AlternativeNumber, int JunkAtEnd, int DisplayAllHeaders)
 {
     struct environment *et;
     char LineBuf[10000], ScribeFormatVersion[100], *ColonLocation, c, ContentType[400], ContentEncoding[50], ContentDescription[200], Subject[200];
@@ -319,7 +339,7 @@ restart:
     while (GetHeader(LineBuf, sizeof(LineBuf), fp)) {
 	linelen = strlen(LineBuf);
 	c = LineBuf[0];
-	if (c == '\n') break; /* done with headers */
+	if (c == '\n' || (c == '\r' && LineBuf[1] == '\n')) break; /* done with headers (CRLF or LF) */
 	if (c == ' ' || c == '\t') {
 	    ColonOffset = 0;
 	} else {
@@ -710,6 +730,28 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 	int Done = 0;
 	int dum = 0;
 	int IsAlternative = 0, IsFinalPart = 0, IsDigest = 0;
+	/* multipart/alternative only: each part is parsed (and its
+	   Content-Transfer-Encoding decoded) via mimepart instead of
+	   being rendered immediately, so all of them can be seen
+	   before picking a winner below -- prefer text/plain, else
+	   text/html, else the first part. 32 alternatives is far more
+	   than any real message has; extras beyond that are silently
+	   dropped from consideration rather than overflowing anything. */
+	struct mimepart *AltParts[32];
+	int AltCount = 0;
+	/* multipart/mixed (and any other multipart that isn't
+	   alternative or digest) similarly: parts are parsed via
+	   mimepart rather than rendered immediately, so the first
+	   displayable text part can be found (it need not be the
+	   first part on the wire) and rendered, with every other part
+	   listed as a one-line "[attachment: ...]" placeholder
+	   afterward instead of today's button-per-part. Digest is left
+	   on its original immediate-render path below (its parts are
+	   nested messages, not attachments -- folding it into this
+	   scheme would just list every digest message as an
+	   "attachment" and render none of them). */
+	struct mimepart *MixedParts[64];
+	int MixedCount = 0;
 
 	if (!amsutil_lc2strncmp("multipart/alternative", ContentTypeOverride, 21)) {
 	    IsAlternative = 1;
@@ -770,19 +812,192 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 		IsFinalPart = 1;
 	    }
 	    if (IsAlternative) {
-		if (IsFinalPart) {
-		    /* Hack to make the alternatives show up AFTER the primary */
-		    ReadMessage(d, tmpfp, Mode, NULL, len, IsReallyTextObject, &dum, &dum, NULL, 1, 0, 2*(IsAlternative) - 1 + JunkAtEnd, 0);
-		} else {
-		    ReadMessage(d, tmpfp, Mode, NULL, len, IsReallyTextObject, &dum, &dum, NULL, 1, IsAlternative, JunkAtEnd, 0);
+		if (AltCount < (int) (sizeof(AltParts) / sizeof(AltParts[0]))) {
+		    rewind(tmpfp);
+		    AltParts[AltCount++] = mimepart_ParseMessageFile(tmpfp);
 		}
-	    } else {
+	    } else if (IsDigest) {
 		ReadMessage(d, tmpfp, Mode, NULL, len, IsReallyTextObject, &dum, &dum, NULL, 1, 0, JunkAtEnd, 0);
+	    } else {
+		if (MixedCount < (int) (sizeof(MixedParts) / sizeof(MixedParts[0]))) {
+		    rewind(tmpfp);
+		    MixedParts[MixedCount++] = mimepart_ParseMessageFile(tmpfp);
+		}
 	    }
 	    fclose(tmpfp);
 	    if (IsAlternative) IsAlternative++;
 	} while (!feof(fp) && !IsFinalPart);
-	unlink(TmpFileName); 
+	if (IsAlternative) {
+	    /* pick the winner: first exact text/plain sibling; else
+	       the first text/html; else just the first part -- mirrors
+	       mimepart_SelectAlternative(), applied here across parts
+	       that were parsed independently rather than as one
+	       mimepart tree (the boundary-scan above already isolates
+	       each part into its own temp file, so there was no single
+	       buffer to hand mimepart_Parse as one multipart entity) */
+	    struct mimepart *winner = NULL;
+	    int wi;
+	    for (wi = 0; wi < AltCount; ++wi) {
+		if (AltParts[wi] && !strcmp(AltParts[wi]->type, "text/plain")) { winner = AltParts[wi]; break; }
+	    }
+	    if (!winner) {
+		for (wi = 0; wi < AltCount; ++wi) {
+		    if (AltParts[wi] && !strcmp(AltParts[wi]->type, "text/html")) { winner = AltParts[wi]; break; }
+		}
+	    }
+	    if (!winner && AltCount > 0) winner = AltParts[0];
+
+	    if (winner && winner->body && !strcmp(winner->type, "text/plain")) {
+		InsertDecodedText(d, &ShowPos, winner->body, winner->bodylen, mimepart_GetParam(winner, "charset"));
+	    } else if (winner && winner->body && !strcmp(winner->type, "text/html")) {
+		/* No text/plain sibling, but there's html: the
+		   deliberately dumb strip shim (see
+		   revival/doc/mime-display-prompt.md), not inline HTML
+		   rendering -- that's the separate HTML-rendering
+		   objective's htmlview work. */
+		char *stripped = mimepart_HtmlToText((char *) winner->body, winner->bodylen);
+		InsertDecodedText(d, &ShowPos, (unsigned char *) stripped, (long) strlen(stripped), mimepart_GetParam(winner, "charset"));
+		free(stripped);
+	    } else if (winner && winner->body) {
+		/* Neither text/plain nor text/html was on offer (e.g.
+		   an alternative set of just an image and an audio
+		   clip): fold the chosen, already CTE-decoded
+		   alternative into one clickable object instead of
+		   today's one-metamail-button-per-alternative pile. */
+		char AltTmpName[1000];
+		FILE *btmpfp;
+		struct mailobj *mo = mailobj_New();
+		struct environment *env;
+		char Label[200];
+		if (mo) {
+		    ams_CUI_GenLocalTmpFileName(ams_GetAMS(), AltTmpName);
+		    btmpfp = (FILE *) fopen(AltTmpName, "w");
+		    if (btmpfp) {
+			fwrite(winner->body, sizeof(char), winner->bodylen, btmpfp);
+			fclose(btmpfp);
+			btmpfp = (FILE *) fopen(AltTmpName, "r");
+			if (btmpfp) {
+			    text822_AlwaysInsertCharacters(d, ShowPos, "\n", 1);
+			    ++ShowPos;
+			    env = text822_AlwaysAddView(d, ShowPos, "mailobjv", mo);
+			    ++ShowPos;
+			    text822_AlwaysInsertCharacters(d, ShowPos, "\n", 1);
+			    ++ShowPos;
+			    mailobj_SetTextInsertion(mo, d, env);
+			    mailobj_ReadAlienMail(mo, winner->type, NULL, btmpfp, FALSE);
+			    fclose(btmpfp);
+			    if (ContentDescription[0]) {
+				sprintf(Label, "%s ('%s' format)", ContentDescription, winner->type);
+			    } else if (Subject[0]) {
+				sprintf(Label, "%s ('%s' format)", Subject, winner->type);
+			    } else {
+				strcpy(Label, "Object of type '");
+				strncat(Label, winner->type, sizeof(Label) - 25);
+				strcat(Label, "'");
+			    }
+			    mailobj_SetLabel(mo, 0, Label);
+			}
+		    }
+		    unlink(AltTmpName);
+		}
+	    }
+	    for (wi = 0; wi < AltCount; ++wi) {
+		mimepart_Free(AltParts[wi]);
+	    }
+	}
+	if (!IsAlternative && !IsDigest) {
+	    /* find the first displayable text part: text/plain or
+	       text/html directly, or -- for something like an HTML
+	       mail with an attachment, which MUAs send as
+	       multipart/mixed[multipart/alternative[...], attachment]
+	       -- whichever mimepart_SelectAlternative() would pick out
+	       of a nested multipart/alternative sibling */
+	    int mi, textidx = -1, textIsHtml = 0;
+	    const struct mimepart *textpart = NULL;
+
+	    for (mi = 0; mi < MixedCount; ++mi) {
+		struct mimepart *p = MixedParts[mi];
+		if (!p) continue;
+		if (!strcmp(p->type, "text/plain")) {
+		    textidx = mi; textpart = p; textIsHtml = 0; break;
+		}
+		if (!strcmp(p->type, "text/html")) {
+		    textidx = mi; textpart = p; textIsHtml = 1; break;
+		}
+		if (mimepart_IsMultipart(p) && !strcmp(p->type, "multipart/alternative")) {
+		    const struct mimepart *sel = mimepart_SelectAlternative(p);
+		    if (sel && sel->body && !strcmp(sel->type, "text/plain")) {
+			textidx = mi; textpart = sel; textIsHtml = 0; break;
+		    } else if (sel && sel->body && !strcmp(sel->type, "text/html")) {
+			textidx = mi; textpart = sel; textIsHtml = 1; break;
+		    }
+		}
+	    }
+	    if (textpart && textpart->body) {
+		if (textIsHtml) {
+		    char *stripped = mimepart_HtmlToText((char *) textpart->body, textpart->bodylen);
+		    InsertDecodedText(d, &ShowPos, (unsigned char *) stripped, (long) strlen(stripped), mimepart_GetParam(textpart, "charset"));
+		    free(stripped);
+		} else {
+		    InsertDecodedText(d, &ShowPos, textpart->body, textpart->bodylen, mimepart_GetParam(textpart, "charset"));
+		}
+	    }
+	    for (mi = 0; mi < MixedCount; ++mi) {
+		struct mimepart *p = MixedParts[mi];
+		char *fname;
+		if (!p || mi == textidx) continue;
+		fname = (char *) mimepart_GetDispParam(p, "filename");
+		if (!fname) fname = (char *) mimepart_GetParam(p, "name");
+		InsertAttachmentLine(d, &ShowPos, fname, p->type, p->bodylen);
+	    }
+	    for (mi = 0; mi < MixedCount; ++mi) {
+		mimepart_Free(MixedParts[mi]);
+	    }
+	}
+	unlink(TmpFileName);
+    } else if (!ForceMet && !AlternativeNumber && !amsutil_lc2strncmp("text/html", ContentTypeOverride, 9)) {
+	/* html-only: nothing better was available (a sibling
+	   multipart/alternative branch above already prefers
+	   text/plain when one exists). Deliberately dumb
+	   strip-and-render shim -- see
+	   revival/doc/mime-display-prompt.md -- scheduled for
+	   replacement by the separate HTML-rendering objective's
+	   htmlview work; kept small and isolated so it can be
+	   deleted. Decoded lines are accumulated (respecting the same
+	   \\enddata{text822 sentinel the plain-ASCII branch below
+	   honors) rather than inserted one at a time, since the strip
+	   pass needs to see the whole body at once. */
+	int EncodingCode = ParseEncoding(ContentEncoding);
+	char *msgcharset = NULL;
+	char *rawbuf = NULL;
+	long rawlen = 0, rawcap = 0;
+
+	if (!FindParam(ContentTypeOverride, "charset", charsetbuf)) {
+	    msgcharset = charsetbuf;
+	}
+	while (fgetsdecoding(LineBuf, sizeof(LineBuf), fp, EncodingCode)) {
+	    if (!strncmp(LineBuf, "\\enddata{text822", 16)) {
+		SawEndData = TRUE;
+		break;
+	    }
+	    linelen = strlen(LineBuf);
+	    if (rawlen + linelen + 1 > rawcap) {
+		char *nb;
+		rawcap = rawcap ? rawcap * 2 : 4000;
+		if (rawcap < rawlen + linelen + 1) rawcap = rawlen + linelen + 1;
+		nb = realloc(rawbuf, rawcap);
+		if (!nb) break;
+		rawbuf = nb;
+	    }
+	    bcopy(LineBuf, rawbuf + rawlen, linelen);
+	    rawlen += linelen;
+	}
+	if (rawbuf) {
+	    char *stripped = mimepart_HtmlToText(rawbuf, rawlen);
+	    InsertDecodedText(d, &ShowPos, (unsigned char *) stripped, (long) strlen(stripped), msgcharset);
+	    free(stripped);
+	    free(rawbuf);
+	}
     } else if (!AlternativeNumber && sfmttype
 		&& !InsertProperObject(d, fp, &ShowPos, sfmttype, ContentEncoding, ContentDescription[0] ? ContentDescription : Subject)) {
 	/* All was handled by InsertProperObject */
@@ -790,14 +1005,22 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 		(!ContentTypeOverride[0]
 		 || PlainAsciiText(ContentTypeOverride, currentcharset))) {
 	int EncodingCode = ParseEncoding(ContentEncoding);
+	char *msgcharset = NULL;
+	/* a UTF-8 line's bytes can't contain a literal '\n' (0x0A) --
+	   every continuation/lead byte of a multi-byte sequence is
+	   >= 0x80 -- so converting charset per fgetsdecoding()-line is
+	   exactly as correct as converting the whole decoded body at
+	   once, without having to buffer the whole thing here */
+	if (ContentTypeOverride[0] && !FindParam(ContentTypeOverride, "charset", charsetbuf)) {
+	    msgcharset = charsetbuf;
+	}
 	while(fgetsdecoding(LineBuf, sizeof(LineBuf), fp, EncodingCode)) {
 	    if (!strncmp(LineBuf, "\\enddata{text822", 16)) {
 		SawEndData = TRUE;
 		break;
 	    }
 	    linelen = strlen(LineBuf);
-	    text822_AlwaysInsertCharacters(d, ShowPos, LineBuf, linelen);
-	    ShowPos += linelen;
+	    InsertDecodedText(d, &ShowPos, (unsigned char *) LineBuf, linelen, msgcharset);
 	}
     } else {
 	struct mailobj *mo = mailobj_New();
@@ -876,17 +1099,12 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
     return(TRUE);
 }
 
-char *text822__ViewName(t)
-struct text822 *t;
+char * text822__ViewName(struct text822 *t)
 {
     return("textview"); /* t822view is not necessary */
 }
 
-long text822__Write(self, fp, writeID, level)
-struct text822 *self;
-FILE *fp;
-long writeID;
-int level;
+long text822__Write(struct text822 *self, FILE *fp, long writeID, int level)
 {
     int bodystart, len;
     unsigned char ch;
@@ -916,15 +1134,13 @@ int level;
 	    fprintf(fp, "\\template{%s}\n", ((struct text *) self)->styleSheet->templateName);
 	stylesheet_Write(((struct text *) self)->styleSheet, fp);
 	text822_WriteSubString(self, bodystart, text822_GetLength(self) - bodystart, fp, TRUE);
-	fprintf(fp, "\\enddata{%s,%d}\n", class_GetTypeName(self), self->header.dataobject.id);
+	fprintf(fp, "\\enddata{%s,%ld}\n", class_GetTypeName(self), self->header.dataobject.id);
 	fflush(fp);
     }
     return self->header.dataobject.id;
 }
 
-static RotateThirteen(d, start)
-struct text *d;
-int start;
+static int RotateThirteen(struct text *d, int start)
 {
     register char *cp,*ecp;
     long len, lengotten;
@@ -946,8 +1162,7 @@ int start;
     }
 }
 
-void text822__Clear(self)
-struct text822 *self;
+void text822__Clear(struct text822 *self)
 {
     super_Clear(self);
     if (text822_ReadTemplate(self, "messages", FALSE)) {
@@ -956,8 +1171,7 @@ struct text822 *self;
     text822_SetGlobalStyle(self, GlobalStyle);
 }
 
-void text822__ClearCompletely(self)
-struct text822 *self;
+void text822__ClearCompletely(struct text822 *self)
 {
     super_ClearCompletely(self);
     if (text822_ReadTemplate(self, "messages", FALSE)) {
@@ -966,23 +1180,19 @@ struct text822 *self;
     text822_SetGlobalStyle(self, GlobalStyle);
 }
 
-long text822__ReadAsText(self, fp, id)
-struct text822 *self;
-FILE *fp;
-long id;
+long text822__ReadAsText(struct text822 *self, FILE *fp, long id)
 {
     return(super_Read(self, fp, id));
 }
 
-void text822__ResetGlobalStyle(c, t)
-struct classheader *c;
-struct text822 *t;
+void text822__ResetGlobalStyle(struct classheader *c, struct text *t_generic)
 {
+    struct text822 *t = (struct text822 *) t_generic;
+
     text822_SetGlobalStyle(t, GlobalStyle);
 }
 
-static char *paramend(s)
-char *s;
+static char * paramend(char *s)
 {
     int inquotes=0;
     while (*s) {
@@ -1002,8 +1212,7 @@ char *s;
     return(NULL);
 }        
 
-static FindParam(ct, paramname, ValueBuf)
-char *ct, *paramname, *ValueBuf;
+static int FindParam(char *ct, char *paramname, char *ValueBuf)
 {
     char *s, *t, *t2, *eq, BigBuf[1000];
 
@@ -1038,13 +1247,7 @@ char *ct, *paramname, *ValueBuf;
     return(1);
 }
 
-static InsertProperObject(d, fp, ShowPos, ctype, encoding, descrip) 
-struct text822 *d;
-FILE *fp;
-int *ShowPos;
-char *ctype;
-char *encoding;
-char *descrip;
+static int InsertProperObject(struct text822 *d, FILE *fp, int *ShowPos, char *ctype, char *encoding, char *descrip)
 {
     int pos;
 
@@ -1090,8 +1293,7 @@ char *descrip;
     return(-1);
 }
 
-static ParseEncoding(enc)
-char *enc;
+static int ParseEncoding(char *enc)
 {
     /* These codes are defined in mailobj.ch */
     /* strip leading white space */
@@ -1104,9 +1306,7 @@ char *enc;
     return ENC_NONE;
 }
 
-static getcdecoding(fp, code)
-FILE *fp;
-int code;
+static int getcdecoding(FILE *fp, int code)
 {
     switch(code) {
 	case ENC_B64:
@@ -1118,10 +1318,7 @@ int code;
     }
 }
 
-static ungetcdecoding(c, fp, code)
-int c;
-FILE *fp;
-int code;
+static int ungetcdecoding(int c, FILE *fp, int code)
 {
     switch(code) {
 	case ENC_B64:
@@ -1137,8 +1334,7 @@ static int charspending=0, nextpending=0;
 static int pendingchars[80];
 static FILE *lastfp = NULL;
 
-static getc64(fp)
-FILE *fp;
+static int getc64(FILE *fp)
 {
     int c1, c2, c3, c4;
 
@@ -1182,9 +1378,7 @@ FILE *fp;
     return(c1);
 }
 
-static ungetc64(c, fp)
-int c;
-FILE *fp;
+static int ungetc64(int c, FILE *fp)
 {
     int i;
     for (i=nextpending+charspending; i>nextpending; --i) {
@@ -1194,8 +1388,7 @@ FILE *fp;
     ++charspending;
 }
 
-static getcqp(fp)
-FILE *fp;
+static int getcqp(FILE *fp)
 {
     int c1, c2;
 
@@ -1210,8 +1403,16 @@ FILE *fp;
 	c1 = getc(fp);
 	if (c1 == EOF) return(EOF);
 	if (c1 == '\n') {
-	    /* ignore it */
+	    /* soft break, LF form: ignore it */
 	    return(getcqp(fp));
+	} else if (c1 == '\r') {
+	    int c1b = getc(fp);
+	    if (c1b == '\n') {
+		/* soft break, CRLF form: ignore both */
+		return(getcqp(fp));
+	    }
+	    if (c1b != EOF) ungetc(c1b, fp);
+	    return('X'); /* malformed escape: lenient passthrough */
 	} else {
 	    c2 = getc(fp);
 	    c1 = hexchar(c1);
@@ -1224,18 +1425,12 @@ FILE *fp;
     }
 }
 
-static ungetcqp(c, fp)
-int c;
-FILE *fp;
+static int ungetcqp(int c, FILE *fp)
 {
     pendingchars[charspending++] = c;
 }
 
-static char *
-fgetsdecoding(buf, size, fp, code)
-char *buf;
-int size, code;
-FILE *fp;
+static char * fgetsdecoding(char *buf, int size, FILE *fp, int code)
 {
     char *s=buf, *end = buf+size -1;
     int c;
@@ -1258,8 +1453,7 @@ FILE *fp;
 static char basis_hex[] = "0123456789ABCDEF";
 static char basis_64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-static hexchar(c)
-int c;
+static int hexchar(int c)
 {
     char *s;
     if (islower(c)) c = toupper(c);
@@ -1268,16 +1462,14 @@ int c;
     return(-1);
 }
 
-static char64(c)
-int c;
+static int char64(int c)
 {
     char *s = (char *) strchr(basis_64, c);
     if (s) return(s-basis_64);
     return(-1);
 }
 
-static char *UnquoteString(s)
-char *s;
+static char * UnquoteString(char *s)
 {
     char *ans, *t;
 
@@ -1300,11 +1492,10 @@ char *s;
     return(ans);
 }
 
-static PlainAsciiText(s, currentcharset)
-char *s, *currentcharset;
+static int PlainAsciiText(char *s, char *currentcharset)
 {
     char *t, *semi;
-    char Buf[1000], Charset[1000];
+    char Buf[1000];
 
     /* strip leading white space */
     while (*s && isspace(*s)) ++s;
@@ -1312,12 +1503,14 @@ char *s, *currentcharset;
     for (t=Buf; *t; ++t) {
 	if (isupper(*t)) *t = tolower(*t);
     }
-    if (!FindParam(Buf, "charset", Charset)) {
-	if ((!currentcharset || strcmp(Charset, currentcharset))
-	    && strcmp(Charset, "us-ascii")) {
-	    return(0); /* view with metamail */
-	}
-    }
+    /* Charset no longer gates this: ISO-8859-1/US-ASCII pass straight
+       through, UTF-8 is converted to Latin-1, and anything else is
+       still passed through as bytes (see mimepart.h) -- the caller
+       does that conversion at the point of insertion, keyed off the
+       same charset param this function used to reject on. currentcharset
+       (this function's own idea of "what charset are we running in")
+       is unused now for that reason, but is left in the signature to
+       avoid touching the one call site's argument list. */
     semi = strchr(Buf, ';');
     if (semi) *semi=NULL;
     /* strip trailing white space */
@@ -1327,8 +1520,7 @@ char *s, *currentcharset;
     return(1);
 }
 
-static int ForceMetamail(ctype)
-char *ctype;
+static int ForceMetamail(char *ctype)
 {
     static char **ForceTypes = NULL;
     int i = 0, len = strlen(ctype), complen;
@@ -1368,4 +1560,58 @@ char *ctype;
 	++i;
     }
     return(0);
+}
+
+/* Inserts already-CTE-decoded bytes as characters at *ShowPos,
+   advancing it -- converting UTF-8 to Latin-1 first if charset says
+   "utf-8" (mimepart_Utf8ToLatin1: exact for codepoints <= 0xFF, '?'
+   above that); ISO-8859-1/US-ASCII/absent/anything else passes
+   through as bytes unchanged, per the charset policy in
+   revival/doc/mime-display-prompt.md. charset may be NULL. */
+static int InsertDecodedText(struct text822 *d, int *ShowPos, unsigned char *bytes, long len, char *charset)
+{
+    long i, o;
+
+    /* ATK's text world is LF-only; strip any stray '\r' in place
+       (bytes is always ours to mutate here -- a stack line buffer, a
+       part body about to be freed, or a strip-shim's own malloc'd
+       result). Quoted-printable does not escape ordinary hard line
+       breaks, only intentional soft breaks and 8-bit/control bytes,
+       so a CRLF-terminated message's decoded lines still carry a
+       literal '\r' before the '\n' unless stripped here -- left in,
+       it shows up as an extra vertical gap per line in the ATK text
+       widget. Since o <= i always, this is a safe in-place
+       compaction, never an overlapping grow. */
+    for (i = 0, o = 0; i < len; ++i) {
+	if (bytes[i] != '\r') bytes[o++] = bytes[i];
+    }
+    len = o;
+
+    if (charset && !amsutil_lc2strncmp("utf-8", charset, 5)) {
+	long convlen;
+	unsigned char *conv = mimepart_Utf8ToLatin1(bytes, len, &convlen);
+	if (conv) {
+	    text822_AlwaysInsertCharacters(d, *ShowPos, (char *) conv, convlen);
+	    *ShowPos += convlen;
+	    free(conv);
+	    return(1);
+	}
+    }
+    text822_AlwaysInsertCharacters(d, *ShowPos, (char *) bytes, len);
+    *ShowPos += len;
+    return(1);
+}
+
+/* Inserts one "[attachment: <filename> (<type/subtype>, <n> bytes)]"
+   line (plus trailing newline) at *ShowPos, advancing it. Saving
+   attachments is out of scope for this display path (see the mime-
+   display task); this is a label only. */
+static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename, char *ctype, long nbytes)
+{
+    char Line[600];
+
+    sprintf(Line, "[attachment: %.200s (%.100s, %ld bytes)]\n",
+	    filename ? filename : "unnamed", ctype ? ctype : "unknown", nbytes);
+    text822_AlwaysInsertCharacters(d, *ShowPos, Line, strlen(Line));
+    *ShowPos += strlen(Line);
 }

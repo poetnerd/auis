@@ -72,6 +72,7 @@ END-SPECIFICATION  ************************************************************/
 #include "view.ih"
 #include "zip.ih"
 #include "zipv.ih"
+static int Set_Crosshairs(struct zipview *self, zip_type_pane pane, int x, int y);
 
 #define	 Data			      (self->data_object)
 #define	 View			      (self)
@@ -81,14 +82,10 @@ END-SPECIFICATION  ************************************************************/
 
 #define  panning_factor			  16
 
-static Set_Crosshairs();
-static int Blit_Pane();
+static int Set_Crosshairs(struct zipview *self, zip_type_pane pane, int x, int y);
+static int Blit_Pane(struct zipview *self, zip_type_pane pane, int x_offset, int y_offset);
 
-long
-zipview__Pan_Pane( self, pane, x_offset, y_offset )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
-  register zip_type_pixel		  x_offset, y_offset;
+long zipview__Pan_Pane(struct zipview *self, zip_type_pane pane, zip_type_pixel x_offset, zip_type_pixel y_offset)
   {
   register int				  status = zip_success;
 
@@ -137,11 +134,7 @@ zipview__Pan_Pane( self, pane, x_offset, y_offset )
   return status;
   }
 
-long
-zipview__Pan_Pane_To_Edge( self, pane, edge )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
-  register long				  edge;
+long zipview__Pan_Pane_To_Edge(struct zipview *self, zip_type_pane pane, long edge)
   {
   register int				  status = zip_success;
   register int				  x_offset = 0, y_offset = 0;
@@ -216,20 +209,12 @@ static zip_type_pixel			  initial_x, initial_y,
 					  hair_x, hair_y;
 
 
-long
-zipview__Handle_Panning( self, pane, x, y, x_delta, y_delta )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
-  register long				  x, y, x_delta, y_delta;
+long zipview__Handle_Panning(struct zipview *self, zip_type_pane pane, long x, long y, long x_delta, long y_delta)
   {
 return zip_ok;
   }
 
-long
-zipview__Initiate_Panning( self, pane, x, y, mode )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
-  register long				  x, y, mode;
+long zipview__Initiate_Panning(struct zipview *self, zip_type_pane pane, long x, long y, long mode)
   {
   IN(zipview__Initiate_Panning);
   zipview_Normalize_Line_Attributes( self );
@@ -240,11 +225,7 @@ zipview__Initiate_Panning( self, pane, x, y, mode )
   }
 
 
-long
-zipview__Continue_Panning( self, pane, x, y )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
-  register long				  x, y;
+long zipview__Continue_Panning(struct zipview *self, zip_type_pane pane, long x, long y)
   {
   register long				  precision =
 				pane->zip_pane_panning_precision;
@@ -260,13 +241,7 @@ zipview__Continue_Panning( self, pane, x, y )
   return zip_ok;
   }
 
-long
-zipview__Terminate_Panning( self, pane, x, y, x_delta, y_delta, draw )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
-  register long				  x, y;
-  register long				 *x_delta, *y_delta;
-  register long				  draw;
+long zipview__Terminate_Panning(struct zipview *self, zip_type_pane pane, long x, long y, long *x_delta, long *y_delta, long draw)
   {
   register long				  precision =
 				pane->zip_pane_panning_precision;
@@ -299,11 +274,7 @@ zipview__Terminate_Panning( self, pane, x, y, x_delta, y_delta, draw )
   return zip_ok;
   }
 
-static
-Set_Crosshairs( self, pane, x, y )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
-  register int				  x, y;
+static int Set_Crosshairs(struct zipview *self, zip_type_pane pane, int x, int y)
   {
   IN(Set_Crosshairs);
   zipview_SetTransferMode( self, graphic_INVERT );
@@ -317,11 +288,7 @@ Set_Crosshairs( self, pane, x, y )
   OUT(Set_Crosshairs);
   }
 
-static int
-Blit_Pane( self, pane, x_offset, y_offset )
-  register struct zipview		 *self;
-  register zip_type_pane		  pane;
-  register int				  x_offset, y_offset;
+static int Blit_Pane(struct zipview *self, zip_type_pane pane, int x_offset, int y_offset)
   {
   struct rectangle			  rectangle;
   struct point				  point;

@@ -61,7 +61,11 @@
 #include <andrewos.h>
 #include <class.h>
 #include <ctype.h>
+#include <math.h>
+#include <util.h>
 #include <netinet/in.h>	/* Get the definition for ntohl. */
+
+struct color_area;
 
 /* for maxpathlen */
 #include <sys/param.h>
@@ -71,8 +75,29 @@
 #include <jpeg.ih>
 #include <gif.ih>
 #include <image.eh>
+static long WriteImageToTempFile(struct image *self, FILE *file);
+static unsigned int * buildZoomIndex(unsigned int width, unsigned int zoom, unsigned int *rwidth);
+static unsigned long colorsToDepth(unsigned long ncolors);
+static unsigned long conv64tolong(char *xnum);
+static char * convlongto64(int num, int pad);
+static char * genid();
+static int insertColorArea(unsigned long *pixel_counts, struct color_area **rlargest, struct color_area **rsmallest, struct color_area *area);
+static int make_gamma(double gamma, int gammamap[256]);
+static void newRGBMapData(RGBMap *rgb, unsigned int size);
+static void setupNormalizationArray(unsigned int min, unsigned int max, byte *array);
+static int sortBGR(unsigned short *p1, unsigned short *p2);
+static int sortBRG(unsigned short *p1, unsigned short *p2);
+static int sortGBR(unsigned short *p1, unsigned short *p2);
+static int sortGRB(unsigned short *p1, unsigned short *p2);
+static int sortRBG(unsigned short *p1, unsigned short *p2);
+static int sortRGB(unsigned short *p1, unsigned short *p2);
 
 extern int errno;
+/* osi_GetTimes (overhead/util/lib/times.c) and to64/from64/fromqp
+   (overhead/util/lib/encode.c) have no declaring header anywhere in
+   the tree. */
+extern int osi_GetTimes(struct osi_Times *blk);
+extern int to64(), from64(), fromqp();
 #define MAXFILELINE 255
 #define DEFAULT_SAVE_QUALITY (75)
 
@@ -252,17 +277,12 @@ static unsigned long DepthToColorsTable[] = {
 
 #define depthToColors(n) DepthToColorsTable[((n) < 32 ? (n) : 32)]
 
-boolean
-image__InitializeClass( classID )
-    struct classheader *classID;
+boolean image__InitializeClass(struct classheader *classID)
 {
   return(TRUE);
 }
 
-boolean
-image__InitializeObject( classID, self )
-    struct classheader *classID;
-    struct image *self;
+boolean image__InitializeObject(struct classheader *classID, struct image *self)
 {
     char *saveformat;
 
@@ -286,10 +306,7 @@ image__InitializeObject( classID, self )
     return(TRUE);
 }
 
-void
-image__Duplicate( self, target )
-    struct image *self;
-    struct image *target;
+void image__Duplicate(struct image *self, struct image *target)
 { register int i;
   int size = 0;
 
@@ -335,10 +352,7 @@ image__Duplicate( self, target )
     target->lastModified = self->lastModified;
 }
 
-void
-image__FinalizeObject( classID, self )
-    struct classheader *classID;
-    struct image *self;
+void image__FinalizeObject(struct classheader *classID, struct image *self)
 {
     image_freeImageData(self);
     if(self->origData) {
@@ -362,9 +376,7 @@ static unsigned char DigVals[96] = {
 	53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 0, 0, 0, 0, 0	/* 0160 thru 0177 */
 };
 
-static char *convlongto64(num, pad)
-/* unsigned */ long num;
-/* unsigned */ int pad;
+static char * convlongto64(int num, int pad)
 {
     static char Answer[7];
 
@@ -381,8 +393,7 @@ static char *convlongto64(num, pad)
 
 /* Note that the following routine throws away the first 4 of 36 bits */
 
-static unsigned long conv64tolong(xnum)
-register char *xnum;
+static unsigned long conv64tolong(char *xnum)
 {
     register int digits;
     unsigned long Answer = 0;
@@ -435,11 +446,7 @@ static char *genid()
     return(IDBuf);
 }
 
-long
-image__GetBeginData(self, file, id)
-    struct image *self;
-    FILE *file;
-    long id;
+long image__GetBeginData(struct image *self, FILE *file, long id)
 {
     int tc;
     if(file == NULL) 
@@ -455,10 +462,7 @@ image__GetBeginData(self, file, id)
     return(dataobject_NOREADERROR);
 }
 
-long
-image__GetImageData(self, file)
-    struct image *self;
-    FILE *file;
+long image__GetImageData(struct image *self, FILE *file)
 {
     char tmpName1[100], tmpName2[100];
     char format[64];
@@ -548,20 +552,13 @@ image__GetImageData(self, file)
     return(dataobject_NOREADERROR);
 }
 
-long
-image__GetEndData(self, file, id)
-    struct image *self;
-    FILE *file;
-    long id;
+long image__GetEndData(struct image *self, FILE *file, long id)
 {
 /* This is a noop because GetImageData can deal with or without the enddata */
     return(dataobject_NOREADERROR);
 }
 
-static long
-WriteImageToTempFile( self, file )
-    struct image *self;
-    FILE *file;
+static long WriteImageToTempFile(struct image *self, FILE *file)
 {
     char tmpName[MAXPATHLEN];
     char buf[BUFSIZ];
@@ -624,11 +621,7 @@ WriteImageToTempFile( self, file )
     return retval;
 }
 
-long
-image__Read( self, file, id )
-    struct image *self;
-    FILE *file;
-    long id;
+long image__Read(struct image *self, FILE *file, long id)
 {
     long status;
 
@@ -643,25 +636,17 @@ image__Read( self, file, id )
     return(status);
 }
 
-long
-image__SendBeginData(self, file, writeID, level)
-    struct image *self;
-    FILE *file;
-    long writeID;
-    int level;
+long image__SendBeginData(struct image *self, FILE *file, long writeID, int level)
 {
     long id = image_UniqueID(self);
     self->header.dataobject.writeID = writeID;
-    if(fprintf(file, "\\begindata{image,%d}\n", id) < 0)
+    if(fprintf(file, "\\begindata{image,%ld}\n", id) < 0)
 	return(-1);
     else
 	return(id);
 }
 
-long
-image__SendImageData(self, file)
-    struct image *self;
-    FILE *file;
+long image__SendImageData(struct image *self, FILE *file)
 {
 	if(image_Data(self)) {
 	    if(image_GetModified(self) > self->lastModified || self->origData == NULL) {
@@ -709,26 +694,16 @@ image__SendImageData(self, file)
     return(0);
 }    
 
-long
-image__SendEndData(self, file, writeID, id)
-    struct image *self;
-    FILE *file;
-    long writeID;
-    int id;
+long image__SendEndData(struct image *self, FILE *file, long writeID, long id)
 {
     image_SetWriteID(self, writeID);
     image_SetID(self, id);
-    if(fprintf(file, "\\enddata{image, %d}\n", id) < 0)
+    if(fprintf(file, "\\enddata{image, %ld}\n", id) < 0)
 	return(-1);
     return(0);
 }
 
-long
-image__Write( self, file, writeID, level )
-    struct image *self;
-    FILE *file;
-    long writeID;
-    int level;
+long image__Write(struct image *self, FILE *file, long writeID, int level)
 {   long id = image_SendBeginData(self, file, writeID, level);
     long status;    
     if( (id > 0) &&
@@ -739,16 +714,12 @@ image__Write( self, file, writeID, level )
 	return(status);
 }
 
-char *
-image__ViewName( self )
-    struct image *self;
+char * image__ViewName(struct image *self)
 {
   return("imagev");
 }
 
-void
-image__Reset( self )
-    struct image *self;
+void image__Reset(struct image *self)
 { 
   image_freeImageData(self);
   image_Type(self) = 0;
@@ -760,19 +731,14 @@ image__Reset( self )
   self->jpegSaveQuality = environ_GetProfileInt("imagesavequality", DEFAULT_SAVE_QUALITY);
  }
 
-static unsigned long 
-colorsToDepth(ncolors)
-    unsigned long ncolors;
+static unsigned long colorsToDepth(unsigned long ncolors)
 { unsigned long a;
 
   for(a = 0; (a < 32) && (DepthToColorsTable[a] < ncolors); a++);
   return(a);
 }
 
-static void 
-newRGBMapData( rgb, size )
-    RGBMap *rgb;
-    unsigned int  size;
+static void newRGBMapData(RGBMap *rgb, unsigned int size)
 { 
   rgb->used = 0;
   rgb->size = size;
@@ -782,18 +748,13 @@ newRGBMapData( rgb, size )
   rgb->blue = (Intensity *)malloc(sizeof(Intensity) * size);
 }
 
-void 
-image__newRGBMapData( self, size )
-    struct image *self;
-    unsigned int  size;
+void image__newRGBMapData(struct image *self, unsigned int size)
 {
   if(self->rgb)
       newRGBMapData(self->rgb, size);
 }
 
-void 
-image__freeRGBMapData( self )
-    struct image *self;
+void image__freeRGBMapData(struct image *self)
 {
   if(self->rgb) {
       if(image_RedMap(self)) {
@@ -813,10 +774,7 @@ image__freeRGBMapData( self )
   }
 }
 
-void
-image__newBitImage( self, width, height )
-    struct image *self;
-    unsigned int width, height;
+void image__newBitImage(struct image *self, unsigned int width, unsigned int height)
 { unsigned int linelen;
 
   image_Type(self) = IBITMAP;
@@ -832,10 +790,7 @@ image__newBitImage( self, width, height )
   image_Data(self) = (unsigned char *) calloc(linelen, height);
 }
 
-void
-image__newGreyImage( self, width, height, depth )
-    struct image *self;
-    unsigned int width, height, depth;
+void image__newGreyImage(struct image *self, unsigned int width, unsigned int height, unsigned int depth)
 {
   image_Type(self) = IGREYSCALE;
   image_newRGBMapData(self, depthToColors(depth));
@@ -846,10 +801,7 @@ image__newGreyImage( self, width, height, depth )
   image_Data(self) = (unsigned char *) malloc(width * height);
 }
 
-void
-image__newRGBImage( self, width, height, depth )
-    struct image *self;
-    unsigned int width, height, depth;
+void image__newRGBImage(struct image *self, unsigned int width, unsigned int height, unsigned int depth)
 { unsigned int pixlen, numcolors;
 
   pixlen = depth / 8 + (depth %	8 ? 1 :	0); /* in bytes */
@@ -865,10 +817,7 @@ image__newRGBImage( self, width, height, depth )
   image_Data(self) = (unsigned char *) malloc(pixlen * width * height);
 }
 
-void
-image__newTrueImage( self, width, height )
-    struct image *self;
-    unsigned int width, height;
+void image__newTrueImage(struct image *self, unsigned int width, unsigned int height)
 { unsigned int  pixlen, numcolors, a;
 
   image_Type(self) = ITRUE;
@@ -880,9 +829,7 @@ image__newTrueImage( self, width, height )
   image_Data(self) = (unsigned char *) malloc(3 * width * height);
 }
 
-void 
-image__freeImageData( self )
-    struct image *self;
+void image__freeImageData(struct image *self)
 {
   if (!TRUEP(self) && self->rgb) {
     image_freeRGBMapData(self);
@@ -895,10 +842,7 @@ image__freeImageData( self )
 /* alter an image's brightness by a given percentage
  */
 
-void 
-image__Brighten( self, percent )
-    struct image *self;
-    unsigned int  percent;
+void image__Brighten(struct image *self, unsigned int percent)
 { int          a;
   unsigned int newrgb;
   float        fperc;
@@ -960,10 +904,7 @@ image__Brighten( self, percent )
  * Outputs:
  *  Changes gamma array entries.
  */
-static 
-make_gamma( gamma, gammamap )
-    double gamma;
-    int gammamap[256];
+static int make_gamma(double gamma, int gammamap[256])
 {   register int i;
 
     for (i = 0; i < 256; i++ ) {
@@ -978,10 +919,7 @@ make_gamma( gamma, gammamap )
     }
 }
 
-void 
-image__GammaCorrect( self, disp_gam )
-    struct image *self;
-    float  disp_gam;
+void image__GammaCorrect(struct image *self, float disp_gam)
 { int a;
   int gammamap[256];
   unsigned int size;
@@ -1022,10 +960,7 @@ image__GammaCorrect( self, disp_gam )
 /* this initializes a lookup table for doing normalization
  */
 
-static void 
-setupNormalizationArray( min, max, array )
-    unsigned int min, max;
-    byte *array;
+static void setupNormalizationArray(unsigned int min, unsigned int max, byte *array)
 { int a;
   unsigned int new;
   float factor;
@@ -1040,9 +975,7 @@ setupNormalizationArray( min, max, array )
 /* normalize an image.
  */
 
-struct image *
-image__Normalize( self )
-    struct image *self;
+struct image * image__Normalize(struct image *self)
 { unsigned int  a, x, y;
   unsigned int  min, max;
   Pixel         pixval;
@@ -1139,9 +1072,7 @@ image__Normalize( self )
 /* convert to grayscale
  */
 
-void 
-image__Gray( self )
-    struct image *self;
+void image__Gray(struct image *self)
 { int a;
   unsigned int size;
   Intensity intensity, red, green, blue;
@@ -1200,9 +1131,7 @@ image__Gray( self )
 
 #define NIL_PIXEL 0xffffffff
 
-void 
-image__Compress( self )
-    struct image *self;
+void image__Compress(struct image *self)
 { Pixel         hash_table[32768];
   Pixel        *pixel_table;
   Pixel        *pixel_map;
@@ -1310,11 +1239,7 @@ image__Compress( self )
   self->rgb->compressed = 1;
 }
 
-static unsigned int *
-buildZoomIndex( width, zoom, rwidth )
-    unsigned int  width;
-    unsigned int  zoom;
-    unsigned int *rwidth;
+static unsigned int * buildZoomIndex(unsigned int width, unsigned int zoom, unsigned int *rwidth)
 { float         fzoom;
   unsigned int *index;
   unsigned int  a;
@@ -1338,10 +1263,7 @@ buildZoomIndex( width, zoom, rwidth )
 
 /* Client is responsible for destroying the scaled (zoomed) image */
 
-struct image *
-image__Zoom( self, xzoom, yzoom )
-    struct image *self;
-    unsigned int  xzoom, yzoom;
+struct image * image__Zoom(struct image *self, unsigned int xzoom, unsigned int yzoom)
 { char          buf[BUFSIZ];
   struct image *newimage;
   unsigned int *xindex, *yindex;
@@ -1476,9 +1398,7 @@ struct color_area {
 /* predicate functions for qsort
  */
 
-static 
-sortRGB(p1, p2)
-    unsigned short *p1, *p2;
+static int sortRGB(unsigned short *p1, unsigned short *p2)
 { unsigned int red1, green1, blue1, red2, green2, blue2;
 
   red1 = RED_INTENSITY(*p1);
@@ -1504,9 +1424,7 @@ sortRGB(p1, p2)
     return(1);
 }
 
-static 
-sortRBG(p1, p2)
-    unsigned short *p1, *p2;
+static int sortRBG(unsigned short *p1, unsigned short *p2)
 { unsigned int red1, green1, blue1, red2, green2, blue2;
 
   red1 = RED_INTENSITY(*p1);
@@ -1532,9 +1450,7 @@ sortRBG(p1, p2)
     return(1);
 }
 
-static 
-sortGRB(p1, p2)
-    unsigned short *p1, *p2;
+static int sortGRB(unsigned short *p1, unsigned short *p2)
 { unsigned int red1, green1, blue1, red2, green2, blue2;
 
   red1 = RED_INTENSITY(*p1);
@@ -1560,9 +1476,7 @@ sortGRB(p1, p2)
     return(1);
 }
 
-static 
-sortGBR(p1, p2)
-    unsigned short *p1, *p2;
+static int sortGBR(unsigned short *p1, unsigned short *p2)
 { unsigned int red1, green1, blue1, red2, green2, blue2;
 
   red1 = RED_INTENSITY(*p1);
@@ -1588,9 +1502,7 @@ sortGBR(p1, p2)
     return(1);
 }
 
-static 
-sortBRG(p1, p2)
-    unsigned short *p1, *p2;
+static int sortBRG(unsigned short *p1, unsigned short *p2)
 { unsigned int red1, green1, blue1, red2, green2, blue2;
 
   red1 = RED_INTENSITY(*p1);
@@ -1616,9 +1528,7 @@ sortBRG(p1, p2)
     return(1);
 }
 
-static 
-sortBGR(p1, p2)
-    unsigned short *p1, *p2;
+static int sortBGR(unsigned short *p1, unsigned short *p2)
 { unsigned int red1, green1, blue1, red2, green2, blue2;
 
   red1 = RED_INTENSITY(*p1);
@@ -1648,10 +1558,7 @@ sortBGR(p1, p2)
  * the color area in the list of color areas.
  */
 
-static 
-insertColorArea(pixel_counts, rlargest, rsmallest, area)
-    unsigned long *pixel_counts;
-    struct color_area **rlargest, **rsmallest, *area;
+static int insertColorArea(unsigned long *pixel_counts, struct color_area **rlargest, struct color_area **rsmallest, struct color_area *area)
 { int a;
   unsigned int red, green, blue;
   unsigned int min_red, min_green, min_blue;
@@ -1759,10 +1666,7 @@ insertColorArea(pixel_counts, rlargest, rsmallest, area)
 
 /* Reduce an image to n colors: also 24 --> 8 if necessary */
 
-struct image *
-image__Reduce( self, n )
-    struct image *self;
-    unsigned int n;
+struct image * image__Reduce(struct image *self, unsigned int n)
 { unsigned long pixel_counts[32768]; /* pixel occurrance histogram */
   unsigned short pixel_array[32768];
   unsigned long count, midpoint;
@@ -1954,9 +1858,7 @@ image__Reduce( self, n )
 /* expand an image into a true color image
  */
 
-struct image *
-image__Expand( self )
-    struct image *self;
+struct image * image__Expand(struct image *self)
 {
   struct image *new_image;
   int x, y;
@@ -2014,9 +1916,7 @@ image__Expand( self )
   return(self);
 }
 
-struct image *
-image__Bit2Grey( self )
-  struct image *self;
+struct image * image__Bit2Grey(struct image *self)
 {
   struct image *new_image;
   int x, y;
@@ -2057,18 +1957,12 @@ image__Bit2Grey( self )
   return(self);
 }
 
-int
-image__depthToColors( classID, n )
-    struct classheader *classID;
-    int n;
+int image__depthToColors(struct classheader *classID, int n)
 {
   return(depthToColors(n));
 }
 
-int
-image__colorsToDepth( classID, n )
-    struct classheader *classID;
-    int n;
+int image__colorsToDepth(struct classheader *classID, int n)
 {
   return(colorsToDepth(n));
 }
@@ -2078,17 +1972,15 @@ image__colorsToDepth( classID, n )
 #define Threshold     16384	/* in the dithering process */
 #define MinGrey           0
 
-static unsigned int tone_scale_adjust();
-static void LeftToRight();
-static void RightToLeft();
+static unsigned int tone_scale_adjust(unsigned int val);
+static void LeftToRight(int *curr, int *next, int width);
+static void RightToLeft(int *curr, int *next, int width);
 
 /*
  * simple floyd-steinberg dither with serpentine raster processing
  */
 
-struct image *
-image__Dither( self )
-    struct image *self;
+struct image * image__Dither(struct image *self)
 {
   struct image   *image;	/* destination image */
   unsigned int   *grey;		/* grey map for source image */
@@ -2226,9 +2118,7 @@ image__Dither( self )
  * 
  * this should help things look a bit better on most displays.
  */
-static unsigned int 
-tone_scale_adjust(val)
-     unsigned int val;
+static unsigned int tone_scale_adjust(unsigned int val)
 {
   unsigned int rslt;
   
@@ -2245,11 +2135,7 @@ tone_scale_adjust(val)
 /*
  * dither a line from left to right
  */
-static void 
-LeftToRight(curr, next, width)
-     int *curr;
-     int *next;
-     int  width;
+static void LeftToRight(int *curr, int *next, int width)
 {
   int idx;
   int error;
@@ -2270,11 +2156,7 @@ LeftToRight(curr, next, width)
 /*
  * dither a line from right to left
  */
-static void 
-RightToLeft(curr, next, width)
-     int *curr;
-     int *next;
-     int  width;
+static void RightToLeft(int *curr, int *next, int width)
 {
   int idx;
   int error;
@@ -2294,9 +2176,7 @@ RightToLeft(curr, next, width)
 /* simple dithering algorithm, really optimized for the 4x4 array
  */
 
-struct image *
-image__Halftone( self )
-     struct image *self;
+struct image * image__Halftone(struct image *self)
 { struct image  *image;
   unsigned char *sp, *dp, *dp2; /* data pointers */
   unsigned int   dindex;        /* index into dither array */
@@ -2395,13 +2275,7 @@ image__Halftone( self )
 
 static int tmpfilectr = 0;
 
-long image__WriteOtherFormat(self, file, writeID, level, usagetype, boundary)
-struct image *self;
-FILE *file;
-long writeID;
-int level;
-int usagetype;
-char *boundary;
+long image__WriteOtherFormat(struct image *self, FILE *file, long writeID, int level, int usagetype, char *boundary)
 {
     FILE *tmpfp;
     char Fnam[1000];
@@ -2437,13 +2311,7 @@ char *boundary;
     return(self->header.dataobject.id);
 }
 
-boolean
-image__ReadOtherFormat(self, file, fmt, encoding, desc)
-    struct image *self;
-    FILE *file;
-    char *fmt;
-    char *encoding;
-    char *desc;
+boolean image__ReadOtherFormat(struct image *self, FILE *file, char *fmt, char *encoding, char *desc)
 {
     char TmpFile[250];
     FILE *tmpfp = NULL;
@@ -2487,29 +2355,18 @@ image__ReadOtherFormat(self, file, fmt, encoding, desc)
     }
 }
 
-long
-image__WriteNative( self, file, filename )
-    struct image *self;
-    FILE *file;
-    char *filename;
+long image__WriteNative(struct image *self, FILE *file, char *filename)
 {
     printf("image_WriteNative\n");
 }
 
-int
-image__Load( image, fullname, fp )
-  struct image *image;
-  char *fullname;
-  FILE *fp;
+int image__Load(struct image *image, char *fullname, FILE *fp)
 {
 /* This method should be overridden by subclasses of image */
   return(0);
 }
 
-void
-image__SetSaveFormatString( self, format )
-    struct image *self;
-    char *format;
+void image__SetSaveFormatString(struct image *self, char *format)
 {
     if(self->saveformatstring)
 	free(self->saveformatstring);

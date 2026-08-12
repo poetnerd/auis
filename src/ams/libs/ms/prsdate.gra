@@ -29,6 +29,21 @@
 
 %{
 #define YYSTYPE int
+static int nextlex();
+static void peeper();
+static int prelex();
+static int tabfind();
+static void check();
+static void constrain();
+static void time_def();
+static int weekday();
+static int month();
+static int mday();
+static void setrep();
+static int new_dtm();
+static void incr();
+static void incryear();
+static void incrmonth();
 %}
 
 
@@ -78,6 +93,8 @@ static jmp_buf errbuf;			/* jump location for parse errors */
 extern char *nxtarg();
 extern long time();
 extern struct tm *localtime();
+extern char *foldup();
+extern int yearsize();
 struct stable { char *text;  int token;  int lexval; };
 static int shour, tmkey;
 static int zone;	/* Offset in minutes from GMT specified */
@@ -785,7 +802,7 @@ struct tm *tmp;
 #define MAXSTRLEN 150
 static int locallexer ();
 struct parser *prsdate_New();
-parsedate (str, tmp, settm, select, err, gmt)
+int parsedate (str, tmp, settm, select, err, gmt)
     char *str;
     struct tm *tmp;
     int settm, select, err;
@@ -871,7 +888,7 @@ parsedate (str, tmp, settm, select, err, gmt)
  *  by pdate().
  */
 
-static prsdate_ErrorGuts(p, sev, sevname, errstring)
+static void prsdate_ErrorGuts(p, sev, sevname, errstring)
 struct parser *p;
 int sev;
 char *sevname;
@@ -928,7 +945,7 @@ YYSTYPE *pyylval;
   return (token);
 }
 
-static peeper (n)
+static void peeper (n)
 int n;
 { register int i;
   if (peepb != 0)
@@ -1078,7 +1095,7 @@ struct tm *tm;
 static int monthend[] =
 { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 };
 
-static days_date (d, tm)
+static void days_date (d, tm)
 int d;
 struct tm *tm;
 {   /* Number of days since 1/1/1900 -> mm/dd/fullyear and weekday */
@@ -1152,7 +1169,7 @@ struct stable *table;
  *   date is invalid.
  */
 
-static check(parser, date)
+static void check(parser, date)
 struct parser *parser;
 int date;
 { register int did;
@@ -1175,7 +1192,7 @@ int date;
  *   constraints (or -1 indicating to use ptm). date is the dtm containing
  *   the date to be constrained. repeat is the loop count. */
 
-static constrain(parser, con, date, past, repeat)
+static void constrain(parser, con, date, past, repeat)
 struct parser *parser;
 int con, date;
 int past, repeat;
@@ -1220,7 +1237,7 @@ int past, repeat;
   }
 }
 
-static time_def (tm, currtm)
+static void time_def (tm, currtm)
 struct tm *tm, *currtm;
 { if (shour >= 0)			/* Handle simple hour specification */
   { if (tmkey == -1)			/* and combine it with time key. */
@@ -1359,7 +1376,7 @@ int past;
 
 /* setrep: sets the representation of the date in a dtm structure. */
 
-static setrep (dtm, rep)
+static void setrep (dtm, rep)
 struct dtm *dtm;
 int rep;
 { if (dtm->repn == rep)
@@ -1378,7 +1395,7 @@ int rep;
 
 /* yearsize: returns nuber of days in year. */
 
-yearsize (year)
+int yearsize (year)
 int year;
 { return (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) ? 366 : 365);
 }
@@ -1424,14 +1441,14 @@ int current;
 
 /* incr: increment date in dtm structure. */
 
-static incr (ndtm, days)
+static void incr (ndtm, days)
 int ndtm;
 int days;
 { setrep (&dtm[ndtm], RDAYS);
   dtm[ndtm].days += days;
 }
 
-static incryear (ndtm, years)
+static void incryear (ndtm, years)
 int ndtm;
 int years;
 { setrep (&dtm[ndtm], RTM);
@@ -1442,7 +1459,7 @@ int years;
 
 /* incrmonth: increment date in dtm structure by a number of months.*/
 
-static incrmonth (ndtm, months)
+static void incrmonth (ndtm, months)
 int ndtm;
 int months;
 { int inc;

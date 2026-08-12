@@ -34,10 +34,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ms.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+extern int StripMyselfFromAddressList(char *Old, char **New);
 
-BuildWideReply(Msg, IncludeFrom)
-struct MS_Message *Msg;
-Boolean IncludeFrom;
+int BuildWideReply(struct MS_Message *Msg, Boolean IncludeFrom)
 {
     struct ParsedMsg *PStuff;
     char *NewWide;

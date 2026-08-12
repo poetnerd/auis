@@ -49,17 +49,12 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 /****************************************************************/
 /*		class procedures				*/
 /****************************************************************/
-boolean
-note__InitializeClass(classID)
-    struct classheader * classID;
+boolean note__InitializeClass(struct classheader *classID)
 {
     return TRUE;
 }
 
-boolean
-note__InitializeObject(classID,self)
-struct classheader * classID;
-struct note * self;
+boolean note__InitializeObject(struct classheader *classID, struct note *self)
 {
     struct text * to;
     struct passwd *userentry;
@@ -77,10 +72,7 @@ struct note * self;
 /*		instance methods				*/
 /****************************************************************/
 
-void
-note__SetChild(self,child)
-    struct note * self;
-    struct dataobject * child;
+void note__SetChild(struct note *self, struct dataobject *child)
 {
     super_SetChild(self,child);
     if (child != (struct dataobject *)0)

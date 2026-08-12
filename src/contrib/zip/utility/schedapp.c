@@ -49,10 +49,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 static boolean debug=FALSE;
 
 
-boolean 
-schedapp__InitializeObject( classID, self )
-  register struct classheader		 *classID;
-  register struct schedapp		 *self;
+boolean schedapp__InitializeObject(struct classheader *classID, struct schedapp *self)
   {
   IN(schedapp_InitializeObject);
   *(self->stream_name) = 0;
@@ -60,11 +57,7 @@ schedapp__InitializeObject( classID, self )
   return TRUE;
   }
 
-boolean
-schedapp__ParseArgs( self, argc, argv )
-  register struct schedapp		 *self;
-  register int				  argc;
-  register char				**argv;
+boolean schedapp__ParseArgs(struct schedapp *self, int argc, char **argv)
   {
   IN(schedapp_ParseArgs);
   while ( *++argv )
@@ -86,9 +79,7 @@ schedapp__ParseArgs( self, argc, argv )
   return TRUE;
   }
 
-boolean 
-schedapp__Start( self )
-  register struct schedapp			 *self;
+boolean schedapp__Start(struct schedapp *self)
   {
   IN(schedapp_Start);
   if( !super_Start(self) )
@@ -119,9 +110,7 @@ schedapp__Start( self )
   return TRUE;
   }
 
-int
-schedapp__Run(self)
-  register struct schedapp			  *self;
+int schedapp__Run(struct schedapp *self)
   {
   IN(schedapp_Run);
   schedapp_Fork( self );

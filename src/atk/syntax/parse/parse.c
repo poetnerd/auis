@@ -58,27 +58,20 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/synt
 #include <lexan.ih>
 #include <parse.eh>
 
+struct YYSTYPE;
+
 static struct parse *CurrentParse = NULL;
 static boolean DebugFlag = FALSE;
 #define ERRORTOK 1
 #define NOTOK -1
 
 
-	static int
-null_action(i, pyyval, yyvsp, rock)
-	int i;
-	struct YYSTYPE *pyyval;
-	struct YYSTYPE *yyvsp;
-	void *rock;
+static int null_action(int i, struct YYSTYPE *pyyval, struct YYSTYPE *yyvsp, void *rock)
 {
 	return parse_OK;
 }
 
-	static void
-print_error(self, severity, msg)
-	struct parse *self;
-	int severity;
-	char *msg;
+static void print_error(struct parse *self, int severity, char *msg)
 {
 	char *sevword;
 	switch(severity & (~parse_FREEMSG)) {
@@ -92,35 +85,26 @@ print_error(self, severity, msg)
 		free(msg);
 }
 
-	static boolean
-parse__InitializeClass(ClassID)
-	struct classheader *ClassID;
+boolean parse__InitializeClass(struct classheader *ClassID)
 {
 	return TRUE;
 }
 
 
 
-	static boolean
-parse__SetDebug(ClassID, value)
-	struct classheader *ClassID;
-	boolean value;
+boolean parse__SetDebug(struct classheader *ClassID, boolean value)
 {
 	boolean oldval = DebugFlag;
 	DebugFlag = value;
 	return oldval;
 }
 
-	static struct parse *
-parse__GetCurrentParse()
+struct parse * parse__GetCurrentParse(struct classheader *classID)
 {
 	return CurrentParse;
 }
 
-	static boolean
-parse__InitializeObject(ClassID, self)
-	struct classheader *ClassID;
-	register struct parse  *self;
+boolean parse__InitializeObject(struct classheader *ClassID, struct parse *self)
 {
 	self->tables = NULL;
 	self->lex = NULL;
@@ -135,21 +119,11 @@ parse__InitializeObject(ClassID, self)
 	return TRUE;
 }
 
-	static void 
-parse__FinalizeObject(ClassID, self)
-	struct classheader *ClassID;
-	register struct parse  *self;
+void parse__FinalizeObject(struct classheader *ClassID, struct parse *self)
 {
 }
 
-	static struct parse *
-parse__Create(ClassID, desc, lex, action, rock, errhand)
-	struct classheader *ClassID;
-	struct parse_tables *desc;
-	struct lexan *lex;
-	int (*action)();
-	void *rock;
-	void (*errhand)();
+struct parse * parse__Create(struct classheader *ClassID, struct parse_tables *desc, struct lexan *lex, int (*action) (), void *rock, void (*errhand) ())
 {
 	struct parse *p = parse_New();
 	int i;
@@ -167,11 +141,7 @@ parse__Create(ClassID, desc, lex, action, rock, errhand)
 	return p;
 }
 
-	static void
-parse__Error(self, severity, msg)
-	struct parse *self;
-	int severity;
-	char *msg;
+void parse__Error(struct parse *self, int severity, char *msg)
 {
 	int tsev = severity & (~parse_FREEMSG);
 	if (tsev > self->maxSeverity)
@@ -180,10 +150,7 @@ parse__Error(self, severity, msg)
 	self->errorHandler(self, severity, msg);
 }
 
-	static void *     /* int (*)() */
-parse__SetErrorHandler(self, handler)
-	struct parse *self;
-	void (*handler)();
+void * parse__SetErrorHandler(struct parse *self, void (*handler) ())
 {
 	void (*oldhand)() = self->errorHandler;
 	if (handler == NULL)
@@ -197,11 +164,7 @@ parse__SetErrorHandler(self, handler)
 	 the handler is called for each reserved word:
 		handler(rock, char *word, int tokennumber) 
 */
-	static void
-parse__EnumerateReservedWords(self, handler, rock)
-	struct parse *self;
-	void (*handler)();
-	void *rock;
+void parse__EnumerateReservedWords(struct parse *self, void (*handler) (), void *rock)
 {
 	int i, nnames;
 	char **names;
@@ -241,10 +204,7 @@ parse__EnumerateReservedWords(self, handler, rock)
 	The routine is forgiving enough to accept the name parameter
 		without quotes:  "a" will match "'a'";  ":=" will match "\":=\""
 */
-	static int
-parse__TokenNumberFromName(self, name)
-	struct parse *self;
-	char *name;
+int parse__TokenNumberFromName(struct parse *self, char *name)
 {
 	int i, nnames, nmlen;
 	char **names;
@@ -264,9 +224,7 @@ parse__TokenNumberFromName(self, name)
 	return 0;
 }
 
-debugstate(desc, state, pendtok, errorstate)
-struct parse_tables *desc;
-int state, pendtok, errorstate;
+int debugstate(struct parse_tables *desc, int state, int pendtok, int errorstate)
 {
 	if (pendtok == NOTOK)
 		printf("(%d,--)", state);
@@ -280,17 +238,13 @@ int state, pendtok, errorstate;
 	fflush(stdout);
 }
 
-debugshift(desc, tact)
-	struct parse_tables *desc;
-	int tact;
+int debugshift(struct parse_tables *desc, int tact)
 {
 	printf(":   shift to state %d\n", tact);
 	fflush(stdout);
 }
 
-debugreduce(desc, rule, revealedstate, newstate)
-	struct parse_tables *desc;
-	int rule, revealedstate, newstate;
+int debugreduce(struct parse_tables *desc, int rule, int revealedstate, int newstate)
 {
 	int i;
 	printf(":   reduce   %d->%d\n", revealedstate, newstate);
@@ -303,23 +257,19 @@ debugreduce(desc, rule, revealedstate, newstate)
 	fflush(stdout);
 }
 
-debugflush(desc, state)
-	struct parse_tables *desc;
-	int state;
+int debugflush(struct parse_tables *desc, int state)
 {
 	printf("\t\tpop state %d\n", state);
 	fflush(stdout);
 }
 
-debugnewline()
+int debugnewline()
 {
 	printf("\n");
 	fflush(stdout);
 }
 
-	static int
-parse__Run(self)
-	struct parse *self;
+int parse__Run(struct parse *self)
 {
 	register struct parse_tables *desc;
 	register int x, tact;	/* temps */

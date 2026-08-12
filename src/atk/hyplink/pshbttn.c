@@ -42,6 +42,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/hypl
 #include <graphic.ih>
 #include <observe.ih>
 #include <pshbttn.eh>
+static int htoin(char *s, int n);
+static long pushbutton_SanelyReturnReadError(struct pushbutton *self, FILE *fp, long id, long code);
 
 /* Defined constants and macros */
 #define DS_VERSION 2 /* datastream version */
@@ -52,16 +54,14 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/hypl
 /* External declarations */
 
 /* Forward Declarations */
-static void WriteLine();
-static char *GlomStrings(), *ReadLine(), *EncodeFont();
+static void WriteLine(FILE *f, char *l);
+static char *GlomStrings(char *s, char *t), *ReadLine(FILE *f), *EncodeFont(struct pushbutton *self);
 
 /* Global variables */
 static struct atom *pushbutton_trigger;
 
 
-boolean
-pushbutton__InitializeClass(c)
-struct classheader *c;
+boolean pushbutton__InitializeClass(struct classheader *c)
 {
     /* 
       Initialize all the class data.
@@ -71,10 +71,7 @@ struct classheader *c;
 }
 
 
-boolean
-pushbutton__InitializeObject(c, self)
-struct classheader *c;
-struct pushbutton *self;
+boolean pushbutton__InitializeObject(struct classheader *c, struct pushbutton *self)
 {
 /*
   Inititialize the object instance data.
@@ -114,10 +111,7 @@ struct pushbutton *self;
 }
 
 
-void
-pushbutton__FinalizeObject(c, self)
-struct classheader *c;
-struct pushbutton *self;
+void pushbutton__FinalizeObject(struct classheader *c, struct pushbutton *self)
 {
 /*
   Finalize the object instance data.
@@ -138,7 +132,7 @@ struct pushbutton *self;
 }
 
 
-static void
+void
 pushbutton__WriteDataPart(self, fp)
 struct pushbutton *self;
 FILE *fp;
@@ -188,12 +182,7 @@ FILE *fp;
 
 
 
-long
-pushbutton__Write(self, fp, id, level)
-struct pushbutton *self;
-FILE *fp;
-long id;
-int level;
+long pushbutton__Write(struct pushbutton *self, FILE *fp, long id, int level)
 {
 /*
   Write the object data out onto the datastream.
@@ -223,9 +212,9 @@ int level;
   if (id != pushbutton_GetWriteID(self)) {
     /* New Write Operation */
     pushbutton_SetWriteID(self, id);
-    fprintf(fp, "\\begindata{%s,%d}\nDatastream version: %d\n",
-	    class_GetTypeName(self), 
-	    uniqueid, 
+    fprintf(fp, "\\begindata{%s,%ld}\nDatastream version: %d\n",
+	    class_GetTypeName(self),
+	    uniqueid,
 #ifndef PL8
 	    DS_VERSION);
 #else /* PL8 */
@@ -234,13 +223,13 @@ int level;
 
     pushbutton__WriteDataPart(self, fp);
 
-    fprintf(fp, "\\enddata{%s,%d}\n", class_GetTypeName(self), uniqueid);
+    fprintf(fp, "\\enddata{%s,%ld}\n", class_GetTypeName(self), uniqueid);
   }
   return(uniqueid);
 }
 
 
-static long
+long
 pushbutton__ReadDataPart(self, fp, dsversion)
 struct pushbutton *self;
 FILE *fp;
@@ -306,12 +295,7 @@ FILE *fp;
 
 
 
-static long
-pushbutton_SanelyReturnReadError(self, fp, id, code)
-     struct pushbutton *self;
-     FILE *fp;
-     long id;
-     long code;
+static long pushbutton_SanelyReturnReadError(struct pushbutton *self, FILE *fp, long id, long code)
 {
     /*
       Suck up the file until our enddata, then return the error code.
@@ -337,11 +321,7 @@ pushbutton_SanelyReturnReadError(self, fp, id, code)
 
 
 
-long
-pushbutton__Read(self, fp, id)
-struct pushbutton *self;
-FILE *fp;
-long id;
+long pushbutton__Read(struct pushbutton *self, FILE *fp, long id)
 {
 /*
   Read in the object from the file.
@@ -373,10 +353,7 @@ long id;
 }
 
 
-void
-pushbutton__SetText(self, txt)
-struct pushbutton *self;
-char *txt;
+void pushbutton__SetText(struct pushbutton *self, char *txt)
 {
 /*
   Set the text label for this object.
@@ -394,10 +371,7 @@ char *txt;
 }
 
 
-void
-pushbutton__SetStyle(self, stylecode)
-struct pushbutton *self;
-int stylecode;
+void pushbutton__SetStyle(struct pushbutton *self, int stylecode)
 {
 /*
   Set the style code for this object.
@@ -409,10 +383,7 @@ int stylecode;
 }
 
 
-void
-pushbutton__SetButtonFont(self, f)
-struct pushbutton *self;
-struct fontdesc *f;
+void pushbutton__SetButtonFont(struct pushbutton *self, struct fontdesc *f)
 {
 /*
   Set the font descriptor for this object.
@@ -428,11 +399,7 @@ struct fontdesc *f;
 
 
 
-void
-pushbutton__SetFGColor(self, name, red, green, blue)
-     struct pushbutton *self;
-     char *name;
-     int red, green, blue;
+void pushbutton__SetFGColor(struct pushbutton *self, char *name, int red, int green, int blue)
 {
     /*
       Set the foreground color for this object.
@@ -460,11 +427,7 @@ pushbutton__SetFGColor(self, name, red, green, blue)
 }
 
 
-void
-pushbutton__SetBGColor(self, name, red, green, blue)
-     struct pushbutton *self;
-     char *name;
-     int red, green, blue;
+void pushbutton__SetBGColor(struct pushbutton *self, char *name, int red, int green, int blue)
 {
     /*
       Set the background color for this object.
@@ -492,10 +455,7 @@ pushbutton__SetBGColor(self, name, red, green, blue)
 }
 
 
-char *
-pushbutton__GetFGColor(self, rgb_vect)
-     struct pushbutton *self;
-     unsigned char rgb_vect[];
+char * pushbutton__GetFGColor(struct pushbutton *self, unsigned char *rgb_vect)
 {
     /*
       Return the foreground color for this object.
@@ -509,10 +469,7 @@ pushbutton__GetFGColor(self, rgb_vect)
 }
 
 
-char *
-pushbutton__GetBGColor(self, rgb_vect)
-     struct pushbutton *self;
-     unsigned char rgb_vect[];
+char * pushbutton__GetBGColor(struct pushbutton *self, unsigned char *rgb_vect)
 {
     /*
       Return the background color for this object.
@@ -526,10 +483,7 @@ pushbutton__GetBGColor(self, rgb_vect)
 }
 
 
-static int
-htoin(s, n)
-     char *s;
-     int n;
+static int htoin(char *s, int n)
 {
     int i, t;
 
@@ -546,11 +500,7 @@ htoin(s, n)
 }
 
 
-void
-pushbutton__ParseRGB(self, rgb_string, rgb_vect)
-     struct pushbutton *self;
-     char *rgb_string;
-     unsigned char rgb_vect[];
+void pushbutton__ParseRGB(struct pushbutton *self, char *rgb_string, unsigned char *rgb_vect)
 {
     /*
       Return the background color for this object.
@@ -567,10 +517,7 @@ pushbutton__ParseRGB(self, rgb_string, rgb_vect)
 }
 
 
-static void
-WriteLine(f, l)
-FILE *f;
-char *l;
+static void WriteLine(FILE *f, char *l)
 {
 /* 
   Output a single line onto the data stream, quoting
@@ -617,9 +564,7 @@ char *l;
 }
 
 
-static char *
-GlomStrings(s, t)
-char *s, *t;
+static char * GlomStrings(char *s, char *t)
 {
 /* 
   Safely (allocs more memory) concatenates the two strings, 
@@ -641,9 +586,7 @@ char *s, *t;
 }
 
 
-static char *
-ReadLine(f)
-FILE *f;
+static char * ReadLine(FILE *f)
 {
 /* 
   Reads from the datastream, attempting to return a single string.
@@ -703,9 +646,7 @@ FILE *f;
 }
 
 
-static char *
-EncodeFont(self)
-struct pushbutton *self;
+static char * EncodeFont(struct pushbutton *self)
 {
 /*
   Returns a string representing the name of the font for this object.
@@ -726,7 +667,7 @@ struct pushbutton *self;
   if (myfonttype & fontdesc_Italic) strcpy(type,"i");
   if (myfonttype & fontdesc_Fixed) strcpy(type,"f");
   if (buf = (char *)malloc(strlen(myfontname)+25)) {
-    sprintf(buf,"%s%d%s", myfontname, myfontsize, type);
+    sprintf(buf,"%s%ld%s", myfontname, myfontsize, type);
     return (buf);
   } else {
     return(NULL);

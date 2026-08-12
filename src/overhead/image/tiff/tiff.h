@@ -44,10 +44,18 @@
 #define	TIFF_BIGENDIAN		0x4d4d
 #define	TIFF_LITTLEENDIAN	0x4949
 
+/* These two structs mirror on-disk TIFF layout byte-for-byte (the header
+   is fread directly via sizeof(TIFFHeader), the directory entry array via
+   dircount*sizeof(TIFFDirEntry)), so their "LONG" fields must stay a real
+   4-byte type regardless of the host's `long` width -- plain `unsigned
+   long` silently doubled these structs' size on LP64, misreading every
+   TIFF's header and directory entries. */
+#include <stdint.h>
+
 typedef	struct {
 	unsigned short tiff_magic;	/* magic number (defines byte order) */
 	unsigned short tiff_version;	/* TIFF version number */
-	unsigned long  tiff_diroff;	/* byte offset to first directory */
+	uint32_t       tiff_diroff;	/* byte offset to first directory */
 } TIFFHeader;
 
 /*
@@ -66,8 +74,8 @@ typedef	struct {
 typedef	struct {
 	unsigned short tdir_tag;	/* see below */
 	unsigned short tdir_type;	/* data type; see below */
-	unsigned long  tdir_count;	/* number of items; length in spec */
-	unsigned long  tdir_offset;	/* byte offset to field data */
+	uint32_t       tdir_count;	/* number of items; length in spec */
+	uint32_t       tdir_offset;	/* byte offset to field data */
 } TIFFDirEntry;
 
 /*

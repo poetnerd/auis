@@ -55,12 +55,35 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #endif                                 /* WHITEPAGES_ENV */
 #include <mail.h>
 #include <dropoff.h>
+#include <stdlib.h>
+extern int AddHeader(struct MS_Message *Msg, char *Head);
+extern int AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int BuildAttributesField(struct MS_Message *msg);
+extern int BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail);
+extern int BuildDateField(struct MS_Message *Msg, int datetype);
+extern int BuildReplyField(struct MS_Message *Msg);
+extern int CloseMSDir(struct MS_Directory *Dir, int CloseMode);
+extern int DeleteHeader(struct MS_Message *Msg, int num);
+extern int EmitBE2PrefixAndLSeekPastIt(int fd, FILE *fp, int *SkippedBytes);
+extern int GenTempName(char *Buf);
+extern int GetFormatFromMessage(struct MS_Message *Msg, char *ThisFormat, int bufsize, int *IsBE2);
+extern int InventID(struct MS_Message *msg);
+extern int IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir);
+extern int PrintQuotingFormatting(FILE *fp, char *text, char *format, int len);  /* overhead/util/lib/unscribe.c */
+extern int ReadOrFindMSDir(char *Name, struct MS_Directory **pDir, int Code);
+extern int WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode);
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dropoff(char *tolist[], char *mesgfile, char *returnpath, char *home, long flags);  /* overhead/mail/lib/dropoff.c */
+extern int dropoff_auth(char *tolist[], char *mesgfile, char *returnpath, char *home, long flags, char *auth);  /* overhead/mail/lib/dropoff.c */
+extern char *newmid();
+
+static int ConvertDropoffCode(int code);
 
 extern char    *DayArray[], *MonArray[];        /* Just the names of days and
                                                  * months */
-extern char    *pop();
-extern char    *StripWhiteEnds(), *GenAuthField();
-extern FILE    *qopen();
+extern char    *pop(int which);
+extern char    *StripWhiteEnds(char *string), *GenAuthField(struct MS_Message *Msg);
+extern FILE    *qopen(char *name, char *argv[], char *mode);
 extern char     Me[], *MyPrettyAddress, home[], MyMailDomain[];
 
 #define StackAbort(err) AMS_RETURN_ERRCODE(EMSBADDIRSPEC, err, EVIA_CHOOSEDIRECTORIES)
@@ -68,9 +91,7 @@ extern char     Me[], *MyPrettyAddress, home[], MyMailDomain[];
 #define PARSESTACK 0
 #define NESTSTACK 1
 
-int             RejectMessage(Msg, Text, RejectionsTo, RejectCC)
-struct MS_Message *Msg;
-char           *Text, *RejectionsTo, *RejectCC;
+int RejectMessage(struct MS_Message *Msg, char *Text, char *RejectionsTo, char *RejectCC)
 {
     FILE           *fp;
     char            RejTo[1500], BBM[500], TempFile[1 + MAXPATHLEN], *Cmd[3], ThisFormat[50], BigBuf[5000];
@@ -213,8 +234,7 @@ char           *Text, *RejectionsTo, *RejectCC;
     return (0);
 }
 
-static int      ConvertDropoffCode(code)
-int             code;
+static int ConvertDropoffCode(int code)
 {
     switch (code) {
         case D_OK:
@@ -236,10 +256,7 @@ int             code;
     }
 }
 
-int             ResendMessageFromMailbox(Msg, Addressee, AddResendHeads)
-struct MS_Message *Msg;
-char           *Addressee;
-Boolean         AddResendHeads;
+int ResendMessageFromMailbox(struct MS_Message *Msg, char *Addressee, Boolean AddResendHeads)
 {
     FILE           *fp;
     char            TempFile[1 + MAXPATHLEN], *retpath = NULL, *Cmd[2], BigBuf[5000], *authfield;

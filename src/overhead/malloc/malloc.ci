@@ -453,7 +453,7 @@ addarena (min) {
 	int x;
 	/* set min to the largest of min, 1<<14, arena size >>3 */
 	if (min < 1<<14) min = 1<<14;
-	x = (A.arenaend - A.arenastart)>>3;
+	x = ((char *)A.arenaend - (char *)A.arenastart)>>3;
 	if (A.allocp != 0 && min < x) min = x;
 	/* round request to a full page  (though not aligned on page boundary )*/
 	segbytes = ((min+2*EPSILON+(SEGGRAIN-1)) 

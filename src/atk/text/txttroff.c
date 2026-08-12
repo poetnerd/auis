@@ -49,6 +49,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
  */
 
 #include <andrewos.h>
+#include <stdlib.h>
 #include <class.h>
 #include <ctype.h>
 
@@ -127,6 +128,30 @@ static boolean enumerate;
 #endif
 
 #include <txttroff.eh>
+static void ChangeFont();
+static void ChangeJustification(enum style_Justification old, enum style_Justification new, boolean putbreak);
+static void ChangeState();
+static struct text * CompileNotes(struct text *srctext, struct environment *env, long startpos, int topLevel);
+static void ComputeTroffFont(char *name, long FaceCodemodifier, long FontSize);
+static int FlushBars(FILE *f);
+static void FlushLineSpacing(int cs, int hitchars, boolean needbreak);
+static void InitializeFonts();
+static void InitializeStyle();
+static void OutputInitialTroff(FILE *f, boolean toplevel, struct environment *cenv);
+static void PutNewlineIfNeeded();
+static int appendlist(char **lst, int cnt, char *ostr, int TEST);
+static int deletechapnumbers(char *buf);
+static int deletenewlines(char *buf);
+static void endspecialformating();
+static int findinlist(char **lst, int cnt, char *str);
+static int handlemac(FILE *f, char *s);
+static int handlespecialformating(struct text *d, struct environment *env, long pos, long len);
+static int insert(char *src, char *c);
+static int lookup(char *s);
+static int outputendnote();
+static int quote(char *buf, char c, int len);
+static int setdefaultstate();
+static char * speclookup(long c, long f);
 
 static FILE *troffFile;
 static int addNewLine;      /* True if \n should be added to keep lines from getting */
@@ -244,18 +269,14 @@ static boolean addindex;
 #define PUTCOLOR(R, G, B, F)   fprintf(F, COLORPTN, R, G, B )
 
 
-	static void
-setcolor(color,f)
-	char *color;
-	FILE *f;
+static void setcolor(char *color, FILE *f)
 {
 	double r, g, b;
 	print_LookUpColor(color, &r, &g, &b);
 	PUTCOLOR(r, g, b, f);
 }
 
-static char *speclookup(c,f)
-long c,f;
+static char * speclookup(long c, long f)
 {
     static char foo[6];
     *foo = 0;
@@ -503,12 +524,9 @@ static void InitializeFonts()
     fclose(fontfile);
 }
 
-static void ComputeTroffFont(name, FaceCodemodifier, FontSize)
-register char *name;
-register long FaceCodemodifier; 
-long FontSize;
+static void ComputeTroffFont(char *name, long FaceCodemodifier, long FontSize)
 {
-    register family, mod,specfamily;
+    register int family, mod,specfamily;
 
     symbola = 0;
     for (family = 0; fonttable[family].fontname; family++) {
@@ -567,9 +585,7 @@ static void ChangeFont()
 	fprintf(troffFile, "'ft %s\n", code);
 }
 
-static void ChangeJustification(old, new,putbreak)
-enum style_Justification old, new;
-boolean putbreak;
+static void ChangeJustification(enum style_Justification old, enum style_Justification new, boolean putbreak)
 {
     if (old != new) {
 	PutNewlineIfNeeded();
@@ -605,7 +621,7 @@ static void ChangeState()
     /* Figure out what to do for each change in state vector */
     if (sv.CurLeftMargin != nsv.CurLeftMargin) {
         PutNewlineIfNeeded();
-        fprintf(troffFile, "'in %dp\n", NegOffset + nsv.CurLeftMargin);
+        fprintf(troffFile, "'in %ldp\n", NegOffset + nsv.CurLeftMargin);
 	changetabs = 1;
     }
 
@@ -624,7 +640,7 @@ static void ChangeState()
         /* fprintf(troffFile, "'ll %dp\n",  LineLength  - nsv.CurRightMargin); */
         /* Fix For Above */
 
-        fprintf(troffFile, "'ll \\n(.lu-(%dp)\n",
+        fprintf(troffFile, "'ll \\n(.lu-(%ldp)\n",
           nsv.CurRightMargin - sv.CurRightMargin);
     }
 
@@ -646,7 +662,7 @@ static void ChangeState()
 
     if (sv.CurScriptMovement != nsv.CurScriptMovement) {
         /* fprintf(stderr,"<%d>",nsv.CurScriptMovement); */
-        fprintf(troffFile, "\\v'%dp'", nsv.CurScriptMovement - cstatus);
+        fprintf(troffFile, "\\v'%ldp'", nsv.CurScriptMovement - cstatus);
 	needNewLine = 1;
         cstatus = nsv.CurScriptMovement;
     }
@@ -657,9 +673,9 @@ static void ChangeState()
     if (sv.CurIndentation != nsv.CurIndentation) {
         PutNewlineIfNeeded();
         if (nsv.CurIndentation < 0)
-            fprintf(troffFile, ".ti %dp\n", nsv.CurIndentation);
+            fprintf(troffFile, ".ti %ldp\n", nsv.CurIndentation);
         else
-	    fprintf(troffFile, ".ti +%dp\n", nsv.CurIndentation);
+	    fprintf(troffFile, ".ti +%ldp\n", nsv.CurIndentation);
 	changetabs = TRUE;
     }
 
@@ -729,15 +745,15 @@ static void ChangeState()
 	    if (needNewLine) {
 #ifdef GROFF_ENV
 		if (dSize > 39)  /* BUG GROFF */
-		    fprintf(troffFile, "\n.ps %d\n\\&", dSize);
+		    fprintf(troffFile, "\n.ps %ld\n\\&", dSize);
 		else
-		    fprintf(troffFile, "\\s%d\\&", dSize);
+		    fprintf(troffFile, "\\s%ld\\&", dSize);
 #else
-		fprintf(troffFile, "\\s%d\\&", dSize);
+		fprintf(troffFile, "\\s%ld\\&", dSize);
 #endif /* GROFF_ENV */
 	    }
 	    else
-		fprintf(troffFile, ".ps %d\n", dSize);	/* set point size */
+		fprintf(troffFile, ".ps %ld\n", dSize);	/* set point size */
 	    
 	    cSize = dSize;
 	}
@@ -761,7 +777,7 @@ static void ChangeState()
     }
 }
 
-static setdefaultstate()
+static int setdefaultstate()
 {
     /*	Encounted a style that encompasses whole document */
     /*  dFont, dFace, dSize are already set at this point */
@@ -807,9 +823,7 @@ static void InitializeStyle()
 /* OutputInitialTroff(f, cenv) */
 /* Generates the standard stuff at the beginning of the troff stream */
 /* The current environment is used to set font, font size, and adjust mode. */
-static handlemac(f,s)
-FILE *f;
-char *s;
+static int handlemac(FILE *f, char *s)
 {
     FILE *fi,*fopen();
     register int c;
@@ -820,10 +834,7 @@ char *s;
     else fprintf(f, ".so %s\n",s);
 }
 
-static void OutputInitialTroff(f, toplevel, cenv)
-register FILE *f;
-boolean toplevel;
-struct environment *cenv;
+static void OutputInitialTroff(FILE *f, boolean toplevel, struct environment *cenv)
 {
 /*     register char **mx; */
     register int i;
@@ -892,11 +903,11 @@ struct environment *cenv;
 	/* Adjust the lengths of the title lens and margins for */
         /* headers (w/o phony left space for outdenting) */
 
-	fprintf(f, ".nr LT %dp\n", LineLength - NegOffset);
+	fprintf(f, ".nr LT %ldp\n", LineLength - NegOffset);
 
 	/* Reset the left hand margin for the document */
 
-	fprintf(f,".nr PO %dp\n", PageOffset);
+	fprintf(f,".nr PO %ldp\n", PageOffset);
 
     }
 
@@ -913,7 +924,7 @@ struct environment *cenv;
       sv.CurFontSize);              /* Sets dFont, dFace, dSize */
 
     ChangeFont();                   /* Set default font */
-    fprintf(f, ".nr PS %d\n", dSize);  /* Set point size */
+    fprintf(f, ".nr PS %ld\n", dSize);  /* Set point size */
     fprintf(f, ".ps \\n(PS\n");
     cSize = dSize;
 
@@ -927,7 +938,7 @@ struct environment *cenv;
 	currentSpread = 0;
     }
 
-    fprintf(f, ".nr VS %dp\n", currentVS);        /* Set interline spacing and tabs */
+    fprintf(f, ".nr VS %ldp\n", currentVS);        /* Set interline spacing and tabs */
     fprintf(f, ".vs \\n(VSu\n");
     fprintf(f, ".nr EN %dn\n", tabscharspaces);
 
@@ -971,10 +982,10 @@ struct environment *cenv;
 	fputs(".nr FS \\n(.s\n", f);
 	fprintf(f, ".RS\n");	/* init real defaults */
 	if (sv.CurLeftMargin != 0) {
-	    fprintf(troffFile, ".in %dp\n", NegOffset + sv.CurLeftMargin);
+	    fprintf(troffFile, ".in %ldp\n", NegOffset + sv.CurLeftMargin);
 	}
 	if (sv.CurRightMargin != 0) {
-	    fprintf(troffFile, ".ll \\n(.lu-(%dp)\n", sv.CurRightMargin);
+	    fprintf(troffFile, ".ll \\n(.lu-(%ldp)\n", sv.CurRightMargin);
 	}
 	if (sv.SpecialFlags & style_TabsCharacters) {
 #if 1
@@ -996,9 +1007,9 @@ struct environment *cenv;
 	    /*:RSKadd*/
 
 	    if (sv.CurIndentation < 0)
-		fprintf(troffFile, ".ti %dp\n", sv.CurIndentation);
+		fprintf(troffFile, ".ti %ldp\n", sv.CurIndentation);
 	    else if (sv.CurIndentation > 0)
-		fprintf(troffFile, ".ti +%dp\n", sv.CurIndentation);
+		fprintf(troffFile, ".ti +%ldp\n", sv.CurIndentation);
     }
 
     if (environ_GetProfileSwitch("hyphenate", 0))
@@ -1009,8 +1020,7 @@ struct environment *cenv;
 
 static int barPending;
 
-static int FlushBars(f)
-FILE *f;
+static int FlushBars(FILE *f)
 {
     if (barPending) {
         char buf[128];
@@ -1035,10 +1045,7 @@ FILE *f;
         return 0;
 }
 
-static void FlushLineSpacing(cs, hitchars, needbreak)
-int cs;
-int hitchars;
-boolean needbreak;
+static void FlushLineSpacing(int cs, int hitchars, boolean needbreak)
 {
     /* Put out .sp for subsequent new lines  */
 
@@ -1049,14 +1056,14 @@ boolean needbreak;
     }
     if (cs == 1) {
 	if (currentSpread != 0) {
-	    fprintf(troffFile, ".sp %dp\n", currentSpread);
+	    fprintf(troffFile, ".sp %ldp\n", currentSpread);
 	}
     }
     else if (cs > 1) {
 	cs--;
 	if(hitchars == 0) /* space past trap */
 	    fprintf(troffFile, ".sv %d\n", cs);
-	else fprintf(troffFile, ".sp %dp\n", cs * (currentVS + currentSpread) + currentSpread);
+	else fprintf(troffFile, ".sp %ldp\n", cs * (currentVS + currentSpread) + currentSpread);
     }
     currentSpread = latestSpread;
 
@@ -1082,12 +1089,12 @@ boolean needbreak;
 	    /*:RSKadd*/
 
 	    if (sv.CurIndentation < 0) 
-		fprintf(troffFile, "'ti %dp\n", sv.CurIndentation);
-	    else 
-		fprintf(troffFile, "'ti +%dp\n", sv.CurIndentation);
+		fprintf(troffFile, "'ti %ldp\n", sv.CurIndentation);
+	    else
+		fprintf(troffFile, "'ti +%ldp\n", sv.CurIndentation);
     }
     if (latestVS != currentVS)  {
-	fprintf(troffFile, ".vs %d\n", latestVS);
+	fprintf(troffFile, ".vs %ld\n", latestVS);
 	currentVS = latestVS;
 	extraVS = 0;
     }
@@ -1107,11 +1114,8 @@ static char defaultlist[] =
 /*    "majorheading,heading,subheading,chapter,section,subsection,paragraph,function" */
 "chapter,section,subsection,paragraph"
 ;
-static formatnote;
-static findinlist(lst,cnt,str)
-char **lst; 
-int cnt;
-char *str;
+static int formatnote;
+static int findinlist(char **lst, int cnt, char *str)
 {
     int i;
     for(i = 0; i < cnt; i++,lst++){
@@ -1122,11 +1126,7 @@ char *str;
     }
     return -1;
 }
-static appendlist(lst,cnt,ostr,TEST)
-char **lst;
-int cnt;
-char *ostr;
-int TEST;
+static int appendlist(char **lst, int cnt, char *ostr, int TEST)
 {   /* BUG -- OVERFLOWS NOT DETECTED */
 
     char *str;
@@ -1155,8 +1155,7 @@ int TEST;
     lst[cnt] = NULL;
     return cnt;
 }
-static int lookup(s)
-char *s;
+static int lookup(char *s)
 {
     char **p;
     int i = 0;
@@ -1173,8 +1172,7 @@ static void endspecialformating()
     fprintf(troffFile,".FE\n");
     formatnote = -1;
 }
-static deletenewlines(buf)
-char *buf;
+static int deletenewlines(char *buf)
 {
     register char *c;
     for(c = buf; *c != '\0'; c++){
@@ -1185,8 +1183,7 @@ char *buf;
 	else break;
     }
 }
-static deletechapnumbers(buf)
-char *buf;
+static int deletechapnumbers(char *buf)
 {
     register char *c,*s;
     s = buf;
@@ -1197,8 +1194,7 @@ char *buf;
 	} while (*c++ != '\0');
     }
 }
-static insert(src,c)
-char *src,*c;
+static int insert(char *src, char *c)
 {   /* inserts string src into the begining of string c , assumes enough space */
     char *p,*enddest;
     enddest = c + strlen(c);
@@ -1207,9 +1203,7 @@ char *src,*c;
     for(p = src; *p != '\0';p++)
 	*c++ = *p;
 }
-static quote(buf,c,len)
-char *buf,c;
-int len;
+static int quote(char *buf, char c, int len)
 {
     char *ebuf ;
     int cfree;
@@ -1225,14 +1219,11 @@ int len;
 	ebuf--;
     }
 }
-static outputendnote()
+static int outputendnote()
 {
     fprintf(troffFile,"%d ",endnotes++);
 }
-static handlespecialformating(d,env,pos,len)
-struct text *d;
-struct environment *env;
-long pos,len;
+static int handlespecialformating(struct text *d, struct environment *env, long pos, long len)
 {
     struct style *st;
     struct content_chapentry *centry;
@@ -1340,11 +1331,11 @@ fflush(stdout); */
 		    pos++;
 		if(con != NULL && *sbuf != text_GetChar(d,pos) && text_Strncmp(d,pos,sbuf,strlen(sbuf)) != 0){
 		    fprintf(troffFile,".HE\n");
-		    if(printContents)fprintf(troffFile,".IC %d \"%s\" NO\n",n,bbf);
+		    if(printContents)fprintf(troffFile,".IC %ld \"%s\" NO\n",n,bbf);
 		}
 		else {
 		    fprintf(troffFile,".HE\n");
-		    if(printContents)fprintf(troffFile,".IC %d \"%s\" %s\n",n,bbf,sbuf);
+		    if(printContents)fprintf(troffFile,".IC %ld \"%s\" %s\n",n,bbf,sbuf);
 		    fprintf(troffFile,".iw %s \"%s\"\n",sbuf,bbf);
 		}
 	    }
@@ -1354,7 +1345,7 @@ fflush(stdout); */
 		    long n;
 		    if(centry != NULL) n = centry->space;
 		    else n = -1;
-		    fprintf(troffFile,".IC %d \"",n + 1);
+		    fprintf(troffFile,".IC %ld \"",n + 1);
 		    n = n *INDENTSPACE;
 		    while(n-- > 0) putc(' ',troffFile);
 		    fprintf(troffFile,"%s\" NO\n",sbuf);
@@ -1373,11 +1364,7 @@ struct text *txt;
     return CompileNotes(self,txt,txt->rootEnvironment, 0,TRUE);
 
 }
-static struct text *CompileNotes(srctext,  env, startpos, topLevel)
-    struct text *srctext;
-    struct environment *env;
-    long startpos;
-    int topLevel;		/* top level call is slightly different */
+static struct text * CompileNotes(struct text *srctext, struct environment *env, long startpos, int topLevel)
 {
     struct environment *child;
     register int pos, cpos;
@@ -1432,13 +1419,7 @@ static struct text *CompileNotes(srctext,  env, startpos, topLevel)
   
 #endif /* 0 */
 
-void texttroff__WriteSomeTroff(classID, view, dd, f, toplevel, flags)
-struct classheader *classID;
-struct view *view;
-struct dataobject *dd;
-FILE * f;
-int toplevel;
-unsigned long flags;
+void texttroff__WriteSomeTroff(struct classheader *classID, struct view *view, struct dataobject *dd, FILE *f, int toplevel, unsigned long flags)
 {
     int elen, cs, ln , flag,count,indexfontface,hitchars;
     register long i, doclen;
@@ -1759,7 +1740,7 @@ unsigned long flags;
                     if (c != ' ' && c != '\t') {
 			insideWord = 1;
 			if (extraVS != 0)  {
-			    fprintf(f, "\\x'-%dp'", extraVS);
+			    fprintf(f, "\\x'-%ldp'", extraVS);
 			    ln += 7;
 			}
                         ln += FlushBars(f);
@@ -1956,28 +1937,19 @@ unsigned long flags;
 #endif /* GROFF_ENV */
 }
 
-void texttroff__WriteTroff(classID, view, dd, f, toplevel)
-struct classheader *classID;
-struct view *view;
-struct dataobject *dd;
-FILE * f;
-int toplevel;
+void texttroff__WriteTroff(struct classheader *classID, struct view *view, struct dataobject *dd, FILE *f, int toplevel)
 {
     texttroff_WriteSomeTroff(view,dd,f,toplevel,texttroff_Revert);
 }
 
-void texttroff__BeginDoc(classID, f)
-struct classheader *classID;
-FILE *f;
+void texttroff__BeginDoc(struct classheader *classID, FILE *f)
 {
     textLevel++;
     OutputInitialTroff(f, TRUE, NULL);
     fputs(".br\n", f);
 }
 
-void texttroff__EndDoc(classID, f)
-struct classheader *classID;
-FILE *f;
+void texttroff__EndDoc(struct classheader *classID, FILE *f)
 {
     /*
      *fputs(".ev\n",f);
@@ -1986,10 +1958,7 @@ FILE *f;
     textLevel--;
 }
 
-void texttroff__BeginPS(classID, f, width, height)
-struct classheader *classID;
-FILE *f;
-long width, height;
+void texttroff__BeginPS(struct classheader *classID, FILE *f, long width, long height)
 {
 #ifdef BOGOSITYWANTED
 	/* I see no reason for this extra dot to print.  It looks bad. */
@@ -1997,16 +1966,13 @@ long width, height;
     fprintf(f, "\\&.\n");
 #endif
 #endif
-    fprintf(f, "'PB %d %d\n", width, height);
+    fprintf(f, "'PB %ld %ld\n", width, height);
     fprintf(f, "'if  \\n(zT  \\{\\\n");
-    fprintf(f, "\\!    %d troffadjust %d neg translate\n", width, height);
+    fprintf(f, "\\!    %ld troffadjust %ld neg translate\n", width, height);
 }
 
-void texttroff__EndPS(classID, f, width, height)
-struct classheader *classID;
-FILE *f;
-long width, height;
+void texttroff__EndPS(struct classheader *classID, FILE *f, long width, long height)
 {
     fprintf(f, "\\}\n");
-    fprintf(f, "'PE %d %d\n", width, height);
+    fprintf(f, "'PE %ld %ld\n", width, height);
 }

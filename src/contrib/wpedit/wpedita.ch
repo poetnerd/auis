@@ -35,7 +35,7 @@ class wpeditapp[wpedita] : application[app] {
 classprocedures:
     InitializeClass() returns boolean;
     InitializeObject(struct wpeditapp *self) returns boolean;
-    FinalizeObject(struct folders *self);
+    FinalizeObject(struct wpeditapp *self);
 overrides:
     Start() returns boolean;
     ParseArgs(int argc, char **argv) returns boolean;

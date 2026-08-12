@@ -40,10 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 /*
   dummy routine to get the rest of ams working again
 */
-long MS_GetVConfig(key,vers,result)
-char *key;
-char *vers;
-char *result;
+long MS_GetVConfig(char *key, char *vers, char *result)
 {if(key==0)key="(null)";
  if(vers==0)vers="(null)";
  if (!access("/debug.getvconfig", F_OK)) /*print debugging info?*/

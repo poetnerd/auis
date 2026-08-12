@@ -106,6 +106,7 @@ YYNTBASE = ntokens.
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "andrewos.h"
 #include "machine.h"
 #include "new.h"
@@ -143,9 +144,9 @@ void output_rule_data();
 void output_defines();
 void output_actions();
 void token_actions();
-void save_row();
+void save_row(int state);
 void goto_actions();
-void save_column();
+void save_column(int symbol, int default_state);
 void sort_actions();
 void pack_table();
 void output_base();
@@ -157,14 +158,14 @@ void free_itemset();
 void free_shifts();
 void free_reductions();
 void free_itemsets();
-int action_row();
-int default_goto();
-int matching_state();
-int pack_vector();
+int action_row(int state);
+int default_goto(int symbol);
+int matching_state(int vector);
+int pack_vector(int vector);
 
-extern void berror();
+extern void berror(char *s);
 extern void fatals();
-extern void reader_output_yylsp();
+extern void reader_output_yylsp(FILE *f);
 
 static int nvectors;
 static int nentries;
@@ -700,9 +701,7 @@ token_actions()
    considered lower-numbered rules last, and the last rule considered that likes
    a token gets to handle it.  */
 
-int
-action_row(state)
-int state;
+int action_row(int state)
 {
   register int i;
   register int j;
@@ -864,9 +863,7 @@ int state;
 }
 
 
-void
-save_row(state)
-int state;
+void save_row(int state)
 {
   register int i;
   register int count;
@@ -948,9 +945,7 @@ goto_actions()
 
 
 
-int
-default_goto(symbol)
-int symbol;
+int default_goto(int symbol)
 {
   register int i;
   register int m;
@@ -986,10 +981,7 @@ int symbol;
 }
 
 
-void
-save_column(symbol, default_state)
-int symbol;
-int default_state;
+void save_column(int symbol, int default_state)
 {
   register int i;
   register int m;
@@ -1121,9 +1113,7 @@ pack_table()
 
 
 
-int
-matching_state(vector)
-int vector;
+int matching_state(int vector)
 {
   register int i;
   register int j;
@@ -1162,9 +1152,7 @@ int vector;
 
 
 
-int
-pack_vector(vector)
-int vector;
+int pack_vector(int vector)
 {
   register int i;
   register int j;

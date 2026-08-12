@@ -38,19 +38,37 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <mailconf.h>
 #include <errprntf.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+static int RotBuf13(char *buf, int ct);
+extern int CheckPrinterValidity(char *printer);
+extern int FreePrintVec(char *PrintVector[], int VecIndex);
+extern int NonfatalBizarreError(char *text);
+extern int PrintPendingRequests(Boolean MustPrint);
+extern int PrintQuotingFormatting(FILE *fp, char *text, char *format, int len);  /* overhead/util/lib/unscribe.c */
+extern int PrinterInPrintcapLine(char *printer, char *line);
+extern int QuickGetBodyFileName(char *DirName, char *id, char *FileName);
+extern int RetryBodyFileName(char *FileName);
+extern char *arpadate();  /* overhead/mail/lib/arpadate.c */
+extern int dbg_close(int fd);  /* overhead/util/lib/fdplumb.c */
+extern void dbg_closedir(DIR *d);  /* overhead/util/lib/fdplumb6.c */
+extern int dbg_fclose(FILE *fp);  /* overhead/util/lib/fdplumb.c */
+extern int dbg_vfclose(FILE *fp);  /* overhead/util/lib/fdplumb2.c */
+extern int lc2strncmp(char *s1, char *s2, int len);  /* ams/libs/shr/utils.c */
+
+extern char *AndrewDir(char *str);
+extern char *UnixError(int errorNumber);
+extern char *ap_Shorten(char *pathname);
 
 #define DefaultDocumentFormat "2"
 #define PRINTPREFIX ".MS.ToPrint"
 
 extern char home[], MeInFull[];
 
-extern char *StripWhiteEnds(), *getenv();
-extern double getla();
+extern char *StripWhiteEnds(char *string), *getenv();
+extern double getla(int indx);
 extern int DelayPrinting, AlwaysPrintImmediately;
 
-MS_PrintMessage(DirName, id, flags, printer)
-char *DirName, *id, *printer;
-int flags;
+int MS_PrintMessage(char *DirName, char *id, int flags, char *printer)
 {
     char RawFileName[1+MAXPATHLEN], PrintQueueFileName[1+MAXPATHLEN], LineBuf[2000];
     int errsave, myid;
@@ -113,10 +131,7 @@ static char SEPARATOR[] = "\n___________________________________________________
 
 /* The following routine used to be needed for printing messages; it is still needed for generating reply templates, in reply.c */
 
-PrintSpecialStuff(fp, prcode, FormatVersion)
-FILE *fp;
-int prcode;
-char *FormatVersion;
+int PrintSpecialStuff(FILE *fp, int prcode, char *FormatVersion)
 {
     Boolean OldStyle = FALSE;
 
@@ -172,8 +187,7 @@ char *FormatVersion;
     more-or-less inhibited by the PRINTCOLLISIONTIME hack */
 #define PRINTCOLLISIONTIME 30
 #define PRINTVECMAX 100
-PrintPendingRequests(MustPrint) 
-Boolean MustPrint;
+int PrintPendingRequests(Boolean MustPrint)
 {
     DIR *dirp;
     DIRENT_TYPE *dirent;
@@ -190,7 +204,7 @@ Boolean MustPrint;
     }
     homelen = strlen(home)+2;
     prefixsize = sizeof(PRINTPREFIX) -1;
-    sprintf(PrintProg, AndrewDir("/bin/ezprint"));
+    sprintf(PrintProg, "%s", AndrewDir("/bin/ezprint"));
     PrintVector[0] = PrintProg;
     PrintVector[1] = "-o";
     PrintVector[2] = "Messages_You_Wanted_To_Print";
@@ -267,9 +281,7 @@ Boolean MustPrint;
     return(0);
 }
 
-FreePrintVec(PrintVector, VecIndex)
-char *PrintVector[];
-int VecIndex;
+int FreePrintVec(char *PrintVector[], int VecIndex)
 {
     while (VecIndex > 3) {
 	if (PrintVector[VecIndex] && strcmp(PrintVector[VecIndex], "-z") ) {
@@ -279,9 +291,7 @@ int VecIndex;
     }
 }
 /*
-static RotBuf13(buf, ct)
-char *buf;
-int ct;
+static RotBuf13(char *buf, int ct)
 {
     register char *s = buf;
     while (*s) {
@@ -292,8 +302,7 @@ int ct;
     }
 }
 */
-CheckPrinterValidity(printer)
-char *printer;
+int CheckPrinterValidity(char *printer)
 {
     int i, Checked;
     char FName[1+MAXPATHLEN];
@@ -352,8 +361,7 @@ char *printer;
     }
 }
 
-PrinterInPrintcapLine(printer, line)
-char *printer, *line;
+int PrinterInPrintcapLine(char *printer, char *line)
 {
     char *start, *s;
 

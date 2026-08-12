@@ -1,4 +1,7 @@
 
+/* M3 ANSI sweep: typed .eh export prototypes (revival/doc/roadmap.md, M3) */
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 LOCALINCLUDES = -I../parse
 
 DOBJS = tlex.do
@@ -19,13 +22,10 @@ InstallDocs(tlex.doc, ${DESTDIR}/doc/syntax)
 
 DependTarget()
 
-
 /* the rest of this file is for testing */
-
 
 /* KLUDGE: `make depend` will process the *.c files, so testness.c and
    testtlex.c are copied at test time */
-
 
 /* bogus: use ness.tab.c for both */
 /* dammit, why don't .SUFFIXES work the way I think it says it does */
@@ -51,7 +51,6 @@ testtestness: testness
 	./testness > /tmp/testness.owt 2>&1
 	diff /tmp/testness.owt testness.owt
 	
-
 /* LIBS = ${BASEDIR}/lib/atk/libframe.a \
 *//*	${BASEDIR}/lib/atk/libtext.a \
 *//*	${BASEDIR}/lib/atk/libsupviews.a \

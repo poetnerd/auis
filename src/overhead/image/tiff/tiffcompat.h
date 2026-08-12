@@ -58,6 +58,12 @@
 #ifndef THINK_C
 #include <sys/types.h>
 #endif
+#if defined(__MACH__)
+#include <string.h>
+#include <strings.h>
+#include <unistd.h>
+#include <math.h>
+#endif
 #ifdef VMS
 #include <file.h>
 #include <unixio.h>
@@ -156,6 +162,12 @@ extern	void TIFFUnmapFileContents();
 #define	lseek	mpw_lseek
 extern long mpw_lseek(int, long, int);
 #else
+#if defined(__MACH__)
+/* <unistd.h> (included above) already provides the real off_t
+   lseek(int, off_t, int) prototype; a second unspecified-args
+   declaration here would conflict with it (off_t != long on LP64
+   Darwin). */
+#else
 #if defined(LSEEK_RETURN_TYPE)
 extern  LSEEK_RETURN_TYPE lseek();
 #else
@@ -163,6 +175,7 @@ extern  LSEEK_RETURN_TYPE lseek();
 extern off_t lseek();
 #else
 extern	long lseek();
+#endif
 #endif
 #endif
 #endif
@@ -183,6 +196,7 @@ extern	long lseek();
 #if defined(__MACH__) || defined(THINK_C)
 extern	void *malloc(size_t size);
 extern	void *realloc(void *ptr, size_t size);
+extern	void free(void *ptr);
 #else /* !__MACH__ && !THINK_C */
 #if defined(MSDOS)
 #include <malloc.h>

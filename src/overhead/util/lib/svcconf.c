@@ -48,12 +48,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <util.h>
 #include <svcconf.h>
-
-#ifndef _IBMR2
-extern char *malloc();
-#endif /* _IBMR2 */
+#include <stdlib.h>
 
 extern int errno;
+extern int ViceIsRunning();	/* vclose.c, no header declares it */
 
 /* The name of a file guaranteed to be in AFS */
 char *ViceFile = "*";

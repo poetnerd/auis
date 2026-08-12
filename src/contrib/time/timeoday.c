@@ -38,6 +38,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include <util.h>
 #include <environ.ih>
 #include <timeoday.eh>
+static void UpdateTime(struct timeoday *self);
 
 /* Defined constants and macros */
 #define MAX_LINE_LENGTH 70  /* can't be less than 6 */
@@ -52,8 +53,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 /* External declarations */
 
 /* Forward Declarations */
-static void WriteLine();
-static char *GlomStrings(), *ReadLine(), *EncodeFont();
+static void WriteLine(FILE *f, char *l);
+static char *GlomStrings(char *s, char *t), *ReadLine(FILE *f), *EncodeFont(struct timeoday *self);
 
 /* Global variables */
 static char *months[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", NULL};
@@ -61,9 +62,7 @@ static char *weekdays[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday
 static int maxdigraphlen;
 
 
-boolean
-timeoday__InitializeClass(c)
-struct classheader *c;
+boolean timeoday__InitializeClass(struct classheader *c)
 {
 /* 
   Initialize all the class data.
@@ -83,9 +82,7 @@ struct classheader *c;
 }
 
 
-void
-timeoday__FormatTime(self)
-struct timeoday *self;
+void timeoday__FormatTime(struct timeoday *self)
 {
 /*     Field Descriptors:
           n    insert a new-line character
@@ -231,20 +228,16 @@ struct timeoday *self;
 }
 
 
-static void
-UpdateTime(self)
-struct timeoday *self;
+static void UpdateTime(struct timeoday *self)
 {
   timeoday_UpdateTime(self);
 }
 
 
-void
-timeoday__UpdateTime(self)
-struct timeoday *self;
+void timeoday__UpdateTime(struct timeoday *self)
 {
   self->now = time(0);
-  self->ev = im_EnqueueEvent(UpdateTime, self, event_SECtoTU(self->epoch - (self->now % self->epoch)));
+  self->ev = im_EnqueueEvent((procedure) UpdateTime, self, event_SECtoTU(self->epoch - (self->now % self->epoch)));
   timeoday_FormatTime(self);
 
   return;
@@ -252,10 +245,7 @@ struct timeoday *self;
 
 
 
-void
-timeoday__SetFormat(self, format)
-struct timeoday *self;
-char *format;
+void timeoday__SetFormat(struct timeoday *self, char *format)
 {
   int i;
   char prof_namebuf[100];
@@ -303,9 +293,7 @@ char *format;
 }
 
 
-boolean
-timeoday__InitializeDefaults(self)
-struct timeoday *self;
+boolean timeoday__InitializeDefaults(struct timeoday *self)
 {
   char *fontfamily;
   int fonttype, fontsize;
@@ -329,10 +317,7 @@ struct timeoday *self;
 }
 
 
-boolean
-timeoday__InitializeObject(c, self)
-struct classheader *c;
-struct timeoday *self;
+boolean timeoday__InitializeObject(struct classheader *c, struct timeoday *self)
 {
 /*
   Inititialize the object instance data.
@@ -346,10 +331,7 @@ struct timeoday *self;
 }
 
 
-void
-timeoday__FinalizeObject(c, self)
-struct classheader *c;
-struct timeoday *self;
+void timeoday__FinalizeObject(struct classheader *c, struct timeoday *self)
 {
 /*
   Finalize the object instance data.
@@ -364,10 +346,7 @@ struct timeoday *self;
 }
 
 
-void
-timeoday__WriteDataPart(self, fp)
-struct timeoday *self;
-FILE *fp;
+void timeoday__WriteDataPart(struct timeoday *self, FILE *fp)
 {
 /*
   Write the object data out onto the datastream.
@@ -384,12 +363,7 @@ FILE *fp;
 }
 
 
-long
-timeoday__Write(self, fp, id, level)
-struct timeoday *self;
-FILE *fp;
-long id;
-int level;
+long timeoday__Write(struct timeoday *self, FILE *fp, long id, int level)
 {
 /*
   Write the object data out onto the datastream.
@@ -408,21 +382,18 @@ int level;
   if (id != timeoday_GetWriteID(self)) {
     /* New Write Operation */
     timeoday_SetWriteID(self, id);
-    fprintf(fp, "\\begindata{%s,%d}\nDatastream version: %d\n",
+    fprintf(fp, "\\begindata{%s,%ld}\nDatastream version: %d\n",
 	    class_GetTypeName(self), uniqueid, DS_VERSION);
 
     timeoday_WriteDataPart(self, fp);
 
-    fprintf(fp, "\\enddata{%s,%d}\n", class_GetTypeName(self), uniqueid);
+    fprintf(fp, "\\enddata{%s,%ld}\n", class_GetTypeName(self), uniqueid);
   }
   return(uniqueid);
 }
 
 
-long
-timeoday__ReadDataPart(self, fp)
-struct timeoday *self;
-FILE *fp;
+long timeoday__ReadDataPart(struct timeoday *self, FILE *fp)
 {
 /*
   Read in the object from the file.
@@ -450,11 +421,7 @@ FILE *fp;
 
 
 
-long
-timeoday__Read(self, fp, id)
-struct timeoday *self;
-FILE *fp;
-long id;
+long timeoday__Read(struct timeoday *self, FILE *fp, long id)
 {
 /*
   Read in the object from the file.
@@ -489,10 +456,7 @@ long id;
 
 
 
-void
-timeoday__SetFont(self, f)
-struct timeoday *self;
-struct fontdesc *f;
+void timeoday__SetFont(struct timeoday *self, struct fontdesc *f)
 {
 /*
   Set the font descriptor for this object.
@@ -504,10 +468,7 @@ struct fontdesc *f;
 
 
 
-static void
-WriteLine(f, l)
-FILE *f;
-char *l;
+static void WriteLine(FILE *f, char *l)
 {
 /* 
   Output a single line onto the data stream, quoting
@@ -554,9 +515,7 @@ char *l;
 }
 
 
-static char *
-GlomStrings(s, t)
-char *s, *t;
+static char * GlomStrings(char *s, char *t)
 {
 /* 
   Safely (allocs more memory) concatenates the two strings, 
@@ -578,9 +537,7 @@ char *s, *t;
 }
 
 
-static char *
-ReadLine(f)
-FILE *f;
+static char * ReadLine(FILE *f)
 {
 /* 
   Reads from the datastream, attempting to return a single string.
@@ -640,9 +597,7 @@ FILE *f;
 }
 
 
-static char *
-EncodeFont(self)
-struct timeoday *self;
+static char * EncodeFont(struct timeoday *self)
 {
 /*
   Returns a string representing the name of the font for this object.
@@ -663,7 +618,7 @@ struct timeoday *self;
   if (myfonttype & fontdesc_Italic) strcpy(type,"i");
   if (myfonttype & fontdesc_Fixed) strcpy(type,"f");
   if (buf = (char *)malloc(strlen(myfontname)+25)) {
-    sprintf(buf,"%s%d%s", myfontname, myfontsize, type);
+    sprintf(buf,"%s%ld%s", myfontname, myfontsize, type);
     return (buf);
   } else {
     return(NULL);

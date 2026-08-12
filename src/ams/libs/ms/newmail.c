@@ -39,6 +39,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ms.h>
 #include <hdrparse.h>
 #include <andrewos.h>
+#include <stdlib.h>
+extern int CheckAuthUid(struct MS_Message *NewMessage);
+extern int Flames_HandleNewMessage(struct MS_Message *Msg, char *FileName, int *NumDirInsertions, Boolean IsMail, char *MailboxFile, char *EliErrBuf, int EliErrBufLim);
+extern int FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot);
+extern int InventID(struct MS_Message *msg);
+extern int ParseMessageFromRawBody(struct MS_Message *NewMessage);
+extern int ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking);
 
 extern char    home[];
 extern struct MS_Directory *MyOpenDir;
@@ -50,10 +57,7 @@ extern struct MS_Directory *MyOpenDir;
   * Code, NumDirInsertions and IsReconstruction are all superfluous.
   */
 
-ProcessNewMail(ThisFileName, ParseSpec, Code, UnlinkFailures, EliErrBuf, EliErrBufLim)
-char           *ThisFileName, *ParseSpec, *EliErrBuf;
-int             Code, EliErrBufLim;
-int            *UnlinkFailures;
+int ProcessNewMail(char *ThisFileName, char *ParseSpec, int Code, int *UnlinkFailures, char *EliErrBuf, int EliErrBufLim)
 {
     char *s;
     Boolean         IsReconstruction;

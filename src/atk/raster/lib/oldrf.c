@@ -65,20 +65,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/rast
 #define SWAB(v) ( ((v>>8) & 0xFF) | ((v&0xFF)<<8) )
 #define SWAL(v) ( (SWAB(v)<<16)  |  SWAB(v>>16) )
 
-static unsigned char masks[] = {0xFF, 0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE};
-
 
 
 /* oldRF__WriteRow(file, row, length)  
 		Writes to 'file' the encoded version of the 'length' bytes
 		beginning at byte with address 'row'.
 */
-	void
-oldRF__WriteRow(ClassID, file, row, length)
-	struct classhdr *ClassID;
-	FILE *file;
-	register unsigned char *row;
-	long length;
+void oldRF__WriteRow(struct classheader *ClassID, FILE *file, unsigned char *row, long length)
 {
 	unsigned char buf[BUFBITS>>3];	/* temp for inversion */
 	unsigned char *sx;			/* where to get bytes */
@@ -97,46 +90,24 @@ oldRF__WriteRow(ClassID, file, row, length)
 	Copies one row of bits from 'file' to 'pix'
 	returns 0 for success.  -1 for failure
 */
-	long
-oldRF__ReadRow(ClassID, file, row, length)
-	struct classhdr *ClassID;
-	register FILE *file;			/* where to get bytes from */
-	register unsigned char *row;		/* where to put them */
-	register long length;		/* how many bits in row must be filled */
+long oldRF__ReadRow(struct classheader *ClassID, FILE *file, unsigned char *row, long length)
 {
 	register long W = (length+7)>>3;/* number of bytes */
-	unsigned char savebyte;
+	register unsigned char *x;
 
-	savebyte = *(row+W-1);		/* save last byte */
 	if (fread(row, W, 1, file) < 0) /* read the bytes */
 		return dataobject_PREMATUREEOF;  /* report error, if any */
 
-	/* convert colors */
-	if (((unsigned long)row) & 3) {
-		/* do first partial word */
-		unsigned char *x;
-		for (x = row; ((unsigned long)x)&3; x++)
-			*x = ~*x;
-	}
-	{
-		/* do full words */
-		unsigned long *lx;
-		for (lx = (unsigned long *)(((unsigned long)(row+W-4))&(~3)); 
-				lx >= (unsigned long *)row; lx --)
-			*lx = ~*lx;
-	}
-	if (((unsigned long)(row+W))&3) {
-		unsigned char *x;
-		for (x = row+W; ((unsigned long)(x--))&3; )
-			*x = ~*x;
-	}
+	/* convert colors: complement exactly the W bytes just read.  (Used to
+	   be done in machine-word-size chunks via an "unsigned long *"; on an
+	   LP64 host sizeof(long)==8 while the alignment arithmetic assumed 4,
+	   which skipped the row's first bytes and read/wrote past its end.
+	   The tail bits beyond 'length' are already zero (WHITE) courtesy of
+	   pixelimage_GetRow's own padding on the write side, so no separate
+	   fix-up of the last byte is needed here.) */
+	for (x = row; x < row+W; x++)
+		*x = ~*x;
 
-	if (length & 0x7) {
-		/* fix the last byte if length is not a multiple of 8 bits */
-		register long mask = masks[length & 0x7];
-		register unsigned char *loc = row+W-1;
-		*loc = (*loc & mask) | (savebyte & ~mask);
-	}
 	return dataobject_NOREADERROR;
 }
 
@@ -146,11 +117,7 @@ oldRF__ReadRow(ClassID, file, row, length)
 	Read a raster image from 'file' and put it in 'pix' 
 		return error code
 */
-	long
-oldRF__ReadImage(ClassID, file, pix)
-	struct classhdr *ClassID;
-	register FILE *file;		/* where to get bits from */
-	register struct pixelimage *pix;/* where to put them */
+long oldRF__ReadImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix)
 {
 	struct stat st;			/* buffer to read stat info */
 	struct RasterHeader hdr;	/* buffer to read file header */
@@ -169,8 +136,8 @@ oldRF__ReadImage(ClassID, file, pix)
 		hdr.height = SWAL(hdr.height);
 	}
 	else {
-		fprintf(stderr, "File starts w/ F1, but magic # is 0x%lx\n",
-			hdr.Magic);
+		fprintf(stderr, "File starts w/ F1, but magic # is 0x%x\n",
+			(unsigned int) hdr.Magic);
 		fflush(stderr);
 		return dataobject_BADFORMAT;
 	}
@@ -196,12 +163,7 @@ oldRF__ReadImage(ClassID, file, pix)
 /* oldRF__WriteImage(file, pix, sub) 
 	Write a raster image from 'pix' to 'file'
 */
-	void
-oldRF__WriteImage(ClassID, file, pix, sub)
-	struct classhdr *ClassID;
-	register FILE *file;		/* where to put bits  */
-	register struct pixelimage *pix;/* where to get them from */
-	register struct rectangle *sub;
+void oldRF__WriteImage(struct classheader *ClassID, FILE *file, struct pixelimage *pix, struct rectangle *sub)
 {
 	long left, top, width, height;
 	long buf[BUFBITS>>5];

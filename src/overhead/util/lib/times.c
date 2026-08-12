@@ -41,8 +41,7 @@ extern int errno;
 #define HAS_GETTIMEOFDAY 1
 #endif /* #if SY_B4x */
 
-int osi_GetTimes(blk)
-struct osi_Times *blk;
+int osi_GetTimes(struct osi_Times *blk)
 {
 #ifdef HAS_GETTIMEOFDAY
     struct timeval TV;
@@ -59,7 +58,7 @@ struct osi_Times *blk;
 #endif /* #ifdef HAS_GETTIMEOFDAY */
 }
 
-#if (SY_AIXx == 0 && SY_U5x == 0)
+#if (SY_AIXx == 0 && SY_U5x == 0 && !defined(sys_darwin))
 static int ZonesInitialized = 0;
 char *osi_ZoneNames[2];
 long int osi_SecondsWest;

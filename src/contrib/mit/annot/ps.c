@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 #include "dict.ih"
 #include "ps.eh"
 #include "text.ih"
+static int check_for_title(struct ps *self, FILE *file);
 #define WIDTH 438
 #define HEIGHT 244
 
@@ -49,9 +50,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/contrib/
 /*		private functions				*/
 /****************************************************************/
 
-static check_for_title(self, file)
-struct ps * self;
-FILE * file;
+static int check_for_title(struct ps *self, FILE *file)
 {
     char * match = "title{";
     char title[1024];
@@ -99,17 +98,12 @@ FILE * file;
 /****************************************************************/
 /*		class procedures				*/
 /****************************************************************/
-boolean
-ps__InitializeClass(classID)
-    struct classheader * classID;
+boolean ps__InitializeClass(struct classheader *classID)
 {
     return TRUE;
 }
 
-boolean
-ps__InitializeObject(classID,self)
-struct classheader * classID;
-struct ps * self;
+boolean ps__InitializeObject(struct classheader *classID, struct ps *self)
 {
     struct text * to;
 
@@ -127,22 +121,14 @@ struct ps * self;
 /*		instance methods				*/
 /****************************************************************/
 
-void
-ps__SetChild(self,child)
-    struct ps * self;
-    struct dataobject * child;
+void ps__SetChild(struct ps *self, struct dataobject *child)
 {
 	super_SetChild(self,child);
 	if (child != (struct dataobject *) 0)
 	    text_SetReadOnly((struct text *) child, 0);
 }
 
-long
-ps__Write(self, file, writeID, level)
-struct ps *self;
-FILE *file;
-long writeID;
-int level;
+long ps__Write(struct ps *self, FILE *file, long writeID, int level)
 {   
     int  haschild = 0;
     long w, h, pw, ph;
@@ -181,11 +167,7 @@ int level;
     return ps_GetID(self);
 }
 
-long
-ps__Read(self,file,id)
-    struct ps * self;
-    FILE * file;
-    long id;
+long ps__Read(struct ps *self, FILE *file, long id)
 {
     long x, y, haschild, width, height;
     long objectid;
@@ -203,7 +185,7 @@ ps__Read(self,file,id)
 
     ps_SetID(self,ps_UniqueID(self));
 
-    fscanf(file,"%ld %ld %d %ld %ld", &x, &y, &haschild, &width, &height);
+    fscanf(file,"%ld %ld %ld %ld %ld", &x, &y, &haschild, &width, &height);
     ps_SetSize(self, x, y);
     ps_SetPixelWidth(self, width);
     ps_SetPixelHeight(self, height);

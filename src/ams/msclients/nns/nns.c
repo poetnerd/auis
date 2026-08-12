@@ -39,6 +39,21 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 #include <andrewos.h>
 #include <big.h>
 #include <sys/stat.h>
+#include <stdlib.h>
+
+/* overhead/util/lib/fdplumb.c's dbg_* wrapper family; overhead/util/hdrs/
+   fdplumb.h #defines close/closedir to these but doesn't declare them. */
+extern int dbg_close(int fd), dbg_closedir(DIR *d);
+
+/* ams/libs/ms: no header in the tree declares any of these. */
+extern int MS_Initialize(int *MaxBufSize, Boolean UsingSnap), MS_UpdateState(), CloseMSDir(struct MS_Directory *Dir, int CloseMode), OpenMSDirectory(struct MS_Directory *Dir, int Code),
+	ReadOldMSDirectoryHead(struct MS_Directory *Dir), ReadRawFile(char *File, struct MS_Message *NewMessage, Boolean DoLocking), ParseMessageFromRawBody(struct MS_Message *NewMessage),
+	InventID(struct MS_Message *msg), BuildDateField(struct MS_Message *Msg, int datetype), BuildReplyField(struct MS_Message *Msg), BuildAttributesField(struct MS_Message *msg),
+	BuildCaption(struct MS_Message *Msg, struct MS_CaptionTemplate *Template, Boolean IsMyMail), FreeMessage(struct MS_Message *Msg, Boolean FreeSnapshot), AddHeader(struct MS_Message *Msg, char *Head), IsMessageAlreadyThere(struct MS_Message *Msg, struct MS_Directory *Dir),
+	WritePureFile(struct MS_Message *Msg, char *File, Boolean Overwrite, int Mode), AppendMessageToMSDir(struct MS_Message *Msg, struct MS_Directory *Dir);
+
+/* Defined later in this same file, used above their definitions. */
+extern int GetNewReadyBox(), AddNetnewsWideReplyHeader(struct MS_Message *Msg);
 
 #define ALT_GOURMAND_DIR ("/afs/andrew.cmu.edu/usr0/netbb/.MESSAGES/netnews/alt/gourmand")
 #define ALT_GOURMAND_STR ("RECIPE:")
@@ -56,7 +71,7 @@ char *CUI_ClientVersion= "nns $Revision: 2.20 $";
 
  /* ...or these... */
 
-BizarreError(text, level)              /* Dummy function from cuinosnap, which
+int BizarreError(text, level)              /* Dummy function from cuinosnap, which
                                         * libmessageserver needs! */
 char           *text;
 int             level;
@@ -64,15 +79,12 @@ int             level;
     fprintf(stderr, "<nns:warning>%s (%d)\n", text, level);
 }
 
-Machine_HandleClientSignal(signum, ActNormal)   /* Ditto */
-int             signum, *ActNormal;
+int Machine_HandleClientSignal(int signum, int *ActNormal)
 {
     printf("Machine_HandleClientSignal was called (signum=%d)\n", signum);
 }
 
-main(argc, argv, envp)
-int             argc;
-char          **argv, **envp;
+int main(int argc, char **argv, char **envp)
 {
     int             opt, status, dummy;
     GList_t         GList;
@@ -190,9 +202,7 @@ int	       GetNewReadyBox()
     return 1;
 }
  
-int            ProcessDir(dir, GListp)
-char           *dir;
-GList_t        *GListp;
+int ProcessDir(char *dir, GList_t *GListp)
 {
     int status;
 
@@ -211,9 +221,7 @@ GList_t        *GListp;
     return status;
 }
 
-void            ProcessList(gl, dir)
-GList_t        *gl;
-char           *dir;
+void ProcessList(GList_t *gl, char *dir)
 {
     GListEntry_t   *gle;
     int             i, numUnlinks, numPosts, numFolders;
@@ -305,12 +313,7 @@ char           *dir;
 
 /* Returns success/failure */
 
-int             ProcessEntry(gle, fullFilename, Dir, mc, UnlinkP)
-GListEntry_t   *gle;
-char           *fullFilename;
-struct MS_Directory *Dir;
-MCache_t       *mc;
-int            *UnlinkP;
+int ProcessEntry(GListEntry_t *gle, char *fullFilename, struct MS_Directory *Dir, MCache_t *mc, int *UnlinkP)
 {
     struct MS_Message *Msg;
     int             shouldWrite, inCache;
@@ -340,7 +343,7 @@ int            *UnlinkP;
 	    || AddNetnewsWideReplyHeader(Msg)
 	    || (Msg->AuthUid = 0, Msg->AuthName = Msg->AuthCell = NULL, FALSE)
 	    || InventID(Msg)
-	    || BuildDateField(Msg)
+	    || BuildDateField(Msg, DATETYPE_FROMHEADER)
 	    || BuildReplyField(Msg)
 	    || BuildAttributesField(Msg)
 	    || BuildCaption(Msg, &CaptionTemplate, FALSE)) {
@@ -421,7 +424,7 @@ int            *UnlinkP;
 	 */
 
 	if (WritePureFile(Msg, NewFileName, FALSE, 0644)) {
-	    printf("nns (0): WritePureFile failed on Mailbox file %s\n     destined for %s,\n      with Msg->OpenFD of %d (ms: %d, %d, %d)\n", GLEGetFilename(gle), NewFileName, Msg->OpenFD, AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
+	    printf("nns (0): WritePureFile failed on Mailbox file %s\n     destined for %s,\n      with Msg->OpenFD of %d (ms: %ld, %ld, %ld)\n", GLEGetFilename(gle), NewFileName, Msg->OpenFD, AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
 	    if (inCache) {
 		MCDelete(mc, GLEGetFilename(gle));      /* This is cool, since
 							 * GLIgnore will be
@@ -469,8 +472,7 @@ int            *UnlinkP;
     return (TRUE);
 }
 
-void            DotsToSlashesInPlace(string)
-char           *string;
+void DotsToSlashesInPlace(char *string)
 {
     char           *p = string;
 
@@ -478,40 +480,33 @@ char           *string;
 	*(p++) = '/';
 }
 
-int             ShouldAlreadyBeCached(gle)
-GListEntry_t   *gle;
+int ShouldAlreadyBeCached(GListEntry_t *gle)
 {
     return (GLEGetBefore(gle) > 0);
 }
 
-int             ShouldBeCached(gle)
-GListEntry_t   *gle;
+int ShouldBeCached(GListEntry_t *gle)
 {
     return (GLEGetAhead(gle) > 0);
 }
 
-int             ShouldRename(gle)
-GListEntry_t   *gle;
+int ShouldRename(GListEntry_t *gle)
 {
     return (!GLEGetAhead(gle));
 }
 
-int             ShouldUnlink(gle)
-GListEntry_t   *gle;
+int ShouldUnlink(GListEntry_t *gle)
 {
     return (!(GLEGetAhead(gle) || GLEGetIgnore(gle)));
 }
 
-void            Verbiage(level, string)
-int             level;
-char           *string;
+void Verbiage(int level, char *string)
 {
     if (level <= Globals.Options.verbose)
-	fprintf(stderr, "nns (%d): %s (ms: %d, %d, %d)\n", level, string, AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
+	fprintf(stderr, "nns (%d): %s (ms: %ld, %ld, %ld)\n", level, string, AMS_ERRNO, AMS_ERRCAUSE, AMS_ERRVIA);
 }
 
-int             AddNetnewsWideReplyHeader(Msg)
-struct MS_Message *Msg;
+int AddNetnewsWideReplyHeader(struct MS_Message *Msg)
 {
     char            header[GROUPSLINESIZE], *gptr, tmpchar, tmpchar2, *endptr, *end2, *folder, *p;
     int             first = TRUE, delay;
@@ -562,8 +557,7 @@ struct MS_Message *Msg;
     return (0);
 }
 
-char *xmalloc(size)
-int size;
+char * xmalloc(int size)
 {
     char *retval = malloc(size);
     if (!retval) {

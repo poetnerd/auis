@@ -32,7 +32,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <mailconf.h>
+#include <mail.h>
+#include <util.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -45,9 +49,7 @@ extern char *inet_ntoa();
 #include <netdb.h>
 #include <andrewos.h> /* sys/time.h */
 
-main(argc, argv)
-int argc;
-unsigned char **argv;
+int main(int argc, char **argv)
 {
     int i, j;
     unsigned long foo, bar, baz;
@@ -84,9 +86,9 @@ unsigned char **argv;
 	    if (Host != NULL) fputc(')', stdout);
 	    j=strlen((char *) cp);
 	    if (j <= 13) {
-		printf(", ctr (mod 64) of %d.\n", baz);
+		printf(", ctr (mod 64) of %lu.\n", baz);
 	    } else {
-		printf(", pid %d, ctr (mod 256) of %d.\n",
+		printf(", pid %lu, ctr (mod 256) of %lu.\n",
 		       (baz >> 16) & 0xFFFF, (baz >> 8) & 0xFF);
 	    }
 	}

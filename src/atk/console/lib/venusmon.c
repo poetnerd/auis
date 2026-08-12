@@ -79,7 +79,6 @@ int venusSocket;		/* socket to Venus */
 boolean FetchInProgress, StoreInProgress;
 char LastFetchMsg[128],  LastStoreMsg[128];
 extern struct fontdesc *console10font;
-extern char *sys_errlist[];
 char OtherVenusStr[150], FetchVenusStr[150], FinishedVenusStr[150];
 extern boolean NonViceHost, NonAFSDHost;
 

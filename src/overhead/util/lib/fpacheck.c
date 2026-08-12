@@ -9,7 +9,7 @@
 static char *rcsid = "$Header: ";
 #endif /* lint */
 
-fpacheck()
+int fpacheck()
 {
     float f;
 

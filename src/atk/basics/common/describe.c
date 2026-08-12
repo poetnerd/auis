@@ -40,19 +40,13 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/basi
 
 /* changes to describe.c */
 
-enum view_DescriberErrs describer__Describe(self,viewToDescribe,format,file,rock)
-struct describer * self;
-struct view * viewToDescribe;
-char * format;
-FILE * file;
-long rock;
+enum view_DescriberErrs describer__Describe(struct describer *self, struct view *viewToDescribe, char *format, FILE *file, long rock)
 {
     /* Print out a console message saying that this format is not available */
     return view_NoDescriptionAvailable;
 }
 
-boolean describer_InitializeObject(classID,self)
-struct classheader * classID; 
-struct describer * self; {
+boolean describer_InitializeObject(struct classheader *classID, struct describer *self)
+{
     return TRUE;
 }

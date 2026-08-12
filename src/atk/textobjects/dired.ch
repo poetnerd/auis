@@ -68,8 +68,8 @@ methods:
     IsMarked(char *fname) returns boolean;
     AnythingMarked() returns boolean;
 
-    EnumerateAll(procedure proc, long rock) returns char *;
-    EnumerateMarked(procedure proc, long rock) returns char *;
+    EnumerateAll(procedure proc, void *rock) returns char *;
+    EnumerateMarked(procedure proc, void *rock) returns char *;
 
 macromethods:
     SetLongMode(boolean on) ((self)->longMode = (on))

@@ -34,9 +34,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <andrewos.h>
 #include <ams.h>
 
-FindTreeRoot(DirName, RootName, ReallyWantParent)
-char *DirName, *RootName;
-short ReallyWantParent;
+int FindTreeRoot(char *DirName, char *RootName, short ReallyWantParent)
 {
     char *s, *t;
 

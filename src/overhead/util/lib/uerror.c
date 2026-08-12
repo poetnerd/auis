@@ -40,6 +40,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 
 #include <andrewos.h>
 #include <errno.h>
+#include <stdio.h>
 #ifdef AFS_ENV
 #include <afs/param.h>
 #include <afs/errors.h>
@@ -48,13 +49,10 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 #define NULL (char *) 0
 #endif
 
-char *UnixError(errorNumber)
-int	errorNumber;
+char * UnixError(int errorNumber)
 {
 /* Returns a pointer to a static buffer containing English text describing the same error condition that errorNumber describes (interpreted as a Unix error number).  The text has no newlines in it.  We contend that this is what ``perror'' should have been returning all along. */
     static char ErrBuff[40];
-    extern int sys_nerr;
-    extern char *sys_errlist[];
 #ifdef AFS_ENV
     static char *vice_errlist[] = {
 	/* 101: VSALVAGE */		"Volume needs salvage",

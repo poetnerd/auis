@@ -32,6 +32,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #endif
 
 #include <andrewos.h> /* sys/types.h */
+#include <stdlib.h>
 #include <class.h>
 #include <sys/stat.h>
 #include <sys/errno.h>
@@ -43,6 +44,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/text
 #include <mark.ih>
 
 #include <smpltext.eh>
+static boolean EnsureSize();
+static void MoveGap(struct simpletext *self, long pos);
+static boolean simplewrite(FILE *file, char *p, long len);
 
 extern int errno;
 
@@ -61,9 +65,7 @@ static long keywordlength;	/* Current length of the keyword buffer */
 static int DataStreamVersion = 0;
 
 
-boolean simpletext__InitializeObject(classID, self)
-struct classheader *classID;
-struct simpletext *self;
+boolean simpletext__InitializeObject(struct classheader *classID, struct simpletext *self)
 {
     self->string = (char *) malloc(INITIALSTRINGSIZE);
     self->lowSize = 0;
@@ -90,9 +92,7 @@ struct simpletext *self;
     return TRUE;
 }
 
-void simpletext__FinalizeObject(classID, self)
-struct classheader *classID;
-struct simpletext *self;
+void simpletext__FinalizeObject(struct classheader *classID, struct simpletext *self)
 {
     struct mark *mark;
     
@@ -107,9 +107,7 @@ struct simpletext *self;
 
 #define SIZEINCREMENT 200 /* Size to increase pad a "large" space request by. */
 
-static boolean EnsureSize(self, neededGap)
-struct simpletext *self;
-long neededGap;
+static boolean EnsureSize(struct simpletext *self, long neededGap)
 {
     long totalSize;
     long newGapSize;
@@ -150,9 +148,7 @@ long neededGap;
     return TRUE;
 }
 
-static void MoveGap(self, pos)
-struct simpletext *self;
-long pos;
+static void MoveGap(struct simpletext *self, long pos)
 {
     register long amount;
     char *s, *t;
@@ -180,23 +176,17 @@ the LengthChanged method.
 
 #define UpdateMarks(self, pos, size) simpletext__LengthChanged(self, pos, size)
 
-void simpletext__LengthChanged(self, pos, size)
-struct simpletext *self;
-long pos;
-long size;
+void simpletext__LengthChanged(struct simpletext *self, long pos, long size)
 {
     mark_UpdateMarks(self->markList, pos, size);
 }
 
-boolean simpletext__GetReadOnly(self)
-    struct simpletext *self;
+boolean simpletext__GetReadOnly(struct simpletext *self)
 {
     return (simpletext_GetFence(self) > simpletext_GetLength(self));
 }
 
-void simpletext__SetReadOnly(self, readOnly)
-    struct simpletext *self;
-    boolean readOnly;
+void simpletext__SetReadOnly(struct simpletext *self, boolean readOnly)
 {
     if (readOnly)
         simpletext_SetFence(self, simpletext_GetLength(self) + 1);
@@ -204,9 +194,7 @@ void simpletext__SetReadOnly(self, readOnly)
         simpletext_ClearFence(self);
 }
 
-void simpletext__SetAttributes(self, attributes)
-    struct simpletext *self;
-    struct attributes *attributes;
+void simpletext__SetAttributes(struct simpletext *self, struct attributes *attributes)
 {
 
     super_SetAttributes(self, attributes);
@@ -224,10 +212,7 @@ void simpletext__SetAttributes(self, attributes)
     }
 }
 
-long simpletext__Read(self, file, id)
-struct simpletext *self;
-FILE *file;
-long id;
+long simpletext__Read(struct simpletext *self, FILE *file, long id)
 {
     int oldLength = self->length;
 
@@ -317,10 +302,7 @@ long id;
     }
     return dataobject_NOREADERROR;
 }
-static boolean simplewrite(file,p,len)
-FILE *file;
-char *p;
-long len;
+static boolean simplewrite(FILE *file, char *p, long len)
 {
     /*
       Write out the literal contents of the character buffer.
@@ -346,11 +328,7 @@ long len;
     }
     return TRUE;
 }
-long simpletext__Write(self, file, writeID, level)
-struct simpletext *self;
-FILE *file;
-long writeID;
-int level;
+long simpletext__Write(struct simpletext *self, FILE *file, long writeID, int level)
 {
     if (self->header.dataobject.writeID != writeID)  {
 	self->header.dataobject.writeID = writeID;
@@ -369,8 +347,7 @@ int level;
     return dataobject_UniqueID(self);
 }
 
-void simpletext__Clear(self)
-struct simpletext *self;
+void simpletext__Clear(struct simpletext *self)
 {
     self->highbitflag=(-1);
     if (self->length == 0) return;
@@ -381,11 +358,7 @@ struct simpletext *self;
     self->length = 0;
 }
 
-boolean simpletext__InsertCharacters(self, pos, str, len)
-struct simpletext *self;
-long pos;
-char *str;
-long len;
+boolean simpletext__InsertCharacters(struct simpletext *self, long pos, char *str, long len)
 {
     if (pos >= simpletext_GetFence(self)) {
         simpletext_AlwaysInsertCharacters(self, pos, str, len);
@@ -395,11 +368,7 @@ long len;
         return FALSE;
 }
 
-void simpletext__AlwaysInsertCharacters(self, pos, str, len)
-struct simpletext *self;
-long pos;
-char *str;
-long len;
+void simpletext__AlwaysInsertCharacters(struct simpletext *self, long pos, char *str, long len)
 {
     register long i;
     register char *s;
@@ -426,10 +395,7 @@ long len;
     simpletext_LengthChanged(self, pos, len);
 }
 
-boolean simpletext__DeleteCharacters(self, pos, len)
-struct simpletext *self;
-long pos;
-long len;
+boolean simpletext__DeleteCharacters(struct simpletext *self, long pos, long len)
 {    
     if (pos >= simpletext_GetFence(self)) {
         simpletext_AlwaysDeleteCharacters(self, pos, len);
@@ -439,10 +405,7 @@ long len;
         return FALSE;
 }
 
-void simpletext__AlwaysDeleteCharacters(self, pos, len)
-struct simpletext *self;
-long pos;
-long len;
+void simpletext__AlwaysDeleteCharacters(struct simpletext *self, long pos, long len)
 {
     
     self->highbitflag=(-1);
@@ -459,11 +422,7 @@ long len;
     simpletext_LengthChanged(self, pos, -len);
 }
 
-boolean simpletext__ReplaceCharacters(self, pos, len, replacementString, replacementLen)
-    struct simpletext *self;
-    long pos, len;
-    char *replacementString;
-    long replacementLen;
+boolean simpletext__ReplaceCharacters(struct simpletext *self, long pos, long len, char *replacementString, long replacementLen)
 {
 
     if (pos >= simpletext_GetFence(self)) {
@@ -474,11 +433,7 @@ boolean simpletext__ReplaceCharacters(self, pos, len, replacementString, replace
         return FALSE;
 }
 
-void simpletext__AlwaysReplaceCharacters(self, pos, len, replacementString, replacementLen)
-    struct simpletext *self;
-    long pos, len;
-    char *replacementString;
-    long replacementLen;
+void simpletext__AlwaysReplaceCharacters(struct simpletext *self, long pos, long len, char *replacementString, long replacementLen)
 {
 
     int i;
@@ -517,24 +472,19 @@ void simpletext__AlwaysReplaceCharacters(self, pos, len, replacementString, repl
     simpletext_SetModified(self);
 }
 
-long simpletext__GetLength(self)
-struct simpletext *self;
+long simpletext__GetLength(struct simpletext *self)
 {
     return self->length;
 }
 
-long simpletext__GetChar(self, pos)
-struct simpletext *self;
-long pos;
+long simpletext__GetChar(struct simpletext *self, long pos)
 {
     if (pos >= self->length || pos < 0) return EOF;
     if (pos < self->lowSize) return self->string[pos];
     return self->string[pos+self->gapSize];
 }
 
-long simpletext__GetUnsignedChar(self, pos)
-struct simpletext *self;
-long pos;
+long simpletext__GetUnsignedChar(struct simpletext *self, long pos)
 {
     if (pos >= self->length || pos < 0) return EOF;
     if (pos < self->lowSize) return ((unsigned char *)(self->string))[pos];
@@ -564,10 +514,7 @@ long pos;
  * as reading a whole file or chunks of a file directly into a buffer.
  */
 
-char *simpletext__GetBuf(self, pos, length, lenp)
-struct simpletext *self;
-long pos, length;
-long *lenp;
+char * simpletext__GetBuf(struct simpletext *self, long pos, long length, long *lenp)
 {
     if (pos >= 0 && length > 0) {
         long len = self->lowSize - pos;
@@ -589,9 +536,7 @@ long *lenp;
     return NULL;
 }
 
-char *simpletext__GetBufEnd(self, endpos, length, lenp)
-struct simpletext *self;
-long endpos, length, *lenp;
+char * simpletext__GetBufEnd(struct simpletext *self, long endpos, long length, long *lenp)
 {
     if (endpos >= 0 && length > 0) {
         if (endpos <= self->lowSize) {
@@ -607,9 +552,7 @@ long endpos, length, *lenp;
     return NULL;
 }
 
-char *simpletext__GetGap(self, pos, len)
-struct simpletext *self;
-long pos, len;
+char * simpletext__GetGap(struct simpletext *self, long pos, long len)
 {
     if (pos < 0 || pos > self->length || len < 0)
         return NULL;
@@ -632,9 +575,7 @@ long pos, len;
     return self->string + pos;
 }
 
-long simpletext__GetPosForLine(self, line)
-struct simpletext *self;
-long line;
+long simpletext__GetPosForLine(struct simpletext *self, long line)
 {
     long len = simpletext_GetLength(self);
     long pos = 0;
@@ -651,9 +592,7 @@ long line;
     return pos;
 }
 
-long simpletext__GetLineForPos(self, pos)
-struct simpletext *self;
-long pos;
+long simpletext__GetLineForPos(struct simpletext *self, long pos)
 {
     long line=1;
 
@@ -664,9 +603,7 @@ long pos;
     return line;
 }
 
-long simpletext__GetBeginningOfLine(self, pos)
-struct simpletext *self;
-long pos;
+long simpletext__GetBeginningOfLine(struct simpletext *self, long pos)
 {
     while (pos > 0 && simpletext_GetChar(self, pos-1) != '\n') {
 	pos--;
@@ -674,9 +611,7 @@ long pos;
     return pos;
 }
 
-long simpletext__GetEndOfLine(self, pos)
-struct simpletext *self;
-long pos;
+long simpletext__GetEndOfLine(struct simpletext *self, long pos)
 {
     long len = simpletext_GetLength(self);
 
@@ -690,10 +625,7 @@ long pos;
 }
 
 
-void simpletext__AddInCharacter(self, pos, c)
-    struct simpletext *self;
-    long pos;
-    char c;
+void simpletext__AddInCharacter(struct simpletext *self, long pos, char c)
 {
     self->highbitflag=(-1);
     if (self->gapSize == 0)
@@ -705,19 +637,12 @@ void simpletext__AddInCharacter(self, pos, c)
     self->length += 1;
 }
 
-long simpletext__HandleDataObject(self, pos, dop, file)
-struct simpletext *self;
-long pos;
-struct dataobject *dop;
-FILE *file;  {
+long simpletext__HandleDataObject(struct simpletext *self, long pos, struct dataobject *dop, FILE *file)
+{
     return 0;
 }
 
-long simpletext__HandleKeyWord(self, pos, keyword, file)
-struct simpletext *self;
-long pos;
-char *keyword;
-FILE *file;
+long simpletext__HandleKeyWord(struct simpletext *self, long pos, char *keyword, FILE *file)
 {
     long len = strlen(keyword);
 
@@ -731,10 +656,7 @@ FILE *file;
 }
 
 
-long simpletext__HandleCloseBrace(self, pos, file)
-struct simpletext *self;
-long pos;
-FILE *file;
+long simpletext__HandleCloseBrace(struct simpletext *self, long pos, FILE *file)
 {
     simpletext_InsertCharacters(self, pos, "}", 1);
     return 1;
@@ -743,11 +665,7 @@ FILE *file;
 #define TESTEND(C) (C == EOF )
 #define GETANDTEST(C,file) ((C = getc(file)) != EOF )
 
-long simpletext__ReadSubString(self, pos, file, quoteCharacters)
-struct simpletext *self;
-long pos;
-FILE *file;
-boolean quoteCharacters;
+long simpletext__ReadSubString(struct simpletext *self, long pos, FILE *file, boolean quoteCharacters)
 {
     register long c;
     long addedcharacters = 0;
@@ -897,16 +815,14 @@ boolean quoteCharacters;
     return addedcharacters;
 }
 
-long simpletext__HandleBegindata(self,pos,file)
-struct simpletext *self;
-long pos;
-FILE *file;
+long simpletext__HandleBegindata(struct simpletext *self, long pos, FILE *file)
 {
 	char objectname[200];
         int c;
 	long objectid;
 	char *s;
 	struct dataobject *newobject;
+	long readret;
 
 	self->highbitflag=(-1);	    
 	s = objectname;
@@ -941,7 +857,28 @@ FILE *file;
 		dataobject_SetAttributes(newobject, &readOnlyAttr);
 	    }
 	    /* 	    Call the read routine for the object */
-	    dataobject_Read(newobject, file,objectid);
+	    readret = dataobject_Read(newobject, file,objectid);
+	    if (readret != dataobject_NOREADERROR && strcmp(objectname, "unknown") != 0) {
+		/* The object's own Read failed partway through (e.g. the file was
+		 written by a newer/different version of the class and contains
+		 fields this one doesn't understand). The file position is now
+		 somewhere in the middle of the object's datastream rather than at
+		 its \enddata marker; if we pressed on, the rest of the document
+		 would be parsed out of sync. Salvage the remainder as a raw
+		 'unknown' object instead, which scans forward (honoring nested
+		 begindata/enddata) until it finds the real \enddata{objectname,id},
+		 so the parser resynchronizes and everything after it still renders. */
+		fprintf(stderr,
+			"warning: %s__Read failed (error %ld) reading object %ld; salvaging as raw data\n",
+			objectname, readret, objectid);
+		dataobject_Destroy(newobject);
+		newobject = (struct dataobject *)class_NewObject("unknown");
+		if (newobject == NULL) {
+		    fprintf(stderr, "Could not find data object unknown - ignoring\n");
+		    return(-2);
+		}
+		readret = dataobject_Read(newobject, file, objectid);
+	    }
 	    if((c = getc(file))!= '\n')ungetc(c,file);
 	    /*     At this point , the object pointer is the new object id */
 	    if(simpletext_GetObjectInsertionFlag(self) == FALSE){
@@ -965,22 +902,12 @@ FILE *file;
 	}
 }
 
-boolean simpletext__CopyTextExactly(self,pos,srctext,srcpos,len)
-    struct simpletext *self;
-    long pos;
-    struct simpletext *srctext;
-    long srcpos;
-    long len;
+boolean simpletext__CopyTextExactly(struct simpletext *self, long pos, struct simpletext *srctext, long srcpos, long len)
 {
 	return simpletext_CopyText(self, pos, srctext, srcpos, len);
 }
     
-boolean simpletext__CopyText(self,pos,srctext,srcpos,len)
-    struct simpletext *self;
-    long pos;
-    struct simpletext *srctext;
-    long srcpos;
-    long len;
+boolean simpletext__CopyText(struct simpletext *self, long pos, struct simpletext *srctext, long srcpos, long len)
 {
     if (pos >= simpletext_GetFence(self)) {
 	simpletext_AlwaysCopyText(self,pos,srctext,srcpos,len);
@@ -990,22 +917,12 @@ boolean simpletext__CopyText(self,pos,srctext,srcpos,len)
         return FALSE;
 }
 
-void simpletext__AlwaysCopyTextExactly(self,pos,srctext,srcpos,len)
-    struct simpletext *self;
-    long pos;
-    struct simpletext *srctext;
-    long srcpos;
-    long len;
+void simpletext__AlwaysCopyTextExactly(struct simpletext *self, long pos, struct simpletext *srctext, long srcpos, long len)
 {
     simpletext_AlwaysCopyText(self, pos, srctext, srcpos, len);
 }
     
-void simpletext__AlwaysCopyText(self,pos,srctext,srcpos,len)
-    struct simpletext *self;
-    long pos;
-    struct simpletext *srctext;
-    long srcpos;
-    long len;
+void simpletext__AlwaysCopyText(struct simpletext *self, long pos, struct simpletext *srctext, long srcpos, long len)
 {
     register long i;
     register char *s;
@@ -1052,11 +969,7 @@ void simpletext__AlwaysCopyText(self,pos,srctext,srcpos,len)
     return;
 }
 
-long simpletext__Index(self,pos,c,len)
-struct simpletext *self;
-long pos;
-char c;
-long len;
+long simpletext__Index(struct simpletext *self, long pos, char c, long len)
 {
     register long remlen = len;
     register char *s, *fs;
@@ -1080,11 +993,7 @@ long len;
     return EOF ;
 }
 
-int simpletext__Strncmp(self,pos,str,len)
-struct simpletext *self;
-long pos;
-char *str;
-long len;
+int simpletext__Strncmp(struct simpletext *self, long pos, char *str, long len)
 {
     register long remlen = len;
     register char *s;
@@ -1110,12 +1019,7 @@ long len;
 
 #define CharAt(self,pos) ((pos < self->lowSize)? self->string[pos] : self->string[pos+self->gapSize])
 
-int simpletext__Textncmp(self,pos,text,pos2,len)
-struct simpletext *self;
-long pos;
-struct simpletext *text;
-long pos2;
-long len;
+int simpletext__Textncmp(struct simpletext *self, long pos, struct simpletext *text, long pos2, long len)
 {
     register long remlen = len;
     register char *s;
@@ -1139,12 +1043,7 @@ long len;
     return 0 ;
 }
 
-void simpletext__WriteSubString(self, pos, len, file, quoteCharacters)
-struct simpletext *self;
-long pos;
-long len;
-FILE *file;
-boolean quoteCharacters;
+void simpletext__WriteSubString(struct simpletext *self, long pos, long len, FILE *file, boolean quoteCharacters)
 {
     long remlen = len;
     char *s;
@@ -1171,12 +1070,7 @@ boolean quoteCharacters;
     }
  }
 
-void simpletext__CopySubString(self, pos, len, buf, quoteCharacters)
-struct simpletext *self;
-long pos;
-long len;
-char *buf;
-boolean quoteCharacters;
+void simpletext__CopySubString(struct simpletext *self, long pos, long len, char *buf, boolean quoteCharacters)
 {
     long remlen = len;
     char *s;
@@ -1203,10 +1097,7 @@ boolean quoteCharacters;
     *buf = '\0';
  }
 
-struct mark *simpletext__CreateMark(self, pos, length)
-struct simpletext *self;
-long pos;
-long length;
+struct mark * simpletext__CreateMark(struct simpletext *self, long pos, long length)
 {
     struct mark *mark;
     
@@ -1219,9 +1110,7 @@ long length;
     return mark;
 }
 
-void simpletext__RemoveMark(self, mark)
-struct simpletext *self;
-struct mark *mark;
+void simpletext__RemoveMark(struct simpletext *self, struct mark *mark)
 {
     struct mark *mp;
     struct mark *tp;
@@ -1241,10 +1130,7 @@ struct mark *mark;
     }
 }
 
-void simpletext__RegionModified(self, pos, len)
-    struct simpletext *self;
-    long pos;
-    long len;
+void simpletext__RegionModified(struct simpletext *self, long pos, long len)
 {
     struct mark *mp;
     long endpos;
@@ -1259,8 +1145,7 @@ void simpletext__RegionModified(self, pos, len)
     }
 }
 
-boolean simpletext__CheckHighBit(self)
-struct simpletext *self;
+boolean simpletext__CheckHighBit(struct simpletext *self)
 {
     long i=0, len=simpletext_GetLength(self);
 

@@ -51,18 +51,19 @@ of the author */
 #include <page.ih>
 #include <im.ih>
 #include <dataobj.ih>
+#include <string.h>
+static boolean CheckRightSwitchee(struct pagev *self, boolean *NeedFullRedraw, struct page_switchee *cp);
 
 
-static void AddSwitchee(), NextSwitchee(),
-  SwitchObject(), AddSwitcheeFromFile(),
-  PasteSwitchee(),SetCurrentView();
+static void AddSwitchee(struct pagev *self), NextSwitchee(struct pagev *self),
+  SwitchObject(struct pagev *self, struct page_switchee *swin), AddSwitcheeFromFile(struct pagev *self),
+  PasteSwitchee(struct pagev *self),SetCurrentView(struct pagev *self, char *name);
 
 static struct keymap *pagev_keymap = NULL;
 static struct menulist *pagev_menulist = NULL;
 static struct proctable_Entry *switchobjproc = NULL;
 
-boolean pagev__InitializeClass(c)
-struct classheader *c;
+boolean pagev__InitializeClass(struct classheader *c)
 {
     struct proctable_Entry *proc = NULL;
 
@@ -70,7 +71,7 @@ struct classheader *c;
     pagev_menulist = menulist_New();
 
     proc = proctable_DefineProc("pagev-next-page",
-	NextSwitchee, &pagev_classinfo, NULL,
+	(procedure)NextSwitchee, &pagev_classinfo, NULL,
 	"Changes the page to look at the next object.");
     keymap_BindToKey(pagev_keymap, "^X^N", proc, 0);
     menulist_AddToML(pagev_menulist,
@@ -91,35 +92,31 @@ struct classheader *c;
 	"page~95,Insert File~92", proc, NULL, 0);
 */
     proc = proctable_DefineProc("pagev-paste",
-	PasteSwitchee, &pagev_classinfo, NULL,
+	(procedure)PasteSwitchee, &pagev_classinfo, NULL,
 	"Pastes a switchee from the cut-buffer");
     keymap_BindToKey(pagev_keymap, "^X5", proc, 0);
     menulist_AddToML(pagev_menulist,
 	"Flip~95,Paste~80", proc, NULL, 0);
 
     proctable_DefineProc("pagev-SetCurrentView",
-	SetCurrentView, &pagev_classinfo, NULL,
+	(procedure)SetCurrentView, &pagev_classinfo, NULL,
 	"Takes a string argument and calls page_SetNowPlayingByName");
 
     switchobjproc = proctable_DefineProc(
-	"pagev-switch-object", SwitchObject,
+	"pagev-switch-object", (procedure)SwitchObject,
 	&pagev_classinfo, NULL,
 	"Switches to a given object.");
     return(TRUE);
 
 }
-static void SetCurrentView(self,name)
-struct pagev *self;
-char *name;
+static void SetCurrentView(struct pagev *self, char *name)
 {
     struct page *page = (struct page *)
       pagev_GetDataObject(self);
     page_SetNowPlayingByName(page,name);
 }
 
-boolean pagev__InitializeObject(c, self)
-struct classheader *c;
-struct pagev *self;
+boolean pagev__InitializeObject(struct classheader *c, struct pagev *self)
 {
     self->ks = keystate_Create(self, pagev_keymap);
     self->ml = menulist_DuplicateML(pagev_menulist,
@@ -130,9 +127,7 @@ struct pagev *self;
     return(TRUE);
 }
 
-void pagev__FinalizeObject(c, self)
-struct classheader *c;
-struct pagev *self;
+void pagev__FinalizeObject(struct classheader *c, struct pagev *self)
 {
     struct pagev_switcheroo *this, *next;
 
@@ -155,10 +150,7 @@ struct pagev *self;
     }
 }
 
-static boolean CheckRightSwitchee(self, NeedFullRedraw,cp)
-struct pagev *self;
-boolean *NeedFullRedraw;
-struct page_switchee *cp;
+static boolean CheckRightSwitchee(struct pagev *self, boolean *NeedFullRedraw, struct page_switchee *cp)
 {
     struct page *page = (struct page *)
       pagev_GetDataObject(self);
@@ -231,13 +223,7 @@ struct page_switchee *cp;
     return(FALSE);
 }
 
-void pagev__FullUpdate(self, type, left, top, width, height)
-struct pagev *self;
-enum view_UpdateType type;
-long left;
-long top;
-long width;
-long height;
+void pagev__FullUpdate(struct pagev *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
     struct rectangle Rect;
     boolean NeedFull; /* ignored */
@@ -257,8 +243,7 @@ long height;
 		     top, width, height);
 }
 
-void pagev__Update(self)
-struct pagev *self;
+void pagev__Update(struct pagev *self)
 {
     boolean NeedFullRedraw;
 
@@ -275,12 +260,7 @@ struct pagev *self;
     if (self->NowPlaying) view_Update(self->NowPlaying->v);
 }
 
-struct view *pagev__Hit(self, action, x, y, numberOfClicks)
-struct pagev *self;
-enum view_MouseAction action;
-long	x;
-long	y;
-long	numberOfClicks;
+struct view * pagev__Hit(struct pagev *self, enum view_MouseAction action, long x, long y, long numberOfClicks)
 {
     if (!self->NowPlaying) {
 	pagev_WantInputFocus(self, self);
@@ -290,18 +270,14 @@ long	numberOfClicks;
 		     x, y, numberOfClicks));
 }
 
-void pagev__PostKeyState(self, ks)
-struct pagev *self;
-struct keystate *ks;
+void pagev__PostKeyState(struct pagev *self, struct keystate *ks)
 {
     self->ks->next = NULL;
     keystate_AddBefore(self->ks, ks);
     super_PostKeyState(self, self->ks);
 }
 
-void pagev__PostMenus(self, ml)
-struct pagev *self;
-struct menulist *ml;
+void pagev__PostMenus(struct pagev *self, struct menulist *ml)
 {
     struct page_switchee *sw;
     struct page *page = (struct page *)
@@ -318,16 +294,14 @@ struct menulist *ml;
 	    menulist_DeleteFromML(self->ml, MenuBuf);
 	} else {
 	    menulist_AddToML(self->ml, MenuBuf,
-			     switchobjproc, (long) sw, 0);
+			     switchobjproc, sw, 0);
 	}
     }
     if (ml) menulist_ChainBeforeML(self->ml, ml, ml);
     super_PostMenus(self, self->ml);
 }
 
-void pagev__LinkTree(self, parent)
-struct pagev *self;
-struct view *parent;
+void pagev__LinkTree(struct pagev *self, struct view *parent)
 {
     super_LinkTree(self, parent);
     if (self->NowPlaying) {
@@ -335,9 +309,7 @@ struct view *parent;
     }
 }
 
-void pagev__WantInputFocus(self, v)
-struct pagev *self;
-struct view *v;
+void pagev__WantInputFocus(struct pagev *self, struct view *v)
 {
     if (self->NowPlaying && (v == (struct view *) self)) {
 	v = self->NowPlaying->v;
@@ -345,8 +317,7 @@ struct view *v;
     super_WantInputFocus(self, v);
 }
 
-static void AddSwitchee(self)
-struct pagev *self;
+static void AddSwitchee(struct pagev *self)
 {
     char ObjName[150], ViewName[150], Label[150];
     struct dataobject *d;
@@ -389,17 +360,14 @@ struct pagev *self;
     page_NotifyObservers(sw, observable_OBJECTCHANGED); */
 }
 
-static void NextSwitchee(self)
-struct pagev *self;
+static void NextSwitchee(struct pagev *self)
 {
     struct page *page = (struct page *)
       pagev_GetDataObject(self);
     page_SetNowPlayingByPosition(page,page_AFTERCURRENT);
 }
 
-static void SwitchObject(self, swin)
-struct pagev *self;
-struct page_switchee *swin; /* really a long */
+static void SwitchObject(struct pagev *self, struct page_switchee *swin)
 {
     struct page *page = (struct page *)
       pagev_GetDataObject(self);
@@ -415,8 +383,7 @@ struct page_switchee *swin; /* really a long */
 	"SwitchObject called for nonexistent object.");
 }
 
-static void AddSwitcheeFromFile(self)
-struct pagev *self;
+static void AddSwitcheeFromFile(struct pagev *self)
 {
     char FileName[150], ViewName[150], Label[150], *ObjName;
     struct dataobject *d;
@@ -473,8 +440,7 @@ struct pagev *self;
     }
     page_SetNowPlaying(sw, d);
 }
-static void PasteSwitchee(self)
-struct pagev *self;
+static void PasteSwitchee(struct pagev *self)
 {
     char FileName[150], ViewName[150], Label[150], *ObjName;
     struct dataobject *d;
@@ -521,13 +487,7 @@ struct pagev *self;
     page_SetNowPlaying(sw, d);
 }
 
-enum view_DSattributes pagev__DesiredSize(self, width, height, pass, dWidth, dHeight)
-struct pagev *self;
-long width;
-long height;
-enum view_DSpass pass;
-long *dWidth;
-long *dHeight;
+enum view_DSattributes pagev__DesiredSize(struct pagev *self, long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight)
 {
     if(self->NowPlaying && self->NowPlaying->v){
 	return view_DesiredSize(self->NowPlaying->v, width  , height  , pass, dWidth, dHeight);
@@ -535,8 +495,7 @@ long *dHeight;
     return super_DesiredSize(self, width, height, pass, dWidth, dHeight);
 }
 
-void pagev__InitChildren(self)
-struct pagev *self;
+void pagev__InitChildren(struct pagev *self)
 {
     struct page_switchee *sw;
     struct pagev_switcheroo *safe;
@@ -553,12 +512,7 @@ struct pagev *self;
     self->NowPlaying = safe;
 }
 
-void pagev__Print(self, file, processor, finalFormat, topLevel)
-struct pagev *self;
-FILE *file;
-char *processor;
-char *finalFormat;
-boolean topLevel;
+void pagev__Print(struct pagev *self, FILE *file, char *processor, char *finalFormat, boolean topLevel)
 {
     struct page_switchee *sw;
     struct pagev_switcheroo *safe;
@@ -583,10 +537,7 @@ boolean topLevel;
     }
     self->NowPlaying = safe;
 }
-void pagev__ObservedChanged(self, changed, value)
-struct pagev *self;
-struct observable *changed;
-long value;
+void pagev__ObservedChanged(struct pagev *self, struct observable *changed, long value)
 {
     struct pagev_switcheroo *swtmp,*last;
 

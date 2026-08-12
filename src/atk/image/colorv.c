@@ -33,34 +33,22 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/imag
 #include <color.ih>
 #include <colorv.eh>
 
-boolean
-colorv__InitializeClass( classID )
-  struct classheader *classID;
+boolean colorv__InitializeClass(struct classheader *classID)
 {
   return(TRUE);
 }
 
-boolean
-colorv__InitializeObject( classID, self )
-  struct classheader *classID;
-  struct colorv *self;
+boolean colorv__InitializeObject(struct classheader *classID, struct colorv *self)
 {
   return(TRUE);
 }
 
-void
-colorv__FinalizeObject( classID, self)
-  struct classheader *classID;
-  struct colorv *self;
+void colorv__FinalizeObject(struct classheader *classID, struct colorv *self)
 {
 
 }
 
-void
-colorv__FullUpdate( self, type, left, top, width, height )
-  struct colorv *self;
-  enum view_UpdateType type;
-  long left, top, width, height;
+void colorv__FullUpdate(struct colorv *self, enum view_UpdateType type, long left, long top, long width, long height)
 {
   struct color *c = (struct color*) colorv_GetDataObject(self);
   unsigned short R, G, B;
@@ -72,9 +60,7 @@ colorv__FullUpdate( self, type, left, top, width, height )
   colorv_FillRect(self, &r, colorv_BlackPattern(self));
 }
 
-void
-colorv__Update( self )
-  struct colorv *self;
+void colorv__Update(struct colorv *self)
 {
   colorv_FullUpdate(self, view_FullRedraw, 0, 0, 0, 0);
 }

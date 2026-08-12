@@ -38,7 +38,7 @@ class chlistview[chlistv]:textview[textv] {
       HighlightItem(long index);
       UnhighlightItem(long index);
       GetRegionStyle(long regionID, boolean highlighted) returns struct style *;
-      SetRegionStyles(long regionID, struct style *normalStyle, struct style highlightStyle);
+      SetRegionStyles(long regionID, struct style *normalStyle, struct style *highlightStyle);
 
       SetUpdateRegion(long pos, long len);
     data:

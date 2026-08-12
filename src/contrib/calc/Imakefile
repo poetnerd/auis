@@ -6,6 +6,8 @@ DOBJS		=	calc.do calcv.do
 
 IHFILES		=	calc.ih calcv.ih
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
+
 NormalObjectRule()
 NormalATKRule()
 DependTarget()
@@ -16,4 +18,3 @@ NormalHelpRule()
 InstallDocs(calc.help calproc.help, ${DESTDIR}/help)
 InstallHelpAlias(calc, calculator)
 InstallHelpAlias(calproc, calcproc calcprocs)
-

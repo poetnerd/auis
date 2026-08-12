@@ -35,6 +35,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "symtab.h"
 #include "lex.h"
 #include "new.h"
+static char * grow_token_buffer(char *p);
 
 
 extern int lineno;
@@ -43,10 +44,10 @@ extern int translations;
 int parse_percent_token();
 
 /* functions from main.c */
-extern void fatals();
-extern void fatal();
+extern void fatals(char *fmt, int x1, int x2, int x3, int x4, int x5, int x6, int x7, int x8);
+extern void fatal(char *s);
 extern void warns();
-extern void warn();
+extern void warn(char *s);
 
 /* Buffer for storing the current token.  */
 char *token_buffer;
@@ -70,9 +71,7 @@ init_lex()
 }
 
 
-static char *
-grow_token_buffer (p)
-     char *p;
+static char * grow_token_buffer(char *p)
 {
   int offset = p - token_buffer;
   maxtoken *= 2;
@@ -151,9 +150,7 @@ skip_white_space()
 }
 
 /* do a getc, but give error message if EOF encountered */
-int
-safegetc(f)
-  FILE *f;
+int safegetc(FILE *f)
 {
   register int c = getc(f);
   if (c == EOF)
@@ -167,11 +164,7 @@ safegetc(f)
    return 1 unless the character is an unescaped 'term' or \n
 	report error for \n
 */
-int
-literalchar(pp, pcode, term)
-  char **pp;
-  int *pcode;
-  char term;
+int literalchar(char **pp, int *pcode, char term)
 {
   register int c;
   register char *p;
@@ -284,9 +277,7 @@ literalchar(pp, pcode, term)
 }
 
 
-void
-unlex(token)
-int token;
+void unlex(int token)
 {
   unlexed = token;
   unlexed_symval = symval;

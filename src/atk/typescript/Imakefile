@@ -26,6 +26,7 @@
 * $
 */
 
+CLASSFLAGS = $(CLASSINCLUDES) -pe
 
 DOBJS = pscripta.do \
 	tscript.do \
@@ -44,7 +45,6 @@ IHFILES = pscripta.ih \
 	tscripta.ih \
 	typetext.ih \
 	fcomp.ih
-
 
 NormalObjectRule()
 NormalATKRule()

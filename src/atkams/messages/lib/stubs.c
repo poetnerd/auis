@@ -32,7 +32,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <andrewos.h>
+#include <signal.h>
 #include <sys/signal.h>
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -67,10 +69,22 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <message.ih>
 #include <msgsvers.h>
 #include <frame.ih>
+static struct view * GetIM();
+static void RememberMessage(char *text, char *moretext);
+static void ReportErrorHistory(FILE *fp);
+static int SendBug(char *text, char *moretext, int code);
 
 extern FILE *topen();
+extern char *LocalDir(char *str);
 
-extern char *FindUserDir(), *StripWhiteEnds(), *CUI_ClientVersion;
+static int PrepareAutoBugFile(char *text, char *moretext, int code, char *FileName);
+static int DescribeLink(FILE *fp, char *name);
+static int SnarfFile(FILE *fp, char *fname);
+static int ReportOptionState(FILE *fp);
+static void RememberMessage(char *text, char *moretext);
+static void ReportErrorHistory(FILE *fp);
+
+extern char *FindUserDir(char *user, char *cellname), *StripWhiteEnds(char *string), *CUI_ClientVersion;
 extern char CUI_MailDomain[], *CUI_WhoIAm;
 
 extern int CUI_SnapIsRunning, CUI_LastCallFinished;
@@ -81,13 +95,26 @@ extern char **unix_sys_errlist,
 	*ms_errvialist[], 
 	*rpc_errlist[];
 
-extern int unix_sys_nerr, 
-	ms_nerr, 
-	ms_nerrcause, 
-	ms_nerrvia, 
+extern int unix_sys_nerr,
+	ms_nerr,
+	ms_nerrcause,
+	ms_nerrvia,
 	rpc_nerr;
 
-static Messages_Global_Error_Count = 0;
+/* same-file forward references -- all defined later in this file */
+extern int SubtleDialogs(int Really), ChooseFromList(char **QVec, int def),
+	TildeResolve(char *old, char *new), ReportError(char *text, int level, int Decode), RealReportError(char *text, int level, int Decode), ReportFailure(char *text, char *moretext, int fmask),
+	ReportSuccessNoLogging(char *text), ReportSuccess(char *text), RealReportSuccess(char *text),
+	GenericCompoundAction(struct view *v, char *prefix, char *orgcmds), GetBooleanFromUser(char *prompt, int defaultans), GetStringFromUser(char *prompt, char *buf, int len, int IsPassword),
+	GetSeparators(char *cmds, char **argsep, char **cmdsep), SnarfCommandOutputToFP(char *cmd, FILE *fp);
+extern int WriteOutUserEnvironment(FILE *fp, Boolean IsAboutMessages);
+
+/* ams/libs/cui, ams/libs/ms, overhead/util/lib -- no header anywhere */
+extern int CUI_GenLocalTmpFileName(char *nmbuf), CUI_SubmitMessage(char *InFile, int DeliveryOpts);
+extern int MS_CheckAuthentication(int *Authenticated);
+extern int dbg_tclose(FILE *fp, int seconds, int *timedout);
+
+static int Messages_Global_Error_Count = 0;
 
 /* This stuff is here mostly to satisfy various linkers */
 
@@ -151,17 +178,14 @@ static struct view *GetIM() {
 
 static int SubtleDialogFlag = 0;
 
-SubtleDialogs(Really) 
-int Really;
+int SubtleDialogs(int Really)
 {
     SubtleDialogFlag = Really;
 }
 
-ChooseFromList(QVec, def)
-char **QVec;
-int def;
+int ChooseFromList(char **QVec, int def)
 {
-    int myans;
+    long myans;
     struct view *v;
 
     v = GetIM();
@@ -176,9 +200,7 @@ int def;
     return(myans+1);
 }
 
-HandleTimeout(name, retries, restarts)
-char *name;
-int retries, restarts;
+int HandleTimeout(char *name, int retries, int restarts)
 {
 /*    if (retries < 2) { */ /* Not needed in SNAP 2 */
     if (retries < 0) {
@@ -194,18 +216,16 @@ int retries, restarts;
     return(CUI_RPC_BUGOUT);  /* No message needed here -- will propogate error */
 }
 
-DidRestart() {
+void DidRestart() {
     ReportSuccess("Reconnected to Message Server!");
 }
 
-SetTerminalParams(h,w)
-int h,w;
+int SetTerminalParams(int h, int w)
 {
 }
 
 #if defined(AMS_DEBUG_MALLOC_ENV) || defined(ELI_DEBUG_MALLOC_ENV)
-plumber(fp)
-FILE *fp;
+int plumber(FILE *fp)
 {
     im_plumber(fp); /* silly, but it helps with the messageserver signal handling */
 }
@@ -213,17 +233,12 @@ SetMallocCheckLevel(){} /* BOGUS -- satisfies linker, but doesn't work. */
 
 #endif
 
-SubscriptionChangeHook(name, nick, status, mess)
-char *name, *nick;
-int status;
-struct messages *mess;
+int SubscriptionChangeHook(char *name, char *nick, int status, struct messages *mess)
 {
     ams_SubscriptionChangeHook(name, nick, status, mess);
 }
 
-DirectoryChangeHook(adddir, deldir, mess)
-char *adddir, *deldir;
-struct messages *mess;
+int DirectoryChangeHook(char *adddir, char *deldir, struct messages *mess)
 {
     ams_DirectoryChangeHook(adddir, deldir, mess);
 }
@@ -235,9 +250,7 @@ void SetProgramVersion()
     sprintf(ProgramVersion, "((prog messages %d %d))", MESSAGES_MAJOR_VERSION, MESSAGES_MINOR_VERSION);
 }
 
-static int SendBug(text, moretext, code)
-char *text, *moretext;
-int code;
+static int SendBug(char *text, char *moretext, int code)
 {
     char FileName[1+MAXPATHLEN], Msg[100+MAXPATHLEN];
     int DumpingCore;
@@ -276,9 +289,7 @@ int code;
     return(0);
 }
 
-static int PrepareAutoBugFile(text, moretext, code, FileName)
-char *text, *moretext, *FileName;
-int code;
+static int PrepareAutoBugFile(char *text, char *moretext, int code, char *FileName)
 {
     char Buf[2000], Subj[50], CoreDirectory[1+MAXPATHLEN];
     FILE *fp;
@@ -341,9 +352,7 @@ int code;
 
 static char *SepLine = "\n\n----------------------------------------\n\n";
 
-WriteOutUserEnvironment(fp, IsAboutMessages)
-FILE *fp;
-Boolean IsAboutMessages;
+int WriteOutUserEnvironment(FILE *fp, Boolean IsAboutMessages)
 {
     char *adir, *ldir;
     extern char **environ;
@@ -483,9 +492,7 @@ Boolean IsAboutMessages;
     }
 }
 
-static int DescribeLink(fp, name)
-FILE *fp;
-char *name;
+static int DescribeLink(FILE *fp, char *name)
 {
     struct stat stbuf;
     char Buffer[1+MAXPATHLEN];
@@ -524,9 +531,7 @@ char *name;
     }
 }
 
-static int SnarfFile(fp, fname)
-FILE *fp;
-char *fname;
+static int SnarfFile(FILE *fp, char *fname)
 {
     struct stat stbuf;
     char LineBuf[1000], Buf[1+MAXPATHLEN];
@@ -546,7 +551,7 @@ char *fname;
 	return 1;
     }
     if ((stbuf.st_mode & S_IFMT) != S_IFREG) {
-	fprintf(fp, "File %s is not a regular file, but has mode %#o.\n", stbuf.st_mode);
+	fprintf(fp, "File %s is not a regular file, but has mode %#o.\n", Buf, stbuf.st_mode);
 	return 1;
     }
     errno = 0;
@@ -567,7 +572,7 @@ char *fname;
 #endif /* AFS_ENV */
     fprintf(fp, "Protection Mode (octal): %#o\nOn Vice: %s\nOwner: User # %d", stbuf.st_mode, OnVice ? "YES" : "NO", stbuf.st_uid);
     if (CellBuf[0] != '\0') fprintf(fp, ", AFS Cell %s", CellBuf);
-    fprintf(fp, "\nFile Size: %d\nLast Modified: %s", stbuf.st_size, ctime(&(stbuf.st_mtime)));
+    fprintf(fp, "\nFile Size: %lld\nLast Modified: %s", (long long)stbuf.st_size, ctime(&(stbuf.st_mtime)));
     fprintf(fp, "The file contents are enclosed by separating lines:%s", SepLine);
     while (fgets(LineBuf, sizeof(LineBuf), rfp)) {
 	fputs(LineBuf, fp);
@@ -634,8 +639,7 @@ static char *OptDescriptions[] = {
 
 /* Changes to the above descriptions should be accompanied by changes to the definitions in amsutil.ch and to the EXP_MAXUSED constant there. */
 
-static int ReportOptionState(fp)
-FILE *fp;
+static int ReportOptionState(FILE *fp)
 {
     int i;
 
@@ -651,8 +655,7 @@ message server.  Having it exist twice is wasteful in standalone messages
 (messagesn), but we don't want it to have to compile as part of the cui on
 PC's, either. */
 
-TildeResolve(old, new)
-char *old, *new;
+int TildeResolve(char *old, char *new)
 {
 	static char *MyHomeDir = NULL, *udir;
 	struct passwd *pw;
@@ -692,18 +695,12 @@ char *old, *new;
 }
 
 
-ReportError(text, level, Decode)
-char *text;
-int level;
-int Decode;
+int ReportError(char *text, int level, int Decode)
 {
     RealReportError(text, level, Decode);
 }
 
-RealReportError(text, level, Decode)
-char *text;
-int level;
-int Decode;
+int RealReportError(char *text, int level, int Decode)
 {
     static char LatestDisaster[400] = "";
     char    ErrorText[500],
@@ -767,7 +764,8 @@ int Decode;
 	    }
 	    else {
 		strcat(ErrorText, "(in unknown call ");
-		strcat(ErrorText, sprintf(NumDum, "%d", errcause));
+		sprintf(NumDum, "%d", errcause);
+		strcat(ErrorText, NumDum);
 	    }
 	    strcat(ErrorText, " in ");
 	    if (ms_errvialist[errvia]) {
@@ -775,7 +773,8 @@ int Decode;
 	    }
 	    else {
 		strcat(ErrorText, "in unknown caller ");
-		strcat(ErrorText, sprintf(NumDum, "%d", errvia));
+		sprintf(NumDum, "%d", errvia);
+		strcat(ErrorText, NumDum);
 	    }
 	    strcat(ErrorText, ")");
 	   
@@ -845,9 +844,7 @@ int Decode;
     }	
 }
 
-ReportFailure(text, moretext, fmask)
-char *text, *moretext;
-int fmask;
+int ReportFailure(char *text, char *moretext, int fmask)
 {
 #define MAXFAILCHOICES 5
     char *QVec[MAXFAILCHOICES+1];
@@ -908,21 +905,18 @@ restart:
     }
 }
 
-ReportSuccessNoLogging(text)
-char *text;
+int ReportSuccessNoLogging(char *text)
 {
     message_DisplayString(GetIM(), 10, text);
     im_ForceUpdate();
 }
 
-ReportSuccess(text)
-char *text;
+int ReportSuccess(char *text)
 {
     RealReportSuccess(text);
 }
 
-RealReportSuccess(text)
-char *text;
+int RealReportSuccess(char *text)
 {
     debug(1, ("ReportSuccess %s\n", text));
     RememberMessage(text, NULL);
@@ -937,8 +931,7 @@ static long ErrHistTimes[ERRHISTSIZE];
 static int DidInitErrHist = 0;
 static int ErrHistStart = 0;
 
-static RememberMessage(text, moretext)
-char *text, *moretext;
+static void RememberMessage(char *text, char *moretext)
 {
     char *SavedCopy;
 
@@ -966,8 +959,7 @@ char *text, *moretext;
     if (++ErrHistStart >= ERRHISTSIZE) ErrHistStart = 0;
 }
 
-static ReportErrorHistory(fp)
-FILE *fp;
+static void ReportErrorHistory(FILE *fp)
 {
     int i, numinhist = 0, which;
     if (!DidInitErrHist) {
@@ -988,9 +980,7 @@ FILE *fp;
     } while (i!=ErrHistStart);
 }
 
-GenericCompoundAction(v, prefix, orgcmds)
-struct view *v;
-char *prefix, *orgcmds;
+int GenericCompoundAction(struct view *v, char *prefix, char *orgcmds)
 {
     char *nextcmd, *args, ErrorText[1000], *cmds, *cmdstofree;
     struct proctable_Entry *ptent;
@@ -1065,9 +1055,7 @@ char *prefix, *orgcmds;
     return(0);
 }
 
-GetBooleanFromUser(prompt, defaultans)
-char *prompt;
-int defaultans;
+int GetBooleanFromUser(char *prompt, int defaultans)
 {
     static char *BooleanQVec[4] = {"", "Yes", "No", NULL};
     int ans;
@@ -1080,9 +1068,7 @@ int defaultans;
     return (ans == 1);
 }
 
-GetStringFromUser(prompt, buf, len, IsPassword)
-char   *prompt, *buf;
-int len, IsPassword;
+int GetStringFromUser(char *prompt, char *buf, int len, int IsPassword)
 {
     char *new_prompt = malloc(strlen(prompt) + 3);
     int retval = 0;
@@ -1103,8 +1089,7 @@ int len, IsPassword;
     return(retval);
 }
 
-char *BalancedQuote(qstring)
-char *qstring;
+char * BalancedQuote(char *qstring)
 {
     int qct = 0;
     char *s;
@@ -1122,8 +1107,7 @@ char *qstring;
     return(NULL);
 }
 
-GetSeparators(cmds, argsep, cmdsep)
-char *cmds, **argsep, **cmdsep;
+int GetSeparators(char *cmds, char **argsep, char **cmdsep)
 {
     char *secondquote, *firstspace, *firstsemi;
 
@@ -1165,9 +1149,7 @@ char *cmds, **argsep, **cmdsep;
     return;
 }    
 
-char *
-DescribeProt(ProtCode)
-int ProtCode;
+char * DescribeProt(int ProtCode)
 {
       switch(ProtCode) {
 	case AMS_DIRPROT_READ:
@@ -1189,9 +1171,7 @@ int ProtCode;
       }
 }
 
-SnarfCommandOutputToFP(cmd, fp)
-char *cmd;
-FILE *fp;
+int SnarfCommandOutputToFP(char *cmd, FILE *fp)
 {
     FILE *myfp;
     char LineBuf[2000], *cmdv[5];

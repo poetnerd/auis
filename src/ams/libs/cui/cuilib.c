@@ -40,6 +40,15 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/libs
 #include <ctype.h>
 #include <cuimach.h>
 #include <hdrparse.h>
+#include <stdlib.h>
+#include <util.h>
+
+struct CUIDirNode;
+static int Bogus_MakeBodyFileName(char *dir, char *id, char *buf);
+static char * ClosingParen(char *s);
+static int OutputLine(char *fname, long *offset, char *buffer);
+static int ValidateDirname(char *dirname, char **result);
+static int dostat(FILE *afile, long *asize);
 #ifdef AFS_ENV
 #include <netinet/in.h>
 #include <afs/param.h>
@@ -64,9 +73,35 @@ char CUI_MailDomain[125] = "";
 long CUI_UseAmsDelivery=0, CUI_UseNameSep=0, CUI_DeliveryType = -1;
 
 /* Any new message server functions should be added to this list. */
-extern long MS_ReInitialize(), MS_GetVersion(), MS_Die(), MS_GetConfigurationParameters(), MS_CreateNewMessageDirectory(), MS_FindMailbox(), MS_DisambiguateFile(), MS_ProcessNewMessages(), MS_HeadersSince(), MS_GetPartialBody(), MS_PrintMessage(), MS_NameReplyFile(), MS_AlterSnapshot(), MS_PurgeDeletedMessages(), MS_PurgeDeletedMessages(), MS_GetSnapshot(),
-   MS_GetHeaderContents(), MS_SubmitMessage(), MS_UnlinkFile(), MS_ReconstructDirectory(), MS_ValidateAndReplaceChunk(), MS_GetPartialFile(), MS_WriteAllMatchesToFile(), MS_InstallWelcomeMessage(), MS_CloneMessage(), MS_GetAssociatedTime(), MS_SetAssociatedTime(), MS_StorePartialFile(), MS_RenameDir(), MS_GetDirInfo(), MS_RemoveDirectory(),
-   MS_CheckMissingFolder(), MS_GetSubscriptionEntry(), MS_PrefetchMessage(), MS_HandlePreference(), MS_SetSubscriptionEntry(), MS_MergeDirectories(), MS_StorePartialFile(), MS_GetDirAttributes(), MS_AddAttribute(),MS_GetVConfig();
+extern long MS_ReInitialize(), MS_GetVersion(char *Buf, int lim), MS_Die(), MS_GetConfigurationParameters(char *MailDomain, int len, long *UseAmsDelivery, long *UseNameSep, long *DelType), MS_CreateNewMessageDirectory(char *DirName, int Overwrite, char *obsolete), MS_FindMailbox(int pathelt, char *Buf), MS_DisambiguateFile(char *source, char *target, short AccessCode), MS_ProcessNewMessages(char *SourceDir, int *NumGood, int *NumBad, int *NumLocks, char *ParseSpecFile, int *resultcode, int *FirstError, int *NumInProgress, char *EliErrBuf, int EliErrBufLim), MS_HeadersSince(char *FullDirName, char *datefield, char *ReturnBuf, int MaxReturn, long startbyte, long *numbytes, long *bytesleft), MS_GetPartialBody(char *DirName, char *id, char *Buf, int BufLim, int offset, long *remaining, int *ct), MS_PrintMessage(char *DirName, char *id, int flags, char *printer), MS_NameReplyFile(char *DirName, char *id, int code, char *FileName), MS_AlterSnapshot(char *dirname, char *id, char *NewSnapshot, int Code), MS_PurgeDeletedMessages(char *dirname), MS_PurgeDeletedMessages(char *dirname), MS_GetSnapshot(char *dirname, char *id, char *SnapshotBuf),
+   MS_GetHeaderContents(char *dirname, char *id, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim), MS_SubmitMessage(char *FileName, int DeliveryOptions, char *ErrorMessage, int ErrMsgLimit, char *ClientProgram), MS_UnlinkFile(char *FileName), MS_ReconstructDirectory(char *DirName, int *NumGood, int *NumBad, int TrustTimeStamp), MS_ValidateAndReplaceChunk(char *FileName, char *inaddr, char *outaddr, int outaddrsize, int which, int *outcode), MS_GetPartialFile(char *FileName, char *Buf, int BufLim, int offset, long *remaining, int *ct), MS_WriteAllMatchesToFile(char *ambigname, char *FileName), MS_InstallWelcomeMessage(char *ParentName, char *InitDir, char *InitFile, char *ShortName), MS_CloneMessage(char *SourceDirName, char *id, char *DestDirName, int Code), MS_GetAssociatedTime(char *FullName, char *Answer, int lim), MS_SetAssociatedTime(char *FullName, char *newvalue), MS_StorePartialFile(char *FileName, int startpos, int len, int mode, int Truncate, char *WhatToStore), MS_RenameDir(char *OldName, char *NewName, char *NewFullName), MS_GetDirInfo(char *DirName, int *ProtCode, int *MsgCount), MS_RemoveDirectory(char *DirName, int MaxRemovals),
+   MS_CheckMissingFolder(char *OldName, char *NewName), MS_GetSubscriptionEntry(char *FullName, char *NickName, int *status), MS_PrefetchMessage(char *DirName, char *id, int GetNext), MS_HandlePreference(char *prog, char *pref, char *InVal, char *OutVal, int OutLim, int opcode, int *resulti, int defaulti), MS_SetSubscriptionEntry(char *FullName, char *NickName, int status), MS_MergeDirectories(char *SourceDirName, char *DestDirName), MS_StorePartialFile(char *FileName, int startpos, int len, int mode, int Truncate, char *WhatToStore), MS_GetDirAttributes(char *Dirname, int *AttrCt, char *Attrs, int SepChar, int ShowEmpty), MS_AddAttribute(char *Dirname, char *Newname, int *AttNum),MS_GetVConfig(char *key, char *vers, char *result);
+
+/* These three message-server functions are declared separately from the
+   list above: their real definitions (ams/libs/ms/gentname.c,
+   ams/libs/ms/unscrib.c) and the currently-linked ams/libs/nosnap/nosnap.c
+   are all plain int, not long -- kept apart from the existing long-typed
+   list above rather than widening them to match it. */
+extern int MS_GenTempFileName(char *Buf), MS_WriteUnscribedBodyFile(char *DirName, char *id, char *FileName), MS_CUI_Init(char *host, char *user, char *passwd, int len, int type, int bufsize);
+
+/* overhead/util/lib/fdplumb.c's dbg_* wrapper family; overhead/util/hdrs/
+   fdplumb.h #defines fclose/close/dup2/pipe/pclose/vfclose to these but
+   only declares part of the family (dbg_open, dbg_fopen, dbg_popen,
+   dbg_qopen, dbg_topen, dbg_opendir), not these six. */
+extern int dbg_fclose(FILE *fp), dbg_close(int fd), dbg_dup2(int oldfd, int newfd), dbg_pipe(int fdarr[2]), dbg_pclose(FILE *fp), dbg_vfclose(FILE *fp);
+
+/* ams/libs/shr/utils.c, ams/libs/shr/findroot.c: no header in the tree
+   declares any of these. */
+extern int BuildNickName(char *FullName, char *NickName), LowerStringInPlace(char *string, int len), ReduceWhiteSpace(char *string), bone(char *buf, int len), lc2strncmp(char *s1, char *s2, int len), FindTreeRoot(char *DirName, char *RootName, short ReallyWantParent);
+
+/* Consumer-supplied UI callback interface: implemented by whichever
+   front end links libcui.a (ams/msclients/cui/cuifns.c and cui.c for the
+   interactive cui client, atkams/messages/lib/stubs.c for the GUI
+   messages app, etc.) -- no header in the tree declares this interface. */
+extern int ReportError(), ReportSuccess(char *text), ChooseFromList(char **QVec, int def), GetStringFromUser(char *prompt, char *buf, int len, int IsPassword), GetBooleanFromUser(), DirectoryChangeHook(), SubscriptionChangeHook(), ConsiderLoggingRead();
+
+/* Defined in the sibling file andmchs.c, same directory, no header. */
+extern int Machine_Init(char **ThisHost, char **ThisUser, char **ThisPassword, int *len, int *type, int IsRecon), CUI_InitializeKeepalives(), CUI_GenLocalTmpFileName(char *nmbuf);
 
 #if !POSIX_ENV
 extern char *malloc (), *realloc ();
@@ -75,16 +110,27 @@ extern char *index (), *rindex();
 #define strrchr(s,c) rindex(s,c)
 #endif
 
-extern char *NextAddress(), *cvEng();
+extern char *NextAddress(char *add), *cvEng(int foo, int Capitalized, int MaxToSpellOut);
 extern char *SnapVersionString;
+extern char *ap_Shorten(char *pathname);
+static int OutputLine(char *fname, long *offset, char *buffer);
+static int ValidateDirname(char *dirname, char **result);
 
 /* Any CUI functions that return a long should be in this list */
-long HandleAddress(), CUI_CacheDirName(), CUI_SetDirNode(), CUI_GetDirNode(), CUI_AlterSnapshot(), CUI_GetHeaders(), CUI_DisambiguateDir(), CUI_SetSubscriptionEntry(), CUI_MergeDirectories();
+long HandleAddress(char *oldaddr, char *newaddr, int newsize, int errcode, int maxdealiases, int *numfound, int *externalct, int *formatct, int *stripct, int *trustct), CUI_CacheDirName(char *shortname, char *longname), CUI_SetDirNode(char *shortname, char *longname, struct CUIDirNode **Node), CUI_GetDirNode(char *shortname, struct CUIDirNode **Node), CUI_AlterSnapshot(int cuid, char *NewSnapshot, int Code, char **dir), CUI_GetHeaders(), CUI_DisambiguateDir(char *shortname, char **longname), CUI_SetSubscriptionEntry(char *Name, char *NickName, int status), CUI_MergeDirectories(char *FromDir, char *ToDir);
+
+/* Defined later in this same file, used above their definitions. */
+extern int CheckEmsgConsistency(), FindQuotedString(char *source, char **first, char **remainder), FreeCustomizationHeaders(), GetHeaderContents(int cuid, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim, int barfmissing), PutStringToViceFile(char *ViceFile, char *text);
+extern int GetViceFileToNewString(char *FileName, char **newtext, Boolean DoUnlink);
+extern int pfclose(FILE *fp, Boolean DoPclose);
+extern int BumpNeedsPurging(char *dirname, int change), CUI_AppendFileToVice(char *LocalFile, char *ViceFile, long offset), CUI_BuildNickName(char *FullName, char *NickName), CUI_CheckNewMessages(char *arg), CUI_CopyViceFileTails(char *FromFile, long FromSkip, char *ToFile, long ToSkip), CUI_GenTmpFileName(char *nmbuf), CUI_GetBodyToLocalFile(int cuid, char *FileName, int *ShouldDelete), CUI_GetCuid(char *amsid, char *dirname, int *IsDup), CUI_HandleMissingFolder(char *OldName), CUI_MarkDirectoryForPurging(char *dirname), CUI_PrintBodyFromCUIDWithFlags(int cuid, int flags, char *printer), CUI_PrintUpdatesWithFlags(char *dname, char *nickname, int flags, char *printer), CUI_ReallyGetBodyToLocalFile(int cuid, char *FileName, int *ShouldDelete, int MayFudge), CUI_ReportAmbig(char *name, char *atype), CUI_ResendMessage(int cuid, char *Tolist), CUI_RewriteHeaderLineInternal(char *text, char **newtext, int maxdealiases, int *numfound, int *externalct, int *formatct, int *stripct, int *trustct);
+extern int CUI_FixAttribute(int cuid, char *attname, Boolean Set);
+extern int CUI_FixAttributeByNumber(int cuid, int attnum, Boolean Set);
+extern int CUI_PurgeMarkedDirectories(Boolean Ask, Boolean OfferQuit);
 
 int (*CUI_GenericClientSignalHandler)() = NULL;
 
-CUI_SetClientSignalHandler(h)
-int (*h)();
+int CUI_SetClientSignalHandler(int (*h)())
 {
     CUI_GenericClientSignalHandler = h;
 }
@@ -101,27 +147,21 @@ void CUI_SetupDeliveryString() {
         (CUI_MachineType ? CUI_MachineType : "unknown"));
 }
     
-void
-CUI_SetClientVersion(Vers)
-char *Vers;
+void CUI_SetClientVersion(char *Vers)
 {
     if (CUI_ClientVersion) free (CUI_ClientVersion);
     CUI_ClientVersion = malloc(strlen(Vers) + 25 + (SnapVersionString?strlen(SnapVersionString):25));
     sprintf(CUI_ClientVersion, "%s.CUILIB.%d.%d.SNAP.%s", Vers, CUI_MAJORVERSION, CUI_MINORVERSION, SnapVersionString?SnapVersionString:"No.Snap.version.number.");
 }
 
-void
-CUI_SetMachineName(s)
-char *s;
+void CUI_SetMachineName(char *s)
 {
     if (CUI_MachineName) free (CUI_MachineName);
     CUI_MachineName = malloc(strlen(s)+1);
     strcpy(CUI_MachineName, s);
 }
 
-void
-CUI_SetMachineType(s)
-char *s;
+void CUI_SetMachineType(char *s)
 {
     int newLen;
 #ifdef hpux
@@ -158,8 +198,8 @@ char *s;
 
 Boolean CUI_IsMagic = TRUE;
 
-extern long gtime ();
-extern char *StripWhiteEnds ();
+extern long gtime(struct tm *ct);
+extern char *StripWhiteEnds(char *string);
 extern int  Interactive;
 
 int	CUIDebugging = 0;
@@ -204,9 +244,7 @@ char *CUI_Rock = (char *)NULL;
 static char *QVnodrop[] = {"Cross-cell configuration will prevent you from sending any mail in this session.", "Continue Anyway (just reading messages)", "Quit", NULL};
 static char *QVlater[] = {"Cross-cell configuration will delay delivery of mail you send in this session for hours.", "Continue Anyway", "Quit", NULL};
 
-long CUI_GetVersConfigString(key,dest)
-char *key;
-char *dest;
+long CUI_GetVersConfigString(char *key, char *dest)
 {return MS_GetVConfig(key,CUI_ClientVersion,dest);
 }
 
@@ -266,9 +304,7 @@ long cui_ms_reinitilize_with_fancy_error_messages()
  return(-1);
 }
 
-long CUI_Initialize(TimerFunction, rock)
-int (*TimerFunction)();
-char *rock;
+long CUI_Initialize(int (*TimerFunction)(), char *rock)
 {
     static int	HasInitialized = FALSE;
     char    *ThisHost;
@@ -335,7 +371,7 @@ char *rock;
     return(0);
   }
 
-CheckEmsgConsistency()
+int CheckEmsgConsistency()
 {
     char ErrorText[256], *s;
     extern int	ms_nerr,
@@ -366,9 +402,7 @@ CheckEmsgConsistency()
     }
 }
 
-CUI_CreateNewMessageDirectory(dir, bodydir)
-char   *dir,
-       *bodydir; /* Ignored 4/22/88 */
+int CUI_CreateNewMessageDirectory(char *dir, char *bodydir) /* bodydir Ignored 4/22/88 */
 {
     char    ErrorText[256], *slash;
 
@@ -399,8 +433,7 @@ char   *dir,
     return(0);
 }
 
-CUI_CheckMailboxes(ForWhat)
-char   *ForWhat;
+int CUI_CheckMailboxes(char *ForWhat)
 {
     int     i = 0;
     char    BoxName[1 + MAXPATHLEN],
@@ -434,15 +467,14 @@ char   *ForWhat;
     }
 }
 
-CUI_CheckNewMessages(arg)
-char   *arg;
+int CUI_CheckNewMessages(char *arg)
 {
     int     Good = 0,
 	    Bad = 0,
 	    Locks = 0,
 	    InProgress = 0,
-	    status;
-    long    FirstError;
+	    status,
+	    FirstError;
     char   *cleanarg,
 	    ErrorText[256 + ELI_ERROR_TEXT_BUFLEN],
 	   *secondarg,
@@ -543,15 +575,7 @@ char   *arg;
     return(0);
 }
 
-long
-CUI_GetHeaders(DirName, date64, headbuf, limit, startbyte, nbytes, status, RegisterCuids)
-char   *DirName,
-       *date64,
-       *headbuf;
-int	limit, RegisterCuids;
-long	startbyte,
-	*nbytes,
-	*status;			/* ***	 Added 8/19 for PC  *** */
+long CUI_GetHeaders(char *DirName, char *date64, char *headbuf, int limit, long startbyte, long *nbytes, long *status, int RegisterCuids) /* nbytes/status Added 8/19 for PC */
 {
     char   *s;
     int IsDup;
@@ -577,8 +601,7 @@ long	startbyte,
  */
 
 
-HashAmsID(id)
-char   *id;
+int HashAmsID(char *id)
 {
     int     i,
 	    total = 0;
@@ -590,17 +613,14 @@ char   *id;
     return(total & (CUIDHASHMAX - 1));
 }
 
-CUI_GetCuid(amsid, dirname, IsDup)
-char   *amsid,
-       *dirname;
-int *IsDup;
+int CUI_GetCuid(char *amsid, char *dirname, int *IsDup)
 {
     static int hashconflicts = 0;
     int     hashval;
     struct cuidnode *ctmp;
     struct CUIDirNode  *DNtmp;
 
-    debug(1,("GetCUID %s %s %d", amsid, dirname, IsDup));
+    debug(1,("GetCUID %s %s %p", amsid, dirname, IsDup));
     *IsDup = 0;
     hashval = HashAmsID(amsid);
     debug(4,("Hashed to %d\n", hashval));
@@ -643,10 +663,7 @@ int *IsDup;
     return(ctmp->index);
 }
 
-CUI_GetAMSID(cuid, id, dir)
-int	cuid;
-char  **id,
-      **dir;
+int CUI_GetAMSID(int cuid, char **id, char **dir)
 {
     debug(1,("GetAMSID %d\n", cuid));
     if (cuid > CUI_CuidsInUse || cuid <= 0)
@@ -656,13 +673,7 @@ char  **id,
     return(0);
 }
 
-CUI_GetPartialBody(Buf, Max, cuid, offset, bytesunfetched, bodylen)
-char   *Buf;
-int	Max,
-	cuid;
-long	offset,
-	*bytesunfetched;		/* *** Added for PC  8/20/86  *** */
-int	*bodylen;
+int CUI_GetPartialBody(char *Buf, int Max, int cuid, long offset, long *bytesunfetched, int *bodylen) /* bytesunfetched Added for PC 8/20/86 */
 {
     char   *id,
 	   *dir,
@@ -691,8 +702,7 @@ int	*bodylen;
 
 static char *CUI_PrinterName = NULL;
 
-CUI_SetPrinter(printername)
-char *printername;
+int CUI_SetPrinter(char *printername)
 {
     char ErrorText[256];
 
@@ -702,7 +712,7 @@ char *printername;
 	ReportSuccess(ErrorText);
 	return(-1);
     } else if (AMS_ERRNO != EINVAL) {
-	sprintf(ErrorText, "Error: could not set printer", printername);
+	sprintf(ErrorText, "Error: could not set printer '%s'", printername);
 	ReportError(ErrorText, ERR_WARNING, TRUE);
 	return(-1);
     }
@@ -729,16 +739,12 @@ char *printername;
     return(0);
 }
 
-CUI_PrintBodyFromCUID(cuid)
-int	cuid;
+int CUI_PrintBodyFromCUID(int cuid)
 {
     return(CUI_PrintBodyFromCUIDWithFlags(cuid, 0, (char *)NULL));
 }
 
-CUI_PrintBodyFromCUIDWithFlags(cuid, flags, printer)
-int cuid;
-int flags;
-char *printer;
+int CUI_PrintBodyFromCUIDWithFlags(int cuid, int flags, char *printer)
 {
     char   *id,
 	   *dir,
@@ -767,10 +773,7 @@ char *printer;
     return(0);
 }
 
-CUI_NameReplyFile(cuid, code, FileName)
-int	cuid,
-	code;
-char   *FileName;
+int CUI_NameReplyFile(int cuid, int code, char *FileName)
 {
     char   *id,
 	   *dir;
@@ -787,12 +790,7 @@ char   *FileName;
     return(0);
 }
 
-long
-CUI_AlterSnapshot(cuid, NewSnapshot, Code, dir)
-int	cuid,
-	Code;
-char   *NewSnapshot,
-      **dir;
+long CUI_AlterSnapshot(int cuid, char *NewSnapshot, int Code, char **dir)
 {
     char   *id,
 	    ErrorText[256];
@@ -811,8 +809,7 @@ char   *NewSnapshot,
     return(mserrcode = MS_AlterSnapshot(*dir, id, NewSnapshot, Code));
 }
 
-CUI_DeleteMessage(cuid)
-int	cuid;
+int CUI_DeleteMessage(int cuid)
 {
     char    SnapshotBuf[AMS_SNAPSHOTSIZE],
 	   *dir,
@@ -832,8 +829,7 @@ int	cuid;
     return(MarkDirectoryForPurging(dir));
 }
 
-CUI_UndeleteMessage(cuid)
-int	cuid;
+int CUI_UndeleteMessage(int cuid)
 {
     char    SnapshotBuf[AMS_SNAPSHOTSIZE],
 	   *dir,
@@ -850,8 +846,7 @@ int	cuid;
     return(0);
 }
 
-CUI_MarkAsRead(cuid)
-int	cuid;
+int CUI_MarkAsRead(int cuid)
 {
     char    SnapshotBuf[AMS_SNAPSHOTSIZE],
 	   *dir,
@@ -871,8 +866,7 @@ int	cuid;
     return(0);
 }
 
-CUI_MarkAsUnseen(cuid)
-int	cuid;
+int CUI_MarkAsUnseen(int cuid)
 {
     char    SnapshotBuf[AMS_SNAPSHOTSIZE],
 	   *dir,
@@ -888,8 +882,7 @@ int	cuid;
     return(0);
 }
 
-static unsigned dirhashfunc(s)
-char *s;
+static unsigned dirhashfunc(char *s)
 {
     int c;
     unsigned int result = 0;
@@ -899,23 +892,18 @@ char *s;
     return result;
 }
 
-long CUI_GetDirNode(shortname, Node)
-char *shortname;
-struct CUIDirNode **Node;
+long CUI_GetDirNode(char *shortname, struct CUIDirNode **Node)
 {
     return(CUI_SetDirNode(shortname, (char *)NULL, Node));
 }
 
-long CUI_CacheDirName(shortname, longname)
-char *shortname, *longname;
+long CUI_CacheDirName(char *shortname, char *longname)
 {
     return 0;  /* Now obsolete -- jgm */
 }
 
 /* Argument "longname" now no longer used --jgm */
-long CUI_SetDirNode(shortname, longname, Node)
-char *shortname, *longname;
-struct CUIDirNode **Node;
+long CUI_SetDirNode(char *shortname, char *longname, struct CUIDirNode **Node)
 {
     char    NameBuf[MAXPATHLEN + 1], *s, *myname, mycopy[1+MAXPATHLEN], NickName[1+MAXPATHLEN], RootBuf[1+MAXPATHLEN];
     struct CUIDirNode *DNtmp;
@@ -986,8 +974,7 @@ struct CUIDirNode **Node;
     *Node = DNtmp;
     return(0);
 }
-CUI_PurgeDeletions(arg)
-char   *arg;
+int CUI_PurgeDeletions(char *arg)
 {
     char   ErrorText[256];
     struct CUIDirNode *DNtmp;
@@ -1012,8 +999,7 @@ char   *arg;
     return(0);
 }
 
-RemoveFromDirCache(name)
-char *name;
+int RemoveFromDirCache(char *name)
 {
     struct CUIDirNode *DNtmp;
     int fullnamehash = dirhashfunc(name);
@@ -1029,9 +1015,7 @@ char *name;
 
 
 
-long CUI_DisambiguateDir(shortname, longname)
-char   *shortname;
-char  **longname;
+long CUI_DisambiguateDir(char *shortname, char **longname)
 {
     struct CUIDirNode *DNtmp;
 
@@ -1044,8 +1028,7 @@ char  **longname;
     }
 }
 
-CUI_DoesDirNeedPurging(Dname)
-char *Dname;
+int CUI_DoesDirNeedPurging(char *Dname)
 {
     struct CUIDirNode *DNtmp;
     int fullnamehash = dirhashfunc(Dname);
@@ -1062,7 +1045,7 @@ char *Dname;
     return(0);
 }
 
-CUI_DirectoriesToPurge() {
+int CUI_DirectoriesToPurge() {
     int     total = 0;
     struct CUIDirNode  *DNtmp;
     int bucket;
@@ -1076,21 +1059,17 @@ CUI_DirectoriesToPurge() {
     return(total); /* Number of directories in need of purging */
 }
 
-CUI_MarkDirectoryForPurging(dirname)
-char   *dirname;
+int CUI_MarkDirectoryForPurging(char *dirname)
 {
     return(BumpNeedsPurging(dirname, 1));
 }
 
-CUI_UnmarkDirectoryForPurging(dirname)
-char   *dirname;
+int CUI_UnmarkDirectoryForPurging(char *dirname)
 {
     printf("Obsolete call -- CUI_UnmarkDirectoryForPurging %s\n", dirname);
 }
 
-BumpNeedsPurging(dirname, change)
-char *dirname;
-int change;
+int BumpNeedsPurging(char *dirname, int change)
 {
     struct CUIDirNode  *DNtmp;
     char ErrorText[1000];
@@ -1116,8 +1095,7 @@ static char *BigPurgeVector[] = {
     0
 };
 
-CUI_PurgeMarkedDirectories(Ask, OfferQuit) 
-Boolean Ask, OfferQuit;
+int CUI_PurgeMarkedDirectories(Boolean Ask, Boolean OfferQuit)
 {
     struct CUIDirNode  *DNtmp;
     char    ErrorText[256], Qtext[100], *LittlePurgeVector[6];
@@ -1189,9 +1167,7 @@ Boolean Ask, OfferQuit;
     to the message server for snapshots, but should cache the most recent ones
  */
 
-CUI_GetSnapshotFromCUID(cuid, SnapshotBuf)
-int	cuid;
-char   *SnapshotBuf;
+int CUI_GetSnapshotFromCUID(int cuid, char *SnapshotBuf)
 {
     char   *id,
 	   *dir,
@@ -1219,23 +1195,12 @@ char   *SnapshotBuf;
     return(0);
 }
 
-CUI_GetHeaderContents(cuid, HeaderName, HeaderTypeNumber, HeaderBuf, lim)
-char   *HeaderName;
-char   *HeaderBuf;
-int	cuid,
-	HeaderTypeNumber,
-	lim;
+int CUI_GetHeaderContents(int cuid, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim)
 {
     return(GetHeaderContents(cuid, HeaderName, HeaderTypeNumber, HeaderBuf, lim, TRUE));
 }
 
-GetHeaderContents(cuid, HeaderName, HeaderTypeNumber, HeaderBuf, lim, barfmissing)
-char   *HeaderName;
-char   *HeaderBuf;
-int	cuid,
-	HeaderTypeNumber,
-	lim,
-        barfmissing;
+int GetHeaderContents(int cuid, char *HeaderName, int HeaderTypeNumber, char *HeaderBuf, int lim, int barfmissing)
 {
     char   *id,
 	   *dir,
@@ -1261,9 +1226,7 @@ int	cuid,
     return(0);
 }
 
-CUI_BuildNickName(FullName, NickName)
-char   *FullName,
-       *NickName;
+int CUI_BuildNickName(char *FullName, char *NickName)
 {
     return(BuildNickName(FullName, NickName));
 }
@@ -1271,8 +1234,7 @@ char   *FullName,
 /* This routine generates a temporary file name to be written by the
 	message server */
 
-CUI_GenTmpFileName(nmbuf)
-char   *nmbuf;
+int CUI_GenTmpFileName(char *nmbuf)
 {
     static unsigned long ctr = 0, hostid = 0, userid = 0, procid = 0;
 
@@ -1281,13 +1243,11 @@ char   *nmbuf;
 	if (userid == 0) userid = getuid();
 	if (procid == 0) procid = getpid();
 	ReportError("Message server could not generate temporary file name", ERR_WARNING, TRUE);
-	sprintf(nmbuf, "/tmp/AMS.%d", hostid ^ ((userid & 0xFF) << 24) | ((procid &0xFF) << 16) | (((ctr++) & 0xFF) << 8));
+	sprintf(nmbuf, "/tmp/AMS.%lu", hostid ^ ((userid & 0xFF) << 24) | ((procid &0xFF) << 16) | (((ctr++) & 0xFF) << 8));
     }
 }
 
-CUI_SubmitMessage(InFile, DeliveryOpts)
-char   *InFile;
-int	DeliveryOpts;
+int CUI_SubmitMessage(char *InFile, int DeliveryOpts)
 {
     char    ErrorText[256], ErrorMessage[500];
 
@@ -1344,9 +1304,7 @@ int	DeliveryOpts;
     return(0);
 }
 
-CUI_ReconstructDirectory(arg, TrustTimeStamp)
-char   *arg;
-int TrustTimeStamp;
+int CUI_ReconstructDirectory(char *arg, int TrustTimeStamp)
 {
     char   *FullName,
 	    NameBuf[1+MAXPATHLEN],
@@ -1395,8 +1353,7 @@ int TrustTimeStamp;
     return(Bad ? -2 : 0);
 }
 
-static char *ClosingParen(s)
-char *s;
+static char * ClosingParen(char *s)
 {
     register int ctr = 0;
 
@@ -1472,17 +1429,14 @@ static char *CommentTexts[] = { /* indexed to MSWP_ constants */
 
 #define MAX_ADDR 4000
 
-CUI_RewriteHeaderLine(text, newtext)
-char *text, **newtext;
+int CUI_RewriteHeaderLine(char *text, char **newtext)
 {
     int numfound = 0, externalct = 0, formatct = 0, trustct = 0, stripct = 0;
 
     return(CUI_RewriteHeaderLineInternal(text, newtext, 25, &numfound, &externalct, &formatct, &stripct, &trustct));
 }
 
-CUI_RewriteHeaderLineInternal(text, newtext, maxdealiases, numfound, externalct, formatct, stripct, trustct)
-char *text, **newtext;
-int maxdealiases, *numfound, *externalct, *formatct, *stripct, *trustct;
+int CUI_RewriteHeaderLineInternal(char *text, char **newtext, int maxdealiases, int *numfound, int *externalct, int *formatct, int *stripct, int *trustct)
 {
     char *s, FileName[1+MAXPATHLEN], ReplaceAddr[MAX_ADDR], ThisAddr[MAX_ADDR];
     int BadCount = 0, errcode, which, foundlastpass;
@@ -1543,9 +1497,7 @@ int maxdealiases, *numfound, *externalct, *formatct, *stripct, *trustct;
     return(BadCount);
 }
 
-static int dostat(afile,asize)
-FILE *afile;
-long *asize;
+static int dostat(FILE *afile, long *asize)
 {if(fseek(afile,0L,2) == -1)	/*seek to end*/
   return TRUE;			/*fail if seek fails*/
  *asize=ftell(afile);		/*see where end of file is*/
@@ -1554,9 +1506,7 @@ long *asize;
  return FALSE;
 }
 
-GetViceFileToNewString(FileName, newtext, DoUnlink)
-char *FileName, **newtext;
-Boolean DoUnlink;
+int GetViceFileToNewString(char *FileName, char **newtext, Boolean DoUnlink)
 {
     debug(1, ("Get vice file %s to string\n", FileName));
     *newtext = NULL;
@@ -1660,9 +1610,7 @@ Boolean DoUnlink;
 }
 
 
-long HandleAddress(oldaddr, newaddr, newsize, errcode, maxdealiases, numfound, externalct, formatct, stripct, trustct)
-char *oldaddr, *newaddr;
-int newsize, errcode, maxdealiases, *numfound, *externalct, *formatct, *stripct, *trustct;
+long HandleAddress(char *oldaddr, char *newaddr, int newsize, int errcode, int maxdealiases, int *numfound, int *externalct, int *formatct, int *stripct, int *trustct)
 {
     int i, numchoices, len;
     char ErrorText[256], *s, *s2, *Qarray[MSWP_MAXAMBIGMATCHES+3], c;
@@ -1897,7 +1845,9 @@ int newsize, errcode, maxdealiases, *numfound, *externalct, *formatct, *stripct,
 			return(mserrcode);
 		    }
 		    *numfound = *numfound + mynumfound - 1;
-		    strncpy(newaddr, mytext, newsize);
+		    /* mytext can come back NULL (validation unavailable, not
+		       just a bad address); don't strncpy a NULL pointer. */
+		    strncpy(newaddr, mytext ? mytext : Qarray[i], newsize);
 		}
 		break;
 	    case MSWP_PERSONALALIAS : /* A personal mail alias */
@@ -1909,7 +1859,9 @@ int newsize, errcode, maxdealiases, *numfound, *externalct, *formatct, *stripct,
 		    return(mserrcode);
 		}
 		*numfound = *numfound + mynumfound - 1;
-		strncpy(newaddr, mytext, newsize);
+		/* mytext can come back NULL (validation unavailable, not
+		   just a bad address); don't strncpy a NULL pointer. */
+		strncpy(newaddr, mytext ? mytext : oldaddr, newsize);
 		break;
 		}
 	    case MSWP_PROBABLYGOOD: /* PARTIAL temporary failure */
@@ -1939,9 +1891,7 @@ int newsize, errcode, maxdealiases, *numfound, *externalct, *formatct, *stripct,
     return(0);
 }
 
-CUI_CloneMessage(cuid, OrigDirName, Code)
-int cuid, Code;
-char *OrigDirName;
+int CUI_CloneMessage(int cuid, char *OrigDirName, int Code)
 {
     char ErrorText[256], *newpart, *oldpart, *ParentDir, *id, *dir, FullNewDirName[1+MAXPATHLEN], PDirName[1+MAXPATHLEN], *NewDirName, *newpart2, DirName[1+MAXPATHLEN];
 
@@ -2063,8 +2013,7 @@ char *OrigDirName;
     }
 }
 
-char *copy (s)
-register char  *s;
+char * copy(char *s)
 {
     register char  *new;
     if (!s || !*s)
@@ -2078,15 +2027,12 @@ register char  *s;
 
 #define TIMELEN 10
 
-CUI_PrintUpdates(dname, nickname)
-char *dname, *nickname;
+int CUI_PrintUpdates(char *dname, char *nickname)
 {
     return(CUI_PrintUpdatesWithFlags(dname, nickname, 0, (char *)NULL));
 }
 
-CUI_PrintUpdatesWithFlags(dname, nickname, flags, printer)
-char *dname, *nickname, *printer;
-int flags;
+int CUI_PrintUpdatesWithFlags(char *dname, char *nickname, int flags, char *printer)
 {
     long cuid, numbytes, totalbytes, status;
     int IsDup;
@@ -2124,7 +2070,7 @@ int flags;
 	    cuid = GetCuid(AMS_ID(s), DirName, &IsDup);
 /* 	    sprintf(ErrorText, "Printing '%s'", AMS_CAPTION(s)); */
 /* The above line was simply too verbose to make PCMessages happy... */
-	    sprintf(ErrorText, "Printing %d", cuid);
+	    sprintf(ErrorText, "Printing %ld", cuid);
 	    ReportSuccess(ErrorText);
 	    if (CUI_PrintBodyFromCUIDWithFlags(cuid, flags, printer)) break;
 	    strncpy(newdate, AMS_DATE(s), AMS_DATESIZE);
@@ -2141,15 +2087,12 @@ int flags;
     return(0);
 }
 
-CUI_StoreFileToVice(LocalFile, ViceFile)
-char *LocalFile, *ViceFile;
+int CUI_StoreFileToVice(char *LocalFile, char *ViceFile)
 {
     return(CUI_AppendFileToVice(LocalFile, ViceFile, 0L));
 }
 
-CUI_AppendFileToVice(LocalFile, ViceFile, offset)
-char *LocalFile, *ViceFile;
-long offset;
+int CUI_AppendFileToVice(char *LocalFile, char *ViceFile, long offset)
 {
     FILE *fp;
     int pos, c;
@@ -2187,8 +2130,7 @@ long offset;
     return(0);
 }
 
-CUI_GetFileFromVice(LocalFile, ViceFile)
-char *LocalFile, *ViceFile;
+int CUI_GetFileFromVice(char *LocalFile, char *ViceFile)
 {
     char    Buf[MAXBODY],
 	    ErrorText[256];
@@ -2228,8 +2170,7 @@ char *LocalFile, *ViceFile;
     return(0);
 }
 
-CUI_RenameDir(old, new)
-char *old, *new;
+int CUI_RenameDir(char *old, char *new)
 {
     struct CUIDirNode  *DNtmp, *NewDN;
     int status, fullnamehash;
@@ -2287,8 +2228,7 @@ char *old, *new;
     return(0);
 }
 
-CUI_RemoveDirectory(DirName)
-char *DirName;
+int CUI_RemoveDirectory(char *DirName)
 {
     int ProtCode, MsgCount;
     char ErrorText[256], NickName[1+MAXPATHLEN];
@@ -2329,7 +2269,7 @@ char *DirName;
     return(0);
 }
 
-CUI_FreeCaches() {
+int CUI_FreeCaches() {
     struct cuidnode *cdnp, *cdnp2;
     struct CUIDirNode *cdp;
     int i, bucket;
@@ -2361,9 +2301,7 @@ CUI_FreeCaches() {
     return(0);
 }
 
-int CUI_HandleFolderCreationNotice(cuid, Snapshot)
-int cuid;
-char *Snapshot;
+int CUI_HandleFolderCreationNotice(int cuid, char *Snapshot)
 {
     char    NewDir[MAXPATHLEN + 1],
 	    Message[100 + MAXPATHLEN],
@@ -2452,9 +2390,7 @@ static char *WriteIn = "Write-in Vote";
 /* however, if you hit this limit, you'd better have a real small font! */
 #define VOTEVECMAX 103
 
-int CUI_HandleVote(cuid, Snapshot)
-int cuid;
-char *Snapshot;
+int CUI_HandleVote(int cuid, char *Snapshot)
 {
     char *s, *VoteVector[VOTEVECMAX], FileName[1+MAXPATHLEN], ErrorText[1000], VoteChoices[2000], VoteRequest[500], VoteTo[500];
     int VoteVecIndex = 0, ans, ix;
@@ -2606,9 +2542,7 @@ char *Snapshot;
     return(0);
 }
 
-int CUI_HandleAckRequest(cuid,Snapshot)
-int cuid;
-char *Snapshot;
+int CUI_HandleAckRequest(int cuid, char *Snapshot)
 {
     char AckHeader[500], *dir, ErrorText[256];
     char SnapshotBuf[AMS_SNAPSHOTSIZE];
@@ -2651,9 +2585,7 @@ char *Snapshot;
     return(0);
 }
 
-int CUI_HandleEnclosure(cuid, Snapshot)
-int cuid;
-char *Snapshot;
+int CUI_HandleEnclosure(int cuid, char *Snapshot)
 {
     char *QVec[5];
     char SnapshotBuf[AMS_SNAPSHOTSIZE];
@@ -2803,9 +2735,7 @@ char *Snapshot;
     return(0);
 }
 
-long CUI_HandleRedistributionMessage(cuid, Snapshot)
-int cuid;
-char *Snapshot;
+long CUI_HandleRedistributionMessage(int cuid, char *Snapshot)
 {
     char HeaderBuf[2000], Prompt[2100], *dir;
 
@@ -2834,9 +2764,7 @@ char *Snapshot;
 static int (*CustomizationProc)() = NULL;
 static long CustomizationRock = 0;
 
-CUI_SetHeaderCustomizationProc(p, rock)
-int (*p)();
-long rock;
+int CUI_SetHeaderCustomizationProc(int (*p)(), long rock)
 {
     CustomizationProc = p;
     CustomizationRock = rock;
@@ -2848,7 +2776,7 @@ struct CustomizationHeader {
     struct CustomizationHeader *next;
 } *FirstCustomizationHeader = NULL;
 
-FillInCustomizationProcs() {
+int FillInCustomizationProcs() {
     static int HasFilledIn = FALSE;
 
     if (!HasFilledIn) {
@@ -2927,7 +2855,7 @@ FillInCustomizationProcs() {
     return(0);
 }
 
-FreeCustomizationHeaders() {
+int FreeCustomizationHeaders() {
     struct CustomizationHeader *oldch, *tmpch = FirstCustomizationHeader;
 
     while (tmpch) {
@@ -2940,9 +2868,7 @@ FreeCustomizationHeaders() {
     FirstCustomizationHeader = NULL;
 }
 
-void CUI_HandleCustomizationMessage(cuid, Snapshot)
-int cuid;
-char *Snapshot;
+void CUI_HandleCustomizationMessage(int cuid, char *Snapshot)
 {
     struct CustomizationHeader *tmpch;
     char HeaderBuf[2000], CmdBuf[2000], *s, *CmdVec[3];
@@ -3029,9 +2955,7 @@ char *Snapshot;
     }
 }
 
-CUI_ProcessMessageAttributes(cuid, Snapshot)
-int cuid;
-char *Snapshot;
+int CUI_ProcessMessageAttributes(int cuid, char *Snapshot)
 {
 	char SnapshotBuf[AMS_SNAPSHOTSIZE];
 
@@ -3056,9 +2980,7 @@ char *Snapshot;
 	return(0);
 }
 
-pfclose(fp, DoPclose)
-FILE *fp;
-Boolean DoPclose;
+int pfclose(FILE *fp, Boolean DoPclose)
 {
 #ifdef ENABLEFILTERING
     if (DoPclose) {
@@ -3067,25 +2989,17 @@ Boolean DoPclose;
 #endif /* ENABLEFILTERING */
     return(vfclose(fp));
 }
-static Bogus_MakeBodyFileName(dir, id, buf)
-char *dir, *id, *buf;
+static int Bogus_MakeBodyFileName(char *dir, char *id, char *buf)
 {
     sprintf(buf, "%s/+%s", dir, id);
 }
 
-CUI_GetBodyToLocalFile(cuid, FileName, ShouldDelete)
-int cuid;
-char *FileName;
-int *ShouldDelete;
+int CUI_GetBodyToLocalFile(int cuid, char *FileName, int *ShouldDelete)
 {
     return(CUI_ReallyGetBodyToLocalFile(cuid, FileName, ShouldDelete, TRUE));
 }
 
-CUI_ReallyGetBodyToLocalFile(cuid, FileName, ShouldDelete, MayFudge)
-int cuid;
-char *FileName;
-int *ShouldDelete;
-int MayFudge;
+int CUI_ReallyGetBodyToLocalFile(int cuid, char *FileName, int *ShouldDelete, int MayFudge)
 {
     char *id, *dir, ErrorText[256], BodyBuf[MAXBODY];
     int bodylen;
@@ -3131,8 +3045,7 @@ int MayFudge;
     return(0);
 }
 
-CUI_PrefetchMessage(cuid, ReallyNext)
-int cuid, ReallyNext;
+int CUI_PrefetchMessage(int cuid, int ReallyNext)
 {
     char ErrorText[256], *id, *dir;
 
@@ -3174,8 +3087,7 @@ int cuid, ReallyNext;
     return(MS_PrefetchMessage(dir, id, ReallyNext));
 }
 
-CUI_HandleMissingFolder(OldName)
-char *OldName;
+int CUI_HandleMissingFolder(char *OldName)
 {
     char  NewNickName[1+MAXPATHLEN],
 	  *QVector[10],
@@ -3285,9 +3197,7 @@ static char *ExtVec[] = {
     NULL
 };
 
-CUI_ResendMessage(cuid, Tolist)
-int cuid;
-char *Tolist;
+int CUI_ResendMessage(int cuid, char *Tolist)
 {
     char *NewToList, *Message;
     char *id, *dir, ErrorText[256], BodyBuf[MAXBODY], FileName[1+MAXPATHLEN];
@@ -3306,6 +3216,13 @@ char *Tolist;
     }
     if (CUI_RewriteHeaderLineInternal(Tolist, &NewToList, 25, &total, &external, &formatct, &stripct, &trustct)) {
 	return(-1);
+    }
+    if (!NewToList) {
+	/* validation unavailable (not just a bad address); fall back to
+	   the recipient list as given rather than propagating NULL into
+	   the strlen/fprintf/sprintf below. */
+	NewToList = malloc(strlen(Tolist)+1);
+	if (NewToList) strcpy(NewToList, Tolist);
     }
     if ((external > 0) && AMS_GET_ATTRIBUTE(SnapshotBuf, AMS_ATT_FORMATTED)) {
 	int ans;
@@ -3403,8 +3320,7 @@ char *Tolist;
     return(0);
 }
 
-CUI_ReportAmbig(name, atype)
-char *name, *atype;
+int CUI_ReportAmbig(char *name, char *atype)
 {
     char ErrorText[1000];
 
@@ -3416,9 +3332,7 @@ char *name, *atype;
     }
 }
 
-CUI_GetProfileString(prog, pref, ValBuf, lim)
-char *prog, *pref, *ValBuf;
-int lim;
+int CUI_GetProfileString(char *prog, char *pref, char *ValBuf, int lim)
 {
     char DumIn[1];
     int dummy;
@@ -3433,9 +3347,7 @@ int lim;
 }
 
 
-CUI_GetProfileInt(prog, pref, def)
-char *prog, *pref;
-int def;
+int CUI_GetProfileInt(char *prog, char *pref, int def)
 {
     char DumIn[1], DumOut[1];
     int intval;
@@ -3451,9 +3363,7 @@ int def;
 
 
 
-CUI_GetProfileSwitch(prog, pref, def)
-char *prog, *pref;
-int def;
+int CUI_GetProfileSwitch(char *prog, char *pref, int def)
 {
     char DumIn[1], DumOut[1];
     int intval;
@@ -3469,8 +3379,7 @@ int def;
 
 
 
-CUI_SetProfileString(prog, pref, val)
-char *prog, *pref, *val;
+int CUI_SetProfileString(char *prog, char *pref, char *val)
 {
     char DumOut[1];
     int dummy;
@@ -3483,10 +3392,7 @@ char *prog, *pref, *val;
     return(0);
 }
 
-long
-CUI_SetSubscriptionEntry(Name, NickName, status)
-char *Name, *NickName;
-int status;
+long CUI_SetSubscriptionEntry(char *Name, char *NickName, int status)
 {
     mserrcode = MS_SetSubscriptionEntry(Name, NickName, status);
     if (!mserrcode) {
@@ -3495,9 +3401,7 @@ int status;
     return(mserrcode);
 }
 
-long
-CUI_MergeDirectories(FromDir, ToDir)
-char *FromDir, *ToDir;
+long CUI_MergeDirectories(char *FromDir, char *ToDir)
 {
     mserrcode = MS_MergeDirectories(FromDir, ToDir);
     if (!mserrcode) {
@@ -3513,8 +3417,7 @@ char *FromDir, *ToDir;
     (*remainder == source), so the implementation must allow this.
 */
 
-FindQuotedString(source, first, remainder)
-char *source, **first, **remainder;
+int FindQuotedString(char *source, char **first, char **remainder)
 {
     char *sdum, *sdum2;
 
@@ -3554,8 +3457,7 @@ char *source, **first, **remainder;
     return(-1);
 }
 
-PutStringToViceFile(ViceFile, text)
-char *ViceFile, *text;
+int PutStringToViceFile(char *ViceFile, char *text)
 {
     int bytesleft, writelen, offset = 0;
 
@@ -3579,24 +3481,17 @@ char *ViceFile, *text;
     return(0);
 }
 
-CUI_SetAttribute(cuid, attname)
-int cuid;
-char *attname;
+int CUI_SetAttribute(int cuid, char *attname)
 {
     return(CUI_FixAttribute(cuid, attname, TRUE));
 }
 
-CUI_UnsetAttribute(cuid, attname)
-int cuid;
-char *attname;
+int CUI_UnsetAttribute(int cuid, char *attname)
 {
     return(CUI_FixAttribute(cuid, attname, FALSE));
 }
 
-CUI_FixAttribute(cuid, attname, Set)
-int cuid;
-char *attname;
-Boolean Set;
+int CUI_FixAttribute(int cuid, char *attname, Boolean Set)
 {
     char *id, *dir, Attrs[1+(AMS_NUM_UATTRS*(1+AMS_ATTRNAMEMAX))], *s, *t, ErrorText[256];
     int AttrCt, i, TargetAttr = -1;
@@ -3640,9 +3535,7 @@ Boolean Set;
     return(CUI_FixAttributeByNumber(cuid, TargetAttr, Set));
 }
 
-CUI_FixAttributeByNumber(cuid, attnum, Set)
-int cuid, attnum;
-Boolean Set;
+int CUI_FixAttributeByNumber(int cuid, int attnum, Boolean Set)
 {
     char SnapshotBuf[AMS_SNAPSHOTSIZE], *dir;
 
@@ -3664,9 +3557,7 @@ Boolean Set;
     }
 }
 
-CUI_GetAttrName(dir, which, buf)
-char *dir, *buf;
-int which;
+int CUI_GetAttrName(char *dir, int which, char *buf)
 {
     char Attrs[1+(AMS_NUM_UATTRS*(1+AMS_ATTRNAMEMAX))], *s, *t;
     int AttrCt, i;
@@ -3689,15 +3580,12 @@ int which;
     return(-1);
 }
 
-CUI_CopyViceFile(FromFile, ToFile)
-char *FromFile, *ToFile;
+int CUI_CopyViceFile(char *FromFile, char *ToFile)
 {
     return(CUI_CopyViceFileTails(FromFile, 0L, ToFile, 0L));
 }
 
-CUI_CopyViceFileTails(FromFile, FromSkip, ToFile, ToSkip)
-char *FromFile, *ToFile;
-long FromSkip, ToSkip;
+int CUI_CopyViceFileTails(char *FromFile, long FromSkip, char *ToFile, long ToSkip)
 {
     int bodylen;
     char ErrorText[256], Buf[WRITEFILECHUNK+1];
@@ -3721,8 +3609,7 @@ long FromSkip, ToSkip;
     return(0);
 }
 
-CUI_MarkRepliedTo(cuid)
-int	cuid;
+int CUI_MarkRepliedTo(int cuid)
 {
     char    SnapshotBuf[AMS_SNAPSHOTSIZE],
 	   *dir,
@@ -3739,9 +3626,7 @@ int	cuid;
     return(0);
 }
 
-CUI_FlagUrgency(cuid, urgency)
-int	cuid;
-int urgency;
+int CUI_FlagUrgency(int cuid, int urgency)
 {
     char    SnapshotBuf[AMS_SNAPSHOTSIZE],
 	   *dir,
@@ -3785,11 +3670,7 @@ NEEDS_VALIDATION VF_headers[] = {
     NIL,			    0, VALIDATE_NO_VALIDATE,   0, FALSE
 };
 
-ValidateAndWriteFile(AwaitingValidation, VFidx, OutFileName, offset_out, VEs, VDEs)
-char *AwaitingValidation, *OutFileName;
-int   VFidx;
-long *offset_out;
-int  *VEs, *VDEs;
+int ValidateAndWriteFile(char *AwaitingValidation, int VFidx, char *OutFileName, long *offset_out, int *VEs, int *VDEs)
 {
     char *result;
 
@@ -3815,8 +3696,7 @@ int  *VEs, *VDEs;
     OutputLine(OutFileName, offset_out, "\n");
 }
 
-CUI_ValidateFile (InFileName, OutFileName)
-char *InFileName, *OutFileName;
+int CUI_ValidateFile(char *InFileName, char *OutFileName)
 {
     int     bodylen, bytesleft = 0, ValidationErrors = 0, ValidDirErrors = 0, VFidx;
     long    offset_out = 0, offset_in = 0, bytesunfetched;
@@ -3958,9 +3838,7 @@ char *InFileName, *OutFileName;
     return(-1);
 }
 
-static OutputLine (fname, offset, buffer)
-char *fname, *buffer;
-long *offset;
+static int OutputLine(char *fname, long *offset, char *buffer)
 {
     int bodylen;
 
@@ -3974,8 +3852,7 @@ long *offset;
     return(0);
 }
 
-static ValidateDirname(dirname, result)
-char *dirname, **result;
+static int ValidateDirname(char *dirname, char **result)
 {
     int len;
     char *result2;

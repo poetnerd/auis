@@ -49,16 +49,16 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/apt/
 #include <apts.ih>
 #include <suiteta.eh>
 
-struct view *Name_Choice(), 
-            *RW_Hit_Handler(),
-	    *First_Test(), 
-            *Last_Test(), 
-            *Number_Test(), 
-	    *Next_Test(),
-            *Prior_Test(), 
-            *Quit_Test(),
-	    *Text_Object_Handler(), 
-            *TextView_Object_Handler();
+struct view *Name_Choice(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks), 
+            *RW_Hit_Handler(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks),
+	    *First_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks), 
+            *Last_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks), 
+            *Number_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks), 
+	    *Next_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks),
+            *Prior_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks), 
+            *Quit_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks),
+	    *Text_Object_Handler(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type), 
+            *TextView_Object_Handler(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type);
 
 #define NUM_NAMES 27
 static char *names[NUM_NAMES] = {
@@ -353,7 +353,7 @@ static suite_Specification icons_1[] = {
   NULL
 };
 
-struct view *Alphabet_Sort();
+struct view *Alphabet_Sort(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks);
 
 static suite_Specification alphabet_0[] = {
   suite_TitleCaption( "Alphabet --- ZERO" ),
@@ -526,11 +526,7 @@ struct view *button_view, *test_view;
 static int suiteta_debug = 0;
 #define debug suiteta_debug
 
-boolean
-suitetapp__ParseArgs( self, argc, argv )
-  register struct suitetapp *self;
-  register int argc;
-  register char **argv;
+boolean suitetapp__ParseArgs(struct suitetapp *self, int argc, char **argv)
 {
   IN(suiteta_ParseArgs);
   super_ParseArgs(self, argc, argv);
@@ -545,9 +541,7 @@ suitetapp__ParseArgs( self, argc, argv )
   return(TRUE);
 }
 
-boolean
-suitetapp__Start( self )
-  struct suitetapp *self;
+boolean suitetapp__Start(struct suitetapp *self)
 {
   FILE *file;
   long id;
@@ -587,9 +581,7 @@ suitetapp__Start( self )
   return 1;
   }
 
-struct view *
-Change_Test( self )
-  struct suitetapp *self;
+struct view * Change_Test(struct suitetapp *self)
 {
   register struct suite *prior_suite = current_suite;
 
@@ -605,14 +597,7 @@ Change_Test( self )
   return(NULL);
 }
 
-struct view *
-First_Test( self, suite, item, type, action, x, y, clicks )
-  struct suitetapp *self;
-  struct suite *suite;
-  struct suite_item *item;
-  long type;
-  enum view_MouseAction action;
-  long x, y, clicks;
+struct view * First_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
 {
   if (action == view_LeftUp) {
     current_test = 0;
@@ -622,14 +607,7 @@ First_Test( self, suite, item, type, action, x, y, clicks )
   return(NULL);
 }
 
-struct view *
-Last_Test( self, suite, item, type, action, x, y, clicks )
-  struct suitetapp *self;
-  struct suite *suite;
-  struct suite_item *item;
-  long type;
-  enum view_MouseAction action;
-  long x, y, clicks;
+struct view * Last_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
 {
 
   if (action == view_LeftUp) {
@@ -640,22 +618,15 @@ Last_Test( self, suite, item, type, action, x, y, clicks )
   return(NULL);
 }
 
-struct view *
-Number_Test( self, suite, item, type, action, x, y, clicks )
-  struct suitetapp *self;
-  struct suite *suite;
-  struct suite_item *item;
-  long type;
-  enum view_MouseAction action;
-  long x, y, clicks;
+struct view * Number_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
 {
   long test;
 
   if(action == view_LeftDown)
-    suite_ChangeItemAttribute(suite, item, suite_ItemCaption(""));
+    suite_ChangeItemAttribute(suite, item, suite_itemcaption, (long) (""));
   else {
-      if(suite_ItemAttribute(suite, item, suite_ItemCaption(0))) {
-	  test = atoi( suite_ItemAttribute( suite, item, suite_ItemCaption(0) ) );
+      if(suite_ItemAttribute(suite, item, suite_itemcaption)) {
+	  test = atoi( (char *) suite_ItemAttribute( suite, item, suite_itemcaption ) );
 	  if(test >= 0 || test <= last_test) {
 	      current_test = test;
 	      Change_Test(self);
@@ -666,14 +637,7 @@ Number_Test( self, suite, item, type, action, x, y, clicks )
   return(NULL);
 }
 
-struct view *
-Next_Test( self, suite, item, type, action, x, y, clicks )
-  struct suitetapp *self;
-  struct suite *suite;
-  struct suite_item *item;
-  long type;
-  enum view_MouseAction action;
-  long x, y, clicks;
+struct view * Next_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
 {
   if(action == view_LeftUp) {
       if(current_test < last_test && test_suites[current_test+1])
@@ -686,14 +650,7 @@ Next_Test( self, suite, item, type, action, x, y, clicks )
   return(NULL);
 }
 
-struct view *
-Prior_Test( self, suite, item, type, action, x, y, clicks )
-  struct suitetapp *self;
-  struct suite *suite;
-  struct suite_item *item;
-  long type;
-  enum view_MouseAction action;
-  long x, y, clicks;
+struct view * Prior_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
 {
   if(action == view_LeftUp) {
     if(current_test > 0)
@@ -706,14 +663,7 @@ Prior_Test( self, suite, item, type, action, x, y, clicks )
   return(NULL);
 }
 
-struct view *
-Quit_Test( self, suite, item, type, action, x, y, clicks )
-  struct suitetapp *self;
-  struct suite *suite;
-  struct suite_item *item;
-  long type;
-  enum view_MouseAction action;
-  long x, y, clicks;
+struct view * Quit_Test(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
 {
   if(action == view_LeftUp) {
     suite_NormalizeItem(suite, item);
@@ -722,67 +672,36 @@ Quit_Test( self, suite, item, type, action, x, y, clicks )
   }
 }
 
-struct view *
-Name_Choice( self, suite, item, type, action, x, y, clicks )
-  struct suitetapp *self;
-  struct suite *suite;
-  struct suite_item *item;
-  long type;
-  enum view_MouseAction action;
-  long x, y, clicks;
+struct view * Name_Choice(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
 {
   printf("Title Caption '%s' Item Caption '%s'\n",
-	    suite_SuiteAttribute(suite, suite_TitleCaption(0)),
-	    suite_ItemAttribute(suite, item, suite_ItemCaption(0)));
+	    (char *)suite_SuiteAttribute(suite, suite_titlecaption),
+	    (char *)suite_ItemAttribute(suite, item, suite_itemcaption));
   return(NULL);
 }
 
-struct view *
-RW_Hit_Handler( self, suite, item, type, action, x, y, clicks )
-  struct suitetapp *self;
-  struct suite *suite;
-  struct suite_item *item;
-  long type;
-  enum view_MouseAction action;
-  long x, y, clicks;
+struct view * RW_Hit_Handler(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
 {
   printf("Title Caption '%s'  Item Caption '%s'\n",
-	    suite_SuiteAttribute(suite, suite_TitleCaption(0)),
-	    suite_ItemAttribute(suite, item, suite_ItemCaption(0)));
+	    (char *)suite_SuiteAttribute(suite, suite_titlecaption),
+	    (char *)suite_ItemAttribute(suite, item, suite_itemcaption));
   return(NULL);
 }
 
-struct view *
-Text_Object_Handler( self, suite, item, type )
-  struct suitetapp *self;
-  struct suite *suite;
-  struct suite_item *item;
-  long type;
+struct view * Text_Object_Handler(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type)
 {
   static char words[]= "Hello.  I am a Text Inset; just tickle me to make yourself a believer.  I am not showing myself with a Scrollbar, for I feel that would impinge upon your view of this textual material.  Further, I am seen only as plain text, because that is all I was born with (if my creator had elected to read me from a file, or do the necessary text-operations, I could have Bold, and all the formatted styles.)";
   text_InsertCharacters((struct text *) suite_ItemDataObject(suite, item), 0, words, sizeof(words) - 1);
   return(NULL);
 }
 
-struct view *
-TextView_Object_Handler( self, suite, item, type )
-  struct suitetapp *self;
-  struct suite *suite;
-  struct suite_item *item;
-  long type;
+struct view * TextView_Object_Handler(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type)
 {
   textview_SetDataObject((struct textview *) suite_ItemViewObject(suite, item), suite_ItemDataObject(suite, item));
   return(NULL);
 }
 
-struct view *
-Alphabet_Sort( self, suite, item, type, action, x, y, clicks ) 
-  struct suitetapp *self;
-  struct suite *suite;
-  struct suite_item *item;
-  long type;
-  enum view_MouseAction action;
-  long x, y, clicks;
+struct view * Alphabet_Sort(struct suitetapp *self, struct suite *suite, struct suite_item *item, long type, enum view_MouseAction action, long x, long y, long clicks)
 {
   static long sort = suite_Ascend;
   static char *sorted, *forward = "Sorted Ascending",
@@ -798,7 +717,7 @@ Alphabet_Sort( self, suite, item, type, action, x, y, clicks )
 	  sorted = forward;
       }
       suite_Sort(suite, suite_Alphabetic | sort, NULL);
-      suite_ChangeSuiteAttribute(suite, suite_TitleCaption(sorted));
+      suite_ChangeSuiteAttribute(suite, suite_titlecaption, (long) (sorted));
   }
   return(NULL);
 }

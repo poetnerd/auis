@@ -45,6 +45,8 @@
 #endif
 
 #include <stdio.h>
+static void exchange(char **argv);
+static char * my_index(const char *str, int chr);
 
 /* Comment out all this code if we are using the GNU C Library, and are not
    actually compiling the library itself.  This code is part of the GNU C
@@ -175,12 +177,15 @@ static enum
 /* Avoid depending on library functions or files
    whose names are inconsistent.  */
 
+/* M4 strict rollout: strcmp/strncmp are called below (Darwin/clang
+   doesn't define __GNU_LIBRARY__, so the branch above never pulls in
+   string.h); the real libc header is safe to include unconditionally
+   here regardless of the my_index/strlen hand-rolled fallbacks below. */
+#include <string.h>
+
 char *getenv ();
 
-static char *
-my_index (str, chr)
-     const char *str;
-     int chr;
+static char * my_index(const char *str, int chr)
 {
   while (*str)
     {
@@ -224,9 +229,7 @@ static int last_nonopt;
    `first_nonopt' and `last_nonopt' are relocated so that they describe
    the new indices of the non-options in ARGV after they are moved.  */
 
-static void
-exchange (argv)
-     char **argv;
+static void exchange(char **argv)
 {
   int bottom = first_nonopt;
   int middle = last_nonopt;
@@ -337,13 +340,7 @@ exchange (argv)
    long-named options.  */
 
 int
-_getopt_internal (argc, argv, optstring, longopts, longind, long_only)
-     int argc;
-     char *const *argv;
-     const char *optstring;
-     const struct option *longopts;
-     int *longind;
-     int long_only;
+_getopt_internal(int argc, char *const *argv, const char *optstring, const struct option *longopts, int *longind, int long_only)
 {
   int option_index;
 
@@ -671,10 +668,7 @@ _getopt_internal (argc, argv, optstring, longopts, longind, long_only)
 }
 
 int
-getopt (argc, argv, optstring)
-     int argc;
-     char *const *argv;
-     const char *optstring;
+getopt(int argc, char *const *argv, const char *optstring)
 {
   return _getopt_internal (argc, argv, optstring,
 			   (const struct option *) 0,
@@ -689,10 +683,7 @@ getopt (argc, argv, optstring)
 /* Compile with -DTEST to make an executable for use in testing
    the above definition of `getopt'.  */
 
-int
-main (argc, argv)
-     int argc;
-     char **argv;
+int main(int argc, char **argv)
 {
   int c;
   int digit_optind = 0;

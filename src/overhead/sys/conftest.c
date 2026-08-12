@@ -37,6 +37,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/overhead
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <andrewos.h>
 
 /* ./conftest "$(RESOLVLIB)" */

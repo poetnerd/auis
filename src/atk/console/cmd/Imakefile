@@ -30,6 +30,7 @@
 BSDLIB = -lbsd
 #endif
 
+
 LOCALINCLUDES = -I../lib
 
 DOBJS = $(VICEDOBJS) consolea.do
