@@ -134,6 +134,43 @@ pass, not a complete one — it's the actual first gate a `c99`
 migration would need to clear, not a formality, should one ever be
 pursued.
 
+## Original build-up plan (2026-06) vs. what actually happened
+
+Early planning called for five staged milestones, static-first. The real
+build-up diverged from that plan almost immediately and never went back
+to it:
+
+### Phase 1: Static build of core ATK (smallest surface) — skipped
+
+The plan: disable `AMS_ENV`/`ANDREW_MALLOC_ENV`, build a minimal static
+core with `genstatl`, defer dynamic loading to Phase 3. In practice,
+Phase 3's `dlopen()` loader was built on day two of the port
+(2026-06-25) rather than deferred, so there was never a separate
+static-only milestone — the tree went straight to a normally-linked
+build with dynamic loading in place from the start.
+
+### Phase 2: ez running — done
+
+`ez` starts and edits documents.
+
+### Phase 3: Dynamic loading via dlopen() — done, earlier than planned
+
+Implemented 2026-06-25, before Phase 1's static core or most insets
+existed, not after them as sequenced here. See §3.
+
+### Phase 4: Additional insets and applications — done
+
+Insets and applications were brought up one at a time as planned; see
+`roadmap.md`'s Applications and insets table for current status — nearly
+everything is fully working.
+
+### Phase 5 (optional): AMS and other subsystems — done, beyond "optional"
+
+Went further than this plan anticipated: full AMS-over-IMAP/SMTP mail
+integration (read, browse, send, writeback) was built, not just the
+original local-mailbox AMS. See `roadmap.md` → Projects → AMS over
+IMAP/SMTP and `ams-IMAP-project.md`.
+
 ## Issues to address
 
 Index — search for `### N.` to jump to a section (anchor links aren't
@@ -143,31 +180,34 @@ lookup table, not a set of links):
 | § | Issue | Status |
 |---|---|---|
 | 1 | `gcc -fwritable-strings` | RESOLVED 2026-07-23 |
-| 2 | glibc `FILE` struct internals | LOW effort |
-| 3 | Dynamic object loader | MEDIUM effort, a simplification |
-| 4 | Andrew custom malloc | LOW effort |
-| 5 | Platform configuration cleanup | LOW effort |
-| 6 | X11 paths and libraries | LOW effort |
-| 7a | Deferred: legacy sgtty terminal clients (`tm`, `vui`) | LOW priority, defer |
-| 7b | Deferred: `contrib/bdffont` | LOW priority, defer |
-| 7 | Console/stats module | LOW priority, defer |
-| 8 | Misc POSIX drift | LOW-MEDIUM effort |
+| 2 | glibc `FILE` struct internals | RESOLVED 2026-06-25 |
+| 3 | Dynamic object loader | RESOLVED 2026-06-25 (native `dlopen()`) |
+| 4 | Andrew custom malloc | RESOLVED (disabled via config) |
+| 5 | Platform configuration cleanup | LOW effort, not yet addressed |
+| 6 | X11 paths and libraries | RESOLVED 2026-06-24 |
+| 7a | Deferred: legacy sgtty terminal clients (`tm`, `vui`) | LOW priority, deferred |
+| 7b | Deferred: `contrib/bdffont` | LOW priority, deferred |
+| 7 | Console/stats module | LOW priority, deferred |
+| 8 | Misc POSIX drift | superseded — Linux-specific, moot on Darwin |
 | 9 | Font system | in progress as of 2026-07 |
-| 10 | Messages with IMAP backend | resolved for local-store case 2026-07-04; IMAP itself unstarted |
-| 11 | `%d`/`%ld` mismatch in scanf family | MEDIUM effort, systemic |
-| 12 | LP64 untyped dispatch: `long` param / `int` arg mismatch | MEDIUM effort, systemic |
+| 10 | Messages with IMAP backend | RESOLVED — see `roadmap.md` → Projects → AMS over IMAP/SMTP |
+| 11 | `%d`/`%ld` mismatch in scanf family | RESOLVED 2026-07-02 (full tree audit, 11 bugs fixed) |
+| 12 | LP64 untyped dispatch: `long` param / `int` arg mismatch | RESOLVED — subsumed into M1 (§14) |
 | 13 | Modern flex generator/init-flag polarity mismatch | closed 2026-07-07 |
-| 14 | ANSI C conversion plan | assessed 2026-07-08 |
+| 14 | ANSI C conversion plan | COMPLETE 2026-08-07 |
 | 15 | mkparser/cparser.c fixed-width table assumption | closed 2026-07-11 |
 | 16 | classpp typed-dispatch signedness mismatch | closed 2026-07-11 |
-| 17 | Xft "erase by redraw" stale foreground color | partially closed 2026-07-12 |
-| 18 | Variadic function called through a K&R extern | found 2026-07-22 |
-| 19 | `.ch`/wrapper vs. real K&R out-param width drift | ongoing, 5 confirmed instances |
-| 20 | `ansify` DRIFT false-positive on `InitializeClass`/`InitializeObject`/`FinalizeObject` | found 2026-07-25 |
-| 21 | `%d`/`%ld` mismatch in the write direction (printf/fprintf) | MEDIUM effort, systemic, found 2026-07-26 |
+| 17 | Xft "erase by redraw" stale foreground color | RESOLVED 2026-07-12 |
+| 18 | Variadic function called through a K&R extern | RESOLVED 2026-07-22 |
+| 19 | `.ch`/wrapper vs. real K&R out-param width drift | 5 known instances fixed; tree-wide sweep still open |
+| 20 | `ansify` DRIFT false-positive on `InitializeClass`/`InitializeObject`/`FinalizeObject` | documented 2026-07-25; 2 instances unchecked |
+| 21 | `%d`/`%ld` mismatch in the write direction (printf/fprintf) | RESOLVED 2026-07-26 |
 | 22 | On-disk binary formats hard-coded around a 4-byte `long` | closed 2026-08-08 |
+| 23 | `eq`: multi-line equation cleanup can't reduce to one line | open, long-standing |
 
-### 1. `gcc -fwritable-strings` — RESOLVED 2026-07-23 by re-enabling the flag
+### 1. `gcc -fwritable-strings`
+
+**Status:** RESOLVED 2026-07-23, by re-enabling the flag.
 
 **Correction to the original assessment below: this was not, in fact,
 one of the issues a compiler flag can't paper over.** The Linux
@@ -281,7 +321,12 @@ ANSI/POSIX modernization effort.
 
 </details>
 
-### 2. glibc `FILE` struct internals (LOW effort)
+### 2. glibc `FILE` struct internals
+
+**Status:** RESOLVED 2026-06-25. Written against a hypothetical Linux
+port and superseded once Darwin became the primary platform — Darwin's
+own `config/darwin/system.h` was written fresh rather than derived from
+`i386_Linux`'s, and never carried this problem.
 
 ```c
 #define FILE_HAS_IO(f) ((f)->_IO_read_end - (f)->_IO_read_ptr)
@@ -294,36 +339,58 @@ remove the optimization (it's a buffering check).
 Similarly, `FILE_NEEDS_FLUSH` is defined to always return 1, which is
 already the safe/portable behavior.
 
-### 3. Dynamic object loader (MEDIUM effort, but a simplification)
+`config/darwin/system.h` defines `FILE_HAS_IO(f)` as `((f)->_r)` — the
+field name Darwin/BSD libc's `FILE` struct actually exposes — and keeps
+`FILE_NEEDS_FLUSH` at the same safe `1` the original assessment already
+recommended. A future Linux port would need the glibc-specific fix
+above; this build never needed it.
+
+### 3. Dynamic object loader
+
+**Status:** RESOLVED 2026-06-25 — replaced with native `dlopen()`.
 
 The `overhead/class/` directory contains AUIS's custom dynamic loader for
 `.do` (dynamic object) files. This was the hardest part of every port —
 it had to understand each platform's object file format.
 
-Modern replacement: `dlopen()`/`dlsym()`/`dlclose()` from `<dlfcn.h>`,
-which is standard POSIX and works everywhere. The `.do` files become
-standard `.so` shared objects. This is actually a simplification over
-the original, but touches the core of the system — every inset is loaded
-through this machinery.
+Implemented as `overhead/class/machdep/darwin/doload.c`, a thin wrapper
+around `dlopen()`/`dlsym()`/`dlclose()` (`<dlfcn.h>`), standard POSIX.
+`.do` files are ordinary Mach-O dylibs, built with `-dynamiclib
+-undefined dynamic_lookup`. Simpler than the original per-platform
+loaders it replaced — roughly 70 lines versus ~500. A handful of core
+classes (`text`, `matte`, `lpair`, `scroll`) remain statically linked
+into `runapp` rather than built as `.do` files; that's an existing build
+convention, not a fallback this fix needed.
 
-Note: `genstatl` already exists for building without dynamic loading.
-A static-linked build could be the first milestone, deferring the
-`dlopen()` migration.
+### 4. Andrew custom malloc
 
-### 4. Andrew custom malloc (LOW effort)
+**Status:** RESOLVED — disabled via config, not needed.
 
 `ANDREW_MALLOC_ENV` is defined by default. This custom allocator may
 conflict with modern allocators and address space layout randomization.
 Can be disabled by `#undef ANDREW_MALLOC_ENV` in `site.h`.
 
-### 5. Platform configuration cleanup (LOW effort)
+`config/site.h` `#undef`s `ANDREW_MALLOC_ENV` (done from the very first
+Darwin bootstrap commit, 2026-06-25), so the system allocator is used
+tree-wide and this conflict never arose.
+
+### 5. Platform configuration cleanup
+
+**Status:** Not yet addressed. LOW effort.
 
 The `config/` directory has 30+ platform directories (VAX, RT, Apollo,
 Mac II, NeXT, etc.) and `platform.tmpl` is a 220-line cascade of
 `#ifdef` blocks for all of them. For the revival, strip everything
 except the Linux path. This is just cleanup, not a porting problem.
 
-### 6. X11 paths and libraries (LOW effort)
+Still true as written — all 30+ legacy platform directories are still
+present; `platform.tmpl` was never trimmed. Harmless clutter, not a
+blocker.
+
+### 6. X11 paths and libraries
+
+**Status:** RESOLVED 2026-06-24. Moot for the Linux paths originally
+described, since Darwin/XQuartz became the primary target instead.
 
 The `system.mcr` hardcodes:
 ```
@@ -336,7 +403,15 @@ Modern Linux puts X11 in `/usr/include/X11`, `/usr/lib/x86_64-linux-gnu`,
 etc. Fix the paths in `site.mcr` or update the defaults. The X11 API
 itself hasn't changed in the ways that matter — Xlib is remarkably stable.
 
-### 7a. Deferred: legacy sgtty-based terminal clients — tm, vui (LOW priority, defer)
+`config/darwin/system.mcr` was written fresh with XQuartz's actual
+paths (`XUTILDIR = /opt/homebrew/bin`, `XLIBDIR = /opt/X11/lib`) from
+the initial Darwin bootstrap — the Linux-specific paths above were
+never carried over. A future Linux port would still need the fix as
+originally described.
+
+### 7a. Deferred: legacy sgtty-based terminal clients — tm, vui
+
+**Status:** LOW priority, deferred.
 
 `contrib/tm` and `ams/msclients/vui` are curses-style terminal mail clients
 built in part on the pre-POSIX BSD `sgtty` tty API (`TIOCGETP`, `TIOCREMOTE`,
@@ -378,7 +453,9 @@ on 2026-07-05 (§ above). Fixed 2026-07-07: `${RESOLVER_LIB}` added to
 links, and installs cleanly. `MK_CUI` is enabled in `config/site.h`. Full
 detail in `porting-changelog.md`'s 2026-07-07 entry.
 
-### 7b. Deferred: contrib/bdffont (LOW priority, defer)
+### 7b. Deferred: contrib/bdffont
+
+**Status:** LOW priority, deferred.
 
 `contrib/bdffont`'s parser splits bison's output across two files: a
 generated `bdfparse.tab.c` plus a hand-maintained `bdfparse.act`
@@ -407,14 +484,22 @@ Revisit if `bdfparse.act` can be recovered from an original CMU
 distribution, or if someone is willing to hand-write it against the
 grammar.
 
-### 7. Console/stats module (LOW priority, defer)
+### 7. Console/stats module
+
+**Status:** LOW priority, deferred.
 
 `atk/console/stats/i386_Linux/` contains platform-specific code for
 reading system statistics from `/dev/kmem` and `/proc`. The kernel
 interfaces have changed completely. This module is not essential —
 defer or disable it.
 
-### 8. Misc POSIX drift (LOW-MEDIUM effort)
+### 8. Misc POSIX drift
+
+**Status:** Superseded — written against the original Linux-port
+assessment. Darwin's `config/darwin/system.h` was written fresh rather
+than derived from `i386_Linux`'s, and carries none of the mappings
+below; none of these ever became live issues on this port. Kept for
+reference in case a Linux config is revived.
 
 - `setreuid(r,e)` is mapped to `setuid(r)` — modern Linux has `setreuid()`
 - `osi_vfork()` maps to `fork()` — fine, vfork() is deprecated anyway
@@ -424,42 +509,9 @@ defer or disable it.
 - `NDEBUG` is forced on to work around a missing `___eprintf()` in shared
   libs — this is long since fixed in modern glibc, remove the `#define`
 
-## Recommended build-up strategy
+### 9. Font system
 
-### Phase 1: Static build of core ATK (smallest surface)
-
-Disable in `site.h`:
-```c
-#undef AMS_ENV           /* skip mail system entirely */
-#undef ANDREW_MALLOC_ENV /* use system malloc */
-```
-
-Build target: `overhead/` (minus class dynamic loader) + `atk/basics/` +
-`atk/text/` + `atk/support/`. Use `genstatl` for static linking.
-Goal: get the class preprocessor and core text objects compiling.
-
-### Phase 2: ez running
-
-Add `atk/ez/`, `atk/frame/`, `atk/supportviews/`, `atk/textaux/`,
-`atk/textobjects/`. Goal: ez starts and can edit a document.
-
-### Phase 3: Dynamic loading via dlopen()
-
-Replace the `overhead/class/` loader with a `dlopen()` wrapper.
-Insets become standard `.so` files. Goal: ez can load insets dynamically.
-
-### Phase 4: Additional insets and applications
-
-Bring up figure, raster, table, help, etc. one at a time.
-Each is relatively independent once dynamic loading works.
-
-### Phase 5 (optional): AMS and other subsystems
-
-The Andrew Message System, if desired. This has its own large set of
-dependencies (mail delivery, white pages, etc.) and could reasonably
-be left for much later or not at all.
-
-### 9. Font system (in progress as of 2026-07)
+**Status:** in progress as of 2026-07.
 
 AUIS was written for the X core font protocol — server-side bitmap font
 rendering with XLFD naming, custom "Andy" bitmap fonts (BDF/PCF format),
@@ -507,15 +559,24 @@ exact invocation.
 - `atk/support/` — style and font selection
 - `build/X11fonts/fonts.alias` — Andy→Adobe XLFD name mappings
 
-### 10. Messages with IMAP backend (UNKNOWN effort, needs investigation)
+### 10. Messages with IMAP backend
 
-**Resolved 2026-07-04 for the local-store case — see `roadmap-old.md` Near-term →
-Messages application prerequisites, Stream 2/3.** The build already has a
-clean seam: `AMS_ENV` on with `AMS_DELIVERY_ENV`/`SNAP_ENV`/`WHITEPAGES_ENV`
-left off builds `messages` against a local, non-networked mbox-backed
-message store (`ams/libs/ms`), with none of the AFS/AMDS delivery machinery
-involved. An IMAP adapter remains a viable fallback (notes below still
-apply to that scenario) but is no longer the near-term plan.
+**Status:** RESOLVED. `messages` runs against a local mbox store with a
+one-way IMAP mirror layered on top — full design and status in
+`ams-IMAP-project.md`; current-status summary in `roadmap.md` → Projects
+→ AMS over IMAP/SMTP. Read/browse/send/writeback all work; only XOAUTH2
+auth and folding the mirror-sync step into the normal workflow remain.
+
+This section originally posed the investigation as open — the questions
+below (how thick is the `atkams`/AMS bridge? is there a storage
+abstraction? does `messages` talk to AMS through a clean boundary?) have
+since been answered directly by reading the source, not by guesswork:
+AMS's `MS_*` API (~75 entry points, ~25-30 actually used by the live
+store surface) is exactly the clean seam this section was hoping for.
+Kept below for the historical record of the original open question.
+
+<details>
+<summary>Original 2026-06 assessment (superseded, kept for history)</summary>
 
 The `messages` application is the UI for mail and bulletin boards. It
 sits on top of AMS, which implements its own storage, delivery, and
@@ -539,7 +600,15 @@ depends entirely on whether there's a seam between the UI and the store.
 Previous experience suggests AMS internals are deeply complex — approach
 with caution and investigate the interface boundaries before committing.
 
-### 11. `%d` / `%ld` mismatch in scanf family (MEDIUM effort, systemic)
+</details>
+
+### 11. `%d` / `%ld` mismatch in scanf family
+
+**Status:** RESOLVED 2026-07-02. Full tree audit (141 `scanf`/`fscanf`/
+`sscanf` hits against `%d`) found and fixed 11 real bugs beyond the two
+below; full instance list in `porting-changelog.md`'s 2026-07-02 entry.
+The audit-query section below is kept for anyone re-running the check
+after future changes.
 
 AUIS was written for ILP32 platforms where `sizeof(int) == sizeof(long)
 == 4`. Throughout the codebase, `long` variables used for sizes, IDs, and
@@ -576,7 +645,14 @@ This is LP64 variant #4, distinct from the three fixed earlier:
 - #2 >8-arg call through `(void(*)())` → stack argument dropped
 - #3 `int` constant through untyped dispatch → zero-extended, comparison fails
 
-### 12. LP64 untyped dispatch: `long` parameter / `int` argument mismatch (MEDIUM effort, systemic)
+### 12. LP64 untyped dispatch: `long` parameter / `int` argument mismatch
+
+**Status:** RESOLVED — the root mechanism (untyped `void (*)()` class
+dispatch) was fixed structurally by the M1 typed-dispatch conversion
+(§14), complete tree-wide as of 2026-08-07. The specific instances,
+audit methodology, and options analysis below remain as reference for
+recognizing the same bug shape anywhere it could still occur outside
+that conversion's scope.
 
 #### Root cause
 
@@ -769,7 +845,9 @@ pixels or percent, style units), `long → int` in the implementation is
 the right fix. If it needs 64-bit range (file offsets, text positions,
 accumulated sizes), keep `long` and cast at the call site instead.
 
-### 13. Modern flex generator/init-flag polarity mismatch (LOW effort, closed 2026-07-07)
+### 13. Modern flex generator/init-flag polarity mismatch
+
+**Status:** closed 2026-07-07. LOW effort.
 
 #### Root cause
 
@@ -862,7 +940,13 @@ with `/dev/null` on stdin) — a separate, pre-existing issue, not caused by
 or diagnostic of this fix. Confidence rests on the byte-for-byte identical
 mechanism and generator to the dynamically-proven `parsel.flex` fix.
 
-### 14. ANSI C conversion plan (assessed 2026-07-08)
+### 14. ANSI C conversion plan
+
+**Status:** COMPLETE 2026-08-07 — all four milestones (M1–M4) done,
+entire active codebase compiles clean under strict settings. See
+"Getting K&R-era source to build under a modern compiler" above for the
+completed-state summary; everything below is the frozen record of how
+the plan was built and executed, kept for reference.
 
 How to complete the conversion abandoned in June (checkin `5e57549713`,
 779 files, reverted in `99fe31066c`). Analysis lives here; the ordered
@@ -1341,7 +1425,9 @@ with the laundered forward at ams.c:120 getting a pre-authorized
    parent `.ch`s from the INSTALLED include tree, such a fix only
    takes effect after `make install` in the parent's directory.
 
-### 15. mkparser/cparser.c: fixed-width table assumption vs. modern bison's per-table type narrowing (MEDIUM effort, closed 2026-07-11)
+### 15. mkparser/cparser.c: fixed-width table assumption vs. modern bison's per-table type narrowing
+
+**Status:** closed 2026-07-11. MEDIUM effort.
 
 #### Root cause
 
@@ -1518,7 +1604,9 @@ standalone harness and against the actual deployed `build/lib` libraries.
 The other four grammars (`eliy`, `parsey`, `eqparse`, `num`) are unverified
 beyond a clean compile/link — see the scope table above.
 
-### 16. classpp typed-dispatch signedness mismatch: `.ch` declared type vs. implementation's actual type (MEDIUM effort, closed 2026-07-11)
+### 16. classpp typed-dispatch signedness mismatch: `.ch` declared type vs. implementation's actual type
+
+**Status:** closed 2026-07-11. MEDIUM effort.
 
 #### Root cause
 
@@ -1639,7 +1727,13 @@ end-to-end against both `src/doc/papers/atk/Cattey.turnin` and
 `contrib/zip/samples/dragon.zip`, and against a full `make Clean; make
 dependInstall` world rebuild.
 
-### 17. Xft "erase by redraw" uses stale foreground color in WHITE transfer mode (LOW-MEDIUM effort, partially closed 2026-07-12)
+### 17. Xft "erase by redraw" uses stale foreground color in WHITE transfer mode
+
+**Status:** RESOLVED 2026-07-12. All three bugs that surfaced during this
+investigation — the stale-foreground-color bug below, the anti-aliasing
+ghost-residue bug, and the incremental-redraw "missing leading
+characters" bug it led to — were root-caused and fixed the same day. See
+"Follow-up 2026-07-12" below.
 
 #### Root cause
 
@@ -1676,18 +1770,18 @@ across a full calc keystroke sequence — every `ClearBoundedString` call
 now requests `0xFFFFFF`, every `DrawBoundedString` call requests
 `0x000000`, perfectly alternating. This part of the bug is resolved.
 
-#### Scope: tree-wide, not calc-specific — partially closed
+#### Scope: tree-wide, not calc-specific
 
 Like §16, this is a general core-ATK bug, not specific to the inset that
 happened to surface it. Any Xft-rendered view using WHITE-mode
-erase-by-redraw was affected. Marked **partially** closed because a
-related symptom — a faint "ghost" of prior text remaining visible after
-an erase/redraw cycle — persisted in `contrib/calc`'s display area even
-after this fix, and had been proven (via the same lldb-trace methodology)
-to **not** be a further instance of this same color bug, nor a content
-or draw/erase-position bug at the API level traced (`aptv__DrawBoundedString`/
-`ClearBoundedString` arguments were correct and self-consistent in every
-case checked).
+erase-by-redraw was affected. A related symptom — a faint "ghost" of
+prior text remaining visible after an erase/redraw cycle — persisted in
+`contrib/calc`'s display area even after this fix, and was proven (via
+the same lldb-trace methodology) to **not** be a further instance of
+this same color bug, nor a content or draw/erase-position bug at the
+API level traced (`aptv__DrawBoundedString`/`ClearBoundedString`
+arguments were correct and self-consistent in every case checked) — see
+the follow-up below, where it was root-caused and fixed separately.
 
 #### Follow-up 2026-07-12: ghost root-caused and fixed; new redraw bug surfaced
 
@@ -1701,19 +1795,29 @@ by filling the glyph's advance-cell rectangle with the background color
 `transferMode == graphic_WHITE`. User-confirmed in `ez`: the ghost is
 gone.
 
-That fix immediately surfaced a **new, distinct, still-open** bug:
-during incremental multi-keystroke redraws, the calc display now shows
-only a *suffix* of the correct string (leading characters go missing —
-e.g. typing `123+4=` shows `1`, `2`, `23`, `3+`, `23+4` instead of `1`,
-`12`, `123`, `123+`, `123+4`). The final `=` result always draws
-correctly, and a forced full repaint (window focus-loss/regain) shows
-the correct string, so calc's own value tracking is fine — this is
-purely a defect in the incremental Clear/Draw redraw path, most likely
-in how the new rect-fill erase interacts with the freshly-drawn new
-string's cells. Not yet root-caused. See
-`claude-history/calc-ghost-fix-prompt.md`'s "Outcome" section and
-`claude-history/calc-text-rendering-investigation.md` for the full trail and untried
-next leads.
+That fix immediately surfaced a **new, distinct** bug: during incremental
+multi-keystroke redraws, the calc display showed only a *suffix* of the
+correct string (leading characters missing — e.g. typing `123+4=` showed
+`1`, `2`, `23`, `3+`, `23+4` instead of `1`, `12`, `123`, `123+`,
+`123+4`). The final `=` result always drew correctly, and a forced full
+repaint (window focus-loss/regain) showed the correct string, so calc's
+own value tracking was fine — this was purely a defect in the incremental
+Clear/Draw redraw path. See `claude-history/calc-ghost-fix-prompt.md`'s
+"Outcome" section and `claude-history/calc-text-rendering-investigation.md`
+for the full trail.
+
+**Root-caused and fixed the same day.** Traced (via a live `XGetImage`
+framebuffer readback in `xgraphic_DrawChars`'s Xft path) to rootless
+XQuartz not reliably recompositing the native window surface for
+Xft/Render draws on their own — the server-side pixels were always
+correct, but didn't reach the visible window until some unrelated event
+(a focus change) forced a full recomposite. Fixed with a self-`XCopyArea`
+kick (through the core-X path) after each Xft draw, forcing the
+compositor to recognize the region as dirty. Confirmed by the user for
+both the calc digit-display symptom and a second, broader instance of
+the same root cause (text typed above a calc inset going temporarily
+invisible during relayout). Full detail: `porting-changelog.md`'s
+2026-07-12 "calc inset missing leading characters" entry.
 
 No tree-wide audit for *other* latent instances of the specific
 `GetXftForeColor` bug has been done (unlike §16's exhaustive `.ch` sweep)
@@ -1731,9 +1835,15 @@ full `123+4=` keystroke sequence in `contrib/calc`, confirmed correct
 color alternation at every step. Full `make Clean && make dependInstall`
 world rebuild done 2026-07-12, zero new errors introduced (one
 pre-existing, unrelated `contrib/zip/utility/ltapp.c` error remains, see
-roadmap-old.md → Insets to Repair → zip).
+roadmap-old.md → Insets to Repair → zip). The ghost-residue and
+incremental-redraw follow-on fixes were each confirmed live by the user
+in `ez` the same day, as described above.
 
-### 18. Variadic function called through a K&R (empty-parens) extern declaration — arm64 calling-convention mismatch (MEDIUM effort, found 2026-07-22)
+### 18. Variadic function called through a K&R (empty-parens) extern declaration — arm64 calling-convention mismatch
+
+**Status:** RESOLVED 2026-07-22. The one instance found was fixed and
+confirmed via repeated live repro; kept here as a bug-class reference for
+any future new variadic function (see Scope below).
 
 #### Root cause
 
@@ -1805,7 +1915,14 @@ mirrored folder) after the fix, no further crashes. No tree-wide audit
 needed — this is the only new variadic function added in this work, and
 no existing variadic function in the tree was touched.
 
-### 19. `.ch`/wrapper vs. real K&R implementation out-param width drift — invisible across the untyped call boundary (MEDIUM effort, ongoing; 5 confirmed instances)
+### 19. `.ch`/wrapper vs. real K&R implementation out-param width drift — invisible across the untyped call boundary
+
+**Status:** 5 known instances found and fixed. Not resolved tree-wide —
+see Scope below: the sweep that found instances 2–4 was narrow and had
+to be re-run once already after missing two on a declaration-style
+technicality, so a thorough, purpose-built sweep of every `ams/libs/ms`
+function's real parameter declaration against its `.ch` entry is still
+open. MEDIUM effort.
 
 #### Root cause
 
@@ -1974,7 +2091,13 @@ Instances 3–4: full rebuild clean, zero new warnings; live smoke test by
 wdc — Inbox's subscription-status message read correctly after the
 correction, confirmed garbled before it (see above).
 
-### 20. `ansify` DRIFT false-positive: classpp's own `InitializeClass`/`InitializeObject`/`FinalizeObject` special-casing (found 2026-07-25, M3 tree-wide census)
+### 20. `ansify` DRIFT false-positive: classpp's own `InitializeClass`/`InitializeObject`/`FinalizeObject` special-casing
+
+**Status:** Documented 2026-07-25 (M3 tree-wide census). Not itself an
+action item beyond consulting this section during future DRIFT triage —
+the tool-side fix in `ansify` is deliberately deferred (§14's delegation
+ruling keeps tool construction top-level). Two live instances remain
+unchecked: `contrib/zip/utility/schedv.ch`/`ltv.ch` (Wave 7).
 
 A tree-wide `ansify --dry-run --dir src` census (M3's "first concrete
 step," run before any batch execution) found 56 DRIFT findings across
@@ -2289,7 +2412,10 @@ classproc parameter is unusual style to begin with), but worth the
 same "note it if you see it" awareness as the other two classpp
 findings above whenever a future batch's `-pe` rollout hits it.
 
-### 21. `%d` / `%ld` mismatch in the write direction — printf/fprintf family (MEDIUM effort, systemic; found 2026-07-26)
+### 21. `%d` / `%ld` mismatch in the write direction — printf/fprintf family
+
+**Status:** RESOLVED 2026-07-26. Tree-wide sweep, ~60 sites across ~30
+files fixed; see "Confirmed systemic" below.
 
 Section 11 above (`scanf` family) noted in passing that "unlike `printf`
 mismatches (wrong output, no memory write), `scanf` mismatches corrupt
@@ -2378,7 +2504,9 @@ vs. a `long`/`dataobject_UniqueID()`/`*_GetID()` call (needs `%ld`) — do
 not blind-replace, several sites mix a genuine `int` (a version number, a
 count) with the `long` id in the same format string.
 
-### 22. On-disk binary formats hard-coded around a 4-byte `long` — struct layout and hand-rolled word loops (MEDIUM effort, closed 2026-08-08)
+### 22. On-disk binary formats hard-coded around a 4-byte `long` — struct layout and hand-rolled word loops
+
+**Status:** closed 2026-08-08. MEDIUM effort.
 
 #### Root cause
 
@@ -2491,6 +2619,31 @@ Full regression pass after both fixes — identity round-trip,
 RF/MacPaint/Xwd/Xbitmap round trips, 4×90° rotation identity, PostScript
 scale factor, valid crop — all still pass. Detail: `porting-changelog.md`
 2026-08-08 entry.
+
+### 23. `eq`: multi-line equation cleanup can't reduce to a single line
+
+**Status:** open, long-standing. Not an LP64/porting bug — a genuine
+functional defect in `eq`'s editing behavior, present in the original
+CMU source. wdc's recollection: MIT fixed this more than once over the
+years, and it kept regressing upstream.
+
+**Symptom:** deleting the lines of a multi-line equation only ever
+reduces each line down to a single "zilch" placeholder character — it's
+possible to end up with several lines, each holding nothing but a zilch,
+but not to merge/delete down to one line with one zilch the way deleting
+within a single line of ordinary text works. Correct behavior: deleting
+across a multi-line equation's line breaks should collapse it the same
+way deleting text does anywhere else in `ez` — down to one line, not
+down to N empty lines.
+
+Not yet root-caused in this revival — no investigation has been done
+into which of `eq`'s line-management routines (`atk/eq/eqvcmds.c` is the
+likely area, given it already owns the Cut/Copy-to-cutbuffer path fixed
+in §21) is responsible. Distinct from a missing-integral-symbol concern
+`roadmap.md` previously carried — that turned out to be a
+misunderstanding, not a real bug: testing the documented way to insert
+an integral into an equation works correctly, and `eq` is otherwise
+fully working (see `roadmap.md`'s Applications and insets table).
 
 ## Primary build environment: macOS/Darwin
 

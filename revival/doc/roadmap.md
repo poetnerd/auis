@@ -38,7 +38,7 @@ solid versus still rough. Active work is listed under Projects.
 | `messages` | Mostly working | Runs against a local mailbox and against a live IMAP mirror, but the IMAP side still needs a manual `imapsync` step — see Projects → AMS over IMAP/SMTP |
 | `typescript` | Broken | Crashes on launch: PTY allocation fails, and a missing NULL check turns that failure into a crash instead of a clean error |
 | `ness` (scripting) | Inert | Blocked on a bison grammar extension specific to the (disabled-on-arm64) Andrew bison fork |
-| Core embedded insets — `eq`, `table`, `fad`, `fnote`, `bp`, `srctext`, `figure`, `value`/slider/button, `pushbutton`/`link`, `lset`, `org`, `apt`/`cel`/`arbiter` | Fully working | `figure` has one open cosmetic bug: italic-text sizing is non-monotonic (10pt renders bigger than 12pt) |
+| Core embedded insets — `eq`, `table`, `fad`, `fnote`, `bp`, `srctext`, `figure`, `value`/slider/button, `pushbutton`/`link`, `lset`, `org`, `apt`/`cel`/`arbiter` | Fully working | `figure` has one open cosmetic bug: italic-text sizing is non-monotonic (10pt renders bigger than 12pt). `eq` has one open bug: deleting a multi-line equation's lines only reduces each to a single "zilch" placeholder rather than merging down to one line — a long-standing bug, not new to this port (see `porting-assessment.md` §23) |
 | `calc`, `zip` (contrib) | Fully working | |
 | `clock` | Fully working | |
 | `raster` (as an embedded inset) | Fully working | |
@@ -46,7 +46,6 @@ solid versus still rough. Active work is listed under Projects.
 | `convertraster` (standalone CLI) | Fully working | Fully tested 2026-08-08; three bugs found and fixed (see `porting-changelog.md`) |
 | `image` (JPEG/TIFF import) | Fully working | Fixed 2026-08-08: TIFF import was totally broken (four LP64 struct/stride bugs in vendored `libtiff`); JPEG/TIFF solid-color render was an unrelated `xgraphic.c` variable mixup — see `porting-changelog.md`. GIF import shares the same render path so is likely also fixed, but wasn't retested |
 | `htmlview` | Rough | No longer crashes, but real-world HTML mostly fails to render — see Projects → HTML mail rendering |
-| `eq`'s integral symbol | Minor bug | Glyph missing; suspect the font pipeline, not `eq` itself |
 
 ---
 
@@ -137,8 +136,8 @@ being front-loaded here.
 ### Inset work
 
 - **Description:** Track and fix insets known broken or buggy.
-- **Next step:** `figure` italic-text sizing, `eq`'s integral symbol
-  (see table above); `convertraster` CLI bugs and `image` JPEG/TIFF
+- **Next step:** `figure` italic-text sizing, `eq`'s multi-line cleanup
+  bug (see table above); `convertraster` CLI bugs and `image` JPEG/TIFF
   import fixed 2026-08-08.
 
 ---
@@ -252,6 +251,11 @@ Smaller items that don't fit the tables above.
   still render as placeholder comments in the `.ez`-to-Markdown
   converter; batch-converting the archive's FAQ/newsletters/papers to
   Markdown is unstarted.
+- **`c99`/`c11` migration** — not planned for the foreseeable future.
+  `gnu89` is load-bearing today only because of ~35 years of K&R-era
+  identifiers that collide with later reserved words (`restrict` is the
+  one confirmed hit); a migration needs a tree-wide reserved-word audit
+  first. `porting-assessment.md` → "Why `gnu89`."
 
 ---
 
