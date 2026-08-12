@@ -235,7 +235,7 @@ parser — its native rich text is ATK datastream, flagged by
   task — spec `revival/doc/mime-display-prompt.md`, queued in the
   roadmap's delegated work queue with user priority to run early.
   Real inline HTML *rendering* (htmlview modernization) remains a
-  post-milestone-5 objective — see roadmap-old.md → "Objective: HTML
+  post-milestone-5 objective — see `claude-history/roadmap-old.md` → "Objective: HTML
   mail rendering".
 
 ## 5. Connection handling and performance
