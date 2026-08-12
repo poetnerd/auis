@@ -1463,7 +1463,7 @@ plan begun with M1 on 2026-07-08: four milestones, dispatch-layer
 typing through full compiler strictness, dozens of decades-old bugs
 found and fixed along the way. Full per-wave/per-batch detail:
 `claude-history/m4-batches.md`, `claude-history/m4-rollout-runbook.md`;
-strict-prototypes detail: `revival/doc/strict-prototypes-census.md`,
+strict-prototypes detail: `claude-history/strict-prototypes-census.md`,
 `claude-history/strict-prototypes-retype-REPORT.md`.
 
 ### 2026-08-08 — convertraster: full functional test pass, three bugs found and fixed

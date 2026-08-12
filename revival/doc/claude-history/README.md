@@ -557,7 +557,9 @@ locking its X axis after the first drag) was found in exactly this
 category: a static helper's forward declaration had been left
 old-style even though its own definition was already fully ANSI-typed,
 invisible to every M4 flag since none of them check a call against a
-declaration that carries no prototype at all. A full 77-directory
-retype pass fixed it the same day; see
-`strict-prototypes-retype-REPORT.md` and
-`revival/doc/strict-prototypes-census.md`.
+declaration that carries no prototype at all. `strict-prototypes-census.md`
+(2026-08-07, moved here 2026-08-12) is the sizing pass that came
+first — diagnostic only, no fixes, classifying every hit across the 91
+active directories before committing to the fix. A full 77-directory
+retype pass then fixed it the same day; see
+`strict-prototypes-retype-REPORT.md`.
