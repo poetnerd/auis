@@ -1,6 +1,6 @@
 # AUIS Revival Roadmap
 
-Last updated: 2026-08-10
+Last updated: 2026-08-13
 
 This document is intended primarily for AUIS revival participants,
 with a summary of what's running, what's active, what's next, and the
@@ -66,6 +66,12 @@ being front-loaded here.
 
 ### HTML mail rendering
 
+- **Design doc:** `html-mail-rendering-design.md` — sanitization
+  allowlist, table strategy (Andrew's `table`/`spread` grid object,
+  not text-flow unpacking), image strategy (`image__ReadOtherFormat`
+  capability check + fallback), and the explicit renderer-level
+  fallback contract. Work happens on the `html` branch
+  (`~/src/AUIS/html/`), not `trunk/`.
 - **Description:** MIME body decoding itself is solid — `messages` and
   `cui` (2026-08-09) both share the real `mimepart.c` parser, decoding
   quoted-printable/base64 and picking the right part out of
