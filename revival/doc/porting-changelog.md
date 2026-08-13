@@ -1782,3 +1782,28 @@ tracked shares that name there. See `revival.md`'s "Old bugs never
 found till now" for the narrative writeup, and `roadmap.md`'s "Open
 issues" for the prior (inaccurate — it called this transient and
 self-healing) entry.
+
+### 2026-08-12 — `andrew-6.4` merged back into `trunk`: trunk is canon
+
+Every entry above this point happened on the `andrew-6.4` branch — the
+tree all revival work has lived in since the June 25 reorg. That branch
+is now merged into `trunk`, in two commits: `9e6cd5ec` (the merge
+itself: all of `revival/doc/`, the ANSI/LP64 work, the restored
+`adew/Arb` above, and a resolved conflict on `README.md`, which had
+independently picked up two different purposes on the two branches —
+trunk's copy framed itself as a read-only mirror pointing readers at
+`andrew-6.4`; the merged-in copy was the real project overview written
+from inside that branch. Kept the latter, since trunk now holds what it
+was pointing at) and `5d87cc06` (a follow-up cleanup pass removing
+`quickstart.md`/`mail-quickstart.md`'s `andrew-6.4`-specific clone
+instructions and path examples, now stale since a plain clone lands on
+`trunk` directly).
+
+`trunk` is the canonical checkout from here on; `andrew-6.4` remains in
+Fossil but is retired from day-to-day use. The practical effect: this
+is a stable baseline future project-scoped work can branch from,
+instead of everything continuing to accumulate on one open-ended
+branch the way `andrew-6.4` did for nearly two months. No such branches
+exist yet — `html` (rendering) and `imap` (deeper AMS-over-IMAP work
+past the M1–4 milestones already merged) are candidates under
+discussion, not decided.
