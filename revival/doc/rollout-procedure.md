@@ -124,7 +124,7 @@ lever left, only a command-shape one:
 
 ALL build output — local rebuilds and the tree-wide gate alike —
 goes to the one canonical file
-`~/src/AUIS/andrew-6.4/dependInstall.log`, overwritten each build.
+`~/src/AUIS/trunk/dependInstall.log`, overwritten each build.
 Never invent per-step log names: the fixed path is already in the
 user's permission allow-list, so reusing it keeps an unattended run
 moving, and gives the user one known place to watch progress.
@@ -184,7 +184,7 @@ match.
 
 A directory is in the active tree iff the gate log contains
 `building (dependInstall) (.../src/<dir>)` — grep
-`~/src/AUIS/andrew-6.4/dependInstall.log` after a full gate. Makefile
+`~/src/AUIS/trunk/dependInstall.log` after a full gate. Makefile
 presence is NOT evidence: stale Makefiles from before a subtree was
 conditionalized out survive indefinitely (`atkbook`, `tm`, `bdffont`,
 `prefed`), and `site.h`/`allsys.h` must be read together (`site.h`

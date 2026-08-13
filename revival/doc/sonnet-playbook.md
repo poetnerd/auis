@@ -4,8 +4,36 @@ You are a delegated instance working on the AUIS/Andrew 6.4 revival.
 This file is the standing briefing; a companion `*-prompt.md` file
 gives your specific task. Read both fully before doing anything.
 
+**Two kinds of session use this playbook — check which one you are
+before doing anything else:**
+
+- **Debug/bugfix session** (the common case: one bug, one directory,
+  a rollout-style batch, etc.) — work directly in
+  `/Users/wdc/src/AUIS/trunk`, the canonical checkout. This is the
+  default if your `<task>-prompt.md` doesn't say otherwise.
+- **Project session** (larger, multi-session initiative — e.g. an
+  "html" rendering effort or an "imap" effort; ask wdc if your prompt
+  doesn't already name one) — do NOT work in `trunk` directly. First
+  confirm with wdc which project this is for, then:
+  1. `fossil branch list` — if a branch by that project's name
+     doesn't exist yet, stop and ask wdc whether to create one (as a
+     new branch off `trunk`'s tip) before doing anything else.
+  2. If the branch exists but has no checkout yet, create one
+     alongside `trunk/` and `andrew-6.4/` — e.g.
+     `mkdir /Users/wdc/src/AUIS/<project> && cd
+     /Users/wdc/src/AUIS/<project> && fossil open
+     ~/museum/auis.fossil && fossil update <project>` — mirroring how
+     `trunk/` and `andrew-6.4/` are each their own independent
+     checkout directory.
+  3. If a checkout for that project already exists, `cd` into it and
+     confirm `fossil status` shows you on the right branch before
+     starting work.
+  No project branches exist yet as of 2026-08-13 — `html` and `imap`
+  are candidates wdc is still deciding between, not settled.
+
 **How wdc launches a session with this:** start a fresh Sonnet
-session in `/Users/wdc/src/AUIS/andrew-6.4` and say:
+session in the tree identified above (`trunk/` for a debug session,
+the project's own checkout for a project session) and say:
 "Read revival/doc/sonnet-playbook.md and revival/doc/<task>-prompt.md,
 then begin. Stop at Gate 1." One task per session; do not mix tasks.
 
@@ -14,10 +42,12 @@ then begin. Stop at Gate 1." One task per session; do not mix tasks.
 AUIS (Andrew User Interface System) is a 1980s–90s CMU C codebase —
 compound-document editor (`ez`), mail reader (`messages`/`cui`), a
 Class object system with generated headers — being revived on macOS
-arm64 with XQuartz. The tree is `/Users/wdc/src/AUIS/andrew-6.4`
+arm64 with XQuartz. The canonical tree is `/Users/wdc/src/AUIS/trunk`
 (Fossil SCM; `src/` sources, `build/` the installed tree,
-`revival/` docs/tests/tools). Most bugs found this year are LP64
-porting classes: 1991 code that assumed int == long == pointer.
+`revival/` docs/tests/tools) — project-branch work happens in its own
+sibling checkout directory instead, see above. Most bugs found this
+year are LP64 porting classes: 1991 code that assumed int == long ==
+pointer.
 
 ## Hard rules
 
