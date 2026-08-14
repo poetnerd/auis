@@ -1,0 +1,130 @@
+[
+ {
+  "fixture": "01-amazon-shipment-deep-nested-tables.html",
+  "source_file": "+IMAP1H2NM9J00020H6",
+  "subject": "Shipped: \"California Design Den...\" and 1 more item",
+  "from": "\"Amazon.com\" <shipment-tracking@amazon.com>",
+  "size": 127370,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "02-boston-art-review-large-font-heavy-tables.html",
+  "source_file": "+IMAP1H2NM9J0002C1E",
+  "subject": "=?utf-8?Q?Your=20Weekly=20Art=20Happenings=20July=2021=E2=80=9328=20=F0=9F=8C=B4?=",
+  "from": "Boston Art Review <editorial@bostonartreview.com>",
+  "size": 212822,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "03-morningstar-receipt-large-body.html",
+  "source_file": "+IMAP1H2NM9J0001A3D",
+  "subject": "Receipt from Morningstar, Inc.",
+  "from": "Morningstar Investor <investor@alerts-morningstar.com>",
+  "size": 220201,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "04-waltham-pest-minimal-body.html",
+  "source_file": "+IMAP1H2NM9J00018D2",
+  "subject": "Your receipt from Waltham Pest Services",
+  "from": "WilmingtonBranch@walthamservices.com",
+  "size": 51,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "05-sec-test-png-inline-image.html",
+  "source_file": "+IMAP1H2NM9J0000KMO",
+  "subject": "You've joined the sec-test group",
+  "from": "sec-test <sec-test@mitprod.onmicrosoft.com>",
+  "size": 24368,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "06-webp-inline-image.html",
+  "source_file": "+IMAP1H2NM9J0001CJE",
+  "subject": "Re: [xbbn] I hope you can all read this",
+  "from": "Jack Haverty <jack@3kitty.org>",
+  "size": 8452,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "07-bakadesuyo-mismatched-table-tags.html",
+  "source_file": "+IMAP1H2NM9J0000IL1",
+  "subject": "=?utf-8?Q?This=20Is=20How=20To=20Succeed=20Under=20Pressure=3A=204=20Secrets=20From=20Astronauts?=",
+  "from": "=?utf-8?Q?Eric=20Barker?= <eric@bakadesuyo.com>",
+  "size": 58644,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "08-fidelity-mismatched-table-plus-font.html",
+  "source_file": "+IMAP1H2NM9J0000KK6",
+  "subject": "Retirement and Investing Planning Resources",
+  "from": "\"Fidelity Investments\" <Fidelity.Investments@mail.fidelity.com>",
+  "size": 29602,
+  "phone_hits": 2
+ },
+ {
+  "fixture": "09-facebook-digest-font-tag-table.html",
+  "source_file": "+IMAP1H2NM9J0000AKQ",
+  "subject": "Eliot Lear posted in Internet Old Farts Club",
+  "from": "\"Facebook\" <groupupdates@facebookmail.com>",
+  "size": 14925,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "10-economist-no-doctype-border0-table.html",
+  "source_file": "+IMAP1H2NM9J0000PHU",
+  "subject": "Case No. : 01682404 Economist app audio playback should NOT take\r\n six seconds to notice a finger press.",
+  "from": "Economist Support <supportteam@economist.com>",
+  "size": 13189,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "11-cid-inline-images-supported-format.html",
+  "source_file": "+IMAP1H2NM9J0000FTM",
+  "subject": "[xbbn] Resend: COVID Update 147. Vaccines: Expect a monovalent\r\n XBB.1.5 formulation for fall 2023",
+  "from": "Bruce Laird <laird2007@hotmail.com>",
+  "size": 32480,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "12-wordpress-colspan-tracking-pixel.html",
+  "source_file": "+IMAP1H2NM9J0000F09",
+  "subject": "[New post] Conscious Communication and the Power of Language",
+  "from": "Radical Copyeditor <comment-reply@wordpress.com>",
+  "size": 48740,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "13-bulletin-board-colspan-cid-image.html",
+  "source_file": "+IMAP1H2NM9J0000KMB",
+  "subject": "[BGMC] New post by Jordan Arruda",
+  "from": "Bulletin Board post by Jordan Arruda <bb91b4a76ed44c4a8b831286e02f519fc3@admin.chorusconnection.com>",
+  "size": 10568,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "14-simple-baseline-no-table-no-style.html",
+  "source_file": "+IMAP1H2NM9J0000O3I",
+  "subject": "[xbbn] Advance in quantum computing",
+  "from": "John Robinson <jr@computer.org>",
+  "size": 1223,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "15-svg-and-webp-both-unsupported.html",
+  "source_file": "+IMAP1H2NM9J0000IQM",
+  "subject": "[senior_house] Walter Pitts The man who tried to redeem the world\r\n with logic",
+  "from": "Thomas ising <doctomi2@gmail.com>",
+  "size": 7342,
+  "phone_hits": 0
+ },
+ {
+  "fixture": "16-podcast-newsletter-deep-table-nesting.html",
+  "source_file": "+IMAP1H2NM9J000139I",
+  "subject": "=?utf-8?Q?Sept=2028=20=F0=9F=8E=89=20=20=22Time=22=20album=20release=20show=20in=20Natick=2C=20MA?=",
+  "from": "Five O'Clock Shadow <focsinfo@focs.com>",
+  "size": 46326,
+  "phone_hits": 1
+ }
+]
