@@ -107,10 +107,32 @@ posture, and worth stating outright rather than defaulting to "just
 trigger silently otherwise. `cid:` (inline MIME-attached images,
 already decoded by `mimepart.c`) are not "remote" and always render.
 
-**Size caps:** total decoded HTML size and per-image decoded size get
-a hard cap (exact numbers TBD, but something like 2MB/document,
-5MB/image) — reject-and-fall-back beyond that rather than trying to
-parse or paint something pathological.
+**No fixed size caps.** Earlier drafts of this doc proposed hard
+size/depth thresholds (reject-and-fall-back beyond ~2MB of markup, a
+table-nesting depth of 3, etc.), reasoning from what the fixture
+corpus showed as "typical." That was importing a browser's
+defend-against-the-hostile-open-web posture where it doesn't belong.
+`dataobj.c`'s `dataobject_Read` already parses arbitrarily deep
+`\begindata{...}` nesting with plain C recursion and no depth cap, and
+that's been correct for the entire life of AUIS — the fixture corpus
+itself proves real mail routinely exceeds any "reasonable-sounding"
+size guess (28 levels of table nesting, 18MB of embedded images in a
+single message, both ordinary commercial mail, not edge cases). Large
+or deeply nested is not the same as pathological, and rejecting real
+content because it's bigger than a guessed threshold is a worse
+failure mode than just rendering it.
+
+The one real concern hiding inside "size caps" is implementation
+robustness against adversarial input (a message deliberately crafted
+with, say, a million levels of nesting, aimed at a crash or a hang) —
+but that's an implementation property, not a policy number. Build the
+tree-walker with an explicit heap-allocated stack rather than
+per-level C recursion (sidesteps stack overflow regardless of depth),
+and let a parse *taking too long* — not a size or depth threshold —
+be what triggers the renderer-level fallback below. Images decode
+through the ordinary `image` object path, same as any other image
+insertion in ATK; this project doesn't need its own size gate for
+that.
 
 ## Table strategy: Andrew's `table` object, not text-flow unpacking
 
@@ -126,9 +148,10 @@ This is a much better target than unpacking `<table>` into flowed
 text: HTML `<table>`/`<tr>`/`<td>` maps onto it directly —
 - `<table>` → `table_New` + `table_ChangeSize(rows, cols)`.
 - `<td>`/`<th>` cell content → `table_TextCell` for text-only cells,
-  `table_ImbeddedObject` for a cell containing an `<img>` (or, later,
-  a nested `<table>` — nesting is allowed structurally since a cell
-  can embed any dataobject, but see the depth cap below).
+  `table_ImbeddedObject` for a cell containing an `<img>` or a nested
+  `<table>` — nesting is allowed structurally since a cell can embed
+  any dataobject, and there's no depth limit imposed here either, same
+  reasoning as above.
 - `colspan`/`rowspan` → `SetInterior`/boundary colors set to `JOINED`
   across the spanned chunk, per the existing `IsJoinedAbove`/
   `IsJoinedToLeft` macros.
@@ -137,11 +160,13 @@ text: HTML `<table>`/`<tr>`/`<td>` maps onto it directly —
   `SUPPRESSED` rather than `BLACK`, so layout-only tables don't render
   a visible grid nobody wants to see.
 
-**Degradation, not failure:** deeply nested tables (email templates
-sometimes nest 3-4 deep for outlook-compatibility hacks) get a depth
-cap (e.g. 3) — beyond that, inner tables flatten to sequential
-paragraph text within their cell rather than recursing further. This
-is a bounded, deliberate degrade, not an error path.
+**Degradation, not failure:** email templates nest tables deeply for
+Outlook-compatibility hacks — the fixture corpus's real max is 28
+levels (see `revival/tests/html-fixtures/README.md`), and that's
+rendered correctly, not flattened. Degradation to sequential
+paragraph text is still the right response to a genuine parse
+failure partway through a table (a malformed/unclosed structure the
+parser can't make sense of), just not to depth alone.
 
 ## Images: the `image` inset, capability-checked
 
@@ -151,13 +176,23 @@ against a known-decodable list (`image/gif`, `image/x-gif`,
 `image/pbm`, `image/ppm`, `image/pgm`, `image/jpeg`) and returns
 `FALSE` for anything else, rather than silently producing garbage.
 **Note: no PNG.** PNG is extremely common in modern mail (most
-signature logos, many inline images) and isn't in that list — this is
-a real gap, not a hypothetical one. Whether to add PNG decoding to
-`image.c` itself, or treat "unsupported format" as the expected case
-and always show the fallback for PNG specifically, is an open
-question — leaning toward actually adding PNG support given how
-common it is, but that's a separate, scoped task from this renderer
-work (touches `image.c`, not the HTML parser/renderer).
+signature logos, many inline images — 5.4% of HTML-bearing messages in
+the fixture corpus carry one, see its README) and isn't in that list —
+a real gap, not a hypothetical one. Decided: add it, not just fall
+back. `image` already has format-specific subclasses following the
+identical pattern PNG would need — `jpeg` (`src/atk/basics/common/
+jpeg.ch`) and `tif` (`src/atk/image/tif.ch`) each just override
+`Read`/`Write`/`Load` and provide a class `Ident()` for format
+detection, wrapping an external codec (libjpeg for `jpeg`). A `png`
+subclass wrapping a PNG decoder (zlib inflate + PNG's scanline
+filters) fits the same slot. It's also close in spirit to AUIS's own
+native `raster` object (`src/atk/raster/cmd/raster.ch`) — a
+bitmap-plus-run-length-compression format AUIS already decodes — PNG
+is architecturally the same idea (bitmap + compressed encoding) with
+color instead of `raster`'s monochrome RLE and a different (DEFLATE)
+compression scheme. Still a separate, scoped task from this renderer
+work (touches `image.c`/a new `png.ch`, not the HTML parser/renderer),
+but no longer an open question — just not yet started.
 
 Rendering plan: `<img>` → attempt `image_New` + `ReadOtherFormat`
 against the resolved bytes (either `cid:`-referenced MIME part, or
@@ -173,17 +208,19 @@ whole-message granularity.
 Two levels, both explicit:
 
 1. **Parser-level, per-construct:** already covered above (unknown
-   tags skip-not-corrupt, oversized documents/images rejected,
-   disallowed attributes/elements dropped). The tree the renderers see
-   is always well-formed, even if the source wasn't.
+   tags skip-not-corrupt, disallowed attributes/elements dropped). The
+   tree the renderers see is always well-formed, even if the source
+   wasn't.
 
 2. **Renderer-level, whole-message:** the ATK-styled renderer (stage
    3) is attempted first for any `text/html` part. If it hits a
    condition it can't recover from structurally (not "unknown tag" —
    that's already handled at the parser level — but something like a
-   render-time failure constructing an inset, or exceeding the size
-   caps mid-render), the **whole message** falls back to the stage-2
-   plain-text renderer, not a half-rendered ATK document. No partial/
+   render-time failure constructing an inset, or parsing simply taking
+   too long — the adversarial-input case, not a size/depth number, see
+   the Sanitization section), the **whole message** falls back to the
+   stage-2 plain-text renderer, not a half-rendered ATK document. No
+   partial/
    corrupted rendering state is ever shown to the user — this is the
    direct lesson from the `htmlview` DOCTYPE bug (partial render,
    silently wrong) and is being stated as a hard requirement here
@@ -208,16 +245,19 @@ pass, so nothing unexpected reaches `popen`.
 
 ## Open questions
 
-- Exact size caps (document/image) — placeholder numbers above, want
-  real-world data from a sample of actual HTML mail before fixing
-  numbers.
-- PNG support in `image.c` — separate task, flagged above, not
-  blocking this project but worth deciding whether it's a prerequisite
-  or a parallel track.
-- Table nesting depth cap — 3 is a guess; revisit once there's a
-  fixture corpus of real template-heavy marketing email to test
-  against.
+- PNG support in `image.c` (a new `png.ch` subclass, see Images above)
+  — separate task from this renderer work, not blocking it, but worth
+  deciding whether it's a prerequisite or a parallel track. Same
+  question applies to SVG/WEBP, which the fixture corpus also turned
+  up (`revival/tests/html-fixtures/README.md`) but which weren't on
+  this doc's radar originally — SVG in particular is a much bigger
+  lift than PNG (a vector format, not a bitmap codec) and probably
+  isn't worth it; WEBP is closer to PNG/JPEG in shape.
 - Whether `font` element support is worth the complexity given `style`
   attribute parsing already covers `color`/weight — possibly `font`
   can be implemented as sugar over the same style-property path
   instead of a separate code path.
+- What a parse-taking-too-long threshold should actually be, now that
+  the renderer-level fallback is keyed on time rather than size/depth
+  — needs a number once there's a working parser to benchmark against
+  real (and deliberately pathological) input, not before.
