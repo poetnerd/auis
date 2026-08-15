@@ -1,0 +1,457 @@
+#!/usr/bin/env python3
+"""html-totext-tests -- Gate 2 regression suite for htmltext.c/htmltext.h
+(src/ams/libs/shr, src/ams/libs/hdrs), Stage 2 of the HTML-mail-
+rendering project (see revival/doc/html-mail-rendering-design.md):
+the plain-text renderer that walks the tree htmlpart_Parse() (Stage 1,
+tested by html-parse-tests) produces. Driven through the standalone
+htmltexttest.test harness (see htmltexttest.c's usage comment) --
+mirrors html-parse-tests' own structure and driver-invocation style
+for its sibling module.
+
+Usage:
+    revival/tests/html-totext-tests
+
+Entirely offline. Two kinds of fixtures, same split as html-parse-
+tests: synthetic HTML this suite writes itself into a fresh temp
+directory on each run (table/list/link/image/whitespace/nesting
+cases), and the real mail corpus committed at
+revival/tests/html-fixtures/ (read-only here; this suite never writes
+into that directory), used for the full-corpus-smoke case and a couple
+of fixture-specific readability spot checks.
+
+No network use.
+
+Cases:
+
+  1. real_corpus_smoke -- all 16 real fixtures render to non-empty,
+     non-crashing plain text in one pass, with no literal '<tag>'
+     markup surviving into the output (a coarse but effective check
+     that nothing leaked through unrendered).
+  2. fixture_spot_checks -- two real fixtures checked for specific
+     expected substrings in their rendered output (a link's URL
+     appearing in "(url)" form, an image alt placeholder, a mailto
+     link) -- not full golden-file comparison, but stronger than
+     "didn't crash" for a couple of real, messy documents.
+  3. table_degrades_to_sequential_text -- a <table> with two rows of
+     two cells each renders as one cell's text per line, in document
+     order, with no leftover '<td>'/'<tr>' markup and no attempt at
+     column alignment.
+  4. unordered_list_markers -- <ul><li> items get "- " markers, one
+     per line, no blank line between items.
+  5. ordered_list_numbering -- <ol><li> items get sequential "N. "
+     markers restarting at 1 for each new <ol>, including a nested
+     <ol> inside a <ul> (numbering restarts under the nested list;
+     nested items also pick up extra indent).
+  6. links_show_text_and_url -- <a href> renders as "text (url)"; a
+     mailto: link and an image-only link (no visible text besides the
+     image placeholder) are both covered.
+  7. images_show_alt_placeholder -- <img alt="..."> renders
+     "[image: alt text]"; <img> with no alt (or an empty one) renders
+     "[image]".
+  8. nested_blocks_no_excessive_blank_lines -- several levels of
+     <div><div><p>...</p></div></div> nesting collapse to a single
+     blank line between paragraphs, never a run of 3+ newlines
+     anywhere in the output, regardless of how many block elements
+     end at the same tree position.
+  9. whitespace_collapsing -- a document with copious insignious
+     inter-tag whitespace (newlines/tabs/runs of spaces the way real
+     mail template HTML is actually formatted) renders clean,
+     single-spaced text with no doubled spaces and no stray blank
+     lines from the whitespace itself.
+  10. br_and_hr -- <br> forces a line break (and <br><br> a blank
+      line); <hr> renders a visible separator line, paragraph-broken
+      from its surroundings.
+  11. pre_preserves_internal_whitespace -- text inside <pre> is
+      copied through without whitespace collapsing, while still being
+      paragraph-broken from surrounding content.
+  12. title_and_head_suppressed -- a <title>...</title> inside <head>
+      never appears in the rendered output, even though it survives
+      as a node in the Stage-1 tree (see htmlpart.h/htmltext.h).
+
+```
+revival/tests/html-totext-tests
+```
+"""
+
+import os
+import subprocess
+import sys
+import tempfile
+
+REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+SHRLIB = os.path.join(REPO_ROOT, "src", "ams", "libs", "shr")
+HDRS = os.path.join(REPO_ROOT, "src", "ams", "libs", "hdrs")
+DRIVER = os.path.join(SHRLIB, "htmltexttest.test")
+FIXTURE_DIR = os.path.join(REPO_ROOT, "revival", "tests", "html-fixtures")
+
+PASS = []
+FAIL = []
+
+
+def note(msg):
+    print(msg, flush=True)
+
+
+def result(name, ok, detail=""):
+    if ok:
+        PASS.append(name)
+        note(f"PASS: {name}")
+    else:
+        FAIL.append(name)
+        note(f"FAIL: {name}" + (f" -- {detail}" if detail else ""))
+
+
+def run_make(args, cwd, what):
+    r = subprocess.run(["make"] + args, cwd=cwd, capture_output=True, text=True, timeout=180)
+    if r.returncode != 0:
+        note(r.stdout)
+        note(r.stderr)
+        sys.exit(f"html-totext-tests: {what} failed in {cwd}")
+    return r
+
+
+def build_driver():
+    """Bootstraps Makefiles (imake, if not already generated) for both
+    the hdrs and shr directories, installs the header + library, and
+    forces a fresh link of htmltexttest.test -- same reasoning as
+    html-parse-tests' build_driver(): the .test suffix rule has no
+    prerequisite on libmsshr.a, so a stale binary would otherwise
+    silently survive an htmltext.c change."""
+    for d in (HDRS, SHRLIB):
+        if not os.path.isfile(os.path.join(d, "Makefile")):
+            r = subprocess.run(["imake", "-Timake.tmpl", "-I.", "-I../../.././config",
+                                 "-s", "Makefile", "-DTOPDIR=../../../."],
+                                cwd=d, capture_output=True, text=True)
+            if r.returncode != 0:
+                note(r.stdout); note(r.stderr)
+                sys.exit("html-totext-tests: could not bootstrap Makefile in " + d)
+    run_make(["Makefile"], HDRS, "'make Makefile' (hdrs)")
+    run_make(["install"], HDRS, "'make install' (htmlpart.h/htmltext.h)")
+    run_make(["Makefile"], SHRLIB, "'make Makefile' (shr)")
+    run_make(["install"], SHRLIB, "'make install' (libmsshr.a)")
+    if os.path.isfile(DRIVER):
+        os.remove(DRIVER)
+    run_make(["htmltexttest.test"], SHRLIB, "'make htmltexttest.test'")
+    if not os.path.isfile(DRIVER):
+        sys.exit("html-totext-tests: htmltexttest.test did not get built")
+
+
+def parse_kv(text):
+    """Parses 'KEY: value' lines into {key: [values...]}, same
+    convention as html-parse-tests' parse_kv."""
+    d = {}
+    for line in text.splitlines():
+        if ": " in line:
+            k, v = line.split(": ", 1)
+            d.setdefault(k.strip(), []).append(v.strip())
+    return d
+
+
+def run_totext(fixture_path, timeout=30):
+    """Runs the driver's 'totext' subcommand and pulls the rendered
+    text back out of its BEGIN-TEXT/TEXTLEN/END-TEXT framing (see
+    htmltexttest.c's usage comment for why: the payload is real
+    rendered Latin-1 mail text, not guaranteed valid UTF-8, so stdout
+    is captured as raw bytes here rather than through subprocess's
+    text=True/UTF-8 decoding -- the header lines around the payload
+    are pure ASCII and decoded directly; the payload itself is decoded
+    as Latin-1, matching htmlpart.c's own documented output encoding.
+    Returns (returncode, kv-dict-of-header, text-or-None,
+    framing-ok-bool)."""
+    r = subprocess.run([DRIVER, "totext", fixture_path], capture_output=True, timeout=timeout)
+    marker = b"BEGIN-TEXT\n"
+    idx = r.stdout.find(marker)
+    if idx < 0:
+        return r.returncode, parse_kv(r.stderr.decode("ascii", "replace")), None, False
+    header = r.stdout[:idx].decode("ascii", "replace")
+    kv = parse_kv(header)
+    textlen_list = kv.get("TEXTLEN")
+    textlen = int(textlen_list[0]) if textlen_list else -1
+    start = idx + len(marker)
+    if textlen < 0:
+        return r.returncode, kv, None, False
+    payload = r.stdout[start:start + textlen]
+    tail = r.stdout[start + textlen:]
+    framing_ok = tail.startswith(b"END-TEXT\n") and len(payload) == textlen
+    text = payload.decode("latin-1")
+    return r.returncode, kv, text, framing_ok
+
+
+def write_fixture(tmpdir, name, html):
+    path = os.path.join(tmpdir, name)
+    with open(path, "wb") as f:
+        f.write(html.encode("latin-1"))
+    return path
+
+
+def max_consecutive_newlines(text):
+    best = cur = 0
+    for c in text:
+        if c == "\n":
+            cur += 1
+            best = max(best, cur)
+        else:
+            cur = 0
+    return best
+
+
+# ---- cases ----
+
+def case_real_corpus_smoke():
+    name = "real-corpus-smoke-all-16-fixtures-render-nonempty-no-leftover-markup"
+    ok = True
+    detail = []
+    files = sorted(f for f in os.listdir(FIXTURE_DIR) if f.endswith(".html"))
+    if len(files) != 16:
+        ok = False
+        detail.append(f"expected 16 .html fixtures, found {len(files)}")
+    for fname in files:
+        path = os.path.join(FIXTURE_DIR, fname)
+        try:
+            rc, kv, text, framing_ok = run_totext(path, timeout=30)
+        except subprocess.TimeoutExpired:
+            ok = False
+            detail.append(f"{fname}: TIMEOUT")
+            continue
+        if rc != 0 or not framing_ok or text is None:
+            ok = False
+            detail.append(f"{fname}: rc={rc} framing_ok={framing_ok}")
+            continue
+        if len(text.strip()) == 0:
+            ok = False
+            detail.append(f"{fname}: empty rendered output")
+        # coarse leftover-markup check: no "<tagname" survivors for any
+        # of the elements htmlpart.h's allowlist keeps (a real '<' in
+        # rendered mail body prose is vanishingly unlikely to be
+        # followed immediately by one of these exact tag names).
+        # Deliberately excludes "<a href" -- fixtures 06/11/14 share a
+        # mailing-list footer that *quotes* "<a href=...>" as literal
+        # instructional text (entity-escaped in the source, correctly
+        # entity-decoded back to literal text by this renderer, same
+        # as any browser would show it), which is real content, not a
+        # leftover-tag bug; every other tag below is not known to
+        # occur as a deliberately-quoted example anywhere in the corpus.
+        lowered = text.lower()
+        for tag in ("<p>", "<p ", "<div", "<span", "<table", "<tr>", "<td",
+                    "<th", "<ul>", "<ol>", "<li>", "<img", "<br",
+                    "<font", "<b>", "<i>", "<h1", "<h2", "<h3"):
+            if tag in lowered:
+                ok = False
+                detail.append(f"{fname}: leftover markup {tag!r}")
+    result(name, ok, "; ".join(detail))
+
+
+def case_fixture_spot_checks():
+    # fixture 14: a real link should render as "text (url)" and a
+    # mailto: unsubscribe link should show as "(mailto:...)"
+    name = "fixture-spot-check-14-links-and-mailto"
+    path = os.path.join(FIXTURE_DIR, "14-simple-baseline-no-table-no-style.html")
+    rc, kv, text, framing_ok = run_totext(path)
+    ok = (rc == 0 and framing_ok and text is not None
+          and "https://news.harvard.edu/gazette/story/2023/12/researchers-create-first-logical-quantum-processor/" in text
+          and "(mailto:xbbn+unsubscribe@googlegroups.com)" in text)
+    result(name, ok, (text or "")[:400])
+
+    # fixture 10: at least one image alt placeholder should survive
+    # (the Economist logo) rendered as "[image: ...]", not dropped
+    name2 = "fixture-spot-check-10-image-alt-placeholder"
+    path2 = os.path.join(FIXTURE_DIR, "10-economist-no-doctype-border0-table.html")
+    rc2, kv2, text2, framing_ok2 = run_totext(path2)
+    ok2 = (rc2 == 0 and framing_ok2 and text2 is not None
+           and "[image:" in text2)
+    result(name2, ok2, (text2 or "")[:400])
+
+
+def case_table_sequential_text(tmpdir):
+    name = "table-degrades-to-sequential-text-one-cell-per-line"
+    html = ("<table border=\"1\"><tr><td>A1</td><td>B1</td></tr>"
+            "<tr><td>A2</td><td>B2</td></tr></table>")
+    fx = write_fixture(tmpdir, "table.html", html)
+    rc, kv, text, framing_ok = run_totext(fx)
+    ok = rc == 0 and framing_ok and text is not None
+    if ok:
+        lines = [ln for ln in text.split("\n") if ln.strip() != ""]
+        ok = lines == ["A1", "B1", "A2", "B2"]
+        ok = ok and "<td>" not in text.lower() and "<tr>" not in text.lower()
+    result(name, ok, repr(text))
+
+
+def case_unordered_list(tmpdir):
+    name = "unordered-list-dash-markers-no-blank-line-between-items"
+    html = "<ul><li>one</li><li>two</li><li>three</li></ul>"
+    fx = write_fixture(tmpdir, "ul.html", html)
+    rc, kv, text, framing_ok = run_totext(fx)
+    ok = rc == 0 and framing_ok and text is not None
+    if ok:
+        lines = [ln for ln in text.split("\n") if ln.strip() != ""]
+        ok = lines == ["- one", "- two", "- three"]
+    result(name, ok, repr(text))
+
+
+def case_ordered_list_numbering(tmpdir):
+    name = "ordered-list-sequential-numbering-including-nested-restart"
+    html = ("<ol><li>first</li><li>second</li>"
+            "<li>third with a nested list"
+            "<ul><li>nested-one</li><li>nested-two</li></ul>"
+            "</li></ol>"
+            "<ol><li>restarted-first</li></ol>")
+    fx = write_fixture(tmpdir, "ol.html", html)
+    rc, kv, text, framing_ok = run_totext(fx)
+    ok = rc == 0 and framing_ok and text is not None
+    if ok:
+        ok = ("1. first" in text and "2. second" in text
+              and "3. third with a nested list" in text
+              and "- nested-one" in text and "- nested-two" in text
+              and "1. restarted-first" in text)
+        # the nested <li>s should carry extra indent beyond the
+        # top-level items' zero indent
+        nested_line = next((ln for ln in text.split("\n") if "nested-one" in ln), "")
+        top_line = next((ln for ln in text.split("\n") if ln.strip() == "1. first"), "")
+        ok = ok and nested_line.startswith("  ") and not top_line.startswith(" ")
+    result(name, ok, repr(text))
+
+
+def case_links(tmpdir):
+    name = "links-show-both-text-and-url"
+    html = ('<p><a href="https://example.com/path?a=1">click here</a></p>'
+            '<p><a href="mailto:user@example.com">email us</a></p>'
+            '<p><a href="https://example.com/img-link"><img src="cid:x" alt="a logo"></a></p>')
+    fx = write_fixture(tmpdir, "links.html", html)
+    rc, kv, text, framing_ok = run_totext(fx)
+    ok = rc == 0 and framing_ok and text is not None
+    if ok:
+        ok = ("click here (https://example.com/path?a=1)" in text
+              and "email us (mailto:user@example.com)" in text
+              and "[image: a logo] (https://example.com/img-link)" in text)
+    result(name, ok, repr(text))
+
+
+def case_images(tmpdir):
+    name = "images-show-alt-text-or-generic-placeholder"
+    html = ('<p><img src="cid:logo" alt="Company Logo"></p>'
+            '<p><img src="http://example.com/track.gif"></p>'
+            '<p><img src="http://example.com/track2.gif" alt=""></p>')
+    fx = write_fixture(tmpdir, "images.html", html)
+    rc, kv, text, framing_ok = run_totext(fx)
+    ok = rc == 0 and framing_ok and text is not None
+    if ok:
+        lines = [ln.strip() for ln in text.split("\n") if ln.strip() != ""]
+        ok = lines.count("[image: Company Logo]") == 1 and lines.count("[image]") == 2
+    result(name, ok, repr(text))
+
+
+def case_nested_blocks_no_excessive_blanks(tmpdir):
+    name = "nested-blocks-collapse-to-single-blank-line"
+    html = ("<div><div><div><p>alpha</p></div></div>"
+            "<div><blockquote><p>beta</p></blockquote></div></div>"
+            "<div><h2>gamma</h2></div>")
+    fx = write_fixture(tmpdir, "nested.html", html)
+    rc, kv, text, framing_ok = run_totext(fx)
+    ok = rc == 0 and framing_ok and text is not None
+    if ok:
+        maxnl = max_consecutive_newlines(text)
+        ok = maxnl <= 2  # at most one blank line (two consecutive '\n's) anywhere
+        ok = ok and "alpha" in text and "beta" in text and "gamma" in text
+        # confirm they're actually separated (not run together on one line)
+        ok = ok and "alpha\n\nbeta" in text.replace(" ", " ")
+    result(name, ok, f"maxnl={max_consecutive_newlines(text) if text else -1}\n{text!r}")
+
+
+def case_whitespace_collapsing(tmpdir):
+    name = "whitespace-collapsing-insignificant-inter-tag-whitespace"
+    html = (
+        "<html>\n  <body>\n\n"
+        "    <p>Hello\n       \t  World,\n\t\tthis   is\n\n  a   test.</p>\n\n\n"
+        "    <table>\n      <tr>\n        <td>  cell   one  </td>\n"
+        "        <td>\n\n   cell two   \n\n</td>\n      </tr>\n    </table>\n\n"
+        "    <p>\n\n   Second   paragraph   with    trailing   space   \n   </p>\n\n"
+        "  </body>\n</html>\n"
+    )
+    fx = write_fixture(tmpdir, "whitespace.html", html)
+    rc, kv, text, framing_ok = run_totext(fx)
+    ok = rc == 0 and framing_ok and text is not None
+    if ok:
+        ok = ("Hello World, this is a test." in text
+              and "Second paragraph with trailing space" in text)
+        ok = ok and "  " not in text.replace("\n\n", "")  # no doubled spaces outside blank-line breaks
+        lines = [ln for ln in text.split("\n") if ln.strip() != ""]
+        ok = ok and ("cell one" in lines) and ("cell two" in lines)
+        ok = ok and max_consecutive_newlines(text) <= 2
+        ok = ok and text == text.rstrip("\n \t") + "\n"  # single trailing newline, no trailing blank lines
+    result(name, ok, repr(text))
+
+
+def case_br_and_hr(tmpdir):
+    name = "br-forces-linebreak-hr-renders-separator"
+    html = "<p>line one<br>line two<br><br>line four</p><hr><p>after rule</p>"
+    fx = write_fixture(tmpdir, "brhr.html", html)
+    rc, kv, text, framing_ok = run_totext(fx)
+    ok = rc == 0 and framing_ok and text is not None
+    if ok:
+        lines = text.split("\n")
+        ok = "line one" in lines and "line two" in lines and "" in lines and "line four" in lines
+        ok = ok and any(set(ln) == {"-"} and len(ln) >= 10 for ln in lines if ln)
+        ok = ok and "after rule" in text
+    result(name, ok, repr(text))
+
+
+def case_pre_preserves_whitespace(tmpdir):
+    name = "pre-preserves-internal-whitespace"
+    html = "<p>before</p><pre>  line one\n\tline   two  \n</pre><p>after</p>"
+    fx = write_fixture(tmpdir, "pre.html", html)
+    rc, kv, text, framing_ok = run_totext(fx)
+    ok = rc == 0 and framing_ok and text is not None
+    if ok:
+        ok = "  line one\n\tline   two  " in text
+        ok = ok and "before" in text and "after" in text
+    result(name, ok, repr(text))
+
+
+def case_title_and_head_suppressed(tmpdir):
+    name = "title-and-head-suppressed-from-rendered-output"
+    html = ("<html><head><title>Should Never Appear In Output</title></head>"
+            "<body><p>Visible body text.</p></body></html>")
+    fx = write_fixture(tmpdir, "title.html", html)
+    rc, kv, text, framing_ok = run_totext(fx)
+    ok = (rc == 0 and framing_ok and text is not None
+          and "Should Never Appear" not in text
+          and "Visible body text." in text)
+    result(name, ok, repr(text))
+
+
+def main():
+    if len(sys.argv) > 1:
+        sys.exit("usage: html-totext-tests")
+
+    build_driver()
+
+    tmpdir = tempfile.mkdtemp(prefix="html-totext-tests-")
+    try:
+        note(f"--- real fixtures from {FIXTURE_DIR} (read-only) ---")
+        case_real_corpus_smoke()
+        case_fixture_spot_checks()
+
+        note(f"--- synthetic fixtures in {tmpdir} (deleted on exit) ---")
+        case_table_sequential_text(tmpdir)
+        case_unordered_list(tmpdir)
+        case_ordered_list_numbering(tmpdir)
+        case_links(tmpdir)
+        case_images(tmpdir)
+        case_nested_blocks_no_excessive_blanks(tmpdir)
+        case_whitespace_collapsing(tmpdir)
+        case_br_and_hr(tmpdir)
+        case_pre_preserves_whitespace(tmpdir)
+        case_title_and_head_suppressed(tmpdir)
+    finally:
+        import shutil
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+    note("")
+    note(f"--- {len(PASS)} passed, {len(FAIL)} failed ---")
+    if FAIL:
+        note("FAILED: " + ", ".join(FAIL))
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

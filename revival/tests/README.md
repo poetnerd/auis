@@ -399,3 +399,82 @@ Cases:
 ```
 revival/tests/html-parse-tests
 ```
+
+## html-totext-tests
+
+`html-totext-tests` -- Gate 2 regression suite for `htmltext.c`/
+`htmltext.h` (`src/ams/libs/shr`, `src/ams/libs/hdrs`), Stage 2 of the
+HTML-mail-rendering project (see
+`revival/doc/html-mail-rendering-design.md`): the plain-text renderer
+that walks the tree `htmlpart_Parse()` (Stage 1, tested by
+`html-parse-tests` above) produces. Built and driven the same way as
+`html-parse-tests` -- a standalone ANSI C driver (`htmltexttest.test`,
+`TestingOnlyTestingRule`) that prints `KEY: value` header lines plus
+the rendered text itself framed by `BEGIN-TEXT`/`TEXTLEN`/`END-TEXT`
+markers (rendered mail text is real Latin-1 output, not guaranteed
+valid UTF-8, so this script captures the driver's stdout as raw bytes
+and decodes the framed payload as Latin-1 rather than relying on
+Python's default UTF-8 text mode). Entirely offline.
+
+Two kinds of fixtures, same split as `html-parse-tests`: synthetic
+HTML this suite writes itself into a fresh temp directory on each run
+(table/list/link/image/whitespace/nesting cases), and the real mail
+corpus committed at `revival/tests/html-fixtures/` (read-only here),
+used for the full-corpus-smoke case and a couple of fixture-specific
+spot checks.
+
+Cases:
+
+1. **Real corpus smoke**: all 16 real fixtures render to non-empty,
+   non-crashing plain text in one pass, with no literal `<tag>`
+   markup surviving into the output -- deliberately excluding
+   `<a href` from that check, since fixtures 06/11/14 share a
+   mailing-list footer that *quotes* `<a href=...>` as literal
+   instructional text (entity-escaped in the source HTML, correctly
+   entity-decoded back to literal text by this renderer, same as any
+   browser would show it) -- real content, not a leftover-tag bug.
+2. **Fixture spot checks**: two real fixtures checked for specific
+   expected substrings in their rendered output -- a link's URL
+   appearing in `text (url)` form, a `mailto:` link, an image alt
+   placeholder -- not full golden-file comparison, but stronger than
+   "didn't crash" for a couple of real, messy documents.
+3. **Table degrades to sequential text**: a `<table>` with two rows of
+   two cells each renders as one cell's text per line, in document
+   order, with no leftover `<td>`/`<tr>` markup and no attempt at
+   column alignment.
+4. **Unordered list markers**: `<ul><li>` items get `- ` markers, one
+   per line, no blank line between items.
+5. **Ordered list numbering**: `<ol><li>` items get sequential `N. `
+   markers restarting at 1 for each new `<ol>`, including a nested
+   `<ol>`/`<ul>` inside a list item (numbering/markers restart under
+   the nested list; nested items also pick up extra indent).
+6. **Links show text and URL**: `<a href>` renders as `text (url)`; a
+   `mailto:` link and an image-only link (no visible text besides the
+   image placeholder) are both covered.
+7. **Images show alt placeholder**: `<img alt="...">` renders
+   `[image: alt text]`; `<img>` with no alt (or an empty one) renders
+   `[image]`.
+8. **Nested blocks, no excessive blank lines**: several levels of
+   `<div><div><p>...</p></div></div>` nesting collapse to a single
+   blank line between paragraphs, never a run of 3+ newlines anywhere
+   in the output, regardless of how many block elements end at the
+   same tree position.
+9. **Whitespace collapsing**: a document with copious insignificant
+   inter-tag whitespace (newlines/tabs/runs of spaces the way real
+   mail template HTML is actually formatted) renders clean,
+   single-spaced text with no doubled spaces and no stray blank lines
+   from the whitespace itself.
+10. **`<br>`/`<hr>`**: `<br>` forces a line break (`<br><br>` a blank
+    line); `<hr>` renders a visible separator line, paragraph-broken
+    from its surroundings.
+11. **`<pre>` preserves internal whitespace**: text inside `<pre>` is
+    copied through without whitespace collapsing, while still being
+    paragraph-broken from surrounding content.
+12. **`<title>`/`<head>` suppressed**: a `<title>...</title>` inside
+    `<head>` never appears in the rendered output, even though it
+    survives as a node in the Stage-1 tree (see
+    `htmlpart.h`/`htmltext.h`'s "read, not rendered" note).
+
+```
+revival/tests/html-totext-tests
+```
