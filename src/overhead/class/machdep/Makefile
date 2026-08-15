@@ -65,7 +65,7 @@ GCCLIB = $(GNULIB)
 
         KRBLIB =
 
-        BASEDIR = /Users/wdc/src/AUIS/trunk/build
+        BASEDIR = /Users/wdc/src/AUIS/html/build
         DESTDIR = ${BASEDIR}
 
         XBINDIR = /usr/bin/X11

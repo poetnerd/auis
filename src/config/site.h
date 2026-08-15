@@ -7,7 +7,7 @@
  * set. Point it at wherever YOUR checkout's build/ directory will be.
  * See quickstart.md's "Site configuration" section. */
 #undef DEFAULT_ANDREWDIR_ENV
-#define DEFAULT_ANDREWDIR_ENV /Users/wdc/src/AUIS/trunk/build
+#define DEFAULT_ANDREWDIR_ENV /Users/wdc/src/AUIS/html/build
 
 #define AMS_ENV 1
 #define MK_CUI

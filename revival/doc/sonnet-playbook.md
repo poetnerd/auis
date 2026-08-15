@@ -25,11 +25,81 @@ before doing anything else:**
      ~/museum/auis.fossil && fossil update <project>` — mirroring how
      `trunk/` and `andrew-6.4/` are each their own independent
      checkout directory.
+  2a. **Immediately after opening a new project checkout, give it its
+      own `build/` tree before running any `make` in it.** A fresh
+      checkout has no `build/` at all, and skipping this step doesn't
+      fail loudly — it silently builds against `trunk/build` instead
+      (found and fixed the hard way in the `html` checkout, 2026-08-15;
+      `fossil status` on trunk stays clean since only `build/`, never
+      source, gets written, but it defeats the entire point of a
+      separate branch checkout). Do this:
+      1. Edit `src/config/site.h` in the new checkout: change
+         `DEFAULT_ANDREWDIR_ENV` from whatever path it currently has to
+         this checkout's own `<project>/build` (this file is
+         fossil-tracked but the edit is checkout-local, like any
+         uncommitted change — it won't affect `trunk/` unless
+         deliberately committed).
+
+         **MERGE WARNING, remember this now for later:** this commit
+         to `site.h` must be committed on the project branch (so the
+         branch's own build stays isolated and reproducible for
+         anyone else who checks it out), but when this branch
+         eventually merges back into `trunk`, the `site.h` change must
+         NOT come with it — `fossil merge` will offer it like any
+         other changed file, but taking it would repoint trunk's own
+         `DEFAULT_ANDREWDIR_ENV` at the project checkout's `build/`
+         instead of trunk's own, breaking trunk's runtime fallback for
+         anyone without `ANDREWDIR` explicitly set. When merging back:
+         review the merge diff for `src/config/site.h` specifically
+         and revert/exclude that hunk (`fossil revert
+         src/config/site.h` after the merge, before committing the
+         merge, restores trunk's own version) rather than accepting it
+         wholesale with everything else the merge brings in.
+      2. **Do not run `make World`/`xmkmf` from scratch to populate
+         `build/`.** A genuinely empty `build/` hits a real chain of
+         historical Imake `SUBDIRS`-ordering bugs (`class.h` needed by
+         `machdep` before `lib` installs it; then the same pattern
+         again for `andrewos.h`'s whole family; more layers kept
+         surfacing each time the previous one was patched) — this
+         project has apparently never been bootstrapped from a truly
+         virgin `build/` before, only ever incrementally rebuilt on
+         top of one that already existed. Chasing this layer-by-layer
+         is a real time sink with no guaranteed bottom.
+      3. Instead: copy `trunk/build` wholesale (`cp -R
+         /Users/wdc/src/AUIS/trunk/build build` — `trunk/build` is
+         ~58MB, cheap to copy, and byte-identical in content to what a
+         correct `<project>/build` would contain, since all source is
+         shared except `site.h`). Then reinstall this checkout's own
+         `site.h` on top: `chmod u+w build/include/site.h && cp
+         src/config/site.h build/include/site.h` (trunk's installed
+         headers are read-only, so a plain `cp` without the `chmod`
+         fails).
+      4. Regenerate every subdirectory's `Makefile` so they pick up
+         the corrected `BASEDIR`: `cd src && make Makefiles`.
+      5. Verify isolation before trusting it — don't just assume the
+         fix took: `grep BASEDIR` in some subdirectory's freshly
+         regenerated `Makefile` (e.g.
+         `src/ams/libs/shr/Makefile`) and confirm it names this
+         checkout's own `build/`, not `trunk/build`. Only after that
+         should you build/test anything for real.
+      One caveat that's expected, not a bug: XQuartz's X11 font path is
+      a server-wide resource, not per-checkout, and will refuse to
+      register a second directory of same-named fonts. Whichever
+      checkout's fonts got registered first (normally `trunk/`'s) is
+      what X11 actually uses for on-screen rendering regardless of
+      which checkout a given app binary was built/run from — this is
+      fine to leave as-is (a real "split brain" between trunk and
+      branch for fonts specifically, everything else fully isolated),
+      not worth chasing further.
   3. If a checkout for that project already exists, `cd` into it and
      confirm `fossil status` shows you on the right branch before
-     starting work.
-  No project branches exist yet as of 2026-08-13 — `html` and `imap`
-  are candidates wdc is still deciding between, not settled.
+     starting work — and confirm its `build/` isolation (2a.5 above)
+     is actually in place before assuming it is; don't take it on
+     faith just because the checkout itself exists.
+  As of 2026-08-15, `html` (an HTML-mail-rendering effort) exists as a
+  real branch+checkout with its own isolated `build/`, see
+  `revival/doc/html-mail-rendering-design.md`. `imap` (deeper
+  AMS-over-IMAP work) is still just a candidate, not created.
 
 **How wdc launches a session with this:** start a fresh Sonnet
 session in the tree identified above (`trunk/` for a debug session,
