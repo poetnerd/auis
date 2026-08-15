@@ -7,7 +7,7 @@ LOCALINCLUDES	=	-I${BASEDIR}/include/ams
 PRODUCT	=	libmsshr.a
 
 OBJS		= 	amserr.o brkdown.o findroot.o utils.o \
-			tildes.o mimepart.o
+			tildes.o mimepart.o htmlpart.o
 
 NormalObjectRule()
 LibraryTarget(${PRODUCT}, ${OBJS})

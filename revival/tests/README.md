@@ -319,3 +319,83 @@ exit (path printed) for inspection.
 ```
 revival/tests/imap-writeback-tests
 ```
+
+## html-parse-tests
+
+`html-parse-tests` -- Gate 2 regression suite for `htmlpart.c`/
+`htmlpart.h` (`src/ams/libs/shr`, `src/ams/libs/hdrs`), the tokenizer/
+sanitizer that is Stage 1 of the HTML-mail-rendering project (see
+`revival/doc/html-mail-rendering-design.md`). Mirrors
+`mime-display-tests`' structure and driver-invocation style for its
+sibling module, `mimepart.c` -- built the same way, via a standalone
+ANSI C driver (`htmlparttest.test`, `TestingOnlyTestingRule`) that
+prints `KEY: value` lines for this script to parse. Entirely offline.
+
+Two kinds of fixtures: synthetic HTML this suite writes itself into a
+fresh temp directory on each run (allowlist/attribute/style/entity/
+wrapper cases, and the deep-nesting regression case), and the real
+mail corpus committed at `revival/tests/html-fixtures/` (read-only
+here -- this suite never writes into that directory), used for the
+malformed-markup and full-corpus-smoke cases.
+
+Cases:
+
+1. **DOCTYPE/comments don't corrupt nesting**: a leading `<!DOCTYPE
+   html>` and HTML comments are recognized and skipped without
+   becoming an unpoppable entity -- the exact `htmlview` bug class
+   this project exists to not repeat -- and content around/inside
+   them still parses and nests correctly.
+2. **Deep nesting, well-formed and deliberately unclosed**: 6000
+   levels of nested `<div>`, both matched and never-closed, parse to
+   completion without crashing. This is the regression test for the
+   design doc's "No fixed size caps" decision: `htmlpart_Parse()`
+   tracks open elements with an explicit heap-allocated stack rather
+   than per-level C recursion, and `htmlpart_Free()` frees the result
+   the same way, so neither building nor freeing a several-thousand-
+   level-deep tree can blow the C stack. (Tried by hand up to 200,000
+   levels during development, in ~50ms; the committed case uses 6000
+   to keep the suite fast.)
+3. **Dropped elements keep surrounding content**: `script`, `style`,
+   `iframe`, `object`, `embed`, and `form` (with `input`/`select`/
+   `button`/`textarea` inside it) are all dropped with their contents
+   -- including a `<` inside embedded JS/CSS, which must not desync
+   the tokenizer or swallow a real subsequent tag -- while `<p>`
+   markers immediately before and after each survive untouched.
+4. **href scheme allowlist**: `http:`/`https:`/`mailto:` hrefs
+   survive; `javascript:`, `file:`, a bare relative path, and a bare
+   `#fragment` are all stripped (the `<a>` tag itself survives, just
+   without `href`).
+5. **style property filtering**: only `color`/`background-color`/
+   `font-weight`/`font-style`/`text-decoration` survive a
+   `style="..."` attribute, canonicalized into that fixed order
+   (not source order), last-value-wins on a repeated property (a
+   second `color:` overrides the first); anything else in the value
+   (`font-family`, a `-webkit-*` property) is dropped entirely.
+6. **Unknown wrapper preserves children**: an unrecognized element
+   produces no node of its own, but its children attach to *its*
+   parent rather than being dropped with it -- the design doc's
+   explicit anti-`<!DOCTYPE>`-bug rule for unrecognized constructs.
+7. **Attribute allowlist per element**: `img`'s `src`/`alt`/`width`/
+   `height`, `table`/`td`/`th`'s `colspan`/`rowspan`/`border`,
+   `font`'s `color`/`size` survive; `class`/`id`/`onclick` and any
+   attribute not on a given element's specific list do not, even on
+   an element (like plain `<p>`) that keeps no attributes of its own
+   at all besides `style`.
+8. **Entity decoding**: named entities (`&amp;`/`&lt;`/`&gt;`/
+   `&quot;`, plus Latin-1 accented-letter and currency names like
+   `&eacute;`/`&pound;`), numeric decimal and hex entities
+   (`&#169;`/`&#xE9;`) all decode correctly; an unrecognized entity
+   name passes through verbatim rather than being guessed at or
+   dropped.
+9. **Malformed table tags, real fixtures 07/08**: the two real-mail
+   fixtures with mismatched `<table>`/`</table>` counts (one extra
+   open, one extra close -- opposite imbalance directions) parse
+   without crashing and produce a non-collapsed tree, not an empty or
+   corrupted one.
+10. **Real corpus smoke**: all 16 real fixtures in
+    `revival/tests/html-fixtures` parse cleanly (no crash, no
+    nonzero exit) in one pass.
+
+```
+revival/tests/html-parse-tests
+```

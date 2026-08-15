@@ -1,0 +1,448 @@
+#!/usr/bin/env python3
+"""html-parse-tests -- Gate 2 regression suite for the htmlpart HTML
+tokenizer/sanitizer (src/ams/libs/hdrs/htmlpart.h,
+src/ams/libs/shr/htmlpart.c), driven through the standalone
+htmlparttest.test harness (see htmlparttest.c's usage comment) --
+mirrors mime-display-tests' structure and driver-invocation style for
+its sibling module, mimepart.c.
+
+Usage:
+    revival/tests/html-parse-tests
+
+Entirely offline. Two kinds of fixtures:
+
+  - Synthetic HTML this suite writes itself into a fresh temp
+    directory on each run (allowlist/attribute/style/entity/wrapper
+    cases, and the deep-nesting regression case -- never real mail).
+  - The real mail corpus committed at revival/tests/html-fixtures/
+    (read-only here; this suite never writes into that directory),
+    used for the malformed-markup and full-corpus-smoke cases per the
+    project's HTML-mail-rendering design doc.
+
+No network use.
+
+Cases:
+
+  1. doctype_and_comments_dont_corrupt_nesting -- a <!DOCTYPE html>
+     and an HTML comment before the real content must be recognized
+     and skipped without becoming an unpoppable entity (the exact
+     htmlview bug class this project exists to not repeat); content
+     after them must parse normally and nest correctly.
+  2. deep_nesting_well_formed / deep_nesting_unclosed -- several
+     thousand levels of nested <div> (both matched and deliberately
+     never-closed) must parse to completion without crashing --
+     the regression test for the design doc's "No fixed size caps"
+     architectural decision (explicit heap stack, no per-level C
+     recursion, in both the tree-builder and htmlpart_Free).
+  3. dropped_elements_keep_surrounding_content -- script, style,
+     iframe, object, embed, form (with input/select/button/textarea
+     inside it) are all dropped with their contents, while <p> markers
+     immediately before and after each survive untouched.
+  4. href_scheme_allowlist -- http:/https:/mailto: hrefs survive;
+     javascript:, file:, and a bare relative/fragment href are all
+     stripped (the <a> tag itself survives, just without href).
+  5. style_property_filtering -- only color/background-color/
+     font-weight/font-style/text-decoration survive a style="..."
+     attribute, canonicalized into that fixed order, last-value-wins
+     on a repeated property; anything else in the value is dropped.
+  6. unknown_wrapper_preserves_children -- an unrecognized element
+     produces no node of its own but its children attach to *its*
+     parent, per the design doc's explicit anti-DOCTYPE-bug rule.
+  7. attribute_allowlist_per_element -- img's src/alt/width/height,
+     table/td/th's colspan/rowspan/border, font's color/size survive;
+     class/id/on* and any attribute not on an element's specific list
+     do not.
+  8. entity_decoding -- named (amp/lt/gt/quot, plus Latin-1 accented/
+     currency names), numeric decimal and hex entities decode
+     correctly; an unrecognized entity name passes through verbatim.
+  9. malformed_table_tags_real_fixtures -- fixtures 07 and 08 in
+     revival/tests/html-fixtures (real mail with mismatched
+     <table>/</table> counts, one imbalance direction each) parse
+     without crashing and produce a non-collapsed tree.
+  10. real_corpus_smoke -- all 16 real fixtures parse cleanly (no
+      crash, no nonzero exit, no exception) in one pass.
+"""
+
+import os
+import subprocess
+import sys
+import tempfile
+import time
+
+REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+SHRLIB = os.path.join(REPO_ROOT, "src", "ams", "libs", "shr")
+HDRS = os.path.join(REPO_ROOT, "src", "ams", "libs", "hdrs")
+DRIVER = os.path.join(SHRLIB, "htmlparttest.test")
+FIXTURE_DIR = os.path.join(REPO_ROOT, "revival", "tests", "html-fixtures")
+
+PASS = []
+FAIL = []
+
+
+def note(msg):
+    print(msg, flush=True)
+
+
+def result(name, ok, detail=""):
+    if ok:
+        PASS.append(name)
+        note(f"PASS: {name}")
+    else:
+        FAIL.append(name)
+        note(f"FAIL: {name}" + (f" -- {detail}" if detail else ""))
+
+
+def run_make(args, cwd, what):
+    r = subprocess.run(["make"] + args, cwd=cwd, capture_output=True, text=True, timeout=180)
+    if r.returncode != 0:
+        note(r.stdout)
+        note(r.stderr)
+        sys.exit(f"html-parse-tests: {what} failed in {cwd}")
+    return r
+
+
+def build_driver():
+    """Bootstraps Makefiles (imake, if not already generated) for both
+    the hdrs and shr directories, installs the header + library, and
+    forces a fresh link of htmlparttest.test -- same reasoning as
+    mime-display-tests' build_driver(): the .test suffix rule has no
+    prerequisite on libmsshr.a, so a stale binary would otherwise
+    silently survive an htmlpart.c change."""
+    for d in (HDRS, SHRLIB):
+        if not os.path.isfile(os.path.join(d, "Makefile")):
+            r = subprocess.run(["imake", "-Timake.tmpl", "-I.", "-I../../.././config",
+                                 "-s", "Makefile", "-DTOPDIR=../../../."],
+                                cwd=d, capture_output=True, text=True)
+            if r.returncode != 0:
+                note(r.stdout); note(r.stderr)
+                sys.exit("html-parse-tests: could not bootstrap Makefile in " + d)
+    run_make(["Makefile"], HDRS, "'make Makefile' (hdrs)")
+    run_make(["install"], HDRS, "'make install' (htmlpart.h)")
+    run_make(["Makefile"], SHRLIB, "'make Makefile' (shr)")
+    run_make(["install"], SHRLIB, "'make install' (libmsshr.a)")
+    if os.path.isfile(DRIVER):
+        os.remove(DRIVER)
+    run_make(["htmlparttest.test"], SHRLIB, "'make htmlparttest.test'")
+    if not os.path.isfile(DRIVER):
+        sys.exit("html-parse-tests: htmlparttest.test did not get built")
+
+
+def parse_kv(stdout):
+    """Parses 'KEY: value' lines into {key: [values...]}, same
+    convention as mime-display-tests' parse_kv."""
+    d = {}
+    for line in stdout.splitlines():
+        if ": " in line:
+            k, v = line.split(": ", 1)
+            d.setdefault(k.strip(), []).append(v.strip())
+    return d
+
+
+def run(args, timeout=30):
+    r = subprocess.run([DRIVER] + args, capture_output=True, text=True, timeout=timeout)
+    return r, parse_kv(r.stdout)
+
+
+def parse_dump(stdout):
+    """Parses 'dump' subcommand output into {index: {field: value}},
+    folding repeated 'ATTR name' fields in under their own key --
+    mirrors mime-display-tests' PART-line re-parsing for mimeparttest's
+    dump subcommand."""
+    nodes = {}
+    for line in stdout.splitlines():
+        if not line.startswith("NODE "):
+            continue
+        rest = line[len("NODE "):]
+        idx_str, rest2 = rest.split(" ", 1)
+        key, val = rest2.split(": ", 1)
+        nodes.setdefault(int(idx_str), {})[key] = val
+    return nodes
+
+
+def unescape(s):
+    """Inverts htmlparttest.c's print_escaped: \\\\ -> \\, \\n -> LF,
+    \\r -> CR, \\0 -> NUL, \\xHH -> that Latin-1 byte (as a Unicode
+    codepoint 0-255, which is exact -- Latin-1 is Unicode's first 256
+    codepoints by definition, same reasoning mimepart.h's
+    mimepart_Utf8ToLatin1 documents)."""
+    out = []
+    i = 0
+    while i < len(s):
+        if s[i] == "\\" and i + 1 < len(s):
+            c = s[i + 1]
+            if c == "\\": out.append("\\"); i += 2; continue
+            if c == "n": out.append("\n"); i += 2; continue
+            if c == "r": out.append("\r"); i += 2; continue
+            if c == "0": out.append("\0"); i += 2; continue
+            if c == "x" and i + 3 < len(s):
+                out.append(chr(int(s[i + 2:i + 4], 16)))
+                i += 4
+                continue
+        out.append(s[i])
+        i += 1
+    return "".join(out)
+
+
+def write_fixture(tmpdir, name, text):
+    path = os.path.join(tmpdir, name)
+    with open(path, "wb") as f:
+        f.write(text.encode("latin-1"))
+    return path
+
+
+# ---- cases ----
+
+def case_doctype_and_comments(tmpdir):
+    name = "doctype-and-comments-dont-corrupt-nesting"
+    html = ("<!DOCTYPE html>\n"
+            "<!-- a leading comment, deliberately before any real markup -->\n"
+            "<html><body><p>ok<!-- inline comment --> content</p>"
+            "<!-- trailing --></body></html>")
+    fx = write_fixture(tmpdir, "doctype.html", html)
+    r, kv = run(["dump", fx])
+    nodes = parse_dump(r.stdout)
+    p_idx = next((i for i, n in nodes.items() if n.get("TAG") == "p"), None)
+    ok = (kv.get("PARSE-RC") == ["0"] and p_idx is not None)
+    if ok:
+        # the inline comment inside <p> splits its text into two
+        # sibling text nodes ("ok" and " content"); both must be
+        # direct children of the <p> (not, say, orphaned at top level
+        # by a DOCTYPE/comment bug corrupting the open-element stack)
+        texts = [unescape(n["TEXT"]) for n in nodes.values()
+                 if n.get("TYPE") == "TEXT" and n.get("PARENT") == str(p_idx)]
+        joined = "".join(texts)
+        ok = "ok" in joined and "content" in joined
+    result(name, ok, r.stdout + r.stderr)
+
+
+def case_deep_nesting(tmpdir, unclosed):
+    n = 6000
+    name = f"deep-nesting-{'unclosed' if unclosed else 'well-formed'}-{n}-divs"
+    html = "<html><body>" + ("<div>" * n) + "deep"
+    if not unclosed:
+        html += ("</div>" * n) + "</body></html>"
+    fx = write_fixture(tmpdir, f"deep-{'unclosed' if unclosed else 'closed'}.html", html)
+    t0 = time.time()
+    r, kv = run(["stats", fx], timeout=30)
+    elapsed = time.time() - t0
+    maxdepth = int(kv["MAXDEPTH"][0]) if kv.get("MAXDEPTH") else -1
+    ok = (r.returncode == 0 and kv.get("PARSE-RC") == ["0"]
+          and maxdepth >= n - 1 and elapsed < 15.0)
+    result(name, ok, f"elapsed={elapsed:.2f}s maxdepth={maxdepth}\n" + r.stdout + r.stderr)
+
+
+def case_dropped_elements(tmpdir):
+    name = "dropped-elements-keep-surrounding-content"
+    html = (
+        "<p>before-script</p><script>if (1<2) { var x = '<not a tag>'; }</script><p>after-script</p>"
+        "<p>before-style</p><style>body { color: red; } /* <fake> */</style><p>after-style</p>"
+        "<p>before-iframe</p><iframe src=\"http://evil.example/\"></iframe><p>after-iframe</p>"
+        "<p>before-object</p><object data=\"http://evil.example/x.swf\"></object><p>after-object</p>"
+        "<p>before-embed</p><embed src=\"http://evil.example/x.swf\"><p>after-embed</p>"
+        "<p>before-form</p>"
+        "<form action=\"http://evil.example/\">"
+        "<input type=\"text\" name=\"x\"><select><option>a</option></select>"
+        "<button>go</button><textarea>free <text> here</textarea>"
+        "</form>"
+        "<p>after-form</p>"
+    )
+    fx = write_fixture(tmpdir, "dropped.html", html)
+    r, kv = run(["stats", fx])
+    ok = r.returncode == 0 and kv.get("PARSE-RC") == ["0"]
+    counts = {}
+    for tag in ("script", "style", "iframe", "object", "embed", "form",
+                "input", "select", "button", "textarea", "option"):
+        rc, ckv = run(["counttag", fx, tag])
+        counts[tag] = int(ckv["COUNT"][0]) if ckv.get("COUNT") else -1
+        ok = ok and counts[tag] == 0
+    rc, pkv = run(["counttag", fx, "p"])
+    pcount = int(pkv["COUNT"][0]) if pkv.get("COUNT") else -1
+    ok = ok and pcount == 12
+    result(name, ok, f"counts={counts} pcount={pcount}\n" + r.stdout + r.stderr)
+
+
+def case_href_scheme(tmpdir, scheme_html, href_attr_expected, label):
+    name = f"href-scheme-{label}"
+    html = f'<a href="{scheme_html}">link</a>'
+    fx = write_fixture(tmpdir, f"href-{label}.html", html)
+    r, kv = run(["firstattr", fx, "a", "href"])
+    got = kv.get("VALUE", [None])[0]
+    ok = kv.get("FOUND") == ["1"] and got == href_attr_expected
+    result(name, ok, f"got={got!r} want={href_attr_expected!r}\n" + r.stdout + r.stderr)
+
+
+def case_style_filtering(tmpdir):
+    name = "style-property-filtering-and-canonical-order"
+    html = ('<p style="  font-family: evil ; color : red ;'
+            ' -webkit-transform:whatever; FONT-WEIGHT:bold ; color:blue ">x</p>')
+    fx = write_fixture(tmpdir, "style.html", html)
+    r, kv = run(["firstattr", fx, "p", "style"])
+    got = kv.get("VALUE", [None])[0]
+    # last color wins (blue, not red); canonical fixed order (color
+    # before font-weight, not source order); font-family and the
+    # -webkit- property are dropped entirely
+    ok = kv.get("FOUND") == ["1"] and got == "color:blue;font-weight:bold"
+    result(name, ok, f"got={got!r}\n" + r.stdout + r.stderr)
+
+    name2 = "style-property-filtering-absent-properties-via-getstyleprop"
+    r2, kv2 = run(["styleprop", fx, "p", "background-color"])
+    ok2 = kv2.get("FOUND") == ["1"] and kv2.get("VALUE") == ["(absent)"]
+    result(name2, ok2, r2.stdout + r2.stderr)
+
+    name3 = "style-property-filtering-present-property-via-getstyleprop"
+    r3, kv3 = run(["styleprop", fx, "p", "color"])
+    ok3 = kv3.get("FOUND") == ["1"] and kv3.get("VALUE") == ["blue"]
+    result(name3, ok3, r3.stdout + r3.stderr)
+
+
+def case_unknown_wrapper(tmpdir):
+    name = "unknown-wrapper-preserves-children"
+    html = "<blarg attr=\"x\"><p>hi</p><p>there</p></blarg><p>sibling</p>"
+    fx = write_fixture(tmpdir, "unknown.html", html)
+    r, kv = run(["dump", fx])
+    nodes = parse_dump(r.stdout)
+    ok = kv.get("PARSE-RC") == ["0"]
+    ok = ok and not any(n.get("TAG") == "blarg" for n in nodes.values())
+    p_nodes = [n for n in nodes.values() if n.get("TAG") == "p"]
+    ok = ok and len(p_nodes) == 3
+    ok = ok and all(n.get("PARENT") == "-1" for n in p_nodes)
+    result(name, ok, r.stdout + r.stderr)
+
+
+def case_attribute_allowlist(tmpdir):
+    name = "attribute-allowlist-per-element"
+    html = (
+        '<img src="cid:logo" alt="Logo" width="10" height="20" class="dropped">'
+        '<table border="1"><tr><td colspan="2" rowspan="3" class="dropped">c</td></tr></table>'
+        '<font color="red" size="4" onclick="evil()">t</font>'
+        '<p class="dropped" id="dropped" onclick="evil()">z</p>'
+    )
+    fx = write_fixture(tmpdir, "attrs.html", html)
+
+    checks = [
+        ("img", "src", "cid:logo"),
+        ("img", "alt", "Logo"),
+        ("img", "width", "10"),
+        ("img", "height", "20"),
+        ("img", "class", "(absent)"),
+        ("table", "border", "1"),
+        ("td", "colspan", "2"),
+        ("td", "rowspan", "3"),
+        ("td", "class", "(absent)"),
+        ("font", "color", "red"),
+        ("font", "size", "4"),
+        ("font", "onclick", "(absent)"),
+        ("p", "class", "(absent)"),
+        ("p", "id", "(absent)"),
+        ("p", "onclick", "(absent)"),
+    ]
+    ok = True
+    detail = []
+    for tag, attr, want in checks:
+        r, kv = run(["firstattr", fx, tag, attr])
+        got = kv.get("VALUE", [None])[0]
+        good = kv.get("FOUND") == ["1"] and got == want
+        ok = ok and good
+        if not good:
+            detail.append(f"{tag}.{attr}: got={got!r} want={want!r}")
+    result(name, ok, "; ".join(detail))
+
+
+def case_entity_decoding(tmpdir):
+    name = "entity-decoding-named-numeric-and-unknown"
+    html = ("<p>&amp; &lt; &gt; &quot; &#169; &eacute; &#xE9; &pound; "
+            "&unknownentityxyz; end</p>")
+    fx = write_fixture(tmpdir, "entities.html", html)
+    r, kv = run(["dump", fx])
+    nodes = parse_dump(r.stdout)
+    texts = [unescape(n["TEXT"]) for n in nodes.values() if n.get("TYPE") == "TEXT"]
+    joined = "".join(texts)
+    expected = ("& < > \" \xa9 \xe9 \xe9 \xa3 "
+                "&unknownentityxyz; end")
+    ok = kv.get("PARSE-RC") == ["0"] and joined == expected
+    result(name, ok, f"got={joined!r}\nwant={expected!r}\n" + r.stdout + r.stderr)
+
+
+def case_malformed_real_fixtures():
+    for fname, minimum_tables in (
+        ("07-bakadesuyo-mismatched-table-tags.html", 5),
+        ("08-fidelity-mismatched-table-plus-font.html", 5),
+    ):
+        name = f"malformed-table-tags-real-fixture-{fname}"
+        path = os.path.join(FIXTURE_DIR, fname)
+        r, kv = run(["stats", path], timeout=30)
+        nodecount = int(kv["NODECOUNT"][0]) if kv.get("NODECOUNT") else -1
+        ok = r.returncode == 0 and kv.get("PARSE-RC") == ["0"] and nodecount > 0
+        if ok:
+            rc, tkv = run(["counttag", path, "table"])
+            tablecount = int(tkv["COUNT"][0]) if tkv.get("COUNT") else -1
+            ok = tablecount >= minimum_tables
+            detail = f"nodecount={nodecount} tablecount={tablecount}"
+        else:
+            detail = r.stdout + r.stderr
+        result(name, ok, detail)
+
+
+def case_real_corpus_smoke():
+    name = "real-corpus-smoke-all-16-fixtures-parse-without-crashing"
+    ok = True
+    detail = []
+    files = sorted(f for f in os.listdir(FIXTURE_DIR) if f.endswith(".html"))
+    if len(files) != 16:
+        ok = False
+        detail.append(f"expected 16 .html fixtures, found {len(files)}")
+    for fname in files:
+        path = os.path.join(FIXTURE_DIR, fname)
+        try:
+            r, kv = run(["stats", path], timeout=30)
+        except subprocess.TimeoutExpired:
+            ok = False
+            detail.append(f"{fname}: TIMEOUT")
+            continue
+        if r.returncode != 0 or kv.get("PARSE-RC") != ["0"]:
+            ok = False
+            detail.append(f"{fname}: rc={r.returncode} stderr={r.stderr.strip()!r}")
+    result(name, ok, "; ".join(detail))
+
+
+def main():
+    if len(sys.argv) > 1:
+        sys.exit("usage: html-parse-tests")
+
+    build_driver()
+
+    tmpdir = tempfile.mkdtemp(prefix="html-parse-tests-")
+    try:
+        note(f"--- synthetic fixtures in {tmpdir} (deleted on exit) ---")
+        case_doctype_and_comments(tmpdir)
+        case_deep_nesting(tmpdir, unclosed=False)
+        case_deep_nesting(tmpdir, unclosed=True)
+        case_dropped_elements(tmpdir)
+        case_href_scheme(tmpdir, "https://example.com/x?a=1", "https://example.com/x?a=1", "https-kept")
+        case_href_scheme(tmpdir, "http://example.com/x", "http://example.com/x", "http-kept")
+        case_href_scheme(tmpdir, "mailto:user@example.com", "mailto:user@example.com", "mailto-kept")
+        case_href_scheme(tmpdir, "javascript:alert(1)", "(absent)", "javascript-stripped")
+        case_href_scheme(tmpdir, "file:///etc/passwd", "(absent)", "file-stripped")
+        case_href_scheme(tmpdir, "/relative/path", "(absent)", "relative-no-scheme-stripped")
+        case_href_scheme(tmpdir, "#anchor", "(absent)", "bare-fragment-stripped")
+        case_style_filtering(tmpdir)
+        case_unknown_wrapper(tmpdir)
+        case_attribute_allowlist(tmpdir)
+        case_entity_decoding(tmpdir)
+
+        note(f"--- real fixtures from {FIXTURE_DIR} (read-only) ---")
+        case_malformed_real_fixtures()
+        case_real_corpus_smoke()
+    finally:
+        import shutil
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+    note("")
+    note(f"--- {len(PASS)} passed, {len(FAIL)} failed ---")
+    if FAIL:
+        note("FAILED: " + ", ".join(FAIL))
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
