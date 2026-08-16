@@ -42,6 +42,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/ams/mscl
 #include <cui.h>
 #include <hdrparse.h>
 #include <mimepart.h>
+#include <htmlpart.h>
+#include <htmltext.h>
 #include <errprntf.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -1487,19 +1489,32 @@ static int PrintAttachmentLine(const struct mimepart *p)
 }
 
 /* Renders the chosen displayable part's decoded body: text/html goes
-   through mimepart's tag-strip/entity-decode shim first (same shim
-   text822.c uses -- see mimepart_HtmlToText()'s own doc comment for
-   what it does and doesn't handle); text/plain (or bare "text") prints
-   verbatim. Unlike text822.c inserting into an ATK Text widget (Latin-1
-   glyphs only, hence its UTF-8->Latin-1 conversion step), cui writes to
-   a real terminal -- on this platform a UTF-8-capable one -- so UTF-8
-   bytes are passed through unchanged rather than folded to Latin-1/'?'. */
+   through the real HTML parser/flattener (htmlpart_Parse() + Stage 2's
+   htmltext_ToText(), see htmlpart.h/htmltext.h) rather than the old
+   dumb mimepart_HtmlToText() tag-strip shim -- cui retired that shim
+   in favor of this same Stage 1/2 sequence text822.c's own whole-
+   message fallback path uses (see text822.c's RenderHtmlPart()).
+   Deliberately NOT htmlatk_Render() (Stage 3): that renderer inserts
+   into a live ATK "text" object, and cui has no ATK class-system
+   dependency at all (confirmed -- no class.h/text.h/style.h/etc.
+   #include anywhere in this file) and must never gain one just to
+   display a plain terminal transcript; htmlpart_Parse()/
+   htmltext_ToText()/htmlpart_Free() are ATK-independent by design
+   (see htmlpart.h's own placement note) specifically so cui can use
+   them without pulling ATK in. text/plain (or bare "text") still
+   prints verbatim, unchanged. Unlike text822.c inserting into an ATK
+   Text widget (Latin-1 glyphs only, hence its UTF-8->Latin-1
+   conversion step), cui writes to a real terminal -- on this platform
+   a UTF-8-capable one -- so UTF-8 bytes are passed through unchanged
+   rather than folded to Latin-1/'?'. */
 static int RenderMimeLeaf(const struct mimepart *p)
 {
     int rc;
 
     if (!strcmp(p->type, "text/html")) {
-        char *text = mimepart_HtmlToText((const char *) p->body, p->bodylen);
+        struct htmlnode *tree = htmlpart_Parse(p->body, p->bodylen);
+        char *text = htmltext_ToText(tree);
+        htmlpart_Free(tree);
         if (!text) return(0);
         rc = PrintMimeChunked(text, (long) strlen(text));
         free(text);
