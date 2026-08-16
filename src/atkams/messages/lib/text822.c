@@ -51,7 +51,11 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <message.ih>
 #include <ams.h>
 #include <mimepart.h>
+#include <htmlpart.h>
+#include <htmltext.h>
+#include <htmlatk.h>
 #include <fdphack.h>
+#include <time.h>
 static int FindParam(char *ct, char *paramname, char *ValueBuf);
 static char * GetHeader(char *LineBuf, int lim, FILE *fp);
 static int InsertProperObject(struct text822 *d, FILE *fp, int *ShowPos, char *ctype, char *encoding, char *descrip);
@@ -92,6 +96,7 @@ static int PlainAsciiText(char *s, char *currentcharset);
 static int ForceMetamail(char *ctype);
 static int InsertDecodedText(struct text822 *d, int *ShowPos, unsigned char *bytes, long len, char *charset);
 static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename, char *ctype, long nbytes);
+static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset);
 
 boolean text822__InitializeObject(struct classheader *c, struct text822 *self)
 {
@@ -850,14 +855,11 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 	    if (winner && winner->body && !strcmp(winner->type, "text/plain")) {
 		InsertDecodedText(d, &ShowPos, winner->body, winner->bodylen, mimepart_GetParam(winner, "charset"));
 	    } else if (winner && winner->body && !strcmp(winner->type, "text/html")) {
-		/* No text/plain sibling, but there's html: the
-		   deliberately dumb strip shim (see
-		   revival/doc/mime-display-prompt.md), not inline HTML
-		   rendering -- that's the separate HTML-rendering
-		   objective's htmlview work. */
-		char *stripped = mimepart_HtmlToText((char *) winner->body, winner->bodylen);
-		InsertDecodedText(d, &ShowPos, (unsigned char *) stripped, (long) strlen(stripped), mimepart_GetParam(winner, "charset"));
-		free(stripped);
+		/* No text/plain sibling, but there's html: real
+		   ATK-styled rendering (Stage 3, htmlatk.h), with a
+		   whole-message fallback to Stage 2's plain-text
+		   renderer if it can't -- see RenderHtmlPart(). */
+		RenderHtmlPart(d, &ShowPos, winner->body, winner->bodylen, mimepart_GetParam(winner, "charset"));
 	    } else if (winner && winner->body) {
 		/* Neither text/plain nor text/html was on offer (e.g.
 		   an alternative set of just an image and an audio
@@ -935,9 +937,7 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 	    }
 	    if (textpart && textpart->body) {
 		if (textIsHtml) {
-		    char *stripped = mimepart_HtmlToText((char *) textpart->body, textpart->bodylen);
-		    InsertDecodedText(d, &ShowPos, (unsigned char *) stripped, (long) strlen(stripped), mimepart_GetParam(textpart, "charset"));
-		    free(stripped);
+		    RenderHtmlPart(d, &ShowPos, textpart->body, textpart->bodylen, mimepart_GetParam(textpart, "charset"));
 		} else {
 		    InsertDecodedText(d, &ShowPos, textpart->body, textpart->bodylen, mimepart_GetParam(textpart, "charset"));
 		}
@@ -993,9 +993,7 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 	    rawlen += linelen;
 	}
 	if (rawbuf) {
-	    char *stripped = mimepart_HtmlToText(rawbuf, rawlen);
-	    InsertDecodedText(d, &ShowPos, (unsigned char *) stripped, (long) strlen(stripped), msgcharset);
-	    free(stripped);
+	    RenderHtmlPart(d, &ShowPos, (unsigned char *) rawbuf, rawlen, msgcharset);
 	    free(rawbuf);
 	}
     } else if (!AlternativeNumber && sfmttype
@@ -1614,4 +1612,153 @@ static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename
 	    filename ? filename : "unnamed", ctype ? ctype : "unknown", nbytes);
     text822_AlwaysInsertCharacters(d, *ShowPos, Line, strlen(Line));
     *ShowPos += strlen(Line);
+}
+
+/* HTML_RENDER_TIME_BUDGET -- the "parsing simply taking too long"
+   renderer-level fallback trigger the design doc calls for
+   (html-mail-rendering-design.md's "Fallback strategy" section) but
+   deliberately leaves unnumbered ("needs a number once there's a
+   working parser to benchmark against real ... input, not before" --
+   see that doc's Open Questions). There is now a working parser and
+   renderer to benchmark: timing htmlatktest.test's "dump" mode against
+   every fixture in revival/tests/html-fixtures/, including the two
+   deepest-nesting cases (01: 28 levels/127KB, 16: 23 levels/46KB) and
+   the two largest bodies (02: 213KB, 03: 220KB), the slowest observed
+   wall-clock time for htmlpart_Parse()+htmlatk_Render() combined was
+   ~20ms -- two orders of magnitude below one second. 2 seconds per
+   phase (parse, then render) is chosen as a deliberately generous
+   multiple of that -- headroom for a slower machine or a much larger
+   real message, not a tight bound -- while still being finite, so a
+   deliberately pathological message (the adversarial-input case the
+   design doc is actually guarding against, not anything in the real
+   corpus) cannot hang the whole message display indefinitely. time()'s
+   1-second granularity is coarse -- a call that starts at the very end
+   of one wall-clock second and finishes just after the start of the
+   next reads as "1 second" elapsed even if it took 5ms -- but that
+   coarseness only ever makes this budget more generous, never less,
+   which is the safe direction to be wrong in for a fallback trigger
+   real content essentially never approaches. */
+#define HTML_RENDER_TIME_BUDGET 2
+
+/* Renders html[0..htmllen) (already CTE-decoded HTML bytes) into d at
+   *ShowPos, per the design doc's two-level fallback contract: Stage
+   3's real ATK-styled rendering (htmlatk_Render(), htmlatk.h) is tried
+   first; on anything htmlatk_Render() itself can't recover from (its
+   documented FALSE return -- a real construction failure, e.g.
+   style_New()/table_New() returning NULL) or on either phase (the
+   htmlpart_Parse() tokenize/sanitize pass, or the htmlatk_Render()
+   walk) taking longer than HTML_RENDER_TIME_BUDGET above, whatever was
+   already inserted for this message is discarded and the *whole*
+   message falls back to Stage 2's plain-text renderer
+   (htmltext_ToText()) instead -- never a half-rendered document, per
+   htmlatk.h's own note on why it doesn't attempt this unwind itself
+   (dest is a live ATK object mid-edit by the time a failure could be
+   noticed; only the caller, here, knows enough about *ShowPos's
+   bookkeeping to undo it safely).
+
+   htmlatk_Render()'s lengthOut out-parameter is documented to report
+   exactly how many characters/view-slots were inserted -- including
+   up to the point of a FALSE return -- so text822_AlwaysDeleteCharacters()
+   with that same length is always the correct amount to discard,
+   whether the failure was a real construction failure or just
+   slowness (a "successful" but too-slow render still fully populated
+   lengthOut before returning; there is no third, torn state to worry
+   about, because neither htmlpart_Parse() nor htmlatk_Render() are
+   preempted mid-call here -- both are left to run to completion, since
+   both are independently documented to always terminate for any input
+   (htmlpart.h: "htmlpart_Parse() always runs to completion"; htmlatk.h
+   documents its own walk as using an explicit heap stack, not
+   recursion, for exactly the same reason, with only bounded, markup-
+   depth-limited C recursion for nested tables). The risk this budget
+   actually guards against is wall-clock *slowness* on adversarial
+   input, not a genuine hang -- so there is nothing to preempt, and no
+   need for a signal-based abort with its own attendant risk of
+   interrupting an ATK library call mid-allocation and leaving heap/
+   class-dispatch state inconsistent, which would be a worse bug than
+   the one being guarded against.
+
+   The resolver argument to htmlatk_Render() is NULL (never resolve,
+   always placeholder an <img>) -- see the note at this function's own
+   call sites: resolving a "cid:" reference to its sibling MIME part
+   needs a Content-ID lookup mimepart.c does not currently parse or
+   expose at all (it only tracks Content-Type/Content-Disposition), so
+   real cid: image resolution is out of scope here, not silently
+   skipped. */
+static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset)
+{
+    struct htmlnode *tree;
+    time_t t0, t1, t2;
+    boolean tooSlow;
+    unsigned char *convhtml = NULL;
+
+    /* Neither htmlpart_Parse() nor htmlatk_Render() know anything about
+       MIME/character sets -- htmlpart.h/htmlatk.h both document this
+       explicitly, and it is correct for them not to (HTML tag/attribute
+       syntax is pure ASCII regardless of the body's encoding, so
+       *parsing* raw UTF-8 bytes is completely safe). But the *renderer*
+       eventually inserts whatever bytes it was handed into ATK's
+       Latin-1-only text buffer via text_AlwaysInsertCharacters(), with
+       no conversion of its own -- unlike InsertDecodedText() below,
+       which already does this for the Stage 2 fallback/plain-text path.
+       Confirmed as a real, live bug (not hypothetical) by writing a
+       real ATK datastream from this renderer's own output and finding
+       stray control bytes in it: "it's" (U+2019, UTF-8 0xE2 0x80 0x99)
+       came out as three separate high-bit-escaped bytes instead of one
+       Latin-1 apostrophe, because each raw UTF-8 byte was inserted as
+       its own "Latin-1 character." Converting the whole raw HTML buffer
+       up front, once, before htmlpart_Parse() ever sees it, fixes this
+       for every text run/attribute value in one place rather than
+       needing per-insertion-site awareness inside htmlatk.c -- the
+       exact same "convert once, then treat as opaque Latin-1 bytes
+       downstream" shape already used by InsertDecodedText(). If
+       charset isn't UTF-8 (already Latin-1, or unspecified/ASCII),
+       html/htmllen are used unchanged, matching InsertDecodedText's
+       own charset check exactly. */
+    if (charset && !amsutil_lc2strncmp("utf-8", charset, 5)) {
+	long convlen;
+	convhtml = mimepart_Utf8ToLatin1(html, htmllen, &convlen);
+	if (convhtml) { html = convhtml; htmllen = convlen; }
+    }
+
+    t0 = time(NULL);
+    tree = htmlpart_Parse(html, htmllen);
+    t1 = time(NULL);
+    tooSlow = (boolean) (tree && (t1 - t0) > HTML_RENDER_TIME_BUDGET);
+
+    if (tree && !tooSlow) {
+	long lengthOut = 0;
+	boolean ok = htmlatk_Render((struct text *) d, (long) *ShowPos, tree, NULL, NULL, &lengthOut);
+	t2 = time(NULL);
+	if (ok && (t2 - t1) <= HTML_RENDER_TIME_BUDGET) {
+	    *ShowPos += (int) lengthOut;
+	    htmlpart_Free(tree);
+	    if (convhtml) free(convhtml);
+	    return;
+	}
+	/* real construction failure, or too slow: discard whatever
+	   htmlatk_Render() already inserted (lengthOut is valid either
+	   way, per its own doc comment) and fall through to the Stage 2
+	   path below, reusing the tree already parsed above rather than
+	   re-running htmlpart_Parse() a second time */
+	if (lengthOut > 0) text822_AlwaysDeleteCharacters(d, *ShowPos, lengthOut);
+    }
+
+    if (tree) {
+	char *stripped = htmltext_ToText(tree);
+	/* charset is NOT passed here (NULL instead): html/htmllen (and
+	   therefore tree, and therefore stripped) were already converted
+	   to Latin-1 above if charset was UTF-8 -- passing the original
+	   charset through would tell InsertDecodedText() to UTF-8-decode
+	   already-Latin-1 text a second time, corrupting it. */
+	InsertDecodedText(d, ShowPos, (unsigned char *) stripped, (long) strlen(stripped), NULL);
+	free(stripped);
+	htmlpart_Free(tree);
+    }
+    /* tree == NULL: htmlpart_Parse() returned NULL (empty/all-dropped
+       input, or an allocation failure) or the parse itself took too
+       long. Stage 2 would call the identical htmlpart_Parse() and hit
+       the same outcome, so there is nothing further to try -- insert
+       nothing, matching what the old mimepart_HtmlToText() shim did on
+       equivalently-empty input. */
+    if (convhtml) free(convhtml);
 }

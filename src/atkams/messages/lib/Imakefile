@@ -35,7 +35,7 @@ CLASSFLAGS = $(CLASSINCLUDES) -pe
     S_IHFILES	=	amss.ih
 #endif /* SNAP_ENV */
 
-OBJS = 		stubs.o capaux.o foldaux.o sendaux.o messaux.o writeone.o
+OBJS = 		stubs.o capaux.o foldaux.o sendaux.o messaux.o writeone.o htmlatk.o
 
 DOBJS = 		text822.do amsutil.do ams.do amsn.do $(S_DOBJS) \
 			fldtreev.do messages.do captions.do msgsa.do  \
@@ -78,7 +78,19 @@ DynamicMultiObject(captions.do, captions.o capaux.o,,$(LEXLIB))
 DynamicMultiObject(folders.do, folders.o foldaux.o,,$(LEXLIB))
 DynamicMultiObject(sendmsg.do, sendmsg.o sendaux.o writeone.o,,$(LEXLIB))
 DynamicMultiObject(messages.do, messages.o messaux.o,,$(LEXLIB))
-DynamicObject(text822,$(LIBS),$(LEXLIB))
+/* text822.do needs htmlatk.o linked in too (Gate 5 of the HTML-mail-
+   rendering project: text822.c now calls htmlatk_Render() instead of
+   the old mimepart_HtmlToText() shim) -- DynamicMultiObject instead of
+   DynamicObject so both objects go into the same .do, same pattern as
+   this Imakefile's other multi-object DOBJS below (captions.do etc).
+   htmlatk.o's own ATK object-library dependencies (style/environment/
+   text/table/dataobj) are not listed in $(LIBS) here, same as they
+   weren't for text822.o's own pre-existing style/environment calls --
+   this is a Darwin .do (-undefined dynamic_lookup at link time, see
+   the project's dot-do-silent-underlink note), so those symbols
+   resolve against runapp's own already-statically-linked copies at
+   load time, not at .do link time. */
+DynamicMultiObject(text822.do, text822.o htmlatk.o, $(LIBS), $(LEXLIB))
 DynamicObject(text822v,,$(LEXLIB))
 DynamicObject(amsutil, $(LIBS), $(LEXLIB) $(BSDLIB))
 DynamicObject(ams, $(UTILLIB),$(LEXLIB))
@@ -91,6 +103,27 @@ DynamicMultiObject(amsn.do, amsn.o stubs.o, $(NLIBS), $(MMDFLIBS) $(LEXLIB) $(BS
 #ifdef SNAP_ENV
 DynamicMultiObject(amss.do, amss.o stubs.o, $(SLIBS), $(MMDFLIBS) $(LEXLIB))
 #endif /* SNAP_ENV */
+
+/* htmlatktest.test -- standalone driver for htmlatk.c (Stage 3 of the
+   HTML-mail-rendering project), built via the .test suffix rule same
+   as libmsshr's htmlparttest.test/htmltexttest.test (see that
+   Imakefile). Unlike those two, this one links ATK's class system
+   directly (see htmlatktest.c's own header comment on why that is
+   still safe to run with no X11 display) rather than just libmsshr.a,
+   so it needs the underlying ATK object libraries too -- the exact
+   set validated during this task's Gate-1 research against
+   src/atk/raster/convert/convrast.c's own (real, working, non-GUI)
+   link line. This standalone target stays even now that htmlatk.o is
+   also linked into text822.do (see the DynamicMultiObject(text822.do,
+   ...) line above, Gate 5) -- it is still the fast, X11-free way to
+   exercise htmlatk_Render() directly against a fixture file without
+   going through a live messages session. */
+TESTLIBS =	htmlatk.o $(BASEDIR)/lib/libmsshr.a \
+		$(BASEDIR)/lib/atk/libbasics.a $(BASEDIR)/lib/liberrors.a \
+		$(BASEDIR)/lib/libutil.a $(BASEDIR)/lib/libafs.a $(BASEDIR)/lib/libclass.a
+TESTSYSLIBS =	-L/opt/X11/lib -lX11 -ldl
+htmlatktest.test: htmlatk.o
+TestingOnlyTestingRule($(TESTLIBS),$(TESTSYSLIBS))
 
 DependTarget()
 
