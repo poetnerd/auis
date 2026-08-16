@@ -240,6 +240,30 @@ When a value reads as a huge positive number, or lldb shows
   To read globals at a point: `-o 'b <function>' -o run -o finish -o
   'p (long)<global>'`. Prefer register/memory reads over `expr` with
   struct types (no debug info in these binaries).
+- **When a headless test driver constructs real ATK dataobjects**
+  (tables, styled text, embedded views -- anything beyond plain
+  string/tree manipulation), give it a subcommand that calls the
+  object's real `Write()` (see `htmlatktest.test writeds` in
+  `src/atkams/messages/lib/htmlatktest.c` for a working example: parse/
+  render into a fresh object, then `text_Write(obj, fopen(outpath,
+  "w"), 1L, 0)`) to emit an actual, directly-openable ATK datastream
+  file, not just an internal text-dump format. This matters for two
+  reasons, both learned the hard way during the html-atk-renderer
+  Gate-5-follow-up bug hunt (2026-08-16, National Grid mail
+  mis-rendering): (1) a human can open the file straight in `ez` for
+  real visual inspection, which caught a real bug (stray UTF-8 control
+  bytes) that the driver's own internal dump missed entirely --
+  printf's `%s` silently truncates at embedded NULs, hiding exactly
+  this class of defect from a text-based dump no matter how carefully
+  you read its output; (2) reproducing a live-app bug via a *file*
+  that opens identically in two independent apps (there, `messages`
+  vs `ez`) is a fast, decisive way to tell whether a bug is general
+  (ATK's own object/view code) or specific to the one app you first
+  saw it in -- far cheaper than chasing it live in the original,
+  more complex app. A companion `roundtrip` subcommand (`filetype_Lookup`
+  + `class_NewObject` + `dataobject_Read`, then reuse the same dump
+  logic) is equally cheap to add and isolates Read()-time bugs from
+  draw-time-only ones, entirely offline, no X11 needed for either.
 
 ## Report format (`<task>-REPORT.md`)
 

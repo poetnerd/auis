@@ -147,11 +147,35 @@ object, not a special case.
 This is a much better target than unpacking `<table>` into flowed
 text: HTML `<table>`/`<tr>`/`<td>` maps onto it directly —
 - `<table>` → `table_New` + `table_ChangeSize(rows, cols)`.
-- `<td>`/`<th>` cell content → `table_TextCell` for text-only cells,
-  `table_ImbeddedObject` for a cell containing an `<img>` or a nested
-  `<table>` — nesting is allowed structurally since a cell can embed
-  any dataobject, and there's no depth limit imposed here either, same
-  reasoning as above.
+- `<td>`/`<th>` cell content → `table_ImbeddedObject` holding a fresh
+  `text` dataobject, for any cell with real content, with the same
+  HTML-to-ATK renderer (`htmlatk_Render()`) called recursively on the
+  cell's children into that object — **not** a dispatch between
+  `table_TextCell` for "text-only" cells and `table_ImbeddedObject` for
+  a cell containing an `<img>`/nested `<table>`, which is what an
+  earlier implementation did and a design review (grounded in real ATK
+  precedent, see below) found to be a real mis-architecture: a table
+  cell's content is an arbitrary nested document — rich text that can
+  itself contain embedded objects — not a scalar choice between two
+  cell kinds. `PAPERS/atk/Sherman.Alloc` lines 663–1066 is a genuine
+  `table` object datastream dump whose cells are each a full
+  `\begindata{text,...}\enddata{text,...}` datastream; the cell at
+  line 675 contains prose, then an embedded `calc` spreadsheet inline
+  via `\view{calcv,...}`, then more prose after it, all inside that
+  one cell's own text object. A cell whose content happens to be
+  simple (line 668's cell is just a centered/bold heading) is still a
+  full `text` object in the real format, not a different
+  representation — there is no separate "plain" cell-content type to
+  special-case for. Nesting (a `<table>` inside a `<td>`, an `<img>`
+  inside prose inside a `<td>`, any mix) falls out for free once cell
+  content is genuinely just another `htmlatk_Render()` call: nesting
+  is allowed structurally since a cell can embed any dataobject, and
+  there's no depth limit imposed here either, same reasoning as above.
+  A cell with no content at all (no children, or only whitespace text)
+  is the one deliberate exception: it is left as `table_EmptyCell`
+  (every freshly-grown cell's own default, see `table__ChangeSize` in
+  `src/atk/table/table.c`) rather than paying for an empty `text`
+  dataobject.
 - `colspan`/`rowspan` → `SetInterior`/boundary colors set to `JOINED`
   across the spanned chunk, per the existing `IsJoinedAbove`/
   `IsJoinedToLeft` macros.
