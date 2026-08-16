@@ -211,12 +211,39 @@ static const struct hp_entity hp_entities[] = {
     { NULL, 0 }
 };
 
+/* Named/numeric references to zero-width Unicode formatting
+   characters -- unlike hp_entities above, none of these have a
+   Latin-1 codepoint (they postdate Latin-1 entirely), so they can't
+   go in that table. Unlike the "some real character, we don't know
+   which" case numeric entities >0xFF fall back to ('?'), these are
+   dropped silently: a real browser renders zero-width characters as
+   literally nothing, so a visible '?' would be actively wrong, not
+   just approximate. Confirmed live in real mail (National Grid,
+   found 2026-08-16): &zwnj; used as "hidden preheader" anti-clipping
+   padding (a wall of them in a color:#ffffff div, controlling the
+   inbox preview snippet -- see revival/tests/html-fixtures/README.md
+   for the same trick found independently in the fixture corpus) was
+   rendering as literal "&zwnj;" text instead of vanishing. zwj/lrm/
+   rlm are the same character class (invisible joining/direction
+   marks) and get the same treatment on the same reasoning, even
+   though only zwnj has been directly observed in real mail so far. */
+static const char * const hp_zerowidth_names[] = {
+    "zwnj", "zwj", "lrm", "rlm", NULL
+};
+
+static int is_zerowidth_codepoint(long code)
+{
+    return code == 0x200B || code == 0x200C || code == 0x200D
+        || code == 0x200E || code == 0x200F || code == 0xFEFF;
+}
+
 /* name/namelen point into the caller's (not necessarily NUL-
    terminated) input buffer -- copied into a small stack buffer before
    strtol, same reasoning as mimepart.c's emit_entity. Numeric entities
    above 0xFF (nearly all of Unicode) become '?', matching
    mimepart_Utf8ToLatin1's policy for the same reason: there is no
-   Latin-1 byte for them. */
+   Latin-1 byte for them -- except the known zero-width codepoints
+   above, which are dropped silently instead (see their own comment). */
 static void decode_entities_into(struct hpbuf_s *out, const unsigned char *data, long start, long end)
 {
     long i = start;
@@ -245,7 +272,15 @@ static void decode_entities_into(struct hpbuf_s *out, const unsigned char *data,
                         st2 = nbuf + 1;
                         code = strtol(st2, &ep, 10);
                     }
-                    hpbuf_putc(out, (ep != st2 && code > 0 && code <= 0xFF) ? (int) code : '?');
+                    {
+                        int valid = (ep != st2 && code > 0);
+                        if (valid && code <= 0xFF) {
+                            hpbuf_putc(out, (int) code);
+                        } else if (!(valid && is_zerowidth_codepoint(code))) {
+                            hpbuf_putc(out, '?');
+                        }
+                        /* else: valid zero-width codepoint -- drop silently */
+                    }
                     matched = 1;
                 } else {
                     for (k = 0; hp_entities[k].name; ++k) {
@@ -253,6 +288,14 @@ static void decode_entities_into(struct hpbuf_s *out, const unsigned char *data,
                             hpbuf_putc(out, hp_entities[k].latin1);
                             matched = 1;
                             break;
+                        }
+                    }
+                    if (!matched) {
+                        for (k = 0; hp_zerowidth_names[k]; ++k) {
+                            if (strcmp(hp_zerowidth_names[k], nbuf) == 0) {
+                                matched = 1; /* drop silently, emit nothing */
+                                break;
+                            }
                         }
                     }
                 }
