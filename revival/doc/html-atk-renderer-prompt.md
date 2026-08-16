@@ -190,28 +190,57 @@ check here, but do add a test confirming a stripped/absent href
 (Stage 1 already handles this — the `<a>` node just has no `href`
 attribute) doesn't crash the `Hit()` handler.
 
-## Gate 5: wire into text822.c, retire the old shim
+## Gate 5: wire into text822.c AND cui.c, retire the old shim in both
 
-Only after Gates 1–4 are solid: make this the primary HTML rendering
-path in `src/atkams/messages/lib/text822.c`, replacing the current
-`mimepart_HtmlToText`-based shim. Implement the design doc's
+Only after Gates 1–4 are solid. There are **two** call sites, in two
+different apps, needing two different fixes — do not assume `cui` is
+already handled, a previous draft of this prompt incorrectly assumed
+it was already on Stage 2's renderer. It isn't: as of this writing
+`grep -n mimepart_HtmlToText src/ams/msclients/cui/cui.c` still finds
+a live call (around line 1502), the exact same old dumb tag-stripper
+`text822.c` uses. Re-run that grep yourself first to confirm current
+state before trusting this description, the same way you'd verify any
+other claim in this file.
+
+**`src/atkams/messages/lib/text822.c`** (the ATK `messages` app, 3
+call sites — grep `mimepart_HtmlToText` in this file to find them,
+their exact line numbers may have shifted): replace with this
+module's real `htmlatk_Render()`, into the same ATK text object
+`text822.c` already inserts into. Implement the design doc's
 renderer-level fallback contract: if this renderer hits a condition
 it can't recover from (not "unknown tag" — Stage 1 already handles
 that — but a real construction failure, or parsing taking too long),
-the **whole message** falls back to Stage 2's plain-text renderer,
-never a half-rendered document. `cui` keeps using Stage 2 directly
-and is unaffected by this gate.
+the **whole message** falls back to Stage 2's plain-text renderer
+(`htmlpart_Parse` + `htmltext_ToText` + `htmlpart_Free`), never a
+half-rendered document.
+
+**`src/ams/msclients/cui/cui.c`** (the terminal-only `cui` client, one
+call site, in the function documented "Renders the chosen displayable
+part's decoded body" around line 1489): `cui` has no ATK display to
+style anything for, so it must NEVER call `htmlatk_Render()` — replace
+its `mimepart_HtmlToText` call with the same three-call Stage 1/2
+sequence (`htmlpart_Parse` + `htmltext_ToText` + `htmlpart_Free`)
+`text822.c`'s own fallback path uses, nothing more. This is a much
+smaller, lower-risk change than the `text822.c` work — same
+char*+long-in, malloc'd-char*-out shape as the function it replaces,
+no ATK object lifecycle involved at all. Confirm `cui.c` really has no
+existing ATK/class.h dependency before touching it (it shouldn't, per
+`mimepart.c`/`htmlpart.c`/`htmltext.c` all being deliberately
+ATK-independent — verify this assumption too rather than trusting it).
 
 Regression-test: `messages`' existing behavior on non-HTML mail
 (plain text, ATK-native datastreams) must be byte-for-byte unchanged
-— this new path only engages where the old shim did. Re-run every
-existing suite this touches (`revival/tests/mime-display-tests` at
-minimum) and confirm still green. You do not have interactive X11
-access and should not attempt to launch `messages` yourself — give
-wdc a short by-hand acceptance note (which real fixture-corpus-shaped
-messages to expect the richest results from) instead, same as prior
-delegated tasks in this tree have done when live-UI verification was
-needed.
+— the new `text822.c` path only engages where the old shim did.
+`cui`'s existing behavior on non-HTML mail must also be unchanged.
+Re-run every existing suite this touches (`revival/tests/
+mime-display-tests` at minimum) and confirm still green. You do not
+have interactive X11 access and should not attempt to launch
+`messages` yourself — give wdc a short by-hand acceptance note (which
+real fixture-corpus-shaped messages to expect the richest results
+from) instead, same as prior delegated tasks in this tree have done
+when live-UI verification was needed. `cui` is a terminal program, so
+you likely *can* exercise it directly (no X11 needed) — do so if
+practical, and say clearly in your report whether you did.
 
 ## Ground rules
 
@@ -233,6 +262,28 @@ as Stages 1/2 did). Don't modify `htmlpart.c`/`htmlpart.h`/
 later finds an actual defect in either (not just an API you wish were
 shaped differently), stop and report it clearly rather than silently
 patching around it, same rule Stage 2 worked under for Stage 1.
+
+**Use `htmlatktest.test`'s `writeds`/`roundtrip` subcommands for real
+verification, not just its `dump` mode.** `writeds <fixturefile>
+<outfile>` renders and calls the real `text_Write()` to emit an
+actual, directly-openable ATK datastream — open it in `ez` for real
+visual inspection, or to check whether a bug you're chasing is general
+(reproduces in `ez` too) or specific to whatever app you first saw it
+in. `roundtrip <dsfile>` reads such a file back in via the same
+`filetype_Lookup`+`class_NewObject`+`dataobject_Read()` sequence real
+ATK apps use, entirely offline (no X11), and dumps the result the same
+way `dump` does — use it to isolate a Read()-time bug from a
+draw-time-only one. Both were added 2026-08-16 chasing a real live
+rendering-corruption report (National Grid mail) and found real bugs
+`dump`'s own text-based output missed entirely (`dump` builds C
+strings for `%s` printf, which silently truncates at embedded NULs —
+a real defect class this hid completely). If you're picking up the
+still-open item from that investigation (severe on-screen
+`\begindata{table,...}`-shaped corruption, confirmed general to ATK's
+own `table`/`text` view code via this exact `ez`-file technique, not
+yet root-caused — see project memory / ask wdc for the full writeup),
+start from a `writeds`-generated file and `ez`, not a live `messages`
+session — much lower noise, fully reproducible from a static file.
 
 ## Final report
 
