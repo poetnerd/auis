@@ -13,7 +13,7 @@ NormalObjectRule()
 LibraryTarget(${PRODUCT}, ${OBJS})
 InstallLibrary(${PRODUCT}, ${DESTDIR}/lib)
 
-TESTLIBS = ${BASEDIR}/lib/libmsshr.a
+TESTLIBS = ${BASEDIR}/lib/libmsshr.a ${BASEDIR}/lib/libutil.a
 TestingOnlyTestingRule(${TESTLIBS},)
 
 DependTarget()

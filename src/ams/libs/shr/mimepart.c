@@ -37,6 +37,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>	/* strncasecmp */
+#include <util.h>	/* getprofileswitch() -- classless, so this file
+			   can be linked into both cui (no Class system)
+			   and messages (Class-based) without pulling in
+			   libclass */
 #include <ctype.h>
 
 #include <mimepart.h>
@@ -603,15 +607,26 @@ void mimepart_Free(struct mimepart *p)
     }
 }
 
+/* Default is HTML-preferred (Stage 3's ATK-styled renderer beats the
+   plain-text fallback for real newsletter/marketing mail, which is
+   most multipart/alternative traffic in practice). Setting the
+   profile switch "ams.preferplaintext" restores the old text/plain
+   -first behavior, e.g. for slow links or a plain-text preference. */
 const struct mimepart *mimepart_SelectAlternative(const struct mimepart *alt)
 {
-    const struct mimepart *c, *html = NULL;
+    const struct mimepart *c, *html = NULL, *plain = NULL;
 
     for (c = alt->children; c; c = c->next) {
-        if (strcasecmp(c->type, "text/plain") == 0) return c;
+        if (!plain && strcasecmp(c->type, "text/plain") == 0) plain = c;
         if (!html && strcasecmp(c->type, "text/html") == 0) html = c;
     }
-    if (html) return html;
+    if (getprofileswitch("ams.preferplaintext", 0)) {
+        if (plain) return plain;
+        if (html) return html;
+    } else {
+        if (html) return html;
+        if (plain) return plain;
+    }
     return alt->children;
 }
 
