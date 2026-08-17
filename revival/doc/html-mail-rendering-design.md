@@ -39,8 +39,9 @@ scoped than to a browser engine.
 2. **Plain-text renderer** — walks the tree, emits text. Used
    unconditionally by `cui`; used by `text822.c` as the fallback path
    (see Fallback strategy below).
-3. **ATK-styled renderer** — walks the tree, builds ATK text/table/
-   image insets. `text822.c`'s primary path.
+3. **ATK-styled renderer** — walks the tree, builds ATK text/`lset`/
+   image insets (`lset`, not `table` — see Table strategy below for
+   why). `text822.c`'s primary path.
 4. *Optional, later* — retarget `htmlview`'s standalone viewer onto
    the same parser+ATK-renderer.
 
@@ -134,55 +135,231 @@ through the ordinary `image` object path, same as any other image
 insertion in ATK; this project doesn't need its own size gate for
 that.
 
-## Table strategy: Andrew's `table` object, not text-flow unpacking
+## Table strategy: `lset`/`lpair`, not `table`/`spread`
 
-Confirmed `src/atk/table/table.ch` is a real grid dataobject — rows/
-columns, a `struct cell` per position that can hold text, a value, or
-**an embedded dataobject** (`table_ImbeddedObject`, via the `Imbed()`
-method), plus per-edge boundary colors including `JOINED` for merged
-cells. Its view is `spread` (`src/atk/table/spread.ch`), a standard
-dataobject/view pair — embeddable as an inset like any other ATK
-object, not a special case.
+### Superseded: the original `table`/`spread` plan
 
-This is a much better target than unpacking `<table>` into flowed
-text: HTML `<table>`/`<tr>`/`<td>` maps onto it directly —
-- `<table>` → `table_New` + `table_ChangeSize(rows, cols)`.
-- `<td>`/`<th>` cell content → `table_ImbeddedObject` holding a fresh
-  `text` dataobject, for any cell with real content, with the same
-  HTML-to-ATK renderer (`htmlatk_Render()`) called recursively on the
-  cell's children into that object — **not** a dispatch between
-  `table_TextCell` for "text-only" cells and `table_ImbeddedObject` for
-  a cell containing an `<img>`/nested `<table>`, which is what an
-  earlier implementation did and a design review (grounded in real ATK
-  precedent, see below) found to be a real mis-architecture: a table
-  cell's content is an arbitrary nested document — rich text that can
-  itself contain embedded objects — not a scalar choice between two
-  cell kinds. `PAPERS/atk/Sherman.Alloc` lines 663–1066 is a genuine
-  `table` object datastream dump whose cells are each a full
-  `\begindata{text,...}\enddata{text,...}` datastream; the cell at
-  line 675 contains prose, then an embedded `calc` spreadsheet inline
-  via `\view{calcv,...}`, then more prose after it, all inside that
-  one cell's own text object. A cell whose content happens to be
-  simple (line 668's cell is just a centered/bold heading) is still a
-  full `text` object in the real format, not a different
-  representation — there is no separate "plain" cell-content type to
-  special-case for. Nesting (a `<table>` inside a `<td>`, an `<img>`
-  inside prose inside a `<td>`, any mix) falls out for free once cell
-  content is genuinely just another `htmlatk_Render()` call: nesting
-  is allowed structurally since a cell can embed any dataobject, and
-  there's no depth limit imposed here either, same reasoning as above.
-  A cell with no content at all (no children, or only whitespace text)
-  is the one deliberate exception: it is left as `table_EmptyCell`
-  (every freshly-grown cell's own default, see `table__ChangeSize` in
-  `src/atk/table/table.c`) rather than paying for an empty `text`
-  dataobject.
-- `colspan`/`rowspan` → `SetInterior`/boundary colors set to `JOINED`
-  across the spanned chunk, per the existing `IsJoinedAbove`/
-  `IsJoinedToLeft` macros.
-- `border="0"` (extremely common in email templates, used purely for
-  layout not visible grid lines) → boundary color `GHOST` or
-  `SUPPRESSED` rather than `BLACK`, so layout-only tables don't render
-  a visible grid nobody wants to see.
+The original plan here (kept below for the record, not because it's
+current) targeted `src/atk/table/table.ch` — a real grid dataobject
+with `struct cell` positions holding text, a value, or an embedded
+dataobject (`table_ImbeddedObject`), plus per-edge boundary colors
+including `JOINED` for merged cells, viewed via `spread`
+(`src/atk/table/spread.ch`). It mapped HTML fairly directly: `<table>`
+→ `table_New`+`table_ChangeSize`, each real cell → a fresh `text`
+dataobject via `table_ImbeddedObject` (not a scalar text/object
+dispatch — real `table` datastreams like `PAPERS/atk/Sherman.Alloc`
+lines 663–1066 confirm a cell's content is always a full nested `text`
+document, mixed prose and embedded objects together, not a choice
+between two cell kinds), `colspan`/`rowspan` → `JOINED` boundary
+colors, `border="0"` → `GHOST`/`SUPPRESSED` boundary color instead of
+`BLACK`.
+
+This was built (Stage 3, Gates 1–5) and worked, but was **rejected and
+replaced with `lset`/`lpair`** once real live testing (`revival/doc/
+lset-table-reflow-*` reports) exposed the actual problem: `spread`'s
+`DesiredSize` (`spread.c:290–311`) is a fixed-pixel grid that never
+recomputes on resize — no `Reshape`/`SetSize`/`ObservedResized` path
+touches it at all. Real HTML tables need to reflow (wrap text, resize
+columns) as the window resizes; `table`/`spread` simply can't, by
+design — it's built for the same "already-sized interactive spreadsheet
+pane" use case `lpair`'s own fixed-pixel sizeforms serve (see
+`src/contrib/mit/neos/eosaux.c` for a real app using `lpair` exactly
+that way). `lset`/`lpair` (`src/atk/adew/lset.ch`, `src/atk/
+supportviews/lpair.ch`) is percentage-based instead —
+`objcvt[i] = objsize[i]*totalsize/100`, recomputed on every real
+`DesiredSize` call (`lpair.c:385`) — genuinely resize-aware, which
+`table`/`spread` structurally is not. `border`/`GHOST`/`SUPPRESSED`
+boundary-color handling has no `lset` equivalent (see "Known
+imperfections" below) — that capability was lost in the switch, not
+carried forward.
+
+### Current approach: one `lset` tree per row, inserted into the
+### surrounding text's own line flow
+
+Each HTML table row becomes its own `lset` — a binary split tree
+(`lset` is strictly binary: `left`/`right` only, so an N-cell row is
+N−1 nested horizontal splits) whose leaves are the cells' own `text`
+dataobjects, built via the same `htmlatk_Render()` recursion used
+everywhere else in this renderer (so nested tables, images, and mixed
+content inside a cell all just work, no special-casing). `colspan`
+gets a proportionally larger split weight in its own row's chain
+(`LsetChainPctWeighted`) rather than any merged-cell representation
+(`lpair` can't represent a genuine merged cell — it's a guillotine
+split tree); cross-row column alignment for a colspan header over a
+plain data row is preserved by expressing every row's weights as
+fractions of one shared `TableColumnCount`, not each row's own local
+cell count.
+
+**Rows are deliberately NOT stacked via a second `lset`/`lpair` split
+layer.** An earlier version of this renderer did that, and it's wrong
+for the same reason `table`/`spread` was rejected: `lpair`'s
+`HORIZONTAL` (stacking) branch never sums its children's real heights,
+only echoes back whatever height it was given — fine for `lset`'s
+original fixed-window-pane design target, wrong for content that needs
+to report its own real height. Instead, `RenderTableAsLset` inserts
+each row as its own view directly into the enclosing `text`'s own line
+flow — the exact mechanism this renderer already uses for every other
+block (paragraphs, images) — and relies on `lsetview`'s own
+`DesiredSize` (added to core ATK by this project, see below) to report
+each row's real height correctly within that flow.
+
+**Two core ATK toolkit gaps, not specific to this renderer, found and
+fixed along the way** (both in `src/atk/adew/lsetv.c`/`.ch`, additive,
+no existing `lset` behavior changed): `lsetview` had no `DesiredSize`
+override at all — a leaf inherited `lpair`'s generic fallback, which
+never consults `self->child`'s real content size, so it always echoed
+back whatever it was asked for. Fixed by forwarding to `self->child`
+for leaves (modeled on the sibling `celview` class's already-working
+equivalent), falling through to `lpair`'s existing split-node behavior
+unchanged. Similarly, `lsetview_WantNewSize` only handled local redraw
+and never escalated to the parent the way `view__WantNewSize`/
+`celview__WantNewSize` do — fixed with the same `super_WantNewSize`
+escalation pattern (debounced against a real re-triggering loop
+observed live). Neither gap was `lset`'s fault exactly — nothing in
+this codebase had ever needed a resizable, content-driven `lset` leaf
+embedded inline in flowing text before; `eosaux.c`'s real usage
+confirms every other caller uses `lpair` for fixed-size UI chrome,
+which never exercised this path.
+
+### Peeling: eliminating superfluous wrapper tables/cells
+
+Real marketing HTML almost universally wraps its *entire* body in an
+outer single-row, single-cell `<table>` shell (the "bulletproof
+layout" pattern, for cross-email-client compatibility), with the real
+content nested one or more tables deep inside that one cell — often
+several layers of this, each one alone doing nothing but reproducing
+the same shell. Built literally, this collapses the whole visible
+message into a tiny handful of `lset` objects sitting behind just one
+or two character positions in the top-level document (confirmed live,
+National Grid fixture, 2026-08-16: the entire ~2000+ pixel-tall body
+ended up as ONE embedded view at one single character position out of
+68 in the whole document).
+
+That disproportion isn't just wasteful nesting — it actively breaks
+things, because ATK's own scrollbar model (`textview`'s `getinfo()`,
+`textv.c`) sizes the elevator/thumb from **character count**
+(`total->end = text_GetLength(...) << FINESCROLL`), with no pixel-height
+term anywhere in it. That assumption — character position is roughly
+proportional to vertical space — holds for ordinary typed text (every
+character contributes a small, bounded sliver of height) and breaks
+down completely the moment one character position *is* an embedded
+view worth thousands of pixels: the elevator reports "nearly the whole
+document visible" when almost none of it, pixel-wise, actually is.
+Narrower windows make it worse (more text-wrapping inside the one
+oversized view, making it even taller), which is why the practical
+symptom was "can't reach a lot of real content via `^V` no matter how
+many presses, unless the window is made much wider."
+
+Fixed with two complementary checks in `htmlatk.c`, both applied via
+the same iterative walk used for everything else (so chains of nested
+wrappers collapse all the way down, not just one level):
+- `TableIsTrivialWrapper`: a `<table>` with exactly one real row and
+  one real cell is pure structural boilerplate — inline its cell's
+  children directly, no `lset` built for it at all.
+- `BuildLsetGrid`'s own row loop: a `<tr>` with exactly one real cell
+  whose sole content is itself a nested `<table>` (per
+  `NodeIsSoleNestedTable`) has that inner table's rows spliced in
+  directly — each inner table rebuilt **recursively and
+  independently**, with its own separately-computed
+  `TableColumnCount`/column alignment, not flattened into one raw row
+  list and re-padded against the *outer* table's column count. That
+  distinction mattered in practice: an earlier version of this fix did
+  the naive flatten-then-pad, and a single genuinely 2-column row
+  elsewhere in the same wrapper (a footer logo-plus-social-icons row)
+  pushed the whole table's column count to 2, so every other,
+  genuinely single-column spliced-in row got padded with a spurious
+  empty 50% filler — visually squishing real content into the left
+  half of the window, inconsistently across window widths. Keeping
+  each nested table's column scope fully self-contained (via real
+  recursion, not list-splicing before the fact) fixed that.
+
+A third, related bug surfaced and got fixed in core ATK itself while
+chasing this: `BackSpace` (`textv.c`), used by `^V`/`^B`'s "get line
+aligned" step, pads the last line's matched span by one phantom
+character so that `pos == textLength` always matches *some* line when
+the document has no trailing newline. That padding also made it think
+a position exactly at the true end of the document was still *inside*
+the previous (very tall) line, snapping the scroll position back to
+that line's start on literally every keystroke — an infinite loop
+through the same content, confirmed via live instrumented tracing.
+Narrow ordinary text essentially never has a single line taller than
+one screen, so this had presumably been a dormant bug in ATK for
+decades; a document with one or more disproportionately tall embedded
+views (exactly what an unpeeled wrapper table produces) is the first
+thing to reliably trigger it. Fixed narrowly (only the specific
+boundary case, not the general "snap to line start" behavior every
+other caller relies on) rather than removing the padding outright,
+since other callers depend on `pos == textLength` always matching some
+line to avoid a different failure.
+
+A fourth bug, also `htmlatk.c`-local, surfaced from live testing after
+the peeling fixes above landed: `BuildLsetGrid`'s blank-row coalescing
+only dropped a blank `<tr>` when the row immediately before it was
+*also* blank, on the theory that an isolated blank row was ordinary,
+intentional spacing worth preserving. Real templates that alternate
+one blank spacer row with every single content row (confirmed live,
+National Grid) defeated that theory completely — every isolated blank
+row fell straight through as its own real, empty `lset`, found by
+careful mouseover boundary-hunting in the rendered view ("a blank line
+between every lset") and confirmed structurally via
+`htmlatktest.test roundtrip`. Fixed by dropping every blank row
+unconditionally, isolated or not — there was never a real fidelity
+trade-off here (this renderer can't represent a spacer's actual
+intended height anyway; an 8px CSS spacer and a full blank text line
+render identically), just an oversight in the original coalescing
+logic.
+
+### Known imperfections, and why this is still the right call
+
+This is **not** a general HTML reflow engine, and peeling is a
+heuristic, not a principled fix — it recognizes two very specific,
+extremely common real-world wrapper shapes (whole-table 1×1, and
+row-level "sole cell wraps a table") and collapses them. Real HTML
+wrapper patterns this doesn't catch (a 1-row wrapper with incidental
+whitespace-only sibling cells that don't quite match the exact
+node-shape checked, for instance) will still under-peel and reproduce
+some version of the same disproportion, just less severely. `lset` has
+no notion of a transparent/no-op grouping container the way a real box
+model does — every non-empty node in the tree costs a real `lset`+
+`lpair` object, so "peeling" is fundamentally working around a
+structural mismatch rather than resolving it. It's kept anyway because
+the alternative (leaving wrapper tables in place) is worse in a way
+that's directly visible to the user (the scrollbar/reachability
+breakage above) — this is the best fit available within `lset`/
+`lpair`'s actual capabilities, not a claim that it's correct HTML
+rendering.
+
+Two capabilities `table`/`spread` had that `lset` genuinely doesn't,
+not recovered by this switch: **no border/background rendering at
+all** (`table`/`spread`'s `JOINED`/`GHOST`/`SUPPRESSED` boundary-color
+model has no `lset` equivalent), and **every `lset` split renders a
+visible thin resize-divider/grab bar** between its two sides —
+`lsetv.c`'s `initkids()` hardcodes `moveable=TRUE` on every split with
+no data-level way to suppress it, and `lset.ch`'s data section has no
+such field to add one cheaply. A genuine invisible CSS layout table
+(the overwhelmingly common real-world case — `border="0"`, used purely
+for alignment) will show these divider bars where a browser would show
+nothing. Both are accepted, known gaps, not fixed here.
+
+The scrollbar-elevator inaccuracy itself (`getinfo()`'s character-count
+model) is *mitigated*, not fixed, by peeling — spreading real content
+across many more character positions makes the character-count proxy
+for "position in the document" roughly accurate again, but the
+underlying assumption is still there and could still mislead for any
+single remaining embedded view disproportionately taller than its
+neighbors. A properly pixel-aware elevator would mean changing
+`getinfo()`/`position()` in core `textv.c` to weight by real per-line
+height — shared scrollbar code used by every ATK application, a much
+bigger and riskier change than anything in this renderer, and out of
+scope here.
+
+Separately, a related-looking but distinct scrollbar bug: clicking a
+scrollbar endzone to jump to the end of the document produces a
+deterministic 3-click cycle rather than settling on the true end, even
+after every fix above. Root cause is in core ATK's `endzone()`/
+`setframe()` (`textv.c`), not this renderer, and not specific to HTML
+mail — see `revival/doc/revival.md`'s "Open issues" for the full
+writeup. Deliberately left unfixed for now.
 
 **Degradation, not failure:** email templates nest tables deeply for
 Outlook-compatibility hacks — the fixture corpus's real max is 28
@@ -190,7 +367,7 @@ levels (see `revival/tests/html-fixtures/README.md`), and that's
 rendered correctly, not flattened. Degradation to sequential
 paragraph text is still the right response to a genuine parse
 failure partway through a table (a malformed/unclosed structure the
-parser can't make sense of), just not to depth alone.
+parser can't make sense of), just not to depth or nesting alone.
 
 ## Images: the `image` inset, capability-checked
 

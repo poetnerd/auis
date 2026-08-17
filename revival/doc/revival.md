@@ -805,6 +805,32 @@ upstream fix.
   untouched by any declaration or typing fix — and predates this project;
   nobody has reported metamail working here at any point. Root cause
   identified; not yet fixed.
+- **Clicking a scrollbar endzone fires two chained scroll operations,
+  not one.** Found while chasing an HTML-mail-rendering report of
+  "scrolling to end of document is non-deterministic" (see
+  `html-mail-rendering-design.md`). `textview`'s `endzone()`
+  (`src/atk/text/textv.c`) handles a discrete click and a held-down
+  auto-repeat click with the same code path: every invocation checks
+  `action == view_LeftDown` for the "jump straight to the requested
+  spot" behavior, but *also*, unconditionally, appears to receive a
+  second, immediately-following event (observed live as `action=2`)
+  that pages forward by one more line using `self->lines[1]` —
+  whatever line happened to be second-from-top after the first jump
+  landed. For a single tap this is unintended: it silently compounds
+  two different scroll intents into one click, and the second step's
+  landing position depends on transient redraw state left over from
+  the first, not on where the user clicked. Confirmed live and via
+  targeted logging in `setframe()`/`endzone()`: clicking the same
+  bottom-endzone spot repeatedly cycles through exactly three distinct
+  results in a fixed order (rather than settling once), and one of the
+  three involves `setframe` computing a negative pixel offset
+  (`off=-81`) it was never designed to hand to `SetTopOffTop`. Root
+  cause identified (the two scroll operations should not both fire for
+  a discrete click); not yet fixed — a real fix needs to determine
+  whether ATK's scrollbar widget is meant to distinguish a tap from a
+  held-down repeat at the event level, or whether `endzone()` itself
+  needs to debounce/coalesce. General ATK scrollbar-click behavior, not
+  specific to HTML mail rendering.
 
 ## Further reading
 
