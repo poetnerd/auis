@@ -107,6 +107,16 @@ posture, and worth stating outright rather than defaulting to "just
 `popen` a fetch," which every image in every marketing email would
 trigger silently otherwise. `cid:` (inline MIME-attached images,
 already decoded by `mimepart.c`) are not "remote" and always render.
+**Status:** this policy is decided but not implemented — today,
+`htmlatk_Render()`'s resolver argument is always `NULL` (`text822.c`),
+so no image, remote or `cid:`, is ever actually resolved to real
+bytes; every `<img>` renders its text placeholder unconditionally.
+Two separate prerequisites, not one: (a) `cid:` resolution needs a
+Content-ID lookup `mimepart.c` doesn't parse or expose at all yet (it
+only tracks Content-Type/Content-Disposition) — that's the more
+foundational gap, since even opt-in remote fetching is only half the
+picture without it; (b) the remote-fetch opt-in setting itself doesn't
+exist anywhere yet. See Planned next work below.
 
 **No fixed size caps.** Earlier drafts of this doc proposed hard
 size/depth thresholds (reject-and-fall-back beyond ~2MB of markup, a
@@ -443,6 +453,60 @@ anchor-detection code, which today only echoes the URL to the message
 line — this wires the same detection to an actual action). Scheme is
 already restricted to `http`/`https`/`mailto` by the sanitization
 pass, so nothing unexpected reaches `popen`.
+
+**Status: half-built.** The style-application half of this landed in
+Stage 3 (every `<a href>` run does get the underlined link style), and
+`htmlatk_LinkAt()`/`htmlatk_LaunchURL()` (`htmlatk.c`) exist and work —
+confirmed via `htmlatktest.test linkat`. But the `Hit()`-override half
+was never actually written: grepping the live `messages`/`text822.c`
+path (2026-08-17) turned up zero callers of either function outside
+the offline test tool. Clicking a link in a real rendered message
+today does nothing. See Planned next work below.
+
+## Planned next work
+
+Three gaps found live against the real National Grid message
+(2026-08-17), agreed sequencing below — unlike Open questions further
+down, these aren't undecided, just not yet done.
+
+1. **Smart punctuation renders as `?`.** `mimepart_Utf8ToLatin1`
+   (`mimepart.c`, shared with plain-text mail bodies, not
+   HTML-specific) exactly converts any codepoint ≤ 0xFF and turns
+   anything above into a literal `?`, same policy `htmlpart.c`'s own
+   numeric-entity decoding follows (see its comment). That's correct
+   for genuine Latin-1 gaps (there is no Latin-1 byte for, say, CJK
+   text), but real marketing HTML is saturated with a small, common
+   set of Unicode punctuation just *above* Latin-1 that has an obvious
+   ASCII fallback — curly single/double quotes (U+2018/2019/201C/201D),
+   en/em dash (U+2013/2014), ellipsis (U+2026) — and today all of
+   those become `?` too, which is most of what actually produces the
+   "ton of question marks" in a typical message. ATK's `compchar.c`
+   compose feature was considered and doesn't apply here: it's a
+   *keyboard-input* helper (accent-key + letter → composed glyph while
+   typing), not a rendering fallback, and can't display a codepoint
+   with no Latin-1 slot regardless. Fix: map that specific small
+   codepoint set to sane ASCII in `mimepart_Utf8ToLatin1` itself
+   (benefits plain-text mail too), instead of the blanket `?`.
+2. **Link clicks don't do anything live.** See the Links section
+   above — the library half (`htmlatk_LinkAt`/`htmlatk_LaunchURL`) is
+   built and tested; the `Hit()`-override wiring into `messages`'s
+   actual message view was never written. Needs figuring out where
+   `text822.c`'s displayed content handles mouse clicks today (or
+   whether a wrapper view needs adding) before the override can go in.
+3. **Remote image fetching isn't implemented at all.** See the Images
+   section above — the anti-tracking-pixel opt-in *policy* was decided
+   at this doc's outset, but nothing resolves images yet, `cid:` or
+   remote (`text822.c` passes a `NULL` resolver unconditionally). Two
+   prerequisites stack here: `cid:` resolution needs Content-ID
+   parsing `mimepart.c` doesn't have, and only after that does the
+   remote-fetch opt-in setting itself (still undesigned — global vs.
+   per-message vs. per-sender, where it lives) become buildable.
+   Deliberately last: real user-facing privacy/security tradeoffs,
+   wants explicit sign-off on the setting's shape before writing code.
+
+Agreed order: (1) first — small, self-contained, no open design
+questions. (2) second — bigger, but nothing left to decide. (3) last —
+blocked on design decisions above, not on effort.
 
 ## Open questions
 
