@@ -411,6 +411,43 @@ int lsetview_Paste(struct lsetview *self)
 
 }
 
+/* Added 2026-08-16 (html branch, lset-table-reflow task): lsetview had
+   no DesiredSize override at all, so it inherited lpair's unmodified --
+   lpair__DesiredSize only ever looks at self->obj[0]/self->obj[1] (the
+   two split children of an INTERNAL split node); for a bare LEAF
+   lsetview (self->mode != lsetview_IsSplit, obj[0]/obj[1] both NULL,
+   the real content living in self->child instead), lpair's fallback
+   branch just echoes back whatever height/width it was asked for
+   (capped at a hardcoded 256px if the input exceeds 2048), never once
+   consulting self->child's real content size. That silently broke any
+   attempt to auto-size an lset leaf to its actual content (confirmed
+   live: a real HTML-table-as-lset render collapsed to a wall of empty
+   divider lines with real text data proven present but never
+   reflected in reported height -- see revival/doc/lset-table-reflow-
+   gate1/2-report.md and htmlatk.h's judgment-call log on the html
+   branch for the full investigation this fixes).
+
+   Modeled directly on celview__DesiredSize (celv.c), a sibling adew
+   class that already solves exactly this problem correctly: forward
+   straight to the real child view's own DesiredSize when this is a
+   leaf hosting real content, and only fall back to the inherited
+   split-partitioning behavior for genuine internal split nodes (or a
+   not-yet-linked/empty leaf with no child at all, where there is
+   nothing real to forward to). Unlike cel, lset has no desw/desh
+   fixed-size-override fields, so there's no "explicit pinned size"
+   case to check first -- if there's a real child, always defer to it.
+   This is purely additive: internal split nodes (self->mode ==
+   lsetview_IsSplit) are untouched, falling through to super_DesiredSize
+   (lpair's existing, already-correct percentage-split behavior)
+   exactly as before this change. */
+enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight)
+{
+    self->sizepending = FALSE; /* matches celview__DesiredSize's own reset -- a real query is happening now, so any pending WantNewSize escalation has been serviced. Without this, WantNewSize's debounce guard would latch TRUE forever after the first call and never escalate again. */
+    if (self->mode != lsetview_IsSplit && self->child)
+	return view_DesiredSize(self->child, width, height, pass, dWidth, dHeight);
+    return super_DesiredSize(self, width, height, pass, dWidth, dHeight);
+}
+
 void lsetview__Update(struct lsetview *self)
 {
  /*   lsetview_RestoreGraphicsState(self); */
@@ -644,6 +681,7 @@ boolean lsetview__InitializeObject(struct classheader *classID, struct lsetview 
     self->promptforparameters = 0;
     self->pdoc = NULL;
     self->level = 0;
+    self->sizepending = FALSE;
     DeleteMode = NULL;
     return TRUE;
 }
@@ -667,10 +705,44 @@ void lsetview__LinkTree(struct lsetview *self, struct view *parent)
 	view_LinkTree(self->child,self);
     if(self->mode == lsetview_NeedLink) dolink(self);
 }
+/* Added 2026-08-16, same session/investigation as the DesiredSize
+   override above: this only ever handled the "redraw myself" half of
+   a size-change notification (mode=UpdateView + a local WantUpdate),
+   never the "tell my parent to re-layout around me" half. view's own
+   base implementation (view__WantNewSize, view.c) climbs exactly one
+   level to self->parent when self==requestor; celview__WantNewSize
+   (celv.c) calls this via super_WantNewSize(self,self) in addition to
+   its own local bookkeeping. lsetview never made that call at all, so
+   an embedding container (e.g. a text object that reserved space for
+   this lset before its real content had linked/loaded) was never told
+   to re-ask once the real size became known -- confirmed live: text
+   content rendered correctly at its real size once this leaf's
+   DesiredSize fix landed, but the surrounding blank space reserved by
+   the embedding text object never shrank to match, and its scrollbar
+   (sized from the same stale reservation) didn't reflect true content
+   size either. Fix: escalate via the real WantNewSize chain too, not
+   just a same-level WantUpdate -- same shape as celview's fix for the
+   identical problem in a sibling class. */
 void lsetview__WantNewSize(struct lsetview *self, struct view *requestor)
 {
 	self->mode = lsetview_UpdateView;
 	lsetview_WantUpdate(self,self);
+	/* Debounced exactly like celview__WantNewSize (celv.c) -- omitting
+	   this guard on the first attempt at this fix caused a real,
+	   confirmed infinite loop: escalating unconditionally on every
+	   call let some downstream re-layout reaction re-trigger another
+	   WantNewSize before this one had even been serviced, observed
+	   live via lldb as lsetview__DesiredSize firing hundreds of times
+	   a second with identical width/height across a small rotating
+	   set of self pointers -- a resonant ping-pong, not real work.
+	   sizepending is reset to FALSE at the top of
+	   lsetview__DesiredSize (a real query happening now means
+	   whatever was pending has been serviced), so at most one
+	   escalation is ever in flight per leaf at a time. */
+	if (!self->sizepending) {
+	    super_WantNewSize(self,self);
+	    self->sizepending = TRUE;
+	}
 }
 boolean lsetview__InitializeClass(struct classheader *classID)
 {
