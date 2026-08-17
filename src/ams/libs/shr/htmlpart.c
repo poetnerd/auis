@@ -425,22 +425,39 @@ static int href_scheme_ok(const char *href)
 }
 
 /* Filters a raw (already entity-decoded) style="..." value down to the
-   fixed 5-property allowlist, canonicalized into that fixed order
-   (not source order), last-value-wins per property if declared more
-   than once. Returns NULL (nothing kept) rather than an empty string
-   if no allowed property was present. */
-static const char * const hp_style_props[5] = {
-    "color", "background-color", "font-weight", "font-style", "text-decoration"
+   fixed property allowlist, canonicalized into that fixed order (not
+   source order), last-value-wins per property if declared more than
+   once. Returns NULL (nothing kept) rather than an empty string if no
+   allowed property was present.
+
+   `display`/`visibility` were added 2026-08-16, alongside the
+   original 5 cosmetic properties -- not for cosmetic effect (neither
+   renderer does CSS layout) but so `htmlatk_Render`/`htmltext_ToText`
+   can detect and skip `display:none`/`visibility:hidden` content
+   entirely. This matters more than it might look: the "hidden
+   preheader" trick -- `<div style="display:none">short summary text
+   for the inbox preview line</div>` -- is an industry-standard pattern
+   in essentially every commercial marketing email, and was previously
+   rendering as ordinary visible body text (confirmed live, National
+   Grid fixture, 2026-08-16: "We have helpful resources to help manage
+   energy costs" at the very top of the rendered body is that exact
+   hidden div's text, with no visible counterpart anywhere else in the
+   source). Without these two properties surviving the allowlist, a
+   renderer has no way to know a node was ever marked hidden in the
+   first place. */
+static const char * const hp_style_props[7] = {
+    "color", "background-color", "font-weight", "font-style", "text-decoration",
+    "display", "visibility"
 };
 
 static char *filter_style(const char *raw)
 {
-    char *vals[5];
+    char *vals[7];
     int i;
     const char *p = raw;
     struct hpbuf_s out;
 
-    for (i = 0; i < 5; ++i) vals[i] = NULL;
+    for (i = 0; i < 7; ++i) vals[i] = NULL;
 
     while (*p) {
         const char *propstart, *propend, *valstart, *valend;
@@ -462,7 +479,7 @@ static char *filter_style(const char *raw)
             valend = p;
             while (valend > valstart && isspace((unsigned char) valend[-1])) --valend;
 
-            for (i = 0; i < 5; ++i) {
+            for (i = 0; i < 7; ++i) {
                 if ((long) strlen(hp_style_props[i]) == proplen
                     && strncasecmp(hp_style_props[i], propstart, (size_t) proplen) == 0) {
                     free(vals[i]);
@@ -479,7 +496,7 @@ static char *filter_style(const char *raw)
     }
 
     hpbuf_init(&out);
-    for (i = 0; i < 5; ++i) {
+    for (i = 0; i < 7; ++i) {
         if (vals[i]) {
             if (out.len > 0) hpbuf_putc(&out, ';');
             hpbuf_puts(&out, hp_style_props[i]);

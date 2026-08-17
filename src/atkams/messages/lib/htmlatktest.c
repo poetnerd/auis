@@ -89,6 +89,7 @@
 #include <envrment.ih>
 #include <style.ih>
 #include <table.ih>
+#include <lset.ih>
 #include <dataobj.ih>
 #include <viewref.ih>
 #include <observe.ih>
@@ -290,6 +291,54 @@ static void DumpStyledText(struct text *t)
    mixed content actually landed -- not an adequate proof this fix
    works. */
 static void DumpCellTextContent(struct text *t, int indent);
+static void DumpTableCell(struct table *T, int r, int c);
+
+/* Dumps an lset tree (the new lset-table-reflow path's own root/leaf
+   objects, htmlatk.c's BuildLsetGrid/RenderTableAsLset) -- mutually
+   recursive with DumpTableCell/DumpCellTextContent above/below, since
+   any of the three object shapes (table cell, cell's "text" content,
+   lset leaf) can nest inside any other: a table-path cell's text can
+   contain a nested <table> that itself has no colspan/rowspan and so
+   routes to the lset path (an "lset" dataobject embedded inside a
+   table cell's own "text" object), and symmetrically an lset leaf's
+   "text" content can contain a nested <table> that DOES have spans and
+   so routes back to the old table/spread path. Printed type/pct/
+   viewname fields are exactly lset's own public struct fields (see
+   src/atk/adew/lset.ch's data: section) -- this dump does not
+   reimplement any lset/lpair layout math itself, just reads back what
+   htmlatk.c's construction wrote, the same "prove the real object
+   shape, not a parallel model of it" spirit DumpTableCell already
+   uses for table cells. */
+static void DumpLsetTree(struct lset *ls, int indent)
+{
+    if (!ls) { printf("%*s(null)\n", indent, ""); return; }
+    printf("%*sLSET type=%d pct=%d", indent, "", ls->type, ls->pct);
+    if (ls->left || ls->right) {
+        printf(" (split)\n");
+        printf("%*sLEFT:\n", indent + 2, "");
+        DumpLsetTree((struct lset *) ls->left, indent + 4);
+        printf("%*sRIGHT:\n", indent + 2, "");
+        DumpLsetTree((struct lset *) ls->right, indent + 4);
+        return;
+    }
+    if (!ls->dobj) { printf(" LEAF (empty)\n"); return; }
+    printf(" LEAF class=%s viewname=%s\n", class_GetTypeName(ls->dobj), ls->viewname);
+    if (strcmp(class_GetTypeName(ls->dobj), "text") == 0) {
+        struct text *ct = (struct text *) ls->dobj;
+        printf("%*sCELL-TEXT-CONTENT len=%ld\n", indent + 2, "", text_GetLength(ct));
+        DumpCellTextContent(ct, indent + 4);
+    } else if (strcmp(class_GetTypeName(ls->dobj), "table") == 0) {
+        struct table *T = (struct table *) ls->dobj;
+        int r, c;
+        printf("%*sNESTED-TABLE %dx%d\n", indent + 2, "", table_NumberOfRows(T), table_NumberOfColumns(T));
+        for (r = 0; r < table_NumberOfRows(T); ++r)
+            for (c = 0; c < table_NumberOfColumns(T); ++c)
+                DumpTableCell(T, r, c);
+    } else if (strcmp(class_GetTypeName(ls->dobj), "lset") == 0) {
+        printf("%*sNESTED-LSET\n", indent + 2, "");
+        DumpLsetTree((struct lset *) ls->dobj, indent + 4);
+    }
+}
 
 static void DumpTableCell(struct table *T, int r, int c)
 {
@@ -326,6 +375,14 @@ static void DumpTableCell(struct table *T, int r, int c)
                 struct text *ct = (struct text *) cell->interior.ImbeddedObject.data;
                 printf("    CELL-TEXT-CONTENT len=%ld\n", text_GetLength(ct));
                 DumpCellTextContent(ct, 4);
+            } else if (cell->interior.ImbeddedObject.data
+                && strcmp(class_GetTypeName(cell->interior.ImbeddedObject.data), "lset") == 0) {
+                /* A nested <table> inside this (table-path) cell had no
+                   colspan/rowspan of its own, so htmlatk.c's routing
+                   put it on the new lset path -- see DumpLsetTree's own
+                   comment on why both nesting directions are real. */
+                printf("    NESTED-LSET\n");
+                DumpLsetTree((struct lset *) cell->interior.ImbeddedObject.data, 4);
             }
             break;
     }
@@ -382,6 +439,9 @@ static void DumpCellTextContent(struct text *t, int indent)
                 for (r = 0; r < table_NumberOfRows(T); ++r)
                     for (c = 0; c < table_NumberOfColumns(T); ++c)
                         DumpTableCell(T, r, c);
+            } else if (dob && strcmp(class_GetTypeName(dob), "lset") == 0) {
+                printf("%*sNESTED-LSET\n", indent + 2, "");
+                DumpLsetTree((struct lset *) dob, indent + 4);
             }
         }
     }
@@ -450,6 +510,9 @@ static int do_dump(const char *fixture, htmlatk_ImageResolver resolver)
                     for (r = 0; r < table_NumberOfRows(T); ++r)
                         for (c = 0; c < table_NumberOfColumns(T); ++c)
                             DumpTableCell(T, r, c);
+                } else if (dob && strcmp(class_GetTypeName(dob), "lset") == 0) {
+                    printf("LSET-AT[%ld]\n", i);
+                    DumpLsetTree((struct lset *) dob, 2);
                 }
             }
         }
@@ -563,9 +626,20 @@ static int do_roundtrip(const char *dsfile)
                     for (r = 0; r < table_NumberOfRows(T); ++r)
                         for (c = 0; c < table_NumberOfColumns(T); ++c)
                             DumpTableCell(T, r, c);
+                } else if (dob && strcmp(class_GetTypeName(dob), "lset") == 0) {
+                    printf("LSET-AT[%ld]\n", i);
+                    DumpLsetTree((struct lset *) dob, 2);
                 }
             }
         }
+    } else if (strcmp(objectName, "lset") == 0) {
+        /* A datastream whose top-level object is itself an lset tree
+           (e.g. a file extracted/hand-crafted the way Gate 1's probe
+           wrote one directly, rather than one produced by this
+           driver's own "writeds", which always wraps content in a
+           "text" root -- see the branch above) -- dump it the same
+           way a nested one gets dumped. */
+        DumpLsetTree((struct lset *) obj, 0);
     }
 
     return 0;
