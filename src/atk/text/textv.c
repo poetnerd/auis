@@ -1787,7 +1787,7 @@ static long BackSpace(struct textview *self, long pos, long units, enum textview
     long pseudo[MAXPARA];
     struct text *text = Text(self);
     long textLength = text_GetLength(text);
-    long pp, vxs, vys, length;
+    long pp, vxs, vys, length, realLength;
     long totalHeight, height, accumHeight, numLines;
     long pseudoLines;
     long plines;
@@ -1862,6 +1862,7 @@ static long BackSpace(struct textview *self, long pos, long units, enum textview
 	    height = textview_LineRedraw(self, textview_GetHeight, tm, 0, 0, vxs, vys, 0, NULL, NULL, &info);
 	    
 	    length = info.lineLength;
+            realLength = length;
             plines = PLines(height);
 
 	    /* handle stopping prematurely at end of file, instead of at a newline */
@@ -1872,6 +1873,40 @@ static long BackSpace(struct textview *self, long pos, long units, enum textview
 
 		if (type == textview_MoveByLines) {
 		    if (units <= px)  {
+			long target = lastn[px-units];
+			/* pos sitting exactly at tp+realLength (one past
+			   this line's REAL content) only matched this line
+			   at all because of the length++ padding just
+			   above -- it isn't genuinely inside the line, it's
+			   at true end-of-file. That padding is needed so
+			   pos==textLength always matches *some* line (or
+			   this whole scan can fail to terminate cleanly),
+			   but blindly snapping such a pos back to tp (this
+			   line's start) is wrong for a units==0 "just
+			   realign, don't actually move" caller -- textv.c's
+			   NextScreenCmd/PrevScreenCmd (txtvcmv.c) use
+			   exactly that units==0 call to keep the top
+			   position line-aligned before each page. Normally
+			   harmless (real lines are short), but when the
+			   document's very last line is a single embedded
+			   view taller than one screen -- routine for our
+			   lset-based HTML table rows, rare for hand-typed
+			   text -- this silently undid legitimate forward
+			   scroll progress: MoveForward correctly finishes
+			   climbing across the tall view and reaches
+			   pos==textLength, then the very next keystroke's
+			   align step snapped straight back to the view's
+			   start, discarding the accumulated
+			   pixelsReadyToBeOffTop and restarting the climb --
+			   an infinite loop through the same content.
+			   Confirmed live via instrumented tracing,
+			   2026-08-16 (project memory has the trace). Fix:
+			   only for this exact boundary case, treat pos as
+			   already aligned (return it unchanged) instead of
+			   snapping to tp. */
+			if (units == 0 && pos == tp + realLength) {
+			    target = pos;
+			}
 			mark_Destroy(tm);
 			if (distMoved) {
 			    *distMoved = accumHeight + totalHeight - posn[px-units];
@@ -1879,7 +1914,7 @@ static long BackSpace(struct textview *self, long pos, long units, enum textview
 			if (linesAdded) {
 			    *linesAdded = numLines - (px - units);
                         }
-			return lastn[px-units];
+			return target;
 		    }
 		    else break;
                 }
@@ -2362,7 +2397,7 @@ static void setframe(struct textview *self, long position, long numerator, long 
 static void endzone(struct textview *self, int end, enum view_MouseAction action)
 {
     if(action != view_LeftDown && action != view_RightDown) return;
-    
+
     if (action == view_LeftDown &&
          (end == scroll_TOPENDZONE || end == scroll_BOTTOMENDZONE)) {
 	    if (end == scroll_TOPENDZONE)
