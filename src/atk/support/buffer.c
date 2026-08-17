@@ -73,6 +73,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <bufferlist.ih>
 
 #include <buffer.eh>
+#include "crlffilter.h"
 static int ResolveLink(char *linkname, char *buffer);
 
 #ifndef MAXPATHLEN 
@@ -402,7 +403,7 @@ int buffer__ReadFile(struct buffer *self, char *filename)
     if (stat(filename, &stbuf) < 0 || (stbuf.st_mode & S_IFMT) == S_IFDIR)
         return -1;
 
-    if ((thisFile = fopen(filename, "r")) == NULL)
+    if ((thisFile = crlffilter_fopen(filename)) == NULL)
             return -1;
 
     self->lastTouchDate = (long) stbuf.st_mtime;

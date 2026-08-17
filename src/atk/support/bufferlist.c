@@ -50,8 +50,9 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <buffer.ih>
 
 #include <bufferlist.eh>
+#include "crlffilter.h"
 
-#ifndef MAXPATHLEN 
+#ifndef MAXPATHLEN
 #include <sys/param.h>
 #endif
 #define DEFAULTOBJECT "text"
@@ -325,7 +326,7 @@ struct buffer * bufferlist__GetBufferOnFile(struct bufferlist *self, char *filen
 	    if ((thisBuffer = bufferlist_FindBufferByFile(self, filename)) != NULL)
 		return thisBuffer;
 
-	if ((thisFile = fopen(filename, "r")) == NULL) {
+	if ((thisFile = crlffilter_fopen(filename)) == NULL) {
 	    if (access(filename, W_OK) < 0) {
 		char *slash;
 		if (errno != ENOENT)
