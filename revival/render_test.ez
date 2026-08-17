@@ -1,86 +1,86 @@
-\begindata{text,4317437504}
+\begindata{text,4316894016}
 \textdsversion{12}
 [image] 
  \
-\begindata{lset,51111826432}
+\begindata{lset,4316908192}
 \V 1
-\begindata{text,4317451360}
+\begindata{text,4316908448}
 \textdsversion{12}
 [image: Stay Coll and connected. Hot summer days are here, enjoy it while 
 you can. We have programs and services to help you manage your energy use, 
 payments and account with ease.]\
-\enddata{text,4317451360}
-0 0 0 4317451360 0 0 0
+\enddata{text,4316908448}
+0 0 0 4316908448 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111826432}
-\view{lsetview,51111826432,5,0,0}
+\enddata{lset,4316908192}
+\view{lsetview,4316908192,5,0,0}
 
-\begindata{lset,51111826944}
+\begindata{lset,4316919680}
 \V 1
-\begindata{text,4317424976}
+\begindata{text,4316884576}
 \textdsversion{12}
 \htmlatk-link{[image: Take the Guesswork Out of Monthly Bills Receive more 
 predictable monthly bills with the Budget Plan. By spreading costs evenly 
 throughout the year, you can count on more consistent monthly payments that 
 are easier to manage.]\
-}\enddata{text,4317424976}
-0 0 0 4317424976 0 0 0
+}\enddata{text,4316884576}
+0 0 0 4316884576 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111826944}
-\view{lsetview,51111826944,6,0,0}
-\begindata{lset,51111827200}
+\enddata{lset,4316919680}
+\view{lsetview,4316919680,6,0,0}
+\begindata{lset,4316923808}
 \V 1
-\begindata{text,4317425792}
+\begindata{text,4316924640}
 \textdsversion{12}
 \htmlatk-link{[image: Payment Plans Can Help Payment plans can help you get 
 back on track if you've fallen behind on your bill. Visit the Financial 
 Support section of MyAccount to explore available payment plans and enroll 
 if your account is eligible.]\
-}\enddata{text,4317425792}
-0 0 0 4317425792 0 0 0
+}\enddata{text,4316924640}
+0 0 0 4316924640 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111827200}
-\view{lsetview,51111827200,7,0,0}
-\begindata{lset,51111827456}
+\enddata{lset,4316923808}
+\view{lsetview,4316923808,7,0,0}
+\begindata{lset,4316925664}
 \V 1
-\begindata{text,4317469920}
+\begindata{text,4316926496}
 \textdsversion{12}
 \htmlatk-link{[image: Call 811 Before Digging Before starting any digging 
-project, it?s important to call 811 to have underground utility lines 
-marked. It?s free, easy, and can help prevent injuries, service 
+project, it's important to call 811 to have underground utility lines 
+marked. It's free, easy, and can help prevent injuries, service 
 interruptions, and costly repairs.]\
-}\enddata{text,4317469920}
-0 0 0 4317469920 0 0 0
+}\enddata{text,4316926496}
+0 0 0 4316926496 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111827456}
-\view{lsetview,51111827456,8,0,0}
-\begindata{lset,51111827712}
+\enddata{lset,4316925664}
+\view{lsetview,4316925664,8,0,0}
+\begindata{lset,4316927520}
 \V 1
-\begindata{text,4317470752}
+\begindata{text,4316928352}
 \textdsversion{12}
 \htmlatk-link{[image: Safety During Extreme Heat With peak summer 
-temperatures here, it?s important to make heat safety a priority. Drink 
+temperatures here, it's important to make heat safety a priority. Drink 
 plenty of water, stay in cool spaces, and check on loved ones during 
 periods of extreme heat. Customers enrolled in text alerts may also receive 
 weather-related safety information from us.]\
-}\enddata{text,4317470752}
-0 0 0 4317470752 0 0 0
+}\enddata{text,4316928352}
+0 0 0 4316928352 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111827712}
-\view{lsetview,51111827712,9,0,0}
-\begindata{lset,51111827968}
+\enddata{lset,4316927520}
+\view{lsetview,4316927520,9,0,0}
+\begindata{lset,4316928864}
 \V 1
-\begindata{text,4317471872}
+\begindata{text,4316929888}
 \textdsversion{12}
 \htmlatk-link{[image: Investing in Reliable Energy For more than 40 years, 
 a South Boston gas regulator station has helped deliver natural gas to 
@@ -88,212 +88,212 @@ approximately 22,000 customers across the greater Boston area. Now, we're
 investing in modern infrastructure to upgrade the facility, strengthen 
 reliability, and help ensure our energy network is ready to meet customers' 
 needs for decades to come.]\
-}\enddata{text,4317471872}
-0 0 0 4317471872 0 0 0
+}\enddata{text,4316929888}
+0 0 0 4316929888 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111827968}
-\view{lsetview,51111827968,10,0,0}
-\begindata{lset,51111828224}
+\enddata{lset,4316928864}
+\view{lsetview,4316928864,10,0,0}
+\begindata{lset,4316930400}
 \V 1
-\begindata{text,4317473184}
+\begindata{text,4316931424}
 \textdsversion{12}
 [image] Gas meters in Massachusetts are required to be updated every seven 
 years. When you receive a notice, please \htmlatk-link{schedule an 
 appointment}. It's quick, free, and helps ensure your service continues 
 without interruption.\
-\enddata{text,4317473184}
-0 0 0 4317473184 0 0 0
+\enddata{text,4316931424}
+0 0 0 4316931424 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111828224}
-\view{lsetview,51111828224,11,0,0}
-\begindata{lset,51111828480}
+\enddata{lset,4316930400}
+\view{lsetview,4316930400,11,0,0}
+\begindata{lset,52231700480}
 \V 1
-\begindata{text,4317474624}
+\begindata{text,52215103488}
 \textdsversion{12}
 \htmlatk-link{National Grid\
-}\enddata{text,4317474624}
-0 0 0 4317474624 0 0 0
+}\enddata{text,52215103488}
+0 0 0 52215103488 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111828480}
-\view{lsetview,51111828480,12,0,0}
-\begindata{lset,51111828992}
+\enddata{lset,52231700480}
+\view{lsetview,52231700480,12,0,0}
+\begindata{lset,52231700992}
 \V 1
-\begindata{lset,51111828736}
+\begindata{lset,52231700736}
 \V 1
-\begindata{text,51120472064}
+\begindata{text,52215103712}
 \textdsversion{12}
 [image: Blue Brand Line]\
-\enddata{text,51120472064}
-0 0 0 51120472064 0 0 0
+\enddata{text,52215103712}
+0 0 0 52215103712 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111828736}
-\begindata{lset,51111831296}
+\enddata{lset,52231700736}
+\begindata{lset,52231703296}
 \V 1
-\begindata{lset,51111829248}
+\begindata{lset,52231701248}
 \V 1
-\begindata{text,51120472288}
+\begindata{text,52215103936}
 \textdsversion{12}
 \htmlatk-link{[image: Twitter]\
-}\enddata{text,51120472288}
-0 0 0 51120472288 0 0 0
+}\enddata{text,52215103936}
+0 0 0 52215103936 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111829248}
-\begindata{lset,51111831040}
+\enddata{lset,52231701248}
+\begindata{lset,52231703040}
 \V 1
-\begindata{lset,51111829504}
+\begindata{lset,52231701504}
 \V 1
-\begindata{text,51120472512}
+\begindata{text,52215104160}
 \textdsversion{12}
 \htmlatk-link{[image: Facebook]\
-}\enddata{text,51120472512}
-0 0 0 51120472512 0 0 0
+}\enddata{text,52215104160}
+0 0 0 52215104160 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111829504}
-\begindata{lset,51111830784}
+\enddata{lset,52231701504}
+\begindata{lset,52231702784}
 \V 1
-\begindata{lset,51111829760}
+\begindata{lset,52231701760}
 \V 1
-\begindata{text,51120472736}
+\begindata{text,52215104384}
 \textdsversion{12}
 \htmlatk-link{[image: Youtube]\
-}\enddata{text,51120472736}
-0 0 0 51120472736 0 0 0
+}\enddata{text,52215104384}
+0 0 0 52215104384 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111829760}
-\begindata{lset,51111830528}
+\enddata{lset,52231701760}
+\begindata{lset,52231702528}
 \V 1
-\begindata{lset,51111830016}
+\begindata{lset,52231702016}
 \V 1
-\begindata{text,51120472960}
+\begindata{text,52215104608}
 \textdsversion{12}
 \htmlatk-link{[image: Instagram]\
-}\enddata{text,51120472960}
-0 0 0 51120472960 0 0 0
+}\enddata{text,52215104608}
+0 0 0 52215104608 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111830016}
-\begindata{lset,51111830272}
+\enddata{lset,52231702016}
+\begindata{lset,52231702272}
 \V 1
-\begindata{text,51120473184}
+\begindata{text,52215104832}
 \textdsversion{12}
 \htmlatk-link{[image: LinkedIn]\
-}\enddata{text,51120473184}
-0 0 0 51120473184 0 0 0
+}\enddata{text,52215104832}
+0 0 0 52215104832 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111830272}
-1 50 0 0 51111830016 51111830272 0
+\enddata{lset,52231702272}
+1 50 0 0 52231702016 52231702272 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,51111830528}
-1 67 0 0 51111829760 51111830528 0
+\enddata{lset,52231702528}
+1 67 0 0 52231701760 52231702528 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,51111830784}
-1 75 0 0 51111829504 51111830784 0
+\enddata{lset,52231702784}
+1 75 0 0 52231701504 52231702784 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,51111831040}
-1 80 0 0 51111829248 51111831040 0
+\enddata{lset,52231703040}
+1 80 0 0 52231701248 52231703040 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,51111831296}
-1 50 0 0 51111828736 51111831296 0
+\enddata{lset,52231703296}
+1 50 0 0 52231700736 52231703296 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,51111828992}
-\view{lsetview,51111828992,13,0,0}
-\begindata{lset,51111831552}
+\enddata{lset,52231700992}
+\view{lsetview,52231700992,13,0,0}
+\begindata{lset,52231703552}
 \V 1
-\begindata{text,51120473408}
+\begindata{text,52215105056}
 \textdsversion{12}
-\begindata{lset,51111831808}
+\begindata{lset,52231703808}
 \V 1
-\begindata{text,51120473632}
+\begindata{text,52215105280}
 \textdsversion{12}
 This email was sent to wdc@fastmail.com\
-\enddata{text,51120473632}
-0 0 0 51120473632 0 0 0
+\enddata{text,52215105280}
+0 0 0 52215105280 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111831808}
-\view{lsetview,51111831808,0,0,0}
+\enddata{lset,52231703808}
+\view{lsetview,52231703808,0,0,0}
 
-\begindata{lset,51111832064}
+\begindata{lset,52231704064}
 \V 1
-\begindata{text,51120473856}
+\begindata{text,52215105504}
 \textdsversion{12}
 \htmlatk-link{Unsubscribe} | \htmlatk-link{Privacy Policy} | 
 \htmlatk-link{Contact Us\
-}\enddata{text,51120473856}
-0 0 0 51120473856 0 0 0
+}\enddata{text,52215105504}
+0 0 0 52215105504 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111832064}
-\view{lsetview,51111832064,1,0,0}
-\begindata{lset,51111832320}
+\enddata{lset,52231704064}
+\view{lsetview,52231704064,1,0,0}
+\begindata{lset,52231704320}
 \V 1
-\begindata{text,51120474080}
+\begindata{text,52215105728}
 \textdsversion{12}
 Please do not reply to this email
 
 as this email address is not monitored.\
-\enddata{text,51120474080}
-0 0 0 51120474080 0 0 0
+\enddata{text,52215105728}
+0 0 0 52215105728 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111832320}
-\view{lsetview,51111832320,2,0,0}
-\begindata{lset,51111832576}
+\enddata{lset,52231704320}
+\view{lsetview,52231704320,2,0,0}
+\begindata{lset,52231704576}
 \V 1
-\begindata{text,51120474304}
+\begindata{text,52215105952}
 \textdsversion{12}
 170 Data Drive, Waltham, MA 02451\
-\enddata{text,51120474304}
-0 0 0 51120474304 0 0 0
+\enddata{text,52215105952}
+0 0 0 52215105952 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111832576}
-\view{lsetview,51111832576,3,0,0}
-\begindata{lset,51111832832}
+\enddata{lset,52231704576}
+\view{lsetview,52231704576,3,0,0}
+\begindata{lset,52231704832}
 \V 1
-\begindata{text,51120474528}
+\begindata{text,52215106176}
 \textdsversion{12}
 \^{)}2026 National Grid.
 
 CM11206 MA-G (7/26)\
-\enddata{text,51120474528}
-0 0 0 51120474528 0 0 0
+\enddata{text,52215106176}
+0 0 0 52215106176 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111832832}
-\view{lsetview,51111832832,4,0,0} \htmlatk-bold{This is an important 
+\enddata{lset,52231704832}
+\view{lsetview,52231704832,4,0,0} \htmlatk-bold{This is an important 
 notice. Please have it translated.}
 
 Este \^{i} um aviso importante. Quiera mand\^{a}-lo traduzir.
@@ -302,7 +302,7 @@ Este es un aviso importante. Sirvase mandarlo traducir.
 
 Avis important. Veuillez traduire immediatement.
 
-Questa \^{h} un?informazione importante, si prega di tradurla.
+Questa \^{h} un'informazione importante, si prega di tradurla.
 
 ??? ????? ?????? ?????????.
 
@@ -320,11 +320,11 @@ th\^{t}ng b\^{a}o n\^{`}y.
 Sa a se yon avi enp\^{r}tan. Tanpri, f\^{h} li tradwi.
 
 ????????? ???? .??????? ???????? ?? ??? ????\
-\enddata{text,51120473408}
-0 0 0 51120473408 0 0 0
+\enddata{text,52215105056}
+0 0 0 52215105056 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,51111831552}
-\view{lsetview,51111831552,14,0,0\
-}\enddata{text,4317437504}
+\enddata{lset,52231703552}
+\view{lsetview,52231703552,14,0,0\
+}\enddata{text,4316894016}
