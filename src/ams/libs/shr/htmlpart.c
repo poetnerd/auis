@@ -237,13 +237,56 @@ static int is_zerowidth_codepoint(long code)
         || code == 0x200E || code == 0x200F || code == 0xFEFF;
 }
 
+/* Same ASCII-fallback set as mimepart_Utf8ToLatin1's own
+   emit_smart_punct (mimepart.c) -- deliberately not shared code
+   (different translation unit, same "own independent copy" precedent
+   already used elsewhere in this pair of files, e.g. htmltext.c's own
+   NodeIsStyleHidden). This handles the entity-reference form of the
+   same characters (`&rsquo;`/`&#8217;`/etc.), which reaches this
+   function unchanged by the UTF-8-to-Latin1 pre-pass in text822.c --
+   entities are plain ASCII regardless of the document's encoding, so
+   a source using `&mdash;` instead of a raw UTF-8 em dash needs its
+   own fix here, not just the raw-bytes one. Before this, an unmatched
+   named entity fell through to hp_entities' final else-branch and
+   rendered as literal "&mdash;" text (see decode_entities_into's
+   fallthrough below); a numeric one above 0xFF became '?' like any
+   other out-of-range codepoint. */
+static int try_smart_punct(struct hpbuf_s *out, long code)
+{
+    switch (code) {
+    case 0x2018: case 0x2019: hpbuf_putc(out, '\''); return 1;
+    case 0x201C: case 0x201D: hpbuf_putc(out, '"'); return 1;
+    case 0x2013: hpbuf_putc(out, '-'); return 1;
+    case 0x2014: hpbuf_puts(out, "--"); return 1;
+    case 0x2026: hpbuf_puts(out, "..."); return 1;
+    default: return 0;
+    }
+}
+
+static long smart_punct_codepoint_for_name(const char *name)
+{
+    if (strcmp(name, "lsquo") == 0) return 0x2018;
+    if (strcmp(name, "rsquo") == 0) return 0x2019;
+    if (strcmp(name, "ldquo") == 0) return 0x201C;
+    if (strcmp(name, "rdquo") == 0) return 0x201D;
+    if (strcmp(name, "ndash") == 0) return 0x2013;
+    if (strcmp(name, "mdash") == 0) return 0x2014;
+    if (strcmp(name, "hellip") == 0) return 0x2026;
+    return 0;
+}
+
 /* name/namelen point into the caller's (not necessarily NUL-
    terminated) input buffer -- copied into a small stack buffer before
    strtol, same reasoning as mimepart.c's emit_entity. Numeric entities
    above 0xFF (nearly all of Unicode) become '?', matching
    mimepart_Utf8ToLatin1's policy for the same reason: there is no
    Latin-1 byte for them -- except the known zero-width codepoints
-   above, which are dropped silently instead (see their own comment). */
+   above (dropped silently, see their own comment) and the small
+   smart-punctuation set above (try_smart_punct: curly quotes, en/em
+   dash, ellipsis -- ASCII-substituted instead of '?'). Named entities
+   go through the same three exceptions, checked in the same order,
+   before falling back to literal passthrough (e.g. unrecognized
+   "&foo;" text). */
 static void decode_entities_into(struct hpbuf_s *out, const unsigned char *data, long start, long end)
 {
     long i = start;
@@ -276,10 +319,11 @@ static void decode_entities_into(struct hpbuf_s *out, const unsigned char *data,
                         int valid = (ep != st2 && code > 0);
                         if (valid && code <= 0xFF) {
                             hpbuf_putc(out, (int) code);
-                        } else if (!(valid && is_zerowidth_codepoint(code))) {
+                        } else if (valid && is_zerowidth_codepoint(code)) {
+                            /* drop silently */
+                        } else if (!(valid && try_smart_punct(out, code))) {
                             hpbuf_putc(out, '?');
                         }
-                        /* else: valid zero-width codepoint -- drop silently */
                     }
                     matched = 1;
                 } else {
@@ -297,6 +341,10 @@ static void decode_entities_into(struct hpbuf_s *out, const unsigned char *data,
                                 break;
                             }
                         }
+                    }
+                    if (!matched) {
+                        long spcode = smart_punct_codepoint_for_name(nbuf);
+                        if (spcode && try_smart_punct(out, spcode)) matched = 1;
                     }
                 }
                 if (matched) { i = j + 1; continue; }

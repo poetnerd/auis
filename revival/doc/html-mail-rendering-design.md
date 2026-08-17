@@ -487,6 +487,8 @@ down, these aren't undecided, just not yet done.
    with no Latin-1 slot regardless. Fix: map that specific small
    codepoint set to sane ASCII in `mimepart_Utf8ToLatin1` itself
    (benefits plain-text mail too), instead of the blanket `?`.
+   **Scope boundary:** this fixes Western marketing-copy punctuation
+   only. It does not, and cannot, help with the much bigger gap below.
 2. **Link clicks don't do anything live.** See the Links section
    above — the library half (`htmlatk_LinkAt`/`htmlatk_LaunchURL`) is
    built and tested; the `Hit()`-override wiring into `messages`'s
@@ -510,6 +512,28 @@ blocked on design decisions above, not on effort.
 
 ## Open questions
 
+- **Non-Latin scripts render as walls of `?`, and there's no fix short
+  of a genuine Unicode text model.** Inventoried directly against the
+  real National Grid message's multi-language "please translate this"
+  footer (2026-08-17; the same block item 1 above partially addresses)
+  — of ~200 non-ASCII characters in that block, only the ~14 Western
+  European accented Latin letters (à, é, ô, etc.) and the one curly
+  apostrophe item 1 fixes actually have a Latin-1-or-ASCII
+  representation. Everything else is a different alphabet with no
+  Latin-1 equivalent at all: Cyrillic (61 chars, Russian), Bengali
+  (53), Hebrew (37, +Yiddish), Arabic (22), CJK ideographs (14,
+  Chinese), plus 4 Vietnamese characters that specifically need
+  combining dot-below diacritics (Unicode's Latin Extended Additional
+  block, outside Latin-1's 256 codepoints) even though *other*
+  Vietnamese diacritics (grave/acute/circumflex) are already Latin-1
+  and already render fine — so a single Vietnamese sentence can be
+  partially readable and partially not. No mapping-table trick fixes
+  this the way item 1 fixes smart quotes; it would need ATK's text
+  model to actually store/route multi-byte characters and a
+  Unicode-aware font, which is a fundamentally bigger undertaking than
+  anything else in this document. Not planned, not scoped — logged
+  here as a known, structural limitation of building on ATK's 8-bit
+  Latin-1 text model, not a bug to chase.
 - PNG support in `image.c` (a new `png.ch` subclass, see Images above)
   — separate task from this renderer work, not blocking it, but worth
   deciding whether it's a prerequisite or a parallel track. Same

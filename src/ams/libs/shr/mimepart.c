@@ -759,6 +759,53 @@ char *mimepart_HtmlToText(const char *html, long len)
 
 /* ---- UTF-8 -> Latin-1 ---- */
 
+/* A 3-byte UTF-8 sequence (U+0800-U+FFFF) is always > 0xFF, so always
+   fell back to '?' -- correct for the general case (there is no
+   Latin-1 byte for, say, a CJK ideograph), but real marketing HTML is
+   saturated with a small, common set of "smart" typography from
+   exactly this range that has an obvious ASCII fallback: curly
+   quotes, en/em dash, ellipsis. Confirmed live, National Grid
+   (2026-08-17): most of the "?" clutter in an ordinary marketing
+   message turned out to be this handful of codepoints, not genuine
+   script gaps -- see revival/doc/html-mail-rendering-design.md's
+   "Planned next work" item 1. Each replacement is sized to fit within
+   the 3 input bytes it replaces (ellipsis -> 3 output bytes, em dash
+   -> 2, everything else -> 1), so the caller's `inlen + 1` output
+   buffer never needs to grow for this. Deliberately narrow: this is
+   not a Unicode-support step, just an ASCII-fallback table for the
+   punctuation real-world templates lean on hardest -- see the design
+   doc's Open questions for why genuinely different scripts (Cyrillic,
+   Hebrew, Arabic, Bengali, CJK, ...) have no equivalent fix. */
+static int emit_smart_punct(unsigned char *out, long o, long cp)
+{
+    switch (cp) {
+    case 0x2018: /* LEFT SINGLE QUOTATION MARK */
+    case 0x2019: /* RIGHT SINGLE QUOTATION MARK */
+        out[o++] = '\'';
+        break;
+    case 0x201C: /* LEFT DOUBLE QUOTATION MARK */
+    case 0x201D: /* RIGHT DOUBLE QUOTATION MARK */
+        out[o++] = '"';
+        break;
+    case 0x2013: /* EN DASH */
+        out[o++] = '-';
+        break;
+    case 0x2014: /* EM DASH */
+        out[o++] = '-';
+        out[o++] = '-';
+        break;
+    case 0x2026: /* HORIZONTAL ELLIPSIS */
+        out[o++] = '.';
+        out[o++] = '.';
+        out[o++] = '.';
+        break;
+    default:
+        out[o++] = '?';
+        break;
+    }
+    return (int) o;
+}
+
 unsigned char *mimepart_Utf8ToLatin1(const unsigned char *in, long inlen, long *outlenp)
 {
     unsigned char *out = (unsigned char *) malloc(inlen + 1 > 0 ? inlen + 1 : 1);
@@ -775,7 +822,8 @@ unsigned char *mimepart_Utf8ToLatin1(const unsigned char *in, long inlen, long *
             i += 2;
         } else if ((c & 0xF0) == 0xE0 && i + 2 < inlen
                    && (in[i+1] & 0xC0) == 0x80 && (in[i+2] & 0xC0) == 0x80) {
-            out[o++] = '?'; /* always > 0xFF */
+            long cp = ((c & 0x0F) << 12) | ((in[i+1] & 0x3F) << 6) | (in[i+2] & 0x3F);
+            o = emit_smart_punct(out, o, cp);
             i += 3;
         } else if ((c & 0xF8) == 0xF0 && i + 3 < inlen
                    && (in[i+1] & 0xC0) == 0x80 && (in[i+2] & 0xC0) == 0x80 && (in[i+3] & 0xC0) == 0x80) {
