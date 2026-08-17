@@ -42,6 +42,7 @@
 
 class lsetview[lsetv]:lpair {
 overrides:
+    DesiredSize(long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight) returns enum view_DSattributes;
     FullUpdate(enum view_UpdateType type, long left, long top, long width, long right);
     Update();
     Hit (enum view_MouseAction action, long x, long y, long numberOfClicks) returns struct view *;
@@ -73,5 +74,6 @@ data:
     int promptforparameters;
     struct text *pdoc;
     int revision;
+    int sizepending; /* debounce for WantNewSize escalation -- see lsetview__WantNewSize/DesiredSize */
 };
 
