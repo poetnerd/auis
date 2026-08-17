@@ -71,6 +71,13 @@ extern int saveprofilestring(char *prog, char *pref, char *val, int warn), Count
 #define OT_EXPLEVEL 0
 #define OT_INTEGER 1
 #define OT_SPECIAL 3
+/* like OT_EXPLEVEL (an on/off toggle) but reads/writes a plain,
+   app-agnostic profile key directly instead of a bit packed into
+   messages' own "messages.BinaryOptions" bitmask -- so cui (and any
+   other ATK program) can read the same key with a plain
+   environ_GetProfileSwitch() call, with no messages-specific decoding.
+   See ProfSwitchHit(). */
+#define OT_PROFSWITCH 4
 
 #define OT_INTEGER_MAXCLASSMENU 0
 #define OT_INTEGER_FONTSIZE 1
@@ -117,6 +124,7 @@ static struct OptionChoice Options[] = {
 	{"Set Quit Here menu", OT_EXPLEVEL, EXP_SETQUITHERE, 0, "This menu can be used to tell Messages that, when you leave the current folder and look at another one, then the next time you come back to the current folder, messages below where you are now should be shown to you again as 'new'.  In response to 'Set Quit Here', Messages will re-position the little line that indicates how far you have read."},
 	{"Reply to Readers/Both menus", OT_EXPLEVEL, EXP_THREEREPLIES, 0, "Normally, the 'Reply to All' menu makes a 'best guess' as to whether or not to send the mail to the sender as well. If you choose, you can have two menus in its place, 'Reply to Readers' and 'Reply to Both', which let you make the decision explicitly."},
 	{"Descramble/Fixed Width menus", OT_EXPLEVEL, EXP_FORMATMENUS, 0, "This option adds two menus to the 'This Message' card which allow you to easily put the message on display in fixed width, to scramble it with the 'rot13' algorithm."},
+	{"Prefer plain text over HTML", OT_PROFSWITCH, 0, 0, "When a message offers both a plain text and an HTML version (a 'multipart/alternative' MIME message, typical of newsletters and marketing mail), Messages normally shows you the HTML version, styled to look like the original. Turn this option ON to go back to always showing the plain text version instead. This preference is shared with cui (the command-line mail reader), since both read the same 'ams.preferplaintext' setting; cui only picks up a change the next time it starts."},
 	{"Special headers to highlight", OT_SPECIAL, OT_SPECIAL_KEYHEADS, 0, "This option alters the list of headers that are highlighted (not hidden) when you display a message.  Your entry should be a list of words separated by colons, with no spaces.  The default list is \"From:Date:Subject:To:CC:ReSent-From:ReSent-To\".  The option after this one can be used to alter the meaning of THIS option, so that it is a list of those headers NOT to highlight, and all non-specified headers WILL be highlighted."},
 	{"Highlight non-listed headers", OT_EXPLEVEL, EXP_SHOWALLBUTKEYS, 0, "By default, most of a message's headers are hidden from you, and you have to scroll backwards to see them.  You can alter the list of those few headers that ARE highlighted, using the previous option.  Using THIS option, you can change it so that the list of headers below is a list of those headers that do NOT get highlighted by default."},
 	{"Highlight NO headers", OT_EXPLEVEL, EXP_SHOWNOHEADS, 0, "This option turns off all header highlighting, leaving all of the bodies area for the message bodies themselves"},
@@ -168,6 +176,22 @@ int ExpLevelHit(long self, struct value *val, int which, int hisrock)
     amsutil_BuildOptionPreference(MyBuf);
     if (saveprofilestring("messages", "BinaryOptions", MyBuf, Options[which].IsStartup) != PREF_ABORT) {
 	sprintf(MyBuf, "Turned %s the \"%s\" option%s.", amsutil_GetOptBit(parm) ? "ON" : "OFF", Options[which].OptionName, Options[which].IsStartup ? " (starting next time)" : "");
+	message_DisplayString(NULL, 10, MyBuf);
+	im_ForceUpdate();
+    }
+    ams_WaitCursor(FALSE);
+}
+
+int ProfSwitchHit(long self, struct value *val, int which, int hisrock)
+{
+    boolean newval;
+    char MyBuf[500];
+
+    if (hisrock == value_OBJECTDESTROYED) return;
+    ams_WaitCursor(TRUE);
+    newval = !environ_GetProfileSwitch("ams.preferplaintext", FALSE);
+    if (saveprofilestring("ams", "preferplaintext", newval ? "1" : "0", Options[which].IsStartup) != PREF_ABORT) {
+	sprintf(MyBuf, "Turned %s the \"%s\" option.", newval ? "ON" : "OFF", Options[which].OptionName);
 	message_DisplayString(NULL, 10, MyBuf);
 	im_ForceUpdate();
     }
@@ -373,7 +397,12 @@ int options__SetMessagesOptions(struct classheader *c, struct t822view *bv)
 	    value_SetValue(v, amsutil_GetPermOptBit(Options[i].OptParm) ? 1 : 0);
 	    value_AddCallBackObserver(v, t, ExpLevelHit, i);
 	    text_AlwaysAddView(t, tpos++, "onoffV", v);
-	} 
+	}
+	else if (Options[i].OptType == OT_PROFSWITCH) {
+	    value_SetValue(v, environ_GetProfileSwitch("ams.preferplaintext", FALSE) ? 1 : 0);
+	    value_AddCallBackObserver(v, t, ProfSwitchHit, i);
+	    text_AlwaysAddView(t, tpos++, "onoffV", v);
+	}
 	else if (Options[i].OptType == OT_INTEGER) {
 	    text_AlwaysAddView(t, tpos++, "sliderV", v);
 	    def = IntegerDefaults[Options[i].OptParm];

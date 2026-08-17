@@ -31,6 +31,13 @@
 #define MODE822_FORMAT 2
 #define MODE822_FIXEDWIDTH 4
 #define MODE822_ROT13 8
+/* one-shot: for this one Read/redisplay pass only, force Stage 2's
+   htmltext_ToText() plain-text rendering instead of Stage 3's
+   htmlatk_Render() styled rendering, for HTML mail whose table layout
+   Stage 3 renders badly. Not sticky like the other MODE822_* bits --
+   the caller (BSM_ShowHtmlPlainText, messages.c) sets it fresh on
+   every redisplay, exactly like MODE822_FIXEDWIDTH/MODE822_ROT13. */
+#define MODE822_HTMLPLAINTEXT 16
 
 class text822: text {
     overrides:

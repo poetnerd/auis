@@ -92,6 +92,7 @@ extern		void BSM_DeleteFolder(struct messages *self);
 extern		void BSM_DeletePlease(struct messages *self);
 extern		void BSM_DifferentContentType(struct messages *self, char *ctype);
 extern		void BSM_ShowRaw(struct messages *self, char *ctype);
+extern		void BSM_ShowHtmlPlainText(struct messages *self);
 extern		void BSM_DummyQuit(struct messages *self);
 extern		void BSM_FileInto(struct messages *self);
 extern		void BSM_MarkCurrent(struct messages *self);
@@ -345,6 +346,7 @@ static struct bind_Description messages_standardbindings [] = {
     {"messages-modifiable-body", NULL, NULL, NULL, NULL, 0, BSM_ModifiableBody, "Make the body of the message not be read-only"},
     {"messages-different-content-type", NULL, NULL, NULL, NULL, 0, BSM_DifferentContentType, "Display the body of a message using a different content-type header"},
     {"messages-show-as-plain-text", NULL, NULL, "This Message~30,Show Raw Body~33", NULL, MENUMASK_MSGSHOWING, BSM_ShowRaw, "Display the body of a message as if it were plain text"},
+    {"messages-show-html-plain-text", NULL, NULL, "This Message~30,Show as Plain Text~34", NULL, MENUMASK_MSGSHOWING, BSM_ShowHtmlPlainText, "Redisplay an HTML message's text with tags stripped, bypassing the styled HTML renderer"},
     {"messages-punt", ">", 1, "Other~60,Punt~94", 1, MENUMASK_PUNTMENU, (void (*)()) PuntCurrent, "Punt current folder and go to the next one"},
     {"messages-punt-and-stay", "~", 0, NULL, 0, 0, PuntCurrent, "Punt current folder but don't go on to the next one"},
     {"textview-compound", NULL, NULL, NULL, NULL, NULL, TextviewCompound, "Execute a compound textview operation"},
@@ -1075,6 +1077,29 @@ void BSM_DifferentContentType(struct messages *self, char *ctype)
 	ctype = buf;
     }
     captions_Redisplay(c, c->CurrentFormatting | MODE822_FORMAT, ctype);
+}
+
+/* unlike BSM_ShowRaw (which forces the message's Content-Type header
+   itself to text/plain, so an HTML message displays its literal,
+   undecoded markup -- genuinely "raw"), this asks Stage 3's styled
+   HTML renderer to be skipped in favor of Stage 2's htmltext_ToText()
+   plain-text rendering: readable text with tags stripped, not markup
+   soup. An escape hatch for HTML mail whose table layout Stage 3
+   renders badly. Toggles (like BSM_RedisplayFixedWidth/
+   BSM_RedisplayRot13 above), not one-shot -- CurrentFormatting is
+   sticky across redisplays (capaux.c), so clicking again switches
+   back to the styled renderer for the same message. Can't reuse
+   ContentTypeOverride the way BSM_ShowRaw does -- that string fully
+   replaces the message's detected MIME type and would break the type
+   dispatch (multipart/alternative vs multipart/mixed vs bare
+   text/html) that decides which of RenderHtmlPart()'s three call
+   sites in text822.c even runs; MODE822_HTMLPLAINTEXT (text822.ch)
+   is a separate bit for exactly this reason. */
+void BSM_ShowHtmlPlainText(struct messages *self)
+{
+    struct captions *c = GetCaptions(self);
+
+    captions_Redisplay(c, c->CurrentFormatting ^ MODE822_HTMLPLAINTEXT, NULL);
 }
 
 void BSM_ModifiableBody(struct messages *self)

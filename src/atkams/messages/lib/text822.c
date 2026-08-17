@@ -96,7 +96,7 @@ static int PlainAsciiText(char *s, char *currentcharset);
 static int ForceMetamail(char *ctype);
 static int InsertDecodedText(struct text822 *d, int *ShowPos, unsigned char *bytes, long len, char *charset);
 static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename, char *ctype, long nbytes);
-static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset);
+static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset, boolean forcePlain);
 
 boolean text822__InitializeObject(struct classheader *c, struct text822 *self)
 {
@@ -833,21 +833,27 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 	    if (IsAlternative) IsAlternative++;
 	} while (!feof(fp) && !IsFinalPart);
 	if (IsAlternative) {
-	    /* pick the winner: first exact text/plain sibling; else
-	       the first text/html; else just the first part -- mirrors
+	    /* pick the winner: HTML-preferred by default (see
+	       mimepart_SelectAlternative()'s comment for why), else
+	       text/plain, else just the first part -- mirrors
 	       mimepart_SelectAlternative(), applied here across parts
 	       that were parsed independently rather than as one
 	       mimepart tree (the boundary-scan above already isolates
 	       each part into its own temp file, so there was no single
-	       buffer to hand mimepart_Parse as one multipart entity) */
+	       buffer to hand mimepart_Parse as one multipart entity).
+	       "ams.preferplaintext" profile switch restores the old
+	       text/plain-first behavior. */
 	    struct mimepart *winner = NULL;
 	    int wi;
+	    boolean preferPlain = environ_GetProfileSwitch("ams.preferplaintext", FALSE);
+	    char *firstType = preferPlain ? "text/plain" : "text/html";
+	    char *secondType = preferPlain ? "text/html" : "text/plain";
 	    for (wi = 0; wi < AltCount; ++wi) {
-		if (AltParts[wi] && !strcmp(AltParts[wi]->type, "text/plain")) { winner = AltParts[wi]; break; }
+		if (AltParts[wi] && !strcmp(AltParts[wi]->type, firstType)) { winner = AltParts[wi]; break; }
 	    }
 	    if (!winner) {
 		for (wi = 0; wi < AltCount; ++wi) {
-		    if (AltParts[wi] && !strcmp(AltParts[wi]->type, "text/html")) { winner = AltParts[wi]; break; }
+		    if (AltParts[wi] && !strcmp(AltParts[wi]->type, secondType)) { winner = AltParts[wi]; break; }
 		}
 	    }
 	    if (!winner && AltCount > 0) winner = AltParts[0];
@@ -859,7 +865,7 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 		   ATK-styled rendering (Stage 3, htmlatk.h), with a
 		   whole-message fallback to Stage 2's plain-text
 		   renderer if it can't -- see RenderHtmlPart(). */
-		RenderHtmlPart(d, &ShowPos, winner->body, winner->bodylen, mimepart_GetParam(winner, "charset"));
+		RenderHtmlPart(d, &ShowPos, winner->body, winner->bodylen, mimepart_GetParam(winner, "charset"), (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0));
 	    } else if (winner && winner->body) {
 		/* Neither text/plain nor text/html was on offer (e.g.
 		   an alternative set of just an image and an audio
@@ -937,7 +943,7 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 	    }
 	    if (textpart && textpart->body) {
 		if (textIsHtml) {
-		    RenderHtmlPart(d, &ShowPos, textpart->body, textpart->bodylen, mimepart_GetParam(textpart, "charset"));
+		    RenderHtmlPart(d, &ShowPos, textpart->body, textpart->bodylen, mimepart_GetParam(textpart, "charset"), (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0));
 		} else {
 		    InsertDecodedText(d, &ShowPos, textpart->body, textpart->bodylen, mimepart_GetParam(textpart, "charset"));
 		}
@@ -993,7 +999,7 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 	    rawlen += linelen;
 	}
 	if (rawbuf) {
-	    RenderHtmlPart(d, &ShowPos, (unsigned char *) rawbuf, rawlen, msgcharset);
+	    RenderHtmlPart(d, &ShowPos, (unsigned char *) rawbuf, rawlen, msgcharset, (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0));
 	    free(rawbuf);
 	}
     } else if (!AlternativeNumber && sfmttype
@@ -1683,8 +1689,17 @@ static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename
    needs a Content-ID lookup mimepart.c does not currently parse or
    expose at all (it only tracks Content-Type/Content-Disposition), so
    real cid: image resolution is out of scope here, not silently
-   skipped. */
-static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset)
+   skipped.
+
+   forcePlain, when TRUE, skips straight to the Stage 2 branch below
+   without even trying htmlatk_Render() -- set from the caller's Mode
+   parameter's MODE822_HTMLPLAINTEXT bit (see text822.ch), which
+   messages.c's "This Message -> Show HTML as Plain Text" menu command
+   (BSM_ShowHtmlPlainText) toggles, the same way MODE822_FIXEDWIDTH/
+   MODE822_ROT13 already do -- an escape hatch for real mail whose
+   table layout Stage 3 renders badly (e.g. very deeply nested
+   marketing-newsletter tables -- see revival/doc/revival.md). */
+static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset, boolean forcePlain)
 {
     struct htmlnode *tree;
     time_t t0, t1, t2;
@@ -1725,7 +1740,7 @@ static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html,
     t1 = time(NULL);
     tooSlow = (boolean) (tree && (t1 - t0) > HTML_RENDER_TIME_BUDGET);
 
-    if (tree && !tooSlow) {
+    if (tree && !tooSlow && !forcePlain) {
 	long lengthOut = 0;
 	boolean ok = htmlatk_Render((struct text *) d, (long) *ShowPos, tree, NULL, NULL, &lengthOut);
 	t2 = time(NULL);

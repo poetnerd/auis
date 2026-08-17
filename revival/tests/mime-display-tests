@@ -141,8 +141,8 @@ def read_bytes(path):
 
 # ---- cases ----
 
-def case_alternative_plain_preferred(tmpdir):
-    name = "alternative-plain-preferred"
+def case_alternative_html_preferred(tmpdir):
+    name = "alternative-html-preferred"
     msg = (
         b"Subject: alt\r\n"
         b"Content-Type: multipart/alternative; boundary=\"B1\"\r\n"
@@ -150,20 +150,25 @@ def case_alternative_plain_preferred(tmpdir):
         b"--B1\r\n"
         b"Content-Type: text/plain; charset=us-ascii\r\n"
         b"\r\n"
-        b"plain wins\r\n"
+        b"plain loses\r\n"
         b"--B1\r\n"
         b"Content-Type: text/html; charset=us-ascii\r\n"
         b"\r\n"
-        b"<p>html loses</p>\r\n"
+        b"<p>html wins</p>\r\n"
         b"--B1--\r\n"
     )
     fx = write_fixture(tmpdir, "alt-plain.eml", msg)
     out = os.path.join(tmpdir, "alt-plain.sel")
     r, kv = run(["select", fx, out])
     # the CRLF right before "--B1" belongs to the boundary delimiter
-    # per RFC 2046, not the part -- correctly stripped by the parser
-    ok = (kv.get("SELECTED-TYPE") == ["text/plain"]
-          and read_bytes(out) == b"plain wins")
+    # per RFC 2046, not the part -- correctly stripped by the parser.
+    # HTML is preferred by default as of 2026-08-17 (see
+    # mimepart_SelectAlternative() in mimepart.c) -- the
+    # "ams.preferplaintext" profile switch restores the old
+    # plain-preferred behavior, but that's not exercised by this
+    # synthetic-fixture harness (no profile file to set it in).
+    ok = (kv.get("SELECTED-TYPE") == ["text/html"]
+          and read_bytes(out) == b"<p>html wins</p>")
     result(name, ok, r.stdout + r.stderr)
 
 
@@ -356,7 +361,7 @@ def main():
     tmpdir = tempfile.mkdtemp(prefix="mime-display-tests-")
     try:
         note(f"--- fixtures in {tmpdir} (synthetic, deleted on exit) ---")
-        case_alternative_plain_preferred(tmpdir)
+        case_alternative_html_preferred(tmpdir)
         case_alternative_html_fallback(tmpdir)
         case_qp_decode(tmpdir)
         case_base64_text(tmpdir)
