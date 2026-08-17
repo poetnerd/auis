@@ -1,6 +1,6 @@
 # AUIS Revival Roadmap
 
-Last updated: 2026-08-13
+Last updated: 2026-08-17
 
 This document is intended primarily for AUIS revival participants,
 with a summary of what's running, what's active, what's next, and the
@@ -45,7 +45,7 @@ solid versus still rough. Active work is listed under Projects.
 | `contentv` (Table of Contents) | Fully working | An earlier report of it ignoring enumerated headings was a false alarm — root cause was input focus being inside an embedded inset rather than the document itself when the ToC view was opened |
 | `convertraster` (standalone CLI) | Fully working | Fully tested 2026-08-08; three bugs found and fixed (see `porting-changelog.md`) |
 | `image` (JPEG/TIFF import) | Fully working | Fixed 2026-08-08: TIFF import was totally broken (four LP64 struct/stride bugs in vendored `libtiff`); JPEG/TIFF solid-color render was an unrelated `xgraphic.c` variable mixup — see `porting-changelog.md`. GIF import shares the same render path so is likely also fixed, but wasn't retested |
-| `htmlview` | Rough | No longer crashes, but real-world HTML mostly fails to render — see Projects → HTML mail rendering |
+| `htmlview` | N/A — superseded | The standalone viewer itself hasn't changed; real-world HTML mail rendering now goes through a separate, purpose-built parser+renderer wired into `messages`/`cui` instead — see Projects → HTML mail rendering. Retargeting `htmlview` onto that same parser is an optional later step, not yet done |
 
 ---
 
@@ -67,64 +67,51 @@ being front-loaded here.
 ### HTML mail rendering
 
 - **Design doc:** `html-mail-rendering-design.md` — sanitization
-  allowlist, table strategy (Andrew's `table`/`spread` grid object,
-  not text-flow unpacking), image strategy (`image__ReadOtherFormat`
-  capability check + fallback), and the explicit renderer-level
-  fallback contract. Work happens on the `html` branch
-  (`~/src/AUIS/html/`), not `trunk/`.
-- **Description:** MIME body decoding itself is solid — `messages` and
-  `cui` (2026-08-09) both share the real `mimepart.c` parser, decoding
-  quoted-printable/base64 and picking the right part out of
-  `multipart/*` instead of dumping wire-encoded bytes or shelling out
-  to a (largely nonfunctional) `metamail` for everything non-text; see
-  `porting-changelog.md`'s 2026-08-09/2026-08-10 entries. HTML
-  *rendering* is the open problem, and was two independent, both-flawed
-  paths until this was scoped out as one project (2026-08-10):
-  `text822.c`'s own MIME body display strips HTML to plain text via a
-  deliberately dumb tag-stripper (`mimepart_HtmlToText`) — no links, no
-  images, no real formatting; `htmlview` has a real ATK-styled parser
-  but wasn't built for wire-format HTML — no `<!DOCTYPE>`/comment
-  handling, and an unrecognized, unclosed tag corrupts its
-  entity-nesting stack for the rest of the document (`html.c`'s
-  "unknown entity" path pushes it as an open environment that nothing
-  ever pops), which is why real-world pages render nothing at all
-  rather than degrading gracefully. Neither is worth hardening further
-  as its own one-off — the plan is one shared, ATK-independent HTML
-  parser (mirroring how `mimepart.c` already sits outside ATK so both
-  `cui` and `messages` can use it), with separate thin renderer
-  backends per consumer.
-- **Next step, staged:**
-  1. New parser library — tokenizer → a simplified tree, own
-     fixture-driven test suite (same shape as `mimepart.c`/
-     `imap_prot.c`). Fixes the structural gaps found in `htmlview`'s
-     parser: DOCTYPE/comments recognized and skipped instead of
-     corrupting the entity stack, void/self-closing elements handled,
-     unknown tags ignored gracefully, `<script>`/`<style>` contents
-     dropped.
-  2. Plain-text renderer over that tree — a drop-in, low-risk
-     replacement for today's `mimepart_HtmlToText` shim in
-     `text822.c`, and what `cui` always uses (terminal-only, no ATK
-     styling to render anyway).
-  3. ATK-styled renderer — reuses `html.c`'s existing tag→stylesheet
-     mapping (that part isn't what's broken), adds real clickable
-     links: a text style applied to the URL run at insertion time, plus
-     a `Hit()` view-method override (same shape `htmlview__Hit` already
-     half-implements — it detects the anchor under a click today, but
-     only echoes the URL to the message line rather than launching
-     anything) that shells out to `open` on click. Wired into
-     `text822.c` as the new html path, retiring the old shim.
-  4. *Optional, later:* retarget `htmlview`'s own standalone viewer
-     onto the same parser+ATK-renderer, so there's one HTML engine in
-     the tree rather than two. `htmlview`'s composition/authoring side
-     (hand-building a document, not parsing untrusted wire HTML) is a
-     separate concern and doesn't need to change.
-- **Scope note:** further one-off investment in the current
-  `text822.c` HTML shim — e.g. making links clickable in the *stripped
-  plain-text* path as a stopgap — is being held off in favor of
-  building this properly; stage 2 above supersedes it directly, likely
-  for less total effort than hardening the shim piecemeal. Only active
-  bugs in the shim are worth fixing in the meantime, not fidelity
-  features.
+  allowlist, table strategy (see below — pivoted mid-project), image
+  strategy (`image__ReadOtherFormat` capability check + fallback), and
+  the explicit renderer-level fallback contract. Work happens on the
+  `html` branch (`~/src/AUIS/html/`), not `trunk/`.
+- **Status: core rendering done, verified live against real mail.**
+  MIME body decoding was already solid (see `porting-changelog.md`'s
+  2026-08-09/2026-08-10 entries); the actual rendering pipeline is now
+  built and wired in, in three stages, mirroring how `mimepart.c`
+  already sits outside ATK so both `cui` and `messages` can share it:
+  1. **Parser** (`htmlpart.c`, 2026-08-15) — ATK-independent
+     tokenizer + sanitization-allowlist tree builder. 20/20 tests.
+  2. **Plain-text renderer** (`htmltext.c`, 2026-08-15) — walks the
+     parse tree to text; what `cui` always uses. 13/13 tests.
+  3. **ATK-styled renderer** (`htmlatk.c`, 2026-08-16) — real clickable
+     links, inline images, styled text; wired into `text822.c`/`cui`
+     the same day, retiring the old `mimepart_HtmlToText` shim.
+  Midway through Stage 3, the originally planned table strategy
+  (Andrew's `table`/`spread` grid object) turned out not to fit real
+  mail: it's a fixed-pixel grid that doesn't reflow with window width,
+  the way marketing HTML's near-universal wrapper-table boilerplate
+  needs. Pivoted to `lset`/`lpair` instead (percentage-based, does
+  reflow), plus a "peeling" heuristic that collapses that wrapper
+  boilerplate down to real content — see the design doc's "Table
+  strategy" section for the full reasoning and known imperfections.
+  That pivot surfaced (and fixed) a real core-ATK bug along the way —
+  `BackSpace`'s end-of-file line padding could infinite-loop `^V`
+  scrolling against a disproportionately tall embedded view — plus,
+  today, two more real-mail rendering bugs (isolated blank spacer rows
+  never coalescing, hidden `display:none` preheader text rendering as
+  visible body text), both found live against a real National Grid
+  message (now saved at `revival/tests/national-grid.html`) and fixed.
+- **Next step:** Two loose ends, both deliberately deferred, neither
+  blocking further use:
+  - A distinct, non-HTML-specific core-ATK bug in scrollbar
+    endzone-click handling (jump-to-end cycles through 3 states rather
+    than settling) — see Open issues below and `revival.md`.
+  - *Optional, later:* retarget `htmlview`'s own standalone viewer
+    onto the same shared parser, so there's one HTML engine in the
+    tree rather than two. `htmlview`'s composition/authoring side
+    (hand-building a document, not parsing untrusted wire HTML) is a
+    separate concern and doesn't need to change.
+  With core rendering done and verified, the open question is whether
+  to keep hardening on the `html` branch or merge it back into `trunk`
+  at its current, already-useful state (the `andrew-6.4` precedent) and
+  pick up the rest later — not yet decided.
 
 ### Coverage inventory
 
@@ -159,6 +146,7 @@ Smaller items that don't fit the tables above.
 - `filetype.c DeleteEntry`: a bogus-free risk and an apparently-inverted condition, flagged by the compiler, never observed to actually fire
 - `runapp -d` with no app-class argument segfaults instead of printing usage — pre-existing since the 1988 source, not a regression
 - **RESOLVED 2026-08-12 (docs):** a fresh checkout has two separate hardcoded-path spots, not one — `site.h`'s `DEFAULT_ANDREWDIR_ENV` was documented, but `config/Makefile`'s `BASEDIR` (baked in from `site.h` by imake at Step 2, and not reliably self-regenerated afterward — see the fossil-mtime caveat elsewhere in this file) wasn't, and silently stays stale if `site.h` gets fixed after Step 2 has already run once. Reported independently by an outside builder hitting exactly this. `quickstart.md`'s "Site configuration" section now covers both.
+- Clicking a scrollbar endzone to jump to the end of a document cycles through 3 distinct results rather than settling — root cause identified (`textview`'s `endzone()`/`setframe()`, `src/atk/text/textv.c`, fires a second chained scroll operation on every discrete click, not just a held-down repeat), not yet fixed. Found chasing an HTML-mail-rendering report but is a general ATK scrollbar bug, not HTML-specific. See `revival.md` → "Open issues" for the full writeup.
 
 **Heisenbugs** (intermittent, low reproducibility)
 - Xlib display-lock self-deadlock: reproduced once, root cause identified (`_XLockDisplay` re-entered from inside `XRefreshKeyboardMapping`, triggered by a keyboard-mapping-change event) but not yet fixed. Current best explanation for the older, harder-to-pin-down "`^V` scroll hang."
@@ -228,6 +216,14 @@ Smaller items that don't fit the tables above.
 
 ## Major milestones
 
+- **2026-08-16** — HTML mail rendering's ATK-styled renderer (Stage 3)
+  wired into `messages`/`cui`, retiring the old plain-text-only shim —
+  real-world mail now gets clickable links, inline images, and styled
+  text instead of stripped tags. Table strategy pivoted mid-stage from
+  Andrew's `table`/`spread` object to `lset`/`lpair` (the former
+  doesn't reflow with window width); a real core-ATK scrolling bug and
+  two more real-mail rendering bugs found and fixed the same day,
+  verified live against an actual message.
 - **2026-08-07** — The ANSI C modernization effort (see Key tradeoffs)
   reached its conclusion: the entire active codebase now compiles
   clean under full strict-C compiler settings, closing out a
