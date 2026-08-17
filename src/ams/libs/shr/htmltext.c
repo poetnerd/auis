@@ -47,6 +47,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>	/* strncasecmp */
 #include <ctype.h>
 
 #include <htmlpart.h>
@@ -308,6 +309,41 @@ static int tag_is_suppressed(const char *t)
     return strcmp(t, "head") == 0 || strcmp(t, "title") == 0;
 }
 
+/* Case-insensitive substring test, local to this file -- same
+   reasoning as htmlatk.c's own copy (not shared across translation
+   units, each renderer is independent by design). */
+static int htx_value_contains_ci(const char *hay, const char *needle)
+{
+    size_t hlen = strlen(hay), nlen = strlen(needle);
+    size_t i;
+    if (nlen == 0 || nlen > hlen) return 0;
+    for (i = 0; i + nlen <= hlen; ++i) {
+        if (strncasecmp(hay + i, needle, nlen) == 0) return 1;
+    }
+    return 0;
+}
+
+/* `display:none`/`visibility:hidden` -- see htmlatk.c's own
+   NodeIsStyleHidden for the full story (the "hidden preheader" trick
+   in commercial marketing email: a <div style="display:none"> whose
+   text is meant only for the email client's inbox-preview line, never
+   the opened message). Same fix, same reasoning, mirrored here since
+   this plain-text renderer is a fully independent module from
+   htmlatk.c, not because the bug is different. */
+static int NodeIsStyleHidden(const struct htmlnode *n)
+{
+    char *sv;
+    int hidden = 0;
+
+    sv = htmlpart_GetStyleProp(n, "display");
+    if (sv) { if (htx_value_contains_ci(sv, "none")) hidden = 1; free(sv); }
+    if (!hidden) {
+        sv = htmlpart_GetStyleProp(n, "visibility");
+        if (sv) { if (htx_value_contains_ci(sv, "hidden")) hidden = 1; free(sv); }
+    }
+    return hidden;
+}
+
 static void do_pre_action(struct htmlnode *n, struct htx_state *st)
 {
     const char *t = n->tag;
@@ -463,6 +499,7 @@ char *htmltext_ToText(const struct htmlnode *root)
             }
             /* ELEMENT */
             if (tag_is_suppressed(n->tag)) continue; /* no children walked, no POST */
+            if (NodeIsStyleHidden(n)) continue; /* no children walked, no POST */
             do_pre_action(n, &st);
             walkstack_push1(&ws, n, 1);
             if (n->children) walkstack_push_siblings(&ws, n->children);

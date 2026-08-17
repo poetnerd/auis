@@ -42,10 +42,19 @@
 	bytes to a scratch buffer, PRE/POST actions insert real characters
 	into the caller's struct text via text_AlwaysInsertCharacters, and
 	open/close real environment_InsertStyle() spans. Table-building
-	(RenderTable / BuildTableGrid below) is a separate, self-contained
-	piece of code the main walk detours into at a <table> PRE action --
-	see htmlatk.h's own note on why *that* part uses ordinary bounded
-	C recursion instead of an explicit stack.
+	(RenderTableAsLset / BuildLsetGrid below) is a separate, self-
+	contained piece of code the main walk detours into at a <table>
+	PRE action -- see htmlatk.h's own note on why *that* part uses
+	ordinary bounded C recursion instead of an explicit stack.
+
+	NOTE 2026-08-16: tables used to route to one of two constructions
+	(table/spread, or lset) depending on whether they used colspan/
+	rowspan -- that hybrid is gone. Every table now builds via lset,
+	including colspan tables (a colspan cell is just a wider-weighted
+	leaf in its row's own independent split chain -- see
+	BuildLsetGrid's own comment for the full design and why it doesn't
+	need table/spread's shared-grid model at all). See htmlatk.h's
+	judgment-call log for the design discussion this replaced.
 */
 
 #include <stdio.h>
@@ -60,7 +69,8 @@
 #include <style.ih>
 #include <fontdesc.ih>
 #include <dataobj.ih>
-#include <table.ih>
+#include <lset.ih>
+#include <lsetv.ih>
 
 #include <htmlpart.h>
 #include "htmlatk.h"
@@ -644,7 +654,7 @@ static const char *ImageClassForMimetype(const char *mt)
    validated approach (see the delegated-session smoke test). Returns
    the ReadOtherFormat result; does not destroy targetObj on failure --
    that is the caller's job, since the caller also owns how targetObj
-   was created (class_NewObject vs. table_Imbed). */
+   was created. */
 static boolean TryReadImageInto(struct dataobject *targetObj, const char *mimetype,
                                   unsigned char *bytes, long len)
 {
@@ -741,9 +751,68 @@ static void CollectRows(const struct htmlnode *tablenode, struct nodevec *rows)
     nodevec_free(&stack);
 }
 
+/* A <table> with exactly one real row containing exactly one real
+   <td>/<th> is pure structural boilerplate -- the "bulletproof
+   layout" wrapper real marketing HTML uses to box its entire body for
+   cross-client compatibility. Confirmed live, National Grid,
+   2026-08-16 (wdc's own hand-edited render2_test.ez experiment): the
+   WHOLE visible email was wrapped this way, collapsing everything
+   into ONE lset leaf at the very top of the document -- a single
+   ~2000+ pixel-tall embedded view sitting behind just one of the top
+   document's ~68 character positions. That single-character/huge-
+   pixel-height disproportion breaks several things downstream that
+   assume character count is roughly proportional to vertical space
+   (confirmed by reading the source, not just observed): the scrollbar
+   elevator's own size (textv.c's getinfo(), total->end = text length
+   << FINESCROLL -- no pixel term at all) and reachability via
+   MoveForward/^V at narrower window widths (narrower width means more
+   text-wrapping inside that one view, making the single already-huge
+   line even taller). This renderer has no border/background support
+   for tables anyway (see Gate 2's judgment-call log), so a 1x1
+   wrapper carries no visual intent worth preserving. Fix: treat it as
+   fully transparent -- push its cell's children onto the SAME
+   iterative walk stack used for everything else, so whatever's really
+   inside (routinely itself a real multi-row table) inserts its own
+   rows directly into the CURRENT text's own line flow instead of
+   collapsing into one more monolithic wrapper. Applied uniformly
+   wherever a <table> tag is encountered by the main walk below (top
+   level or nested inside a cell, both go through the same dispatch),
+   so chains of nested 1x1 wrappers collapse all the way down, not
+   just one level. This is a different, complementary check from
+   BuildLsetCell's own NodeIsSoleNestedTable below (which asks "does
+   THIS CELL's sole content, once built, resolve to exactly one row" from
+   the cell's perspective, coalescing-aware) -- this one asks "is the
+   TABLE ELEMENT itself a 1x1 no-op" from the table's own perspective,
+   regardless of what's inside or how many rows survive coalescing. */
+static int TableIsTrivialWrapper(const struct htmlnode *tablenode, const struct htmlnode **outCellChildren)
+{
+    struct nodevec rows;
+    const struct htmlnode *tr;
+    const struct htmlnode *td;
+    const struct htmlnode *foundCell = NULL;
+    int result = 0;
+
+    CollectRows(tablenode, &rows);
+    if (rows.count == 1) {
+        tr = rows.items[0];
+        for (td = tr->children; td; td = td->next) {
+            if (!htmlpart_IsElement(td)) continue;
+            if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+            if (foundCell) { foundCell = NULL; break; } /* more than one real cell */
+            foundCell = td;
+        }
+        if (foundCell) {
+            *outCellChildren = foundCell->children;
+            result = 1;
+        }
+    }
+    nodevec_free(&rows);
+    return result;
+}
+
 /* A cell with no children at all, or whose only children are
    whitespace-only text nodes, is genuinely empty -- the only case
-   worth a fast path (see this file's BuildTableGrid, below, and
+   worth a fast path (see this file's BuildLsetCell, below, and
    htmlatk.h's judgment-call note on why every other cell, however
    simple, goes through the general recursive path instead of a
    scalar/dispatch shortcut). Uses the same is_collapsible_space test
@@ -759,16 +828,33 @@ static void CollectRows(const struct htmlnode *tablenode, struct nodevec *rows)
    confirmed live, National Grid, 2026-08-16: after the &zwnj; fix
    above, that div's own text is nothing but collapsible whitespace,
    but a direct-children-only check never looks inside the div to see
-   that). <img>/<table> are always "real content" regardless of what's
-   inside them -- an empty-looking table can still have visible
-   borders, and an unresolvable image still gets a placeholder -- so
-   recursion stops there rather than trying to determine if a whole
-   nested table is itself empty. Plain C recursion (not an explicit
-   heap stack): this only ever descends through incidental wrapper
-   markup around genuinely trivial content, the same "bounded by
+   that). <img> is always "real content" regardless of what's inside
+   it -- an unresolvable image still gets a placeholder, so there's
+   nothing to look inside. <table> used to get the same unconditional
+   treatment ("an empty-looking table can still have visible
+   borders"), but that reasoning doesn't hold for THIS renderer: it
+   has no border/background rendering at all (see html-mail-rendering-
+   design.md's "Known imperfections" note), so a table whose every
+   real cell is itself visually empty genuinely has nothing to show --
+   treating it as unconditionally non-empty only meant a `<tr>` whose
+   sole content is a spacer `<table>` (an extremely common real-world
+   shape: `<td><table><tr><td>&nbsp;</td></tr></table></td>`) could
+   never be recognized as blank for RowIsEntirelyBlank's own
+   consecutive-blank-row coalescing below, unlike a plain
+   `<td>&nbsp;</td>` with no nested table, which always could. This
+   went unnoticed for a while because it was rarely consequential when
+   whole wrapper tables collapsed into one opaque embedded view anyway
+   (see the Peeling section in html-mail-rendering-design.md) --
+   peeling those wrappers away turns each spacer-table-wrapped row into
+   its own independent top-level line, making this gap directly
+   visible as extra whitespace. Mutually recursive with CellIsEmpty
+   below (forward-declared here) -- plain C recursion, not an explicit
+   heap stack: this only ever descends through incidental wrapper
+   markup and genuinely trivial nested tables, the same "bounded by
    markup, not document size" reasoning already used for table-nesting
    recursion elsewhere in this file (see htmlatk.h's own note on why
    that's safe). */
+static int CellIsEmpty(const struct htmlnode *cellnode);
 static int NodeIsVisuallyEmpty(const struct htmlnode *n)
 {
     const struct htmlnode *c;
@@ -779,7 +865,24 @@ static int NodeIsVisuallyEmpty(const struct htmlnode *n)
         }
         return 1;
     }
-    if (strcmp(n->tag, "img") == 0 || strcmp(n->tag, "table") == 0) return 0;
+    if (strcmp(n->tag, "img") == 0) return 0;
+    if (strcmp(n->tag, "table") == 0) {
+        struct nodevec rows;
+        long r;
+        int empty = 1;
+        CollectRows(n, &rows);
+        for (r = 0; r < rows.count && empty; ++r) {
+            const struct htmlnode *tr = rows.items[r];
+            const struct htmlnode *td;
+            for (td = tr->children; td; td = td->next) {
+                if (!htmlpart_IsElement(td)) continue;
+                if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+                if (!CellIsEmpty(td)) { empty = 0; break; }
+            }
+        }
+        nodevec_free(&rows);
+        return empty;
+    }
     for (c = n->children; c; c = c->next) {
         if (!NodeIsVisuallyEmpty(c)) return 0;
     }
@@ -795,244 +898,639 @@ static int CellIsEmpty(const struct htmlnode *cellnode)
     return 1;
 }
 
-/* HTML width="NNN" (a bare pixel integer) -> real ATK column widths,
-   since ATK's own default (TABLE_DEFAULT_COLUMN_THICKNESS, table.ch:
-   99) is far too narrow for real content and produces severe one-
-   word-per-line wrapping -- confirmed live, National Grid mail,
-   2026-08-16, via the writeds/ez round-trip technique (see revival/
-   doc/sonnet-playbook.md's "Verification tools" section). Deliberately
-   strict: only a bare integer counts ("750"), not "100%" -- resolving
-   a percentage needs a container width that doesn't exist yet at
-   construction time (no live view), and misreading "100%" as 100
-   *pixels* would make the bug worse, not better. Percentage/missing/
-   malformed widths all fall through to HTML_TABLE_DEFAULT_WIDTH, a
-   far more reasonable stand-in for "an email body's width" than
-   ATK's own tiny built-in default -- most real HTML mail either
-   omits width on layout tables entirely or uses width="100%" (see
-   revival/tests/html-fixtures), so this default covers most
-   real-world tables, not just an edge case. */
-#define HTML_TABLE_DEFAULT_WIDTH 600
+/* ==================================================================== *
+ * lset-based table construction (BuildLsetGrid/RenderTableAsLset). This
+ * is now the ONLY table representation this module produces -- the
+ * earlier table/spread path (and the hybrid routing rule that sent
+ * colspan/rowspan tables there) is gone as of 2026-08-16. See
+ * htmlatk.h's judgment-call log for the full design discussion: each
+ * lset row builds its own independent binary-split tree (unlike
+ * table/spread's single shared grid), so a colspan cell doesn't need
+ * "merging" or a shared grid at all -- it just needs to be a wider-
+ * WEIGHTED leaf in its own row's split chain (LsetChainPctWeighted,
+ * BuildLsetChain below), with every row's weights expressed as
+ * fractions of the same table-wide column count (TableColumnCount) so
+ * cells in different rows still align visually, the way a real
+ * `Date | Description(colspan=3) | Status` header would need to.
+ * Reuses CollectRows/CellIsEmpty/htmlatk_Render, the same shared
+ * pieces the old table/spread path used, rather than a second
+ * parallel tree-walk. Rowspan is NOT given any special vertical
+ * handling -- lset rows are independent lines in the surrounding
+ * text's own flow with no shared vertical coordinate system, so a
+ * cell "reaching down" into a later row has no natural
+ * representation here; a rowspan cell's content renders fully within
+ * its own starting row instead (accepted degradation -- the real
+ * fixture corpus has zero rowspan occurrences, see Gate 1's report). *
+ * ==================================================================== */
 
-static long ParseWidthPixels(const char *s)
+/* Small growable vector of struct lset* -- same shape as this file's
+   struct nodevec above (htmlnode*), duplicated rather than templated
+   because this codebase has no generic container mechanism and every
+   other growable buffer in this file (nodevec, hax_mark stacks) is its
+   own small dedicated type; adding a void*-casting generic here would
+   be less readable, not more, for a two-call-site helper. */
+struct lsetvec { struct lset **items; long count, cap; };
+
+static void lsetvec_init(struct lsetvec *v) { v->items = NULL; v->count = 0; v->cap = 0; }
+
+static void lsetvec_push(struct lsetvec *v, struct lset *n)
 {
-    long v;
-    char *end;
-    if (!s || !*s) return 0;
-    v = strtol(s, &end, 10);
-    if (end == s || *end != '\0' || v <= 0) return 0;
-    return v;
+    if (v->count >= v->cap) {
+        long ncap = v->cap ? v->cap * 2 : 8;
+        struct lset **ni = (struct lset **) realloc(v->items, ncap * sizeof(*ni));
+        if (!ni) return;
+        v->items = ni;
+        v->cap = ncap;
+    }
+    v->items[v->count++] = n;
 }
 
-static int RenderTable(struct hax_state *st, const struct htmlnode *tablenode);
+static void lsetvec_free(struct lsetvec *v) { free(v->items); v->items = NULL; v->count = v->cap = 0; }
 
-/* Fills an already-created (but not yet sized) table object T from
-   tablenode's row/cell structure. RenderTable (below) is a thin
-   wrapper that creates a fresh top-level struct table and inserts it
-   as a view; a nested <table> inside a cell instead reaches here via
-   this cell-content loop's own call into htmlatk_Render() (which,
-   when it walks into the nested <table> tag, calls RenderTable again)
-   -- not, as an earlier version of this function did, via BuildTableGrid
-   calling itself directly on the same struct table's cell. That old
-   direct self-call was a special case only nested <table>s used; the
-   general per-cell recursion into htmlatk_Render() below now covers
-   nested tables, inline images, and any mix of the two with ordinary
-   rich text, all through the same one path (see htmlatk.h's
-   judgment-call log). The no-longer-needed explicit depth counter the
-   direct self-call used to thread through (never actually checked
-   against a limit -- see htmlatk.h's own note that this recursion is
-   bounded by markup structure, not a policed counter) is gone with
-   it; C-stack depth for nested tables is now bounded by the
-   BuildTableGrid -> htmlatk_Render -> RenderTable -> BuildTableGrid
-   call chain instead, same bound, one indirection deeper. */
-static int BuildTableGrid(struct table *T, const struct htmlnode *tablenode, struct hax_state *st)
+static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st, struct lsetvec *outRows);
+static int NodeIsSoleNestedTable(const struct htmlnode *td, const struct htmlnode **outTable);
+
+/* Small paired vector of (leaf, weight) for one row's cells --
+   analogous to lsetvec above but carrying each cell's WEIGHT alongside
+   it (a plain cell's weight is 1; a colspan="N" cell's weight is N),
+   since BuildLsetChain below needs both to compute proportional
+   splits. Kept separate from lsetvec (used for rows, which never need
+   a weight) rather than adding an unused field there for the row
+   case. */
+struct wleaf { struct lset *leaf; long weight; };
+struct wlvec { struct wleaf *items; long count, cap; };
+
+static void wlvec_init(struct wlvec *v) { v->items = NULL; v->count = 0; v->cap = 0; }
+
+static void wlvec_push(struct wlvec *v, struct lset *leaf, long weight)
+{
+    if (v->count >= v->cap) {
+        long ncap = v->cap ? v->cap * 2 : 8;
+        struct wleaf *ni = (struct wleaf *) realloc(v->items, ncap * sizeof(*ni));
+        if (!ni) return;
+        v->items = ni;
+        v->cap = ncap;
+    }
+    v->items[v->count].leaf = leaf;
+    v->items[v->count].weight = weight;
+    ++v->count;
+}
+
+static void wlvec_free(struct wlvec *v) { free(v->items); v->items = NULL; v->count = v->cap = 0; }
+
+/* The table-wide column count a colspan cell's weight is expressed
+   against, so cells in DIFFERENT rows still align visually even
+   though each row builds its own fully independent lset split tree
+   (see this section's header comment) -- e.g. a `Date | Description
+   (colspan=3) | Status` header row and a `Jan1 | ItemA | ItemB |
+   ItemC | Shipped` data row both need their cells sized as fractions
+   of the same total (5, here), not of their own row's local cell
+   count (3 vs. 5), or Description's 3/5 share wouldn't line up with
+   ItemA+ItemB+ItemC's combined 3/5. Deliberately simpler than the old
+   BuildTableGrid's own Pass A: no rowspan carry-over bookkeeping,
+   since rowspan gets no cross-row vertical handling at all here (see
+   this section's header comment) and so cannot affect which column a
+   later row's cells logically start at the way it would in a real
+   shared-grid model. Just the max, over all rows, of that row's own
+   colspan values summed -- a plain <td> with no colspan attribute
+   counts as 1 (ParsePositiveInt's own default). */
+static long TableColumnCount(const struct htmlnode *tablenode)
 {
     struct nodevec rows;
     long r, ncols = 0;
-    long *pending; /* remaining rowspan carry-over, indexed by column */
-    long pendcap = 0;
-    const char *borderAttr;
-    int border0;
-    struct chunk whole;
 
     CollectRows(tablenode, &rows);
-
-    /* Pass A: dimensions only. */
-    pending = NULL;
     for (r = 0; r < rows.count; ++r) {
         const struct htmlnode *tr = rows.items[r];
         const struct htmlnode *td;
-        long col = 0;
-        long c;
-
-        if ((long) pendcap < ncols) {
-            long *np = (long *) realloc(pending, ncols * sizeof(long));
-            if (np) { for (c = pendcap; c < ncols; ++c) np[c] = 0; pending = np; pendcap = ncols; }
-        }
+        long rowsum = 0;
         for (td = tr->children; td; td = td->next) {
-            long colspan, rowspan;
             if (!htmlpart_IsElement(td)) continue;
             if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
-            while (col < pendcap && pending[col] > 0) ++col;
-            colspan = ParsePositiveInt(htmlpart_GetAttr(td, "colspan"), 1, 1000);
-            rowspan = ParsePositiveInt(htmlpart_GetAttr(td, "rowspan"), 1, 1000);
-            if (col + colspan > pendcap) {
-                long ncap = col + colspan;
-                long *np = (long *) realloc(pending, ncap * sizeof(long));
-                if (np) { for (c = pendcap; c < ncap; ++c) np[c] = 0; pending = np; pendcap = ncap; }
-            }
-            if (rowspan > 1 && col < pendcap) {
-                for (c = col; c < col + colspan && c < pendcap; ++c) pending[c] = rowspan - 1;
-            }
-            col += colspan;
+            rowsum += ParsePositiveInt(htmlpart_GetAttr(td, "colspan"), 1, 1000);
         }
-        if (col > ncols) ncols = col;
-        for (c = 0; c < pendcap; ++c) if (pending[c] > 0) --pending[c];
+        if (rowsum > ncols) ncols = rowsum;
     }
-    free(pending);
-
-    if (rows.count == 0 || ncols == 0) {
-        table_ChangeSize(T, rows.count > 0 ? (int) rows.count : 1, ncols > 0 ? (int) ncols : 1);
-        nodevec_free(&rows);
-        return TRUE; /* empty/malformed table: degrade to an empty grid, not a crash */
-    }
-    table_ChangeSize(T, (int) rows.count, (int) ncols);
-
-    /* Real column widths -- see ParseWidthPixels's own comment for
-       why. Evenly divides the table's total width (explicit or
-       defaulted) across every column; a floor of 40px keeps a
-       pathologically wide column count from producing degenerate
-       slivers (table.c's own ChangeThickness floor is 10, but that's
-       too tight for real text to be usable in). */
-    {
-        long totalWidth = ParseWidthPixels(htmlpart_GetAttr(tablenode, "width"));
-        long perCol, wc;
-        if (totalWidth <= 0) totalWidth = HTML_TABLE_DEFAULT_WIDTH;
-        perCol = totalWidth / ncols;
-        if (perCol < 40) perCol = 40;
-        for (wc = 0; wc < ncols; ++wc) table_ChangeThickness(T, COLS, (int) wc, (int) perCol);
-    }
-
-    /* border="0" (or literally border="0", per the design doc) ->
-       suppress all lines; anything else (including the attribute's
-       plain absence -- the design doc does not address that case
-       explicitly, resolved here by treating "absent" the same as
-       "present and non-zero", i.e. visible, since that is the more
-       common real intent for a table that bothered to include cell
-       structure at all) -> visible black lines, since table.c's own
-       class default for freshly grown edges is GHOST (dotted/
-       invisible), not BLACK -- confirmed by reading table__ChangeSize
-       in src/atk/table/table.c. */
-    borderAttr = htmlpart_GetAttr(tablenode, "border");
-    border0 = (borderAttr && strcmp(borderAttr, "0") == 0);
-    whole.TopRow = 0; whole.BotRow = (int) rows.count - 1;
-    whole.LeftCol = 0; whole.RightCol = (int) ncols - 1;
-    table_SetInterior(T, &whole, border0 ? GHOST : BLACK);
-    table_SetBoundary(T, &whole, border0 ? GHOST : BLACK);
-
-    /* Pass B: place content, now that dimensions are final. */
-    pendcap = 0; pending = NULL;
-    for (r = 0; r < rows.count; ++r) {
-        const struct htmlnode *tr = rows.items[r];
-        const struct htmlnode *td;
-        long col = 0;
-        long c;
-
-        if (pendcap < ncols) {
-            long *np = (long *) realloc(pending, ncols * sizeof(long));
-            if (np) { for (c = pendcap; c < ncols; ++c) np[c] = 0; pending = np; pendcap = ncols; }
-        }
-        for (td = tr->children; td; td = td->next) {
-            long colspan, rowspan;
-            struct chunk cellchunk, spanchunk;
-            struct cell *cellp;
-
-            if (!htmlpart_IsElement(td)) continue;
-            if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
-            while (col < pendcap && pending[col] > 0) ++col;
-            if (col >= ncols) break; /* ragged/malformed row: drop the overflow cell, degrade not crash */
-
-            colspan = ParsePositiveInt(htmlpart_GetAttr(td, "colspan"), 1, 1000);
-            rowspan = ParsePositiveInt(htmlpart_GetAttr(td, "rowspan"), 1, 1000);
-            if (col + colspan > ncols) colspan = ncols - col;
-            if (col + colspan > pendcap) {
-                long ncap = col + colspan;
-                long *np = (long *) realloc(pending, ncap * sizeof(long));
-                if (np) { for (c = pendcap; c < ncap; ++c) np[c] = 0; pending = np; pendcap = ncap; }
-            }
-            if (rowspan > 1) {
-                for (c = col; c < col + colspan && c < pendcap; ++c) pending[c] = rowspan - 1;
-            }
-
-            if (colspan > 1 || rowspan > 1) {
-                spanchunk.TopRow = (int) r; spanchunk.BotRow = (int) (r + rowspan - 1);
-                spanchunk.LeftCol = (int) col; spanchunk.RightCol = (int) (col + colspan - 1);
-                if (spanchunk.BotRow >= (int) rows.count) spanchunk.BotRow = (int) rows.count - 1;
-                table_SetInterior(T, &spanchunk, JOINED);
-            }
-
-            cellchunk.TopRow = (int) r; cellchunk.BotRow = (int) r;
-            cellchunk.LeftCol = (int) col; cellchunk.RightCol = (int) col;
-
-            /* General case, per the real ATK precedent (see htmlatk.h's
-               judgment-call note and PAPERS/atk/Sherman.Alloc lines
-               663-1066: a real `table` datastream dump whose second
-               cell is prose, then an inline embedded `calc` spreadsheet
-               view, then more prose -- one cell, mixed rich content,
-               not a scalar choice between "plain text" or "exactly one
-               embedded object"). An empty cell (CellIsEmpty above) is
-               left as the table_EmptyCell every freshly-grown cell
-               already defaults to (table__ChangeSize's CreateCell(T,
-               cell,NULL) path, src/atk/table/table.c) -- allocating a
-               real "text" dataobject with nothing in it would be pure
-               overhead for the overwhelmingly common empty-cell case.
-               Every other cell, however simple ("plain text") or
-               complex (styled prose around an inline image, or a
-               nested <table>), gets a fresh "text" dataobject via
-               table_Imbed() and this same module's own htmlatk_Render()
-               recurses into it at position 0 -- nested <table>s and
-               <img>s inside the cell fall out for free as ordinary
-               embedded views within that recursive call, exactly as
-               they would at the top level of the document, with no
-               per-cell content-type dispatch needed here at all. */
-            if (CellIsEmpty(td)) {
-                /* table_EmptyCell already in place; nothing to do. */
-            } else {
-                table_Imbed(T, "text", &cellchunk);
-                cellp = table_GetCell(T, (int) r, (int) col);
-                if (cellp->celltype == table_ImbeddedObject) {
-                    long celllen = 0;
-                    if (!htmlatk_Render((struct text *) cellp->interior.ImbeddedObject.data,
-                                         0, td->children, st->resolver, st->resolverRock, &celllen))
-                        st->hardfail = 1;
-                } else {
-                    /* table_Imbed's class_NewObject("text") failed --
-                       a real ATK object-allocation failure, same
-                       category RenderTable's own table_New() failure
-                       is (see htmlatk.h's Returns-FALSE contract). */
-                    st->hardfail = 1;
-                }
-            }
-            col += colspan;
-        }
-        for (c = 0; c < pendcap; ++c) if (pending[c] > 0) --pending[c];
-    }
-    free(pending);
     nodevec_free(&rows);
+    return ncols;
+}
+
+/* The percentage assigned to one binary lset split's RIGHT child,
+   given that this split's own total weight (summed over every leaf
+   still inside it, left and right together) is `remainingWeight`, and
+   the leaf being peeled off as this split's LEFT child has weight
+   `thisWeight` (a plain cell's weight is 1; a colspan="N" cell's
+   weight is N -- see TableColumnCount above for why weights, not
+   counts, are what alignment across rows actually needs).
+
+   Traced (not assumed) from real ATK source: lsetv.c's initkids()
+   calls lsetview_HSplit/VSplit(self, v1, v2, ls->pct, TRUE) with
+   v1==view-of-ls->left, v2==view-of-ls->right (lsetv.c ~line 143-150).
+   HSplit/VSplit (lpair.c:543-570) both funnel into
+   lpair__SetUp(..., pct, lpair_PERCENTAGE, ...), whose PERCENTAGE
+   branch (lpair.c:498-510) sets objsize[1] = pct (the SECOND arg's
+   slot, i.e. l2 == ls->right) and leaves objsize[0] (l1 == ls->left)
+   to be whatever ComputeSizesFromTotal derives as "the rest"
+   (lpair.c:373-398: objcvt[1] = objsize[1]*totalsize/100; objcvt[1-i]
+   = totalsize - objcvt[i], i.e. the complement). So: ls->pct is the
+   percentage of *this split's own* available space given to
+   ls->right, and ls->left gets the complement (100-pct)% -- not a
+   50/50-agnostic value the way the Gate 1 probe's symmetric 2-leaf
+   case left ambiguous.
+
+   Given that, pct = 100 * (remainingWeight - thisWeight) / remainingWeight
+   -- the fraction of this split's own weight NOT accounted for by the
+   leaf being peeled off, i.e. what's left for the right subtree. This
+   is a direct generalization of the original equal-weight formula
+   (100*(remaining-1)/remaining): when every leaf has weight 1,
+   remainingWeight equals the plain leaf-count and thisWeight is
+   always 1, reducing to exactly that formula (checked against the old
+   N=3/4/5 worked arithmetic in htmlatk.h's judgment-call log -- this
+   produces identical results for the equal-weight case, byte for
+   byte). Verified by hand for the Date/Description/Status example
+   above: weights [1,3,1] over remainingWeight=5 resolve to Date=20%,
+   Description=60% (3/5), Status=20% of the row -- and a sibling row
+   with weights [1,1,1,1,1] (also remainingWeight=5) gives each of its
+   5 cells 20%, so the 3 cells "under" Description sum to exactly 60%,
+   matching it. Rounded to the nearest integer percentage point (not
+   truncated), same rounding technique as the original formula. */
+static int LsetChainPctWeighted(long remainingWeight, long thisWeight)
+{
+    long rightWeight;
+    if (remainingWeight <= 0) return 0;
+    rightWeight = remainingWeight - thisWeight;
+    return (int) (((2L * rightWeight * 100L) + remainingWeight) / (2L * remainingWeight));
+}
+
+/* Builds a right-leaning chain of count-1 binary lset split nodes over
+   cells[0..count-1] (already-built lset leaves/subtrees plus their
+   weights, one per row or one per cell), all splits typed splittype
+   (lsetview_MakeHorz for a row's cells, lsetview_MakeVert for a
+   table's rows). Iterative (built tail-to-head with a plain for
+   loop), NOT C recursion, unlike this file's nested-<table> recursion
+   above (see htmlatk.h's own note on why that one is safe): a single
+   pathological row could carry an arbitrarily large number of <td>s,
+   so unlike table-nesting depth (bounded by markup structure) this
+   chain's length is bounded only by document content, the same
+   category of concern htmlpart.c/htmltext.c already use an explicit
+   stack for -- so this does too, just via a simple backwards loop
+   rather than a heap-allocated work list, since the shape (fold
+   right-to-left, no branching/backtracking) doesn't need one. On an
+   allocation failure partway through, returns NULL and records
+   st->hardfail (htmlatk.h's Returns-FALSE note); does not free the
+   leaves/subtrees already folded in, same best-effort-on-OOM posture
+   as this file's other growable buffers. */
+static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittype, struct hax_state *st)
+{
+    struct lset *rest;
+    long i;
+    long remainingWeight;
+
+    if (count <= 0) return NULL;
+    rest = cells[count - 1].leaf;
+    remainingWeight = cells[count - 1].weight;
+    for (i = count - 2; i >= 0; --i) {
+        struct lset *node = (struct lset *) class_NewObject("lset");
+        long thisWeight = cells[i].weight;
+        if (!node) { st->hardfail = 1; return NULL; }
+        remainingWeight += thisWeight;
+        node->type = splittype;
+        node->pct = LsetChainPctWeighted(remainingWeight, thisWeight);
+        node->left = (struct dataobject *) cells[i].leaf;
+        node->right = (struct dataobject *) rest;
+        rest = node;
+    }
+    return rest;
+}
+
+/* A leaf with real content but no text of its own to hold -- used to
+   pad a row out to the table's shared column count (TableColumnCount)
+   when that row's own cells' colspans don't sum to it, so alignment
+   across rows holds even for a genuinely ragged/shorter row rather
+   than letting its real cells silently stretch to fill 100% and drift
+   out of alignment with its neighbors. Always attaches a real (empty)
+   "text" object rather than leaving dobj==NULL, same reasoning as
+   BuildLsetCell's own empty-cell fix below (lsetview__DesiredSize's
+   forwarding fix only applies when self->child exists). */
+static struct lset *MakeFillerLeaf(struct hax_state *st)
+{
+    struct lset *leaf = (struct lset *) class_NewObject("lset");
+    struct text *ct;
+    if (!leaf) { st->hardfail = 1; return NULL; }
+    ct = (struct text *) class_NewObject("text");
+    if (ct) {
+        leaf->dobj = (struct dataobject *) ct;
+        strcpy(leaf->viewname, dataobject_ViewName((struct dataobject *) ct));
+        strcpy(leaf->dataname, "text");
+    } else {
+        st->hardfail = 1;
+    }
+    return leaf;
+}
+
+/* Builds one <td>/<th>'s lset leaf: an "lset" object with no left/right
+   (a leaf, per Gate 1's finding that dobj/left/right are mutually
+   exclusive -- lsetv.c's dolink() branches on "ls->left && ls->right"
+   vs. makeview(), never both) and, for any cell (empty or not), a
+   fresh "text" dataobject attached via plain field assignment (Gate 1
+   section 1.4: leaf->dobj = obj; strcpy(leaf->viewname,
+   dataobject_ViewName(obj)); -- no lset_InsertObject call, it only
+   constructs a *fresh* empty object by class name, not attach an
+   existing one) that this module's own htmlatk_Render() recurses into
+   -- "a cell is just another dataobject, rich content included," the
+   same real-ATK-precedent design this whole module is grounded in
+   (see htmlatk.h's judgment-call log) -- nested <table>s/<img>s/nested
+   <table>s-that-themselves-route-to-lset all fall out for free as
+   ordinary content of that recursive call.
+
+   CORRECTION, found live 2026-08-16 (wdc: clicking into the large
+   blank gaps between blocks highlighted a big black selection zone --
+   "as if we missed eliminating an empty text zone"): this originally
+   left an empty cell (CellIsEmpty) as a bare leaf with
+   dobj==NULL/viewname=="", modeled on table_EmptyCell's zero-overhead
+   philosophy -- lsetv.c's makeview() does decline to create a child
+   view for an empty viewname (confirmed by reading it: `if (lv &&
+   *lv!='\0' ...)`), so self->child stays NULL. That's exactly the
+   case lsetview__DesiredSize's own fix (added earlier this session,
+   see htmlatk.h's judgment-call log) does NOT cover -- its forwarding
+   condition is `self->mode != lsetview_IsSplit && self->child`, and a
+   bare empty leaf never has a self->child at all, so it unconditionally
+   falls through to lpair's original, still-broken fallback (echo the
+   asked-for height, capped at 256px) regardless of that fix. Real
+   marketing email is full of near-invisible spacer/padding rows
+   (confirmed throughout revival/tests/html-fixtures/), so this gap hit
+   constantly and compounded into exactly the reported symptom: large
+   blank areas that are still real, clickable, selectable view
+   rectangles (an oversized region under a leaf with no real content to
+   fill it) -- not literally eliminated the way this comment's original
+   claim assumed. table/spread's own empty-cell path is unaffected by
+   any of this (spread's row-height computation has never gone through
+   lsetview at all); this is lset-path-specific. Fix: always attach a
+   real (possibly zero-length) "text" object, even for an empty cell,
+   so self->child is never NULL and lsetview__DesiredSize's fix always
+   applies -- an empty text view's own natural height is small/correct
+   (the same as any other blank line in this renderer, never a
+   reported bug), which is exactly the minimal-footprint behavior
+   table_EmptyCell's zero-overhead design was trying to approximate a
+   different way; this trades a few bytes of always-allocated "text"
+   dataobject per empty cell for actually working correctly, a trade
+   worth making given lset's structural limitation.
+
+   SECOND CORRECTION, found live 2026-08-16 -- wdc read this exact
+   generated datastream by hand (revival/render_test.ez) and asked the
+   right question directly: "Is something deciding that to have an
+   lset embedded in a text object that it needs to be wrapped in a
+   text?" Yes -- this always wraps a cell's content in a fresh "text"
+   object and recurses, even when that cell's ENTIRE content is
+   nothing but one nested <table> that itself routes to the lset path.
+   For the extremely common real-mail case of a <td> that exists
+   purely to hold a nested layout table, that produces a real,
+   traceable, unnecessary chain: text -> (one embedded view) -> lset
+   -> text -> (one embedded view) -> lset -> ... one extra
+   text/lsetview level per nesting, for content that has no text of
+   its own to hold. Confirmed by hand-tracing render_test.ez's actual
+   bytes: the document's first row (a blank spacer) was
+   text[outer]->lset[row]->text[cell]->lset[nested-row]->text[empty],
+   five objects deep for what is semantically one blank cell. Fixed:
+   when a cell's only real child (skipping whitespace-only text) is a
+   single <table> (originally gated on "doesn't need the table/spread
+   fallback" via TableNeedsGridFallback -- that whole function and the
+   fallback it gated are gone as of later the same day, see this
+   section's header comment, so this check is now unconditional),
+   build that nested table's own rows first; if it resolves to exactly
+   one row (the common case after row
+   coalescing above), attach that row directly as this leaf's own
+   dobj/viewname -- no "text" wrapper at all. A nested table that
+   still has multiple rows after coalescing has no single object to
+   attach this way (a cell can only hold one dataobject), so it falls
+   through to the general text-wrapping path below unchanged, same as
+   before this fix. Whether this also explains the persisting reports
+   of oversized rendering for deeply-nested chains is NOT yet
+   confirmed -- but reducing real, unnecessary nesting depth is a
+   correct simplification on its own regardless of that open question. */
+static int NodeIsSoleNestedTable(const struct htmlnode *td, const struct htmlnode **outTable)
+{
+    const struct htmlnode *c;
+    const struct htmlnode *found = NULL;
+    for (c = td->children; c; c = c->next) {
+        if (htmlpart_IsText(c)) {
+            long i;
+            for (i = 0; i < c->textlen; ++i)
+                if (!is_collapsible_space((unsigned char) c->text[i])) return 0;
+            continue;
+        }
+        if (!htmlpart_IsElement(c) || strcmp(c->tag, "table") != 0) return 0;
+        if (found) return 0; /* more than one real element child */
+        found = c;
+    }
+    if (!found) return 0;
+    *outTable = found;
+    return 1;
+}
+
+/* Builds one <td>/<th>'s lset leaf and reports its WEIGHT (its own
+   colspan value, default 1 -- see TableColumnCount's comment above for
+   why weight, not a boolean/count, is what cross-row alignment needs)
+   via *outWeight, set on every path through this function regardless
+   of which branch actually builds the leaf. */
+static struct lset *BuildLsetCell(const struct htmlnode *td, struct hax_state *st, long *outWeight)
+{
+    struct lset *leaf = (struct lset *) class_NewObject("lset");
+    const struct htmlnode *soleTable;
+    struct text *ct;
+    *outWeight = ParsePositiveInt(htmlpart_GetAttr(td, "colspan"), 1, 1000);
+    if (!leaf) { st->hardfail = 1; return NULL; }
+
+    if (NodeIsSoleNestedTable(td, &soleTable)) {
+        struct lsetvec innerRows;
+        int savedHardfail = st->hardfail;
+        if (BuildLsetGrid(soleTable, st, &innerRows) && innerRows.count == 1) {
+            /* inner is already a complete lset leaf/chain for the
+               nested table's one row -- use it AS this cell's leaf
+               directly instead of wrapping it in the shell we
+               speculatively allocated above (leaf->dobj = inner would
+               produce a pointless lset-wrapping-an-lset pair for every
+               single-cell nested table, and this spacer-table idiom is
+               extremely common in real marketing HTML -- wdc caught
+               this live in render_test.ez, 2026-08-16: the first two
+               objects in the National Grid fixture were exactly this
+               redundant pair around one empty spacer cell). *outWeight
+               was already set from td's own colspan above and is
+               unaffected by which lset object we return. */
+            struct lset *inner = innerRows.items[0];
+            lsetvec_free(&innerRows);
+            dataobject_Destroy((struct dataobject *) leaf);
+            return inner;
+        }
+        /* More than one row (or the attempt failed outright) -- no
+           single object to attach directly; undo any failure flag
+           from this abandoned attempt (BuildLsetGrid only sets it on
+           a genuine "no rows at all" case) and fall through to the
+           general path below, which re-walks and rebuilds this same
+           <table> the ordinary way via htmlatk_Render's own tag
+           dispatch. */
+        lsetvec_free(&innerRows);
+        st->hardfail = savedHardfail;
+    }
+
+    ct = (struct text *) class_NewObject("text");
+    if (ct) {
+        if (!CellIsEmpty(td)) {
+            long celllen = 0;
+            if (!htmlatk_Render(ct, 0, td->children, st->resolver, st->resolverRock, &celllen))
+                st->hardfail = 1;
+        }
+        leaf->dobj = (struct dataobject *) ct;
+        strcpy(leaf->viewname, dataobject_ViewName((struct dataobject *) ct));
+        strcpy(leaf->dataname, "text");
+    } else {
+        /* class_NewObject("text") failed -- a real ATK object-
+           allocation failure (htmlatk.h's Returns-FALSE contract);
+           leave this one leaf blank (degrade, not crash) rather than
+           aborting the whole table over one cell. */
+        st->hardfail = 1;
+    }
+    return leaf;
+}
+
+/* Fills a fresh root lset tree from tablenode's row/cell structure:
+   one lset per real row, each row an lsetview_MakeHorz chain of that
+   row's own cells (colspan cells get a proportionally larger weight
+   in that chain -- see TableColumnCount/LsetChainPctWeighted above).
+   Reuses CollectRows for row collection; cells within a row are the
+   row node's own direct <td>/<th> children only -- HTML rows never
+   nest their cells inside a transparent wrapper the way
+   <tbody>/<thead> wrap rows.
+
+   Rows are NOT stacked via a second lset/lpair layer (an earlier
+   version of this function did that and it was wrong -- see
+   htmlatk.h's judgment-call log for the full root-cause writeup:
+   lpair__DesiredSize's row-stacking branch, src/atk/supportviews/
+   lpair.c:354-364, never sums its children's real heights, only
+   echoes/caps whatever height it was given, which is fine for lset's
+   original fixed-window-pane use case but wrong for a content-driven
+   inset in flowing text). Instead RenderTableAsLset below inserts
+   each row as its own view directly into the surrounding text's own
+   line flow -- the same per-line auto-height stacking this renderer
+   already uses for every other block. A row with zero real cells
+   (e.g. a stray bare <tr></tr>) is dropped from the result entirely
+   rather than inserted as a placeholder. Returns FALSE (leaving
+   *outRows empty) only if the table has no real rows anywhere. */
+/* A row counts as "blank" for coalescing purposes if it has at least
+   one real <td>/<th> cell and every one of them is CellIsEmpty -- a
+   row with NO real cells at all isn't "blank content" in the same
+   sense, it's just dropped by the main build loop below regardless
+   (cells.count==0 never gets pushed to outRows), so it doesn't need
+   coalescing logic of its own. */
+static int RowIsEntirelyBlank(const struct htmlnode *tr)
+{
+    const struct htmlnode *td;
+    int any = 0;
+    for (td = tr->children; td; td = td->next) {
+        if (!htmlpart_IsElement(td)) continue;
+        if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+        any = 1;
+        if (!CellIsEmpty(td)) return 0;
+    }
+    return any;
+}
+
+/* Real marketing/newsletter HTML routinely uses all-<td>-empty spacer
+   <tr>s purely for vertical padding -- sometimes stacked (several
+   consecutive blank rows), sometimes one isolated blank row between
+   every real content row (both confirmed live in the National Grid
+   fixture: a run of blanks between two footer blocks, AND -- found
+   later the same day via wdc's own mouseover boundary-hunting in the
+   rendered ez view, then confirmed structurally via `htmlatktest.test
+   roundtrip` showing LSET-AT[9]/[13]/[17]/... as genuinely empty
+   CELL-TEXT-CONTENT len=0 -- a single blank <tr> alternating with
+   every one of the ~9 real content rows in the fixture's main body).
+   Every blank row is dropped unconditionally, isolated or not: each
+   one becomes its own full text-line-height view in the surrounding
+   flow per RenderTableAsLset below (this renderer has no way to
+   represent a source spacer's actual intended height -- an 8px CSS
+   spacer and a full blank text line both come out the same size here),
+   so keeping even one isolated blank row between every real row means
+   doubling the row count and, empirically, most of the "too much
+   whitespace" complaint. An earlier version of this function only
+   coalesced runs of 2+ consecutive blanks down to one, on the theory
+   that an isolated blank row was "ordinary, real, intentional
+   spacing" worth preserving -- that theory doesn't survive contact
+   with a template that alternates content/spacer on every row. */
+static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st, struct lsetvec *outRows)
+{
+    struct nodevec rows;
+    long r, ncols;
+
+    lsetvec_init(outRows);
+    CollectRows(tablenode, &rows);
+    ncols = TableColumnCount(tablenode);
+
+    for (r = 0; r < rows.count; ++r) {
+        const struct htmlnode *tr = rows.items[r];
+        const struct htmlnode *td;
+        struct wlvec cells;
+        struct lset *rowRoot;
+        long rowWeight = 0;
+
+        /* Blank-row dropping has to run BEFORE the sole-nested-table
+           splice check below, not after -- NodeIsVisuallyEmpty now
+           looks inside a nested <table> to judge real blankness (see
+           its own comment), so RowIsEntirelyBlank correctly recognizes
+           a <tr> whose sole cell wraps nothing but a blank spacer
+           table. Checking splice-eligibility first (an earlier version
+           of this code did) meant a genuinely blank spacer-table row
+           always got recursed into and spliced in as its own row
+           regardless. Every blank row is dropped, not just runs of 2+
+           (see RowIsEntirelyBlank's own comment on why isolated blanks
+           turned out not to be safe to keep). */
+        if (RowIsEntirelyBlank(tr)) {
+            continue;
+        }
+
+        {
+            /* A row with exactly one real cell whose sole content is
+               itself a <table> gets that inner table's OWN rows
+               spliced in directly, each already independently
+               built+padded to THAT inner table's own column count --
+               not this (outer) table's ncols. Splicing raw <tr> nodes
+               and padding them all against one shared ncols (an
+               earlier version of this fix, 2026-08-16) was wrong: it
+               smeared together column counts for what are semantically
+               separate, unrelated table layouts. Confirmed live,
+               National Grid, 2026-08-16 (wdc's own screenshot): a
+               genuine 2-column footer row (logo + social icons)
+               elsewhere in the SAME outer wrapper pushed the whole
+               table's ncols to 2, so every other, genuinely
+               single-column spliced-in row got padded with a spurious
+               empty 50% filler -- visually squishing real
+               single-column content into the left half of the window.
+               Recursing here (BuildLsetGrid calling itself on
+               soleTable) keeps each nested table's column alignment
+               fully self-contained. */
+            const struct htmlnode *soleCell = NULL;
+            const struct htmlnode *soleTable;
+            int soleCellSeen = 0;
+            for (td = tr->children; td; td = td->next) {
+                if (!htmlpart_IsElement(td)) continue;
+                if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+                if (soleCellSeen) { soleCell = NULL; break; } /* more than one real cell */
+                soleCell = td;
+                soleCellSeen = 1;
+            }
+            if (soleCell && NodeIsSoleNestedTable(soleCell, &soleTable)) {
+                struct lsetvec innerRows;
+                long j;
+                if (BuildLsetGrid(soleTable, st, &innerRows)) {
+                    for (j = 0; j < innerRows.count; ++j) lsetvec_push(outRows, innerRows.items[j]);
+                }
+                lsetvec_free(&innerRows);
+                continue;
+            }
+        }
+
+        wlvec_init(&cells);
+        for (td = tr->children; td; td = td->next) {
+            struct lset *leaf;
+            long weight;
+            if (!htmlpart_IsElement(td)) continue;
+            if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
+            leaf = BuildLsetCell(td, st, &weight);
+            if (leaf) { wlvec_push(&cells, leaf, weight); rowWeight += weight; }
+        }
+        if (cells.count > 0) {
+            /* Pad out to the table's shared column count so this
+               row's cells stay aligned with sibling rows that have a
+               different local cell count (see TableColumnCount's own
+               comment) -- e.g. a colspan-free data row under a
+               colspan header, or a genuinely ragged row. */
+            if (rowWeight < ncols) {
+                struct lset *filler = MakeFillerLeaf(st);
+                if (filler) wlvec_push(&cells, filler, ncols - rowWeight);
+            }
+            rowRoot = BuildLsetChain(cells.items, cells.count, lsetview_MakeHorz, st);
+            if (rowRoot) lsetvec_push(outRows, rowRoot);
+        }
+        wlvec_free(&cells);
+    }
+    nodevec_free(&rows);
+
+    if (outRows->count == 0) {
+        /* A structurally empty/malformed table (no real rows anywhere)
+           is not a FAILURE -- there's simply nothing to render, the
+           same graceful degrade the old table/spread path had (grow
+           to a minimal empty grid, still return TRUE). Does NOT set
+           st->hardfail: this branch fires often now that there's no
+           more fallback path to catch it first -- both genuinely
+           empty <table>s in real mail (decorative/spacer markup) and
+           discarded "peek" attempts from BuildLsetCell's sole-nested-
+           table shortcut (a real, common, harmless case for a nested
+           table that isn't a single row) hit this every time. Marking
+           the whole render failed for either would be wildly
+           disproportionate -- RenderHtmlPart falls back the ENTIRE
+           message to plain text on a hardfail (see text822.c), and
+           this needs to stay reserved for genuine construction
+           failures (allocation failures, which still propagate via
+           their own explicit st->hardfail=1 sites elsewhere in this
+           file), not "this one table/peek had nothing in it." */
+        return FALSE;
+    }
     return TRUE;
 }
 
-/* Top-level entry: builds a fresh struct table for tablenode and
-   inserts it as an inline view at the walker's current position. */
-static int RenderTable(struct hax_state *st, const struct htmlnode *tablenode)
+/* Top-level entry: builds one lset per row (cells only, see
+   BuildLsetGrid's note above for why rows are no longer stacked via a
+   second lset/lpair layer) and inserts each as its own inline view at
+   successive positions in the walker's text flow, one per line -- the
+   same text_AlwaysAddView call this module uses for any single
+   embedded view (lset does not override ViewName, falls through to
+   the generic "lset"+"view"="lsetview" algorithm, Gate 1 section 1.6),
+   just called once per row instead of once for the whole table.
+   EnsureLineBreak between rows forces each row onto its own line the
+   same way it does for any other line-level content in this file --
+   without it, two back-to-back embedded views with no break between
+   them could end up flowed onto the same line if they're narrow
+   enough, which a row of an HTML table should never do. HTML
+   width=/border= attributes are deliberately NOT consulted anywhere
+   in this section -- lset has no border/gridline concept for a
+   border= attribute to control, and per-column width hints have no
+   real signal in the fixture corpus to act on (see htmlatk.h's
+   judgment-call log); column proportions come entirely from
+   colspan-derived weights (TableColumnCount/LsetChainPctWeighted
+   above) instead. */
+static int RenderTableAsLset(struct hax_state *st, const struct htmlnode *tablenode)
 {
-    struct table *T = table_New();
-    if (!T) { st->hardfail = 1; return FALSE; }
-    if (!BuildTableGrid(T, tablenode, st)) st->hardfail = 1;
+    struct lsetvec rows;
+    long i;
+    int ok = BuildLsetGrid(tablenode, st, &rows);
+    /* !ok means BuildLsetGrid found no real rows -- a benign, common
+       case (a genuinely empty/decorative <table>), not a failure; see
+       BuildLsetGrid's own comment on why this must NOT set
+       st->hardfail. Just render nothing for this table and move on. */
+    if (!ok) { lsetvec_free(&rows); return FALSE; }
     FlushPendingSpace(st); /* AddView doesn't collapse into text runs like InsertLiteral does */
-    text_AlwaysAddView(st->dest, st->pos, dataobject_ViewName((struct dataobject *) T), (struct dataobject *) T);
-    ++st->pos;
-    st->anyContent = 1;
-    st->trailingNL = 0;
+    for (i = 0; i < rows.count; ++i) {
+        struct lset *rowRoot = rows.items[i];
+        if (i > 0) EnsureLineBreak(st);
+        text_AlwaysAddView(st->dest, st->pos, dataobject_ViewName((struct dataobject *) rowRoot), (struct dataobject *) rowRoot);
+        ++st->pos;
+        /* EnsureLineBreak's own guard (trailingNL==0) has to see this
+           reset on every iteration, not just once after the loop --
+           the view character just inserted isn't a text newline, so
+           whatever trailingNL was before this row (e.g. 2, carried
+           over from a paragraph break before the table) is stale and
+           must not survive into the next iteration's EnsureLineBreak
+           call. Missing this the first time (only setting it once,
+           after the whole loop) caused a real, confirmed bug: two
+           row-views landed on back-to-back text positions with
+           *nothing* between them (RUN[65,66)/RUN[66,67) directly
+           adjacent, no newline run at all -- found by reading the raw
+           dump output after wdc reported the fixed version showed no
+           table content at all past the first line of body text). */
+        st->trailingNL = 0;
+        st->anyContent = 1;
+    }
+    lsetvec_free(&rows);
     st->spacePending = 0;
     return !st->hardfail;
 }
@@ -1083,6 +1581,36 @@ static int tag_is_para(const char *t)
 static int tag_is_suppressed(const char *t)
 {
     return strcmp(t, "head") == 0 || strcmp(t, "title") == 0;
+}
+
+/* `display:none`/`visibility:hidden` (added to htmlpart.c's style
+   property allowlist alongside this check, 2026-08-16): an
+   industry-standard trick in commercial marketing email is a `<div
+   style="display:none">short summary text</div>` right at the top of
+   the body -- the "preheader" -- read only by the email client's
+   inbox-list preview line, never meant to be visible in the opened
+   message. Without this check that div rendered as ordinary visible
+   body text (confirmed live, National Grid fixture, 2026-08-16: "We
+   have helpful resources to help manage energy costs" at the very top
+   of the rendered body, with no visible counterpart anywhere else in
+   the source -- found while chasing a separate "too much whitespace"
+   report, worth more on its own than the whitespace investigation that
+   led to it). Checked once, right alongside tag_is_suppressed, so a
+   hidden node's children are never even pushed onto the walk stack --
+   same "skip structurally, don't half-render" treatment as any other
+   suppressed content. */
+static int NodeIsStyleHidden(const struct htmlnode *n)
+{
+    char *sv;
+    int hidden = 0;
+
+    sv = htmlpart_GetStyleProp(n, "display");
+    if (sv) { if (value_contains_ci(sv, "none")) hidden = 1; free(sv); }
+    if (!hidden) {
+        sv = htmlpart_GetStyleProp(n, "visibility");
+        if (sv) { if (value_contains_ci(sv, "hidden")) hidden = 1; free(sv); }
+    }
+    return hidden;
 }
 
 /* Pushes style marks for a node's tag-implied and style=-implied
@@ -1166,9 +1694,25 @@ boolean htmlatk_Render(struct text *dest, long pos, const struct htmlnode *root,
             }
             /* ELEMENT */
             if (tag_is_suppressed(n->tag)) continue;
+            if (NodeIsStyleHidden(n)) continue;
 
             if (strcmp(n->tag, "table") == 0) {
-                if (!RenderTable(&st, n)) { /* hardfail already recorded */ }
+                const struct htmlnode *cellChildren;
+                if (TableIsTrivialWrapper(n, &cellChildren)) {
+                    /* 1x1 no-op wrapper table -- see TableIsTrivialWrapper's
+                       own comment. Inline its cell's children directly
+                       instead of building an lset for it at all. */
+                    ws_push_siblings(&ws, cellChildren);
+                    continue;
+                }
+                /* Every table builds via lset now -- no more routing
+                   decision (the earlier hybrid, and the colspan/rowspan
+                   check that drove it, are gone as of 2026-08-16; see
+                   this file's header comment and htmlatk.h's judgment-
+                   call log). BuildLsetGrid/RenderTableAsLset degrade
+                   gracefully (hardfail recorded, nothing inserted) for
+                   a structurally degenerate table with no real rows. */
+                if (!RenderTableAsLset(&st, n)) { /* hardfail already recorded */ }
                 continue;
             }
             if (strcmp(n->tag, "img") == 0) {

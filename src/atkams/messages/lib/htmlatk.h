@@ -335,6 +335,679 @@
 	runs around every no-color case came back with exactly the expected
 	boundaries, no bleed).
 
+	lset-based table reflow (BuildLsetGrid/RenderTableAsLset in
+	htmlatk.c), added as a follow-up to the original table/spread-only
+	design above -- see revival/doc/lset-table-reflow-gate1-report.md
+	for the full research trail this implementation is based on.
+	table/spread is a fixed-pixel-column model (ATK_DEFAULT_COLUMN_
+	THICKNESS, table.ch) that never reflows on window resize; lset/
+	lpair (src/atk/adew/lset.c, src/atk/supportviews/lpair.c) is a tree
+	of binary, PERCENTAGE-mode splits that genuinely does (lpair.c:385,
+	objcvt recomputed from a live percentage on every DesiredSize
+	pass). This is now the default path for an HTML <table>; table/
+	spread is kept, unmodified, as the fallback for the one shape lset
+	structurally cannot represent.
+
+	Routing rule (TableNeedsGridFallback, htmlatk.c): a table routes to
+	the OLD table/spread path if and only if it has any colspan>1 or
+	rowspan>1 cell anywhere in its own rows (not a descendant/ancestor
+	table's), or is structurally degenerate (no row with any real
+	<td>/<th>). Otherwise it routes to the new lset path. This is a
+	per-<table>-node decision, not a per-document one: a span-free
+	outer wrapper table can (and in the real fixture corpus, routinely
+	does) route to lset while a colspan-bearing table nested many
+	levels inside one of its cells independently routes to table/
+	spread, and vice versa -- confirmed against real fixtures 09/12/16
+	(the corpus's only colspan-bearing fixtures): the specific nested
+	tables carrying colspan="3"/"8"/"12"/"2" cells show up as real
+	table_ImbeddedObject NESTED-TABLE structures in htmlatktest.test's
+	dump output at whatever depth they actually occur, while every
+	span-free table around them -- including the top-level document
+	wrapper in all three fixtures -- uses lset. table/spread's own
+	JOINED/SetInterior spanning mechanism has no lset equivalent
+	(lpair is a strict two-child guillotine split, confirmed in Gate 1;
+	there is no "this region covers two rows" concept anywhere in lset/
+	lpair), so a table that needs it structurally cannot use the new
+	path at all -- this is not a heuristic tuned against the corpus,
+	it is the only choice lset's own data model allows.
+
+	N-way splits as a chain of binary splits, and the percentage
+	assigned at each link (LsetChainPct, htmlatk.c): lset/lpair only
+	ever splits one region into two (Gate 1, section 1.1), so an N-cell
+	row (or an N-row table) is built as a right-leaning chain of N-1
+	lset split nodes: node 0's left is leaf 0, node 0's right is node 1
+	(covering leaves 1..N-1), node 1's left is leaf 1, node 1's right
+	is node 2, and so on, the last node's right being leaf N-1 directly
+	(no further node needed for N==1). Traced against real lpair.c
+	source (not assumed from the symmetric N=2 case Gate 1's own probe
+	tested): lsetv.c's initkids() passes ls->pct straight through to
+	lpair's HSplit/VSplit as the *second* positional argument's share
+	-- lpair.c:498-510's PERCENTAGE branch sets objsize[1] (the second,
+	right child) to exactly pct, and ComputeSizesFromTotal (lpair.c:
+	373-398) gives the first (left) child whatever total space is left
+	over. So ls->pct is unambiguously "how much of this split's own
+	space goes to ls->right", not a symmetric or left-biased value.
+	Given that, and wanting every leaf to end up with an equal 1/N
+	share of the whole chain's space (this module's chosen v1 default,
+	see the width-hints paragraph below for why), each link's pct must
+	give its right subtree (which still contains `remaining-1` not-yet-
+	peeled leaves) exactly (remaining-1)/remaining of that link's own
+	space, so that -- inductively, one level of recursion at a time --
+	each remaining leaf keeps getting an equal share of whatever space
+	it was handed. That formula, LsetChainPct(remaining) = round(100 *
+	(remaining-1) / remaining), was checked with a standalone offline
+	harness (mirrors lpair.c's own integer division exactly, including
+	its floor-not-round objcvt arithmetic) before being wired into
+	htmlatk.c, computing the actual final leaf-pixel breakdown for
+	N=2..5 against several total widths (900/1000/800/601, chosen to
+	include both evenly- and unevenly-divisible cases): every case sums
+	back to exactly the input total (no lost or double-counted pixels
+	across the whole chain) and every leaf lands within 1-4px of a
+	perfectly equal 1/N share, e.g. N=5/total=1000px gives leaf widths
+	[200,200,198,201,201] against an ideal of 200.00 each. Rounding to
+	the nearest integer percentage point (rather than truncating, the
+	naive choice) roughly halves the worst-case per-leaf deviation
+	versus the ideal share in that same harness -- confirmed, not
+	assumed. BuildLsetChain itself builds this chain with a plain
+	backwards for-loop, deliberately NOT the bounded-C-recursion this
+	file already uses for nested <table> depth (see that section's own
+	note above): a single row's cell *count* is bounded only by how
+	much markup a sender puts in one <tr>, which -- unlike table-
+	nesting depth -- scales with raw document content, not structure,
+	so it gets the same explicit-iteration treatment htmlpart.c/
+	htmltext.c already use for genuinely document-size-bound walks.
+
+	Per-column/per-cell HTML width hints are deliberately NOT consulted
+	for the lset path's percentages (equal-split is this module's v1
+	default, unconditionally) -- unlike the table/spread path just
+	above, which does read the table-level width= attribute (Parse
+	WidthPixels/HTML_TABLE_DEFAULT_WIDTH). Checked against the real
+	fixture corpus before deciding, not assumed: no fixture anywhere in
+	revival/tests/html-fixtures/ uses a per-<td> width= or a <col>/
+	<colgroup> width hint (grepped for both); the only width attribute
+	seen anywhere is a whole-table width="100%"/width="NNN", which says
+	nothing about relative *column* proportions in the first place --
+	there is no real signal in this corpus this module could act on
+	even if it tried. If a future fixture or live message shows a real
+	per-column width pattern, this is the place to add it (thread a
+	per-leaf weight through BuildLsetCell/BuildLsetChain instead of the
+	uniform "1 of N" LsetChainPct(remaining) call), flagged here rather
+	than silently left unconsidered.
+
+	A visible thin resize-divider bar between every lset-split region
+	is an inherent, unavoidable property of this construction, not a
+	defect introduced by this module: lsetv.c's initkids() (the code
+	that turns a saved lset tree back into live views on open, Gate 1
+	section 1.1) hardcodes moveable=TRUE on every HSplit/VSplit call --
+	`lsetview_HSplit(self,v1,v2,ls->pct,TRUE)` -- with no data-level
+	knob this module's construction code can set to suppress it (the
+	`struct lset` data section, lset.ch, has no such field at all).
+	table/spread's border="0" -> GHOST handling (BuildTableGrid, this
+	file) has no lset equivalent for the same reason colspan/rowspan
+	doesn't: there is nothing in lset's own data model to carry that
+	information even if this module wanted to set it. This is a real,
+	visible difference from a genuine CSS-style borderless layout
+	table and is called out here deliberately rather than silently
+	discovered later; it was not treated as a blocking design fork
+	because it follows directly from the lset/lpair mechanism Gate 1
+	already evaluated and recommended, and no per-instance API exists
+	in this class to work around it from htmlatk.c without modifying
+	lset/lpair/lsetview themselves, which is out of this module's
+	scope.
+
+	htmlatktest.test's dump/writeds/roundtrip subcommands needed no
+	*new* subcommands to exercise the lset path -- the same fixture-
+	file-in, real-datastream-or-greppable-dump-out shape already
+	proves it -- but DumpStyledText/DumpCellTextContent's embedded-view
+	scan and DumpTableCell's table_ImbeddedObject case both needed a
+	third branch alongside their existing "table"/"text" class checks
+	(a new DumpLsetTree, mutually recursive with both, since a lset
+	leaf's own content is "text" that can itself embed a nested table
+	or a nested lset, exactly symmetric with a table cell's "text"
+	content being able to embed a nested lset -- both nesting
+	directions are real, confirmed against fixtures 09/12/16 above, not
+	just the shallow case a single new branch would have covered).
+
+	CORRECTION, found via live testing in ez (not caught by any
+	offline dump/writeds/roundtrip check -- those only prove
+	construction/serialization round-trips correctly, not that the
+	object actually draws its content at a sensible size): the first
+	version of BuildLsetGrid wrapped each row's cell-split lset in one
+	more outer lset (lsetview_MakeVert) to stack the rows into a
+	single merged tree, mirroring wdc's original proposed shape
+	literally. Live-tested in ez against a real message
+	(revival/render_test.ez, the National Grid mail used throughout
+	Stage 3), it rendered as a wall of empty horizontal divider lines
+	with no visible text, even though the underlying datastream
+	genuinely contained the real cell text (confirmed offline via
+	roundtrip -- CELL-TEXT-CONTENT entries up to 615 chars long were
+	present and intact; this was a display bug, not a missing-data
+	bug). Root cause, traced directly in
+	src/atk/supportviews/lpair.c's lpair__DesiredSize (lines 300-370):
+	its two branches are NOT symmetric despite looking parallel. The
+	lpair_VERTICAL branch (side-by-side children -- what
+	lsetview_MakeHorz/our per-row cell split compiles down to,
+	lpair.c:331-353) genuinely asks each child for its desired height
+	at a given width and returns max(d0,d1): content-aware, correct.
+	The lpair_HORIZONTAL branch (stacked children -- what
+	lsetview_MakeVert/the old row-stacking layer compiled down to,
+	lpair.c:354-364) does NOT sum its children's desired heights at
+	all -- it takes whatever `height` it was *given*, splits that by
+	percentage (lpair_ComputeSizesFromTotal), and reports back
+	`(height > 2048) ? STARTHEIGHT : height`, i.e. it echoes the input
+	or caps at a hardcoded 256px constant, never actually querying its
+	row children's real content height. This is correct behavior for
+	lset's original design target (splitting an already-fixed-size
+	interactive window pane, where "total size" is externally given
+	and stays fixed) and wrong for a content-driven inset embedded
+	inline in flowing text, where the height has to be derived from
+	content, bottom-up. No amount of correct pct-formula or routing
+	logic in this module could have fixed this -- it's one level
+	below, in lpair itself, and out of this module's scope to change.
+
+	Fix, now implemented: stop using lset/lpair for the row-stacking
+	dimension entirely. It never needed percentage-based reflow in the
+	first place -- rows should just stack at their natural height,
+	unconditionally, regardless of window width, which is exactly what
+	the surrounding `text` object's own per-line flow already does
+	correctly for every other block this renderer inserts (paragraphs,
+	RenderImageInline's images, RenderTable's whole table object).
+	BuildLsetGrid now takes an out-param and fills it with one lset
+	root per row (cells only, lsetview_MakeHorz -- the dimension that
+	IS content-aware) instead of building and returning one merged
+	tree; RenderTableAsLset inserts each row as its own
+	text_AlwaysAddView call at successive text positions, separated by
+	EnsureLineBreak, the same idiom every other block-level insertion
+	in this file already uses. Re-verified after the fix: same offline
+	suite (16 fixtures, 3 regression suites, writeds/roundtrip) all
+	still green, and revival/render_test.ez regenerated for wdc to
+	re-check live in ez. General lesson for this project, not just
+	this bug: offline writeds/roundtrip proves construction and
+	serialization are correct, but does not prove a view actually
+	sizes/draws itself sensibly -- that still needs a real live check
+	in ez/messages, the same lesson Stage 3's original
+	`\begindata{table,...}`-visible-as-text corruption bug already
+	taught, now confirmed a second time for a completely different
+	failure mode (wrong size instead of wrong bytes).
+
+	SECOND CORRECTION, same live-testing cycle, found immediately after
+	the one above: wdc re-checked the per-row-insertion fix in ez and
+	reported the divider lines were gone (expected -- see the "visible
+	resize-divider bar" note above, a per-lset-split property, not a
+	per-row-stacking one, so removing the row-stacking lpair layer
+	removes exactly one divider per table, the one that used to run
+	between rows) but ALSO no table content at all rendered past the
+	first line of plain body text -- worse than the first bug, not
+	better. Root-caused by going straight to the same offline dump
+	tool rather than guessing from the live symptom (per this file's
+	own stated methodology): `htmlatktest.test dump` on the raw fixture
+	showed `RUN[65,66) style=VIEW ...` immediately followed by
+	`RUN[66,67) style=VIEW ...` -- the two row-views were sitting at
+	back-to-back text positions with NOTHING between them, not even a
+	newline run. RenderTableAsLset's loop called EnsureLineBreak(st)
+	before each row after the first, but EnsureLineBreak's own guard
+	(`if (st->trailingNL == 0)`) was reading stale state: the loop set
+	`st->trailingNL = 0` only once, after the whole loop finished, not
+	after each individual row insertion. So on the first
+	inter-row EnsureLineBreak call, trailingNL was still whatever it
+	had been left at BEFORE the table started (2, from the paragraph
+	break the intro text ended with) -- EnsureLineBreak saw a nonzero
+	value and, believing a break already existed, inserted nothing.
+	Every row after the first landed on the exact same text position as
+	the row before it, with no line break to force it onto its own
+	line -- explaining both symptoms at once (no dividers, since
+	dividers were correctly removed by the first fix; no visible
+	content, since stacking N views with zero separation onto one
+	logical line is not a state a text view's line-layout code is
+	built to display sensibly). Fixed by moving `st->trailingNL = 0;
+	st->anyContent = 1;` inside the loop, right after each row's own
+	text_AlwaysAddView call, mirroring exactly how InsertLiteral/
+	FlushPendingSpace update this same state immediately alongside
+	their own insertion rather than deferring it. Verified two ways
+	before calling this fixed: (1) re-ran the same dump command and
+	confirmed a real `RUN[...) style=(none) text="\n"` run now sits
+	between every pair of adjacent row-views; (2) re-ran the full
+	offline suite again (16 fixtures, 3 regression suites) -- all still
+	green. revival/render_test.ez regenerated a second time; NOT yet
+	re-confirmed live in ez as of this writing. Sharpens the general
+	lesson above: it's not just that offline testing can't prove a view
+	draws at a sensible size -- it also could have caught THIS bug
+	(missing separator between two adjacent embedded views is a pure
+	text-position fact, no X11 needed) if the dump output had been
+	actually read after the first fix instead of only re-running the
+	pass/fail suite and trusting a byte-count match. Read the dump
+	output, not just its exit code.
+
+	THIRD CORRECTION, same live-testing cycle, this one outside this
+	module entirely: wdc re-checked the trailingNL fix above in ez and
+	reported real progress (the first row's real content -- an image
+	alt-text block -- finally showed) but everything after it was
+	still missing, plus a large blank gap before it. Investigation
+	(with wdc pointing at real prior art in the tree --
+	src/contrib/mit/neos/eosaux.c's eos__InitializeObject and
+	src/atk/supportviews/bpair.c -- and then at src/atk/adew/cel.c/
+	celv.c) found the actual root cause one level below this module,
+	in lsetview itself (src/atk/adew/lsetv.ch/.c): it has NO
+	DesiredSize override at all, so it inherits lpair's unmodified --
+	and lpair__DesiredSize only ever examines self->obj[0]/obj[1] (an
+	internal split node's two children); a bare LEAF lsetview (any
+	single cell -- self->mode != lsetview_IsSplit, obj[0]/obj[1] both
+	NULL, real content living in self->child instead) falls through to
+	lpair's generic fallback, which echoes back whatever height it was
+	asked for rather than ever consulting self->child's real content
+	size. This is NOT specific to how htmlatk.c builds its lset trees
+	-- it's a genuine gap in lsetview itself, confirmed three
+	independent ways (a full manual trace through initkids/makeview/
+	dolink, checking lsetv.ch's override list directly, and reading
+	eosaux.c's real fixed-pixel-chrome usage pattern, which sizes
+	panes by construction-time constants specifically because nothing
+	in lpair/lsetview can derive a size from real content). The fix
+	(implemented on the html branch, same session, in lsetv.ch/.c, NOT
+	in this file) was modeled directly on celview__DesiredSize
+	(celv.c), a sibling adew class that already solves exactly this
+	problem correctly for its own single-child case: a new
+	lsetview__DesiredSize override that forwards straight to
+	self->child's real DesiredSize whenever this is a leaf hosting
+	real content, falling through to super_DesiredSize (lpair's
+	existing, unchanged split-partitioning behavior) for genuine
+	internal split nodes or a not-yet-linked/empty leaf. Purely
+	additive -- no existing lset/Arbcon behavior for split nodes
+	changes. Requires classpp regeneration (lsetv.eh/.ih) and a
+	rebuild+install+md5-verify of lset.do/lsetv.do specifically (not
+	text822.do this time -- a different, shared, dynamically-loaded ATK
+	class), same install-then-verify discipline as every other fix in
+	this project. This module's own construction code
+	(BuildLsetGrid/RenderTableAsLset/BuildLsetChain/BuildLsetCell)
+	needed NO changes for this fix -- it was already producing the
+	right tree shape; the missing piece was one level below, in the
+	toolkit itself. As of this writing, re-verified offline (16
+	fixtures + 3 regression suites still green -- expected, since this
+	fix only affects live view geometry, not dataobject construction/
+	serialization, so offline dump/writeds/roundtrip cannot exercise it
+	at all) but NOT yet re-confirmed live in ez.
+
+	FOURTH CORRECTION, same live-testing cycle, also outside this
+	module, in lsetview again: wdc confirmed the DesiredSize fix above
+	worked (text blocks show at their real size and resize with the
+	window) but reported a large, still-unfixed amount of blank space
+	between blocks -- enough that scrolling between them takes a full
+	screen at a time -- and the scrollbar itself doesn't reflect the
+	true content size either. Root cause: lsetview_WantNewSize
+	(lsetv.c) only ever handled the "redraw myself" half of a
+	size-change notification (self->mode = lsetview_UpdateView plus a
+	same-level lsetview_WantUpdate call); it never escalated to the
+	real WantNewSize chain that tells an ENCLOSING container "I've
+	changed size, please re-layout/re-reserve space around me."
+	view__WantNewSize (view.c, the true base default) climbs exactly
+	one level to self->parent when self==requestor; celview__WantNewSize
+	(celv.c) calls this via super_WantNewSize(self,self) in addition to
+	its own bookkeeping -- lsetview never made that call at all. Net
+	effect: once a leaf's real content linked/loaded and its
+	DesiredSize started reporting a real (usually much smaller) height,
+	nothing ever told the embedding text object -- which had already
+	reserved space for that leaf based on an earlier, pre-content
+	guess -- to re-ask and shrink its reservation, and the scrollbar
+	(sized from that same stale reservation) never updated either. Same
+	failure shape as the DesiredSize gap, same fix pattern: added
+	super_WantNewSize(self,self) to lsetview__WantNewSize, modeled on
+	celview's already-working equivalent, alongside (not replacing) the
+	existing local mode/WantUpdate handling. Rebuilt+installed+
+	md5-verified lsetv.do again (lset.do unaffected, only lsetv.c
+	changed this time). Re-verified offline (16 fixtures + 3 regression
+	suites still green, same reasoning as above -- this is a live
+	view-geometry fix, offline tooling can't exercise it) but NOT yet
+	re-confirmed live in ez.
+
+	FIFTH CORRECTION / methodology note, same cycle: after the fourth
+	correction wdc reported "still looks the same." Live lldb tracing
+	(register reads on lsetview__DesiredSize's entry args, since this
+	build has no DWARF line info -- see sonnet-playbook.md's lldb
+	notes) initially appeared to show a genuine infinite loop:
+	lsetview__DesiredSize firing hundreds of times a second, cycling
+	through a small fixed set of self pointers with identical
+	width/height each time. Root-caused this to the same missing-
+	debounce gap celview__WantNewSize (celv.c) already guards against
+	via its own sizepending field/check -- lsetview_WantNewSize
+	escalated unconditionally on every call, with nothing to stop a
+	downstream re-layout reaction from re-triggering another
+	escalation before the first was serviced. Added an equivalent
+	sizepending field to lsetview (lsetv.ch data: section) and the
+	same guard/reset pair celview uses (WantNewSize only escalates
+	`if (!self->sizepending)`, then sets it TRUE; DesiredSize resets it
+	FALSE at the top, since a real query means whatever was pending has
+	been serviced). This is a real, additive hardening worth keeping
+	regardless of what's below.
+
+	HOWEVER: re-testing after this fix showed the SAME apparent loop
+	pattern still occurring under lldb (now cycling a larger ~57-object
+	set instead of ~6, same rough call rate) -- but a follow-up test
+	running ez PLAINLY in the background, no debugger attached, for 15+
+	seconds showed ZERO calls to lsetview__DesiredSize after the
+	initial render and the process sitting fully idle at 0% CPU. This
+	strongly suggests the apparent "infinite loop" was an LLDB
+	ARTIFACT (the batch script's rapid breakpoint-hit -> register-read
+	-> continue cycle interacting with X11 in some way that generates
+	synthetic re-dispatch, not a real runaway loop in the app itself),
+	not a genuine bug -- real, undebugged execution shows no ongoing
+	work at all once the initial layout completes, which is the
+	CORRECT steady-state behavior. This was not fully re-confirmed with
+	a clean return-value trace (attempting to capture the actual
+	dWidth/dHeight results via `finish` inside a scripted lldb
+	breakpoint-command sequence hit real tooling friction -- `finish`
+	resumes the target asynchronously, which aborts the remaining
+	queued commands in that same script invocation, corrupting
+	subsequent convenience-variable state -- a genuine limitation of
+	this scripted-breakpoint-command technique worth remembering for
+	future sessions, not yet solved). Also newly noted for future
+	sessions: invoking plain `ez` (no absolute path) under lldb from
+	this checkout resolved to a DIFFERENT checkout's binary
+	(andrew-6.4/build/bin/ez was found first on PATH) -- this did NOT
+	actually invalidate the test, since ANDREWDIR (which was set
+	correctly to this checkout's build/) governs dynamic .do loading
+	independent of which copy of the runapp/ez executable itself is
+	running (confirmed: the breakpoint resolved to freshly-compiled
+	code matching this session's own edits, disassembling to the exact
+	`self->sizepending = FALSE` store this fix added) -- but it's a
+	sharp edge worth flagging so a future session doesn't waste time
+	chasing a phantom "wrong build" theory the way this one almost did.
+
+	Net state as of this writing: the sizepending debounce fix is
+	real, correct, and kept, but whether it (or anything else) actually
+	resolves wdc's visual complaint (large gaps between blocks,
+	scrollbar not reflecting true content size) has NOT been
+	re-confirmed live -- the lldb investigation above answered "is
+	there a runaway loop" (apparently no, in real use) but not "why are
+	the gaps still there," which remains the open question for the
+	next live check.
+
+	SIXTH CORRECTION, found live 2026-08-16 -- this is the one that
+	actually explains the gaps, found from wdc's own diagnostic
+	instinct rather than another blind source-reasoning pass: wdc
+	reported that clicking into one of the large blank gaps highlighted
+	a big solid black zone, "as if we missed eliminating an empty text
+	zone" -- and sent a screenshot confirming exactly that (a large
+	solid black rectangle sitting right where an empty spacer row
+	should be, directly below a real content block). This is
+	lsetview__Update's own literal rendering for a focused, genuinely
+	empty leaf (lsetv.c): `if(self->HasFocus)
+	lsetview_SetTransferMode(self,graphic_BLACK); ...
+	lsetview_EraseVisualRect(self);` -- Arbcon's built-in "this is an
+	empty, ready-to-paste pane, click here" indicator, never meant to
+	appear in read-only rendered mail. Root cause, found by re-reading
+	BuildLsetCell (this file) against the DesiredSize fix from the
+	third correction above: that fix's forwarding condition is
+	`self->mode != lsetview_IsSplit && self->child`, and BuildLsetCell
+	deliberately left a genuinely-empty cell (CellIsEmpty) as a bare
+	leaf with dobj==NULL/viewname=="" (modeled on table_EmptyCell's
+	zero-overhead philosophy) -- meaning self->child is NEVER created
+	for an empty cell (lsetv.c's makeview() declines for an empty
+	viewname), so an empty leaf ALWAYS falls through to lpair's
+	original, still-broken DesiredSize fallback regardless of the
+	third correction's fix -- that fix only ever covered non-empty
+	leaves. Real marketing/newsletter email is full of near-invisible
+	spacer/padding rows (confirmed throughout revival/tests/
+	html-fixtures/), so this gap hit constantly and is the actual,
+	dominant source of the reported large blank areas -- not a
+	remaining DesiredSize/WantNewSize propagation issue as the fourth/
+	fifth corrections above assumed (those fixes are still real and
+	correct, just not what was causing THIS symptom). Fix: BuildLsetCell
+	now always creates a real "text" dataobject and attaches it as
+	leaf->dobj/viewname, even for an empty cell (leaving the text
+	object's own content empty in that case rather than skipping
+	object creation entirely) -- self->child is therefore never NULL
+	for any real cell, so the third correction's DesiredSize fix always
+	applies, and an empty text view's own natural height is small/
+	correct (the same as any other blank line elsewhere in this
+	renderer, never a reported bug) -- the minimal-footprint outcome
+	table_EmptyCell's zero-overhead design was trying to approximate a
+	different, lset-incompatible way. Verified: re-ran writeds+roundtrip
+	on the National Grid fixture -- LEAF (empty) count went from 8 to 0
+	and CELL-TEXT-CONTENT len=0 appeared 8 times in its place (same 8
+	cells, now real empty text objects instead of bare dobj==NULL
+	leaves); all 16 fixtures + all 3 regression suites still green;
+	revival/render_test.ez regenerated. NOT yet re-confirmed live in
+	ez, but this is the first fix in this whole lset-table-reflow
+	investigation that was actually confirmed against a real,
+	wdc-provided screenshot rather than source-reasoning alone --
+	notably higher confidence than the fourth/fifth corrections above.
+
+	SEVENTH addition, requested live 2026-08-16, same session: wdc
+	confirmed the sixth correction fixed the black-box rendering, but
+	pointed out (with a screenshot, plus a follow-up note that the
+	ATK caret needed many ^N presses to step down through the
+	remaining blank area between real content blocks) that consecutive
+	blank spacer rows should coalesce into a single blank line, the
+	way HTML/browsers collapse redundant whitespace -- otherwise N
+	stacked blank spacer <tr>s (a common real-mail padding pattern,
+	confirmed throughout revival/tests/html-fixtures/) become N
+	stacked blank lines. Added RowIsEntirelyBlank() (a row has >=1
+	real <td>/<th> and every one is CellIsEmpty) and coalescing logic
+	in BuildLsetGrid's row loop: a run of 2+ consecutive entirely-blank
+	rows collapses to just the first; a single isolated blank row is
+	left alone (real, intentional spacing, not redundant). Verified
+	structurally via writeds/roundtrip on the National Grid fixture --
+	confirmed the coalescing logic itself fires correctly where
+	applicable (a nested spacer-table under the document's first
+	top-level row now resolves to a single len=0 leaf after
+	coalescing) -- but this fixture's overall leaf/blank-leaf counts
+	were UNCHANGED (52 total, 8 blank) before vs. after, meaning this
+	specific document doesn't actually have any 2+-consecutive-blank-row
+	runs for the fix to act on beyond that one nested case. This means
+	coalescing, while a real and correct improvement kept in the code,
+	is NOT the full explanation for the many-^N-presses symptom on
+	THIS fixture -- something is still causing at least one nested
+	lset-in-cell-in-lset chain (the document's very first top-level row,
+	a single-cell row wrapping a nested table that itself coalesces to
+	one blank row) to draw far taller on screen than its now-minimal
+	underlying character content (0 real characters at the bottom of
+	that chain) should require. All 16 fixtures + 3 regression suites
+	still green; render_test.ez regenerated. This nested-chain height
+	mystery is the genuinely open question carried into the next live
+	check -- not yet root-caused.
+
+	NINTH item, requested live 2026-08-16, same session (wdc: "much
+	better" after the eighth fix above) -- removed the table/spread
+	hybrid entirely, per wdc's explicit direction: "I don't like the
+	hybrid model of going back to table on colspan... we should be
+	able to unsplit an lset crossing multiple columns." Design
+	discussion (with wdc, before writing code): the key realization is
+	that each lset row already builds its own fully independent
+	binary-split tree (unlike table/spread's single shared grid), so a
+	colspan cell doesn't need "unsplitting"/merging at all -- it just
+	needs to be a proportionally WIDER leaf in its own row's split
+	chain. wdc's own counter-example sharpened this from "no shared
+	state needed" (my first, incomplete answer) to "needs one shared
+	table-wide column count so cells in DIFFERENT rows still align":
+	`Date | Description(colspan=3) | Status` over `Jan1 | ItemA |
+	ItemB | ItemC | Shipped` only aligns if Description's weight (3)
+	and ItemA+ItemB+ItemC's combined weight (1+1+1) are both expressed
+	as fractions of the SAME total (5), not each row's own local cell
+	count. Implemented:
+	- TableColumnCount(tablenode): one lightweight pre-scan per table,
+	  the max sum of colspan values (default 1) across all real rows --
+	  deliberately simpler than the old BuildTableGrid's own Pass A, no
+	  rowspan carry-over bookkeeping needed (rowspan still gets no
+	  cross-row vertical handling at all, unchanged from before -- see
+	  below).
+	- LsetChainPctWeighted(remainingWeight, thisWeight): generalizes
+	  the old LsetChainPct(remaining) -- pct = 100*(remainingWeight-
+	  thisWeight)/remainingWeight, which reduces to the exact original
+	  formula when every weight is 1 (checked, byte-identical for the
+	  equal-weight case). BuildLsetChain now takes struct wleaf{leaf,
+	  weight} pairs instead of bare struct lset* items.
+	- BuildLsetCell now reports its own weight (colspan value) via an
+	  out-parameter on every path through the function.
+	- BuildLsetGrid computes ncols once per table, sums each row's real
+	  cell weights, and pads with a MakeFillerLeaf (a real, empty
+	  "text"-backed leaf, same reasoning as the sixth correction above)
+	  when a row's own colspan sum falls short of ncols -- keeps a
+	  genuinely ragged row's real cells aligned with its neighbors
+	  instead of letting them silently stretch to fill 100%.
+	Removed entirely: TableNeedsGridFallback (the routing decision),
+	RenderTable/BuildTableGrid (the whole table/spread construction
+	path -- ~230 lines), ParseWidthPixels/HTML_TABLE_DEFAULT_WIDTH (only
+	used by the removed path), and the `#include <table.ih>` dependency.
+	Every <table> now builds via lset unconditionally; the main walk's
+	dispatch no longer branches on colspan/rowspan at all.
+
+	Verified two ways beyond the usual fixture/regression-suite pass
+	(all 16 fixtures + 3 suites still green, and zero TABLE-AT/NESTED-
+	TABLE markers anywhere in the corpus now, confirming the hybrid is
+	genuinely gone, not just unreachable): (1) a synthetic fixture built
+	from wdc's own Date/Description/Status example -- writeds'd datastream
+	shows the row-1 splits at pct=25 and pct=80, hand-verified to
+	resolve to exactly Date=20%/Description=60%/Status=20%, and the
+	colspan-free sibling row's splits are the untouched 50/67/75/80
+	equal-weight chain; (2) a synthetic ragged-row fixture (a 4-cell
+	row over a 1-cell row) -- the 1-cell row's single split is pct=75,
+	meaning the real cell gets the complementary 25%, exactly matching
+	column A's 25% share in the 4-cell row above it, confirming the
+	filler-padding mechanism holds alignment.
+
+	Real regression caught and fixed during this work, not by wdc but
+	by re-running the fixture suite myself before declaring it done:
+	BuildLsetGrid's own "no real rows" branch used to set
+	st->hardfail=1 -- harmless before, since TableNeedsGridFallback's
+	own "!anyRealRow" check routed that case to the OLD table/spread
+	path instead (which degrades silently, no hardfail). With the
+	hybrid gone, EVERY empty/decorative <table> in real mail, and every
+	discarded "peek" attempt from BuildLsetCell's own sole-nested-table
+	shortcut (see the SECOND CORRECTION above -- a multi-row nested
+	table's peek is expected to be discarded, not a real failure),
+	started hitting this same branch, and st->hardfail cascades into
+	RenderHtmlPart falling back the WHOLE message to plain text
+	(text822.c). Caught via the fixture suite itself: 3 of 16 fixtures
+	(01, 08, 12) started reporting RENDER-OK: 0 despite producing
+	complete, correct-looking dumps -- a real false-positive failure,
+	not a construction bug. Fixed by no longer setting st->hardfail for
+	this specific "structurally empty, nothing to render" case in
+	either BuildLsetGrid or its caller RenderTableAsLset -- genuine
+	allocation failures elsewhere in the file are unaffected, still
+	propagate normally. All 16 fixtures back to RENDER-OK: 1 after the
+	fix.
+
+	ELEVENTH item, found live 2026-08-16, same session -- while
+	investigating the still-open TENTH item (the scrolling/paging bug,
+	see this project's memory entry; not fixed here, this is a separate
+	finding), wdc pulled up render_test.ez's
+	raw datastream by hand and asked why the first two lsets were an
+	"apparent empty text, and view", noting "there's always a pair of
+	nested lsets, and this seems incorrect"). Root cause: BuildLsetCell's
+	sole-nested-table fast path (see the SECOND CORRECTION item) builds
+	the nested table's own row (`inner`, already a complete lset leaf/
+	chain) but then WRAPPED it inside the outer leaf this function
+	speculatively allocates at entry (`leaf->dobj = inner`) instead of
+	just using `inner` directly -- producing a pointless lset-wrapping-
+	an-lset pair for every single-cell nested table. This is an
+	extremely common real-world idiom (marketing HTML padding hack: a
+	`<td>` whose only child is its own single-row single-cell `<table>`,
+	e.g. National Grid's `<td align="center">&nbsp;</td>` spacer wrapped
+	in its own table, nationalgrid-body.html:113-115) -- confirmed as
+	the exact case wdc was looking at: object IDs 4318748208 (outer,
+	empty viewname/dataname since it's mid-construction in the pasted
+	excerpt) wrapping 4318748720 wrapping empty text 4318748976. Fixed:
+	discard the unused outer shell via dataobject_Destroy and return
+	`inner` directly as this cell's own leaf; *outWeight (the outer
+	td's own colspan) is set earlier in the function regardless of
+	which object gets returned, so this doesn't affect weight/alignment
+	at all. Verified: all 16 fixtures + 3 regression suites still green;
+	render_test.ez regenerated -- the National Grid fixture's first
+	table now shows ONE lset leaf wrapping the empty text directly, not
+	a pair; the colspan_test.html synthetic fixture (no nested tables,
+	so this path never triggers) writeds'd byte-identical modulo object
+	IDs, confirming the fix is a no-op outside the nested-spacer-table
+	case. Whether this also explains any part of the still-open
+	scrolling/paging bug (see project_html_mail_rendering.md's memory
+	entry) is NOT confirmed -- fewer redundant lsetview layers can only
+	help that investigation, but it wasn't the target of this fix and
+	shouldn't be assumed to resolve it.
+
+	TWELFTH through FIFTEENTH items, 2026-08-16, same session -- the
+	TENTH item's scrolling/paging bug turned out to be a real core ATK
+	bug (BackSpace's end-of-file line-padding wrongly snapping a
+	just-reached end-of-document position back to the start of the
+	previous, very tall line -- fixed in src/atk/text/textv.c, not this
+	file) plus a genuine architectural gap this renderer's own output
+	was the first thing to expose badly enough to notice: wrapping the
+	entire email body in one monolithic lset (the "bulletproof layout"
+	wrapper pattern virtually all commercial marketing HTML uses)
+	breaks ATK's own character-count-based scrollbar model. Fixed with
+	general peeling (TableIsTrivialWrapper + BuildLsetGrid's row-level
+	splice, both keeping each nested table's own column-alignment scope
+	fully independent after an interim version wrongly smeared them
+	together -- see below), plus two more real bugs caught chasing the
+	resulting "still too much whitespace" report: NodeIsVisuallyEmpty
+	never looked inside a nested <table> to judge real blankness (so a
+	<tr> wrapping nothing but a spacer table could never be recognized
+	as blank for consecutive-blank-row coalescing -- fixed, and
+	BuildLsetGrid's blank-check now runs BEFORE its splice-eligibility
+	check, not after, so a genuinely blank spliced row's blankness
+	isn't lost across the splice boundary); and htmlpart.c's style
+	property allowlist never kept `display`/`visibility`, so the
+	industry-standard "hidden preheader" trick (a `<div
+	style="display:none">` holding text meant only for the email
+	client's inbox-preview line) was rendering as ordinary visible body
+	text -- confirmed live, National Grid: "We have helpful resources
+	to help manage energy costs" at the very top of the rendered body,
+	with no visible counterpart anywhere else in the source. Fixed in
+	both renderers (htmlatk.c's NodeIsStyleHidden and htmltext.c's own
+	independent copy), not just this one.
+
+	Full detail -- the reasoning for each fix, what was tried and
+	rejected, and an honest accounting of what's still imperfect about
+	this whole approach -- is in revival/doc/html-mail-rendering-
+	design.md's "Table strategy: lset/lpair, not table/spread" section
+	now, not duplicated here; this file's own log stays focused on
+	htmlatk.c-local judgment calls. All 16 fixtures + 3 regression
+	suites green after every step above; render_test.ez regenerated
+	each time. Whether the scrolling bug is FULLY resolved now (vs.
+	just no longer looping via the specific BackSpace mechanism) is
+	still wdc's call to make via live re-testing -- not yet confirmed
+	as of this entry.
+
+	SIXTEENTH item, 2026-08-16, same session -- live testing of the
+	TWELFTH-through-FIFTEENTH fixes above surfaced two more findings,
+	both confirmed against a real National Grid message (not the
+	synthetic fixture corpus; the actual message this whole
+	investigation has been chasing, saved at revival/tests/
+	national-grid.html -- kept out of html-fixtures/ since that
+	directory's own regression test hardcodes an expectation of
+	exactly 16 files). First: BuildLsetGrid's blank-row coalescing
+	(previous item) only dropped a blank <tr> when the row immediately
+	before it was ALSO blank -- a deliberate judgment call at the time
+	("an isolated blank row is ordinary, intentional spacing, worth
+	preserving"), but this message's real body alternates one blank
+	spacer row with every single real content row, so every isolated
+	blank row fell through untouched: wdc found this independently via
+	careful mouseover boundary-hunting in the live ez render ("a blank
+	line between every lset"), confirmed structurally via
+	`htmlatktest.test roundtrip` on render_test.ez showing
+	LSET-AT[9]/[13]/[17]/... as genuinely empty (CELL-TEXT-CONTENT
+	len=0), alternating with real content at [11]/[15]/[19]/....
+	Fixed: every blank row is dropped now, isolated or not (see
+	RowIsEntirelyBlank's and BuildLsetGrid's own comments) -- this
+	renderer has no way to represent a source spacer's actual intended
+	height anyway (an 8px CSS spacer and a full blank text line render
+	identically here), so there was never a real fidelity trade-off
+	being preserved by keeping isolated blanks, just an oversight.
+	Verified: all 16 fixtures + 3 regression suites still green;
+	render_test.ez regenerated against the real National Grid source
+	via writeds, roundtrip-dumped, confirmed zero empty cells remain
+	(previously 8); wdc confirmed live ("YES! That's done it!").
+	Second, NOT fixed today (see revival/doc/revival.md's "Open
+	issues" for the full writeup): a related-looking "scroll to end of
+	document is non-deterministic" report turned out to be a distinct,
+	pre-existing, non-HTML-specific bug in core ATK's scrollbar endzone
+	click handling (textview__endzone/setframe, src/atk/text/textv.c)
+	-- every discrete click fires a second, chained "page by one more
+	line" scroll operation whose target depends on transient redraw
+	state, producing a deterministic 3-click cycle rather than settling
+	on the true end. Confirmed via targeted logging in setframe()/
+	endzone(), deliberately deferred (wdc: "let's document that
+	endzone scrollbar behavior and not fix it today") -- logged in
+	revival.md rather than here since it's a general ATK scrollbar bug,
+	not an htmlatk.c-local one.
+
 	== Gate 5 (not implemented by this module) ==
 
 	Wiring this into src/atkams/messages/lib/text822.c (replacing the
