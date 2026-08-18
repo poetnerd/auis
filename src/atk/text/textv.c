@@ -1854,14 +1854,37 @@ static long BackSpace(struct textview *self, long pos, long units, enum textview
            below is the correct, sufficient shortcut on its own --
            pixelsReadyToBeOffTop already IS "how far this line is
            scrolled into," the only distance a within-this-line
-           backward move can cover. */
-        units -= self->pixelsReadyToBeOffTop;
-        if (units <= 0) {
-            self->pixelsComingOffTop = self->pixelsReadyToBeOffTop - ounits;
-            if (distMoved) {
-                *distMoved = self->pixelsReadyToBeOffTop - self->pixelsComingOffTop;
+           backward move can cover.
+
+           Guarded on pos == textview_GetTopPosition(self): pixelsReadyToBeOffTop
+           describes how far the CURRENT top line is scrolled into -- it
+           says nothing about an unrelated pos passed in. The scrollbar's
+           bottom-endzone jump (setframe(), textview's endzone()) computes
+           its target in two MoveBack calls from the same pos
+           (text_GetLength()): first a units==0 realign, then this
+           MoveByPixels backward offset -- neither call is moving from the
+           current top, both move from a freshly computed target line near
+           the end of the document, so this shortcut's premise doesn't
+           apply to them. A held click re-issues the identical request via
+           the endzone auto-repeat timer before mouse-up; by then the first
+           click's landing already set pixelsReadyToBeOffTop to
+           (approximately) the very distance being requested again, so the
+           shortcut fired and returned pos == text_GetLength() completely
+           unmoved -- landing the scroll top exactly at end-of-document, a
+           position with no line of its own, which (as with the
+           MoveForward bug above) renders as a blank white screen.
+           Confirmed live 2026-08-18: holding the scrollbar's bottom
+           endzone button past one repeat tick (~100ms, the default
+           ButtonRepeatTime) reproduced this every time. */
+        if (pos == textview_GetTopPosition(self)) {
+            units -= self->pixelsReadyToBeOffTop;
+            if (units <= 0) {
+                self->pixelsComingOffTop = self->pixelsReadyToBeOffTop - ounits;
+                if (distMoved) {
+                    *distMoved = self->pixelsReadyToBeOffTop - self->pixelsComingOffTop;
+                }
+                return pos;
             }
-            return pos;
         }
     }
 
