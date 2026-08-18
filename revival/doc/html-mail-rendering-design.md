@@ -363,13 +363,12 @@ height — shared scrollbar code used by every ATK application, a much
 bigger and riskier change than anything in this renderer, and out of
 scope here.
 
-Separately, a related-looking but distinct scrollbar bug: clicking a
-scrollbar endzone to jump to the end of the document produces a
-deterministic 3-click cycle rather than settling on the true end, even
-after every fix above. Root cause is in core ATK's `endzone()`/
-`setframe()` (`textv.c`), not this renderer, and not specific to HTML
-mail — see `revival/doc/revival.md`'s "Open issues" for the full
-writeup. Deliberately left unfixed for now.
+Separately, a related-looking but distinct scrollbar bug, now fixed: a
+held click on the bottom endzone (long enough to trigger the button's
+auto-repeat) could blank the whole screen. Root cause was in core ATK's
+`BackSpace` (`textv.c`), not this renderer, and not specific to HTML
+mail — see `revival/doc/revival.md`'s "Old bugs never found till now"
+for the full writeup.
 
 **Degradation, not failure:** email templates nest tables deeply for
 Outlook-compatibility hacks — the fixture corpus's real max is 28
@@ -541,9 +540,28 @@ than one screen:
   the next one"). Fixed to stop at the last line instead, capped at
   its own bottom edge, so further paging becomes a no-op once there
   (`de73971e25`).
+- `BackSpace`'s `MoveByPixels` "stay within the current line" fast-path
+  was applied to any `pos` passed in, though the shortcut's own logic
+  only makes sense when `pos` is the current top position. The
+  scrollbar's bottom-endzone "jump to end" (`setframe()`/`endzone()`)
+  computes its target from a freshly-found line near the end of the
+  document, not the current top — a held click (past the endzone
+  button's ~100ms auto-repeat) re-issued the identical jump request
+  while `pixelsReadyToBeOffTop` still held the first click's landing
+  offset, tripping the fast-path against that unrelated value and
+  returning the target completely unmoved: `text_GetLength()`, the same
+  no-line-of-its-own position the `MoveForward` fix above already
+  identified as rendering blank. Fixed by gating the shortcut on
+  `pos == textview_GetTopPosition(self)`, matching what its own comment
+  already claimed (`492e9b6e24`).
 
-**Known open bug:** clicking the scrollbar's bottom endzone button has
-no effect. Not yet investigated.
+**Known open bug:** forward/backward paging (`^v`/`Escape-v`) and the
+scrollbar's elevator position are still not pixel-accurate — landing
+positions are approximately but not exactly where a precise scroll
+would put them. Not a scrollbar-click bug like the ones above (those are
+fixed); this is the underlying character-count-based positioning model
+described earlier in this document, still only mitigated by peeling, not
+fixed at the root.
 
 ## Planned next work
 
