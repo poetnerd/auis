@@ -1,330 +1,2606 @@
-\begindata{text,4316894016}
+\begindata{text,4307822480}
 \textdsversion{12}
-[image] 
- \
-\begindata{lset,4316908192}
+\begindata{lset,36222783232}
 \V 1
-\begindata{text,4316908448}
+\begindata{lset,36222175488}
+\V 1
+\begindata{text,4307832688}
 \textdsversion{12}
-[image: Stay Coll and connected. Hot summer days are here, enjoy it while 
-you can. We have programs and services to help you manage your energy use, 
-payments and account with ease.]\
-\enddata{text,4316908448}
-0 0 0 4316908448 0 0 0
+\enddata{text,4307832688}
+0 0 0 4307832688 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,4316908192}
-\view{lsetview,4316908192,5,0,0}
-
-\begindata{lset,4316919680}
+\enddata{lset,36222175488}
+\begindata{lset,36222782976}
 \V 1
-\begindata{text,4316884576}
+\begindata{lset,36222175744}
+\V 1
+\begindata{text,4307808976}
 \textdsversion{12}
-\htmlatk-link{[image: Take the Guesswork Out of Monthly Bills Receive more 
-predictable monthly bills with the Budget Plan. By spreading costs evenly 
-throughout the year, you can count on more consistent monthly payments that 
-are easier to manage.]\
-}\enddata{text,4316884576}
-0 0 0 4316884576 0 0 0
+\enddata{text,4307808976}
+0 0 0 4307808976 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,4316919680}
-\view{lsetview,4316919680,6,0,0}
-\begindata{lset,4316923808}
+\enddata{lset,36222175744}
+\begindata{lset,36222782720}
 \V 1
-\begindata{text,4316924640}
+\begindata{lset,36222176000}
+\V 1
+\begindata{text,4307809408}
 \textdsversion{12}
-\htmlatk-link{[image: Payment Plans Can Help Payment plans can help you get 
-back on track if you've fallen behind on your bill. Visit the Financial 
-Support section of MyAccount to explore available payment plans and enroll 
-if your account is eligible.]\
-}\enddata{text,4316924640}
-0 0 0 4316924640 0 0 0
+\enddata{text,4307809408}
+0 0 0 4307809408 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,4316923808}
-\view{lsetview,4316923808,7,0,0}
-\begindata{lset,4316925664}
+\enddata{lset,36222176000}
+\begindata{lset,36222782464}
 \V 1
-\begindata{text,4316926496}
+\begindata{lset,36222176256}
+\V 1
+\begindata{text,36222606112}
 \textdsversion{12}
-\htmlatk-link{[image: Call 811 Before Digging Before starting any digging 
-project, it's important to call 811 to have underground utility lines 
-marked. It's free, easy, and can help prevent injuries, service 
-interruptions, and costly repairs.]\
-}\enddata{text,4316926496}
-0 0 0 4316926496 0 0 0
+\begindata{lset,36222618112}
+\V 1
+\begindata{text,36222606336}
+\textdsversion{12}
+\begindata{lset,36222618368}
+\V 1
+\begindata{text,36222606560}
+\textdsversion{12}
+\htmlatk-link{view in browser\
+}\enddata{text,36222606560}
+0 0 0 36222606560 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,4316925664}
-\view{lsetview,4316925664,8,0,0}
-\begindata{lset,4316927520}
+\enddata{lset,36222618368}
+\view{lsetview,36222618368,55,0,0} 
+\begindata{lset,36222619648}
 \V 1
-\begindata{text,4316928352}
+\begindata{lset,36222618624}
+\V 1
+\begindata{text,36222606784}
 \textdsversion{12}
-\htmlatk-link{[image: Safety During Extreme Heat With peak summer 
-temperatures here, it's important to make heat safety a priority. Drink 
-plenty of water, stay in cool spaces, and check on loved ones during 
-periods of extreme heat. Customers enrolled in text alerts may also receive 
-weather-related safety information from us.]\
-}\enddata{text,4316928352}
-0 0 0 4316928352 0 0 0
+\htmlatk-link{[image: Email]\
+}\enddata{text,36222606784}
+0 0 0 36222606784 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,4316927520}
-\view{lsetview,4316927520,9,0,0}
-\begindata{lset,4316928864}
+\enddata{lset,36222618624}
+\begindata{lset,36222619392}
 \V 1
-\begindata{text,4316929888}
-\textdsversion{12}
-\htmlatk-link{[image: Investing in Reliable Energy For more than 40 years, 
-a South Boston gas regulator station has helped deliver natural gas to 
-approximately 22,000 customers across the greater Boston area. Now, we're 
-investing in modern infrastructure to upgrade the facility, strengthen 
-reliability, and help ensure our energy network is ready to meet customers' 
-needs for decades to come.]\
-}\enddata{text,4316929888}
-0 0 0 4316929888 0 0 0
->OBJ< text
->VIEW< textview
->REF< 
-\enddata{lset,4316928864}
-\view{lsetview,4316928864,10,0,0}
-\begindata{lset,4316930400}
+\begindata{lset,36222618880}
 \V 1
-\begindata{text,4316931424}
-\textdsversion{12}
-[image] Gas meters in Massachusetts are required to be updated every seven 
-years. When you receive a notice, please \htmlatk-link{schedule an 
-appointment}. It's quick, free, and helps ensure your service continues 
-without interruption.\
-\enddata{text,4316931424}
-0 0 0 4316931424 0 0 0
->OBJ< text
->VIEW< textview
->REF< 
-\enddata{lset,4316930400}
-\view{lsetview,4316930400,11,0,0}
-\begindata{lset,52231700480}
-\V 1
-\begindata{text,52215103488}
-\textdsversion{12}
-\htmlatk-link{National Grid\
-}\enddata{text,52215103488}
-0 0 0 52215103488 0 0 0
->OBJ< text
->VIEW< textview
->REF< 
-\enddata{lset,52231700480}
-\view{lsetview,52231700480,12,0,0}
-\begindata{lset,52231700992}
-\V 1
-\begindata{lset,52231700736}
-\V 1
-\begindata{text,52215103712}
-\textdsversion{12}
-[image: Blue Brand Line]\
-\enddata{text,52215103712}
-0 0 0 52215103712 0 0 0
->OBJ< text
->VIEW< textview
->REF< 
-\enddata{lset,52231700736}
-\begindata{lset,52231703296}
-\V 1
-\begindata{lset,52231701248}
-\V 1
-\begindata{text,52215103936}
-\textdsversion{12}
-\htmlatk-link{[image: Twitter]\
-}\enddata{text,52215103936}
-0 0 0 52215103936 0 0 0
->OBJ< text
->VIEW< textview
->REF< 
-\enddata{lset,52231701248}
-\begindata{lset,52231703040}
-\V 1
-\begindata{lset,52231701504}
-\V 1
-\begindata{text,52215104160}
+\begindata{text,36222607008}
 \textdsversion{12}
 \htmlatk-link{[image: Facebook]\
-}\enddata{text,52215104160}
-0 0 0 52215104160 0 0 0
+}\enddata{text,36222607008}
+0 0 0 36222607008 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,52231701504}
-\begindata{lset,52231702784}
+\enddata{lset,36222618880}
+\begindata{lset,36222619136}
 \V 1
-\begindata{lset,52231701760}
-\V 1
-\begindata{text,52215104384}
-\textdsversion{12}
-\htmlatk-link{[image: Youtube]\
-}\enddata{text,52215104384}
-0 0 0 52215104384 0 0 0
->OBJ< text
->VIEW< textview
->REF< 
-\enddata{lset,52231701760}
-\begindata{lset,52231702528}
-\V 1
-\begindata{lset,52231702016}
-\V 1
-\begindata{text,52215104608}
+\begindata{text,36222607232}
 \textdsversion{12}
 \htmlatk-link{[image: Instagram]\
-}\enddata{text,52215104608}
-0 0 0 52215104608 0 0 0
+}\enddata{text,36222607232}
+0 0 0 36222607232 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,52231702016}
-\begindata{lset,52231702272}
-\V 1
-\begindata{text,52215104832}
-\textdsversion{12}
-\htmlatk-link{[image: LinkedIn]\
-}\enddata{text,52215104832}
-0 0 0 52215104832 0 0 0
->OBJ< text
->VIEW< textview
->REF< 
-\enddata{lset,52231702272}
-1 50 0 0 52231702016 52231702272 0
+\enddata{lset,36222619136}
+1 50 0 0 36222618880 36222619136 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,52231702528}
-1 67 0 0 52231701760 52231702528 0
+\enddata{lset,36222619392}
+1 67 0 0 36222618624 36222619392 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,52231702784}
-1 75 0 0 52231701504 52231702784 0
+\enddata{lset,36222619648}
+\view{lsetview,36222619648,56,0,0\
+}\enddata{text,36222606336}
+0 0 0 36222606336 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222618112}
+\view{lsetview,36222618112,110,0,0}
+
+\begindata{lset,36222619904}
+\V 1
+\begindata{text,36222607456}
+\textdsversion{12}
+\htmlatk-link{[image: Disney Hyperion: Artemis Fowl Deluxe Collector's 
+Edition by Eoin Colfer]\
+}\enddata{text,36222607456}
+0 0 0 36222607456 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222619904}
+\view{lsetview,36222619904,111,0,0}
+\begindata{lset,36222620160}
+\V 1
+\begindata{text,36222607680}
+\textdsversion{12}
+\htmlatk-link{[image: The Book Rack]} 
+\begindata{lset,36222624000}
+\V 1
+\begindata{lset,36222620416}
+\V 1
+\begindata{text,36222607904}
+\textdsversion{12}
+\enddata{text,36222607904}
+0 0 0 36222607904 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222620416}
+\begindata{lset,36222620672}
+\V 1
+\begindata{text,36222609472}
+\textdsversion{12}
+\begindata{lset,36222622464}
+\V 1
+\begindata{text,36222609696}
+\textdsversion{12}
+\unknown{\htmlatk-bold{In this issue:\
+}}\enddata{text,36222609696}
+0 0 0 36222609696 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222622464}
+\view{lsetview,36222622464,57,0,0}
+
+\begindata{lset,36222622720}
+\V 1
+\begindata{text,36222609920}
+\textdsversion{12}
+\htmlatk-bold{Featured Titles\
+}\enddata{text,36222609920}
+0 0 0 36222609920 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222622720}
+\view{lsetview,36222622720,58,0,0}
+\begindata{lset,36222622976}
+\V 1
+\begindata{text,36222610144}
+\textdsversion{12}
+\htmlatk-bold{Book Reviews\
+}\enddata{text,36222610144}
+0 0 0 36222610144 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222622976}
+\view{lsetview,36222622976,59,0,0}
+\begindata{lset,36222623232}
+\V 1
+\begindata{text,36222610368}
+\textdsversion{12}
+\htmlatk-bold{The Writer's Life\
+}\enddata{text,36222610368}
+0 0 0 36222610368 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222623232}
+\view{lsetview,36222623232,60,0,0}
+\begindata{lset,36222623488}
+\V 1
+\begindata{text,36222610592}
+\textdsversion{12}
+\htmlatk-bold{Book Candy\
+}\enddata{text,36222610592}
+0 0 0 36222610592 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222623488}
+\view{lsetview,36222623488,61,0,0}
+\begindata{lset,36222623744}
+\V 1
+\begindata{text,36222610816}
+\textdsversion{12}
+\htmlatk-bold{Rediscover\
+}\enddata{text,36222610816}
+0 0 0 36222610816 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222623744}
+\view{lsetview,36222623744,62,0,0\
+}\enddata{text,36222609472}
+0 0 0 36222609472 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222620672}
+11 20 0 0 36222620416 36222620672 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,52231703040}
-1 80 0 0 52231701248 52231703040 0
+\enddata{lset,36222624000}
+\view{lsetview,36222624000,63,0,0\
+}\enddata{text,36222607680}
+0 0 0 36222607680 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222620160}
+\view{lsetview,36222620160,112,0,0}
+\begindata{lset,36222626304}
+\V 1
+\begindata{lset,36222624256}
+\V 1
+\begindata{text,36222611040}
+\textdsversion{12}
+\enddata{text,36222611040}
+0 0 0 36222611040 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222624256}
+\begindata{lset,36222626048}
+\V 1
+\begindata{lset,36222624512}
+\V 1
+\begindata{text,36222611264}
+\textdsversion{12}
+\enddata{text,36222611264}
+0 0 0 36222611264 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222624512}
+\begindata{lset,36222625792}
+\V 1
+\begindata{lset,36222624768}
+\V 1
+\begindata{text,36222611488}
+\textdsversion{12}
+\unknown{July 31, 2026\
+}\enddata{text,36222611488}
+0 0 0 36222611488 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222624768}
+\begindata{lset,36222625536}
+\V 1
+\begindata{lset,36222625024}
+\V 1
+\begindata{text,36222611712}
+\textdsversion{12}
+\enddata{text,36222611712}
+0 0 0 36222611712 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222625024}
+\begindata{lset,36222625280}
+\V 1
+\begindata{text,36222611936}
+\textdsversion{12}
+\enddata{text,36222611936}
+0 0 0 36222611936 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222625280}
+11 10 0 0 36222625024 36222625280 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,52231703296}
-1 50 0 0 52231700736 52231703296 0
+\enddata{lset,36222625536}
+1 50 0 0 36222624768 36222625536 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,52231700992}
-\view{lsetview,52231700992,13,0,0}
-\begindata{lset,52231703552}
+\enddata{lset,36222625792}
+11 10 0 0 36222624512 36222625792 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222626048}
+1 67 0 0 36222624256 36222626048 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222626304}
+\view{lsetview,36222626304,113,0,0}
+\begindata{lset,36222626560}
 \V 1
-\begindata{text,52215105056}
+\begindata{text,36222612160}
 \textdsversion{12}
-\begindata{lset,52231703808}
-\V 1
-\begindata{text,52215105280}
-\textdsversion{12}
-This email was sent to wdc@fastmail.com\
-\enddata{text,52215105280}
-0 0 0 52215105280 0 0 0
+\htmlatk-link{WHAT TO READ NEXT: REVIEWS OF GREAT BOOKS\
+}\enddata{text,36222612160}
+0 0 0 36222612160 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,52231703808}
-\view{lsetview,52231703808,0,0,0}
-
-\begindata{lset,52231704064}
+\enddata{lset,36222626560}
+\view{lsetview,36222626560,114,0,0}
+\begindata{lset,36222626816}
 \V 1
-\begindata{text,52215105504}
+\begindata{text,36222612384}
 \textdsversion{12}
-\htmlatk-link{Unsubscribe} | \htmlatk-link{Privacy Policy} | 
-\htmlatk-link{Contact Us\
-}\enddata{text,52215105504}
-0 0 0 52215105504 0 0 0
+The dog days of summer have a tendency to make people restless, easily 
+agitated, and maybe even a little puckish. It's a prime season for scandals 
+both grave and fanciful. Isaac Butler's "exhaustively investigated and 
+deeply persuasive" history \htmlatk-italic{\htmlatk-link{The Perfect Moment}} 
+considers the explosive reaction to a 1980s Robert Mapplethorpe art exhibit 
+and the questions of censorship that continue to reverberate today. And on 
+the lighter side, Alexandra Vasti's \htmlatk-italic{\htmlatk-link{Scandal 
+of the Summer}} pits outspoken ladies against rakish smugglers in a Regency 
+romance that features delightful banter and un petit assassination plot. 
+Cooler heads do prevail, at any rate, and the well-read ones most of all!
+
+
+--\htmlatk-link{Dave Wheeler}, senior editor, \htmlatk-italic{Shelf 
+Awareness}
+
+
+\enddata{text,36222612384}
+0 0 0 36222612384 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,52231704064}
-\view{lsetview,52231704064,1,0,0}
-\begindata{lset,52231704320}
+\enddata{lset,36222626816}
+\view{lsetview,36222626816,115,0,0}
+\begindata{lset,36222627072}
 \V 1
-\begindata{text,52215105728}
+\begindata{text,36222612608}
 \textdsversion{12}
-Please do not reply to this email
-
-as this email address is not monitored.\
-\enddata{text,52215105728}
-0 0 0 52215105728 0 0 0
+\htmlatk-link{FEATURED TITLES\
+}\enddata{text,36222612608}
+0 0 0 36222612608 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,52231704320}
-\view{lsetview,52231704320,2,0,0}
-\begindata{lset,52231704576}
+\enddata{lset,36222627072}
+\view{lsetview,36222627072,116,0,0}
+\begindata{lset,36222627328}
 \V 1
-\begindata{text,52215105952}
+\begindata{text,36222612832}
 \textdsversion{12}
-170 Data Drive, Waltham, MA 02451\
-\enddata{text,52215105952}
-0 0 0 52215105952 0 0 0
->OBJ< text
->VIEW< textview
->REF< 
-\enddata{lset,52231704576}
-\view{lsetview,52231704576,3,0,0}
-\begindata{lset,52231704832}
+\begindata{lset,36222628096}
 \V 1
-\begindata{text,52215106176}
+\begindata{lset,36222627584}
+\V 1
+\begindata{text,36222613056}
 \textdsversion{12}
-\^{)}2026 National Grid.
-
-CM11206 MA-G (7/26)\
-\enddata{text,52215106176}
-0 0 0 52215106176 0 0 0
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222613056}
+0 0 0 36222613056 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,52231704832}
-\view{lsetview,52231704832,4,0,0} \htmlatk-bold{This is an important 
-notice. Please have it translated.}
-
-Este \^{i} um aviso importante. Quiera mand\^{a}-lo traduzir.
-
-Este es un aviso importante. Sirvase mandarlo traducir.
-
-Avis important. Veuillez traduire immediatement.
-
-Questa \^{h} un'informazione importante, si prega di tradurla.
-
-??? ????? ?????? ?????????.
-
-??????????, ????????? ????? ??? ??? ????????.
-
-?\^{b}y l\^{`} m?t th\^{t}ng b\^{a}o quan tr?ng. Xin vui l\^{r}ng d?ch 
-th\^{t}ng b\^{a}o n\^{`}y.
-
-???????????????.
-
-?????? ????? .??? ????? ???
-
-??? ???? ???????????? ?????????? ??????? ??? ??? ?????? ??? ????
-
-Sa a se yon avi enp\^{r}tan. Tanpri, f\^{h} li tradwi.
-
-????????? ???? .??????? ???????? ?? ??? ????\
-\enddata{text,52215105056}
-0 0 0 52215105056 0 0 0
+\enddata{lset,36222627584}
+\begindata{lset,36222627840}
+\V 1
+\begindata{text,36222613280}
+\textdsversion{12}
+\enddata{text,36222613280}
+0 0 0 36222613280 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,52231703552}
-\view{lsetview,52231703552,14,0,0\
-}\enddata{text,4316894016}
+\enddata{lset,36222627840}
+1 0 0 0 36222627584 36222627840 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222628096}
+\view{lsetview,36222628096,64,0,0} 
+\begindata{lset,36222629376}
+\V 1
+\begindata{lset,36222628352}
+\V 1
+\begindata{text,36222613504}
+\textdsversion{12}
+[image]\
+\enddata{text,36222613504}
+0 0 0 36222613504 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222628352}
+\begindata{lset,36222629120}
+\V 1
+\begindata{lset,36222628608}
+\V 1
+\begindata{text,36222613728}
+\textdsversion{12}
+\enddata{text,36222613728}
+0 0 0 36222613728 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222628608}
+\begindata{lset,36222628864}
+\V 1
+\begindata{text,36222613952}
+\textdsversion{12}
+\unknown{The Perfect Moment: God, Sex, Art, and the Birth of America's 
+Culture Wars\
+}\enddata{text,36222613952}
+0 0 0 36222613952 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222628864}
+11 20 0 0 36222628608 36222628864 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222629120}
+1 50 0 0 36222628352 36222629120 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222629376}
+\view{lsetview,36222629376,65,0,0}
+
+\begindata{lset,36222630144}
+\V 1
+\begindata{lset,36222629632}
+\V 1
+\begindata{text,36222614176}
+\textdsversion{12}
+Isaac Butler\
+\enddata{text,36222614176}
+0 0 0 36222614176 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222629632}
+\begindata{lset,36222629888}
+\V 1
+\begindata{text,36222614400}
+\textdsversion{12}
+\enddata{text,36222614400}
+0 0 0 36222614400 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222629888}
+1 67 0 0 36222629632 36222629888 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222630144}
+\view{lsetview,36222630144,66,0,0}
+\begindata{lset,36222630400}
+\V 1
+\begindata{text,36222614624}
+\textdsversion{12}
+Meticulously researched and alive on every page, \htmlatk-italic{The 
+Perfect Moment} is essential reading not because the culture wars are 
+history, but because they never ended.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Read the full review\
+}}\enddata{text,36222614624}
+0 0 0 36222614624 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222630400}
+\view{lsetview,36222630400,67,0,0}
+\begindata{lset,36222630656}
+\V 1
+\begindata{text,36222615072}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222615072}
+0 0 0 36222615072 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222630656}
+\view{lsetview,36222630656,68,0,0\
+}\enddata{text,36222612832}
+0 0 0 36222612832 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222627328}
+\view{lsetview,36222627328,117,0,0}
+\begindata{lset,36222630912}
+\V 1
+\begindata{text,36222615296}
+\textdsversion{12}
+\begindata{lset,36222631680}
+\V 1
+\begindata{lset,36222631168}
+\V 1
+\begindata{text,36222681088}
+\textdsversion{12}
+\enddata{text,36222681088}
+0 0 0 36222681088 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222631168}
+\begindata{lset,36222631424}
+\V 1
+\begindata{text,36222681312}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222681312}
+0 0 0 36222681312 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222631424}
+11 30 0 0 36222631168 36222631424 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222631680}
+\view{lsetview,36222631680,69,0,0} 
+\begindata{lset,36222698496}
+\V 1
+\begindata{lset,36222697472}
+\V 1
+\begindata{text,36222681536}
+\textdsversion{12}
+[image]\
+\enddata{text,36222681536}
+0 0 0 36222681536 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222697472}
+\begindata{lset,36222698240}
+\V 1
+\begindata{lset,36222697728}
+\V 1
+\begindata{text,36222681760}
+\textdsversion{12}
+\enddata{text,36222681760}
+0 0 0 36222681760 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222697728}
+\begindata{lset,36222697984}
+\V 1
+\begindata{text,36222681984}
+\textdsversion{12}
+\unknown{Scandal of the Summer\
+}\enddata{text,36222681984}
+0 0 0 36222681984 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222697984}
+11 20 0 0 36222697728 36222697984 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222698240}
+1 50 0 0 36222697472 36222698240 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222698496}
+\view{lsetview,36222698496,70,0,0}
+
+\begindata{lset,36222699264}
+\V 1
+\begindata{lset,36222698752}
+\V 1
+\begindata{text,36222682208}
+\textdsversion{12}
+Alexandra Vasti\
+\enddata{text,36222682208}
+0 0 0 36222682208 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222698752}
+\begindata{lset,36222699008}
+\V 1
+\begindata{text,36222682432}
+\textdsversion{12}
+\enddata{text,36222682432}
+0 0 0 36222682432 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222699008}
+1 67 0 0 36222698752 36222699008 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222699264}
+\view{lsetview,36222699264,71,0,0}
+\begindata{lset,36222699520}
+\V 1
+\begindata{text,36222682656}
+\textdsversion{12}
+Pirates, princesses, and passion, oh my! Alexandra Vasti never disappoints 
+with excitement and love.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Read the full review\
+}}\enddata{text,36222682656}
+0 0 0 36222682656 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222699520}
+\view{lsetview,36222699520,72,0,0}
+\begindata{lset,36222699776}
+\V 1
+\begindata{text,36222683104}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222683104}
+0 0 0 36222683104 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222699776}
+\view{lsetview,36222699776,73,0,0\
+}\enddata{text,36222615296}
+0 0 0 36222615296 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222630912}
+\view{lsetview,36222630912,118,0,0}
+\begindata{lset,36222700032}
+\V 1
+\begindata{text,36222683328}
+\textdsversion{12}
+\htmlatk-link{[image: Sourcebooks Fire: Flickerstate by F.A. Davidson]\
+}\enddata{text,36222683328}
+0 0 0 36222683328 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222700032}
+\view{lsetview,36222700032,119,0,0}
+\begindata{lset,36222700288}
+\V 1
+\begindata{text,36222683552}
+\textdsversion{12}
+\begindata{lset,36222701056}
+\V 1
+\begindata{lset,36222700544}
+\V 1
+\begindata{text,36222683776}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222683776}
+0 0 0 36222683776 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222700544}
+\begindata{lset,36222700800}
+\V 1
+\begindata{text,36222684000}
+\textdsversion{12}
+\enddata{text,36222684000}
+0 0 0 36222684000 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222700800}
+1 0 0 0 36222700544 36222700800 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222701056}
+\view{lsetview,36222701056,74,0,0} 
+\begindata{lset,36222702336}
+\V 1
+\begindata{lset,36222701312}
+\V 1
+\begindata{text,36222684224}
+\textdsversion{12}
+[image]\
+\enddata{text,36222684224}
+0 0 0 36222684224 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222701312}
+\begindata{lset,36222702080}
+\V 1
+\begindata{lset,36222701568}
+\V 1
+\begindata{text,36222684448}
+\textdsversion{12}
+\enddata{text,36222684448}
+0 0 0 36222684448 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222701568}
+\begindata{lset,36222701824}
+\V 1
+\begindata{text,36222684672}
+\textdsversion{12}
+\unknown{Tangled Roots\
+}\enddata{text,36222684672}
+0 0 0 36222684672 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222701824}
+11 20 0 0 36222701568 36222701824 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222702080}
+1 50 0 0 36222701312 36222702080 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222702336}
+\view{lsetview,36222702336,75,0,0}
+
+\begindata{lset,36222703104}
+\V 1
+\begindata{lset,36222702592}
+\V 1
+\begindata{text,36222684896}
+\textdsversion{12}
+Maria Turtschaninoff, trans. by Annie Prime\
+\enddata{text,36222684896}
+0 0 0 36222684896 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222702592}
+\begindata{lset,36222702848}
+\V 1
+\begindata{text,36222685120}
+\textdsversion{12}
+\enddata{text,36222685120}
+0 0 0 36222685120 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222702848}
+1 67 0 0 36222702592 36222702848 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222703104}
+\view{lsetview,36222703104,76,0,0}
+\begindata{lset,36222703360}
+\V 1
+\begindata{text,36222685344}
+\textdsversion{12}
+\htmlatk-italic{Tangled Roots} is an epic, century-spanning collection of 
+linked stories that brings to life the deep connection between a landscape 
+and the people who've made their home in it.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Read the full review\
+}}\enddata{text,36222685344}
+0 0 0 36222685344 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222703360}
+\view{lsetview,36222703360,77,0,0}
+\begindata{lset,36222703616}
+\V 1
+\begindata{text,36222685568}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222685568}
+0 0 0 36222685568 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222703616}
+\view{lsetview,36222703616,78,0,0\
+}\enddata{text,36222683552}
+0 0 0 36222683552 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222700288}
+\view{lsetview,36222700288,120,0,0}
+\begindata{lset,36222703872}
+\V 1
+\begindata{text,36222685792}
+\textdsversion{12}
+\begindata{lset,36222704640}
+\V 1
+\begindata{lset,36222704128}
+\V 1
+\begindata{text,36222686016}
+\textdsversion{12}
+\enddata{text,36222686016}
+0 0 0 36222686016 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222704128}
+\begindata{lset,36222704384}
+\V 1
+\begindata{text,36222686240}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222686240}
+0 0 0 36222686240 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222704384}
+11 30 0 0 36222704128 36222704384 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222704640}
+\view{lsetview,36222704640,79,0,0} 
+\begindata{lset,36222704896}
+\V 1
+\begindata{text,36222686464}
+\textdsversion{12}
+\unknown{The Great Wherever\
+}\enddata{text,36222686464}
+0 0 0 36222686464 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222704896}
+\view{lsetview,36222704896,80,0,0}
+
+\begindata{lset,36222705152}
+\V 1
+\begindata{text,36222686688}
+\textdsversion{12}
+Shannon Sanders\
+\enddata{text,36222686688}
+0 0 0 36222686688 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222705152}
+\view{lsetview,36222705152,81,0,0}
+\begindata{lset,36222705408}
+\V 1
+\begindata{text,36222686912}
+\textdsversion{12}
+In Shannon Sanders's spirited first novel, living and dead members of an 
+African American family converge on the ancestral farm in Tennessee to 
+decide its fate.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Read the full review\
+}}\enddata{text,36222686912}
+0 0 0 36222686912 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222705408}
+\view{lsetview,36222705408,82,0,0}
+\begindata{lset,36222705664}
+\V 1
+\begindata{text,36222687360}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222687360}
+0 0 0 36222687360 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222705664}
+\view{lsetview,36222705664,83,0,0\
+}\enddata{text,36222685792}
+0 0 0 36222685792 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222703872}
+\view{lsetview,36222703872,121,0,0}
+\begindata{lset,36222705920}
+\V 1
+\begindata{text,36222687584}
+\textdsversion{12}
+\htmlatk-link{[image: Running Press Adult: But Have You Read the Book? 
+Romance Edition: 40 Love Stories That Inspired Our Favorite Films by 
+Kristen Lopez]\
+}\enddata{text,36222687584}
+0 0 0 36222687584 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222705920}
+\view{lsetview,36222705920,122,0,0}
+\begindata{lset,36222706176}
+\V 1
+\begindata{text,36222688032}
+\textdsversion{12}
+\htmlatk-link{BOOK REVIEWS\
+}\enddata{text,36222688032}
+0 0 0 36222688032 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222706176}
+\view{lsetview,36222706176,123,0,0}
+\begindata{lset,36222706432}
+\V 1
+\begindata{text,36222688256}
+\textdsversion{12}
+\begindata{lset,36222706688}
+\V 1
+\begindata{lset,36222707968}
+\V 1
+\begindata{lset,36222706944}
+\V 1
+\begindata{text,36222688480}
+\textdsversion{12}
+\enddata{text,36222688480}
+0 0 0 36222688480 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222706944}
+\begindata{lset,36222707712}
+\V 1
+\begindata{lset,36222707200}
+\V 1
+\begindata{text,36222688704}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222688704}
+0 0 0 36222688704 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222707200}
+\begindata{lset,36222707456}
+\V 1
+\begindata{text,36222688928}
+\textdsversion{12}
+\enddata{text,36222688928}
+0 0 0 36222688928 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222707456}
+1 0 0 0 36222707200 36222707456 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222707712}
+11 15 0 0 36222706944 36222707712 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222707968}
+\begindata{lset,36222708736}
+\V 1
+\begindata{lset,36222708224}
+\V 1
+\begindata{text,36222689152}
+\textdsversion{12}
+When Vivian's husband is lost in space, grief, public expectation, and the 
+strength of their love lead her on an inspiring journey of hope in Chanel 
+Cleeton's \htmlatk-italic{An Infinite Love Story}.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Full review\
+}}\enddata{text,36222689152}
+0 0 0 36222689152 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222708224}
+\begindata{lset,36222708480}
+\V 1
+\begindata{text,36222689600}
+\textdsversion{12}
+\enddata{text,36222689600}
+0 0 0 36222689600 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222708480}
+1 50 0 0 36222708224 36222708480 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222708736}
+1 50 0 0 36222707968 36222708736 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222706688}
+\view{lsetview,36222706688,84,0,0}
+
+\begindata{lset,36222709504}
+\V 1
+\begindata{lset,36222708992}
+\V 1
+\begindata{text,36222689824}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222689824}
+0 0 0 36222689824 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222708992}
+\begindata{lset,36222709248}
+\V 1
+\begindata{text,36222690048}
+\textdsversion{12}
+\enddata{text,36222690048}
+0 0 0 36222690048 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222709248}
+1 0 0 0 36222708992 36222709248 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222709504}
+\view{lsetview,36222709504,85,0,0}\
+\begindata{lset,36222709760}
+\V 1
+\begindata{lset,36222711040}
+\V 1
+\begindata{lset,36222710016}
+\V 1
+\begindata{text,36222690272}
+\textdsversion{12}
+\enddata{text,36222690272}
+0 0 0 36222690272 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222710016}
+\begindata{lset,36222710784}
+\V 1
+\begindata{lset,36222710272}
+\V 1
+\begindata{text,36222690496}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222690496}
+0 0 0 36222690496 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222710272}
+\begindata{lset,36222710528}
+\V 1
+\begindata{text,36222690720}
+\textdsversion{12}
+\enddata{text,36222690720}
+0 0 0 36222690720 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222710528}
+1 0 0 0 36222710272 36222710528 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222710784}
+11 15 0 0 36222710016 36222710784 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222711040}
+\begindata{lset,36222711808}
+\V 1
+\begindata{lset,36222711296}
+\V 1
+\begindata{text,36222690944}
+\textdsversion{12}
+Ia Genberg's \htmlatk-italic{Small Comfort}, longlisted for the 
+International Booker Prize, tackles the tricky subjects of wealth, 
+inheritance, and justice.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Full review\
+}}\enddata{text,36222690944}
+0 0 0 36222690944 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222711296}
+\begindata{lset,36222711552}
+\V 1
+\begindata{text,36222691392}
+\textdsversion{12}
+\enddata{text,36222691392}
+0 0 0 36222691392 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222711552}
+1 50 0 0 36222711296 36222711552 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222711808}
+1 50 0 0 36222711040 36222711808 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222709760}
+\view{lsetview,36222709760,86,0,0}
+\begindata{lset,36222712576}
+\V 1
+\begindata{lset,36222712064}
+\V 1
+\begindata{text,36222691616}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222691616}
+0 0 0 36222691616 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222712064}
+\begindata{lset,36222712320}
+\V 1
+\begindata{text,36222691840}
+\textdsversion{12}
+\enddata{text,36222691840}
+0 0 0 36222691840 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222712320}
+1 0 0 0 36222712064 36222712320 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222712576}
+\view{lsetview,36222712576,87,0,0}
+
+
+\begindata{lset,36222714368}
+\V 1
+\begindata{lset,36222714112}
+\V 1
+\begindata{lset,36222713088}
+\V 1
+\begindata{text,36222692064}
+\textdsversion{12}
+\enddata{text,36222692064}
+0 0 0 36222692064 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222713088}
+\begindata{lset,36222713856}
+\V 1
+\begindata{lset,36222713344}
+\V 1
+\begindata{text,36222692288}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222692288}
+0 0 0 36222692288 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222713344}
+\begindata{lset,36222713600}
+\V 1
+\begindata{text,36222692512}
+\textdsversion{12}
+\enddata{text,36222692512}
+0 0 0 36222692512 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222713600}
+1 0 0 0 36222713344 36222713600 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222713856}
+11 15 0 0 36222713088 36222713856 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222714112}
+\begindata{lset,36222715136}
+\V 1
+\begindata{lset,36222714624}
+\V 1
+\begindata{text,36222692736}
+\textdsversion{12}
+Val\^{i}rie Perrin pens a gorgeous mystery about a filmmaker who discovers 
+her aunt has died--for a second time--and sets out to learn who's buried in 
+her grave.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Full review\
+}}\enddata{text,36222692736}
+0 0 0 36222692736 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222714624}
+\begindata{lset,36222714880}
+\V 1
+\begindata{text,36222693184}
+\textdsversion{12}
+\enddata{text,36222693184}
+0 0 0 36222693184 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222714880}
+1 50 0 0 36222714624 36222714880 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222715136}
+1 50 0 0 36222714112 36222715136 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222714368}
+\view{lsetview,36222714368,88,0,0}
+\begindata{lset,36222715904}
+\V 1
+\begindata{lset,36222715392}
+\V 1
+\begindata{text,36222693408}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222693408}
+0 0 0 36222693408 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222715392}
+\begindata{lset,36222715648}
+\V 1
+\begindata{text,36222693632}
+\textdsversion{12}
+\enddata{text,36222693632}
+0 0 0 36222693632 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222715648}
+1 0 0 0 36222715392 36222715648 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222715904}
+\view{lsetview,36222715904,89,0,0}\
+\begindata{lset,36222716160}
+\V 1
+\begindata{lset,36222717440}
+\V 1
+\begindata{lset,36222716416}
+\V 1
+\begindata{text,36222693856}
+\textdsversion{12}
+\enddata{text,36222693856}
+0 0 0 36222693856 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222716416}
+\begindata{lset,36222717184}
+\V 1
+\begindata{lset,36222716672}
+\V 1
+\begindata{text,36222694080}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222694080}
+0 0 0 36222694080 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222716672}
+\begindata{lset,36222716928}
+\V 1
+\begindata{text,36222694304}
+\textdsversion{12}
+\enddata{text,36222694304}
+0 0 0 36222694304 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222716928}
+1 0 0 0 36222716672 36222716928 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222717184}
+11 15 0 0 36222716416 36222717184 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222717440}
+\begindata{lset,36222718208}
+\V 1
+\begindata{lset,36222717696}
+\V 1
+\begindata{text,36222694528}
+\textdsversion{12}
+In Chuck Tingle's thrilling, heartfelt horror novel, an influencer/grave 
+robber unleashes her inner mama bear for the sake of her daughter when a 
+famous corpse wakes up with bloody plans.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Full review\
+}}\enddata{text,36222694528}
+0 0 0 36222694528 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222717696}
+\begindata{lset,36222717952}
+\V 1
+\begindata{text,36222694752}
+\textdsversion{12}
+\enddata{text,36222694752}
+0 0 0 36222694752 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222717952}
+1 50 0 0 36222717696 36222717952 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222718208}
+1 50 0 0 36222717440 36222718208 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222716160}
+\view{lsetview,36222716160,90,0,0}
+\begindata{lset,36222718976}
+\V 1
+\begindata{lset,36222718464}
+\V 1
+\begindata{text,36222694976}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222694976}
+0 0 0 36222694976 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222718464}
+\begindata{lset,36222718720}
+\V 1
+\begindata{text,36222695200}
+\textdsversion{12}
+\enddata{text,36222695200}
+0 0 0 36222695200 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222718720}
+1 0 0 0 36222718464 36222718720 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222718976}
+\view{lsetview,36222718976,91,0,0} 
+\begindata{lset,36222719232}
+\V 1
+\begindata{lset,36222720512}
+\V 1
+\begindata{lset,36222719488}
+\V 1
+\begindata{text,36222695424}
+\textdsversion{12}
+\enddata{text,36222695424}
+0 0 0 36222695424 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222719488}
+\begindata{lset,36222720256}
+\V 1
+\begindata{lset,36222719744}
+\V 1
+\begindata{text,36222695648}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222695648}
+0 0 0 36222695648 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222719744}
+\begindata{lset,36222720000}
+\V 1
+\begindata{text,36222695872}
+\textdsversion{12}
+\enddata{text,36222695872}
+0 0 0 36222695872 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222720000}
+1 0 0 0 36222719744 36222720000 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222720256}
+11 15 0 0 36222719488 36222720256 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222720512}
+\begindata{lset,36222721280}
+\V 1
+\begindata{lset,36222720768}
+\V 1
+\begindata{text,36222696096}
+\textdsversion{12}
+In this hair-raising thriller, a woman becomes ensnared in a mystery 
+involving a lost dog, the dog's owner, a creepy old house, and unanswered 
+questions from her own past.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Full review\
+}}\enddata{text,36222696096}
+0 0 0 36222696096 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222720768}
+\begindata{lset,36222721024}
+\V 1
+\begindata{text,36222696544}
+\textdsversion{12}
+\enddata{text,36222696544}
+0 0 0 36222696544 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222721024}
+1 50 0 0 36222720768 36222721024 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222721280}
+1 50 0 0 36222720512 36222721280 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222719232}
+\view{lsetview,36222719232,92,0,0}
+
+\begindata{lset,36222722048}
+\V 1
+\begindata{lset,36222721536}
+\V 1
+\begindata{text,36222696768}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222696768}
+0 0 0 36222696768 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222721536}
+\begindata{lset,36222721792}
+\V 1
+\begindata{text,36222696992}
+\textdsversion{12}
+\enddata{text,36222696992}
+0 0 0 36222696992 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222721792}
+1 0 0 0 36222721536 36222721792 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222722048}
+\view{lsetview,36222722048,93,0,0}\
+\begindata{lset,36222722304}
+\V 1
+\begindata{lset,36222723584}
+\V 1
+\begindata{lset,36222722560}
+\V 1
+\begindata{text,36222697216}
+\textdsversion{12}
+\enddata{text,36222697216}
+0 0 0 36222697216 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222722560}
+\begindata{lset,36222723328}
+\V 1
+\begindata{lset,36222722816}
+\V 1
+\begindata{text,36222746624}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222746624}
+0 0 0 36222746624 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222722816}
+\begindata{lset,36222723072}
+\V 1
+\begindata{text,36222746848}
+\textdsversion{12}
+\enddata{text,36222746848}
+0 0 0 36222746848 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222723072}
+1 0 0 0 36222722816 36222723072 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222723328}
+11 15 0 0 36222722560 36222723328 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222723584}
+\begindata{lset,36222724352}
+\V 1
+\begindata{lset,36222723840}
+\V 1
+\begindata{text,36222747072}
+\textdsversion{12}
+\htmlatk-italic{The Wedding Week} is an entertaining thriller structured 
+around a Bollywood-style wedding extravaganza at an opulent Florida resort, 
+complete with gossiping aunties and an alligator-infested swamp.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Full review\
+}}\enddata{text,36222747072}
+0 0 0 36222747072 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222723840}
+\begindata{lset,36222724096}
+\V 1
+\begindata{text,36222747296}
+\textdsversion{12}
+\enddata{text,36222747296}
+0 0 0 36222747296 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222724096}
+1 50 0 0 36222723840 36222724096 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222724352}
+1 50 0 0 36222723584 36222724352 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222722304}
+\view{lsetview,36222722304,94,0,0}
+\begindata{lset,36222725120}
+\V 1
+\begindata{lset,36222724608}
+\V 1
+\begindata{text,36222747520}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222747520}
+0 0 0 36222747520 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222724608}
+\begindata{lset,36222724864}
+\V 1
+\begindata{text,36222747744}
+\textdsversion{12}
+\enddata{text,36222747744}
+0 0 0 36222747744 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222724864}
+1 0 0 0 36222724608 36222724864 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222725120}
+\view{lsetview,36222725120,95,0,0}
+
+
+\begindata{lset,36222725376}
+\V 1
+\begindata{lset,36222726656}
+\V 1
+\begindata{lset,36222725632}
+\V 1
+\begindata{text,36222747968}
+\textdsversion{12}
+\enddata{text,36222747968}
+0 0 0 36222747968 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222725632}
+\begindata{lset,36222726400}
+\V 1
+\begindata{lset,36222725888}
+\V 1
+\begindata{text,36222748192}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222748192}
+0 0 0 36222748192 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222725888}
+\begindata{lset,36222726144}
+\V 1
+\begindata{text,36222748416}
+\textdsversion{12}
+\enddata{text,36222748416}
+0 0 0 36222748416 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222726144}
+1 0 0 0 36222725888 36222726144 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222726400}
+11 15 0 0 36222725632 36222726400 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222726656}
+\begindata{lset,36222727424}
+\V 1
+\begindata{lset,36222726912}
+\V 1
+\begindata{text,36222748640}
+\textdsversion{12}
+Heather Frances creates a stunning portrait of storm chasing in 
+\htmlatk-italic{Chase Me If You Can}, an electrifying romance ablaze with 
+tumultuous emotions, tantalizing passion, and terrifying tornados.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Full review\
+}}\enddata{text,36222748640}
+0 0 0 36222748640 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222726912}
+\begindata{lset,36222727168}
+\V 1
+\begindata{text,36222748864}
+\textdsversion{12}
+\enddata{text,36222748864}
+0 0 0 36222748864 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222727168}
+1 50 0 0 36222726912 36222727168 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222727424}
+1 50 0 0 36222726656 36222727424 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222725376}
+\view{lsetview,36222725376,96,0,0}
+\begindata{lset,36222728192}
+\V 1
+\begindata{lset,36222727680}
+\V 1
+\begindata{text,36222749088}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222749088}
+0 0 0 36222749088 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222727680}
+\begindata{lset,36222727936}
+\V 1
+\begindata{text,36222749312}
+\textdsversion{12}
+\enddata{text,36222749312}
+0 0 0 36222749312 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222727936}
+1 0 0 0 36222727680 36222727936 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222728192}
+\view{lsetview,36222728192,97,0,0}\
+\begindata{lset,36222763264}
+\V 1
+\begindata{lset,36222729728}
+\V 1
+\begindata{lset,36222728704}
+\V 1
+\begindata{text,36222749536}
+\textdsversion{12}
+\enddata{text,36222749536}
+0 0 0 36222749536 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222728704}
+\begindata{lset,36222729472}
+\V 1
+\begindata{lset,36222728960}
+\V 1
+\begindata{text,36222749760}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222749760}
+0 0 0 36222749760 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222728960}
+\begindata{lset,36222729216}
+\V 1
+\begindata{text,36222749984}
+\textdsversion{12}
+\enddata{text,36222749984}
+0 0 0 36222749984 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222729216}
+1 0 0 0 36222728960 36222729216 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222729472}
+11 15 0 0 36222728704 36222729472 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222729728}
+\begindata{lset,36222763008}
+\V 1
+\begindata{lset,36222729984}
+\V 1
+\begindata{text,36222750208}
+\textdsversion{12}
+A bioengineered raccoon private investigator must find a mouse before 
+anyone else--or before he runs out of his intelligence serum--in this 
+wildly inventive sci-fi noir mash-up.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Full review\
+}}\enddata{text,36222750208}
+0 0 0 36222750208 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222729984}
+\begindata{lset,36222712832}
+\V 1
+\begindata{text,36222750656}
+\textdsversion{12}
+\enddata{text,36222750656}
+0 0 0 36222750656 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222712832}
+1 50 0 0 36222729984 36222712832 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222763008}
+1 50 0 0 36222729728 36222763008 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222763264}
+\view{lsetview,36222763264,98,0,0}
+\begindata{lset,36222764032}
+\V 1
+\begindata{lset,36222763520}
+\V 1
+\begindata{text,36222750880}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222750880}
+0 0 0 36222750880 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222763520}
+\begindata{lset,36222763776}
+\V 1
+\begindata{text,36222751104}
+\textdsversion{12}
+\enddata{text,36222751104}
+0 0 0 36222751104 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222763776}
+1 0 0 0 36222763520 36222763776 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222764032}
+\view{lsetview,36222764032,99,0,0} 
+\begindata{lset,36222768640}
+\V 1
+\begindata{lset,36222764288}
+\V 1
+\begindata{text,36222752448}
+\textdsversion{12}
+\begindata{lset,36222766848}
+\V 1
+\begindata{lset,36222766592}
+\V 1
+\begindata{text,36222752672}
+\textdsversion{12}
+\enddata{text,36222752672}
+0 0 0 36222752672 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222766592}
+\begindata{lset,36222768128}
+\V 1
+\begindata{lset,36222767104}
+\V 1
+\begindata{text,36222752896}
+\textdsversion{12}
+\enddata{text,36222752896}
+0 0 0 36222752896 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222767104}
+\begindata{lset,36222767872}
+\V 1
+\begindata{lset,36222767360}
+\V 1
+\begindata{text,36222753120}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222753120}
+0 0 0 36222753120 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222767360}
+\begindata{lset,36222767616}
+\V 1
+\begindata{text,36222753344}
+\textdsversion{12}
+\enddata{text,36222753344}
+0 0 0 36222753344 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222767616}
+1 0 0 0 36222767360 36222767616 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222767872}
+11 15 0 0 36222767104 36222767872 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222768128}
+1 50 0 0 36222766592 36222768128 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222766848}
+\view{lsetview,36222766848,100,0,0}
+
+\begindata{lset,36222768384}
+\V 1
+\begindata{text,36222753568}
+\textdsversion{12}
+[image]\
+\enddata{text,36222753568}
+0 0 0 36222753568 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222768384}
+\view{lsetview,36222768384,101,0,0\
+}\enddata{text,36222752448}
+0 0 0 36222752448 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222764288}
+\begindata{lset,36222769408}
+\V 1
+\begindata{lset,36222768896}
+\V 1
+\begindata{text,36222753792}
+\textdsversion{12}
+A teen whose father is imprisoned for murder must prove her own innocence 
+after a weekend getaway ends in blood in this riveting and frightening YA 
+thriller.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Full review\
+}}\enddata{text,36222753792}
+0 0 0 36222753792 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222768896}
+\begindata{lset,36222769152}
+\V 1
+\begindata{text,36222754240}
+\textdsversion{12}
+\enddata{text,36222754240}
+0 0 0 36222754240 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222769152}
+1 50 0 0 36222768896 36222769152 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222769408}
+1 50 0 0 36222764288 36222769408 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222768640}
+\view{lsetview,36222768640,102,0,0}
+
+\begindata{lset,36222770176}
+\V 1
+\begindata{lset,36222769664}
+\V 1
+\begindata{text,36222754464}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222754464}
+0 0 0 36222754464 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222769664}
+\begindata{lset,36222769920}
+\V 1
+\begindata{text,36222754688}
+\textdsversion{12}
+\enddata{text,36222754688}
+0 0 0 36222754688 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222769920}
+1 0 0 0 36222769664 36222769920 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222770176}
+\view{lsetview,36222770176,103,0,0}\
+\begindata{lset,36222770432}
+\V 1
+\begindata{lset,36222771712}
+\V 1
+\begindata{lset,36222770688}
+\V 1
+\begindata{text,36222754912}
+\textdsversion{12}
+\enddata{text,36222754912}
+0 0 0 36222754912 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222770688}
+\begindata{lset,36222771456}
+\V 1
+\begindata{lset,36222770944}
+\V 1
+\begindata{text,36222755136}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222755136}
+0 0 0 36222755136 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222770944}
+\begindata{lset,36222771200}
+\V 1
+\begindata{text,36222755360}
+\textdsversion{12}
+\enddata{text,36222755360}
+0 0 0 36222755360 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222771200}
+1 0 0 0 36222770944 36222771200 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222771456}
+11 15 0 0 36222770688 36222771456 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222771712}
+\begindata{lset,36222772480}
+\V 1
+\begindata{lset,36222771968}
+\V 1
+\begindata{text,36222755584}
+\textdsversion{12}
+\htmlatk-italic{Farah's Nose} is an empowering picture book in which a 
+child learns to embrace her strong nose and proud history.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Full review\
+}}\enddata{text,36222755584}
+0 0 0 36222755584 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222771968}
+\begindata{lset,36222772224}
+\V 1
+\begindata{text,36222756032}
+\textdsversion{12}
+\enddata{text,36222756032}
+0 0 0 36222756032 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222772224}
+1 50 0 0 36222771968 36222772224 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222772480}
+1 50 0 0 36222771712 36222772480 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222770432}
+\view{lsetview,36222770432,104,0,0}
+\begindata{lset,36222773248}
+\V 1
+\begindata{lset,36222772736}
+\V 1
+\begindata{text,36222756256}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222756256}
+0 0 0 36222756256 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222772736}
+\begindata{lset,36222772992}
+\V 1
+\begindata{text,36222756480}
+\textdsversion{12}
+\enddata{text,36222756480}
+0 0 0 36222756480 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222772992}
+1 0 0 0 36222772736 36222772992 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222773248}
+\view{lsetview,36222773248,105,0,0}
+
+
+\begindata{lset,36222773504}
+\V 1
+\begindata{lset,36222774784}
+\V 1
+\begindata{lset,36222773760}
+\V 1
+\begindata{text,36222756704}
+\textdsversion{12}
+\enddata{text,36222756704}
+0 0 0 36222756704 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222773760}
+\begindata{lset,36222774528}
+\V 1
+\begindata{lset,36222774016}
+\V 1
+\begindata{text,36222756928}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222756928}
+0 0 0 36222756928 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222774016}
+\begindata{lset,36222774272}
+\V 1
+\begindata{text,36222757152}
+\textdsversion{12}
+\enddata{text,36222757152}
+0 0 0 36222757152 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222774272}
+1 0 0 0 36222774016 36222774272 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222774528}
+11 15 0 0 36222773760 36222774528 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222774784}
+\begindata{lset,36222775552}
+\V 1
+\begindata{lset,36222775040}
+\V 1
+\begindata{text,36222757376}
+\textdsversion{12}
+Author Andrea Zimmerman and illustrator Dan Yaccarino reunite to create an 
+inspiring picture book for budding readers about a strong, innovative woman 
+in construction.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Full review\
+}}\enddata{text,36222757376}
+0 0 0 36222757376 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222775040}
+\begindata{lset,36222775296}
+\V 1
+\begindata{text,36222757824}
+\textdsversion{12}
+\enddata{text,36222757824}
+0 0 0 36222757824 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222775296}
+1 50 0 0 36222775040 36222775296 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222775552}
+1 50 0 0 36222774784 36222775552 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222773504}
+\view{lsetview,36222773504,106,0,0}
+\begindata{lset,36222776320}
+\V 1
+\begindata{lset,36222775808}
+\V 1
+\begindata{text,36222758048}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222758048}
+0 0 0 36222758048 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222775808}
+\begindata{lset,36222776064}
+\V 1
+\begindata{text,36222758272}
+\textdsversion{12}
+\enddata{text,36222758272}
+0 0 0 36222758272 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222776064}
+1 0 0 0 36222775808 36222776064 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222776320}
+\view{lsetview,36222776320,107,0,0}\
+\begindata{lset,36222776576}
+\V 1
+\begindata{lset,36222777856}
+\V 1
+\begindata{lset,36222776832}
+\V 1
+\begindata{text,36222758496}
+\textdsversion{12}
+\enddata{text,36222758496}
+0 0 0 36222758496 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222776832}
+\begindata{lset,36222777600}
+\V 1
+\begindata{lset,36222777088}
+\V 1
+\begindata{text,36222758720}
+\textdsversion{12}
+\htmlatk-link{[image: Cover]\
+}\enddata{text,36222758720}
+0 0 0 36222758720 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222777088}
+\begindata{lset,36222777344}
+\V 1
+\begindata{text,36222758944}
+\textdsversion{12}
+\enddata{text,36222758944}
+0 0 0 36222758944 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222777344}
+1 0 0 0 36222777088 36222777344 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222777600}
+11 15 0 0 36222776832 36222777600 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222777856}
+\begindata{lset,36222778624}
+\V 1
+\begindata{lset,36222778112}
+\V 1
+\begindata{text,36222759168}
+\textdsversion{12}
+In this creepy first installment in a series about uncanny, imagined 
+dangers of technology, an entitled 11-year-old gamer learns the true cost 
+of looking out only for herself.
+
+
+
+\htmlatk-link{\^{;} \htmlatk-italic{Full review\
+}}\enddata{text,36222759168}
+0 0 0 36222759168 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222778112}
+\begindata{lset,36222778368}
+\V 1
+\begindata{text,36222759616}
+\textdsversion{12}
+\enddata{text,36222759616}
+0 0 0 36222759616 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222778368}
+1 50 0 0 36222778112 36222778368 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222778624}
+1 50 0 0 36222777856 36222778624 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222776576}
+\view{lsetview,36222776576,108,0,0}
+\begindata{lset,36222728448}
+\V 1
+\begindata{lset,36222778880}
+\V 1
+\begindata{text,36222759840}
+\textdsversion{12}
+\htmlatk-link{[image: Buy]\
+}\enddata{text,36222759840}
+0 0 0 36222759840 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222778880}
+\begindata{lset,36222779136}
+\V 1
+\begindata{text,36222760064}
+\textdsversion{12}
+\enddata{text,36222760064}
+0 0 0 36222760064 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222779136}
+1 0 0 0 36222778880 36222779136 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222728448}
+\view{lsetview,36222728448,109,0,0\
+}\enddata{text,36222688256}
+0 0 0 36222688256 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222706432}
+\view{lsetview,36222706432,124,0,0}
+\begindata{lset,36222779392}
+\V 1
+\begindata{text,36222760288}
+\textdsversion{12}
+\htmlatk-link{THE WRITER'S LIFE\
+}\enddata{text,36222760288}
+0 0 0 36222760288 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222779392}
+\view{lsetview,36222779392,125,0,0}
+\begindata{lset,36222779648}
+\V 1
+\begindata{text,36222760512}
+\textdsversion{12}
+[image]Meryl Branch-McTiernan is an essayist and screenwriter as well as 
+the author of the debut novel \htmlatk-italic{What You Should Worry About}, 
+in which 37-year-old Layla Moody navigates the Covid-19 pandemic while 
+finding family on her own terms. Discover which hefty tome she partied with 
+in lockdown and which famously controversial novel she considers essential 
+reading on "the balance between artistic, relational, and familial 
+desires"... \htmlatk-bold{\htmlatk-link{(continued)}}
+
+
+\enddata{text,36222760512}
+0 0 0 36222760512 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222779648}
+\view{lsetview,36222779648,126,0,0}
+\begindata{lset,36222779904}
+\V 1
+\begindata{text,36222760736}
+\textdsversion{12}
+\htmlatk-link{BOOK CANDY\
+}\enddata{text,36222760736}
+0 0 0 36222760736 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222779904}
+\view{lsetview,36222779904,127,0,0}
+\begindata{lset,36222780160}
+\V 1
+\begindata{text,36222760960}
+\textdsversion{12}
+Mental Floss served "8 \htmlatk-link{foods people in \htmlatk-italic{The 
+Odyssey}} might have actually eaten."
+
+
+---
+
+
+\htmlatk-italic{Epithet}, for example. Merriam-Webster looked up several 
+\htmlatk-link{English words that can trace their origin to the Greek} 
+language and \htmlatk-italic{The Odyssey}.
+
+
+---
+
+
+Headline of the day: "\htmlatk-link{George R.R. Martin hands agent} 
+unsolicited, 4,000-page manuscript titled \htmlatk-italic{Tuba Man, Scuba 
+Man}." (via the satirical minds at the \htmlatk-italic{Onion})
+
+
+\enddata{text,36222760960}
+0 0 0 36222760960 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222780160}
+\view{lsetview,36222780160,128,0,0}
+\begindata{lset,36222780416}
+\V 1
+\begindata{text,36222761184}
+\textdsversion{12}
+\htmlatk-link{REDISCOVER\
+}\enddata{text,36222761184}
+0 0 0 36222761184 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222780416}
+\view{lsetview,36222780416,129,0,0}
+\begindata{lset,36222780672}
+\V 1
+\begindata{text,36222761408}
+\textdsversion{12}
+[image]Shahrnush Parsipur, "the celebrated Iranian writer whose subversive 
+works of feminist fiction saw her repeatedly imprisoned" under the Shah as 
+well as the Islamic Republic, died July 3 at age 80, the 
+\htmlatk-italic{\htmlatk-link{Guardian}} reported. Parsipur "excoriated the 
+country's patriarchal culture" in novels like \htmlatk-italic{Women Without 
+Men} and \htmlatk-italic{Touba and the Meaning of Night}. In 2026, a 
+translation of \htmlatk-italic{Women Without Men} by Faridoun Farrokh was 
+published in the U.K. and was longlisted for the International Booker 
+Prize. \htmlatk-bold{\htmlatk-link{(continued)}}
+
+
+\enddata{text,36222761408}
+0 0 0 36222761408 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222780672}
+\view{lsetview,36222780672,130,0,0}
+\begindata{lset,36222780928}
+\V 1
+\begindata{text,36222761632}
+\textdsversion{12}
+This message was sent to \htmlatk-bold{\htmlatk-link{wdc@fastmail.com}} as 
+part of a subscription to \htmlatk-italic{Shelf Awareness}.
+
+
+\htmlatk-bold{\htmlatk-link{Forward to a Friend}} | 
+\htmlatk-bold{\htmlatk-link{Update delivery preferences}} | 
+\htmlatk-bold{\htmlatk-link{Unsubscribe}}
+
+
+To contact us, \htmlatk-bold{\htmlatk-link{send us an email}} or 
+\htmlatk-bold{\htmlatk-link{contact us}} via our website.
+
+
+To view back issues of Shelf Awareness for Readers, 
+\htmlatk-bold{\htmlatk-link{visit our archive page}}.\
+\enddata{text,36222761632}
+0 0 0 36222761632 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222780928}
+\view{lsetview,36222780928,131,0,0\
+}\enddata{text,36222606112}
+0 0 0 36222606112 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222176256}
+\begindata{lset,36222782208}
+\V 1
+\begindata{lset,36222781184}
+\V 1
+\begindata{text,36222761856}
+\textdsversion{12}
+\enddata{text,36222761856}
+0 0 0 36222761856 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222781184}
+\begindata{lset,36222781952}
+\V 1
+\begindata{lset,36222781440}
+\V 1
+\begindata{text,36222762080}
+\textdsversion{12}
+\enddata{text,36222762080}
+0 0 0 36222762080 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222781440}
+\begindata{lset,36222781696}
+\V 1
+\begindata{text,36222762304}
+\textdsversion{12}
+\enddata{text,36222762304}
+0 0 0 36222762304 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,36222781696}
+11 10 0 0 36222781440 36222781696 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222781952}
+11 4 0 0 36222781184 36222781952 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222782208}
+1 0 0 0 36222176256 36222782208 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222782464}
+11 4 0 0 36222176000 36222782464 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222782720}
+11 10 0 0 36222175744 36222782720 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222782976}
+11 1 0 0 36222175488 36222782976 0
+>OBJ< 
+>VIEW< 
+>REF< 
+\enddata{lset,36222783232}
+\view{lsetview,36222783232,132,0,0\
+}\enddata{text,4307822480}

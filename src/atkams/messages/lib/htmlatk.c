@@ -127,6 +127,30 @@ static long ParsePositiveInt(const char *s, long deflt, long maxval)
     return v;
 }
 
+/* Like ParsePositiveInt, but for a width="..." attribute specifically
+   -- unlike colspan/rowspan/font-size (ParsePositiveInt's other
+   callers), a trailing '%' is extremely common on width and
+   ParsePositiveInt's strtol-based parse doesn't notice trailing
+   garbage at all (strtol("100%", &end, 10) happily returns 100 with
+   end pointing at '%', which ParsePositiveInt never checks). Resolving
+   a genuine percentage needs a container width not available at
+   construction time -- same reasoning the old, since-removed
+   ParseWidthPixels used (see this file's Table-strategy design-doc
+   history) -- so this REJECTS (returns 0) anything with trailing
+   content other than nothing or "px", rather than silently
+   misreading "100%" as 100 pixels. */
+static long ParseFixedPixelWidth(const char *s)
+{
+    long v;
+    char *end;
+    if (!s || !*s) return 0;
+    v = strtol(s, &end, 10);
+    if (end == s || v <= 0) return 0;
+    if (*end != '\0' && strcmp(end, "px") != 0) return 0;
+    if (v > 100000) v = 100000;
+    return v;
+}
+
 /* Generic growable pointer vector, reused for row-collection and
    subtree scans below -- same "best-effort, drop rather than abort on
    OOM" policy as htmlpart.c/htmltext.c's own growable buffers. */
@@ -956,13 +980,19 @@ static int NodeIsSoleNestedTable(const struct htmlnode *td, const struct htmlnod
    since BuildLsetChain below needs both to compute proportional
    splits. Kept separate from lsetvec (used for rows, which never need
    a weight) rather than adding an unused field there for the row
-   case. */
-struct wleaf { struct lset *leaf; long weight; };
+   case. fixedpx (0 if unset -- see CellFixedPixelWidth) is a THIRD,
+   independent per-cell attribute: when set, BuildLsetChain gives this
+   leaf an absolute pixel width via lset's new Fixed split types
+   instead of a proportional share, and weight is simply ignored for
+   that leaf (still set to its normal colspan-derived value regardless,
+   for uniformity -- callers other than BuildLsetChain, if any were
+   ever added, shouldn't have to know about this special case). */
+struct wleaf { struct lset *leaf; long weight; long fixedpx; };
 struct wlvec { struct wleaf *items; long count, cap; };
 
 static void wlvec_init(struct wlvec *v) { v->items = NULL; v->count = 0; v->cap = 0; }
 
-static void wlvec_push(struct wlvec *v, struct lset *leaf, long weight)
+static void wlvec_push(struct wlvec *v, struct lset *leaf, long weight, long fixedpx)
 {
     if (v->count >= v->cap) {
         long ncap = v->cap ? v->cap * 2 : 8;
@@ -973,6 +1003,7 @@ static void wlvec_push(struct wlvec *v, struct lset *leaf, long weight)
     }
     v->items[v->count].leaf = leaf;
     v->items[v->count].weight = weight;
+    v->items[v->count].fixedpx = fixedpx;
     ++v->count;
 }
 
@@ -1064,23 +1095,50 @@ static int LsetChainPctWeighted(long remainingWeight, long thisWeight)
 
 /* Builds a right-leaning chain of count-1 binary lset split nodes over
    cells[0..count-1] (already-built lset leaves/subtrees plus their
-   weights, one per row or one per cell), all splits typed splittype
+   weights, one per row or one per cell), splits typed splittype
    (lsetview_MakeHorz for a row's cells, lsetview_MakeVert for a
-   table's rows). Iterative (built tail-to-head with a plain for
-   loop), NOT C recursion, unlike this file's nested-<table> recursion
-   above (see htmlatk.h's own note on why that one is safe): a single
-   pathological row could carry an arbitrarily large number of <td>s,
-   so unlike table-nesting depth (bounded by markup structure) this
-   chain's length is bounded only by document content, the same
-   category of concern htmlpart.c/htmltext.c already use an explicit
-   stack for -- so this does too, just via a simple backwards loop
-   rather than a heap-allocated work list, since the shape (fold
-   right-to-left, no branching/backtracking) doesn't need one. On an
-   allocation failure partway through, returns NULL and records
-   st->hardfail (htmlatk.h's Returns-FALSE note); does not free the
-   leaves/subtrees already folded in, same best-effort-on-OOM posture
-   as this file's other growable buffers. */
-static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittype, struct hax_state *st)
+   table's rows) EXCEPT where an individual cell carries a nonzero
+   fixedpx (see CellFixedPixelWidth/struct wleaf), which instead gets
+   fixedsplittype (lsetview_MakeHorzFixed/MakeVertFixed -- the sibling
+   type to splittype, pct reinterpreted as an absolute pixel bsize) for
+   that one split. A fixed cell is always folded in as the LEFT/TOP
+   child (see below), matching lpair_TOPFIXED's own convention
+   (lpair.c:504-510: objsize[0]=bsize for TOPFIXED) -- and matching
+   real markup order in every corpus example seen so far, where
+   decoration/spacer cells precede real content.
+
+   A fixed cell's own weight plays NO part in the proportional pool at
+   all -- it's excluded from remainingWeight entirely, both in the
+   initial seed and the fold loop below, so cells[count-1] being fixed
+   doesn't corrupt the running total either. This is correct because
+   lpair_ComputeSizesFromTotal (lpair.c:373-398) carves the fixed
+   cell's literal pixels off FIRST, at runtime, and only ever hands
+   "the rest" on to whatever's nested inside the other child -- there
+   is no shared percentage basis for a fixed cell to participate in.
+   Concretely, for a real row shaped [D1(fixed 1px), D2(fixed 10px),
+   D3(fixed 4px), Content(proportional)]: the fold produces
+   [D1|[D2|[D3|Content]]], each fixed split peeling off its own literal
+   pixels in turn, with Content finally getting whatever's left after
+   all three -- exactly real-browser table-auto-layout behavior for a
+   handful of thin border/spacer columns beside open content, not an
+   equal-ish 25% share for each the way pure colspan-weighting would
+   have given them.
+
+   Iterative (built tail-to-head with a plain for loop), NOT C
+   recursion, unlike this file's nested-<table> recursion above (see
+   htmlatk.h's own note on why that one is safe): a single pathological
+   row could carry an arbitrarily large number of <td>s, so unlike
+   table-nesting depth (bounded by markup structure) this chain's
+   length is bounded only by document content, the same category of
+   concern htmlpart.c/htmltext.c already use an explicit stack for --
+   so this does too, just via a simple backwards loop rather than a
+   heap-allocated work list, since the shape (fold right-to-left, no
+   branching/backtracking) doesn't need one. On an allocation failure
+   partway through, returns NULL and records st->hardfail (htmlatk.h's
+   Returns-FALSE note); does not free the leaves/subtrees already
+   folded in, same best-effort-on-OOM posture as this file's other
+   growable buffers. */
+static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittype, int fixedsplittype, struct hax_state *st)
 {
     struct lset *rest;
     long i;
@@ -1088,14 +1146,19 @@ static struct lset *BuildLsetChain(struct wleaf *cells, long count, int splittyp
 
     if (count <= 0) return NULL;
     rest = cells[count - 1].leaf;
-    remainingWeight = cells[count - 1].weight;
+    remainingWeight = (cells[count - 1].fixedpx > 0) ? 0 : cells[count - 1].weight;
     for (i = count - 2; i >= 0; --i) {
         struct lset *node = (struct lset *) class_NewObject("lset");
-        long thisWeight = cells[i].weight;
         if (!node) { st->hardfail = 1; return NULL; }
-        remainingWeight += thisWeight;
-        node->type = splittype;
-        node->pct = LsetChainPctWeighted(remainingWeight, thisWeight);
+        if (cells[i].fixedpx > 0) {
+            node->type = fixedsplittype;
+            node->pct = (int) cells[i].fixedpx; /* a pixel bsize here, not a percentage -- see lsetview_MakeHorzFixed's comment in lsetv.ch */
+        } else {
+            long thisWeight = cells[i].weight;
+            remainingWeight += thisWeight;
+            node->type = splittype;
+            node->pct = LsetChainPctWeighted(remainingWeight, thisWeight);
+        }
         node->left = (struct dataobject *) cells[i].leaf;
         node->right = (struct dataobject *) rest;
         rest = node;
@@ -1228,17 +1291,81 @@ static int NodeIsSoleNestedTable(const struct htmlnode *td, const struct htmlnod
     return 1;
 }
 
+/* Returns a positive pixel width if td should get a FIXED (not
+   proportional) width in its row's lset split, else 0.
+
+   ONLY an empty spacer/border <td> (NodeIsVisuallyEmpty) whose own
+   width="N" IS the real intended size qualifies -- there's no content
+   to expand it past that, so trusting it literally is safe, AND it's
+   always small (a border/spacer strip, realistically never more than
+   a few tens of pixels), so it can never plausibly exceed a real
+   window's available width on its own. Confirmed against a real
+   fixture (The Book Rack, 2026-08-17): a <td width="1" bgcolor="..."
+   style="font-size:0px"/> border-color strip sitting next to real
+   content was previously getting an equal ~25% share alongside three
+   other cells in the same row, instead of the ~1px it actually is.
+
+   REJECTED, live-tested and reverted same day: also giving a fixed
+   width to a <td> whose only content is a nested <table> with its own
+   explicit width="N" (the common "outer <td width=1> wraps a real
+   width=640 table" idiom). That's a fundamentally different case --
+   the value can be large (a full content column, easily 600px+) --
+   and lpair's TOPFIXED sizeform (lsetview_MakeHorzFixed) has no
+   graceful-degrade behavior: lpair_ComputeSizesFromTotal's
+   objcvt[0]=min(totalsize,bsize) correctly caps the fixed side when
+   the window is narrower than requested, but objcvt[1] (whatever
+   comes after it in that row) gets totalsize-objcvt[0], which can be
+   exactly 0 -- and a zero-width rectangle is treated as empty and
+   skipped from view_FullUpdate entirely, along with everything nested
+   inside it. Confirmed live via lpair.c/lsetv.c instrumentation
+   (revival/render_test.ez in a ~500px-wide ez window against this
+   fixture's real 640px content column): DoFullUpdate showed
+   objsize[0]=640 objcvt[0]=407 objcvt[1]=0, rightBottomObject
+   rect(w=-1,h=-1) empty=1 -- exactly the "three bars then nothing"
+   symptom wdc reported live, in both messages and ez. A real window
+   narrower than a newsletter's declared content width is completely
+   ordinary, not an edge case. Leaving this case on its EXISTING
+   proportional/colspan-weighted default (unchanged from before this
+   whole feature) instead achieves the same practical outcome when
+   there's room -- a lone weight-1 cell with nothing else of substance
+   in its row still gets ~100% of whatever's available -- but degrades
+   gracefully (shrinks to fit) instead of an all-or-nothing collapse
+   when there isn't.
+
+   Percentage widths are not handled here (see ParseFixedPixelWidth) --
+   resolving one needs a container width not available at construction
+   time. A text-bearing cell with no explicit sizing signal at all
+   keeps the existing equal/colspan-weighted default; guessing an
+   intrinsic content width is out of scope, same as it always was. */
+static long CellFixedPixelWidth(const struct htmlnode *td)
+{
+    long w;
+
+    if (NodeIsVisuallyEmpty(td)) {
+        w = ParseFixedPixelWidth(htmlpart_GetAttr(td, "width"));
+        if (w > 0) return w;
+    }
+    return 0;
+}
+
 /* Builds one <td>/<th>'s lset leaf and reports its WEIGHT (its own
    colspan value, default 1 -- see TableColumnCount's comment above for
    why weight, not a boolean/count, is what cross-row alignment needs)
-   via *outWeight, set on every path through this function regardless
-   of which branch actually builds the leaf. */
-static struct lset *BuildLsetCell(const struct htmlnode *td, struct hax_state *st, long *outWeight)
+   via *outWeight, and its FIXED PIXEL width (see CellFixedPixelWidth
+   above), 0 if none, via *outFixedPx -- both set on every path through
+   this function regardless of which branch actually builds the leaf.
+   The two are independent/orthogonal: *outWeight still reflects this
+   cell's real colspan even when *outFixedPx is also set, since
+   TableColumnCount/cross-row alignment (colspan-based) and
+   BuildLsetChain's fixed-vs-proportional split choice are unrelated
+   concerns -- see BuildLsetChain's own comment. */
+static struct lset *BuildLsetCell(const struct htmlnode *td, struct hax_state *st, long *outWeight, long *outFixedPx)
 {
     struct lset *leaf = (struct lset *) class_NewObject("lset");
     const struct htmlnode *soleTable;
     struct text *ct;
     *outWeight = ParsePositiveInt(htmlpart_GetAttr(td, "colspan"), 1, 1000);
+    *outFixedPx = CellFixedPixelWidth(td);
     if (!leaf) { st->hardfail = 1; return NULL; }
 
     if (NodeIsSoleNestedTable(td, &soleTable)) {
@@ -1255,8 +1382,11 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, struct hax_state *s
                this live in render_test.ez, 2026-08-16: the first two
                objects in the National Grid fixture were exactly this
                redundant pair around one empty spacer cell). *outWeight
-               was already set from td's own colspan above and is
-               unaffected by which lset object we return. */
+               and *outFixedPx were already set above (from td's own
+               colspan, and CellFixedPixelWidth -- which itself checks
+               this same soleTable's own width= for exactly this case,
+               see its comment) and are unaffected by which lset object
+               we return. */
             struct lset *inner = innerRows.items[0];
             lsetvec_free(&innerRows);
             dataobject_Destroy((struct dataobject *) leaf);
@@ -1432,23 +1562,26 @@ static int BuildLsetGrid(const struct htmlnode *tablenode, struct hax_state *st,
         wlvec_init(&cells);
         for (td = tr->children; td; td = td->next) {
             struct lset *leaf;
-            long weight;
+            long weight, fixedpx;
             if (!htmlpart_IsElement(td)) continue;
             if (strcmp(td->tag, "td") != 0 && strcmp(td->tag, "th") != 0) continue;
-            leaf = BuildLsetCell(td, st, &weight);
-            if (leaf) { wlvec_push(&cells, leaf, weight); rowWeight += weight; }
+            leaf = BuildLsetCell(td, st, &weight, &fixedpx);
+            if (leaf) { wlvec_push(&cells, leaf, weight, fixedpx); rowWeight += weight; }
         }
         if (cells.count > 0) {
             /* Pad out to the table's shared column count so this
                row's cells stay aligned with sibling rows that have a
                different local cell count (see TableColumnCount's own
                comment) -- e.g. a colspan-free data row under a
-               colspan header, or a genuinely ragged row. */
+               colspan header, or a genuinely ragged row. Filler is
+               always proportional (fixedpx=0) -- it exists purely for
+               colspan cross-row alignment, unrelated to any real
+               cell's fixed-pixel sizing. */
             if (rowWeight < ncols) {
                 struct lset *filler = MakeFillerLeaf(st);
-                if (filler) wlvec_push(&cells, filler, ncols - rowWeight);
+                if (filler) wlvec_push(&cells, filler, ncols - rowWeight, 0);
             }
-            rowRoot = BuildLsetChain(cells.items, cells.count, lsetview_MakeHorz, st);
+            rowRoot = BuildLsetChain(cells.items, cells.count, lsetview_MakeHorz, lsetview_MakeHorzFixed, st);
             if (rowRoot) lsetvec_push(outRows, rowRoot);
         }
         wlvec_free(&cells);

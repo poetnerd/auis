@@ -55,6 +55,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/adew
 #include <rm.ih>
 #include <valuev.ih>
 #include <text.ih>
+
 static int dolink(struct lsetview *self);
 static int initkids(struct lsetview *self, struct lset *ls);
 static int lookuptype(char *ty);
@@ -147,11 +148,17 @@ static int initkids(struct lsetview *self, struct lset *ls)
 	v2 = lsetview_Create(self->level+1,(struct lset *)ls->right,(struct view *)self);
 	if(ls->type == lsetview_MakeHorz)
 	    lsetview_HSplit(self,v1,v2,ls->pct,TRUE);
+	else if(ls->type == lsetview_MakeHorzFixed) {
+	    /* ls->pct is a pixel bsize here, not a percentage -- see
+	       lsetview_MakeHorzFixed's own comment in lsetv.ch. */
+	    lsetview_HTFixed(self,v1,v2,ls->pct,TRUE);
+	} else if(ls->type == lsetview_MakeVertFixed)
+	    lsetview_VTFixed(self,v1,v2,ls->pct,TRUE);
 	else
 	    lsetview_VSplit(self,v1,v2,ls->pct,TRUE);
 	self->mode = lsetview_IsSplit;
 	lsetview_WantUpdate(self,self);
-    }	
+    }
 static int dolink(struct lsetview *self)
 {
     struct lset *ls;
@@ -442,10 +449,14 @@ int lsetview_Paste(struct lsetview *self)
    exactly as before this change. */
 enum view_DSattributes lsetview__DesiredSize(struct lsetview *self, long width, long height, enum view_DSpass pass, long *dWidth, long *dHeight)
 {
+    enum view_DSattributes result;
     self->sizepending = FALSE; /* matches celview__DesiredSize's own reset -- a real query is happening now, so any pending WantNewSize escalation has been serviced. Without this, WantNewSize's debounce guard would latch TRUE forever after the first call and never escalate again. */
-    if (self->mode != lsetview_IsSplit && self->child)
-	return view_DesiredSize(self->child, width, height, pass, dWidth, dHeight);
-    return super_DesiredSize(self, width, height, pass, dWidth, dHeight);
+    if (self->mode != lsetview_IsSplit && self->child) {
+	result = view_DesiredSize(self->child, width, height, pass, dWidth, dHeight);
+	return result;
+    }
+    result = super_DesiredSize(self, width, height, pass, dWidth, dHeight);
+    return result;
 }
 
 void lsetview__Update(struct lsetview *self)
@@ -481,9 +492,19 @@ void lsetview__Update(struct lsetview *self)
 	case lsetview_IsSplit:
             if(cursor_IsPosted(self->cursor))
                 lsetview_RetractCursor(self,self->cursor);
-	    if(self->header.lpair.objsize[1] > 0 &&   ls->pct != self->header.lpair.objsize[1]){
-		ls->pct = self->header.lpair.objsize[1];
-		lset_NotifyObservers(ls,0);
+	    {
+		/* lpair_TOPFIXED (our two *Fixed types) stores its live
+		   size in objsize[0], not objsize[1] -- lpair__SetUp
+		   (lpair.c:504-510) sets objsize[0]=bsize/objsize[1]=0
+		   for TOPFIXED, the mirror image of PERCENTAGE's
+		   objsize[1]=pct/objsize[0]=0. Same live-drag-to-
+		   dataobject sync as before, just watching the other
+		   slot for our two fixed-pixel types. */
+		int fixedIdx = (ls->type == lsetview_MakeHorzFixed || ls->type == lsetview_MakeVertFixed) ? 0 : 1;
+		if(self->header.lpair.objsize[fixedIdx] > 0 && ls->pct != self->header.lpair.objsize[fixedIdx]){
+		    ls->pct = self->header.lpair.objsize[fixedIdx];
+		    lset_NotifyObservers(ls,0);
+		}
 	    }
             super_Update(self); return ;
         case lsetview_MakeVert:
@@ -531,7 +552,9 @@ void lsetview__FullUpdate(struct lsetview *self, enum view_UpdateType type, long
     else if (self->mode == lsetview_IsSplit){
         super_FullUpdate(self,type,left,top,width,height);
     }
-    else lsetview_Update(self);
+    else {
+	lsetview_Update(self);
+    }
 }
 void lsetview__ObservedChanged(struct lsetview *self, struct observable *changed, long value)
     {
@@ -579,10 +602,16 @@ void lsetview__ObservedChanged(struct lsetview *self, struct observable *changed
 		cursor_SetStandard(self->cursor,Cursor_Arrow);
 		dolink(self);
 	    }
-	    else if(Data(self)->pct != self->header.lpair.objsize[1]){
-		self->header.lpair.objsize[1] =  Data(self)->pct ;
-		self->header.lpair.needsfull = 1;
-		lsetview_WantUpdate(self,self);
+	    else {
+		/* Same objsize[0]-vs-[1] distinction as lsetview__Update
+		   above -- ls was already fetched as Data(self) at this
+		   function's top. */
+		int fixedIdx = (ls->type == lsetview_MakeHorzFixed || ls->type == lsetview_MakeVertFixed) ? 0 : 1;
+		if(ls->pct != self->header.lpair.objsize[fixedIdx]){
+		    self->header.lpair.objsize[fixedIdx] = ls->pct;
+		    self->header.lpair.needsfull = 1;
+		    lsetview_WantUpdate(self,self);
+		}
 	    }
 
 	    super_ObservedChanged(self, changed, value);
