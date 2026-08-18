@@ -463,6 +463,82 @@ path (2026-08-17) turned up zero callers of either function outside
 the offline test tool. Clicking a link in a real rendered message
 today does nothing. See Planned next work below.
 
+## Implementation
+
+Status snapshot of what's actually built and fixed — an inventory,
+distinct from the architecture/rationale sections above. Full
+bug-by-bug technical detail (root causes, code, live-verification
+steps) lives in `revival/doc/porting-assessment.md` (§24 for the
+`lset`/`lpair`/`textview` fixes below) and `revival/doc/revival.md`'s
+"Old bugs never found till now" section — this section is a pointer
+and summary, not a duplicate.
+
+**Stage 1 — Parser library:** done, committed (`756e137a`).
+`htmlpart.c`/`.h`. 20/20 fixture tests (`html-parse-tests`).
+
+**Stage 2 — Plain-text renderer:** done, committed (`56f48784`).
+`htmltext.c`/`.h`. 13/13 fixture tests (`html-totext-tests`).
+
+**Stage 3 — ATK-styled renderer:** done, committed. `htmlatk.c`/`.h`,
+`text822.c`'s primary path. Walks the parsed tree into `text`/`lset`/
+`image` insets — see "Table strategy" above for the `lset`-vs-`table`
+decision and the peeling heuristic.
+
+**Core ATK toolkit changes, `lset`/`lpair`** (`src/atk/adew/lsetv.c`/
+`.ch`, `src/atk/supportviews/lpair.c`) — none of this is HTML-specific;
+`lset`/`lpair` had simply never been asked to do this before this
+project:
+- `lsetview` gained a real `DesiredSize` override (previously inherited
+  `lpair`'s generic no-op fallback, which never consulted a leaf's real
+  content size) and `WantNewSize` escalation to its parent.
+- `lset` gained real fixed-pixel splits (`lsetview_MakeHorzFixed`/
+  `MakeVertFixed`), for small, non-reflowing decoration/spacer cells.
+- `lpair__DesiredSize`'s "pathological content" height clamp — a
+  hardcoded 2048px cutoff from before any caller routinely exceeded it
+  — raised to a practically-unreachable 1,000,000; real HTML mail
+  bodies routinely exceed the old value.
+- `lpair__DesiredSize`'s HORIZONTAL (stacked-row) branch never summed
+  its children's real heights, only echoed back whatever height it was
+  offered — fixed to query each child's real height and sum them
+  (`b38e9fda90`).
+- `htmlatk.c`'s `BuildLsetCell` splice-through (a shortcut meant only
+  for a truly trivial single-cell wrapper) could also fire for a
+  genuine multi-cell nested row, flattening whole subsequent newsletter
+  sections into one side-by-side chain — fixed to only fire for a
+  genuine single-cell leaf (`a9a82d66f1`).
+
+**Core ATK toolkit changes, `textview`** (`src/atk/text/textv.c`) —
+also general-purpose fixes, not HTML-specific, all first exposed by
+this project because it's the first content to embed a view taller
+than one screen:
+- `BackSpace`'s end-of-file phantom-character padding could mistake the
+  true end of a document for still being inside the previous
+  (oversized) line, snapping the scroll position back to that line's
+  start on every keystroke — an infinite loop.
+- `BackSpace`'s `MoveByPixels` fast-path used a stale calculation that
+  swallowed an entire backward-move request whenever the current line's
+  height exceeded it — silently no-op'd `Escape-v`/prior-screen while
+  inside any oversized embedded view, including plain `raster` images,
+  not just HTML mail.
+- `textview_Visible` conflated text-position containment with
+  pixel-level visibility, treating a position at the end of an
+  oversized, only-partly-scrolled-into line as "already visible" — made
+  `Escape->` ("go to end") silently no-op.
+- `BackSpace`'s pixel-budget search never credited a target position's
+  own line height when the target sat at that line's *end* (only lines
+  strictly before it) — made "go to end" snap all the way back to the
+  top instead of framing near the bottom, once the `Visible()` fix
+  above correctly detected it needed to move at all. (`1971a51eb3`,
+  together with the `Visible()` fix)
+
+**Known open bug:** `textview_NextScreenCmd`/`MoveForward`
+(`txtvcmv.c`/`textv.c`) blanks the screen when forward-paging (`^v`)
+reaches the true end of a document whose tail is one oversized
+embedded view — the new scroll-top lands exactly at end-of-text, a
+position with no content there. Suspected root cause of the original
+motivating complaint ("space-space-space skips the last chunk of a
+message and moves to the next one"). Not yet fixed.
+
 ## Planned next work
 
 Three gaps found live against the real National Grid message
