@@ -543,6 +543,39 @@ next step, not yet done:
   current line are actually scrolled off-screen rather than the line's
   total height.
 
+- **`textview_Visible` treated text-position containment as proof of
+  pixel-level visibility.** `textview__Visible` answers "is this position
+  currently on screen," but for a position sitting exactly at the end of
+  the last laid-out line it only checked whether that position fell
+  within the line's text range — never whether the line's own bottom
+  edge actually fit inside the viewport. For ordinary short lines the two
+  questions have the same answer, but for a document whose entire
+  content is a single embedded view many screens tall, only partway
+  scrolled into view, they diverge: the position is trivially "contained"
+  while almost none of the line is actually visible. This made
+  "go to end" (`Escape >`, via `textview_FrameDot`) silently no-op,
+  because the framing logic saw `Visible()` return true and skipped
+  re-scrolling. Fixed by also requiring the last line's bottom edge fit
+  within the viewport, mirroring a check the scrollbar code (`getinfo`)
+  already made in the same file.
+
+- **Backward-move-to-a-position always failed to land inside the very
+  first, tallest line of the document.** Once `Visible()` correctly
+  detected "not on screen" and asked `BackSpace` to scroll a target
+  position into view, `BackSpace`'s own pixel-budget search only ever
+  credited the height of lines strictly *before* the one containing the
+  target position — correct when the target sits at its own line's top
+  edge (the normal case, since the search is normally driven off the
+  current top-of-screen mark), but wrong when the target sits at the
+  line's *end*, as happens when the target is the very end of a document
+  whose entire content is one line. With no preceding lines to credit,
+  the search always concluded there wasn't enough room and fell through
+  to "can't go any farther," clamping to absolute position 0 — so
+  `Escape >` reset the scroll to the very top instead of leaving the
+  target framed near the bottom. Fixed by also checking whether the
+  line's own height (not just its predecessors') covers the remaining
+  budget, landing partway into it when so.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

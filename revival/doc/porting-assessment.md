@@ -2706,10 +2706,11 @@ fully working (see `roadmap.md`'s Applications and insets table).
 
 ### 24. `lset`/`lpair` pressed into service as an HTML table-layout engine — width/height computations never exercised at this scale before
 
-**Status:** partially resolved. Three distinct, confirmed bugs found and
-fixed 2026-08-17/18 (commits `c5f535ca9b`, `b38e9fda90`); a fourth,
-architectural one (htmlatk.c tree construction, not lset/lpair
-themselves) found 2026-08-18 and still **open**.
+**Status:** resolved. Four distinct bugs in the `lset`/`lpair` table
+layout itself found and fixed 2026-08-17/18 (commits `c5f535ca9b`,
+`b38e9fda90`, `a9a82d66f1`). Fixing them exposed two further,
+pre-existing bugs in `textview` itself (not `lset`/`lpair` — see f/g
+below), also found and fixed 2026-08-18 (`textv.c`).
 
 `atkams/messages/lib/htmlatk.c`'s HTML-mail renderer builds each
 `<table>` as a tree of `lset`/`lsetview` objects (`atk/adew/lset.ch`,
@@ -2813,7 +2814,7 @@ split/echo path when `pass==view_HeightSet` (a real imposed budget);
 any other pass now queries each child with the *shared, unsplit* width
 and sums their real, independently-queried heights.
 
-#### e. OPEN: `htmlatk.c`'s row/cell splice-through can flatten stacked sections into one side-by-side chain
+#### e. `htmlatk.c`'s row/cell splice-through could flatten stacked sections into one side-by-side chain
 
 Found live-testing d.: after b–d, National Grid pages to within a few
 pixels of correct, but Book Rack still reports its first screenful as
@@ -2842,11 +2843,45 @@ the "wrapped" content is actually an unrelated subsequent section of
 the newsletter — a very common email-authoring pattern (each section
 individually wrapped in its own single-row single-column spacing
 table) — folding what should be a fresh stacked (`MakeVert`)
-relationship into "more of the same side-by-side chain" instead. Not
-yet fixed; next step is distinguishing "this nested table is genuinely
-this cell's whole content" from "this nested table is actually the next
-section, incidentally reached through a single-cell wrapper" in
-`BuildLsetCell`'s splice-through check (`htmlatk.c`).
+relationship into "more of the same side-by-side chain" instead. Fixed
+by only allowing the splice-through when the nested table is a genuine
+single-cell leaf (`left==NULL`, no real side-by-side content of its own)
+— confirmed via `htmlatktest.test dump`: nested `lset` view count went
+from 78 to 102 (+24), matching the leaf-count increase (165→189)
+exactly, while the flat split-type census stayed identical (the same
+subtrees moved one level deeper rather than being flat-spliced).
+
+#### f. `textview_Visible` treated text-position containment as proof of pixel-level visibility
+
+Found live-testing e.'s fix: Book Rack's forward scrolling now worked,
+but "go to end" (`Escape >`) silently did nothing. `textview__Visible`
+(`atk/text/textv.c`) answers "is this position on screen," but for a
+position at the very end of the last laid-out line it only checked
+whether the position fell within that line's text range — never
+whether the line's own bottom edge fit inside the viewport. For
+ordinary short lines the two questions have the same answer; for a
+document whose entire content is one embedded view many screens tall,
+only partway scrolled into view, they diverge, and `textview_FrameDot`'s
+consumer skipped re-scrolling because `Visible()` said "already
+visible." Fixed by also requiring the last line's bottom edge fit
+within the viewport, mirroring a check the scrollbar code (`getinfo`,
+same file) already made.
+
+#### g. `BackSpace`'s pixel-budget search never landed inside the very first, tallest line
+
+Found live-testing f.'s fix: `Visible()` now correctly detected "not on
+screen" and asked `BackSpace` (`atk/text/textv.c`) to scroll the target
+into view, but the target landed at absolute position 0 (the very top)
+instead of near the bottom where it belonged. `BackSpace`'s pixel-budget
+search only credits the height of lines strictly *before* the one
+containing the target — correct when the target sits at its own line's
+top edge (the normal case, since the search is normally driven off the
+current top-of-screen mark), but not when the target sits at the line's
+*end*, as happens for the very end of a document that is one line. With
+no preceding lines to credit, the search always concluded there wasn't
+enough room and fell through to "can't go any farther," clamping to
+position 0. Fixed by also checking whether the line's own height covers
+the remaining budget, landing partway into it when so.
 
 ## Primary build environment: macOS/Darwin
 
