@@ -595,6 +595,28 @@ next step, not yet done:
   edge — once reached, further forward-paging is a no-op instead of a
   blank screen.
 
+- **The scrollbar bottom-endzone click blanked the screen, but only on a
+  held click.** A single quick tap already worked. Targeted `write(2)`
+  tracing in both `scroll.c` and `textv.c` showed that `scroll.c`'s
+  auto-repeat timer for the endzone buttons (~100ms, easy for an ordinary
+  click to exceed) fires a second "jump to end" request identically to
+  the first, before the mouse button is released. The second request's
+  backward pixel-offset step hit `BackSpace`'s "stay within the current
+  line" fast-path shortcut — a shortcut whose own comment already stated
+  its precondition as operating on the current top line, but which was
+  applied unconditionally to whatever position was passed in. The
+  endzone jump's target is never the current top; it's a freshly
+  computed line near the end of the document. Because the first
+  (correct) landing had already set the view's "how far scrolled into
+  this line" state to approximately the same distance being requested
+  again, the second call's shortcut fired against that unrelated
+  leftover value and returned the target completely unmoved — landing
+  the scroll-top exactly at end-of-document, the same no-line-of-its-own
+  position the forward-paging bug above already established renders as a
+  blank screen. Fixed by only taking the shortcut when the position
+  passed in actually is the current top position, matching the
+  precondition the shortcut's own comment already claimed.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or
@@ -878,32 +900,6 @@ upstream fix.
   untouched by any declaration or typing fix — and predates this project;
   nobody has reported metamail working here at any point. Root cause
   identified; not yet fixed.
-- **Clicking a scrollbar endzone fires two chained scroll operations,
-  not one.** Found while chasing an HTML-mail-rendering report of
-  "scrolling to end of document is non-deterministic" (see
-  `html-mail-rendering-design.md`). `textview`'s `endzone()`
-  (`src/atk/text/textv.c`) handles a discrete click and a held-down
-  auto-repeat click with the same code path: every invocation checks
-  `action == view_LeftDown` for the "jump straight to the requested
-  spot" behavior, but *also*, unconditionally, appears to receive a
-  second, immediately-following event (observed live as `action=2`)
-  that pages forward by one more line using `self->lines[1]` —
-  whatever line happened to be second-from-top after the first jump
-  landed. For a single tap this is unintended: it silently compounds
-  two different scroll intents into one click, and the second step's
-  landing position depends on transient redraw state left over from
-  the first, not on where the user clicked. Confirmed live and via
-  targeted logging in `setframe()`/`endzone()`: clicking the same
-  bottom-endzone spot repeatedly cycles through exactly three distinct
-  results in a fixed order (rather than settling once), and one of the
-  three involves `setframe` computing a negative pixel offset
-  (`off=-81`) it was never designed to hand to `SetTopOffTop`. Root
-  cause identified (the two scroll operations should not both fire for
-  a discrete click); not yet fixed — a real fix needs to determine
-  whether ATK's scrollbar widget is meant to distinguish a tap from a
-  held-down repeat at the event level, or whether `endzone()` itself
-  needs to debounce/coalesce. General ATK scrollbar-click behavior, not
-  specific to HTML mail rendering.
 
 ## Further reading
 

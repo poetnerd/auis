@@ -2708,8 +2708,8 @@ fully working (see `roadmap.md`'s Applications and insets table).
 
 **Status:** resolved. Four distinct bugs in the `lset`/`lpair` table
 layout itself found and fixed 2026-08-17/18 (commits `c5f535ca9b`,
-`b38e9fda90`, `a9a82d66f1`). Fixing them exposed three further,
-pre-existing bugs in `textview` itself (not `lset`/`lpair` — see f/g/h
+`b38e9fda90`, `a9a82d66f1`). Fixing them exposed four further,
+pre-existing bugs in `textview` itself (not `lset`/`lpair` — see f/g/h/i
 below), also found and fixed 2026-08-18 (`textv.c`).
 
 `atkams/messages/lib/htmlatk.c`'s HTML-mail renderer builds each
@@ -2905,6 +2905,34 @@ further into it (same math the existing partial-landing branch uses),
 capped so its bottom never scrolls past the viewport's bottom edge --
 once reached, further forward-paging is a genuine no-op rather than a
 blank screen.
+
+#### i. Scrollbar bottom-endzone click blanked the screen on a held click, via a `BackSpace` fast-path applied outside its own stated precondition
+
+Found chasing the scrollbar endzone-click bug logged in `revival.md`'s
+Open issues (itself found live-testing f./g./h.'s fixes). A single
+discrete click already worked; a click held past one auto-repeat tick
+(~100ms, `scroll.c`'s default `ButtonRepeatTime`) reproduced a blank
+white window. Confirmed live with targeted `write(2)` tracing in both
+`scroll.c` and `textv.c`: the click's release event is correctly
+filtered out by `endzone()`'s own action check, but the auto-repeat
+timer fires a *second* `view_LeftDown`-flavored call before release,
+re-running the "jump to end" `setframe()` request identically.
+`setframe()`'s second internal `MoveBack` call (the `MoveByPixels`
+backward offset) hit `BackSpace`'s "stay within the current line"
+fast-path shortcut (`atk/text/textv.c`) — a shortcut whose own comment
+already documented its precondition as operating on the *current top
+line*, but which was applied unconditionally to whatever `pos` was
+passed in. The bottom-endzone jump's `pos` is never the current top; it's
+a freshly-computed target line near the end of the document. After the
+first (correct) landing already set `pixelsReadyToBeOffTop` to
+approximately the same distance being requested again, the second call's
+shortcut fired, comparing the request against that unrelated leftover
+value, and returned `pos` (`text_GetLength()`) completely unmoved —
+landing the scroll-top exactly at end-of-document, the same
+no-line-of-its-own position h. above already established renders as a
+blank screen. Fixed by only taking the shortcut when
+`pos == textview_GetTopPosition(self)`, matching the precondition the
+shortcut's own comment already claimed.
 
 ## Primary build environment: macOS/Darwin
 
