@@ -1371,34 +1371,68 @@ static struct lset *BuildLsetCell(const struct htmlnode *td, struct hax_state *s
     if (NodeIsSoleNestedTable(td, &soleTable)) {
         struct lsetvec innerRows;
         int savedHardfail = st->hardfail;
-        if (BuildLsetGrid(soleTable, st, &innerRows) && innerRows.count == 1) {
-            /* inner is already a complete lset leaf/chain for the
-               nested table's one row -- use it AS this cell's leaf
-               directly instead of wrapping it in the shell we
-               speculatively allocated above (leaf->dobj = inner would
-               produce a pointless lset-wrapping-an-lset pair for every
-               single-cell nested table, and this spacer-table idiom is
-               extremely common in real marketing HTML -- wdc caught
-               this live in render_test.ez, 2026-08-16: the first two
-               objects in the National Grid fixture were exactly this
-               redundant pair around one empty spacer cell). *outWeight
-               and *outFixedPx were already set above (from td's own
+        if (BuildLsetGrid(soleTable, st, &innerRows) && innerRows.count == 1
+            && innerRows.items[0]->left == NULL) {
+            /* inner is already a complete lset LEAF (not a split) for
+               the nested table's one row -- i.e. that row itself has
+               at most one real cell, so there's no side-by-side
+               content of its own being hidden by inlining it. Use it
+               AS this cell's leaf directly instead of wrapping it in
+               the shell we speculatively allocated above (leaf->dobj
+               = inner would produce a pointless lset-wrapping-an-lset
+               pair for every single-cell nested table, and this
+               spacer-table idiom is extremely common in real
+               marketing HTML -- wdc caught this live in
+               render_test.ez, 2026-08-16: the first two objects in
+               the National Grid fixture were exactly this redundant
+               pair around one empty spacer cell). *outWeight and
+               *outFixedPx were already set above (from td's own
                colspan, and CellFixedPixelWidth -- which itself checks
                this same soleTable's own width= for exactly this case,
                see its comment) and are unaffected by which lset object
-               we return. */
+               we return.
+
+               The innerRows.items[0]->left==NULL guard was added
+               2026-08-18, after this original count==1-only version
+               was found live-collapsing Book Rack's ENTIRE message
+               into ONE embedded view (VIEW-AT count: 1 in
+               htmlatktest.test dump) with 87 chained MakeHorz splits
+               and zero MakeVert -- i.e. every section of the
+               newsletter, each reached via exactly this idiom (a
+               single-row nested table whose one row is itself a real
+               decoration+content split, not a plain leaf), kept
+               getting folded in as "just this cell's own content"
+               instead of becoming its own separate row-view in
+               RenderTableAsLset's per-line text flow (BuildLsetGrid's
+               own header comment above explains why that per-line
+               flow, not a second lset/lpair stacking layer, is how
+               this renderer represents multiple rows). Since
+               lpair__DesiredSize's side-by-side (VERTICAL) branch
+               reports max(d0,d1) for its free dimension, chaining 87
+               unrelated sections together this way made the whole
+               document's reported height collapse to its single
+               tallest link -- <space> paging then thought the first
+               screenful was the entire message. A genuinely trivial
+               single-cell wrapper (this guard's true case) has
+               nothing of its own to lose by inlining; a single ROW
+               that's itself a real multi-cell split does, and now
+               falls through below to the ordinary path instead,
+               which re-walks it via htmlatk_Render/RenderTableAsLset
+               and gets its own row-view(s) in the flow like any other
+               table. */
             struct lset *inner = innerRows.items[0];
             lsetvec_free(&innerRows);
             dataobject_Destroy((struct dataobject *) leaf);
             return inner;
         }
-        /* More than one row (or the attempt failed outright) -- no
-           single object to attach directly; undo any failure flag
-           from this abandoned attempt (BuildLsetGrid only sets it on
-           a genuine "no rows at all" case) and fall through to the
-           general path below, which re-walks and rebuilds this same
-           <table> the ordinary way via htmlatk_Render's own tag
-           dispatch. */
+        /* More than one row, or a single row that's itself a real
+           split (see the left==NULL guard above), or the attempt
+           failed outright -- no single leaf to attach directly; undo
+           any failure flag from this abandoned attempt (BuildLsetGrid
+           only sets it on a genuine "no rows at all" case) and fall
+           through to the general path below, which re-walks and
+           rebuilds this same <table> the ordinary way via
+           htmlatk_Render's own tag dispatch. */
         lsetvec_free(&innerRows);
         st->hardfail = savedHardfail;
     }
