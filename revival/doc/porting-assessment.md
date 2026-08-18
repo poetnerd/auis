@@ -2708,8 +2708,8 @@ fully working (see `roadmap.md`'s Applications and insets table).
 
 **Status:** resolved. Four distinct bugs in the `lset`/`lpair` table
 layout itself found and fixed 2026-08-17/18 (commits `c5f535ca9b`,
-`b38e9fda90`, `a9a82d66f1`). Fixing them exposed two further,
-pre-existing bugs in `textview` itself (not `lset`/`lpair` — see f/g
+`b38e9fda90`, `a9a82d66f1`). Fixing them exposed three further,
+pre-existing bugs in `textview` itself (not `lset`/`lpair` — see f/g/h
 below), also found and fixed 2026-08-18 (`textv.c`).
 
 `atkams/messages/lib/htmlatk.c`'s HTML-mail renderer builds each
@@ -2882,6 +2882,29 @@ no preceding lines to credit, the search always concluded there wasn't
 enough room and fell through to "can't go any farther," clamping to
 position 0. Fixed by also checking whether the line's own height covers
 the remaining budget, landing partway into it when so.
+
+#### h. `MoveForward`'s forward-paging landed the scroll-top on a position with no line of its own
+
+Found live-testing f./g.'s fixes: with "go to end" now working, paging
+forward one more screen (`^v`, `textview_NextScreenCmd`) from that
+already-at-the-end state produced a totally blank window instead of a
+no-op. `textview__MoveForward`'s `MoveByPixels` branch (`atk/text/textv.c`),
+when a forward page consumed the *entire* remaining height of the
+document's last line, unconditionally advanced the scroll-top position to
+`text_GetLength()` -- one past all real content. `DoUpdate`/
+`GenerateLineItems` has no fallback for that: it formats one empty line
+there and whites out the rest of the view. This isn't specific to the
+pathological one-giant-embedded-view case -- it's latent for any document
+where forward-paging exactly exhausts the last line -- it just took a
+document like this project's HTML tables (a line many screens tall) to
+actually trigger it in ordinary use. Likely the real mechanism behind the
+project's original motivating complaint, that paging through a message
+with `<space>` repeatedly skips its last chunk and jumps to the next
+message. Fixed by refusing to advance past the last line; instead reveal
+further into it (same math the existing partial-landing branch uses),
+capped so its bottom never scrolls past the viewport's bottom edge --
+once reached, further forward-paging is a genuine no-op rather than a
+blank screen.
 
 ## Primary build environment: macOS/Darwin
 

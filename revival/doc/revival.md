@@ -576,6 +576,25 @@ next step, not yet done:
   line's own height (not just its predecessors') covers the remaining
   budget, landing partway into it when so.
 
+- **Forward-paging past the end of a document landed the scroll-top on a
+  position with no line of its own, blanking the screen.**
+  `textview__MoveForward`'s pixel-based branch, when a forward page
+  (`^v`, `textview_NextScreenCmd`) consumed the entire remaining height of
+  the document's last line, unconditionally advanced the scroll-top to
+  `text_GetLength()` — one past all real content. The layout code has no
+  fallback for that: it formats one empty line there and whites out the
+  rest of the view. This isn't specific to the one-giant-embedded-view
+  case that exposed it — it's latent for any document where forward-
+  paging exactly exhausts the last line — it just took a document like
+  this project's HTML tables to trigger it in ordinary use. This is
+  suspected to be the actual mechanism behind the project's original
+  motivating complaint, that repeatedly pressing `<space>` while reading
+  a message skips its last chunk and jumps straight to the next message.
+  Fixed by refusing to advance past the last line; instead reveal further
+  into it, capped so its bottom never scrolls past the viewport's bottom
+  edge — once reached, further forward-paging is a no-op instead of a
+  blank screen.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

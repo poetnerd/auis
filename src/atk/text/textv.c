@@ -2150,11 +2150,45 @@ long textview__MoveForward(struct textview *self, long pos, long units, enum tex
             }
         }
         else if (type == textview_MoveByPixels) {
-            if (viewHeight < VIEWTOOSMALL || viewHeight <= units - i) {
+            if (pos + info.lineLength == textlen) {
+                /* This is the document's last line, and gobbling it
+                   whole (the ordinary branch below) would drive pos to
+                   textlen -- a position with no line of its own.
+                   DoUpdate/GenerateLineItems has no fallback for that:
+                   it formats one empty line there and whites out the
+                   rest of the view, i.e. a blank screen, discarding
+                   whatever of this line was still showing. Instead,
+                   stay on this line and reveal further into it (same
+                   direction/units math as the plain "else" branch
+                   below), capped so its bottom never scrolls past the
+                   viewport's bottom edge -- once that cap is reached
+                   there's genuinely nothing left to page into, so
+                   further calls become a no-op instead of blanking.
+                   Confirmed live 2026-08-18: ^v right after `Escape >`
+                   landed at the true end-of-document produced a
+                   totally white window with the caret in the upper
+                   left. */
+                long viewportHeight = textview_GetLogicalHeight(self) - self->by;
+                long cap = viewHeight - viewportHeight;
+                long newOffTop;
+
+                if (cap < 0) {
+                    cap = 0;
+                }
+                newOffTop = self->pixelsComingOffTop + (units - i);
+                if (newOffTop > cap) {
+                    newOffTop = cap;
+                }
+                if (newOffTop < self->pixelsComingOffTop) {
+                    newOffTop = self->pixelsComingOffTop;
+                }
+                self->pixelsComingOffTop = newOffTop;
+                break;
+            }
+            else if (viewHeight < VIEWTOOSMALL || viewHeight <= units - i) {
                 pos += info.lineLength;
                 i += viewHeight;
                 self->pixelsComingOffTop = 0;
-                if (pos == textlen) break;
             }
             else {
                 self->pixelsComingOffTop += units - i;
