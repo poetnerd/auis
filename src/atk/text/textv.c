@@ -1819,10 +1819,34 @@ static long BackSpace(struct textview *self, long pos, long units, enum textview
     }
 
     if (type == textview_MoveByPixels) {
-        units -= (self->lines[0].y + self->lines[0].height);
-	if (units <= 0) {
-            return pos;
-        }
+        /* Fast-path shortcut for a backward move small enough to stay
+           within the current top line, just revealing more of what's
+           already scrolled off above it (self->pixelsReadyToBeOffTop)
+           -- avoids the real paragraph-by-paragraph search below.
+
+           A second, now-removed check used to run first:
+             units -= (self->lines[0].y + self->lines[0].height);
+             if (units <= 0) return pos;
+           self->lines[0].y is negative exactly when the top line is
+           itself partially scrolled into (y == -pixelsReadyToBeOffTop,
+           roughly), so y+height computed "how much of this line's
+           content remains below the current scroll position" -- i.e.
+           the FORWARD remaining extent, not anything relevant to a
+           BACKWARD move. For ordinary short lines this fires so
+           rarely (a page-up request is essentially always bigger than
+           one line's height) it was effectively dead code; for a
+           single embedded view many screens tall -- routine for this
+           renderer's HTML tables, never seen before it -- y+height is
+           enormous and swallowed the entire request every time,
+           silently no-op'ing every backward page/frame-into-view call
+           while scrolled partway into it (confirmed live 2026-08-18:
+           `^V` forward worked, Meta-V back did nothing; "go to end"
+           landed wrong too, both going through this same function via
+           FrameDot's own textview_MoveBack call). The remaining check
+           below is the correct, sufficient shortcut on its own --
+           pixelsReadyToBeOffTop already IS "how far this line is
+           scrolled into," the only distance a within-this-line
+           backward move can cover. */
         units -= self->pixelsReadyToBeOffTop;
         if (units <= 0) {
             self->pixelsComingOffTop = self->pixelsReadyToBeOffTop - ounits;
