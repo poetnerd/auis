@@ -366,7 +366,36 @@ enum view_DSattributes lpair__DesiredSize(struct lpair *self, long width, long h
 				return(view_Fixed);
 			}
 		} else {
-			if (pass != view_WidthSet) {
+			/* typex == HORIZONTAL: obj[0]/obj[1] stack top/bottom
+			   (a table's rows, via lsetview_MakeVert/VTFixed).
+			   pass == HeightSet is a real imposed budget -- the
+			   caller is telling us we WILL be exactly this tall,
+			   so split it per sizeform and ask each child, for
+			   its height slice, what width it wants. Unchanged.
+
+			   Any other pass (NoSet, or WidthSet -- "here's your
+			   width, what's your real height?", exactly what
+			   drawtxtv.c's embedded-view-in-a-text-line query
+			   uses) must NOT reuse that split-then-query-width
+			   shape: sizeform's proportional/fixed allocation is
+			   a WIDTH-among-side-by-side-cells policy, not a
+			   meaningful way to divide up an unconstrained
+			   height among stacked rows. A stack's true height
+			   is simply the SUM of each row's own natural height
+			   for the (unsplit, shared) width -- previously this
+			   branch instead echoed the OFFERED height straight
+			   back regardless of actual content, which is what
+			   made a too-tall embedded HTML table under-report
+			   its height to textview's line layout (textv.c's
+			   pixel-based page-forward walk then jumped straight
+			   over unread content instead of stopping partway
+			   through it, matching National Grid's mail footer
+			   never fully reachable via <space> paging, though a
+			   plain raster inset -- whose DesiredSize doesn't go
+			   through lpair at all -- paged through fine).
+			   2026-08-18, found investigating that bug (separate
+			   from the lpair_TOPFIXED/2048 fix above). */
+			if (pass == view_HeightSet) {
 				lpair_ComputeSizesFromTotal (self, height);
 				view_DesiredSize(self->obj[0], width, self->objcvt[0], view_HeightSet, &d0, desiredheight);
 				view_DesiredSize(self->obj[1], width, self->objcvt[1], view_HeightSet, &d1, desiredheight);
@@ -374,6 +403,14 @@ enum view_DSattributes lpair__DesiredSize(struct lpair *self, long width, long h
 				self->objcvt[1] = c1;
 				*desiredheight = (height > MAXSANEHEIGHT) ? STARTHEIGHT : height;
 				*desiredwidth = max(d0, d1);
+				return(view_Fixed);
+			} else {
+				long h0, h1, sum;
+				view_DesiredSize(self->obj[0], width, height, view_WidthSet, &d0, &h0);
+				view_DesiredSize(self->obj[1], width, height, view_WidthSet, &d1, &h1);
+				sum = h0 + h1;
+				*desiredwidth = max(d0, d1);
+				*desiredheight = (sum > MAXSANEHEIGHT) ? STARTHEIGHT : sum;
 				return(view_Fixed);
 			}
 		}
