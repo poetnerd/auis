@@ -522,6 +522,27 @@ next step, not yet done:
   rejected outright. Fixed with an explicit bounds check ahead of the
   crop.
 
+- **Backward scrolling silently no-op'd through any embedded view taller
+  than one screen — including plain raster images, not just HTML mail.**
+  `textview`'s backward-page command (`BackSpace` in `atk/text/textv.c`)
+  had a fast-path shortcut that computed how far to move back from a
+  cached line's `y`-coordinate plus its full height. For an ordinary short
+  line this arithmetic was essentially inert — a real page-up request is
+  always bigger than one line's height, so the shortcut almost never
+  fired — but for a single line taller than the screen, partially
+  scrolled into, the same arithmetic swallowed the entire backward-move
+  request every time, so `Escape-v`/prior-screen did nothing at all
+  while inside such a view. Confirmed live (2026-08-18) against the HTML
+  mail renderer's table layouts, but the bug is generic to `textview`
+  itself, not specific to HTML content — a plain `raster` inset larger
+  than the window hits the identical code path and was independently
+  observed with the same symptom. Effectively dead code for 30-some
+  years because nothing embedded had ever been taller than a screen
+  before. Fixed by removing the erroneous shortcut and relying on the
+  (already correct) shortcut beside it, based on how many pixels of the
+  current line are actually scrolled off-screen rather than the line's
+  total height.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or
