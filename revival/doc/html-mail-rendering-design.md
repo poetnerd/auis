@@ -530,14 +530,20 @@ than one screen:
   top instead of framing near the bottom, once the `Visible()` fix
   above correctly detected it needed to move at all. (`1971a51eb3`,
   together with the `Visible()` fix)
+- `textview__MoveForward`'s pixel branch unconditionally advanced the
+  scroll-top to `text_GetLength()` whenever a forward page (`^v`)
+  consumed the entire remaining height of the document's last line —
+  a position with no line of its own, which the layout code renders
+  as a blank screen. Not specific to oversized embedded views; latent
+  for any document where forward-paging exactly exhausts the last
+  line. Suspected root cause of the original motivating complaint
+  ("space-space-space skips the last chunk of a message and moves to
+  the next one"). Fixed to stop at the last line instead, capped at
+  its own bottom edge, so further paging becomes a no-op once there
+  (`de73971e25`).
 
-**Known open bug:** `textview_NextScreenCmd`/`MoveForward`
-(`txtvcmv.c`/`textv.c`) blanks the screen when forward-paging (`^v`)
-reaches the true end of a document whose tail is one oversized
-embedded view — the new scroll-top lands exactly at end-of-text, a
-position with no content there. Suspected root cause of the original
-motivating complaint ("space-space-space skips the last chunk of a
-message and moves to the next one"). Not yet fixed.
+**Known open bug:** clicking the scrollbar's bottom endzone button has
+no effect. Not yet investigated.
 
 ## Planned next work
 
