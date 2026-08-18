@@ -2704,6 +2704,150 @@ misunderstanding, not a real bug: testing the documented way to insert
 an integral into an equation works correctly, and `eq` is otherwise
 fully working (see `roadmap.md`'s Applications and insets table).
 
+### 24. `lset`/`lpair` pressed into service as an HTML table-layout engine — width/height computations never exercised at this scale before
+
+**Status:** partially resolved. Three distinct, confirmed bugs found and
+fixed 2026-08-17/18 (commits `c5f535ca9b`, `b38e9fda90`); a fourth,
+architectural one (htmlatk.c tree construction, not lset/lpair
+themselves) found 2026-08-18 and still **open**.
+
+`atkams/messages/lib/htmlatk.c`'s HTML-mail renderer builds each
+`<table>` as a tree of `lset`/`lsetview` objects (`atk/adew/lset.ch`,
+`lsetv.c`) — a persistable dataobject layer over `lpair`
+(`atk/supportviews/lpair.c`), the general split-pane view class ATK
+uses tree-wide for scrollbar-adjacent splits, window chrome, etc.
+Nothing about this combination is new, but rendering an arbitrary real
+HTML table this way — potentially deeply nested, with cells that need
+literal pixel widths (spacer/decoration `<td>`s) alongside proportional
+ones, and rows/sections that can flow to many times a screen's height
+with no per-cell scroller — exercises code paths `lset`/`lpair` had
+never been asked to handle before. All four bugs below were found
+working a single real fixture (a Shelf Awareness "Book Rack" newsletter
+and a National Grid utility mailer) from "renders as a few blank bars"
+through to "mostly right, pagination close but not exact."
+
+#### a. `width=` silently stripped before `htmlatk.c` ever saw it
+
+`ams/libs/shr/htmlpart.c`'s `attr_allowed()` per-tag attribute allowlist
+only let `colspan`/`rowspan`/`border` through for `table`/`td`/`th` —
+`width` was never added, so every `width=` attribute in real mail was
+discarded during sanitization regardless of what the renderer tried to
+do with it. One-line allowlist fix.
+
+#### b. `lset` had no fixed-pixel split type, only percentage
+
+`lpair` already had a `lpair_TOPFIXED`/`BOTTOMFIXED` sizeform (an
+absolute pixel `bsize` for one side, remainder to the other) alongside
+`lpair_PERCENTAGE`, but `lsetview`'s `initkids()` only ever dispatched
+to the percentage-based `HSplit`/`VSplit`. Added
+`lsetview_MakeHorzFixed`/`MakeVertFixed` (`adew/lsetv.ch`, values 11/12,
+chosen to not collide with `lsetv.c`'s file-local `lsetview_NeedLink`
+=10), dispatching to `lpair_HTFixed`/`VTFixed`, with `ls->pct`
+reinterpreted as a pixel `bsize` instead of a 0–100 percentage for these
+two types only. `htmlatk.c`'s `BuildLsetChain` gives this treatment
+**only** to small, visually-empty decoration/spacer cells (confirmed
+via `CellFixedPixelWidth`) — giving it to a large content-bearing cell
+(e.g. a `<td>` wrapping a `width=640` nested table) was tried, live-
+tested, and reverted the same day: `lpair_TOPFIXED`'s
+`min(totalsize,bsize)` cap has no graceful degradation, so a fixed
+request larger than the real window can zero out the complement side
+entirely — and `lpair`'s `DoFullUpdate` skips `view_FullUpdate` on a
+zero-width rectangle, silently dropping everything nested inside it.
+
+#### c. `lpair__DesiredSize`'s 2048px "pathological content" clamp
+
+```c
+if (d1 > 2048) {
+    if (d0 > 2048) { *desiredheight = STARTHEIGHT; return(view_Fixed); }
+    *desiredheight = d0;      /* picks the SMALL side's height for the WHOLE split */
+    return(view_Fixed);
+}
+```
+Original intent: content taller than 2048px was assumed to be a
+runaway/pathological value (an oversized image, say) that shouldn't
+dictate a pane's height — reasonable when such content is always
+wrapped in its own scroller before reaching `lpair`, which is true of
+every pre-existing caller. `htmlatk.c` flows a whole message body
+through nested `lpair` splits with no per-cell scroller, so ordinary
+mail routinely exceeds 2048px. When that content was paired (via
+`lpair_TOPFIXED`) against a small fixed-pixel decoration, this branch
+reported the *decoration's* ~25px height for the entire row, collapsing
+real content to a sliver regardless of window size (Book Rack: a few
+thin decoration bars, nothing else, no matter how the window was
+resized). Renamed to `MAXSANEHEIGHT` and raised to 1,000,000 — the
+original safety-net shape (and the `STARTHEIGHT` double-overflow
+fallback) is unchanged, just practically unreachable for real content.
+
+#### d. `lpair__DesiredSize`'s HORIZONTAL (stacked) branch never summed
+
+Distinct bug in the *other* branch — `typex==lpair_HORIZONTAL`, used
+for top/bottom stacking (`lsetview_MakeVert`/`MakeVertFixed`, a table's
+rows):
+```c
+view_DesiredSize(self->obj[0], width, self->objcvt[0], view_HeightSet, &d0, desiredheight);
+view_DesiredSize(self->obj[1], width, self->objcvt[1], view_HeightSet, &d1, desiredheight);
+...
+*desiredheight = (height > MAXSANEHEIGHT) ? STARTHEIGHT : height;   /* echoes the OFFERED height, ignores d0/d1 entirely */
+*desiredwidth = max(d0, d1);
+```
+The sibling `VERTICAL` (side-by-side) branch *does* correctly compute
+`max(d0,d1)` from real per-child `DesiredSize` results for its free
+dimension (height, there) — this branch's free dimension is width
+(correctly `max(d0,d1)`), but its height was never computed at all,
+just parroted back from whatever was offered. Found live-testing the
+c. fix: a too-tall stacked row-chain reported its *offered* probe
+height (`drawtxtv.c` offers 16384 as an effectively-unconstrained
+ceiling when asking an embedded view "how tall do you really want to
+be") instead of summing its rows' real heights, so `textview`'s
+pixel-based page-forward walk (`textv.c:2045` `textview__MoveForward`,
+`textview_MoveByPixels`) thought a whole screen's worth fit and jumped
+straight past unread content — `<space>` paging through a long HTML
+message would reach the last *visible* line and then skip straight to
+the next message, never showing the rest. (Confirmed this is not a
+general "can't page through one big embedded view" limitation: a
+raster inset taller than a window pages through it fine, screen by
+screen, because raster's own `DesiredSize` doesn't go through `lpair`
+and correctly reports its true height every time — the bug was
+specific to `lpair`'s HORIZONTAL branch.) Fixed by only taking the
+split/echo path when `pass==view_HeightSet` (a real imposed budget);
+any other pass now queries each child with the *shared, unsplit* width
+and sums their real, independently-queried heights.
+
+#### e. OPEN: `htmlatk.c`'s row/cell splice-through can flatten stacked sections into one side-by-side chain
+
+Found live-testing d.: after b–d, National Grid pages to within a few
+pixels of correct, but Book Rack still reports its first screenful as
+the *entire* document. Dumping Book Rack's actual built tree
+(`htmlatktest.test dump`) shows why — split-type census across the
+whole message:
+```
+165 type=0   (leaves)
+ 62 type=1   (MakeHorz  -- side-by-side, VERTICAL orientation)
+ 25 type=11  (MakeHorzFixed -- side-by-side, fixed-pixel)
+  0 type=2, type=12   (MakeVert/MakeVertFixed -- stacked, HORIZONTAL orientation)
+```
+87 splits total (matching the original "87-level nested" diagnosis
+exactly) and **zero** are the stacked/`MakeVert` type — the entire
+message, every section that should sit below the previous one, is one
+long chain of *side-by-side* splits. `lpair__DesiredSize`'s VERTICAL
+branch correctly takes `max(d0,d1)` for that orientation (right for
+genuinely-adjacent cells) — so the reported height of the whole 87-deep
+chain is just the height of its single tallest link, not the sum of the
+whole document. Root cause believed to be `htmlatk.c`'s
+`NodeIsSoleNestedTable` splice-through: its *cell-level* rule (a `<td>`
+whose only content is a single-row nested table gets that row's own
+lset chain attached directly as the cell's own leaf, added originally
+to skip a redundant wrapper around one cell's content) also fires when
+the "wrapped" content is actually an unrelated subsequent section of
+the newsletter — a very common email-authoring pattern (each section
+individually wrapped in its own single-row single-column spacing
+table) — folding what should be a fresh stacked (`MakeVert`)
+relationship into "more of the same side-by-side chain" instead. Not
+yet fixed; next step is distinguishing "this nested table is genuinely
+this cell's whole content" from "this nested table is actually the next
+section, incidentally reached through a single-cell wrapper" in
+`BuildLsetCell`'s splice-through check (`htmlatk.c`).
+
 ## Primary build environment: macOS/Darwin
 
 The initial development platform is macOS (POSIX Darwin), not Linux.
