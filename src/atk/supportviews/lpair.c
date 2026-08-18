@@ -44,6 +44,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atk/supp
 #include <view.ih>
 #include <cursor.ih>
 #include <rect.h>
+
 static void DoFullUpdate(struct lpair *self, enum view_UpdateType type, struct rectangle *redrawRectangle);
 
 
@@ -84,7 +85,7 @@ static void DoFullUpdate(struct lpair *self, enum view_UpdateType type, struct r
 
 	lpair_ComputeSizes(self);
 	lpair_ResetDimensions(self);	/* reset the child lpair sizes */
-	x = 0; 
+	x = 0;
 	y = 0;
 	if (self->typex == lpair_VERTICAL)
 		x += self->objcvt[0];
@@ -322,6 +323,19 @@ void lpair__WantUpdate(struct lpair *self, struct view *requestor)
 
 
 #define STARTHEIGHT 256
+/* Original heuristic treated any desired height over 2048 as pathological
+   (e.g. a runaway image) and refused to let it dictate a pane's height --
+   sane when oversized content is always wrapped in its own scroller, as
+   in lpair's traditional callers. htmlatk.c's HTML table renderer instead
+   flows a whole document through nested lpair splits with no per-cell
+   scroller, so ordinary message bodies routinely exceed 2048px of desired
+   height. When that content happened to be split (via lpair_TOPFIXED/
+   BOTTOMFIXED) against a small fixed-pixel decoration cell, the old
+   threshold picked the decoration's own tiny height for the whole row,
+   collapsing all real content to a few pixels regardless of window size.
+   Raised far past anything a real view could plausibly want, while still
+   guarding truly degenerate values via STARTHEIGHT below. 2026-08-17. */
+#define MAXSANEHEIGHT 1000000
 enum view_DSattributes lpair__DesiredSize(struct lpair *self, long width, long height, enum view_DSpass pass, long *desiredwidth, long *desiredheight)
 {
 	long	d0, d1, c0, c1;
@@ -336,15 +350,15 @@ enum view_DSattributes lpair__DesiredSize(struct lpair *self, long width, long h
 				*desiredwidth = width;
 				self->objcvt[0] = c0;
 				self->objcvt[1] = c1;
-				if (d1 > 2048) {
-					if (d0 > 2048) {
+				if (d1 > MAXSANEHEIGHT) {
+					if (d0 > MAXSANEHEIGHT) {
 						*desiredheight = STARTHEIGHT;
 						return(view_Fixed);
 					}
 					*desiredheight = d0;
 					return(view_Fixed);
 				}
-				if (d0 > 2048) {
+				if (d0 > MAXSANEHEIGHT) {
 					*desiredheight = d1;
 					return(view_Fixed);
 				}
@@ -358,14 +372,14 @@ enum view_DSattributes lpair__DesiredSize(struct lpair *self, long width, long h
 				view_DesiredSize(self->obj[1], width, self->objcvt[1], view_HeightSet, &d1, desiredheight);
 				self->objcvt[0] = c0;
 				self->objcvt[1] = c1;
-				*desiredheight = (height > 2048) ? STARTHEIGHT : height;
+				*desiredheight = (height > MAXSANEHEIGHT) ? STARTHEIGHT : height;
 				*desiredwidth = max(d0, d1);
 				return(view_Fixed);
 			}
 		}
 	}
 	*desiredwidth = width;
-	*desiredheight = (height > 2048) ? STARTHEIGHT : height;
+	*desiredheight = (height > MAXSANEHEIGHT) ? STARTHEIGHT : height;
 	return(view_Fixed);
 }
 

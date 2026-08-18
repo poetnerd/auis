@@ -439,8 +439,17 @@ static int attr_allowed(const char *tag, const char *attr)
             || strcmp(attr, "width") == 0 || strcmp(attr, "height") == 0;
     }
     if (strcmp(tag, "table") == 0 || strcmp(tag, "td") == 0 || strcmp(tag, "th") == 0) {
+        /* width added 2026-08-17: htmlatk.c's lset-based table renderer
+           now reads a cell's (or its sole nested table's) bare-pixel
+           width= to give decoration/spacer columns a real fixed pixel
+           size instead of an equal proportional share -- see
+           CellFixedPixelWidth's comment there, and htmlatk.h's
+           judgment-call log, which flagged per-cell width as the place
+           to extend once a real fixture/message showed the pattern
+           (The Book Rack, found this same day). Without it here, the
+           attribute never reaches htmlatk.c at all. */
         return strcmp(attr, "colspan") == 0 || strcmp(attr, "rowspan") == 0
-            || strcmp(attr, "border") == 0;
+            || strcmp(attr, "border") == 0 || strcmp(attr, "width") == 0;
     }
     if (strcmp(tag, "font") == 0) {
         return strcmp(attr, "color") == 0 || strcmp(attr, "size") == 0;

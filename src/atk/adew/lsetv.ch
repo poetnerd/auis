@@ -39,6 +39,27 @@
 #define lsetview_UpdateView 7
 #define lsetview_FirstUpdate 8
 #define lsetview_NoUpdate 9
+/* Values 11/12, not 10, deliberately -- lsetv.c's own file-local
+   lsetview_NeedLink is 10; these two live in this public header
+   (unlike NeedLink) because ls->type is a real dataobject field a
+   builder like htmlatk.c writes directly, so it needs to be visible
+   outside this file. Like MakeHorz/MakeVert, a split's ls->pct field
+   holds the split's size -- but here as an absolute pixel bsize (fed
+   straight to lpair_HTFixed/VTFixed, i.e. lpair_TOPFIXED: the LEFT/
+   TOP child gets exactly that many pixels, min'd against whatever
+   space is actually available, and the RIGHT/BOTTOM child gets the
+   remainder), not a 0-100 percentage. Only ever set by a builder
+   (e.g. htmlatk.c's BuildLsetChain) constructing a fresh lset tree in
+   code -- there is no interactive/authoring-mode UI path that creates
+   one of these (lsetview__Hit's click-to-split logic, ~line 194-230,
+   is unchanged and still only ever creates MakeHorz/MakeVert
+   percentage splits), so self->mode never takes these values, only
+   ls->type does; safe to add without touching the self->mode state
+   machine above. See initkids() and the two ls->pct/objsize sync
+   sites in lsetview__Update/lsetview__ObservedChanged (lsetv.c) for
+   the three places that actually need to know about these. */
+#define lsetview_MakeHorzFixed 11
+#define lsetview_MakeVertFixed 12
 
 class lsetview[lsetv]:lpair {
 overrides:
