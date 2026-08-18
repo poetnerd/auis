@@ -1219,7 +1219,7 @@ calls in this function are being RETURNED state vector information in info.sv, b
 	if (! textview_Visible(self, line)) {
 	    mark_SetPos(self->frameDot, -1);		/* prevent recursive loops */
 #if 1
-	    
+
 	    if(self->pixelsReadyToBeOffTop) {
 		textview_SetTopPosition(self, line);
 	    }
@@ -1644,7 +1644,15 @@ boolean textview__Visible(struct textview *self, long pos)
 	if (pos == mark_GetPos(lineMark))
 	    return (self->nLines != 1 || textview_PrevCharIsNewline(Text(self), pos));
 	else if (pos == endMark)
-	    return !textview_PrevCharIsNewline(Text(self), pos); 
+	    /* pos falls exactly at the end of the last laid-out line, but
+	       that line's own bottom edge (y+height) may still run past the
+	       viewport -- true for a single embedded view taller than the
+	       screen, only partly scrolled into view. Position containment
+	       alone isn't enough; also require the line's bottom actually
+	       fit on screen, mirroring getinfo()'s identical check. */
+	    return !textview_PrevCharIsNewline(Text(self), pos) &&
+		((textview_GetLogicalHeight(self) - (2*BY)) >=
+		 self->lines[self->nLines-1].y + self->lines[self->nLines-1].height);
     }
     return FALSE;
 }
@@ -1981,6 +1989,38 @@ static long BackSpace(struct textview *self, long pos, long units, enum textview
                             *linesAdded = numLines - (i-1);
                         }
 			return lastn[i-1];
+		    }
+		    else if (pos == tp + realLength && units <= totalHeight + height) {
+			/* Not enough height in the lines strictly BEFORE this
+			   one (totalHeight), but pos sits at this line's own
+			   end and this line's own height covers the rest of
+			   the units budget. Land inside this line itself,
+			   offsetting down from its top by (height - units
+			   remaining). Without this, a units budget smaller
+			   than a single oversized line (an embedded view
+			   taller than the screen, routine for this renderer's
+			   HTML tables) falls through the loop entirely; for
+			   the first line of the first paragraph -- nothing to
+			   fall back to -- that clamps the result to absolute
+			   position 0 with zero pixel offset, discarding the
+			   whole backward-move budget instead of landing
+			   partway into the line as requested. Confirmed live
+			   2026-08-18 via instrumented tracing: `Escape >`
+			   (go to end) landed at the very top of the document
+			   instead of leaving the target position framed near
+			   the bottom. */
+			mark_Destroy(tm);
+			self->pixelsComingOffTop = height - (units - totalHeight);
+			if (self->pixelsComingOffTop < PSEUDOLINEHEIGHT) {
+			    self->pixelsComingOffTop = 0;
+			}
+			if (distMoved) {
+			    *distMoved = accumHeight + units;
+			}
+			if (linesAdded) {
+			    *linesAdded = numLines;
+			}
+			return tp;
 		    }
 		    else break;
 		}
