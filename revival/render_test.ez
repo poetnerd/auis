@@ -1,340 +1,340 @@
-\begindata{text,4307822480}
+\begindata{text,4384528096}
 \textdsversion{12}
-\begindata{lset,36222783232}
+\begindata{lset,44980861696}
 \V 1
-\begindata{lset,36222175488}
+\begindata{lset,4384537696}
 \V 1
-\begindata{text,4307832688}
+\begindata{text,4384537952}
 \textdsversion{12}
-\enddata{text,4307832688}
-0 0 0 4307832688 0 0 0
+\enddata{text,4384537952}
+0 0 0 4384537952 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222175488}
-\begindata{lset,36222782976}
+\enddata{lset,4384537696}
+\begindata{lset,44980861440}
 \V 1
-\begindata{lset,36222175744}
+\begindata{lset,4384538880}
 \V 1
-\begindata{text,4307808976}
+\begindata{text,4384541696}
 \textdsversion{12}
-\enddata{text,4307808976}
-0 0 0 4307808976 0 0 0
+\enddata{text,4384541696}
+0 0 0 4384541696 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222175744}
-\begindata{lset,36222782720}
+\enddata{lset,4384538880}
+\begindata{lset,44980861184}
 \V 1
-\begindata{lset,36222176000}
+\begindata{lset,4384542464}
 \V 1
-\begindata{text,4307809408}
+\begindata{text,4384518352}
 \textdsversion{12}
-\enddata{text,4307809408}
-0 0 0 4307809408 0 0 0
+\enddata{text,4384518352}
+0 0 0 4384518352 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222176000}
-\begindata{lset,36222782464}
+\enddata{lset,4384542464}
+\begindata{lset,44980860928}
 \V 1
-\begindata{lset,36222176256}
+\begindata{lset,4384518672}
 \V 1
-\begindata{text,36222606112}
+\begindata{text,44980559072}
 \textdsversion{12}
-\begindata{lset,36222618112}
+\begindata{lset,44980549888}
 \V 1
-\begindata{text,36222606336}
+\begindata{text,44980559296}
 \textdsversion{12}
-\begindata{lset,36222618368}
+\begindata{lset,44980549376}
 \V 1
-\begindata{text,36222606560}
+\begindata{text,44980559520}
 \textdsversion{12}
 \htmlatk-link{view in browser\
-}\enddata{text,36222606560}
-0 0 0 36222606560 0 0 0
+}\enddata{text,44980559520}
+0 0 0 44980559520 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222618368}
-\view{lsetview,36222618368,55,0,0} 
-\begindata{lset,36222619648}
+\enddata{lset,44980549376}
+\view{lsetview,44980549376,80,0,0} 
+\begindata{lset,44980551168}
 \V 1
-\begindata{lset,36222618624}
+\begindata{lset,44980550144}
 \V 1
-\begindata{text,36222606784}
+\begindata{text,44980559744}
 \textdsversion{12}
 \htmlatk-link{[image: Email]\
-}\enddata{text,36222606784}
-0 0 0 36222606784 0 0 0
+}\enddata{text,44980559744}
+0 0 0 44980559744 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222618624}
-\begindata{lset,36222619392}
+\enddata{lset,44980550144}
+\begindata{lset,44980550912}
 \V 1
-\begindata{lset,36222618880}
+\begindata{lset,44980550400}
 \V 1
-\begindata{text,36222607008}
+\begindata{text,44980559968}
 \textdsversion{12}
 \htmlatk-link{[image: Facebook]\
-}\enddata{text,36222607008}
-0 0 0 36222607008 0 0 0
+}\enddata{text,44980559968}
+0 0 0 44980559968 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222618880}
-\begindata{lset,36222619136}
+\enddata{lset,44980550400}
+\begindata{lset,44980550656}
 \V 1
-\begindata{text,36222607232}
+\begindata{text,44980560192}
 \textdsversion{12}
 \htmlatk-link{[image: Instagram]\
-}\enddata{text,36222607232}
-0 0 0 36222607232 0 0 0
+}\enddata{text,44980560192}
+0 0 0 44980560192 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222619136}
-1 50 0 0 36222618880 36222619136 0
+\enddata{lset,44980550656}
+1 50 0 0 44980550400 44980550656 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222619392}
-1 67 0 0 36222618624 36222619392 0
+\enddata{lset,44980550912}
+1 67 0 0 44980550144 44980550912 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222619648}
-\view{lsetview,36222619648,56,0,0\
-}\enddata{text,36222606336}
-0 0 0 36222606336 0 0 0
+\enddata{lset,44980551168}
+\view{lsetview,44980551168,81,0,0\
+}\enddata{text,44980559296}
+0 0 0 44980559296 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222618112}
-\view{lsetview,36222618112,110,0,0}
+\enddata{lset,44980549888}
+\view{lsetview,44980549888,160,0,0}
 
-\begindata{lset,36222619904}
+\begindata{lset,44980551424}
 \V 1
-\begindata{text,36222607456}
+\begindata{text,44980560416}
 \textdsversion{12}
 \htmlatk-link{[image: Disney Hyperion: Artemis Fowl Deluxe Collector's 
 Edition by Eoin Colfer]\
-}\enddata{text,36222607456}
-0 0 0 36222607456 0 0 0
+}\enddata{text,44980560416}
+0 0 0 44980560416 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222619904}
-\view{lsetview,36222619904,111,0,0}
-\begindata{lset,36222620160}
+\enddata{lset,44980551424}
+\view{lsetview,44980551424,161,0,0}
+\begindata{lset,44980600832}
 \V 1
-\begindata{text,36222607680}
+\begindata{text,44980560640}
 \textdsversion{12}
 \htmlatk-link{[image: The Book Rack]} 
-\begindata{lset,36222624000}
+\begindata{lset,44980604672}
 \V 1
-\begindata{lset,36222620416}
+\begindata{lset,44980601088}
 \V 1
-\begindata{text,36222607904}
+\begindata{text,44980560864}
 \textdsversion{12}
-\enddata{text,36222607904}
-0 0 0 36222607904 0 0 0
+\enddata{text,44980560864}
+0 0 0 44980560864 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222620416}
-\begindata{lset,36222620672}
+\enddata{lset,44980601088}
+\begindata{lset,44980601344}
 \V 1
-\begindata{text,36222609472}
+\begindata{text,44980562432}
 \textdsversion{12}
-\begindata{lset,36222622464}
+\begindata{lset,44980603136}
 \V 1
-\begindata{text,36222609696}
+\begindata{text,44980562656}
 \textdsversion{12}
 \unknown{\htmlatk-bold{In this issue:\
-}}\enddata{text,36222609696}
-0 0 0 36222609696 0 0 0
+}}\enddata{text,44980562656}
+0 0 0 44980562656 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222622464}
-\view{lsetview,36222622464,57,0,0}
+\enddata{lset,44980603136}
+\view{lsetview,44980603136,82,0,0}
 
-\begindata{lset,36222622720}
+\begindata{lset,44980603392}
 \V 1
-\begindata{text,36222609920}
+\begindata{text,44980562880}
 \textdsversion{12}
 \htmlatk-bold{Featured Titles\
-}\enddata{text,36222609920}
-0 0 0 36222609920 0 0 0
+}\enddata{text,44980562880}
+0 0 0 44980562880 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222622720}
-\view{lsetview,36222622720,58,0,0}
-\begindata{lset,36222622976}
+\enddata{lset,44980603392}
+\view{lsetview,44980603392,83,0,0}
+\begindata{lset,44980603648}
 \V 1
-\begindata{text,36222610144}
+\begindata{text,44980563104}
 \textdsversion{12}
 \htmlatk-bold{Book Reviews\
-}\enddata{text,36222610144}
-0 0 0 36222610144 0 0 0
+}\enddata{text,44980563104}
+0 0 0 44980563104 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222622976}
-\view{lsetview,36222622976,59,0,0}
-\begindata{lset,36222623232}
+\enddata{lset,44980603648}
+\view{lsetview,44980603648,84,0,0}
+\begindata{lset,44980603904}
 \V 1
-\begindata{text,36222610368}
+\begindata{text,44980563328}
 \textdsversion{12}
 \htmlatk-bold{The Writer's Life\
-}\enddata{text,36222610368}
-0 0 0 36222610368 0 0 0
+}\enddata{text,44980563328}
+0 0 0 44980563328 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222623232}
-\view{lsetview,36222623232,60,0,0}
-\begindata{lset,36222623488}
+\enddata{lset,44980603904}
+\view{lsetview,44980603904,85,0,0}
+\begindata{lset,44980604160}
 \V 1
-\begindata{text,36222610592}
+\begindata{text,44980563552}
 \textdsversion{12}
 \htmlatk-bold{Book Candy\
-}\enddata{text,36222610592}
-0 0 0 36222610592 0 0 0
+}\enddata{text,44980563552}
+0 0 0 44980563552 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222623488}
-\view{lsetview,36222623488,61,0,0}
-\begindata{lset,36222623744}
+\enddata{lset,44980604160}
+\view{lsetview,44980604160,86,0,0}
+\begindata{lset,44980604416}
 \V 1
-\begindata{text,36222610816}
+\begindata{text,44980563776}
 \textdsversion{12}
 \htmlatk-bold{Rediscover\
-}\enddata{text,36222610816}
-0 0 0 36222610816 0 0 0
+}\enddata{text,44980563776}
+0 0 0 44980563776 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222623744}
-\view{lsetview,36222623744,62,0,0\
-}\enddata{text,36222609472}
-0 0 0 36222609472 0 0 0
+\enddata{lset,44980604416}
+\view{lsetview,44980604416,87,0,0\
+}\enddata{text,44980562432}
+0 0 0 44980562432 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222620672}
-11 20 0 0 36222620416 36222620672 0
+\enddata{lset,44980601344}
+11 20 0 0 44980601088 44980601344 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222624000}
-\view{lsetview,36222624000,63,0,0\
-}\enddata{text,36222607680}
-0 0 0 36222607680 0 0 0
+\enddata{lset,44980604672}
+\view{lsetview,44980604672,88,0,0\
+}\enddata{text,44980560640}
+0 0 0 44980560640 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222620160}
-\view{lsetview,36222620160,112,0,0}
-\begindata{lset,36222626304}
+\enddata{lset,44980600832}
+\view{lsetview,44980600832,162,0,0}
+\begindata{lset,44980606976}
 \V 1
-\begindata{lset,36222624256}
+\begindata{lset,44980604928}
 \V 1
-\begindata{text,36222611040}
+\begindata{text,44980564000}
 \textdsversion{12}
-\enddata{text,36222611040}
-0 0 0 36222611040 0 0 0
+\enddata{text,44980564000}
+0 0 0 44980564000 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222624256}
-\begindata{lset,36222626048}
+\enddata{lset,44980604928}
+\begindata{lset,44980606720}
 \V 1
-\begindata{lset,36222624512}
+\begindata{lset,44980605184}
 \V 1
-\begindata{text,36222611264}
+\begindata{text,44980564224}
 \textdsversion{12}
-\enddata{text,36222611264}
-0 0 0 36222611264 0 0 0
+\enddata{text,44980564224}
+0 0 0 44980564224 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222624512}
-\begindata{lset,36222625792}
+\enddata{lset,44980605184}
+\begindata{lset,44980606464}
 \V 1
-\begindata{lset,36222624768}
+\begindata{lset,44980605440}
 \V 1
-\begindata{text,36222611488}
+\begindata{text,44980564448}
 \textdsversion{12}
 \unknown{July 31, 2026\
-}\enddata{text,36222611488}
-0 0 0 36222611488 0 0 0
+}\enddata{text,44980564448}
+0 0 0 44980564448 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222624768}
-\begindata{lset,36222625536}
+\enddata{lset,44980605440}
+\begindata{lset,44980606208}
 \V 1
-\begindata{lset,36222625024}
+\begindata{lset,44980605696}
 \V 1
-\begindata{text,36222611712}
+\begindata{text,44980564672}
 \textdsversion{12}
-\enddata{text,36222611712}
-0 0 0 36222611712 0 0 0
+\enddata{text,44980564672}
+0 0 0 44980564672 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222625024}
-\begindata{lset,36222625280}
+\enddata{lset,44980605696}
+\begindata{lset,44980605952}
 \V 1
-\begindata{text,36222611936}
+\begindata{text,44980564896}
 \textdsversion{12}
-\enddata{text,36222611936}
-0 0 0 36222611936 0 0 0
+\enddata{text,44980564896}
+0 0 0 44980564896 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222625280}
-11 10 0 0 36222625024 36222625280 0
+\enddata{lset,44980605952}
+11 10 0 0 44980605696 44980605952 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222625536}
-1 50 0 0 36222624768 36222625536 0
+\enddata{lset,44980606208}
+1 50 0 0 44980605440 44980606208 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222625792}
-11 10 0 0 36222624512 36222625792 0
+\enddata{lset,44980606464}
+11 10 0 0 44980605184 44980606464 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222626048}
-1 67 0 0 36222624256 36222626048 0
+\enddata{lset,44980606720}
+1 67 0 0 44980604928 44980606720 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222626304}
-\view{lsetview,36222626304,113,0,0}
-\begindata{lset,36222626560}
+\enddata{lset,44980606976}
+\view{lsetview,44980606976,163,0,0}
+\begindata{lset,44980607232}
 \V 1
-\begindata{text,36222612160}
+\begindata{text,44980565120}
 \textdsversion{12}
 \htmlatk-link{WHAT TO READ NEXT: REVIEWS OF GREAT BOOKS\
-}\enddata{text,36222612160}
-0 0 0 36222612160 0 0 0
+}\enddata{text,44980565120}
+0 0 0 44980565120 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222626560}
-\view{lsetview,36222626560,114,0,0}
-\begindata{lset,36222626816}
+\enddata{lset,44980607232}
+\view{lsetview,44980607232,164,0,0}
+\begindata{lset,44980607488}
 \V 1
-\begindata{text,36222612384}
+\begindata{text,44980565344}
 \textdsversion{12}
 The dog days of summer have a tendency to make people restless, easily 
 agitated, and maybe even a little puckish. It's a prime season for scandals 
@@ -352,139 +352,139 @@ Cooler heads do prevail, at any rate, and the well-read ones most of all!
 Awareness}
 
 
-\enddata{text,36222612384}
-0 0 0 36222612384 0 0 0
+\enddata{text,44980565344}
+0 0 0 44980565344 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222626816}
-\view{lsetview,36222626816,115,0,0}
-\begindata{lset,36222627072}
+\enddata{lset,44980607488}
+\view{lsetview,44980607488,165,0,0}
+\begindata{lset,44980607744}
 \V 1
-\begindata{text,36222612608}
+\begindata{text,44980565568}
 \textdsversion{12}
 \htmlatk-link{FEATURED TITLES\
-}\enddata{text,36222612608}
-0 0 0 36222612608 0 0 0
+}\enddata{text,44980565568}
+0 0 0 44980565568 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222627072}
-\view{lsetview,36222627072,116,0,0}
-\begindata{lset,36222627328}
+\enddata{lset,44980607744}
+\view{lsetview,44980607744,166,0,0}
+\begindata{lset,44980608000}
 \V 1
-\begindata{text,36222612832}
+\begindata{text,44980565792}
 \textdsversion{12}
-\begindata{lset,36222628096}
+\begindata{lset,44980608768}
 \V 1
-\begindata{lset,36222627584}
+\begindata{lset,44980608256}
 \V 1
-\begindata{text,36222613056}
+\begindata{text,44980566016}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222613056}
-0 0 0 36222613056 0 0 0
+}\enddata{text,44980566016}
+0 0 0 44980566016 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222627584}
-\begindata{lset,36222627840}
+\enddata{lset,44980608256}
+\begindata{lset,44980608512}
 \V 1
-\begindata{text,36222613280}
+\begindata{text,44980566240}
 \textdsversion{12}
-\enddata{text,36222613280}
-0 0 0 36222613280 0 0 0
+\enddata{text,44980566240}
+0 0 0 44980566240 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222627840}
-1 0 0 0 36222627584 36222627840 0
+\enddata{lset,44980608512}
+1 0 0 0 44980608256 44980608512 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222628096}
-\view{lsetview,36222628096,64,0,0} 
-\begindata{lset,36222629376}
+\enddata{lset,44980608768}
+\view{lsetview,44980608768,89,0,0} 
+\begindata{lset,44980610048}
 \V 1
-\begindata{lset,36222628352}
+\begindata{lset,44980609024}
 \V 1
-\begindata{text,36222613504}
+\begindata{text,44980566464}
 \textdsversion{12}
 [image]\
-\enddata{text,36222613504}
-0 0 0 36222613504 0 0 0
+\enddata{text,44980566464}
+0 0 0 44980566464 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222628352}
-\begindata{lset,36222629120}
+\enddata{lset,44980609024}
+\begindata{lset,44980609792}
 \V 1
-\begindata{lset,36222628608}
+\begindata{lset,44980609280}
 \V 1
-\begindata{text,36222613728}
+\begindata{text,44980566688}
 \textdsversion{12}
-\enddata{text,36222613728}
-0 0 0 36222613728 0 0 0
+\enddata{text,44980566688}
+0 0 0 44980566688 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222628608}
-\begindata{lset,36222628864}
+\enddata{lset,44980609280}
+\begindata{lset,44980609536}
 \V 1
-\begindata{text,36222613952}
+\begindata{text,44980566912}
 \textdsversion{12}
 \unknown{The Perfect Moment: God, Sex, Art, and the Birth of America's 
 Culture Wars\
-}\enddata{text,36222613952}
-0 0 0 36222613952 0 0 0
+}\enddata{text,44980566912}
+0 0 0 44980566912 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222628864}
-11 20 0 0 36222628608 36222628864 0
+\enddata{lset,44980609536}
+11 20 0 0 44980609280 44980609536 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222629120}
-1 50 0 0 36222628352 36222629120 0
+\enddata{lset,44980609792}
+1 50 0 0 44980609024 44980609792 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222629376}
-\view{lsetview,36222629376,65,0,0}
+\enddata{lset,44980610048}
+\view{lsetview,44980610048,90,0,0}
 
-\begindata{lset,36222630144}
+\begindata{lset,44980610816}
 \V 1
-\begindata{lset,36222629632}
+\begindata{lset,44980610304}
 \V 1
-\begindata{text,36222614176}
+\begindata{text,44980567136}
 \textdsversion{12}
 Isaac Butler\
-\enddata{text,36222614176}
-0 0 0 36222614176 0 0 0
+\enddata{text,44980567136}
+0 0 0 44980567136 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222629632}
-\begindata{lset,36222629888}
+\enddata{lset,44980610304}
+\begindata{lset,44980610560}
 \V 1
-\begindata{text,36222614400}
+\begindata{text,44980567360}
 \textdsversion{12}
-\enddata{text,36222614400}
-0 0 0 36222614400 0 0 0
+\enddata{text,44980567360}
+0 0 0 44980567360 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222629888}
-1 67 0 0 36222629632 36222629888 0
+\enddata{lset,44980610560}
+1 67 0 0 44980610304 44980610560 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222630144}
-\view{lsetview,36222630144,66,0,0}
-\begindata{lset,36222630400}
+\enddata{lset,44980610816}
+\view{lsetview,44980610816,91,0,0}
+\begindata{lset,44980611072}
 \V 1
-\begindata{text,36222614624}
+\begindata{text,44980567584}
 \textdsversion{12}
 Meticulously researched and alive on every page, \htmlatk-italic{The 
 Perfect Moment} is essential reading not because the culture wars are 
@@ -493,145 +493,145 @@ history, but because they never ended.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Read the full review\
-}}\enddata{text,36222614624}
-0 0 0 36222614624 0 0 0
+}}\enddata{text,44980567584}
+0 0 0 44980567584 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222630400}
-\view{lsetview,36222630400,67,0,0}
-\begindata{lset,36222630656}
+\enddata{lset,44980611072}
+\view{lsetview,44980611072,92,0,0}
+\begindata{lset,44980611328}
 \V 1
-\begindata{text,36222615072}
+\begindata{text,44980567808}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222615072}
-0 0 0 36222615072 0 0 0
+}\enddata{text,44980567808}
+0 0 0 44980567808 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222630656}
-\view{lsetview,36222630656,68,0,0\
-}\enddata{text,36222612832}
-0 0 0 36222612832 0 0 0
+\enddata{lset,44980611328}
+\view{lsetview,44980611328,93,0,0\
+}\enddata{text,44980565792}
+0 0 0 44980565792 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222627328}
-\view{lsetview,36222627328,117,0,0}
-\begindata{lset,36222630912}
+\enddata{lset,44980608000}
+\view{lsetview,44980608000,167,0,0}
+\begindata{lset,44980611584}
 \V 1
-\begindata{text,36222615296}
+\begindata{text,44980617216}
 \textdsversion{12}
-\begindata{lset,36222631680}
+\begindata{lset,44980612352}
 \V 1
-\begindata{lset,36222631168}
+\begindata{lset,44980611840}
 \V 1
-\begindata{text,36222681088}
+\begindata{text,44980617440}
 \textdsversion{12}
-\enddata{text,36222681088}
-0 0 0 36222681088 0 0 0
+\enddata{text,44980617440}
+0 0 0 44980617440 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222631168}
-\begindata{lset,36222631424}
+\enddata{lset,44980611840}
+\begindata{lset,44980612096}
 \V 1
-\begindata{text,36222681312}
+\begindata{text,44980617664}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222681312}
-0 0 0 36222681312 0 0 0
+}\enddata{text,44980617664}
+0 0 0 44980617664 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222631424}
-11 30 0 0 36222631168 36222631424 0
+\enddata{lset,44980612096}
+11 30 0 0 44980611840 44980612096 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222631680}
-\view{lsetview,36222631680,69,0,0} 
-\begindata{lset,36222698496}
+\enddata{lset,44980612352}
+\view{lsetview,44980612352,94,0,0} 
+\begindata{lset,44980613632}
 \V 1
-\begindata{lset,36222697472}
+\begindata{lset,44980612608}
 \V 1
-\begindata{text,36222681536}
+\begindata{text,44980617888}
 \textdsversion{12}
 [image]\
-\enddata{text,36222681536}
-0 0 0 36222681536 0 0 0
+\enddata{text,44980617888}
+0 0 0 44980617888 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222697472}
-\begindata{lset,36222698240}
+\enddata{lset,44980612608}
+\begindata{lset,44980613376}
 \V 1
-\begindata{lset,36222697728}
+\begindata{lset,44980612864}
 \V 1
-\begindata{text,36222681760}
+\begindata{text,44980618112}
 \textdsversion{12}
-\enddata{text,36222681760}
-0 0 0 36222681760 0 0 0
+\enddata{text,44980618112}
+0 0 0 44980618112 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222697728}
-\begindata{lset,36222697984}
+\enddata{lset,44980612864}
+\begindata{lset,44980613120}
 \V 1
-\begindata{text,36222681984}
+\begindata{text,44980618336}
 \textdsversion{12}
 \unknown{Scandal of the Summer\
-}\enddata{text,36222681984}
-0 0 0 36222681984 0 0 0
+}\enddata{text,44980618336}
+0 0 0 44980618336 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222697984}
-11 20 0 0 36222697728 36222697984 0
+\enddata{lset,44980613120}
+11 20 0 0 44980612864 44980613120 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222698240}
-1 50 0 0 36222697472 36222698240 0
+\enddata{lset,44980613376}
+1 50 0 0 44980612608 44980613376 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222698496}
-\view{lsetview,36222698496,70,0,0}
+\enddata{lset,44980613632}
+\view{lsetview,44980613632,95,0,0}
 
-\begindata{lset,36222699264}
+\begindata{lset,44980614400}
 \V 1
-\begindata{lset,36222698752}
+\begindata{lset,44980613888}
 \V 1
-\begindata{text,36222682208}
+\begindata{text,44980618560}
 \textdsversion{12}
 Alexandra Vasti\
-\enddata{text,36222682208}
-0 0 0 36222682208 0 0 0
+\enddata{text,44980618560}
+0 0 0 44980618560 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222698752}
-\begindata{lset,36222699008}
+\enddata{lset,44980613888}
+\begindata{lset,44980614144}
 \V 1
-\begindata{text,36222682432}
+\begindata{text,44980618784}
 \textdsversion{12}
-\enddata{text,36222682432}
-0 0 0 36222682432 0 0 0
+\enddata{text,44980618784}
+0 0 0 44980618784 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222699008}
-1 67 0 0 36222698752 36222699008 0
+\enddata{lset,44980614144}
+1 67 0 0 44980613888 44980614144 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222699264}
-\view{lsetview,36222699264,71,0,0}
-\begindata{lset,36222699520}
+\enddata{lset,44980614400}
+\view{lsetview,44980614400,96,0,0}
+\begindata{lset,44980614656}
 \V 1
-\begindata{text,36222682656}
+\begindata{text,44980619008}
 \textdsversion{12}
 Pirates, princesses, and passion, oh my! Alexandra Vasti never disappoints 
 with excitement and love.
@@ -639,157 +639,157 @@ with excitement and love.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Read the full review\
-}}\enddata{text,36222682656}
-0 0 0 36222682656 0 0 0
+}}\enddata{text,44980619008}
+0 0 0 44980619008 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222699520}
-\view{lsetview,36222699520,72,0,0}
-\begindata{lset,36222699776}
+\enddata{lset,44980614656}
+\view{lsetview,44980614656,97,0,0}
+\begindata{lset,44980614912}
 \V 1
-\begindata{text,36222683104}
+\begindata{text,44980619232}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222683104}
-0 0 0 36222683104 0 0 0
+}\enddata{text,44980619232}
+0 0 0 44980619232 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222699776}
-\view{lsetview,36222699776,73,0,0\
-}\enddata{text,36222615296}
-0 0 0 36222615296 0 0 0
+\enddata{lset,44980614912}
+\view{lsetview,44980614912,98,0,0\
+}\enddata{text,44980617216}
+0 0 0 44980617216 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222630912}
-\view{lsetview,36222630912,118,0,0}
-\begindata{lset,36222700032}
+\enddata{lset,44980611584}
+\view{lsetview,44980611584,168,0,0}
+\begindata{lset,44980615168}
 \V 1
-\begindata{text,36222683328}
+\begindata{text,44980619456}
 \textdsversion{12}
 \htmlatk-link{[image: Sourcebooks Fire: Flickerstate by F.A. Davidson]\
-}\enddata{text,36222683328}
-0 0 0 36222683328 0 0 0
+}\enddata{text,44980619456}
+0 0 0 44980619456 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222700032}
-\view{lsetview,36222700032,119,0,0}
-\begindata{lset,36222700288}
+\enddata{lset,44980615168}
+\view{lsetview,44980615168,169,0,0}
+\begindata{lset,44980615424}
 \V 1
-\begindata{text,36222683552}
+\begindata{text,44980619680}
 \textdsversion{12}
-\begindata{lset,36222701056}
+\begindata{lset,44980616192}
 \V 1
-\begindata{lset,36222700544}
+\begindata{lset,44980615680}
 \V 1
-\begindata{text,36222683776}
+\begindata{text,44980619904}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222683776}
-0 0 0 36222683776 0 0 0
+}\enddata{text,44980619904}
+0 0 0 44980619904 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222700544}
-\begindata{lset,36222700800}
+\enddata{lset,44980615680}
+\begindata{lset,44980615936}
 \V 1
-\begindata{text,36222684000}
+\begindata{text,44980620128}
 \textdsversion{12}
-\enddata{text,36222684000}
-0 0 0 36222684000 0 0 0
+\enddata{text,44980620128}
+0 0 0 44980620128 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222700800}
-1 0 0 0 36222700544 36222700800 0
+\enddata{lset,44980615936}
+1 0 0 0 44980615680 44980615936 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222701056}
-\view{lsetview,36222701056,74,0,0} 
-\begindata{lset,36222702336}
+\enddata{lset,44980616192}
+\view{lsetview,44980616192,99,0,0} 
+\begindata{lset,44980633856}
 \V 1
-\begindata{lset,36222701312}
+\begindata{lset,44980616448}
 \V 1
-\begindata{text,36222684224}
+\begindata{text,44980620352}
 \textdsversion{12}
 [image]\
-\enddata{text,36222684224}
-0 0 0 36222684224 0 0 0
+\enddata{text,44980620352}
+0 0 0 44980620352 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222701312}
-\begindata{lset,36222702080}
+\enddata{lset,44980616448}
+\begindata{lset,44980633600}
 \V 1
-\begindata{lset,36222701568}
+\begindata{lset,44980616704}
 \V 1
-\begindata{text,36222684448}
+\begindata{text,44980620576}
 \textdsversion{12}
-\enddata{text,36222684448}
-0 0 0 36222684448 0 0 0
+\enddata{text,44980620576}
+0 0 0 44980620576 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222701568}
-\begindata{lset,36222701824}
+\enddata{lset,44980616704}
+\begindata{lset,44980616960}
 \V 1
-\begindata{text,36222684672}
+\begindata{text,44980620800}
 \textdsversion{12}
 \unknown{Tangled Roots\
-}\enddata{text,36222684672}
-0 0 0 36222684672 0 0 0
+}\enddata{text,44980620800}
+0 0 0 44980620800 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222701824}
-11 20 0 0 36222701568 36222701824 0
+\enddata{lset,44980616960}
+11 20 0 0 44980616704 44980616960 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222702080}
-1 50 0 0 36222701312 36222702080 0
+\enddata{lset,44980633600}
+1 50 0 0 44980616448 44980633600 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222702336}
-\view{lsetview,36222702336,75,0,0}
+\enddata{lset,44980633856}
+\view{lsetview,44980633856,100,0,0}
 
-\begindata{lset,36222703104}
+\begindata{lset,44980634624}
 \V 1
-\begindata{lset,36222702592}
+\begindata{lset,44980634112}
 \V 1
-\begindata{text,36222684896}
+\begindata{text,44980621024}
 \textdsversion{12}
 Maria Turtschaninoff, trans. by Annie Prime\
-\enddata{text,36222684896}
-0 0 0 36222684896 0 0 0
+\enddata{text,44980621024}
+0 0 0 44980621024 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222702592}
-\begindata{lset,36222702848}
+\enddata{lset,44980634112}
+\begindata{lset,44980634368}
 \V 1
-\begindata{text,36222685120}
+\begindata{text,44980621248}
 \textdsversion{12}
-\enddata{text,36222685120}
-0 0 0 36222685120 0 0 0
+\enddata{text,44980621248}
+0 0 0 44980621248 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222702848}
-1 67 0 0 36222702592 36222702848 0
+\enddata{lset,44980634368}
+1 67 0 0 44980634112 44980634368 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222703104}
-\view{lsetview,36222703104,76,0,0}
-\begindata{lset,36222703360}
+\enddata{lset,44980634624}
+\view{lsetview,44980634624,101,0,0}
+\begindata{lset,44980634880}
 \V 1
-\begindata{text,36222685344}
+\begindata{text,44980621472}
 \textdsversion{12}
 \htmlatk-italic{Tangled Roots} is an epic, century-spanning collection of 
 linked stories that brings to life the deep connection between a landscape 
@@ -798,93 +798,93 @@ and the people who've made their home in it.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Read the full review\
-}}\enddata{text,36222685344}
-0 0 0 36222685344 0 0 0
+}}\enddata{text,44980621472}
+0 0 0 44980621472 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222703360}
-\view{lsetview,36222703360,77,0,0}
-\begindata{lset,36222703616}
+\enddata{lset,44980634880}
+\view{lsetview,44980634880,102,0,0}
+\begindata{lset,44980635136}
 \V 1
-\begindata{text,36222685568}
+\begindata{text,44980621696}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222685568}
-0 0 0 36222685568 0 0 0
+}\enddata{text,44980621696}
+0 0 0 44980621696 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222703616}
-\view{lsetview,36222703616,78,0,0\
-}\enddata{text,36222683552}
-0 0 0 36222683552 0 0 0
+\enddata{lset,44980635136}
+\view{lsetview,44980635136,103,0,0\
+}\enddata{text,44980619680}
+0 0 0 44980619680 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222700288}
-\view{lsetview,36222700288,120,0,0}
-\begindata{lset,36222703872}
+\enddata{lset,44980615424}
+\view{lsetview,44980615424,170,0,0}
+\begindata{lset,44980635392}
 \V 1
-\begindata{text,36222685792}
+\begindata{text,44980621920}
 \textdsversion{12}
-\begindata{lset,36222704640}
+\begindata{lset,44980636160}
 \V 1
-\begindata{lset,36222704128}
+\begindata{lset,44980635648}
 \V 1
-\begindata{text,36222686016}
+\begindata{text,44980622144}
 \textdsversion{12}
-\enddata{text,36222686016}
-0 0 0 36222686016 0 0 0
+\enddata{text,44980622144}
+0 0 0 44980622144 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222704128}
-\begindata{lset,36222704384}
+\enddata{lset,44980635648}
+\begindata{lset,44980635904}
 \V 1
-\begindata{text,36222686240}
+\begindata{text,44980622368}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222686240}
-0 0 0 36222686240 0 0 0
+}\enddata{text,44980622368}
+0 0 0 44980622368 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222704384}
-11 30 0 0 36222704128 36222704384 0
+\enddata{lset,44980635904}
+11 30 0 0 44980635648 44980635904 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222704640}
-\view{lsetview,36222704640,79,0,0} 
-\begindata{lset,36222704896}
+\enddata{lset,44980636160}
+\view{lsetview,44980636160,104,0,0} 
+\begindata{lset,44980636416}
 \V 1
-\begindata{text,36222686464}
+\begindata{text,44980622592}
 \textdsversion{12}
 \unknown{The Great Wherever\
-}\enddata{text,36222686464}
-0 0 0 36222686464 0 0 0
+}\enddata{text,44980622592}
+0 0 0 44980622592 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222704896}
-\view{lsetview,36222704896,80,0,0}
+\enddata{lset,44980636416}
+\view{lsetview,44980636416,105,0,0}
 
-\begindata{lset,36222705152}
+\begindata{lset,44980636672}
 \V 1
-\begindata{text,36222686688}
+\begindata{text,44980622816}
 \textdsversion{12}
 Shannon Sanders\
-\enddata{text,36222686688}
-0 0 0 36222686688 0 0 0
+\enddata{text,44980622816}
+0 0 0 44980622816 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222705152}
-\view{lsetview,36222705152,81,0,0}
-\begindata{lset,36222705408}
+\enddata{lset,44980636672}
+\view{lsetview,44980636672,106,0,0}
+\begindata{lset,44980636928}
 \V 1
-\begindata{text,36222686912}
+\begindata{text,44980623040}
 \textdsversion{12}
 In Shannon Sanders's spirited first novel, living and dead members of an 
 African American family converge on the ancestral farm in Tennessee to 
@@ -893,114 +893,129 @@ decide its fate.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Read the full review\
-}}\enddata{text,36222686912}
-0 0 0 36222686912 0 0 0
+}}\enddata{text,44980623040}
+0 0 0 44980623040 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222705408}
-\view{lsetview,36222705408,82,0,0}
-\begindata{lset,36222705664}
+\enddata{lset,44980636928}
+\view{lsetview,44980636928,107,0,0}
+\begindata{lset,44980637184}
 \V 1
-\begindata{text,36222687360}
+\begindata{text,44980623264}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222687360}
-0 0 0 36222687360 0 0 0
+}\enddata{text,44980623264}
+0 0 0 44980623264 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222705664}
-\view{lsetview,36222705664,83,0,0\
-}\enddata{text,36222685792}
-0 0 0 36222685792 0 0 0
+\enddata{lset,44980637184}
+\view{lsetview,44980637184,108,0,0\
+}\enddata{text,44980621920}
+0 0 0 44980621920 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222703872}
-\view{lsetview,36222703872,121,0,0}
-\begindata{lset,36222705920}
+\enddata{lset,44980635392}
+\view{lsetview,44980635392,171,0,0}
+\begindata{lset,44980637440}
 \V 1
-\begindata{text,36222687584}
+\begindata{text,44980623488}
 \textdsversion{12}
 \htmlatk-link{[image: Running Press Adult: But Have You Read the Book? 
 Romance Edition: 40 Love Stories That Inspired Our Favorite Films by 
 Kristen Lopez]\
-}\enddata{text,36222687584}
-0 0 0 36222687584 0 0 0
+}\enddata{text,44980623488}
+0 0 0 44980623488 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222705920}
-\view{lsetview,36222705920,122,0,0}
-\begindata{lset,36222706176}
+\enddata{lset,44980637440}
+\view{lsetview,44980637440,172,0,0}
+\begindata{lset,44980637696}
 \V 1
-\begindata{text,36222688032}
+\begindata{text,44980623712}
 \textdsversion{12}
 \htmlatk-link{BOOK REVIEWS\
-}\enddata{text,36222688032}
-0 0 0 36222688032 0 0 0
+}\enddata{text,44980623712}
+0 0 0 44980623712 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222706176}
-\view{lsetview,36222706176,123,0,0}
-\begindata{lset,36222706432}
+\enddata{lset,44980637696}
+\view{lsetview,44980637696,173,0,0}
+\begindata{lset,44980637952}
 \V 1
-\begindata{text,36222688256}
+\begindata{text,44980623936}
 \textdsversion{12}
-\begindata{lset,36222706688}
+\begindata{lset,44980642816}
 \V 1
-\begindata{lset,36222707968}
+\begindata{lset,44980638208}
 \V 1
-\begindata{lset,36222706944}
-\V 1
-\begindata{text,36222688480}
+\begindata{text,44980624832}
 \textdsversion{12}
-\enddata{text,36222688480}
-0 0 0 36222688480 0 0 0
+\begindata{lset,44980640768}
+\V 1
+\begindata{lset,44980639744}
+\V 1
+\begindata{text,44980625056}
+\textdsversion{12}
+\enddata{text,44980625056}
+0 0 0 44980625056 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222706944}
-\begindata{lset,36222707712}
+\enddata{lset,44980639744}
+\begindata{lset,44980640512}
 \V 1
-\begindata{lset,36222707200}
+\begindata{lset,44980640000}
 \V 1
-\begindata{text,36222688704}
+\begindata{text,44980625280}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222688704}
-0 0 0 36222688704 0 0 0
+}\enddata{text,44980625280}
+0 0 0 44980625280 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222707200}
-\begindata{lset,36222707456}
+\enddata{lset,44980640000}
+\begindata{lset,44980640256}
 \V 1
-\begindata{text,36222688928}
+\begindata{text,44980625504}
 \textdsversion{12}
-\enddata{text,36222688928}
-0 0 0 36222688928 0 0 0
+\enddata{text,44980625504}
+0 0 0 44980625504 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222707456}
-1 0 0 0 36222707200 36222707456 0
+\enddata{lset,44980640256}
+1 0 0 0 44980640000 44980640256 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222707712}
-11 15 0 0 36222706944 36222707712 0
+\enddata{lset,44980640512}
+11 15 0 0 44980639744 44980640512 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222707968}
-\begindata{lset,36222708736}
+\enddata{lset,44980640768}
+\view{lsetview,44980640768,109,0,0\
+}\enddata{text,44980624832}
+0 0 0 44980624832 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980638208}
+\begindata{lset,44980641024}
 \V 1
-\begindata{lset,36222708224}
+\begindata{text,44980626176}
+\textdsversion{12}
+\begindata{lset,44980642560}
 \V 1
-\begindata{text,36222689152}
+\begindata{lset,44980642048}
+\V 1
+\begindata{text,44980626400}
 \textdsversion{12}
 When Vivian's husband is lost in space, grief, public expectation, and the 
 strength of their love lead her on an inspiring journey of hope in Chanel 
@@ -1009,115 +1024,137 @@ Cleeton's \htmlatk-italic{An Infinite Love Story}.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Full review\
-}}\enddata{text,36222689152}
-0 0 0 36222689152 0 0 0
+}}\enddata{text,44980626400}
+0 0 0 44980626400 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222708224}
-\begindata{lset,36222708480}
+\enddata{lset,44980642048}
+\begindata{lset,44980642304}
 \V 1
-\begindata{text,36222689600}
+\begindata{text,44980626624}
 \textdsversion{12}
-\enddata{text,36222689600}
-0 0 0 36222689600 0 0 0
+\enddata{text,44980626624}
+0 0 0 44980626624 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222708480}
-1 50 0 0 36222708224 36222708480 0
+\enddata{lset,44980642304}
+1 50 0 0 44980642048 44980642304 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222708736}
-1 50 0 0 36222707968 36222708736 0
+\enddata{lset,44980642560}
+\view{lsetview,44980642560,110,0,0\
+}\enddata{text,44980626176}
+0 0 0 44980626176 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980641024}
+1 50 0 0 44980638208 44980641024 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222706688}
-\view{lsetview,36222706688,84,0,0}
+\enddata{lset,44980642816}
+\view{lsetview,44980642816,111,0,0}
 
-\begindata{lset,36222709504}
+\begindata{lset,44980643584}
 \V 1
-\begindata{lset,36222708992}
+\begindata{lset,44980643072}
 \V 1
-\begindata{text,36222689824}
+\begindata{text,44980626848}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222689824}
-0 0 0 36222689824 0 0 0
+}\enddata{text,44980626848}
+0 0 0 44980626848 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222708992}
-\begindata{lset,36222709248}
+\enddata{lset,44980643072}
+\begindata{lset,44980643328}
 \V 1
-\begindata{text,36222690048}
+\begindata{text,44980627072}
 \textdsversion{12}
-\enddata{text,36222690048}
-0 0 0 36222690048 0 0 0
+\enddata{text,44980627072}
+0 0 0 44980627072 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222709248}
-1 0 0 0 36222708992 36222709248 0
+\enddata{lset,44980643328}
+1 0 0 0 44980643072 44980643328 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222709504}
-\view{lsetview,36222709504,85,0,0}\
-\begindata{lset,36222709760}
+\enddata{lset,44980643584}
+\view{lsetview,44980643584,112,0,0}\
+\begindata{lset,44980648448}
 \V 1
-\begindata{lset,36222711040}
+\begindata{lset,44980643840}
 \V 1
-\begindata{lset,36222710016}
-\V 1
-\begindata{text,36222690272}
+\begindata{text,44980627968}
 \textdsversion{12}
-\enddata{text,36222690272}
-0 0 0 36222690272 0 0 0
+\begindata{lset,44980646400}
+\V 1
+\begindata{lset,44980645376}
+\V 1
+\begindata{text,44980628192}
+\textdsversion{12}
+\enddata{text,44980628192}
+0 0 0 44980628192 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222710016}
-\begindata{lset,36222710784}
+\enddata{lset,44980645376}
+\begindata{lset,44980646144}
 \V 1
-\begindata{lset,36222710272}
+\begindata{lset,44980645632}
 \V 1
-\begindata{text,36222690496}
+\begindata{text,44980628416}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222690496}
-0 0 0 36222690496 0 0 0
+}\enddata{text,44980628416}
+0 0 0 44980628416 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222710272}
-\begindata{lset,36222710528}
+\enddata{lset,44980645632}
+\begindata{lset,44980645888}
 \V 1
-\begindata{text,36222690720}
+\begindata{text,44980628640}
 \textdsversion{12}
-\enddata{text,36222690720}
-0 0 0 36222690720 0 0 0
+\enddata{text,44980628640}
+0 0 0 44980628640 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222710528}
-1 0 0 0 36222710272 36222710528 0
+\enddata{lset,44980645888}
+1 0 0 0 44980645632 44980645888 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222710784}
-11 15 0 0 36222710016 36222710784 0
+\enddata{lset,44980646144}
+11 15 0 0 44980645376 44980646144 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222711040}
-\begindata{lset,36222711808}
+\enddata{lset,44980646400}
+\view{lsetview,44980646400,113,0,0\
+}\enddata{text,44980627968}
+0 0 0 44980627968 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980643840}
+\begindata{lset,44980646656}
 \V 1
-\begindata{lset,36222711296}
+\begindata{text,44980629312}
+\textdsversion{12}
+\begindata{lset,44980648192}
 \V 1
-\begindata{text,36222690944}
+\begindata{lset,44980647680}
+\V 1
+\begindata{text,44980629536}
 \textdsversion{12}
 Ia Genberg's \htmlatk-italic{Small Comfort}, longlisted for the 
 International Booker Prize, tackles the tricky subjects of wealth, 
@@ -1126,116 +1163,138 @@ inheritance, and justice.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Full review\
-}}\enddata{text,36222690944}
-0 0 0 36222690944 0 0 0
+}}\enddata{text,44980629536}
+0 0 0 44980629536 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222711296}
-\begindata{lset,36222711552}
+\enddata{lset,44980647680}
+\begindata{lset,44980647936}
 \V 1
-\begindata{text,36222691392}
+\begindata{text,44980629760}
 \textdsversion{12}
-\enddata{text,36222691392}
-0 0 0 36222691392 0 0 0
+\enddata{text,44980629760}
+0 0 0 44980629760 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222711552}
-1 50 0 0 36222711296 36222711552 0
+\enddata{lset,44980647936}
+1 50 0 0 44980647680 44980647936 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222711808}
-1 50 0 0 36222711040 36222711808 0
+\enddata{lset,44980648192}
+\view{lsetview,44980648192,114,0,0\
+}\enddata{text,44980629312}
+0 0 0 44980629312 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980646656}
+1 50 0 0 44980643840 44980646656 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222709760}
-\view{lsetview,36222709760,86,0,0}
-\begindata{lset,36222712576}
+\enddata{lset,44980648448}
+\view{lsetview,44980648448,115,0,0}
+\begindata{lset,44980649216}
 \V 1
-\begindata{lset,36222712064}
+\begindata{lset,44980648704}
 \V 1
-\begindata{text,36222691616}
+\begindata{text,44980629984}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222691616}
-0 0 0 36222691616 0 0 0
+}\enddata{text,44980629984}
+0 0 0 44980629984 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222712064}
-\begindata{lset,36222712320}
+\enddata{lset,44980648704}
+\begindata{lset,44980648960}
 \V 1
-\begindata{text,36222691840}
+\begindata{text,44980630208}
 \textdsversion{12}
-\enddata{text,36222691840}
-0 0 0 36222691840 0 0 0
+\enddata{text,44980630208}
+0 0 0 44980630208 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222712320}
-1 0 0 0 36222712064 36222712320 0
+\enddata{lset,44980648960}
+1 0 0 0 44980648704 44980648960 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222712576}
-\view{lsetview,36222712576,87,0,0}
+\enddata{lset,44980649216}
+\view{lsetview,44980649216,116,0,0}
 
 
-\begindata{lset,36222714368}
+\begindata{lset,44980703232}
 \V 1
-\begindata{lset,36222714112}
+\begindata{lset,44980649472}
 \V 1
-\begindata{lset,36222713088}
-\V 1
-\begindata{text,36222692064}
+\begindata{text,44980631104}
 \textdsversion{12}
-\enddata{text,36222692064}
-0 0 0 36222692064 0 0 0
+\begindata{lset,44980701184}
+\V 1
+\begindata{lset,44980700160}
+\V 1
+\begindata{text,44980631328}
+\textdsversion{12}
+\enddata{text,44980631328}
+0 0 0 44980631328 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222713088}
-\begindata{lset,36222713856}
+\enddata{lset,44980700160}
+\begindata{lset,44980700928}
 \V 1
-\begindata{lset,36222713344}
+\begindata{lset,44980700416}
 \V 1
-\begindata{text,36222692288}
+\begindata{text,44980631552}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222692288}
-0 0 0 36222692288 0 0 0
+}\enddata{text,44980631552}
+0 0 0 44980631552 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222713344}
-\begindata{lset,36222713600}
+\enddata{lset,44980700416}
+\begindata{lset,44980700672}
 \V 1
-\begindata{text,36222692512}
+\begindata{text,44980631776}
 \textdsversion{12}
-\enddata{text,36222692512}
-0 0 0 36222692512 0 0 0
+\enddata{text,44980631776}
+0 0 0 44980631776 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222713600}
-1 0 0 0 36222713344 36222713600 0
+\enddata{lset,44980700672}
+1 0 0 0 44980700416 44980700672 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222713856}
-11 15 0 0 36222713088 36222713856 0
+\enddata{lset,44980700928}
+11 15 0 0 44980700160 44980700928 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222714112}
-\begindata{lset,36222715136}
+\enddata{lset,44980701184}
+\view{lsetview,44980701184,117,0,0\
+}\enddata{text,44980631104}
+0 0 0 44980631104 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980649472}
+\begindata{lset,44980701440}
 \V 1
-\begindata{lset,36222714624}
+\begindata{text,44980632448}
+\textdsversion{12}
+\begindata{lset,44980702976}
 \V 1
-\begindata{text,36222692736}
+\begindata{lset,44980702464}
+\V 1
+\begindata{text,44980632672}
 \textdsversion{12}
 Val\^{i}rie Perrin pens a gorgeous mystery about a filmmaker who discovers 
 her aunt has died--for a second time--and sets out to learn who's buried in 
@@ -1244,114 +1303,136 @@ her grave.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Full review\
-}}\enddata{text,36222692736}
-0 0 0 36222692736 0 0 0
+}}\enddata{text,44980632672}
+0 0 0 44980632672 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222714624}
-\begindata{lset,36222714880}
+\enddata{lset,44980702464}
+\begindata{lset,44980702720}
 \V 1
-\begindata{text,36222693184}
+\begindata{text,44980632896}
 \textdsversion{12}
-\enddata{text,36222693184}
-0 0 0 36222693184 0 0 0
+\enddata{text,44980632896}
+0 0 0 44980632896 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222714880}
-1 50 0 0 36222714624 36222714880 0
+\enddata{lset,44980702720}
+1 50 0 0 44980702464 44980702720 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222715136}
-1 50 0 0 36222714112 36222715136 0
+\enddata{lset,44980702976}
+\view{lsetview,44980702976,118,0,0\
+}\enddata{text,44980632448}
+0 0 0 44980632448 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980701440}
+1 50 0 0 44980649472 44980701440 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222714368}
-\view{lsetview,36222714368,88,0,0}
-\begindata{lset,36222715904}
+\enddata{lset,44980703232}
+\view{lsetview,44980703232,119,0,0}
+\begindata{lset,44980704000}
 \V 1
-\begindata{lset,36222715392}
+\begindata{lset,44980703488}
 \V 1
-\begindata{text,36222693408}
+\begindata{text,44980633120}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222693408}
-0 0 0 36222693408 0 0 0
+}\enddata{text,44980633120}
+0 0 0 44980633120 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222715392}
-\begindata{lset,36222715648}
+\enddata{lset,44980703488}
+\begindata{lset,44980703744}
 \V 1
-\begindata{text,36222693632}
+\begindata{text,44980633344}
 \textdsversion{12}
-\enddata{text,36222693632}
-0 0 0 36222693632 0 0 0
+\enddata{text,44980633344}
+0 0 0 44980633344 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222715648}
-1 0 0 0 36222715392 36222715648 0
+\enddata{lset,44980703744}
+1 0 0 0 44980703488 44980703744 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222715904}
-\view{lsetview,36222715904,89,0,0}\
-\begindata{lset,36222716160}
+\enddata{lset,44980704000}
+\view{lsetview,44980704000,120,0,0}\
+\begindata{lset,44980708864}
 \V 1
-\begindata{lset,36222717440}
+\begindata{lset,44980704256}
 \V 1
-\begindata{lset,36222716416}
-\V 1
-\begindata{text,36222693856}
+\begindata{text,44980732576}
 \textdsversion{12}
-\enddata{text,36222693856}
-0 0 0 36222693856 0 0 0
+\begindata{lset,44980706816}
+\V 1
+\begindata{lset,44980705792}
+\V 1
+\begindata{text,44980732800}
+\textdsversion{12}
+\enddata{text,44980732800}
+0 0 0 44980732800 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222716416}
-\begindata{lset,36222717184}
+\enddata{lset,44980705792}
+\begindata{lset,44980706560}
 \V 1
-\begindata{lset,36222716672}
+\begindata{lset,44980706048}
 \V 1
-\begindata{text,36222694080}
+\begindata{text,44980733024}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222694080}
-0 0 0 36222694080 0 0 0
+}\enddata{text,44980733024}
+0 0 0 44980733024 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222716672}
-\begindata{lset,36222716928}
+\enddata{lset,44980706048}
+\begindata{lset,44980706304}
 \V 1
-\begindata{text,36222694304}
+\begindata{text,44980733248}
 \textdsversion{12}
-\enddata{text,36222694304}
-0 0 0 36222694304 0 0 0
+\enddata{text,44980733248}
+0 0 0 44980733248 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222716928}
-1 0 0 0 36222716672 36222716928 0
+\enddata{lset,44980706304}
+1 0 0 0 44980706048 44980706304 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222717184}
-11 15 0 0 36222716416 36222717184 0
+\enddata{lset,44980706560}
+11 15 0 0 44980705792 44980706560 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222717440}
-\begindata{lset,36222718208}
+\enddata{lset,44980706816}
+\view{lsetview,44980706816,121,0,0\
+}\enddata{text,44980732576}
+0 0 0 44980732576 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980704256}
+\begindata{lset,44980707072}
 \V 1
-\begindata{lset,36222717696}
+\begindata{text,44980733920}
+\textdsversion{12}
+\begindata{lset,44980708608}
 \V 1
-\begindata{text,36222694528}
+\begindata{lset,44980708096}
+\V 1
+\begindata{text,44980734144}
 \textdsversion{12}
 In Chuck Tingle's thrilling, heartfelt horror novel, an influencer/grave 
 robber unleashes her inner mama bear for the sake of her daughter when a 
@@ -1360,114 +1441,136 @@ famous corpse wakes up with bloody plans.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Full review\
-}}\enddata{text,36222694528}
-0 0 0 36222694528 0 0 0
+}}\enddata{text,44980734144}
+0 0 0 44980734144 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222717696}
-\begindata{lset,36222717952}
+\enddata{lset,44980708096}
+\begindata{lset,44980708352}
 \V 1
-\begindata{text,36222694752}
+\begindata{text,44980734368}
 \textdsversion{12}
-\enddata{text,36222694752}
-0 0 0 36222694752 0 0 0
+\enddata{text,44980734368}
+0 0 0 44980734368 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222717952}
-1 50 0 0 36222717696 36222717952 0
+\enddata{lset,44980708352}
+1 50 0 0 44980708096 44980708352 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222718208}
-1 50 0 0 36222717440 36222718208 0
+\enddata{lset,44980708608}
+\view{lsetview,44980708608,122,0,0\
+}\enddata{text,44980733920}
+0 0 0 44980733920 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980707072}
+1 50 0 0 44980704256 44980707072 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222716160}
-\view{lsetview,36222716160,90,0,0}
-\begindata{lset,36222718976}
+\enddata{lset,44980708864}
+\view{lsetview,44980708864,123,0,0}
+\begindata{lset,44980709632}
 \V 1
-\begindata{lset,36222718464}
+\begindata{lset,44980709120}
 \V 1
-\begindata{text,36222694976}
+\begindata{text,44980734592}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222694976}
-0 0 0 36222694976 0 0 0
+}\enddata{text,44980734592}
+0 0 0 44980734592 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222718464}
-\begindata{lset,36222718720}
+\enddata{lset,44980709120}
+\begindata{lset,44980709376}
 \V 1
-\begindata{text,36222695200}
+\begindata{text,44980734816}
 \textdsversion{12}
-\enddata{text,36222695200}
-0 0 0 36222695200 0 0 0
+\enddata{text,44980734816}
+0 0 0 44980734816 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222718720}
-1 0 0 0 36222718464 36222718720 0
+\enddata{lset,44980709376}
+1 0 0 0 44980709120 44980709376 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222718976}
-\view{lsetview,36222718976,91,0,0} 
-\begindata{lset,36222719232}
+\enddata{lset,44980709632}
+\view{lsetview,44980709632,124,0,0} 
+\begindata{lset,44980714496}
 \V 1
-\begindata{lset,36222720512}
+\begindata{lset,44980709888}
 \V 1
-\begindata{lset,36222719488}
-\V 1
-\begindata{text,36222695424}
+\begindata{text,44980735712}
 \textdsversion{12}
-\enddata{text,36222695424}
-0 0 0 36222695424 0 0 0
+\begindata{lset,44980712448}
+\V 1
+\begindata{lset,44980711424}
+\V 1
+\begindata{text,44980735936}
+\textdsversion{12}
+\enddata{text,44980735936}
+0 0 0 44980735936 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222719488}
-\begindata{lset,36222720256}
+\enddata{lset,44980711424}
+\begindata{lset,44980712192}
 \V 1
-\begindata{lset,36222719744}
+\begindata{lset,44980711680}
 \V 1
-\begindata{text,36222695648}
+\begindata{text,44980736160}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222695648}
-0 0 0 36222695648 0 0 0
+}\enddata{text,44980736160}
+0 0 0 44980736160 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222719744}
-\begindata{lset,36222720000}
+\enddata{lset,44980711680}
+\begindata{lset,44980711936}
 \V 1
-\begindata{text,36222695872}
+\begindata{text,44980736384}
 \textdsversion{12}
-\enddata{text,36222695872}
-0 0 0 36222695872 0 0 0
+\enddata{text,44980736384}
+0 0 0 44980736384 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222720000}
-1 0 0 0 36222719744 36222720000 0
+\enddata{lset,44980711936}
+1 0 0 0 44980711680 44980711936 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222720256}
-11 15 0 0 36222719488 36222720256 0
+\enddata{lset,44980712192}
+11 15 0 0 44980711424 44980712192 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222720512}
-\begindata{lset,36222721280}
+\enddata{lset,44980712448}
+\view{lsetview,44980712448,125,0,0\
+}\enddata{text,44980735712}
+0 0 0 44980735712 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980709888}
+\begindata{lset,44980712704}
 \V 1
-\begindata{lset,36222720768}
+\begindata{text,44980737056}
+\textdsversion{12}
+\begindata{lset,44980714240}
 \V 1
-\begindata{text,36222696096}
+\begindata{lset,44980713728}
+\V 1
+\begindata{text,44980737280}
 \textdsversion{12}
 In this hair-raising thriller, a woman becomes ensnared in a mystery 
 involving a lost dog, the dog's owner, a creepy old house, and unanswered 
@@ -1476,115 +1579,137 @@ questions from her own past.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Full review\
-}}\enddata{text,36222696096}
-0 0 0 36222696096 0 0 0
+}}\enddata{text,44980737280}
+0 0 0 44980737280 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222720768}
-\begindata{lset,36222721024}
+\enddata{lset,44980713728}
+\begindata{lset,44980713984}
 \V 1
-\begindata{text,36222696544}
+\begindata{text,44980737504}
 \textdsversion{12}
-\enddata{text,36222696544}
-0 0 0 36222696544 0 0 0
+\enddata{text,44980737504}
+0 0 0 44980737504 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222721024}
-1 50 0 0 36222720768 36222721024 0
+\enddata{lset,44980713984}
+1 50 0 0 44980713728 44980713984 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222721280}
-1 50 0 0 36222720512 36222721280 0
+\enddata{lset,44980714240}
+\view{lsetview,44980714240,126,0,0\
+}\enddata{text,44980737056}
+0 0 0 44980737056 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980712704}
+1 50 0 0 44980709888 44980712704 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222719232}
-\view{lsetview,36222719232,92,0,0}
+\enddata{lset,44980714496}
+\view{lsetview,44980714496,127,0,0}
 
-\begindata{lset,36222722048}
+\begindata{lset,44980715264}
 \V 1
-\begindata{lset,36222721536}
+\begindata{lset,44980714752}
 \V 1
-\begindata{text,36222696768}
+\begindata{text,44980737728}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222696768}
-0 0 0 36222696768 0 0 0
+}\enddata{text,44980737728}
+0 0 0 44980737728 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222721536}
-\begindata{lset,36222721792}
+\enddata{lset,44980714752}
+\begindata{lset,44980715008}
 \V 1
-\begindata{text,36222696992}
+\begindata{text,44980737952}
 \textdsversion{12}
-\enddata{text,36222696992}
-0 0 0 36222696992 0 0 0
+\enddata{text,44980737952}
+0 0 0 44980737952 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222721792}
-1 0 0 0 36222721536 36222721792 0
+\enddata{lset,44980715008}
+1 0 0 0 44980714752 44980715008 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222722048}
-\view{lsetview,36222722048,93,0,0}\
-\begindata{lset,36222722304}
+\enddata{lset,44980715264}
+\view{lsetview,44980715264,128,0,0}\
+\begindata{lset,44980752896}
 \V 1
-\begindata{lset,36222723584}
+\begindata{lset,44980748288}
 \V 1
-\begindata{lset,36222722560}
-\V 1
-\begindata{text,36222697216}
+\begindata{text,44980738848}
 \textdsversion{12}
-\enddata{text,36222697216}
-0 0 0 36222697216 0 0 0
+\begindata{lset,44980750848}
+\V 1
+\begindata{lset,44980749824}
+\V 1
+\begindata{text,44980739072}
+\textdsversion{12}
+\enddata{text,44980739072}
+0 0 0 44980739072 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222722560}
-\begindata{lset,36222723328}
+\enddata{lset,44980749824}
+\begindata{lset,44980750592}
 \V 1
-\begindata{lset,36222722816}
+\begindata{lset,44980750080}
 \V 1
-\begindata{text,36222746624}
+\begindata{text,44980739296}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222746624}
-0 0 0 36222746624 0 0 0
+}\enddata{text,44980739296}
+0 0 0 44980739296 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222722816}
-\begindata{lset,36222723072}
+\enddata{lset,44980750080}
+\begindata{lset,44980750336}
 \V 1
-\begindata{text,36222746848}
+\begindata{text,44980739520}
 \textdsversion{12}
-\enddata{text,36222746848}
-0 0 0 36222746848 0 0 0
+\enddata{text,44980739520}
+0 0 0 44980739520 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222723072}
-1 0 0 0 36222722816 36222723072 0
+\enddata{lset,44980750336}
+1 0 0 0 44980750080 44980750336 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222723328}
-11 15 0 0 36222722560 36222723328 0
+\enddata{lset,44980750592}
+11 15 0 0 44980749824 44980750592 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222723584}
-\begindata{lset,36222724352}
+\enddata{lset,44980750848}
+\view{lsetview,44980750848,129,0,0\
+}\enddata{text,44980738848}
+0 0 0 44980738848 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980748288}
+\begindata{lset,44980751104}
 \V 1
-\begindata{lset,36222723840}
+\begindata{text,44980740192}
+\textdsversion{12}
+\begindata{lset,44980752640}
 \V 1
-\begindata{text,36222747072}
+\begindata{lset,44980752128}
+\V 1
+\begindata{text,44980740416}
 \textdsversion{12}
 \htmlatk-italic{The Wedding Week} is an entertaining thriller structured 
 around a Bollywood-style wedding extravaganza at an opulent Florida resort, 
@@ -1593,116 +1718,138 @@ complete with gossiping aunties and an alligator-infested swamp.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Full review\
-}}\enddata{text,36222747072}
-0 0 0 36222747072 0 0 0
+}}\enddata{text,44980740416}
+0 0 0 44980740416 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222723840}
-\begindata{lset,36222724096}
+\enddata{lset,44980752128}
+\begindata{lset,44980752384}
 \V 1
-\begindata{text,36222747296}
+\begindata{text,44980740640}
 \textdsversion{12}
-\enddata{text,36222747296}
-0 0 0 36222747296 0 0 0
+\enddata{text,44980740640}
+0 0 0 44980740640 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222724096}
-1 50 0 0 36222723840 36222724096 0
+\enddata{lset,44980752384}
+1 50 0 0 44980752128 44980752384 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222724352}
-1 50 0 0 36222723584 36222724352 0
+\enddata{lset,44980752640}
+\view{lsetview,44980752640,130,0,0\
+}\enddata{text,44980740192}
+0 0 0 44980740192 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980751104}
+1 50 0 0 44980748288 44980751104 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222722304}
-\view{lsetview,36222722304,94,0,0}
-\begindata{lset,36222725120}
+\enddata{lset,44980752896}
+\view{lsetview,44980752896,131,0,0}
+\begindata{lset,44980753664}
 \V 1
-\begindata{lset,36222724608}
+\begindata{lset,44980753152}
 \V 1
-\begindata{text,36222747520}
+\begindata{text,44980740864}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222747520}
-0 0 0 36222747520 0 0 0
+}\enddata{text,44980740864}
+0 0 0 44980740864 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222724608}
-\begindata{lset,36222724864}
+\enddata{lset,44980753152}
+\begindata{lset,44980753408}
 \V 1
-\begindata{text,36222747744}
+\begindata{text,44980741088}
 \textdsversion{12}
-\enddata{text,36222747744}
-0 0 0 36222747744 0 0 0
+\enddata{text,44980741088}
+0 0 0 44980741088 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222724864}
-1 0 0 0 36222724608 36222724864 0
+\enddata{lset,44980753408}
+1 0 0 0 44980753152 44980753408 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222725120}
-\view{lsetview,36222725120,95,0,0}
+\enddata{lset,44980753664}
+\view{lsetview,44980753664,132,0,0}
 
 
-\begindata{lset,36222725376}
+\begindata{lset,44980758528}
 \V 1
-\begindata{lset,36222726656}
+\begindata{lset,44980753920}
 \V 1
-\begindata{lset,36222725632}
-\V 1
-\begindata{text,36222747968}
+\begindata{text,44980741984}
 \textdsversion{12}
-\enddata{text,36222747968}
-0 0 0 36222747968 0 0 0
+\begindata{lset,44980756480}
+\V 1
+\begindata{lset,44980755456}
+\V 1
+\begindata{text,44980742208}
+\textdsversion{12}
+\enddata{text,44980742208}
+0 0 0 44980742208 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222725632}
-\begindata{lset,36222726400}
+\enddata{lset,44980755456}
+\begindata{lset,44980756224}
 \V 1
-\begindata{lset,36222725888}
+\begindata{lset,44980755712}
 \V 1
-\begindata{text,36222748192}
+\begindata{text,44980742432}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222748192}
-0 0 0 36222748192 0 0 0
+}\enddata{text,44980742432}
+0 0 0 44980742432 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222725888}
-\begindata{lset,36222726144}
+\enddata{lset,44980755712}
+\begindata{lset,44980755968}
 \V 1
-\begindata{text,36222748416}
+\begindata{text,44980742656}
 \textdsversion{12}
-\enddata{text,36222748416}
-0 0 0 36222748416 0 0 0
+\enddata{text,44980742656}
+0 0 0 44980742656 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222726144}
-1 0 0 0 36222725888 36222726144 0
+\enddata{lset,44980755968}
+1 0 0 0 44980755712 44980755968 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222726400}
-11 15 0 0 36222725632 36222726400 0
+\enddata{lset,44980756224}
+11 15 0 0 44980755456 44980756224 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222726656}
-\begindata{lset,36222727424}
+\enddata{lset,44980756480}
+\view{lsetview,44980756480,133,0,0\
+}\enddata{text,44980741984}
+0 0 0 44980741984 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980753920}
+\begindata{lset,44980756736}
 \V 1
-\begindata{lset,36222726912}
+\begindata{text,44980743328}
+\textdsversion{12}
+\begindata{lset,44980758272}
 \V 1
-\begindata{text,36222748640}
+\begindata{lset,44980757760}
+\V 1
+\begindata{text,44980743552}
 \textdsversion{12}
 Heather Frances creates a stunning portrait of storm chasing in 
 \htmlatk-italic{Chase Me If You Can}, an electrifying romance ablaze with 
@@ -1711,114 +1858,136 @@ tumultuous emotions, tantalizing passion, and terrifying tornados.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Full review\
-}}\enddata{text,36222748640}
-0 0 0 36222748640 0 0 0
+}}\enddata{text,44980743552}
+0 0 0 44980743552 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222726912}
-\begindata{lset,36222727168}
+\enddata{lset,44980757760}
+\begindata{lset,44980758016}
 \V 1
-\begindata{text,36222748864}
+\begindata{text,44980743776}
 \textdsversion{12}
-\enddata{text,36222748864}
-0 0 0 36222748864 0 0 0
+\enddata{text,44980743776}
+0 0 0 44980743776 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222727168}
-1 50 0 0 36222726912 36222727168 0
+\enddata{lset,44980758016}
+1 50 0 0 44980757760 44980758016 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222727424}
-1 50 0 0 36222726656 36222727424 0
+\enddata{lset,44980758272}
+\view{lsetview,44980758272,134,0,0\
+}\enddata{text,44980743328}
+0 0 0 44980743328 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980756736}
+1 50 0 0 44980753920 44980756736 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222725376}
-\view{lsetview,36222725376,96,0,0}
-\begindata{lset,36222728192}
+\enddata{lset,44980758528}
+\view{lsetview,44980758528,135,0,0}
+\begindata{lset,44980759296}
 \V 1
-\begindata{lset,36222727680}
+\begindata{lset,44980758784}
 \V 1
-\begindata{text,36222749088}
+\begindata{text,44980744000}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222749088}
-0 0 0 36222749088 0 0 0
+}\enddata{text,44980744000}
+0 0 0 44980744000 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222727680}
-\begindata{lset,36222727936}
+\enddata{lset,44980758784}
+\begindata{lset,44980759040}
 \V 1
-\begindata{text,36222749312}
+\begindata{text,44980744224}
 \textdsversion{12}
-\enddata{text,36222749312}
-0 0 0 36222749312 0 0 0
+\enddata{text,44980744224}
+0 0 0 44980744224 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222727936}
-1 0 0 0 36222727680 36222727936 0
+\enddata{lset,44980759040}
+1 0 0 0 44980758784 44980759040 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222728192}
-\view{lsetview,36222728192,97,0,0}\
-\begindata{lset,36222763264}
+\enddata{lset,44980759296}
+\view{lsetview,44980759296,136,0,0}\
+\begindata{lset,44980764160}
 \V 1
-\begindata{lset,36222729728}
+\begindata{lset,44980759552}
 \V 1
-\begindata{lset,36222728704}
-\V 1
-\begindata{text,36222749536}
+\begindata{text,44980745120}
 \textdsversion{12}
-\enddata{text,36222749536}
-0 0 0 36222749536 0 0 0
+\begindata{lset,44980762112}
+\V 1
+\begindata{lset,44980761088}
+\V 1
+\begindata{text,44980745344}
+\textdsversion{12}
+\enddata{text,44980745344}
+0 0 0 44980745344 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222728704}
-\begindata{lset,36222729472}
+\enddata{lset,44980761088}
+\begindata{lset,44980761856}
 \V 1
-\begindata{lset,36222728960}
+\begindata{lset,44980761344}
 \V 1
-\begindata{text,36222749760}
+\begindata{text,44980745568}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222749760}
-0 0 0 36222749760 0 0 0
+}\enddata{text,44980745568}
+0 0 0 44980745568 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222728960}
-\begindata{lset,36222729216}
+\enddata{lset,44980761344}
+\begindata{lset,44980761600}
 \V 1
-\begindata{text,36222749984}
+\begindata{text,44980745792}
 \textdsversion{12}
-\enddata{text,36222749984}
-0 0 0 36222749984 0 0 0
+\enddata{text,44980745792}
+0 0 0 44980745792 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222729216}
-1 0 0 0 36222728960 36222729216 0
+\enddata{lset,44980761600}
+1 0 0 0 44980761344 44980761600 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222729472}
-11 15 0 0 36222728704 36222729472 0
+\enddata{lset,44980761856}
+11 15 0 0 44980761088 44980761856 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222729728}
-\begindata{lset,36222763008}
+\enddata{lset,44980762112}
+\view{lsetview,44980762112,137,0,0\
+}\enddata{text,44980745120}
+0 0 0 44980745120 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980759552}
+\begindata{lset,44980762368}
 \V 1
-\begindata{lset,36222729984}
+\begindata{text,44980746464}
+\textdsversion{12}
+\begindata{lset,44980763904}
 \V 1
-\begindata{text,36222750208}
+\begindata{lset,44980763392}
+\V 1
+\begindata{text,44980746688}
 \textdsversion{12}
 A bioengineered raccoon private investigator must find a mouse before 
 anyone else--or before he runs out of his intelligence serum--in this 
@@ -1827,155 +1996,177 @@ wildly inventive sci-fi noir mash-up.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Full review\
-}}\enddata{text,36222750208}
-0 0 0 36222750208 0 0 0
+}}\enddata{text,44980746688}
+0 0 0 44980746688 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222729984}
-\begindata{lset,36222712832}
+\enddata{lset,44980763392}
+\begindata{lset,44980763648}
 \V 1
-\begindata{text,36222750656}
+\begindata{text,44980746912}
 \textdsversion{12}
-\enddata{text,36222750656}
-0 0 0 36222750656 0 0 0
+\enddata{text,44980746912}
+0 0 0 44980746912 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222712832}
-1 50 0 0 36222729984 36222712832 0
+\enddata{lset,44980763648}
+1 50 0 0 44980763392 44980763648 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222763008}
-1 50 0 0 36222729728 36222763008 0
+\enddata{lset,44980763904}
+\view{lsetview,44980763904,138,0,0\
+}\enddata{text,44980746464}
+0 0 0 44980746464 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980762368}
+1 50 0 0 44980759552 44980762368 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222763264}
-\view{lsetview,36222763264,98,0,0}
-\begindata{lset,36222764032}
+\enddata{lset,44980764160}
+\view{lsetview,44980764160,139,0,0}
+\begindata{lset,44980797696}
 \V 1
-\begindata{lset,36222763520}
+\begindata{lset,44980764416}
 \V 1
-\begindata{text,36222750880}
+\begindata{text,44980747136}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222750880}
-0 0 0 36222750880 0 0 0
+}\enddata{text,44980747136}
+0 0 0 44980747136 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222763520}
-\begindata{lset,36222763776}
+\enddata{lset,44980764416}
+\begindata{lset,44980797440}
 \V 1
-\begindata{text,36222751104}
+\begindata{text,44980747360}
 \textdsversion{12}
-\enddata{text,36222751104}
-0 0 0 36222751104 0 0 0
+\enddata{text,44980747360}
+0 0 0 44980747360 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222763776}
-1 0 0 0 36222763520 36222763776 0
+\enddata{lset,44980797440}
+1 0 0 0 44980764416 44980797440 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222764032}
-\view{lsetview,36222764032,99,0,0} 
-\begindata{lset,36222768640}
+\enddata{lset,44980797696}
+\view{lsetview,44980797696,140,0,0} 
+\begindata{lset,44980807168}
 \V 1
-\begindata{lset,36222764288}
+\begindata{lset,44980797952}
 \V 1
-\begindata{text,36222752448}
+\begindata{text,44980815168}
 \textdsversion{12}
-\begindata{lset,36222766848}
+\begindata{lset,44980804864}
 \V 1
-\begindata{lset,36222766592}
+\begindata{lset,44980801792}
 \V 1
-\begindata{text,36222752672}
+\begindata{text,44980815392}
 \textdsversion{12}
-\enddata{text,36222752672}
-0 0 0 36222752672 0 0 0
+\enddata{text,44980815392}
+0 0 0 44980815392 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222766592}
-\begindata{lset,36222768128}
+\enddata{lset,44980801792}
+\begindata{lset,44980802048}
 \V 1
-\begindata{lset,36222767104}
-\V 1
-\begindata{text,36222752896}
+\begindata{text,44980816288}
 \textdsversion{12}
-\enddata{text,36222752896}
-0 0 0 36222752896 0 0 0
+\begindata{lset,44980804608}
+\V 1
+\begindata{lset,44980803584}
+\V 1
+\begindata{text,44980816512}
+\textdsversion{12}
+\enddata{text,44980816512}
+0 0 0 44980816512 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222767104}
-\begindata{lset,36222767872}
+\enddata{lset,44980803584}
+\begindata{lset,44980804352}
 \V 1
-\begindata{lset,36222767360}
+\begindata{lset,44980803840}
 \V 1
-\begindata{text,36222753120}
+\begindata{text,44980816736}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222753120}
-0 0 0 36222753120 0 0 0
+}\enddata{text,44980816736}
+0 0 0 44980816736 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222767360}
-\begindata{lset,36222767616}
+\enddata{lset,44980803840}
+\begindata{lset,44980804096}
 \V 1
-\begindata{text,36222753344}
+\begindata{text,44980816960}
 \textdsversion{12}
-\enddata{text,36222753344}
-0 0 0 36222753344 0 0 0
+\enddata{text,44980816960}
+0 0 0 44980816960 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222767616}
-1 0 0 0 36222767360 36222767616 0
+\enddata{lset,44980804096}
+1 0 0 0 44980803840 44980804096 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222767872}
-11 15 0 0 36222767104 36222767872 0
+\enddata{lset,44980804352}
+11 15 0 0 44980803584 44980804352 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222768128}
-1 50 0 0 36222766592 36222768128 0
+\enddata{lset,44980804608}
+\view{lsetview,44980804608,142,0,0\
+}\enddata{text,44980816288}
+0 0 0 44980816288 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980802048}
+1 50 0 0 44980801792 44980802048 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222766848}
-\view{lsetview,36222766848,100,0,0}
+\enddata{lset,44980804864}
+\view{lsetview,44980804864,143,0,0}
 
-\begindata{lset,36222768384}
+\begindata{lset,44980805120}
 \V 1
-\begindata{text,36222753568}
+\begindata{text,44980817184}
 \textdsversion{12}
 [image]\
-\enddata{text,36222753568}
-0 0 0 36222753568 0 0 0
+\enddata{text,44980817184}
+0 0 0 44980817184 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222768384}
-\view{lsetview,36222768384,101,0,0\
-}\enddata{text,36222752448}
-0 0 0 36222752448 0 0 0
+\enddata{lset,44980805120}
+\view{lsetview,44980805120,144,0,0\
+}\enddata{text,44980815168}
+0 0 0 44980815168 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222764288}
-\begindata{lset,36222769408}
+\enddata{lset,44980797952}
+\begindata{lset,44980805376}
 \V 1
-\begindata{lset,36222768896}
+\begindata{text,44980817856}
+\textdsversion{12}
+\begindata{lset,44980806912}
 \V 1
-\begindata{text,36222753792}
+\begindata{lset,44980806400}
+\V 1
+\begindata{text,44980818080}
 \textdsversion{12}
 A teen whose father is imprisoned for murder must prove her own innocence 
 after a weekend getaway ends in blood in this riveting and frightening YA 
@@ -1984,115 +2175,137 @@ thriller.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Full review\
-}}\enddata{text,36222753792}
-0 0 0 36222753792 0 0 0
+}}\enddata{text,44980818080}
+0 0 0 44980818080 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222768896}
-\begindata{lset,36222769152}
+\enddata{lset,44980806400}
+\begindata{lset,44980806656}
 \V 1
-\begindata{text,36222754240}
+\begindata{text,44980818304}
 \textdsversion{12}
-\enddata{text,36222754240}
-0 0 0 36222754240 0 0 0
+\enddata{text,44980818304}
+0 0 0 44980818304 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222769152}
-1 50 0 0 36222768896 36222769152 0
+\enddata{lset,44980806656}
+1 50 0 0 44980806400 44980806656 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222769408}
-1 50 0 0 36222764288 36222769408 0
+\enddata{lset,44980806912}
+\view{lsetview,44980806912,145,0,0\
+}\enddata{text,44980817856}
+0 0 0 44980817856 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980805376}
+1 50 0 0 44980797952 44980805376 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222768640}
-\view{lsetview,36222768640,102,0,0}
+\enddata{lset,44980807168}
+\view{lsetview,44980807168,146,0,0}
 
-\begindata{lset,36222770176}
+\begindata{lset,44980807936}
 \V 1
-\begindata{lset,36222769664}
+\begindata{lset,44980807424}
 \V 1
-\begindata{text,36222754464}
+\begindata{text,44980818528}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222754464}
-0 0 0 36222754464 0 0 0
+}\enddata{text,44980818528}
+0 0 0 44980818528 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222769664}
-\begindata{lset,36222769920}
+\enddata{lset,44980807424}
+\begindata{lset,44980807680}
 \V 1
-\begindata{text,36222754688}
+\begindata{text,44980818752}
 \textdsversion{12}
-\enddata{text,36222754688}
-0 0 0 36222754688 0 0 0
+\enddata{text,44980818752}
+0 0 0 44980818752 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222769920}
-1 0 0 0 36222769664 36222769920 0
+\enddata{lset,44980807680}
+1 0 0 0 44980807424 44980807680 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222770176}
-\view{lsetview,36222770176,103,0,0}\
-\begindata{lset,36222770432}
+\enddata{lset,44980807936}
+\view{lsetview,44980807936,147,0,0}\
+\begindata{lset,44980812800}
 \V 1
-\begindata{lset,36222771712}
+\begindata{lset,44980808192}
 \V 1
-\begindata{lset,36222770688}
-\V 1
-\begindata{text,36222754912}
+\begindata{text,44980819648}
 \textdsversion{12}
-\enddata{text,36222754912}
-0 0 0 36222754912 0 0 0
+\begindata{lset,44980810752}
+\V 1
+\begindata{lset,44980809728}
+\V 1
+\begindata{text,44980819872}
+\textdsversion{12}
+\enddata{text,44980819872}
+0 0 0 44980819872 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222770688}
-\begindata{lset,36222771456}
+\enddata{lset,44980809728}
+\begindata{lset,44980810496}
 \V 1
-\begindata{lset,36222770944}
+\begindata{lset,44980809984}
 \V 1
-\begindata{text,36222755136}
+\begindata{text,44980820096}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222755136}
-0 0 0 36222755136 0 0 0
+}\enddata{text,44980820096}
+0 0 0 44980820096 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222770944}
-\begindata{lset,36222771200}
+\enddata{lset,44980809984}
+\begindata{lset,44980810240}
 \V 1
-\begindata{text,36222755360}
+\begindata{text,44980820320}
 \textdsversion{12}
-\enddata{text,36222755360}
-0 0 0 36222755360 0 0 0
+\enddata{text,44980820320}
+0 0 0 44980820320 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222771200}
-1 0 0 0 36222770944 36222771200 0
+\enddata{lset,44980810240}
+1 0 0 0 44980809984 44980810240 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222771456}
-11 15 0 0 36222770688 36222771456 0
+\enddata{lset,44980810496}
+11 15 0 0 44980809728 44980810496 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222771712}
-\begindata{lset,36222772480}
+\enddata{lset,44980810752}
+\view{lsetview,44980810752,148,0,0\
+}\enddata{text,44980819648}
+0 0 0 44980819648 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980808192}
+\begindata{lset,44980811008}
 \V 1
-\begindata{lset,36222771968}
+\begindata{text,44980820992}
+\textdsversion{12}
+\begindata{lset,44980812544}
 \V 1
-\begindata{text,36222755584}
+\begindata{lset,44980812032}
+\V 1
+\begindata{text,44980821216}
 \textdsversion{12}
 \htmlatk-italic{Farah's Nose} is an empowering picture book in which a 
 child learns to embrace her strong nose and proud history.
@@ -2100,116 +2313,138 @@ child learns to embrace her strong nose and proud history.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Full review\
-}}\enddata{text,36222755584}
-0 0 0 36222755584 0 0 0
+}}\enddata{text,44980821216}
+0 0 0 44980821216 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222771968}
-\begindata{lset,36222772224}
+\enddata{lset,44980812032}
+\begindata{lset,44980812288}
 \V 1
-\begindata{text,36222756032}
+\begindata{text,44980821440}
 \textdsversion{12}
-\enddata{text,36222756032}
-0 0 0 36222756032 0 0 0
+\enddata{text,44980821440}
+0 0 0 44980821440 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222772224}
-1 50 0 0 36222771968 36222772224 0
+\enddata{lset,44980812288}
+1 50 0 0 44980812032 44980812288 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222772480}
-1 50 0 0 36222771712 36222772480 0
+\enddata{lset,44980812544}
+\view{lsetview,44980812544,149,0,0\
+}\enddata{text,44980820992}
+0 0 0 44980820992 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980811008}
+1 50 0 0 44980808192 44980811008 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222770432}
-\view{lsetview,36222770432,104,0,0}
-\begindata{lset,36222773248}
+\enddata{lset,44980812800}
+\view{lsetview,44980812800,150,0,0}
+\begindata{lset,44980813568}
 \V 1
-\begindata{lset,36222772736}
+\begindata{lset,44980813056}
 \V 1
-\begindata{text,36222756256}
+\begindata{text,44980821664}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222756256}
-0 0 0 36222756256 0 0 0
+}\enddata{text,44980821664}
+0 0 0 44980821664 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222772736}
-\begindata{lset,36222772992}
+\enddata{lset,44980813056}
+\begindata{lset,44980813312}
 \V 1
-\begindata{text,36222756480}
+\begindata{text,44980821888}
 \textdsversion{12}
-\enddata{text,36222756480}
-0 0 0 36222756480 0 0 0
+\enddata{text,44980821888}
+0 0 0 44980821888 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222772992}
-1 0 0 0 36222772736 36222772992 0
+\enddata{lset,44980813312}
+1 0 0 0 44980813056 44980813312 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222773248}
-\view{lsetview,36222773248,105,0,0}
+\enddata{lset,44980813568}
+\view{lsetview,44980813568,151,0,0}
 
 
-\begindata{lset,36222773504}
+\begindata{lset,44980851200}
 \V 1
-\begindata{lset,36222774784}
+\begindata{lset,44980846592}
 \V 1
-\begindata{lset,36222773760}
-\V 1
-\begindata{text,36222756704}
+\begindata{text,44980822784}
 \textdsversion{12}
-\enddata{text,36222756704}
-0 0 0 36222756704 0 0 0
+\begindata{lset,44980849152}
+\V 1
+\begindata{lset,44980848128}
+\V 1
+\begindata{text,44980823008}
+\textdsversion{12}
+\enddata{text,44980823008}
+0 0 0 44980823008 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222773760}
-\begindata{lset,36222774528}
+\enddata{lset,44980848128}
+\begindata{lset,44980848896}
 \V 1
-\begindata{lset,36222774016}
+\begindata{lset,44980848384}
 \V 1
-\begindata{text,36222756928}
+\begindata{text,44980823232}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222756928}
-0 0 0 36222756928 0 0 0
+}\enddata{text,44980823232}
+0 0 0 44980823232 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222774016}
-\begindata{lset,36222774272}
+\enddata{lset,44980848384}
+\begindata{lset,44980848640}
 \V 1
-\begindata{text,36222757152}
+\begindata{text,44980823456}
 \textdsversion{12}
-\enddata{text,36222757152}
-0 0 0 36222757152 0 0 0
+\enddata{text,44980823456}
+0 0 0 44980823456 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222774272}
-1 0 0 0 36222774016 36222774272 0
+\enddata{lset,44980848640}
+1 0 0 0 44980848384 44980848640 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222774528}
-11 15 0 0 36222773760 36222774528 0
+\enddata{lset,44980848896}
+11 15 0 0 44980848128 44980848896 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222774784}
-\begindata{lset,36222775552}
+\enddata{lset,44980849152}
+\view{lsetview,44980849152,152,0,0\
+}\enddata{text,44980822784}
+0 0 0 44980822784 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980846592}
+\begindata{lset,44980849408}
 \V 1
-\begindata{lset,36222775040}
+\begindata{text,44980824128}
+\textdsversion{12}
+\begindata{lset,44980850944}
 \V 1
-\begindata{text,36222757376}
+\begindata{lset,44980850432}
+\V 1
+\begindata{text,44980824352}
 \textdsversion{12}
 Author Andrea Zimmerman and illustrator Dan Yaccarino reunite to create an 
 inspiring picture book for budding readers about a strong, innovative woman 
@@ -2218,114 +2453,136 @@ in construction.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Full review\
-}}\enddata{text,36222757376}
-0 0 0 36222757376 0 0 0
+}}\enddata{text,44980824352}
+0 0 0 44980824352 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222775040}
-\begindata{lset,36222775296}
+\enddata{lset,44980850432}
+\begindata{lset,44980850688}
 \V 1
-\begindata{text,36222757824}
+\begindata{text,44980824576}
 \textdsversion{12}
-\enddata{text,36222757824}
-0 0 0 36222757824 0 0 0
+\enddata{text,44980824576}
+0 0 0 44980824576 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222775296}
-1 50 0 0 36222775040 36222775296 0
+\enddata{lset,44980850688}
+1 50 0 0 44980850432 44980850688 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222775552}
-1 50 0 0 36222774784 36222775552 0
+\enddata{lset,44980850944}
+\view{lsetview,44980850944,153,0,0\
+}\enddata{text,44980824128}
+0 0 0 44980824128 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980849408}
+1 50 0 0 44980846592 44980849408 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222773504}
-\view{lsetview,36222773504,106,0,0}
-\begindata{lset,36222776320}
+\enddata{lset,44980851200}
+\view{lsetview,44980851200,154,0,0}
+\begindata{lset,44980851968}
 \V 1
-\begindata{lset,36222775808}
+\begindata{lset,44980851456}
 \V 1
-\begindata{text,36222758048}
+\begindata{text,44980824800}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222758048}
-0 0 0 36222758048 0 0 0
+}\enddata{text,44980824800}
+0 0 0 44980824800 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222775808}
-\begindata{lset,36222776064}
+\enddata{lset,44980851456}
+\begindata{lset,44980851712}
 \V 1
-\begindata{text,36222758272}
+\begindata{text,44980825024}
 \textdsversion{12}
-\enddata{text,36222758272}
-0 0 0 36222758272 0 0 0
+\enddata{text,44980825024}
+0 0 0 44980825024 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222776064}
-1 0 0 0 36222775808 36222776064 0
+\enddata{lset,44980851712}
+1 0 0 0 44980851456 44980851712 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222776320}
-\view{lsetview,36222776320,107,0,0}\
-\begindata{lset,36222776576}
+\enddata{lset,44980851968}
+\view{lsetview,44980851968,155,0,0}\
+\begindata{lset,44980856832}
 \V 1
-\begindata{lset,36222777856}
+\begindata{lset,44980852224}
 \V 1
-\begindata{lset,36222776832}
-\V 1
-\begindata{text,36222758496}
+\begindata{text,44980825920}
 \textdsversion{12}
-\enddata{text,36222758496}
-0 0 0 36222758496 0 0 0
+\begindata{lset,44980854784}
+\V 1
+\begindata{lset,44980853760}
+\V 1
+\begindata{text,44980826144}
+\textdsversion{12}
+\enddata{text,44980826144}
+0 0 0 44980826144 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222776832}
-\begindata{lset,36222777600}
+\enddata{lset,44980853760}
+\begindata{lset,44980854528}
 \V 1
-\begindata{lset,36222777088}
+\begindata{lset,44980854016}
 \V 1
-\begindata{text,36222758720}
+\begindata{text,44980826368}
 \textdsversion{12}
 \htmlatk-link{[image: Cover]\
-}\enddata{text,36222758720}
-0 0 0 36222758720 0 0 0
+}\enddata{text,44980826368}
+0 0 0 44980826368 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222777088}
-\begindata{lset,36222777344}
+\enddata{lset,44980854016}
+\begindata{lset,44980854272}
 \V 1
-\begindata{text,36222758944}
+\begindata{text,44980826592}
 \textdsversion{12}
-\enddata{text,36222758944}
-0 0 0 36222758944 0 0 0
+\enddata{text,44980826592}
+0 0 0 44980826592 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222777344}
-1 0 0 0 36222777088 36222777344 0
+\enddata{lset,44980854272}
+1 0 0 0 44980854016 44980854272 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222777600}
-11 15 0 0 36222776832 36222777600 0
+\enddata{lset,44980854528}
+11 15 0 0 44980853760 44980854528 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222777856}
-\begindata{lset,36222778624}
+\enddata{lset,44980854784}
+\view{lsetview,44980854784,156,0,0\
+}\enddata{text,44980825920}
+0 0 0 44980825920 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980852224}
+\begindata{lset,44980855040}
 \V 1
-\begindata{lset,36222778112}
+\begindata{text,44980827264}
+\textdsversion{12}
+\begindata{lset,44980856576}
 \V 1
-\begindata{text,36222759168}
+\begindata{lset,44980856064}
+\V 1
+\begindata{text,44980827488}
 \textdsversion{12}
 In this creepy first installment in a series about uncanny, imagined 
 dangers of technology, an entitled 11-year-old gamer learns the true cost 
@@ -2334,84 +2591,91 @@ of looking out only for herself.
 
 
 \htmlatk-link{\^{;} \htmlatk-italic{Full review\
-}}\enddata{text,36222759168}
-0 0 0 36222759168 0 0 0
+}}\enddata{text,44980827488}
+0 0 0 44980827488 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222778112}
-\begindata{lset,36222778368}
+\enddata{lset,44980856064}
+\begindata{lset,44980856320}
 \V 1
-\begindata{text,36222759616}
+\begindata{text,44980827712}
 \textdsversion{12}
-\enddata{text,36222759616}
-0 0 0 36222759616 0 0 0
+\enddata{text,44980827712}
+0 0 0 44980827712 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222778368}
-1 50 0 0 36222778112 36222778368 0
+\enddata{lset,44980856320}
+1 50 0 0 44980856064 44980856320 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222778624}
-1 50 0 0 36222777856 36222778624 0
+\enddata{lset,44980856576}
+\view{lsetview,44980856576,157,0,0\
+}\enddata{text,44980827264}
+0 0 0 44980827264 0 0 0
+>OBJ< text
+>VIEW< textview
+>REF< 
+\enddata{lset,44980855040}
+1 50 0 0 44980852224 44980855040 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222776576}
-\view{lsetview,36222776576,108,0,0}
-\begindata{lset,36222728448}
+\enddata{lset,44980856832}
+\view{lsetview,44980856832,158,0,0}
+\begindata{lset,44980857600}
 \V 1
-\begindata{lset,36222778880}
+\begindata{lset,44980857088}
 \V 1
-\begindata{text,36222759840}
+\begindata{text,44980827936}
 \textdsversion{12}
 \htmlatk-link{[image: Buy]\
-}\enddata{text,36222759840}
-0 0 0 36222759840 0 0 0
+}\enddata{text,44980827936}
+0 0 0 44980827936 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222778880}
-\begindata{lset,36222779136}
+\enddata{lset,44980857088}
+\begindata{lset,44980857344}
 \V 1
-\begindata{text,36222760064}
+\begindata{text,44980828160}
 \textdsversion{12}
-\enddata{text,36222760064}
-0 0 0 36222760064 0 0 0
+\enddata{text,44980828160}
+0 0 0 44980828160 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222779136}
-1 0 0 0 36222778880 36222779136 0
+\enddata{lset,44980857344}
+1 0 0 0 44980857088 44980857344 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222728448}
-\view{lsetview,36222728448,109,0,0\
-}\enddata{text,36222688256}
-0 0 0 36222688256 0 0 0
+\enddata{lset,44980857600}
+\view{lsetview,44980857600,159,0,0\
+}\enddata{text,44980623936}
+0 0 0 44980623936 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222706432}
-\view{lsetview,36222706432,124,0,0}
-\begindata{lset,36222779392}
+\enddata{lset,44980637952}
+\view{lsetview,44980637952,174,0,0}
+\begindata{lset,44980857856}
 \V 1
-\begindata{text,36222760288}
+\begindata{text,44980828384}
 \textdsversion{12}
 \htmlatk-link{THE WRITER'S LIFE\
-}\enddata{text,36222760288}
-0 0 0 36222760288 0 0 0
+}\enddata{text,44980828384}
+0 0 0 44980828384 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222779392}
-\view{lsetview,36222779392,125,0,0}
-\begindata{lset,36222779648}
+\enddata{lset,44980857856}
+\view{lsetview,44980857856,175,0,0}
+\begindata{lset,44980858112}
 \V 1
-\begindata{text,36222760512}
+\begindata{text,44980828608}
 \textdsversion{12}
 [image]Meryl Branch-McTiernan is an essayist and screenwriter as well as 
 the author of the debut novel \htmlatk-italic{What You Should Worry About}, 
@@ -2422,28 +2686,28 @@ reading on "the balance between artistic, relational, and familial
 desires"... \htmlatk-bold{\htmlatk-link{(continued)}}
 
 
-\enddata{text,36222760512}
-0 0 0 36222760512 0 0 0
+\enddata{text,44980828608}
+0 0 0 44980828608 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222779648}
-\view{lsetview,36222779648,126,0,0}
-\begindata{lset,36222779904}
+\enddata{lset,44980858112}
+\view{lsetview,44980858112,176,0,0}
+\begindata{lset,44980858368}
 \V 1
-\begindata{text,36222760736}
+\begindata{text,44980828832}
 \textdsversion{12}
 \htmlatk-link{BOOK CANDY\
-}\enddata{text,36222760736}
-0 0 0 36222760736 0 0 0
+}\enddata{text,44980828832}
+0 0 0 44980828832 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222779904}
-\view{lsetview,36222779904,127,0,0}
-\begindata{lset,36222780160}
+\enddata{lset,44980858368}
+\view{lsetview,44980858368,177,0,0}
+\begindata{lset,44980858624}
 \V 1
-\begindata{text,36222760960}
+\begindata{text,44980829056}
 \textdsversion{12}
 Mental Floss served "8 \htmlatk-link{foods people in \htmlatk-italic{The 
 Odyssey}} might have actually eaten."
@@ -2465,28 +2729,28 @@ unsolicited, 4,000-page manuscript titled \htmlatk-italic{Tuba Man, Scuba
 Man}." (via the satirical minds at the \htmlatk-italic{Onion})
 
 
-\enddata{text,36222760960}
-0 0 0 36222760960 0 0 0
+\enddata{text,44980829056}
+0 0 0 44980829056 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222780160}
-\view{lsetview,36222780160,128,0,0}
-\begindata{lset,36222780416}
+\enddata{lset,44980858624}
+\view{lsetview,44980858624,178,0,0}
+\begindata{lset,44980858880}
 \V 1
-\begindata{text,36222761184}
+\begindata{text,44980829280}
 \textdsversion{12}
 \htmlatk-link{REDISCOVER\
-}\enddata{text,36222761184}
-0 0 0 36222761184 0 0 0
+}\enddata{text,44980829280}
+0 0 0 44980829280 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222780416}
-\view{lsetview,36222780416,129,0,0}
-\begindata{lset,36222780672}
+\enddata{lset,44980858880}
+\view{lsetview,44980858880,179,0,0}
+\begindata{lset,44980859136}
 \V 1
-\begindata{text,36222761408}
+\begindata{text,44980829504}
 \textdsversion{12}
 [image]Shahrnush Parsipur, "the celebrated Iranian writer whose subversive 
 works of feminist fiction saw her repeatedly imprisoned" under the Shah as 
@@ -2499,16 +2763,16 @@ published in the U.K. and was longlisted for the International Booker
 Prize. \htmlatk-bold{\htmlatk-link{(continued)}}
 
 
-\enddata{text,36222761408}
-0 0 0 36222761408 0 0 0
+\enddata{text,44980829504}
+0 0 0 44980829504 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222780672}
-\view{lsetview,36222780672,130,0,0}
-\begindata{lset,36222780928}
+\enddata{lset,44980859136}
+\view{lsetview,44980859136,180,0,0}
+\begindata{lset,44980859648}
 \V 1
-\begindata{text,36222761632}
+\begindata{text,44980829728}
 \textdsversion{12}
 This message was sent to \htmlatk-bold{\htmlatk-link{wdc@fastmail.com}} as 
 part of a subscription to \htmlatk-italic{Shelf Awareness}.
@@ -2525,82 +2789,82 @@ To contact us, \htmlatk-bold{\htmlatk-link{send us an email}} or
 
 To view back issues of Shelf Awareness for Readers, 
 \htmlatk-bold{\htmlatk-link{visit our archive page}}.\
-\enddata{text,36222761632}
-0 0 0 36222761632 0 0 0
+\enddata{text,44980829728}
+0 0 0 44980829728 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222780928}
-\view{lsetview,36222780928,131,0,0\
-}\enddata{text,36222606112}
-0 0 0 36222606112 0 0 0
+\enddata{lset,44980859648}
+\view{lsetview,44980859648,181,0,0\
+}\enddata{text,44980559072}
+0 0 0 44980559072 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222176256}
-\begindata{lset,36222782208}
+\enddata{lset,4384518672}
+\begindata{lset,44980860672}
 \V 1
-\begindata{lset,36222781184}
+\begindata{lset,44980859392}
 \V 1
-\begindata{text,36222761856}
+\begindata{text,44980829952}
 \textdsversion{12}
-\enddata{text,36222761856}
-0 0 0 36222761856 0 0 0
+\enddata{text,44980829952}
+0 0 0 44980829952 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222781184}
-\begindata{lset,36222781952}
+\enddata{lset,44980859392}
+\begindata{lset,44980860416}
 \V 1
-\begindata{lset,36222781440}
+\begindata{lset,44980859904}
 \V 1
-\begindata{text,36222762080}
+\begindata{text,44988203008}
 \textdsversion{12}
-\enddata{text,36222762080}
-0 0 0 36222762080 0 0 0
+\enddata{text,44988203008}
+0 0 0 44988203008 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222781440}
-\begindata{lset,36222781696}
+\enddata{lset,44980859904}
+\begindata{lset,44980860160}
 \V 1
-\begindata{text,36222762304}
+\begindata{text,44988203232}
 \textdsversion{12}
-\enddata{text,36222762304}
-0 0 0 36222762304 0 0 0
+\enddata{text,44988203232}
+0 0 0 44988203232 0 0 0
 >OBJ< text
 >VIEW< textview
 >REF< 
-\enddata{lset,36222781696}
-11 10 0 0 36222781440 36222781696 0
+\enddata{lset,44980860160}
+11 10 0 0 44980859904 44980860160 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222781952}
-11 4 0 0 36222781184 36222781952 0
+\enddata{lset,44980860416}
+11 4 0 0 44980859392 44980860416 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222782208}
-1 0 0 0 36222176256 36222782208 0
+\enddata{lset,44980860672}
+1 0 0 0 4384518672 44980860672 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222782464}
-11 4 0 0 36222176000 36222782464 0
+\enddata{lset,44980860928}
+11 4 0 0 4384542464 44980860928 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222782720}
-11 10 0 0 36222175744 36222782720 0
+\enddata{lset,44980861184}
+11 10 0 0 4384538880 44980861184 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222782976}
-11 1 0 0 36222175488 36222782976 0
+\enddata{lset,44980861440}
+11 1 0 0 4384537696 44980861440 0
 >OBJ< 
 >VIEW< 
 >REF< 
-\enddata{lset,36222783232}
-\view{lsetview,36222783232,132,0,0\
-}\enddata{text,4307822480}
+\enddata{lset,44980861696}
+\view{lsetview,44980861696,182,0,0\
+}\enddata{text,4384528096}
