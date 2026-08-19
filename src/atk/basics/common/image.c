@@ -1265,7 +1265,7 @@ static unsigned int * buildZoomIndex(unsigned int width, unsigned int zoom, unsi
 
 struct image * image__Zoom(struct image *self, unsigned int xzoom, unsigned int yzoom)
 { char          buf[BUFSIZ];
-  struct image *newimage;
+  struct image *newimage = NULL;
   unsigned int *xindex, *yindex;
   unsigned int  xwidth, ywidth;
   unsigned int  x, y, xsrc, ysrc;
@@ -1341,7 +1341,15 @@ struct image * image__Zoom(struct image *self, unsigned int xzoom, unsigned int 
 	  /* FALLTHRU */
 
       case ITRUE:
-	  if (!RGBP(newimage)) {
+	  /* newimage is only already set here via the IGREYSCALE/IRGB
+	     fallthrough above; a genuine ITRUE source (e.g. a decoded
+	     truecolor PNG -- the common case for real inline HTML-mail
+	     images, never exercised by Zoom() before) enters this case
+	     directly, and reading RGBP(newimage) on an uninitialized
+	     pointer is undefined behavior -- confirmed live 2026-08-19,
+	     manifested as corrupted/black icons after adding the first
+	     real caller of Zoom() on a plain truecolor image. */
+	  if (!newimage || !RGBP(newimage)) {
 	      newimage = image_New();
 	      image_newTrueImage(newimage, xwidth, ywidth);
 	  }

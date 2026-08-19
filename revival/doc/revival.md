@@ -646,6 +646,53 @@ next step, not yet done:
   already calls successfully, unsuppressed — rather than disturbing
   either decades-old mechanism.
 
+- **Every embedded `image` bevels its whole allocated rectangle, not
+  just the picture — invisible for ordinary use, glaring for a decorative
+  image next to a much taller sibling.** `imagev`'s `DrawBorder()`
+  unconditionally draws a 5px "window pane" frame (a legitimate
+  affordance for a normal, editable, user-embedded `ez` image) across
+  the *entire* view rectangle it's given — including any blank space
+  left over when a surrounding `lset`/`lpair` split stretches a short
+  cell to match a taller side-by-side sibling. A real fixture's thin
+  350×16px divider image, sitting beside a much taller 5-icon row,
+  rendered as a large bevelled box instead of a thin line. Fixed with a
+  new per-instance `noBorder` flag on `image`, set by the HTML renderer
+  on every image it inserts; normal image usage elsewhere is unaffected
+  since the flag defaults off.
+
+- **`<img width=/height=>` was silently ignored — every image displayed
+  at its raw decoded pixel size.** Nothing in the HTML-mail renderer
+  ever read these attributes for display sizing (only for a heuristic
+  tracking-pixel check, a separate concern). Real mail relies on the
+  browser to scale images down; a real fixture's 5 social icons all
+  declared `width="30"`, but 3 of the 5 source PNGs happen to be
+  100×100px native assets (the other 2 are already small files) —
+  ordinary real-world asset reuse, not malformed markup. The 3 oversized
+  icons rendered at roughly 3× the intended size, and because a
+  side-by-side split correctly reports the taller side's height for its
+  free dimension, the oversized icons dragged the *entire row's* height
+  up to match. Fixed by scaling any image whose decoded size differs
+  from its declared `width=`/`height=` before inserting it, via
+  `image`'s existing (but previously never exercised on a plain
+  truecolor image) `Zoom()` method.
+
+- **`image`'s `Zoom()` method read an uninitialized pointer for
+  truecolor images — a 40-year-latent bug, triggered for the first time
+  by the fix directly above.** `image__Zoom` handles four source pixel
+  formats in one `switch`; two of them (`IGREYSCALE`/`IRGB`) build a
+  fresh working image and then deliberately *fall through* into the
+  truecolor (`ITRUE`) case, which checks whether that image is already
+  the right kind before deciding whether to reuse it. But a genuine
+  truecolor source — the ordinary case for a decoded PNG, and
+  apparently the first time anything in this codebase had ever called
+  `Zoom()` on one — enters that same check with nothing built yet: an
+  uninitialized stack pointer, read and dereferenced. Confirmed live:
+  scaled icons rendered as solid black boxes instead of shrunk
+  pictures, not a crash, exactly the kind of silent corruption
+  undefined behavior produces rather than a clean failure. Fixed by
+  initializing the pointer to `NULL` and checking for that alongside
+  the existing type check.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or

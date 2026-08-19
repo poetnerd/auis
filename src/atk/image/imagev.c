@@ -1822,6 +1822,20 @@ void imagev__SetDataObject(struct imagev *self, struct dataobject *image)
 {
     self->orig = image;
     super_SetDataObject(self, (struct dataobject *) image);
+    /* image_GetNoBorder(): an inline HTML-mail image is meant to read as
+       a flat picture, not an editable ez pane -- suppress the bevelled
+       "window pane" frame DrawBorder()/sbuttonv_SafeDrawButton() always
+       draws across the view's WHOLE allocated rectangle, not just around
+       the picture. That frame is fine, even desirable, for a normal
+       user-embedded image (it's an editable object, the bezel is a
+       legitimate affordance), but for a decorative image cell that an
+       lset/lpair split has stretched taller than its own content (e.g.
+       a thin divider image beside a much taller sibling cell), the
+       frame ends up bezeling a large empty rectangle -- confirmed live
+       2026-08-19 against the National Grid fixture's "Blue Brand Line"
+       divider next to its 5-icon social row. */
+    self->bordersize = image_GetNoBorder((struct image *) image) ?
+        0 : environ_GetProfileInt("imagebordersize", DEFAULT_BORDER_SIZE);
     self->originx = image_GetOriginX(image);
     self->originy = image_GetOriginY(image);
     self->panx = self->originx;

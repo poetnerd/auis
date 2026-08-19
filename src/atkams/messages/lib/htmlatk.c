@@ -73,6 +73,7 @@
 #include <style.ih>
 #include <fontdesc.ih>
 #include <dataobj.ih>
+#include <image.ih>
 #include <lset.ih>
 #include <lsetv.ih>
 
@@ -911,6 +912,69 @@ static boolean LooksLikeBeacon(const struct htmlnode *n, const char *src)
     return FALSE;
 }
 
+/* Scale a successfully-decoded image to its HTML-declared width=/height=
+   attributes, if given -- RenderImageInline never applied these at all,
+   the decoded image always displayed at its native pixel size. Real
+   marketing HTML routinely relies on the browser to do this: several
+   icons on the same page sharing one full-size source asset, each
+   individually scaled down via width=/height=. Confirmed live
+   2026-08-19 against a real National Grid message: three of five
+   social-row icons (Facebook/YouTube/Instagram) decode to their native
+   100x100px source size while the other two (Twitter 37x38, LinkedIn
+   31x31) happen to be pre-sized small files -- both declare
+   width="30" -- so the row rendered visibly mismatched, and via
+   lpair's max(d0,d1) split-height logic, the whole row's height got
+   dragged up to match the oversized icons instead of the intended
+   ~30px.
+
+   image_Zoom takes an integer PERCENTAGE (100 = unchanged), not a
+   pixel target, and always returns a NEW plain `image` (never a
+   `png`/`gif`/`jpeg` subclass instance, see image.c's image__Zoom --
+   it constructs via image_New() directly) that the caller owns; the
+   original is left untouched and must be destroyed separately if
+   replaced. Only called for real `image` subclasses (gif/jpeg/png/pbm)
+   -- "raster" is a different class entirely with no image_Width/Zoom
+   of its own. */
+static void ScaleImageToDeclaredSize(struct dataobject **dobRef, const struct htmlnode *n)
+{
+    struct image *img = (struct image *) *dobRef;
+    const char *wAttr = htmlpart_GetAttr(n, "width");
+    const char *hAttr = htmlpart_GetAttr(n, "height");
+    long declaredW = wAttr ? strtol(wAttr, NULL, 10) : 0;
+    long declaredH = hAttr ? strtol(hAttr, NULL, 10) : 0;
+    long nativeW = image_Width(img);
+    long nativeH = image_Height(img);
+    long targetW, targetH, xzoom, yzoom;
+    struct image *scaled;
+
+    if (declaredW <= 0 && declaredH <= 0) return;
+    if (nativeW <= 0 || nativeH <= 0) return;
+
+    if (declaredW > 0 && declaredH > 0) {
+        targetW = declaredW;
+        targetH = declaredH;
+    } else if (declaredW > 0) {
+        targetW = declaredW;
+        targetH = (declaredW * nativeH) / nativeW;
+    } else {
+        targetH = declaredH;
+        targetW = (declaredH * nativeW) / nativeH;
+    }
+    if (targetW <= 0 || targetH <= 0) return;
+    if (targetW == nativeW && targetH == nativeH) return;
+
+    xzoom = (targetW * 100) / nativeW;
+    yzoom = (targetH * 100) / nativeH;
+    if (xzoom <= 0) xzoom = 1;
+    if (yzoom <= 0) yzoom = 1;
+
+    scaled = image_Zoom(img, (unsigned int) xzoom, (unsigned int) yzoom);
+    if (scaled && (struct dataobject *) scaled != *dobRef) {
+        dataobject_Destroy(*dobRef);
+        *dobRef = (struct dataobject *) scaled;
+    }
+}
+
 /* Top-level (non-table-cell) <img> handling: try a real embed via the
    resolver; on any failure (no resolver, resolver declines, format
    unsupported) fall back to the inline text placeholder. If the
@@ -945,27 +1009,38 @@ static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
 
     if (resolved && bytes) {
         int savedErr;
+        const char *dobClass;
         placeholderHint = mimetype;
-        dob = (struct dataobject *) class_NewObject((char *) ImageClassForMimetype(mimetype));
+        dobClass = ImageClassForMimetype(mimetype);
+        dob = (struct dataobject *) class_NewObject((char *) dobClass);
         savedErr = SuppressStderrBegin(); /* speculative: a labeled-decode failure here is expected/routine now, see SuppressStderrBegin's own comment */
         ok = dob && TryReadImageInto(dob, mimetype, bytes, len);
         SuppressStderrEnd(savedErr);
-        TraceDecode("  attempt1 class=%s ok=%d\n", ImageClassForMimetype(mimetype), ok);
+        TraceDecode("  attempt1 class=%s ok=%d\n", dobClass, ok);
 
         if (!ok) {
             const char *sniffed = SniffImageMimetype(bytes, len);
             TraceDecode("  sniffed=%s\n", sniffed ? sniffed : "(null)");
             if (sniffed && (!mimetype || strcmp(sniffed, mimetype) != 0)) {
                 if (dob) dataobject_Destroy(dob);
-                dob = (struct dataobject *) class_NewObject((char *) ImageClassForMimetype(sniffed));
+                dobClass = ImageClassForMimetype(sniffed);
+                dob = (struct dataobject *) class_NewObject((char *) dobClass);
                 ok = dob && TryReadImageInto(dob, sniffed, bytes, len);
                 placeholderHint = sniffed; /* the truth, whether or not this retry itself succeeded */
-                TraceDecode("  attempt2 class=%s ok=%d\n", ImageClassForMimetype(sniffed), ok);
+                TraceDecode("  attempt2 class=%s ok=%d\n", dobClass, ok);
             }
         }
 
         TraceDecode("  -> final ok=%d\n", ok);
         if (ok) {
+            /* "raster" (ImageClassForMimetype's fallback for anything
+               not gif/jpeg/png/pbm) is a plain dataobject, not an
+               `image` subclass -- image_SetNoBorder is only valid on
+               the classes that actually have that field. */
+            if (strcmp(dobClass, "raster") != 0) {
+                ScaleImageToDeclaredSize(&dob, n);
+                image_SetNoBorder((struct image *) dob, TRUE);
+            }
             FlushPendingSpace(st); /* AddView doesn't collapse into text runs like InsertLiteral does */
             text_AlwaysAddView(st->dest, st->pos, dataobject_ViewName(dob), dob);
             ++st->pos;
