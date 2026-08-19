@@ -423,39 +423,50 @@ parser can't make sense of), just not to depth or nesting alone.
 
 ## Images: the `image` inset, capability-checked
 
-`image__ReadOtherFormat` (`src/atk/basics/common/image.c:2314`)
-already does exactly what was asked for: it checks the MIME type
-against a known-decodable list (`image/gif`, `image/x-gif`,
-`image/pbm`, `image/ppm`, `image/pgm`, `image/jpeg`) and returns
-`FALSE` for anything else, rather than silently producing garbage.
-**Note: no PNG.** PNG is extremely common in modern mail (most
-signature logos, many inline images — 5.4% of HTML-bearing messages in
-the fixture corpus carry one, see its README) and isn't in that list —
-a real gap, not a hypothetical one. Decided: add it, not just fall
-back. `image` already has format-specific subclasses following the
-identical pattern PNG would need — `jpeg` (`src/atk/basics/common/
-jpeg.ch`) and `tif` (`src/atk/image/tif.ch`) each just override
-`Read`/`Write`/`Load` and provide a class `Ident()` for format
-detection, wrapping an external codec (libjpeg for `jpeg`). A `png`
-subclass wrapping a PNG decoder (zlib inflate + PNG's scanline
-filters) fits the same slot. It's also close in spirit to AUIS's own
-native `raster` object (`src/atk/raster/cmd/raster.ch`) — a
-bitmap-plus-run-length-compression format AUIS already decodes — PNG
-is architecturally the same idea (bitmap + compressed encoding) with
-color instead of `raster`'s monochrome RLE and a different (DEFLATE)
-compression scheme. Still a separate, scoped task from this renderer
-work (touches `image.c`/a new `png.ch`, not the HTML parser/renderer)
-— **in progress as of 2026-08-19** (separate session/instance;
-`RenderImageInline`'s `ImageClassForMimetype` routes `image/png` to
-`"raster"`, which can't decode it, until this lands).
+`image__ReadOtherFormat` (`src/atk/basics/common/image.c:2314`) checks
+the MIME type against a known-decodable list and returns `FALSE` for
+anything else, rather than silently producing garbage. As of
+2026-08-19 that list is `image/gif`, `image/x-gif`, `image/pbm`,
+`image/ppm`, `image/pgm`, `image/jpeg`, and **`image/png`**.
 
-Rendering plan: `<img>` → attempt `image_New` + `ReadOtherFormat`
-against the resolved bytes (either `cid:`-referenced MIME part, or
-fetched remote content per the policy above). On `FALSE` (or content
-not fetched because remote-blocked), render a text placeholder using
-`alt` if present, else `[image: <mime-type> not supported]` — same
-idea as `PrintAttachmentLine` already does in `cui` for non-renderable
-MIME parts, just at the inline-image granularity instead of the
+**PNG support: DONE, 2026-08-19.** PNG was a real gap, not a
+hypothetical one — most signature logos and many inline images in real
+mail are PNG (5.4% of HTML-bearing messages in the fixture corpus
+carry one, see its README), and until this landed they always fell
+through to a `[image: ...]` text placeholder. Filled by a new `png`
+subclass (`src/atk/basics/common/png.c`/`png.ch`) following the
+identical pattern `jpeg`/`tif` already use — override `Read`/`Write`/
+`Load`, provide a class `Ident()` for format detection — decode-only
+(no `WriteNative`, same as `tif`), using system zlib for DEFLATE and
+hand-rolled PNG chunk/scanline-filter parsing rather than vendoring
+libpng (matches this codebase's own precedent of hand-rolling
+format-specific logic — `gif.c` hand-rolls LZW rather than linking
+giflib — reserving actual vendoring, like `overhead/image/jpeg`+
+`tiff`, for codecs too complex to hand-roll). Alpha channel is decoded
+then discarded (`image.ch`'s data model has no alpha plane); 16-bit
+channels truncated to 8; Adam7 interlacing not implemented (fails
+cleanly, not silently). Wired into both image-dispatch sites:
+`htmlatk.c`'s `ImageClassForMimetype` (previously routed `image/png`
+to `"raster"`, which can't decode it) and `text822.c`'s
+`InsertProperObject` (the plain MIME-attachment path, kept in sync per
+that function's own comment). Verified offline against synthetic PNGs
+covering every supported color type/bit depth, via a live `.ez`
+render-check in `ez`, and end-to-end against real-world mail images in
+`messages`. Committed `69396a0a`.
+
+Rendering plan (as implemented — differs slightly from the original
+sketch above, which said `image_New` + `ReadOtherFormat`): `<img>` →
+resolve bytes (either `cid:`-referenced MIME part, or fetched remote
+content per the policy above) → `class_NewObject()` the *specific*
+subclass for the declared MIME type (`ImageClassForMimetype`) →
+`ReadOtherFormat` against it, with one retry against the sniffed
+format if the declared type's decoder fails (see `SniffImageMimetype`
+— catches real-world mislabeled images, e.g. actual JPEG bytes served
+under a `.gif` URL). On failure (or content not fetched because
+remote-blocked), render a text placeholder using `alt` if present,
+else `[image: <mime-type> not supported]` — same idea as
+`PrintAttachmentLine` already does in `cui` for non-renderable MIME
+parts, just at the inline-image granularity instead of the
 whole-message granularity.
 
 ## Fallback strategy (now explicit, per renderer)

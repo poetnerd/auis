@@ -44,7 +44,7 @@ solid versus still rough. Active work is listed under Projects.
 | `raster` (as an embedded inset) | Fully working | |
 | `contentv` (Table of Contents) | Fully working | An earlier report of it ignoring enumerated headings was a false alarm — root cause was input focus being inside an embedded inset rather than the document itself when the ToC view was opened |
 | `convertraster` (standalone CLI) | Fully working | Fully tested 2026-08-08; three bugs found and fixed (see `porting-changelog.md`) |
-| `image` (JPEG/TIFF import) | Fully working | Fixed 2026-08-08: TIFF import was totally broken (four LP64 struct/stride bugs in vendored `libtiff`); JPEG/TIFF solid-color render was an unrelated `xgraphic.c` variable mixup — see `porting-changelog.md`. GIF import shares the same render path so is likely also fixed, but wasn't retested |
+| `image` (GIF/JPEG/TIFF/PNG import) | Fully working | Fixed 2026-08-08: TIFF import was totally broken (four LP64 struct/stride bugs in vendored `libtiff`); JPEG/TIFF solid-color render was an unrelated `xgraphic.c` variable mixup — see `porting-changelog.md`. GIF import shares the same render path so is likely also fixed, but wasn't retested. **PNG support added 2026-08-19** (`src/atk/basics/common/png.c`/`png.ch`, decode-only, hand-rolled chunk/filter parsing over system zlib — no vendored libpng) — a genuinely new format for this codebase, not a bugfix; wired into the image inset's Import menu and into HTML-mail image dispatch (see "HTML mail rendering" below). Verified against synthetic and real-world mail images, live in both `ez` and `messages` |
 | `htmlview` | N/A — superseded | The standalone viewer itself hasn't changed; real-world HTML mail rendering now goes through a separate, purpose-built parser+renderer wired into `messages`/`cui` instead — see Projects → HTML mail rendering. Retargeting `htmlview` onto that same parser is an optional later step, not yet done |
 
 ---
@@ -68,9 +68,10 @@ being front-loaded here.
 
 - **Design doc:** `html-mail-rendering-design.md` — sanitization
   allowlist, table strategy (see below — pivoted mid-project), image
-  strategy (`image__ReadOtherFormat` capability check + fallback), and
-  the explicit renderer-level fallback contract. Work happens on the
-  `html` branch (`~/src/AUIS/html/`), not `trunk/`.
+  strategy (`image__ReadOtherFormat` capability check + fallback,
+  including PNG — see below), and the explicit renderer-level fallback
+  contract. Work happens on the `html` branch (`~/src/AUIS/html/`),
+  not `trunk/`.
 - **Status: core rendering done, verified live against real mail.**
   MIME body decoding was already solid (see `porting-changelog.md`'s
   2026-08-09/2026-08-10 entries); the actual rendering pipeline is now
@@ -98,6 +99,13 @@ being front-loaded here.
   never coalescing, hidden `display:none` preheader text rendering as
   visible body text), both found live against a real National Grid
   message (now saved at `revival/tests/national-grid.html`) and fixed.
+  **PNG images now render inline, 2026-08-19** — the `image` inset
+  itself gained a real PNG decoder (see the `image` row above), and
+  `htmlatk.c`/`text822.c`'s image dispatch was updated to route
+  `image/png` to it (previously fell through to `raster`, which
+  can't decode PNG, so real mail's PNG logos/graphics — the single
+  most common inline-image format — always showed as a text
+  placeholder). Confirmed live against real-world mail images.
 - **Next step:** Two loose ends, both deliberately deferred, neither
   blocking further use:
   - A distinct, non-HTML-specific core-ATK bug in scrollbar
