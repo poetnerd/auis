@@ -617,6 +617,35 @@ next step, not yet done:
   passed in actually is the current top position, matching the
   precondition the shortcut's own comment already claimed.
 
+- **A decades-old include trick in `messages.c` silently disabled a whole
+  class's dispatch macros — until new code finally needed one.**
+  Implementing a "trust this sender's images" feature needed `messages.c`
+  to read a value `text822.c` already tracked internally. The obvious
+  approach — a hand-written `extern` C function declared in one file and
+  called from the other — compiled and linked cleanly, then crashed the
+  running program the first time that code path actually executed:
+  `EXC_BAD_ACCESS` at address zero, a call through a symbol that was
+  never really resolved. Darwin's dynamic-object loader (`-undefined
+  dynamic_lookup`, used to build every ATK `.do` plugin) defers all
+  cross-plugin symbol resolution to load time and never fails the build
+  over a missing one; `messages.do` had already bound the symbol to
+  nothing before `text822.do`, the plugin that actually defines it, was
+  even loaded. The fix that suggested itself — expose the value as a
+  proper ATK classprocedure, the mechanism every other cross-file call in
+  the toolkit already uses, which forces the right plugin to load on
+  first use — compiled without error and then simply didn't work: the new
+  dispatch macro never expanded inside `messages.c`. The cause was a
+  second, much older trap: `messages.c` wraps its own `#include
+  <text822.ih>` in `#define dontDefineRoutinesFor_text822` / `#undef`, a
+  bracket that has suppressed text822's entire classprocedure-macro block
+  in that one file since long before this project, for a reason no
+  longer recorded (the same file does the identical thing for `tree`).
+  Nobody had ever collided with it, because nobody had ever added a
+  text822 classprocedure that `messages.c` needed to call. The actual fix
+  routes the value through `amsutil` instead — a class `messages.c`
+  already calls successfully, unsuppressed — rather than disturbing
+  either decades-old mechanism.
+
 None of these are new mistakes. Each was introduced once, decades ago, and
 never triggered — because the exercising code path was never run, because
 nothing had checked a declared interface against its actual usage, or
