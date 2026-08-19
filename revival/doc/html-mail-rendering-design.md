@@ -557,6 +557,34 @@ else `[image: <mime-type> not supported]` — same idea as
 parts, just at the inline-image granularity instead of the
 whole-message granularity.
 
+**Sizing and framing: DONE, 2026-08-19.** Two gaps found live-testing
+image fetching/PNG support against the National Grid fixture, both
+fixed in core ATK, not this renderer:
+
+- Every embedded `image` view bevels its *entire* allocated rectangle
+  (`imagev`'s `DrawBorder()`, a 5px "window pane" frame — fine for a
+  normal editable `ez` image, wrong for a flat inline picture whose
+  `lset`/`lpair` cell got stretched by a taller side-by-side sibling).
+  Fixed with a new `image_SetNoBorder()` flag, set on every image this
+  renderer inserts; other image usage (`ez`'s own Insert Image,
+  `messages`' plain MIME-attachment display) is unaffected.
+- `<img width=/height=>` was never applied — images always displayed
+  at their raw decoded pixel size. Real mail relies on the browser to
+  scale down oversized source assets (confirmed live: 3 of 5 icons in
+  a real social-icon row were 100×100px native files declaring
+  `width="30"`), and because a side-by-side split correctly reports
+  its taller side's height, oversized images dragged their whole row's
+  height up with them. Fixed: any image whose decoded size differs
+  from its declared `width=`/`height=` gets scaled via `image_Zoom()`
+  before insertion (aspect-preserving if only one dimension is given).
+
+Fixing the second of these also surfaced (and fixed) a genuine,
+decades-latent core `image__Zoom()` bug — an uninitialized pointer read
+for truecolor (PNG) images, never triggered before because nothing had
+called `Zoom()` on a plain truecolor image until this renderer did. See
+`revival.md`'s "Old bugs never found till now" for the full writeup of
+all three.
+
 ## Fallback strategy (now explicit, per renderer)
 
 Two levels, both explicit:
@@ -698,14 +726,44 @@ than one screen:
   identified as rendering blank. Fixed by gating the shortcut on
   `pos == textview_GetTopPosition(self)`, matching what its own comment
   already claimed (`492e9b6e24`).
+- `imagev`'s `DrawBorder()` bevels an embedded image's *whole allocated
+  rectangle*, not just the picture — harmless for a normal image, but a
+  glaring blank bevelled box for a decorative image whose `lset`/`lpair`
+  cell got stretched to match a taller side-by-side sibling. Fixed with
+  a new per-instance `image_SetNoBorder()` flag; other image usage is
+  unaffected (defaults off).
+- `<img width=/height=>` was never applied — images always displayed at
+  their raw decoded pixel size, and because a side-by-side split
+  correctly reports its taller side's height, an oversized image
+  dragged its whole row's height up with it. Fixed by scaling via
+  `image_Zoom()` before insertion whenever decoded size differs from
+  declared.
+- `image__Zoom`'s truecolor case read an uninitialized pointer — a
+  decades-latent bug, triggered for the first time by the fix directly
+  above (nothing had called `Zoom()` on a plain truecolor/PNG image
+  before). Manifested as solid black boxes instead of shrunk pictures.
+  Fixed by initializing the pointer.
 
-**Known open bug:** forward/backward paging (`^v`/`Escape-v`) and the
-scrollbar's elevator position are still not pixel-accurate — landing
-positions are approximately but not exactly where a precise scroll
-would put them. Not a scrollbar-click bug like the ones above (those are
-fixed); this is the underlying character-count-based positioning model
-described earlier in this document, still only mitigated by peeling, not
-fixed at the root.
+**Known open bugs:**
+- Forward/backward paging (`^v`/`Escape-v`) and the scrollbar's elevator
+  position are still not pixel-accurate — landing positions are
+  approximately but not exactly where a precise scroll would put them.
+  Not a scrollbar-click bug like the ones above (those are fixed); this
+  is the underlying character-count-based positioning model described
+  earlier in this document, still only mitigated by peeling, not fixed
+  at the root.
+- Five layout/styling issues found live 2026-08-19 against the National
+  Grid fixture's "National Grid" header row, not yet investigated:
+  (1) the red gas-meter icon's paragraph wraps below/above it instead of
+  to its right; (2) the thin vertical divider lines `lpair` draws
+  between side-by-side splits are visually noisy across the 5-icon row
+  (a milder case of the same "no way to suppress the split divider"
+  limitation noted in Table strategy above); (3) the "National Grid"
+  text link sits too high above the blue divider bar; (4) that same
+  text renders in the default body font/weight instead of larger,
+  bold, sans-serif — possibly a `style=`/CSS-to-ATK-style mapping gap;
+  (5) the blue divider bar itself is top-aligned within its row instead
+  of vertically centered against the icon row beside it.
 
 ## Planned next work
 
