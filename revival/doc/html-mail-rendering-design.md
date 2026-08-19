@@ -132,6 +132,52 @@ newsletters) costs one fetch, not one per occurrence. `cid:` resolution
 remains unimplemented — `mimepart.c` still doesn't parse Content-ID —
 so that half of "resolve an image" is still open; see Open questions.
 
+**Beacon/tracking-pixel blocking: DONE, 2026-08-19.** Fetching a remote
+image is itself the tracking signal, regardless of what the image
+actually shows — the request tells the sender your address is live and
+that you opened this specific message. `LooksLikeBeacon()` (`htmlatk.c`)
+checks *before* the resolver is ever called, not after: a declared
+0×0/1×1 size, or a URL containing a giveaway keyword (`beacon`, `pixel`,
+`track`, `open.aspx`, etc.), skips the fetch entirely, gated on a new
+`ams.blockbeaconimages` preference (`options.c`, on by default). A
+blocked image renders nothing at all, not a placeholder — an earlier
+version showed `[blocked tracking pixel]` text instead, which broke real
+table layout in practice (this renderer maps HTML tables onto
+`lset`/`lpair`, which sizes columns from cell content, and substituting
+a wide text run for what the page declared as 1×1 blew out a column
+width and shifted the rest of a real message sideways, confirmed live
+against National Grid's own open-tracking pixel). Rendering nothing
+sidesteps that and is arguably more faithful anyway — a beacon is
+supposed to be invisible on the original page.
+
+**Per-sender trust: DONE, 2026-08-19/20.** A comma-separated
+`ams.imageallowlist` preference (addresses or domains, substring-matched
+against the message's `From:` address — same best-effort shape as the
+beacon keyword match, not a strict parse) lets a sender's remote images
+load automatically even while the global "Load remote images" switch
+stays off, populated either by hand (`options.c`'s "Trusted senders"
+row) or via a new "Add current sender to allow images" `This Message`
+menu command (`messages.c`'s `BSM_AllowImagesFromSender`). **Deliberately
+does not also bypass beacon-blocking** — trusting a sender's images and
+vetoing tracking pixels are two independently-set preferences here, not
+one implying the other (an explicit design decision, revisited once
+after an earlier version *did* couple them: "my definition of 'trust
+remote images' is that they're non-toxic, but I still veto beacons"). A
+trusted sender's real photos and logos load; an obvious tracking pixel
+from that same sender is still skipped, exactly like anyone else's.
+
+A rendering gap surfaced live once trust let a real beacon actually
+decode: even a genuinely 1×1 image doesn't render invisibly in this
+toolkit the way it would in a browser. `imagev.c`'s embedded-view border
+(`DEFAULT_BORDER_SIZE`, 5px, unconditional) pads every embedded image's
+`DesiredSize` regardless of its real dimensions, so a true 1×1 pixel
+becomes an 11×11 gray sbutton-bevel box, not a dot. Neither `gif.c` nor
+`png.c` implement transparency either — GIF's Graphic Control Extension
+is skipped wholesale (`gifin_skip_extension`), PNG alpha is decoded then
+discarded — so even without the border a "trusted" beacon wouldn't
+actually be invisible, just opaque. Known, not yet fixed; see Open
+questions.
+
 Two hazards found and fixed while building this, worth keeping in
 mind for anything else that forks a subprocess from inside ATK's event
 loop: (1) `im.c`'s `cleanUpZombies` (on by default for every ATK app)
@@ -686,14 +732,21 @@ questions. (2) second — bigger, but nothing left to decide. (3) done,
   anything else in this document. Not planned, not scoped — logged
   here as a known, structural limitation of building on ATK's 8-bit
   Latin-1 text model, not a bug to chase.
-- PNG support in `image.c` (a new `png.ch` subclass, see Images above)
-  — separate task from this renderer work, not blocking it, but worth
-  deciding whether it's a prerequisite or a parallel track. Same
-  question applies to SVG/WEBP, which the fixture corpus also turned
-  up (`revival/tests/html-fixtures/README.md`) but which weren't on
-  this doc's radar originally — SVG in particular is a much bigger
-  lift than PNG (a vector format, not a bitmap codec) and probably
-  isn't worth it; WEBP is closer to PNG/JPEG in shape.
+- SVG/WEBP support — PNG (see Images above) is done, but the fixture
+  corpus also turned up SVG and WEBP images
+  (`revival/tests/html-fixtures/README.md`), which weren't on this
+  doc's radar originally. SVG in particular is a much bigger lift than
+  PNG (a vector format, not a bitmap codec) and probably isn't worth
+  it; WEBP is closer to PNG/JPEG in shape.
+- **`imagev.c`'s unconditional 5px embedded-image border, and this
+  toolkit's lack of GIF/PNG transparency, together mean no embedded
+  image ever renders truly invisibly** — relevant now that a trusted
+  sender's real (unblocked) beacon can actually reach the screen; see
+  the "Per-sender trust" note above. Possible fixes not yet chosen
+  between: special-case genuinely tiny (≤2px declared) images to skip
+  the border in `imagev`, or have `RenderImageInline` suppress the
+  border specifically for beacon-shaped-but-trusted images. Not
+  requested yet, just documented.
 - Whether `font` element support is worth the complexity given `style`
   attribute parsing already covers `color`/weight — possibly `font`
   can be implemented as sugar over the same style-property path

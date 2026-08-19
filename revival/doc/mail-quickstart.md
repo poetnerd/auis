@@ -234,6 +234,55 @@ the first time. To make this permanent, put both lines in `~/.cuirc`
 — `cui` sources that file automatically on startup (silently skipped
 if absent), the same mechanism the `source` command uses interactively.
 
+## Reading HTML and image-rich mail
+
+Most real-world mail today is HTML, often `multipart/alternative` with
+a plain-text part alongside it. `messages` renders the HTML part
+natively — as styled ATK text (fonts, colors, tables, inline images,
+underlined links), not raw markup and not shelled out to metamail — the
+same MIME part-selection logic that already picked the right part for
+plain-text mail just picks HTML now too. `cui`, having no styled-text
+display at all, renders the HTML part down to plain text instead (tags
+stripped, structure kept as best it can).
+
+**Prefer plain text over HTML** (Set Options): when a message offers
+both, always show the plain-text part instead of the styled HTML one.
+Shared with `cui` via the same `ams.preferplaintext` preference, though
+`cui` only picks up a change the next time it starts.
+
+**Remote images are off by default.** HTML mail routinely references
+images by URL instead of attaching them, and the mere act of fetching
+one tells the sender your address is live and that you opened that
+specific message — so `messages` shows a placeholder rather than
+fetching automatically. Three settings control this (all in Set
+Options unless noted):
+
+- **Load remote images in HTML mail** — off by default; turn on to
+  fetch and display remote images for every message, from anyone, from
+  now on. **This Message → Load Remote Images** does the same for just
+  the one currently-displayed message, just this once, without
+  changing the setting above.
+- **Trusted senders (always load their images)** — a comma-separated
+  list of addresses or domains whose images load automatically even
+  while the switch above stays off. The easiest way to add one is
+  **This Message → Add Sender To Image Allow-list** on a displayed
+  message, rather than typing addresses in by hand. Independent of the
+  tracking-pixel check below: a trusted sender's real photos and logos
+  load, but an obvious tracking pixel from that same sender is still
+  blocked unless that check is also off.
+- **Block obvious tracking-pixel images** — on by default; recognizes
+  the common shapes of an invisible tracking pixel (a declared 0×0/1×1
+  size, or a URL containing a word like "beacon" or "track") and skips
+  fetching them, rather than fetching and then hiding the result — the
+  fetch itself is what tips off the sender. Best-effort, not a
+  guarantee: some trackers use ordinary dimensions or an unremarkable
+  URL and still get through once remote images are being loaded at
+  all.
+
+**This Message → Show as Plain Text** re-renders the current message
+with tags stripped instead of the styled renderer — an escape hatch for
+the rare HTML message whose table layout renders badly.
+
 ## Step 7: send
 
 Compose and send from `messages` or `cui` as normal. With `smtphost`
@@ -277,7 +326,8 @@ watch it appear in the mirrored INBOX.
 | One-way sync: local flag changes revert to the server's view on next sync; don't file into or delete from mirror folders | Writeback is milestone 4 |
 | App passwords only | XOAUTH2 is milestone 5 |
 | Default folder-view visibility needs `AMS_OnlyMail: No` (AndrewSetup) plus Ask/Show-All subscription | M3c, resolved 2026-07-22 — see step 6 |
-| MIME display shells out to metamail, which does nothing on this platform | Pre-existing gap, separate from the IMAP project |
+| Generic (non-HTML, non-inline-image) MIME attachments still shell out to metamail, which does nothing on this platform | Pre-existing gap, separate from the IMAP project — HTML mail and inline gif/jpeg/png images render natively instead, see "Reading HTML and image-rich mail" above |
+| `cid:`-referenced inline images inside HTML mail (as opposed to `http(s)://` ones) show a placeholder, not the image | `mimepart.c` doesn't parse Content-ID yet |
 | No sync daemon | Re-run `imapsync` by hand or from cron |
 | No folder auto-discovery — new server-side folders don't appear until named and synced | Use `imaptest.test list ...` to enumerate real folder names; see step 4 |
 

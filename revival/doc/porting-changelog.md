@@ -1807,3 +1807,66 @@ branch the way `andrew-6.4` did for nearly two months. No such branches
 exist yet — `html` (rendering) and `imap` (deeper AMS-over-IMAP work
 past the M1–4 milestones already merged) are candidates under
 discussion, not decided.
+
+### 2026-08-19–08-20 — `messages`/`html` branch: a cross-`.do` call crashes, then a decades-old macro silently swallows the fix
+
+**Symptom:** implementing a per-sender trusted-images feature required
+`messages.c` to read a `From:` address `text822.c`'s `ReadMessage()`
+already extracted internally. A hand-written `extern char
+*text822_LastFromAddress(void)` declared in `messages.c` and defined in
+`text822.c` compiled and linked with no warning, then crashed the
+running `messages` process the first time the code path actually ran:
+`EXC_BAD_ACCESS` (code=1, address=0x0), lldb backtrace showing the fault
+one call inside `BSM_AllowImagesFromSender`.
+
+**Root cause, part 1:** `makedo.csh` links every ATK `.do` plugin with
+`cc -dynamiclib -flat_namespace -undefined dynamic_lookup` (already
+documented as a hazard for missing *libraries*, see the 2026-07-17 AMS/
+IMAP entries above and `revival/doc/`'s cross-references) — the same
+flag also defers *any* unresolved symbol reference to load time and
+never fails the build over it. `messages.do` had already bound
+`_text822_LastFromAddress` to nothing by the time it was `dlopen`'d,
+because `text822.do` — the plugin that actually defines the symbol —
+had not necessarily been loaded yet. `nm -g build/dlib/atk/text822.do`
+confirmed the symbol genuinely existed there (`T
+_text822_LastFromAddress`); the problem was purely load-order/timing,
+not a missing definition.
+
+**First fix attempt, and root cause part 2:** replacing the hand-written
+`extern` with a real ATK classprocedure (`text822.ch`'s
+`LastFromAddress() returns char *;`, the mechanism every legitimate
+cross-file call in this app already uses, which forces `class_Lookup`
+to load the target `.do` on first use) compiled cleanly and then simply
+didn't work — the generated `text822_LastFromAddress()` dispatch macro
+never expanded in `messages.c`, falling through to an implicit
+(undeclared) function call, caught only because this tree's build flags
+include `-Werror=implicit-function-declaration`. Traced with `cc -E -dM`
+on a truncated copy of `messages.c` (preprocessing just its first 65
+lines and dumping the resulting macro table): `dontDefineRoutinesFor_text822`
+was already `#define`d. `messages.c` itself is the definer —
+lines 64-66 wrap its own `#include <text822.ih>` in `#define
+dontDefineRoutinesFor_text822` / `#undef` (and does the identical thing
+for `tree` a few lines below), a bracket that suppresses `text822.ih`'s
+entire classprocedure-macro block specifically in that one file. The
+reason is not recorded in any comment and predates this project;
+`messages.c` had simply never needed to *call* a text822 classprocedure
+before (only its struct layout, which the suppression doesn't affect),
+so nothing had ever collided with it.
+
+**Fix:** routed the value through `amsutil` instead — two new
+classprocedures, `amsutil_SetLastHtmlSender()`/`amsutil_GetLastHtmlSender()`
+(`amsutil.ch`/`amsutil.c`, a plain `static char[400]` file-scope buffer
+behind them). `amsutil.ih` is included unsuppressed in both files, and
+`messages.c` already calls other `amsutil_*` classprocedures
+successfully elsewhere (`amsutil_cvEng`, `amsutil_GetOptBit`), so this
+is a proven-safe relay rather than a new mechanism. `text822.c`'s
+`ReadMessage()` pushes the captured address in at both its capture site
+and its per-message reset; `messages.c` pulls it back out.
+Rebuilt clean; `nm -u build/dlib/atk/messages.do` shows zero undefined
+imports for any of this afterward (confirms it now resolves via
+`class_Lookup`'s runtime name-string lookup, not link-time/load-time
+symbol binding), and the crash was confirmed gone live. See
+`revival.md`'s "Old bugs never found till now" for the narrative
+writeup, and `revival/doc/html-mail-rendering-design.md` for the
+feature this was building (per-sender trusted images, deliberately kept
+independent of the existing tracking-pixel-blocking preference).
