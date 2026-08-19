@@ -1079,7 +1079,18 @@ typedef boolean (*htmlatk_ImageResolver)(void *rock, const char *src,
    *lengthOut, if non-NULL, receives the number of characters/view-
    slots inserted (dest's length increased by exactly this much) --
    useful for a caller doing its own position bookkeeping afterward,
-   same shape as text822.c's own ShowPos convention. */
+   same shape as text822.c's own ShowPos convention.
+
+   The tracking-pixel heuristic (RenderImageInline's LooksLikeBeacon
+   check, gated on "ams.blockbeaconimages") always applies here,
+   independent of whether the caller trusts the sender enough to
+   install a resolver at all -- there used to be a trustedSender
+   parameter that let a trusted sender's messages skip this check too,
+   removed 2026-08-20 at the user's explicit request: "trust this
+   sender enough to load images" and "veto beacons anyway" are
+   deliberately two separate, independently-set preferences (see
+   options.c's "ams.imageallowlist" and "ams.blockbeaconimages" rows),
+   not one implying the other. */
 boolean htmlatk_Render(struct text *dest, long pos,
     const struct htmlnode *root,
     htmlatk_ImageResolver resolver, void *resolverRock,

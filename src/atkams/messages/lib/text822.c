@@ -33,6 +33,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 
 #include <ctype.h>
 #include <stdlib.h>
+#include <string.h>
 #include <andrewos.h>
 #include <class.h>
 #include <text822.eh>
@@ -105,6 +106,118 @@ static struct style *FixedStyle, *BoldStyle, *FormatStyle, *TinyStyle, *GlobalSt
 static char *myfontname = NULL;
 static int myfontsize, UsingFootNote, PrintMinorHeaders;
 static char *fgetsdecoding(char *buf, int size, FILE *fp, int code), *UnquoteString(char *s);
+
+/* The From: address of the top-level message most recently read by
+   ReadMessage() below (captured in its header-parsing loop, guarded
+   to only fire at the outermost recursion level -- a nested MIME part
+   has no From: header of its own, and this is meant to answer "who
+   sent the message currently on screen", not "whose part is this").
+   Single-message-at-a-time process state, same shape as UsingFootNote/
+   PrintMinorHeaders above: this app displays one message body at a
+   time, synchronously, so a file-static is sufficient and there is no
+   concurrent-message case to get wrong. Consulted by RenderHtmlPart()
+   (SenderIsAllowlisted, below) to decide whether this message's
+   sender is on the "ams.imageallowlist" trusted-senders list, and
+   exported read-only via text822_LastFromAddress() for messages.c's
+   "Add current sender to allow images" menu command (BSM_
+   AllowImagesFromSender) to read back what to add to that list. */
+static char CurrentFromAddress[400] = "";
+
+/* Extracts and trims the bare address out of a raw From: header value
+   ("Jane Doe <jane@example.com>" -> "jane@example.com"), falling back
+   to the whole trimmed string when there's no "<...>" (a bare
+   "jane@example.com" From:, which is common and legal). Deliberately
+   not a full RFC822 address parser -- this codebase already has one
+   (amsutil's address handling, used for actually sending mail) but it
+   answers a different question (a validated, structured address list)
+   than this needs (a best-effort string to substring-match against
+   later, same tradeoff as htmlatk.c's own LooksLikeBeacon). Storing
+   just the address (not the display name too) also sidesteps display
+   names that legally contain commas ("Doe, Jane" <jane@example.com>),
+   which would otherwise collide with imageallowlist's own comma-
+   separated-list syntax. */
+static void ExtractFromAddress(const char *rawFrom, char *out, size_t outsz)
+{
+    const char *lt, *gt, *p;
+    size_t n;
+
+    out[0] = '\0';
+    if (!rawFrom) return;
+    lt = strrchr(rawFrom, '<');
+    gt = lt ? strchr(lt, '>') : NULL;
+    if (lt && gt && gt > lt) {
+        p = lt + 1;
+        n = (size_t) (gt - p);
+    } else {
+        p = rawFrom;
+        n = strlen(rawFrom);
+    }
+    while (n > 0 && (*p == ' ' || *p == '\t')) { ++p; --n; }
+    while (n > 0 && (p[n - 1] == ' ' || p[n - 1] == '\t' || p[n - 1] == '\n' || p[n - 1] == '\r')) --n;
+    if (n >= outsz) n = outsz - 1;
+    strncpy(out, p, n);
+    out[n] = '\0';
+}
+
+/* Not exposed as a text822 classprocedure -- messages.c wraps its own
+   #include <text822.ih> in #define dontDefineRoutinesFor_text822 (a
+   deliberate, pre-existing suppression of text822's classprocedure
+   macros in that one file, presumably to avoid some long-forgotten
+   symbol collision), so a text822 classprocedure would be silently
+   invisible there regardless of what text822.ch declares -- confirmed
+   the hard way (this exact function, first written as a real
+   classprocedure, silently failed to expand into a dispatch call in
+   messages.c, and a still-earlier hand-written extern-C version of it
+   flat-out crashed messages, EXC_BAD_ACCESS at address 0x0 -- see
+   revival/doc's "Dot Do Silent Underlink" note). CurrentFromAddress is
+   relayed to messages.c via amsutil_SetLastHtmlSender() (called at
+   every capture/reset site below) instead; messages.c reads it back
+   with amsutil_GetLastHtmlSender(), both genuine classprocedures on a
+   class (amsutil) that's never suppressed anywhere. */
+
+/* Best-effort trusted-sender check against the "ams.imageallowlist"
+   preference (a comma-separated list edited via options.c's
+   OT_SPECIAL_IMAGEALLOWLIST row, or appended to directly by messages.c's
+   "Add current sender to allow images" menu command) -- same shape
+   as htmlatk.c's own LooksLikeBeacon keyword scan: a case-insensitive
+   substring test, not a strict address-equality check, so a stored
+   entry can be a full address (matches only that address) or just a
+   domain like "example.com" (matches any address at that domain).
+   Deliberately manual comma-splitting (no strtok/strtok_r) to match
+   this file's existing style (see CountCommas in options.c) rather
+   than pull in a dependency this K&R-era file doesn't otherwise use. */
+static boolean SenderIsAllowlisted(const char *from)
+{
+    char *list;
+    char fromLower[400];
+    char entry[400];
+    const char *p, *comma;
+    size_t i, elen;
+
+    if (!from || !*from) return FALSE;
+    list = environ_GetProfile("ams.imageallowlist");
+    if (!list || !*list) return FALSE;
+
+    for (i = 0; from[i] && i + 1 < sizeof(fromLower); ++i)
+        fromLower[i] = (char) tolower((unsigned char) from[i]);
+    fromLower[i] = '\0';
+
+    p = list;
+    while (*p) {
+        while (*p == ' ' || *p == '\t' || *p == ',') ++p;
+        if (!*p) break;
+        comma = strchr(p, ',');
+        elen = comma ? (size_t) (comma - p) : strlen(p);
+        while (elen > 0 && (p[elen - 1] == ' ' || p[elen - 1] == '\t')) --elen;
+        if (elen > 0 && elen < sizeof(entry)) {
+            for (i = 0; i < elen; ++i) entry[i] = (char) tolower((unsigned char) p[i]);
+            entry[elen] = '\0';
+            if (strstr(fromLower, entry)) return TRUE;
+        }
+        p += comma ? (size_t) (comma - p + 1) : strlen(p);
+    }
+    return FALSE;
+}
 static boolean ReadMessage(struct text822 *d, FILE *fp, int Mode, char *ContentTypeOverride, int *len, boolean IsReallyTextObject, int *BodyStart, int *IgnorePosition, struct text *AuxHeadText, int InsideRecursion, int AlternativeNumber, int JunkAtEnd, int DisplayAllHeaders);
 static int RotateThirteen(struct text *d, int start);
 static int FindParam(char *ct, char *paramname, char *ValueBuf);
@@ -367,6 +480,13 @@ restart:
     fmtvers[0] = '\0';
     fmttype[0] = '\0';
     fmtresources[0] = '\0';
+    /* Only reset the sender captured for the whole message at the
+       outermost call -- a recursive call for a nested MIME part has
+       no From: header of its own to overwrite it with (see
+       CurrentFromAddress's own comment above), so resetting here
+       unconditionally would blank it out again before RenderHtmlPart
+       ever gets to consult it for a multipart message. */
+    if (!InsideRecursion) { CurrentFromAddress[0] = '\0'; amsutil_SetLastHtmlSender(""); }
     while (GetHeader(LineBuf, sizeof(LineBuf), fp)) {
 	linelen = strlen(LineBuf);
 	c = LineBuf[0];
@@ -402,6 +522,11 @@ restart:
 	    } else if (!amsutil_lc2strncmp("subject", LineBuf, sizeof(LineBuf))) {
 
 		strncpy(Subject, ColonLocation ? ColonLocation+1 : "", sizeof(Subject));
+	    } else if (!InsideRecursion && !amsutil_lc2strncmp("from", LineBuf, sizeof(LineBuf))) {
+		/* See CurrentFromAddress's own comment: only the outermost
+		   message has a real From: header to capture. */
+		ExtractFromAddress(ColonLocation ? ColonLocation+1 : "", CurrentFromAddress, sizeof(CurrentFromAddress));
+		amsutil_SetLastHtmlSender(CurrentFromAddress);
 	    } else if (!amsutil_lc2strncmp("x-andrew-scribeformat", LineBuf, sizeof(LineBuf))) {
 
 		strncpy(ScribeFormatVersion, ColonLocation ? ColonLocation+1 : "", sizeof(ScribeFormatVersion));
@@ -1823,7 +1948,24 @@ static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename
    captions__DisplayNewBody() (capaux.c) already resets Mode to
    MODE822_NORMAL for every bit, this one included, the moment the
    user moves on to a different message -- "this once" falls out of
-   that existing reset, not anything added here. */
+   that existing reset, not anything added here.
+
+   trustedSender (computed below, just before use, not a parameter of
+   this function) is the sticky, persisted counterpart to
+   loadImagesOverride's one-shot menu toggle: a message whose From:
+   address matches the "ams.imageallowlist" preference gets images
+   loaded on every future viewing, not just this once. Deliberately
+   does NOT also bypass the beacon-blocking heuristic below (that used
+   to be true here, removed 2026-08-20 at the user's explicit request
+   -- "trust this sender enough to load images" and "veto beacons
+   anyway" are two separately-set preferences, not one implying the
+   other; a trusted sender's real photos/logos load, but their
+   tracking pixels are still skipped exactly like anyone else's,
+   governed only by "ams.blockbeaconimages"). "Add current sender to
+   allow images" (BSM_AllowImagesFromSender, messages.c) is what
+   actually populates the imageallowlist preference day to day;
+   options.c's OT_SPECIAL_IMAGEALLOWLIST row is the manual editor for
+   it. */
 static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset, boolean forcePlain, boolean loadImagesOverride)
 {
     struct htmlnode *tree;
@@ -1867,7 +2009,21 @@ static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html,
 
     if (tree && !tooSlow && !forcePlain) {
 	long lengthOut = 0;
-	boolean loadImages = loadImagesOverride || environ_GetProfileSwitch("ams.loadremoteimages", FALSE);
+	/* A trusted sender (options.c's "ams.imageallowlist", or the
+	   "Add current sender to allow images" menu command that
+	   appends to it -- see CurrentFromAddress/SenderIsAllowlisted
+	   above) is treated exactly like loadImagesOverride: it turns
+	   fetching on for this message even if the global
+	   "ams.loadremoteimages" switch is off, one more OR'd-in
+	   escape hatch alongside the existing per-message menu
+	   override, not a replacement for it. That's ALL trust affects
+	   here -- it is deliberately NOT passed to htmlatk_Render, so
+	   it has no effect on that module's own beacon-blocking
+	   heuristic; a trusted sender's real images load, but their
+	   tracking pixels are still skipped exactly like anyone else's,
+	   governed only by "ams.blockbeaconimages". */
+	boolean trustedSender = SenderIsAllowlisted(CurrentFromAddress);
+	boolean loadImages = loadImagesOverride || trustedSender || environ_GetProfileSwitch("ams.loadremoteimages", FALSE);
 	struct httpimg_budget imgBudget;
 	htmlatk_ImageResolver resolver = NULL;
 	void *resolverRock = NULL;
