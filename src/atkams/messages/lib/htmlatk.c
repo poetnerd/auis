@@ -744,6 +744,7 @@ static const char *ImageClassForMimetype(const char *mt)
     if (strncmp(mt + 6, "pbm", 3) == 0 || strncmp(mt + 6, "pnm", 3) == 0
         || strncmp(mt + 6, "ppm", 3) == 0 || strncmp(mt + 6, "pgm", 3) == 0) return "pbm";
     if (strncmp(mt + 6, "jpeg", 4) == 0) return "jpeg";
+    if (strncmp(mt + 6, "png", 3) == 0) return "png";
     return "raster";
 }
 
@@ -768,14 +769,12 @@ static const char *ImageClassForMimetype(const char *mt)
    servers at all. Returns NULL, not a guess, for anything this
    module doesn't recognize -- an unidentified magic number should
    fall through to the ordinary placeholder, not a second wrong
-   attempt. Deliberately recognizes png here even though
-   ImageClassForMimetype() has nowhere to route it yet (raster's
-   XWD-only ReadOtherFormat gate, see that function's own note) --
-   once a real png-decoding class exists (tracked separately, not
-   this module's job), a mislabeled-as-something-else real PNG starts
-   working through this same retry path with no further change here,
-   which is exactly the point of sniffing the bytes instead of the
-   filename. */
+   attempt. Recognizes png here for the same reason it recognizes
+   jpeg/gif: ImageClassForMimetype() now routes "image/png" to the
+   real png class (src/atk/basics/common/png.c), so a mislabeled-as-
+   something-else real PNG works through this same retry path with no
+   further change here, which is exactly the point of sniffing the
+   bytes instead of the filename. */
 static const char *SniffImageMimetype(const unsigned char *bytes, long len)
 {
     if (!bytes || len < 4) return NULL;

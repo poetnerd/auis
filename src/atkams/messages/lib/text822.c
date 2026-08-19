@@ -1294,6 +1294,8 @@ static int InsertProperObject(struct text822 *d, FILE *fp, int *ShowPos, char *c
 	}
 	else if (!strncmp("jpeg", ctype + 6, 4))
 	    dob = (struct dataobject *) class_NewObject("jpeg");
+	else if (!strncmp("png", ctype + 6, 3))
+	    dob = (struct dataobject *) class_NewObject("png");
 	else
 	    dob = (struct dataobject *) class_NewObject("raster");
 	/* We don't use raster_New, etc. to avoid dependencies */
