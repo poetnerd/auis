@@ -38,6 +38,19 @@
    the caller (BSM_ShowHtmlPlainText, messages.c) sets it fresh on
    every redisplay, exactly like MODE822_FIXEDWIDTH/MODE822_ROT13. */
 #define MODE822_HTMLPLAINTEXT 16
+/* one-shot, same shape as MODE822_HTMLPLAINTEXT above (set fresh on
+   each captions_Redisplay() call, not carried forward -- see
+   captions__DisplayNewBody()'s MODE822_NORMAL reset in capaux.c,
+   which applies to every bit here, not something this bit needs its
+   own logic for). Overrides the "ams.loadremoteimages" profile switch
+   (options.c) to ON for just this one message's HTML rendering,
+   regardless of that switch's saved value -- see the caller
+   (BSM_LoadRemoteImages, messages.c) and RenderHtmlPart()'s own note
+   in text822.c on why an override can only turn fetching on here, not
+   off (the switch being off is the safe default this exists to let
+   someone deliberately step around for one message they've decided to
+   trust, not something a second control needs to re-enforce). */
+#define MODE822_LOADIMAGES 32
 
 class text822: text {
     overrides:
