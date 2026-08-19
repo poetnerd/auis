@@ -41,6 +41,7 @@ enum image_fileType {
   mac_imageType,			/* MacPaint Image */
   cmuwm_imageType,			/* CMU WM Raster */
   jpeg_imageType,			/* JPEG */
+  png_imageType,			/* PNG */
   mcidas_imageType,			/* McIDAS areafile */
   tif_imageType				/* Tagged Image File Format Image */
 };

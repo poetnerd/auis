@@ -31,8 +31,8 @@ static const char *TypeName(unsigned int t)
 {
 	switch (t) {
 	case 0: return "IBITMAP";
-	case 1: return "IRGB";
-	case 2: return "IGREYSCALE";
+	case 1: return "IGREYSCALE";
+	case 2: return "IRGB";
 	case 3: return "ITRUE";
 	default: return "UNKNOWN";
 	}

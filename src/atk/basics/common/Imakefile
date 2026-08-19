@@ -34,14 +34,14 @@ DOBJS = app.do atom.do atomlist.do bind.do cursor.do dataobj.do describe.do \
 	keyrec.do keystate.do menulist.do message.do msghndlr.do \
 	namespc.do observe.do path.do proctbl.do profile.do region.do rm.do \
 	updlist.do view.do winsys.do rastio.do traced.do color.do cmap.do \
-	image.do gif.do jpeg.do owatch.do messitem.do xbitmap.do
+	image.do gif.do jpeg.do png.do owatch.do messitem.do xbitmap.do
 
 IHFILES = app.ih atom.ih atomlist.ih bind.ih cursor.ih dataobj.ih describe.ih \
 	environ.ih event.ih filetype.ih fontdesc.ih graphic.ih im.ih init.ih \
 	keymap.ih keyrec.ih keystate.ih menulist.ih message.ih msghndlr.ih \
 	namespc.ih observe.ih path.ih pixelimg.ih proctbl.ih profile.ih \
 	region.ih rm.ih updlist.ih view.ih winsys.ih rastio.ih traced.ih \
-	color.ih cmap.ih image.ih gif.ih jpeg.ih owatch.ih messitem.ih xbitmap.ih
+	color.ih cmap.ih image.ih gif.ih jpeg.ih png.ih owatch.ih messitem.ih xbitmap.ih
 
 DOCS = app.doc atom.doc atomlist.doc attribs.doc basinit.doc \
 	bind.doc cursor.doc dataobj.doc describe.doc environ.doc \
@@ -96,6 +96,18 @@ DynamicMultiObject(gif.do, gif.o gifwr.o imageaux.o,,)
 LOCALINCLUDES = -I$(JPEGINCLUDES)        
 #endif
 DynamicMultiObject(jpeg.do, jpeg.o imageaux.o,$(JPEGLIB),)
+
+/* System zlib, not vendored (see revival/doc for why: gif.c/jpeg.c's
+   own precedent is to hand-roll format-specific decode logic and only
+   reach for an external library for the genuinely hard part - LZW is
+   hand-rolled in gif.c, DEFLATE is not worth hand-rolling when zlib is
+   practically universal). No MK_ gate: unlike vendored JPEG/TIFF this
+   isn't optional, it's always expected to be present. */
+/* -L/usr/lib forced ahead of -lz: on this Darwin toolchain a stray,
+   wrong-format /usr/local/lib/libz.a (Homebrew leftover, not this
+   project's doing) otherwise shadows the real system zlib and breaks
+   the link ("not a mach-o file"). */
+DynamicMultiObject(png.do, png.o imageaux.o,,-L/usr/lib -lz)
 
 InstallClassFiles($(DOBJS) graphic.do pixelimg.do, $(IHFILES))
 

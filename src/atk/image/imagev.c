@@ -238,6 +238,13 @@ static struct bind_Description imagevBindings[] = {
   jpeg_imageType, imagev_DefaultMenus, (void(*)()) Import_Cmd,
   "Import a JPEG image." },
 
+  /* Decode-only, same as TIFF -- no imagev-export-png, matching the
+     fact that png.c's Write is just a super_Write forward with no
+     real WriteNative yet. */
+  {"imagev-import-png", NULL, png_imageType, "Import~30, PNG~15",
+  png_imageType, imagev_DefaultMenus, (void(*)()) Import_Cmd,
+  "Import a PNG image." },
+
   {"imagev-import-pbm", NULL, pbm_imageType, "Import~30, PBM~16",
   pbm_imageType, imagev_DefaultMenus, (void(*)()) Import_Cmd,
   "Import a pbm image."},
@@ -915,6 +922,9 @@ static char * imageTypeName(enum image_fileType type)
 	    break;
 	case jpeg_imageType:
 	    objName = "jpeg";
+	    break;
+	case png_imageType:
+	    objName = "png";
 	    break;
 	default:
 	    fprintf(stderr, "imagev: no such image type.\n");

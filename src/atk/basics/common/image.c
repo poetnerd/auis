@@ -2324,7 +2324,8 @@ boolean image__ReadOtherFormat(struct image *self, FILE *file, char *fmt, char *
 	&& strcmp(fmt, "image/pbm")
 	&& strcmp(fmt, "image/ppm")
 	&& strcmp(fmt, "image/pgm")
-	&& strcmp(fmt, "image/jpeg") ) return(FALSE);
+	&& strcmp(fmt, "image/jpeg")
+	&& strcmp(fmt, "image/png") ) return(FALSE);
 
     /* Need to decode base64 or q-p here */
     if (!strncmp(encoding, "base64", 6)
@@ -2346,7 +2347,7 @@ boolean image__ReadOtherFormat(struct image *self, FILE *file, char *fmt, char *
     code = image_Read(self, file, -1);
     if (tmpfp) {
 	fclose(tmpfp);
-	unlink(TmpFile); 
+	unlink(TmpFile);
     }
     if (code == dataobject_NOREADERROR) {
 	return(TRUE);
