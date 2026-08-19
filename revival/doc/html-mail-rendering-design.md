@@ -132,6 +132,48 @@ newsletters) costs one fetch, not one per occurrence. `cid:` resolution
 remains unimplemented — `mimepart.c` still doesn't parse Content-ID —
 so that half of "resolve an image" is still open; see Open questions.
 
+**Why blocking curl, not something else.** Four options were weighed
+before `httpimg.c` was written, cheapest to most correct:
+
+- **A. Blocking `popen`/`fork`+`execvp` curl in the resolver** (what
+  shipped). Matches an existing pattern in this tree (`papers.c:524`).
+  curl is already on macOS, SecureTransport-backed, no new library to
+  link. Costs: freezes the render for the fetch duration, one process
+  spawn per image, no cross-message cache without extra work.
+- **B. In-process HTTP client linked into ATK** (raw sockets + TLS,
+  following imapsync's `${SSLLIB}` Imakefile precedent). Dead end
+  checked, not assumed: `SSLLIB` isn't actually defined in
+  `trunk/src/config/site.def`, so this would mean debugging a
+  crypto-library link before writing a single fetch — no payoff over A
+  given curl already works with zero build-system risk.
+- **C. True async fetch via `im_AddFileHandler`** (`im.ch:269`,
+  the same non-blocking-fd mechanism `xim.c`'s `select()` loop already
+  uses elsewhere in ATK). The architecturally "right" answer for
+  keeping `ez` responsive — non-blocking connect, register the fd,
+  swap the real image in when the callback fires. Not chosen because
+  it breaks `htmlatk_ImageResolver`'s current contract: resolvers fill
+  out-params and return synchronously today; async means returning a
+  placeholder view now and mutating it in place later, a bigger
+  cross-cutting change to something that had just been finished.
+- **D. Out-of-band prefetch/disk cache, imapsync-style.** A helper
+  fetches and caches images to local disk (keyed by URL hash), and the
+  resolver only ever does a fast synchronous local-file read — the
+  same shape as the `cid:` case, and the same shape imapsync itself
+  already chose for keeping network I/O out of `messages`/`ez`'s live
+  event loop.
+
+The call: **A now, D later if it turns out to matter.** Rendering is
+already a batch tree-walk, not incrementally redrawn, so a fetch pause
+is a smaller UX hit here than the same pause would be during
+interactive typing. If image-heavy mail makes the pause routinely
+annoying, graduate to D rather than jumping straight to C — C only
+earns its complexity if images need to pop in progressively while the
+user keeps working, which isn't a stated goal. What actually shipped
+is a cheaper middle step: A, plus a same-render-pass in-memory cache
+(`HTTPIMG_CACHE_SIZE`, next paragraph) — not full D, since nothing
+persists past one render pass. See Open questions for what D would
+still buy.
+
 **Beacon/tracking-pixel blocking: DONE, 2026-08-19.** Fetching a remote
 image is itself the tracking signal, regardless of what the image
 actually shows — the request tells the sender your address is live and
@@ -747,6 +789,18 @@ questions. (2) second — bigger, but nothing left to decide. (3) done,
   the border in `imagev`, or have `RenderImageInline` suppress the
   border specifically for beacon-shaped-but-trusted images. Not
   requested yet, just documented.
+- **Caching is per-render-pass only, not persistent.**
+  `httpimg_ResolveImage()`'s cache (`struct httpimg_budget`,
+  `HTTPIMG_CACHE_SIZE` = 16 entries, `httpimg.h`) dedups a URL repeated
+  *within* one render — real newsletter chrome (the same icon
+  re-referenced once per table row) hits it constantly — but it's
+  freed at the end of that render pass. Reopening a message, or
+  re-rendering it after any change, refetches every image from
+  scratch. This is option A's dedup, not option D's disk cache (see
+  "Why blocking curl, not something else" above); D would make
+  revisiting a message free after the first open. Not implemented
+  because nothing yet has made refetch-on-reopen actually annoying in
+  practice — worth revisiting if that changes.
 - Whether `font` element support is worth the complexity given `style`
   attribute parsing already covers `color`/weight — possibly `font`
   can be implemented as sugar over the same style-property path

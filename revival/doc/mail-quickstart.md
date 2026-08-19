@@ -28,6 +28,11 @@ IMAP + SMTP submission with app passwords should work the same way.
 - An **app password** from your provider (Fastmail: Settings → Privacy &
   Security → Integrations → New app password, scope "Mail (IMAP/SMTP)").
   Regular account passwords will not work with third-party clients.
+- `curl` on `$PATH` — only needed for "Load remote images" (see below);
+  it fetches `<img src="http(s)://...">` in HTML mail. Ships with
+  macOS, so normally nothing to install. Without it, remote-image
+  loading just silently fails to fetch (no error dialog); mail with no
+  remote images, and `cid:`-inline images, are unaffected.
 
 ## Step 1: credentials in ~/.netrc
 
