@@ -110,7 +110,20 @@ static void InitATK(void)
     dataobject_StaticEntry;
 }
 
-static unsigned char *readfile(const char *path, long *lenp)
+/* Raw byte read, no interpretation of the content at all -- the
+   correct helper for arbitrary binary data (a fixture's referenced
+   image bytes via TestResolver() below). readfile() (next) layers
+   HTML-fixture-specific UTF-8-to-Latin1 handling on top of this for
+   the one caller that actually wants it; using readfile() itself for
+   binary image bytes was a real, silent bug here (found 2026-08-19,
+   sniffing-fallback verification work) -- mimepart_Utf8ToLatin1()
+   treats its input as UTF-8 text and replaces byte sequences that
+   aren't valid UTF-8 with '?', which arbitrary binary data (a real
+   JPEG's bytes almost certainly contain such sequences) triggers
+   constantly, silently corrupting the image before it ever reached a
+   decoder -- any "resolve" mode test against a real binary image was
+   exercising corrupted bytes, not the real ones, until this split. */
+static unsigned char *readfile_raw(const char *path, long *lenp)
 {
     FILE *fp;
     unsigned char *buf = NULL;
@@ -134,6 +147,14 @@ static unsigned char *readfile(const char *path, long *lenp)
         used += (long) got;
     }
     fclose(fp);
+    *lenp = used;
+    return buf;
+}
+
+static unsigned char *readfile(const char *path, long *lenp)
+{
+    unsigned char *buf = readfile_raw(path, lenp);
+    long used = *lenp;
 
     /* Mirror RenderHtmlPart's own UTF-8-to-Latin1 conversion (text822.c)
        so this driver exercises the same real bug/fix that live-messages
@@ -197,7 +218,7 @@ static boolean TestResolver(void *rock, const char *src, unsigned char **bytesOu
     for (i = 0; i < CidMapCount; ++i) {
         if (strcmp(CidMap[i].cid, src) == 0) {
             long len;
-            unsigned char *bytes = readfile(CidMap[i].path, &len);
+            unsigned char *bytes = readfile_raw(CidMap[i].path, &len);
             *bytesOut = bytes;
             *lenOut = len;
             *mimetypeOut = strdup(CidMap[i].mimetype);
