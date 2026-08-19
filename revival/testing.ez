@@ -1,4 +1,4 @@
-\begindata{text,4316708480}
+\begindata{text,4354375616}
 \textdsversion{12}
 \template{default}
 \define{footnote
@@ -24,14 +24,14 @@ attr:[FontSize PreviousFontSize Point -2]}
 
 Text to play with a 
 footnote\footnote{\
-\begindata{fnote,4316717952}
+\begindata{fnote,4354389216}
 \textdsversion{12}
-\enddata{fnote,4316717952}
-\view{fnotev,4316717952,0,0,0}HEllo footnote.} in the middle.
+\enddata{fnote,4354389216}
+\view{fnotev,4354389216,0,0,0}HEllo footnote.} in the middle.
 
 Here's a clock:
 
-\begindata{clock,4316718464}
+\begindata{clock,4354392880}
 Datastream version: 1
 hand lengths, 60, 80, -20
 hand widths, 4, 2, 1
@@ -42,32 +42,32 @@ labels, 4, 0, Andy
 3
 6
 9
-\enddata{clock,4316718464}
-\view{clockview,4316718464,1,0,0}
+\enddata{clock,4354392880}
+\view{clockview,4354392880,1,0,0}
 Here's an annotation:
 
-\begindata{note,4316721872}
+\begindata{note,4354396016}
 200 100 1 
 \title{wdc}
-\begindata{text,4316723936}
+\begindata{text,4354403120}
 \textdsversion{12}
 Hello\
-\enddata{text,4316723936}
-\enddata{note,4316721872}
-\view{noteview,4316721872,2,0,0}
+\enddata{text,4354403120}
+\enddata{note,4354396016}
+\view{noteview,4354396016,2,0,0}
 Here is a calc:
 
-\begindata{calc, 4316725312}
+\begindata{calc, 4354403840}
 TopTitleFontName AndySans22b
 BottomLegendFontName Andy20i
 Value 95.000000
-\enddata{calc, 4316725312}
-\view{calcv,4316725312,3,0,0}
+\enddata{calc, 4354403840}
+\view{calcv,4354403840,3,0,0}
 Here is a raster:
 
-\begindata{raster,4316726704}
+\begindata{raster,4354405872}
 2 0 65536 65536 0 0 1152 900
-bits 4316726704 1152 900
+bits 4354405872 1152 900
 zlJc0zzzzzs |
 zk0fJ80zzzzzs |
 zk3fJzzzzzt |
@@ -1155,12 +1155,76 @@ v3001Sfbe941g	0438m01gbe7873	Hd0k0c10018304	1871e7cf1c18e3
 xRf7a0tfbIf980	m0cg60820e1e70	e79c061820gPfe	7fefK3f7dNfdH
  fe3dfbRbfGfbZI |
 ZZZZZZZJ |
-\enddata{raster, 4316726704}
-\view{rasterview,4316726704,4,0,0}
+\enddata{raster, 4354405872}
+\view{rasterview,4354405872,4,0,0}
 
+Here is a png image
+
+\begindata{image,53067096672}
+format: gif
+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
+QlQAQ3UAxTgBQQAAOw==
+\enddata{image, 53067096672}
+\view{imagev,53067096672,11,0,0}
 Here is a zip:
 
-\begindata{zip,4316728048}
+\begindata{zip,4354407168}
 %ViewWidth 426
 %ViewHeight 512
 *D;-1000,1400
@@ -1179,14 +1243,14 @@ MCM
 G40
 >819,819
 
-\enddata{zip,4316728048}
-\view{zipview,4316728048,5,0,0}
+\enddata{zip,4354407168}
+\view{zipview,4354407168,5,0,0}
 
 And more.
 
 Here is another zip:
 
-\begindata{zip,4316748752}
+\begindata{zip,4354424032}
 %ViewWidth 426
 %ViewHeight 512
 *D;-1000,1400
@@ -1201,22 +1265,22 @@ MCM
 T|
 MCM
 
-\enddata{zip,4316748752}
-\view{zipview,4316748752,6,0,0}
+\enddata{zip,4354424032}
+\view{zipview,4354424032,6,0,0}
 
 Here are equation bits:
 
 
-\begindata{eq,4316754528}
-{ lpile d_eqstyle { int d s { cpile { d t } over { d y } } } { zilch } { zilch } { zilch } { zilch } } \enddata{eq,4316754528}
-\view{eqview,4316754528,7,0,0}
+\begindata{eq,4354429904}
+{ lpile d_eqstyle { int d s { cpile { d t } over { d y } } } { zilch } { zilch } { zilch } { zilch } } \enddata{eq,4354429904}
+\view{eqview,4354429904,7,0,0}
 <head> </head>
 
 <body>
 
 </body>
 
-\begindata{table,35479916768}
+\begindata{table,4354430112}
 ^aaa	 	 	 	 
 32	8	=[2,1]+[2,2]	 	 
  	 	 	 	 
@@ -1228,12 +1292,12 @@ Here are equation bits:
  	 	 	 	 
  	 	 	 	 
  	 	 	 	 
-\enddata{table,35479916768}
-\view{spread,35479916768,8,0,0}
+\enddata{table,4354430112}
+\view{spread,4354430112,8,0,0}
 
-\begindata{eq,4316757328}
-{ lpile d_eqstyle { y above { - } = 1 m m - y { cpile { 1 } over { m m * s e c } } } { v sub { x } ( { y above { - } } ) = 4 . 9 9 5 { cpile { 1 } over { m m * s e c } } * ( { 2 * y above { - } m m - y above { - } sup { 2 } } ) } } \enddata{eq,4316757328}
-\view{eqview,4316757328,9,0,0}
+\begindata{eq,4354432784}
+{ lpile d_eqstyle { y above { - } = 1 m m - y { cpile { 1 } over { m m * s e c } } } { v sub { x } ( { y above { - } } ) = 4 . 9 9 5 { cpile { 1 } over { m m * s e c } } * ( { 2 * y above { - } m m - y above { - } sup { 2 } } ) } } \enddata{eq,4354432784}
+\view{eqview,4354432784,9,0,0}
 
 Let's add some text that has a couple lines so it becomes a paragraph. Is 
 this thing on? Testing testing, 1, 2, 3? Yes this is on.
@@ -1243,7 +1307,7 @@ Yet another \bold{\bigger{paragraph}}. Insertion and deletion seems ok. Is
 this thing on? Testing testing, 1, 2, 3?
 
 
-\begindata{eq,4316757600}
-{ lpile d_eqstyle { { cpile { 1 } over { m m * s e c } } } } \enddata{eq,4316757600}
-\view{eqview,4316757600,10,0,0\
-}\enddata{text,4316708480}
+\begindata{eq,53066481664}
+{ lpile d_eqstyle { { cpile { 1 } over { m m * s e c } } } } \enddata{eq,53066481664}
+\view{eqview,53066481664,10,0,0\
+}\enddata{text,4354375616}
