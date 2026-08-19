@@ -88,6 +88,7 @@ extern int saveprofilestring(char *prog, char *pref, char *val, int warn), Count
    second OT_PROFSWITCH row (see OT_PROFSWITCH_LOADREMOTEIMAGES). */
 #define OT_PROFSWITCH_PREFERPLAINTEXT 0
 #define OT_PROFSWITCH_LOADREMOTEIMAGES 1
+#define OT_PROFSWITCH_BLOCKBEACONS 2
 
 #define OT_INTEGER_MAXCLASSMENU 0
 #define OT_INTEGER_FONTSIZE 1
@@ -136,6 +137,7 @@ static struct OptionChoice Options[] = {
 	{"Descramble/Fixed Width menus", OT_EXPLEVEL, EXP_FORMATMENUS, 0, "This option adds two menus to the 'This Message' card which allow you to easily put the message on display in fixed width, to scramble it with the 'rot13' algorithm."},
 	{"Prefer plain text over HTML", OT_PROFSWITCH, OT_PROFSWITCH_PREFERPLAINTEXT, 0, "When a message offers both a plain text and an HTML version (a 'multipart/alternative' MIME message, typical of newsletters and marketing mail), Messages normally shows you the HTML version, styled to look like the original. Turn this option ON to go back to always showing the plain text version instead. This preference is shared with cui (the command-line mail reader), since both read the same 'ams.preferplaintext' setting; cui only picks up a change the next time it starts."},
 	{"Load remote images in HTML mail", OT_PROFSWITCH, OT_PROFSWITCH_LOADREMOTEIMAGES, 0, "HTML mail can reference images by URL instead of attaching them, and by default Messages leaves those as a placeholder rather than fetching them. Turn this option ON to have Messages fetch and display those images automatically. Leaving it OFF is the safer default: a remote image URL is exactly how marketers and spammers build 'read receipts' -- the mere act of loading the image tells them your address is live and that you opened this particular message, even if you never reply or click anything. Turning this ON means every HTML message you open, from anyone, gets that automatic vote of trust; there is currently no per-sender or per-message exception, only this one global switch."},
+	{"Block obvious tracking-pixel images", OT_PROFSWITCH, OT_PROFSWITCH_BLOCKBEACONS, 0, "Only matters when 'Load remote images in HTML mail' is ON. Many senders include a tiny (often 1x1 pixel) image, or one with a URL containing a word like 'beacon' or 'track', whose only purpose is to notice that you opened the message -- unlike a real inline photo or logo, there is nothing to see. With this option ON, Messages recognizes the obvious cases and skips fetching them entirely, rendering nothing in their place -- the same as how the tracking pixel was invisible on the original page anyway; because the fetch itself (not just displaying the image) is what tips off the sender, this has to skip the request, not just hide the result afterward. This is a best-effort guess, not a guarantee: a tracking pixel with ordinary dimensions or an unremarkable URL can still slip through, and very rarely a genuinely tiny decorative image could get caught by mistake and silently vanish. On by default -- turning it OFF means every remote image, including obvious trackers, gets fetched once 'Load remote images' is on."},
 	{"Special headers to highlight", OT_SPECIAL, OT_SPECIAL_KEYHEADS, 0, "This option alters the list of headers that are highlighted (not hidden) when you display a message.  Your entry should be a list of words separated by colons, with no spaces.  The default list is \"From:Date:Subject:To:CC:ReSent-From:ReSent-To\".  The option after this one can be used to alter the meaning of THIS option, so that it is a list of those headers NOT to highlight, and all non-specified headers WILL be highlighted."},
 	{"Highlight non-listed headers", OT_EXPLEVEL, EXP_SHOWALLBUTKEYS, 0, "By default, most of a message's headers are hidden from you, and you have to scroll backwards to see them.  You can alter the list of those few headers that ARE highlighted, using the previous option.  Using THIS option, you can change it so that the list of headers below is a list of those headers that do NOT get highlighted by default."},
 	{"Highlight NO headers", OT_EXPLEVEL, EXP_SHOWNOHEADS, 0, "This option turns off all header highlighting, leaving all of the bodies area for the message bodies themselves"},
@@ -201,10 +203,33 @@ static void ProfSwitchKey(int parm, char **app, char **pref)
 	case OT_PROFSWITCH_LOADREMOTEIMAGES:
 	    *app = "ams"; *pref = "loadremoteimages";
 	    break;
+	case OT_PROFSWITCH_BLOCKBEACONS:
+	    *app = "ams"; *pref = "blockbeaconimages";
+	    break;
 	case OT_PROFSWITCH_PREFERPLAINTEXT:
 	default:
 	    *app = "ams"; *pref = "preferplaintext";
 	    break;
+    }
+}
+
+/* Default value for a given OT_PROFSWITCH row's OptParm, when the
+   user has never set the underlying profile key -- kept next to
+   ProfSwitchKey() since the options-dialog checkbox display below
+   needs to agree with whatever default value(s) other code reading
+   the same profile key uses (e.g. htmlatk.c's own
+   environ_GetProfileSwitch("ams.blockbeaconimages", TRUE) check);
+   disagreeing would show the checkbox as OFF while the feature it
+   controls actually behaves as ON, until the user touches it once. */
+static boolean ProfSwitchDefault(int parm)
+{
+    switch (parm) {
+	case OT_PROFSWITCH_BLOCKBEACONS:
+	    return TRUE;
+	case OT_PROFSWITCH_LOADREMOTEIMAGES:
+	case OT_PROFSWITCH_PREFERPLAINTEXT:
+	default:
+	    return FALSE;
     }
 }
 
@@ -218,7 +243,7 @@ int ProfSwitchHit(long self, struct value *val, int which, int hisrock)
     ams_WaitCursor(TRUE);
     ProfSwitchKey(Options[which].OptParm, &app, &pref);
     sprintf(key, "%s.%s", app, pref);
-    newval = !environ_GetProfileSwitch(key, FALSE);
+    newval = !environ_GetProfileSwitch(key, ProfSwitchDefault(Options[which].OptParm));
     if (saveprofilestring(app, pref, newval ? "1" : "0", Options[which].IsStartup) != PREF_ABORT) {
 	sprintf(MyBuf, "Turned %s the \"%s\" option.", newval ? "ON" : "OFF", Options[which].OptionName);
 	message_DisplayString(NULL, 10, MyBuf);
@@ -431,7 +456,7 @@ int options__SetMessagesOptions(struct classheader *c, struct t822view *bv)
 	    char *psApp, *psPref, psKey[128];
 	    ProfSwitchKey(Options[i].OptParm, &psApp, &psPref);
 	    sprintf(psKey, "%s.%s", psApp, psPref);
-	    value_SetValue(v, environ_GetProfileSwitch(psKey, FALSE) ? 1 : 0);
+	    value_SetValue(v, environ_GetProfileSwitch(psKey, ProfSwitchDefault(Options[i].OptParm)) ? 1 : 0);
 	    value_AddCallBackObserver(v, t, ProfSwitchHit, i);
 	    text_AlwaysAddView(t, tpos++, "onoffV", v);
 	}
