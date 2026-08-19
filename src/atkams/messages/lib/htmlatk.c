@@ -61,6 +61,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdarg.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include <andrewos.h>
 #include <class.h>
@@ -609,13 +612,88 @@ static void emit_li_marker(struct hax_state *st)
     }
 }
 
-/* Builds "[image: alt]" / "[image]" into a caller buffer (bufsz must
-   be comfortably larger than any real alt text -- truncates rather
-   than overflowing for a pathological alt attribute). Shared by the
-   top-level inline placeholder and the table-cell placeholder. */
-static void BuildImgPlaceholder(char *buf, size_t bufsz, const struct htmlnode *n)
+/* Fills label (a small caller buffer, at least 9 bytes: "img.jpeg" +
+   NUL) with "img.<ext>" when a format can be identified, or plain
+   "image" otherwise -- the word BuildImgPlaceholder below brackets.
+   Prefers mimetypeHint (the real fetched Content-Type, when the
+   resolver actually got bytes but something downstream -- e.g. no
+   decoder for this format at all, see raster__ReadOtherFormat's
+   image/xwd-only gate -- failed to turn them into a displayable
+   image: knowing it really was a PNG the toolkit simply can't decode
+   is more useful than a placeholder that just says "image") over
+   guessing from src's URL path extension (the only signal available
+   when the resolver was never called at all -- no resolver installed,
+   remote loading off, a non-http(s) scheme). Both are restricted to a
+   fixed set of recognized image extensions/subtypes rather than
+   echoing whatever trailing token happens to follow the last '.' in
+   a URL verbatim -- a tracking-pixel URL's "open.aspx" is not useful
+   as "[img.aspx]", and an untrusted sender's src is not a string this
+   function should insert into the rendered document unfiltered. */
+static void ImgFormatLabel(char label[16], const char *mimetypeHint, const char *src)
 {
+    static const char *mimeToExt[][2] = {
+        {"jpeg", "jpg"}, {"png", "png"}, {"gif", "gif"}, {"webp", "webp"},
+        {"bmp", "bmp"}, {"x-icon", "ico"}, {"svg+xml", "svg"},
+        {"pbm", "pbm"}, {"pnm", "pnm"}, {"ppm", "ppm"}, {"pgm", "pgm"},
+    };
+    static const char *knownExt[] = {
+        "jpg", "jpeg", "png", "gif", "webp", "bmp", "ico", "svg",
+        "pbm", "pnm", "ppm", "pgm",
+    };
+    size_t i;
+
+    if (mimetypeHint && strncmp(mimetypeHint, "image/", 6) == 0) {
+        const char *sub = mimetypeHint + 6;
+        for (i = 0; i < sizeof(mimeToExt) / sizeof(mimeToExt[0]); ++i) {
+            if (strcmp(sub, mimeToExt[i][0]) == 0) {
+                sprintf(label, "img.%s", mimeToExt[i][1]);
+                return;
+            }
+        }
+    }
+
+    if (src) {
+        const char *p, *dot = NULL, *slash = NULL;
+        char ext[8];
+        int ei = 0;
+        for (p = src; *p && *p != '?' && *p != '#'; ++p) {
+            if (*p == '.') dot = p;
+            if (*p == '/') slash = p;
+        }
+        if (dot && (!slash || dot > slash)) {
+            ++dot;
+            while (dot[ei] && ei < (int) sizeof(ext) - 1 && isalnum((unsigned char) dot[ei])) {
+                ext[ei] = (char) tolower((unsigned char) dot[ei]);
+                ++ei;
+            }
+            ext[ei] = '\0';
+            for (i = 0; i < sizeof(knownExt) / sizeof(knownExt[0]); ++i) {
+                if (strcmp(ext, knownExt[i]) == 0) {
+                    sprintf(label, "img.%s", ext);
+                    return;
+                }
+            }
+        }
+    }
+
+    strcpy(label, "image");
+}
+
+/* Builds "[img.png: alt]" / "[img.png]" (or "[image: alt]" / "[image]"
+   when no format could be identified, see ImgFormatLabel above) into
+   a caller buffer (bufsz must be comfortably larger than any real alt
+   text -- truncates rather than overflowing for a pathological alt
+   attribute). mimetypeHint is the real fetched Content-Type when
+   available (NULL if the resolver was never called or declined -- see
+   ImgFormatLabel's own note on why that's the preferred source when
+   present). Shared by the top-level inline placeholder and the
+   table-cell placeholder. */
+static void BuildImgPlaceholder(char *buf, size_t bufsz, const struct htmlnode *n, const char *mimetypeHint)
+{
+    char label[16];
     const char *alt = htmlpart_GetAttr(n, "alt");
+
+    ImgFormatLabel(label, mimetypeHint, htmlpart_GetAttr(n, "src"));
     if (alt && alt[0]) {
         /* alt text itself gets the same whitespace-collapse treatment
            as ordinary text content per htmltext.h -- reuse htmltext_
@@ -636,17 +714,16 @@ static void BuildImgPlaceholder(char *buf, size_t bufsz, const struct htmlnode *
         while (ti > 0 && tmp[ti - 1] == ' ') --ti;
         tmp[ti] = '\0';
         (void) alen;
-        sprintf(buf, "[image: %.*s]", (int) (bufsz > 32 ? bufsz - 32 : 1), tmp);
+        sprintf(buf, "[%.*s: %.*s]", (int) sizeof(label) - 1, label, (int) (bufsz > 48 ? bufsz - 48 : 1), tmp);
     } else {
-        strncpy(buf, "[image]", bufsz - 1);
-        buf[bufsz - 1] = '\0';
+        sprintf(buf, "[%.*s]", (int) (bufsz > 4 ? bufsz - 4 : 1), label);
     }
 }
 
-static void emit_img_placeholder_inline(struct hax_state *st, const struct htmlnode *n)
+static void emit_img_placeholder_inline(struct hax_state *st, const struct htmlnode *n, const char *mimetypeHint)
 {
     char buf[600];
-    BuildImgPlaceholder(buf, sizeof(buf), n);
+    BuildImgPlaceholder(buf, sizeof(buf), n, mimetypeHint);
     MaybeSpace(st);
     InsertLiteral(st, buf);
 }
@@ -668,6 +745,44 @@ static const char *ImageClassForMimetype(const char *mt)
         || strncmp(mt + 6, "ppm", 3) == 0 || strncmp(mt + 6, "pgm", 3) == 0) return "pbm";
     if (strncmp(mt + 6, "jpeg", 4) == 0) return "jpeg";
     return "raster";
+}
+
+/* Identifies an image's real format from its own leading bytes,
+   independent of whatever Content-Type the server claimed. Real-
+   world motivating case (media.shelf-awareness.com's book-cover
+   images, seen via a live national-grid.html/book-rack repro):
+   actual JPEG bytes served under a .gif URL with a genuine, server-
+   sent "Content-Type: image/gif" header. That is not this module's
+   bug, and not a gif__Load bug either -- confirmed directly by
+   fetching the exact URLs, running `file` on the bytes (reports
+   "JPEG image data"), and feeding those same bytes to the real ATK
+   gif class headlessly, which correctly rejects them at the GIF
+   signature check gifin_open_file() does first. The decoder was
+   never broken; the label was.
+
+   Only ever consulted from RenderImageInline() AFTER the server-
+   labeled decoder attempt already failed -- trusting the declared
+   Content-Type first is still correct and free for the overwhelming
+   common case where it's accurate; this is a fallback for the real
+   world's mislabeled minority, not a replacement for believing
+   servers at all. Returns NULL, not a guess, for anything this
+   module doesn't recognize -- an unidentified magic number should
+   fall through to the ordinary placeholder, not a second wrong
+   attempt. Deliberately recognizes png here even though
+   ImageClassForMimetype() has nowhere to route it yet (raster's
+   XWD-only ReadOtherFormat gate, see that function's own note) --
+   once a real png-decoding class exists (tracked separately, not
+   this module's job), a mislabeled-as-something-else real PNG starts
+   working through this same retry path with no further change here,
+   which is exactly the point of sniffing the bytes instead of the
+   filename. */
+static const char *SniffImageMimetype(const unsigned char *bytes, long len)
+{
+    if (!bytes || len < 4) return NULL;
+    if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) return "image/jpeg";
+    if (len >= 6 && (memcmp(bytes, "GIF87a", 6) == 0 || memcmp(bytes, "GIF89a", 6) == 0)) return "image/gif";
+    if (len >= 8 && memcmp(bytes, "\x89PNG\r\n\x1a\n", 8) == 0) return "image/png";
+    return NULL;
 }
 
 /* Attempts to read already-fetched, not-yet-CTE-decoded-by-us raw
@@ -693,9 +808,71 @@ static boolean TryReadImageInto(struct dataobject *targetObj, const char *mimety
     return ok;
 }
 
+/* TEMPORARY diagnostic tracing -- same shape/rationale as httpimg.c's
+   Trace() (raw write(), not stdio, see that comment), and deliberately
+   writing to the same /tmp/httpimg-trace.log so a repro's network-
+   fetch trace and this decode-layer trace interleave into one
+   chronological narrative instead of two files to cross-reference by
+   hand. Added because httpimg.c's own trace only covers whether the
+   *fetch* succeeded -- it has no visibility into what RenderImageInline
+   does with the bytes afterward, and a real repro (a shelf-awareness
+   book cover still showing as a placeholder after the sniff-retry
+   fix) needs exactly that visibility to diagnose. Remove once the
+   actual cause is found. */
+static void TraceDecode(const char *fmt, ...)
+{
+    char buf[512];
+    va_list ap;
+    int len;
+    int fd = open("/tmp/httpimg-trace.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
+    if (fd < 0) return;
+    va_start(ap, fmt);
+    len = vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+    if (len > 0) write(fd, buf, (size_t) ((len < (int) sizeof(buf)) ? len : (int) sizeof(buf) - 1));
+    close(fd);
+}
+
+/* Redirects fd 2 (stderr) to /dev/null for the duration of a single
+   speculative decode attempt this function expects to fail routinely
+   now that a first attempt failing is a normal, handled step (trigger
+   the sniff-based retry) rather than a real problem -- gif__Load's own
+   "Couldn't read GIF image." (gif.c) has no way to know it's being
+   tried speculatively and will print on every mislabeled-as-gif image,
+   which is now the common case for some real-world senders (shelf-
+   awareness.com), not the rare one. Deliberately local to just this
+   one call via dup2 save/restore, not a change to gif.c itself: gif__Load
+   is called from other places in the app (gif__Read, gif__Ident) that
+   have nothing to do with html image rendering and should keep
+   whatever diagnostic behavior they already have. Restores stderr
+   unconditionally even if open()/dup() failed partway (savedFd < 0 is
+   checked before the restoring dup2, not assumed to have succeeded). */
+static int SuppressStderrBegin(void)
+{
+    int savedFd;
+    int devnull;
+    fflush(stderr);
+    savedFd = dup(2);
+    devnull = open("/dev/null", O_WRONLY);
+    if (devnull >= 0) { dup2(devnull, 2); close(devnull); }
+    return savedFd;
+}
+
+static void SuppressStderrEnd(int savedFd)
+{
+    fflush(stderr);
+    if (savedFd >= 0) { dup2(savedFd, 2); close(savedFd); }
+}
+
 /* Top-level (non-table-cell) <img> handling: try a real embed via the
    resolver; on any failure (no resolver, resolver declines, format
-   unsupported) fall back to the inline text placeholder. */
+   unsupported) fall back to the inline text placeholder. If the
+   server-declared Content-Type's decoder fails, retries once against
+   whatever SniffImageMimetype() identifies from the bytes themselves
+   -- see that function's own note on why (a mislabeled-but-otherwise-
+   fine image, e.g. real JPEG bytes served as "image/gif") and why
+   this is a fallback attempted only after the declared type already
+   failed, not a first-choice replacement for it. */
 static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
 {
     const char *src = htmlpart_GetAttr(n, "src");
@@ -703,14 +880,40 @@ static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
     long len = 0;
     char *mimetype = NULL;
     boolean resolved = FALSE;
+    struct dataobject *dob = NULL;
+    boolean ok = FALSE;
+    const char *placeholderHint = NULL;
 
     if (src && st->resolver) {
         resolved = (*st->resolver)(st->resolverRock, src, &bytes, &len, &mimetype);
     }
 
+    TraceDecode("DECODE ENTER src=%s resolved=%d bytes=%p len=%ld mimetype=%s\n",
+        src ? src : "(null)", resolved, (void *) bytes, len, mimetype ? mimetype : "(null)");
+
     if (resolved && bytes) {
-        struct dataobject *dob = (struct dataobject *) class_NewObject((char *) ImageClassForMimetype(mimetype));
-        if (dob && TryReadImageInto(dob, mimetype, bytes, len)) {
+        int savedErr;
+        placeholderHint = mimetype;
+        dob = (struct dataobject *) class_NewObject((char *) ImageClassForMimetype(mimetype));
+        savedErr = SuppressStderrBegin(); /* speculative: a labeled-decode failure here is expected/routine now, see SuppressStderrBegin's own comment */
+        ok = dob && TryReadImageInto(dob, mimetype, bytes, len);
+        SuppressStderrEnd(savedErr);
+        TraceDecode("  attempt1 class=%s ok=%d\n", ImageClassForMimetype(mimetype), ok);
+
+        if (!ok) {
+            const char *sniffed = SniffImageMimetype(bytes, len);
+            TraceDecode("  sniffed=%s\n", sniffed ? sniffed : "(null)");
+            if (sniffed && (!mimetype || strcmp(sniffed, mimetype) != 0)) {
+                if (dob) dataobject_Destroy(dob);
+                dob = (struct dataobject *) class_NewObject((char *) ImageClassForMimetype(sniffed));
+                ok = dob && TryReadImageInto(dob, sniffed, bytes, len);
+                placeholderHint = sniffed; /* the truth, whether or not this retry itself succeeded */
+                TraceDecode("  attempt2 class=%s ok=%d\n", ImageClassForMimetype(sniffed), ok);
+            }
+        }
+
+        TraceDecode("  -> final ok=%d\n", ok);
+        if (ok) {
             FlushPendingSpace(st); /* AddView doesn't collapse into text runs like InsertLiteral does */
             text_AlwaysAddView(st->dest, st->pos, dataobject_ViewName(dob), dob);
             ++st->pos;
@@ -723,9 +926,15 @@ static void RenderImageInline(struct hax_state *st, const struct htmlnode *n)
         }
         if (dob) dataobject_Destroy(dob);
     }
+    /* placeholderHint (when non-NULL here) is the best-known real
+       format for a resolved-but-undecodable image -- the sniffed
+       type if a sniff was attempted (truthful regardless of whether
+       the retry itself succeeded), else the server's declared
+       Content-Type -- so BuildImgPlaceholder needs it before
+       mimetype is freed below. */
+    emit_img_placeholder_inline(st, n, placeholderHint);
     free(bytes);
     free(mimetype);
-    emit_img_placeholder_inline(st, n);
 }
 
 /* ==================================================================== *
