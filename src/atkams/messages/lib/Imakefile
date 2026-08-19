@@ -35,7 +35,7 @@ CLASSFLAGS = $(CLASSINCLUDES) -pe
     S_IHFILES	=	amss.ih
 #endif /* SNAP_ENV */
 
-OBJS = 		stubs.o capaux.o foldaux.o sendaux.o messaux.o writeone.o htmlatk.o
+OBJS = 		stubs.o capaux.o foldaux.o sendaux.o messaux.o writeone.o htmlatk.o httpimg.o
 
 DOBJS = 		text822.do amsutil.do ams.do amsn.do $(S_DOBJS) \
 			fldtreev.do messages.do captions.do msgsa.do  \
@@ -89,8 +89,11 @@ DynamicMultiObject(messages.do, messages.o messaux.o,,$(LEXLIB))
    this is a Darwin .do (-undefined dynamic_lookup at link time, see
    the project's dot-do-silent-underlink note), so those symbols
    resolve against runapp's own already-statically-linked copies at
-   load time, not at .do link time. */
-DynamicMultiObject(text822.do, text822.o htmlatk.o, $(LIBS), $(LEXLIB))
+   load time, not at .do link time. httpimg.o (the "ams.loadremoteimages"
+   resolver, httpimg.h) is added the same way -- it has no ATK class
+   dependencies at all, only libc (fork/execvp/mkstemp/stat), so it
+   needs nothing added to $(LIBS) either. */
+DynamicMultiObject(text822.do, text822.o htmlatk.o httpimg.o, $(LIBS), $(LEXLIB))
 DynamicObject(text822v,,$(LEXLIB))
 DynamicObject(amsutil, $(LIBS), $(LEXLIB) $(BSDLIB))
 DynamicObject(ams, $(UTILLIB),$(LEXLIB))

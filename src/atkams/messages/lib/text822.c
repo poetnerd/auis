@@ -54,8 +54,34 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <htmlpart.h>
 #include <htmltext.h>
 #include <htmlatk.h>
+#include <httpimg.h>
+#include <im.ih>
 #include <fdphack.h>
 #include <time.h>
+#include <stdarg.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+/* TEMPORARY diagnostic tracing -- see the matching Trace() in
+   httpimg.c and its comment for why write()-not-stdio, and why this
+   exists (national-grid.html's images stopping at the same one every
+   time, not explained yet). Writes to the same /tmp/httpimg-trace.log
+   so both files' output interleaves into one chronological narrative.
+   Remove once the actual cause is found. */
+static void Trace822(const char *fmt, ...)
+{
+    char buf[512];
+    va_list ap;
+    int len;
+    int fd = open("/tmp/httpimg-trace.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
+    if (fd < 0) return;
+    va_start(ap, fmt);
+    len = vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+    if (len > 0) write(fd, buf, (size_t) ((len < (int) sizeof(buf)) ? len : (int) sizeof(buf) - 1));
+    close(fd);
+}
+
 static int FindParam(char *ct, char *paramname, char *ValueBuf);
 static char * GetHeader(char *LineBuf, int lim, FILE *fp);
 static int InsertProperObject(struct text822 *d, FILE *fp, int *ShowPos, char *ctype, char *encoding, char *descrip);
@@ -96,7 +122,7 @@ static int PlainAsciiText(char *s, char *currentcharset);
 static int ForceMetamail(char *ctype);
 static int InsertDecodedText(struct text822 *d, int *ShowPos, unsigned char *bytes, long len, char *charset);
 static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename, char *ctype, long nbytes);
-static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset, boolean forcePlain);
+static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset, boolean forcePlain, boolean loadImagesOverride);
 
 boolean text822__InitializeObject(struct classheader *c, struct text822 *self)
 {
@@ -865,7 +891,7 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 		   ATK-styled rendering (Stage 3, htmlatk.h), with a
 		   whole-message fallback to Stage 2's plain-text
 		   renderer if it can't -- see RenderHtmlPart(). */
-		RenderHtmlPart(d, &ShowPos, winner->body, winner->bodylen, mimepart_GetParam(winner, "charset"), (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0));
+		RenderHtmlPart(d, &ShowPos, winner->body, winner->bodylen, mimepart_GetParam(winner, "charset"), (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0), (boolean) ((Mode & MODE822_LOADIMAGES) != 0));
 	    } else if (winner && winner->body) {
 		/* Neither text/plain nor text/html was on offer (e.g.
 		   an alternative set of just an image and an audio
@@ -943,7 +969,7 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 	    }
 	    if (textpart && textpart->body) {
 		if (textIsHtml) {
-		    RenderHtmlPart(d, &ShowPos, textpart->body, textpart->bodylen, mimepart_GetParam(textpart, "charset"), (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0));
+		    RenderHtmlPart(d, &ShowPos, textpart->body, textpart->bodylen, mimepart_GetParam(textpart, "charset"), (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0), (boolean) ((Mode & MODE822_LOADIMAGES) != 0));
 		} else {
 		    InsertDecodedText(d, &ShowPos, textpart->body, textpart->bodylen, mimepart_GetParam(textpart, "charset"));
 		}
@@ -999,7 +1025,7 @@ if (nofill <= 0 && JustSawNewline > 0) {		\
 	    rawlen += linelen;
 	}
 	if (rawbuf) {
-	    RenderHtmlPart(d, &ShowPos, (unsigned char *) rawbuf, rawlen, msgcharset, (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0));
+	    RenderHtmlPart(d, &ShowPos, (unsigned char *) rawbuf, rawlen, msgcharset, (boolean) ((Mode & MODE822_HTMLPLAINTEXT) != 0), (boolean) ((Mode & MODE822_LOADIMAGES) != 0));
 	    free(rawbuf);
 	}
     } else if (!AlternativeNumber && sfmttype
@@ -1646,6 +1672,55 @@ static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename
    real content essentially never approaches. */
 #define HTML_RENDER_TIME_BUDGET 2
 
+/* Used instead of HTML_RENDER_TIME_BUDGET above for the whole parse+
+   render call when this render is allowed to fetch remote <img>
+   content (see the "ams.loadremoteimages" check in RenderHtmlPart()
+   below and httpimg.h's own design note on why a live network fetch
+   cannot share a budget sized only for local CPU work). httpimg.h's
+   struct httpimg_budget, as initialized below, already bounds total
+   fetch time to HTTPIMG_LOADIMAGES_MAXSECONDS on its own (via curl's
+   own --max-time/--connect-timeout, enforced inside httpimg.c, not
+   here) -- this second, larger wall-clock budget exists only to keep
+   RenderHtmlPart()'s own post-hoc "was that too slow" check (t2 - t1
+   below) from treating that same, expected network time as a hang and
+   discarding a render that actually succeeded. Sized as
+   HTTPIMG_LOADIMAGES_MAXSECONDS (the most the fetches themselves are
+   ever allowed to take) plus HTML_RENDER_TIME_BUDGET's own original
+   headroom (the local parse/build-views work around those fetches is
+   no slower with images on than off).
+
+   Both numbers below were originally 6 and 6 -- sized against this
+   module's own synthetic smoke test (httpimg.c's design-time trial
+   run against httpbin.org), never checked against a real multi-image
+   message. First real use (revival/tests/national-grid.html, a real
+   marketing email saved specifically as a recurring test case) broke
+   that immediately: it has 14 <img> tags (including, fittingly, a
+   1x1 open-tracking pixel -- see options.c's help text on exactly
+   that risk), and after the first 6 fetches -- or 6 seconds, cumulative
+   across the whole message, whichever came first -- every remaining
+   <img> silently fell back to its placeholder for the rest of that
+   render pass, mid-message, with no visible error. Not a hang and not
+   a per-image timeout being too short (the user's own two guesses,
+   both reasonable, both ruled out by checking): direct curl timing
+   against this exact CDN (image.emails.nationalgridus.com) measured
+   ~0.1-0.2s per image when reachable, so 14 real images cost under 3
+   seconds total in the healthy case -- the 6-fetch count cap was
+   hit while there was still budget to spare, and even without the
+   count cap the 6-second deadline itself had barely any slack above
+   that observed 3-second real cost for THIS message; a slightly
+   larger or slower-hosted newsletter would trip the seconds cap too.
+   24 fetches / 25 seconds gives real headroom above both the observed
+   14-image/~3-second case (not just barely clearing it) while staying
+   finite: a message with hundreds of remote <img> references (an
+   adversarial flood, not anything in the corpus) still can't spawn an
+   unbounded number of curl subprocesses or hold the render open
+   indefinitely if those hosts are slow or unreachable -- that
+   pathological case, not typical newsletter volume, is what these
+   caps exist to bound. */
+#define HTTPIMG_LOADIMAGES_MAXFETCHES 24
+#define HTTPIMG_LOADIMAGES_MAXSECONDS 25
+#define HTML_RENDER_TIME_BUDGET_WITH_IMAGES (HTTPIMG_LOADIMAGES_MAXSECONDS + HTML_RENDER_TIME_BUDGET)
+
 /* Renders html[0..htmllen) (already CTE-decoded HTML bytes) into d at
    *ShowPos, per the design doc's two-level fallback contract: Stage
    3's real ATK-styled rendering (htmlatk_Render(), htmlatk.h) is tried
@@ -1681,15 +1756,47 @@ static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename
    need for a signal-based abort with its own attendant risk of
    interrupting an ATK library call mid-allocation and leaving heap/
    class-dispatch state inconsistent, which would be a worse bug than
-   the one being guarded against.
+   the one being guarded against. That "not a genuine hang" premise is
+   specifically about htmlpart_Parse()/htmlatk_Render()'s own work --
+   it does NOT extend to whatever a resolver callback does on the
+   htmlatk_Render() side of that boundary, see immediately below.
 
-   The resolver argument to htmlatk_Render() is NULL (never resolve,
-   always placeholder an <img>) -- see the note at this function's own
-   call sites: resolving a "cid:" reference to its sibling MIME part
+   The resolver argument to htmlatk_Render() is httpimg_ResolveImage()
+   (httpimg.h) when the "ams.loadremoteimages" profile switch is on
+   (see options.c's matching Options[] entry; default off, since an
+   auto-fetched remote image is a tracking pixel -- see that entry's
+   own help text for the full reasoning), and NULL (never resolve,
+   always placeholder an <img>) otherwise. "cid:" is out of scope
+   either way: resolving a "cid:" reference to its sibling MIME part
    needs a Content-ID lookup mimepart.c does not currently parse or
    expose at all (it only tracks Content-Type/Content-Disposition), so
-   real cid: image resolution is out of scope here, not silently
-   skipped.
+   real cid: image resolution is not silently skipped, it simply isn't
+   built yet, independent of this switch. When the resolver is live,
+   HTML_RENDER_TIME_BUDGET_WITH_IMAGES (not HTML_RENDER_TIME_BUDGET)
+   is used for the t2 - t1 check below -- see that constant's own
+   comment for why a plain, unmodified HTML_RENDER_TIME_BUDGET would
+   make turning images on actively counterproductive (every render
+   that used the network at all would read as "too slow" and get
+   thrown away in favor of the Stage 2 plain-text fallback, even
+   though it had just finished successfully). curl's own --max-time
+   inside httpimg.c is still the thing actually bounding any one
+   fetch; this is only the outer check that decides whether the
+   result of however long that took gets kept. One acknowledged gap:
+   if curl itself ever fails to honor --max-time (a bug on curl's
+   side, not something this module controls), httpimg.c's waitpid()
+   has no independent hard kill of its own and would block for as
+   long as that stuck curl process does -- not guarded against here,
+   since curl reliably enforcing its own documented timeout is a much
+   safer assumption than adding signal-based process-killing logic
+   whose own edge cases (a SIGALRM landing mid-waitpid, a curl left
+   as a zombie or still writing to the temp files after this function
+   moves on) would need to be gotten right instead. Separately, and
+   already fixed rather than just acknowledged: see the
+   im_SetCleanUpZombies() call bracketing htmlatk_Render() below for a
+   real, reproduced race between httpimg.c's own waitpid() and im.c's
+   independent wildcard child-reaping, which silently dropped images
+   partway through a real multi-image message before this bracket was
+   added.
 
    forcePlain, when TRUE, skips straight to the Stage 2 branch below
    without even trying htmlatk_Render() -- set from the caller's Mode
@@ -1698,8 +1805,24 @@ static void InsertAttachmentLine(struct text822 *d, int *ShowPos, char *filename
    (BSM_ShowHtmlPlainText) toggles, the same way MODE822_FIXEDWIDTH/
    MODE822_ROT13 already do -- an escape hatch for real mail whose
    table layout Stage 3 renders badly (e.g. very deeply nested
-   marketing-newsletter tables -- see revival/doc/revival.md). */
-static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset, boolean forcePlain)
+   marketing-newsletter tables -- see revival/doc/revival.md).
+
+   loadImagesOverride, when TRUE, is OR'd into the "ams.loadremoteimages"
+   check below -- set from Mode's MODE822_LOADIMAGES bit (text822.ch),
+   which messages.c's "This Message -> Load Remote Images" menu
+   command (BSM_LoadRemoteImages) toggles. One-way on purpose: it can
+   turn image fetching on for this one message when the global switch
+   is off, but the global switch being ON is never overridden off by
+   this bit's absence -- there is no "don't load images for this one
+   message" menu command, only "go ahead and load them for this one
+   message" (see MODE822_LOADIMAGES's own comment in text822.ch). Same
+   one-shot shape as forcePlain/MODE822_HTMLPLAINTEXT above: nothing
+   here needs to clear it again afterward, since
+   captions__DisplayNewBody() (capaux.c) already resets Mode to
+   MODE822_NORMAL for every bit, this one included, the moment the
+   user moves on to a different message -- "this once" falls out of
+   that existing reset, not anything added here. */
+static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html, long htmllen, char *charset, boolean forcePlain, boolean loadImagesOverride)
 {
     struct htmlnode *tree;
     time_t t0, t1, t2;
@@ -1742,9 +1865,54 @@ static void RenderHtmlPart(struct text822 *d, int *ShowPos, unsigned char *html,
 
     if (tree && !tooSlow && !forcePlain) {
 	long lengthOut = 0;
-	boolean ok = htmlatk_Render((struct text *) d, (long) *ShowPos, tree, NULL, NULL, &lengthOut);
+	boolean loadImages = loadImagesOverride || environ_GetProfileSwitch("ams.loadremoteimages", FALSE);
+	struct httpimg_budget imgBudget;
+	htmlatk_ImageResolver resolver = NULL;
+	void *resolverRock = NULL;
+	boolean ok;
+
+	if (loadImages) {
+	    httpimg_InitBudget(&imgBudget, HTTPIMG_LOADIMAGES_MAXFETCHES, HTTPIMG_LOADIMAGES_MAXSECONDS);
+	    resolver = httpimg_ResolveImage;
+	    resolverRock = &imgBudget;
+	    /* im's own SIGCHLD handling (im.c: cleanUpZombies, TRUE by
+	       default for every ATK app, per its own comment "very
+	       convenient for the messages system") reaps ANY exited child
+	       via a wildcard waitpid(-1, WNOHANG) -- not just children it
+	       spawned itself, see im.c's childDied handling. That races
+	       httpimg.c's own waitpid(pid, ...) for each curl child: if
+	       im's sweep wins, httpimg.c's own wait gets ECHILD (no such
+	       child -- already reaped) and reports that image as a
+	       failure even though curl succeeded, silently, with no error
+	       visible anywhere. Confirmed as the actual cause of a real,
+	       reproducible bug (not theoretical): httpimg.c's own
+	       resolver, exercised standalone against revival/tests/
+	       national-grid.html's real 14 image URLs with a plain, non-
+	       ATK-linked test driver, fetched all 14 successfully in
+	       under 2 seconds -- but the same message, same URLs, same
+	       budget, inside a real running messages session, lost
+	       several images partway through. UPDATE 2026-08-18: this
+	       bracket is real and worth keeping regardless (im's wildcard
+	       reap is a genuine, demonstrated hazard for ANY forked child,
+	       not just httpimg.c's), but it did NOT fix the national-
+	       grid.html symptom -- the cutoff point turned out to be the
+	       *same* image on every repro, including repros after this
+	       fix and after a proper `make dependInstall` confirmed the
+	       fix was actually deployed. A same-every-time cutoff is not
+	       what a race predicts; something else deterministic is the
+	       real cause, not yet found. See the Trace() calls in
+	       httpimg.c (temporary, /tmp/httpimg-trace.log) added to
+	       observe it directly instead of guessing again. */
+	    im_SetCleanUpZombies(FALSE);
+	}
+
+	Trace822("RenderHtmlPart: loadImages=%d fetchesLeft_before=%d\n", loadImages, loadImages ? imgBudget.fetchesLeft : -1);
+	ok = htmlatk_Render((struct text *) d, (long) *ShowPos, tree, resolver, resolverRock, &lengthOut);
+	Trace822("RenderHtmlPart: htmlatk_Render returned ok=%d lengthOut=%ld fetchesLeft_after=%d\n", ok, lengthOut, loadImages ? imgBudget.fetchesLeft : -1);
+	if (loadImages) im_SetCleanUpZombies(TRUE);
+	if (loadImages) httpimg_FreeBudget(&imgBudget); /* frees the cache's malloc'd copies (httpimg.h) -- imgBudget itself is stack-local, nothing to free for it */
 	t2 = time(NULL);
-	if (ok && (t2 - t1) <= HTML_RENDER_TIME_BUDGET) {
+	if (ok && (t2 - t1) <= (loadImages ? HTML_RENDER_TIME_BUDGET_WITH_IMAGES : HTML_RENDER_TIME_BUDGET)) {
 	    *ShowPos += (int) lengthOut;
 	    htmlpart_Free(tree);
 	    if (convhtml) free(convhtml);

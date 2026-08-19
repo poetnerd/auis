@@ -93,6 +93,7 @@ extern		void BSM_DeletePlease(struct messages *self);
 extern		void BSM_DifferentContentType(struct messages *self, char *ctype);
 extern		void BSM_ShowRaw(struct messages *self, char *ctype);
 extern		void BSM_ShowHtmlPlainText(struct messages *self);
+extern		void BSM_LoadRemoteImages(struct messages *self);
 extern		void BSM_DummyQuit(struct messages *self);
 extern		void BSM_FileInto(struct messages *self);
 extern		void BSM_MarkCurrent(struct messages *self);
@@ -347,6 +348,7 @@ static struct bind_Description messages_standardbindings [] = {
     {"messages-different-content-type", NULL, NULL, NULL, NULL, 0, BSM_DifferentContentType, "Display the body of a message using a different content-type header"},
     {"messages-show-as-plain-text", NULL, NULL, "This Message~30,Show Raw Body~33", NULL, MENUMASK_MSGSHOWING, BSM_ShowRaw, "Display the body of a message as if it were plain text"},
     {"messages-show-html-plain-text", NULL, NULL, "This Message~30,Show as Plain Text~34", NULL, MENUMASK_MSGSHOWING, BSM_ShowHtmlPlainText, "Redisplay an HTML message's text with tags stripped, bypassing the styled HTML renderer"},
+    {"messages-load-remote-images", NULL, NULL, "This Message~30,Load Remote Images~35", NULL, MENUMASK_MSGSHOWING, BSM_LoadRemoteImages, "Redisplay an HTML message, fetching and showing any remote images it references, just for this one viewing"},
     {"messages-punt", ">", 1, "Other~60,Punt~94", 1, MENUMASK_PUNTMENU, (void (*)()) PuntCurrent, "Punt current folder and go to the next one"},
     {"messages-punt-and-stay", "~", 0, NULL, 0, 0, PuntCurrent, "Punt current folder but don't go on to the next one"},
     {"textview-compound", NULL, NULL, NULL, NULL, NULL, TextviewCompound, "Execute a compound textview operation"},
@@ -1100,6 +1102,25 @@ void BSM_ShowHtmlPlainText(struct messages *self)
     struct captions *c = GetCaptions(self);
 
     captions_Redisplay(c, c->CurrentFormatting ^ MODE822_HTMLPLAINTEXT, NULL);
+}
+
+/* Same toggle shape as BSM_ShowHtmlPlainText above (XOR the bit,
+   redisplay the same message), for MODE822_LOADIMAGES (text822.ch)
+   instead of MODE822_HTMLPLAINTEXT -- see that bit's own comment for
+   why it only ever turns image fetching ON for this one message, plus
+   why "one message" is really what this does even though the
+   implementation is an unconditional XOR toggle like any other
+   MODE822_* bit here: captions__DisplayNewBody() (capaux.c) already
+   resets Mode to MODE822_NORMAL the moment the user displays a
+   different message, so toggling this back OFF by clicking the menu
+   item again is only ever needed if the user wants to go back to the
+   placeholder view of the SAME still-displayed message, not as
+   between-message cleanup. */
+void BSM_LoadRemoteImages(struct messages *self)
+{
+    struct captions *c = GetCaptions(self);
+
+    captions_Redisplay(c, c->CurrentFormatting ^ MODE822_LOADIMAGES, NULL);
 }
 
 void BSM_ModifiableBody(struct messages *self)
