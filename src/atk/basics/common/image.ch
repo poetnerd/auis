@@ -174,6 +174,8 @@ macromethods:
   SetJPEGSaveQuality(q) ((self)->jpegSaveQuality = (q))
   GetJPEGSaveQuality() ((self)->jpegSaveQuality)
   SaveFormatString() ((self)->saveformatstring)
+  SetNoBorder(val) ((self)->noBorder = (val))
+  GetNoBorder() ((self)->noBorder)
 
 data:
   unsigned int type;  /* type of image */
@@ -190,6 +192,9 @@ data:
   long origDataSize;
   long lastModified;
   char *saveformatstring;
+  boolean noBorder; /* suppress imagev's default bevelled pane frame --
+                        e.g. for an inline HTML-mail image, which should
+                        read as a flat picture, not an editable ez pane */
 };
 
 #define image_NEW (1<<5)

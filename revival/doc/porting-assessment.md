@@ -2708,9 +2708,9 @@ fully working (see `roadmap.md`'s Applications and insets table).
 
 **Status:** resolved. Four distinct bugs in the `lset`/`lpair` table
 layout itself found and fixed 2026-08-17/18 (commits `c5f535ca9b`,
-`b38e9fda90`, `a9a82d66f1`). Fixing them exposed four further,
-pre-existing bugs in `textview` itself (not `lset`/`lpair` — see f/g/h/i
-below), also found and fixed 2026-08-18 (`textv.c`).
+`b38e9fda90`, `a9a82d66f1`). Fixing them exposed seven further,
+pre-existing bugs elsewhere in core ATK (`textview` — f/g/h/i; `image`/
+`imagev` — j/k/l), also found and fixed 2026-08-18/19.
 
 `atkams/messages/lib/htmlatk.c`'s HTML-mail renderer builds each
 `<table>` as a tree of `lset`/`lsetview` objects (`atk/adew/lset.ch`,
@@ -2933,6 +2933,71 @@ no-line-of-its-own position h. above already established renders as a
 blank screen. Fixed by only taking the shortcut when
 `pos == textview_GetTopPosition(self)`, matching the precondition the
 shortcut's own comment already claimed.
+
+#### j. Every embedded `image` draws a 5px bevelled "window pane" frame across its whole allocated rectangle, not just around the picture
+
+Found live-testing image fetching/PNG support against the National Grid
+fixture: a thin decorative divider image ("Blue Brand Line", 350×16px)
+sitting side-by-side with a much taller 5-icon social row rendered as a
+large blank bevelled box, not a thin line. `imagev`'s `DrawBorder()`
+(`atk/image/imagev.c`) always bezels the *entire* view rectangle
+(`self->bordersize`, default 5px each side, via `sbuttonv_SafeDrawButton`)
+— correct, even desirable, styling for a normal user-embedded `ez`
+image (a "pane" affordance for an editable object), but wrong for a
+flat inline decorative image whose `lset`/`lpair` cell has been
+stretched taller than its own content to match a side-by-side sibling
+(`lpair`'s side-by-side split correctly gives both sides the same
+height — see k. below for why the mismatch existed at all). Fixed by
+adding a `noBorder` flag to `image` (`basics/common/image.ch`), checked
+in `imagev__SetDataObject` to zero `bordersize` for that instance only;
+`htmlatk.c`'s `RenderImageInline` sets it on every image it inserts.
+Normal image usage elsewhere (`ez`'s own Insert Image, `messages`'
+plain MIME-attachment image display) is unaffected — the flag defaults
+off.
+
+#### k. HTML `<img width=/height=>` was never applied — every image displayed at its raw decoded pixel size
+
+Found live-testing j.'s fix: the "blank box" was gone, but the row was
+still far taller than it should be. Root cause: `RenderImageInline`
+(`htmlatk.c`) never read an `<img>`'s `width=`/`height=` attributes at
+all (only `LooksLikeBeacon()` reads them, for tracking-pixel detection,
+not display sizing) — every image always displayed at whatever pixel
+size it happened to decode to. Real marketing HTML relies on the
+browser for this: the National Grid fixture's 5 social icons all
+declare `width="30"`, but the actual source PNGs are inconsistently
+sized (Facebook/YouTube/Instagram are 100×100px native; Twitter/LinkedIn
+happen to be small pre-sized files) — nothing wrong with the markup,
+just normal real-world asset reuse. Undersized-relative-to-declared
+never showed (nothing in the corpus does that), but the oversized case
+made 3 of 5 icons render at ~3× the intended size, and because `lpair`'s
+side-by-side split correctly reports `max(d0, d1)` for its free
+dimension (not a bug — see the design doc's Table strategy section),
+the oversized icons dragged the *entire row's* height up to match, not
+just their own cells. Fixed: a new `ScaleImageToDeclaredSize()` reads
+`width=`/`height=` (aspect-preserving if only one is given) and calls
+`image_Zoom()` (percentage-based, `image.ch`) to produce a correctly-
+sized replacement before insertion, whenever the decoded size differs
+from the declared one.
+
+#### l. `image__Zoom`'s `ITRUE` (truecolor) case read an uninitialized pointer
+
+Found live-testing k.'s fix: scaled icons rendered as solid black boxes
+instead of shrunk pictures. `image__Zoom` (`basics/common/image.c`) is
+one function handling four source image types via a `switch`; the
+`IGREYSCALE`/`IRGB` cases build a fresh `newimage` and *fall through*
+into the `ITRUE` case, which then checks `if (!RGBP(newimage))` before
+deciding whether to reuse it or allocate its own. But a genuine `ITRUE`
+source (a decoded truecolor PNG — the common case for real inline
+HTML-mail images, and apparently the first real caller of `Zoom()` on a
+plain truecolor image in this revival) enters the `ITRUE` case
+*directly*, with `newimage` never assigned — reading and dereferencing
+an uninitialized stack pointer, undefined behavior that happened to
+manifest as corrupted (black) output rather than an outright crash.
+Latent since whenever `Zoom()` was written; never triggered before
+because nothing in this codebase previously zoomed a plain truecolor
+image. Fixed by initializing `newimage = NULL` at declaration and
+checking `!newimage || !RGBP(newimage)`, matching the code's own
+evident intent.
 
 ## Primary build environment: macOS/Darwin
 
