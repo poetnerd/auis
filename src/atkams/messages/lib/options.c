@@ -114,6 +114,7 @@ int IntegerDefaults[] = {8, 12, 8, 50, 12, 1, 25};
 #define OT_SPECIAL_FONT 1
 #define OT_SPECIAL_CKPWHERE 2
 #define OT_SPECIAL_KEYHEADS 3
+#define OT_SPECIAL_IMAGEALLOWLIST 4
 
 struct OptionChoice {
     char *OptionName;
@@ -136,8 +137,9 @@ static struct OptionChoice Options[] = {
 	{"Reply to Readers/Both menus", OT_EXPLEVEL, EXP_THREEREPLIES, 0, "Normally, the 'Reply to All' menu makes a 'best guess' as to whether or not to send the mail to the sender as well. If you choose, you can have two menus in its place, 'Reply to Readers' and 'Reply to Both', which let you make the decision explicitly."},
 	{"Descramble/Fixed Width menus", OT_EXPLEVEL, EXP_FORMATMENUS, 0, "This option adds two menus to the 'This Message' card which allow you to easily put the message on display in fixed width, to scramble it with the 'rot13' algorithm."},
 	{"Prefer plain text over HTML", OT_PROFSWITCH, OT_PROFSWITCH_PREFERPLAINTEXT, 0, "When a message offers both a plain text and an HTML version (a 'multipart/alternative' MIME message, typical of newsletters and marketing mail), Messages normally shows you the HTML version, styled to look like the original. Turn this option ON to go back to always showing the plain text version instead. This preference is shared with cui (the command-line mail reader), since both read the same 'ams.preferplaintext' setting; cui only picks up a change the next time it starts."},
-	{"Load remote images in HTML mail", OT_PROFSWITCH, OT_PROFSWITCH_LOADREMOTEIMAGES, 0, "HTML mail can reference images by URL instead of attaching them, and by default Messages leaves those as a placeholder rather than fetching them. Turn this option ON to have Messages fetch and display those images automatically. Leaving it OFF is the safer default: a remote image URL is exactly how marketers and spammers build 'read receipts' -- the mere act of loading the image tells them your address is live and that you opened this particular message, even if you never reply or click anything. Turning this ON means every HTML message you open, from anyone, gets that automatic vote of trust; there is currently no per-sender or per-message exception, only this one global switch."},
-	{"Block obvious tracking-pixel images", OT_PROFSWITCH, OT_PROFSWITCH_BLOCKBEACONS, 0, "Only matters when 'Load remote images in HTML mail' is ON. Many senders include a tiny (often 1x1 pixel) image, or one with a URL containing a word like 'beacon' or 'track', whose only purpose is to notice that you opened the message -- unlike a real inline photo or logo, there is nothing to see. With this option ON, Messages recognizes the obvious cases and skips fetching them entirely, rendering nothing in their place -- the same as how the tracking pixel was invisible on the original page anyway; because the fetch itself (not just displaying the image) is what tips off the sender, this has to skip the request, not just hide the result afterward. This is a best-effort guess, not a guarantee: a tracking pixel with ordinary dimensions or an unremarkable URL can still slip through, and very rarely a genuinely tiny decorative image could get caught by mistake and silently vanish. On by default -- turning it OFF means every remote image, including obvious trackers, gets fetched once 'Load remote images' is on."},
+	{"Load remote images in HTML mail", OT_PROFSWITCH, OT_PROFSWITCH_LOADREMOTEIMAGES, 0, "HTML mail can reference images by URL. By default Messages shows a placeholder instead of fetching them, since fetching one can tell the sender you opened the message. Turn this on to fetch and display them automatically for every message."},
+	{"Block obvious tracking-pixel images", OT_PROFSWITCH, OT_PROFSWITCH_BLOCKBEACONS, 0, "Skips fetching images that look like tracking pixels (tiny declared size, or a URL containing a word like 'beacon' or 'track'), leaving nothing in their place rather than a placeholder. On by default; only matters once images are being fetched at all."},
+	{"Trusted senders (always load their images)", OT_SPECIAL, OT_SPECIAL_IMAGEALLOWLIST, 0, "A comma-separated list of senders (address or domain) whose images load automatically even when 'Load remote images' above is off. Add entries here, or via 'Add current sender to allow images' on a message's 'This Message' menu. Tracking-pixel blocking above still applies to them."},
 	{"Special headers to highlight", OT_SPECIAL, OT_SPECIAL_KEYHEADS, 0, "This option alters the list of headers that are highlighted (not hidden) when you display a message.  Your entry should be a list of words separated by colons, with no spaces.  The default list is \"From:Date:Subject:To:CC:ReSent-From:ReSent-To\".  The option after this one can be used to alter the meaning of THIS option, so that it is a list of those headers NOT to highlight, and all non-specified headers WILL be highlighted."},
 	{"Highlight non-listed headers", OT_EXPLEVEL, EXP_SHOWALLBUTKEYS, 0, "By default, most of a message's headers are hidden from you, and you have to scroll backwards to see them.  You can alter the list of those few headers that ARE highlighted, using the previous option.  Using THIS option, you can change it so that the list of headers below is a list of those headers that do NOT get highlighted by default."},
 	{"Highlight NO headers", OT_EXPLEVEL, EXP_SHOWNOHEADS, 0, "This option turns off all header highlighting, leaving all of the bodies area for the message bodies themselves"},
@@ -302,6 +304,7 @@ int IntegerHit(long self, struct value *val, int which, int hisrock)
 int ButtonHit(long self, struct value *val, int which, int hisrock)
 {
     char Msg[1000], AnsBuf[5000], *pref, *defaultans = "bogus", *prompt = "bogus";
+    char *app = "messages", key[300];
     int parm, numans;
 
     if (hisrock == value_OBJECTDESTROYED) return;
@@ -323,13 +326,31 @@ int ButtonHit(long self, struct value *val, int which, int hisrock)
 	    pref = "KeyHeaders";
 	    prompt = "Enter or edit the list of 'special' highlighting headers: ";
 	    break;
+	case OT_SPECIAL_IMAGEALLOWLIST:
+	    /* Shared with htmlatk.c/text822.c's own "ams.imageallowlist"
+	       reads (SenderIsAllowlisted, text822.c) -- this is the only
+	       OT_SPECIAL row not stored under the "messages" program
+	       name, since it needs to be findable via a plain
+	       environ_GetProfile("ams.imageallowlist") call from code
+	       that has no reason to know this dialog exists. app/key
+	       (below) exist only for this case; every other OT_SPECIAL
+	       row still uses the plain bare-pref path unchanged. */
+	    app = "ams";
+	    pref = "imageallowlist";
+	    prompt = "Enter the comma-separated list of trusted senders (an email address, or just a domain like 'example.com') allowed to load remote images automatically: ";
+	    break;
     }
-    defaultans = environ_GetProfile(pref);
+    if (parm == OT_SPECIAL_IMAGEALLOWLIST) {
+	sprintf(key, "%s.%s", app, pref);
+	defaultans = environ_GetProfile(key);
+    } else {
+	defaultans = environ_GetProfile(pref);
+    }
     if (message_AskForString(NULL, 99, prompt, defaultans, AnsBuf, sizeof(AnsBuf)) < 0) {
 	return;
     }
     ams_WaitCursor(TRUE);
-    if (saveprofilestring("messages", pref, AnsBuf, Options[which].IsStartup) != PREF_ABORT) {
+    if (saveprofilestring(app, pref, AnsBuf, Options[which].IsStartup) != PREF_ABORT) {
 	switch(parm) {
 	    case OT_SPECIAL_CRUCIALCLASSES:
 		numans = environ_GetProfileInt("maxclassmenu", 8) -1;

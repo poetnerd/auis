@@ -36,6 +36,8 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 
 #include <andrewos.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 #include <sys/param.h>
 #include <cui.h>
 #include <fdphack.h>
@@ -94,6 +96,7 @@ extern		void BSM_DifferentContentType(struct messages *self, char *ctype);
 extern		void BSM_ShowRaw(struct messages *self, char *ctype);
 extern		void BSM_ShowHtmlPlainText(struct messages *self);
 extern		void BSM_LoadRemoteImages(struct messages *self);
+extern		void BSM_AllowImagesFromSender(struct messages *self);
 extern		void BSM_DummyQuit(struct messages *self);
 extern		void BSM_FileInto(struct messages *self);
 extern		void BSM_MarkCurrent(struct messages *self);
@@ -349,6 +352,7 @@ static struct bind_Description messages_standardbindings [] = {
     {"messages-show-as-plain-text", NULL, NULL, "This Message~30,Show Raw Body~33", NULL, MENUMASK_MSGSHOWING, BSM_ShowRaw, "Display the body of a message as if it were plain text"},
     {"messages-show-html-plain-text", NULL, NULL, "This Message~30,Show as Plain Text~34", NULL, MENUMASK_MSGSHOWING, BSM_ShowHtmlPlainText, "Redisplay an HTML message's text with tags stripped, bypassing the styled HTML renderer"},
     {"messages-load-remote-images", NULL, NULL, "This Message~30,Load Remote Images~35", NULL, MENUMASK_MSGSHOWING, BSM_LoadRemoteImages, "Redisplay an HTML message, fetching and showing any remote images it references, just for this one viewing"},
+    {"messages-allow-images-from-sender", NULL, NULL, "This Message~30,Add Sender To Image Allow-list~36", NULL, MENUMASK_MSGSHOWING, BSM_AllowImagesFromSender, "Trust this message's sender: load their images automatically from now on, without asking again"},
     {"messages-punt", ">", 1, "Other~60,Punt~94", 1, MENUMASK_PUNTMENU, (void (*)()) PuntCurrent, "Punt current folder and go to the next one"},
     {"messages-punt-and-stay", "~", 0, NULL, 0, 0, PuntCurrent, "Punt current folder but don't go on to the next one"},
     {"textview-compound", NULL, NULL, NULL, NULL, NULL, TextviewCompound, "Execute a compound textview operation"},
@@ -1121,6 +1125,85 @@ void BSM_LoadRemoteImages(struct messages *self)
     struct captions *c = GetCaptions(self);
 
     captions_Redisplay(c, c->CurrentFormatting ^ MODE822_LOADIMAGES, NULL);
+}
+
+/* Persisted counterpart to BSM_LoadRemoteImages above: instead of a
+   one-shot "just this once" override, this appends the currently
+   displayed message's From: address to the "ams.imageallowlist"
+   preference (options.c's OT_SPECIAL_IMAGEALLOWLIST row is the manual
+   editor for the same list), so RenderHtmlPart's own
+   SenderIsAllowlisted() check (text822.c) picks it up on every future
+   viewing of mail from this sender, not just this one message.
+
+   The address comes from amsutil_GetLastHtmlSender(), NOT a direct
+   call into text822.c, and persisting goes through
+   amsutil_setprofilestring(), NOT options.c's own saveprofilestring()
+   wrapper -- both routed through amsutil (<amsutil.ih>, already
+   included, unsuppressed) rather than text822 or options directly,
+   for a real, previously-hit reason: messages.c wraps its own
+   #include <text822.ih> a few lines above in
+   #define dontDefineRoutinesFor_text822 / #undef (a deliberate,
+   decades-old suppression of text822's classprocedure macros in this
+   one file), so a text822 classprocedure is invisible here no matter
+   what text822.ch declares -- confirmed by a first version of this
+   function that declared a real text822 classprocedure and had it
+   silently fail to expand. A version before THAT, calling
+   hand-written externs straight into text822.c/options.c, crashed
+   messages outright (EXC_BAD_ACCESS at address 0x0, a call through an
+   unresolved symbol) -- see revival/doc's "Dot Do Silent Underlink"
+   note: -undefined dynamic_lookup lets a .do link clean against a
+   symbol that isn't actually loaded yet, and only fails at the moment
+   it's called. amsutil is the one relay point proven safe from both
+   failure modes (already used successfully, unsuppressed, from both
+   files). See amsutil.ch's own comment on SetLastHtmlSender/
+   GetLastHtmlSender, and text822.c's ReadMessage (the two call sites
+   that feed it). */
+
+static boolean AllowlistAlreadyContains(char *list, char *address)
+{
+    char listLower[4096], addrLower[400];
+    size_t i;
+
+    if (!list || !*list || !address || !*address) return FALSE;
+    for (i = 0; list[i] && i + 1 < sizeof(listLower); ++i) listLower[i] = tolower((unsigned char) list[i]);
+    listLower[i] = '\0';
+    for (i = 0; address[i] && i + 1 < sizeof(addrLower); ++i) addrLower[i] = tolower((unsigned char) address[i]);
+    addrLower[i] = '\0';
+    return strstr(listLower, addrLower) != NULL;
+}
+
+void BSM_AllowImagesFromSender(struct messages *self)
+{
+    struct captions *c = GetCaptions(self);
+    char *address = amsutil_GetLastHtmlSender();
+    char *oldlist;
+    char newlist[4096];
+    char msg[500];
+
+    if (!address || !*address) {
+	message_DisplayString(NULL, 10, "No message is currently displayed (or it has no From: address to add).");
+	return;
+    }
+    oldlist = environ_GetProfile("ams.imageallowlist");
+    if (AllowlistAlreadyContains(oldlist, address)) {
+	sprintf(msg, "'%.100s' is already on the trusted-senders list.", address);
+	message_DisplayString(NULL, 10, msg);
+	return;
+    }
+    if (oldlist && *oldlist) {
+	sprintf(newlist, "%.4000s,%.90s", oldlist, address);
+    } else {
+	sprintf(newlist, "%.90s", address);
+    }
+    /* amsutil_setprofilestring returns 0 on success, nonzero (an
+       errno-ish code) on failure -- see options.c's own saveprofilestring()
+       wrapper, `if (code = amsutil_setprofilestring(...))` treating any
+       nonzero result as the error branch, same contract here. */
+    if (amsutil_setprofilestring("ams", "imageallowlist", newlist) == 0) {
+	sprintf(msg, "Added '%.100s' to the trusted-senders image allow-list.", address);
+	message_DisplayString(NULL, 10, msg);
+	captions_Redisplay(c, c->CurrentFormatting | MODE822_LOADIMAGES, NULL);
+    }
 }
 
 void BSM_ModifiableBody(struct messages *self)

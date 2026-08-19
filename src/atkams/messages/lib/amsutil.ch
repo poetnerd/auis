@@ -147,4 +147,19 @@ package amsutil {
       fdplumb_SpillGuts();
       GetDefaultFontName() returns char *;
       ChooseNewStatus(char *nickname, int GivenDefault, boolean ShowAllChoices) returns int;
+      /* Cross-file relay for "who is the currently displayed HTML
+         message from" -- text822.c (ReadMessage) sets this right
+         after capturing/extracting a message's From: address;
+         messages.c (BSM_AllowImagesFromSender) reads it back. Not
+         declared directly on text822 itself: messages.c wraps its own
+         #include <text822.ih> in #define dontDefineRoutinesFor_text822
+         (see messages.c's own include block), a deliberate, pre-
+         existing suppression of text822's classprocedure macros in
+         that one file -- so a text822 classprocedure is invisible to
+         messages.c regardless of what text822.ch declares. amsutil.ih
+         is included unsuppressed everywhere (including messages.c and
+         text822.c already), so it's the safe, already-proven-working
+         relay point instead. */
+      SetLastHtmlSender(char *addr);
+      GetLastHtmlSender() returns char *;
 };

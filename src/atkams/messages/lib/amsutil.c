@@ -34,6 +34,7 @@ static char rcsid[]="$Header: /afs/cs.cmu.edu/project/atk-dist/auis-6.3/atkams/m
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <andrewos.h>
 #include <mailconf.h>
 #include <class.h>
@@ -364,6 +365,26 @@ void amsutil__fdplumb_SpillGuts(struct classheader *c)
 #else /* #ifdef PLUMBFDLEAKS */
     printf("FD plumbing not compiled in!\n\n\n");
 #endif /* #ifdef PLUMBFDLEAKS */
+}
+
+/* See amsutil.ch's own comment on SetLastHtmlSender/GetLastHtmlSender:
+   a cross-.do relay for "who is the currently displayed HTML message
+   from", used because messages.c deliberately suppresses text822's
+   own classprocedure macros (dontDefineRoutinesFor_text822 around its
+   #include <text822.ih>), so text822 can't expose this directly to
+   messages.c the way every other cross-file call in this app works. */
+static char LastHtmlSender[400] = "";
+
+void amsutil__SetLastHtmlSender(struct classheader *c, char *addr)
+{
+    if (!addr) addr = "";
+    strncpy(LastHtmlSender, addr, sizeof(LastHtmlSender) - 1);
+    LastHtmlSender[sizeof(LastHtmlSender) - 1] = '\0';
+}
+
+char * amsutil__GetLastHtmlSender(struct classheader *c)
+{
+    return LastHtmlSender;
 }
 
 char * amsutil__GetDefaultFontName(struct classheader *c)
